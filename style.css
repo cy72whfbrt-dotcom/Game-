@@ -343,66 +343,97 @@ body {
 .adv-progress { font-size: 10.5px; color: #c9bb9a; }
 .adv-progress .red { color: var(--red-badge); font-weight: 900; }
 
-/* Bottom nav */
-.bottom-nav {
+/* Forge scene: the anvil+hammer is the dominant centerpiece graphic,
+   feature icons are scattered freely over it, as in the reference. */
+.forge-scene {
   position: relative;
   margin: 8px 4px 0;
-  background: linear-gradient(180deg, #241c14, #120d09);
+  background: linear-gradient(180deg, #241c14 0%, #1a130c 55%, #100b07 100%);
   border-top: 2px solid var(--stone-border);
   border-radius: 14px 14px 0 0;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr) 64px repeat(3, 1fr);
-  align-items: start;
-  padding: 10px 8px 8px;
-  row-gap: 10px;
   flex: 1;
+  overflow: hidden;
 }
-.nav-item {
+
+.scene-floor {
+  position: absolute;
+  left: 8%; right: 8%; bottom: 0; top: 55%;
+  background: radial-gradient(ellipse at 50% 100%, rgba(120,40,30,0.35), transparent 70%);
+}
+
+.forge-hero {
+  position: absolute;
+  left: 50%; top: 8%;
+  width: 62%;
+  height: auto;
+  transform: translateX(-50%);
+  filter: drop-shadow(0 6px 10px rgba(0,0,0,0.6));
+  z-index: 2;
+}
+.forge-glow {
+  position: absolute;
+  left: 50%; top: 38%;
+  width: 50%; height: 30%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(ellipse at center, rgba(240,193,75,0.35), transparent 70%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.scene-icon {
+  position: absolute;
   display: flex; flex-direction: column; align-items: center; gap: 2px;
-  position: relative;
+  width: 60px;
+  transform: translateX(-50%);
   cursor: pointer;
+  z-index: 3;
 }
-.nav-icon { width: 28px; height: 28px; }
-.nav-label { font-size: 9.5px; font-weight: 800; color: #d8cba8; }
-.nav-badge {
-  position: absolute; top: -4px; right: 6px;
+.scene-icon.small { width: 26px; }
+.scene-svg { width: 30px; height: 30px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.6)); }
+.scene-icon.small .scene-svg { width: 22px; height: 22px; }
+.scene-label {
+  font-size: 9.5px; font-weight: 800; color: #d8cba8;
+  text-shadow: 0 1px 2px #000;
+  white-space: nowrap;
+}
+.scene-sublabel {
+  font-size: 7.5px; color: #b8a888; font-weight: 700;
+}
+.scene-sublabel.floating {
+  position: absolute;
+  transform: translateX(-50%);
+  z-index: 3;
+  text-shadow: 0 1px 2px #000;
+}
+.scene-icon .badge {
+  position: absolute; top: -5px; right: 4px;
   width: 13px; height: 13px; border-radius: 50%;
   background: var(--red-badge); color: #fff;
   font-size: 8.5px; font-weight: 900;
   display: flex; align-items: center; justify-content: center;
 }
-.guild-lvl {
-  font-size: 7.5px; color: #b8a888; font-weight: 700;
-}
 
-.anvil-center {
-  grid-column: 4;
-  grid-row: 1 / span 2;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  position: relative;
-  top: -22px;
+.scene-auto {
+  position: absolute;
+  transform: translateX(-50%);
+  z-index: 3;
   cursor: pointer;
 }
-.anvil { width: 64px; height: 50px; filter: drop-shadow(0 0 8px rgba(240,193,75,0.45)); }
-.hammer { width: 36px; height: 36px; position: absolute; top: -22px; left: 50%; transform: translateX(-50%) rotate(-22deg); }
-.bottom-nav > .nav-item:nth-child(1) { grid-column: 1; grid-row: 1; }
-.bottom-nav > .nav-item:nth-child(2) { grid-column: 2; grid-row: 1; }
-.bottom-nav > .nav-item:nth-child(3) { grid-column: 3; grid-row: 1; }
-.bottom-nav > .nav-item:nth-child(5) { grid-column: 5; grid-row: 1; }
-.bottom-nav > .nav-item:nth-child(6) { grid-column: 6; grid-row: 1; }
-.bottom-nav > .nav-item:nth-child(7) { grid-column: 7; grid-row: 1; }
-.bottom-nav > .nav-item:nth-child(8) { grid-column: 1; grid-row: 2; }
-.bottom-nav > .nav-item:nth-child(9) { grid-column: 2; grid-row: 2; }
-.bottom-nav > .nav-item:nth-child(10) { grid-column: 3; grid-row: 2; }
-
 .auto-box {
   border: 1.5px solid #d8cba8; border-radius: 4px;
   font-size: 8px; font-weight: 900; letter-spacing: 0.5px;
   width: 30px; height: 16px; display: flex; align-items: center; justify-content: center;
   color: #d8cba8;
+  background: rgba(0,0,0,0.3);
 }
-.resource-item .nav-icon { width: 22px; height: 22px; }
-.resource-item .nav-value { font-weight: 800; font-size: 12.5px; color: #fff; }
+.scene-counter {
+  position: absolute;
+  transform: translateX(-50%);
+  z-index: 3;
+  display: flex; align-items: center; gap: 4px;
+}
+.small-svg { width: 20px; height: 20px; }
+.scene-value { font-weight: 800; font-size: 12.5px; color: #fff; text-shadow: 0 1px 2px #000; }
 
 .home-indicator {
   position: absolute;
