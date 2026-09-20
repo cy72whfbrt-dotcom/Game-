@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Idle RPG - Home</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div style="display:none">
+    <object id="icon-sprite" data="icons.svg" type="image/svg+xml"></object>
+  </div>
+  <img src="icons.svg" style="display:none" id="preload">
+
+  <div class="phone-frame">
+    <div class="status-bar">
+      <span class="time">19:14 <span class="moon">☾</span></span>
+      <div class="status-icons">
+        <svg class="si-signal" viewBox="0 0 20 14"><rect x="0" y="8" width="4" height="6" rx="1" fill="#fff"/><rect x="6" y="5" width="4" height="9" rx="1" fill="#fff"/><rect x="12" y="2" width="4" height="12" rx="1" fill="#fff"/></svg>
+        <svg class="si-wifi" viewBox="0 0 20 14"><path d="M2 5c5-5 11-5 16 0M5 8c3.5-3.5 6.5-3.5 10 0M8 11c1.5-1.5 2.5-1.5 4 0" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <div class="battery"><span class="battery-num">43</span><span class="battery-shell"><span class="battery-fill"></span></span></div>
+      </div>
+    </div>
+
+    <div class="game-screen">
+
+      <!-- Top bar -->
+      <div class="top-bar">
+        <div class="profile">
+          <div class="avatar">
+            <div class="avatar-face"></div>
+          </div>
+          <span class="player-name">player66378937</span>
+        </div>
+        <div class="currencies">
+          <div class="currency">
+            <svg class="cur-icon"><use href="icons.svg#gem"/></svg>
+            <span class="cur-value">6530</span>
+            <span class="cur-add">+</span>
+          </div>
+          <div class="currency">
+            <svg class="cur-icon"><use href="icons.svg#coin"/></svg>
+            <span class="cur-value">1951</span>
+            <span class="cur-add">+</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="top-bar-labels">
+        <div class="mini-btn">
+          <svg class="mini-icon"><use href="icons.svg#gift"/></svg>
+          <span class="mini-label">1st Top-up</span>
+        </div>
+        <div class="mini-btn">
+          <svg class="mini-icon"><use href="icons.svg#mail"/></svg>
+          <span class="mini-label">Mail</span>
+        </div>
+        <div class="mini-btn">
+          <svg class="mini-icon"><use href="icons.svg#chat"/></svg>
+          <span class="mini-label">Chat</span>
+        </div>
+      </div>
+
+      <!-- Character viewport -->
+      <div class="character-viewport">
+        <svg class="arch-bg" viewBox="0 0 320 300" preserveAspectRatio="xMidYMid slice">
+          <rect width="320" height="300" fill="#171310"/>
+          <ellipse cx="160" cy="110" rx="150" ry="230" fill="#241d17"/>
+          <path d="M160 20c-55 0-90 45-90 100v90h180v-90c0-55-35-100-90-100z" fill="#2c231b" stroke="#4a3a28" stroke-width="3"/>
+          <path d="M160 34c-46 0-76 38-76 86v82h152v-82c0-48-30-86-76-86z" fill="#100a08"/>
+          <rect x="72" y="200" width="20" height="28" rx="3" fill="#3a2c1c"/>
+          <rect x="228" y="200" width="20" height="28" rx="3" fill="#3a2c1c"/>
+          <circle cx="82" cy="196" r="7" fill="#e8862f" opacity="0.85"/>
+          <circle cx="238" cy="196" r="7" fill="#e8862f" opacity="0.85"/>
+        </svg>
+
+        <div class="equip-grid equip-left">
+          <div class="equip-slot"><svg class="slot-icon"><use href="icons.svg#cap"/></svg><span class="slot-lvl">Lv. 98</span></div>
+          <div class="equip-slot"><svg class="slot-icon"><use href="icons.svg#helmet"/></svg><span class="slot-lvl">Lv. 100</span></div>
+          <div class="equip-slot"><svg class="slot-icon"><use href="icons.svg#gauntlet"/></svg><span class="slot-lvl">Lv. 99</span></div>
+          <div class="equip-slot"><svg class="slot-icon"><use href="icons.svg#robe"/></svg><span class="slot-lvl">Lv. 98</span></div>
+          <div class="equip-slot"><svg class="slot-icon"><use href="icons.svg#ring"/></svg><span class="slot-lvl">Lv. 100</span></div>
+          <div class="equip-slot"><svg class="slot-icon"><use href="icons.svg#pants"/></svg><span class="slot-lvl">Lv. 98</span></div>
+          <div class="equip-slot"><svg class="slot-icon"><use href="icons.svg#star"/></svg><span class="slot-lvl">Lv. 98</span></div>
+          <div class="equip-slot rare"><svg class="slot-icon"><use href="icons.svg#boots"/></svg><span class="slot-lvl">Lv. 99</span></div>
+        </div>
+
+        <div class="equip-grid equip-right">
+          <div class="equip-slot epic"><span class="badge">!</span><svg class="slot-icon"><use href="icons.svg#sword"/></svg><span class="slot-lvl">Lv. 100</span></div>
+          <div class="equip-slot legendary"><span class="badge">!</span><svg class="slot-icon"><use href="icons.svg#wingstar"/></svg><span class="slot-lvl">Lv. 1</span></div>
+          <div class="equip-slot epic"><span class="badge">!</span><svg class="slot-icon"><use href="icons.svg#dragon"/></svg><span class="slot-lvl">Lv1</span></div>
+          <div class="equip-slot"><span class="badge">!</span><svg class="slot-icon"><use href="icons.svg#scroll"/></svg><span class="slot-label">Secret Stone</span></div>
+          <div class="equip-slot gem"><span class="badge">!</span><svg class="slot-icon"><use href="icons.svg#gem"/></svg><span class="slot-label">Gem</span></div>
+          <div class="equip-slot unknown"><svg class="slot-icon"><use href="icons.svg#question"/></svg><span class="slot-label">To Be Revealed</span></div>
+        </div>
+
+        <div class="character">
+          <svg viewBox="0 0 120 170" class="char-sprite">
+            <defs>
+              <linearGradient id="cPurple" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#a97ce8"/><stop offset="100%" stop-color="#5c2fa0"/>
+              </linearGradient>
+              <linearGradient id="cSteel" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#cfd6dd"/><stop offset="100%" stop-color="#7c8894"/>
+              </linearGradient>
+              <linearGradient id="cGold" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#f7dd8f"/><stop offset="100%" stop-color="#c9922f"/>
+              </linearGradient>
+            </defs>
+            <ellipse cx="60" cy="150" rx="34" ry="8" fill="#000" opacity="0.35"/>
+            <path d="M60 60c-30 6-46 30-38 58 5 16 4 26 0 34h76c-4-8-5-18 0-34 8-28-8-52-38-58z" fill="url(#cPurple)" opacity="0.9"/>
+            <path d="M28 92c-14-4-24 2-26 14 10 2 18-2 24-8zM92 92c14-4 24 2 26 14-10 2-18-2-24-8z" fill="url(#cPurple)"/>
+            <path d="M40 84c8 20 32 20 40 0l-4 40c-10 8-22 8-32 0z" fill="#8a3b2f"/>
+            <rect x="46" y="108" width="28" height="28" rx="4" fill="#7a3226"/>
+            <circle cx="60" cy="46" r="22" fill="#f0cf9e"/>
+            <path d="M38 40c0-16 10-26 22-26s22 10 22 26c-6-4-14-6-22-6s-16 2-22 6z" fill="#5a4a38"/>
+            <path d="M36 30c-2-10 6-18 24-18s26 8 24 18c-4-8-14-12-24-12s-20 4-24 12z" fill="url(#cSteel)" stroke="#3a3f45" stroke-width="1.5"/>
+            <circle cx="60" cy="18" r="4" fill="url(#cGold)"/>
+            <circle cx="52" cy="48" r="2.4" fill="#2a2018"/>
+            <circle cx="68" cy="48" r="2.4" fill="#2a2018"/>
+            <path d="M54 56c2 3 10 3 12 0" stroke="#8a5a3f" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+            <rect x="86" y="70" width="6" height="46" rx="2" fill="url(#cSteel)" transform="rotate(18 89 93)"/>
+            <rect x="80" y="112" width="14" height="8" rx="2" fill="url(#cGold)" transform="rotate(18 87 116)"/>
+          </svg>
+        </div>
+
+        <div class="bottom-row">
+          <div class="round-slot"><span class="badge">!</span><svg class="round-icon"><use href="icons.svg#crown"/></svg><span class="round-label">Title</span></div>
+          <div class="round-slot"><svg class="round-icon"><use href="icons.svg#tophat"/></svg><span class="badge">!</span><span class="round-label">Skin</span></div>
+          <div class="wing-slot"><span class="corner-tag">+1</span><svg class="wing-icon"><use href="icons.svg#bat"/></svg></div>
+        </div>
+      </div>
+
+      <!-- Level / EXP bar -->
+      <div class="level-bar">
+        <svg class="worm-icon"><use href="icons.svg#worm"/></svg>
+        <span class="level-text">Lv. 99</span>
+        <div class="exp-track">
+          <div class="exp-fill" style="width:0.4%"></div>
+          <span class="exp-text">73 / 18930</span>
+        </div>
+        <svg class="info-icon"><use href="icons.svg#info"/></svg>
+      </div>
+
+      <!-- Stats panel -->
+      <div class="stats-panel">
+        <div class="stat"><span class="stat-icon">◈</span><span class="stat-name">HP</span><span class="stat-value">59437</span></div>
+        <div class="stat"><span class="stat-icon">◈</span><span class="stat-name">ATK</span><span class="stat-value">11858</span></div>
+        <div class="stat"><span class="stat-icon">◈</span><span class="stat-name">DEF</span><span class="stat-value">5867</span></div>
+        <div class="stat"><span class="stat-icon">◈</span><span class="stat-name">SPD</span><span class="stat-value">2198</span></div>
+        <div class="stat"><span class="stat-icon">◈</span><span class="stat-name">CMB</span><span class="stat-value">2.0%</span></div>
+        <div class="stat"><span class="stat-icon">◈</span><span class="stat-name">CTA</span><span class="stat-value">1.0%</span></div>
+        <div class="stat"><span class="stat-icon">◈</span><span class="stat-name">Stun</span><span class="stat-value">0.0%</span></div>
+        <div class="stat"><span class="stat-icon">◈</span><span class="stat-name">ER</span><span class="stat-value">0.0%</span></div>
+        <div class="stat"><span class="stat-icon">◈</span><span class="stat-name">Crit</span><span class="stat-value">0.0%</span></div>
+      </div>
+
+      <!-- Adventure banner -->
+      <div class="adventure-banner">
+        <div class="adv-icon">
+          <svg class="adv-shield"><use href="icons.svg#shield"/></svg>
+          <span class="adv-count">5</span>
+        </div>
+        <div class="adv-text">
+          <span>Go on an adventure.</span>
+          <span class="adv-progress"><span class="red">0</span> /1</span>
+        </div>
+      </div>
+
+      <!-- Bottom navigation -->
+      <div class="bottom-nav">
+        <div class="nav-item" data-nav="events">
+          <span class="badge nav-badge">!</span>
+          <svg class="nav-icon"><use href="icons.svg#chest"/></svg>
+          <span class="nav-label">Events</span>
+        </div>
+        <div class="nav-item" data-nav="adventure">
+          <svg class="nav-icon"><use href="icons.svg#book"/></svg>
+          <span class="nav-label">Adventure</span>
+        </div>
+        <div class="nav-item" data-nav="shop">
+          <span class="badge nav-badge">!</span>
+          <svg class="nav-icon"><use href="icons.svg#gift"/></svg>
+          <span class="nav-label">Shop</span>
+        </div>
+
+        <div class="anvil-center" data-nav="forge">
+          <svg class="hammer"><use href="icons.svg#hammer"/></svg>
+          <svg class="anvil"><use href="icons.svg#anvil"/></svg>
+        </div>
+
+        <div class="nav-item" data-nav="dungeon">
+          <svg class="nav-icon"><use href="icons.svg#portal"/></svg>
+          <span class="nav-label">Dungeon</span>
+        </div>
+        <div class="nav-item" data-nav="trove">
+          <span class="badge nav-badge">!</span>
+          <svg class="nav-icon"><use href="icons.svg#map"/></svg>
+          <span class="nav-label">Trove Hunt</span>
+        </div>
+        <div class="nav-item" data-nav="arena">
+          <svg class="nav-icon"><use href="icons.svg#shield"/></svg>
+          <span class="nav-label">Arena</span>
+        </div>
+        <div class="nav-item auto-item" data-nav="auto">
+          <span class="nav-icon auto-box">AUTO</span>
+        </div>
+        <div class="nav-item resource-item">
+          <svg class="nav-icon"><use href="icons.svg#coin"/></svg>
+          <span class="nav-value">99</span>
+        </div>
+        <div class="nav-item" data-nav="guild">
+          <svg class="nav-icon"><use href="icons.svg#flag"/></svg>
+          <span class="nav-label">Guild</span>
+          <span class="guild-lvl">Lv. 1</span>
+        </div>
+      </div>
+
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+
+<script src="script.js"></script>
+</body>
+</html>
