@@ -9,8 +9,8 @@ import * as THREE from "three/webgpu";
 export class HeroCamera {
   readonly camera: THREE.PerspectiveCamera;
 
-  private readonly basePosition = new THREE.Vector3(0, 2.1, 7.6);
-  private readonly lookTarget = new THREE.Vector3(0, 2.05, 0);
+  private readonly basePosition = new THREE.Vector3(0, 1.5, 4.4);
+  private readonly lookTarget = new THREE.Vector3(0, 1.25, 0);
   private pointer = new THREE.Vector2(0, 0);
   private smoothedPointer = new THREE.Vector2(0, 0);
 

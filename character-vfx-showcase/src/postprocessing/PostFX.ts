@@ -38,7 +38,7 @@ export function createPostFX(
   opts: PostFXOptions,
 ): PostFXPipeline {
   const postProcessing = new THREE.PostProcessing(renderer);
-  const focusDistance = uniform(6.4);
+  const focusDistance = uniform(4.4);
 
   function rebuild(o: PostFXOptions): void {
     const scenePass = pass(scene, camera);

@@ -1,21 +1,12 @@
 // @ts-nocheck -- three@0.169 ships no type declarations for the webgpu/tsl entry points used here (see README).
 import * as THREE from "three/webgpu";
 import { createRenderer } from "./scene/RendererFactory";
-import { createLightingRig } from "./lighting/CinematicLighting";
 import { HeroCamera } from "./camera/HeroCamera";
-import { buildWarrior } from "./character/Warrior";
-import { createEnergyAura } from "./vfx/EnergyAura";
-import { createMagicRings } from "./vfx/MagicRings";
-import { createEnergyTrails } from "./vfx/EnergyTrails";
-import { createFloatingRunes } from "./vfx/FloatingRunes";
-import { createGroundVFX } from "./vfx/GroundVFX";
-import { createAtmosphereBackground } from "./vfx/AtmosphereBackground";
-import { createEnergyShield } from "./vfx/EnergyShield";
+import { buildSimpleCharacter } from "./character/SimpleCharacter";
+import { createSimpleGround } from "./vfx/SimpleGround";
 import { GPUParticleSystem } from "./vfx/particles/GPUParticleSystem";
 import { createPostFX } from "./postprocessing/PostFX";
 import { clock } from "./utils/Clock";
-import { detectStartTier, QualityManager, type QualitySettings } from "./utils/QualityManager";
-import { PEDESTAL_TOP_Y } from "./utils/Constants";
 
 async function bootstrap(): Promise<void> {
   const appHost = document.getElementById("app")!;
@@ -24,107 +15,70 @@ async function bootstrap(): Promise<void> {
   const loadingSub = document.getElementById("loading-sub")!;
   const rendererLabel = document.getElementById("renderer-label")!;
   const fpsLabel = document.getElementById("fps-label")!;
-  const qualityLabel = document.getElementById("quality-label")!;
 
   const setProgress = (pct: number, text: string): void => {
     loadingFill.style.width = `${pct}%`;
     loadingSub.textContent = text;
   };
 
-  setProgress(8, "Initialisiere Renderer…");
+  setProgress(15, "Initialisiere Renderer…");
   const { renderer, backendLabel } = await createRenderer(appHost);
   rendererLabel.textContent = backendLabel;
 
   const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x050308);
+  scene.fog = new THREE.FogExp2(0x08060d, 0.05);
+
   const heroCamera = new HeroCamera(window.innerWidth / window.innerHeight);
 
-  setProgress(20, "Beleuchte die Szene…");
-  const startTier = detectStartTier();
-  const initialParticleBudget = startTier === "high" ? 6000 : startTier === "medium" ? 3000 : 1200;
+  setProgress(35, "Beleuchte die Szene…");
+  const key = new THREE.DirectionalLight(0xfff1d6, 3.4);
+  key.position.set(3, 5, 4);
+  key.castShadow = true;
+  key.shadow.mapSize.set(1024, 1024);
+  scene.add(key);
 
-  const lighting = createLightingRig(scene, renderer, startTier === "high" ? 2048 : startTier === "medium" ? 1024 : 512);
+  const rim = new THREE.DirectionalLight(0x8fd0ff, 2.4);
+  rim.position.set(-4, 3, -3);
+  scene.add(rim);
 
-  setProgress(35, "Beschwöre den Krieger…");
-  const warrior = buildWarrior();
-  scene.add(warrior.root);
+  const ambient = new THREE.HemisphereLight(0x392e55, 0x0a0710, 0.8);
+  scene.add(ambient);
 
-  setProgress(50, "Webe die Energieaura…");
-  const aura = createEnergyAura();
-  scene.add(aura.group);
+  setProgress(55, "Stelle den Charakter hin…");
+  const character = buildSimpleCharacter();
+  scene.add(character.root);
 
-  const shield = createEnergyShield();
-  scene.add(shield.mesh);
+  const ground = createSimpleGround();
+  scene.add(ground);
 
-  const swirlDust = new GPUParticleSystem({
-    count: Math.round(initialParticleBudget * 0.45),
-    radius: 1.9,
-    height: 3.8,
-    riseSpeed: [0.15, 0.55],
+  setProgress(75, "Ein Effekt: aufsteigende Energiepartikel…");
+  // The one effect for now: a dense swirl of glowing GPU particles rising
+  // around the character. More effects (aura, rings, shield, ...) can be
+  // added the same way — each is its own self-contained module.
+  const particles = new GPUParticleSystem({
+    count: 1800,
+    radius: 1.7,
+    height: 3.0,
+    riseSpeed: [0.2, 0.6],
     size: [0.012, 0.03],
     colorA: new THREE.Color(0x6fc7ff),
-    colorB: new THREE.Color(0xbfe6ff),
-    origin: new THREE.Vector3(0, PEDESTAL_TOP_Y, 0),
+    colorB: new THREE.Color(0xc9a3ff),
+    origin: new THREE.Vector3(0, 0, 0),
   });
-  scene.add(swirlDust.mesh);
-
-  const swirlGlints = new GPUParticleSystem({
-    count: Math.round(initialParticleBudget * 0.08),
-    radius: 2.3,
-    height: 4.2,
-    riseSpeed: [0.05, 0.2],
-    size: [0.05, 0.11],
-    colorA: new THREE.Color(0xffffff),
-    colorB: new THREE.Color(0x9ee8ff),
-    origin: new THREE.Vector3(0, PEDESTAL_TOP_Y, 0),
-  });
-  scene.add(swirlGlints.mesh);
-
-  const rings = createMagicRings();
-  scene.add(rings.group);
-
-  const trails = createEnergyTrails();
-  scene.add(trails.group);
-
-  setProgress(65, "Zeichne Runen…");
-  const runes = createFloatingRunes(16);
-  scene.add(runes.group);
-  runes.setCount(startTier === "high" ? 14 : startTier === "medium" ? 9 : 5);
-
-  setProgress(78, "Formt den Sockel…");
-  const ground = createGroundVFX(Math.round(initialParticleBudget * 0.35));
-  scene.add(ground.group);
-
-  const atmosphere = createAtmosphereBackground(scene, Math.round(initialParticleBudget * 0.65));
-  scene.add(atmosphere.group);
+  scene.add(particles.mesh);
 
   setProgress(90, "Kalibriere Post-Processing…");
   const postFX = createPostFX(renderer, scene, heroCamera.camera, {
     bloomEnabled: true,
-    dofEnabled: startTier === "high",
-    filmGrainEnabled: startTier !== "low",
+    dofEnabled: false,
+    filmGrainEnabled: false,
   });
 
-  const qualityManager = new QualityManager(startTier, (q: QualitySettings) => {
-    renderer.setPixelRatio(q.pixelRatio);
-    runes.setCount(q.runeCount);
-    swirlDust.setCount(Math.round(q.particleCount * 0.45));
-    swirlGlints.setCount(Math.round(q.particleCount * 0.08));
-    ground.emberParticles.setCount(Math.round(q.particleCount * 0.35));
-    atmosphere.dustParticles.setCount(Math.round(q.particleCount * 0.65));
-    postFX.rebuild({
-      bloomEnabled: q.bloomEnabled,
-      dofEnabled: q.dofEnabled,
-      filmGrainEnabled: q.filmGrainEnabled,
-    });
-    qualityLabel.textContent = q.tier === "high" ? "Hoch" : q.tier === "medium" ? "Mittel" : "Niedrig";
-  });
-
-  // Pointer parallax input.
-  const pointerNDC = new THREE.Vector2(0, 0);
   window.addEventListener("pointermove", (ev) => {
-    pointerNDC.x = (ev.clientX / window.innerWidth) * 2 - 1;
-    pointerNDC.y = (ev.clientY / window.innerHeight) * 2 - 1;
-    heroCamera.setPointer(pointerNDC.x, pointerNDC.y);
+    const nx = (ev.clientX / window.innerWidth) * 2 - 1;
+    const ny = (ev.clientY / window.innerHeight) * 2 - 1;
+    heroCamera.setPointer(nx, ny);
   });
 
   window.addEventListener("resize", () => {
@@ -148,21 +102,9 @@ async function bootstrap(): Promise<void> {
     const elapsed = clock.elapsed;
 
     heroCamera.update(elapsed, dt);
-    const pointer = heroCamera.getPointer();
-
-    warrior.update(elapsed, dt, pointer);
-    aura.update(elapsed, dt);
-    shield.update(elapsed);
-    rings.update(elapsed);
-    trails.update(elapsed);
-    runes.update(elapsed);
-    ground.update(elapsed);
-    atmosphere.update(elapsed);
-    lighting.update(elapsed, pointer);
+    character.update(elapsed);
 
     postFX.postProcessing.render();
-
-    qualityManager.reportFrame(dt);
 
     fpsAccum += 1 / Math.max(dt, 1e-6);
     fpsFrames += 1;
@@ -177,7 +119,7 @@ async function bootstrap(): Promise<void> {
 }
 
 bootstrap().catch((err) => {
-  console.error("Fatal error while starting the AAA RPG VFX scene:", err);
+  console.error("Fatal error while starting the scene:", err);
   const loadingSub = document.getElementById("loading-sub");
   if (loadingSub) {
     loadingSub.textContent = "Fehler beim Laden — siehe Konsole.";
