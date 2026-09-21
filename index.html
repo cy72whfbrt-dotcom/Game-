@@ -130,17 +130,53 @@
         <svg class="info-icon"><use href="icons.svg#info"/></svg>
       </div>
 
-      <!-- Stats panel -->
+      <!-- Stats panel: klare Namen + kurze Erklärung statt kryptischer Kürzel -->
       <div class="stats-panel">
-        <div class="stat"><span class="stat-icon">◈</span><span class="stat-name">HP</span><span class="stat-value" id="stat-HP">0</span></div>
-        <div class="stat"><span class="stat-icon">◈</span><span class="stat-name">ATK</span><span class="stat-value" id="stat-ATK">0</span></div>
-        <div class="stat"><span class="stat-icon">◈</span><span class="stat-name">DEF</span><span class="stat-value" id="stat-DEF">0</span></div>
-        <div class="stat"><span class="stat-icon">◈</span><span class="stat-name">SPD</span><span class="stat-value" id="stat-SPD">0</span></div>
-        <div class="stat"><span class="stat-icon">◈</span><span class="stat-name">CMB</span><span class="stat-value" id="stat-CMB">0.0%</span></div>
-        <div class="stat"><span class="stat-icon">◈</span><span class="stat-name">CTA</span><span class="stat-value" id="stat-CTA">0.0%</span></div>
-        <div class="stat"><span class="stat-icon">◈</span><span class="stat-name">Betäubung</span><span class="stat-value" id="stat-Betaeubung">0.0%</span></div>
-        <div class="stat"><span class="stat-icon">◈</span><span class="stat-name">ER</span><span class="stat-value" id="stat-ER">0.0%</span></div>
-        <div class="stat"><span class="stat-icon">◈</span><span class="stat-name">Crit</span><span class="stat-value" id="stat-Crit">0.0%</span></div>
+        <div class="stat">
+          <span class="stat-icon">♥</span>
+          <span class="stat-text"><span class="stat-name">Leben</span><span class="stat-desc">wie viel du aushältst</span></span>
+          <span class="stat-value" id="stat-HP">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-icon">⚔</span>
+          <span class="stat-text"><span class="stat-name">Angriff</span><span class="stat-desc">dein Schaden pro Treffer</span></span>
+          <span class="stat-value" id="stat-ATK">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-icon">🛡</span>
+          <span class="stat-text"><span class="stat-name">Verteidigung</span><span class="stat-desc">senkt erlittenen Schaden</span></span>
+          <span class="stat-value" id="stat-DEF">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-icon">⚡</span>
+          <span class="stat-text"><span class="stat-name">Tempo</span><span class="stat-desc">wie oft du zuschlägst</span></span>
+          <span class="stat-value" id="stat-SPD">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-icon">✦</span>
+          <span class="stat-text"><span class="stat-name">Krit.-Chance</span><span class="stat-desc">Chance auf doppelten Schaden</span></span>
+          <span class="stat-value" id="stat-Crit">0,0%</span>
+        </div>
+        <div class="stat">
+          <span class="stat-icon">✺</span>
+          <span class="stat-text"><span class="stat-name">Kombo-Schaden</span><span class="stat-desc">Bonusschaden bei Kombos</span></span>
+          <span class="stat-value" id="stat-CMB">0,0%</span>
+        </div>
+        <div class="stat">
+          <span class="stat-icon">↺</span>
+          <span class="stat-text"><span class="stat-name">Konterchance</span><span class="stat-desc">Chance auf Gegenangriff</span></span>
+          <span class="stat-value" id="stat-CTA">0,0%</span>
+        </div>
+        <div class="stat">
+          <span class="stat-icon">💫</span>
+          <span class="stat-text"><span class="stat-name">Betäubungschance</span><span class="stat-desc">Gegner kurz handlungsunfähig</span></span>
+          <span class="stat-value" id="stat-Betaeubung">0,0%</span>
+        </div>
+        <div class="stat">
+          <span class="stat-icon">⛨</span>
+          <span class="stat-text"><span class="stat-name">Effektwiderstand</span><span class="stat-desc">Schutz vor negativen Effekten</span></span>
+          <span class="stat-value" id="stat-ER">0,0%</span>
+        </div>
       </div>
 
       <!-- Adventure banner -->

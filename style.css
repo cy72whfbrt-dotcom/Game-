@@ -231,22 +231,36 @@ body {
 }
 .info-icon { width: 15px; height: 15px; flex: 0 0 auto; }
 
-/* Stats panel */
+/* Stats panel: klare Namen + kurze Erklaerung statt Kuerzeln wie "CMB"/"CTA" */
 .stats-panel {
   margin: 6px 8px 0;
   background: linear-gradient(180deg, #2a2016, #1a130c);
   border: 2px solid var(--stone-border);
   border-radius: 10px;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px 4px;
-  padding: 8px 12px;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px 10px;
+  padding: 9px 10px;
   flex: 0 0 auto;
 }
-.stat { display: flex; align-items: center; gap: 5px; font-size: 12px; }
-.stat-icon { color: var(--gold); font-size: 9px; }
-.stat-name { color: #c9bb9a; font-weight: 700; width: 30px; }
-.stat-value { color: #fff; font-weight: 800; margin-left: auto; }
+.stat { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.stat-icon {
+  color: var(--gold); font-size: 13px; width: 16px; flex: 0 0 auto;
+  text-align: center;
+}
+.stat-text { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
+.stat-name {
+  font-size: 10px; font-weight: 800; color: #efe3c8;
+  white-space: nowrap;
+}
+.stat-desc {
+  font-size: 7px; font-weight: 600; color: #8a7f6a;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.stat-value {
+  color: #fff; font-weight: 900; font-size: 11.5px;
+  margin-left: auto; padding-left: 4px; flex: 0 0 auto;
+}
 
 /* Adventure banner */
 .adventure-banner {
