@@ -732,7 +732,9 @@ svg use { color: inherit; }
 .battle-ground {
   position: absolute;
   left: 0; right: 0; bottom: 0; height: 24%;
-  background: linear-gradient(180deg, rgba(109,93,251,0.25), rgba(20,18,50,0.75));
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.16) 0%, transparent 12%),
+    linear-gradient(180deg, rgba(109,93,251,0.25), rgba(20,18,50,0.75));
   border-top: 1px solid rgba(255,255,255,0.12);
 }
 .battle-ground::before {
@@ -743,6 +745,17 @@ svg use { color: inherit; }
   transform: translateX(-50%);
   background: radial-gradient(ellipse at center, rgba(109,93,251,0.35), transparent 70%);
 }
+/* sehr dezente Boden-Textur (Risse/Steine als feine Linien), rein additiv, keine
+   Kontrast-Hoehe die die Karten/Sprites davor beeintraechtigt */
+.battle-ground::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(118deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 30px),
+    repeating-linear-gradient(24deg, rgba(0,0,0,0.12) 0 1px, transparent 1px 38px);
+}
 .battle-vignette {
   position: absolute; inset: 0;
   pointer-events: none;
@@ -750,18 +763,76 @@ svg use { color: inherit; }
     radial-gradient(ellipse at 50% 40%, transparent 45%, rgba(10,8,25,0.55) 100%);
 }
 
+/* Sternenfunkeln + aufsteigende Glut-Partikel im Kampf-Hintergrund: wenige,
+   leichte, ausschliesslich opacity/transform-Animationen (keine Layout-Kosten),
+   damit es auf Mobilgeraeten nicht ruckelt. */
+.star-tw { animation: starTwinkle 3.6s ease-in-out infinite; }
+@keyframes starTwinkle {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 0.25; }
+}
+.ember { animation: emberRise 4.5s ease-in infinite; }
+@keyframes emberRise {
+  0% { transform: translateY(0) scale(1); opacity: 0; }
+  12% { opacity: 0.9; }
+  85% { opacity: 0.3; }
+  100% { transform: translateY(-42px) scale(0.6); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .star-tw, .ember { animation: none; }
+}
+
 .fighter-card {
-  display: flex; flex-direction: column; align-items: center; gap: 2px;
-  background: rgba(255,255,255,0.12);
-  border: 1px solid rgba(255,255,255,0.18);
-  border-radius: 10px;
-  padding: 4px 7px 5px;
-  backdrop-filter: blur(6px);
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: 2.5px;
+  border: 1.5px solid transparent;
+  border-radius: 12px;
+  padding: 5px 7px 4px;
+  backdrop-filter: blur(8px);
+  --card-accent-1: rgba(255,255,255,0.9);
+  --card-accent-2: rgba(255,255,255,0.3);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.07) 100%) padding-box,
+    linear-gradient(135deg, var(--card-accent-1), var(--card-accent-2)) border-box;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.5),
+    inset 0 -9px 10px -7px rgba(0,0,0,0.4),
+    0 10px 18px -4px rgba(0,0,0,0.4),
+    0 2px 5px rgba(0,0,0,0.3);
+}
+/* kleiner "Rang"-Edelstein oben mittig - dekorativer Akzent statt leerer Kante */
+.fighter-card::before {
+  content: '';
+  position: absolute;
+  top: -6px; left: 50%;
+  width: 10px; height: 10px;
+  transform: translateX(-50%) rotate(45deg);
+  border-radius: 3px;
+  background: linear-gradient(135deg, var(--card-accent-1), var(--card-accent-2));
+  border: 1px solid rgba(255,255,255,0.55);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.35), inset 0 1px 1px rgba(255,255,255,0.6);
+}
+/* duenne Verbindungs-"Fahnenstange" zur Figur darunter, ersetzt das harte Ueberlappen */
+.fighter-card::after {
+  content: '';
+  position: absolute;
+  left: 50%; bottom: -10px;
+  width: 2px; height: 10px;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, var(--card-accent-2), transparent);
 }
 .fighter-name {
-  font-size: 9px; font-weight: 800; color: #fff;
+  font-size: 9.5px; font-weight: 800; color: #fff;
+  letter-spacing: 0.2px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.35);
 }
-.player-card { border-color: rgba(31,206,122,0.4); }
+.player-card {
+  --card-accent-1: #7dffbc;
+  --card-accent-2: rgba(31,206,122,0.5);
+  background:
+    linear-gradient(180deg, rgba(31,206,122,0.22) 0%, rgba(255,255,255,0.06) 100%) padding-box,
+    linear-gradient(135deg, var(--card-accent-1), var(--card-accent-2)) border-box;
+}
 
 .player-side {
   position: absolute;
@@ -769,7 +840,7 @@ svg use { color: inherit; }
   display: flex; flex-direction: column; align-items: center;
   z-index: 3;
 }
-.battle-player-sprite { width: 56px; height: auto; margin-top: 4px; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.35)); }
+.battle-player-sprite { width: 56px; height: auto; margin-top: 20px; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.35)); }
 .fighter-pedestal {
   width: 60px; height: 8px;
   margin-top: -3px;
@@ -800,19 +871,20 @@ svg use { color: inherit; }
   0%, 100% { box-shadow: none; }
   50% { box-shadow: 0 0 0 2px rgba(255,77,109,0.8); }
 }
-.enemy-sprite { width: 42px; height: auto; margin-top: 3px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4)); }
+.enemy-sprite { width: 42px; height: auto; margin-top: 17px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4)); }
 
 .enemy-stat-line {
   display: flex; gap: 6px;
   font-size: 8px; font-weight: 800;
   white-space: nowrap;
+  opacity: 0.92;
 }
 .enemy-stat-hp { color: #ff8fa8; }
 .enemy-stat-atk { color: #ffd166; }
 
 .hp-bar {
   position: relative;
-  width: 62px; height: 10px;
+  width: 54px; height: 10px;
   background: rgba(255,255,255,0.15);
   border: none;
   border-radius: 5px;
@@ -824,12 +896,12 @@ svg use { color: inherit; }
   background: linear-gradient(90deg, #ff6b8a, var(--danger-dark));
   transition: width 0.2s;
 }
-.player-hp-bar { width: 78px; height: 12px; }
+.player-hp-bar { width: 66px; height: 12px; }
 .player-hp-bar .hp-fill { background: linear-gradient(90deg, #4bec9a, var(--success-dark)); }
 
 /* Schild (Verteidigung): faengt Schaden zuerst ab */
 .shield-bar {
-  width: 78px; height: 10px;
+  width: 66px; height: 10px;
   margin-bottom: 2px;
 }
 .shield-fill { background: linear-gradient(90deg, #7fd4ff, var(--shield)); }
@@ -981,11 +1053,26 @@ svg use { color: inherit; }
 }
 
 .boss-stage { box-shadow: var(--shadow-md), 0 0 0 1px rgba(255,59,48,0.22) inset; }
-.boss-ground { background: linear-gradient(180deg, rgba(255,59,48,0.22), rgba(20,10,25,0.8)); }
+.boss-ground {
+  background:
+    linear-gradient(180deg, rgba(255,167,140,0.16) 0%, transparent 12%),
+    linear-gradient(180deg, rgba(255,59,48,0.22), rgba(20,10,25,0.8));
+}
 .boss-ground::before { background: radial-gradient(ellipse at center, rgba(255,59,48,0.3), transparent 70%); }
+.boss-ground::after {
+  background:
+    repeating-linear-gradient(118deg, rgba(255,167,140,0.06) 0 1px, transparent 1px 30px),
+    repeating-linear-gradient(24deg, rgba(0,0,0,0.16) 0 1px, transparent 1px 36px);
+}
 .boss-vignette { background: radial-gradient(ellipse at 50% 40%, transparent 40%, rgba(20,5,10,0.6) 100%); }
 
-.boss-player-card { border-color: rgba(255,59,48,0.45); }
+.boss-player-card {
+  --card-accent-1: #ff8f83;
+  --card-accent-2: rgba(255,59,48,0.5);
+  background:
+    linear-gradient(180deg, rgba(255,59,48,0.18) 0%, rgba(255,255,255,0.05) 100%) padding-box,
+    linear-gradient(135deg, var(--card-accent-1), var(--card-accent-2)) border-box;
+}
 
 .boss-unit {
   position: absolute;
@@ -1001,13 +1088,21 @@ svg use { color: inherit; }
 .boss-unit.hit .boss-sprite { animation: enemyHit 0.15s; }
 .boss-unit.hit .boss-card { animation: cardHit 0.15s; }
 .boss-card {
-  border-color: rgba(255,59,48,0.5);
-  box-shadow: 0 0 18px rgba(255,59,48,0.35);
+  --card-accent-1: #ff8f83;
+  --card-accent-2: rgba(123,47,247,0.55);
+  background:
+    linear-gradient(180deg, rgba(255,59,48,0.24) 0%, rgba(20,5,15,0.1) 100%) padding-box,
+    linear-gradient(135deg, var(--card-accent-1), var(--card-accent-2)) border-box;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.4),
+    inset 0 -9px 12px -7px rgba(0,0,0,0.5),
+    0 0 20px rgba(255,59,48,0.4),
+    0 10px 18px -4px rgba(0,0,0,0.45);
 }
 .boss-hp-bar { width: 110px; }
 .boss-hp-bar .hp-fill { background: linear-gradient(90deg, var(--boss-accent), #b3121f); }
 .boss-sprite {
-  width: 92px; height: auto; margin-top: 6px;
+  width: 92px; height: auto; margin-top: 20px;
   filter: drop-shadow(0 8px 14px rgba(0,0,0,0.5));
 }
 

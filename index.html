@@ -349,6 +349,24 @@
               <stop offset="0%" stop-color="#14c2b8" stop-opacity="0.3"/>
               <stop offset="100%" stop-color="#14c2b8" stop-opacity="0"/>
             </radialGradient>
+            <radialGradient id="moonGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#eef1ff" stop-opacity="0.55"/>
+              <stop offset="45%" stop-color="#eef1ff" stop-opacity="0.16"/>
+              <stop offset="100%" stop-color="#eef1ff" stop-opacity="0"/>
+            </radialGradient>
+            <radialGradient id="moonBody" cx="35%" cy="32%" r="70%">
+              <stop offset="0%" stop-color="#ffffff"/>
+              <stop offset="70%" stop-color="#e7eaff"/>
+              <stop offset="100%" stop-color="#c3c9ef"/>
+            </radialGradient>
+            <radialGradient id="mistWisp" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#c9d4ff" stop-opacity="0.16"/>
+              <stop offset="100%" stop-color="#c9d4ff" stop-opacity="0"/>
+            </radialGradient>
+            <linearGradient id="mtn0" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#4b3fae" stop-opacity="0.26"/>
+              <stop offset="100%" stop-color="#4b3fae" stop-opacity="0.06"/>
+            </linearGradient>
             <linearGradient id="mtn1" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stop-color="#4436a8" stop-opacity="0.5"/>
               <stop offset="100%" stop-color="#4436a8" stop-opacity="0.15"/>
@@ -361,13 +379,47 @@
           <rect width="320" height="260" fill="url(#battleSky)"/>
           <circle cx="70" cy="50" r="100" fill="url(#glowPink)"/>
           <circle cx="270" cy="90" r="80" fill="url(#glowTeal)"/>
-          <g opacity="0.8" fill="#fff">
-            <circle cx="30" cy="30" r="1.2"/><circle cx="90" cy="18" r="1"/><circle cx="150" cy="40" r="1.4"/>
-            <circle cx="200" cy="15" r="1"/><circle cx="250" cy="35" r="1.2"/><circle cx="290" cy="55" r="1"/>
-            <circle cx="55" cy="70" r="1"/><circle cx="180" cy="65" r="1.2"/><circle cx="310" cy="20" r="1"/>
+          <!-- Mond mit weichem Glow-Hof, dezente Krater fuer Oberflaechen-Detail.
+               Hinweis: .battle-bg wird per preserveAspectRatio="slice" auf die
+               schmale/hohe Buehne (~374x689px) gemappt, wodurch nur der mittlere
+               Ausschnitt ca. vb-x 89-231 sichtbar bleibt - alle "wichtigen"
+               (nicht nur als Rand-Bleed gedachten) Elemente bewusst dort platziert. -->
+          <circle cx="205" cy="38" r="46" fill="url(#moonGlow)"/>
+          <circle cx="205" cy="38" r="16" fill="url(#moonBody)"/>
+          <circle cx="199" cy="32" r="2.6" fill="#c3c9ef" opacity="0.35"/>
+          <circle cx="210" cy="43" r="1.8" fill="#c3c9ef" opacity="0.3"/>
+          <circle cx="203" cy="45" r="1.2" fill="#c3c9ef" opacity="0.25"/>
+          <!-- Sternenfeld: variable Groesse/Helligkeit, wenige funkeln sanft.
+               Mehrheit bewusst im sichtbaren Mittelband (x 90-230), einige
+               am Rand fuer Tiefe/Bleed bei anderen Seitenverhaeltnissen. -->
+          <g fill="#fff">
+            <circle cx="24" cy="26" r="1.2" opacity="0.85"/><circle cx="48" cy="15" r="0.8" opacity="0.5"/>
+            <circle cx="80" cy="32" r="1.1" opacity="0.7"/>
+            <circle cx="104" cy="14" r="1.3" opacity="0.8" class="star-tw" style="animation-delay:-0.8s"/>
+            <circle cx="126" cy="36" r="0.9" opacity="0.6"/>
+            <circle cx="150" cy="10" r="1.4" opacity="0.85" class="star-tw" style="animation-delay:-2.0s"/>
+            <circle cx="172" cy="28" r="1.1" opacity="0.75"/><circle cx="196" cy="16" r="0.9" opacity="0.65"/>
+            <circle cx="214" cy="38" r="1.3" opacity="0.8" class="star-tw" style="animation-delay:-3.2s"/>
+            <circle cx="70" cy="60" r="1.1" opacity="0.6"/><circle cx="110" cy="80" r="0.8" opacity="0.45"/>
+            <circle cx="150" cy="58" r="1.2" opacity="0.7" class="star-tw" style="animation-delay:-1.4s"/>
+            <circle cx="190" cy="72" r="1" opacity="0.55"/>
+            <circle cx="10" cy="50" r="0.9" opacity="0.4"/><circle cx="300" cy="45" r="1" opacity="0.5"/>
+            <circle cx="300" cy="90" r="0.8" opacity="0.4"/>
           </g>
+          <!-- Nebelschleier: weiche, gefederte Schwaden ueber dem Horizont -->
+          <ellipse cx="140" cy="128" rx="90" ry="14" fill="url(#mistWisp)"/>
+          <ellipse cx="195" cy="108" rx="60" ry="11" fill="url(#mistWisp)"/>
+          <ellipse cx="165" cy="150" rx="110" ry="16" fill="url(#mistWisp)"/>
+          <!-- Bergketten: 3 Ebenen mit atmosphaerischer Perspektive + Grat-Linien -->
+          <path d="M0 158 L45 132 L95 150 L145 120 L195 144 L245 118 L290 138 L320 126 L320 260 L0 260 Z" fill="url(#mtn0)"/>
           <path d="M0 170 L50 120 L100 155 L150 105 L200 145 L250 115 L320 150 L320 260 L0 260 Z" fill="url(#mtn1)"/>
+          <path d="M0 176 L50 126 L100 161 L150 111 L200 151 L250 121 L320 156" fill="none" stroke="#fff" stroke-opacity="0.07" stroke-width="1"/>
           <path d="M0 205 L70 175 L130 200 L190 165 L260 200 L320 180 L320 260 L0 260 Z" fill="url(#mtn2)"/>
+          <path d="M0 211 L70 181 L130 206 L190 171 L260 206 L320 186" fill="none" stroke="#fff" stroke-opacity="0.06" stroke-width="1"/>
+          <g stroke="#100c30" stroke-opacity="0.25" stroke-width="1" stroke-linecap="round">
+            <path d="M78 188 L82 200"/><path d="M138 178 L142 192"/>
+            <path d="M212 182 L216 196"/><path d="M270 188 L274 200"/>
+          </g>
         </svg>
         <div class="battle-ground"></div>
         <div class="battle-vignette"></div>
@@ -452,6 +504,29 @@
               <stop offset="0%" stop-color="#7b2ff7" stop-opacity="0.35"/>
               <stop offset="100%" stop-color="#7b2ff7" stop-opacity="0"/>
             </radialGradient>
+            <radialGradient id="bMoonGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#ff6a4d" stop-opacity="0.5"/>
+              <stop offset="45%" stop-color="#ff6a4d" stop-opacity="0.16"/>
+              <stop offset="100%" stop-color="#ff6a4d" stop-opacity="0"/>
+            </radialGradient>
+            <radialGradient id="bMoonBody" cx="35%" cy="32%" r="70%">
+              <stop offset="0%" stop-color="#ffd9c7"/>
+              <stop offset="70%" stop-color="#e8836a"/>
+              <stop offset="100%" stop-color="#8f2f2a"/>
+            </radialGradient>
+            <radialGradient id="bMistWisp" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#ff8a6a" stop-opacity="0.14"/>
+              <stop offset="100%" stop-color="#ff8a6a" stop-opacity="0"/>
+            </radialGradient>
+            <radialGradient id="emberGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#ffcf6a" stop-opacity="0.95"/>
+              <stop offset="55%" stop-color="#ff6a30" stop-opacity="0.5"/>
+              <stop offset="100%" stop-color="#ff6a30" stop-opacity="0"/>
+            </radialGradient>
+            <linearGradient id="bmtn0" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#8a2c50" stop-opacity="0.3"/>
+              <stop offset="100%" stop-color="#8a2c50" stop-opacity="0.08"/>
+            </linearGradient>
             <linearGradient id="bmtn1" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stop-color="#7a1f3a" stop-opacity="0.5"/>
               <stop offset="100%" stop-color="#7a1f3a" stop-opacity="0.15"/>
@@ -464,13 +539,45 @@
           <rect width="320" height="260" fill="url(#bossSky)"/>
           <circle cx="250" cy="60" r="110" fill="url(#glowRed)"/>
           <circle cx="60" cy="100" r="80" fill="url(#glowViolet)"/>
-          <g opacity="0.7" fill="#fff">
-            <circle cx="30" cy="30" r="1.2"/><circle cx="90" cy="18" r="1"/><circle cx="150" cy="40" r="1.4"/>
-            <circle cx="200" cy="15" r="1"/><circle cx="250" cy="35" r="1.2"/><circle cx="290" cy="55" r="1"/>
-            <circle cx="55" cy="70" r="1"/><circle cx="180" cy="65" r="1.2"/><circle cx="310" cy="20" r="1"/>
+          <!-- Blutmond: im sichtbaren Mittelband platziert (siehe Hinweis oben im
+               Battle-Hintergrund zu preserveAspectRatio="slice"), verschmilzt mit
+               dem roten Ambient-Glow (glowRed, rechts ausserhalb) zu einem
+               bedrohlichen Fixpunkt am Bildrand. -->
+          <circle cx="200" cy="40" r="48" fill="url(#bMoonGlow)"/>
+          <circle cx="200" cy="40" r="17" fill="url(#bMoonBody)"/>
+          <circle cx="194" cy="34" r="2.8" fill="#8f2f2a" opacity="0.4"/>
+          <circle cx="206" cy="45" r="1.8" fill="#8f2f2a" opacity="0.35"/>
+          <g fill="#ffe9df">
+            <circle cx="18" cy="26" r="1.2" opacity="0.75"/><circle cx="42" cy="14" r="0.8" opacity="0.5"/>
+            <circle cx="90" cy="18" r="1.1" opacity="0.65"/>
+            <circle cx="120" cy="38" r="1.5" opacity="0.8" class="star-tw" style="animation-delay:-1.6s"/>
+            <circle cx="150" cy="40" r="0.9" opacity="0.55"/><circle cx="180" cy="65" r="1.2" opacity="0.7"/>
+            <circle cx="55" cy="70" r="1" opacity="0.55"/>
+            <circle cx="34" cy="52" r="1.4" opacity="0.75" class="star-tw" style="animation-delay:-3.1s"/>
+            <circle cx="100" cy="60" r="0.8" opacity="0.45"/><circle cx="150" cy="14" r="1" opacity="0.6"/>
           </g>
+          <!-- Rauchig-warme Nebelschleier statt kuehler Nebel, passend zum Boss-Thema -->
+          <ellipse cx="150" cy="132" rx="85" ry="14" fill="url(#bMistWisp)"/>
+          <ellipse cx="105" cy="105" rx="55" ry="10" fill="url(#bMistWisp)"/>
+          <path d="M0 158 L45 130 L95 150 L145 118 L195 144 L245 116 L290 138 L320 124 L320 260 L0 260 Z" fill="url(#bmtn0)"/>
           <path d="M0 170 L50 120 L100 155 L150 105 L200 145 L250 115 L320 150 L320 260 L0 260 Z" fill="url(#bmtn1)"/>
+          <path d="M0 176 L50 126 L100 161 L150 111 L200 151 L250 121 L320 156" fill="none" stroke="#ff9d7a" stroke-opacity="0.1" stroke-width="1"/>
           <path d="M0 205 L70 175 L130 200 L190 165 L260 200 L320 180 L320 260 L0 260 Z" fill="url(#bmtn2)"/>
+          <path d="M0 211 L70 181 L130 206 L190 171 L260 206 L320 186" fill="none" stroke="#ff9d7a" stroke-opacity="0.08" stroke-width="1"/>
+          <!-- Glut-/Funkenpartikel: steigen sanft auf (CSS .ember Keyframe), bewusst
+               vor den Bergen platziert (ueber .battle-bg's Berg-Pfaden gezeichnet),
+               damit sie als vor der Silhouette aufsteigende Funken lesbar sind -->
+          <g>
+            <circle class="ember" cx="100" cy="190" r="2.2" fill="url(#emberGlow)" style="animation-delay:-0.6s"/>
+            <circle class="ember" cx="130" cy="194" r="1.8" fill="url(#emberGlow)" style="animation-delay:-2.3s"/>
+            <circle class="ember" cx="160" cy="186" r="2.4" fill="url(#emberGlow)" style="animation-delay:-1.1s"/>
+            <circle class="ember" cx="190" cy="193" r="1.9" fill="url(#emberGlow)" style="animation-delay:-3.4s"/>
+            <circle class="ember" cx="215" cy="188" r="2.1" fill="url(#emberGlow)" style="animation-delay:-0.2s"/>
+          </g>
+          <g stroke="#160616" stroke-opacity="0.3" stroke-width="1" stroke-linecap="round">
+            <path d="M78 188 L82 200"/><path d="M138 178 L142 192"/>
+            <path d="M212 182 L216 196"/><path d="M270 188 L274 200"/>
+          </g>
         </svg>
         <div class="battle-ground boss-ground"></div>
         <div class="battle-vignette boss-vignette"></div>

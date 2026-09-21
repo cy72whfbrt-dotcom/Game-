@@ -230,6 +230,53 @@
     <rect x="16" y="64" width="48" height="18" rx="4" fill="#6b4a2a" stroke="#2c1c0e" stroke-width="2"/>
   </symbol>
 
+  <!-- Wolf: spitze Ohren, laengliche Schnauze, grau/blau -->
+  <symbol id="wolf" viewBox="0 0 80 90">
+    <path d="M12 32L22 8 32 34Z" fill="url(#gSteel)" stroke="#28323c" stroke-width="2.5" stroke-linejoin="round"/>
+    <path d="M68 32L58 8 48 34Z" fill="url(#gSteel)" stroke="#28323c" stroke-width="2.5" stroke-linejoin="round"/>
+    <path d="M40 20c-14 0-23 10-23 22 0 7 3 13 8 17-3 5-4 10-2 14 4-3 8-5 12-5h10c4 0 8 2 12 5 2-4 1-9-2-14 5-4 8-10 8-17 0-12-9-22-23-22z" fill="url(#gSteel)" stroke="#28323c" stroke-width="2.5"/>
+    <path d="M40 46c-6 0-10 3-10 8 0 6 5 11 10 11s10-5 10-11c0-5-4-8-10-8z" fill="url(#gBlue)" opacity="0.4"/>
+    <circle cx="30" cy="38" r="5" fill="#fff"/>
+    <circle cx="50" cy="38" r="5" fill="#fff"/>
+    <circle cx="31" cy="39" r="2.4" fill="#1c2c3a"/>
+    <circle cx="51" cy="39" r="2.4" fill="#1c2c3a"/>
+    <circle cx="40" cy="56" r="2.6" fill="#1c2c3a"/>
+    <path d="M33 63l7-5 7 5" fill="none" stroke="#28323c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+
+  <!-- Ork: breiter Schaedel, gruen/gold mit Stosszahn -->
+  <symbol id="ork" viewBox="0 0 80 90">
+    <path d="M6 28l16-11-5 20zM74 28l-16-11 5 20z" fill="url(#gGreen)" stroke="#1c4a2c" stroke-width="2.5"/>
+    <path d="M40 12c-17 0-27 11-27 26 0 7 2 13 6 17l-4 14h50l-4-14c4-4 6-10 6-17 0-15-10-26-27-26z" fill="url(#gGreen)" stroke="#1c4a2c" stroke-width="2.5"/>
+    <circle cx="29" cy="40" r="5.5" fill="#fff"/>
+    <circle cx="51" cy="40" r="5.5" fill="#fff"/>
+    <circle cx="30" cy="41" r="2.6" fill="#7a1010"/>
+    <circle cx="52" cy="41" r="2.6" fill="#7a1010"/>
+    <path d="M26 58c5 5 23 5 28 0" fill="none" stroke="#1c4a2c" stroke-width="2.6" stroke-linecap="round"/>
+    <path d="M44 58l3 10 5-8z" fill="url(#gGold)" stroke="#7a5000" stroke-width="1.5" stroke-linejoin="round"/>
+    <rect x="14" y="70" width="52" height="18" rx="4" fill="url(#gLeather)" stroke="#2c1c0e" stroke-width="2"/>
+  </symbol>
+
+  <!-- Spinne: duenne, geknickte Beine, dunkel/lila mit roten Augen -->
+  <symbol id="spinne" viewBox="0 0 90 70">
+    <g fill="none" stroke="url(#gPurple)" stroke-width="3.2" stroke-linecap="round">
+      <path d="M32 30L14 18M14 18L4 22"/>
+      <path d="M32 36L10 32M10 32L2 36"/>
+      <path d="M32 42L10 44M10 44L2 50"/>
+      <path d="M32 48L14 56M14 56L6 64"/>
+      <path d="M58 30L76 18M76 18L86 22"/>
+      <path d="M58 36L80 32M80 32L88 36"/>
+      <path d="M58 42L80 44M80 44L88 50"/>
+      <path d="M58 48L76 56M76 56L84 64"/>
+    </g>
+    <ellipse cx="45" cy="46" rx="20" ry="16" fill="url(#gPurple)" stroke="#2c1440" stroke-width="2.5"/>
+    <circle cx="45" cy="24" r="13" fill="url(#gPurple)" stroke="#2c1440" stroke-width="2.5"/>
+    <circle cx="39" cy="21" r="3" fill="#ff3b30"/>
+    <circle cx="51" cy="21" r="3" fill="#ff3b30"/>
+    <circle cx="40" cy="28" r="2" fill="#ff3b30"/>
+    <circle cx="50" cy="28" r="2" fill="#ff3b30"/>
+  </symbol>
+
   <!-- Erz: sechseckiger Mineral-Klumpen, nutzt die bestehenden gGold/gSteel Verlaeufe -->
   <symbol id="ore" viewBox="0 0 48 48">
     <path d="M24 4l18 10v20L24 44 6 34V14z" fill="url(#gGold)" stroke="#7a5000" stroke-width="2"/>

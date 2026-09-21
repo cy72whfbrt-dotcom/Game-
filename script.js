@@ -539,8 +539,15 @@ forgeModal.addEventListener('click', (e) => {
    sichtbar ist (per Wisch-Geste erreichbar) - auf der Ausruestungs-
    Seite pausiert alles. */
 
-const ENEMY_NAMES = ['Schleim', 'Goblin', 'Wolf', 'Ork', 'Spinne'];
-const ENEMY_ICONS = ['slime', 'goblin'];
+// Name und Icon gehoeren fest zusammen (ein Eintrag = ein Gegnertyp), damit
+// nie ein falsches Icon zu einem Namen gewuerfelt wird.
+const ENEMY_TYPES = [
+  { name: 'Schleim', icon: 'slime' },
+  { name: 'Goblin', icon: 'goblin' },
+  { name: 'Wolf', icon: 'wolf' },
+  { name: 'Ork', icon: 'ork' },
+  { name: 'Spinne', icon: 'spinne' },
+];
 
 const battle = {
   wave: 1,
@@ -597,13 +604,14 @@ function buildWave(wave) {
   const enemies = [];
   for (let i = 0; i < count; i++) {
     const variance = 0.85 + Math.random() * 0.3;
+    const type = ENEMY_TYPES[Math.floor(Math.random() * ENEMY_TYPES.length)];
     enemies.push({
       hp: Math.max(8, Math.round((groupHp / count) * variance)),
       maxHp: 0, // wird unten gesetzt
       dmg: Math.max(2, Math.round((groupDmg / count) * variance)),
       reward: Math.max(3, Math.round((groupReward / count) * variance)),
-      name: ENEMY_NAMES[Math.floor(Math.random() * ENEMY_NAMES.length)],
-      icon: ENEMY_ICONS[Math.floor(Math.random() * ENEMY_ICONS.length)],
+      name: type.name,
+      icon: type.icon,
     });
   }
   enemies.forEach(e => { e.maxHp = e.hp; });
@@ -664,7 +672,10 @@ function updateEnemiesLeftLabel() {
 
 // Alle Gegner einer Welle laufen gleichzeitig ein und stellen sich
 // nebeneinander auf (nicht hintereinander in einer Warteschlange).
-const QUEUE_STOPS = [55, 30, 8];
+// Gleichmaessig auf ~8px Abstand austariert (die aufgewerteten, etwas
+// breiteren Fighter-Cards liessen die beiden hintersten Slots sonst fast
+// beruehren).
+const QUEUE_STOPS = [50, 26, 2];
 
 function spawnWave() {
   clearTimeout(battle.playerAttackTimer);
