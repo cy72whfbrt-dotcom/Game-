@@ -229,5 +229,24 @@
     <path d="M30 54l4-6 6 6 6-6 4 6" fill="none" stroke="#2c4018" stroke-width="2.4" stroke-linecap="round"/>
     <rect x="16" y="64" width="48" height="18" rx="4" fill="#6b4a2a" stroke="#2c1c0e" stroke-width="2"/>
   </symbol>
+
+  <!-- Erz: sechseckiger Mineral-Klumpen, nutzt die bestehenden gGold/gSteel Verlaeufe -->
+  <symbol id="ore" viewBox="0 0 48 48">
+    <path d="M24 4l18 10v20L24 44 6 34V14z" fill="url(#gGold)" stroke="#7a5000" stroke-width="2"/>
+    <path d="M24 4l18 10-18 10L6 14z" fill="url(#gSteel)" opacity="0.55"/>
+    <path d="M24 4v40M6 14l18 10 18-10M6 34l18-10 18 10" fill="none" stroke="#7a5000" stroke-width="1.2" opacity="0.5"/>
+  </symbol>
+
+  <!-- Boss-Gegner fuer den Boss-Kampf-Modus: bedrohliches gehoerntes Wesen -->
+  <symbol id="bossmonster" viewBox="0 0 100 100">
+    <path d="M50 14c-4-8-14-10-20-4 4 2 6 6 6 10-10 2-18 10-20 20 6-2 10-1 14 2-6 4-10 10-10 18 0 16 14 26 30 26s30-10 30-26c0-8-4-14-10-18 4-3 8-4 14-2-2-10-10-18-20-20 0-4 2-8 6-10-6-6-16-4-20 4z" fill="url(#gRed)" stroke="#5c130c" stroke-width="2.5"/>
+    <path d="M28 30l-10-14 4 16zM72 30l10-14-4 16z" fill="url(#gPurple)" stroke="#3a1c5c" stroke-width="2"/>
+    <circle cx="40" cy="56" r="7" fill="#ffd94a"/>
+    <circle cx="60" cy="56" r="7" fill="#ffd94a"/>
+    <circle cx="40" cy="57" r="3" fill="#1a0000"/>
+    <circle cx="60" cy="57" r="3" fill="#1a0000"/>
+    <path d="M34 74c6 6 26 6 32 0" fill="none" stroke="#3a0a06" stroke-width="3" stroke-linecap="round"/>
+    <path d="M40 74l-3 8M60 74l3 8M50 76v8" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>
+  </symbol>
 </defs>
 </svg>

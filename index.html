@@ -28,13 +28,17 @@
         <div class="currencies">
           <div class="currency">
             <svg class="cur-icon"><use href="icons.svg#gem"/></svg>
-            <span class="cur-value">6530</span>
+            <span class="cur-value" id="gemsValue">6530</span>
             <span class="cur-add">+</span>
           </div>
           <div class="currency">
             <svg class="cur-icon"><use href="icons.svg#coin"/></svg>
             <span class="cur-value" id="goldValue">1951</span>
             <span class="cur-add">+</span>
+          </div>
+          <div class="currency currency-ore">
+            <svg class="cur-icon"><use href="icons.svg#ore"/></svg>
+            <span class="cur-value" id="oreValue">0</span>
           </div>
         </div>
       </div>
@@ -96,11 +100,44 @@
 
         <div class="equip-grid equip-right">
           <div class="equip-slot empty" id="slot-sword" data-slot="sword"><svg class="slot-icon"><use href="icons.svg#sword"/></svg><span class="slot-lvl">Leer</span></div>
-          <div class="equip-slot empty" id="slot-wingstar" data-slot="wingstar"><svg class="slot-icon"><use href="icons.svg#wingstar"/></svg><span class="slot-lvl">Leer</span></div>
+          <div class="equip-slot empty" id="slot-wingstar" data-slot="wingstar"><svg class="slot-icon"><use href="icons.svg#wingstar"/></svg><span class="slot-lvl">Leer</span><span class="slot-enhance-badge" id="wingstarEnhanceBadge"></span></div>
           <div class="equip-slot empty" id="slot-dragon" data-slot="dragon"><svg class="slot-icon"><use href="icons.svg#dragon"/></svg><span class="slot-lvl">Leer</span></div>
           <div class="equip-slot empty" id="slot-scroll" data-slot="scroll"><svg class="slot-icon"><use href="icons.svg#scroll"/></svg><span class="slot-lvl">Leer</span></div>
           <div class="equip-slot empty" id="slot-gem" data-slot="gem"><svg class="slot-icon"><use href="icons.svg#gem"/></svg><span class="slot-lvl">Leer</span></div>
           <div class="equip-slot empty" id="slot-question" data-slot="question"><svg class="slot-icon"><use href="icons.svg#question"/></svg><span class="slot-lvl">Leer</span></div>
+        </div>
+
+        <!-- Fluegel/Glow-Buff-Effekt: standardmaessig unsichtbar (display:none via
+             .character-fx ohne .active). Wird per updateCharacterFx() in script.js
+             sichtbar geschaltet, sobald state.equipment.wingstar existiert. Liegt
+             im DOM VOR .character (beide z-index:auto) und damit optisch dahinter,
+             aber noch unter den Ausruestungs-Slots (z-index 5/6). -->
+        <div class="character-fx" id="characterFx">
+          <div class="character-fx-glow"></div>
+          <svg class="character-fx-wings" viewBox="0 0 300 200" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <linearGradient id="wSteel" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#eef2f6"/><stop offset="100%" stop-color="#93a0ad"/>
+              </linearGradient>
+              <linearGradient id="wGold" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#fff0c2"/><stop offset="100%" stop-color="#d99f33"/>
+              </linearGradient>
+            </defs>
+            <g class="wing wing-right">
+              <path class="wing-membrane" d="M150 148 C172 112 198 78 228 58 C238 74 234 88 246 94 C258 80 268 72 282 63 C272 84 262 93 264 103 C277 98 287 95 297 99 C280 114 262 121 251 133 C236 127 219 135 206 151 C196 141 179 143 169 153 C161 151 155 150 150 148 Z"/>
+              <path class="wing-bone" d="M150 148 C172 112 198 78 228 58" fill="none" stroke="url(#wSteel)" stroke-width="3" stroke-linecap="round"/>
+              <path class="wing-bone" d="M169 153 C185 128 210 108 246 94" fill="none" stroke="url(#wSteel)" stroke-width="2" stroke-linecap="round"/>
+              <path class="wing-bone" d="M206 151 C222 128 245 112 264 103" fill="none" stroke="url(#wSteel)" stroke-width="2" stroke-linecap="round"/>
+              <circle class="wing-rivet" cx="153" cy="146" r="4" fill="url(#wGold)"/>
+            </g>
+            <g class="wing wing-left" transform="scale(-1,1) translate(-300,0)">
+              <path class="wing-membrane" d="M150 148 C172 112 198 78 228 58 C238 74 234 88 246 94 C258 80 268 72 282 63 C272 84 262 93 264 103 C277 98 287 95 297 99 C280 114 262 121 251 133 C236 127 219 135 206 151 C196 141 179 143 169 153 C161 151 155 150 150 148 Z"/>
+              <path class="wing-bone" d="M150 148 C172 112 198 78 228 58" fill="none" stroke="url(#wSteel)" stroke-width="3" stroke-linecap="round"/>
+              <path class="wing-bone" d="M169 153 C185 128 210 108 246 94" fill="none" stroke="url(#wSteel)" stroke-width="2" stroke-linecap="round"/>
+              <path class="wing-bone" d="M206 151 C222 128 245 112 264 103" fill="none" stroke="url(#wSteel)" stroke-width="2" stroke-linecap="round"/>
+              <circle class="wing-rivet" cx="153" cy="146" r="4" fill="url(#wGold)"/>
+            </g>
+          </svg>
         </div>
 
         <div class="character">
@@ -376,7 +413,134 @@
         </div>
       </div>
 
+      <!-- Einstieg in den Boss-Kampf: scrollt zur dritten Seite -->
+      <div class="boss-nav-banner" id="bossNavBanner">
+        <div class="adv-icon boss-nav-icon">
+          <svg class="adv-shield" viewBox="0 0 48 48"><use href="icons.svg#flag"/></svg>
+        </div>
+        <div class="adv-text">
+          <span>⚔️ Boss-Kampf</span>
+          <span class="adv-progress">Fordere den Boss heraus</span>
+        </div>
+        <span class="adv-chevron">&#8250;</span>
+      </div>
+
       <div class="swipe-hint">&#8249; Zurück zur Ausrüstung wischen</div>
+    </div>
+
+    <!-- Seite 3: Boss-Kampf - ein einzelner, sehr starker Gegner -->
+    <div class="page page-boss" id="pageBoss">
+      <div class="boss-banner">
+        <svg class="boss-banner-icon" viewBox="0 0 48 48"><use href="icons.svg#flag"/></svg>
+        <span class="boss-banner-title">Boss-Kampf</span>
+        <span class="boss-banner-sub" id="bossNameLabel">???</span>
+      </div>
+
+      <div class="battle-stage boss-stage" id="bossStage">
+        <svg class="battle-bg boss-bg" viewBox="0 0 320 260" preserveAspectRatio="xMidYMid slice">
+          <defs>
+            <linearGradient id="bossSky" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#4a1030"/>
+              <stop offset="55%" stop-color="#2c0d28"/>
+              <stop offset="100%" stop-color="#160616"/>
+            </linearGradient>
+            <radialGradient id="glowRed" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#ff3b30" stop-opacity="0.4"/>
+              <stop offset="100%" stop-color="#ff3b30" stop-opacity="0"/>
+            </radialGradient>
+            <radialGradient id="glowViolet" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#7b2ff7" stop-opacity="0.35"/>
+              <stop offset="100%" stop-color="#7b2ff7" stop-opacity="0"/>
+            </radialGradient>
+            <linearGradient id="bmtn1" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#7a1f3a" stop-opacity="0.5"/>
+              <stop offset="100%" stop-color="#7a1f3a" stop-opacity="0.15"/>
+            </linearGradient>
+            <linearGradient id="bmtn2" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#3a1240" stop-opacity="0.65"/>
+              <stop offset="100%" stop-color="#3a1240" stop-opacity="0.2"/>
+            </linearGradient>
+          </defs>
+          <rect width="320" height="260" fill="url(#bossSky)"/>
+          <circle cx="250" cy="60" r="110" fill="url(#glowRed)"/>
+          <circle cx="60" cy="100" r="80" fill="url(#glowViolet)"/>
+          <g opacity="0.7" fill="#fff">
+            <circle cx="30" cy="30" r="1.2"/><circle cx="90" cy="18" r="1"/><circle cx="150" cy="40" r="1.4"/>
+            <circle cx="200" cy="15" r="1"/><circle cx="250" cy="35" r="1.2"/><circle cx="290" cy="55" r="1"/>
+            <circle cx="55" cy="70" r="1"/><circle cx="180" cy="65" r="1.2"/><circle cx="310" cy="20" r="1"/>
+          </g>
+          <path d="M0 170 L50 120 L100 155 L150 105 L200 145 L250 115 L320 150 L320 260 L0 260 Z" fill="url(#bmtn1)"/>
+          <path d="M0 205 L70 175 L130 200 L190 165 L260 200 L320 180 L320 260 L0 260 Z" fill="url(#bmtn2)"/>
+        </svg>
+        <div class="battle-ground boss-ground"></div>
+        <div class="battle-vignette boss-vignette"></div>
+
+        <div class="player-side">
+          <div class="fighter-card player-card boss-player-card">
+            <span class="fighter-name">Du</span>
+            <div class="hp-bar shield-bar" id="bossPlayerShieldBar">
+              <div class="hp-fill shield-fill" id="bossPlayerShieldFill"></div>
+              <span class="hp-text" id="bossPlayerShieldText">0 / 0</span>
+            </div>
+            <div class="hp-bar player-hp-bar">
+              <div class="hp-fill" id="bossPlayerHpFill"></div>
+              <span class="hp-text" id="bossPlayerHpText">100 / 100</span>
+            </div>
+          </div>
+          <svg viewBox="0 0 120 170" class="char-sprite battle-player-sprite">
+            <ellipse cx="60" cy="150" rx="34" ry="8" fill="#000" opacity="0.35"/>
+            <path d="M60 60c-30 6-46 30-38 58 5 16 4 26 0 34h76c-4-8-5-18 0-34 8-28-8-52-38-58z" fill="#8a5fd6" opacity="0.9"/>
+            <path d="M40 84c8 20 32 20 40 0l-4 40c-10 8-22 8-32 0z" fill="#8a3b2f"/>
+            <circle cx="60" cy="46" r="22" fill="#f0cf9e"/>
+            <path d="M36 30c-2-10 6-18 24-18s26 8 24 18c-4-8-14-12-24-12s-20 4-24 12z" fill="#b7c0c9" stroke="#3a3f45" stroke-width="1.5"/>
+          </svg>
+          <div class="fighter-pedestal"></div>
+        </div>
+
+        <!-- Der Boss: ein einzelner, sehr starker Gegner statt einer Welle -->
+        <div class="boss-unit" id="bossUnit">
+          <div class="fighter-card boss-card">
+            <span class="enemy-name" id="bossUnitName">???</span>
+            <span class="enemy-stat-line">
+              <span class="enemy-stat-hp">♥ <span id="bossHpNum">0</span></span>
+              <span class="enemy-stat-atk">⚔ <span id="bossDmgNum">0</span></span>
+            </span>
+            <div class="hp-bar enemy-hp-bar boss-hp-bar">
+              <div class="hp-fill" id="bossHpFill"></div>
+              <span class="hp-text" id="bossHpText">0 / 0</span>
+            </div>
+          </div>
+          <svg class="enemy-sprite boss-sprite" viewBox="0 0 100 100"><use href="icons.svg#bossmonster"/></svg>
+        </div>
+
+        <!-- Boss-Niederlage: pausiert den Kampf, Retry setzt HP/Schild und Boss-HP zurueck -->
+        <div class="defeat-overlay boss-defeat-overlay" id="bossDefeatOverlay">
+          <div class="defeat-card boss-defeat-card">
+            <svg class="defeat-skull" viewBox="0 0 48 48">
+              <path d="M24 6C13 6 6 14 6 24c0 6 3 11 7 14v8h6v-6h4v6h2v-6h4v6h6v-8c4-3 7-8 7-14 0-10-7-18-18-18z" fill="#e8e0d0" stroke="#3a3226" stroke-width="2"/>
+              <circle cx="16" cy="23" r="4.5" fill="#1a130c"/>
+              <circle cx="32" cy="23" r="4.5" fill="#1a130c"/>
+              <path d="M20 32l4 4 4-4" fill="none" stroke="#1a130c" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span class="defeat-title boss-defeat-title">Niederlage</span>
+            <span class="defeat-text">Der Boss war zu stark. Verbessere deine Ausrüstung und versuch's erneut.</span>
+            <button class="defeat-retry-btn boss-retry-btn" id="bossDefeatRetryBtn">Erneut versuchen</button>
+          </div>
+        </div>
+
+        <!-- Boss-Sieg: zeigt 2-4 zufaellige Belohnungen -->
+        <div class="defeat-overlay boss-victory-overlay" id="bossVictoryOverlay">
+          <div class="defeat-card boss-victory-card">
+            <svg class="victory-icon" viewBox="0 0 48 48"><use href="icons.svg#crown"/></svg>
+            <span class="defeat-title boss-victory-title">Sieg!</span>
+            <span class="defeat-text">Du hast den Boss besiegt und diese Belohnungen erhalten:</span>
+            <div class="boss-rewards-list" id="bossRewardsList"></div>
+            <button class="defeat-retry-btn boss-continue-btn" id="bossVictoryContinueBtn">Weiterkämpfen</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="swipe-hint">&#8249; Zurück zum Kampf wischen</div>
     </div>
     </div>
 

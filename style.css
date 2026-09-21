@@ -36,6 +36,11 @@
   --r-gold: #ffab2e;
   --r-mystisch: #ff5c9d;
   --r-goettlich: #ff5a4a;
+
+  /* Boss-Kampf - bedrohlichere Akzentfarben (tiefes Rot/Violett) */
+  --boss-accent: #ff3b30;
+  --boss-accent-2: #7b2ff7;
+  --boss-grad: linear-gradient(135deg, #ff4d4d 0%, #7b2ff7 100%);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -246,6 +251,22 @@ body {
   z-index: 2;
 }
 
+/* Fluegel-Verstaerkungs-Badge ("+N") auf der Slot-Kachel - eigene Ecke
+   (oben links), damit sie nicht mit .badge (oben rechts) kollidiert. */
+.slot-enhance-badge {
+  display: none;
+  position: absolute; top: -6px; left: -6px;
+  min-width: 15px; height: 15px; padding: 0 3px;
+  border-radius: 8px;
+  background: var(--primary-grad); color: #fff;
+  font-size: 9px; font-weight: 900;
+  align-items: center; justify-content: center;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+  z-index: 2;
+}
+.slot-enhance-badge.show { display: flex; }
+
 .character {
   position: absolute;
   left: 50%; top: 48%;
@@ -254,6 +275,69 @@ body {
 .char-sprite {
   width: 108px; height: 158px;
   filter: drop-shadow(0 10px 14px rgba(28,31,58,0.28));
+}
+
+/* Buff-Glow: leuchtende Fluegel hinter dem Charakter, sobald ein Fluegel-
+   Item (wingstar) ausgeruestet ist. Unsichtbar per default (display:none),
+   toggled ausschliesslich per JS (.active) in updateCharacterFx() - nie
+   sichtbar/Layout-Einfluss ohne ausgeruestete Fluegel. Rein dekorativ. */
+.character-fx {
+  position: absolute;
+  left: 50%; top: 48%;
+  width: 0; height: 0;
+  transform: translate(-50%, -50%) scale(var(--fx-scale, 1));
+  display: none;
+  pointer-events: none;
+  --fx-color: #9b5cf6;
+}
+.character-fx.active { display: block; }
+
+.character-fx-glow {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 210px; height: 210px;
+  margin-left: -105px; margin-top: -105px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--fx-color) 0%, transparent 70%);
+  opacity: 0.45;
+  filter: blur(7px);
+  animation: fxGlowPulse 2.8s ease-in-out infinite;
+}
+.character-fx.fx-rainbow .character-fx-glow {
+  background: conic-gradient(from 180deg, #ff5a4a, #ffab2e, #22c55e, #2f9dff, #9b5cf6, #ff5a4a);
+  opacity: 0.4;
+}
+
+.character-fx-wings {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 232px; height: auto;
+  margin-left: -116px; margin-top: -104px;
+  filter: drop-shadow(0 0 6px var(--fx-color)) drop-shadow(0 0 16px var(--fx-color));
+  animation: fxWingFloat 3.4s ease-in-out infinite;
+}
+.character-fx.fx-rainbow .character-fx-wings {
+  filter: drop-shadow(0 0 6px #ff5c9d) drop-shadow(0 0 14px #9b5cf6) drop-shadow(0 0 22px #2f9dff);
+}
+.character-fx-wings .wing-membrane {
+  fill: var(--fx-color);
+  opacity: 0.5;
+}
+.character-fx.fx-rainbow .wing-membrane {
+  fill: #ffffff;
+  opacity: 0.38;
+}
+
+@keyframes fxGlowPulse {
+  0%, 100% { opacity: 0.32; transform: scale(0.94); }
+  50% { opacity: 0.55; transform: scale(1.04); }
+}
+@keyframes fxWingFloat {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-3px) scale(1.015); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .character-fx-glow, .character-fx-wings { animation: none; }
 }
 
 /* Level bar */
@@ -583,6 +667,25 @@ svg use { color: inherit; }
   opacity: 0.4; cursor: not-allowed;
 }
 
+/* Fluegel-Verstaerken-Button: gleiches Gradient-Button-Look wie der
+   Amboss-Upgrade-Button, nur schmaler fuer die Slot-Info-Karte. */
+.slot-enhance-btn {
+  width: 100%;
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--primary-grad);
+  border: none;
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: #fff; font-weight: 800; font-size: 12.5px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+}
+.slot-enhance-btn .forge-cost { display: flex; align-items: center; gap: 3px; color: #ffe4a8; font-weight: 900; font-size: 11.5px; }
+.slot-enhance-btn .mini-coin { width: 12px; height: 12px; }
+.slot-enhance-btn.disabled { opacity: 0.45; }
+.slot-enhance-btn.insufficient { animation: upgradeShake 0.35s; }
+
 /* Abenteuer / Battle - Seite 2 */
 .page-battle {
   background:
@@ -753,6 +856,7 @@ svg use { color: inherit; }
 }
 .dmg-popup.player-dmg { color: #ff6b8a; }
 .dmg-popup.shield-dmg { color: #7fd4ff; }
+.dmg-popup.pet-dmg { color: var(--accent-teal); }
 @keyframes dmgPopup {
   0% { opacity: 1; transform: translateY(0); }
   100% { opacity: 0; transform: translateY(-30px); }
@@ -826,3 +930,114 @@ svg use { color: inherit; }
 }
 .page-home .swipe-hint { color: var(--ink-faint); }
 .page-battle .swipe-hint { color: rgba(255,255,255,0.55); }
+.page-boss .swipe-hint { color: rgba(255,255,255,0.55); }
+
+/* Einstieg zum Boss-Kampf, auf der normalen Kampf-Seite */
+.boss-nav-banner {
+  margin: 10px 8px 0;
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 16px;
+  background: var(--boss-grad);
+  flex: 0 0 auto;
+  cursor: pointer;
+  transition: transform 0.15s;
+  box-shadow: var(--shadow-md);
+}
+.boss-nav-banner:active { transform: scale(0.98); }
+.boss-nav-icon { background: rgba(255,255,255,0.22); }
+
+/* Boss-Kampf - Seite 3: gleiche Karten-/Schatten-Sprache wie Seite 2,
+   aber mit tiefem Rot/Violett statt Indigo als bedrohlicherer Akzent. */
+.page-boss {
+  background:
+    radial-gradient(ellipse 380px 260px at 90% 0%, rgba(255,59,48,0.28), transparent 60%),
+    radial-gradient(ellipse 380px 300px at 0% 100%, rgba(123,47,247,0.26), transparent 60%),
+    linear-gradient(180deg, #2c1030 0%, #1c0d28 55%, #10071a 100%);
+  display: flex;
+  flex-direction: column;
+  width: 100%; height: 100%;
+}
+
+.boss-banner {
+  margin: 10px 8px 0;
+  background: var(--boss-grad);
+  border: none;
+  border-radius: 18px;
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 7px 14px;
+  flex: 0 0 auto;
+  box-shadow: var(--shadow-sm);
+}
+.boss-banner-icon { width: 17px; height: 17px; filter: brightness(0) invert(1); opacity: 0.9; }
+.boss-banner-title {
+  font-family: 'Sora', sans-serif;
+  font-weight: 700; font-size: 15px; color: #fff;
+}
+.boss-banner-sub {
+  font-size: 10.5px; font-weight: 700; color: rgba(255,255,255,0.8);
+  padding-left: 8px; border-left: 1px solid rgba(255,255,255,0.32);
+}
+
+.boss-stage { box-shadow: var(--shadow-md), 0 0 0 1px rgba(255,59,48,0.22) inset; }
+.boss-ground { background: linear-gradient(180deg, rgba(255,59,48,0.22), rgba(20,10,25,0.8)); }
+.boss-ground::before { background: radial-gradient(ellipse at center, rgba(255,59,48,0.3), transparent 70%); }
+.boss-vignette { background: radial-gradient(ellipse at 50% 40%, transparent 40%, rgba(20,5,10,0.6) 100%); }
+
+.boss-player-card { border-color: rgba(255,59,48,0.45); }
+
+.boss-unit {
+  position: absolute;
+  right: 8%;
+  bottom: 10%;
+  display: flex; flex-direction: column; align-items: center;
+  z-index: 3;
+  opacity: 0;
+  transform: translateY(10px) scale(0.92);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+.boss-unit.approached { opacity: 1; transform: translateY(0) scale(1); }
+.boss-unit.hit .boss-sprite { animation: enemyHit 0.15s; }
+.boss-unit.hit .boss-card { animation: cardHit 0.15s; }
+.boss-card {
+  border-color: rgba(255,59,48,0.5);
+  box-shadow: 0 0 18px rgba(255,59,48,0.35);
+}
+.boss-hp-bar { width: 110px; }
+.boss-hp-bar .hp-fill { background: linear-gradient(90deg, var(--boss-accent), #b3121f); }
+.boss-sprite {
+  width: 92px; height: auto; margin-top: 6px;
+  filter: drop-shadow(0 8px 14px rgba(0,0,0,0.5));
+}
+
+/* Boss-Niederlage / -Sieg: gleiche Overlay-/Karten-Sprache wie das normale
+   Niederlage-Overlay, nur mit dem Boss-Akzent statt Indigo. */
+.boss-defeat-title { color: var(--boss-accent); }
+.boss-retry-btn { background: var(--boss-grad); }
+.boss-victory-title { color: var(--success-dark); }
+.victory-icon { width: 46px; height: 46px; margin-bottom: 2px; }
+.boss-continue-btn { background: var(--boss-grad); }
+
+.boss-rewards-list {
+  display: flex; flex-direction: column; gap: 8px; width: 100%;
+  margin: 4px 0 2px;
+}
+.boss-reward-row {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface-soft);
+  border-radius: 12px;
+  padding: 8px 10px;
+}
+.boss-reward-icon { width: 26px; height: 26px; flex: 0 0 auto; }
+.boss-reward-text { flex: 1; text-align: left; font-size: 12px; font-weight: 800; color: var(--ink); }
+.boss-reward-actions { display: flex; gap: 6px; flex: 0 0 auto; }
+.boss-reward-actions button {
+  padding: 6px 9px; border-radius: 9px; border: none;
+  font-weight: 800; font-size: 10px; color: #fff; cursor: pointer;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  white-space: nowrap;
+}
+.boss-reward-actions button:disabled { opacity: 0.45; cursor: not-allowed; }
+.boss-reward-equip { background: linear-gradient(135deg, #34dc8c, var(--success-dark)); }
+.boss-reward-sell { background: linear-gradient(135deg, #ffc35c, var(--gold-dark)); }
