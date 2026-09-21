@@ -396,3 +396,134 @@ svg use { color: inherit; }
 .forge-result-text { display: flex; flex-direction: column; gap: 1px; }
 .forge-result-rarity { font-weight: 900; font-size: 13.5px; }
 .forge-result-stat { font-size: 11.5px; color: #c9bb9a; }
+
+/* Abenteuer / Battle screen */
+.battle-screen {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 20%, #3a2e20 0%, #1a130d 60%, #0a0705 100%);
+  display: none;
+  flex-direction: column;
+  z-index: 60;
+}
+.battle-screen.open { display: flex; }
+
+.battle-top {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px;
+  flex: 0 0 auto;
+}
+.battle-back {
+  color: #efe3c8; font-weight: 700; font-size: 14px; cursor: pointer;
+}
+.battle-wave {
+  font-family: 'Baloo 2', sans-serif;
+  font-weight: 700; font-size: 15px; color: var(--gold);
+}
+
+.battle-stage {
+  position: relative;
+  flex: 1;
+  margin: 0 10px;
+  overflow: hidden;
+}
+.battle-ground {
+  position: absolute;
+  left: 0; right: 0; bottom: 0; height: 30%;
+  background: linear-gradient(180deg, rgba(90,60,30,0.35), rgba(40,25,12,0.55));
+  border-top: 2px solid rgba(140,100,60,0.4);
+}
+
+.player-side {
+  position: absolute;
+  left: 6%; bottom: 8%;
+  display: flex; flex-direction: column; align-items: center;
+  z-index: 3;
+}
+.battle-player-sprite { width: 78px; height: auto; }
+
+.enemy-side {
+  position: absolute;
+  right: -40%;
+  bottom: 10%;
+  display: flex; flex-direction: column; align-items: center;
+  z-index: 2;
+  transition: right 2.2s linear;
+  cursor: pointer;
+}
+.enemy-side.approached { right: 42%; }
+.enemy-side.hit .enemy-sprite { animation: enemyHit 0.15s; }
+.enemy-side.dying { transition: opacity 0.4s, transform 0.4s; opacity: 0; transform: scale(0.4) translateY(20px); }
+@keyframes enemyHit {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.85) translateX(-4px); }
+  100% { transform: scale(1); }
+}
+.enemy-sprite { width: 64px; height: auto; filter: drop-shadow(0 4px 5px rgba(0,0,0,0.5)); }
+
+.hp-bar {
+  position: relative;
+  width: 90px; height: 14px;
+  background: #1a1210;
+  border: 1px solid #000;
+  border-radius: 7px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+.hp-fill {
+  position: absolute; left: 0; top: 0; bottom: 0; right: 0;
+  background: linear-gradient(180deg, #e8443a, #9c2b23);
+  transition: width 0.2s;
+}
+.player-hp-bar .hp-fill { background: linear-gradient(180deg, #3ddc72, #1c7a3f); }
+.hp-text {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 8.5px; font-weight: 800; color: #fff; text-shadow: 0 1px 1px #000;
+  z-index: 1;
+}
+.enemy-name {
+  display: block; text-align: center;
+  font-size: 10px; font-weight: 800; color: #efe3c8;
+  margin-bottom: 2px;
+  text-shadow: 0 1px 2px #000;
+}
+
+.dmg-popup {
+  position: absolute;
+  font-family: 'Baloo 2', sans-serif;
+  font-weight: 700; font-size: 15px; color: #fff;
+  text-shadow: 0 2px 3px #000;
+  pointer-events: none;
+  animation: dmgPopup 0.6s ease-out forwards;
+  z-index: 10;
+}
+.dmg-popup.player-dmg { color: #ff6b5c; }
+@keyframes dmgPopup {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-30px); }
+}
+
+.reward-popup {
+  position: absolute;
+  left: 50%; top: 40%;
+  transform: translate(-50%, -50%);
+  font-family: 'Baloo 2', sans-serif;
+  font-weight: 700; font-size: 16px; color: var(--gold);
+  text-shadow: 0 2px 3px #000;
+  pointer-events: none;
+  animation: rewardPopup 0.9s ease-out forwards;
+  z-index: 10;
+}
+@keyframes rewardPopup {
+  0% { opacity: 0; transform: translate(-50%, -30%) scale(0.7); }
+  20% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+  100% { opacity: 0; transform: translate(-50%, -70%) scale(1); }
+}
+
+.battle-hint {
+  text-align: center;
+  font-size: 11px; color: #8a7f6a; font-weight: 700;
+  padding: 8px 0 14px;
+  flex: 0 0 auto;
+}

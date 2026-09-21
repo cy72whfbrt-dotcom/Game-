@@ -142,7 +142,7 @@
       </div>
 
       <!-- Adventure banner -->
-      <div class="adventure-banner">
+      <div class="adventure-banner" id="adventureBanner">
         <div class="adv-icon">
           <svg class="adv-shield"><use href="icons.svg#shield"/></svg>
           <span class="adv-count">5</span>
@@ -216,6 +216,45 @@
             <span class="forge-result-hint">Noch nichts geschmiedet.</span>
           </div>
         </div>
+      </div>
+
+      <!-- Abenteuer / Battle screen -->
+      <div class="battle-screen" id="battleScreen">
+        <div class="battle-top">
+          <span class="battle-back" id="battleBack">&#8249; Zurück</span>
+          <span class="battle-wave">Welle <span id="waveNum">1</span></span>
+        </div>
+
+        <div class="battle-stage" id="battleStage">
+          <div class="battle-ground"></div>
+
+          <div class="player-side">
+            <svg viewBox="0 0 120 170" class="char-sprite battle-player-sprite">
+              <ellipse cx="60" cy="150" rx="34" ry="8" fill="#000" opacity="0.35"/>
+              <path d="M60 60c-30 6-46 30-38 58 5 16 4 26 0 34h76c-4-8-5-18 0-34 8-28-8-52-38-58z" fill="#8a5fd6" opacity="0.9"/>
+              <path d="M40 84c8 20 32 20 40 0l-4 40c-10 8-22 8-32 0z" fill="#8a3b2f"/>
+              <circle cx="60" cy="46" r="22" fill="#f0cf9e"/>
+              <path d="M36 30c-2-10 6-18 24-18s26 8 24 18c-4-8-14-12-24-12s-20 4-24 12z" fill="#b7c0c9" stroke="#3a3f45" stroke-width="1.5"/>
+            </svg>
+            <div class="hp-bar player-hp-bar">
+              <div class="hp-fill" id="playerHpFill"></div>
+              <span class="hp-text" id="playerHpText">5000 / 5000</span>
+            </div>
+          </div>
+
+          <div class="enemy-side" id="enemySide">
+            <div class="hp-bar enemy-hp-bar">
+              <span class="enemy-name" id="enemyName">Schleim</span>
+              <div class="hp-fill" id="enemyHpFill"></div>
+              <span class="hp-text" id="enemyHpText">100 / 100</span>
+            </div>
+            <svg class="enemy-sprite" id="enemySprite" viewBox="0 0 80 90">
+              <use href="icons.svg#slime"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="battle-hint">Gegner antippen, um Schaden zu machen</div>
       </div>
 
       <div class="home-indicator"></div>

@@ -151,3 +151,157 @@ document.getElementById('forgeClose').addEventListener('click', () => {
 forgeModal.addEventListener('click', (e) => {
   if (e.target === forgeModal) forgeModal.classList.remove('open');
 });
+
+/* ---------- Abenteuer / Battle screen ----------
+   Gegner laufen von rechts auf den Spieler zu. Antippen macht Schaden.
+   Erreicht der Gegner den Spieler, greift er im Takt an. Bei Sieg gibt
+   es Gold, die naechste (etwas staerkere) Welle startet automatisch. */
+
+const ENEMY_NAMES = ['Schleim', 'Goblin', 'Wolf', 'Ork', 'Spinne'];
+
+const battle = {
+  wave: 1,
+  playerHp: 5000,
+  playerMaxHp: 5000,
+  enemyHp: 0,
+  enemyMaxHp: 0,
+  approachTimer: null,
+  attackTimer: null,
+  enemyReachedPlayer: false,
+};
+
+const battleScreen = document.getElementById('battleScreen');
+const battleStage = document.getElementById('battleStage');
+const enemySide = document.getElementById('enemySide');
+const enemySprite = document.getElementById('enemySprite');
+const enemyNameEl = document.getElementById('enemyName');
+const enemyHpFill = document.getElementById('enemyHpFill');
+const enemyHpText = document.getElementById('enemyHpText');
+const playerHpFill = document.getElementById('playerHpFill');
+const playerHpText = document.getElementById('playerHpText');
+const waveNumEl = document.getElementById('waveNum');
+
+function enemyStatsForWave(wave) {
+  const maxHp = Math.round(80 * Math.pow(1.18, wave - 1));
+  const dmg = Math.round(60 * Math.pow(1.12, wave - 1));
+  const reward = Math.round(15 * Math.pow(1.1, wave - 1));
+  const name = ENEMY_NAMES[(wave - 1) % ENEMY_NAMES.length];
+  const icon = wave % 2 === 0 ? 'goblin' : 'slime';
+  return { maxHp, dmg, reward, name, icon };
+}
+
+function updatePlayerHpBar() {
+  const pct = Math.max(0, (battle.playerHp / battle.playerMaxHp) * 100);
+  playerHpFill.style.width = pct + '%';
+  playerHpText.textContent = `${Math.max(0, battle.playerHp)} / ${battle.playerMaxHp}`;
+}
+function updateEnemyHpBar() {
+  const pct = Math.max(0, (battle.enemyHp / battle.enemyMaxHp) * 100);
+  enemyHpFill.style.width = pct + '%';
+  enemyHpText.textContent = `${Math.max(0, battle.enemyHp)} / ${battle.enemyMaxHp}`;
+}
+
+function spawnEnemy() {
+  clearTimeout(battle.attackTimer);
+  const stats = enemyStatsForWave(battle.wave);
+  battle.enemyMaxHp = stats.maxHp;
+  battle.enemyHp = stats.maxHp;
+  battle.enemyReachedPlayer = false;
+  battle.currentDmg = stats.dmg;
+  battle.currentReward = stats.reward;
+  enemyNameEl.textContent = stats.name;
+  enemySprite.innerHTML = `<use href="icons.svg#${stats.icon}"/>`;
+  waveNumEl.textContent = battle.wave;
+  updateEnemyHpBar();
+
+  enemySide.classList.remove('dying', 'approached');
+  // Reflow erzwingen, damit die Anlauf-Transition sauber neu startet
+  void enemySide.offsetWidth;
+  requestAnimationFrame(() => {
+    enemySide.classList.add('approached');
+  });
+
+  battle.approachTimer = setTimeout(() => {
+    battle.enemyReachedPlayer = true;
+    scheduleEnemyAttack();
+  }, 2300);
+}
+
+function scheduleEnemyAttack() {
+  if (!battle.enemyReachedPlayer || battle.enemyHp <= 0) return;
+  battle.attackTimer = setTimeout(() => {
+    if (battle.enemyHp <= 0) return;
+    dealDamageToPlayer(battle.currentDmg);
+    scheduleEnemyAttack();
+  }, 1100);
+}
+
+function showFloatingText(text, x, y, cls) {
+  const el = document.createElement('span');
+  el.className = 'dmg-popup' + (cls ? ' ' + cls : '');
+  el.textContent = text;
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  battleStage.appendChild(el);
+  setTimeout(() => el.remove(), 650);
+}
+
+function dealDamageToPlayer(amount) {
+  battle.playerHp = Math.max(0, battle.playerHp - amount);
+  updatePlayerHpBar();
+  const rect = document.querySelector('.player-side').getBoundingClientRect();
+  const stageRect = battleStage.getBoundingClientRect();
+  showFloatingText('-' + amount, rect.left - stageRect.left + 20, rect.top - stageRect.top, 'player-dmg');
+  if (battle.playerHp <= 0) {
+    clearTimeout(battle.attackTimer);
+    showFloatingText('Niederlage!', stageRect.width / 2 - 30, stageRect.height / 2, 'player-dmg');
+    setTimeout(() => {
+      battle.playerHp = battle.playerMaxHp;
+      updatePlayerHpBar();
+    }, 900);
+  }
+}
+
+function attackEnemy() {
+  if (battle.enemyHp <= 0) return;
+  const dmg = Math.round(35 + Math.random() * 25);
+  battle.enemyHp -= dmg;
+  updateEnemyHpBar();
+
+  const rect = enemySide.getBoundingClientRect();
+  const stageRect = battleStage.getBoundingClientRect();
+  showFloatingText('-' + dmg, rect.left - stageRect.left + 15, rect.top - stageRect.top - 10, '');
+
+  enemySide.classList.remove('hit');
+  void enemySide.offsetWidth;
+  enemySide.classList.add('hit');
+
+  if (battle.enemyHp <= 0) {
+    clearTimeout(battle.approachTimer);
+    clearTimeout(battle.attackTimer);
+    const reward = battle.currentReward;
+    goldEl.textContent = getGold() + reward;
+    const rp = document.createElement('span');
+    rp.className = 'reward-popup';
+    rp.textContent = `+${reward} Gold`;
+    battleStage.appendChild(rp);
+    setTimeout(() => rp.remove(), 900);
+
+    enemySide.classList.add('dying');
+    battle.wave += 1;
+    setTimeout(spawnEnemy, 700);
+  }
+}
+
+enemySide.addEventListener('click', attackEnemy);
+
+document.getElementById('adventureBanner').addEventListener('click', () => {
+  battleScreen.classList.add('open');
+  updatePlayerHpBar();
+  spawnEnemy();
+});
+document.getElementById('battleBack').addEventListener('click', () => {
+  battleScreen.classList.remove('open');
+  clearTimeout(battle.approachTimer);
+  clearTimeout(battle.attackTimer);
+});
