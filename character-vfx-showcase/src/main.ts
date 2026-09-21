@@ -10,9 +10,12 @@ import { createEnergyTrails } from "./vfx/EnergyTrails";
 import { createFloatingRunes } from "./vfx/FloatingRunes";
 import { createGroundVFX } from "./vfx/GroundVFX";
 import { createAtmosphereBackground } from "./vfx/AtmosphereBackground";
+import { createEnergyShield } from "./vfx/EnergyShield";
+import { GPUParticleSystem } from "./vfx/particles/GPUParticleSystem";
 import { createPostFX } from "./postprocessing/PostFX";
 import { clock } from "./utils/Clock";
 import { detectStartTier, QualityManager, type QualitySettings } from "./utils/QualityManager";
+import { PEDESTAL_TOP_Y } from "./utils/Constants";
 
 async function bootstrap(): Promise<void> {
   const appHost = document.getElementById("app")!;
@@ -37,7 +40,7 @@ async function bootstrap(): Promise<void> {
 
   setProgress(20, "Beleuchte die Szene…");
   const startTier = detectStartTier();
-  const initialParticleBudget = startTier === "high" ? 2200 : startTier === "medium" ? 1100 : 450;
+  const initialParticleBudget = startTier === "high" ? 6000 : startTier === "medium" ? 3000 : 1200;
 
   const lighting = createLightingRig(scene, renderer, startTier === "high" ? 2048 : startTier === "medium" ? 1024 : 512);
 
@@ -48,6 +51,33 @@ async function bootstrap(): Promise<void> {
   setProgress(50, "Webe die Energieaura…");
   const aura = createEnergyAura();
   scene.add(aura.group);
+
+  const shield = createEnergyShield();
+  scene.add(shield.mesh);
+
+  const swirlDust = new GPUParticleSystem({
+    count: Math.round(initialParticleBudget * 0.45),
+    radius: 1.9,
+    height: 3.8,
+    riseSpeed: [0.15, 0.55],
+    size: [0.012, 0.03],
+    colorA: new THREE.Color(0x6fc7ff),
+    colorB: new THREE.Color(0xbfe6ff),
+    origin: new THREE.Vector3(0, PEDESTAL_TOP_Y, 0),
+  });
+  scene.add(swirlDust.mesh);
+
+  const swirlGlints = new GPUParticleSystem({
+    count: Math.round(initialParticleBudget * 0.08),
+    radius: 2.3,
+    height: 4.2,
+    riseSpeed: [0.05, 0.2],
+    size: [0.05, 0.11],
+    colorA: new THREE.Color(0xffffff),
+    colorB: new THREE.Color(0x9ee8ff),
+    origin: new THREE.Vector3(0, PEDESTAL_TOP_Y, 0),
+  });
+  scene.add(swirlGlints.mesh);
 
   const rings = createMagicRings();
   scene.add(rings.group);
@@ -77,6 +107,10 @@ async function bootstrap(): Promise<void> {
   const qualityManager = new QualityManager(startTier, (q: QualitySettings) => {
     renderer.setPixelRatio(q.pixelRatio);
     runes.setCount(q.runeCount);
+    swirlDust.setCount(Math.round(q.particleCount * 0.45));
+    swirlGlints.setCount(Math.round(q.particleCount * 0.08));
+    ground.emberParticles.setCount(Math.round(q.particleCount * 0.35));
+    atmosphere.dustParticles.setCount(Math.round(q.particleCount * 0.65));
     postFX.rebuild({
       bloomEnabled: q.bloomEnabled,
       dofEnabled: q.dofEnabled,
@@ -118,6 +152,7 @@ async function bootstrap(): Promise<void> {
 
     warrior.update(elapsed, dt, pointer);
     aura.update(elapsed, dt);
+    shield.update(elapsed);
     rings.update(elapsed);
     trails.update(elapsed);
     runes.update(elapsed);

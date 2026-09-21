@@ -15,7 +15,7 @@ const TIERS: Record<QualityTier, QualitySettings> = {
   high: {
     tier: "high",
     pixelRatio: Math.min(window.devicePixelRatio || 1, 2),
-    particleCount: 2200,
+    particleCount: 6000,
     shadowMapSize: 2048,
     bloomEnabled: true,
     dofEnabled: true,
@@ -25,7 +25,7 @@ const TIERS: Record<QualityTier, QualitySettings> = {
   medium: {
     tier: "medium",
     pixelRatio: Math.min(window.devicePixelRatio || 1, 1.5),
-    particleCount: 1100,
+    particleCount: 3000,
     shadowMapSize: 1024,
     bloomEnabled: true,
     dofEnabled: false,
@@ -35,7 +35,7 @@ const TIERS: Record<QualityTier, QualitySettings> = {
   low: {
     tier: "low",
     pixelRatio: 1,
-    particleCount: 450,
+    particleCount: 1200,
     shadowMapSize: 512,
     bloomEnabled: true,
     dofEnabled: false,
