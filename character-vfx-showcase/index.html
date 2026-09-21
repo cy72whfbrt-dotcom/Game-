@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>AAA RPG Character VFX Showcase</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; }
+    #app { position: fixed; inset: 0; }
+    canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+
+    #loading-screen {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at center, #14101c 0%, #050308 70%, #000 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      transition: opacity 0.8s ease;
+      font-family: "Cinzel", "Georgia", serif;
+    }
+    #loading-screen.hidden { opacity: 0; pointer-events: none; }
+    .loading-title {
+      color: #d8c39a;
+      letter-spacing: 0.4em;
+      font-size: 14px;
+      text-transform: uppercase;
+      margin-bottom: 28px;
+      opacity: 0.85;
+    }
+    .loading-bar-track {
+      width: 280px;
+      height: 2px;
+      background: rgba(216, 195, 154, 0.15);
+      position: relative;
+      overflow: hidden;
+    }
+    .loading-bar-fill {
+      position: absolute;
+      inset: 0;
+      width: 0%;
+      background: linear-gradient(90deg, #7dd3ff, #c9a3ff, #ffd27d);
+      box-shadow: 0 0 12px 1px rgba(180, 190, 255, 0.7);
+      transition: width 0.25s ease;
+    }
+    .loading-sub {
+      margin-top: 16px;
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      color: rgba(216, 195, 154, 0.45);
+      font-family: sans-serif;
+      text-transform: uppercase;
+    }
+
+    #hud {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 10;
+      font-family: "Georgia", serif;
+      color: #e9dfc7;
+    }
+    #hud .corner {
+      position: absolute;
+      opacity: 0.75;
+      letter-spacing: 0.15em;
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+    #hud .top-left { top: 22px; left: 26px; }
+    #hud .top-right { top: 22px; right: 26px; text-align: right; }
+    #hud .bottom-left { bottom: 22px; left: 26px; }
+    #hud .bottom-right { bottom: 22px; right: 26px; text-align: right; }
+    #hud .title-block { text-align: center; position: absolute; top: 30px; left: 50%; transform: translateX(-50%); }
+    #hud .title-main { font-size: 22px; letter-spacing: 0.5em; color: #f1e6c8; text-shadow: 0 0 18px rgba(120, 170, 255, 0.35); }
+    #hud .title-sub { font-size: 10px; letter-spacing: 0.35em; color: rgba(233, 223, 199, 0.5); margin-top: 6px; }
+    #hud .fps { font-variant-numeric: tabular-nums; }
+    #hud .vignette-frame {
+      position: absolute; inset: 0;
+      box-shadow: inset 0 0 180px 40px rgba(0,0,0,0.55);
+    }
+
+    #quality-badge {
+      position: absolute;
+      bottom: 22px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 10px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: rgba(233, 223, 199, 0.45);
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <div id="loading-screen">
+    <div class="loading-title">Beschwörung des Helden</div>
+    <div class="loading-bar-track"><div class="loading-bar-fill" id="loading-bar-fill"></div></div>
+    <div class="loading-sub" id="loading-sub">Initialisiere Renderer…</div>
+  </div>
+
+  <div id="hud">
+    <div class="vignette-frame"></div>
+    <div class="title-block">
+      <div class="title-main">IRONVALE</div>
+      <div class="title-sub">Character Selection</div>
+    </div>
+    <div class="corner top-left">Renderer: <span id="renderer-label">—</span></div>
+    <div class="corner top-right">FPS: <span class="fps" id="fps-label">—</span></div>
+    <div class="corner bottom-left">Warrior of the Ember Order</div>
+    <div class="corner bottom-right">Lv. 47 &nbsp;·&nbsp; Runeforged Plate</div>
+    <div id="quality-badge">Qualität: <span id="quality-label">Hoch</span></div>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
