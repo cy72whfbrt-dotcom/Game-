@@ -639,6 +639,15 @@ svg use { color: inherit; }
 }
 .player-hp-bar { width: 78px; height: 12px; }
 .player-hp-bar .hp-fill { background: linear-gradient(180deg, #3ddc72, #1c7a3f); }
+
+/* Schild (Verteidigung): faengt Schaden zuerst ab, blau statt gruen.
+   Ist kein Schild vorhanden (0 Verteidigung), blendet er sich aus. */
+.shield-bar {
+  width: 78px; height: 10px;
+  margin-bottom: 2px;
+}
+.shield-fill { background: linear-gradient(180deg, #6cb3f2, #2864a8); }
+.shield-bar.empty-shield { display: none; }
 .hp-text {
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
@@ -661,6 +670,7 @@ svg use { color: inherit; }
   z-index: 10;
 }
 .dmg-popup.player-dmg { color: #ff6b5c; }
+.dmg-popup.shield-dmg { color: #6cb3f2; }
 @keyframes dmgPopup {
   0% { opacity: 1; transform: translateY(0); }
   100% { opacity: 0; transform: translateY(-30px); }

@@ -273,6 +273,7 @@ function renderForgeResult() {
     renderStats();
     applyEquipmentToBattle();
     updatePlayerHpBar();
+    updatePlayerShieldBar();
     state.lastCrafted = null;
     forgeModal.classList.remove('open');
   });
@@ -334,7 +335,8 @@ const battle = {
   playerHp: 100,
   playerMaxHp: 100,
   playerDmg: 10,
-  playerDef: 0,
+  playerShield: 0,
+  playerMaxShield: 0,
   difficulty: 1,
   enemies: [], // { hp, maxHp, dmg, reward, name, icon, el, hpFillEl, hpTextEl, reached, attackTimer }
   playerAttackTimer: null,
@@ -347,6 +349,9 @@ const battleStage = document.getElementById('battleStage');
 const enemyQueue = document.getElementById('enemyQueue');
 const playerHpFill = document.getElementById('playerHpFill');
 const playerHpText = document.getElementById('playerHpText');
+const playerShieldBar = document.getElementById('playerShieldBar');
+const playerShieldFill = document.getElementById('playerShieldFill');
+const playerShieldText = document.getElementById('playerShieldText');
 const waveNumEl = document.getElementById('waveNum');
 const defeatOverlay = document.getElementById('defeatOverlay');
 
@@ -396,6 +401,16 @@ function updatePlayerHpBar() {
   const pct = Math.max(0, (battle.playerHp / battle.playerMaxHp) * 100);
   playerHpFill.style.width = pct + '%';
   playerHpText.textContent = `${Math.max(0, Math.round(battle.playerHp))} / ${Math.round(battle.playerMaxHp)}`;
+}
+function updatePlayerShieldBar() {
+  if (battle.playerMaxShield <= 0) {
+    playerShieldBar.classList.add('empty-shield');
+    return;
+  }
+  playerShieldBar.classList.remove('empty-shield');
+  const pct = Math.max(0, (battle.playerShield / battle.playerMaxShield) * 100);
+  playerShieldFill.style.width = pct + '%';
+  playerShieldText.textContent = `${Math.max(0, Math.round(battle.playerShield))} / ${Math.round(battle.playerMaxShield)}`;
 }
 function updateEnemyHpBar(enemy) {
   const pct = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
@@ -499,13 +514,26 @@ function showFloatingText(text, x, y, cls) {
   setTimeout(() => el.remove(), 650);
 }
 
+// Verteidigung ist ein Schild-Pool (blau): er faengt Schaden zuerst ab.
+// Erst wenn der Schild leer ist, geht der restliche Schaden auf die HP (gruen).
 function dealDamageToPlayer(rawAmount) {
-  const amount = Math.max(1, Math.round(rawAmount - battle.playerDef));
-  battle.playerHp = Math.max(0, battle.playerHp - amount);
-  updatePlayerHpBar();
+  let remaining = Math.round(rawAmount);
   const rect = document.querySelector('.player-side').getBoundingClientRect();
   const stageRect = battleStage.getBoundingClientRect();
-  showFloatingText('-' + amount, rect.left - stageRect.left + 16, rect.top - stageRect.top, 'player-dmg');
+
+  if (battle.playerShield > 0) {
+    const absorbed = Math.min(battle.playerShield, remaining);
+    battle.playerShield -= absorbed;
+    remaining -= absorbed;
+    updatePlayerShieldBar();
+    showFloatingText('-' + absorbed, rect.left - stageRect.left + 16, rect.top - stageRect.top - 12, 'shield-dmg');
+  }
+
+  if (remaining > 0) {
+    battle.playerHp = Math.max(0, battle.playerHp - remaining);
+    updatePlayerHpBar();
+    showFloatingText('-' + remaining, rect.left - stageRect.left + 16, rect.top - stageRect.top, 'player-dmg');
+  }
 
   if (battle.playerHp <= 0 && !battle.defeated) {
     battle.defeated = true;
@@ -558,15 +586,20 @@ function attackAllEnemies() {
   if (dead.length > 0 && battle.enemies.length === 0) {
     clearTimeout(battle.playerAttackTimer);
     battle.wave += 1;
-    battle.playerHp = battle.playerMaxHp; // jede neue Welle: volle HP
+    // Jede neue Welle: volle HP und Schild.
+    battle.playerHp = battle.playerMaxHp;
+    battle.playerShield = battle.playerMaxShield;
     updatePlayerHpBar();
+    updatePlayerShieldBar();
     setTimeout(spawnWave, 700);
   }
 }
 
 document.getElementById('defeatRetryBtn').addEventListener('click', () => {
   battle.playerHp = battle.playerMaxHp;
+  battle.playerShield = battle.playerMaxShield;
   updatePlayerHpBar();
+  updatePlayerShieldBar();
   battle.defeated = false;
   defeatOverlay.classList.remove('open');
   battle.enemies.forEach(enemy => {
@@ -576,15 +609,19 @@ document.getElementById('defeatRetryBtn').addEventListener('click', () => {
 });
 
 // Der angezeigte Gesamtwert (Grundwert + Ausruestung) ist 1:1 das, was im
-// Kampf zaehlt - keine versteckte Umrechnung. Verteidigung senkt zudem den
-// erlittenen Schaden direkt (mind. 1 Schaden kommt immer durch).
+// Kampf zaehlt - keine versteckte Umrechnung. Verteidigung ist dabei ein
+// Schild-Pool (blau), der Schaden zuerst abfaengt, bevor die HP (gruen)
+// dran glauben.
 function applyEquipmentToBattle() {
   const totals = computeStats();
   battle.playerMaxHp = totals.HP;
   battle.playerDmg = totals.ATK;
-  battle.playerDef = totals.DEF;
+  battle.playerMaxShield = totals.DEF;
   if (battle.playerHp > battle.playerMaxHp || battle.playerHp === undefined) {
     battle.playerHp = battle.playerMaxHp;
+  }
+  if (battle.playerShield === undefined || battle.playerShield > battle.playerMaxShield) {
+    battle.playerShield = battle.playerMaxShield;
   }
 }
 
@@ -592,7 +629,9 @@ function applyEquipmentToBattle() {
 // aber NUR solange die Kampf-Seite tatsaechlich sichtbar/offen ist.
 applyEquipmentToBattle();
 battle.playerHp = battle.playerMaxHp;
+battle.playerShield = battle.playerMaxShield;
 updatePlayerHpBar();
+updatePlayerShieldBar();
 
 function resumeBattle() {
   if (battle.active) return;
