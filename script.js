@@ -309,15 +309,17 @@ forgeModal.addEventListener('click', (e) => {
 /* ---------- Abenteuer / Battle - Seite 2 ----------
    Gegner laufen automatisch von rechts auf den ganz links stehenden
    Spieler zu. Eine Welle kann 1-3 (dafuer schwaechere) Gegner haben,
-   die sich hintereinander einreihen; nur der vorderste kaempft, der
-   Rest wartet sichtbar dahinter. Sobald ein Gegner in Reichweite ist,
-   greifen Spieler und Gegner automatisch im Takt an - kein Antippen
-   noetig. HP und Angriff jedes Gegners stehen ueber ihm. Die
-   Wellenstaerke steigt NICHT linear: mal ein kleiner Sprung nach oben,
-   mal ein leichter Ruecksetzer - aber langfristig steigend. Bei
-   Niederlage pausiert der Kampf mit einem Retry-Screen statt einfach
-   automatisch weiterzulaufen. Zwischen Ausruestungs- und Kampf-Seite
-   wechselt man per Wisch-Geste (horizontales Scroll-Snap). */
+   die gleichzeitig einlaufen und sich nebeneinander aufstellen. Sobald
+   ein Gegner angekommen ist, ist er treffbar; der Spieler-Angriff
+   trifft ALLE angekommenen Gegner gleichzeitig (Flaechenschaden), jeder
+   angekommene Gegner greift zusaetzlich selbst im eigenen Takt an. HP
+   und Angriff jedes Gegners stehen ueber ihm. Die Wellenstaerke steigt
+   NICHT linear: mal ein kleiner Sprung nach oben, mal ein leichter
+   Ruecksetzer - aber langfristig steigend. Bei Niederlage pausiert der
+   Kampf mit einem Retry-Screen statt automatisch weiterzulaufen. Der
+   Kampf laeuft ausserdem NUR, waehrend diese Seite tatsaechlich
+   sichtbar ist (per Wisch-Geste erreichbar) - auf der Ausruestungs-
+   Seite pausiert alles. */
 
 const ENEMY_NAMES = ['Schleim', 'Goblin', 'Wolf', 'Ork', 'Spinne'];
 const ENEMY_ICONS = ['slime', 'goblin'];
@@ -331,6 +333,8 @@ const battle = {
   enemies: [], // { hp, maxHp, dmg, reward, name, icon, el, hpFillEl, hpTextEl, reached, attackTimer }
   playerAttackTimer: null,
   defeated: false,
+  started: false, // erste Welle wurde schon gespawnt
+  active: false,  // Seite gerade sichtbar -> Timer laufen
 };
 
 const battleStage = document.getElementById('battleStage');
@@ -414,19 +418,9 @@ function createEnemyEl(enemy, stopPct) {
   return el;
 }
 
-// Warteschlangen-Positionen: der vorderste (Index 0) steht am naechsten
-// beim Spieler und kaempft, alle anderen warten sichtbar weiter rechts.
-const QUEUE_STOPS = [24, 42, 58];
-
-function layoutQueue() {
-  battle.enemies.forEach((e, i) => {
-    e.el.style.setProperty('--stop', QUEUE_STOPS[Math.min(i, QUEUE_STOPS.length - 1)] + '%');
-    if (!e.el.classList.contains('approached')) {
-      void e.el.offsetWidth;
-      e.el.classList.add('approached');
-    }
-  });
-}
+// Alle Gegner einer Welle laufen gleichzeitig ein und stellen sich
+// nebeneinander auf (nicht hintereinander in einer Warteschlange).
+const QUEUE_STOPS = [40, 22, 58];
 
 function spawnWave() {
   clearTimeout(battle.playerAttackTimer);
@@ -441,37 +435,39 @@ function spawnWave() {
     createEnemyEl(enemy, QUEUE_STOPS[Math.min(i, QUEUE_STOPS.length - 1)]);
   });
 
-  requestAnimationFrame(layoutQueue);
+  requestAnimationFrame(() => {
+    list.forEach(e => {
+      void e.el.offsetWidth;
+      e.el.classList.add('approached');
+    });
+  });
 
-  // Der vorderste Gegner erreicht den Spieler zuerst und beginnt den Kampf.
-  setTimeout(() => {
-    if (battle.enemies[0]) engageFront();
-  }, 1900);
-}
+  // Sobald ein Gegner ankommt, ist er treffbar und greift selbst an.
+  list.forEach(enemy => {
+    enemy.arriveTimer = setTimeout(() => {
+      if (battle.defeated || !battle.active) return;
+      enemy.reached = true;
+      scheduleEnemyAttack(enemy);
+    }, 1900);
+  });
 
-function engageFront() {
-  const front = battle.enemies[0];
-  if (!front || battle.defeated) return;
-  front.reached = true;
-  scheduleEnemyAttack(front);
-  schedulePlayerAttack();
+  if (battle.active) schedulePlayerAttack();
 }
 
 function scheduleEnemyAttack(enemy) {
-  if (battle.defeated || battle.enemies[0] !== enemy || enemy.hp <= 0) return;
+  if (battle.defeated || !battle.active || enemy.hp <= 0 || !battle.enemies.includes(enemy)) return;
   enemy.attackTimer = setTimeout(() => {
-    if (battle.defeated || battle.enemies[0] !== enemy || enemy.hp <= 0) return;
+    if (battle.defeated || !battle.active || enemy.hp <= 0 || !battle.enemies.includes(enemy)) return;
     dealDamageToPlayer(enemy.dmg);
     scheduleEnemyAttack(enemy);
   }, 1100);
 }
 
 function schedulePlayerAttack() {
-  if (battle.defeated) return;
+  if (battle.defeated || !battle.active) return;
   battle.playerAttackTimer = setTimeout(() => {
-    const front = battle.enemies[0];
-    if (battle.defeated || !front || !front.reached) return;
-    attackFrontEnemy();
+    if (battle.defeated || !battle.active) return;
+    attackAllEnemies();
     schedulePlayerAttack();
   }, 800);
 }
@@ -501,24 +497,32 @@ function dealDamageToPlayer(amount) {
   }
 }
 
-function attackFrontEnemy() {
-  const enemy = battle.enemies[0];
-  if (!enemy || enemy.hp <= 0 || battle.defeated) return;
-  const dmg = Math.round(battle.playerDmg * (0.85 + Math.random() * 0.3));
-  enemy.hp -= dmg;
-  updateEnemyHpBar(enemy);
+// Trifft ALLE angekommenen Gegner gleichzeitig mit einem Angriff.
+function attackAllEnemies() {
+  if (battle.defeated) return;
+  const targets = battle.enemies.filter(e => e.reached && e.hp > 0);
+  if (targets.length === 0) return;
 
-  const rect = enemy.el.getBoundingClientRect();
   const stageRect = battleStage.getBoundingClientRect();
-  showFloatingText('-' + dmg, rect.left - stageRect.left + 10, rect.top - stageRect.top - 8, '');
+  const dead = [];
+  targets.forEach(enemy => {
+    const dmg = Math.round(battle.playerDmg * (0.85 + Math.random() * 0.3));
+    enemy.hp -= dmg;
+    updateEnemyHpBar(enemy);
 
-  enemy.el.classList.remove('hit');
-  void enemy.el.offsetWidth;
-  enemy.el.classList.add('hit');
+    const rect = enemy.el.getBoundingClientRect();
+    showFloatingText('-' + dmg, rect.left - stageRect.left + 10, rect.top - stageRect.top - 8, '');
 
-  if (enemy.hp <= 0) {
+    enemy.el.classList.remove('hit');
+    void enemy.el.offsetWidth;
+    enemy.el.classList.add('hit');
+
+    if (enemy.hp <= 0) dead.push(enemy);
+  });
+
+  dead.forEach(enemy => {
     clearTimeout(enemy.attackTimer);
-    clearTimeout(battle.playerAttackTimer);
+    clearTimeout(enemy.arriveTimer);
     const reward = enemy.reward;
     goldEl.textContent = getGold() + reward;
     const rp = document.createElement('span');
@@ -528,20 +532,16 @@ function attackFrontEnemy() {
     setTimeout(() => rp.remove(), 900);
 
     enemy.el.classList.add('dying');
-    battle.enemies.shift();
-    setTimeout(() => {
-      enemy.el.remove();
-      if (battle.enemies.length > 0) {
-        // Naechster in der Reihe rueckt vor und wird zum aktiven Gegner.
-        layoutQueue();
-        setTimeout(engageFront, 900);
-      } else {
-        battle.wave += 1;
-        battle.playerHp = battle.playerMaxHp; // jede neue Welle: volle HP
-        updatePlayerHpBar();
-        setTimeout(spawnWave, 700);
-      }
-    }, 400);
+    battle.enemies = battle.enemies.filter(e => e !== enemy);
+    setTimeout(() => enemy.el.remove(), 400);
+  });
+
+  if (dead.length > 0 && battle.enemies.length === 0) {
+    clearTimeout(battle.playerAttackTimer);
+    battle.wave += 1;
+    battle.playerHp = battle.playerMaxHp; // jede neue Welle: volle HP
+    updatePlayerHpBar();
+    setTimeout(spawnWave, 700);
   }
 }
 
@@ -550,11 +550,10 @@ document.getElementById('defeatRetryBtn').addEventListener('click', () => {
   updatePlayerHpBar();
   battle.defeated = false;
   defeatOverlay.classList.remove('open');
-  if (battle.enemies[0]) {
-    battle.enemies[0].reached = true;
-    scheduleEnemyAttack(battle.enemies[0]);
-    schedulePlayerAttack();
-  }
+  battle.enemies.forEach(enemy => {
+    if (enemy.reached) scheduleEnemyAttack(enemy);
+  });
+  schedulePlayerAttack();
 });
 
 // Spieler-HP und -Schaden im Kampf ergeben sich aus der Ausruestung
@@ -568,11 +567,45 @@ function applyEquipmentToBattle() {
   }
 }
 
-// Der Kampf laeuft komplett automatisch (kein Antippen des Gegners noetig).
+// Der Kampf laeuft komplett automatisch (kein Antippen des Gegners noetig),
+// aber NUR solange die Kampf-Seite tatsaechlich sichtbar/offen ist.
 applyEquipmentToBattle();
 battle.playerHp = battle.playerMaxHp;
 updatePlayerHpBar();
-spawnWave();
+
+function resumeBattle() {
+  if (battle.active) return;
+  battle.active = true;
+  if (!battle.started) {
+    battle.started = true;
+    spawnWave();
+    return;
+  }
+  if (battle.defeated) return; // wartet auf "Erneut versuchen"
+  battle.enemies.forEach(enemy => {
+    if (enemy.reached) scheduleEnemyAttack(enemy);
+  });
+  schedulePlayerAttack();
+}
+
+function pauseBattle() {
+  if (!battle.active) return;
+  battle.active = false;
+  clearTimeout(battle.playerAttackTimer);
+  battle.enemies.forEach(enemy => clearTimeout(enemy.attackTimer));
+}
+
+const pageBattleEl = document.getElementById('pageBattle');
+const battleVisibilityObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting && entry.intersectionRatio > 0.6) {
+      resumeBattle();
+    } else {
+      pauseBattle();
+    }
+  });
+}, { root: document.getElementById('pagesTrack'), threshold: [0, 0.6, 1] });
+battleVisibilityObserver.observe(pageBattleEl);
 
 // Wischen zwischen Ausruestungs-Seite (1) und Kampf-Seite (2). Ein Klick
 // auf den Abenteuer-Banner scrollt als Komfort-Abkuerzung ebenfalls dorthin.
