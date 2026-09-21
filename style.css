@@ -338,61 +338,6 @@ body {
   pointer-events: none;
 }
 
-.scene-icon {
-  position: absolute;
-  display: flex; flex-direction: column; align-items: center; gap: 2px;
-  width: 60px;
-  transform: translateX(-50%);
-  cursor: pointer;
-  z-index: 3;
-}
-.scene-icon.small { width: 26px; }
-.scene-svg { width: 30px; height: 30px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.6)); }
-.scene-icon.small .scene-svg { width: 22px; height: 22px; }
-.scene-label {
-  font-size: 9.5px; font-weight: 800; color: #d8cba8;
-  text-shadow: 0 1px 2px #000;
-  white-space: nowrap;
-}
-.scene-sublabel {
-  font-size: 7.5px; color: #b8a888; font-weight: 700;
-}
-.scene-sublabel.floating {
-  position: absolute;
-  transform: translateX(-50%);
-  z-index: 3;
-  text-shadow: 0 1px 2px #000;
-}
-.scene-icon .badge {
-  position: absolute; top: -5px; right: 4px;
-  width: 13px; height: 13px; border-radius: 50%;
-  background: var(--red-badge); color: #fff;
-  font-size: 8.5px; font-weight: 900;
-  display: flex; align-items: center; justify-content: center;
-}
-
-.scene-auto {
-  position: absolute;
-  transform: translateX(-50%);
-  z-index: 3;
-  cursor: pointer;
-}
-.auto-box {
-  border: 1.5px solid #d8cba8; border-radius: 4px;
-  font-size: 8px; font-weight: 900; letter-spacing: 0.5px;
-  width: 30px; height: 16px; display: flex; align-items: center; justify-content: center;
-  color: #d8cba8;
-  background: rgba(0,0,0,0.3);
-}
-.scene-counter {
-  position: absolute;
-  transform: translateX(-50%);
-  z-index: 3;
-  display: flex; align-items: center; gap: 4px;
-}
-.small-svg { width: 20px; height: 20px; }
-.scene-value { font-weight: 800; font-size: 12.5px; color: #fff; text-shadow: 0 1px 2px #000; }
-
 .home-indicator {
   position: absolute;
   bottom: 8px; left: 50%; transform: translateX(-50%);
