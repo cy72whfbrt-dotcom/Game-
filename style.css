@@ -289,3 +289,110 @@ body {
 }
 
 svg use { color: inherit; }
+
+/* Forge / Schmiede modal */
+.forge-modal {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.72);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+.forge-modal.open { display: flex; }
+
+.forge-modal-card {
+  width: 88%;
+  max-height: 86%;
+  overflow-y: auto;
+  background: linear-gradient(180deg, #2a2016, #14100a);
+  border: 2px solid var(--stone-border);
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+}
+.forge-modal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.forge-title {
+  font-family: 'Baloo 2', sans-serif;
+  font-weight: 700; font-size: 18px; color: var(--gold);
+}
+.forge-close {
+  font-size: 22px; line-height: 1; color: #c9bb9a; cursor: pointer;
+  padding: 2px 8px;
+}
+
+.forge-level-row {
+  display: flex; align-items: center; justify-content: space-between;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--stone-border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+}
+.forge-level-label { font-size: 13px; font-weight: 700; color: #c9bb9a; }
+.forge-level-value { font-size: 16px; font-weight: 900; color: var(--gold); }
+
+.forge-upgrade-btn, .forge-craft-btn {
+  width: 100%;
+  display: flex; align-items: center; justify-content: space-between;
+  background: linear-gradient(180deg, #3a2f6a, #241c46);
+  border: 2px solid var(--purple);
+  border-radius: 9px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  color: #fff; font-weight: 800; font-size: 13.5px;
+  font-family: 'Nunito', sans-serif;
+  cursor: pointer;
+}
+.forge-craft-btn {
+  background: linear-gradient(180deg, #5a2f2a, #3a1c19);
+  border-color: #7a3f35;
+}
+.forge-upgrade-btn:disabled, .forge-craft-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.forge-cost { display: flex; align-items: center; gap: 4px; color: var(--gold); font-weight: 900; }
+.mini-coin { width: 15px; height: 15px; }
+
+.forge-chances {
+  display: flex; flex-direction: column; gap: 5px;
+  margin-bottom: 8px;
+}
+.chance-row {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(0,0,0,0.25);
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 11.5px;
+}
+.chance-row.locked { opacity: 0.4; }
+.chance-swatch {
+  width: 12px; height: 12px; border-radius: 3px; flex: 0 0 auto;
+}
+.chance-name { flex: 1; font-weight: 800; color: #efe3c8; }
+.chance-pct { font-weight: 800; color: #c9bb9a; }
+.chance-lock { font-size: 10px; color: #8a7f6a; }
+
+.forge-result {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--stone-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  min-height: 40px;
+  display: flex; align-items: center; gap: 10px;
+}
+.forge-result-hint { font-size: 12px; color: #8a7f6a; }
+.forge-result-swatch {
+  width: 34px; height: 34px; border-radius: 8px; flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 900; color: #000; font-size: 13px;
+  border: 2px solid rgba(255,255,255,0.5);
+}
+.forge-result-text { display: flex; flex-direction: column; gap: 1px; }
+.forge-result-rarity { font-weight: 900; font-size: 13.5px; }
+.forge-result-stat { font-size: 11.5px; color: #c9bb9a; }

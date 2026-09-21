@@ -31,7 +31,7 @@
           </div>
           <div class="currency">
             <svg class="cur-icon"><use href="icons.svg#coin"/></svg>
-            <span class="cur-value">1951</span>
+            <span class="cur-value" id="goldValue">1951</span>
             <span class="cur-add">+</span>
           </div>
         </div>
@@ -185,6 +185,37 @@
           </g>
         </svg>
         <div class="forge-glow"></div>
+      </div>
+
+      <!-- Forge / Schmiede modal -->
+      <div class="forge-modal" id="forgeModal">
+        <div class="forge-modal-card">
+          <div class="forge-modal-head">
+            <span class="forge-title">Schmiede</span>
+            <span class="forge-close" id="forgeClose">&times;</span>
+          </div>
+
+          <div class="forge-level-row">
+            <span class="forge-level-label">Amboss-Level</span>
+            <span class="forge-level-value" id="anvilLevel">1</span>
+          </div>
+
+          <button class="forge-upgrade-btn" id="upgradeBtn">
+            <span>Amboss aufwerten</span>
+            <span class="forge-cost" id="upgradeCost">200 <svg class="mini-coin"><use href="icons.svg#coin"/></svg></span>
+          </button>
+
+          <div class="forge-chances" id="forgeChances"></div>
+
+          <button class="forge-craft-btn" id="craftBtn">
+            <span>Schmieden</span>
+            <span class="forge-cost" id="craftCost">80 <svg class="mini-coin"><use href="icons.svg#coin"/></svg></span>
+          </button>
+
+          <div class="forge-result" id="forgeResult">
+            <span class="forge-result-hint">Noch nichts geschmiedet.</span>
+          </div>
+        </div>
       </div>
 
       <div class="home-indicator"></div>
