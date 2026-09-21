@@ -180,18 +180,26 @@ function renderChances() {
 
 function renderLevel() {
   document.getElementById('anvilLevel').textContent = state.anvilLevel;
-  document.getElementById('upgradeCost').innerHTML =
-    `${upgradeCost(state.anvilLevel)} <svg class="mini-coin"><use href="icons.svg#coin"/></svg>`;
-  document.getElementById('craftCost').innerHTML =
-    `${craftCost(state.anvilLevel)} <svg class="mini-coin"><use href="icons.svg#coin"/></svg>`;
+  document.getElementById('anvilLevelInline').textContent = state.anvilLevel;
+  document.getElementById('upgradeCostInline').textContent = upgradeCost(state.anvilLevel);
   renderChances();
 }
 
-document.getElementById('upgradeBtn').addEventListener('click', () => {
+const anvilUpgradeBtn = document.getElementById('anvilUpgradeBtn');
+anvilUpgradeBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
   const cost = upgradeCost(state.anvilLevel);
-  if (!spendGold(cost)) return;
+  if (!spendGold(cost)) {
+    anvilUpgradeBtn.classList.remove('insufficient');
+    void anvilUpgradeBtn.offsetWidth;
+    anvilUpgradeBtn.classList.add('insufficient');
+    return;
+  }
   state.anvilLevel += 1;
   renderLevel();
+  anvilUpgradeBtn.classList.remove('flash');
+  void anvilUpgradeBtn.offsetWidth;
+  anvilUpgradeBtn.classList.add('flash');
 });
 
 const forgeResult = document.getElementById('forgeResult');
@@ -249,18 +257,27 @@ function renderForgeResult() {
   });
 }
 
-document.getElementById('craftBtn').addEventListener('click', () => {
+function craftItem() {
   const cost = craftCost(state.anvilLevel);
-  if (!spendGold(cost)) return;
+  if (!spendGold(cost)) return false;
   const rarity = rollRarity(state.anvilLevel);
   const slot = SLOT_TYPES[Math.floor(Math.random() * SLOT_TYPES.length)];
   const statValue = rollStat(rarity, state.anvilLevel, slot);
   state.lastCrafted = { slot, rarity, statValue };
-  renderForgeResult();
-});
+  return true;
+}
 
+// Amboss antippen = sofort schmieden, Ergebnis wird direkt angezeigt.
 const forgeModal = document.getElementById('forgeModal');
-document.querySelector('.forge-hero')?.addEventListener('click', () => {
+const forgeHero = document.querySelector('.forge-hero');
+forgeHero?.addEventListener('click', () => {
+  const crafted = craftItem();
+  if (!crafted) {
+    forgeHero.classList.remove('insufficient');
+    void forgeHero.offsetWidth;
+    forgeHero.classList.add('insufficient');
+    return;
+  }
   forgeModal.classList.add('open');
   renderLevel();
   renderForgeResult();

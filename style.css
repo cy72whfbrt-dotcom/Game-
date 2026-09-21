@@ -302,6 +302,50 @@ body {
   pointer-events: none;
 }
 
+.anvil-upgrade {
+  position: absolute;
+  right: 8%;
+  top: 10%;
+  z-index: 4;
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  width: 54px;
+  padding: 5px 4px;
+  background: linear-gradient(180deg, #3a2f6a, #241c46);
+  border: 2px solid var(--purple);
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.5);
+}
+.anvil-upgrade:active { transform: scale(0.95); }
+.upgrade-arrow {
+  font-size: 15px; line-height: 1; color: var(--gold);
+}
+.upgrade-level {
+  font-size: 9px; font-weight: 800; color: #fff;
+}
+.upgrade-cost {
+  display: flex; align-items: center; gap: 2px;
+  font-size: 9px; font-weight: 800; color: var(--gold);
+}
+.anvil-upgrade .mini-coin { width: 11px; height: 11px; }
+.anvil-upgrade.flash { animation: upgradeFlash 0.4s; }
+@keyframes upgradeFlash {
+  0% { box-shadow: 0 0 0 0 rgba(240,193,75,0.9); }
+  100% { box-shadow: 0 0 0 14px rgba(240,193,75,0); }
+}
+.anvil-upgrade.insufficient { animation: upgradeShake 0.35s; border-color: var(--red-badge); }
+.forge-hero.insufficient { animation: heroShake 0.35s; }
+@keyframes upgradeShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+@keyframes heroShake {
+  0%, 100% { transform: translateX(-50%); }
+  25% { transform: translateX(calc(-50% - 5px)); }
+  75% { transform: translateX(calc(-50% + 5px)); }
+}
+
 .home-indicator {
   position: absolute;
   bottom: 8px; left: 50%; transform: translateX(-50%);
@@ -360,27 +404,6 @@ svg use { color: inherit; }
 .forge-level-label { font-size: 13px; font-weight: 700; color: #c9bb9a; }
 .forge-level-value { font-size: 16px; font-weight: 900; color: var(--gold); }
 
-.forge-upgrade-btn, .forge-craft-btn {
-  width: 100%;
-  display: flex; align-items: center; justify-content: space-between;
-  background: linear-gradient(180deg, #3a2f6a, #241c46);
-  border: 2px solid var(--purple);
-  border-radius: 9px;
-  padding: 10px 14px;
-  margin-bottom: 8px;
-  color: #fff; font-weight: 800; font-size: 13.5px;
-  font-family: 'Nunito', sans-serif;
-  cursor: pointer;
-}
-.forge-craft-btn {
-  background: linear-gradient(180deg, #5a2f2a, #3a1c19);
-  border-color: #7a3f35;
-}
-.forge-upgrade-btn:disabled, .forge-craft-btn:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-.forge-cost { display: flex; align-items: center; gap: 4px; color: var(--gold); font-weight: 900; }
 .mini-coin { width: 15px; height: 15px; }
 
 .forge-chances {

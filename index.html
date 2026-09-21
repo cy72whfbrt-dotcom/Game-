@@ -186,10 +186,18 @@
             <rect x="55" y="10" width="24" height="34" rx="7" fill="url(#fGold)" opacity="0.55" transform="rotate(8 90 27)"/>
           </g>
         </svg>
+
+        <!-- Amboss-Upgrade sitzt direkt neben dem Amboss, unabhängig vom Schmiede-Ergebnis -->
+        <div class="anvil-upgrade" id="anvilUpgradeBtn">
+          <span class="upgrade-arrow">&#9650;</span>
+          <span class="upgrade-level">Lvl <span id="anvilLevelInline">1</span></span>
+          <span class="upgrade-cost"><span id="upgradeCostInline">200</span> <svg class="mini-coin"><use href="icons.svg#coin"/></svg></span>
+        </div>
+
         <div class="forge-glow"></div>
       </div>
 
-      <!-- Forge / Schmiede modal -->
+      <!-- Schmiede-Ergebnis: öffnet sich sofort, wenn man auf den Amboss tippt -->
       <div class="forge-modal" id="forgeModal">
         <div class="forge-modal-card">
           <div class="forge-modal-head">
@@ -202,17 +210,7 @@
             <span class="forge-level-value" id="anvilLevel">1</span>
           </div>
 
-          <button class="forge-upgrade-btn" id="upgradeBtn">
-            <span>Amboss aufwerten</span>
-            <span class="forge-cost" id="upgradeCost">200 <svg class="mini-coin"><use href="icons.svg#coin"/></svg></span>
-          </button>
-
           <div class="forge-chances" id="forgeChances"></div>
-
-          <button class="forge-craft-btn" id="craftBtn">
-            <span>Schmieden</span>
-            <span class="forge-cost" id="craftCost">80 <svg class="mini-coin"><use href="icons.svg#coin"/></svg></span>
-          </button>
 
           <div class="forge-result" id="forgeResult">
             <span class="forge-result-hint">Noch nichts geschmiedet.</span>
