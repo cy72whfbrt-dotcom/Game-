@@ -23,14 +23,14 @@ fitToScreen();
    einer Spanne, ist also nie exakt gleich. */
 
 const RARITIES = [
-  { key: 'grau', name: 'Grau', color: '#9aa0a6', unlock: 1, weight: 1000, mult: 1.0 },
-  { key: 'gruen', name: 'Grün', color: '#3ddc72', unlock: 2, weight: 220, mult: 1.35 },
-  { key: 'blau', name: 'Blau', color: '#3fa9f5', unlock: 4, weight: 90, mult: 1.8 },
-  { key: 'lila', name: 'Lila', color: '#a35cf0', unlock: 6, weight: 30, mult: 2.4 },
-  { key: 'gold', name: 'Gold', color: '#f0c14b', unlock: 9, weight: 10, mult: 3.2 },
-  { key: 'mystisch', name: 'Mystisch', color: '#ff4fa3', unlock: 12, weight: 3, mult: 4.2 },
-  { key: 'goettlich', name: 'Göttlich', color: '#ff5a3c', unlock: 16, weight: 1, mult: 5.6 },
-  { key: 'himmlisch', name: 'Himmlisch', color: 'linear-gradient(90deg,#ff5a3c,#f0c14b,#3ddc72,#3fa9f5,#a35cf0)', unlock: 20, weight: 0.3, mult: 7.5 },
+  { key: 'grau', name: 'Grau', color: '#9aa3c0', unlock: 1, weight: 1000, mult: 1.0 },
+  { key: 'gruen', name: 'Grün', color: '#22c55e', unlock: 2, weight: 220, mult: 1.35 },
+  { key: 'blau', name: 'Blau', color: '#2f9dff', unlock: 4, weight: 90, mult: 1.8 },
+  { key: 'lila', name: 'Lila', color: '#9b5cf6', unlock: 6, weight: 30, mult: 2.4 },
+  { key: 'gold', name: 'Gold', color: '#ffab2e', unlock: 9, weight: 10, mult: 3.2 },
+  { key: 'mystisch', name: 'Mystisch', color: '#ff5c9d', unlock: 12, weight: 3, mult: 4.2 },
+  { key: 'goettlich', name: 'Göttlich', color: '#ff5a4a', unlock: 16, weight: 1, mult: 5.6 },
+  { key: 'himmlisch', name: 'Himmlisch', color: 'linear-gradient(90deg,#ff5a4a,#ffab2e,#22c55e,#2f9dff,#9b5cf6)', unlock: 20, weight: 0.3, mult: 7.5 },
 ];
 
 // Welchen Slot ein Item betrifft und welchen Grundwert es traegt.
