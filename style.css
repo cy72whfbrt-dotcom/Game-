@@ -175,11 +175,10 @@ body {
   position: absolute; bottom: 1px; left: 1px; right: 1px;
   font-size: 6px; font-weight: 700; color: #eee; text-align: center; line-height: 1.1;
 }
-.equip-slot.epic { border-color: var(--blue); box-shadow: 0 0 6px rgba(47,111,179,0.6); }
-.equip-slot.legendary { border-color: var(--green); box-shadow: 0 0 6px rgba(47,158,99,0.6); }
-.equip-slot.rare { border-color: var(--green); }
-.equip-slot.gem { border-color: var(--red); }
 .equip-slot.unknown { border-color: #555; background: #1c1a17; }
+.equip-slot.empty { opacity: 0.55; }
+.equip-slot.empty .slot-icon { filter: grayscale(1); }
+.equip-slot.filled { box-shadow: inset 0 0 6px rgba(0,0,0,0.6), 0 0 6px var(--slot-glow, transparent); }
 .equip-slot .badge {
   position: absolute; top: -5px; right: -5px;
   width: 14px; height: 14px; border-radius: 50%;
@@ -409,18 +408,43 @@ svg use { color: inherit; }
   border-radius: 8px;
   padding: 10px 12px;
   min-height: 40px;
-  display: flex; align-items: center; gap: 10px;
+  display: flex; flex-direction: column; gap: 8px;
 }
 .forge-result-hint { font-size: 12px; color: #8a7f6a; }
+.forge-result-top { display: flex; align-items: center; gap: 10px; }
 .forge-result-swatch {
   width: 34px; height: 34px; border-radius: 8px; flex: 0 0 auto;
   display: flex; align-items: center; justify-content: center;
   font-weight: 900; color: #000; font-size: 13px;
   border: 2px solid rgba(255,255,255,0.5);
 }
+.forge-result-swatch .slot-icon { width: 22px; height: 22px; }
 .forge-result-text { display: flex; flex-direction: column; gap: 1px; }
 .forge-result-rarity { font-weight: 900; font-size: 13.5px; }
-.forge-result-stat { font-size: 11.5px; color: #c9bb9a; }
+.forge-result-stat { font-size: 11.5px; color: #c9bb9a; display: flex; align-items: center; gap: 5px; }
+.compare-up { color: #3ddc72; font-weight: 900; }
+.compare-down { color: #e8443a; font-weight: 900; }
+.compare-new { color: var(--gold); font-weight: 900; }
+
+.forge-result-actions { display: flex; gap: 8px; }
+.forge-equip-btn, .forge-sell-btn {
+  flex: 1;
+  padding: 7px 8px;
+  border-radius: 7px;
+  font-weight: 800; font-size: 12px;
+  font-family: 'Nunito', sans-serif;
+  cursor: pointer;
+  border: 2px solid var(--green);
+  background: linear-gradient(180deg, #2a6b45, #1c4a2e);
+  color: #fff;
+}
+.forge-sell-btn {
+  border-color: var(--gold-dark);
+  background: linear-gradient(180deg, #6b5320, #4a3814);
+}
+.forge-equip-btn:disabled {
+  opacity: 0.4; cursor: not-allowed;
+}
 
 /* Abenteuer / Battle - Seite 2, Spieler steht mittig, Gegner laufen von rechts automatisch heran */
 .page-battle {

@@ -33,9 +33,74 @@ const RARITIES = [
   { key: 'himmlisch', name: 'Himmlisch', color: 'linear-gradient(90deg,#ff5a3c,#f0c14b,#3ddc72,#3fa9f5,#a35cf0)', unlock: 20, weight: 0.3, mult: 7.5 },
 ];
 
+// Welchen Slot ein Item betrifft und welchen Grundwert es traegt.
+// Zwei Slots rechts oben (Fluegel) und drei weitere (Geheimer Stein, Edelstein,
+// Unbekannt) sind bewusst nicht ueber die Schmiede erreichbar (gesperrt).
+const SLOT_TYPES = [
+  { id: 'cap', name: 'Kappe', stat: 'HP', base: 40 },
+  { id: 'helmet', name: 'Helm', stat: 'DEF', base: 8 },
+  { id: 'gauntlet', name: 'Handschuh', stat: 'ATK', base: 8 },
+  { id: 'robe', name: 'Robe', stat: 'HP', base: 40 },
+  { id: 'ring', name: 'Ring', stat: 'CTA', base: 0.12 },
+  { id: 'pants', name: 'Hose', stat: 'DEF', base: 8 },
+  { id: 'star', name: 'Amulett', stat: 'Crit', base: 0.12 },
+  { id: 'boots', name: 'Schuhe', stat: 'SPD', base: 4 },
+  { id: 'sword', name: 'Schwert', stat: 'ATK', base: 10 },
+  { id: 'dragon', name: 'Gefährte', stat: 'CMB', base: 0.15 },
+];
+const PCT_STATS = ['CMB', 'CTA', 'Crit', 'ER', 'Betaeubung'];
+
 const state = {
   anvilLevel: 1,
+  equipment: {}, // slotId -> { rarity, statValue } | nicht gesetzt = leer
+  lastCrafted: null, // { slot, rarity, statValue }
 };
+
+function formatStatValue(statKey, value) {
+  return PCT_STATS.includes(statKey) ? value.toFixed(1).replace('.', ',') + '%' : Math.round(value);
+}
+
+function computeStats() {
+  const totals = { HP: 0, ATK: 0, DEF: 0, SPD: 0, CMB: 0, CTA: 0, Betaeubung: 0, ER: 0, Crit: 0 };
+  SLOT_TYPES.forEach(slot => {
+    const item = state.equipment[slot.id];
+    if (item) totals[slot.stat] += item.statValue;
+  });
+  return totals;
+}
+
+function renderStats() {
+  const totals = computeStats();
+  Object.keys(totals).forEach(key => {
+    const el = document.getElementById('stat-' + key);
+    if (el) el.textContent = formatStatValue(key, totals[key]);
+  });
+}
+
+function renderSlot(slotId) {
+  const slotDef = SLOT_TYPES.find(s => s.id === slotId);
+  const slotEl = document.getElementById('slot-' + slotId);
+  if (!slotDef || !slotEl) return;
+  const item = state.equipment[slotId];
+  const lvlEl = slotEl.querySelector('.slot-lvl');
+  if (item) {
+    slotEl.classList.remove('empty');
+    slotEl.classList.add('filled');
+    slotEl.style.setProperty('--slot-glow', item.rarity.color.startsWith('linear') ? '#fff' : item.rarity.color);
+    slotEl.style.borderColor = item.rarity.color.startsWith('linear') ? '#fff' : item.rarity.color;
+    lvlEl.textContent = formatStatValue(slotDef.stat, item.statValue);
+  } else {
+    slotEl.classList.add('empty');
+    slotEl.classList.remove('filled');
+    slotEl.style.borderColor = '';
+    lvlEl.textContent = 'Leer';
+  }
+}
+
+function renderAllSlots() {
+  SLOT_TYPES.forEach(s => renderSlot(s.id));
+  renderStats();
+}
 
 const goldEl = document.getElementById('goldValue');
 function getGold() { return parseInt(goldEl.textContent, 10); }
@@ -81,11 +146,15 @@ function rollRarity(level) {
   return RARITIES[0];
 }
 
-function rollStat(rarity, level) {
-  const base = 100;
+function rollStat(rarity, level, slotDef) {
   const bonus = rarity.key === 'grau' ? grauBonus(level) : 0;
   const randomFactor = 0.9 + Math.random() * 0.2;
-  return Math.round(base * rarity.mult * (1 + bonus) * randomFactor);
+  const raw = slotDef.base * rarity.mult * (1 + bonus) * randomFactor;
+  return PCT_STATS.includes(slotDef.stat) ? Math.round(raw * 10) / 10 : Math.round(raw);
+}
+
+function sellPrice(rarity) {
+  return Math.round(18 * rarity.mult);
 }
 
 function renderChances() {
@@ -125,25 +194,76 @@ document.getElementById('upgradeBtn').addEventListener('click', () => {
   renderLevel();
 });
 
+const forgeResult = document.getElementById('forgeResult');
+
+function renderForgeResult() {
+  const crafted = state.lastCrafted;
+  if (!crafted) {
+    forgeResult.innerHTML = '<span class="forge-result-hint">Noch nichts geschmiedet.</span>';
+    return;
+  }
+  const { slot, rarity, statValue } = crafted;
+  const equipped = state.equipment[slot.id];
+  const swatchColor = rarity.color.startsWith('linear') ? '#fff' : rarity.color;
+
+  let compareHtml;
+  if (!equipped) {
+    compareHtml = '<span class="compare-new">Neu! Noch nichts in diesem Slot.</span>';
+  } else if (statValue > equipped.statValue) {
+    compareHtml = `<span class="compare-up">▲ besser als getragenes Teil (${formatStatValue(slot.stat, equipped.statValue)})</span>`;
+  } else if (statValue < equipped.statValue) {
+    compareHtml = `<span class="compare-down">▼ schwächer als getragenes Teil (${formatStatValue(slot.stat, equipped.statValue)})</span>`;
+  } else {
+    compareHtml = '<span>gleich stark wie getragenes Teil</span>';
+  }
+
+  forgeResult.innerHTML = `
+    <div class="forge-result-top">
+      <span class="forge-result-swatch" style="background:${swatchColor}">
+        <svg class="slot-icon"><use href="icons.svg#${slot.id}"/></svg>
+      </span>
+      <span class="forge-result-text">
+        <span class="forge-result-rarity" style="color:${swatchColor}">${rarity.name} · ${slot.name}</span>
+        <span class="forge-result-stat">${slot.stat}: ${formatStatValue(slot.stat, statValue)}</span>
+        <span class="forge-result-stat">${compareHtml}</span>
+      </span>
+    </div>
+    <div class="forge-result-actions">
+      <button class="forge-equip-btn" id="equipBtn">Ausrüsten</button>
+      <button class="forge-sell-btn" id="sellBtn">Verkaufen (+${sellPrice(rarity)} <svg class="mini-coin"><use href="icons.svg#coin"/></svg>)</button>
+    </div>`;
+
+  document.getElementById('equipBtn').addEventListener('click', () => {
+    state.equipment[slot.id] = { rarity, statValue };
+    renderSlot(slot.id);
+    renderStats();
+    applyEquipmentToBattle();
+    updatePlayerHpBar();
+    state.lastCrafted = null;
+    renderForgeResult();
+  });
+  document.getElementById('sellBtn').addEventListener('click', () => {
+    goldEl.textContent = getGold() + sellPrice(rarity);
+    state.lastCrafted = null;
+    renderForgeResult();
+  });
+}
+
 document.getElementById('craftBtn').addEventListener('click', () => {
   const cost = craftCost(state.anvilLevel);
   if (!spendGold(cost)) return;
   const rarity = rollRarity(state.anvilLevel);
-  const statValue = rollStat(rarity, state.anvilLevel);
-  const result = document.getElementById('forgeResult');
-  const swatchStyle = rarity.color.startsWith('linear') ? rarity.color : rarity.color;
-  result.innerHTML = `
-    <span class="forge-result-swatch" style="background:${swatchStyle}"></span>
-    <span class="forge-result-text">
-      <span class="forge-result-rarity" style="color:${rarity.color.startsWith('linear') ? '#fff' : rarity.color}">${rarity.name}</span>
-      <span class="forge-result-stat">Wert: ${statValue}</span>
-    </span>`;
+  const slot = SLOT_TYPES[Math.floor(Math.random() * SLOT_TYPES.length)];
+  const statValue = rollStat(rarity, state.anvilLevel, slot);
+  state.lastCrafted = { slot, rarity, statValue };
+  renderForgeResult();
 });
 
 const forgeModal = document.getElementById('forgeModal');
 document.querySelector('.forge-hero')?.addEventListener('click', () => {
   forgeModal.classList.add('open');
   renderLevel();
+  renderForgeResult();
 });
 document.getElementById('forgeClose').addEventListener('click', () => {
   forgeModal.classList.remove('open');
@@ -314,7 +434,17 @@ function attackEnemy() {
   }
 }
 
+// Spieler-HP und -Schaden im Kampf ergeben sich aus der Ausruestung
+// (HP/ATK-Stats) - ohne Gear ist man schwach, jedes Teil zaehlt spuerbar.
+function applyEquipmentToBattle() {
+  const totals = computeStats();
+  battle.playerMaxHp = 500 + totals.HP * 5;
+  battle.playerHp = battle.playerMaxHp;
+  battle.playerDmg = 15 + totals.ATK * 1.2;
+}
+
 // Der Kampf laeuft komplett automatisch (kein Antippen des Gegners noetig).
+applyEquipmentToBattle();
 updatePlayerHpBar();
 spawnEnemy();
 
@@ -324,3 +454,6 @@ const pagesTrack = document.getElementById('pagesTrack');
 document.getElementById('adventureBanner').addEventListener('click', () => {
   pagesTrack.scrollTo({ left: DESIGN_WIDTH, behavior: 'smooth' });
 });
+
+// Start: keine Ausruestung, alle Werte auf 0 - erst Schmieden + Ausruesten baut die Werte auf.
+renderAllSlots();
