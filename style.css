@@ -87,7 +87,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 12px 2px;
+  padding: 8px 10px 2px;
 }
 .profile { display: flex; align-items: center; gap: 8px; }
 .avatar {
@@ -127,7 +127,9 @@ body {
   display: flex;
   justify-content: flex-end;
   gap: 14px;
-  padding: 2px 12px 4px;
+  padding: 2px 10px 7px;
+  border-bottom: 1px solid rgba(240,193,75,0.12);
+  margin: 0 8px;
 }
 .mini-btn { display: flex; flex-direction: column; align-items: center; gap: 1px; }
 .mini-icon { width: 22px; height: 22px; }
@@ -137,12 +139,31 @@ body {
 .character-viewport {
   position: relative;
   height: 300px;
-  margin: 2px 6px 0;
-  border-radius: 6px;
+  margin: 8px 8px 0;
+  border-radius: 8px;
   overflow: hidden;
   flex: 0 0 auto;
+  border: 1px solid rgba(240,193,75,0.1);
 }
 .arch-bg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.viewport-vignette {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 38%, transparent 50%, rgba(0,0,0,0.5) 100%);
+}
+.section-tag {
+  position: absolute;
+  top: 6px; left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  font-size: 8.5px; font-weight: 800; letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--gold);
+  background: rgba(0,0,0,0.45);
+  border: 1px solid rgba(240,193,75,0.25);
+  border-radius: 8px;
+  padding: 2px 9px;
+}
 
 .equip-grid {
   position: absolute;
@@ -159,11 +180,13 @@ body {
   width: 46px; height: 46px;
   background: linear-gradient(180deg, #3a3226, #23201c);
   border: 2px solid var(--slot-border);
-  border-radius: 7px;
+  border-radius: 8px;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   position: relative;
   box-shadow: inset 0 0 6px rgba(0,0,0,0.6);
+  transition: box-shadow 0.2s, transform 0.15s;
 }
+.equip-slot:active { transform: scale(0.94); }
 .equip-slot .slot-icon { width: 26px; height: 26px; }
 .equip-slot .slot-lvl {
   position: absolute; bottom: 1px;
@@ -201,7 +224,7 @@ body {
 
 /* Level bar */
 .level-bar {
-  margin: 6px 8px 0;
+  margin: 8px 8px 0;
   background: linear-gradient(180deg, #5a2f2a, #3a1c19);
   border: 2px solid #7a3f35;
   border-radius: 18px;
@@ -233,7 +256,7 @@ body {
 
 /* Stats panel: klare Namen + kurze Erklaerung statt Kuerzeln wie "CMB"/"CTA" */
 .stats-panel {
-  margin: 6px 8px 0;
+  margin: 8px 8px 0;
   background: linear-gradient(180deg, #2a2016, #1a130c);
   border: 2px solid var(--stone-border);
   border-radius: 10px;
@@ -264,11 +287,16 @@ body {
 
 /* Adventure banner */
 .adventure-banner {
-  margin: 6px 8px 0;
-  display: flex; align-items: center; gap: 8px;
-  padding: 6px 10px;
+  margin: 8px 8px 0;
+  display: flex; align-items: center; gap: 9px;
+  padding: 7px 10px;
+  border: 1px solid rgba(122,79,196,0.25);
+  border-radius: 10px;
   flex: 0 0 auto;
+  cursor: pointer;
+  transition: transform 0.15s;
 }
+.adventure-banner:active { transform: scale(0.98); }
 .adv-icon {
   width: 38px; height: 38px;
   background: linear-gradient(180deg, #3a2f6a, #241c46);
@@ -276,6 +304,7 @@ body {
   border-radius: 8px;
   display: flex; align-items: center; justify-content: center;
   position: relative;
+  box-shadow: 0 0 8px rgba(122,79,196,0.35);
 }
 .adv-shield { width: 20px; height: 20px; }
 .adv-count {
@@ -284,15 +313,16 @@ body {
   font-size: 9px; font-weight: 900;
   padding: 0 4px; border-radius: 6px;
 }
-.adv-text { display: flex; flex-direction: column; gap: 1px; font-size: 12.5px; font-weight: 700; }
+.adv-text { display: flex; flex-direction: column; gap: 1px; font-size: 12.5px; font-weight: 700; flex: 1; }
 .adv-progress { font-size: 10.5px; color: #c9bb9a; }
 .adv-progress .red { color: var(--red-badge); font-weight: 900; }
+.adv-chevron { font-size: 20px; color: var(--purple); font-weight: 900; flex: 0 0 auto; }
 
 /* Forge scene: the anvil+hammer is the dominant centerpiece graphic,
    feature icons are scattered freely over it, as in the reference. */
 .forge-scene {
   position: relative;
-  margin: 8px 4px 0;
+  margin: 8px 8px 0;
   flex: 1;
   overflow: hidden;
 }
