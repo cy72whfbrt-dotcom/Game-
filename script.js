@@ -182,6 +182,8 @@ function renderLevel() {
   document.getElementById('anvilLevel').textContent = state.anvilLevel;
   document.getElementById('anvilLevelInline').textContent = state.anvilLevel;
   document.getElementById('upgradeCostInline').textContent = upgradeCost(state.anvilLevel);
+  document.getElementById('upgradeCost').innerHTML =
+    `${upgradeCost(state.anvilLevel)} <svg class="mini-coin"><use href="icons.svg#coin"/></svg>`;
   renderChances();
 }
 
@@ -200,12 +202,13 @@ anvilInfoModal.addEventListener('click', (e) => {
   if (e.target === anvilInfoModal) anvilInfoModal.classList.remove('open');
 });
 
+const upgradeConfirmBtn = document.getElementById('upgradeConfirmBtn');
 function upgradeAnvil() {
   const cost = upgradeCost(state.anvilLevel);
   if (!spendGold(cost)) {
-    anvilUpgradeBtn.classList.remove('insufficient');
-    void anvilUpgradeBtn.offsetWidth;
-    anvilUpgradeBtn.classList.add('insufficient');
+    upgradeConfirmBtn.classList.remove('insufficient');
+    void upgradeConfirmBtn.offsetWidth;
+    upgradeConfirmBtn.classList.add('insufficient');
     return;
   }
   state.anvilLevel += 1;
@@ -214,6 +217,7 @@ function upgradeAnvil() {
   void anvilUpgradeBtn.offsetWidth;
   anvilUpgradeBtn.classList.add('flash');
 }
+upgradeConfirmBtn.addEventListener('click', upgradeAnvil);
 
 // Schmiede-Ergebnis: zeigt AUSSCHLIESSLICH das gerade geschmiedete Teil,
 // mittig, mit allen Werten und Ausruesten/Verkaufen - keine Level-/Chancen-Infos.
@@ -460,6 +464,9 @@ function attackEnemy() {
 
     enemySide.classList.add('dying');
     battle.wave += 1;
+    // Jede neue Welle startet mit wieder voller HP.
+    battle.playerHp = battle.playerMaxHp;
+    updatePlayerHpBar();
     setTimeout(spawnEnemy, 700);
   }
 }

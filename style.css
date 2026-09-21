@@ -404,6 +404,20 @@ svg use { color: inherit; }
 .forge-level-label { font-size: 13px; font-weight: 700; color: #c9bb9a; }
 .forge-level-value { font-size: 16px; font-weight: 900; color: var(--gold); }
 
+.forge-upgrade-confirm-btn {
+  width: 100%;
+  display: flex; align-items: center; justify-content: space-between;
+  background: linear-gradient(180deg, #3a2f6a, #241c46);
+  border: 2px solid var(--purple);
+  border-radius: 9px;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+  color: #fff; font-weight: 800; font-size: 13.5px;
+  font-family: 'Nunito', sans-serif;
+  cursor: pointer;
+}
+.forge-upgrade-confirm-btn.insufficient { animation: upgradeShake 0.35s; border-color: var(--red-badge); }
+.forge-cost { display: flex; align-items: center; gap: 4px; color: var(--gold); font-weight: 900; }
 .mini-coin { width: 15px; height: 15px; }
 
 .forge-chances {
