@@ -400,14 +400,16 @@ function createEnemyEl(enemy, stopPct) {
   el.className = 'enemy-unit';
   el.style.setProperty('--stop', stopPct + '%');
   el.innerHTML = `
-    <span class="enemy-name">${enemy.name}</span>
-    <span class="enemy-stat-line">
-      <span class="enemy-stat-hp">♥ ${enemy.hp}</span>
-      <span class="enemy-stat-atk">⚔ ${enemy.dmg}</span>
-    </span>
-    <div class="hp-bar enemy-hp-bar">
-      <div class="hp-fill"></div>
-      <span class="hp-text">${enemy.hp} / ${enemy.maxHp}</span>
+    <div class="fighter-card">
+      <span class="enemy-name">${enemy.name}</span>
+      <span class="enemy-stat-line">
+        <span class="enemy-stat-hp">♥ ${enemy.hp}</span>
+        <span class="enemy-stat-atk">⚔ ${enemy.dmg}</span>
+      </span>
+      <div class="hp-bar enemy-hp-bar">
+        <div class="hp-fill"></div>
+        <span class="hp-text">${enemy.hp} / ${enemy.maxHp}</span>
+      </div>
     </div>
     <svg class="enemy-sprite" viewBox="0 0 80 90"><use href="icons.svg#${enemy.icon}"/></svg>`;
   enemyQueue.appendChild(el);
@@ -416,6 +418,12 @@ function createEnemyEl(enemy, stopPct) {
   enemy.hpTextEl = el.querySelector('.hp-text');
   enemy.atkEl = el.querySelector('.enemy-stat-atk');
   return el;
+}
+
+const enemiesLeftLabel = document.getElementById('enemiesLeftLabel');
+function updateEnemiesLeftLabel() {
+  const n = battle.enemies.length;
+  enemiesLeftLabel.textContent = n === 1 ? '1 Gegner' : `${n} Gegner`;
 }
 
 // Alle Gegner einer Welle laufen gleichzeitig ein und stellen sich
@@ -434,6 +442,7 @@ function spawnWave() {
   list.forEach((enemy, i) => {
     createEnemyEl(enemy, QUEUE_STOPS[Math.min(i, QUEUE_STOPS.length - 1)]);
   });
+  updateEnemiesLeftLabel();
 
   requestAnimationFrame(() => {
     list.forEach(e => {
@@ -533,6 +542,7 @@ function attackAllEnemies() {
 
     enemy.el.classList.add('dying');
     battle.enemies = battle.enemies.filter(e => e !== enemy);
+    updateEnemiesLeftLabel();
     setTimeout(() => enemy.el.remove(), 400);
   });
 

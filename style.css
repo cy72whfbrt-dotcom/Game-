@@ -496,34 +496,71 @@ svg use { color: inherit; }
    laufen von rechts heran. Alles bewusst klein gehalten, damit die
    Arena geräumig statt vollgestopft wirkt. */
 .page-battle {
-  background: radial-gradient(ellipse at 50% 20%, #3a2e20 0%, #1a130d 60%, #0a0705 100%);
+  background: #0d0906;
   display: flex;
   flex-direction: column;
   width: 100%; height: 100%;
 }
 
-.battle-top {
-  display: flex; align-items: center; justify-content: center;
-  padding: 10px 14px;
+/* Ornamentales Wellen-Banner, im gleichen Stil wie die Lv.-Leiste auf Seite 1 */
+.wave-banner {
+  margin: 8px 8px 0;
+  background: linear-gradient(180deg, #5a2f2a, #3a1c19);
+  border: 2px solid #7a3f35;
+  border-radius: 18px;
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 6px 14px;
   flex: 0 0 auto;
 }
+.wave-banner-icon { width: 17px; height: 17px; opacity: 0.9; }
 .battle-wave {
   font-family: 'Baloo 2', sans-serif;
   font-weight: 700; font-size: 15px; color: var(--gold);
+}
+.wave-banner-sub {
+  font-size: 10.5px; font-weight: 700; color: #c9bb9a;
+  padding-left: 8px; border-left: 1px solid #7a3f35;
 }
 
 .battle-stage {
   position: relative;
   flex: 1;
-  margin: 0 6px;
+  margin: 8px 6px 0;
   overflow: hidden;
+  border-radius: 10px;
+  border: 1px solid var(--stone-border);
+}
+.battle-bg {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
 }
 .battle-ground {
   position: absolute;
-  left: 0; right: 0; bottom: 0; height: 26%;
-  background: linear-gradient(180deg, rgba(90,60,30,0.35), rgba(40,25,12,0.55));
-  border-top: 2px solid rgba(140,100,60,0.4);
+  left: 0; right: 0; bottom: 0; height: 22%;
+  background: linear-gradient(180deg, rgba(110,75,35,0.4), rgba(30,18,9,0.75));
+  border-top: 2px solid rgba(160,115,65,0.45);
+  box-shadow: 0 -1px 12px rgba(240,193,75,0.06) inset;
 }
+.battle-vignette {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 40%, transparent 45%, rgba(0,0,0,0.55) 100%);
+}
+
+.fighter-card {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  background: rgba(10,7,4,0.55);
+  border: 1px solid rgba(140,100,60,0.35);
+  border-radius: 8px;
+  padding: 4px 7px 5px;
+  backdrop-filter: blur(1px);
+}
+.fighter-name {
+  font-size: 9px; font-weight: 800; color: #efe3c8;
+  text-shadow: 0 1px 2px #000;
+}
+.player-card { border-color: rgba(61,220,114,0.35); }
 
 .player-side {
   position: absolute;
@@ -531,7 +568,13 @@ svg use { color: inherit; }
   display: flex; flex-direction: column; align-items: center;
   z-index: 3;
 }
-.battle-player-sprite { width: 56px; height: auto; }
+.battle-player-sprite { width: 56px; height: auto; margin-top: 4px; }
+.fighter-pedestal {
+  width: 60px; height: 8px;
+  margin-top: -3px;
+  background: radial-gradient(ellipse at center, rgba(0,0,0,0.55), transparent 75%);
+  border-radius: 50%;
+}
 
 .enemy-queue { position: absolute; inset: 0; }
 
@@ -545,19 +588,22 @@ svg use { color: inherit; }
 }
 .enemy-unit.approached { right: var(--stop, 55%); }
 .enemy-unit.hit .enemy-sprite { animation: enemyHit 0.15s; }
+.enemy-unit.hit .fighter-card { animation: cardHit 0.15s; }
 .enemy-unit.dying { transition: opacity 0.4s, transform 0.4s; opacity: 0; transform: scale(0.4) translateY(20px); }
 @keyframes enemyHit {
   0% { transform: scale(1); }
   50% { transform: scale(0.85) translateX(-4px); }
   100% { transform: scale(1); }
 }
-.enemy-sprite { width: 42px; height: auto; filter: drop-shadow(0 3px 4px rgba(0,0,0,0.5)); }
+@keyframes cardHit {
+  0%, 100% { box-shadow: none; }
+  50% { box-shadow: 0 0 0 2px rgba(232,68,58,0.7); }
+}
+.enemy-sprite { width: 42px; height: auto; margin-top: 3px; filter: drop-shadow(0 3px 4px rgba(0,0,0,0.5)); }
 
 .enemy-stat-line {
-  display: flex; gap: 5px;
+  display: flex; gap: 6px;
   font-size: 8px; font-weight: 800;
-  margin-bottom: 2px;
-  text-shadow: 0 1px 2px #000;
   white-space: nowrap;
 }
 .enemy-stat-hp { color: #ff8a7a; }
@@ -565,30 +611,29 @@ svg use { color: inherit; }
 
 .hp-bar {
   position: relative;
-  width: 62px; height: 11px;
+  width: 62px; height: 10px;
   background: #1a1210;
   border: 1px solid #000;
-  border-radius: 6px;
+  border-radius: 5px;
   overflow: hidden;
-  margin-bottom: 3px;
+  margin-top: 2px;
 }
 .hp-fill {
   position: absolute; left: 0; top: 0; bottom: 0; right: 0;
   background: linear-gradient(180deg, #e8443a, #9c2b23);
   transition: width 0.2s;
 }
-.player-hp-bar { width: 78px; height: 13px; }
+.player-hp-bar { width: 78px; height: 12px; }
 .player-hp-bar .hp-fill { background: linear-gradient(180deg, #3ddc72, #1c7a3f); }
 .hp-text {
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
-  font-size: 7.5px; font-weight: 800; color: #fff; text-shadow: 0 1px 1px #000;
+  font-size: 7px; font-weight: 800; color: #fff; text-shadow: 0 1px 1px #000;
   z-index: 1;
 }
 .enemy-name {
   display: block; text-align: center;
   font-size: 8.5px; font-weight: 800; color: #efe3c8;
-  margin-bottom: 1px;
   text-shadow: 0 1px 2px #000;
 }
 
@@ -629,23 +674,33 @@ svg use { color: inherit; }
   position: absolute;
   inset: 0;
   z-index: 20;
-  background: rgba(0,0,0,0.8);
+  background: rgba(0,0,0,0.78);
   display: none;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  padding: 30px;
-  text-align: center;
+  padding: 20px;
 }
 .defeat-overlay.open { display: flex; }
+.defeat-card {
+  width: 100%;
+  max-width: 280px;
+  background: linear-gradient(180deg, #2a2016, #14100a);
+  border: 2px solid var(--red);
+  border-radius: 16px;
+  padding: 20px 20px 18px;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+}
+.defeat-skull { width: 46px; height: 46px; margin-bottom: 2px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
 .defeat-title {
   font-family: 'Baloo 2', sans-serif;
-  font-weight: 700; font-size: 26px; color: var(--red-badge);
+  font-weight: 700; font-size: 24px; color: var(--red-badge);
 }
-.defeat-text { font-size: 13px; color: #c9bb9a; line-height: 1.4; }
+.defeat-text { font-size: 12.5px; color: #c9bb9a; line-height: 1.4; }
 .defeat-retry-btn {
   margin-top: 6px;
+  width: 100%;
   padding: 10px 22px;
   border-radius: 9px;
   background: linear-gradient(180deg, #3a2f6a, #241c46);
