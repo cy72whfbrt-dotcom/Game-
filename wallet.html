@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Idle RPG - Tresor</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="auth.css">
+</head>
+<body>
+  <div style="display:none">
+    <object id="icon-sprite" data="icons.svg" type="image/svg+xml"></object>
+  </div>
+
+  <div class="phone-frame">
+    <div class="vault-screen">
+
+      <div class="vault-topbar">
+        <div>
+          <div class="vault-topbar-title">Mein Tresor</div>
+          <div class="vault-topbar-sub">Icey · Idle RPG</div>
+        </div>
+        <span class="vault-demo-pill">SPIEL-WÄHRUNG</span>
+      </div>
+
+      <div class="vault-scroll">
+
+        <div class="vault-hero-card">
+          <div class="vault-hero-label">Gesamtwert (Gold-Äquivalent)</div>
+          <div class="vault-hero-value">128.430 <small>Gold</small></div>
+          <div class="vault-hero-trend">▲ +6,2 % diese Woche</div>
+        </div>
+
+        <div class="vault-currency-row">
+          <div class="vault-currency-card">
+            <svg><use href="icons.svg#coin"/></svg>
+            <div class="vault-currency-name">Gold</div>
+            <div class="vault-currency-value">98.240</div>
+          </div>
+          <div class="vault-currency-card">
+            <svg><use href="icons.svg#gem"/></svg>
+            <div class="vault-currency-name">Edelsteine</div>
+            <div class="vault-currency-value">6.530</div>
+          </div>
+          <div class="vault-currency-card">
+            <svg><use href="icons.svg#ore"/></svg>
+            <div class="vault-currency-name">Erz</div>
+            <div class="vault-currency-value">1.951</div>
+          </div>
+        </div>
+
+        <div class="vault-section-title">
+          Letzte Aktivitäten
+          <span class="link">Alle anzeigen</span>
+        </div>
+        <div class="vault-tx-list">
+          <div class="vault-tx">
+            <div class="vault-tx-icon in"><svg viewBox="0 0 24 24" fill="none" stroke="#1fce7a" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div>
+            <div class="vault-tx-body">
+              <div class="vault-tx-title">Tages-Belohnung</div>
+              <div class="vault-tx-time">Heute, 09:14</div>
+            </div>
+            <div class="vault-tx-amount in">+1.200 Gold</div>
+          </div>
+          <div class="vault-tx">
+            <div class="vault-tx-icon out"><svg viewBox="0 0 24 24" fill="none" stroke="#ff4d6d" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div>
+            <div class="vault-tx-body">
+              <div class="vault-tx-title">Schmiede-Verbesserung</div>
+              <div class="vault-tx-time">Gestern, 21:03</div>
+            </div>
+            <div class="vault-tx-amount out">-3.400 Gold</div>
+          </div>
+          <div class="vault-tx">
+            <div class="vault-tx-icon in"><svg viewBox="0 0 24 24" fill="none" stroke="#1fce7a" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div>
+            <div class="vault-tx-body">
+              <div class="vault-tx-title">Boss besiegt: Schattendrache</div>
+              <div class="vault-tx-time">Gestern, 18:47</div>
+            </div>
+            <div class="vault-tx-amount in">+540 Edelsteine</div>
+          </div>
+          <div class="vault-tx">
+            <div class="vault-tx-icon in"><svg viewBox="0 0 24 24" fill="none" stroke="#1fce7a" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div>
+            <div class="vault-tx-body">
+              <div class="vault-tx-title">Erz-Abbau</div>
+              <div class="vault-tx-time">Mo, 07:52</div>
+            </div>
+            <div class="vault-tx-amount in">+310 Erz</div>
+          </div>
+        </div>
+
+        <div class="vault-footnote">
+          Alle Beträge sind fiktive In-Game-Währung des Idle-RPG-Demoprojekts und besitzen keinen echten Gegenwert.
+        </div>
+
+        <button class="vault-logout" id="logoutBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+          Abmelden
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      window.location.href = 'login.html';
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Idle RPG - Anmeldung</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="auth.css">
+</head>
+<body>
+  <div class="phone-frame">
+    <div class="auth-screen">
+
+      <div class="auth-hero">
+        <span class="auth-demo-tag">SPIEL-DEMO</span>
+        <div class="auth-badge">
+          <div class="auth-badge-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 2 3 6v6c0 5 4 9 9 10 5-1 9-5 9-10V6l-9-4zm-1 14.5-4-4L8.4 11 11 13.6l4.6-4.6L17 10.4 11 16.5z"/></svg>
+          </div>
+          <div class="auth-title">Spieler-Tresor</div>
+          <div class="auth-subtitle">Idle RPG · Anmeldung</div>
+        </div>
+      </div>
+
+      <div class="auth-body">
+        <div class="auth-form-title">Willkommen zurück</div>
+        <div class="auth-form-hint">Melde dich mit deinen Spiel-Zugangsdaten an, um deinen Tresor zu öffnen.</div>
+
+        <form id="loginForm" novalidate>
+          <div class="field">
+            <label class="field-label" for="username">Benutzername</label>
+            <div class="field-input-wrap">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+              <input type="text" id="username" name="username" placeholder="Benutzername" autocomplete="username">
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="password">Passwort</label>
+            <div class="field-input-wrap">
+              <svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+              <input type="password" id="password" name="password" placeholder="Passwort" autocomplete="current-password">
+              <button type="button" class="field-toggle" id="togglePw" aria-label="Passwort anzeigen">
+                <svg viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+            <div class="field-error" id="loginError">Benutzername oder Passwort ist falsch.</div>
+          </div>
+
+          <button type="submit" class="auth-submit" id="submitBtn">
+            <span class="auth-spinner" id="submitSpinner"></span>
+            <span id="submitLabel">Anmelden</span>
+          </button>
+        </form>
+
+        <div class="auth-hint-row">
+          <span>Demo-Zugang: <code>Icey</code> / <code>3107</code></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="auth-loading-overlay" id="loadingOverlay">
+    <div class="auth-loading-inner">
+      <div class="auth-loading-ring"></div>
+      <div class="auth-loading-text">Tresor wird geladen …</div>
+    </div>
+  </div>
+
+  <script>
+    const DEMO_USER = 'Icey';
+    const DEMO_PASS = '3107';
+
+    const form = document.getElementById('loginForm');
+    const userInput = document.getElementById('username');
+    const passInput = document.getElementById('password');
+    const errorEl = document.getElementById('loginError');
+    const submitBtn = document.getElementById('submitBtn');
+    const submitSpinner = document.getElementById('submitSpinner');
+    const submitLabel = document.getElementById('submitLabel');
+    const overlay = document.getElementById('loadingOverlay');
+
+    document.getElementById('togglePw').addEventListener('click', () => {
+      passInput.type = passInput.type === 'password' ? 'text' : 'password';
+    });
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      errorEl.classList.remove('show');
+
+      const ok = userInput.value.trim() === DEMO_USER && passInput.value === DEMO_PASS;
+      if (!ok) {
+        errorEl.classList.add('show');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitSpinner.classList.add('show');
+      submitLabel.textContent = 'Anmelden …';
+
+      setTimeout(() => {
+        overlay.classList.add('show');
+        setTimeout(() => {
+          window.location.href = 'wallet.html';
+        }, 900);
+      }, 500);
+    });
+  </script>
+</body>
+</html>

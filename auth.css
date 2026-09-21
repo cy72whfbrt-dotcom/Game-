@@ -1,0 +1,484 @@
+/* Login & Vault (Wallet) screens — shares tokens/fonts with style.css */
+
+.auth-screen, .vault-screen {
+  width: 390px;
+  height: 838px;
+  background: var(--bg-1);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- Login ---------- */
+
+.auth-hero {
+  position: relative;
+  height: 300px;
+  flex-shrink: 0;
+  background: linear-gradient(160deg, #4f3fe0 0%, #6d5dfb 55%, #8a7bff 100%);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-hero::before, .auth-hero::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.10);
+}
+.auth-hero::before { width: 260px; height: 260px; top: -120px; left: -60px; }
+.auth-hero::after { width: 180px; height: 180px; bottom: -90px; right: -40px; background: rgba(255, 255, 255, 0.08); }
+
+.auth-badge {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.auth-badge-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+.auth-badge-icon svg { width: 32px; height: 32px; fill: #fff; }
+
+.auth-title {
+  font-family: 'Sora', sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+  color: #fff;
+  letter-spacing: 0.2px;
+}
+.auth-subtitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.auth-demo-tag {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+  font-family: 'Sora', sans-serif;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  padding: 5px 10px;
+  border-radius: 999px;
+}
+
+.auth-body {
+  flex: 1;
+  background: var(--surface);
+  border-radius: 28px 28px 0 0;
+  margin-top: -24px;
+  position: relative;
+  z-index: 1;
+  padding: 30px 26px 26px;
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-form-title {
+  font-family: 'Sora', sans-serif;
+  font-weight: 800;
+  font-size: 17px;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.auth-form-hint {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-bottom: 22px;
+}
+
+.field {
+  margin-bottom: 16px;
+}
+.field-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  margin-bottom: 6px;
+  display: block;
+}
+.field-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface-soft);
+  border: 1.5px solid #e6e9f7;
+  border-radius: 14px;
+  padding: 12px 14px;
+  transition: border-color .15s ease;
+}
+.field-input-wrap:focus-within {
+  border-color: var(--primary);
+}
+.field-input-wrap svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: var(--ink-faint);
+  stroke-width: 1.8;
+  flex-shrink: 0;
+}
+.field-input-wrap input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  width: 100%;
+}
+.field-input-wrap input::placeholder { color: var(--ink-faint); font-weight: 500; }
+
+.field-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.field-toggle svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: var(--ink-faint);
+  stroke-width: 1.8;
+}
+
+.field-error {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--danger);
+  margin-top: 6px;
+  min-height: 14px;
+  opacity: 0;
+  transform: translateY(-2px);
+  transition: opacity .15s ease, transform .15s ease;
+}
+.field-error.show { opacity: 1; transform: translateY(0); }
+
+.auth-submit {
+  margin-top: 10px;
+  border: none;
+  border-radius: 14px;
+  padding: 15px;
+  background: var(--primary-grad);
+  color: #fff;
+  font-family: 'Sora', sans-serif;
+  font-weight: 800;
+  font-size: 14.5px;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.auth-submit:active { transform: scale(0.98); }
+.auth-submit:disabled { opacity: 0.7; cursor: default; }
+
+.auth-spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2.5px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  animation: auth-spin 0.7s linear infinite;
+  display: none;
+}
+.auth-spinner.show { display: inline-block; }
+@keyframes auth-spin { to { transform: rotate(360deg); } }
+
+.auth-hint-row {
+  margin-top: auto;
+  padding-top: 18px;
+  text-align: center;
+}
+.auth-hint-row span {
+  font-size: 11px;
+  color: var(--ink-faint);
+  font-weight: 600;
+}
+.auth-hint-row code {
+  background: var(--surface-soft);
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+/* ---------- Loading overlay ---------- */
+
+.auth-loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: #12131f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s ease;
+}
+.auth-loading-overlay.show { opacity: 1; pointer-events: auto; }
+.auth-loading-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.auth-loading-ring {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 3.5px solid rgba(255, 255, 255, 0.15);
+  border-top-color: #8a7bff;
+  animation: auth-spin 0.8s linear infinite;
+}
+.auth-loading-text {
+  font-family: 'Sora', sans-serif;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* ---------- Vault / Wallet dashboard ---------- */
+
+.vault-topbar {
+  padding: 18px 20px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.vault-topbar-title {
+  font-family: 'Sora', sans-serif;
+  font-weight: 800;
+  font-size: 16px;
+  color: var(--ink);
+}
+.vault-topbar-sub {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--ink-faint);
+}
+.vault-demo-pill {
+  font-family: 'Sora', sans-serif;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: var(--primary-dark);
+  background: #ece9ff;
+  border: 1px solid #d8d3ff;
+  padding: 4px 9px;
+  border-radius: 999px;
+}
+
+.vault-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 20px 24px;
+}
+.vault-scroll::-webkit-scrollbar { display: none; }
+
+.vault-hero-card {
+  border-radius: 22px;
+  background: var(--primary-grad);
+  padding: 22px 20px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  margin-bottom: 18px;
+}
+.vault-hero-card::after {
+  content: "";
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.09);
+  top: -70px;
+  right: -50px;
+}
+.vault-hero-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.75);
+  margin-bottom: 6px;
+  position: relative;
+  z-index: 1;
+}
+.vault-hero-value {
+  font-family: 'Sora', sans-serif;
+  font-weight: 800;
+  font-size: 32px;
+  color: #fff;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.vault-hero-value small {
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
+}
+.vault-hero-trend {
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #d9ffe9;
+  background: rgba(255, 255, 255, 0.14);
+  padding: 4px 10px 4px 8px;
+  border-radius: 999px;
+  position: relative;
+  z-index: 1;
+}
+
+.vault-currency-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.vault-currency-card {
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 13px 10px;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+.vault-currency-card svg { width: 24px; height: 24px; margin-bottom: 6px; }
+.vault-currency-name {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--ink-faint);
+  margin-bottom: 2px;
+}
+.vault-currency-value {
+  font-family: 'Sora', sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.vault-section-title {
+  font-family: 'Sora', sans-serif;
+  font-weight: 800;
+  font-size: 13.5px;
+  color: var(--ink);
+  margin: 4px 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.vault-section-title span.link {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.vault-tx-list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-bottom: 22px;
+}
+.vault-tx {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 11px 13px;
+  box-shadow: var(--shadow-sm);
+}
+.vault-tx-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.vault-tx-icon.in { background: #e4fbef; }
+.vault-tx-icon.out { background: #ffe9ee; }
+.vault-tx-icon svg { width: 18px; height: 18px; }
+.vault-tx-body { flex: 1; min-width: 0; }
+.vault-tx-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.vault-tx-time {
+  font-size: 10.5px;
+  color: var(--ink-faint);
+  font-weight: 600;
+}
+.vault-tx-amount {
+  font-family: 'Sora', sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+.vault-tx-amount.in { color: var(--success-dark); }
+.vault-tx-amount.out { color: var(--danger); }
+
+.vault-footnote {
+  text-align: center;
+  font-size: 10.5px;
+  color: var(--ink-faint);
+  font-weight: 600;
+  padding: 6px 10px 2px;
+  line-height: 1.5;
+}
+
+.vault-logout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 6px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1.5px solid #e6e9f7;
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-family: 'Sora', sans-serif;
+  font-weight: 700;
+  font-size: 12.5px;
+  cursor: pointer;
+}
