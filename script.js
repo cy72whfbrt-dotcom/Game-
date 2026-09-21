@@ -60,8 +60,13 @@ function formatStatValue(statKey, value) {
   return PCT_STATS.includes(statKey) ? value.toFixed(1).replace('.', ',') + '%' : Math.round(value);
 }
 
+// Grundwerte: das hat man schon ohne jede Ausruestung. Die Schmiede-Teile
+// zaehlen immer oben drauf - der angezeigte Wert ist Grundwert + Ausruestung,
+// und genau dieser Gesamtwert ist es auch, der im Kampf zaehlt.
+const BASE_STATS = { HP: 100, ATK: 10, DEF: 0, SPD: 0, CMB: 0, CTA: 0, Betaeubung: 0, ER: 0, Crit: 0 };
+
 function computeStats() {
-  const totals = { HP: 0, ATK: 0, DEF: 0, SPD: 0, CMB: 0, CTA: 0, Betaeubung: 0, ER: 0, Crit: 0 };
+  const totals = { ...BASE_STATS };
   SLOT_TYPES.forEach(slot => {
     const item = state.equipment[slot.id];
     if (item) totals[slot.stat] += item.statValue;
@@ -326,9 +331,10 @@ const ENEMY_ICONS = ['slime', 'goblin'];
 
 const battle = {
   wave: 1,
-  playerHp: 500,
-  playerMaxHp: 500,
-  playerDmg: 15,
+  playerHp: 100,
+  playerMaxHp: 100,
+  playerDmg: 10,
+  playerDef: 0,
   difficulty: 1,
   enemies: [], // { hp, maxHp, dmg, reward, name, icon, el, hpFillEl, hpTextEl, reached, attackTimer }
   playerAttackTimer: null,
@@ -365,16 +371,18 @@ function rollEnemyCount() {
 function buildWave(wave) {
   const diff = nextDifficulty(wave);
   const count = rollEnemyCount();
-  const groupHp = 70 * diff;
-  const groupDmg = 16 * diff;
+  // Abgestimmt auf die Grundwerte HP 100 / Angriff 10: aehnliche
+  // Treffer-Anzahl wie vorher, nur auf die kleinere Basis skaliert.
+  const groupHp = 45 * diff;
+  const groupDmg = 3 * diff;
   const groupReward = 14 * diff;
   const enemies = [];
   for (let i = 0; i < count; i++) {
     const variance = 0.85 + Math.random() * 0.3;
     enemies.push({
-      hp: Math.max(20, Math.round((groupHp / count) * variance)),
+      hp: Math.max(8, Math.round((groupHp / count) * variance)),
       maxHp: 0, // wird unten gesetzt
-      dmg: Math.max(4, Math.round((groupDmg / count) * variance)),
+      dmg: Math.max(2, Math.round((groupDmg / count) * variance)),
       reward: Math.max(3, Math.round((groupReward / count) * variance)),
       name: ENEMY_NAMES[Math.floor(Math.random() * ENEMY_NAMES.length)],
       icon: ENEMY_ICONS[Math.floor(Math.random() * ENEMY_ICONS.length)],
@@ -491,7 +499,8 @@ function showFloatingText(text, x, y, cls) {
   setTimeout(() => el.remove(), 650);
 }
 
-function dealDamageToPlayer(amount) {
+function dealDamageToPlayer(rawAmount) {
+  const amount = Math.max(1, Math.round(rawAmount - battle.playerDef));
   battle.playerHp = Math.max(0, battle.playerHp - amount);
   updatePlayerHpBar();
   const rect = document.querySelector('.player-side').getBoundingClientRect();
@@ -566,12 +575,14 @@ document.getElementById('defeatRetryBtn').addEventListener('click', () => {
   schedulePlayerAttack();
 });
 
-// Spieler-HP und -Schaden im Kampf ergeben sich aus der Ausruestung
-// (HP/ATK-Stats) - ohne Gear ist man schwach, jedes Teil zaehlt spuerbar.
+// Der angezeigte Gesamtwert (Grundwert + Ausruestung) ist 1:1 das, was im
+// Kampf zaehlt - keine versteckte Umrechnung. Verteidigung senkt zudem den
+// erlittenen Schaden direkt (mind. 1 Schaden kommt immer durch).
 function applyEquipmentToBattle() {
   const totals = computeStats();
-  battle.playerMaxHp = 500 + totals.HP * 5;
-  battle.playerDmg = 15 + totals.ATK * 1.2;
+  battle.playerMaxHp = totals.HP;
+  battle.playerDmg = totals.ATK;
+  battle.playerDef = totals.DEF;
   if (battle.playerHp > battle.playerMaxHp || battle.playerHp === undefined) {
     battle.playerHp = battle.playerMaxHp;
   }
