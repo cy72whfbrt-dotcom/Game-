@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kaelthûr — 3D RPG Character Showcase</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #030304; overflow: hidden; }
+    #app { position: fixed; inset: 0; }
+    canvas { display: block; }
+
+    #hud {
+      position: fixed; left: 28px; bottom: 24px; z-index: 10;
+      font-family: 'Rajdhani', Arial, sans-serif; color: #dbe2ec;
+      pointer-events: none; max-width: 320px;
+    }
+    #hud .eyebrow {
+      font-size: 11px; letter-spacing: .32em; text-transform: uppercase;
+      color: #6ee7f5; opacity: .85; text-shadow: 0 0 10px rgba(110,231,245,.5);
+    }
+    #hud h1 {
+      font-family: Georgia, 'Times New Roman', serif; font-weight: 600;
+      font-size: clamp(24px, 4vw, 38px); margin: 2px 0 4px;
+      color: #fdf2da; text-shadow: 0 0 16px rgba(253,242,218,.3);
+    }
+    #hud p { margin: 0; font-size: 13px; color: #93a0b4; letter-spacing: .04em; }
+
+    #loading {
+      position: fixed; inset: 0; z-index: 20; display: flex; align-items: center;
+      justify-content: center; background: #030304; color: #6ee7f5;
+      font-family: 'Rajdhani', Arial, sans-serif; letter-spacing: .2em;
+      font-size: 13px; text-transform: uppercase; transition: opacity .6s ease;
+    }
+    #loading.hidden { opacity: 0; pointer-events: none; }
+
+    #perf-note {
+      position: fixed; right: 20px; bottom: 20px; z-index: 10;
+      font-family: 'Rajdhani', Arial, sans-serif; font-size: 10.5px;
+      letter-spacing: .12em; text-transform: uppercase; color: #67728a;
+      opacity: .55; pointer-events: none;
+    }
+
+    @font-face { font-family: 'Rajdhani'; src: local('Rajdhani'); }
+  </style>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap">
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="app"></div>
+
+  <div id="loading">Initializing render pipeline…</div>
+
+  <div id="hud">
+    <div class="eyebrow">3D Character Showcase</div>
+    <h1>Kaelthûr</h1>
+    <p>Voidbound Sentinel · Elite Guardian</p>
+  </div>
+  <div id="perf-note">WebGL2 · Three.js · drag assets/character/character.glb to replace placeholder</div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
