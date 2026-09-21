@@ -425,36 +425,45 @@ svg use { color: inherit; }
 .chance-pct { font-weight: 800; color: #c9bb9a; }
 .chance-lock { font-size: 10px; color: #8a7f6a; }
 
-.forge-result {
-  background: rgba(0,0,0,0.3);
-  border: 1px solid var(--stone-border);
-  border-radius: 8px;
-  padding: 10px 12px;
-  min-height: 40px;
-  display: flex; flex-direction: column; gap: 8px;
+/* Grosse, zentrierte Ergebnis-Karte - zeigt ausschliesslich das gerade
+   geschmiedete Teil (Icon, Name, Wert, Vergleich, Ausruesten/Verkaufen). */
+.forge-result-card {
+  position: relative;
+  width: 82%;
+  max-width: 300px;
+  background: linear-gradient(180deg, #2a2016, #14100a);
+  border: 2px solid var(--stone-border);
+  border-radius: 16px;
+  padding: 26px 20px 20px;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
 }
-.forge-result-hint { font-size: 12px; color: #8a7f6a; }
-.forge-result-top { display: flex; align-items: center; gap: 10px; }
+.forge-result-hint { font-size: 13px; color: #8a7f6a; padding: 10px 0; }
+.forge-result-close {
+  position: absolute; top: 8px; right: 12px;
+  font-size: 22px; line-height: 1; color: #c9bb9a; cursor: pointer;
+}
 .forge-result-swatch {
-  width: 34px; height: 34px; border-radius: 8px; flex: 0 0 auto;
+  width: 68px; height: 68px; border-radius: 16px; flex: 0 0 auto;
   display: flex; align-items: center; justify-content: center;
-  font-weight: 900; color: #000; font-size: 13px;
-  border: 2px solid rgba(255,255,255,0.5);
+  border: 3px solid rgba(255,255,255,0.5);
+  box-shadow: 0 0 16px rgba(255,255,255,0.15);
 }
-.forge-result-swatch .slot-icon { width: 22px; height: 22px; }
-.forge-result-text { display: flex; flex-direction: column; gap: 1px; }
-.forge-result-rarity { font-weight: 900; font-size: 13.5px; }
-.forge-result-stat { font-size: 11.5px; color: #c9bb9a; display: flex; align-items: center; gap: 5px; }
+.forge-result-swatch .slot-icon { width: 42px; height: 42px; }
+.forge-result-text { display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center; }
+.forge-result-rarity { font-weight: 900; font-size: 17px; font-family: 'Baloo 2', sans-serif; }
+.forge-result-stat { font-size: 14px; color: #efe3c8; font-weight: 800; }
+.forge-result-compare { font-size: 12px; display: flex; align-items: center; gap: 5px; }
 .compare-up { color: #3ddc72; font-weight: 900; }
 .compare-down { color: #e8443a; font-weight: 900; }
 .compare-new { color: var(--gold); font-weight: 900; }
 
-.forge-result-actions { display: flex; gap: 8px; }
+.forge-result-actions { display: flex; gap: 10px; width: 100%; margin-top: 6px; }
 .forge-equip-btn, .forge-sell-btn {
   flex: 1;
-  padding: 7px 8px;
-  border-radius: 7px;
-  font-weight: 800; font-size: 12px;
+  padding: 10px 8px;
+  border-radius: 9px;
+  font-weight: 800; font-size: 12.5px;
   font-family: 'Nunito', sans-serif;
   cursor: pointer;
   border: 2px solid var(--green);

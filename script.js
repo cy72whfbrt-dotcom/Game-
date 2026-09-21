@@ -185,9 +185,22 @@ function renderLevel() {
   renderChances();
 }
 
+// Amboss-Info (Level + Raritäts-Chancen) - eigenes Fenster, geöffnet über den Upgrade-Button.
+const anvilInfoModal = document.getElementById('anvilInfoModal');
 const anvilUpgradeBtn = document.getElementById('anvilUpgradeBtn');
 anvilUpgradeBtn.addEventListener('click', (e) => {
   e.stopPropagation();
+  anvilInfoModal.classList.add('open');
+  renderLevel();
+});
+document.getElementById('anvilInfoClose').addEventListener('click', () => {
+  anvilInfoModal.classList.remove('open');
+});
+anvilInfoModal.addEventListener('click', (e) => {
+  if (e.target === anvilInfoModal) anvilInfoModal.classList.remove('open');
+});
+
+function upgradeAnvil() {
   const cost = upgradeCost(state.anvilLevel);
   if (!spendGold(cost)) {
     anvilUpgradeBtn.classList.remove('insufficient');
@@ -200,8 +213,10 @@ anvilUpgradeBtn.addEventListener('click', (e) => {
   anvilUpgradeBtn.classList.remove('flash');
   void anvilUpgradeBtn.offsetWidth;
   anvilUpgradeBtn.classList.add('flash');
-});
+}
 
+// Schmiede-Ergebnis: zeigt AUSSCHLIESSLICH das gerade geschmiedete Teil,
+// mittig, mit allen Werten und Ausruesten/Verkaufen - keine Level-/Chancen-Infos.
 const forgeResult = document.getElementById('forgeResult');
 
 function renderForgeResult() {
@@ -218,29 +233,31 @@ function renderForgeResult() {
   if (!equipped) {
     compareHtml = '<span class="compare-new">Neu! Noch nichts in diesem Slot.</span>';
   } else if (statValue > equipped.statValue) {
-    compareHtml = `<span class="compare-up">▲ besser als getragenes Teil (${formatStatValue(slot.stat, equipped.statValue)})</span>`;
+    compareHtml = `<span class="compare-up">▲ besser (${formatStatValue(slot.stat, equipped.statValue)} getragen)</span>`;
   } else if (statValue < equipped.statValue) {
-    compareHtml = `<span class="compare-down">▼ schwächer als getragenes Teil (${formatStatValue(slot.stat, equipped.statValue)})</span>`;
+    compareHtml = `<span class="compare-down">▼ schwächer (${formatStatValue(slot.stat, equipped.statValue)} getragen)</span>`;
   } else {
     compareHtml = '<span>gleich stark wie getragenes Teil</span>';
   }
 
   forgeResult.innerHTML = `
-    <div class="forge-result-top">
-      <span class="forge-result-swatch" style="background:${swatchColor}">
-        <svg class="slot-icon"><use href="icons.svg#${slot.id}"/></svg>
-      </span>
-      <span class="forge-result-text">
-        <span class="forge-result-rarity" style="color:${swatchColor}">${rarity.name} · ${slot.name}</span>
-        <span class="forge-result-stat">${slot.stat}: ${formatStatValue(slot.stat, statValue)}</span>
-        <span class="forge-result-stat">${compareHtml}</span>
-      </span>
-    </div>
+    <span class="forge-result-close" id="forgeResultClose">&times;</span>
+    <span class="forge-result-swatch" style="background:${swatchColor}">
+      <svg class="slot-icon"><use href="icons.svg#${slot.id}"/></svg>
+    </span>
+    <span class="forge-result-text">
+      <span class="forge-result-rarity" style="color:${swatchColor}">${rarity.name} · ${slot.name}</span>
+      <span class="forge-result-stat">${slot.stat}: ${formatStatValue(slot.stat, statValue)}</span>
+      <span class="forge-result-compare">${compareHtml}</span>
+    </span>
     <div class="forge-result-actions">
       <button class="forge-equip-btn" id="equipBtn">Ausrüsten</button>
       <button class="forge-sell-btn" id="sellBtn">Verkaufen (+${sellPrice(rarity)} <svg class="mini-coin"><use href="icons.svg#coin"/></svg>)</button>
     </div>`;
 
+  document.getElementById('forgeResultClose').addEventListener('click', () => {
+    forgeModal.classList.remove('open');
+  });
   document.getElementById('equipBtn').addEventListener('click', () => {
     state.equipment[slot.id] = { rarity, statValue };
     renderSlot(slot.id);
@@ -248,12 +265,12 @@ function renderForgeResult() {
     applyEquipmentToBattle();
     updatePlayerHpBar();
     state.lastCrafted = null;
-    renderForgeResult();
+    forgeModal.classList.remove('open');
   });
   document.getElementById('sellBtn').addEventListener('click', () => {
     goldEl.textContent = getGold() + sellPrice(rarity);
     state.lastCrafted = null;
-    renderForgeResult();
+    forgeModal.classList.remove('open');
   });
 }
 
@@ -278,12 +295,8 @@ forgeHero?.addEventListener('click', () => {
     forgeHero.classList.add('insufficient');
     return;
   }
-  forgeModal.classList.add('open');
-  renderLevel();
   renderForgeResult();
-});
-document.getElementById('forgeClose').addEventListener('click', () => {
-  forgeModal.classList.remove('open');
+  forgeModal.classList.add('open');
 });
 forgeModal.addEventListener('click', (e) => {
   if (e.target === forgeModal) forgeModal.classList.remove('open');

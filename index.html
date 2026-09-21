@@ -197,12 +197,20 @@
         <div class="forge-glow"></div>
       </div>
 
-      <!-- Schmiede-Ergebnis: öffnet sich sofort, wenn man auf den Amboss tippt -->
+      <!-- Schmiede-Ergebnis: öffnet sich sofort, wenn man auf den Amboss tippt.
+           Zeigt NUR das gerade geschmiedete Teil, mittig, groß. -->
       <div class="forge-modal" id="forgeModal">
+        <div class="forge-result-card" id="forgeResult">
+          <span class="forge-result-hint">Noch nichts geschmiedet.</span>
+        </div>
+      </div>
+
+      <!-- Amboss-Info: Level + Raritäts-Chancen, öffnet sich über den Upgrade-Button -->
+      <div class="forge-modal" id="anvilInfoModal">
         <div class="forge-modal-card">
           <div class="forge-modal-head">
-            <span class="forge-title">Schmiede</span>
-            <span class="forge-close" id="forgeClose">&times;</span>
+            <span class="forge-title">Amboss</span>
+            <span class="forge-close" id="anvilInfoClose">&times;</span>
           </div>
 
           <div class="forge-level-row">
@@ -211,10 +219,6 @@
           </div>
 
           <div class="forge-chances" id="forgeChances"></div>
-
-          <div class="forge-result" id="forgeResult">
-            <span class="forge-result-hint">Noch nichts geschmiedet.</span>
-          </div>
         </div>
       </div>
 
