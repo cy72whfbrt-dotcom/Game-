@@ -82,11 +82,11 @@
 
         <div class="equip-grid equip-right">
           <div class="equip-slot empty" id="slot-sword" data-slot="sword"><svg class="slot-icon"><use href="icons.svg#sword"/></svg><span class="slot-lvl">Leer</span></div>
-          <div class="equip-slot unknown"><svg class="slot-icon"><use href="icons.svg#wingstar"/></svg><span class="slot-label">Gesperrt</span></div>
+          <div class="equip-slot empty" id="slot-wingstar" data-slot="wingstar"><svg class="slot-icon"><use href="icons.svg#wingstar"/></svg><span class="slot-lvl">Leer</span></div>
           <div class="equip-slot empty" id="slot-dragon" data-slot="dragon"><svg class="slot-icon"><use href="icons.svg#dragon"/></svg><span class="slot-lvl">Leer</span></div>
-          <div class="equip-slot unknown"><svg class="slot-icon"><use href="icons.svg#scroll"/></svg><span class="slot-label">Geheimer Stein</span></div>
-          <div class="equip-slot unknown"><svg class="slot-icon"><use href="icons.svg#gem"/></svg><span class="slot-label">Edelstein</span></div>
-          <div class="equip-slot unknown"><svg class="slot-icon"><use href="icons.svg#question"/></svg><span class="slot-label">Wird enthüllt</span></div>
+          <div class="equip-slot empty" id="slot-scroll" data-slot="scroll"><svg class="slot-icon"><use href="icons.svg#scroll"/></svg><span class="slot-lvl">Leer</span></div>
+          <div class="equip-slot empty" id="slot-gem" data-slot="gem"><svg class="slot-icon"><use href="icons.svg#gem"/></svg><span class="slot-lvl">Leer</span></div>
+          <div class="equip-slot empty" id="slot-question" data-slot="question"><svg class="slot-icon"><use href="icons.svg#question"/></svg><span class="slot-lvl">Leer</span></div>
         </div>
 
         <div class="character">
@@ -264,6 +264,11 @@
 
           <div class="forge-chances" id="forgeChances"></div>
         </div>
+      </div>
+
+      <!-- Slot-Info: Ausrüstungsteil antippen zeigt Name, Rarität und Wert -->
+      <div class="forge-modal" id="slotInfoModal">
+        <div class="forge-result-card" id="slotInfoContent"></div>
       </div>
 
       <div class="swipe-hint">Nach rechts wischen für den Kampf &#8250;</div>

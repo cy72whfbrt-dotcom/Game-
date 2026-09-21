@@ -36,6 +36,7 @@ const RARITIES = [
 // Welchen Slot ein Item betrifft und welchen Grundwert es traegt.
 // Zwei Slots rechts oben (Fluegel) und drei weitere (Geheimer Stein, Edelstein,
 // Unbekannt) sind bewusst nicht ueber die Schmiede erreichbar (gesperrt).
+// Alle 14 Slots sind freigeschaltet und ueber die Schmiede erreichbar.
 const SLOT_TYPES = [
   { id: 'cap', name: 'Kappe', stat: 'HP', base: 40 },
   { id: 'helmet', name: 'Helm', stat: 'DEF', base: 8 },
@@ -47,6 +48,10 @@ const SLOT_TYPES = [
   { id: 'boots', name: 'Schuhe', stat: 'SPD', base: 4 },
   { id: 'sword', name: 'Schwert', stat: 'ATK', base: 10 },
   { id: 'dragon', name: 'Gefährte', stat: 'CMB', base: 0.15 },
+  { id: 'wingstar', name: 'Flügel', stat: 'SPD', base: 4 },
+  { id: 'scroll', name: 'Geheimer Stein', stat: 'ER', base: 0.1 },
+  { id: 'gem', name: 'Edelstein', stat: 'Crit', base: 0.12 },
+  { id: 'question', name: 'Mysteriöses Relikt', stat: 'Betaeubung', base: 0.08 },
 ];
 const PCT_STATS = ['CMB', 'CTA', 'Crit', 'ER', 'Betaeubung'];
 
@@ -106,6 +111,70 @@ function renderAllSlots() {
   SLOT_TYPES.forEach(s => renderSlot(s.id));
   renderStats();
 }
+
+// Slot antippen -> zeigt Name, Rarität und Wert des getragenen Teils
+// (oder "leer"), mit der Moeglichkeit es wieder abzulegen.
+const slotInfoModal = document.getElementById('slotInfoModal');
+const slotInfoContent = document.getElementById('slotInfoContent');
+
+function showSlotInfo(slotId) {
+  const slotDef = SLOT_TYPES.find(s => s.id === slotId);
+  if (!slotDef) return;
+  const item = state.equipment[slotId];
+
+  if (!item) {
+    slotInfoContent.innerHTML = `
+      <span class="forge-result-close" id="slotInfoClose">&times;</span>
+      <span class="forge-result-swatch" style="background:#3a3226">
+        <svg class="slot-icon"><use href="icons.svg#${slotId}"/></svg>
+      </span>
+      <span class="forge-result-text">
+        <span class="forge-result-rarity" style="color:#c9bb9a">${slotDef.name}</span>
+        <span class="forge-result-stat">Leer</span>
+        <span class="forge-result-compare">Beim Amboss schmieden, um dieses Teil zu füllen.</span>
+      </span>`;
+  } else {
+    const swatchColor = item.rarity.color.startsWith('linear') ? '#fff' : item.rarity.color;
+    slotInfoContent.innerHTML = `
+      <span class="forge-result-close" id="slotInfoClose">&times;</span>
+      <span class="forge-result-swatch" style="background:${swatchColor}">
+        <svg class="slot-icon"><use href="icons.svg#${slotId}"/></svg>
+      </span>
+      <span class="forge-result-text">
+        <span class="forge-result-rarity" style="color:${swatchColor}">${item.rarity.name} · ${slotDef.name}</span>
+        <span class="forge-result-stat">${slotDef.stat}: ${formatStatValue(slotDef.stat, item.statValue)}</span>
+      </span>
+      <div class="forge-result-actions">
+        <button class="forge-sell-btn" id="slotUnequipBtn">Ablegen</button>
+      </div>`;
+  }
+
+  document.getElementById('slotInfoClose').addEventListener('click', () => {
+    slotInfoModal.classList.remove('open');
+  });
+  const unequipBtn = document.getElementById('slotUnequipBtn');
+  if (unequipBtn) {
+    unequipBtn.addEventListener('click', () => {
+      delete state.equipment[slotId];
+      renderSlot(slotId);
+      renderStats();
+      applyEquipmentToBattle();
+      updatePlayerHpBar();
+      updatePlayerShieldBar();
+      slotInfoModal.classList.remove('open');
+    });
+  }
+
+  slotInfoModal.classList.add('open');
+}
+
+SLOT_TYPES.forEach(slot => {
+  const el = document.getElementById('slot-' + slot.id);
+  el?.addEventListener('click', () => showSlotInfo(slot.id));
+});
+slotInfoModal.addEventListener('click', (e) => {
+  if (e.target === slotInfoModal) slotInfoModal.classList.remove('open');
+});
 
 const goldEl = document.getElementById('goldValue');
 function getGold() { return parseInt(goldEl.textContent, 10); }
