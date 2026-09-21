@@ -628,9 +628,17 @@ svg use { color: inherit; }
 }
 .battle-ground {
   position: absolute;
-  left: 0; right: 0; bottom: 0; height: 22%;
+  left: 0; right: 0; bottom: 0; height: 24%;
   background: linear-gradient(180deg, rgba(109,93,251,0.25), rgba(20,18,50,0.75));
   border-top: 1px solid rgba(255,255,255,0.12);
+}
+.battle-ground::before {
+  content: '';
+  position: absolute;
+  left: 50%; bottom: -10%;
+  width: 130%; height: 70%;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse at center, rgba(109,93,251,0.35), transparent 70%);
 }
 .battle-vignette {
   position: absolute; inset: 0;

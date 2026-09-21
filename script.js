@@ -520,7 +520,7 @@ function updateEnemiesLeftLabel() {
 
 // Alle Gegner einer Welle laufen gleichzeitig ein und stellen sich
 // nebeneinander auf (nicht hintereinander in einer Warteschlange).
-const QUEUE_STOPS = [40, 22, 58];
+const QUEUE_STOPS = [55, 30, 8];
 
 function spawnWave() {
   clearTimeout(battle.playerAttackTimer);
