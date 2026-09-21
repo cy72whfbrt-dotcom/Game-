@@ -138,7 +138,7 @@ body {
 /* Character viewport */
 .character-viewport {
   position: relative;
-  height: 300px;
+  height: 262px;
   margin: 8px 8px 0;
   border-radius: 8px;
   overflow: hidden;
@@ -262,26 +262,26 @@ body {
   border-radius: 10px;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 7px 10px;
-  padding: 9px 10px;
+  gap: 5px 8px;
+  padding: 7px 9px;
   flex: 0 0 auto;
 }
-.stat { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.stat { display: flex; align-items: center; gap: 5px; min-width: 0; }
 .stat-icon {
-  color: var(--gold); font-size: 13px; width: 16px; flex: 0 0 auto;
+  color: var(--gold); font-size: 12px; width: 14px; flex: 0 0 auto;
   text-align: center;
 }
-.stat-text { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
+.stat-text { display: flex; flex-direction: column; line-height: 1.1; min-width: 0; }
 .stat-name {
-  font-size: 10px; font-weight: 800; color: #efe3c8;
+  font-size: 9.5px; font-weight: 800; color: #efe3c8;
   white-space: nowrap;
 }
 .stat-desc {
-  font-size: 7px; font-weight: 600; color: #8a7f6a;
+  font-size: 6.5px; font-weight: 600; color: #8a7f6a;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .stat-value {
-  color: #fff; font-weight: 900; font-size: 11.5px;
+  color: #fff; font-weight: 900; font-size: 11px;
   margin-left: auto; padding-left: 4px; flex: 0 0 auto;
 }
 
@@ -329,10 +329,11 @@ body {
 
 .forge-hero {
   position: absolute;
-  left: 50%; top: 8%;
-  width: 62%;
-  height: auto;
-  transform: translateX(-50%);
+  left: 50%; top: 50%;
+  height: 92%;
+  width: auto;
+  max-width: 90%;
+  transform: translate(-50%, -50%);
   filter: drop-shadow(0 6px 10px rgba(0,0,0,0.6));
   z-index: 2;
 }
