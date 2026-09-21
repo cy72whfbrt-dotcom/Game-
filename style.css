@@ -227,9 +227,6 @@ body {
 /* Adventure banner */
 .adventure-banner {
   margin: 6px 8px 0;
-  background: linear-gradient(180deg, #2b2318, #1c160e);
-  border: 1px solid var(--stone-border);
-  border-radius: 8px;
   display: flex; align-items: center; gap: 8px;
   padding: 6px 10px;
   flex: 0 0 auto;
@@ -258,17 +255,8 @@ body {
 .forge-scene {
   position: relative;
   margin: 8px 4px 0;
-  background: linear-gradient(180deg, #241c14 0%, #1a130c 55%, #100b07 100%);
-  border-top: 2px solid var(--stone-border);
-  border-radius: 14px 14px 0 0;
   flex: 1;
   overflow: hidden;
-}
-
-.scene-floor {
-  position: absolute;
-  left: 8%; right: 8%; bottom: 0; top: 55%;
-  background: radial-gradient(ellipse at 50% 100%, rgba(120,40,30,0.35), transparent 70%);
 }
 
 .forge-hero {
