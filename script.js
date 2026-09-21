@@ -307,100 +307,171 @@ forgeModal.addEventListener('click', (e) => {
 });
 
 /* ---------- Abenteuer / Battle - Seite 2 ----------
-   Gegner laufen automatisch von rechts auf den mittig stehenden Spieler
-   zu. Sobald ein Gegner in Reichweite ist, greifen Spieler und Gegner
-   automatisch im Takt an - kein Antippen noetig. Bei Sieg gibt es Gold,
-   die naechste (etwas staerkere) Welle startet automatisch. Zwischen
-   der Ausruestungs-Seite und dieser Kampf-Seite wechselt man per Wisch-
-   Geste (horizontales Scroll-Snap in #pagesTrack). */
+   Gegner laufen automatisch von rechts auf den ganz links stehenden
+   Spieler zu. Eine Welle kann 1-3 (dafuer schwaechere) Gegner haben,
+   die sich hintereinander einreihen; nur der vorderste kaempft, der
+   Rest wartet sichtbar dahinter. Sobald ein Gegner in Reichweite ist,
+   greifen Spieler und Gegner automatisch im Takt an - kein Antippen
+   noetig. HP und Angriff jedes Gegners stehen ueber ihm. Die
+   Wellenstaerke steigt NICHT linear: mal ein kleiner Sprung nach oben,
+   mal ein leichter Ruecksetzer - aber langfristig steigend. Bei
+   Niederlage pausiert der Kampf mit einem Retry-Screen statt einfach
+   automatisch weiterzulaufen. Zwischen Ausruestungs- und Kampf-Seite
+   wechselt man per Wisch-Geste (horizontales Scroll-Snap). */
 
 const ENEMY_NAMES = ['Schleim', 'Goblin', 'Wolf', 'Ork', 'Spinne'];
+const ENEMY_ICONS = ['slime', 'goblin'];
 
 const battle = {
   wave: 1,
-  playerHp: 5000,
-  playerMaxHp: 5000,
-  playerDmg: 45,
-  enemyHp: 0,
-  enemyMaxHp: 0,
-  approachTimer: null,
-  enemyAttackTimer: null,
+  playerHp: 500,
+  playerMaxHp: 500,
+  playerDmg: 15,
+  difficulty: 1,
+  enemies: [], // { hp, maxHp, dmg, reward, name, icon, el, hpFillEl, hpTextEl, reached, attackTimer }
   playerAttackTimer: null,
-  enemyReachedPlayer: false,
+  defeated: false,
 };
 
 const battleStage = document.getElementById('battleStage');
-const enemySide = document.getElementById('enemySide');
-const enemySprite = document.getElementById('enemySprite');
-const enemyNameEl = document.getElementById('enemyName');
-const enemyHpFill = document.getElementById('enemyHpFill');
-const enemyHpText = document.getElementById('enemyHpText');
+const enemyQueue = document.getElementById('enemyQueue');
 const playerHpFill = document.getElementById('playerHpFill');
 const playerHpText = document.getElementById('playerHpText');
 const waveNumEl = document.getElementById('waveNum');
+const defeatOverlay = document.getElementById('defeatOverlay');
 
-function enemyStatsForWave(wave) {
-  const maxHp = Math.round(80 * Math.pow(1.18, wave - 1));
-  const dmg = Math.round(60 * Math.pow(1.12, wave - 1));
-  const reward = Math.round(15 * Math.pow(1.1, wave - 1));
-  const name = ENEMY_NAMES[(wave - 1) % ENEMY_NAMES.length];
-  const icon = wave % 2 === 0 ? 'goblin' : 'slime';
-  return { maxHp, dmg, reward, name, icon };
+// Nicht-lineare Wellenstaerke: die Basisschwierigkeit schwankt bei jedem
+// Aufruf zufaellig (mal rauf, mal etwas runter), bleibt aber nie unter
+// einer langsam steigenden Untergrenze - so bleibt der Trend aufwaerts,
+// ohne dass jede Welle staerker als die vorherige sein muss.
+function nextDifficulty(wave) {
+  const swing = 0.75 + Math.random() * 0.7; // 0.75x bis 1.45x
+  const floor = 1 + (wave - 1) * 0.1;
+  battle.difficulty = Math.max(battle.difficulty * swing, floor);
+  return battle.difficulty;
+}
+
+function rollEnemyCount() {
+  const r = Math.random();
+  if (r < 0.5) return 1;
+  if (r < 0.82) return 2;
+  return 3;
+}
+
+function buildWave(wave) {
+  const diff = nextDifficulty(wave);
+  const count = rollEnemyCount();
+  const groupHp = 70 * diff;
+  const groupDmg = 16 * diff;
+  const groupReward = 14 * diff;
+  const enemies = [];
+  for (let i = 0; i < count; i++) {
+    const variance = 0.85 + Math.random() * 0.3;
+    enemies.push({
+      hp: Math.max(20, Math.round((groupHp / count) * variance)),
+      maxHp: 0, // wird unten gesetzt
+      dmg: Math.max(4, Math.round((groupDmg / count) * variance)),
+      reward: Math.max(3, Math.round((groupReward / count) * variance)),
+      name: ENEMY_NAMES[Math.floor(Math.random() * ENEMY_NAMES.length)],
+      icon: ENEMY_ICONS[Math.floor(Math.random() * ENEMY_ICONS.length)],
+    });
+  }
+  enemies.forEach(e => { e.maxHp = e.hp; });
+  return enemies;
 }
 
 function updatePlayerHpBar() {
   const pct = Math.max(0, (battle.playerHp / battle.playerMaxHp) * 100);
   playerHpFill.style.width = pct + '%';
-  playerHpText.textContent = `${Math.max(0, battle.playerHp)} / ${battle.playerMaxHp}`;
+  playerHpText.textContent = `${Math.max(0, Math.round(battle.playerHp))} / ${Math.round(battle.playerMaxHp)}`;
 }
-function updateEnemyHpBar() {
-  const pct = Math.max(0, (battle.enemyHp / battle.enemyMaxHp) * 100);
-  enemyHpFill.style.width = pct + '%';
-  enemyHpText.textContent = `${Math.max(0, battle.enemyHp)} / ${battle.enemyMaxHp}`;
+function updateEnemyHpBar(enemy) {
+  const pct = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
+  enemy.hpFillEl.style.width = pct + '%';
+  enemy.hpTextEl.textContent = `${Math.max(0, enemy.hp)} / ${enemy.maxHp}`;
 }
 
-function spawnEnemy() {
-  clearTimeout(battle.enemyAttackTimer);
+function createEnemyEl(enemy, stopPct) {
+  const el = document.createElement('div');
+  el.className = 'enemy-unit';
+  el.style.setProperty('--stop', stopPct + '%');
+  el.innerHTML = `
+    <span class="enemy-name">${enemy.name}</span>
+    <span class="enemy-stat-line">
+      <span class="enemy-stat-hp">♥ ${enemy.hp}</span>
+      <span class="enemy-stat-atk">⚔ ${enemy.dmg}</span>
+    </span>
+    <div class="hp-bar enemy-hp-bar">
+      <div class="hp-fill"></div>
+      <span class="hp-text">${enemy.hp} / ${enemy.maxHp}</span>
+    </div>
+    <svg class="enemy-sprite" viewBox="0 0 80 90"><use href="icons.svg#${enemy.icon}"/></svg>`;
+  enemyQueue.appendChild(el);
+  enemy.el = el;
+  enemy.hpFillEl = el.querySelector('.hp-fill');
+  enemy.hpTextEl = el.querySelector('.hp-text');
+  enemy.atkEl = el.querySelector('.enemy-stat-atk');
+  return el;
+}
+
+// Warteschlangen-Positionen: der vorderste (Index 0) steht am naechsten
+// beim Spieler und kaempft, alle anderen warten sichtbar weiter rechts.
+const QUEUE_STOPS = [24, 42, 58];
+
+function layoutQueue() {
+  battle.enemies.forEach((e, i) => {
+    e.el.style.setProperty('--stop', QUEUE_STOPS[Math.min(i, QUEUE_STOPS.length - 1)] + '%');
+    if (!e.el.classList.contains('approached')) {
+      void e.el.offsetWidth;
+      e.el.classList.add('approached');
+    }
+  });
+}
+
+function spawnWave() {
   clearTimeout(battle.playerAttackTimer);
-  const stats = enemyStatsForWave(battle.wave);
-  battle.enemyMaxHp = stats.maxHp;
-  battle.enemyHp = stats.maxHp;
-  battle.enemyReachedPlayer = false;
-  battle.currentDmg = stats.dmg;
-  battle.currentReward = stats.reward;
-  enemyNameEl.textContent = stats.name;
-  enemySprite.innerHTML = `<use href="icons.svg#${stats.icon}"/>`;
+  enemyQueue.innerHTML = '';
   waveNumEl.textContent = battle.wave;
-  updateEnemyHpBar();
+  battle.defeated = false;
+  defeatOverlay.classList.remove('open');
 
-  enemySide.classList.remove('dying', 'approached');
-  // Reflow erzwingen, damit die Anlauf-Transition sauber neu startet
-  void enemySide.offsetWidth;
-  requestAnimationFrame(() => {
-    enemySide.classList.add('approached');
+  const list = buildWave(battle.wave);
+  battle.enemies = list;
+  list.forEach((enemy, i) => {
+    createEnemyEl(enemy, QUEUE_STOPS[Math.min(i, QUEUE_STOPS.length - 1)]);
   });
 
-  battle.approachTimer = setTimeout(() => {
-    battle.enemyReachedPlayer = true;
-    scheduleEnemyAttack();
-    schedulePlayerAttack();
-  }, 2300);
+  requestAnimationFrame(layoutQueue);
+
+  // Der vorderste Gegner erreicht den Spieler zuerst und beginnt den Kampf.
+  setTimeout(() => {
+    if (battle.enemies[0]) engageFront();
+  }, 1900);
 }
 
-function scheduleEnemyAttack() {
-  if (!battle.enemyReachedPlayer || battle.enemyHp <= 0) return;
-  battle.enemyAttackTimer = setTimeout(() => {
-    if (battle.enemyHp <= 0) return;
-    dealDamageToPlayer(battle.currentDmg);
-    scheduleEnemyAttack();
+function engageFront() {
+  const front = battle.enemies[0];
+  if (!front || battle.defeated) return;
+  front.reached = true;
+  scheduleEnemyAttack(front);
+  schedulePlayerAttack();
+}
+
+function scheduleEnemyAttack(enemy) {
+  if (battle.defeated || battle.enemies[0] !== enemy || enemy.hp <= 0) return;
+  enemy.attackTimer = setTimeout(() => {
+    if (battle.defeated || battle.enemies[0] !== enemy || enemy.hp <= 0) return;
+    dealDamageToPlayer(enemy.dmg);
+    scheduleEnemyAttack(enemy);
   }, 1100);
 }
 
 function schedulePlayerAttack() {
-  if (!battle.enemyReachedPlayer || battle.enemyHp <= 0) return;
+  if (battle.defeated) return;
   battle.playerAttackTimer = setTimeout(() => {
-    if (battle.enemyHp <= 0) return;
-    attackEnemy();
+    const front = battle.enemies[0];
+    if (battle.defeated || !front || !front.reached) return;
+    attackFrontEnemy();
     schedulePlayerAttack();
   }, 800);
 }
@@ -420,41 +491,35 @@ function dealDamageToPlayer(amount) {
   updatePlayerHpBar();
   const rect = document.querySelector('.player-side').getBoundingClientRect();
   const stageRect = battleStage.getBoundingClientRect();
-  showFloatingText('-' + amount, rect.left - stageRect.left + 20, rect.top - stageRect.top, 'player-dmg');
-  if (battle.playerHp <= 0) {
-    clearTimeout(battle.enemyAttackTimer);
+  showFloatingText('-' + amount, rect.left - stageRect.left + 16, rect.top - stageRect.top, 'player-dmg');
+
+  if (battle.playerHp <= 0 && !battle.defeated) {
+    battle.defeated = true;
+    battle.enemies.forEach(e => clearTimeout(e.attackTimer));
     clearTimeout(battle.playerAttackTimer);
-    showFloatingText('Niederlage!', stageRect.width / 2 - 30, stageRect.height / 2, 'player-dmg');
-    setTimeout(() => {
-      battle.playerHp = battle.playerMaxHp;
-      updatePlayerHpBar();
-      if (battle.enemyHp > 0) {
-        scheduleEnemyAttack();
-        schedulePlayerAttack();
-      }
-    }, 900);
+    defeatOverlay.classList.add('open');
   }
 }
 
-function attackEnemy() {
-  if (battle.enemyHp <= 0) return;
+function attackFrontEnemy() {
+  const enemy = battle.enemies[0];
+  if (!enemy || enemy.hp <= 0 || battle.defeated) return;
   const dmg = Math.round(battle.playerDmg * (0.85 + Math.random() * 0.3));
-  battle.enemyHp -= dmg;
-  updateEnemyHpBar();
+  enemy.hp -= dmg;
+  updateEnemyHpBar(enemy);
 
-  const rect = enemySide.getBoundingClientRect();
+  const rect = enemy.el.getBoundingClientRect();
   const stageRect = battleStage.getBoundingClientRect();
-  showFloatingText('-' + dmg, rect.left - stageRect.left + 15, rect.top - stageRect.top - 10, '');
+  showFloatingText('-' + dmg, rect.left - stageRect.left + 10, rect.top - stageRect.top - 8, '');
 
-  enemySide.classList.remove('hit');
-  void enemySide.offsetWidth;
-  enemySide.classList.add('hit');
+  enemy.el.classList.remove('hit');
+  void enemy.el.offsetWidth;
+  enemy.el.classList.add('hit');
 
-  if (battle.enemyHp <= 0) {
-    clearTimeout(battle.approachTimer);
-    clearTimeout(battle.enemyAttackTimer);
+  if (enemy.hp <= 0) {
+    clearTimeout(enemy.attackTimer);
     clearTimeout(battle.playerAttackTimer);
-    const reward = battle.currentReward;
+    const reward = enemy.reward;
     goldEl.textContent = getGold() + reward;
     const rp = document.createElement('span');
     rp.className = 'reward-popup';
@@ -462,28 +527,52 @@ function attackEnemy() {
     battleStage.appendChild(rp);
     setTimeout(() => rp.remove(), 900);
 
-    enemySide.classList.add('dying');
-    battle.wave += 1;
-    // Jede neue Welle startet mit wieder voller HP.
-    battle.playerHp = battle.playerMaxHp;
-    updatePlayerHpBar();
-    setTimeout(spawnEnemy, 700);
+    enemy.el.classList.add('dying');
+    battle.enemies.shift();
+    setTimeout(() => {
+      enemy.el.remove();
+      if (battle.enemies.length > 0) {
+        // Naechster in der Reihe rueckt vor und wird zum aktiven Gegner.
+        layoutQueue();
+        setTimeout(engageFront, 900);
+      } else {
+        battle.wave += 1;
+        battle.playerHp = battle.playerMaxHp; // jede neue Welle: volle HP
+        updatePlayerHpBar();
+        setTimeout(spawnWave, 700);
+      }
+    }, 400);
   }
 }
+
+document.getElementById('defeatRetryBtn').addEventListener('click', () => {
+  battle.playerHp = battle.playerMaxHp;
+  updatePlayerHpBar();
+  battle.defeated = false;
+  defeatOverlay.classList.remove('open');
+  if (battle.enemies[0]) {
+    battle.enemies[0].reached = true;
+    scheduleEnemyAttack(battle.enemies[0]);
+    schedulePlayerAttack();
+  }
+});
 
 // Spieler-HP und -Schaden im Kampf ergeben sich aus der Ausruestung
 // (HP/ATK-Stats) - ohne Gear ist man schwach, jedes Teil zaehlt spuerbar.
 function applyEquipmentToBattle() {
   const totals = computeStats();
   battle.playerMaxHp = 500 + totals.HP * 5;
-  battle.playerHp = battle.playerMaxHp;
   battle.playerDmg = 15 + totals.ATK * 1.2;
+  if (battle.playerHp > battle.playerMaxHp || battle.playerHp === undefined) {
+    battle.playerHp = battle.playerMaxHp;
+  }
 }
 
 // Der Kampf laeuft komplett automatisch (kein Antippen des Gegners noetig).
 applyEquipmentToBattle();
+battle.playerHp = battle.playerMaxHp;
 updatePlayerHpBar();
-spawnEnemy();
+spawnWave();
 
 // Wischen zwischen Ausruestungs-Seite (1) und Kampf-Seite (2). Ein Klick
 // auf den Abenteuer-Banner scrollt als Komfort-Abkuerzung ebenfalls dorthin.

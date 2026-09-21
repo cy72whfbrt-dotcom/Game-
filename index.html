@@ -253,15 +253,14 @@
           </div>
         </div>
 
-        <div class="enemy-side" id="enemySide">
-          <div class="hp-bar enemy-hp-bar">
-            <span class="enemy-name" id="enemyName">Schleim</span>
-            <div class="hp-fill" id="enemyHpFill"></div>
-            <span class="hp-text" id="enemyHpText">100 / 100</span>
-          </div>
-          <svg class="enemy-sprite" id="enemySprite" viewBox="0 0 80 90">
-            <use href="icons.svg#slime"/>
-          </svg>
+        <!-- Gegner werden dynamisch erzeugt: es können 1-3 pro Welle sein -->
+        <div class="enemy-queue" id="enemyQueue"></div>
+
+        <!-- Niederlage-Screen: pausiert den Kampf, statt einfach weiterzulaufen -->
+        <div class="defeat-overlay" id="defeatOverlay">
+          <span class="defeat-title">Niederlage</span>
+          <span class="defeat-text">Deine Ausrüstung war zu schwach. Schmiede bessere Teile und rüste sie aus, dann versuch's erneut.</span>
+          <button class="defeat-retry-btn" id="defeatRetryBtn">Erneut versuchen</button>
         </div>
       </div>
 
