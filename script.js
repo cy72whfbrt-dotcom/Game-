@@ -152,10 +152,13 @@ forgeModal.addEventListener('click', (e) => {
   if (e.target === forgeModal) forgeModal.classList.remove('open');
 });
 
-/* ---------- Abenteuer / Battle screen ----------
-   Gegner laufen von rechts auf den Spieler zu. Antippen macht Schaden.
-   Erreicht der Gegner den Spieler, greift er im Takt an. Bei Sieg gibt
-   es Gold, die naechste (etwas staerkere) Welle startet automatisch. */
+/* ---------- Abenteuer / Battle - Seite 2 ----------
+   Gegner laufen automatisch von rechts auf den mittig stehenden Spieler
+   zu. Sobald ein Gegner in Reichweite ist, greifen Spieler und Gegner
+   automatisch im Takt an - kein Antippen noetig. Bei Sieg gibt es Gold,
+   die naechste (etwas staerkere) Welle startet automatisch. Zwischen
+   der Ausruestungs-Seite und dieser Kampf-Seite wechselt man per Wisch-
+   Geste (horizontales Scroll-Snap in #pagesTrack). */
 
 const ENEMY_NAMES = ['Schleim', 'Goblin', 'Wolf', 'Ork', 'Spinne'];
 
@@ -163,14 +166,15 @@ const battle = {
   wave: 1,
   playerHp: 5000,
   playerMaxHp: 5000,
+  playerDmg: 45,
   enemyHp: 0,
   enemyMaxHp: 0,
   approachTimer: null,
-  attackTimer: null,
+  enemyAttackTimer: null,
+  playerAttackTimer: null,
   enemyReachedPlayer: false,
 };
 
-const battleScreen = document.getElementById('battleScreen');
 const battleStage = document.getElementById('battleStage');
 const enemySide = document.getElementById('enemySide');
 const enemySprite = document.getElementById('enemySprite');
@@ -202,7 +206,8 @@ function updateEnemyHpBar() {
 }
 
 function spawnEnemy() {
-  clearTimeout(battle.attackTimer);
+  clearTimeout(battle.enemyAttackTimer);
+  clearTimeout(battle.playerAttackTimer);
   const stats = enemyStatsForWave(battle.wave);
   battle.enemyMaxHp = stats.maxHp;
   battle.enemyHp = stats.maxHp;
@@ -224,16 +229,26 @@ function spawnEnemy() {
   battle.approachTimer = setTimeout(() => {
     battle.enemyReachedPlayer = true;
     scheduleEnemyAttack();
+    schedulePlayerAttack();
   }, 2300);
 }
 
 function scheduleEnemyAttack() {
   if (!battle.enemyReachedPlayer || battle.enemyHp <= 0) return;
-  battle.attackTimer = setTimeout(() => {
+  battle.enemyAttackTimer = setTimeout(() => {
     if (battle.enemyHp <= 0) return;
     dealDamageToPlayer(battle.currentDmg);
     scheduleEnemyAttack();
   }, 1100);
+}
+
+function schedulePlayerAttack() {
+  if (!battle.enemyReachedPlayer || battle.enemyHp <= 0) return;
+  battle.playerAttackTimer = setTimeout(() => {
+    if (battle.enemyHp <= 0) return;
+    attackEnemy();
+    schedulePlayerAttack();
+  }, 800);
 }
 
 function showFloatingText(text, x, y, cls) {
@@ -253,18 +268,23 @@ function dealDamageToPlayer(amount) {
   const stageRect = battleStage.getBoundingClientRect();
   showFloatingText('-' + amount, rect.left - stageRect.left + 20, rect.top - stageRect.top, 'player-dmg');
   if (battle.playerHp <= 0) {
-    clearTimeout(battle.attackTimer);
+    clearTimeout(battle.enemyAttackTimer);
+    clearTimeout(battle.playerAttackTimer);
     showFloatingText('Niederlage!', stageRect.width / 2 - 30, stageRect.height / 2, 'player-dmg');
     setTimeout(() => {
       battle.playerHp = battle.playerMaxHp;
       updatePlayerHpBar();
+      if (battle.enemyHp > 0) {
+        scheduleEnemyAttack();
+        schedulePlayerAttack();
+      }
     }, 900);
   }
 }
 
 function attackEnemy() {
   if (battle.enemyHp <= 0) return;
-  const dmg = Math.round(35 + Math.random() * 25);
+  const dmg = Math.round(battle.playerDmg * (0.85 + Math.random() * 0.3));
   battle.enemyHp -= dmg;
   updateEnemyHpBar();
 
@@ -278,7 +298,8 @@ function attackEnemy() {
 
   if (battle.enemyHp <= 0) {
     clearTimeout(battle.approachTimer);
-    clearTimeout(battle.attackTimer);
+    clearTimeout(battle.enemyAttackTimer);
+    clearTimeout(battle.playerAttackTimer);
     const reward = battle.currentReward;
     goldEl.textContent = getGold() + reward;
     const rp = document.createElement('span');
@@ -293,15 +314,13 @@ function attackEnemy() {
   }
 }
 
-enemySide.addEventListener('click', attackEnemy);
+// Der Kampf laeuft komplett automatisch (kein Antippen des Gegners noetig).
+updatePlayerHpBar();
+spawnEnemy();
 
+// Wischen zwischen Ausruestungs-Seite (1) und Kampf-Seite (2). Ein Klick
+// auf den Abenteuer-Banner scrollt als Komfort-Abkuerzung ebenfalls dorthin.
+const pagesTrack = document.getElementById('pagesTrack');
 document.getElementById('adventureBanner').addEventListener('click', () => {
-  battleScreen.classList.add('open');
-  updatePlayerHpBar();
-  spawnEnemy();
-});
-document.getElementById('battleBack').addEventListener('click', () => {
-  battleScreen.classList.remove('open');
-  clearTimeout(battle.approachTimer);
-  clearTimeout(battle.attackTimer);
+  pagesTrack.scrollTo({ left: DESIGN_WIDTH, behavior: 'smooth' });
 });

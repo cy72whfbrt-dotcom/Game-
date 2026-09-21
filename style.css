@@ -47,10 +47,35 @@ body {
 .game-screen {
   width: 390px;
   height: 838px;
-  background:
-    radial-gradient(ellipse at 50% 25%, #362a1e 0%, #1c150f 55%, #0d0906 100%);
+  background: #0d0906;
   position: relative;
   transform-origin: center center;
+  overflow: hidden;
+}
+
+.pages-track {
+  display: flex;
+  width: 390px;
+  height: 838px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.pages-track::-webkit-scrollbar { display: none; }
+
+.page {
+  flex: 0 0 390px;
+  width: 390px;
+  height: 838px;
+  scroll-snap-align: start;
+  position: relative;
+  overflow: hidden;
+}
+
+.page-home {
+  background:
+    radial-gradient(ellipse at 50% 25%, #362a1e 0%, #1c150f 55%, #0d0906 100%);
   display: flex;
   flex-direction: column;
   padding-bottom: 4px;
@@ -397,28 +422,21 @@ svg use { color: inherit; }
 .forge-result-rarity { font-weight: 900; font-size: 13.5px; }
 .forge-result-stat { font-size: 11.5px; color: #c9bb9a; }
 
-/* Abenteuer / Battle screen */
-.battle-screen {
-  position: absolute;
-  inset: 0;
+/* Abenteuer / Battle - Seite 2, Spieler steht mittig, Gegner laufen von rechts automatisch heran */
+.page-battle {
   background: radial-gradient(ellipse at 50% 20%, #3a2e20 0%, #1a130d 60%, #0a0705 100%);
-  display: none;
+  display: flex;
   flex-direction: column;
-  z-index: 60;
 }
-.battle-screen.open { display: flex; }
 
 .battle-top {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; align-items: center; justify-content: center;
   padding: 12px 14px;
   flex: 0 0 auto;
 }
-.battle-back {
-  color: #efe3c8; font-weight: 700; font-size: 14px; cursor: pointer;
-}
 .battle-wave {
   font-family: 'Baloo 2', sans-serif;
-  font-weight: 700; font-size: 15px; color: var(--gold);
+  font-weight: 700; font-size: 16px; color: var(--gold);
 }
 
 .battle-stage {
@@ -436,22 +454,22 @@ svg use { color: inherit; }
 
 .player-side {
   position: absolute;
-  left: 6%; bottom: 8%;
+  left: 50%; bottom: 10%;
+  transform: translateX(-50%);
   display: flex; flex-direction: column; align-items: center;
   z-index: 3;
 }
-.battle-player-sprite { width: 78px; height: auto; }
+.battle-player-sprite { width: 82px; height: auto; }
 
 .enemy-side {
   position: absolute;
   right: -40%;
-  bottom: 10%;
+  bottom: 12%;
   display: flex; flex-direction: column; align-items: center;
   z-index: 2;
   transition: right 2.2s linear;
-  cursor: pointer;
 }
-.enemy-side.approached { right: 42%; }
+.enemy-side.approached { right: 22%; }
 .enemy-side.hit .enemy-sprite { animation: enemyHit 0.15s; }
 .enemy-side.dying { transition: opacity 0.4s, transform 0.4s; opacity: 0; transform: scale(0.4) translateY(20px); }
 @keyframes enemyHit {
@@ -521,9 +539,9 @@ svg use { color: inherit; }
   100% { opacity: 0; transform: translate(-50%, -70%) scale(1); }
 }
 
-.battle-hint {
+.swipe-hint {
   text-align: center;
   font-size: 11px; color: #8a7f6a; font-weight: 700;
-  padding: 8px 0 14px;
+  padding: 6px 0 10px;
   flex: 0 0 auto;
 }
