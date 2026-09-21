@@ -1,9 +1,18 @@
-document.querySelectorAll('.nav-item[data-nav]').forEach((el) => {
-  el.addEventListener('click', () => {
-    console.log('Navigate to:', el.dataset.nav);
-  });
-});
+const DESIGN_WIDTH = 390;
+const DESIGN_HEIGHT = 838;
+const gameScreen = document.getElementById('gameScreen');
 
-document.querySelector('.anvil-center')?.addEventListener('click', () => {
+function fitToScreen() {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const scale = Math.min(vw / DESIGN_WIDTH, vh / DESIGN_HEIGHT);
+  gameScreen.style.transform = `scale(${scale})`;
+}
+
+window.addEventListener('resize', fitToScreen);
+window.addEventListener('orientationchange', fitToScreen);
+fitToScreen();
+
+document.querySelector('.forge-hero')?.addEventListener('click', () => {
   console.log('Navigate to: forge');
 });

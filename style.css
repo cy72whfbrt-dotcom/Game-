@@ -16,93 +16,45 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 body {
   background: #000;
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   font-family: 'Nunito', sans-serif;
   color: var(--text-cream);
 }
 
+/* Fullscreen mobile stage: fills the whole viewport (incl. safe areas),
+   game-screen is a fixed-design canvas that JS scales to fit exactly,
+   so every icon/label shrinks or grows together and stays tidy/small. */
 .phone-frame {
-  width: 390px;
-  height: 845px;
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100dvh;
   background: #000;
   overflow: hidden;
-  position: relative;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
-  display: flex;
-  flex-direction: column;
-}
-
-.status-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 24px 0;
-  height: 32px;
-  font-weight: 800;
-  font-size: 15px;
-  color: #fff;
-  background: #000;
-  z-index: 20;
-  flex: 0 0 auto;
-  box-sizing: border-box;
-}
-
-.picker-nav {
-  height: 51px;
-  flex: 0 0 auto;
-  background: #000;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 18px;
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+  justify-content: center;
 }
-.picker-back {
-  color: #e8e8ea;
-  font-size: 16px;
-  font-weight: 400;
-}
-.picker-done {
-  color: #3b8af2;
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.card-wrap {
-  flex: 0 0 auto;
-  height: 700px;
-  width: 326px;
-  margin: 8px auto 0;
-  border-radius: 26px;
-  overflow: hidden;
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.03);
-  position: relative;
-}
-.moon { font-size: 11px; margin-left: 2px; }
-.status-icons { display: flex; gap: 6px; align-items: center; }
-.si-signal, .si-wifi { width: 18px; height: 13px; }
-.battery { display: flex; align-items: center; gap: 3px; }
-.battery-num { font-size: 13px; font-weight: 700; }
-.battery-shell { width: 22px; height: 11px; border: 1px solid #fff; border-radius: 3px; display: block; padding: 1px; }
-.battery-fill { display: block; height: 100%; width: 40%; background: #fff; border-radius: 1px; }
 
 .game-screen {
   width: 390px;
   height: 838px;
   background:
     radial-gradient(ellipse at 50% 25%, #362a1e 0%, #1c150f 55%, #0d0906 100%);
-  position: absolute;
-  top: 0; left: 0;
-  transform: scale(0.8359);
-  transform-origin: top left;
+  position: relative;
+  transform-origin: center center;
   display: flex;
   flex-direction: column;
   padding-bottom: 4px;
+  flex-shrink: 0;
 }
 
 /* Top bar */

@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Idle RPG - Home</title>
 <link rel="stylesheet" href="style.css">
 </head>
@@ -13,8 +13,7 @@
   <img src="icons.svg" style="display:none" id="preload">
 
   <div class="phone-frame">
-    <div class="card-wrap">
-    <div class="game-screen">
+    <div class="game-screen" id="gameScreen">
 
       <!-- Top bar -->
       <div class="top-bar">
@@ -188,9 +187,8 @@
         <div class="forge-glow"></div>
       </div>
 
+      <div class="home-indicator"></div>
     </div>
-    </div>
-    <div class="home-indicator"></div>
   </div>
 
 <script src="script.js"></script>
