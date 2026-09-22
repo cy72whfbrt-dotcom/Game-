@@ -194,18 +194,13 @@
             return off;
         }
 
-        // Every island is just plain green land - only the tower built on
-        // top of it (drawn smaller, centered) shows who controls it.
+        // The big island underneath is just plain green land, drawn once per
+        // landmass; only the tower built on top of it shows who controls it.
         const ISLAND_GROUND_COLOR = '#4f9a3a';
         const TOWER_SCALE = 0.62;
 
         function drawIslandIcon(island, towerColor) {
             const size = island.radius * 2;
-            const x = island.x - island.radius;
-            const y = island.y - island.radius;
-            ctx.fillStyle = ISLAND_GROUND_COLOR;
-            ctx.fillRect(x, y, size, size);
-
             const towerSize = size * TOWER_SCALE;
             const towerX = island.x - towerSize / 2;
             const towerY = island.y - towerSize / 2;
@@ -234,9 +229,13 @@
         // territory reads clearly from far above the map.
         const TERRITORY_VIEW_ZOOM = 0.15;
 
-        // Layout: one center island plus 4 outer islands (N/E/S/W)
-        const ISLAND_SPACING = 950;
-        const ISLAND_RADIUS = 220;
+        // Layout: 5 big islands (1 center + N/E/S/W), each one covered in
+        // several towers - the tower is the actual capturable unit.
+        const LANDMASS_SPACING = 3400;
+        const LANDMASS_RADIUS = 1400;
+        const TOWER_GRID_SIZE = 3; // 3x3 towers per island
+        const TOWER_SPACING = 780;
+        const ISLAND_RADIUS = 220; // tower footprint
         const NEUTRAL_DEFENSE_MAX = 100;
         const NEUTRAL_DEFENSE_MIN = 20;
         const NEUTRAL_TROOPS_MAX = 100;
@@ -266,30 +265,41 @@
             return level * UPGRADE_BASE_COST;
         }
 
-        // Build the 5 islands: one in the middle, one each to the
-        // north/east/south/west
+        // The 5 big islands themselves - just background land, drawn as one
+        // large green square each, no ownership state of their own.
+        const landmasses = [
+            { id: 0, x: 0, y: 0 },
+            { id: 1, x: 0, y: -LANDMASS_SPACING },
+            { id: 2, x: LANDMASS_SPACING, y: 0 },
+            { id: 3, x: 0, y: LANDMASS_SPACING },
+            { id: 4, x: -LANDMASS_SPACING, y: 0 }
+        ];
+
+        // Every landmass is covered in a grid of towers - the tower, not the
+        // island, is the capturable unit with its own troops/level/defense.
         const islands = [];
         let playerIslandId = null;
 
-        const layout = [
-            { x: 0, y: 0 },
-            { x: 0, y: -ISLAND_SPACING },
-            { x: ISLAND_SPACING, y: 0 },
-            { x: 0, y: ISLAND_SPACING },
-            { x: -ISLAND_SPACING, y: 0 }
-        ];
+        const towerHalf = Math.floor(TOWER_GRID_SIZE / 2);
         let id = 0;
-        for (const pos of layout) {
-            islands.push({
-                id: id++,
-                x: pos.x,
-                y: pos.y,
-                radius: ISLAND_RADIUS,
-                // Two separate stats for a neutral (unowned) island:
-                // troops garrisoned there, and a defense bonus on top.
-                neutralTroops: NEUTRAL_TROOPS_MIN + Math.floor(rand() * (NEUTRAL_TROOPS_MAX - NEUTRAL_TROOPS_MIN + 1)),
-                neutralDefense: NEUTRAL_DEFENSE_MIN + Math.floor(rand() * (NEUTRAL_DEFENSE_MAX - NEUTRAL_DEFENSE_MIN + 1))
-            });
+        for (const lm of landmasses) {
+            for (let row = -towerHalf; row <= towerHalf; row++) {
+                for (let col = -towerHalf; col <= towerHalf; col++) {
+                    const jitterX = (rand() - 0.5) * TOWER_SPACING * 0.25;
+                    const jitterY = (rand() - 0.5) * TOWER_SPACING * 0.25;
+                    islands.push({
+                        id: id++,
+                        landmassId: lm.id,
+                        x: lm.x + col * TOWER_SPACING + jitterX,
+                        y: lm.y + row * TOWER_SPACING + jitterY,
+                        radius: ISLAND_RADIUS,
+                        // Two separate stats for a neutral (unowned) tower:
+                        // troops garrisoned there, and a defense bonus on top.
+                        neutralTroops: NEUTRAL_TROOPS_MIN + Math.floor(rand() * (NEUTRAL_TROOPS_MAX - NEUTRAL_TROOPS_MIN + 1)),
+                        neutralDefense: NEUTRAL_DEFENSE_MIN + Math.floor(rand() * (NEUTRAL_DEFENSE_MAX - NEUTRAL_DEFENSE_MIN + 1))
+                    });
+                }
+            }
         }
         const islandById = {};
         for (const island of islands) islandById[island.id] = island;
@@ -502,6 +512,15 @@
             const viewBottom = viewTop + canvas.height / mapState.zoom + ISLAND_RADIUS * 2;
 
             const blinkAlpha = 0.35 + 0.65 * Math.abs(Math.sin(Date.now() / 280));
+
+            ctx.fillStyle = ISLAND_GROUND_COLOR;
+            for (const lm of landmasses) {
+                if (lm.x + LANDMASS_RADIUS < viewLeft || lm.x - LANDMASS_RADIUS > viewRight ||
+                    lm.y + LANDMASS_RADIUS < viewTop || lm.y - LANDMASS_RADIUS > viewBottom) {
+                    continue;
+                }
+                ctx.fillRect(lm.x - LANDMASS_RADIUS, lm.y - LANDMASS_RADIUS, LANDMASS_RADIUS * 2, LANDMASS_RADIUS * 2);
+            }
 
             drawTerritoryBorder();
 
