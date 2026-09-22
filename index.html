@@ -334,10 +334,6 @@
         // on a connected island will move or attack with.
         let selectedSourceId = null;
 
-        // Brief coloured flashes drawn over a lane (red = attack, green = reinforce)
-        let laneFlashes = [];
-        const FLASH_DURATION = 700;
-
         function drawMap() {
             // Ease current zoom toward target zoom
             mapState.zoom += (mapState.targetZoom - mapState.zoom) * 0.18;
@@ -374,83 +370,6 @@
             const viewTop = -mapState.offsetY / mapState.zoom - ISLAND_RADIUS;
             const viewRight = viewLeft + canvas.width / mapState.zoom + ISLAND_RADIUS * 2;
             const viewBottom = viewTop + canvas.height / mapState.zoom + ISLAND_RADIUS * 2;
-
-            function inView(a, b) {
-                return !(Math.max(a.x, b.x) < viewLeft || Math.min(a.x, b.x) > viewRight ||
-                    Math.max(a.y, b.y) < viewTop || Math.min(a.y, b.y) > viewBottom);
-            }
-
-            function laneControlPoint(a, b) {
-                const midX = (a.x + b.x) / 2;
-                const midY = (a.y + b.y) / 2;
-                const dx = b.x - a.x, dy = b.y - a.y;
-                const len = Math.hypot(dx, dy) || 1;
-                const bow = len * 0.2;
-                return { x: midX - (dy / len) * bow, y: midY + (dx / len) * bow };
-            }
-
-            // Prune expired flashes, keep the rest for lookup while drawing lanes
-            const now = Date.now();
-            laneFlashes = laneFlashes.filter(f => now - f.start < FLASH_DURATION);
-
-            function quadPoint(a, cp, b, t) {
-                const mt = 1 - t;
-                return {
-                    x: mt * mt * a.x + 2 * mt * t * cp.x + t * t * b.x,
-                    y: mt * mt * a.y + 2 * mt * t * cp.y + t * t * b.y
-                };
-            }
-
-            // Draws a thin curved "Bogen": a light base line plus small
-            // stripes sticking up off of it at intervals, like rungs on a
-            // suspension bridge - not a thick 3D tube, just a bow with ticks.
-            function drawBow(a, b, color, alpha) {
-                const cp = laneControlPoint(a, b);
-                const dx = b.x - a.x, dy = b.y - a.y;
-                const len = Math.hypot(dx, dy) || 1;
-                const nx = -dy / len, ny = dx / len; // outward normal, same side as the bow
-
-                ctx.globalAlpha = alpha;
-                ctx.strokeStyle = color;
-                ctx.lineWidth = 2 / mapState.zoom;
-                ctx.lineCap = 'round';
-
-                ctx.beginPath();
-                ctx.moveTo(a.x, a.y);
-                ctx.quadraticCurveTo(cp.x, cp.y, b.x, b.y);
-                ctx.stroke();
-
-                const tickCount = Math.max(4, Math.round(len / 90));
-                const tickLen = 22 / mapState.zoom;
-                for (let i = 1; i < tickCount; i++) {
-                    const t = i / tickCount;
-                    const pt = quadPoint(a, cp, b, t);
-                    ctx.beginPath();
-                    ctx.moveTo(pt.x, pt.y);
-                    ctx.lineTo(pt.x + nx * tickLen, pt.y + ny * tickLen);
-                    ctx.stroke();
-                }
-            }
-
-            // Only the lanes touching an island the player owns are shown -
-            // connections between two neutral islands are pointless clutter
-            // since only owned islands can send troops.
-            for (const lane of lanes) {
-                if (!ownedIslands.has(lane.aId) && !ownedIslands.has(lane.bId)) continue;
-                const a = islandById[lane.aId], b = islandById[lane.bId];
-                if (!inView(a, b)) continue;
-
-                const flash = laneFlashes.find(f =>
-                    (f.aId === lane.aId && f.bId === lane.bId) || (f.aId === lane.bId && f.bId === lane.aId));
-
-                if (flash) {
-                    const t = 1 - (now - flash.start) / FLASH_DURATION;
-                    drawBow(a, b, flash.color, 0.4 + 0.6 * t);
-                } else {
-                    drawBow(a, b, '#dff0ff', 0.7);
-                }
-            }
-            ctx.globalAlpha = 1;
 
             for (const island of islands) {
                 if (island.x + island.radius < viewLeft || island.x - island.radius > viewRight ||
@@ -575,10 +494,6 @@
             return neighborsOf[aId] && neighborsOf[aId].includes(bId);
         }
 
-        function flashLane(aId, bId, color) {
-            laneFlashes.push({ aId, bId, color, start: Date.now() });
-        }
-
         function handleTap(screenX, screenY) {
             const world = screenToWorld(screenX, screenY);
             const island = findIslandAt(world.x, world.y);
@@ -593,7 +508,6 @@
                         // Reinforce: merge the source garrison into the target
                         islandTroops[island.id] = (islandTroops[island.id] || 0) + sourceTroops;
                         islandTroops[selectedSourceId] = 0;
-                        flashLane(selectedSourceId, island.id, '#4fd67a');
                     } else if (sourceTroops > 0) {
                         // Attack: win if the sent troops beat the defense, losing
                         // troops equal to the defense either way (or the whole
@@ -606,7 +520,6 @@
                         } else {
                             islandTroops[selectedSourceId] = 0;
                         }
-                        flashLane(selectedSourceId, island.id, '#e64545');
                     }
 
                     updateHud();
