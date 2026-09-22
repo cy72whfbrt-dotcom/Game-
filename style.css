@@ -765,89 +765,44 @@ svg use { color: inherit; }
   position: absolute;
   left: 7%; bottom: 10%;
   display: flex; flex-direction: column; align-items: center;
+  gap: 6px;
   z-index: 3;
 }
 
-/* Plattform: stilisierter Boden-Ring unter der Spielfigur statt eines
-   verschwommenen Fleckens - macht sichtbar, dass der Spieler HIER steht. */
-.player-platform {
-  position: absolute;
-  left: 50%; bottom: 2px;
-  width: 152px; height: 46px;
-  transform: translateX(-50%);
-  z-index: 1;
-  pointer-events: none;
+.player-figure {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center;
 }
-.platform-glow {
-  position: absolute; inset: 0;
-  border-radius: 50%;
-  background: radial-gradient(ellipse at center, rgba(125,255,188,0.4) 0%, rgba(125,255,188,0.14) 45%, transparent 75%);
-}
-.platform-ring {
-  position: absolute; left: 50%; top: 50%;
-  width: 100%; height: 100%;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  border: 1.5px solid rgba(148,255,199,0.55);
-  box-shadow: 0 0 14px rgba(125,255,188,0.3), inset 0 0 14px rgba(125,255,188,0.12);
-}
-.platform-ring-inner {
-  position: absolute; left: 50%; top: 50%;
-  width: 66%; height: 66%;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  border: 1px dashed rgba(255,255,255,0.4);
-  animation: platformSpin 14s linear infinite;
-}
-@keyframes platformSpin { to { transform: translate(-50%, -50%) rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .platform-ring-inner { animation: none; } }
 
-/* Begleiter-Plaetze: flacher Bogen auf gleicher Bodenlinie wie die Plattform,
-   jeder Kreis mit eigenem kleinen Schlagschatten - stehen sichtbar auf dem
-   Boden statt lose um die Figur zu schweben. */
+.battle-player-sprite { width: 62px; height: auto; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.35)); }
+.fighter-shadow {
+  width: 50px; height: 12px;
+  margin-top: -8px;
+  background: radial-gradient(ellipse at center, rgba(0,0,0,0.45), transparent 75%);
+  border-radius: 50%;
+}
+
+/* Begleiter-Plaetze: schlichter Halbkreis vorm Spieler (Blickrichtung nach
+   rechts, zur Front hin geoeffnet), noch gesperrt - dezent statt aufwendig. */
 .companion-ring {
   position: absolute;
-  left: 50%; bottom: 2px;
+  left: 100%; top: 42%;
   width: 0; height: 0;
   z-index: 1;
 }
 .companion-slot {
   position: absolute;
-  left: calc(50% + var(--ring-x));
-  bottom: var(--ring-y);
-  width: 24px; height: 24px;
-  margin-left: -12px;
+  left: var(--ring-x);
+  top: calc(50% + var(--ring-y));
+  width: 20px; height: 20px;
+  margin: -10px 0 0 -10px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.1);
-  border: 1.5px dashed rgba(255,255,255,0.42);
+  background: rgba(255,255,255,0.08);
+  border: 1.5px dashed rgba(255,255,255,0.38);
   display: flex; align-items: center; justify-content: center;
-  backdrop-filter: blur(2px);
   cursor: pointer;
-  animation: companionPulse 3.6s ease-in-out infinite;
 }
-.companion-slot::after {
-  content: '';
-  position: absolute;
-  left: 50%; bottom: -6px;
-  width: 20px; height: 6px;
-  transform: translateX(-50%);
-  background: radial-gradient(ellipse at center, rgba(0,0,0,0.4), transparent 75%);
-  border-radius: 50%;
-  z-index: -1;
-}
-.companion-slot:nth-child(2) { animation-delay: -0.5s; }
-.companion-slot:nth-child(3) { animation-delay: -1.4s; }
-.companion-slot:nth-child(4) { animation-delay: -2.3s; }
-.companion-slot:nth-child(5) { animation-delay: -1.0s; }
-.companion-slot:nth-child(6) { animation-delay: -2.9s; }
-.companion-lock { width: 10px; height: 10px; color: rgba(255,255,255,0.5); opacity: 0.7; }
-@keyframes companionPulse {
-  0%, 100% { opacity: 0.55; transform: translateY(0); }
-  50% { opacity: 0.95; transform: translateY(-2px); }
-}
-@media (prefers-reduced-motion: reduce) { .companion-slot { animation: none; } }
-
-.battle-player-sprite { width: 62px; height: auto; margin-top: 22px; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.35)); position: relative; z-index: 2; }
+.companion-lock { width: 9px; height: 9px; color: rgba(255,255,255,0.55); opacity: 0.75; }
 
 .fighter-card {
   position: relative;
