@@ -65,6 +65,7 @@ const state = {
   equipment: {}, // slotId -> { rarity, statValue } | nicht gesetzt = leer
   lastCrafted: null, // { slot, rarity, statValue }
   pets: [], // { rarity } - aus dem Boss-Kampf, besetzen den Begleiter-Halbkreis
+  campaignLevel: 1, // hoechstes freigeschaltetes Boss-Kampf-Level
 };
 
 function formatStatValue(statKey, value) {
@@ -1062,9 +1063,12 @@ document.querySelectorAll('#companionRing .companion-slot').forEach((slot, i) =>
   });
 });
 
-/* ---------- Boss-Kampf: Kampagnen-Modus ----------
-   Eigenstaendiges Modal mit einem einzelnen, starken Gegner - komplett
-   unabhaengig von der Welle. Sieg belohnt ein Pet in einer der
+/* ---------- Boss-Kampf: Kampagne mit Level-Pfad ----------
+   Eigenes Modal, komplett unabhaengig von der Welle: ein Level-Pfad
+   (Level 1, 2, 3, ...), jedes Level ein einzelner, starker Gegner. Level
+   werden nacheinander freigeschaltet - ein Sieg auf dem aktuellen Level
+   schaltet das naechste frei; bereits geschaffte Level bleiben zum
+   Wiederholen antippbar. Sieg belohnt ein Pet in einer der
    Schmiede-Raritaeten (Grau bis Himmlisch), das anschliessend einen der
    5 Begleiter-Plaetze im Kampf besetzt und dort passiv mithilft
    (attackAllEnemiesWithPetHelpers, siehe oben). Nutzt die aktuellen
@@ -1074,15 +1078,21 @@ document.querySelectorAll('#companionRing .companion-slot').forEach((slot, i) =>
 const BOSS_FIGHT_NAMES = ['Schattendrache', 'Abgrundfürst', 'Klingentitan', 'Aschekoloss'];
 
 const bossFight = {
-  active: false, // Modal gerade offen -> Timer laufen
-  bossesWon: 0,
+  active: false, // Boss-Kampf-Ansicht gerade offen -> Timer laufen
   bossHp: 0, bossMaxHp: 0, bossDmg: 0, bossName: '???',
   playerHp: 0, playerMaxHp: 0, playerShield: 0, playerMaxShield: 0,
   playerAttackTimer: null, bossAttackTimer: null, introTimer: null,
   defeated: false, victorious: false,
 };
 
+// Welches Level gerade gespielt wird - kann ein schon geschafftes Level
+// sein (Wiederholung) oder das naechste, noch gesperrte Level.
+let activeCampaignLevel = 1;
+
 const bossModal = document.getElementById('bossModal');
+const bossModalTitle = document.getElementById('bossModalTitle');
+const campaignPathEl = document.getElementById('campaignPath');
+const bossFightView = document.getElementById('bossFightView');
 const bossFightName = document.getElementById('bossFightName');
 const bossFightHpFill = document.getElementById('bossFightHpFill');
 const bossFightHpText = document.getElementById('bossFightHpText');
@@ -1117,15 +1127,45 @@ function updateBossFightHpBar() {
   bossFightHpText.textContent = `${Math.max(0, Math.round(bossFight.bossHp))} / ${Math.round(bossFight.bossMaxHp)}`;
 }
 
-// Boss-Werte wachsen leicht mit jedem Sieg (bossesWon), damit der
-// Kampagnen-Modus auch nach mehreren Durchlaeufen noch fordert.
-function rollBossFightStats() {
-  const hpMult = 15 + Math.random() * 5 + bossFight.bossesWon * 1.5;
-  const dmgMult = 5 + Math.random() * 3 + bossFight.bossesWon * 0.6;
+// Level-Pfad: zeigt immer ein paar gesperrte Level ueber dem aktuellen an,
+// damit sichtbar ist, dass es weitergeht. Geschaffte Level (gruen) und das
+// aktuelle Level (rot, pulsierend) sind antippbar, gesperrte Level nicht.
+function renderCampaignPath() {
+  const totalToShow = state.campaignLevel + 4;
+  let html = '';
+  for (let lvl = 1; lvl <= totalToShow; lvl++) {
+    const cls = lvl < state.campaignLevel ? 'done' : lvl === state.campaignLevel ? 'current' : 'locked';
+    const inner = cls === 'done' ? '&#10003;' : cls === 'locked' ? '&#128274;' : String(lvl);
+    html += `
+      <div class="campaign-node ${cls}" data-level="${lvl}">
+        <div class="campaign-node-circle">${inner}</div>
+        <span class="campaign-node-label">Level ${lvl}</span>
+      </div>`;
+  }
+  campaignPathEl.innerHTML = html;
+  campaignPathEl.querySelectorAll('.campaign-node.current, .campaign-node.done').forEach(node => {
+    node.addEventListener('click', () => startCampaignLevel(parseInt(node.dataset.level, 10)));
+  });
+}
+
+// Boss-Werte wachsen mit dem Level, damit die Kampagne auch nach mehreren
+// Durchlaeufen noch fordert.
+function rollBossFightStats(level) {
+  const hpMult = 15 + Math.random() * 5 + (level - 1) * 1.5;
+  const dmgMult = 5 + Math.random() * 3 + (level - 1) * 0.6;
   return {
     bossMaxHp: Math.max(300, Math.round(battle.playerMaxHp * 0.45 * hpMult)),
     bossDmg: Math.max(15, Math.round(battle.playerDmg * 0.3 * dmgMult)),
   };
+}
+
+function startCampaignLevel(level) {
+  activeCampaignLevel = level;
+  bossModalTitle.textContent = 'Level ' + level;
+  campaignPathEl.classList.add('hidden');
+  bossFightView.classList.add('open');
+  bossFight.active = true;
+  spawnBossFight();
 }
 
 function spawnBossFight() {
@@ -1144,7 +1184,7 @@ function spawnBossFight() {
   updateBossFightPlayerHpBar();
   updateBossFightShieldBar();
 
-  const { bossMaxHp, bossDmg } = rollBossFightStats();
+  const { bossMaxHp, bossDmg } = rollBossFightStats(activeCampaignLevel);
   bossFight.bossMaxHp = bossMaxHp;
   bossFight.bossHp = bossMaxHp;
   bossFight.bossDmg = bossDmg;
@@ -1200,7 +1240,7 @@ function dealDamageToBossFightPlayer(rawAmount) {
 let pendingPetRarity = null;
 
 function showBossFightVictory() {
-  pendingPetRarity = rollRarity(Math.max(state.anvilLevel, 1 + bossFight.bossesWon));
+  pendingPetRarity = rollRarity(Math.max(state.anvilLevel, activeCampaignLevel));
   bossPetSwatch.style.background = pendingPetRarity.color;
   bossPetName.textContent = pendingPetRarity.name + '-Pet';
   bossFightVictoryOverlay.classList.add('open');
@@ -1215,28 +1255,39 @@ function attackBossFight() {
     bossFight.bossHp = 0;
     updateBossFightHpBar();
     bossFight.victorious = true;
-    bossFight.bossesWon += 1;
     clearTimeout(bossFight.bossAttackTimer);
     clearTimeout(bossFight.playerAttackTimer);
     setTimeout(showBossFightVictory, 350);
   }
 }
 
+// Oeffnet die Kampagne immer auf dem Level-Pfad, nie direkt im Kampf.
 function openBossFight() {
   bossModal.classList.add('open');
-  bossFight.active = true;
-  spawnBossFight();
+  renderCampaignPath();
 }
+
+// Verlaesst den Boss-Kampf komplett (X / Klick auf Hintergrund) - immer
+// zurueck zum Pfad, egal ob gerade ein Kampf laeuft.
 function closeBossFight() {
   bossModal.classList.remove('open');
+  pauseBossFightView();
+}
+
+// Nur den Kampf verlassen, zurueck zum Level-Pfad (Modal bleibt offen).
+function pauseBossFightView() {
   bossFight.active = false;
   clearTimeout(bossFight.playerAttackTimer);
   clearTimeout(bossFight.bossAttackTimer);
   clearTimeout(bossFight.introTimer);
+  bossFightView.classList.remove('open');
+  campaignPathEl.classList.remove('hidden');
+  bossModalTitle.textContent = 'Kampagne';
 }
 
 document.getElementById('bossEntryBtn').addEventListener('click', openBossFight);
 document.getElementById('bossModalClose').addEventListener('click', closeBossFight);
+document.getElementById('bossFightBackBtn').addEventListener('click', pauseBossFightView);
 bossModal.addEventListener('click', (e) => { if (e.target === bossModal) closeBossFight(); });
 
 document.getElementById('bossFightRetryBtn').addEventListener('click', () => {
@@ -1252,6 +1303,9 @@ document.getElementById('bossFightRetryBtn').addEventListener('click', () => {
   schedulePlayerAttackBossFight();
 });
 
+// Pet einsammeln, Level als geschafft vermerken (nur wenn es gerade das
+// aktuelle Frontier-Level war) und zurueck zum Pfad - naechstes Level ist
+// dann sichtbar freigeschaltet.
 document.getElementById('bossFightCollectBtn').addEventListener('click', () => {
   if (pendingPetRarity) {
     state.pets.push({ rarity: pendingPetRarity });
@@ -1259,8 +1313,12 @@ document.getElementById('bossFightCollectBtn').addEventListener('click', () => {
     if (battle.active) schedulePetHelpersAttack();
     pendingPetRarity = null;
   }
+  if (activeCampaignLevel === state.campaignLevel) {
+    state.campaignLevel += 1;
+  }
   bossFightVictoryOverlay.classList.remove('open');
-  spawnBossFight();
+  renderCampaignPath();
+  pauseBossFightView();
 });
 
 // Start: keine Ausruestung, alle Werte auf 0 - erst Schmieden + Ausruesten baut die Werte auf.

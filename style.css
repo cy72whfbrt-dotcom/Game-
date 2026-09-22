@@ -676,9 +676,76 @@ svg use { color: inherit; }
 .slot-enhance-btn.disabled { opacity: 0.45; }
 .slot-enhance-btn.insufficient { animation: upgradeShake 0.35s; }
 
-/* Boss-Kampf-Modal: eigener Kampagnen-Modus mit einem einzelnen starken
-   Gegner, Belohnung ist ein Pet statt Ausruestung. */
+/* Boss-Kampf-Modal: eigene Kampagne mit Level-Pfad, Belohnung ist ein Pet
+   statt Ausruestung. */
 .boss-modal-card { max-width: 340px; }
+
+/* Level-Pfad: schlaengelt sich von unten (Level 1) nach oben, jedes Level
+   ein eigener Boss-Kampf. Erledigte/aktuelle Level sind antippbar. */
+.campaign-path {
+  position: relative;
+  display: flex; flex-direction: column-reverse; align-items: center;
+  gap: 22px;
+  padding: 14px 10px 6px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.campaign-path.hidden { display: none; }
+.campaign-path::before {
+  content: '';
+  position: absolute;
+  left: 50%; top: 6px; bottom: 6px;
+  width: 3px;
+  background: repeating-linear-gradient(180deg, rgba(109,93,251,0.28) 0 6px, transparent 6px 12px);
+  transform: translateX(-50%);
+  z-index: 0;
+}
+.campaign-node {
+  position: relative;
+  z-index: 1;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.campaign-node:nth-child(3n+1) { transform: translateX(-52px); }
+.campaign-node:nth-child(3n+3) { transform: translateX(52px); }
+.campaign-node-circle {
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 15px;
+  border: 3px solid #fff;
+  box-shadow: var(--shadow-sm);
+}
+.campaign-node.locked .campaign-node-circle {
+  background: var(--surface-soft); color: var(--ink-faint); border-color: #e4e6f2; cursor: not-allowed;
+  font-size: 15px;
+}
+.campaign-node.done .campaign-node-circle {
+  background: linear-gradient(135deg, #34dc8c, var(--success-dark)); color: #fff; cursor: pointer;
+}
+.campaign-node.current .campaign-node-circle {
+  background: var(--boss-grad); color: #fff; cursor: pointer;
+  box-shadow: 0 0 0 4px rgba(255,59,48,0.22);
+  animation: campaignPulse 1.8s ease-in-out infinite;
+}
+@keyframes campaignPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+@media (prefers-reduced-motion: reduce) { .campaign-node.current .campaign-node-circle { animation: none; } }
+.campaign-node-label { font-size: 9.5px; font-weight: 700; color: var(--ink-soft); }
+
+.boss-fight-view { display: none; }
+.boss-fight-view.open { display: block; }
+.boss-fight-back {
+  display: block;
+  background: none;
+  border: none;
+  padding: 4px 2px 10px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 800; font-size: 12.5px; color: var(--primary);
+  cursor: pointer;
+}
+
 .boss-fight-stage {
   position: relative;
   display: flex; align-items: center; justify-content: space-between;
