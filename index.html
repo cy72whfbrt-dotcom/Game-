@@ -680,8 +680,18 @@
             openIslandPopup(island);
         }
 
+        // Clicks/taps on the popup or HUD must never reach the map - without
+        // this, a button press bubbles up to these document-level listeners
+        // and fires as a map tap at the button's screen position (mousedown
+        // -> mouseup -> click is the real DOM order, so the tap would even
+        // land *before* the button's own click handler ran).
+        function isUiElement(target) {
+            return !!(target && target.closest && (target.closest('#islandPopup') || target.closest('#hud')));
+        }
+
         // Mouse events
         document.addEventListener('mousedown', (e) => {
+            if (isUiElement(e.target)) return;
             mapState.isDragging = true;
             pressMoved = false;
             zoomAnchor = null;
@@ -704,7 +714,7 @@
         });
 
         document.addEventListener('mouseup', (e) => {
-            if (mapState.isDragging && !pressMoved) {
+            if (mapState.isDragging && !pressMoved && !isUiElement(e.target)) {
                 handleTap(e.clientX, e.clientY);
             }
             mapState.isDragging = false;
@@ -730,6 +740,7 @@
         let touchStartZoom = 1;
 
         document.addEventListener('touchstart', (e) => {
+            if (isUiElement(e.target)) return;
             if (e.touches.length === 1) {
                 mapState.isDragging = true;
                 pressMoved = false;
@@ -773,7 +784,7 @@
         }, { passive: false });
 
         document.addEventListener('touchend', (e) => {
-            if (mapState.isDragging && !pressMoved && e.changedTouches.length === 1) {
+            if (mapState.isDragging && !pressMoved && e.changedTouches.length === 1 && !isUiElement(e.target)) {
                 handleTap(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
             }
             mapState.isDragging = false;
