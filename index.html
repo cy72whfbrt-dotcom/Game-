@@ -14,6 +14,7 @@
 
   <div class="phone-frame">
     <div class="game-screen" id="gameScreen">
+    <div class="pages-track" id="pagesTrack">
     <div class="page page-home" id="pageHome">
 
       <!-- Top bar -->
@@ -231,6 +232,18 @@
         </div>
       </div>
 
+      <!-- Kampf-Einstieg: fuehrt zur Welle-Seite -->
+      <div class="battle-entry" id="battleEntry">
+        <div class="battle-entry-icon">
+          <svg class="battle-entry-swords"><use href="icons.svg#sword"/></svg>
+        </div>
+        <div class="battle-entry-text">
+          <span class="battle-entry-title">In den Kampf ziehen</span>
+          <span class="battle-entry-sub">Welle <span id="waveEntryNum">1</span> wartet</span>
+        </div>
+        <span class="battle-entry-chevron">&#8250;</span>
+      </div>
+
       <!-- Bottom forge scene: the anvil/hammer is the dominant centerpiece,
            feature icons are scattered around it, matching the reference. -->
       <div class="forge-scene">
@@ -308,8 +321,139 @@
         <div class="forge-result-card" id="slotInfoContent"></div>
       </div>
 
+      <div class="swipe-hint">Nach rechts wischen für den Kampf &#8250;</div>
     </div>
 
+    <!-- Seite 2: Welle-Kampf. Spieler fest links verankert, Gegner laufen von
+         rechts heran. Um den Spieler ein Ring aus kleinen, noch gesperrten
+         Kreisen - reservierte Plaetze fuer spaetere Pets/Begleiter. -->
+    <div class="page page-battle" id="pageBattle">
+      <div class="wave-banner">
+        <svg class="wave-banner-icon" viewBox="0 0 48 48"><use href="icons.svg#portal"/></svg>
+        <span class="battle-wave">Welle <span id="waveNum">1</span></span>
+        <span class="wave-banner-sub" id="enemiesLeftLabel">1 Gegner</span>
+      </div>
+
+      <div class="battle-stage" id="battleStage">
+        <svg class="battle-bg" viewBox="0 0 320 260" preserveAspectRatio="xMidYMid slice">
+          <defs>
+            <linearGradient id="battleSky" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#332a82"/>
+              <stop offset="55%" stop-color="#1c1650"/>
+              <stop offset="100%" stop-color="#0d0a28"/>
+            </linearGradient>
+            <radialGradient id="glowPink" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#ff5c9d" stop-opacity="0.3"/>
+              <stop offset="100%" stop-color="#ff5c9d" stop-opacity="0"/>
+            </radialGradient>
+            <radialGradient id="glowTeal" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#14c2b8" stop-opacity="0.28"/>
+              <stop offset="100%" stop-color="#14c2b8" stop-opacity="0"/>
+            </radialGradient>
+            <radialGradient id="moonGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#eef1ff" stop-opacity="0.55"/>
+              <stop offset="45%" stop-color="#eef1ff" stop-opacity="0.16"/>
+              <stop offset="100%" stop-color="#eef1ff" stop-opacity="0"/>
+            </radialGradient>
+            <radialGradient id="moonBody" cx="35%" cy="32%" r="70%">
+              <stop offset="0%" stop-color="#ffffff"/>
+              <stop offset="70%" stop-color="#e7eaff"/>
+              <stop offset="100%" stop-color="#c3c9ef"/>
+            </radialGradient>
+            <linearGradient id="mtn0" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#4b3fae" stop-opacity="0.26"/>
+              <stop offset="100%" stop-color="#4b3fae" stop-opacity="0.06"/>
+            </linearGradient>
+            <linearGradient id="mtn1" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#4436a8" stop-opacity="0.5"/>
+              <stop offset="100%" stop-color="#4436a8" stop-opacity="0.15"/>
+            </linearGradient>
+            <linearGradient id="mtn2" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#2a2270" stop-opacity="0.65"/>
+              <stop offset="100%" stop-color="#2a2270" stop-opacity="0.2"/>
+            </linearGradient>
+          </defs>
+          <rect width="320" height="260" fill="url(#battleSky)"/>
+          <circle cx="60" cy="46" r="95" fill="url(#glowPink)"/>
+          <circle cx="266" cy="86" r="80" fill="url(#glowTeal)"/>
+          <circle cx="205" cy="38" r="46" fill="url(#moonGlow)"/>
+          <circle cx="205" cy="38" r="16" fill="url(#moonBody)"/>
+          <circle cx="199" cy="32" r="2.6" fill="#c3c9ef" opacity="0.35"/>
+          <circle cx="210" cy="43" r="1.8" fill="#c3c9ef" opacity="0.3"/>
+          <g fill="#fff">
+            <circle cx="24" cy="26" r="1.2" opacity="0.85"/><circle cx="48" cy="15" r="0.8" opacity="0.5"/>
+            <circle cx="80" cy="32" r="1.1" opacity="0.7"/>
+            <circle cx="104" cy="14" r="1.3" opacity="0.8" class="star-tw" style="animation-delay:-0.8s"/>
+            <circle cx="126" cy="36" r="0.9" opacity="0.6"/>
+            <circle cx="150" cy="10" r="1.4" opacity="0.85" class="star-tw" style="animation-delay:-2.0s"/>
+            <circle cx="172" cy="28" r="1.1" opacity="0.75"/><circle cx="196" cy="16" r="0.9" opacity="0.65"/>
+            <circle cx="70" cy="60" r="1.1" opacity="0.6"/><circle cx="110" cy="80" r="0.8" opacity="0.45"/>
+            <circle cx="150" cy="58" r="1.2" opacity="0.7" class="star-tw" style="animation-delay:-1.4s"/>
+            <circle cx="10" cy="50" r="0.9" opacity="0.4"/><circle cx="300" cy="45" r="1" opacity="0.5"/>
+          </g>
+          <path d="M0 158 L45 132 L95 150 L145 120 L195 144 L245 118 L290 138 L320 126 L320 260 L0 260 Z" fill="url(#mtn0)"/>
+          <path d="M0 170 L50 120 L100 155 L150 105 L200 145 L250 115 L320 150 L320 260 L0 260 Z" fill="url(#mtn1)"/>
+          <path d="M0 205 L70 175 L130 200 L190 165 L260 200 L320 180 L320 260 L0 260 Z" fill="url(#mtn2)"/>
+        </svg>
+        <div class="battle-ground"></div>
+        <div class="battle-vignette"></div>
+
+        <!-- Spieler, fest links verankert. Ring aus gesperrten Begleiter-
+             Plaetzen (Pets etc, spaeteres Feature) sitzt konzentrisch hinter
+             der Spielfigur. -->
+        <div class="player-anchor">
+          <div class="companion-ring" id="companionRing" aria-hidden="true">
+            <div class="companion-slot" style="--ring-x:0px; --ring-y:-50px"><svg class="companion-lock"><use href="icons.svg#question"/></svg></div>
+            <div class="companion-slot" style="--ring-x:43px; --ring-y:-25px"><svg class="companion-lock"><use href="icons.svg#question"/></svg></div>
+            <div class="companion-slot" style="--ring-x:43px; --ring-y:25px"><svg class="companion-lock"><use href="icons.svg#question"/></svg></div>
+            <div class="companion-slot" style="--ring-x:0px; --ring-y:50px"><svg class="companion-lock"><use href="icons.svg#question"/></svg></div>
+            <div class="companion-slot" style="--ring-x:-43px; --ring-y:25px"><svg class="companion-lock"><use href="icons.svg#question"/></svg></div>
+            <div class="companion-slot" style="--ring-x:-43px; --ring-y:-25px"><svg class="companion-lock"><use href="icons.svg#question"/></svg></div>
+          </div>
+
+          <div class="fighter-card player-card">
+            <span class="fighter-name">Du</span>
+            <div class="hp-bar shield-bar" id="playerShieldBar">
+              <div class="hp-fill shield-fill" id="playerShieldFill"></div>
+              <span class="hp-text" id="playerShieldText">0 / 0</span>
+            </div>
+            <div class="hp-bar player-hp-bar">
+              <div class="hp-fill" id="playerHpFill"></div>
+              <span class="hp-text" id="playerHpText">100 / 100</span>
+            </div>
+          </div>
+          <svg viewBox="0 0 120 170" class="char-sprite battle-player-sprite">
+            <ellipse cx="60" cy="150" rx="34" ry="8" fill="#000" opacity="0.35"/>
+            <path d="M60 60c-30 6-46 30-38 58 5 16 4 26 0 34h76c-4-8-5-18 0-34 8-28-8-52-38-58z" fill="#8a5fd6" opacity="0.9"/>
+            <path d="M40 84c8 20 32 20 40 0l-4 40c-10 8-22 8-32 0z" fill="#8a3b2f"/>
+            <circle cx="60" cy="46" r="22" fill="#f0cf9e"/>
+            <path d="M36 30c-2-10 6-18 24-18s26 8 24 18c-4-8-14-12-24-12s-20 4-24 12z" fill="#b7c0c9" stroke="#3a3f45" stroke-width="1.5"/>
+          </svg>
+          <div class="fighter-pedestal"></div>
+        </div>
+
+        <!-- Gegner werden dynamisch erzeugt: es koennen 1-3 pro Welle sein -->
+        <div class="enemy-queue" id="enemyQueue"></div>
+
+        <!-- Niederlage-Screen: pausiert den Kampf, statt einfach weiterzulaufen -->
+        <div class="defeat-overlay" id="defeatOverlay">
+          <div class="defeat-card">
+            <svg class="defeat-skull" viewBox="0 0 48 48">
+              <path d="M24 6C13 6 6 14 6 24c0 6 3 11 7 14v8h6v-6h4v6h2v-6h4v6h6v-8c4-3 7-8 7-14 0-10-7-18-18-18z" fill="#e8e0d0" stroke="#3a3226" stroke-width="2"/>
+              <circle cx="16" cy="23" r="4.5" fill="#1a130c"/>
+              <circle cx="32" cy="23" r="4.5" fill="#1a130c"/>
+              <path d="M20 32l4 4 4-4" fill="none" stroke="#1a130c" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span class="defeat-title">Niederlage</span>
+            <span class="defeat-text">Deine Ausrüstung war zu schwach. Schmiede bessere Teile und rüste sie aus, dann versuch's erneut.</span>
+            <button class="defeat-retry-btn" id="defeatRetryBtn">Erneut versuchen</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="swipe-hint">&#8249; Zurück zur Ausrüstung wischen</div>
+    </div>
+    </div>
 
     <div class="home-indicator"></div>
   </div>

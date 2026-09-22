@@ -226,6 +226,9 @@ function showSlotInfo(slotId) {
       renderSlot(slotId);
       renderStats();
       updateCharacterFx();
+      applyEquipmentToBattle();
+      updatePlayerHpBar();
+      updatePlayerShieldBar();
       slotInfoModal.classList.remove('open');
     });
   }
@@ -273,6 +276,9 @@ function enhanceWingstar() {
   renderSlot('wingstar');
   renderStats();
   updateCharacterFx();
+  applyEquipmentToBattle();
+  updatePlayerHpBar();
+  updatePlayerShieldBar();
   return true;
 }
 
@@ -464,6 +470,9 @@ function renderForgeResult() {
     renderSlot(slot.id);
     renderStats();
     updateCharacterFx();
+    applyEquipmentToBattle();
+    updatePlayerHpBar();
+    updatePlayerShieldBar();
     state.lastCrafted = null;
     forgeModal.classList.remove('open');
   });
@@ -502,6 +511,443 @@ forgeModal.addEventListener('click', (e) => {
   if (e.target === forgeModal) forgeModal.classList.remove('open');
 });
 
+/* ---------- Welle-Kampf - Seite 2 ----------
+   Der Spieler steht fest links, Gegner laufen von rechts heran und
+   stellen sich nebeneinander auf. Eine Welle kann 1-3 (dafuer schwaechere)
+   Gegner haben, die gleichzeitig einlaufen. Sobald ein Gegner angekommen
+   ist, ist er treffbar; der Spieler-Angriff trifft ALLE angekommenen
+   Gegner gleichzeitig (Flaechenschaden), jeder angekommene Gegner greift
+   zusaetzlich selbst im eigenen Takt an. Bei Niederlage pausiert der Kampf
+   mit einem Retry-Screen statt automatisch weiterzulaufen. Der Kampf laeuft
+   ausserdem NUR, waehrend diese Seite tatsaechlich sichtbar ist (per
+   Wisch-Geste erreichbar) - auf der Ausruestungs-Seite pausiert alles. */
+
+const ENEMY_TYPES = [
+  { name: 'Schleim', icon: 'slime' },
+  { name: 'Goblin', icon: 'goblin' },
+  { name: 'Wolf', icon: 'wolf' },
+  { name: 'Ork', icon: 'ork' },
+  { name: 'Spinne', icon: 'spinne' },
+];
+
+const battle = {
+  wave: 1,
+  playerHp: 100,
+  playerMaxHp: 100,
+  playerDmg: 10,
+  playerShield: 0,
+  playerMaxShield: 0,
+  difficulty: 1,
+  enemies: [], // { hp, maxHp, dmg, reward, name, icon, el, hpFillEl, hpTextEl, reached, attackTimer }
+  playerAttackTimer: null,
+  petAttackTimer: null, // Gefaehrte (dragon) - eigener, unabhaengiger Angriffstakt
+  defeated: false,
+  started: false, // erste Welle wurde schon gespawnt
+  active: false,  // Seite gerade sichtbar -> Timer laufen
+};
+
+const battleStage = document.getElementById('battleStage');
+const enemyQueue = document.getElementById('enemyQueue');
+const playerHpFill = document.getElementById('playerHpFill');
+const playerHpText = document.getElementById('playerHpText');
+const playerShieldBar = document.getElementById('playerShieldBar');
+const playerShieldFill = document.getElementById('playerShieldFill');
+const playerShieldText = document.getElementById('playerShieldText');
+const waveNumEl = document.getElementById('waveNum');
+const waveEntryNumEl = document.getElementById('waveEntryNum');
+const defeatOverlay = document.getElementById('defeatOverlay');
+
+// Nicht-lineare Wellenstaerke: die Basisschwierigkeit schwankt bei jedem
+// Aufruf zufaellig (mal rauf, mal etwas runter), bleibt aber nie unter
+// einer langsam steigenden Untergrenze - so bleibt der Trend aufwaerts,
+// ohne dass jede Welle staerker als die vorherige sein muss.
+function nextDifficulty(wave) {
+  const swing = 0.75 + Math.random() * 0.7; // 0.75x bis 1.45x
+  const floor = 1 + (wave - 1) * 0.1;
+  battle.difficulty = Math.max(battle.difficulty * swing, floor);
+  return battle.difficulty;
+}
+
+function rollEnemyCount() {
+  const r = Math.random();
+  if (r < 0.5) return 1;
+  if (r < 0.82) return 2;
+  return 3;
+}
+
+function buildWave(wave) {
+  const diff = nextDifficulty(wave);
+  const count = rollEnemyCount();
+  // Abgestimmt auf die Grundwerte HP 100 / Angriff 10: aehnliche
+  // Treffer-Anzahl wie vorher, nur auf die kleinere Basis skaliert.
+  const groupHp = 45 * diff;
+  const groupDmg = 3 * diff;
+  const groupReward = 14 * diff;
+  const enemies = [];
+  for (let i = 0; i < count; i++) {
+    const variance = 0.85 + Math.random() * 0.3;
+    const type = ENEMY_TYPES[Math.floor(Math.random() * ENEMY_TYPES.length)];
+    enemies.push({
+      hp: Math.max(8, Math.round((groupHp / count) * variance)),
+      maxHp: 0, // wird unten gesetzt
+      dmg: Math.max(2, Math.round((groupDmg / count) * variance)),
+      reward: Math.max(3, Math.round((groupReward / count) * variance)),
+      name: type.name,
+      icon: type.icon,
+    });
+  }
+  enemies.forEach(e => { e.maxHp = e.hp; });
+  return enemies;
+}
+
+function updatePlayerHpBar() {
+  const pct = Math.max(0, (battle.playerHp / battle.playerMaxHp) * 100);
+  playerHpFill.style.width = pct + '%';
+  playerHpText.textContent = `${Math.max(0, Math.round(battle.playerHp))} / ${Math.round(battle.playerMaxHp)}`;
+}
+function updatePlayerShieldBar() {
+  if (battle.playerMaxShield <= 0) {
+    playerShieldBar.classList.add('empty-shield');
+    return;
+  }
+  playerShieldBar.classList.remove('empty-shield');
+  const pct = Math.max(0, (battle.playerShield / battle.playerMaxShield) * 100);
+  playerShieldFill.style.width = pct + '%';
+  playerShieldText.textContent = `${Math.max(0, Math.round(battle.playerShield))} / ${Math.round(battle.playerMaxShield)}`;
+}
+function updateEnemyHpBar(enemy) {
+  const pct = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
+  enemy.hpFillEl.style.width = pct + '%';
+  enemy.hpTextEl.textContent = `${Math.max(0, enemy.hp)} / ${enemy.maxHp}`;
+}
+
+function createEnemyEl(enemy, stopPct) {
+  const el = document.createElement('div');
+  el.className = 'enemy-unit';
+  el.style.setProperty('--stop', stopPct + '%');
+  el.innerHTML = `
+    <div class="fighter-card">
+      <span class="enemy-name">${enemy.name}</span>
+      <span class="enemy-stat-line">
+        <span class="enemy-stat-hp">♥ ${enemy.hp}</span>
+        <span class="enemy-stat-atk">⚔ ${enemy.dmg}</span>
+      </span>
+      <div class="hp-bar enemy-hp-bar">
+        <div class="hp-fill"></div>
+        <span class="hp-text">${enemy.hp} / ${enemy.maxHp}</span>
+      </div>
+    </div>
+    <svg class="enemy-sprite" viewBox="0 0 80 90"><use href="icons.svg#${enemy.icon}"/></svg>`;
+  enemyQueue.appendChild(el);
+  enemy.el = el;
+  enemy.hpFillEl = el.querySelector('.hp-fill');
+  enemy.hpTextEl = el.querySelector('.hp-text');
+  return el;
+}
+
+const enemiesLeftLabel = document.getElementById('enemiesLeftLabel');
+function updateEnemiesLeftLabel() {
+  const n = battle.enemies.length;
+  enemiesLeftLabel.textContent = n === 1 ? '1 Gegner' : `${n} Gegner`;
+}
+
+// Alle Gegner einer Welle laufen gleichzeitig ein und stellen sich
+// nebeneinander auf (nicht hintereinander in einer Warteschlange), mit
+// deutlichem Abstand zum links verankerten Spieler.
+const QUEUE_STOPS = [58, 34, 10];
+
+function spawnWave() {
+  clearTimeout(battle.playerAttackTimer);
+  enemyQueue.innerHTML = '';
+  waveNumEl.textContent = battle.wave;
+  if (waveEntryNumEl) waveEntryNumEl.textContent = battle.wave;
+  battle.defeated = false;
+  defeatOverlay.classList.remove('open');
+
+  const list = buildWave(battle.wave);
+  battle.enemies = list;
+  list.forEach((enemy, i) => {
+    createEnemyEl(enemy, QUEUE_STOPS[Math.min(i, QUEUE_STOPS.length - 1)]);
+  });
+  updateEnemiesLeftLabel();
+
+  requestAnimationFrame(() => {
+    list.forEach(e => {
+      void e.el.offsetWidth;
+      e.el.classList.add('approached');
+    });
+  });
+
+  // Sobald ein Gegner ankommt, ist er treffbar und greift selbst an.
+  list.forEach(enemy => {
+    enemy.arriveTimer = setTimeout(() => {
+      if (battle.defeated || !battle.active) return;
+      enemy.reached = true;
+      scheduleEnemyAttack(enemy);
+    }, 1900);
+  });
+
+  if (battle.active) schedulePlayerAttack();
+  if (battle.active) schedulePetAttack();
+}
+
+function scheduleEnemyAttack(enemy) {
+  if (battle.defeated || !battle.active || enemy.hp <= 0 || !battle.enemies.includes(enemy)) return;
+  enemy.attackTimer = setTimeout(() => {
+    if (battle.defeated || !battle.active || enemy.hp <= 0 || !battle.enemies.includes(enemy)) return;
+    dealDamageToPlayer(enemy.dmg);
+    scheduleEnemyAttack(enemy);
+  }, 1100);
+}
+
+function schedulePlayerAttack() {
+  if (battle.defeated || !battle.active) return;
+  battle.playerAttackTimer = setTimeout(() => {
+    if (battle.defeated || !battle.active) return;
+    attackAllEnemies();
+    schedulePlayerAttack();
+  }, 800);
+}
+
+// Gefaehrte (dragon-Slot): aktiver Kampf-Begleiter statt passivem Statwert.
+// Eigener, unabhaengiger Timer/Rhythmus (~2500ms), komplett getrennt vom
+// Spieler-Angriffstakt (schedulePlayerAttack, 800ms). Laeuft NUR wenn ein
+// Gefaehrte ausgeruestet ist UND der Kampf gerade aktiv/sichtbar ist.
+function schedulePetAttack() {
+  clearTimeout(battle.petAttackTimer);
+  battle.petAttackTimer = null;
+  if (battle.defeated || !battle.active || !state.equipment.dragon) return;
+  battle.petAttackTimer = setTimeout(() => {
+    if (battle.defeated || !battle.active || !state.equipment.dragon) return;
+    attackAllEnemiesWithPet();
+    schedulePetAttack();
+  }, 2500);
+}
+
+function showFloatingText(text, x, y, cls) {
+  const el = document.createElement('span');
+  el.className = 'dmg-popup' + (cls ? ' ' + cls : '');
+  el.textContent = text;
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  battleStage.appendChild(el);
+  setTimeout(() => el.remove(), 650);
+}
+
+// Verteidigung ist ein Schild-Pool (blau): er faengt Schaden zuerst ab.
+// Erst wenn der Schild leer ist, geht der restliche Schaden auf die HP (gruen).
+function dealDamageToPlayer(rawAmount) {
+  let remaining = Math.round(rawAmount);
+  const rect = document.querySelector('.player-anchor').getBoundingClientRect();
+  const stageRect = battleStage.getBoundingClientRect();
+
+  if (battle.playerShield > 0) {
+    const absorbed = Math.min(battle.playerShield, remaining);
+    battle.playerShield -= absorbed;
+    remaining -= absorbed;
+    updatePlayerShieldBar();
+    showFloatingText('-' + absorbed, rect.left - stageRect.left + 16, rect.top - stageRect.top - 12, 'shield-dmg');
+  }
+
+  if (remaining > 0) {
+    battle.playerHp = Math.max(0, battle.playerHp - remaining);
+    updatePlayerHpBar();
+    showFloatingText('-' + remaining, rect.left - stageRect.left + 16, rect.top - stageRect.top, 'player-dmg');
+  }
+
+  if (battle.playerHp <= 0 && !battle.defeated) {
+    battle.defeated = true;
+    battle.enemies.forEach(e => clearTimeout(e.attackTimer));
+    clearTimeout(battle.playerAttackTimer);
+    defeatOverlay.classList.add('open');
+  }
+}
+
+function resolveDeadEnemies(dead) {
+  dead.forEach(enemy => {
+    clearTimeout(enemy.attackTimer);
+    clearTimeout(enemy.arriveTimer);
+    const reward = enemy.reward;
+    goldEl.textContent = getGold() + reward;
+    const rp = document.createElement('span');
+    rp.className = 'reward-popup';
+    rp.textContent = `+${reward} Gold`;
+    battleStage.appendChild(rp);
+    setTimeout(() => rp.remove(), 900);
+
+    enemy.el.classList.add('dying');
+    battle.enemies = battle.enemies.filter(e => e !== enemy);
+    updateEnemiesLeftLabel();
+    setTimeout(() => enemy.el.remove(), 400);
+  });
+
+  if (dead.length > 0 && battle.enemies.length === 0) {
+    clearTimeout(battle.playerAttackTimer);
+    clearTimeout(battle.petAttackTimer);
+    battle.wave += 1;
+    // Jede neue Welle: volle HP und Schild.
+    battle.playerHp = battle.playerMaxHp;
+    battle.playerShield = battle.playerMaxShield;
+    updatePlayerHpBar();
+    updatePlayerShieldBar();
+    setTimeout(spawnWave, 700);
+  }
+}
+
+// Trifft ALLE angekommenen Gegner gleichzeitig mit einem Angriff.
+function attackAllEnemies() {
+  if (battle.defeated) return;
+  const targets = battle.enemies.filter(e => e.reached && e.hp > 0);
+  if (targets.length === 0) return;
+
+  const stageRect = battleStage.getBoundingClientRect();
+  const dead = [];
+  targets.forEach(enemy => {
+    const dmg = Math.round(battle.playerDmg * (0.85 + Math.random() * 0.3));
+    enemy.hp -= dmg;
+    updateEnemyHpBar(enemy);
+
+    const rect = enemy.el.getBoundingClientRect();
+    showFloatingText('-' + dmg, rect.left - stageRect.left + 10, rect.top - stageRect.top - 8, '');
+
+    enemy.el.classList.remove('hit');
+    void enemy.el.offsetWidth;
+    enemy.el.classList.add('hit');
+
+    if (enemy.hp <= 0) dead.push(enemy);
+  });
+
+  resolveDeadEnemies(dead);
+}
+
+// Gefaehrte (dragon): eigener Flaechenschaden-Angriff auf ALLE angekommenen
+// Gegner. Schadensformel: playerDmg * (CMB-Statwert / 100). Eigene, visuell
+// unterscheidbare Floating-Number (Drachen-Icon-Praefix + eigene Farbe).
+function attackAllEnemiesWithPet() {
+  if (battle.defeated) return;
+  const item = state.equipment.dragon;
+  if (!item) return;
+  const targets = battle.enemies.filter(e => e.reached && e.hp > 0);
+  if (targets.length === 0) return;
+
+  const dmg = Math.max(1, Math.round(battle.playerDmg * (item.statValue / 100)));
+  const stageRect = battleStage.getBoundingClientRect();
+  const dead = [];
+  targets.forEach(enemy => {
+    enemy.hp -= dmg;
+    updateEnemyHpBar(enemy);
+
+    const rect = enemy.el.getBoundingClientRect();
+    showFloatingText('🐉-' + dmg, rect.left - stageRect.left + 10, rect.top - stageRect.top - 8, 'shield-dmg');
+
+    enemy.el.classList.remove('hit');
+    void enemy.el.offsetWidth;
+    enemy.el.classList.add('hit');
+
+    if (enemy.hp <= 0) dead.push(enemy);
+  });
+
+  resolveDeadEnemies(dead);
+}
+
+document.getElementById('defeatRetryBtn').addEventListener('click', () => {
+  battle.playerHp = battle.playerMaxHp;
+  battle.playerShield = battle.playerMaxShield;
+  updatePlayerHpBar();
+  updatePlayerShieldBar();
+  battle.defeated = false;
+  defeatOverlay.classList.remove('open');
+  battle.enemies.forEach(enemy => {
+    if (enemy.reached) scheduleEnemyAttack(enemy);
+  });
+  schedulePlayerAttack();
+  schedulePetAttack();
+});
+
+// Der angezeigte Gesamtwert (Grundwert + Ausruestung) ist 1:1 das, was im
+// Kampf zaehlt - keine versteckte Umrechnung. Verteidigung ist dabei ein
+// Schild-Pool (blau), der Schaden zuerst abfaengt, bevor die HP (gruen)
+// dran glauben.
+function applyEquipmentToBattle() {
+  const totals = computeStats();
+  battle.playerMaxHp = totals.HP;
+  battle.playerDmg = totals.ATK;
+  battle.playerMaxShield = totals.DEF;
+  if (battle.playerHp > battle.playerMaxHp || battle.playerHp === undefined) {
+    battle.playerHp = battle.playerMaxHp;
+  }
+  if (battle.playerShield === undefined || battle.playerShield > battle.playerMaxShield) {
+    battle.playerShield = battle.playerMaxShield;
+  }
+}
+
+// Der Kampf laeuft komplett automatisch (kein Antippen des Gegners noetig),
+// aber NUR solange die Kampf-Seite tatsaechlich sichtbar/offen ist.
+applyEquipmentToBattle();
+battle.playerHp = battle.playerMaxHp;
+battle.playerShield = battle.playerMaxShield;
+updatePlayerHpBar();
+updatePlayerShieldBar();
+
+function resumeBattle() {
+  if (battle.active) return;
+  battle.active = true;
+  if (!battle.started) {
+    battle.started = true;
+    spawnWave();
+    return;
+  }
+  if (battle.defeated) return; // wartet auf "Erneut versuchen"
+  battle.enemies.forEach(enemy => {
+    if (enemy.reached) scheduleEnemyAttack(enemy);
+  });
+  schedulePlayerAttack();
+  schedulePetAttack();
+}
+
+function pauseBattle() {
+  if (!battle.active) return;
+  battle.active = false;
+  clearTimeout(battle.playerAttackTimer);
+  clearTimeout(battle.petAttackTimer);
+  battle.petAttackTimer = null;
+  battle.enemies.forEach(enemy => clearTimeout(enemy.attackTimer));
+}
+
+const pageBattleEl = document.getElementById('pageBattle');
+const battleVisibilityObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting && entry.intersectionRatio > 0.6) {
+      resumeBattle();
+    } else {
+      pauseBattle();
+    }
+  });
+}, { root: document.getElementById('pagesTrack'), threshold: [0, 0.6, 1] });
+battleVisibilityObserver.observe(pageBattleEl);
+
+// Wischen zwischen Ausruestungs-Seite (1) und Kampf-Seite (2). Ein Klick
+// auf den Kampf-Einstieg scrollt als Komfort-Abkuerzung ebenfalls dorthin.
+const pagesTrack = document.getElementById('pagesTrack');
+document.getElementById('battleEntry').addEventListener('click', () => {
+  pagesTrack.scrollTo({ left: DESIGN_WIDTH, behavior: 'smooth' });
+});
+
+// Begleiter-Ring: rein dekorativ/gesperrt bis das Pet-Feature kommt. Ein
+// Antippen zeigt kurz einen Hinweis statt nichts zu tun.
+document.querySelectorAll('.companion-slot').forEach(slot => {
+  slot.addEventListener('click', (e) => {
+    e.stopPropagation();
+    slot.classList.remove('locked-tap');
+    void slot.offsetWidth;
+    slot.classList.add('locked-tap');
+    setTimeout(() => slot.classList.remove('locked-tap'), 400);
+
+    const rect = slot.getBoundingClientRect();
+    const stageRect = battleStage.getBoundingClientRect();
+    showFloatingText('Bald verfügbar', rect.left - stageRect.left + 12, rect.top - stageRect.top - 6, 'shield-dmg');
+  });
+});
 
 // Start: keine Ausruestung, alle Werte auf 0 - erst Schmieden + Ausruesten baut die Werte auf.
 renderAllSlots();

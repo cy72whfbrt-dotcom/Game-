@@ -80,9 +80,22 @@ body {
   overflow: hidden;
 }
 
-.page {
+.pages-track {
+  display: flex;
   width: 390px;
   height: 838px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.pages-track::-webkit-scrollbar { display: none; }
+
+.page {
+  flex: 0 0 390px;
+  width: 390px;
+  height: 838px;
+  scroll-snap-align: start;
   position: relative;
   overflow: hidden;
 }
@@ -638,3 +651,341 @@ svg use { color: inherit; }
 .slot-enhance-btn.disabled { opacity: 0.45; }
 .slot-enhance-btn.insufficient { animation: upgradeShake 0.35s; }
 
+
+/* ---------- Kampf-Einstieg auf der Ausruestungs-Seite ---------- */
+.battle-entry {
+  margin: 8px 8px 0;
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 16px;
+  background: linear-gradient(120deg, #423a99, #2c1e6e);
+  flex: 0 0 auto;
+  cursor: pointer;
+  transition: transform 0.15s;
+  box-shadow: var(--shadow-md);
+}
+.battle-entry:active { transform: scale(0.98); }
+.battle-entry-icon {
+  width: 38px; height: 38px;
+  background: rgba(255,255,255,0.14);
+  border-radius: 11px;
+  display: flex; align-items: center; justify-content: center;
+}
+.battle-entry-swords { width: 19px; height: 19px; filter: brightness(0) invert(1); }
+.battle-entry-text { display: flex; flex-direction: column; gap: 1px; flex: 1; }
+.battle-entry-title { font-size: 12.5px; font-weight: 800; color: #fff; }
+.battle-entry-sub { font-size: 10.5px; color: rgba(255,255,255,0.65); font-weight: 700; }
+.battle-entry-chevron { font-size: 22px; color: #fff; font-weight: 900; flex: 0 0 auto; }
+
+.swipe-hint {
+  text-align: center;
+  font-size: 11px; font-weight: 700;
+  padding: 8px 0 10px;
+  flex: 0 0 auto;
+}
+.page-home .swipe-hint { color: var(--ink-faint); }
+.page-battle .swipe-hint { color: rgba(255,255,255,0.55); }
+
+/* ---------- Welle-Kampf - Seite 2 ----------
+   Der Spieler steht fest verankert am linken Rand, Gegner laufen von
+   rechts heran und stellen sich links von ihrem Startpunkt auf. Ein Ring
+   aus kleinen, gesperrten Kreisen sitzt konzentrisch um die Spielfigur -
+   reservierte Plaetze fuer spaetere Begleiter (Pets etc.), rein
+   dekorativ/inaktiv bis dieses Feature kommt. */
+.page-battle {
+  background:
+    radial-gradient(ellipse 380px 260px at 8% 0%, rgba(255,92,157,0.22), transparent 60%),
+    radial-gradient(ellipse 380px 300px at 100% 100%, rgba(47,157,255,0.2), transparent 60%),
+    linear-gradient(180deg, #201a45 0%, #140f30 55%, #0c0a20 100%);
+  display: flex;
+  flex-direction: column;
+  width: 100%; height: 100%;
+}
+
+.wave-banner {
+  margin: 10px 8px 0;
+  background: var(--primary-grad);
+  border: none;
+  border-radius: 18px;
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 7px 14px;
+  flex: 0 0 auto;
+  box-shadow: var(--shadow-sm);
+}
+.wave-banner-icon { width: 17px; height: 17px; filter: brightness(0) invert(1); opacity: 0.9; }
+.battle-wave { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 15px; color: #fff; }
+.wave-banner-sub {
+  font-size: 10.5px; font-weight: 700; color: rgba(255,255,255,0.75);
+  padding-left: 8px; border-left: 1px solid rgba(255,255,255,0.3);
+}
+
+.battle-stage {
+  position: relative;
+  flex: 1;
+  margin: 10px 8px 8px;
+  overflow: hidden;
+  border-radius: 18px;
+  box-shadow: var(--shadow-md);
+}
+.battle-bg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.battle-ground {
+  position: absolute;
+  left: 0; right: 0; bottom: 0; height: 26%;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.14) 0%, transparent 12%),
+    linear-gradient(180deg, rgba(109,93,251,0.22), rgba(20,18,50,0.78));
+  border-top: 1px solid rgba(255,255,255,0.12);
+}
+.battle-ground::before {
+  content: '';
+  position: absolute;
+  left: 50%; bottom: -10%;
+  width: 130%; height: 70%;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse at center, rgba(109,93,251,0.3), transparent 70%);
+}
+.battle-ground::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(118deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 30px),
+    repeating-linear-gradient(24deg, rgba(0,0,0,0.12) 0 1px, transparent 1px 38px);
+}
+.battle-vignette {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 40%, transparent 45%, rgba(10,8,25,0.55) 100%);
+}
+
+.star-tw { animation: starTwinkle 3.6s ease-in-out infinite; }
+@keyframes starTwinkle {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 0.25; }
+}
+@media (prefers-reduced-motion: reduce) { .star-tw { animation: none; } }
+
+/* Spieler-Verankerung links, mit Begleiter-Ring dahinter */
+.player-anchor {
+  position: absolute;
+  left: 7%; bottom: 10%;
+  display: flex; flex-direction: column; align-items: center;
+  z-index: 3;
+}
+
+.companion-ring {
+  position: absolute;
+  left: 50%; top: 60%;
+  width: 0; height: 0;
+  z-index: 1;
+}
+.companion-slot {
+  position: absolute;
+  left: calc(50% + var(--ring-x));
+  top: calc(50% + var(--ring-y));
+  width: 25px; height: 25px;
+  margin: -12.5px 0 0 -12.5px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  border: 1.5px dashed rgba(255,255,255,0.4);
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(2px);
+  cursor: pointer;
+  animation: companionPulse 3.6s ease-in-out infinite;
+}
+.companion-slot:nth-child(2) { animation-delay: -0.5s; }
+.companion-slot:nth-child(3) { animation-delay: -1.4s; }
+.companion-slot:nth-child(4) { animation-delay: -2.3s; }
+.companion-slot:nth-child(5) { animation-delay: -1.0s; }
+.companion-slot:nth-child(6) { animation-delay: -2.9s; }
+.companion-lock { width: 10px; height: 10px; color: rgba(255,255,255,0.5); opacity: 0.7; }
+@keyframes companionPulse {
+  0%, 100% { opacity: 0.55; transform: scale(0.94); }
+  50% { opacity: 0.95; transform: scale(1.04); }
+}
+@media (prefers-reduced-motion: reduce) { .companion-slot { animation: none; } }
+
+.battle-player-sprite { width: 62px; height: auto; margin-top: 22px; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.35)); position: relative; z-index: 2; }
+.fighter-pedestal {
+  width: 62px; height: 8px;
+  margin-top: -3px;
+  background: radial-gradient(ellipse at center, rgba(0,0,0,0.4), transparent 75%);
+  border-radius: 50%;
+  position: relative; z-index: 2;
+}
+
+.fighter-card {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: 2.5px;
+  border: 1.5px solid transparent;
+  border-radius: 12px;
+  padding: 5px 7px 4px;
+  backdrop-filter: blur(8px);
+  --card-accent-1: rgba(255,255,255,0.9);
+  --card-accent-2: rgba(255,255,255,0.3);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.07) 100%) padding-box,
+    linear-gradient(135deg, var(--card-accent-1), var(--card-accent-2)) border-box;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.5),
+    inset 0 -9px 10px -7px rgba(0,0,0,0.4),
+    0 10px 18px -4px rgba(0,0,0,0.4),
+    0 2px 5px rgba(0,0,0,0.3);
+  z-index: 2;
+}
+.fighter-card::before {
+  content: '';
+  position: absolute;
+  top: -6px; left: 50%;
+  width: 10px; height: 10px;
+  transform: translateX(-50%) rotate(45deg);
+  border-radius: 3px;
+  background: linear-gradient(135deg, var(--card-accent-1), var(--card-accent-2));
+  border: 1px solid rgba(255,255,255,0.55);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.35), inset 0 1px 1px rgba(255,255,255,0.6);
+}
+.fighter-name {
+  font-size: 9.5px; font-weight: 800; color: #fff;
+  letter-spacing: 0.2px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.35);
+}
+.player-card {
+  --card-accent-1: #7dffbc;
+  --card-accent-2: rgba(31,206,122,0.5);
+  background:
+    linear-gradient(180deg, rgba(31,206,122,0.22) 0%, rgba(255,255,255,0.06) 100%) padding-box,
+    linear-gradient(135deg, var(--card-accent-1), var(--card-accent-2)) border-box;
+}
+
+.hp-bar {
+  position: relative;
+  width: 54px; height: 10px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 5px;
+  overflow: hidden;
+  margin-top: 2px;
+}
+.hp-fill {
+  position: absolute; left: 0; top: 0; bottom: 0; right: 0;
+  background: linear-gradient(90deg, #ff6b8a, var(--danger-dark));
+  transition: width 0.2s;
+}
+.player-hp-bar { width: 66px; height: 12px; }
+.player-hp-bar .hp-fill { background: linear-gradient(90deg, #4bec9a, var(--success-dark)); }
+.shield-bar { width: 66px; height: 10px; margin-bottom: 2px; }
+.shield-fill { background: linear-gradient(90deg, #7fd4ff, var(--shield)); }
+.shield-bar.empty-shield { display: none; }
+.hp-text {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 7px; font-weight: 800; color: #fff; text-shadow: 0 1px 1px rgba(0,0,0,0.4);
+  z-index: 1;
+}
+.enemy-name { display: block; text-align: center; font-size: 8.5px; font-weight: 800; color: #fff; }
+
+/* Gegner: laufen von rechts (ausserhalb der Buehne) zu ihrem Stop-Punkt */
+.enemy-queue { position: absolute; inset: 0; }
+.enemy-unit {
+  position: absolute;
+  right: -30%;
+  bottom: 11%;
+  display: flex; flex-direction: column; align-items: center;
+  z-index: 2;
+  transition: right 1.8s linear;
+}
+.enemy-unit.approached { right: var(--stop, 55%); }
+.enemy-unit.hit .enemy-sprite { animation: enemyHit 0.15s; }
+.enemy-unit.hit .fighter-card { animation: cardHit 0.15s; }
+.enemy-unit.dying { transition: opacity 0.4s, transform 0.4s; opacity: 0; transform: scale(0.4) translateY(20px); }
+@keyframes enemyHit {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.85) translateX(4px); }
+  100% { transform: scale(1); }
+}
+@keyframes cardHit {
+  0%, 100% { box-shadow: none; }
+  50% { box-shadow: 0 0 0 2px rgba(255,77,109,0.8); }
+}
+.enemy-sprite { width: 42px; height: auto; margin-top: 17px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4)); }
+.enemy-stat-line { display: flex; gap: 6px; font-size: 8px; font-weight: 800; white-space: nowrap; opacity: 0.92; }
+.enemy-stat-hp { color: #ff8fa8; }
+.enemy-stat-atk { color: #ffd166; }
+
+.dmg-popup {
+  position: absolute;
+  font-family: 'Sora', sans-serif;
+  font-weight: 700; font-size: 14px; color: #fff;
+  text-shadow: 0 2px 3px rgba(0,0,0,0.4);
+  pointer-events: none;
+  animation: dmgPopup 0.6s ease-out forwards;
+  z-index: 10;
+}
+.dmg-popup.player-dmg { color: #ff6b8a; }
+.dmg-popup.shield-dmg { color: #7fd4ff; }
+@keyframes dmgPopup {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-30px); }
+}
+.reward-popup {
+  position: absolute;
+  left: 50%; top: 40%;
+  transform: translate(-50%, -50%);
+  font-family: 'Sora', sans-serif;
+  font-weight: 700; font-size: 15px; color: var(--gold);
+  text-shadow: 0 2px 3px rgba(0,0,0,0.4);
+  pointer-events: none;
+  animation: rewardPopup 0.9s ease-out forwards;
+  z-index: 10;
+}
+@keyframes rewardPopup {
+  0% { opacity: 0; transform: translate(-50%, -30%) scale(0.7); }
+  20% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+  100% { opacity: 0; transform: translate(-50%, -70%) scale(1); }
+}
+
+.defeat-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: rgba(10,8,25,0.7);
+  backdrop-filter: blur(3px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.defeat-overlay.open { display: flex; }
+.defeat-card {
+  width: 100%;
+  max-width: 280px;
+  background: var(--surface);
+  border-radius: 22px;
+  padding: 22px 20px 18px;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+}
+.defeat-skull { width: 46px; height: 46px; margin-bottom: 2px; }
+.defeat-title { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 24px; color: var(--danger); }
+.defeat-text { font-size: 12.5px; color: var(--ink-soft); line-height: 1.4; }
+.defeat-retry-btn {
+  margin-top: 6px;
+  width: 100%;
+  padding: 11px 22px;
+  border-radius: 12px;
+  background: var(--primary-grad);
+  border: none;
+  color: #fff; font-weight: 800; font-size: 13.5px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+}
+
+.companion-slot.locked-tap { animation: companionLockedTap 0.4s ease-out; }
+@keyframes companionLockedTap {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.25); border-color: rgba(255,255,255,0.75); }
+  100% { transform: scale(1); }
+}
