@@ -183,8 +183,11 @@
         };
         let zoomAnchor = null; // { screenX, screenY, worldX, worldY }
 
-        const MIN_ZOOM = 0.06;
+        const MIN_ZOOM = 0.035;
         const MAX_ZOOM = 4;
+        // Below this zoom, owned islands switch from green to blue so a big
+        // territory reads clearly from far above the map.
+        const TERRITORY_VIEW_ZOOM = 0.15;
 
         // Grid of islands - all the same size so the map reads consistently
         const GRID_SIZE = 9; // 9x9 = 81 islands
@@ -364,12 +367,18 @@
 
             // Keep the anchored world point fixed under the anchored screen point
             // at every step of the easing animation - this is what stops the
-            // "picture jumps while zooming" drift.
+            // "picture jumps while zooming" drift. The snap-to-target check
+            // must happen BEFORE the offset is computed, not after: otherwise
+            // the very last eased frame draws with the old (pre-snap) zoom
+            // while the state already holds the snapped value, producing a
+            // one-frame "bounce back" right as a zoom gesture finishes.
             if (zoomAnchor) {
-                mapState.offsetX = zoomAnchor.screenX - zoomAnchor.worldX * mapState.zoom;
-                mapState.offsetY = zoomAnchor.screenY - zoomAnchor.worldY * mapState.zoom;
                 if (Math.abs(mapState.zoom - mapState.targetZoom) < 0.0005) {
                     mapState.zoom = mapState.targetZoom;
+                }
+                mapState.offsetX = zoomAnchor.screenX - zoomAnchor.worldX * mapState.zoom;
+                mapState.offsetY = zoomAnchor.screenY - zoomAnchor.worldY * mapState.zoom;
+                if (mapState.zoom === mapState.targetZoom) {
                     zoomAnchor = null;
                 }
             }
@@ -404,7 +413,8 @@
                 }
 
                 const isOwned = ownedIslands.has(island.id);
-                ctx.fillStyle = isOwned ? '#4f9a3a' : '#8a8a8a';
+                const territoryView = mapState.zoom < TERRITORY_VIEW_ZOOM;
+                ctx.fillStyle = isOwned ? (territoryView ? '#2f7fd6' : '#4f9a3a') : '#8a8a8a';
                 ctx.fillRect(
                     island.x - island.radius,
                     island.y - island.radius,
