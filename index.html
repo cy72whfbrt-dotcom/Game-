@@ -446,7 +446,11 @@
                     );
                 }
 
-                // Label: level + garrisoned troops for owned islands, defense for neutral ones
+                // Label: level + garrisoned troops for owned islands, defense
+                // for neutral ones - skipped in the zoomed-out territory view,
+                // where plain colored blocks read more clearly than tiny text.
+                if (territoryView) continue;
+
                 ctx.fillStyle = '#ffffff';
                 ctx.textAlign = 'center';
                 if (isOwned) {
@@ -844,14 +848,21 @@
                 }
                 mapState.offsetX = mapState.lastOffsetX + deltaX;
                 mapState.offsetY = mapState.lastOffsetY + deltaY;
-            } else if (e.touches.length === 2 && zoomAnchor) {
+            } else if (e.touches.length === 2) {
                 const dx = e.touches[0].clientX - e.touches[1].clientX;
                 const dy = e.touches[0].clientY - e.touches[1].clientY;
                 const distance = Math.sqrt(dx * dx + dy * dy);
                 let newZoom = touchStartZoom * (distance / touchStartDistance);
                 newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom));
                 mapState.targetZoom = newZoom;
-                // Keep the pinch anchor's world point; only zoom changes here
+
+                // Re-anchor to the CURRENT pinch midpoint on every move, not
+                // just the one from touchstart - fingers drift as they pinch,
+                // and a stale anchor is what made mobile pinch-zoom feel off.
+                const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+                const world = screenToWorld(midX, midY);
+                zoomAnchor = { screenX: midX, screenY: midY, worldX: world.x, worldY: world.y };
             }
         }, { passive: false });
 
