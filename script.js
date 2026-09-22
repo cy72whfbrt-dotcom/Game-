@@ -84,8 +84,28 @@ function computeStats() {
   return totals;
 }
 
+// Kraft: ein einziger Gesamtwert aus allen Stats, gewichtet nach grobem
+// Kampfwert - gibt auf einen Blick her, wie stark die aktuelle Ausruestung
+// insgesamt ist. Jedes ausgeruestete Teil traegt ueber seinen Stat bei.
+const POWER_WEIGHTS = { HP: 0.4, ATK: 5, DEF: 4, SPD: 6, Crit: 8, CMB: 6, CTA: 6, Betaeubung: 6, ER: 5 };
+function computePower(totals) {
+  return Math.round(Object.keys(POWER_WEIGHTS).reduce((sum, key) => sum + totals[key] * POWER_WEIGHTS[key], 0));
+}
+
+function renderPower(totals) {
+  const powerEl = document.getElementById('powerValue');
+  if (!powerEl) return;
+  const power = computePower(totals);
+  if (powerEl.textContent === String(power)) return;
+  powerEl.textContent = power;
+  powerEl.classList.remove('bump');
+  void powerEl.offsetWidth;
+  powerEl.classList.add('bump');
+}
+
 function renderStats() {
   const totals = computeStats();
+  renderPower(totals);
   Object.keys(totals).forEach(key => {
     const el = document.getElementById('stat-' + key);
     if (el) el.textContent = formatStatValue(key, totals[key]);
@@ -556,6 +576,23 @@ const playerShieldText = document.getElementById('playerShieldText');
 const waveNumEl = document.getElementById('waveNum');
 const waveEntryNumEl = document.getElementById('waveEntryNum');
 const defeatOverlay = document.getElementById('defeatOverlay');
+const battlePlayerSprite = document.getElementById('battlePlayerSprite');
+const playerWeapon = document.getElementById('playerWeapon');
+
+// Angriffs-Animation: die Spielfigur lunged leicht nach vorn, und falls ein
+// Schwert ausgeruestet ist, schwingt es sichtbar mit. Rein visuell, laeuft
+// bei jedem gelandeten Spieler-Treffer.
+function playPlayerAttackAnim() {
+  battlePlayerSprite.classList.remove('attack-lunge');
+  void battlePlayerSprite.offsetWidth;
+  battlePlayerSprite.classList.add('attack-lunge');
+
+  if (state.equipment.sword) {
+    playerWeapon.classList.remove('swinging');
+    void playerWeapon.offsetWidth;
+    playerWeapon.classList.add('swinging');
+  }
+}
 
 // Nicht-lineare Wellenstaerke: die Basisschwierigkeit schwankt bei jedem
 // Aufruf zufaellig (mal rauf, mal etwas runter), bleibt aber nie unter
@@ -800,6 +837,7 @@ function attackAllEnemies() {
   const targets = battle.enemies.filter(e => e.reached && e.hp > 0);
   if (targets.length === 0) return;
 
+  playPlayerAttackAnim();
   const stageRect = battleStage.getBoundingClientRect();
   const dead = [];
   targets.forEach(enemy => {

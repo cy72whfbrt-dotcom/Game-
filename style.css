@@ -172,6 +172,31 @@ body {
 }
 .mini-label { font-size: 8.5px; color: var(--ink-soft); font-weight: 700; }
 
+/* Kraft: Gesamtwert aus allen ausgeruesteten Teilen */
+.power-banner {
+  margin: 2px 8px 0;
+  display: flex; align-items: baseline; justify-content: center; gap: 6px;
+  padding: 6px 0;
+  flex: 0 0 auto;
+}
+.power-icon { font-size: 15px; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.15)); }
+.power-value {
+  font-family: 'Sora', sans-serif;
+  font-weight: 800; font-size: 22px; color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  transition: color 0.2s;
+}
+.power-value.bump { animation: powerBump 0.35s ease-out; }
+@keyframes powerBump {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.18); color: var(--primary); }
+  100% { transform: scale(1); }
+}
+.power-label {
+  font-size: 10.5px; font-weight: 800; color: var(--ink-soft);
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+
 /* Character viewport */
 .character-viewport {
   position: relative;
@@ -774,7 +799,42 @@ svg use { color: inherit; }
   display: flex; flex-direction: column; align-items: center;
 }
 
-.battle-player-sprite { width: 62px; height: auto; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.35)); }
+.battle-player-sprite {
+  width: 62px; height: auto;
+  filter: drop-shadow(0 6px 10px rgba(0,0,0,0.35));
+  transform-origin: 30% 85%;
+}
+.battle-player-sprite.attack-lunge { animation: playerLunge 0.3s ease-out; }
+@keyframes playerLunge {
+  0% { transform: translateX(0) rotate(0deg); }
+  35% { transform: translateX(5px) rotate(-3deg); }
+  100% { transform: translateX(0) rotate(0deg); }
+}
+@media (prefers-reduced-motion: reduce) { .battle-player-sprite.attack-lunge { animation: none; } }
+
+/* Schwert: liegt bei ruhendem Spieler unsichtbar am Rand, schwingt bei
+   jedem Treffer einmal vor - nur wenn ein Schwert ausgeruestet ist
+   (siehe playPlayerAttackAnim in script.js, das die Klasse setzt). */
+.player-weapon {
+  position: absolute;
+  right: -6px; top: 44%;
+  width: 22px; height: 22px;
+  opacity: 0;
+  transform-origin: 15% 85%;
+  transform: rotate(-70deg) scale(0.85);
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));
+  pointer-events: none;
+  z-index: 4;
+}
+.player-weapon.swinging { animation: swordSwing 0.35s ease-out; }
+@keyframes swordSwing {
+  0% { opacity: 0; transform: rotate(-70deg) scale(0.85); }
+  30% { opacity: 1; transform: rotate(15deg) scale(1.05); }
+  65% { opacity: 1; transform: rotate(45deg) scale(1); }
+  100% { opacity: 0; transform: rotate(60deg) scale(0.9); }
+}
+@media (prefers-reduced-motion: reduce) { .player-weapon.swinging { animation: none; opacity: 0; } }
+
 .fighter-shadow {
   width: 50px; height: 12px;
   margin-top: -8px;
