@@ -102,17 +102,6 @@
             margin-top: 14px;
         }
 
-        #baseSelect {
-            display: none;
-            width: 100%;
-            margin-top: 10px;
-            font: inherit;
-            padding: 8px;
-            border-radius: 8px;
-            border: 1px solid #2c3a63;
-            background: #0a0e27;
-            color: #e6eefc;
-        }
 
         #islandPopup button {
             font: inherit;
@@ -158,7 +147,6 @@
     <div id="islandPopup">
         <h3 id="popupTitle">Insel</h3>
         <div id="popupStats" class="stats"></div>
-        <select id="baseSelect"></select>
         <div class="row">
             <button id="upgradeBtn">Verbessern</button>
             <button id="mergeBtn">Zusammenf&uuml;hren</button>
@@ -486,7 +474,12 @@
             popupView = 'menu';
         }
 
-        const baseSelect = document.getElementById('baseSelect');
+        // While set, the next tap on one of the player's own islands picks
+        // that island as the attack base for this target instead of opening
+        // its normal popup.
+        let pendingAttackTargetId = null;
+        const hintEl = document.getElementById('hint');
+        const defaultHint = hintEl.textContent;
 
         function hideAllButtons() {
             upgradeBtn.style.display = 'none';
@@ -495,7 +488,6 @@
             scoutBtn.style.display = 'none';
             confirmBtn.style.display = 'none';
             backBtn.style.display = 'none';
-            baseSelect.style.display = 'none';
         }
 
         // Renders whichever screen (menu or a preview) is currently active
@@ -538,12 +530,9 @@
                 const scouted = scoutedIslands.has(island.id);
 
                 if (popupView === 'attack') {
-                    // Pick (or default-pick) which owned island the attack is
-                    // launched from - any island is free to choose, right here.
-                    if (selectedSourceId === null || !ownedIslands.has(selectedSourceId)) {
-                        selectedSourceId = [...ownedIslands][0];
-                    }
-                    const myTroops = islandTroops[selectedSourceId] || 0;
+                    // selectedSourceId was picked by tapping an owned island
+                    // on the map (see handleTap's pendingAttackTargetId logic)
+                    const myTroops = selectedSourceId !== null ? (islandTroops[selectedSourceId] || 0) : 0;
                     popupTitle.textContent = 'Insel #' + (island.id + 1) + ' angreifen';
 
                     let outcome;
@@ -558,18 +547,9 @@
                     }
 
                     popupStats.innerHTML =
+                        'Basis: Insel #' + (selectedSourceId + 1) + '<br>' +
                         'Meine Truppen: ' + myTroops + '<br>' +
                         'Gegner Truppen (Verteidigung): ' + (scouted ? island.neutralDefense : '?') + '<br><br>' + outcome;
-
-                    baseSelect.innerHTML = '';
-                    for (const ownedId of ownedIslands) {
-                        const opt = document.createElement('option');
-                        opt.value = ownedId;
-                        opt.textContent = 'Insel #' + (ownedId + 1) + ' (Truppen: ' + (islandTroops[ownedId] || 0) + ')';
-                        baseSelect.appendChild(opt);
-                    }
-                    baseSelect.value = selectedSourceId;
-                    baseSelect.style.display = 'block';
 
                     confirmBtn.style.display = 'inline-block';
                     confirmBtn.disabled = myTroops <= 0;
@@ -591,16 +571,24 @@
         });
 
         attackBtn.addEventListener('click', () => {
-            popupView = 'attack';
-            renderPopup();
-        });
-
-        baseSelect.addEventListener('change', () => {
-            selectedSourceId = parseInt(baseSelect.value, 10);
-            renderPopup();
+            // Don't pick a base here - close the popup and let the player
+            // tap whichever of their own islands they want to attack from.
+            pendingAttackTargetId = popupIslandId;
+            selectedSourceId = null;
+            closeIslandPopup();
+            hintEl.textContent = 'Wähle die Insel, von der aus du angreifen willst - tippe sie auf der Karte an.';
         });
 
         backBtn.addEventListener('click', () => {
+            if (popupView === 'attack') {
+                // Go back to picking a different base by tapping the map again
+                const targetId = popupIslandId;
+                pendingAttackTargetId = targetId;
+                selectedSourceId = null;
+                closeIslandPopup();
+                hintEl.textContent = 'Wähle die Insel, von der aus du angreifen willst - tippe sie auf der Karte an.';
+                return;
+            }
             popupView = 'menu';
             renderPopup();
         });
@@ -684,6 +672,23 @@
             const world = screenToWorld(screenX, screenY);
             const island = findIslandAt(world.x, world.y);
             if (!island) return;
+
+            if (pendingAttackTargetId !== null) {
+                const targetId = pendingAttackTargetId;
+                if (ownedIslands.has(island.id)) {
+                    selectedSourceId = island.id;
+                    pendingAttackTargetId = null;
+                    hintEl.textContent = defaultHint;
+                    popupIslandId = targetId;
+                    popupView = 'attack';
+                    renderPopup();
+                    return;
+                }
+                // Tapped something other than an owned island - cancel picking
+                pendingAttackTargetId = null;
+                hintEl.textContent = defaultHint;
+            }
+
             openIslandPopup(island);
         }
 
