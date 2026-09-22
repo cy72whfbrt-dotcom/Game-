@@ -393,41 +393,43 @@
             const now = Date.now();
             laneFlashes = laneFlashes.filter(f => now - f.start < FLASH_DURATION);
 
-            // Draws one lane as a raised, tube-like "Bogen": a dark shadow copy
-            // beneath, a gradient-shaded body, and a bright highlight on top -
-            // that combination is what reads as 3D instead of a flat line.
-            function drawBow(a, b, baseWidth, colorTop, colorBottom, alpha) {
+            function quadPoint(a, cp, b, t) {
+                const mt = 1 - t;
+                return {
+                    x: mt * mt * a.x + 2 * mt * t * cp.x + t * t * b.x,
+                    y: mt * mt * a.y + 2 * mt * t * cp.y + t * t * b.y
+                };
+            }
+
+            // Draws a thin curved "Bogen": a light base line plus small
+            // stripes sticking up off of it at intervals, like rungs on a
+            // suspension bridge - not a thick 3D tube, just a bow with ticks.
+            function drawBow(a, b, color, alpha) {
                 const cp = laneControlPoint(a, b);
-                const shadowDrop = (baseWidth * 0.9) / mapState.zoom;
+                const dx = b.x - a.x, dy = b.y - a.y;
+                const len = Math.hypot(dx, dy) || 1;
+                const nx = -dy / len, ny = dx / len; // outward normal, same side as the bow
 
-                ctx.globalAlpha = alpha * 0.4;
-                ctx.strokeStyle = '#000000';
-                ctx.lineWidth = baseWidth / mapState.zoom;
-                ctx.lineCap = 'round';
-                ctx.beginPath();
-                ctx.moveTo(a.x, a.y + shadowDrop);
-                ctx.quadraticCurveTo(cp.x, cp.y + shadowDrop, b.x, b.y + shadowDrop);
-                ctx.stroke();
-
-                const gradient = ctx.createLinearGradient(a.x, Math.min(a.y, cp.y), a.x, Math.max(b.y, cp.y) + 1);
-                gradient.addColorStop(0, colorTop);
-                gradient.addColorStop(1, colorBottom);
                 ctx.globalAlpha = alpha;
-                ctx.strokeStyle = gradient;
-                ctx.lineWidth = baseWidth / mapState.zoom;
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 2 / mapState.zoom;
+                ctx.lineCap = 'round';
+
                 ctx.beginPath();
                 ctx.moveTo(a.x, a.y);
                 ctx.quadraticCurveTo(cp.x, cp.y, b.x, b.y);
                 ctx.stroke();
 
-                const highlightLift = (baseWidth * 0.6) / mapState.zoom;
-                ctx.globalAlpha = alpha * 0.6;
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
-                ctx.lineWidth = (baseWidth * 0.3) / mapState.zoom;
-                ctx.beginPath();
-                ctx.moveTo(a.x, a.y - highlightLift);
-                ctx.quadraticCurveTo(cp.x, cp.y - highlightLift, b.x, b.y - highlightLift);
-                ctx.stroke();
+                const tickCount = Math.max(4, Math.round(len / 90));
+                const tickLen = 22 / mapState.zoom;
+                for (let i = 1; i < tickCount; i++) {
+                    const t = i / tickCount;
+                    const pt = quadPoint(a, cp, b, t);
+                    ctx.beginPath();
+                    ctx.moveTo(pt.x, pt.y);
+                    ctx.lineTo(pt.x + nx * tickLen, pt.y + ny * tickLen);
+                    ctx.stroke();
+                }
             }
 
             // Only the lanes touching an island the player owns are shown -
@@ -443,9 +445,9 @@
 
                 if (flash) {
                     const t = 1 - (now - flash.start) / FLASH_DURATION;
-                    drawBow(a, b, 16, flash.color, flash.color, 0.4 + 0.6 * t);
+                    drawBow(a, b, flash.color, 0.4 + 0.6 * t);
                 } else {
-                    drawBow(a, b, 9, '#bfe3ff', '#3b6fa0', 0.85);
+                    drawBow(a, b, '#dff0ff', 0.7);
                 }
             }
             ctx.globalAlpha = 1;
