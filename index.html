@@ -40,11 +40,66 @@
             pointer-events: none;
             white-space: nowrap;
         }
+
+        #islandPopup {
+            display: none;
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background: #10182f;
+            border: 1px solid #2c3a63;
+            border-radius: 12px;
+            padding: 18px 22px;
+            color: #e6eefc;
+            font: 14px/1.5 system-ui, sans-serif;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            min-width: 220px;
+            text-align: center;
+        }
+
+        #islandPopup h3 {
+            margin: 0 0 10px;
+            font-size: 16px;
+        }
+
+        #islandPopup .row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 14px;
+        }
+
+        #islandPopup button {
+            font: inherit;
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+        }
+
+        #attackBtn {
+            background: #c0392b;
+            color: #fff;
+        }
+
+        #closeBtn {
+            background: #2c3a63;
+            color: #cfe8ff;
+        }
     </style>
 </head>
 <body>
     <canvas id="mapCanvas"></canvas>
-    <div id="hint">Ziehen zum Bewegen &middot; Scrollen/Pinch zum Zoomen &middot; deine Insel ist gr&uuml;n</div>
+    <div id="hint">Ziehen zum Bewegen &middot; Scrollen/Pinch zum Zoomen &middot; tippen zum Angreifen &middot; deine Inseln sind gr&uuml;n</div>
+    <div id="islandPopup">
+        <h3 id="popupTitle">Insel</h3>
+        <div id="popupBody">Diese Insel geh&ouml;rt niemandem.</div>
+        <div class="row">
+            <button id="attackBtn">Angreifen</button>
+            <button id="closeBtn">Schlie&szlig;en</button>
+        </div>
+    </div>
 
     <script>
         const canvas = document.getElementById('mapCanvas');
@@ -131,6 +186,20 @@
             localStorage.setItem('openWaterPlayerIslandId', playerIslandId);
         }
 
+        // Islands the player owns (starts with just the home island, grows by attacking)
+        let ownedIslands;
+        try {
+            ownedIslands = new Set(JSON.parse(localStorage.getItem('openWaterOwnedIslands')));
+        } catch (e) {
+            ownedIslands = new Set();
+        }
+        ownedIslands.add(playerIslandId);
+        saveOwnedIslands();
+
+        function saveOwnedIslands() {
+            localStorage.setItem('openWaterOwnedIslands', JSON.stringify([...ownedIslands]));
+        }
+
         // Center the view on the player's island at start
         const startIsland = islands.find(i => i.id === playerIslandId);
         mapState.offsetX = window.innerWidth / 2 - startIsland.x * mapState.zoom;
@@ -170,8 +239,9 @@
                     continue;
                 }
 
-                const isPlayer = island.id === playerIslandId;
-                ctx.fillStyle = isPlayer ? '#4f9a3a' : '#8a8a8a';
+                const isOwned = ownedIslands.has(island.id);
+                const isHome = island.id === playerIslandId;
+                ctx.fillStyle = isOwned ? '#4f9a3a' : '#8a8a8a';
                 ctx.fillRect(
                     island.x - island.radius,
                     island.y - island.radius,
@@ -179,9 +249,9 @@
                     island.radius * 2
                 );
 
-                if (isPlayer) {
-                    ctx.strokeStyle = '#dff5c8';
-                    ctx.lineWidth = 6 / mapState.zoom;
+                if (isOwned) {
+                    ctx.strokeStyle = isHome ? '#dff5c8' : '#bfe6a8';
+                    ctx.lineWidth = (isHome ? 6 : 4) / mapState.zoom;
                     ctx.strokeRect(
                         island.x - island.radius,
                         island.y - island.radius,
@@ -194,9 +264,77 @@
             ctx.restore();
         }
 
+        // Island tap/click handling (a "tap" is a press+release that barely moved)
+        const TAP_MOVE_THRESHOLD = 6;
+        let pressMoved = false;
+
+        function screenToWorld(screenX, screenY) {
+            return {
+                x: (screenX - mapState.offsetX) / mapState.zoom,
+                y: (screenY - mapState.offsetY) / mapState.zoom
+            };
+        }
+
+        function findIslandAt(worldX, worldY) {
+            for (const island of islands) {
+                if (Math.abs(worldX - island.x) <= island.radius && Math.abs(worldY - island.y) <= island.radius) {
+                    return island;
+                }
+            }
+            return null;
+        }
+
+        const popup = document.getElementById('islandPopup');
+        const popupTitle = document.getElementById('popupTitle');
+        const popupBody = document.getElementById('popupBody');
+        const attackBtn = document.getElementById('attackBtn');
+        const closeBtn = document.getElementById('closeBtn');
+        let selectedIslandId = null;
+
+        function openIslandPopup(island) {
+            selectedIslandId = island.id;
+            const isOwned = ownedIslands.has(island.id);
+            const isHome = island.id === playerIslandId;
+            popupTitle.textContent = 'Insel #' + (island.id + 1);
+            if (isHome) {
+                popupBody.textContent = 'Das ist deine Heimatinsel.';
+                attackBtn.style.display = 'none';
+            } else if (isOwned) {
+                popupBody.textContent = 'Diese Insel gehört bereits dir.';
+                attackBtn.style.display = 'none';
+            } else {
+                popupBody.textContent = 'Diese Insel gehört niemandem. Angreifen, um sie zu erobern?';
+                attackBtn.style.display = 'inline-block';
+            }
+            popup.style.display = 'block';
+        }
+
+        function closeIslandPopup() {
+            popup.style.display = 'none';
+            selectedIslandId = null;
+        }
+
+        attackBtn.addEventListener('click', () => {
+            if (selectedIslandId === null) return;
+            ownedIslands.add(selectedIslandId);
+            saveOwnedIslands();
+            closeIslandPopup();
+        });
+
+        closeBtn.addEventListener('click', closeIslandPopup);
+
+        function handleTap(screenX, screenY) {
+            const world = screenToWorld(screenX, screenY);
+            const island = findIslandAt(world.x, world.y);
+            if (island) {
+                openIslandPopup(island);
+            }
+        }
+
         // Mouse events
         document.addEventListener('mousedown', (e) => {
             mapState.isDragging = true;
+            pressMoved = false;
             mapState.dragStartX = e.clientX;
             mapState.dragStartY = e.clientY;
             mapState.lastOffsetX = mapState.offsetX;
@@ -207,12 +345,18 @@
             if (mapState.isDragging) {
                 const deltaX = e.clientX - mapState.dragStartX;
                 const deltaY = e.clientY - mapState.dragStartY;
+                if (Math.abs(deltaX) > TAP_MOVE_THRESHOLD || Math.abs(deltaY) > TAP_MOVE_THRESHOLD) {
+                    pressMoved = true;
+                }
                 mapState.offsetX = mapState.lastOffsetX + deltaX;
                 mapState.offsetY = mapState.lastOffsetY + deltaY;
             }
         });
 
-        document.addEventListener('mouseup', () => {
+        document.addEventListener('mouseup', (e) => {
+            if (mapState.isDragging && !pressMoved) {
+                handleTap(e.clientX, e.clientY);
+            }
             mapState.isDragging = false;
         });
 
@@ -246,6 +390,7 @@
         document.addEventListener('touchstart', (e) => {
             if (e.touches.length === 1) {
                 mapState.isDragging = true;
+                pressMoved = false;
                 mapState.dragStartX = e.touches[0].clientX;
                 mapState.dragStartY = e.touches[0].clientY;
                 mapState.lastOffsetX = mapState.offsetX;
@@ -266,6 +411,9 @@
             if (e.touches.length === 1 && mapState.isDragging) {
                 const deltaX = e.touches[0].clientX - mapState.dragStartX;
                 const deltaY = e.touches[0].clientY - mapState.dragStartY;
+                if (Math.abs(deltaX) > TAP_MOVE_THRESHOLD || Math.abs(deltaY) > TAP_MOVE_THRESHOLD) {
+                    pressMoved = true;
+                }
                 mapState.offsetX = mapState.lastOffsetX + deltaX;
                 mapState.offsetY = mapState.lastOffsetY + deltaY;
             } else if (e.touches.length === 2) {
@@ -284,7 +432,10 @@
             }
         }, { passive: false });
 
-        document.addEventListener('touchend', () => {
+        document.addEventListener('touchend', (e) => {
+            if (mapState.isDragging && !pressMoved && e.changedTouches.length === 1) {
+                handleTap(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+            }
             mapState.isDragging = false;
         });
 
