@@ -192,6 +192,8 @@
         const ISLAND_RADIUS = 180;
         const NEUTRAL_DEFENSE_MAX = 100;
         const NEUTRAL_DEFENSE_MIN = 20;
+        const NEUTRAL_TROOPS_MAX = 100;
+        const NEUTRAL_TROOPS_MIN = 0;
 
         function mulberry32(seed) {
             return function () {
@@ -234,7 +236,9 @@
                     x: col * ISLAND_SPACING + jitterX,
                     y: row * ISLAND_SPACING + jitterY,
                     radius: ISLAND_RADIUS,
-                    // Troops garrisoned on a neutral (unowned) island; also its defense
+                    // Two separate stats for a neutral (unowned) island:
+                    // troops garrisoned there, and a defense bonus on top.
+                    neutralTroops: NEUTRAL_TROOPS_MIN + Math.floor(rand() * (NEUTRAL_TROOPS_MAX - NEUTRAL_TROOPS_MIN + 1)),
                     neutralDefense: NEUTRAL_DEFENSE_MIN + Math.floor(rand() * (NEUTRAL_DEFENSE_MAX - NEUTRAL_DEFENSE_MIN + 1))
                 });
             }
@@ -442,11 +446,16 @@
                     ctx.font = '44px system-ui, sans-serif';
                     ctx.textBaseline = 'top';
                     ctx.fillText(String(islandTroops[island.id] || 0) + ' Truppen', island.x, island.y + 4);
+                } else if (scoutedIslands.has(island.id)) {
+                    ctx.font = '44px system-ui, sans-serif';
+                    ctx.textBaseline = 'bottom';
+                    ctx.fillText(island.neutralTroops + ' Truppen', island.x, island.y);
+                    ctx.textBaseline = 'top';
+                    ctx.fillText(island.neutralDefense + ' Verteidigung', island.x, island.y + 4);
                 } else {
                     ctx.font = '56px system-ui, sans-serif';
                     ctx.textBaseline = 'middle';
-                    const label = scoutedIslands.has(island.id) ? String(island.neutralDefense) : '?';
-                    ctx.fillText(label, island.x, island.y);
+                    ctx.fillText('?', island.x, island.y);
                 }
             }
 
@@ -563,17 +572,22 @@
 
                 if (popupView === 'preview') {
                     const myTroops = previewSourceId !== null ? (islandTroops[previewSourceId] || 0) : 0;
+                    const total = island.neutralTroops + island.neutralDefense;
                     popupTitle.textContent = 'Insel #' + (island.id + 1) + ' angreifen?';
                     popupStats.innerHTML =
                         'Meine Truppen: ' + myTroops + ' (Insel #' + (previewSourceId + 1) + ')<br>' +
-                        'Gegner Truppen (Verteidigung): ' + (scouted ? island.neutralDefense : '?');
+                        'Gegner Truppen: ' + (scouted ? island.neutralTroops : '?') + '<br>' +
+                        'Gegner Verteidigung: ' + (scouted ? island.neutralDefense : '?') +
+                        (scouted ? ' <span style="color:#7f93bd">(zusammen ' + total + ')</span>' : '');
                     attackBtn.textContent = 'Angreifen';
                     attackBtn.style.display = 'inline-block';
                     attackBtn.disabled = myTroops <= 0;
                     backBtn.style.display = 'inline-block';
                 } else {
                     popupTitle.textContent = 'Insel #' + (island.id + 1) + ' (unbesetzt)';
-                    popupStats.innerHTML = 'Truppen auf der Insel: ' + (scouted ? island.neutralDefense : 'unbekannt - erst sp&auml;hen');
+                    popupStats.innerHTML = scouted
+                        ? 'Truppen: ' + island.neutralTroops + '<br>Verteidigung: ' + island.neutralDefense
+                        : 'Truppen: unbekannt - erst sp&auml;hen<br>Verteidigung: unbekannt - erst sp&auml;hen';
                     attackBtn.textContent = 'Angreifen';
                     attackBtn.style.display = 'inline-block';
                     scoutBtn.style.display = 'inline-block';
@@ -627,9 +641,10 @@
                 const myTroops = islandTroops[sourceId] || 0;
                 if (myTroops <= 0) return;
 
-                // Win if the sent troops beat the defense, losing troops equal
-                // to the defense either way (or the whole force if it fails)
-                const won = myTroops > target.neutralDefense;
+                // Win if the sent troops beat troops+defense combined; losing
+                // only the defense's worth (or the whole force if it fails)
+                const totalStrength = target.neutralTroops + target.neutralDefense;
+                const won = myTroops > totalStrength;
                 const remaining = won ? myTroops - target.neutralDefense : 0;
                 if (won) {
                     islandTroops[target.id] = remaining;
@@ -674,7 +689,8 @@
         function showAttackResult(sourceId, target, myTroops, won, remaining) {
             lastResultHtml =
                 'Meine Truppen: ' + myTroops + '<br>' +
-                'Gegner Truppen (Verteidigung): ' + target.neutralDefense + '<br>' +
+                'Gegner Truppen: ' + target.neutralTroops + '<br>' +
+                'Gegner Verteidigung: ' + target.neutralDefense + '<br>' +
                 'Ergebnis: ' + (won
                     ? 'Sieg - ' + remaining + ' Truppen übrig, Insel erobert!'
                     : 'Niederlage - alle Truppen verloren.');
