@@ -490,6 +490,8 @@
         let popupView = 'menu';
         let lastResultHtml = '';
         let previewSourceId = null; // base picked for an attack awaiting confirmation
+        let previewShownAt = 0; // guards against a stray click landing on the
+                                 // confirm button the instant the preview opens
 
         function openIslandPopup(island) {
             popupIslandId = island.id;
@@ -615,6 +617,9 @@
 
         attackBtn.addEventListener('click', () => {
             if (popupView === 'preview') {
+                // Ignore a click that arrives the instant the preview opened -
+                // a real confirmation tap is a separate, deliberate action
+                if (Date.now() - previewShownAt < 350) return;
                 // Confirmed - actually run the attack now
                 const target = islandById[popupIslandId];
                 const sourceId = previewSourceId;
@@ -694,6 +699,7 @@
                     previewSourceId = island.id;
                     popupIslandId = target.id;
                     popupView = 'preview';
+                    previewShownAt = Date.now();
                     renderPopup();
                     return;
                 }
@@ -824,11 +830,21 @@
         }, { passive: false });
 
         document.addEventListener('touchend', (e) => {
-            if (mapState.isDragging && !pressMoved && e.changedTouches.length === 1 && !isUiElement(e.target)) {
+            if (isUiElement(e.target)) {
+                mapState.isDragging = false;
+                return;
+            }
+            if (mapState.isDragging && !pressMoved && e.changedTouches.length === 1) {
+                // Stop the browser from also firing a synthetic "ghost click"
+                // ~300ms later at these same coordinates - without this, that
+                // delayed click can land on a button of the popup that
+                // handleTap() is about to open right under the finger,
+                // silently triggering it a second time.
+                e.preventDefault();
                 handleTap(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
             }
             mapState.isDragging = false;
-        });
+        }, { passive: false });
 
         function animate() {
             drawMap();
