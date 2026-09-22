@@ -489,6 +489,7 @@
         // read-only battle report shown right after an attack resolves.
         let popupView = 'menu';
         let lastResultHtml = '';
+        let previewSourceId = null; // base picked for an attack awaiting confirmation
 
         function openIslandPopup(island) {
             popupIslandId = island.id;
@@ -500,6 +501,7 @@
             popup.style.display = 'none';
             popupIslandId = null;
             popupView = 'menu';
+            previewSourceId = null;
         }
 
         function hideAllButtons() {
@@ -556,11 +558,25 @@
                 }
             } else {
                 const scouted = scoutedIslands.has(island.id);
-                popupTitle.textContent = 'Insel #' + (island.id + 1) + ' (unbesetzt)';
-                popupStats.innerHTML = 'Truppen auf der Insel: ' + (scouted ? island.neutralDefense : 'unbekannt - erst sp&auml;hen');
-                attackBtn.style.display = 'inline-block';
-                scoutBtn.style.display = 'inline-block';
-                scoutBtn.disabled = scouted;
+
+                if (popupView === 'preview') {
+                    const myTroops = previewSourceId !== null ? (islandTroops[previewSourceId] || 0) : 0;
+                    popupTitle.textContent = 'Insel #' + (island.id + 1) + ' angreifen?';
+                    popupStats.innerHTML =
+                        'Meine Truppen: ' + myTroops + ' (Insel #' + (previewSourceId + 1) + ')<br>' +
+                        'Gegner Truppen (Verteidigung): ' + (scouted ? island.neutralDefense : '?');
+                    attackBtn.textContent = 'Angreifen';
+                    attackBtn.style.display = 'inline-block';
+                    attackBtn.disabled = myTroops <= 0;
+                    backBtn.style.display = 'inline-block';
+                } else {
+                    popupTitle.textContent = 'Insel #' + (island.id + 1) + ' (unbesetzt)';
+                    popupStats.innerHTML = 'Truppen auf der Insel: ' + (scouted ? island.neutralDefense : 'unbekannt - erst sp&auml;hen');
+                    attackBtn.textContent = 'Angreifen';
+                    attackBtn.style.display = 'inline-block';
+                    scoutBtn.style.display = 'inline-block';
+                    scoutBtn.disabled = scouted;
+                }
             }
             popup.style.display = 'block';
         }
@@ -571,6 +587,15 @@
         });
 
         backBtn.addEventListener('click', () => {
+            if (popupView === 'preview') {
+                // Go back to blink-picking a different base
+                const targetId = popupIslandId;
+                previewSourceId = null;
+                pendingAttackTargetId = targetId;
+                closeIslandPopup();
+                flashHint('Wähle die Insel, von der aus du angreifen willst - tippe sie auf der Karte an.');
+                return;
+            }
             popupView = 'menu';
             renderPopup();
         });
@@ -588,9 +613,37 @@
             renderPopup();
         });
 
-        // "Angreifen": close the popup, blink every owned island, and wait
-        // for the player to tap the one they want to attack from.
         attackBtn.addEventListener('click', () => {
+            if (popupView === 'preview') {
+                // Confirmed - actually run the attack now
+                const target = islandById[popupIslandId];
+                const sourceId = previewSourceId;
+                if (!target || sourceId === null) return;
+                const myTroops = islandTroops[sourceId] || 0;
+                if (myTroops <= 0) return;
+
+                // Win if the sent troops beat the defense, losing troops equal
+                // to the defense either way (or the whole force if it fails)
+                const won = myTroops > target.neutralDefense;
+                const remaining = won ? myTroops - target.neutralDefense : 0;
+                if (won) {
+                    islandTroops[target.id] = remaining;
+                    islandTroops[sourceId] = 0;
+                    ownedIslands.add(target.id);
+                    islandLevels[target.id] = 1;
+                } else {
+                    islandTroops[sourceId] = 0;
+                }
+                scoutedIslands.add(target.id);
+                previewSourceId = null;
+                updateHud();
+                saveGame();
+                showAttackResult(sourceId, target, myTroops, won, remaining);
+                return;
+            }
+
+            // On the menu of a neutral island: close the popup, blink every
+            // owned island, and wait for the player to tap the attack base.
             pendingAttackTargetId = popupIslandId;
             closeIslandPopup();
             flashHint('Wähle die Insel, von der aus du angreifen willst - tippe sie auf der Karte an.');
@@ -636,25 +689,12 @@
                 hintEl.textContent = defaultHint;
 
                 if (ownedIslands.has(island.id) && target && (islandTroops[island.id] || 0) > 0) {
-                    const myTroops = islandTroops[island.id] || 0;
-
-                    // Win if the sent troops beat the defense, losing troops
-                    // equal to the defense either way (or the whole force if
-                    // the attack fails)
-                    const won = myTroops > target.neutralDefense;
-                    const remaining = won ? myTroops - target.neutralDefense : 0;
-                    if (won) {
-                        islandTroops[target.id] = remaining;
-                        islandTroops[island.id] = 0;
-                        ownedIslands.add(target.id);
-                        islandLevels[target.id] = 1;
-                    } else {
-                        islandTroops[island.id] = 0;
-                    }
-                    scoutedIslands.add(target.id);
-                    updateHud();
-                    saveGame();
-                    showAttackResult(island.id, target, myTroops, won, remaining);
+                    // Show the comparison and wait for an explicit "Angreifen"
+                    // tap before anything actually happens
+                    previewSourceId = island.id;
+                    popupIslandId = target.id;
+                    popupView = 'preview';
+                    renderPopup();
                     return;
                 }
                 // Tapped something other than an owned island - just cancel
