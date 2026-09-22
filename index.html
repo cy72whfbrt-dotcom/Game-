@@ -342,13 +342,23 @@
              Plaetzen (Pets etc, spaeteres Feature) sitzt konzentrisch hinter
              der Spielfigur. -->
         <div class="player-anchor">
+          <!-- Plattform: eigene stilisierte Bodenmarkierung unter der Spielfigur,
+               statt nur einem verschwommenen Schatten. -->
+          <div class="player-platform" aria-hidden="true">
+            <div class="platform-glow"></div>
+            <div class="platform-ring"></div>
+            <div class="platform-ring-inner"></div>
+          </div>
+
+          <!-- Begleiter-Plaetze: stehen als flacher Bogen mit auf dem Boden,
+               auf gleicher Ebene wie die Plattform - keine schwebenden Kreise. -->
           <div class="companion-ring" id="companionRing" aria-hidden="true">
-            <div class="companion-slot" style="--ring-x:0px; --ring-y:-50px"><svg class="companion-lock"><use href="icons.svg#question"/></svg></div>
-            <div class="companion-slot" style="--ring-x:43px; --ring-y:-25px"><svg class="companion-lock"><use href="icons.svg#question"/></svg></div>
-            <div class="companion-slot" style="--ring-x:43px; --ring-y:25px"><svg class="companion-lock"><use href="icons.svg#question"/></svg></div>
-            <div class="companion-slot" style="--ring-x:0px; --ring-y:50px"><svg class="companion-lock"><use href="icons.svg#question"/></svg></div>
-            <div class="companion-slot" style="--ring-x:-43px; --ring-y:25px"><svg class="companion-lock"><use href="icons.svg#question"/></svg></div>
-            <div class="companion-slot" style="--ring-x:-43px; --ring-y:-25px"><svg class="companion-lock"><use href="icons.svg#question"/></svg></div>
+            <div class="companion-slot" style="--ring-x:-58px; --ring-y:10px"><svg class="companion-lock"><use href="icons.svg#question"/></svg></div>
+            <div class="companion-slot" style="--ring-x:-34px; --ring-y:2px"><svg class="companion-lock"><use href="icons.svg#question"/></svg></div>
+            <div class="companion-slot" style="--ring-x:-10px; --ring-y:-3px"><svg class="companion-lock"><use href="icons.svg#question"/></svg></div>
+            <div class="companion-slot" style="--ring-x:14px; --ring-y:-3px"><svg class="companion-lock"><use href="icons.svg#question"/></svg></div>
+            <div class="companion-slot" style="--ring-x:38px; --ring-y:2px"><svg class="companion-lock"><use href="icons.svg#question"/></svg></div>
+            <div class="companion-slot" style="--ring-x:60px; --ring-y:10px"><svg class="companion-lock"><use href="icons.svg#question"/></svg></div>
           </div>
 
           <div class="fighter-card player-card">
@@ -369,7 +379,6 @@
             <circle cx="60" cy="46" r="22" fill="#f0cf9e"/>
             <path d="M36 30c-2-10 6-18 24-18s26 8 24 18c-4-8-14-12-24-12s-20 4-24 12z" fill="#b7c0c9" stroke="#3a3f45" stroke-width="1.5"/>
           </svg>
-          <div class="fighter-pedestal"></div>
         </div>
 
         <!-- Gegner werden dynamisch erzeugt: es koennen 1-3 pro Welle sein -->
