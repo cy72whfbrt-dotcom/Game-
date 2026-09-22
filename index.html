@@ -115,7 +115,7 @@
             cursor: not-allowed;
         }
 
-        #upgradeBtn, #mergeBtn {
+        #upgradeBtn, #mergeBtn, #confirmBtn {
             background: #2e8b57;
             color: #fff;
         }
@@ -130,7 +130,7 @@
             color: #fff;
         }
 
-        #closeBtn {
+        #closeBtn, #backBtn {
             background: #2c3a63;
             color: #cfe8ff;
         }
@@ -151,6 +151,8 @@
             <button id="mergeBtn">Zusammenf&uuml;hren</button>
             <button id="attackBtn">Angreifen</button>
             <button id="scoutBtn">Sp&auml;hen</button>
+            <button id="confirmBtn">Best&auml;tigen</button>
+            <button id="backBtn">Zur&uuml;ck</button>
             <button id="closeBtn">Schlie&szlig;en</button>
         </div>
     </div>
@@ -450,88 +452,123 @@
         const mergeBtn = document.getElementById('mergeBtn');
         const attackBtn = document.getElementById('attackBtn');
         const scoutBtn = document.getElementById('scoutBtn');
+        const confirmBtn = document.getElementById('confirmBtn');
+        const backBtn = document.getElementById('backBtn');
         const closeBtn = document.getElementById('closeBtn');
         let popupIslandId = null;
+        // 'menu' just lists the available actions; 'upgrade'/'attack' are the
+        // preview screens shown after tapping one of those actions, and only
+        // their own "Bestätigen" button actually performs anything.
+        let popupView = 'menu';
 
-        // Every button here only ever runs when the player explicitly taps
-        // it - opening a popup by tapping an island never acts by itself.
-        // Any owned island can act as the troop source for any other island
-        // on the map, no adjacency requirement.
         function openIslandPopup(island) {
             popupIslandId = island.id;
-            const isOwned = ownedIslands.has(island.id);
-
-            if (isOwned) {
-                const level = islandLevels[island.id] || 1;
-                const cost = upgradeCost(level);
-                const troopsHere = islandTroops[island.id] || 0;
-                popupTitle.textContent = 'Insel #' + (island.id + 1) + (island.id === playerIslandId ? ' (Heimat)' : ' (deine)');
-
-                let mergeHint = '';
-                if (selectedSourceId === island.id) {
-                    mergeHint = 'Als Quelle ausgew&auml;hlt - tippe "Zusammenf&uuml;hren" erneut, um die Auswahl aufzuheben.';
-                } else if (selectedSourceId !== null) {
-                    mergeHint = 'Tippe "Zusammenf&uuml;hren", um die Truppen von Insel #' + (selectedSourceId + 1) + ' hierher zu holen.';
-                } else {
-                    mergeHint = 'Tippe "Zusammenf&uuml;hren", um diese Insel als Truppen-Basis zu w&auml;hlen.';
-                }
-
-                popupStats.innerHTML =
-                    'Level: ' + level + '<br>' +
-                    'Truppen hier: ' + troopsHere + '<br>' +
-                    'Verteidigung: ' + defenseForLevel(level) + '<br>' +
-                    'Produktion: ' + (COINS_PER_LEVEL * level) + ' M&uuml;nzen/s, ' + (TROOPS_PER_LEVEL * level) + ' Truppen/s<br>' +
-                    'N&auml;chstes Level kostet: ' + cost + ' M&uuml;nzen<br><br>' + mergeHint;
-
-                upgradeBtn.style.display = 'inline-block';
-                upgradeBtn.disabled = coins < cost;
-                mergeBtn.style.display = 'inline-block';
-                mergeBtn.disabled = false;
-                attackBtn.style.display = 'none';
-                scoutBtn.style.display = 'none';
-            } else {
-                const scouted = scoutedIslands.has(island.id);
-                let attackHint;
-                let canAttack = false;
-                if (selectedSourceId === null) {
-                    attackHint = 'W&auml;hle zuerst eine eigene Insel als Basis (dort "Zusammenf&uuml;hren" tippen).';
-                } else if ((islandTroops[selectedSourceId] || 0) <= 0) {
-                    attackHint = 'Deine gew&auml;hlte Basis hat keine Truppen.';
-                } else {
-                    canAttack = true;
-                    attackHint = 'Angriff mit ' + (islandTroops[selectedSourceId] || 0) + ' Truppen von Insel #' + (selectedSourceId + 1) + '.';
-                }
-
-                popupTitle.textContent = 'Insel #' + (island.id + 1) + ' (unbesetzt)';
-                popupStats.innerHTML =
-                    'Truppen auf der Insel: ' + (scouted ? island.neutralDefense : 'unbekannt - erst sp&auml;hen') + '<br><br>' +
-                    attackHint;
-
-                upgradeBtn.style.display = 'none';
-                mergeBtn.style.display = 'none';
-                attackBtn.style.display = 'inline-block';
-                attackBtn.disabled = !canAttack;
-                scoutBtn.style.display = 'inline-block';
-                scoutBtn.disabled = scouted;
-            }
-            popup.style.display = 'block';
+            popupView = 'menu';
+            renderPopup();
         }
 
         function closeIslandPopup() {
             popup.style.display = 'none';
             popupIslandId = null;
+            popupView = 'menu';
+        }
+
+        function hideAllButtons() {
+            upgradeBtn.style.display = 'none';
+            mergeBtn.style.display = 'none';
+            attackBtn.style.display = 'none';
+            scoutBtn.style.display = 'none';
+            confirmBtn.style.display = 'none';
+            backBtn.style.display = 'none';
+        }
+
+        // Renders whichever screen (menu or a preview) is currently active
+        // for the popped-up island - never performs any game action itself.
+        function renderPopup() {
+            const island = islandById[popupIslandId];
+            if (!island) return;
+            hideAllButtons();
+            const isOwned = ownedIslands.has(island.id);
+
+            if (isOwned) {
+                const level = islandLevels[island.id] || 1;
+                const troopsHere = islandTroops[island.id] || 0;
+
+                if (popupView === 'upgrade') {
+                    const cost = upgradeCost(level);
+                    popupTitle.textContent = 'Insel #' + (island.id + 1) + ' verbessern';
+                    popupStats.innerHTML =
+                        'Jetzt: Level ' + level + ', Verteidigung ' + defenseForLevel(level) + ', ' +
+                        (COINS_PER_LEVEL * level) + ' M&uuml;nzen/s, ' + (TROOPS_PER_LEVEL * level) + ' Truppen/s<br>' +
+                        'Danach: Level ' + (level + 1) + ', Verteidigung ' + defenseForLevel(level + 1) + ', ' +
+                        (COINS_PER_LEVEL * (level + 1)) + ' M&uuml;nzen/s, ' + (TROOPS_PER_LEVEL * (level + 1)) + ' Truppen/s<br><br>' +
+                        'Kosten: ' + cost + ' M&uuml;nzen';
+                    confirmBtn.style.display = 'inline-block';
+                    confirmBtn.disabled = coins < cost;
+                    backBtn.style.display = 'inline-block';
+                } else {
+                    popupTitle.textContent = 'Insel #' + (island.id + 1) + (island.id === playerIslandId ? ' (Heimat)' : ' (deine)');
+                    popupStats.innerHTML =
+                        'Level: ' + level + '<br>' +
+                        'Truppen hier: ' + troopsHere + '<br>' +
+                        'Verteidigung: ' + defenseForLevel(level) + '<br>' +
+                        'Produktion: ' + (COINS_PER_LEVEL * level) + ' M&uuml;nzen/s, ' + (TROOPS_PER_LEVEL * level) + ' Truppen/s';
+                    upgradeBtn.style.display = 'inline-block';
+                    mergeBtn.style.display = 'inline-block';
+                    mergeBtn.textContent = selectedSourceId === island.id ? 'Auswahl aufheben' :
+                        (selectedSourceId !== null ? 'Truppen holen' : 'Als Basis wählen');
+                }
+            } else {
+                const scouted = scoutedIslands.has(island.id);
+
+                if (popupView === 'attack') {
+                    const myTroops = selectedSourceId !== null ? (islandTroops[selectedSourceId] || 0) : 0;
+                    popupTitle.textContent = 'Insel #' + (island.id + 1) + ' angreifen';
+
+                    let outcome;
+                    if (selectedSourceId === null) {
+                        outcome = 'W&auml;hle zuerst eine eigene Insel als Basis (dort "Zusammenf&uuml;hren" tippen).';
+                    } else if (myTroops <= 0) {
+                        outcome = 'Deine gew&auml;hlte Basis hat keine Truppen.';
+                    } else if (!scouted) {
+                        outcome = 'Insel noch nicht gesp&auml;ht - die gegnerischen Truppen sind unbekannt.';
+                    } else if (myTroops > island.neutralDefense) {
+                        outcome = 'Du gewinnst und verlierst dabei ' + island.neutralDefense + ' Truppen.';
+                    } else {
+                        outcome = 'Zu wenig Truppen - der gesamte Angriffstrupp geht verloren.';
+                    }
+
+                    popupStats.innerHTML =
+                        'Meine Truppen: ' + myTroops + (selectedSourceId !== null ? ' (Insel #' + (selectedSourceId + 1) + ')' : '') + '<br>' +
+                        'Gegner Truppen (Verteidigung): ' + (scouted ? island.neutralDefense : '?') + '<br><br>' + outcome;
+
+                    confirmBtn.style.display = 'inline-block';
+                    confirmBtn.disabled = selectedSourceId === null || myTroops <= 0;
+                    backBtn.style.display = 'inline-block';
+                } else {
+                    popupTitle.textContent = 'Insel #' + (island.id + 1) + ' (unbesetzt)';
+                    popupStats.innerHTML = 'Truppen auf der Insel: ' + (scouted ? island.neutralDefense : 'unbekannt - erst sp&auml;hen');
+                    attackBtn.style.display = 'inline-block';
+                    scoutBtn.style.display = 'inline-block';
+                    scoutBtn.disabled = scouted;
+                }
+            }
+            popup.style.display = 'block';
         }
 
         upgradeBtn.addEventListener('click', () => {
-            if (popupIslandId === null) return;
-            const level = islandLevels[popupIslandId] || 1;
-            const cost = upgradeCost(level);
-            if (coins < cost) return;
-            coins -= cost;
-            islandLevels[popupIslandId] = level + 1;
-            updateHud();
-            saveGame();
-            openIslandPopup(islandById[popupIslandId]);
+            popupView = 'upgrade';
+            renderPopup();
+        });
+
+        attackBtn.addEventListener('click', () => {
+            popupView = 'attack';
+            renderPopup();
+        });
+
+        backBtn.addEventListener('click', () => {
+            popupView = 'menu';
+            renderPopup();
         });
 
         mergeBtn.addEventListener('click', () => {
@@ -540,14 +577,14 @@
             if (selectedSourceId === popupIslandId) {
                 // Tapping merge again on the already-selected base deselects it
                 selectedSourceId = null;
-                openIslandPopup(islandById[popupIslandId]);
+                renderPopup();
                 return;
             }
 
             if (selectedSourceId === null) {
                 // Nothing to merge in (yet) - just select this island as the base
                 selectedSourceId = popupIslandId;
-                openIslandPopup(islandById[popupIslandId]);
+                renderPopup();
                 return;
             }
 
@@ -558,39 +595,53 @@
             selectedSourceId = null;
             updateHud();
             saveGame();
-            openIslandPopup(islandById[popupIslandId]);
-        });
-
-        attackBtn.addEventListener('click', () => {
-            if (popupIslandId === null || selectedSourceId === null) return;
-            const island = islandById[popupIslandId];
-            if (!island) return;
-            const sourceTroops = islandTroops[selectedSourceId] || 0;
-            if (sourceTroops <= 0) return;
-
-            // Win if the sent troops beat the defense, losing troops equal to
-            // the defense either way (or the whole force if the attack fails)
-            if (sourceTroops > island.neutralDefense) {
-                islandTroops[island.id] = sourceTroops - island.neutralDefense;
-                islandTroops[selectedSourceId] = 0;
-                ownedIslands.add(island.id);
-                islandLevels[island.id] = 1;
-                scoutedIslands.add(island.id);
-            } else {
-                islandTroops[selectedSourceId] = 0;
-            }
-
-            selectedSourceId = null;
-            updateHud();
-            saveGame();
-            closeIslandPopup();
+            renderPopup();
         });
 
         scoutBtn.addEventListener('click', () => {
             if (popupIslandId === null) return;
             scoutedIslands.add(popupIslandId);
             saveGame();
-            openIslandPopup(islandById[popupIslandId]);
+            renderPopup();
+        });
+
+        confirmBtn.addEventListener('click', () => {
+            if (popupIslandId === null) return;
+            const island = islandById[popupIslandId];
+            if (!island) return;
+
+            if (popupView === 'upgrade') {
+                const level = islandLevels[popupIslandId] || 1;
+                const cost = upgradeCost(level);
+                if (coins < cost) return;
+                coins -= cost;
+                islandLevels[popupIslandId] = level + 1;
+                updateHud();
+                saveGame();
+                popupView = 'menu';
+                renderPopup();
+            } else if (popupView === 'attack') {
+                if (selectedSourceId === null) return;
+                const sourceTroops = islandTroops[selectedSourceId] || 0;
+                if (sourceTroops <= 0) return;
+
+                // Win if the sent troops beat the defense, losing troops equal
+                // to the defense either way (or the whole force if it fails)
+                if (sourceTroops > island.neutralDefense) {
+                    islandTroops[island.id] = sourceTroops - island.neutralDefense;
+                    islandTroops[selectedSourceId] = 0;
+                    ownedIslands.add(island.id);
+                    islandLevels[island.id] = 1;
+                    scoutedIslands.add(island.id);
+                } else {
+                    islandTroops[selectedSourceId] = 0;
+                }
+
+                selectedSourceId = null;
+                updateHud();
+                saveGame();
+                closeIslandPopup();
+            }
         });
 
         closeBtn.addEventListener('click', closeIslandPopup);
