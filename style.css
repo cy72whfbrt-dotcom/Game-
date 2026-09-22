@@ -719,10 +719,7 @@ svg use { color: inherit; }
    reservierte Plaetze fuer spaetere Begleiter (Pets etc.), rein
    dekorativ/inaktiv bis dieses Feature kommt. */
 .page-battle {
-  background:
-    radial-gradient(ellipse 380px 260px at 8% 0%, rgba(255,92,157,0.22), transparent 60%),
-    radial-gradient(ellipse 380px 300px at 100% 100%, rgba(47,157,255,0.2), transparent 60%),
-    linear-gradient(180deg, #201a45 0%, #140f30 55%, #0c0a20 100%);
+  background: #15112f;
   display: flex;
   flex-direction: column;
   width: 100%; height: 100%;
@@ -732,14 +729,13 @@ svg use { color: inherit; }
   margin: 10px 8px 0;
   background: var(--primary-grad);
   border: none;
-  border-radius: 18px;
+  border-radius: 14px;
   display: flex; align-items: center; justify-content: center; gap: 7px;
-  padding: 7px 14px;
+  padding: 8px 14px;
   flex: 0 0 auto;
-  box-shadow: var(--shadow-sm);
 }
-.wave-banner-icon { width: 17px; height: 17px; filter: brightness(0) invert(1); opacity: 0.9; }
-.battle-wave { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 15px; color: #fff; }
+.wave-banner-icon { width: 16px; height: 16px; filter: brightness(0) invert(1); opacity: 0.9; }
+.battle-wave { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 14px; color: #fff; }
 .wave-banner-sub {
   font-size: 10.5px; font-weight: 700; color: rgba(255,255,255,0.75);
   padding-left: 8px; border-left: 1px solid rgba(255,255,255,0.3);
@@ -750,45 +746,22 @@ svg use { color: inherit; }
   flex: 1;
   margin: 10px 8px 8px;
   overflow: hidden;
-  border-radius: 18px;
-  background: linear-gradient(180deg, #2a2266 0%, #180f3e 55%, #0c0a20 100%);
-  box-shadow: var(--shadow-md);
+  border-radius: 14px;
+  background: #1c1740;
 }
 .battle-ground {
   position: absolute;
-  left: 0; right: 0; bottom: 0; height: 26%;
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.14) 0%, transparent 12%),
-    linear-gradient(180deg, rgba(109,93,251,0.22), rgba(20,18,50,0.78));
-  border-top: 1px solid rgba(255,255,255,0.12);
-}
-.battle-ground::before {
-  content: '';
-  position: absolute;
-  left: 50%; bottom: -10%;
-  width: 130%; height: 70%;
-  transform: translateX(-50%);
-  background: radial-gradient(ellipse at center, rgba(109,93,251,0.3), transparent 70%);
-}
-.battle-ground::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    repeating-linear-gradient(118deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 30px),
-    repeating-linear-gradient(24deg, rgba(0,0,0,0.12) 0 1px, transparent 1px 38px);
-}
-.battle-vignette {
-  position: absolute; inset: 0;
-  pointer-events: none;
-  background: radial-gradient(ellipse at 50% 40%, transparent 45%, rgba(10,8,25,0.55) 100%);
+  left: 0; right: 0; bottom: 0; height: 22%;
+  background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.28) 100%);
+  border-top: 1px solid rgba(255,255,255,0.08);
 }
 
-/* Spieler-Verankerung links, mit Begleiter-Ring dahinter */
+/* Spieler-Verankerung links, mit Begleiter-Halbkreis daneben. Gleiche
+   Bodenlinie (bottom) wie .enemy-unit, damit Spieler und Gegner sichtbar
+   auf derselben Ebene stehen. */
 .player-anchor {
   position: absolute;
-  left: 7%; bottom: 10%;
+  left: 8%; bottom: 12%;
   display: flex; flex-direction: column; align-items: center;
   gap: 6px;
   z-index: 3;
@@ -854,58 +827,30 @@ svg use { color: inherit; }
   position: absolute;
   left: var(--ring-x);
   top: calc(50% + var(--ring-y));
-  width: 20px; height: 20px;
-  margin: -10px 0 0 -10px;
+  width: 18px; height: 18px;
+  margin: -9px 0 0 -9px;
   border-radius: 50%;
   background: rgba(255,255,255,0.08);
-  border: 1.5px dashed rgba(255,255,255,0.38);
+  border: 1.5px dashed rgba(255,255,255,0.35);
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
 }
-.companion-lock { width: 9px; height: 9px; color: rgba(255,255,255,0.55); opacity: 0.75; }
+.companion-lock { width: 8px; height: 8px; color: rgba(255,255,255,0.55); opacity: 0.75; }
 
 .fighter-card {
   position: relative;
   display: flex; flex-direction: column; align-items: center; gap: 2.5px;
-  border: 1.5px solid transparent;
-  border-radius: 12px;
-  padding: 5px 7px 4px;
-  backdrop-filter: blur(8px);
-  --card-accent-1: rgba(255,255,255,0.9);
-  --card-accent-2: rgba(255,255,255,0.3);
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.07) 100%) padding-box,
-    linear-gradient(135deg, var(--card-accent-1), var(--card-accent-2)) border-box;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.5),
-    inset 0 -9px 10px -7px rgba(0,0,0,0.4),
-    0 10px 18px -4px rgba(0,0,0,0.4),
-    0 2px 5px rgba(0,0,0,0.3);
+  border-radius: 10px;
+  padding: 5px 8px 4px;
+  background: rgba(12,10,28,0.82);
+  border: 1px solid rgba(255,255,255,0.14);
   z-index: 2;
-}
-.fighter-card::before {
-  content: '';
-  position: absolute;
-  top: -6px; left: 50%;
-  width: 10px; height: 10px;
-  transform: translateX(-50%) rotate(45deg);
-  border-radius: 3px;
-  background: linear-gradient(135deg, var(--card-accent-1), var(--card-accent-2));
-  border: 1px solid rgba(255,255,255,0.55);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.35), inset 0 1px 1px rgba(255,255,255,0.6);
 }
 .fighter-name {
   font-size: 9.5px; font-weight: 800; color: #fff;
   letter-spacing: 0.2px;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.35);
 }
-.player-card {
-  --card-accent-1: #7dffbc;
-  --card-accent-2: rgba(31,206,122,0.5);
-  background:
-    linear-gradient(180deg, rgba(31,206,122,0.22) 0%, rgba(255,255,255,0.06) 100%) padding-box,
-    linear-gradient(135deg, var(--card-accent-1), var(--card-accent-2)) border-box;
-}
+.player-card { border-color: rgba(125,255,188,0.45); }
 
 .hp-bar {
   position: relative;
@@ -938,7 +883,7 @@ svg use { color: inherit; }
 .enemy-unit {
   position: absolute;
   right: -30%;
-  bottom: 11%;
+  bottom: 12%;
   display: flex; flex-direction: column; align-items: center;
   z-index: 2;
   transition: right 1.8s linear;
