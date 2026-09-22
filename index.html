@@ -39,6 +39,8 @@
             border-radius: 20px;
             pointer-events: none;
             white-space: nowrap;
+            text-align: center;
+            max-width: 90vw;
         }
 
         #hud {
@@ -113,11 +115,6 @@
             cursor: not-allowed;
         }
 
-        #attackBtn {
-            background: #c0392b;
-            color: #fff;
-        }
-
         #upgradeBtn {
             background: #2e8b57;
             color: #fff;
@@ -135,12 +132,11 @@
         <div class="stat">&#129689; <span id="coinCount">0</span></div>
         <div class="stat">&#9876;&#65039; <span id="troopCount">0</span></div>
     </div>
-    <div id="hint">Ziehen zum Bewegen &middot; Scrollen/Pinch zum Zoomen &middot; Insel antippen</div>
+    <div id="hint">Ziehen zum Bewegen &middot; Zoomen mit Scroll/Pinch &middot; eigene Insel antippen zum Ausw&auml;hlen, dann eine verbundene Insel antippen zum Angreifen/Verst&auml;rken</div>
     <div id="islandPopup">
         <h3 id="popupTitle">Insel</h3>
         <div id="popupStats" class="stats"></div>
         <div class="row">
-            <button id="attackBtn">Angreifen</button>
             <button id="upgradeBtn">Verbessern</button>
             <button id="closeBtn">Schlie&szlig;en</button>
         </div>
@@ -179,6 +175,8 @@
         const GRID_SIZE = 9; // 9x9 = 81 islands
         const ISLAND_SPACING = 850;
         const ISLAND_RADIUS = 180;
+        const NEUTRAL_DEFENSE_MAX = 100;
+        const NEUTRAL_DEFENSE_MIN = 20;
 
         function mulberry32(seed) {
             return function () {
@@ -204,6 +202,8 @@
             return level * UPGRADE_BASE_COST;
         }
 
+        // Build the island grid, remembering each island's row/col so we can
+        // connect it to its immediate neighbours (the "Bogen" attack lanes).
         const islands = [];
         let playerIslandId = null;
 
@@ -215,12 +215,32 @@
                 const jitterY = (rand() - 0.5) * ISLAND_SPACING * 0.3;
                 islands.push({
                     id: id++,
+                    row,
+                    col,
                     x: col * ISLAND_SPACING + jitterX,
                     y: row * ISLAND_SPACING + jitterY,
                     radius: ISLAND_RADIUS,
                     // Defense of a neutral (unowned) island; irrelevant once captured
-                    neutralDefense: 60 + Math.floor(rand() * 200)
+                    neutralDefense: NEUTRAL_DEFENSE_MIN + Math.floor(rand() * (NEUTRAL_DEFENSE_MAX - NEUTRAL_DEFENSE_MIN + 1))
                 });
+            }
+        }
+        const islandById = {};
+        for (const island of islands) islandById[island.id] = island;
+
+        // Connection lanes: every island links to its up/down/left/right/diagonal
+        // neighbours in the grid. Troops can only move/attack along a lane.
+        const neighborsOf = {};
+        const lanes = [];
+        for (const island of islands) neighborsOf[island.id] = [];
+        for (let i = 0; i < islands.length; i++) {
+            for (let j = i + 1; j < islands.length; j++) {
+                const a = islands[i], b = islands[j];
+                if (Math.abs(a.row - b.row) <= 1 && Math.abs(a.col - b.col) <= 1) {
+                    neighborsOf[a.id].push(b.id);
+                    neighborsOf[b.id].push(a.id);
+                    lanes.push({ aId: a.id, bId: b.id });
+                }
             }
         }
 
@@ -238,14 +258,14 @@
         }
 
         const storedId = parseInt(localStorage.getItem('openWaterPlayerIslandId'), 10);
-        if (!Number.isNaN(storedId) && islands.some(i => i.id === storedId)) {
+        if (!Number.isNaN(storedId) && islandById[storedId]) {
             playerIslandId = storedId;
         } else {
             playerIslandId = centerIsland().id;
             localStorage.setItem('openWaterPlayerIslandId', playerIslandId);
         }
 
-        // Islands the player owns, and each owned island's level (starts at 1)
+        // Islands the player owns, each with its own level and troop garrison
         let ownedIslands;
         try {
             ownedIslands = new Set(JSON.parse(localStorage.getItem('openWaterOwnedIslands')));
@@ -260,43 +280,63 @@
         } catch (e) {
             islandLevels = {};
         }
+        let islandTroops;
+        try {
+            islandTroops = JSON.parse(localStorage.getItem('openWaterIslandTroops')) || {};
+        } catch (e) {
+            islandTroops = {};
+        }
         for (const ownedId of ownedIslands) {
             if (!islandLevels[ownedId]) islandLevels[ownedId] = 1;
+            if (!islandTroops[ownedId]) islandTroops[ownedId] = 0;
         }
 
         let coins = parseInt(localStorage.getItem('openWaterCoins'), 10) || 0;
-        let troops = parseInt(localStorage.getItem('openWaterTroops'), 10) || 0;
 
         function saveGame() {
             localStorage.setItem('openWaterOwnedIslands', JSON.stringify([...ownedIslands]));
             localStorage.setItem('openWaterIslandLevels', JSON.stringify(islandLevels));
+            localStorage.setItem('openWaterIslandTroops', JSON.stringify(islandTroops));
             localStorage.setItem('openWaterCoins', String(coins));
-            localStorage.setItem('openWaterTroops', String(troops));
         }
 
         const coinCountEl = document.getElementById('coinCount');
         const troopCountEl = document.getElementById('troopCount');
+        function totalTroops() {
+            let sum = 0;
+            for (const ownedId of ownedIslands) sum += islandTroops[ownedId] || 0;
+            return sum;
+        }
         function updateHud() {
             coinCountEl.textContent = coins;
-            troopCountEl.textContent = troops;
+            troopCountEl.textContent = totalTroops();
         }
         updateHud();
 
-        // Every owned island produces coins and troops each second
+        // Every owned island produces coins (shared treasury) and troops
+        // (kept locally on that island) once per second.
         setInterval(() => {
             for (const ownedId of ownedIslands) {
                 const level = islandLevels[ownedId] || 1;
                 coins += COINS_PER_LEVEL * level;
-                troops += TROOPS_PER_LEVEL * level;
+                islandTroops[ownedId] = (islandTroops[ownedId] || 0) + TROOPS_PER_LEVEL * level;
             }
             updateHud();
             saveGame();
         }, 1000);
 
         // Center the view on the player's island at start
-        const startIsland = islands.find(i => i.id === playerIslandId);
+        const startIsland = islandById[playerIslandId];
         mapState.offsetX = window.innerWidth / 2 - startIsland.x * mapState.zoom;
         mapState.offsetY = window.innerHeight / 2 - startIsland.y * mapState.zoom;
+
+        // Selected "attack base" - an owned island whose troops the next tap
+        // on a connected island will move or attack with.
+        let selectedSourceId = null;
+
+        // Brief coloured flashes drawn over a lane (red = attack, green = reinforce)
+        let laneFlashes = [];
+        const FLASH_DURATION = 700;
 
         function drawMap() {
             // Ease current zoom toward target zoom
@@ -335,6 +375,52 @@
             const viewRight = viewLeft + canvas.width / mapState.zoom + ISLAND_RADIUS * 2;
             const viewBottom = viewTop + canvas.height / mapState.zoom + ISLAND_RADIUS * 2;
 
+            function inView(a, b) {
+                return !(Math.max(a.x, b.x) < viewLeft || Math.min(a.x, b.x) > viewRight ||
+                    Math.max(a.y, b.y) < viewTop || Math.min(a.y, b.y) > viewBottom);
+            }
+
+            function laneControlPoint(a, b) {
+                const midX = (a.x + b.x) / 2;
+                const midY = (a.y + b.y) / 2;
+                const dx = b.x - a.x, dy = b.y - a.y;
+                const len = Math.hypot(dx, dy) || 1;
+                const bow = len * 0.12;
+                return { x: midX - (dy / len) * bow, y: midY + (dx / len) * bow };
+            }
+
+            // Prune expired flashes, keep the rest for lookup while drawing lanes
+            const now = Date.now();
+            laneFlashes = laneFlashes.filter(f => now - f.start < FLASH_DURATION);
+
+            // Draw connection lanes (white "Bogen" arcs) first, under the islands
+            ctx.lineWidth = 4 / mapState.zoom;
+            for (const lane of lanes) {
+                const a = islandById[lane.aId], b = islandById[lane.bId];
+                if (!inView(a, b)) continue;
+                const cp = laneControlPoint(a, b);
+
+                const flash = laneFlashes.find(f =>
+                    (f.aId === lane.aId && f.bId === lane.bId) || (f.aId === lane.bId && f.bId === lane.aId));
+
+                if (flash) {
+                    const t = 1 - (now - flash.start) / FLASH_DURATION;
+                    ctx.strokeStyle = flash.color;
+                    ctx.globalAlpha = 0.35 + 0.65 * t;
+                    ctx.lineWidth = 10 / mapState.zoom;
+                } else {
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+                    ctx.globalAlpha = 1;
+                    ctx.lineWidth = 4 / mapState.zoom;
+                }
+
+                ctx.beginPath();
+                ctx.moveTo(a.x, a.y);
+                ctx.quadraticCurveTo(cp.x, cp.y, b.x, b.y);
+                ctx.stroke();
+            }
+            ctx.globalAlpha = 1;
+
             for (const island of islands) {
                 if (island.x + island.radius < viewLeft || island.x - island.radius > viewRight ||
                     island.y + island.radius < viewTop || island.y - island.radius > viewBottom) {
@@ -350,13 +436,32 @@
                     island.radius * 2
                 );
 
-                // Label: level for owned islands, defense for neutral ones
-                const label = isOwned ? 'Lvl ' + (islandLevels[island.id] || 1) : String(island.neutralDefense);
+                if (island.id === selectedSourceId) {
+                    ctx.strokeStyle = '#ffd23f';
+                    ctx.lineWidth = 8 / mapState.zoom;
+                    ctx.strokeRect(
+                        island.x - island.radius,
+                        island.y - island.radius,
+                        island.radius * 2,
+                        island.radius * 2
+                    );
+                }
+
+                // Label: level + garrisoned troops for owned islands, defense for neutral ones
                 ctx.fillStyle = '#ffffff';
-                ctx.font = '64px system-ui, sans-serif';
                 ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(label, island.x, island.y);
+                if (isOwned) {
+                    ctx.font = '56px system-ui, sans-serif';
+                    ctx.textBaseline = 'bottom';
+                    ctx.fillText('Lvl ' + (islandLevels[island.id] || 1), island.x, island.y);
+                    ctx.font = '44px system-ui, sans-serif';
+                    ctx.textBaseline = 'top';
+                    ctx.fillText(String(islandTroops[island.id] || 0) + ' Truppen', island.x, island.y + 4);
+                } else {
+                    ctx.font = '56px system-ui, sans-serif';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(String(island.neutralDefense), island.x, island.y);
+                }
             }
 
             ctx.restore();
@@ -385,37 +490,32 @@
         const popup = document.getElementById('islandPopup');
         const popupTitle = document.getElementById('popupTitle');
         const popupStats = document.getElementById('popupStats');
-        const attackBtn = document.getElementById('attackBtn');
         const upgradeBtn = document.getElementById('upgradeBtn');
         const closeBtn = document.getElementById('closeBtn');
-        let selectedIslandId = null;
+        let popupIslandId = null;
 
         function openIslandPopup(island) {
-            selectedIslandId = island.id;
+            popupIslandId = island.id;
             const isOwned = ownedIslands.has(island.id);
 
             if (isOwned) {
                 const level = islandLevels[island.id] || 1;
                 const cost = upgradeCost(level);
-                popupTitle.textContent = 'Insel #' + (island.id + 1) + ' (deine)';
+                popupTitle.textContent = 'Insel #' + (island.id + 1) + (island.id === playerIslandId ? ' (Heimat)' : ' (deine)');
                 popupStats.innerHTML =
                     'Level: ' + level + '<br>' +
+                    'Truppen hier: ' + (islandTroops[island.id] || 0) + '<br>' +
                     'Verteidigung: ' + defenseForLevel(level) + '<br>' +
                     'Produktion: ' + (COINS_PER_LEVEL * level) + ' M&uuml;nzen/s, ' + (TROOPS_PER_LEVEL * level) + ' Truppen/s<br>' +
-                    'N&auml;chstes Level kostet: ' + cost + ' M&uuml;nzen';
-                attackBtn.style.display = 'none';
+                    'N&auml;chstes Level kostet: ' + cost + ' M&uuml;nzen<br><br>' +
+                    'Als Basis ausgew&auml;hlt - tippe eine verbundene Insel an, um Truppen zu senden.';
                 upgradeBtn.style.display = 'inline-block';
                 upgradeBtn.disabled = coins < cost;
             } else {
                 popupTitle.textContent = 'Insel #' + (island.id + 1) + ' (unbesetzt)';
                 popupStats.innerHTML =
-                    'Verteidigung: ' + island.neutralDefense + '<br>' +
-                    'Deine Truppen: ' + troops + '<br>' +
-                    (troops > island.neutralDefense
-                        ? 'Ein Angriff gewinnt und kostet ' + island.neutralDefense + ' Truppen.'
-                        : 'Zu wenige Truppen - ein Angriff w&uuml;rde verloren gehen.');
-                attackBtn.style.display = 'inline-block';
-                attackBtn.disabled = troops <= 0;
+                    'Verteidigung: ' + island.neutralDefense + '<br><br>' +
+                    'W&auml;hle zuerst eine eigene, verbundene Insel als Angriffsbasis.';
                 upgradeBtn.style.display = 'none';
             }
             popup.style.display = 'block';
@@ -423,46 +523,76 @@
 
         function closeIslandPopup() {
             popup.style.display = 'none';
-            selectedIslandId = null;
+            popupIslandId = null;
         }
 
-        attackBtn.addEventListener('click', () => {
-            if (selectedIslandId === null) return;
-            const island = islands.find(i => i.id === selectedIslandId);
-            if (!island || troops <= 0) return;
-
-            if (troops > island.neutralDefense) {
-                // Win: capture the island, losses equal its defense
-                troops -= island.neutralDefense;
-                ownedIslands.add(island.id);
-                islandLevels[island.id] = 1;
-            } else {
-                // Lose: the whole attacking force is lost, island stays neutral
-                troops = 0;
-            }
-            updateHud();
-            saveGame();
-            closeIslandPopup();
-        });
-
         upgradeBtn.addEventListener('click', () => {
-            if (selectedIslandId === null) return;
-            const level = islandLevels[selectedIslandId] || 1;
+            if (popupIslandId === null) return;
+            const level = islandLevels[popupIslandId] || 1;
             const cost = upgradeCost(level);
             if (coins < cost) return;
             coins -= cost;
-            islandLevels[selectedIslandId] = level + 1;
+            islandLevels[popupIslandId] = level + 1;
             updateHud();
             saveGame();
-            closeIslandPopup();
+            openIslandPopup(islandById[popupIslandId]);
         });
 
         closeBtn.addEventListener('click', closeIslandPopup);
 
+        function areConnected(aId, bId) {
+            return neighborsOf[aId] && neighborsOf[aId].includes(bId);
+        }
+
+        function flashLane(aId, bId, color) {
+            laneFlashes.push({ aId, bId, color, start: Date.now() });
+        }
+
         function handleTap(screenX, screenY) {
             const world = screenToWorld(screenX, screenY);
             const island = findIslandAt(world.x, world.y);
-            if (island) {
+            if (!island) return;
+
+            // A source is already selected: try to act along the lane to this island
+            if (selectedSourceId !== null && selectedSourceId !== island.id) {
+                if (areConnected(selectedSourceId, island.id)) {
+                    const sourceTroops = islandTroops[selectedSourceId] || 0;
+
+                    if (ownedIslands.has(island.id)) {
+                        // Reinforce: merge the source garrison into the target
+                        islandTroops[island.id] = (islandTroops[island.id] || 0) + sourceTroops;
+                        islandTroops[selectedSourceId] = 0;
+                        flashLane(selectedSourceId, island.id, '#4fd67a');
+                    } else if (sourceTroops > 0) {
+                        // Attack: win if the sent troops beat the defense, losing
+                        // troops equal to the defense either way (or the whole
+                        // force if the attack fails)
+                        if (sourceTroops > island.neutralDefense) {
+                            islandTroops[island.id] = sourceTroops - island.neutralDefense;
+                            islandTroops[selectedSourceId] = 0;
+                            ownedIslands.add(island.id);
+                            islandLevels[island.id] = 1;
+                        } else {
+                            islandTroops[selectedSourceId] = 0;
+                        }
+                        flashLane(selectedSourceId, island.id, '#e64545');
+                    }
+
+                    updateHud();
+                    saveGame();
+                    selectedSourceId = null;
+                    closeIslandPopup();
+                    return;
+                }
+                // Not connected to the current base - fall through and treat
+                // this tap as a fresh selection/info request instead.
+            }
+
+            if (ownedIslands.has(island.id)) {
+                selectedSourceId = island.id;
+                openIslandPopup(island);
+            } else {
+                selectedSourceId = null;
                 openIslandPopup(island);
             }
         }
