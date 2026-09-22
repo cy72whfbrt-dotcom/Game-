@@ -45,46 +45,43 @@
 
         #hud {
             position: fixed;
-            left: 16px;
-            top: 16px;
+            left: 12px;
+            top: 12px;
             display: flex;
-            gap: 12px;
-            color: #ffffff;
-            font: 800 20px/1.4 system-ui, sans-serif;
+            gap: 8px;
+            color: #e6eefc;
+            font: 600 13px/1.4 system-ui, sans-serif;
         }
 
         #hud .stat {
-            background: linear-gradient(#1c2b52, #101a35);
-            border: 2px solid #3a5490;
-            border-radius: 16px;
-            padding: 10px 20px 10px 14px;
+            background: rgba(10, 14, 39, 0.7);
+            border: 1px solid #2c3a63;
+            border-radius: 10px;
+            padding: 6px 12px 6px 10px;
             display: flex;
             align-items: center;
-            gap: 8px;
-            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+            gap: 5px;
         }
 
         #hud .stat .icon {
-            font-size: 26px;
-            filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.4));
+            font-size: 15px;
         }
 
         #profileBtn {
             position: fixed;
-            right: 16px;
-            top: 16px;
-            width: 52px;
-            height: 52px;
+            right: 12px;
+            top: 12px;
+            width: 34px;
+            height: 34px;
             border-radius: 50%;
-            background: linear-gradient(#1c2b52, #101a35);
-            border: 2px solid #3a5490;
-            color: #ffffff;
-            font-size: 24px;
+            background: rgba(10, 14, 39, 0.7);
+            border: 1px solid #2c3a63;
+            color: #e6eefc;
+            font-size: 15px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15);
         }
 
         #profilePopup {
@@ -410,8 +407,8 @@
         let mapState = {
             offsetX: window.innerWidth / 2,
             offsetY: window.innerHeight / 2,
-            zoom: 0.2,
-            targetZoom: 0.2,
+            zoom: 0.1,
+            targetZoom: 0.1,
             isDragging: false,
             dragStartX: 0,
             dragStartY: 0,
@@ -424,7 +421,7 @@
         const MAX_ZOOM = 4;
         // Below this zoom, owned islands switch from green to blue so a big
         // territory reads clearly from far above the map.
-        const TERRITORY_VIEW_ZOOM = 0.1;
+        const TERRITORY_VIEW_ZOOM = 0.06;
 
         // Layout: a 3x3 grid of big islands (9 total), each one covered in
         // several towers - the tower is the actual capturable unit.
