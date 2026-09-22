@@ -361,6 +361,58 @@
             if (ms) hintResetTimer = setTimeout(() => { hintEl.textContent = defaultHint; }, ms);
         }
 
+        // Convex hull (monotone chain) - used to draw one continuous
+        // territory border around all owned islands instead of leaving
+        // them as disconnected colored squares.
+        function convexHull(points) {
+            const pts = points.slice().sort((a, b) => a.x - b.x || a.y - b.y);
+            const n = pts.length;
+            if (n < 3) return pts;
+            const cross = (o, a, b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+            const lower = [];
+            for (const p of pts) {
+                while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop();
+                lower.push(p);
+            }
+            const upper = [];
+            for (let i = n - 1; i >= 0; i--) {
+                const p = pts[i];
+                while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop();
+                upper.push(p);
+            }
+            lower.pop();
+            upper.pop();
+            return lower.concat(upper);
+        }
+
+        const TERRITORY_PADDING = 160;
+
+        function drawTerritoryBorder() {
+            if (ownedIslands.size === 0) return;
+            const points = [];
+            for (const oid of ownedIslands) {
+                const isl = islandById[oid];
+                if (!isl) continue;
+                const pad = isl.radius + TERRITORY_PADDING;
+                points.push({ x: isl.x - pad, y: isl.y - pad });
+                points.push({ x: isl.x + pad, y: isl.y - pad });
+                points.push({ x: isl.x + pad, y: isl.y + pad });
+                points.push({ x: isl.x - pad, y: isl.y + pad });
+            }
+            const hull = convexHull(points);
+            if (hull.length < 3) return;
+
+            ctx.beginPath();
+            ctx.moveTo(hull[0].x, hull[0].y);
+            for (let i = 1; i < hull.length; i++) ctx.lineTo(hull[i].x, hull[i].y);
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(63, 150, 230, 0.22)';
+            ctx.fill();
+            ctx.strokeStyle = '#8fd6ff';
+            ctx.lineWidth = 7 / mapState.zoom;
+            ctx.stroke();
+        }
+
         function drawMap() {
             // Ease current zoom toward target zoom
             mapState.zoom += (mapState.targetZoom - mapState.zoom) * 0.18;
@@ -405,6 +457,8 @@
             const viewBottom = viewTop + canvas.height / mapState.zoom + ISLAND_RADIUS * 2;
 
             const blinkAlpha = 0.35 + 0.65 * Math.abs(Math.sin(Date.now() / 280));
+
+            drawTerritoryBorder();
 
             for (const island of islands) {
                 if (island.x + island.radius < viewLeft || island.x - island.radius > viewRight ||
