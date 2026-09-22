@@ -229,12 +229,13 @@
         // territory reads clearly from far above the map.
         const TERRITORY_VIEW_ZOOM = 0.15;
 
-        // Layout: 5 big islands (1 center + N/E/S/W), each one covered in
+        // Layout: a 3x3 grid of big islands (9 total), each one covered in
         // several towers - the tower is the actual capturable unit.
-        const LANDMASS_SPACING = 6400;
-        const LANDMASS_RADIUS = 2600;
+        const LANDMASS_GRID_SIZE = 3;
+        const LANDMASS_SPACING = 8200;
+        const LANDMASS_RADIUS = 3400;
         const TOWER_GRID_SIZE = 5; // 5x5 towers per island
-        const TOWER_SPACING = 850;
+        const TOWER_SPACING = 1050;
         const ISLAND_RADIUS = 220; // tower footprint
         const NEUTRAL_DEFENSE_MAX = 100;
         const NEUTRAL_DEFENSE_MIN = 20;
@@ -265,15 +266,18 @@
             return level * UPGRADE_BASE_COST;
         }
 
-        // The 5 big islands themselves - just background land, drawn as one
+        // The big islands themselves - just background land, drawn as one
         // large green square each, no ownership state of their own.
-        const landmasses = [
-            { id: 0, x: 0, y: 0 },
-            { id: 1, x: 0, y: -LANDMASS_SPACING },
-            { id: 2, x: LANDMASS_SPACING, y: 0 },
-            { id: 3, x: 0, y: LANDMASS_SPACING },
-            { id: 4, x: -LANDMASS_SPACING, y: 0 }
-        ];
+        const landmasses = [];
+        {
+            const lmHalf = Math.floor(LANDMASS_GRID_SIZE / 2);
+            let lmId = 0;
+            for (let row = -lmHalf; row <= lmHalf; row++) {
+                for (let col = -lmHalf; col <= lmHalf; col++) {
+                    landmasses.push({ id: lmId++, x: col * LANDMASS_SPACING, y: row * LANDMASS_SPACING });
+                }
+            }
+        }
 
         // Every landmass is covered in a grid of towers - the tower, not the
         // island, is the capturable unit with its own troops/level/defense.
