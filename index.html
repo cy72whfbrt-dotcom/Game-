@@ -17,7 +17,8 @@
     <div class="pages-track" id="pagesTrack">
     <div class="page page-home" id="pageHome">
 
-      <!-- Top bar -->
+      <!-- Top bar: Profil, Kraft, Waehrungen - kompakt in einer Zeile,
+           mehr braucht es hier nicht. -->
       <div class="top-bar">
         <div class="profile">
           <div class="avatar">
@@ -25,45 +26,24 @@
           </div>
           <span class="player-name">player66378937</span>
         </div>
+        <div class="power-banner">
+          <span class="power-icon">⚡</span>
+          <span class="power-value" id="powerValue">0</span>
+        </div>
         <div class="currencies">
           <div class="currency">
             <svg class="cur-icon"><use href="icons.svg#gem"/></svg>
             <span class="cur-value" id="gemsValue">6530</span>
-            <span class="cur-add">+</span>
           </div>
           <div class="currency">
             <svg class="cur-icon"><use href="icons.svg#coin"/></svg>
             <span class="cur-value" id="goldValue">1951</span>
-            <span class="cur-add">+</span>
           </div>
           <div class="currency currency-ore">
             <svg class="cur-icon"><use href="icons.svg#ore"/></svg>
             <span class="cur-value" id="oreValue">0</span>
           </div>
         </div>
-      </div>
-
-      <div class="top-bar-labels">
-        <div class="mini-btn">
-          <svg class="mini-icon"><use href="icons.svg#gift"/></svg>
-          <span class="mini-label">1. Aufladung</span>
-        </div>
-        <div class="mini-btn">
-          <svg class="mini-icon"><use href="icons.svg#mail"/></svg>
-          <span class="mini-label">Post</span>
-        </div>
-        <div class="mini-btn">
-          <svg class="mini-icon"><use href="icons.svg#chat"/></svg>
-          <span class="mini-label">Chat</span>
-        </div>
-      </div>
-
-      <!-- Kraft: Gesamtwert aus allen ausgeruesteten Teilen, auf einen Blick
-           wie stark der Charakter gerade ist. -->
-      <div class="power-banner">
-        <span class="power-icon">⚡</span>
-        <span class="power-value" id="powerValue">0</span>
-        <span class="power-label">Kraft</span>
       </div>
 
       <!-- Character viewport -->
