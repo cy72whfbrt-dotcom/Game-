@@ -64,6 +64,7 @@ const state = {
   anvilLevel: 1,
   equipment: {}, // slotId -> { rarity, statValue } | nicht gesetzt = leer
   lastCrafted: null, // { slot, rarity, statValue }
+  pets: [], // { rarity } - aus dem Boss-Kampf, besetzen den Begleiter-Halbkreis
 };
 
 function formatStatValue(statKey, value) {
@@ -151,6 +152,25 @@ function renderAllSlots() {
   SLOT_TYPES.forEach(s => renderSlot(s.id));
   renderStats();
   updateCharacterFx();
+}
+
+// Begleiter-Halbkreis im Kampf: die ersten (bis zu) 5 eingesammelten Pets
+// besetzen die Plaetze, in der Farbe ihrer Raritaet. Rest bleibt gesperrt.
+function renderCompanionRing() {
+  const slots = document.querySelectorAll('#companionRing .companion-slot');
+  slots.forEach((slot, i) => {
+    const pet = state.pets[i];
+    if (pet) {
+      const color = pet.rarity.color.startsWith('linear') ? '#fff' : pet.rarity.color;
+      slot.classList.add('filled');
+      slot.style.setProperty('--pet-color', color);
+      slot.innerHTML = '<svg class="companion-pet-icon"><use href="icons.svg#bat"/></svg>';
+    } else {
+      slot.classList.remove('filled');
+      slot.style.removeProperty('--pet-color');
+      slot.innerHTML = '<svg class="companion-lock"><use href="icons.svg#question"/></svg>';
+    }
+  });
 }
 
 // Buff-Glow: leuchtende Fluegel hinter dem Charakter, sichtbar sobald ein
@@ -561,6 +581,7 @@ const battle = {
   enemies: [], // { hp, maxHp, dmg, reward, name, icon, el, hpFillEl, hpTextEl, reached, attackTimer }
   playerAttackTimer: null,
   petAttackTimer: null, // Gefaehrte (dragon) - eigener, unabhaengiger Angriffstakt
+  petHelpersTimer: null, // Boss-Kampf-Pets im Begleiter-Halbkreis - eigener Takt
   defeated: false,
   started: false, // erste Welle wurde schon gespawnt
   active: false,  // Seite gerade sichtbar -> Timer laufen
@@ -726,6 +747,7 @@ function spawnWave() {
 
   if (battle.active) schedulePlayerAttack();
   if (battle.active) schedulePetAttack();
+  if (battle.active) schedulePetHelpersAttack();
 }
 
 function scheduleEnemyAttack(enemy) {
@@ -759,6 +781,21 @@ function schedulePetAttack() {
     attackAllEnemiesWithPet();
     schedulePetAttack();
   }, 2500);
+}
+
+// Boss-Kampf-Pets im Begleiter-Halbkreis: gleiches Prinzip wie der Gefaehrte
+// oben, aber eigener Takt (~3000ms) und eigene Bedingung (state.pets statt
+// state.equipment.dragon) - laeuft nur wenn mindestens ein Pet eingesammelt
+// wurde.
+function schedulePetHelpersAttack() {
+  clearTimeout(battle.petHelpersTimer);
+  battle.petHelpersTimer = null;
+  if (battle.defeated || !battle.active || state.pets.length === 0) return;
+  battle.petHelpersTimer = setTimeout(() => {
+    if (battle.defeated || !battle.active || state.pets.length === 0) return;
+    attackAllEnemiesWithPetHelpers();
+    schedulePetHelpersAttack();
+  }, 3000);
 }
 
 function showFloatingText(text, x, y, cls) {
@@ -821,6 +858,7 @@ function resolveDeadEnemies(dead) {
   if (dead.length > 0 && battle.enemies.length === 0) {
     clearTimeout(battle.playerAttackTimer);
     clearTimeout(battle.petAttackTimer);
+    clearTimeout(battle.petHelpersTimer);
     battle.wave += 1;
     // Jede neue Welle: volle HP und Schild.
     battle.playerHp = battle.playerMaxHp;
@@ -888,6 +926,36 @@ function attackAllEnemiesWithPet() {
   resolveDeadEnemies(dead);
 }
 
+// Boss-Kampf-Pets: Flaechenschaden anteilig zu ihrer Raritaet (staerkere
+// Pets tragen mehr bei), ausgeloest von schedulePetHelpersAttack(). Eigene
+// Floating-Number (Pfoten-Praefix) statt der Drachen-/Spielerzahl.
+function attackAllEnemiesWithPetHelpers() {
+  if (battle.defeated) return;
+  if (state.pets.length === 0) return;
+  const targets = battle.enemies.filter(e => e.reached && e.hp > 0);
+  if (targets.length === 0) return;
+
+  const petPower = state.pets.reduce((sum, pet) => sum + pet.rarity.mult, 0);
+  const dmg = Math.max(1, Math.round(battle.playerDmg * petPower * 0.06));
+  const stageRect = battleStage.getBoundingClientRect();
+  const dead = [];
+  targets.forEach(enemy => {
+    enemy.hp -= dmg;
+    updateEnemyHpBar(enemy);
+
+    const rect = enemy.el.getBoundingClientRect();
+    showFloatingText('🐾-' + dmg, rect.left - stageRect.left + 10, rect.top - stageRect.top - 8, 'shield-dmg');
+
+    enemy.el.classList.remove('hit');
+    void enemy.el.offsetWidth;
+    enemy.el.classList.add('hit');
+
+    if (enemy.hp <= 0) dead.push(enemy);
+  });
+
+  resolveDeadEnemies(dead);
+}
+
 document.getElementById('defeatRetryBtn').addEventListener('click', () => {
   battle.playerHp = battle.playerMaxHp;
   battle.playerShield = battle.playerMaxShield;
@@ -900,6 +968,7 @@ document.getElementById('defeatRetryBtn').addEventListener('click', () => {
   });
   schedulePlayerAttack();
   schedulePetAttack();
+  schedulePetHelpersAttack();
 });
 
 // Der angezeigte Gesamtwert (Grundwert + Ausruestung) ist 1:1 das, was im
@@ -941,6 +1010,7 @@ function resumeBattle() {
   });
   schedulePlayerAttack();
   schedulePetAttack();
+  schedulePetHelpersAttack();
 }
 
 function pauseBattle() {
@@ -949,6 +1019,8 @@ function pauseBattle() {
   clearTimeout(battle.playerAttackTimer);
   clearTimeout(battle.petAttackTimer);
   battle.petAttackTimer = null;
+  clearTimeout(battle.petHelpersTimer);
+  battle.petHelpersTimer = null;
   battle.enemies.forEach(enemy => clearTimeout(enemy.attackTimer));
 }
 
@@ -971,9 +1043,10 @@ document.getElementById('battleEntry').addEventListener('click', () => {
   pagesTrack.scrollTo({ left: DESIGN_WIDTH, behavior: 'smooth' });
 });
 
-// Begleiter-Ring: rein dekorativ/gesperrt bis das Pet-Feature kommt. Ein
-// Antippen zeigt kurz einen Hinweis statt nichts zu tun.
-document.querySelectorAll('.companion-slot').forEach(slot => {
+// Begleiter-Ring: leere Plaetze sind gesperrt bis ein Pet aus dem
+// Boss-Kampf sie besetzt. Ein Antippen zeigt je nach Zustand einen Hinweis
+// oder den Namen des Pets.
+document.querySelectorAll('#companionRing .companion-slot').forEach((slot, i) => {
   slot.addEventListener('click', (e) => {
     e.stopPropagation();
     slot.classList.remove('locked-tap');
@@ -983,9 +1056,213 @@ document.querySelectorAll('.companion-slot').forEach(slot => {
 
     const rect = slot.getBoundingClientRect();
     const stageRect = battleStage.getBoundingClientRect();
-    showFloatingText('Bald verfügbar', rect.left - stageRect.left + 12, rect.top - stageRect.top - 6, 'shield-dmg');
+    const pet = state.pets[i];
+    const label = pet ? `${pet.rarity.name}-Pet · hilft im Kampf` : 'Bald verfügbar';
+    showFloatingText(label, rect.left - stageRect.left + 12, rect.top - stageRect.top - 6, 'shield-dmg');
   });
+});
+
+/* ---------- Boss-Kampf: Kampagnen-Modus ----------
+   Eigenstaendiges Modal mit einem einzelnen, starken Gegner - komplett
+   unabhaengig von der Welle. Sieg belohnt ein Pet in einer der
+   Schmiede-Raritaeten (Grau bis Himmlisch), das anschliessend einen der
+   5 Begleiter-Plaetze im Kampf besetzt und dort passiv mithilft
+   (attackAllEnemiesWithPetHelpers, siehe oben). Nutzt die aktuellen
+   Spieler-Werte aus battle.playerMaxHp/playerDmg/playerMaxShield, die
+   applyEquipmentToBattle() stets aktuell haelt. */
+
+const BOSS_FIGHT_NAMES = ['Schattendrache', 'Abgrundfürst', 'Klingentitan', 'Aschekoloss'];
+
+const bossFight = {
+  active: false, // Modal gerade offen -> Timer laufen
+  bossesWon: 0,
+  bossHp: 0, bossMaxHp: 0, bossDmg: 0, bossName: '???',
+  playerHp: 0, playerMaxHp: 0, playerShield: 0, playerMaxShield: 0,
+  playerAttackTimer: null, bossAttackTimer: null, introTimer: null,
+  defeated: false, victorious: false,
+};
+
+const bossModal = document.getElementById('bossModal');
+const bossFightName = document.getElementById('bossFightName');
+const bossFightHpFill = document.getElementById('bossFightHpFill');
+const bossFightHpText = document.getElementById('bossFightHpText');
+const bossFightPlayerHpFill = document.getElementById('bossFightPlayerHpFill');
+const bossFightPlayerHpText = document.getElementById('bossFightPlayerHpText');
+const bossFightShieldBar = document.getElementById('bossFightShieldBar');
+const bossFightShieldFill = document.getElementById('bossFightShieldFill');
+const bossFightShieldText = document.getElementById('bossFightShieldText');
+const bossFightDefeatOverlay = document.getElementById('bossFightDefeatOverlay');
+const bossFightVictoryOverlay = document.getElementById('bossFightVictoryOverlay');
+const bossPetSwatch = document.getElementById('bossPetSwatch');
+const bossPetName = document.getElementById('bossPetName');
+
+function updateBossFightPlayerHpBar() {
+  const pct = Math.max(0, (bossFight.playerHp / bossFight.playerMaxHp) * 100);
+  bossFightPlayerHpFill.style.width = pct + '%';
+  bossFightPlayerHpText.textContent = `${Math.max(0, Math.round(bossFight.playerHp))} / ${Math.round(bossFight.playerMaxHp)}`;
+}
+function updateBossFightShieldBar() {
+  if (bossFight.playerMaxShield <= 0) {
+    bossFightShieldBar.classList.add('empty-shield');
+    return;
+  }
+  bossFightShieldBar.classList.remove('empty-shield');
+  const pct = Math.max(0, (bossFight.playerShield / bossFight.playerMaxShield) * 100);
+  bossFightShieldFill.style.width = pct + '%';
+  bossFightShieldText.textContent = `${Math.max(0, Math.round(bossFight.playerShield))} / ${Math.round(bossFight.playerMaxShield)}`;
+}
+function updateBossFightHpBar() {
+  const pct = Math.max(0, (bossFight.bossHp / bossFight.bossMaxHp) * 100);
+  bossFightHpFill.style.width = pct + '%';
+  bossFightHpText.textContent = `${Math.max(0, Math.round(bossFight.bossHp))} / ${Math.round(bossFight.bossMaxHp)}`;
+}
+
+// Boss-Werte wachsen leicht mit jedem Sieg (bossesWon), damit der
+// Kampagnen-Modus auch nach mehreren Durchlaeufen noch fordert.
+function rollBossFightStats() {
+  const hpMult = 15 + Math.random() * 5 + bossFight.bossesWon * 1.5;
+  const dmgMult = 5 + Math.random() * 3 + bossFight.bossesWon * 0.6;
+  return {
+    bossMaxHp: Math.max(300, Math.round(battle.playerMaxHp * 0.45 * hpMult)),
+    bossDmg: Math.max(15, Math.round(battle.playerDmg * 0.3 * dmgMult)),
+  };
+}
+
+function spawnBossFight() {
+  clearTimeout(bossFight.playerAttackTimer);
+  clearTimeout(bossFight.bossAttackTimer);
+  clearTimeout(bossFight.introTimer);
+  bossFight.defeated = false;
+  bossFight.victorious = false;
+  bossFightDefeatOverlay.classList.remove('open');
+  bossFightVictoryOverlay.classList.remove('open');
+
+  bossFight.playerMaxHp = battle.playerMaxHp;
+  bossFight.playerMaxShield = battle.playerMaxShield;
+  bossFight.playerHp = bossFight.playerMaxHp;
+  bossFight.playerShield = bossFight.playerMaxShield;
+  updateBossFightPlayerHpBar();
+  updateBossFightShieldBar();
+
+  const { bossMaxHp, bossDmg } = rollBossFightStats();
+  bossFight.bossMaxHp = bossMaxHp;
+  bossFight.bossHp = bossMaxHp;
+  bossFight.bossDmg = bossDmg;
+  bossFight.bossName = BOSS_FIGHT_NAMES[Math.floor(Math.random() * BOSS_FIGHT_NAMES.length)];
+  bossFightName.textContent = bossFight.bossName;
+  updateBossFightHpBar();
+
+  bossFight.introTimer = setTimeout(() => {
+    if (bossFight.defeated || bossFight.victorious || !bossFight.active) return;
+    scheduleBossFightAttack();
+  }, 900);
+  schedulePlayerAttackBossFight();
+}
+
+function scheduleBossFightAttack() {
+  if (bossFight.defeated || bossFight.victorious || !bossFight.active) return;
+  bossFight.bossAttackTimer = setTimeout(() => {
+    if (bossFight.defeated || bossFight.victorious || !bossFight.active) return;
+    dealDamageToBossFightPlayer(bossFight.bossDmg);
+    scheduleBossFightAttack();
+  }, 1300);
+}
+
+function schedulePlayerAttackBossFight() {
+  if (bossFight.defeated || bossFight.victorious || !bossFight.active) return;
+  bossFight.playerAttackTimer = setTimeout(() => {
+    if (bossFight.defeated || bossFight.victorious || !bossFight.active) return;
+    attackBossFight();
+    schedulePlayerAttackBossFight();
+  }, 800);
+}
+
+function dealDamageToBossFightPlayer(rawAmount) {
+  let remaining = Math.round(rawAmount);
+  if (bossFight.playerShield > 0) {
+    const absorbed = Math.min(bossFight.playerShield, remaining);
+    bossFight.playerShield -= absorbed;
+    remaining -= absorbed;
+    updateBossFightShieldBar();
+  }
+  if (remaining > 0) {
+    bossFight.playerHp = Math.max(0, bossFight.playerHp - remaining);
+    updateBossFightPlayerHpBar();
+  }
+  if (bossFight.playerHp <= 0 && !bossFight.defeated) {
+    bossFight.defeated = true;
+    clearTimeout(bossFight.bossAttackTimer);
+    clearTimeout(bossFight.playerAttackTimer);
+    bossFightDefeatOverlay.classList.add('open');
+  }
+}
+
+let pendingPetRarity = null;
+
+function showBossFightVictory() {
+  pendingPetRarity = rollRarity(Math.max(state.anvilLevel, 1 + bossFight.bossesWon));
+  bossPetSwatch.style.background = pendingPetRarity.color;
+  bossPetName.textContent = pendingPetRarity.name + '-Pet';
+  bossFightVictoryOverlay.classList.add('open');
+}
+
+function attackBossFight() {
+  if (bossFight.defeated || bossFight.victorious || bossFight.bossHp <= 0) return;
+  const dmg = Math.round(battle.playerDmg * (0.85 + Math.random() * 0.3));
+  bossFight.bossHp -= dmg;
+  updateBossFightHpBar();
+  if (bossFight.bossHp <= 0) {
+    bossFight.bossHp = 0;
+    updateBossFightHpBar();
+    bossFight.victorious = true;
+    bossFight.bossesWon += 1;
+    clearTimeout(bossFight.bossAttackTimer);
+    clearTimeout(bossFight.playerAttackTimer);
+    setTimeout(showBossFightVictory, 350);
+  }
+}
+
+function openBossFight() {
+  bossModal.classList.add('open');
+  bossFight.active = true;
+  spawnBossFight();
+}
+function closeBossFight() {
+  bossModal.classList.remove('open');
+  bossFight.active = false;
+  clearTimeout(bossFight.playerAttackTimer);
+  clearTimeout(bossFight.bossAttackTimer);
+  clearTimeout(bossFight.introTimer);
+}
+
+document.getElementById('bossEntryBtn').addEventListener('click', openBossFight);
+document.getElementById('bossModalClose').addEventListener('click', closeBossFight);
+bossModal.addEventListener('click', (e) => { if (e.target === bossModal) closeBossFight(); });
+
+document.getElementById('bossFightRetryBtn').addEventListener('click', () => {
+  bossFight.playerHp = bossFight.playerMaxHp;
+  bossFight.playerShield = bossFight.playerMaxShield;
+  updateBossFightPlayerHpBar();
+  updateBossFightShieldBar();
+  bossFight.bossHp = bossFight.bossMaxHp;
+  updateBossFightHpBar();
+  bossFight.defeated = false;
+  bossFightDefeatOverlay.classList.remove('open');
+  scheduleBossFightAttack();
+  schedulePlayerAttackBossFight();
+});
+
+document.getElementById('bossFightCollectBtn').addEventListener('click', () => {
+  if (pendingPetRarity) {
+    state.pets.push({ rarity: pendingPetRarity });
+    renderCompanionRing();
+    if (battle.active) schedulePetHelpersAttack();
+    pendingPetRarity = null;
+  }
+  bossFightVictoryOverlay.classList.remove('open');
+  spawnBossFight();
 });
 
 // Start: keine Ausruestung, alle Werte auf 0 - erst Schmieden + Ausruesten baut die Werte auf.
 renderAllSlots();
+renderCompanionRing();

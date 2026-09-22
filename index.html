@@ -271,6 +271,14 @@
           <span class="upgrade-cost"><span id="upgradeCostInline">200</span> <svg class="mini-coin"><use href="icons.svg#coin"/></svg></span>
         </div>
 
+        <!-- Boss-Kampf: eigener Kampagnen-Modus, unabhaengig von der Welle.
+             Belohnt Pets (gleiche Raritaetsstufen wie die Schmiede) statt
+             Ausruestung. -->
+        <div class="boss-entry" id="bossEntryBtn">
+          <svg class="boss-entry-icon"><use href="icons.svg#flag"/></svg>
+          <span class="boss-entry-label">Boss</span>
+        </div>
+
         <div class="forge-glow"></div>
       </div>
 
@@ -307,6 +315,54 @@
       <!-- Slot-Info: Ausrüstungsteil antippen zeigt Name, Rarität und Wert -->
       <div class="forge-modal" id="slotInfoModal">
         <div class="forge-result-card" id="slotInfoContent"></div>
+      </div>
+
+      <!-- Boss-Kampf: eigener Kampagnen-Modus. Sieg rollt ein Pet in einer
+           der Schmiede-Raritaeten (Grau bis Himmlisch) statt Ausruestung -
+           das Pet landet danach als Helfer im Begleiter-Halbkreis im Kampf. -->
+      <div class="forge-modal" id="bossModal">
+        <div class="forge-modal-card boss-modal-card">
+          <div class="forge-modal-head">
+            <span class="forge-title">Boss-Kampf</span>
+            <span class="forge-close" id="bossModalClose">&times;</span>
+          </div>
+
+          <div class="boss-fight-stage" id="bossFightStage">
+            <div class="boss-fight-unit">
+              <span class="fighter-name" id="bossFightName">???</span>
+              <svg class="boss-fight-sprite" viewBox="0 0 100 100"><use href="icons.svg#bossmonster"/></svg>
+              <div class="hp-bar boss-fight-hp-bar">
+                <div class="hp-fill" id="bossFightHpFill"></div>
+                <span class="hp-text" id="bossFightHpText">0 / 0</span>
+              </div>
+            </div>
+
+            <div class="boss-fight-player">
+              <span class="fighter-name">Du</span>
+              <div class="hp-bar shield-bar" id="bossFightShieldBar">
+                <div class="hp-fill shield-fill" id="bossFightShieldFill"></div>
+                <span class="hp-text" id="bossFightShieldText">0 / 0</span>
+              </div>
+              <div class="hp-bar player-hp-bar">
+                <div class="hp-fill" id="bossFightPlayerHpFill"></div>
+                <span class="hp-text" id="bossFightPlayerHpText">0 / 0</span>
+              </div>
+            </div>
+
+            <div class="boss-fight-overlay" id="bossFightDefeatOverlay">
+              <span class="boss-fight-overlay-title lose">Niederlage</span>
+              <span class="boss-fight-overlay-text">Der Boss war zu stark. Verbessere deine Ausrüstung und versuch's erneut.</span>
+              <button class="forge-upgrade-confirm-btn" id="bossFightRetryBtn"><span>Erneut versuchen</span></button>
+            </div>
+
+            <div class="boss-fight-overlay" id="bossFightVictoryOverlay">
+              <span class="boss-fight-overlay-title win">Sieg!</span>
+              <div class="forge-result-swatch" id="bossPetSwatch"><svg class="slot-icon"><use href="icons.svg#bat"/></svg></div>
+              <span class="boss-fight-pet-name" id="bossPetName">Pet</span>
+              <button class="forge-upgrade-confirm-btn" id="bossFightCollectBtn"><span>Einsammeln</span></button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="swipe-hint">Nach rechts wischen für den Kampf &#8250;</div>

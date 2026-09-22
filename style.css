@@ -488,6 +488,25 @@ body {
   75% { transform: translate(calc(-50% + 5px), -50%); }
 }
 
+/* Boss-Kampf: eigener Button neben dem Amboss-Upgrade, rechts. */
+.boss-entry {
+  position: absolute;
+  right: 10px;
+  top: 66px;
+  z-index: 4;
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  width: 54px;
+  padding: 6px 4px;
+  background: var(--boss-grad);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+}
+.boss-entry:active { transform: scale(0.95); }
+.boss-entry-icon { width: 16px; height: 16px; filter: brightness(0) invert(1); }
+.boss-entry-label { font-size: 9px; font-weight: 800; color: #fff; }
+
 .home-indicator {
   position: absolute;
   bottom: 8px; left: 50%; transform: translateX(-50%);
@@ -657,6 +676,50 @@ svg use { color: inherit; }
 .slot-enhance-btn.disabled { opacity: 0.45; }
 .slot-enhance-btn.insufficient { animation: upgradeShake 0.35s; }
 
+/* Boss-Kampf-Modal: eigener Kampagnen-Modus mit einem einzelnen starken
+   Gegner, Belohnung ist ein Pet statt Ausruestung. */
+.boss-modal-card { max-width: 340px; }
+.boss-fight-stage {
+  position: relative;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px;
+  background: #15112f;
+  border-radius: 14px;
+  padding: 18px 14px;
+  margin-top: 2px;
+}
+.boss-fight-unit, .boss-fight-player {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+}
+.boss-fight-sprite { width: 64px; height: 64px; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.4)); }
+.boss-fight-hp-bar { width: 84px; height: 10px; }
+.boss-fight-hp-bar .hp-fill { background: linear-gradient(90deg, var(--boss-accent), #b3121f); }
+.boss-fight-unit .fighter-name, .boss-fight-player .fighter-name {
+  font-size: 10px; font-weight: 800; color: #fff;
+}
+
+.boss-fight-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: rgba(10,8,25,0.85);
+  border-radius: 14px;
+  display: none;
+  flex-direction: column; align-items: center; justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  text-align: center;
+}
+.boss-fight-overlay.open { display: flex; }
+.boss-fight-overlay-title { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 19px; }
+.boss-fight-overlay-title.lose { color: var(--danger); }
+.boss-fight-overlay-title.win { color: var(--success); }
+.boss-fight-overlay-text { font-size: 12px; color: rgba(255,255,255,0.7); line-height: 1.4; }
+.boss-fight-overlay .forge-result-swatch { width: 52px; height: 52px; }
+.boss-fight-overlay .forge-result-swatch .slot-icon { width: 32px; height: 32px; }
+.boss-fight-pet-name { font-weight: 800; font-size: 13px; }
+.boss-fight-overlay .forge-upgrade-confirm-btn { width: 100%; justify-content: center; }
+
 
 /* ---------- Kampf-Einstieg auf der Ausruestungs-Seite ---------- */
 .battle-entry {
@@ -808,8 +871,8 @@ svg use { color: inherit; }
   position: absolute;
   left: var(--ring-x);
   top: calc(50% + var(--ring-y));
-  width: 18px; height: 18px;
-  margin: -9px 0 0 -9px;
+  width: 20px; height: 20px;
+  margin: -10px 0 0 -10px;
   border-radius: 50%;
   background: rgba(255,255,255,0.08);
   border: 1.5px dashed rgba(255,255,255,0.35);
@@ -817,6 +880,15 @@ svg use { color: inherit; }
   cursor: pointer;
 }
 .companion-lock { width: 8px; height: 8px; color: rgba(255,255,255,0.55); opacity: 0.75; }
+
+/* Ein Pet aus dem Boss-Kampf besetzt den Platz: fester Rand statt gestrichelt,
+   in der Farbe der Pet-Raritaet, dazu ein kleines Fledermaus-Icon. */
+.companion-slot.filled {
+  background: rgba(0,0,0,0.35);
+  border: 1.5px solid var(--pet-color, #fff);
+  box-shadow: 0 0 6px var(--pet-color, transparent);
+}
+.companion-pet-icon { width: 12px; height: 12px; }
 
 .fighter-card {
   position: relative;
