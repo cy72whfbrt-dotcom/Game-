@@ -1,659 +1,300 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Idle RPG - Home</title>
-<link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Open Water</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            background: #1a1a1a;
+        }
+
+        canvas {
+            display: block;
+            cursor: grab;
+        }
+
+        canvas:active {
+            cursor: grabbing;
+        }
+
+        #hint {
+            position: fixed;
+            left: 50%;
+            bottom: 18px;
+            transform: translateX(-50%);
+            color: #cfe8ff;
+            font: 13px/1.4 system-ui, sans-serif;
+            background: rgba(10, 14, 39, 0.55);
+            padding: 6px 14px;
+            border-radius: 20px;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+    </style>
 </head>
 <body>
-  <div style="display:none">
-    <object id="icon-sprite" data="icons.svg" type="image/svg+xml"></object>
-  </div>
-  <img src="icons.svg" style="display:none" id="preload">
+    <canvas id="mapCanvas"></canvas>
+    <div id="hint">Ziehen zum Bewegen &middot; Scrollen/Pinch zum Zoomen &middot; deine Insel ist gr&uuml;n</div>
 
-  <div class="phone-frame">
-    <div class="game-screen" id="gameScreen">
-    <div class="pages-track" id="pagesTrack">
-    <div class="page page-home" id="pageHome">
+    <script>
+        const canvas = document.getElementById('mapCanvas');
+        const ctx = canvas.getContext('2d');
 
-      <!-- Top bar -->
-      <div class="top-bar">
-        <div class="profile">
-          <div class="avatar">
-            <div class="avatar-face"></div>
-          </div>
-          <span class="player-name">player66378937</span>
-        </div>
-        <div class="currencies">
-          <div class="currency">
-            <svg class="cur-icon"><use href="icons.svg#gem"/></svg>
-            <span class="cur-value" id="gemsValue">6530</span>
-            <span class="cur-add">+</span>
-          </div>
-          <div class="currency">
-            <svg class="cur-icon"><use href="icons.svg#coin"/></svg>
-            <span class="cur-value" id="goldValue">1951</span>
-            <span class="cur-add">+</span>
-          </div>
-          <div class="currency currency-ore">
-            <svg class="cur-icon"><use href="icons.svg#ore"/></svg>
-            <span class="cur-value" id="oreValue">0</span>
-          </div>
-        </div>
-      </div>
+        // Resize canvas
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
 
-      <div class="top-bar-labels">
-        <div class="mini-btn">
-          <svg class="mini-icon"><use href="icons.svg#gift"/></svg>
-          <span class="mini-label">1. Aufladung</span>
-        </div>
-        <div class="mini-btn">
-          <svg class="mini-icon"><use href="icons.svg#mail"/></svg>
-          <span class="mini-label">Post</span>
-        </div>
-        <div class="mini-btn">
-          <svg class="mini-icon"><use href="icons.svg#chat"/></svg>
-          <span class="mini-label">Chat</span>
-        </div>
-      </div>
+        // Map state - zoom is smoothed toward targetZoom for a nicer feel
+        let mapState = {
+            offsetX: window.innerWidth / 2,
+            offsetY: window.innerHeight / 2,
+            zoom: 0.35,
+            targetZoom: 0.35,
+            isDragging: false,
+            dragStartX: 0,
+            dragStartY: 0,
+            lastOffsetX: 0,
+            lastOffsetY: 0
+        };
 
-      <!-- Character viewport -->
-      <div class="character-viewport">
-        <svg class="arch-bg" viewBox="0 0 320 300" preserveAspectRatio="xMidYMid slice">
-          <defs>
-            <linearGradient id="archOuter" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#efe9ff"/>
-              <stop offset="100%" stop-color="#d9def7"/>
-            </linearGradient>
-            <linearGradient id="archInner" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#6d5dfb"/>
-              <stop offset="100%" stop-color="#2f2a78"/>
-            </linearGradient>
-            <linearGradient id="archRing" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#ffffff"/>
-              <stop offset="100%" stop-color="#c9d0f5"/>
-            </linearGradient>
-          </defs>
-          <rect width="320" height="300" fill="url(#archOuter)"/>
-          <ellipse cx="160" cy="120" rx="160" ry="220" fill="#ffffff" opacity="0.35"/>
-          <path d="M160 20c-55 0-90 45-90 100v90h180v-90c0-55-35-100-90-100z" fill="url(#archRing)" stroke="#ffffff" stroke-width="3"/>
-          <path d="M160 34c-46 0-76 38-76 86v82h152v-82c0-48-30-86-76-86z" fill="url(#archInner)"/>
-          <rect x="72" y="200" width="20" height="28" rx="3" fill="#e8def7"/>
-          <rect x="228" y="200" width="20" height="28" rx="3" fill="#e8def7"/>
-          <circle cx="82" cy="196" r="7" fill="#ff5c9d" opacity="0.9"/>
-          <circle cx="238" cy="196" r="7" fill="#14c2b8" opacity="0.9"/>
-        </svg>
-        <div class="viewport-vignette"></div>
-        <span class="section-tag">Ausrüstung</span>
+        const MIN_ZOOM = 0.06;
+        const MAX_ZOOM = 4;
 
-        <div class="equip-grid equip-left">
-          <div class="equip-slot empty" id="slot-cap" data-slot="cap"><svg class="slot-icon"><use href="icons.svg#cap"/></svg><span class="slot-lvl">Leer</span></div>
-          <div class="equip-slot empty" id="slot-helmet" data-slot="helmet"><svg class="slot-icon"><use href="icons.svg#helmet"/></svg><span class="slot-lvl">Leer</span></div>
-          <div class="equip-slot empty" id="slot-gauntlet" data-slot="gauntlet"><svg class="slot-icon"><use href="icons.svg#gauntlet"/></svg><span class="slot-lvl">Leer</span></div>
-          <div class="equip-slot empty" id="slot-robe" data-slot="robe"><svg class="slot-icon"><use href="icons.svg#robe"/></svg><span class="slot-lvl">Leer</span></div>
-          <div class="equip-slot empty" id="slot-ring" data-slot="ring"><svg class="slot-icon"><use href="icons.svg#ring"/></svg><span class="slot-lvl">Leer</span></div>
-          <div class="equip-slot empty" id="slot-pants" data-slot="pants"><svg class="slot-icon"><use href="icons.svg#pants"/></svg><span class="slot-lvl">Leer</span></div>
-          <div class="equip-slot empty" id="slot-star" data-slot="star"><svg class="slot-icon"><use href="icons.svg#star"/></svg><span class="slot-lvl">Leer</span></div>
-          <div class="equip-slot empty" id="slot-boots" data-slot="boots"><svg class="slot-icon"><use href="icons.svg#boots"/></svg><span class="slot-lvl">Leer</span></div>
-        </div>
+        // Large grid of islands, jittered so it doesn't look too uniform
+        const GRID_SIZE = 9; // 9x9 = 81 islands
+        const ISLAND_SPACING = 850;
+        const ISLAND_RADIUS_MIN = 140;
+        const ISLAND_RADIUS_MAX = 230;
 
-        <div class="equip-grid equip-right">
-          <div class="equip-slot empty" id="slot-sword" data-slot="sword"><svg class="slot-icon"><use href="icons.svg#sword"/></svg><span class="slot-lvl">Leer</span></div>
-          <div class="equip-slot empty" id="slot-wingstar" data-slot="wingstar"><svg class="slot-icon"><use href="icons.svg#wingstar"/></svg><span class="slot-lvl">Leer</span><span class="slot-enhance-badge" id="wingstarEnhanceBadge"></span></div>
-          <div class="equip-slot empty" id="slot-dragon" data-slot="dragon"><svg class="slot-icon"><use href="icons.svg#dragon"/></svg><span class="slot-lvl">Leer</span></div>
-          <div class="equip-slot empty" id="slot-scroll" data-slot="scroll"><svg class="slot-icon"><use href="icons.svg#scroll"/></svg><span class="slot-lvl">Leer</span></div>
-          <div class="equip-slot empty" id="slot-gem" data-slot="gem"><svg class="slot-icon"><use href="icons.svg#gem"/></svg><span class="slot-lvl">Leer</span></div>
-          <div class="equip-slot empty" id="slot-question" data-slot="question"><svg class="slot-icon"><use href="icons.svg#question"/></svg><span class="slot-lvl">Leer</span></div>
-        </div>
+        function mulberry32(seed) {
+            return function () {
+                seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+                let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+                t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+                return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+            };
+        }
+        const rand = mulberry32(1337);
 
-        <!-- Fluegel/Glow-Buff-Effekt: standardmaessig unsichtbar (display:none via
-             .character-fx ohne .active). Wird per updateCharacterFx() in script.js
-             sichtbar geschaltet, sobald state.equipment.wingstar existiert. Liegt
-             im DOM VOR .character (beide z-index:auto) und damit optisch dahinter,
-             aber noch unter den Ausruestungs-Slots (z-index 5/6). -->
-        <div class="character-fx" id="characterFx">
-          <div class="character-fx-glow"></div>
-          <svg class="character-fx-wings" viewBox="0 0 300 200" preserveAspectRatio="xMidYMid meet">
-            <defs>
-              <linearGradient id="wSteel" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stop-color="#eef2f6"/><stop offset="100%" stop-color="#93a0ad"/>
-              </linearGradient>
-              <linearGradient id="wGold" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stop-color="#fff0c2"/><stop offset="100%" stop-color="#d99f33"/>
-              </linearGradient>
-            </defs>
-            <g class="wing wing-right">
-              <path class="wing-membrane" d="M150 148 C172 112 198 78 228 58 C238 74 234 88 246 94 C258 80 268 72 282 63 C272 84 262 93 264 103 C277 98 287 95 297 99 C280 114 262 121 251 133 C236 127 219 135 206 151 C196 141 179 143 169 153 C161 151 155 150 150 148 Z"/>
-              <path class="wing-bone" d="M150 148 C172 112 198 78 228 58" fill="none" stroke="url(#wSteel)" stroke-width="3" stroke-linecap="round"/>
-              <path class="wing-bone" d="M169 153 C185 128 210 108 246 94" fill="none" stroke="url(#wSteel)" stroke-width="2" stroke-linecap="round"/>
-              <path class="wing-bone" d="M206 151 C222 128 245 112 264 103" fill="none" stroke="url(#wSteel)" stroke-width="2" stroke-linecap="round"/>
-              <circle class="wing-rivet" cx="153" cy="146" r="4" fill="url(#wGold)"/>
-            </g>
-            <g class="wing wing-left" transform="scale(-1,1) translate(-300,0)">
-              <path class="wing-membrane" d="M150 148 C172 112 198 78 228 58 C238 74 234 88 246 94 C258 80 268 72 282 63 C272 84 262 93 264 103 C277 98 287 95 297 99 C280 114 262 121 251 133 C236 127 219 135 206 151 C196 141 179 143 169 153 C161 151 155 150 150 148 Z"/>
-              <path class="wing-bone" d="M150 148 C172 112 198 78 228 58" fill="none" stroke="url(#wSteel)" stroke-width="3" stroke-linecap="round"/>
-              <path class="wing-bone" d="M169 153 C185 128 210 108 246 94" fill="none" stroke="url(#wSteel)" stroke-width="2" stroke-linecap="round"/>
-              <path class="wing-bone" d="M206 151 C222 128 245 112 264 103" fill="none" stroke="url(#wSteel)" stroke-width="2" stroke-linecap="round"/>
-              <circle class="wing-rivet" cx="153" cy="146" r="4" fill="url(#wGold)"/>
-            </g>
-          </svg>
-        </div>
+        const islands = [];
+        let playerIslandId = null;
 
-        <div class="character">
-          <svg viewBox="0 0 120 170" class="char-sprite">
-            <defs>
-              <linearGradient id="cPurple" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#a97ce8"/><stop offset="100%" stop-color="#5c2fa0"/>
-              </linearGradient>
-              <linearGradient id="cSteel" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#cfd6dd"/><stop offset="100%" stop-color="#7c8894"/>
-              </linearGradient>
-              <linearGradient id="cGold" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#f7dd8f"/><stop offset="100%" stop-color="#c9922f"/>
-              </linearGradient>
-            </defs>
-            <ellipse cx="60" cy="150" rx="34" ry="8" fill="#000" opacity="0.35"/>
-            <path d="M60 60c-30 6-46 30-38 58 5 16 4 26 0 34h76c-4-8-5-18 0-34 8-28-8-52-38-58z" fill="url(#cPurple)" opacity="0.9"/>
-            <path d="M28 92c-14-4-24 2-26 14 10 2 18-2 24-8zM92 92c14-4 24 2 26 14-10 2-18-2-24-8z" fill="url(#cPurple)"/>
-            <path d="M40 84c8 20 32 20 40 0l-4 40c-10 8-22 8-32 0z" fill="#8a3b2f"/>
-            <rect x="46" y="108" width="28" height="28" rx="4" fill="#7a3226"/>
-            <circle cx="60" cy="46" r="22" fill="#f0cf9e"/>
-            <path d="M38 40c0-16 10-26 22-26s22 10 22 26c-6-4-14-6-22-6s-16 2-22 6z" fill="#5a4a38"/>
-            <path d="M36 30c-2-10 6-18 24-18s26 8 24 18c-4-8-14-12-24-12s-20 4-24 12z" fill="url(#cSteel)" stroke="#3a3f45" stroke-width="1.5"/>
-            <circle cx="60" cy="18" r="4" fill="url(#cGold)"/>
-            <circle cx="52" cy="48" r="2.4" fill="#2a2018"/>
-            <circle cx="68" cy="48" r="2.4" fill="#2a2018"/>
-            <path d="M54 56c2 3 10 3 12 0" stroke="#8a5a3f" stroke-width="1.6" fill="none" stroke-linecap="round"/>
-            <rect x="86" y="70" width="6" height="46" rx="2" fill="url(#cSteel)" transform="rotate(18 89 93)"/>
-            <rect x="80" y="112" width="14" height="8" rx="2" fill="url(#cGold)" transform="rotate(18 87 116)"/>
-          </svg>
-        </div>
+        const half = Math.floor(GRID_SIZE / 2);
+        let id = 0;
+        for (let row = -half; row <= half; row++) {
+            for (let col = -half; col <= half; col++) {
+                const jitterX = (rand() - 0.5) * ISLAND_SPACING * 0.4;
+                const jitterY = (rand() - 0.5) * ISLAND_SPACING * 0.4;
+                islands.push({
+                    id: id++,
+                    x: col * ISLAND_SPACING + jitterX,
+                    y: row * ISLAND_SPACING + jitterY,
+                    radius: ISLAND_RADIUS_MIN + rand() * (ISLAND_RADIUS_MAX - ISLAND_RADIUS_MIN)
+                });
+            }
+        }
 
-      </div>
+        // Assign the player's island: the one closest to the map center,
+        // persisted so the same island stays "yours" between visits.
+        function centerIsland() {
+            let closest = islands[0];
+            let closestDist = Infinity;
+            for (const island of islands) {
+                const dist = island.x * island.x + island.y * island.y;
+                if (dist < closestDist) {
+                    closestDist = dist;
+                    closest = island;
+                }
+            }
+            return closest;
+        }
 
-      <!-- Level / EXP bar -->
-      <div class="level-bar">
-        <svg class="worm-icon"><use href="icons.svg#worm"/></svg>
-        <span class="level-text">Lv. 0</span>
-        <div class="exp-track">
-          <div class="exp-fill" style="width:0%"></div>
-          <span class="exp-text">0 / 100</span>
-        </div>
-        <svg class="info-icon"><use href="icons.svg#info"/></svg>
-      </div>
+        const storedId = parseInt(localStorage.getItem('openWaterPlayerIslandId'), 10);
+        if (!Number.isNaN(storedId) && islands.some(i => i.id === storedId)) {
+            playerIslandId = storedId;
+        } else {
+            playerIslandId = centerIsland().id;
+            localStorage.setItem('openWaterPlayerIslandId', playerIslandId);
+        }
 
-      <!-- Stats panel: klare Namen + kurze Erklärung statt kryptischer Kürzel -->
-      <div class="stats-panel">
-        <div class="stat">
-          <span class="stat-icon">♥</span>
-          <span class="stat-text"><span class="stat-name">Leben</span><span class="stat-desc">wie viel du aushältst</span></span>
-          <span class="stat-value" id="stat-HP">0</span>
-        </div>
-        <div class="stat">
-          <span class="stat-icon">⚔</span>
-          <span class="stat-text"><span class="stat-name">Angriff</span><span class="stat-desc">dein Schaden pro Treffer</span></span>
-          <span class="stat-value" id="stat-ATK">0</span>
-        </div>
-        <div class="stat">
-          <span class="stat-icon">🛡</span>
-          <span class="stat-text"><span class="stat-name">Verteidigung</span><span class="stat-desc">senkt erlittenen Schaden</span></span>
-          <span class="stat-value" id="stat-DEF">0</span>
-        </div>
-        <div class="stat">
-          <span class="stat-icon">⚡</span>
-          <span class="stat-text"><span class="stat-name">Tempo</span><span class="stat-desc">wie oft du zuschlägst</span></span>
-          <span class="stat-value" id="stat-SPD">0</span>
-        </div>
-        <div class="stat">
-          <span class="stat-icon">✦</span>
-          <span class="stat-text"><span class="stat-name">Krit.-Chance</span><span class="stat-desc">Chance auf doppelten Schaden</span></span>
-          <span class="stat-value" id="stat-Crit">0,0%</span>
-        </div>
-        <div class="stat">
-          <span class="stat-icon">✺</span>
-          <span class="stat-text"><span class="stat-name">Kombo-Schaden</span><span class="stat-desc">Bonusschaden bei Kombos</span></span>
-          <span class="stat-value" id="stat-CMB">0,0%</span>
-        </div>
-        <div class="stat">
-          <span class="stat-icon">↺</span>
-          <span class="stat-text"><span class="stat-name">Konterchance</span><span class="stat-desc">Chance auf Gegenangriff</span></span>
-          <span class="stat-value" id="stat-CTA">0,0%</span>
-        </div>
-        <div class="stat">
-          <span class="stat-icon">💫</span>
-          <span class="stat-text"><span class="stat-name">Betäubungschance</span><span class="stat-desc">Gegner kurz handlungsunfähig</span></span>
-          <span class="stat-value" id="stat-Betaeubung">0,0%</span>
-        </div>
-        <div class="stat">
-          <span class="stat-icon">⛨</span>
-          <span class="stat-text"><span class="stat-name">Effektwiderstand</span><span class="stat-desc">Schutz vor negativen Effekten</span></span>
-          <span class="stat-value" id="stat-ER">0,0%</span>
-        </div>
-      </div>
+        // Center the view on the player's island at start
+        const startIsland = islands.find(i => i.id === playerIslandId);
+        mapState.offsetX = window.innerWidth / 2 - startIsland.x * mapState.zoom;
+        mapState.offsetY = window.innerHeight / 2 - startIsland.y * mapState.zoom;
 
-      <!-- Adventure banner -->
-      <div class="adventure-banner" id="adventureBanner">
-        <div class="adv-icon">
-          <svg class="adv-shield"><use href="icons.svg#shield"/></svg>
-          <span class="adv-count">5</span>
-        </div>
-        <div class="adv-text">
-          <span>Auf ein Abenteuer gehen.</span>
-          <span class="adv-progress"><span class="red">0</span> /1</span>
-        </div>
-        <span class="adv-chevron">&#8250;</span>
-      </div>
+        // Draw map
+        function drawMap() {
+            // Smoothly ease current zoom toward target zoom
+            mapState.zoom += (mapState.targetZoom - mapState.zoom) * 0.18;
 
-      <!-- Bottom forge scene: the anvil/hammer is the dominant centerpiece,
-           feature icons are scattered around it, matching the reference. -->
-      <div class="forge-scene">
-        <div class="scene-floor"></div>
+            ctx.fillStyle = '#0a0e27';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        <svg class="forge-hero" viewBox="0 0 200 190" data-nav="forge">
-          <defs>
-            <linearGradient id="fSteel" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#9aa6b0"/><stop offset="100%" stop-color="#4a5560"/>
-            </linearGradient>
-            <linearGradient id="fSteelDark" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#6a7480"/><stop offset="100%" stop-color="#333c46"/>
-            </linearGradient>
-            <linearGradient id="fGold" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#f7dd8f"/><stop offset="100%" stop-color="#b8862f"/>
-            </linearGradient>
-          </defs>
-          <!-- anvil body -->
-          <rect x="55" y="95" width="90" height="52" rx="6" fill="url(#fSteel)" stroke="#20262c" stroke-width="3"/>
-          <path d="M55 108H24l-14 14 14 14h31z" fill="url(#fSteel)" stroke="#20262c" stroke-width="3"/>
-          <path d="M40 175h120l16 20H24z" fill="url(#fSteelDark)" stroke="#20262c" stroke-width="3"/>
-          <rect x="60" y="147" width="80" height="16" fill="url(#fSteelDark)" stroke="#20262c" stroke-width="3"/>
-          <circle cx="100" cy="120" r="10" fill="#1c2024"/>
-          <path d="M100 120l7-7M100 120l7 7M100 120l-9 0" stroke="url(#fGold)" stroke-width="2.5" stroke-linecap="round"/>
-          <!-- hammer, glowing, above anvil -->
-          <g filter="none">
-            <rect x="93" y="55" width="14" height="55" rx="4" fill="url(#fGold)" stroke="#7a5000" stroke-width="2" transform="rotate(8 100 82)"/>
-            <rect x="55" y="10" width="70" height="34" rx="7" fill="url(#fSteel)" stroke="#20262c" stroke-width="3" transform="rotate(8 90 27)"/>
-            <rect x="55" y="10" width="24" height="34" rx="7" fill="url(#fGold)" opacity="0.55" transform="rotate(8 90 27)"/>
-          </g>
-        </svg>
+            ctx.save();
+            ctx.translate(mapState.offsetX, mapState.offsetY);
+            ctx.scale(mapState.zoom, mapState.zoom);
 
-        <!-- Amboss-Upgrade sitzt direkt neben dem Amboss, unabhängig vom Schmiede-Ergebnis -->
-        <div class="anvil-upgrade" id="anvilUpgradeBtn">
-          <span class="upgrade-arrow">&#9650;</span>
-          <span class="upgrade-level">Lvl <span id="anvilLevelInline">1</span></span>
-          <span class="upgrade-cost"><span id="upgradeCostInline">200</span> <svg class="mini-coin"><use href="icons.svg#coin"/></svg></span>
-        </div>
+            const tileSize = 50;
+            const visibleX = Math.floor(-mapState.offsetX / mapState.zoom / tileSize) - 2;
+            const visibleY = Math.floor(-mapState.offsetY / mapState.zoom / tileSize) - 2;
+            const visibleW = Math.ceil(canvas.width / mapState.zoom / tileSize) + 4;
+            const visibleH = Math.ceil(canvas.height / mapState.zoom / tileSize) + 4;
 
-        <div class="forge-glow"></div>
-      </div>
+            // Base water fill
+            ctx.fillStyle = '#1a6faa';
+            ctx.fillRect(visibleX * tileSize, visibleY * tileSize, visibleW * tileSize, visibleH * tileSize);
 
-      <!-- Schmiede-Ergebnis: öffnet sich sofort, wenn man auf den Amboss tippt.
-           Zeigt NUR das gerade geschmiedete Teil, mittig, groß. -->
-      <div class="forge-modal" id="forgeModal">
-        <div class="forge-result-card" id="forgeResult">
-          <span class="forge-result-hint">Noch nichts geschmiedet.</span>
-        </div>
-      </div>
+            // Cull islands outside the visible area for performance
+            const viewLeft = -mapState.offsetX / mapState.zoom - ISLAND_RADIUS_MAX;
+            const viewTop = -mapState.offsetY / mapState.zoom - ISLAND_RADIUS_MAX;
+            const viewRight = viewLeft + canvas.width / mapState.zoom + ISLAND_RADIUS_MAX * 2;
+            const viewBottom = viewTop + canvas.height / mapState.zoom + ISLAND_RADIUS_MAX * 2;
 
-      <!-- Amboss-Info: Level + Raritäts-Chancen, öffnet sich über den Upgrade-Button -->
-      <div class="forge-modal" id="anvilInfoModal">
-        <div class="forge-modal-card">
-          <div class="forge-modal-head">
-            <span class="forge-title">Amboss</span>
-            <span class="forge-close" id="anvilInfoClose">&times;</span>
-          </div>
+            for (const island of islands) {
+                if (island.x + island.radius < viewLeft || island.x - island.radius > viewRight ||
+                    island.y + island.radius < viewTop || island.y - island.radius > viewBottom) {
+                    continue;
+                }
 
-          <div class="forge-level-row">
-            <span class="forge-level-label">Amboss-Level</span>
-            <span class="forge-level-value" id="anvilLevel">1</span>
-          </div>
+                const isPlayer = island.id === playerIslandId;
+                ctx.fillStyle = isPlayer ? '#4f9a3a' : '#8a8a8a';
+                ctx.fillRect(
+                    island.x - island.radius,
+                    island.y - island.radius,
+                    island.radius * 2,
+                    island.radius * 2
+                );
 
-          <button class="forge-upgrade-confirm-btn" id="upgradeConfirmBtn">
-            <span>Amboss verbessern</span>
-            <span class="forge-cost" id="upgradeCost">200 <svg class="mini-coin"><use href="icons.svg#coin"/></svg></span>
-          </button>
+                if (isPlayer) {
+                    ctx.strokeStyle = '#dff5c8';
+                    ctx.lineWidth = 6 / mapState.zoom;
+                    ctx.strokeRect(
+                        island.x - island.radius,
+                        island.y - island.radius,
+                        island.radius * 2,
+                        island.radius * 2
+                    );
+                }
+            }
 
-          <div class="forge-chances" id="forgeChances"></div>
-        </div>
-      </div>
+            ctx.restore();
+        }
 
-      <!-- Slot-Info: Ausrüstungsteil antippen zeigt Name, Rarität und Wert -->
-      <div class="forge-modal" id="slotInfoModal">
-        <div class="forge-result-card" id="slotInfoContent"></div>
-      </div>
+        // Mouse events
+        document.addEventListener('mousedown', (e) => {
+            mapState.isDragging = true;
+            mapState.dragStartX = e.clientX;
+            mapState.dragStartY = e.clientY;
+            mapState.lastOffsetX = mapState.offsetX;
+            mapState.lastOffsetY = mapState.offsetY;
+        });
 
-      <div class="swipe-hint">Nach rechts wischen für den Kampf &#8250;</div>
-    </div>
+        document.addEventListener('mousemove', (e) => {
+            if (mapState.isDragging) {
+                const deltaX = e.clientX - mapState.dragStartX;
+                const deltaY = e.clientY - mapState.dragStartY;
+                mapState.offsetX = mapState.lastOffsetX + deltaX;
+                mapState.offsetY = mapState.lastOffsetY + deltaY;
+            }
+        });
 
-    <!-- Seite 2: Abenteuer / Kampf, mittig, Gegner laufen automatisch heran -->
-    <div class="page page-battle" id="pageBattle">
-      <div class="wave-banner">
-        <svg class="wave-banner-icon" viewBox="0 0 48 48"><use href="icons.svg#portal"/></svg>
-        <span class="battle-wave">Welle <span id="waveNum">1</span></span>
-        <span class="wave-banner-sub" id="enemiesLeftLabel">1 Gegner</span>
-      </div>
+        document.addEventListener('mouseup', () => {
+            mapState.isDragging = false;
+        });
 
-      <div class="battle-stage" id="battleStage">
-        <svg class="battle-bg" viewBox="0 0 320 260" preserveAspectRatio="xMidYMid slice">
-          <defs>
-            <linearGradient id="battleSky" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#2f2778"/>
-              <stop offset="55%" stop-color="#1c1650"/>
-              <stop offset="100%" stop-color="#100c30"/>
-            </linearGradient>
-            <radialGradient id="glowPink" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stop-color="#ff5c9d" stop-opacity="0.35"/>
-              <stop offset="100%" stop-color="#ff5c9d" stop-opacity="0"/>
-            </radialGradient>
-            <radialGradient id="glowTeal" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stop-color="#14c2b8" stop-opacity="0.3"/>
-              <stop offset="100%" stop-color="#14c2b8" stop-opacity="0"/>
-            </radialGradient>
-            <radialGradient id="moonGlow" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stop-color="#eef1ff" stop-opacity="0.55"/>
-              <stop offset="45%" stop-color="#eef1ff" stop-opacity="0.16"/>
-              <stop offset="100%" stop-color="#eef1ff" stop-opacity="0"/>
-            </radialGradient>
-            <radialGradient id="moonBody" cx="35%" cy="32%" r="70%">
-              <stop offset="0%" stop-color="#ffffff"/>
-              <stop offset="70%" stop-color="#e7eaff"/>
-              <stop offset="100%" stop-color="#c3c9ef"/>
-            </radialGradient>
-            <radialGradient id="mistWisp" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stop-color="#c9d4ff" stop-opacity="0.16"/>
-              <stop offset="100%" stop-color="#c9d4ff" stop-opacity="0"/>
-            </radialGradient>
-            <linearGradient id="mtn0" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#4b3fae" stop-opacity="0.26"/>
-              <stop offset="100%" stop-color="#4b3fae" stop-opacity="0.06"/>
-            </linearGradient>
-            <linearGradient id="mtn1" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#4436a8" stop-opacity="0.5"/>
-              <stop offset="100%" stop-color="#4436a8" stop-opacity="0.15"/>
-            </linearGradient>
-            <linearGradient id="mtn2" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#2a2270" stop-opacity="0.65"/>
-              <stop offset="100%" stop-color="#2a2270" stop-opacity="0.2"/>
-            </linearGradient>
-          </defs>
-          <rect width="320" height="260" fill="url(#battleSky)"/>
-          <circle cx="70" cy="50" r="100" fill="url(#glowPink)"/>
-          <circle cx="270" cy="90" r="80" fill="url(#glowTeal)"/>
-          <!-- Mond mit weichem Glow-Hof, dezente Krater fuer Oberflaechen-Detail.
-               Hinweis: .battle-bg wird per preserveAspectRatio="slice" auf die
-               schmale/hohe Buehne (~374x689px) gemappt, wodurch nur der mittlere
-               Ausschnitt ca. vb-x 89-231 sichtbar bleibt - alle "wichtigen"
-               (nicht nur als Rand-Bleed gedachten) Elemente bewusst dort platziert. -->
-          <circle cx="205" cy="38" r="46" fill="url(#moonGlow)"/>
-          <circle cx="205" cy="38" r="16" fill="url(#moonBody)"/>
-          <circle cx="199" cy="32" r="2.6" fill="#c3c9ef" opacity="0.35"/>
-          <circle cx="210" cy="43" r="1.8" fill="#c3c9ef" opacity="0.3"/>
-          <circle cx="203" cy="45" r="1.2" fill="#c3c9ef" opacity="0.25"/>
-          <!-- Sternenfeld: variable Groesse/Helligkeit, wenige funkeln sanft.
-               Mehrheit bewusst im sichtbaren Mittelband (x 90-230), einige
-               am Rand fuer Tiefe/Bleed bei anderen Seitenverhaeltnissen. -->
-          <g fill="#fff">
-            <circle cx="24" cy="26" r="1.2" opacity="0.85"/><circle cx="48" cy="15" r="0.8" opacity="0.5"/>
-            <circle cx="80" cy="32" r="1.1" opacity="0.7"/>
-            <circle cx="104" cy="14" r="1.3" opacity="0.8" class="star-tw" style="animation-delay:-0.8s"/>
-            <circle cx="126" cy="36" r="0.9" opacity="0.6"/>
-            <circle cx="150" cy="10" r="1.4" opacity="0.85" class="star-tw" style="animation-delay:-2.0s"/>
-            <circle cx="172" cy="28" r="1.1" opacity="0.75"/><circle cx="196" cy="16" r="0.9" opacity="0.65"/>
-            <circle cx="214" cy="38" r="1.3" opacity="0.8" class="star-tw" style="animation-delay:-3.2s"/>
-            <circle cx="70" cy="60" r="1.1" opacity="0.6"/><circle cx="110" cy="80" r="0.8" opacity="0.45"/>
-            <circle cx="150" cy="58" r="1.2" opacity="0.7" class="star-tw" style="animation-delay:-1.4s"/>
-            <circle cx="190" cy="72" r="1" opacity="0.55"/>
-            <circle cx="10" cy="50" r="0.9" opacity="0.4"/><circle cx="300" cy="45" r="1" opacity="0.5"/>
-            <circle cx="300" cy="90" r="0.8" opacity="0.4"/>
-          </g>
-          <!-- Nebelschleier: weiche, gefederte Schwaden ueber dem Horizont -->
-          <ellipse cx="140" cy="128" rx="90" ry="14" fill="url(#mistWisp)"/>
-          <ellipse cx="195" cy="108" rx="60" ry="11" fill="url(#mistWisp)"/>
-          <ellipse cx="165" cy="150" rx="110" ry="16" fill="url(#mistWisp)"/>
-          <!-- Bergketten: 3 Ebenen mit atmosphaerischer Perspektive + Grat-Linien -->
-          <path d="M0 158 L45 132 L95 150 L145 120 L195 144 L245 118 L290 138 L320 126 L320 260 L0 260 Z" fill="url(#mtn0)"/>
-          <path d="M0 170 L50 120 L100 155 L150 105 L200 145 L250 115 L320 150 L320 260 L0 260 Z" fill="url(#mtn1)"/>
-          <path d="M0 176 L50 126 L100 161 L150 111 L200 151 L250 121 L320 156" fill="none" stroke="#fff" stroke-opacity="0.07" stroke-width="1"/>
-          <path d="M0 205 L70 175 L130 200 L190 165 L260 200 L320 180 L320 260 L0 260 Z" fill="url(#mtn2)"/>
-          <path d="M0 211 L70 181 L130 206 L190 171 L260 206 L320 186" fill="none" stroke="#fff" stroke-opacity="0.06" stroke-width="1"/>
-          <g stroke="#100c30" stroke-opacity="0.25" stroke-width="1" stroke-linecap="round">
-            <path d="M78 188 L82 200"/><path d="M138 178 L142 192"/>
-            <path d="M212 182 L216 196"/><path d="M270 188 L274 200"/>
-          </g>
-        </svg>
-        <div class="battle-ground"></div>
-        <div class="battle-vignette"></div>
+        // Zoom with mouse wheel / trackpad, zooming toward the cursor
+        document.addEventListener('wheel', (e) => {
+            e.preventDefault();
 
-        <div class="player-side">
-          <div class="fighter-card player-card">
-            <span class="fighter-name">Du</span>
-            <div class="hp-bar shield-bar" id="playerShieldBar">
-              <div class="hp-fill shield-fill" id="playerShieldFill"></div>
-              <span class="hp-text" id="playerShieldText">0 / 0</span>
-            </div>
-            <div class="hp-bar player-hp-bar">
-              <div class="hp-fill" id="playerHpFill"></div>
-              <span class="hp-text" id="playerHpText">5000 / 5000</span>
-            </div>
-          </div>
-          <svg viewBox="0 0 120 170" class="char-sprite battle-player-sprite">
-            <ellipse cx="60" cy="150" rx="34" ry="8" fill="#000" opacity="0.35"/>
-            <path d="M60 60c-30 6-46 30-38 58 5 16 4 26 0 34h76c-4-8-5-18 0-34 8-28-8-52-38-58z" fill="#8a5fd6" opacity="0.9"/>
-            <path d="M40 84c8 20 32 20 40 0l-4 40c-10 8-22 8-32 0z" fill="#8a3b2f"/>
-            <circle cx="60" cy="46" r="22" fill="#f0cf9e"/>
-            <path d="M36 30c-2-10 6-18 24-18s26 8 24 18c-4-8-14-12-24-12s-20 4-24 12z" fill="#b7c0c9" stroke="#3a3f45" stroke-width="1.5"/>
-          </svg>
-          <div class="fighter-pedestal"></div>
-        </div>
+            const oldZoom = mapState.targetZoom;
+            const zoomFactor = Math.exp(-e.deltaY * 0.0015);
+            let newZoom = oldZoom * zoomFactor;
+            newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom));
 
-        <!-- Gegner werden dynamisch erzeugt: es können 1-3 pro Welle sein -->
-        <div class="enemy-queue" id="enemyQueue"></div>
+            const mouseX = e.clientX;
+            const mouseY = e.clientY;
 
-        <!-- Niederlage-Screen: pausiert den Kampf, statt einfach weiterzulaufen -->
-        <div class="defeat-overlay" id="defeatOverlay">
-          <div class="defeat-card">
-            <svg class="defeat-skull" viewBox="0 0 48 48">
-              <path d="M24 6C13 6 6 14 6 24c0 6 3 11 7 14v8h6v-6h4v6h2v-6h4v6h6v-8c4-3 7-8 7-14 0-10-7-18-18-18z" fill="#e8e0d0" stroke="#3a3226" stroke-width="2"/>
-              <circle cx="16" cy="23" r="4.5" fill="#1a130c"/>
-              <circle cx="32" cy="23" r="4.5" fill="#1a130c"/>
-              <path d="M20 32l4 4 4-4" fill="none" stroke="#1a130c" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-            <span class="defeat-title">Niederlage</span>
-            <span class="defeat-text">Deine Ausrüstung war zu schwach. Schmiede bessere Teile und rüste sie aus, dann versuch's erneut.</span>
-            <button class="defeat-retry-btn" id="defeatRetryBtn">Erneut versuchen</button>
-          </div>
-        </div>
-      </div>
+            // Keep the point under the cursor stable while zooming
+            const worldX = (mouseX - mapState.offsetX) / mapState.zoom;
+            const worldY = (mouseY - mapState.offsetY) / mapState.zoom;
 
-      <!-- Einstieg in den Boss-Kampf: scrollt zur dritten Seite -->
-      <div class="boss-nav-banner" id="bossNavBanner">
-        <div class="adv-icon boss-nav-icon">
-          <svg class="adv-shield" viewBox="0 0 48 48"><use href="icons.svg#flag"/></svg>
-        </div>
-        <div class="adv-text">
-          <span>⚔️ Boss-Kampf</span>
-          <span class="adv-progress">Fordere den Boss heraus</span>
-        </div>
-        <span class="adv-chevron">&#8250;</span>
-      </div>
+            mapState.targetZoom = newZoom;
+            mapState.offsetX = mouseX - worldX * newZoom;
+            mapState.offsetY = mouseY - worldY * newZoom;
+        }, { passive: false });
 
-      <div class="swipe-hint">&#8249; Zurück zur Ausrüstung wischen</div>
-    </div>
+        // Touch support
+        let touchStartDistance = 0;
+        let touchStartZoom = 1;
+        let touchMidX = 0;
+        let touchMidY = 0;
 
-    <!-- Seite 3: Boss-Kampf - ein einzelner, sehr starker Gegner -->
-    <div class="page page-boss" id="pageBoss">
-      <div class="boss-banner">
-        <svg class="boss-banner-icon" viewBox="0 0 48 48"><use href="icons.svg#flag"/></svg>
-        <span class="boss-banner-title">Boss-Kampf</span>
-        <span class="boss-banner-sub" id="bossNameLabel">???</span>
-      </div>
+        document.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                mapState.isDragging = true;
+                mapState.dragStartX = e.touches[0].clientX;
+                mapState.dragStartY = e.touches[0].clientY;
+                mapState.lastOffsetX = mapState.offsetX;
+                mapState.lastOffsetY = mapState.offsetY;
+            } else if (e.touches.length === 2) {
+                mapState.isDragging = false;
+                const dx = e.touches[0].clientX - e.touches[1].clientX;
+                const dy = e.touches[0].clientY - e.touches[1].clientY;
+                touchStartDistance = Math.sqrt(dx * dx + dy * dy);
+                touchStartZoom = mapState.targetZoom;
+                touchMidX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                touchMidY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+            }
+        }, { passive: false });
 
-      <div class="battle-stage boss-stage" id="bossStage">
-        <svg class="battle-bg boss-bg" viewBox="0 0 320 260" preserveAspectRatio="xMidYMid slice">
-          <defs>
-            <linearGradient id="bossSky" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#4a1030"/>
-              <stop offset="55%" stop-color="#2c0d28"/>
-              <stop offset="100%" stop-color="#160616"/>
-            </linearGradient>
-            <radialGradient id="glowRed" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stop-color="#ff3b30" stop-opacity="0.4"/>
-              <stop offset="100%" stop-color="#ff3b30" stop-opacity="0"/>
-            </radialGradient>
-            <radialGradient id="glowViolet" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stop-color="#7b2ff7" stop-opacity="0.35"/>
-              <stop offset="100%" stop-color="#7b2ff7" stop-opacity="0"/>
-            </radialGradient>
-            <radialGradient id="bMoonGlow" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stop-color="#ff6a4d" stop-opacity="0.5"/>
-              <stop offset="45%" stop-color="#ff6a4d" stop-opacity="0.16"/>
-              <stop offset="100%" stop-color="#ff6a4d" stop-opacity="0"/>
-            </radialGradient>
-            <radialGradient id="bMoonBody" cx="35%" cy="32%" r="70%">
-              <stop offset="0%" stop-color="#ffd9c7"/>
-              <stop offset="70%" stop-color="#e8836a"/>
-              <stop offset="100%" stop-color="#8f2f2a"/>
-            </radialGradient>
-            <radialGradient id="bMistWisp" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stop-color="#ff8a6a" stop-opacity="0.14"/>
-              <stop offset="100%" stop-color="#ff8a6a" stop-opacity="0"/>
-            </radialGradient>
-            <radialGradient id="emberGlow" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stop-color="#ffcf6a" stop-opacity="0.95"/>
-              <stop offset="55%" stop-color="#ff6a30" stop-opacity="0.5"/>
-              <stop offset="100%" stop-color="#ff6a30" stop-opacity="0"/>
-            </radialGradient>
-            <linearGradient id="bmtn0" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#8a2c50" stop-opacity="0.3"/>
-              <stop offset="100%" stop-color="#8a2c50" stop-opacity="0.08"/>
-            </linearGradient>
-            <linearGradient id="bmtn1" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#7a1f3a" stop-opacity="0.5"/>
-              <stop offset="100%" stop-color="#7a1f3a" stop-opacity="0.15"/>
-            </linearGradient>
-            <linearGradient id="bmtn2" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#3a1240" stop-opacity="0.65"/>
-              <stop offset="100%" stop-color="#3a1240" stop-opacity="0.2"/>
-            </linearGradient>
-          </defs>
-          <rect width="320" height="260" fill="url(#bossSky)"/>
-          <circle cx="250" cy="60" r="110" fill="url(#glowRed)"/>
-          <circle cx="60" cy="100" r="80" fill="url(#glowViolet)"/>
-          <!-- Blutmond: im sichtbaren Mittelband platziert (siehe Hinweis oben im
-               Battle-Hintergrund zu preserveAspectRatio="slice"), verschmilzt mit
-               dem roten Ambient-Glow (glowRed, rechts ausserhalb) zu einem
-               bedrohlichen Fixpunkt am Bildrand. -->
-          <circle cx="200" cy="40" r="48" fill="url(#bMoonGlow)"/>
-          <circle cx="200" cy="40" r="17" fill="url(#bMoonBody)"/>
-          <circle cx="194" cy="34" r="2.8" fill="#8f2f2a" opacity="0.4"/>
-          <circle cx="206" cy="45" r="1.8" fill="#8f2f2a" opacity="0.35"/>
-          <g fill="#ffe9df">
-            <circle cx="18" cy="26" r="1.2" opacity="0.75"/><circle cx="42" cy="14" r="0.8" opacity="0.5"/>
-            <circle cx="90" cy="18" r="1.1" opacity="0.65"/>
-            <circle cx="120" cy="38" r="1.5" opacity="0.8" class="star-tw" style="animation-delay:-1.6s"/>
-            <circle cx="150" cy="40" r="0.9" opacity="0.55"/><circle cx="180" cy="65" r="1.2" opacity="0.7"/>
-            <circle cx="55" cy="70" r="1" opacity="0.55"/>
-            <circle cx="34" cy="52" r="1.4" opacity="0.75" class="star-tw" style="animation-delay:-3.1s"/>
-            <circle cx="100" cy="60" r="0.8" opacity="0.45"/><circle cx="150" cy="14" r="1" opacity="0.6"/>
-          </g>
-          <!-- Rauchig-warme Nebelschleier statt kuehler Nebel, passend zum Boss-Thema -->
-          <ellipse cx="150" cy="132" rx="85" ry="14" fill="url(#bMistWisp)"/>
-          <ellipse cx="105" cy="105" rx="55" ry="10" fill="url(#bMistWisp)"/>
-          <path d="M0 158 L45 130 L95 150 L145 118 L195 144 L245 116 L290 138 L320 124 L320 260 L0 260 Z" fill="url(#bmtn0)"/>
-          <path d="M0 170 L50 120 L100 155 L150 105 L200 145 L250 115 L320 150 L320 260 L0 260 Z" fill="url(#bmtn1)"/>
-          <path d="M0 176 L50 126 L100 161 L150 111 L200 151 L250 121 L320 156" fill="none" stroke="#ff9d7a" stroke-opacity="0.1" stroke-width="1"/>
-          <path d="M0 205 L70 175 L130 200 L190 165 L260 200 L320 180 L320 260 L0 260 Z" fill="url(#bmtn2)"/>
-          <path d="M0 211 L70 181 L130 206 L190 171 L260 206 L320 186" fill="none" stroke="#ff9d7a" stroke-opacity="0.08" stroke-width="1"/>
-          <!-- Glut-/Funkenpartikel: steigen sanft auf (CSS .ember Keyframe), bewusst
-               vor den Bergen platziert (ueber .battle-bg's Berg-Pfaden gezeichnet),
-               damit sie als vor der Silhouette aufsteigende Funken lesbar sind -->
-          <g>
-            <circle class="ember" cx="100" cy="190" r="2.2" fill="url(#emberGlow)" style="animation-delay:-0.6s"/>
-            <circle class="ember" cx="130" cy="194" r="1.8" fill="url(#emberGlow)" style="animation-delay:-2.3s"/>
-            <circle class="ember" cx="160" cy="186" r="2.4" fill="url(#emberGlow)" style="animation-delay:-1.1s"/>
-            <circle class="ember" cx="190" cy="193" r="1.9" fill="url(#emberGlow)" style="animation-delay:-3.4s"/>
-            <circle class="ember" cx="215" cy="188" r="2.1" fill="url(#emberGlow)" style="animation-delay:-0.2s"/>
-          </g>
-          <g stroke="#160616" stroke-opacity="0.3" stroke-width="1" stroke-linecap="round">
-            <path d="M78 188 L82 200"/><path d="M138 178 L142 192"/>
-            <path d="M212 182 L216 196"/><path d="M270 188 L274 200"/>
-          </g>
-        </svg>
-        <div class="battle-ground boss-ground"></div>
-        <div class="battle-vignette boss-vignette"></div>
+        document.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (e.touches.length === 1 && mapState.isDragging) {
+                const deltaX = e.touches[0].clientX - mapState.dragStartX;
+                const deltaY = e.touches[0].clientY - mapState.dragStartY;
+                mapState.offsetX = mapState.lastOffsetX + deltaX;
+                mapState.offsetY = mapState.lastOffsetY + deltaY;
+            } else if (e.touches.length === 2) {
+                const dx = e.touches[0].clientX - e.touches[1].clientX;
+                const dy = e.touches[0].clientY - e.touches[1].clientY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                let newZoom = touchStartZoom * (distance / touchStartDistance);
+                newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom));
 
-        <div class="player-side">
-          <div class="fighter-card player-card boss-player-card">
-            <span class="fighter-name">Du</span>
-            <div class="hp-bar shield-bar" id="bossPlayerShieldBar">
-              <div class="hp-fill shield-fill" id="bossPlayerShieldFill"></div>
-              <span class="hp-text" id="bossPlayerShieldText">0 / 0</span>
-            </div>
-            <div class="hp-bar player-hp-bar">
-              <div class="hp-fill" id="bossPlayerHpFill"></div>
-              <span class="hp-text" id="bossPlayerHpText">100 / 100</span>
-            </div>
-          </div>
-          <svg viewBox="0 0 120 170" class="char-sprite battle-player-sprite">
-            <ellipse cx="60" cy="150" rx="34" ry="8" fill="#000" opacity="0.35"/>
-            <path d="M60 60c-30 6-46 30-38 58 5 16 4 26 0 34h76c-4-8-5-18 0-34 8-28-8-52-38-58z" fill="#8a5fd6" opacity="0.9"/>
-            <path d="M40 84c8 20 32 20 40 0l-4 40c-10 8-22 8-32 0z" fill="#8a3b2f"/>
-            <circle cx="60" cy="46" r="22" fill="#f0cf9e"/>
-            <path d="M36 30c-2-10 6-18 24-18s26 8 24 18c-4-8-14-12-24-12s-20 4-24 12z" fill="#b7c0c9" stroke="#3a3f45" stroke-width="1.5"/>
-          </svg>
-          <div class="fighter-pedestal"></div>
-        </div>
+                const worldX = (touchMidX - mapState.offsetX) / mapState.zoom;
+                const worldY = (touchMidY - mapState.offsetY) / mapState.zoom;
 
-        <!-- Der Boss: ein einzelner, sehr starker Gegner statt einer Welle -->
-        <div class="boss-unit" id="bossUnit">
-          <div class="fighter-card boss-card">
-            <span class="enemy-name" id="bossUnitName">???</span>
-            <span class="enemy-stat-line">
-              <span class="enemy-stat-hp">♥ <span id="bossHpNum">0</span></span>
-              <span class="enemy-stat-atk">⚔ <span id="bossDmgNum">0</span></span>
-            </span>
-            <div class="hp-bar enemy-hp-bar boss-hp-bar">
-              <div class="hp-fill" id="bossHpFill"></div>
-              <span class="hp-text" id="bossHpText">0 / 0</span>
-            </div>
-          </div>
-          <svg class="enemy-sprite boss-sprite" viewBox="0 0 100 100"><use href="icons.svg#bossmonster"/></svg>
-        </div>
+                mapState.targetZoom = newZoom;
+                mapState.offsetX = touchMidX - worldX * newZoom;
+                mapState.offsetY = touchMidY - worldY * newZoom;
+            }
+        }, { passive: false });
 
-        <!-- Boss-Niederlage: pausiert den Kampf, Retry setzt HP/Schild und Boss-HP zurueck -->
-        <div class="defeat-overlay boss-defeat-overlay" id="bossDefeatOverlay">
-          <div class="defeat-card boss-defeat-card">
-            <svg class="defeat-skull" viewBox="0 0 48 48">
-              <path d="M24 6C13 6 6 14 6 24c0 6 3 11 7 14v8h6v-6h4v6h2v-6h4v6h6v-8c4-3 7-8 7-14 0-10-7-18-18-18z" fill="#e8e0d0" stroke="#3a3226" stroke-width="2"/>
-              <circle cx="16" cy="23" r="4.5" fill="#1a130c"/>
-              <circle cx="32" cy="23" r="4.5" fill="#1a130c"/>
-              <path d="M20 32l4 4 4-4" fill="none" stroke="#1a130c" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-            <span class="defeat-title boss-defeat-title">Niederlage</span>
-            <span class="defeat-text">Der Boss war zu stark. Verbessere deine Ausrüstung und versuch's erneut.</span>
-            <button class="defeat-retry-btn boss-retry-btn" id="bossDefeatRetryBtn">Erneut versuchen</button>
-          </div>
-        </div>
+        document.addEventListener('touchend', () => {
+            mapState.isDragging = false;
+        });
 
-        <!-- Boss-Sieg: zeigt 2-4 zufaellige Belohnungen -->
-        <div class="defeat-overlay boss-victory-overlay" id="bossVictoryOverlay">
-          <div class="defeat-card boss-victory-card">
-            <svg class="victory-icon" viewBox="0 0 48 48"><use href="icons.svg#crown"/></svg>
-            <span class="defeat-title boss-victory-title">Sieg!</span>
-            <span class="defeat-text">Du hast den Boss besiegt und diese Belohnungen erhalten:</span>
-            <div class="boss-rewards-list" id="bossRewardsList"></div>
-            <button class="defeat-retry-btn boss-continue-btn" id="bossVictoryContinueBtn">Weiterkämpfen</button>
-          </div>
-        </div>
-      </div>
+        // Animation loop
+        function animate() {
+            drawMap();
+            requestAnimationFrame(animate);
+        }
 
-      <div class="swipe-hint">&#8249; Zurück zum Kampf wischen</div>
-    </div>
-    </div>
-
-    <div class="home-indicator"></div>
-  </div>
-
-<script src="script.js"></script>
+        animate();
+    </script>
 </body>
 </html>
