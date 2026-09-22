@@ -48,36 +48,43 @@
             left: 16px;
             top: 16px;
             display: flex;
-            gap: 10px;
-            color: #e6eefc;
-            font: 14px/1.4 system-ui, sans-serif;
+            gap: 12px;
+            color: #ffffff;
+            font: 800 20px/1.4 system-ui, sans-serif;
         }
 
         #hud .stat {
-            background: rgba(10, 14, 39, 0.65);
-            border: 1px solid #2c3a63;
-            border-radius: 10px;
-            padding: 8px 14px;
+            background: linear-gradient(#1c2b52, #101a35);
+            border: 2px solid #3a5490;
+            border-radius: 16px;
+            padding: 10px 20px 10px 14px;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        }
+
+        #hud .stat .icon {
+            font-size: 26px;
+            filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.4));
         }
 
         #profileBtn {
             position: fixed;
             right: 16px;
             top: 16px;
-            width: 40px;
-            height: 40px;
+            width: 52px;
+            height: 52px;
             border-radius: 50%;
-            background: rgba(10, 14, 39, 0.65);
-            border: 1px solid #2c3a63;
-            color: #e6eefc;
-            font-size: 18px;
+            background: linear-gradient(#1c2b52, #101a35);
+            border: 2px solid #3a5490;
+            color: #ffffff;
+            font-size: 24px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15);
         }
 
         #profilePopup {
@@ -301,8 +308,8 @@
 <body>
     <canvas id="mapCanvas"></canvas>
     <div id="hud">
-        <div class="stat">&#129689; <span id="coinCount">0</span></div>
-        <div class="stat">&#9876;&#65039; <span id="troopCount">0</span></div>
+        <div class="stat"><span class="icon">&#129689;</span> <span id="coinCount">0</span></div>
+        <div class="stat"><span class="icon">&#9876;&#65039;</span> <span id="troopCount">0</span></div>
     </div>
     <button id="profileBtn" title="Profil">&#128100;</button>
     <div id="hint">Ziehen zum Bewegen &middot; Zoomen mit Scroll/Pinch &middot; Insel antippen f&uuml;r Infos &amp; Aktionen</div>
@@ -403,8 +410,8 @@
         let mapState = {
             offsetX: window.innerWidth / 2,
             offsetY: window.innerHeight / 2,
-            zoom: 0.35,
-            targetZoom: 0.35,
+            zoom: 0.2,
+            targetZoom: 0.2,
             isDragging: false,
             dragStartX: 0,
             dragStartY: 0,
@@ -417,7 +424,7 @@
         const MAX_ZOOM = 4;
         // Below this zoom, owned islands switch from green to blue so a big
         // territory reads clearly from far above the map.
-        const TERRITORY_VIEW_ZOOM = 0.15;
+        const TERRITORY_VIEW_ZOOM = 0.1;
 
         // Layout: a 3x3 grid of big islands (9 total), each one covered in
         // several towers - the tower is the actual capturable unit.
