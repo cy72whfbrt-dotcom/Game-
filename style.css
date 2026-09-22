@@ -726,9 +726,9 @@ svg use { color: inherit; }
   margin: 10px 8px 8px;
   overflow: hidden;
   border-radius: 18px;
+  background: linear-gradient(180deg, #2a2266 0%, #180f3e 55%, #0c0a20 100%);
   box-shadow: var(--shadow-md);
 }
-.battle-bg { position: absolute; inset: 0; width: 100%; height: 100%; }
 .battle-ground {
   position: absolute;
   left: 0; right: 0; bottom: 0; height: 26%;
@@ -759,13 +759,6 @@ svg use { color: inherit; }
   pointer-events: none;
   background: radial-gradient(ellipse at 50% 40%, transparent 45%, rgba(10,8,25,0.55) 100%);
 }
-
-.star-tw { animation: starTwinkle 3.6s ease-in-out infinite; }
-@keyframes starTwinkle {
-  0%, 100% { opacity: 0.85; }
-  50% { opacity: 0.25; }
-}
-@media (prefers-reduced-motion: reduce) { .star-tw { animation: none; } }
 
 /* Spieler-Verankerung links, mit Begleiter-Ring dahinter */
 .player-anchor {
