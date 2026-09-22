@@ -41,6 +41,26 @@
             white-space: nowrap;
         }
 
+        #hud {
+            position: fixed;
+            left: 16px;
+            top: 16px;
+            display: flex;
+            gap: 10px;
+            color: #e6eefc;
+            font: 14px/1.4 system-ui, sans-serif;
+        }
+
+        #hud .stat {
+            background: rgba(10, 14, 39, 0.65);
+            border: 1px solid #2c3a63;
+            border-radius: 10px;
+            padding: 8px 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
         #islandPopup {
             display: none;
             position: fixed;
@@ -54,13 +74,23 @@
             color: #e6eefc;
             font: 14px/1.5 system-ui, sans-serif;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            min-width: 220px;
+            min-width: 240px;
             text-align: center;
         }
 
         #islandPopup h3 {
             margin: 0 0 10px;
             font-size: 16px;
+        }
+
+        #islandPopup .stats {
+            text-align: left;
+            font-size: 13px;
+            color: #b9c6e6;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-top: 4px;
         }
 
         #islandPopup .row {
@@ -78,8 +108,18 @@
             cursor: pointer;
         }
 
+        #islandPopup button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
         #attackBtn {
             background: #c0392b;
+            color: #fff;
+        }
+
+        #upgradeBtn {
+            background: #2e8b57;
             color: #fff;
         }
 
@@ -91,12 +131,17 @@
 </head>
 <body>
     <canvas id="mapCanvas"></canvas>
-    <div id="hint">Ziehen zum Bewegen &middot; Scrollen/Pinch zum Zoomen &middot; tippen zum Angreifen &middot; deine Inseln sind gr&uuml;n</div>
+    <div id="hud">
+        <div class="stat">&#129689; <span id="coinCount">0</span></div>
+        <div class="stat">&#9876;&#65039; <span id="troopCount">0</span></div>
+    </div>
+    <div id="hint">Ziehen zum Bewegen &middot; Scrollen/Pinch zum Zoomen &middot; Insel antippen</div>
     <div id="islandPopup">
         <h3 id="popupTitle">Insel</h3>
-        <div id="popupBody">Diese Insel geh&ouml;rt niemandem.</div>
+        <div id="popupStats" class="stats"></div>
         <div class="row">
             <button id="attackBtn">Angreifen</button>
+            <button id="upgradeBtn">Verbessern</button>
             <button id="closeBtn">Schlie&szlig;en</button>
         </div>
     </div>
@@ -105,7 +150,6 @@
         const canvas = document.getElementById('mapCanvas');
         const ctx = canvas.getContext('2d');
 
-        // Resize canvas
         function resizeCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
@@ -113,7 +157,8 @@
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
 
-        // Map state - zoom is smoothed toward targetZoom for a nicer feel
+        // Map state - zoom eases toward targetZoom; zoomAnchor keeps the point
+        // under the cursor/fingers fixed on screen while that easing plays out.
         let mapState = {
             offsetX: window.innerWidth / 2,
             offsetY: window.innerHeight / 2,
@@ -125,15 +170,15 @@
             lastOffsetX: 0,
             lastOffsetY: 0
         };
+        let zoomAnchor = null; // { screenX, screenY, worldX, worldY }
 
         const MIN_ZOOM = 0.06;
         const MAX_ZOOM = 4;
 
-        // Large grid of islands, jittered so it doesn't look too uniform
+        // Grid of islands - all the same size so the map reads consistently
         const GRID_SIZE = 9; // 9x9 = 81 islands
         const ISLAND_SPACING = 850;
-        const ISLAND_RADIUS_MIN = 140;
-        const ISLAND_RADIUS_MAX = 230;
+        const ISLAND_RADIUS = 180;
 
         function mulberry32(seed) {
             return function () {
@@ -145,6 +190,20 @@
         }
         const rand = mulberry32(1337);
 
+        // Game balance
+        const BASE_DEFENSE = 100;
+        const DEFENSE_PER_LEVEL = 50;
+        const COINS_PER_LEVEL = 10;
+        const TROOPS_PER_LEVEL = 5;
+        const UPGRADE_BASE_COST = 150;
+
+        function defenseForLevel(level) {
+            return BASE_DEFENSE + (level - 1) * DEFENSE_PER_LEVEL;
+        }
+        function upgradeCost(level) {
+            return level * UPGRADE_BASE_COST;
+        }
+
         const islands = [];
         let playerIslandId = null;
 
@@ -152,19 +211,19 @@
         let id = 0;
         for (let row = -half; row <= half; row++) {
             for (let col = -half; col <= half; col++) {
-                const jitterX = (rand() - 0.5) * ISLAND_SPACING * 0.4;
-                const jitterY = (rand() - 0.5) * ISLAND_SPACING * 0.4;
+                const jitterX = (rand() - 0.5) * ISLAND_SPACING * 0.3;
+                const jitterY = (rand() - 0.5) * ISLAND_SPACING * 0.3;
                 islands.push({
                     id: id++,
                     x: col * ISLAND_SPACING + jitterX,
                     y: row * ISLAND_SPACING + jitterY,
-                    radius: ISLAND_RADIUS_MIN + rand() * (ISLAND_RADIUS_MAX - ISLAND_RADIUS_MIN)
+                    radius: ISLAND_RADIUS,
+                    // Defense of a neutral (unowned) island; irrelevant once captured
+                    neutralDefense: 60 + Math.floor(rand() * 200)
                 });
             }
         }
 
-        // Assign the player's island: the one closest to the map center,
-        // persisted so the same island stays "yours" between visits.
         function centerIsland() {
             let closest = islands[0];
             let closestDist = Infinity;
@@ -186,7 +245,7 @@
             localStorage.setItem('openWaterPlayerIslandId', playerIslandId);
         }
 
-        // Islands the player owns (starts with just the home island, grows by attacking)
+        // Islands the player owns, and each owned island's level (starts at 1)
         let ownedIslands;
         try {
             ownedIslands = new Set(JSON.parse(localStorage.getItem('openWaterOwnedIslands')));
@@ -194,21 +253,66 @@
             ownedIslands = new Set();
         }
         ownedIslands.add(playerIslandId);
-        saveOwnedIslands();
 
-        function saveOwnedIslands() {
-            localStorage.setItem('openWaterOwnedIslands', JSON.stringify([...ownedIslands]));
+        let islandLevels;
+        try {
+            islandLevels = JSON.parse(localStorage.getItem('openWaterIslandLevels')) || {};
+        } catch (e) {
+            islandLevels = {};
         }
+        for (const ownedId of ownedIslands) {
+            if (!islandLevels[ownedId]) islandLevels[ownedId] = 1;
+        }
+
+        let coins = parseInt(localStorage.getItem('openWaterCoins'), 10) || 0;
+        let troops = parseInt(localStorage.getItem('openWaterTroops'), 10) || 0;
+
+        function saveGame() {
+            localStorage.setItem('openWaterOwnedIslands', JSON.stringify([...ownedIslands]));
+            localStorage.setItem('openWaterIslandLevels', JSON.stringify(islandLevels));
+            localStorage.setItem('openWaterCoins', String(coins));
+            localStorage.setItem('openWaterTroops', String(troops));
+        }
+
+        const coinCountEl = document.getElementById('coinCount');
+        const troopCountEl = document.getElementById('troopCount');
+        function updateHud() {
+            coinCountEl.textContent = coins;
+            troopCountEl.textContent = troops;
+        }
+        updateHud();
+
+        // Every owned island produces coins and troops each second
+        setInterval(() => {
+            for (const ownedId of ownedIslands) {
+                const level = islandLevels[ownedId] || 1;
+                coins += COINS_PER_LEVEL * level;
+                troops += TROOPS_PER_LEVEL * level;
+            }
+            updateHud();
+            saveGame();
+        }, 1000);
 
         // Center the view on the player's island at start
         const startIsland = islands.find(i => i.id === playerIslandId);
         mapState.offsetX = window.innerWidth / 2 - startIsland.x * mapState.zoom;
         mapState.offsetY = window.innerHeight / 2 - startIsland.y * mapState.zoom;
 
-        // Draw map
         function drawMap() {
-            // Smoothly ease current zoom toward target zoom
+            // Ease current zoom toward target zoom
             mapState.zoom += (mapState.targetZoom - mapState.zoom) * 0.18;
+
+            // Keep the anchored world point fixed under the anchored screen point
+            // at every step of the easing animation - this is what stops the
+            // "picture jumps while zooming" drift.
+            if (zoomAnchor) {
+                mapState.offsetX = zoomAnchor.screenX - zoomAnchor.worldX * mapState.zoom;
+                mapState.offsetY = zoomAnchor.screenY - zoomAnchor.worldY * mapState.zoom;
+                if (Math.abs(mapState.zoom - mapState.targetZoom) < 0.0005) {
+                    mapState.zoom = mapState.targetZoom;
+                    zoomAnchor = null;
+                }
+            }
 
             ctx.fillStyle = '#0a0e27';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -223,15 +327,13 @@
             const visibleW = Math.ceil(canvas.width / mapState.zoom / tileSize) + 4;
             const visibleH = Math.ceil(canvas.height / mapState.zoom / tileSize) + 4;
 
-            // Base water fill
             ctx.fillStyle = '#1a6faa';
             ctx.fillRect(visibleX * tileSize, visibleY * tileSize, visibleW * tileSize, visibleH * tileSize);
 
-            // Cull islands outside the visible area for performance
-            const viewLeft = -mapState.offsetX / mapState.zoom - ISLAND_RADIUS_MAX;
-            const viewTop = -mapState.offsetY / mapState.zoom - ISLAND_RADIUS_MAX;
-            const viewRight = viewLeft + canvas.width / mapState.zoom + ISLAND_RADIUS_MAX * 2;
-            const viewBottom = viewTop + canvas.height / mapState.zoom + ISLAND_RADIUS_MAX * 2;
+            const viewLeft = -mapState.offsetX / mapState.zoom - ISLAND_RADIUS;
+            const viewTop = -mapState.offsetY / mapState.zoom - ISLAND_RADIUS;
+            const viewRight = viewLeft + canvas.width / mapState.zoom + ISLAND_RADIUS * 2;
+            const viewBottom = viewTop + canvas.height / mapState.zoom + ISLAND_RADIUS * 2;
 
             for (const island of islands) {
                 if (island.x + island.radius < viewLeft || island.x - island.radius > viewRight ||
@@ -240,7 +342,6 @@
                 }
 
                 const isOwned = ownedIslands.has(island.id);
-                const isHome = island.id === playerIslandId;
                 ctx.fillStyle = isOwned ? '#4f9a3a' : '#8a8a8a';
                 ctx.fillRect(
                     island.x - island.radius,
@@ -249,16 +350,13 @@
                     island.radius * 2
                 );
 
-                if (isOwned) {
-                    ctx.strokeStyle = isHome ? '#dff5c8' : '#bfe6a8';
-                    ctx.lineWidth = (isHome ? 6 : 4) / mapState.zoom;
-                    ctx.strokeRect(
-                        island.x - island.radius,
-                        island.y - island.radius,
-                        island.radius * 2,
-                        island.radius * 2
-                    );
-                }
+                // Label: level for owned islands, defense for neutral ones
+                const label = isOwned ? 'Lvl ' + (islandLevels[island.id] || 1) : String(island.neutralDefense);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '64px system-ui, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(label, island.x, island.y);
             }
 
             ctx.restore();
@@ -286,25 +384,39 @@
 
         const popup = document.getElementById('islandPopup');
         const popupTitle = document.getElementById('popupTitle');
-        const popupBody = document.getElementById('popupBody');
+        const popupStats = document.getElementById('popupStats');
         const attackBtn = document.getElementById('attackBtn');
+        const upgradeBtn = document.getElementById('upgradeBtn');
         const closeBtn = document.getElementById('closeBtn');
         let selectedIslandId = null;
 
         function openIslandPopup(island) {
             selectedIslandId = island.id;
             const isOwned = ownedIslands.has(island.id);
-            const isHome = island.id === playerIslandId;
-            popupTitle.textContent = 'Insel #' + (island.id + 1);
-            if (isHome) {
-                popupBody.textContent = 'Das ist deine Heimatinsel.';
+
+            if (isOwned) {
+                const level = islandLevels[island.id] || 1;
+                const cost = upgradeCost(level);
+                popupTitle.textContent = 'Insel #' + (island.id + 1) + ' (deine)';
+                popupStats.innerHTML =
+                    'Level: ' + level + '<br>' +
+                    'Verteidigung: ' + defenseForLevel(level) + '<br>' +
+                    'Produktion: ' + (COINS_PER_LEVEL * level) + ' M&uuml;nzen/s, ' + (TROOPS_PER_LEVEL * level) + ' Truppen/s<br>' +
+                    'N&auml;chstes Level kostet: ' + cost + ' M&uuml;nzen';
                 attackBtn.style.display = 'none';
-            } else if (isOwned) {
-                popupBody.textContent = 'Diese Insel gehört bereits dir.';
-                attackBtn.style.display = 'none';
+                upgradeBtn.style.display = 'inline-block';
+                upgradeBtn.disabled = coins < cost;
             } else {
-                popupBody.textContent = 'Diese Insel gehört niemandem. Angreifen, um sie zu erobern?';
+                popupTitle.textContent = 'Insel #' + (island.id + 1) + ' (unbesetzt)';
+                popupStats.innerHTML =
+                    'Verteidigung: ' + island.neutralDefense + '<br>' +
+                    'Deine Truppen: ' + troops + '<br>' +
+                    (troops > island.neutralDefense
+                        ? 'Ein Angriff gewinnt und kostet ' + island.neutralDefense + ' Truppen.'
+                        : 'Zu wenige Truppen - ein Angriff w&uuml;rde verloren gehen.');
                 attackBtn.style.display = 'inline-block';
+                attackBtn.disabled = troops <= 0;
+                upgradeBtn.style.display = 'none';
             }
             popup.style.display = 'block';
         }
@@ -316,8 +428,32 @@
 
         attackBtn.addEventListener('click', () => {
             if (selectedIslandId === null) return;
-            ownedIslands.add(selectedIslandId);
-            saveOwnedIslands();
+            const island = islands.find(i => i.id === selectedIslandId);
+            if (!island || troops <= 0) return;
+
+            if (troops > island.neutralDefense) {
+                // Win: capture the island, losses equal its defense
+                troops -= island.neutralDefense;
+                ownedIslands.add(island.id);
+                islandLevels[island.id] = 1;
+            } else {
+                // Lose: the whole attacking force is lost, island stays neutral
+                troops = 0;
+            }
+            updateHud();
+            saveGame();
+            closeIslandPopup();
+        });
+
+        upgradeBtn.addEventListener('click', () => {
+            if (selectedIslandId === null) return;
+            const level = islandLevels[selectedIslandId] || 1;
+            const cost = upgradeCost(level);
+            if (coins < cost) return;
+            coins -= cost;
+            islandLevels[selectedIslandId] = level + 1;
+            updateHud();
+            saveGame();
             closeIslandPopup();
         });
 
@@ -335,6 +471,7 @@
         document.addEventListener('mousedown', (e) => {
             mapState.isDragging = true;
             pressMoved = false;
+            zoomAnchor = null;
             mapState.dragStartX = e.clientX;
             mapState.dragStartY = e.clientY;
             mapState.lastOffsetX = mapState.offsetX;
@@ -360,37 +497,30 @@
             mapState.isDragging = false;
         });
 
-        // Zoom with mouse wheel / trackpad, zooming toward the cursor
+        // Zoom with mouse wheel / trackpad, zooming toward the cursor.
+        // A zoomAnchor is set once here; drawMap() re-applies it every frame
+        // while the eased zoom catches up, so the anchored point never drifts.
         document.addEventListener('wheel', (e) => {
             e.preventDefault();
 
-            const oldZoom = mapState.targetZoom;
             const zoomFactor = Math.exp(-e.deltaY * 0.0015);
-            let newZoom = oldZoom * zoomFactor;
+            let newZoom = mapState.targetZoom * zoomFactor;
             newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom));
 
-            const mouseX = e.clientX;
-            const mouseY = e.clientY;
-
-            // Keep the point under the cursor stable while zooming
-            const worldX = (mouseX - mapState.offsetX) / mapState.zoom;
-            const worldY = (mouseY - mapState.offsetY) / mapState.zoom;
-
+            const world = screenToWorld(e.clientX, e.clientY);
             mapState.targetZoom = newZoom;
-            mapState.offsetX = mouseX - worldX * newZoom;
-            mapState.offsetY = mouseY - worldY * newZoom;
+            zoomAnchor = { screenX: e.clientX, screenY: e.clientY, worldX: world.x, worldY: world.y };
         }, { passive: false });
 
         // Touch support
         let touchStartDistance = 0;
         let touchStartZoom = 1;
-        let touchMidX = 0;
-        let touchMidY = 0;
 
         document.addEventListener('touchstart', (e) => {
             if (e.touches.length === 1) {
                 mapState.isDragging = true;
                 pressMoved = false;
+                zoomAnchor = null;
                 mapState.dragStartX = e.touches[0].clientX;
                 mapState.dragStartY = e.touches[0].clientY;
                 mapState.lastOffsetX = mapState.offsetX;
@@ -401,8 +531,10 @@
                 const dy = e.touches[0].clientY - e.touches[1].clientY;
                 touchStartDistance = Math.sqrt(dx * dx + dy * dy);
                 touchStartZoom = mapState.targetZoom;
-                touchMidX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-                touchMidY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+                const touchMidX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                const touchMidY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+                const world = screenToWorld(touchMidX, touchMidY);
+                zoomAnchor = { screenX: touchMidX, screenY: touchMidY, worldX: world.x, worldY: world.y };
             }
         }, { passive: false });
 
@@ -416,19 +548,14 @@
                 }
                 mapState.offsetX = mapState.lastOffsetX + deltaX;
                 mapState.offsetY = mapState.lastOffsetY + deltaY;
-            } else if (e.touches.length === 2) {
+            } else if (e.touches.length === 2 && zoomAnchor) {
                 const dx = e.touches[0].clientX - e.touches[1].clientX;
                 const dy = e.touches[0].clientY - e.touches[1].clientY;
                 const distance = Math.sqrt(dx * dx + dy * dy);
                 let newZoom = touchStartZoom * (distance / touchStartDistance);
                 newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom));
-
-                const worldX = (touchMidX - mapState.offsetX) / mapState.zoom;
-                const worldY = (touchMidY - mapState.offsetY) / mapState.zoom;
-
                 mapState.targetZoom = newZoom;
-                mapState.offsetX = touchMidX - worldX * newZoom;
-                mapState.offsetY = touchMidY - worldY * newZoom;
+                // Keep the pinch anchor's world point; only zoom changes here
             }
         }, { passive: false });
 
@@ -439,7 +566,6 @@
             mapState.isDragging = false;
         });
 
-        // Animation loop
         function animate() {
             drawMap();
             requestAnimationFrame(animate);
