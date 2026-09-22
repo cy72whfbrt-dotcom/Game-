@@ -93,7 +93,10 @@
             color: #e6eefc;
             font: 14px/1.5 system-ui, sans-serif;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            min-width: 240px;
+            width: 320px;
+            max-width: 90vw;
+            max-height: 80vh;
+            overflow-y: auto;
         }
 
         #profilePopup h3 {
@@ -120,6 +123,89 @@
             display: flex;
             flex-direction: column;
             gap: 4px;
+        }
+
+        #profileTabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 14px;
+        }
+
+        #profileTabs button {
+            flex: 1;
+            font: inherit;
+            font-size: 12px;
+            padding: 8px 4px;
+            border-radius: 8px;
+            border: 1px solid #2c3a63;
+            cursor: pointer;
+            background: #1a2340;
+            color: #b9c6e6;
+        }
+
+        #profileTabs button.active {
+            background: #2e8b57;
+            color: #fff;
+            border-color: #2e8b57;
+        }
+
+        .profileTabPanel {
+            display: none;
+        }
+
+        .profileTabPanel.active {
+            display: block;
+        }
+
+        .itemGrid {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .itemCard {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #1a2340;
+            border: 1px solid #2c3a63;
+            border-radius: 8px;
+            padding: 8px 10px;
+        }
+
+        .itemIcon {
+            font-size: 24px;
+            width: 32px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .itemInfo {
+            flex: 1;
+            font-size: 12px;
+            color: #b9c6e6;
+        }
+
+        .itemInfo b {
+            color: #e6eefc;
+            font-size: 13px;
+        }
+
+        .itemUpgradeBtn {
+            font: inherit;
+            font-size: 12px;
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            background: #2e8b57;
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .itemUpgradeBtn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
         }
 
         #profilePopup .row {
@@ -222,8 +308,27 @@
     <div id="hint">Ziehen zum Bewegen &middot; Zoomen mit Scroll/Pinch &middot; Insel antippen f&uuml;r Infos &amp; Aktionen</div>
     <div id="profilePopup">
         <h3>Profil</h3>
-        <input id="profileName" type="text" maxlength="20" placeholder="Dein Name">
-        <div id="profileStats"></div>
+        <div id="profileTabs">
+            <button id="tabBtnInfo" class="active">Spieler</button>
+            <button id="tabBtnEquip">Ausr&uuml;stung</button>
+            <button id="tabBtnSkills">Skills</button>
+        </div>
+
+        <div id="tabInfo" class="profileTabPanel active">
+            <input id="profileName" type="text" maxlength="20" placeholder="Dein Name">
+            <div id="profileStats"></div>
+        </div>
+
+        <div id="tabEquip" class="profileTabPanel">
+            <div id="equipStats" class="stats" style="margin-bottom:10px;"></div>
+            <div id="equipGrid" class="itemGrid"></div>
+        </div>
+
+        <div id="tabSkills" class="profileTabPanel">
+            <div id="skillPointsLine" class="stats" style="margin-bottom:10px;"></div>
+            <div id="skillGrid" class="itemGrid"></div>
+        </div>
+
         <div class="row">
             <button id="profileCloseBtn">Schlie&szlig;en</button>
         </div>
@@ -345,7 +450,7 @@
         const UPGRADE_BASE_COST = 150;
 
         function defenseForLevel(level) {
-            return BASE_DEFENSE + (level - 1) * DEFENSE_PER_LEVEL;
+            return BASE_DEFENSE + (level - 1) * DEFENSE_PER_LEVEL + defenseBonusFlat();
         }
         function upgradeCost(level) {
             return level * UPGRADE_BASE_COST;
@@ -471,12 +576,83 @@
         }
         updateHud();
 
-        // Profile popup: player name (persisted) plus a summary of progress
+        // Equipment: bought with coins, each level grants a small permanent
+        // global bonus. Skills: bought with skill points earned by capturing
+        // towers, same idea, separate currency.
+        const EQUIPMENT_DEFS = {
+            weapon: { icon: '⚔️', name: 'Waffe', desc: 'Truppenproduktion', pct: 2 },
+            armor: { icon: '🪖', name: 'Rüstung', desc: 'Verteidigung aller Inseln', flat: 5 },
+            shield: { icon: '🛡️', name: 'Schild', desc: 'weniger Truppenverlust bei Sieg', pct: 2 },
+            boots: { icon: '👢', name: 'Stiefel', desc: 'Münzproduktion', pct: 2 }
+        };
+        const SKILL_DEFS = {
+            recruiter: { icon: '👥', name: 'Recruiter', desc: 'Truppenproduktion', pct: 2 },
+            defender: { icon: '🏰', name: 'Verteidiger', desc: 'Verteidigung aller Inseln', flat: 5 },
+            economist: { icon: '💰', name: 'Ökonom', desc: 'Münzproduktion', pct: 2 }
+        };
+        const EQUIPMENT_BASE_COST = 100;
+
+        let equipment;
+        try {
+            equipment = JSON.parse(localStorage.getItem('openWaterEquipment')) || {};
+        } catch (e) {
+            equipment = {};
+        }
+        for (const key of Object.keys(EQUIPMENT_DEFS)) if (!equipment[key]) equipment[key] = 0;
+
+        let skills;
+        try {
+            skills = JSON.parse(localStorage.getItem('openWaterSkills')) || {};
+        } catch (e) {
+            skills = {};
+        }
+        for (const key of Object.keys(SKILL_DEFS)) if (!skills[key]) skills[key] = 0;
+
+        let skillPoints = parseInt(localStorage.getItem('openWaterSkillPoints'), 10) || 0;
+
+        function saveProgression() {
+            localStorage.setItem('openWaterEquipment', JSON.stringify(equipment));
+            localStorage.setItem('openWaterSkills', JSON.stringify(skills));
+            localStorage.setItem('openWaterSkillPoints', String(skillPoints));
+        }
+
+        function equipmentUpgradeCost(level) {
+            return (level + 1) * EQUIPMENT_BASE_COST;
+        }
+
+        // Combined bonus percentage from an equipment slot + matching skill
+        function bonusPct(equipKey, skillKey) {
+            return (equipment[equipKey] || 0) * (EQUIPMENT_DEFS[equipKey].pct || 0) +
+                (skills[skillKey] || 0) * (SKILL_DEFS[skillKey].pct || 0);
+        }
+        function bonusFlat(equipKey, skillKey) {
+            return (equipment[equipKey] || 0) * (EQUIPMENT_DEFS[equipKey].flat || 0) +
+                (skills[skillKey] || 0) * (SKILL_DEFS[skillKey].flat || 0);
+        }
+        function troopProductionMultiplier() {
+            return 1 + bonusPct('weapon', 'recruiter') / 100;
+        }
+        function coinProductionMultiplier() {
+            return 1 + bonusPct('boots', 'economist') / 100;
+        }
+        function defenseBonusFlat() {
+            return bonusFlat('armor', 'defender');
+        }
+        function shieldLossReductionPct() {
+            return Math.min(90, equipment.shield * EQUIPMENT_DEFS.shield.pct);
+        }
+
+        // Profile popup: player name (persisted), progress summary, and the
+        // equipment/skills tabs
         const profileBtn = document.getElementById('profileBtn');
         const profilePopup = document.getElementById('profilePopup');
         const profileName = document.getElementById('profileName');
         const profileStats = document.getElementById('profileStats');
         const profileCloseBtn = document.getElementById('profileCloseBtn');
+        const equipStats = document.getElementById('equipStats');
+        const equipGrid = document.getElementById('equipGrid');
+        const skillPointsLine = document.getElementById('skillPointsLine');
+        const skillGrid = document.getElementById('skillGrid');
 
         profileName.value = localStorage.getItem('openWaterPlayerName') || '';
         profileName.addEventListener('input', () => {
@@ -493,11 +669,101 @@
                 'Eroberte T&uuml;rme: ' + ownedIslands.size + ' / ' + islands.length + '<br>' +
                 'Gesamt-Truppen: ' + totalTroops() + '<br>' +
                 'M&uuml;nzen: ' + coins + '<br>' +
+                'Skillpunkte: ' + skillPoints + '<br>' +
                 'Heimat: ' + homeLabel;
         }
 
+        function renderEquipGrid() {
+            equipStats.innerHTML =
+                'Truppenproduktion: +' + bonusPct('weapon', 'recruiter').toFixed(0) + '%<br>' +
+                'M&uuml;nzenproduktion: +' + bonusPct('boots', 'economist').toFixed(0) + '%<br>' +
+                'Verteidigung: +' + defenseBonusFlat() + '<br>' +
+                'Angriffsverluste: -' + shieldLossReductionPct().toFixed(0) + '%';
+
+            equipGrid.innerHTML = '';
+            for (const key of Object.keys(EQUIPMENT_DEFS)) {
+                const def = EQUIPMENT_DEFS[key];
+                const level = equipment[key];
+                const cost = equipmentUpgradeCost(level);
+                const bonusText = def.pct ? ('+' + (level * def.pct) + '%') : ('+' + (level * def.flat));
+
+                const card = document.createElement('div');
+                card.className = 'itemCard';
+                card.innerHTML =
+                    '<div class="itemIcon">' + def.icon + '</div>' +
+                    '<div class="itemInfo"><b>' + def.name + ' Lvl ' + level + '</b><br>' +
+                    def.desc + ': ' + bonusText + '</div>';
+
+                const btn = document.createElement('button');
+                btn.className = 'itemUpgradeBtn';
+                btn.textContent = cost + ' \u{1FA99}';
+                btn.disabled = coins < cost;
+                btn.addEventListener('click', () => {
+                    if (coins < equipmentUpgradeCost(equipment[key])) return;
+                    coins -= equipmentUpgradeCost(equipment[key]);
+                    equipment[key] += 1;
+                    updateHud();
+                    saveProgression();
+                    renderEquipGrid();
+                });
+                card.appendChild(btn);
+                equipGrid.appendChild(card);
+            }
+        }
+
+        function renderSkillGrid() {
+            skillPointsLine.innerHTML = 'Verf&uuml;gbare Skillpunkte: ' + skillPoints;
+
+            skillGrid.innerHTML = '';
+            for (const key of Object.keys(SKILL_DEFS)) {
+                const def = SKILL_DEFS[key];
+                const level = skills[key];
+                const bonusText = def.pct ? ('+' + (level * def.pct) + '%') : ('+' + (level * def.flat));
+
+                const card = document.createElement('div');
+                card.className = 'itemCard';
+                card.innerHTML =
+                    '<div class="itemIcon">' + def.icon + '</div>' +
+                    '<div class="itemInfo"><b>' + def.name + ' Lvl ' + level + '</b><br>' +
+                    def.desc + ': ' + bonusText + '</div>';
+
+                const btn = document.createElement('button');
+                btn.className = 'itemUpgradeBtn';
+                btn.textContent = '+1 (1 Punkt)';
+                btn.disabled = skillPoints <= 0;
+                btn.addEventListener('click', () => {
+                    if (skillPoints <= 0) return;
+                    skillPoints -= 1;
+                    skills[key] += 1;
+                    saveProgression();
+                    renderSkillGrid();
+                });
+                card.appendChild(btn);
+                skillGrid.appendChild(card);
+            }
+        }
+
+        const profileTabs = {
+            info: { btn: document.getElementById('tabBtnInfo'), panel: document.getElementById('tabInfo') },
+            equip: { btn: document.getElementById('tabBtnEquip'), panel: document.getElementById('tabEquip') },
+            skills: { btn: document.getElementById('tabBtnSkills'), panel: document.getElementById('tabSkills') }
+        };
+        function showProfileTab(name) {
+            for (const key of Object.keys(profileTabs)) {
+                const isActive = key === name;
+                profileTabs[key].btn.classList.toggle('active', isActive);
+                profileTabs[key].panel.classList.toggle('active', isActive);
+            }
+            if (name === 'equip') renderEquipGrid();
+            if (name === 'skills') renderSkillGrid();
+        }
+        profileTabs.info.btn.addEventListener('click', () => showProfileTab('info'));
+        profileTabs.equip.btn.addEventListener('click', () => showProfileTab('equip'));
+        profileTabs.skills.btn.addEventListener('click', () => showProfileTab('skills'));
+
         profileBtn.addEventListener('click', () => {
             renderProfile();
+            showProfileTab('info');
             profilePopup.style.display = 'block';
         });
         profileCloseBtn.addEventListener('click', () => {
@@ -507,10 +773,12 @@
         // Every owned island produces coins (shared treasury) and troops
         // (kept locally on that island) once per second.
         setInterval(() => {
+            const coinMult = coinProductionMultiplier();
+            const troopMult = troopProductionMultiplier();
             for (const ownedId of ownedIslands) {
                 const level = islandLevels[ownedId] || 1;
-                coins += COINS_PER_LEVEL * level;
-                islandTroops[ownedId] = (islandTroops[ownedId] || 0) + TROOPS_PER_LEVEL * level;
+                coins += Math.round(COINS_PER_LEVEL * level * coinMult);
+                islandTroops[ownedId] = (islandTroops[ownedId] || 0) + Math.round(TROOPS_PER_LEVEL * level * troopMult);
             }
             updateHud();
             saveGame();
@@ -893,15 +1161,19 @@
                 if (myTroops <= 0) return;
 
                 // Win if the sent troops beat troops+defense combined; losing
-                // only the defense's worth (or the whole force if it fails)
+                // only the defense's worth (reduced by the shield bonus), or
+                // the whole force if the attack fails
                 const totalStrength = target.neutralTroops + target.neutralDefense;
                 const won = myTroops > totalStrength;
-                const remaining = won ? myTroops - target.neutralDefense : 0;
+                const losses = Math.round(target.neutralDefense * (1 - shieldLossReductionPct() / 100));
+                const remaining = won ? myTroops - losses : 0;
                 if (won) {
                     islandTroops[target.id] = remaining;
                     islandTroops[sourceId] = 0;
                     ownedIslands.add(target.id);
                     islandLevels[target.id] = 1;
+                    skillPoints += 1;
+                    saveProgression();
                 } else {
                     islandTroops[sourceId] = 0;
                 }
