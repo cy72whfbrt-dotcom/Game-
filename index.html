@@ -385,7 +385,7 @@
                 const midY = (a.y + b.y) / 2;
                 const dx = b.x - a.x, dy = b.y - a.y;
                 const len = Math.hypot(dx, dy) || 1;
-                const bow = len * 0.12;
+                const bow = len * 0.2;
                 return { x: midX - (dy / len) * bow, y: midY + (dx / len) * bow };
             }
 
@@ -393,31 +393,60 @@
             const now = Date.now();
             laneFlashes = laneFlashes.filter(f => now - f.start < FLASH_DURATION);
 
-            // Draw connection lanes (white "Bogen" arcs) first, under the islands
-            ctx.lineWidth = 4 / mapState.zoom;
+            // Draws one lane as a raised, tube-like "Bogen": a dark shadow copy
+            // beneath, a gradient-shaded body, and a bright highlight on top -
+            // that combination is what reads as 3D instead of a flat line.
+            function drawBow(a, b, baseWidth, colorTop, colorBottom, alpha) {
+                const cp = laneControlPoint(a, b);
+                const shadowDrop = (baseWidth * 0.9) / mapState.zoom;
+
+                ctx.globalAlpha = alpha * 0.4;
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = baseWidth / mapState.zoom;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(a.x, a.y + shadowDrop);
+                ctx.quadraticCurveTo(cp.x, cp.y + shadowDrop, b.x, b.y + shadowDrop);
+                ctx.stroke();
+
+                const gradient = ctx.createLinearGradient(a.x, Math.min(a.y, cp.y), a.x, Math.max(b.y, cp.y) + 1);
+                gradient.addColorStop(0, colorTop);
+                gradient.addColorStop(1, colorBottom);
+                ctx.globalAlpha = alpha;
+                ctx.strokeStyle = gradient;
+                ctx.lineWidth = baseWidth / mapState.zoom;
+                ctx.beginPath();
+                ctx.moveTo(a.x, a.y);
+                ctx.quadraticCurveTo(cp.x, cp.y, b.x, b.y);
+                ctx.stroke();
+
+                const highlightLift = (baseWidth * 0.6) / mapState.zoom;
+                ctx.globalAlpha = alpha * 0.6;
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+                ctx.lineWidth = (baseWidth * 0.3) / mapState.zoom;
+                ctx.beginPath();
+                ctx.moveTo(a.x, a.y - highlightLift);
+                ctx.quadraticCurveTo(cp.x, cp.y - highlightLift, b.x, b.y - highlightLift);
+                ctx.stroke();
+            }
+
+            // Only the lanes touching an island the player owns are shown -
+            // connections between two neutral islands are pointless clutter
+            // since only owned islands can send troops.
             for (const lane of lanes) {
+                if (!ownedIslands.has(lane.aId) && !ownedIslands.has(lane.bId)) continue;
                 const a = islandById[lane.aId], b = islandById[lane.bId];
                 if (!inView(a, b)) continue;
-                const cp = laneControlPoint(a, b);
 
                 const flash = laneFlashes.find(f =>
                     (f.aId === lane.aId && f.bId === lane.bId) || (f.aId === lane.bId && f.bId === lane.aId));
 
                 if (flash) {
                     const t = 1 - (now - flash.start) / FLASH_DURATION;
-                    ctx.strokeStyle = flash.color;
-                    ctx.globalAlpha = 0.35 + 0.65 * t;
-                    ctx.lineWidth = 10 / mapState.zoom;
+                    drawBow(a, b, 16, flash.color, flash.color, 0.4 + 0.6 * t);
                 } else {
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
-                    ctx.globalAlpha = 1;
-                    ctx.lineWidth = 4 / mapState.zoom;
+                    drawBow(a, b, 9, '#bfe3ff', '#3b6fa0', 0.85);
                 }
-
-                ctx.beginPath();
-                ctx.moveTo(a.x, a.y);
-                ctx.quadraticCurveTo(cp.x, cp.y, b.x, b.y);
-                ctx.stroke();
             }
             ctx.globalAlpha = 1;
 
