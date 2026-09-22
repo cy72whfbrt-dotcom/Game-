@@ -786,7 +786,7 @@ svg use { color: inherit; }
    rechts, zur Front hin geoeffnet), noch gesperrt - dezent statt aufwendig. */
 .companion-ring {
   position: absolute;
-  left: 100%; top: 42%;
+  left: 100%; top: 50%;
   width: 0; height: 0;
   z-index: 1;
 }
