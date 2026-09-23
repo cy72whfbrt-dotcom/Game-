@@ -1374,7 +1374,7 @@
             troops: { icon: '👥', name: 'Truppenherstellung', desc: 'Truppenproduktion', pct: 2 },
             defense: { icon: '🏰', name: 'Verteidigung', desc: 'Verteidigung aller Inseln', flat: 5 },
             defenseGold: { icon: '🛡️', name: 'Verteidigung: Gold', desc: 'Gold pro getöteter Truppe', rate: 0.3 },
-            attack: { icon: '⚔️', name: 'Angriff', desc: 'Angriffsstärke', pct: 3 },
+            attack: { icon: '⚔️', name: 'Angriff', desc: 'Truppen zus&auml;tzlich pro Angriff', flat: 4, unit: ' Truppen' },
             attackGold: { icon: '💰', name: 'Angriff: Gold', desc: 'Gold pro getöteter Truppe', rate: 0.3 }
         };
         const EQUIPMENT_BASE_COST = 100;
@@ -1584,7 +1584,7 @@
             const target = islandById[attack.targetId];
             if (!source || !target) return;
 
-            const myTroops = Math.round(attack.rawTroops * attackPowerMultiplier());
+            const myTroops = attack.rawTroops + attackFlatBonus();
             const totalStrength = target.neutralTroops + target.neutralDefense;
             const won = myTroops > totalStrength;
             const losses = Math.round(target.neutralDefense * (1 - shieldLossReductionPct() / 100));
@@ -1682,10 +1682,10 @@
         function shieldLossReductionPct() {
             return Math.min(90, equipment.shield * EQUIPMENT_DEFS.shield.pct);
         }
-        // "Angriff" skill: boosts effective attacking strength without
-        // spending more actual troops from the source tower's garrison.
-        function attackPowerMultiplier() {
-            return 1 + (skills.attack || 0) * (SKILL_DEFS.attack.pct || 0) / 100;
+        // "Angriff" skill: adds a flat number of extra troops to an attack
+        // (not a %), on top of whatever the source tower's garrison sends.
+        function attackFlatBonus() {
+            return (skills.attack || 0) * (SKILL_DEFS.attack.flat || 0);
         }
         // "Verteidigung: Gold" + "Angriff: Gold": coins earned per enemy
         // troop killed in a won attack (all of the target's troops+defense).
@@ -1699,7 +1699,7 @@
         }
         function skillBonusText(def, level) {
             if (def.pct) return '+' + (level * def.pct) + '%';
-            if (def.flat) return '+' + (level * def.flat);
+            if (def.flat) return '+' + (level * def.flat) + (def.unit || '');
             if (def.rate) return '+' + (level * def.rate).toFixed(1) + ' Gold/Kill';
             if (def.msPerLevel) return '-' + (level * def.msPerLevel) + 'ms/Tick';
             return '';
@@ -2389,12 +2389,12 @@
 
                 if (popupView === 'preview') {
                     const rawTroops = previewSourceId !== null ? (islandTroops[previewSourceId] || 0) : 0;
-                    const atkMult = attackPowerMultiplier();
-                    const myTroops = Math.round(rawTroops * atkMult);
+                    const atkBonus = attackFlatBonus();
+                    const myTroops = rawTroops + atkBonus;
                     const total = island.neutralTroops + island.neutralDefense;
                     popupTitle.textContent = 'Insel #' + (island.id + 1) + ' angreifen?';
                     popupStats.innerHTML =
-                        'Meine Truppen: ' + myTroops + (atkMult > 1 ? ' (' + rawTroops + ' + Angriffsbonus)' : '') +
+                        'Meine Truppen: ' + myTroops + (atkBonus > 0 ? ' (' + rawTroops + ' + ' + atkBonus + ' Angriffsbonus)' : '') +
                         ' (Insel #' + (previewSourceId + 1) + ')<br>' +
                         'Gegner Truppen: ' + (scouted ? island.neutralTroops : '?') + '<br>' +
                         'Gegner Verteidigung: ' + (scouted ? island.neutralDefense : '?') +
