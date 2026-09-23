@@ -109,29 +109,60 @@
             display: none;
         }
 
+        /* ===== Kingdom Dashboard - profile popup redesign =====
+           Produced by a 3-concept design panel (glassmorphism / flat
+           card-based / soft-UI) judged for modernity, usability, coherence
+           with the game's existing look and feel, and feasibility; this
+           flat card-based "Kingdom Dashboard" won on usability + coherence
+           (its red/blue/green/gold action colors mirror the ones already
+           used for attack/scout/confirm on the island popup), with a few
+           grafted details from the other two concepts (backdrop blur on
+           the outer shell only, the avatar progress ring, inset shadows on
+           non-interactive info panels). */
         #profilePopup {
+            --bg: #0c1226;
+            --surface: #182348;
+            --surface-alt: #223066;
+            --border: #324377;
+            --text: #f4f7ff;
+            --text-dim: #94a3cf;
+            --gold: #ffcb3d;
+            --gold-dark: #c99a1f;
+            --green: #24b47e;
+            --green-dark: #17825b;
+            --red: #ef5b4e;
+            --red-dark: #b8392f;
+            --blue: #3b82f6;
+            --blue-dark: #2a5fc0;
+
             display: none;
             position: fixed;
             left: 50%;
             top: 50%;
             transform: translate(-50%, -50%);
-            background: #10182f;
-            border: 1px solid #2c3a63;
-            border-radius: 12px;
-            padding: 18px 22px;
-            color: #e6eefc;
-            font: 14px/1.5 system-ui, sans-serif;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            width: 380px;
+            width: 372px;
             max-width: 92vw;
-            max-height: 80vh;
+            max-height: 84vh;
             overflow-y: auto;
+            background: var(--bg);
+            color: var(--text);
+            font: 14px/1.45 system-ui, sans-serif;
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            padding: 16px 16px 0;
+            box-shadow: 0 10px 0 rgba(0, 0, 0, .35), 0 18px 34px rgba(0, 0, 0, .5);
+            -webkit-backdrop-filter: blur(8px) saturate(140%);
+            backdrop-filter: blur(8px) saturate(140%);
         }
 
         #profilePopup h3 {
-            margin: 0 0 12px;
-            font-size: 16px;
+            margin: 0 0 14px;
+            font-size: 13px;
+            font-weight: 800;
             text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            color: var(--text-dim);
         }
 
         #battleLogPopup, #mailPopup {
@@ -234,40 +265,76 @@
         #profileName {
             width: 100%;
             font: inherit;
-            padding: 8px 10px;
-            border-radius: 8px;
-            border: 1px solid #2c3a63;
-            background: #0a0e27;
-            color: #e6eefc;
-            margin-bottom: 12px;
+            font-weight: 700;
+            font-size: 14px;
+            padding: 9px 12px;
+            border-radius: 10px;
+            border: 2px solid var(--border);
+            background: var(--surface);
+            color: var(--text);
             box-sizing: border-box;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, .4);
         }
 
         #profileStats {
-            font-size: 13px;
-            color: #b9c6e6;
+            margin-top: 14px;
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            padding: 4px 12px;
+            font-size: 12px;
+            color: var(--text-dim);
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, .35);
+        }
+
+        .statRow {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .statRow:last-child {
+            border-bottom: none;
+        }
+
+        .statRow b {
+            color: var(--text);
+            font-weight: 700;
         }
 
         .pTopRow {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+        }
+
+        /* Wrapping ring: a conic-gradient doubles as the "Fortschritt"
+           progress meter (grafted from the soft-UI concept) instead of
+           being purely decorative like a plain border would be. */
+        .pAvatarWrap {
+            position: relative;
+            width: 62px;
+            height: 62px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            padding: 4px;
+            background: conic-gradient(var(--gold) calc(var(--progress, 0) * 1%), var(--surface-alt) 0);
         }
 
         .pAvatar {
-            width: 50px;
-            height: 50px;
+            width: 100%;
+            height: 100%;
             border-radius: 50%;
-            border: 3px solid #ffd23f;
-            background: #1a2340;
+            background: var(--surface);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
-            flex-shrink: 0;
+            font-size: 26px;
+            box-shadow: inset 0 0 0 2px var(--bg);
         }
 
         .pNameCol {
@@ -276,98 +343,166 @@
         }
 
         .pLevelBadge {
+            position: absolute;
+            bottom: -4px;
+            right: -4px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            min-width: 22px;
-            height: 22px;
-            padding: 0 5px;
-            border-radius: 6px;
-            background: #2f7fd6;
-            color: #fff;
-            font-size: 11px;
-            font-weight: 700;
-            flex-shrink: 0;
+            min-width: 30px;
+            height: 20px;
+            padding: 0 6px;
+            border-radius: 999px;
+            background: var(--gold);
+            color: #241a02;
+            font-size: 10px;
+            font-weight: 800;
+            box-shadow: 0 2px 0 var(--gold-dark);
         }
 
         .pRankRow {
-            margin-top: 10px;
-            background: #1a2340;
-            border: 1px solid #2c3a63;
-            border-radius: 8px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .pRankRow span {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 12px;
             padding: 8px 10px;
+            font-size: 11px;
+            color: var(--text-dim);
             display: flex;
-            justify-content: space-between;
-            font-size: 12px;
-            color: #b9c6e6;
+            flex-direction: column;
+            gap: 4px;
         }
 
         .pRankRow b {
-            color: #e6eefc;
+            color: var(--text);
+            font-size: 14px;
         }
 
         .kingdomLabel {
-            margin-top: 14px;
-            margin-bottom: 6px;
-            font-size: 12px;
-            font-weight: 700;
-            color: #8fa0c8;
+            margin: 14px 0 8px;
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--text-dim);
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .kingdomGrid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            letter-spacing: 0.12em;
+            display: flex;
+            align-items: center;
             gap: 6px;
         }
 
+        .kingdomLabel::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--gold);
+        }
+
+        /* Bento grid: the 5 kingdomCell divs are always rendered in the same
+           fixed order (kTroops, kBases, kCoins, kTroopsRate, kCoinsRate), so
+           positioning + coloring by nth-child needs no HTML/JS changes. */
+        .kingdomGrid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-areas:
+                "troops bases"
+                "coins  coins"
+                "rate1  rate2";
+            gap: 8px;
+        }
+
         .kingdomCell {
-            background: #1a2340;
-            border: 1px solid #2c3a63;
-            border-radius: 8px;
-            padding: 8px 4px;
-            text-align: center;
+            border-radius: 14px;
+            padding: 10px;
+            text-align: left;
+            border: none;
         }
 
         .kingdomCell .icon {
-            font-size: 17px;
+            font-size: 18px;
+            filter: drop-shadow(0 0 6px rgba(255, 255, 255, .4));
         }
 
         .kingdomCell .val {
-            font-weight: 700;
-            font-size: 13px;
-            margin-top: 2px;
+            font-weight: 800;
+            font-size: 20px;
+            margin-top: 4px;
         }
 
         .kingdomCell .sub {
             font-size: 10px;
-            color: #8fa0c8;
+            color: rgba(255, 255, 255, .75);
             margin-top: 1px;
+            text-transform: uppercase;
+            letter-spacing: .04em;
         }
 
+        .kingdomCell:nth-child(1) { grid-area: troops; background: var(--red); color: #fff; box-shadow: 0 3px 0 var(--red-dark); }
+        .kingdomCell:nth-child(2) { grid-area: bases; background: var(--blue); color: #fff; box-shadow: 0 3px 0 var(--blue-dark); }
+        .kingdomCell:nth-child(3) {
+            grid-area: coins;
+            background: var(--gold);
+            color: #241a02;
+            box-shadow: 0 3px 0 var(--gold-dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .kingdomCell:nth-child(3) .val { font-size: 22px; }
+        .kingdomCell:nth-child(4), .kingdomCell:nth-child(5) {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            text-align: center;
+            padding: 6px 4px;
+        }
+        .kingdomCell:nth-child(4) { grid-area: rate1; }
+        .kingdomCell:nth-child(5) { grid-area: rate2; }
+        .kingdomCell:nth-child(4) .val, .kingdomCell:nth-child(5) .val { font-size: 13px; color: var(--green); }
+
+        /* Shared segmented track for the tab bar, active segment fully
+           filled instead of a subtle border/tint change */
         #profileTabs {
             display: flex;
-            gap: 6px;
-            margin-bottom: 14px;
+            gap: 4px;
+            margin-bottom: 16px;
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            padding: 4px;
         }
 
         #profileTabs button {
             flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
             font: inherit;
-            font-size: 12px;
-            padding: 8px 4px;
-            border-radius: 8px;
-            border: 1px solid #2c3a63;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 8px 4px 6px;
+            border-radius: 10px;
+            border: none;
             cursor: pointer;
-            background: #1a2340;
-            color: #b9c6e6;
+            background: transparent;
+            color: var(--text-dim);
+            transition: background-color .18s ease, color .18s ease, box-shadow .18s ease;
+        }
+
+        #profileTabs button .tabIcon {
+            font-size: 16px;
         }
 
         #profileTabs button.active {
-            background: #2e8b57;
+            background: var(--green);
             color: #fff;
-            border-color: #2e8b57;
+            box-shadow: 0 3px 0 var(--green-dark);
         }
 
         .profileTabPanel {
@@ -381,54 +516,87 @@
         .itemGrid {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 10px;
+        }
+
+        .equipStatsRow {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+        }
+
+        .statChip {
+            flex: 1;
+            min-width: 72px;
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            padding: 6px 8px;
+            text-align: center;
+            font-size: 10px;
+            color: var(--text-dim);
+        }
+
+        .statChip b {
+            display: block;
+            font-size: 13px;
+            color: var(--text);
+            margin-top: 2px;
         }
 
         .skillDetail {
             display: flex;
             align-items: center;
-            gap: 10px;
-            background: #1a2340;
-            border: 1px solid #2c3a63;
-            border-radius: 8px;
-            padding: 10px;
-            margin-bottom: 12px;
-            min-height: 44px;
+            gap: 12px;
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-left: 5px solid var(--green);
+            border-radius: 14px;
+            padding: 12px;
+            margin-bottom: 14px;
+            min-height: 48px;
         }
 
         .skillDetail .icon {
-            font-size: 30px;
-            width: 38px;
-            text-align: center;
+            font-size: 26px;
+            width: 46px;
+            height: 46px;
+            border-radius: 12px;
+            background: var(--surface-alt);
+            display: flex;
+            align-items: center;
+            justify-content: center;
             flex-shrink: 0;
         }
 
         .skillDetail .info {
             flex: 1;
             font-size: 12px;
-            color: #b9c6e6;
+            color: var(--text-dim);
         }
 
         .skillDetail .info b {
-            color: #e6eefc;
+            color: var(--text);
             font-size: 14px;
             display: block;
+            margin-bottom: 2px;
         }
 
         .skillCross {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            grid-auto-rows: 74px;
-            gap: 8px;
+            grid-auto-rows: 72px;
+            gap: 10px;
             justify-items: center;
         }
 
         .skillNode {
-            width: 66px;
-            height: 66px;
-            border-radius: 14px;
-            background: #1a2340;
-            border: 2px solid #2c3a63;
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
+            background: var(--surface-alt);
+            border: none;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -436,84 +604,153 @@
             gap: 2px;
             cursor: pointer;
             position: relative;
-            color: #e6eefc;
+            color: #fff;
+            box-shadow: 0 3px 0 rgba(0, 0, 0, .3);
+            transition: box-shadow .15s ease, transform .15s ease;
+        }
+
+        /* Category colors follow SKILL_DEFS's fixed key order: speed,
+           troops, defense, defenseGold, attack, attackGold */
+        .skillNode:nth-child(1) { background: var(--blue); box-shadow: 0 3px 0 var(--blue-dark); }
+        .skillNode:nth-child(2) { background: var(--green); box-shadow: 0 3px 0 var(--green-dark); }
+        .skillNode:nth-child(3) { background: var(--surface-alt); box-shadow: 0 3px 0 #17204a; }
+        .skillNode:nth-child(4) { background: var(--gold); color: #241a02; box-shadow: 0 3px 0 var(--gold-dark); }
+        .skillNode:nth-child(5) { background: var(--red); box-shadow: 0 3px 0 var(--red-dark); }
+        .skillNode:nth-child(6) { background: var(--gold); color: #241a02; box-shadow: 0 3px 0 var(--gold-dark); }
+
+        .skillNode.selected {
+            box-shadow: 0 0 0 3px var(--gold), 0 5px 0 rgba(0, 0, 0, .35);
+            transform: translateY(-2px);
         }
 
         .skillNode .nIcon {
-            font-size: 24px;
+            font-size: 22px;
         }
 
         .skillNode .nLevel {
-            font-size: 11px;
-            font-weight: 700;
-            color: #b9c6e6;
-        }
-
-        .skillNode:disabled {
-            opacity: 0.55;
-            cursor: not-allowed;
+            font-size: 10px;
+            font-weight: 800;
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: var(--gold);
+            color: #241a02;
+            border-radius: 999px;
+            min-width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+            box-shadow: 0 1px 0 var(--gold-dark);
         }
 
         .itemCard {
             display: flex;
             align-items: center;
-            gap: 10px;
-            background: #1a2340;
-            border: 1px solid #2c3a63;
-            border-radius: 8px;
-            padding: 8px 10px;
+            gap: 12px;
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            padding: 10px 12px;
         }
 
         .itemIcon {
-            font-size: 24px;
-            width: 32px;
-            text-align: center;
+            font-size: 22px;
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             flex-shrink: 0;
+            background: var(--surface-alt);
+            color: #fff;
         }
+
+        /* Category colors follow EQUIPMENT_DEFS's fixed key order: weapon,
+           armor, shield, boots */
+        .itemCard:nth-child(1) .itemIcon { background: var(--red); box-shadow: 0 2px 0 var(--red-dark); }
+        .itemCard:nth-child(2) .itemIcon { background: var(--blue); box-shadow: 0 2px 0 var(--blue-dark); }
+        .itemCard:nth-child(3) .itemIcon { background: var(--green); box-shadow: 0 2px 0 var(--green-dark); }
+        .itemCard:nth-child(4) .itemIcon { background: var(--gold); color: #241a02; box-shadow: 0 2px 0 var(--gold-dark); }
 
         .itemInfo {
             flex: 1;
             font-size: 12px;
-            color: #b9c6e6;
+            color: var(--text-dim);
         }
 
         .itemInfo b {
-            color: #e6eefc;
+            color: var(--text);
             font-size: 13px;
+            font-weight: 700;
+            display: block;
+            margin-bottom: 2px;
         }
 
         .itemUpgradeBtn {
             font: inherit;
             font-size: 12px;
-            padding: 6px 10px;
-            border-radius: 6px;
+            font-weight: 800;
+            padding: 9px 14px;
+            border-radius: 10px;
             border: none;
             cursor: pointer;
-            background: #2e8b57;
+            background: var(--green);
             color: #fff;
             flex-shrink: 0;
+            box-shadow: 0 3px 0 var(--green-dark);
         }
 
-        .itemUpgradeBtn:disabled {
-            opacity: 0.4;
+        .itemUpgradeBtn:active {
+            box-shadow: 0 1px 0 var(--green-dark);
+            transform: translateY(2px);
+        }
+
+        /* Disabled reads as "pressed in / inert" rather than just dimmed */
+        .itemUpgradeBtn:disabled, .skillNode:disabled {
+            opacity: 0.55;
             cursor: not-allowed;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, .4) !important;
+            transform: translateY(2px);
         }
 
         #profilePopup .row {
             display: flex;
             gap: 10px;
             justify-content: center;
-            margin-top: 14px;
+            margin: 4px -16px 0;
+            padding: 12px 16px 16px;
+            position: sticky;
+            bottom: 0;
+            background: var(--bg);
+            border-top: 2px solid var(--border);
         }
 
-        #profilePopup button {
+        /* Scoped to .row (footer) only, NOT the bare "#profilePopup button"
+           the source design used - that ID+tag selector would outrank the
+           class-only .itemUpgradeBtn/.skillNode/#profileTabs button rules
+           above and silently overwrite their colors/padding/width. */
+        #profilePopup .row button {
             font: inherit;
-            padding: 8px 16px;
-            border-radius: 8px;
+            font-weight: 800;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            padding: 12px 16px;
+            border-radius: 12px;
             border: none;
             cursor: pointer;
-            background: #2c3a63;
-            color: #cfe8ff;
+            background: var(--surface-alt);
+            color: var(--text);
+            box-shadow: 0 3px 0 #10184a;
+            width: 100%;
+        }
+
+        #profilePopup .row button:active {
+            box-shadow: 0 1px 0 #10184a;
+            transform: translateY(2px);
         }
 
         #islandPopup {
@@ -605,17 +842,19 @@
     <div id="profilePopup">
         <h3>Profil</h3>
         <div id="profileTabs">
-            <button id="tabBtnInfo" class="active">Spieler</button>
-            <button id="tabBtnEquip">Ausr&uuml;stung</button>
-            <button id="tabBtnSkills">Skills</button>
+            <button id="tabBtnInfo" class="active"><span class="tabIcon">&#128100;</span><span>Spieler</span></button>
+            <button id="tabBtnEquip"><span class="tabIcon">&#128737;&#65039;</span><span>Ausr&uuml;stung</span></button>
+            <button id="tabBtnSkills"><span class="tabIcon">&#9889;</span><span>Skills</span></button>
         </div>
 
         <div id="tabInfo" class="profileTabPanel active">
             <div class="pTopRow">
-                <div class="pAvatar">&#127984;</div>
-                <div class="pNameCol">
-                    <input id="profileName" type="text" maxlength="20" placeholder="Dein Name" style="margin-bottom:4px;">
+                <div id="pAvatarRing" class="pAvatarWrap">
+                    <div class="pAvatar">&#127984;</div>
                     <span id="profileLevelBadge" class="pLevelBadge">Lvl 1</span>
+                </div>
+                <div class="pNameCol">
+                    <input id="profileName" type="text" maxlength="20" placeholder="Dein Name">
                 </div>
             </div>
 
@@ -630,14 +869,14 @@
                 <div class="kingdomCell"><div class="icon">&#127984;</div><div class="val" id="kBases">0</div><div class="sub">Basen</div></div>
                 <div class="kingdomCell"><div class="icon">&#129689;</div><div class="val" id="kCoins">0</div><div class="sub">M&uuml;nzen</div></div>
                 <div class="kingdomCell"><div class="icon">&#9876;&#65039;/h</div><div class="val" id="kTroopsRate">0</div><div class="sub">Truppen/Tick</div></div>
-                <div class="kingdomCell" style="grid-column: 2 / 4;"><div class="icon">&#129689;/h</div><div class="val" id="kCoinsRate">0</div><div class="sub">M&uuml;nzen/Tick</div></div>
+                <div class="kingdomCell"><div class="icon">&#129689;/h</div><div class="val" id="kCoinsRate">0</div><div class="sub">M&uuml;nzen/Tick</div></div>
             </div>
 
-            <div id="profileStats" style="margin-top:12px;"></div>
+            <div id="profileStats"></div>
         </div>
 
         <div id="tabEquip" class="profileTabPanel">
-            <div id="equipStats" class="stats" style="margin-bottom:10px;"></div>
+            <div id="equipStats" class="equipStatsRow"></div>
             <div id="equipGrid" class="itemGrid"></div>
         </div>
 
@@ -1326,19 +1565,24 @@
             document.getElementById('kCoinsRate').textContent =
                 '+' + Math.round(totalCoinProductionPerTick());
 
+            const progressPct = Math.round(ownedIslands.size / islands.length * 100);
+            const avatarRing = document.getElementById('pAvatarRing');
+            if (avatarRing) avatarRing.style.setProperty('--progress', progressPct);
+
+            const activeCount = pendingAttacks.length + pendingSends.length + pendingScouts.length;
             profileStats.innerHTML =
-                'XP: ' + playerXp + ' / ' + xpNeededForLevel(playerLvl) + '<br>' +
-                'Skillpunkte: ' + skillPoints + '<br>' +
-                (pendingAttacks.length > 0 ? pendingAttacks.length + ' Angriff(e) unterwegs<br>' : '') +
-                'Heimat: ' + homeLabel;
+                '<div class="statRow"><span>XP</span><b>' + playerXp + ' / ' + xpNeededForLevel(playerLvl) + '</b></div>' +
+                '<div class="statRow"><span>Skillpunkte</span><b>' + skillPoints + '</b></div>' +
+                (activeCount > 0 ? '<div class="statRow"><span>Unterwegs</span><b>' + activeCount + '</b></div>' : '') +
+                '<div class="statRow"><span>Heimat</span><b>' + homeLabel + '</b></div>';
         }
 
         function renderEquipGrid() {
             equipStats.innerHTML =
-                'Truppenproduktion: +' + bonusPct('weapon', 'troops').toFixed(0) + '%<br>' +
-                'M&uuml;nzenproduktion: +' + bonusPct('boots', null).toFixed(0) + '%<br>' +
-                'Verteidigung: +' + defenseBonusFlat() + '<br>' +
-                'Angriffsverluste: -' + shieldLossReductionPct().toFixed(0) + '%';
+                '<div class="statChip"><span>Truppen</span><b>+' + bonusPct('weapon', 'troops').toFixed(0) + '%</b></div>' +
+                '<div class="statChip"><span>M&uuml;nzen</span><b>+' + bonusPct('boots', null).toFixed(0) + '%</b></div>' +
+                '<div class="statChip"><span>Verteidigung</span><b>+' + defenseBonusFlat() + '</b></div>' +
+                '<div class="statChip"><span>Verluste</span><b>-' + shieldLossReductionPct().toFixed(0) + '%</b></div>';
 
             equipGrid.innerHTML = '';
             for (const key of Object.keys(EQUIPMENT_DEFS)) {
@@ -1417,7 +1661,7 @@
                 node.className = 'skillNode';
                 node.style.gridColumn = pos.col;
                 node.style.gridRow = pos.row;
-                node.style.borderColor = key === selectedSkillKey ? '#2e8b57' : '#2c3a63';
+                node.classList.toggle('selected', key === selectedSkillKey);
                 node.innerHTML =
                     '<div class="nIcon">' + skillInfo.icon + '</div>' +
                     '<div class="nLevel">Lvl ' + skillLevel + '</div>';
