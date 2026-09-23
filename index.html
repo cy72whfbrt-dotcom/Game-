@@ -97,8 +97,8 @@
             color: #e6eefc;
             font: 14px/1.5 system-ui, sans-serif;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            width: 320px;
-            max-width: 90vw;
+            width: 380px;
+            max-width: 92vw;
             max-height: 80vh;
             overflow-y: auto;
         }
@@ -127,6 +127,101 @@
             display: flex;
             flex-direction: column;
             gap: 4px;
+        }
+
+        .pTopRow {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pAvatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 3px solid #ffd23f;
+            background: #1a2340;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .pNameCol {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .pLevelBadge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 22px;
+            height: 22px;
+            padding: 0 5px;
+            border-radius: 6px;
+            background: #2f7fd6;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .pRankRow {
+            margin-top: 10px;
+            background: #1a2340;
+            border: 1px solid #2c3a63;
+            border-radius: 8px;
+            padding: 8px 10px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #b9c6e6;
+        }
+
+        .pRankRow b {
+            color: #e6eefc;
+        }
+
+        .kingdomLabel {
+            margin-top: 14px;
+            margin-bottom: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #8fa0c8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .kingdomGrid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+        }
+
+        .kingdomCell {
+            background: #1a2340;
+            border: 1px solid #2c3a63;
+            border-radius: 8px;
+            padding: 8px 4px;
+            text-align: center;
+        }
+
+        .kingdomCell .icon {
+            font-size: 17px;
+        }
+
+        .kingdomCell .val {
+            font-weight: 700;
+            font-size: 13px;
+            margin-top: 2px;
+        }
+
+        .kingdomCell .sub {
+            font-size: 10px;
+            color: #8fa0c8;
+            margin-top: 1px;
         }
 
         #profileTabs {
@@ -319,8 +414,29 @@
         </div>
 
         <div id="tabInfo" class="profileTabPanel active">
-            <input id="profileName" type="text" maxlength="20" placeholder="Dein Name">
-            <div id="profileStats"></div>
+            <div class="pTopRow">
+                <div class="pAvatar">&#127984;</div>
+                <div class="pNameCol">
+                    <input id="profileName" type="text" maxlength="20" placeholder="Dein Name" style="margin-bottom:4px;">
+                    <span id="profileLevelBadge" class="pLevelBadge">Lvl 1</span>
+                </div>
+            </div>
+
+            <div class="pRankRow">
+                <span>Rang: <b id="profileRank">Bronze</b></span>
+                <span>Fortschritt: <b id="profileProgress">0%</b></span>
+            </div>
+
+            <div class="kingdomLabel">Kingdom</div>
+            <div class="kingdomGrid">
+                <div class="kingdomCell"><div class="icon">&#9876;&#65039;</div><div class="val" id="kTroops">0</div><div class="sub">Truppen</div></div>
+                <div class="kingdomCell"><div class="icon">&#127984;</div><div class="val" id="kBases">0</div><div class="sub">Basen</div></div>
+                <div class="kingdomCell"><div class="icon">&#129689;</div><div class="val" id="kCoins">0</div><div class="sub">M&uuml;nzen</div></div>
+                <div class="kingdomCell"><div class="icon">&#9876;&#65039;/h</div><div class="val" id="kTroopsRate">0</div><div class="sub">Truppen/Tick</div></div>
+                <div class="kingdomCell" style="grid-column: 2 / 4;"><div class="icon">&#129689;/h</div><div class="val" id="kCoinsRate">0</div><div class="sub">M&uuml;nzen/Tick</div></div>
+            </div>
+
+            <div id="profileStats" style="margin-top:12px;"></div>
         </div>
 
         <div id="tabEquip" class="profileTabPanel">
@@ -574,6 +690,16 @@
             for (const ownedId of ownedIslands) sum += islandTroops[ownedId] || 0;
             return sum;
         }
+        function totalTroopProductionPerTick() {
+            let sum = 0;
+            for (const ownedId of ownedIslands) sum += TROOPS_PER_LEVEL * (islandLevels[ownedId] || 1);
+            return sum * troopProductionMultiplier();
+        }
+        function totalCoinProductionPerTick() {
+            let sum = 0;
+            for (const ownedId of ownedIslands) sum += COINS_PER_LEVEL * (islandLevels[ownedId] || 1);
+            return sum * coinProductionMultiplier();
+        }
         function updateHud() {
             coinCountEl.textContent = coins;
             troopCountEl.textContent = totalTroops();
@@ -590,9 +716,12 @@
             boots: { icon: '👢', name: 'Stiefel', desc: 'Münzproduktion', pct: 2 }
         };
         const SKILL_DEFS = {
-            recruiter: { icon: '👥', name: 'Recruiter', desc: 'Truppenproduktion', pct: 2 },
-            defender: { icon: '🏰', name: 'Verteidiger', desc: 'Verteidigung aller Inseln', flat: 5 },
-            economist: { icon: '💰', name: 'Ökonom', desc: 'Münzproduktion', pct: 2 }
+            speed: { icon: '🏃', name: 'Geschwindigkeit', desc: 'schnellere Produktions-Ticks', msPerLevel: 60 },
+            troops: { icon: '👥', name: 'Truppenherstellung', desc: 'Truppenproduktion', pct: 2 },
+            defense: { icon: '🏰', name: 'Verteidigung', desc: 'Verteidigung aller Inseln', flat: 5 },
+            defenseGold: { icon: '🛡️', name: 'Verteidigung: Gold', desc: 'Gold pro getöteter Truppe', rate: 0.3 },
+            attack: { icon: '⚔️', name: 'Angriff', desc: 'Angriffsstärke', pct: 3 },
+            attackGold: { icon: '💰', name: 'Angriff: Gold', desc: 'Gold pro getöteter Truppe', rate: 0.3 }
         };
         const EQUIPMENT_BASE_COST = 100;
 
@@ -624,26 +753,51 @@
             return (level + 1) * EQUIPMENT_BASE_COST;
         }
 
-        // Combined bonus percentage from an equipment slot + matching skill
+        // Combined bonus percentage/flat from an equipment slot + a matching
+        // skill (skillKey may be null when no skill covers that stat)
         function bonusPct(equipKey, skillKey) {
-            return (equipment[equipKey] || 0) * (EQUIPMENT_DEFS[equipKey].pct || 0) +
-                (skills[skillKey] || 0) * (SKILL_DEFS[skillKey].pct || 0);
+            const eq = (equipment[equipKey] || 0) * (EQUIPMENT_DEFS[equipKey].pct || 0);
+            const sk = skillKey ? (skills[skillKey] || 0) * (SKILL_DEFS[skillKey].pct || 0) : 0;
+            return eq + sk;
         }
         function bonusFlat(equipKey, skillKey) {
-            return (equipment[equipKey] || 0) * (EQUIPMENT_DEFS[equipKey].flat || 0) +
-                (skills[skillKey] || 0) * (SKILL_DEFS[skillKey].flat || 0);
+            const eq = (equipment[equipKey] || 0) * (EQUIPMENT_DEFS[equipKey].flat || 0);
+            const sk = skillKey ? (skills[skillKey] || 0) * (SKILL_DEFS[skillKey].flat || 0) : 0;
+            return eq + sk;
         }
         function troopProductionMultiplier() {
-            return 1 + bonusPct('weapon', 'recruiter') / 100;
+            return 1 + bonusPct('weapon', 'troops') / 100;
         }
         function coinProductionMultiplier() {
-            return 1 + bonusPct('boots', 'economist') / 100;
+            return 1 + bonusPct('boots', null) / 100;
         }
         function defenseBonusFlat() {
-            return bonusFlat('armor', 'defender');
+            return bonusFlat('armor', 'defense');
         }
         function shieldLossReductionPct() {
             return Math.min(90, equipment.shield * EQUIPMENT_DEFS.shield.pct);
+        }
+        // "Angriff" skill: boosts effective attacking strength without
+        // spending more actual troops from the source tower's garrison.
+        function attackPowerMultiplier() {
+            return 1 + (skills.attack || 0) * (SKILL_DEFS.attack.pct || 0) / 100;
+        }
+        // "Verteidigung: Gold" + "Angriff: Gold": coins earned per enemy
+        // troop killed in a won attack (all of the target's troops+defense).
+        function goldPerKillRate() {
+            return (skills.defenseGold || 0) * SKILL_DEFS.defenseGold.rate +
+                (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate;
+        }
+        // "Geschwindigkeit" skill: shortens the production tick interval.
+        function productionTickMs() {
+            return Math.max(400, 1000 - (skills.speed || 0) * SKILL_DEFS.speed.msPerLevel);
+        }
+        function skillBonusText(def, level) {
+            if (def.pct) return '+' + (level * def.pct) + '%';
+            if (def.flat) return '+' + (level * def.flat);
+            if (def.rate) return '+' + (level * def.rate).toFixed(1) + ' Gold/Kill';
+            if (def.msPerLevel) return '-' + (level * def.msPerLevel) + 'ms/Tick';
+            return '';
         }
 
         // Profile popup: player name (persisted), progress summary, and the
@@ -663,24 +817,53 @@
             localStorage.setItem('openWaterPlayerName', profileName.value);
         });
 
+        const RANK_TIERS = [
+            { min: 0, name: 'Bronze' },
+            { min: 5, name: 'Silber' },
+            { min: 15, name: 'Gold' },
+            { min: 35, name: 'Platin' },
+            { min: 70, name: 'Diamant' },
+            { min: 120, name: 'Meister' },
+            { min: 225, name: 'Legende' }
+        ];
+        function currentRank() {
+            let rank = RANK_TIERS[0].name;
+            for (const tier of RANK_TIERS) {
+                if (ownedIslands.size >= tier.min) rank = tier.name;
+            }
+            return rank;
+        }
+        function playerLevel() {
+            return 1 + Math.floor(ownedIslands.size / 3);
+        }
+
         function renderProfile() {
             const home = islandById[playerIslandId];
             const homeLandmass = landmasses.find(lm => lm.id === home.landmassId);
             const homeLabel = homeLandmass
                 ? 'Insel ' + (homeLandmass.id + 1) + ', Turm #' + (home.id + 1)
                 : 'Turm #' + (home.id + 1);
-            profileStats.innerHTML =
-                'Eroberte T&uuml;rme: ' + ownedIslands.size + ' / ' + islands.length + '<br>' +
-                'Gesamt-Truppen: ' + totalTroops() + '<br>' +
-                'M&uuml;nzen: ' + coins + '<br>' +
-                'Skillpunkte: ' + skillPoints + '<br>' +
-                'Heimat: ' + homeLabel;
+
+            document.getElementById('profileLevelBadge').textContent = 'Lvl ' + playerLevel();
+            document.getElementById('profileRank').textContent = currentRank();
+            document.getElementById('profileProgress').textContent =
+                Math.round(ownedIslands.size / islands.length * 100) + '%';
+
+            document.getElementById('kTroops').textContent = totalTroops();
+            document.getElementById('kBases').textContent = ownedIslands.size + '/' + islands.length;
+            document.getElementById('kCoins').textContent = coins;
+            document.getElementById('kTroopsRate').textContent =
+                '+' + Math.round(totalTroopProductionPerTick());
+            document.getElementById('kCoinsRate').textContent =
+                '+' + Math.round(totalCoinProductionPerTick());
+
+            profileStats.innerHTML = 'Skillpunkte: ' + skillPoints + '<br>Heimat: ' + homeLabel;
         }
 
         function renderEquipGrid() {
             equipStats.innerHTML =
-                'Truppenproduktion: +' + bonusPct('weapon', 'recruiter').toFixed(0) + '%<br>' +
-                'M&uuml;nzenproduktion: +' + bonusPct('boots', 'economist').toFixed(0) + '%<br>' +
+                'Truppenproduktion: +' + bonusPct('weapon', 'troops').toFixed(0) + '%<br>' +
+                'M&uuml;nzenproduktion: +' + bonusPct('boots', null).toFixed(0) + '%<br>' +
                 'Verteidigung: +' + defenseBonusFlat() + '<br>' +
                 'Angriffsverluste: -' + shieldLossReductionPct().toFixed(0) + '%';
 
@@ -689,7 +872,7 @@
                 const def = EQUIPMENT_DEFS[key];
                 const level = equipment[key];
                 const cost = equipmentUpgradeCost(level);
-                const bonusText = def.pct ? ('+' + (level * def.pct) + '%') : ('+' + (level * def.flat));
+                const bonusText = skillBonusText(def, level);
 
                 const card = document.createElement('div');
                 card.className = 'itemCard';
@@ -722,7 +905,7 @@
             for (const key of Object.keys(SKILL_DEFS)) {
                 const def = SKILL_DEFS[key];
                 const level = skills[key];
-                const bonusText = def.pct ? ('+' + (level * def.pct) + '%') : ('+' + (level * def.flat));
+                const bonusText = skillBonusText(def, level);
 
                 const card = document.createElement('div');
                 card.className = 'itemCard';
@@ -775,8 +958,10 @@
         });
 
         // Every owned island produces coins (shared treasury) and troops
-        // (kept locally on that island) once per second.
-        setInterval(() => {
+        // (kept locally on that island) once per tick. The "Geschwindigkeit"
+        // skill shortens the tick interval, so this reschedules itself each
+        // time instead of using a fixed setInterval.
+        function runProductionTick() {
             const coinMult = coinProductionMultiplier();
             const troopMult = troopProductionMultiplier();
             for (const ownedId of ownedIslands) {
@@ -786,7 +971,9 @@
             }
             updateHud();
             saveGame();
-        }, 1000);
+            setTimeout(runProductionTick, productionTickMs());
+        }
+        setTimeout(runProductionTick, productionTickMs());
 
         // Center the view on the player's island at start
         const startIsland = islandById[playerIslandId];
@@ -1094,17 +1281,20 @@
                 const scouted = scoutedIslands.has(island.id);
 
                 if (popupView === 'preview') {
-                    const myTroops = previewSourceId !== null ? (islandTroops[previewSourceId] || 0) : 0;
+                    const rawTroops = previewSourceId !== null ? (islandTroops[previewSourceId] || 0) : 0;
+                    const atkMult = attackPowerMultiplier();
+                    const myTroops = Math.round(rawTroops * atkMult);
                     const total = island.neutralTroops + island.neutralDefense;
                     popupTitle.textContent = 'Insel #' + (island.id + 1) + ' angreifen?';
                     popupStats.innerHTML =
-                        'Meine Truppen: ' + myTroops + ' (Insel #' + (previewSourceId + 1) + ')<br>' +
+                        'Meine Truppen: ' + myTroops + (atkMult > 1 ? ' (' + rawTroops + ' + Angriffsbonus)' : '') +
+                        ' (Insel #' + (previewSourceId + 1) + ')<br>' +
                         'Gegner Truppen: ' + (scouted ? island.neutralTroops : '?') + '<br>' +
                         'Gegner Verteidigung: ' + (scouted ? island.neutralDefense : '?') +
                         (scouted ? ' <span style="color:#7f93bd">(zusammen ' + total + ')</span>' : '');
                     attackBtn.textContent = 'Angreifen';
                     attackBtn.style.display = 'inline-block';
-                    attackBtn.disabled = myTroops <= 0;
+                    attackBtn.disabled = rawTroops <= 0;
                     backBtn.style.display = 'inline-block';
                 } else {
                     popupTitle.textContent = 'Insel #' + (island.id + 1) + ' (unbesetzt)';
@@ -1161,8 +1351,11 @@
                 const target = islandById[popupIslandId];
                 const sourceId = previewSourceId;
                 if (!target || sourceId === null) return;
-                const myTroops = islandTroops[sourceId] || 0;
-                if (myTroops <= 0) return;
+                const rawTroops = islandTroops[sourceId] || 0;
+                if (rawTroops <= 0) return;
+                // "Angriff" skill boosts effective strength without costing
+                // extra actual troops from the garrison
+                const myTroops = Math.round(rawTroops * attackPowerMultiplier());
 
                 // Win if the sent troops beat troops+defense combined; losing
                 // only the defense's worth (reduced by the shield bonus), or
@@ -1177,6 +1370,9 @@
                     ownedIslands.add(target.id);
                     islandLevels[target.id] = 1;
                     skillPoints += 1;
+                    // "Verteidigung: Gold" + "Angriff: Gold" skills: coins
+                    // per enemy troop killed (the whole target force)
+                    coins += Math.round(totalStrength * goldPerKillRate());
                     saveProgression();
                 } else {
                     islandTroops[sourceId] = 0;
