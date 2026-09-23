@@ -67,10 +67,17 @@
             font-size: 15px;
         }
 
-        #profileBtn {
+        #cornerButtons {
             position: fixed;
             right: 12px;
             top: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 20;
+        }
+
+        #cornerButtons button {
             width: 34px;
             height: 34px;
             border-radius: 50%;
@@ -82,6 +89,24 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 0;
+            position: relative;
+        }
+
+        #cornerButtons .badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            min-width: 14px;
+            height: 14px;
+            padding: 0 3px;
+            border-radius: 7px;
+            background: #c0392b;
+            color: #fff;
+            font-size: 9px;
+            font-weight: 700;
+            line-height: 14px;
+            display: none;
         }
 
         #profilePopup {
@@ -107,6 +132,99 @@
             margin: 0 0 12px;
             font-size: 16px;
             text-align: center;
+        }
+
+        #battleLogPopup, #mailPopup {
+            display: none;
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background: #10182f;
+            border: 1px solid #2c3a63;
+            border-radius: 12px;
+            padding: 18px 22px;
+            color: #e6eefc;
+            font: 14px/1.5 system-ui, sans-serif;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            width: 340px;
+            max-width: 92vw;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        #battleLogPopup h3, #mailPopup h3 {
+            margin: 0 0 12px;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .sectionLabel {
+            font-size: 12px;
+            font-weight: 700;
+            color: #8fa0c8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin: 10px 0 6px;
+        }
+
+        .logList {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .logList .logRow {
+            background: #1a2340;
+            border: 1px solid #2c3a63;
+            border-radius: 8px;
+            padding: 8px 10px;
+            font-size: 12px;
+            color: #b9c6e6;
+        }
+
+        .logList .logRow.win {
+            border-left: 3px solid #4f9a3a;
+        }
+
+        .logList .logRow.loss {
+            border-left: 3px solid #c0392b;
+        }
+
+        .logList .logRow.send {
+            border-left: 3px solid #2f7fd6;
+        }
+
+        .logList .logEmpty {
+            font-size: 12px;
+            color: #8fa0c8;
+            text-align: center;
+            padding: 10px;
+        }
+
+        .mailEmpty {
+            text-align: center;
+            font-size: 13px;
+            color: #b9c6e6;
+            padding: 30px 10px;
+            line-height: 1.8;
+        }
+
+        #battleLogPopup button, #mailPopup button {
+            font: inherit;
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            background: #2c3a63;
+            color: #cfe8ff;
+        }
+
+        #battleLogPopup .row, #mailPopup .row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 14px;
         }
 
         #profileName {
@@ -474,7 +592,11 @@
         <div class="stat"><span class="icon">&#129689;</span> <span id="coinCount">0</span></div>
         <div class="stat"><span class="icon">&#9876;&#65039;</span> <span id="troopCount">0</span></div>
     </div>
-    <button id="profileBtn" title="Profil">&#128100;</button>
+    <div id="cornerButtons">
+        <button id="profileBtn" title="Profil">&#128100;</button>
+        <button id="battleLogBtn" title="Angriffe &amp; Kampflog">&#9876;&#65039;<span id="battleLogBadge" class="badge">0</span></button>
+        <button id="mailBtn" title="Postfach">&#128238;</button>
+    </div>
     <div id="hint">Ziehen zum Bewegen &middot; Zoomen mit Scroll/Pinch &middot; Insel antippen f&uuml;r Infos &amp; Aktionen</div>
     <div id="profilePopup">
         <h3>Profil</h3>
@@ -525,6 +647,26 @@
             <button id="profileCloseBtn">Schlie&szlig;en</button>
         </div>
     </div>
+
+    <div id="battleLogPopup">
+        <h3>Angriffe &amp; Kampflog</h3>
+        <div class="sectionLabel">Laufende Aktionen</div>
+        <div id="activeMarches" class="logList"></div>
+        <div class="sectionLabel">Kampflog</div>
+        <div id="combatLogList" class="logList"></div>
+        <div class="row">
+            <button id="battleLogCloseBtn">Schlie&szlig;en</button>
+        </div>
+    </div>
+
+    <div id="mailPopup">
+        <h3>Postfach</h3>
+        <div class="mailEmpty">&#128238;<br>Hier siehst du bald Nachrichten und Ereignisse.<br>Kommt sp&auml;ter.</div>
+        <div class="row">
+            <button id="mailCloseBtn">Schlie&szlig;en</button>
+        </div>
+    </div>
+
     <div id="islandPopup">
         <h3 id="popupTitle">Insel</h3>
         <div id="popupStats" class="stats"></div>
@@ -898,6 +1040,21 @@
             pendingSends = [];
         }
 
+        // History of resolved attacks/transfers, newest first, capped
+        const COMBAT_LOG_LIMIT = 50;
+        let combatLog;
+        try {
+            combatLog = JSON.parse(localStorage.getItem('openWaterCombatLog')) || [];
+        } catch (e) {
+            combatLog = [];
+        }
+        function addCombatLogEntry(entry) {
+            entry.at = Date.now();
+            combatLog.unshift(entry);
+            if (combatLog.length > COMBAT_LOG_LIMIT) combatLog.length = COMBAT_LOG_LIMIT;
+            localStorage.setItem('openWaterCombatLog', JSON.stringify(combatLog));
+        }
+
         function launchAttack(sourceId, targetId) {
             const source = islandById[sourceId];
             const target = islandById[targetId];
@@ -918,6 +1075,7 @@
             saveGame();
             saveProgression();
             flashHint('Angriff unterwegs zu Insel #' + (target.id + 1) + ' - ca. ' + Math.ceil(durationSec) + 's');
+            renderActiveMarches();
         }
 
         // "Truppen verschicken": same travel time as an attack, but a blue
@@ -942,6 +1100,7 @@
             saveGame();
             saveProgression();
             flashHint('Truppen unterwegs zu Insel #' + (target.id + 1) + ' - ca. ' + Math.ceil(durationSec) + 's');
+            renderActiveMarches();
         }
 
         function resolveSend(send) {
@@ -950,6 +1109,12 @@
             islandTroops[send.toId] = (islandTroops[send.toId] || 0) + send.troops;
             updateHud();
             saveGame();
+            addCombatLogEntry({
+                type: 'send',
+                fromId: send.fromId,
+                toId: send.toId,
+                troops: send.troops
+            });
             flashHint(send.troops + ' Truppen bei Insel #' + (target.id + 1) + ' angekommen.', 3000);
         }
 
@@ -976,6 +1141,15 @@
             saveGame();
             saveProgression();
 
+            addCombatLogEntry({
+                type: 'attack',
+                sourceId: attack.sourceId,
+                targetId: attack.targetId,
+                troops: myTroops,
+                won,
+                remaining
+            });
+
             flashHint((won
                 ? 'Sieg bei Insel #' + (target.id + 1) + '! ' + remaining + ' Truppen übrig.'
                 : 'Niederlage bei Insel #' + (target.id + 1) + ' - Angriffstrupp verloren.'), 4000);
@@ -999,6 +1173,7 @@
                     for (const send of dueSends) resolveSend(send);
                 }
             }
+            if (battleLogPopup.style.display !== 'block') renderActiveMarches();
         }, 1000);
 
         // Combined bonus percentage/flat from an equipment slot + a matching
@@ -1229,6 +1404,91 @@
         });
         profileCloseBtn.addEventListener('click', () => {
             profilePopup.style.display = 'none';
+        });
+
+        // Battle log popup: which of your troops are marching right now,
+        // plus a history of resolved attacks/transfers
+        const battleLogBtn = document.getElementById('battleLogBtn');
+        const battleLogBadge = document.getElementById('battleLogBadge');
+        const battleLogPopup = document.getElementById('battleLogPopup');
+        const battleLogCloseBtn = document.getElementById('battleLogCloseBtn');
+        const activeMarchesEl = document.getElementById('activeMarches');
+        const combatLogListEl = document.getElementById('combatLogList');
+        let battleLogRefreshTimer = null;
+
+        function timeAgoLabel(timestamp) {
+            const seconds = Math.max(0, Math.round((Date.now() - timestamp) / 1000));
+            if (seconds < 60) return 'vor ' + seconds + 's';
+            const minutes = Math.round(seconds / 60);
+            if (minutes < 60) return 'vor ' + minutes + 'min';
+            return 'vor ' + Math.round(minutes / 60) + 'h';
+        }
+
+        function renderActiveMarches() {
+            const rows = [];
+            for (const attack of pendingAttacks) {
+                const secondsLeft = Math.max(0, Math.ceil((attack.resolveAt - Date.now()) / 1000));
+                rows.push(
+                    '<div class="logRow">Deine Basis #' + (attack.sourceId + 1) +
+                    ' greift Basis #' + (attack.targetId + 1) + ' an - noch ' + secondsLeft + 's</div>'
+                );
+            }
+            for (const send of pendingSends) {
+                const secondsLeft = Math.max(0, Math.ceil((send.resolveAt - Date.now()) / 1000));
+                rows.push(
+                    '<div class="logRow send">Deine Basis #' + (send.fromId + 1) +
+                    ' schickt Truppen zu Basis #' + (send.toId + 1) + ' - noch ' + secondsLeft + 's</div>'
+                );
+            }
+            activeMarchesEl.innerHTML = rows.length
+                ? rows.join('')
+                : '<div class="logEmpty">Gerade nichts unterwegs.</div>';
+
+            const total = pendingAttacks.length + pendingSends.length;
+            battleLogBadge.textContent = total;
+            battleLogBadge.style.display = total > 0 ? 'block' : 'none';
+        }
+
+        function renderCombatLog() {
+            if (combatLog.length === 0) {
+                combatLogListEl.innerHTML = '<div class="logEmpty">Noch keine Eintr&auml;ge.</div>';
+                return;
+            }
+            combatLogListEl.innerHTML = combatLog.map(entry => {
+                if (entry.type === 'send') {
+                    return '<div class="logRow send">Insel #' + (entry.fromId + 1) + ' → Insel #' + (entry.toId + 1) +
+                        ': ' + entry.troops + ' Truppen verschickt - ' + timeAgoLabel(entry.at) + '</div>';
+                }
+                const resultText = entry.won
+                    ? 'Sieg (' + entry.remaining + ' Truppen übrig)'
+                    : 'Niederlage';
+                return '<div class="logRow ' + (entry.won ? 'win' : 'loss') + '">Insel #' + (entry.sourceId + 1) +
+                    ' → Insel #' + (entry.targetId + 1) + ' (' + entry.troops + ' Truppen): ' +
+                    resultText + ' - ' + timeAgoLabel(entry.at) + '</div>';
+            }).join('');
+        }
+
+        battleLogBtn.addEventListener('click', () => {
+            renderActiveMarches();
+            renderCombatLog();
+            battleLogPopup.style.display = 'block';
+            clearInterval(battleLogRefreshTimer);
+            battleLogRefreshTimer = setInterval(renderActiveMarches, 1000);
+        });
+        battleLogCloseBtn.addEventListener('click', () => {
+            battleLogPopup.style.display = 'none';
+            clearInterval(battleLogRefreshTimer);
+        });
+
+        // Mailbox: placeholder for now, wired up for a future feature
+        const mailBtn = document.getElementById('mailBtn');
+        const mailPopup = document.getElementById('mailPopup');
+        const mailCloseBtn = document.getElementById('mailCloseBtn');
+        mailBtn.addEventListener('click', () => {
+            mailPopup.style.display = 'block';
+        });
+        mailCloseBtn.addEventListener('click', () => {
+            mailPopup.style.display = 'none';
         });
 
         // Every owned island produces coins (shared treasury) and troops
@@ -1757,7 +2017,8 @@
         // land *before* the button's own click handler ran).
         function isUiElement(target) {
             return !!(target && target.closest && (target.closest('#islandPopup') || target.closest('#hud') ||
-                target.closest('#profileBtn') || target.closest('#profilePopup')));
+                target.closest('#cornerButtons') || target.closest('#profilePopup') ||
+                target.closest('#battleLogPopup') || target.closest('#mailPopup')));
         }
 
         // Mouse events
@@ -1891,6 +2152,7 @@
             requestAnimationFrame(animate);
         }
 
+        renderActiveMarches();
         animate();
     </script>
 </body>
