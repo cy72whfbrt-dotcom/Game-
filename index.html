@@ -307,6 +307,15 @@
             color: #5fd685;
         }
 
+        .logCasualty {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            font-weight: 700;
+            color: #ef5b4e;
+            margin-top: 1px;
+        }
+
         .logGold {
             margin-top: 5px;
             font-size: 10px;
@@ -1645,6 +1654,9 @@
             // buffs already have somewhere to show up - today the target is
             // always a skill-less neutral island, so its "defender" buffs
             // are always 0, but the attacker's are real.
+            // Casualties: a win only costs the attacker the shield-reduced
+            // "losses" and wipes out every defending troop; a loss wipes
+            // out the whole attacking force and costs the defender nothing.
             addCombatLogEntry({
                 type: 'attack',
                 sourceId: attack.sourceId,
@@ -1653,10 +1665,12 @@
                 myTroopsBuffed: myTroops,
                 attackBuff: myTroops - attack.rawTroops,
                 attackGoldRate: (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate,
+                attackerCasualties: won ? losses : myTroops,
                 enemyTroops: target.neutralTroops,
                 enemyDefense: target.neutralDefense,
                 defenseBuff: 0,
                 defenseGoldRate: 0,
+                defenderCasualties: won ? target.neutralTroops : 0,
                 won,
                 remaining
             });
@@ -2016,6 +2030,7 @@
                             '<div class="logLine"><span>Truppen</span><span>' + entry.myTroops + '</span></div>' +
                             '<div class="logLine buff"><span>Angriff-Buff</span><span>+' + entry.attackBuff + '</span></div>' +
                             '<div class="logSum' + (atkTotal >= defTotal ? ' advantage' : '') + '"><span>Gesamt</span><span>' + atkTotal + '</span></div>' +
+                            '<div class="logCasualty"><span>Gefallen</span><span>-' + (entry.attackerCasualties || 0) + '</span></div>' +
                         '</div>' +
                         '<div class="logVsDivider">vs</div>' +
                         '<div class="logSide">' +
@@ -2024,6 +2039,7 @@
                             '<div class="logLine"><span>Verteidigung</span><span>' + entry.enemyDefense + '</span></div>' +
                             '<div class="logLine buff"><span>Verteidigung-Buff</span><span>+' + entry.defenseBuff + '</span></div>' +
                             '<div class="logSum' + (defTotal > atkTotal ? ' advantage' : '') + '"><span>Gesamt</span><span>' + defTotal + '</span></div>' +
+                            '<div class="logCasualty"><span>Gefallen</span><span>-' + (entry.defenderCasualties || 0) + '</span></div>' +
                         '</div>' +
                     '</div>' +
                     '<div class="logGold">Gold/Kill-Bonus: Angriff +' + entry.attackGoldRate.toFixed(1) + ' · Verteidigung +' + entry.defenseGoldRate.toFixed(1) + '</div>' +
