@@ -262,6 +262,76 @@
             gap: 8px;
         }
 
+        .skillDetail {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #1a2340;
+            border: 1px solid #2c3a63;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 12px;
+            min-height: 44px;
+        }
+
+        .skillDetail .icon {
+            font-size: 30px;
+            width: 38px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .skillDetail .info {
+            flex: 1;
+            font-size: 12px;
+            color: #b9c6e6;
+        }
+
+        .skillDetail .info b {
+            color: #e6eefc;
+            font-size: 14px;
+            display: block;
+        }
+
+        .skillCross {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-auto-rows: 74px;
+            gap: 8px;
+            justify-items: center;
+        }
+
+        .skillNode {
+            width: 66px;
+            height: 66px;
+            border-radius: 14px;
+            background: #1a2340;
+            border: 2px solid #2c3a63;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            cursor: pointer;
+            position: relative;
+            color: #e6eefc;
+        }
+
+        .skillNode .nIcon {
+            font-size: 24px;
+        }
+
+        .skillNode .nLevel {
+            font-size: 11px;
+            font-weight: 700;
+            color: #b9c6e6;
+        }
+
+        .skillNode:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
         .itemCard {
             display: flex;
             align-items: center;
@@ -333,11 +403,12 @@
             background: #10182f;
             border: 1px solid #2c3a63;
             border-radius: 12px;
-            padding: 18px 22px;
+            padding: 18px 24px;
             color: #e6eefc;
             font: 14px/1.5 system-ui, sans-serif;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            min-width: 240px;
+            width: 340px;
+            max-width: 92vw;
             text-align: center;
         }
 
@@ -446,7 +517,8 @@
 
         <div id="tabSkills" class="profileTabPanel">
             <div id="skillPointsLine" class="stats" style="margin-bottom:10px;"></div>
-            <div id="skillGrid" class="itemGrid"></div>
+            <div id="skillDetail" class="skillDetail"></div>
+            <div id="skillGrid" class="skillCross"></div>
         </div>
 
         <div class="row">
@@ -529,9 +601,32 @@
             dragStartX: 0,
             dragStartY: 0,
             lastOffsetX: 0,
-            lastOffsetY: 0
+            lastOffsetY: 0,
+            velocityX: 0,
+            velocityY: 0
         };
         let zoomAnchor = null; // { screenX, screenY, worldX, worldY }
+
+        // Momentum panning: tracks how fast the pointer moved right before
+        // release, so letting go mid-swipe keeps the map gliding (with
+        // friction) instead of stopping dead - the "scroll animation".
+        let lastMoveX = 0;
+        let lastMoveY = 0;
+        let lastMoveTime = 0;
+        const FRICTION = 0.93;
+        const MIN_VELOCITY = 0.02;
+
+        function trackPointerVelocity(x, y) {
+            const now = performance.now();
+            const dt = now - lastMoveTime;
+            if (dt > 0) {
+                mapState.velocityX = (x - lastMoveX) / dt;
+                mapState.velocityY = (y - lastMoveY) / dt;
+            }
+            lastMoveX = x;
+            lastMoveY = y;
+            lastMoveTime = now;
+        }
 
         const MIN_ZOOM = 0.035;
         const MAX_ZOOM = 4;
@@ -999,35 +1094,61 @@
             }
         }
 
+        // Cross/plus arrangement (3 columns) matching the reference layout:
+        // speed on top, attack/troops/defense in the middle row, the two
+        // gold-on-kill skills bottom-left/right.
+        const SKILL_POSITIONS = {
+            speed: { row: 1, col: 2 },
+            attack: { row: 2, col: 1 },
+            troops: { row: 2, col: 2 },
+            defense: { row: 2, col: 3 },
+            attackGold: { row: 3, col: 1 },
+            defenseGold: { row: 3, col: 3 }
+        };
+        let selectedSkillKey = 'troops';
+        const skillDetail = document.getElementById('skillDetail');
+
         function renderSkillGrid() {
             skillPointsLine.innerHTML = 'Verf&uuml;gbare Skillpunkte: ' + skillPoints;
 
+            const def = SKILL_DEFS[selectedSkillKey];
+            const level = skills[selectedSkillKey];
+            skillDetail.innerHTML =
+                '<div class="icon">' + def.icon + '</div>' +
+                '<div class="info"><b>' + def.name + ' - Lvl ' + level + '</b>' +
+                def.desc + ': ' + skillBonusText(def, level) + '</div>';
+            const detailBtn = document.createElement('button');
+            detailBtn.className = 'itemUpgradeBtn';
+            detailBtn.textContent = '+1';
+            detailBtn.disabled = skillPoints <= 0;
+            detailBtn.addEventListener('click', () => {
+                if (skillPoints <= 0) return;
+                skillPoints -= 1;
+                skills[selectedSkillKey] += 1;
+                saveProgression();
+                renderSkillGrid();
+            });
+            skillDetail.appendChild(detailBtn);
+
             skillGrid.innerHTML = '';
             for (const key of Object.keys(SKILL_DEFS)) {
-                const def = SKILL_DEFS[key];
-                const level = skills[key];
-                const bonusText = skillBonusText(def, level);
+                const skillInfo = SKILL_DEFS[key];
+                const skillLevel = skills[key];
+                const pos = SKILL_POSITIONS[key];
 
-                const card = document.createElement('div');
-                card.className = 'itemCard';
-                card.innerHTML =
-                    '<div class="itemIcon">' + def.icon + '</div>' +
-                    '<div class="itemInfo"><b>' + def.name + ' Lvl ' + level + '</b><br>' +
-                    def.desc + ': ' + bonusText + '</div>';
-
-                const btn = document.createElement('button');
-                btn.className = 'itemUpgradeBtn';
-                btn.textContent = '+1 (1 Punkt)';
-                btn.disabled = skillPoints <= 0;
-                btn.addEventListener('click', () => {
-                    if (skillPoints <= 0) return;
-                    skillPoints -= 1;
-                    skills[key] += 1;
-                    saveProgression();
+                const node = document.createElement('button');
+                node.className = 'skillNode';
+                node.style.gridColumn = pos.col;
+                node.style.gridRow = pos.row;
+                node.style.borderColor = key === selectedSkillKey ? '#2e8b57' : '#2c3a63';
+                node.innerHTML =
+                    '<div class="nIcon">' + skillInfo.icon + '</div>' +
+                    '<div class="nLevel">Lvl ' + skillLevel + '</div>';
+                node.addEventListener('click', () => {
+                    selectedSkillKey = key;
                     renderSkillGrid();
                 });
-                card.appendChild(btn);
-                skillGrid.appendChild(card);
+                skillGrid.appendChild(node);
             }
         }
 
@@ -1150,7 +1271,26 @@
             ctx.stroke();
         }
 
+        let lastFrameTime = performance.now();
+
         function drawMap() {
+            const frameNow = performance.now();
+            const frameDt = Math.min(50, frameNow - lastFrameTime); // ms, capped so a tab switch can't fling the map
+            lastFrameTime = frameNow;
+
+            // Momentum panning: once the pointer is released, keep gliding
+            // with its last velocity and slow down via friction each frame -
+            // this is the "scroll animation" a flick/swipe should have.
+            if (!mapState.isDragging && (Math.abs(mapState.velocityX) > MIN_VELOCITY || Math.abs(mapState.velocityY) > MIN_VELOCITY)) {
+                mapState.offsetX += mapState.velocityX * frameDt;
+                mapState.offsetY += mapState.velocityY * frameDt;
+                mapState.velocityX *= FRICTION;
+                mapState.velocityY *= FRICTION;
+            } else if (!mapState.isDragging) {
+                mapState.velocityX = 0;
+                mapState.velocityY = 0;
+            }
+
             // Ease current zoom toward target zoom
             mapState.zoom += (mapState.targetZoom - mapState.zoom) * 0.18;
 
@@ -1547,10 +1687,13 @@
             mapState.isDragging = true;
             pressMoved = false;
             zoomAnchor = null;
+            mapState.velocityX = 0;
+            mapState.velocityY = 0;
             mapState.dragStartX = e.clientX;
             mapState.dragStartY = e.clientY;
             mapState.lastOffsetX = mapState.offsetX;
             mapState.lastOffsetY = mapState.offsetY;
+            trackPointerVelocity(e.clientX, e.clientY);
         });
 
         document.addEventListener('mousemove', (e) => {
@@ -1562,6 +1705,7 @@
                 }
                 mapState.offsetX = mapState.lastOffsetX + deltaX;
                 mapState.offsetY = mapState.lastOffsetY + deltaY;
+                trackPointerVelocity(e.clientX, e.clientY);
             }
         });
 
@@ -1597,10 +1741,13 @@
                 mapState.isDragging = true;
                 pressMoved = false;
                 zoomAnchor = null;
+                mapState.velocityX = 0;
+                mapState.velocityY = 0;
                 mapState.dragStartX = e.touches[0].clientX;
                 mapState.dragStartY = e.touches[0].clientY;
                 mapState.lastOffsetX = mapState.offsetX;
                 mapState.lastOffsetY = mapState.offsetY;
+                trackPointerVelocity(e.touches[0].clientX, e.touches[0].clientY);
             } else if (e.touches.length === 2) {
                 mapState.isDragging = false;
                 const dx = e.touches[0].clientX - e.touches[1].clientX;
@@ -1624,6 +1771,7 @@
                 }
                 mapState.offsetX = mapState.lastOffsetX + deltaX;
                 mapState.offsetY = mapState.lastOffsetY + deltaY;
+                trackPointerVelocity(e.touches[0].clientX, e.touches[0].clientY);
             } else if (e.touches.length === 2) {
                 const dx = e.touches[0].clientX - e.touches[1].clientX;
                 const dy = e.touches[0].clientY - e.touches[1].clientY;
