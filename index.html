@@ -743,15 +743,116 @@
 
         let skillPoints = parseInt(localStorage.getItem('openWaterSkillPoints'), 10) || 0;
 
+        // XP/level: killing enemy troops in a won attack grants XP; filling
+        // the XP bar levels the player up and grants a skill point.
+        let playerXp = parseInt(localStorage.getItem('openWaterXp'), 10) || 0;
+        let playerLvl = parseInt(localStorage.getItem('openWaterLevel'), 10) || 1;
+
+        function xpNeededForLevel(level) {
+            return level * 50;
+        }
+        function addXp(amount) {
+            playerXp += amount;
+            while (playerXp >= xpNeededForLevel(playerLvl)) {
+                playerXp -= xpNeededForLevel(playerLvl);
+                playerLvl += 1;
+                skillPoints += 1;
+            }
+        }
+
         function saveProgression() {
             localStorage.setItem('openWaterEquipment', JSON.stringify(equipment));
             localStorage.setItem('openWaterSkills', JSON.stringify(skills));
             localStorage.setItem('openWaterSkillPoints', String(skillPoints));
+            localStorage.setItem('openWaterXp', String(playerXp));
+            localStorage.setItem('openWaterLevel', String(playerLvl));
+            localStorage.setItem('openWaterPendingAttacks', JSON.stringify(pendingAttacks));
         }
 
         function equipmentUpgradeCost(level) {
             return (level + 1) * EQUIPMENT_BASE_COST;
         }
+
+        // Attacks now take real time to arrive, scaled by the distance
+        // between the two towers - the "Geschwindigkeit" skill (which also
+        // speeds up production) shortens the march.
+        const BASE_ATTACK_SPEED = 600; // world units per second
+        const MIN_ATTACK_SECONDS = 3;
+        const MAX_ATTACK_SECONDS = 25;
+
+        function attackSpeedMultiplier() {
+            return 1 + (skills.speed || 0) * 0.05;
+        }
+        function attackDurationSeconds(source, target) {
+            const distance = Math.hypot(target.x - source.x, target.y - source.y);
+            const seconds = distance / (BASE_ATTACK_SPEED * attackSpeedMultiplier());
+            return Math.min(MAX_ATTACK_SECONDS, Math.max(MIN_ATTACK_SECONDS, seconds));
+        }
+
+        let pendingAttacks;
+        try {
+            pendingAttacks = JSON.parse(localStorage.getItem('openWaterPendingAttacks')) || [];
+        } catch (e) {
+            pendingAttacks = [];
+        }
+
+        function launchAttack(sourceId, targetId) {
+            const source = islandById[sourceId];
+            const target = islandById[targetId];
+            const rawTroops = islandTroops[sourceId] || 0;
+            if (!source || !target || rawTroops <= 0) return;
+
+            islandTroops[sourceId] = 0; // troops march out
+            const durationSec = attackDurationSeconds(source, target);
+            pendingAttacks.push({
+                sourceId,
+                targetId,
+                rawTroops,
+                resolveAt: Date.now() + durationSec * 1000
+            });
+            updateHud();
+            saveGame();
+            saveProgression();
+            flashHint('Angriff unterwegs zu Insel #' + (target.id + 1) + ' - ca. ' + Math.ceil(durationSec) + 's');
+        }
+
+        function resolveAttack(attack) {
+            const source = islandById[attack.sourceId];
+            const target = islandById[attack.targetId];
+            if (!source || !target) return;
+
+            const myTroops = Math.round(attack.rawTroops * attackPowerMultiplier());
+            const totalStrength = target.neutralTroops + target.neutralDefense;
+            const won = myTroops > totalStrength;
+            const losses = Math.round(target.neutralDefense * (1 - shieldLossReductionPct() / 100));
+            const remaining = won ? myTroops - losses : 0;
+
+            if (won) {
+                islandTroops[target.id] = remaining;
+                ownedIslands.add(target.id);
+                islandLevels[target.id] = 1;
+                addXp(totalStrength);
+                coins += Math.round(totalStrength * goldPerKillRate());
+            }
+            scoutedIslands.add(target.id);
+            updateHud();
+            saveGame();
+            saveProgression();
+
+            flashHint((won
+                ? 'Sieg bei Insel #' + (target.id + 1) + '! ' + remaining + ' Truppen übrig.'
+                : 'Niederlage bei Insel #' + (target.id + 1) + ' - Angriffstrupp verloren.'), 4000);
+        }
+
+        // Checks every second whether any in-flight attack has arrived
+        setInterval(() => {
+            if (pendingAttacks.length === 0) return;
+            const now = Date.now();
+            const due = pendingAttacks.filter(a => a.resolveAt <= now);
+            if (due.length === 0) return;
+            pendingAttacks = pendingAttacks.filter(a => a.resolveAt > now);
+            for (const attack of due) resolveAttack(attack);
+        }, 1000);
 
         // Combined bonus percentage/flat from an equipment slot + a matching
         // skill (skillKey may be null when no skill covers that stat)
@@ -833,10 +934,6 @@
             }
             return rank;
         }
-        function playerLevel() {
-            return 1 + Math.floor(ownedIslands.size / 3);
-        }
-
         function renderProfile() {
             const home = islandById[playerIslandId];
             const homeLandmass = landmasses.find(lm => lm.id === home.landmassId);
@@ -844,7 +941,7 @@
                 ? 'Insel ' + (homeLandmass.id + 1) + ', Turm #' + (home.id + 1)
                 : 'Turm #' + (home.id + 1);
 
-            document.getElementById('profileLevelBadge').textContent = 'Lvl ' + playerLevel();
+            document.getElementById('profileLevelBadge').textContent = 'Lvl ' + playerLvl;
             document.getElementById('profileRank').textContent = currentRank();
             document.getElementById('profileProgress').textContent =
                 Math.round(ownedIslands.size / islands.length * 100) + '%';
@@ -857,7 +954,11 @@
             document.getElementById('kCoinsRate').textContent =
                 '+' + Math.round(totalCoinProductionPerTick());
 
-            profileStats.innerHTML = 'Skillpunkte: ' + skillPoints + '<br>Heimat: ' + homeLabel;
+            profileStats.innerHTML =
+                'XP: ' + playerXp + ' / ' + xpNeededForLevel(playerLvl) + '<br>' +
+                'Skillpunkte: ' + skillPoints + '<br>' +
+                (pendingAttacks.length > 0 ? pendingAttacks.length + ' Angriff(e) unterwegs<br>' : '') +
+                'Heimat: ' + homeLabel;
         }
 
         function renderEquipGrid() {
@@ -1169,6 +1270,19 @@
                 }
             }
 
+            // Countdown badge over every tower a march is currently headed to
+            const now = Date.now();
+            for (const attack of pendingAttacks) {
+                const target = islandById[attack.targetId];
+                if (!target) continue;
+                const secondsLeft = Math.max(0, Math.ceil((attack.resolveAt - now) / 1000));
+                ctx.font = '40px system-ui, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = '#ffd23f';
+                ctx.fillText('⏳ ' + secondsLeft + 's', target.x, target.y - target.radius - 40);
+            }
+
             ctx.restore();
         }
 
@@ -1204,10 +1318,8 @@
         const closeBtn = document.getElementById('closeBtn');
         let popupIslandId = null;
         // 'menu' lists the available actions for the tapped island; 'upgrade'
-        // is the only remaining preview+confirm screen; 'result' is the
-        // read-only battle report shown right after an attack resolves.
+        // and 'preview' (attack) are the preview+confirm screens.
         let popupView = 'menu';
-        let lastResultHtml = '';
         let previewSourceId = null; // base picked for an attack awaiting confirmation
         let previewShownAt = 0; // guards against a stray click landing on the
                                  // confirm button the instant the preview opens
@@ -1234,17 +1346,9 @@
             backBtn.style.display = 'none';
         }
 
-        // Renders whichever screen (menu, the upgrade preview, or a battle
-        // result) is currently active - never performs any game action itself.
+        // Renders whichever screen (menu or the upgrade preview) is
+        // currently active - never performs any game action itself.
         function renderPopup() {
-            if (popupView === 'result') {
-                popupTitle.textContent = 'Angriffsergebnis';
-                popupStats.innerHTML = lastResultHtml;
-                hideAllButtons();
-                popup.style.display = 'block';
-                return;
-            }
-
             const island = islandById[popupIslandId];
             if (!island) return;
             hideAllButtons();
@@ -1347,41 +1451,16 @@
                 // Ignore a click that arrives the instant the preview opened -
                 // a real confirmation tap is a separate, deliberate action
                 if (Date.now() - previewShownAt < 350) return;
-                // Confirmed - actually run the attack now
-                const target = islandById[popupIslandId];
+                // Confirmed - send the troops marching, resolved later once
+                // they arrive (see launchAttack/resolveAttack)
+                const targetId = popupIslandId;
                 const sourceId = previewSourceId;
-                if (!target || sourceId === null) return;
-                const rawTroops = islandTroops[sourceId] || 0;
-                if (rawTroops <= 0) return;
-                // "Angriff" skill boosts effective strength without costing
-                // extra actual troops from the garrison
-                const myTroops = Math.round(rawTroops * attackPowerMultiplier());
+                if (targetId === null || sourceId === null) return;
+                if ((islandTroops[sourceId] || 0) <= 0) return;
 
-                // Win if the sent troops beat troops+defense combined; losing
-                // only the defense's worth (reduced by the shield bonus), or
-                // the whole force if the attack fails
-                const totalStrength = target.neutralTroops + target.neutralDefense;
-                const won = myTroops > totalStrength;
-                const losses = Math.round(target.neutralDefense * (1 - shieldLossReductionPct() / 100));
-                const remaining = won ? myTroops - losses : 0;
-                if (won) {
-                    islandTroops[target.id] = remaining;
-                    islandTroops[sourceId] = 0;
-                    ownedIslands.add(target.id);
-                    islandLevels[target.id] = 1;
-                    skillPoints += 1;
-                    // "Verteidigung: Gold" + "Angriff: Gold" skills: coins
-                    // per enemy troop killed (the whole target force)
-                    coins += Math.round(totalStrength * goldPerKillRate());
-                    saveProgression();
-                } else {
-                    islandTroops[sourceId] = 0;
-                }
-                scoutedIslands.add(target.id);
+                launchAttack(sourceId, targetId);
                 previewSourceId = null;
-                updateHud();
-                saveGame();
-                showAttackResult(sourceId, target, myTroops, won, remaining);
+                closeIslandPopup();
                 return;
             }
 
@@ -1408,19 +1487,6 @@
         });
 
         closeBtn.addEventListener('click', closeIslandPopup);
-
-        function showAttackResult(sourceId, target, myTroops, won, remaining) {
-            lastResultHtml =
-                'Meine Truppen: ' + myTroops + '<br>' +
-                'Gegner Truppen: ' + target.neutralTroops + '<br>' +
-                'Gegner Verteidigung: ' + target.neutralDefense + '<br>' +
-                'Ergebnis: ' + (won
-                    ? 'Sieg - ' + remaining + ' Truppen übrig, Insel erobert!'
-                    : 'Niederlage - alle Truppen verloren.');
-            popupIslandId = null;
-            popupView = 'result';
-            renderPopup();
-        }
 
         function handleTap(screenX, screenY) {
             const world = screenToWorld(screenX, screenY);
