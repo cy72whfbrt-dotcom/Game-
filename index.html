@@ -237,48 +237,84 @@
             margin-bottom: 4px;
         }
 
-        .logStatRow {
-            display: flex;
-            justify-content: space-between;
-            padding: 1px 0;
-        }
-
-        .logStatRow .vsTxt {
+        .vsTxt {
             color: #62719c;
             font-size: 10px;
             text-transform: uppercase;
         }
 
-        .logNote {
+        /* Side-by-side addition: each side lists its raw stat + every buff
+           line, ending in a "Gesamt" sum - so the two totals sit right next
+           to each other and the advantage is obvious at a glance. */
+        .logCompare {
+            display: flex;
+            align-items: stretch;
+            gap: 6px;
+            margin-top: 4px;
+        }
+
+        .logSide {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .logSideLabel {
+            font-size: 9.5px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #62719c;
+            margin-bottom: 3px;
+        }
+
+        .logLine {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: #b9c6e6;
+            padding: 1px 0;
+        }
+
+        .logLine.buff {
+            color: #8fa0c8;
+        }
+
+        .logLine.buff span:last-child {
+            color: #ffcb3d;
+        }
+
+        .logVsDivider {
+            align-self: center;
+            font-size: 10px;
+            font-weight: 700;
+            color: #62719c;
+            text-transform: uppercase;
+            padding: 0 1px;
+        }
+
+        .logSum {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 800;
+            font-size: 13px;
+            margin-top: 3px;
+            padding-top: 3px;
+            border-top: 1px solid #2c3a63;
+            color: #e6eefc;
+        }
+
+        .logSum.advantage {
+            color: #5fd685;
+        }
+
+        .logGold {
+            margin-top: 5px;
             font-size: 10px;
             color: #62719c;
-            margin: 3px 0 2px;
-            font-style: italic;
-        }
-
-        .logBuffs {
-            margin-top: 4px;
-            padding-top: 4px;
-            border-top: 1px dashed #2c3a63;
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .logBuffRow {
-            font-size: 11px;
-            color: #9fb0d8;
-        }
-
-        .logBuffRow .buffLabel {
-            display: inline-block;
-            min-width: 82px;
-            font-weight: 700;
-            color: #7f93bd;
         }
 
         .logResult {
-            margin-top: 5px;
+            margin-top: 4px;
             font-size: 11px;
             color: #7f93bd;
         }
@@ -1966,15 +2002,31 @@
                         ' → Insel #' + (entry.targetId + 1) + ' (' + entry.troops + ' Truppen): ' +
                         resultText + ' - ' + timeAgoLabel(entry.at) + '</div>';
                 }
+                // Everything each side brings to the fight, added up line by
+                // line into a "Gesamt" sum, side by side - so the two final
+                // numbers sit right next to each other and it's obvious at a
+                // glance who had the advantage (that side's sum is green).
+                const atkTotal = entry.myTroops + entry.attackBuff;
+                const defTotal = entry.enemyTroops + entry.enemyDefense + entry.defenseBuff;
                 return '<div class="logRow ' + (entry.won ? 'win' : 'loss') + '">' +
                     '<div class="logHead">Insel #' + (entry.sourceId + 1) + ' <span class="vsTxt">vs</span> Insel #' + (entry.targetId + 1) + '</div>' +
-                    '<div class="logStatRow"><span>Truppen <b>' + entry.myTroopsBuffed + '</b></span><span class="vsTxt">vs</span><span>Truppen <b>' + entry.enemyTroops + '</b></span></div>' +
-                    '<div class="logStatRow"><span>Verteidigung <b>0</b>*</span><span class="vsTxt">vs</span><span>Verteidigung <b>' + entry.enemyDefense + '</b></span></div>' +
-                    '<div class="logNote">* Angreifer hat keine eigene Verteidigung</div>' +
-                    '<div class="logBuffs">' +
-                        '<div class="logBuffRow"><span class="buffLabel">Verteidiger</span>Verteidigung +' + entry.defenseBuff + ' · Verteidigung-Gold +' + entry.defenseGoldRate.toFixed(1) + '/Kill</div>' +
-                        '<div class="logBuffRow"><span class="buffLabel">Angreifer</span>Angriff +' + entry.attackBuff + ' · Angriff-Gold +' + entry.attackGoldRate.toFixed(1) + '/Kill</div>' +
+                    '<div class="logCompare">' +
+                        '<div class="logSide">' +
+                            '<div class="logSideLabel">Angreifer</div>' +
+                            '<div class="logLine"><span>Truppen</span><span>' + entry.myTroops + '</span></div>' +
+                            '<div class="logLine buff"><span>Angriff-Buff</span><span>+' + entry.attackBuff + '</span></div>' +
+                            '<div class="logSum' + (atkTotal >= defTotal ? ' advantage' : '') + '"><span>Gesamt</span><span>' + atkTotal + '</span></div>' +
+                        '</div>' +
+                        '<div class="logVsDivider">vs</div>' +
+                        '<div class="logSide">' +
+                            '<div class="logSideLabel">Verteidiger</div>' +
+                            '<div class="logLine"><span>Truppen</span><span>' + entry.enemyTroops + '</span></div>' +
+                            '<div class="logLine"><span>Verteidigung</span><span>' + entry.enemyDefense + '</span></div>' +
+                            '<div class="logLine buff"><span>Verteidigung-Buff</span><span>+' + entry.defenseBuff + '</span></div>' +
+                            '<div class="logSum' + (defTotal > atkTotal ? ' advantage' : '') + '"><span>Gesamt</span><span>' + defTotal + '</span></div>' +
+                        '</div>' +
                     '</div>' +
+                    '<div class="logGold">Gold/Kill-Bonus: Angriff +' + entry.attackGoldRate.toFixed(1) + ' · Verteidigung +' + entry.defenseGoldRate.toFixed(1) + '</div>' +
                     '<div class="logResult">' + (entry.won ? 'Sieg - ' + entry.remaining + ' Truppen übrig' : 'Niederlage') + ' · ' + timeAgoLabel(entry.at) + '</div>' +
                     '</div>';
             }).join('');
