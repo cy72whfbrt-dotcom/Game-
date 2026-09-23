@@ -1515,6 +1515,13 @@
             if (!target) return;
             scoutedIslands.add(scout.targetId);
             saveGame();
+            addCombatLogEntry({
+                type: 'scout',
+                sourceId: scout.sourceId,
+                targetId: scout.targetId,
+                troops: target.neutralTroops,
+                defense: target.neutralDefense
+            });
             flashHint('Insel #' + (target.id + 1) + ' ausgekundschaftet: ' + target.neutralTroops +
                 ' Truppen, ' + target.neutralDefense + ' Verteidigung.', 4000);
         }
@@ -1880,6 +1887,11 @@
                 if (entry.type === 'send') {
                     return '<div class="logRow send">Insel #' + (entry.fromId + 1) + ' → Insel #' + (entry.toId + 1) +
                         ': ' + entry.troops + ' Truppen verschickt - ' + timeAgoLabel(entry.at) + '</div>';
+                }
+                if (entry.type === 'scout') {
+                    return '<div class="logRow scout">Insel #' + (entry.sourceId + 1) + ' → Insel #' + (entry.targetId + 1) +
+                        ': ausgekundschaftet (' + entry.troops + ' Truppen, ' + entry.defense + ' Verteidigung) - ' +
+                        timeAgoLabel(entry.at) + '</div>';
                 }
                 const resultText = entry.won
                     ? 'Sieg (' + entry.remaining + ' Truppen übrig)'
@@ -2323,7 +2335,11 @@
                     attackBtn.textContent = 'Angreifen';
                     attackBtn.style.display = 'inline-block';
                     scoutBtn.style.display = 'inline-block';
-                    scoutBtn.disabled = scouted || scoutEnRoute;
+                    // Scouting is always allowed, even on an already-scouted
+                    // island (re-scout to refresh) - only block a second
+                    // scout while one is already en route to this target.
+                    scoutBtn.textContent = scouted ? 'Erneut spähen' : 'Spähen';
+                    scoutBtn.disabled = scoutEnRoute;
                 }
             }
             popup.style.display = 'block';
@@ -2532,6 +2548,7 @@
         }, { passive: false });
 
         document.addEventListener('touchmove', (e) => {
+            if (isUiElement(e.target)) return;
             e.preventDefault();
             if (e.touches.length === 1 && mapState.isDragging) {
                 const deltaX = e.touches[0].clientX - mapState.dragStartX;
