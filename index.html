@@ -230,6 +230,59 @@
             border-left: 3px solid #ffd23f;
         }
 
+        .logHead {
+            font-weight: 700;
+            font-size: 12.5px;
+            color: #e6eefc;
+            margin-bottom: 4px;
+        }
+
+        .logStatRow {
+            display: flex;
+            justify-content: space-between;
+            padding: 1px 0;
+        }
+
+        .logStatRow .vsTxt {
+            color: #62719c;
+            font-size: 10px;
+            text-transform: uppercase;
+        }
+
+        .logNote {
+            font-size: 10px;
+            color: #62719c;
+            margin: 3px 0 2px;
+            font-style: italic;
+        }
+
+        .logBuffs {
+            margin-top: 4px;
+            padding-top: 4px;
+            border-top: 1px dashed #2c3a63;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .logBuffRow {
+            font-size: 11px;
+            color: #9fb0d8;
+        }
+
+        .logBuffRow .buffLabel {
+            display: inline-block;
+            min-width: 82px;
+            font-weight: 700;
+            color: #7f93bd;
+        }
+
+        .logResult {
+            margin-top: 5px;
+            font-size: 11px;
+            color: #7f93bd;
+        }
+
         .logList .logEmpty {
             font-size: 12px;
             color: #8fa0c8;
@@ -1551,11 +1604,23 @@
             saveGame();
             saveProgression();
 
+            // Buff breakdown shown in the battle log as plain numbers (not
+            // percentages), split by role so a future PvP defender's own
+            // buffs already have somewhere to show up - today the target is
+            // always a skill-less neutral island, so its "defender" buffs
+            // are always 0, but the attacker's are real.
             addCombatLogEntry({
                 type: 'attack',
                 sourceId: attack.sourceId,
                 targetId: attack.targetId,
-                troops: myTroops,
+                myTroops: attack.rawTroops,
+                myTroopsBuffed: myTroops,
+                attackBuff: myTroops - attack.rawTroops,
+                attackGoldRate: (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate,
+                enemyTroops: target.neutralTroops,
+                enemyDefense: target.neutralDefense,
+                defenseBuff: 0,
+                defenseGoldRate: 0,
                 won,
                 remaining
             });
@@ -1893,12 +1958,25 @@
                         ': ausgekundschaftet (' + entry.troops + ' Truppen, ' + entry.defense + ' Verteidigung) - ' +
                         timeAgoLabel(entry.at) + '</div>';
                 }
-                const resultText = entry.won
-                    ? 'Sieg (' + entry.remaining + ' Truppen übrig)'
-                    : 'Niederlage';
-                return '<div class="logRow ' + (entry.won ? 'win' : 'loss') + '">Insel #' + (entry.sourceId + 1) +
-                    ' → Insel #' + (entry.targetId + 1) + ' (' + entry.troops + ' Truppen): ' +
-                    resultText + ' - ' + timeAgoLabel(entry.at) + '</div>';
+                // Legacy entries saved before this format existed - fall back
+                // to the old one-liner instead of showing "undefined".
+                if (entry.myTroopsBuffed === undefined) {
+                    const resultText = entry.won ? 'Sieg (' + entry.remaining + ' Truppen übrig)' : 'Niederlage';
+                    return '<div class="logRow ' + (entry.won ? 'win' : 'loss') + '">Insel #' + (entry.sourceId + 1) +
+                        ' → Insel #' + (entry.targetId + 1) + ' (' + entry.troops + ' Truppen): ' +
+                        resultText + ' - ' + timeAgoLabel(entry.at) + '</div>';
+                }
+                return '<div class="logRow ' + (entry.won ? 'win' : 'loss') + '">' +
+                    '<div class="logHead">Insel #' + (entry.sourceId + 1) + ' <span class="vsTxt">vs</span> Insel #' + (entry.targetId + 1) + '</div>' +
+                    '<div class="logStatRow"><span>Truppen <b>' + entry.myTroopsBuffed + '</b></span><span class="vsTxt">vs</span><span>Truppen <b>' + entry.enemyTroops + '</b></span></div>' +
+                    '<div class="logStatRow"><span>Verteidigung <b>0</b>*</span><span class="vsTxt">vs</span><span>Verteidigung <b>' + entry.enemyDefense + '</b></span></div>' +
+                    '<div class="logNote">* Angreifer hat keine eigene Verteidigung</div>' +
+                    '<div class="logBuffs">' +
+                        '<div class="logBuffRow"><span class="buffLabel">Verteidiger</span>Verteidigung +' + entry.defenseBuff + ' · Verteidigung-Gold +' + entry.defenseGoldRate.toFixed(1) + '/Kill</div>' +
+                        '<div class="logBuffRow"><span class="buffLabel">Angreifer</span>Angriff +' + entry.attackBuff + ' · Angriff-Gold +' + entry.attackGoldRate.toFixed(1) + '/Kill</div>' +
+                    '</div>' +
+                    '<div class="logResult">' + (entry.won ? 'Sieg - ' + entry.remaining + ' Truppen übrig' : 'Niederlage') + ' · ' + timeAgoLabel(entry.at) + '</div>' +
+                    '</div>';
             }).join('');
         }
 
