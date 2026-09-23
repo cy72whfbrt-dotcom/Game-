@@ -11,6 +11,26 @@
             box-sizing: border-box;
         }
 
+        /* Shared "Kingdom Dashboard" theme - originally scoped to just
+           #profilePopup, now global so every popup/HUD element uses the
+           same palette instead of each having its own one-off dark colors. */
+        :root {
+            --bg: #0c1226;
+            --surface: #182348;
+            --surface-alt: #223066;
+            --border: #324377;
+            --text: #f4f7ff;
+            --text-dim: #94a3cf;
+            --gold: #ffcb3d;
+            --gold-dark: #c99a1f;
+            --green: #24b47e;
+            --green-dark: #17825b;
+            --red: #ef5b4e;
+            --red-dark: #b8392f;
+            --blue: #3b82f6;
+            --blue-dark: #2a5fc0;
+        }
+
         body {
             width: 100%;
             height: 100vh;
@@ -32,15 +52,17 @@
             left: 50%;
             bottom: 18px;
             transform: translateX(-50%);
-            color: #cfe8ff;
-            font: 13px/1.4 system-ui, sans-serif;
-            background: rgba(10, 14, 39, 0.55);
-            padding: 6px 14px;
-            border-radius: 20px;
+            color: var(--text);
+            font: 600 13px/1.4 system-ui, sans-serif;
+            background: var(--bg);
+            border: 2px solid var(--border);
+            padding: 7px 16px;
+            border-radius: 999px;
             pointer-events: none;
             white-space: nowrap;
             text-align: center;
             max-width: 90vw;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, .4);
         }
 
         #hud {
@@ -49,18 +71,19 @@
             top: 12px;
             display: flex;
             gap: 8px;
-            color: #e6eefc;
-            font: 600 13px/1.4 system-ui, sans-serif;
+            color: var(--text);
+            font: 700 13px/1.4 system-ui, sans-serif;
         }
 
         #hud .stat {
-            background: rgba(10, 14, 39, 0.7);
-            border: 1px solid #2c3a63;
-            border-radius: 10px;
-            padding: 6px 12px 6px 10px;
+            background: var(--bg);
+            border: 2px solid var(--border);
+            border-radius: 999px;
+            padding: 7px 14px 7px 11px;
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 6px;
+            box-shadow: 0 4px 0 rgba(0, 0, 0, .25);
         }
 
         #hud .stat .icon {
@@ -73,40 +96,47 @@
             top: 12px;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 9px;
             z-index: 20;
         }
 
         #cornerButtons button {
-            width: 34px;
-            height: 34px;
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
-            background: rgba(10, 14, 39, 0.7);
-            border: 1px solid #2c3a63;
-            color: #e6eefc;
-            font-size: 15px;
+            background: var(--surface);
+            border: 2px solid var(--border);
+            color: var(--text);
+            font-size: 16px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 0;
             position: relative;
+            box-shadow: 0 3px 0 var(--bg);
+        }
+
+        #cornerButtons button:active {
+            box-shadow: 0 1px 0 var(--bg);
+            transform: translateY(2px);
         }
 
         #cornerButtons .badge {
             position: absolute;
             top: -4px;
             right: -4px;
-            min-width: 14px;
-            height: 14px;
+            min-width: 15px;
+            height: 15px;
             padding: 0 3px;
-            border-radius: 7px;
-            background: #c0392b;
+            border-radius: 999px;
+            background: var(--red);
             color: #fff;
             font-size: 9px;
-            font-weight: 700;
-            line-height: 14px;
+            font-weight: 800;
+            line-height: 15px;
             display: none;
+            box-shadow: 0 0 0 2px var(--bg);
         }
 
         /* ===== Kingdom Dashboard - profile popup redesign =====
@@ -120,21 +150,6 @@
            the outer shell only, the avatar progress ring, inset shadows on
            non-interactive info panels). */
         #profilePopup {
-            --bg: #0c1226;
-            --surface: #182348;
-            --surface-alt: #223066;
-            --border: #324377;
-            --text: #f4f7ff;
-            --text-dim: #94a3cf;
-            --gold: #ffcb3d;
-            --gold-dark: #c99a1f;
-            --green: #24b47e;
-            --green-dark: #17825b;
-            --red: #ef5b4e;
-            --red-dark: #b8392f;
-            --blue: #3b82f6;
-            --blue-dark: #2a5fc0;
-
             display: none;
             position: fixed;
             left: 50%;
@@ -171,13 +186,13 @@
             left: 50%;
             top: 50%;
             transform: translate(-50%, -50%);
-            background: #10182f;
-            border: 1px solid #2c3a63;
-            border-radius: 12px;
-            padding: 18px 22px;
-            color: #e6eefc;
+            background: var(--bg);
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            padding: 18px 20px;
+            color: var(--text);
             font: 14px/1.5 system-ui, sans-serif;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 10px 0 rgba(0, 0, 0, .35), 0 18px 34px rgba(0, 0, 0, .5);
             width: 340px;
             max-width: 92vw;
             max-height: 80vh;
@@ -185,8 +200,12 @@
         }
 
         #battleLogPopup h3, #mailPopup h3 {
-            margin: 0 0 12px;
-            font-size: 16px;
+            margin: 0 0 14px;
+            font-size: 13px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--text-dim);
             text-align: center;
         }
 
@@ -345,12 +364,22 @@
 
         #battleLogPopup button, #mailPopup button {
             font: inherit;
-            padding: 8px 16px;
-            border-radius: 8px;
+            font-weight: 800;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            padding: 11px 18px;
+            border-radius: 12px;
             border: none;
             cursor: pointer;
-            background: #2c3a63;
-            color: #cfe8ff;
+            background: var(--surface-alt);
+            color: var(--text);
+            box-shadow: 0 3px 0 #10184a;
+        }
+
+        #battleLogPopup button:active, #mailPopup button:active {
+            box-shadow: 0 1px 0 #10184a;
+            transform: translateY(2px);
         }
 
         #battleLogPopup .row, #mailPopup .row {
@@ -402,6 +431,55 @@
         .statRow b {
             color: var(--text);
             font-weight: 700;
+        }
+
+        /* XP is the very first thing in the profile - always visible without
+           scrolling or digging into the stats list below. */
+        .xpBar {
+            margin-bottom: 14px;
+        }
+
+        .xpBarTop {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 5px;
+        }
+
+        .xpLvl {
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--text);
+        }
+
+        .xpLvl b {
+            color: var(--gold);
+            font-size: 15px;
+        }
+
+        .xpNums {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-dim);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .xpTrack {
+            height: 16px;
+            border-radius: 999px;
+            background: var(--surface);
+            border: 2px solid var(--border);
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, .35);
+        }
+
+        .xpFill {
+            height: 100%;
+            width: 0%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, var(--gold-dark), var(--gold));
+            box-shadow: 0 0 8px rgba(255, 203, 61, .55);
+            transition: width .3s ease;
         }
 
         .pTopRow {
@@ -857,71 +935,105 @@
             left: 50%;
             top: 50%;
             transform: translate(-50%, -50%);
-            background: #10182f;
-            border: 1px solid #2c3a63;
-            border-radius: 12px;
-            padding: 18px 24px;
-            color: #e6eefc;
+            background: var(--bg);
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            padding: 20px 22px;
+            color: var(--text);
             font: 14px/1.5 system-ui, sans-serif;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 10px 0 rgba(0, 0, 0, .35), 0 18px 34px rgba(0, 0, 0, .5);
             width: 340px;
             max-width: 92vw;
             text-align: center;
         }
 
         #islandPopup h3 {
-            margin: 0 0 10px;
-            font-size: 16px;
+            margin: 0 0 12px;
+            font-size: 15px;
+            font-weight: 800;
         }
 
         #islandPopup .stats {
             text-align: left;
             font-size: 13px;
-            color: #b9c6e6;
+            color: var(--text-dim);
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            padding: 12px 14px;
             display: flex;
             flex-direction: column;
             gap: 4px;
             margin-top: 4px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, .35);
         }
 
         #islandPopup .row {
             display: flex;
+            flex-wrap: wrap;
             gap: 10px;
             justify-content: center;
-            margin-top: 14px;
+            margin-top: 16px;
         }
 
         #islandPopup button {
             font: inherit;
-            padding: 8px 16px;
-            border-radius: 8px;
+            font-weight: 800;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .03em;
+            padding: 11px 16px;
+            border-radius: 12px;
             border: none;
             cursor: pointer;
+            flex: 1 1 auto;
+        }
+
+        #islandPopup button:active {
+            transform: translateY(2px);
         }
 
         #islandPopup button:disabled {
-            opacity: 0.4;
+            opacity: 0.5;
             cursor: not-allowed;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, .4) !important;
+            transform: translateY(2px);
         }
 
         #upgradeBtn, #sendBtn, #confirmBtn {
-            background: #2e8b57;
+            background: var(--green);
             color: #fff;
+            box-shadow: 0 3px 0 var(--green-dark);
+        }
+        #upgradeBtn:active, #sendBtn:active, #confirmBtn:active {
+            box-shadow: 0 1px 0 var(--green-dark);
         }
 
         #attackBtn {
-            background: #c0392b;
+            background: var(--red);
             color: #fff;
+            box-shadow: 0 3px 0 var(--red-dark);
+        }
+        #attackBtn:active {
+            box-shadow: 0 1px 0 var(--red-dark);
         }
 
         #scoutBtn {
-            background: #3b6fa0;
+            background: var(--blue);
             color: #fff;
+            box-shadow: 0 3px 0 var(--blue-dark);
+        }
+        #scoutBtn:active {
+            box-shadow: 0 1px 0 var(--blue-dark);
         }
 
         #closeBtn, #backBtn {
-            background: #2c3a63;
-            color: #cfe8ff;
+            background: var(--surface-alt);
+            color: var(--text);
+            box-shadow: 0 3px 0 #10184a;
+        }
+        #closeBtn:active, #backBtn:active {
+            box-shadow: 0 1px 0 #10184a;
         }
     </style>
 </head>
@@ -929,6 +1041,7 @@
     <canvas id="mapCanvas"></canvas>
     <div id="hud">
         <div class="stat"><span class="icon">&#129689;</span> <span id="coinCount">0</span></div>
+        <div class="stat"><span class="icon">&#128142;</span> <span id="gemCount">0</span></div>
         <div class="stat"><span class="icon">&#9876;&#65039;</span> <span id="troopCount">0</span></div>
     </div>
     <div id="cornerButtons">
@@ -946,6 +1059,13 @@
         </div>
 
         <div id="tabInfo" class="profileTabPanel active">
+            <div class="xpBar">
+                <div class="xpBarTop">
+                    <span class="xpLvl">Lvl <b id="xpLevelNum">1</b></span>
+                    <span class="xpNums" id="xpNums">0 / 50 XP</span>
+                </div>
+                <div class="xpTrack"><div class="xpFill" id="xpFill"></div></div>
+            </div>
             <div class="pTopRow">
                 <div id="pAvatarRing" class="pAvatarWrap">
                     <div class="pAvatar">&#127984;</div>
@@ -1117,18 +1237,36 @@
         // territory reads clearly from far above the map.
         const TERRITORY_VIEW_ZOOM = 0.06;
 
-        // Layout: a 3x3 grid of big islands (9 total), each one covered in
-        // several towers - the tower is the actual capturable unit.
-        const LANDMASS_GRID_SIZE = 3;
-        const LANDMASS_SPACING = 12500;
-        const LANDMASS_RADIUS = 5200;
-        const TOWER_GRID_SIZE = 5; // 5x5 towers per island
-        const TOWER_SPACING = 1600;
+        // Layout: one important central landmass (the hub) plus a ring of
+        // outer landmasses around it, each connected to the center by
+        // exactly one bridge - crossing to a different landmass is only
+        // possible over that bridge, not "any tower anywhere" like before.
+        // Bigger and more islands than the old 3x3 grid.
+        const CENTER_LANDMASS_RADIUS = 7200;
+        const OUTER_LANDMASS_RADIUS = 6200;
+        const OUTER_LANDMASS_COUNT = 10;
+        const RING_DISTANCE = 29500; // center-to-center, hub to each outer island
+        const TOWER_GRID_SIZE = 5; // 5x5 towers per landmass
+        const TOWER_SPACING_RATIO = 1600 / 5200; // keep the old island/tower proportions
         const ISLAND_RADIUS = 220; // tower footprint
         const NEUTRAL_DEFENSE_MAX = 100;
         const NEUTRAL_DEFENSE_MIN = 20;
         const NEUTRAL_TROOPS_MAX = 100;
         const NEUTRAL_TROOPS_MIN = 0;
+        // Temples: one per landmass except the center, which gets the
+        // stronger Mega-Tempel instead. Harder to hold than a regular tower,
+        // and reward Gold/Truppen/Gems on top of the normal per-level
+        // production for as long as the player keeps holding them.
+        const TEMPLE_DEFENSE_MIN = 220;
+        const TEMPLE_DEFENSE_MAX = 380;
+        const TEMPLE_TROOPS_MIN = 150;
+        const TEMPLE_TROOPS_MAX = 260;
+        const MEGA_TEMPLE_MULT = 1.8;
+        const TEMPLE_GEMS_PER_TICK = 0.08;
+        const TEMPLE_COIN_BONUS_PER_TICK = 15;
+        const TEMPLE_TROOP_BONUS_PER_TICK = 6;
+        const TEMPLE_HOLD_STREAK_MS = 30 * 60 * 1000; // 30min to reach the max hold bonus
+        const TEMPLE_HOLD_STREAK_MAX_MULT = 2; // holding it long enough doubles its output
 
         function mulberry32(seed) {
             return function () {
@@ -1233,6 +1371,22 @@
             return inside;
         }
 
+        // Closest point of a landmass's coastline polygon to some other
+        // point - used to anchor a bridge to the nearest shore instead of
+        // just running it between the two landmass centers.
+        function closestPolygonPoint(poly, targetX, targetY) {
+            let best = poly[0];
+            let bestDist = Infinity;
+            for (const p of poly) {
+                const d = (p.x - targetX) * (p.x - targetX) + (p.y - targetY) * (p.y - targetY);
+                if (d < bestDist) {
+                    bestDist = d;
+                    best = p;
+                }
+            }
+            return best;
+        }
+
         // Game balance
         const BASE_DEFENSE = 100;
         const DEFENSE_PER_LEVEL = 50;
@@ -1248,41 +1402,69 @@
         }
 
         // The big islands themselves - just background land, drawn as one
-        // large green square each, no ownership state of their own.
+        // organic coastline each, no ownership state of their own. Landmass
+        // 0 is always the center/hub; every other landmass sits in a ring
+        // around it.
         const landmasses = [];
         {
-            const lmHalf = Math.floor(LANDMASS_GRID_SIZE / 2);
-            let lmId = 0;
-            for (let row = -lmHalf; row <= lmHalf; row++) {
-                for (let col = -lmHalf; col <= lmHalf; col++) {
-                    const x = col * LANDMASS_SPACING;
-                    const y = row * LANDMASS_SPACING;
-                    // Distinct seed per landmass (large prime multiplier
-                    // avoids correlated streams between adjacent ids) so
-                    // every island gets a visibly different coastline
-                    const shapeRand = mulberry32(1337 + lmId * 104729);
-                    const shape = generateIslandShape(x, y, LANDMASS_RADIUS, shapeRand);
-                    let shapeMaxR = 0;
-                    for (const p of shape) shapeMaxR = Math.max(shapeMaxR, Math.hypot(p.x - x, p.y - y));
-                    landmasses.push({ id: lmId++, x, y, shape, shapeMaxR });
-                }
+            const shapeRand0 = mulberry32(1337);
+            const shape0 = generateIslandShape(0, 0, CENTER_LANDMASS_RADIUS, shapeRand0);
+            let shapeMaxR0 = 0;
+            for (const p of shape0) shapeMaxR0 = Math.max(shapeMaxR0, Math.hypot(p.x, p.y));
+            landmasses.push({ id: 0, x: 0, y: 0, radius: CENTER_LANDMASS_RADIUS, shape: shape0, shapeMaxR: shapeMaxR0, isCenter: true });
+
+            for (let i = 0; i < OUTER_LANDMASS_COUNT; i++) {
+                const angle = (i / OUTER_LANDMASS_COUNT) * Math.PI * 2;
+                const x = Math.cos(angle) * RING_DISTANCE;
+                const y = Math.sin(angle) * RING_DISTANCE;
+                const lmId = i + 1;
+                // Distinct seed per landmass (large prime multiplier avoids
+                // correlated streams between adjacent ids) so every island
+                // gets a visibly different coastline
+                const shapeRand = mulberry32(1337 + lmId * 104729);
+                const shape = generateIslandShape(x, y, OUTER_LANDMASS_RADIUS, shapeRand);
+                let shapeMaxR = 0;
+                for (const p of shape) shapeMaxR = Math.max(shapeMaxR, Math.hypot(p.x - x, p.y - y));
+                landmasses.push({ id: lmId, x, y, radius: OUTER_LANDMASS_RADIUS, shape, shapeMaxR, isCenter: false });
             }
+        }
+
+        // Bridges: the ONLY way to cross from one landmass to a different
+        // one - a hub-and-spoke topology where every outer landmass has
+        // exactly one bridge straight to the center. Anchored to each
+        // landmass's nearest actual coastline point (not just its center).
+        const bridges = [];
+        for (const lm of landmasses) {
+            if (lm.isCenter) continue;
+            const hub = landmasses[0];
+            const p1 = closestPolygonPoint(hub.shape, lm.x, lm.y);
+            const p2 = closestPolygonPoint(lm.shape, hub.x, hub.y);
+            bridges.push({ a: hub.id, b: lm.id, x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y });
+        }
+        function landmassesConnected(a, b) {
+            if (a === b) return true;
+            return bridges.some(br => (br.a === a && br.b === b) || (br.a === b && br.b === a));
         }
 
         // Every landmass is covered in a grid of towers - the tower, not the
         // island, is the capturable unit with its own troops/level/defense.
+        // The exact center slot of the grid is reserved for that landmass's
+        // temple instead of a regular tower (a Mega-Tempel on the hub, a
+        // plain Tempel on every outer landmass).
         const islands = [];
         let playerIslandId = null;
 
         const towerHalf = Math.floor(TOWER_GRID_SIZE / 2);
         let id = 0;
         for (const lm of landmasses) {
+            const towerSpacing = lm.radius * TOWER_SPACING_RATIO;
             for (let row = -towerHalf; row <= towerHalf; row++) {
                 for (let col = -towerHalf; col <= towerHalf; col++) {
-                    const jitterX = (rand() - 0.5) * TOWER_SPACING * 0.25;
-                    const jitterY = (rand() - 0.5) * TOWER_SPACING * 0.25;
-                    const dx = col * TOWER_SPACING + jitterX;
-                    const dy = row * TOWER_SPACING + jitterY;
+                    if (row === 0 && col === 0) continue; // reserved for the temple
+                    const jitterX = (rand() - 0.5) * towerSpacing * 0.25;
+                    const jitterY = (rand() - 0.5) * towerSpacing * 0.25;
+                    const dx = col * towerSpacing + jitterX;
+                    const dy = row * towerSpacing + jitterY;
                     let tx = lm.x + dx;
                     let ty = lm.y + dy;
                     // Bases may only stand on the island itself: if the grid
@@ -1306,6 +1488,7 @@
                         x: tx,
                         y: ty,
                         radius: ISLAND_RADIUS,
+                        type: 'tower',
                         // Two separate stats for a neutral (unowned) tower:
                         // troops garrisoned there, and a defense bonus on top.
                         neutralTroops: NEUTRAL_TROOPS_MIN + Math.floor(rand() * (NEUTRAL_TROOPS_MAX - NEUTRAL_TROOPS_MIN + 1)),
@@ -1313,14 +1496,28 @@
                     });
                 }
             }
+
+            const isMega = lm.isCenter;
+            islands.push({
+                id: id++,
+                landmassId: lm.id,
+                x: lm.x,
+                y: lm.y,
+                radius: ISLAND_RADIUS * (isMega ? 1.6 : 1.3),
+                type: isMega ? 'megaTemple' : 'temple',
+                neutralTroops: Math.round(Math.floor(TEMPLE_TROOPS_MIN + rand() * (TEMPLE_TROOPS_MAX - TEMPLE_TROOPS_MIN)) * (isMega ? MEGA_TEMPLE_MULT : 1)),
+                neutralDefense: Math.round(Math.floor(TEMPLE_DEFENSE_MIN + rand() * (TEMPLE_DEFENSE_MAX - TEMPLE_DEFENSE_MIN)) * (isMega ? MEGA_TEMPLE_MULT : 1))
+            });
         }
         const islandById = {};
         for (const island of islands) islandById[island.id] = island;
 
         function centerIsland() {
-            let closest = islands[0];
+            // Player's home base must be a regular tower, never a temple.
+            let closest = null;
             let closestDist = Infinity;
             for (const island of islands) {
+                if (island.type !== 'tower') continue;
                 const dist = island.x * island.x + island.y * island.y;
                 if (dist < closestDist) {
                     closestDist = dist;
@@ -1365,6 +1562,25 @@
         }
 
         let coins = parseInt(localStorage.getItem('openWaterCoins'), 10) || 0;
+        let gems = parseFloat(localStorage.getItem('openWaterGems')) || 0;
+
+        // When each currently-owned temple was captured - the longer it's
+        // held continuously, the bigger its output bonus (see
+        // templeHoldMultiplier). Reset whenever a temple changes hands,
+        // which today only happens when the player captures a neutral one,
+        // but the field is ready for a future PvP recapture too.
+        let templeHoldSince;
+        try {
+            templeHoldSince = JSON.parse(localStorage.getItem('openWaterTempleHoldSince')) || {};
+        } catch (e) {
+            templeHoldSince = {};
+        }
+        function templeHoldMultiplier(templeId) {
+            const since = templeHoldSince[templeId];
+            if (!since) return 1;
+            const heldMs = Date.now() - since;
+            return 1 + Math.min(1, heldMs / TEMPLE_HOLD_STREAK_MS) * (TEMPLE_HOLD_STREAK_MAX_MULT - 1);
+        }
 
         // Neutral islands hide their troop count until scouted
         let scoutedIslands;
@@ -1379,10 +1595,13 @@
             localStorage.setItem('openWaterIslandLevels', JSON.stringify(islandLevels));
             localStorage.setItem('openWaterIslandTroops', JSON.stringify(islandTroops));
             localStorage.setItem('openWaterCoins', String(coins));
+            localStorage.setItem('openWaterGems', String(gems));
+            localStorage.setItem('openWaterTempleHoldSince', JSON.stringify(templeHoldSince));
             localStorage.setItem('openWaterScoutedIslands', JSON.stringify([...scoutedIslands]));
         }
 
         const coinCountEl = document.getElementById('coinCount');
+        const gemCountEl = document.getElementById('gemCount');
         const troopCountEl = document.getElementById('troopCount');
         function totalTroops() {
             let sum = 0;
@@ -1401,6 +1620,7 @@
         }
         function updateHud() {
             coinCountEl.textContent = coins;
+            gemCountEl.textContent = Math.floor(gems);
             troopCountEl.textContent = totalTroops();
         }
         updateHud();
@@ -1533,12 +1753,21 @@
             islandTroops[sourceId] = 0; // troops march out
             const durationSec = travelDurationSeconds(source, target);
             const startedAt = Date.now();
+            // Snapshot every skill/equipment-derived combat bonus NOW, at
+            // launch, not when the attack resolves on arrival (which can be
+            // many seconds later) - otherwise leveling a skill while troops
+            // are already marching would silently change the outcome of an
+            // attack whose preview the player already confirmed.
             pendingAttacks.push({
                 sourceId,
                 targetId,
                 rawTroops,
                 startedAt,
-                resolveAt: startedAt + durationSec * 1000
+                resolveAt: startedAt + durationSec * 1000,
+                attackBonus: attackFlatBonus(),
+                attackGoldRate: (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate,
+                rewardGoldRate: goldPerKillRate(),
+                shieldLossReductionPct: shieldLossReductionPct()
             });
             updateHud();
             saveGame();
@@ -1578,6 +1807,11 @@
             islandTroops[send.toId] = (islandTroops[send.toId] || 0) + send.troops;
             updateHud();
             saveGame();
+            // Persists the now-shorter pendingSends array too - without this
+            // the just-resolved send reloads from localStorage on next page
+            // load (resolveAt already in the past) and gets applied a
+            // second time, duping the arrived troops.
+            saveProgression();
             addCombatLogEntry({
                 type: 'send',
                 fromId: send.fromId,
@@ -1613,6 +1847,9 @@
             if (!target) return;
             scoutedIslands.add(scout.targetId);
             saveGame();
+            // Same reasoning as resolveSend(): persist the now-shorter
+            // pendingScouts array, or a reload replays this scout again.
+            saveProgression();
             addCombatLogEntry({
                 type: 'scout',
                 sourceId: scout.sourceId,
@@ -1629,17 +1866,31 @@
             const target = islandById[attack.targetId];
             if (!source || !target) return;
 
-            const myTroops = attack.rawTroops + attackFlatBonus();
+            // Uses the bonuses snapshotted at launch (see launchAttack), not
+            // whatever the player's skills/equipment are right now - troops
+            // already marching shouldn't have their outcome change because
+            // a skill got leveled up while they were still en route.
+            const atkBonus = attack.attackBonus !== undefined ? attack.attackBonus : attackFlatBonus();
+            const lossReductionPct = attack.shieldLossReductionPct !== undefined ? attack.shieldLossReductionPct : shieldLossReductionPct();
+            const rewardRate = attack.rewardGoldRate !== undefined ? attack.rewardGoldRate : goldPerKillRate();
+
+            const myTroops = attack.rawTroops + atkBonus;
             const totalStrength = target.neutralTroops + target.neutralDefense;
             const won = myTroops > totalStrength;
-            const losses = Math.round(target.neutralDefense * (1 - shieldLossReductionPct() / 100));
+            const losses = Math.round(target.neutralDefense * (1 - lossReductionPct / 100));
             const remaining = won ? myTroops - losses : 0;
 
             if (won) {
                 islandTroops[target.id] = remaining;
                 ownedIslands.add(target.id);
                 islandLevels[target.id] = 1;
-                coins += Math.round(totalStrength * goldPerKillRate());
+                coins += Math.round(totalStrength * rewardRate);
+                if (target.type === 'temple' || target.type === 'megaTemple') {
+                    // Starts (or restarts) this temple's hold streak - see
+                    // templeHoldMultiplier(). Ready for a future PvP
+                    // recapture to reset this the same way.
+                    templeHoldSince[target.id] = Date.now();
+                }
             }
             // XP for troops that died in the clash either way: a win kills
             // the whole enemy force, a loss costs your whole attack force
@@ -1664,7 +1915,7 @@
                 myTroops: attack.rawTroops,
                 myTroopsBuffed: myTroops,
                 attackBuff: myTroops - attack.rawTroops,
-                attackGoldRate: (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate,
+                attackGoldRate: attack.attackGoldRate !== undefined ? attack.attackGoldRate : (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate,
                 attackerCasualties: won ? losses : myTroops,
                 enemyTroops: target.neutralTroops,
                 enemyDefense: target.neutralDefense,
@@ -1800,6 +2051,13 @@
             document.getElementById('profileProgress').textContent =
                 Math.round(ownedIslands.size / islands.length * 100) + '%';
 
+            // XP sits at the very top of the profile, always visible - a
+            // proper fill bar, not buried in the stats list below.
+            const xpNeeded = xpNeededForLevel(playerLvl);
+            document.getElementById('xpLevelNum').textContent = playerLvl;
+            document.getElementById('xpNums').textContent = playerXp + ' / ' + xpNeeded + ' XP';
+            document.getElementById('xpFill').style.width = Math.min(100, Math.round(playerXp / xpNeeded * 100)) + '%';
+
             document.getElementById('kTroops').textContent = totalTroops();
             document.getElementById('kBases').textContent = ownedIslands.size + '/' + islands.length;
             document.getElementById('kCoins').textContent = coins;
@@ -1814,8 +2072,8 @@
 
             const activeCount = pendingAttacks.length + pendingSends.length + pendingScouts.length;
             profileStats.innerHTML =
-                '<div class="statRow"><span>XP</span><b>' + playerXp + ' / ' + xpNeededForLevel(playerLvl) + '</b></div>' +
                 '<div class="statRow"><span>Skillpunkte</span><b>' + skillPoints + '</b></div>' +
+                '<div class="statRow"><span>Gems</span><b>' + Math.floor(gems) + '</b></div>' +
                 (activeCount > 0 ? '<div class="statRow"><span>Unterwegs</span><b>' + activeCount + '</b></div>' : '') +
                 '<div class="statRow"><span>Heimat</span><b>' + homeLabel + '</b></div>';
         }
@@ -1935,6 +2193,7 @@
         profileTabs.skills.btn.addEventListener('click', () => showProfileTab('skills'));
 
         profileBtn.addEventListener('click', () => {
+            closeAllPopups();
             renderProfile();
             showProfileTab('info');
             profilePopup.style.display = 'block';
@@ -1954,11 +2213,11 @@
         let battleLogRefreshTimer = null;
 
         function timeAgoLabel(timestamp) {
-            const seconds = Math.max(0, Math.round((Date.now() - timestamp) / 1000));
+            const seconds = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
             if (seconds < 60) return 'vor ' + seconds + 's';
-            const minutes = Math.round(seconds / 60);
+            const minutes = Math.floor(seconds / 60);
             if (minutes < 60) return 'vor ' + minutes + 'min';
-            return 'vor ' + Math.round(minutes / 60) + 'h';
+            return 'vor ' + Math.floor(minutes / 60) + 'h';
         }
 
         function renderActiveMarches() {
@@ -2049,10 +2308,10 @@
         }
 
         battleLogBtn.addEventListener('click', () => {
+            closeAllPopups();
             renderActiveMarches();
             renderCombatLog();
             battleLogPopup.style.display = 'block';
-            clearInterval(battleLogRefreshTimer);
             battleLogRefreshTimer = setInterval(renderActiveMarches, 1000);
         });
         battleLogCloseBtn.addEventListener('click', () => {
@@ -2065,6 +2324,7 @@
         const mailPopup = document.getElementById('mailPopup');
         const mailCloseBtn = document.getElementById('mailCloseBtn');
         mailBtn.addEventListener('click', () => {
+            closeAllPopups();
             mailPopup.style.display = 'block';
         });
         mailCloseBtn.addEventListener('click', () => {
@@ -2072,20 +2332,56 @@
         });
 
         // Every owned island produces coins (shared treasury) and troops
-        // (kept locally on that island) once per tick. The "Geschwindigkeit"
-        // skill shortens the tick interval, so this reschedules itself each
-        // time instead of using a fixed setInterval.
+        // (kept locally on that island) once per tick; owned temples also
+        // add Gems + a coin/troop bonus on top, scaled by how long they've
+        // been held without interruption. The "Geschwindigkeit" skill
+        // shortens the tick interval, so this reschedules itself each time
+        // instead of using a fixed setInterval.
+        //
+        // Ticks are due against an absolute nextProductionTickAt timestamp
+        // (like the attack/send/scout timers already do) and CAUGHT UP in a
+        // batch if the browser throttled setTimeout while the tab was
+        // backgrounded - a plain "always apply exactly one tick" would
+        // otherwise silently pause production during that time while
+        // marches (which resolve off absolute timestamps) keep catching up
+        // correctly.
+        let nextProductionTickAt = Date.now() + productionTickMs();
         function runProductionTick() {
-            const coinMult = coinProductionMultiplier();
-            const troopMult = troopProductionMultiplier();
-            for (const ownedId of ownedIslands) {
-                const level = islandLevels[ownedId] || 1;
-                coins += Math.round(COINS_PER_LEVEL * level * coinMult);
-                islandTroops[ownedId] = (islandTroops[ownedId] || 0) + Math.round(TROOPS_PER_LEVEL * level * troopMult);
+            const now = Date.now();
+            let ticks = 0;
+            while (nextProductionTickAt <= now && ticks < 500) {
+                nextProductionTickAt += productionTickMs();
+                ticks++;
             }
-            updateHud();
-            saveGame();
-            setTimeout(runProductionTick, productionTickMs());
+            if (ticks > 0) {
+                const coinMult = coinProductionMultiplier();
+                const troopMult = troopProductionMultiplier();
+                for (const ownedId of ownedIslands) {
+                    const level = islandLevels[ownedId] || 1;
+                    coins += Math.round(COINS_PER_LEVEL * level * coinMult) * ticks;
+                    islandTroops[ownedId] = (islandTroops[ownedId] || 0) + Math.round(TROOPS_PER_LEVEL * level * troopMult) * ticks;
+
+                    const isl = islandById[ownedId];
+                    if (isl && (isl.type === 'temple' || isl.type === 'megaTemple')) {
+                        const mult = (isl.type === 'megaTemple' ? MEGA_TEMPLE_MULT : 1) * templeHoldMultiplier(ownedId);
+                        gems += TEMPLE_GEMS_PER_TICK * mult * ticks;
+                        coins += Math.round(TEMPLE_COIN_BONUS_PER_TICK * mult) * ticks;
+                        islandTroops[ownedId] += Math.round(TEMPLE_TROOP_BONUS_PER_TICK * mult) * ticks;
+                    }
+                }
+                updateHud();
+                saveGame();
+                // Keep any currently-open popup/tab in sync with production -
+                // without this, an "afford it" button can stay stuck
+                // disabled after coins cross its threshold while the popup
+                // is already open.
+                if (popup.style.display === 'block') renderPopup();
+                if (profilePopup.style.display === 'block') {
+                    renderProfile();
+                    renderEquipGrid();
+                }
+            }
+            setTimeout(runProductionTick, Math.max(50, nextProductionTickAt - Date.now()));
         }
         setTimeout(runProductionTick, productionTickMs());
 
@@ -2240,6 +2536,43 @@
                 ctx.fill();
             }
 
+            // Bridges: the only way to cross from one landmass to a
+            // different one - drawn as a simple plank bridge (a tan double
+            // stroke with cross-ties) between the two closest shore points.
+            ctx.save();
+            ctx.lineCap = 'round';
+            for (const br of bridges) {
+                ctx.strokeStyle = '#8a6541';
+                ctx.lineWidth = 46 / mapState.zoom;
+                ctx.beginPath();
+                ctx.moveTo(br.x1, br.y1);
+                ctx.lineTo(br.x2, br.y2);
+                ctx.stroke();
+
+                ctx.strokeStyle = '#c9a274';
+                ctx.lineWidth = 30 / mapState.zoom;
+                ctx.beginPath();
+                ctx.moveTo(br.x1, br.y1);
+                ctx.lineTo(br.x2, br.y2);
+                ctx.stroke();
+
+                const dx = br.x2 - br.x1, dy = br.y2 - br.y1;
+                const len = Math.hypot(dx, dy) || 1;
+                const nx = -dy / len, ny = dx / len;
+                const tieCount = Math.max(2, Math.floor(len / 260));
+                ctx.strokeStyle = '#5c4326';
+                ctx.lineWidth = 10 / mapState.zoom;
+                for (let i = 1; i < tieCount; i++) {
+                    const t = i / tieCount;
+                    const px = br.x1 + dx * t, py = br.y1 + dy * t;
+                    ctx.beginPath();
+                    ctx.moveTo(px - nx * 26, py - ny * 26);
+                    ctx.lineTo(px + nx * 26, py + ny * 26);
+                    ctx.stroke();
+                }
+            }
+            ctx.restore();
+
             drawTerritoryBorder();
 
             for (const island of islands) {
@@ -2250,13 +2583,36 @@
 
                 const isOwned = ownedIslands.has(island.id);
                 const territoryView = mapState.zoom < TERRITORY_VIEW_ZOOM;
-                // The island itself is always green land; only the tower on
-                // top shows who controls it (grey = unclaimed, blue = yours).
-                const towerColor = isOwned ? '#2f7fd6' : '#8a8a8a';
+                const isTemple = island.type === 'temple' || island.type === 'megaTemple';
+                const isMegaTemple = island.type === 'megaTemple';
+                // The island itself is always green land; only the building
+                // on top shows who controls it (grey/purple = unclaimed,
+                // blue = your tower, gold = your temple).
+                let towerColor;
+                if (isTemple) {
+                    towerColor = isOwned
+                        ? (isMegaTemple ? '#ffe066' : '#ffcb3d')
+                        : (isMegaTemple ? '#8b6f1f' : '#6b5b95');
+                } else {
+                    towerColor = isOwned ? '#2f7fd6' : '#8a8a8a';
+                }
                 drawIslandIcon(island, towerColor);
 
+                if (isTemple && !territoryView) {
+                    // Glowing ring so temples/Mega-Tempel read as points of
+                    // interest on the map even before you've tapped them.
+                    ctx.save();
+                    ctx.strokeStyle = isMegaTemple ? 'rgba(255, 224, 102, 0.9)' : 'rgba(255, 203, 61, 0.75)';
+                    ctx.lineWidth = (isMegaTemple ? 14 : 10) / mapState.zoom;
+                    ctx.beginPath();
+                    ctx.arc(island.x, island.y, island.radius * 1.25, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+
+                const attackTarget = pendingAttackTargetId !== null ? islandById[pendingAttackTargetId] : null;
                 const isSelectable =
-                    (pendingAttackTargetId !== null && isOwned) ||
+                    (attackTarget && isOwned && landmassesConnected(island.landmassId, attackTarget.landmassId)) ||
                     (pendingSendFromId !== null && isOwned && island.id !== pendingSendFromId);
 
                 if (isSelectable) {
@@ -2395,7 +2751,24 @@
         let previewShownAt = 0; // guards against a stray click landing on the
                                  // confirm button the instant the preview opens
 
+        // The four popups (island, profile, battle log, mail) are all
+        // centered on top of each other with no shared z-index/exclusivity
+        // logic - without closing the others first, opening a second one
+        // just stacks it on top while the first stays open underneath with
+        // its state (e.g. an open attack preview) still live.
+        function closeAllPopups() {
+            popup.style.display = 'none';
+            popupIslandId = null;
+            popupView = 'menu';
+            previewSourceId = null;
+            profilePopup.style.display = 'none';
+            battleLogPopup.style.display = 'none';
+            clearInterval(battleLogRefreshTimer);
+            mailPopup.style.display = 'none';
+        }
+
         function openIslandPopup(island) {
+            closeAllPopups();
             popupIslandId = island.id;
             popupView = 'menu';
             renderPopup();
@@ -2419,11 +2792,30 @@
 
         // Renders whichever screen (menu or the upgrade preview) is
         // currently active - never performs any game action itself.
+        // Temples/Mega-Tempel get their own name instead of "Insel #N" -
+        // regular towers keep the numbering players already know.
+        function islandTitle(island) {
+            if (island.type === 'megaTemple') return 'Mega-Tempel';
+            if (island.type === 'temple') return 'Tempel';
+            return 'Insel #' + (island.id + 1);
+        }
+
+        function templeBonusLine(island) {
+            const mult = (island.type === 'megaTemple' ? MEGA_TEMPLE_MULT : 1) * templeHoldMultiplier(island.id);
+            const heldSince = templeHoldSince[island.id];
+            const heldMin = heldSince ? Math.floor((Date.now() - heldSince) / 60000) : 0;
+            return '<br><span style="color:#ffcb3d">&#128142; +' + (TEMPLE_GEMS_PER_TICK * mult).toFixed(2) + ' Gems/Tick, +' +
+                Math.round(TEMPLE_COIN_BONUS_PER_TICK * mult) + ' M&uuml;nzen/Tick, +' +
+                Math.round(TEMPLE_TROOP_BONUS_PER_TICK * mult) + ' Truppen/Tick' +
+                (heldSince ? ' - gehalten seit ' + heldMin + ' Min (x' + templeHoldMultiplier(island.id).toFixed(2) + ' Bonus)' : '') + '</span>';
+        }
+
         function renderPopup() {
             const island = islandById[popupIslandId];
             if (!island) return;
             hideAllButtons();
             const isOwned = ownedIslands.has(island.id);
+            const isTemple = island.type === 'temple' || island.type === 'megaTemple';
 
             if (isOwned) {
                 const level = islandLevels[island.id] || 1;
@@ -2431,7 +2823,7 @@
 
                 if (popupView === 'upgrade') {
                     const cost = upgradeCost(level);
-                    popupTitle.textContent = 'Insel #' + (island.id + 1) + ' aufwerten';
+                    popupTitle.textContent = islandTitle(island) + ' aufwerten';
                     popupStats.innerHTML =
                         'Jetzt: Level ' + level + ', Verteidigung ' + defenseForLevel(level) + ', ' +
                         (COINS_PER_LEVEL * level) + ' M&uuml;nzen/s, ' + (TROOPS_PER_LEVEL * level) + ' Truppen/s<br>' +
@@ -2442,12 +2834,14 @@
                     confirmBtn.disabled = coins < cost;
                     backBtn.style.display = 'inline-block';
                 } else {
-                    popupTitle.textContent = 'Insel #' + (island.id + 1) + (island.id === playerIslandId ? ' (Heimat)' : ' (deine)');
+                    popupTitle.textContent = islandTitle(island) +
+                        (island.id === playerIslandId ? ' (Heimat)' : (isTemple ? ' (dein Tempel)' : ' (deine)'));
                     popupStats.innerHTML =
                         'Level: ' + level + '<br>' +
                         'Truppen hier: ' + troopsHere + '<br>' +
                         'Verteidigung: ' + defenseForLevel(level) + '<br>' +
-                        'Produktion: ' + (COINS_PER_LEVEL * level) + ' M&uuml;nzen/s, ' + (TROOPS_PER_LEVEL * level) + ' Truppen/s';
+                        'Produktion: ' + (COINS_PER_LEVEL * level) + ' M&uuml;nzen/s, ' + (TROOPS_PER_LEVEL * level) + ' Truppen/s' +
+                        (isTemple ? templeBonusLine(island) : '');
                     upgradeBtn.style.display = 'inline-block';
                     sendBtn.style.display = 'inline-block';
                     sendBtn.disabled = troopsHere <= 0 || ownedIslands.size <= 1;
@@ -2460,7 +2854,7 @@
                     const atkBonus = attackFlatBonus();
                     const myTroops = rawTroops + atkBonus;
                     const total = island.neutralTroops + island.neutralDefense;
-                    popupTitle.textContent = 'Insel #' + (island.id + 1) + ' angreifen?';
+                    popupTitle.textContent = islandTitle(island) + ' angreifen?';
                     popupStats.innerHTML =
                         'Meine Truppen: ' + myTroops + (atkBonus > 0 ? ' (' + rawTroops + ' + ' + atkBonus + ' Angriffsbonus)' : '') +
                         ' (Insel #' + (previewSourceId + 1) + ')<br>' +
@@ -2473,10 +2867,11 @@
                     backBtn.style.display = 'inline-block';
                 } else {
                     const scoutEnRoute = pendingScouts.some(s => s.targetId === island.id);
-                    popupTitle.textContent = 'Insel #' + (island.id + 1) + ' (unbesetzt)';
+                    popupTitle.textContent = islandTitle(island) + ' (unbesetzt)';
                     popupStats.innerHTML = (scouted
                         ? 'Truppen: ' + island.neutralTroops + '<br>Verteidigung: ' + island.neutralDefense
                         : 'Truppen: unbekannt - erst sp&auml;hen<br>Verteidigung: unbekannt - erst sp&auml;hen') +
+                        (isTemple ? '<br><span style="color:#ffcb3d">&#127963;&#65039; Tempel: gibt Produktion, Gems &amp; Gold, sobald erobert</span>' : '') +
                         (scoutEnRoute ? '<br><span style="color:#ffd23f">Kundschafter bereits unterwegs...</span>' : '');
                     attackBtn.textContent = 'Angreifen';
                     attackBtn.style.display = 'inline-block';
@@ -2543,6 +2938,11 @@
 
             // On the menu of a neutral island: close the popup, blink every
             // owned island, and wait for the player to tap the attack base.
+            // Guard against a stray second click (double-tap/ghost-click)
+            // landing here after the popup already closed from the first -
+            // without this, popupIslandId is already null and this would
+            // wrongly clear pendingAttackTargetId and show a stale hint.
+            if (popupIslandId === null) return;
             pendingAttackTargetId = popupIslandId;
             closeIslandPopup();
             flashHint('Wähle die Insel, von der aus du angreifen willst - tippe sie auf der Karte an.');
@@ -2575,6 +2975,12 @@
                 hintEl.textContent = defaultHint;
 
                 if (ownedIslands.has(island.id) && target && (islandTroops[island.id] || 0) > 0) {
+                    // Crossing to a different landmass is only allowed over
+                    // a bridge - same-landmass attacks are always fine.
+                    if (!landmassesConnected(island.landmassId, target.landmassId)) {
+                        flashHint('Keine Brücke zwischen diesen Inseln - erobere eine verbundene Basis, um näher heranzukommen.', 3500);
+                        return;
+                    }
                     // Show the comparison and wait for an explicit "Angreifen"
                     // tap before anything actually happens
                     previewSourceId = island.id;
