@@ -1022,10 +1022,10 @@
         // Layout: a 3x3 grid of big islands (9 total), each one covered in
         // several towers - the tower is the actual capturable unit.
         const LANDMASS_GRID_SIZE = 3;
-        const LANDMASS_SPACING = 8200;
-        const LANDMASS_RADIUS = 3400;
+        const LANDMASS_SPACING = 12500;
+        const LANDMASS_RADIUS = 5200;
         const TOWER_GRID_SIZE = 5; // 5x5 towers per island
-        const TOWER_SPACING = 1050;
+        const TOWER_SPACING = 1600;
         const ISLAND_RADIUS = 220; // tower footprint
         const NEUTRAL_DEFENSE_MAX = 100;
         const NEUTRAL_DEFENSE_MIN = 20;
@@ -1121,6 +1121,20 @@
             return points;
         }
 
+        // Ray-casting point-in-polygon test, used to keep towers from being
+        // placed off the edge of a landmass's organic (non-square) coastline.
+        function pointInPolygon(px, py, poly) {
+            let inside = false;
+            for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+                const xi = poly[i].x, yi = poly[i].y;
+                const xj = poly[j].x, yj = poly[j].y;
+                const intersects = ((yi > py) !== (yj > py)) &&
+                    (px < (xj - xi) * (py - yi) / (yj - yi) + xi);
+                if (intersects) inside = !inside;
+            }
+            return inside;
+        }
+
         // Game balance
         const BASE_DEFENSE = 100;
         const DEFENSE_PER_LEVEL = 50;
@@ -1169,11 +1183,30 @@
                 for (let col = -towerHalf; col <= towerHalf; col++) {
                     const jitterX = (rand() - 0.5) * TOWER_SPACING * 0.25;
                     const jitterY = (rand() - 0.5) * TOWER_SPACING * 0.25;
+                    const dx = col * TOWER_SPACING + jitterX;
+                    const dy = row * TOWER_SPACING + jitterY;
+                    let tx = lm.x + dx;
+                    let ty = lm.y + dy;
+                    // Bases may only stand on the island itself: if the grid
+                    // slot falls off the organic coastline, pull it inward
+                    // along the line from the landmass center until it lands
+                    // on land; if it never does, drop that tower entirely.
+                    if (!pointInPolygon(tx, ty, lm.shape)) {
+                        let scale = 1;
+                        let attempts = 0;
+                        do {
+                            scale *= 0.9;
+                            tx = lm.x + dx * scale;
+                            ty = lm.y + dy * scale;
+                            attempts++;
+                        } while (!pointInPolygon(tx, ty, lm.shape) && attempts < 40);
+                        if (!pointInPolygon(tx, ty, lm.shape)) continue;
+                    }
                     islands.push({
                         id: id++,
                         landmassId: lm.id,
-                        x: lm.x + col * TOWER_SPACING + jitterX,
-                        y: lm.y + row * TOWER_SPACING + jitterY,
+                        x: tx,
+                        y: ty,
                         radius: ISLAND_RADIUS,
                         // Two separate stats for a neutral (unowned) tower:
                         // troops garrisoned there, and a defense bonus on top.
