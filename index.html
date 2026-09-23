@@ -195,6 +195,10 @@
             border-left: 3px solid #2f7fd6;
         }
 
+        .logList .logRow.scout {
+            border-left: 3px solid #ffd23f;
+        }
+
         .logList .logEmpty {
             font-size: 12px;
             color: #8fa0c8;
@@ -1005,6 +1009,7 @@
             localStorage.setItem('openWaterLevel', String(playerLvl));
             localStorage.setItem('openWaterPendingAttacks', JSON.stringify(pendingAttacks));
             localStorage.setItem('openWaterPendingSends', JSON.stringify(pendingSends));
+            localStorage.setItem('openWaterPendingScouts', JSON.stringify(pendingScouts));
         }
 
         function equipmentUpgradeCost(level) {
@@ -1038,6 +1043,12 @@
             pendingSends = JSON.parse(localStorage.getItem('openWaterPendingSends')) || [];
         } catch (e) {
             pendingSends = [];
+        }
+        let pendingScouts;
+        try {
+            pendingScouts = JSON.parse(localStorage.getItem('openWaterPendingScouts')) || [];
+        } catch (e) {
+            pendingScouts = [];
         }
 
         // History of resolved attacks/transfers, newest first, capped
@@ -1118,6 +1129,36 @@
             flashHint(send.troops + ' Truppen bei Insel #' + (target.id + 1) + ' angekommen.', 3000);
         }
 
+        // "Spähen": no troops needed, but a scout still takes time to reach
+        // the target - measured from the player's home base.
+        function launchScout(targetId) {
+            const home = islandById[playerIslandId];
+            const target = islandById[targetId];
+            if (!home || !target) return;
+
+            const durationSec = travelDurationSeconds(home, target);
+            const startedAt = Date.now();
+            pendingScouts.push({
+                sourceId: playerIslandId,
+                targetId,
+                startedAt,
+                resolveAt: startedAt + durationSec * 1000
+            });
+            saveGame();
+            saveProgression();
+            flashHint('Kundschafter unterwegs zu Insel #' + (target.id + 1) + ' - ca. ' + Math.ceil(durationSec) + 's');
+            renderActiveMarches();
+        }
+
+        function resolveScout(scout) {
+            const target = islandById[scout.targetId];
+            if (!target) return;
+            scoutedIslands.add(scout.targetId);
+            saveGame();
+            flashHint('Insel #' + (target.id + 1) + ' ausgekundschaftet: ' + target.neutralTroops +
+                ' Truppen, ' + target.neutralDefense + ' Verteidigung.', 4000);
+        }
+
         function resolveAttack(attack) {
             const source = islandById[attack.sourceId];
             const target = islandById[attack.targetId];
@@ -1133,9 +1174,11 @@
                 islandTroops[target.id] = remaining;
                 ownedIslands.add(target.id);
                 islandLevels[target.id] = 1;
-                addXp(totalStrength);
                 coins += Math.round(totalStrength * goldPerKillRate());
             }
+            // XP for troops that died in the clash either way: a win kills
+            // the whole enemy force, a loss costs your whole attack force
+            addXp(won ? totalStrength : myTroops);
             scoutedIslands.add(target.id);
             updateHud();
             saveGame();
@@ -1171,6 +1214,13 @@
                 if (dueSends.length > 0) {
                     pendingSends = pendingSends.filter(s => s.resolveAt > now);
                     for (const send of dueSends) resolveSend(send);
+                }
+            }
+            if (pendingScouts.length > 0) {
+                const dueScouts = pendingScouts.filter(s => s.resolveAt <= now);
+                if (dueScouts.length > 0) {
+                    pendingScouts = pendingScouts.filter(s => s.resolveAt > now);
+                    for (const scout of dueScouts) resolveScout(scout);
                 }
             }
             if (battleLogPopup.style.display !== 'block') renderActiveMarches();
@@ -1440,11 +1490,18 @@
                     ' schickt Truppen zu Basis #' + (send.toId + 1) + ' - noch ' + secondsLeft + 's</div>'
                 );
             }
+            for (const scout of pendingScouts) {
+                const secondsLeft = Math.max(0, Math.ceil((scout.resolveAt - Date.now()) / 1000));
+                rows.push(
+                    '<div class="logRow scout">Kundschafter unterwegs zu Basis #' + (scout.targetId + 1) +
+                    ' - noch ' + secondsLeft + 's</div>'
+                );
+            }
             activeMarchesEl.innerHTML = rows.length
                 ? rows.join('')
                 : '<div class="logEmpty">Gerade nichts unterwegs.</div>';
 
-            const total = pendingAttacks.length + pendingSends.length;
+            const total = pendingAttacks.length + pendingSends.length + pendingScouts.length;
             battleLogBadge.textContent = total;
             battleLogBadge.style.display = total > 0 ? 'block' : 'none';
         }
@@ -1766,6 +1823,9 @@
             for (const send of pendingSends) {
                 drawMarch(islandById[send.fromId], islandById[send.toId], send.startedAt, send.resolveAt, '#2f7fd6');
             }
+            for (const scout of pendingScouts) {
+                drawMarch(islandById[scout.sourceId], islandById[scout.targetId], scout.startedAt, scout.resolveAt, '#ffd23f');
+            }
 
             ctx.restore();
         }
@@ -1885,14 +1945,16 @@
                     attackBtn.disabled = rawTroops <= 0;
                     backBtn.style.display = 'inline-block';
                 } else {
+                    const scoutEnRoute = pendingScouts.some(s => s.targetId === island.id);
                     popupTitle.textContent = 'Insel #' + (island.id + 1) + ' (unbesetzt)';
-                    popupStats.innerHTML = scouted
+                    popupStats.innerHTML = (scouted
                         ? 'Truppen: ' + island.neutralTroops + '<br>Verteidigung: ' + island.neutralDefense
-                        : 'Truppen: unbekannt - erst sp&auml;hen<br>Verteidigung: unbekannt - erst sp&auml;hen';
+                        : 'Truppen: unbekannt - erst sp&auml;hen<br>Verteidigung: unbekannt - erst sp&auml;hen') +
+                        (scoutEnRoute ? '<br><span style="color:#ffd23f">Kundschafter bereits unterwegs...</span>' : '');
                     attackBtn.textContent = 'Angreifen';
                     attackBtn.style.display = 'inline-block';
                     scoutBtn.style.display = 'inline-block';
-                    scoutBtn.disabled = scouted;
+                    scoutBtn.disabled = scouted || scoutEnRoute;
                 }
             }
             popup.style.display = 'block';
@@ -1957,9 +2019,8 @@
 
         scoutBtn.addEventListener('click', () => {
             if (popupIslandId === null) return;
-            scoutedIslands.add(popupIslandId);
-            saveGame();
-            renderPopup();
+            launchScout(popupIslandId);
+            closeIslandPopup();
         });
 
         // "Truppen verschicken": close the popup, blink every OTHER owned
