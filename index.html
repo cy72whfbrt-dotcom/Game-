@@ -862,15 +862,16 @@
             localStorage.setItem('openWaterXp', String(playerXp));
             localStorage.setItem('openWaterLevel', String(playerLvl));
             localStorage.setItem('openWaterPendingAttacks', JSON.stringify(pendingAttacks));
+            localStorage.setItem('openWaterPendingSends', JSON.stringify(pendingSends));
         }
 
         function equipmentUpgradeCost(level) {
             return (level + 1) * EQUIPMENT_BASE_COST;
         }
 
-        // Attacks now take real time to arrive, scaled by the distance
-        // between the two towers - the "Geschwindigkeit" skill (which also
-        // speeds up production) shortens the march.
+        // Attacks and troop transfers now take real time to arrive, scaled
+        // by the distance between the two towers - the "Geschwindigkeit"
+        // skill (which also speeds up production) shortens the march.
         const BASE_ATTACK_SPEED = 600; // world units per second
         const MIN_ATTACK_SECONDS = 3;
         const MAX_ATTACK_SECONDS = 25;
@@ -878,7 +879,7 @@
         function attackSpeedMultiplier() {
             return 1 + (skills.speed || 0) * 0.05;
         }
-        function attackDurationSeconds(source, target) {
+        function travelDurationSeconds(source, target) {
             const distance = Math.hypot(target.x - source.x, target.y - source.y);
             const seconds = distance / (BASE_ATTACK_SPEED * attackSpeedMultiplier());
             return Math.min(MAX_ATTACK_SECONDS, Math.max(MIN_ATTACK_SECONDS, seconds));
@@ -890,6 +891,12 @@
         } catch (e) {
             pendingAttacks = [];
         }
+        let pendingSends;
+        try {
+            pendingSends = JSON.parse(localStorage.getItem('openWaterPendingSends')) || [];
+        } catch (e) {
+            pendingSends = [];
+        }
 
         function launchAttack(sourceId, targetId) {
             const source = islandById[sourceId];
@@ -898,17 +905,52 @@
             if (!source || !target || rawTroops <= 0) return;
 
             islandTroops[sourceId] = 0; // troops march out
-            const durationSec = attackDurationSeconds(source, target);
+            const durationSec = travelDurationSeconds(source, target);
+            const startedAt = Date.now();
             pendingAttacks.push({
                 sourceId,
                 targetId,
                 rawTroops,
-                resolveAt: Date.now() + durationSec * 1000
+                startedAt,
+                resolveAt: startedAt + durationSec * 1000
             });
             updateHud();
             saveGame();
             saveProgression();
             flashHint('Angriff unterwegs zu Insel #' + (target.id + 1) + ' - ca. ' + Math.ceil(durationSec) + 's');
+        }
+
+        // "Truppen verschicken": same travel time as an attack, but a blue
+        // march to one of the player's OWN towers that just merges in.
+        function launchSend(fromId, toId) {
+            const source = islandById[fromId];
+            const target = islandById[toId];
+            const rawTroops = islandTroops[fromId] || 0;
+            if (!source || !target || rawTroops <= 0) return;
+
+            islandTroops[fromId] = 0; // troops march out
+            const durationSec = travelDurationSeconds(source, target);
+            const startedAt = Date.now();
+            pendingSends.push({
+                fromId,
+                toId,
+                troops: rawTroops,
+                startedAt,
+                resolveAt: startedAt + durationSec * 1000
+            });
+            updateHud();
+            saveGame();
+            saveProgression();
+            flashHint('Truppen unterwegs zu Insel #' + (target.id + 1) + ' - ca. ' + Math.ceil(durationSec) + 's');
+        }
+
+        function resolveSend(send) {
+            const target = islandById[send.toId];
+            if (!target) return;
+            islandTroops[send.toId] = (islandTroops[send.toId] || 0) + send.troops;
+            updateHud();
+            saveGame();
+            flashHint(send.troops + ' Truppen bei Insel #' + (target.id + 1) + ' angekommen.', 3000);
         }
 
         function resolveAttack(attack) {
@@ -939,14 +981,24 @@
                 : 'Niederlage bei Insel #' + (target.id + 1) + ' - Angriffstrupp verloren.'), 4000);
         }
 
-        // Checks every second whether any in-flight attack has arrived
+        // Checks every second whether any in-flight attack or troop transfer
+        // has arrived
         setInterval(() => {
-            if (pendingAttacks.length === 0) return;
             const now = Date.now();
-            const due = pendingAttacks.filter(a => a.resolveAt <= now);
-            if (due.length === 0) return;
-            pendingAttacks = pendingAttacks.filter(a => a.resolveAt > now);
-            for (const attack of due) resolveAttack(attack);
+            if (pendingAttacks.length > 0) {
+                const dueAttacks = pendingAttacks.filter(a => a.resolveAt <= now);
+                if (dueAttacks.length > 0) {
+                    pendingAttacks = pendingAttacks.filter(a => a.resolveAt > now);
+                    for (const attack of dueAttacks) resolveAttack(attack);
+                }
+            }
+            if (pendingSends.length > 0) {
+                const dueSends = pendingSends.filter(s => s.resolveAt <= now);
+                if (dueSends.length > 0) {
+                    pendingSends = pendingSends.filter(s => s.resolveAt > now);
+                    for (const send of dueSends) resolveSend(send);
+                }
+            }
         }, 1000);
 
         // Combined bonus percentage/flat from an equipment slot + a matching
@@ -1410,17 +1462,49 @@
                 }
             }
 
-            // Countdown badge over every tower a march is currently headed to
+            // Draw a line to the target for every in-flight march: red for
+            // attacks, blue for friendly troop transfers - not just an
+            // abstract countdown, an actual connection to who/where.
             const now = Date.now();
-            for (const attack of pendingAttacks) {
-                const target = islandById[attack.targetId];
-                if (!target) continue;
-                const secondsLeft = Math.max(0, Math.ceil((attack.resolveAt - now) / 1000));
+            function drawMarch(source, target, startedAt, resolveAt, color) {
+                if (!source || !target) return;
+                // Older saved marches (before this field existed) fall back
+                // to "just started" rather than producing NaN positions
+                if (!startedAt) startedAt = resolveAt - MIN_ATTACK_SECONDS * 1000;
+                const total = resolveAt - startedAt;
+                const progress = total > 0 ? Math.min(1, Math.max(0, (now - startedAt) / total)) : 1;
+
+                ctx.save();
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 5 / mapState.zoom;
+                ctx.setLineDash([22 / mapState.zoom, 16 / mapState.zoom]);
+                ctx.lineDashOffset = -now / 40;
+                ctx.beginPath();
+                ctx.moveTo(source.x, source.y);
+                ctx.lineTo(target.x, target.y);
+                ctx.stroke();
+                ctx.restore();
+
+                const mx = source.x + (target.x - source.x) * progress;
+                const my = source.y + (target.y - source.y) * progress;
+                ctx.beginPath();
+                ctx.fillStyle = color;
+                ctx.arc(mx, my, 16 / mapState.zoom, 0, Math.PI * 2);
+                ctx.fill();
+
+                const secondsLeft = Math.max(0, Math.ceil((resolveAt - now) / 1000));
                 ctx.font = '40px system-ui, sans-serif';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.fillStyle = '#ffd23f';
+                ctx.fillStyle = color;
                 ctx.fillText('⏳ ' + secondsLeft + 's', target.x, target.y - target.radius - 40);
+            }
+
+            for (const attack of pendingAttacks) {
+                drawMarch(islandById[attack.sourceId], islandById[attack.targetId], attack.startedAt, attack.resolveAt, '#e64545');
+            }
+            for (const send of pendingSends) {
+                drawMarch(islandById[send.fromId], islandById[send.toId], send.startedAt, send.resolveAt, '#2f7fd6');
             }
 
             ctx.restore();
@@ -1656,13 +1740,8 @@
                 pendingSendFromId = null;
                 hintEl.textContent = defaultHint;
 
-                if (ownedIslands.has(island.id) && island.id !== fromId) {
-                    const sent = islandTroops[fromId] || 0;
-                    islandTroops[island.id] = (islandTroops[island.id] || 0) + sent;
-                    islandTroops[fromId] = 0;
-                    updateHud();
-                    saveGame();
-                    flashHint(sent + ' Truppen zu Insel #' + (island.id + 1) + ' verschickt.', 2500);
+                if (ownedIslands.has(island.id) && island.id !== fromId && (islandTroops[fromId] || 0) > 0) {
+                    launchSend(fromId, island.id);
                     return;
                 }
                 // Tapped the source again or a neutral island - just cancel
