@@ -2156,10 +2156,15 @@
             let retreatSurvivors = 0;
 
             if (won) {
+                // Capturing a base doesn't reset it to level 1 - it costs
+                // the previous owner one level of upgrades, same as losing
+                // any other base. A level 10 base taken by force becomes a
+                // level 9 base for its new owner, not back to scratch.
+                const levelAfterCapture = Math.max(1, (islandLevels[target.id] || 1) - 1);
                 if (targetOwner) clearIslandOwner(target.id); // taken from a bot (or, later, another player)
                 islandTroops[target.id] = remaining;
                 ownedIslands.add(target.id);
-                islandLevels[target.id] = 1;
+                islandLevels[target.id] = levelAfterCapture;
                 coins += Math.round(totalStrength * rewardRate);
                 defenderCasualties = originalEnemyTroops;
                 if (target.type === 'temple' || target.type === 'megaTemple') {
@@ -2276,10 +2281,13 @@
             const playerInvolved = targetOwner === 'player';
 
             if (won) {
+                // Same rule as the player's own captures: the new owner
+                // gets the base one level lower than it was, not reset to 1.
+                const levelAfterCapture = Math.max(1, (islandLevels[target.id] || 1) - 1);
                 if (targetOwner) clearIslandOwner(target.id);
                 islandTroops[target.id] = Math.max(0, myTroops - originalEnemyDefense);
                 botOwnedIslands[bot.id].add(target.id);
-                islandLevels[target.id] = 1;
+                islandLevels[target.id] = levelAfterCapture;
                 botCoins[bot.id] += Math.round(totalStrength * BOT_GOLD_PER_KILL_RATE);
                 if (target.type === 'temple' || target.type === 'megaTemple') {
                     templeHoldSince[target.id] = Date.now();
