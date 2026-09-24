@@ -334,11 +334,35 @@
             outline: 3px solid var(--gold);
             outline-offset: 1px;
         }
+        /* A small always-present tap target on each inventory tile (not on
+           equipped ones - those can't be selected) - selecting is just
+           toggling this dot, never a separate "mode" to enter/exit. */
+        .chestTile .selectDot {
+            position: absolute;
+            top: 3px;
+            right: 3px;
+            width: 17px;
+            height: 17px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, .4);
+            border: 2px solid rgba(255, 255, 255, .7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: #fff;
+            cursor: pointer;
+        }
+        .chestTile .selectDot.checked {
+            background: var(--gold);
+            border-color: var(--gold-dark);
+            color: #241a02;
+        }
 
         #chestBottomBar {
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: center;
             gap: 10px;
             margin-top: 12px;
             background: var(--surface);
@@ -355,22 +379,6 @@
             color: var(--gold);
         }
         .chestPointsIcon { font-size: 16px; }
-        #chestSelectToggleBtn {
-            font: inherit;
-            font-weight: 800;
-            font-size: 11px;
-            text-transform: uppercase;
-            padding: 9px 14px;
-            border-radius: 10px;
-            border: none;
-            cursor: pointer;
-            background: var(--surface-alt);
-            color: var(--text);
-        }
-        #chestSelectToggleBtn.active {
-            background: var(--gold);
-            color: #241a02;
-        }
         #chestSelectionBar {
             display: none;
             margin-top: 10px;
@@ -407,7 +415,6 @@
         }
         #chestSelectCombineBtn { background: #8e44ad; color: #fff; }
         #chestSelectSellBtn { background: var(--red); color: #fff; }
-        #chestSelectDoneBtn { background: var(--surface-alt); color: var(--text); }
 
         #battleLogPopup, #mailPopup, #shopPopup {
             display: none;
@@ -1575,14 +1582,12 @@
                     <span class="chestPointsIcon">&#129689;</span>
                     <span id="chestPointsValue">0</span>
                 </div>
-                <button id="chestSelectToggleBtn">Ausw&auml;hlen</button>
             </div>
             <div id="chestSelectionBar">
-                <div class="label" id="chestSelectionLabel">0 ausgew&auml;hlt</div>
+                <div class="label" id="chestSelectionLabel">Tippe den Punkt auf einer Karte, um sie auszuw&auml;hlen</div>
                 <div class="row">
                     <button id="chestSelectCombineBtn">Kombinieren</button>
                     <button id="chestSelectSellBtn">Verkaufen</button>
-                    <button id="chestSelectDoneBtn">Fertig</button>
                 </div>
             </div>
         </div>
@@ -3261,12 +3266,10 @@
         const chestEquippedGrid = document.getElementById('chestEquippedGrid');
         const chestInventoryGrid = document.getElementById('chestInventoryGrid');
         const chestInventoryLabel = document.getElementById('chestInventoryLabel');
-        const chestSelectToggleBtn = document.getElementById('chestSelectToggleBtn');
         const chestSelectionBar = document.getElementById('chestSelectionBar');
         const chestSelectionLabel = document.getElementById('chestSelectionLabel');
         const chestSelectCombineBtn = document.getElementById('chestSelectCombineBtn');
         const chestSelectSellBtn = document.getElementById('chestSelectSellBtn');
-        const chestSelectDoneBtn = document.getElementById('chestSelectDoneBtn');
         const chestItemPopup = document.getElementById('chestItemPopup');
         const chestItemIconBig = document.getElementById('chestItemIconBig');
         const chestItemTitle = document.getElementById('chestItemTitle');
@@ -3276,7 +3279,9 @@
         const chestItemUnequipBtn = document.getElementById('chestItemUnequipBtn');
         const chestItemSellBtn = document.getElementById('chestItemSellBtn');
         const chestItemCloseBtn = document.getElementById('chestItemCloseBtn');
-        let chestSelectMode = false;
+        // Selecting a tile (via its little dot) is always available, not a
+        // separate mode you switch in and out of - that mode toggle was
+        // confusing (looked like it got stuck "on").
         let chestSelectedIds = new Set();
         let chestDetailItemId = null;
         const skillPointsLine = document.getElementById('skillPointsLine');
@@ -3362,26 +3367,14 @@
         // points).
         // Tile-grid inventory: equipped items on top (one tile per slot),
         // every other owned item below as its own tile (no more grouping -
-        // each item is tappable on its own). Tapping a tile normally opens
-        // its detail popup (level up / equip / unequip / sell); tapping
-        // "Auswählen" switches into a multi-select mode instead, where
-        // tapping toggles a tile into a selection used for bulk-selling or
-        // (with exactly 3 matching tiles) combining.
+        // each item is tappable on its own). Tapping a tile opens its
+        // detail popup (level up / equip / unequip / sell); tapping the
+        // small dot in its corner toggles it into the selection used for
+        // bulk-selling or (with exactly 3 matching tiles) combining -
+        // selecting is always available, not a separate mode to switch in
+        // and out of first.
         function renderChestEquipment() {
             chestPointsValue.textContent = upgradePoints;
-
-            const unequippedCount = Object.values(inventory).filter(it => equippedItems[it.slot] !== it.id).length;
-            // Nothing to select when the inventory's empty - don't show a
-            // select mode (and its own separate "Fertig") with nothing to
-            // act on.
-            if (unequippedCount === 0) {
-                chestSelectMode = false;
-                chestSelectedIds.clear();
-            }
-            chestSelectToggleBtn.style.display = unequippedCount === 0 ? 'none' : 'inline-block';
-            chestSelectToggleBtn.classList.toggle('active', chestSelectMode);
-            chestSelectToggleBtn.textContent = chestSelectMode ? 'Fertig' : 'Auswählen';
-            chestSelectionBar.style.display = chestSelectMode ? 'block' : 'none';
 
             chestEquippedGrid.innerHTML = '';
             for (const slotKey of Object.keys(EQUIPMENT_DEFS)) {
@@ -3415,25 +3408,29 @@
             for (const item of items) {
                 const def = EQUIPMENT_DEFS[item.slot];
                 const rd = RARITY_DEFS[item.rarity];
+                const selected = chestSelectedIds.has(item.id);
                 const tile = document.createElement('div');
-                tile.className = 'chestTile' + (chestSelectedIds.has(item.id) ? ' selected' : '');
+                tile.className = 'chestTile';
                 tile.style.background = rd.color;
-                tile.innerHTML = def.icon + '<span class="lvl">Lvl ' + item.level + '</span>';
+                tile.innerHTML = def.icon + '<span class="lvl">Lvl ' + item.level + '</span>' +
+                    '<span class="selectDot' + (selected ? ' checked' : '') + '">' + (selected ? '✓' : '') + '</span>';
                 tile.title = def.name + ' - ' + rd.name;
-                tile.addEventListener('click', () => {
-                    if (chestSelectMode) {
-                        if (chestSelectedIds.has(item.id)) chestSelectedIds.delete(item.id);
-                        else chestSelectedIds.add(item.id);
-                        renderChestEquipment();
-                    } else {
-                        openChestItemPopup(item.id);
-                    }
+                tile.addEventListener('click', () => openChestItemPopup(item.id));
+                const dot = tile.querySelector('.selectDot');
+                dot.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (chestSelectedIds.has(item.id)) chestSelectedIds.delete(item.id);
+                    else chestSelectedIds.add(item.id);
+                    renderChestEquipment();
                 });
                 chestInventoryGrid.appendChild(tile);
             }
 
+            chestSelectionBar.style.display = items.length === 0 ? 'none' : 'block';
             const selected = [...chestSelectedIds].map(id => inventory[id]).filter(Boolean);
-            chestSelectionLabel.textContent = selected.length + ' ausgewählt';
+            chestSelectionLabel.textContent = selected.length > 0
+                ? (selected.length + ' ausgewählt')
+                : 'Tippe den Punkt auf einer Karte, um sie auszuwählen';
             chestSelectSellBtn.disabled = selected.length === 0;
             chestSelectCombineBtn.disabled = !(
                 selected.length === COMBINE_COUNT &&
@@ -3442,16 +3439,6 @@
             );
         }
 
-        chestSelectToggleBtn.addEventListener('click', () => {
-            chestSelectMode = !chestSelectMode;
-            chestSelectedIds.clear();
-            renderChestEquipment();
-        });
-        chestSelectDoneBtn.addEventListener('click', () => {
-            chestSelectMode = false;
-            chestSelectedIds.clear();
-            renderChestEquipment();
-        });
         chestSelectSellBtn.addEventListener('click', () => {
             salvageItems([...chestSelectedIds]);
             chestSelectedIds.clear();
@@ -3648,7 +3635,6 @@
         });
         profileCloseBtn.addEventListener('click', () => {
             profilePopup.style.display = 'none';
-            chestSelectMode = false;
             chestSelectedIds.clear();
         });
 
@@ -4654,7 +4640,6 @@
             shopPopup.style.display = 'none';
             chestItemPopup.style.display = 'none';
             chestDetailItemId = null;
-            chestSelectMode = false;
             chestSelectedIds.clear();
         }
 
