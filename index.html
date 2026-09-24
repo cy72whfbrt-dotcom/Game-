@@ -2525,6 +2525,53 @@
             updateHud();
             return true;
         }
+        // Combining doesn't need the player to pick anything - the button
+        // is just always active whenever 3+ unequipped items of the same
+        // slot+rarity exist anywhere in the inventory.
+        function findAnyCombinableGroup() {
+            const counts = {};
+            for (const item of Object.values(inventory)) {
+                if (equippedItems[item.slot] === item.id) continue;
+                if (item.rarity >= RARITY_DEFS.length - 1) continue;
+                const key = item.slot + '|' + item.rarity;
+                counts[key] = (counts[key] || 0) + 1;
+            }
+            return Object.values(counts).some(c => c >= COMBINE_COUNT);
+        }
+        // Merges every eligible group in the inventory, repeatedly - so 9
+        // matching grey items become 3 green become 1 blue in a single
+        // click, not just one merge at a time.
+        function autoCombineAll() {
+            let totalCombines = 0;
+            let changed = true;
+            while (changed) {
+                changed = false;
+                const groups = {};
+                for (const item of Object.values(inventory)) {
+                    if (equippedItems[item.slot] === item.id) continue;
+                    if (item.rarity >= RARITY_DEFS.length - 1) continue;
+                    const key = item.slot + '|' + item.rarity;
+                    (groups[key] = groups[key] || []).push(item);
+                }
+                for (const key of Object.keys(groups)) {
+                    const list = groups[key];
+                    if (list.length < COMBINE_COUNT) continue;
+                    const sepIdx = key.indexOf('|');
+                    const slot = key.slice(0, sepIdx);
+                    const rarity = parseInt(key.slice(sepIdx + 1), 10);
+                    for (let i = 0; i < COMBINE_COUNT; i++) delete inventory[list[i].id];
+                    addInventoryItem(slot, rarity + 1, 1);
+                    totalCombines++;
+                    changed = true;
+                }
+            }
+            if (totalCombines > 0) {
+                saveGame();
+                saveProgression();
+                updateHud();
+            }
+            return totalCombines;
+        }
         // Melts an unequipped item into upgrade points (can't salvage
         // whatever's currently equipped - unequip/replace it first).
         function salvageItem(itemId) {
@@ -3433,24 +3480,25 @@
 
             chestSelectionBar.style.display = items.length === 0 ? 'none' : 'block';
             const selected = [...chestSelectedIds].map(id => inventory[id]).filter(Boolean);
+            // The label is only ever about the Verkaufen selection now -
+            // Kombinieren doesn't need anything picked, so there's nothing
+            // to prompt for when the selection is empty.
             if (chestFlashMessage) {
+                chestSelectionLabel.style.display = 'block';
                 chestSelectionLabel.textContent = chestFlashMessage;
+            } else if (selected.length > 0) {
+                chestSelectionLabel.style.display = 'block';
+                chestSelectionLabel.textContent = selected.length + ' zum Verkaufen ausgewählt';
             } else {
-                chestSelectionLabel.textContent = selected.length > 0
-                    ? (selected.length + ' ausgewählt')
-                    : 'Punkt antippen zum Auswählen';
+                chestSelectionLabel.style.display = 'none';
             }
             chestSelectSellBtn.disabled = selected.length === 0;
-            chestSelectCombineBtn.disabled = !(
-                selected.length === COMBINE_COUNT &&
-                selected.every(it => it.slot === selected[0].slot && it.rarity === selected[0].rarity) &&
-                selected[0].rarity < RARITY_DEFS.length - 1
-            );
+            // Always active, never tied to a selection - enabled whenever
+            // ANY 3-of-a-kind exists anywhere in the inventory.
+            chestSelectCombineBtn.disabled = !findAnyCombinableGroup();
         }
 
-        // Briefly shows exactly what a combine/sell click just did, so it's
-        // never ambiguous whether "just those 3" or "everything" happened -
-        // each click only ever acts on the items selected at that moment.
+        // Briefly shows exactly what a combine/sell click just did.
         let chestFlashMessage = null;
         let chestFlashTimer = null;
         function showChestFlash(msg) {
@@ -3469,11 +3517,10 @@
             if (points > 0) showChestFlash(ids.length + ' verkauft für ' + points + ' Punkte');
             renderChestEquipment();
         });
+        // No selection needed - merges every eligible group in one go.
         chestSelectCombineBtn.addEventListener('click', () => {
-            const ids = [...chestSelectedIds];
-            const ok = combineSelectedItems(ids);
-            chestSelectedIds.clear();
-            if (ok) showChestFlash('3 kombiniert → 1 höhere Seltenheit');
+            const n = autoCombineAll();
+            if (n > 0) showChestFlash(n === 1 ? '1 Kombination durchgeführt' : (n + ' Kombinationen durchgeführt'));
             renderChestEquipment();
         });
 
