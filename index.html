@@ -195,6 +195,219 @@
             color: var(--text-dim);
         }
 
+        #chestItemPopup {
+            display: none;
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--bg);
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            padding: 20px 22px;
+            color: var(--text);
+            font: 14px/1.5 system-ui, sans-serif;
+            box-shadow: 0 10px 0 rgba(0, 0, 0, .35), 0 18px 34px rgba(0, 0, 0, .5);
+            width: 320px;
+            max-width: 92vw;
+            text-align: center;
+            z-index: 60;
+        }
+        #chestItemPopup h3 {
+            margin: 0 0 12px;
+            font-size: 15px;
+            font-weight: 800;
+        }
+        #chestItemPopup .row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 12px;
+        }
+        #chestItemPopup button {
+            font: inherit;
+            font-weight: 800;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .03em;
+            padding: 11px 16px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            flex: 1 1 auto;
+            background: var(--surface-alt);
+            color: var(--text);
+            box-shadow: 0 3px 0 #10184a;
+        }
+        #chestItemPopup button:active {
+            box-shadow: 0 1px 0 #10184a;
+            transform: translateY(2px);
+        }
+        #chestItemPopup button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, .4) !important;
+            transform: translateY(2px);
+        }
+        #chestItemUpgradeBtn {
+            background: var(--gold);
+            color: #241a02;
+            box-shadow: 0 3px 0 var(--gold-dark);
+        }
+        #chestItemUpgradeBtn:active { box-shadow: 0 1px 0 var(--gold-dark); }
+        #chestItemEquipBtn {
+            background: var(--green);
+            color: #fff;
+            box-shadow: 0 3px 0 var(--green-dark);
+        }
+        #chestItemEquipBtn:active { box-shadow: 0 1px 0 var(--green-dark); }
+        #chestItemSellBtn {
+            background: var(--red);
+            color: #fff;
+            box-shadow: 0 3px 0 var(--red-dark);
+        }
+        #chestItemSellBtn:active { box-shadow: 0 1px 0 var(--red-dark); }
+        #chestItemIconBig {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 34px;
+            box-shadow: 0 4px 0 rgba(0, 0, 0, .35), inset 0 2px 6px rgba(255, 255, 255, .25);
+        }
+
+        .chestTileGrid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+        .chestTile {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+            border: 2px solid rgba(255, 255, 255, .18);
+            box-shadow: 0 3px 0 rgba(0, 0, 0, .35);
+        }
+        .chestTile.empty {
+            background: var(--surface) !important;
+            border: 2px dashed var(--border);
+            font-size: 16px;
+            opacity: 0.6;
+            cursor: default;
+        }
+        .chestTile .lvl {
+            position: absolute;
+            bottom: 2px;
+            left: 4px;
+            font-size: 9px;
+            font-weight: 800;
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, .85);
+        }
+        .chestTile .check {
+            position: absolute;
+            top: 3px;
+            right: 3px;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: var(--green);
+            color: #fff;
+            font-size: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 0 2px var(--bg);
+        }
+        .chestTile.selected {
+            outline: 3px solid var(--gold);
+            outline-offset: 1px;
+        }
+
+        #chestBottomBar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-top: 12px;
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            padding: 8px 10px;
+        }
+        #chestPointsLine {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 800;
+            font-size: 14px;
+            color: var(--gold);
+        }
+        .chestPointsIcon { font-size: 16px; }
+        #chestSelectToggleBtn {
+            font: inherit;
+            font-weight: 800;
+            font-size: 11px;
+            text-transform: uppercase;
+            padding: 9px 14px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            background: var(--surface-alt);
+            color: var(--text);
+        }
+        #chestSelectToggleBtn.active {
+            background: var(--gold);
+            color: #241a02;
+        }
+        #chestSelectionBar {
+            display: none;
+            margin-top: 10px;
+            background: var(--surface);
+            border: 2px solid #8e44ad;
+            border-radius: 14px;
+            padding: 10px;
+        }
+        #chestSelectionBar .label {
+            text-align: center;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+        #chestSelectionBar .row {
+            display: flex;
+            gap: 8px;
+        }
+        #chestSelectionBar button {
+            font: inherit;
+            font-weight: 800;
+            font-size: 11px;
+            text-transform: uppercase;
+            padding: 9px 10px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            flex: 1;
+        }
+        #chestSelectionBar button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        #chestSelectCombineBtn { background: #8e44ad; color: #fff; }
+        #chestSelectSellBtn { background: var(--red); color: #fff; }
+        #chestSelectDoneBtn { background: var(--surface-alt); color: var(--text); }
+
         #battleLogPopup, #mailPopup, #shopPopup {
             display: none;
             position: fixed;
@@ -1350,11 +1563,26 @@
             <div id="equipGrid" class="itemGrid"></div>
 
             <div class="kingdomLabel">Truhen-Ausr&uuml;stung</div>
-            <div id="chestPointsLine" class="stats" style="margin-bottom:10px;"></div>
             <div class="sectionLabel">Ausger&uuml;stet</div>
-            <div id="chestEquippedGrid" class="itemGrid"></div>
-            <div class="sectionLabel">Inventar (3x gleiche Seltenheit = eine H&ouml;here)</div>
-            <div id="chestInventoryGrid" class="itemGrid"></div>
+            <div id="chestEquippedGrid" class="chestTileGrid"></div>
+            <div class="sectionLabel" id="chestInventoryLabel">Inventar</div>
+            <div id="chestInventoryGrid" class="chestTileGrid"></div>
+
+            <div id="chestBottomBar">
+                <div id="chestPointsLine">
+                    <span class="chestPointsIcon">&#129689;</span>
+                    <span id="chestPointsValue">0</span>
+                </div>
+                <button id="chestSelectToggleBtn">Ausw&auml;hlen</button>
+            </div>
+            <div id="chestSelectionBar">
+                <div class="label" id="chestSelectionLabel">0 ausgew&auml;hlt</div>
+                <div class="row">
+                    <button id="chestSelectCombineBtn">Kombinieren</button>
+                    <button id="chestSelectSellBtn">Verkaufen</button>
+                    <button id="chestSelectDoneBtn">Fertig</button>
+                </div>
+            </div>
         </div>
 
         <div id="tabSkills" class="profileTabPanel">
@@ -1406,6 +1634,23 @@
         <div class="row">
             <button id="shopToEquipBtn">Zur Ausr&uuml;stung</button>
             <button id="shopCloseBtn">Schlie&szlig;en</button>
+        </div>
+    </div>
+
+    <div id="chestItemPopup">
+        <div id="chestItemIconBig"></div>
+        <h3 id="chestItemTitle">Ausr&uuml;stung</h3>
+        <div id="chestItemStats" class="stats"></div>
+        <div class="row">
+            <button id="chestItemUpgradeBtn">Verbessern</button>
+        </div>
+        <div class="row">
+            <button id="chestItemEquipBtn">Ausr&uuml;sten</button>
+            <button id="chestItemUnequipBtn">Ablegen</button>
+            <button id="chestItemSellBtn">Verkaufen</button>
+        </div>
+        <div class="row">
+            <button id="chestItemCloseBtn">Schlie&szlig;en</button>
         </div>
     </div>
 
@@ -2281,6 +2526,42 @@
             updateHud();
             return points;
         }
+        // Bulk version for the multi-select "Verkaufen" action - one
+        // save/update pass for the whole batch instead of one per item.
+        function salvageItems(itemIds) {
+            let total = 0;
+            for (const id of itemIds) {
+                const item = inventory[id];
+                if (!item || equippedItems[item.slot] === id) continue;
+                total += itemScore(item);
+                delete inventory[id];
+            }
+            if (total > 0) {
+                upgradePoints += total;
+                saveGame();
+                saveProgression();
+                updateHud();
+            }
+            return total;
+        }
+        // Combines exactly the 3 selected items (rather than "any 3
+        // matching" like combineItems) - used by the multi-select UI, where
+        // the player picked specific tiles.
+        function combineSelectedItems(itemIds) {
+            if (itemIds.length !== COMBINE_COUNT) return false;
+            const items = itemIds.map(id => inventory[id]).filter(Boolean);
+            if (items.length !== COMBINE_COUNT) return false;
+            const slot = items[0].slot, rarity = items[0].rarity;
+            if (rarity >= RARITY_DEFS.length - 1) return false;
+            const allMatch = items.every(it => it.slot === slot && it.rarity === rarity && equippedItems[it.slot] !== it.id);
+            if (!allMatch) return false;
+            for (const it of items) delete inventory[it.id];
+            addInventoryItem(slot, rarity + 1, 1);
+            saveGame();
+            saveProgression();
+            updateHud();
+            return true;
+        }
         function levelUpItem(itemId) {
             const item = inventory[itemId];
             if (!item || item.level >= ITEM_MAX_LEVEL) return false;
@@ -2975,9 +3256,28 @@
         const profileCloseBtn = document.getElementById('profileCloseBtn');
         const equipStats = document.getElementById('equipStats');
         const equipGrid = document.getElementById('equipGrid');
-        const chestPointsLine = document.getElementById('chestPointsLine');
+        const chestPointsValue = document.getElementById('chestPointsValue');
         const chestEquippedGrid = document.getElementById('chestEquippedGrid');
         const chestInventoryGrid = document.getElementById('chestInventoryGrid');
+        const chestInventoryLabel = document.getElementById('chestInventoryLabel');
+        const chestSelectToggleBtn = document.getElementById('chestSelectToggleBtn');
+        const chestSelectionBar = document.getElementById('chestSelectionBar');
+        const chestSelectionLabel = document.getElementById('chestSelectionLabel');
+        const chestSelectCombineBtn = document.getElementById('chestSelectCombineBtn');
+        const chestSelectSellBtn = document.getElementById('chestSelectSellBtn');
+        const chestSelectDoneBtn = document.getElementById('chestSelectDoneBtn');
+        const chestItemPopup = document.getElementById('chestItemPopup');
+        const chestItemIconBig = document.getElementById('chestItemIconBig');
+        const chestItemTitle = document.getElementById('chestItemTitle');
+        const chestItemStats = document.getElementById('chestItemStats');
+        const chestItemUpgradeBtn = document.getElementById('chestItemUpgradeBtn');
+        const chestItemEquipBtn = document.getElementById('chestItemEquipBtn');
+        const chestItemUnequipBtn = document.getElementById('chestItemUnequipBtn');
+        const chestItemSellBtn = document.getElementById('chestItemSellBtn');
+        const chestItemCloseBtn = document.getElementById('chestItemCloseBtn');
+        let chestSelectMode = false;
+        let chestSelectedIds = new Set();
+        let chestDetailItemId = null;
         const skillPointsLine = document.getElementById('skillPointsLine');
         const skillGrid = document.getElementById('skillGrid');
 
@@ -3084,105 +3384,169 @@
         // points), and an inventory grid below grouped by slot+rarity
         // (equip the best one, combine 3-of-a-kind, or salvage one for
         // points).
+        // Tile-grid inventory: equipped items on top (one tile per slot),
+        // every other owned item below as its own tile (no more grouping -
+        // each item is tappable on its own). Tapping a tile normally opens
+        // its detail popup (level up / equip / unequip / sell); tapping
+        // "Auswählen" switches into a multi-select mode instead, where
+        // tapping toggles a tile into a selection used for bulk-selling or
+        // (with exactly 3 matching tiles) combining.
         function renderChestEquipment() {
-            chestPointsLine.innerHTML = 'Aufwertungspunkte: <b>' + upgradePoints + '</b> - durch Verschmelzen von Ausr&uuml;stung erhalten';
+            chestPointsValue.textContent = upgradePoints;
+            chestSelectToggleBtn.classList.toggle('active', chestSelectMode);
+            chestSelectToggleBtn.textContent = chestSelectMode ? 'Fertig' : 'Auswählen';
+            chestSelectionBar.style.display = chestSelectMode ? 'block' : 'none';
 
             chestEquippedGrid.innerHTML = '';
             for (const slotKey of Object.keys(EQUIPMENT_DEFS)) {
                 const def = EQUIPMENT_DEFS[slotKey];
                 const itemId = equippedItems[slotKey];
                 const item = itemId ? inventory[itemId] : null;
-                const card = document.createElement('div');
-                card.className = 'chestItemCard';
+                const tile = document.createElement('div');
                 if (item) {
                     const rd = RARITY_DEFS[item.rarity];
-                    card.innerHTML =
-                        '<div class="chestItemIcon" style="background:' + rd.color + '">' + def.icon + '</div>' +
-                        '<div class="chestItemInfo"><b>' + def.name + '</b>' +
-                        '<span class="rarityChip" style="background:' + rd.color + '">' + rd.name + '</span> Lvl ' + item.level + '/' + ITEM_MAX_LEVEL +
-                        '</div>';
-                    const actions = document.createElement('div');
-                    actions.className = 'chestItemActions';
-                    const lvlBtn = document.createElement('button');
-                    lvlBtn.className = 'levelup';
-                    const cost = itemLevelUpCost(item);
-                    lvlBtn.textContent = item.level >= ITEM_MAX_LEVEL ? 'Max' : ('+1 (' + cost + 'P)');
-                    lvlBtn.disabled = item.level >= ITEM_MAX_LEVEL || upgradePoints < cost;
-                    lvlBtn.addEventListener('click', () => {
-                        levelUpItem(item.id);
-                        renderChestEquipment();
-                    });
-                    actions.appendChild(lvlBtn);
-                    card.appendChild(actions);
+                    tile.className = 'chestTile';
+                    tile.style.background = rd.color;
+                    tile.innerHTML = def.icon + '<span class="lvl">Lvl ' + item.level + '</span><span class="check">✓</span>';
+                    tile.title = def.name + ' - ' + rd.name;
+                    tile.addEventListener('click', () => openChestItemPopup(item.id));
                 } else {
-                    card.innerHTML =
-                        '<div class="chestItemIcon" style="background:#555">' + def.icon + '</div>' +
-                        '<div class="chestItemInfo"><b>' + def.name + '</b>nichts ausger&uuml;stet</div>';
+                    tile.className = 'chestTile empty';
+                    tile.textContent = def.icon;
+                    tile.title = def.name + ' - leer';
                 }
-                chestEquippedGrid.appendChild(card);
+                chestEquippedGrid.appendChild(tile);
             }
 
             chestInventoryGrid.innerHTML = '';
-            const groups = {};
-            for (const item of Object.values(inventory)) {
-                if (equippedItems[item.slot] === item.id) continue; // shown above already
-                const key = item.slot + '_' + item.rarity;
-                if (!groups[key]) groups[key] = { slot: item.slot, rarity: item.rarity, items: [] };
-                groups[key].items.push(item);
+            const items = Object.values(inventory)
+                .filter(it => equippedItems[it.slot] !== it.id)
+                .sort((a, b) => b.rarity - a.rarity || b.level - a.level);
+            chestInventoryLabel.textContent = 'Inventar (' + items.length + ')';
+            if (items.length === 0) {
+                chestInventoryGrid.innerHTML = '<div style="grid-column:1/-1;font-size:12px;color:#8fa0c8;text-align:center;padding:10px;">Noch keine Truhen-Ausr&uuml;stung - kaufe eine Kiste im Shop.</div>';
             }
-            const groupList = Object.values(groups).sort((a, b) => a.slot.localeCompare(b.slot) || a.rarity - b.rarity);
-            if (groupList.length === 0) {
-                chestInventoryGrid.innerHTML = '<div style="font-size:12px;color:#8fa0c8;text-align:center;padding:10px;">Noch keine Truhen-Ausr&uuml;stung - kaufe eine Kiste im Shop.</div>';
-            }
-            for (const group of groupList) {
-                const def = EQUIPMENT_DEFS[group.slot];
-                const rd = RARITY_DEFS[group.rarity];
-                const best = group.items.reduce((a, b) => (b.level > a.level ? b : a), group.items[0]);
-
-                const card = document.createElement('div');
-                card.className = 'chestItemCard';
-                card.innerHTML =
-                    '<div class="chestItemIcon" style="background:' + rd.color + '">' + def.icon + '</div>' +
-                    '<div class="chestItemInfo"><b>' + def.name + ' ×' + group.items.length + '</b>' +
-                    '<span class="rarityChip" style="background:' + rd.color + '">' + rd.name + '</span></div>';
-
-                const actions = document.createElement('div');
-                actions.className = 'chestItemActions';
-
-                const equipBtn = document.createElement('button');
-                equipBtn.className = 'equip';
-                equipBtn.textContent = 'Ausrüsten';
-                equipBtn.addEventListener('click', () => {
-                    equipInventoryItem(best.id);
-                    renderChestEquipment();
-                });
-                actions.appendChild(equipBtn);
-
-                if (group.rarity < RARITY_DEFS.length - 1) {
-                    const combineBtn = document.createElement('button');
-                    combineBtn.className = 'combine';
-                    combineBtn.textContent = 'Kombinieren (' + group.items.length + '/' + COMBINE_COUNT + ')';
-                    combineBtn.disabled = group.items.length < COMBINE_COUNT;
-                    combineBtn.addEventListener('click', () => {
-                        combineItems(group.slot, group.rarity);
+            for (const item of items) {
+                const def = EQUIPMENT_DEFS[item.slot];
+                const rd = RARITY_DEFS[item.rarity];
+                const tile = document.createElement('div');
+                tile.className = 'chestTile' + (chestSelectedIds.has(item.id) ? ' selected' : '');
+                tile.style.background = rd.color;
+                tile.innerHTML = def.icon + '<span class="lvl">Lvl ' + item.level + '</span>';
+                tile.title = def.name + ' - ' + rd.name;
+                tile.addEventListener('click', () => {
+                    if (chestSelectMode) {
+                        if (chestSelectedIds.has(item.id)) chestSelectedIds.delete(item.id);
+                        else chestSelectedIds.add(item.id);
                         renderChestEquipment();
-                    });
-                    actions.appendChild(combineBtn);
-                }
-
-                const salvageBtn = document.createElement('button');
-                salvageBtn.className = 'salvage';
-                salvageBtn.textContent = 'Verschmelzen (' + itemScore(best) + 'P)';
-                salvageBtn.addEventListener('click', () => {
-                    salvageItem(best.id);
-                    renderChestEquipment();
+                    } else {
+                        openChestItemPopup(item.id);
+                    }
                 });
-                actions.appendChild(salvageBtn);
-
-                card.appendChild(actions);
-                chestInventoryGrid.appendChild(card);
+                chestInventoryGrid.appendChild(tile);
             }
+
+            const selected = [...chestSelectedIds].map(id => inventory[id]).filter(Boolean);
+            chestSelectionLabel.textContent = selected.length + ' ausgewählt';
+            chestSelectSellBtn.disabled = selected.length === 0;
+            chestSelectCombineBtn.disabled = !(
+                selected.length === COMBINE_COUNT &&
+                selected.every(it => it.slot === selected[0].slot && it.rarity === selected[0].rarity) &&
+                selected[0].rarity < RARITY_DEFS.length - 1
+            );
         }
+
+        chestSelectToggleBtn.addEventListener('click', () => {
+            chestSelectMode = !chestSelectMode;
+            chestSelectedIds.clear();
+            renderChestEquipment();
+        });
+        chestSelectDoneBtn.addEventListener('click', () => {
+            chestSelectMode = false;
+            chestSelectedIds.clear();
+            renderChestEquipment();
+        });
+        chestSelectSellBtn.addEventListener('click', () => {
+            salvageItems([...chestSelectedIds]);
+            chestSelectedIds.clear();
+            renderChestEquipment();
+        });
+        chestSelectCombineBtn.addEventListener('click', () => {
+            combineSelectedItems([...chestSelectedIds]);
+            chestSelectedIds.clear();
+            renderChestEquipment();
+        });
+
+        // Item detail popup: tapping any tile (outside select mode) opens
+        // this with the item's stat bonus and Verbessern/Ausrüsten-
+        // Ablegen/Verkaufen actions.
+        function openChestItemPopup(itemId) {
+            if (!inventory[itemId]) return;
+            chestDetailItemId = itemId;
+            renderChestItemPopup();
+            chestItemPopup.style.display = 'block';
+        }
+
+        function renderChestItemPopup() {
+            const item = inventory[chestDetailItemId];
+            if (!item) { chestItemPopup.style.display = 'none'; return; }
+            const def = EQUIPMENT_DEFS[item.slot];
+            const rd = RARITY_DEFS[item.rarity];
+            const isEquipped = equippedItems[item.slot] === item.id;
+            const score = itemScore(item);
+            const statLine = def.pct !== undefined
+                ? '+' + (score * RARITY_PCT_PER_SCORE).toFixed(1) + '% ' + def.desc
+                : '+' + (score * RARITY_FLAT_PER_SCORE).toFixed(1) + ' ' + def.desc;
+
+            chestItemIconBig.style.background = rd.color;
+            chestItemIconBig.textContent = def.icon;
+            chestItemTitle.textContent = def.name + ' – ' + rd.name;
+            const cost = itemLevelUpCost(item);
+            chestItemStats.innerHTML =
+                'Level: ' + item.level + ' / ' + ITEM_MAX_LEVEL + '<br>' +
+                'Bonus: ' + statLine + (isEquipped ? '' : ' (sobald ausgerästet)') + '<br>' +
+                'Verschmelzt für: ' + score + ' Aufwertungspunkte';
+
+            chestItemUpgradeBtn.textContent = item.level >= ITEM_MAX_LEVEL ? 'Max. Level' : ('Verbessern (' + cost + ' 🪙)');
+            chestItemUpgradeBtn.disabled = item.level >= ITEM_MAX_LEVEL || upgradePoints < cost;
+            chestItemEquipBtn.style.display = isEquipped ? 'none' : 'inline-block';
+            chestItemUnequipBtn.style.display = isEquipped ? 'inline-block' : 'none';
+            chestItemSellBtn.disabled = isEquipped;
+        }
+
+        chestItemUpgradeBtn.addEventListener('click', () => {
+            if (chestDetailItemId === null) return;
+            levelUpItem(chestDetailItemId);
+            renderChestItemPopup();
+            renderChestEquipment();
+        });
+        chestItemEquipBtn.addEventListener('click', () => {
+            if (chestDetailItemId === null) return;
+            equipInventoryItem(chestDetailItemId);
+            renderChestItemPopup();
+            renderChestEquipment();
+        });
+        chestItemUnequipBtn.addEventListener('click', () => {
+            const item = inventory[chestDetailItemId];
+            if (!item || equippedItems[item.slot] !== chestDetailItemId) return;
+            equippedItems[item.slot] = null;
+            saveGame();
+            saveProgression();
+            updateHud();
+            renderChestItemPopup();
+            renderChestEquipment();
+        });
+        chestItemSellBtn.addEventListener('click', () => {
+            if (chestDetailItemId === null) return;
+            salvageItem(chestDetailItemId);
+            chestItemPopup.style.display = 'none';
+            chestDetailItemId = null;
+            renderChestEquipment();
+        });
+        chestItemCloseBtn.addEventListener('click', () => {
+            chestItemPopup.style.display = 'none';
+            chestDetailItemId = null;
+        });
 
         // Cross/plus arrangement (3 columns) matching the reference layout:
         // speed on top, attack/troops/defense in the middle row, the two
@@ -4300,6 +4664,8 @@
             clearInterval(battleLogRefreshTimer);
             mailPopup.style.display = 'none';
             shopPopup.style.display = 'none';
+            chestItemPopup.style.display = 'none';
+            chestDetailItemId = null;
         }
 
         function openIslandPopup(island) {
@@ -4721,7 +5087,7 @@
             return !!(target && target.closest && (target.closest('#islandPopup') || target.closest('#hud') ||
                 target.closest('#cornerButtons') || target.closest('#profilePopup') ||
                 target.closest('#battleLogPopup') || target.closest('#mailPopup') ||
-                target.closest('#shopPopup') || target.closest('#multiAttackBar')));
+                target.closest('#shopPopup') || target.closest('#chestItemPopup') || target.closest('#multiAttackBar')));
         }
 
         // Mouse events
