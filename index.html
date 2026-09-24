@@ -249,6 +249,17 @@
             border-left: 3px solid #ffd23f;
         }
 
+        .logList .logRow.retreat {
+            border-left: 3px solid #ffcb3d;
+        }
+
+        .logRetreat {
+            margin-top: 5px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #ffcb3d;
+        }
+
         .logHead {
             font-weight: 700;
             font-size: 12.5px;
@@ -1517,6 +1528,22 @@
         const islandById = {};
         for (const island of islands) islandById[island.id] = island;
 
+        // Neutral islands normally regenerate the exact same neutralTroops
+        // every load (same seed, same order) - but a lost attack now
+        // permanently wounds the defender (see resolveAttack), so that
+        // damage has to survive a reload too. This overrides the freshly
+        // generated neutralTroops for any island that's taken casualties.
+        let neutralTroopOverrides;
+        try {
+            neutralTroopOverrides = JSON.parse(localStorage.getItem('openWaterNeutralTroopOverrides')) || {};
+        } catch (e) {
+            neutralTroopOverrides = {};
+        }
+        for (const idStr of Object.keys(neutralTroopOverrides)) {
+            const isl = islandById[idStr];
+            if (isl) isl.neutralTroops = neutralTroopOverrides[idStr];
+        }
+
         function centerIsland() {
             // Player's home base must be a regular tower, never a temple.
             let closest = null;
@@ -1603,6 +1630,7 @@
             localStorage.setItem('openWaterGems', String(gems));
             localStorage.setItem('openWaterTempleHoldSince', JSON.stringify(templeHoldSince));
             localStorage.setItem('openWaterScoutedIslands', JSON.stringify([...scoutedIslands]));
+            localStorage.setItem('openWaterNeutralTroopOverrides', JSON.stringify(neutralTroopOverrides));
         }
 
         const coinCountEl = document.getElementById('coinCount');
@@ -1693,6 +1721,7 @@
             localStorage.setItem('openWaterPendingAttacks', JSON.stringify(pendingAttacks));
             localStorage.setItem('openWaterPendingSends', JSON.stringify(pendingSends));
             localStorage.setItem('openWaterPendingScouts', JSON.stringify(pendingScouts));
+            localStorage.setItem('openWaterPendingRetreats', JSON.stringify(pendingRetreats));
         }
 
         function equipmentUpgradeCost(level) {
@@ -1705,6 +1734,11 @@
         const BASE_ATTACK_SPEED = 600; // world units per second
         const MIN_ATTACK_SECONDS = 3;
         const MAX_ATTACK_SECONDS = 25;
+        // A lost attack isn't one-sided: the defender takes real casualties
+        // too (capped at the attacker's strength, so it can never go
+        // negative), and a small slice of the attacker's "dead" troops
+        // actually survives and marches back to the base it attacked from.
+        const RETREAT_RECOVERY_PCT = 20;
 
         function attackSpeedMultiplier() {
             return 1 + (skills.speed || 0) * 0.05;
@@ -1732,6 +1766,12 @@
             pendingScouts = JSON.parse(localStorage.getItem('openWaterPendingScouts')) || [];
         } catch (e) {
             pendingScouts = [];
+        }
+        let pendingRetreats;
+        try {
+            pendingRetreats = JSON.parse(localStorage.getItem('openWaterPendingRetreats')) || [];
+        } catch (e) {
+            pendingRetreats = [];
         }
 
         // History of resolved attacks/transfers, newest first, capped
@@ -1880,21 +1920,51 @@
             const rewardRate = attack.rewardGoldRate !== undefined ? attack.rewardGoldRate : goldPerKillRate();
 
             const myTroops = attack.rawTroops + atkBonus;
-            const totalStrength = target.neutralTroops + target.neutralDefense;
+            const originalEnemyTroops = target.neutralTroops;
+            const originalEnemyDefense = target.neutralDefense;
+            const totalStrength = originalEnemyTroops + originalEnemyDefense;
             const won = myTroops > totalStrength;
-            const losses = Math.round(target.neutralDefense * (1 - lossReductionPct / 100));
+            const losses = Math.round(originalEnemyDefense * (1 - lossReductionPct / 100));
             const remaining = won ? myTroops - losses : 0;
+
+            let defenderCasualties;
+            let retreatSurvivors = 0;
 
             if (won) {
                 islandTroops[target.id] = remaining;
                 ownedIslands.add(target.id);
                 islandLevels[target.id] = 1;
                 coins += Math.round(totalStrength * rewardRate);
+                defenderCasualties = originalEnemyTroops;
                 if (target.type === 'temple' || target.type === 'megaTemple') {
                     // Starts (or restarts) this temple's hold streak - see
                     // templeHoldMultiplier(). Ready for a future PvP
                     // recapture to reset this the same way.
                     templeHoldSince[target.id] = Date.now();
+                }
+            } else {
+                // A losing attack isn't one-sided: the defender also takes
+                // real casualties (capped at their own garrison, and at the
+                // attacker's strength - they only lose as many troops as
+                // actually clashed with them), permanently weakening that
+                // base for next time. And a fraction of the attacker's
+                // "dead" troops actually survive and retreat back to the
+                // base the attack was launched from.
+                defenderCasualties = Math.min(originalEnemyTroops, myTroops);
+                target.neutralTroops = originalEnemyTroops - defenderCasualties;
+                neutralTroopOverrides[target.id] = target.neutralTroops;
+
+                retreatSurvivors = Math.floor(myTroops * RETREAT_RECOVERY_PCT / 100);
+                if (retreatSurvivors > 0) {
+                    const durationSec = travelDurationSeconds(target, source);
+                    const startedAt = Date.now();
+                    pendingRetreats.push({
+                        fromId: target.id,
+                        toId: source.id,
+                        troops: retreatSurvivors,
+                        startedAt,
+                        resolveAt: startedAt + durationSec * 1000
+                    });
                 }
             }
             // XP for troops that died in the clash either way: a win kills
@@ -1904,15 +1974,13 @@
             updateHud();
             saveGame();
             saveProgression();
+            if (!won) renderActiveMarches();
 
             // Buff breakdown shown in the battle log as plain numbers (not
             // percentages), split by role so a future PvP defender's own
             // buffs already have somewhere to show up - today the target is
             // always a skill-less neutral island, so its "defender" buffs
             // are always 0, but the attacker's are real.
-            // Casualties: a win only costs the attacker the shield-reduced
-            // "losses" and wipes out every defending troop; a loss wipes
-            // out the whole attacking force and costs the defender nothing.
             addCombatLogEntry({
                 type: 'attack',
                 sourceId: attack.sourceId,
@@ -1922,18 +1990,35 @@
                 attackBuff: myTroops - attack.rawTroops,
                 attackGoldRate: attack.attackGoldRate !== undefined ? attack.attackGoldRate : (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate,
                 attackerCasualties: won ? losses : myTroops,
-                enemyTroops: target.neutralTroops,
-                enemyDefense: target.neutralDefense,
+                enemyTroops: originalEnemyTroops,
+                enemyDefense: originalEnemyDefense,
                 defenseBuff: 0,
                 defenseGoldRate: 0,
-                defenderCasualties: won ? target.neutralTroops : 0,
+                defenderCasualties,
+                retreatSurvivors,
                 won,
                 remaining
             });
 
             flashHint((won
                 ? 'Sieg bei Insel #' + (target.id + 1) + '! ' + remaining + ' Truppen übrig.'
-                : 'Niederlage bei Insel #' + (target.id + 1) + ' - Angriffstrupp verloren.'), 4000);
+                : 'Niederlage bei Insel #' + (target.id + 1) + ' - ' + retreatSurvivors + ' Truppen fliehen zurück.'), 4000);
+        }
+
+        function resolveRetreat(retreat) {
+            const target = islandById[retreat.toId];
+            if (!target) return;
+            islandTroops[retreat.toId] = (islandTroops[retreat.toId] || 0) + retreat.troops;
+            updateHud();
+            saveGame();
+            saveProgression();
+            addCombatLogEntry({
+                type: 'retreat',
+                fromId: retreat.fromId,
+                toId: retreat.toId,
+                troops: retreat.troops
+            });
+            flashHint(retreat.troops + ' geflohene Truppen bei Insel #' + (target.id + 1) + ' angekommen.', 3000);
         }
 
         // Checks every second whether any in-flight attack or troop transfer
@@ -1959,6 +2044,13 @@
                 if (dueScouts.length > 0) {
                     pendingScouts = pendingScouts.filter(s => s.resolveAt > now);
                     for (const scout of dueScouts) resolveScout(scout);
+                }
+            }
+            if (pendingRetreats.length > 0) {
+                const dueRetreats = pendingRetreats.filter(r => r.resolveAt <= now);
+                if (dueRetreats.length > 0) {
+                    pendingRetreats = pendingRetreats.filter(r => r.resolveAt > now);
+                    for (const retreat of dueRetreats) resolveRetreat(retreat);
                 }
             }
             if (battleLogPopup.style.display !== 'block') renderActiveMarches();
@@ -2075,7 +2167,7 @@
             const avatarRing = document.getElementById('pAvatarRing');
             if (avatarRing) avatarRing.style.setProperty('--progress', progressPct);
 
-            const activeCount = pendingAttacks.length + pendingSends.length + pendingScouts.length;
+            const activeCount = pendingAttacks.length + pendingSends.length + pendingScouts.length + pendingRetreats.length;
             profileStats.innerHTML =
                 '<div class="statRow"><span>Skillpunkte</span><b>' + skillPoints + '</b></div>' +
                 '<div class="statRow"><span>Gems</span><b>' + Math.floor(gems) + '</b></div>' +
@@ -2248,11 +2340,18 @@
                     ' - noch ' + secondsLeft + 's</div>'
                 );
             }
+            for (const retreat of pendingRetreats) {
+                const secondsLeft = Math.max(0, Math.ceil((retreat.resolveAt - Date.now()) / 1000));
+                rows.push(
+                    '<div class="logRow retreat">' + retreat.troops + ' geflohene Truppen unterwegs zurück zu Basis #' + (retreat.toId + 1) +
+                    ' - noch ' + secondsLeft + 's</div>'
+                );
+            }
             activeMarchesEl.innerHTML = rows.length
                 ? rows.join('')
                 : '<div class="logEmpty">Gerade nichts unterwegs.</div>';
 
-            const total = pendingAttacks.length + pendingSends.length + pendingScouts.length;
+            const total = pendingAttacks.length + pendingSends.length + pendingScouts.length + pendingRetreats.length;
             battleLogBadge.textContent = total;
             battleLogBadge.style.display = total > 0 ? 'block' : 'none';
         }
@@ -2271,6 +2370,10 @@
                     return '<div class="logRow scout">Insel #' + (entry.sourceId + 1) + ' → Insel #' + (entry.targetId + 1) +
                         ': ausgekundschaftet (' + entry.troops + ' Truppen, ' + entry.defense + ' Verteidigung) - ' +
                         timeAgoLabel(entry.at) + '</div>';
+                }
+                if (entry.type === 'retreat') {
+                    return '<div class="logRow retreat">Insel #' + (entry.fromId + 1) + ' → Insel #' + (entry.toId + 1) +
+                        ': ' + entry.troops + ' geflohene Truppen zurückgekehrt - ' + timeAgoLabel(entry.at) + '</div>';
                 }
                 // Legacy entries saved before this format existed - fall back
                 // to the old one-liner instead of showing "undefined".
@@ -2307,6 +2410,7 @@
                         '</div>' +
                     '</div>' +
                     '<div class="logGold">Gold/Kill-Bonus: Angriff +' + entry.attackGoldRate.toFixed(1) + ' · Verteidigung +' + entry.defenseGoldRate.toFixed(1) + '</div>' +
+                    (!entry.won && entry.retreatSurvivors ? '<div class="logRetreat">&#127939; ' + entry.retreatSurvivors + ' Truppen konnten fliehen und kehren zurük</div>' : '') +
                     '<div class="logResult">' + (entry.won ? 'Sieg - ' + entry.remaining + ' Truppen übrig' : 'Niederlage') + ' · ' + timeAgoLabel(entry.at) + '</div>' +
                     '</div>';
             }).join('');
@@ -2698,6 +2802,9 @@
             }
             for (const scout of pendingScouts) {
                 drawMarch(islandById[scout.sourceId], islandById[scout.targetId], scout.startedAt, scout.resolveAt, '#ffd23f');
+            }
+            for (const retreat of pendingRetreats) {
+                drawMarch(islandById[retreat.fromId], islandById[retreat.toId], retreat.startedAt, retreat.resolveAt, '#ffa94d');
             }
 
             ctx.restore();
