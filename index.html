@@ -1245,7 +1245,7 @@
         // Low enough that pinching/scrolling all the way out fits the WHOLE
         // map (hub + every outer island) on screen even on a narrow phone
         // viewport, not just a chunk of it.
-        const MIN_ZOOM = 0.0065;
+        const MIN_ZOOM = 0.01;
         const MAX_ZOOM = 4;
         // Below this zoom, owned islands switch from green to blue so a big
         // territory reads clearly from far above the map.
@@ -1259,9 +1259,9 @@
         // before. Found via a search against the actual coastline generator
         // for the tightest packing that still has zero overlap.
         const CENTER_LANDMASS_RADIUS = 9000;
-        const OUTER_LANDMASS_RADIUS = 4500;
-        const OUTER_LANDMASS_COUNT = 10;
-        const RING_DISTANCE = 17880; // center-to-center, hub to each outer island
+        const OUTER_LANDMASS_RADIUS = 2200;
+        const OUTER_LANDMASS_COUNT = 14;
+        const RING_DISTANCE = 11760; // center-to-center, hub to each outer island
         const TOWER_GRID_SIZE = 5; // 5x5 towers per landmass
         const TOWER_SPACING_RATIO = 1600 / 5200; // keep the old island/tower proportions
         const ISLAND_RADIUS = 220; // tower footprint
