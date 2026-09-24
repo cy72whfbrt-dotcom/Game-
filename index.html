@@ -1250,7 +1250,7 @@
         // of a single flat fill - still solidly green as requested, just
         // less flat. Gradients are cached per landmass (like the tinted
         // tower icons already are) since landmasses never move or resize.
-        const TOWER_SCALE = 0.62;
+        const TOWER_SCALE = 0.78;
         const landmassGradientCache = {};
         function getLandmassGradient(lm) {
             if (landmassGradientCache[lm.id]) return landmassGradientCache[lm.id];
@@ -1276,8 +1276,8 @@
         let mapState = {
             offsetX: window.innerWidth / 2,
             offsetY: window.innerHeight / 2,
-            zoom: 0.1,
-            targetZoom: 0.1,
+            zoom: 0.07,
+            targetZoom: 0.07,
             isDragging: false,
             dragStartX: 0,
             dragStartY: 0,
@@ -1338,7 +1338,7 @@
         const TOWERS_PER_LANDMASS = 100;
         const HUB_TOWERS_PER_LANDMASS = 180; // the hub is 1.5x the radius, so it earns more bases too
         const TOWER_MIN_SPACING_RATIO = 0.10; // relative to the landmass radius
-        const ISLAND_RADIUS = 380; // tower footprint - bigger so bases actually stand out on the map
+        const ISLAND_RADIUS = 650; // tower footprint - bigger again, still well under the guaranteed minimum spacing between towers
         const NEUTRAL_DEFENSE_MAX = 100;
         const NEUTRAL_DEFENSE_MIN = 20;
         const NEUTRAL_TROOPS_MAX = 100;
@@ -3044,7 +3044,7 @@
         // into one blob when the straight line between them is checked and
         // confirmed completely clear of every other base (owned by anyone
         // or neutral) - never assumed just because the bases are close.
-        const TERRITORY_PADDING = 550;
+        const TERRITORY_PADDING = 250;
         const TERRITORY_CONNECT_MAX_DIST = 6000;
 
         function hexToRgba(hex, alpha) {
