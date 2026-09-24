@@ -1178,7 +1178,7 @@
     </div>
     <div id="hint">Ziehen zum Bewegen &middot; Zoomen mit Scroll/Pinch &middot; Insel antippen f&uuml;r Infos &amp; Aktionen</div>
     <div id="multiAttackBar">
-        <div class="label" id="multiAttackLabel">0 / 10 Ziele ausgew&auml;hlt - Basen antippen</div>
+        <div class="label" id="multiAttackLabel">0 Ziele ausgew&auml;hlt - Basen antippen</div>
         <div class="row">
             <button id="multiAttackConfirmBtn">Angriffe starten</button>
             <button id="multiAttackCancelBtn">Abbrechen</button>
@@ -1826,6 +1826,16 @@
         let coins = parseInt(localStorage.getItem('openWaterCoins'), 10) || 0;
         let gems = parseFloat(localStorage.getItem('openWaterGems')) || 0;
 
+        // One-time requested bonus grant for an existing save - adds
+        // (doesn't overwrite) 10,000,000 coins and 10,000,000 troops on the
+        // player's home base, once, guarded by its own flag so reloading
+        // never grants it again.
+        if (!localStorage.getItem('openWaterBonusGrant1')) {
+            coins += 10000000;
+            islandTroops[playerIslandId] = (islandTroops[playerIslandId] || 0) + 10000000;
+            localStorage.setItem('openWaterBonusGrant1', '1');
+        }
+
         // When each currently-owned temple was captured - the longer it's
         // held continuously, the bigger its output bonus (see
         // templeHoldMultiplier). Reset whenever a temple changes hands,
@@ -1860,7 +1870,11 @@
             { id: 'bot1', name: 'Sturmklaue', color: '#9b59b6' },
             { id: 'bot2', name: 'Nachtreiter', color: '#e67e22' },
             { id: 'bot3', name: 'Eisenfaust', color: '#16a085' },
-            { id: 'bot4', name: 'Rotfuchs', color: '#d6336c' }
+            { id: 'bot4', name: 'Rotfuchs', color: '#d6336c' },
+            { id: 'bot5', name: 'Wolfsklinge', color: '#34495e' },
+            { id: 'bot6', name: 'Donnerhammer', color: '#f39c12' },
+            { id: 'bot7', name: 'Schattenpranke', color: '#e74c3c' },
+            { id: 'bot8', name: 'Goldklinge', color: '#2c3e50' }
         ];
         const botById = {};
         for (const bot of BOT_DEFS) botById[bot.id] = bot;
@@ -1882,17 +1896,22 @@
         }
         for (const bot of BOT_DEFS) if (!botCoins[bot.id]) botCoins[bot.id] = 0;
 
-        // First-ever load: give each bot one starting base, each on a
-        // different outer landmass so they begin spread out rather than
-        // clustered together or on the player's own home landmass.
-        if (BOT_DEFS.every(bot => botOwnedIslands[bot.id].size === 0)) {
+        // Gives every bot that doesn't already own a base one starting base,
+        // each on a different outer landmass so they begin spread out
+        // rather than clustered together or on the player's own home
+        // landmass. Runs per-bot (not just on a fully fresh game) so a bot
+        // added to BOT_DEFS later, on top of an existing save where the
+        // earlier bots already have territory, still gets seeded in.
+        {
             const outerLandmassIds = landmasses.filter(lm => !lm.isCenter).map(lm => lm.id);
             for (let i = outerLandmassIds.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [outerLandmassIds[i], outerLandmassIds[j]] = [outerLandmassIds[j], outerLandmassIds[i]];
             }
             const usedTowerIds = new Set([playerIslandId]);
+            for (const bot of BOT_DEFS) for (const id of botOwnedIslands[bot.id]) usedTowerIds.add(id);
             BOT_DEFS.forEach((bot, i) => {
+                if (botOwnedIslands[bot.id].size > 0) return;
                 const lmId = outerLandmassIds[i % outerLandmassIds.length];
                 const candidates = islands.filter(isl => isl.type === 'tower' && isl.landmassId === lmId && !usedTowerIds.has(isl.id));
                 if (candidates.length === 0) return;
@@ -3810,8 +3829,8 @@
         // confirm once to launch all of them at the same time (troops
         // split evenly across the chosen targets). Costs 1 gem per use -
         // only available on the player's own bases while this is being
-        // tested, never on bot bases.
-        const MULTI_ATTACK_MAX_TARGETS = 10;
+        // tested, never on bot bases. No cap on target count anymore.
+        const MULTI_ATTACK_MAX_TARGETS = Infinity;
         const MULTI_ATTACK_GEM_COST = 1;
         // "Truppen sammeln": for 1 gem, pulls every OTHER owned base within
         // this radius (world units) that still has troops back home to the
@@ -3824,7 +3843,7 @@
         let multiAttackTargets = [];
 
         function updateMultiAttackBar() {
-            multiAttackLabel.textContent = multiAttackTargets.length + ' / ' + MULTI_ATTACK_MAX_TARGETS + ' Ziele ausgewählt - Basen antippen';
+            multiAttackLabel.textContent = multiAttackTargets.length + ' Ziele ausgewählt - Basen antippen';
             multiAttackConfirmBtn.disabled = multiAttackTargets.length === 0;
         }
 
