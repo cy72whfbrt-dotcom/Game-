@@ -2287,11 +2287,14 @@
                     neutralTroopOverrides[target.id] = target.neutralTroops;
                 }
             }
-            scoutedIslands.add(target.id);
-            saveGame();
             updateHud();
 
             if (playerInvolved) {
+                // Only reveals the target to the player when the player was
+                // actually part of this fight - a bot conquering a neutral
+                // or another bot's base off-screen must NOT leak that
+                // island's troop count to the player as a side effect.
+                scoutedIslands.add(target.id);
                 addCombatLogEntry({
                     type: 'botAttack',
                     botName: bot.name,
@@ -2307,6 +2310,7 @@
                 renderActiveMarches();
                 if (popup.style.display === 'block' && popupIslandId === target.id) renderPopup();
             }
+            saveGame();
         }
 
         // Precomputed once (landmasses never change): which islands sit on
@@ -3191,16 +3195,28 @@
                 // where plain colored blocks read more clearly than tiny text.
                 if (territoryView) continue;
 
+                const isScouted = scoutedIslands.has(island.id);
                 ctx.fillStyle = '#ffffff';
                 ctx.textAlign = 'center';
-                if (isOwned || (ownerBot && scoutedIslands.has(island.id))) {
+                if (isOwned || (ownerBot && isScouted)) {
                     ctx.font = '56px system-ui, sans-serif';
                     ctx.textBaseline = 'bottom';
                     ctx.fillText('Lvl ' + (islandLevels[island.id] || 1), island.x, island.y);
                     ctx.font = '44px system-ui, sans-serif';
                     ctx.textBaseline = 'top';
                     ctx.fillText(String(islandTroops[island.id] || 0) + ' Truppen', island.x, island.y + 4);
-                } else if (!ownerBot && scoutedIslands.has(island.id)) {
+                } else if (ownerBot) {
+                    // Someone else's base you haven't scouted: you can see
+                    // whose it is and its level (that much is visible just
+                    // by looking at it), but not its garrison - that still
+                    // needs scouting.
+                    ctx.font = '40px system-ui, sans-serif';
+                    ctx.textBaseline = 'bottom';
+                    ctx.fillText(ownerBot.name, island.x, island.y);
+                    ctx.font = '44px system-ui, sans-serif';
+                    ctx.textBaseline = 'top';
+                    ctx.fillText('Lvl ' + (islandLevels[island.id] || 1), island.x, island.y + 4);
+                } else if (isScouted) {
                     ctx.font = '44px system-ui, sans-serif';
                     ctx.textBaseline = 'bottom';
                     ctx.fillText(island.neutralTroops + ' Truppen', island.x, island.y);
@@ -3289,6 +3305,11 @@
             }
 
             for (const attack of pendingAttacks) {
+                // Bot-vs-neutral and bot-vs-bot marches elsewhere on the map
+                // aren't the player's business and stay invisible - only
+                // the player's own attacks, and a bot marching on the
+                // player's own territory, are worth showing.
+                if (attack.attackerBotId && islandOwnerOf(attack.targetId) !== 'player') continue;
                 drawMarch(islandById[attack.sourceId], islandById[attack.targetId], attack.startedAt, attack.resolveAt, '#e64545');
             }
             for (const send of pendingSends) {
@@ -3463,7 +3484,11 @@
                 } else {
                     const scoutEnRoute = pendingScouts.some(s => s.targetId === island.id);
                     popupTitle.textContent = islandTitle(island) + (ownerBot ? ' (' + ownerBot.name + ')' : ' (unbesetzt)');
-                    popupStats.innerHTML = (scouted
+                    popupStats.innerHTML =
+                        // A bot's level is visible on sight (same as on the
+                        // map) - only its garrison needs scouting first.
+                        (ownerBot ? 'Level: ' + (islandLevels[island.id] || 1) + '<br>' : '') +
+                        (scouted
                         ? 'Truppen: ' + effectiveTroops(island) + '<br>Verteidigung: ' + effectiveDefense(island)
                         : 'Truppen: unbekannt - erst sp&auml;hen<br>Verteidigung: unbekannt - erst sp&auml;hen') +
                         (isTemple ? '<br><span style="color:#ffcb3d">&#127963;&#65039; Tempel: gibt Produktion, Gems &amp; Gold, sobald erobert</span>' : '') +
