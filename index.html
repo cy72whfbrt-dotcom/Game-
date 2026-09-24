@@ -70,25 +70,39 @@
             left: 12px;
             top: 12px;
             display: flex;
-            gap: 8px;
+            gap: 9px;
             color: var(--text);
-            font: 700 13px/1.4 system-ui, sans-serif;
+            font: 800 14px/1.4 system-ui, sans-serif;
         }
 
         #hud .stat {
-            background: var(--bg);
+            background: linear-gradient(180deg, var(--surface), var(--bg));
             border: 2px solid var(--border);
             border-radius: 999px;
-            padding: 7px 14px 7px 11px;
+            padding: 6px 15px 6px 6px;
             display: flex;
             align-items: center;
-            gap: 6px;
-            box-shadow: 0 4px 0 rgba(0, 0, 0, .25);
+            gap: 8px;
+            box-shadow: 0 4px 0 rgba(0, 0, 0, .3), inset 0 1px 0 rgba(255, 255, 255, .06);
+            transition: transform .12s ease;
         }
 
         #hud .stat .icon {
             font-size: 15px;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.35), rgba(255,255,255,0) 60%), var(--surface-alt);
+            box-shadow: 0 2px 0 rgba(0, 0, 0, .3);
+            flex-shrink: 0;
         }
+
+        #hud .stat:nth-child(1) .icon { background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.5), rgba(255,255,255,0) 60%), var(--gold); box-shadow: 0 2px 0 var(--gold-dark); }
+        #hud .stat:nth-child(2) .icon { background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.5), rgba(255,255,255,0) 60%), var(--blue); box-shadow: 0 2px 0 var(--blue-dark); }
+        #hud .stat:nth-child(3) .icon { background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.5), rgba(255,255,255,0) 60%), var(--red); box-shadow: 0 2px 0 var(--red-dark); }
 
         #cornerButtons {
             position: fixed;
@@ -96,30 +110,31 @@
             top: 12px;
             display: flex;
             flex-direction: column;
-            gap: 9px;
+            gap: 10px;
             z-index: 20;
         }
 
         #cornerButtons button {
-            width: 38px;
-            height: 38px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
-            background: var(--surface);
+            background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.12), rgba(255,255,255,0) 60%), var(--surface);
             border: 2px solid var(--border);
             color: var(--text);
-            font-size: 16px;
+            font-size: 18px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 0;
             position: relative;
-            box-shadow: 0 3px 0 var(--bg);
+            box-shadow: 0 4px 0 var(--bg), 0 6px 10px rgba(0, 0, 0, .3);
+            transition: transform .12s ease;
         }
 
         #cornerButtons button:active {
             box-shadow: 0 1px 0 var(--bg);
-            transform: translateY(2px);
+            transform: translateY(3px);
         }
 
         #cornerButtons .badge {
@@ -4731,8 +4746,16 @@
                 if (Math.abs(deltaX) > TAP_MOVE_THRESHOLD || Math.abs(deltaY) > TAP_MOVE_THRESHOLD) {
                     pressMoved = true;
                 }
-                mapState.offsetX = mapState.lastOffsetX + deltaX;
-                mapState.offsetY = mapState.lastOffsetY + deltaY;
+                // Only actually move the camera once a real drag is
+                // confirmed - applying every sub-threshold jitter (which a
+                // "still" finger/mouse always produces a little of) made
+                // plain taps visibly nudge the map, most noticeable when
+                // tapping several bases in a row while picking attack
+                // targets.
+                if (pressMoved) {
+                    mapState.offsetX = mapState.lastOffsetX + deltaX;
+                    mapState.offsetY = mapState.lastOffsetY + deltaY;
+                }
                 trackPointerVelocity(e.clientX, e.clientY);
             }
         });
@@ -4740,6 +4763,12 @@
         document.addEventListener('mouseup', (e) => {
             if (mapState.isDragging && !pressMoved && !isUiElement(e.target)) {
                 handleTap(e.clientX, e.clientY);
+            }
+            // A tap (no real drag) shouldn't leave residual velocity behind
+            // to drift the map via momentum panning afterward.
+            if (!pressMoved) {
+                mapState.velocityX = 0;
+                mapState.velocityY = 0;
             }
             mapState.isDragging = false;
         });
@@ -4798,8 +4827,12 @@
                 if (Math.abs(deltaX) > TAP_MOVE_THRESHOLD || Math.abs(deltaY) > TAP_MOVE_THRESHOLD) {
                     pressMoved = true;
                 }
-                mapState.offsetX = mapState.lastOffsetX + deltaX;
-                mapState.offsetY = mapState.lastOffsetY + deltaY;
+                // Same as mousemove - don't move the camera on sub-threshold
+                // jitter, only once a real drag is confirmed.
+                if (pressMoved) {
+                    mapState.offsetX = mapState.lastOffsetX + deltaX;
+                    mapState.offsetY = mapState.lastOffsetY + deltaY;
+                }
                 trackPointerVelocity(e.touches[0].clientX, e.touches[0].clientY);
             } else if (e.touches.length === 2) {
                 const dx = e.touches[0].clientX - e.touches[1].clientX;
@@ -4832,6 +4865,10 @@
                 // silently triggering it a second time.
                 e.preventDefault();
                 handleTap(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+            }
+            if (!pressMoved) {
+                mapState.velocityX = 0;
+                mapState.velocityY = 0;
             }
             mapState.isDragging = false;
         }, { passive: false });
