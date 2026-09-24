@@ -383,9 +383,10 @@
             display: none;
             margin-top: 10px;
             background: var(--surface);
-            border: 2px solid #8e44ad;
+            border: 2px solid var(--border);
             border-radius: 14px;
             padding: 10px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, .35);
         }
         #chestSelectionBar .label {
             text-align: center;
@@ -1584,7 +1585,7 @@
                 </div>
             </div>
             <div id="chestSelectionBar">
-                <div class="label" id="chestSelectionLabel">Tippe den Punkt auf einer Karte, um sie auszuw&auml;hlen</div>
+                <div class="label" id="chestSelectionLabel">Punkt antippen zum Ausw&auml;hlen</div>
                 <div class="row">
                     <button id="chestSelectCombineBtn">Kombinieren</button>
                     <button id="chestSelectSellBtn">Verkaufen</button>
@@ -2228,6 +2229,11 @@
             coins += 10000000;
             islandTroops[playerIslandId] = (islandTroops[playerIslandId] || 0) + 10000000;
             localStorage.setItem('openWaterBonusGrant1', '1');
+        }
+        // Second one-time grant, same pattern - 1,000,000 gems.
+        if (!localStorage.getItem('openWaterBonusGrant2')) {
+            gems += 1000000;
+            localStorage.setItem('openWaterBonusGrant2', '1');
         }
 
         // When each currently-owned temple was captured - the longer it's
@@ -3430,7 +3436,7 @@
             const selected = [...chestSelectedIds].map(id => inventory[id]).filter(Boolean);
             chestSelectionLabel.textContent = selected.length > 0
                 ? (selected.length + ' ausgewählt')
-                : 'Tippe den Punkt auf einer Karte, um sie auszuwählen';
+                : 'Punkt antippen zum Auswählen';
             chestSelectSellBtn.disabled = selected.length === 0;
             chestSelectCombineBtn.disabled = !(
                 selected.length === COMBINE_COUNT &&
