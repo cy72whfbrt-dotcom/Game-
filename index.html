@@ -260,6 +260,54 @@
             color: #ffcb3d;
         }
 
+        .rankRow {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #1a2340;
+            border: 1px solid #2c3a63;
+            border-radius: 10px;
+            padding: 10px 12px;
+        }
+
+        .rankRow.isPlayer {
+            border-color: var(--gold);
+            background: rgba(255, 203, 61, 0.08);
+        }
+
+        .rankPos {
+            font-weight: 800;
+            font-size: 13px;
+            color: #7f93bd;
+            width: 20px;
+            flex-shrink: 0;
+        }
+
+        .rankDot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .rankName {
+            flex: 1;
+            font-weight: 700;
+            font-size: 13px;
+            color: #e6eefc;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .rankScore {
+            font-weight: 800;
+            font-size: 13px;
+            color: #ffcb3d;
+            flex-shrink: 0;
+        }
+
         .logHead {
             font-weight: 700;
             font-size: 12.5px;
@@ -1067,6 +1115,7 @@
             <button id="tabBtnInfo" class="active"><span class="tabIcon">&#128100;</span><span>Spieler</span></button>
             <button id="tabBtnEquip"><span class="tabIcon">&#128737;&#65039;</span><span>Ausr&uuml;stung</span></button>
             <button id="tabBtnSkills"><span class="tabIcon">&#9889;</span><span>Skills</span></button>
+            <button id="tabBtnRank"><span class="tabIcon">&#127942;</span><span>Rangliste</span></button>
         </div>
 
         <div id="tabInfo" class="profileTabPanel active">
@@ -1113,6 +1162,10 @@
             <div id="skillPointsLine" class="stats" style="margin-bottom:10px;"></div>
             <div id="skillDetail" class="skillDetail"></div>
             <div id="skillGrid" class="skillCross"></div>
+        </div>
+
+        <div id="tabRank" class="profileTabPanel">
+            <div id="rankList" class="logList"></div>
         </div>
 
         <div class="row">
@@ -1431,8 +1484,14 @@
         const TROOPS_PER_LEVEL = 5;
         const UPGRADE_BASE_COST = 150;
 
+        // The flat level-based defense every base gets, with no equipment/
+        // skill bonus - used for bot- and (in a future PvP defense) other-
+        // player-owned bases, which don't have the human player's gear.
+        function baseDefenseForLevel(level) {
+            return BASE_DEFENSE + (level - 1) * DEFENSE_PER_LEVEL;
+        }
         function defenseForLevel(level) {
-            return BASE_DEFENSE + (level - 1) * DEFENSE_PER_LEVEL + defenseBonusFlat();
+            return baseDefenseForLevel(level) + defenseBonusFlat();
         }
         function upgradeCost(level) {
             return level * UPGRADE_BASE_COST;
@@ -1661,8 +1720,8 @@
         // When each currently-owned temple was captured - the longer it's
         // held continuously, the bigger its output bonus (see
         // templeHoldMultiplier). Reset whenever a temple changes hands,
-        // which today only happens when the player captures a neutral one,
-        // but the field is ready for a future PvP recapture too.
+        // whether that's the player or a bot taking it from a neutral
+        // garrison or from each other.
         let templeHoldSince;
         try {
             templeHoldSince = JSON.parse(localStorage.getItem('openWaterTempleHoldSince')) || {};
@@ -1684,6 +1743,88 @@
             scoutedIslands = new Set();
         }
 
+        // Bots: other "players" on the same map, each with their own
+        // territory/troops/coins, that think and act on their own timer
+        // (see runBotTick below) - attack, upgrade, and expand exactly like
+        // the human player does, just automated.
+        const BOT_DEFS = [
+            { id: 'bot1', name: 'Sturmklaue', color: '#9b59b6' },
+            { id: 'bot2', name: 'Nachtreiter', color: '#e67e22' },
+            { id: 'bot3', name: 'Eisenfaust', color: '#16a085' },
+            { id: 'bot4', name: 'Rotfuchs', color: '#d6336c' }
+        ];
+        const botById = {};
+        for (const bot of BOT_DEFS) botById[bot.id] = bot;
+
+        let botOwnedIslands;
+        try {
+            const raw = JSON.parse(localStorage.getItem('openWaterBotOwnedIslands'));
+            botOwnedIslands = {};
+            for (const bot of BOT_DEFS) botOwnedIslands[bot.id] = new Set(raw && raw[bot.id] || []);
+        } catch (e) {
+            botOwnedIslands = {};
+            for (const bot of BOT_DEFS) botOwnedIslands[bot.id] = new Set();
+        }
+        let botCoins;
+        try {
+            botCoins = JSON.parse(localStorage.getItem('openWaterBotCoins')) || {};
+        } catch (e) {
+            botCoins = {};
+        }
+        for (const bot of BOT_DEFS) if (!botCoins[bot.id]) botCoins[bot.id] = 0;
+
+        // First-ever load: give each bot one starting base, each on a
+        // different outer landmass so they begin spread out rather than
+        // clustered together or on the player's own home landmass.
+        if (BOT_DEFS.every(bot => botOwnedIslands[bot.id].size === 0)) {
+            const outerLandmassIds = landmasses.filter(lm => !lm.isCenter).map(lm => lm.id);
+            for (let i = outerLandmassIds.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [outerLandmassIds[i], outerLandmassIds[j]] = [outerLandmassIds[j], outerLandmassIds[i]];
+            }
+            const usedTowerIds = new Set([playerIslandId]);
+            BOT_DEFS.forEach((bot, i) => {
+                const lmId = outerLandmassIds[i % outerLandmassIds.length];
+                const candidates = islands.filter(isl => isl.type === 'tower' && isl.landmassId === lmId && !usedTowerIds.has(isl.id));
+                if (candidates.length === 0) return;
+                const tower = candidates[Math.floor(Math.random() * candidates.length)];
+                botOwnedIslands[bot.id].add(tower.id);
+                islandLevels[tower.id] = 1;
+                islandTroops[tower.id] = 20;
+                usedTowerIds.add(tower.id);
+            });
+        }
+
+        // Who owns a given island right now: 'player', a bot id, or null
+        // for neutral. Player ownership always wins the check since a
+        // capture always removes the island from whichever set it used to
+        // be in first.
+        function islandOwnerOf(islandId) {
+            if (ownedIslands.has(islandId)) return 'player';
+            for (const bot of BOT_DEFS) if (botOwnedIslands[bot.id].has(islandId)) return bot.id;
+            return null;
+        }
+        // Actual troops/defense a target currently has, regardless of who
+        // (if anyone) owns it - neutral islands use their fixed generated
+        // stats, an owned island uses its real garrison and level.
+        function effectiveTroops(island) {
+            const owner = islandOwnerOf(island.id);
+            return owner ? (islandTroops[island.id] || 0) : island.neutralTroops;
+        }
+        function effectiveDefense(island) {
+            const owner = islandOwnerOf(island.id);
+            if (!owner) return island.neutralDefense;
+            const level = islandLevels[island.id] || 1;
+            return owner === 'player' ? defenseForLevel(level) : baseDefenseForLevel(level);
+        }
+        // Removes an island from whichever owner (player or a bot) it
+        // currently belongs to, without touching its troops/level - used
+        // right before handing it to whoever just conquered it.
+        function clearIslandOwner(islandId) {
+            ownedIslands.delete(islandId);
+            for (const bot of BOT_DEFS) botOwnedIslands[bot.id].delete(islandId);
+        }
+
         function saveGame() {
             localStorage.setItem('openWaterOwnedIslands', JSON.stringify([...ownedIslands]));
             localStorage.setItem('openWaterIslandLevels', JSON.stringify(islandLevels));
@@ -1693,6 +1834,10 @@
             localStorage.setItem('openWaterTempleHoldSince', JSON.stringify(templeHoldSince));
             localStorage.setItem('openWaterScoutedIslands', JSON.stringify([...scoutedIslands]));
             localStorage.setItem('openWaterNeutralTroopOverrides', JSON.stringify(neutralTroopOverrides));
+            const botOwnedForSave = {};
+            for (const bot of BOT_DEFS) botOwnedForSave[bot.id] = [...botOwnedIslands[bot.id]];
+            localStorage.setItem('openWaterBotOwnedIslands', JSON.stringify(botOwnedForSave));
+            localStorage.setItem('openWaterBotCoins', JSON.stringify(botCoins));
         }
 
         const coinCountEl = document.getElementById('coinCount');
@@ -1851,7 +1996,7 @@
             localStorage.setItem('openWaterCombatLog', JSON.stringify(combatLog));
         }
 
-        function launchAttack(sourceId, targetId) {
+        function launchAttack(sourceId, targetId, attackerBotId) {
             const source = islandById[sourceId];
             const target = islandById[targetId];
             const rawTroops = islandTroops[sourceId] || 0;
@@ -1864,22 +2009,24 @@
             // launch, not when the attack resolves on arrival (which can be
             // many seconds later) - otherwise leveling a skill while troops
             // are already marching would silently change the outcome of an
-            // attack whose preview the player already confirmed.
+            // attack whose preview the player already confirmed. Bots have
+            // no equipment/skills, so their attacks carry no bonuses.
             pendingAttacks.push({
                 sourceId,
                 targetId,
                 rawTroops,
                 startedAt,
                 resolveAt: startedAt + durationSec * 1000,
-                attackBonus: attackFlatBonus(),
-                attackGoldRate: (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate,
-                rewardGoldRate: goldPerKillRate(),
-                shieldLossReductionPct: shieldLossReductionPct()
+                attackerBotId: attackerBotId || null,
+                attackBonus: attackerBotId ? 0 : attackFlatBonus(),
+                attackGoldRate: attackerBotId ? 0 : (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate,
+                rewardGoldRate: attackerBotId ? 0 : goldPerKillRate(),
+                shieldLossReductionPct: attackerBotId ? 0 : shieldLossReductionPct()
             });
             updateHud();
             saveGame();
             saveProgression();
-            flashHint('Angriff unterwegs zu Insel #' + (target.id + 1) + ' - ca. ' + Math.ceil(durationSec) + 's');
+            if (!attackerBotId) flashHint('Angriff unterwegs zu Insel #' + (target.id + 1) + ' - ca. ' + Math.ceil(durationSec) + 's');
             renderActiveMarches();
         }
 
@@ -1982,8 +2129,9 @@
             const rewardRate = attack.rewardGoldRate !== undefined ? attack.rewardGoldRate : goldPerKillRate();
 
             const myTroops = attack.rawTroops + atkBonus;
-            const originalEnemyTroops = target.neutralTroops;
-            const originalEnemyDefense = target.neutralDefense;
+            const targetOwner = islandOwnerOf(target.id); // null | 'player' | a bot id
+            const originalEnemyTroops = effectiveTroops(target);
+            const originalEnemyDefense = effectiveDefense(target);
             const totalStrength = originalEnemyTroops + originalEnemyDefense;
             const won = myTroops > totalStrength;
             const losses = Math.round(originalEnemyDefense * (1 - lossReductionPct / 100));
@@ -1993,6 +2141,7 @@
             let retreatSurvivors = 0;
 
             if (won) {
+                if (targetOwner) clearIslandOwner(target.id); // taken from a bot (or, later, another player)
                 islandTroops[target.id] = remaining;
                 ownedIslands.add(target.id);
                 islandLevels[target.id] = 1;
@@ -2013,8 +2162,12 @@
                 // "dead" troops actually survive and retreat back to the
                 // base the attack was launched from.
                 defenderCasualties = Math.min(originalEnemyTroops, myTroops);
-                target.neutralTroops = originalEnemyTroops - defenderCasualties;
-                neutralTroopOverrides[target.id] = target.neutralTroops;
+                if (targetOwner) {
+                    islandTroops[target.id] = Math.max(0, (islandTroops[target.id] || 0) - defenderCasualties);
+                } else {
+                    target.neutralTroops = originalEnemyTroops - defenderCasualties;
+                    neutralTroopOverrides[target.id] = target.neutralTroops;
+                }
 
                 retreatSurvivors = Math.floor(myTroops * RETREAT_RECOVERY_PCT / 100);
                 if (retreatSurvivors > 0) {
@@ -2039,10 +2192,9 @@
             if (!won) renderActiveMarches();
 
             // Buff breakdown shown in the battle log as plain numbers (not
-            // percentages), split by role so a future PvP defender's own
-            // buffs already have somewhere to show up - today the target is
-            // always a skill-less neutral island, so its "defender" buffs
-            // are always 0, but the attacker's are real.
+            // percentages), split by role so a bot defender's own buffs
+            // already have somewhere to show up (0 for now - bots don't
+            // have equipment/skills yet, just their level-based defense).
             addCombatLogEntry({
                 type: 'attack',
                 sourceId: attack.sourceId,
@@ -2058,12 +2210,13 @@
                 defenseGoldRate: 0,
                 defenderCasualties,
                 retreatSurvivors,
+                defenderName: targetOwner ? botById[targetOwner].name : null,
                 won,
                 remaining
             });
 
             flashHint((won
-                ? 'Sieg bei Insel #' + (target.id + 1) + '! ' + remaining + ' Truppen übrig.'
+                ? 'Sieg bei Insel #' + (target.id + 1) + (targetOwner ? ' gegen ' + botById[targetOwner].name : '') + '! ' + remaining + ' Truppen übrig.'
                 : 'Niederlage bei Insel #' + (target.id + 1) + ' - ' + retreatSurvivors + ' Truppen fliehen zurück.'), 4000);
         }
 
@@ -2083,6 +2236,151 @@
             flashHint(retreat.troops + ' geflohene Truppen bei Insel #' + (target.id + 1) + ' angekommen.', 3000);
         }
 
+        // --- Bot AI ---------------------------------------------------
+        // A bot attack that wins takes the target for that bot (clearing
+        // whoever owned it before, including the player); a bot attack
+        // that loses damages the defender the same way a player's failed
+        // attack does. Bots have no shield/skills, so no loss-reduction and
+        // no retreat survivors. Only logged/announced to the player when
+        // the player's own territory is the one being fought over - bot-
+        // vs-bot and bot-vs-neutral fights resolve silently so the log
+        // doesn't fill up with battles that have nothing to do with you.
+        const BOT_GOLD_PER_KILL_RATE = 0.3;
+        function resolveBotAttack(attack) {
+            const bot = botById[attack.attackerBotId];
+            const source = islandById[attack.sourceId];
+            const target = islandById[attack.targetId];
+            if (!bot || !source || !target) return;
+
+            const myTroops = attack.rawTroops;
+            const targetOwner = islandOwnerOf(target.id);
+            const originalEnemyTroops = effectiveTroops(target);
+            const originalEnemyDefense = effectiveDefense(target);
+            const totalStrength = originalEnemyTroops + originalEnemyDefense;
+            const won = myTroops > totalStrength;
+            const playerInvolved = targetOwner === 'player';
+
+            if (won) {
+                if (targetOwner) clearIslandOwner(target.id);
+                islandTroops[target.id] = Math.max(0, myTroops - originalEnemyDefense);
+                botOwnedIslands[bot.id].add(target.id);
+                islandLevels[target.id] = 1;
+                botCoins[bot.id] += Math.round(totalStrength * BOT_GOLD_PER_KILL_RATE);
+                if (target.type === 'temple' || target.type === 'megaTemple') {
+                    templeHoldSince[target.id] = Date.now();
+                }
+            } else {
+                const defenderCasualties = Math.min(originalEnemyTroops, myTroops);
+                if (targetOwner) {
+                    islandTroops[target.id] = Math.max(0, (islandTroops[target.id] || 0) - defenderCasualties);
+                } else {
+                    target.neutralTroops = originalEnemyTroops - defenderCasualties;
+                    neutralTroopOverrides[target.id] = target.neutralTroops;
+                }
+            }
+            scoutedIslands.add(target.id);
+            saveGame();
+            updateHud();
+
+            if (playerInvolved) {
+                addCombatLogEntry({
+                    type: 'botAttack',
+                    botName: bot.name,
+                    targetId: target.id,
+                    myTroops,
+                    enemyTroops: originalEnemyTroops,
+                    enemyDefense: originalEnemyDefense,
+                    won
+                });
+                flashHint((won
+                    ? bot.name + ' hat deine Insel #' + (target.id + 1) + ' erobert!'
+                    : 'Verteidigung erfolgreich - ' + bot.name + ' bei Insel #' + (target.id + 1) + ' zurückgeschlagen.'), 5000);
+                renderActiveMarches();
+                if (popup.style.display === 'block' && popupIslandId === target.id) renderPopup();
+            }
+        }
+
+        // Precomputed once (landmasses never change): which islands sit on
+        // a given landmass, and which landmasses are directly reachable
+        // from it (itself plus every bridge-connected neighbor) - lets bot
+        // AI scan only the handful of landmasses actually in reach instead
+        // of every island on the whole map, every tick, per bot.
+        const islandsByLandmass = {};
+        for (const isl of islands) {
+            (islandsByLandmass[isl.landmassId] = islandsByLandmass[isl.landmassId] || []).push(isl);
+        }
+        const reachableLandmassIds = {};
+        for (const lm of landmasses) {
+            const ids = [lm.id];
+            for (const br of bridges) {
+                if (br.a === lm.id) ids.push(br.b);
+                else if (br.b === lm.id) ids.push(br.a);
+            }
+            reachableLandmassIds[lm.id] = ids;
+        }
+
+        // "Thinks carefully": only ever attacks with a comfortable troop
+        // advantage (never a coin-flip), and always picks whichever
+        // reachable target gives it the biggest safety margin rather than
+        // just the first one found. With nothing worth attacking, it saves
+        // up and upgrades its weakest base instead.
+        const BOT_ATTACK_SAFETY_MARGIN = 1.15;
+        const BOT_MIN_GARRISON_TO_ATTACK = 10;
+        function botThink(bot) {
+            const owned = botOwnedIslands[bot.id];
+            if (!owned || owned.size === 0) return;
+
+            let bestSourceId = null, bestTargetId = null, bestScore = -Infinity;
+            for (const sourceId of owned) {
+                const troopsHere = islandTroops[sourceId] || 0;
+                if (troopsHere < BOT_MIN_GARRISON_TO_ATTACK) continue;
+                const source = islandById[sourceId];
+                for (const lmId of reachableLandmassIds[source.landmassId]) {
+                    for (const target of islandsByLandmass[lmId] || []) {
+                        if (owned.has(target.id)) continue;
+                        const totalStrength = effectiveTroops(target) + effectiveDefense(target);
+                        if (troopsHere < totalStrength * BOT_ATTACK_SAFETY_MARGIN) continue;
+                        const score = troopsHere - totalStrength;
+                        if (score > bestScore) {
+                            bestScore = score;
+                            bestSourceId = sourceId;
+                            bestTargetId = target.id;
+                        }
+                    }
+                }
+            }
+
+            if (bestSourceId !== null) {
+                launchAttack(bestSourceId, bestTargetId, bot.id);
+            } else {
+                botConsiderUpgrade(bot);
+            }
+        }
+
+        function botConsiderUpgrade(bot) {
+            const owned = [...botOwnedIslands[bot.id]];
+            if (owned.length === 0) return;
+            let weakestId = owned[0];
+            let weakestLevel = islandLevels[weakestId] || 1;
+            for (const id of owned) {
+                const lvl = islandLevels[id] || 1;
+                if (lvl < weakestLevel) { weakestId = id; weakestLevel = lvl; }
+            }
+            const cost = upgradeCost(weakestLevel);
+            if (botCoins[bot.id] >= cost) {
+                botCoins[bot.id] -= cost;
+                islandLevels[weakestId] = weakestLevel + 1;
+                saveGame();
+            }
+        }
+
+        const BOT_TICK_MS = 9000;
+        function runBotTick() {
+            for (const bot of BOT_DEFS) botThink(bot);
+            setTimeout(runBotTick, BOT_TICK_MS);
+        }
+        setTimeout(runBotTick, BOT_TICK_MS);
+
         // Checks every second whether any in-flight attack or troop transfer
         // has arrived
         setInterval(() => {
@@ -2091,7 +2389,10 @@
                 const dueAttacks = pendingAttacks.filter(a => a.resolveAt <= now);
                 if (dueAttacks.length > 0) {
                     pendingAttacks = pendingAttacks.filter(a => a.resolveAt > now);
-                    for (const attack of dueAttacks) resolveAttack(attack);
+                    for (const attack of dueAttacks) {
+                        if (attack.attackerBotId) resolveBotAttack(attack);
+                        else resolveAttack(attack);
+                    }
                 }
             }
             if (pendingSends.length > 0) {
@@ -2229,7 +2530,7 @@
             const avatarRing = document.getElementById('pAvatarRing');
             if (avatarRing) avatarRing.style.setProperty('--progress', progressPct);
 
-            const activeCount = pendingAttacks.length + pendingSends.length + pendingScouts.length + pendingRetreats.length;
+            const activeCount = playerRelevantAttackCount() + pendingSends.length + pendingScouts.length + pendingRetreats.length;
             profileStats.innerHTML =
                 '<div class="statRow"><span>Skillpunkte</span><b>' + skillPoints + '</b></div>' +
                 '<div class="statRow"><span>Gems</span><b>' + Math.floor(gems) + '</b></div>' +
@@ -2336,7 +2637,8 @@
         const profileTabs = {
             info: { btn: document.getElementById('tabBtnInfo'), panel: document.getElementById('tabInfo') },
             equip: { btn: document.getElementById('tabBtnEquip'), panel: document.getElementById('tabEquip') },
-            skills: { btn: document.getElementById('tabBtnSkills'), panel: document.getElementById('tabSkills') }
+            skills: { btn: document.getElementById('tabBtnSkills'), panel: document.getElementById('tabSkills') },
+            rank: { btn: document.getElementById('tabBtnRank'), panel: document.getElementById('tabRank') }
         };
         function showProfileTab(name) {
             for (const key of Object.keys(profileTabs)) {
@@ -2346,10 +2648,39 @@
             }
             if (name === 'equip') renderEquipGrid();
             if (name === 'skills') renderSkillGrid();
+            if (name === 'rank') renderRankList();
         }
         profileTabs.info.btn.addEventListener('click', () => showProfileTab('info'));
         profileTabs.equip.btn.addEventListener('click', () => showProfileTab('equip'));
         profileTabs.skills.btn.addEventListener('click', () => showProfileTab('skills'));
+        profileTabs.rank.btn.addEventListener('click', () => showProfileTab('rank'));
+
+        // Rangliste: player + every bot, ranked by how many bases they
+        // currently hold (the same "territory" number the Kingdom card
+        // already shows for the player).
+        const rankListEl = document.getElementById('rankList');
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+        function renderRankList() {
+            const entries = [
+                { id: 'player', name: escapeHtml(profileName.value) || 'Du', color: '#2f7fd6', score: ownedIslands.size, isPlayer: true }
+            ];
+            for (const bot of BOT_DEFS) {
+                entries.push({ id: bot.id, name: bot.name, color: bot.color, score: botOwnedIslands[bot.id].size, isPlayer: false });
+            }
+            entries.sort((a, b) => b.score - a.score);
+            rankListEl.innerHTML = entries.map((entry, i) =>
+                '<div class="rankRow' + (entry.isPlayer ? ' isPlayer' : '') + '">' +
+                    '<span class="rankPos">#' + (i + 1) + '</span>' +
+                    '<span class="rankDot" style="background:' + entry.color + '"></span>' +
+                    '<span class="rankName">' + entry.name + (entry.isPlayer ? ' (Du)' : '') + '</span>' +
+                    '<span class="rankScore">' + entry.score + ' Basen</span>' +
+                '</div>'
+            ).join('');
+        }
 
         profileBtn.addEventListener('click', () => {
             closeAllPopups();
@@ -2379,14 +2710,38 @@
             return 'vor ' + Math.floor(minutes / 60) + 'h';
         }
 
+        // Pending attacks worth showing to the player: their own, plus any
+        // bot attack aimed at their own territory - not bot-vs-bot or bot-
+        // vs-neutral fighting elsewhere on the map.
+        function playerRelevantAttackCount() {
+            let count = 0;
+            for (const attack of pendingAttacks) {
+                if (!attack.attackerBotId || islandOwnerOf(attack.targetId) === 'player') count++;
+            }
+            return count;
+        }
+
         function renderActiveMarches() {
             const rows = [];
+            let relevantAttackCount = 0;
             for (const attack of pendingAttacks) {
                 const secondsLeft = Math.max(0, Math.ceil((attack.resolveAt - Date.now()) / 1000));
-                rows.push(
-                    '<div class="logRow">Deine Basis #' + (attack.sourceId + 1) +
-                    ' greift Basis #' + (attack.targetId + 1) + ' an - noch ' + secondsLeft + 's</div>'
-                );
+                if (!attack.attackerBotId) {
+                    relevantAttackCount++;
+                    rows.push(
+                        '<div class="logRow">Deine Basis #' + (attack.sourceId + 1) +
+                        ' greift Basis #' + (attack.targetId + 1) + ' an - noch ' + secondsLeft + 's</div>'
+                    );
+                } else if (islandOwnerOf(attack.targetId) === 'player') {
+                    // A bot marching on the player's own territory is worth
+                    // a warning - a bot attacking a neutral or another bot
+                    // isn't the player's business and stays out of this list.
+                    relevantAttackCount++;
+                    rows.push(
+                        '<div class="logRow loss">' + botById[attack.attackerBotId].name +
+                        ' greift deine Basis #' + (attack.targetId + 1) + ' an - noch ' + secondsLeft + 's</div>'
+                    );
+                }
             }
             for (const send of pendingSends) {
                 const secondsLeft = Math.max(0, Math.ceil((send.resolveAt - Date.now()) / 1000));
@@ -2413,7 +2768,7 @@
                 ? rows.join('')
                 : '<div class="logEmpty">Gerade nichts unterwegs.</div>';
 
-            const total = pendingAttacks.length + pendingSends.length + pendingScouts.length + pendingRetreats.length;
+            const total = relevantAttackCount + pendingSends.length + pendingScouts.length + pendingRetreats.length;
             battleLogBadge.textContent = total;
             battleLogBadge.style.display = total > 0 ? 'block' : 'none';
         }
@@ -2436,6 +2791,14 @@
                 if (entry.type === 'retreat') {
                     return '<div class="logRow retreat">Insel #' + (entry.fromId + 1) + ' → Insel #' + (entry.toId + 1) +
                         ': ' + entry.troops + ' geflohene Truppen zurückgekehrt - ' + timeAgoLabel(entry.at) + '</div>';
+                }
+                if (entry.type === 'botAttack') {
+                    const resultText = entry.won
+                        ? entry.botName + ' hat die Insel erobert!'
+                        : 'Erfolgreich verteidigt - ' + entry.botName + ' zurückgeschlagen.';
+                    return '<div class="logRow ' + (entry.won ? 'loss' : 'win') + '">' + entry.botName +
+                        ' greift deine Insel #' + (entry.targetId + 1) + ' an (' + entry.myTroops + ' vs ' + (entry.enemyTroops + entry.enemyDefense) + '): ' +
+                        resultText + ' - ' + timeAgoLabel(entry.at) + '</div>';
                 }
                 // Legacy entries saved before this format existed - fall back
                 // to the old one-liner instead of showing "undefined".
@@ -2463,7 +2826,7 @@
                         '</div>' +
                         '<div class="logVsDivider">vs</div>' +
                         '<div class="logSide">' +
-                            '<div class="logSideLabel">Verteidiger</div>' +
+                            '<div class="logSideLabel">Verteidiger' + (entry.defenderName ? ' • ' + entry.defenderName : '') + '</div>' +
                             '<div class="logLine"><span>Truppen</span><span>' + entry.enemyTroops + '</span></div>' +
                             '<div class="logLine"><span>Verteidigung</span><span>' + entry.enemyDefense + '</span></div>' +
                             '<div class="logLine buff"><span>Verteidigung-Buff</span><span>+' + entry.defenseBuff + '</span></div>' +
@@ -2540,6 +2903,22 @@
                         islandTroops[ownedId] += Math.round(TEMPLE_TROOP_BONUS_PER_TICK * mult) * ticks;
                     }
                 }
+                // Bots produce too - same base rates as the player, just
+                // without any equipment/skill multiplier since they don't
+                // have gear of their own.
+                for (const bot of BOT_DEFS) {
+                    for (const ownedId of botOwnedIslands[bot.id]) {
+                        const level = islandLevels[ownedId] || 1;
+                        botCoins[bot.id] += Math.round(COINS_PER_LEVEL * level) * ticks;
+                        islandTroops[ownedId] = (islandTroops[ownedId] || 0) + Math.round(TROOPS_PER_LEVEL * level) * ticks;
+                        const isl = islandById[ownedId];
+                        if (isl && (isl.type === 'temple' || isl.type === 'megaTemple')) {
+                            const mult = (isl.type === 'megaTemple' ? MEGA_TEMPLE_MULT : 1) * templeHoldMultiplier(ownedId);
+                            botCoins[bot.id] += Math.round(TEMPLE_COIN_BONUS_PER_TICK * mult) * ticks;
+                            islandTroops[ownedId] += Math.round(TEMPLE_TROOP_BONUS_PER_TICK * mult) * ticks;
+                        }
+                    }
+                }
                 updateHud();
                 saveGame();
                 // Keep any currently-open popup/tab in sync with production -
@@ -2550,6 +2929,7 @@
                 if (profilePopup.style.display === 'block') {
                     renderProfile();
                     renderEquipGrid();
+                    if (profileTabs.rank.panel.classList.contains('active')) renderRankList();
                 }
             }
             setTimeout(runProductionTick, Math.max(50, nextProductionTickAt - Date.now()));
@@ -2737,20 +3117,24 @@
                     continue;
                 }
 
-                const isOwned = ownedIslands.has(island.id);
+                const owner = islandOwnerOf(island.id);
+                const isOwned = owner === 'player';
+                const ownerBot = owner && owner !== 'player' ? botById[owner] : null;
                 const territoryView = mapState.zoom < TERRITORY_VIEW_ZOOM;
                 const isTemple = island.type === 'temple' || island.type === 'megaTemple';
                 const isMegaTemple = island.type === 'megaTemple';
                 // The island itself is always green land; only the building
                 // on top shows who controls it (grey/purple = unclaimed,
-                // blue = your tower, gold = your temple).
+                // blue = your tower, gold = your temple, a bot's own color
+                // for anything they hold).
                 let towerColor;
                 if (isTemple) {
                     towerColor = isOwned
                         ? (isMegaTemple ? '#ffe066' : '#ffcb3d')
+                        : ownerBot ? ownerBot.color
                         : (isMegaTemple ? '#8b6f1f' : '#6b5b95');
                 } else {
-                    towerColor = isOwned ? '#2f7fd6' : '#8a8a8a';
+                    towerColor = isOwned ? '#2f7fd6' : ownerBot ? ownerBot.color : '#8a8a8a';
                 }
                 drawIslandIcon(island, towerColor);
 
@@ -2798,14 +3182,14 @@
 
                 ctx.fillStyle = '#ffffff';
                 ctx.textAlign = 'center';
-                if (isOwned) {
+                if (isOwned || (ownerBot && scoutedIslands.has(island.id))) {
                     ctx.font = '56px system-ui, sans-serif';
                     ctx.textBaseline = 'bottom';
                     ctx.fillText('Lvl ' + (islandLevels[island.id] || 1), island.x, island.y);
                     ctx.font = '44px system-ui, sans-serif';
                     ctx.textBaseline = 'top';
                     ctx.fillText(String(islandTroops[island.id] || 0) + ' Truppen', island.x, island.y + 4);
-                } else if (scoutedIslands.has(island.id)) {
+                } else if (!ownerBot && scoutedIslands.has(island.id)) {
                     ctx.font = '44px system-ui, sans-serif';
                     ctx.textBaseline = 'bottom';
                     ctx.fillText(island.neutralTroops + ' Truppen', island.x, island.y);
@@ -3011,6 +3395,8 @@
             if (!island) return;
             hideAllButtons();
             const isOwned = ownedIslands.has(island.id);
+            const owner = islandOwnerOf(island.id);
+            const ownerBot = owner && owner !== 'player' ? botById[owner] : null;
             const isTemple = island.type === 'temple' || island.type === 'megaTemple';
 
             if (isOwned) {
@@ -3049,13 +3435,15 @@
                     const rawTroops = previewSourceId !== null ? (islandTroops[previewSourceId] || 0) : 0;
                     const atkBonus = attackFlatBonus();
                     const myTroops = rawTroops + atkBonus;
-                    const total = island.neutralTroops + island.neutralDefense;
+                    const enemyTroops = effectiveTroops(island);
+                    const enemyDefense = effectiveDefense(island);
+                    const total = enemyTroops + enemyDefense;
                     popupTitle.textContent = islandTitle(island) + ' angreifen?';
                     popupStats.innerHTML =
                         'Meine Truppen: ' + myTroops + (atkBonus > 0 ? ' (' + rawTroops + ' + ' + atkBonus + ' Angriffsbonus)' : '') +
                         ' (Insel #' + (previewSourceId + 1) + ')<br>' +
-                        'Gegner Truppen: ' + (scouted ? island.neutralTroops : '?') + '<br>' +
-                        'Gegner Verteidigung: ' + (scouted ? island.neutralDefense : '?') +
+                        'Gegner Truppen: ' + (scouted ? enemyTroops : '?') + '<br>' +
+                        'Gegner Verteidigung: ' + (scouted ? enemyDefense : '?') +
                         (scouted ? ' <span style="color:#7f93bd">(zusammen ' + total + ')</span>' : '');
                     attackBtn.textContent = 'Angreifen';
                     attackBtn.style.display = 'inline-block';
@@ -3063,9 +3451,9 @@
                     backBtn.style.display = 'inline-block';
                 } else {
                     const scoutEnRoute = pendingScouts.some(s => s.targetId === island.id);
-                    popupTitle.textContent = islandTitle(island) + ' (unbesetzt)';
+                    popupTitle.textContent = islandTitle(island) + (ownerBot ? ' (' + ownerBot.name + ')' : ' (unbesetzt)');
                     popupStats.innerHTML = (scouted
-                        ? 'Truppen: ' + island.neutralTroops + '<br>Verteidigung: ' + island.neutralDefense
+                        ? 'Truppen: ' + effectiveTroops(island) + '<br>Verteidigung: ' + effectiveDefense(island)
                         : 'Truppen: unbekannt - erst sp&auml;hen<br>Verteidigung: unbekannt - erst sp&auml;hen') +
                         (isTemple ? '<br><span style="color:#ffcb3d">&#127963;&#65039; Tempel: gibt Produktion, Gems &amp; Gold, sobald erobert</span>' : '') +
                         (scoutEnRoute ? '<br><span style="color:#ffd23f">Kundschafter bereits unterwegs...</span>' : '');
