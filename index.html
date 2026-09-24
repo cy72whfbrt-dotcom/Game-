@@ -3369,6 +3369,16 @@
         // (with exactly 3 matching tiles) combining.
         function renderChestEquipment() {
             chestPointsValue.textContent = upgradePoints;
+
+            const unequippedCount = Object.values(inventory).filter(it => equippedItems[it.slot] !== it.id).length;
+            // Nothing to select when the inventory's empty - don't show a
+            // select mode (and its own separate "Fertig") with nothing to
+            // act on.
+            if (unequippedCount === 0) {
+                chestSelectMode = false;
+                chestSelectedIds.clear();
+            }
+            chestSelectToggleBtn.style.display = unequippedCount === 0 ? 'none' : 'inline-block';
             chestSelectToggleBtn.classList.toggle('active', chestSelectMode);
             chestSelectToggleBtn.textContent = chestSelectMode ? 'Fertig' : 'Auswählen';
             chestSelectionBar.style.display = chestSelectMode ? 'block' : 'none';
@@ -3638,6 +3648,8 @@
         });
         profileCloseBtn.addEventListener('click', () => {
             profilePopup.style.display = 'none';
+            chestSelectMode = false;
+            chestSelectedIds.clear();
         });
 
         // Battle log popup: which of your troops are marching right now,
@@ -4642,6 +4654,8 @@
             shopPopup.style.display = 'none';
             chestItemPopup.style.display = 'none';
             chestDetailItemId = null;
+            chestSelectMode = false;
+            chestSelectedIds.clear();
         }
 
         function openIslandPopup(island) {
