@@ -1245,23 +1245,25 @@
         // Low enough that pinching/scrolling all the way out fits the WHOLE
         // map (hub + every outer island) on screen even on a narrow phone
         // viewport, not just a chunk of it.
-        const MIN_ZOOM = 0.0027;
+        const MIN_ZOOM = 0.0008;
         const MAX_ZOOM = 4;
         // Below this zoom, owned islands switch from green to blue so a big
         // territory reads clearly from far above the map.
         const TERRITORY_VIEW_ZOOM = 0.06;
 
-        // Layout: one important central landmass (the hub, much bigger than
-        // everything else) plus a ring of big outer landmasses packed in
-        // tight around it - close enough that only a short "mini bridge"
-        // spans the water gap to each one. Crossing to a different landmass
-        // is only possible over that bridge, not "any tower anywhere" like
-        // before. Found via a search against the actual coastline generator
-        // for the tightest packing that still has zero overlap.
-        const CENTER_LANDMASS_RADIUS = 13500;
-        const OUTER_LANDMASS_RADIUS = 13500;
-        const OUTER_LANDMASS_COUNT = 8;
-        const RING_DISTANCE = 39040; // center-to-center, hub to each outer island
+        // Layout: a honeycomb - the important central landmass (the hub) at
+        // the middle of a hex grid, with rings of same-size landmasses
+        // radiating outward around it (like Million Lord: lots of islands
+        // packed tightly edge to edge). Every hex-ADJACENT pair of
+        // landmasses gets its own short "mini bridge", not just hub-to-
+        // outer - so expanding means hopping from island to island outward
+        // through whichever neighbors you've bridged/captured, not
+        // attacking anything anywhere. Spacing found via a search against
+        // the actual coastline generator for the tightest hex packing with
+        // zero overlap.
+        const LANDMASS_RADIUS = 20000; // every landmass is this same size
+        const HEX_RING_COUNT = 3; // hub + 3 rings = 1+6+12+18 = 37 landmasses
+        const HEX_SPACING = 50800; // distance between adjacent hex cell centers
         const TOWER_GRID_SIZE = 5; // 5x5 towers per landmass
         const TOWER_SPACING_RATIO = 1600 / 5200; // keep the old island/tower proportions
         const ISLAND_RADIUS = 220; // tower footprint
@@ -1417,58 +1419,80 @@
             return level * UPGRADE_BASE_COST;
         }
 
+        // Hex grid helpers (axial coordinates, pointy-top). hexRing(n) walks
+        // the n-th ring of cells around the origin (n=0 is just the origin
+        // itself); axialToPixel converts a cell to world coordinates with
+        // every direct neighbor exactly HEX_SPACING apart.
+        const HEX_DIRS = [{ q: 1, r: 0 }, { q: 1, r: -1 }, { q: 0, r: -1 }, { q: -1, r: 0 }, { q: -1, r: 1 }, { q: 0, r: 1 }];
+        function hexRing(radius) {
+            if (radius === 0) return [{ q: 0, r: 0 }];
+            const results = [];
+            let cur = { q: HEX_DIRS[4].q * radius, r: HEX_DIRS[4].r * radius };
+            for (let side = 0; side < 6; side++) {
+                for (let step = 0; step < radius; step++) {
+                    results.push(cur);
+                    cur = { q: cur.q + HEX_DIRS[side].q, r: cur.r + HEX_DIRS[side].r };
+                }
+            }
+            return results;
+        }
+        function axialToPixel(q, r) {
+            return { x: HEX_SPACING * (q + r / 2), y: HEX_SPACING * r * (Math.sqrt(3) / 2) };
+        }
+
         // The big islands themselves - just background land, drawn as one
         // organic coastline each, no ownership state of their own. Landmass
-        // 0 is always the center/hub; every other landmass sits in a ring
+        // 0 is always the center/hub (hex ring 0); every other landmass
+        // sits somewhere in the honeycomb of rings radiating outward
         // around it.
         const landmasses = [];
         {
-            const shapeRand0 = mulberry32(1337);
-            const shape0 = generateIslandShape(0, 0, CENTER_LANDMASS_RADIUS, shapeRand0);
-            let shapeMaxR0 = 0;
-            for (const p of shape0) shapeMaxR0 = Math.max(shapeMaxR0, Math.hypot(p.x, p.y));
-            landmasses.push({ id: 0, x: 0, y: 0, radius: CENTER_LANDMASS_RADIUS, shape: shape0, shapeMaxR: shapeMaxR0, isCenter: true });
-
-            for (let i = 0; i < OUTER_LANDMASS_COUNT; i++) {
-                const angle = (i / OUTER_LANDMASS_COUNT) * Math.PI * 2;
-                const x = Math.cos(angle) * RING_DISTANCE;
-                const y = Math.sin(angle) * RING_DISTANCE;
-                const lmId = i + 1;
-                // Distinct seed per landmass (large prime multiplier avoids
-                // correlated streams between adjacent ids) so every island
-                // gets a visibly different coastline
-                const shapeRand = mulberry32(1337 + lmId * 104729);
-                const shape = generateIslandShape(x, y, OUTER_LANDMASS_RADIUS, shapeRand);
-                let shapeMaxR = 0;
-                for (const p of shape) shapeMaxR = Math.max(shapeMaxR, Math.hypot(p.x - x, p.y - y));
-                landmasses.push({ id: lmId, x, y, radius: OUTER_LANDMASS_RADIUS, shape, shapeMaxR, isCenter: false });
+            let lmId = 0;
+            for (let ring = 0; ring <= HEX_RING_COUNT; ring++) {
+                for (const cell of hexRing(ring)) {
+                    const { x, y } = axialToPixel(cell.q, cell.r);
+                    // Distinct seed per landmass (large prime multiplier
+                    // avoids correlated streams between adjacent ids) so
+                    // every island gets a visibly different coastline
+                    const shapeRand = mulberry32(1337 + lmId * 104729);
+                    const shape = generateIslandShape(x, y, LANDMASS_RADIUS, shapeRand);
+                    let shapeMaxR = 0;
+                    for (const p of shape) shapeMaxR = Math.max(shapeMaxR, Math.hypot(p.x - x, p.y - y));
+                    landmasses.push({ id: lmId, q: cell.q, r: cell.r, x, y, radius: LANDMASS_RADIUS, shape, shapeMaxR, isCenter: ring === 0 });
+                    lmId++;
+                }
             }
         }
 
         // Bridges: the ONLY way to cross from one landmass to a different
-        // one - a hub-and-spoke topology where every outer landmass has
-        // exactly one bridge straight to the center. Anchored to each
-        // landmass's nearest actual coastline point (not just its center).
-        // Some coastline pairs land almost flush against each other (a
-        // near-zero gap) - stretched out to a minimum visible length here
-        // so the bridge always reads as a short straight line instead of
+        // one - every hex-ADJACENT pair of landmasses gets its own short
+        // bridge (not just hub-to-outer), so the honeycomb is a proper mesh
+        // you expand outward through island by island. Anchored to each
+        // landmass's nearest actual coastline point to its neighbor. Some
+        // coastline pairs land almost flush against each other (a near-zero
+        // gap) - stretched out to a minimum visible length here so the
+        // bridge always reads as a short straight line instead of
         // collapsing into a round blob where its two line-cap ends overlap.
         const MIN_BRIDGE_VISUAL_LENGTH = 700;
         const bridges = [];
-        for (const lm of landmasses) {
-            if (lm.isCenter) continue;
-            const hub = landmasses[0];
-            let p1 = closestPolygonPoint(hub.shape, lm.x, lm.y);
-            let p2 = closestPolygonPoint(lm.shape, hub.x, hub.y);
-            const dx = p2.x - p1.x, dy = p2.y - p1.y;
-            const dist = Math.hypot(dx, dy);
-            if (dist > 0 && dist < MIN_BRIDGE_VISUAL_LENGTH) {
-                const ux = dx / dist, uy = dy / dist;
-                const extra = (MIN_BRIDGE_VISUAL_LENGTH - dist) / 2;
-                p1 = { x: p1.x - ux * extra, y: p1.y - uy * extra };
-                p2 = { x: p2.x + ux * extra, y: p2.y + uy * extra };
+        for (let i = 0; i < landmasses.length; i++) {
+            for (let j = i + 1; j < landmasses.length; j++) {
+                const a = landmasses[i], b = landmasses[j];
+                const dq = a.q - b.q, dr = a.r - b.r;
+                const isAdjacent = HEX_DIRS.some(d => (d.q === dq && d.r === dr) || (d.q === -dq && d.r === -dr));
+                if (!isAdjacent) continue;
+                let p1 = closestPolygonPoint(a.shape, b.x, b.y);
+                let p2 = closestPolygonPoint(b.shape, a.x, a.y);
+                const dx = p2.x - p1.x, dy = p2.y - p1.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist > 0 && dist < MIN_BRIDGE_VISUAL_LENGTH) {
+                    const ux = dx / dist, uy = dy / dist;
+                    const extra = (MIN_BRIDGE_VISUAL_LENGTH - dist) / 2;
+                    p1 = { x: p1.x - ux * extra, y: p1.y - uy * extra };
+                    p2 = { x: p2.x + ux * extra, y: p2.y + uy * extra };
+                }
+                bridges.push({ a: a.id, b: b.id, x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y });
             }
-            bridges.push({ a: hub.id, b: lm.id, x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y });
         }
         function landmassesConnected(a, b) {
             if (a === b) return true;
