@@ -1314,9 +1314,11 @@
         // viewport, not just a chunk of it.
         const MIN_ZOOM = 0.0008;
         const MAX_ZOOM = 4;
-        // Below this zoom, owned islands switch from green to blue so a big
-        // territory reads clearly from far above the map.
-        const TERRITORY_VIEW_ZOOM = 0.06;
+        // Below this zoom, banners/labels disappear in favor of plain
+        // colored blocks so a big territory reads clearly from far above
+        // the map. Kept low so banners stay readable through most of the
+        // zoom-out range instead of vanishing almost immediately.
+        const TERRITORY_VIEW_ZOOM = 0.018;
 
         // Layout: a honeycomb - the important central landmass (the hub) at
         // the middle of a hex grid, with rings of same-size landmasses
@@ -3446,20 +3448,19 @@
                         troopsLabel: isScouted ? '⚔ ' + (islandTroops[island.id] || 0) : '⚔ ?',
                         level: islandLevels[island.id] || 1
                     });
-                } else if (isScouted) {
-                    ctx.fillStyle = '#ffffff';
-                    ctx.textAlign = 'center';
-                    ctx.font = '64px system-ui, sans-serif';
-                    ctx.textBaseline = 'bottom';
-                    ctx.fillText(island.neutralTroops + ' Truppen', island.x, island.y);
-                    ctx.textBaseline = 'top';
-                    ctx.fillText(island.neutralDefense + ' Verteidigung', island.x, island.y + 4);
                 } else {
-                    ctx.fillStyle = '#ffffff';
-                    ctx.textAlign = 'center';
-                    ctx.font = '80px system-ui, sans-serif';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText('?', island.x, island.y);
+                    // Unclaimed base - still gets the same banner treatment,
+                    // just in a neutral grey, and its troops/defense stay
+                    // masked until it's been scouted.
+                    drawBaseBanner(island, {
+                        barColor: 'rgba(120, 120, 120, 0.92)',
+                        barBorderColor: '#d4d4d4',
+                        name: isTemple ? (isMegaTemple ? 'Mega-Tempel' : 'Tempel') : 'Neutral',
+                        troopsLabel: isScouted
+                            ? '⚔ ' + island.neutralTroops + ' · 🛡 ' + island.neutralDefense
+                            : '⚔ ? · 🛡 ?',
+                        level: islandLevels[island.id] || 1
+                    });
                 }
             }
 
