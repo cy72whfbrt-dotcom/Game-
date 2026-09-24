@@ -3026,31 +3026,16 @@
             if (ms) hintResetTimer = setTimeout(() => { hintEl.textContent = defaultHint; }, ms);
         }
 
-        // Convex hull (monotone chain) - used to draw one continuous
-        // territory border around all owned islands instead of leaving
-        // them as disconnected colored squares.
-        function convexHull(points) {
-            const pts = points.slice().sort((a, b) => a.x - b.x || a.y - b.y);
-            const n = pts.length;
-            if (n < 3) return pts;
-            const cross = (o, a, b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
-            const lower = [];
-            for (const p of pts) {
-                while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop();
-                lower.push(p);
-            }
-            const upper = [];
-            for (let i = n - 1; i >= 0; i--) {
-                const p = pts[i];
-                while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop();
-                upper.push(p);
-            }
-            lower.pop();
-            upper.pop();
-            return lower.concat(upper);
-        }
-
-        const TERRITORY_PADDING = 160;
+        // A convex/concave hull spanning every owned island used to draw
+        // ONE connected border around the whole territory - but with bases
+        // scattered sparsely across a landmass, any two owned islands with
+        // empty or neutral ground between them get that ground swept into
+        // the hull's interior too, making unowned bases look like they're
+        // "inside your border". Instead, each owned island gets its own
+        // small halo circle - nothing that isn't actually owned is ever
+        // enclosed, since the halo radius stays well under the minimum
+        // distance the map already guarantees between any two towers.
+        const TERRITORY_PADDING = 700;
 
         function hexToRgba(hex, alpha) {
             const r = parseInt(hex.slice(1, 3), 16);
@@ -3058,34 +3043,35 @@
             const b = parseInt(hex.slice(5, 7), 16);
             return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
         }
-        // Draws one player's/bot's territory outline (a convex hull around
-        // all their bases) - called once for the player (blue, as before)
+        // Draws one player's/bot's territory halos (a small circle around
+        // each owned base) - called once for the player (blue, as before)
         // and once per bot in their own color, so zooming out shows exactly
-        // whose territory is whose at a glance.
+        // whose territory is whose at a glance, without ever implying
+        // ownership over bases that are actually still neutral.
         function drawTerritoryBorder(ownedSet, fillColor, strokeColor) {
             if (ownedSet.size === 0) return;
-            const points = [];
+
+            ctx.beginPath();
             for (const oid of ownedSet) {
                 const isl = islandById[oid];
                 if (!isl) continue;
-                const pad = isl.radius + TERRITORY_PADDING;
-                points.push({ x: isl.x - pad, y: isl.y - pad });
-                points.push({ x: isl.x + pad, y: isl.y - pad });
-                points.push({ x: isl.x + pad, y: isl.y + pad });
-                points.push({ x: isl.x - pad, y: isl.y + pad });
+                const r = isl.radius + TERRITORY_PADDING;
+                ctx.moveTo(isl.x + r, isl.y);
+                ctx.arc(isl.x, isl.y, r, 0, Math.PI * 2);
             }
-            const hull = convexHull(points);
-            if (hull.length < 3) return;
-
-            ctx.beginPath();
-            ctx.moveTo(hull[0].x, hull[0].y);
-            for (let i = 1; i < hull.length; i++) ctx.lineTo(hull[i].x, hull[i].y);
-            ctx.closePath();
             ctx.fillStyle = fillColor;
             ctx.fill();
-            ctx.strokeStyle = strokeColor;
-            ctx.lineWidth = 7 / mapState.zoom;
-            ctx.stroke();
+
+            for (const oid of ownedSet) {
+                const isl = islandById[oid];
+                if (!isl) continue;
+                const r = isl.radius + TERRITORY_PADDING;
+                ctx.beginPath();
+                ctx.arc(isl.x, isl.y, r, 0, Math.PI * 2);
+                ctx.strokeStyle = strokeColor;
+                ctx.lineWidth = 7 / mapState.zoom;
+                ctx.stroke();
+            }
         }
 
         let lastFrameTime = performance.now();
