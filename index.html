@@ -1094,6 +1094,65 @@
         #closeBtn:active, #backBtn:active {
             box-shadow: 0 1px 0 #10184a;
         }
+
+        #multiAttackBtn {
+            background: #8e44ad;
+            color: #fff;
+            box-shadow: 0 3px 0 #5f2e73;
+        }
+        #multiAttackBtn:active {
+            box-shadow: 0 1px 0 #5f2e73;
+        }
+
+        #multiAttackBar {
+            display: none;
+            position: fixed;
+            left: 50%;
+            bottom: 60px;
+            transform: translateX(-50%);
+            background: var(--bg);
+            border: 2px solid #8e44ad;
+            border-radius: 16px;
+            padding: 10px 14px;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, .4);
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            z-index: 15;
+            max-width: 92vw;
+        }
+        #multiAttackBar .label {
+            color: var(--text);
+            font: 700 13px system-ui, sans-serif;
+            text-align: center;
+        }
+        #multiAttackBar .row {
+            display: flex;
+            gap: 8px;
+        }
+        #multiAttackBar button {
+            font: inherit;
+            font-weight: 800;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .03em;
+            padding: 9px 14px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+        }
+        #multiAttackConfirmBtn {
+            background: #8e44ad;
+            color: #fff;
+        }
+        #multiAttackConfirmBtn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        #multiAttackCancelBtn {
+            background: var(--surface-alt);
+            color: var(--text);
+        }
     </style>
 </head>
 <body>
@@ -1109,6 +1168,13 @@
         <button id="mailBtn" title="Postfach">&#128238;</button>
     </div>
     <div id="hint">Ziehen zum Bewegen &middot; Zoomen mit Scroll/Pinch &middot; Insel antippen f&uuml;r Infos &amp; Aktionen</div>
+    <div id="multiAttackBar">
+        <div class="label" id="multiAttackLabel">0 / 10 Ziele ausgew&auml;hlt - Basen antippen</div>
+        <div class="row">
+            <button id="multiAttackConfirmBtn">Angriffe starten</button>
+            <button id="multiAttackCancelBtn">Abbrechen</button>
+        </div>
+    </div>
     <div id="profilePopup">
         <h3>Profil</h3>
         <div id="profileTabs">
@@ -1199,6 +1265,7 @@
             <button id="upgradeBtn">Aufwerten</button>
             <button id="sendBtn">Truppen verschicken</button>
             <button id="attackBtn">Angreifen</button>
+            <button id="multiAttackBtn">Multi-Angriff (1 &#128142;)</button>
             <button id="scoutBtn">Sp&auml;hen</button>
             <button id="confirmBtn">Best&auml;tigen</button>
             <button id="backBtn">Zur&uuml;ck</button>
@@ -3462,6 +3529,34 @@
                         island.radius * 2,
                         island.radius * 2
                     );
+                } else if (multiAttackMode && island.id === multiAttackSourceId) {
+                    ctx.strokeStyle = '#ffd23f';
+                    ctx.lineWidth = 10 / mapState.zoom;
+                    ctx.strokeRect(
+                        island.x - island.radius,
+                        island.y - island.radius,
+                        island.radius * 2,
+                        island.radius * 2
+                    );
+                } else if (multiAttackMode && multiAttackTargets.includes(island.id)) {
+                    ctx.strokeStyle = '#8e44ad';
+                    ctx.lineWidth = 10 / mapState.zoom;
+                    ctx.strokeRect(
+                        island.x - island.radius,
+                        island.y - island.radius,
+                        island.radius * 2,
+                        island.radius * 2
+                    );
+                } else if (multiAttackMode && multiAttackSourceId !== null &&
+                           landmassesConnected(island.landmassId, islandById[multiAttackSourceId].landmassId)) {
+                    ctx.strokeStyle = 'rgba(142, 68, 173, ' + blinkAlpha.toFixed(2) + ')';
+                    ctx.lineWidth = 8 / mapState.zoom;
+                    ctx.strokeRect(
+                        island.x - island.radius,
+                        island.y - island.radius,
+                        island.radius * 2,
+                        island.radius * 2
+                    );
                 }
 
                 // Label: level + garrisoned troops for owned islands, defense
@@ -3630,10 +3725,15 @@
         const upgradeBtn = document.getElementById('upgradeBtn');
         const sendBtn = document.getElementById('sendBtn');
         const attackBtn = document.getElementById('attackBtn');
+        const multiAttackBtn = document.getElementById('multiAttackBtn');
         const scoutBtn = document.getElementById('scoutBtn');
         const confirmBtn = document.getElementById('confirmBtn');
         const backBtn = document.getElementById('backBtn');
         const closeBtn = document.getElementById('closeBtn');
+        const multiAttackBar = document.getElementById('multiAttackBar');
+        const multiAttackLabel = document.getElementById('multiAttackLabel');
+        const multiAttackConfirmBtn = document.getElementById('multiAttackConfirmBtn');
+        const multiAttackCancelBtn = document.getElementById('multiAttackCancelBtn');
         let popupIslandId = null;
         // 'menu' lists the available actions for the tapped island; 'upgrade'
         // and 'preview' (attack) are the preview+confirm screens.
@@ -3679,10 +3779,76 @@
             upgradeBtn.style.display = 'none';
             sendBtn.style.display = 'none';
             attackBtn.style.display = 'none';
+            multiAttackBtn.style.display = 'none';
             scoutBtn.style.display = 'none';
             confirmBtn.style.display = 'none';
             backBtn.style.display = 'none';
         }
+
+        // Multi-Angriff: pick one of YOUR OWN bases, then tap up to 10
+        // enemy/neutral bases on the map to select them as targets, then
+        // confirm once to launch all of them at the same time (troops
+        // split evenly across the chosen targets). Costs 1 gem per use -
+        // only available on the player's own bases while this is being
+        // tested, never on bot bases.
+        const MULTI_ATTACK_MAX_TARGETS = 10;
+        const MULTI_ATTACK_GEM_COST = 1;
+        let multiAttackMode = false;
+        let multiAttackSourceId = null;
+        let multiAttackTargets = [];
+
+        function updateMultiAttackBar() {
+            multiAttackLabel.textContent = multiAttackTargets.length + ' / ' + MULTI_ATTACK_MAX_TARGETS + ' Ziele ausgewählt - Basen antippen';
+            multiAttackConfirmBtn.disabled = multiAttackTargets.length === 0;
+        }
+
+        function startMultiAttack(sourceId) {
+            multiAttackMode = true;
+            multiAttackSourceId = sourceId;
+            multiAttackTargets = [];
+            multiAttackBar.style.display = 'flex';
+            updateMultiAttackBar();
+            flashHint('Multi-Angriff: bis zu 10 gegnerische Basen antippen, dann "Angriffe starten".');
+        }
+
+        function cancelMultiAttack() {
+            multiAttackMode = false;
+            multiAttackSourceId = null;
+            multiAttackTargets = [];
+            multiAttackBar.style.display = 'none';
+            hintEl.textContent = defaultHint;
+        }
+
+        multiAttackCancelBtn.addEventListener('click', cancelMultiAttack);
+
+        multiAttackConfirmBtn.addEventListener('click', () => {
+            const sourceId = multiAttackSourceId;
+            const targets = multiAttackTargets.slice();
+            if (sourceId === null || targets.length === 0) return;
+            if (gems < MULTI_ATTACK_GEM_COST) {
+                flashHint('Nicht genug Gems für Multi-Angriff.', 3000);
+                return;
+            }
+            const available = islandTroops[sourceId] || 0;
+            if (available < targets.length) {
+                flashHint('Nicht genug Truppen, um so viele Ziele gleichzeitig anzugreifen.', 3000);
+                return;
+            }
+
+            gems -= MULTI_ATTACK_GEM_COST;
+            const perTarget = Math.floor(available / targets.length);
+            let remainder = available - perTarget * targets.length;
+            for (const targetId of targets) {
+                let troopsForThis = perTarget;
+                if (remainder > 0) { troopsForThis++; remainder--; }
+                launchAttack(sourceId, targetId, null, troopsForThis);
+            }
+            saveGame();
+            saveProgression();
+            updateHud();
+            flashHint(targets.length + ' Angriffe gleichzeitig gestartet.', 3000);
+            cancelMultiAttack();
+        });
 
         // Renders whichever screen (menu or the upgrade preview) is
         // currently active - never performs any game action itself.
@@ -3741,6 +3907,10 @@
                     upgradeBtn.style.display = 'inline-block';
                     sendBtn.style.display = 'inline-block';
                     sendBtn.disabled = troopsHere <= 0 || ownedIslands.size <= 1;
+                    // Testing only - multi-attack is a player-only feature,
+                    // bots never get it.
+                    multiAttackBtn.style.display = 'inline-block';
+                    multiAttackBtn.disabled = troopsHere <= 0 || gems < MULTI_ATTACK_GEM_COST;
                 }
             } else {
                 const scouted = scoutedIslands.has(island.id);
@@ -3811,6 +3981,14 @@
         upgradeBtn.addEventListener('click', () => {
             popupView = 'upgrade';
             renderPopup();
+        });
+
+        multiAttackBtn.addEventListener('click', () => {
+            if (popupIslandId === null) return;
+            if ((islandTroops[popupIslandId] || 0) <= 0 || gems < MULTI_ATTACK_GEM_COST) return;
+            const sourceId = popupIslandId;
+            closeIslandPopup();
+            startMultiAttack(sourceId);
         });
 
         backBtn.addEventListener('click', () => {
@@ -3893,6 +4071,27 @@
             const island = findIslandAt(world.x, world.y);
             if (!island) return;
 
+            if (multiAttackMode) {
+                const source = islandById[multiAttackSourceId];
+                if (island.id === multiAttackSourceId) return; // can't target your own source base
+                if (!source || !landmassesConnected(island.landmassId, source.landmassId)) {
+                    flashHint('Keine Brücke zu dieser Insel - sie kann nicht Ziel sein.', 2500);
+                    return;
+                }
+                const idx = multiAttackTargets.indexOf(island.id);
+                if (idx !== -1) {
+                    multiAttackTargets.splice(idx, 1); // tap again to deselect
+                } else {
+                    if (multiAttackTargets.length >= MULTI_ATTACK_MAX_TARGETS) {
+                        flashHint('Maximal ' + MULTI_ATTACK_MAX_TARGETS + ' Ziele gleichzeitig.', 2500);
+                        return;
+                    }
+                    multiAttackTargets.push(island.id);
+                }
+                updateMultiAttackBar();
+                return;
+            }
+
             if (pendingAttackTargetId !== null) {
                 const target = islandById[pendingAttackTargetId];
                 pendingAttackTargetId = null;
@@ -3940,7 +4139,8 @@
         function isUiElement(target) {
             return !!(target && target.closest && (target.closest('#islandPopup') || target.closest('#hud') ||
                 target.closest('#cornerButtons') || target.closest('#profilePopup') ||
-                target.closest('#battleLogPopup') || target.closest('#mailPopup')));
+                target.closest('#battleLogPopup') || target.closest('#mailPopup') ||
+                target.closest('#multiAttackBar')));
         }
 
         // Mouse events
