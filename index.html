@@ -2041,7 +2041,7 @@
 
         // "Truppen verschicken": same travel time as an attack, but a blue
         // march to one of the player's OWN towers that just merges in.
-        function launchSend(fromId, toId) {
+        function launchSend(fromId, toId, senderBotId) {
             const source = islandById[fromId];
             const target = islandById[toId];
             const rawTroops = islandTroops[fromId] || 0;
@@ -2055,13 +2055,16 @@
                 toId,
                 troops: rawTroops,
                 startedAt,
-                resolveAt: startedAt + durationSec * 1000
+                resolveAt: startedAt + durationSec * 1000,
+                senderBotId: senderBotId || null
             });
             updateHud();
             saveGame();
             saveProgression();
-            flashHint('Truppen unterwegs zu Insel #' + (target.id + 1) + ' - ca. ' + Math.ceil(durationSec) + 's');
-            renderActiveMarches();
+            if (!senderBotId) {
+                flashHint('Truppen unterwegs zu Insel #' + (target.id + 1) + ' - ca. ' + Math.ceil(durationSec) + 's');
+                renderActiveMarches();
+            }
         }
 
         function resolveSend(send) {
@@ -2075,6 +2078,9 @@
             // load (resolveAt already in the past) and gets applied a
             // second time, duping the arrived troops.
             saveProgression();
+            // A bot reinforcing its own base internally is never shown to
+            // the player - same reasoning as bot-vs-neutral attacks.
+            if (send.senderBotId) return;
             addCombatLogEntry({
                 type: 'send',
                 fromId: send.fromId,
@@ -2333,17 +2339,19 @@
         }
 
         // "Thinks carefully": only ever attacks with a comfortable troop
-        // advantage (never a coin-flip), and always picks whichever
-        // reachable target gives it the biggest safety margin rather than
-        // just the first one found. With nothing worth attacking, it saves
-        // up and upgrades its weakest base instead.
+        // advantage (never a coin-flip), and among every target that clears
+        // that bar, always picks the CLOSEST one - expanding its border
+        // outward step by step instead of reaching for some weaker base
+        // way across the map just because the margin happens to be bigger.
+        // With nothing worth attacking nearby, it saves up and upgrades its
+        // weakest base instead.
         const BOT_ATTACK_SAFETY_MARGIN = 1.15;
         const BOT_MIN_GARRISON_TO_ATTACK = 10;
         function botThink(bot) {
             const owned = botOwnedIslands[bot.id];
             if (!owned || owned.size === 0) return;
 
-            let bestSourceId = null, bestTargetId = null, bestScore = -Infinity;
+            let bestSourceId = null, bestTargetId = null, bestDistance = Infinity;
             for (const sourceId of owned) {
                 const troopsHere = islandTroops[sourceId] || 0;
                 if (troopsHere < BOT_MIN_GARRISON_TO_ATTACK) continue;
@@ -2353,9 +2361,9 @@
                         if (owned.has(target.id)) continue;
                         const totalStrength = effectiveTroops(target) + effectiveDefense(target);
                         if (troopsHere < totalStrength * BOT_ATTACK_SAFETY_MARGIN) continue;
-                        const score = troopsHere - totalStrength;
-                        if (score > bestScore) {
-                            bestScore = score;
+                        const distance = Math.hypot(target.x - source.x, target.y - source.y);
+                        if (distance < bestDistance) {
+                            bestDistance = distance;
                             bestSourceId = sourceId;
                             bestTargetId = target.id;
                         }
@@ -2387,9 +2395,47 @@
             }
         }
 
+        // If one of the bot's bases is currently under attack (by the
+        // player or another bot), send reinforcements from its closest
+        // other base that can actually reach it (same landmass or a direct
+        // bridge) instead of just letting the base fall.
+        function botDefend(bot) {
+            const owned = botOwnedIslands[bot.id];
+            if (!owned || owned.size === 0) return;
+
+            const threatened = new Set();
+            for (const attack of pendingAttacks) {
+                if (owned.has(attack.targetId)) threatened.add(attack.targetId);
+            }
+            if (threatened.size === 0) return;
+
+            for (const targetId of threatened) {
+                const target = islandById[targetId];
+                let bestSourceId = null, bestDistance = Infinity;
+                for (const sourceId of owned) {
+                    if (sourceId === targetId) continue;
+                    const troopsHere = islandTroops[sourceId] || 0;
+                    if (troopsHere < BOT_MIN_GARRISON_TO_ATTACK) continue;
+                    const source = islandById[sourceId];
+                    if (!reachableLandmassIds[source.landmassId].includes(target.landmassId)) continue;
+                    const distance = Math.hypot(target.x - source.x, target.y - source.y);
+                    if (distance < bestDistance) {
+                        bestDistance = distance;
+                        bestSourceId = sourceId;
+                    }
+                }
+                if (bestSourceId !== null) {
+                    launchSend(bestSourceId, targetId, bot.id);
+                }
+            }
+        }
+
         const BOT_TICK_MS = 9000;
         function runBotTick() {
-            for (const bot of BOT_DEFS) botThink(bot);
+            for (const bot of BOT_DEFS) {
+                botDefend(bot);
+                botThink(bot);
+            }
             setTimeout(runBotTick, BOT_TICK_MS);
         }
         setTimeout(runBotTick, BOT_TICK_MS);
@@ -2543,7 +2589,7 @@
             const avatarRing = document.getElementById('pAvatarRing');
             if (avatarRing) avatarRing.style.setProperty('--progress', progressPct);
 
-            const activeCount = playerRelevantAttackCount() + pendingSends.length + pendingScouts.length + pendingRetreats.length;
+            const activeCount = playerRelevantAttackCount() + playerRelevantSendCount() + pendingScouts.length + pendingRetreats.length;
             profileStats.innerHTML =
                 '<div class="statRow"><span>Skillpunkte</span><b>' + skillPoints + '</b></div>' +
                 '<div class="statRow"><span>Gems</span><b>' + Math.floor(gems) + '</b></div>' +
@@ -2733,6 +2779,12 @@
             }
             return count;
         }
+        // A bot reinforcing its own territory is never the player's send.
+        function playerRelevantSendCount() {
+            let count = 0;
+            for (const send of pendingSends) if (!send.senderBotId) count++;
+            return count;
+        }
 
         function renderActiveMarches() {
             const rows = [];
@@ -2756,7 +2808,10 @@
                     );
                 }
             }
+            let relevantSendCount = 0;
             for (const send of pendingSends) {
+                if (send.senderBotId) continue; // a bot reinforcing itself isn't the player's business
+                relevantSendCount++;
                 const secondsLeft = Math.max(0, Math.ceil((send.resolveAt - Date.now()) / 1000));
                 rows.push(
                     '<div class="logRow send">Deine Basis #' + (send.fromId + 1) +
@@ -2781,7 +2836,7 @@
                 ? rows.join('')
                 : '<div class="logEmpty">Gerade nichts unterwegs.</div>';
 
-            const total = relevantAttackCount + pendingSends.length + pendingScouts.length + pendingRetreats.length;
+            const total = relevantAttackCount + relevantSendCount + pendingScouts.length + pendingRetreats.length;
             battleLogBadge.textContent = total;
             battleLogBadge.style.display = total > 0 ? 'block' : 'none';
         }
@@ -2997,10 +3052,20 @@
 
         const TERRITORY_PADDING = 160;
 
-        function drawTerritoryBorder() {
-            if (ownedIslands.size === 0) return;
+        function hexToRgba(hex, alpha) {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+        }
+        // Draws one player's/bot's territory outline (a convex hull around
+        // all their bases) - called once for the player (blue, as before)
+        // and once per bot in their own color, so zooming out shows exactly
+        // whose territory is whose at a glance.
+        function drawTerritoryBorder(ownedSet, fillColor, strokeColor) {
+            if (ownedSet.size === 0) return;
             const points = [];
-            for (const oid of ownedIslands) {
+            for (const oid of ownedSet) {
                 const isl = islandById[oid];
                 if (!isl) continue;
                 const pad = isl.radius + TERRITORY_PADDING;
@@ -3016,9 +3081,9 @@
             ctx.moveTo(hull[0].x, hull[0].y);
             for (let i = 1; i < hull.length; i++) ctx.lineTo(hull[i].x, hull[i].y);
             ctx.closePath();
-            ctx.fillStyle = 'rgba(63, 150, 230, 0.22)';
+            ctx.fillStyle = fillColor;
             ctx.fill();
-            ctx.strokeStyle = '#8fd6ff';
+            ctx.strokeStyle = strokeColor;
             ctx.lineWidth = 7 / mapState.zoom;
             ctx.stroke();
         }
@@ -3124,7 +3189,10 @@
             }
             ctx.restore();
 
-            drawTerritoryBorder();
+            drawTerritoryBorder(ownedIslands, 'rgba(63, 150, 230, 0.22)', '#8fd6ff');
+            for (const bot of BOT_DEFS) {
+                drawTerritoryBorder(botOwnedIslands[bot.id], hexToRgba(bot.color, 0.22), bot.color);
+            }
 
             for (const island of islands) {
                 if (island.x + island.radius < viewLeft || island.x - island.radius > viewRight ||
@@ -3313,6 +3381,8 @@
                 drawMarch(islandById[attack.sourceId], islandById[attack.targetId], attack.startedAt, attack.resolveAt, '#e64545');
             }
             for (const send of pendingSends) {
+                // A bot reinforcing its own base isn't the player's business either.
+                if (send.senderBotId) continue;
                 drawMarch(islandById[send.fromId], islandById[send.toId], send.startedAt, send.resolveAt, '#2f7fd6');
             }
             for (const scout of pendingScouts) {
