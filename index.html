@@ -2007,13 +2007,20 @@
             localStorage.setItem('openWaterCombatLog', JSON.stringify(combatLog));
         }
 
-        function launchAttack(sourceId, targetId, attackerBotId) {
+        // troopsOverride lets the player send only part of a base's garrison
+        // (chosen via the attack preview's slider) instead of always
+        // marching out with everything - bots never pass this, so their
+        // attacks are unaffected and still commit their full garrison.
+        function launchAttack(sourceId, targetId, attackerBotId, troopsOverride) {
             const source = islandById[sourceId];
             const target = islandById[targetId];
-            const rawTroops = islandTroops[sourceId] || 0;
+            const available = islandTroops[sourceId] || 0;
+            const rawTroops = (troopsOverride !== undefined && troopsOverride !== null)
+                ? Math.max(0, Math.min(troopsOverride, available))
+                : available;
             if (!source || !target || rawTroops <= 0) return;
 
-            islandTroops[sourceId] = 0; // troops march out
+            islandTroops[sourceId] = available - rawTroops; // only the sent troops march out, the rest stay to defend
             const durationSec = travelDurationSeconds(source, target);
             const startedAt = Date.now();
             // Snapshot every skill/equipment-derived combat bonus NOW, at
@@ -3597,6 +3604,7 @@
         // and 'preview' (attack) are the preview+confirm screens.
         let popupView = 'menu';
         let previewSourceId = null; // base picked for an attack awaiting confirmation
+        let previewAttackTroops = null; // how many of the source base's troops to send - adjustable via the slider, defaults to all of them
         let previewShownAt = 0; // guards against a stray click landing on the
                                  // confirm button the instant the preview opens
 
@@ -3610,6 +3618,7 @@
             popupIslandId = null;
             popupView = 'menu';
             previewSourceId = null;
+            previewAttackTroops = null;
             profilePopup.style.display = 'none';
             battleLogPopup.style.display = 'none';
             clearInterval(battleLogRefreshTimer);
@@ -3628,6 +3637,7 @@
             popupIslandId = null;
             popupView = 'menu';
             previewSourceId = null;
+            previewAttackTroops = null;
         }
 
         function hideAllButtons() {
@@ -3701,22 +3711,42 @@
                 const scouted = scoutedIslands.has(island.id);
 
                 if (popupView === 'preview') {
-                    const rawTroops = previewSourceId !== null ? (islandTroops[previewSourceId] || 0) : 0;
+                    const maxTroops = previewSourceId !== null ? (islandTroops[previewSourceId] || 0) : 0;
+                    // Defaults to sending everything, but the slider below
+                    // lets the player hold part of the garrison back.
+                    if (previewAttackTroops === null || previewAttackTroops > maxTroops) previewAttackTroops = maxTroops;
                     const atkBonus = attackFlatBonus();
-                    const myTroops = rawTroops + atkBonus;
                     const enemyTroops = effectiveTroops(island);
                     const enemyDefense = effectiveDefense(island);
                     const total = enemyTroops + enemyDefense;
                     popupTitle.textContent = islandTitle(island) + ' angreifen?';
                     popupStats.innerHTML =
-                        'Meine Truppen: ' + myTroops + (atkBonus > 0 ? ' (' + rawTroops + ' + ' + atkBonus + ' Angriffsbonus)' : '') +
+                        'Meine Truppen: <span id="previewMyTroops">' + (previewAttackTroops + atkBonus) + '</span>' +
+                        (atkBonus > 0 ? ' (<span id="previewRawTroops">' + previewAttackTroops + '</span> + ' + atkBonus + ' Angriffsbonus)' : '') +
                         ' (Insel #' + (previewSourceId + 1) + ')<br>' +
                         'Gegner Truppen: ' + (scouted ? enemyTroops : '?') + '<br>' +
                         'Gegner Verteidigung: ' + (scouted ? enemyDefense : '?') +
-                        (scouted ? ' <span style="color:#7f93bd">(zusammen ' + total + ')</span>' : '');
+                        (scouted ? ' <span style="color:#7f93bd">(zusammen ' + total + ')</span>' : '') +
+                        '<div style="margin-top:10px;">' +
+                        '<input type="range" id="attackTroopsSlider" min="1" max="' + Math.max(1, maxTroops) + '" value="' + Math.max(1, previewAttackTroops) + '" style="width:100%" ' + (maxTroops <= 0 ? 'disabled' : '') + '>' +
+                        '<div style="display:flex;justify-content:space-between;font-size:11px;color:#7f93bd;margin-top:2px;">' +
+                        '<span>1</span><span id="attackTroopsLabel">' + previewAttackTroops + ' / ' + maxTroops + ' Truppen</span><span>' + maxTroops + '</span>' +
+                        '</div></div>';
+
+                    const slider = document.getElementById('attackTroopsSlider');
+                    if (slider) {
+                        slider.addEventListener('input', () => {
+                            previewAttackTroops = Math.max(1, Math.min(parseInt(slider.value, 10) || 1, maxTroops));
+                            document.getElementById('previewMyTroops').textContent = previewAttackTroops + atkBonus;
+                            const rawSpan = document.getElementById('previewRawTroops');
+                            if (rawSpan) rawSpan.textContent = previewAttackTroops;
+                            document.getElementById('attackTroopsLabel').textContent = previewAttackTroops + ' / ' + maxTroops + ' Truppen';
+                        });
+                    }
+
                     attackBtn.textContent = 'Angreifen';
                     attackBtn.style.display = 'inline-block';
-                    attackBtn.disabled = rawTroops <= 0;
+                    attackBtn.disabled = maxTroops <= 0;
                     backBtn.style.display = 'inline-block';
                 } else {
                     const scoutEnRoute = pendingScouts.some(s => s.targetId === island.id);
@@ -3785,9 +3815,11 @@
                 const targetId = popupIslandId;
                 const sourceId = previewSourceId;
                 if (targetId === null || sourceId === null) return;
-                if ((islandTroops[sourceId] || 0) <= 0) return;
+                const available = islandTroops[sourceId] || 0;
+                if (available <= 0) return;
+                const troopsToSend = Math.max(1, Math.min(previewAttackTroops || available, available));
 
-                launchAttack(sourceId, targetId);
+                launchAttack(sourceId, targetId, null, troopsToSend);
                 previewSourceId = null;
                 closeIslandPopup();
                 return;
