@@ -1190,10 +1190,24 @@
             return off;
         }
 
-        // The big island underneath is just plain green land, drawn once per
-        // landmass; only the tower built on top of it shows who controls it.
-        const ISLAND_GROUND_COLOR = '#4f9a3a';
+        // The big island underneath is green land, drawn once per landmass;
+        // only the tower built on top of it shows who controls it. A radial
+        // gradient (richer/darker green toward the coast, lighter in the
+        // interior) plus a sandy beach fringe gives it some depth instead
+        // of a single flat fill - still solidly green as requested, just
+        // less flat. Gradients are cached per landmass (like the tinted
+        // tower icons already are) since landmasses never move or resize.
         const TOWER_SCALE = 0.62;
+        const landmassGradientCache = {};
+        function getLandmassGradient(lm) {
+            if (landmassGradientCache[lm.id]) return landmassGradientCache[lm.id];
+            const grad = ctx.createRadialGradient(lm.x, lm.y, 0, lm.x, lm.y, lm.shapeMaxR);
+            grad.addColorStop(0, '#63c14b');
+            grad.addColorStop(0.55, '#4f9a3a');
+            grad.addColorStop(1, '#397127');
+            landmassGradientCache[lm.id] = grad;
+            return grad;
+        }
 
         function drawIslandIcon(island, towerColor) {
             const size = island.radius * 2;
@@ -2680,7 +2694,6 @@
 
             const blinkAlpha = 0.35 + 0.65 * Math.abs(Math.sin(Date.now() / 280));
 
-            ctx.fillStyle = ISLAND_GROUND_COLOR;
             for (const lm of landmasses) {
                 if (lm.x + lm.shapeMaxR < viewLeft || lm.x - lm.shapeMaxR > viewRight ||
                     lm.y + lm.shapeMaxR < viewTop || lm.y - lm.shapeMaxR > viewBottom) {
@@ -2690,15 +2703,41 @@
                 ctx.moveTo(lm.shape[0].x, lm.shape[0].y);
                 for (let i = 1; i < lm.shape.length; i++) ctx.lineTo(lm.shape[i].x, lm.shape[i].y);
                 ctx.closePath();
+                ctx.fillStyle = getLandmassGradient(lm);
                 ctx.fill();
+                // Sandy beach fringe right at the coastline (straddles the
+                // path, so it reads as a thin ring of shore), then a crisp
+                // dark outline on top so the island edge stays well-defined
+                // against the water at every zoom level.
+                ctx.lineWidth = 90 / mapState.zoom;
+                ctx.strokeStyle = 'rgba(224, 201, 138, 0.65)';
+                ctx.stroke();
+                ctx.lineWidth = 14 / mapState.zoom;
+                ctx.strokeStyle = 'rgba(45, 87, 32, 0.8)';
+                ctx.stroke();
             }
 
             // Bridges: the only way to cross from one landmass to a
-            // different one - a small, thin plank line between the two
-            // closest shore points, not a wide road.
+            // different one - a small plank bridge between the two closest
+            // shore points, not a wide road. A soft shadow first gives it
+            // some lift off the water, then the wood body, a lighter
+            // highlight stripe down the middle, and light cross-ties for a
+            // bit of plank texture.
             ctx.save();
             ctx.lineCap = 'round';
             for (const br of bridges) {
+                const dx = br.x2 - br.x1, dy = br.y2 - br.y1;
+                const len = Math.hypot(dx, dy) || 1;
+                const nx = -dy / len, ny = dx / len;
+                const shadowOff = 7 / mapState.zoom;
+
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.28)';
+                ctx.lineWidth = 18 / mapState.zoom;
+                ctx.beginPath();
+                ctx.moveTo(br.x1 + nx * shadowOff, br.y1 + ny * shadowOff);
+                ctx.lineTo(br.x2 + nx * shadowOff, br.y2 + ny * shadowOff);
+                ctx.stroke();
+
                 ctx.strokeStyle = '#8a6541';
                 ctx.lineWidth = 16 / mapState.zoom;
                 ctx.beginPath();
@@ -2712,6 +2751,18 @@
                 ctx.moveTo(br.x1, br.y1);
                 ctx.lineTo(br.x2, br.y2);
                 ctx.stroke();
+
+                ctx.strokeStyle = 'rgba(93, 66, 38, 0.55)';
+                ctx.lineWidth = 4 / mapState.zoom;
+                const tieCount = Math.max(2, Math.floor(len / 380));
+                for (let i = 1; i < tieCount; i++) {
+                    const t = i / tieCount;
+                    const px = br.x1 + dx * t, py = br.y1 + dy * t;
+                    ctx.beginPath();
+                    ctx.moveTo(px - nx * 7, py - ny * 7);
+                    ctx.lineTo(px + nx * 7, py + ny * 7);
+                    ctx.stroke();
+                }
             }
             ctx.restore();
 
