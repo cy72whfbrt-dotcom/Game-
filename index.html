@@ -1245,7 +1245,7 @@
         // Low enough that pinching/scrolling all the way out fits the WHOLE
         // map (hub + every outer island) on screen even on a narrow phone
         // viewport, not just a chunk of it.
-        const MIN_ZOOM = 0.0075;
+        const MIN_ZOOM = 0.0065;
         const MAX_ZOOM = 4;
         // Below this zoom, owned islands switch from green to blue so a big
         // territory reads clearly from far above the map.
@@ -1260,8 +1260,8 @@
         // for the tightest packing that still has zero overlap.
         const CENTER_LANDMASS_RADIUS = 9000;
         const OUTER_LANDMASS_RADIUS = 4500;
-        const OUTER_LANDMASS_COUNT = 8;
-        const RING_DISTANCE = 14480; // center-to-center, hub to each outer island
+        const OUTER_LANDMASS_COUNT = 10;
+        const RING_DISTANCE = 17880; // center-to-center, hub to each outer island
         const TOWER_GRID_SIZE = 5; // 5x5 towers per landmass
         const TOWER_SPACING_RATIO = 1600 / 5200; // keep the old island/tower proportions
         const ISLAND_RADIUS = 220; // tower footprint
@@ -1449,12 +1449,25 @@
         // one - a hub-and-spoke topology where every outer landmass has
         // exactly one bridge straight to the center. Anchored to each
         // landmass's nearest actual coastline point (not just its center).
+        // Some coastline pairs land almost flush against each other (a
+        // near-zero gap) - stretched out to a minimum visible length here
+        // so the bridge always reads as a short straight line instead of
+        // collapsing into a round blob where its two line-cap ends overlap.
+        const MIN_BRIDGE_VISUAL_LENGTH = 700;
         const bridges = [];
         for (const lm of landmasses) {
             if (lm.isCenter) continue;
             const hub = landmasses[0];
-            const p1 = closestPolygonPoint(hub.shape, lm.x, lm.y);
-            const p2 = closestPolygonPoint(lm.shape, hub.x, hub.y);
+            let p1 = closestPolygonPoint(hub.shape, lm.x, lm.y);
+            let p2 = closestPolygonPoint(lm.shape, hub.x, hub.y);
+            const dx = p2.x - p1.x, dy = p2.y - p1.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist > 0 && dist < MIN_BRIDGE_VISUAL_LENGTH) {
+                const ux = dx / dist, uy = dy / dist;
+                const extra = (MIN_BRIDGE_VISUAL_LENGTH - dist) / 2;
+                p1 = { x: p1.x - ux * extra, y: p1.y - uy * extra };
+                p2 = { x: p2.x + ux * extra, y: p2.y + uy * extra };
+            }
             bridges.push({ a: hub.id, b: lm.id, x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y });
         }
         function landmassesConnected(a, b) {
