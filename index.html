@@ -1104,6 +1104,15 @@
             box-shadow: 0 1px 0 #5f2e73;
         }
 
+        #recallBtn {
+            background: #1a9e8f;
+            color: #fff;
+            box-shadow: 0 3px 0 #106e63;
+        }
+        #recallBtn:active {
+            box-shadow: 0 1px 0 #106e63;
+        }
+
         #multiAttackBar {
             display: none;
             position: fixed;
@@ -1266,6 +1275,7 @@
             <button id="sendBtn">Truppen verschicken</button>
             <button id="attackBtn">Angreifen</button>
             <button id="multiAttackBtn">Multi-Angriff (1 &#128142;)</button>
+            <button id="recallBtn">Truppen sammeln (1 &#128142;)</button>
             <button id="scoutBtn">Sp&auml;hen</button>
             <button id="confirmBtn">Best&auml;tigen</button>
             <button id="backBtn">Zur&uuml;ck</button>
@@ -3555,7 +3565,7 @@
                         island.radius * 2,
                         island.radius * 2
                     );
-                } else if (multiAttackMode && multiAttackSourceId !== null &&
+                } else if (multiAttackMode && multiAttackSourceId !== null && !isOwned &&
                            landmassesConnected(island.landmassId, islandById[multiAttackSourceId].landmassId)) {
                     ctx.strokeStyle = 'rgba(142, 68, 173, ' + blinkAlpha.toFixed(2) + ')';
                     ctx.lineWidth = 8 / mapState.zoom;
@@ -3734,6 +3744,7 @@
         const sendBtn = document.getElementById('sendBtn');
         const attackBtn = document.getElementById('attackBtn');
         const multiAttackBtn = document.getElementById('multiAttackBtn');
+        const recallBtn = document.getElementById('recallBtn');
         const scoutBtn = document.getElementById('scoutBtn');
         const confirmBtn = document.getElementById('confirmBtn');
         const backBtn = document.getElementById('backBtn');
@@ -3788,6 +3799,7 @@
             sendBtn.style.display = 'none';
             attackBtn.style.display = 'none';
             multiAttackBtn.style.display = 'none';
+            recallBtn.style.display = 'none';
             scoutBtn.style.display = 'none';
             confirmBtn.style.display = 'none';
             backBtn.style.display = 'none';
@@ -3801,6 +3813,12 @@
         // tested, never on bot bases.
         const MULTI_ATTACK_MAX_TARGETS = 10;
         const MULTI_ATTACK_GEM_COST = 1;
+        // "Truppen sammeln": for 1 gem, pulls every OTHER owned base within
+        // this radius (world units) that still has troops back home to the
+        // tapped base in one go - each one marches individually via the
+        // normal launchSend (own travel time, no instant teleport).
+        const RECALL_RADIUS = 8000;
+        const RECALL_GEM_COST = 1;
         let multiAttackMode = false;
         let multiAttackSourceId = null;
         let multiAttackTargets = [];
@@ -3919,6 +3937,8 @@
                     // bots never get it.
                     multiAttackBtn.style.display = 'inline-block';
                     multiAttackBtn.disabled = troopsHere <= 0 || gems < MULTI_ATTACK_GEM_COST;
+                    recallBtn.style.display = 'inline-block';
+                    recallBtn.disabled = gems < RECALL_GEM_COST || ownedIslands.size <= 1;
                 }
             } else {
                 const scouted = scoutedIslands.has(island.id);
@@ -3997,6 +4017,33 @@
             const sourceId = popupIslandId;
             closeIslandPopup();
             startMultiAttack(sourceId);
+        });
+
+        recallBtn.addEventListener('click', () => {
+            if (popupIslandId === null) return;
+            const targetId = popupIslandId;
+            const target = islandById[targetId];
+            if (!target || gems < RECALL_GEM_COST) return;
+
+            const sources = [];
+            for (const id of ownedIslands) {
+                if (id === targetId) continue;
+                if ((islandTroops[id] || 0) <= 0) continue;
+                const isl = islandById[id];
+                if (Math.hypot(isl.x - target.x, isl.y - target.y) <= RECALL_RADIUS) sources.push(id);
+            }
+            if (sources.length === 0) {
+                flashHint('Keine eigenen Basen mit Truppen im Umkreis gefunden.', 3000);
+                return;
+            }
+
+            gems -= RECALL_GEM_COST;
+            for (const sourceId of sources) launchSend(sourceId, targetId);
+            updateHud();
+            saveGame();
+            saveProgression();
+            flashHint('Truppen aus ' + sources.length + ' Basen im Umkreis werden zurückgerufen.', 3500);
+            closeIslandPopup();
         });
 
         backBtn.addEventListener('click', () => {
@@ -4081,7 +4128,10 @@
 
             if (multiAttackMode) {
                 const source = islandById[multiAttackSourceId];
-                if (island.id === multiAttackSourceId) return; // can't target your own source base
+                if (ownedIslands.has(island.id)) {
+                    flashHint('Das ist bereits deine eigene Basis - wähle ein gegnerisches Ziel.', 2500);
+                    return; // never a valid attack target, source base included
+                }
                 if (!source || !landmassesConnected(island.landmassId, source.landmassId)) {
                     flashHint('Keine Brücke zu dieser Insel - sie kann nicht Ziel sein.', 2500);
                     return;
