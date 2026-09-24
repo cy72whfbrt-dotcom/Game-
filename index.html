@@ -3054,6 +3054,79 @@
             return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
         }
 
+        function drawRoundedRect(x, y, w, h, r) {
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.lineTo(x + w - r, y);
+            ctx.arcTo(x + w, y, x + w, y + r, r);
+            ctx.lineTo(x + w, y + h - r);
+            ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+            ctx.lineTo(x + r, y + h);
+            ctx.arcTo(x, y + h, x, y + h - r, r);
+            ctx.lineTo(x, y + r);
+            ctx.arcTo(x, y, x + r, y, r);
+            ctx.closePath();
+        }
+
+        // A "kingdom banner" over a base: name + avatar + troop count in one
+        // bar (owner-colored - blue for the player, red for a bot), with a
+        // level pill underneath the base itself.
+        function drawBaseBanner(island, cfg) {
+            const r = island.radius;
+            const barW = r * 2.8;
+            const barH = r * 0.62;
+            const gap = r * 0.18;
+            const barX = island.x - barW / 2;
+            const barY = island.y - r - gap - barH;
+
+            drawRoundedRect(barX, barY, barW, barH, barH * 0.22);
+            ctx.fillStyle = cfg.barColor;
+            ctx.fill();
+            ctx.lineWidth = r * 0.03;
+            ctx.strokeStyle = cfg.barBorderColor;
+            ctx.stroke();
+
+            const avatarR = barH * 0.42;
+            const avatarCx = barX + barH * 0.55;
+            const avatarCy = barY + barH / 2;
+            ctx.beginPath();
+            ctx.arc(avatarCx, avatarCy, avatarR, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+            ctx.lineWidth = r * 0.02;
+            ctx.strokeStyle = cfg.barBorderColor;
+            ctx.stroke();
+            ctx.font = Math.round(avatarR * 1.3) + 'px system-ui, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('👤', avatarCx, avatarCy + avatarR * 0.05);
+
+            const textX = avatarCx + avatarR + barH * 0.2;
+            ctx.textAlign = 'left';
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold ' + Math.round(barH * 0.36) + 'px system-ui, sans-serif';
+            ctx.textBaseline = 'bottom';
+            ctx.fillText(cfg.name, textX, barY + barH * 0.52);
+            ctx.font = Math.round(barH * 0.32) + 'px system-ui, sans-serif';
+            ctx.textBaseline = 'top';
+            ctx.fillText(cfg.troopsLabel, textX, barY + barH * 0.52);
+
+            const pillW = r * 1.15, pillH = r * 0.42;
+            const pillX = island.x - pillW / 2;
+            const pillY = island.y + r + gap;
+            drawRoundedRect(pillX, pillY, pillW, pillH, pillH * 0.5);
+            ctx.fillStyle = cfg.barColor;
+            ctx.fill();
+            ctx.strokeStyle = cfg.barBorderColor;
+            ctx.lineWidth = r * 0.025;
+            ctx.stroke();
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.font = 'bold ' + Math.round(pillH * 0.6) + 'px system-ui, sans-serif';
+            ctx.fillText('Lvl ' + cfg.level, island.x, pillY + pillH / 2 + 2);
+        }
+
         function pointToSegmentDistance(px, py, ax, ay, bx, by) {
             const abx = bx - ax, aby = by - ay;
             const len2 = abx * abx + aby * aby;
@@ -3074,11 +3147,18 @@
             return true;
         }
 
+        // Diagonal hatch spacing/width, in world units so it scales with zoom
+        // like everything else on the map.
+        const TERRITORY_STRIPE_SPACING = 340;
+        const TERRITORY_STRIPE_WIDTH = 90;
+
         // Draws one player's/bot's territory (a halo around each owned
         // base, bridged together wherever verified safe) - called once for
-        // the player (blue, as before) and once per bot in their own
-        // color, so zooming out shows exactly whose territory is whose at
-        // a glance, without ever implying ownership over bases that are
+        // the player (blue, as before) and once for every bot's combined
+        // territory (red, so "enemy ground" reads at a glance instead of
+        // needing to remember each bot's individual color), with a diagonal
+        // hatch fill so it reads as "claimed territory" rather than a flat
+        // tint - without ever implying ownership over bases that are
         // actually still neutral.
         function drawTerritoryBorder(ownedSet, fillColor, strokeColor) {
             if (ownedSet.size === 0) return;
@@ -3095,23 +3175,52 @@
                 }
             }
 
-            ctx.beginPath();
-            for (const isl of ownedArr) {
-                const r = isl.radius + TERRITORY_PADDING;
-                ctx.moveTo(isl.x + r, isl.y);
-                ctx.arc(isl.x, isl.y, r, 0, Math.PI * 2);
-            }
+            // One combined path (every halo circle + every bridge as a
+            // rectangle) so it can be filled AND reused as a clip region
+            // for the hatch overlay - a single consistent territory shape
+            // instead of filling and clipping against slightly different
+            // shapes.
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            const buildTerritoryPath = () => {
+                ctx.beginPath();
+                for (const isl of ownedArr) {
+                    const r = isl.radius + TERRITORY_PADDING;
+                    ctx.moveTo(isl.x + r, isl.y);
+                    ctx.arc(isl.x, isl.y, r, 0, Math.PI * 2);
+                    minX = Math.min(minX, isl.x - r); maxX = Math.max(maxX, isl.x + r);
+                    minY = Math.min(minY, isl.y - r); maxY = Math.max(maxY, isl.y + r);
+                }
+                for (const [a, b, halfWidth] of bridges) {
+                    const dx = b.x - a.x, dy = b.y - a.y;
+                    const len = Math.hypot(dx, dy) || 1;
+                    const nx = -dy / len * halfWidth, ny = dx / len * halfWidth;
+                    ctx.moveTo(a.x + nx, a.y + ny);
+                    ctx.lineTo(b.x + nx, b.y + ny);
+                    ctx.lineTo(b.x - nx, b.y - ny);
+                    ctx.lineTo(a.x - nx, a.y - ny);
+                    ctx.closePath();
+                }
+            };
+
+            buildTerritoryPath();
             ctx.fillStyle = fillColor;
             ctx.fill();
-            for (const [a, b, halfWidth] of bridges) {
+
+            // Diagonal hatch, clipped to the territory shape just filled.
+            ctx.save();
+            buildTerritoryPath();
+            ctx.clip();
+            ctx.strokeStyle = strokeColor;
+            ctx.lineWidth = TERRITORY_STRIPE_WIDTH / mapState.zoom;
+            ctx.globalAlpha = 0.28;
+            const diag = (maxX - minX) + (maxY - minY);
+            for (let d = -diag; d < diag; d += TERRITORY_STRIPE_SPACING) {
                 ctx.beginPath();
-                ctx.moveTo(a.x, a.y);
-                ctx.lineTo(b.x, b.y);
-                ctx.strokeStyle = fillColor;
-                ctx.lineWidth = halfWidth * 2;
-                ctx.lineCap = 'round';
+                ctx.moveTo(minX + d, minY);
+                ctx.lineTo(minX + d + (maxY - minY), maxY);
                 ctx.stroke();
             }
+            ctx.restore();
 
             for (const [a, b, halfWidth] of bridges) {
                 const dx = b.x - a.x, dy = b.y - a.y;
@@ -3240,8 +3349,11 @@
             ctx.restore();
 
             drawTerritoryBorder(ownedIslands, 'rgba(63, 150, 230, 0.22)', '#8fd6ff');
+            // Every bot's territory reads as plain "enemy ground" in red -
+            // easier to scan at a glance than remembering each bot's own
+            // color, which still shows up on their name tags/labels.
             for (const bot of BOT_DEFS) {
-                drawTerritoryBorder(botOwnedIslands[bot.id], hexToRgba(bot.color, 0.22), bot.color);
+                drawTerritoryBorder(botOwnedIslands[bot.id], 'rgba(230, 69, 69, 0.22)', '#ff6b6b');
             }
 
             for (const island of islands) {
@@ -3314,33 +3426,37 @@
                 if (territoryView) continue;
 
                 const isScouted = scoutedIslands.has(island.id);
-                ctx.fillStyle = '#ffffff';
-                ctx.textAlign = 'center';
-                if (isOwned || (ownerBot && isScouted)) {
-                    ctx.font = '80px system-ui, sans-serif';
-                    ctx.textBaseline = 'bottom';
-                    ctx.fillText('Lvl ' + (islandLevels[island.id] || 1), island.x, island.y);
-                    ctx.font = '64px system-ui, sans-serif';
-                    ctx.textBaseline = 'top';
-                    ctx.fillText(String(islandTroops[island.id] || 0) + ' Truppen', island.x, island.y + 4);
+                if (isOwned) {
+                    drawBaseBanner(island, {
+                        barColor: 'rgba(47, 127, 214, 0.92)',
+                        barBorderColor: '#8fd6ff',
+                        name: profileName.value || 'Du',
+                        troopsLabel: '⚔ ' + (islandTroops[island.id] || 0),
+                        level: islandLevels[island.id] || 1
+                    });
                 } else if (ownerBot) {
                     // Someone else's base you haven't scouted: you can see
                     // whose it is and its level (that much is visible just
                     // by looking at it), but not its garrison - that still
                     // needs scouting.
-                    ctx.font = '58px system-ui, sans-serif';
-                    ctx.textBaseline = 'bottom';
-                    ctx.fillText(ownerBot.name, island.x, island.y);
-                    ctx.font = '64px system-ui, sans-serif';
-                    ctx.textBaseline = 'top';
-                    ctx.fillText('Lvl ' + (islandLevels[island.id] || 1), island.x, island.y + 4);
+                    drawBaseBanner(island, {
+                        barColor: 'rgba(214, 47, 47, 0.92)',
+                        barBorderColor: '#ff9b9b',
+                        name: ownerBot.name,
+                        troopsLabel: isScouted ? '⚔ ' + (islandTroops[island.id] || 0) : '⚔ ?',
+                        level: islandLevels[island.id] || 1
+                    });
                 } else if (isScouted) {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.textAlign = 'center';
                     ctx.font = '64px system-ui, sans-serif';
                     ctx.textBaseline = 'bottom';
                     ctx.fillText(island.neutralTroops + ' Truppen', island.x, island.y);
                     ctx.textBaseline = 'top';
                     ctx.fillText(island.neutralDefense + ' Verteidigung', island.x, island.y + 4);
                 } else {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.textAlign = 'center';
                     ctx.font = '80px system-ui, sans-serif';
                     ctx.textBaseline = 'middle';
                     ctx.fillText('?', island.x, island.y);
