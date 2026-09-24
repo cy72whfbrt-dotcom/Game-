@@ -1209,10 +1209,23 @@
     <script>
         const canvas = document.getElementById('mapCanvas');
         const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
 
+        // Without this, the canvas's backing store is sized in CSS pixels
+        // while the screen renders at devicePixelRatio - on any Retina/HiDPI
+        // phone that means the browser upscales an already-blurry buffer,
+        // which is exactly the "everything looks pixelated" effect. Sizing
+        // the backing store at devicePixelRatio and scaling the drawing
+        // context to match (see drawMap) renders at full screen resolution
+        // instead.
+        let dpr = window.devicePixelRatio || 1;
         function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+            dpr = window.devicePixelRatio || 1;
+            canvas.width = window.innerWidth * dpr;
+            canvas.height = window.innerHeight * dpr;
+            canvas.style.width = window.innerWidth + 'px';
+            canvas.style.height = window.innerHeight + 'px';
         }
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
@@ -1276,8 +1289,8 @@
         let mapState = {
             offsetX: window.innerWidth / 2,
             offsetY: window.innerHeight / 2,
-            zoom: 0.07,
-            targetZoom: 0.07,
+            zoom: 0.03,
+            targetZoom: 0.03,
             isDragging: false,
             dragStartX: 0,
             dragStartY: 0,
@@ -3322,22 +3335,23 @@
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             ctx.save();
+            ctx.scale(dpr, dpr);
             ctx.translate(mapState.offsetX, mapState.offsetY);
             ctx.scale(mapState.zoom, mapState.zoom);
 
             const tileSize = 50;
             const visibleX = Math.floor(-mapState.offsetX / mapState.zoom / tileSize) - 2;
             const visibleY = Math.floor(-mapState.offsetY / mapState.zoom / tileSize) - 2;
-            const visibleW = Math.ceil(canvas.width / mapState.zoom / tileSize) + 4;
-            const visibleH = Math.ceil(canvas.height / mapState.zoom / tileSize) + 4;
+            const visibleW = Math.ceil(window.innerWidth / mapState.zoom / tileSize) + 4;
+            const visibleH = Math.ceil(window.innerHeight / mapState.zoom / tileSize) + 4;
 
             ctx.fillStyle = '#1a6faa';
             ctx.fillRect(visibleX * tileSize, visibleY * tileSize, visibleW * tileSize, visibleH * tileSize);
 
             const viewLeft = -mapState.offsetX / mapState.zoom - ISLAND_RADIUS;
             const viewTop = -mapState.offsetY / mapState.zoom - ISLAND_RADIUS;
-            const viewRight = viewLeft + canvas.width / mapState.zoom + ISLAND_RADIUS * 2;
-            const viewBottom = viewTop + canvas.height / mapState.zoom + ISLAND_RADIUS * 2;
+            const viewRight = viewLeft + window.innerWidth / mapState.zoom + ISLAND_RADIUS * 2;
+            const viewBottom = viewTop + window.innerHeight / mapState.zoom + ISLAND_RADIUS * 2;
 
             const blinkAlpha = 0.35 + 0.65 * Math.abs(Math.sin(Date.now() / 280));
 
