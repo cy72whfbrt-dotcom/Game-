@@ -1269,6 +1269,7 @@
         // not a rigid grid) - only constraint is a minimum distance from
         // every other base and the temple, so nothing ends up crowded.
         const TOWERS_PER_LANDMASS = 48;
+        const HUB_TOWERS_PER_LANDMASS = 70; // the hub is 1.5x the radius, so it earns more bases too
         const TOWER_MIN_SPACING_RATIO = 0.16; // relative to the landmass radius
         const ISLAND_RADIUS = 220; // tower footprint
         const NEUTRAL_DEFENSE_MAX = 100;
@@ -1529,12 +1530,13 @@
             // island, as long as it isn't too close to the temple or any
             // base already placed - free placement instead of a rigid grid,
             // but never crowded together.
+            const targetCount = isMega ? HUB_TOWERS_PER_LANDMASS : TOWERS_PER_LANDMASS;
             const minSpacing = lm.radius * TOWER_MIN_SPACING_RATIO;
             const occupied = [{ x: lm.x, y: lm.y }]; // the temple's spot, reserved first
             let placed = 0;
             let attempts = 0;
-            const maxAttempts = TOWERS_PER_LANDMASS * 300;
-            while (placed < TOWERS_PER_LANDMASS && attempts < maxAttempts) {
+            const maxAttempts = targetCount * 300;
+            while (placed < targetCount && attempts < maxAttempts) {
                 attempts++;
                 const tx = minX + rand() * (maxX - minX);
                 const ty = minY + rand() * (maxY - minY);
