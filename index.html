@@ -3039,11 +3039,13 @@
         // scattered sparsely across a landmass, any two owned islands with
         // empty or neutral ground between them get that ground swept into
         // the hull's interior too, making unowned bases look like they're
-        // "inside your border". Instead, each owned island gets its own
-        // small halo circle - nothing that isn't actually owned is ever
-        // enclosed, since the halo radius stays well under the minimum
-        // distance the map already guarantees between any two towers.
+        // "inside your border". So each owned island gets its own halo
+        // circle instead - but two halos only ever get visually bridged
+        // into one blob when the straight line between them is checked and
+        // confirmed completely clear of every other base (owned by anyone
+        // or neutral) - never assumed just because the bases are close.
         const TERRITORY_PADDING = 550;
+        const TERRITORY_CONNECT_MAX_DIST = 6000;
 
         function hexToRgba(hex, alpha) {
             const r = parseInt(hex.slice(1, 3), 16);
@@ -3051,28 +3053,82 @@
             const b = parseInt(hex.slice(5, 7), 16);
             return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
         }
-        // Draws one player's/bot's territory halos (a small circle around
-        // each owned base) - called once for the player (blue, as before)
-        // and once per bot in their own color, so zooming out shows exactly
-        // whose territory is whose at a glance, without ever implying
-        // ownership over bases that are actually still neutral.
+
+        function pointToSegmentDistance(px, py, ax, ay, bx, by) {
+            const abx = bx - ax, aby = by - ay;
+            const len2 = abx * abx + aby * aby;
+            let t = len2 > 0 ? ((px - ax) * abx + (py - ay) * aby) / len2 : 0;
+            t = Math.max(0, Math.min(1, t));
+            const cx = ax + t * abx, cy = ay + t * aby;
+            return Math.hypot(px - cx, py - cy);
+        }
+
+        // Only bridges a and b if NO other base on the same landmass - not
+        // owned by either side, including neutral ones - sits anywhere in
+        // the strip directly between their two halos.
+        function canConnectHalos(a, b, corridorHalfWidth) {
+            for (const isl of islandsByLandmass[a.landmassId] || []) {
+                if (isl.id === a.id || isl.id === b.id) continue;
+                if (pointToSegmentDistance(isl.x, isl.y, a.x, a.y, b.x, b.y) < corridorHalfWidth + isl.radius) return false;
+            }
+            return true;
+        }
+
+        // Draws one player's/bot's territory (a halo around each owned
+        // base, bridged together wherever verified safe) - called once for
+        // the player (blue, as before) and once per bot in their own
+        // color, so zooming out shows exactly whose territory is whose at
+        // a glance, without ever implying ownership over bases that are
+        // actually still neutral.
         function drawTerritoryBorder(ownedSet, fillColor, strokeColor) {
             if (ownedSet.size === 0) return;
+            const ownedArr = [...ownedSet].map(oid => islandById[oid]).filter(Boolean);
+
+            const bridges = [];
+            for (let i = 0; i < ownedArr.length; i++) {
+                for (let j = i + 1; j < ownedArr.length; j++) {
+                    const a = ownedArr[i], b = ownedArr[j];
+                    if (a.landmassId !== b.landmassId) continue;
+                    if (Math.hypot(a.x - b.x, a.y - b.y) > TERRITORY_CONNECT_MAX_DIST) continue;
+                    const corridorHalfWidth = Math.min(a.radius, b.radius) + TERRITORY_PADDING;
+                    if (canConnectHalos(a, b, corridorHalfWidth)) bridges.push([a, b, corridorHalfWidth]);
+                }
+            }
 
             ctx.beginPath();
-            for (const oid of ownedSet) {
-                const isl = islandById[oid];
-                if (!isl) continue;
+            for (const isl of ownedArr) {
                 const r = isl.radius + TERRITORY_PADDING;
                 ctx.moveTo(isl.x + r, isl.y);
                 ctx.arc(isl.x, isl.y, r, 0, Math.PI * 2);
             }
             ctx.fillStyle = fillColor;
             ctx.fill();
+            for (const [a, b, halfWidth] of bridges) {
+                ctx.beginPath();
+                ctx.moveTo(a.x, a.y);
+                ctx.lineTo(b.x, b.y);
+                ctx.strokeStyle = fillColor;
+                ctx.lineWidth = halfWidth * 2;
+                ctx.lineCap = 'round';
+                ctx.stroke();
+            }
 
-            for (const oid of ownedSet) {
-                const isl = islandById[oid];
-                if (!isl) continue;
+            for (const [a, b, halfWidth] of bridges) {
+                const dx = b.x - a.x, dy = b.y - a.y;
+                const len = Math.hypot(dx, dy) || 1;
+                const nx = -dy / len * halfWidth, ny = dx / len * halfWidth;
+                ctx.strokeStyle = strokeColor;
+                ctx.lineWidth = 7 / mapState.zoom;
+                ctx.beginPath();
+                ctx.moveTo(a.x + nx, a.y + ny);
+                ctx.lineTo(b.x + nx, b.y + ny);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(a.x - nx, a.y - ny);
+                ctx.lineTo(b.x - nx, b.y - ny);
+                ctx.stroke();
+            }
+            for (const isl of ownedArr) {
                 const r = isl.radius + TERRITORY_PADDING;
                 ctx.beginPath();
                 ctx.arc(isl.x, isl.y, r, 0, Math.PI * 2);
