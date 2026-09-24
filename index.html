@@ -1234,23 +1234,23 @@
         // Low enough that pinching/scrolling all the way out fits the WHOLE
         // map (hub + every outer island) on screen even on a narrow phone
         // viewport, not just a chunk of it.
-        const MIN_ZOOM = 0.008;
+        const MIN_ZOOM = 0.0075;
         const MAX_ZOOM = 4;
         // Below this zoom, owned islands switch from green to blue so a big
         // territory reads clearly from far above the map.
         const TERRITORY_VIEW_ZOOM = 0.06;
 
         // Layout: one important central landmass (the hub, much bigger than
-        // everything else) plus a ring of smaller outer landmasses packed
-        // in close around it, each connected to the center by exactly one
-        // SHORT bridge - crossing to a different landmass is only possible
-        // over that bridge, not "any tower anywhere" like before. More
-        // islands than the old 3x3 grid, but tightly clustered rather than
-        // spread out, so bridges stay short.
+        // everything else) plus a ring of big outer landmasses packed in
+        // tight around it - close enough that only a short "mini bridge"
+        // spans the water gap to each one. Crossing to a different landmass
+        // is only possible over that bridge, not "any tower anywhere" like
+        // before. Found via a search against the actual coastline generator
+        // for the tightest packing that still has zero overlap.
         const CENTER_LANDMASS_RADIUS = 9000;
-        const OUTER_LANDMASS_RADIUS = 2800;
-        const OUTER_LANDMASS_COUNT = 12;
-        const RING_DISTANCE = 13600; // center-to-center, hub to each outer island
+        const OUTER_LANDMASS_RADIUS = 4500;
+        const OUTER_LANDMASS_COUNT = 8;
+        const RING_DISTANCE = 14480; // center-to-center, hub to each outer island
         const TOWER_GRID_SIZE = 5; // 5x5 towers per landmass
         const TOWER_SPACING_RATIO = 1600 / 5200; // keep the old island/tower proportions
         const ISLAND_RADIUS = 220; // tower footprint
@@ -2539,53 +2539,27 @@
                 for (let i = 1; i < lm.shape.length; i++) ctx.lineTo(lm.shape[i].x, lm.shape[i].y);
                 ctx.closePath();
                 ctx.fill();
-
-                // The hub is the most important landmass on the map - give
-                // its whole coastline a gold glow so it reads as "the
-                // important place" at a glance, at any zoom level.
-                if (lm.isCenter) {
-                    ctx.save();
-                    ctx.strokeStyle = 'rgba(255, 203, 61, 0.85)';
-                    ctx.lineWidth = 90 / mapState.zoom;
-                    ctx.stroke();
-                    ctx.restore();
-                }
             }
 
             // Bridges: the only way to cross from one landmass to a
-            // different one - drawn as a simple plank bridge (a tan double
-            // stroke with cross-ties) between the two closest shore points.
+            // different one - a small, thin plank line between the two
+            // closest shore points, not a wide road.
             ctx.save();
             ctx.lineCap = 'round';
             for (const br of bridges) {
                 ctx.strokeStyle = '#8a6541';
-                ctx.lineWidth = 46 / mapState.zoom;
+                ctx.lineWidth = 16 / mapState.zoom;
                 ctx.beginPath();
                 ctx.moveTo(br.x1, br.y1);
                 ctx.lineTo(br.x2, br.y2);
                 ctx.stroke();
 
                 ctx.strokeStyle = '#c9a274';
-                ctx.lineWidth = 30 / mapState.zoom;
+                ctx.lineWidth = 9 / mapState.zoom;
                 ctx.beginPath();
                 ctx.moveTo(br.x1, br.y1);
                 ctx.lineTo(br.x2, br.y2);
                 ctx.stroke();
-
-                const dx = br.x2 - br.x1, dy = br.y2 - br.y1;
-                const len = Math.hypot(dx, dy) || 1;
-                const nx = -dy / len, ny = dx / len;
-                const tieCount = Math.max(2, Math.floor(len / 260));
-                ctx.strokeStyle = '#5c4326';
-                ctx.lineWidth = 10 / mapState.zoom;
-                for (let i = 1; i < tieCount; i++) {
-                    const t = i / tieCount;
-                    const px = br.x1 + dx * t, py = br.y1 + dy * t;
-                    ctx.beginPath();
-                    ctx.moveTo(px - nx * 26, py - ny * 26);
-                    ctx.lineTo(px + nx * 26, py + ny * 26);
-                    ctx.stroke();
-                }
             }
             ctx.restore();
 
