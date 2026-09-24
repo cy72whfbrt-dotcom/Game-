@@ -2705,11 +2705,6 @@
                 ctx.closePath();
                 ctx.fillStyle = getLandmassGradient(lm);
                 ctx.fill();
-                // Sandy beach fringe right at the coastline (straddles the
-                // path, so it reads as a thin ring of shore).
-                ctx.lineWidth = 90 / mapState.zoom;
-                ctx.strokeStyle = 'rgba(224, 201, 138, 0.65)';
-                ctx.stroke();
             }
 
             // Bridges: the only way to cross from one landmass to a
