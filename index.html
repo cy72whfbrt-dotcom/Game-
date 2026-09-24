@@ -1461,20 +1461,25 @@
             return inside;
         }
 
-        // Closest point of a landmass's coastline polygon to some other
-        // point - used to anchor a bridge to the nearest shore instead of
-        // just running it between the two landmass centers.
-        function closestPolygonPoint(poly, targetX, targetY) {
-            let best = poly[0];
-            let bestDist = Infinity;
-            for (const p of poly) {
-                const d = (p.x - targetX) * (p.x - targetX) + (p.y - targetY) * (p.y - targetY);
-                if (d < bestDist) {
-                    bestDist = d;
-                    best = p;
-                }
-            }
-            return best;
+        // The point on a landmass's coastline that faces exactly toward
+        // some other point, i.e. where the straight line between the two
+        // landmass centers crosses the coastline - not just "whichever
+        // shape point happens to be closest", which could sit off to the
+        // side and make the bridge cut across at a crooked angle. Works
+        // directly off generateIslandShape()'s own parametrization: its
+        // points are sampled at uniformly increasing angles around the
+        // landmass's center, so the point at any bearing is a straight
+        // interpolation between the two samples that bracket it.
+        function polygonPointAtAngle(lm, angle) {
+            const n = lm.shape.length;
+            const step = (Math.PI * 2) / n;
+            const norm = ((angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+            const idx = norm / step;
+            const i0 = Math.floor(idx) % n;
+            const i1 = (i0 + 1) % n;
+            const t = idx - Math.floor(idx);
+            const p0 = lm.shape[i0], p1 = lm.shape[i1];
+            return { x: p0.x + (p1.x - p0.x) * t, y: p0.y + (p1.y - p0.y) * t };
         }
 
         // Game balance
@@ -1546,12 +1551,15 @@
         // Bridges: the ONLY way to cross from one landmass to a different
         // one - every hex-ADJACENT pair of landmasses gets its own short
         // bridge (not just hub-to-outer), so the honeycomb is a proper mesh
-        // you expand outward through island by island. Anchored to each
-        // landmass's nearest actual coastline point to its neighbor. Some
-        // coastline pairs land almost flush against each other (a near-zero
-        // gap) - stretched out to a minimum visible length here so the
-        // bridge always reads as a short straight line instead of
-        // collapsing into a round blob where its two line-cap ends overlap.
+        // you expand outward through island by island. Anchored exactly on
+        // the straight line between the two landmass centers (see
+        // polygonPointAtAngle), so the bridge always crosses the water
+        // directly instead of angling off toward whatever shape point
+        // happened to be closest. Some coastline pairs land almost flush
+        // against each other (a near-zero gap) - stretched out to a
+        // minimum visible length here so the bridge always reads as a
+        // short straight line instead of collapsing into a round blob
+        // where its two line-cap ends overlap.
         const MIN_BRIDGE_VISUAL_LENGTH = 700;
         const bridges = [];
         for (let i = 0; i < landmasses.length; i++) {
@@ -1560,8 +1568,9 @@
                 const dq = a.q - b.q, dr = a.r - b.r;
                 const isAdjacent = HEX_DIRS.some(d => (d.q === dq && d.r === dr) || (d.q === -dq && d.r === -dr));
                 if (!isAdjacent) continue;
-                let p1 = closestPolygonPoint(a.shape, b.x, b.y);
-                let p2 = closestPolygonPoint(b.shape, a.x, a.y);
+                const angleAtoB = Math.atan2(b.y - a.y, b.x - a.x);
+                let p1 = polygonPointAtAngle(a, angleAtoB);
+                let p2 = polygonPointAtAngle(b, angleAtoB + Math.PI);
                 const dx = p2.x - p1.x, dy = p2.y - p1.y;
                 const dist = Math.hypot(dx, dy);
                 if (dist > 0 && dist < MIN_BRIDGE_VISUAL_LENGTH) {
@@ -3088,20 +3097,22 @@
             }
 
             // Bridges: the only way to cross from one landmass to a
-            // different one - a small plank bridge between the two closest
-            // shore points, not a wide road.
+            // different one - a small, straight plank bridge running
+            // directly along the line between the two landmass centers, not
+            // a wide road wandering off toward whatever coastline point
+            // happened to be closest.
             ctx.save();
             ctx.lineCap = 'round';
             for (const br of bridges) {
                 ctx.strokeStyle = '#8a6541';
-                ctx.lineWidth = 16 / mapState.zoom;
+                ctx.lineWidth = 12 / mapState.zoom;
                 ctx.beginPath();
                 ctx.moveTo(br.x1, br.y1);
                 ctx.lineTo(br.x2, br.y2);
                 ctx.stroke();
 
                 ctx.strokeStyle = '#c9a274';
-                ctx.lineWidth = 9 / mapState.zoom;
+                ctx.lineWidth = 7 / mapState.zoom;
                 ctx.beginPath();
                 ctx.moveTo(br.x1, br.y1);
                 ctx.lineTo(br.x2, br.y2);
