@@ -1261,11 +1261,15 @@
         // attacking anything anywhere. Spacing found via a search against
         // the actual coastline generator for the tightest hex packing with
         // zero overlap.
-        const LANDMASS_RADIUS = 20000; // every landmass is this same size
+        const CENTER_LANDMASS_RADIUS = 30000; // only the hub is bigger
+        const OUTER_LANDMASS_RADIUS = 20000;
         const HEX_RING_COUNT = 3; // hub + 3 rings = 1+6+12+18 = 37 landmasses
-        const HEX_SPACING = 50800; // distance between adjacent hex cell centers
-        const TOWER_GRID_SIZE = 5; // 5x5 towers per landmass
-        const TOWER_SPACING_RATIO = 1600 / 5200; // keep the old island/tower proportions
+        const HEX_SPACING = 56120; // distance between adjacent hex cell centers
+        // Bases are scattered freely across a landmass (rejection-sampled,
+        // not a rigid grid) - only constraint is a minimum distance from
+        // every other base and the temple, so nothing ends up crowded.
+        const TOWERS_PER_LANDMASS = 24;
+        const TOWER_MIN_SPACING_RATIO = 0.24; // relative to the landmass radius
         const ISLAND_RADIUS = 220; // tower footprint
         const NEUTRAL_DEFENSE_MAX = 100;
         const NEUTRAL_DEFENSE_MIN = 20;
@@ -1449,16 +1453,17 @@
         {
             let lmId = 0;
             for (let ring = 0; ring <= HEX_RING_COUNT; ring++) {
+                const radius = ring === 0 ? CENTER_LANDMASS_RADIUS : OUTER_LANDMASS_RADIUS;
                 for (const cell of hexRing(ring)) {
                     const { x, y } = axialToPixel(cell.q, cell.r);
                     // Distinct seed per landmass (large prime multiplier
                     // avoids correlated streams between adjacent ids) so
                     // every island gets a visibly different coastline
                     const shapeRand = mulberry32(1337 + lmId * 104729);
-                    const shape = generateIslandShape(x, y, LANDMASS_RADIUS, shapeRand);
+                    const shape = generateIslandShape(x, y, radius, shapeRand);
                     let shapeMaxR = 0;
                     for (const p of shape) shapeMaxR = Math.max(shapeMaxR, Math.hypot(p.x - x, p.y - y));
-                    landmasses.push({ id: lmId, q: cell.q, r: cell.r, x, y, radius: LANDMASS_RADIUS, shape, shapeMaxR, isCenter: ring === 0 });
+                    landmasses.push({ id: lmId, q: cell.q, r: cell.r, x, y, radius, shape, shapeMaxR, isCenter: ring === 0 });
                     lmId++;
                 }
             }
@@ -1507,50 +1512,54 @@
         const islands = [];
         let playerIslandId = null;
 
-        const towerHalf = Math.floor(TOWER_GRID_SIZE / 2);
         let id = 0;
         for (const lm of landmasses) {
-            const towerSpacing = lm.radius * TOWER_SPACING_RATIO;
-            for (let row = -towerHalf; row <= towerHalf; row++) {
-                for (let col = -towerHalf; col <= towerHalf; col++) {
-                    if (row === 0 && col === 0) continue; // reserved for the temple
-                    const jitterX = (rand() - 0.5) * towerSpacing * 0.25;
-                    const jitterY = (rand() - 0.5) * towerSpacing * 0.25;
-                    const dx = col * towerSpacing + jitterX;
-                    const dy = row * towerSpacing + jitterY;
-                    let tx = lm.x + dx;
-                    let ty = lm.y + dy;
-                    // Bases may only stand on the island itself: if the grid
-                    // slot falls off the organic coastline, pull it inward
-                    // along the line from the landmass center until it lands
-                    // on land; if it never does, drop that tower entirely.
-                    if (!pointInPolygon(tx, ty, lm.shape)) {
-                        let scale = 1;
-                        let attempts = 0;
-                        do {
-                            scale *= 0.9;
-                            tx = lm.x + dx * scale;
-                            ty = lm.y + dy * scale;
-                            attempts++;
-                        } while (!pointInPolygon(tx, ty, lm.shape) && attempts < 40);
-                        if (!pointInPolygon(tx, ty, lm.shape)) continue;
-                    }
-                    islands.push({
-                        id: id++,
-                        landmassId: lm.id,
-                        x: tx,
-                        y: ty,
-                        radius: ISLAND_RADIUS,
-                        type: 'tower',
-                        // Two separate stats for a neutral (unowned) tower:
-                        // troops garrisoned there, and a defense bonus on top.
-                        neutralTroops: NEUTRAL_TROOPS_MIN + Math.floor(rand() * (NEUTRAL_TROOPS_MAX - NEUTRAL_TROOPS_MIN + 1)),
-                        neutralDefense: NEUTRAL_DEFENSE_MIN + Math.floor(rand() * (NEUTRAL_DEFENSE_MAX - NEUTRAL_DEFENSE_MIN + 1))
-                    });
-                }
+            const isMega = lm.isCenter;
+
+            // Bounding box of this landmass's coastline, so random sample
+            // points can be drawn from it before checking they actually
+            // land inside the (non-rectangular) polygon.
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            for (const p of lm.shape) {
+                minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+                minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
             }
 
-            const isMega = lm.isCenter;
+            // Rejection sampling: drop a base wherever it lands on the
+            // island, as long as it isn't too close to the temple or any
+            // base already placed - free placement instead of a rigid grid,
+            // but never crowded together.
+            const minSpacing = lm.radius * TOWER_MIN_SPACING_RATIO;
+            const occupied = [{ x: lm.x, y: lm.y }]; // the temple's spot, reserved first
+            let placed = 0;
+            let attempts = 0;
+            const maxAttempts = TOWERS_PER_LANDMASS * 300;
+            while (placed < TOWERS_PER_LANDMASS && attempts < maxAttempts) {
+                attempts++;
+                const tx = minX + rand() * (maxX - minX);
+                const ty = minY + rand() * (maxY - minY);
+                if (!pointInPolygon(tx, ty, lm.shape)) continue;
+                let tooClose = false;
+                for (const p of occupied) {
+                    if (Math.hypot(p.x - tx, p.y - ty) < minSpacing) { tooClose = true; break; }
+                }
+                if (tooClose) continue;
+                occupied.push({ x: tx, y: ty });
+                placed++;
+                islands.push({
+                    id: id++,
+                    landmassId: lm.id,
+                    x: tx,
+                    y: ty,
+                    radius: ISLAND_RADIUS,
+                    type: 'tower',
+                    // Two separate stats for a neutral (unowned) tower:
+                    // troops garrisoned there, and a defense bonus on top.
+                    neutralTroops: NEUTRAL_TROOPS_MIN + Math.floor(rand() * (NEUTRAL_TROOPS_MAX - NEUTRAL_TROOPS_MIN + 1)),
+                    neutralDefense: NEUTRAL_DEFENSE_MIN + Math.floor(rand() * (NEUTRAL_DEFENSE_MAX - NEUTRAL_DEFENSE_MIN + 1))
+                });
+            }
+
             islands.push({
                 id: id++,
                 landmassId: lm.id,
@@ -2805,19 +2814,56 @@
                 const total = resolveAt - startedAt;
                 const progress = total > 0 ? Math.min(1, Math.max(0, (now - startedAt) / total)) : 1;
 
+                // Troops can only cross to a different landmass over its
+                // bridge - so the march is drawn walking straight to that
+                // bridge, along it, then straight on to the target, instead
+                // of cutting a diagonal line through open water. Same-
+                // landmass marches (or a march with no bridge between the
+                // two landmasses, e.g. an older save) just go direct.
+                let path = [{ x: source.x, y: source.y }, { x: target.x, y: target.y }];
+                if (source.landmassId !== target.landmassId) {
+                    const bridge = bridges.find(br =>
+                        (br.a === source.landmassId && br.b === target.landmassId) ||
+                        (br.a === target.landmassId && br.b === source.landmassId));
+                    if (bridge) {
+                        const sourceIsA = bridge.a === source.landmassId;
+                        const nearSource = sourceIsA ? { x: bridge.x1, y: bridge.y1 } : { x: bridge.x2, y: bridge.y2 };
+                        const nearTarget = sourceIsA ? { x: bridge.x2, y: bridge.y2 } : { x: bridge.x1, y: bridge.y1 };
+                        path = [{ x: source.x, y: source.y }, nearSource, nearTarget, { x: target.x, y: target.y }];
+                    }
+                }
+
                 ctx.save();
                 ctx.strokeStyle = color;
                 ctx.lineWidth = 5 / mapState.zoom;
                 ctx.setLineDash([22 / mapState.zoom, 16 / mapState.zoom]);
                 ctx.lineDashOffset = -now / 40;
                 ctx.beginPath();
-                ctx.moveTo(source.x, source.y);
-                ctx.lineTo(target.x, target.y);
+                ctx.moveTo(path[0].x, path[0].y);
+                for (let i = 1; i < path.length; i++) ctx.lineTo(path[i].x, path[i].y);
                 ctx.stroke();
                 ctx.restore();
 
-                const mx = source.x + (target.x - source.x) * progress;
-                const my = source.y + (target.y - source.y) * progress;
+                // Walk the progress dot along the whole path (proportional
+                // to each leg's length), not just straight source->target.
+                const segLengths = [];
+                let totalLength = 0;
+                for (let i = 0; i < path.length - 1; i++) {
+                    const len = Math.hypot(path[i + 1].x - path[i].x, path[i + 1].y - path[i].y);
+                    segLengths.push(len);
+                    totalLength += len;
+                }
+                let distAlong = totalLength * progress;
+                let mx = path[0].x, my = path[0].y;
+                for (let i = 0; i < segLengths.length; i++) {
+                    if (distAlong <= segLengths[i] || i === segLengths.length - 1) {
+                        const t = segLengths[i] > 0 ? Math.min(1, distAlong / segLengths[i]) : 1;
+                        mx = path[i].x + (path[i + 1].x - path[i].x) * t;
+                        my = path[i].y + (path[i + 1].y - path[i].y) * t;
+                        break;
+                    }
+                    distAlong -= segLengths[i];
+                }
                 ctx.beginPath();
                 ctx.fillStyle = color;
                 ctx.arc(mx, my, 16 / mapState.zoom, 0, Math.PI * 2);
