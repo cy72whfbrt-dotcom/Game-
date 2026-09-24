@@ -386,7 +386,6 @@
             border: 2px solid var(--border);
             border-radius: 14px;
             padding: 10px;
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, .35);
         }
         #chestSelectionBar .label {
             text-align: center;
@@ -3434,9 +3433,13 @@
 
             chestSelectionBar.style.display = items.length === 0 ? 'none' : 'block';
             const selected = [...chestSelectedIds].map(id => inventory[id]).filter(Boolean);
-            chestSelectionLabel.textContent = selected.length > 0
-                ? (selected.length + ' ausgewählt')
-                : 'Punkt antippen zum Auswählen';
+            if (chestFlashMessage) {
+                chestSelectionLabel.textContent = chestFlashMessage;
+            } else {
+                chestSelectionLabel.textContent = selected.length > 0
+                    ? (selected.length + ' ausgewählt')
+                    : 'Punkt antippen zum Auswählen';
+            }
             chestSelectSellBtn.disabled = selected.length === 0;
             chestSelectCombineBtn.disabled = !(
                 selected.length === COMBINE_COUNT &&
@@ -3445,14 +3448,32 @@
             );
         }
 
+        // Briefly shows exactly what a combine/sell click just did, so it's
+        // never ambiguous whether "just those 3" or "everything" happened -
+        // each click only ever acts on the items selected at that moment.
+        let chestFlashMessage = null;
+        let chestFlashTimer = null;
+        function showChestFlash(msg) {
+            chestFlashMessage = msg;
+            clearTimeout(chestFlashTimer);
+            chestFlashTimer = setTimeout(() => {
+                chestFlashMessage = null;
+                renderChestEquipment();
+            }, 2200);
+        }
+
         chestSelectSellBtn.addEventListener('click', () => {
-            salvageItems([...chestSelectedIds]);
+            const ids = [...chestSelectedIds];
+            const points = salvageItems(ids);
             chestSelectedIds.clear();
+            if (points > 0) showChestFlash(ids.length + ' verkauft für ' + points + ' Punkte');
             renderChestEquipment();
         });
         chestSelectCombineBtn.addEventListener('click', () => {
-            combineSelectedItems([...chestSelectedIds]);
+            const ids = [...chestSelectedIds];
+            const ok = combineSelectedItems(ids);
             chestSelectedIds.clear();
+            if (ok) showChestFlash('3 kombiniert → 1 höhere Seltenheit');
             renderChestEquipment();
         });
 
