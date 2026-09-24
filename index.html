@@ -183,6 +183,7 @@
             box-shadow: 0 10px 0 rgba(0, 0, 0, .35), 0 18px 34px rgba(0, 0, 0, .5);
             -webkit-backdrop-filter: blur(8px) saturate(140%);
             backdrop-filter: blur(8px) saturate(140%);
+            z-index: 30;
         }
 
         #profilePopup h3 {
@@ -425,6 +426,7 @@
             max-width: 92vw;
             max-height: 80vh;
             overflow-y: auto;
+            z-index: 30;
         }
 
         #battleLogPopup h3, #mailPopup h3, #shopPopup h3 {
@@ -1333,6 +1335,7 @@
             width: 340px;
             max-width: 92vw;
             text-align: center;
+            z-index: 30;
         }
 
         #islandPopup h3 {
@@ -1560,7 +1563,6 @@
 
         <div id="tabEquip" class="profileTabPanel">
             <div id="equipStats" class="equipStatsRow"></div>
-            <div id="equipGrid" class="itemGrid"></div>
 
             <div class="kingdomLabel">Truhen-Ausr&uuml;stung</div>
             <div class="sectionLabel">Ausger&uuml;stet</div>
@@ -3255,7 +3257,6 @@
         const profileStats = document.getElementById('profileStats');
         const profileCloseBtn = document.getElementById('profileCloseBtn');
         const equipStats = document.getElementById('equipStats');
-        const equipGrid = document.getElementById('equipGrid');
         const chestPointsValue = document.getElementById('chestPointsValue');
         const chestEquippedGrid = document.getElementById('chestEquippedGrid');
         const chestInventoryGrid = document.getElementById('chestInventoryGrid');
@@ -3341,42 +3342,17 @@
                 '<div class="statRow"><span>Heimat</span><b>' + homeLabel + '</b></div>';
         }
 
+        // The old coin-upgraded weapon/armor/shield/boots cards were
+        // removed - the gem-crate rarity system below (renderChestEquipment)
+        // replaced them as the way to grow this equipment. This just keeps
+        // the summary stat chips (total bonus from equipment+skills+rarity
+        // items combined) up to date.
         function renderEquipGrid() {
             equipStats.innerHTML =
                 '<div class="statChip"><span>Truppen</span><b>+' + bonusPct('weapon', 'troops').toFixed(0) + '%</b></div>' +
                 '<div class="statChip"><span>M&uuml;nzen</span><b>+' + bonusPct('boots', null).toFixed(0) + '%</b></div>' +
                 '<div class="statChip"><span>Verteidigung</span><b>+' + defenseBonusFlat() + '</b></div>' +
                 '<div class="statChip"><span>Verluste</span><b>-' + shieldLossReductionPct().toFixed(0) + '%</b></div>';
-
-            equipGrid.innerHTML = '';
-            for (const key of Object.keys(EQUIPMENT_DEFS)) {
-                const def = EQUIPMENT_DEFS[key];
-                const level = equipment[key];
-                const cost = equipmentUpgradeCost(level);
-                const bonusText = skillBonusText(def, level);
-
-                const card = document.createElement('div');
-                card.className = 'itemCard';
-                card.innerHTML =
-                    '<div class="itemIcon">' + def.icon + '</div>' +
-                    '<div class="itemInfo"><b>' + def.name + ' Lvl ' + level + '</b><br>' +
-                    def.desc + ': ' + bonusText + '</div>';
-
-                const btn = document.createElement('button');
-                btn.className = 'itemUpgradeBtn';
-                btn.textContent = cost + ' \u{1FA99}';
-                btn.disabled = coins < cost;
-                btn.addEventListener('click', () => {
-                    if (coins < equipmentUpgradeCost(equipment[key])) return;
-                    coins -= equipmentUpgradeCost(equipment[key]);
-                    equipment[key] += 1;
-                    updateHud();
-                    saveProgression();
-                    renderEquipGrid();
-                });
-                card.appendChild(btn);
-                equipGrid.appendChild(card);
-            }
         }
 
         // The gem-crate rarity item layer: one equipped card per slot
