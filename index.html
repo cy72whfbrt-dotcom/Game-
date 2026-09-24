@@ -15,20 +15,27 @@
            #profilePopup, now global so every popup/HUD element uses the
            same palette instead of each having its own one-off dark colors. */
         :root {
-            --bg: #0c1226;
-            --surface: #182348;
-            --surface-alt: #223066;
-            --border: #324377;
-            --text: #f4f7ff;
-            --text-dim: #94a3cf;
-            --gold: #ffcb3d;
+            /* Richer, deeper palette than before - near-black indigo
+               instead of navy, more saturated accents, a new cyan accent
+               for highlights/glows. Everything below (HUD, popups,
+               buttons, cards) reads off these variables, so this one
+               block is most of the "make it look modern" work. */
+            --bg: #070a18;
+            --surface: #131c3c;
+            --surface-alt: #1c2a58;
+            --border: #33477e;
+            --text: #f8faff;
+            --text-dim: #9fb0e0;
+            --gold: #ffd257;
             --gold-dark: #c99a1f;
-            --green: #24b47e;
-            --green-dark: #17825b;
-            --red: #ef5b4e;
-            --red-dark: #b8392f;
-            --blue: #3b82f6;
+            --green: #2ed99b;
+            --green-dark: #159a6b;
+            --red: #ff5c5c;
+            --red-dark: #c1322f;
+            --blue: #4f8bff;
             --blue-dark: #2a5fc0;
+            --accent: #29e0e0;
+            --accent-dark: #0f9fa6;
         }
 
         body {
@@ -1501,6 +1508,26 @@
         #multiAttackCancelBtn {
             background: var(--surface-alt);
             color: var(--text);
+        }
+
+        /* Modern pass: a soft glossy highlight layered over EVERY button
+           in every popup, regardless of its own background color - a
+           `background-image` set here beats each button's own `background:
+           var(--x)` shorthand because "#somePopup button" (id+tag) always
+           out-specifies a bare "#someBtn" (id-only) for that property, so
+           this works without touching every individual button rule. */
+        #islandPopup button, #profilePopup button, #battleLogPopup button,
+        #mailPopup button, #shopPopup button, #chestItemPopup button,
+        #chestSelectionBar button, #multiAttackBar button {
+            background-image: linear-gradient(180deg, rgba(255, 255, 255, .22), rgba(255, 255, 255, 0) 55%);
+        }
+
+        /* Slightly larger, softer corner radii + a subtle ambient glow
+           behind every popup, on top of the existing drop shadow - reads
+           as "elevated card" rather than a flat panel. */
+        #islandPopup, #profilePopup, #battleLogPopup, #mailPopup, #shopPopup, #chestItemPopup {
+            border-radius: 22px;
+            box-shadow: 0 10px 0 rgba(0, 0, 0, .35), 0 22px 44px rgba(0, 0, 0, .55), 0 0 0 1px rgba(255, 255, 255, .04) inset;
         }
     </style>
 </head>
