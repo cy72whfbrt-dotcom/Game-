@@ -1800,9 +1800,17 @@
         } catch (e) {
             islandTroops = {};
         }
+        // Only the very first time this player's save is created (no
+        // troop record for their home base yet) do they start with a
+        // 100,000-troop head start - not on every reload where troops
+        // happen to be at 0 from actual gameplay, and not for bots.
+        const PLAYER_START_TROOPS = 100000;
+        const isFreshPlayerSave = !(playerIslandId in islandTroops);
         for (const ownedId of ownedIslands) {
             if (!islandLevels[ownedId]) islandLevels[ownedId] = 1;
-            if (!islandTroops[ownedId]) islandTroops[ownedId] = 0;
+            if (!islandTroops[ownedId]) {
+                islandTroops[ownedId] = (ownedId === playerIslandId && isFreshPlayerSave) ? PLAYER_START_TROOPS : 0;
+            }
         }
 
         let coins = parseInt(localStorage.getItem('openWaterCoins'), 10) || 0;
