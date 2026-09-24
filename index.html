@@ -379,19 +379,20 @@
             color: var(--gold);
         }
         .chestPointsIcon { font-size: 16px; }
+        /* No border/background box here on purpose - a rounded-corner box
+           with the button row's own rounded buttons sitting right against
+           its edge kept rendering with a visible seam/artifact on some
+           phones (iOS Safari + backdrop-filter on the parent popup is a
+           known trigger for this). Plain text + buttons avoids it outright. */
         #chestSelectionBar {
             display: none;
-            margin-top: 10px;
-            background: var(--surface);
-            border: 2px solid var(--border);
-            border-radius: 14px;
-            padding: 10px;
+            margin-top: 14px;
         }
         #chestSelectionBar .label {
             text-align: center;
             font-size: 12px;
             font-weight: 700;
-            color: var(--text);
+            color: var(--text-dim);
             margin-bottom: 8px;
         }
         #chestSelectionBar .row {
