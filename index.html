@@ -180,7 +180,7 @@
             color: var(--text-dim);
         }
 
-        #battleLogPopup, #mailPopup {
+        #battleLogPopup, #mailPopup, #shopPopup {
             display: none;
             position: fixed;
             left: 50%;
@@ -199,7 +199,7 @@
             overflow-y: auto;
         }
 
-        #battleLogPopup h3, #mailPopup h3 {
+        #battleLogPopup h3, #mailPopup h3, #shopPopup h3 {
             margin: 0 0 14px;
             font-size: 13px;
             font-weight: 800;
@@ -421,7 +421,7 @@
             line-height: 1.8;
         }
 
-        #battleLogPopup button, #mailPopup button {
+        #battleLogPopup button, #mailPopup button, #shopPopup button {
             font: inherit;
             font-weight: 800;
             font-size: 12px;
@@ -434,18 +434,119 @@
             background: var(--surface-alt);
             color: var(--text);
             box-shadow: 0 3px 0 #10184a;
+            flex: 1 1 auto;
         }
 
-        #battleLogPopup button:active, #mailPopup button:active {
+        #battleLogPopup button:active, #mailPopup button:active, #shopPopup button:active {
             box-shadow: 0 1px 0 #10184a;
             transform: translateY(2px);
         }
 
-        #battleLogPopup .row, #mailPopup .row {
+        #battleLogPopup button:disabled, #mailPopup button:disabled, #shopPopup button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, .4) !important;
+            transform: translateY(2px);
+        }
+
+        #shopOpenCrateBtn {
+            background: var(--gold);
+            color: #241a02;
+            box-shadow: 0 3px 0 var(--gold-dark);
+        }
+        #shopOpenCrateBtn:active {
+            box-shadow: 0 1px 0 var(--gold-dark);
+        }
+
+        #battleLogPopup .row, #mailPopup .row, #shopPopup .row {
             display: flex;
             gap: 10px;
             justify-content: center;
             margin-top: 14px;
+        }
+
+        .rarityChip {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: 800;
+            color: #fff;
+            text-shadow: 0 1px 1px rgba(0,0,0,.4);
+        }
+
+        .chestItemCard {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+        }
+
+        .chestItemIcon {
+            font-size: 20px;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: #fff;
+        }
+
+        .chestItemInfo {
+            flex: 1;
+            font-size: 11px;
+            color: var(--text-dim);
+            min-width: 0;
+        }
+        .chestItemInfo b {
+            color: var(--text);
+            font-size: 13px;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .chestItemActions {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .chestItemActions button {
+            font: inherit;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            padding: 6px 10px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            background: var(--surface-alt);
+            color: var(--text);
+        }
+        .chestItemActions button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .chestItemActions button.equip {
+            background: var(--green);
+            color: #fff;
+        }
+        .chestItemActions button.combine {
+            background: #8e44ad;
+            color: #fff;
+        }
+        .chestItemActions button.salvage {
+            background: var(--red);
+            color: #fff;
+        }
+        .chestItemActions button.levelup {
+            background: var(--gold);
+            color: #241a02;
         }
 
         #profileName {
@@ -1175,6 +1276,7 @@
         <button id="profileBtn" title="Profil">&#128100;</button>
         <button id="battleLogBtn" title="Angriffe &amp; Kampflog">&#9876;&#65039;<span id="battleLogBadge" class="badge">0</span></button>
         <button id="mailBtn" title="Postfach">&#128238;</button>
+        <button id="shopBtn" title="Shop">&#128722;</button>
     </div>
     <div id="hint">Ziehen zum Bewegen &middot; Zoomen mit Scroll/Pinch &middot; Insel antippen f&uuml;r Infos &amp; Aktionen</div>
     <div id="multiAttackBar">
@@ -1231,6 +1333,13 @@
         <div id="tabEquip" class="profileTabPanel">
             <div id="equipStats" class="equipStatsRow"></div>
             <div id="equipGrid" class="itemGrid"></div>
+
+            <div class="kingdomLabel">Truhen-Ausr&uuml;stung</div>
+            <div id="chestPointsLine" class="stats" style="margin-bottom:10px;"></div>
+            <div class="sectionLabel">Ausger&uuml;stet</div>
+            <div id="chestEquippedGrid" class="itemGrid"></div>
+            <div class="sectionLabel">Inventar (3x gleiche Seltenheit = eine H&ouml;here)</div>
+            <div id="chestInventoryGrid" class="itemGrid"></div>
         </div>
 
         <div id="tabSkills" class="profileTabPanel">
@@ -1264,6 +1373,24 @@
         <div class="mailEmpty">&#128238;<br>Hier siehst du bald Nachrichten und Ereignisse.<br>Kommt sp&auml;ter.</div>
         <div class="row">
             <button id="mailCloseBtn">Schlie&szlig;en</button>
+        </div>
+    </div>
+
+    <div id="shopPopup">
+        <h3>Shop</h3>
+        <div class="stats" style="text-align:center;">
+            <div style="font-size:13px;color:var(--text-dim);">Deine Gems</div>
+            <div style="font-size:24px;font-weight:800;color:var(--gold);">&#128142; <span id="shopGemCount">0</span></div>
+        </div>
+        <div class="sectionLabel">Ausr&uuml;stungskiste</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:10px;">Enth&auml;lt ein zuf&auml;lliges Ausr&uuml;stungsteil (Waffe/R&uuml;stung/Schild/Stiefel) in einer von 6 Seltenheiten: Grau, Gr&uuml;n, Blau, Lila, Gold, Rot.</div>
+        <div id="shopCrateResult" class="stats" style="display:none;margin-bottom:10px;"></div>
+        <div class="row">
+            <button id="shopOpenCrateBtn">Kiste &ouml;ffnen (5 &#128142;)</button>
+        </div>
+        <div class="row">
+            <button id="shopToEquipBtn">Zur Ausr&uuml;stung</button>
+            <button id="shopCloseBtn">Schlie&szlig;en</button>
         </div>
     </div>
 
@@ -2020,6 +2147,144 @@
         }
         for (const key of Object.keys(EQUIPMENT_DEFS)) if (!equipment[key]) equipment[key] = 0;
 
+        // ===== Shop: gem-bought crates, rarity items, combine, salvage =====
+        // A second, separate equipment layer on top of the existing coin-
+        // upgraded weapon/armor/shield/boots levels above - gem crates drop
+        // a random item (one of the same 4 slots) at one of 6 rarities.
+        // 3 items of the same slot+rarity combine into 1 of the next
+        // rarity. Salvaging an unequipped item turns it into upgrade
+        // points, which level up an EQUIPPED item (max level 20 per item).
+        // "A level-20 grey item is about as strong as a level-1 green one"
+        // (the player's own framing) falls out naturally from scoring an
+        // item as rarityIndex * 20 + level: grey L20 scores 20, green L1
+        // scores 21 - just barely ahead, exactly that equivalence.
+        const RARITY_DEFS = [
+            { key: 'grau', name: 'Grau', color: '#9a9a9a' },
+            { key: 'gruen', name: 'Grün', color: '#2ecc71' },
+            { key: 'blau', name: 'Blau', color: '#3498db' },
+            { key: 'lila', name: 'Lila', color: '#9b59b6' },
+            { key: 'gold', name: 'Gold', color: '#f1c40f' },
+            { key: 'rot', name: 'Rot', color: '#e74c3c' }
+        ];
+        const ITEM_MAX_LEVEL = 20;
+        const RARITY_DROP_WEIGHTS = [60, 25, 10, 4, 0.9, 0.1]; // grau..rot
+        const CRATE_GEM_COST = 5;
+        const COMBINE_COUNT = 3;
+        const RARITY_PCT_PER_SCORE = 0.15;
+        const RARITY_FLAT_PER_SCORE = 0.3;
+
+        function itemScore(item) {
+            return item.rarity * ITEM_MAX_LEVEL + item.level;
+        }
+        function itemLevelUpCost(item) {
+            return item.level * 5;
+        }
+
+        let inventory; // id -> { id, slot, rarity, level }
+        try {
+            inventory = JSON.parse(localStorage.getItem('openWaterInventory')) || {};
+        } catch (e) {
+            inventory = {};
+        }
+        let nextItemId = parseInt(localStorage.getItem('openWaterNextItemId'), 10) || 1;
+        let equippedItems; // slot -> item id or null
+        try {
+            equippedItems = JSON.parse(localStorage.getItem('openWaterEquippedItems')) || {};
+        } catch (e) {
+            equippedItems = {};
+        }
+        for (const key of Object.keys(EQUIPMENT_DEFS)) if (!(key in equippedItems)) equippedItems[key] = null;
+        let upgradePoints = parseInt(localStorage.getItem('openWaterUpgradePoints'), 10) || 0;
+
+        function equippedItemBonusPct(slot) {
+            const id = equippedItems[slot];
+            const item = id ? inventory[id] : null;
+            return item ? itemScore(item) * RARITY_PCT_PER_SCORE : 0;
+        }
+        function equippedItemBonusFlat(slot) {
+            const id = equippedItems[slot];
+            const item = id ? inventory[id] : null;
+            return item ? itemScore(item) * RARITY_FLAT_PER_SCORE : 0;
+        }
+
+        function pickRandomSlot() {
+            const keys = Object.keys(EQUIPMENT_DEFS);
+            return keys[Math.floor(Math.random() * keys.length)];
+        }
+        function pickRandomRarity() {
+            const total = RARITY_DROP_WEIGHTS.reduce((a, b) => a + b, 0);
+            let roll = Math.random() * total;
+            for (let i = 0; i < RARITY_DROP_WEIGHTS.length; i++) {
+                if (roll < RARITY_DROP_WEIGHTS[i]) return i;
+                roll -= RARITY_DROP_WEIGHTS[i];
+            }
+            return 0;
+        }
+        function addInventoryItem(slot, rarity, level) {
+            const id = 'item' + (nextItemId++);
+            const item = { id, slot, rarity, level: level || 1 };
+            inventory[id] = item;
+            return item;
+        }
+        // Buys and opens one crate for CRATE_GEM_COST gems - returns the new
+        // item, or null if the player can't afford it.
+        function openCrate() {
+            if (gems < CRATE_GEM_COST) return null;
+            gems -= CRATE_GEM_COST;
+            const item = addInventoryItem(pickRandomSlot(), pickRandomRarity(), 1);
+            saveGame();
+            saveProgression();
+            updateHud();
+            return item;
+        }
+        function itemsBySlotRarity(slot, rarity) {
+            return Object.values(inventory).filter(it => it.slot === slot && it.rarity === rarity && equippedItems[it.slot] !== it.id);
+        }
+        // 3 unequipped items of the same slot+rarity -> 1 new item of the
+        // same slot, one rarity tier up, at level 1.
+        function combineItems(slot, rarity) {
+            if (rarity >= RARITY_DEFS.length - 1) return false;
+            const candidates = itemsBySlotRarity(slot, rarity);
+            if (candidates.length < COMBINE_COUNT) return false;
+            for (let i = 0; i < COMBINE_COUNT; i++) delete inventory[candidates[i].id];
+            addInventoryItem(slot, rarity + 1, 1);
+            saveGame();
+            saveProgression();
+            updateHud();
+            return true;
+        }
+        // Melts an unequipped item into upgrade points (can't salvage
+        // whatever's currently equipped - unequip/replace it first).
+        function salvageItem(itemId) {
+            const item = inventory[itemId];
+            if (!item || equippedItems[item.slot] === itemId) return 0;
+            const points = itemScore(item);
+            upgradePoints += points;
+            delete inventory[itemId];
+            saveGame();
+            saveProgression();
+            updateHud();
+            return points;
+        }
+        function levelUpItem(itemId) {
+            const item = inventory[itemId];
+            if (!item || item.level >= ITEM_MAX_LEVEL) return false;
+            const cost = itemLevelUpCost(item);
+            if (upgradePoints < cost) return false;
+            upgradePoints -= cost;
+            item.level += 1;
+            saveProgression();
+            return true;
+        }
+        function equipInventoryItem(itemId) {
+            const item = inventory[itemId];
+            if (!item) return;
+            equippedItems[item.slot] = itemId;
+            saveGame();
+            saveProgression();
+            updateHud();
+        }
+
         let skills;
         try {
             skills = JSON.parse(localStorage.getItem('openWaterSkills')) || {};
@@ -2049,6 +2314,10 @@
 
         function saveProgression() {
             localStorage.setItem('openWaterEquipment', JSON.stringify(equipment));
+            localStorage.setItem('openWaterInventory', JSON.stringify(inventory));
+            localStorage.setItem('openWaterNextItemId', String(nextItemId));
+            localStorage.setItem('openWaterEquippedItems', JSON.stringify(equippedItems));
+            localStorage.setItem('openWaterUpgradePoints', String(upgradePoints));
             localStorage.setItem('openWaterSkills', JSON.stringify(skills));
             localStorage.setItem('openWaterSkillPoints', String(skillPoints));
             localStorage.setItem('openWaterXp', String(playerXp));
@@ -2638,12 +2907,14 @@
         function bonusPct(equipKey, skillKey) {
             const eq = (equipment[equipKey] || 0) * (EQUIPMENT_DEFS[equipKey].pct || 0);
             const sk = skillKey ? (skills[skillKey] || 0) * (SKILL_DEFS[skillKey].pct || 0) : 0;
-            return eq + sk;
+            const rarity = equippedItemBonusPct(equipKey);
+            return eq + sk + rarity;
         }
         function bonusFlat(equipKey, skillKey) {
             const eq = (equipment[equipKey] || 0) * (EQUIPMENT_DEFS[equipKey].flat || 0);
             const sk = skillKey ? (skills[skillKey] || 0) * (SKILL_DEFS[skillKey].flat || 0) : 0;
-            return eq + sk;
+            const rarity = equippedItemBonusFlat(equipKey);
+            return eq + sk + rarity;
         }
         function troopProductionMultiplier() {
             return 1 + bonusPct('weapon', 'troops') / 100;
@@ -2655,7 +2926,7 @@
             return bonusFlat('armor', 'defense');
         }
         function shieldLossReductionPct() {
-            return Math.min(90, equipment.shield * EQUIPMENT_DEFS.shield.pct);
+            return Math.min(90, equipment.shield * EQUIPMENT_DEFS.shield.pct + equippedItemBonusPct('shield'));
         }
         // "Angriff" skill: adds a flat number of extra troops to an attack
         // (not a %), on top of whatever the source tower's garrison sends.
@@ -2689,6 +2960,9 @@
         const profileCloseBtn = document.getElementById('profileCloseBtn');
         const equipStats = document.getElementById('equipStats');
         const equipGrid = document.getElementById('equipGrid');
+        const chestPointsLine = document.getElementById('chestPointsLine');
+        const chestEquippedGrid = document.getElementById('chestEquippedGrid');
+        const chestInventoryGrid = document.getElementById('chestInventoryGrid');
         const skillPointsLine = document.getElementById('skillPointsLine');
         const skillGrid = document.getElementById('skillGrid');
 
@@ -2790,6 +3064,111 @@
             }
         }
 
+        // The gem-crate rarity item layer: one equipped card per slot
+        // (shows what's equipped + a level-up button spending upgrade
+        // points), and an inventory grid below grouped by slot+rarity
+        // (equip the best one, combine 3-of-a-kind, or salvage one for
+        // points).
+        function renderChestEquipment() {
+            chestPointsLine.innerHTML = 'Aufwertungspunkte: <b>' + upgradePoints + '</b> - durch Verschmelzen von Ausr&uuml;stung erhalten';
+
+            chestEquippedGrid.innerHTML = '';
+            for (const slotKey of Object.keys(EQUIPMENT_DEFS)) {
+                const def = EQUIPMENT_DEFS[slotKey];
+                const itemId = equippedItems[slotKey];
+                const item = itemId ? inventory[itemId] : null;
+                const card = document.createElement('div');
+                card.className = 'chestItemCard';
+                if (item) {
+                    const rd = RARITY_DEFS[item.rarity];
+                    card.innerHTML =
+                        '<div class="chestItemIcon" style="background:' + rd.color + '">' + def.icon + '</div>' +
+                        '<div class="chestItemInfo"><b>' + def.name + '</b>' +
+                        '<span class="rarityChip" style="background:' + rd.color + '">' + rd.name + '</span> Lvl ' + item.level + '/' + ITEM_MAX_LEVEL +
+                        '</div>';
+                    const actions = document.createElement('div');
+                    actions.className = 'chestItemActions';
+                    const lvlBtn = document.createElement('button');
+                    lvlBtn.className = 'levelup';
+                    const cost = itemLevelUpCost(item);
+                    lvlBtn.textContent = item.level >= ITEM_MAX_LEVEL ? 'Max' : ('+1 (' + cost + 'P)');
+                    lvlBtn.disabled = item.level >= ITEM_MAX_LEVEL || upgradePoints < cost;
+                    lvlBtn.addEventListener('click', () => {
+                        levelUpItem(item.id);
+                        renderChestEquipment();
+                    });
+                    actions.appendChild(lvlBtn);
+                    card.appendChild(actions);
+                } else {
+                    card.innerHTML =
+                        '<div class="chestItemIcon" style="background:#555">' + def.icon + '</div>' +
+                        '<div class="chestItemInfo"><b>' + def.name + '</b>nichts ausger&uuml;stet</div>';
+                }
+                chestEquippedGrid.appendChild(card);
+            }
+
+            chestInventoryGrid.innerHTML = '';
+            const groups = {};
+            for (const item of Object.values(inventory)) {
+                if (equippedItems[item.slot] === item.id) continue; // shown above already
+                const key = item.slot + '_' + item.rarity;
+                if (!groups[key]) groups[key] = { slot: item.slot, rarity: item.rarity, items: [] };
+                groups[key].items.push(item);
+            }
+            const groupList = Object.values(groups).sort((a, b) => a.slot.localeCompare(b.slot) || a.rarity - b.rarity);
+            if (groupList.length === 0) {
+                chestInventoryGrid.innerHTML = '<div style="font-size:12px;color:#8fa0c8;text-align:center;padding:10px;">Noch keine Truhen-Ausr&uuml;stung - kaufe eine Kiste im Shop.</div>';
+            }
+            for (const group of groupList) {
+                const def = EQUIPMENT_DEFS[group.slot];
+                const rd = RARITY_DEFS[group.rarity];
+                const best = group.items.reduce((a, b) => (b.level > a.level ? b : a), group.items[0]);
+
+                const card = document.createElement('div');
+                card.className = 'chestItemCard';
+                card.innerHTML =
+                    '<div class="chestItemIcon" style="background:' + rd.color + '">' + def.icon + '</div>' +
+                    '<div class="chestItemInfo"><b>' + def.name + ' ×' + group.items.length + '</b>' +
+                    '<span class="rarityChip" style="background:' + rd.color + '">' + rd.name + '</span></div>';
+
+                const actions = document.createElement('div');
+                actions.className = 'chestItemActions';
+
+                const equipBtn = document.createElement('button');
+                equipBtn.className = 'equip';
+                equipBtn.textContent = 'Ausrüsten';
+                equipBtn.addEventListener('click', () => {
+                    equipInventoryItem(best.id);
+                    renderChestEquipment();
+                });
+                actions.appendChild(equipBtn);
+
+                if (group.rarity < RARITY_DEFS.length - 1) {
+                    const combineBtn = document.createElement('button');
+                    combineBtn.className = 'combine';
+                    combineBtn.textContent = 'Kombinieren (' + group.items.length + '/' + COMBINE_COUNT + ')';
+                    combineBtn.disabled = group.items.length < COMBINE_COUNT;
+                    combineBtn.addEventListener('click', () => {
+                        combineItems(group.slot, group.rarity);
+                        renderChestEquipment();
+                    });
+                    actions.appendChild(combineBtn);
+                }
+
+                const salvageBtn = document.createElement('button');
+                salvageBtn.className = 'salvage';
+                salvageBtn.textContent = 'Verschmelzen (' + itemScore(best) + 'P)';
+                salvageBtn.addEventListener('click', () => {
+                    salvageItem(best.id);
+                    renderChestEquipment();
+                });
+                actions.appendChild(salvageBtn);
+
+                card.appendChild(actions);
+                chestInventoryGrid.appendChild(card);
+            }
+        }
+
         // Cross/plus arrangement (3 columns) matching the reference layout:
         // speed on top, attack/troops/defense in the middle row, the two
         // gold-on-kill skills bottom-left/right.
@@ -2860,7 +3239,7 @@
                 profileTabs[key].btn.classList.toggle('active', isActive);
                 profileTabs[key].panel.classList.toggle('active', isActive);
             }
-            if (name === 'equip') renderEquipGrid();
+            if (name === 'equip') { renderEquipGrid(); renderChestEquipment(); }
             if (name === 'skills') renderSkillGrid();
             if (name === 'rank') renderRankList();
         }
@@ -3086,6 +3465,50 @@
         });
         mailCloseBtn.addEventListener('click', () => {
             mailPopup.style.display = 'none';
+        });
+
+        // Shop: buy gem crates, opens straight into a result readout.
+        const shopBtn = document.getElementById('shopBtn');
+        const shopPopup = document.getElementById('shopPopup');
+        const shopGemCount = document.getElementById('shopGemCount');
+        const shopCrateResult = document.getElementById('shopCrateResult');
+        const shopOpenCrateBtn = document.getElementById('shopOpenCrateBtn');
+        const shopToEquipBtn = document.getElementById('shopToEquipBtn');
+        const shopCloseBtn = document.getElementById('shopCloseBtn');
+
+        function renderShop() {
+            shopGemCount.textContent = Math.floor(gems);
+            shopOpenCrateBtn.disabled = gems < CRATE_GEM_COST;
+        }
+
+        shopBtn.addEventListener('click', () => {
+            closeAllPopups();
+            shopCrateResult.style.display = 'none';
+            renderShop();
+            shopPopup.style.display = 'block';
+        });
+        shopCloseBtn.addEventListener('click', () => {
+            shopPopup.style.display = 'none';
+        });
+        shopOpenCrateBtn.addEventListener('click', () => {
+            const item = openCrate();
+            renderShop();
+            if (!item) {
+                shopCrateResult.style.display = 'block';
+                shopCrateResult.innerHTML = 'Nicht genug Gems.';
+                return;
+            }
+            const rd = RARITY_DEFS[item.rarity];
+            shopCrateResult.style.display = 'block';
+            shopCrateResult.innerHTML =
+                'Erhalten: ' + EQUIPMENT_DEFS[item.slot].icon + ' ' + EQUIPMENT_DEFS[item.slot].name +
+                ' <span class="rarityChip" style="background:' + rd.color + '">' + rd.name + '</span>';
+        });
+        shopToEquipBtn.addEventListener('click', () => {
+            shopPopup.style.display = 'none';
+            renderProfile();
+            showProfileTab('equip');
+            profilePopup.style.display = 'block';
         });
 
         // Every owned island produces coins (shared treasury) and troops
@@ -3861,6 +4284,7 @@
             battleLogPopup.style.display = 'none';
             clearInterval(battleLogRefreshTimer);
             mailPopup.style.display = 'none';
+            shopPopup.style.display = 'none';
         }
 
         function openIslandPopup(island) {
@@ -4282,7 +4706,7 @@
             return !!(target && target.closest && (target.closest('#islandPopup') || target.closest('#hud') ||
                 target.closest('#cornerButtons') || target.closest('#profilePopup') ||
                 target.closest('#battleLogPopup') || target.closest('#mailPopup') ||
-                target.closest('#multiAttackBar')));
+                target.closest('#shopPopup') || target.closest('#multiAttackBar')));
         }
 
         // Mouse events
