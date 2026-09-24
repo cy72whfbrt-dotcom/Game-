@@ -2101,15 +2101,32 @@
 
         // "Spähen": no troops needed, but a scout still takes time to reach
         // the target - measured from the player's home base.
+        // Always scouts from whichever owned base is actually closest to the
+        // target, not always the player's original home base - a scout sent
+        // from a far-off home while a much closer base sits right next to
+        // the target made no sense.
+        function nearestOwnedIslandTo(target) {
+            let bestId = null, bestDist = Infinity;
+            for (const id of ownedIslands) {
+                const isl = islandById[id];
+                if (!isl) continue;
+                const dist = Math.hypot(isl.x - target.x, isl.y - target.y);
+                if (dist < bestDist) { bestDist = dist; bestId = id; }
+            }
+            return bestId;
+        }
+
         function launchScout(targetId) {
-            const home = islandById[playerIslandId];
             const target = islandById[targetId];
-            if (!home || !target) return;
+            if (!target) return;
+            const sourceId = nearestOwnedIslandTo(target);
+            const home = islandById[sourceId];
+            if (!home) return;
 
             const durationSec = travelDurationSeconds(home, target);
             const startedAt = Date.now();
             pendingScouts.push({
-                sourceId: playerIslandId,
+                sourceId,
                 targetId,
                 startedAt,
                 resolveAt: startedAt + durationSec * 1000
@@ -2360,8 +2377,10 @@
         // that bar, always picks the CLOSEST one - expanding its border
         // outward step by step instead of reaching for some weaker base
         // way across the map just because the margin happens to be bigger.
-        // With nothing worth attacking nearby, it saves up and upgrades its
-        // weakest base instead.
+        // Upgrading (see botConsiderUpgrade) happens independently every
+        // tick, not just as a fallback when there's nothing to attack -
+        // otherwise a bot with endless nearby neutral fodder would attack
+        // forever and never spend a single coin on leveling up.
         const BOT_ATTACK_SAFETY_MARGIN = 1.15;
         const BOT_MIN_GARRISON_TO_ATTACK = 10;
         function botThink(bot) {
@@ -2390,8 +2409,6 @@
 
             if (bestSourceId !== null) {
                 launchAttack(bestSourceId, bestTargetId, bot.id);
-            } else {
-                botConsiderUpgrade(bot);
             }
         }
 
@@ -2447,11 +2464,15 @@
             }
         }
 
-        const BOT_TICK_MS = 9000;
+        // Faster than before so a bot notices and reacts to an incoming
+        // attack (botDefend) before it can resolve, instead of only
+        // reconsidering once every 9 seconds.
+        const BOT_TICK_MS = 4000;
         function runBotTick() {
             for (const bot of BOT_DEFS) {
                 botDefend(bot);
                 botThink(bot);
+                botConsiderUpgrade(bot);
             }
             setTimeout(runBotTick, BOT_TICK_MS);
         }
