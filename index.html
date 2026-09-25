@@ -1375,24 +1375,31 @@ body.has-panel .mapctl{display:none}
             return { x: p0.x + (p1.x - p0.x) * t, y: p0.y + (p1.y - p0.y) * t };
         }
 
-        // Game balance
-        const BASE_DEFENSE = 100;
-        const DEFENSE_PER_LEVEL = 50;
-        const COINS_PER_LEVEL = 10;
-        const TROOPS_PER_LEVEL = 5;
-        const UPGRADE_BASE_COST = 150;
+        // Game balance - exponential, so a base keeps mattering from the first
+        // hundred troops up to the trillions (level 100 ≈ 0,9 Bio. defence).
+        // Costs grow a bit faster than income, so every level takes longer.
+        const MAX_BASE_LEVEL = 100;
+        const BASE_DEFENSE = 100, DEFENSE_GROWTH = 1.26;
+        const BASE_COINS = 10, BASE_TROOPS = 5, PRODUCTION_GROWTH = 1.15;
+        const UPGRADE_BASE_COST = 150, UPGRADE_COST_GROWTH = 1.32;
 
-        // The flat level-based defense every base gets, with no equipment/
+        // The level-based defense every base gets, with no equipment/
         // skill bonus - used for bot- and (in a future PvP defense) other-
         // player-owned bases, which don't have the human player's gear.
         function baseDefenseForLevel(level) {
-            return BASE_DEFENSE + (level - 1) * DEFENSE_PER_LEVEL;
+            return Math.round(BASE_DEFENSE * Math.pow(DEFENSE_GROWTH, Math.min(level, MAX_BASE_LEVEL) - 1));
         }
         function defenseForLevel(level) {
             return baseDefenseForLevel(level) + defenseBonusFlat();
         }
+        function coinsPerTick(level) {
+            return Math.round(BASE_COINS * Math.pow(PRODUCTION_GROWTH, Math.min(level, MAX_BASE_LEVEL) - 1));
+        }
+        function troopsPerTick(level) {
+            return Math.round(BASE_TROOPS * Math.pow(PRODUCTION_GROWTH, Math.min(level, MAX_BASE_LEVEL) - 1));
+        }
         function upgradeCost(level) {
-            return level * UPGRADE_BASE_COST;
+            return Math.round(UPGRADE_BASE_COST * Math.pow(UPGRADE_COST_GROWTH, level - 1));
         }
 
         // Hex grid helpers (axial coordinates, pointy-top). hexRing(n) walks
@@ -1605,6 +1612,18 @@ body.has-panel .mapctl{display:none}
         } catch (e) {
             islandLevels = {};
         }
+        // One-time conversion from the old linear balance: a base keeps the coins that went
+        // into it (old total 75·L·(L−1)) and gets the level those coins buy under the new costs.
+        if (!store.get('openWaterBalanceV2')) {
+            for (const id of Object.keys(islandLevels)) {
+                const L = islandLevels[id] || 1;
+                const spent = 75 * L * (L - 1);
+                const newL = 1 + Math.floor(Math.log(spent * (UPGRADE_COST_GROWTH - 1) / UPGRADE_BASE_COST + 1) / Math.log(UPGRADE_COST_GROWTH));
+                islandLevels[id] = Math.max(1, Math.min(MAX_BASE_LEVEL, newL));
+            }
+            store.set('openWaterIslandLevels', JSON.stringify(islandLevels));
+            store.set('openWaterBalanceV2', '1');
+        }
         let islandTroops;
         try {
             islandTroops = JSON.parse(store.get('openWaterIslandTroops')) || {};
@@ -1787,12 +1806,12 @@ body.has-panel .mapctl{display:none}
         }
         function totalTroopProductionPerTick() {
             let sum = 0;
-            for (const ownedId of ownedIslands) sum += TROOPS_PER_LEVEL * (islandLevels[ownedId] || 1);
+            for (const ownedId of ownedIslands) sum += troopsPerTick(islandLevels[ownedId] || 1);
             return sum * troopProductionMultiplier();
         }
         function totalCoinProductionPerTick() {
             let sum = 0;
-            for (const ownedId of ownedIslands) sum += COINS_PER_LEVEL * (islandLevels[ownedId] || 1);
+            for (const ownedId of ownedIslands) sum += coinsPerTick(islandLevels[ownedId] || 1);
             return sum * coinProductionMultiplier();
         }
         function updateHud() {
@@ -3990,6 +4009,7 @@ body.has-panel .mapctl{display:none}
                 const lvl = islandLevels[id] || 1;
                 if (lvl < weakestLevel) { weakestId = id; weakestLevel = lvl; }
             }
+            if (weakestLevel >= MAX_BASE_LEVEL) return;
             const cost = upgradeCost(weakestLevel);
             if (botCoins[bot.id] >= cost) {
                 botCoins[bot.id] -= cost;
@@ -5111,8 +5131,8 @@ body.has-panel .mapctl{display:none}
                 const troopMult = troopProductionMultiplier();
                 for (const ownedId of ownedIslands) {
                     const level = islandLevels[ownedId] || 1;
-                    coins += Math.round(COINS_PER_LEVEL * level * coinMult) * ticks;
-                    islandTroops[ownedId] = (islandTroops[ownedId] || 0) + Math.round(TROOPS_PER_LEVEL * level * troopMult) * ticks;
+                    coins += Math.round(coinsPerTick(level) * coinMult) * ticks;
+                    islandTroops[ownedId] = (islandTroops[ownedId] || 0) + Math.round(troopsPerTick(level) * troopMult) * ticks;
 
                     const isl = islandById[ownedId];
                     if (isl && (isl.type === 'temple' || isl.type === 'megaTemple')) {
@@ -5128,8 +5148,8 @@ body.has-panel .mapctl{display:none}
                 for (const bot of BOT_DEFS) {
                     for (const ownedId of botOwnedIslands[bot.id]) {
                         const level = islandLevels[ownedId] || 1;
-                        botCoins[bot.id] += Math.round(COINS_PER_LEVEL * level) * ticks;
-                        islandTroops[ownedId] = (islandTroops[ownedId] || 0) + Math.round(TROOPS_PER_LEVEL * level) * ticks;
+                        botCoins[bot.id] += coinsPerTick(level) * ticks;
+                        islandTroops[ownedId] = (islandTroops[ownedId] || 0) + troopsPerTick(level) * ticks;
                         const isl = islandById[ownedId];
                         if (isl && (isl.type === 'temple' || isl.type === 'megaTemple')) {
                             const mult = (isl.type === 'megaTemple' ? MEGA_TEMPLE_MULT : 1) * templeHoldMultiplier(ownedId);
@@ -5633,8 +5653,8 @@ body.has-panel .mapctl{display:none}
                     popupOverline.textContent = 'Aufwerten';
                     popupStats.innerHTML = '<div class="upgrade-table">' + row('Stufe', level, level + 1) +
                         row('Verteidigung', defenseForLevel(level), defenseForLevel(level + 1)) +
-                        row('Münzen / s', COINS_PER_LEVEL * level, COINS_PER_LEVEL * (level + 1)) +
-                        row('Truppen / s', TROOPS_PER_LEVEL * level, TROOPS_PER_LEVEL * (level + 1)) + '</div>' +
+                        row('Münzen / s', coinsPerTick(level), coinsPerTick(level + 1)) +
+                        row('Truppen / s', troopsPerTick(level), troopsPerTick(level + 1)) + '</div>' +
                         '<div class="cost-line"><span>Kosten</span><b class="' + (coins < cost ? 'is-bad' : '') + '">' + icon('coin') + fmtNum(cost) + '</b></div>';
                     confirmBtn.style.display = 'inline-block';
                     confirmBtn.disabled = coins < cost;
@@ -5644,10 +5664,10 @@ body.has-panel .mapctl{display:none}
                     popupStats.innerHTML = '<div class="stat-grid">' +
                         statTile('Truppen hier', 'troops', fmtNum(troopsHere)) +
                         statTile('Verteidigung', 'defense', fmtNum(defenseForLevel(level))) +
-                        statTile('Münzen / s', 'coin', '+' + fmtNum(COINS_PER_LEVEL * level), 'is-good') +
-                        statTile('Truppen / s', 'troops', '+' + fmtNum(TROOPS_PER_LEVEL * level), 'is-good') + '</div>' +
+                        statTile('Münzen / s', 'coin', '+' + fmtNum(coinsPerTick(level)), 'is-good') +
+                        statTile('Truppen / s', 'troops', '+' + fmtNum(troopsPerTick(level)), 'is-good') + '</div>' +
                         (isTemple ? templeBonusLine(island) : '');
-                    upgradeCostLabel.innerHTML = icon('coin', 'icon--coin') + fmtNum(upgradeCost(level));
+                    upgradeCostLabel.innerHTML = level >= MAX_BASE_LEVEL ? 'Max. Stufe' : icon('coin', 'icon--coin') + fmtCompact(upgradeCost(level));
                     popupActions.hidden = false;
                     upgradeBtn.style.display = 'inline-block';
                     sendBtn.style.display = 'inline-block';
@@ -5785,9 +5805,10 @@ body.has-panel .mapctl{display:none}
         upgradeBtn.addEventListener('click', () => {
             if (popupIslandId === null) return;
             const level = islandLevels[popupIslandId] || 1;
+            if (level >= MAX_BASE_LEVEL) { flashHint('Maximale Stufe ' + MAX_BASE_LEVEL + ' erreicht.', 2500); return; }
             const cost = upgradeCost(level);
             if (coins < cost) {
-                flashHint('Nicht genug Münzen – benötigt ' + fmtNum(cost) + '.', 2500);
+                flashHint('Nicht genug Münzen – benötigt ' + fmtCompact(cost) + '.', 2500);
                 return;
             }
             coins -= cost;
@@ -5855,7 +5876,7 @@ body.has-panel .mapctl{display:none}
             const cost = upgradeCost(level);
             if (coins < cost) return;
             coins -= cost;
-            islandLevels[popupIslandId] = level + 1;
+            islandLevels[popupIslandId] = Math.min(MAX_BASE_LEVEL, level + 1);
             updateHud();
             saveGame();
             popupView = 'menu';
