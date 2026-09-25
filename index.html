@@ -1918,6 +1918,13 @@ body.has-panel .mapctl{display:none}
             gems += 1000000;
             store.set('openWaterBonusGrant2', '1');
         }
+        // Third one-time test grant: 1 Mrd. coins + 1 Mrd. troops on the home base.
+        if (!store.get('openWaterBonusGrant3')) {
+            bonusGrantedAtBoot = true;
+            coins += 1000000000;
+            islandTroops[playerIslandId] = (islandTroops[playerIslandId] || 0) + 1000000000;
+            store.set('openWaterBonusGrant3', '1');
+        }
 
         // When each currently-owned temple was captured - the longer it's
         // held continuously, the bigger its output bonus (see
