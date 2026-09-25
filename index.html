@@ -826,6 +826,68 @@ body.has-panel .mapctl{display:none}
 .daily-day span{white-space:nowrap} .daily-day i{font-style:normal}
 @media (max-width:359px){.daily-day i{display:none}}
 .quest-ok{font:600 var(--fs-11)/1 var(--font-ui);color:#5cbf62;letter-spacing:.06em;text-transform:uppercase}
+
+/* =====================================================================
+   LOADING SCREEN
+   ===================================================================== */
+.splash{position:fixed;inset:0;z-index:200;overflow:hidden;background:#03050b;color:var(--tx-1);
+  display:flex;flex-direction:column;justify-content:space-between;align-items:center;
+  padding:calc(var(--safe-t) + 9vh) 24px calc(var(--safe-b) + 7vh);transition:opacity .7s ease,visibility .7s}
+.splash.is-leaving{opacity:0;visibility:hidden}
+.splash.is-leaving .splash-bg{transform:scale(1.08)}
+.splash-bg{position:absolute;inset:0;width:100%;height:100%;transition:transform 1.4s cubic-bezier(.2,.8,.2,1);animation:sp-zoom 22s ease-out both}
+@keyframes sp-zoom{from{transform:scale(1.12)}to{transform:scale(1)}}
+.sp-stars circle{fill:#fff;animation:sp-tw 3.6s ease-in-out infinite}
+.sp-stars .st2{fill:#ffe9c4;animation-duration:5.2s}
+@keyframes sp-tw{0%,100%{opacity:.9}50%{opacity:.25}}
+.sp-clouds{animation:sp-drift 60s linear infinite alternate}
+@keyframes sp-drift{to{transform:translateX(-90px)}}
+.sp-refl rect{animation:sp-shim 2.4s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes sp-shim{0%,100%{opacity:.75;transform:scaleX(1)}50%{opacity:.25;transform:scaleX(.7)}}
+.sp-fog{animation:sp-fog 26s ease-in-out infinite alternate}
+@keyframes sp-fog{to{transform:translateX(70px)}}
+.sp-flag{transform-box:fill-box;transform-origin:left center;animation:sp-flag 1.6s ease-in-out infinite}
+.sp-flag.f2{animation-delay:-.5s}.sp-flag.f3{animation-delay:-1s}
+@keyframes sp-flag{0%,100%{transform:scaleX(1) skewY(0)}50%{transform:scaleX(.86) skewY(-6deg)}}
+.sp-windows rect{animation:sp-flick 4s ease-in-out infinite}
+.sp-windows rect:nth-child(3n){animation-delay:-1.3s}.sp-windows rect:nth-child(3n+1){animation-delay:-2.6s}
+@keyframes sp-flick{0%,100%{opacity:1}45%{opacity:.8}50%{opacity:.55}55%{opacity:.9}}
+.splash-embers{position:absolute;inset:0;pointer-events:none}
+.splash-embers i{position:absolute;bottom:-10px;width:var(--s);height:var(--s);border-radius:50%;background:#ffc46b;
+  box-shadow:0 0 6px 2px rgba(255,170,70,.55);opacity:0;animation:sp-ember var(--d) linear infinite}
+@keyframes sp-ember{0%{opacity:0;transform:translate(0,0)}10%{opacity:.9}80%{opacity:.5}100%{opacity:0;transform:translate(var(--x),-75vh)}}
+.splash-vig{position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 42%,transparent 38%,rgba(0,0,0,.55) 78%,rgba(0,0,0,.85)),linear-gradient(180deg,rgba(0,0,0,.45),transparent 30%,transparent 70%,rgba(0,0,0,.6))}
+.splash-top,.splash-bottom{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center}
+.splash-crest{width:58px;height:66px;margin-bottom:10px;filter:drop-shadow(0 0 14px rgba(236,196,120,.45));animation:sp-rise 1.1s cubic-bezier(.2,.8,.2,1) both}
+.splash-crest svg{width:100%;height:100%}
+.splash-title{margin:0;font:700 clamp(40px,11.5vw,92px)/1 var(--font-display);letter-spacing:.07em;text-transform:uppercase;
+  background:linear-gradient(180deg,#fff6dc 0%,#f0d59a 38%,#c8923e 70%,#8a5d22 100%);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 2px 0 rgba(0,0,0,.6)) drop-shadow(0 0 22px rgba(236,190,110,.35));animation:sp-rise 1.1s .15s cubic-bezier(.2,.8,.2,1) both}
+.splash-sub{display:flex;align-items:center;gap:12px;margin-top:12px;font:600 var(--fs-12)/1 var(--font-ui);letter-spacing:.34em;text-transform:uppercase;color:#d9c49a;
+  animation:sp-rise 1.1s .3s cubic-bezier(.2,.8,.2,1) both}
+.splash-sub span{width:34px;height:1px;background:linear-gradient(90deg,transparent,#d9b56a)}
+.splash-sub span:last-child{transform:scaleX(-1)}
+@keyframes sp-rise{from{opacity:0;transform:translateY(14px)}}
+.splash-bottom{width:min(420px,100%);gap:10px;animation:sp-rise 1s .45s ease-out both}
+.splash-tip{min-height:2.8em;font:500 var(--fs-13)/1.4 var(--font-ui);color:#cdbf9f;text-shadow:0 1px 6px rgba(0,0,0,.8);transition:opacity .35s}
+.splash-bar{position:relative;width:100%;height:6px;border-radius:3px;background:rgba(0,0,0,.55);border:1px solid rgba(217,181,106,.45);overflow:hidden;
+  box-shadow:0 0 18px rgba(0,0,0,.6)}
+.splash-bar i{position:absolute;inset:0;width:0;background:linear-gradient(90deg,#8a5d22,#e7c173 70%,#fff3cf);box-shadow:0 0 12px rgba(236,190,110,.7);
+  animation:sp-load 1.8s cubic-bezier(.3,.7,.3,1) forwards}
+.splash-bar i::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);
+  transform:translateX(-100%);animation:sp-sheen 1.3s linear infinite}
+@keyframes sp-load{to{width:72%}}
+@keyframes sp-sheen{to{transform:translateX(100%)}}
+.splash.is-done .splash-bar i{animation:none;width:100%;transition:width .6s ease-out}
+.splash-status{font:600 var(--fs-11)/1 var(--font-ui);letter-spacing:.22em;text-transform:uppercase;color:#a8977a}
+/* portrait phones: the scene is cropped to its middle - move the moon out from behind the title and lower the fortress */
+@media (max-aspect-ratio:4/5){.sp-moon{transform:translate(50px,150px)}.sp-castle{transform:translateY(95px)}.splash-bar{height:5px}}
+.splash-sub{text-shadow:0 1px 8px rgba(0,0,0,.9),0 0 2px rgba(0,0,0,.9)}
+.splash-top::before{content:"";position:absolute;inset:-30px -80px;z-index:-1;background:radial-gradient(ellipse at center,rgba(2,3,8,.55),transparent 70%)}
+.splash-bottom::before{content:"";position:absolute;inset:-40px -60px -30px;z-index:-1;background:radial-gradient(ellipse at center,rgba(2,3,8,.8),transparent 70%)}
+@media (max-height:500px){.splash{padding-top:calc(var(--safe-t) + 4vh);padding-bottom:calc(var(--safe-b) + 4vh)}.splash-crest{width:40px;height:46px}.splash-title{font-size:clamp(34px,8vh,60px)}}
+@media (prefers-reduced-motion:reduce){.splash *,.splash-bg{animation:none!important}.splash-bar i{width:72%}}
     </style>
 </head>
 <body>
@@ -869,6 +931,88 @@ body.has-panel .mapctl{display:none}
 <symbol id="i-flag" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21V3.5"/><path d="M6 4.5h12l-2.8 3.8L18 12H6" fill="currentColor" stroke="none" opacity="0.16"/><path d="M6 4.5h12l-2.8 3.8L18 12H6"/></g></symbol>
 <symbol id="i-info" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 1 0 17 0a8.5 8.5 0 1 0 -17 0z"/><path d="M12 11v5.5"/><path d="M10.9 7.9a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0 -2.2 0z" fill="currentColor" stroke="none"/></g></symbol>
 </svg>
+
+<!-- ============ LOADING SCREEN ============ -->
+<div id="splash" class="splash" role="status" aria-label="Spiel lädt">
+  <svg class="splash-bg" viewBox="0 0 1200 1000" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  <defs>
+    <linearGradient id="spSky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#03050b"/><stop offset=".45" stop-color="#0b1330"/><stop offset=".62" stop-color="#1d1f3d"/>
+      <stop offset=".69" stop-color="#4a2f3f"/><stop offset=".73" stop-color="#9a5a34"/><stop offset=".745" stop-color="#d8904a"/></linearGradient>
+    <radialGradient id="spMoonGlow"><stop offset="0" stop-color="#ffe7b0" stop-opacity=".42"/><stop offset=".35" stop-color="#ffd48a" stop-opacity=".12"/><stop offset="1" stop-color="#ffd48a" stop-opacity="0"/></radialGradient>
+    <radialGradient id="spMoon" cx=".4" cy=".38"><stop offset="0" stop-color="#fffaf0"/><stop offset=".7" stop-color="#f1dcaa"/><stop offset="1" stop-color="#d7b77a"/></radialGradient>
+    <radialGradient id="spHorizon" cx=".58" cy="1" r=".6"><stop offset="0" stop-color="#ffb35c" stop-opacity=".55"/><stop offset="1" stop-color="#ffb35c" stop-opacity="0"/></radialGradient>
+    <linearGradient id="spSea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a1a30"/><stop offset=".25" stop-color="#0a1022"/><stop offset="1" stop-color="#020308"/></linearGradient>
+    <linearGradient id="spRim" x1="1" y1="0" x2="0" y2="0"><stop offset="0" stop-color="#ffcf87" stop-opacity=".5"/><stop offset=".6" stop-color="#ffcf87" stop-opacity=".06"/><stop offset="1" stop-color="#ffcf87" stop-opacity="0"/></linearGradient>
+    <filter id="spBlur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="14"/></filter>
+    <filter id="spGlow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="1200" height="745" fill="url(#spSky)"/>
+  <g class="sp-stars"><circle cx="663" cy="154" r="1.6" class="st" style="animation-delay:0.3s"/><circle cx="1097" cy="96" r="1.2" class="st" style="animation-delay:3.6s"/><circle cx="439" cy="38" r="0.8" class="st st2" style="animation-delay:1.7s"/><circle cx="492" cy="92" r="2.1" class="st st2" style="animation-delay:0.2s"/><circle cx="1158" cy="126" r="1.0" class="st" style="animation-delay:2.3s"/><circle cx="812" cy="50" r="1.0" class="st" style="animation-delay:2.2s"/><circle cx="272" cy="296" r="1.6" class="st" style="animation-delay:2.2s"/><circle cx="1169" cy="315" r="2.1" class="st" style="animation-delay:0.4s"/><circle cx="1169" cy="192" r="1.2" class="st" style="animation-delay:2.2s"/><circle cx="128" cy="61" r="2.1" class="st" style="animation-delay:2.0s"/><circle cx="1088" cy="437" r="1.2" class="st st2" style="animation-delay:2.3s"/><circle cx="928" cy="370" r="1.2" class="st" style="animation-delay:3.2s"/><circle cx="499" cy="83" r="2.1" class="st st2" style="animation-delay:2.1s"/><circle cx="703" cy="459" r="1.2" class="st" style="animation-delay:0.5s"/><circle cx="856" cy="168" r="1.2" class="st" style="animation-delay:3.7s"/><circle cx="863" cy="40" r="0.8" class="st st2" style="animation-delay:1.4s"/><circle cx="717" cy="508" r="2.1" class="st st2" style="animation-delay:0.3s"/><circle cx="191" cy="276" r="1.6" class="st" style="animation-delay:0.2s"/><circle cx="634" cy="456" r="1.2" class="st st2" style="animation-delay:3.5s"/><circle cx="710" cy="23" r="1.6" class="st st2" style="animation-delay:0.7s"/><circle cx="239" cy="505" r="0.8" class="st" style="animation-delay:3.1s"/><circle cx="264" cy="253" r="1.6" class="st st2" style="animation-delay:3.7s"/><circle cx="1016" cy="82" r="1.0" class="st st2" style="animation-delay:1.6s"/><circle cx="569" cy="140" r="1.6" class="st st2" style="animation-delay:2.8s"/><circle cx="734" cy="389" r="1.0" class="st" style="animation-delay:0.3s"/><circle cx="309" cy="237" r="1.0" class="st" style="animation-delay:1.9s"/><circle cx="373" cy="269" r="1.2" class="st" style="animation-delay:0.6s"/><circle cx="1094" cy="378" r="2.1" class="st st2" style="animation-delay:3.8s"/><circle cx="1055" cy="55" r="1.6" class="st st2" style="animation-delay:1.6s"/><circle cx="807" cy="106" r="1.6" class="st st2" style="animation-delay:0.2s"/><circle cx="137" cy="213" r="1.6" class="st" style="animation-delay:0.4s"/><circle cx="107" cy="104" r="0.8" class="st" style="animation-delay:2.1s"/><circle cx="744" cy="26" r="0.8" class="st" style="animation-delay:2.5s"/><circle cx="304" cy="258" r="1.2" class="st st2" style="animation-delay:1.9s"/><circle cx="236" cy="499" r="1.6" class="st st2" style="animation-delay:1.9s"/><circle cx="175" cy="147" r="0.8" class="st st2" style="animation-delay:3.0s"/><circle cx="980" cy="165" r="2.1" class="st" style="animation-delay:0.8s"/><circle cx="1081" cy="370" r="1.0" class="st" style="animation-delay:3.0s"/><circle cx="610" cy="93" r="1.2" class="st st2" style="animation-delay:3.6s"/><circle cx="728" cy="228" r="2.1" class="st st2" style="animation-delay:2.5s"/><circle cx="399" cy="245" r="1.6" class="st" style="animation-delay:0.8s"/><circle cx="1009" cy="364" r="0.8" class="st" style="animation-delay:3.2s"/><circle cx="967" cy="265" r="1.0" class="st st2" style="animation-delay:1.8s"/><circle cx="715" cy="373" r="0.8" class="st" style="animation-delay:0.4s"/><circle cx="962" cy="201" r="1.2" class="st" style="animation-delay:1.9s"/><circle cx="3" cy="490" r="1.2" class="st" style="animation-delay:3.3s"/><circle cx="245" cy="397" r="1.0" class="st st2" style="animation-delay:3.6s"/><circle cx="888" cy="340" r="0.8" class="st st2" style="animation-delay:1.9s"/><circle cx="173" cy="162" r="1.0" class="st" style="animation-delay:0.1s"/><circle cx="953" cy="149" r="2.1" class="st st2" style="animation-delay:2.6s"/><circle cx="717" cy="159" r="2.1" class="st" style="animation-delay:0.1s"/><circle cx="210" cy="539" r="1.0" class="st st2" style="animation-delay:3.9s"/><circle cx="398" cy="216" r="0.8" class="st st2" style="animation-delay:0.9s"/><circle cx="1026" cy="246" r="2.1" class="st st2" style="animation-delay:1.0s"/><circle cx="858" cy="134" r="0.8" class="st st2" style="animation-delay:3.6s"/><circle cx="1194" cy="529" r="1.6" class="st" style="animation-delay:2.1s"/><circle cx="1072" cy="522" r="0.8" class="st st2" style="animation-delay:3.1s"/><circle cx="8" cy="153" r="1.0" class="st" style="animation-delay:1.9s"/><circle cx="246" cy="63" r="1.2" class="st st2" style="animation-delay:3.1s"/><circle cx="217" cy="58" r="1.0" class="st" style="animation-delay:1.1s"/><circle cx="200" cy="519" r="1.6" class="st" style="animation-delay:3.0s"/><circle cx="129" cy="453" r="1.2" class="st" style="animation-delay:2.8s"/><circle cx="926" cy="520" r="2.1" class="st st2" style="animation-delay:2.0s"/><circle cx="507" cy="535" r="1.2" class="st" style="animation-delay:3.4s"/><circle cx="280" cy="426" r="0.8" class="st st2" style="animation-delay:1.8s"/><circle cx="148" cy="246" r="1.6" class="st" style="animation-delay:0.9s"/><circle cx="620" cy="125" r="1.0" class="st st2" style="animation-delay:0.6s"/><circle cx="281" cy="478" r="1.0" class="st" style="animation-delay:1.6s"/><circle cx="997" cy="166" r="1.0" class="st" style="animation-delay:2.8s"/><circle cx="1055" cy="413" r="1.2" class="st st2" style="animation-delay:0.8s"/><circle cx="652" cy="94" r="1.2" class="st" style="animation-delay:1.4s"/><circle cx="939" cy="451" r="0.8" class="st st2" style="animation-delay:1.3s"/><circle cx="605" cy="524" r="0.8" class="st" style="animation-delay:3.9s"/><circle cx="468" cy="107" r="0.8" class="st st2" style="animation-delay:1.1s"/><circle cx="371" cy="276" r="1.0" class="st st2" style="animation-delay:3.4s"/><circle cx="529" cy="415" r="1.0" class="st st2" style="animation-delay:2.8s"/><circle cx="183" cy="285" r="0.8" class="st" style="animation-delay:1.7s"/><circle cx="148" cy="275" r="0.8" class="st" style="animation-delay:3.2s"/><circle cx="171" cy="227" r="0.8" class="st st2" style="animation-delay:3.5s"/><circle cx="929" cy="11" r="1.2" class="st st2" style="animation-delay:3.7s"/><circle cx="548" cy="132" r="0.8" class="st" style="animation-delay:3.8s"/><circle cx="330" cy="268" r="0.8" class="st" style="animation-delay:0.8s"/><circle cx="638" cy="312" r="2.1" class="st" style="animation-delay:1.2s"/><circle cx="1024" cy="182" r="1.2" class="st st2" style="animation-delay:3.2s"/><circle cx="512" cy="37" r="0.8" class="st" style="animation-delay:2.9s"/><circle cx="1128" cy="194" r="2.1" class="st st2" style="animation-delay:1.0s"/><circle cx="915" cy="108" r="1.6" class="st st2" style="animation-delay:2.2s"/><circle cx="805" cy="518" r="1.2" class="st" style="animation-delay:3.9s"/><circle cx="701" cy="203" r="1.0" class="st st2" style="animation-delay:4.0s"/><circle cx="111" cy="132" r="0.8" class="st" style="animation-delay:2.5s"/><circle cx="523" cy="441" r="1.0" class="st" style="animation-delay:0.3s"/><circle cx="780" cy="518" r="1.2" class="st" style="animation-delay:2.8s"/><circle cx="92" cy="470" r="1.0" class="st" style="animation-delay:1.1s"/><circle cx="7" cy="269" r="1.2" class="st st2" style="animation-delay:3.9s"/><circle cx="1120" cy="331" r="1.0" class="st" style="animation-delay:3.9s"/><circle cx="633" cy="223" r="1.2" class="st" style="animation-delay:0.0s"/><circle cx="781" cy="85" r="1.6" class="st st2" style="animation-delay:2.0s"/><circle cx="411" cy="254" r="2.1" class="st" style="animation-delay:0.4s"/><circle cx="183" cy="147" r="1.6" class="st" style="animation-delay:1.6s"/><circle cx="613" cy="311" r="1.0" class="st" style="animation-delay:2.3s"/><circle cx="1083" cy="158" r="2.1" class="st st2" style="animation-delay:3.1s"/><circle cx="1012" cy="153" r="1.2" class="st" style="animation-delay:0.2s"/><circle cx="1050" cy="439" r="2.1" class="st" style="animation-delay:3.6s"/><circle cx="1032" cy="16" r="2.1" class="st" style="animation-delay:0.3s"/><circle cx="85" cy="136" r="1.2" class="st" style="animation-delay:1.5s"/><circle cx="924" cy="51" r="0.8" class="st" style="animation-delay:2.0s"/><circle cx="6" cy="467" r="0.8" class="st" style="animation-delay:2.6s"/><circle cx="135" cy="485" r="1.2" class="st" style="animation-delay:3.4s"/><circle cx="480" cy="210" r="1.0" class="st st2" style="animation-delay:2.0s"/><circle cx="783" cy="78" r="1.6" class="st st2" style="animation-delay:3.1s"/></g>
+  <g class="sp-moon"><circle cx="700" cy="250" r="300" fill="url(#spMoonGlow)"/>
+  <circle cx="700" cy="250" r="74" fill="url(#spMoon)"/>
+  <g fill="#c9ab76" opacity=".35"><circle cx="676" cy="232" r="11"/><circle cx="724" cy="270" r="15"/><circle cx="700" cy="292" r="7"/><circle cx="732" cy="225" r="6"/></g></g>
+  <g class="sp-clouds" fill="#0a0f22">
+    <ellipse cx="300" cy="300" rx="260" ry="22" opacity=".75"/><ellipse cx="880" cy="345" rx="320" ry="18" opacity=".6"/>
+    <ellipse cx="620" cy="410" rx="380" ry="16" opacity=".5"/><ellipse cx="1080" cy="215" rx="200" ry="14" opacity=".55"/>
+  </g>
+  <rect y="560" width="1200" height="190" fill="url(#spHorizon)"/>
+  <path fill="#161a33" d="M0 700 L90 640 L170 668 L260 610 L340 655 L420 630 L470 660 L520 700 L0 745Z M760 700 L840 650 L905 672 L980 618 L1060 660 L1130 630 L1200 660 L1200 745 L760 745Z"/>
+  <path fill="#0d1124" d="M0 745 L0 705 L60 690 L120 712 L175 682 L240 700 L300 692 L350 745Z M880 745 L930 708 L1000 690 L1070 700 L1130 680 L1200 695 L1200 745Z"/>
+  <g fill="#0d1124"><rect x="160" y="650" width="16" height="36"/><path d="M156 650h24l-12-18z"/><rect x="1068" y="646" width="14" height="36"/><path d="M1064 646h22l-11-16z"/></g>
+  <rect y="745" width="1200" height="255" fill="url(#spSea)"/>
+  <g class="sp-refl" fill="#ffd792"><rect x="678" y="750" width="40" height="2.1" rx="1.5" style="animation-delay:0.44s"/><rect x="665" y="760" width="70" height="3.0" rx="1.5" style="animation-delay:2.08s"/><rect x="668" y="772" width="56" height="2.0" rx="1.5" style="animation-delay:0.18s"/><rect x="645" y="786" width="110" height="3.5" rx="1.5" style="animation-delay:0.30s"/><rect x="653" y="801" width="90" height="3.0" rx="1.5" style="animation-delay:0.87s"/><rect x="633" y="818" width="150" height="2.4" rx="1.5" style="animation-delay:1.40s"/><rect x="635" y="838" width="120" height="3.5" rx="1.5" style="animation-delay:1.65s"/><rect x="606" y="861" width="190" height="3.5" rx="1.5" style="animation-delay:2.81s"/><rect x="612" y="888" width="160" height="2.4" rx="1.5" style="animation-delay:0.23s"/><rect x="588" y="918" width="240" height="3.5" rx="1.5" style="animation-delay:1.35s"/><rect x="600" y="952" width="200" height="2.6" rx="1.5" style="animation-delay:2.75s"/><rect x="548" y="985" width="300" height="2.1" rx="1.5" style="animation-delay:0.27s"/></g>
+  <g class="sp-waves" stroke="#8fa4d6" stroke-opacity=".08" stroke-width="1.2" fill="none">
+    <path d="M0 790 Q150 784 300 790 T600 790 T900 790 T1200 790"/><path d="M0 850 Q150 842 300 850 T600 850 T900 850 T1200 850"/><path d="M0 930 Q150 920 300 930 T600 930 T900 930 T1200 930"/>
+  </g>
+  <g class="sp-castle">
+    <path fill="#060910" d="M330 760 L360 700 L392 668 L408 610 L446 588 L470 540 L520 528 L600 532 L650 548 L672 590 L700 612 L716 668 L748 712 L770 760Z"/>
+    <path fill="url(#spRim)" d="M672 590 L700 612 L716 668 L748 712 L770 760 L752 760 L730 716 L702 672 L688 618 L664 598Z"/>
+    <g fill="#070a13">
+      <rect x="452" y="430" width="40" height="120"/><path d="M448 430h48l-24-58z"/>
+      <rect x="600" y="410" width="44" height="140"/><path d="M596 410h52l-26-66z"/>
+      <rect x="486" y="470" width="120" height="80"/>
+      <rect x="520" y="360" width="52" height="120"/><path d="M514 360h64l-32-86z"/>
+      <path d="M486 470h120v-12h-10v-8h-10v8h-10v-8h-10v8h-10v-8h-10v8h-10v-8h-10v8h-10v-8h-10v8h-10v-8h-10v8h-10z"/>
+      <rect x="410" y="520" width="30" height="70"/><path d="M406 520h38l-19-40z"/>
+      <rect x="656" y="508" width="30" height="84"/><path d="M652 508h38l-19-42z"/>
+      <rect x="436" y="540" width="232" height="30"/>
+    </g>
+    <g stroke="#070a13" stroke-width="2"><path d="M546 274v-36"/><path d="M472 372v-26"/><path d="M622 344v-28"/></g>
+    <path class="sp-flag" fill="#c8912f" d="M546 240 q14 -6 28 0 q-6 7 0 14 q-14 -6 -28 0z"/>
+    <path class="sp-flag f2" fill="#2f63b8" d="M472 348 q11 -5 22 0 q-5 6 0 11 q-11 -5 -22 0z"/>
+    <path class="sp-flag f3" fill="#2f63b8" d="M622 318 q11 -5 22 0 q-5 6 0 11 q-11 -5 -22 0z"/>
+    <g class="sp-windows" fill="#ffc86a" filter="url(#spGlow)">
+      <rect x="540" y="392" width="8" height="14" rx="4"/><rect x="556" y="420" width="7" height="12" rx="3.5"/>
+      <rect x="466" y="460" width="7" height="12" rx="3.5"/><rect x="616" y="444" width="7" height="12" rx="3.5"/>
+      <rect x="626" y="480" width="6" height="10" rx="3"/><rect x="505" y="500" width="7" height="11" rx="3.5"/>
+      <rect x="578" y="498" width="7" height="11" rx="3.5"/><rect x="420" y="548" width="6" height="10" rx="3"/>
+      <rect x="665" y="540" width="6" height="10" rx="3"/><rect x="538" y="496" width="16" height="24" rx="8"/>
+    </g>
+  </g>
+  <g class="sp-fog" fill="#b8c4e8" filter="url(#spBlur)" opacity=".10">
+    <ellipse cx="300" cy="755" rx="420" ry="26"/><ellipse cx="950" cy="765" rx="380" ry="22"/><ellipse cx="620" cy="700" rx="300" ry="18"/>
+  </g>
+</svg>
+  <div class="splash-embers" aria-hidden="true"><i style="left:97%;--d:9.7s;--x:-14px;--s:1.8px;animation-delay:-9.8s"></i><i style="left:67%;--d:8.0s;--x:-46px;--s:3.3px;animation-delay:-2.8s"></i><i style="left:64%;--d:8.8s;--x:-40px;--s:1.5px;animation-delay:-5.9s"></i><i style="left:59%;--d:8.8s;--x:33px;--s:1.9px;animation-delay:-4.1s"></i><i style="left:42%;--d:6.8s;--x:-18px;--s:1.5px;animation-delay:-9.0s"></i><i style="left:52%;--d:6.8s;--x:58px;--s:2.0px;animation-delay:-0.1s"></i><i style="left:96%;--d:8.0s;--x:-13px;--s:1.7px;animation-delay:-4.7s"></i><i style="left:77%;--d:6.5s;--x:58px;--s:2.6px;animation-delay:-3.3s"></i><i style="left:8%;--d:8.0s;--x:-54px;--s:3.6px;animation-delay:-3.4s"></i><i style="left:21%;--d:7.7s;--x:-26px;--s:2.6px;animation-delay:-3.8s"></i><i style="left:49%;--d:11.5s;--x:-6px;--s:3.7px;animation-delay:-9.7s"></i><i style="left:82%;--d:8.8s;--x:52px;--s:3.9px;animation-delay:-6.6s"></i><i style="left:94%;--d:6.6s;--x:59px;--s:3.3px;animation-delay:-5.4s"></i><i style="left:98%;--d:7.0s;--x:51px;--s:2.2px;animation-delay:-0.6s"></i><i style="left:72%;--d:6.9s;--x:0px;--s:2.5px;animation-delay:-3.4s"></i><i style="left:34%;--d:11.2s;--x:23px;--s:2.2px;animation-delay:-7.9s"></i><i style="left:40%;--d:9.4s;--x:25px;--s:2.5px;animation-delay:-2.0s"></i><i style="left:22%;--d:6.5s;--x:4px;--s:3.8px;animation-delay:-6.0s"></i><i style="left:30%;--d:9.2s;--x:-18px;--s:4.0px;animation-delay:-5.4s"></i><i style="left:19%;--d:9.8s;--x:-29px;--s:1.7px;animation-delay:-4.1s"></i><i style="left:13%;--d:8.2s;--x:-13px;--s:2.1px;animation-delay:-6.8s"></i><i style="left:4%;--d:11.2s;--x:-8px;--s:2.5px;animation-delay:-9.0s"></i><i style="left:28%;--d:8.6s;--x:-17px;--s:3.4px;animation-delay:-6.0s"></i><i style="left:75%;--d:12.8s;--x:-44px;--s:3.2px;animation-delay:-6.4s"></i><i style="left:29%;--d:6.6s;--x:54px;--s:2.1px;animation-delay:-4.8s"></i><i style="left:59%;--d:9.0s;--x:-21px;--s:3.6px;animation-delay:-10.5s"></i></div>
+  <div class="splash-vig" aria-hidden="true"></div>
+  <div class="splash-top">
+    <div class="splash-crest" aria-hidden="true">
+      <svg viewBox="0 0 64 72"><path d="M32 3 L58 12 V34 C58 52 46 63 32 69 C18 63 6 52 6 34 V12 Z" fill="#120d06" stroke="#d9b56a" stroke-width="2"/>
+        <path d="M32 9 L52 16 V34 C52 48 43 57 32 62 C21 57 12 48 12 34 V16 Z" fill="none" stroke="#d9b56a" stroke-opacity=".45" stroke-width="1"/>
+        <g stroke="#f0d69a" stroke-width="2.6" stroke-linecap="round"><path d="M21 22 L43 48"/><path d="M43 22 L21 48"/></g>
+        <g stroke="#f0d69a" stroke-width="2" stroke-linecap="round"><path d="M18 44 l6 6"/><path d="M46 44 l-6 6"/></g>
+        <circle cx="32" cy="35" r="4.2" fill="#f0d69a"/></svg>
+    </div>
+    <h1 class="splash-title">Open Water</h1>
+    <div class="splash-sub"><span></span>Erobere die Inseln<span></span></div>
+  </div>
+  <div class="splash-bottom">
+    <div id="splashTip" class="splash-tip">Tipp: Mit dem Schieberegler bestimmst du, wie viele Truppen angreifen.</div>
+    <div class="splash-bar"><i id="splashFill"></i></div>
+    <div id="splashStatus" class="splash-status">Welt wird erschaffen …</div>
+  </div>
+</div>
 <canvas id="mapCanvas" aria-label="Weltkarte"></canvas>
 <div id="mapVignette" aria-hidden="true"></div>
 
@@ -5046,7 +5190,7 @@ body.has-panel .mapctl{display:none}
             updateQuestBadge();
         }, 60000);
         updateQuestBadge();
-        setTimeout(() => { if (dailyClaimable() && document.getElementById('levelUpModal').hidden) showDailyModal(); }, 1200);
+        afterSplash(() => setTimeout(() => { if (dailyClaimable() && document.getElementById('levelUpModal').hidden) showDailyModal(); }, 500));
         mailCloseBtn.addEventListener('click', () => {
             closePanel(mailPopup);
         });
@@ -5191,6 +5335,9 @@ body.has-panel .mapctl{display:none}
         const hintEl = document.getElementById('hint');
         const defaultHint = hintEl.textContent;
         let hintResetTimer = null;
+        var splashQueue, splashFinished;   // no initialisers: afterSplash() already runs earlier in the script (hoisting)
+        function afterSplash(fn) { if (splashFinished) fn(); else (splashQueue || (splashQueue = [])).push(fn); }
+        function splashDone() { splashFinished = true; const q = splashQueue || []; splashQueue = []; q.forEach(f => { try { f(); } catch (e) {} }); }
         function flashHint(text, ms) {
             clearTimeout(hintResetTimer);
             hintEl.textContent = text;
@@ -5587,7 +5734,7 @@ body.has-panel .mapctl{display:none}
         document.getElementById('hudPlayer').addEventListener('click', () => { if (!isPanelOpen(profilePopup)) profileBtn.click(); });
         try {
             if (!store.get('openWaterTutorialSeen')) {
-                flashHint(TUTORIAL_HINT, 7000);
+                afterSplash(() => flashHint(TUTORIAL_HINT, 7000));
                 store.set('openWaterTutorialSeen', '1');
             }
         } catch (e) {}
@@ -6007,6 +6154,40 @@ body.has-panel .mapctl{display:none}
             document.fonts.addEventListener('loadingdone', () => { flushBannerSprites(); requestRender(); });
         } catch (e) {}
         profileName.addEventListener('input', requestRender);   // own-base banners show the name (§6.4)
+
+        // ===== LOADING SCREEN =====
+        // Shown from the first paint (markup + CSS); the bar runs to ~72 % on its own while the
+        // world is generated, then finishes here and fades into the map (min. ~2 s on screen).
+        (function finishSplash() {
+            const sp = document.getElementById('splash');
+            if (!sp) return;
+            const skip = navigator.webdriver && !window.__FORCE_SPLASH;          // automated tests
+            if (skip) { sp.remove(); splashDone(); return; }
+            const tips = ['Tipp: Mit dem Schieberegler bestimmst du, wie viele Truppen angreifen.',
+                'Tipp: Späh eine Basis aus, bevor du angreifst – dann siehst du ihre Truppen.',
+                'Tipp: Tempel geben deinem ganzen Reich einen Bonus.',
+                'Tipp: Unter „Aufgaben“ warten jeden Tag neue Belohnungen.',
+                'Tipp: Glänzende Münzen, Gems und Banner auf der Karte einfach antippen.',
+                'Tipp: Drei gleiche Ausrüstungsteile werden automatisch zu einem besseren.'];
+            const tipEl = document.getElementById('splashTip'), statusEl = document.getElementById('splashStatus');
+            tipEl.textContent = tips[Math.floor(Math.random() * tips.length)];
+            const steps = ['Welt wird erschaffen …', 'Inseln werden besiedelt …', 'Truppen werden gerüstet …', 'Bereit'];
+            const elapsed = performance.now();
+            const wait = Math.max(0, 1900 - elapsed);
+            steps.slice(1, 3).forEach((t, i) => setTimeout(() => { statusEl.textContent = t; }, wait * (i + 1) / 3));
+            setTimeout(() => {
+                statusEl.textContent = steps[3];
+                const fill = document.getElementById('splashFill');
+                fill.style.width = getComputedStyle(fill).width;             // freeze the CSS animation where it is …
+                sp.classList.add('is-done');
+                requestAnimationFrame(() => { fill.style.width = '100%'; }); // … and finish from there
+                setTimeout(() => {
+                    sp.classList.add('is-leaving');
+                    splashDone();
+                    setTimeout(() => sp.remove(), 800);
+                }, 650);
+            }, wait);
+        })();
 
         renderActiveMarches();
         if (bonusGrantedAtBoot) saveGame();      // a reload right after the first start must not lose the grant
