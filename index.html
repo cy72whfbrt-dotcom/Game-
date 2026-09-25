@@ -790,6 +790,42 @@ body.has-panel .mapctl{display:none}
 .xp-next b{color:var(--tx-2);font-weight:600}
 .ico-coin{color:var(--gold-300)} .ico-gem{color:#7fd3ff} .ico-troops{color:#e8e2d2} .ico-points{color:var(--gold-200)}
 @media (prefers-reduced-motion:reduce){.lvlup-card,.lvlup-card::before,.lvlup-rewards li{animation:none;opacity:1}}
+
+/* ---- daily reward + quests ---- */
+.daily{display:flex;flex-direction:column;gap:10px;padding:12px;border:1px solid var(--line-2);border-radius:var(--r-sm);
+  background:linear-gradient(180deg,rgba(236,208,138,.07),rgba(0,0,0,.2))}
+.daily-days{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:12px}
+.daily-day{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0 5px;border:1px solid var(--line-1);
+  border-radius:var(--r-xs);background:rgba(0,0,0,.25);font:600 var(--fs-10,10px)/1 var(--font-ui);color:var(--tx-3);letter-spacing:.04em}
+.daily-day .icon{width:16px;height:16px;color:var(--tx-3)}
+.daily-day.is-done{border-color:var(--line-2);color:var(--tx-2)} .daily-day.is-done .icon{color:var(--gold-400)}
+.daily-day.is-done::after{content:"";position:absolute;right:3px;top:3px;width:5px;height:5px;border-radius:50%;background:#5cbf62}
+.daily-day.is-today{border-color:var(--gold-300);color:var(--gold-100);box-shadow:var(--glow-gold)} .daily-day.is-today .icon{color:var(--gold-200)}
+.daily-day.is-big .icon{color:var(--r-lila)}
+.daily-row{display:flex;align-items:center;gap:10px}
+.daily-row .daily-txt{flex:1;min-width:0}
+.daily-row .daily-txt b{display:block;font:600 var(--fs-13)/1.3 var(--font-ui);color:var(--tx-1)}
+.daily-row .daily-txt small{display:block;font:500 var(--fs-11)/1.35 var(--font-ui);color:var(--tx-3)}
+.daily .daily-days{margin-top:0}
+.quests{display:flex;flex-direction:column;gap:8px}
+.quest{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line-1);border-radius:var(--r-sm);background:rgba(0,0,0,.22)}
+.quest.is-done{border-color:var(--line-3);background:linear-gradient(90deg,rgba(236,208,138,.10),rgba(0,0,0,.2))}
+.quest.is-claimed{opacity:.55}
+.quest > .icon{width:22px;height:22px;flex:none;color:var(--gold-300)}
+.quest-main{flex:1;min-width:0}
+.quest-main b{display:block;font:600 var(--fs-13)/1.3 var(--font-ui);color:var(--tx-1)}
+.quest-bar{display:flex;align-items:center;gap:8px;margin-top:5px}
+.quest-bar i{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.08);overflow:hidden;position:relative}
+.quest-bar i::after{content:"";position:absolute;inset:0;width:var(--p,0%);background:linear-gradient(90deg,var(--gold-500),var(--gold-200))}
+.quest-bar span{font:600 var(--fs-11)/1 var(--font-ui);color:var(--tx-3);font-variant-numeric:tabular-nums}
+.quest-side{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex:none}
+.quest-rew{display:inline-flex;align-items:center;gap:4px;font:700 var(--fs-12)/1 var(--font-ui);color:#9fe0ff}
+.quest-rew .icon{width:13px;height:13px}
+.quest-rew.is-gold{color:var(--gold-200)}
+.quest-reset{font:500 var(--fs-11)/1 var(--font-ui);color:var(--tx-3)}
+.daily-day span{white-space:nowrap} .daily-day i{font-style:normal}
+@media (max-width:359px){.daily-day i{display:none}}
+.quest-ok{font:600 var(--fs-11)/1 var(--font-ui);color:#5cbf62;letter-spacing:.06em;text-transform:uppercase}
     </style>
 </head>
 <body>
@@ -852,7 +888,7 @@ body.has-panel .mapctl{display:none}
 <nav id="cornerButtons" class="nav" aria-label="Hauptmenü">
   <button id="profileBtn" class="nav-btn" type="button" title="Profil"><svg class="icon"><use href="#i-profile"/></svg><span class="nav-l">Profil</span></button>
   <button id="battleLogBtn" class="nav-btn" type="button" title="Angriffe &amp; Kampflog"><svg class="icon"><use href="#i-battlelog"/></svg><span class="nav-l">Kampf</span><span id="battleLogBadge" class="badge" style="display:none">0</span></button>
-  <button id="mailBtn" class="nav-btn" type="button" title="Postfach"><svg class="icon"><use href="#i-mail"/></svg><span class="nav-l">Post</span></button>
+  <button id="mailBtn" class="nav-btn" type="button" title="Aufgaben &amp; tägliche Belohnung"><svg class="icon"><use href="#i-flag"/></svg><span class="nav-l">Aufgaben</span><span id="questBadge" class="badge" style="display:none">0</span></button>
   <button id="shopBtn" class="nav-btn" type="button" title="Shop"><svg class="icon"><use href="#i-shop"/></svg><span class="nav-l">Shop</span></button>
 </nav>
 
@@ -967,12 +1003,15 @@ body.has-panel .mapctl{display:none}
 <section id="mailPopup" class="panel panel--sheet" role="dialog" aria-labelledby="mailTitle">
   <span class="sheet-grab" aria-hidden="true"></span>
   <header class="phead">
-    <div class="emblem emblem--gold"><svg class="icon"><use href="#i-mail"/></svg></div>
-    <div class="phead-text"><div class="overline">Nachrichten</div><h3 id="mailTitle" class="ptitle">Postfach</h3></div>
+    <div class="emblem emblem--gold"><svg class="icon"><use href="#i-flag"/></svg></div>
+    <div class="phead-text"><div class="overline">Täglich neu</div><h3 id="mailTitle" class="ptitle">Aufgaben</h3></div>
     <button id="mailCloseBtn" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button>
   </header>
   <div class="pbody">
-    <div class="empty-state"><svg class="icon"><use href="#i-mail"/></svg><b>Noch keine Nachrichten</b><span>Hier erscheinen bald Nachrichten und Ereignisse.</span></div>
+    <div class="sect"><h4>Tägliche Belohnung</h4></div>
+    <div id="dailyCard" class="daily"></div>
+    <div class="sect"><h4>Heutige Aufgaben</h4><span id="questReset" class="sect-aside quest-reset"></span></div>
+    <div id="questList" class="quests"></div>
   </div>
 </section>
 
@@ -1035,6 +1074,21 @@ body.has-panel .mapctl{display:none}
     <ul id="levelUpRewards" class="lvlup-rewards"></ul>
     <div id="levelUpNext" class="lvlup-next"></div>
     <button id="levelUpBtn" class="btn btn--primary" type="button"><svg class="icon"><use href="#i-check"/></svg><span>Einsammeln</span></button>
+  </div>
+</div>
+
+<!-- ============ DAILY REWARD MODAL ============ -->
+<div id="dailyModal" class="lvlup" role="dialog" aria-modal="true" aria-labelledby="dailyModalTitle" hidden>
+  <div class="lvlup-card">
+    <div class="lvlup-badge"><svg class="icon" style="width:34px;height:34px;color:var(--gold-100)"><use href="#i-shop"/></svg></div>
+    <div class="lvlup-over">Tägliche Belohnung</div>
+    <h2 id="dailyModalTitle" class="lvlup-title">Tag 1</h2>
+    <div id="dailyModalSub" class="lvlup-sub"></div>
+    <div id="dailyModalDays" class="daily-days"></div>
+    <div class="lvlup-rule"></div>
+    <div class="lvlup-label" id="dailyModalLabel">Heute</div>
+    <ul id="dailyModalRewards" class="lvlup-rewards"></ul>
+    <button id="dailyModalBtn" class="btn btn--primary" type="button"><svg class="icon"><use href="#i-shop"/></svg><span>Abholen</span></button>
   </div>
 </div>
 
@@ -1875,6 +1929,7 @@ body.has-panel .mapctl{display:none}
             if (gems < CRATE_GEM_COST) return null;
             gems -= CRATE_GEM_COST;
             const item = addInventoryItem(pickRandomSlot(), pickRandomRarity(), 1);
+            questProgress('crate', 1);
             saveGame();
             saveProgression();
             updateHud();
@@ -2194,6 +2249,7 @@ body.has-panel .mapctl{display:none}
             saveGame();
             saveProgression();
             if (!attackerBotId) flashHint('Angriff unterwegs zu ' + islandTitle(target) + ' · ca. ' + fmtClock(durationSec));
+            if (!attackerBotId) questProgress('attack', 1);
             renderActiveMarches();
         }
 
@@ -2216,6 +2272,7 @@ body.has-panel .mapctl{display:none}
                 resolveAt: startedAt + durationSec * 1000,
                 senderBotId: senderBotId || null
             });
+            if (!senderBotId) questProgress('send', 1);
             updateHud();
             saveGame();
             saveProgression();
@@ -2280,6 +2337,7 @@ body.has-panel .mapctl{display:none}
                 startedAt,
                 resolveAt: startedAt + durationSec * 1000
             });
+            questProgress('scout', 1);
             saveGame();
             saveProgression();
             flashHint('Späher unterwegs zu ' + islandTitle(target) + ' · ca. ' + fmtClock(durationSec));
@@ -2340,6 +2398,7 @@ body.has-panel .mapctl{display:none}
                 islandTroops[target.id] = remaining;
                 ownedIslands.add(target.id);
                 islandLevels[target.id] = levelAfterCapture;
+                questProgress('capture', 1);
                 coins += Math.round(totalStrength * rewardRate);
                 defenderCasualties = originalEnemyTroops;
                 if (target.type === 'temple' || target.type === 'megaTemple') {
@@ -4750,15 +4809,224 @@ body.has-panel .mapctl{display:none}
             clearInterval(battleLogRefreshTimer);
         });
 
-        // Mailbox: placeholder for now, wired up for a future feature
+        // ===== AUFGABEN (daily quests) + TÄGLICHE BELOHNUNG =====
+        // The panel keeps its old ids (mailBtn / mailPopup) so the panel system needs no changes.
         const mailBtn = document.getElementById('mailBtn');
         const mailPopup = document.getElementById('mailPopup');
         const mailCloseBtn = document.getElementById('mailCloseBtn');
         mailBtn.addEventListener('click', () => {
             if (isPanelOpen(mailPopup)) { mailCloseBtn.click(); return; }
             closeAllPopups();
+            renderQuestPanel();
             openPanel(mailPopup);
         });
+
+        function todayKey(d) {
+            d = d || new Date();
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        }
+        function yesterdayKey() { const d = new Date(); d.setDate(d.getDate() - 1); return todayKey(d); }
+        function msToMidnight() { const d = new Date(); const m = new Date(d); m.setHours(24, 0, 0, 0); return m - d; }
+        function fmtHoursLeft(ms) { const h = Math.floor(ms / 3600000), m = Math.floor(ms % 3600000 / 60000); return h > 0 ? h + ' Std. ' + m + ' Min.' : m + ' Min.'; }
+
+        // Grants one crate item (like the shop) - minRarity for the big day-7 chest.
+        function grantFreeCrate(minRarity) {
+            return addInventoryItem(pickRandomSlot(), Math.max(minRarity || 0, pickRandomRarity()), 1);
+        }
+
+        // ---- daily reward: 7-day cycle, missing a day starts again at day 1 ----
+        var DAILY_REWARDS = [
+            { crates: 1, gems: 0 }, { crates: 1, gems: 5 }, { crates: 2, gems: 0 }, { crates: 2, gems: 10 },
+            { crates: 3, gems: 0 }, { crates: 3, gems: 15 }, { crates: 1, gems: 25, epic: true }
+        ];
+        var dailyState = null;
+        function loadDaily() {
+            if (dailyState) return dailyState;
+            try { dailyState = JSON.parse(store.get('openWaterDaily')) || null; } catch (e) { dailyState = null; }
+            if (!dailyState || typeof dailyState.day !== 'number') dailyState = { last: null, day: 0 };
+            return dailyState;
+        }
+        function dailyClaimable() { return loadDaily().last !== todayKey(); }
+        function dailyNextDay() {           // the day (1-7) that the next claim gives
+            const d = loadDaily();
+            if (d.last === todayKey()) return d.day;
+            return d.last === yesterdayKey() ? d.day % 7 + 1 : 1;
+        }
+        function dailyRewardLabel(r) {
+            return (r.epic ? 'Epische Kiste' : r.crates + (r.crates === 1 ? ' Kiste' : ' Kisten')) + (r.gems ? ' + ' + r.gems + ' Gems' : '');
+        }
+        function dailyDaysHtml() {
+            const today = dailyNextDay(), claimed = !dailyClaimable();
+            let html = '';
+            for (let i = 1; i <= 7; i++) {
+                const r = DAILY_REWARDS[i - 1];
+                const done = i < today || (i === today && claimed);
+                const cls = 'daily-day' + (done ? ' is-done' : '') + (i === today && !claimed ? ' is-today' : '') + (r.epic ? ' is-big' : '');
+                html += '<div class="' + cls + '">' + icon(r.gems && !r.crates ? 'gem' : 'shop') + '<span><i>Tag </i>' + i + '</span></div>';
+            }
+            return html;
+        }
+        function claimDaily() {
+            if (!dailyClaimable()) return null;
+            const day = dailyNextDay(), r = DAILY_REWARDS[day - 1];
+            const items = [];
+            for (let i = 0; i < r.crates; i++) items.push(grantFreeCrate(r.epic ? 3 : 0));
+            gems += r.gems;
+            dailyState = { last: todayKey(), day };
+            store.set('openWaterDaily', JSON.stringify(dailyState));
+            saveGame(); saveProgression(); updateHud(); updateQuestBadge();
+            return { day, gems: r.gems, items };
+        }
+        function itemRewardRow(item) {
+            const rd = RARITY_DEFS[item.rarity], def = EQUIPMENT_DEFS[item.slot];
+            return '<li style="border-color:' + rd.color + '66">' + '<svg class="icon" style="color:' + rd.color + '"><use href="#i-' + def.icon + '"/></svg>' +
+                '<span>' + def.name + '</span><b style="color:' + rd.color + '">' + rd.label + '</b></li>';
+        }
+        const dailyModal = document.getElementById('dailyModal');
+        function showDailyModal() {
+            if (!dailyClaimable()) return;
+            const day = dailyNextDay(), r = DAILY_REWARDS[day - 1];
+            document.getElementById('dailyModalTitle').textContent = 'Tag ' + day;
+            document.getElementById('dailyModalSub').textContent = day > 1 ? day + ' Tage in Folge – weiter so!' : 'Jeden Tag vorbeischauen lohnt sich.';
+            document.getElementById('dailyModalDays').innerHTML = dailyDaysHtml();
+            document.getElementById('dailyModalLabel').textContent = 'Heute';
+            document.getElementById('dailyModalRewards').innerHTML =
+                '<li>' + icon('shop', 'ico-coin') + '<span>' + (r.epic ? 'Epische Kiste (mind. Episch)' : r.crates === 1 ? 'Ausrüstungskiste' : 'Ausrüstungskisten') + '</span><b>×' + r.crates + '</b></li>' +
+                (r.gems ? '<li>' + icon('gem', 'ico-gem') + '<span>Gems</span><b>+' + r.gems + '</b></li>' : '');
+            [...document.getElementById('dailyModalRewards').children].forEach((li, i) => { li.style.animationDelay = (150 + i * 110) + 'ms'; });
+            const btn = document.getElementById('dailyModalBtn');
+            btn.dataset.state = 'claim'; btn.querySelector('span').textContent = 'Abholen';
+            dailyModal.hidden = false;
+        }
+        function closeDailyModal() {
+            if (dailyModal.hidden) return false;
+            dailyModal.hidden = true;
+            if (isPanelOpen(mailPopup)) renderQuestPanel();
+            return true;
+        }
+        document.getElementById('dailyModalBtn').addEventListener('click', () => {
+            const btn = document.getElementById('dailyModalBtn');
+            if (btn.dataset.state !== 'claim') { closeDailyModal(); return; }
+            const res = claimDaily();
+            if (!res) { closeDailyModal(); return; }
+            document.getElementById('dailyModalDays').innerHTML = dailyDaysHtml();
+            document.getElementById('dailyModalLabel').textContent = 'Erhalten';
+            const list = document.getElementById('dailyModalRewards');
+            list.innerHTML = res.items.map(itemRewardRow).join('') + (res.gems ? '<li>' + icon('gem', 'ico-gem') + '<span>Gems</span><b>+' + res.gems + '</b></li>' : '');
+            [...list.children].forEach((li, i) => { li.style.animationDelay = (80 + i * 120) + 'ms'; });
+            btn.dataset.state = 'done'; btn.querySelector('span').textContent = 'Weiter';
+        });
+        dailyModal.addEventListener('click', e => { if (e.target === dailyModal) closeDailyModal(); });
+
+        // ---- daily quests: 3 random tasks per day, gems each, bonus crate for all 3 ----
+        var QUEST_DEFS = {
+            capture: { icon: 'flag',        text: n => 'Erobere ' + n + ' Basen',             steps: [3, 5, 8] },
+            attack:  { icon: 'attack',      text: n => 'Starte ' + n + ' Angriffe',            steps: [5, 10, 15] },
+            upgrade: { icon: 'upgrade',     text: n => 'Werte ' + n + '-mal Basen auf',        steps: [5, 10, 20] },
+            pickup:  { icon: 'coin',        text: n => 'Sammle ' + n + ' Karten-Belohnungen',  steps: [2, 4, 6] },
+            scout:   { icon: 'scout',       text: n => 'Späh ' + n + ' Basen aus',             steps: [2, 4, 6] },
+            send:    { icon: 'send',        text: n => 'Schicke ' + n + '-mal Truppen',        steps: [2, 4, 6] },
+            crate:   { icon: 'shop',        text: n => 'Öffne ' + n + (n === 1 ? ' Kiste' : ' Kisten') + ' im Shop', steps: [1, 2, 3] }
+        };
+        var QUEST_GEMS = [5, 10, 15];
+        var QUEST_BONUS = { crates: 1, gems: 10 };
+        var questState = null;
+        function loadQuests() {
+            const today = todayKey();
+            if (!questState) { try { questState = JSON.parse(store.get('openWaterQuests')) || null; } catch (e) { questState = null; } }
+            if (!questState || questState.date !== today || !Array.isArray(questState.list)) {
+                const types = Object.keys(QUEST_DEFS).sort(() => Math.random() - 0.5).slice(0, 3);
+                questState = { date: today, bonusClaimed: false, list: types.map((type, i) => {
+                    const tier = i;                                  // one easy, one medium, one hard
+                    return { type, target: QUEST_DEFS[type].steps[tier], progress: 0, gems: QUEST_GEMS[tier], claimed: false };
+                }) };
+                saveQuests();
+            }
+            return questState;
+        }
+        function saveQuests() { store.set('openWaterQuests', JSON.stringify(questState)); }
+        function questProgress(type, n) {
+            const q = loadQuests();
+            let finished = null;
+            for (const t of q.list) {
+                if (t.type !== type || t.progress >= t.target) continue;
+                t.progress = Math.min(t.target, t.progress + n);
+                if (t.progress >= t.target) finished = t;
+            }
+            saveQuests();
+            if (finished) flashHint('Aufgabe erledigt: ' + QUEST_DEFS[finished.type].text(finished.target) + ' – unter „Aufgaben“ abholen.', 3500);
+            updateQuestBadge();
+            if (isPanelOpen(mailPopup)) renderQuestPanel();
+        }
+        function claimQuest(i) {
+            const q = loadQuests(), t = q.list[i];
+            if (!t || t.claimed || t.progress < t.target) return;
+            t.claimed = true;
+            gems += t.gems;
+            saveQuests(); saveGame(); updateHud();
+            flashHint('+' + t.gems + ' Gems', 1800);
+            renderQuestPanel(); updateQuestBadge();
+        }
+        function claimQuestBonus() {
+            const q = loadQuests();
+            if (q.bonusClaimed || !q.list.every(t => t.claimed)) return;
+            q.bonusClaimed = true;
+            const items = [];
+            for (let i = 0; i < QUEST_BONUS.crates; i++) items.push(grantFreeCrate(0));
+            gems += QUEST_BONUS.gems;
+            saveQuests(); saveGame(); saveProgression(); updateHud();
+            const it = items[0];
+            flashHint('Bonus: ' + RARITY_DEFS[it.rarity].label + ' ' + EQUIPMENT_DEFS[it.slot].name + ' + ' + QUEST_BONUS.gems + ' Gems', 3000);
+            renderQuestPanel(); updateQuestBadge();
+        }
+        function claimableCount() {
+            const q = loadQuests();
+            let n = q.list.filter(t => !t.claimed && t.progress >= t.target).length;
+            if (!q.bonusClaimed && q.list.every(t => t.claimed)) n++;
+            if (dailyClaimable()) n++;
+            return n;
+        }
+        function updateQuestBadge() {
+            const b = document.getElementById('questBadge'); if (!b) return;
+            const n = claimableCount();
+            b.textContent = n; b.style.display = n > 0 ? 'block' : 'none';
+        }
+        function renderQuestPanel() {
+            const q = loadQuests();
+            const day = dailyNextDay(), claimable = dailyClaimable(), r = DAILY_REWARDS[day - 1];
+            document.getElementById('dailyCard').innerHTML =
+                '<div class="daily-days">' + dailyDaysHtml() + '</div>' +
+                '<div class="daily-row"><div class="daily-txt"><b>' + (claimable ? 'Tag ' + day + ': ' + dailyRewardLabel(r) : 'Heute abgeholt') + '</b>' +
+                '<small>' + (claimable ? 'Bereit zum Abholen' : 'Nächste Belohnung in ' + fmtHoursLeft(msToMidnight()) + ' · ' + dailyRewardLabel(DAILY_REWARDS[day % 7])) + '</small></div>' +
+                (claimable ? '<button class="btn btn--primary btn--sm" type="button" data-daily>' + icon('shop') + '<span>Abholen</span></button>' : '<span class="quest-ok">Erledigt</span>') + '</div>';
+            document.getElementById('questReset').textContent = 'Neu in ' + fmtHoursLeft(msToMidnight());
+            let html = q.list.map((t, i) => {
+                const def = QUEST_DEFS[t.type], done = t.progress >= t.target;
+                return '<div class="quest' + (t.claimed ? ' is-claimed' : done ? ' is-done' : '') + '">' + icon(def.icon) +
+                    '<div class="quest-main"><b>' + def.text(t.target) + '</b><div class="quest-bar"><i style="--p:' + Math.round(t.progress / t.target * 100) + '%"></i><span>' + t.progress + ' / ' + t.target + '</span></div></div>' +
+                    '<div class="quest-side"><span class="quest-rew">' + icon('gem') + t.gems + '</span>' +
+                    (t.claimed ? '<span class="quest-ok">Abgeholt</span>' : done ? '<button class="btn btn--primary btn--sm" type="button" data-quest="' + i + '"><span>Abholen</span></button>' : '') +
+                    '</div></div>';
+            }).join('');
+            const allClaimed = q.list.every(t => t.claimed), doneCount = q.list.filter(t => t.claimed).length;
+            html += '<div class="quest' + (q.bonusClaimed ? ' is-claimed' : allClaimed ? ' is-done' : '') + '">' + icon('star') +
+                '<div class="quest-main"><b>Bonus: alle erledigt</b><div class="quest-bar"><i style="--p:' + Math.round(doneCount / 3 * 100) + '%"></i><span>' + doneCount + ' / 3</span></div></div>' +
+                '<div class="quest-side"><span class="quest-rew is-gold">' + icon('shop') + 'Kiste + ' + QUEST_BONUS.gems + icon('gem') + '</span>' +
+                (q.bonusClaimed ? '<span class="quest-ok">Abgeholt</span>' : allClaimed ? '<button class="btn btn--primary btn--sm" type="button" data-bonus><span>Abholen</span></button>' : '') + '</div></div>';
+            document.getElementById('questList').innerHTML = html;
+        }
+        mailPopup.addEventListener('click', e => {
+            const b = e.target.closest('button'); if (!b) return;
+            if (b.hasAttribute('data-daily')) showDailyModal();
+            else if (b.dataset.quest !== undefined) claimQuest(+b.dataset.quest);
+            else if (b.hasAttribute('data-bonus')) claimQuestBonus();
+        });
+        setInterval(() => {                 // day rollover while the game stays open
+            if (questState && questState.date !== todayKey()) { loadQuests(); if (isPanelOpen(mailPopup)) renderQuestPanel(); }
+            updateQuestBadge();
+        }, 60000);
+        updateQuestBadge();
+        setTimeout(() => { if (dailyClaimable() && document.getElementById('levelUpModal').hidden) showDailyModal(); }, 1200);
         mailCloseBtn.addEventListener('click', () => {
             closePanel(mailPopup);
         });
@@ -4928,6 +5196,7 @@ body.has-panel .mapctl{display:none}
         }
         function renderLevelUpModal() {
             const s = levelUpShown; if (!s) return;
+            if (!document.getElementById('dailyModal').hidden) { levelUpTimer = setTimeout(renderLevelUpModal, 500); return; }   // one window at a time
             const m = document.getElementById('levelUpModal');
             document.getElementById('levelUpLevel').textContent = s.to;
             document.getElementById('levelUpTitle').textContent = 'Stufe ' + s.to;
@@ -5008,6 +5277,7 @@ body.has-panel .mapctl{display:none}
                     label = '+' + fmtNum(p.amount) + ' Truppen';
                 } else { coins += p.amount; label = '+' + fmtNum(p.amount) + ' Münzen'; }
                 pickupFx.push({ x: p.x, y: p.y, kind: p.kind, label, born: performance.now() });
+                questProgress('pickup', 1);
                 updateHud();
                 saveGame();
                 requestRender();
@@ -5156,6 +5426,7 @@ body.has-panel .mapctl{display:none}
         }
         function closeTopmostPanel() {           // scrim click + Escape
           if (closeLevelUpModal()) return;
+          if (closeDailyModal()) return;
           if (isPanelOpen(chestItemPopup)) return chestItemCloseBtn.click();
           if (isPanelOpen(popup)) return closeBtn.click();
           for (const [pid, closeId] of [['profilePopup','profileCloseBtn'],['battleLogPopup','battleLogCloseBtn'],['mailPopup','mailCloseBtn'],['shopPopup','shopCloseBtn']])
@@ -5524,6 +5795,7 @@ body.has-panel .mapctl{display:none}
             updateHud();
             saveGame();
             flashHint(islandTitle(islandById[popupIslandId]) + ' ist jetzt Stufe ' + (level + 1) + '.', 1800);
+            questProgress('upgrade', 1);
             popupView = 'menu';
             renderPopup();
         });
