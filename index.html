@@ -1484,6 +1484,14 @@ body.has-panel .mapctl{display:none}
         // not a rigid grid) - only constraint is a minimum distance from
         // every other base and the temple, so nothing ends up crowded.
         const TOWERS_PER_LANDMASS = 100;
+        const THRONE_TOWERS = 36, GUARDIAN_TOWERS = 60;
+        // Neutral strength of the inner islands (the outer ring keeps the small starter values):
+        // the Thron-Insel is late-game, the Wächter-Inseln mid-game.
+        const TIER_STATS = {
+            throne:   { troops: [5e6, 2e7],   def: [1e6, 4e6],   level: 40, temple: [2.5e8, 6e7], templeLevel: 60 },
+            guardian: { troops: [1e5, 1e6],   def: [2e4, 2e5],   level: 20, temple: [5e6, 1e6],   templeLevel: 30 }
+        };
+        function niceRoundW(n) { const p = Math.pow(10, Math.max(0, Math.floor(Math.log10(n)) - 1)); return Math.round(n / p) * p; }
         const HUB_TOWERS_PER_LANDMASS = 180; // the hub is 1.5x the radius, so it earns more bases too
         const TOWER_MIN_SPACING_RATIO = 0.10; // relative to the landmass radius
         const ISLAND_RADIUS = 650; // tower footprint - bigger again, still well under the guaranteed minimum spacing between towers
@@ -1686,9 +1694,13 @@ body.has-panel .mapctl{display:none}
         const landmasses = [];
         {
             let lmId = 0;
+            // World layout: the Thron-Insel (hub, Mega-Tempel) in the middle, 4 Wächter-Inseln
+            // diagonally around it (the east/west cells of ring 1 stay open sea, a moat), then the
+            // outer rings where the player and the bots start.
             for (let ring = 0; ring <= HEX_RING_COUNT; ring++) {
                 const radius = ring === 0 ? CENTER_LANDMASS_RADIUS : OUTER_LANDMASS_RADIUS;
                 for (const cell of hexRing(ring)) {
+                    if (ring === 1 && cell.r === 0) continue;
                     const { x, y } = axialToPixel(cell.q, cell.r);
                     // Distinct seed per landmass (large prime multiplier
                     // avoids correlated streams between adjacent ids) so
@@ -1697,7 +1709,7 @@ body.has-panel .mapctl{display:none}
                     const shape = generateIslandShape(x, y, radius, shapeRand);
                     let shapeMaxR = 0;
                     for (const p of shape) shapeMaxR = Math.max(shapeMaxR, Math.hypot(p.x - x, p.y - y));
-                    landmasses.push({ id: lmId, q: cell.q, r: cell.r, x, y, radius, shape, shapeMaxR, isCenter: ring === 0 });
+                    landmasses.push({ id: lmId, q: cell.q, r: cell.r, x, y, radius, shape, shapeMaxR, isCenter: ring === 0, tier: ring === 0 ? 'throne' : ring === 1 ? 'guardian' : 'outer' });
                     lmId++;
                 }
             }
@@ -1767,7 +1779,8 @@ body.has-panel .mapctl{display:none}
             // island, as long as it isn't too close to the temple or any
             // base already placed - free placement instead of a rigid grid,
             // but never crowded together.
-            const targetCount = isMega ? HUB_TOWERS_PER_LANDMASS : TOWERS_PER_LANDMASS;
+            const targetCount = lm.tier === 'throne' ? THRONE_TOWERS : lm.tier === 'guardian' ? GUARDIAN_TOWERS : TOWERS_PER_LANDMASS;
+            const tierStats = TIER_STATS[lm.tier];
             const minSpacing = lm.radius * TOWER_MIN_SPACING_RATIO;
             const occupied = [{ x: lm.x, y: lm.y }]; // the temple's spot, reserved first
             let placed = 0;
@@ -1794,8 +1807,9 @@ body.has-panel .mapctl{display:none}
                     type: 'tower',
                     // Two separate stats for a neutral (unowned) tower:
                     // troops garrisoned there, and a defense bonus on top.
-                    neutralTroops: NEUTRAL_TROOPS_MIN + Math.floor(rand() * (NEUTRAL_TROOPS_MAX - NEUTRAL_TROOPS_MIN + 1)),
-                    neutralDefense: NEUTRAL_DEFENSE_MIN + Math.floor(rand() * (NEUTRAL_DEFENSE_MAX - NEUTRAL_DEFENSE_MIN + 1))
+                    neutralTroops: tierStats ? niceRoundW(tierStats.troops[0] + rand() * (tierStats.troops[1] - tierStats.troops[0])) : NEUTRAL_TROOPS_MIN + Math.floor(rand() * (NEUTRAL_TROOPS_MAX - NEUTRAL_TROOPS_MIN + 1)),
+                    neutralDefense: tierStats ? niceRoundW(tierStats.def[0] + rand() * (tierStats.def[1] - tierStats.def[0])) : NEUTRAL_DEFENSE_MIN + Math.floor(rand() * (NEUTRAL_DEFENSE_MAX - NEUTRAL_DEFENSE_MIN + 1)),
+                    neutralLevel: tierStats ? tierStats.level : 1
                 });
             }
 
@@ -1806,12 +1820,34 @@ body.has-panel .mapctl{display:none}
                 y: lm.y,
                 radius: ISLAND_RADIUS * (isMega ? 1.6 : 1.3),
                 type: isMega ? 'megaTemple' : 'temple',
-                neutralTroops: Math.round(Math.floor(TEMPLE_TROOPS_MIN + rand() * (TEMPLE_TROOPS_MAX - TEMPLE_TROOPS_MIN)) * (isMega ? MEGA_TEMPLE_MULT : 1)),
-                neutralDefense: Math.round(Math.floor(TEMPLE_DEFENSE_MIN + rand() * (TEMPLE_DEFENSE_MAX - TEMPLE_DEFENSE_MIN)) * (isMega ? MEGA_TEMPLE_MULT : 1))
+                neutralTroops: tierStats ? tierStats.temple[0] : Math.round(Math.floor(TEMPLE_TROOPS_MIN + rand() * (TEMPLE_TROOPS_MAX - TEMPLE_TROOPS_MIN)) * (isMega ? MEGA_TEMPLE_MULT : 1)),
+                neutralDefense: tierStats ? tierStats.temple[1] : Math.round(Math.floor(TEMPLE_DEFENSE_MIN + rand() * (TEMPLE_DEFENSE_MAX - TEMPLE_DEFENSE_MIN)) * (isMega ? MEGA_TEMPLE_MULT : 1)),
+                neutralLevel: tierStats ? tierStats.templeLevel : 1
             });
         }
         const islandById = {};
         for (const island of islands) islandById[island.id] = island;
+
+        // The map was rebuilt (Thron-Insel + Wächter-Inseln): old base ids no longer match, so every
+        // map-bound part of an old save is cleared once. Coins, gems, gear, skills and level stay,
+        // and the player's whole army moves to the new home base.
+        const WORLD_VERSION = '2';
+        if (store.get('openWaterWorldVersion') !== WORLD_VERSION) {
+            let carry = 0;
+            try {
+                const oldOwned = JSON.parse(store.get('openWaterOwnedIslands')) || [], oldTroops = JSON.parse(store.get('openWaterIslandTroops')) || {};
+                for (const i of oldOwned) carry += oldTroops[i] || 0;
+                for (const a of JSON.parse(store.get('openWaterPendingAttacks')) || []) if (!a.attackerBotId) carry += a.rawTroops || 0;
+                for (const a of JSON.parse(store.get('openWaterPendingSends')) || []) if (!a.senderBotId) carry += a.troops || a.rawTroops || 0;
+                for (const a of JSON.parse(store.get('openWaterPendingRetreats')) || []) carry += a.troops || 0;
+            } catch (e) {}
+            ['openWaterPlayerIslandId', 'openWaterOwnedIslands', 'openWaterIslandLevels', 'openWaterIslandTroops', 'openWaterBotOwnedIslands',
+             'openWaterBotCoins', 'openWaterNeutralTroopOverrides', 'openWaterScoutedIslands', 'openWaterPendingAttacks', 'openWaterPendingSends',
+             'openWaterPendingScouts', 'openWaterPendingRetreats', 'openWaterTempleHoldSince', 'openWaterBoss', 'openWaterBossNext'].forEach(k => store.remove(k));
+            if (carry > 0) store.set('openWaterCarryTroops', String(Math.round(carry)));
+            store.set('openWaterBalanceV2', '1');
+            store.set('openWaterWorldVersion', WORLD_VERSION);
+        }
 
         // Neutral islands normally regenerate the exact same neutralTroops
         // every load (same seed, same order) - but a lost attack now
@@ -1830,12 +1866,14 @@ body.has-panel .mapctl{display:none}
         }
 
         function centerIsland() {
-            // Player's home base must be a regular tower, never a temple.
+            // Player's home base: a regular tower near the middle of the southernmost outer landmass,
+            // as far from the Thron-Insel as the bots start.
+            const startLm = landmasses.filter(l => l.tier === 'outer').reduce((a, b) => (b.y > a.y || (b.y === a.y && Math.abs(b.x) < Math.abs(a.x))) ? b : a);
             let closest = null;
             let closestDist = Infinity;
             for (const island of islands) {
-                if (island.type !== 'tower') continue;
-                const dist = island.x * island.x + island.y * island.y;
+                if (island.type !== 'tower' || island.landmassId !== startLm.id) continue;
+                const dist = (island.x - startLm.x) ** 2 + (island.y - startLm.y) ** 2;
                 if (dist < closestDist) {
                     closestDist = dist;
                     closest = island;
@@ -1879,6 +1917,8 @@ body.has-panel .mapctl{display:none}
             store.set('openWaterIslandLevels', JSON.stringify(islandLevels));
             store.set('openWaterBalanceV2', '1');
         }
+        // strong inner islands show (and keep, minus one, on capture) their level
+        for (const isl of islands) if (isl.neutralLevel > 1 && islandLevels[isl.id] === undefined) islandLevels[isl.id] = isl.neutralLevel;
         let islandTroops;
         try {
             islandTroops = JSON.parse(store.get('openWaterIslandTroops')) || {};
@@ -1924,6 +1964,13 @@ body.has-panel .mapctl{display:none}
             coins += 1000000000;
             islandTroops[playerIslandId] = (islandTroops[playerIslandId] || 0) + 1000000000;
             store.set('openWaterBonusGrant3', '1');
+        }
+        // After the map rebuild: the old army arrives at the new home base.
+        const carriedTroops = parseInt(store.get('openWaterCarryTroops'), 10) || 0;
+        if (carriedTroops > 0) {
+            bonusGrantedAtBoot = true;
+            islandTroops[playerIslandId] = (islandTroops[playerIslandId] || 0) + carriedTroops;
+            store.remove('openWaterCarryTroops');
         }
 
         // When each currently-owned temple was captured - the longer it's
@@ -1993,7 +2040,7 @@ body.has-panel .mapctl{display:none}
         // added to BOT_DEFS later, on top of an existing save where the
         // earlier bots already have territory, still gets seeded in.
         {
-            const outerLandmassIds = landmasses.filter(lm => !lm.isCenter).map(lm => lm.id);
+            const outerLandmassIds = landmasses.filter(lm => lm.tier === 'outer' && lm.id !== islandById[playerIslandId].landmassId).map(lm => lm.id);
             for (let i = outerLandmassIds.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [outerLandmassIds[i], outerLandmassIds[j]] = [outerLandmassIds[j], outerLandmassIds[i]];
@@ -2025,6 +2072,12 @@ body.has-panel .mapctl{display:none}
         // Actual troops/defense a target currently has, regardless of who
         // (if anyone) owns it - neutral islands use their fixed generated
         // stats, an owned island uses its real garrison and level.
+        // ===== HERRSCHER DER MEERE =====
+        // Whoever holds the Mega-Tempel on the Thron-Insel rules: a crown on every nameplate,
+        // +25 % coins and troops on all bases, and the title "Herrscher der Meere".
+        const RULER_BONUS = 1.25;
+        const megaTempleId = (islands.find(i => i.type === 'megaTemple') || {}).id;
+        function rulerOwner() { return megaTempleId === undefined ? null : islandOwnerOf(megaTempleId); }
         function effectiveTroops(island) {
             const boss = bossAt(island.id); if (boss) return boss.troops;
             const owner = islandOwnerOf(island.id);
@@ -2095,7 +2148,7 @@ body.has-panel .mapctl{display:none}
         function updateHudPlayer() {
             document.getElementById('hudName').textContent = profileName.value || 'Du';
             document.getElementById('hudLevel').textContent = playerLvl;
-            document.getElementById('hudRankLine').textContent = 'Rang ' + currentRank();
+            document.getElementById('hudRankLine').textContent = rulerOwner() === 'player' ? 'Herrscher der Meere' : 'Rang ' + currentRank();
         }
         updateHud();
 
@@ -2804,6 +2857,7 @@ body.has-panel .mapctl{display:none}
             const totalStrength = originalEnemyTroops + originalEnemyDefense;
             const won = myTroops > totalStrength;
             const playerInvolved = targetOwner === 'player';
+            const bossHere = bossAt(target.id);
 
             if (won) {
                 // Same rule as the player's own captures: the new owner
@@ -2821,12 +2875,16 @@ body.has-panel .mapctl{display:none}
                 const defenderCasualties = Math.min(originalEnemyTroops, myTroops);
                 if (targetOwner) {
                     islandTroops[target.id] = Math.max(0, (islandTroops[target.id] || 0) - defenderCasualties);
+                } else if (bossHere) {
+                    bossHere.troops = Math.max(0, bossHere.troops - defenderCasualties);
+                    saveBoss();
                 } else {
                     target.neutralTroops = originalEnemyTroops - defenderCasualties;
                     neutralTroopOverrides[target.id] = target.neutralTroops;
                 }
             }
             updateHud();
+            if (bossHere && won) { spawnBattleFx(target.id, false, bossHere.name + ' gefallen', bot.name); endBoss(bot.name + ' hat den ' + bossHere.name + ' besiegt!'); }
 
             if (playerInvolved) {
                 spawnBattleFx(target.id, !won, won ? 'Basis verloren' : 'Verteidigt!', bot.name);
@@ -3728,6 +3786,7 @@ body.has-panel .mapctl{display:none}
           const plates = layoutBanners(vis, z, isPanelOpen(popup) ? popupIslandId : null);
           drawMarchTokens();                                                                                                   // 8 tokens (clear of the plates)
           paintBanners(plates);                                                                                                // 9 nameplates on top
+          drawRulerCrowns(plates);                                                                                             // crown on the ruler's plates
           drawMarchChips();                                                                                                    // 10 countdown chips
           drawPickups(now);                                                                                                    // 11 mini-event pickups
           drawBattleFx(now);                                                                                                   // 13 battle flashes + "Sieg!"
@@ -4253,16 +4312,20 @@ body.has-panel .mapctl{display:none}
             if (!owned || owned.size === 0) return;
 
             let bestSourceId = null, bestTargetId = null, bestDistance = Infinity;
+            const ruler = rulerOwner();
             for (const sourceId of owned) {
                 const troopsHere = islandTroops[sourceId] || 0;
                 if (troopsHere < BOT_MIN_GARRISON_TO_ATTACK) continue;
                 const source = islandById[sourceId];
                 for (const lmId of reachableLandmassIds[source.landmassId]) {
                     for (const target of islandsByLandmass[lmId] || []) {
-                        if (owned.has(target.id) || bossAt(target.id)) continue;
+                        if (owned.has(target.id)) continue;
                         const totalStrength = effectiveTroops(target) + effectiveDefense(target);
                         if (troopsHere < totalStrength * BOT_ATTACK_SAFETY_MARGIN) continue;
-                        const distance = Math.hypot(target.x - source.x, target.y - source.y);
+                        let distance = Math.hypot(target.x - source.x, target.y - source.y);
+                        // the throne pulls: the Mega-Tempel (once someone holds it) and a boss rank far ahead of plain bases
+                        if (target.id === megaTempleId && ruler && ruler !== bot.id) distance *= 0.1;
+                        else if (bossAt(target.id)) distance *= 0.3;
                         if (distance < bestDistance) {
                             bestDistance = distance;
                             bestSourceId = sourceId;
@@ -5404,8 +5467,9 @@ body.has-panel .mapctl{display:none}
                 ticks++;
             }
             if (ticks > 0) {
-                const coinMult = coinProductionMultiplier();
-                const troopMult = troopProductionMultiplier();
+                const ruler = rulerOwner();
+                const coinMult = coinProductionMultiplier() * (ruler === 'player' ? RULER_BONUS : 1);
+                const troopMult = troopProductionMultiplier() * (ruler === 'player' ? RULER_BONUS : 1);
                 for (const ownedId of ownedIslands) {
                     const level = islandLevels[ownedId] || 1;
                     coins += Math.round(coinsPerTick(level) * coinMult) * ticks;
@@ -5425,8 +5489,9 @@ body.has-panel .mapctl{display:none}
                 for (const bot of BOT_DEFS) {
                     for (const ownedId of botOwnedIslands[bot.id]) {
                         const level = islandLevels[ownedId] || 1;
-                        botCoins[bot.id] += coinsPerTick(level) * ticks;
-                        islandTroops[ownedId] = (islandTroops[ownedId] || 0) + troopsPerTick(level) * ticks;
+                        const rb = ruler === bot.id ? RULER_BONUS : 1;
+                        botCoins[bot.id] += Math.round(coinsPerTick(level) * rb) * ticks;
+                        islandTroops[ownedId] = (islandTroops[ownedId] || 0) + Math.round(troopsPerTick(level) * rb) * ticks;
                         const isl = islandById[ownedId];
                         if (isl && (isl.type === 'temple' || isl.type === 'megaTemple')) {
                             const mult = (isl.type === 'megaTemple' ? MEGA_TEMPLE_MULT : 1) * templeHoldMultiplier(ownedId);
@@ -5557,7 +5622,7 @@ body.has-panel .mapctl{display:none}
             const home = islandById[rewardBaseId() ?? playerIslandId];
             const busy = new Set(pendingAttacks.map(a => a.targetId));
             const cand = [];
-            for (const lm of reach) for (const isl of islandsByLandmass[lm] || [])
+            for (const lm of reach) if (landmasses[lm] && landmasses[lm].tier === 'outer') for (const isl of islandsByLandmass[lm] || [])
                 if (!islandOwnerOf(isl.id) && isl.type !== 'temple' && isl.type !== 'megaTemple' && !busy.has(isl.id)) cand.push(isl);
             if (!cand.length || !home) return false;
             cand.sort((a, b) => Math.hypot(a.x - home.x, a.y - home.y) - Math.hypot(b.x - home.x, b.y - home.y));
@@ -5597,6 +5662,7 @@ body.has-panel .mapctl{display:none}
         }
         document.getElementById('rewardModalBtn').addEventListener('click', () => { document.getElementById('rewardModal').hidden = true; });
         function bossTick() {
+            checkRuler();
             loadBoss();
             const now = Date.now();
             if (bossState && (bossState.endsAt <= now || islandOwnerOf(bossState.islandId))) {
@@ -5611,6 +5677,37 @@ body.has-panel .mapctl{display:none}
             }
         }
         setInterval(bossTick, 1000);
+        function drawCrown(x, y, w) {       // small gold crown, (x, y) = bottom centre
+            const h = w * 0.62;
+            ctx.beginPath();
+            ctx.moveTo(x - w / 2, y); ctx.lineTo(x - w / 2, y - h * 0.55); ctx.lineTo(x - w / 4, y - h * 0.25); ctx.lineTo(x, y - h);
+            ctx.lineTo(x + w / 4, y - h * 0.25); ctx.lineTo(x + w / 2, y - h * 0.55); ctx.lineTo(x + w / 2, y); ctx.closePath();
+            const gr = ctx.createLinearGradient(0, y - h, 0, y);
+            gr.addColorStop(0, '#fff3cf'); gr.addColorStop(0.5, '#e7bd6a'); gr.addColorStop(1, '#9a6a24');
+            ctx.fillStyle = gr; ctx.fill(); ctx.lineWidth = 1.2; ctx.strokeStyle = '#3b2608'; ctx.stroke();
+            ctx.fillStyle = '#d8342a'; ctx.beginPath(); ctx.arc(x, y - h * 0.35, w * 0.08, 0, Math.PI * 2); ctx.fill();
+        }
+        function drawRulerCrowns(plates) {
+            const ruler = rulerOwner(); if (!ruler || !plates) return;
+            setScreen(ctx);
+            for (const it of plates) {
+                if (islandOwnerOf(it.isl.id) !== ruler) continue;
+                const w = Math.max(12, Math.min(24, it.rect.h * 0.85));
+                drawCrown(it.rect.x + it.rect.h * 0.5, it.rect.y + 2, w);
+            }
+        }
+        var lastRuler;
+        function checkRuler() {             // announces a change of ruler once
+            const r = rulerOwner();
+            if (lastRuler === undefined) { lastRuler = r; return; }
+            if (r === lastRuler) return;
+            const was = lastRuler; lastRuler = r;
+            if (r === 'player') { flashHint('Du bist Herrscher der Meere! +25 % Münzen und Truppen im ganzen Reich.', 6000); spawnBattleFx(megaTempleId, true, 'Herrscher!', 'Herrscher der Meere'); }
+            else if (was === 'player') flashHint('Du hast den Mega-Tempel verloren – die Krone ist weg!', 5000);
+            else if (r && botById[r]) flashHint(botById[r].name + ' ist jetzt Herrscher der Meere!', 4000);
+            updateHudPlayer(); requestRender();
+        }
+
         function drawBossOverlay(now) {    // screen space: pulsing aura, rotating rune ring, countdown chip
             loadBoss();
             const b = bossState; if (!b || b.endsAt <= Date.now()) return;
@@ -6146,7 +6243,7 @@ body.has-panel .mapctl{display:none}
                         statTile('Truppen', 'troops', scouted ? fmtNum(effectiveTroops(island)) : UNK, scouted && ownerBot ? 'is-enemy' : '') +
                         statTile('Verteidigung', 'defense', scouted ? fmtNum(effectiveDefense(island)) : UNK) + '</div>' +
                         (scouted ? '' : '<div class="notice">' + icon('scout') + '<span>Stärke unbekannt. Spähen deckt Truppen und Verteidigung auf.</span></div>') +
-                        (isTemple ? '<div class="notice notice--gold">' + icon('temple') + '<span>Tempel: gibt Produktion, Gems und Münzen, sobald erobert.</span></div>' : '') +
+                        (isTemple ? '<div class="notice notice--gold">' + icon('temple') + '<span>' + (island.type === 'megaTemple' ? 'Thron der Meere: wer ihn hält, trägt die Krone – +25 % Münzen und Truppen im ganzen Reich.' : 'Tempel: gibt Produktion, Gems und Münzen, sobald erobert.') + '</span></div>' : '') +
                         (bossAt(island.id) ? '<div class="notice notice--gold">' + icon('shop') + '<span><b>Belohnung:</b> Legendäre Kiste + ' + BOSS_REWARD_GEMS + ' Gems · verschwindet in <b data-boss-clock>' + fmtClock((bossAt(island.id).endsAt - Date.now()) / 1000) + '</b></span></div>' : '') +
                         (scoutEnRoute ? '<div class="notice notice--warn">' + icon('hourglass') + '<span>Späher bereits unterwegs …</span></div>' : '');
                     setBtnLabel(attackBtn, 'Angreifen');
