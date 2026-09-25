@@ -118,8 +118,10 @@ b,strong{font-weight:600}
 .res > .icon{width:18px;height:18px}
 .res b{font:600 var(--fs-13)/1 var(--font-ui);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .res--coin > .icon{color:var(--res-coin)} .res--gem > .icon{color:var(--res-gem)} .res--troop > .icon{color:var(--res-troop)}
-.res-add{margin-left:auto;width:18px;height:18px;flex:none;display:grid;place-items:center;border-radius:var(--r-xs);color:var(--gold-200);background:rgba(214,170,90,.12);border:1px solid var(--line-2)}
+.res-add{position:relative;margin-left:auto;width:18px;height:18px;flex:none;display:grid;place-items:center;border-radius:var(--r-xs);color:var(--gold-200);background:rgba(214,170,90,.12);border:1px solid var(--line-2)}
 .res-add .icon{width:12px;height:12px}
+/* phone portrait: the dock already has Shop - the "+" would only squeeze the gem value into an ellipsis */
+@media (max-width:899px) and (min-height:501px){ .res-add{display:none} }
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){ .res,.nav,.mapctl,.toast,.mabar{background:var(--glass-strong)} }
 
 /* avatar ring (profile header + desktop HUD). --progress (0-100) is written by renderProfile */
@@ -142,7 +144,7 @@ b,strong{font-weight:600}
    ===================================================================== */
 .nav{position:fixed;z-index:var(--z-dock);left:0;right:0;bottom:0;height:calc(var(--dock-h) + var(--safe-b));
   padding:0 calc(var(--safe-r) + 6px) var(--safe-b) calc(var(--safe-l) + 6px);display:grid;grid-template-columns:repeat(4,1fr);
-  background:linear-gradient(180deg,rgba(18,21,28,.97),rgba(8,10,13,.99));border-top:1px solid var(--line-2);box-shadow:0 -12px 30px rgba(0,0,0,.45)}
+  background:linear-gradient(180deg,rgb(18,21,28),rgb(8,10,13));border-top:1px solid var(--line-2);box-shadow:0 -12px 30px rgba(0,0,0,.45)}
 .nav::before{content:"";position:absolute;left:18%;right:18%;top:-1px;height:1px;background:linear-gradient(90deg,transparent,var(--gold-200),transparent)}
 .nav-btn{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:0;color:var(--tx-3);transition:color var(--dur-1)}
 .nav-btn .icon{width:22px;height:22px}
@@ -167,6 +169,14 @@ b,strong{font-weight:600}
 .mapctl button:disabled{color:var(--tx-4);cursor:default}
 .mapctl button + button{border-top:1px solid var(--line-1)}
 .mapctl .icon{width:18px;height:18px}
+@media (pointer:coarse){
+  /* bigger finger targets, same visuals */
+  .btn-x,.mapctl button{position:relative}
+  .btn-x::before{content:"";position:absolute;inset:-6px}
+  .mapctl button::before{content:"";position:absolute;inset:0 -4px}
+  .mapctl button:first-child::before{top:-4px} .mapctl button:last-child::before{bottom:-4px}
+  .res-add::before{content:"";position:absolute;inset:-12px}
+}
 body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/landscape re-enable below */
 
 /* =====================================================================
@@ -182,7 +192,11 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 .toast:empty{display:none}
 @keyframes toast-in{from{opacity:0;translate:0 -6px}}
 /* a full sheet starts right under the HUD: the toast then floats over the HUD row instead of the sheet header */
-@media (max-width:899px) and (min-height:501px){ body.has-sheet .toast{top:calc(var(--safe-t) + 4px);box-shadow:var(--sh-2),0 0 0 1px rgba(0,0,0,.35)} }
+/* phone: while a sheet is open the toast docks just above the sheet's footer (never over the HUD values or the sheet header) */
+@media (max-width:899px) and (min-height:501px){
+  body.has-sheet .toast{top:auto;bottom:calc(var(--dock-h) + var(--safe-b) + 72px);box-shadow:var(--sh-2),0 0 0 1px rgba(0,0,0,.35)}
+  body.has-sheet:has(#battleLogPopup.is-open,#mailPopup.is-open,#profilePopup.is-open:not([data-tab="equip"])) .toast{bottom:calc(var(--dock-h) + var(--safe-b) + 16px)}
+}
 
 /* =====================================================================
    MULTI-ATTACK BAR  (JS: style.display = 'flex' | 'none')
@@ -218,13 +232,13 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 .phead{position:relative;flex:none;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:8px 12px 12px 14px;border-bottom:1px solid var(--line-1)}
 .phead::after{content:"";position:absolute;left:50%;bottom:-6px;width:96px;height:12px;transform:translateX(-50%);background:var(--crest) center/contain no-repeat;pointer-events:none}
 .phead-text{min-width:0}
-.overline{font:600 var(--fs-10)/1.2 var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--tx-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.overline{font:600 var(--fs-10)/1.3 var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--tx-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .overline b{color:var(--gold-200);font-weight:600}
 .ptitle{display:block;margin:3px 0 2px;font:600 var(--fs-17)/1.15 var(--font-display);letter-spacing:var(--track-display);color:var(--gold-100);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ptitle--input{width:100%;min-width:0;padding:1px 4px;margin-left:-4px;background:transparent;border:1px solid transparent;border-radius:var(--r-xs);outline:none}
 .ptitle--input:hover{border-color:var(--line-1)}
 .ptitle--input:focus{border-color:var(--line-3);background:rgba(0,0,0,.25);box-shadow:none}
-.ptitle--input::placeholder{color:var(--tx-4)}
+.ptitle--input::placeholder{color:var(--gold-100);opacity:.6}
 .psub{display:flex;align-items:center;gap:6px;min-width:0;font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-2);white-space:nowrap;overflow:hidden}
 .psub .icon{width:13px;height:13px;color:var(--tx-3)}
 .psub .sep{width:3px;height:3px;border-radius:50%;background:var(--tx-4);flex:none}
@@ -246,15 +260,19 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 
 .pbody{position:relative;flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
   padding:14px;display:flex;flex-direction:column;gap:12px;scrollbar-width:thin;scrollbar-color:var(--ink-5) transparent;
-  -webkit-mask-image:linear-gradient(180deg,#000 calc(100% - 14px),transparent);mask-image:linear-gradient(180deg,#000 calc(100% - 14px),transparent)}
+  /* top 10px fade: scrolled content dissolves before it reaches the header crest (.phead::after hangs 6px into the body) */
+  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 10px,#000 calc(100% - 14px),transparent);mask-image:linear-gradient(180deg,transparent 0,#000 10px,#000 calc(100% - 14px),transparent)}
 .pfoot{position:relative;flex:none;display:flex;gap:8px;align-items:center;padding:10px 14px 12px;border-top:1px solid var(--line-1);
   background:linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,.3))}
 .pfoot--wrap{flex-wrap:wrap}
 .pfoot:not(:has(> :not([style*="display: none"]):not([hidden]))){display:none}
 
 /* ---- panel placement: PHONE PORTRAIT (default) ---- */
-.panel--sheet{left:var(--safe-l);right:var(--safe-r);top:calc(var(--safe-t) + var(--hud-top-space));bottom:calc(var(--dock-h) + var(--safe-b));
-  z-index:var(--z-sheet);border-radius:var(--r-lg) var(--r-lg) 0 0}
+.panel--sheet{--sheet-max:calc(100dvh - var(--safe-t) - var(--hud-top-space) - var(--dock-h) - var(--safe-b));
+  left:var(--safe-l);right:var(--safe-r);top:auto;bottom:calc(var(--dock-h) + var(--safe-b));max-height:var(--sheet-max);
+  z-index:var(--z-sheet);border-radius:var(--r-lg) var(--r-lg) 0 0}   /* bottom-anchored, hugs its content up to the HUD */
+#profilePopup{min-height:min(680px,var(--sheet-max))}   /* stable height: switching tabs never makes the sheet jump */
+#battleLogPopup.has-entries{height:var(--sheet-max)}    /* live rows come and go every second: keep it steady once it has any */
 .panel--island{left:var(--safe-l);right:var(--safe-r);bottom:calc(var(--dock-h) + var(--safe-b));z-index:var(--z-sheet);
   max-height:min(62dvh,calc(100dvh - var(--dock-h) - var(--safe-b) - var(--safe-t) - var(--hud-top-space)));border-radius:var(--r-lg) var(--r-lg) 0 0}
 .panel--item{left:var(--safe-l);right:var(--safe-r);bottom:calc(var(--dock-h) + var(--safe-b));z-index:var(--z-modal);
@@ -311,7 +329,7 @@ body.has-panel .mapctl{display:none}
 .act-ic{grid-row:1 / span 2;width:30px;height:30px;display:grid;place-items:center;border-radius:var(--r-xs);background:rgba(0,0,0,.28);border:1px solid var(--line-1);color:var(--gold-300)}
 .act-ic .icon{width:17px;height:17px}
 .act-ic--send{color:var(--f-player-hi)} .act-ic--attack{color:var(--f-multi)} .act-ic--recall{color:var(--ember-300)}
-.act-t{font:600 var(--fs-12)/1.1 var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--tx-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.act-t{font:600 var(--fs-12)/1.3 var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--tx-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .act-s{display:flex;align-items:center;gap:3px;font:500 var(--fs-11)/1.1 var(--font-ui);color:var(--tx-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
 .act-s .icon{width:12px;height:12px}
 .act--primary{border-color:var(--line-3)}
@@ -347,7 +365,7 @@ body.has-panel .mapctl{display:none}
 .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .stat-grid--3{grid-template-columns:repeat(auto-fit,minmax(128px,1fr))}
 .stat{min-width:0;padding:8px 10px;border-radius:var(--r-sm);background:var(--well);border:1px solid var(--line-1)}
-.stat-l{display:flex;align-items:center;gap:5px;font:600 var(--fs-10)/1.1 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--tx-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat-l{display:flex;align-items:center;gap:5px;font:600 var(--fs-10)/1.3 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--tx-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .stat-l .icon{width:12px;height:12px;flex:none}
 .stat-v{display:block;margin-top:5px;font:600 var(--fs-15)/1.1 var(--font-ui);font-variant-numeric:tabular-nums;color:var(--tx-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .stat-v small{font-size:var(--fs-11);font-weight:500;color:var(--tx-3);margin-left:3px}
@@ -450,7 +468,7 @@ body.has-panel .mapctl{display:none}
 .tile{--rc:var(--r-grau);position:relative;aspect-ratio:1;min-width:0;min-height:0;width:100%;height:auto;display:grid;place-items:center;border-radius:var(--r-sm);cursor:pointer;
   background:radial-gradient(110% 80% at 50% 115%,color-mix(in srgb,var(--rc) 42%,transparent) 0,transparent 62%),var(--tile-bg);
   border:1px solid color-mix(in srgb,var(--rc) 62%,transparent);box-shadow:inset 0 0 0 1px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.05);transition:border-color var(--dur-1),transform var(--dur-1)}
-.tile > .icon{width:50%;height:auto;aspect-ratio:1;color:color-mix(in srgb,var(--rc) 45%,#fff);filter:drop-shadow(0 1px 0 rgba(0,0,0,.6))}
+.tile > .icon{width:44%;height:auto;aspect-ratio:1;translate:0 2px;color:color-mix(in srgb,var(--rc) 45%,#fff);filter:drop-shadow(0 1px 0 rgba(0,0,0,.6))}
 .tile[data-r="gold"],.tile[data-r="rot"]{box-shadow:inset 0 0 0 1px rgba(0,0,0,.55),inset 0 0 0 2px color-mix(in srgb,var(--rc) 30%,transparent),0 0 12px color-mix(in srgb,var(--rc) 22%,transparent)}
 .tile::before{content:"";position:absolute;left:5px;top:5px;width:5px;height:5px;transform:rotate(45deg);background:var(--rc);box-shadow:0 0 5px var(--rc)}
 .tile:active{transform:scale(.97)}
@@ -463,9 +481,13 @@ body.has-panel .mapctl{display:none}
   font:700 9.5px/12px var(--font-ui);color:var(--tx-1);text-align:center;font-variant-numeric:tabular-nums;display:block}
 .tile .check{position:absolute;right:-5px;top:-5px;width:17px;height:17px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(180deg,#e9cb86,#a67b34);border:1px solid var(--ink-1);color:var(--tx-inv)}
 .tile .check .icon{width:10px;height:10px}
-.tile .selectDot{position:absolute;top:0;right:0;width:30px;height:30px;display:grid;place-items:center;cursor:pointer}
-.tile .selectDot::after{content:"";width:15px;height:15px;border-radius:var(--r-xs);border:1px solid rgba(238,230,212,.45);background:rgba(5,6,8,.55)}
-.tile .selectDot.checked::after{background:var(--gold-300) var(--tick) center/11px no-repeat;border-color:var(--gold-100)}
+.tile .selectDot{position:absolute;top:0;right:0;width:22px;height:22px;display:grid;place-items:center;border-radius:var(--r-xs);pointer-events:none}   /* hit-tested by the tile's click handler: Chrome's touch adjustment would otherwise snap centre taps onto this small target */
+.tile .selectDot::after{content:"";width:13px;height:13px;border-radius:var(--r-xs);border:1px solid rgba(238,230,212,.45);background:rgba(5,6,8,.55);opacity:0;transition:opacity var(--dur-1)}
+.tile .selectDot.checked::after{background:var(--gold-300) var(--tick) center/10px no-repeat;border-color:var(--gold-100)}
+/* the empty box only shows once something is selected, on hover or on keyboard focus - the glyph stays clear otherwise */
+.has-selection .tile .selectDot::after,.tile:hover .selectDot::after,.tile:focus-visible .selectDot::after,.tile .selectDot:focus-visible::after,.tile .selectDot.checked::after{opacity:1}
+@media (pointer:coarse){ .tile .selectDot::after{opacity:.5} }
+.tile:focus-visible{outline:none;box-shadow:var(--focus)}
 .tile.is-selected{outline:1px solid var(--gold-200);outline-offset:1px}
 .item-icon{--rc:var(--r-grau);position:relative;width:48px;height:48px;border-radius:var(--r-sm);display:grid;place-items:center;
   background:radial-gradient(110% 80% at 50% 115%,color-mix(in srgb,var(--rc) 48%,transparent),transparent 62%),var(--tile-bg);border:1px solid color-mix(in srgb,var(--rc) 70%,transparent)}
@@ -513,7 +535,7 @@ body.has-panel .mapctl{display:none}
 .logRow .li .icon{width:16px;height:16px;color:var(--lc)}
 .logRow .lt{min-width:0}
 .logRow .lt b{display:block;font:600 var(--fs-13)/1.25 var(--font-ui);color:var(--tx-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.logRow .lt small{display:block;margin-top:2px;font:500 var(--fs-11)/1.25 var(--font-ui);color:var(--tx-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.logRow .lt small{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;margin-top:2px;font:500 var(--fs-11)/1.25 var(--font-ui);color:var(--tx-3);white-space:normal;overflow:hidden;overflow-wrap:anywhere}
 .logRow .lv{font:600 var(--fs-12)/1 var(--font-ui);color:var(--tx-2);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
 .logRow.win{--lc:#8fcf7a} .logRow.loss{--lc:var(--blood-300)} .logRow.send{--lc:var(--f-player-hi)} .logRow.scout{--lc:var(--gold-300)} .logRow.retreat{--lc:var(--ember-300)} .logRow.attack{--lc:var(--f-enemy-hi)}
 .logRow details{grid-column:1 / -1;margin-top:6px}
@@ -539,7 +561,9 @@ body.has-panel .mapctl{display:none}
 .rankRow:nth-child(1) .rankPos{color:var(--gold-200)} .rankRow:nth-child(2) .rankPos{color:#c9ced6} .rankRow:nth-child(3) .rankPos{color:#c88a55}
 .rankDot{width:22px;height:22px;border-radius:var(--r-xs);display:grid;place-items:center;border:1px solid rgba(255,255,255,.15);box-shadow:inset 0 0 0 1px rgba(0,0,0,.4)}
 .rankDot .icon{width:14px;height:14px;color:#fff}
-.rankName{min-width:0;font:600 var(--fs-13)/1.2 var(--font-ui);color:var(--tx-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rankName{display:flex;align-items:center;min-width:0;font:600 var(--fs-13)/1.2 var(--font-ui);color:var(--tx-1);white-space:nowrap}
+.rankName-t{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}   /* only the name truncates, the DU tag stays whole */
+.rankName .tag{flex:none}
 .rankScore{font:600 var(--fs-12)/1 var(--font-ui);color:var(--tx-2);font-variant-numeric:tabular-nums;white-space:nowrap}
 .tag{display:inline-flex;align-items:center;height:16px;padding:0 5px;margin-left:6px;border-radius:var(--r-xs);font:600 9.5px/1 var(--font-ui);letter-spacing:.08em;text-transform:uppercase;vertical-align:2px}
 .tag--player{color:#cfe3ff;background:rgba(63,134,216,.2);border:1px solid rgba(140,192,255,.4)}
@@ -565,6 +589,7 @@ body.has-panel .mapctl{display:none}
 .slider:disabled{opacity:.4;cursor:not-allowed}
 .seg{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:4px}
 .seg button{height:28px;border-radius:var(--r-xs);background:var(--ink-3);border:1px solid var(--line-1);font:600 var(--fs-11)/1 var(--font-ui);color:var(--tx-2);font-variant-numeric:tabular-nums}
+@media (pointer:coarse){ .seg button{min-height:36px} .slider{height:40px} }
 .seg button.on{color:var(--gold-100);border-color:var(--line-3);background:rgba(214,170,90,.12)}
 .seg button:disabled{color:var(--tx-4)}
 
@@ -591,20 +616,36 @@ body.has-panel .mapctl{display:none}
    ===================================================================== */
 @media (max-width:359px){
   :root{--hud-h:28px;--tile:52px}
-  .res{gap:4px;padding:0 6px 0 5px}
-  .res b{font-size:var(--fs-12)}
+  .hud{gap:4px}
+  .res{gap:4px;padding:0 5px 0 4px}
+  .res b{font-size:var(--fs-12);letter-spacing:-.01em}
   .res > .icon{width:16px;height:16px}
   .res-add{display:none}
-  .btn{padding:0 10px;letter-spacing:.06em}
+  .btn{padding:0 10px;letter-spacing:.02em}
   .selbar .btn .icon{display:none}
-  .pfoot > .btn--secondary:has(> .icon + span):not(.btn--grow) > span{display:none}   /* secondary footer buttons collapse to icon-only (not the .selbar ones, whose icons are hidden) */
-  .pfoot > .btn--secondary:has(> .icon + span):not(.btn--grow){width:var(--btn-h);padding:0}
+  .pfoot > .btn--secondary:has(> .icon + span):not(.btn--grow) > .icon{display:none}   /* secondary footer buttons keep their label, drop the icon */
+  .pfoot > .btn--secondary:not(.btn--grow){flex:none;min-width:max-content}
+  .ptitle--input{font-size:var(--fs-15);letter-spacing:0}
+  .tile .selectDot{width:20px;height:20px}
+  .tile .selectDot::after{width:12px;height:12px}
+  .tile .lvl{height:13px;min-width:15px;line-height:11px;font-size:9px}
   .statChip span{font-size:9px}
   .logCompare{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
   .logVsDivider{display:none}
   .logSide{padding:6px}
   .logLine span:first-child{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .bonus-row{gap:4px}
+}
+/* short or narrow screens: the attack preview fits without scrolling */
+@media (max-height:480px),(max-width:360px){
+  .force{padding:8px}
+  .force b{font-size:var(--fs-15)}
+  .force small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sm-hide{display:none}   /* "Truppen entsenden" -> "Entsenden" */
+}
+@media (max-width:360px){
+  .xs-hide{display:none}   /* "81 Truppen + 72 Vert." -> "81 + 72 Vert.", "Marsch ca. 0:25" -> "0:25" */
+  .seg{margin-top:2px}
 }
 @media (max-height:700px) and (orientation:portrait){
   .panel--island .pbody{gap:10px;padding:12px}
@@ -623,9 +664,11 @@ body.has-panel .mapctl{display:none}
   .nav::before{display:none}
   .nav-btn.active::after{top:50%;left:0;width:2px;height:28px;transform:translateY(-50%);background:linear-gradient(180deg,transparent,var(--gold-300),transparent)}
   .nav-btn .badge{top:calc(50% - 24px)}
-  .hud{left:calc(var(--rail-w) + var(--safe-l) + 10px);right:auto;width:min(420px,calc(100vw - var(--rail-w) - 40px))}
-  body.has-panel .hud{width:calc(100vw - var(--rail-w) - var(--safe-l) - min(380px,50vw) - var(--safe-r) - 36px)}
-  .res{max-width:124px}
+  .hud{left:calc(var(--rail-w) + var(--safe-l) + 10px);right:auto;width:auto;max-width:calc(100vw - var(--rail-w) - 40px)}
+  body.has-panel .hud{max-width:calc(100vw - var(--rail-w) - var(--safe-l) - min(380px,50vw) - var(--safe-r) - 36px)}
+  body.has-panel .res-add{display:none}   /* narrow map strip: the rail has Shop; the values keep their room */
+  .res{flex:0 0 auto;max-width:none}   /* pills size to their value: no ellipsis on "999,9 Tsd." */
+  .res b{min-width:max-content}
   .mapctl{bottom:calc(var(--safe-b) + 10px)}
   .mabar{left:calc(var(--rail-w) + var(--safe-l) + 10px);bottom:calc(var(--safe-b) + 10px);right:calc(var(--safe-r) + 60px)}
   body.is-multi .mapctl{display:flex;bottom:calc(var(--safe-b) + 10px)}
@@ -633,10 +676,25 @@ body.has-panel .mapctl{display:none}
   body.has-panel .toast{left:calc(var(--rail-w) + var(--safe-l) + (100vw - var(--rail-w) - var(--safe-l) - min(380px,50vw) - var(--safe-r) - 8px) / 2);
     max-width:calc(100vw - var(--rail-w) - var(--safe-l) - min(380px,50vw) - var(--safe-r) - 32px)}
   .panel--sheet,.panel--island,.panel--item{top:8px;bottom:8px;right:calc(var(--safe-r) + 8px);left:auto;width:min(380px,50vw);max-height:none;border-radius:var(--r-xs)}
+  .panel--sheet{--sheet-max:calc(100dvh - 16px)}
   .panel--island{top:auto;max-height:calc(100dvh - var(--safe-t) - var(--safe-b) - 16px)}   /* hugs its content: no empty band above the footer */
   .sheet-grab{display:none}
   .panel .sheet-grab + .phead{padding-top:10px}
-  body.has-panel .mapctl{display:flex}
+  body.has-panel .mapctl{display:flex;right:calc(min(380px,50vw) + var(--safe-r) + 16px)}   /* left of the side panel, never under it */
+  /* profile: compact hero + one-row tabs so the body keeps ~250px */
+  .panel .sheet-grab + .phead--hero{padding-top:6px;padding-bottom:6px}
+  .phead--hero .overline{display:none}
+  .phead--hero .avatar-ring{width:36px;height:36px}
+  .phead--hero .avatar .icon{width:18px;height:18px}
+  .phead--hero .avatar-ring .lvl{min-width:16px;height:16px;font-size:9px;right:-5px;bottom:-5px}
+  .phead--hero .ptitle{margin:0 0 1px}
+  .phead--hero .xp{margin-top:2px}
+  .tabs .tab{flex-direction:row;height:30px;font-size:11px}
+  .tabs .tab .icon{display:none}
+  #profileFoot{padding:5px 14px 6px}
+  #profileFoot .btn{height:30px}
+  /* attack preview: fits without scrolling */
+  .panel--island .pbody{gap:8px;padding-top:10px;padding-bottom:10px}
 }
 /* desktop */
 @media (min-width:900px) and (min-height:501px){
@@ -649,7 +707,7 @@ body.has-panel .mapctl{display:none}
   .hud-me-text small{display:block;font:500 10.5px/1.2 var(--font-ui);color:var(--tx-3);margin-top:2px}
   .res{flex:0 0 auto;max-width:none;min-width:112px;height:48px;background:none;border:0;border-radius:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;padding:0 14px;gap:8px}
   .res + .res{border-left:1px solid var(--line-1)}
-  .res b{font-size:var(--fs-15)}
+  .res b{font-size:var(--fs-15);min-width:6.2em}   /* room for "999,9 Tsd.": the frame never jumps when a value changes length */
   .res > .icon{width:20px;height:20px}
   .res-add{margin-left:6px}
   .nav{left:auto;bottom:auto;top:14px;right:14px;height:auto;padding:4px;display:flex;gap:2px;background:var(--glass);border:1px solid var(--line-2);border-radius:var(--r-sm);box-shadow:var(--sh-2);
@@ -676,9 +734,10 @@ body.has-panel .mapctl{display:none}
   /* island popup = popover anchored next to the base (JS writes --ax/--ay/--py) */
   .panel--island{left:var(--ax,50%);top:var(--ay,90px);right:auto;bottom:auto;width:360px;max-height:calc(100dvh - 100px);border-radius:var(--r-xs);z-index:var(--z-popover)}
   .panel--island::after{content:"";position:absolute;left:-7px;top:var(--py,60px);width:12px;height:12px;transform:rotate(45deg);background:#12161d;border-left:1px solid var(--line-3);border-bottom:1px solid var(--line-3)}
+  .panel--island .pfoot .btn{padding:0 12px}   /* two grow buttons side by side: "Erneut spähen" fits the 360px popover */
   .panel--island.is-left::after{left:auto;right:-7px;border-left:0;border-bottom:0;border-right:1px solid var(--line-3);border-top:1px solid var(--line-3)}
   /* profile / battle log / mail / shop = right drawer under the nav */
-  .panel--sheet{top:72px;bottom:14px;right:14px;left:auto;width:404px;border-radius:var(--r-xs)}
+  .panel--sheet{--sheet-max:calc(100dvh - 86px);top:72px;bottom:auto;right:14px;left:auto;width:404px;border-radius:var(--r-xs)}
   /* item detail = card left of the drawer */
   .panel--item{top:72px;right:432px;left:auto;bottom:auto;width:320px;max-height:calc(100dvh - 86px);border-radius:var(--r-xs)}
 }
@@ -955,6 +1014,11 @@ body.has-panel .mapctl{display:none}
 </section>
 
     <script>
+        // Every storage access goes through here: blocked site data, sandboxed frames and a full quota must not stop the
+        // game - it then simply runs in memory.
+        const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+                        set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+                        remove(k) { try { localStorage.removeItem(k); } catch (e) {} } };
         const canvas = document.getElementById('mapCanvas');
         const ctx = canvas.getContext('2d');
 
@@ -1029,19 +1093,14 @@ body.has-panel .mapctl{display:none}
             zoom: 0.03,
             targetZoom: 0.03,
             isDragging: false,
-            dragStartX: 0,
-            dragStartY: 0,
-            lastOffsetX: 0,
-            lastOffsetY: 0,
             velocityX: 0,
             velocityY: 0
         };
         let zoomAnchor = null; // { screenX, screenY, worldX, worldY }
 
-        // Below this zoom, banners/labels disappear in favor of plain
-        // colored blocks so a big territory reads clearly from far above
-        // the map. Kept low so banners stay readable through most of the
-        // zoom-out range instead of vanishing almost immediately.
+        // Every base shows its nameplate down to this zoom; below it only the
+        // buildings / LOD markers and the territory remain (drawBanners). Also
+        // bounds minZoom (updateZoomBounds).
         const TERRITORY_VIEW_ZOOM = 0.018;
 
         // Layout: a honeycomb - the important central landmass (the hub) at
@@ -1391,7 +1450,7 @@ body.has-panel .mapctl{display:none}
         // generated neutralTroops for any island that's taken casualties.
         let neutralTroopOverrides;
         try {
-            neutralTroopOverrides = JSON.parse(localStorage.getItem('openWaterNeutralTroopOverrides')) || {};
+            neutralTroopOverrides = JSON.parse(store.get('openWaterNeutralTroopOverrides')) || {};
         } catch (e) {
             neutralTroopOverrides = {};
         }
@@ -1415,18 +1474,18 @@ body.has-panel .mapctl{display:none}
             return closest;
         }
 
-        const storedId = parseInt(localStorage.getItem('openWaterPlayerIslandId'), 10);
+        const storedId = parseInt(store.get('openWaterPlayerIslandId'), 10);
         if (!Number.isNaN(storedId) && islandById[storedId]) {
             playerIslandId = storedId;
         } else {
             playerIslandId = centerIsland().id;
-            localStorage.setItem('openWaterPlayerIslandId', playerIslandId);
+            store.set('openWaterPlayerIslandId', playerIslandId);
         }
 
         // Islands the player owns, each with its own level and troop garrison
         let ownedIslands;
         try {
-            ownedIslands = new Set(JSON.parse(localStorage.getItem('openWaterOwnedIslands')));
+            ownedIslands = new Set(JSON.parse(store.get('openWaterOwnedIslands')));
         } catch (e) {
             ownedIslands = new Set();
         }
@@ -1434,13 +1493,13 @@ body.has-panel .mapctl{display:none}
 
         let islandLevels;
         try {
-            islandLevels = JSON.parse(localStorage.getItem('openWaterIslandLevels')) || {};
+            islandLevels = JSON.parse(store.get('openWaterIslandLevels')) || {};
         } catch (e) {
             islandLevels = {};
         }
         let islandTroops;
         try {
-            islandTroops = JSON.parse(localStorage.getItem('openWaterIslandTroops')) || {};
+            islandTroops = JSON.parse(store.get('openWaterIslandTroops')) || {};
         } catch (e) {
             islandTroops = {};
         }
@@ -1457,22 +1516,25 @@ body.has-panel .mapctl{display:none}
             }
         }
 
-        let coins = parseInt(localStorage.getItem('openWaterCoins'), 10) || 0;
-        let gems = parseFloat(localStorage.getItem('openWaterGems')) || 0;
+        let coins = parseInt(store.get('openWaterCoins'), 10) || 0;
+        let gems = parseFloat(store.get('openWaterGems')) || 0;
 
         // One-time requested bonus grant for an existing save - adds
         // (doesn't overwrite) 10,000,000 coins and 10,000,000 troops on the
         // player's home base, once, guarded by its own flag so reloading
         // never grants it again.
-        if (!localStorage.getItem('openWaterBonusGrant1')) {
+        let bonusGrantedAtBoot = false;   // persisted by saveGame() at the end of boot, together with the flags below
+        if (!store.get('openWaterBonusGrant1')) {
+            bonusGrantedAtBoot = true;
             coins += 10000000;
             islandTroops[playerIslandId] = (islandTroops[playerIslandId] || 0) + 10000000;
-            localStorage.setItem('openWaterBonusGrant1', '1');
+            store.set('openWaterBonusGrant1', '1');
         }
         // Second one-time grant, same pattern - 1,000,000 gems.
-        if (!localStorage.getItem('openWaterBonusGrant2')) {
+        if (!store.get('openWaterBonusGrant2')) {
+            bonusGrantedAtBoot = true;
             gems += 1000000;
-            localStorage.setItem('openWaterBonusGrant2', '1');
+            store.set('openWaterBonusGrant2', '1');
         }
 
         // When each currently-owned temple was captured - the longer it's
@@ -1482,7 +1544,7 @@ body.has-panel .mapctl{display:none}
         // garrison or from each other.
         let templeHoldSince;
         try {
-            templeHoldSince = JSON.parse(localStorage.getItem('openWaterTempleHoldSince')) || {};
+            templeHoldSince = JSON.parse(store.get('openWaterTempleHoldSince')) || {};
         } catch (e) {
             templeHoldSince = {};
         }
@@ -1496,7 +1558,7 @@ body.has-panel .mapctl{display:none}
         // Neutral islands hide their troop count until scouted
         let scoutedIslands;
         try {
-            scoutedIslands = new Set(JSON.parse(localStorage.getItem('openWaterScoutedIslands')));
+            scoutedIslands = new Set(JSON.parse(store.get('openWaterScoutedIslands')));
         } catch (e) {
             scoutedIslands = new Set();
         }
@@ -1520,7 +1582,7 @@ body.has-panel .mapctl{display:none}
 
         let botOwnedIslands;
         try {
-            const raw = JSON.parse(localStorage.getItem('openWaterBotOwnedIslands'));
+            const raw = JSON.parse(store.get('openWaterBotOwnedIslands'));
             botOwnedIslands = {};
             for (const bot of BOT_DEFS) botOwnedIslands[bot.id] = new Set(raw && raw[bot.id] || []);
         } catch (e) {
@@ -1529,7 +1591,7 @@ body.has-panel .mapctl{display:none}
         }
         let botCoins;
         try {
-            botCoins = JSON.parse(localStorage.getItem('openWaterBotCoins')) || {};
+            botCoins = JSON.parse(store.get('openWaterBotCoins')) || {};
         } catch (e) {
             botCoins = {};
         }
@@ -1593,18 +1655,18 @@ body.has-panel .mapctl{display:none}
         }
 
         function saveGame() {
-            localStorage.setItem('openWaterOwnedIslands', JSON.stringify([...ownedIslands]));
-            localStorage.setItem('openWaterIslandLevels', JSON.stringify(islandLevels));
-            localStorage.setItem('openWaterIslandTroops', JSON.stringify(islandTroops));
-            localStorage.setItem('openWaterCoins', String(coins));
-            localStorage.setItem('openWaterGems', String(gems));
-            localStorage.setItem('openWaterTempleHoldSince', JSON.stringify(templeHoldSince));
-            localStorage.setItem('openWaterScoutedIslands', JSON.stringify([...scoutedIslands]));
-            localStorage.setItem('openWaterNeutralTroopOverrides', JSON.stringify(neutralTroopOverrides));
+            store.set('openWaterOwnedIslands', JSON.stringify([...ownedIslands]));
+            store.set('openWaterIslandLevels', JSON.stringify(islandLevels));
+            store.set('openWaterIslandTroops', JSON.stringify(islandTroops));
+            store.set('openWaterCoins', String(coins));
+            store.set('openWaterGems', String(gems));
+            store.set('openWaterTempleHoldSince', JSON.stringify(templeHoldSince));
+            store.set('openWaterScoutedIslands', JSON.stringify([...scoutedIslands]));
+            store.set('openWaterNeutralTroopOverrides', JSON.stringify(neutralTroopOverrides));
             const botOwnedForSave = {};
             for (const bot of BOT_DEFS) botOwnedForSave[bot.id] = [...botOwnedIslands[bot.id]];
-            localStorage.setItem('openWaterBotOwnedIslands', JSON.stringify(botOwnedForSave));
-            localStorage.setItem('openWaterBotCoins', JSON.stringify(botCoins));
+            store.set('openWaterBotOwnedIslands', JSON.stringify(botOwnedForSave));
+            store.set('openWaterBotCoins', JSON.stringify(botCoins));
         }
 
         const coinCountEl = document.getElementById('coinCount');
@@ -1667,7 +1729,7 @@ body.has-panel .mapctl{display:none}
 
         let equipment;
         try {
-            equipment = JSON.parse(localStorage.getItem('openWaterEquipment')) || {};
+            equipment = JSON.parse(store.get('openWaterEquipment')) || {};
         } catch (e) {
             equipment = {};
         }
@@ -1709,19 +1771,19 @@ body.has-panel .mapctl{display:none}
 
         let inventory; // id -> { id, slot, rarity, level }
         try {
-            inventory = JSON.parse(localStorage.getItem('openWaterInventory')) || {};
+            inventory = JSON.parse(store.get('openWaterInventory')) || {};
         } catch (e) {
             inventory = {};
         }
-        let nextItemId = parseInt(localStorage.getItem('openWaterNextItemId'), 10) || 1;
+        let nextItemId = parseInt(store.get('openWaterNextItemId'), 10) || 1;
         let equippedItems; // slot -> item id or null
         try {
-            equippedItems = JSON.parse(localStorage.getItem('openWaterEquippedItems')) || {};
+            equippedItems = JSON.parse(store.get('openWaterEquippedItems')) || {};
         } catch (e) {
             equippedItems = {};
         }
         for (const key of Object.keys(EQUIPMENT_DEFS)) if (!(key in equippedItems)) equippedItems[key] = null;
-        let upgradePoints = parseInt(localStorage.getItem('openWaterUpgradePoints'), 10) || 0;
+        let upgradePoints = parseInt(store.get('openWaterUpgradePoints'), 10) || 0;
 
         function equippedItemBonusPct(slot) {
             const id = equippedItems[slot];
@@ -1897,18 +1959,18 @@ body.has-panel .mapctl{display:none}
 
         let skills;
         try {
-            skills = JSON.parse(localStorage.getItem('openWaterSkills')) || {};
+            skills = JSON.parse(store.get('openWaterSkills')) || {};
         } catch (e) {
             skills = {};
         }
         for (const key of Object.keys(SKILL_DEFS)) if (!skills[key]) skills[key] = 0;
 
-        let skillPoints = parseInt(localStorage.getItem('openWaterSkillPoints'), 10) || 0;
+        let skillPoints = parseInt(store.get('openWaterSkillPoints'), 10) || 0;
 
         // XP/level: killing enemy troops in a won attack grants XP; filling
         // the XP bar levels the player up and grants a skill point.
-        let playerXp = parseInt(localStorage.getItem('openWaterXp'), 10) || 0;
-        let playerLvl = parseInt(localStorage.getItem('openWaterLevel'), 10) || 1;
+        let playerXp = parseInt(store.get('openWaterXp'), 10) || 0;
+        let playerLvl = parseInt(store.get('openWaterLevel'), 10) || 1;
 
         function xpNeededForLevel(level) {
             return level * 50;
@@ -1923,19 +1985,19 @@ body.has-panel .mapctl{display:none}
         }
 
         function saveProgression() {
-            localStorage.setItem('openWaterEquipment', JSON.stringify(equipment));
-            localStorage.setItem('openWaterInventory', JSON.stringify(inventory));
-            localStorage.setItem('openWaterNextItemId', String(nextItemId));
-            localStorage.setItem('openWaterEquippedItems', JSON.stringify(equippedItems));
-            localStorage.setItem('openWaterUpgradePoints', String(upgradePoints));
-            localStorage.setItem('openWaterSkills', JSON.stringify(skills));
-            localStorage.setItem('openWaterSkillPoints', String(skillPoints));
-            localStorage.setItem('openWaterXp', String(playerXp));
-            localStorage.setItem('openWaterLevel', String(playerLvl));
-            localStorage.setItem('openWaterPendingAttacks', JSON.stringify(pendingAttacks));
-            localStorage.setItem('openWaterPendingSends', JSON.stringify(pendingSends));
-            localStorage.setItem('openWaterPendingScouts', JSON.stringify(pendingScouts));
-            localStorage.setItem('openWaterPendingRetreats', JSON.stringify(pendingRetreats));
+            store.set('openWaterEquipment', JSON.stringify(equipment));
+            store.set('openWaterInventory', JSON.stringify(inventory));
+            store.set('openWaterNextItemId', String(nextItemId));
+            store.set('openWaterEquippedItems', JSON.stringify(equippedItems));
+            store.set('openWaterUpgradePoints', String(upgradePoints));
+            store.set('openWaterSkills', JSON.stringify(skills));
+            store.set('openWaterSkillPoints', String(skillPoints));
+            store.set('openWaterXp', String(playerXp));
+            store.set('openWaterLevel', String(playerLvl));
+            store.set('openWaterPendingAttacks', JSON.stringify(pendingAttacks));
+            store.set('openWaterPendingSends', JSON.stringify(pendingSends));
+            store.set('openWaterPendingScouts', JSON.stringify(pendingScouts));
+            store.set('openWaterPendingRetreats', JSON.stringify(pendingRetreats));
         }
 
         function equipmentUpgradeCost(level) {
@@ -1965,25 +2027,25 @@ body.has-panel .mapctl{display:none}
 
         let pendingAttacks;
         try {
-            pendingAttacks = JSON.parse(localStorage.getItem('openWaterPendingAttacks')) || [];
+            pendingAttacks = JSON.parse(store.get('openWaterPendingAttacks')) || [];
         } catch (e) {
             pendingAttacks = [];
         }
         let pendingSends;
         try {
-            pendingSends = JSON.parse(localStorage.getItem('openWaterPendingSends')) || [];
+            pendingSends = JSON.parse(store.get('openWaterPendingSends')) || [];
         } catch (e) {
             pendingSends = [];
         }
         let pendingScouts;
         try {
-            pendingScouts = JSON.parse(localStorage.getItem('openWaterPendingScouts')) || [];
+            pendingScouts = JSON.parse(store.get('openWaterPendingScouts')) || [];
         } catch (e) {
             pendingScouts = [];
         }
         let pendingRetreats;
         try {
-            pendingRetreats = JSON.parse(localStorage.getItem('openWaterPendingRetreats')) || [];
+            pendingRetreats = JSON.parse(store.get('openWaterPendingRetreats')) || [];
         } catch (e) {
             pendingRetreats = [];
         }
@@ -1992,7 +2054,7 @@ body.has-panel .mapctl{display:none}
         const COMBAT_LOG_LIMIT = 50;
         let combatLog;
         try {
-            combatLog = JSON.parse(localStorage.getItem('openWaterCombatLog')) || [];
+            combatLog = JSON.parse(store.get('openWaterCombatLog')) || [];
         } catch (e) {
             combatLog = [];
         }
@@ -2000,7 +2062,10 @@ body.has-panel .mapctl{display:none}
             entry.at = Date.now();
             combatLog.unshift(entry);
             if (combatLog.length > COMBAT_LOG_LIMIT) combatLog.length = COMBAT_LOG_LIMIT;
-            localStorage.setItem('openWaterCombatLog', JSON.stringify(combatLog));
+            store.set('openWaterCombatLog', JSON.stringify(combatLog));
+            // an open battle log shows the new entry right away
+            const logPanel = document.getElementById('battleLogPopup');
+            if (logPanel && logPanel.classList.contains('is-open')) refreshOpenCombatLog();
         }
 
         // troopsOverride lets the player send only part of a base's garrison
@@ -2361,7 +2426,7 @@ body.has-panel .mapctl{display:none}
 
         // ===== MAP RENDERER (verified in the running game; see spec §5) =====
         var viewW = innerWidth, viewH = innerHeight;           // CSS px; written ONLY by sizeBackingStore() (§6) so a resize still knows the old centre.
-                                                              // `var` on purpose: sizeBackingStore() runs at line ~1729, before this block.
+                                                              // `var` on purpose: sizeBackingStore() already runs at boot, before this block.
         const setWorld  = g => g.setTransform(dpr * mapState.zoom, 0, 0, dpr * mapState.zoom, dpr * mapState.offsetX, dpr * mapState.offsetY);
         const setScreen = g => g.setTransform(dpr, 0, 0, dpr, 0, 0);
         const toSX = x => x * mapState.zoom + mapState.offsetX, toSY = y => y * mapState.zoom + mapState.offsetY;
@@ -2479,13 +2544,12 @@ body.has-panel .mapctl{display:none}
         }
 
         let OWNER_SNAPSHOT = new Map();                                // islandId -> 0 (player) | 1..n (bot index)
-        function ownershipDelta() {                                    // world rect a capture can influence (base ± connect distance), or null
+        function ownershipDelta() {                                    // world rects a capture can influence (one per changed base: base ± connect distance), or null
           const cur = new Map(); let r = null;
           for (const id of ownedIslands) cur.set(id, 0);
           BOT_DEFS.forEach((bot, i) => { for (const id of botOwnedIslands[bot.id]) cur.set(id, i + 1); });
           const grow = id => { const isl = islandById[id], m = TERRITORY_CONNECT_MAX_DIST + isl.radius + TERRITORY_PADDING;
-            r = r ? { l: Math.min(r.l, isl.x - m), t: Math.min(r.t, isl.y - m), r: Math.max(r.r, isl.x + m), b: Math.max(r.b, isl.y + m) }
-                  : { l: isl.x - m, t: isl.y - m, r: isl.x + m, b: isl.y + m }; };
+            (r = r || []).push({ l: isl.x - m, t: isl.y - m, r: isl.x + m, b: isl.y + m }); };   // per base: one far capture never touches the view's tiles
           for (const [id, tag] of cur) if (OWNER_SNAPSHOT.get(id) !== tag) grow(id);
           for (const id of OWNER_SNAPSHOT.keys()) if (!cur.has(id)) grow(id);
           OWNER_SNAPSHOT = cur;
@@ -2526,7 +2590,7 @@ body.has-panel .mapctl{display:none}
             const x1 = Math.min(cx1, Math.ceil(((r - originL) * z + 6) * dpr)), y1 = Math.min(cy1, Math.ceil(((b - originT) * z + 6) * dpr));
             if (x1 <= x0 || y1 <= y0) continue;
             const m = 8 / z, vv = { l: view.l - m, t: view.t - m, r: view.r + m, b: view.b + m };
-            const paths = chunks.map(c => clip ? piecesPath(c, vv) : c.path);   // clipped repaint: only nearby geometry
+            const paths = chunks.map(c => piecesPath(c, vv));                      // only the geometry near this tile / clip
             setW(g);
             g.fillStyle = TERR_STYLE[grp].fill; for (const p of paths) g.fill(p);
             H[grp].setTransform(new DOMMatrix().scale(1 / (z * dpr)));
@@ -2540,41 +2604,96 @@ body.has-panel .mapctl{display:none}
           }
         }
 
-        // ---- cached background layer: sea + land + grass + forests + coast + bridges + territory ----
-        const BG = { c: document.createElement('canvas'), z: 0, l: 0, t: 0, valid: false };
-        BG.g = BG.c.getContext('2d');
-        function renderBackground(z) {                 // full repaint; covers the viewport plus a 30 % margin on every side
-          const mx = Math.round(viewW * 0.3), my = Math.round(viewH * 0.3);
-          const w = Math.ceil((viewW + 2 * mx) * dpr), h = Math.ceil((viewH + 2 * my) * dpr);
-          if (BG.c.width !== w || BG.c.height !== h) { BG.c.width = w; BG.c.height = h; }
-          if (layer.width !== w || layer.height !== h) { layer.width = w; layer.height = h; }
-          BG.z = z; BG.l = (-mapState.offsetX - mx) / z; BG.t = (-mapState.offsetY - my) / z; BG.valid = true;
-          paintBackground(null);
+        // ---- cached background: sea + land + grass + forests + coast + bridges + territory ----
+        // World-anchored tiles of TILE_PX CSS px, rendered at one exact zoom per "generation". Panning only renders the
+        // tiles that scroll into view (a few per frame, time-boxed); a zoom gesture draws the current generation scaled
+        // and starts a new one when the scale leaves 0.7-1.4. While tiles are missing, up to three older generations
+        // (scaled) and a whole-world overview (built at idle right after boot) fill the gaps, so nothing is ever rendered
+        // as one big blocking job and no flat sea shows through. When the zoom settles off-scale, the crisp generation is
+        // built behind the complete scaled one and swapped in only once it covers the view (no patchwork).
+        // Canvas rasterisation is deferred until a tile is first drawn, so the per-frame budget counts device pixels, not ms,
+        // and adapts: it halves after a slow frame that rendered tiles (heavy territory, slow device) and recovers slowly.
+        const TILE_PX = 256, TILE_BUDGET_MOVING = 540000, TILE_BUDGET_IDLE = 1600000;   // device px of new tiles per frame (max, but ≥ 3 / 4 tiles)
+        const BG = { rate: TILE_BUDGET_IDLE, lastAt: 0, lastTiles: 0, valid: false, gen: null, olds: [], next: null, tiles: new Map(), pool: [], pending: false, over: null, seq: 0 };
+        function bgDropGen(gen) { for (const [key, T] of BG.tiles) if (T.gen === gen) { BG.tiles.delete(key); BG.pool.push(T.c); } }
+        function bgGen(z) { const td = Math.round(TILE_PX * dpr); return { z, td, ws: td / (dpr * z), id: ++BG.seq }; }   // ws = tile edge in world units
+        function bgShow(gen) {                         // gen becomes the displayed generation; the replaced one fills gaps until gen covers the view
+          if (BG.gen && BG.gen !== gen) BG.olds.unshift(BG.gen);
+          for (const g of BG.olds.splice(0).filter(g => g !== gen)) { if (g.td === gen.td && BG.olds.length < 3) BG.olds.push(g); else bgDropGen(g); }
+          BG.gen = gen; return gen;
+        }
+        function bgRange(gen, pad) {                   // tile index range covering the view (+pad tiles)
+          const z = mapState.zoom, ws = gen.ws;
+          return { x0: Math.floor(-mapState.offsetX / z / ws) - pad, x1: Math.floor((viewW - mapState.offsetX) / z / ws) + pad,
+                   y0: Math.floor(-mapState.offsetY / z / ws) - pad, y1: Math.floor((viewH - mapState.offsetY) / z / ws) + pad };
+        }
+        function bgMissing(gen, pad) {                 // missing tiles, nearest to the view centre first
+          const R = bgRange(gen, pad), out = [], cx = (viewW / 2 - mapState.offsetX) / mapState.zoom / gen.ws - .5, cy = (viewH / 2 - mapState.offsetY) / mapState.zoom / gen.ws - .5;
+          for (let ty = R.y0; ty <= R.y1; ty++) for (let tx = R.x0; tx <= R.x1; tx++)
+            if (!BG.tiles.has(gen.id + ':' + tx + ':' + ty)) out.push({ tx, ty, d: (tx - cx) * (tx - cx) + (ty - cy) * (ty - cy) });
+          return out.sort((a, b) => a.d - b.d);
+        }
+        function renderTile(gen, tx, ty) {
+          const td = gen.td, c = BG.pool.pop() || document.createElement('canvas');
+          if (c.width !== td || c.height !== td) { c.width = td; c.height = td; }
+          if (layer.width !== td || layer.height !== td) { layer.width = td; layer.height = td; }
+          const T = { c, g: c.getContext('2d'), gen, z: gen.z, l: tx * gen.ws, t: ty * gen.ws };
+          paintBackground(T, null);
+          BG.tiles.set(gen.id + ':' + tx + ':' + ty, T);
+          return T;
+        }
+        function renderBackground(z) {                 // synchronous: a new generation with every visible tile (boot, resize, jumps)
+          const gen = bgShow(bgGen(z));
+          for (const m of bgMissing(gen, 0)) renderTile(gen, m.tx, m.ty);
+          BG.valid = true;
+        }
+        function bgOverview() {                        // whole-world picture (no territory) for gaps; painted at idle in 8 slices, once per dpr
+          let O = BG.over;
+          if (O && O.dpr === dpr && O.done) return O;
+          if (!O || O.dpr !== dpr) {
+            const pad = .22, l = WORLD.l - WORLD.w * pad, t = WORLD.t - WORLD.h * pad, ww = WORLD.w * (1 + 2 * pad), wh = WORLD.h * (1 + 2 * pad);
+            const z = 2560 / (Math.max(ww, wh) * dpr), c = document.createElement('canvas');
+            c.width = Math.ceil(ww * z * dpr); c.height = Math.ceil(wh * z * dpr);
+            O = BG.over = { c, g: c.getContext('2d'), z, l, t, dpr, ref: 0.008, row: 0, rows: 8, queued: false, done: false };   // ref: coast / bridge widths as at zoom 0.008
+          }
+          if (!O.queued) { O.queued = true;
+            (window.requestIdleCallback || (f => setTimeout(f, 200)))(() => { O.queued = false; if (BG.over !== O) return;
+              const h = Math.ceil(O.c.height / O.rows), y = O.row * h;
+              paintBackground(O, { x: 0, y, w: O.c.width, h: Math.min(h, O.c.height - y) }, true);
+              if (++O.row >= O.rows) O.done = true; else bgOverview(); }, { timeout: 600 }); }
+          return null;
         }
         function repaintBackgroundRect(r) {            // partial repaint of a WORLD rect (after a capture); pixels are deterministic → no seams
-          const z = BG.z;
-          const x0 = Math.max(0, Math.floor((r.l - BG.l) * z * dpr)), y0 = Math.max(0, Math.floor((r.t - BG.t) * z * dpr));
-          const x1 = Math.min(BG.c.width, Math.ceil((r.r - BG.l) * z * dpr)), y1 = Math.min(BG.c.height, Math.ceil((r.b - BG.t) * z * dpr));
-          if (x1 > x0 && y1 > y0) paintBackground({ x: x0, y: y0, w: x1 - x0, h: y1 - y0 });
+          for (const [key, T] of BG.tiles) {
+            const e = T.gen.ws;
+            if (T.l > r.r || T.l + e < r.l || T.t > r.b || T.t + e < r.t) continue;
+            if (T.gen !== BG.gen && T.gen !== BG.next) { BG.tiles.delete(key); BG.pool.push(T.c); continue; }   // stale generation: just forget it
+            const k = T.z * dpr, td = T.c.width;
+            const x0 = Math.max(0, Math.floor((r.l - T.l) * k)), y0 = Math.max(0, Math.floor((r.t - T.t) * k));
+            const x1 = Math.min(td, Math.ceil((r.r - T.l) * k)), y1 = Math.min(td, Math.ceil((r.b - T.t) * k));
+            if (layer.width !== td || layer.height !== td) { layer.width = td; layer.height = td; }
+            if (x1 > x0 && y1 > y0) paintBackground(T, { x: x0, y: y0, w: x1 - x0, h: y1 - y0 });
+          }
         }
-        function paintBackground(clip) {               // clip = device-px rect inside BG.c, or null for everything
-          const z = BG.z, w = BG.c.width, h = BG.c.height;
-          const g = BG.g;
+        function paintBackground(T, clip, noTerritory) {  // T = tile {c, g, z, l, t}; clip = device-px rect inside T.c, or null for everything
+          const z = T.z, w = T.c.width, h = T.c.height, zl = T.ref || z, ls = z / zl;   // zl: zoom whose line widths to use (overview)
+          const g = T.g;
           g.save();
           if (clip) { g.setTransform(1, 0, 0, 1, 0, 0); g.beginPath(); g.rect(clip.x, clip.y, clip.w, clip.h); g.clip(); }
-          const cl = clip ? BG.l + clip.x / dpr / z : BG.l, ct = clip ? BG.t + clip.y / dpr / z : BG.t;
+          const cl = clip ? T.l + clip.x / dpr / z : T.l, ct = clip ? T.t + clip.y / dpr / z : T.t;
           const W = (clip ? clip.w : w) / dpr / z, H = (clip ? clip.h : h) / dpr / z;
           const view = { l: cl - ISLAND_RADIUS * 2, t: ct - ISLAND_RADIUS * 2, r: cl + W + ISLAND_RADIUS * 2, b: ct + H + ISLAND_RADIUS * 2 };
-          const world = () => g.setTransform(dpr * z, 0, 0, dpr * z, -BG.l * z * dpr, -BG.t * z * dpr);
+          const world = () => g.setTransform(dpr * z, 0, 0, dpr * z, -T.l * z * dpr, -T.t * z * dpr);
           const screen = () => g.setTransform(dpr, 0, 0, dpr, 0, 0);
-          const sx = x => (x - BG.l) * z, sy = y => (y - BG.t) * z;
+          const sx = x => (x - T.l) * z, sy = y => (y - T.t) * z;
           // 1 sea: depth gradient (lighter at the hub) + world-anchored texture. NOTHING hugs the coast.
           screen(); const R = WORLD.radius * z, cx = sx(WORLD.cx), cy = sy(WORLD.cy);
           const sg = g.createRadialGradient(cx, cy, 0, cx, cy, Math.max(1, R));
           sg.addColorStop(0, '#16506f'); sg.addColorStop(.5, '#0f3a57'); sg.addColorStop(1, '#0a2438');
           g.fillStyle = sg; g.fillRect(0, 0, w / dpr, h / dpr);
-          if (z >= 0.004) { world(); SEA_PATTERN.setTransform(new DOMMatrix().scale(26000 / 512));
-            g.globalAlpha = .55; g.fillStyle = SEA_PATTERN; g.fillRect(BG.l, BG.t, W, H); g.globalAlpha = 1; }
+          if (z >= 0.004 || T.ref) { world(); g.fillStyle = SEA_PATTERN;                  // two passes at an incommensurate scale + rotation → no visible repeat grid
+            SEA_PATTERN.setTransform(new DOMMatrix().scale(26000 / 512)); g.globalAlpha = .42; g.fillRect(cl, ct, W, H);
+            SEA_PATTERN.setTransform(new DOMMatrix().rotate(17).scale(26000 * 1.37 / 512)); g.globalAlpha = .3; g.fillRect(cl, ct, W, H); g.globalAlpha = 1; }
           // 2 land: GREEN gradient, grass texture (fades in 0.006-0.018), forests (fade in 0.016-0.022), ONE thin coastline. No shadow, no beach.
           world();
           const grassA = Math.min(1, Math.max(0, (z - 0.006) / 0.012)) * 0.38, forestA = Math.min(1, Math.max(0, (z - 0.016) / 0.006));
@@ -2586,19 +2705,19 @@ body.has-panel .mapctl{display:none}
             if (forestA > 0) { g.globalAlpha = forestA;
               g.fillStyle = '#284d22'; g.fill(lm.forest[0]); g.fillStyle = '#35652c'; g.fill(lm.forest[1]);
               g.fillStyle = 'rgba(128,176,90,.38)'; g.fill(lm.forest[2]); g.globalAlpha = 1; }
-            g.lineJoin = 'round'; g.lineWidth = 1.4 / z; g.strokeStyle = 'rgba(14,30,12,.92)'; g.stroke(lm.path);
+            g.lineJoin = 'round'; g.lineWidth = 1.4 / zl; g.strokeStyle = 'rgba(14,30,12,.92)'; g.stroke(lm.path);
           }
           // 3 bridges: straight timber between the polygonPointAtAngle endpoints, extended 250 units along their own axis
-          const bw = Math.max(3, Math.min(28, 420 * z)); screen();
+          const bw = Math.max(3, Math.min(28, 420 * zl)) * ls; screen();
           for (const br of bridges) {
             const dx = br.x2 - br.x1, dy = br.y2 - br.y1, len0 = Math.hypot(dx, dy) || 1, ux = dx / len0, uy = dy / len0, EXT = 250;
             const ax = sx(br.x1 - ux * EXT), ay = sy(br.y1 - uy * EXT), bx = sx(br.x2 + ux * EXT), by = sy(br.y2 + uy * EXT);
             if (Math.max(ax, bx) < -40 || Math.min(ax, bx) > w / dpr + 40 || Math.max(ay, by) < -40 || Math.min(ay, by) > h / dpr + 40) continue;
             const len = Math.hypot(bx - ax, by - ay);
             g.save(); g.translate(ax, ay); g.rotate(Math.atan2(by - ay, bx - ax));
-            g.fillStyle = '#35261a'; g.fillRect(0, -bw / 2 - 1, len, bw + 2);                                   // timber casing, butt ends
+            g.fillStyle = '#35261a'; g.fillRect(0, -bw / 2 - ls, len, bw + 2 * ls);                             // timber casing, butt ends
             const dg = g.createLinearGradient(0, -bw / 2, 0, bw / 2); dg.addColorStop(0, '#b08658'); dg.addColorStop(.5, '#94704a'); dg.addColorStop(1, '#77593a');
-            g.fillStyle = dg; g.fillRect(0, -bw / 2 + 1, len, bw - 2);                                          // deck
+            g.fillStyle = dg; g.fillRect(0, -bw / 2 + ls, len, bw - 2 * ls);                                    // deck
             const step = 160 * z;
             if (step >= 4 && bw >= 6) { g.strokeStyle = 'rgba(40,26,14,.5)'; g.lineWidth = 1; g.beginPath();
               for (let s = step; s < len; s += step) { g.moveTo(s, -bw / 2 + 1); g.lineTo(s, bw / 2 - 1); } g.stroke(); }   // planks
@@ -2607,19 +2726,76 @@ body.has-panel .mapctl{display:none}
             g.restore();
           }
           // 4 territory (cached geometry, see below)
-          drawTerritoriesInto(g, layer, z, BG.l, BG.t, w, h, clip);
+          if (!noTerritory) drawTerritoriesInto(g, layer, z, T.l, T.t, w, h, clip);
           g.restore();
         }
         let cameraSettling = false;   // true while the zoom eases, a pinch runs or a camera flight plays (set by §6)
-        function drawBackground() {   // per frame: ONE drawImage while panning; re-render only when needed
-          const z = mapState.zoom;
-          let k = BG.valid ? z / BG.z : 0, x = BG.l * z + mapState.offsetX, y = BG.t * z + mapState.offsetY;
-          const covers = BG.valid && x <= 0.5 && y <= 0.5 && x + BG.c.width / dpr * k >= viewW - 0.5 && y + BG.c.height / dpr * k >= viewH - 0.5;
-          if (!covers || k < 0.7 || k > 1.4 || (k !== 1 && !cameraSettling)) {
-            renderBackground(z); k = 1; x = BG.l * z + mapState.offsetX; y = BG.t * z + mapState.offsetY;
+        function drawBackground() {   // per frame: blit the cached tiles; render the missing ones within a pixel budget
+          const z = mapState.zoom, now = performance.now(), gap = now - BG.lastAt, td0 = Math.round(TILE_PX * dpr);
+          const bIdle = Math.max(TILE_BUDGET_IDLE, 4 * td0 * td0), bMove = Math.max(TILE_BUDGET_MOVING, 3 * td0 * td0);   // a DPR-3 tile is 590k px
+          if (BG.lastTiles && gap > 30 && gap < 400) BG.rate = Math.max(2 * td0 * td0, BG.rate * .5);   // the last frame's new tiles were too much (floor: 2 tiles)
+          else if (gap < 22) BG.rate = Math.min(bIdle, BG.rate * 1.15);
+          BG.lastAt = now; BG.lastTiles = 0;
+          if (!BG.valid) { BG.tiles.forEach(T => BG.pool.push(T.c)); BG.tiles.clear(); BG.gen = BG.next = null; BG.olds = []; BG.valid = true; }
+          const O = bgOverview();                                                          // queued at idle right after boot
+          const moving = gesture.active || cameraSettling || mapState.velocityX || mapState.velocityY;
+          const has = (g, tx, ty) => BG.tiles.has(g.id + ':' + tx + ':' + ty);
+          const anyIn = g => { if (!g) return false; const R = bgRange(g, 0);
+            for (let ty = R.y0; ty <= R.y1; ty++) for (let tx = R.x0; tx <= R.x1; tx++) if (has(g, tx, ty)) return true; return false; };
+          if (BG.next && (moving || BG.next.z !== z || BG.next.td !== td0)) { bgDropGen(BG.next); BG.next = null; }   // superseded
+          // render for where the zoom is heading: the wheel / button ease and camera flights know their end zoom; a pinch that
+          // leaves the window outward gets a generation 20 % further out (fewer, cheaper generations while zooming out)
+          const zEnd = cameraFlight ? Math.exp(cameraFlight.tlz) : gesture.mode !== 'pinch' && mapState.targetZoom !== z ? mapState.targetZoom : z;
+          let gen = BG.gen, k = gen ? z / gen.z : 0, kEnd = gen ? zEnd / gen.z : 0;
+          if (!gen || gen.td !== td0 || kEnd < 0.7 || kEnd > 1.4) { gen = bgShow(bgGen(zEnd !== z ? zEnd : gen && gesture.mode === 'pinch' && k < 0.7 ? z * 0.8 : z)); k = z / gen.z; }
+          const covered = (tx, ty) => BG.olds.some(o => {                                  // an older generation already shows this tile
+            const e = gen.ws * (1 - 1e-9), x0 = Math.floor(tx * gen.ws / o.ws), x1 = Math.floor((tx * gen.ws + e) / o.ws), y0 = Math.floor(ty * gen.ws / o.ws), y1 = Math.floor((ty * gen.ws + e) / o.ws);
+            for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (!has(o, x, y)) return false; return true; });
+          const missing = g => { const out = bgMissing(g, 0); if (g !== gen || !BG.olds.length) return out;
+            const a = [], b = []; for (const m of out) (covered(m.tx, m.ty) ? b : a).push(m); return a.concat(b); };   // the uncovered ring first
+          let miss = missing(gen), budget = 0;
+          if (k !== 1 && !moving) {                                                        // settled off-scale
+            if (miss.length) { gen = bgShow(bgGen(z)); k = 1; miss = bgMissing(gen, 0); }  // gaps anyway: render the crisp one directly
+            else if (!BG.next) BG.next = bgGen(z);                                         // complete: build the crisp one behind it
+          }
+          if (miss.length && !cameraFlight && !anyIn(gen) && !BG.olds.some(anyIn)) {       // nothing cached here at all (boot, resize, jump): draw it now
+            for (const m of miss) renderTile(gen, m.tx, m.ty); miss = [];
+          } else {
+            budget = Math.min(BG.rate, moving ? bMove : bIdle);
+            const work = miss.length ? miss : BG.next ? bgMissing(BG.next, 0) : [], wg = miss.length ? gen : BG.next;
+            for (let first = true; work.length && (first || budget >= wg.td * wg.td); first = false) {   // at least one tile per frame
+              const m = work.shift(); renderTile(wg, m.tx, m.ty); budget -= wg.td * wg.td; BG.lastTiles++; }
+            if (BG.next && !miss.length && !work.length) { gen = bgShow(BG.next); BG.next = null; k = 1; }   // the crisp one covers the view: swap
           }
           ctx.setTransform(1, 0, 0, 1, 0, 0);
-          ctx.drawImage(BG.c, Math.round(x * dpr), Math.round(y * dpr), BG.c.width * k, BG.c.height * k);   // scaled (slightly soft) only mid-zoom
+          const blit = g => { const kk = z / g.z; ctx.imageSmoothingQuality = kk === 1 ? 'high' : 'low';   // scaled only mid-zoom: cheap bilinear
+            const td = g.td, ox = mapState.offsetX * dpr, oy = mapState.offsetY * dpr, R = bgRange(g, 0);
+            const ex = tx => Math.round(tx * td * kk + ox), ey = ty => Math.round(ty * td * kk + oy);   // shared tile edges → no seams
+            for (let ty = R.y0; ty <= R.y1; ty++) for (let tx = R.x0; tx <= R.x1; tx++) {
+              const key = g.id + ':' + tx + ':' + ty, T = BG.tiles.get(key); if (!T) continue;
+              BG.tiles.delete(key); BG.tiles.set(key, T);                                        // LRU refresh
+              const x = ex(tx), y = ey(ty); ctx.drawImage(T.c, x, y, ex(tx + 1) - x, ey(ty + 1) - y);
+            }
+            ctx.imageSmoothingQuality = 'high'; };
+          // gaps: sea → overview → coarser older generations → current → finer older generations (zooming out: the finer
+          // picture stays whole in the middle and the new generation fills the ring around it, then everything swaps at once)
+          if (miss.length) {
+            ctx.fillStyle = '#0a2438'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            if (O) { const kk = z / O.z; ctx.imageSmoothingQuality = 'low'; ctx.drawImage(O.c, Math.round((O.l * z + mapState.offsetX) * dpr), Math.round((O.t * z + mapState.offsetY) * dpr), O.c.width * kk, O.c.height * kk); ctx.imageSmoothingQuality = 'high'; }
+            for (let i = BG.olds.length - 1; i >= 0; i--) if (BG.olds[i].z <= gen.z) blit(BG.olds[i]);
+          }
+          blit(gen);
+          if (miss.length) for (let i = BG.olds.length - 1; i >= 0; i--) if (BG.olds[i].z > gen.z) blit(BG.olds[i]);
+          let pre = [];                                                                    // prefetch a one-tile ring once the view is complete
+          if (!miss.length && !BG.next) { pre = bgMissing(gen, 1);
+            if (!BG.lastTiles) budget = Math.min(BG.rate, bMove);
+            while (pre.length && budget >= gen.td * gen.td) { const m = pre.shift(); renderTile(gen, m.tx, m.ty); budget -= gen.td * gen.td; BG.lastTiles++; } }
+          if (!miss.length && BG.olds.length) { for (const g of BG.olds) bgDropGen(g); BG.olds = []; }   // the current generation covers the view
+          const count = (g, pad) => { const R = bgRange(g, pad); return (R.x1 - R.x0 + 1) * (R.y1 - R.y0 + 1); };
+          const cap = count(gen, 1) + (BG.next ? count(BG.next, 0) : 0) + BG.olds.reduce((n, o) => n + count(o, 0), 0) + 12;
+          while (BG.tiles.size > cap) { const [key, T] = BG.tiles.entries().next().value; BG.tiles.delete(key); BG.pool.push(T.c); }   // least recently used first
+          if (BG.pool.length > 8) BG.pool.length = 8;
+          BG.pending = miss.length > 0 || pre.length > 0 || !!BG.next;
         }
 
         function strokeBox(g, x, y, w, h) { g.beginPath(); g.rect(x, y, w, h); g.stroke(); }   // replaces strokeRect (forbidden token, §7.4)
@@ -2711,15 +2887,19 @@ body.has-panel .mapctl{display:none}
             const r = kind !== 'tower' ? 3.5 : ownerKey === 'neutral' ? 1.4 : 2.5;
             ctx.beginPath(); if (kind !== 'tower') { ctx.moveTo(x, y - r); ctx.lineTo(x + r, y); ctx.lineTo(x, y + r); ctx.lineTo(x - r, y); } else ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); return;
           }
-          if (size < 14) {                                                             // LOD: heraldic shield marker (neutral towers at 50 %)
-            ctx.globalAlpha = kind === 'tower' && ownerKey === 'neutral' ? .5 : 1;
+          if (size < 17) {                                                             // LOD: heraldic shield marker (neutral towers at 50 %), cross-fades to the sprite over 12-17 px
+            ctx.globalAlpha = (kind === 'tower' && ownerKey === 'neutral' ? .5 : 1) * Math.min(1, (17 - size) / 5);
             const s = size / 2; ctx.beginPath(); ctx.moveTo(x - s, y - s * .9); ctx.lineTo(x + s, y - s * .9); ctx.lineTo(x + s, y);
             ctx.quadraticCurveTo(x + s, y + s * .8, x, y + s * 1.1); ctx.quadraticCurveTo(x - s, y + s * .8, x - s, y); ctx.closePath();
             ctx.fillStyle = kind !== 'tower' ? '#d9b566' : BAND[ownerKey]; ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(10,10,12,.85)'; ctx.stroke();
-            ctx.globalAlpha = 1; return;
+            ctx.globalAlpha = 1; if (size < 12) return;
           }
-          const sp = buildingSprite(kind, ownerKey, home, size), k = size / sp.bucket, u = size / 64;   // ≥14px: silhouette (<28) or full sprite
+          const sp = buildingSprite(kind, ownerKey, home, size), k = size / sp.bucket, u = size / 64;   // ≥12px: silhouette (<28) or full sprite
+          if (ownerKey !== 'neutral' && size < 20) {                                   // owner band under the small sprite, fading out by 20 px
+            ctx.globalAlpha = Math.min(1, (20 - size) / 5); rr(ctx, x - 22 * u, y + 21 * u, 44 * u, Math.max(2, 5 * u), 1); ctx.fillStyle = BAND[ownerKey]; ctx.fill(); }
+          ctx.globalAlpha = Math.min(1, (size - 12) / 5);
           ctx.drawImage(sp.c, x - 31 * u - 1 / dpr, y - 48 * u - 1 / dpr, sp.c.width / dpr * k, sp.c.height / dpr * k);
+          ctx.globalAlpha = 1;
         }
 
         function bannerModel(island) {
@@ -2766,8 +2946,8 @@ body.has-panel .mapctl{display:none}
           g.beginPath(); g.arc(ax, ay, ar - .5, 0, Math.PI * 2); g.fillStyle = rg; g.fill();
           g.lineWidth = 1.4; g.strokeStyle = m.temple ? '#e4c886' : o.hi; g.stroke();
           g.lineWidth = 1; g.strokeStyle = 'rgba(0,0,0,.6)'; g.beginPath(); g.arc(ax, ay, ar + .6, 0, Math.PI * 2); g.stroke();
-          drawGlyph(g, m.glyph, ax, ay, T.av * .6, '#f5f0e5');
-          const ls = T.lv, lx = ax + ar * .55, lyy = ay + ar * .5;                                                                          // gold level chip
+          drawGlyph(g, m.glyph, ax - 1.5, ay - 1.5, T.av * .52, '#f5f0e5');                                                                // up-left, clear of the chip
+          const ls = T.lv, lx = ax + ar * .78, lyy = Math.min(ay + ar * .66, H + 1.5 - ls / 2);                                          // gold level chip on the rim
           rr(g, lx - ls / 2, lyy - ls / 2, ls, ls, 2); g.fillStyle = '#14110b'; g.fill(); g.lineWidth = 1; g.strokeStyle = '#d8b56c'; g.stroke();
           g.fillStyle = '#f0dfb0'; g.font = '700 ' + (ls * .66) + 'px Inter, system-ui, sans-serif'; g.textAlign = 'center';
           g.fillText(String(m.level), lx, lyy + ls * .24); g.textAlign = 'left';
@@ -2799,6 +2979,8 @@ body.has-panel .mapctl{display:none}
         let bannerHitRects = [];
         function overlap(a, b) { return Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y)); }
 
+        // candidate slots [x shift (in half widths + 0.6 r), y mode (0 below, ±1 below nudged by 0.3 h, 2 above, 3 centred), penalty]
+        const BANNER_SLOTS = [[0, 0, 0], [0, 1, 12], [0, -1, 12], [0, 2, 40], [1, 3, 60], [-1, 3, 60]];
         function drawBanners(visible, z, selectedId) {
           bannerHitRects = [];
           if (z < TERRITORY_VIEW_ZOOM) return;
@@ -2808,7 +2990,7 @@ body.has-panel .mapctl{display:none}
             const m = bannerModel(isl);
             let p = m.p; if (isl.id === selectedId) p = 5;
             let tier = m.filler ? DOWN[base] : base;
-            if (m.mega && tier === 'C') tier = 'B';
+            if (m.mega) { if (tier === 'C') tier = 'B'; if (p < 5) p = 4.5; }                  // placed first: temple > player > bot > neutral
             return { isl, m, p, tier };
           }).sort((a, b) => b.p - a.p || a.isl.y - b.isl.y);
           const placed = [];
@@ -2817,9 +2999,9 @@ body.has-panel .mapctl{display:none}
             let best = null;
             for (let t = it.tier; ; t = DOWN[t]) {
               const sp = bannerSprite(t, it.m), w = sp.w, h = sp.h;
-              for (const slot of ['below', 'above']) {
-                const rect = { x: sx - w / 2, y: slot === 'below' ? sy + 0.95 * r : sy - 1.32 * r - h, w, h };
-                let sc = slot === 'above' ? 40 : 0;
+              for (const [dx, dy, cost] of BANNER_SLOTS) {                                 // below, nudged, above, beside
+                const rect = { x: sx - w / 2 + dx * (w / 2 + 0.6 * r), y: dy === 2 ? sy - 1.32 * r - h : dy === 3 ? sy - h / 2 : sy + 0.95 * r + dy * 0.3 * h, w, h };
+                let sc = cost;
                 for (const q of placed) sc += overlap(rect, q);
                 for (const tw of towers) if (tw.id !== it.isl.id) sc += 0.35 * overlap(rect, tw);
                 if (!best || sc < best.sc) best = { sc, rect, sp, t };
@@ -2903,19 +3085,50 @@ body.has-panel .mapctl{display:none}
           trace(); ctx.setLineDash([]); ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(6,8,12,.55)'; ctx.stroke();
           trace(); ctx.setLineDash(dash); ctx.lineDashOffset = -(now / 40) % 26; ctx.lineWidth = 2.5; ctx.strokeStyle = col; ctx.stroke(); ctx.setLineDash([]);
           const seg = []; let tot = 0; for (let i = 0; i < pts.length - 1; i++) { const l = Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].y - pts[i].y); seg.push(l); tot += l; }
-          let d = tot * progress, mx = pts[0].x, my = pts[0].y;
-          for (let i = 0; i < seg.length; i++) { if (d <= seg[i] || i === seg.length - 1) { const t = seg[i] > 0 ? Math.min(1, d / seg[i]) : 1;
-            mx = pts[i].x + (pts[i + 1].x - pts[i].x) * t; my = pts[i].y + (pts[i + 1].y - pts[i].y) * t; break; } d -= seg[i]; }
-          marchTokens.push({ x: mx, y: my, col, glyph: glyphName, secs: Math.max(0, Math.ceil((resolveAt - now) / 1000)) });
+          // placed in drawMarchTokens(), after the nameplates, so the token can start past the source's own plate
+          marchTokens.push({ pts, seg, tot, progress, r: source.radius * mapState.zoom, srcId: source.id, col, glyph: glyphName, own: type !== 'incoming', secs: Math.max(0, Math.ceil((resolveAt - now) / 1000)) });
+        }
+        function marchPointAt(m, d) {                   // screen point at path distance d
+          for (let i = 0; i < m.seg.length; i++) { if (d <= m.seg[i] || i === m.seg.length - 1) { const t = m.seg[i] > 0 ? Math.min(1, Math.max(0, d / m.seg[i])) : 1;
+            return { x: m.pts[i].x + (m.pts[i + 1].x - m.pts[i].x) * t, y: m.pts[i].y + (m.pts[i + 1].y - m.pts[i].y) * t }; } d -= m.seg[i]; }
+          return m.pts[0];
         }
         function drawMarchTokens() {
           setScreen(ctx);
+          const inRect = (p, q, e) => p.x > q.x - e && p.x < q.x + q.w + e && p.y > q.y - e && p.y < q.y + q.h + e;
+          for (const m of marchTokens) {                  // leave the source base (tower + its nameplate) visible
+            const plate = bannerHitRects.find(q => q.id === m.srcId);
+            let off = Math.min(m.tot * .5, m.r + 10);
+            if (plate) while (off < m.tot * .5 && inRect(marchPointAt(m, off), plate, 10)) off += 2;
+            const p = marchPointAt(m, off + (m.tot - off) * m.progress); m.x = p.x; m.y = p.y;
+          }
           for (const m of marchTokens) {
             ctx.beginPath(); ctx.arc(m.x, m.y, 7.5, 0, Math.PI * 2); ctx.fillStyle = '#141820'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = m.col; ctx.stroke();
             drawGlyph(ctx, m.glyph, m.x, m.y, 10, m.col);
-            const txt = fmtClock(m.secs); ctx.font = '600 10.5px Inter, system-ui, sans-serif'; const tw = ctx.measureText(txt).width + 22;
-            rr(ctx, m.x + 11, m.y - 9, tw, 18, 3); ctx.fillStyle = 'rgba(10,12,16,.86)'; ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(212,176,102,.4)'; ctx.stroke();
-            drawGlyph(ctx, 'hourglass', m.x + 19, m.y, 10, '#e4c886'); ctx.fillStyle = '#eee6d4'; ctx.textBaseline = 'alphabetic'; ctx.fillText(txt, m.x + 27, m.y + 3.8);
+          }
+          // countdown chips: zoomed far out only the player's own, co-located ones merged into one "×n" chip;
+          // each chip takes the first free slot (right, left, then stacked) and is skipped when none is free
+          let chips = marchTokens.map(m => ({ x: m.x, y: m.y, secs: m.secs, n: 1, own: m.own }));
+          if (mapState.zoom < 0.006) {
+            const merged = [];
+            for (const c of chips) { if (!c.own) continue;
+              const g = merged.find(q => Math.hypot(q.x - c.x, q.y - c.y) < 16);
+              if (g) { g.n++; g.secs = Math.min(g.secs, c.secs); } else merged.push(c); }
+            chips = merged;
+          }
+          const taken = marchTokens.map(m => ({ x: m.x - 8.5, y: m.y - 8.5, w: 17, h: 17 })).concat(bannerHitRects);   // never over a nameplate
+          ctx.font = '600 10.5px Inter, system-ui, sans-serif'; ctx.textBaseline = 'alphabetic';
+          for (const c of chips) {
+            const txt = fmtClock(c.secs) + (c.n > 1 ? '  ×' + c.n : ''), tw = ctx.measureText(txt).width + 22;
+            let rect = null;
+            for (const [sx, dy] of [[1, 0], [-1, 0], [1, -20], [1, 20], [-1, -20], [-1, 20], [1, -40], [1, 40], [-1, -40], [-1, 40], [1, -60], [-1, -60]]) {
+              const r = { x: sx > 0 ? c.x + 11 : c.x - 11 - tw, y: c.y - 9 + dy, w: tw, h: 18 };
+              if (!taken.some(q => r.x < q.x + q.w + 2 && q.x < r.x + r.w + 2 && r.y < q.y + q.h + 2 && q.y < r.y + r.h + 2)) { rect = r; break; }
+            }
+            if (!rect) continue;
+            taken.push(rect);
+            rr(ctx, rect.x, rect.y, tw, 18, 3); ctx.fillStyle = 'rgba(10,12,16,.86)'; ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(212,176,102,.4)'; ctx.stroke();
+            drawGlyph(ctx, 'hourglass', rect.x + 8, rect.y + 9, 10, '#e4c886'); ctx.fillStyle = '#eee6d4'; ctx.fillText(txt, rect.x + 16, rect.y + 12.8);
           }
         }
 
@@ -2943,7 +3156,7 @@ body.has-panel .mapctl{display:none}
           ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
           const dirty = ownershipDelta();                                                 // what a capture can have changed
           refreshTerritory();                                                            // rebuild only chunks whose ownership changed
-          if (dirty && BG.valid) repaintBackgroundRect(dirty);                           // partial repaint, clipped (no full re-render)
+          if (dirty && BG.valid) for (const d of dirty) repaintBackgroundRect(d);        // partial repaints, clipped (no full re-render)
           drawBackground();                                                              // 1-4: sea, land, bridges, territory
           const vis = visibleIslands(viewPad);
           drawRings(vis, z, now);                                                        // 5
@@ -2962,8 +3175,7 @@ body.has-panel .mapctl{display:none}
 
         // ===== CAMERA & INPUT (spec §6) =====
         // Keeps mapState.{offsetX, offsetY, zoom, targetZoom, velocityX, velocityY, isDragging} and zoomAnchor as the
-        // source of truth (screenToWorld, the harness and the probes read them). Replaces the old document-level
-        // mouse/touch/wheel listeners, MIN_ZOOM/MAX_ZOOM constants, trackPointerVelocity and the camera part of drawMap.
+        // source of truth (screenToWorld, the harness and the probes read them).
         const CAM = {
           MAX_ZOOM: 0.16,          // tower ≈ 208 px wide; beyond that nothing new is shown
           FIT_MARGIN: 1.08,        // min zoom = whole world + 8 %
@@ -2985,12 +3197,66 @@ body.has-panel .mapctl{display:none}
           maxZoom = CAM.MAX_ZOOM;
           mapState.zoom = clampZoom(mapState.zoom); mapState.targetZoom = clampZoom(mapState.targetZoom);
         }
-        function clampCamera() {         // the view centre may never leave the world bounding box
-          const z = mapState.zoom;
+        // Content-aware clamp, so the map can never be pushed out of view:
+        // (1) per axis, a view wider than the world keeps it centred (slack: 15 % of the world); a narrower view may
+        //     overhang the world box by at most 15 % of the view;
+        // (2) some land (a coast or a bridge) must lie within the inner 75 % of the view, or within CLAMP_REACH world units of
+        //     the centre when zoomed in (so ordinary sea straits can be crossed at any zoom). A move (drag, glide, pinch,
+        //     zoom ease) that would leave that region stops at its edge, per axis, from the last valid centre - continuous,
+        //     never deflected sideways; a jump (fly, resize) that ends outside moves toward the nearest land instead.
+        const CLAMP_LAND = [...landmasses.map(lm => ({ poly: lm.shape, bb: lm.bbox,
+                                segs: lm.shape.map((p, i) => [p, lm.shape[(i + 1) % lm.shape.length]]) })),
+                            ...bridges.map(br => ({ poly: null, bb: { l: Math.min(br.x1, br.x2), t: Math.min(br.y1, br.y2), r: Math.max(br.x1, br.x2), b: Math.max(br.y1, br.y2) },
+                                segs: [[{ x: br.x1, y: br.y1 }, { x: br.x2, y: br.y2 }]] }))];
+        const boxDist = (dx, dy, ax, ay) => Math.hypot(Math.max(0, Math.abs(dx) - ax), Math.max(0, Math.abs(dy) - ay));
+        const bbBoxDist = (bb, x, y, ax, ay) => boxDist(Math.max(bb.l - x, 0, x - bb.r), Math.max(bb.t - y, 0, y - bb.b), ax, ay);
+        function nearestLand(x, y, ax, ay) {     // land point whose ax×ay box around it is closest to (x, y); d = 0 → already in reach
+          let best = { d: Infinity, x, y };
+          const order = CLAMP_LAND.map(L => ({ L, d: bbBoxDist(L.bb, x, y, ax, ay) })).sort((a, b) => a.d - b.d);
+          for (const { L, d } of order) {
+            if (d >= best.d) break;
+            if (L.poly && x >= L.bb.l && x <= L.bb.r && y >= L.bb.t && y <= L.bb.b && pointInPolygon(x, y, L.poly)) return { d: 0, x, y };
+            for (const [p, q] of L.segs) {
+              if (boxDist(Math.max(Math.min(p.x, q.x) - x, 0, x - Math.max(p.x, q.x)), Math.max(Math.min(p.y, q.y) - y, 0, y - Math.max(p.y, q.y)), ax, ay) >= best.d) continue;
+              const f = t => boxDist(x - (p.x + (q.x - p.x) * t), y - (p.y + (q.y - p.y) * t), ax, ay);
+              let lo = 0, hi = 1;                                               // f is convex along the segment → ternary search
+              for (let i = 0; i < 28; i++) { const m1 = lo + (hi - lo) / 3, m2 = hi - (hi - lo) / 3; if (f(m1) <= f(m2)) hi = m2; else lo = m1; }
+              const t = (lo + hi) / 2, dd = f(t);
+              if (dd < best.d) { best = { d: dd, x: p.x + (q.x - p.x) * t, y: p.y + (q.y - p.y) * t }; if (dd === 0) return best; }
+            }
+          }
+          return best;
+        }
+        const CLAMP_REACH = 8000;
+        let clampPrev = null;                    // last clamped view centre (world)
+        function clampCamera(jump) {             // jump: the camera was placed, not moved (fly, resize, boot)
+          const z = mapState.zoom, hw = viewW / 2 / z, hh = viewH / 2 / z;
           const cx = (viewW / 2 - mapState.offsetX) / z, cy = (viewH / 2 - mapState.offsetY) / z;
-          const nx = Math.min(WORLD.r, Math.max(WORLD.l, cx)), ny = Math.min(WORLD.b, Math.max(WORLD.t, cy));
+          const axis = (c, h, W, mid) => { const r = Math.abs(W - 2 * h) / 2 + 0.15 * Math.min(2 * h, W); return Math.min(mid + r, Math.max(mid - r, c)); };
+          let nx = axis(cx, hw, WORLD.w, WORLD.cx), ny = axis(cy, hh, WORLD.h, WORLD.cy);
+          const ax = Math.max(0.75 * hw, CLAMP_REACH), ay = Math.max(0.75 * hh, CLAMP_REACH);
+          const ok = (x, y) => nearestLand(x, y, ax, ay).d === 0;
+          const px = clampPrev && axis(clampPrev.x, hw, WORLD.w, WORLD.cx), py = clampPrev && axis(clampPrev.y, hh, WORLD.h, WORLD.cy);
+          if (clampPrev && !jump && ok(px, py)) {                                                // a move: stop at the edge, per axis
+            const walk = (x0, y0, x1, y1) => {               // last valid point from (x0,y0) toward (x1,y1), in ≤ 12 px steps (no tunnelling)
+              const n = Math.min(48, Math.ceil(Math.hypot(x1 - x0, y1 - y0) * z / 12)); let lx = x0, ly = y0;
+              for (let i = 1; i <= n; i++) { const x = i === n ? x1 : x0 + (x1 - x0) * i / n, y = i === n ? y1 : y0 + (y1 - y0) * i / n;
+                if (!ok(x, y)) { let lo = 0, hi = 1;
+                  for (let k = 0; k < 10; k++) { const m = (lo + hi) / 2; if (ok(lx + (x - lx) * m, ly + (y - ly) * m)) lo = m; else hi = m; }
+                  return [lx + (x - lx) * lo, ly + (y - ly) * lo]; }
+                lx = x; ly = y; }
+              return [lx, ly]; };
+            const x = walk(px, py, nx, py)[0]; ny = walk(x, py, x, ny)[1]; nx = x;
+          } else if (!ok(nx, ny)) {                                                               // jump: toward the nearest land
+            const n = nearestLand(nx, ny, ax, ay);
+            if (Math.abs(nx - n.x) > ax) nx = n.x + Math.sign(nx - n.x) * ax;
+            if (Math.abs(ny - n.y) > ay) ny = n.y + Math.sign(ny - n.y) * ay;
+            nx = axis(nx, hw, WORLD.w, WORLD.cx); ny = axis(ny, hh, WORLD.h, WORLD.cy);
+          }
+          clampPrev = { x: nx, y: ny };
           if (nx !== cx) { mapState.offsetX = viewW / 2 - nx * z; mapState.velocityX = 0; }
           if (ny !== cy) { mapState.offsetY = viewH / 2 - ny * z; mapState.velocityY = 0; }
+          return nx !== cx || ny !== cy;                 // true → the caller re-anchors its gesture (no dead zone, no later leap)
         }
         function zoomAt(sx, sy, z, animate) {   // the ONE zoom primitive: keeps the world point under (sx, sy) fixed
           z = clampZoom(z); cameraFlight = null;
@@ -3004,7 +3270,7 @@ body.has-panel .mapctl{display:none}
           const sx = opts.screenX != null ? opts.screenX : viewW / 2, sy = opts.screenY != null ? opts.screenY : viewH / 2;
           const c = screenToWorld(sx, sy);
           mapState.velocityX = mapState.velocityY = 0; zoomAnchor = null; mapState.targetZoom = mapState.zoom;
-          if (opts.instant) { mapState.zoom = mapState.targetZoom = z1; mapState.offsetX = sx - wx * z1; mapState.offsetY = sy - wy * z1; clampCamera(); requestRender(); return; }
+          if (opts.instant) { mapState.zoom = mapState.targetZoom = z1; mapState.offsetX = sx - wx * z1; mapState.offsetY = sy - wy * z1; clampCamera(true); requestRender(); return; }
           cameraFlight = { fx: c.x, fy: c.y, flz: Math.log(z0), tx: wx, ty: wy, tlz: Math.log(z1), sx, sy, t0: performance.now(), dur: opts.ms || CAM.FLY_MS };
           requestRender();
         }
@@ -3038,7 +3304,7 @@ body.has-panel .mapctl{display:none}
               animating = true;
             }
           }
-          clampCamera();
+          if (clampCamera() && zoomAnchor) { zoomAnchor.worldX = (zoomAnchor.screenX - mapState.offsetX) / mapState.zoom; zoomAnchor.worldY = (zoomAnchor.screenY - mapState.offsetY) / mapState.zoom; }
           cameraSettling = animating || gesture.mode === 'pinch';
           return animating;
         }
@@ -3102,7 +3368,8 @@ body.has-panel .mapctl{display:none}
             const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
             mapState.zoom = mapState.targetZoom = z; zoomAnchor = null;                       // 1:1, no easing
             mapState.offsetX = mx - gesture.pinch.w.x * z; mapState.offsetY = my - gesture.pinch.w.y * z;   // pan + zoom together
-            clampCamera(); requestRender(); return;
+            if (clampCamera()) gesture.pinch.w = screenToWorld(mx, my);                        // held at the edge: re-anchor
+            requestRender(); return;
           }
           if (gesture.mode === 'press') {
             const slop = e.pointerType === 'mouse' ? CAM.SLOP_MOUSE : CAM.SLOP_TOUCH;
@@ -3113,7 +3380,8 @@ body.has-panel .mapctl{display:none}
           if (gesture.mode === 'pan') {
             mapState.offsetX = e.clientX - gesture.grab.x * mapState.zoom;                     // invariant: grabbed point stays under the pointer
             mapState.offsetY = e.clientY - gesture.grab.y * mapState.zoom;
-            clampCamera(); pushSample(e.clientX, e.clientY, e.timeStamp); requestRender();
+            if (clampCamera()) gesture.grab = screenToWorld(e.clientX, e.clientY);            // held at the edge: re-anchor, so reversing moves at once
+            pushSample(e.clientX, e.clientY, e.timeStamp); requestRender();
           }
         });
         function onPointerEnd(e) {
@@ -3127,7 +3395,8 @@ body.has-panel .mapctl{display:none}
           const wasTap = gesture.mode === 'press' && !gesture.pinched && !gesture.caughtGlide;
           if (gesture.mode === 'pan') { const v = releaseVelocity(e.timeStamp); mapState.velocityX = v.x; mapState.velocityY = v.y; }
           resetGesture();
-          if (wasTap) { if (e.pointerType !== 'mouse') suppressGhostClick = true; handleTap(e.clientX, e.clientY); }
+          if (wasTap) { if (e.pointerType !== 'mouse') suppressGhostClick = true; handleTap(e.clientX, e.clientY);
+            tapGuard = isPanelOpen(popup) ? { t: performance.now(), x: e.clientX, y: e.clientY } : null; }
           requestRender();
         }
         function cancelGesture() { mapState.velocityX = mapState.velocityY = 0; resetGesture(); requestRender(); }
@@ -3138,6 +3407,11 @@ body.has-panel .mapctl{display:none}
         canvas.addEventListener('contextmenu', e => e.preventDefault());
         // pointerup fires before touchend: cancelling touchend stops the synthetic click from hitting the popup that just opened
         canvas.addEventListener('touchend', e => { if (suppressGhostClick) { e.preventDefault(); suppressGhostClick = false; } }, { passive: false });
+        // a quick second tap (double-tap) at the same spot must not press whatever the just-opened sheet put under the finger
+        let tapGuard = null;
+        document.getElementById('islandPopup').addEventListener('click', e => {
+          if (tapGuard && performance.now() - tapGuard.t < 350 && Math.hypot(e.clientX - tapGuard.x, e.clientY - tapGuard.y) < 40) { e.stopPropagation(); e.preventDefault(); }
+        }, true);
 
         // ---------------- wheel (canvas only → popups scroll natively) ----------------
         canvas.addEventListener('wheel', e => {
@@ -3167,7 +3441,7 @@ body.has-panel .mapctl{display:none}
         }
 
         // ---------------- render loop (render on demand) ----------------
-        var mapDirty = true;   // `var` on purpose: updateHud() → requestRender() already runs at boot (line ~2421), before this block
+        var mapDirty = true;   // `var` on purpose: updateHud() → requestRender() already runs at boot, before this block
         let lastFrameAt = performance.now(), lastDrawAt = 0, lastCamKey = '', lastMarchKey = '';
         function requestRender() { mapDirty = true; }   // hoisted function declaration: safe to call from anywhere
         function frame(now) {
@@ -3178,18 +3452,16 @@ body.has-panel .mapctl{display:none}
           if (marchKey !== lastMarchKey) { lastMarchKey = marchKey; mapDirty = true; }
           const live = liveAnimation || multiAttackMode || pendingAttackTargetId !== null || pendingSendFromId !== null ||
                        (isPanelOpen(popup) && popupView === 'preview');                           // dashes / pulses → 30 fps
-          if (mapDirty || animating || camKey !== lastCamKey || (live && now - lastDrawAt >= 33) || now - lastDrawAt >= 1000) {
+          if (mapDirty || animating || BG.pending || camKey !== lastCamKey || (live && now - lastDrawAt >= 33) || now - lastDrawAt >= 1000) {
             drawMap(); lastDrawAt = now; lastCamKey = camKey; mapDirty = false;
             if (isPanelOpen(popup)) positionIslandPopover();
             updateMapControls();
           }
           requestAnimationFrame(frame);
         }
-        // replaces: function animate() { drawMap(); requestAnimationFrame(animate); } … animate();
-        // start with: requestAnimationFrame(frame);
 
         // ---------------- resize / rotation / dpr ----------------
-        function sizeBackingStore() {             // safe at boot (replaces the body of the old resizeCanvas)
+        function sizeBackingStore() {             // safe at boot
           viewW = window.innerWidth; viewH = window.innerHeight;
           dpr = Math.min(window.devicePixelRatio || 1, 2);                 // cap: 2 is plenty and halves fill cost on 3x phones
           const bw = Math.round(viewW * dpr), bh = Math.round(viewH * dpr);
@@ -3201,7 +3473,7 @@ body.has-panel .mapctl{display:none}
           const oldDpr = dpr, c = screenToWorld(viewW / 2, viewH / 2);
           sizeBackingStore();
           mapState.offsetX = viewW / 2 - c.x * mapState.zoom; mapState.offsetY = viewH / 2 - c.y * mapState.zoom;
-          updateZoomBounds(); clampCamera(); BG.valid = false;
+          updateZoomBounds(); clampCamera(true); BG.valid = false;
           if (dpr !== oldDpr) { BUILDING_SPRITES.clear(); flushBannerSprites(); HATCH = null; }
           requestRender();
         }
@@ -3210,9 +3482,13 @@ body.has-panel .mapctl{display:none}
           requestAnimationFrame(() => { resizeQueued = false; onViewportResize(); }); });
 
         // ---------------- keyboard ----------------
+        let keyScopeUi = false;                   // last press landed in the UI → arrows/letters belong to it (e.g. scrolling a panel)
+        document.addEventListener('pointerdown', e => { keyScopeUi = isUiElement(e.target); }, true);
         document.addEventListener('keydown', e => {
-          if (e.target && e.target.closest && e.target.closest('input, textarea, select')) return;
-          if (e.key === 'Escape') { closeTopmostPanel(); return; }
+          if (e.key === 'Escape') { if (e.target && e.target !== document.body && e.target.blur) e.target.blur(); closeTopmostPanel(); return; }
+          if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return;          // browser zoom, shortcuts
+          if (e.target && e.target.closest && (e.target.closest('input, textarea, select') || isUiElement(e.target))) return;   // native keys inside the UI
+          if (keyScopeUi && document.body.classList.contains('has-panel')) return;
           if (document.body.classList.contains('has-sheet') && uiLayout() !== 'desktop') return;
           const c = { x: viewW / 2, y: viewH / 2 }, step = 0.15;
           const panBy = (dx, dy) => { const w = screenToWorld(c.x + dx * viewW * step, c.y + dy * viewH * step); flyTo(w.x, w.y, { ms: 180 }); };
@@ -3259,14 +3535,20 @@ body.has-panel .mapctl{display:none}
           popup.style.setProperty('--ay', Math.round(top) + 'px');
           popup.style.setProperty('--py', Math.round(Math.max(16, Math.min(h - 28, sy - top - 6))) + 'px');
         }
-        function frameIslandInView(island) {      // phone/landscape: ease the base into the free map area next to the sheet
+        function frameIslandInView(island) {      // ease the base into the free map area (next to the sheet / clear of the desktop HUD + controls)
           const layout = uiLayout(), pr = popup.getBoundingClientRect();
           let free;
           if (layout === 'phone') free = { l: 0, t: 46, r: viewW, b: pr.top };
           else if (layout === 'landscape') free = { l: 64, t: 0, r: pr.left, b: viewH };
-          else { const s = { x: island.x * mapState.zoom + mapState.offsetX, y: island.y * mapState.zoom + mapState.offsetY };
-                 if (s.x < 40 || s.y < 80 || s.x > viewW - 40 || s.y > viewH - 40) flyTo(island.x, island.y, { screenX: viewW * .4, screenY: viewH * .45 });
-                 return; }
+          else {                                   // desktop: keep the base (tower + nameplate) out from under the HUD, nav and map controls
+            const hud = document.getElementById('hud').getBoundingClientRect(), nav = document.getElementById('cornerButtons').getBoundingClientRect();
+            const mc = document.getElementById('mapControls').getBoundingClientRect();
+            const safe = { l: 24, t: Math.max(hud.bottom, nav.bottom) + 16, r: (mc.width ? mc.left : viewW) - 24, b: viewH - 24 };
+            const z = mapState.zoom, up = island.radius * z * 1.3 + 8, down = island.radius * z + 40, side = Math.max(island.radius * z, 60);
+            const s = { x: island.x * z + mapState.offsetX, y: island.y * z + mapState.offsetY };
+            const tx = Math.min(safe.r - side, Math.max(safe.l + side, s.x)), ty = Math.min(safe.b - down, Math.max(safe.t + up, s.y));
+            if (Math.abs(tx - s.x) > .5 || Math.abs(ty - s.y) > .5) flyTo(island.x, island.y, { screenX: tx, screenY: ty, ms: 220 });
+            return; }
           const s = { x: island.x * mapState.zoom + mapState.offsetX, y: island.y * mapState.zoom + mapState.offsetY };
           const m = island.radius * mapState.zoom + 40;
           if (s.x < free.l + m || s.x > free.r - m || s.y < free.t + m || s.y > free.b - m)
@@ -3513,9 +3795,9 @@ body.has-panel .mapctl{display:none}
         const skillPointsLine = document.getElementById('skillPointsLine');
         const skillGrid = document.getElementById('skillGrid');
 
-        profileName.value = localStorage.getItem('openWaterPlayerName') || '';
+        profileName.value = store.get('openWaterPlayerName') || '';
         profileName.addEventListener('input', () => {
-            localStorage.setItem('openWaterPlayerName', profileName.value);
+            store.set('openWaterPlayerName', profileName.value);
             updateHudPlayer();
         });
 
@@ -3587,11 +3869,16 @@ body.has-panel .mapctl{display:none}
         // the summary stat chips (total bonus from equipment+skills+rarity
         // items combined) up to date.
         function renderEquipGrid() {
+            // A zero bonus is shown neutral ("0 %"), the sign and the success colour only once it is > 0.
+            const chip = (ic, v, sign, unit, label) => {
+                const r = Math.round(v);
+                return '<div class="statChip">' + icon(ic) + '<b' + (r > 0 ? ' class="good">' + sign : '>') + fmtNum(r) + unit + '</b><span>' + label + '</span></div>';
+            };
             equipStats.innerHTML =
-                '<div class="statChip">' + icon('troops')  + '<b class="good">+' + bonusPct('weapon', 'troops').toFixed(0) + ' %</b><span>Truppen</span></div>' +
-                '<div class="statChip">' + icon('coin')    + '<b class="good">+' + bonusPct('boots', null).toFixed(0) + ' %</b><span>Münzen</span></div>' +
-                '<div class="statChip">' + icon('defense') + '<b class="good">+' + fmtNum(defenseBonusFlat()) + '</b><span>Verteidigung</span></div>' +
-                '<div class="statChip">' + icon('losses')  + '<b class="good">−' + shieldLossReductionPct().toFixed(0) + ' %</b><span>Verluste</span></div>';
+                chip('troops', bonusPct('weapon', 'troops'), '+', ' %', 'Truppen') +
+                chip('coin', bonusPct('boots', null), '+', ' %', 'Münzen') +
+                chip('defense', defenseBonusFlat(), '+', '', 'Verteidigung') +
+                chip('losses', shieldLossReductionPct(), '−', ' %', 'Verluste');
         }
 
         // The gem-crate rarity item layer: one equipped card per slot
@@ -3607,6 +3894,17 @@ body.has-panel .mapctl{display:none}
         // bulk-selling or (with exactly 3 matching tiles) combining -
         // selecting is always available, not a separate mode to switch in
         // and out of first.
+        // Tiles are divs (they hold a nested checkbox): make them operable like a button.
+        function makeTileKeyboard(tile, label) {
+            tile.tabIndex = 0;
+            tile.setAttribute('role', 'button');
+            tile.setAttribute('aria-label', label);
+            tile.addEventListener('keydown', (e) => {
+                if (e.target !== tile || (e.key !== 'Enter' && e.key !== ' ')) return;
+                e.preventDefault();
+                tile.click();
+            });
+        }
         function renderChestEquipment() {
             chestPointsValue.textContent = fmtNum(upgradePoints);
 
@@ -3625,6 +3923,7 @@ body.has-panel .mapctl{display:none}
                     tile.innerHTML = icon(def.icon) + '<span class="lvl">' + item.level + '</span><span class="check">' + icon('check') + '</span>';
                     tile.title = def.name + ' – ' + rd.label + ', Stufe ' + item.level;
                     tile.addEventListener('click', () => openChestItemPopup(item.id));
+                    makeTileKeyboard(tile, def.name + ', ' + rd.label + ', Stufe ' + item.level + ', ausgerüstet');
                 } else {
                     tile.className = 'tile empty';
                     tile.innerHTML = icon(def.icon);
@@ -3656,16 +3955,33 @@ body.has-panel .mapctl{display:none}
                 tile.innerHTML = icon(def.icon) + '<span class="lvl">' + item.level + '</span>' +
                     '<span class="selectDot' + (selected ? ' checked' : '') + '" role="checkbox" aria-checked="' + selected + '" aria-label="Zum Verkaufen auswählen"></span>';
                 tile.title = def.name + ' – ' + rd.label + ', Stufe ' + item.level;
-                tile.addEventListener('click', () => openChestItemPopup(item.id));
+                tile.dataset.id = item.id;
                 const dot = tile.querySelector('.selectDot');
-                dot.addEventListener('click', (e) => {
-                    e.stopPropagation();
+                tile.addEventListener('click', (e) => {
+                    // a pointer click inside the top-right checkbox corner selects, anywhere else opens the item card
+                    const d = dot.getBoundingClientRect();
+                    if (e.detail !== 0 && e.clientX >= d.left && e.clientY <= d.bottom) { toggleSel(false); return; }
+                    openChestItemPopup(item.id);
+                });
+                makeTileKeyboard(tile, def.name + ', ' + rd.label + ', Stufe ' + item.level);
+                dot.tabIndex = 0;
+                const toggleSel = (fromKey) => {
                     if (chestSelectedIds.has(item.id)) chestSelectedIds.delete(item.id);
                     else chestSelectedIds.add(item.id);
                     renderChestEquipment();
+                    if (fromKey) {                      // keep keyboard focus on the same checkbox after the re-render
+                        const again = [...chestInventoryGrid.querySelectorAll('.tile')].find(t => t.dataset.id === String(item.id));
+                        if (again) again.querySelector('.selectDot').focus();
+                    }
+                };
+                dot.addEventListener('click', (e) => { e.stopPropagation(); toggleSel(false); });
+                dot.addEventListener('keydown', (e) => {
+                    if (e.key !== 'Enter' && e.key !== ' ') return;
+                    e.preventDefault(); e.stopPropagation(); toggleSel(true);
                 });
                 chestInventoryGrid.appendChild(tile);
             }
+            chestInventoryGrid.classList.toggle('has-selection', chestSelectedIds.size > 0);
 
             chestSelectionBar.style.display = items.length === 0 ? 'none' : 'block';
             const selected = [...chestSelectedIds].map(id => inventory[id]).filter(Boolean);
@@ -3708,7 +4024,7 @@ body.has-panel .mapctl{display:none}
             const ids = [...chestSelectedIds];
             const points = salvageItems(ids);
             chestSelectedIds.clear();
-            if (points > 0) showChestFlash(ids.length + ' verkauft für ' + fmtNum(points) + ' Punkte');
+            if (points > 0) showChestFlash(ids.length + ' verkauft für ' + fmtNum(points) + (points === 1 ? ' Punkt' : ' Punkte'));
             renderChestEquipment();
         });
         // No selection needed - merges every eligible group in one go.
@@ -3751,7 +4067,7 @@ body.has-panel .mapctl{display:none}
                 '<div><span>' + icon(def.icon) + 'Bonus</span><b class="up">' + bonusText(score) + '</b></div>' +
                 (isEquipped ? '' : '<div><span>' + icon('info') + 'Status</span><b>wirkt, sobald ausgerüstet</b></div>') +
                 (maxed ? '' : '<div><span>' + icon('upgrade') + 'Nächste Stufe</span><b>' + bonusText(itemScore({ ...item, level: item.level + 1 })) + '</b></div>') +
-                '<div><span>' + icon('points') + 'Verkaufswert</span><b>' + fmtNum(score) + ' Punkte</b></div>';
+                '<div><span>' + icon('points') + 'Verkaufswert</span><b>' + fmtNum(score) + (score === 1 ? ' Punkt' : ' Punkte') + '</b></div>';
 
             setBtnLabel(chestItemUpgradeBtn, maxed ? 'Max. Stufe' : 'Verbessern');
             const upgradeCostEl = chestItemUpgradeBtn.querySelector('.cost');
@@ -3908,7 +4224,7 @@ body.has-panel .mapctl{display:none}
             rankListEl.innerHTML = entries.map((e, i) =>
                 '<div class="rankRow' + (e.isPlayer ? ' isPlayer' : '') + '"><span class="rankPos">' + (i + 1) + '</span>' +
                 '<span class="rankDot" style="background:' + e.color + '">' + icon(e.isPlayer ? 'profile' : 'bot') + '</span>' +
-                '<span class="rankName">' + e.name + (e.isPlayer && e.named ? '<span class="tag tag--player">Du</span>' : '') + '</span>' +
+                '<span class="rankName"><span class="rankName-t">' + e.name + '</span>' + (e.isPlayer && e.named ? '<span class="tag tag--player">Du</span>' : '') + '</span>' +
                 '<span class="rankScore">' + fmtNum(e.score) + ' ' + (e.score === 1 ? 'Basis' : 'Basen') + '</span></div>'
             ).join('');
         }
@@ -3999,13 +4315,33 @@ body.has-panel .mapctl{display:none}
             activeMarchesEl.innerHTML = rows.length
                 ? rows.join('')
                 : '<div class="logEmpty">' + icon('hourglass') + 'Gerade nichts unterwegs.</div>';
+            battleLogPopup.classList.toggle('has-entries', rows.length > 0 || combatLog.length > 0);
 
             const total = relevantAttackCount + relevantSendCount + pendingScouts.length + pendingRetreats.length;
             battleLogBadge.textContent = total;
             battleLogBadge.style.display = total > 0 ? 'block' : 'none';
         }
 
+        const combatLogKey = e => e.at + '|' + e.type + '|' + (e.targetId ?? e.toId);
+        // Re-renders the list while the panel is open: opened "Kampfdetails" stay open and the
+        // rows the player is reading stay where they are when a new row is added on top.
+        function refreshOpenCombatLog() {
+            const body = combatLogListEl.closest('.pbody');
+            const rows = [...combatLogListEl.children];
+            const openKeys = new Set(rows.filter(r => r.querySelector('details[open]')).map(r => r.dataset.key));
+            const anchor = rows.find(r => r.dataset.key && r.offsetTop + r.offsetHeight > body.scrollTop);
+            const anchorKey = anchor && anchor.dataset.key, anchorTop = anchor ? anchor.offsetTop : 0;
+            const scrollTop = body.scrollTop;
+            renderCombatLog();
+            for (const r of combatLogListEl.children)
+                if (openKeys.has(r.dataset.key)) { const d = r.querySelector('details'); if (d) d.open = true; }
+            if (scrollTop > 0 && anchorKey) {
+                const again = [...combatLogListEl.children].find(r => r.dataset.key === anchorKey);
+                body.scrollTop = scrollTop + (again ? again.offsetTop - anchorTop : 0);
+            }
+        }
         function renderCombatLog() {
+            battleLogPopup.classList.toggle('has-entries', combatLog.length > 0 || activeMarchesEl.querySelector('.logRow') !== null);
             if (combatLog.length === 0) {
                 combatLogListEl.innerHTML = '<div class="logEmpty">' + icon('battlelog') + 'Noch keine Einträge.</div>';
                 return;
@@ -4013,19 +4349,21 @@ body.has-panel .mapctl{display:none}
             const T = id => islandTitle(islandById[id]);
             const ago = e => timeAgoLabel(e.at);
             const fmt1 = v => (v || 0).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+            const fmtM = v => Math.abs(v || 0) >= 1e6 ? fmtCompact(v || 0) : fmtNum(v || 0);   // meta lines: "987,7 Mio."
+            const fmtD = v => Math.abs(v || 0) >= 1e8 ? fmtCompact(v || 0) : fmtNum(v || 0);   // detail cards
             combatLogListEl.innerHTML = combatLog.map(entry => {
                 if (entry.type === 'send') {
-                    return logRowHtml('send', 'send', 'Verstärkung → ' + T(entry.toId), fmtNum(entry.troops) + ' Truppen verlegt', ago(entry));
+                    return logRowHtml('send', 'send', 'Verstärkung → ' + T(entry.toId), fmtM(entry.troops) + ' Truppen verlegt', ago(entry));
                 }
                 if (entry.type === 'scout') {
                     return logRowHtml('scout', 'scout', 'Gespäht · ' + T(entry.targetId),
-                        fmtNum(entry.troops) + ' Truppen · ' + fmtNum(entry.defense) + ' Verteidigung', ago(entry));
+                        fmtM(entry.troops) + ' Truppen · ' + fmtM(entry.defense) + ' Verteidigung', ago(entry));
                 }
                 if (entry.type === 'retreat') {
-                    return logRowHtml('retreat', 'recall', 'Rückkehr · ' + T(entry.toId), fmtNum(entry.troops) + ' geflohene Truppen zurück', ago(entry));
+                    return logRowHtml('retreat', 'recall', 'Rückkehr · ' + T(entry.toId), fmtM(entry.troops) + ' geflohene Truppen zurück', ago(entry));
                 }
                 if (entry.type === 'botAttack') {
-                    const vs = ' (' + fmtNum(entry.myTroops) + ' vs ' + fmtNum(entry.enemyTroops + entry.enemyDefense) + ')';
+                    const vs = ' (' + fmtM(entry.myTroops) + ' vs ' + fmtM(entry.enemyTroops + entry.enemyDefense) + ')';
                     return entry.won
                         ? logRowHtml('loss', 'bot', 'Verloren · ' + T(entry.targetId), escapeHtml(entry.botName) + ' hat die Basis erobert' + vs, ago(entry))
                         : logRowHtml('win', 'shield', 'Verteidigt · ' + T(entry.targetId), escapeHtml(entry.botName) + ' zurückgeschlagen' + vs, ago(entry));
@@ -4035,7 +4373,7 @@ body.has-panel .mapctl{display:none}
                 if (entry.myTroopsBuffed === undefined) {
                     return logRowHtml(entry.won ? 'win' : 'loss', entry.won ? 'level' : 'losses',
                         (entry.won ? 'Sieg · ' : 'Niederlage · ') + T(entry.targetId),
-                        'von ' + T(entry.sourceId) + ' · ' + fmtNum(entry.troops) + ' Truppen', ago(entry));
+                        'von ' + T(entry.sourceId) + ' · ' + fmtM(entry.troops) + ' Truppen', ago(entry));
                 }
                 // Everything each side brings to the fight, added up line by
                 // line into a "Gesamt" sum, side by side - so the two final
@@ -4047,19 +4385,19 @@ body.has-panel .mapctl{display:none}
                     '<div class="logCompare">' +
                         '<div class="logSide">' +
                             '<div class="logSideLabel">Angreifer</div>' +
-                            '<div class="logLine"><span>Truppen</span><span>' + fmtNum(entry.myTroops) + '</span></div>' +
-                            '<div class="logLine buff"><span>Angriff-Buff</span><span>+' + fmtNum(entry.attackBuff) + '</span></div>' +
-                            '<div class="logSum' + (atkTotal >= defTotal ? ' advantage' : '') + '"><span>Gesamt</span><span>' + fmtNum(atkTotal) + '</span></div>' +
-                            '<div class="logCasualty"><span>Gefallen</span><span>−' + fmtNum(entry.attackerCasualties || 0) + '</span></div>' +
+                            '<div class="logLine"><span>Truppen</span><span>' + fmtD(entry.myTroops) + '</span></div>' +
+                            '<div class="logLine buff"><span>Angriff-Buff</span><span>+' + fmtD(entry.attackBuff) + '</span></div>' +
+                            '<div class="logSum' + (atkTotal >= defTotal ? ' advantage' : '') + '"><span>Gesamt</span><span>' + fmtD(atkTotal) + '</span></div>' +
+                            '<div class="logCasualty"><span>Gefallen</span><span>−' + fmtD(entry.attackerCasualties || 0) + '</span></div>' +
                         '</div>' +
                         '<div class="logVsDivider">VS</div>' +
                         '<div class="logSide">' +
                             '<div class="logSideLabel">Verteidiger' + (entry.defenderName ? ' · ' + escapeHtml(entry.defenderName) : '') + '</div>' +
-                            '<div class="logLine"><span>Truppen</span><span>' + fmtNum(entry.enemyTroops) + '</span></div>' +
-                            '<div class="logLine"><span>Verteidigung</span><span>' + fmtNum(entry.enemyDefense) + '</span></div>' +
-                            '<div class="logLine buff"><span>Verteidigung-Buff</span><span>+' + fmtNum(entry.defenseBuff) + '</span></div>' +
-                            '<div class="logSum' + (defTotal > atkTotal ? ' advantage' : '') + '"><span>Gesamt</span><span>' + fmtNum(defTotal) + '</span></div>' +
-                            '<div class="logCasualty"><span>Gefallen</span><span>−' + fmtNum(entry.defenderCasualties || 0) + '</span></div>' +
+                            '<div class="logLine"><span>Truppen</span><span>' + fmtD(entry.enemyTroops) + '</span></div>' +
+                            '<div class="logLine"><span>Verteidigung</span><span>' + fmtD(entry.enemyDefense) + '</span></div>' +
+                            '<div class="logLine buff"><span>Verteidigung-Buff</span><span>+' + fmtD(entry.defenseBuff) + '</span></div>' +
+                            '<div class="logSum' + (defTotal > atkTotal ? ' advantage' : '') + '"><span>Gesamt</span><span>' + fmtD(defTotal) + '</span></div>' +
+                            '<div class="logCasualty"><span>Gefallen</span><span>−' + fmtD(entry.defenderCasualties || 0) + '</span></div>' +
                         '</div>' +
                     '</div>' +
                     '<div class="logGold">Gold/Kill-Bonus: Angriff +' + fmt1(entry.attackGoldRate) + ' · Verteidigung +' + fmt1(entry.defenseGoldRate) + '</div>' +
@@ -4068,10 +4406,11 @@ body.has-panel .mapctl{display:none}
                 return logRowHtml(entry.won ? 'win' : 'loss', entry.won ? 'level' : 'losses',
                     (entry.won ? 'Sieg · ' : 'Niederlage · ') + T(entry.targetId),
                     'von ' + T(entry.sourceId) + (entry.won
-                        ? ' · ' + fmtNum(entry.remaining) + ' übrig'
-                        : (entry.retreatSurvivors ? ' · ' + fmtNum(entry.retreatSurvivors) + ' geflohen' : '')),
+                        ? ' · ' + fmtM(entry.remaining) + ' übrig'
+                        : (entry.retreatSurvivors ? ' · ' + fmtM(entry.retreatSurvivors) + ' geflohen' : '')),
                     ago(entry), details);
             }).join('');
+            [...combatLogListEl.children].forEach((row, i) => { if (combatLog[i]) row.dataset.key = combatLogKey(combatLog[i]); });
         }
 
         battleLogBtn.addEventListener('click', () => {
@@ -4133,6 +4472,7 @@ body.has-panel .mapctl{display:none}
                 delete shopCrateResult.dataset.r;
                 shopCrateResult.innerHTML = '<div class="tile empty">' + icon('gem') + '</div>' +
                     '<div><b>Nicht genug Gems</b><small>Eine Kiste kostet ' + fmtNum(CRATE_GEM_COST) + ' Gems.</small></div>';
+                shopCrateResult.scrollIntoView({ block: 'nearest' });
                 return;
             }
             const rd = RARITY_DEFS[item.rarity];
@@ -4143,6 +4483,7 @@ body.has-panel .mapctl{display:none}
                 '<div class="tile" data-r="' + rd.key + '">' + icon(slotDef.icon) + '<span class="lvl">' + item.level + '</span></div>' +
                 '<div><span class="overline rar-text" data-r="' + rd.key + '">' + rd.label + '</span><b>' + slotDef.name + '</b>' +
                 '<small>Stufe ' + item.level + ' · im Inventar</small></div>';
+            shopCrateResult.scrollIntoView({ block: 'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
         });
         shopToEquipBtn.addEventListener('click', () => {
             closePanel(shopPopup);
@@ -4294,15 +4635,6 @@ body.has-panel .mapctl{display:none}
             };
         }
 
-        function findIslandAt(worldX, worldY) {
-            for (const island of islands) {
-                if (Math.abs(worldX - island.x) <= island.radius && Math.abs(worldY - island.y) <= island.radius) {
-                    return island;
-                }
-            }
-            return null;
-        }
-
         const popup = document.getElementById('islandPopup');
         const popupTitle = document.getElementById('popupTitle');
         const popupStats = document.getElementById('popupStats');
@@ -4325,11 +4657,11 @@ body.has-panel .mapctl{display:none}
         let popupView = 'menu';
         let previewSourceId = null; // base picked for an attack awaiting confirmation
         let previewAttackTroops = null; // how many of the source base's troops to send - adjustable via the slider, defaults to all of them
+        let previewFraction = 1;        // share of the garrison picked via "Alle"/25-75 % (follows the growing garrison); null after a manual slider drag
         let previewShownAt = 0; // guards against a stray click landing on the
                                  // confirm button the instant the preview opens
 
-        // the canvas no longer depends on this for input (§6), but the keyboard handler and any
-        // remaining document-level listeners still do
+        // the keyboard handler uses this: map shortcuts only fire while focus is on the page or the canvas
         function isUiElement(target) {
           return !!(target && target.closest && target.closest(
             '#islandPopup,#hud,#cornerButtons,#profilePopup,#battleLogPopup,#mailPopup,#shopPopup,#chestItemPopup,#multiAttackBar,#mapControls,#uiScrim,#uiScrimTop'));
@@ -4362,11 +4694,8 @@ body.has-panel .mapctl{display:none}
         document.getElementById('uiScrim').addEventListener('click', closeTopmostPanel);
         document.getElementById('uiScrimTop').addEventListener('click', closeTopmostPanel);
 
-        // The four popups (island, profile, battle log, mail) are all
-        // centered on top of each other with no shared z-index/exclusivity
-        // logic - without closing the others first, opening a second one
-        // just stacks it on top while the first stays open underneath with
-        // its state (e.g. an open attack preview) still live.
+        // Panels are exclusive: opening one closes the others first, so no
+        // hidden panel keeps live state (e.g. an open attack preview) underneath.
         function closeAllPopups() {
             closePanel(popup);
             popupStats.dataset.preview = '';
@@ -4491,12 +4820,13 @@ body.has-panel .mapctl{display:none}
             el.textContent = fmtNum({ CRATE_GEM_COST, MULTI_ATTACK_GEM_COST, RECALL_GEM_COST }[el.dataset.const]);
         document.getElementById('shopOdds').innerHTML = RARITY_DEFS.map((rd, i) =>
             '<span class="chip chip--rar" data-r="' + rd.key + '">' + rd.label + ' ' + RARITY_DROP_WEIGHTS[i].toLocaleString('de-DE') + ' %</span>').join('');
-        document.getElementById('hudShopBtn').addEventListener('click', () => shopBtn.click());
-        document.getElementById('hudPlayer').addEventListener('click', () => profileBtn.click());
+        // HUD shortcuts only ever open (the nav buttons toggle)
+        document.getElementById('hudShopBtn').addEventListener('click', () => { if (!isPanelOpen(shopPopup)) shopBtn.click(); });
+        document.getElementById('hudPlayer').addEventListener('click', () => { if (!isPanelOpen(profilePopup)) profileBtn.click(); });
         try {
-            if (!localStorage.getItem('openWaterTutorialSeen')) {
+            if (!store.get('openWaterTutorialSeen')) {
                 flashHint(TUTORIAL_HINT, 7000);
-                localStorage.setItem('openWaterTutorialSeen', '1');
+                store.set('openWaterTutorialSeen', '1');
             }
         } catch (e) {}
         updateHudPlayer();
@@ -4613,7 +4943,7 @@ body.has-panel .mapctl{display:none}
                     // Scouting is always allowed, even on an already-scouted
                     // island (re-scout to refresh) - only block a second
                     // scout while one is already en route to this target.
-                    setBtnLabel(scoutBtn, scouted ? 'Erneut spähen' : 'Spähen');
+                    setBtnLabel(scoutBtn, scouted ? (matchMedia('(max-width:359px)').matches ? 'Erneut' : 'Erneut spähen') : 'Spähen');
                     scoutBtn.disabled = scoutEnRoute;
                 }
             }
@@ -4637,6 +4967,9 @@ body.has-panel .mapctl{display:none}
             const source = islandById[previewSourceId];
             const key = island.id + ':' + previewSourceId + ':' + scouted + ':' + atkBonus;
             popupOverline.textContent = 'Angriff vorbereiten';
+            // source + march time live in the header subline (frees the body on short screens)
+            popupSub.innerHTML = icon('defense') + '<span>Von ' + islandTitle(source) + '</span><span class="sep"></span>' +
+                icon('hourglass') + '<span><span class="xs-hide">Marsch ca. </span><span class="num">' + fmtClock(travelDurationSeconds(source, island)) + '</span></span>';
             if (popupStats.dataset.preview !== key || !document.getElementById('attackTroopsSlider')) {
                 popupStats.dataset.preview = key;
                 popupStats.innerHTML =
@@ -4649,21 +4982,21 @@ body.has-panel .mapctl{display:none}
                     (scouted
                         ? '<div><div class="balance" data-preview="balance"><i></i><b></b></div><div class="balance-note"><span>Kräfteverhältnis</span><span data-preview="verdict"></span></div></div>'
                         : '<div class="notice">' + icon('scout') + '<span>Abwehr unbekannt: ohne Spähen ist der Ausgang ungewiss.</span></div>') +
-                    '<div class="field"><div class="field-top"><span class="field-l">Truppen entsenden</span><span class="val"><b id="attackTroopsLabel"></b> / <span data-preview="max"></span></span></div>' +
+                    '<div class="field"><div class="field-top"><span class="field-l"><span class="sm-hide">Truppen </span>entsenden</span><span class="val"><b id="attackTroopsLabel"></b> / <span data-preview="max"></span></span></div>' +
                         '<input type="range" id="attackTroopsSlider" class="slider" min="1" max="' + Math.max(1, maxTroops) + '" value="' + Math.max(1, previewAttackTroops) + '"' + (maxTroops <= 0 ? ' disabled' : '') + ' aria-label="Truppen entsenden">' +
-                        '<div class="seg" data-preview="quick"><button type="button" data-f=".25">25 %</button><button type="button" data-f=".5">50 %</button><button type="button" data-f=".75">75 %</button><button type="button" data-f="1">Alle</button></div></div>' +
-                    '<div class="meta-row"><span>' + icon('defense') + 'Von <b>' + islandTitle(source) + '</b></span><span>' + icon('hourglass') + 'Marsch <b>ca. ' + fmtClock(travelDurationSeconds(source, island)) + '</b></span></div>';
+                        '<div class="seg" data-preview="quick"><button type="button" data-f=".25">25 %</button><button type="button" data-f=".5">50 %</button><button type="button" data-f=".75">75 %</button><button type="button" data-f="1">Alle</button></div></div>';
                 const slider = document.getElementById('attackTroopsSlider');
                 slider.addEventListener('input', () => {
                     const mx = sourceTroops();
                     previewAttackTroops = Math.max(1, Math.min(parseInt(slider.value, 10) || 1, mx));
+                    previewFraction = previewAttackTroops >= mx ? 1 : null;   // dragged to the end = "Alle" again
                     patchAttackPreview();
                 });
                 popupStats.querySelector('[data-preview="quick"]').addEventListener('click', (e) => {
                     const f = parseFloat(e.target.closest('button') && e.target.closest('button').dataset.f);
                     if (!f || slider.disabled) return;
-                    slider.value = Math.max(1, Math.round(sourceTroops() * f));
-                    slider.dispatchEvent(new Event('input'));
+                    previewFraction = f;
+                    patchAttackPreview();
                 });
             }
             patchAttackPreview();
@@ -4680,6 +5013,7 @@ body.has-panel .mapctl{display:none}
             const atkBonus = attackFlatBonus();
             slider.max = Math.max(1, maxTroops);
             slider.disabled = maxTroops <= 0;
+            if (previewFraction !== null && maxTroops > 0) previewAttackTroops = Math.max(1, Math.round(maxTroops * previewFraction));
             if (maxTroops > 0 && +slider.value !== previewAttackTroops) slider.value = Math.max(1, previewAttackTroops);
             const shown = Math.max(0, previewAttackTroops || 0);
             const mine = shown + atkBonus;
@@ -4690,15 +5024,17 @@ body.has-panel .mapctl{display:none}
             popupStats.querySelector('[data-preview="max"]').textContent = fmtNum(maxTroops);
             slider.style.setProperty('--pct', (maxTroops > 1 ? (Math.max(1, shown) - 1) / (maxTroops - 1) * 100 : 100) + '%');
             for (const b of popupStats.querySelectorAll('[data-preview="quick"] button'))
-                b.classList.toggle('on', maxTroops > 0 && Math.max(1, Math.round(maxTroops * parseFloat(b.dataset.f))) === shown);
+                b.classList.toggle('on', maxTroops > 0 && (previewFraction !== null
+                    ? previewFraction === parseFloat(b.dataset.f)
+                    : Math.max(1, Math.round(maxTroops * parseFloat(b.dataset.f))) === shown));
             if (scouted) {                                      // fog of war: enemy numbers and the ratio exist only when scouted
                 const enemyTroops = effectiveTroops(island), enemyDefense = effectiveDefense(island), total = enemyTroops + enemyDefense;
                 popupStats.querySelector('[data-foe="total"]').textContent = fmtNum(total);
-                popupStats.querySelector('[data-foe="sub"]').textContent = fmtNum(enemyTroops) + '\u00a0Truppen +\u00a0' + fmtNum(enemyDefense) + '\u00a0Vert.';
+                popupStats.querySelector('[data-foe="sub"]').innerHTML = fmtCompact(enemyTroops) + '<span class="xs-hide">\u00a0Truppen</span> +\u00a0' + fmtCompact(enemyDefense) + '\u00a0Vert.';
                 const ratio = total > 0 ? mine / total : Infinity;
                 popupStats.querySelector('[data-preview="balance"]').style.setProperty('--a', (mine + total > 0 ? Math.round(mine / (mine + total) * 100) : 50) + '%');
                 popupStats.querySelector('[data-preview="verdict"]').innerHTML = (ratio > 1 ? 'Überlegen ' : 'Unterlegen ') +
-                    '<b class="' + (ratio > 1 ? '' : 'is-bad') + '">' + (isFinite(ratio) ? ratio.toLocaleString('de-DE', { maximumFractionDigits: 2 }) + '×' : '∞') + '</b>';
+                    '<b class="' + (ratio > 1 ? '' : 'is-bad') + '">' + (isFinite(ratio) ? (ratio >= 1000 ? '> 999×' : ratio.toLocaleString('de-DE', { maximumFractionDigits: ratio < 10 ? 1 : 0 }) + '×') : '∞') + '</b>';
             }
         }
 
@@ -4738,7 +5074,7 @@ body.has-panel .mapctl{display:none}
             updateHud();
             saveGame();
             saveProgression();
-            flashHint('Truppen aus ' + sources.length + ' Basen im Umkreis werden zurückgerufen.', 3500);
+            flashHint('Truppen aus ' + (sources.length === 1 ? '1 Basis' : sources.length + ' Basen') + ' im Umkreis werden zurückgerufen.', 3500);
             closeIslandPopup();
         });
 
@@ -4781,7 +5117,8 @@ body.has-panel .mapctl{display:none}
                 if (targetId === null || sourceId === null) return;
                 const available = islandTroops[sourceId] || 0;
                 if (available <= 0) return;
-                const troopsToSend = Math.max(1, Math.min(previewAttackTroops || available, available));
+                const picked = previewFraction !== null ? Math.round(available * previewFraction) : previewAttackTroops;
+                const troopsToSend = Math.max(1, Math.min(picked || available, available));
 
                 launchAttack(sourceId, targetId, null, troopsToSend);
                 previewSourceId = null;
@@ -4863,6 +5200,7 @@ body.has-panel .mapctl{display:none}
                     popupIslandId = target.id;
                     popupView = 'preview';
                     previewShownAt = Date.now();
+                    previewFraction = 1;
                     renderPopup();
                     return;
                 }
@@ -4892,7 +5230,8 @@ body.has-panel .mapctl{display:none}
         profileName.addEventListener('input', requestRender);   // own-base banners show the name (§6.4)
 
         renderActiveMarches();
-        updateZoomBounds(); clampCamera();
+        if (bonusGrantedAtBoot) saveGame();      // a reload right after the first start must not lose the grant
+        updateZoomBounds(); clampCamera(true);
         requestAnimationFrame(frame);
     </script>
 </body>
