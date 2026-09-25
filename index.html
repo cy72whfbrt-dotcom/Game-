@@ -1333,6 +1333,20 @@ body.has-panel .mapctl{display:none}
   </div>
 </div>
 
+<!-- ============ REWARD MODAL (boss etc.) ============ -->
+<div id="rewardModal" class="lvlup" role="dialog" aria-modal="true" aria-labelledby="rewardModalTitle" hidden>
+  <div class="lvlup-card">
+    <div class="lvlup-badge"><svg class="icon" style="width:34px;height:34px;color:var(--gold-100)"><use href="#i-attack"/></svg></div>
+    <div id="rewardModalOver" class="lvlup-over">Weltereignis</div>
+    <h2 id="rewardModalTitle" class="lvlup-title">Boss besiegt!</h2>
+    <div id="rewardModalSub" class="lvlup-sub"></div>
+    <div class="lvlup-rule"></div>
+    <div class="lvlup-label">Belohnungen</div>
+    <ul id="rewardModalRewards" class="lvlup-rewards"></ul>
+    <button id="rewardModalBtn" class="btn btn--primary" type="button"><svg class="icon"><use href="#i-check"/></svg><span>Einsammeln</span></button>
+  </div>
+</div>
+
 <!-- ============ ISLAND / BASE POPUP ============ -->
 <section id="islandPopup" class="panel panel--island" role="dialog" aria-labelledby="popupTitle">
   <span class="sheet-grab" aria-hidden="true"></span>
@@ -2005,10 +2019,12 @@ body.has-panel .mapctl{display:none}
         // (if anyone) owns it - neutral islands use their fixed generated
         // stats, an owned island uses its real garrison and level.
         function effectiveTroops(island) {
+            const boss = bossAt(island.id); if (boss) return boss.troops;
             const owner = islandOwnerOf(island.id);
             return owner ? (islandTroops[island.id] || 0) : island.neutralTroops;
         }
         function effectiveDefense(island) {
+            const boss = bossAt(island.id); if (boss) return boss.defense;
             const owner = islandOwnerOf(island.id);
             if (!owner) return island.neutralDefense;
             const level = islandLevels[island.id] || 1;
@@ -2341,8 +2357,10 @@ body.has-panel .mapctl{display:none}
         let playerXp = parseInt(store.get('openWaterXp'), 10) || 0;
         let playerLvl = parseInt(store.get('openWaterLevel'), 10) || 1;
 
+        // Each player level needs 30 % more XP than the one before (XP = enemy troops killed),
+        // so huge battles still give a handful of levels instead of hundreds.
         function xpNeededForLevel(level) {
-            return level * 50;
+            return Math.round(50 * Math.pow(1.3, Math.min(level, 400) - 1));
         }
         // Level rewards: small at the start, 2 Mio. troops at level 30, then linear growth.
         function niceRound(n) {
@@ -2642,6 +2660,7 @@ body.has-panel .mapctl{display:none}
             const originalEnemyDefense = effectiveDefense(target);
             const totalStrength = originalEnemyTroops + originalEnemyDefense;
             const won = myTroops > totalStrength;
+            const bossHere = bossAt(target.id);
             const losses = Math.round(originalEnemyDefense * (1 - lossReductionPct / 100));
             const remaining = won ? myTroops - losses : 0;
 
@@ -2678,6 +2697,9 @@ body.has-panel .mapctl{display:none}
                 defenderCasualties = Math.min(originalEnemyTroops, myTroops);
                 if (targetOwner) {
                     islandTroops[target.id] = Math.max(0, (islandTroops[target.id] || 0) - defenderCasualties);
+                } else if (bossHere) {
+                    bossHere.troops = Math.max(0, bossHere.troops - defenderCasualties);
+                    saveBoss();
                 } else {
                     target.neutralTroops = originalEnemyTroops - defenderCasualties;
                     neutralTroopOverrides[target.id] = target.neutralTroops;
@@ -2700,6 +2722,8 @@ body.has-panel .mapctl{display:none}
             // the whole enemy force, a loss costs your whole attack force
             addXp(won ? totalStrength : myTroops);
             scoutedIslands.add(target.id);
+            spawnBattleFx(target.id, won, won ? (bossHere ? 'Boss besiegt!' : 'Sieg!') : 'Verloren', won ? 'Erobert' : '−' + fmtCompact(myTroops) + ' Truppen');
+            if (won && bossHere) defeatBoss(bossHere);
             updateHud();
             saveGame();
             saveProgression();
@@ -2798,6 +2822,7 @@ body.has-panel .mapctl{display:none}
             updateHud();
 
             if (playerInvolved) {
+                spawnBattleFx(target.id, !won, won ? 'Basis verloren' : 'Verteidigt!', bot.name);
                 // Only reveals the target to the player when the player was
                 // actually part of this fight - a bot conquering a neutral
                 // or another bot's base off-screen must NOT leak that
@@ -3383,6 +3408,8 @@ body.has-panel .mapctl{display:none}
           const owner = islandOwnerOf(island.id), isTemple = island.type === 'temple' || island.type === 'megaTemple';
           const scouted = scoutedIslands.has(island.id), level = islandLevels[island.id] || 1;
           const tName = island.type === 'megaTemple' ? 'Mega-Tempel' : 'Tempel';
+          const boss = bossAt(island.id);
+          if (boss) return { kind: 'bot', glyph: 'attack', name: boss.name, troops: fmtCompact(boss.troops), def: null, level, temple: false, p: 4.8 };
           if (owner === 'player') return { kind: 'player', glyph: isTemple ? 'temple' : 'profile', name: profileName.value || 'Du',
                                            troops: fmtCompact(islandTroops[island.id] || 0), def: null, level, temple: isTemple, p: 4 };
           if (owner) return { kind: 'bot', glyph: isTemple ? 'temple' : 'bot', name: botById[owner].name,
@@ -3689,12 +3716,14 @@ body.has-panel .mapctl{display:none}
           for (const s of pendingScouts) drawMarchLine('scout', islandById[s.sourceId], islandById[s.targetId], s.startedAt, s.resolveAt, wallNow);
           for (const r of pendingRetreats) drawMarchLine('retreat', islandById[r.fromId], islandById[r.toId], r.startedAt, r.resolveAt, wallNow);   // 6
           setScreen(ctx);
+          drawBossOverlay(now);                                                                                                // world-event boss aura (under the tower)
           for (const isl of vis.slice().sort((a, b) => a.y - b.y)) drawBuilding(isl, ownerKeyOf(isl), z);                    // 7
           const plates = layoutBanners(vis, z, isPanelOpen(popup) ? popupIslandId : null);
           drawMarchTokens();                                                                                                   // 8 tokens (clear of the plates)
           paintBanners(plates);                                                                                                // 9 nameplates on top
           drawMarchChips();                                                                                                    // 10 countdown chips
           drawPickups(now);                                                                                                    // 11 mini-event pickups
+          drawBattleFx(now);                                                                                                   // 13 battle flashes + "Sieg!"
           ctx.setTransform(1, 0, 0, 1, 0, 0);
         }
 
@@ -4223,7 +4252,7 @@ body.has-panel .mapctl{display:none}
                 const source = islandById[sourceId];
                 for (const lmId of reachableLandmassIds[source.landmassId]) {
                     for (const target of islandsByLandmass[lmId] || []) {
-                        if (owned.has(target.id)) continue;
+                        if (owned.has(target.id) || bossAt(target.id)) continue;
                         const totalStrength = effectiveTroops(target) + effectiveDefense(target);
                         if (troopsHere < totalStrength * BOT_ATTACK_SAFETY_MARGIN) continue;
                         const distance = Math.hypot(target.x - source.x, target.y - source.y);
@@ -5440,6 +5469,172 @@ body.has-panel .mapctl{display:none}
             hintEl.textContent = text;
             if (ms) hintResetTimer = setTimeout(() => { hintEl.textContent = defaultHint; }, ms);
         }
+        // ===== BATTLE EFFECTS =====
+        // A flash, a shockwave and sparks at the base when a fight the player is part of resolves,
+        // plus "Sieg!" / "Verloren" floating up (screen space, drawn in drawMap).
+        var battleFx = [];
+        function spawnBattleFx(islandId, good, label, sub) {
+            const isl = islandById[islandId]; if (!isl) return;
+            const sparks = [];
+            for (let i = 0; i < 26; i++) sparks.push({ a: Math.random() * Math.PI * 2, v: 50 + Math.random() * 130, s: 1 + Math.random() * 2.2 });
+            const stack = battleFx.filter(f => f.x === isl.x && f.y === isl.y && performance.now() - f.born < 2200).length;   // several fights at one base: labels stack
+            battleFx.push({ x: isl.x, y: isl.y, good, label, sub: sub || '', born: performance.now(), sparks, stack });
+            if (battleFx.length > 12) battleFx.shift();
+            requestRender();
+        }
+        function drawBattleFx(now) {       // screen space (setScreen active)
+            battleFx = battleFx.filter(f => now - f.born < 2200);
+            for (const f of battleFx) {
+                const t = (now - f.born) / 2200, sx = f.x * mapState.zoom + mapState.offsetX, sy = f.y * mapState.zoom + mapState.offsetY;
+                if (sx < -150 || sy < -150 || sx > viewW + 150 || sy > viewH + 150) continue;
+                const hot = f.good ? [255, 214, 120] : [255, 96, 80];
+                ctx.save();
+                ctx.globalCompositeOperation = 'lighter';
+                if (t < 0.25) {                                   // flash
+                    const a = 1 - t / 0.25, r = 18 + t * 260;
+                    const gr = ctx.createRadialGradient(sx, sy, 0, sx, sy, r);
+                    gr.addColorStop(0, 'rgba(255,250,235,' + 0.9 * a + ')'); gr.addColorStop(0.4, 'rgba(' + hot + ',' + 0.5 * a + ')'); gr.addColorStop(1, 'rgba(' + hot + ',0)');
+                    ctx.fillStyle = gr; ctx.fillRect(sx - r, sy - r, r * 2, r * 2);
+                }
+                const ring = Math.min(1, t / 0.5);                // shockwave
+                if (ring < 1) {
+                    ctx.strokeStyle = 'rgba(' + hot + ',' + (1 - ring) * 0.8 + ')'; ctx.lineWidth = 3 * (1 - ring) + 1;
+                    ctx.beginPath(); ctx.arc(sx, sy, 16 + ring * 90, 0, Math.PI * 2); ctx.stroke();
+                }
+                const te = Math.min(1, t / 0.6);                  // sparks
+                for (const sp of f.sparks) {
+                    if (te >= 1) break;
+                    const d = sp.v * (1 - Math.pow(1 - te, 2)), px = sx + Math.cos(sp.a) * d, py = sy + Math.sin(sp.a) * d + te * te * 30;
+                    ctx.fillStyle = 'rgba(' + hot + ',' + (1 - te) + ')';
+                    ctx.beginPath(); ctx.arc(px, py, sp.s * (1 - te * 0.6), 0, Math.PI * 2); ctx.fill();
+                }
+                ctx.globalCompositeOperation = 'source-over';
+                const tt = Math.min(1, t / 0.15), fade = t > 0.7 ? 1 - (t - 0.7) / 0.3 : 1;   // text
+                const y = sy - 34 - t * 46 - f.stack * 44, scale = 0.6 + 0.4 * (1 - Math.pow(1 - tt, 3)) + (t < 0.2 ? 0.12 * Math.sin(tt * Math.PI) : 0);
+                ctx.globalAlpha = fade;
+                ctx.translate(sx, y); ctx.scale(scale, scale);
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+                ctx.font = '700 22px Cinzel, Georgia, serif';
+                ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(8,8,10,.9)'; ctx.strokeText(f.label, 0, 0);
+                const tg = ctx.createLinearGradient(0, -12, 0, 12);
+                if (f.good) { tg.addColorStop(0, '#fff3cf'); tg.addColorStop(1, '#e0a84a'); } else { tg.addColorStop(0, '#ffc2b8'); tg.addColorStop(1, '#e0453a'); }
+                ctx.fillStyle = tg; ctx.fillText(f.label, 0, 0);
+                if (f.sub) {
+                    ctx.font = '600 12px Inter, system-ui, sans-serif'; ctx.lineWidth = 4;
+                    ctx.strokeText(f.sub, 0, 20); ctx.fillStyle = f.good ? '#f1e3bd' : '#ffb3aa'; ctx.fillText(f.sub, 0, 20);
+                }
+                ctx.restore();
+            }
+            if (battleFx.length) liveAnimation = true;
+        }
+
+        // ===== BOSSES / WORLD EVENTS =====
+        // Now and then a Drachenturm or a Piratenfestung takes over a neutral base near the player:
+        // a huge garrison, a countdown, and a legendary crate for whoever breaks it. Bots leave it alone.
+        var BOSS_KINDS = [{ kind: 'dragon', name: 'Drachenturm' }, { kind: 'pirate', name: 'Piratenfestung' }];
+        var BOSS_DURATION_MS = 30 * 60 * 1000, BOSS_REWARD_GEMS = 50;
+        var bossState = null, nextBossAt = 0, bossLoaded = false, bossRewardPending = false;
+        function loadBoss() {
+            if (bossLoaded) return; bossLoaded = true;
+            try { bossState = JSON.parse(store.get('openWaterBoss')) || null; } catch (e) { bossState = null; }
+            nextBossAt = parseInt(store.get('openWaterBossNext'), 10) || (Date.now() + 2 * 60 * 1000);   // first one 2 min after the first start
+        }
+        function saveBoss() { store.set('openWaterBoss', JSON.stringify(bossState)); store.set('openWaterBossNext', String(nextBossAt)); }
+        function bossAt(id) {
+            loadBoss();
+            return bossState && bossState.islandId === id && bossState.endsAt > Date.now() && !islandOwnerOf(id) ? bossState : null;
+        }
+        function spawnBoss() {
+            const reach = new Set();
+            for (const id of ownedIslands) for (const lm of reachableLandmassIds[islandById[id].landmassId] || []) reach.add(lm);
+            const home = islandById[rewardBaseId() ?? playerIslandId];
+            const busy = new Set(pendingAttacks.map(a => a.targetId));
+            const cand = [];
+            for (const lm of reach) for (const isl of islandsByLandmass[lm] || [])
+                if (!islandOwnerOf(isl.id) && isl.type !== 'temple' && isl.type !== 'megaTemple' && !busy.has(isl.id)) cand.push(isl);
+            if (!cand.length || !home) return false;
+            cand.sort((a, b) => Math.hypot(a.x - home.x, a.y - home.y) - Math.hypot(b.x - home.x, b.y - home.y));
+            const isl = cand[Math.floor(Math.random() * Math.min(25, cand.length))];
+            const def = BOSS_KINDS[Math.floor(Math.random() * BOSS_KINDS.length)];
+            const troops = niceRound(Math.max(200000, totalTroops() * (1.2 + Math.random() * 0.8)));
+            bossState = { islandId: isl.id, kind: def.kind, name: def.name, troops, defense: niceRound(troops * 0.1), endsAt: Date.now() + BOSS_DURATION_MS };
+            scoutedIslands.add(isl.id);                           // its strength is public
+            saveBoss(); saveGame();
+            flashHint('Weltereignis: ' + def.name + ' erschienen! Besiegen = legendäre Kiste.', 6000);
+            spawnBattleFx(isl.id, false, def.name + '!', 'Weltereignis · 30:00');
+            requestRender();
+            return true;
+        }
+        function endBoss(msg) {
+            bossState = null;
+            nextBossAt = Date.now() + (20 + Math.random() * 15) * 60 * 1000;   // next one in 20-35 min
+            saveBoss(); requestRender();
+            if (msg) flashHint(msg, 4000);
+            if (isPanelOpen(popup)) renderPopup();
+        }
+        function defeatBoss(boss) {
+            const item = grantFreeCrate(4);                        // legendary or better
+            gems += BOSS_REWARD_GEMS;
+            saveProgression(); saveGame(); updateHud();
+            endBoss(null);
+            const rd = RARITY_DEFS[item.rarity], d = EQUIPMENT_DEFS[item.slot];
+            document.getElementById('rewardModalOver').textContent = 'Weltereignis';
+            document.getElementById('rewardModalTitle').textContent = 'Boss besiegt!';
+            document.getElementById('rewardModalSub').textContent = boss.name + ' ist gefallen – die Beute gehört dir.';
+            const list = document.getElementById('rewardModalRewards');
+            list.innerHTML = '<li style="border-color:' + rd.color + '66"><svg class="icon" style="color:' + rd.color + '"><use href="#i-' + d.icon + '"/></svg><span>' + d.name + '</span><b style="color:' + rd.color + '">' + rd.label + '</b></li>' +
+                '<li>' + icon('gem', 'ico-gem') + '<span>Gems</span><b>+' + BOSS_REWARD_GEMS + '</b></li>';
+            [...list.children].forEach((li, i) => { li.style.animationDelay = (200 + i * 120) + 'ms'; });
+            bossRewardPending = true;
+            setTimeout(() => { bossRewardPending = false; document.getElementById('rewardModal').hidden = false; }, 1400);
+        }
+        document.getElementById('rewardModalBtn').addEventListener('click', () => { document.getElementById('rewardModal').hidden = true; });
+        function bossTick() {
+            loadBoss();
+            const now = Date.now();
+            if (bossState && (bossState.endsAt <= now || islandOwnerOf(bossState.islandId))) {
+                const name = bossState.name;
+                endBoss(islandOwnerOf(bossState.islandId) ? null : name + ' ist wieder verschwunden.');
+            }
+            if (!bossState && now >= nextBossAt && !document.hidden) { if (!spawnBoss()) nextBossAt = now + 60000; saveBoss(); }
+            if (bossState) {
+                const el = document.querySelector('[data-boss-clock]');
+                if (el) el.textContent = fmtClock((bossState.endsAt - now) / 1000);
+                requestRender();
+            }
+        }
+        setInterval(bossTick, 1000);
+        function drawBossOverlay(now) {    // screen space: pulsing aura, rotating rune ring, countdown chip
+            loadBoss();
+            const b = bossState; if (!b || b.endsAt <= Date.now()) return;
+            const isl = islandById[b.islandId], z = mapState.zoom;
+            const sx = isl.x * z + mapState.offsetX, sy = isl.y * z + mapState.offsetY, r = Math.max(22, isl.radius * z * 1.5);
+            if (sx < -r * 3 || sy < -r * 3 || sx > viewW + r * 3 || sy > viewH + r * 3) return;
+            const pulse = 0.5 + 0.5 * Math.sin(now / 380);
+            ctx.save();
+            const gr = ctx.createRadialGradient(sx, sy, r * 0.3, sx, sy, r * 2.2);
+            gr.addColorStop(0, 'rgba(255,70,40,' + (0.28 + 0.14 * pulse) + ')'); gr.addColorStop(1, 'rgba(255,70,40,0)');
+            ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(sx, sy, r * 2.2, 0, Math.PI * 2); ctx.fill();
+            ctx.translate(sx, sy);
+            ctx.rotate(now / 4000);
+            ctx.setLineDash([6, 5]); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(236,196,120,0.9)';
+            ctx.beginPath(); ctx.arc(0, 0, r * 1.25, 0, Math.PI * 2); ctx.stroke();
+            ctx.rotate(-now / 2000); ctx.setLineDash([2, 7]); ctx.strokeStyle = 'rgba(255,90,60,0.9)';
+            ctx.beginPath(); ctx.arc(0, 0, r * 1.45, 0, Math.PI * 2); ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.restore();
+            const label = fmtClock((b.endsAt - Date.now()) / 1000);
+            ctx.save();
+            ctx.font = '700 12px Inter, system-ui, sans-serif';
+            const w = ctx.measureText(label).width + 30, h = 20, cx = sx - w / 2, cy = sy - r * 1.45 - h - 8;
+            ctx.fillStyle = 'rgba(20,6,5,0.92)'; ctx.strokeStyle = 'rgba(255,110,80,0.9)'; ctx.lineWidth = 1.2;
+            ctx.beginPath(); ctx.roundRect ? ctx.roundRect(cx, cy, w, h, 4) : ctx.rect(cx, cy, w, h); ctx.fill(); ctx.stroke();
+            drawGlyph(ctx, 'hourglass', cx + 11, cy + h / 2, 12, '#ffb3a0');
+            ctx.fillStyle = '#ffe2d8'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(label, cx + 20, cy + h / 2 + 0.5);
+            ctx.restore();
+            liveAnimation = true;
+        }
+
         // ===== LEVEL-UP MODAL =====
         var levelUpShown = null;            // { from, to, coins, troops, gems, points } currently on screen / queued
         var levelUpTimer = null;
@@ -5456,11 +5651,11 @@ body.has-panel .mapctl{display:none}
                 levelUpShown = { from, to, ...r };
             }
             clearTimeout(levelUpTimer);
-            levelUpTimer = setTimeout(renderLevelUpModal, 450);   // after the battle toast, not on top of the tap
+            levelUpTimer = setTimeout(renderLevelUpModal, 1600);  // after the battle flash / "Sieg!" has played
         }
         function renderLevelUpModal() {
             const s = levelUpShown; if (!s) return;
-            if (!document.getElementById('dailyModal').hidden) { levelUpTimer = setTimeout(renderLevelUpModal, 500); return; }   // one window at a time
+            if (!document.getElementById('dailyModal').hidden || !document.getElementById('rewardModal').hidden || bossRewardPending) { levelUpTimer = setTimeout(renderLevelUpModal, 500); return; }   // one window at a time
             const m = document.getElementById('levelUpModal');
             document.getElementById('levelUpLevel').textContent = s.to;
             document.getElementById('levelUpTitle').textContent = 'Stufe ' + s.to;
@@ -5691,6 +5886,7 @@ body.has-panel .mapctl{display:none}
         function closeTopmostPanel() {           // scrim click + Escape
           if (closeLevelUpModal()) return;
           if (closeDailyModal()) return;
+          if (!document.getElementById('rewardModal').hidden) { document.getElementById('rewardModal').hidden = true; return; }
           if (isPanelOpen(chestItemPopup)) return chestItemCloseBtn.click();
           if (isPanelOpen(popup)) return closeBtn.click();
           for (const [pid, closeId] of [['profilePopup','profileCloseBtn'],['battleLogPopup','battleLogCloseBtn'],['mailPopup','mailCloseBtn'],['shopPopup','shopCloseBtn']])
@@ -5842,6 +6038,7 @@ body.has-panel .mapctl{display:none}
         // Temples/Mega-Tempel get their own name instead of "Turm #N" -
         // regular towers keep the numbering players already know.
         function islandTitle(island) {
+            const boss = bossAt(island.id); if (boss) return boss.name;
             if (island.type === 'megaTemple') return 'Mega-Tempel';
             if (island.type === 'temple') return 'Tempel';
             return 'Turm #' + (island.id + 1);
@@ -5879,8 +6076,9 @@ body.has-panel .mapctl{display:none}
             const level = islandLevels[island.id] || 1;
             const kind = isOwned ? 'player' : ownerBot ? 'enemy' : 'neutral';
             const sep = '<span class="sep"></span>';
-            popupEmblem.className = 'emblem emblem--' + kind;
-            popupEmblem.querySelector('use').setAttribute('href', '#i-' + (isTemple ? 'temple' : isOwned ? 'profile' : ownerBot ? 'bot' : 'question'));
+            const isBoss = !!bossAt(island.id);
+            popupEmblem.className = 'emblem emblem--' + (isBoss ? 'enemy' : kind);
+            popupEmblem.querySelector('use').setAttribute('href', '#i-' + (isBoss ? 'attack' : isTemple ? 'temple' : isOwned ? 'profile' : ownerBot ? 'bot' : 'question'));
             popupLevel.textContent = level;
             popupTitle.textContent = islandTitle(island);
             popupActions.hidden = true;
@@ -5925,7 +6123,7 @@ body.has-panel .mapctl{display:none}
                 }
             } else {
                 const scouted = scoutedIslands.has(island.id);
-                popupSub.innerHTML = '<span class="dot dot--' + kind + '"></span>' + (ownerBot ? escapeHtml(ownerBot.name) : 'Unbesetzt') +
+                popupSub.innerHTML = '<span class="dot dot--' + (bossAt(island.id) ? 'enemy' : kind) + '"></span>' + (bossAt(island.id) ? 'Boss' : ownerBot ? escapeHtml(ownerBot.name) : 'Unbesetzt') +
                     (scouted ? sep + '<span class="chip chip--scouted">' + icon('scout') + 'Gespäht</span>' : '');
 
                 if (popupView === 'preview') {
@@ -5936,12 +6134,13 @@ body.has-panel .mapctl{display:none}
                     backBtn.style.display = 'inline-block';
                 } else {
                     const scoutEnRoute = pendingScouts.some(s => s.targetId === island.id);
-                    popupOverline.textContent = ownerBot ? (isTemple ? 'Feindlicher Tempel' : 'Feindliche Basis') : (isTemple ? 'Tempel · unbesetzt' : 'Neutrale Basis');
+                    popupOverline.textContent = bossAt(island.id) ? 'Weltereignis · Boss' : ownerBot ? (isTemple ? 'Feindlicher Tempel' : 'Feindliche Basis') : (isTemple ? 'Tempel · unbesetzt' : 'Neutrale Basis');
                     popupStats.innerHTML = '<div class="stat-grid">' +
                         statTile('Truppen', 'troops', scouted ? fmtNum(effectiveTroops(island)) : UNK, scouted && ownerBot ? 'is-enemy' : '') +
                         statTile('Verteidigung', 'defense', scouted ? fmtNum(effectiveDefense(island)) : UNK) + '</div>' +
                         (scouted ? '' : '<div class="notice">' + icon('scout') + '<span>Stärke unbekannt. Spähen deckt Truppen und Verteidigung auf.</span></div>') +
                         (isTemple ? '<div class="notice notice--gold">' + icon('temple') + '<span>Tempel: gibt Produktion, Gems und Münzen, sobald erobert.</span></div>' : '') +
+                        (bossAt(island.id) ? '<div class="notice notice--gold">' + icon('shop') + '<span><b>Belohnung:</b> Legendäre Kiste + ' + BOSS_REWARD_GEMS + ' Gems · verschwindet in <b data-boss-clock>' + fmtClock((bossAt(island.id).endsAt - Date.now()) / 1000) + '</b></span></div>' : '') +
                         (scoutEnRoute ? '<div class="notice notice--warn">' + icon('hourglass') + '<span>Späher bereits unterwegs …</span></div>' : '');
                     setBtnLabel(attackBtn, 'Angreifen');
                     attackBtn.style.display = 'inline-block';
