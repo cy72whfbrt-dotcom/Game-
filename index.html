@@ -2619,21 +2619,22 @@ body.has-panel .mapctl{display:none}
         // Canvas rasterisation is deferred until a tile is first drawn, so the per-frame budget counts device pixels, not ms,
         // and adapts: it halves after a slow frame that rendered tiles (heavy territory, slow device) and recovers slowly.
         const TILE_PX = 256, TILE_BUDGET_MOVING = 540000, TILE_BUDGET_IDLE = 1600000;   // device px of new tiles per frame (max; at least 1 tile)
-        const BG = { rate: TILE_BUDGET_IDLE, lastAt: 0, lastTiles: 0, valid: false, gen: null, olds: [], next: null, tiles: new Map(), pool: [], pending: false, over: null, seq: 0 };
+        const BG = { rate: TILE_BUDGET_IDLE, lastAt: 0, lastTiles: 0, valid: false, gen: null, olds: [], next: null, tiles: new Map(), pool: [], pending: false, over: null, seq: 0, lastZ: 0, hopAt: -1e9, land: null, hopGen: null };
         function bgDropGen(gen) { for (const [key, T] of BG.tiles) if (T.gen === gen) { BG.tiles.delete(key); BG.pool.push(T.c); } }
         function bgGen(z) { const td = Math.round(TILE_PX * dpr); return { z, td, ws: td / (dpr * z), id: ++BG.seq }; }   // ws = tile edge in world units
         function bgShow(gen) {                         // gen becomes the displayed generation; the replaced one fills gaps until gen covers the view
           if (BG.gen && BG.gen !== gen) BG.olds.unshift(BG.gen);
-          for (const g of BG.olds.splice(0).filter(g => g !== gen)) { if (g.td === gen.td && BG.olds.length < 2 && g.z / gen.z > 0.55 && g.z / gen.z < 1.8) BG.olds.push(g); else bgDropGen(g); }   // near zooms only: they look alike
+          for (const g of BG.olds.splice(0).filter(g => g !== gen)) { if (bgKept(g) || (g.td === gen.td && BG.olds.length < 2 && g.z / gen.z > 0.55 && g.z / gen.z < 1.8)) BG.olds.push(g); else bgDropGen(g); }   // near zooms only: they look alike
           BG.gen = gen; return gen;
         }
-        function bgRange(gen, pad) {                   // tile index range covering the view (+pad tiles)
-          const z = mapState.zoom, ws = gen.ws;
-          return { x0: Math.floor(-mapState.offsetX / z / ws) - pad, x1: Math.floor((viewW - mapState.offsetX) / z / ws) + pad,
-                   y0: Math.floor(-mapState.offsetY / z / ws) - pad, y1: Math.floor((viewH - mapState.offsetY) / z / ws) + pad };
+        const bgKept = g => g === BG.land || g === BG.hopGen;   // a hop's end generation and its current far one: kept as filler until it lands
+        function bgRange(gen, pad, v) {                // tile index range covering the view (v: another view { x, y, z } centre + zoom) (+pad tiles)
+          const z = v ? v.z : mapState.zoom, ws = gen.ws, l = v ? v.x - viewW / 2 / z : -mapState.offsetX / z, t = v ? v.y - viewH / 2 / z : -mapState.offsetY / z;
+          return { x0: Math.floor(l / ws) - pad, x1: Math.floor((l + viewW / z) / ws) + pad, y0: Math.floor(t / ws) - pad, y1: Math.floor((t + viewH / z) / ws) + pad };
         }
-        function bgMissing(gen, pad) {                 // missing tiles, nearest to the view centre first
-          const R = bgRange(gen, pad), out = [], cx = (viewW / 2 - mapState.offsetX) / mapState.zoom / gen.ws - .5, cy = (viewH / 2 - mapState.offsetY) / mapState.zoom / gen.ws - .5;
+        function bgMissing(gen, pad, v) {              // missing tiles, nearest to the view centre first
+          const R = bgRange(gen, pad, v), out = [], z = mapState.zoom;
+          const cx = (v ? v.x : (viewW / 2 - mapState.offsetX) / z) / gen.ws - .5, cy = (v ? v.y : (viewH / 2 - mapState.offsetY) / z) / gen.ws - .5;
           for (let ty = R.y0; ty <= R.y1; ty++) for (let tx = R.x0; tx <= R.x1; tx++)
             if (!BG.tiles.has(gen.id + ':' + tx + ':' + ty)) out.push({ tx, ty, d: (tx - cx) * (tx - cx) + (ty - cy) * (ty - cy) });
           return out.sort((a, b) => a.d - b.d);
@@ -2647,6 +2648,8 @@ body.has-panel .mapctl{display:none}
           BG.tiles.set(gen.id + ':' + tx + ':' + ty, T);
           return T;
         }
+        const WARM = document.createElement('canvas'); WARM.width = WARM.height = 1; const WARMG = WARM.getContext('2d');
+        function bgWarm(T) { WARMG.clearRect(0, 0, 1, 1); WARMG.drawImage(T.c, 0, 0, 1, 1); T.drawn = true; }   // rasterise a tile now, not at its first blit
         function renderBackground(z) {                 // synchronous: a new generation with every visible tile (boot, resize, jumps)
           const gen = bgShow(bgGen(z));
           for (const m of bgMissing(gen, 0)) renderTile(gen, m.tx, m.ty);
@@ -2666,6 +2669,7 @@ body.has-panel .mapctl{display:none}
               const h = Math.ceil(O.c.height / O.rows), y = O.row * h, clip = { x: 0, y, w: O.c.width, h: Math.min(h, O.c.height - y) };
               paintBackground({ ...O, g: O.c.getContext('2d'), part: 'base' }, clip, true);
               paintBackground({ ...O, c: O.d, g: O.d.getContext('2d'), part: 'full' }, clip, true);
+              bgWarm(O); bgWarm({ c: O.d });                                             // rasterised slice by slice here, not at its first use
               if (++O.row >= O.rows) O.done = true; else bgOverview(); }, { timeout: 600 }); }
           return null;
         }
@@ -2760,14 +2764,32 @@ body.has-panel .mapctl{display:none}
             for (let ty = R.y0; ty <= R.y1; ty++) for (let tx = R.x0; tx <= R.x1; tx++) if (has(g, tx, ty)) return true; return false; };
           if (BG.next && (moving || BG.next.z !== z || BG.next.td !== td0)) { bgDropGen(BG.next); BG.next = null; }   // superseded
           // render for where the zoom is heading: the wheel / button ease and camera flights know their end zoom; a pinch that
-          // leaves the window outward gets a generation 20 % further out (fewer, cheaper generations while zooming out)
-          const zEnd = cameraFlight ? cameraFlight.z1 : gesture.mode !== 'pinch' && mapState.targetZoom !== z ? mapState.targetZoom : z;
+          // leaves the window outward gets a generation 20 % further out (fewer, cheaper generations while zooming out).
+          // A hop (a flight that dips below 0.6 · its end zoom): its end generation (BG.land) is set up at once and the end
+          // view's tiles are rendered first, on the way, so it lands crisp; far out (hopOut) few, coarse generations follow
+          // the zoom (z1's tiles would be specks, and a touch there must find tiles near the current zoom)
           const ratio = (a, b) => Math.abs(a / b - 1) < 1e-9 ? 1 : a / b;                // float noise is not a zoom change
+          const F = cameraFlight, hop = !!F && F.zm < F.z1 * 0.6, hopOut = hop && z < F.z1 * 0.6;
+          if (hop && (!F.land || F.land.td !== td0)) {
+            F.land = [BG.gen, ...BG.olds].find(g => g && g.td === td0 && ratio(g.z, F.z1) === 1) || bgGen(F.z1);
+            if (F.land !== BG.gen && !BG.olds.includes(F.land)) BG.olds.push(F.land);
+          }
+          if (!hop) BG.hopGen = null;
+          BG.land = hop ? F.land : null;
+          const zEnd = F ? (hopOut ? z : F.z1) : gesture.mode !== 'pinch' && mapState.targetZoom !== z ? mapState.targetZoom : z;
           let gen = BG.gen, k = gen ? ratio(z, gen.z) : 0, kEnd = gen ? ratio(zEnd, gen.z) : 0;
-          if (!gen || gen.td !== td0 || kEnd < 0.7 || kEnd > 1.4) { gen = bgShow(bgGen(zEnd !== z ? zEnd : gen && gesture.mode === 'pinch' && k < 0.7 ? z * 0.8 : z)); k = z / gen.z; }
+          const down = z < (BG.lastZ || z); BG.lastZ = z;
+          if (hopOut) BG.hopAt = now;
+          if (hopOut && gen && gen.td === td0) {                                             // fast, so fewer generations: each one spans a wide
+            if (k < 0.6 || (!down && k > 1.5 && z < F.z1 * 0.45)) { gen = BG.hopGen = bgShow(bgGen(down ? Math.max(F.zm, z * 0.6) : z * 1.3)); k = z / gen.z; } }   // range, set ahead of the motion
+          else if (hop) { if (gen !== F.land) gen = bgShow(F.land); k = ratio(z, gen.z); }  // the approach: the end generation, the far one as filler
+          else if (!gen || gen.td !== td0 || kEnd < 0.7 || kEnd > 1.4) { gen = bgShow(bgGen(zEnd !== z ? zEnd : gen && gesture.mode === 'pinch' && k < 0.7 ? z * 0.8 : z)); k = z / gen.z; }
+          const drawn = (g, tx, ty) => { const T = BG.tiles.get(g.id + ':' + tx + ':' + ty); return !!T && T.drawn; };   // (a filler never pays a first raster)
+          const alike = o => !bgKept(o) || (o.td === gen.td && o.z / z > 0.55 && o.z / z < 1.8);          // a hop's kept generations fill in near their zoom only
           const covered = (tx, ty) => BG.olds.some(o => {                                  // an older generation already shows this tile
+            if (!alike(o)) return false;
             const e = gen.ws * (1 - 1e-9), x0 = Math.floor(tx * gen.ws / o.ws), x1 = Math.floor((tx * gen.ws + e) / o.ws), y0 = Math.floor(ty * gen.ws / o.ws), y1 = Math.floor((ty * gen.ws + e) / o.ws);
-            for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (!has(o, x, y)) return false; return true; });
+            for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (!drawn(o, x, y)) return false; return true; });
           const missing = g => { const out = bgMissing(g, 0); if (g !== gen || !BG.olds.length) return out;
             const a = [], b = []; for (const m of out) (covered(m.tx, m.ty) ? b : a).push(m); return a.concat(b); };   // the uncovered ring first
           let miss = missing(gen), budget = 0;
@@ -2775,10 +2797,15 @@ body.has-panel .mapctl{display:none}
             if (miss.length) { gen = bgShow(bgGen(z)); k = 1; miss = bgMissing(gen, 0); }  // gaps anyway: render the crisp one directly
             else if (!BG.next) BG.next = bgGen(z);                                         // complete: build the crisp one behind it
           }
-          if (miss.length && !cameraFlight && !anyIn(gen) && !BG.olds.some(anyIn)) {       // nothing cached here at all (boot, resize, jump): draw it now
+          if (miss.length && !cameraFlight && !anyIn(gen) && !BG.olds.some(anyIn) &&       // nothing cached here at all (boot, resize, jump): draw it now -
+              !(O && now - BG.hopAt < 600)) {                                              // but not right after a hop (a touch mid-hop): the overview fills in
             for (const m of miss) renderTile(gen, m.tx, m.ty); miss = [];
           } else {
             budget = Math.min(BG.rate, moving ? bMove : bIdle);
+            if (hop && gen !== F.land) {                                                   // far out on a hop: the end view first, rasterised
+              const lw = bgMissing(F.land, 0, { x: F.end.x, y: F.end.y, z: F.z1 });      // now (a first blit after landing would stall)
+              if (lw.length) { const m = lw[0]; bgWarm(renderTile(F.land, m.tx, m.ty)); budget -= F.land.td * F.land.td; BG.lastTiles++; }   // (one per frame: that costs real time)
+            }
             const work = miss.length ? miss : BG.next ? bgMissing(BG.next, 0) : [], wg = miss.length ? gen : BG.next;
             for (let first = true; work.length && (first || budget >= wg.td * wg.td); first = false) {   // at least one tile per frame
               const m = work.shift(); renderTile(wg, m.tx, m.ty); budget -= wg.td * wg.td; BG.lastTiles++; }
@@ -2790,9 +2817,9 @@ body.has-panel .mapctl{display:none}
             const td = g.td, R = bgRange(g, 0);
             const ex = tx => Math.round(tx * td * kk + ox), ey = ty => Math.round(ty * td * kk + oy);   // shared tile edges → no seams
             for (let ty = R.y0; ty <= R.y1; ty++) for (let tx = R.x0; tx <= R.x1; tx++) {
-              const key = g.id + ':' + tx + ':' + ty, T = BG.tiles.get(key); if (!T || (only && !only(g, tx, ty))) continue;
+              const key = g.id + ':' + tx + ':' + ty, T = BG.tiles.get(key); if (!T || (only && (!T.drawn || !only(g, tx, ty)))) continue;
               BG.tiles.delete(key); BG.tiles.set(key, T);                                        // LRU refresh
-              const x = ex(tx), y = ey(ty); ctx.drawImage(T.c, x, y, ex(tx + 1) - x, ey(ty + 1) - y);
+              const x = ex(tx), y = ey(ty); ctx.drawImage(T.c, x, y, ex(tx + 1) - x, ey(ty + 1) - y); T.drawn = true;
             }
             ctx.imageSmoothingQuality = 'high'; };
           // gaps (only where the current generation has no tile yet, so nothing is drawn twice): older generations where they
@@ -2805,11 +2832,18 @@ body.has-panel .mapctl{display:none}
                 for (let x = Math.floor(tx * o.ws / gen.ws); x <= Math.floor((tx * o.ws + e) / gen.ws); x++) if (holes.has(x + ':' + y)) return true;
               return false; };
             const open = miss.filter(m => !covered(m.tx, m.ty)).map(m => { const x = gx(m.tx), y = gy(m.ty); return { m, x, y, w: gx(m.tx + 1) - x, h: gy(m.ty + 1) - y }; });
-            if (open.length) {                                                             // the live sea (exactly as in the tiles) + the overview's land
+            if (open.length > 48) {                                                        // many holes: sea + overview once for the whole view
+              const V = { z, l: -mapState.offsetX / z, t: -mapState.offsetY / z, fast: 1 }, W = canvas.width, Hh = canvas.height;
+              paintSea(ctx, V, 0, 0, W, Hh);
+              ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.imageSmoothingQuality = 'low';
+              if (O) { const OC = z >= 0.016 ? O.d : O.c, s = O.z * dpr, u0 = (V.l - O.l) * s, v0 = (V.t - O.t) * s, us = viewW / z * s, vs = viewH / z * s;
+                const cu0 = Math.max(0, u0), cv0 = Math.max(0, v0), cu1 = Math.min(O.c.width, u0 + us), cv1 = Math.min(O.c.height, v0 + vs);
+                if (cu1 > cu0 && cv1 > cv0) ctx.drawImage(OC, cu0, cv0, cu1 - cu0, cv1 - cv0, (cu0 - u0) / us * W, (cv0 - v0) / vs * Hh, (cu1 - cu0) / us * W, (cv1 - cv0) / vs * Hh); }
+            } else if (open.length) {                                                      // the live sea (exactly as in the tiles) + the overview's land
               const V = { z, l: -mapState.offsetX / z, t: -mapState.offsetY / z, fast: 1 };
               for (const r of open) paintSea(ctx, V, r.x, r.y, r.w, r.h);
               ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.imageSmoothingQuality = 'low';
-              const OC = O && (z >= 0.013 ? O.d : O.c);                                  // with grass + forests where the tiles have them
+              const OC = O && (z >= 0.016 ? O.d : O.c);                                  // with grass + forests where the tiles have them (from 0.016)
               if (O) for (const { m, x, y, w, h } of open) {
                 const s = O.z * dpr, u0 = (m.tx * gen.ws - O.l) * s, v0 = (m.ty * gen.ws - O.t) * s, us = gen.ws * s;   // source rect in the overview
                 const cu0 = Math.max(0, u0), cv0 = Math.max(0, v0), cu1 = Math.min(O.c.width, u0 + us), cv1 = Math.min(O.c.height, v0 + us);
@@ -2819,14 +2853,14 @@ body.has-panel .mapctl{display:none}
               }
             }
             ctx.imageSmoothingQuality = 'high';
-            for (const o of BG.olds.slice().sort((a, b) => a.z - b.z)) blit(o, overHole);
+            for (const o of BG.olds.slice().sort((a, b) => a.z - b.z)) if (alike(o)) blit(o, overHole);
           }
           blit(gen);
           let pre = [];                                                                    // prefetch a one-tile ring once the view is complete
-          if (!miss.length && !BG.next) { pre = bgMissing(gen, 1);
+          if (!miss.length && !BG.next && !hop) { pre = bgMissing(gen, 1);
             if (!BG.lastTiles) budget = Math.min(BG.rate, bMove);
             while (pre.length && budget >= gen.td * gen.td) { const m = pre.shift(); renderTile(gen, m.tx, m.ty); budget -= gen.td * gen.td; BG.lastTiles++; } }
-          if (!miss.length && BG.olds.length) { for (const g of BG.olds) bgDropGen(g); BG.olds = []; }   // the current generation covers the view
+          if (!miss.length && BG.olds.length) BG.olds = BG.olds.filter(g => bgKept(g) || (bgDropGen(g), false));   // the current generation covers the view
           const count = (g, pad) => { const R = bgRange(g, pad); return (R.x1 - R.x0 + 1) * (R.y1 - R.y0 + 1); };
           const cap = count(gen, 1) + (BG.next ? count(BG.next, 0) : 0) + BG.olds.reduce((n, o) => n + count(o, 0), 0) + 12;
           while (BG.tiles.size > cap) { const [key, T] = BG.tiles.entries().next().value; BG.tiles.delete(key); BG.pool.push(T.c); }   // least recently used first
@@ -3127,7 +3161,7 @@ body.has-panel .mapctl{display:none}
           trace(); ctx.setLineDash(dash); ctx.lineDashOffset = -(now / 40) % 26; ctx.lineWidth = 2.5; ctx.strokeStyle = col; ctx.stroke(); ctx.setLineDash([]);
           const seg = []; let tot = 0; for (let i = 0; i < pts.length - 1; i++) { const l = Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].y - pts[i].y); seg.push(l); tot += l; }
           // placed in drawMarchTokens(), after the nameplates, so the token can start past the source's own plate
-          marchTokens.push({ pts, seg, tot, progress, r: source.radius * mapState.zoom, srcId: source.id, col, glyph: glyphName, own: type !== 'incoming', secs: Math.max(0, Math.ceil((resolveAt - now) / 1000)) });
+          marchTokens.push({ pts, seg, tot, progress, r: source.radius * mapState.zoom, srcId: source.id, key: type + source.id + '>' + target.id + '@' + resolveAt, col, glyph: glyphName, own: type !== 'incoming', secs: Math.max(0, Math.ceil((resolveAt - now) / 1000)) });
         }
         function marchPointAt(m, d) {                   // screen point at path distance d
           for (let i = 0; i < m.seg.length; i++) { if (d <= m.seg[i] || i === m.seg.length - 1) { const t = m.seg[i] > 0 ? Math.min(1, Math.max(0, d / m.seg[i])) : 1;
@@ -3154,39 +3188,61 @@ body.has-panel .mapctl{display:none}
             drawGlyph(ctx, m.glyph, m.x, m.y, 10, m.col);
           }
         }
-        const CHIP_SLOTS = [0, -20, 20, -40, 40, -60, 60].flatMap(dy => [[1, dy], [-1, dy]]);
-        function drawMarchChips() {                       // after the nameplates; never over a plate, a building or a token
+        const CHIP_SLOTS = [0, -20, 20, -40, 40, -60, 60].flatMap(dy => [[1, dy], [-1, dy]])          // beside the cluster, then above / below;
+          .concat([-10, 10, -30, 30, -50, 50, -80, 80].flatMap(dy => [[1, dy], [-1, dy]]),                                    // in between; further out
+                  [0, -20, 20, -40, 40].flatMap(dy => [[2, dy], [-2, dy]]), [0, -20, 20, -40, 40].flatMap(dy => [[3, dy], [-3, dy]]));
+        let chipDigit = null;                             // the widest digit: chips reserve the width of their widest label
+        let chipSlotOf = new Map();                       // cluster key → slot used last frame (a chip only moves when that slot gets blocked)
+        function drawMarchChips() {                       // after the nameplates: one chip per cluster of tokens, "×n" when merged
           setScreen(ctx);
-          // zoomed far out only the player's own; co-located ones merged into one "×n" chip
-          let chips = marchTokens.map(m => ({ x: m.x, y: m.y, secs: m.secs, n: 1, own: m.own }));
-          if (mapState.zoom < 0.006) {
-            const merged = [];
-            for (const c of chips) { if (!c.own) continue;
-              const g = merged.find(q => Math.hypot(q.x - c.x, q.y - c.y) < 16);
-              if (g) { g.n++; g.secs = Math.min(g.secs, c.secs); } else merged.push(c); }
-            chips = merged;
-          }
-          const taken = marchTokens.map(m => ({ x: m.x - 8.5, y: m.y - 8.5, w: 17, h: 17 })).concat(bannerHitRects, towerRects.map(t => ({ x: t.x + t.w * .2, y: t.y + t.h * .1, w: t.w * .6, h: t.h * .8 })));
+          const far = mapState.zoom < 0.006;             // zoomed far out only the player's own
+          const on = marchTokens.filter(m => (m.own || !far) && m.x > 0 && m.x < viewW && m.y > 0 && m.y < viewH);
+          const root = on.map((_, i) => i), find = i => root[i] === i ? i : (root[i] = find(root[i]));
+          for (let i = 0; i < on.length; i++) for (let j = i + 1; j < on.length; j++)   // chains of tokens < 34 px apart merge (own and incoming apart)
+            if (on[i].own === on[j].own && Math.hypot(on[i].x - on[j].x, on[i].y - on[j].y) < 34) root[find(j)] = find(i);
+          const byRoot = new Map();
+          on.forEach((m, i) => { const r = find(i), g = byRoot.get(r);
+            if (!g) { byRoot.set(r, { key: m.key, sx: m.x, sy: m.y, l: m.x, r: m.x, n: 1, secs: m.secs }); return; }
+            g.n++; g.secs = Math.min(g.secs, m.secs); g.sx += m.x; g.sy += m.y; g.l = Math.min(g.l, m.x); g.r = Math.max(g.r, m.x); if (m.key < g.key) g.key = m.key; });
+          const clusters = [...byRoot.values()].sort((a, b) => a.key < b.key ? -1 : 1);   // a steady order → steady slots
+          for (const c of clusters) c.y = c.sy / c.n;
+          const lastSlot = chipSlotOf; chipSlotOf = new Map();
+          if (!clusters.length) return;
           ctx.font = '600 10.5px Inter, system-ui, sans-serif'; ctx.textBaseline = 'alphabetic';
-          const label = c => fmtClock(c.secs) + (c.n > 1 ? '  ×' + c.n : ''), width = c => ctx.measureText(label(c)).width + 22;
-          const placed = [];
-          for (const c of chips) {                        // first free slot (right, left, then stacked); none free → join the nearest chip
-            const tw = width(c); let rect = null;
-            for (const [sx, dy] of CHIP_SLOTS) { const r = { x: sx > 0 ? c.x + 11 : c.x - 11 - tw, y: c.y - 9 + dy, w: tw, h: 18 };
-              if (!hitsAny(r, taken, 2)) { rect = r; c.side = sx; break; } }
-            if (rect) { c.rect = rect; taken.push(rect); placed.push(c); continue; }
-            let best = null, bd = 140;
-            for (const q of placed) { const d = Math.hypot(q.x - c.x, q.y - c.y); if (d < bd) { bd = d; best = q; } }
-            if (best) { best.n += c.n; best.secs = Math.min(best.secs, c.secs); }
+          if (!chipDigit) chipDigit = [...'0123456789'].reduce((w, d) => ctx.measureText(d).width > ctx.measureText(w).width ? d : w, '0');
+          const label = c => fmtClock(c.secs) + (c.n > 1 ? '  ×' + c.n : '');
+          const tokens = marchTokens.map(m => ({ x: m.x - 8.5, y: m.y - 8.5, w: 17, h: 17 }));
+          const towers = towerRects.map(t => ({ x: t.x + t.w * .2, y: t.y + t.h * .1, w: t.w * .6, h: t.h * .8 }));
+          const screen = { x: 0, y: 0, w: viewW, h: viewH }, placed = [];
+          const width = c => Math.ceil(ctx.measureText(label(c).replace(/\d/g, chipDigit)).width) + 22;   // steady from second to second
+          const slot = (c, i) => { const [side, dy] = CHIP_SLOTS[i], tw = width(c);
+            const gap = [0, 11, 34, 60][Math.abs(side)], r = { x: side > 0 ? c.r + gap : c.l - gap - tw, y: c.y - 9 + dy, w: tw, h: 18 }, e = { x: r.x - 2, y: r.y - 2, w: r.w + 4, h: r.h + 4 };
+            let over = r.w * r.h - overlap(r, screen), hard = over, soft = 0;                // hard: within 2 px of a plate or a chip, or off screen
+            for (const q of bannerHitRects) { hard += overlap(e, q); over += overlap(r, q); }    // over: really on top of one
+            for (const q of placed) { hard += overlap(e, q.rect); over += overlap(r, q.rect); }
+            for (const q of tokens) soft += 3 * overlap(e, q);
+            for (const q of towers) soft += overlap(e, q);
+            if (over < 0.5) over = 0; if (hard < 0.5) hard = 0;                                  // (float residue of the area sums)
+            return { i, r, over, hard, soft, sc: (over > 0 ? 1e6 : 0) + (hard > 0 ? 1e5 : 0) + 50 * hard + soft }; };   // on a plate / off screen only when no slot avoids it
+          const place = (c, s) => { c.rect = s.r; chipSlotOf.set(c.key, s.i); placed.push(c); };
+          const rest = [];
+          const bestSlot = c => { let best = null;
+            for (let i = 0; i < CHIP_SLOTS.length; i++) { const s = slot(c, i); if (!best || s.sc < best.sc) best = s; if (s.sc === 0) break; }
+            return best; };
+          for (const c of clusters) {                     // a chip keeps last frame's slot (hysteresis) while it is not on a plate, a chip or
+            const s = lastSlot.has(c.key) ? slot(c, lastSlot.get(c.key)) : null;   // the screen edge and does not hide most of a token
+            if (s && s.over === 0 && s.soft < 1200) place(c, s); else rest.push(c);
           }
-          for (const c of placed) {                       // a merged chip is wider: it grows away from its token, or moves to a free slot
-            let tw = width(c), x = c.side > 0 ? c.rect.x : c.rect.x + c.rect.w - tw, y = c.rect.y;
-            if (tw > c.rect.w) { const others = taken.filter(q => q !== c.rect);
-              if (hitsAny({ x, y, w: tw, h: 18 }, others, 2)) {
-                const slot = CHIP_SLOTS.map(([sx, dy]) => ({ x: sx > 0 ? c.x + 11 : c.x - 11 - tw, y: c.y - 9 + dy, w: tw, h: 18 })).find(r => !hitsAny(r, others, 2));
-                if (slot) { x = slot.x; y = slot.y; } else { c.n = 1; tw = width(c); x = c.rect.x; y = c.rect.y; } }
-              const i = taken.indexOf(c.rect); if (i >= 0) taken[i] = { x, y, w: tw, h: 18 }; }
-            rr(ctx, x, y, tw, 18, 3); ctx.fillStyle = 'rgba(10,12,16,.86)'; ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(212,176,102,.4)'; ctx.stroke();
+          for (const c of rest) {                         // others: the first free slot; none free → the least bad one (over a tower rather than
+            if (!lastSlot.has(c.key)) { place(c, bestSlot(c)); continue; }   // a plate); a chip that had to leave its slot takes the nearest good one
+            const p = slot(c, lastSlot.get(c.key)).r; let best = null, bs = Infinity;
+            for (let i = 0; i < CHIP_SLOTS.length; i++) { const s = slot(c, i), v = s.sc + 20 * Math.hypot(s.r.x - p.x, s.r.y - p.y); if (v < bs) { bs = v; best = s; } }
+            place(c, best);
+          }
+          for (const c of placed) {
+            c.rect.x = Math.max(2, Math.min(viewW - c.rect.w - 2, c.rect.x)); c.rect.y = Math.max(2, Math.min(viewH - 20, c.rect.y));   // never cut by the edge
+            const { x, y, w } = c.rect;
+            rr(ctx, x, y, w, 18, 3); ctx.fillStyle = 'rgba(10,12,16,.86)'; ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(212,176,102,.4)'; ctx.stroke();
             drawGlyph(ctx, 'hourglass', x + 8, y + 9, 10, '#e4c886'); ctx.fillStyle = '#eee6d4'; ctx.fillText(label(c), x + 16, y + 12.8);
           }
         }
@@ -3250,7 +3306,7 @@ body.has-panel .mapctl{display:none}
           BUTTON_STEP: 1.6, KEY_STEP: 1.25, FLY_MS: 320
         };
         let minZoom = 0.0008, maxZoom = CAM.MAX_ZOOM;
-        let cameraFlight = null;         // { fx, fy, flz, tx, ty, tlz, sx, sy, t0, dur }
+        let cameraFlight = null;         // { path(e) → {x, y, z} centre, end, z1, ins, t0, dur }
         const clampZoom = z => Math.min(maxZoom, Math.max(minZoom, z));
 
         function updateZoomBounds() {    // call at boot (after WORLD exists) and on every resize
@@ -3258,41 +3314,76 @@ body.has-panel .mapctl{display:none}
           maxZoom = CAM.MAX_ZOOM;
           mapState.zoom = clampZoom(mapState.zoom); mapState.targetZoom = clampZoom(mapState.targetZoom);
         }
-        // Content-aware clamp, so the map can never be pushed out of view:
-        // (1) per axis, a view wider than the world keeps it centred (slack: 15 % of the world); a narrower view may
-        //     overhang the world box by at most 15 % of the view. While a sheet covers part of the view, the same rule also
-        //     holds for the free part (so a base at the world edge can be shown above / beside the sheet); that slack eases
-        //     back when the sheet closes;
-        // (2) some land (a coast or a bridge) must lie within the inner 75 % of the view. A move (drag, glide, pinch) that
-        //     would leave that region stops at its edge, per axis, from the last valid centre (continuous, no jumps); when the
-        //     region itself shrinks under the camera (zooming in over open sea), the camera eases toward land instead of
-        //     leaping; a jump (instant fly, resize, boot) that ends outside moves straight to the nearest valid centre.
-        //     Camera flights are not clamped per frame: their target is validated once, in flyTo().
-        const CLAMP_LAND = [...landmasses.map(lm => ({ poly: lm.shape, bb: lm.bbox,
-                                segs: lm.shape.map((p, i) => [p, lm.shape[(i + 1) % lm.shape.length]]) })),
-                            ...bridges.map(br => ({ poly: null, bb: { l: Math.min(br.x1, br.x2), t: Math.min(br.y1, br.y2), r: Math.max(br.x1, br.x2), b: Math.max(br.y1, br.y2) },
-                                segs: [[{ x: br.x1, y: br.y1 }, { x: br.x2, y: br.y2 }]] }))];
-        const boxDist = (dx, dy, ax, ay) => Math.hypot(Math.max(0, Math.abs(dx) - ax), Math.max(0, Math.abs(dy) - ay));
-        const bbBoxDist = (bb, x, y, ax, ay) => boxDist(Math.max(bb.l - x, 0, x - bb.r), Math.max(bb.t - y, 0, y - bb.b), ax, ay);
-        function nearestLand(x, y, ax, ay) {     // land point whose ax×ay box around it is closest to (x, y); d = 0 → already in reach
-          let best = { d: Infinity, x, y };
-          const order = CLAMP_LAND.map(L => ({ L, d: bbBoxDist(L.bb, x, y, ax, ay) })).sort((a, b) => a.d - b.d);
-          for (const { L, d } of order) {
-            if (d >= best.d) break;
-            if (L.poly && x >= L.bb.l && x <= L.bb.r && y >= L.bb.t && y <= L.bb.b && pointInPolygon(x, y, L.poly)) return { d: 0, x, y };
-            for (const [p, q] of L.segs) {
-              if (boxDist(Math.max(Math.min(p.x, q.x) - x, 0, x - Math.max(p.x, q.x)), Math.max(Math.min(p.y, q.y) - y, 0, y - Math.max(p.y, q.y)), ax, ay) >= best.d) continue;
-              const f = t => boxDist(x - (p.x + (q.x - p.x) * t), y - (p.y + (q.y - p.y) * t), ax, ay);
-              let lo = 0, hi = 1;                                               // f is convex along the segment → ternary search
-              for (let i = 0; i < 28; i++) { const m1 = lo + (hi - lo) / 3, m2 = hi - (hi - lo) / 3; if (f(m1) <= f(m2)) hi = m2; else lo = m1; }
-              const t = (lo + hi) / 2, dd = f(t);
-              if (dd < best.d) { best = { d: dd, x: p.x + (q.x - p.x) * t, y: p.y + (q.y - p.y) * t }; if (dd === 0) return best; }
-            }
-          }
-          return best;
+        // Camera clamp (v2): the view centre is kept in a region R(z), and the clamp is the nearest point of R - history-free,
+        // never stuck inside, it only slides along the rim. R(z) is a union of CONVEX pieces, each grown by a square of half
+        // side m = CLAMP_K · min(viewW, viewH) / z (the view always reaches further than m) and cut to a box:
+        // - every landmass (star-shaped around its centre → split into convex fans), so every point of land can be centred;
+        // - every triangle of three bridged landmass centres, so the sea inside the ring is free to cross. The triangles'
+        //   edges are the bridge lines (centre - coast - bridge - coast - centre), so beyond the outer coasts and bridges at
+        //   most m is sea: a view on the rim always shows land or a bridge, and the bays between outer landmasses are out.
+        // - box: per axis, a view smaller than the land box may overhang it by 15 % of the view, a larger one keeps it
+        //   centred (± 15 % of the land box); the slack eases to ~0 at min zoom, so the whole world is centred there.
+        // Each piece is convex and changes continuously with zoom, view size and sheet, so the clamp moves continuously:
+        // a step of the requested centre moves the result at most twice as far (no jumps). While a sheet covers part of
+        // the view, R also admits the centres whose FREE part obeys the same rule (each piece swept by the sheet shift,
+        // the box widened), so a base at the world edge can be framed above / beside the sheet; that slack eases back when
+        // the sheet closes. Pan, pinch, wheel, keys, buttons, glide and flights all go through clampCamera().
+        const CLAMP_K = 0.32, CLAMP_SLACK = 0.15;
+        function convexHull(pts) {               // Andrew's monotone chain; positive orientation (cross > 0 = interior on the left)
+          const p = pts.map(q => ({ x: q.x, y: q.y })).sort((a, b) => a.x - b.x || a.y - b.y);
+          if (p.length < 3) return p;
+          const cr = (o, a, b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x), lo = [], up = [];
+          for (const q of p) { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], q) <= 0) lo.pop(); lo.push(q); }
+          for (let i = p.length - 1; i >= 0; i--) { const q = p[i]; while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], q) <= 0) up.pop(); up.push(q); }
+          lo.pop(); up.pop(); return lo.concat(up);
         }
-        const CLAMP_FRAC = 0.75;                 // land within the inner 75 % of the view
-        let clampPrev = null;                    // last clamped view centre (world)
+        const CAM_PIECES = (() => {
+          const out = [];
+          for (const lm of landmasses) {         // greedy fans around the centre: extend while every point stays a hull vertex
+            const s = lm.shape, n = s.length, c = { x: lm.x, y: lm.y };
+            for (let i = 0; i < n;) { let j = i + 1, P = convexHull([c, s[i], s[j % n]]);
+              while (j < n) { const Q = convexHull([c, ...Array.from({ length: j + 2 - i }, (_, k) => s[(i + k) % n])]);
+                if (Q.length !== j + 3 - i) break; P = Q; j++; }
+              if (P.length >= 3) out.push(P); i = j; }
+          }
+          const at = new Map(landmasses.map(l => [l.q + ',' + l.r, l])), seen = new Set();
+          for (const a of landmasses) for (let k = 0; k < 6; k++) {   // two consecutive hex neighbours: all three pairs are bridged
+            const d1 = HEX_DIRS[k], d2 = HEX_DIRS[(k + 1) % 6], b = at.get((a.q + d1.q) + ',' + (a.r + d1.r)), c = at.get((a.q + d2.q) + ',' + (a.r + d2.r));
+            if (!b || !c) continue;
+            const key = [a.id, b.id, c.id].sort((u, v) => u - v).join(); if (seen.has(key)) continue; seen.add(key);
+            out.push(convexHull([a, b, c]));
+          }
+          return out.map(P => ({ P, l: Math.min(...P.map(p => p.x)), t: Math.min(...P.map(p => p.y)), r: Math.max(...P.map(p => p.x)), b: Math.max(...P.map(p => p.y)) }));
+        })();
+        const LAND_BOX = (() => { let l = Infinity, t = Infinity, r = -Infinity, b = -Infinity;
+          for (const p of [...landmasses.flatMap(lm => lm.shape), ...bridges.flatMap(br => [{ x: br.x1, y: br.y1 }, { x: br.x2, y: br.y2 }])]) {
+            l = Math.min(l, p.x); r = Math.max(r, p.x); t = Math.min(t, p.y); b = Math.max(b, p.y); }
+          return { w: r - l, h: b - t, cx: (l + r) / 2, cy: (t + b) / 2 }; })();
+        function sumBox(P, x0, y0, x1, y1) {     // convex P ⊕ the box [x0, x1] × [y0, y1]: each vertex takes the box corners of its normal cone
+          const C = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]], n = P.length, out = [];
+          const q = (a, b) => { const nx = b.y - a.y, ny = a.x - b.x; return ny >= 0 ? (nx > 0 ? 2 : 3) : (nx < 0 ? 0 : 1); };   // corner of an edge's outer normal
+          for (let i = 0; i < n; i++) { const v = P[i], b = q(v, P[(i + 1) % n]);
+            for (let k = q(P[(i + n - 1) % n], v); ; k = (k + 1) % 4) { out.push({ x: v.x + C[k][0], y: v.y + C[k][1] }); if (k === b) break; } }
+          return out;
+        }
+        function clipHalf(P, f) {                // Sutherland-Hodgman against one half-plane f(p) ≥ 0 (convex stays convex)
+          const out = [];
+          for (let i = 0; i < P.length; i++) { const a = P[i], b = P[(i + 1) % P.length], fa = f(a), fb = f(b);
+            if (fa >= 0) out.push(a);
+            if ((fa >= 0) !== (fb >= 0)) { const t = fa / (fa - fb); out.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }); } }
+          return out;
+        }
+        function clipToBox(P, x0, y0, x1, y1) { return clipHalf(clipHalf(clipHalf(clipHalf(P, p => p.x - x0), p => x1 - p.x), p => p.y - y0), p => y1 - p.y); }
+        function projectConvex(Q, x, y) {        // nearest point of the convex polygon Q (positive orientation) to (x, y)
+          let inside = true, bx = x, by = y, bd = Infinity;
+          for (let i = 0; i < Q.length; i++) { const a = Q[i], b = Q[(i + 1) % Q.length], dx = b.x - a.x, dy = b.y - a.y, l2 = dx * dx + dy * dy;
+            if (dx * (y - a.y) - dy * (x - a.x) < 0) inside = false;
+            const t = l2 > 0 ? Math.max(0, Math.min(1, ((x - a.x) * dx + (y - a.y) * dy) / l2)) : 0, px = a.x + dx * t, py = a.y + dy * t;
+            const d = (px - x) * (px - x) + (py - y) * (py - y); if (d < bd) { bd = d; bx = px; by = py; } }
+          return inside ? { x, y } : { x: bx, y: by };
+        }
+        const insideConvex = (Q, x, y) => { for (let i = 0; i < Q.length; i++) { const a = Q[i], b = Q[(i + 1) % Q.length];
+          if ((b.x - a.x) * (y - a.y) - (b.y - a.y) * (x - a.x) < 0) return false; } return true; };
         const camInset = { t: 0, b: 0, l: 0, r: 0 };   // CSS px of the view covered by a sheet (eased; see updateCamera)
         let insetCache = { at: -1e9, v: { t: 0, b: 0, l: 0, r: 0 } };
         function camInsetTarget(now, fresh) {    // the island sheet (phone: bottom, landscape: right side) covers part of the map
@@ -3303,61 +3394,63 @@ body.has-panel .mapctl{display:none}
             else v.r = Math.max(0, Math.min(viewW * 0.8, viewW - pr.left)); }
           insetCache = { at: now, v }; return v;
         }
-        function camRange(h, W, mid, a, b) {     // allowed centre interval on one axis; a / b: world units covered at the low / high side
-          const r = hh => Math.abs(W - 2 * hh) / 2 + 0.15 * Math.min(2 * hh, W);
+        function camRange(h, W, mid, a, b, sl) { // allowed centre interval on one axis; a / b: world units covered at the low / high side; sl: slack
+          const r = hh => Math.max(0, W / 2 - hh) + sl * Math.min(2 * hh, W);
           let lo = mid - r(h), hi = mid + r(h);
           const fh = h - (a + b) / 2, sh = (a - b) / 2;                                   // the free part: half size, centre shift
           if ((a || b) && fh > 0) { lo = Math.min(lo, mid - r(fh) - sh); hi = Math.max(hi, mid + r(fh) - sh); }
           return [lo, hi];
         }
-        function clampCentre(cx, cy, z, prev, ins) {   // prev: last valid centre for a move, null for a jump → the allowed centre
-          const hw = viewW / 2 / z, hh = viewH / 2 / z;
-          const [xl, xh] = camRange(hw, WORLD.w, WORLD.cx, ins.l / z, ins.r / z), [yl, yh] = camRange(hh, WORLD.h, WORLD.cy, ins.t / z, ins.b / z);
-          const bx = x => Math.min(xh, Math.max(xl, x)), by = y => Math.min(yh, Math.max(yl, y));
-          const ax = CLAMP_FRAC * hw, ay = CLAMP_FRAC * hh;
-          const gap = (x, y) => nearestLand(x, y, ax, ay).d, ok = (x, y) => gap(x, y) < 1;
-          const toLand = (x, y) => { const n = nearestLand(x, y, ax, ay);                  // nearest valid centre
-            if (Math.abs(x - n.x) > ax) x = n.x + Math.sign(x - n.x) * ax;
-            if (Math.abs(y - n.y) > ay) y = n.y + Math.sign(y - n.y) * ay;
-            return { x: bx(x), y: by(y) }; };
-          const nx = bx(cx), ny = by(cy);
-          if (ok(nx, ny)) return { x: nx, y: ny };
-          if (!prev) return toLand(nx, ny);                                                 // jump
-          const px = bx(prev.x), py = by(prev.y);
-          if (Math.hypot(px - nx, py - ny) * z > Math.max(viewW, viewH)) return toLand(nx, ny);   // placed from outside (harness): a jump
-          if (ok(px, py)) {                                                                 // a move: stop at the edge, per axis
-            const walk = (x0, y0, x1, y1) => {               // last valid point from (x0,y0) toward (x1,y1), in ≤ 12 px steps (no tunnelling)
-              const n = Math.min(24, Math.ceil(Math.hypot(x1 - x0, y1 - y0) * z / 12)); let lx = x0, ly = y0;
-              for (let i = 1; i <= n; i++) { const x = i === n ? x1 : x0 + (x1 - x0) * i / n, y = i === n ? y1 : y0 + (y1 - y0) * i / n;
-                if (!ok(x, y)) { let lo = 0, hi = 1;
-                  for (let k = 0; k < 8; k++) { const m = (lo + hi) / 2; if (ok(lx + (x - lx) * m, ly + (y - ly) * m)) lo = m; else hi = m; }
-                  return [lx + (x - lx) * lo, ly + (y - ly) * lo]; }
-                lx = x; ly = y; }
-              return [lx, ly]; };
-            const x = walk(px, py, nx, py)[0], y = walk(x, py, x, ny)[1];
-            return { x, y };
-          }
-          // the allowed region shrank under the camera (zoom-in over sea): ease toward land, each call taking 50 % (no zoom
-          // change: 12 %) off the previous centre's shortfall - smooth, never farther out, no leap on a single frame
-          const d = gap(nx, ny), dp = gap(px, py), t = toLand(nx, ny), keep = prev.z && prev.z !== z ? 0.5 : 0.88;
-          const f = d * z < 1.5 ? 1 : 1 - keep * Math.min(d, dp) / d;
-          return { x: nx + (t.x - nx) * f, y: ny + (t.y - ny) * f };
+        const camRegionCache = [];               // R(z) for the last few (zoom, view size, sheet) keys: a zoom ease asks for its end view too
+        function camRegion(z, ins) {             // → { R: [{ l, t, r, b }] the pieces' boxes (camPiece(G, p): the polygon, built on demand), box }
+          const key = z + ',' + viewW + ',' + viewH + ',' + ins.t + ',' + ins.b + ',' + ins.l + ',' + ins.r;
+          const hit = camRegionCache.find(e => e.key === key); if (hit) return hit;
+          const hw = viewW / 2 / z, hh = viewH / 2 / z, sl = CLAMP_SLACK * Math.min(1, Math.max(0.01, (z / minZoom - 1) / 0.3));
+          const [x0, x1] = camRange(hw, LAND_BOX.w, LAND_BOX.cx, ins.l / z, ins.r / z, sl), [y0, y1] = camRange(hh, LAND_BOX.h, LAND_BOX.cy, ins.t / z, ins.b / z, sl);
+          const m = CLAMP_K * Math.min(viewW, viewH) / z, sx = (ins.r - ins.l) / 2 / z, sy = (ins.b - ins.t) / 2 / z;   // free part's centre = centre - (sx, sy)
+          const G = { key, R: [], box: [x0, y0, x1, y1], grow: [-m + Math.min(0, sx), -m + Math.min(0, sy), m + Math.max(0, sx), m + Math.max(0, sy)] }, [gl, gt, gr, gb] = G.grow;
+          for (const c of CAM_PIECES) { const l = c.l + gl, t = c.t + gt, r = c.r + gr, b = c.b + gb;
+            if (r >= x0 && l <= x1 && b >= y0 && t <= y1) G.R.push({ c, l: Math.max(l, x0), t: Math.max(t, y0), r: Math.min(r, x1), b: Math.min(b, y1), cut: l < x0 || r > x1 || t < y0 || b > y1, Q: null }); }
+          camRegionCache.unshift(G); if (camRegionCache.length > 3) camRegionCache.pop();
+          return G;
         }
-        function clampCamera(jump) {             // jump: the camera was placed, not moved (instant fly, resize, boot)
+        function camPiece(G, p) {                // a piece of R: grown, cut to the box ([] when the cut leaves nothing)
+          if (!p.Q) { p.Q = sumBox(p.c.P, ...G.grow);
+            if (p.cut) { const Q = clipToBox(p.Q, ...G.box); let a = 0; for (let i = 0; i < Q.length; i++) { const u = Q[i], v = Q[(i + 1) % Q.length]; a += u.x * v.y - v.x * u.y; }
+              p.Q = a > 1 ? Q : []; } }                                                     // (a sliver of the box is left to the box itself)
+          return p.Q;
+        }
+        function clampCentre(cx, cy, z, ins) {   // nearest point of R(z) (ins: the sheet slack, default the current one)
+          const G = camRegion(z, ins || camInset);
+          for (const p of G.R) if (cx >= p.l && cx <= p.r && cy >= p.t && cy <= p.b) { const Q = camPiece(G, p); if (Q.length && insideConvex(Q, cx, cy)) return { x: cx, y: cy }; }
+          let bx = cx, by = cy, bd = Infinity;
+          for (const p of G.R) { const dx = Math.max(p.l - cx, 0, cx - p.r), dy = Math.max(p.t - cy, 0, cy - p.b); if (dx * dx + dy * dy >= bd) continue;
+            const Q = camPiece(G, p); if (!Q.length) continue;
+            const q = projectConvex(Q, cx, cy), d = (q.x - cx) * (q.x - cx) + (q.y - cy) * (q.y - cy); if (d < bd) { bd = d; bx = q.x; by = q.y; } }
+          if (bd === Infinity) { const [x0, y0, x1, y1] = G.box; bx = Math.min(x1, Math.max(x0, cx)); by = Math.min(y1, Math.max(y0, cy)); }   // (a degenerate box at min zoom)
+          return { x: bx, y: by };
+        }
+        function stopFlight() {                  // cancel / end a flight where it is: its view is valid for its inset, so that
+          const f = cameraFlight; if (!f) return; // inset stays as slack and eases off (no snap)
+          cameraFlight = null;
+          for (const side of ['t', 'b', 'l', 'r']) camInset[side] = Math.max(camInset[side], f.ins[side]);
+        }
+        function clampCamera(ins) {              // ins: the sheet slack (optional) → true when it moved the centre: the caller re-anchors its gesture
           const z = mapState.zoom, cx = (viewW / 2 - mapState.offsetX) / z, cy = (viewH / 2 - mapState.offsetY) / z;
-          const c = clampCentre(cx, cy, z, jump ? null : clampPrev, camInset);
-          clampPrev = { x: c.x, y: c.y, z };
-          if (c.x !== cx) { mapState.offsetX = viewW / 2 - c.x * z; mapState.velocityX = 0; }
-          if (c.y !== cy) { mapState.offsetY = viewH / 2 - c.y * z; mapState.velocityY = 0; }
-          return c.x !== cx || c.y !== cy;               // true → the caller re-anchors its gesture (no dead zone, no later leap)
+          const c = clampCentre(cx, cy, z, ins), dx = c.x - cx, dy = c.y - cy, d = Math.hypot(dx, dy);
+          if (d * z < 0.01) return false;
+          mapState.offsetX = viewW / 2 - c.x * z; mapState.offsetY = viewH / 2 - c.y * z;
+          const vn = (mapState.velocityX * dx + mapState.velocityY * dy) / d;                // glide: drop the part into the edge,
+          if (vn > 0) { mapState.velocityX -= vn * dx / d; mapState.velocityY -= vn * dy / d; }   // keep sliding along it
+          return true;
         }
         function zoomAt(sx, sy, z, animate) {   // the ONE zoom primitive: keeps the world point under (sx, sy) fixed
-          z = clampZoom(z); cameraFlight = null;
+          z = clampZoom(z); stopFlight();
           if (animate) {                         // eased: if the end view would need the clamp (zooming into open sea, out past an
             const z0 = mapState.zoom, ox = mapState.offsetX, oy = mapState.offsetY;   // edge), zoom about the point that
             if (Math.abs(z - z0) > z0 * 1e-4) {                                        // stays fixed between now and the valid
               const ex = sx - (sx - ox) / z0 * z, ey = sy - (sy - oy) / z0 * z;        // end view instead → one smooth motion
-              const c = clampCentre((viewW / 2 - ex) / z, (viewH / 2 - ey) / z, z, null, camInset);
+              const c = clampCentre((viewW / 2 - ex) / z, (viewH / 2 - ey) / z, z);
               const fx = viewW / 2 - c.x * z, fy = viewH / 2 - c.y * z;
               if (Math.abs(fx - ex) > .01 || Math.abs(fy - ey) > .01) { sx = (ox * z - fx * z0) / (z - z0); sy = (oy * z - fy * z0) / (z - z0); }
             }
@@ -3369,14 +3462,29 @@ body.has-panel .mapctl{display:none}
           requestRender();
         }
         function flyTo(wx, wy, opts = {}) {     // animated camera move; the world point ends at screen (sx, sy)
-          const z0 = mapState.zoom, z1 = clampZoom(opts.zoom || mapState.zoom);
+          // a flight started during another one (Home pressed again, a key, a framing) keeps that one's end zoom, not the dip
+          const z0 = mapState.zoom, z1 = clampZoom(opts.zoom || (cameraFlight ? cameraFlight.z1 : zoomAnchor ? mapState.targetZoom : mapState.zoom));
           const sx = opts.screenX != null ? opts.screenX : viewW / 2, sy = opts.screenY != null ? opts.screenY : viewH / 2;
-          const c = screenToWorld(sx, sy);
-          mapState.velocityX = mapState.velocityY = 0; zoomAnchor = null; mapState.targetZoom = mapState.zoom;
-          if (opts.instant) { mapState.zoom = mapState.targetZoom = z1; mapState.offsetX = sx - wx * z1; mapState.offsetY = sy - wy * z1; clampCamera(true); requestRender(); return; }
-          const ex = wx + (viewW / 2 - sx) / z1, ey = wy + (viewH / 2 - sy) / z1;          // the flight's end centre, validated once (as a jump)
-          const ins = camInsetTarget(performance.now(), true), end = clampCentre(ex, ey, z1, null, { t: Math.max(ins.t, camInset.t), b: Math.max(ins.b, camInset.b), l: Math.max(ins.l, camInset.l), r: Math.max(ins.r, camInset.r) });
-          cameraFlight = { fx: c.x, fy: c.y, flz: Math.log(z0), z1, tx: wx + end.x - ex, ty: wy + end.y - ey, tlz: Math.log(z1), sx, sy, t0: performance.now(), dur: opts.ms || CAM.FLY_MS };
+          mapState.velocityX = mapState.velocityY = 0; zoomAnchor = null; mapState.targetZoom = mapState.zoom; stopFlight();
+          if (opts.instant) { mapState.zoom = mapState.targetZoom = z1; mapState.offsetX = sx - wx * z1; mapState.offsetY = sy - wy * z1; clampCamera(); requestRender(); return; }
+          const it = camInsetTarget(performance.now(), true), ins = { t: Math.max(it.t, camInset.t), b: Math.max(it.b, camInset.b), l: Math.max(it.l, camInset.l), r: Math.max(it.r, camInset.r) };
+          const c0 = { x: (viewW / 2 - mapState.offsetX) / z0, y: (viewH / 2 - mapState.offsetY) / z0 };
+          const end = clampCentre(wx + (viewW / 2 - sx) / z1, wy + (viewH / 2 - sy) / z1, z1, ins);   // both ends lie in R
+          const w0 = viewW / z0, w1 = viewW / z1, dx = end.x - c0.x, dy = end.y - c0.y, D = Math.hypot(dx, dy);
+          let path, dur = opts.ms || CAM.FLY_MS, zm = Math.min(z0, z1);
+          if (D > 1.2 * Math.max(w0, w1)) {      // a hop (van Wijk & Nuij smooth zoom + pan): zooms out on the way, so land stays in view
+            const b0 = (w1 * w1 - w0 * w0 + 4 * D * D) / (4 * w0 * D), b1 = (w1 * w1 - w0 * w0 - 4 * D * D) / (4 * w1 * D);
+            const r0 = Math.log(Math.sqrt(b0 * b0 + 1) - b0), r1 = Math.log(Math.sqrt(b1 * b1 + 1) - b1), S = (r1 - r0) / Math.SQRT2;
+            path = e => { const s = Math.SQRT2 * e * S + r0, u = w0 / (2 * D) * (Math.cosh(r0) * Math.tanh(s) - Math.sinh(r0));
+              return { x: c0.x + u * dx, y: c0.y + u * dy, z: z0 * Math.cosh(s) / Math.cosh(r0) }; };   // (no live viewW: a rotation mid-flight must not jump)
+            dur = Math.min(800, Math.max(400, 300 + 110 * S));
+            for (let k = 1; k < 16; k++) zm = Math.min(zm, path(k / 16).z);   // the dip (the renderer draws the far part coarse)
+          } else {                               // short: the world point under (sx, sy) glides there, zoom eases in log space
+            const f = screenToWorld(sx, sy), ox = viewW / 2 - sx, oy = viewH / 2 - sy, tx = end.x - ox / z1, ty = end.y - oy / z1;
+            path = e => { const z = Math.exp(Math.log(z0) + (Math.log(z1) - Math.log(z0)) * e);
+              return { x: f.x + (tx - f.x) * e + ox / z, y: f.y + (ty - f.y) * e + oy / z, z }; };
+          }
+          cameraFlight = { path, end, z1, zm, ins, t0: performance.now(), dur };
           requestRender();
         }
         function recenterOnHome(animate) {      // harness calls it without an argument → instant
@@ -3390,9 +3498,10 @@ body.has-panel .mapctl{display:none}
           let animating = false;
           if (cameraFlight) {
             const f = cameraFlight, k = Math.min(1, (now - f.t0) / f.dur), e = k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
-            const z = k >= 1 ? f.z1 : Math.exp(f.flz + (f.tlz - f.flz) * e), wx = k >= 1 ? f.tx : f.fx + (f.tx - f.fx) * e, wy = k >= 1 ? f.ty : f.fy + (f.ty - f.fy) * e;
-            mapState.zoom = mapState.targetZoom = z; mapState.offsetX = f.sx - wx * z; mapState.offsetY = f.sy - wy * z;   // the last frame lands exactly (z1, not exp(log z1))
-            if (k >= 1) { cameraFlight = null; clampPrev = { x: (viewW / 2 - mapState.offsetX) / z, y: (viewH / 2 - mapState.offsetY) / z, z }; }
+            const p = k >= 1 ? { x: f.end.x, y: f.end.y, z: f.z1 } : f.path(e), z = k >= 1 ? f.z1 : clampZoom(p.z);   // the last frame lands exactly
+            mapState.zoom = mapState.targetZoom = z; mapState.offsetX = viewW / 2 - p.x * z; mapState.offsetY = viewH / 2 - p.y * z;
+            clampCamera(f.ins);                                                              // every frame in R(z): land stays in view
+            if (k >= 1) stopFlight();
             animating = true;
           } else {
             if (!gesture.active && (Math.abs(mapState.velocityX) > CAM.MIN_V || Math.abs(mapState.velocityY) > CAM.MIN_V)) {
@@ -3410,10 +3519,15 @@ body.has-panel .mapctl{display:none}
               animating = true;
             }
           }
-          const it = camInsetTarget(now), a = 1 - Math.exp(-dt / 140);                    // sheet slack: on at once, eases off
-          for (const side of ['t', 'b', 'l', 'r']) { const v = camInset[side], w = it[side];
-            if (v !== w) { camInset[side] = w > v || Math.abs(w - v) < 0.5 ? w : v + (w - v) * a; animating = true; } }
-          if (!cameraFlight && clampCamera() && zoomAnchor) { zoomAnchor.worldX = (zoomAnchor.screenX - mapState.offsetX) / mapState.zoom; zoomAnchor.worldY = (zoomAnchor.screenY - mapState.offsetY) / mapState.zoom; }
+          const it = camInsetTarget(now), a = 1 - Math.exp(-dt / 140);                    // sheet slack: on at once, eases off -
+          for (const side of ['t', 'b', 'l', 'r']) { const v = camInset[side], w = it[side];  // but not under a finger (it eases after release)
+            if (v !== w && (w > v || !gesture.active)) { camInset[side] = w > v || Math.abs(w - v) < 0.5 ? w : v + (w - v) * a; animating = true; } }
+          if (!cameraFlight && clampCamera()) {                                      // moved: re-anchor whatever holds the camera
+            if (zoomAnchor) { zoomAnchor.worldX = (zoomAnchor.screenX - mapState.offsetX) / mapState.zoom; zoomAnchor.worldY = (zoomAnchor.screenY - mapState.offsetY) / mapState.zoom; }
+            const pts = [...gesture.pointers.values()];
+            if (gesture.mode === 'pan' && pts.length === 1) gesture.grab = screenToWorld(pts[0].x, pts[0].y);
+            else if (gesture.mode === 'pinch' && gesture.pinch && pts.length >= 2) gesture.pinch.w = screenToWorld((pts[0].x + pts[1].x) / 2, (pts[0].y + pts[1].y) / 2);
+          }
           cameraSettling = animating || gesture.mode === 'pinch';
           return animating;
         }
@@ -3430,7 +3544,7 @@ body.has-panel .mapctl{display:none}
           const speed = Math.hypot(mapState.velocityX, mapState.velocityY);
           mapState.velocityX = mapState.velocityY = 0;
           if (mapState.zoom !== mapState.targetZoom) { mapState.targetZoom = mapState.zoom; zoomAnchor = null; }
-          cameraFlight = null;
+          stopFlight();
           return speed;
         }
         function startPinch() {
@@ -3477,7 +3591,8 @@ body.has-panel .mapctl{display:none}
             const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
             mapState.zoom = mapState.targetZoom = z; zoomAnchor = null;                       // 1:1, no easing
             mapState.offsetX = mx - gesture.pinch.w.x * z; mapState.offsetY = my - gesture.pinch.w.y * z;   // pan + zoom together
-            if (clampCamera()) gesture.pinch.w = screenToWorld(mx, my);                        // held at the edge: re-anchor
+            if (clampCamera()) gesture.pinch.w = screenToWorld(mx, my);                        // held at the edge: re-anchor (all land lies in R,
+                                                                                               // so a pinch on land runs 1:1 and the land stays under the fingers)
             requestRender(); return;
           }
           if (gesture.mode === 'press') {
@@ -3490,6 +3605,7 @@ body.has-panel .mapctl{display:none}
             mapState.offsetX = e.clientX - gesture.grab.x * mapState.zoom;                     // invariant: grabbed point stays under the pointer
             mapState.offsetY = e.clientY - gesture.grab.y * mapState.zoom;
             if (clampCamera()) gesture.grab = screenToWorld(e.clientX, e.clientY);            // held at the edge: re-anchor, so reversing moves at once
+            if (zoomAnchor) zoomAnchor = { screenX: e.clientX, screenY: e.clientY, worldX: gesture.grab.x, worldY: gesture.grab.y };   // a wheel ease
             pushSample(e.clientX, e.clientY, e.timeStamp); requestRender();
           }
         });
@@ -3527,11 +3643,11 @@ body.has-panel .mapctl{display:none}
           e.preventDefault();
           let dy = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? viewH : 1);        // normalise line/page modes
           dy = Math.max(-150, Math.min(150, dy));                                             // clamp per event
-          mapState.velocityX = mapState.velocityY = 0; cameraFlight = null;
+          mapState.velocityX = mapState.velocityY = 0; stopFlight();
           if (e.ctrlKey) { zoomAt(e.clientX, e.clientY, mapState.zoom * Math.exp(-dy * CAM.CTRL_WHEEL_K), false); return; }  // trackpad pinch: direct
           const base = zoomAnchor ? mapState.targetZoom : mapState.zoom;                      // successive notches accumulate
           zoomAt(e.clientX, e.clientY, base * Math.exp(-dy * CAM.WHEEL_K), true);             // eased, anchored at the cursor
-          // a wheel during a drag needs no special case: the zoom is anchored at the cursor, so the grabbed point stays under it
+          // during a drag the pan moves the zoom anchor along with the cursor (see pointermove), so the grabbed point stays under it
         }, { passive: false });
 
         // ---------------- hover cursor + hit testing ----------------
@@ -3582,7 +3698,7 @@ body.has-panel .mapctl{display:none}
           const oldDpr = dpr, c = screenToWorld(viewW / 2, viewH / 2);
           sizeBackingStore();
           mapState.offsetX = viewW / 2 - c.x * mapState.zoom; mapState.offsetY = viewH / 2 - c.y * mapState.zoom;
-          updateZoomBounds(); clampCamera(true); BG.valid = false;
+          updateZoomBounds(); clampCamera(); BG.valid = false;
           if (dpr !== oldDpr) { BUILDING_SPRITES.clear(); flushBannerSprites(); HATCH = null; }
           requestRender();
         }
@@ -3599,6 +3715,7 @@ body.has-panel .mapctl{display:none}
           if (e.target && e.target.closest && (e.target.closest('input, textarea, select') || isUiElement(e.target))) return;   // native keys inside the UI
           if (keyScopeUi && document.body.classList.contains('has-panel')) return;
           if (document.body.classList.contains('has-sheet') && uiLayout() !== 'desktop') return;
+          if (gesture.active) return;                                                    // the map is in the pointer's hand
           const c = { x: viewW / 2, y: viewH / 2 }, step = 0.15;
           const panBy = (dx, dy) => { const w = screenToWorld(c.x + dx * viewW * step, c.y + dy * viewH * step); flyTo(w.x, w.y, { ms: 180 }); };
           switch (e.key) {
@@ -5154,8 +5271,22 @@ body.has-panel .mapctl{display:none}
             }
         }
 
+        // One tap upgrades right away (no confirmation step); tapping again
+        // keeps levelling up as long as the coins last.
         upgradeBtn.addEventListener('click', () => {
-            popupView = 'upgrade';
+            if (popupIslandId === null) return;
+            const level = islandLevels[popupIslandId] || 1;
+            const cost = upgradeCost(level);
+            if (coins < cost) {
+                flashHint('Nicht genug Münzen – benötigt ' + fmtNum(cost) + '.', 2500);
+                return;
+            }
+            coins -= cost;
+            islandLevels[popupIslandId] = level + 1;
+            updateHud();
+            saveGame();
+            flashHint(islandTitle(islandById[popupIslandId]) + ' ist jetzt Stufe ' + (level + 1) + '.', 1800);
+            popupView = 'menu';
             renderPopup();
         });
 
@@ -5347,7 +5478,7 @@ body.has-panel .mapctl{display:none}
 
         renderActiveMarches();
         if (bonusGrantedAtBoot) saveGame();      // a reload right after the first start must not lose the grant
-        updateZoomBounds(); clampCamera(true);
+        updateZoomBounds(); clampCamera();
         requestAnimationFrame(frame);
     </script>
 </body>
