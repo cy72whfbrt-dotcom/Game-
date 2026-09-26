@@ -4796,10 +4796,21 @@ body.has-panel .mapctl{display:none}
         // attack (botDefend) before it can resolve, instead of only
         // reconsidering once every 9 seconds.
         const BOT_TICK_MS = 1000;
+        function botRespawn(bot, now) {                   // knocked out: like a player starting over, back after ~10 min on a free outer base
+            const b = loadBotState()[bot.id];
+            if (!b.outAt) { b.outAt = now; saveBotState(); return; }
+            if (now - b.outAt < 600000 || !botOnline(bot, now)) return;
+            const free = islands.filter(i => i.type === 'tower' && !islandOwnerOf(i.id) && landmasses[i.landmassId].tier === 'outer' && !bossAt(i.id));
+            if (!free.length) return;
+            const t = free[Math.floor(Math.random() * free.length)];
+            botOwnedIslands[bot.id].add(t.id); islandLevels[t.id] = 1; islandTroops[t.id] = 20; b.outAt = 0;
+            saveBotState(); saveGame();
+        }
         const botNextAt = {};
         function runBotTick() {
             const now = Date.now();
             for (const bot of BOT_DEFS) {
+                if (botOwnedIslands[bot.id].size === 0) { botRespawn(bot, now); continue; }
                 if (!botOnline(bot, now)) continue;                                   // offline: the empire keeps producing, nobody acts
                 if (now < (botNextAt[bot.id] || 0)) continue;
                 botNextAt[bot.id] = now + 3000 + Math.random() * 9000;                 // a few seconds between moves, never all at once
