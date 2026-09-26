@@ -1546,7 +1546,8 @@ body.has-panel .mapctl{display:none}
         const GRID_N = 7;          // square world: 7 × 7 landmasses, the Thron-Insel in the middle cell
         const HEX_SPACING = 56120; // distance between orthogonally adjacent cell centres (tightest packing with zero overlap)
         const GRID_HALF = (GRID_N - 1) / 2;
-        const FRAME_HALF = GRID_HALF * HEX_SPACING + OUTER_LANDMASS_RADIUS + 16000;   // the square map border (world units from the centre)
+        const RIVER_HALF = 1500;   // one big square continent: its 49 regions are split by narrow rivers (half width)
+        const FRAME_HALF = (GRID_HALF + .5) * HEX_SPACING + 9000;   // the square map border (world units from the centre)
         // Bases are scattered freely across a landmass (rejection-sampled,
         // not a rigid grid) - only constraint is a minimum distance from
         // every other base and the temple, so nothing ends up crowded.
@@ -1738,6 +1739,39 @@ body.has-panel .mapctl{display:none}
         // organic coastline each, no ownership state of their own. Landmass
         // 0 is always the centre (Thron-Insel); the others sit on a square
         // 7 × 7 grid around it.
+        // A region of the continent: a square cell whose edges follow the river centre lines between the cells
+        // (shared by both neighbours, so the banks match) - sampled at uniform angles like generateIslandShape,
+        // so polygonPointAtAngle works on it. The continent's outer edge is a gently wavy coast.
+        function riverOffset(vertical, line, t) {       // meander of the river line `line` (between cells) at position t along it
+            const k = line * 2.37 + (vertical ? 0 : 11.3);
+            return 1400 * Math.sin(t / 6100 + k) + 700 * Math.sin(t / 2300 + k * 1.9) + 300 * Math.sin(t / 900 + k * 3.7);
+        }
+        function generateRegionShape(q, r) {
+            const S = HEX_SPACING, cx = q * S, cy = r * S, N = 120, out = [];
+            const edge = (side, t) => {                  // world coordinate of one bank at position t along it
+                const vertical = side === 0 || side === 2, line = side === 0 ? q + .5 : side === 2 ? q - .5 : side === 1 ? r + .5 : r - .5;
+                const outer = Math.abs(line) > GRID_HALF, base = line * S + riverOffset(vertical, line, t) * (outer ? 1.6 : 1);
+                const sign = side === 0 || side === 1 ? -1 : 1;             // right / bottom bank sits left / above the river line
+                return base + sign * (outer ? 0 : RIVER_HALF);
+            };
+            for (let i = 0; i < N; i++) {
+                const th = i / N * Math.PI * 2, dx = Math.cos(th), dy = Math.sin(th);
+                let best = Infinity;
+                for (let side = 0; side < 4; side++) {
+                    const vertical = side === 0 || side === 2, d = vertical ? dx : dy;
+                    if ((side === 0 || side === 1) ? d <= 1e-6 : d >= -1e-6) continue;
+                    let tt = S * .5;
+                    for (let it = 0; it < 4; it++) {                         // the bank moves with t: a few fixed-point steps
+                        const along = vertical ? cy + dy * tt : cx + dx * tt;
+                        tt = ((edge(side, along)) - (vertical ? cx : cy)) / d;
+                    }
+                    if (tt > 0) best = Math.min(best, tt);
+                }
+                out.push({ x: cx + dx * best, y: cy + dy * best });
+            }
+            return out;
+        }
+
         const landmasses = [];
         {
             let lmId = 0;
@@ -1748,11 +1782,9 @@ body.has-panel .mapctl{display:none}
             cells.sort((u, v) => u.d - v.d || u.r - v.r || u.q - v.q);                      // landmass 0 = the centre, then the guardians
             for (const cell of cells) {
                 const isC = cell.d === 0, tier = isC ? 'throne' : cell.d === 1 ? 'guardian' : 'outer';
-                const radius = isC ? CENTER_LANDMASS_RADIUS : OUTER_LANDMASS_RADIUS;
+                const radius = HEX_SPACING * .4;                                             // (tower spacing scales with it)
                 const x = cell.q * HEX_SPACING, y = cell.r * HEX_SPACING;
-                // Distinct seed per landmass (large prime multiplier avoids correlated streams) → a different coastline each
-                const shapeRand = mulberry32(1337 + lmId * 104729);
-                const shape = generateIslandShape(x, y, radius, shapeRand);
+                const shape = generateRegionShape(cell.q, cell.r);
                 let shapeMaxR = 0;
                 for (const p of shape) shapeMaxR = Math.max(shapeMaxR, Math.hypot(p.x - x, p.y - y));
                 landmasses.push({ id: lmId, q: cell.q, r: cell.r, x, y, radius, shape, shapeMaxR, isCenter: isC, tier });
@@ -1903,7 +1935,7 @@ body.has-panel .mapctl{display:none}
         // The map was rebuilt (Thron-Insel + Wächter-Inseln): old base ids no longer match, so every
         // map-bound part of an old save is cleared once. Coins, gems, gear, skills and level stay,
         // and the player's whole army moves to the new home base.
-        const WORLD_VERSION = '3';
+        const WORLD_VERSION = '4';
         if (store.get('openWaterWorldVersion') !== WORLD_VERSION) {
             let carry = 0;
             try {
