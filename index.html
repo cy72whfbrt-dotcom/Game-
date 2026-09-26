@@ -947,6 +947,21 @@ body.has-panel .mapctl{display:none}
 .title-row.is-good small{color:#8fd38a} .title-row.is-bad small{color:#ff9d90}
 .title-row select{max-width:150px;height:32px;border:1px solid var(--line-2);border-radius:var(--r-xs);background:#15171c;color:var(--tx-1);font:600 var(--fs-12)/1 var(--font-ui);padding:0 6px}
 .title-row .holder{font:600 var(--fs-12)/1.2 var(--font-ui);color:var(--gold-100)}
+
+.forge-list{display:flex;flex-direction:column;gap:6px}
+.forge-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line-1);border-radius:var(--r-sm);background:rgba(0,0,0,.22)}
+.forge-row > .icon{width:20px;height:20px;color:var(--gold-200);flex:none}
+.forge-row > span{flex:1;min-width:0}
+.forge-row b{display:block;font:700 var(--fs-13)/1.2 var(--font-ui)}
+.forge-row small{display:block;font:600 var(--fs-13)/1.3 var(--font-ui);color:var(--gold-200);letter-spacing:.08em}
+.forge-row em{font:600 var(--fs-11)/1 var(--font-ui);font-style:normal;color:var(--tx-3)}
+.forge-row.is-empty{color:var(--tx-3);font:500 var(--fs-12)/1.3 var(--font-ui)}
+.tile .stars{position:absolute;left:0;right:0;bottom:2px;display:flex;justify-content:center;gap:0;color:#ffd76a}
+.tile .stars .icon{width:9px;height:9px;filter:drop-shadow(0 0 1px #000)}
+.starbar{display:flex!important;flex-wrap:wrap;gap:1px;margin-top:3px}
+.starbar .icon{width:13px;height:13px;color:#ffd76a}
+.starbar i{display:contents}
+.starbar i .icon{color:rgba(255,255,255,.18)}
     </style>
 </head>
 <body>
@@ -1432,6 +1447,7 @@ body.has-panel .mapctl{display:none}
     <p id="cityBDesc" class="city-bdesc"></p>
     <div id="cityBNote" class="notice"></div>
     <div id="cityBStats" class="city-bstats"></div>
+    <div id="cityBExtra"></div>
     <div class="city-bfoot">
       <button id="cityUpgradeBtn" class="btn btn--primary btn--grow" type="button"><svg class="icon"><use href="#i-upgrade"/></svg><span class="lbl">Aufwerten</span></button>
       <button id="citySpeedBtn" class="btn btn--secondary btn--grow" type="button" style="display:none"><svg class="icon"><use href="#i-gem"/></svg><span class="lbl">Beschleunigen</span></button>
@@ -2475,12 +2491,12 @@ body.has-panel .mapctl{display:none}
         function equippedItemBonusPct(slot) {
             const id = equippedItems[slot];
             const item = id ? inventory[id] : null;
-            return item ? itemScore(item) * RARITY_PCT_PER_SCORE : 0;
+            return item ? itemScore(item) * RARITY_PCT_PER_SCORE * (1 + (item.stars || 0) * 0.2) : 0;
         }
         function equippedItemBonusFlat(slot) {
             const id = equippedItems[slot];
             const item = id ? inventory[id] : null;
-            return item ? itemScore(item) * RARITY_FLAT_PER_SCORE : 0;
+            return item ? itemScore(item) * RARITY_FLAT_PER_SCORE * (1 + (item.stars || 0) * 0.2) : 0;
         }
 
         function pickRandomSlot() {
@@ -2743,9 +2759,9 @@ body.has-panel .mapctl{display:none}
         function attackSpeedMultiplier() {
             return 1 + (skills.speed || 0) * 0.05;
         }
-        function travelDurationSeconds(source, target) {
+        function travelDurationSeconds(source, target, botId) {   // bots march at base speed; the player gets the speed skill + Akademie
             const distance = Math.hypot(target.x - source.x, target.y - source.y);
-            const seconds = distance / (BASE_ATTACK_SPEED * attackSpeedMultiplier());
+            const seconds = distance / (BASE_ATTACK_SPEED * (botId ? 1 : attackSpeedMultiplier() * (1 + academyLevel() * 0.05)));
             return Math.min(MAX_ATTACK_SECONDS, Math.max(MIN_ATTACK_SECONDS, seconds));
         }
 
@@ -2808,7 +2824,7 @@ body.has-panel .mapctl{display:none}
             if (!payToll(source.landmassId, target.landmassId, rawTroops, attackerBotId || 'player', target.id)) return false;
 
             islandTroops[sourceId] = available - rawTroops; // only the sent troops march out, the rest stay to defend
-            const durationSec = travelDurationSeconds(source, target);
+            const durationSec = travelDurationSeconds(source, target, attackerBotId);
             const startedAt = Date.now();
             // Snapshot every skill/equipment-derived combat bonus NOW, at
             // launch, not when the attack resolves on arrival (which can be
@@ -2847,7 +2863,7 @@ body.has-panel .mapctl{display:none}
             if (!payToll(source.landmassId, target.landmassId, rawTroops, senderBotId || 'player')) return;
 
             islandTroops[fromId] = 0; // troops march out
-            const durationSec = travelDurationSeconds(source, target);
+            const durationSec = travelDurationSeconds(source, target, senderBotId);
             const startedAt = Date.now();
             pendingSends.push({
                 fromId,
@@ -3023,6 +3039,11 @@ body.has-panel .mapctl{display:none}
                 }
 
                 retreatSurvivors = Math.floor(myTroops * RETREAT_RECOVERY_PCT / 100);
+                if (hospitalLevel()) {                                     // Lazarett: part of the fallen are only wounded
+                    const c = loadCity(), room = Math.max(0, hospitalCapacity() - c.wounded);
+                    const w = Math.min(room, Math.floor((myTroops - retreatSurvivors) * hospitalPct() / 100));
+                    if (w > 0) { c.wounded += w; saveCity(); setTimeout(() => flashHint(fmtNum(w) + ' Verwundete sind im Lazarett – heile sie in der Stadt.', 4000), 9500); }
+                }
                 if (retreatSurvivors > 0) {
                     const durationSec = travelDurationSeconds(target, source);
                     const startedAt = Date.now();
@@ -5187,7 +5208,7 @@ body.has-panel .mapctl{display:none}
                     const rd = RARITY_DEFS[item.rarity];
                     tile.className = 'tile';
                     tile.dataset.r = rd.key;
-                    tile.innerHTML = icon(def.icon) + '<span class="lvl">' + item.level + '</span><span class="check">' + icon('check') + '</span>';
+                    tile.innerHTML = icon(def.icon) + '<span class="lvl">' + item.level + '</span><span class="check">' + icon('check') + '</span>' + (item.stars ? '<span class="stars">' + icon('star').repeat(item.stars) + '</span>' : '');
                     tile.title = def.name + ' – ' + rd.label + ', Stufe ' + item.level;
                     tile.addEventListener('click', () => openChestItemPopup(item.id));
                     makeTileKeyboard(tile, def.name + ', ' + rd.label + ', Stufe ' + item.level + ', ausgerüstet');
@@ -5327,7 +5348,7 @@ body.has-panel .mapctl{display:none}
             chestItemIconBig.innerHTML = icon(def.icon);
             chestItemOverline.innerHTML = '<span class="rar-text" data-r="' + rd.key + '">' + rd.label + '</span> · ' + def.name;
             chestItemTitle.textContent = def.name;
-            chestItemSub.textContent = 'Stufe ' + item.level + ' / ' + ITEM_MAX_LEVEL + (isEquipped ? ' · ausgerüstet' : '');
+            chestItemSub.textContent = 'Stufe ' + item.level + ' / ' + ITEM_MAX_LEVEL + (item.stars ? ' · ' + item.stars + (item.stars === 1 ? ' Stern' : ' Sterne') : '') + (isEquipped ? ' · ausgerüstet' : '');
             const cost = itemLevelUpCost(item);
             const maxed = item.level >= ITEM_MAX_LEVEL;
             chestItemStats.innerHTML =
@@ -6665,17 +6686,14 @@ body.has-panel .mapctl{display:none}
 
         // ===== CAPITAL / CITY (step 1: buildings can be built and upgraded, effects come later) =====
         var CITY_BUILDINGS = [
-            { id: 'keep',     name: 'Burgfried',     icon: 'home',    x: 500, y: 430, big: true, roof: '#6d2a22',
-              desc: 'Das Herz deiner Hauptstadt. Seine Stufe bestimmt, wie hoch alle anderen Gebäude ausgebaut werden können.' },
-            { id: 'barracks', name: 'Heerlager',     icon: 'troops',  x: 270, y: 330, roof: '#7a3226', desc: 'Wird die Truppenproduktion aller Basen erhöhen.' },
-            { id: 'treasury', name: 'Schatzkammer',  icon: 'coin',    x: 730, y: 330, roof: '#8a6a22', desc: 'Wird die Münzproduktion erhöhen und Münzen bei Angriffen auf die Hauptstadt schützen.' },
-            { id: 'academy',  name: 'Akademie',      icon: 'star',    x: 250, y: 560, roof: '#2f4f86', dome: true, desc: 'Wird Forschung freischalten: Marschtempo, günstigere Aufwertungen und mehr.' },
-            { id: 'forge',    name: 'Schmiede',      icon: 'weapon',  x: 750, y: 560, roof: '#4a4a52', chimney: true, desc: 'Wird Ausrüstung herstellen und verbessern können.' },
-            { id: 'hospital', name: 'Lazarett',      icon: 'plus',    x: 340, y: 740, roof: '#e8e2d2', cross: true, desc: 'Wird verwundete Truppen nach verlorenen Kämpfen retten.' },
-            { id: 'shrine',   name: 'Tempelschrein', icon: 'temple',  x: 660, y: 740, roof: '#c9a54e', dome: true, desc: 'Wird den Bonus aller deiner Tempel verstärken.' },
-            { id: 'tower',    name: 'Wachturm',      icon: 'scout',   x: 500, y: 140, roof: '#5a2c22', tall: true, desc: 'Wird feindliche Angriffe früher sichtbar machen und die Späher-Reichweite erhöhen.' },
-            { id: 'wall',     name: 'Mauer',         icon: 'defense', x: 500, y: 620, roof: '#6b6456', gate: true, desc: 'Wird die Verteidigung deiner Hauptstadt erhöhen.' },
-            { id: 'harbor',   name: 'Hafen',         icon: 'send',    x: 500, y: 855, roof: '#3d5a82', pier: true, desc: 'Wird Märsche über Brücken beschleunigen.' }
+            { id: 'academy',  name: 'Akademie',      icon: 'star',    x: 290, y: 390, roof: '#2f4f86', dome: true, fx: true,
+              desc: 'Forschung: Marschtempo. Jede Stufe lässt deine Truppen 5 % schneller laufen (Angriffe, Verstärkung, Späher).' },
+            { id: 'forge',    name: 'Schmiede',      icon: 'weapon',  x: 710, y: 390, roof: '#4a4a52', chimney: true, fx: true,
+              desc: 'Setzt Sterne auf deine angelegte Ausrüstung: jeder Stern +20 % Wirkung des Teils. Jede Stufe erlaubt einen Stern mehr.' },
+            { id: 'hospital', name: 'Lazarett',      icon: 'plus',    x: 290, y: 690, roof: '#e8e2d2', cross: true, fx: true,
+              desc: 'Verlierst du einen Angriff, kommen Verwundete hierher statt zu sterben (5 % pro Stufe, bis 60 %). Heile sie gegen Münzen – sie gehen in die Hauptstadt.' },
+            { id: 'shrine',   name: 'Tempelschrein', icon: 'temple',  x: 710, y: 690, roof: '#c9a54e', dome: true, desc: 'Wird den Bonus aller deiner Tempel verstärken.' },
+            { id: 'wall',     name: 'Mauer',         icon: 'defense', x: 500, y: 850, roof: '#6b6456', gate: true, desc: 'Wird die Verteidigung deiner Hauptstadt erhöhen.' }
         ];
         var CITY_MAX_LEVEL = 25, CITY_GEMS_PER_MIN = 1;
         var cityState = null;
@@ -6683,16 +6701,18 @@ body.has-panel .mapctl{display:none}
             if (cityState) return cityState;
             try { cityState = JSON.parse(store.get('openWaterCity')) || null; } catch (e) { cityState = null; }
             if (!cityState || !cityState.levels) cityState = { levels: {}, build: null };
-            for (const b of CITY_BUILDINGS) if (typeof cityState.levels[b.id] !== 'number') cityState.levels[b.id] = b.id === 'keep' ? 1 : 0;
+            for (const b of CITY_BUILDINGS) if (typeof cityState.levels[b.id] !== 'number') cityState.levels[b.id] = 0;
+            if (cityState.build && !CITY_BUILDINGS.some(b => b.id === cityState.build.id)) cityState.build = null;   // a removed building was being built
+            if (typeof cityState.wounded !== 'number') cityState.wounded = 0;
             return cityState;
         }
         function saveCity() { store.set('openWaterCity', JSON.stringify(cityState)); }
         function cityDef(id) { return CITY_BUILDINGS.find(b => b.id === id); }
         function cityCost(id, level) {                    // coins to go from `level` to level + 1
-            return niceRound((id === 'keep' ? 1000 : 500) * Math.pow(id === 'keep' ? 2.1 : 1.9, level));
+            return niceRound(500 * Math.pow(1.9, level));
         }
         function cityTimeSec(id, level) {                 // build time for level -> level + 1
-            return Math.round((id === 'keep' ? 30 : 20) * Math.pow(1.6, level));
+            return Math.round(20 * Math.pow(1.6, level));
         }
         function fmtDuration(sec) {
             sec = Math.max(0, Math.ceil(sec));
@@ -6702,7 +6722,6 @@ body.has-panel .mapctl{display:none}
         function cityBlocker(id) {                        // why this building can't be upgraded right now (or null)
             const c = loadCity(), lvl = c.levels[id];
             if (lvl >= CITY_MAX_LEVEL) return 'Maximale Stufe erreicht.';
-            if (id !== 'keep' && lvl + 1 > c.levels.keep) return 'Erst den Burgfried auf Stufe ' + (lvl + 1) + ' ausbauen.';
             if (c.build) return c.build.id === id ? 'Wird gerade gebaut.' : 'Der Bauarbeiter ist beschäftigt (' + cityDef(c.build.id).name + ').';
             return null;
         }
@@ -6776,7 +6795,7 @@ body.has-panel .mapctl{display:none}
             const c = loadCity(), def = cityDef(id), lvl = c.levels[id];
             document.getElementById('citySheet').hidden = false;
             document.getElementById('cityBIcon').innerHTML = icon(def.icon);
-            document.getElementById('cityBOver').textContent = def.id === 'keep' ? 'Hauptgebäude' : 'Gebäude';
+            document.getElementById('cityBOver').textContent = 'Gebäude';
             document.getElementById('cityBName').textContent = def.name;
             document.getElementById('cityBLevel').textContent = lvl ? 'Stufe ' + lvl + ' / ' + CITY_MAX_LEVEL : 'Noch nicht gebaut';
             document.getElementById('cityBDesc').textContent = def.desc;
@@ -6787,7 +6806,7 @@ body.has-panel .mapctl{display:none}
                 note.innerHTML = icon('hourglass') + '<span style="flex:1">Ausbau auf Stufe ' + c.build.to + ' · noch <b id="cityBNoteTime"></b><div class="city-progress" style="margin-top:6px"><i></i></div></span>';
             } else {
                 note.className = 'notice';
-                note.innerHTML = icon('info') + '<span>' + (def.id === 'keep' ? 'Höhere Burgfried-Stufen erlauben höhere Stufen aller Gebäude.' : 'Die Wirkung dieses Gebäudes kommt in einem späteren Update – ausbauen kannst du es schon jetzt.') + '</span>';
+                note.innerHTML = icon('info') + '<span>' + (def.fx ? cityEffectText(id, lvl) : 'Die Wirkung dieses Gebäudes kommt in einem späteren Update – ausbauen kannst du es schon jetzt.') + '</span>';
             }
             const cost = lvl < CITY_MAX_LEVEL ? cityCost(id, lvl) : 0;
             document.getElementById('cityBStats').innerHTML = lvl < CITY_MAX_LEVEL
@@ -6803,7 +6822,52 @@ body.has-panel .mapctl{display:none}
                 note.className = 'notice notice--warn'; note.innerHTML = icon('lock') + '<span>' + blocker + '</span>';
             }
             if (building) renderCitySheetTimer();
+            document.getElementById('cityBExtra').innerHTML = cityExtraHtml(id, lvl);
         }
+        // ---- building effects ----
+        function academyLevel() { return loadCity().levels.academy || 0; }
+        function forgeLevel() { return loadCity().levels.forge || 0; }
+        function hospitalLevel() { return loadCity().levels.hospital || 0; }
+        function hospitalPct() { return Math.min(60, hospitalLevel() * 5); }
+        function hospitalCapacity() { const l = hospitalLevel(); return l ? Math.round(1e6 * Math.pow(1.6, l - 1)) : 0; }
+        const HEAL_COIN_PER_TROOP = 0.1, STAR_MAX = 10;
+        function starGemCost(stars) { return 20 * (stars + 1); }
+        function cityEffectText(id, lvl) {
+            if (id === 'academy') return 'Jetzt: Truppen laufen +' + (lvl * 5) + ' % schneller.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: +' + ((lvl + 1) * 5) + ' %.' : '');
+            if (id === 'forge') return lvl ? 'Bis zu ' + Math.min(STAR_MAX, lvl) + ' Sterne pro Ausrüstungsteil.' : 'Baue die Schmiede, um Sterne zu setzen.';
+            if (id === 'hospital') return lvl ? hospitalPct() + ' % der Gefallenen kommen ins Lazarett · Platz für ' + fmtCompact(hospitalCapacity()) : 'Baue das Lazarett, um Verwundete zu retten.';
+            return '';
+        }
+        function cityExtraHtml(id, lvl) {
+            if (id === 'forge' && lvl) {
+                return '<div class="forge-list">' + Object.keys(EQUIPMENT_DEFS).map(slot => {
+                    const item = equippedItems[slot] ? inventory[equippedItems[slot]] : null, def = EQUIPMENT_DEFS[slot];
+                    if (!item) return '<div class="forge-row is-empty">' + icon(def.icon) + '<span>' + def.name + ' – nichts angelegt</span></div>';
+                    const st = item.stars || 0, rd = RARITY_DEFS[item.rarity], cap = Math.min(STAR_MAX, lvl), cost = starGemCost(st);
+                    return '<div class="forge-row">' + icon(def.icon) + '<span><b class="rar-text" data-r="' + rd.key + '">' + def.name + '</b><small class="starbar">' + icon('star').repeat(st) + '<i>' + icon('star').repeat(Math.max(0, cap - st)) + '</i></small></span>' +
+                        (st >= cap ? '<em>' + (st >= STAR_MAX ? 'max.' : 'Schmiede ausbauen') + '</em>' : '<button type="button" class="btn btn--secondary btn--sm" data-star="' + item.id + '"' + (gems < cost ? ' disabled' : '') + '>+1 Stern · ' + cost + ' Gems</button>') + '</div>';
+                }).join('') + '</div>';
+            }
+            if (id === 'hospital' && lvl) {
+                const w = loadCity().wounded, cost = Math.ceil(w * HEAL_COIN_PER_TROOP);
+                return '<div class="forge-list"><div class="forge-row">' + icon('plus') + '<span><b>Verwundete</b><small>' + fmtNum(w) + ' / ' + fmtCompact(hospitalCapacity()) + '</small></span>' +
+                    (w > 0 ? '<button type="button" class="btn btn--primary btn--sm" data-heal' + (coins < cost ? ' disabled' : '') + '>Heilen · ' + fmtCompact(cost) + ' Münzen</button>' : '<em>leer</em>') + '</div></div>';
+            }
+            return '';
+        }
+        document.getElementById('citySheet').addEventListener('click', e => {
+            const st = e.target.closest('[data-star]'), hl = e.target.closest('[data-heal]');
+            if (st) { const item = inventory[st.dataset.star]; if (!item) return;
+                const s0 = item.stars || 0, cost = starGemCost(s0);
+                if (s0 >= Math.min(STAR_MAX, forgeLevel()) || gems < cost) return;
+                gems -= cost; item.stars = s0 + 1; saveGame(); saveProgression(); updateHud();
+                flashHint(EQUIPMENT_DEFS[item.slot].name + ' hat jetzt ' + item.stars + (item.stars === 1 ? ' Stern' : ' Sterne') + ' (+' + item.stars * 20 + ' % Wirkung).', 2500); renderCitySheet(); }
+            else if (hl) { const c = loadCity(), w = c.wounded, cost = Math.ceil(w * HEAL_COIN_PER_TROOP);
+                if (!w || coins < cost) return;
+                coins -= cost; c.wounded = 0; saveCity();
+                const base = rewardBaseId(); if (base !== null) islandTroops[base] = (islandTroops[base] || 0) + w;
+                saveGame(); updateHud(); flashHint(fmtNum(w) + ' Truppen geheilt – sie sind in deiner Hauptstadt.', 3000); renderCitySheet(); }
+        });
         document.getElementById('cityBtn').addEventListener('click', openCity);
         document.getElementById('cityNavBtn').addEventListener('click', openCity);
         // Hauptstadt verlegen (teleport): pick one of your own bases, the capital status and its garrison move there.
@@ -6856,10 +6920,10 @@ body.has-panel .mapctl{display:none}
         // --- drawing (virtual 1000 x 1000 space, fitted to the screen) ---
         function cityDrawGround(g) {                    // a square walled town: meadow outside, paved streets inside, towers on the corners
             const out = g.createLinearGradient(-600, -600, 1600, 1600); out.addColorStop(0, '#46823a'); out.addColorStop(1, '#2b5626');
-            g.fillStyle = out; g.fillRect(-600, -600, 2200, 2200);
+            g.fillStyle = out; g.fillRect(-4000, -4000, 9000, 9000);
             const rng2 = mulberry32(77);
-            for (let i = 0; i < 260; i++) {                // woods around the walls
-                const x = -300 + rng2() * 1600, y = -300 + rng2() * 1600;
+            for (let i = 0; i < 700; i++) {                // woods around the walls
+                const x = -1100 + rng2() * 3200, y = -400 + rng2() * 1800;
                 if (x > 10 && x < 990 && y > 10 && y < 990) continue;
                 g.fillStyle = '#26512a'; g.beginPath(); g.arc(x, y, 10 + rng2() * 12, 0, Math.PI * 2); g.fill();
                 g.fillStyle = 'rgba(140,200,100,.28)'; g.beginPath(); g.arc(x - 3, y - 4, 5, 0, Math.PI * 2); g.fill();
@@ -6870,14 +6934,22 @@ body.has-panel .mapctl{display:none}
             // streets: a main avenue from the gate to the keep, cross streets along the building rows
             const street = (x1, y1, x2, y2, w) => { g.strokeStyle = '#6e604a'; g.lineWidth = w + 4; g.lineCap = 'square'; g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke();
                 g.strokeStyle = '#b9a67e'; g.lineWidth = w; g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); };
-            street(500, 950, 500, 150, 26);
-            street(250, 360, 750, 360, 18); street(250, 590, 750, 590, 18); street(340, 770, 660, 770, 16);
-            street(250, 360, 250, 590, 14); street(750, 360, 750, 590, 14);
-            g.strokeStyle = 'rgba(80,65,45,.35)'; g.lineWidth = 1.5; g.setLineDash([10, 12]);
-            g.beginPath(); g.moveTo(500, 945); g.lineTo(500, 155); g.stroke(); g.setLineDash([]);
-            // inner courtyard around the keep (square)
-            g.fillStyle = '#a89878'; g.fillRect(372, 372, 256, 176); g.strokeStyle = '#4a4034'; g.lineWidth = 2; strokeBox(g, 372, 372, 256, 176);
-            g.strokeStyle = '#8c8573'; g.lineWidth = 10; strokeBox(g, 362, 362, 276, 196);
+            street(500, 950, 500, 200, 26);
+            street(290, 420, 710, 420, 18); street(290, 720, 710, 720, 18);
+            street(290, 420, 290, 720, 16); street(710, 420, 710, 720, 16);
+            // market square with a fountain in the middle
+            g.fillStyle = '#b9a67e'; g.beginPath(); g.arc(500, 560, 92, 0, Math.PI * 2); g.fill(); g.strokeStyle = '#6e604a'; g.lineWidth = 3; g.stroke();
+            g.fillStyle = '#8c8573'; g.beginPath(); g.arc(500, 560, 40, 0, Math.PI * 2); g.fill(); g.stroke();
+            g.fillStyle = '#3d7aa8'; g.beginPath(); g.arc(500, 560, 30, 0, Math.PI * 2); g.fill();
+            g.fillStyle = 'rgba(255,255,255,.5)'; g.beginPath(); g.arc(494, 553, 8, 0, Math.PI * 2); g.fill();
+            g.fillStyle = '#8c8573'; g.beginPath(); g.arc(500, 560, 8, 0, Math.PI * 2); g.fill();
+            // a few houses and gardens between the streets
+            const house = (x, y, w, h, roofCol) => { g.fillStyle = '#e6dcc6'; g.fillRect(x, y, w, h); g.strokeStyle = '#3a342b'; g.lineWidth = 1.5; strokeBox(g, x, y, w, h);
+                g.fillStyle = roofCol; g.fillRect(x - 3, y - 8, w + 6, 10); strokeBox(g, x - 3, y - 8, w + 6, 10); };
+            for (const [x, y, c] of [[120, 160, '#7a3226'], [190, 150, '#6d2a22'], [800, 160, '#7a3226'], [860, 170, '#5a2c22'], [120, 520, '#6d2a22'], [850, 520, '#7a3226'],
+                                      [140, 860, '#5a2c22'], [210, 870, '#7a3226'], [790, 870, '#6d2a22'], [860, 860, '#7a3226'], [400, 180, '#6d2a22'], [570, 180, '#5a2c22']]) house(x, y, 40, 28, c);
+            g.fillStyle = 'rgba(40,90,30,.55)';
+            for (const [x, y] of [[180, 300], [820, 300], [180, 790], [820, 790], [390, 300], [610, 300]]) { g.beginPath(); g.arc(x, y, 16, 0, Math.PI * 2); g.fill(); }
             // outer wall: thick stone band with merlons, corner towers, the gatehouse at the bottom
             const W2 = 22;
             g.fillStyle = '#8f887a'; g.fillRect(L - W2, L - W2, R - L + 2 * W2, W2); g.fillRect(L - W2, R, R - L + 2 * W2, W2);
