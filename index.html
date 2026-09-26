@@ -6609,8 +6609,14 @@ body.has-panel .mapctl{display:none}
                     drawn.push({ y: y + .01, f: () => { ctx.save(); ctx.globalAlpha = alpha;
                         bsSoldier(ctx, x, y, s, atk ? face : -face, col, (atk ? cA : cD)[1], (atk && adv < 1) || after ? rt / 90 : 0, 0, 0);
                         ctx.strokeStyle = '#3a2c1c'; ctx.lineWidth = 1.4 * k; ctx.beginPath(); ctx.moveTo(x, y - s * .2); ctx.lineTo(x, y - s * 1.9); ctx.stroke();
-                        ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(x, y - s * 1.9); ctx.quadraticCurveTo(x + (atk ? face : -face) * 7 * k, y - s * 1.9 + wave, x + (atk ? face : -face) * 14 * k, y - s * 1.75 + wave);
-                        ctx.lineTo(x, y - s * 1.45); ctx.closePath(); ctx.fill(); ctx.lineWidth = .8 * k; ctx.stroke(); ctx.restore(); } });
+                        const fd = atk ? face : -face, top = y - s * 1.9, bw = 13 * k, bh = s * .62, rimC = (atk ? cA : cD)[1];
+                        ctx.strokeStyle = '#3a2c1c'; ctx.lineWidth = 1.2 * k; ctx.beginPath(); ctx.moveTo(x, top + 1 * k); ctx.lineTo(x + fd * bw, top + 1 * k); ctx.stroke();   // crossbar
+                        ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(x, top + 1 * k); ctx.lineTo(x + fd * bw, top + 1 * k + wave * .3);
+                        ctx.quadraticCurveTo(x + fd * (bw + wave * .4), top + bh * .5, x + fd * bw, top + bh + wave * .5); ctx.lineTo(x + fd * bw * .5, top + bh * .78 + wave * .4); ctx.lineTo(x, top + bh); ctx.closePath(); ctx.fill();
+                        ctx.lineWidth = .9 * k; ctx.strokeStyle = 'rgba(12,12,16,.8)'; ctx.stroke();
+                        ctx.strokeStyle = rimC; ctx.lineWidth = 1.1 * k; ctx.beginPath(); ctx.moveTo(x + fd * bw * .5, top + 3 * k); ctx.lineTo(x + fd * bw * .5, top + bh * .62); ctx.stroke();   // stripe
+                        ctx.fillStyle = '#e4c886'; ctx.beginPath(); ctx.arc(x, top - 1.5 * k, 1.8 * k, 0, Math.PI * 2); ctx.fill();   // gold finial
+                        ctx.restore(); } });
                 };
                 bearer(true); bearer(false);
                 // dust kicked up behind the charging column
@@ -6662,13 +6668,17 @@ body.has-panel .mapctl{display:none}
                     const cx = tx - ux * (aFront * .55), top = Math.min(ty - uy * ad, ty - uy * dFront * .4, ty) - s * 1.5 - 22;
                     ctx.save(); ctx.globalAlpha = alphaP; ctx.font = '700 11px Inter, system-ui, sans-serif'; ctx.textBaseline = 'middle';
                     const la = fmtCompact(Math.round(va)), ld = fmtCompact(Math.round(vd)), W = Math.max(116, ctx.measureText(la + ld).width + 64), x0 = cx - W / 2;
-                    rr(ctx, x0, top, W, 26, 6); ctx.fillStyle = 'rgba(10,12,16,.9)'; ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(228,200,134,.55)'; ctx.stroke();
+                    rr(ctx, x0, top, W, 27, 6); ctx.fillStyle = 'rgba(10,12,16,.92)'; ctx.fill(); ctx.lineWidth = 1.2; ctx.strokeStyle = 'rgba(228,200,134,.7)'; ctx.stroke();
                     ctx.fillStyle = cA[1]; ctx.textAlign = 'left'; ctx.fillText(la, x0 + 8, top + 10);
                     ctx.fillStyle = cD[1]; ctx.textAlign = 'right'; ctx.fillText(ld, x0 + W - 8, top + 10);
                     drawGlyph(ctx, 'attack', cx, top + 10, 11, '#e4c886');
-                    const bw = W - 16, sh = va + vd > 0 ? va / (va + vd) : .5;
-                    ctx.fillStyle = cD[0]; ctx.fillRect(x0 + 8, top + 18, bw, 4); ctx.fillStyle = cA[0]; ctx.fillRect(x0 + 8, top + 18, bw * sh, 4);
-                    ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.fillRect(x0 + 8, top + 18, bw, 1);
+                    const bw = W - 16, sh = va + vd > 0 ? va / (va + vd) : .5, by = top + 17.5, bx = x0 + 8, sx = bx + bw * sh;
+                    ctx.save(); rr(ctx, bx, by, bw, 5, 2.5); ctx.clip();                          // tug-of-war bar: two bevelled halves, a gold notch at the front line
+                    const gD = ctx.createLinearGradient(0, by, 0, by + 5); gD.addColorStop(0, cD[1]); gD.addColorStop(.45, cD[0]); gD.addColorStop(1, cD[0]);
+                    const gA = ctx.createLinearGradient(0, by, 0, by + 5); gA.addColorStop(0, cA[1]); gA.addColorStop(.45, cA[0]); gA.addColorStop(1, cA[0]);
+                    ctx.fillStyle = gD; ctx.fillRect(bx, by, bw, 5); ctx.fillStyle = gA; ctx.fillRect(bx, by, bw * sh, 5); ctx.restore();
+                    rr(ctx, bx, by, bw, 5, 2.5); ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(0,0,0,.6)'; ctx.stroke();
+                    ctx.fillStyle = '#f0d69a'; ctx.beginPath(); ctx.moveTo(sx, by - 2); ctx.lineTo(sx + 2.5, by + 2.5); ctx.lineTo(sx, by + 7); ctx.lineTo(sx - 2.5, by + 2.5); ctx.closePath(); ctx.fill();
                     ctx.restore();
                 }
                 if (t > 900 && t < 3400) {
@@ -6690,23 +6700,39 @@ body.has-panel .mapctl{display:none}
             }
         }
         function bsSoldier(g, x, y, s, dir, col, rim, walk, thrust, fall) {
+            // a spearman in 3/4 view: boots, mail, a tabard in the side's colour with a pale stripe, nasal helm, heater shield
             g.save(); g.translate(x, y);
             if (fall > 0) { g.rotate(-dir * fall * Math.PI / 2 * 0.95); g.globalAlpha *= 1 - fall * 0.45; }
-            g.fillStyle = 'rgba(0,0,0,.28)'; g.beginPath(); g.ellipse(0, 0, s * .32, s * .08, 0, 0, Math.PI * 2); g.fill();
-            const st = Math.sin(walk) * s * .12;
-            g.strokeStyle = '#1b1c20'; g.lineWidth = s * .09; g.lineCap = 'round';
-            g.beginPath(); g.moveTo(-s * .06, -s * .42); g.lineTo(-s * .06 + st, 0); g.moveTo(s * .06, -s * .42); g.lineTo(s * .06 - st, 0); g.stroke();
-            g.fillStyle = '#2a2d34'; g.beginPath(); g.moveTo(-s * .15, -s * .4); g.lineTo(s * .15, -s * .4); g.lineTo(s * .12, -s * .82); g.lineTo(-s * .12, -s * .82); g.closePath(); g.fill();
-            g.fillStyle = col; g.fillRect(-s * .1, -s * .78, s * .2, s * .3);          // tabard
-            g.beginPath(); g.arc(0, -s * .93, s * .12, 0, Math.PI * 2); g.fillStyle = '#9ea7b1'; g.fill();   // helmet
-            g.fillStyle = '#3b4048'; g.fillRect(-s * .12, -s * .95, s * .24, s * .04);
+            g.fillStyle = 'rgba(0,0,0,.3)'; g.beginPath(); g.ellipse(0, 0, s * .3, s * .075, 0, 0, Math.PI * 2); g.fill();
+            const st = Math.sin(walk) * s * .12, ink = 'rgba(12,12,16,.85)';
+            g.lineCap = 'round'; g.lineJoin = 'round';
+            g.strokeStyle = '#2b2620'; g.lineWidth = s * .1;                                            // legs
+            g.beginPath(); g.moveTo(-s * .06, -s * .4); g.lineTo(-s * .06 + st, -s * .03); g.moveTo(s * .06, -s * .4); g.lineTo(s * .06 - st, -s * .03); g.stroke();
+            g.strokeStyle = '#17130f'; g.lineWidth = s * .12;                                           // boots
+            g.beginPath(); g.moveTo(-s * .06 + st, -s * .06); g.lineTo(-s * .06 + st + dir * s * .05, -s * .01); g.moveTo(s * .06 - st, -s * .06); g.lineTo(s * .06 - st + dir * s * .05, -s * .01); g.stroke();
+            const mail = g.createLinearGradient(-s * .16, 0, s * .16, 0); mail.addColorStop(0, '#8d949d'); mail.addColorStop(1, '#4a5058');
+            g.fillStyle = mail; g.strokeStyle = ink; g.lineWidth = s * .03;                              // mail shirt
+            g.beginPath(); g.moveTo(-s * .16, -s * .38); g.lineTo(s * .16, -s * .38); g.lineTo(s * .13, -s * .82); g.lineTo(-s * .13, -s * .82); g.closePath(); g.fill(); g.stroke();
+            g.fillStyle = col; g.beginPath(); g.moveTo(-s * .11, -s * .8); g.lineTo(s * .11, -s * .8); g.lineTo(s * .12, -s * .4); g.lineTo(0, -s * .34); g.lineTo(-s * .12, -s * .4); g.closePath(); g.fill(); g.stroke();   // tabard
+            g.fillStyle = rim; g.globalAlpha *= .9; g.fillRect(-s * .025, -s * .79, s * .05, s * .42); g.globalAlpha /= .9;
+            g.fillStyle = '#3a2a1a'; g.fillRect(-s * .12, -s * .56, s * .24, s * .035);                 // belt
+            g.fillStyle = '#d9b48c'; g.beginPath(); g.arc(dir * s * .02, -s * .9, s * .1, 0, Math.PI * 2); g.fill();   // face
+            const helm = g.createLinearGradient(-s * .13, -s * 1.06, s * .13, -s * .9); helm.addColorStop(0, '#e2e7ec'); helm.addColorStop(1, '#6d7580');
+            g.fillStyle = helm; g.beginPath(); g.moveTo(-s * .13, -s * .9); g.quadraticCurveTo(-s * .13, -s * 1.08, 0, -s * 1.1); g.quadraticCurveTo(s * .13, -s * 1.08, s * .13, -s * .9); g.closePath(); g.fill(); g.stroke();
+            g.fillStyle = '#5b626b'; g.fillRect(dir * s * .045 - s * .015, -s * .92, s * .03, s * .09);   // nasal
             const sa = thrust ? -0.12 : -1.05 + Math.sin(walk * .5) * .05, px = dir * s * .08, py = -s * .6;   // spear: upright on the march, levelled in the clash
-            g.strokeStyle = '#b89f70'; g.lineWidth = s * .05;
-            g.beginPath(); g.moveTo(px - dir * Math.cos(sa) * s * .45, py - Math.sin(sa) * s * .45); g.lineTo(px + dir * Math.cos(sa) * s * .75 + dir * thrust * s * .18, py + Math.sin(sa) * s * .75); g.stroke();
-            g.fillStyle = '#d7dde3'; g.beginPath(); const tx = px + dir * Math.cos(sa) * s * .75 + dir * thrust * s * .18, ty = py + Math.sin(sa) * s * .75;
-            g.arc(tx, ty, s * .04, 0, Math.PI * 2); g.fill();
-            g.fillStyle = col; g.strokeStyle = rim; g.lineWidth = s * .04;                   // shield towards the enemy
-            g.beginPath(); g.ellipse(dir * s * .17, -s * .6, s * .09, s * .19, 0, 0, Math.PI * 2); g.fill(); g.stroke();
+            const tipX = px + dir * Math.cos(sa) * s * .78 + dir * thrust * s * .18, tipY = py + Math.sin(sa) * s * .78;
+            g.strokeStyle = '#8a6b43'; g.lineWidth = s * .045;
+            g.beginPath(); g.moveTo(px - dir * Math.cos(sa) * s * .45, py - Math.sin(sa) * s * .45); g.lineTo(tipX, tipY); g.stroke();
+            g.save(); g.translate(tipX, tipY); g.rotate(dir > 0 ? sa : Math.PI - sa); g.fillStyle = '#dfe5ea'; g.strokeStyle = ink; g.lineWidth = s * .02;   // leaf blade
+            g.beginPath(); g.moveTo(-s * .02, -s * .035); g.quadraticCurveTo(s * .08, -s * .03, s * .13, 0); g.quadraticCurveTo(s * .08, s * .03, -s * .02, s * .035); g.closePath(); g.fill(); g.stroke(); g.restore();
+            g.fillStyle = '#d9b48c'; g.beginPath(); g.arc(px, py, s * .045, 0, Math.PI * 2); g.fill();   // hand on the shaft
+            g.save(); g.translate(dir * s * .17, -s * .6);                                              // heater shield towards the enemy
+            g.beginPath(); g.moveTo(-s * .1, -s * .19); g.lineTo(s * .1, -s * .19); g.lineTo(s * .1, -s * .02); g.quadraticCurveTo(s * .08, s * .14, 0, s * .2); g.quadraticCurveTo(-s * .08, s * .14, -s * .1, -s * .02); g.closePath();
+            g.fillStyle = col; g.fill(); g.lineWidth = s * .035; g.strokeStyle = rim; g.stroke(); g.lineWidth = s * .015; g.strokeStyle = ink; g.stroke();
+            g.fillStyle = rim; g.fillRect(-s * .018, -s * .17, s * .036, s * .33); g.fillRect(-s * .085, -s * .06, s * .17, s * .036);   // cross
+            g.fillStyle = 'rgba(255,255,255,.18)'; g.beginPath(); g.moveTo(-s * .085, -s * .17); g.lineTo(-s * .02, -s * .17); g.lineTo(-s * .085, -s * .02); g.closePath(); g.fill();
+            g.restore();
             g.restore();
         }
         const BS_COL = { mine: ['#3d6fb3', '#b7d3f5'], bot: ['#a3352b', '#f2aa9f'], neutral: ['#7a6a4f', '#d9c7a1'], boss: ['#5b1d3d', '#e39ac0'] };
