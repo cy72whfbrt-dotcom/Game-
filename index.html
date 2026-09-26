@@ -2186,7 +2186,7 @@ body.has-panel .mapctl{display:none}
         // every island bridged to it; a scout sent into the fog explores the island it reaches.
         // The fog lifts in small sections (FOG_CELL squares): around every own base, and wherever a scout goes.
         const FOG_CELL = 4000, REVEAL_BASE = 7000, REVEAL_SCOUT = 8000;
-        var fogCells = null, fogLmCount = {}, cellLm = null, fogFx = [], fogVer = {};
+        var fogCells = null, fogLmCount = {}, cellLm = null, fogFx = [], fogVer = {}, fogMaskDirty = true, fogPrompt = null;
         function fogKey(cx, cy) { return cx + ',' + cy; }
         function fogLandCells() {                        // key → landmass id for every cell that touches land
             if (cellLm) return cellLm;
@@ -2218,13 +2218,15 @@ body.has-panel .mapctl{display:none}
             for (let cx = Math.floor((x - r) / FOG_CELL); cx <= Math.floor((x + r) / FOG_CELL); cx++)
                 for (let cy = Math.floor((y - r) / FOG_CELL); cy <= Math.floor((y + r) / FOG_CELL); cy++) {
                     const k = fogKey(cx, cy), id = cl[k];
-                    if (id === undefined || set.has(k)) continue;
+                    if (set.has(k)) continue;
                     const mx = (cx + .5) * FOG_CELL, my = (cy + .5) * FOG_CELL;
+                    if (Math.abs(mx) > FRAME_HALF + FOG_CELL || Math.abs(my) > FRAME_HALF + FOG_CELL) continue;
                     if (Math.hypot(mx - x, my - y) > rr2) continue;
-                    set.add(k); fogLmCount[id] = (fogLmCount[id] || 0) + 1; fogVer[id] = (fogVer[id] || 0) + 1; changed = true;
-                    if (fade) fogFx.push({ id, x: mx, y: my, d: Math.hypot(mx - x, my - y), t: now });
+                    set.add(k); changed = true;
+                    if (id !== undefined) fogLmCount[id] = (fogLmCount[id] || 0) + 1;
+                    if (fade) fogFx.push({ k, x: mx, y: my, d: Math.hypot(mx - x, my - y), t: now });
                 }
-            if (changed) { store.set('openWaterFogCells', JSON.stringify([...set])); if (typeof requestRender === 'function') requestRender(); }
+            if (changed) { fogMaskDirty = true; store.set('openWaterFogCells', JSON.stringify([...set])); if (typeof requestRender === 'function') requestRender(); }
             return changed;
         }
         function exploreOwned() { for (const id of ownedIslands) { const i = islandById[id]; if (i) revealAround(i.x, i.y, REVEAL_BASE, false); } }
@@ -2316,7 +2318,7 @@ body.has-panel .mapctl{display:none}
           troops:      { icon: 'troops',    name: 'Truppenherstellung', desc: 'Truppenproduktion', pct: 2 },
           defense:     { icon: 'defense',   name: 'Verteidigung',       desc: 'Verteidigung aller Inseln', flat: 5 },
           defenseGold: { icon: 'shield',    name: 'Verteidigung: Gold', desc: 'Gold pro getöteter Truppe', rate: 0.3 },
-          attack:      { icon: 'attack',    name: 'Angriff',            desc: 'Truppen zusätzlich pro Angriff', flat: 4, unit: ' Truppen' },
+          attack:      { icon: 'attack',    name: 'Angriff',            desc: 'mehr Truppen bei jedem Angriff', atkPct: 10 },
           attackGold:  { icon: 'sell',      name: 'Angriff: Gold',      desc: 'Gold pro getöteter Truppe', rate: 0.3 }
         };
         const EQUIPMENT_BASE_COST = 100;
@@ -2728,7 +2730,7 @@ body.has-panel .mapctl{display:none}
                 startedAt,
                 resolveAt: startedAt + durationSec * 1000,
                 attackerBotId: attackerBotId || null,
-                attackBonus: attackerBotId ? 0 : attackFlatBonus(),
+                attackBonus: attackerBotId ? 0 : attackFlatBonus(rawTroops),
                 attackGoldRate: attackerBotId ? 0 : (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate,
                 rewardGoldRate: attackerBotId ? 0 : goldPerKillRate(),
                 shieldLossReductionPct: attackerBotId ? 0 : shieldLossReductionPct()
@@ -2868,7 +2870,7 @@ body.has-panel .mapctl{display:none}
             // whatever the player's skills/equipment are right now - troops
             // already marching shouldn't have their outcome change because
             // a skill got leveled up while they were still en route.
-            const atkBonus = attack.attackBonus !== undefined ? attack.attackBonus : attackFlatBonus();
+            const atkBonus = attack.attackBonus !== undefined ? attack.attackBonus : attackFlatBonus(attack.rawTroops);
             const lossReductionPct = attack.shieldLossReductionPct !== undefined ? attack.shieldLossReductionPct : shieldLossReductionPct();
             const rewardRate = attack.rewardGoldRate !== undefined ? attack.rewardGoldRate : goldPerKillRate();
 
@@ -4647,6 +4649,13 @@ body.has-panel .mapctl{display:none}
                     for (const send of dueSends) resolveSend(send);
                 }
             }
+            for (const sc of pendingScouts) {                                        // explorers clear a lane as they walk
+                if (!sc.explore || sc.ex === undefined) continue;
+                const home = islandById[sc.sourceId]; if (!home) continue;
+                const L = Math.hypot(sc.ex - home.x, sc.ey - home.y) || 1, prog = Math.max(0, Math.min(1, (now - sc.startedAt) / Math.max(1, sc.resolveAt - sc.startedAt)));
+                for (let d = sc.revD || 0; d <= L * prog; d += 2500) revealAround(home.x + (sc.ex - home.x) * d / L, home.y + (sc.ey - home.y) * d / L, 3400, true);
+                sc.revD = Math.max(sc.revD || 0, Math.floor(L * prog / 2500) * 2500 + 2500);
+            }
             if (pendingScouts.length > 0) {
                 const dueScouts = pendingScouts.filter(s => s.resolveAt <= now);
                 if (dueScouts.length > 0) {
@@ -4691,10 +4700,11 @@ body.has-panel .mapctl{display:none}
         function shieldLossReductionPct() {
             return Math.min(90, equipment.shield * EQUIPMENT_DEFS.shield.pct + equippedItemBonusPct('shield'));
         }
-        // "Angriff" skill: adds a flat number of extra troops to an attack
-        // (not a %), on top of whatever the source tower's garrison sends.
-        function attackFlatBonus() {
-            return (skills.attack || 0) * (SKILL_DEFS.attack.flat || 0);
+        // "Angriff" skill (Schwert): every attack gets extra troops on top of the ones sent,
+        // +10 % of the sent troops per skill level, so it matters at every army size.
+        function attackBonusPct() { return (skills.attack || 0) * SKILL_DEFS.attack.atkPct; }
+        function attackFlatBonus(troops) {
+            return Math.round(Math.max(0, troops || 0) * attackBonusPct() / 100);
         }
         // "Verteidigung: Gold" + "Angriff: Gold": coins earned per enemy
         // troop killed in a won attack (all of the target's troops+defense).
@@ -4708,6 +4718,7 @@ body.has-panel .mapctl{display:none}
         }
         function skillBonusText(def, level) {
             if (def.pct) return '+' + fmtNum(level * def.pct) + ' %';
+            if (def.atkPct) return '+' + fmtNum(level * def.atkPct) + ' % Truppen';
             if (def.flat) return '+' + fmtNum(level * def.flat) + (def.unit || '');
             if (def.rate) return '+' + (level * def.rate).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' Gold/Kill';
             if (def.msPerLevel) return '−' + fmtNum(level * def.msPerLevel) + ' ms/Tick';
@@ -5794,75 +5805,113 @@ body.has-panel .mapctl{display:none}
                 ctx.fillText('N', mx, t - 14); ctx.fillText('S', mx, b + 14); ctx.fillText('O', r + 14, my); ctx.fillText('W', l - 14, my);
             }
         }
-        function fogCanvasOf(lm) {                        // per island: the still-fogged cells as soft blobs, clipped to the coast (cached)
-            if (lm.fogCv && lm.fogCvVer === (fogVer[lm.id] || 0)) return lm.fogCv;
-            const set = fogSet(), R = lm.shapeMaxR + FOG_CELL, S = lm.isCenter ? 560 : 400, sc = S / (2 * R);
-            const cv = lm.fogCv || document.createElement('canvas'); cv.width = cv.height = S;
-            const g = cv.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, S, S);
-            g.setTransform(sc, 0, 0, sc, (R - lm.x) * sc, (R - lm.y) * sc);
-            g.save(); g.clip(lm.path);
-            const puff = fogPuff();
-            for (const c of lm.fogCells) {
-                if (set.has(c.k)) continue;
-                const gr = g.createRadialGradient(c.x, c.y, 0, c.x, c.y, FOG_CELL * .9);
-                gr.addColorStop(0, '#262d39'); gr.addColorStop(.55, '#262d39'); gr.addColorStop(1, 'rgba(38,45,57,0)');
-                g.fillStyle = gr; g.fillRect(c.x - FOG_CELL, c.y - FOG_CELL, FOG_CELL * 2, FOG_CELL * 2);
+        // Fog of war look: a bright, layered cloud cover (tileable value-noise texture, world-anchored) shown through
+        // one soft mask for the whole map (fog everywhere, soft holes where explored). Freshly revealed cells fade out.
+        var FOG_TEX = null, FOG_TEX2 = null, fogMaskCv = null, fogBaseCv = null, fogComp = null;
+        const FOG_MASK_PX = 6;                                  // mask pixels per fog cell
+        function fogTexture(seed, size, cells, light) {
+            const c = document.createElement('canvas'); c.width = c.height = size;
+            const g = c.getContext('2d'), img = g.createImageData(size, size), rnd = mulberry32(seed);
+            const oct = [], N = 4;
+            for (let o = 0; o < N; o++) { const n = cells << o, v = new Float32Array(n * n); for (let i = 0; i < v.length; i++) v[i] = rnd(); oct.push({ n, v }); }
+            const sm = t => t * t * (3 - 2 * t);
+            for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+                let val = 0, amp = 1, tot = 0;
+                for (const { n, v } of oct) {
+                    const fx = x / size * n, fy = y / size * n, x0 = Math.floor(fx), y0 = Math.floor(fy), tx = sm(fx - x0), ty = sm(fy - y0);
+                    const a = v[(y0 % n) * n + x0 % n], b = v[(y0 % n) * n + (x0 + 1) % n], c2 = v[((y0 + 1) % n) * n + x0 % n], d = v[((y0 + 1) % n) * n + (x0 + 1) % n];
+                    val += amp * (a + (b - a) * tx + (c2 - a) * ty + (a - b - c2 + d) * tx * ty); tot += amp; amp *= .5;
+                }
+                val /= tot;                                                    // 0..1, cloudy
+                const t = Math.max(0, Math.min(1, (val - .28) / .5)), i = (y * size + x) * 4;
+                img.data[i] = 96 + t * (light ? 140 : 120); img.data[i + 1] = 106 + t * (light ? 134 : 116); img.data[i + 2] = 122 + t * (light ? 124 : 108); img.data[i + 3] = 255;
             }
-            const rnd = mulberry32(lm.id * 97 + 5);             // loose, irregular haze on top (not one puff per cell)
-            g.globalAlpha = .55;
-            for (const c of lm.fogCells) {
-                if (set.has(c.k)) { rnd(); rnd(); rnd(); rnd(); continue; }
-                if (rnd() < .45) { rnd(); rnd(); rnd(); continue; }
-                const sz = FOG_CELL * (1.6 + rnd() * 2.2), ox = (rnd() - .5) * FOG_CELL * 1.4, oy = (rnd() - .5) * FOG_CELL * 1.4;
-                g.drawImage(puff, c.x + ox - sz / 2, c.y + oy - sz / 2, sz, sz);
+            g.putImageData(img, 0, 0);
+            return c;
+        }
+        function fogBlob() {                                    // soft round eraser, 1 fog cell ≈ half its width
+            if (fogBlob.c) return fogBlob.c;
+            const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d');
+            const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(.5, 'rgba(0,0,0,.95)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+            g.fillStyle = gr; g.fillRect(0, 0, 64, 64); return fogBlob.c = c;
+        }
+        function fogMask(now) {                                 // canvas over the whole frame: alpha = fog
+            const n = Math.ceil(2 * FRAME_HALF / FOG_CELL) + 2, W = n * FOG_MASK_PX, o = Math.floor(-FRAME_HALF / FOG_CELL) - 1;
+            const fading = new Set(fogFx.map(f => f.k));
+            if (!fogBaseCv || fogMaskDirty || fogBaseCv.fading !== fading.size) {
+                fogBaseCv = fogBaseCv || document.createElement('canvas'); fogBaseCv.width = fogBaseCv.height = W;
+                const g = fogBaseCv.getContext('2d'); g.globalCompositeOperation = 'source-over'; g.fillStyle = '#000'; g.fillRect(0, 0, W, W);
+                g.globalCompositeOperation = 'destination-out';
+                const bl = fogBlob(), bs = FOG_MASK_PX * 2.3;
+                for (const k of fogSet()) {
+                    if (fading.has(k)) continue;
+                    const i = k.indexOf(','), cx = +k.slice(0, i), cy = +k.slice(i + 1);
+                    g.drawImage(bl, (cx - o + .5) * FOG_MASK_PX - bs / 2, (cy - o + .5) * FOG_MASK_PX - bs / 2, bs, bs);
+                }
+                fogBaseCv.fading = fading.size; fogBaseCv.o = o; fogBaseCv.n = n; fogBaseCv.stamp = (fogBaseCv.stamp || 0) + 1; fogMaskDirty = false;
             }
-            g.globalAlpha = 1;
-            g.restore();
-            lm.fogCv = cv; lm.fogCvVer = fogVer[lm.id] || 0; lm.fogCvR = R;
-            return cv;
+            if (!fogFx.length) return fogBaseCv;
+            fogMaskCv = fogMaskCv || document.createElement('canvas');
+            if (fogMaskCv.width !== W) { fogMaskCv.width = fogMaskCv.height = W; }
+            const g = fogMaskCv.getContext('2d'); g.globalCompositeOperation = 'copy'; g.drawImage(fogBaseCv, 0, 0);
+            g.globalCompositeOperation = 'destination-out';
+            const bl = fogBlob();
+            for (const f of fogFx) {
+                const p = Math.max(0, Math.min(1, (now - f.t - f.d / 5) / 1500)); if (p <= 0) continue;
+                const bs = FOG_MASK_PX * (2.3 + (1 - p) * 1.2);
+                g.globalAlpha = p * p * (3 - 2 * p);
+                g.drawImage(bl, (f.x / FOG_CELL - o) * FOG_MASK_PX - bs / 2, (f.y / FOG_CELL - o) * FOG_MASK_PX - bs / 2, bs, bs);
+            }
+            g.globalAlpha = 1; fogMaskCv.o = o; fogMaskCv.n = n;
+            return fogMaskCv;
         }
         function drawFog(view, now) {
-            const z = mapState.zoom, set = fogSet();
-            fogFx = fogFx.filter(f => now - f.t < 1400 + f.d / 6);
-            for (const lm of landmasses) {
-                if (lm.bbox.r < view.l || lm.bbox.l > view.r || lm.bbox.b < view.t || lm.bbox.t > view.b) continue;
-                if ((fogLmCount[lm.id] || 0) >= lm.fogCells.length && !fogFx.some(f => f.id === lm.id)) continue;   // fully known
-                ctx.save();
-                ctx.setTransform(dpr * z, 0, 0, dpr * z, dpr * mapState.offsetX, dpr * mapState.offsetY);
-                const cv = fogCanvasOf(lm), R = lm.fogCvR;
-                ctx.drawImage(cv, lm.x - R, lm.y - R, 2 * R, 2 * R);
-                const fx = fogFx.filter(f => f.id === lm.id);
-                if (fx.length) {                              // freshly revealed sections dissolve from the centre outwards
-                    ctx.clip(lm.path);
-                    for (const f of fx) {
-                        const p = Math.max(0, Math.min(1, (now - f.t - f.d / 6) / 1400)), a = 1 - p;
-                        if (a <= 0) continue;
-                        const gr = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, FOG_CELL * (.9 + p * .5));
-                        gr.addColorStop(0, 'rgba(38,45,57,' + a + ')'); gr.addColorStop(.55, 'rgba(38,45,57,' + a + ')'); gr.addColorStop(1, 'rgba(38,45,57,0)');
-                        ctx.fillStyle = gr; ctx.fillRect(f.x - FOG_CELL * 1.5, f.y - FOG_CELL * 1.5, FOG_CELL * 3, FOG_CELL * 3);
-                        ctx.globalAlpha = a * .9; const sz = FOG_CELL * (1.8 + p); ctx.drawImage(fogPuff(), f.x - sz / 2, f.y - sz / 2 - p * FOG_CELL * .3, sz, sz); ctx.globalAlpha = 1;
-                    }
-                    liveAnimation = true;
-                }
-                ctx.restore();
+            const z = mapState.zoom;
+            fogFx = fogFx.filter(f => now - f.t < 1500 + f.d / 5);
+            if (!fogFx.length && fogBaseCv && fogBaseCv.fading) fogMaskDirty = true;
+            const mask = fogMask(now), o = mask.o, n = mask.n;
+            if (!FOG_TEX) { FOG_TEX = fogTexture(4242, 256, 4, true); FOG_TEX2 = fogTexture(977, 256, 3, false); }
+            const FS = 0.6, Wd = Math.round(viewW * FS), Hd = Math.round(viewH * FS);             // soft clouds: a low-res layer is enough
+            fogComp = fogComp || document.createElement('canvas');
+            const key = [Wd, Hd, z, mapState.offsetX, mapState.offsetY, mask === fogBaseCv ? fogBaseCv.stamp : Math.random()].join('|');
+            if (fogComp.key === key) { ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(fogComp, 0, 0, Math.round(viewW * dpr), Math.round(viewH * dpr)); ctx.restore(); }
+            else {
+            fogComp.key = key;
+            if (fogComp.width !== Wd || fogComp.height !== Hd) { fogComp.width = Wd; fogComp.height = Hd; }
+            const g = fogComp.getContext('2d');
+            g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, Wd, Hd);
+            g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+            g.setTransform(FS * z, 0, 0, FS * z, FS * mapState.offsetX, FS * mapState.offsetY);          // world units
+            g.save(); g.beginPath(); g.rect(-FRAME_HALF, -FRAME_HALF, 2 * FRAME_HALF, 2 * FRAME_HALF); g.clip();   // only inside the map border
+            g.drawImage(mask, o * FOG_CELL, o * FOG_CELL, n * FOG_CELL, n * FOG_CELL); g.restore();
+            g.globalCompositeOperation = 'source-in';                                                        // clouds only where the mask is
+            const p1 = g.createPattern(FOG_TEX2, 'repeat'); p1.setTransform(new DOMMatrix().rotate(-13).scale(170000 / 256));
+            g.fillStyle = p1; g.fillRect(view.l - 1e5, view.t - 1e5, view.r - view.l + 2e5, view.b - view.t + 2e5);
+            g.globalCompositeOperation = 'source-atop';                                                      // a finer, brighter layer on top
+            const p2 = g.createPattern(FOG_TEX, 'repeat'); p2.setTransform(new DOMMatrix().rotate(23).scale(Math.max(26000, 0.9 / z) / 256));   // never finer than ~1 px of noise
+            g.globalAlpha = .55 * Math.max(0, Math.min(1, (z - 0.004) / 0.006)); g.fillStyle = p2; g.fillRect(view.l - 1e5, view.t - 1e5, view.r - view.l + 2e5, view.b - view.t + 2e5); g.globalAlpha = 1;
+            ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.imageSmoothingEnabled = true; ctx.drawImage(fogComp, 0, 0, Math.round(viewW * dpr), Math.round(viewH * dpr)); ctx.restore();
             }
-            // "Erkunden" on fully fogged islands that border known ones
-            if (z > 0.004) {
+            if (fogFx.length) liveAnimation = true;
+            if (fogPrompt) {                                   // confirm chip: "Späher senden · 0:25" above a marker at the spot
                 setScreen(ctx);
-                for (const lm of landmasses) {
-                    if (isExplored(lm.id)) continue;
-                    if (!bridges.some(br => (br.a === lm.id && isExplored(br.b)) || (br.b === lm.id && isExplored(br.a)))) continue;
-                    const sx = lm.x * z + mapState.offsetX, sy = lm.y * z + mapState.offsetY;
-                    if (sx < -60 || sy < -60 || sx > viewW + 60 || sy > viewH + 60) continue;
-                    const scouting = pendingScouts.some(sc => sc.explore && islandById[sc.targetId] && islandById[sc.targetId].landmassId === lm.id);
-                    const label = scouting ? 'Wird erkundet …' : 'Erkunden';
-                    ctx.font = '700 12px Inter, system-ui, sans-serif';
-                    const w = ctx.measureText(label).width + 34;
-                    ctx.fillStyle = 'rgba(12,14,20,.85)'; ctx.strokeStyle = 'rgba(228,200,134,.7)'; ctx.lineWidth = 1.2;
-                    ctx.beginPath(); ctx.roundRect ? ctx.roundRect(sx - w / 2, sy - 13, w, 26, 13) : ctx.rect(sx - w / 2, sy - 13, w, 26); ctx.fill(); ctx.stroke();
-                    drawGlyph(ctx, 'scout', sx - w / 2 + 15, sy, 14, '#f0d69a');
-                    ctx.fillStyle = '#f3e6c4'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(label, sx - w / 2 + 26, sy + 0.5);
-                }
+                const px = fogPrompt.x * z + mapState.offsetX, py = fogPrompt.y * z + mapState.offsetY, k = Math.min(1, (now - fogPrompt.at) / 180);
+                ctx.save(); ctx.globalAlpha = k;
+                ctx.beginPath(); ctx.arc(px, py, 14, 0, Math.PI * 2); ctx.fillStyle = 'rgba(228,200,134,.18)'; ctx.fill();
+                ctx.lineWidth = 2; ctx.strokeStyle = '#e4c886'; ctx.setLineDash([4, 3]); ctx.stroke(); ctx.setLineDash([]);
+                ctx.beginPath(); ctx.arc(px, py, 3, 0, Math.PI * 2); ctx.fillStyle = '#f3e6c4'; ctx.fill();
+                ctx.font = '700 13px Inter, system-ui, sans-serif';
+                const l1 = 'Späher senden', l2 = fmtClock(fogPrompt.secs), w = Math.max(ctx.measureText(l1).width, 40) + ctx.measureText(l2).width + 58, h = 36;
+                const x = Math.max(8, Math.min(viewW - w - 8, px - w / 2)), y = Math.max(70, py - 26 - h);
+                rr(ctx, x + 1, y + 3, w, h, 8); ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fill();
+                rr(ctx, x, y, w, h, 8); const gr = ctx.createLinearGradient(0, y, 0, y + h); gr.addColorStop(0, '#f1d48c'); gr.addColorStop(1, '#b98a3a');
+                ctx.fillStyle = gr; ctx.fill(); ctx.lineWidth = 1.2; ctx.strokeStyle = '#5a3c0e'; ctx.stroke();
+                drawGlyph(ctx, 'scout', x + 18, y + h / 2, 16, '#2a1a04');
+                ctx.fillStyle = '#2a1a04'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(l1, x + 32, y + h / 2 + .5);
+                ctx.font = '600 12px Inter, system-ui, sans-serif'; ctx.fillStyle = 'rgba(42,26,4,.75)'; ctx.textAlign = 'right'; ctx.fillText(l2, x + w - 12, y + h / 2 + .5);
+                ctx.restore();
+                fogPrompt.rect = { x, y, w, h };
+                if (k < 1) liveAnimation = true;
             }
         }
         function drawGatehouse(g, cx, cy, H, open) {      // front view like the towers: two turrets, a wall, an arch with a portcullis
@@ -5928,7 +5977,7 @@ body.has-panel .mapctl{display:none}
         // forms up, the garrison steps out, they clash, soldiers fall in proportion to the real losses,
         // troop counts tick down with floating losses, then the result ribbon (spawnBattleFx) appears.
         var mapBattles = [];
-        const MB_MS = 4200;
+        const MB_MS = 4200, MB_SLOW = 0.45;              // ≈ 9 s on screen
         function spawnMapBattle(o) {
             const src = islandById[o.sourceId], tgt = islandById[o.targetId]; if (!src || !tgt) { o.onEnd && o.onEnd(); return; }
             const path = marchPath(src, tgt), from = path[path.length - 2];
@@ -5951,12 +6000,12 @@ body.has-panel .mapctl{display:none}
             liveAnimation = true;
             const z = mapState.zoom, k = Math.max(1.1, Math.min(2.6, z / 0.015)), near = z >= 0.006;
             for (const b of mapBattles.slice()) {
-                const t = now - b.born;
+                const rt = now - b.born, t = rt * MB_SLOW;                  // choreography runs slowed down, motion cycles in real time
                 if (t > MB_MS) { b.done = true; mapBattles.splice(mapBattles.indexOf(b), 1); if (b.onEnd) b.onEnd(); continue; }
                 const tx = b.x * z + mapState.offsetX, ty = b.y * z + mapState.offsetY;
                 if (tx < -120 || ty < -120 || tx > viewW + 120 || ty > viewH + 120) continue;
                 if (!near) {                                 // far out: a pulsing crossed-swords marker at the base
-                    const pulse = 1 + Math.sin(t / 140) * .12;
+                    const pulse = 1 + Math.sin(rt / 140) * .12;
                     ctx.beginPath(); ctx.arc(tx, ty - 14, 11 * pulse, 0, Math.PI * 2); ctx.fillStyle = 'rgba(20,10,8,.85)'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#ff8d7e'; ctx.stroke();
                     drawGlyph(ctx, 'attack', tx, ty - 14, 13, '#ffd2c8'); continue;
                 }
@@ -5979,8 +6028,8 @@ body.has-panel .mapctl{display:none}
                     }
                     if (fall > 0) alpha = Math.max(0, 1 - Math.max(0, t - u.die - 900) / 600);          // the fallen fade after a moment
                     const x = tx - ux * d + vx * off, y = ty - uy * d + vy * off + u.jy * 2 * k;
-                    const walk = (atk && adv < 1) || (after && fall === 0) ? t / 90 + u.ph : u.ph;
-                    const thrust = fight && fall === 0 && u.r === 0 ? Math.max(0, Math.sin(t / 110 + u.ph)) : 0;
+                    const walk = (atk && adv < 1) || (after && fall === 0) ? rt / 90 + u.ph : u.ph;
+                    const thrust = fight && fall === 0 && u.r === 0 ? Math.max(0, Math.sin(rt / 110 + u.ph)) : 0;
                     const [col, rim] = atk ? cA : cD;
                     drawn.push({ y, f: () => { if (alpha <= 0.01) return; ctx.save(); ctx.globalAlpha = alpha; bsSoldier(ctx, x, y, s, atk ? face : -face, col, rim, walk, thrust, fall); ctx.restore(); } });
                 };
@@ -5989,7 +6038,7 @@ body.has-panel .mapctl{display:none}
                 drawn.sort((p, q) => p.y - q.y).forEach(d => d.f());
                 const mx = tx - ux * (dFront + 6.5 * k), my2 = ty - uy * (dFront + 6.5 * k);
                 if (fight) {                                  // sparks + dust on the front line
-                    const r = mulberry32(Math.floor(t / 70) + b.targetId);
+                    const r = mulberry32(Math.floor(rt / 70) + b.targetId);
                     for (let i = 0; i < 5; i++) { const o = (r() - .5) * 40 * k, x = mx + vx * o, y = my2 + vy * o - s * .55;
                         ctx.strokeStyle = 'rgba(255,' + (190 + Math.floor(r() * 60)) + ',120,' + (.5 + r() * .5) + ')'; ctx.lineWidth = 1.2;
                         const a = r() * 6.28, l = (3 + r() * 6) * k; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); ctx.stroke(); }
@@ -6232,7 +6281,7 @@ body.has-panel .mapctl{display:none}
                 '<li>' + icon('gem', 'ico-gem') + '<span>Gems</span><b>+' + BOSS_REWARD_GEMS + '</b></li>';
             [...list.children].forEach((li, i) => { li.style.animationDelay = (200 + i * 120) + 'ms'; });
             bossRewardPending = true;
-            setTimeout(() => { bossRewardPending = false; document.getElementById('rewardModal').hidden = false; }, 4600);   // after the fight on the map
+            setTimeout(() => { bossRewardPending = false; document.getElementById('rewardModal').hidden = false; }, 9800);   // after the fight on the map
         }
         document.getElementById('rewardModalBtn').addEventListener('click', () => { document.getElementById('rewardModal').hidden = true; });
         function bossTick() {
@@ -7128,9 +7177,9 @@ body.has-panel .mapctl{display:none}
             // Defaults to sending everything, but the slider lets the player
             // hold part of the garrison back.
             if (previewAttackTroops === null || previewAttackTroops > maxTroops) previewAttackTroops = maxTroops;
-            const atkBonus = attackFlatBonus();
+            const atkPct = attackBonusPct();
             const source = islandById[previewSourceId];
-            const key = island.id + ':' + previewSourceId + ':' + scouted + ':' + atkBonus;
+            const key = island.id + ':' + previewSourceId + ':' + scouted + ':' + atkPct;
             popupOverline.textContent = 'Angriff vorbereiten';
             // source + march time live in the header subline (frees the body on short screens)
             popupSub.innerHTML = icon('defense') + '<span>Von ' + islandTitle(source) + '</span><span class="sep"></span>' +
@@ -7140,7 +7189,7 @@ body.has-panel .mapctl{display:none}
                 popupStats.innerHTML =
                     '<div class="versus">' +
                         '<div class="force force--me"><span class="stat-l">' + icon('troops') + 'Angriff</span><b id="previewMyTroops"></b><small>' +
-                            (atkBonus > 0 ? '<span id="previewRawTroops"></span> + ' + fmtNum(atkBonus) + ' Bonus' : 'aus ' + islandTitle(source)) + '</small></div>' +
+                            (atkPct > 0 ? '<span id="previewRawTroops"></span> + <span id="previewAtkBonus"></span> Schwert (+' + fmtNum(atkPct) + ' %)' : 'aus ' + islandTitle(source)) + '</small></div>' +
                         '<div class="vs"><span>VS</span></div>' +
                         '<div class="force force--foe"><span class="stat-l">Abwehr' + icon('defense') + '</span><b data-foe="total">?</b><small data-foe="sub">nicht gespäht</small></div>' +
                     '</div>' +
@@ -7175,13 +7224,14 @@ body.has-panel .mapctl{display:none}
             if (!slider || !island) return;
             const maxTroops = previewSourceId !== null ? (islandTroops[previewSourceId] || 0) : 0;
             const scouted = scoutedIslands.has(island.id);
-            const atkBonus = attackFlatBonus();
             slider.max = Math.max(1, maxTroops);
             slider.disabled = maxTroops <= 0;
             if (previewFraction !== null && maxTroops > 0) previewAttackTroops = Math.max(1, Math.round(maxTroops * previewFraction));
             if (maxTroops > 0 && +slider.value !== previewAttackTroops) slider.value = Math.max(1, previewAttackTroops);
             const shown = Math.max(0, previewAttackTroops || 0);
+            const atkBonus = attackFlatBonus(shown);
             const mine = shown + atkBonus;
+            const bEl = popupStats.querySelector('#previewAtkBonus'); if (bEl) bEl.textContent = fmtNum(atkBonus);
             document.getElementById('previewMyTroops').textContent = fmtNum(mine);
             const raw = document.getElementById('previewRawTroops');
             if (raw) raw.textContent = fmtNum(shown);
@@ -7351,9 +7401,21 @@ body.has-panel .mapctl{display:none}
             }
             let target = null, bd = Infinity;
             for (const i of islandsByLandmass[lm.id] || []) { const d = Math.hypot(i.x - f.x, i.y - f.y); if (d < bd) { bd = d; target = i; } }
-            if (target) launchScout(target.id, true, { x: f.x, y: f.y });
+            if (!target) return;
+            const home = islandById[nearestOwnedIslandTo(f)];
+            fogPrompt = { x: f.x, y: f.y, targetId: target.id, secs: home ? travelDurationSeconds(home, f) : 0, at: performance.now() };
+            requestRender();
+        }
+        function fogPromptHit(sx, sy) {                   // → 'go' (the button), 'off' (elsewhere)
+            if (!fogPrompt || !fogPrompt.rect) return 'off';
+            const r = fogPrompt.rect;
+            return sx >= r.x - 6 && sx <= r.x + r.w + 6 && sy >= r.y - 6 && sy <= r.y + r.h + 6 ? 'go' : 'off';
         }
         function handleTap(screenX, screenY) {
+            if (fogPrompt) {
+                const hit = fogPromptHit(screenX, screenY), fp = fogPrompt; fogPrompt = null; requestRender();
+                if (hit === 'go') { launchScout(fp.targetId, true, { x: fp.x, y: fp.y }); return; }
+            }
             if (!multiAttackMode && collectPickupAt(screenX, screenY)) return;
             const island = pickIslandAtScreen(screenX, screenY);
             if (!island && !multiAttackMode) { const fp = fogPointAt(screenX, screenY); if (fp) { tapFog(fp); return; } }
