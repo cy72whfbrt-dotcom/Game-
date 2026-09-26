@@ -4147,6 +4147,10 @@ body.has-panel .mapctl{display:none}
           ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI * 2); ctx.lineWidth = w; ctx.strokeStyle = color;
           ctx.setLineDash(dash || []); ctx.lineDashOffset = offset || 0; ctx.stroke(); ctx.setLineDash([]);
         }
+        const RANK_RING = [null, ['rgba(214,150,96,.85)', 'rgba(214,150,96,.35)', 'rgba(214,150,96,A)'],       // bronze
+                           ['rgba(222,230,240,.9)', 'rgba(222,230,240,.4)', 'rgba(222,230,240,A)'],                          // silver
+                           ['rgba(255,208,90,.95)', 'rgba(255,208,90,.5)', 'rgba(255,220,120,A)'],                           // gold
+                           ['rgba(235,60,50,.95)', 'rgba(255,208,90,.7)', 'rgba(255,90,60,A)']];                             // blood red and gold
         function drawRings(visible, z, now) {
           setScreen(ctx);
           const pulse = .5 + .5 * Math.sin(now / 280);
@@ -4160,6 +4164,20 @@ body.has-panel .mapctl{display:none}
               if (isl.type === 'megaTemple' && r >= 20) { ctx.beginPath(); for (let i = 0; i < 24; i++) { const a = i / 24 * Math.PI * 2;
                 ctx.moveTo(x + Math.cos(a) * r * 1.44, y + Math.sin(a) * r * 1.44); ctx.lineTo(x + Math.cos(a) * r * 1.52, y + Math.sin(a) * r * 1.52); }
                 ctx.lineWidth = 1.2; ctx.strokeStyle = 'rgba(228,200,134,.7)'; ctx.stroke(); }
+            }
+            if (isl.type === 'tower' && z >= 0.006) {                                  // rank ring: bronze 10+, silver 25+, gold 50+, blood-red and gold 80+
+              const tier = towerTier(baseLevelOf(isl));
+              if (tier > 0) {
+                const col = RANK_RING[tier], R1 = Math.max(r * 1.35, 17 + tier * 2), R2 = R1 + Math.max(r * .28, 5), W = 2 + tier * .6;
+                ring(x, y, R1, W + 2.5, 'rgba(10,8,4,.55)'); ring(x, y, R1, W, col[0]);          // dark underlay so the ring reads on grass and territory
+                ring(x, y, R2, 3, 'rgba(10,8,4,.35)'); ring(x, y, R2, 1.4, col[1]);
+                if (tier >= 2) { const n = tier >= 3 ? 24 : 16, spin = tier >= 4 ? now / 4000 : 0;   // notches like the mega temple
+                  ctx.beginPath(); for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2 + spin;
+                    ctx.moveTo(x + Math.cos(a) * R1 * 1.07, y + Math.sin(a) * R1 * 1.07); ctx.lineTo(x + Math.cos(a) * R2 * .97, y + Math.sin(a) * R2 * .97); }
+                  ctx.lineWidth = 2; ctx.strokeStyle = col[0]; ctx.stroke(); }
+                if (tier >= 3) { const p2 = (now / 1800) % 1; ring(x, y, R2 + p2 * Math.max(r * .6, 12), 2, col[2].replace('A', (.8 * (1 - p2)).toFixed(2))); liveAnimation = true; }
+                if (tier >= 4) { ring(x, y, R2 + 5, 2, 'rgba(255,214,110,.9)', [8, 5], -now / 40); }
+              }
             }
             if (isl.id === playerIslandId && z >= 0.006) {                            // the capital: blue-gold double ring
               ring(x, y, Math.max(r * 1.55, 12), 2, 'rgba(228,200,134,.95)'); ring(x, y, Math.max(r * 1.8, 15), 1.2, 'rgba(140,192,255,.6)', [3, 4]);
