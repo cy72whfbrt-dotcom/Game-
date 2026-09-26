@@ -1888,15 +1888,15 @@ body.has-panel .mapctl{display:none}
         function gateSettings(gate) { return Object.assign({ toll: gate.toll, closed: false }, loadGateCfg()[gate.id] || {}); }
         function setGateSettings(gateId, patch) { const c = loadGateCfg(); c[gateId] = Object.assign(gateSettings(islandById[gateId]), patch); store.set('openWaterGateCfg', JSON.stringify(c)); }
         const GATE_TOLLS = [0, 0.1, 0.25, 0.5, 1, 2];
-        function tollFor(fromLm, toLm, troops, payer) {  // → { gate, cost, closed } (cost 0 when the payer owns the gate)
+        function tollFor(fromLm, toLm, troops, payer, targetId) {  // → { gate, cost, closed } (free for the gate's owner - and for an attack ON the gate itself)
             const gate = gateOnRoute(fromLm, toLm);
-            if (!gate || islandOwnerOf(gate.id) === payer) return { gate, cost: 0 };
+            if (!gate || islandOwnerOf(gate.id) === payer || gate.id === targetId) return { gate, cost: 0 };
             const cfg = gateSettings(gate);
             if (cfg.closed && islandOwnerOf(gate.id)) return { gate, cost: Infinity, closed: true };
             return { gate, cost: cfg.toll > 0 ? Math.max(100, Math.round(Math.max(0, troops) * cfg.toll)) : 0 };
         }
-        function payToll(fromLm, toLm, troops, payer) { // payer: 'player' | bot id → false when it can't pay
-            const { gate, cost, closed } = tollFor(fromLm, toLm, troops, payer);
+        function payToll(fromLm, toLm, troops, payer, targetId) { // payer: 'player' | bot id → false when it can't pay
+            const { gate, cost, closed } = tollFor(fromLm, toLm, troops, payer, targetId);
             if (!cost) return true;
             if (closed) { if (payer === 'player') flashHint('Das Tor ist geschlossen – ' + botById[islandOwnerOf(gate.id)].name + ' lässt niemanden durch. Erobere das Tor.', 4000); return false; }
             const have = payer === 'player' ? coins : (botCoins[payer] || 0);
@@ -2805,7 +2805,7 @@ body.has-panel .mapctl{display:none}
                 : available;
             if (!source || !target || rawTroops <= 0) return false;
             if (!attackerBotId && target.id === playerIslandId) return false;
-            if (!payToll(source.landmassId, target.landmassId, rawTroops, attackerBotId || 'player')) return false;
+            if (!payToll(source.landmassId, target.landmassId, rawTroops, attackerBotId || 'player', target.id)) return false;
 
             islandTroops[sourceId] = available - rawTroops; // only the sent troops march out, the rest stay to defend
             const durationSec = travelDurationSeconds(source, target);
@@ -4660,10 +4660,10 @@ body.has-panel .mapctl{display:none}
                 const source = islandById[sourceId];
                 for (const lmId of reachableLandmassIds[source.landmassId]) {
                     if (!landmassesConnected(source.landmassId, lmId)) continue;
-                    const toll = tollFor(source.landmassId, lmId, troopsHere, bot.id).cost;
-                    if (toll && (botCoins[bot.id] || 0) < toll) continue;
+                    const toll = tollFor(source.landmassId, lmId, troopsHere, bot.id).cost, canPass = !toll || (botCoins[bot.id] || 0) >= toll;
                     for (const target of islandsByLandmass[lmId] || []) {
                         if (owned.has(target.id) || target.id === playerIslandId) continue;   // the capital can't be attacked
+                        if (!canPass && !(target.type === 'gate' && gateOnRoute(source.landmassId, lmId) === target)) continue;
                         const totalStrength = effectiveTroops(target) + effectiveDefense(target);
                         if (troopsHere * atk < totalStrength * st.margin) continue;
                         let d = Math.hypot(target.x - source.x, target.y - source.y);
@@ -7593,7 +7593,7 @@ body.has-panel .mapctl{display:none}
             const mine = shown + atkBonus;
             const bEl = popupStats.querySelector('#previewAtkBonus'); if (bEl) bEl.textContent = fmtNum(atkBonus);
             const src = islandById[previewSourceId], tEl = popupSub.querySelector('#previewToll');
-            if (tEl && src) { const t = tollFor(src.landmassId, island.landmassId, shown, 'player');
+            if (tEl && src) { const t = tollFor(src.landmassId, island.landmassId, shown, 'player', island.id);
                 tEl.innerHTML = t.closed ? '<span class="sep"></span>' + icon('lock') + '<span>Tor geschlossen</span>' : t.cost ? '<span class="sep"></span>' + icon('coin') + '<span>Maut <span class="num">' + fmtCompact(t.cost) + '</span></span>' : ''; }
             document.getElementById('previewMyTroops').textContent = fmtNum(mine);
             const raw = document.getElementById('previewRawTroops');
