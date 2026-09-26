@@ -2017,7 +2017,7 @@ body.has-panel .mapctl{display:none}
             const ex = outerA ? br.x1 : br.x2, ey = outerA ? br.y1 : br.y2, ox = outerA ? br.x2 : br.x1, oy = outerA ? br.y2 : br.y1;
             const bl = Math.hypot(ox - ex, oy - ey) || 1, st = GATE_STATS[kind];
             br.gateId = id;
-            islands.push({ id: id++, landmassId: outerA ? br.a : br.b, x: ex - (ox - ex) / bl * 900, y: ey - (oy - ey) / bl * 900, radius: ISLAND_RADIUS * 1.25,
+            islands.push({ id: id++, ends: [[br.x1, br.y1], [br.x2, br.y2]], landmassId: outerA ? br.a : br.b, x: ex - (ox - ex) / bl * 900, y: ey - (oy - ey) / bl * 900, radius: ISLAND_RADIUS * 1.25,
                            type: 'gate', gateKind: kind, toll: st.toll, neutralTroops: st.troops, neutralDefense: st.def, neutralLevel: st.level });
         }
         const islandById = {};
@@ -2318,6 +2318,9 @@ body.has-panel .mapctl{display:none}
             return fogCells;
         }
         function isCellOpen(x, y) { return fogSet().has(fogKey(Math.floor(x / FOG_CELL), Math.floor(y / FOG_CELL))); }
+        function islandSeen(isl) {                      // a base is visible when its spot is explored - a gate also from its bridge
+            return isCellOpen(isl.x, isl.y) || (isl.ends && isl.ends.some(e => isCellOpen(e[0], e[1])));
+        }
         function isExplored(lmId) { fogSet(); return (fogLmCount[lmId] || 0) > 0; }             // any part of the island known
         function revealAround(x, y, r, fade) {
             const set = fogSet(), cl = fogLandCells(), now = performance.now(), rr2 = r + FOG_CELL * .35;
@@ -2821,6 +2824,10 @@ body.has-panel .mapctl{display:none}
                 : available;
             if (!source || !target || rawTroops <= 0) return false;
             if (!attackerBotId && target.id === playerIslandId) return false;
+            if (isCapital(target.id)) {                                   // nobody's capital can be attacked
+                if (!attackerBotId) flashHint('Das ist die Hauptstadt von ' + (botById[islandOwnerOf(target.id)] || {}).name + ' – Hauptstädte können nicht angegriffen werden.', 3500);
+                return false;
+            }
             if (!payToll(source.landmassId, target.landmassId, rawTroops, attackerBotId || 'player', target.id)) return false;
 
             islandTroops[sourceId] = available - rawTroops; // only the sent troops march out, the rest stay to defend
@@ -2993,7 +3000,7 @@ body.has-panel .mapctl{display:none}
             const won = myTroops > totalStrength;
             const bossHere = bossAt(target.id);
             const losses = Math.round(originalEnemyDefense * (1 - lossReductionPct / 100));
-            const remaining = won ? myTroops - losses : 0;
+            const remaining = won ? Math.max(0, Math.min(attack.rawTroops, myTroops - losses)) : 0;   // bonus troops fight, but only the sent ones can survive
 
             let defenderCasualties;
             let retreatSurvivors = 0;
@@ -3038,10 +3045,10 @@ body.has-panel .mapctl{display:none}
                     neutralTroopOverrides[target.id] = target.neutralTroops;
                 }
 
-                retreatSurvivors = Math.floor(myTroops * RETREAT_RECOVERY_PCT / 100);
+                retreatSurvivors = Math.floor(attack.rawTroops * RETREAT_RECOVERY_PCT / 100);
                 if (hospitalLevel()) {                                     // Lazarett: part of the fallen are only wounded
                     const c = loadCity(), room = Math.max(0, hospitalCapacity() - c.wounded);
-                    const w = Math.min(room, Math.floor((myTroops - retreatSurvivors) * hospitalPct() / 100));
+                    const w = Math.min(room, Math.floor((attack.rawTroops - retreatSurvivors) * hospitalPct() / 100));
                     if (w > 0) { c.wounded += w; saveCity(); setTimeout(() => flashHint(fmtNum(w) + ' Verwundete sind im Lazarett – heile sie in der Stadt.', 4000), 9500); }
                 }
                 if (retreatSurvivors > 0) {
@@ -3774,8 +3781,8 @@ body.has-panel .mapctl{display:none}
         }
         function drawBuilding(island, ownerKey, z) {                                   // screen space (setScreen active)
           const kind = island.type === 'megaTemple' ? 'mega' : island.guardian ? 'guardian' : island.type === 'temple' ? 'temple' : 'tower';
-          const home = island.id === playerIslandId;
-          const size = 2 * island.radius * z * (home ? 1.3 : 1), x = toSX(island.x), y = toSY(island.y);
+          const home = island.id === playerIslandId, cap = home || isCapital(island.id);
+          const size = 2 * island.radius * z * (cap ? 1.3 : 1), x = toSX(island.x), y = toSY(island.y);
           if (island.type === 'gate') {                                                // gates: the gatehouse, an owner pennant on top
             if (size < 8) { ctx.fillStyle = '#b8b2a6'; ctx.fillRect(x - 3, y - 3, 6, 6); return; }
             const H = Math.max(14, size * 1.05);
@@ -3814,7 +3821,7 @@ body.has-panel .mapctl{display:none}
           if (owner === 'player') return { kind: 'player', glyph: isTemple ? 'temple' : island.type === 'gate' ? 'lock' : island.id === playerIslandId ? 'castle' : 'profile',
                                            name: island.id === playerIslandId ? 'Hauptstadt' : profileName.value || 'Du',
                                            troops: fmtCompact(islandTroops[island.id] || 0), def: null, level, temple: isTemple, p: 4 };
-          if (owner) return { kind: 'bot', glyph: isTemple ? 'temple' : 'bot', name: botById[owner].name,
+          if (owner) return { kind: 'bot', glyph: isTemple ? 'temple' : botCapitalOf(owner) === island.id ? 'castle' : 'bot', name: botById[owner].name,
                               troops: scouted ? fmtCompact(islandTroops[island.id] || 0) : '?', def: null, level, temple: isTemple, p: 3 };
           if (island.type === 'gate') return { kind: 'neutral', glyph: 'lock', name: island.gateKind === 'throne' ? 'Thron-Tor' : 'Wächter-Tor',
                    troops: scouted ? fmtCompact(island.neutralTroops) : '?', def: scouted ? fmtCompact(island.neutralDefense) : null, level, temple: false, p: 2.5 };
@@ -4114,7 +4121,7 @@ body.has-panel .mapctl{display:none}
             if (lm.bbox.r < view.l || lm.bbox.l > view.r || lm.bbox.b < view.t || lm.bbox.t > view.b) continue;
             if (!isExplored(lm.id)) continue;                                              // under the fog
             for (const isl of islandsByLandmass[lm.id] || []) {
-              if (!isCellOpen(isl.x, isl.y)) continue;
+              if (!islandSeen(isl)) continue;
               const pad = isl.radius * 2.2;
               if (isl.x + pad < view.l || isl.x - pad > view.r || isl.y + pad < view.t || isl.y - pad > view.b) continue;
               out.push(isl);
@@ -4525,7 +4532,7 @@ body.has-panel .mapctl{display:none}
           }
           const w = screenToWorld(sx, sy), z = mapState.zoom; let best = null, bd = Infinity;
           for (const isl of islands) {                                                        // nearest base, min 22 CSS px hit radius
-            if (!isCellOpen(isl.x, isl.y)) continue;
+            if (!islandSeen(isl)) continue;
             const d = Math.hypot(isl.x - w.x, isl.y - w.y); if (d <= Math.max(isl.radius, 22 / z) && d < bd) { bd = d; best = isl; }
           }
           return best;
@@ -4683,7 +4690,7 @@ body.has-panel .mapctl{display:none}
                     if (!landmassesConnected(source.landmassId, lmId)) continue;
                     const toll = tollFor(source.landmassId, lmId, troopsHere, bot.id).cost, canPass = !toll || (botCoins[bot.id] || 0) >= toll;
                     for (const target of islandsByLandmass[lmId] || []) {
-                        if (owned.has(target.id) || target.id === playerIslandId) continue;   // the capital can't be attacked
+                        if (owned.has(target.id) || isCapital(target.id)) continue;   // capitals can't be attacked
                         if (!canPass && !(target.type === 'gate' && gateOnRoute(source.landmassId, lmId) === target)) continue;
                         const totalStrength = effectiveTroops(target) + effectiveDefense(target);
                         if (troopsHere * atk < totalStrength * st.margin) continue;
@@ -4797,7 +4804,7 @@ body.has-panel .mapctl{display:none}
                 for (const lmId of reachableLandmassIds[source.landmassId]) {
                     if (!landmassesConnected(source.landmassId, lmId)) continue;
                     for (const target of islandsByLandmass[lmId] || []) {
-                        if (botOwnedIslands[bot.id].has(target.id) || target.id === playerIslandId) continue;
+                        if (botOwnedIslands[bot.id].has(target.id) || isCapital(target.id)) continue;
                         if (!(target.type === 'gate' || target.type === 'temple' || target.type === 'megaTemple')) continue;
                         const need = (effectiveTroops(target) + effectiveDefense(target)) * st.margin / atk;
                         const helpers = owned.filter(id => id !== sourceId && islandById[id].landmassId === source.landmassId && (islandTroops[id] || 0) > BOT_MIN_GARRISON_TO_ATTACK);
@@ -4812,6 +4819,17 @@ body.has-panel .mapctl{display:none}
             for (const id of plan.helpers.sort((a, c) => (islandTroops[c] || 0) - (islandTroops[a] || 0)).slice(0, 5)) launchSend(id, plan.sourceId, bot.id);
             return true;
         }
+        function botCapitalOf(botId) {                  // each bot's main base: its strongest base, kept for good once chosen
+            const b = loadBotState()[botId], own = botOwnedIslands[botId];
+            if (!own || !own.size) return null;
+            if (b.capital === undefined || !own.has(b.capital)) {
+                let best = null; for (const id of own) { const isl = islandById[id]; if (isl.type !== 'tower') continue;
+                    if (best === null || (islandLevels[id] || 1) > (islandLevels[best] || 1)) best = id; }
+                b.capital = best ?? [...own][0]; saveBotState();
+            }
+            return b.capital;
+        }
+        function isCapital(id) { if (id === playerIslandId) return true; for (const bot of BOT_DEFS) if (botCapitalOf(bot.id) === id) return true; return false; }
         function botSampleSources(owned) {                       // a person looks at their big armies and a few others, not at all 500 bases
             const arr = [...owned], rich = arr.sort((a, c) => (islandTroops[c] || 0) - (islandTroops[a] || 0)).slice(0, 10);
             for (let i = 0; i < 8 && arr.length > 10; i++) rich.push(arr[10 + Math.floor(Math.random() * (arr.length - 10))]);
@@ -4929,7 +4947,7 @@ body.has-panel .mapctl{display:none}
             const free = islands.filter(i => i.type === 'tower' && !islandOwnerOf(i.id) && landmasses[i.landmassId].tier === 'outer' && !bossAt(i.id));
             if (!free.length) return;
             const t = free[Math.floor(Math.random() * free.length)];
-            botOwnedIslands[bot.id].add(t.id); islandLevels[t.id] = 1; islandTroops[t.id] = 20; b.outAt = 0;
+            botOwnedIslands[bot.id].add(t.id); islandLevels[t.id] = 1; islandTroops[t.id] = 20; b.outAt = 0; b.capital = t.id;
             saveBotState(); saveGame();
         }
         const botNextAt = {};
@@ -7574,7 +7592,7 @@ body.has-panel .mapctl{display:none}
                     backBtn.style.display = 'inline-block';
                 } else {
                     const scoutEnRoute = pendingScouts.some(s => s.targetId === island.id);
-                    popupOverline.textContent = bossAt(island.id) ? 'Weltereignis · Boss' : ownerBot ? (isTemple ? 'Feindlicher Tempel' : 'Feindliche Basis') : (isTemple ? 'Tempel · unbesetzt' : 'Neutrale Basis');
+                    popupOverline.textContent = bossAt(island.id) ? 'Weltereignis · Boss' : ownerBot ? (isCapital(island.id) ? 'Hauptstadt · kann nicht angegriffen werden' : isTemple ? 'Feindlicher Tempel' : 'Feindliche Basis') : (isTemple ? 'Tempel · unbesetzt' : 'Neutrale Basis');
                     popupStats.innerHTML = '<div class="stat-grid">' +
                         statTile('Truppen', 'troops', scouted ? fmtNum(effectiveTroops(island)) : UNK, scouted && ownerBot ? 'is-enemy' : '') +
                         statTile('Verteidigung', 'defense', scouted ? fmtNum(effectiveDefense(island)) : UNK) + '</div>' +
@@ -7584,7 +7602,7 @@ body.has-panel .mapctl{display:none}
                         (bossAt(island.id) ? '<div class="notice notice--gold">' + icon('shop') + '<span><b>Belohnung:</b> Legendäre Kiste + ' + BOSS_REWARD_GEMS + ' Gems · verschwindet in <b data-boss-clock>' + fmtClock((bossAt(island.id).endsAt - Date.now()) / 1000) + '</b></span></div>' : '') +
                         (scoutEnRoute ? '<div class="notice notice--warn">' + icon('hourglass') + '<span>Späher bereits unterwegs …</span></div>' : '');
                     setBtnLabel(attackBtn, 'Angreifen');
-                    attackBtn.style.display = 'inline-block';
+                    attackBtn.style.display = isCapital(island.id) ? 'none' : 'inline-block';   // capitals can't be attacked
                     scoutBtn.style.display = 'inline-block';
                     // Scouting is always allowed, even on an already-scouted
                     // island (re-scout to refresh) - only block a second
