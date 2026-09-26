@@ -1589,7 +1589,7 @@ body.has-panel .mapctl{display:none}
         // zero overlap.
         const CENTER_LANDMASS_RADIUS = 30000; // only the hub is bigger
         const OUTER_LANDMASS_RADIUS = 20000;
-        const GRID_N = 7;          // square world: 7 × 7 landmasses, the Thron-Insel in the middle cell
+        const GRID_N = 9;          // square world: 9 × 9 landmasses, the Thron-Insel in the middle cell
         const HEX_SPACING = 56120; // distance between orthogonally adjacent cell centres (tightest packing with zero overlap)
         const GRID_HALF = (GRID_N - 1) / 2;
         const RIVER_HALF = 1500;   // one big square continent: its 49 regions are split by narrow rivers (half width)
@@ -1605,6 +1605,8 @@ body.has-panel .mapctl{display:none}
             throne:   { troops: [5e6, 2e7],   def: [1e6, 4e6],   level: 40, temple: [2.5e8, 6e7], templeLevel: 60 },
             guardian: { troops: [1e5, 1e6],   def: [2e4, 2e5],   level: 20, temple: [5e6, 1e6],   templeLevel: 30 }
         };
+        const RING_MULT = { 1: 300, 2: 60, 3: 8, 4: 1 };   // neutral strength of outer regions: the edge is easy, near the middle hard
+        function ringMult(lm) { return lm.tier === 'outer' ? (RING_MULT[lm.ring] || 1) : 1; }
         function niceRoundW(n) { const p = Math.pow(10, Math.max(0, Math.floor(Math.log10(n)) - 1)); return Math.round(n / p) * p; }
         const HUB_TOWERS_PER_LANDMASS = 180; // the hub is 1.5x the radius, so it earns more bases too
         const TOWER_MIN_SPACING_RATIO = 0.10; // relative to the landmass radius
@@ -1784,7 +1786,7 @@ body.has-panel .mapctl{display:none}
         // The big islands themselves - just background land, drawn as one
         // organic coastline each, no ownership state of their own. Landmass
         // 0 is always the centre (Thron-Insel); the others sit on a square
-        // 7 × 7 grid around it.
+        // 9 × 9 grid around it.
         // A region of the continent: a square cell whose edges follow the river centre lines between the cells
         // (shared by both neighbours, so the banks match) - sampled at uniform angles like generateIslandShape,
         // so polygonPointAtAngle works on it. The continent's outer edge is a gently wavy coast.
@@ -1833,7 +1835,7 @@ body.has-panel .mapctl{display:none}
                 const shape = generateRegionShape(cell.q, cell.r);
                 let shapeMaxR = 0;
                 for (const p of shape) shapeMaxR = Math.max(shapeMaxR, Math.hypot(p.x - x, p.y - y));
-                landmasses.push({ id: lmId, q: cell.q, r: cell.r, x, y, radius, shape, shapeMaxR, isCenter: isC, tier });
+                landmasses.push({ id: lmId, q: cell.q, r: cell.r, ring: Math.max(Math.abs(cell.q), Math.abs(cell.r)), x, y, radius, shape, shapeMaxR, isCenter: isC, tier });
                 lmId++;
             }
         }
@@ -1908,13 +1910,14 @@ body.has-panel .mapctl{display:none}
             const gate = gateOnRoute(fromLm, toLm);
             if (!gate || islandOwnerOf(gate.id) === payer || gate.id === targetId) return { gate, cost: 0 };
             const cfg = gateSettings(gate);
-            if (cfg.closed && islandOwnerOf(gate.id)) return { gate, cost: Infinity, closed: true };
+            if (!islandOwnerOf(gate.id) || cfg.closed) return { gate, cost: Infinity, closed: true };   // unowned gates are shut
             return { gate, cost: cfg.toll > 0 ? Math.max(100, Math.round(Math.max(0, troops) * cfg.toll)) : 0 };
         }
         function payToll(fromLm, toLm, troops, payer, targetId) { // payer: 'player' | bot id → false when it can't pay
             const { gate, cost, closed } = tollFor(fromLm, toLm, troops, payer, targetId);
             if (!cost) return true;
-            if (closed) { if (payer === 'player') flashHint('Das Tor ist geschlossen – ' + botById[islandOwnerOf(gate.id)].name + ' lässt niemanden durch. Erobere das Tor.', 4000); return false; }
+            if (closed) { if (payer === 'player') { const ow = islandOwnerOf(gate.id);
+                flashHint(ow ? 'Das Tor ist geschlossen – ' + botById[ow].name + ' lässt niemanden durch. Erobere das Tor.' : 'Das Tor ist unbesetzt und verschlossen – erobere es zuerst, dann kommst du durch.', 4000); } return false; }
             const have = payer === 'player' ? coins : (botCoins[payer] || 0);
             if (have < cost) { if (payer === 'player') flashHint('Maut am Tor: ' + fmtNum(cost) + ' Münzen – du hast zu wenig. Erobere das Tor, dann ist es kostenlos.', 4000); return false; }
             if (payer === 'player') coins -= cost; else botCoins[payer] -= cost;
@@ -1987,9 +1990,9 @@ body.has-panel .mapctl{display:none}
                     type: 'tower',
                     // Two separate stats for a neutral (unowned) tower:
                     // troops garrisoned there, and a defense bonus on top.
-                    neutralTroops: tierStats ? niceRoundW(tierStats.troops[0] + rand() * (tierStats.troops[1] - tierStats.troops[0])) : NEUTRAL_TROOPS_MIN + Math.floor(rand() * (NEUTRAL_TROOPS_MAX - NEUTRAL_TROOPS_MIN + 1)),
-                    neutralDefense: tierStats ? niceRoundW(tierStats.def[0] + rand() * (tierStats.def[1] - tierStats.def[0])) : NEUTRAL_DEFENSE_MIN + Math.floor(rand() * (NEUTRAL_DEFENSE_MAX - NEUTRAL_DEFENSE_MIN + 1)),
-                    neutralLevel: tierStats ? tierStats.level : 1
+                    neutralTroops: tierStats ? niceRoundW(tierStats.troops[0] + rand() * (tierStats.troops[1] - tierStats.troops[0])) : (NEUTRAL_TROOPS_MIN + Math.floor(rand() * (NEUTRAL_TROOPS_MAX - NEUTRAL_TROOPS_MIN + 1))) * ringMult(lm),
+                    neutralDefense: tierStats ? niceRoundW(tierStats.def[0] + rand() * (tierStats.def[1] - tierStats.def[0])) : (NEUTRAL_DEFENSE_MIN + Math.floor(rand() * (NEUTRAL_DEFENSE_MAX - NEUTRAL_DEFENSE_MIN + 1))) * ringMult(lm),
+                    neutralLevel: tierStats ? tierStats.level : 1 + Math.round(Math.log2(ringMult(lm)))
                 });
             }
 
@@ -2001,21 +2004,22 @@ body.has-panel .mapctl{display:none}
                 radius: ISLAND_RADIUS * (isMega ? 1.6 : lm.tier === 'guardian' ? 1.45 : 1.3),
                 type: isMega ? 'megaTemple' : 'temple',
                 guardian: lm.tier === 'guardian',
-                neutralTroops: tierStats ? tierStats.temple[0] : Math.round(Math.floor(TEMPLE_TROOPS_MIN + rand() * (TEMPLE_TROOPS_MAX - TEMPLE_TROOPS_MIN)) * (isMega ? MEGA_TEMPLE_MULT : 1)),
-                neutralDefense: tierStats ? tierStats.temple[1] : Math.round(Math.floor(TEMPLE_DEFENSE_MIN + rand() * (TEMPLE_DEFENSE_MAX - TEMPLE_DEFENSE_MIN)) * (isMega ? MEGA_TEMPLE_MULT : 1)),
+                neutralTroops: tierStats ? tierStats.temple[0] : Math.round(Math.floor(TEMPLE_TROOPS_MIN + rand() * (TEMPLE_TROOPS_MAX - TEMPLE_TROOPS_MIN)) * (isMega ? MEGA_TEMPLE_MULT : 1) * ringMult(lm)),
+                neutralDefense: tierStats ? tierStats.temple[1] : Math.round(Math.floor(TEMPLE_DEFENSE_MIN + rand() * (TEMPLE_DEFENSE_MAX - TEMPLE_DEFENSE_MIN)) * (isMega ? MEGA_TEMPLE_MULT : 1) * ringMult(lm)),
                 neutralLevel: tierStats ? tierStats.templeLevel : 1
             });
         }
         // Tore: a capturable base on the outer bank of every bridge into a Wächter region or the middle.
         // Whoever owns a gate crosses its bridge for free and collects the toll everyone else pays.
+        // Every bridge has a gate. Unowned gates are shut: whoever wants across has to take the gate first.
         const GATE_STATS = { guardian: { troops: 2e6, def: 5e5, level: 25, toll: 0.25 }, throne: { troops: 5e7, def: 1e7, level: 45, toll: 0.5 } };
+        const BORDER_GATE = { 4: { troops: 1500, def: 400, level: 3 }, 3: { troops: 12000, def: 3000, level: 8 }, 2: { troops: 1e5, def: 25000, level: 14 }, 1: { troops: 4e5, def: 1e5, level: 18 } };
         for (const br of bridges) {
-            const ta = landmasses[br.a].tier, tb = landmasses[br.b].tier;
-            const kind = ta === 'throne' || tb === 'throne' ? 'throne' : ta === 'guardian' || tb === 'guardian' ? 'guardian' : null;
-            if (!kind) continue;
-            const rank = { outer: 0, guardian: 1, throne: 2 }, outerA = rank[ta] <= rank[tb];
+            const A = landmasses[br.a], B = landmasses[br.b], ta = A.tier, tb = B.tier;
+            const kind = ta === 'throne' || tb === 'throne' ? 'throne' : ta === 'guardian' || tb === 'guardian' ? 'guardian' : 'border';
+            const outerA = A.ring >= B.ring;                                                      // the gate stands on the side farther from the middle
             const ex = outerA ? br.x1 : br.x2, ey = outerA ? br.y1 : br.y2, ox = outerA ? br.x2 : br.x1, oy = outerA ? br.y2 : br.y1;
-            const bl = Math.hypot(ox - ex, oy - ey) || 1, st = GATE_STATS[kind];
+            const bl = Math.hypot(ox - ex, oy - ey) || 1, st = kind === 'border' ? Object.assign({ toll: 0.1 }, BORDER_GATE[Math.min(A.ring, B.ring)] || BORDER_GATE[4]) : GATE_STATS[kind];
             br.gateId = id;
             islands.push({ id: id++, ends: [[br.x1, br.y1], [br.x2, br.y2]], landmassId: outerA ? br.a : br.b, x: ex - (ox - ex) / bl * 900, y: ey - (oy - ey) / bl * 900, radius: ISLAND_RADIUS * 1.25,
                            type: 'gate', gateKind: kind, toll: st.toll, neutralTroops: st.troops, neutralDefense: st.def, neutralLevel: st.level });
@@ -2026,7 +2030,7 @@ body.has-panel .mapctl{display:none}
         // The map was rebuilt (Thron-Insel + Wächter-Inseln): old base ids no longer match, so every
         // map-bound part of an old save is cleared once. Coins, gems, gear, skills and level stay,
         // and the player's whole army moves to the new home base.
-        const WORLD_VERSION = '4';
+        const WORLD_VERSION = '5';
         if (store.get('openWaterWorldVersion') !== WORLD_VERSION) {
             let carry = 0;
             try {
@@ -2216,7 +2220,15 @@ body.has-panel .mapctl{display:none}
             { id: 'bot13', name: 'Jonas',        color: '#7f8c8d', style: 'balanced' },
             { id: 'bot14', name: 'IronMike',     color: '#b03a2e', style: 'raider' },
             { id: 'bot15', name: 'Sophie_K',     color: '#6c3483', style: 'builder' },
-            { id: 'bot16', name: 'Drachenherz',  color: '#a04000', style: 'templer' }
+            { id: 'bot16', name: 'Drachenherz',  color: '#a04000', style: 'templer' },
+            { id: 'bot17', name: 'Nina_R',       color: '#884ea0', style: 'builder' },
+            { id: 'bot18', name: 'Blitzkrieger', color: '#cb4335', style: 'raider' },
+            { id: 'bot19', name: 'MaxPower',     color: '#1f618d', style: 'balanced' },
+            { id: 'bot20', name: 'Eisbär',       color: '#117864', style: 'templer' },
+            { id: 'bot21', name: 'Lukas_07',     color: '#b9770e', style: 'raider' },
+            { id: 'bot22', name: 'Hanna',        color: '#6e2c00', style: 'builder' },
+            { id: 'bot23', name: 'Sturmfalke',   color: '#5b2c6f', style: 'balanced' },
+            { id: 'bot24', name: 'Ragnar',       color: '#943126', style: 'raider' }
         ];
         const BOT_STYLES = {
             raider:   { margin: 1.05, spend: .45, send: 1,   skills: ['attack', 'troops', 'attack', 'defense'], temple: .7, enemy: .55, act: .72 },
@@ -2251,7 +2263,7 @@ body.has-panel .mapctl{display:none}
         // added to BOT_DEFS later, on top of an existing save where the
         // earlier bots already have territory, still gets seeded in.
         {
-            const outerLandmassIds = landmasses.filter(lm => lm.tier === 'outer' && lm.id !== islandById[playerIslandId].landmassId).map(lm => lm.id);
+            const outerLandmassIds = landmasses.filter(lm => lm.tier === 'outer' && lm.ring >= 3 && lm.id !== islandById[playerIslandId].landmassId).map(lm => lm.id);
             for (let i = outerLandmassIds.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [outerLandmassIds[i], outerLandmassIds[j]] = [outerLandmassIds[j], outerLandmassIds[i]];
@@ -3823,7 +3835,7 @@ body.has-panel .mapctl{display:none}
                                            troops: fmtCompact(islandTroops[island.id] || 0), def: null, level, temple: isTemple, p: 4 };
           if (owner) return { kind: 'bot', glyph: isTemple ? 'temple' : botCapitalOf(owner) === island.id ? 'castle' : 'bot', name: botById[owner].name,
                               troops: scouted ? fmtCompact(islandTroops[island.id] || 0) : '?', def: null, level, temple: isTemple, p: 3 };
-          if (island.type === 'gate') return { kind: 'neutral', glyph: 'lock', name: island.gateKind === 'throne' ? 'Thron-Tor' : 'Wächter-Tor',
+          if (island.type === 'gate') return { kind: 'neutral', glyph: 'lock', name: island.gateKind === 'throne' ? 'Thron-Tor' : island.gateKind === 'guardian' ? 'Wächter-Tor' : 'Grenztor',
                    troops: scouted ? fmtCompact(island.neutralTroops) : '?', def: scouted ? fmtCompact(island.neutralDefense) : null, level, temple: false, p: 2.5 };
           return { kind: 'neutral', glyph: isTemple ? 'temple' : 'question', name: isTemple ? tName : 'Neutral',
                    troops: scouted ? fmtCompact(island.neutralTroops) : '?', def: scouted ? fmtCompact(island.neutralDefense) : null,
@@ -4944,7 +4956,7 @@ body.has-panel .mapctl{display:none}
             const b = loadBotState()[bot.id];
             if (!b.outAt) { b.outAt = now; saveBotState(); return; }
             if (now - b.outAt < 600000 || !botOnline(bot, now)) return;
-            const free = islands.filter(i => i.type === 'tower' && !islandOwnerOf(i.id) && landmasses[i.landmassId].tier === 'outer' && !bossAt(i.id));
+            const free = islands.filter(i => i.type === 'tower' && !islandOwnerOf(i.id) && landmasses[i.landmassId].tier === 'outer' && landmasses[i.landmassId].ring >= 3 && !bossAt(i.id));
             if (!free.length) return;
             const t = free[Math.floor(Math.random() * free.length)];
             botOwnedIslands[bot.id].add(t.id); islandLevels[t.id] = 1; islandTroops[t.id] = 20; b.outAt = 0; b.capital = t.id;
@@ -6375,8 +6387,54 @@ body.has-panel .mapctl{display:none}
                 };
                 for (const u of b.A.units) place(b.A, u);
                 for (const u of b.D.units) place(b.D, u);
+                // standard bearers behind each army, flags in the side's colour
+                const bearer = (atk) => {
+                    const side = atk ? b.A : b.D, rows = Math.ceil(side.units.length / side.files);
+                    let d = atk ? aFront + (rows + .6) * gap : Math.max(4 * k, dFront - (rows + .4) * gap * .8);
+                    let alpha = 1; if (after) { const q = Math.min(1, (t - 3200) / 900); alpha = 1 - q; if (atk) d += (aWon ? -aFront * q : 60 * k * q); }
+                    if (!atk && t < 700) alpha = t / 700;
+                    const x = tx - ux * d, y = ty - uy * d, [col] = atk ? cA : cD, wave = Math.sin(rt / 160) * 2 * k;
+                    drawn.push({ y: y + .01, f: () => { ctx.save(); ctx.globalAlpha = alpha;
+                        bsSoldier(ctx, x, y, s, atk ? face : -face, col, (atk ? cA : cD)[1], (atk && adv < 1) || after ? rt / 90 : 0, 0, 0);
+                        ctx.strokeStyle = '#3a2c1c'; ctx.lineWidth = 1.4 * k; ctx.beginPath(); ctx.moveTo(x, y - s * .2); ctx.lineTo(x, y - s * 1.9); ctx.stroke();
+                        ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(x, y - s * 1.9); ctx.quadraticCurveTo(x + (atk ? face : -face) * 7 * k, y - s * 1.9 + wave, x + (atk ? face : -face) * 14 * k, y - s * 1.75 + wave);
+                        ctx.lineTo(x, y - s * 1.45); ctx.closePath(); ctx.fill(); ctx.lineWidth = .8 * k; ctx.stroke(); ctx.restore(); } });
+                };
+                bearer(true); bearer(false);
+                // dust kicked up behind the charging column
+                if (adv < 1) { for (let i = 0; i < 4; i++) { const d = aFront + (b.A.files ? i * gap : 0), o = (i - 1.5) * fileGap;
+                    const x = tx - ux * (d + 6 * k) + vx * o, y = ty - uy * (d + 6 * k) + vy * o;
+                    ctx.fillStyle = 'rgba(190,175,140,' + (.18 * (1 - adv)) + ')'; ctx.beginPath(); ctx.ellipse(x, y + 2 * k, (8 + adv * 10) * k, (3 + adv * 3) * k, 0, 0, Math.PI * 2); ctx.fill(); } }
                 drawn.sort((p, q) => p.y - q.y).forEach(d => d.f());
                 const mx = tx - ux * (dFront + 6.5 * k), my2 = ty - uy * (dFront + 6.5 * k);
+                if (t > 780 && t < 1150) {                   // the lines crash together: a flash and a ring of dust
+                    const q = (t - 780) / 370;
+                    ctx.strokeStyle = 'rgba(255,236,190,' + (.7 * (1 - q)) + ')'; ctx.lineWidth = 3 * k * (1 - q);
+                    ctx.beginPath(); ctx.ellipse(mx, my2 - s * .4, (12 + 40 * q) * k, (5 + 16 * q) * k, Math.atan2(vy, vx), 0, Math.PI * 2); ctx.stroke();
+                    ctx.fillStyle = 'rgba(255,245,215,' + (.35 * (1 - q)) + ')'; ctx.beginPath(); ctx.arc(mx, my2 - s * .5, (8 + 10 * q) * k, 0, Math.PI * 2); ctx.fill();
+                }
+                if (t > 350 && t < 2800) {                   // arrow volleys from the back ranks, both ways
+                    const r = mulberry32(b.targetId * 7 + 1);
+                    for (let i = 0; i < 10; i++) {
+                        const atk = i % 2 === 0, start = 350 + r() * 1600, dur = 520 + r() * 200, q = (t - start) / dur;
+                        if (q < 0 || q > 1) continue;
+                        const o1 = (r() - .5) * 40 * k, o2 = (r() - .5) * 40 * k;
+                        const d1 = atk ? aFront + 2.5 * gap : dFront * .2, d2 = atk ? dFront * .6 : aFront + gap;
+                        const x1 = tx - ux * d1 + vx * o1, y1 = ty - uy * d1 + vy * o1 - s, x2 = tx - ux * d2 + vx * o2, y2 = ty - uy * d2 + vy * o2 - s * .5;
+                        const h = 26 * k, px = x1 + (x2 - x1) * q, py = y1 + (y2 - y1) * q - Math.sin(q * Math.PI) * h;
+                        const qn = Math.min(1, q + .06), nx = x1 + (x2 - x1) * qn, ny = y1 + (y2 - y1) * qn - Math.sin(qn * Math.PI) * h;
+                        const ang = Math.atan2(ny - py, nx - px);
+                        ctx.strokeStyle = '#2a2016'; ctx.lineWidth = 1.1 * k; ctx.beginPath(); ctx.moveTo(px - Math.cos(ang) * 5 * k, py - Math.sin(ang) * 5 * k); ctx.lineTo(px + Math.cos(ang) * 4 * k, py + Math.sin(ang) * 4 * k); ctx.stroke();
+                        ctx.fillStyle = '#d8dde2'; ctx.beginPath(); ctx.arc(px + Math.cos(ang) * 4 * k, py + Math.sin(ang) * 4 * k, .9 * k, 0, Math.PI * 2); ctx.fill();
+                    }
+                }
+                if (after && aWon && b.atk === 'mine') {       // your banner goes up on the captured base
+                    const q = Math.min(1, (t - 3300) / 700), fx = tx + 6 * k, fy = ty - s * .6, pole = s * 2.2 * q;
+                    ctx.strokeStyle = '#3a2c1c'; ctx.lineWidth = 1.6 * k; ctx.beginPath(); ctx.moveTo(fx, fy); ctx.lineTo(fx, fy - pole); ctx.stroke();
+                    if (q > .3) { const wave = Math.sin(rt / 150) * 2.5 * k; ctx.fillStyle = cA[0]; ctx.beginPath(); ctx.moveTo(fx, fy - pole);
+                        ctx.quadraticCurveTo(fx + 10 * k, fy - pole + wave, fx + 20 * k, fy - pole + 3 * k + wave); ctx.lineTo(fx, fy - pole + 11 * k); ctx.closePath(); ctx.fill();
+                        ctx.lineWidth = .8 * k; ctx.stroke(); }
+                }
                 if (fight) {                                  // sparks + dust on the front line
                     const r = mulberry32(Math.floor(rt / 70) + b.targetId);
                     for (let i = 0; i < 5; i++) { const o = (r() - .5) * 40 * k, x = mx + vx * o, y = my2 + vy * o - s * .55;
@@ -6936,92 +6994,160 @@ body.has-panel .mapctl{display:none}
         });
 
         // --- drawing (virtual 1000 x 1000 space, fitted to the screen) ---
-        function cityDrawGround(g) {                    // a square walled town: meadow outside, paved streets inside, towers on the corners
-            const out = g.createLinearGradient(-600, -600, 1600, 1600); out.addColorStop(0, '#46823a'); out.addColorStop(1, '#2b5626');
-            g.fillStyle = out; g.fillRect(-4000, -4000, 9000, 9000);
-            const rng2 = mulberry32(77);
-            for (let i = 0; i < 700; i++) {                // woods around the walls
-                const x = -1100 + rng2() * 3200, y = -400 + rng2() * 1800;
-                if (x > 10 && x < 990 && y > 10 && y < 990) continue;
-                g.fillStyle = '#26512a'; g.beginPath(); g.arc(x, y, 10 + rng2() * 12, 0, Math.PI * 2); g.fill();
-                g.fillStyle = 'rgba(140,200,100,.28)'; g.beginPath(); g.arc(x - 3, y - 4, 5, 0, Math.PI * 2); g.fill();
-            }
-            const L = 40, R = 960;                          // inside the walls
-            const town = g.createLinearGradient(0, L, 0, R); town.addColorStop(0, '#6f9a4c'); town.addColorStop(1, '#5a8540');
-            g.fillStyle = town; g.fillRect(L, L, R - L, R - L);
-            // streets: a main avenue from the gate to the keep, cross streets along the building rows
-            const street = (x1, y1, x2, y2, w) => { g.strokeStyle = '#6e604a'; g.lineWidth = w + 4; g.lineCap = 'square'; g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke();
-                g.strokeStyle = '#b9a67e'; g.lineWidth = w; g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); };
-            street(500, 950, 500, 200, 26);
-            street(290, 420, 710, 420, 18); street(290, 720, 710, 720, 18);
-            street(290, 420, 290, 720, 16); street(710, 420, 710, 720, 16);
-            // market square with a fountain in the middle
-            g.fillStyle = '#b9a67e'; g.beginPath(); g.arc(500, 560, 92, 0, Math.PI * 2); g.fill(); g.strokeStyle = '#6e604a'; g.lineWidth = 3; g.stroke();
-            g.fillStyle = '#8c8573'; g.beginPath(); g.arc(500, 560, 40, 0, Math.PI * 2); g.fill(); g.stroke();
-            g.fillStyle = '#3d7aa8'; g.beginPath(); g.arc(500, 560, 30, 0, Math.PI * 2); g.fill();
-            g.fillStyle = 'rgba(255,255,255,.5)'; g.beginPath(); g.arc(494, 553, 8, 0, Math.PI * 2); g.fill();
-            g.fillStyle = '#8c8573'; g.beginPath(); g.arc(500, 560, 8, 0, Math.PI * 2); g.fill();
-            // a few houses and gardens between the streets
-            const house = (x, y, w, h, roofCol) => { g.fillStyle = '#e6dcc6'; g.fillRect(x, y, w, h); g.strokeStyle = '#3a342b'; g.lineWidth = 1.5; strokeBox(g, x, y, w, h);
-                g.fillStyle = roofCol; g.fillRect(x - 3, y - 8, w + 6, 10); strokeBox(g, x - 3, y - 8, w + 6, 10); };
-            for (const [x, y, c] of [[120, 160, '#7a3226'], [190, 150, '#6d2a22'], [800, 160, '#7a3226'], [860, 170, '#5a2c22'], [120, 520, '#6d2a22'], [850, 520, '#7a3226'],
-                                      [140, 860, '#5a2c22'], [210, 870, '#7a3226'], [790, 870, '#6d2a22'], [860, 860, '#7a3226'], [400, 180, '#6d2a22'], [570, 180, '#5a2c22']]) house(x, y, 40, 28, c);
-            g.fillStyle = 'rgba(40,90,30,.55)';
-            for (const [x, y] of [[180, 300], [820, 300], [180, 790], [820, 790], [390, 300], [610, 300]]) { g.beginPath(); g.arc(x, y, 16, 0, Math.PI * 2); g.fill(); }
-            // outer wall: thick stone band with merlons, corner towers, the gatehouse at the bottom
-            const W2 = 22;
-            g.fillStyle = '#8f887a'; g.fillRect(L - W2, L - W2, R - L + 2 * W2, W2); g.fillRect(L - W2, R, R - L + 2 * W2, W2);
-            g.fillRect(L - W2, L, W2, R - L); g.fillRect(R, L, W2, R - L);
-            g.strokeStyle = '#3a342b'; g.lineWidth = 2; strokeBox(g, L - W2, L - W2, R - L + 2 * W2, R - L + 2 * W2); strokeBox(g, L, L, R - L, R - L);
-            g.fillStyle = '#a8a193';
-            for (let x = L; x < R; x += 22) { g.fillRect(x, L - W2 - 8, 12, 8); g.fillRect(x, R + W2, 12, 8); }
-            for (let y = L; y < R; y += 22) { g.fillRect(L - W2 - 8, y, 8, 12); g.fillRect(R + W2, y, 8, 12); }
-            for (const [cx, cy] of [[L - 11, L - 11], [R + 11, L - 11], [L - 11, R + 11], [R + 11, R + 11]]) {   // corner towers
-                g.fillStyle = '#9a9384'; g.fillRect(cx - 34, cy - 34, 68, 68); g.strokeStyle = '#3a342b'; g.lineWidth = 2; strokeBox(g, cx - 34, cy - 34, 68, 68);
-                g.fillStyle = '#6d2a22'; g.beginPath(); g.moveTo(cx - 38, cy - 28); g.lineTo(cx, cy - 64); g.lineTo(cx + 38, cy - 28); g.closePath(); g.fill(); g.stroke();
-            }
-            g.fillStyle = '#9a9384'; g.fillRect(450, R - 14, 100, 50); g.strokeStyle = '#3a342b'; strokeBox(g, 450, R - 14, 100, 50);   // gatehouse
-            g.fillStyle = '#2a1f16'; g.beginPath(); g.moveTo(478, R + 36); g.lineTo(478, R + 8); g.arc(500, R + 8, 22, Math.PI, 0); g.lineTo(522, R + 36); g.fill();
+        // ---- the town, painted once into a cache canvas (1000 × 1000 virtual units) ----
+        var CITY_BG = null;
+        function cityTexture(seed, base, spots, n, size) {   // small tileable noise texture for grass / cobbles
+            const c = document.createElement('canvas'); c.width = c.height = size; const g = c.getContext('2d'), r = mulberry32(seed);
+            g.fillStyle = base; g.fillRect(0, 0, size, size);
+            for (let i = 0; i < n; i++) { g.fillStyle = spots[Math.floor(r() * spots.length)]; const x = r() * size, y = r() * size, w = 1 + r() * 3;
+                for (const dx of [0, -size, size]) for (const dy of [0, -size, size]) g.fillRect(x + dx, y + dy, w, w * (.6 + r())); }
+            return c;
         }
-        function cityDrawPlot(g, x, y, r) {
-            g.fillStyle = 'rgba(110,90,55,.55)'; g.beginPath(); g.ellipse(x, y + 18, r, r * 0.5, 0, 0, Math.PI * 2); g.fill();
-            g.strokeStyle = 'rgba(240,220,170,.55)'; g.setLineDash([5, 5]); g.lineWidth = 2; g.stroke(); g.setLineDash([]);
+        function cityPaintTown() {
+            const S = 2, c = document.createElement('canvas'); c.width = c.height = 1400 * S; const g = c.getContext('2d');
+            g.setTransform(S, 0, 0, S, 200 * S, 200 * S);                      // covers -200 … 1200
+            const grass = g.createPattern(cityTexture(11, '#4f8a3c', ['#5a9644', '#447a33', '#63a14c', '#3d6f2e'], 900, 128), 'repeat');
+            const cob = g.createPattern(cityTexture(12, '#a8977a', ['#b8a787', '#978669', '#c2b294', '#8a7a5f'], 700, 64), 'repeat');
+            const rnd = mulberry32(77);
+            // meadow + woods outside the walls
+            g.fillStyle = '#2f5a27'; g.fillRect(-200, -200, 1400, 1400);
+            g.fillStyle = grass; g.globalAlpha = .55; g.fillRect(-200, -200, 1400, 1400); g.globalAlpha = 1;
+            const tree = (x, y, r) => { g.fillStyle = 'rgba(0,0,0,.18)'; g.beginPath(); g.ellipse(x + 3, y + r * .7, r * .9, r * .35, 0, 0, Math.PI * 2); g.fill();
+                g.fillStyle = '#5a3d24'; g.fillRect(x - 1.5, y, 3, r * .6);
+                for (const [dx, dy, rr, col] of [[0, 0, 1, '#2b5a26'], [-.35, -.2, .7, '#34692d'], [.3, -.3, .65, '#3d7834'], [-.1, -.5, .5, '#4a8a3c']]) {
+                    g.fillStyle = col; g.beginPath(); g.arc(x + dx * r, y + dy * r, rr * r, 0, Math.PI * 2); g.fill(); } };
+            for (let i = 0; i < 520; i++) { const x = -200 + rnd() * 1400, y = -200 + rnd() * 1400; if (x > 5 && x < 995 && y > 5 && y < 995) continue; tree(x, y, 11 + rnd() * 9); }
+            // moat
+            g.strokeStyle = '#1f4f6e'; g.lineWidth = 26; g.beginPath(); g.rect(-8, -8, 1016, 1016); g.stroke();
+            g.strokeStyle = 'rgba(160,210,235,.25)'; g.lineWidth = 2; g.beginPath(); g.rect(-16, -16, 1032, 1032); g.stroke();
+            // town ground
+            g.fillStyle = grass; g.fillRect(40, 40, 920, 920);
+            // cobbled streets + the market square
+            const road = (pts, w) => { g.lineJoin = 'round'; g.lineCap = 'round'; g.beginPath(); pts.forEach((q, i) => g[i ? 'lineTo' : 'moveTo'](q[0], q[1]));
+                g.strokeStyle = '#6a5c45'; g.lineWidth = w + 5; g.stroke(); g.strokeStyle = cob; g.lineWidth = w; g.stroke(); };
+            road([[500, 1000], [500, 120]], 34);
+            road([[150, 420], [850, 420]], 24); road([[150, 720], [850, 720]], 24);
+            road([[290, 420], [290, 720]], 20); road([[710, 420], [710, 720]], 20);
+            road([[120, 160], [880, 160]], 16);
+            g.fillStyle = '#6a5c45'; g.beginPath(); g.arc(500, 570, 112, 0, Math.PI * 2); g.fill();
+            g.fillStyle = cob; g.beginPath(); g.arc(500, 570, 107, 0, Math.PI * 2); g.fill();
+            g.strokeStyle = 'rgba(80,68,50,.35)'; g.lineWidth = 1.5; for (const rr of [60, 85]) { g.beginPath(); g.arc(500, 570, rr, 0, Math.PI * 2); g.stroke(); }
+            // fountain
+            g.fillStyle = '#8e8676'; g.beginPath(); g.arc(500, 570, 38, 0, Math.PI * 2); g.fill(); g.strokeStyle = '#4a4336'; g.lineWidth = 2; g.stroke();
+            const wat = g.createRadialGradient(492, 562, 4, 500, 570, 31); wat.addColorStop(0, '#7fc3e6'); wat.addColorStop(1, '#2f6f98');
+            g.fillStyle = wat; g.beginPath(); g.arc(500, 570, 31, 0, Math.PI * 2); g.fill();
+            g.fillStyle = '#a79f8e'; g.beginPath(); g.arc(500, 570, 10, 0, Math.PI * 2); g.fill(); g.stroke();
+            // market stalls around the square
+            const stall = (x, y, col) => { g.fillStyle = '#7a5a36'; g.fillRect(x - 13, y - 6, 26, 14); g.fillStyle = col; g.beginPath(); g.moveTo(x - 16, y - 4); g.lineTo(x + 16, y - 4); g.lineTo(x + 12, y - 14); g.lineTo(x - 12, y - 14); g.closePath(); g.fill();
+                g.fillStyle = 'rgba(255,255,255,.55)'; for (let i = -12; i < 12; i += 8) g.fillRect(x + i, y - 14, 4, 10); g.strokeStyle = '#3a2c1c'; g.lineWidth = 1; g.stroke(); };
+            [[430, 495, '#b33a2e'], [570, 495, '#2f6fa8'], [410, 640, '#c98b2a'], [590, 640, '#3d8a4a']].forEach(q => stall(q[0], q[1], q[2]));
+            // houses in blocks: pitched roofs, chimneys
+            const house = (x, y, w, h, roofCol, rot) => { g.save(); g.translate(x, y); if (rot) g.rotate(rot);
+                g.fillStyle = 'rgba(0,0,0,.2)'; g.fillRect(-w / 2 + 3, -h / 2 + 4, w, h);
+                g.fillStyle = roofCol; g.fillRect(-w / 2, -h / 2, w, h);
+                g.fillStyle = 'rgba(255,255,255,.18)'; g.fillRect(-w / 2, -h / 2, w, h / 2);
+                g.strokeStyle = 'rgba(30,20,12,.8)'; g.lineWidth = 1.2; g.beginPath(); g.rect(-w / 2, -h / 2, w, h); g.stroke();
+                g.beginPath(); g.moveTo(-w / 2, 0); g.lineTo(w / 2, 0); g.stroke();
+                g.fillStyle = '#6b6456'; g.fillRect(w / 4, -h / 2 + 2, 4, 5); g.restore(); };
+            const roofs = ['#8e3a2c', '#7a3226', '#9a4a30', '#6d2a22', '#8a5a34', '#5e5a55'];
+            const block = (x0, y0, x1, y1, seed) => { const r = mulberry32(seed);
+                for (let y = y0; y < y1; y += 30) for (let x = x0; x < x1; x += 34) {
+                    if (CITY_BUILDINGS.some(bd => Math.abs(x + 15 - bd.x) < 88 && y + 13 > bd.y - 95 && y + 13 < bd.y + 62)) { r(); r(); r(); r(); continue; }   // keep the building lots free
+                    if (r() < .22) { tree(x + 14, y + 14, 9 + r() * 4); continue; }
+                    house(x + 15, y + 13, 24 + r() * 6, 18 + r() * 6, roofs[Math.floor(r() * roofs.length)], (r() - .5) * .12); } };
+            block(70, 200, 250, 390, 1); block(750, 200, 940, 390, 2); block(345, 200, 470, 390, 3); block(530, 200, 655, 390, 4);
+            block(70, 450, 240, 690, 5); block(760, 450, 940, 690, 6); block(70, 760, 250, 940, 7); block(750, 760, 940, 940, 8);
+            block(345, 760, 460, 940, 9); block(540, 760, 655, 940, 10);
+            // gardens / flower beds
+            for (const [x, y] of [[372, 470], [628, 470], [372, 680], [628, 680]]) { g.fillStyle = '#3f7a33'; g.beginPath(); g.arc(x, y, 14, 0, Math.PI * 2); g.fill();
+                const r = mulberry32(x + y); for (let i = 0; i < 9; i++) { g.fillStyle = ['#e8c547', '#d9534f', '#f0f0f0', '#b577d6'][i % 4]; g.beginPath(); g.arc(x + (r() - .5) * 20, y + (r() - .5) * 20, 1.8, 0, Math.PI * 2); g.fill(); } }
+            // the wall: walkway on top, crenellations, round towers with cone roofs, the gatehouse
+            const L = 40, R = 960, W2 = 24;
+            const wallBand = (x, y, w, h) => { const gr = g.createLinearGradient(x, y, x + (w > h ? 0 : w), y + (w > h ? h : 0)); gr.addColorStop(0, '#b3ab9a'); gr.addColorStop(1, '#8a8373');
+                g.fillStyle = gr; g.fillRect(x, y, w, h); g.strokeStyle = '#3a342b'; g.lineWidth = 2; g.beginPath(); g.rect(x, y, w, h); g.stroke();
+                g.strokeStyle = 'rgba(60,54,44,.35)'; g.lineWidth = 1; g.beginPath();
+                if (w > h) for (let i = x + 14; i < x + w; i += 14) { g.moveTo(i, y); g.lineTo(i, y + h); } else for (let i = y + 14; i < y + h; i += 14) { g.moveTo(x, i); g.lineTo(x + w, i); } g.stroke(); };
+            wallBand(L - W2, L - W2, R - L + 2 * W2, W2); wallBand(L - W2, R, R - L + 2 * W2, W2); wallBand(L - W2, L, W2, R - L); wallBand(R, L, W2, R - L);
+            g.fillStyle = '#c4bcab'; g.strokeStyle = '#3a342b'; g.lineWidth = 1;
+            for (let x = L - W2; x < R + W2; x += 16) { for (const y of [L - W2 - 7, R + W2]) { g.beginPath(); g.rect(x, y, 9, 7); g.fill(); g.stroke(); } }
+            for (let y = L; y < R; y += 16) { for (const x of [L - W2 - 7, R + W2]) { g.beginPath(); g.rect(x, y, 7, 9); g.fill(); g.stroke(); } }
+            const tower = (x, y, r) => { const gr = g.createRadialGradient(x - r * .3, y - r * .3, 2, x, y, r); gr.addColorStop(0, '#c9c1ae'); gr.addColorStop(1, '#8a8373');
+                g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); g.strokeStyle = '#3a342b'; g.lineWidth = 2; g.stroke();
+                const rf = g.createLinearGradient(x - r, y - r, x + r, y + r); rf.addColorStop(0, '#a3402f'); rf.addColorStop(1, '#5a1c14');
+                g.fillStyle = rf; g.beginPath(); g.arc(x, y, r * .78, 0, Math.PI * 2); g.fill(); g.stroke();
+                g.strokeStyle = 'rgba(40,10,6,.5)'; g.lineWidth = 1; for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * r * .78, y + Math.sin(a) * r * .78); g.stroke(); }
+                g.fillStyle = '#e8c547'; g.beginPath(); g.arc(x, y, 2.5, 0, Math.PI * 2); g.fill(); };
+            for (const [x, y] of [[L - 12, L - 12], [R + 12, L - 12], [L - 12, R + 12], [R + 12, R + 12], [500, L - 12], [L - 12, 500], [R + 12, 500]]) tower(x, y, 30);
+            g.fillStyle = '#9a9384'; g.fillRect(450, R - 18, 100, 58); g.strokeStyle = '#3a342b'; g.lineWidth = 2; g.beginPath(); g.rect(450, R - 18, 100, 58); g.stroke();   // gatehouse
+            tower(448, R + 12, 22); tower(552, R + 12, 22);
+            g.fillStyle = '#2a1f16'; g.beginPath(); g.moveTo(480, R + 40); g.lineTo(480, R + 10); g.arc(500, R + 10, 20, Math.PI, 0); g.lineTo(520, R + 40); g.fill();
+            for (const x of [470, 530]) { g.fillStyle = '#2b5d9b'; g.fillRect(x - 5, R - 14, 10, 22); g.fillStyle = '#e8c547'; g.fillRect(x - 2, R - 8, 4, 4); }
+            return CITY_BG = c;
+        }
+        function cityDrawGround(g) {
+            const bg = CITY_BG || cityPaintTown();
+            g.fillStyle = '#2f5a27'; g.fillRect(-5000, -5000, 11000, 11000);
+            g.drawImage(bg, -200, -200, 1400, 1400);
+        }
+        function cityDrawPlot(g, x, y, r) {            // empty lot: a stone foundation and a sign
+            g.fillStyle = 'rgba(0,0,0,.18)'; g.beginPath(); g.ellipse(x + 3, y + 22, r, r * .45, 0, 0, Math.PI * 2); g.fill();
+            g.fillStyle = '#9a8f78'; g.beginPath(); g.ellipse(x, y + 18, r, r * .45, 0, 0, Math.PI * 2); g.fill(); g.strokeStyle = '#4a4336'; g.lineWidth = 2; g.stroke();
+            g.fillStyle = '#b8ad94'; g.beginPath(); g.ellipse(x, y + 15, r * .8, r * .34, 0, 0, Math.PI * 2); g.fill();
+            g.strokeStyle = 'rgba(80,68,50,.5)'; g.setLineDash([6, 6]); g.lineWidth = 1.5; g.stroke(); g.setLineDash([]);
+            g.fillStyle = '#6b4a2c'; g.fillRect(x + r * .55, y - 12, 3, 26); g.fillStyle = '#e6d8b4'; g.fillRect(x + r * .55 - 9, y - 16, 21, 12); g.strokeStyle = '#3a2c1c'; g.lineWidth = 1; g.beginPath(); g.rect(x + r * .55 - 9, y - 16, 21, 12); g.stroke();
         }
         function cityDrawBuilding(g, b, lvl, now) {
-            const ink = '#2a241b', k = b.big ? 1.6 : 1 + Math.min(lvl, 25) * 0.012, x = b.x, y = b.y;
-            if (!lvl) { cityDrawPlot(g, x, y, 42); drawGlyph(g, 'plus', x, y + 8, 22, 'rgba(250,235,200,.85)'); return; }
+            const ink = '#2a241b', x = b.x, y = b.y;
+            if (!lvl) { cityDrawPlot(g, x, y, 46); drawGlyph(g, 'plus', x, y + 14, 20, 'rgba(60,50,35,.85)'); return; }
+            const tier = lvl >= 15 ? 3 : lvl >= 8 ? 2 : 1, k = 1.05 + Math.min(lvl, 25) * 0.012;
             g.save(); g.translate(x, y); g.scale(k, k); g.lineJoin = 'round'; g.strokeStyle = ink; g.lineWidth = 1.6;
-            const wall = (x0, y0, w, h) => { const q = g.createLinearGradient(x0, 0, x0 + w, 0); q.addColorStop(0, '#efe8d8'); q.addColorStop(1, '#a89c83'); g.fillStyle = q; g.fillRect(x0, y0, w, h); strokeBox(g, x0, y0, w, h); };
-            const roof = (x0, y0, w, h, col) => { g.beginPath(); g.moveTo(x0 - 4, y0); g.lineTo(x0 + w / 2, y0 - h); g.lineTo(x0 + w + 4, y0); g.closePath();
-                const q = g.createLinearGradient(x0, 0, x0 + w, 0); q.addColorStop(0, col); q.addColorStop(1, '#1d120c'); g.fillStyle = q; g.fill(); g.stroke(); };
-            if (b.big) {                                   // keep: central tower + two side towers
-                wall(-42, -30, 84, 50); roof(-42, -30, 84, 22, b.roof);
-                wall(-18, -78, 36, 50); roof(-18, -78, 36, 34, b.roof);
-                for (const sx of [-58, 42]) { wall(sx, -46, 16, 66); roof(sx, -46, 16, 22, b.roof); }
-                g.fillStyle = '#2a1f16'; g.beginPath(); g.moveTo(-9, 20); g.lineTo(-9, 2); g.arc(0, 2, 9, Math.PI, 0); g.lineTo(9, 20); g.fill();
-                g.beginPath(); g.moveTo(0, -112); g.lineTo(0, -132); g.stroke(); g.fillStyle = '#3f86d8'; g.beginPath(); g.moveTo(0, -132); g.lineTo(16, -127); g.lineTo(0, -122); g.fill(); g.stroke();
-            } else if (b.tall) {
-                wall(-12, -60, 24, 80); roof(-12, -60, 24, 30, b.roof);
-                g.fillStyle = '#2a1f16'; g.fillRect(-4, -46, 8, 10);
-            } else if (b.gate) {
-                wall(-50, -12, 100, 32);
-                for (let i = 0; i < 6; i++) { g.fillStyle = '#d9d0bd'; g.fillRect(-50 + i * 18, -20, 12, 8); strokeBox(g, -50 + i * 18, -20, 12, 8); }
-                g.fillStyle = '#2a1f16'; g.beginPath(); g.moveTo(-12, 20); g.lineTo(-12, 0); g.arc(0, 0, 12, Math.PI, 0); g.lineTo(12, 20); g.fill();
-            } else if (b.pier) {
-                g.fillStyle = '#7a5a3a'; g.fillRect(-10, 10, 20, 50); strokeBox(g, -10, 10, 20, 50);
-                wall(-30, -18, 60, 30); roof(-30, -18, 60, 18, b.roof);
-                g.fillStyle = '#5a3b22'; g.beginPath(); g.moveTo(24, 58); g.quadraticCurveTo(40, 66, 58, 58); g.lineTo(52, 50); g.lineTo(28, 50); g.closePath(); g.fill(); g.stroke();
-                g.fillStyle = '#efe7d4'; g.beginPath(); g.moveTo(40, 50); g.lineTo(40, 28); g.lineTo(52, 48); g.closePath(); g.fill(); g.stroke();
-            } else {
-                wall(-30, -20, 60, 40);
-                if (b.dome) {
-                    const q = g.createLinearGradient(-22, -52, 22, -20); q.addColorStop(0, '#f3e3b0'); q.addColorStop(1, b.roof);
-                    g.beginPath(); g.moveTo(-24, -20); g.bezierCurveTo(-24, -44, -10, -52, 0, -52); g.bezierCurveTo(10, -52, 24, -44, 24, -20); g.closePath(); g.fillStyle = q; g.fill(); g.stroke();
-                } else roof(-30, -20, 60, 26, b.roof);
-                if (b.chimney) { g.fillStyle = '#6b6456'; g.fillRect(14, -40, 8, 18); strokeBox(g, 14, -40, 8, 18);
-                    for (let i = 0; i < 3; i++) { const t = ((now / 1600) + i / 3) % 1; g.fillStyle = 'rgba(120,120,120,' + (0.5 * (1 - t)) + ')'; g.beginPath(); g.arc(18 + t * 10, -44 - t * 40, 5 + t * 8, 0, Math.PI * 2); g.fill(); } }
-                if (b.cross) { g.fillStyle = '#c0392b'; g.fillRect(-4, -6, 8, 20); g.fillRect(-10, 0, 20, 8); }
-                g.fillStyle = '#2a1f16'; g.fillRect(-6, 4, 12, 16);
+            g.fillStyle = 'rgba(0,0,0,.2)'; g.beginPath(); g.ellipse(4, 24, 50, 14, 0, 0, Math.PI * 2); g.fill();
+            g.fillStyle = '#8a7f68'; g.beginPath(); g.ellipse(0, 21, 46, 12, 0, 0, Math.PI * 2); g.fill(); g.stroke();       // plinth
+            const wall = (x0, y0, w, h, c1, c2) => { const q = g.createLinearGradient(x0, 0, x0 + w, 0); q.addColorStop(0, c1 || '#f1ead9'); q.addColorStop(1, c2 || '#a99d83');
+                g.fillStyle = q; g.fillRect(x0, y0, w, h); strokeBox(g, x0, y0, w, h);
+                g.strokeStyle = 'rgba(90,75,55,.28)'; g.lineWidth = 1; g.beginPath(); for (let yy = y0 + 8; yy < y0 + h; yy += 8) { g.moveTo(x0, yy); g.lineTo(x0 + w, yy); } g.stroke(); g.strokeStyle = ink; g.lineWidth = 1.6; };
+            const roof = (x0, y0, w, h, col) => { g.beginPath(); g.moveTo(x0 - 5, y0); g.lineTo(x0 + w / 2, y0 - h); g.lineTo(x0 + w + 5, y0); g.closePath();
+                const q = g.createLinearGradient(x0, 0, x0 + w, 0); q.addColorStop(0, col); q.addColorStop(1, '#1d120c'); g.fillStyle = q; g.fill(); g.stroke();
+                g.strokeStyle = 'rgba(0,0,0,.25)'; g.lineWidth = 1; g.beginPath(); for (let i = 1; i < 5; i++) { const yy = y0 - h * i / 5; const hw = (w / 2 + 5) * (1 - i / 5); g.moveTo(x0 + w / 2 - hw, yy); g.lineTo(x0 + w / 2 + hw, yy); } g.stroke(); g.strokeStyle = ink; g.lineWidth = 1.6; };
+            const windows = (x0, y0, n, gap) => { for (let i = 0; i < n; i++) { g.fillStyle = '#2a2016'; g.fillRect(x0 + i * gap, y0, 6, 8); g.fillStyle = 'rgba(255,210,120,.55)'; g.fillRect(x0 + i * gap + 1, y0 + 1, 4, 3); } };
+            const door = (w, h) => { g.fillStyle = '#3a2616'; g.beginPath(); g.moveTo(-w / 2, 20); g.lineTo(-w / 2, 20 - h + w / 2); g.arc(0, 20 - h + w / 2, w / 2, Math.PI, 0); g.lineTo(w / 2, 20); g.closePath(); g.fill(); g.stroke(); };
+            const banner = (bx, by, col) => { g.strokeStyle = '#3a2c1c'; g.lineWidth = 1.4; g.beginPath(); g.moveTo(bx, by); g.lineTo(bx, by - 26); g.stroke();
+                const w = Math.sin(now / 300 + bx) * 2; g.fillStyle = col; g.beginPath(); g.moveTo(bx, by - 26); g.quadraticCurveTo(bx + 8, by - 25 + w, bx + 15, by - 22 + w); g.lineTo(bx, by - 17); g.closePath(); g.fill(); g.lineWidth = .8; g.stroke(); g.lineWidth = 1.6; };
+            if (b.id === 'academy') {                    // library with a domed observatory, columns in front
+                wall(-40, -26, 80, 46); windows(-32, -16, 5, 14);
+                if (tier >= 2) { wall(-26, -52, 52, 26); windows(-18, -44, 3, 14); }
+                const top = tier >= 2 ? -52 : -26;
+                const q = g.createLinearGradient(-26, top - 30, 26, top); q.addColorStop(0, '#9fc2ee'); q.addColorStop(1, b.roof);
+                g.beginPath(); g.moveTo(-26, top); g.bezierCurveTo(-26, top - 28, -10, top - 36, 0, top - 36); g.bezierCurveTo(10, top - 36, 26, top - 28, 26, top); g.closePath(); g.fillStyle = q; g.fill(); g.stroke();
+                g.strokeStyle = 'rgba(255,255,255,.5)'; g.beginPath(); g.moveTo(-10, top - 30); g.quadraticCurveTo(-4, top - 34, 4, top - 34); g.stroke(); g.strokeStyle = ink;
+                for (const cx of [-30, -15, 15, 30]) { g.fillStyle = '#efe7d4'; g.fillRect(cx - 3, -6, 6, 26); strokeBox(g, cx - 3, -6, 6, 26); }
+                door(12, 22); if (tier >= 3) { banner(-40, -26, '#2f4f86'); banner(40, -26, '#2f4f86'); }
+            } else if (b.id === 'forge') {               // workshop: wide hall, big chimney with smoke, anvil outside
+                wall(-42, -22, 84, 42, '#e3d7c0', '#978a70'); roof(-42, -22, 84, 26, '#3c3c44'); windows(-34, -12, 2, 16);
+                if (tier >= 2) { wall(20, -48, 22, 26, '#d8ccb3', '#8c7f66'); roof(20, -48, 22, 16, '#3c3c44'); }
+                g.fillStyle = '#6b6456'; g.fillRect(-30, -56, 12, 30); strokeBox(g, -30, -56, 12, 30);
+                for (let i = 0; i < 4; i++) { const t = ((now / 1500) + i / 4) % 1; g.fillStyle = 'rgba(110,110,110,' + (0.55 * (1 - t)) + ')'; g.beginPath(); g.arc(-24 + t * 14, -60 - t * 44, 5 + t * 10, 0, Math.PI * 2); g.fill(); }
+                g.fillStyle = 'rgba(255,140,40,' + (.55 + .3 * Math.sin(now / 120)) + ')'; g.fillRect(8, 2, 18, 12); strokeBox(g, 8, 2, 18, 12);    // glowing furnace door
+                g.fillStyle = '#3a3a40'; g.fillRect(-44, 12, 14, 6); g.fillRect(-41, 18, 8, 4);                                               // anvil
+                if (tier >= 3) { banner(42, -22, '#4a4a52'); }
+            } else if (b.id === 'hospital') {            // white house with red cross, a tent for the wounded
+                wall(-36, -24, 72, 44, '#fbf7ee', '#c7bfae'); roof(-36, -24, 72, 24, '#b33a2e'); windows(-28, -14, 4, 16);
+                g.fillStyle = '#c0392b'; g.fillRect(-4, -46, 8, 18); g.fillRect(-9, -41, 18, 8);
+                door(12, 20);
+                g.fillStyle = '#e8e2d2'; g.beginPath(); g.moveTo(40, 20); g.lineTo(52, -4); g.lineTo(64, 20); g.closePath(); g.fill(); g.stroke();   // tent
+                if (tier >= 2) { g.beginPath(); g.moveTo(-64, 20); g.lineTo(-52, -4); g.lineTo(-40, 20); g.closePath(); g.fill(); g.stroke(); }
+                if (tier >= 3) banner(0, -46, '#c0392b');
+            } else if (b.id === 'shrine') {              // small temple: steps, columns, golden roof
+                g.fillStyle = '#d9d0bb'; g.fillRect(-40, 12, 80, 8); strokeBox(g, -40, 12, 80, 8); g.fillRect(-34, 4, 68, 8); strokeBox(g, -34, 4, 68, 8);
+                for (const cx of [-26, -9, 9, 26]) { g.fillStyle = '#f3ecdc'; g.fillRect(cx - 4, -28, 8, 32); strokeBox(g, cx - 4, -28, 8, 32); }
+                g.beginPath(); g.moveTo(-40, -28); g.lineTo(0, -52); g.lineTo(40, -28); g.closePath(); const q = g.createLinearGradient(-40, 0, 40, 0); q.addColorStop(0, '#f2d27a'); q.addColorStop(1, '#8a6a22'); g.fillStyle = q; g.fill(); g.stroke();
+                g.fillStyle = 'rgba(255,220,120,' + (.25 + .15 * Math.sin(now / 400)) + ')'; g.beginPath(); g.arc(0, -8, 9, 0, Math.PI * 2); g.fill();
+                if (tier >= 2) banner(-40, -28, '#c9a54e');
+            } else {                                      // wall section with a gate and battlements
+                wall(-56, -18, 112, 38, '#d0c8b6', '#8a8373');
+                for (let i = 0; i < 7; i++) { g.fillStyle = '#d9d0bd'; g.fillRect(-56 + i * 17, -27, 11, 9); strokeBox(g, -56 + i * 17, -27, 11, 9); }
+                if (tier >= 2) for (const tx of [-62, 50]) { wall(tx, -40, 12, 60, '#c9c1ae', '#8a8373'); roof(tx, -40, 12, 14, '#6d2a22'); }
+                door(22, 30); if (tier >= 3) { banner(-56, -27, '#2b5d9b'); banner(56, -27, '#2b5d9b'); }
             }
             g.restore();
         }
@@ -7476,7 +7602,7 @@ body.has-panel .mapctl{display:none}
             if (island.type === 'megaTemple') return 'Mega-Tempel';
             if (island.guardian) return 'Wächter-Tempel';
             if (island.type === 'temple') return 'Tempel';
-            if (island.type === 'gate') return island.gateKind === 'throne' ? 'Thron-Tor' : 'Wächter-Tor';
+            if (island.type === 'gate') return island.gateKind === 'throne' ? 'Thron-Tor' : island.gateKind === 'guardian' ? 'Wächter-Tor' : 'Grenztor';
             if (island.id === playerIslandId) return 'Hauptstadt';
             return 'Turm #' + (island.id + 1);
         }
@@ -7597,7 +7723,7 @@ body.has-panel .mapctl{display:none}
                         statTile('Truppen', 'troops', scouted ? fmtNum(effectiveTroops(island)) : UNK, scouted && ownerBot ? 'is-enemy' : '') +
                         statTile('Verteidigung', 'defense', scouted ? fmtNum(effectiveDefense(island)) : UNK) + '</div>' +
                         (scouted ? '' : '<div class="notice">' + icon('scout') + '<span>Stärke unbekannt. Spähen deckt Truppen und Verteidigung auf.</span></div>') +
-                        (island.type === 'gate' ? '<div class="notice notice--gold">' + icon('lock') + '<span>Tor: Wer es besitzt, geht kostenlos über die Brücke und kassiert die Maut. Alle anderen zahlen ' + island.toll.toLocaleString('de-DE') + ' Münzen pro Truppe.</span></div>' : '') +
+                        (island.type === 'gate' ? '<div class="notice notice--gold">' + icon('lock') + '<span>Tor: Unbesetzt ist es verschlossen – erobere es, um über die Brücke zu kommen. Wer es besitzt, geht kostenlos durch und bestimmt die Maut für alle anderen.</span></div>' : '') +
                         (isTemple ? '<div class="notice notice--gold">' + icon('temple') + '<span>' + (island.type === 'megaTemple' ? 'Thron der Meere: wer ihn hält, trägt die Krone – +25 % Münzen und Truppen im ganzen Reich.' : island.guardian ? 'Wächter-Tempel: 3-facher Tempel-Bonus, bewacht den Weg zur Thron-Insel.' : 'Tempel: gibt Produktion, Gems und Münzen, sobald erobert.') + '</span></div>' : '') +
                         (bossAt(island.id) ? '<div class="notice notice--gold">' + icon('shop') + '<span><b>Belohnung:</b> Legendäre Kiste + ' + BOSS_REWARD_GEMS + ' Gems · verschwindet in <b data-boss-clock>' + fmtClock((bossAt(island.id).endsAt - Date.now()) / 1000) + '</b></span></div>' : '') +
                         (scoutEnRoute ? '<div class="notice notice--warn">' + icon('hourglass') + '<span>Späher bereits unterwegs …</span></div>' : '');
