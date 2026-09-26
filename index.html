@@ -932,17 +932,6 @@ body.has-panel .mapctl{display:none}
 .city-progress{height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
 .city-progress i{display:block;height:100%;width:var(--p,0%);background:linear-gradient(90deg,var(--gold-500),var(--gold-200))}
 
-/* =====================================================================
-   BATTLE SCENE
-   ===================================================================== */
-.bscene{position:fixed;inset:0;z-index:calc(var(--z-modal) + 1);display:flex;align-items:center;justify-content:center;padding:16px;
-  background:radial-gradient(ellipse at center,rgba(6,8,12,.55),rgba(6,8,12,.88));animation:fade-in var(--dur-3) var(--ease-out);cursor:pointer}
-.bscene[hidden]{display:none}
-.bscene.is-leaving{opacity:0;transition:opacity .35s var(--ease-out)}
-.bscene-card{position:relative;width:min(620px,100%);aspect-ratio:16/10;border:1px solid var(--line-3);border-radius:var(--r-lg);overflow:hidden;
-  box-shadow:var(--sh-3),0 0 0 1px rgba(0,0,0,.6);background:#12161c}
-.bscene-canvas{display:block;width:100%;height:100%}
-.bscene-skip{position:absolute;left:0;right:0;bottom:8px;text-align:center;font:600 var(--fs-11)/1 var(--font-ui);letter-spacing:.12em;text-transform:uppercase;color:rgba(236,226,200,.5);pointer-events:none}
     </style>
 </head>
 <body>
@@ -1396,12 +1385,6 @@ body.has-panel .mapctl{display:none}
     <ul id="rewardModalRewards" class="lvlup-rewards"></ul>
     <button id="rewardModalBtn" class="btn btn--primary" type="button"><svg class="icon"><use href="#i-check"/></svg><span>Einsammeln</span></button>
   </div>
-</div>
-
-<!-- ============ BATTLE SCENE ============ -->
-<div id="battleScene" class="bscene" role="dialog" aria-modal="true" aria-label="Schlacht" hidden>
-  <div class="bscene-card"><canvas id="battleCanvas" class="bscene-canvas"></canvas>
-    <div class="bscene-skip">Tippen zum Überspringen</div></div>
 </div>
 
 <!-- ============ CAPITAL / CITY VIEW ============ -->
@@ -2920,11 +2903,12 @@ body.has-panel .mapctl{display:none}
             // the whole enemy force, a loss costs your whole attack force
             addXp(won ? totalStrength : myTroops);
             scoutedIslands.add(target.id);
-            spawnBattleFx(target.id, won, won ? (bossHere ? 'Boss besiegt' : 'Sieg') : 'Niederlage', won ? islandTitle(target) + ' erobert' : '−' + fmtCompact(myTroops) + ' Truppen');
-            if (Date.now() - attack.resolveAt < 8000)        // only fights that end while the player is watching, not ones caught up at load
-                queueBattleScene({ place: islandTitle(target), enemy: bossHere ? bossHere.name : targetOwner && botById[targetOwner] ? botById[targetOwner].name : 'Neutrale Garnison',
-                    kind: bossHere ? 'boss' : targetOwner ? 'bot' : 'neutral', my: myTroops, myLoss: won ? Math.min(myTroops, losses) : myTroops - retreatSurvivors,
-                    en: originalEnemyTroops, enLoss: won ? originalEnemyTroops : defenderCasualties, walls: originalEnemyDefense > 0, won, retreat: retreatSurvivors });
+            const ribbon = () => spawnBattleFx(target.id, won, won ? (bossHere ? 'Boss besiegt' : 'Sieg') : 'Niederlage', won ? islandTitle(target) + ' erobert' : '−' + fmtCompact(myTroops) + ' Truppen');
+            if (Date.now() - attack.resolveAt < 8000)        // fights that end while the player is watching play out on the map first
+                spawnMapBattle({ sourceId: source.id, targetId: target.id, atk: 'mine', def: bossHere ? 'boss' : targetOwner ? 'bot' : 'neutral',
+                    my: myTroops, myLoss: won ? Math.min(myTroops, losses) : myTroops - retreatSurvivors, en: originalEnemyTroops,
+                    enLoss: won ? originalEnemyTroops : defenderCasualties, won, onEnd: ribbon });
+            else ribbon();
             if (won && bossHere) defeatBoss(bossHere);
             updateHud();
             saveGame();
@@ -3033,7 +3017,11 @@ body.has-panel .mapctl{display:none}
             if (bossHere && won) { spawnBattleFx(target.id, false, bossHere.name + ' gefallen', bot.name); endBoss(bot.name + ' hat den ' + bossHere.name + ' besiegt!'); }
 
             if (playerInvolved) {
-                spawnBattleFx(target.id, !won || capitalHolds, capitalHolds ? 'Hauptstadt hält' : won ? 'Basis verloren' : 'Verteidigt', capitalHolds ? 'Garnison gefallen' : won ? 'von ' + bot.name : bot.name + ' abgewehrt');
+                const ribbon = () => spawnBattleFx(target.id, !won || capitalHolds, capitalHolds ? 'Hauptstadt hält' : won ? 'Basis verloren' : 'Verteidigt', capitalHolds ? 'Garnison gefallen' : won ? 'von ' + bot.name : bot.name + ' abgewehrt');
+                if (Date.now() - attack.resolveAt < 8000)
+                    spawnMapBattle({ sourceId: source.id, targetId: target.id, atk: 'bot', def: 'mine', my: myTroops, myLoss: won ? Math.min(myTroops, originalEnemyDefense) : myTroops,
+                        en: originalEnemyTroops, enLoss: won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops), won, onEnd: ribbon });
+                else ribbon();
                 // Only reveals the target to the player when the player was
                 // actually part of this fight - a bot conquering a neutral
                 // or another bot's base off-screen must NOT leak that
@@ -3981,6 +3969,7 @@ body.has-panel .mapctl{display:none}
           drawMarchChips();                                                                                                    // 10 countdown chips
           drawPasses(view, now);                                                                                               // chained, time-locked bridges
           drawPickups(now);                                                                                                    // 11 mini-event pickups
+          drawMapBattles(now);                                                                                                 // fights playing out at the bases
           drawBattleFx(now);                                                                                                   // 13 battle flashes + "Sieg!"
           ctx.setTransform(1, 0, 0, 1, 0, 0);
         }
@@ -5798,70 +5787,167 @@ body.has-panel .mapctl{display:none}
                 }
             }
         }
-        function drawPasses(view, now) {                   // chains + lock + countdown on bridges that are still closed
+        function drawGatehouse(g, cx, cy, H, open) {      // front view like the towers: two turrets, a wall, an arch with a portcullis
+            const W = H * 1.3, base = cy + H * .42, top = base - H, wallTop = base - H * .7, tw = W * .27;
+            const stone = '#8f8b84', dark = '#5d5a54', edge = '#23211e';
+            g.save(); g.lineJoin = 'round';
+            g.fillStyle = 'rgba(0,0,0,.28)'; g.beginPath(); g.ellipse(cx, base + H * .03, W * .56, H * .07, 0, 0, Math.PI * 2); g.fill();
+            const merlons = (x0, x1, y, n) => { const mw = (x1 - x0) / (n * 2 - 1); for (let i = 0; i < n; i++) g.rect(x0 + i * 2 * mw, y - mw * .9, mw, mw * .9); };
+            g.beginPath(); g.rect(cx - W * .36, wallTop, W * .72, base - wallTop); merlons(cx - W * .36, cx + W * .36, wallTop, 5);   // wall
+            g.fillStyle = stone; g.fill(); g.lineWidth = 1.2; g.strokeStyle = edge; g.stroke();
+            for (const sx of [-1, 1]) {                                                                                              // turrets
+                const x0 = sx < 0 ? cx - W / 2 : cx + W / 2 - tw;
+                g.beginPath(); g.rect(x0, top, tw, base - top); merlons(x0 - tw * .08, x0 + tw * 1.08, top, 3);
+                const tg = g.createLinearGradient(x0, 0, x0 + tw, 0); tg.addColorStop(0, '#a29e96'); tg.addColorStop(1, '#77736c');
+                g.fillStyle = tg; g.fill(); g.stroke();
+                g.fillStyle = '#1d1a16'; g.fillRect(x0 + tw * .38, top + H * .2, tw * .24, H * .14);                                // arrow slit
+            }
+            g.strokeStyle = 'rgba(40,36,32,.35)'; g.lineWidth = 1;                                                                    // courses
+            for (let y = wallTop + H * .12; y < base - 2; y += H * .12) { g.beginPath(); g.moveTo(cx - W * .23, y); g.lineTo(cx + W * .23, y); g.stroke(); }
+            const aw = W * .3, ah = H * .5, ax = cx - aw / 2, ay = base - ah;                                                          // arch
+            const arch = () => { g.beginPath(); g.moveTo(ax, base); g.lineTo(ax, ay + aw / 2); g.arc(cx, ay + aw / 2, aw / 2, Math.PI, 0); g.lineTo(ax + aw, base); g.closePath(); };
+            arch(); g.fillStyle = open >= 1 ? '#6f5438' : '#15120e'; g.fill();
+            if (open > 0) { arch(); const lg = g.createLinearGradient(0, ay, 0, base); lg.addColorStop(0, 'rgba(255,226,160,' + (.25 * open) + ')'); lg.addColorStop(1, 'rgba(176,134,88,' + open + ')'); g.fillStyle = lg; g.fill(); }
+            g.save(); arch(); g.clip();                                                                                                 // portcullis, raised by `open`
+            const lift = open * ah * .92, bars = 5;
+            g.strokeStyle = '#2e2b27'; g.lineWidth = Math.max(1, aw * .07);
+            g.beginPath();
+            for (let i = 1; i < bars; i++) { const x = ax + aw * i / bars; g.moveTo(x, ay - lift); g.lineTo(x, base - lift); }
+            for (let j = 1; j < 4; j++) { const y = ay + ah * j / 4 - lift; g.moveTo(ax, y); g.lineTo(ax + aw, y); }
+            g.stroke(); g.restore();
+            arch(); g.lineWidth = 1.4; g.strokeStyle = edge; g.stroke();
+            g.fillStyle = dark; g.fillRect(cx - aw * .62, ay - H * .06, aw * 1.24, H * .06);                                            // lintel
+            g.restore();
+        }
+        function drawPasses(view, now) {                   // a gatehouse on every gated bridge; closed ones carry a countdown
             const z = mapState.zoom; if (z < 0.0035) return;
             setScreen(ctx);
             for (const br of bridges) {
-                const opens = passOpensAt(br); if (!opens || Date.now() >= opens) continue;
+                const opens = passOpensAt(br); if (!opens) continue;
                 if (!isExplored(br.a) && !isExplored(br.b)) continue;
-                const x1 = br.x1 * z + mapState.offsetX, y1 = br.y1 * z + mapState.offsetY, x2 = br.x2 * z + mapState.offsetX, y2 = br.y2 * z + mapState.offsetY;
-                const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+                const mx = (br.x1 + br.x2) / 2 * z + mapState.offsetX, my = (br.y1 + br.y2) / 2 * z + mapState.offsetY;
                 if (mx < -80 || my < -80 || mx > viewW + 80 || my > viewH + 80) continue;
-                const nx = -(y2 - y1), ny = x2 - x1, nl = Math.hypot(nx, ny) || 1, cl = Math.max(10, 900 * z);
-                ctx.strokeStyle = '#1a1612'; ctx.lineWidth = 4; ctx.setLineDash([5, 3]);
-                for (const k of [-0.28, 0.28]) {
-                    const cx = x1 + (x2 - x1) * (0.5 + k * 0.4), cy = y1 + (y2 - y1) * (0.5 + k * 0.4);
-                    ctx.beginPath(); ctx.moveTo(cx - nx / nl * cl, cy - ny / nl * cl); ctx.lineTo(cx + nx / nl * cl, cy + ny / nl * cl); ctx.stroke();
-                }
-                ctx.strokeStyle = '#b7a37a'; ctx.lineWidth = 1.6; ctx.stroke(); ctx.setLineDash([]);
-                const label = fmtPassWait(opens - Date.now());
+                const H = Math.max(24, Math.min(110, 2000 * z)), left = opens - Date.now();
+                const open = left > 0 ? 0 : Math.min(1, -left / 2500);                                                           // the portcullis rises once
+                if (open > 0 && open < 1) liveAnimation = true;
+                drawGatehouse(ctx, mx, my - H * .15, H, open);
+                if (left <= 0) continue;
+                const label = fmtPassWait(left);
                 ctx.font = '700 11px Inter, system-ui, sans-serif';
-                const w = ctx.measureText(label).width + 30;
-                ctx.fillStyle = 'rgba(20,10,8,.9)'; ctx.strokeStyle = 'rgba(255,120,90,.85)'; ctx.lineWidth = 1.2;
-                ctx.beginPath(); ctx.roundRect ? ctx.roundRect(mx - w / 2, my - 11, w, 22, 11) : ctx.rect(mx - w / 2, my - 11, w, 22); ctx.fill(); ctx.stroke();
-                drawGlyph(ctx, 'lock', mx - w / 2 + 12, my, 12, '#ffb8a8');
-                ctx.fillStyle = '#ffe3da'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(label, mx - w / 2 + 22, my + 0.5);
+                const w = ctx.measureText(label).width + 30, cy = my - H * .15 + H * .42 + 13;
+                ctx.fillStyle = 'rgba(14,12,10,.9)'; ctx.strokeStyle = 'rgba(228,200,134,.75)'; ctx.lineWidth = 1.2;
+                ctx.beginPath(); ctx.roundRect ? ctx.roundRect(mx - w / 2, cy - 10, w, 20, 10) : ctx.rect(mx - w / 2, cy - 10, w, 20); ctx.fill(); ctx.stroke();
+                drawGlyph(ctx, 'lock', mx - w / 2 + 12, cy, 12, '#f0d69a');
+                ctx.fillStyle = '#f3e6c4'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(label, mx - w / 2 + 22, cy + .5);
             }
         }
 
-        // ===== BATTLE SCENE =====
-        // After one of the player's attacks resolves: two armies march in, clash, soldiers fall in proportion
-        // to the real losses, the troop counters tick down, then SIEG / NIEDERLAGE. Tap to skip, closes itself.
-        var battleQueue = [], battleCur = null, battleRaf = 0;
-        const BS_MS = 5200;
-        function battleSceneBusy() { return !!battleCur || battleQueue.length > 0; }
-        function queueBattleScene(b) {
-            if (battleQueue.length >= 1) battleQueue.shift();            // many at once (multi-attack): only the newest waits
-            battleQueue.push(b);
-            if (!battleCur) nextBattleScene();
+        // ===== BATTLES ON THE MAP =====
+        // When a fight the player is part of resolves, it plays out at the base itself: the arriving column
+        // forms up, the garrison steps out, they clash, soldiers fall in proportion to the real losses,
+        // troop counts tick down with floating losses, then the result ribbon (spawnBattleFx) appears.
+        var mapBattles = [];
+        const MB_MS = 4200;
+        function spawnMapBattle(o) {
+            const src = islandById[o.sourceId], tgt = islandById[o.targetId]; if (!src || !tgt) { o.onEnd && o.onEnd(); return; }
+            const path = marchPath(src, tgt), from = path[path.length - 2];
+            const dx = tgt.x - from.x, dy = tgt.y - from.y, l = Math.hypot(dx, dy) || 1;
+            const share = o.my / Math.max(1, o.my + o.en), seed = mulberry32(Math.round(o.my % 9973) + Math.round(o.en % 9967) + o.targetId);
+            const army = (atk) => {
+                const n = Math.max(3, Math.min(15, Math.round(20 * (atk ? share : 1 - share)))), files = atk ? Math.min(5, n) : Math.min(5, Math.ceil(n / 2));
+                const loss = Math.min(1, atk ? o.myLoss / Math.max(1, o.my) : o.enLoss / Math.max(1, o.en)), units = [];
+                for (let i = 0; i < n; i++) units.push({ f: i % files, r: Math.floor(i / files), ph: seed() * 6.28, jx: seed() - .5, jy: seed() - .5, die: Infinity });
+                const dead = Math.round(n * loss), order = units.map((u, i) => ({ i, k: u.r + seed() * 1.6 })).sort((p, q) => p.k - q.k);
+                for (let j = 0; j < dead; j++) units[order[j].i].die = 1000 + (j / Math.max(1, dead)) * 2000 + seed() * 200;
+                return { units, files };
+            };
+            mapBattles.push(Object.assign({}, o, { x: tgt.x, y: tgt.y, ux: dx / l, uy: dy / l, born: performance.now(), A: army(true), D: army(false), done: false }));
+            if (mapBattles.length > 6) { const old = mapBattles.shift(); if (!old.done && old.onEnd) old.onEnd(); }
+            requestRender();
         }
-        function nextBattleScene() {
-            const el = document.getElementById('battleScene');
-            battleCur = battleQueue.shift() || null;
-            if (!battleCur) { el.hidden = true; el.classList.remove('is-leaving'); return; }
-            battleCur.born = performance.now();
-            battleCur.army = [bsArmy(battleCur, true), bsArmy(battleCur, false)];
-            el.classList.remove('is-leaving'); el.hidden = false;
-            cancelAnimationFrame(battleRaf); battleRaf = requestAnimationFrame(bsFrame);
-        }
-        function closeBattleScene() {
-            if (!battleCur || battleCur.closing) return;
-            battleCur.closing = true;
-            const el = document.getElementById('battleScene'); el.classList.add('is-leaving');
-            setTimeout(() => { cancelAnimationFrame(battleRaf); battleCur = null; nextBattleScene(); }, 350);
-        }
-        document.getElementById('battleScene').addEventListener('click', () => { if (battleCur && performance.now() - battleCur.born > 300) closeBattleScene(); });
-        document.addEventListener('keydown', e => { if (e.key === 'Escape' && battleCur) { e.stopImmediatePropagation(); closeBattleScene(); } }, true);
-        function bsArmy(b, mine) {                          // formation: rows in depth, columns away from the front
-            const share = b.my / Math.max(1, b.my + b.en), total = 44;
-            const n = mine ? Math.max(5, Math.min(36, Math.round(total * share))) : Math.max(5, Math.min(36, Math.round(total * (1 - share))));
-            const lossPct = Math.min(1, (mine ? b.myLoss / Math.max(1, b.my) : b.enLoss / Math.max(1, b.en)));
-            const rows = 4, r = mulberry32((mine ? 7 : 13) + Math.round(b.my % 997) + Math.round(b.en % 991)), units = [];
-            for (let i = 0; i < n; i++) units.push({ col: Math.floor(i / rows), row: i % rows, jx: (r() - .5) * 4, ph: r() * 6.28, die: Infinity });
-            const dead = Math.round(n * lossPct);                 // front columns fall first, with some randomness
-            const order = units.map((u, i) => ({ i, k: u.col + r() * 2.2 })).sort((a, c) => a.k - c.k);
-            for (let j = 0; j < dead; j++) units[order[j].i].die = 1300 + (j / Math.max(1, dead)) * 1800 + r() * 250;
-            return { mine, units, lossPct, champion: !mine && b.kind === 'boss' };
+        function drawMapBattles(now) {                      // screen space
+            if (!mapBattles.length) return;
+            liveAnimation = true;
+            const z = mapState.zoom, k = Math.max(1.1, Math.min(2.6, z / 0.015)), near = z >= 0.006;
+            for (const b of mapBattles.slice()) {
+                const t = now - b.born;
+                if (t > MB_MS) { b.done = true; mapBattles.splice(mapBattles.indexOf(b), 1); if (b.onEnd) b.onEnd(); continue; }
+                const tx = b.x * z + mapState.offsetX, ty = b.y * z + mapState.offsetY;
+                if (tx < -120 || ty < -120 || tx > viewW + 120 || ty > viewH + 120) continue;
+                if (!near) {                                 // far out: a pulsing crossed-swords marker at the base
+                    const pulse = 1 + Math.sin(t / 140) * .12;
+                    ctx.beginPath(); ctx.arc(tx, ty - 14, 11 * pulse, 0, Math.PI * 2); ctx.fillStyle = 'rgba(20,10,8,.85)'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#ff8d7e'; ctx.stroke();
+                    drawGlyph(ctx, 'attack', tx, ty - 14, 13, '#ffd2c8'); continue;
+                }
+                const ux = b.ux, uy = b.uy, vx = -uy, vy = ux, face = ux >= 0 ? 1 : -1;
+                const adv = Math.min(1, t / 800), advE = 1 - Math.pow(1 - adv, 3), fight = t > 800 && t < 3200, after = t > 3200;
+                const gap = 11 * k, fileGap = 10.5 * k, s = 17 * k;
+                const dFront = 22 * k, aFront = dFront + 13 * k + (1 - advE) * 46 * k;
+                const cA = b.atk === 'mine' ? BS_COL.mine : BS_COL.bot, cD = BS_COL[b.def] || BS_COL.bot;
+                const aWon = b.won, drawn = [];
+                const place = (side, u) => {
+                    const atk = side === b.A, files = side.files, off = (u.f - (files - 1) / 2) * fileGap + u.jx * 2 * k;
+                    let d = atk ? aFront + u.r * gap : dFront - u.r * gap * .8;
+                    const fall = Math.max(0, Math.min(1, (t - u.die) / 240));
+                    let alpha = 1;
+                    if (!atk && t < 700) { d *= t / 700; alpha = t / 700; }                            // garrison steps out of the base
+                    if (after && fall === 0) {
+                        const q = Math.min(1, (t - 3200) / 900);
+                        if (atk) { if (aWon) { d -= q * aFront; alpha = 1 - q; } else { d += q * 60 * k; alpha = 1 - q; } }   // storm the base / fall back
+                        else { d -= q * dFront; alpha = 1 - q; }                                            // survivors return inside
+                    }
+                    if (fall > 0) alpha = Math.max(0, 1 - Math.max(0, t - u.die - 900) / 600);          // the fallen fade after a moment
+                    const x = tx - ux * d + vx * off, y = ty - uy * d + vy * off + u.jy * 2 * k;
+                    const walk = (atk && adv < 1) || (after && fall === 0) ? t / 90 + u.ph : u.ph;
+                    const thrust = fight && fall === 0 && u.r === 0 ? Math.max(0, Math.sin(t / 110 + u.ph)) : 0;
+                    const [col, rim] = atk ? cA : cD;
+                    drawn.push({ y, f: () => { if (alpha <= 0.01) return; ctx.save(); ctx.globalAlpha = alpha; bsSoldier(ctx, x, y, s, atk ? face : -face, col, rim, walk, thrust, fall); ctx.restore(); } });
+                };
+                for (const u of b.A.units) place(b.A, u);
+                for (const u of b.D.units) place(b.D, u);
+                drawn.sort((p, q) => p.y - q.y).forEach(d => d.f());
+                const mx = tx - ux * (dFront + 6.5 * k), my2 = ty - uy * (dFront + 6.5 * k);
+                if (fight) {                                  // sparks + dust on the front line
+                    const r = mulberry32(Math.floor(t / 70) + b.targetId);
+                    for (let i = 0; i < 5; i++) { const o = (r() - .5) * 40 * k, x = mx + vx * o, y = my2 + vy * o - s * .55;
+                        ctx.strokeStyle = 'rgba(255,' + (190 + Math.floor(r() * 60)) + ',120,' + (.5 + r() * .5) + ')'; ctx.lineWidth = 1.2;
+                        const a = r() * 6.28, l = (3 + r() * 6) * k; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); ctx.stroke(); }
+                    ctx.fillStyle = 'rgba(170,160,140,.14)'; ctx.beginPath(); ctx.ellipse(mx, my2, 30 * k, 9 * k, Math.atan2(vy, vx), 0, Math.PI * 2); ctx.fill();
+                }
+                // troop counts over each side, ticking down, with floating losses
+                const tick = Math.max(0, Math.min(1, (t - 1000) / 2200)), e = 1 - Math.pow(1 - tick, 2);
+                const ad = aFront + gap * 1.5, alphaP = after ? Math.max(0, 1 - (t - 3200) / 600) : Math.min(1, t / 300);
+                const va = Math.max(0, b.my - b.myLoss * e), vd = Math.max(0, b.en - b.enLoss * e);
+                {                                             // one strength bar above the fight: attacker | defender
+                    const cx = tx - ux * (aFront * .55), top = Math.min(ty - uy * ad, ty - uy * dFront * .4, ty) - s * 1.5 - 22;
+                    ctx.save(); ctx.globalAlpha = alphaP; ctx.font = '700 11px Inter, system-ui, sans-serif'; ctx.textBaseline = 'middle';
+                    const la = fmtCompact(Math.round(va)), ld = fmtCompact(Math.round(vd)), W = Math.max(116, ctx.measureText(la + ld).width + 64), x0 = cx - W / 2;
+                    rr(ctx, x0, top, W, 26, 6); ctx.fillStyle = 'rgba(10,12,16,.9)'; ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(228,200,134,.55)'; ctx.stroke();
+                    ctx.fillStyle = cA[1]; ctx.textAlign = 'left'; ctx.fillText(la, x0 + 8, top + 10);
+                    ctx.fillStyle = cD[1]; ctx.textAlign = 'right'; ctx.fillText(ld, x0 + W - 8, top + 10);
+                    drawGlyph(ctx, 'attack', cx, top + 10, 11, '#e4c886');
+                    const bw = W - 16, sh = va + vd > 0 ? va / (va + vd) : .5;
+                    ctx.fillStyle = cD[0]; ctx.fillRect(x0 + 8, top + 18, bw, 4); ctx.fillStyle = cA[0]; ctx.fillRect(x0 + 8, top + 18, bw * sh, 4);
+                    ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.fillRect(x0 + 8, top + 18, bw, 1);
+                    ctx.restore();
+                }
+                if (t > 900 && t < 3400) {
+                    ctx.font = '700 12px Inter, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    const i0 = Math.floor((t - 900) / 450);
+                    for (let i = Math.max(0, i0 - 2); i <= i0; i++) {
+                        const age = t - 900 - i * 450; if (age < 0 || age > 900) continue;
+                        const r = mulberry32(i * 31 + b.targetId), a = 1 - age / 900, rise = age / 900 * 22;
+                        for (const [atk, loss, col] of [[true, b.myLoss, cA[1]], [false, b.enLoss, cD[1]]]) {
+                            if (loss <= 0) continue;
+                            const chunk = loss / 5, d = atk ? aFront + gap : dFront * .6, o = (r() - .5) * 30 * k;
+                            ctx.globalAlpha = a; ctx.fillStyle = '#0b0d12'; const txt = '−' + fmtCompact(Math.max(1, Math.round(chunk)));
+                            const px = tx - ux * d + vx * o, py = ty - uy * d + vy * o - s - rise;
+                            ctx.fillText(txt, px + 1, py + 1); ctx.fillStyle = col; ctx.fillText(txt, px, py);
+                        }
+                    }
+                    ctx.globalAlpha = 1;
+                }
+            }
         }
         function bsSoldier(g, x, y, s, dir, col, rim, walk, thrust, fall) {
             g.save(); g.translate(x, y);
@@ -5884,87 +5970,6 @@ body.has-panel .mapctl{display:none}
             g.restore();
         }
         const BS_COL = { mine: ['#3d6fb3', '#b7d3f5'], bot: ['#a3352b', '#f2aa9f'], neutral: ['#7a6a4f', '#d9c7a1'], boss: ['#5b1d3d', '#e39ac0'] };
-        function bsFrame(now) {
-            const b = battleCur; if (!b) return;
-            const cv = document.getElementById('battleCanvas'), W = cv.clientWidth, H = cv.clientHeight, pr = Math.min(3, window.devicePixelRatio || 1);
-            if (cv.width !== Math.round(W * pr)) { cv.width = Math.round(W * pr); cv.height = Math.round(H * pr); }
-            const g = cv.getContext('2d'); g.setTransform(pr, 0, 0, pr, 0, 0);
-            const t = now - b.born, u = Math.min(1, W / 620);
-            // ground + sky, muted
-            const sky = g.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#1b2330'); sky.addColorStop(.38, '#2e3a3e'); sky.addColorStop(.4, '#3c4a33'); sky.addColorStop(1, '#1f2a1b');
-            g.fillStyle = sky; g.fillRect(0, 0, W, H);
-            g.fillStyle = 'rgba(210,220,230,.05)'; for (let i = 0; i < 5; i++) { g.beginPath(); g.ellipse(W * (.1 + i * .22) + Math.sin(t / 3000 + i) * 10, H * .39, W * .18, H * .03, 0, 0, Math.PI * 2); g.fill(); }
-            const groundTop = H * .52, rowGap = H * .092, s0 = H * .13, cg = s0 * .5;
-            // defender's wall behind the enemy lines
-            if (b.walls) {
-                const wx = W * .83, wy = groundTop - rowGap * .2, crumble = b.won ? Math.max(0, Math.min(1, (t - 2600) / 900)) : 0;
-                g.fillStyle = '#3c3a36'; g.fillRect(wx, wy - 52 * u * (1 - crumble * .5), W - wx, 52 * u * (1 - crumble * .5) + rowGap * 3.4);
-                g.fillStyle = '#4b4843'; for (let i = 0; wx + i * 14 * u < W; i++) g.fillRect(wx + i * 14 * u, wy - 60 * u * (1 - crumble * .5), 8 * u, 9 * u);
-                g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 1; for (let y = wy - 40 * u; y < wy + rowGap * 3.4; y += 10 * u) { g.beginPath(); g.moveTo(wx, y); g.lineTo(W, y); g.stroke(); }
-            }
-            // title + counters
-            g.textAlign = 'center'; g.textBaseline = 'middle';
-            g.font = '700 ' + Math.round(15 * u + 3) + 'px Cinzel, Georgia, serif'; g.fillStyle = '#f0dca6';
-            g.fillText(('Schlacht um ' + b.place).toUpperCase(), W / 2, H * .08);
-            const tick = Math.max(0, Math.min(1, (t - 1200) / 2000)), ease = 1 - Math.pow(1 - tick, 2);
-            const counter = (x, align, label, v, col) => { g.textAlign = align; g.font = '600 ' + Math.round(9 * u + 3) + 'px Inter, system-ui, sans-serif'; g.fillStyle = 'rgba(236,226,200,.7)';
-                g.fillText(label, x, H * .17); g.font = '700 ' + Math.round(15 * u + 5) + 'px Inter, system-ui, sans-serif'; g.fillStyle = col; g.fillText(fmtCompact(Math.max(0, Math.round(v))), x, H * .25); };
-            counter(W * .05, 'left', 'Deine Truppen', b.my - b.myLoss * ease, '#cfe2fb');
-            counter(W * .95, 'right', b.enemy, b.en - b.enLoss * ease, '#f7c3ba');
-            // armies
-            const ez = BS_COL[b.kind] || BS_COL.bot, [mc, mr] = BS_COL.mine, [ec, er] = ez;
-            const adv = Math.min(1, t / 1100), advE = 1 - Math.pow(1 - adv, 3), fight = t > 1100 && t < 3300;
-            const drawn = [];
-            for (const a of b.army) {
-                const dir = a.mine ? 1 : -1, front = W / 2 - dir * (cg * .8 + (1 - advE) * W * .3);
-                const won = a.mine === b.won, after = t > 3300;
-                for (const un of a.units) {
-                    const depth = un.row / 3, s = s0 * (.82 + depth * .22), y = groundTop + un.row * rowGap;
-                    let x = front - dir * (un.col * cg + un.row * cg * .18) + un.jx * u;
-                    const fall = Math.max(0, Math.min(1, (t - un.die) / 260));
-                    if (after && fall === 0) x += dir * (won ? 1 : -2.4) * Math.min(1, (t - 3300) / 1200) * 40 * u;   // winners press on, losers fall back
-                    const walk = (adv < 1 || (after && fall === 0)) ? t / 90 + un.ph : un.ph, thrust = fight && fall === 0 && un.col < 2 ? Math.max(0, Math.sin(t / 120 + un.ph)) : 0;
-                    drawn.push({ y, f: () => bsSoldier(g, x, y, s, dir, a.mine ? mc : ec, a.mine ? mr : er, walk, thrust, fall) });
-                }
-                if (a.champion) { const y = groundTop + rowGap * 1.5, x = front - dir * cg * 6;
-                    drawn.push({ y: y + .1, f: () => { const fall = b.won ? Math.max(0, Math.min(1, (t - 2900) / 400)) : 0; bsSoldier(g, x, y, s0 * 1.9, dir, ec, er, 0, fight ? Math.max(0, Math.sin(t / 160)) : 0, fall); } }); }
-            }
-            drawn.sort((p, q) => p.y - q.y).forEach(d => d.f());
-            // clash: dust + sparks on the front line
-            if (fight) {
-                const r = mulberry32(Math.floor(t / 70));
-                for (let i = 0; i < 6; i++) { const y = groundTop + r() * rowGap * 3.2, x = W / 2 + (r() - .5) * 26 * u;
-                    g.strokeStyle = 'rgba(255,' + (190 + Math.floor(r() * 60)) + ',120,' + (.5 + r() * .5) + ')'; g.lineWidth = 1.2;
-                    const a = r() * 6.28, l = 4 + r() * 7; g.beginPath(); g.moveTo(x, y - s0 * .6); g.lineTo(x + Math.cos(a) * l, y - s0 * .6 + Math.sin(a) * l); g.stroke(); }
-                g.fillStyle = 'rgba(160,150,130,.10)';
-                for (let i = 0; i < 4; i++) { g.beginPath(); g.ellipse(W / 2 + Math.sin(t / 400 + i * 2) * 20 * u, groundTop + i * rowGap, 40 * u, 12 * u, 0, 0, Math.PI * 2); g.fill(); }
-            }
-            // vignette
-            const vg = g.createRadialGradient(W / 2, H / 2, H * .3, W / 2, H / 2, W * .7); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.55)');
-            g.fillStyle = vg; g.fillRect(0, 0, W, H);
-            // result
-            if (t > 3300) {
-                const k = Math.min(1, (t - 3300) / 350), sc = .8 + .2 * (1 - Math.pow(1 - k, 3));
-                const band = g.createLinearGradient(0, H * .3, 0, H * .62); band.addColorStop(0, 'rgba(6,8,12,0)'); band.addColorStop(.25, 'rgba(6,8,12,.72)'); band.addColorStop(.75, 'rgba(6,8,12,.72)'); band.addColorStop(1, 'rgba(6,8,12,0)');
-                g.globalAlpha = k; g.fillStyle = band; g.fillRect(0, H * .3, W, H * .32); g.globalAlpha = 1;
-                g.save(); g.translate(W / 2, H * .43); g.scale(sc, sc); g.globalAlpha = k;
-                const label = b.won ? 'Sieg' : 'Niederlage', col1 = b.won ? '#f6dc8e' : '#e76a5c', col2 = b.won ? '#b98733' : '#8e1f17';
-                g.font = '700 ' + Math.round(26 * u + 8) + 'px Cinzel, Georgia, serif';
-                const tw = g.measureText(label.toUpperCase()).width, bw = tw + 70 * u, bh = 44 * u + 8;
-                const gr = g.createLinearGradient(0, -bh / 2, 0, bh / 2); gr.addColorStop(0, col1); gr.addColorStop(1, col2);
-                g.fillStyle = gr; g.strokeStyle = b.won ? '#5a3c0e' : '#3e0906'; g.lineWidth = 2;
-                g.beginPath(); g.roundRect ? g.roundRect(-bw / 2, -bh / 2, bw, bh, 4) : g.rect(-bw / 2, -bh / 2, bw, bh); g.fill(); g.stroke();
-                g.fillStyle = b.won ? '#2a1a04' : '#fff1ec'; g.textAlign = 'center'; g.fillText(label.toUpperCase(), 0, 2);
-                g.font = '600 ' + Math.round(10 * u + 4) + 'px Inter, system-ui, sans-serif'; g.fillStyle = '#efe4c8';
-                const sub = b.won ? b.place + ' erobert · −' + fmtCompact(b.myLoss) + ' Truppen'
-                                  : '−' + fmtCompact(b.myLoss) + ' gefallen' + (b.retreat > 0 ? ' · ' + fmtCompact(b.retreat) + ' ziehen sich zurück' : '');
-                g.fillText(sub, 0, bh / 2 + 16 * u + 4);
-                g.restore();
-            }
-            if (t > BS_MS) { closeBattleScene(); return; }
-            battleRaf = requestAnimationFrame(bsFrame);
-        }
-
         // ===== BATTLE EFFECTS =====
         // A flash, a shockwave and sparks at the base when a fight the player is part of resolves,
         // plus "Sieg!" / "Verloren" floating up (screen space, drawn in drawMap).
@@ -6146,8 +6151,7 @@ body.has-panel .mapctl{display:none}
                 '<li>' + icon('gem', 'ico-gem') + '<span>Gems</span><b>+' + BOSS_REWARD_GEMS + '</b></li>';
             [...list.children].forEach((li, i) => { li.style.animationDelay = (200 + i * 120) + 'ms'; });
             bossRewardPending = true;
-            (function showReward() { if (battleSceneBusy()) { setTimeout(showReward, 400); return; }
-                bossRewardPending = false; document.getElementById('rewardModal').hidden = false; })();
+            setTimeout(() => { bossRewardPending = false; document.getElementById('rewardModal').hidden = false; }, 4600);   // after the fight on the map
         }
         document.getElementById('rewardModalBtn').addEventListener('click', () => { document.getElementById('rewardModal').hidden = true; });
         function bossTick() {
@@ -6525,7 +6529,7 @@ body.has-panel .mapctl{display:none}
         }
         function renderLevelUpModal() {
             const s = levelUpShown; if (!s) return;
-            if (!document.getElementById('dailyModal').hidden || !document.getElementById('rewardModal').hidden || bossRewardPending || battleSceneBusy()) { levelUpTimer = setTimeout(renderLevelUpModal, 500); return; }   // one window at a time
+            if (!document.getElementById('dailyModal').hidden || !document.getElementById('rewardModal').hidden || bossRewardPending || (typeof mapBattles !== 'undefined' && mapBattles.length)) { levelUpTimer = setTimeout(renderLevelUpModal, 500); return; }   // one window at a time
             const m = document.getElementById('levelUpModal');
             document.getElementById('levelUpLevel').textContent = s.to;
             document.getElementById('levelUpTitle').textContent = 'Stufe ' + s.to;
