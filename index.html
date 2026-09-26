@@ -1821,7 +1821,7 @@ body.has-panel .mapctl{display:none}
         }
         // Passes (wie in großen Strategiespielen): the bridges into the Wächter-Inseln open on day 2 of a world,
         // the bridges into the Thron-Insel on day 4. Until then they are chained shut for everyone.
-        const PASS_OPEN_DAYS = { guardian: 1, throne: 3 };
+        const PASS_OPEN_DAYS = { guardian: 0, throne: 0 };        // timers off for now (0 = open from the start)
         function worldStartAt() {
             let t = parseInt(store.get('openWaterWorldStart'), 10);
             if (!t) { t = Date.now(); store.set('openWaterWorldStart', String(t)); }
@@ -1937,7 +1937,7 @@ body.has-panel .mapctl{display:none}
             } catch (e) {}
             ['openWaterPlayerIslandId', 'openWaterOwnedIslands', 'openWaterIslandLevels', 'openWaterIslandTroops', 'openWaterBotOwnedIslands',
              'openWaterBotCoins', 'openWaterNeutralTroopOverrides', 'openWaterScoutedIslands', 'openWaterPendingAttacks', 'openWaterPendingSends',
-             'openWaterPendingScouts', 'openWaterPendingRetreats', 'openWaterTempleHoldSince', 'openWaterBoss', 'openWaterBossNext', 'openWaterExplored', 'openWaterWorldStart'].forEach(k => store.remove(k));
+             'openWaterPendingScouts', 'openWaterPendingRetreats', 'openWaterTempleHoldSince', 'openWaterBoss', 'openWaterBossNext', 'openWaterExplored', 'openWaterFogCells', 'openWaterWorldStart'].forEach(k => store.remove(k));
             if (carry > 0) store.set('openWaterCarryTroops', String(Math.round(carry)));
             store.set('openWaterBalanceV2', '1');
             store.set('openWaterWorldVersion', WORLD_VERSION);
@@ -2174,23 +2174,50 @@ body.has-panel .mapctl{display:none}
         function rulerOwner() { return megaTempleId === undefined ? null : islandOwnerOf(megaTempleId); }
         // Nebel des Krieges: only explored islands are visible. Owning a base explores its island and
         // every island bridged to it; a scout sent into the fog explores the island it reaches.
-        var exploredSet = null, exploreFx = {};
-        function exploredLms() {
-            if (!exploredSet) {
-                try { exploredSet = new Set(JSON.parse(store.get('openWaterExplored')) || []); } catch (e) { exploredSet = new Set(); }
+        // The fog lifts in small sections (FOG_CELL squares): around every own base, and wherever a scout goes.
+        const FOG_CELL = 4000, REVEAL_BASE = 7000, REVEAL_SCOUT = 8000;
+        var fogCells = null, fogLmCount = {}, cellLm = null, fogFx = [], fogVer = {};
+        function fogKey(cx, cy) { return cx + ',' + cy; }
+        function fogLandCells() {                        // key → landmass id for every cell that touches land
+            if (cellLm) return cellLm;
+            cellLm = {};
+            for (const lm of landmasses) {
+                lm.fogCells = [];
+                const r = lm.shapeMaxR, x0 = Math.floor((lm.x - r) / FOG_CELL), x1 = Math.floor((lm.x + r) / FOG_CELL), y0 = Math.floor((lm.y - r) / FOG_CELL), y1 = Math.floor((lm.y + r) / FOG_CELL);
+                for (let cx = x0; cx <= x1; cx++) for (let cy = y0; cy <= y1; cy++) {
+                    const pts = [[.5, .5], [.1, .1], [.9, .1], [.1, .9], [.9, .9], [.5, .1], [.5, .9], [.1, .5], [.9, .5]];
+                    if (!pts.some(([fx, fy]) => pointInPolygon((cx + fx) * FOG_CELL, (cy + fy) * FOG_CELL, lm.shape))) continue;
+                    const k = fogKey(cx, cy); cellLm[k] = lm.id; lm.fogCells.push({ k, x: (cx + .5) * FOG_CELL, y: (cy + .5) * FOG_CELL });
+                }
             }
-            return exploredSet;
+            return cellLm;
         }
-        function isExplored(lmId) { return exploredLms().has(lmId); }
-        function exploreLandmass(lmId, withNeighbours) {
-            const set = exploredLms(), add = [lmId];
-            if (withNeighbours) for (const br of bridges) { if (br.a === lmId) add.push(br.b); else if (br.b === lmId) add.push(br.a); }
+        function fogSet() {
+            if (!fogCells) {
+                try { fogCells = new Set(JSON.parse(store.get('openWaterFogCells')) || []); } catch (e) { fogCells = new Set(); }
+                const cl = fogLandCells(); fogLmCount = {};
+                for (const k of fogCells) { const id = cl[k]; if (id !== undefined) fogLmCount[id] = (fogLmCount[id] || 0) + 1; }
+            }
+            return fogCells;
+        }
+        function isCellOpen(x, y) { return fogSet().has(fogKey(Math.floor(x / FOG_CELL), Math.floor(y / FOG_CELL))); }
+        function isExplored(lmId) { fogSet(); return (fogLmCount[lmId] || 0) > 0; }             // any part of the island known
+        function revealAround(x, y, r, fade) {
+            const set = fogSet(), cl = fogLandCells(), now = performance.now(), rr2 = r + FOG_CELL * .35;
             let changed = false;
-            for (const id of add) if (!set.has(id)) { set.add(id); exploreFx[id] = performance.now(); changed = true; }
-            if (changed) { store.set('openWaterExplored', JSON.stringify([...set])); if (typeof requestRender === 'function') requestRender(); }
+            for (let cx = Math.floor((x - r) / FOG_CELL); cx <= Math.floor((x + r) / FOG_CELL); cx++)
+                for (let cy = Math.floor((y - r) / FOG_CELL); cy <= Math.floor((y + r) / FOG_CELL); cy++) {
+                    const k = fogKey(cx, cy), id = cl[k];
+                    if (id === undefined || set.has(k)) continue;
+                    const mx = (cx + .5) * FOG_CELL, my = (cy + .5) * FOG_CELL;
+                    if (Math.hypot(mx - x, my - y) > rr2) continue;
+                    set.add(k); fogLmCount[id] = (fogLmCount[id] || 0) + 1; fogVer[id] = (fogVer[id] || 0) + 1; changed = true;
+                    if (fade) fogFx.push({ id, x: mx, y: my, d: Math.hypot(mx - x, my - y), t: now });
+                }
+            if (changed) { store.set('openWaterFogCells', JSON.stringify([...set])); if (typeof requestRender === 'function') requestRender(); }
             return changed;
         }
-        function exploreOwned() { for (const id of ownedIslands) exploreLandmass(islandById[id].landmassId, true); }
+        function exploreOwned() { for (const id of ownedIslands) { const i = islandById[id]; if (i) revealAround(i.x, i.y, REVEAL_BASE, false); } }
         function effectiveTroops(island) {
             const boss = bossAt(island.id); if (boss) return boss.troops;
             const owner = islandOwnerOf(island.id);
@@ -2773,7 +2800,7 @@ body.has-panel .mapctl{display:none}
             return bestId;
         }
 
-        function launchScout(targetId, explore) {
+        function launchScout(targetId, explore, at) {
             const target = islandById[targetId];
             if (!target) return;
             const sourceId = nearestOwnedIslandTo(target);
@@ -2787,12 +2814,13 @@ body.has-panel .mapctl{display:none}
                 targetId,
                 startedAt,
                 resolveAt: startedAt + durationSec * 1000,
-                explore: !!explore
+                explore: !!explore,
+                ex: at ? at.x : undefined, ey: at ? at.y : undefined
             });
             questProgress('scout', 1);
             saveGame();
             saveProgression();
-            flashHint((explore ? 'Späher erkundet die Insel · ca. ' : 'Späher unterwegs zu ' + islandTitle(target) + ' · ca. ') + fmtClock(durationSec));
+            flashHint((explore ? 'Späher erkundet das Gebiet · ca. ' : 'Späher unterwegs zu ' + islandTitle(target) + ' · ca. ') + fmtClock(durationSec));
             renderActiveMarches();
         }
 
@@ -2800,9 +2828,9 @@ body.has-panel .mapctl{display:none}
             const target = islandById[scout.targetId];
             if (!target) return;
             if (scout.explore) {
-                exploreLandmass(target.landmassId, false);
+                revealAround(scout.ex ?? target.x, scout.ey ?? target.y, REVEAL_SCOUT, true);
                 saveProgression();
-                flashHint('Insel erkundet – der Nebel lichtet sich.', 3500);
+                flashHint('Gebiet erkundet – der Nebel lichtet sich.', 3500);
                 return;
             }
             scoutedIslands.add(scout.targetId);
@@ -2858,7 +2886,7 @@ body.has-panel .mapctl{display:none}
                 ownedIslands.add(target.id);
                 islandLevels[target.id] = levelAfterCapture;
                 questProgress('capture', 1);
-                exploreLandmass(target.landmassId, true);
+                revealAround(target.x, target.y, REVEAL_BASE, true);
                 coins += Math.round(totalStrength * rewardRate);
                 defenderCasualties = originalEnemyTroops;
                 if (target.type === 'temple' || target.type === 'megaTemple') {
@@ -3930,6 +3958,7 @@ body.has-panel .mapctl{display:none}
             if (lm.bbox.r < view.l || lm.bbox.l > view.r || lm.bbox.b < view.t || lm.bbox.t > view.b) continue;
             if (!isExplored(lm.id)) continue;                                              // under the fog
             for (const isl of islandsByLandmass[lm.id] || []) {
+              if (!isCellOpen(isl.x, isl.y)) continue;
               const pad = isl.radius * 2.2;
               if (isl.x + pad < view.l || isl.x - pad > view.r || isl.y + pad < view.t || isl.y - pad > view.b) continue;
               out.push(isl);
@@ -4344,7 +4373,7 @@ body.has-panel .mapctl{display:none}
           }
           const w = screenToWorld(sx, sy), z = mapState.zoom; let best = null, bd = Infinity;
           for (const isl of islands) {                                                        // nearest base, min 22 CSS px hit radius
-            if (!isExplored(isl.landmassId)) continue;
+            if (!isCellOpen(isl.x, isl.y)) continue;
             const d = Math.hypot(isl.x - w.x, isl.y - w.y); if (d <= Math.max(isl.radius, 22 / z) && d < bd) { bd = d; best = isl; }
           }
           return best;
@@ -5737,38 +5766,59 @@ body.has-panel .mapctl{display:none}
             }
             return FOG_PUFF = c;
         }
-        function fogPuffsOf(lm) {                          // haze positions in world units, fixed per landmass
-            if (lm.fogPuffs) return lm.fogPuffs;
-            const r = mulberry32(900 + lm.id * 31), out = [];
-            for (let i = 0; i < lm.shape.length; i += Math.max(1, Math.floor(lm.shape.length / 22))) out.push({ x: lm.shape[i].x, y: lm.shape[i].y, s: 0.42 + r() * 0.14, ph: r() * 6.28 });
-            for (let i = 0; i < 22; i++) { const a = r() * Math.PI * 2, d = Math.sqrt(r()) * lm.radius * 0.8; out.push({ x: lm.x + Math.cos(a) * d, y: lm.y + Math.sin(a) * d, s: 0.5 + r() * 0.2, ph: r() * 6.28 }); }
-            return lm.fogPuffs = out;
+        function fogCanvasOf(lm) {                        // per island: the still-fogged cells as soft blobs, clipped to the coast (cached)
+            if (lm.fogCv && lm.fogCvVer === (fogVer[lm.id] || 0)) return lm.fogCv;
+            const set = fogSet(), R = lm.shapeMaxR + FOG_CELL, S = lm.isCenter ? 560 : 400, sc = S / (2 * R);
+            const cv = lm.fogCv || document.createElement('canvas'); cv.width = cv.height = S;
+            const g = cv.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, S, S);
+            g.setTransform(sc, 0, 0, sc, (R - lm.x) * sc, (R - lm.y) * sc);
+            g.save(); g.clip(lm.path);
+            const puff = fogPuff();
+            for (const c of lm.fogCells) {
+                if (set.has(c.k)) continue;
+                const gr = g.createRadialGradient(c.x, c.y, 0, c.x, c.y, FOG_CELL * .9);
+                gr.addColorStop(0, '#262d39'); gr.addColorStop(.55, '#262d39'); gr.addColorStop(1, 'rgba(38,45,57,0)');
+                g.fillStyle = gr; g.fillRect(c.x - FOG_CELL, c.y - FOG_CELL, FOG_CELL * 2, FOG_CELL * 2);
+            }
+            const rnd = mulberry32(lm.id * 97 + 5);             // loose, irregular haze on top (not one puff per cell)
+            g.globalAlpha = .55;
+            for (const c of lm.fogCells) {
+                if (set.has(c.k)) { rnd(); rnd(); rnd(); rnd(); continue; }
+                if (rnd() < .45) { rnd(); rnd(); rnd(); continue; }
+                const sz = FOG_CELL * (1.6 + rnd() * 2.2), ox = (rnd() - .5) * FOG_CELL * 1.4, oy = (rnd() - .5) * FOG_CELL * 1.4;
+                g.drawImage(puff, c.x + ox - sz / 2, c.y + oy - sz / 2, sz, sz);
+            }
+            g.globalAlpha = 1;
+            g.restore();
+            lm.fogCv = cv; lm.fogCvVer = fogVer[lm.id] || 0; lm.fogCvR = R;
+            return cv;
         }
         function drawFog(view, now) {
-            const z = mapState.zoom, puff = fogPuff();
-            let live = false;
+            const z = mapState.zoom, set = fogSet();
+            fogFx = fogFx.filter(f => now - f.t < 1400 + f.d / 6);
             for (const lm of landmasses) {
-                const fx = exploreFx[lm.id], fading = fx && now - fx < 1600;
-                if (isExplored(lm.id) && !fading) continue;
                 if (lm.bbox.r < view.l || lm.bbox.l > view.r || lm.bbox.b < view.t || lm.bbox.t > view.b) continue;
-                const a = fading ? 1 - (now - fx) / 1600 : 1;
+                if ((fogLmCount[lm.id] || 0) >= lm.fogCells.length && !fogFx.some(f => f.id === lm.id)) continue;   // fully known
                 ctx.save();
                 ctx.setTransform(dpr * z, 0, 0, dpr * z, dpr * mapState.offsetX, dpr * mapState.offsetY);
-                ctx.globalAlpha = a;
-                const sh = ctx.createRadialGradient(lm.x, lm.y, 0, lm.x, lm.y, lm.shapeMaxR);   // unknown land: dark slate silhouette
-                sh.addColorStop(0, '#2c3441'); sh.addColorStop(1, '#1b212b');
-                ctx.fillStyle = sh; ctx.fill(lm.path);
-                ctx.lineWidth = lm.radius * 0.012; ctx.strokeStyle = 'rgba(150,160,178,.35)'; ctx.stroke(lm.path);
-                for (const p of fogPuffsOf(lm)) {
-                    const sz = lm.radius * p.s * 2 * (fading ? 1 + (1 - a) * 0.8 : 1), dx = Math.sin(now / 5200 + p.ph) * lm.radius * 0.02;
-                    ctx.globalAlpha = a;
-                    ctx.drawImage(puff, p.x - sz / 2 + dx, p.y - sz / 2, sz, sz);
+                const cv = fogCanvasOf(lm), R = lm.fogCvR;
+                ctx.drawImage(cv, lm.x - R, lm.y - R, 2 * R, 2 * R);
+                const fx = fogFx.filter(f => f.id === lm.id);
+                if (fx.length) {                              // freshly revealed sections dissolve from the centre outwards
+                    ctx.clip(lm.path);
+                    for (const f of fx) {
+                        const p = Math.max(0, Math.min(1, (now - f.t - f.d / 6) / 1400)), a = 1 - p;
+                        if (a <= 0) continue;
+                        const gr = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, FOG_CELL * (.9 + p * .5));
+                        gr.addColorStop(0, 'rgba(38,45,57,' + a + ')'); gr.addColorStop(.55, 'rgba(38,45,57,' + a + ')'); gr.addColorStop(1, 'rgba(38,45,57,0)');
+                        ctx.fillStyle = gr; ctx.fillRect(f.x - FOG_CELL * 1.5, f.y - FOG_CELL * 1.5, FOG_CELL * 3, FOG_CELL * 3);
+                        ctx.globalAlpha = a * .9; const sz = FOG_CELL * (1.8 + p); ctx.drawImage(fogPuff(), f.x - sz / 2, f.y - sz / 2 - p * FOG_CELL * .3, sz, sz); ctx.globalAlpha = 1;
+                    }
+                    liveAnimation = true;
                 }
                 ctx.restore();
-                if (fading) live = true;
             }
-            if (live) liveAnimation = true;
-            // "?" hint on fogged islands that border known ones
+            // "Erkunden" on fully fogged islands that border known ones
             if (z > 0.004) {
                 setScreen(ctx);
                 for (const lm of landmasses) {
@@ -5776,7 +5826,7 @@ body.has-panel .mapctl{display:none}
                     if (!bridges.some(br => (br.a === lm.id && isExplored(br.b)) || (br.b === lm.id && isExplored(br.a)))) continue;
                     const sx = lm.x * z + mapState.offsetX, sy = lm.y * z + mapState.offsetY;
                     if (sx < -60 || sy < -60 || sx > viewW + 60 || sy > viewH + 60) continue;
-                    const scouting = pendingScouts.some(sc => sc.explore && islandById[sc.targetId].landmassId === lm.id);
+                    const scouting = pendingScouts.some(sc => sc.explore && islandById[sc.targetId] && islandById[sc.targetId].landmassId === lm.id);
                     const label = scouting ? 'Wird erkundet …' : 'Erkunden';
                     ctx.font = '700 12px Inter, system-ui, sans-serif';
                     const w = ctx.measureText(label).width + 34;
@@ -6582,7 +6632,7 @@ body.has-panel .mapctl{display:none}
                 const sx = 40 + Math.random() * (viewW - 80), sy = top + Math.random() * (bottom - top);
                 const w = screenToWorld(sx, sy);
                 const lm = landmasses.find(l => Math.hypot(w.x - l.x, w.y - l.y) <= l.shapeMaxR && pointInPolygon(w.x, w.y, l.shape));
-                if (!lm || !isExplored(lm.id)) continue;
+                if (!lm || !isCellOpen(w.x, w.y)) continue;
                 const clear = 30 / mapState.zoom;
                 if ((islandsByLandmass[lm.id] || []).some(i => Math.hypot(i.x - w.x, i.y - w.y) < i.radius + clear)) continue;
                 if (bannerHitRects.some(b => sx > b.x - 26 && sx < b.x + b.w + 26 && sy > b.y - 26 && sy < b.y + b.h + 26)) continue;   // keep nameplates tappable
@@ -7257,22 +7307,28 @@ body.has-panel .mapctl{display:none}
 
         closeBtn.addEventListener('click', closeIslandPopup);
 
-        function fogLandmassAt(sx, sy) {
+        function fogPointAt(sx, sy) {                      // a fogged spot on land under the finger
             const w = screenToWorld(sx, sy);
-            return landmasses.find(l => !isExplored(l.id) && Math.hypot(w.x - l.x, w.y - l.y) <= l.shapeMaxR && pointInPolygon(w.x, w.y, l.shape)) || null;
+            if (isCellOpen(w.x, w.y)) return null;
+            const lm = landmasses.find(l => Math.hypot(w.x - l.x, w.y - l.y) <= l.shapeMaxR && pointInPolygon(w.x, w.y, l.shape));
+            return lm ? { lm, x: w.x, y: w.y } : null;
         }
-        function tapFog(lm) {
-            const pending = pendingScouts.some(sc => sc.explore && islandById[sc.targetId].landmassId === lm.id);
-            if (pending) { flashHint('Ein Späher erkundet diese Insel bereits.', 2500); return; }
-            const nextToKnown = bridges.some(br => (br.a === lm.id && isExplored(br.b)) || (br.b === lm.id && isExplored(br.a)));
-            if (!nextToKnown) { flashHint('Unerkundet – erkunde zuerst die Nachbarinseln.', 2500); return; }
-            const target = (islandsByLandmass[lm.id] || []).find(i => i.type !== 'tower') || islandsByLandmass[lm.id][0];
-            launchScout(target.id, true);
+        function tapFog(f) {
+            const lm = f.lm;
+            if (pendingScouts.some(sc => sc.explore && sc.ex !== undefined && Math.hypot(sc.ex - f.x, sc.ey - f.y) < FOG_CELL * 1.6)) { flashHint('Ein Späher erkundet dieses Gebiet bereits.', 2500); return; }
+            if (!isExplored(lm.id)) {
+                const known = bridges.filter(br => (br.a === lm.id && isExplored(br.b)) || (br.b === lm.id && isExplored(br.a)));
+                if (!known.length) { flashHint('Zu weit entfernt – erkunde zuerst die Gebiete davor.', 2500); return; }
+                if (!known.some(br => landmassesConnected(br.a, br.b))) { flashHint('Das Tor ist noch verschlossen – dahinter kann noch niemand spähen.', 2800); return; }
+            }
+            let target = null, bd = Infinity;
+            for (const i of islandsByLandmass[lm.id] || []) { const d = Math.hypot(i.x - f.x, i.y - f.y); if (d < bd) { bd = d; target = i; } }
+            if (target) launchScout(target.id, true, { x: f.x, y: f.y });
         }
         function handleTap(screenX, screenY) {
             if (!multiAttackMode && collectPickupAt(screenX, screenY)) return;
             const island = pickIslandAtScreen(screenX, screenY);
-            if (!island && !multiAttackMode) { const fl = fogLandmassAt(screenX, screenY); if (fl) { tapFog(fl); return; } }
+            if (!island && !multiAttackMode) { const fp = fogPointAt(screenX, screenY); if (fp) { tapFog(fp); return; } }
             if (!island) { if (isPanelOpen(popup) && !multiAttackMode) closeIslandPopup(); return; }
 
             if (multiAttackMode) {
@@ -7384,7 +7440,7 @@ body.has-panel .mapctl{display:none}
             }, wait);
         })();
 
-        exploreOwned(); exploreFx = {};         // Nebel: home island + its neighbours are always known (no fade at boot)
+        exploreOwned();                          // Nebel: the land around every own base is always known
         renderActiveMarches();
         if (bonusGrantedAtBoot) saveGame();      // a reload right after the first start must not lose the grant
         updateZoomBounds(); clampCamera();
