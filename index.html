@@ -3131,7 +3131,10 @@ body.has-panel .mapctl{display:none}
           lm.path = p;
           lm.bbox = { l: lm.x - lm.shapeMaxR, t: lm.y - lm.shapeMaxR, r: lm.x + lm.shapeMaxR, b: lm.y + lm.shapeMaxR };
           const g = ctx.createLinearGradient(lm.bbox.l, lm.bbox.t, lm.bbox.r, lm.bbox.b);   // world coords; used under setWorld
-          g.addColorStop(0, '#62a44a'); g.addColorStop(.55, '#4d8a3b'); g.addColorStop(1, '#3d7231');
+          lm.stone = lm.tier === 'throne' || lm.tier === 'guardian';                    // the middle and the 4 Wächter regions: grey stone land
+          if (lm.tier === 'throne') { g.addColorStop(0, '#a3a39d'); g.addColorStop(.55, '#8c8c86'); g.addColorStop(1, '#76766f'); }
+          else if (lm.stone) { g.addColorStop(0, '#8e908c'); g.addColorStop(.55, '#797b77'); g.addColorStop(1, '#646662'); }
+          else { g.addColorStop(0, '#62a44a'); g.addColorStop(.55, '#4d8a3b'); g.addColorStop(1, '#3d7231'); }
           lm.fill = g;
           lm.forest = buildForest(lm);
         }
@@ -3395,11 +3398,14 @@ body.has-panel .mapctl{display:none}
           for (const lm of landmasses) {
             if (lm.bbox.r < view.l || lm.bbox.l > view.r || lm.bbox.b < view.t || lm.bbox.t > view.b) continue;
             g.fillStyle = lm.fill; g.fill(lm.path);
-            if (grassA > 0) { g.globalAlpha = grassA; g.fillStyle = GRASS_PATTERN; g.fill(lm.path); g.globalAlpha = 1; }
+            if (grassA > 0) { g.globalAlpha = grassA * (lm.stone ? .35 : 1); g.fillStyle = GRASS_PATTERN; g.fill(lm.path); g.globalAlpha = 1; }
             if (forestA > 0) { g.globalAlpha = forestA;
-              g.fillStyle = '#284d22'; g.fill(lm.forest[0]); g.fillStyle = '#35652c'; g.fill(lm.forest[1]);
-              g.fillStyle = 'rgba(128,176,90,.38)'; g.fill(lm.forest[2]); g.globalAlpha = 1; }
-            g.lineJoin = 'round'; g.lineWidth = 1.4 / zl; g.strokeStyle = 'rgba(14,30,12,.92)'; g.stroke(lm.path);
+              if (lm.stone) { g.fillStyle = '#56575a'; g.fill(lm.forest[0]); g.fillStyle = '#6a6b6e'; g.fill(lm.forest[1]);   // rocks instead of forest
+                g.fillStyle = 'rgba(215,215,210,.3)'; g.fill(lm.forest[2]); }
+              else { g.fillStyle = '#284d22'; g.fill(lm.forest[0]); g.fillStyle = '#35652c'; g.fill(lm.forest[1]);
+                g.fillStyle = 'rgba(128,176,90,.38)'; g.fill(lm.forest[2]); }
+              g.globalAlpha = 1; }
+            g.lineJoin = 'round'; g.lineWidth = 1.4 / zl; g.strokeStyle = lm.stone ? 'rgba(24,24,26,.92)' : 'rgba(14,30,12,.92)'; g.stroke(lm.path);
           }
           // 3 bridges: straight timber between the polygonPointAtAngle endpoints, extended 250 units along their own axis
           const bw = Math.max(3, Math.min(28, 420 * zl)) * ls; screen();
