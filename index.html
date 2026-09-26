@@ -892,6 +892,45 @@ body.has-panel .mapctl{display:none}
 .splash-bottom::before{content:"";position:absolute;inset:-40px -60px -30px;z-index:-1;background:radial-gradient(ellipse at center,rgba(2,3,8,.8),transparent 70%)}
 @media (max-height:500px){.splash{padding-top:calc(var(--safe-t) + 4vh);padding-bottom:calc(var(--safe-b) + 4vh)}.splash-crest{width:auto;height:30vh;margin-bottom:6px}.splash-title{font-size:clamp(34px,8vh,60px)}}
 @media (prefers-reduced-motion:reduce){.splash *,.splash-bg{animation:none!important}.splash-bar i{width:72%}}
+
+/* =====================================================================
+   CAPITAL / CITY VIEW
+   ===================================================================== */
+.act--city{grid-column:1/-1;border-color:var(--line-3);background:linear-gradient(180deg,rgba(236,208,138,.12),rgba(0,0,0,.2))}
+.act-ic--city{color:var(--gold-200)}
+.city{position:fixed;inset:0;z-index:50;background:#0b1a2b;animation:fade-in var(--dur-3) var(--ease-out)}
+.city[hidden]{display:none}
+.city-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.city-head{position:absolute;left:0;right:0;top:0;display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding:calc(var(--safe-t) + 10px) 12px 10px;
+  background:linear-gradient(180deg,rgba(6,8,12,.92),rgba(6,8,12,.55) 70%,transparent)}
+.city-title{flex:1;min-width:0}
+@media (max-width:599px){.city-builder{flex-basis:100%;justify-content:center}}
+.city-title h2{margin:2px 0 0;font:700 var(--fs-18,18px)/1.1 var(--font-display);color:var(--gold-100);letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.city-builder{order:3;display:flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid var(--line-2);border-radius:var(--r-pill);background:rgba(10,10,14,.75);
+  font:600 var(--fs-11)/1 var(--font-ui);color:var(--tx-2);white-space:nowrap}
+.city-builder .icon{width:14px;height:14px;color:var(--gold-300)}
+.city-builder b{color:var(--gold-100);font-variant-numeric:tabular-nums}
+.city-sheet{position:absolute;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;padding:14px 14px calc(var(--safe-b) + 14px);
+  background:var(--noise),var(--panel-bg);border:1px solid var(--line-2);border-bottom:0;border-radius:var(--r-lg) var(--r-lg) 0 0;box-shadow:var(--sh-3);
+  display:flex;flex-direction:column;gap:10px;animation:panel-in var(--dur-3) var(--ease-out)}
+.city-sheet[hidden]{display:none}
+.city-sheet-head{display:flex;align-items:center;gap:12px}
+.city-bicon{width:48px;height:48px;flex:none;display:grid;place-items:center;border-radius:var(--r-sm);border:1px solid var(--line-3);
+  background:radial-gradient(circle at 50% 35%,#3a2c14,#16110a 75%);box-shadow:var(--glow-gold)}
+.city-bicon .icon{width:26px;height:26px;color:var(--gold-100)}
+.city-bmeta{flex:1;min-width:0}
+.city-bmeta h3{margin:2px 0;font:700 var(--fs-18,18px)/1.1 var(--font-display);color:var(--gold-100)}
+.city-blevel{font:600 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-2)}
+.city-bdesc{margin:0;font:500 var(--fs-13)/1.45 var(--font-ui);color:var(--tx-2)}
+.city-bstats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.city-bstats > div{padding:8px 10px;border:1px solid var(--line-1);border-radius:var(--r-sm);background:rgba(0,0,0,.22)}
+.city-bstats span{display:block;font:600 var(--fs-10,10px)/1.2 var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--tx-3)}
+.city-bstats b{display:flex;align-items:center;gap:5px;margin-top:3px;font:700 var(--fs-15)/1.2 var(--font-ui);color:var(--tx-1);font-variant-numeric:tabular-nums}
+.city-bstats b .icon{width:14px;height:14px}
+.city-bstats b.is-bad{color:#ff8d7e}
+.city-bfoot{display:flex;gap:8px}
+.city-progress{height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
+.city-progress i{display:block;height:100%;width:var(--p,0%);background:linear-gradient(90deg,var(--gold-500),var(--gold-200))}
     </style>
 </head>
 <body>
@@ -1347,6 +1386,30 @@ body.has-panel .mapctl{display:none}
   </div>
 </div>
 
+<!-- ============ CAPITAL / CITY VIEW ============ -->
+<div id="cityView" class="city" hidden>
+  <canvas id="cityCanvas" class="city-canvas" aria-label="Hauptstadt"></canvas>
+  <header class="city-head">
+    <div class="city-title"><div class="overline">Hauptstadt</div><h2 id="cityName">Deine Stadt</h2></div>
+    <div id="cityBuilder" class="city-builder"></div>
+    <button id="cityCloseBtn" class="btn btn--secondary btn--sm" type="button"><svg class="icon"><use href="#i-back"/></svg><span>Zur Karte</span></button>
+  </header>
+  <section id="citySheet" class="city-sheet" hidden>
+    <div class="city-sheet-head">
+      <div id="cityBIcon" class="city-bicon"></div>
+      <div class="city-bmeta"><div id="cityBOver" class="overline">Gebäude</div><h3 id="cityBName">Burgfried</h3><div id="cityBLevel" class="city-blevel"></div></div>
+      <button id="citySheetClose" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button>
+    </div>
+    <p id="cityBDesc" class="city-bdesc"></p>
+    <div id="cityBNote" class="notice"></div>
+    <div id="cityBStats" class="city-bstats"></div>
+    <div class="city-bfoot">
+      <button id="cityUpgradeBtn" class="btn btn--primary btn--grow" type="button"><svg class="icon"><use href="#i-upgrade"/></svg><span class="lbl">Aufwerten</span></button>
+      <button id="citySpeedBtn" class="btn btn--secondary btn--grow" type="button" style="display:none"><svg class="icon"><use href="#i-gem"/></svg><span class="lbl">Beschleunigen</span></button>
+    </div>
+  </section>
+</div>
+
 <!-- ============ ISLAND / BASE POPUP ============ -->
 <section id="islandPopup" class="panel panel--island" role="dialog" aria-labelledby="popupTitle">
   <span class="sheet-grab" aria-hidden="true"></span>
@@ -1362,6 +1425,7 @@ body.has-panel .mapctl{display:none}
   <div class="pbody">
     <div id="popupStats" class="popup-stats"></div>
     <div id="popupActions" class="actgrid">
+      <button id="cityBtn" class="act act--city" type="button" style="display:none"><span class="act-ic act-ic--city"><svg class="icon"><use href="#i-home"/></svg></span><span class="act-t">Stadt betreten</span><span class="act-s">Hauptstadt ausbauen</span></button>
       <button id="upgradeBtn" class="act act--primary" type="button"><span class="act-ic"><svg class="icon"><use href="#i-upgrade"/></svg></span><span class="act-t">Aufwerten</span><span class="act-s" id="upgradeCostLabel">–</span></button>
       <button id="sendBtn" class="act" type="button"><span class="act-ic act-ic--send"><svg class="icon"><use href="#i-send"/></svg></span><span class="act-t">Senden</span><span class="act-s">Verstärken</span></button>
       <button id="multiAttackBtn" class="act" type="button"><span class="act-ic act-ic--attack"><svg class="icon"><use href="#i-multiattack"/></svg></span><span class="act-t">Mehrfach</span><span class="act-s"><svg class="icon icon--gem"><use href="#i-gem"/></svg><b data-const="MULTI_ATTACK_GEM_COST">1</b> Gem</span></button>
@@ -2862,7 +2926,11 @@ body.has-panel .mapctl{display:none}
             const playerInvolved = targetOwner === 'player';
             const bossHere = bossAt(target.id);
 
-            if (won) {
+            // The capital can never be taken: a winning raid only wipes out its garrison.
+            const capitalHolds = won && target.id === playerIslandId;
+            if (capitalHolds) {
+                islandTroops[target.id] = 0;
+            } else if (won) {
                 // Same rule as the player's own captures: the new owner
                 // gets the base one level lower than it was, not reset to 1.
                 const levelAfterCapture = Math.max(1, (islandLevels[target.id] || 1) - 1);
@@ -2890,7 +2958,7 @@ body.has-panel .mapctl{display:none}
             if (bossHere && won) { spawnBattleFx(target.id, false, bossHere.name + ' gefallen', bot.name); endBoss(bot.name + ' hat den ' + bossHere.name + ' besiegt!'); }
 
             if (playerInvolved) {
-                spawnBattleFx(target.id, !won, won ? 'Basis verloren' : 'Verteidigt', won ? 'von ' + bot.name : bot.name + ' abgewehrt');
+                spawnBattleFx(target.id, !won || capitalHolds, capitalHolds ? 'Hauptstadt hält' : won ? 'Basis verloren' : 'Verteidigt', capitalHolds ? 'Garnison gefallen' : won ? 'von ' + bot.name : bot.name + ' abgewehrt');
                 // Only reveals the target to the player when the player was
                 // actually part of this fight - a bot conquering a neutral
                 // or another bot's base off-screen must NOT leak that
@@ -2905,7 +2973,9 @@ body.has-panel .mapctl{display:none}
                     enemyDefense: originalEnemyDefense,
                     won
                 });
-                flashHint((won
+                flashHint((capitalHolds
+                    ? bot.name + ' hat deine Hauptstadt geplündert – die Garnison ist gefallen, aber die Stadt hält.'
+                    : won
                     ? bot.name + ' hat deine Basis ' + islandTitle(target) + ' erobert!'
                     : 'Verteidigung erfolgreich – ' + bot.name + ' bei ' + islandTitle(target) + ' zurückgeschlagen.'), 5000);
                 renderActiveMarches();
@@ -5828,6 +5898,283 @@ body.has-panel .mapctl{display:none}
             liveAnimation = true;
         }
 
+        // ===== CAPITAL / CITY (step 1: buildings can be built and upgraded, effects come later) =====
+        var CITY_BUILDINGS = [
+            { id: 'keep',     name: 'Burgfried',     icon: 'home',    x: 500, y: 430, big: true, roof: '#6d2a22',
+              desc: 'Das Herz deiner Hauptstadt. Seine Stufe bestimmt, wie hoch alle anderen Gebäude ausgebaut werden können.' },
+            { id: 'barracks', name: 'Heerlager',     icon: 'troops',  x: 270, y: 330, roof: '#7a3226', desc: 'Wird die Truppenproduktion aller Basen erhöhen.' },
+            { id: 'treasury', name: 'Schatzkammer',  icon: 'coin',    x: 730, y: 330, roof: '#8a6a22', desc: 'Wird die Münzproduktion erhöhen und Münzen bei Angriffen auf die Hauptstadt schützen.' },
+            { id: 'academy',  name: 'Akademie',      icon: 'star',    x: 250, y: 560, roof: '#2f4f86', dome: true, desc: 'Wird Forschung freischalten: Marschtempo, günstigere Aufwertungen und mehr.' },
+            { id: 'forge',    name: 'Schmiede',      icon: 'weapon',  x: 750, y: 560, roof: '#4a4a52', chimney: true, desc: 'Wird Ausrüstung herstellen und verbessern können.' },
+            { id: 'hospital', name: 'Lazarett',      icon: 'plus',    x: 340, y: 740, roof: '#e8e2d2', cross: true, desc: 'Wird verwundete Truppen nach verlorenen Kämpfen retten.' },
+            { id: 'shrine',   name: 'Tempelschrein', icon: 'temple',  x: 660, y: 740, roof: '#c9a54e', dome: true, desc: 'Wird den Bonus aller deiner Tempel verstärken.' },
+            { id: 'tower',    name: 'Wachturm',      icon: 'scout',   x: 500, y: 140, roof: '#5a2c22', tall: true, desc: 'Wird feindliche Angriffe früher sichtbar machen und die Späher-Reichweite erhöhen.' },
+            { id: 'wall',     name: 'Mauer',         icon: 'defense', x: 500, y: 620, roof: '#6b6456', gate: true, desc: 'Wird die Verteidigung deiner Hauptstadt erhöhen.' },
+            { id: 'harbor',   name: 'Hafen',         icon: 'send',    x: 500, y: 855, roof: '#3d5a82', pier: true, desc: 'Wird Märsche über Brücken beschleunigen.' }
+        ];
+        var CITY_MAX_LEVEL = 25, CITY_GEMS_PER_MIN = 1;
+        var cityState = null;
+        function loadCity() {
+            if (cityState) return cityState;
+            try { cityState = JSON.parse(store.get('openWaterCity')) || null; } catch (e) { cityState = null; }
+            if (!cityState || !cityState.levels) cityState = { levels: {}, build: null };
+            for (const b of CITY_BUILDINGS) if (typeof cityState.levels[b.id] !== 'number') cityState.levels[b.id] = b.id === 'keep' ? 1 : 0;
+            return cityState;
+        }
+        function saveCity() { store.set('openWaterCity', JSON.stringify(cityState)); }
+        function cityDef(id) { return CITY_BUILDINGS.find(b => b.id === id); }
+        function cityCost(id, level) {                    // coins to go from `level` to level + 1
+            return niceRound((id === 'keep' ? 1000 : 500) * Math.pow(id === 'keep' ? 2.1 : 1.9, level));
+        }
+        function cityTimeSec(id, level) {                 // build time for level -> level + 1
+            return Math.round((id === 'keep' ? 30 : 20) * Math.pow(1.6, level));
+        }
+        function fmtDuration(sec) {
+            sec = Math.max(0, Math.ceil(sec));
+            const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s2 = sec % 60;
+            return h ? h + ' Std. ' + m + ' Min.' : m ? m + ':' + String(s2).padStart(2, '0') + ' Min.' : s2 + ' s';
+        }
+        function cityBlocker(id) {                        // why this building can't be upgraded right now (or null)
+            const c = loadCity(), lvl = c.levels[id];
+            if (lvl >= CITY_MAX_LEVEL) return 'Maximale Stufe erreicht.';
+            if (id !== 'keep' && lvl + 1 > c.levels.keep) return 'Erst den Burgfried auf Stufe ' + (lvl + 1) + ' ausbauen.';
+            if (c.build) return c.build.id === id ? 'Wird gerade gebaut.' : 'Der Bauarbeiter ist beschäftigt (' + cityDef(c.build.id).name + ').';
+            return null;
+        }
+        function cityStartBuild(id) {
+            const c = loadCity(), lvl = c.levels[id];
+            if (cityBlocker(id)) return;
+            const cost = cityCost(id, lvl);
+            if (coins < cost) { flashHint('Nicht genug Münzen – benötigt ' + fmtCompact(cost) + '.', 2500); return; }
+            coins -= cost;
+            c.build = { id, to: lvl + 1, startedAt: Date.now(), endsAt: Date.now() + cityTimeSec(id, lvl) * 1000 };
+            saveCity(); saveGame(); updateHud();
+            renderCitySheet(); cityDirty = true;
+        }
+        function citySpeedCost() {
+            const c = loadCity(); if (!c.build) return 0;
+            return Math.max(1, Math.ceil((c.build.endsAt - Date.now()) / 60000) * CITY_GEMS_PER_MIN);
+        }
+        function cityFinishBuild(announce) {
+            const c = loadCity(); if (!c.build) return;
+            const def = cityDef(c.build.id);
+            c.levels[c.build.id] = c.build.to;
+            const to = c.build.to; c.build = null;
+            saveCity(); cityDirty = true;
+            if (announce) flashHint(def.name + ' ist fertig – jetzt Stufe ' + to + '.', 3000);
+            if (cityOpenId) renderCitySheet();
+            updateCityBuilder();
+        }
+        function cityTick() {
+            const c = loadCity();
+            if (c.build && Date.now() >= c.build.endsAt) cityFinishBuild(true);
+            if (!document.getElementById('cityView').hidden) { updateCityBuilder(); if (cityOpenId) renderCitySheetTimer(); }
+        }
+        setInterval(cityTick, 1000);
+
+        // --- view ---
+        var cityPan = 0, cityDrag = null, cityOpenId = null, cityDirty = true, cityRaf = 0, cityHitRects = [], cityFit = { s: 1, ox: 0, oy: 0 };
+        const cityView = document.getElementById('cityView'), cityCanvas = document.getElementById('cityCanvas'), cityCtx = cityCanvas.getContext('2d');
+        function openCity() {
+            loadCity();
+            closeAllPopups();
+            document.getElementById('cityName').textContent = (profileName.value || 'Deine') + (profileName.value ? 's Hauptstadt' : ' Hauptstadt');
+            cityView.hidden = false;
+            cityOpenId = null; document.getElementById('citySheet').hidden = true;
+            updateCityBuilder();
+            cityDirty = true;
+            cancelAnimationFrame(cityRaf); cityRaf = requestAnimationFrame(cityFrame);
+        }
+        function closeCity() {
+            if (cityView.hidden) return false;
+            cityView.hidden = true; cityOpenId = null; cancelAnimationFrame(cityRaf); requestRender();
+            return true;
+        }
+        function updateCityBuilder() {
+            const c = loadCity(), el = document.getElementById('cityBuilder');
+            el.innerHTML = c.build
+                ? icon('hourglass') + '<span>' + cityDef(c.build.id).name + '</span><b>' + fmtClock((c.build.endsAt - Date.now()) / 1000) + '</b>'
+                : icon('check') + '<span>Bauarbeiter frei</span>';
+        }
+        function renderCitySheetTimer() {
+            const c = loadCity();
+            if (!c.build || c.build.id !== cityOpenId) return;
+            const el = document.querySelector('#cityBNote .city-progress i'); if (!el) return renderCitySheet();
+            const tot = c.build.endsAt - c.build.startedAt, done = Date.now() - c.build.startedAt;
+            el.style.setProperty('--p', Math.min(100, done / tot * 100) + '%');
+            document.querySelector('#cityBNoteTime').textContent = fmtDuration((c.build.endsAt - Date.now()) / 1000);
+            setBtnLabel(document.getElementById('citySpeedBtn'), 'Fertig für ' + citySpeedCost() + ' Gems');
+            document.getElementById('citySpeedBtn').disabled = gems < citySpeedCost();
+        }
+        function renderCitySheet() {
+            const id = cityOpenId; if (!id) return;
+            const c = loadCity(), def = cityDef(id), lvl = c.levels[id];
+            document.getElementById('citySheet').hidden = false;
+            document.getElementById('cityBIcon').innerHTML = icon(def.icon);
+            document.getElementById('cityBOver').textContent = def.id === 'keep' ? 'Hauptgebäude' : 'Gebäude';
+            document.getElementById('cityBName').textContent = def.name;
+            document.getElementById('cityBLevel').textContent = lvl ? 'Stufe ' + lvl + ' / ' + CITY_MAX_LEVEL : 'Noch nicht gebaut';
+            document.getElementById('cityBDesc').textContent = def.desc;
+            const note = document.getElementById('cityBNote'), up = document.getElementById('cityUpgradeBtn'), sp = document.getElementById('citySpeedBtn');
+            const building = c.build && c.build.id === id, blocker = cityBlocker(id);
+            if (building) {
+                note.className = 'notice notice--gold';
+                note.innerHTML = icon('hourglass') + '<span style="flex:1">Ausbau auf Stufe ' + c.build.to + ' · noch <b id="cityBNoteTime"></b><div class="city-progress" style="margin-top:6px"><i></i></div></span>';
+            } else {
+                note.className = 'notice';
+                note.innerHTML = icon('info') + '<span>' + (def.id === 'keep' ? 'Höhere Burgfried-Stufen erlauben höhere Stufen aller Gebäude.' : 'Die Wirkung dieses Gebäudes kommt in einem späteren Update – ausbauen kannst du es schon jetzt.') + '</span>';
+            }
+            const cost = lvl < CITY_MAX_LEVEL ? cityCost(id, lvl) : 0;
+            document.getElementById('cityBStats').innerHTML = lvl < CITY_MAX_LEVEL
+                ? '<div><span>Kosten</span><b class="' + (coins < cost ? 'is-bad' : '') + '">' + icon('coin', 'icon--coin') + fmtCompact(cost) + '</b></div>' +
+                  '<div><span>Bauzeit</span><b>' + icon('hourglass') + fmtDuration(cityTimeSec(id, lvl)) + '</b></div>'
+                : '';
+            setBtnLabel(up, lvl ? 'Aufwerten auf ' + (lvl + 1) : 'Bauen');
+            up.disabled = !!blocker || coins < cost;
+            up.title = blocker || '';
+            up.style.display = building ? 'none' : '';
+            sp.style.display = building ? '' : 'none';
+            if (!building && blocker && !(c.build && c.build.id === id)) {
+                note.className = 'notice notice--warn'; note.innerHTML = icon('lock') + '<span>' + blocker + '</span>';
+            }
+            if (building) renderCitySheetTimer();
+        }
+        document.getElementById('cityBtn').addEventListener('click', openCity);
+        document.getElementById('cityCloseBtn').addEventListener('click', closeCity);
+        document.getElementById('citySheetClose').addEventListener('click', () => { cityOpenId = null; document.getElementById('citySheet').hidden = true; cityDirty = true; });
+        document.getElementById('cityUpgradeBtn').addEventListener('click', () => { if (cityOpenId) cityStartBuild(cityOpenId); });
+        document.getElementById('citySpeedBtn').addEventListener('click', () => {
+            const cost = citySpeedCost(); if (!cost || gems < cost) return;
+            gems -= cost; saveGame(); updateHud(); cityFinishBuild(true);
+        });
+        cityCanvas.addEventListener('pointerdown', e => { cityDrag = { x: e.clientX, pan: cityPan, moved: false }; cityCanvas.setPointerCapture(e.pointerId); });
+        cityCanvas.addEventListener('pointermove', e => {
+            if (!cityDrag) return;
+            const dx = e.clientX - cityDrag.x;
+            if (Math.abs(dx) > 8) cityDrag.moved = true;
+            if (cityDrag.moved) cityPan = cityDrag.pan + dx;
+        });
+        cityCanvas.addEventListener('pointerup', () => { setTimeout(() => { cityDrag = null; }, 0); });
+        cityCanvas.addEventListener('pointercancel', () => { cityDrag = null; });
+        cityCanvas.addEventListener('click', e => {
+            if (cityDrag && cityDrag.moved) return;       // that was a swipe, not a tap
+            const r = cityCanvas.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+            const hit = cityHitRects.find(h => x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h);
+            cityOpenId = hit ? hit.id : null;
+            if (hit) renderCitySheet(); else document.getElementById('citySheet').hidden = true;
+            cityDirty = true;
+        });
+
+        // --- drawing (virtual 1000 x 1000 space, fitted to the screen) ---
+        function cityDrawGround(g) {
+            const sea = g.createRadialGradient(500, 500, 200, 500, 500, 820);
+            sea.addColorStop(0, '#1d4a66'); sea.addColorStop(1, '#0a1c2e');
+            g.fillStyle = sea; g.fillRect(-600, -600, 2200, 2200);
+            const pts = []; for (let i = 0; i < 48; i++) { const a = i / 48 * Math.PI * 2, rr = 470 + 26 * Math.sin(a * 3 + 1) + 14 * Math.sin(a * 7); pts.push([500 + Math.cos(a) * rr * 1.02, 500 + Math.sin(a) * rr * 0.96]); }
+            g.beginPath(); pts.forEach((p2, i) => g[i ? 'lineTo' : 'moveTo'](p2[0], p2[1])); g.closePath();
+            const land = g.createLinearGradient(0, 0, 1000, 1000); land.addColorStop(0, '#62a44a'); land.addColorStop(1, '#3d7231');
+            g.fillStyle = land; g.fill(); g.lineWidth = 3; g.strokeStyle = '#18321a'; g.stroke();
+            const rng2 = mulberry32(77);
+            for (let i = 0; i < 90; i++) {                 // trees on the rim
+                const a = rng2() * Math.PI * 2, d = 360 + rng2() * 90, x = 500 + Math.cos(a) * d, y = 500 + Math.sin(a) * d * 0.94;
+                if (Math.hypot(x - 500, y - 900) < 120 || Math.hypot(x - 500, y - 120) < 100) continue;
+                g.fillStyle = '#2f6b2c'; g.beginPath(); g.arc(x, y, 9 + rng2() * 8, 0, Math.PI * 2); g.fill();
+                g.fillStyle = 'rgba(150,210,110,.35)'; g.beginPath(); g.arc(x - 3, y - 3, 4, 0, Math.PI * 2); g.fill();
+            }
+            // roads from the keep to every plot
+            g.strokeStyle = '#b8a47a'; g.lineWidth = 14; g.lineCap = 'round';
+            for (const b of CITY_BUILDINGS) if (b.id !== 'keep') { g.beginPath(); g.moveTo(500, 470); g.lineTo(b.x, b.y + 20); g.stroke(); }
+            g.strokeStyle = 'rgba(90,70,40,.35)'; g.lineWidth = 2; g.setLineDash([6, 8]);
+            for (const b of CITY_BUILDINGS) if (b.id !== 'keep') { g.beginPath(); g.moveTo(500, 470); g.lineTo(b.x, b.y + 20); g.stroke(); }
+            g.setLineDash([]);
+            // inner wall ring around the keep
+            g.strokeStyle = '#8c8573'; g.lineWidth = 12; g.beginPath(); g.ellipse(500, 460, 150, 120, 0, 0, Math.PI * 2); g.stroke();
+            g.strokeStyle = '#2a241b'; g.lineWidth = 1.5; g.beginPath(); g.ellipse(500, 460, 156, 126, 0, 0, Math.PI * 2); g.stroke(); g.beginPath(); g.ellipse(500, 460, 144, 114, 0, 0, Math.PI * 2); g.stroke();
+        }
+        function cityDrawPlot(g, x, y, r) {
+            g.fillStyle = 'rgba(110,90,55,.55)'; g.beginPath(); g.ellipse(x, y + 18, r, r * 0.5, 0, 0, Math.PI * 2); g.fill();
+            g.strokeStyle = 'rgba(240,220,170,.55)'; g.setLineDash([5, 5]); g.lineWidth = 2; g.stroke(); g.setLineDash([]);
+        }
+        function cityDrawBuilding(g, b, lvl, now) {
+            const ink = '#2a241b', k = b.big ? 1.6 : 1 + Math.min(lvl, 25) * 0.012, x = b.x, y = b.y;
+            if (!lvl) { cityDrawPlot(g, x, y, 42); drawGlyph(g, 'plus', x, y + 8, 22, 'rgba(250,235,200,.85)'); return; }
+            g.save(); g.translate(x, y); g.scale(k, k); g.lineJoin = 'round'; g.strokeStyle = ink; g.lineWidth = 1.6;
+            const wall = (x0, y0, w, h) => { const q = g.createLinearGradient(x0, 0, x0 + w, 0); q.addColorStop(0, '#efe8d8'); q.addColorStop(1, '#a89c83'); g.fillStyle = q; g.fillRect(x0, y0, w, h); strokeBox(g, x0, y0, w, h); };
+            const roof = (x0, y0, w, h, col) => { g.beginPath(); g.moveTo(x0 - 4, y0); g.lineTo(x0 + w / 2, y0 - h); g.lineTo(x0 + w + 4, y0); g.closePath();
+                const q = g.createLinearGradient(x0, 0, x0 + w, 0); q.addColorStop(0, col); q.addColorStop(1, '#1d120c'); g.fillStyle = q; g.fill(); g.stroke(); };
+            if (b.big) {                                   // keep: central tower + two side towers
+                wall(-42, -30, 84, 50); roof(-42, -30, 84, 22, b.roof);
+                wall(-18, -78, 36, 50); roof(-18, -78, 36, 34, b.roof);
+                for (const sx of [-58, 42]) { wall(sx, -46, 16, 66); roof(sx, -46, 16, 22, b.roof); }
+                g.fillStyle = '#2a1f16'; g.beginPath(); g.moveTo(-9, 20); g.lineTo(-9, 2); g.arc(0, 2, 9, Math.PI, 0); g.lineTo(9, 20); g.fill();
+                g.beginPath(); g.moveTo(0, -112); g.lineTo(0, -132); g.stroke(); g.fillStyle = '#3f86d8'; g.beginPath(); g.moveTo(0, -132); g.lineTo(16, -127); g.lineTo(0, -122); g.fill(); g.stroke();
+            } else if (b.tall) {
+                wall(-12, -60, 24, 80); roof(-12, -60, 24, 30, b.roof);
+                g.fillStyle = '#2a1f16'; g.fillRect(-4, -46, 8, 10);
+            } else if (b.gate) {
+                wall(-50, -12, 100, 32);
+                for (let i = 0; i < 6; i++) { g.fillStyle = '#d9d0bd'; g.fillRect(-50 + i * 18, -20, 12, 8); strokeBox(g, -50 + i * 18, -20, 12, 8); }
+                g.fillStyle = '#2a1f16'; g.beginPath(); g.moveTo(-12, 20); g.lineTo(-12, 0); g.arc(0, 0, 12, Math.PI, 0); g.lineTo(12, 20); g.fill();
+            } else if (b.pier) {
+                g.fillStyle = '#7a5a3a'; g.fillRect(-10, 10, 20, 50); strokeBox(g, -10, 10, 20, 50);
+                wall(-30, -18, 60, 30); roof(-30, -18, 60, 18, b.roof);
+                g.fillStyle = '#5a3b22'; g.beginPath(); g.moveTo(24, 58); g.quadraticCurveTo(40, 66, 58, 58); g.lineTo(52, 50); g.lineTo(28, 50); g.closePath(); g.fill(); g.stroke();
+                g.fillStyle = '#efe7d4'; g.beginPath(); g.moveTo(40, 50); g.lineTo(40, 28); g.lineTo(52, 48); g.closePath(); g.fill(); g.stroke();
+            } else {
+                wall(-30, -20, 60, 40);
+                if (b.dome) {
+                    const q = g.createLinearGradient(-22, -52, 22, -20); q.addColorStop(0, '#f3e3b0'); q.addColorStop(1, b.roof);
+                    g.beginPath(); g.moveTo(-24, -20); g.bezierCurveTo(-24, -44, -10, -52, 0, -52); g.bezierCurveTo(10, -52, 24, -44, 24, -20); g.closePath(); g.fillStyle = q; g.fill(); g.stroke();
+                } else roof(-30, -20, 60, 26, b.roof);
+                if (b.chimney) { g.fillStyle = '#6b6456'; g.fillRect(14, -40, 8, 18); strokeBox(g, 14, -40, 8, 18);
+                    for (let i = 0; i < 3; i++) { const t = ((now / 1600) + i / 3) % 1; g.fillStyle = 'rgba(120,120,120,' + (0.5 * (1 - t)) + ')'; g.beginPath(); g.arc(18 + t * 10, -44 - t * 40, 5 + t * 8, 0, Math.PI * 2); g.fill(); } }
+                if (b.cross) { g.fillStyle = '#c0392b'; g.fillRect(-4, -6, 8, 20); g.fillRect(-10, 0, 20, 8); }
+                g.fillStyle = '#2a1f16'; g.fillRect(-6, 4, 12, 16);
+            }
+            g.restore();
+        }
+        function cityFrame(now) {
+            if (cityView.hidden) return;
+            const dpr2 = Math.min(window.devicePixelRatio || 1, 2), W = window.innerWidth, H = window.innerHeight;
+            if (cityCanvas.width !== Math.round(W * dpr2) || cityCanvas.height !== Math.round(H * dpr2)) { cityCanvas.width = Math.round(W * dpr2); cityCanvas.height = Math.round(H * dpr2); }
+            const narrow = W < 600, top = narrow ? 104 : 70, sheetH = cityOpenId ? Math.min(380, H * 0.46) : 0, availH = H - top - sheetH - 10;
+            const sc = Math.min(availH / 1000, Math.max(W / 1000, W / 640));      // phones: bigger than the width, drag sideways to see all
+            const over = Math.max(0, 1000 * sc - W) / 2;
+            cityPan = Math.max(-over, Math.min(over, cityPan));
+            cityFit = { s: sc, ox: (W - 1000 * sc) / 2 + cityPan, oy: top + Math.max(0, availH - 1000 * sc) / 2 };
+            const g = cityCtx, c = loadCity();
+            g.setTransform(dpr2, 0, 0, dpr2, 0, 0); g.clearRect(0, 0, W, H);
+            g.save(); g.translate(cityFit.ox, cityFit.oy); g.scale(sc, sc);
+            cityDrawGround(g);
+            const order = CITY_BUILDINGS.slice().sort((a, b) => a.y - b.y);
+            cityHitRects = [];
+            const labels = [];
+            for (const b of order) {
+                const lvl = c.levels[b.id], building = c.build && c.build.id === b.id;
+                if (cityOpenId === b.id) { g.strokeStyle = 'rgba(255,220,140,.9)'; g.lineWidth = 3; g.beginPath(); g.ellipse(b.x, b.y + 18, b.big ? 100 : 56, b.big ? 44 : 26, 0, 0, Math.PI * 2); g.stroke(); }
+                cityDrawBuilding(g, b, lvl, now);
+                if (building) {                            // scaffolding + bouncing hammer
+                    g.strokeStyle = '#8a6a44'; g.lineWidth = 3;
+                    for (const sx of [-34, 34]) { g.beginPath(); g.moveTo(b.x + sx, b.y + 22); g.lineTo(b.x + sx, b.y - 40); g.stroke(); }
+                    g.beginPath(); g.moveTo(b.x - 34, b.y - 12); g.lineTo(b.x + 34, b.y - 12); g.stroke();
+                    drawGlyph(g, 'upgrade', b.x + 30, b.y - 58 - Math.abs(Math.sin(now / 180)) * 10, 24, '#ffd98a');
+                }
+                labels.push({ b, lvl, building });
+            }
+            for (const { b, lvl, building } of labels) {   // plates last, so no roof or flag covers them
+                const label = b.name + (lvl ? ' · ' + lvl : ''), fs = 15;
+                g.font = '700 ' + fs + 'px Inter, system-ui, sans-serif';
+                const tw = g.measureText(label).width + 20, py = b.y + (b.big ? 66 : 42);
+                g.fillStyle = lvl ? 'rgba(14,14,20,.85)' : 'rgba(14,14,20,.6)'; g.strokeStyle = building ? '#ffd98a' : 'rgba(228,200,134,.6)'; g.lineWidth = 1.4;
+                g.beginPath(); g.roundRect ? g.roundRect(b.x - tw / 2, py, tw, 24, 12) : g.rect(b.x - tw / 2, py, tw, 24); g.fill(); g.stroke();
+                g.fillStyle = lvl ? '#f3e6c4' : '#b9ad92'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(label, b.x, py + 12.5);
+                const hx = cityFit.ox + (b.x - (b.big ? 90 : 55)) * sc, hy = cityFit.oy + (b.y - (b.big ? 130 : 70)) * sc;
+                cityHitRects.push({ id: b.id, x: hx, y: hy, w: (b.big ? 180 : 110) * sc, h: ((b.big ? 130 : 70) + (py - b.y) + 26) * sc });
+            }
+            g.restore();
+            cityRaf = requestAnimationFrame(cityFrame);
+        }
+
         // ===== LEVEL-UP MODAL =====
         var levelUpShown = null;            // { from, to, coins, troops, gems, points } currently on screen / queued
         var levelUpTimer = null;
@@ -6078,6 +6425,8 @@ body.has-panel .mapctl{display:none}
         }
         function closeTopmostPanel() {           // scrim click + Escape
           if (closeLevelUpModal()) return;
+          if (!document.getElementById('citySheet').hidden && !cityView.hidden) { document.getElementById('citySheetClose').click(); return; }
+          if (closeCity()) return;
           if (closeDailyModal()) return;
           if (!document.getElementById('rewardModal').hidden) { document.getElementById('rewardModal').hidden = true; return; }
           if (isPanelOpen(chestItemPopup)) return chestItemCloseBtn.click();
@@ -6276,6 +6625,7 @@ body.has-panel .mapctl{display:none}
             popupLevel.textContent = level;
             popupTitle.textContent = islandTitle(island);
             popupActions.hidden = true;
+            document.getElementById('cityBtn').style.display = 'none';
             if (popupView !== 'preview') popupStats.dataset.preview = '';
 
             if (isOwned) {
@@ -6296,7 +6646,8 @@ body.has-panel .mapctl{display:none}
                     confirmBtn.disabled = coins < cost;
                     backBtn.style.display = 'inline-block';
                 } else {
-                    popupOverline.textContent = island.id === playerIslandId ? 'Deine Basis · Heimat' : isTemple ? 'Dein Tempel' : 'Deine Basis';
+                    popupOverline.textContent = island.id === playerIslandId ? 'Deine Hauptstadt' : isTemple ? 'Dein Tempel' : 'Deine Basis';
+                    if (island.id === playerIslandId) document.getElementById('cityBtn').style.display = 'inline-block';
                     popupStats.innerHTML = '<div class="stat-grid">' +
                         statTile('Truppen hier', 'troops', fmtNum(troopsHere)) +
                         statTile('Verteidigung', 'defense', fmtNum(defenseForLevel(level))) +
