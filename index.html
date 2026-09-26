@@ -1815,9 +1815,35 @@ body.has-panel .mapctl{display:none}
                 bridges.push({ a: a.id, b: b.id, x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y });
             }
         }
+        function bridgeBetween(a, b) {
+            return bridges.find(br => (br.a === a && br.b === b) || (br.a === b && br.b === a)) || null;
+        }
+        // Passes (wie in großen Strategiespielen): the bridges into the Wächter-Inseln open on day 2 of a world,
+        // the bridges into the Thron-Insel on day 4. Until then they are chained shut for everyone.
+        const PASS_OPEN_DAYS = { guardian: 1, throne: 3 };
+        function worldStartAt() {
+            let t = parseInt(store.get('openWaterWorldStart'), 10);
+            if (!t) { t = Date.now(); store.set('openWaterWorldStart', String(t)); }
+            return t;
+        }
+        function passOpensAt(br) {
+            const ta = landmasses[br.a].tier, tb = landmasses[br.b].tier;
+            const inner = ta === 'throne' || tb === 'throne' ? 'throne' : ta === 'guardian' || tb === 'guardian' ? 'guardian' : null;
+            return inner ? worldStartAt() + PASS_OPEN_DAYS[inner] * 86400000 : 0;
+        }
         function landmassesConnected(a, b) {
             if (a === b) return true;
-            return bridges.some(br => (br.a === a && br.b === b) || (br.a === b && br.b === a));
+            const br = bridgeBetween(a, b);
+            return !!br && Date.now() >= passOpensAt(br);
+        }
+        function fmtPassWait(ms) {
+            const m = Math.max(1, Math.ceil(ms / 60000)), d = Math.floor(m / 1440), h = Math.floor(m % 1440 / 60), mm = m % 60;
+            return d ? d + (d === 1 ? ' Tag ' : ' Tage ') + h + ' Std.' : h ? h + ' Std. ' + mm + ' Min.' : mm + ' Min.';
+        }
+        function noRouteHint(a, b) {
+            const br = bridgeBetween(a, b);
+            return br ? 'Der Pass ist noch verschlossen – er öffnet in ' + fmtPassWait(passOpensAt(br) - Date.now())
+                      : 'Keine Brücke zwischen diesen Inseln – erobere eine verbundene Basis, um näher heranzukommen.';
         }
 
         // Every landmass is covered in a grid of towers - the tower, not the
@@ -1910,7 +1936,7 @@ body.has-panel .mapctl{display:none}
             } catch (e) {}
             ['openWaterPlayerIslandId', 'openWaterOwnedIslands', 'openWaterIslandLevels', 'openWaterIslandTroops', 'openWaterBotOwnedIslands',
              'openWaterBotCoins', 'openWaterNeutralTroopOverrides', 'openWaterScoutedIslands', 'openWaterPendingAttacks', 'openWaterPendingSends',
-             'openWaterPendingScouts', 'openWaterPendingRetreats', 'openWaterTempleHoldSince', 'openWaterBoss', 'openWaterBossNext'].forEach(k => store.remove(k));
+             'openWaterPendingScouts', 'openWaterPendingRetreats', 'openWaterTempleHoldSince', 'openWaterBoss', 'openWaterBossNext', 'openWaterExplored', 'openWaterWorldStart'].forEach(k => store.remove(k));
             if (carry > 0) store.set('openWaterCarryTroops', String(Math.round(carry)));
             store.set('openWaterBalanceV2', '1');
             store.set('openWaterWorldVersion', WORLD_VERSION);
@@ -2145,6 +2171,25 @@ body.has-panel .mapctl{display:none}
         const RULER_BONUS = 1.25;
         const megaTempleId = (islands.find(i => i.type === 'megaTemple') || {}).id;
         function rulerOwner() { return megaTempleId === undefined ? null : islandOwnerOf(megaTempleId); }
+        // Nebel des Krieges: only explored islands are visible. Owning a base explores its island and
+        // every island bridged to it; a scout sent into the fog explores the island it reaches.
+        var exploredSet = null, exploreFx = {};
+        function exploredLms() {
+            if (!exploredSet) {
+                try { exploredSet = new Set(JSON.parse(store.get('openWaterExplored')) || []); } catch (e) { exploredSet = new Set(); }
+            }
+            return exploredSet;
+        }
+        function isExplored(lmId) { return exploredLms().has(lmId); }
+        function exploreLandmass(lmId, withNeighbours) {
+            const set = exploredLms(), add = [lmId];
+            if (withNeighbours) for (const br of bridges) { if (br.a === lmId) add.push(br.b); else if (br.b === lmId) add.push(br.a); }
+            let changed = false;
+            for (const id of add) if (!set.has(id)) { set.add(id); exploreFx[id] = performance.now(); changed = true; }
+            if (changed) { store.set('openWaterExplored', JSON.stringify([...set])); if (typeof requestRender === 'function') requestRender(); }
+            return changed;
+        }
+        function exploreOwned() { for (const id of ownedIslands) exploreLandmass(islandById[id].landmassId, true); }
         function effectiveTroops(island) {
             const boss = bossAt(island.id); if (boss) return boss.troops;
             const owner = islandOwnerOf(island.id);
@@ -2727,7 +2772,7 @@ body.has-panel .mapctl{display:none}
             return bestId;
         }
 
-        function launchScout(targetId) {
+        function launchScout(targetId, explore) {
             const target = islandById[targetId];
             if (!target) return;
             const sourceId = nearestOwnedIslandTo(target);
@@ -2740,18 +2785,25 @@ body.has-panel .mapctl{display:none}
                 sourceId,
                 targetId,
                 startedAt,
-                resolveAt: startedAt + durationSec * 1000
+                resolveAt: startedAt + durationSec * 1000,
+                explore: !!explore
             });
             questProgress('scout', 1);
             saveGame();
             saveProgression();
-            flashHint('Späher unterwegs zu ' + islandTitle(target) + ' · ca. ' + fmtClock(durationSec));
+            flashHint((explore ? 'Späher erkundet die Insel · ca. ' : 'Späher unterwegs zu ' + islandTitle(target) + ' · ca. ') + fmtClock(durationSec));
             renderActiveMarches();
         }
 
         function resolveScout(scout) {
             const target = islandById[scout.targetId];
             if (!target) return;
+            if (scout.explore) {
+                exploreLandmass(target.landmassId, false);
+                saveProgression();
+                flashHint('Insel erkundet – der Nebel lichtet sich.', 3500);
+                return;
+            }
             scoutedIslands.add(scout.targetId);
             saveGame();
             // Same reasoning as resolveSend(): persist the now-shorter
@@ -2805,6 +2857,7 @@ body.has-panel .mapctl{display:none}
                 ownedIslands.add(target.id);
                 islandLevels[target.id] = levelAfterCapture;
                 questProgress('capture', 1);
+                exploreLandmass(target.landmassId, true);
                 coins += Math.round(totalStrength * rewardRate);
                 defenderCasualties = originalEnemyTroops;
                 if (target.type === 'temple' || target.type === 'megaTemple') {
@@ -3847,6 +3900,7 @@ body.has-panel .mapctl{display:none}
           const out = [];
           for (const lm of landmasses) {
             if (lm.bbox.r < view.l || lm.bbox.l > view.r || lm.bbox.b < view.t || lm.bbox.t > view.b) continue;
+            if (!isExplored(lm.id)) continue;                                              // under the fog
             for (const isl of islandsByLandmass[lm.id] || []) {
               const pad = isl.radius * 2.2;
               if (isl.x + pad < view.l || isl.x - pad > view.r || isl.y + pad < view.t || isl.y - pad > view.b) continue;
@@ -3868,6 +3922,7 @@ body.has-panel .mapctl{display:none}
           refreshTerritory();                                                            // rebuild only chunks whose ownership changed
           if (dirty && BG.valid) for (const d of dirty) repaintBackgroundRect(d);        // partial repaints, clipped (no full re-render)
           drawBackground();                                                              // 1-4: sea, land, bridges, territory
+          drawFog(view, now);                                                            // Nebel des Krieges over unexplored islands
           const vis = visibleIslands(viewPad);
           drawRings(vis, z, now);                                                        // 5
           for (const a of pendingAttacks) { if (a.attackerBotId && islandOwnerOf(a.targetId) !== 'player') continue;         // fog of war (unchanged)
@@ -3884,6 +3939,7 @@ body.has-panel .mapctl{display:none}
           paintBanners(plates);                                                                                                // 9 nameplates on top
           drawRulerCrowns(plates);                                                                                             // crown on the ruler's plates
           drawMarchChips();                                                                                                    // 10 countdown chips
+          drawPasses(view, now);                                                                                               // chained, time-locked bridges
           drawPickups(now);                                                                                                    // 11 mini-event pickups
           drawBattleFx(now);                                                                                                   // 13 battle flashes + "Sieg!"
           ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -4259,6 +4315,7 @@ body.has-panel .mapctl{display:none}
           }
           const w = screenToWorld(sx, sy), z = mapState.zoom; let best = null, bd = Infinity;
           for (const isl of islands) {                                                        // nearest base, min 22 CSS px hit radius
+            if (!isExplored(isl.landmassId)) continue;
             const d = Math.hypot(isl.x - w.x, isl.y - w.y); if (d <= Math.max(isl.radius, 22 / z) && d < bd) { bd = d; best = isl; }
           }
           return best;
@@ -4414,6 +4471,7 @@ body.has-panel .mapctl{display:none}
                 if (troopsHere < BOT_MIN_GARRISON_TO_ATTACK) continue;
                 const source = islandById[sourceId];
                 for (const lmId of reachableLandmassIds[source.landmassId]) {
+                    if (!landmassesConnected(source.landmassId, lmId)) continue;
                     for (const target of islandsByLandmass[lmId] || []) {
                         if (owned.has(target.id)) continue;
                         const totalStrength = effectiveTroops(target) + effectiveDefense(target);
@@ -4476,7 +4534,7 @@ body.has-panel .mapctl{display:none}
                     const troopsHere = islandTroops[sourceId] || 0;
                     if (troopsHere < BOT_MIN_GARRISON_TO_ATTACK) continue;
                     const source = islandById[sourceId];
-                    if (!reachableLandmassIds[source.landmassId].includes(target.landmassId)) continue;
+                    if (!landmassesConnected(source.landmassId, target.landmassId)) continue;
                     const distance = Math.hypot(target.x - source.x, target.y - source.y);
                     if (distance < bestDistance) {
                         bestDistance = distance;
@@ -5637,6 +5695,95 @@ body.has-panel .mapctl{display:none}
             hintEl.textContent = text;
             if (ms) hintResetTimer = setTimeout(() => { hintEl.textContent = defaultHint; }, ms);
         }
+        // ===== FOG + PASSES (drawing) =====
+        var FOG_PUFF = null;
+        function fogPuff() {                               // soft, low-contrast haze blob (deterministic)
+            if (FOG_PUFF) return FOG_PUFF;
+            const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'), r = mulberry32(4711);
+            for (let i = 0; i < 6; i++) {
+                const px = 44 + r() * 40, py = 44 + r() * 40, rad = 30 + r() * 22;
+                const g2 = x.createRadialGradient(px, py, 0, px, py, rad);
+                g2.addColorStop(0, 'rgba(150,162,182,.34)'); g2.addColorStop(0.6, 'rgba(112,124,146,.18)'); g2.addColorStop(1, 'rgba(90,100,120,0)');
+                x.fillStyle = g2; x.fillRect(0, 0, 128, 128);
+            }
+            return FOG_PUFF = c;
+        }
+        function fogPuffsOf(lm) {                          // haze positions in world units, fixed per landmass
+            if (lm.fogPuffs) return lm.fogPuffs;
+            const r = mulberry32(900 + lm.id * 31), out = [];
+            for (let i = 0; i < lm.shape.length; i += Math.max(1, Math.floor(lm.shape.length / 22))) out.push({ x: lm.shape[i].x, y: lm.shape[i].y, s: 0.42 + r() * 0.14, ph: r() * 6.28 });
+            for (let i = 0; i < 22; i++) { const a = r() * Math.PI * 2, d = Math.sqrt(r()) * lm.radius * 0.8; out.push({ x: lm.x + Math.cos(a) * d, y: lm.y + Math.sin(a) * d, s: 0.5 + r() * 0.2, ph: r() * 6.28 }); }
+            return lm.fogPuffs = out;
+        }
+        function drawFog(view, now) {
+            const z = mapState.zoom, puff = fogPuff();
+            let live = false;
+            for (const lm of landmasses) {
+                const fx = exploreFx[lm.id], fading = fx && now - fx < 1600;
+                if (isExplored(lm.id) && !fading) continue;
+                if (lm.bbox.r < view.l || lm.bbox.l > view.r || lm.bbox.b < view.t || lm.bbox.t > view.b) continue;
+                const a = fading ? 1 - (now - fx) / 1600 : 1;
+                ctx.save();
+                ctx.setTransform(dpr * z, 0, 0, dpr * z, dpr * mapState.offsetX, dpr * mapState.offsetY);
+                ctx.globalAlpha = a;
+                const sh = ctx.createRadialGradient(lm.x, lm.y, 0, lm.x, lm.y, lm.shapeMaxR);   // unknown land: dark slate silhouette
+                sh.addColorStop(0, '#2c3441'); sh.addColorStop(1, '#1b212b');
+                ctx.fillStyle = sh; ctx.fill(lm.path);
+                ctx.lineWidth = lm.radius * 0.012; ctx.strokeStyle = 'rgba(150,160,178,.35)'; ctx.stroke(lm.path);
+                for (const p of fogPuffsOf(lm)) {
+                    const sz = lm.radius * p.s * 2 * (fading ? 1 + (1 - a) * 0.8 : 1), dx = Math.sin(now / 5200 + p.ph) * lm.radius * 0.02;
+                    ctx.globalAlpha = a;
+                    ctx.drawImage(puff, p.x - sz / 2 + dx, p.y - sz / 2, sz, sz);
+                }
+                ctx.restore();
+                if (fading) live = true;
+            }
+            if (live) liveAnimation = true;
+            // "?" hint on fogged islands that border known ones
+            if (z > 0.004) {
+                setScreen(ctx);
+                for (const lm of landmasses) {
+                    if (isExplored(lm.id)) continue;
+                    if (!bridges.some(br => (br.a === lm.id && isExplored(br.b)) || (br.b === lm.id && isExplored(br.a)))) continue;
+                    const sx = lm.x * z + mapState.offsetX, sy = lm.y * z + mapState.offsetY;
+                    if (sx < -60 || sy < -60 || sx > viewW + 60 || sy > viewH + 60) continue;
+                    const scouting = pendingScouts.some(sc => sc.explore && islandById[sc.targetId].landmassId === lm.id);
+                    const label = scouting ? 'Wird erkundet …' : 'Erkunden';
+                    ctx.font = '700 12px Inter, system-ui, sans-serif';
+                    const w = ctx.measureText(label).width + 34;
+                    ctx.fillStyle = 'rgba(12,14,20,.85)'; ctx.strokeStyle = 'rgba(228,200,134,.7)'; ctx.lineWidth = 1.2;
+                    ctx.beginPath(); ctx.roundRect ? ctx.roundRect(sx - w / 2, sy - 13, w, 26, 13) : ctx.rect(sx - w / 2, sy - 13, w, 26); ctx.fill(); ctx.stroke();
+                    drawGlyph(ctx, 'scout', sx - w / 2 + 15, sy, 14, '#f0d69a');
+                    ctx.fillStyle = '#f3e6c4'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(label, sx - w / 2 + 26, sy + 0.5);
+                }
+            }
+        }
+        function drawPasses(view, now) {                   // chains + lock + countdown on bridges that are still closed
+            const z = mapState.zoom; if (z < 0.0035) return;
+            setScreen(ctx);
+            for (const br of bridges) {
+                const opens = passOpensAt(br); if (!opens || Date.now() >= opens) continue;
+                if (!isExplored(br.a) && !isExplored(br.b)) continue;
+                const x1 = br.x1 * z + mapState.offsetX, y1 = br.y1 * z + mapState.offsetY, x2 = br.x2 * z + mapState.offsetX, y2 = br.y2 * z + mapState.offsetY;
+                const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+                if (mx < -80 || my < -80 || mx > viewW + 80 || my > viewH + 80) continue;
+                const nx = -(y2 - y1), ny = x2 - x1, nl = Math.hypot(nx, ny) || 1, cl = Math.max(10, 900 * z);
+                ctx.strokeStyle = '#1a1612'; ctx.lineWidth = 4; ctx.setLineDash([5, 3]);
+                for (const k of [-0.28, 0.28]) {
+                    const cx = x1 + (x2 - x1) * (0.5 + k * 0.4), cy = y1 + (y2 - y1) * (0.5 + k * 0.4);
+                    ctx.beginPath(); ctx.moveTo(cx - nx / nl * cl, cy - ny / nl * cl); ctx.lineTo(cx + nx / nl * cl, cy + ny / nl * cl); ctx.stroke();
+                }
+                ctx.strokeStyle = '#b7a37a'; ctx.lineWidth = 1.6; ctx.stroke(); ctx.setLineDash([]);
+                const label = fmtPassWait(opens - Date.now());
+                ctx.font = '700 11px Inter, system-ui, sans-serif';
+                const w = ctx.measureText(label).width + 30;
+                ctx.fillStyle = 'rgba(20,10,8,.9)'; ctx.strokeStyle = 'rgba(255,120,90,.85)'; ctx.lineWidth = 1.2;
+                ctx.beginPath(); ctx.roundRect ? ctx.roundRect(mx - w / 2, my - 11, w, 22, 11) : ctx.rect(mx - w / 2, my - 11, w, 22); ctx.fill(); ctx.stroke();
+                drawGlyph(ctx, 'lock', mx - w / 2 + 12, my, 12, '#ffb8a8');
+                ctx.fillStyle = '#ffe3da'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(label, mx - w / 2 + 22, my + 0.5);
+            }
+        }
+
         // ===== BATTLE EFFECTS =====
         // A flash, a shockwave and sparks at the base when a fight the player is part of resolves,
         // plus "Sieg!" / "Verloren" floating up (screen space, drawn in drawMap).
@@ -5777,7 +5924,8 @@ body.has-panel .mapctl{display:none}
         }
         function spawnBoss() {
             const reach = new Set();
-            for (const id of ownedIslands) for (const lm of reachableLandmassIds[islandById[id].landmassId] || []) reach.add(lm);
+            for (const id of ownedIslands) for (const lm of reachableLandmassIds[islandById[id].landmassId] || [])
+                if (landmassesConnected(islandById[id].landmassId, lm) && isExplored(lm)) reach.add(lm);
             const home = islandById[rewardBaseId() ?? playerIslandId];
             const busy = new Set(pendingAttacks.map(a => a.targetId));
             const cand = [];
@@ -6245,7 +6393,7 @@ body.has-panel .mapctl{display:none}
                 const sx = 40 + Math.random() * (viewW - 80), sy = top + Math.random() * (bottom - top);
                 const w = screenToWorld(sx, sy);
                 const lm = landmasses.find(l => Math.hypot(w.x - l.x, w.y - l.y) <= l.shapeMaxR && pointInPolygon(w.x, w.y, l.shape));
-                if (!lm) continue;
+                if (!lm || !isExplored(lm.id)) continue;
                 const clear = 30 / mapState.zoom;
                 if ((islandsByLandmass[lm.id] || []).some(i => Math.hypot(i.x - w.x, i.y - w.y) < i.radius + clear)) continue;
                 if (bannerHitRects.some(b => sx > b.x - 26 && sx < b.x + b.w + 26 && sy > b.y - 26 && sy < b.y + b.h + 26)) continue;   // keep nameplates tappable
@@ -6920,9 +7068,22 @@ body.has-panel .mapctl{display:none}
 
         closeBtn.addEventListener('click', closeIslandPopup);
 
+        function fogLandmassAt(sx, sy) {
+            const w = screenToWorld(sx, sy);
+            return landmasses.find(l => !isExplored(l.id) && Math.hypot(w.x - l.x, w.y - l.y) <= l.shapeMaxR && pointInPolygon(w.x, w.y, l.shape)) || null;
+        }
+        function tapFog(lm) {
+            const pending = pendingScouts.some(sc => sc.explore && islandById[sc.targetId].landmassId === lm.id);
+            if (pending) { flashHint('Ein Späher erkundet diese Insel bereits.', 2500); return; }
+            const nextToKnown = bridges.some(br => (br.a === lm.id && isExplored(br.b)) || (br.b === lm.id && isExplored(br.a)));
+            if (!nextToKnown) { flashHint('Unerkundet – erkunde zuerst die Nachbarinseln.', 2500); return; }
+            const target = (islandsByLandmass[lm.id] || []).find(i => i.type !== 'tower') || islandsByLandmass[lm.id][0];
+            launchScout(target.id, true);
+        }
         function handleTap(screenX, screenY) {
             if (!multiAttackMode && collectPickupAt(screenX, screenY)) return;
             const island = pickIslandAtScreen(screenX, screenY);
+            if (!island && !multiAttackMode) { const fl = fogLandmassAt(screenX, screenY); if (fl) { tapFog(fl); return; } }
             if (!island) { if (isPanelOpen(popup) && !multiAttackMode) closeIslandPopup(); return; }
 
             if (multiAttackMode) {
@@ -6932,7 +7093,7 @@ body.has-panel .mapctl{display:none}
                     return; // never a valid attack target, source base included
                 }
                 if (!source || !landmassesConnected(island.landmassId, source.landmassId)) {
-                    flashHint('Keine Brücke zu dieser Insel – sie kann nicht Ziel sein.', 2500);
+                    flashHint(source ? noRouteHint(island.landmassId, source.landmassId) : 'Keine Brücke zu dieser Insel – sie kann nicht Ziel sein.', 3000);
                     return;
                 }
                 const idx = multiAttackTargets.indexOf(island.id);
@@ -6958,7 +7119,7 @@ body.has-panel .mapctl{display:none}
                     // Crossing to a different landmass is only allowed over
                     // a bridge - same-landmass attacks are always fine.
                     if (!landmassesConnected(island.landmassId, target.landmassId)) {
-                        flashHint('Keine Brücke zwischen diesen Inseln – erobere eine verbundene Basis, um näher heranzukommen.', 3500);
+                        flashHint(noRouteHint(island.landmassId, target.landmassId), 3500);
                         return;
                     }
                     // Show the comparison and wait for an explicit "Angreifen"
@@ -7012,7 +7173,8 @@ body.has-panel .mapctl{display:none}
                 'Tipp: Tempel geben deinem ganzen Reich einen Bonus.',
                 'Tipp: Unter „Aufgaben“ warten jeden Tag neue Belohnungen.',
                 'Tipp: Glänzende Münzen, Gems und Banner auf der Karte einfach antippen.',
-                'Tipp: Drei gleiche Ausrüstungsteile werden automatisch zu einem besseren.'];
+                'Tipp: Drei gleiche Ausrüstungsteile werden automatisch zu einem besseren.',
+                'Tipp: Tippe auf den Nebel neben deinem Gebiet, um die Insel zu erkunden.'];
             const tipEl = document.getElementById('splashTip'), statusEl = document.getElementById('splashStatus');
             tipEl.textContent = tips[Math.floor(Math.random() * tips.length)];
             const steps = ['Welt wird erschaffen …', 'Inseln werden besiedelt …', 'Truppen werden gerüstet …', 'Bereit'];
@@ -7033,6 +7195,7 @@ body.has-panel .mapctl{display:none}
             }, wait);
         })();
 
+        exploreOwned(); exploreFx = {};         // Nebel: home island + its neighbours are always known (no fade at boot)
         renderActiveMarches();
         if (bonusGrantedAtBoot) saveGame();      // a reload right after the first start must not lose the grant
         updateZoomBounds(); clampCamera();
