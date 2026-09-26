@@ -7799,9 +7799,25 @@ body.has-panel .mapctl{display:none}
             // without this, popupIslandId is already null and this would
             // wrongly clear pendingAttackTargetId and show a stale hint.
             if (popupIslandId === null) return;
-            pendingAttackTargetId = popupIslandId;
-            closeIslandPopup();
-            flashHint('Wähle die Basis, von der aus du angreifst – tippe sie auf der Karte an.');
+            // pick the own base next to the target with the most troops (same region or one bridge away) - no hunting on the map
+            const target = islandById[popupIslandId];
+            let best = null;
+            for (const id of ownedIslands) {
+                const isl = islandById[id], t = islandTroops[id] || 0;
+                if (t <= 0 || !landmassesConnected(isl.landmassId, target.landmassId)) continue;
+                if (!best || t > (islandTroops[best] || 0)) best = id;
+            }
+            if (best === null) {
+                const any = [...ownedIslands].some(id => landmassesConnected(islandById[id].landmassId, target.landmassId));
+                flashHint(any ? 'Deine Basen neben diesem Gebiet haben keine Truppen – schicke erst Truppen dorthin (Senden).'
+                              : 'Keine deiner Basen grenzt an dieses Gebiet. Erobere zuerst eine Basis oder ein Tor direkt daneben und schicke Truppen hin.', 5000);
+                return;
+            }
+            previewSourceId = best;
+            popupView = 'preview';
+            previewShownAt = Date.now();
+            previewFraction = 1;
+            renderPopup();
         });
 
         scoutBtn.addEventListener('click', () => {
@@ -7887,6 +7903,13 @@ body.has-panel .mapctl{display:none}
                 return;
             }
 
+            if (isPanelOpen(popup) && popupView === 'preview' && previewSourceId !== null && ownedIslands.has(island.id)) {   // switch the start base
+                const target = islandById[popupIslandId];
+                if (island.id === previewSourceId) return;
+                if (!(islandTroops[island.id] > 0)) { flashHint('Diese Basis hat keine Truppen zum Angreifen.', 3000); return; }
+                if (!landmassesConnected(island.landmassId, target.landmassId)) { flashHint(noRouteHint(island.landmassId, target.landmassId), 3500); return; }
+                previewSourceId = island.id; previewFraction = 1; renderPopup(); return;
+            }
             if (pendingAttackTargetId !== null) {
                 const target = islandById[pendingAttackTargetId];
                 pendingAttackTargetId = null;
@@ -7909,6 +7932,7 @@ body.has-panel .mapctl{display:none}
                     renderPopup();
                     return;
                 }
+                if (ownedIslands.has(island.id)) { flashHint('Diese Basis hat keine Truppen zum Angreifen.', 3000); return; }
                 // Tapped something other than an owned island - just cancel
             }
 
