@@ -931,6 +931,18 @@ body.has-panel .mapctl{display:none}
 .city-bfoot{display:flex;gap:8px}
 .city-progress{height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
 .city-progress i{display:block;height:100%;width:var(--p,0%);background:linear-gradient(90deg,var(--gold-500),var(--gold-200))}
+
+/* =====================================================================
+   BATTLE SCENE
+   ===================================================================== */
+.bscene{position:fixed;inset:0;z-index:calc(var(--z-modal) + 1);display:flex;align-items:center;justify-content:center;padding:16px;
+  background:radial-gradient(ellipse at center,rgba(6,8,12,.55),rgba(6,8,12,.88));animation:fade-in var(--dur-3) var(--ease-out);cursor:pointer}
+.bscene[hidden]{display:none}
+.bscene.is-leaving{opacity:0;transition:opacity .35s var(--ease-out)}
+.bscene-card{position:relative;width:min(620px,100%);aspect-ratio:16/10;border:1px solid var(--line-3);border-radius:var(--r-lg);overflow:hidden;
+  box-shadow:var(--sh-3),0 0 0 1px rgba(0,0,0,.6);background:#12161c}
+.bscene-canvas{display:block;width:100%;height:100%}
+.bscene-skip{position:absolute;left:0;right:0;bottom:8px;text-align:center;font:600 var(--fs-11)/1 var(--font-ui);letter-spacing:.12em;text-transform:uppercase;color:rgba(236,226,200,.5);pointer-events:none}
     </style>
 </head>
 <body>
@@ -1384,6 +1396,12 @@ body.has-panel .mapctl{display:none}
     <ul id="rewardModalRewards" class="lvlup-rewards"></ul>
     <button id="rewardModalBtn" class="btn btn--primary" type="button"><svg class="icon"><use href="#i-check"/></svg><span>Einsammeln</span></button>
   </div>
+</div>
+
+<!-- ============ BATTLE SCENE ============ -->
+<div id="battleScene" class="bscene" role="dialog" aria-modal="true" aria-label="Schlacht" hidden>
+  <div class="bscene-card"><canvas id="battleCanvas" class="bscene-canvas"></canvas>
+    <div class="bscene-skip">Tippen zum Überspringen</div></div>
 </div>
 
 <!-- ============ CAPITAL / CITY VIEW ============ -->
@@ -2903,6 +2921,10 @@ body.has-panel .mapctl{display:none}
             addXp(won ? totalStrength : myTroops);
             scoutedIslands.add(target.id);
             spawnBattleFx(target.id, won, won ? (bossHere ? 'Boss besiegt' : 'Sieg') : 'Niederlage', won ? islandTitle(target) + ' erobert' : '−' + fmtCompact(myTroops) + ' Truppen');
+            if (Date.now() - attack.resolveAt < 8000)        // only fights that end while the player is watching, not ones caught up at load
+                queueBattleScene({ place: islandTitle(target), enemy: bossHere ? bossHere.name : targetOwner && botById[targetOwner] ? botById[targetOwner].name : 'Neutrale Garnison',
+                    kind: bossHere ? 'boss' : targetOwner ? 'bot' : 'neutral', my: myTroops, myLoss: won ? Math.min(myTroops, losses) : myTroops - retreatSurvivors,
+                    en: originalEnemyTroops, enLoss: won ? originalEnemyTroops : defenderCasualties, walls: originalEnemyDefense > 0, won, retreat: retreatSurvivors });
             if (won && bossHere) defeatBoss(bossHere);
             updateHud();
             saveGame();
@@ -3816,6 +3838,22 @@ body.has-panel .mapctl{display:none}
             return { x: m.pts[i].x + (m.pts[i + 1].x - m.pts[i].x) * t, y: m.pts[i].y + (m.pts[i + 1].y - m.pts[i].y) * t }; } d -= m.seg[i]; }
           return m.pts[0];
         }
+        function drawMarchColumn(m, t) {                  // a short column of soldiers (pairs) trailing the token along its path
+          const k = Math.max(1, Math.min(2, mapState.zoom / 0.02)), n = 8, gap = 8.5 * k;
+          for (let i = n - 1; i >= 0; i--) {
+            const d = m.d - 11 * k - Math.floor(i / 2) * gap; if (d < 0) continue;
+            const p = marchPointAt(m, d), q = marchPointAt(m, d + 2), dx = q.x - p.x, dy = q.y - p.y, l = Math.hypot(dx, dy) || 1;
+            const side = i % 2 ? 1 : -1, ox = -dy / l * 3.4 * k * side, oy = dx / l * 3.4 * k * side;
+            const x = p.x + ox, y = p.y + oy, bob = Math.abs(Math.sin(t / 110 + i * 1.7)) * 1.1 * k, fx = dx / l >= 0 ? 1 : -1;
+            ctx.save(); ctx.translate(x, y - bob); ctx.scale(k, k);
+            ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(0, 3.4 + bob / k, 2.8, 1, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#1a1d24'; ctx.fillRect(-1.7, -3.4, 3.4, 6);                   // body
+            ctx.fillStyle = m.col; ctx.fillRect(fx > 0 ? 0.8 : -2.6, -2.8, 1.8, 3.6);        // shield in the troop colour
+            ctx.beginPath(); ctx.arc(0, -4.7, 1.6, 0, Math.PI * 2); ctx.fillStyle = '#aab2bc'; ctx.fill();   // helmet
+            ctx.strokeStyle = '#c9b48a'; ctx.lineWidth = 0.8; ctx.beginPath(); ctx.moveTo(-fx * 1.3, 0.8); ctx.lineTo(fx * 2.4, -8.5); ctx.stroke();   // spear
+            ctx.restore();
+          }
+        }
         const hitsAny = (r, list, e) => list.some(q => r.x < q.x + q.w + e && q.x < r.x + r.w + e && r.y < q.y + q.h + e && q.y < r.y + r.h + e);
         function drawMarchTokens() {                      // drawn BEFORE the nameplates: a token slides along its path (up to 60 px)
           setScreen(ctx);                                 // to a spot clear of every plate; when there is none, the plate covers it
@@ -3829,8 +3867,10 @@ body.has-panel .mapctl{display:none}
               for (let k = 3; k <= 60; k += 3) {
                 if (d0 + k <= m.tot && !hitsAny(box(marchPointAt(m, d0 + k)), bannerHitRects, 1)) { d = d0 + k; break; }
                 if (d0 - k >= off && !hitsAny(box(marchPointAt(m, d0 - k)), bannerHitRects, 1)) { d = d0 - k; break; } }
-            const p = marchPointAt(m, d); m.x = p.x; m.y = p.y;
+            const p = marchPointAt(m, d); m.x = p.x; m.y = p.y; m.d = d;
           }
+          const cols = mapState.zoom >= 0.006, t = performance.now();
+          for (const m of marchTokens) if (cols && m.glyph !== 'scout') drawMarchColumn(m, t);
           for (const m of marchTokens) {
             ctx.beginPath(); ctx.arc(m.x, m.y, 7.5, 0, Math.PI * 2); ctx.fillStyle = '#141820'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = m.col; ctx.stroke();
             drawGlyph(ctx, m.glyph, m.x, m.y, 10, m.col);
@@ -5784,6 +5824,147 @@ body.has-panel .mapctl{display:none}
             }
         }
 
+        // ===== BATTLE SCENE =====
+        // After one of the player's attacks resolves: two armies march in, clash, soldiers fall in proportion
+        // to the real losses, the troop counters tick down, then SIEG / NIEDERLAGE. Tap to skip, closes itself.
+        var battleQueue = [], battleCur = null, battleRaf = 0;
+        const BS_MS = 5200;
+        function battleSceneBusy() { return !!battleCur || battleQueue.length > 0; }
+        function queueBattleScene(b) {
+            if (battleQueue.length >= 1) battleQueue.shift();            // many at once (multi-attack): only the newest waits
+            battleQueue.push(b);
+            if (!battleCur) nextBattleScene();
+        }
+        function nextBattleScene() {
+            const el = document.getElementById('battleScene');
+            battleCur = battleQueue.shift() || null;
+            if (!battleCur) { el.hidden = true; el.classList.remove('is-leaving'); return; }
+            battleCur.born = performance.now();
+            battleCur.army = [bsArmy(battleCur, true), bsArmy(battleCur, false)];
+            el.classList.remove('is-leaving'); el.hidden = false;
+            cancelAnimationFrame(battleRaf); battleRaf = requestAnimationFrame(bsFrame);
+        }
+        function closeBattleScene() {
+            if (!battleCur || battleCur.closing) return;
+            battleCur.closing = true;
+            const el = document.getElementById('battleScene'); el.classList.add('is-leaving');
+            setTimeout(() => { cancelAnimationFrame(battleRaf); battleCur = null; nextBattleScene(); }, 350);
+        }
+        document.getElementById('battleScene').addEventListener('click', () => { if (battleCur && performance.now() - battleCur.born > 300) closeBattleScene(); });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape' && battleCur) { e.stopImmediatePropagation(); closeBattleScene(); } }, true);
+        function bsArmy(b, mine) {                          // formation: rows in depth, columns away from the front
+            const share = b.my / Math.max(1, b.my + b.en), total = 44;
+            const n = mine ? Math.max(5, Math.min(36, Math.round(total * share))) : Math.max(5, Math.min(36, Math.round(total * (1 - share))));
+            const lossPct = Math.min(1, (mine ? b.myLoss / Math.max(1, b.my) : b.enLoss / Math.max(1, b.en)));
+            const rows = 4, r = mulberry32((mine ? 7 : 13) + Math.round(b.my % 997) + Math.round(b.en % 991)), units = [];
+            for (let i = 0; i < n; i++) units.push({ col: Math.floor(i / rows), row: i % rows, jx: (r() - .5) * 4, ph: r() * 6.28, die: Infinity });
+            const dead = Math.round(n * lossPct);                 // front columns fall first, with some randomness
+            const order = units.map((u, i) => ({ i, k: u.col + r() * 2.2 })).sort((a, c) => a.k - c.k);
+            for (let j = 0; j < dead; j++) units[order[j].i].die = 1300 + (j / Math.max(1, dead)) * 1800 + r() * 250;
+            return { mine, units, lossPct, champion: !mine && b.kind === 'boss' };
+        }
+        function bsSoldier(g, x, y, s, dir, col, rim, walk, thrust, fall) {
+            g.save(); g.translate(x, y);
+            if (fall > 0) { g.rotate(-dir * fall * Math.PI / 2 * 0.95); g.globalAlpha *= 1 - fall * 0.45; }
+            g.fillStyle = 'rgba(0,0,0,.28)'; g.beginPath(); g.ellipse(0, 0, s * .32, s * .08, 0, 0, Math.PI * 2); g.fill();
+            const st = Math.sin(walk) * s * .12;
+            g.strokeStyle = '#1b1c20'; g.lineWidth = s * .09; g.lineCap = 'round';
+            g.beginPath(); g.moveTo(-s * .06, -s * .42); g.lineTo(-s * .06 + st, 0); g.moveTo(s * .06, -s * .42); g.lineTo(s * .06 - st, 0); g.stroke();
+            g.fillStyle = '#2a2d34'; g.beginPath(); g.moveTo(-s * .15, -s * .4); g.lineTo(s * .15, -s * .4); g.lineTo(s * .12, -s * .82); g.lineTo(-s * .12, -s * .82); g.closePath(); g.fill();
+            g.fillStyle = col; g.fillRect(-s * .1, -s * .78, s * .2, s * .3);          // tabard
+            g.beginPath(); g.arc(0, -s * .93, s * .12, 0, Math.PI * 2); g.fillStyle = '#9ea7b1'; g.fill();   // helmet
+            g.fillStyle = '#3b4048'; g.fillRect(-s * .12, -s * .95, s * .24, s * .04);
+            const sa = thrust ? -0.12 : -1.05 + Math.sin(walk * .5) * .05, px = dir * s * .08, py = -s * .6;   // spear: upright on the march, levelled in the clash
+            g.strokeStyle = '#b89f70'; g.lineWidth = s * .05;
+            g.beginPath(); g.moveTo(px - dir * Math.cos(sa) * s * .45, py - Math.sin(sa) * s * .45); g.lineTo(px + dir * Math.cos(sa) * s * .75 + dir * thrust * s * .18, py + Math.sin(sa) * s * .75); g.stroke();
+            g.fillStyle = '#d7dde3'; g.beginPath(); const tx = px + dir * Math.cos(sa) * s * .75 + dir * thrust * s * .18, ty = py + Math.sin(sa) * s * .75;
+            g.arc(tx, ty, s * .04, 0, Math.PI * 2); g.fill();
+            g.fillStyle = col; g.strokeStyle = rim; g.lineWidth = s * .04;                   // shield towards the enemy
+            g.beginPath(); g.ellipse(dir * s * .17, -s * .6, s * .09, s * .19, 0, 0, Math.PI * 2); g.fill(); g.stroke();
+            g.restore();
+        }
+        const BS_COL = { mine: ['#3d6fb3', '#b7d3f5'], bot: ['#a3352b', '#f2aa9f'], neutral: ['#7a6a4f', '#d9c7a1'], boss: ['#5b1d3d', '#e39ac0'] };
+        function bsFrame(now) {
+            const b = battleCur; if (!b) return;
+            const cv = document.getElementById('battleCanvas'), W = cv.clientWidth, H = cv.clientHeight, pr = Math.min(3, window.devicePixelRatio || 1);
+            if (cv.width !== Math.round(W * pr)) { cv.width = Math.round(W * pr); cv.height = Math.round(H * pr); }
+            const g = cv.getContext('2d'); g.setTransform(pr, 0, 0, pr, 0, 0);
+            const t = now - b.born, u = Math.min(1, W / 620);
+            // ground + sky, muted
+            const sky = g.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#1b2330'); sky.addColorStop(.38, '#2e3a3e'); sky.addColorStop(.4, '#3c4a33'); sky.addColorStop(1, '#1f2a1b');
+            g.fillStyle = sky; g.fillRect(0, 0, W, H);
+            g.fillStyle = 'rgba(210,220,230,.05)'; for (let i = 0; i < 5; i++) { g.beginPath(); g.ellipse(W * (.1 + i * .22) + Math.sin(t / 3000 + i) * 10, H * .39, W * .18, H * .03, 0, 0, Math.PI * 2); g.fill(); }
+            const groundTop = H * .52, rowGap = H * .092, s0 = H * .13, cg = s0 * .5;
+            // defender's wall behind the enemy lines
+            if (b.walls) {
+                const wx = W * .83, wy = groundTop - rowGap * .2, crumble = b.won ? Math.max(0, Math.min(1, (t - 2600) / 900)) : 0;
+                g.fillStyle = '#3c3a36'; g.fillRect(wx, wy - 52 * u * (1 - crumble * .5), W - wx, 52 * u * (1 - crumble * .5) + rowGap * 3.4);
+                g.fillStyle = '#4b4843'; for (let i = 0; wx + i * 14 * u < W; i++) g.fillRect(wx + i * 14 * u, wy - 60 * u * (1 - crumble * .5), 8 * u, 9 * u);
+                g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 1; for (let y = wy - 40 * u; y < wy + rowGap * 3.4; y += 10 * u) { g.beginPath(); g.moveTo(wx, y); g.lineTo(W, y); g.stroke(); }
+            }
+            // title + counters
+            g.textAlign = 'center'; g.textBaseline = 'middle';
+            g.font = '700 ' + Math.round(15 * u + 3) + 'px Cinzel, Georgia, serif'; g.fillStyle = '#f0dca6';
+            g.fillText(('Schlacht um ' + b.place).toUpperCase(), W / 2, H * .08);
+            const tick = Math.max(0, Math.min(1, (t - 1200) / 2000)), ease = 1 - Math.pow(1 - tick, 2);
+            const counter = (x, align, label, v, col) => { g.textAlign = align; g.font = '600 ' + Math.round(9 * u + 3) + 'px Inter, system-ui, sans-serif'; g.fillStyle = 'rgba(236,226,200,.7)';
+                g.fillText(label, x, H * .17); g.font = '700 ' + Math.round(15 * u + 5) + 'px Inter, system-ui, sans-serif'; g.fillStyle = col; g.fillText(fmtCompact(Math.max(0, Math.round(v))), x, H * .25); };
+            counter(W * .05, 'left', 'Deine Truppen', b.my - b.myLoss * ease, '#cfe2fb');
+            counter(W * .95, 'right', b.enemy, b.en - b.enLoss * ease, '#f7c3ba');
+            // armies
+            const ez = BS_COL[b.kind] || BS_COL.bot, [mc, mr] = BS_COL.mine, [ec, er] = ez;
+            const adv = Math.min(1, t / 1100), advE = 1 - Math.pow(1 - adv, 3), fight = t > 1100 && t < 3300;
+            const drawn = [];
+            for (const a of b.army) {
+                const dir = a.mine ? 1 : -1, front = W / 2 - dir * (cg * .8 + (1 - advE) * W * .3);
+                const won = a.mine === b.won, after = t > 3300;
+                for (const un of a.units) {
+                    const depth = un.row / 3, s = s0 * (.82 + depth * .22), y = groundTop + un.row * rowGap;
+                    let x = front - dir * (un.col * cg + un.row * cg * .18) + un.jx * u;
+                    const fall = Math.max(0, Math.min(1, (t - un.die) / 260));
+                    if (after && fall === 0) x += dir * (won ? 1 : -2.4) * Math.min(1, (t - 3300) / 1200) * 40 * u;   // winners press on, losers fall back
+                    const walk = (adv < 1 || (after && fall === 0)) ? t / 90 + un.ph : un.ph, thrust = fight && fall === 0 && un.col < 2 ? Math.max(0, Math.sin(t / 120 + un.ph)) : 0;
+                    drawn.push({ y, f: () => bsSoldier(g, x, y, s, dir, a.mine ? mc : ec, a.mine ? mr : er, walk, thrust, fall) });
+                }
+                if (a.champion) { const y = groundTop + rowGap * 1.5, x = front - dir * cg * 6;
+                    drawn.push({ y: y + .1, f: () => { const fall = b.won ? Math.max(0, Math.min(1, (t - 2900) / 400)) : 0; bsSoldier(g, x, y, s0 * 1.9, dir, ec, er, 0, fight ? Math.max(0, Math.sin(t / 160)) : 0, fall); } }); }
+            }
+            drawn.sort((p, q) => p.y - q.y).forEach(d => d.f());
+            // clash: dust + sparks on the front line
+            if (fight) {
+                const r = mulberry32(Math.floor(t / 70));
+                for (let i = 0; i < 6; i++) { const y = groundTop + r() * rowGap * 3.2, x = W / 2 + (r() - .5) * 26 * u;
+                    g.strokeStyle = 'rgba(255,' + (190 + Math.floor(r() * 60)) + ',120,' + (.5 + r() * .5) + ')'; g.lineWidth = 1.2;
+                    const a = r() * 6.28, l = 4 + r() * 7; g.beginPath(); g.moveTo(x, y - s0 * .6); g.lineTo(x + Math.cos(a) * l, y - s0 * .6 + Math.sin(a) * l); g.stroke(); }
+                g.fillStyle = 'rgba(160,150,130,.10)';
+                for (let i = 0; i < 4; i++) { g.beginPath(); g.ellipse(W / 2 + Math.sin(t / 400 + i * 2) * 20 * u, groundTop + i * rowGap, 40 * u, 12 * u, 0, 0, Math.PI * 2); g.fill(); }
+            }
+            // vignette
+            const vg = g.createRadialGradient(W / 2, H / 2, H * .3, W / 2, H / 2, W * .7); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.55)');
+            g.fillStyle = vg; g.fillRect(0, 0, W, H);
+            // result
+            if (t > 3300) {
+                const k = Math.min(1, (t - 3300) / 350), sc = .8 + .2 * (1 - Math.pow(1 - k, 3));
+                const band = g.createLinearGradient(0, H * .3, 0, H * .62); band.addColorStop(0, 'rgba(6,8,12,0)'); band.addColorStop(.25, 'rgba(6,8,12,.72)'); band.addColorStop(.75, 'rgba(6,8,12,.72)'); band.addColorStop(1, 'rgba(6,8,12,0)');
+                g.globalAlpha = k; g.fillStyle = band; g.fillRect(0, H * .3, W, H * .32); g.globalAlpha = 1;
+                g.save(); g.translate(W / 2, H * .43); g.scale(sc, sc); g.globalAlpha = k;
+                const label = b.won ? 'Sieg' : 'Niederlage', col1 = b.won ? '#f6dc8e' : '#e76a5c', col2 = b.won ? '#b98733' : '#8e1f17';
+                g.font = '700 ' + Math.round(26 * u + 8) + 'px Cinzel, Georgia, serif';
+                const tw = g.measureText(label.toUpperCase()).width, bw = tw + 70 * u, bh = 44 * u + 8;
+                const gr = g.createLinearGradient(0, -bh / 2, 0, bh / 2); gr.addColorStop(0, col1); gr.addColorStop(1, col2);
+                g.fillStyle = gr; g.strokeStyle = b.won ? '#5a3c0e' : '#3e0906'; g.lineWidth = 2;
+                g.beginPath(); g.roundRect ? g.roundRect(-bw / 2, -bh / 2, bw, bh, 4) : g.rect(-bw / 2, -bh / 2, bw, bh); g.fill(); g.stroke();
+                g.fillStyle = b.won ? '#2a1a04' : '#fff1ec'; g.textAlign = 'center'; g.fillText(label.toUpperCase(), 0, 2);
+                g.font = '600 ' + Math.round(10 * u + 4) + 'px Inter, system-ui, sans-serif'; g.fillStyle = '#efe4c8';
+                const sub = b.won ? b.place + ' erobert · −' + fmtCompact(b.myLoss) + ' Truppen'
+                                  : '−' + fmtCompact(b.myLoss) + ' gefallen' + (b.retreat > 0 ? ' · ' + fmtCompact(b.retreat) + ' ziehen sich zurück' : '');
+                g.fillText(sub, 0, bh / 2 + 16 * u + 4);
+                g.restore();
+            }
+            if (t > BS_MS) { closeBattleScene(); return; }
+            battleRaf = requestAnimationFrame(bsFrame);
+        }
+
         // ===== BATTLE EFFECTS =====
         // A flash, a shockwave and sparks at the base when a fight the player is part of resolves,
         // plus "Sieg!" / "Verloren" floating up (screen space, drawn in drawMap).
@@ -5965,7 +6146,8 @@ body.has-panel .mapctl{display:none}
                 '<li>' + icon('gem', 'ico-gem') + '<span>Gems</span><b>+' + BOSS_REWARD_GEMS + '</b></li>';
             [...list.children].forEach((li, i) => { li.style.animationDelay = (200 + i * 120) + 'ms'; });
             bossRewardPending = true;
-            setTimeout(() => { bossRewardPending = false; document.getElementById('rewardModal').hidden = false; }, 1400);
+            (function showReward() { if (battleSceneBusy()) { setTimeout(showReward, 400); return; }
+                bossRewardPending = false; document.getElementById('rewardModal').hidden = false; })();
         }
         document.getElementById('rewardModalBtn').addEventListener('click', () => { document.getElementById('rewardModal').hidden = true; });
         function bossTick() {
@@ -6343,7 +6525,7 @@ body.has-panel .mapctl{display:none}
         }
         function renderLevelUpModal() {
             const s = levelUpShown; if (!s) return;
-            if (!document.getElementById('dailyModal').hidden || !document.getElementById('rewardModal').hidden || bossRewardPending) { levelUpTimer = setTimeout(renderLevelUpModal, 500); return; }   // one window at a time
+            if (!document.getElementById('dailyModal').hidden || !document.getElementById('rewardModal').hidden || bossRewardPending || battleSceneBusy()) { levelUpTimer = setTimeout(renderLevelUpModal, 500); return; }   // one window at a time
             const m = document.getElementById('levelUpModal');
             document.getElementById('levelUpLevel').textContent = s.to;
             document.getElementById('levelUpTitle').textContent = 'Stufe ' + s.to;
