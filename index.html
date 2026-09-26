@@ -932,6 +932,21 @@ body.has-panel .mapctl{display:none}
 .city-progress{height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
 .city-progress i{display:block;height:100%;width:var(--p,0%);background:linear-gradient(90deg,var(--gold-500),var(--gold-200))}
 
+
+.gate-ctl{display:flex;flex-direction:column;gap:8px;margin-top:10px;padding:10px;border:1px solid var(--line-2);border-radius:var(--r-sm);background:rgba(0,0,0,.22)}
+.gate-row{display:flex;flex-direction:column;gap:6px}
+.seg{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
+.seg button{height:32px;border:1px solid var(--line-2);border-radius:var(--r-xs);background:rgba(255,255,255,.04);color:var(--tx-2);font:700 var(--fs-12)/1 var(--font-ui)}
+.seg button.is-on{border-color:var(--gold-300);background:linear-gradient(180deg,rgba(236,208,138,.28),rgba(236,208,138,.08));color:var(--gold-100)}
+.gate-note{margin:0;font:500 var(--fs-12)/1.4 var(--font-ui);color:var(--tx-3)}
+.title-card{max-width:440px;width:100%}
+.title-list{display:flex;flex-direction:column;gap:6px;max-height:52vh;overflow:auto;text-align:left}
+.title-row{display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;padding:8px 10px;border:1px solid var(--line-1);border-radius:var(--r-sm);background:rgba(0,0,0,.22)}
+.title-row b{font:700 var(--fs-13)/1.2 var(--font-ui);color:var(--tx-1)}
+.title-row small{display:block;font:600 var(--fs-11)/1.3 var(--font-ui)}
+.title-row.is-good small{color:#8fd38a} .title-row.is-bad small{color:#ff9d90}
+.title-row select{max-width:150px;height:32px;border:1px solid var(--line-2);border-radius:var(--r-xs);background:#15171c;color:var(--tx-1);font:600 var(--fs-12)/1 var(--font-ui);padding:0 6px}
+.title-row .holder{font:600 var(--fs-12)/1.2 var(--font-ui);color:var(--gold-100)}
     </style>
 </head>
 <body>
@@ -1376,6 +1391,17 @@ body.has-panel .mapctl{display:none}
 </div>
 
 <!-- ============ REWARD MODAL (boss etc.) ============ -->
+<div id="titleModal" class="lvlup" role="dialog" aria-modal="true" aria-labelledby="titleModalTitle" hidden>
+  <div class="lvlup-card title-card">
+    <div class="lvlup-badge"><svg class="icon" style="width:34px;height:34px;color:var(--gold-100)"><use href="#i-temple"/></svg></div>
+    <div class="lvlup-over">Mega-Tempel</div>
+    <h2 id="titleModalTitle" class="lvlup-title">Titel</h2>
+    <div id="titleModalSub" class="lvlup-sub"></div>
+    <div class="lvlup-rule"></div>
+    <div id="titleList" class="title-list"></div>
+    <button id="titleModalBtn" class="btn btn--primary" type="button"><svg class="icon"><use href="#i-check"/></svg><span>Fertig</span></button>
+  </div>
+</div>
 <div id="rewardModal" class="lvlup" role="dialog" aria-modal="true" aria-labelledby="rewardModalTitle" hidden>
   <div class="lvlup-card">
     <div class="lvlup-badge"><svg class="icon" style="width:34px;height:34px;color:var(--gold-100)"><use href="#i-attack"/></svg></div>
@@ -1429,6 +1455,7 @@ body.has-panel .mapctl{display:none}
     <div id="popupStats" class="popup-stats"></div>
     <div id="popupActions" class="actgrid">
       <button id="teleportBtn" class="act act--city" type="button" style="display:none"><span class="act-ic act-ic--city"><svg class="icon"><use href="#i-send"/></svg></span><span class="act-t">Hauptstadt verlegen</span><span class="act-s">zu einer eigenen Basis · 50 Gems</span></button>
+      <button id="titleBtn" class="act act--city" type="button" style="display:none"><span class="act-ic act-ic--city"><svg class="icon"><use href="#i-temple"/></svg></span><span class="act-t">Titel</span><span class="act-s">Buffs und Strafen vergeben</span></button>
       <button id="cityBtn" class="act act--city" type="button" style="display:none"><span class="act-ic act-ic--city"><svg class="icon"><use href="#i-castle"/></svg></span><span class="act-t">Stadt betreten</span><span class="act-s">Hauptstadt ausbauen</span></button>
       <button id="upgradeBtn" class="act act--primary" type="button"><span class="act-ic"><svg class="icon"><use href="#i-upgrade"/></svg></span><span class="act-t">Aufwerten</span><span class="act-s" id="upgradeCostLabel">–</span></button>
       <button id="sendBtn" class="act" type="button"><span class="act-ic act-ic--send"><svg class="icon"><use href="#i-send"/></svg></span><span class="act-t">Senden</span><span class="act-s">Verstärken</span></button>
@@ -1855,14 +1882,23 @@ body.has-panel .mapctl{display:none}
             const br = bridgeBetween(fromLm, toLm);
             return br && br.gateId !== undefined ? islandById[br.gateId] : null;
         }
-        function tollFor(fromLm, toLm, troops, payer) {  // → { gate, cost } (cost 0 when the payer owns the gate)
+        // Gate owners set the toll per troop (0 = free passage) and can shut the gate: then nobody else gets across.
+        var gateCfg = null;
+        function loadGateCfg() { if (!gateCfg) { try { gateCfg = JSON.parse(store.get('openWaterGateCfg')) || {}; } catch (e) { gateCfg = {}; } } return gateCfg; }
+        function gateSettings(gate) { return Object.assign({ toll: gate.toll, closed: false }, loadGateCfg()[gate.id] || {}); }
+        function setGateSettings(gateId, patch) { const c = loadGateCfg(); c[gateId] = Object.assign(gateSettings(islandById[gateId]), patch); store.set('openWaterGateCfg', JSON.stringify(c)); }
+        const GATE_TOLLS = [0, 0.1, 0.25, 0.5, 1, 2];
+        function tollFor(fromLm, toLm, troops, payer) {  // → { gate, cost, closed } (cost 0 when the payer owns the gate)
             const gate = gateOnRoute(fromLm, toLm);
             if (!gate || islandOwnerOf(gate.id) === payer) return { gate, cost: 0 };
-            return { gate, cost: Math.max(100, Math.round(Math.max(0, troops) * gate.toll)) };
+            const cfg = gateSettings(gate);
+            if (cfg.closed && islandOwnerOf(gate.id)) return { gate, cost: Infinity, closed: true };
+            return { gate, cost: cfg.toll > 0 ? Math.max(100, Math.round(Math.max(0, troops) * cfg.toll)) : 0 };
         }
         function payToll(fromLm, toLm, troops, payer) { // payer: 'player' | bot id → false when it can't pay
-            const { gate, cost } = tollFor(fromLm, toLm, troops, payer);
+            const { gate, cost, closed } = tollFor(fromLm, toLm, troops, payer);
             if (!cost) return true;
+            if (closed) { if (payer === 'player') flashHint('Das Tor ist geschlossen – ' + botById[islandOwnerOf(gate.id)].name + ' lässt niemanden durch. Erobere das Tor.', 4000); return false; }
             const have = payer === 'player' ? coins : (botCoins[payer] || 0);
             if (have < cost) { if (payer === 'player') flashHint('Maut am Tor: ' + fmtNum(cost) + ' Münzen – du hast zu wenig. Erobere das Tor, dann ist es kostenlos.', 4000); return false; }
             if (payer === 'player') coins -= cost; else botCoins[payer] -= cost;
@@ -1986,7 +2022,7 @@ body.has-panel .mapctl{display:none}
             } catch (e) {}
             ['openWaterPlayerIslandId', 'openWaterOwnedIslands', 'openWaterIslandLevels', 'openWaterIslandTroops', 'openWaterBotOwnedIslands',
              'openWaterBotCoins', 'openWaterNeutralTroopOverrides', 'openWaterScoutedIslands', 'openWaterPendingAttacks', 'openWaterPendingSends',
-             'openWaterPendingScouts', 'openWaterPendingRetreats', 'openWaterTempleHoldSince', 'openWaterBoss', 'openWaterBossNext', 'openWaterExplored', 'openWaterFogCells', 'openWaterWorldStart', 'openWaterBotState'].forEach(k => store.remove(k));
+             'openWaterPendingScouts', 'openWaterPendingRetreats', 'openWaterTempleHoldSince', 'openWaterBoss', 'openWaterBossNext', 'openWaterExplored', 'openWaterFogCells', 'openWaterWorldStart', 'openWaterBotState', 'openWaterTitles', 'openWaterGateCfg'].forEach(k => store.remove(k));
             if (carry > 0) store.set('openWaterCarryTroops', String(Math.round(carry)));
             store.set('openWaterBalanceV2', '1');
             store.set('openWaterWorldVersion', WORLD_VERSION);
@@ -2295,7 +2331,7 @@ body.has-panel .mapctl{display:none}
             const owner = islandOwnerOf(island.id);
             if (!owner) return island.neutralDefense;
             const level = islandLevels[island.id] || 1;
-            return owner === 'player' ? defenseForLevel(level) : baseDefenseForLevel(level) + botMults(owner).defense;
+            return Math.round((owner === 'player' ? defenseForLevel(level) : baseDefenseForLevel(level) + botMults(owner).defense) * titleMult(owner, 'defense'));
         }
         // Removes an island from whichever owner (player or a bot) it
         // currently belongs to, without touching its troops/level - used
@@ -2933,7 +2969,7 @@ body.has-panel .mapctl{display:none}
             const lossReductionPct = attack.shieldLossReductionPct !== undefined ? attack.shieldLossReductionPct : shieldLossReductionPct();
             const rewardRate = attack.rewardGoldRate !== undefined ? attack.rewardGoldRate : goldPerKillRate();
 
-            const myTroops = attack.rawTroops + atkBonus;
+            const myTroops = Math.round((attack.rawTroops + atkBonus) * titleMult('player', 'attack'));
             const targetOwner = islandOwnerOf(target.id); // null | 'player' | a bot id
             const originalEnemyTroops = effectiveTroops(target);
             const originalEnemyDefense = effectiveDefense(target);
@@ -2957,6 +2993,7 @@ body.has-panel .mapctl{display:none}
                 ownedIslands.add(target.id);
                 islandLevels[target.id] = levelAfterCapture;
                 questProgress('capture', 1);
+                if (target.type === 'gate') setGateSettings(target.id, { toll: target.toll, closed: false });
                 revealAround(target.x, target.y, REVEAL_BASE, true);
                 coins += Math.round(totalStrength * rewardRate);
                 defenderCasualties = originalEnemyTroops;
@@ -3075,7 +3112,7 @@ body.has-panel .mapctl{display:none}
             const target = islandById[attack.targetId];
             if (!bot || !source || !target) return;
 
-            const myTroops = attack.rawTroops + (attack.attackBonus || 0);
+            const myTroops = Math.round((attack.rawTroops + (attack.attackBonus || 0)) * titleMult(bot.id, 'attack'));
             const targetOwner = islandOwnerOf(target.id);
             const originalEnemyTroops = effectiveTroops(target);
             const originalEnemyDefense = effectiveDefense(target);
@@ -3096,6 +3133,9 @@ body.has-panel .mapctl{display:none}
                 if (targetOwner) clearIslandOwner(target.id);
                 islandTroops[target.id] = Math.max(0, Math.min(attack.rawTroops, myTroops - Math.round(originalEnemyDefense * (1 - botMults(bot.id).shield / 100))));   // the sword bonus fights along but doesn't stay
                 botOwnedIslands[bot.id].add(target.id);
+                if (target.type === 'gate') { const sty = bot.style, r = Math.random();                  // how this player runs a gate
+                    setGateSettings(target.id, { toll: sty === 'templer' ? 1 : sty === 'builder' ? 0.5 : sty === 'raider' ? 0.25 : GATE_TOLLS[1 + Math.floor(r * 4)],
+                                                 closed: sty === 'raider' ? r < .5 : sty === 'templer' ? r < .3 : r < .1 }); }
                 islandLevels[target.id] = levelAfterCapture;
                 botCoins[bot.id] += Math.round(totalStrength * BOT_GOLD_PER_KILL_RATE);
                 if (target.type === 'temple' || target.type === 'megaTemple') {
@@ -3718,7 +3758,7 @@ body.has-panel .mapctl{display:none}
           if (island.type === 'gate') {                                                // gates: the gatehouse, an owner pennant on top
             if (size < 8) { ctx.fillStyle = '#b8b2a6'; ctx.fillRect(x - 3, y - 3, 6, 6); return; }
             const H = Math.max(14, size * 1.05);
-            drawGatehouse(ctx, x, y - H * .1, H, 1);
+            drawGatehouse(ctx, x, y - H * .1, H, ownerKey !== 'neutral' && gateSettings(island).closed ? 0 : 1);
             if (ownerKey !== 'neutral') { const px = x, py = y - H * .1 + H * .42 - H - 2;
               ctx.strokeStyle = '#2a2622'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px, py - H * .35); ctx.stroke();
               ctx.fillStyle = BAND[ownerKey]; ctx.beginPath(); ctx.moveTo(px, py - H * .35); ctx.lineTo(px + H * .28, py - H * .27); ctx.lineTo(px, py - H * .19); ctx.closePath(); ctx.fill(); }
@@ -4664,8 +4704,8 @@ body.has-panel .mapctl{display:none}
         function botItemScore(b, slot) { const it = botItem(b, slot); return it ? itemScore(it) : 0; }
         function botMults(botId) {
             const b = loadBotState()[botId]; if (!b) return { troops: 1, coins: 1, defense: 0, attackPct: 0, shield: 0 };
-            return { troops: 1 + (b.skills.troops * SKILL_DEFS.troops.pct + b.equip.weapon * EQUIPMENT_DEFS.weapon.pct + botItemScore(b, 'weapon') * RARITY_PCT_PER_SCORE) / 100,
-                     coins: 1 + (b.equip.boots * EQUIPMENT_DEFS.boots.pct + botItemScore(b, 'boots') * RARITY_PCT_PER_SCORE) / 100,
+            return { troops: (1 + (b.skills.troops * SKILL_DEFS.troops.pct + b.equip.weapon * EQUIPMENT_DEFS.weapon.pct + botItemScore(b, 'weapon') * RARITY_PCT_PER_SCORE) / 100) * titleMult(botId, 'troops'),
+                     coins: (1 + (b.equip.boots * EQUIPMENT_DEFS.boots.pct + botItemScore(b, 'boots') * RARITY_PCT_PER_SCORE) / 100) * titleMult(botId, 'coins'),
                      defense: b.skills.defense * SKILL_DEFS.defense.flat + b.equip.armor * EQUIPMENT_DEFS.armor.flat + botItemScore(b, 'armor') * RARITY_FLAT_PER_SCORE,
                      attackPct: b.skills.attack * SKILL_DEFS.attack.atkPct,
                      shield: Math.min(90, b.equip.shield * EQUIPMENT_DEFS.shield.pct + botItemScore(b, 'shield') * RARITY_PCT_PER_SCORE) };
@@ -4796,6 +4836,71 @@ body.has-panel .mapctl{display:none}
         // attack (botDefend) before it can resolve, instead of only
         // reconsidering once every 9 seconds.
         const BOT_TICK_MS = 1000;
+        // ===== TITLES (Mega-Tempel) =====
+        // Whoever holds the Mega-Tempel hands out titles: 4 buffs for friends, 4 penalties for rivals (±25 %).
+        // A new holder starts with a clean slate. Bots that hold it hand them out too - you may get the Narr.
+        var TITLES = [
+            { key: 'herzog',    name: 'Herzog',        good: true,  kind: 'troops',  v: .25, desc: '+25 % Truppenproduktion' },
+            { key: 'schatz',    name: 'Schatzmeister', good: true,  kind: 'coins',   v: .25, desc: '+25 % Münzen' },
+            { key: 'feldherr',  name: 'Feldherr',      good: true,  kind: 'attack',  v: .25, desc: '+25 % Angriffsstärke' },
+            { key: 'burgherr',  name: 'Burgherr',      good: true,  kind: 'defense', v: .25, desc: '+25 % Verteidigung' },
+            { key: 'narr',      name: 'Narr',          good: false, kind: 'troops',  v: -.25, desc: '−25 % Truppenproduktion' },
+            { key: 'bettler',   name: 'Bettler',       good: false, kind: 'coins',   v: -.25, desc: '−25 % Münzen' },
+            { key: 'feigling',  name: 'Feigling',      good: false, kind: 'attack',  v: -.25, desc: '−25 % Angriffsstärke' },
+            { key: 'verraeter', name: 'Verräter',      good: false, kind: 'defense', v: -.25, desc: '−25 % Verteidigung' }
+        ];
+        var titleState = null;
+        function loadTitles() {
+            if (!titleState) { try { titleState = JSON.parse(store.get('openWaterTitles')) || null; } catch (e) { titleState = null; } }
+            if (!titleState) titleState = { ruler: null, by: {} };
+            const r = rulerOwner() || null;
+            if (titleState.ruler !== r) { titleState = { ruler: r, by: {} }; saveTitles(); }     // new holder, clean slate
+            return titleState;
+        }
+        function saveTitles() { store.set('openWaterTitles', JSON.stringify(titleState)); }
+        function titleOf(who) { const t = loadTitles(); return TITLES.find(x => t.by[x.key] === who) || null; }
+        function titleMult(who, kind) {
+            const t = loadTitles(); let m = 1;
+            for (const x of TITLES) if (x.kind === kind && t.by[x.key] === who) m *= 1 + x.v;
+            return m;
+        }
+        function giveTitle(key, who) {                   // who: 'player' | bot id | null
+            const t = loadTitles();
+            for (const k of Object.keys(t.by)) if (t.by[k] === who && who) delete t.by[k];      // one title per head
+            if (who) t.by[key] = who; else delete t.by[key];
+            saveTitles();
+        }
+        function botRulerTitles(bot) {                    // a bot on the throne: rivals get penalties, a few others the buffs
+            const t = loadTitles(); if (t.ruler !== bot.id || Object.keys(t.by).length) return;
+            const others = BOT_DEFS.filter(b => b.id !== bot.id && botOwnedIslands[b.id].size).map(b => ({ who: b.id, n: botOwnedIslands[b.id].size }));
+            others.push({ who: 'player', n: ownedIslands.size * 1.5 });                          // the human is always a suspect
+            others.sort((a, c) => c.n - a.n);
+            const bad = TITLES.filter(x => !x.good), good = TITLES.filter(x => x.good);
+            bad.forEach((x, i) => { if (others[i]) giveTitle(x.key, others[i].who); });
+            const friends = others.slice(bad.length).sort(() => Math.random() - .5);
+            good.forEach((x, i) => { if (friends[i]) giveTitle(x.key, friends[i].who); });
+            const mine = titleOf('player');
+            if (mine) flashHint(bot.name + ' hat dir den Titel „' + mine.name + '“ gegeben: ' + mine.desc + '.', 6000);
+        }
+        const titleModal = document.getElementById('titleModal');
+        function renderTitleModal() {
+            const t = loadTitles(), mine = t.ruler === 'player';
+            const who = w => w === 'player' ? (profileName.value || 'Du') : w ? botById[w].name : '–';
+            document.getElementById('titleModalSub').textContent = mine ? 'Du hältst den Mega-Tempel: verteile Buffs an Freunde und Strafen an Rivalen.'
+                : t.ruler ? botById[t.ruler].name + ' hält den Mega-Tempel und verteilt die Titel.' : 'Niemand hält den Mega-Tempel – erobere ihn, um Titel zu vergeben.';
+            const opts = cur => '<option value="">– niemand –</option>' + BOT_DEFS.filter(b => botOwnedIslands[b.id].size).map(b => '<option value="' + b.id + '"' + (cur === b.id ? ' selected' : '') + '>' + escapeHtml(b.name) + '</option>').join('');
+            document.getElementById('titleList').innerHTML = TITLES.map(x => '<div class="title-row ' + (x.good ? 'is-good' : 'is-bad') + '"><div><b>' + x.name + '</b><small>' + x.desc + '</small></div>' +
+                (mine ? '<select data-title="' + x.key + '">' + opts(t.by[x.key]) + '</select>' : '<span class="holder">' + escapeHtml(who(t.by[x.key])) + '</span>') + '</div>').join('');
+        }
+        document.getElementById('titleBtn').addEventListener('click', () => { closeIslandPopup(); renderTitleModal(); titleModal.hidden = false; });
+        document.getElementById('titleModalBtn').addEventListener('click', () => { titleModal.hidden = true; });
+        document.getElementById('titleList').addEventListener('change', e => {
+            const sel = e.target.closest('select[data-title]'); if (!sel || loadTitles().ruler !== 'player') return;
+            giveTitle(sel.dataset.title, sel.value || null);
+            const x = TITLES.find(q => q.key === sel.dataset.title);
+            if (sel.value) flashHint(botById[sel.value].name + ' ist jetzt ' + x.name + ' (' + x.desc + ').', 3000);
+            renderTitleModal();
+        });
         function botRespawn(bot, now) {                   // knocked out: like a player starting over, back after ~10 min on a free outer base
             const b = loadBotState()[bot.id];
             if (!b.outAt) { b.outAt = now; saveBotState(); return; }
@@ -4817,6 +4922,7 @@ body.has-panel .mapctl{display:none}
                 botDefend(bot);
                 botThink(bot);
                 botConsiderUpgrade(bot);
+                botRulerTitles(bot);
                 if (Math.random() < .3) botShop(bot);
             }
             setTimeout(runBotTick, BOT_TICK_MS);
@@ -5893,8 +5999,8 @@ body.has-panel .mapctl{display:none}
             }
             if (ticks > 0) {
                 const ruler = rulerOwner();
-                const coinMult = coinProductionMultiplier() * (ruler === 'player' ? RULER_BONUS : 1);
-                const troopMult = troopProductionMultiplier() * (ruler === 'player' ? RULER_BONUS : 1);
+                const coinMult = coinProductionMultiplier() * (ruler === 'player' ? RULER_BONUS : 1) * titleMult('player', 'coins');
+                const troopMult = troopProductionMultiplier() * (ruler === 'player' ? RULER_BONUS : 1) * titleMult('player', 'troops');
                 for (const ownedId of ownedIslands) {
                     const level = islandLevels[ownedId] || 1;
                     coins += Math.round(coinsPerTick(level) * coinMult) * ticks;
@@ -6748,30 +6854,44 @@ body.has-panel .mapctl{display:none}
         });
 
         // --- drawing (virtual 1000 x 1000 space, fitted to the screen) ---
-        function cityDrawGround(g) {
-            const sea = g.createRadialGradient(500, 500, 200, 500, 500, 820);
-            sea.addColorStop(0, '#1d4a66'); sea.addColorStop(1, '#0a1c2e');
-            g.fillStyle = sea; g.fillRect(-600, -600, 2200, 2200);
-            const pts = []; for (let i = 0; i < 48; i++) { const a = i / 48 * Math.PI * 2, rr = 470 + 26 * Math.sin(a * 3 + 1) + 14 * Math.sin(a * 7); pts.push([500 + Math.cos(a) * rr * 1.02, 500 + Math.sin(a) * rr * 0.96]); }
-            g.beginPath(); pts.forEach((p2, i) => g[i ? 'lineTo' : 'moveTo'](p2[0], p2[1])); g.closePath();
-            const land = g.createLinearGradient(0, 0, 1000, 1000); land.addColorStop(0, '#62a44a'); land.addColorStop(1, '#3d7231');
-            g.fillStyle = land; g.fill(); g.lineWidth = 3; g.strokeStyle = '#18321a'; g.stroke();
+        function cityDrawGround(g) {                    // a square walled town: meadow outside, paved streets inside, towers on the corners
+            const out = g.createLinearGradient(-600, -600, 1600, 1600); out.addColorStop(0, '#46823a'); out.addColorStop(1, '#2b5626');
+            g.fillStyle = out; g.fillRect(-600, -600, 2200, 2200);
             const rng2 = mulberry32(77);
-            for (let i = 0; i < 90; i++) {                 // trees on the rim
-                const a = rng2() * Math.PI * 2, d = 360 + rng2() * 90, x = 500 + Math.cos(a) * d, y = 500 + Math.sin(a) * d * 0.94;
-                if (Math.hypot(x - 500, y - 900) < 120 || Math.hypot(x - 500, y - 120) < 100) continue;
-                g.fillStyle = '#2f6b2c'; g.beginPath(); g.arc(x, y, 9 + rng2() * 8, 0, Math.PI * 2); g.fill();
-                g.fillStyle = 'rgba(150,210,110,.35)'; g.beginPath(); g.arc(x - 3, y - 3, 4, 0, Math.PI * 2); g.fill();
+            for (let i = 0; i < 260; i++) {                // woods around the walls
+                const x = -300 + rng2() * 1600, y = -300 + rng2() * 1600;
+                if (x > 10 && x < 990 && y > 10 && y < 990) continue;
+                g.fillStyle = '#26512a'; g.beginPath(); g.arc(x, y, 10 + rng2() * 12, 0, Math.PI * 2); g.fill();
+                g.fillStyle = 'rgba(140,200,100,.28)'; g.beginPath(); g.arc(x - 3, y - 4, 5, 0, Math.PI * 2); g.fill();
             }
-            // roads from the keep to every plot
-            g.strokeStyle = '#b8a47a'; g.lineWidth = 14; g.lineCap = 'round';
-            for (const b of CITY_BUILDINGS) if (b.id !== 'keep') { g.beginPath(); g.moveTo(500, 470); g.lineTo(b.x, b.y + 20); g.stroke(); }
-            g.strokeStyle = 'rgba(90,70,40,.35)'; g.lineWidth = 2; g.setLineDash([6, 8]);
-            for (const b of CITY_BUILDINGS) if (b.id !== 'keep') { g.beginPath(); g.moveTo(500, 470); g.lineTo(b.x, b.y + 20); g.stroke(); }
-            g.setLineDash([]);
-            // inner wall ring around the keep
-            g.strokeStyle = '#8c8573'; g.lineWidth = 12; g.beginPath(); g.ellipse(500, 460, 150, 120, 0, 0, Math.PI * 2); g.stroke();
-            g.strokeStyle = '#2a241b'; g.lineWidth = 1.5; g.beginPath(); g.ellipse(500, 460, 156, 126, 0, 0, Math.PI * 2); g.stroke(); g.beginPath(); g.ellipse(500, 460, 144, 114, 0, 0, Math.PI * 2); g.stroke();
+            const L = 40, R = 960;                          // inside the walls
+            const town = g.createLinearGradient(0, L, 0, R); town.addColorStop(0, '#6f9a4c'); town.addColorStop(1, '#5a8540');
+            g.fillStyle = town; g.fillRect(L, L, R - L, R - L);
+            // streets: a main avenue from the gate to the keep, cross streets along the building rows
+            const street = (x1, y1, x2, y2, w) => { g.strokeStyle = '#6e604a'; g.lineWidth = w + 4; g.lineCap = 'square'; g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke();
+                g.strokeStyle = '#b9a67e'; g.lineWidth = w; g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); };
+            street(500, 950, 500, 150, 26);
+            street(250, 360, 750, 360, 18); street(250, 590, 750, 590, 18); street(340, 770, 660, 770, 16);
+            street(250, 360, 250, 590, 14); street(750, 360, 750, 590, 14);
+            g.strokeStyle = 'rgba(80,65,45,.35)'; g.lineWidth = 1.5; g.setLineDash([10, 12]);
+            g.beginPath(); g.moveTo(500, 945); g.lineTo(500, 155); g.stroke(); g.setLineDash([]);
+            // inner courtyard around the keep (square)
+            g.fillStyle = '#a89878'; g.fillRect(372, 372, 256, 176); g.strokeStyle = '#4a4034'; g.lineWidth = 2; strokeBox(g, 372, 372, 256, 176);
+            g.strokeStyle = '#8c8573'; g.lineWidth = 10; strokeBox(g, 362, 362, 276, 196);
+            // outer wall: thick stone band with merlons, corner towers, the gatehouse at the bottom
+            const W2 = 22;
+            g.fillStyle = '#8f887a'; g.fillRect(L - W2, L - W2, R - L + 2 * W2, W2); g.fillRect(L - W2, R, R - L + 2 * W2, W2);
+            g.fillRect(L - W2, L, W2, R - L); g.fillRect(R, L, W2, R - L);
+            g.strokeStyle = '#3a342b'; g.lineWidth = 2; strokeBox(g, L - W2, L - W2, R - L + 2 * W2, R - L + 2 * W2); strokeBox(g, L, L, R - L, R - L);
+            g.fillStyle = '#a8a193';
+            for (let x = L; x < R; x += 22) { g.fillRect(x, L - W2 - 8, 12, 8); g.fillRect(x, R + W2, 12, 8); }
+            for (let y = L; y < R; y += 22) { g.fillRect(L - W2 - 8, y, 8, 12); g.fillRect(R + W2, y, 8, 12); }
+            for (const [cx, cy] of [[L - 11, L - 11], [R + 11, L - 11], [L - 11, R + 11], [R + 11, R + 11]]) {   // corner towers
+                g.fillStyle = '#9a9384'; g.fillRect(cx - 34, cy - 34, 68, 68); g.strokeStyle = '#3a342b'; g.lineWidth = 2; strokeBox(g, cx - 34, cy - 34, 68, 68);
+                g.fillStyle = '#6d2a22'; g.beginPath(); g.moveTo(cx - 38, cy - 28); g.lineTo(cx, cy - 64); g.lineTo(cx + 38, cy - 28); g.closePath(); g.fill(); g.stroke();
+            }
+            g.fillStyle = '#9a9384'; g.fillRect(450, R - 14, 100, 50); g.strokeStyle = '#3a342b'; strokeBox(g, 450, R - 14, 100, 50);   // gatehouse
+            g.fillStyle = '#2a1f16'; g.beginPath(); g.moveTo(478, R + 36); g.lineTo(478, R + 8); g.arc(500, R + 8, 22, Math.PI, 0); g.lineTo(522, R + 36); g.fill();
         }
         function cityDrawPlot(g, x, y, r) {
             g.fillStyle = 'rgba(110,90,55,.55)'; g.beginPath(); g.ellipse(x, y + 18, r, r * 0.5, 0, 0, Math.PI * 2); g.fill();
@@ -7271,6 +7391,21 @@ body.has-panel .mapctl{display:none}
             return 'Turm #' + (island.id + 1);
         }
 
+        function gateControlsHtml(gate) {
+            const cfg = gateSettings(gate);
+            return '<div class="gate-ctl"><div class="gate-row"><span class="stat-l">' + icon('coin') + 'Maut pro Truppe</span><div class="seg">' +
+                GATE_TOLLS.map(v => '<button type="button" data-toll="' + v + '" class="' + (cfg.toll === v ? 'is-on' : '') + '">' + (v ? v.toLocaleString('de-DE') : 'frei') + '</button>').join('') + '</div></div>' +
+                '<button type="button" data-gate-toggle class="btn ' + (cfg.closed ? 'btn--primary' : 'btn--secondary') + ' btn--grow">' + icon('lock') + '<span>' + (cfg.closed ? 'Tor öffnen' : 'Tor schließen') + '</span></button>' +
+                '<p class="gate-note">' + (cfg.closed ? 'Geschlossen: niemand sonst kommt über die Brücke – nur wer das Tor erobert.' : 'Offen: andere zahlen die Maut an dich.') + '</p></div>';
+        }
+        popupStats.addEventListener('click', e => {
+            const isl = islandById[popupIslandId]; if (!isl || isl.type !== 'gate' || !ownedIslands.has(isl.id)) return;
+            const t = e.target.closest('[data-toll]'), tg = e.target.closest('[data-gate-toggle]');
+            if (t) { setGateSettings(isl.id, { toll: +t.dataset.toll }); flashHint('Maut: ' + (+t.dataset.toll ? (+t.dataset.toll).toLocaleString('de-DE') + ' Münzen pro Truppe' : 'frei') + '.', 2200); }
+            else if (tg) { const c = !gateSettings(isl).closed; setGateSettings(isl.id, { closed: c }); flashHint(c ? 'Tor geschlossen.' : 'Tor geöffnet.', 2000); }
+            else return;
+            openIslandPopup(isl); requestRender();
+        });
         function templeBonusLine(island) {
             const mult = templeBaseMult(island) * templeHoldMultiplier(island.id);
             const heldSince = templeHoldSince[island.id];
@@ -7311,6 +7446,7 @@ body.has-panel .mapctl{display:none}
             popupActions.hidden = true;
             document.getElementById('cityBtn').style.display = 'none';
             document.getElementById('teleportBtn').style.display = 'none';
+            document.getElementById('titleBtn').style.display = island.type === 'megaTemple' ? 'inline-block' : 'none';
             if (popupView !== 'preview') popupStats.dataset.preview = '';
 
             if (isOwned) {
@@ -7338,6 +7474,7 @@ body.has-panel .mapctl{display:none}
                         statTile('Verteidigung', 'defense', fmtNum(defenseForLevel(level))) +
                         statTile('Münzen / s', 'coin', '+' + fmtNum(coinsPerTick(level)), 'is-good') +
                         statTile('Truppen / s', 'troops', '+' + fmtNum(troopsPerTick(level)), 'is-good') + '</div>' +
+                        (island.type === 'gate' ? gateControlsHtml(island) : '') +
                         (isTemple ? templeBonusLine(island) : '');
                     upgradeCostLabel.innerHTML = level >= MAX_BASE_LEVEL ? 'Max. Stufe' : icon('coin', 'icon--coin') + fmtCompact(upgradeCost(level));
                     popupActions.hidden = false;
@@ -7457,7 +7594,7 @@ body.has-panel .mapctl{display:none}
             const bEl = popupStats.querySelector('#previewAtkBonus'); if (bEl) bEl.textContent = fmtNum(atkBonus);
             const src = islandById[previewSourceId], tEl = popupSub.querySelector('#previewToll');
             if (tEl && src) { const t = tollFor(src.landmassId, island.landmassId, shown, 'player');
-                tEl.innerHTML = t.cost ? '<span class="sep"></span>' + icon('coin') + '<span>Maut <span class="num">' + fmtCompact(t.cost) + '</span></span>' : ''; }
+                tEl.innerHTML = t.closed ? '<span class="sep"></span>' + icon('lock') + '<span>Tor geschlossen</span>' : t.cost ? '<span class="sep"></span>' + icon('coin') + '<span>Maut <span class="num">' + fmtCompact(t.cost) + '</span></span>' : ''; }
             document.getElementById('previewMyTroops').textContent = fmtNum(mine);
             const raw = document.getElementById('previewRawTroops');
             if (raw) raw.textContent = fmtNum(shown);
