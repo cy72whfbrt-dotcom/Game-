@@ -143,7 +143,7 @@ b,strong{font-weight:600}
    NAVIGATION  #cornerButtons  (phone = bottom dock)
    ===================================================================== */
 .nav{position:fixed;z-index:var(--z-dock);left:0;right:0;bottom:0;height:calc(var(--dock-h) + var(--safe-b));
-  padding:0 calc(var(--safe-r) + 6px) var(--safe-b) calc(var(--safe-l) + 6px);display:grid;grid-template-columns:repeat(4,1fr);
+  padding:0 calc(var(--safe-r) + 6px) var(--safe-b) calc(var(--safe-l) + 6px);display:grid;grid-template-columns:repeat(5,1fr);
   background:linear-gradient(180deg,rgb(18,21,28),rgb(8,10,13));border-top:1px solid var(--line-2);box-shadow:0 -12px 30px rgba(0,0,0,.45)}
 .nav::before{content:"";position:absolute;left:18%;right:18%;top:-1px;height:1px;background:linear-gradient(90deg,transparent,var(--gold-200),transparent)}
 .nav-btn{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:0;color:var(--tx-3);transition:color var(--dur-1)}
@@ -964,6 +964,7 @@ body.has-panel .mapctl{display:none}
 <symbol id="i-back" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 6 8.5 12l6 6"/></g></symbol>
 <symbol id="i-plus" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5.5v13M5.5 12h13"/></g></symbol>
 <symbol id="i-minus" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 12h13"/></g></symbol>
+<symbol id="i-castle" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20.5V9h3v2h2.5V9h5v2H17V9h3v11.5z" fill="currentColor" stroke="none" opacity="0.16"/><path d="M4 20.5V9h3v2h2.5V9h5v2H17V9h3v11.5z"/><path d="M4 6.5V9M20 6.5V9M12 3.5v5.5"/><path d="M12 3.5l3 1.2-3 1.2" fill="currentColor"/><path d="M9.8 20.5v-3.3a2.2 2.2 0 0 1 4.4 0v3.3"/><path d="M3 20.5h18"/></g></symbol>
 <symbol id="i-home" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12a7 7 0 1 0 14 0a7 7 0 1 0 -14 0z"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4"/><path d="M10.4 12a1.6 1.6 0 1 0 3.2 0a1.6 1.6 0 1 0 -3.2 0z" fill="currentColor" stroke="none"/></g></symbol>
 <symbol id="i-hourglass" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3.5h11M6.5 20.5h11"/><path d="M8 3.5c0 4.2 4 5.3 4 8.5s-4 4.3-4 8.5M16 3.5c0 4.2-4 5.3-4 8.5s4 4.3 4 8.5"/><path d="M9.5 18.8 12 16.2l2.5 2.6z" fill="currentColor" stroke="none"/></g></symbol>
 <symbol id="i-points" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5h15.5V10c-1.9 0-3 .8-3.4 2.5H9.4C8.8 10.6 6.8 9.6 3 7.5z" fill="currentColor" stroke="none" opacity="0.2"/><path d="M3 7.5h15.5V10c-1.9 0-3 .8-3.4 2.5H9.4C8.8 10.6 6.8 9.6 3 7.5z"/><path d="M10.2 12.5v3.2M14.3 12.5v3.2"/><path d="M8.2 15.7h8.1l1.6 3.8H6.6z"/><path d="M18.5 7.5h2.5" opacity="0.6"/></g></symbol>
@@ -1167,6 +1168,7 @@ body.has-panel .mapctl{display:none}
 
 <!-- Navigation: phone = bottom dock, landscape phone = left rail, desktop = top-right cluster -->
 <nav id="cornerButtons" class="nav" aria-label="Hauptmenü">
+  <button id="cityNavBtn" class="nav-btn" type="button" title="Hauptstadt betreten"><svg class="icon"><use href="#i-castle"/></svg><span class="nav-l">Stadt</span></button>
   <button id="profileBtn" class="nav-btn" type="button" title="Profil"><svg class="icon"><use href="#i-profile"/></svg><span class="nav-l">Profil</span></button>
   <button id="battleLogBtn" class="nav-btn" type="button" title="Angriffe &amp; Kampflog"><svg class="icon"><use href="#i-battlelog"/></svg><span class="nav-l">Kampf</span><span id="battleLogBadge" class="badge" style="display:none">0</span></button>
   <button id="mailBtn" class="nav-btn" type="button" title="Aufgaben &amp; tägliche Belohnung"><svg class="icon"><use href="#i-flag"/></svg><span class="nav-l">Aufgaben</span><span id="questBadge" class="badge" style="display:none">0</span></button>
@@ -1426,7 +1428,8 @@ body.has-panel .mapctl{display:none}
   <div class="pbody">
     <div id="popupStats" class="popup-stats"></div>
     <div id="popupActions" class="actgrid">
-      <button id="cityBtn" class="act act--city" type="button" style="display:none"><span class="act-ic act-ic--city"><svg class="icon"><use href="#i-home"/></svg></span><span class="act-t">Stadt betreten</span><span class="act-s">Hauptstadt ausbauen</span></button>
+      <button id="teleportBtn" class="act act--city" type="button" style="display:none"><span class="act-ic act-ic--city"><svg class="icon"><use href="#i-send"/></svg></span><span class="act-t">Hauptstadt verlegen</span><span class="act-s">zu einer eigenen Basis · 50 Gems</span></button>
+      <button id="cityBtn" class="act act--city" type="button" style="display:none"><span class="act-ic act-ic--city"><svg class="icon"><use href="#i-castle"/></svg></span><span class="act-t">Stadt betreten</span><span class="act-s">Hauptstadt ausbauen</span></button>
       <button id="upgradeBtn" class="act act--primary" type="button"><span class="act-ic"><svg class="icon"><use href="#i-upgrade"/></svg></span><span class="act-t">Aufwerten</span><span class="act-s" id="upgradeCostLabel">–</span></button>
       <button id="sendBtn" class="act" type="button"><span class="act-ic act-ic--send"><svg class="icon"><use href="#i-send"/></svg></span><span class="act-t">Senden</span><span class="act-s">Verstärken</span></button>
       <button id="multiAttackBtn" class="act" type="button"><span class="act-ic act-ic--attack"><svg class="icon"><use href="#i-multiattack"/></svg></span><span class="act-t">Mehrfach</span><span class="act-s"><svg class="icon icon--gem"><use href="#i-gem"/></svg><b data-const="MULTI_ATTACK_GEM_COST">1</b> Gem</span></button>
@@ -1847,6 +1850,28 @@ body.has-panel .mapctl{display:none}
             const br = bridgeBetween(a, b);
             return !!br && Date.now() >= passOpensAt(br);
         }
+        function gateOnRoute(fromLm, toLm) {            // the gate base guarding the bridge between two regions (or null)
+            if (fromLm === toLm) return null;
+            const br = bridgeBetween(fromLm, toLm);
+            return br && br.gateId !== undefined ? islandById[br.gateId] : null;
+        }
+        function tollFor(fromLm, toLm, troops, payer) {  // → { gate, cost } (cost 0 when the payer owns the gate)
+            const gate = gateOnRoute(fromLm, toLm);
+            if (!gate || islandOwnerOf(gate.id) === payer) return { gate, cost: 0 };
+            return { gate, cost: Math.max(100, Math.round(Math.max(0, troops) * gate.toll)) };
+        }
+        function payToll(fromLm, toLm, troops, payer) { // payer: 'player' | bot id → false when it can't pay
+            const { gate, cost } = tollFor(fromLm, toLm, troops, payer);
+            if (!cost) return true;
+            const have = payer === 'player' ? coins : (botCoins[payer] || 0);
+            if (have < cost) { if (payer === 'player') flashHint('Maut am Tor: ' + fmtNum(cost) + ' Münzen – du hast zu wenig. Erobere das Tor, dann ist es kostenlos.', 4000); return false; }
+            if (payer === 'player') coins -= cost; else botCoins[payer] -= cost;
+            const owner = islandOwnerOf(gate.id);
+            if (owner === 'player') { coins += cost; flashHint(botById[payer].name + ' zahlt ' + fmtNum(cost) + ' Münzen Maut an deinem Tor.', 3500); }
+            else if (owner) botCoins[owner] = (botCoins[owner] || 0) + cost;
+            if (payer === 'player') flashHint('Maut bezahlt: ' + fmtNum(cost) + ' Münzen' + (owner ? ' an ' + botById[owner].name : '') + '.', 3500);
+            return true;
+        }
         function fmtPassWait(ms) {
             const m = Math.max(1, Math.ceil(ms / 60000)), d = Math.floor(m / 1440), h = Math.floor(m % 1440 / 60), mm = m % 60;
             return d ? d + (d === 1 ? ' Tag ' : ' Tage ') + h + ' Std.' : h ? h + ' Std. ' + mm + ' Min.' : mm + ' Min.';
@@ -1928,6 +1953,20 @@ body.has-panel .mapctl{display:none}
                 neutralDefense: tierStats ? tierStats.temple[1] : Math.round(Math.floor(TEMPLE_DEFENSE_MIN + rand() * (TEMPLE_DEFENSE_MAX - TEMPLE_DEFENSE_MIN)) * (isMega ? MEGA_TEMPLE_MULT : 1)),
                 neutralLevel: tierStats ? tierStats.templeLevel : 1
             });
+        }
+        // Tore: a capturable base on the outer bank of every bridge into a Wächter region or the middle.
+        // Whoever owns a gate crosses its bridge for free and collects the toll everyone else pays.
+        const GATE_STATS = { guardian: { troops: 2e6, def: 5e5, level: 25, toll: 0.25 }, throne: { troops: 5e7, def: 1e7, level: 45, toll: 0.5 } };
+        for (const br of bridges) {
+            const ta = landmasses[br.a].tier, tb = landmasses[br.b].tier;
+            const kind = ta === 'throne' || tb === 'throne' ? 'throne' : ta === 'guardian' || tb === 'guardian' ? 'guardian' : null;
+            if (!kind) continue;
+            const rank = { outer: 0, guardian: 1, throne: 2 }, outerA = rank[ta] <= rank[tb];
+            const ex = outerA ? br.x1 : br.x2, ey = outerA ? br.y1 : br.y2, ox = outerA ? br.x2 : br.x1, oy = outerA ? br.y2 : br.y1;
+            const bl = Math.hypot(ox - ex, oy - ey) || 1, st = GATE_STATS[kind];
+            br.gateId = id;
+            islands.push({ id: id++, landmassId: outerA ? br.a : br.b, x: ex - (ox - ex) / bl * 900, y: ey - (oy - ey) / bl * 900, radius: ISLAND_RADIUS * 1.25,
+                           type: 'gate', gateKind: kind, toll: st.toll, neutralTroops: st.troops, neutralDefense: st.def, neutralLevel: st.level });
         }
         const islandById = {};
         for (const island of islands) islandById[island.id] = island;
@@ -2712,7 +2751,9 @@ body.has-panel .mapctl{display:none}
             const rawTroops = (troopsOverride !== undefined && troopsOverride !== null)
                 ? Math.max(0, Math.min(troopsOverride, available))
                 : available;
-            if (!source || !target || rawTroops <= 0) return;
+            if (!source || !target || rawTroops <= 0) return false;
+            if (!attackerBotId && target.id === playerIslandId) return false;
+            if (!payToll(source.landmassId, target.landmassId, rawTroops, attackerBotId || 'player')) return false;
 
             islandTroops[sourceId] = available - rawTroops; // only the sent troops march out, the rest stay to defend
             const durationSec = travelDurationSeconds(source, target);
@@ -2741,6 +2782,7 @@ body.has-panel .mapctl{display:none}
             if (!attackerBotId) flashHint('Angriff unterwegs zu ' + islandTitle(target) + ' · ca. ' + fmtClock(durationSec));
             if (!attackerBotId) questProgress('attack', 1);
             renderActiveMarches();
+            return true;
         }
 
         // "Truppen verschicken": same travel time as an attack, but a blue
@@ -2750,6 +2792,7 @@ body.has-panel .mapctl{display:none}
             const target = islandById[toId];
             const rawTroops = islandTroops[fromId] || 0;
             if (!source || !target || rawTroops <= 0) return;
+            if (!payToll(source.landmassId, target.landmassId, rawTroops, senderBotId || 'player')) return;
 
             islandTroops[fromId] = 0; // troops march out
             const durationSec = travelDurationSeconds(source, target);
@@ -3654,7 +3697,16 @@ body.has-panel .mapctl{display:none}
         function drawBuilding(island, ownerKey, z) {                                   // screen space (setScreen active)
           const kind = island.type === 'megaTemple' ? 'mega' : island.guardian ? 'guardian' : island.type === 'temple' ? 'temple' : 'tower';
           const home = island.id === playerIslandId;
-          const size = 2 * island.radius * z * (home ? 1.12 : 1), x = toSX(island.x), y = toSY(island.y);
+          const size = 2 * island.radius * z * (home ? 1.3 : 1), x = toSX(island.x), y = toSY(island.y);
+          if (island.type === 'gate') {                                                // gates: the gatehouse, an owner pennant on top
+            if (size < 8) { ctx.fillStyle = '#b8b2a6'; ctx.fillRect(x - 3, y - 3, 6, 6); return; }
+            const H = Math.max(14, size * 1.05);
+            drawGatehouse(ctx, x, y - H * .1, H, 1);
+            if (ownerKey !== 'neutral') { const px = x, py = y - H * .1 + H * .42 - H - 2;
+              ctx.strokeStyle = '#2a2622'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px, py - H * .35); ctx.stroke();
+              ctx.fillStyle = BAND[ownerKey]; ctx.beginPath(); ctx.moveTo(px, py - H * .35); ctx.lineTo(px + H * .28, py - H * .27); ctx.lineTo(px, py - H * .19); ctx.closePath(); ctx.fill(); }
+            return;
+          }
           if (size < 6) {                                                              // LOD: dot / diamond
             ctx.fillStyle = kind !== 'tower' ? '#d9b566' : ownerKey === 'neutral' ? 'rgba(205,212,224,.55)' : (ownerKey === 'player' ? '#8cc0ff' : '#ff8d82');
             const r = kind !== 'tower' ? 3.5 : ownerKey === 'neutral' ? 1.4 : 2.5;
@@ -3681,10 +3733,13 @@ body.has-panel .mapctl{display:none}
           const tName = island.type === 'megaTemple' ? 'Mega-Tempel' : island.guardian ? 'Wächter-Tempel' : 'Tempel';
           const boss = bossAt(island.id);
           if (boss) return { kind: 'bot', glyph: 'attack', name: boss.name, troops: fmtCompact(boss.troops), def: null, level, temple: false, p: 4.8 };
-          if (owner === 'player') return { kind: 'player', glyph: isTemple ? 'temple' : 'profile', name: profileName.value || 'Du',
+          if (owner === 'player') return { kind: 'player', glyph: isTemple ? 'temple' : island.type === 'gate' ? 'lock' : island.id === playerIslandId ? 'castle' : 'profile',
+                                           name: island.id === playerIslandId ? 'Hauptstadt' : profileName.value || 'Du',
                                            troops: fmtCompact(islandTroops[island.id] || 0), def: null, level, temple: isTemple, p: 4 };
           if (owner) return { kind: 'bot', glyph: isTemple ? 'temple' : 'bot', name: botById[owner].name,
                               troops: scouted ? fmtCompact(islandTroops[island.id] || 0) : '?', def: null, level, temple: isTemple, p: 3 };
+          if (island.type === 'gate') return { kind: 'neutral', glyph: 'lock', name: island.gateKind === 'throne' ? 'Thron-Tor' : 'Wächter-Tor',
+                   troops: scouted ? fmtCompact(island.neutralTroops) : '?', def: scouted ? fmtCompact(island.neutralDefense) : null, level, temple: false, p: 2.5 };
           return { kind: 'neutral', glyph: isTemple ? 'temple' : 'question', name: isTemple ? tName : 'Neutral',
                    troops: scouted ? fmtCompact(island.neutralTroops) : '?', def: scouted ? fmtCompact(island.neutralDefense) : null,
                    level, temple: isTemple, mega: island.type === 'megaTemple', p: isTemple ? 2 : 0, filler: !isTemple };
@@ -3818,6 +3873,10 @@ body.has-panel .mapctl{display:none}
                 ctx.moveTo(x + Math.cos(a) * r * 1.44, y + Math.sin(a) * r * 1.44); ctx.lineTo(x + Math.cos(a) * r * 1.52, y + Math.sin(a) * r * 1.52); }
                 ctx.lineWidth = 1.2; ctx.strokeStyle = 'rgba(228,200,134,.7)'; ctx.stroke(); }
             }
+            if (isl.id === playerIslandId && z >= 0.006) {                            // the capital: blue-gold double ring
+              ring(x, y, Math.max(r * 1.55, 12), 2, 'rgba(228,200,134,.95)'); ring(x, y, Math.max(r * 1.8, 15), 1.2, 'rgba(140,192,255,.6)', [3, 4]);
+            }
+            if (teleportMode && isOwned && isl.id !== playerIslandId && isl.type !== 'gate') ring(x, y, S, 2, 'rgba(228,200,134,' + (.45 + .55 * pulse).toFixed(2) + ')', [4, 4]);
             const isSelectable = (attackTarget && isOwned && landmassesConnected(isl.landmassId, attackTarget.landmassId)) ||
                                  (pendingSendFromId !== null && isOwned && isl.id !== pendingSendFromId);
             if (isSelectable) ring(x, y, S, 2, 'rgba(255,255,255,' + (.45 + .55 * pulse).toFixed(2) + ')', [4, 4]);
@@ -4545,8 +4604,10 @@ body.has-panel .mapctl{display:none}
                 const source = islandById[sourceId];
                 for (const lmId of reachableLandmassIds[source.landmassId]) {
                     if (!landmassesConnected(source.landmassId, lmId)) continue;
+                    const toll = tollFor(source.landmassId, lmId, troopsHere, bot.id).cost;
+                    if (toll && (botCoins[bot.id] || 0) < toll) continue;
                     for (const target of islandsByLandmass[lmId] || []) {
-                        if (owned.has(target.id)) continue;
+                        if (owned.has(target.id) || target.id === playerIslandId) continue;   // the capital can't be attacked
                         const totalStrength = effectiveTroops(target) + effectiveDefense(target);
                         if (troopsHere < totalStrength * BOT_ATTACK_SAFETY_MARGIN) continue;
                         let distance = Math.hypot(target.x - source.x, target.y - source.y);
@@ -5716,7 +5777,7 @@ body.has-panel .mapctl{display:none}
                         const mult = templeBaseMult(isl) * templeHoldMultiplier(ownedId);
                         gems += TEMPLE_GEMS_PER_TICK * mult * ticks;
                         coins += Math.round(TEMPLE_COIN_BONUS_PER_TICK * mult) * ticks;
-                        islandTroops[ownedId] += Math.round(TEMPLE_TROOP_BONUS_PER_TICK * mult) * ticks;
+                        islandTroops[rewardBaseId() ?? ownedId] += Math.round(TEMPLE_TROOP_BONUS_PER_TICK * mult) * ticks;   // bonus troops go to the capital
                     }
                 }
                 // Bots produce too - same base rates as the player, just
@@ -5732,7 +5793,7 @@ body.has-panel .mapctl{display:none}
                         if (isl && (isl.type === 'temple' || isl.type === 'megaTemple')) {
                             const mult = templeBaseMult(isl) * templeHoldMultiplier(ownedId);
                             botCoins[bot.id] += Math.round(TEMPLE_COIN_BONUS_PER_TICK * mult) * ticks;
-                            islandTroops[ownedId] += Math.round(TEMPLE_TROOP_BONUS_PER_TICK * mult) * ticks;
+                            islandTroops[rewardBaseId() ?? ownedId] += Math.round(TEMPLE_TROOP_BONUS_PER_TICK * mult) * ticks;   // bonus troops go to the capital
                         }
                     }
                 }
@@ -5964,10 +6025,8 @@ body.has-panel .mapctl{display:none}
                 const mx = gx * z + mapState.offsetX, my = gy * z + mapState.offsetY;
                 if (mx < -80 || my < -80 || mx > viewW + 80 || my > viewH + 80) continue;
                 const H = Math.max(24, Math.min(110, 2000 * z)), left = opens - Date.now();
-                const open = left > 0 ? 0 : Math.min(1, -left / 2500);                                                           // the portcullis rises once
-                if (open > 0 && open < 1) liveAnimation = true;
-                drawGatehouse(ctx, mx, my - H * .15, H, open);
                 if (left <= 0) continue;
+                drawGatehouse(ctx, mx, my - H * .15, H, 0);
                 const label = fmtPassWait(left);
                 ctx.font = '700 11px Inter, system-ui, sans-serif';
                 const w = ctx.measureText(label).width + 30, cy = my - H * .15 + H * .42 + 13;
@@ -6252,7 +6311,7 @@ body.has-panel .mapctl{display:none}
             const busy = new Set(pendingAttacks.map(a => a.targetId));
             const cand = [];
             for (const lm of reach) if (landmasses[lm] && landmasses[lm].tier === 'outer') for (const isl of islandsByLandmass[lm] || [])
-                if (!islandOwnerOf(isl.id) && isl.type !== 'temple' && isl.type !== 'megaTemple' && !busy.has(isl.id)) cand.push(isl);
+                if (!islandOwnerOf(isl.id) && isl.type !== 'temple' && isl.type !== 'megaTemple' && isl.type !== 'gate' && !busy.has(isl.id)) cand.push(isl);
             if (!cand.length || !home) return false;
             cand.sort((a, b) => Math.hypot(a.x - home.x, a.y - home.y) - Math.hypot(b.x - home.x, b.y - home.y));
             const isl = cand[Math.floor(Math.random() * Math.min(25, cand.length))];
@@ -6510,6 +6569,29 @@ body.has-panel .mapctl{display:none}
             if (building) renderCitySheetTimer();
         }
         document.getElementById('cityBtn').addEventListener('click', openCity);
+        document.getElementById('cityNavBtn').addEventListener('click', openCity);
+        // Hauptstadt verlegen (teleport): pick one of your own bases, the capital status and its garrison move there.
+        var teleportMode = false;
+        const TELEPORT_GEMS = 50;
+        document.getElementById('teleportBtn').addEventListener('click', () => {
+            if (gems < TELEPORT_GEMS) { flashHint('Zum Verlegen brauchst du ' + TELEPORT_GEMS + ' Gems.', 3000); return; }
+            if (ownedIslands.size < 2) { flashHint('Du brauchst noch eine zweite Basis, um die Hauptstadt zu verlegen.', 3000); return; }
+            closeIslandPopup(); teleportMode = true; requestRender();
+            flashHint('Tippe eine deiner Basen an – die Hauptstadt zieht dorthin (' + TELEPORT_GEMS + ' Gems). Woanders tippen bricht ab.', 5000);
+        });
+        function teleportCapital(toId) {
+            const from = playerIslandId, to = islandById[toId];
+            if (!to || !ownedIslands.has(toId) || toId === from || to.type === 'gate') return false;
+            gems -= TELEPORT_GEMS;
+            islandTroops[toId] = (islandTroops[toId] || 0) + (islandTroops[from] || 0); islandTroops[from] = 0;   // the garrison moves along
+            playerIslandId = toId; store.set('openWaterPlayerIslandId', playerIslandId);
+            revealAround(to.x, to.y, REVEAL_BASE, true);
+            flushBannerSprites();
+            saveGame(); saveProgression(); updateHud();
+            spawnBattleFx(toId, true, 'Hauptstadt', 'hierher verlegt');
+            flashHint('Die Hauptstadt ist umgezogen – deine Truppen sind mitgekommen.', 3500);
+            return true;
+        }
         document.getElementById('cityCloseBtn').addEventListener('click', closeCity);
         document.getElementById('citySheetClose').addEventListener('click', () => { cityOpenId = null; document.getElementById('citySheet').hidden = true; cityDirty = true; });
         document.getElementById('cityUpgradeBtn').addEventListener('click', () => { if (cityOpenId) cityStartBuild(cityOpenId); });
@@ -7054,6 +7136,8 @@ body.has-panel .mapctl{display:none}
             if (island.type === 'megaTemple') return 'Mega-Tempel';
             if (island.guardian) return 'Wächter-Tempel';
             if (island.type === 'temple') return 'Tempel';
+            if (island.type === 'gate') return island.gateKind === 'throne' ? 'Thron-Tor' : 'Wächter-Tor';
+            if (island.id === playerIslandId) return 'Hauptstadt';
             return 'Turm #' + (island.id + 1);
         }
 
@@ -7096,6 +7180,7 @@ body.has-panel .mapctl{display:none}
             popupTitle.textContent = islandTitle(island);
             popupActions.hidden = true;
             document.getElementById('cityBtn').style.display = 'none';
+            document.getElementById('teleportBtn').style.display = 'none';
             if (popupView !== 'preview') popupStats.dataset.preview = '';
 
             if (isOwned) {
@@ -7116,8 +7201,8 @@ body.has-panel .mapctl{display:none}
                     confirmBtn.disabled = coins < cost;
                     backBtn.style.display = 'inline-block';
                 } else {
-                    popupOverline.textContent = island.id === playerIslandId ? 'Deine Hauptstadt' : isTemple ? 'Dein Tempel' : 'Deine Basis';
-                    if (island.id === playerIslandId) document.getElementById('cityBtn').style.display = 'inline-block';
+                    popupOverline.textContent = island.id === playerIslandId ? 'Deine Hauptstadt · kann nicht angegriffen werden' : isTemple ? 'Dein Tempel' : island.type === 'gate' ? 'Dein Tor · du kassierst die Maut' : 'Deine Basis';
+                    if (island.id === playerIslandId) { document.getElementById('cityBtn').style.display = 'inline-block'; document.getElementById('teleportBtn').style.display = 'inline-block'; }
                     popupStats.innerHTML = '<div class="stat-grid">' +
                         statTile('Truppen hier', 'troops', fmtNum(troopsHere)) +
                         statTile('Verteidigung', 'defense', fmtNum(defenseForLevel(level))) +
@@ -7154,6 +7239,7 @@ body.has-panel .mapctl{display:none}
                         statTile('Truppen', 'troops', scouted ? fmtNum(effectiveTroops(island)) : UNK, scouted && ownerBot ? 'is-enemy' : '') +
                         statTile('Verteidigung', 'defense', scouted ? fmtNum(effectiveDefense(island)) : UNK) + '</div>' +
                         (scouted ? '' : '<div class="notice">' + icon('scout') + '<span>Stärke unbekannt. Spähen deckt Truppen und Verteidigung auf.</span></div>') +
+                        (island.type === 'gate' ? '<div class="notice notice--gold">' + icon('lock') + '<span>Tor: Wer es besitzt, geht kostenlos über die Brücke und kassiert die Maut. Alle anderen zahlen ' + island.toll.toLocaleString('de-DE') + ' Münzen pro Truppe.</span></div>' : '') +
                         (isTemple ? '<div class="notice notice--gold">' + icon('temple') + '<span>' + (island.type === 'megaTemple' ? 'Thron der Meere: wer ihn hält, trägt die Krone – +25 % Münzen und Truppen im ganzen Reich.' : island.guardian ? 'Wächter-Tempel: 3-facher Tempel-Bonus, bewacht den Weg zur Thron-Insel.' : 'Tempel: gibt Produktion, Gems und Münzen, sobald erobert.') + '</span></div>' : '') +
                         (bossAt(island.id) ? '<div class="notice notice--gold">' + icon('shop') + '<span><b>Belohnung:</b> Legendäre Kiste + ' + BOSS_REWARD_GEMS + ' Gems · verschwindet in <b data-boss-clock>' + fmtClock((bossAt(island.id).endsAt - Date.now()) / 1000) + '</b></span></div>' : '') +
                         (scoutEnRoute ? '<div class="notice notice--warn">' + icon('hourglass') + '<span>Späher bereits unterwegs …</span></div>' : '');
@@ -7188,7 +7274,7 @@ body.has-panel .mapctl{display:none}
             const key = island.id + ':' + previewSourceId + ':' + scouted + ':' + atkPct;
             popupOverline.textContent = 'Angriff vorbereiten';
             // source + march time live in the header subline (frees the body on short screens)
-            popupSub.innerHTML = icon('defense') + '<span>Von ' + islandTitle(source) + '</span><span class="sep"></span>' +
+            popupSub.innerHTML = '<span id="previewToll" style="display:contents"></span>' + icon('defense') + '<span>Von ' + islandTitle(source) + '</span><span class="sep"></span>' +
                 icon('hourglass') + '<span><span class="xs-hide">Marsch ca. </span><span class="num">' + fmtClock(travelDurationSeconds(source, island)) + '</span></span>';
             if (popupStats.dataset.preview !== key || !document.getElementById('attackTroopsSlider')) {
                 popupStats.dataset.preview = key;
@@ -7238,6 +7324,9 @@ body.has-panel .mapctl{display:none}
             const atkBonus = attackFlatBonus(shown);
             const mine = shown + atkBonus;
             const bEl = popupStats.querySelector('#previewAtkBonus'); if (bEl) bEl.textContent = fmtNum(atkBonus);
+            const src = islandById[previewSourceId], tEl = popupSub.querySelector('#previewToll');
+            if (tEl && src) { const t = tollFor(src.landmassId, island.landmassId, shown, 'player');
+                tEl.innerHTML = t.cost ? '<span class="sep"></span>' + icon('coin') + '<span>Maut <span class="num">' + fmtCompact(t.cost) + '</span></span>' : ''; }
             document.getElementById('previewMyTroops').textContent = fmtNum(mine);
             const raw = document.getElementById('previewRawTroops');
             if (raw) raw.textContent = fmtNum(shown);
@@ -7418,6 +7507,13 @@ body.has-panel .mapctl{display:none}
             return sx >= r.x - 6 && sx <= r.x + r.w + 6 && sy >= r.y - 6 && sy <= r.y + r.h + 6 ? 'go' : 'off';
         }
         function handleTap(screenX, screenY) {
+            if (teleportMode) {
+                teleportMode = false; requestRender();
+                const isl = pickIslandAtScreen(screenX, screenY);
+                if (isl && ownedIslands.has(isl.id) && isl.id !== playerIslandId && isl.type !== 'gate') teleportCapital(isl.id);
+                else flashHint('Verlegen abgebrochen.', 2000);
+                return;
+            }
             if (fogPrompt) {
                 const hit = fogPromptHit(screenX, screenY), fp = fogPrompt; fogPrompt = null; requestRender();
                 if (hit === 'go') { launchScout(fp.targetId, true, { x: fp.x, y: fp.y }); return; }
