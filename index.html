@@ -1543,12 +1543,14 @@ body.has-panel .mapctl{display:none}
         // zero overlap.
         const CENTER_LANDMASS_RADIUS = 30000; // only the hub is bigger
         const OUTER_LANDMASS_RADIUS = 20000;
-        const HEX_RING_COUNT = 3; // hub + 3 rings = 1+6+12+18 = 37 landmasses
-        const HEX_SPACING = 56120; // distance between adjacent hex cell centers
+        const GRID_N = 7;          // square world: 7 × 7 landmasses, the Thron-Insel in the middle cell
+        const HEX_SPACING = 56120; // distance between orthogonally adjacent cell centres (tightest packing with zero overlap)
+        const GRID_HALF = (GRID_N - 1) / 2;
+        const FRAME_HALF = GRID_HALF * HEX_SPACING + OUTER_LANDMASS_RADIUS + 16000;   // the square map border (world units from the centre)
         // Bases are scattered freely across a landmass (rejection-sampled,
         // not a rigid grid) - only constraint is a minimum distance from
         // every other base and the temple, so nothing ends up crowded.
-        const TOWERS_PER_LANDMASS = 100;
+        const TOWERS_PER_LANDMASS = 85;
         const THRONE_TOWERS = 36, GUARDIAN_TOWERS = 60;
         // Neutral strength of the inner islands (the outer ring keeps the small starter values):
         // the Thron-Insel is late-game, the Wächter-Inseln mid-game.
@@ -1732,53 +1734,29 @@ body.has-panel .mapctl{display:none}
             return Math.round(UPGRADE_BASE_COST * Math.pow(UPGRADE_COST_GROWTH, level - 1));
         }
 
-        // Hex grid helpers (axial coordinates, pointy-top). hexRing(n) walks
-        // the n-th ring of cells around the origin (n=0 is just the origin
-        // itself); axialToPixel converts a cell to world coordinates with
-        // every direct neighbor exactly HEX_SPACING apart.
-        const HEX_DIRS = [{ q: 1, r: 0 }, { q: 1, r: -1 }, { q: 0, r: -1 }, { q: -1, r: 0 }, { q: -1, r: 1 }, { q: 0, r: 1 }];
-        function hexRing(radius) {
-            if (radius === 0) return [{ q: 0, r: 0 }];
-            const results = [];
-            let cur = { q: HEX_DIRS[4].q * radius, r: HEX_DIRS[4].r * radius };
-            for (let side = 0; side < 6; side++) {
-                for (let step = 0; step < radius; step++) {
-                    results.push(cur);
-                    cur = { q: cur.q + HEX_DIRS[side].q, r: cur.r + HEX_DIRS[side].r };
-                }
-            }
-            return results;
-        }
-        function axialToPixel(q, r) {
-            return { x: HEX_SPACING * (q + r / 2), y: HEX_SPACING * r * (Math.sqrt(3) / 2) };
-        }
-
         // The big islands themselves - just background land, drawn as one
         // organic coastline each, no ownership state of their own. Landmass
-        // 0 is always the center/hub (hex ring 0); every other landmass
-        // sits somewhere in the honeycomb of rings radiating outward
-        // around it.
+        // 0 is always the centre (Thron-Insel); the others sit on a square
+        // 7 × 7 grid around it.
         const landmasses = [];
         {
             let lmId = 0;
-            // World layout: the Thron-Insel (hub, Mega-Tempel) in the middle, 4 Wächter-Inseln
-            // diagonally around it (the east/west cells of ring 1 stay open sea, a moat), then the
-            // outer rings where the player and the bots start.
-            for (let ring = 0; ring <= HEX_RING_COUNT; ring++) {
-                const radius = ring === 0 ? CENTER_LANDMASS_RADIUS : OUTER_LANDMASS_RADIUS;
-                for (const cell of hexRing(ring)) {
-                    if (ring === 1 && cell.r === 0) continue;
-                    const { x, y } = axialToPixel(cell.q, cell.r);
-                    // Distinct seed per landmass (large prime multiplier
-                    // avoids correlated streams between adjacent ids) so
-                    // every island gets a visibly different coastline
-                    const shapeRand = mulberry32(1337 + lmId * 104729);
-                    const shape = generateIslandShape(x, y, radius, shapeRand);
-                    let shapeMaxR = 0;
-                    for (const p of shape) shapeMaxR = Math.max(shapeMaxR, Math.hypot(p.x - x, p.y - y));
-                    landmasses.push({ id: lmId, q: cell.q, r: cell.r, x, y, radius, shape, shapeMaxR, isCenter: ring === 0, tier: ring === 0 ? 'throne' : ring === 1 ? 'guardian' : 'outer' });
-                    lmId++;
-                }
+            // World layout (square map): the Thron-Insel (Mega-Tempel) in the middle cell, the 4 Wächter-Inseln
+            // north / east / south / west of it, every other cell an outer island where the player and bots start.
+            const cells = [];
+            for (let r = -GRID_HALF; r <= GRID_HALF; r++) for (let q = -GRID_HALF; q <= GRID_HALF; q++) cells.push({ q, r, d: Math.abs(q) + Math.abs(r) });
+            cells.sort((u, v) => u.d - v.d || u.r - v.r || u.q - v.q);                      // landmass 0 = the centre, then the guardians
+            for (const cell of cells) {
+                const isC = cell.d === 0, tier = isC ? 'throne' : cell.d === 1 ? 'guardian' : 'outer';
+                const radius = isC ? CENTER_LANDMASS_RADIUS : OUTER_LANDMASS_RADIUS;
+                const x = cell.q * HEX_SPACING, y = cell.r * HEX_SPACING;
+                // Distinct seed per landmass (large prime multiplier avoids correlated streams) → a different coastline each
+                const shapeRand = mulberry32(1337 + lmId * 104729);
+                const shape = generateIslandShape(x, y, radius, shapeRand);
+                let shapeMaxR = 0;
+                for (const p of shape) shapeMaxR = Math.max(shapeMaxR, Math.hypot(p.x - x, p.y - y));
+                landmasses.push({ id: lmId, q: cell.q, r: cell.r, x, y, radius, shape, shapeMaxR, isCenter: isC, tier });
+                lmId++;
             }
         }
 
@@ -1800,7 +1778,7 @@ body.has-panel .mapctl{display:none}
             for (let j = i + 1; j < landmasses.length; j++) {
                 const a = landmasses[i], b = landmasses[j];
                 const dq = a.q - b.q, dr = a.r - b.r;
-                const isAdjacent = HEX_DIRS.some(d => (d.q === dq && d.r === dr) || (d.q === -dq && d.r === -dr));
+                const isAdjacent = Math.abs(dq) + Math.abs(dr) === 1;                          // north / south / east / west neighbours
                 if (!isAdjacent) continue;
                 const angleAtoB = Math.atan2(b.y - a.y, b.x - a.x);
                 let p1 = polygonPointAtAngle(a, angleAtoB);
@@ -1925,7 +1903,7 @@ body.has-panel .mapctl{display:none}
         // The map was rebuilt (Thron-Insel + Wächter-Inseln): old base ids no longer match, so every
         // map-bound part of an old save is cleared once. Coins, gems, gear, skills and level stay,
         // and the player's whole army moves to the new home base.
-        const WORLD_VERSION = '2';
+        const WORLD_VERSION = '3';
         if (store.get('openWaterWorldVersion') !== WORLD_VERSION) {
             let carry = 0;
             try {
@@ -3106,6 +3084,7 @@ body.has-panel .mapctl{display:none}
         // World bounds (camera clamp + sea gradient)
         const WORLD = (() => { let l = Infinity, t = Infinity, r = -Infinity, b = -Infinity;
           for (const lm of landmasses) { l = Math.min(l, lm.x - lm.shapeMaxR); r = Math.max(r, lm.x + lm.shapeMaxR); t = Math.min(t, lm.y - lm.shapeMaxR); b = Math.max(b, lm.y + lm.shapeMaxR); }
+          l = Math.min(l, -FRAME_HALF); t = Math.min(t, -FRAME_HALF); r = Math.max(r, FRAME_HALF); b = Math.max(b, FRAME_HALF);   // the map border fits too
           return { l, t, r, b, w: r - l, h: b - t, cx: (l + r) / 2, cy: (t + b) / 2, radius: Math.hypot(r - l, b - t) / 2 }; })();
 
         // Landmass paths: smoothed coast (quadratic curves through edge midpoints), world units
@@ -3979,7 +3958,8 @@ body.has-panel .mapctl{display:none}
           refreshTerritory();                                                            // rebuild only chunks whose ownership changed
           if (dirty && BG.valid) for (const d of dirty) repaintBackgroundRect(d);        // partial repaints, clipped (no full re-render)
           drawBackground();                                                              // 1-4: sea, land, bridges, territory
-          drawFog(view, now);                                                            // Nebel des Krieges over unexplored islands
+          drawFog(view, now);
+          drawWorldFrame();                                                            // Nebel des Krieges over unexplored islands
           const vis = visibleIslands(viewPad);
           drawRings(vis, z, now);                                                        // 5
           for (const a of pendingAttacks) { if (a.attackerBotId && islandOwnerOf(a.targetId) !== 'player') continue;         // fog of war (unchanged)
@@ -4059,13 +4039,8 @@ body.has-panel .mapctl{display:none}
                 if (Q.length !== j + 3 - i) break; P = Q; j++; }
               if (P.length >= 3) out.push(P); i = j; }
           }
-          const at = new Map(landmasses.map(l => [l.q + ',' + l.r, l])), seen = new Set();
-          for (const a of landmasses) for (let k = 0; k < 6; k++) {   // two consecutive hex neighbours: all three pairs are bridged
-            const d1 = HEX_DIRS[k], d2 = HEX_DIRS[(k + 1) % 6], b = at.get((a.q + d1.q) + ',' + (a.r + d1.r)), c = at.get((a.q + d2.q) + ',' + (a.r + d2.r));
-            if (!b || !c) continue;
-            const key = [a.id, b.id, c.id].sort((u, v) => u - v).join(); if (seen.has(key)) continue; seen.add(key);
-            out.push(convexHull([a, b, c]));
-          }
+          const F = FRAME_HALF * 0.92;                     // square map: the sea inside the border is free to cross
+          out.push(convexHull([{ x: -F, y: -F }, { x: F, y: -F }, { x: F, y: F }, { x: -F, y: F }]));
           return out.map(P => ({ P, l: Math.min(...P.map(p => p.x)), t: Math.min(...P.map(p => p.y)), r: Math.max(...P.map(p => p.x)), b: Math.max(...P.map(p => p.y)) }));
         })();
         const LAND_BOX = (() => { let l = Infinity, t = Infinity, r = -Infinity, b = -Infinity;
@@ -5765,6 +5740,27 @@ body.has-panel .mapctl{display:none}
                 x.fillStyle = g2; x.fillRect(0, 0, 128, 128);
             }
             return FOG_PUFF = c;
+        }
+        function drawWorldFrame() {                        // the square map border: darker sea outside, a framed edge with corner marks
+            const z = mapState.zoom, ox = mapState.offsetX, oy = mapState.offsetY;
+            const l = -FRAME_HALF * z + ox, t = -FRAME_HALF * z + oy, r = FRAME_HALF * z + ox, b = FRAME_HALF * z + oy;
+            setScreen(ctx);
+            ctx.fillStyle = 'rgba(3,7,12,.72)';
+            ctx.beginPath(); ctx.rect(-10, -10, viewW + 20, viewH + 20); ctx.rect(l, t, r - l, b - t); ctx.fill('evenodd');
+            ctx.lineJoin = 'miter';
+            ctx.strokeStyle = 'rgba(8,10,14,.95)'; ctx.lineWidth = 7; strokeBox(ctx, l, t, r - l, b - t);
+            ctx.strokeStyle = 'rgba(212,176,102,.85)'; ctx.lineWidth = 1.5; strokeBox(ctx, l, t, r - l, b - t);
+            ctx.strokeStyle = 'rgba(212,176,102,.35)'; ctx.lineWidth = 1; strokeBox(ctx, l + 6, t + 6, r - l - 12, b - t - 12);
+            for (const [cx, cy] of [[l, t], [r, t], [r, b], [l, b]]) {                     // corner diamonds
+                if (cx < -20 || cy < -20 || cx > viewW + 20 || cy > viewH + 20) continue;
+                ctx.beginPath(); ctx.moveTo(cx, cy - 9); ctx.lineTo(cx + 9, cy); ctx.lineTo(cx, cy + 9); ctx.lineTo(cx - 9, cy); ctx.closePath();
+                ctx.fillStyle = '#16120b'; ctx.fill(); ctx.strokeStyle = 'rgba(228,200,134,.95)'; ctx.lineWidth = 1.4; ctx.stroke();
+            }
+            if (z < 0.0035) {                                                                 // compass letters on the edges when zoomed far out
+                ctx.font = '700 12px Cinzel, Georgia, serif'; ctx.fillStyle = 'rgba(228,200,134,.85)'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                const mx = (l + r) / 2, my = (t + b) / 2;
+                ctx.fillText('N', mx, t - 14); ctx.fillText('S', mx, b + 14); ctx.fillText('O', r + 14, my); ctx.fillText('W', l - 14, my);
+            }
         }
         function fogCanvasOf(lm) {                        // per island: the still-fogged cells as soft blobs, clipped to the coast (cached)
             if (lm.fogCv && lm.fogCvVer === (fogVer[lm.id] || 0)) return lm.fogCv;
