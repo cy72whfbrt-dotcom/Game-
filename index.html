@@ -1986,7 +1986,7 @@ body.has-panel .mapctl{display:none}
             } catch (e) {}
             ['openWaterPlayerIslandId', 'openWaterOwnedIslands', 'openWaterIslandLevels', 'openWaterIslandTroops', 'openWaterBotOwnedIslands',
              'openWaterBotCoins', 'openWaterNeutralTroopOverrides', 'openWaterScoutedIslands', 'openWaterPendingAttacks', 'openWaterPendingSends',
-             'openWaterPendingScouts', 'openWaterPendingRetreats', 'openWaterTempleHoldSince', 'openWaterBoss', 'openWaterBossNext', 'openWaterExplored', 'openWaterFogCells', 'openWaterWorldStart'].forEach(k => store.remove(k));
+             'openWaterPendingScouts', 'openWaterPendingRetreats', 'openWaterTempleHoldSince', 'openWaterBoss', 'openWaterBossNext', 'openWaterExplored', 'openWaterFogCells', 'openWaterWorldStart', 'openWaterBotState'].forEach(k => store.remove(k));
             if (carry > 0) store.set('openWaterCarryTroops', String(Math.round(carry)));
             store.set('openWaterBalanceV2', '1');
             store.set('openWaterWorldVersion', WORLD_VERSION);
@@ -2279,7 +2279,7 @@ body.has-panel .mapctl{display:none}
             const owner = islandOwnerOf(island.id);
             if (!owner) return island.neutralDefense;
             const level = islandLevels[island.id] || 1;
-            return owner === 'player' ? defenseForLevel(level) : baseDefenseForLevel(level);
+            return owner === 'player' ? defenseForLevel(level) : baseDefenseForLevel(level) + botMults(owner).defense;
         }
         // Removes an island from whichever owner (player or a bot) it
         // currently belongs to, without touching its troops/level - used
@@ -2771,7 +2771,7 @@ body.has-panel .mapctl{display:none}
                 startedAt,
                 resolveAt: startedAt + durationSec * 1000,
                 attackerBotId: attackerBotId || null,
-                attackBonus: attackerBotId ? 0 : attackFlatBonus(rawTroops),
+                attackBonus: attackerBotId ? Math.round(rawTroops * botMults(attackerBotId).attackPct / 100) : attackFlatBonus(rawTroops),
                 attackGoldRate: attackerBotId ? 0 : (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate,
                 rewardGoldRate: attackerBotId ? 0 : goldPerKillRate(),
                 shieldLossReductionPct: attackerBotId ? 0 : shieldLossReductionPct()
@@ -3059,12 +3059,13 @@ body.has-panel .mapctl{display:none}
             const target = islandById[attack.targetId];
             if (!bot || !source || !target) return;
 
-            const myTroops = attack.rawTroops;
+            const myTroops = attack.rawTroops + (attack.attackBonus || 0);
             const targetOwner = islandOwnerOf(target.id);
             const originalEnemyTroops = effectiveTroops(target);
             const originalEnemyDefense = effectiveDefense(target);
             const totalStrength = originalEnemyTroops + originalEnemyDefense;
             const won = myTroops > totalStrength;
+            addBotXp(bot.id, won ? totalStrength : myTroops);
             const playerInvolved = targetOwner === 'player';
             const bossHere = bossAt(target.id);
 
@@ -3077,7 +3078,7 @@ body.has-panel .mapctl{display:none}
                 // gets the base one level lower than it was, not reset to 1.
                 const levelAfterCapture = Math.max(1, (islandLevels[target.id] || 1) - 1);
                 if (targetOwner) clearIslandOwner(target.id);
-                islandTroops[target.id] = Math.max(0, myTroops - originalEnemyDefense);
+                islandTroops[target.id] = Math.max(0, Math.min(attack.rawTroops, myTroops - Math.round(originalEnemyDefense * (1 - botMults(bot.id).shield / 100))));   // the sword bonus fights along but doesn't stay
                 botOwnedIslands[bot.id].add(target.id);
                 islandLevels[target.id] = levelAfterCapture;
                 botCoins[bot.id] += Math.round(totalStrength * BOT_GOLD_PER_KILL_RATE);
@@ -4609,8 +4610,11 @@ body.has-panel .mapctl{display:none}
                     for (const target of islandsByLandmass[lmId] || []) {
                         if (owned.has(target.id) || target.id === playerIslandId) continue;   // the capital can't be attacked
                         const totalStrength = effectiveTroops(target) + effectiveDefense(target);
-                        if (troopsHere < totalStrength * BOT_ATTACK_SAFETY_MARGIN) continue;
+                        if (troopsHere * (1 + botMults(bot.id).attackPct / 100) < totalStrength * BOT_ATTACK_SAFETY_MARGIN) continue;
                         let distance = Math.hypot(target.x - source.x, target.y - source.y);
+                        if (target.type === 'gate') distance *= 0.5;                                  // gates, temples and Wächter are worth a detour
+                        else if (target.guardian) distance *= 0.35;
+                        else if (target.type === 'temple') distance *= 0.5;
                         // the throne pulls: the Mega-Tempel (once someone holds it) and a boss rank far ahead of plain bases
                         if (target.id === megaTempleId && ruler && ruler !== bot.id) distance *= 0.1;
                         else if (bossAt(target.id)) distance *= 0.3;
@@ -4625,25 +4629,90 @@ body.has-panel .mapctl{display:none}
 
             if (bestSourceId !== null) {
                 launchAttack(bestSourceId, bestTargetId, bot.id);
-            }
+            } else botGather(bot);
         }
 
+        // Bots play by the player's rules: they earn XP from fights and level up (1 skill point per level),
+        // put points into Truppen / Angriff / Verteidigung, buy gear with coins, and upgrade their important
+        // bases (temples, gates, their strongest bases) far past level 2 - but only as fast as their income allows.
+        var botState = null;
+        function loadBotState() {
+            if (botState) return botState;
+            try { botState = JSON.parse(store.get('openWaterBotState')) || {}; } catch (e) { botState = {}; }
+            for (const bot of BOT_DEFS) botState[bot.id] = Object.assign({ lvl: 1, xp: 0, sp: 0, skills: { troops: 0, attack: 0, defense: 0 }, equip: { weapon: 0, armor: 0, shield: 0, boots: 0 } }, botState[bot.id] || {});
+            return botState;
+        }
+        function saveBotState() { store.set('openWaterBotState', JSON.stringify(botState)); }
+        function botMults(botId) {
+            const b = loadBotState()[botId]; if (!b) return { troops: 1, coins: 1, defense: 0, attackPct: 0, shield: 0 };
+            return { troops: 1 + (b.skills.troops * SKILL_DEFS.troops.pct + b.equip.weapon * EQUIPMENT_DEFS.weapon.pct) / 100,
+                     coins: 1 + b.equip.boots * EQUIPMENT_DEFS.boots.pct / 100,
+                     defense: b.skills.defense * SKILL_DEFS.defense.flat + b.equip.armor * EQUIPMENT_DEFS.armor.flat,
+                     attackPct: b.skills.attack * SKILL_DEFS.attack.atkPct,
+                     shield: Math.min(90, b.equip.shield * EQUIPMENT_DEFS.shield.pct) };
+        }
+        const BOT_SKILL_ORDER = ['troops', 'attack', 'defense', 'troops', 'attack'], BOT_SKILL_MAX = 10, BOT_EQUIP_MAX = 20;
+        function addBotXp(botId, amount) {
+            const b = loadBotState()[botId]; if (!b) return;
+            b.xp += amount;
+            while (b.xp >= xpNeededForLevel(b.lvl)) { b.xp -= xpNeededForLevel(b.lvl); b.lvl++; b.sp++; }
+            while (b.sp > 0) {                                         // spend points in a steady rotation, max BOT_SKILL_MAX per skill
+                const spent = b.skills.troops + b.skills.attack + b.skills.defense, pref = BOT_SKILL_ORDER[spent % BOT_SKILL_ORDER.length];
+                const key = b.skills[pref] < BOT_SKILL_MAX ? pref : ['troops', 'attack', 'defense'].find(k => b.skills[k] < BOT_SKILL_MAX);
+                if (!key) break; b.skills[key]++; b.sp--;
+            }
+            saveBotState();
+        }
         function botConsiderUpgrade(bot) {
             const owned = [...botOwnedIslands[bot.id]];
             if (owned.length === 0) return;
-            let weakestId = owned[0];
-            let weakestLevel = islandLevels[weakestId] || 1;
-            for (const id of owned) {
-                const lvl = islandLevels[id] || 1;
-                if (lvl < weakestLevel) { weakestId = id; weakestLevel = lvl; }
+            const b = loadBotState()[bot.id];
+            // gear first when it's cheap compared to the income (same prices as the player's)
+            const slot = ['weapon', 'armor', 'shield', 'boots'].reduce((a, k) => b.equip[k] < b.equip[a] ? k : a, 'weapon');
+            if (b.equip[slot] < Math.min(BOT_EQUIP_MAX, b.lvl) && botCoins[bot.id] > (b.equip[slot] + 1) * EQUIPMENT_BASE_COST * 20) {
+                botCoins[bot.id] -= (b.equip[slot] + 1) * EQUIPMENT_BASE_COST; b.equip[slot]++; saveBotState(); }
+            // bases: important ones first (Mega-Tempel, gates, Wächter/temples, the strongest bases), then the rest
+            const ranked = owned.map(id => islandLevels[id] || 1).sort((x, y) => y - x);
+            const topLevel = ranked[Math.min(2, ranked.length - 1)];
+            const prio = id => { const isl = islandById[id], lvl = islandLevels[id] || 1;
+                return isl.type === 'megaTemple' ? 0 : isl.type === 'gate' || isl.guardian ? 1 : isl.type === 'temple' ? 2 : lvl >= topLevel ? 3 : 4; };
+            const cap = id => Math.min(MAX_BASE_LEVEL, prio(id) <= 3 ? b.lvl + 12 : b.lvl + 3);
+            let did = 0;
+            for (let n = 0; n < 4; n++) {                              // up to 4 upgrades per turn, keeping 20 % of the coins for tolls
+                let best = null, bestScore = Infinity;
+                for (const id of owned) { const lvl = islandLevels[id] || 1; if (lvl >= cap(id)) continue;
+                    const sc = prio(id) * 1000 + lvl; if (sc < bestScore) { bestScore = sc; best = id; } }
+                if (best === null) break;
+                const cost = upgradeCost(islandLevels[best] || 1);
+                if (botCoins[bot.id] * 0.8 < cost) break;
+                botCoins[bot.id] -= cost; islandLevels[best] = (islandLevels[best] || 1) + 1; did++;
             }
-            if (weakestLevel >= MAX_BASE_LEVEL) return;
-            const cost = upgradeCost(weakestLevel);
-            if (botCoins[bot.id] >= cost) {
-                botCoins[bot.id] -= cost;
-                islandLevels[weakestId] = weakestLevel + 1;
-                saveGame();
+            if (did) saveGame();
+        }
+        // Big targets (gates, temples, Wächter, the throne) need more than one garrison: pull troops together first.
+        function botGather(bot) {
+            if (pendingSends.some(s => s.senderBotId === bot.id)) return false;
+            const owned = [...botOwnedIslands[bot.id]], atk = 1 + botMults(bot.id).attackPct / 100;
+            let plan = null;
+            for (const sourceId of owned) {
+                const source = islandById[sourceId];
+                for (const lmId of reachableLandmassIds[source.landmassId]) {
+                    if (!landmassesConnected(source.landmassId, lmId)) continue;
+                    for (const target of islandsByLandmass[lmId] || []) {
+                        if (botOwnedIslands[bot.id].has(target.id) || target.id === playerIslandId) continue;
+                        if (!(target.type === 'gate' || target.type === 'temple' || target.type === 'megaTemple')) continue;
+                        const need = (effectiveTroops(target) + effectiveDefense(target)) * BOT_ATTACK_SAFETY_MARGIN / atk;
+                        const helpers = owned.filter(id => id !== sourceId && islandById[id].landmassId === source.landmassId && (islandTroops[id] || 0) > BOT_MIN_GARRISON_TO_ATTACK);
+                        const pool = (islandTroops[sourceId] || 0) + helpers.reduce((a, id) => a + (islandTroops[id] || 0) * .8, 0);
+                        if (pool < need) continue;
+                        const d = Math.hypot(target.x - source.x, target.y - source.y) * (target.type === 'megaTemple' ? .3 : target.guardian ? .5 : 1);
+                        if (!plan || d < plan.d) plan = { d, sourceId, helpers };
+                    }
+                }
             }
+            if (!plan) return false;
+            for (const id of plan.helpers.slice(0, 5)) launchSend(id, plan.sourceId, bot.id);
+            return true;
         }
 
         // If one of the bot's bases is currently under attack (by the
@@ -5787,13 +5856,14 @@ body.has-panel .mapctl{display:none}
                     for (const ownedId of botOwnedIslands[bot.id]) {
                         const level = islandLevels[ownedId] || 1;
                         const rb = ruler === bot.id ? RULER_BONUS : 1;
-                        botCoins[bot.id] += Math.round(coinsPerTick(level) * rb) * ticks;
-                        islandTroops[ownedId] = (islandTroops[ownedId] || 0) + Math.round(troopsPerTick(level) * rb) * ticks;
+                        const bm = botMults(bot.id);
+                        botCoins[bot.id] += Math.round(coinsPerTick(level) * rb * bm.coins) * ticks;
+                        islandTroops[ownedId] = (islandTroops[ownedId] || 0) + Math.round(troopsPerTick(level) * rb * bm.troops) * ticks;
                         const isl = islandById[ownedId];
                         if (isl && (isl.type === 'temple' || isl.type === 'megaTemple')) {
                             const mult = templeBaseMult(isl) * templeHoldMultiplier(ownedId);
                             botCoins[bot.id] += Math.round(TEMPLE_COIN_BONUS_PER_TICK * mult) * ticks;
-                            islandTroops[rewardBaseId() ?? ownedId] += Math.round(TEMPLE_TROOP_BONUS_PER_TICK * mult) * ticks;   // bonus troops go to the capital
+                            islandTroops[ownedId] += Math.round(TEMPLE_TROOP_BONUS_PER_TICK * mult) * ticks;
                         }
                     }
                 }
@@ -7223,7 +7293,7 @@ body.has-panel .mapctl{display:none}
                 }
             } else {
                 const scouted = scoutedIslands.has(island.id);
-                popupSub.innerHTML = '<span class="dot dot--' + (bossAt(island.id) ? 'enemy' : kind) + '"></span>' + (bossAt(island.id) ? 'Boss' : ownerBot ? escapeHtml(ownerBot.name) : 'Unbesetzt') +
+                popupSub.innerHTML = '<span class="dot dot--' + (bossAt(island.id) ? 'enemy' : kind) + '"></span>' + (bossAt(island.id) ? 'Boss' : ownerBot ? escapeHtml(ownerBot.name) + ' · Stufe ' + loadBotState()[ownerBot.id].lvl : 'Unbesetzt') +
                     (scouted ? sep + '<span class="chip chip--scouted">' + icon('scout') + 'Gespäht</span>' : '');
 
                 if (popupView === 'preview') {
