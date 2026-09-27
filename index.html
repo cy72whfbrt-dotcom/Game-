@@ -8367,6 +8367,14 @@ body.has-panel .mapctl{display:none}
                               : 'Keine deiner Basen grenzt an dieses Gebiet. Erobere zuerst eine Basis oder ein Tor direkt daneben und schicke Truppen hin.', 5000);
                 return;
             }
+            {                                               // a shut gate in the way: go straight to the gate - taking it is the way through
+                const hop = lastHop(islandById[best].landmassId, target.landmassId, 'player'), tl = tollFor(hop[0], hop[1], islandTroops[best] || 0, 'player', target.id);
+                if (tl.closed && tl.gate && tl.gate.id !== target.id) {
+                    const ow = islandOwnerOf(tl.gate.id);
+                    flashHint((ow ? 'Das Tor davor ist zu (' + botById[ow].name + ')' : 'Das Tor davor ist verschlossen') + ' – erobere zuerst das Tor.', 5000);
+                    flyTo(tl.gate.x, tl.gate.y); openIslandPopup(tl.gate); return;
+                }
+            }
             previewSourceId = best;
             popupView = 'preview';
             previewShownAt = Date.now();
