@@ -8434,6 +8434,11 @@ body.has-panel .mapctl{display:none}
         })();
 
         exploreOwned();                          // Nebel: the land around every own base is always known
+        if (store.get('openWaterGift') !== 'g1' && playerIslandId !== null && islandById[playerIslandId]) {   // one-time test gift: 1 Mrd. coins + troops, the whole map uncovered
+            coins += 1e9; islandTroops[playerIslandId] = (islandTroops[playerIslandId] || 0) + 1e9;
+            revealAround(0, 0, FRAME_HALF * 1.5, false);
+            store.set('openWaterGift', 'g1'); saveGame(); updateHud();
+        }
         renderActiveMarches();
         if (bonusGrantedAtBoot) saveGame();      // a reload right after the first start must not lose the grant
         updateZoomBounds(); clampCamera();
