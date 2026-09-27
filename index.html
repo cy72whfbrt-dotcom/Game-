@@ -4000,7 +4000,7 @@ body.has-panel .mapctl{display:none}
           const kind = island.type === 'megaTemple' ? 'mega' : island.guardian ? 'guardian' : island.type === 'temple' ? 'temple' : 'tower';
           const home = island.id === playerIslandId, cap = home || isCapital(island.id);
           const tier = island.type === 'tower' ? towerTier(baseLevelOf(island)) : 1;
-          const size = 2 * island.radius * z * (cap ? 1.3 : 1) * (island.type === 'tower' ? [.9, 1, 1.12, 1.25, 1.35][tier] : 1), x = toSX(island.x), y = toSY(island.y);
+          const size = 2 * island.radius * z * (cap ? 1.3 : 1) * (island.type === 'tower' ? [.9, 1, 1.12, 1.25, 1.35][tier] : island.type === 'megaTemple' ? 2.3 : 1), x = toSX(island.x), y = toSY(island.y);
           if (island.type === 'gate') {                                                // gates: the gatehouse, an owner pennant on top
             if (size < 8) { ctx.fillStyle = '#b8b2a6'; ctx.fillRect(x - 3, y - 3, 6, 6); return; }
             const H = Math.max(14, size * 1.05);
@@ -4235,6 +4235,87 @@ body.has-panel .mapctl{display:none}
             const gr = ctx.createLinearGradient(0, fy - h, 0, fy); gr.addColorStop(0, 'rgba(190,90,255,0)'); gr.addColorStop(.5, 'rgba(150,50,220,.75)'); gr.addColorStop(1, 'rgba(60,10,90,.9)');
             ctx.fillStyle = gr; ctx.beginPath(); ctx.moveTo(fx - R * .13, fy); ctx.quadraticCurveTo(fx - R * .16, fy - h * .5, fx + Math.sin(now / 120 + i) * R * .06, fy - h); ctx.quadraticCurveTo(fx + R * .16, fy - h * .5, fx + R * .13, fy); ctx.closePath(); ctx.fill();
           }
+        }
+        // ===== THRONPLATZ: the centre of the world looks the part =====
+        // a paved round plaza with obelisks, paths and a slowly turning rune circle, fire bowls at the edge;
+        // a beacon that shows from afar; the ruler's pillar of light and god rays over the Mega-Tempel.
+        function drawThronePlaza(z, now) {
+            if (megaTempleId === undefined) return;
+            const m = islandById[megaTempleId], x = toSX(m.x), y = toSY(m.y), R = Math.max(10, m.radius * z * 3.4);
+            if (x < -R * 2 || y < -R * 2 || x > viewW + R * 2 || y > viewH + R * 2) return;
+            setScreen(ctx); ctx.save();
+            const ruler = rulerOwner(), rc = ruler === 'player' ? '120,180,255' : ruler ? '255,120,100' : '255,214,120';
+            if (z < 0.006) {                                      // far out: a golden beacon marks the centre
+                const pulse = .6 + .4 * Math.sin(now / 600), gr = ctx.createRadialGradient(x, y, 2, x, y, 40 + 10 * pulse);
+                gr.addColorStop(0, 'rgba(' + rc + ',.9)'); gr.addColorStop(.3, 'rgba(' + rc + ',.35)'); gr.addColorStop(1, 'rgba(' + rc + ',0)');
+                ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, 50, 0, Math.PI * 2); ctx.fill(); ctx.restore(); liveAnimation = true; return;
+            }
+            ctx.translate(x, y); ctx.scale(1, .55);                 // plaza lies flat on the ground
+            for (let i = 0; i < 4; i++) {                          // paved roads leading in from the four gates
+                ctx.save(); ctx.rotate(i * Math.PI / 2); ctx.fillStyle = '#8f8673'; ctx.fillRect(-R * .09, R * .9, R * .18, R * 1.6);
+                ctx.fillStyle = '#b3aa94'; ctx.fillRect(-R * .07, R * .9, R * .14, R * 1.6); ctx.restore(); }
+            ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.arc(0, R * .05, R * 1.04, 0, Math.PI * 2); ctx.fill();
+            const pv = ctx.createRadialGradient(0, -R * .3, R * .1, 0, 0, R);
+            pv.addColorStop(0, '#d8cfb8'); pv.addColorStop(1, '#9d9480');
+            ctx.fillStyle = pv; ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.fill();
+            ctx.lineWidth = Math.max(1.5, R * .03); ctx.strokeStyle = '#5a5244'; ctx.stroke();
+            ctx.strokeStyle = 'rgba(90,82,68,.35)'; ctx.lineWidth = 1;
+            for (const f of [.35, .55, .75]) { ctx.beginPath(); ctx.arc(0, 0, R * f, 0, Math.PI * 2); ctx.stroke(); }
+            for (let i = 0; i < 16; i++) { const a = i / 16 * Math.PI * 2; ctx.beginPath(); ctx.moveTo(Math.cos(a) * R * .35, Math.sin(a) * R * .35); ctx.lineTo(Math.cos(a) * R, Math.sin(a) * R); ctx.stroke(); }
+            ctx.save(); ctx.rotate(now / 9000); ctx.globalCompositeOperation = 'lighter';     // rune circle turning in the paving
+            ctx.strokeStyle = 'rgba(' + rc + ',.55)'; ctx.lineWidth = Math.max(1.2, R * .018); ctx.beginPath(); ctx.arc(0, 0, R * .66, 0, Math.PI * 2); ctx.stroke();
+            ctx.setLineDash([R * .05, R * .04]); ctx.beginPath(); ctx.arc(0, 0, R * .6, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+            for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; ctx.save(); ctx.translate(Math.cos(a) * R * .63, Math.sin(a) * R * .63); ctx.rotate(a);
+                ctx.fillStyle = 'rgba(' + rc + ',.8)'; ctx.beginPath(); ctx.moveTo(0, -R * .025); ctx.lineTo(R * .02, 0); ctx.lineTo(0, R * .025); ctx.lineTo(-R * .02, 0); ctx.closePath(); ctx.fill(); ctx.restore(); }
+            ctx.restore();
+            ctx.restore();
+            if (ruler) {                                            // god rays behind the temple while someone rules
+                const r = Math.max(12, m.radius * z * 2.3); ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.translate(x, y - r * .5); ctx.rotate(now / 5000);
+                for (let i = 0; i < 16; i++) { ctx.rotate(Math.PI / 8); const L = r * (3.2 + .6 * Math.sin(now / 500 + i)), gr = ctx.createLinearGradient(0, 0, L, 0);
+                    gr.addColorStop(0, 'rgba(' + rc + ',.4)'); gr.addColorStop(1, 'rgba(' + rc + ',0)'); ctx.fillStyle = gr; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(L, -r * .16); ctx.lineTo(L, r * .16); ctx.closePath(); ctx.fill(); }
+                ctx.restore();
+            }
+            const ob = [];                                          // obelisks and fire bowls around the rim (upright, so not squashed)
+            for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2 + Math.PI / 8; ob.push({ a, ox: x + Math.cos(a) * R * .92, oy: y + Math.sin(a) * R * .92 * .55, fire: i % 2 === 0 }); }
+            ob.sort((p, q) => p.oy - q.oy);
+            const H = R * .32;
+            for (const o of ob) {
+                if (o.fire) {                                       // bronze bowl on a stand, flames
+                    ctx.fillStyle = '#4a3a26'; ctx.fillRect(o.ox - H * .04, o.oy - H * .5, H * .08, H * .5);
+                    ctx.fillStyle = '#8a6a3a'; ctx.beginPath(); ctx.ellipse(o.ox, o.oy - H * .5, H * .16, H * .06, 0, 0, Math.PI * 2); ctx.fill();
+                    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+                    const fl = .75 + .25 * Math.sin(now / 90 + o.a * 5), fh = H * .45 * fl, gl = ctx.createRadialGradient(o.ox, o.oy - H * .6, 1, o.ox, o.oy - H * .6, H * .5);
+                    gl.addColorStop(0, 'rgba(255,180,80,.55)'); gl.addColorStop(1, 'rgba(255,120,40,0)'); ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(o.ox, o.oy - H * .6, H * .5, 0, Math.PI * 2); ctx.fill();
+                    const fg = ctx.createLinearGradient(0, o.oy - H * .5 - fh, 0, o.oy - H * .5); fg.addColorStop(0, 'rgba(255,230,150,0)'); fg.addColorStop(.5, 'rgba(255,170,60,.9)'); fg.addColorStop(1, 'rgba(230,80,20,.95)');
+                    ctx.fillStyle = fg; ctx.beginPath(); ctx.moveTo(o.ox - H * .12, o.oy - H * .5); ctx.quadraticCurveTo(o.ox - H * .14, o.oy - H * .5 - fh * .5, o.ox + Math.sin(now / 110 + o.a) * H * .05, o.oy - H * .5 - fh);
+                    ctx.quadraticCurveTo(o.ox + H * .14, o.oy - H * .5 - fh * .5, o.ox + H * .12, o.oy - H * .5); ctx.closePath(); ctx.fill(); ctx.restore();
+                } else {                                            // obelisk with a gold cap
+                    const og = ctx.createLinearGradient(o.ox - H * .08, 0, o.ox + H * .08, 0); og.addColorStop(0, '#e2dac6'); og.addColorStop(1, '#8a8270');
+                    ctx.fillStyle = og; ctx.beginPath(); ctx.moveTo(o.ox - H * .08, o.oy); ctx.lineTo(o.ox - H * .055, o.oy - H); ctx.lineTo(o.ox + H * .055, o.oy - H); ctx.lineTo(o.ox + H * .08, o.oy); ctx.closePath(); ctx.fill();
+                    ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(40,34,26,.8)'; ctx.stroke();
+                    ctx.fillStyle = '#e4c35a'; ctx.beginPath(); ctx.moveTo(o.ox - H * .055, o.oy - H); ctx.lineTo(o.ox, o.oy - H * 1.15); ctx.lineTo(o.ox + H * .055, o.oy - H); ctx.closePath(); ctx.fill(); ctx.stroke();
+                }
+            }
+            liveAnimation = true;
+        }
+        function drawThroneFx(z, now) {                      // over the Mega-Tempel: a warm glow, and when someone rules: their pillar of light and god rays
+            if (megaTempleId === undefined || z < 0.006) return;
+            const m = islandById[megaTempleId], x = toSX(m.x), y = toSY(m.y), r = Math.max(12, m.radius * z * 2.3);
+            if (x < -r * 6 || y < -r * 8 || x > viewW + r * 6 || y > viewH + r * 6) return;
+            const ruler = rulerOwner(), rc = ruler === 'player' ? '140,195,255' : ruler ? '255,130,110' : '255,220,140';
+            setScreen(ctx); ctx.save(); ctx.globalCompositeOperation = 'lighter';
+            if (ruler) {
+                const pulse = .8 + .2 * Math.sin(now / 400), ph = r * 9, pw = r * .9;
+                const pg = ctx.createLinearGradient(0, y - ph, 0, y); pg.addColorStop(0, 'rgba(' + rc + ',0)'); pg.addColorStop(.6, 'rgba(' + rc + ',' + (.3 * pulse).toFixed(2) + ')'); pg.addColorStop(1, 'rgba(' + rc + ',' + (.12 * pulse).toFixed(2) + ')');
+                ctx.fillStyle = pg; ctx.beginPath(); ctx.moveTo(x - pw / 2, y - r * .9); ctx.lineTo(x - pw * .2, y - ph); ctx.lineTo(x + pw * .2, y - ph); ctx.lineTo(x + pw / 2, y - r * .9); ctx.closePath(); ctx.fill();
+                for (let i = 0; i < 12; i++) { const q = ((now / 2200) + i / 12) % 1;       // motes rising in the pillar
+                    ctx.fillStyle = 'rgba(255,245,210,' + (.9 * (1 - q)).toFixed(2) + ')'; ctx.beginPath(); ctx.arc(x + Math.sin(i * 2.3 + now / 600) * pw * .25, y - r * .4 - q * ph * .8, 1.2 + (1 - q) * 1.6, 0, Math.PI * 2); ctx.fill(); }
+            } else {
+                const gr = ctx.createRadialGradient(x, y - r * .3, 2, x, y - r * .3, r * 1.6);
+                gr.addColorStop(0, 'rgba(' + rc + ',' + (.3 + .1 * Math.sin(now / 700)).toFixed(2) + ')'); gr.addColorStop(1, 'rgba(' + rc + ',0)');
+                ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y - r * .3, r * 1.6, 0, Math.PI * 2); ctx.fill();
+            }
+            ctx.restore(); liveAnimation = true;
         }
         function drawBaseAuras(vis, z, now) {             // under the towers
           if (z < 0.006) return;
@@ -4559,7 +4640,9 @@ body.has-panel .mapctl{display:none}
           setScreen(ctx);
           drawBossOverlay(now);                                                                                                // world-event boss aura (under the tower)
           drawBaseAuras(vis, z, now);                                                                                          // level + title auras under the towers
+          drawThronePlaza(z, now);                                                                                             // the Thronplatz around the Mega-Tempel
           for (const isl of vis.slice().sort((a, b) => a.y - b.y)) drawBuilding(isl, ownerKeyOf(isl), z);                    // 7
+          drawThroneFx(z, now);
           drawBaseSparks(vis, z, now);
           drawWander(now);                                                                                                     // the Kriegsherr and his host
           const plates = layoutBanners(vis, z, isPanelOpen(popup) ? popupIslandId : null);
