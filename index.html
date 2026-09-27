@@ -1762,7 +1762,7 @@ body.has-panel .mapctl{display:none}
         const MAX_BASE_LEVEL = 100;
         const BASE_DEFENSE = 100, DEFENSE_GROWTH = 1.26;
         const BASE_COINS = 10, BASE_TROOPS = 5, PRODUCTION_GROWTH = 1.15;
-        const UPGRADE_BASE_COST = 150, UPGRADE_COST_GROWTH = 1.32;
+        const UPGRADE_BASE_COST = 120, UPGRADE_COST_GROWTH = 1.27;
 
         // The level-based defense every base gets, with no equipment/
         // skill bonus - used for bot- and (in a future PvP defense) other-
@@ -1895,6 +1895,27 @@ body.has-panel .mapctl{display:none}
             const br = bridgeBetween(a, b);
             return !!br && Date.now() >= passOpensAt(br);
         }
+        // Long marches: troops may cross any number of regions as long as every gate on the way belongs to them;
+        // only the last crossing (into the target's region) may be someone else's gate (toll / shut as usual).
+        // → the chain of landmass ids from a to b, or null. BFS over the 81 regions, cheap enough per call.
+        function routeFor(a, b, payer) {
+            if (a === b) return [a];
+            if (landmassesConnected(a, b)) return [a, b];
+            const prev = { [a]: -1 }, queue = [a];
+            while (queue.length) {
+                const cur = queue.shift();
+                for (const nb of reachableLandmassIds[cur] || []) {
+                    if (nb === cur || prev[nb] !== undefined || !landmassesConnected(cur, nb)) continue;
+                    const gate = gateOnRoute(cur, nb), free = !gate || islandOwnerOf(gate.id) === payer;
+                    if (nb === b) { const out = [b]; for (let x = cur; x !== -1; x = prev[x]) out.unshift(x); return out; }
+                    if (!free) continue;                    // a foreign gate ends the march there
+                    prev[nb] = cur; queue.push(nb);
+                }
+            }
+            return null;
+        }
+        function canReach(a, b, payer) { return !!routeFor(a, b, payer || 'player'); }
+        function lastHop(a, b, payer) { const r = routeFor(a, b, payer); return r && r.length > 1 ? [r[r.length - 2], r[r.length - 1]] : [a, b]; }
         function gateOnRoute(fromLm, toLm) {            // the gate base guarding the bridge between two regions (or null)
             if (fromLm === toLm) return null;
             const br = bridgeBetween(fromLm, toLm);
@@ -2365,7 +2386,9 @@ body.has-panel .mapctl{display:none}
             const owner = islandOwnerOf(island.id);
             if (!owner) return island.neutralDefense;
             const level = islandLevels[island.id] || 1;
-            return Math.round((owner === 'player' ? defenseForLevel(level) : baseDefenseForLevel(level) + botMults(owner).defense) * titleMult(owner, 'defense'));
+            const garrison = islandTroops[island.id] || 0;   // Verteidigung skill: the garrison fights harder, +3 % of it per level (mirror of the sword)
+            return Math.round((owner === 'player' ? defenseForLevel(level) + garrison * (skills.defense || 0) * SKILL_DEFS.defense.defPct / 100
+                                                  : baseDefenseForLevel(level) + botMults(owner).defense + garrison * (botMults(owner).defensePct || 0) / 100) * titleMult(owner, 'defense'));
         }
         // Removes an island from whichever owner (player or a bot) it
         // currently belongs to, without touching its troops/level - used
@@ -2441,9 +2464,9 @@ body.has-panel .mapctl{display:none}
         const SKILL_DEFS = {
           speed:       { icon: 'hourglass', name: 'Geschwindigkeit',    desc: 'schnellere Produktions-Ticks', msPerLevel: 60 },
           troops:      { icon: 'troops',    name: 'Truppenherstellung', desc: 'Truppenproduktion', pct: 2 },
-          defense:     { icon: 'defense',   name: 'Verteidigung',       desc: 'Verteidigung aller Inseln', flat: 5 },
+          defense:     { icon: 'defense',   name: 'Verteidigung',       desc: 'jede Basis verteidigt mit mehr Truppen', defPct: 3 },
           defenseGold: { icon: 'shield',    name: 'Verteidigung: Gold', desc: 'Gold pro getöteter Truppe', rate: 0.3 },
-          attack:      { icon: 'attack',    name: 'Angriff',            desc: 'mehr Truppen bei jedem Angriff', atkPct: 10 },
+          attack:      { icon: 'attack',    name: 'Angriff',            desc: 'mehr Truppen bei jedem Angriff', atkPct: 3 },
           attackGold:  { icon: 'sell',      name: 'Angriff: Gold',      desc: 'Gold pro getöteter Truppe', rate: 0.3 }
         };
         const EQUIPMENT_BASE_COST = 100;
@@ -2778,7 +2801,8 @@ body.has-panel .mapctl{display:none}
             return 1 + (skills.speed || 0) * 0.05;
         }
         function travelDurationSeconds(source, target, botId) {   // bots march at base speed; the player gets the speed skill + Akademie
-            const distance = Math.hypot(target.x - source.x, target.y - source.y);
+            const pts = source.landmassId === target.landmassId ? [source, target] : marchPath(source, target);
+            let distance = 0; for (let i = 1; i < pts.length; i++) distance += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
             const seconds = distance / (BASE_ATTACK_SPEED * (botId ? (BOT_STYLES[botById[botId].style].speed || 1) : attackSpeedMultiplier() * (1 + academyLevel() * 0.05)));
             return Math.min(MAX_ATTACK_SECONDS, Math.max(MIN_ATTACK_SECONDS, seconds));
         }
@@ -2843,7 +2867,8 @@ body.has-panel .mapctl{display:none}
                 if (!attackerBotId) flashHint('Das ist die Hauptstadt von ' + (botById[islandOwnerOf(target.id)] || {}).name + ' – Hauptstädte können nicht angegriffen werden.', 3500);
                 return false;
             }
-            if (!payToll(source.landmassId, target.landmassId, rawTroops, attackerBotId || 'player', target.id)) return false;
+            const hop = lastHop(source.landmassId, target.landmassId, attackerBotId || 'player');
+            if (!payToll(hop[0], hop[1], rawTroops, attackerBotId || 'player', target.id)) return false;
 
             islandTroops[sourceId] = available - rawTroops; // only the sent troops march out, the rest stay to defend
             const durationSec = travelDurationSeconds(source, target, attackerBotId);
@@ -2882,7 +2907,8 @@ body.has-panel .mapctl{display:none}
             const target = islandById[toId];
             const rawTroops = islandTroops[fromId] || 0;
             if (!source || !target || rawTroops <= 0) return;
-            if (!payToll(source.landmassId, target.landmassId, rawTroops, senderBotId || 'player')) return;
+            const hop = lastHop(source.landmassId, target.landmassId, senderBotId || 'player');
+            if (!payToll(hop[0], hop[1], rawTroops, senderBotId || 'player')) return;
 
             islandTroops[fromId] = 0; // troops march out
             const durationSec = travelDurationSeconds(source, target, senderBotId);
@@ -2908,6 +2934,19 @@ body.has-panel .mapctl{display:none}
         function resolveSend(send) {
             const target = islandById[send.toId];
             if (!target) return;
+            const sender = send.senderBotId || 'player';
+            if (islandOwnerOf(send.toId) !== sender) {       // the base fell while they marched: they turn round instead of joining the enemy
+                const home = islandOwnerOf(send.fromId) === sender ? send.fromId : sender === 'player' ? rewardBaseId() : [...(botOwnedIslands[sender] || [])][0];
+                if (home !== null && home !== undefined && islandById[home]) {
+                    const startedAt = Date.now(), dur = travelDurationSeconds(target, islandById[home], send.senderBotId);
+                    if (sender === 'player') {
+                        pendingRetreats.push({ fromId: send.toId, toId: home, troops: send.troops, startedAt, resolveAt: startedAt + dur * 1000 });
+                        flashHint(islandTitle(target) + ' ist schon gefallen – deine ' + fmtNum(send.troops) + ' Truppen kehren nach ' + islandTitle(islandById[home]) + ' zurück.', 5000);
+                        renderActiveMarches();
+                    } else islandTroops[home] = (islandTroops[home] || 0) + send.troops;
+                }
+                saveGame(); saveProgression(); return;
+            }
             islandTroops[send.toId] = (islandTroops[send.toId] || 0) + send.troops;
             updateHud();
             saveGame();
@@ -4182,7 +4221,7 @@ body.has-panel .mapctl{display:none}
               ring(x, y, Math.max(r * 1.55, 12), 2, 'rgba(228,200,134,.95)'); ring(x, y, Math.max(r * 1.8, 15), 1.2, 'rgba(140,192,255,.6)', [3, 4]);
             }
             if (teleportMode && isOwned && isl.id !== playerIslandId && isl.type !== 'gate') ring(x, y, S, 2, 'rgba(228,200,134,' + (.45 + .55 * pulse).toFixed(2) + ')', [4, 4]);
-            const isSelectable = (attackTarget && isOwned && landmassesConnected(isl.landmassId, attackTarget.landmassId)) ||
+            const isSelectable = (attackTarget && isOwned && canReach(isl.landmassId, attackTarget.landmassId)) ||
                                  (pendingSendFromId !== null && isOwned && isl.id !== pendingSendFromId);
             if (isSelectable) ring(x, y, S, 2, 'rgba(255,255,255,' + (.45 + .55 * pulse).toFixed(2) + ')', [4, 4]);
             else if (isl.id === pendingSendFromId || (multiAttackMode && isl.id === multiAttackSourceId)) ring(x, y, S, 2.5, '#e4c886');
@@ -4193,7 +4232,7 @@ body.has-panel .mapctl{display:none}
               ctx.fillStyle = '#fff'; ctx.font = '700 9px Inter, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
               ctx.fillText(String(multiAttackTargets.indexOf(isl.id) + 1), bx, by + .5); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
             } else if (multiAttackMode && multiAttackSourceId !== null && !isOwned &&
-                       landmassesConnected(isl.landmassId, islandById[multiAttackSourceId].landmassId))
+                       canReach(isl.landmassId, islandById[multiAttackSourceId].landmassId))
               ring(x, y, S, 1.5, 'rgba(185,140,240,' + (.8 * (.45 + .55 * pulse)).toFixed(2) + ')', [4, 5]);
             if (isl.id === popupIslandId && isPanelOpen(popup)) {
               if (popupView === 'preview') ring(x, y, S, 2, '#ff8d82', [6, 4], -now / 60);
@@ -4206,13 +4245,17 @@ body.has-panel .mapctl{display:none}
         const MARCH_STYLE = { attack: ['#ff8d82', [7, 6], 'attack'], incoming: ['#ff8d82', [7, 6], 'bot'], send: ['#8cc0ff', [7, 6], 'send'],
                               scout: ['#e4c886', [3, 6], 'scout'], retreat: ['#f2a066', [5, 5], 'recall'] };
         let marchTokens = [], liveAnimation = false;
-        function marchPath(source, target) {
-          let path = [{ x: source.x, y: source.y }, { x: target.x, y: target.y }];
+        function marchPath(source, target) {             // source → over every bridge on the route → target
+          const path = [{ x: source.x, y: source.y }];
           if (source.landmassId !== target.landmassId) {
-            const br = bridges.find(b => (b.a === source.landmassId && b.b === target.landmassId) || (b.a === target.landmassId && b.b === source.landmassId));
-            if (br) { const sA = br.a === source.landmassId;
-              path = [{ x: source.x, y: source.y }, sA ? { x: br.x1, y: br.y1 } : { x: br.x2, y: br.y2 }, sA ? { x: br.x2, y: br.y2 } : { x: br.x1, y: br.y1 }, { x: target.x, y: target.y }]; }
+            const route = routeFor(source.landmassId, target.landmassId, islandOwnerOf(source.id) || 'player') || [source.landmassId, target.landmassId];
+            for (let i = 0; i < route.length - 1; i++) {
+              const br = bridgeBetween(route[i], route[i + 1]); if (!br) continue;
+              const sA = br.a === route[i];
+              path.push(sA ? { x: br.x1, y: br.y1 } : { x: br.x2, y: br.y2 }, sA ? { x: br.x2, y: br.y2 } : { x: br.x1, y: br.y1 });
+            }
           }
+          path.push({ x: target.x, y: target.y });
           return path;
         }
         function drawMarchLine(type, source, target, startedAt, resolveAt, now) {
@@ -4973,7 +5016,8 @@ body.has-panel .mapctl{display:none}
             const st = BOT_STYLES[botById[botId].style];
             return { troops: (1 + (b.skills.troops * SKILL_DEFS.troops.pct + b.equip.weapon * EQUIPMENT_DEFS.weapon.pct + botItemScore(b, 'weapon') * RARITY_PCT_PER_SCORE) / 100) * titleMult(botId, 'troops') * (st.troopMult || 1),
                      coins: (1 + (b.equip.boots * EQUIPMENT_DEFS.boots.pct + botItemScore(b, 'boots') * RARITY_PCT_PER_SCORE) / 100) * titleMult(botId, 'coins'),
-                     defense: b.skills.defense * SKILL_DEFS.defense.flat + b.equip.armor * EQUIPMENT_DEFS.armor.flat + botItemScore(b, 'armor') * RARITY_FLAT_PER_SCORE,
+                     defense: b.equip.armor * EQUIPMENT_DEFS.armor.flat + botItemScore(b, 'armor') * RARITY_FLAT_PER_SCORE,
+                     defensePct: b.skills.defense * SKILL_DEFS.defense.defPct,
                      attackPct: b.skills.attack * SKILL_DEFS.attack.atkPct + (st.atkBonus || 0),
                      shield: Math.min(90, b.equip.shield * EQUIPMENT_DEFS.shield.pct + botItemScore(b, 'shield') * RARITY_PCT_PER_SCORE) };
         }
@@ -5320,7 +5364,7 @@ body.has-panel .mapctl{display:none}
             return Math.min(90, equipment.shield * EQUIPMENT_DEFS.shield.pct + equippedItemBonusPct('shield'));
         }
         // "Angriff" skill (Schwert): every attack gets extra troops on top of the ones sent,
-        // +10 % of the sent troops per skill level, so it matters at every army size.
+        // +3 % of the sent troops per skill level, so it matters at every army size.
         function attackBonusPct() { return (skills.attack || 0) * SKILL_DEFS.attack.atkPct; }
         function attackFlatBonus(troops) {
             return Math.round(Math.max(0, troops || 0) * attackBonusPct() / 100);
@@ -5338,6 +5382,7 @@ body.has-panel .mapctl{display:none}
         function skillBonusText(def, level) {
             if (def.pct) return '+' + fmtNum(level * def.pct) + ' %';
             if (def.atkPct) return '+' + fmtNum(level * def.atkPct) + ' % Truppen';
+            if (def.defPct) return '+' + fmtNum(level * def.defPct) + ' % Truppen';
             if (def.flat) return '+' + fmtNum(level * def.flat) + (def.unit || '');
             if (def.rate) return '+' + (level * def.rate).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' Gold/Kill';
             if (def.msPerLevel) return '−' + fmtNum(level * def.msPerLevel) + ' ms/Tick';
@@ -8174,7 +8219,7 @@ body.has-panel .mapctl{display:none}
             const mine = shown + atkBonus;
             const bEl = popupStats.querySelector('#previewAtkBonus'); if (bEl) bEl.textContent = fmtNum(atkBonus);
             const src = islandById[previewSourceId], tEl = popupSub.querySelector('#previewToll');
-            if (tEl && src) { const t = tollFor(src.landmassId, island.landmassId, shown, 'player', island.id);
+            if (tEl && src) { const hop = lastHop(src.landmassId, island.landmassId, 'player'), t = tollFor(hop[0], hop[1], shown, 'player', island.id);
                 tEl.innerHTML = t.closed ? '<span class="sep"></span>' + icon('lock') + '<span>Tor geschlossen</span>' : t.cost ? '<span class="sep"></span>' + icon('coin') + '<span>Maut <span class="num">' + fmtCompact(t.cost) + '</span></span>' : ''; }
             document.getElementById('previewMyTroops').textContent = fmtNum(mine);
             const raw = document.getElementById('previewRawTroops');
@@ -8313,11 +8358,11 @@ body.has-panel .mapctl{display:none}
             let best = null;
             for (const id of ownedIslands) {
                 const isl = islandById[id], t = islandTroops[id] || 0;
-                if (t <= 0 || !landmassesConnected(isl.landmassId, target.landmassId)) continue;
+                if (t <= 0 || !canReach(isl.landmassId, target.landmassId)) continue;
                 if (!best || t > (islandTroops[best] || 0)) best = id;
             }
             if (best === null) {
-                const any = [...ownedIslands].some(id => landmassesConnected(islandById[id].landmassId, target.landmassId));
+                const any = [...ownedIslands].some(id => canReach(islandById[id].landmassId, target.landmassId));
                 flashHint(any ? 'Deine Basen neben diesem Gebiet haben keine Truppen – schicke erst Truppen dorthin (Senden).'
                               : 'Keine deiner Basen grenzt an dieses Gebiet. Erobere zuerst eine Basis oder ein Tor direkt daneben und schicke Truppen hin.', 5000);
                 return;
@@ -8394,7 +8439,7 @@ body.has-panel .mapctl{display:none}
                     flashHint('Das ist bereits deine eigene Basis – wähle ein gegnerisches Ziel.', 2500);
                     return; // never a valid attack target, source base included
                 }
-                if (!source || !landmassesConnected(island.landmassId, source.landmassId)) {
+                if (!source || !canReach(island.landmassId, source.landmassId)) {
                     flashHint(source ? noRouteHint(island.landmassId, source.landmassId) : 'Keine Brücke zu dieser Insel – sie kann nicht Ziel sein.', 3000);
                     return;
                 }
@@ -8416,7 +8461,7 @@ body.has-panel .mapctl{display:none}
                 const target = islandById[popupIslandId];
                 if (island.id === previewSourceId) return;
                 if (!(islandTroops[island.id] > 0)) { flashHint('Diese Basis hat keine Truppen zum Angreifen.', 3000); return; }
-                if (!landmassesConnected(island.landmassId, target.landmassId)) { flashHint(noRouteHint(island.landmassId, target.landmassId), 3500); return; }
+                if (!canReach(island.landmassId, target.landmassId)) { flashHint(noRouteHint(island.landmassId, target.landmassId), 3500); return; }
                 previewSourceId = island.id; previewFraction = 1; renderPopup(); return;
             }
             if (pendingAttackTargetId !== null) {
@@ -8427,7 +8472,7 @@ body.has-panel .mapctl{display:none}
                 if (ownedIslands.has(island.id) && target && (islandTroops[island.id] || 0) > 0) {
                     // Crossing to a different landmass is only allowed over
                     // a bridge - same-landmass attacks are always fine.
-                    if (!landmassesConnected(island.landmassId, target.landmassId)) {
+                    if (!canReach(island.landmassId, target.landmassId)) {
                         flashHint(noRouteHint(island.landmassId, target.landmassId), 3500);
                         return;
                     }
