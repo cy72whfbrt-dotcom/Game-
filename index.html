@@ -537,6 +537,11 @@ body.has-panel .mapctl{display:none}
 .logRow .lt b{display:block;font:600 var(--fs-13)/1.25 var(--font-ui);color:var(--tx-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .logRow .lt small{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;margin-top:2px;font:500 var(--fs-11)/1.25 var(--font-ui);color:var(--tx-3);white-space:normal;overflow:hidden;overflow-wrap:anywhere}
 .logRow .lv{font:600 var(--fs-12)/1 var(--font-ui);color:var(--tx-2);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.hero-list{display:grid;gap:8px;margin-top:10px} .hero-card{display:grid;grid-template-columns:40px 1fr;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line-2);border-left:3px solid var(--hc);border-radius:8px;background:rgba(255,255,255,.03)}
+.hero-card.is-locked{opacity:.55;border-left-color:var(--line-2)} .hero-ic{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--hc);color:#fff} .hero-card.is-locked .hero-ic{background:#3a3a44}
+.hero-t{display:grid;gap:3px} .hero-t b small{font-weight:500;color:var(--tx-2)} .hero-t small{color:var(--tx-2)} .hero-t em{color:var(--gold-300);font-style:normal}
+.hero-xp{display:block;height:5px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden} .hero-xp i{display:block;height:100%;background:linear-gradient(90deg,var(--hc),#f0d69a)}
+.seg.hero-seg button{display:inline-flex;align-items:center;justify-content:center;gap:4px} .seg.hero-seg button:disabled{opacity:.4}
 .logRow .mact{grid-column:2/4;display:flex;gap:6px;justify-content:flex-end;margin-top:4px}
 .logRow .mact button{display:inline-flex;align-items:center;gap:4px;min-height:30px;padding:0 10px;border-radius:6px;border:1px solid var(--line-2);background:rgba(255,255,255,.04);color:var(--tx-1);font:600 var(--fs-12)/1 var(--font-ui);cursor:pointer}
 .logRow .mact button:hover{border-color:var(--gold-300)} .logRow .mact .icon{width:14px;height:14px}
@@ -2889,7 +2894,8 @@ body.has-panel .mapctl{display:none}
             if (!payToll(hop[0], hop[1], rawTroops, attackerBotId || 'player', target.id)) return false;
 
             islandTroops[sourceId] = available - rawTroops; // only the sent troops march out, the rest stay to defend
-            const durationSec = travelDurationSeconds(source, target, attackerBotId);
+            const hero = !attackerBotId && nextAttackHero && heroUnlocked(heroById(nextAttackHero)) && !heroBusy(nextAttackHero) ? nextAttackHero : null;
+            const durationSec = travelDurationSeconds(source, target, attackerBotId) / (hero === 'ida' ? 1 + heroBonus('ida') / 100 : 1);
             const startedAt = Date.now();
             // Snapshot every skill/equipment-derived combat bonus NOW, at
             // launch, not when the attack resolves on arrival (which can be
@@ -2904,10 +2910,11 @@ body.has-panel .mapctl{display:none}
                 startedAt,
                 resolveAt: startedAt + durationSec * 1000,
                 attackerBotId: attackerBotId || null,
-                attackBonus: attackerBotId ? Math.round(rawTroops * botMults(attackerBotId).attackPct / 100) : attackFlatBonus(rawTroops),
+                attackBonus: attackerBotId ? Math.round(rawTroops * botMults(attackerBotId).attackPct / 100) : attackFlatBonus(rawTroops) + (hero === 'sigrun' ? Math.round(rawTroops * heroBonus('sigrun') / 100) : 0),
                 attackGoldRate: attackerBotId ? 0 : (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate,
-                rewardGoldRate: attackerBotId ? 0 : goldPerKillRate(),
-                shieldLossReductionPct: attackerBotId ? 0 : shieldLossReductionPct()
+                rewardGoldRate: attackerBotId ? 0 : goldPerKillRate() + (hero === 'ida' ? heroBonus('ida') * 0.02 : 0),
+                shieldLossReductionPct: attackerBotId ? 0 : Math.min(90, shieldLossReductionPct() + (hero === 'bernhard' ? heroBonus('bernhard') : 0)),
+                hero
             });
             updateHud();
             saveGame();
@@ -3187,9 +3194,10 @@ body.has-panel .mapctl{display:none}
             // XP for troops that died in the clash either way: a win kills
             // the whole enemy force, a loss costs your whole attack force
             addXp(won ? totalStrength : myTroops);
+            if (attack.hero) heroGainXp(attack.hero, won ? totalStrength : defenderCasualties);
             scoutedIslands.add(target.id);
             const ribbon = () => spawnBattleFx(target.id, won, won ? (bossHere ? 'Boss besiegt' : 'Sieg') : 'Niederlage', won ? islandTitle(target) + ' erobert' : '−' + fmtCompact(myTroops) + ' Truppen');
-            finishMapBattle(attack, { sourceId: source.id, targetId: target.id, atk: 'mine', def: bossHere ? 'boss' : targetOwner ? 'bot' : 'neutral',   // fights the player watches play out on the map
+            finishMapBattle(attack, { hero: attack.hero || null, sourceId: source.id, targetId: target.id, atk: 'mine', def: bossHere ? 'boss' : targetOwner ? 'bot' : 'neutral',   // fights the player watches play out on the map
                     my: myTroops, myLoss: won ? Math.min(myTroops, losses) : myTroops - retreatSurvivors, en: originalEnemyTroops,
                     enLoss: won ? originalEnemyTroops : defenderCasualties, won, onEnd: ribbon });
             if (won && bossHere) defeatBoss(bossHere);
@@ -5366,7 +5374,7 @@ body.has-panel .mapctl{display:none}
                     }
                     const fight = pendingAttacks.find(p => p !== a && p.fightEndsAt > now && p.targetId === a.targetId && (p.attackerBotId || null) === (a.attackerBotId || null));
                     if (fight) {
-                        fight.rawTroops += a.rawTroops; fight.attackBonus = (fight.attackBonus || 0) + (a.attackBonus || 0); fight.waves = (fight.waves || 1) + (a.waves || 1);
+                        fight.rawTroops += a.rawTroops; fight.attackBonus = (fight.attackBonus || 0) + (a.attackBonus || 0); fight.waves = (fight.waves || 1) + (a.waves || 1); fight.hero = fight.hero || a.hero;
                         fight.fightEndsAt = Math.max(fight.fightEndsAt, now + 2500);          // the fresh troops get to fight too
                         pendingAttacks.splice(pendingAttacks.indexOf(a), 1);
                         if (!a.attackerBotId) flashHint('Verstärkung ist im Kampf um ' + islandTitle(islandById[a.targetId]) + ' eingetroffen: +' + fmtNum(a.rawTroops) + ' Truppen, jetzt ' + fmtNum(fight.rawTroops) + '.', 4000);
@@ -5375,7 +5383,7 @@ body.has-panel .mapctl{display:none}
                         a.id = a.id || (a.startedAt + '-' + a.sourceId + '-' + a.targetId);
                         a.fightEndsAt = now + fightDurationMs(est);
                         const tgt = islandById[a.targetId], mine = !a.attackerBotId, vsMe = a.attackerBotId && islandOwnerOf(a.targetId) === 'player';
-                        if (mine || vsMe) spawnMapBattle({ sourceId: a.sourceId, targetId: a.targetId, attackId: a.id, live: true, fightMs: a.fightEndsAt - now,
+                        if (mine || vsMe) spawnMapBattle({ sourceId: a.sourceId, targetId: a.targetId, attackId: a.id, live: true, fightMs: a.fightEndsAt - now, hero: a.hero || null,
                             atk: mine ? 'mine' : 'bot', def: mine ? (bossAt(tgt.id) ? 'boss' : islandOwnerOf(tgt.id) ? 'bot' : 'neutral') : 'mine', ...est });
                     }
                     if (!a.attackerBotId) saveProgression();
@@ -6851,6 +6859,19 @@ body.has-panel .mapctl{display:none}
                         ctx.restore(); } });
                 };
                 bearer(true); bearer(false);
+                const hdef = b.hero && heroById(b.hero); let heroPlate = null;
+                if (hdef) {                                    // the hero leads from the front: a bigger figure in the hero's colour, a gold plume and a name plate
+                    let d = aFront - 4 * k; let alpha = 1;
+                    if (after) { const q = Math.min(1, (t - 3200) / 900); alpha = 1 - q; d += aWon ? -aFront * q : 60 * k * q; }
+                    const hx = tx - ux * d + vx * 0, hy = ty - uy * d;
+                    drawn.push({ y: hy + .02, f: () => { ctx.save(); ctx.globalAlpha = alpha;
+                        bsSoldier(ctx, hx, hy, s * 1.35, face, hdef.color, '#f0d69a', adv < 1 || after ? rt / 60 : 0, fight ? Math.max(0, Math.sin(rt / 90)) : 0, 0);
+                        ctx.fillStyle = '#e8c547'; ctx.beginPath(); ctx.ellipse(hx - face * 1 * k, hy - s * 1.52, 1.3 * k, 3 * k, -face * .4, 0, Math.PI * 2); ctx.fill();   // plume
+                        ctx.restore(); } });
+                    heroPlate = () => { ctx.save(); ctx.globalAlpha = alpha; ctx.font = '700 11px Inter, system-ui, sans-serif'; const tw = ctx.measureText(hdef.name).width + 12, py = hy + 12;   // on top of every figure
+                        rr(ctx, hx - tw / 2, py - 9, tw, 16, 8); ctx.fillStyle = 'rgba(14,12,10,.88)'; ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = hdef.color; ctx.stroke();
+                        ctx.fillStyle = '#f3e6c4'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(hdef.name, hx, py - .5); ctx.restore(); };
+                }
                 {                                             // the battlefield: the ground is trampled, the front glows
                     const env = Math.min(1, t / 900) * (after ? Math.max(0, 1 - (t - 3200) / 900) : 1), ang = Math.atan2(vy, vx);
                     const fxp = tx - ux * (dFront + 6.5 * k), fyp = ty - uy * (dFront + 6.5 * k);
@@ -6870,6 +6891,7 @@ body.has-panel .mapctl{display:none}
                     const x = tx - ux * (d + 6 * k) + vx * o, y = ty - uy * (d + 6 * k) + vy * o;
                     ctx.fillStyle = 'rgba(190,175,140,' + (.18 * (1 - adv)) + ')'; ctx.beginPath(); ctx.ellipse(x, y + 2 * k, (8 + adv * 10) * k, (3 + adv * 3) * k, 0, 0, Math.PI * 2); ctx.fill(); } }
                 drawn.sort((p, q) => p.y - q.y).forEach(d => d.f());
+                if (heroPlate) heroPlate();
                 for (const [fx, fy, dt] of falls) {           // hit flash, then a puff of dust where he went down
                     if (dt < 140) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; const q = dt / 140, R = (4 + 8 * q) * k, gh = ctx.createRadialGradient(fx, fy - s * .6, 0, fx, fy - s * .6, R);
                         gh.addColorStop(0, 'rgba(255,240,210,' + (1 - q) + ')'); gh.addColorStop(1, 'rgba(255,160,90,0)'); ctx.fillStyle = gh; ctx.beginPath(); ctx.arc(fx, fy - s * .6, R, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
@@ -7287,7 +7309,9 @@ body.has-panel .mapctl{display:none}
             { id: 'hospital', name: 'Lazarett',      icon: 'plus',    x: 290, y: 690, roof: '#e8e2d2', cross: true, fx: true,
               desc: 'Verlierst du einen Angriff, kommen Verwundete hierher statt zu sterben (5 % pro Stufe, bis 60 %). Heile sie gegen Münzen – sie gehen in die Hauptstadt.' },
             { id: 'shrine',   name: 'Tempelschrein', icon: 'temple',  x: 710, y: 690, roof: '#c9a54e', dome: true, desc: 'Wird den Bonus aller deiner Tempel verstärken.' },
-            { id: 'wall',     name: 'Mauer',         icon: 'defense', x: 500, y: 850, roof: '#6b6456', gate: true, desc: 'Wird die Verteidigung deiner Hauptstadt erhöhen.' }
+            { id: 'wall',     name: 'Mauer',         icon: 'defense', x: 500, y: 850, roof: '#6b6456', gate: true, desc: 'Wird die Verteidigung deiner Hauptstadt erhöhen.' },
+            { id: 'heroes',   name: 'Heldenhalle',   icon: 'profile', x: 500, y: 255, roof: '#7a2e2a', fx: true,
+              desc: 'Hier leben deine Helden. Ein Held zieht mit einem Angriff mit und gibt ihm seinen Bonus. Jede Stufe hebt die Höchststufe der Helden um 2; Stufe 1, 5 und 10 schalten je einen Helden frei.' }
         ];
         var CITY_MAX_LEVEL = 25, CITY_GEMS_PER_MIN = 1;
         var cityState = null;
@@ -7418,6 +7442,45 @@ body.has-panel .mapctl{display:none}
             if (building) renderCitySheetTimer();
             document.getElementById('cityBExtra').innerHTML = cityExtraHtml(id, lvl);
         }
+        // ===== HELDEN: live in the Heldenhalle, march with one attack at a time, level up from the enemies they beat =====
+        var HEROES = [
+            { id: 'sigrun',   name: 'Sigrun',   title: 'die Eroberin', icon: 'attack',  color: '#b8433a', unlock: 1,  per: 2, what: '% Angriff',              short: 'Angriff' },
+            { id: 'bernhard', name: 'Bernhard', title: 'der Wächter',  icon: 'shield',  color: '#3d6fb3', unlock: 5,  per: 1, what: '% weniger Verluste',     short: 'Verluste' },
+            { id: 'ida',      name: 'Ida',      title: 'die Reiterin', icon: 'send',    color: '#c98b2a', unlock: 10, per: 2, what: '% Tempo und Beute',      short: 'Tempo' }
+        ];
+        var heroState = null;
+        function loadHeroes() {
+            if (heroState) return heroState;
+            try { heroState = JSON.parse(store.get('openWaterHeroes')) || {}; } catch (e) { heroState = {}; }
+            for (const h of HEROES) heroState[h.id] = Object.assign({ lvl: 1, xp: 0 }, heroState[h.id] || {});
+            return heroState;
+        }
+        function saveHeroes() { store.set('openWaterHeroes', JSON.stringify(heroState)); }
+        function heroById(id) { return HEROES.find(h => h.id === id) || null; }
+        function hallLevel() { return loadCity().levels.heroes || 0; }
+        function heroUnlocked(h) { return hallLevel() >= h.unlock; }
+        function heroMaxLevel() { return Math.min(50, hallLevel() * 2); }
+        function heroLevel(id) { return Math.min(loadHeroes()[id].lvl, Math.max(1, heroMaxLevel())); }
+        function heroBonus(id) { const h = heroById(id); return h ? heroLevel(id) * h.per : 0; }
+        function heroBusy(id) { return pendingAttacks.some(a => !a.attackerBotId && a.hero === id); }
+        function heroXpNeed(lvl) { return Math.round(5000 * Math.pow(1.5, lvl - 1)); }
+        function heroGainXp(id, amount) {
+            const h = heroById(id), st = loadHeroes()[id]; if (!h || !st) return;
+            st.xp += Math.max(0, Math.round(amount)); let up = 0;
+            while (st.lvl < heroMaxLevel() && st.xp >= heroXpNeed(st.lvl)) { st.xp -= heroXpNeed(st.lvl); st.lvl++; up++; }
+            if (st.lvl >= heroMaxLevel()) st.xp = Math.min(st.xp, heroXpNeed(st.lvl));
+            saveHeroes();
+            if (up) setTimeout(() => flashHint(h.name + ' ' + h.title + ' steigt auf Stufe ' + st.lvl + ' – jetzt +' + heroBonus(id) + ' ' + h.what + '.', 4500), 2500);
+        }
+        function heroCardHtml(h) {
+            const st = loadHeroes()[h.id], on = heroUnlocked(h), lvl = heroLevel(h.id), need = heroXpNeed(st.lvl), capped = st.lvl >= heroMaxLevel();
+            return '<div class="hero-card' + (on ? '' : ' is-locked') + '" style="--hc:' + h.color + '"><span class="hero-ic">' + icon(on ? h.icon : 'lock') + '</span>' +
+                '<span class="hero-t"><b>' + h.name + ' <small>' + h.title + '</small></b>' +
+                (on ? '<small>Stufe ' + lvl + ' · +' + heroBonus(h.id) + ' ' + h.what + (heroBusy(h.id) ? ' · <em>unterwegs</em>' : '') + '</small>' +
+                      '<span class="hero-xp"><i style="width:' + (capped ? 100 : Math.min(100, st.xp / need * 100)) + '%"></i></span><small>' + (capped ? 'Höchststufe der Halle erreicht' : fmtCompact(st.xp) + ' / ' + fmtCompact(need) + ' EP') + '</small>'
+                    : '<small>Ab Heldenhalle Stufe ' + h.unlock + '</small>') + '</span></div>';
+        }
+        var previewHero = null, nextAttackHero = null;
         // ---- building effects ----
         function academyLevel() { return loadCity().levels.academy || 0; }
         function forgeLevel() { return loadCity().levels.forge || 0; }
@@ -7429,10 +7492,12 @@ body.has-panel .mapctl{display:none}
         function cityEffectText(id, lvl) {
             if (id === 'academy') return 'Jetzt: Truppen laufen +' + (lvl * 5) + ' % schneller.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: +' + ((lvl + 1) * 5) + ' %.' : '');
             if (id === 'forge') return lvl ? 'Bis zu ' + Math.min(STAR_MAX, lvl) + ' Sterne pro Ausrüstungsteil.' : 'Baue die Schmiede, um Sterne zu setzen.';
+            if (id === 'heroes') return lvl ? 'Helden bis Stufe ' + heroMaxLevel() + ' · ' + HEROES.filter(h => heroUnlocked(h)).length + ' von ' + HEROES.length + ' Helden bereit.' : 'Baue die Heldenhalle, um deinen ersten Helden zu rufen.';
             if (id === 'hospital') return lvl ? hospitalPct() + ' % der Gefallenen kommen ins Lazarett · Platz für ' + fmtCompact(hospitalCapacity()) : 'Baue das Lazarett, um Verwundete zu retten.';
             return '';
         }
         function cityExtraHtml(id, lvl) {
+            if (id === 'heroes') return '<div class="hero-list">' + HEROES.map(h => heroCardHtml(h)).join('') + '</div>';
             if (id === 'forge' && lvl) {
                 return '<div class="forge-list">' + Object.keys(EQUIPMENT_DEFS).map(slot => {
                     const item = equippedItems[slot] ? inventory[equippedItems[slot]] : null, def = EQUIPMENT_DEFS[slot];
@@ -7661,6 +7726,16 @@ body.has-panel .mapctl{display:none}
                 g.beginPath(); g.moveTo(-40, -28); g.lineTo(0, -52); g.lineTo(40, -28); g.closePath(); const q = g.createLinearGradient(-40, 0, 40, 0); q.addColorStop(0, '#f2d27a'); q.addColorStop(1, '#8a6a22'); g.fillStyle = q; g.fill(); g.stroke();
                 g.fillStyle = 'rgba(255,220,120,' + (.25 + .15 * Math.sin(now / 400)) + ')'; g.beginPath(); g.arc(0, -8, 9, 0, Math.PI * 2); g.fill();
                 if (tier >= 2) banner(-40, -28, '#c9a54e');
+            } else if (b.id === 'heroes') {              // great hall: tall hipped roof, three hero statues in front, banners
+                wall(-46, -30, 92, 50, '#efe6d2', '#a59878'); roof(-46, -30, 92, 34, b.roof); windows(-36, -20, 5, 16);
+                if (tier >= 2) { wall(-16, -74, 32, 22, '#e6dcc6', '#9c8f72'); roof(-16, -74, 32, 18, b.roof); }
+                door(16, 26);
+                const hs = loadHeroes(), unlocked = HEROES.filter(h => heroUnlocked(h));
+                HEROES.forEach((h, i) => { const sx = -40 + i * 40, on = unlocked.includes(h);         // plinth + statue (gold when unlocked)
+                    g.fillStyle = '#8a7f68'; g.fillRect(sx - 7, 20, 14, 8); strokeBox(g, sx - 7, 20, 14, 8);
+                    g.fillStyle = on ? '#d9b454' : '#9a927f'; g.beginPath(); g.arc(sx, 6, 4, 0, Math.PI * 2); g.fill(); g.stroke();
+                    g.beginPath(); g.moveTo(sx - 5, 20); g.lineTo(sx - 3, 10); g.lineTo(sx + 3, 10); g.lineTo(sx + 5, 20); g.closePath(); g.fill(); g.stroke(); });
+                banner(-46, -30, '#7a2e2a'); banner(46, -30, '#7a2e2a'); if (tier >= 3) banner(0, -74, '#e4c886');
             } else {                                      // wall section with a gate and battlements
                 wall(-56, -18, 112, 38, '#d0c8b6', '#8a8373');
                 for (let i = 0; i < 7; i++) { g.fillStyle = '#d9d0bd'; g.fillRect(-56 + i * 17, -27, 11, 9); strokeBox(g, -56 + i * 17, -27, 11, 9); }
@@ -8292,7 +8367,9 @@ body.has-panel .mapctl{display:none}
                         : '<div class="notice">' + icon('scout') + '<span>Abwehr unbekannt: ohne Spähen ist der Ausgang ungewiss.</span></div>') +
                     '<div class="field"><div class="field-top"><span class="field-l"><span class="sm-hide">Truppen </span>entsenden</span><span class="val"><b id="attackTroopsLabel"></b> / <span data-preview="max"></span></span></div>' +
                         '<input type="range" id="attackTroopsSlider" class="slider" min="1" max="' + Math.max(1, maxTroops) + '" value="' + Math.max(1, previewAttackTroops) + '"' + (maxTroops <= 0 ? ' disabled' : '') + ' aria-label="Truppen entsenden">' +
-                        '<div class="seg" data-preview="quick"><button type="button" data-f=".25">25 %</button><button type="button" data-f=".5">50 %</button><button type="button" data-f=".75">75 %</button><button type="button" data-f="1">Alle</button></div></div>';
+                        '<div class="seg" data-preview="quick"><button type="button" data-f=".25">25 %</button><button type="button" data-f=".5">50 %</button><button type="button" data-f=".75">75 %</button><button type="button" data-f="1">Alle</button></div></div>' +
+                    (HEROES.some(h => heroUnlocked(h)) ? '<div class="field"><div class="field-top"><span class="field-l">Held</span><span class="val" data-preview="herofx"></span></div><div class="seg hero-seg" data-preview="hero">' +
+                        '<button type="button" data-hero="">Keiner</button>' + HEROES.filter(h => heroUnlocked(h)).map(h => '<button type="button" data-hero="' + h.id + '">' + icon(h.icon) + h.name + '</button>').join('') + '</div></div>' : '');
                 const slider = document.getElementById('attackTroopsSlider');
                 slider.addEventListener('input', () => {
                     const mx = sourceTroops();
@@ -8300,6 +8377,8 @@ body.has-panel .mapctl{display:none}
                     previewFraction = previewAttackTroops >= mx ? 1 : null;   // dragged to the end = "Alle" again
                     patchAttackPreview();
                 });
+                const heroSeg = popupStats.querySelector('[data-preview="hero"]');
+                if (heroSeg) heroSeg.addEventListener('click', e => { const bt = e.target.closest('[data-hero]'); if (!bt || bt.disabled) return; previewHero = bt.dataset.hero || null; patchAttackPreview(); });
                 popupStats.querySelector('[data-preview="quick"]').addEventListener('click', (e) => {
                     const f = parseFloat(e.target.closest('button') && e.target.closest('button').dataset.f);
                     if (!f || slider.disabled) return;
@@ -8323,7 +8402,11 @@ body.has-panel .mapctl{display:none}
             if (previewFraction !== null && maxTroops > 0) previewAttackTroops = Math.max(1, Math.round(maxTroops * previewFraction));
             if (maxTroops > 0 && +slider.value !== previewAttackTroops) slider.value = Math.max(1, previewAttackTroops);
             const shown = Math.max(0, previewAttackTroops || 0);
-            const atkBonus = attackFlatBonus(shown);
+            if (previewHero && (!heroUnlocked(heroById(previewHero)) || heroBusy(previewHero))) previewHero = null;
+            for (const b of popupStats.querySelectorAll('[data-hero]')) { const id = b.dataset.hero; b.disabled = !!id && heroBusy(id); b.classList.toggle('on', (id || null) === previewHero); }
+            const hfx = popupStats.querySelector('[data-preview="herofx"]');
+            if (hfx) hfx.textContent = previewHero ? heroById(previewHero).name + ': +' + heroBonus(previewHero) + ' ' + heroById(previewHero).what : '';
+            const atkBonus = attackFlatBonus(shown) + (previewHero === 'sigrun' ? Math.round(shown * heroBonus('sigrun') / 100) : 0);
             const mine = shown + atkBonus;
             const bEl = popupStats.querySelector('#previewAtkBonus'); if (bEl) bEl.textContent = fmtNum(atkBonus);
             const src = islandById[previewSourceId], tEl = popupSub.querySelector('#previewToll');
@@ -8448,7 +8531,9 @@ body.has-panel .mapctl{display:none}
                 const picked = previewFraction !== null ? Math.round(available * previewFraction) : previewAttackTroops;
                 const troopsToSend = Math.max(1, Math.min(picked || available, available));
 
+                nextAttackHero = previewHero;
                 launchAttack(sourceId, targetId, null, troopsToSend);
+                nextAttackHero = null;
                 previewSourceId = null;
                 closeIslandPopup();
                 return;
