@@ -4241,14 +4241,15 @@ body.has-panel .mapctl{display:none}
             return { x: m.pts[i].x + (m.pts[i + 1].x - m.pts[i].x) * t, y: m.pts[i].y + (m.pts[i + 1].y - m.pts[i].y) * t }; } d -= m.seg[i]; }
           return m.pts[0];
         }
-        function drawWaitingWave(target, a) {              // the first wave camps outside the target until the reinforcements arrive
+        function drawFightChip(target, a, now) {          // a fight is going on at the base: time left, and how many waves are in it
             if (!target) return;
-            setScreen(ctx);
+            setScreen(ctx); liveAnimation = true;
             const z = mapState.zoom, x = toSX(target.x), y = toSY(target.y) - Math.max(18, target.radius * z * 1.6) - 16;
-            const label = 'Wartet · ' + fmtCompact(a.rawTroops) + ' · ' + a.waves + ' Wellen';
+            const left = Math.max(0, Math.ceil((a.fightEndsAt - now) / 1000));
+            const label = 'Kampf läuft · ' + fmtClock(left) + (a.attackerBotId ? '' : ' · ' + fmtCompact(a.rawTroops)) + (a.waves > 1 ? ' · ' + a.waves + ' Wellen' : '');
             ctx.font = '700 11px Inter, system-ui, sans-serif'; const w = ctx.measureText(label).width + 30;
             rr(ctx, x - w / 2, y - 10, w, 20, 10); ctx.fillStyle = 'rgba(14,12,10,.9)'; ctx.fill(); ctx.lineWidth = 1.2; ctx.strokeStyle = '#ff8d82'; ctx.stroke();
-            drawGlyph(ctx, 'flag', x - w / 2 + 12, y, 12, '#ffb2a7');
+            drawGlyph(ctx, 'attack', x - w / 2 + 12, y, 12, '#ffb2a7');
             ctx.fillStyle = '#f3e6c4'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(label, x - w / 2 + 22, y + .5);
         }
         function drawMarchColumn(m, t) {                  // a short column of soldiers (pairs) trailing the token along its path
@@ -4383,7 +4384,7 @@ body.has-panel .mapctl{display:none}
           drawRings(vis, z, now);                                                        // 5
           for (const a of pendingAttacks) { if (a.attackerBotId && islandOwnerOf(a.targetId) !== 'player') continue;         // fog of war (unchanged)
             drawMarchLine(a.attackerBotId ? 'incoming' : 'attack', islandById[a.sourceId], islandById[a.targetId], a.startedAt, a.resolveAt, wallNow);
-            if (a.waves > 1 && !a.attackerBotId) drawWaitingWave(islandById[a.targetId], a); }
+            if (a.fightEndsAt) drawFightChip(islandById[a.targetId], a, wallNow); }
           for (const s of pendingSends) { if (s.senderBotId) continue;                                                        // fog of war (unchanged)
             drawMarchLine('send', islandById[s.fromId], islandById[s.toId], s.startedAt, s.resolveAt, wallNow); }
           for (const s of pendingScouts) drawMarchLine('scout', islandById[s.sourceId], islandById[s.targetId], s.startedAt, s.resolveAt, wallNow);
@@ -5116,7 +5117,7 @@ body.has-panel .mapctl{display:none}
         // attack (botDefend) before it can resolve, instead of only
         // reconsidering once every 9 seconds.
         const BOT_TICK_MS = 1000;
-        const REINFORCE_WAIT_MS = 120000;                 // how long a first wave waits outside the target for a second one
+        const FIGHT_MS = 8000;                            // how long a fight at a base lasts - reinforcements that arrive in time join it
         // ===== TITLES (Mega-Tempel) =====
         // Whoever holds the Mega-Tempel hands out titles: 4 buffs for friends, 4 penalties for rivals (±25 %).
         // A new holder starts with a clean slate. Bots that hold it hand them out too - you may get the Narr.
@@ -5216,19 +5217,22 @@ body.has-panel .mapctl{display:none}
         setInterval(() => {
             const now = Date.now();
             if (pendingAttacks.length > 0) {
-                // Reinforcements: a wave that arrives while another wave of the same side is still marching on the same
-                // target (and gets there within 2 min) waits outside and joins it - both strike together as ONE attack.
-                for (const a of pendingAttacks.filter(x => x.resolveAt <= now)) {
-                    const later = pendingAttacks.filter(p => p !== a && p.resolveAt > now && p.resolveAt - now <= REINFORCE_WAIT_MS &&
-                        p.targetId === a.targetId && (p.attackerBotId || null) === (a.attackerBotId || null)).sort((x, y) => y.resolveAt - x.resolveAt)[0];
-                    if (!later) continue;
-                    later.rawTroops += a.rawTroops; later.attackBonus = (later.attackBonus || 0) + (a.attackBonus || 0); later.waves = (later.waves || 1) + (a.waves || 1);
-                    pendingAttacks.splice(pendingAttacks.indexOf(a), 1);
-                    if (!a.attackerBotId) { flashHint('Deine erste Welle wartet vor ' + islandTitle(islandById[a.targetId]) + ' auf die Verstärkung – in ' + fmtClock(Math.ceil((later.resolveAt - now) / 1000)) + ' greifen ' + fmtNum(later.rawTroops) + ' Truppen gemeinsam an.', 4500); saveProgression(); }
+                // A wave that arrives starts fighting at once; the fight lasts FIGHT_MS. Another wave of the same side that
+                // reaches the same target while that fight is still going joins it (one battle, all troops counted);
+                // one that comes too late starts a fight of its own.
+                for (const a of pendingAttacks.filter(x => x.resolveAt <= now && !x.fightEndsAt)) {
+                    const fight = pendingAttacks.find(p => p !== a && p.fightEndsAt > now && p.targetId === a.targetId && (p.attackerBotId || null) === (a.attackerBotId || null));
+                    if (fight) {
+                        fight.rawTroops += a.rawTroops; fight.attackBonus = (fight.attackBonus || 0) + (a.attackBonus || 0); fight.waves = (fight.waves || 1) + (a.waves || 1);
+                        pendingAttacks.splice(pendingAttacks.indexOf(a), 1);
+                        if (!a.attackerBotId) flashHint('Verstärkung ist im Kampf um ' + islandTitle(islandById[a.targetId]) + ' eingetroffen: +' + fmtNum(a.rawTroops) + ' Truppen, jetzt ' + fmtNum(fight.rawTroops) + '.', 4000);
+                    } else a.fightEndsAt = now + FIGHT_MS;
+                    if (!a.attackerBotId) saveProgression();
                 }
-                const dueAttacks = pendingAttacks.filter(a => a.resolveAt <= now);
+                const dueAttacks = pendingAttacks.filter(a => a.fightEndsAt && a.fightEndsAt <= now);
                 if (dueAttacks.length > 0) {
-                    pendingAttacks = pendingAttacks.filter(a => a.resolveAt > now);
+                    pendingAttacks = pendingAttacks.filter(a => !dueAttacks.includes(a));
+                    for (const a of dueAttacks) a.resolveAt = now;      // the result plays out on the map right away
                     for (const attack of dueAttacks) {
                         if (attack.attackerBotId) resolveBotAttack(attack);
                         else resolveAttack(attack);
@@ -5841,10 +5845,10 @@ body.has-panel .mapctl{display:none}
             const clock = sec => '<span class="num">' + fmtClock(sec) + '</span>';
             let relevantAttackCount = 0;
             for (const attack of pendingAttacks) {
-                const secondsLeft = Math.max(0, Math.ceil((attack.resolveAt - Date.now()) / 1000));
+                const secondsLeft = Math.max(0, Math.ceil(((attack.fightEndsAt || attack.resolveAt) - Date.now()) / 1000));
                 if (!attack.attackerBotId) {
                     relevantAttackCount++;
-                    rows.push(logRowHtml('attack', 'attack', 'Angriff auf ' + T(attack.targetId),
+                    rows.push(logRowHtml('attack', 'attack', (attack.fightEndsAt ? 'Kampf um ' : 'Angriff auf ') + T(attack.targetId),
                         'von ' + T(attack.sourceId) + (attack.rawTroops ? ' · ' + fmtNum(attack.rawTroops) + ' Truppen' : ''), clock(secondsLeft)));
                 } else if (islandOwnerOf(attack.targetId) === 'player') {
                     // A bot marching on the player's own territory is worth
