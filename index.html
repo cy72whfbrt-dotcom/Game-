@@ -2237,7 +2237,7 @@ body.has-panel .mapctl{display:none}
             templer:  { margin: 1.2,  spend: .65, send: .9,  skills: ['attack', 'troops', 'defense'],           temple: .2, enemy: 1,   act: .66 },
             balanced: { margin: 1.2,  spend: .65, send: .9,  skills: ['troops', 'attack', 'defense'],           temple: .5, enemy: .9,  act: .64 },
             blitz:    { margin: 1.0,  spend: .9,  send: 1,   skills: ['attack', 'troops'],                      temple: .3, enemy: .5,  act: 1,
-                        troopMult: 30, atkBonus: 300, speed: 6, moveMs: 400, moves: 3 }
+                        troopMult: 60, atkBonus: 300, speed: 14, moveMs: 300, launches: 12, sources: [30, 20] }
         };
         const botById = {};
         for (const bot of BOT_DEFS) botById[bot.id] = bot;
@@ -4923,7 +4923,8 @@ body.has-panel .mapctl{display:none}
             if (!owned || owned.size === 0) return;
             const st = BOT_STYLES[bot.style], atk = 1 + botMults(bot.id).attackPct / 100, ruler = rulerOwner();
             const cands = [];
-            for (const sourceId of botSampleSources(owned)) {
+            const busy = st.launches ? new Set(pendingAttacks.filter(a => a.attackerBotId === bot.id).map(a => a.targetId)) : null;
+            for (const sourceId of botSampleSources(owned, st.sources)) {
                 const troopsHere = (islandTroops[sourceId] || 0) * st.send;
                 if (troopsHere < BOT_MIN_GARRISON_TO_ATTACK) continue;
                 const source = islandById[sourceId];
@@ -4931,7 +4932,7 @@ body.has-panel .mapctl{display:none}
                     if (!landmassesConnected(source.landmassId, lmId)) continue;
                     const toll = tollFor(source.landmassId, lmId, troopsHere, bot.id).cost, canPass = !toll || (botCoins[bot.id] || 0) >= toll;
                     for (const target of islandsByLandmass[lmId] || []) {
-                        if (owned.has(target.id) || isCapital(target.id)) continue;   // capitals can't be attacked
+                        if (owned.has(target.id) || isCapital(target.id) || (busy && busy.has(target.id))) continue;   // capitals can't be attacked
                         if (!canPass && !(target.type === 'gate' && gateOnRoute(source.landmassId, lmId) === target)) continue;
                         const totalStrength = effectiveTroops(target) + effectiveDefense(target);
                         if (troopsHere * atk < totalStrength * st.margin) continue;
@@ -4940,12 +4941,23 @@ body.has-panel .mapctl{display:none}
                         else if (bossAt(target.id)) d *= 0.3;
                         else if (target.type === 'gate' || target.type === 'temple' || target.guardian) d *= st.temple;
                         else if (islandOwnerOf(target.id)) d *= st.enemy;                       // raiders like hitting other players
-                        cands.push({ d, sourceId, targetId: target.id, troops: Math.round(troopsHere) });
+                        cands.push({ d, sourceId, targetId: target.id, troops: Math.round(troopsHere), need: Math.ceil(totalStrength * 1.3 / atk) + 1 });
                     }
                 }
             }
             if (!cands.length) { botGather(bot); return; }
             cands.sort((x, y) => x.d - y.d);
+            if (st.launches) {                               // blitz: many attacks per move, each source splits its army over several targets
+                const left = {}, hit = new Set(); let n = 0;
+                for (const c of cands) {
+                    if (n >= st.launches) break;
+                    if (hit.has(c.targetId)) continue;
+                    const have = left[c.sourceId] ?? (islandTroops[c.sourceId] || 0);
+                    if (have < c.need) continue;
+                    if (launchAttack(c.sourceId, c.targetId, bot.id, c.need)) { left[c.sourceId] = have - c.need; hit.add(c.targetId); n++; }
+                }
+                return;
+            }
             const pick = cands[Math.random() < .7 ? 0 : Math.floor(Math.random() * Math.min(3, cands.length))];   // not always the perfect move
             launchAttack(pick.sourceId, pick.targetId, bot.id, pick.troops);
         }
@@ -5072,9 +5084,9 @@ body.has-panel .mapctl{display:none}
             return b.capital;
         }
         function isCapital(id) { if (id === playerIslandId) return true; for (const bot of BOT_DEFS) if (botCapitalOf(bot.id) === id) return true; return false; }
-        function botSampleSources(owned) {                       // a person looks at their big armies and a few others, not at all 500 bases
-            const arr = [...owned], rich = arr.sort((a, c) => (islandTroops[c] || 0) - (islandTroops[a] || 0)).slice(0, 10);
-            for (let i = 0; i < 8 && arr.length > 10; i++) rich.push(arr[10 + Math.floor(Math.random() * (arr.length - 10))]);
+        function botSampleSources(owned, n) {                    // a person looks at their big armies and a few others, not at all 500 bases
+            const [top, extra] = n || [10, 8], arr = [...owned], rich = arr.sort((a, c) => (islandTroops[c] || 0) - (islandTroops[a] || 0)).slice(0, top);
+            for (let i = 0; i < extra && arr.length > top; i++) rich.push(arr[top + Math.floor(Math.random() * (arr.length - top))]);
             return [...new Set(rich)];
         }
 
@@ -5203,7 +5215,7 @@ body.has-panel .mapctl{display:none}
                 const st = BOT_STYLES[bot.style];
                 botNextAt[bot.id] = now + (st.moveMs || 3000 + Math.random() * 9000);   // a few seconds between moves, never all at once
                 botDefend(bot);
-                for (let m = 0; m < (st.moves || 1); m++) botThink(bot);
+                botThink(bot);
                 botConsiderUpgrade(bot);
                 botRulerTitles(bot);
                 if (Math.random() < .3) botShop(bot);
