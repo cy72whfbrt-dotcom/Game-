@@ -2085,7 +2085,7 @@ body.has-panel .mapctl{display:none}
             } catch (e) {}
             ['openWaterPlayerIslandId', 'openWaterOwnedIslands', 'openWaterIslandLevels', 'openWaterIslandTroops', 'openWaterBotOwnedIslands',
              'openWaterBotCoins', 'openWaterNeutralTroopOverrides', 'openWaterScoutedIslands', 'openWaterPendingAttacks', 'openWaterPendingSends',
-             'openWaterPendingScouts', 'openWaterPendingRetreats', 'openWaterTempleHoldSince', 'openWaterBoss', 'openWaterBossNext', 'openWaterExplored', 'openWaterFogCells', 'openWaterWorldStart', 'openWaterBotState', 'openWaterTitles', 'openWaterGateCfg', 'openWaterShield'].forEach(k => store.remove(k));
+             'openWaterPendingScouts', 'openWaterPendingRetreats', 'openWaterTempleHoldSince', 'openWaterBoss', 'openWaterBossNext', 'openWaterExplored', 'openWaterFogCells', 'openWaterWorldStart', 'openWaterBotState', 'openWaterTitles', 'openWaterGateCfg', 'openWaterShield', 'openWaterWander', 'openWaterWanderNext'].forEach(k => store.remove(k));
             if (carry > 0) store.set('openWaterCarryTroops', String(Math.round(carry)));
             store.set('openWaterBalanceV2', '1');
             store.set('openWaterWorldVersion', WORLD_VERSION);
@@ -3309,7 +3309,7 @@ body.has-panel .mapctl{display:none}
                 }
             }
             updateHud();
-            if (bossHere && won) { spawnBattleFx(target.id, false, bossHere.name + ' gefallen', bot.name); endBoss(bot.name + ' hat den ' + bossHere.name + ' besiegt!'); }
+            if (bossHere && won) { spawnBattleFx(target.id, false, bossHere.name + ' gefallen', bot.name); (bossHere.wander ? endWander : endBoss)(bot.name + ' hat ' + bossHere.name + ' besiegt!'); }
 
             if (playerInvolved) {
                 const ribbon = () => spawnBattleFx(target.id, !won || capitalHolds, capitalHolds ? 'Hauptstadt hält' : won ? 'Basis verloren' : 'Verteidigt', capitalHolds ? 'Garnison gefallen' : won ? 'von ' + bot.name : bot.name + ' abgewehrt');
@@ -4508,11 +4508,13 @@ body.has-panel .mapctl{display:none}
           drawBaseAuras(vis, z, now);                                                                                          // level + title auras under the towers
           for (const isl of vis.slice().sort((a, b) => a.y - b.y)) drawBuilding(isl, ownerKeyOf(isl), z);                    // 7
           drawBaseSparks(vis, z, now);
+          drawWander(now);                                                                                                     // the Kriegsherr and his host
           const plates = layoutBanners(vis, z, isPanelOpen(popup) ? popupIslandId : null);
           drawMarchTokens();                                                                                                   // 8 tokens (clear of the plates)
           paintBanners(plates);                                                                                                // 9 nameplates on top
           drawRulerCrowns(plates);
           drawTitleBadges(z, now);                                                                                             // crown on the ruler's plates
+          drawWander(now, true);
           drawMarchChips();                                                                                                    // 10 countdown chips
           drawPasses(view, now);                                                                                               // chained, time-locked bridges
           drawPickups(now);                                                                                                    // 11 mini-event pickups
@@ -6813,7 +6815,7 @@ body.has-panel .mapctl{display:none}
                 const adv = Math.min(1, t / 800), advE = adv * adv, fight = t > 800 && t < 3200, after = t > 3200;
                 const gap = 8.5 * k, fileGap = 8 * k, s = 14 * k;
                 const dFront = 22 * k, aFront = dFront + 13 * k + (1 - advE) * 46 * k;
-                const cA = b.atk === 'mine' ? BS_COL.mine : BS_COL.bot, cD = BS_COL[b.def] || BS_COL.bot, tA = b.atk === 'mine' ? BS_TROOP.mine : BS_TROOP.bot, tD = BS_TROOP[b.def] || BS_TROOP.bot;
+                const ak = b.atk === 'mine' ? 'mine' : b.atk === 'boss' ? 'boss' : 'bot', cA = BS_COL[ak], cD = BS_COL[b.def] || BS_COL.bot, tA = BS_TROOP[ak], tD = BS_TROOP[b.def] || BS_TROOP.bot;
                 const aWon = b.won, drawn = [];
                 const place = (side, u) => {
                     const atk = side === b.A, files = side.files, off = (u.f - (files - 1) / 2) * fileGap + u.jx * 2 * k;
@@ -7171,10 +7173,12 @@ body.has-panel .mapctl{display:none}
             try { bossState = JSON.parse(store.get('openWaterBoss')) || null; } catch (e) { bossState = null; }
             nextBossAt = parseInt(store.get('openWaterBossNext'), 10) || (Date.now() + 2 * 60 * 1000);   // first one 2 min after the first start
         }
-        function saveBoss() { store.set('openWaterBoss', JSON.stringify(bossState)); store.set('openWaterBossNext', String(nextBossAt)); }
+        function saveBoss() { store.set('openWaterBoss', JSON.stringify(bossState)); store.set('openWaterBossNext', String(nextBossAt)); if (wander !== undefined) saveWander(); }
         function bossAt(id) {
             loadBoss();
-            return bossState && bossState.islandId === id && bossState.endsAt > Date.now() && !islandOwnerOf(id) ? bossState : null;
+            if (bossState && bossState.islandId === id && bossState.endsAt > Date.now() && !islandOwnerOf(id)) return bossState;
+            const w = loadWander();
+            return w && w.at === id && w.to === null && w.troops > 0 && !islandOwnerOf(id) ? w : null;   // the Kriegsherr in his camp
         }
         function spawnBoss() {
             const reach = new Set();
@@ -7207,16 +7211,17 @@ body.has-panel .mapctl{display:none}
         }
         function defeatBoss(boss) {
             const item = grantFreeCrate(4);                        // legendary or better
-            gems += BOSS_REWARD_GEMS;
+            const rewardGems = boss.wander ? WANDER_REWARD_GEMS : BOSS_REWARD_GEMS;
+            gems += rewardGems;
             saveProgression(); saveGame(); updateHud();
-            endBoss(null);
+            if (boss.wander) endWander(null); else endBoss(null);
             const rd = RARITY_DEFS[item.rarity], d = EQUIPMENT_DEFS[item.slot];
             document.getElementById('rewardModalOver').textContent = 'Weltereignis';
             document.getElementById('rewardModalTitle').textContent = 'Boss besiegt!';
             document.getElementById('rewardModalSub').textContent = boss.name + ' ist gefallen – die Beute gehört dir.';
             const list = document.getElementById('rewardModalRewards');
             list.innerHTML = '<li style="border-color:' + rd.color + '66"><svg class="icon" style="color:' + rd.color + '"><use href="#i-' + d.icon + '"/></svg><span>' + d.name + '</span><b style="color:' + rd.color + '">' + rd.label + '</b></li>' +
-                '<li>' + icon('gem', 'ico-gem') + '<span>Gems</span><b>+' + BOSS_REWARD_GEMS + '</b></li>';
+                '<li>' + icon('gem', 'ico-gem') + '<span>Gems</span><b>+' + rewardGems + '</b></li>';
             [...list.children].forEach((li, i) => { li.style.animationDelay = (200 + i * 120) + 'ms'; });
             bossRewardPending = true;
             setTimeout(() => { bossRewardPending = false; document.getElementById('rewardModal').hidden = false; }, 9800);   // after the fight on the map
@@ -7231,13 +7236,128 @@ body.has-panel .mapctl{display:none}
                 endBoss(islandOwnerOf(bossState.islandId) ? null : name + ' ist wieder verschwunden.');
             }
             if (!bossState && now >= nextBossAt && !document.hidden) { if (!spawnBoss()) nextBossAt = now + 60000; saveBoss(); }
-            if (bossState) {
-                const el = document.querySelector('[data-boss-clock]');
-                if (el) el.textContent = fmtClock((bossState.endsAt - now) / 1000);
-                requestRender();
-            }
+            const el = document.querySelector('[data-boss-clock]'), pb = popupIslandId !== null && bossAt(popupIslandId);
+            if (el && pb) el.textContent = fmtClock(((pb.wander ? pb.campUntil : pb.endsAt) - now) / 1000);
+            if (bossState) requestRender();
         }
         setInterval(bossTick, 1000);
+
+        // ===== WANDERBOSS: a warlord marches across the map, storms bases (yours, the bots', neutral ones) and camps
+        // for a while where he won. In his camp he can be attacked like a boss; every fight wears his army down.
+        // Whoever breaks him gets a legendary crate and 150 gems. Every ~45-60 min, lives 25 min.
+        var WANDER_REWARD_GEMS = 150, WANDER_NAMES = ['Kriegsherr Morgath', 'Die Schwarze Horde', 'Graf Vargoth', 'Der Eisenkönig'];
+        var wander, nextWanderAt = 0;
+        function loadWander() {
+            if (wander !== undefined) return wander;
+            try { wander = JSON.parse(store.get('openWaterWander')) || null; } catch (e) { wander = null; }
+            nextWanderAt = parseInt(store.get('openWaterWanderNext'), 10) || (Date.now() + 8 * 60 * 1000);
+            return wander;
+        }
+        function saveWander() { store.set('openWaterWander', JSON.stringify(wander || null)); store.set('openWaterWanderNext', String(nextWanderAt)); }
+        function endWander(msg) {
+            wander = null; nextWanderAt = Date.now() + (45 + Math.random() * 15) * 60 * 1000; saveWander(); requestRender();
+            if (msg) flashHint(msg, 4500);
+            if (isPanelOpen(popup)) renderPopup();
+        }
+        function spawnWander() {
+            const cand = islands.filter(i => i.type === 'tower' && !islandOwnerOf(i.id) && !bossAt(i.id) && landmasses[i.landmassId].tier === 'outer' && landmasses[i.landmassId].ring >= 3);
+            if (!cand.length) return false;
+            const isl = cand[Math.floor(Math.random() * cand.length)], now = Date.now();
+            const troops = niceRound(Math.max(1e6, totalTroops() * (1.5 + Math.random())));
+            wander = { wander: true, name: WANDER_NAMES[Math.floor(Math.random() * WANDER_NAMES.length)], troops, defense: niceRound(troops * .15), max: troops,
+                at: isl.id, from: null, to: null, departAt: 0, arriveAt: 0, campUntil: now + 60000, endsAt: now + 25 * 60 * 1000 };
+            scoutedIslands.add(isl.id);
+            saveWander(); saveGame();
+            flashHint('Weltereignis: ' + wander.name + ' zieht über die Karte und greift Basen an! Besiege ihn in seinem Lager.', 7000);
+            requestRender(); return true;
+        }
+        function wanderDepart(now) {                          // off to the next base: owned ones first, the player a bit more tempting
+            const here = islandById[wander.at]; if (!here) return endWander(null);
+            const lms = new Set((reachableLandmassIds[here.landmassId] || [here.landmassId]).filter(l => l === here.landmassId || landmassesConnected(here.landmassId, l)));
+            let best = null;
+            for (const lm of lms) for (const isl of islandsByLandmass[lm] || []) {
+                if (isl.type !== 'tower' || isl.id === here.id || isCapital(isl.id) || bossAt(isl.id)) continue;
+                const ow = islandOwnerOf(isl.id); if (ow === 'player' && playerShielded()) continue;
+                const d = Math.hypot(isl.x - here.x, isl.y - here.y) * (ow ? (ow === 'player' ? .45 : .6) : 1.6) * (.8 + Math.random() * .4);
+                if (!best || d < best.d) best = { d, isl };
+            }
+            if (!best) { wander.campUntil = now + 30000; return; }
+            const dist = Math.hypot(best.isl.x - here.x, best.isl.y - here.y);
+            Object.assign(wander, { from: here.id, to: best.isl.id, at: null, departAt: now, arriveAt: now + Math.max(20000, Math.min(150000, dist / (BASE_ATTACK_SPEED * .6) * 1000)) });
+            if (islandOwnerOf(best.isl.id) === 'player') flashHint(wander.name + ' marschiert auf deine Basis ' + islandTitle(best.isl) + ' zu!', 5000);
+            saveWander(); requestRender();
+        }
+        function wanderArrive(now) {                          // the storm: same maths as any attack; a win razes the base and he camps there
+            const tgt = islandById[wander.to], from = wander.from; if (!tgt) return endWander(null);
+            const owner = islandOwnerOf(tgt.id), en = effectiveTroops(tgt), def = effectiveDefense(tgt), my = wander.troops, won = my > en + def;
+            if (owner === 'player' && playerShielded()) { Object.assign(wander, { at: from, to: null, campUntil: now + 20000 }); saveWander(); return; }
+            if (won) {
+                if (owner) clearIslandOwner(tgt.id);
+                islandTroops[tgt.id] = 0; tgt.neutralTroops = 0; neutralTroopOverrides[tgt.id] = 0;
+                wander.troops = Math.max(1, Math.round(my - def * .6 - en * .3));
+                Object.assign(wander, { at: tgt.id, to: null, campUntil: now + 90000 });
+            } else {
+                const cas = Math.min(en, my);
+                if (owner) islandTroops[tgt.id] = Math.max(0, (islandTroops[tgt.id] || 0) - cas); else { tgt.neutralTroops = en - cas; neutralTroopOverrides[tgt.id] = tgt.neutralTroops; }
+                wander.troops = Math.max(0, Math.round(my * .35));
+                Object.assign(wander, { at: from, to: null, campUntil: now + 45000 });
+            }
+            wander.defense = niceRound(wander.troops * .15);
+            if (owner === 'player') {
+                scoutedIslands.add(tgt.id);
+                const name = wander.name;
+                spawnMapBattle({ sourceId: from, targetId: tgt.id, atk: 'boss', def: 'mine', my, myLoss: won ? Math.min(my, def) : my - wander.troops, en, enLoss: won ? en : Math.min(en, my), won,
+                    onEnd: () => spawnBattleFx(tgt.id, !won, won ? 'Basis verloren' : 'Verteidigt', won ? 'von ' + name : name + ' abgewehrt') });
+                flashHint(won ? name + ' hat deine Basis ' + islandTitle(tgt) + ' zerstört!' : 'Verteidigt! ' + name + ' wurde bei ' + islandTitle(tgt) + ' zurückgeschlagen.', 5000);
+            }
+            if (wander.troops <= 0) return endWander(wander.name + ' ist zerschlagen.');
+            updateHud(); saveGame(); saveWander(); requestRender();
+        }
+        function wanderTick() {
+            loadWander(); const now = Date.now();
+            if (!wander) { if (now >= nextWanderAt && !document.hidden && !spawnWander()) nextWanderAt = now + 60000; return; }
+            if (now >= wander.endsAt) return endWander(wander.name + ' ist weitergezogen.');
+            if (wander.to !== null) { if (now >= wander.arriveAt) wanderArrive(now); else requestRender(); }
+            else if (islandOwnerOf(wander.at)) endWander(null);           // someone took his camp (reward handled by the fight)
+            else if (now >= wander.campUntil) wanderDepart(now);
+        }
+        setInterval(wanderTick, 1000);
+        function drawWander(now, chipOnly) {                // screen space: the marching host, or the camp with its aura (chipOnly: just the name plate, drawn over the base plates)
+            const w = loadWander(); if (!w) return;
+            const z = mapState.zoom; let wx, wy, marching = w.to !== null;
+            if (marching) { const a = islandById[w.from], b2 = islandById[w.to], q = Math.max(0, Math.min(1, (Date.now() - w.departAt) / Math.max(1, w.arriveAt - w.departAt)));
+                wx = a.x + (b2.x - a.x) * q; wy = a.y + (b2.y - a.y) * q;
+                const ex = b2.x * z + mapState.offsetX, ey = b2.y * z + mapState.offsetY;
+                ctx.save(); ctx.setLineDash([8, 6]); ctx.lineDashOffset = -now / 40; ctx.lineWidth = 2.5; ctx.strokeStyle = 'rgba(150,30,70,.85)';
+                ctx.beginPath(); ctx.moveTo(wx * z + mapState.offsetX, wy * z + mapState.offsetY); ctx.lineTo(ex, ey); ctx.stroke(); ctx.restore();
+            } else { const c = islandById[w.at]; if (!c) return; wx = c.x; wy = c.y; }
+            const sx = wx * z + mapState.offsetX, sy = wy * z + mapState.offsetY;
+            if (sx < -200 || sy < -200 || sx > viewW + 200 || sy > viewH + 200) return;
+            const k = Math.max(.8, Math.min(2.2, z / 0.015)), pulse = .5 + .5 * Math.sin(now / 350);
+            if (chipOnly) return wanderChip(w, sx, sy, z, k, marching);
+            const gr = ctx.createRadialGradient(sx, sy, 4, sx, sy, 60 * k);
+            gr.addColorStop(0, 'rgba(120,20,60,' + (.35 + .15 * pulse) + ')'); gr.addColorStop(1, 'rgba(120,20,60,0)');
+            ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(sx, sy, 60 * k, 0, Math.PI * 2); ctx.fill();
+            if (z >= 0.006) {                                  // the host: a dense block of dark soldiers around a great banner
+                const s = 14 * k, dir = marching && islandById[w.to].x < wx ? -1 : 1, walk = marching ? now / 70 : 0;
+                const pos = []; for (let r = 0; r < 3; r++) for (let f = 0; f < 4; f++) pos.push([(f - 1.5) * 9 * k + (r % 2) * 4 * k, (r - 1) * 7 * k]);
+                pos.sort((a, b) => a[1] - b[1]).forEach(([ox, oy], i) => bsSoldier(ctx, sx + ox, sy + oy + 8 * k, s, dir, '#3f1630', '#b07c98', walk + i, 0, 0));
+                ctx.strokeStyle = '#2a1a12'; ctx.lineWidth = 2 * k; ctx.beginPath(); ctx.moveTo(sx, sy - 4 * k); ctx.lineTo(sx, sy - 44 * k); ctx.stroke();
+                const wave = Math.sin(now / 200) * 3 * k; ctx.fillStyle = '#5b1d3d';
+                ctx.beginPath(); ctx.moveTo(sx, sy - 44 * k); ctx.lineTo(sx + 22 * k, sy - 42 * k + wave); ctx.lineTo(sx + 16 * k, sy - 34 * k + wave); ctx.lineTo(sx + 22 * k, sy - 26 * k + wave); ctx.lineTo(sx, sy - 28 * k); ctx.closePath(); ctx.fill();
+                ctx.lineWidth = 1; ctx.strokeStyle = '#e39ac0'; ctx.stroke();
+            }
+            liveAnimation = true;
+        }
+        function wanderChip(w, sx, sy, z, k, marching) {
+            const left = marching ? w.arriveAt - Date.now() : w.campUntil - Date.now();
+            const label = w.name + ' · ' + fmtCompact(w.troops) + ' · ' + (marching ? 'Ankunft ' : 'Lager ') + fmtClock(left / 1000);
+            ctx.font = '700 11px Inter, system-ui, sans-serif'; const tw = ctx.measureText(label).width + 30, cy = sy - (z >= 0.006 ? 60 * k : 26);
+            rr(ctx, sx - tw / 2, cy - 10, tw, 20, 10); ctx.fillStyle = 'rgba(24,6,14,.92)'; ctx.fill(); ctx.lineWidth = 1.2; ctx.strokeStyle = '#e39ac0'; ctx.stroke();
+            drawGlyph(ctx, 'attack', sx - tw / 2 + 12, cy, 12, '#f2b6d2');
+            ctx.fillStyle = '#fbe3ee'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(label, sx - tw / 2 + 22, cy + .5);
+            liveAnimation = true;
+        }
         function drawCrown(x, y, w) {       // small gold crown, (x, y) = bottom centre
             const h = w * 0.62;
             ctx.beginPath();
@@ -8318,7 +8438,7 @@ body.has-panel .mapctl{display:none}
                         (scouted ? '' : '<div class="notice">' + icon('scout') + '<span>Stärke unbekannt. Spähen deckt Truppen und Verteidigung auf.</span></div>') +
                         (island.type === 'gate' ? '<div class="notice notice--gold">' + icon('lock') + '<span>Tor: Unbesetzt ist es verschlossen – erobere es, um über die Brücke zu kommen. Wer es besitzt, geht kostenlos durch und bestimmt die Maut für alle anderen.</span></div>' : '') +
                         (isTemple ? '<div class="notice notice--gold">' + icon('temple') + '<span>' + (island.type === 'megaTemple' ? 'Thron der Meere: wer ihn hält, trägt die Krone – +25 % Münzen und Truppen im ganzen Reich.' : island.guardian ? 'Wächter-Tempel: 3-facher Tempel-Bonus, bewacht den Weg zur Thron-Insel.' : 'Tempel: gibt Produktion, Gems und Münzen, sobald erobert.') + '</span></div>' : '') +
-                        (bossAt(island.id) ? '<div class="notice notice--gold">' + icon('shop') + '<span><b>Belohnung:</b> Legendäre Kiste + ' + BOSS_REWARD_GEMS + ' Gems · verschwindet in <b data-boss-clock>' + fmtClock((bossAt(island.id).endsAt - Date.now()) / 1000) + '</b></span></div>' : '') +
+                        (bossAt(island.id) ? '<div class="notice notice--gold">' + icon('shop') + '<span><b>Belohnung:</b> Legendäre Kiste + ' + (bossAt(island.id).wander ? WANDER_REWARD_GEMS : BOSS_REWARD_GEMS) + ' Gems · ' + (bossAt(island.id).wander ? 'zieht weiter in' : 'verschwindet in') + ' <b data-boss-clock>' + fmtClock(((bossAt(island.id).wander ? bossAt(island.id).campUntil : bossAt(island.id).endsAt) - Date.now()) / 1000) + '</b></span></div>' : '') +
                         (scoutEnRoute ? '<div class="notice notice--warn">' + icon('hourglass') + '<span>Späher bereits unterwegs …</span></div>' : '');
                     setBtnLabel(attackBtn, 'Angreifen');
                     attackBtn.style.display = isCapital(island.id) ? 'none' : 'inline-block';   // capitals can't be attacked
