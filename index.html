@@ -5272,6 +5272,12 @@ body.has-panel .mapctl{display:none}
                 // so do the defender's reinforcements (they land in the garrison) - one battle, everything counted.
                 // A wave that comes after the fight is decided starts a fight of its own.
                 for (const a of pendingAttacks.filter(x => x.resolveAt <= now && !x.fightEndsAt)) {
+                    if (islandOwnerOf(a.targetId) === (a.attackerBotId || 'player')) {   // the base is already ours (an earlier wave took it): they simply move in
+                        islandTroops[a.targetId] = (islandTroops[a.targetId] || 0) + a.rawTroops;
+                        pendingAttacks.splice(pendingAttacks.indexOf(a), 1);
+                        if (!a.attackerBotId) { flashHint(islandTitle(islandById[a.targetId]) + ' gehört schon dir – ' + fmtNum(a.rawTroops) + ' Truppen verstärken die Besatzung.', 4000); updateHud(); saveGame(); saveProgression(); }
+                        continue;
+                    }
                     const fight = pendingAttacks.find(p => p !== a && p.fightEndsAt > now && p.targetId === a.targetId && (p.attackerBotId || null) === (a.attackerBotId || null));
                     if (fight) {
                         fight.rawTroops += a.rawTroops; fight.attackBonus = (fight.attackBonus || 0) + (a.attackBonus || 0); fight.waves = (fight.waves || 1) + (a.waves || 1);
