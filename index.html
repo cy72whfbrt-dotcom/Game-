@@ -606,6 +606,7 @@ body.has-panel .mapctl{display:none}
 .offer-text h4{margin:0 0 4px;font:600 var(--fs-13)/1.2 var(--font-display);letter-spacing:.05em;color:var(--gold-100)}
 .offer-text p{margin:0;font:500 var(--fs-12)/1.4 var(--font-ui);color:var(--tx-3)}
 .odds{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.shield-opts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px} .shield-opts .btn{min-height:52px;flex-direction:column;justify-content:center;gap:4px;padding:6px 4px} .shield-state{color:var(--f-player-hi);font-weight:600}
 .odds .chip{height:20px;padding:0 6px;font-size:var(--fs-10)}
 .loot{align-items:center;gap:12px;padding:10px 12px;border-radius:var(--r-sm);border:1px solid color-mix(in srgb,var(--rc,var(--line-2)) 60%,transparent);
   background:radial-gradient(80% 120% at 0% 50%,color-mix(in srgb,var(--rc,transparent) 16%,transparent),transparent 70%),rgba(0,0,0,.2);animation:panel-in var(--dur-3) var(--ease-out)}
@@ -1350,6 +1351,19 @@ body.has-panel .mapctl{display:none}
       </div>
     </article>
     <div id="shopCrateResult" class="loot" style="display:none"></div>
+    <article class="offer">
+      <div class="offer-art"><svg class="icon"><use href="#i-shield"/></svg></div>
+      <div class="offer-text">
+        <h4>Friedensschild</h4>
+        <p>Niemand kann deine Basen angreifen, solange der Schild steht. Greifst du selbst an, fällt der Schild sofort.</p>
+        <p id="shieldState" class="shield-state"></p>
+        <div class="shield-opts">
+          <button type="button" class="btn btn--secondary" data-shield="2"><span>2 Std.</span><span class="cost cost--gem"><svg class="icon"><use href="#i-gem"/></svg><b>40</b></span></button>
+          <button type="button" class="btn btn--secondary" data-shield="8"><span>8 Std.</span><span class="cost cost--gem"><svg class="icon"><use href="#i-gem"/></svg><b>120</b></span></button>
+          <button type="button" class="btn btn--secondary" data-shield="24"><span>24 Std.</span><span class="cost cost--gem"><svg class="icon"><use href="#i-gem"/></svg><b>300</b></span></button>
+        </div>
+      </div>
+    </article>
   </div>
   <footer class="pfoot">
     <button id="shopToEquipBtn" class="btn btn--secondary" type="button"><svg class="icon"><use href="#i-shield"/></svg><span>Ausrüstung</span></button>
@@ -2066,7 +2080,7 @@ body.has-panel .mapctl{display:none}
             } catch (e) {}
             ['openWaterPlayerIslandId', 'openWaterOwnedIslands', 'openWaterIslandLevels', 'openWaterIslandTroops', 'openWaterBotOwnedIslands',
              'openWaterBotCoins', 'openWaterNeutralTroopOverrides', 'openWaterScoutedIslands', 'openWaterPendingAttacks', 'openWaterPendingSends',
-             'openWaterPendingScouts', 'openWaterPendingRetreats', 'openWaterTempleHoldSince', 'openWaterBoss', 'openWaterBossNext', 'openWaterExplored', 'openWaterFogCells', 'openWaterWorldStart', 'openWaterBotState', 'openWaterTitles', 'openWaterGateCfg'].forEach(k => store.remove(k));
+             'openWaterPendingScouts', 'openWaterPendingRetreats', 'openWaterTempleHoldSince', 'openWaterBoss', 'openWaterBossNext', 'openWaterExplored', 'openWaterFogCells', 'openWaterWorldStart', 'openWaterBotState', 'openWaterTitles', 'openWaterGateCfg', 'openWaterShield'].forEach(k => store.remove(k));
             if (carry > 0) store.set('openWaterCarryTroops', String(Math.round(carry)));
             store.set('openWaterBalanceV2', '1');
             store.set('openWaterWorldVersion', WORLD_VERSION);
@@ -2866,6 +2880,7 @@ body.has-panel .mapctl{display:none}
                 : available;
             if (!source || !target || rawTroops <= 0) return false;
             if (!attackerBotId && target.id === playerIslandId) return false;
+            if (attackerBotId && islandOwnerOf(target.id) === 'player' && playerShielded()) return false;
             if (isCapital(target.id)) {                                   // nobody's capital can be attacked
                 if (!attackerBotId) flashHint('Das ist die Hauptstadt von ' + (botById[islandOwnerOf(target.id)] || {}).name + ' – Hauptstädte können nicht angegriffen werden.', 3500);
                 return false;
@@ -2898,6 +2913,7 @@ body.has-panel .mapctl{display:none}
             saveGame();
             saveProgression();
             if (!attackerBotId) flashHint('Angriff unterwegs zu ' + islandTitle(target) + ' · ca. ' + fmtClock(durationSec));
+            if (!attackerBotId) dropShield('Dein Friedensschild ist gefallen, weil du angreifst.');
             if (!attackerBotId) questProgress('attack', 1);
             renderActiveMarches();
             return true;
@@ -4189,12 +4205,23 @@ body.has-panel .mapctl{display:none}
         }
         function drawBaseSparks(vis, z, now) {            // over the towers
           if (z < 0.006) return;
-          setScreen(ctx);
+          setScreen(ctx); const shielded = playerShielded();
           const titled = titledCapitals();
           for (const isl of vis) {
             if (isl.type !== 'tower' || !islandOwnerOf(isl.id)) continue;
             const lvl = islandLevels[isl.id] || 1, t = titled.get(isl.id), x = toSX(isl.x), y = toSY(isl.y), r = Math.max(20, isl.radius * z * 1.25);
             if (x < -r * 5 || x > viewW + r * 5 || y < -r * 6 || y > viewH + r * 5) continue;
+            if (shielded && ownedIslands.has(isl.id)) { const r = isl.radius * z;                          // Friedensschild: a pale dome over every own base
+              const R = Math.max(r * 1.45, 16), ph = .6 + .4 * Math.sin(now / 700 + isl.id);
+              const gd = ctx.createRadialGradient(x, y - R * .2, R * .3, x, y - R * .2, R);
+              gd.addColorStop(0, 'rgba(210,235,255,.12)'); gd.addColorStop(.7, 'rgba(190,225,255,' + (.28 * ph).toFixed(2) + ')'); gd.addColorStop(1, 'rgba(230,245,255,' + (.6 * ph).toFixed(2) + ')');
+              ctx.fillStyle = gd; ctx.beginPath(); ctx.arc(x, y - R * .2, R, 0, Math.PI * 2); ctx.fill();
+              ring(x, y - R * .2, R + 1, 5, 'rgba(10,30,60,.35)');
+              ring(x, y - R * .2, R, 2.6, 'rgba(225,242,255,' + (.75 + .25 * ph).toFixed(2) + ')');
+              ctx.strokeStyle = 'rgba(255,255,255,' + (.5 * ph).toFixed(2) + ')'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y - R * .2, R * .82, Math.PI * 1.1, Math.PI * 1.45); ctx.stroke();   // glint
+              liveAnimation = true;
+            }
+
             if (lvl >= 80) {                               // pillar of light + sparks orbiting and rising
               fxPillar(x, y + r * .3, r * 1.6, r * 7, now, 'rgba(255,225,140,A)');
               for (let i = 0; i < 10; i++) { const a = now / 700 + i / 10 * Math.PI * 2, ox = Math.cos(a) * r * 1.5, oy = Math.sin(a) * r * .55 - r * .5 - Math.sin(now / 500 + i) * r * .3;
@@ -5002,6 +5029,7 @@ body.has-panel .mapctl{display:none}
             if (!owned || owned.size === 0) return;
             const st = BOT_STYLES[bot.style], atk = (1 + botMults(bot.id).attackPct / 100) * titleMult(bot.id, 'attack'), ruler = rulerOwner();
             const cands = [];
+            const shielded = playerShielded();
             const busy = st.launches ? new Set(pendingAttacks.filter(a => a.attackerBotId === bot.id).map(a => a.targetId)) : null;
             for (const sourceId of botSampleSources(owned, st.sources)) {
                 const troopsHere = (islandTroops[sourceId] || 0) * st.send;
@@ -5012,6 +5040,7 @@ body.has-panel .mapctl{display:none}
                     const toll = tollFor(source.landmassId, lmId, troopsHere, bot.id).cost, canPass = !toll || (botCoins[bot.id] || 0) >= toll;
                     for (const target of islandsByLandmass[lmId] || []) {
                         if (owned.has(target.id) || isCapital(target.id) || (busy && busy.has(target.id))) continue;   // capitals can't be attacked
+                        if (shielded && islandOwnerOf(target.id) === 'player') continue;                           // the Friedensschild
                         if (!canPass && !(target.type === 'gate' && gateOnRoute(source.landmassId, lmId) === target)) continue;
                         const totalStrength = effectiveTroops(target) + effectiveDefense(target);
                         if (troopsHere * atk < totalStrength * st.margin) continue;
@@ -5323,6 +5352,12 @@ body.has-panel .mapctl{display:none}
                 // so do the defender's reinforcements (they land in the garrison) - one battle, everything counted.
                 // A wave that comes after the fight is decided starts a fight of its own.
                 for (const a of pendingAttacks.filter(x => x.resolveAt <= now && !x.fightEndsAt)) {
+                    if (a.attackerBotId && islandOwnerOf(a.targetId) === 'player' && playerShielded()) {   // bounces off the Friedensschild
+                        if (botOwnedIslands[a.attackerBotId].has(a.sourceId)) islandTroops[a.sourceId] = (islandTroops[a.sourceId] || 0) + a.rawTroops;
+                        pendingAttacks.splice(pendingAttacks.indexOf(a), 1);
+                        flashHint('Dein Friedensschild hat den Angriff von ' + botById[a.attackerBotId].name + ' auf ' + islandTitle(islandById[a.targetId]) + ' abgewehrt.', 4000);
+                        spawnBattleFx(a.targetId, true, 'Schild hält', botById[a.attackerBotId].name + ' prallt ab'); renderActiveMarches(); continue;
+                    }
                     if (islandOwnerOf(a.targetId) === (a.attackerBotId || 'player')) {   // the base is already ours (an earlier wave took it): they simply move in
                         islandTroops[a.targetId] = (islandTroops[a.targetId] || 0) + a.rawTroops;
                         pendingAttacks.splice(pendingAttacks.indexOf(a), 1);
@@ -6353,7 +6388,21 @@ body.has-panel .mapctl{display:none}
         const shopToEquipBtn = document.getElementById('shopToEquipBtn');
         const shopCloseBtn = document.getElementById('shopCloseBtn');
 
+        // ===== FRIEDENSSCHILD: nobody may attack the player's bases while it stands; attacking yourself drops it =====
+        const SHIELD_PRICES = { 2: 40, 8: 120, 24: 300 };
+        function shieldUntil() { return parseInt(store.get('openWaterShield'), 10) || 0; }
+        function playerShielded() { return Date.now() < shieldUntil(); }
+        function dropShield(reason) { if (!playerShielded()) return; store.set('openWaterShield', '0'); if (reason) flashHint(reason, 4000); requestRender(); }
+        function fmtHours(ms) { const m = Math.ceil(ms / 60000); return m >= 60 ? Math.floor(m / 60) + ' Std. ' + (m % 60) + ' Min.' : m + ' Min.'; }
+        function renderShieldState() { const el = document.getElementById('shieldState'); if (el) el.textContent = playerShielded() ? 'Aktiv – noch ' + fmtHours(shieldUntil() - Date.now()) : ''; }
+        shopPopup.addEventListener('click', e => { const bt = e.target.closest('[data-shield]'); if (!bt) return;
+            const h = +bt.dataset.shield, cost = SHIELD_PRICES[h];
+            if (gems < cost) { flashHint('Zu wenig Gems – der Schild kostet ' + cost + '.', 3000); return; }
+            gems -= cost; store.set('openWaterShield', String(Math.max(Date.now(), shieldUntil()) + h * 3600000));
+            updateHud(); saveGame(); renderShop(); requestRender();
+            flashHint('Friedensschild aktiv – noch ' + fmtHours(shieldUntil() - Date.now()), 3500); });
         function renderShop() {
+            renderShieldState();
             shopGemCount.textContent = fmtCompact(Math.floor(gems));
             shopGemCount.title = fmtNum(Math.floor(gems)) + ' Gems';
             shopOpenCrateBtn.disabled = gems < CRATE_GEM_COST;
