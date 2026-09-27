@@ -1,0 +1,349 @@
+<title>Open Water Baupläne</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;600;700&display=swap">
+<style>
+  /* One deliberate look: the game's own dark parchment-and-steel UI, so the buildings are judged on the ground they stand on. */
+  :root {
+    color-scheme: dark;
+    --bg: #11141a; --panel: #1a1e26; --panel-2: #222733; --line: #2e3442;
+    --tx: #efe6d2; --tx-2: #a99f8b; --gold: #e4c886; --gold-2: #b98a3e;
+    --player: #3f86d8; --bot: #c9423a; --neutral: #7c8088;
+    --grass: #4f8a3a; --grass-2: #3f7430; --stone: #9a968c; --night: #1d2733;
+    --ground: var(--grass); --ground-2: var(--grass-2);
+    --display: 'Cinzel', Georgia, 'Times New Roman', serif;
+    --ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+  :root[data-ground="mitte"] { --ground: #a7a296; --ground-2: #8f8a7e; }
+  :root[data-ground="nacht"] { --ground: #243241; --ground-2: #1b2632; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--tx); font: 400 14px/1.5 var(--ui); padding-inline: 16px; padding-block: 20px 48px; }
+  .wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 28px; }
+  header { display: grid; gap: 10px; }
+  #atlas { display: grid; gap: 32px; }
+  .eyebrow { font: 700 11px/1 var(--ui); letter-spacing: .16em; text-transform: uppercase; color: var(--gold); }
+  h1 { font: 700 clamp(26px, 5vw, 38px)/1.1 var(--display); margin: 0; text-wrap: balance; letter-spacing: .02em; }
+  .lede { color: var(--tx-2); max-width: 64ch; margin: 0; }
+  .lede b { color: var(--tx); }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; padding: 10px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+  .bar .lbl { font: 600 12px/1 var(--ui); color: var(--tx-2); letter-spacing: .08em; text-transform: uppercase; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  .seg button { font: 600 13px/1 var(--ui); color: var(--tx-2); background: transparent; border: 0; padding: 9px 12px; cursor: pointer; }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button.on { background: var(--panel-2); color: var(--gold); }
+  .seg button:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+  section { display: grid; gap: 12px; }
+  .sec-h { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+  .sec-h h2 { font: 700 20px/1.2 var(--display); margin: 0; letter-spacing: .03em; }
+  .sec-h p { margin: 0; color: var(--tx-2); font-size: 13px; }
+  .row { display: grid; gap: 8px; }
+  .row-h { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .code { font: 700 12px/1 var(--ui); color: #16120a; background: var(--gold); border-radius: 4px; padding: 4px 6px; font-variant-numeric: tabular-nums; }
+  .row-h b { font: 700 15px/1.2 var(--display); letter-spacing: .02em; }
+  .row-h small { color: var(--tx-2); }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+  .card { display: grid; grid-template-rows: auto auto; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .stage { position: relative; background: radial-gradient(ellipse at 50% 70%, var(--ground) 0%, var(--ground-2) 80%); display: grid; place-items: center; padding-block: 8px 4px; }
+  .stage canvas.big { width: 124px; height: 144px; }
+  .minis { overflow: hidden; display: flex; gap: 10px; align-items: flex-end; justify-content: center; padding: 6px 8px; background: var(--ground-2); border-top: 1px solid rgba(0,0,0,.25); }
+  .minis canvas { display: block; }
+  .meta { display: flex; justify-content: space-between; gap: 8px; align-items: center; padding: 8px 10px; }
+  .meta span { font: 600 13px/1.2 var(--ui); }
+  .own { font: 700 11px/1 var(--ui); letter-spacing: .06em; text-transform: uppercase; padding: 4px 6px; border-radius: 4px; color: #fff; white-space: nowrap; }
+  .own.neutral { background: var(--neutral); } .own.player { background: var(--player); } .own.bot { background: var(--bot); } .own.home { background: #7a5a18; }
+  .how { display: grid; gap: 6px; padding: 12px 14px; border: 1px dashed var(--line); border-radius: 8px; color: var(--tx-2); max-width: 72ch; }
+  .how b { color: var(--tx); }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Open Water · Werkstatt</div>
+    <h1>Baupläne der Basen und Tempel</h1>
+    <p class="lede">Jede Base, jeder Tempel und jedes Tor, genau so gezeichnet wie im Spiel. Oben groß, darunter in den <b>Größen, wie sie auf der Karte erscheinen</b>. Jedes Design hat eine Nummer, zum Beispiel <b>B2</b> oder <b>T3</b>.</p>
+    <div class="how">
+      <span><b>So arbeiten wir damit:</b> Sag mir die Nummer und was anders werden soll, etwa „B0 soll mehr wie ein Lager mit Zelten aussehen“ oder „T3 goldener“.</span>
+      <span>Ich ändere es hier, du schaust es dir an, und wenn es passt, übernehme ich es ins Spiel.</span>
+    </div>
+    <div class="bar" role="group" aria-label="Untergrund">
+      <span class="lbl">Untergrund</span>
+      <div class="seg" id="groundSeg">
+        <button type="button" id="gWiese" data-g="wiese" class="on">Wiese</button>
+        <button type="button" id="gMitte" data-g="mitte">Mitte (grau)</button>
+        <button type="button" id="gNacht" data-g="nacht">Nacht</button>
+      </div>
+    </div>
+  </header>
+  <main id="atlas"></main>
+</div>
+
+<script>
+/*<<DESIGN-CODE*/
+function strokeBox(g, x, y, w, h) { g.beginPath(); g.rect(x, y, w, h); g.stroke(); }
+
+function rr(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+
+const BAND = { player: '#3f86d8', bot: '#c9423a', neutral: '#7c8088' };
+
+function towerTier(level) { return level >= 80 ? 4 : level >= 50 ? 3 : level >= 25 ? 2 : level >= 10 ? 1 : 0; }
+
+function paintTowerTier(g, ownerKey, detail, home, tier) {
+  // 3/4 view, light from the upper left. Sprite box: x -31…31, y -48…24 (see buildingSprite).
+  const ink = '#1e1a16', neutral = ownerKey === 'neutral', own = BAND[ownerKey];
+  const marble = tier === 4, S = marble ? ['#fbf8f1', '#e3ddcf', '#a9a08c'] : neutral ? ['#d2cbbd', '#aaa393', '#716b5d'] : ['#ece5d6', '#c4bba8', '#847b69'];
+  const roofC = tier === 4 ? ['#fff1b8', '#e2b54a', '#7a5414'] : tier >= 3 ? ['#e4745a', '#b03e2a', '#5a1a10'] : tier === 2 ? ['#6f8bb4', '#3f5a86', '#1c2a44'] : ['#9a6a3c', '#6d4524', '#3a2410'];
+  const lin = (x0, x1, cs) => { const q = g.createLinearGradient(x0, 0, x1, 0); q.addColorStop(0, cs[0]); q.addColorStop(.45, cs[1]); q.addColorStop(1, cs[2]); return q; };
+  const mound = (w) => {                                   // rocky ground the base stands on
+    g.beginPath(); g.ellipse(0, 16, w, 7.5, 0, 0, Math.PI * 2);
+    const q = g.createLinearGradient(0, 9, 0, 24); q.addColorStop(0, '#8a8272'); q.addColorStop(1, '#4b463d'); g.fillStyle = q; g.fill();
+    g.lineWidth = 1; g.strokeStyle = ink; g.stroke();
+    g.fillStyle = 'rgba(255,255,255,.18)'; g.beginPath(); g.ellipse(-w * .25, 13.5, w * .5, 2.4, 0, 0, Math.PI * 2); g.fill();
+    if (detail) { g.fillStyle = '#6d8a3e'; for (const [x, r] of [[-w * .8, 2.4], [w * .75, 2.2], [-w * .45, 1.8], [w * .4, 1.6]]) { g.beginPath(); g.arc(x, 18, r, 0, Math.PI * 2); g.fill(); } } };
+  const cyl = (cx, top, bot, r) => {                       // round stone tower body
+    g.fillStyle = lin(cx - r, cx + r, S); g.beginPath(); g.moveTo(cx - r, top); g.lineTo(cx - r, bot); g.ellipse(cx, bot, r, r * .32, 0, Math.PI, 0, true); g.lineTo(cx + r, top); g.closePath(); g.fill();
+    g.lineWidth = 1.1; g.strokeStyle = ink; g.stroke();
+    if (detail) { g.strokeStyle = 'rgba(40,32,22,.2)'; g.lineWidth = .7; for (let y = top + 5; y < bot; y += 5) { g.beginPath(); g.ellipse(cx, y, r, r * .32, 0, 0, Math.PI); g.stroke(); } } };
+  const crenel = (cx, top, r) => {                         // round parapet with merlons
+    g.fillStyle = lin(cx - r - 1.5, cx + r + 1.5, S); g.beginPath(); g.ellipse(cx, top, r + 1.5, (r + 1.5) * .32, 0, 0, Math.PI * 2); g.fill(); g.lineWidth = 1; g.strokeStyle = ink; g.stroke();
+    for (let i = 0; i < 5; i++) { const a = Math.PI * (.12 + i * .19), x = cx - Math.cos(a) * (r + .5), y = top + Math.sin(a) * (r + .5) * .32;
+      g.fillStyle = i < 2 ? S[0] : S[1]; g.fillRect(x - 1.4, y - 3.4, 2.8, 3.4); g.lineWidth = .7; strokeBox(g, x - 1.4, y - 3.4, 2.8, 3.4); } };
+  const cone = (cx, base, r, h, cs) => {                   // tiled conical roof with a rim
+    g.fillStyle = lin(cx - r, cx + r, cs); g.beginPath(); g.moveTo(cx - r - 1, base); g.lineTo(cx, base - h); g.lineTo(cx + r + 1, base); g.ellipse(cx, base, r + 1, (r + 1) * .3, 0, 0, Math.PI); g.closePath(); g.fill();
+    g.lineWidth = 1.1; g.strokeStyle = ink; g.stroke();
+    if (detail) { g.strokeStyle = 'rgba(0,0,0,.22)'; g.lineWidth = .7; for (let i = 1; i < 4; i++) { const t = i / 4, rr2 = (r + 1) * (1 - t); g.beginPath(); g.ellipse(cx, base - h * t, rr2, rr2 * .3, 0, 0, Math.PI); g.stroke(); }
+      g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = .9; g.beginPath(); g.moveTo(cx - r * .45, base - 1); g.lineTo(cx - .6, base - h + 1.5); g.stroke(); } };
+  const box3 = (x0, top, w, h, d) => {                     // block with a lit front and a shaded right side
+    g.fillStyle = lin(x0, x0 + w, S); g.fillRect(x0, top, w, h); g.lineWidth = 1.1; g.strokeStyle = ink; strokeBox(g, x0, top, w, h);
+    g.fillStyle = S[2]; g.beginPath(); g.moveTo(x0 + w, top); g.lineTo(x0 + w + d, top - d * .6); g.lineTo(x0 + w + d, top + h - d * .6); g.lineTo(x0 + w, top + h); g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = S[0]; g.beginPath(); g.moveTo(x0, top); g.lineTo(x0 + d, top - d * .6); g.lineTo(x0 + w + d, top - d * .6); g.lineTo(x0 + w, top); g.closePath(); g.fill(); g.stroke();
+    if (detail) { g.strokeStyle = 'rgba(40,32,22,.18)'; g.lineWidth = .7; g.beginPath(); for (let y = top + 5; y < top + h; y += 5) { g.moveTo(x0, y); g.lineTo(x0 + w, y); } g.stroke(); } };
+  const merl = (x0, top, w, d) => { const n = Math.max(2, Math.round(w / 5)), mw = w / (n * 2 - 1);
+    for (let i = 0; i < n; i++) { g.fillStyle = S[0]; g.fillRect(x0 + i * 2 * mw, top - 3.2, mw, 3.2); g.lineWidth = .7; g.strokeStyle = ink; strokeBox(g, x0 + i * 2 * mw, top - 3.2, mw, 3.2); } };
+  const win = (x, y, w, h) => { g.fillStyle = '#1b140e'; g.beginPath(); g.moveTo(x - w / 2, y + h); g.lineTo(x - w / 2, y + w / 2); g.arc(x, y + w / 2, w / 2, Math.PI, 0); g.lineTo(x + w / 2, y + h); g.closePath(); g.fill();
+    if (!neutral) { g.fillStyle = 'rgba(255,196,96,.9)'; g.beginPath(); g.arc(x, y + h * .65, w * .3, 0, Math.PI * 2); g.fill(); } };
+  const gate = (x, bot, w, h) => { g.fillStyle = '#1b140e'; g.beginPath(); g.moveTo(x - w / 2, bot); g.lineTo(x - w / 2, bot - h + w / 2); g.arc(x, bot - h + w / 2, w / 2, Math.PI, 0); g.lineTo(x + w / 2, bot); g.closePath(); g.fill();
+    g.strokeStyle = '#7a5a36'; g.lineWidth = .8; g.beginPath(); for (let i = 1; i < 3; i++) { g.moveTo(x - w / 2 + w * i / 3, bot); g.lineTo(x - w / 2 + w * i / 3, bot - h + 2); } g.stroke(); };
+  const flag = (x, y, h, w) => { if (neutral) return;
+    g.strokeStyle = '#2b2622'; g.lineWidth = 1.3; g.beginPath(); g.moveTo(x, y); g.lineTo(x, y - h); g.stroke();
+    g.fillStyle = '#e8c877'; g.beginPath(); g.arc(x, y - h - 1, 1.4, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.moveTo(x + .6, y - h + .5); g.quadraticCurveTo(x + w * .5, y - h - 1.5, x + w, y - h + 1.5); g.lineTo(x + w * .8, y - h + 4.5); g.lineTo(x + w, y - h + 7.5); g.quadraticCurveTo(x + w * .5, y - h + 5, x + .6, y - h + 8);
+    g.closePath(); const q = g.createLinearGradient(x, 0, x + w, 0); q.addColorStop(0, own); q.addColorStop(1, 'rgba(0,0,0,.35)'); g.fillStyle = own; g.fill(); g.fillStyle = q; g.globalAlpha = .45; g.fill(); g.globalAlpha = 1;
+    g.lineWidth = .8; g.strokeStyle = 'rgba(20,16,12,.8)'; g.stroke(); };
+  const band = (x0, y, w) => { if (neutral) return; g.fillStyle = own; g.fillRect(x0, y, w, 2.6); g.fillStyle = 'rgba(255,255,255,.25)'; g.fillRect(x0, y, w, .8); };
+
+  if (tier === 0) {                                        // palisade camp with a timber watchtower
+    mound(19);
+    const wood = ['#c89662', '#8e6038', '#4e331c'];
+    g.strokeStyle = '#3a2410'; g.lineWidth = 2.4; g.beginPath(); g.moveTo(-8, 14); g.lineTo(-6.5, -8); g.moveTo(8, 14); g.lineTo(6.5, -8); g.stroke();
+    g.lineWidth = 1.2; g.beginPath(); g.moveTo(-7.5, 10); g.lineTo(7.5, -3); g.moveTo(7.5, 10); g.lineTo(-7.5, -3); g.stroke();
+    g.fillStyle = lin(-11, 11, wood); g.fillRect(-10.5, -18, 21, 11); g.lineWidth = 1.1; g.strokeStyle = ink; strokeBox(g, -10.5, -18, 21, 11);
+    if (detail) { g.strokeStyle = 'rgba(40,24,10,.45)'; g.lineWidth = .7; g.beginPath(); for (const x of [-5.5, -.5, 4.5]) { g.moveTo(x, -18); g.lineTo(x, -7); } g.stroke(); }
+    band(-10.5, -10, 21); win(0, -16, 4, 5);
+    cone(0, -18, 13, 13, ['#e0c078', '#b08a3e', '#5e4418']);                                          // thatch
+    for (let i = 0; i < 9; i++) { const x = -17 + i * 4.25, top = 5 + Math.abs(i - 4) * .6;           // palisade in front
+      g.fillStyle = lin(x - 2, x + 2, wood); g.beginPath(); g.moveTo(x - 1.9, 16); g.lineTo(x - 1.9, top); g.lineTo(x, top - 3); g.lineTo(x + 1.9, top); g.lineTo(x + 1.9, 16); g.closePath(); g.fill(); g.lineWidth = .8; g.strokeStyle = ink; g.stroke(); }
+    flag(0, -31, 10, 11);
+  } else if (tier === 1) {                                 // round stone tower with a gatehouse
+    mound(21);
+    cyl(0, -14, 13, 11); band(-11, -8, 22); win(-4, -4, 3, 5); win(4, -4, 3, 5);
+    box3(-9, 3, 18, 11, 3); gate(0, 14, 7, 9); merl(-9, 3, 18);
+    crenel(0, -14, 11); cone(0, -17, 9.5, 15, roofC);
+    flag(0, -32, 11, 12);
+  } else if (tier === 2) {                                 // keep flanked by two round towers
+    mound(26);
+    box3(-12, -20, 24, 34, 5); band(-12, -14, 24); win(-5, -10, 3.4, 6); win(5, -10, 3.4, 6); win(0, -1, 3.4, 6); merl(-12, -20, 24);
+    for (const cx of [-19, 19]) { cyl(cx, -8, 14, 6.5); crenel(cx, -8, 6.5); cone(cx, -11, 5.5, 10, roofC); }
+    box3(-7, 5, 14, 9, 2); gate(0, 14, 7, 8);
+    flag(0, -24, 13, 14);
+  } else {                                                 // castle / citadel: curtain wall, four towers, tall keep
+    mound(29);
+    for (const cx of [-15, 15]) { cyl(cx, -14, 6, 5); crenel(cx, -14, 5); cone(cx, -17, 4.5, 10, roofC); }                   // back towers
+    box3(-10, -30, 20, 40, 5); band(-10, -24, 20); win(-4, -21, 3.2, 6); win(4, -21, 3.2, 6); win(0, -10, 3.4, 6);          // keep
+    if (marble) { g.strokeStyle = 'rgba(210,170,70,.8)'; g.lineWidth = 1; strokeBox(g, -10, -30, 20, 40); }
+    cone(2.5, -30, 13, tier === 4 ? 17 : 15, roofC);
+    box3(-24, 2, 48, 12, 3); merl(-24, 2, 48); band(-24, 5, 48); gate(0, 14, 8, 10);                                         // curtain wall
+    for (const cx of [-25, 25]) { cyl(cx, -6, 15, 5.5); crenel(cx, -6, 5.5); cone(cx, -9, 5, 11, roofC); }                   // front towers
+    if (tier === 4) { for (const [cx, cy] of [[25, -21], [2.5, -47.5]]) { g.fillStyle = '#ffe9a0'; g.beginPath(); g.arc(cx, cy, 1.8, 0, Math.PI * 2); g.fill(); g.lineWidth = .6; g.strokeStyle = ink; g.stroke(); } }
+    flag(-25, -20, 8, 11);
+  }
+}
+
+function paintTemple(g, ownerKey, detail) {
+  const ink = '#2a241b';
+  const step = (x, y, w, h, a, b) => { const q = g.createLinearGradient(x, 0, x + w, 0); q.addColorStop(0, a); q.addColorStop(1, b);
+    g.fillStyle = q; g.fillRect(x, y, w, h); g.lineWidth = 1.1; g.strokeStyle = ink; strokeBox(g, x, y, w, h); };
+  step(-22, 14, 44, 6, '#d9cfb6', '#978b70'); step(-19, 10, 38, 4, '#e2d9c2', '#a3977c'); step(-16.5, 6.5, 33, 3.5, '#ebe3cf', '#ada186');
+  for (const cx of [-12, -4.3, 3.3, 11]) { const q = g.createLinearGradient(cx - 1.9, 0, cx + 1.9, 0); q.addColorStop(0, '#f5efe0'); q.addColorStop(1, '#a99d83');
+    g.fillStyle = q; g.fillRect(cx - 1.9, -8, 3.8, 14.5); g.lineWidth = .9; g.strokeStyle = ink; strokeBox(g, cx - 1.9, -8, 3.8, 14.5); }
+  g.fillStyle = '#d8cdb2'; g.fillRect(-16, -11, 32, 3.2); g.lineWidth = 1.1; g.strokeStyle = ink; strokeBox(g, -16, -11, 32, 3.2);
+  const pd = g.createLinearGradient(0, -24, 0, -11); pd.addColorStop(0, '#f4e1a4'); pd.addColorStop(1, '#b88e44');
+  g.beginPath(); g.moveTo(-18, -11); g.lineTo(0, -23.5); g.lineTo(18, -11); g.closePath(); g.fillStyle = pd; g.fill(); g.lineWidth = 1.3; g.strokeStyle = ink; g.stroke();
+  if (detail) { g.fillStyle = 'rgba(60,40,10,.35)'; g.beginPath(); g.arc(0, -15, 2.2, 0, Math.PI * 2); g.fill(); }
+  g.fillStyle = '#f1d27f'; g.beginPath(); g.moveTo(0, -30); g.lineTo(2.6, -26.5); g.lineTo(0, -23.5); g.lineTo(-2.6, -26.5); g.closePath(); g.fill(); g.lineWidth = .9; g.stroke();
+  if (ownerKey !== 'neutral') { g.fillStyle = BAND[ownerKey]; g.beginPath(); g.moveTo(-3.2, -7.8); g.lineTo(3.2, -7.8); g.lineTo(3.2, 1); g.lineTo(0, -1.2); g.lineTo(-3.2, 1); g.closePath(); g.fill(); }  // owner cloth
+}
+
+function paintGuardianTemple(g, ownerKey, detail) {                             // Wächter-Tempel: temple flanked by two watchtowers, steel-blue dome
+  const ink = '#2a241b';
+  const stone = (x0, x1) => { const q = g.createLinearGradient(x0, 0, x1, 0); q.addColorStop(0, '#ebe6da'); q.addColorStop(1, '#9d9585'); return q; };
+  g.lineJoin = 'round'; g.strokeStyle = ink;
+  for (const [x, y, w, h] of [[-25, 14, 50, 6], [-21, 10, 42, 4]]) { g.fillStyle = stone(x, x + w); g.fillRect(x, y, w, h); g.lineWidth = 1.1; strokeBox(g, x, y, w, h); }
+  for (const sx of [-1, 1]) {                                                    // watchtowers
+    const x = sx < 0 ? -24 : 15;
+    g.fillStyle = stone(x, x + 9); g.fillRect(x, -10, 9, 20); g.lineWidth = 1.1; strokeBox(g, x, -10, 9, 20);
+    for (let i = 0; i < 3; i++) { g.fillRect(x - 0.5 + i * 3.5, -13, 2.5, 3); strokeBox(g, x - 0.5 + i * 3.5, -13, 2.5, 3); }
+    g.fillStyle = '#3a342c'; g.fillRect(x + 3.2, -4, 2.6, 5);
+  }
+  g.fillStyle = '#4a4238'; g.fillRect(-12, -6, 24, 16);                        // cella
+  for (const cx of [-10, -3.4, 3.4, 10]) { g.fillStyle = stone(cx - 1.7, cx + 1.7); g.fillRect(cx - 1.7, -6, 3.4, 16); g.lineWidth = .9; strokeBox(g, cx - 1.7, -6, 3.4, 16); }
+  g.lineWidth = 1.1; g.fillStyle = stone(-14, 14); g.fillRect(-14, -9.5, 28, 3.5); strokeBox(g, -14, -9.5, 28, 3.5);
+  const dg = g.createLinearGradient(-10, -26, 10, -9.5); dg.addColorStop(0, '#dbe8f7'); dg.addColorStop(.5, '#7f9fc6'); dg.addColorStop(1, '#3d5a82');
+  g.beginPath(); g.moveTo(-11, -9.5); g.bezierCurveTo(-11, -20, -4, -24, 0, -24); g.bezierCurveTo(4, -24, 11, -20, 11, -9.5); g.closePath();
+  g.fillStyle = dg; g.fill(); g.lineWidth = 1.3; g.stroke();                   // steel dome
+  if (detail) { g.strokeStyle = 'rgba(20,40,70,.45)'; g.lineWidth = .8; g.beginPath(); g.moveTo(-5, -9.8); g.quadraticCurveTo(-5.3, -19, 0, -23.8); g.moveTo(5, -9.8); g.quadraticCurveTo(5.3, -19, 0, -23.8); g.stroke(); g.strokeStyle = ink; }
+  g.beginPath(); g.moveTo(0, -24); g.lineTo(0, -33); g.lineWidth = 1.4; g.stroke();   // spear finial
+  g.fillStyle = '#e6edf6'; g.beginPath(); g.moveTo(0, -38); g.lineTo(2.4, -33); g.lineTo(-2.4, -33); g.closePath(); g.fill(); g.lineWidth = .9; g.stroke();
+  if (ownerKey !== 'neutral') { g.fillStyle = BAND[ownerKey]; g.beginPath(); g.moveTo(-3.2, -5.5); g.lineTo(3.2, -5.5); g.lineTo(3.2, 3); g.lineTo(0, 1); g.lineTo(-3.2, 3); g.closePath(); g.fill(); }
+}
+
+function paintMegaTemple(g, ownerKey, detail) {                                   // grafted from Parchment & Steel, converted to the 64-box
+  const ink = '#2a241b';
+  const marble = (x0, x1) => { const q = g.createLinearGradient(x0, 0, x1, 0); q.addColorStop(0, '#f3ecdc'); q.addColorStop(.5, '#d6cdb8'); q.addColorStop(1, '#a79d86'); return q; };
+  g.lineJoin = 'round'; g.strokeStyle = ink; g.lineWidth = 1.1;
+  for (const [x, y, w, h] of [[-24, 14, 48, 6], [-21, 10, 42, 4], [-18.5, 6.5, 37, 3.5]]) { g.fillStyle = marble(x, x + w); g.fillRect(x, y, w, h); strokeBox(g, x, y, w, h); }
+  for (const s of [-1, 1]) { g.beginPath(); g.moveTo(s * 25, 14); g.lineTo(s * 25, -6); g.lineTo(s * 26.6, -10.5); g.lineTo(s * 28.2, -6); g.lineTo(s * 28.2, 14); g.closePath();
+    g.fillStyle = marble(s * 25, s * 28.2); g.fill(); g.stroke(); }                                                             // side obelisks
+  g.fillStyle = '#4a4238'; g.fillRect(-16, -8, 32, 14.5);                                                                      // dark cella
+  for (const cx of [-14, -8.4, -2.8, 2.8, 8.4, 14]) { g.fillStyle = marble(cx - 1.7, cx + 1.7); g.fillRect(cx - 1.7, -8, 3.4, 14.5); g.lineWidth = .9; strokeBox(g, cx - 1.7, -8, 3.4, 14.5); }
+  g.lineWidth = 1.1; g.fillStyle = marble(-18, 18); g.fillRect(-18, -11.2, 36, 3.2); strokeBox(g, -18, -11.2, 36, 3.2);          // entablature
+  g.fillStyle = marble(-9, 9); g.fillRect(-9, -16.5, 18, 5.3); strokeBox(g, -9, -16.5, 18, 5.3);                                // drum
+  const dg = g.createLinearGradient(-9, -29, 9, -16.5); dg.addColorStop(0, '#f6dc86'); dg.addColorStop(.55, '#d2a247'); dg.addColorStop(1, '#946a22');
+  g.beginPath(); g.moveTo(-9, -16.5); g.bezierCurveTo(-9, -25, -3.5, -28.5, 0, -28.5); g.bezierCurveTo(3.5, -28.5, 9, -25, 9, -16.5); g.closePath();
+  g.fillStyle = dg; g.fill(); g.lineWidth = 1.3; g.stroke();                                                                  // gold dome
+  if (detail) { g.strokeStyle = 'rgba(120,80,20,.5)'; g.lineWidth = .8; g.beginPath(); g.moveTo(-4, -16.8); g.quadraticCurveTo(-4.3, -24, 0, -28.2);
+    g.moveTo(4, -16.8); g.quadraticCurveTo(4.3, -24, 0, -28.2); g.stroke(); g.strokeStyle = ink; }                           // dome ribs
+  g.lineWidth = 1; g.fillStyle = '#e8c46a'; g.fillRect(-1.5, -32.5, 3, 4); strokeBox(g, -1.5, -32.5, 3, 4);                      // lantern
+  g.beginPath(); g.moveTo(0, -37); g.lineTo(2, -34.7); g.lineTo(0, -32.5); g.lineTo(-2, -34.7); g.closePath(); g.fillStyle = '#f1d27f'; g.fill(); g.stroke();
+  if (ownerKey !== 'neutral') { g.fillStyle = BAND[ownerKey]; g.beginPath(); g.moveTo(-3.2, -7.8); g.lineTo(3.2, -7.8); g.lineTo(3.2, 1); g.lineTo(0, -1.2); g.lineTo(-3.2, 1); g.closePath(); g.fill(); }
+}
+
+function drawGatehouse(g, cx, cy, H, open) {      // front view like the towers: two turrets, a wall, an arch with a portcullis
+    const W = H * 1.3, base = cy + H * .42, top = base - H, wallTop = base - H * .7, tw = W * .27;
+    const stone = '#8f8b84', dark = '#5d5a54', edge = '#23211e';
+    g.save(); g.lineJoin = 'round';
+    g.fillStyle = 'rgba(0,0,0,.28)'; g.beginPath(); g.ellipse(cx, base + H * .03, W * .56, H * .07, 0, 0, Math.PI * 2); g.fill();
+    const merlons = (x0, x1, y, n) => { const mw = (x1 - x0) / (n * 2 - 1); for (let i = 0; i < n; i++) g.rect(x0 + i * 2 * mw, y - mw * .9, mw, mw * .9); };
+    g.beginPath(); g.rect(cx - W * .36, wallTop, W * .72, base - wallTop); merlons(cx - W * .36, cx + W * .36, wallTop, 5);   // wall
+    g.fillStyle = stone; g.fill(); g.lineWidth = 1.2; g.strokeStyle = edge; g.stroke();
+    for (const sx of [-1, 1]) {                                                                                              // turrets
+        const x0 = sx < 0 ? cx - W / 2 : cx + W / 2 - tw;
+        g.beginPath(); g.rect(x0, top, tw, base - top); merlons(x0 - tw * .08, x0 + tw * 1.08, top, 3);
+        const tg = g.createLinearGradient(x0, 0, x0 + tw, 0); tg.addColorStop(0, '#a29e96'); tg.addColorStop(1, '#77736c');
+        g.fillStyle = tg; g.fill(); g.stroke();
+        g.fillStyle = '#1d1a16'; g.fillRect(x0 + tw * .38, top + H * .2, tw * .24, H * .14);                                // arrow slit
+    }
+    g.strokeStyle = 'rgba(40,36,32,.35)'; g.lineWidth = 1;                                                                    // courses
+    for (let y = wallTop + H * .12; y < base - 2; y += H * .12) { g.beginPath(); g.moveTo(cx - W * .23, y); g.lineTo(cx + W * .23, y); g.stroke(); }
+    const aw = W * .3, ah = H * .5, ax = cx - aw / 2, ay = base - ah;                                                          // arch
+    const arch = () => { g.beginPath(); g.moveTo(ax, base); g.lineTo(ax, ay + aw / 2); g.arc(cx, ay + aw / 2, aw / 2, Math.PI, 0); g.lineTo(ax + aw, base); g.closePath(); };
+    arch(); g.fillStyle = open >= 1 ? '#6f5438' : '#15120e'; g.fill();
+    if (open > 0) { arch(); const lg = g.createLinearGradient(0, ay, 0, base); lg.addColorStop(0, 'rgba(255,226,160,' + (.25 * open) + ')'); lg.addColorStop(1, 'rgba(176,134,88,' + open + ')'); g.fillStyle = lg; g.fill(); }
+    g.save(); arch(); g.clip();                                                                                                 // portcullis, raised by `open`
+    const lift = open * ah * .92, bars = 5;
+    g.strokeStyle = '#2e2b27'; g.lineWidth = Math.max(1, aw * .07);
+    g.beginPath();
+    for (let i = 1; i < bars; i++) { const x = ax + aw * i / bars; g.moveTo(x, ay - lift); g.lineTo(x, base - lift); }
+    for (let j = 1; j < 4; j++) { const y = ay + ah * j / 4 - lift; g.moveTo(ax, y); g.lineTo(ax + aw, y); }
+    g.stroke(); g.restore();
+    arch(); g.lineWidth = 1.4; g.strokeStyle = edge; g.stroke();
+    g.fillStyle = dark; g.fillRect(cx - aw * .62, ay - H * .06, aw * 1.24, H * .06);                                            // lintel
+    g.restore();
+}
+/*DESIGN-CODE>>*/
+
+// ---- gallery ----
+const DPR = Math.min(window.devicePixelRatio || 1, 3);
+const OWNERS = [['neutral', 'Neutral'], ['player', 'Du'], ['bot', 'Bot']];
+const TIERS = [
+  { code: 'B0', name: 'Lager', lv: 'Stufe 1–9' },
+  { code: 'B1', name: 'Rundturm', lv: 'Stufe 10–24' },
+  { code: 'B2', name: 'Bergfried', lv: 'Stufe 25–49' },
+  { code: 'B3', name: 'Burg', lv: 'Stufe 50–79' },
+  { code: 'B4', name: 'Zitadelle', lv: 'Stufe 80+' }
+];
+const TEMPLES = [
+  { code: 'T1', name: 'Tempel', kind: 'temple', note: 'In jeder äußeren Region' },
+  { code: 'T2', name: 'Wächter-Tempel', kind: 'guardian', note: 'Die 4 Regionen um die Mitte' },
+  { code: 'T3', name: 'Mega-Tempel', kind: 'mega', note: 'Die Mitte, auf der Karte 2,3-mal so groß' }
+];
+// Same geometry as buildingSprite() in the game: a 64-unit box, x −31…31, y −48…24.
+function paintSprite(kind, owner, home, tier, sizePx) {
+  const u = sizePx / 64, c = document.createElement('canvas');
+  c.width = Math.ceil(62 * u * DPR) + 2; c.height = Math.ceil(72 * u * DPR) + 2;
+  c.style.width = (c.width / DPR) + 'px'; c.style.height = (c.height / DPR) + 'px';
+  const g = c.getContext('2d'); g.setTransform(u * DPR, 0, 0, u * DPR, 31 * u * DPR + 1, 48 * u * DPR + 1); g.lineJoin = 'round';
+  const detail = sizePx >= 28;
+  if (kind === 'tower') paintTowerTier(g, owner, detail, home, tier);
+  else if (kind === 'temple') paintTemple(g, owner, detail);
+  else if (kind === 'guardian') paintGuardianTemple(g, owner, detail);
+  else paintMegaTemple(g, owner, detail);
+  return c;
+}
+function paintGate(owner, open, H) {                 // the gatehouse plus the owner pennant, as drawBuilding() does it
+  const W = Math.ceil(H * 1.5), Hc = Math.ceil(H * 1.55), c = document.createElement('canvas');
+  c.width = W * DPR; c.height = Hc * DPR; c.style.width = W + 'px'; c.style.height = Hc + 'px';
+  const g = c.getContext('2d'); g.scale(DPR, DPR);
+  const x = W / 2, y = Hc - H * .5;
+  drawGatehouse(g, x, y - H * .1, H, open);
+  if (owner !== 'neutral') { const py = y - H * .1 + H * .42 - H - 2;
+    g.strokeStyle = '#2a2622'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(x, py); g.lineTo(x, py - H * .35); g.stroke();
+    g.fillStyle = BAND[owner]; g.beginPath(); g.moveTo(x, py - H * .35); g.lineTo(x + H * .28, py - H * .27); g.lineTo(x, py - H * .19); g.closePath(); g.fill(); }
+  return c;
+}
+function card(bigCanvas, minis, title, ownerKey, ownerLabel) {
+  const el = document.createElement('div'); el.className = 'card';
+  const st = document.createElement('div'); st.className = 'stage'; bigCanvas.classList.add('big'); st.appendChild(bigCanvas); el.appendChild(st);
+  const m = document.createElement('div'); m.className = 'minis'; minis.forEach(c => m.appendChild(c)); el.appendChild(m);
+  const meta = document.createElement('div'); meta.className = 'meta';
+  meta.innerHTML = '<span>' + title + '</span><span class="own ' + ownerKey + '">' + ownerLabel + '</span>'; el.appendChild(meta);
+  return el;
+}
+function section(title, note) {
+  const s = document.createElement('section'); s.innerHTML = '<div class="sec-h"><h2>' + title + '</h2><p>' + note + '</p></div>';
+  document.getElementById('atlas').appendChild(s); return s;
+}
+function row(sec, code, name, sub) {
+  const r = document.createElement('div'); r.className = 'row';
+  r.innerHTML = '<div class="row-h"><span class="code">' + code + '</span><b>' + name + '</b><small>' + sub + '</small></div><div class="cards"></div>';
+  sec.appendChild(r); return r.querySelector('.cards');
+}
+function build() {
+  document.getElementById('atlas').innerHTML = '';
+  const MINI = [20, 32, 48];
+  const sb = section('Basen', 'Wachsen mit der Stufe. Im Spiel 0,9- bis 1,35-mal so groß, Hauptstädte zusätzlich 1,3-mal.');
+  TIERS.forEach((t, tier) => {
+    const cards = row(sb, t.code, t.name, t.lv);
+    for (const [key, label] of OWNERS) cards.appendChild(card(paintSprite('tower', key, false, tier, 124 * 64 / 62), MINI.map(s => paintSprite('tower', key, false, tier, s)), t.name, key, label));
+    cards.appendChild(card(paintSprite('tower', 'player', true, tier, 124 * 64 / 62), MINI.map(s => paintSprite('tower', 'player', true, tier, s * 1.3)), 'Hauptstadt', 'home', 'Deine'));
+  });
+  const stt = section('Tempel', 'Geben Gems, Münzen und Truppen, solange du sie hältst.');
+  for (const t of TEMPLES) {
+    const cards = row(stt, t.code, t.name, t.note);
+    for (const [key, label] of OWNERS) cards.appendChild(card(paintSprite(t.kind, key, false, 1, 124 * 64 / 62), MINI.map(s => paintSprite(t.kind, key, false, 1, t.kind === 'mega' ? s * 1.5 : s)), t.name, key, label));
+  }
+  const sg = section('Tore', 'Auf jeder Brücke. Unbesetzt verschlossen, sonst entscheidet der Besitzer.');
+  for (const [code, name, open] of [['G1', 'Tor offen', 1], ['G2', 'Tor geschlossen', 0]]) {
+    const cards = row(sg, code, name, open ? 'Fallgitter oben, Licht im Durchgang' : 'Fallgitter unten');
+    for (const [key, label] of OWNERS) cards.appendChild(card(paintGate(key, open, 92), [22, 34, 50].map(h => paintGate(key, open, h)), name, key, label));
+  }
+}
+function setGround(gv) {
+  if (gv === 'wiese') document.documentElement.removeAttribute('data-ground'); else document.documentElement.setAttribute('data-ground', gv);
+  for (const b of document.querySelectorAll('#groundSeg button')) b.classList.toggle('on', b.dataset.g === gv);
+  try { localStorage.setItem('owDesignsGround', gv); } catch (e) {}
+}
+document.getElementById('groundSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setGround(b.dataset.g); });
+let saved = 'wiese'; try { saved = localStorage.getItem('owDesignsGround') || 'wiese'; } catch (e) {}
+setGround(saved);
+build();
+</script>
