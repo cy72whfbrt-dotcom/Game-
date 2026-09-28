@@ -59,16 +59,12 @@
         <button type="button" id="vMitte" data-v="mitte" class="on">Mitte</button>
         <button type="button" id="vWelt" data-v="welt">Ganze Welt</button>
       </div>
-      <div class="seg" id="varSeg" role="group" aria-label="Variante">
-        <button type="button" id="varA" data-var="A" class="on">A · ein großer Bezirk</button>
-        <button type="button" id="varB" data-var="B">B · Ecken als Gebiete</button>
-      </div>
     </div>
   </header>
 
   <div class="stage" id="stage">
     <canvas id="map" aria-label="Karte der neuen Mitte"></canvas>
-    <aside class="info" id="info"><b id="infoT">Thronbezirk</b><span id="infoD">Tippe ein Gebäude oder Gebiet an.</span></aside>
+    <aside class="info" id="info"><b id="infoT">Thron-Gebiet</b><span id="infoD">Tippe ein Gebäude oder Gebiet an.</span></aside>
     <div class="zoom">
       <button type="button" id="zIn" aria-label="Hineinzoomen">+</button>
       <button type="button" id="zOut" aria-label="Herauszoomen">−</button>
@@ -82,9 +78,9 @@
   </div>
 
   <section class="notes">
-    <div class="note" id="noteVar">
-      <h2>Variante A · ein großer Bezirk</h2>
-      <p></p>
+    <div class="note">
+      <h2>Die Mitte · 3 × 3 Gebiete</h2>
+      <p>In der Mitte der <b>Haupttempel</b>, in den <b>4 Ecken die Wächter-Tempel</b>, dazwischen die <b>4 Vorhöfe</b>. Die 8 Gebiete um den Haupttempel haben dieselbe Farbe. Zum Haupttempel geht es nur über die <b>4 Thron-Tore</b> in den Vorhöfen.</p>
     </div>
     <div class="note">
       <h2>Die Welt drumherum</h2>
@@ -284,7 +280,7 @@ function drawGatehouse(g, cx, cy, H, open) {      // front view like the towers:
 // ---------------- world model ----------------
 const S = 1000, HALF = 7, RIVER = 70;                 // 15 × 15 cells, rivers between them
 const rng = seed => () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
-let variant = 'A', view = 'mitte';
+let view = 'mitte';
 let regions = [], things = [], roads = [], walls = [], bridges = [];
 
 const ringOf = (q, r) => Math.max(Math.abs(q), Math.abs(r));
@@ -302,83 +298,59 @@ function segDist(px, py, a, b) {
 
 function build() {
   regions = []; things = []; roads = []; walls = []; bridges = [];
-  const R = rng(variant === 'A' ? 7 : 11);
-  const isCentre = (q, r) => variant === 'A' ? ringOf(q, r) <= 1 : ringOf(q, r) === 0;
-  // --- the middle ---
-  if (variant === 'A') {
-    const rc = cellRect(-1, -1, 1, 1);
-    regions.push({ kind: 'throne', rect: rc, name: 'Thronbezirk', desc: 'Ein großes Gebiet, so groß wie 3 × 3 normale Gebiete. Rundherum eine Mauer, hinein nur durch die 4 Tore.' });
-    const pl = 330;                                                   // central plaza
-    roads.push({ a: { x: 0, y: rc.y0 + 40 }, b: { x: 0, y: rc.y1 - 40 }, w: 70 }, { a: { x: rc.x0 + 40, y: 0 }, b: { x: rc.x1 - 40, y: 0 }, w: 70 });
-    const ring = 900; for (let i = 0; i < 4; i++) { const c = [[-ring, -ring], [ring, -ring], [ring, ring], [-ring, ring]]; const a = c[i], b = c[(i + 1) % 4]; roads.push({ a: { x: a[0], y: a[1] }, b: { x: b[0], y: b[1] }, w: 50 }); }
-    for (const [cq, cr] of CORNERS) roads.push({ a: { x: 0, y: 0 }, b: { x: cq * 1100, y: cr * 1100 }, w: 44 });
-    roads.push({ plaza: pl });
-    walls.push({ rect: { x0: rc.x0 + 20, y0: rc.y0 + 20, x1: rc.x1 - 20, y1: rc.y1 - 20 }, w: 34, gaps: 'sides' });
-    things.push({ kind: 'mega', x: 0, y: 0, size: 520, name: 'Haupttempel', desc: 'Die Mitte der Welt. Wer ihn hält, herrscht. 8-facher Tempel-Bonus.' });
-    for (const [cq, cr, nm] of CORNERS) {
-      const x = cq * 1170, y = cr * 1170, b = 250;
-      walls.push({ rect: { x0: x - b, y0: y - b, x1: x + b, y1: y + b }, w: 22, gaps: 'toward', gx: -cq, gy: -cr });
-      things.push({ kind: 'guardian', x, y: y + 60, size: 300, name: 'Wächter-Tempel ' + nm, desc: 'Einer der vier Eck-Tempel, auf einer eigenen Bastion. 3-facher Tempel-Bonus.' });
+  const R = rng(11);
+  const dirName = (q, r) => ({ '0,-1': 'Nord', '1,0': 'Ost', '0,1': 'Süd', '-1,0': 'West' })[q + ',' + r] || '';
+  // --- bridges first: every bridge gets a gate on its outer bank, like in the game ---
+  let gates = 0;
+  for (let r = -HALF; r <= HALF; r++) for (let q = -HALF; q <= HALF; q++) {
+    for (const [dq, dr] of [[1, 0], [0, 1]]) {
+      const q2 = q + dq, r2 = r + dr; if (q2 > HALF || r2 > HALF) continue;
+      const bx = (q + q2) / 2 * S, by = (r + r2) / 2 * S;
+      bridges.push({ x: bx, y: by, horiz: dq === 1 });
+      const ra = ringOf(q, r), rb = ringOf(q2, r2), outerIsB = rb > ra || (rb === ra && (q2 + r2) % 2 === 0);
+      const oq = outerIsB ? q2 : q, orr = outerIsB ? r2 : r, iq = outerIsB ? q : q2, ir = outerIsB ? r : r2;
+      const ux = Math.sign(oq - iq), uy = Math.sign(orr - ir), off = RIVER / 2 + 70;
+      const intoThrone = ringOf(iq, ir) === 0, intoRing = ringOf(iq, ir) === 1 || ringOf(oq, orr) === 1;
+      const nm = intoThrone ? 'Thron-Tor ' + dirName(oq, orr) : intoRing ? 'Wächter-Tor' : 'Grenztor';
+      things.push({ kind: 'gate', x: bx + ux * off, y: by + uy * off, size: intoThrone ? 130 : intoRing ? 110 : 85, name: nm, major: intoThrone,
+        desc: intoThrone ? 'Einer von nur 4 Wegen zum Haupttempel.' : intoRing ? 'Tor in den Ring um die Mitte. Unbesetzt verschlossen.' : 'Jede Brücke hat ein Tor. Unbesetzt verschlossen, wer es hält, bestimmt die Maut.' });
+      gates++;
     }
-    for (const [sq, sr, nm] of SIDES) {
-      const x = sq * (rc.x1 - 20), y = sr * (rc.y1 - 20);
-      things.push({ kind: 'gate', x, y: y + (sr === 0 ? 0 : 0), size: 150, name: 'Tor ' + nm, desc: 'Einer von nur 4 Wegen in den Thronbezirk. Wer das Tor hält, bestimmt die Maut.' });
-      bridges.push({ x: sq * 1.5 * S, y: sr * 1.5 * S, horiz: sq !== 0 });
-    }
-    scatter(rc, 46, 4, R, p => Math.hypot(p.x, p.y) > pl + 220 && CORNERS.every(([cq, cr]) => Math.max(Math.abs(p.x - cq * 1170), Math.abs(p.y - cr * 1170)) > 330)
-      && Math.abs(p.x) > 90 && Math.abs(p.y) > 90 && Math.abs(Math.abs(p.x) - 900) > 70 && Math.abs(Math.abs(p.y) - 900) > 70, 'Zitadelle', 90);
-  } else {
-    const rc = cellRect(0, 0, 0, 0);
-    regions.push({ kind: 'throne', rect: rc, name: 'Thron-Gebiet', desc: 'Nur der Haupttempel und seine Wachen. Hinein nur über die 4 Vorhöfe.' });
-    roads.push({ plaza: 240 });
-    things.push({ kind: 'mega', x: 0, y: 0, size: 440, name: 'Haupttempel', desc: 'Die Mitte der Welt. Wer ihn hält, herrscht. 8-facher Tempel-Bonus.' });
-    scatter(rc, 8, 4, R, p => Math.hypot(p.x, p.y) > 330, 'Zitadelle', 80);
-    for (const [cq, cr, nm] of CORNERS) {
-      const c = cellRect(cq, cr, cq, cr);
-      regions.push({ kind: 'guardian', rect: c, name: 'Wächter-Gebiet ' + nm, desc: 'Eck-Gebiet mit einem Wächter-Tempel. Grenzt an zwei Vorhöfe und an die äußeren Gebiete.' });
-      things.push({ kind: 'guardian', x: cq * S, y: cr * S + 40, size: 290, name: 'Wächter-Tempel ' + nm, desc: 'Einer der vier Eck-Tempel. 3-facher Tempel-Bonus.' });
-      scatter(c, 18, 3, R, p => Math.hypot(p.x - cq * S, p.y - cr * S) > 260, 'Burg', 80);
-    }
-    for (const [sq, sr, nm] of SIDES) {
-      const c = cellRect(sq, sr, sq, sr);
-      regions.push({ kind: 'court', rect: c, name: 'Vorhof ' + nm, desc: 'Der Weg zur Mitte. Am inneren Ufer steht das Tor zum Thron-Gebiet.' });
-      things.push({ kind: 'gate', x: sq * (S * .5 + RIVER / 2 + 40), y: sr * (S * .5 + RIVER / 2 + 40), size: 130, name: 'Tor ' + nm, desc: 'Einer von nur 4 Wegen zum Haupttempel.' });
-      bridges.push({ x: sq * S * .5, y: sr * S * .5, horiz: sq !== 0 });
-      scatter(c, 20, 3, R, p => Math.hypot(p.x - sq * S * .5, p.y - sr * S * .5) > 200, 'Burg', 80);
-    }
+  }
+  // --- the middle: 3 × 3 regions ---
+  const rc = cellRect(0, 0, 0, 0);
+  regions.push({ kind: 'throne', rect: rc, name: 'Thron-Gebiet', desc: 'Nur der Haupttempel und seine Wachen. Hinein nur über die 4 Thron-Tore.' });
+  roads.push({ plaza: 240 });
+  things.push({ kind: 'mega', x: 0, y: 0, size: 440, name: 'Haupttempel', desc: 'Die Mitte der Welt. Wer ihn hält, herrscht. 8-facher Tempel-Bonus.' });
+  scatter(rc, 8, 4, R, p => Math.hypot(p.x, p.y) > 330, 'Zitadelle', 80);
+  for (const [cq, cr, nm] of CORNERS) {
+    const c = cellRect(cq, cr, cq, cr);
+    regions.push({ kind: 'ring', rect: c, name: 'Wächter-Gebiet ' + nm, desc: 'Eck-Gebiet mit einem Wächter-Tempel.' });
+    things.push({ kind: 'guardian', x: cq * S, y: cr * S + 40, size: 290, name: 'Wächter-Tempel ' + nm, desc: 'Einer der vier Eck-Tempel. 3-facher Tempel-Bonus.' });
+    scatter(c, 18, 3, R, p => Math.hypot(p.x - cq * S, p.y - cr * S) > 260, 'Burg', 80);
+  }
+  for (const [sq, sr, nm] of SIDES) {
+    const c = cellRect(sq, sr, sq, sr);
+    regions.push({ kind: 'ring', rect: c, name: 'Vorhof ' + nm, desc: 'Zwischen zwei Wächter-Gebieten. Von hier geht das Thron-Tor zum Haupttempel.' });
+    scatter(c, 20, 3, R, () => true, 'Burg', 80);
   }
   // --- everything around it ---
   let temples = 0;
   for (let r = -HALF; r <= HALF; r++) for (let q = -HALF; q <= HALF; q++) {
-    if (variant === 'A' ? ringOf(q, r) <= 1 : ringOf(q, r) <= 1) continue;
-    const ring = ringOf(q, r), c = cellRect(q, r, q, r);
-    const belt = ring >= 3 && ring <= 5, start = ring >= 6;
+    const ring = ringOf(q, r); if (ring <= 1) continue;
+    const c = cellRect(q, r, q, r), belt = ring >= 3 && ring <= 5, start = ring >= 6;
     regions.push({ kind: start ? 'start' : 'outer', ring, rect: c, name: start ? 'Startgebiet' : ring === 2 ? 'Vorland der Mitte' : 'Mittlerer Gürtel',
-      desc: start ? 'Hier starten die Spieler. Leichte Basen, keine Tempel.' : ring === 2 ? 'Direkt an der Mitte: starke Basen, keine Tempel.' : 'Hier liegen die normalen Tempel (nicht in jedem Gebiet).' });
+      desc: start ? 'Hier starten die Spieler. Leichte Basen, keine Tempel.' : ring === 2 ? 'Direkt am Ring um die Mitte: starke Basen, keine Tempel.' : 'Hier liegen die normalen Tempel (nicht in jedem Gebiet).' });
     const hasTemple = belt && (q + r) % 2 === 0;
     if (hasTemple) { temples++; things.push({ kind: 'temple', x: q * S, y: r * S + 30, size: 210, name: 'Tempel', desc: 'Normaler Tempel. Nur im mittleren Gürtel und nur in jedem zweiten Gebiet.' }); }
-    const tier = ring >= 6 ? 0 : ring >= 5 ? 1 : ring >= 4 ? 1 : ring >= 3 ? 2 : 3;
+    const tier = ring >= 6 ? 0 : ring >= 4 ? 1 : ring >= 3 ? 2 : 3;
     scatter(c, 22, tier, R, p => !hasTemple || Math.hypot(p.x - q * S, p.y - r * S) > 190, ['Lager', 'Rundturm', 'Bergfried', 'Burg', 'Zitadelle'][tier], 70);
-  }
-  // bridges between neighbouring outer cells (and the ring-2 cells among each other)
-  for (let r = -HALF; r <= HALF; r++) for (let q = -HALF; q <= HALF; q++) {
-    for (const [dq, dr] of [[1, 0], [0, 1]]) {
-      const q2 = q + dq, r2 = r + dr; if (q2 > HALF || r2 > HALF) continue;
-      if (isCentre(q, r) || isCentre(q2, r2)) continue;
-      if (variant === 'B' && ringOf(q, r) <= 1 && ringOf(q2, r2) <= 1) { bridges.push({ x: (q + q2) / 2 * S, y: (r + r2) / 2 * S, horiz: dq === 1 }); continue; }
-      bridges.push({ x: (q + q2) / 2 * S, y: (r + r2) / 2 * S, horiz: dq === 1 });
-    }
   }
   things.push({ kind: 'tower', tier: 0, owner: 'player', home: true, x: -6 * S, y: 6 * S - 60, size: 120, name: 'Deine Hauptstadt (Beispiel)', desc: 'So weit außen startet man: ganz am Rand, weit weg von der Mitte.' });
   things.sort((a, b) => a.y - b.y);
   const bases = things.filter(t => t.kind === 'tower').length;
   document.getElementById('worldStats').innerHTML = '<b>15 × 15 Gebiete</b> statt 9 × 9. Außen die Startgebiete (ohne Tempel), dann der mittlere Gürtel mit den normalen Tempeln, dann das Vorland der Mitte.<br>' +
-    'In dieser Skizze: <b>' + bases.toLocaleString('de-DE') + ' Basen</b>, <b>' + temples + ' normale Tempel</b> + 4 Wächter + 1 Haupttempel (heute: 72 + 4 + 1).';
-  const nv = document.getElementById('noteVar');
-  nv.querySelector('h2').textContent = variant === 'A' ? 'Variante A · ein großer Bezirk' : 'Variante B · Ecken als Gebiete';
-  nv.querySelector('p').innerHTML = variant === 'A'
-    ? 'Die Mitte ist <b>ein großes, ummauertes Quadrat</b>. Haupttempel in der Mitte, die 4 Wächter-Tempel auf <b>Bastionen in den Ecken</b>. Hinein nur durch <b>4 Tore</b>, eins pro Seite. Straßen führen vom Tor zum Haupttempel und zu den Ecken.'
-    : 'Die Mitte besteht aus <b>3 × 3 Gebieten</b>: in der Mitte der Haupttempel, in den <b>4 Eck-Gebieten</b> die Wächter-Tempel, dazwischen <b>4 Vorhöfe</b> mit den Toren. Der Haupttempel ist nur über die Vorhöfe erreichbar.';
+    'In dieser Skizze: <b>' + bases.toLocaleString('de-DE') + ' Basen</b>, <b>' + gates + ' Tore</b> (eins pro Brücke), <b>' + temples + ' normale Tempel</b> + 4 Wächter + 1 Haupttempel (heute: 72 + 4 + 1).';
 }
 
 function scatter(rc, n, tier, R, ok, label, gap) {
@@ -443,7 +415,7 @@ function fitZoom() { const span = view === 'mitte' ? 5.3 * S : (2 * HALF + 1.4) 
 const toS = (x, y) => [(x - cam.x) * cam.z + W / 2, (y - cam.y) * cam.z + H / 2];
 const toW = (sx, sy) => [(sx - W / 2) / cam.z + cam.x, (sy - H / 2) / cam.z + cam.y];
 
-const GROUND = { throne: ['#a19c90', '#8d887c'], guardian: ['#8f949b', '#7b8088'], court: ['#9a9383', '#877f6f'], outer: ['#5b8a3e', '#4a7733'], start: ['#5f9544', '#4f8238'] };
+const GROUND = { throne: ['#a19c90', '#8d887c'], ring: ['#8f949b', '#7b8088'], outer: ['#5b8a3e', '#4a7733'], start: ['#5f9544', '#4f8238'] };
 function drawRegion(rg) {
   const [x0, y0] = toS(rg.rect.x0, rg.rect.y0), [x1, y1] = toS(rg.rect.x1, rg.rect.y1);
   if (x1 < 0 || y1 < 0 || x0 > W || y0 > H) return;
@@ -503,7 +475,8 @@ function drawThing(t) {
   if (t.kind === 'tower' && px < 10) {                                              // far away: a dot per base
     ctx.fillStyle = t.owner === 'player' ? '#3f86d8' : 'rgba(40,40,40,.55)'; ctx.fillRect(x - 1.5, y - 1.5, 3, 3); return;
   }
-  const minPx = t.kind === 'mega' ? 26 : t.kind === 'guardian' ? 18 : t.kind === 'gate' ? 14 : t.kind === 'temple' ? 12 : 0;
+  if (t.kind === 'gate' && !t.major && px < 9) return;                               // far away: the border gates hide, the bridges stay
+  const minPx = t.kind === 'mega' ? 26 : t.kind === 'guardian' ? 18 : t.kind === 'gate' ? (t.major ? 14 : 0) : t.kind === 'temple' ? 12 : 0;
   const size = Math.max(px, minPx), sp = sprite(t, size), c = sp.c, k = sp.s;
   ctx.drawImage(c, x - c.ax * k, y - c.ay * k, c.width * k, c.height * k);
   if (sel && sel.thing === t) { ctx.strokeStyle = '#e4c886'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(x, y + 2, size * .55, size * .22, 0, 0, Math.PI * 2); ctx.stroke(); }
@@ -512,7 +485,7 @@ function drawLabels() {
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   for (const t of things) {
     if (t.kind === 'tower' && !t.home) continue;
-    const px = t.size * cam.z; if (t.kind === 'temple' && px < 22) continue; if (t.kind === 'gate' && px < 14) continue; if (t.home && px < 14) continue;
+    const px = t.size * cam.z; if (t.kind === 'temple' && px < 22) continue; if (t.kind === 'gate' && (!t.major || px < 14)) continue; if (t.home && px < 14) continue;
     const [x, y] = toS(t.x, t.y); if (x < -80 || y < -40 || x > W + 80 || y > H + 60) continue;
     if (t.kind === 'guardian' && px < 16) continue;
     const short = { Nordwest: 'NW', Nordost: 'NO', Südwest: 'SW', Südost: 'SO' };
@@ -576,8 +549,6 @@ function flyHome() {
 }
 function setSeg(id, attr, val) { for (const b of document.querySelectorAll('#' + id + ' button')) b.classList.toggle('on', b.dataset[attr] === val); }
 document.getElementById('viewSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; view = b.dataset.v; setSeg('viewSeg', 'v', view); flyHome(); });
-document.getElementById('varSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; variant = b.dataset.var; setSeg('varSeg', 'var', variant); sel = null; build(); dirty = true;
-  document.getElementById('infoT').textContent = variant === 'A' ? 'Thronbezirk' : 'Thron-Gebiet'; document.getElementById('infoD').textContent = 'Tippe ein Gebäude oder Gebiet an.'; });
 window.addEventListener('resize', () => { resize(); });
 
 resize(); build(); cam.z = fitZoom(); draw();
