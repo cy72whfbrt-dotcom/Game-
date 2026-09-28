@@ -286,7 +286,7 @@ function drawGatehouse(g, cx, cy, H, open) {      // front view like the towers:
 /*DESIGN-CODE>>*/
 
 // ---------------- world model ----------------
-const S = 2200, HALF = 7, RIVER = 110;                // 15 × 15 cells, rivers between them; a region is as roomy as in the game (~90 bases)
+const S = 4400, HALF = 7, RIVER = 260, BRIDGE_W = 170;   // 15 × 15 big regions, rivers wide enough for real bridges
 const rng = seed => () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
 let view = 'mitte';
 let regions = [], things = [], roads = [], walls = [], bridges = [];
@@ -325,10 +325,10 @@ function build() {
       bridges.push({ x: bx, y: by, horiz: dq === 1 });
       const ra = ringOf(q, r), rb = ringOf(q2, r2), outerIsB = rb > ra || (rb === ra && (q2 + r2) % 2 === 0);
       const oq = outerIsB ? q2 : q, orr = outerIsB ? r2 : r, iq = outerIsB ? q : q2, ir = outerIsB ? r : r2;
-      const ux = Math.sign(oq - iq), uy = Math.sign(orr - ir), off = RIVER / 2 + 70;
+      const ux = Math.sign(oq - iq), uy = Math.sign(orr - ir), off = RIVER / 2 + 150;   // the gate stands on the bank, right at the bridge's end
       const intoThrone = ringOf(iq, ir) === 0, intoRing = ringOf(iq, ir) === 1 || ringOf(oq, orr) === 1;
       const nm = intoThrone ? 'Thron-Tor ' + dirName(oq, orr) : intoRing ? 'Wächter-Tor' : 'Grenztor';
-      things.push({ kind: 'gate', x: bx + ux * off, y: by + uy * off, size: intoThrone ? 240 : intoRing ? 200 : 160, name: nm, major: intoThrone,
+      things.push({ kind: 'gate', horiz: dq === 1, x: bx + ux * (dq === 1 ? RIVER / 2 + 190 : off), y: by + uy * off + (dq === 1 ? 95 : uy < 0 ? 40 : 60), size: intoThrone ? 330 : intoRing ? 280 : 240, name: nm, major: intoThrone,
         desc: intoThrone ? 'Einer von nur 4 Wegen zum Haupttempel.' : intoRing ? 'Tor in den Ring um die Mitte. Unbesetzt verschlossen.' : 'Jede Brücke hat ein Tor. Unbesetzt verschlossen, wer es hält, bestimmt die Maut.' });
       gates++;
     }
@@ -336,14 +336,14 @@ function build() {
   // --- the middle: 3 × 3 regions ---
   const rc = cellRect(0, 0, 0, 0);
   regions.push({ kind: 'throne', rect: rc, name: 'Thron-Gebiet', desc: 'Nur der Haupttempel und seine Wachen. Hinein nur über die 4 Thron-Tore.' });
-  roads.push({ plaza: 470 });
-  things.push({ kind: 'mega', x: 0, y: 0, size: 900, name: 'Haupttempel', desc: 'Die Mitte der Welt. Wer ihn hält, herrscht. 8-facher Tempel-Bonus.' });
-  scatter(rc, 0, 4, R, p => Math.max(Math.abs(p.x), Math.abs(p.y) * 1.1) > 540, 'Zitadelle');
+  roads.push({ plaza: 700 });
+  things.push({ kind: 'mega', x: 0, y: 0, size: 1350, name: 'Haupttempel', desc: 'Die Mitte der Welt. Wer ihn hält, herrscht. 8-facher Tempel-Bonus.' });
+  scatter(rc, 0, 4, R, p => Math.max(Math.abs(p.x), Math.abs(p.y) * 1.1) > 820, 'Zitadelle');
   for (const [cq, cr, nm] of CORNERS) {
     const c = cellRect(cq, cr, cq, cr);
     regions.push({ kind: 'ring', rect: c, name: 'Wächter-Gebiet ' + nm, desc: 'Eck-Gebiet mit einem Wächter-Tempel.' });
-    things.push({ kind: 'guardian', x: cq * S, y: cr * S + 70, size: 560, name: 'Wächter-Tempel ' + nm, desc: 'Einer der vier Eck-Tempel. 3-facher Tempel-Bonus.' });
-    scatter(c, 0, 3, R, p => Math.hypot(p.x - cq * S, p.y - cr * S - 80) > 440, 'Burg');
+    things.push({ kind: 'guardian', x: cq * S, y: cr * S + 100, size: 820, name: 'Wächter-Tempel ' + nm, desc: 'Einer der vier Eck-Tempel. 3-facher Tempel-Bonus.' });
+    scatter(c, 0, 3, R, p => Math.hypot(p.x - cq * S, p.y - cr * S - 110) > 640, 'Burg');
   }
   for (const [sq, sr, nm] of SIDES) {
     const c = cellRect(sq, sr, sq, sr);
@@ -364,9 +364,9 @@ function build() {
       things.push({ kind: 'slot', x, y, size: 120, name: 'Freier Startplatz', desc: 'Hier kann ein neuer Spieler seine Hauptstadt bekommen. 4 Plätze pro Startgebiet.' }); slots++;
     }
     const hasTemple = belt && (q + r) % 2 === 0;
-    if (hasTemple) { temples++; things.push({ kind: 'temple', x: q * S, y: r * S + 60, size: 400, name: 'Tempel', desc: 'Normaler Tempel. Nur im mittleren Gürtel und nur in jedem zweiten Gebiet.' }); }
+    if (hasTemple) { temples++; things.push({ kind: 'temple', x: q * S, y: r * S + 80, size: 580, name: 'Tempel', desc: 'Normaler Tempel. Nur im mittleren Gürtel und nur in jedem zweiten Gebiet.' }); }
     const tier = ring >= 6 ? 0 : ring >= 4 ? 1 : ring >= 3 ? 2 : 3;
-    scatter(c, 0, tier, R, p => !hasTemple || Math.hypot(p.x - q * S, p.y - r * S - 70) > 370, ['Lager', 'Rundturm', 'Bergfried', 'Burg', 'Zitadelle'][tier]);
+    scatter(c, 0, tier, R, p => !hasTemple || Math.hypot(p.x - q * S, p.y - r * S - 100) > 520, ['Lager', 'Rundturm', 'Bergfried', 'Burg', 'Zitadelle'][tier]);
   }
   things.sort((a, b) => a.y - b.y);
   const bases = things.filter(t => t.kind === 'tower').length;
@@ -378,21 +378,21 @@ function build() {
 // minimum distance to its neighbours, and new ones are only placed right next to existing ones, so the
 // region fills up evenly from the middle out instead of leaving holes.
 function scatter(rc, n, tier, R, ok, label) {
-  const d = 172 + tier * 5, mine = [];                // one spacing everywhere; the region is filled completely (n is ignored)
+  const d = 350 + tier * 8, mine = [];                // one spacing everywhere; the region is filled completely (n is ignored)
   const near = things.filter(t => t.kind !== 'tower' || t.home).filter(t => t.x > rc.x0 - 400 && t.x < rc.x1 + 400 && t.y > rc.y0 - 400 && t.y < rc.y1 + 400);
   const grid = new Map(), cellOf = p => Math.floor(p.x / d) + ',' + Math.floor(p.y / d);   // neighbour lookup in O(1)
-  const inside = p => p.x > rc.x0 + 50 && p.x < rc.x1 - 50 && p.y > rc.y0 + 80 && p.y < rc.y1 - 40;
+  const inside = p => p.x > rc.x0 + 110 && p.x < rc.x1 - 110 && p.y > rc.y0 + 150 && p.y < rc.y1 - 90;
   const clash = p => { const gx = Math.floor(p.x / d), gy = Math.floor(p.y / d);
     for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) for (const m of grid.get((gx + i) + ',' + (gy + j)) || []) if (Math.hypot(m.x - p.x, m.y - p.y) < d) return true;
     return false; };
   const free = p => inside(p) && ok(p) && !clash(p)
-    && !near.some(t => (t.home || t.kind === 'slot') && Math.hypot(t.x - p.x, t.y - p.y) < 150)
-    && !near.some(t => t.kind !== 'tower' && t.kind !== 'slot' && t.kind !== 'mega' && t.kind !== 'guardian' && t.kind !== 'temple' && Math.hypot(t.x - p.x, (t.y - p.y) * 1.2) < t.size * .6 + 70);
+    && !near.some(t => (t.home || t.kind === 'slot') && Math.hypot(t.x - p.x, t.y - p.y) < 300)
+    && !near.some(t => t.kind !== 'tower' && t.kind !== 'slot' && t.kind !== 'mega' && t.kind !== 'guardian' && t.kind !== 'temple' && Math.hypot(t.x - p.x, (t.y - p.y) * 1.2) < t.size * .6 + 150);
   const cx = (rc.x0 + rc.x1) / 2, cy = (rc.y0 + rc.y1) / 2;
   const add = p => { mine.push(p); const k = cellOf(p); (grid.get(k) || grid.set(k, []).get(k)).push(p); };
   const newSeed = () => {                               // start (or restart) anywhere free: nearest to the middle first
     let best = null, bd = Infinity;
-    for (let t = 0; t < 400; t++) { const p = { x: rc.x0 + 50 + R() * (rc.x1 - rc.x0 - 100), y: rc.y0 + 80 + R() * (rc.y1 - rc.y0 - 120) }, dd = Math.hypot(p.x - cx, p.y - cy); if (dd < bd && free(p)) { bd = dd; best = p; } }
+    for (let t = 0; t < 400; t++) { const p = { x: rc.x0 + 110 + R() * (rc.x1 - rc.x0 - 220), y: rc.y0 + 150 + R() * (rc.y1 - rc.y0 - 240) }, dd = Math.hypot(p.x - cx, p.y - cy); if (dd < bd && free(p)) { bd = dd; best = p; } }
     if (best) { add(best); active.push(best); } return best;
   };
   const active = [];
@@ -455,7 +455,7 @@ function preload(done) {                               // every building type ×
 const cv = document.getElementById('map'), ctx = cv.getContext('2d'), stage = document.getElementById('stage');
 let W = 0, H = 0, cam = { x: 0, y: 0, z: .2 }, sel = null, dirty = true;
 function resize() { const r = stage.getBoundingClientRect(); W = r.width; H = r.height; cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR); dirty = true; }
-function fitZoom() { const span = view === 'mitte' ? 3.4 * S : (2 * HALF + 1.4) * S; return Math.min(W, H) / span; }
+function fitZoom() { const span = view === 'mitte' ? 3.3 * S : (2 * HALF + 1.4) * S; return Math.min(W, H) / span; }
 const toS = (x, y) => [(x - cam.x) * cam.z + W / 2, (y - cam.y) * cam.z + H / 2];
 const toW = (sx, sy) => [(sx - W / 2) / cam.z + cam.x, (sy - H / 2) / cam.z + cam.y];
 
@@ -512,12 +512,33 @@ function drawWalls() {
     }
   }
 }
-function drawBridges() {
+function drawBridges() {                               // wooden deck on stone piers, railings, stone abutments, a shadow on the water
+  const z = cam.z, L = RIVER + 150, Wd = BRIDGE_W;
   for (const b of bridges) {
-    const [x, y] = toS(b.x, b.y), len = (RIVER + 60) * cam.z, wd = 70 * cam.z;
-    if (x < -50 || y < -50 || x > W + 50 || y > H + 50 || len < 2) continue;
-    ctx.fillStyle = '#8a6a44'; ctx.strokeStyle = '#4a3622'; ctx.lineWidth = 1;
-    ctx.beginPath(); if (b.horiz) ctx.rect(x - len / 2, y - wd / 2, len, wd); else ctx.rect(x - wd / 2, y - len / 2, wd, len); ctx.fill(); ctx.stroke();
+    const [x, y] = toS(b.x, b.y), lp = L * z, wp = Wd * z;
+    if (x < -lp || y < -lp || x > W + lp || y > H + lp || lp < 2) continue;
+    ctx.save(); ctx.translate(x, y); if (!b.horiz) ctx.rotate(Math.PI / 2);
+    if (wp < 5) { ctx.fillStyle = '#8a6a44'; ctx.fillRect(-lp / 2, -wp / 2, lp, wp); ctx.restore(); continue; }
+    ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.fillRect(-lp / 2 + 6 * z, -wp / 2 + 18 * z, lp, wp);                 // shadow on the water
+    ctx.fillStyle = '#6f6a62';                                                                                  // two stone piers under the deck
+    for (const f of [-.18, .18]) ctx.fillRect(f * lp - 14 * z, -wp / 2 - 6 * z, 28 * z, wp + 26 * z);
+    for (const sx of [-1, 1]) {                                                                                 // abutments on the banks
+      ctx.fillStyle = '#8f8b84'; ctx.fillRect(sx * lp / 2 - (sx > 0 ? 70 * z : 0), -wp / 2 - 14 * z, 70 * z, wp + 28 * z);
+      ctx.strokeStyle = '#4d4943'; ctx.lineWidth = Math.max(1, 3 * z); ctx.strokeRect(sx * lp / 2 - (sx > 0 ? 70 * z : 0), -wp / 2 - 14 * z, 70 * z, wp + 28 * z);
+    }
+    const dg = ctx.createLinearGradient(0, -wp / 2, 0, wp / 2); dg.addColorStop(0, '#a47d4d'); dg.addColorStop(1, '#7c5a35');
+    ctx.fillStyle = dg; ctx.fillRect(-lp / 2 + 60 * z, -wp / 2, lp - 120 * z, wp);                            // deck
+    if (wp > 14) {                                                                                             // planks
+      ctx.strokeStyle = 'rgba(58,38,20,.45)'; ctx.lineWidth = Math.max(1, 2.5 * z); ctx.beginPath();
+      for (let px = -lp / 2 + 60 * z + 16 * z; px < lp / 2 - 60 * z; px += 16 * z) { ctx.moveTo(px, -wp / 2); ctx.lineTo(px, wp / 2); }
+      ctx.stroke();
+    }
+    ctx.fillStyle = '#4a3622';                                                                                 // railings with posts
+    for (const sy of [-1, 1]) {
+      ctx.fillRect(-lp / 2 + 60 * z, sy * wp / 2 - (sy > 0 ? 9 * z : 0), lp - 120 * z, 9 * z);
+      if (wp > 14) for (let px = -lp / 2 + 70 * z; px < lp / 2 - 60 * z; px += 48 * z) ctx.fillRect(px - 5 * z, sy * wp / 2 - (sy > 0 ? 16 * z : -7 * z) - 7 * z, 10 * z, 16 * z);
+    }
+    ctx.restore();
   }
 }
 function drawThing(t) {
