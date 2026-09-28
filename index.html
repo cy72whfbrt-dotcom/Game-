@@ -1818,7 +1818,7 @@ body.has-panel .mapctl{display:none}
             return Math.round(BASE_DEFENSE * Math.pow(DEFENSE_GROWTH, Math.min(level, MAX_BASE_LEVEL) - 1));
         }
         function defenseForLevel(level) {
-            return baseDefenseForLevel(level) + defenseBonusFlat();
+            return Math.round(baseDefenseForLevel(level) * (1 + armorDefensePct() / 100));
         }
         function coinsPerTick(level) {
             return Math.round(BASE_COINS * Math.pow(PRODUCTION_GROWTH, Math.min(level, MAX_BASE_LEVEL) - 1));
@@ -2091,6 +2091,27 @@ body.has-panel .mapctl{display:none}
             br.gateId = id;
             islands.push({ id: id++, ends: [[br.x1, br.y1], [br.x2, br.y2]], landmassId: outerA ? br.a : br.b, x: ex - (ox - ex) / bl * 900, y: ey - (oy - ey) / bl * 900, radius: ISLAND_RADIUS * 1.25,
                            type: 'gate', gateKind: kind, toll: st.toll, neutralTroops: st.troops, neutralDefense: st.def, neutralLevel: st.level });
+        }
+        // Keep every gate and its road to the bridge clear: a tower that landed there is moved to the
+        // nearest free spot on its own island (ids stay the same, so saves are not affected).
+        {
+            const segDist = (px, py, ax, ay, bx, by) => { const dx = bx - ax, dy = by - ay, L = dx * dx + dy * dy || 1, t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / L)); return Math.hypot(px - (ax + dx * t), py - (ay + dy * t)); };
+            const gates = islands.filter(i => i.type === 'gate');
+            const roads = gates.map(g => { const e = g.ends.reduce((b, p) => Math.hypot(p[0] - g.x, p[1] - g.y) < Math.hypot(b[0] - g.x, b[1] - g.y) ? p : b); return { g, ex: e[0], ey: e[1] }; });
+            const blocked = (t, x, y) => roads.some(r => r.g.landmassId === t.landmassId && (Math.hypot(x - r.g.x, y - r.g.y) < r.g.radius + t.radius + 250 || segDist(x, y, r.g.x, r.g.y, r.ex, r.ey) < t.radius + 250));
+            for (const t of islands) {
+                if (t.type !== 'tower' || !blocked(t, t.x, t.y)) continue;
+                const lm = landmasses[t.landmassId], gap = lm.radius * TOWER_MIN_SPACING_RATIO * 0.8;
+                const others = islands.filter(o => o !== t && o.landmassId === t.landmassId && o.type !== 'gate');
+                let done = false;
+                for (let r = 400; r < lm.radius && !done; r += 300) {
+                    for (let k = 0; k < 24 && !done; k++) {
+                        const ang = k / 24 * Math.PI * 2, x = t.x + Math.cos(ang) * r, y = t.y + Math.sin(ang) * r;
+                        if (!pointInPolygon(x, y, lm.shape) || blocked(t, x, y) || others.some(o => Math.hypot(o.x - x, o.y - y) < gap)) continue;
+                        t.x = x; t.y = y; done = true;
+                    }
+                }
+            }
         }
         const islandById = {};
         for (const island of islands) islandById[island.id] = island;
@@ -2435,7 +2456,7 @@ body.has-panel .mapctl{display:none}
             const level = islandLevels[island.id] || 1;
             const garrison = islandTroops[island.id] || 0;   // Verteidigung skill: the garrison fights harder, +3 % of it per level (mirror of the sword)
             return Math.round((owner === 'player' ? defenseForLevel(level) + garrison * (skills.defense || 0) * SKILL_DEFS.defense.defPct / 100
-                                                  : baseDefenseForLevel(level) + botMults(owner).defense + garrison * (botMults(owner).defensePct || 0) / 100) * titleMult(owner, 'defense'));
+                                                  : baseDefenseForLevel(level) * (1 + (botMults(owner).armorPct || 0) / 100) + garrison * (botMults(owner).defensePct || 0) / 100) * titleMult(owner, 'defense'));
         }
         // Removes an island from whichever owner (player or a bot) it
         // currently belongs to, without touching its troops/level - used
@@ -2515,13 +2536,13 @@ body.has-panel .mapctl{display:none}
         // towers, same idea, separate currency.
         const EQUIPMENT_DEFS = {
           weapon: { icon: 'weapon', name: 'Waffe',   desc: 'Truppenproduktion', pct: 2 },
-          armor:  { icon: 'armor',  name: 'Rüstung', desc: 'Verteidigung aller Inseln', flat: 5 },
+          armor:  { icon: 'armor',  name: 'Rüstung', desc: 'Verteidigung aller Basen', pct: 2 },
           shield: { icon: 'shield', name: 'Schild',  desc: 'weniger Truppenverlust bei Sieg', pct: 2 },
           boots:  { icon: 'boots',  name: 'Stiefel', desc: 'Münzproduktion', pct: 2 }
         };
         const SKILL_DEFS = {
-          speed:       { icon: 'hourglass', name: 'Geschwindigkeit',    desc: 'schnellere Produktion und Märsche', msPerLevel: 60, max: 10 },
-          troops:      { icon: 'troops',    name: 'Truppenherstellung', desc: 'Truppenproduktion', pct: 2 },
+          speed:       { icon: 'hourglass', name: 'Geschwindigkeit',    desc: 'schnellere Produktion und Märsche', msPerLevel: 40, max: 10 },
+          troops:      { icon: 'troops',    name: 'Truppenherstellung', desc: 'Truppenproduktion', pct: 3 },
           defense:     { icon: 'defense',   name: 'Verteidigung',       desc: 'jede Basis verteidigt mit mehr Truppen', defPct: 3 },
           defenseGold: { icon: 'shield',    name: 'Verteidigung: Gold', desc: 'Gold pro getöteter Truppe', rate: 0.3 },
           attack:      { icon: 'attack',    name: 'Angriff',            desc: 'mehr Truppen bei jedem Angriff', atkPct: 3 },
@@ -2591,11 +2612,6 @@ body.has-panel .mapctl{display:none}
             const id = equippedItems[slot];
             const item = id ? inventory[id] : null;
             return item ? itemScore(item) * RARITY_PCT_PER_SCORE * (1 + (item.stars || 0) * 0.2) : 0;
-        }
-        function equippedItemBonusFlat(slot) {
-            const id = equippedItems[slot];
-            const item = id ? inventory[id] : null;
-            return item ? itemScore(item) * RARITY_FLAT_PER_SCORE * (1 + (item.stars || 0) * 0.2) : 0;
         }
 
         function pickRandomSlot() {
@@ -2816,9 +2832,9 @@ body.has-panel .mapctl{display:none}
         // Attacks and troop transfers now take real time to arrive, scaled
         // by the distance between the two towers - the "Geschwindigkeit"
         // skill (which also speeds up production) shortens the march.
-        const BASE_ATTACK_SPEED = 600; // world units per second
-        const MIN_ATTACK_SECONDS = 3;
-        const MAX_ATTACK_SECONDS = 25;
+        const BASE_ATTACK_SPEED = 300; // world units per second - slow enough that speed upgrades are felt
+        const MIN_ATTACK_SECONDS = 6;
+        const MAX_ATTACK_SECONDS = 60;
         // A lost attack isn't one-sided: the defender takes real casualties
         // too (capped at the attacker's strength, so it can never go
         // negative), and a small slice of the attacker's "dead" troops
@@ -2833,7 +2849,7 @@ body.has-panel .mapctl{display:none}
             let distance = 0; for (let i = 1; i < pts.length; i++) distance += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
             if (botId) return Math.min(MAX_ATTACK_SECONDS, Math.max(MIN_ATTACK_SECONDS, distance / (BASE_ATTACK_SPEED * (BOT_STYLES[botById[botId].style].speed || 1))));
             const base = Math.min(MAX_ATTACK_SECONDS, Math.max(MIN_ATTACK_SECONDS, distance / BASE_ATTACK_SPEED));   // clamp first, so the speed skill and the Akademie also shorten long marches
-            return Math.max(1.5, base / (attackSpeedMultiplier() * (1 + academyLevel() * 0.02)));
+            return Math.max(3, base / (attackSpeedMultiplier() * (1 + academyLevel() * 0.02)));
         }
 
         let pendingAttacks;
@@ -3350,7 +3366,7 @@ body.has-panel .mapctl{display:none}
                     enemyTroops: originalEnemyTroops,
                     enemyDefense: originalEnemyDefense,
                     wounded: defWounded,
-                    armor: defenseBonusFlat(),
+                    armor: armorDefenseFor(target.id),
                     fallen: won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops),
                     won,
                     capitalHolds,
@@ -5253,11 +5269,11 @@ body.has-panel .mapctl{display:none}
         }
         function botItemScore(b, slot) { const it = botItem(b, slot); return it ? itemScore(it) : 0; }
         function botMults(botId) {
-            const b = loadBotState()[botId]; if (!b) return { troops: 1, coins: 1, defense: 0, attackPct: 0, shield: 0 };
+            const b = loadBotState()[botId]; if (!b) return { troops: 1, coins: 1, armorPct: 0, attackPct: 0, shield: 0 };
             const st = BOT_STYLES[botById[botId].style];
             return { troops: (1 + (b.skills.troops * SKILL_DEFS.troops.pct + b.equip.weapon * EQUIPMENT_DEFS.weapon.pct + botItemScore(b, 'weapon') * RARITY_PCT_PER_SCORE) / 100) * titleMult(botId, 'troops') * (st.troopMult || 1),
                      coins: (1 + (b.equip.boots * EQUIPMENT_DEFS.boots.pct + botItemScore(b, 'boots') * RARITY_PCT_PER_SCORE) / 100) * titleMult(botId, 'coins'),
-                     defense: b.equip.armor * EQUIPMENT_DEFS.armor.flat + botItemScore(b, 'armor') * RARITY_FLAT_PER_SCORE,
+                     armorPct: b.equip.armor * EQUIPMENT_DEFS.armor.pct + botItemScore(b, 'armor') * RARITY_PCT_PER_SCORE,   // Rüstung: +% base defense, same rule as the player
                      defensePct: b.skills.defense * SKILL_DEFS.defense.defPct,
                      attackPct: b.skills.attack * SKILL_DEFS.attack.atkPct + (st.atkBonus || 0),
                      shield: Math.min(90, b.equip.shield * EQUIPMENT_DEFS.shield.pct + botItemScore(b, 'shield') * RARITY_PCT_PER_SCORE) };
@@ -5601,20 +5617,15 @@ body.has-panel .mapctl{display:none}
             const rarity = equippedItemBonusPct(equipKey);
             return eq + sk + rarity;
         }
-        function bonusFlat(equipKey, skillKey) {
-            const eq = (equipment[equipKey] || 0) * (EQUIPMENT_DEFS[equipKey].flat || 0);
-            const sk = skillKey ? (skills[skillKey] || 0) * (SKILL_DEFS[skillKey].flat || 0) : 0;
-            const rarity = equippedItemBonusFlat(equipKey);
-            return eq + sk + rarity;
-        }
         function troopProductionMultiplier() {
             return 1 + bonusPct('weapon', 'troops') / 100;
         }
         function coinProductionMultiplier() {
             return 1 + bonusPct('boots', null) / 100;
         }
-        function defenseBonusFlat() {
-            return bonusFlat('armor', 'defense');
+        function armorDefenseFor(islandId) { const l = islandLevels[islandId] || 1; return defenseForLevel(l) - baseDefenseForLevel(l); }   // the Rüstung's share of a base's defense
+        function armorDefensePct() {                    // Rüstung: +% on every base's own defense (grows with the base, stays useful late)
+            return bonusPct('armor', null);
         }
         function shieldLossReductionPct() {
             return Math.min(90, equipment.shield * EQUIPMENT_DEFS.shield.pct + equippedItemBonusPct('shield'));
@@ -5796,7 +5807,7 @@ body.has-panel .mapctl{display:none}
             equipStats.innerHTML =
                 chip('troops', bonusPct('weapon', 'troops'), '+', ' %', 'Truppen') +
                 chip('coin', bonusPct('boots', null), '+', ' %', 'Münzen') +
-                chip('defense', defenseBonusFlat(), '+', '', 'Verteidigung') +
+                chip('defense', armorDefensePct(), '+', ' %', 'Verteidigung') +
                 chip('losses', shieldLossReductionPct(), '−', ' %', 'Verluste');
         }
 
@@ -7528,7 +7539,7 @@ body.has-panel .mapctl{display:none}
                 const fallen = won ? en : Math.min(en, my), wounded = hospitalTake(fallen);
                 spawnMapBattle({ sourceId: from, targetId: tgt.id, atk: 'boss', def: 'mine', my, myLoss: my - wander.troops, en, enLoss: fallen, won,
                     onEnd: () => spawnBattleFx(tgt.id, !won || capitalHolds, capitalHolds ? 'Hauptstadt hält' : won ? 'Basis verloren' : 'Verteidigt', capitalHolds ? 'Garnison gefallen' : won ? 'von ' + name : name + ' abgewehrt') });
-                addCombatLogEntry({ type: 'botAttack', botName: name, targetId: tgt.id, myTroops: my, enemyTroops: en, enemyDefense: def, wounded, armor: defenseBonusFlat(), fallen, won, capitalHolds });
+                addCombatLogEntry({ type: 'botAttack', botName: name, targetId: tgt.id, myTroops: my, enemyTroops: en, enemyDefense: def, wounded, armor: armorDefenseFor(tgt.id), fallen, won, capitalHolds });
                 flashHint((capitalHolds ? name + ' hat die Garnison deiner Hauptstadt geschlagen – die Stadt hält.' : won ? name + ' hat deine Basis ' + islandTitle(tgt) + ' zerstört!' : 'Verteidigt! ' + name + ' wurde bei ' + islandTitle(tgt) + ' zurückgeschlagen.') + (wounded ? ' ' + fmtCompact(wounded) + ' Verwundete ins Lazarett.' : ''), 5000);
             }
             if (wander.troops <= 0) return endWander(wander.name + ' ist zerschlagen.');
@@ -7823,9 +7834,9 @@ body.has-panel .mapctl{display:none}
         }
         // ===== HELDEN: live in the Heldenhalle, march with one attack at a time, level up from the enemies they beat =====
         var HEROES = [
-            { id: 'sigrun',   name: 'Sigrun',   title: 'die Eroberin', icon: 'attack',  color: '#b8433a', unlock: 1,  per: 2, what: '% Angriff',              short: 'Angriff' },
-            { id: 'bernhard', name: 'Bernhard', title: 'der Wächter',  icon: 'shield',  color: '#3d6fb3', unlock: 5,  per: 2, what: '% weniger Verluste',     short: 'Verluste' },
-            { id: 'ida',      name: 'Ida',      title: 'die Reiterin', icon: 'send',    color: '#c98b2a', unlock: 10, per: 2, what: '% Tempo und Beute',      short: 'Tempo' }
+            { id: 'sigrun',   name: 'Sigrun',   title: 'die Eroberin', icon: 'attack',  color: '#b8433a', unlock: 1,  per: 1, what: '% Angriff',              short: 'Angriff' },
+            { id: 'bernhard', name: 'Bernhard', title: 'der Wächter',  icon: 'shield',  color: '#3d6fb3', unlock: 5,  per: 1, what: '% weniger Verluste',     short: 'Verluste' },
+            { id: 'ida',      name: 'Ida',      title: 'die Reiterin', icon: 'send',    color: '#c98b2a', unlock: 10, per: 1, what: '% Tempo und Beute',      short: 'Tempo' }
         ];
         var heroState = null;
         function loadHeroes() {
