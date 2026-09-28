@@ -2472,7 +2472,7 @@ body.has-panel .mapctl{display:none}
         function totalTroopProductionPerTick() {
             let sum = 0; const m = playerTroopMult();
             for (const ownedId of ownedIslands) {
-                sum += Math.round(troopsPerTick(islandLevels[ownedId] || 1) * m);
+                sum += troopsPerTick(islandLevels[ownedId] || 1) * m;
                 const isl = islandById[ownedId];
                 if (isl && (isl.type === 'temple' || isl.type === 'megaTemple')) sum += Math.round(TEMPLE_TROOP_BONUS_PER_TICK * templeBaseMult(isl) * templeHoldMultiplier(ownedId));
             }
@@ -2481,7 +2481,7 @@ body.has-panel .mapctl{display:none}
         function totalCoinProductionPerTick() {
             let sum = 0; const m = playerCoinMult();
             for (const ownedId of ownedIslands) {
-                sum += Math.round(coinsPerTick(islandLevels[ownedId] || 1) * m);
+                sum += coinsPerTick(islandLevels[ownedId] || 1) * m;
                 const isl = islandById[ownedId];
                 if (isl && (isl.type === 'temple' || isl.type === 'megaTemple')) sum += Math.round(TEMPLE_COIN_BONUS_PER_TICK * templeBaseMult(isl) * templeHoldMultiplier(ownedId));
             }
@@ -2518,7 +2518,7 @@ body.has-panel .mapctl{display:none}
           boots:  { icon: 'boots',  name: 'Stiefel', desc: 'Münzproduktion', pct: 2 }
         };
         const SKILL_DEFS = {
-          speed:       { icon: 'hourglass', name: 'Geschwindigkeit',    desc: 'schnellere Produktions-Ticks', msPerLevel: 60 },
+          speed:       { icon: 'hourglass', name: 'Geschwindigkeit',    desc: 'schnellere Produktion und Märsche', msPerLevel: 60, max: 10 },
           troops:      { icon: 'troops',    name: 'Truppenherstellung', desc: 'Truppenproduktion', pct: 2 },
           defense:     { icon: 'defense',   name: 'Verteidigung',       desc: 'jede Basis verteidigt mit mehr Truppen', defPct: 3 },
           defenseGold: { icon: 'shield',    name: 'Verteidigung: Gold', desc: 'Gold pro getöteter Truppe', rate: 0.3 },
@@ -2634,7 +2634,7 @@ body.has-panel .mapctl{display:none}
             const counts = {};
             for (const item of Object.values(inventory)) {
                 if (equippedItems[item.slot] === item.id) continue;
-                if (item.rarity >= RARITY_DEFS.length - 1) continue;
+                if (item.rarity >= RARITY_DEFS.length - 1 || (item.stars || 0) > 0) continue;
                 const key = item.slot + '|' + item.rarity;
                 counts[key] = (counts[key] || 0) + 1;
             }
@@ -2731,9 +2731,12 @@ body.has-panel .mapctl{display:none}
         } catch (e) {
             skills = {};
         }
-        for (const key of Object.keys(SKILL_DEFS)) if (!skills[key]) skills[key] = 0;
+        for (const key of Object.keys(SKILL_DEFS)) if (!(skills[key] > 0)) skills[key] = 0;   // also repairs negative/broken values
 
         let skillPoints = parseInt(store.get('openWaterSkillPoints'), 10) || 0;
+        for (const key of Object.keys(SKILL_DEFS)) {                  // points spent above a skill's cap come back
+            const mx = SKILL_DEFS[key].max; if (mx && skills[key] > mx) { skillPoints += skills[key] - mx; skills[key] = mx; }
+        }
 
         // XP/level: killing enemy troops in a won attack grants XP; filling
         // the XP bar levels the player up and grants a skill point.
@@ -2821,7 +2824,7 @@ body.has-panel .mapctl{display:none}
         const RETREAT_RECOVERY_PCT = 20;
 
         function attackSpeedMultiplier() {
-            return 1 + (skills.speed || 0) * 0.05;
+            return 1 + Math.min(skills.speed || 0, SKILL_DEFS.speed.max) * 0.05;
         }
         function travelDurationSeconds(source, target, botId) {   // bots march at base speed; the player gets the speed skill + Akademie
             const pts = source.landmassId === target.landmassId ? [source, target] : marchPath(source, target);
@@ -3320,8 +3323,8 @@ body.has-panel .mapctl{display:none}
             if (bossHere && won) { spawnBattleFx(target.id, false, bossHere.name + ' gefallen', bot.name); (bossHere.wander ? endWander : endBoss)(bot.name + ' hat ' + bossHere.name + ' besiegt!'); }
 
             let defWounded = 0, defGold = 0;
-            if (playerInvolved && !won) {                                  // "Verteidigung: Gold": every attacker your garrison kills pays out
-                defGold = Math.round(myTroops * (skills.defenseGold || 0) * SKILL_DEFS.defenseGold.rate);
+            if (playerInvolved) {                                          // "Verteidigung: Gold": every attacker your garrison kills pays out (also when the base falls)
+                defGold = Math.round((won ? Math.min(myTroops, totalStrength) : myTroops) * (skills.defenseGold || 0) * SKILL_DEFS.defenseGold.rate);
                 if (defGold > 0) coins += defGold;
             }
             if (playerInvolved) defWounded = hospitalTake(won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops));   // your fallen defenders
@@ -5629,7 +5632,7 @@ body.has-panel .mapctl{display:none}
             if (def.defPct) return '+' + fmtNum(level * def.defPct) + ' % Truppen';
             if (def.flat) return '+' + fmtNum(level * def.flat) + (def.unit || '');
             if (def.rate) return '+' + (level * def.rate).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' Gold/Kill';
-            if (def.msPerLevel) return '−' + fmtNum(level * def.msPerLevel) + ' ms/Tick';
+            if (def.msPerLevel) { const l = Math.min(level, def.max || level); return '+' + fmtNum(Math.round(1000 / (1000 - l * def.msPerLevel) * 100 - 100)) + ' % Produktion, +' + fmtNum(l * 5) + ' % Marschtempo' + (def.max && level >= def.max ? ' (max.)' : ''); }
             return '';
         }
 
@@ -5754,9 +5757,9 @@ body.has-panel .mapctl{display:none}
             kCoinsEl.textContent = fmtCompact(Math.floor(coins));
             kCoinsEl.title = fmtNum(Math.floor(coins)) + ' Münzen';
             document.getElementById('kTroopsRate').textContent =
-                '+' + fmtNum(totalTroopProductionPerTick());
+                '+' + fmtNum(Math.round(totalTroopProductionPerTick()));
             document.getElementById('kCoinsRate').textContent =
-                '+' + fmtNum(totalCoinProductionPerTick());
+                '+' + fmtNum(Math.round(totalCoinProductionPerTick()));
 
             const progressPct = Math.round(ownedIslands.size / islands.length * 100);
             const avatarRing = document.getElementById('pAvatarRing');
@@ -5860,7 +5863,7 @@ body.has-panel .mapctl{display:none}
                 const tile = document.createElement('div');
                 tile.className = 'tile' + (selected ? ' is-selected' : '');
                 tile.dataset.r = rd.key;
-                tile.innerHTML = icon(def.icon) + '<span class="lvl">' + item.level + '</span>' +
+                tile.innerHTML = icon(def.icon) + '<span class="lvl">' + item.level + '</span>' + (item.stars ? '<span class="stars">' + icon('star').repeat(item.stars) + '</span>' : '') +
                     '<span class="selectDot' + (selected ? ' checked' : '') + '" role="checkbox" aria-checked="' + selected + '" aria-label="Zum Verkaufen auswählen"></span>';
                 tile.title = def.name + ' – ' + rd.label + ', Stufe ' + item.level;
                 tile.dataset.id = item.id;
@@ -5960,9 +5963,10 @@ body.has-panel .mapctl{display:none}
             const isEquipped = equippedItems[item.slot] === item.id;
             const score = itemScore(item);
             const fmt1 = v => v.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+            const starF = 1 + (item.stars || 0) * 0.2;                   // forge stars multiply the item's effect
             const bonusText = sc => def.pct !== undefined
-                ? '+' + fmt1(sc * RARITY_PCT_PER_SCORE) + ' % ' + def.desc
-                : '+' + fmt1(sc * RARITY_FLAT_PER_SCORE) + ' ' + def.desc;
+                ? '+' + fmt1(Math.min(item.slot === 'shield' ? 90 : Infinity, sc * RARITY_PCT_PER_SCORE * starF)) + ' % ' + def.desc
+                : '+' + fmt1(sc * RARITY_FLAT_PER_SCORE * starF) + ' ' + def.desc;
 
             chestItemIconBig.dataset.r = rd.key;
             chestItemIconBig.innerHTML = icon(def.icon);
@@ -6051,9 +6055,11 @@ body.has-panel .mapctl{display:none}
             detailBtn.innerHTML = icon('plus') + '<span>1</span>';
             detailBtn.setAttribute('aria-label', 'Skillpunkt vergeben');
             detailBtn.title = 'Skillpunkt vergeben';
-            detailBtn.disabled = skillPoints <= 0;
+            const atMax = def.max && level >= def.max;
+            if (atMax) detailBtn.innerHTML = '<span>Max.</span>';
+            detailBtn.disabled = skillPoints <= 0 || atMax;
             detailBtn.addEventListener('click', () => {
-                if (skillPoints <= 0) return;
+                if (skillPoints <= 0 || atMax) return;
                 skillPoints -= 1;
                 skills[selectedSkillKey] += 1;
                 saveProgression();
@@ -6339,7 +6345,7 @@ body.has-panel .mapctl{display:none}
                             '<div class="logCasualty"><span>Gefallen</span><span>−' + fmtD(entry.defenderCasualties || 0) + '</span></div>' +
                         '</div>' +
                     '</div>' +
-                    '<div class="logGold">Gold/Kill-Bonus: Angriff +' + fmt1(entry.attackGoldRate) + ' · Verteidigung +' + fmt1(entry.defenseGoldRate) + '</div>' +
+                    (entry.attackGoldRate ? '<div class="logGold">Angriff: Gold +' + fmt1(entry.attackGoldRate) + ' pro getöteter Truppe</div>' : '') +
                     (!entry.won && entry.retreatSurvivors ? '<div class="logRetreat">' + fmtNum(entry.retreatSurvivors) + ' Truppen konnten fliehen und kehren zurück</div>' : '') +
                     (entry.wounded ? '<div class="logRetreat logWounded">' + fmtNum(entry.wounded) + ' Verwundete gehen ins Lazarett – heile sie in der Stadt</div>' : '') +
                     '</details>';
@@ -6678,6 +6684,7 @@ body.has-panel .mapctl{display:none}
         // marches (which resolve off absolute timestamps) keep catching up
         // correctly.
         let nextProductionTickAt = Date.now() + productionTickMs();
+        const prodCarry = { coins: 0, troops: {} };      // fractions left over each tick, so small % bonuses aren't rounded away
         function runProductionTick() {
             const now = Date.now();
             let ticks = 0;
@@ -6689,8 +6696,10 @@ body.has-panel .mapctl{display:none}
                 const ruler = rulerOwner(), coinMult = playerCoinMult(), troopMult = playerTroopMult();
                 for (const ownedId of ownedIslands) {
                     const level = islandLevels[ownedId] || 1;
-                    coins += Math.round(coinsPerTick(level) * coinMult) * ticks;
-                    islandTroops[ownedId] = (islandTroops[ownedId] || 0) + Math.round(troopsPerTick(level) * troopMult) * ticks;
+                    prodCarry.coins += coinsPerTick(level) * coinMult * ticks;
+                    const tc = (prodCarry.troops[ownedId] || 0) + troopsPerTick(level) * troopMult * ticks, tw = Math.floor(tc);
+                    prodCarry.troops[ownedId] = tc - tw;
+                    islandTroops[ownedId] = (islandTroops[ownedId] || 0) + tw;
 
                     const isl = islandById[ownedId];
                     if (isl && (isl.type === 'temple' || isl.type === 'megaTemple')) {
@@ -6700,6 +6709,7 @@ body.has-panel .mapctl{display:none}
                         islandTroops[rewardBaseId() ?? ownedId] += Math.round(TEMPLE_TROOP_BONUS_PER_TICK * mult) * ticks;   // bonus troops go to the capital
                     }
                 }
+                const cw = Math.floor(prodCarry.coins); coins += cw; prodCarry.coins -= cw;
                 // Bots produce too - same base rates as the player, just
                 // without any equipment/skill multiplier since they don't
                 // have gear of their own.
@@ -8718,8 +8728,8 @@ body.has-panel .mapctl{display:none}
                 popupStats.innerHTML = '<div class="stat-grid">' +
                     statTile('Truppen hier', 'troops', fmtNum(troopsHere)) +
                     statTile('Verteidigung', 'defense', fmtNum(defenseForLevel(level))) +
-                    statTile('Münzen / s', 'coin', '+' + fmtNum(Math.round(Math.round(coinsPerTick(level) * playerCoinMult()) * 1000 / productionTickMs())), 'is-good') +
-                    statTile('Truppen / s', 'troops', '+' + fmtNum(Math.round(Math.round(troopsPerTick(level) * playerTroopMult()) * 1000 / productionTickMs())), 'is-good') + '</div>' +
+                    statTile('Münzen / s', 'coin', '+' + fmtNum(Math.round(coinsPerTick(level) * playerCoinMult() * 1000 / productionTickMs())), 'is-good') +
+                    statTile('Truppen / s', 'troops', '+' + fmtNum(Math.round(troopsPerTick(level) * playerTroopMult() * 1000 / productionTickMs())), 'is-good') + '</div>' +
                     (island.type === 'gate' ? gateControlsHtml(island) : '') +
                     (isTemple ? templeBonusLine(island) : '');
                 upgradeCostLabel.innerHTML = level >= MAX_BASE_LEVEL ? 'Max. Stufe' : icon('coin', 'icon--coin') + fmtCompact(upgradeCost(level));
