@@ -556,7 +556,7 @@ body.has-panel .mapctl{display:none}
 .keep-note{display:block;margin-top:6px;color:var(--tx-2)} .skin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
 .skin-card{display:grid;justify-items:center;gap:2px;padding:6px 4px 8px;border:1px solid var(--line-2);border-radius:8px;background:rgba(255,255,255,.03);color:var(--tx-1);cursor:pointer} .skin-card.on{border-color:var(--gold-300);box-shadow:0 0 0 1px var(--gold-300)}
 .skin-card canvas{width:60px;height:66px} .skin-card small{display:inline-flex;align-items:center;gap:3px;color:var(--tx-2)} .skin-card .icon{width:12px;height:12px}
-.logWounded{color:#ff9d8f}
+.logWounded,.logRetreat.logWounded{color:#f2c94c;font-weight:600}
 .logRow .mact{grid-column:2/4;display:flex;gap:6px;justify-content:flex-end;margin-top:4px}
 .logRow .mact button{display:inline-flex;align-items:center;gap:4px;min-height:30px;padding:0 10px;border-radius:6px;border:1px solid var(--line-2);background:rgba(255,255,255,.04);color:var(--tx-1);font:600 var(--fs-12)/1 var(--font-ui);cursor:pointer}
 .logRow .mact button:hover{border-color:var(--gold-300)} .logRow .mact .icon{width:14px;height:14px}
@@ -3168,6 +3168,7 @@ body.has-panel .mapctl{display:none}
                 const levelAfterCapture = Math.max(1, (islandLevels[target.id] || 1) - 1);
                 if (targetOwner) clearIslandOwner(target.id); // taken from a bot (or, later, another player)
                 islandTroops[target.id] = remaining;
+                woundedAdded = hospitalTake(attack.rawTroops - remaining);          // your fallen in a won fight: part of them only wounded
                 ownedIslands.add(target.id);
                 islandLevels[target.id] = levelAfterCapture;
                 questProgress('capture', 1);
@@ -3201,11 +3202,7 @@ body.has-panel .mapctl{display:none}
                 }
 
                 retreatSurvivors = Math.floor(attack.rawTroops * RETREAT_RECOVERY_PCT / 100);
-                if (hospitalLevel()) {                                     // Lazarett: part of the fallen are only wounded
-                    const c = loadCity(), room = Math.max(0, hospitalCapacity() - c.wounded);
-                    const w = Math.min(room, Math.floor((attack.rawTroops - retreatSurvivors) * hospitalPct() / 100));
-                    if (w > 0) { c.wounded += w; woundedAdded = w; saveCity(); }
-                }
+                woundedAdded = hospitalTake(attack.rawTroops - retreatSurvivors);   // Lazarett: part of the fallen are only wounded
                 if (retreatSurvivors > 0) {
                     const durationSec = travelDurationSeconds(target, source);
                     const startedAt = Date.now();
@@ -3245,7 +3242,7 @@ body.has-panel .mapctl{display:none}
                 myTroopsBuffed: myTroops,
                 attackBuff: myTroops - attack.rawTroops,
                 attackGoldRate: attack.attackGoldRate !== undefined ? attack.attackGoldRate : (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate,
-                attackerCasualties: won ? losses : Math.max(0, myTroops - retreatSurvivors - woundedAdded),   // really dead: not the ones who fled or lie in the Lazarett
+                attackerCasualties: won ? Math.max(0, losses - woundedAdded) : Math.max(0, myTroops - retreatSurvivors - woundedAdded),   // really dead: not the ones who fled or lie in the Lazarett
                 wounded: woundedAdded,
                 enemyTroops: originalEnemyTroops,
                 enemyDefense: originalEnemyDefense,
@@ -3259,7 +3256,7 @@ body.has-panel .mapctl{display:none}
             });
 
             flashHint((won
-                ? 'Sieg bei ' + islandTitle(target) + (targetOwner ? ' gegen ' + botById[targetOwner].name : '') + '! ' + fmtNum(remaining) + ' Truppen übrig.'
+                ? 'Sieg bei ' + islandTitle(target) + (targetOwner ? ' gegen ' + botById[targetOwner].name : '') + '! ' + fmtCompact(remaining) + ' übrig' + (woundedAdded ? ', ' + fmtCompact(woundedAdded) + ' ins Lazarett.' : '.')
                 : 'Niederlage bei ' + islandTitle(target) + ' – ' + fmtCompact(retreatSurvivors) + ' fliehen' + (woundedAdded ? ', ' + fmtCompact(woundedAdded) + ' ins Lazarett.' : '.')), 6000);
         }
 
@@ -3339,6 +3336,8 @@ body.has-panel .mapctl{display:none}
             updateHud();
             if (bossHere && won) { spawnBattleFx(target.id, false, bossHere.name + ' gefallen', bot.name); (bossHere.wander ? endWander : endBoss)(bot.name + ' hat ' + bossHere.name + ' besiegt!'); }
 
+            let defWounded = 0;
+            if (playerInvolved) defWounded = hospitalTake(won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops));   // your fallen defenders
             if (playerInvolved) {
                 const ribbon = () => spawnBattleFx(target.id, !won || capitalHolds, capitalHolds ? 'Hauptstadt hält' : won ? 'Basis verloren' : 'Verteidigt', capitalHolds ? 'Garnison gefallen' : won ? 'von ' + bot.name : bot.name + ' abgewehrt');
                 finishMapBattle(attack, { sourceId: source.id, targetId: target.id, atk: 'bot', def: 'mine', my: myTroops, myLoss: won ? Math.min(myTroops, originalEnemyDefense) : myTroops,
@@ -3355,13 +3354,14 @@ body.has-panel .mapctl{display:none}
                     myTroops,
                     enemyTroops: originalEnemyTroops,
                     enemyDefense: originalEnemyDefense,
+                    wounded: defWounded,
                     won
                 });
                 flashHint((capitalHolds
                     ? bot.name + ' hat deine Hauptstadt geplündert – die Garnison ist gefallen, aber die Stadt hält.'
                     : won
                     ? bot.name + ' hat deine Basis ' + islandTitle(target) + ' erobert!'
-                    : 'Verteidigung erfolgreich – ' + bot.name + ' bei ' + islandTitle(target) + ' zurückgeschlagen.'), 5000);
+                    : 'Verteidigung erfolgreich – ' + bot.name + ' bei ' + islandTitle(target) + ' zurückgeschlagen.') + (defWounded ? ' ' + fmtCompact(defWounded) + ' Verwundete ins Lazarett.' : ''), 5000);
                 renderActiveMarches();
                 if (isPanelOpen(popup) && popupIslandId === target.id) renderPopup();
             }
@@ -6316,10 +6316,10 @@ body.has-panel .mapctl{display:none}
                     return logRowHtml('retreat', 'recall', 'Rückkehr · ' + T(entry.toId), fmtM(entry.troops) + ' geflohene Truppen zurück', ago(entry));
                 }
                 if (entry.type === 'botAttack') {
-                    const vs = ' (' + fmtM(entry.myTroops) + ' vs ' + fmtM(entry.enemyTroops + entry.enemyDefense) + ')';
+                    const vs = ' (' + fmtM(entry.myTroops) + ' vs ' + fmtM(entry.enemyTroops + entry.enemyDefense) + ')', wd = entry.wounded ? ' · <span class="logWounded">' + fmtM(entry.wounded) + ' im Lazarett</span>' : '';
                     return entry.won
-                        ? logRowHtml('loss', 'bot', 'Verloren · ' + T(entry.targetId), escapeHtml(entry.botName) + ' hat die Basis erobert' + vs, ago(entry))
-                        : logRowHtml('win', 'shield', 'Verteidigt · ' + T(entry.targetId), escapeHtml(entry.botName) + ' zurückgeschlagen' + vs, ago(entry));
+                        ? logRowHtml('loss', 'bot', 'Verloren · ' + T(entry.targetId), escapeHtml(entry.botName) + ' hat die Basis erobert' + vs + wd, ago(entry))
+                        : logRowHtml('win', 'shield', 'Verteidigt · ' + T(entry.targetId), escapeHtml(entry.botName) + ' zurückgeschlagen' + vs + wd, ago(entry));
                 }
                 // Legacy entries saved before this format existed - fall back
                 // to the old one-liner instead of showing "undefined".
@@ -6355,13 +6355,13 @@ body.has-panel .mapctl{display:none}
                     '</div>' +
                     '<div class="logGold">Gold/Kill-Bonus: Angriff +' + fmt1(entry.attackGoldRate) + ' · Verteidigung +' + fmt1(entry.defenseGoldRate) + '</div>' +
                     (!entry.won && entry.retreatSurvivors ? '<div class="logRetreat">' + fmtNum(entry.retreatSurvivors) + ' Truppen konnten fliehen und kehren zurück</div>' : '') +
-                    (entry.wounded ? '<div class="logRetreat logWounded">' + fmtNum(entry.wounded) + ' Verwundete liegen im Lazarett – heile sie in der Stadt</div>' : '') +
+                    (entry.wounded ? '<div class="logRetreat logWounded">' + fmtNum(entry.wounded) + ' Verwundete gehen ins Lazarett – heile sie in der Stadt</div>' : '') +
                     '</details>';
                 return logRowHtml(entry.won ? 'win' : 'loss', entry.won ? 'level' : 'losses',
                     (entry.won ? 'Sieg · ' : 'Niederlage · ') + T(entry.targetId),
                     'von ' + T(entry.sourceId) + (entry.won
                         ? ' · ' + fmtM(entry.remaining) + ' übrig'
-                        : (entry.retreatSurvivors ? ' · ' + fmtM(entry.retreatSurvivors) + ' geflohen' : '') + (entry.wounded ? ' · ' + fmtM(entry.wounded) + ' im Lazarett' : '')),
+                        : (entry.retreatSurvivors ? ' · ' + fmtM(entry.retreatSurvivors) + ' geflohen' : '')) + (entry.wounded ? ' · <span class="logWounded">' + fmtM(entry.wounded) + ' im Lazarett</span>' : ''),
                     ago(entry), details);
             }).join('');
             [...combatLogListEl.children].forEach((row, i) => { if (combatLog[i]) row.dataset.key = combatLogKey(combatLog[i]); });
@@ -7872,6 +7872,12 @@ body.has-panel .mapctl{display:none}
         function hospitalPct() { return Math.min(60, hospitalLevel() * 5); }
         function hospitalCapacity() { const l = hospitalLevel(); return l ? Math.round(1e6 * Math.pow(1.6, l - 1)) : 0; }
         const HEAL_COIN_PER_TROOP = 0.1, STAR_MAX = 10;
+        function hospitalTake(fallen) {                   // Lazarett: part of your fallen (attack won or lost, or defending) are only wounded → how many
+            if (!hospitalLevel() || fallen <= 0) return 0;
+            const c = loadCity(), room = Math.max(0, hospitalCapacity() - c.wounded), w = Math.min(room, Math.floor(fallen * hospitalPct() / 100));
+            if (w > 0) { c.wounded += w; saveCity(); }
+            return w;
+        }
         function starGemCost(stars) { return 20 * (stars + 1); }
         function cityEffectText(id, lvl) {
             if (id === 'academy') return 'Jetzt: Truppen laufen +' + (lvl * 2) + ' % schneller.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: +' + ((lvl + 1) * 2) + ' %.' : '');
