@@ -1,0 +1,585 @@
+<title>Die neue Mitte</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;600;700&display=swap">
+<style>
+  /* Same dark parchment-and-steel look as the game and the Baupläne page. */
+  :root {
+    color-scheme: dark;
+    --bg: #11141a; --panel: #1a1e26; --panel-2: #222733; --line: #2e3442;
+    --tx: #efe6d2; --tx-2: #a99f8b; --gold: #e4c886; --gold-2: #b98a3e;
+    --player: #3f86d8; --neutral: #7c8088;
+    --display: 'Cinzel', Georgia, 'Times New Roman', serif;
+    --ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--tx); font: 400 14px/1.5 var(--ui); padding-inline: 16px; padding-block: 20px 40px; }
+  .wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 18px; }
+  header { display: grid; gap: 10px; }
+  .eyebrow { font: 700 11px/1 var(--ui); letter-spacing: .16em; text-transform: uppercase; color: var(--gold); }
+  h1 { font: 700 clamp(26px, 5vw, 38px)/1.1 var(--display); margin: 0; letter-spacing: .02em; text-wrap: balance; }
+  .lede { color: var(--tx-2); max-width: 68ch; margin: 0; }
+  .lede b { color: var(--tx); }
+  .bar { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--panel); }
+  .seg button { font: 600 13px/1 var(--ui); color: var(--tx-2); background: transparent; border: 0; padding: 10px 12px; cursor: pointer; }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button.on { background: var(--panel-2); color: var(--gold); }
+  .seg button:focus-visible, .zoom button:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+  .stage { position: relative; height: min(72vh, 760px); min-height: 380px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #1c3342; touch-action: none; }
+  #map { display: block; width: 100%; height: 100%; cursor: grab; }
+  #map.drag { cursor: grabbing; }
+  .zoom { position: absolute; right: 10px; bottom: 10px; display: grid; gap: 6px; }
+  .zoom button { width: 40px; height: 40px; border-radius: 6px; border: 1px solid var(--line); background: rgba(17,20,26,.88); color: var(--tx); font: 700 18px/1 var(--ui); cursor: pointer; }
+  .info { position: absolute; left: 10px; top: 10px; max-width: min(320px, calc(100% - 70px)); padding: 12px 14px; background: rgba(17,20,26,.92); border: 1px solid var(--line); border-radius: 8px; display: grid; gap: 4px; }
+  .info b { font: 700 15px/1.25 var(--display); letter-spacing: .02em; color: var(--gold); }
+  .info span { color: var(--tx-2); font-size: 13px; }
+  .loader { position: absolute; inset: 0; display: grid; place-content: center; gap: 12px; background: #11141a; text-align: center; transition: opacity .35s; }
+  .loader.done { opacity: 0; pointer-events: none; }
+  .loader b { font: 700 18px/1.2 var(--display); letter-spacing: .04em; }
+  .loader .track { width: min(280px, 70vw); height: 8px; border-radius: 4px; background: var(--panel-2); overflow: hidden; }
+  .loader .fill { height: 100%; width: 0; background: linear-gradient(90deg, var(--gold-2), var(--gold)); }
+  .loader small { color: var(--tx-2); font-variant-numeric: tabular-nums; }
+  .notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+  .note { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; display: grid; gap: 6px; align-content: start; }
+  .note h2 { font: 700 16px/1.2 var(--display); margin: 0; letter-spacing: .03em; }
+  .note p { margin: 0; color: var(--tx-2); }
+  .note p b { color: var(--tx); }
+  .stats { font-variant-numeric: tabular-nums; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Open Water · Werkstatt</div>
+    <h1>Die neue Mitte</h1>
+    <p class="lede">Der <b>Haupttempel</b> steht genau in der Mitte, die <b>vier Wächter-Tempel</b> genau in den vier Ecken, zusammen ein sauberes Quadrat. Ziehen zum Verschieben, Mausrad oder zwei Finger zum Zoomen, <b>antippen</b> für Details.</p>
+    <div class="bar">
+      <div class="seg" id="viewSeg" role="group" aria-label="Ansicht">
+        <button type="button" id="vMitte" data-v="mitte" class="on">Mitte</button>
+        <button type="button" id="vWelt" data-v="welt">Ganze Welt</button>
+      </div>
+      <div class="seg" id="varSeg" role="group" aria-label="Variante">
+        <button type="button" id="varA" data-var="A" class="on">A · ein großer Bezirk</button>
+        <button type="button" id="varB" data-var="B">B · Ecken als Gebiete</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="map" aria-label="Karte der neuen Mitte"></canvas>
+    <aside class="info" id="info"><b id="infoT">Thronbezirk</b><span id="infoD">Tippe ein Gebäude oder Gebiet an.</span></aside>
+    <div class="zoom">
+      <button type="button" id="zIn" aria-label="Hineinzoomen">+</button>
+      <button type="button" id="zOut" aria-label="Herauszoomen">−</button>
+      <button type="button" id="zFit" aria-label="Ansicht zurücksetzen">⌖</button>
+    </div>
+    <div class="loader" id="loader">
+      <b>Karte wird vorbereitet</b>
+      <div class="track"><div class="fill" id="loadFill"></div></div>
+      <small id="loadTxt">Gebäude 0 / 0</small>
+    </div>
+  </div>
+
+  <section class="notes">
+    <div class="note" id="noteVar">
+      <h2>Variante A · ein großer Bezirk</h2>
+      <p></p>
+    </div>
+    <div class="note">
+      <h2>Die Welt drumherum</h2>
+      <p class="stats" id="worldStats"></p>
+    </div>
+    <div class="note">
+      <h2>Laden ohne Hänger</h2>
+      <p>Beim Öffnen werden <b>alle Gebäude einmal vorgezeichnet</b> (der Balken oben), erst danach geht die Karte auf. Beim Spielen muss dann nichts mehr nachgeladen werden. Genauso machen wir es im Spiel, später auch für Bilder und Musik.</p>
+    </div>
+  </section>
+</div>
+
+<script>
+/*<<DESIGN-CODE*/
+function strokeBox(g, x, y, w, h) { g.beginPath(); g.rect(x, y, w, h); g.stroke(); }
+
+function rr(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+
+const BAND = { player: '#3f86d8', bot: '#c9423a', neutral: '#7c8088' };
+
+function towerTier(level) { return level >= 80 ? 4 : level >= 50 ? 3 : level >= 25 ? 2 : level >= 10 ? 1 : 0; }
+
+function paintTowerTier(g, ownerKey, detail, home, tier, skin) {
+  // 3/4 view, light from the upper left. Sprite box: x -31…31, y -48…24 (see buildingSprite). skin: optional { stone, roof } palette (capital skins)
+  const ink = '#1e1a16', neutral = ownerKey === 'neutral', own = BAND[ownerKey];
+  const marble = tier === 4, S = skin ? skin.stone : marble ? ['#fbf8f1', '#e3ddcf', '#a9a08c'] : neutral ? ['#d2cbbd', '#aaa393', '#716b5d'] : ['#ece5d6', '#c4bba8', '#847b69'];
+  const roofC = skin ? skin.roof : tier === 4 ? ['#fff1b8', '#e2b54a', '#7a5414'] : tier >= 3 ? ['#e4745a', '#b03e2a', '#5a1a10'] : tier === 2 ? ['#6f8bb4', '#3f5a86', '#1c2a44'] : ['#9a6a3c', '#6d4524', '#3a2410'];
+  const lin = (x0, x1, cs) => { const q = g.createLinearGradient(x0, 0, x1, 0); q.addColorStop(0, cs[0]); q.addColorStop(.45, cs[1]); q.addColorStop(1, cs[2]); return q; };
+  const mound = (w) => {                                   // rocky ground the base stands on
+    g.beginPath(); g.ellipse(0, 16, w, 7.5, 0, 0, Math.PI * 2);
+    const q = g.createLinearGradient(0, 9, 0, 24); q.addColorStop(0, '#8a8272'); q.addColorStop(1, '#4b463d'); g.fillStyle = q; g.fill();
+    g.lineWidth = 1; g.strokeStyle = ink; g.stroke();
+    g.fillStyle = 'rgba(255,255,255,.18)'; g.beginPath(); g.ellipse(-w * .25, 13.5, w * .5, 2.4, 0, 0, Math.PI * 2); g.fill();
+    if (detail) { g.fillStyle = '#6d8a3e'; for (const [x, r] of [[-w * .8, 2.4], [w * .75, 2.2], [-w * .45, 1.8], [w * .4, 1.6]]) { g.beginPath(); g.arc(x, 18, r, 0, Math.PI * 2); g.fill(); } } };
+  const cyl = (cx, top, bot, r) => {                       // round stone tower body
+    g.fillStyle = lin(cx - r, cx + r, S); g.beginPath(); g.moveTo(cx - r, top); g.lineTo(cx - r, bot); g.ellipse(cx, bot, r, r * .32, 0, Math.PI, 0, true); g.lineTo(cx + r, top); g.closePath(); g.fill();
+    g.lineWidth = 1.1; g.strokeStyle = ink; g.stroke();
+    if (detail) { g.strokeStyle = 'rgba(40,32,22,.2)'; g.lineWidth = .7; for (let y = top + 5; y < bot; y += 5) { g.beginPath(); g.ellipse(cx, y, r, r * .32, 0, 0, Math.PI); g.stroke(); } } };
+  const crenel = (cx, top, r) => {                         // round parapet with merlons
+    g.fillStyle = lin(cx - r - 1.5, cx + r + 1.5, S); g.beginPath(); g.ellipse(cx, top, r + 1.5, (r + 1.5) * .32, 0, 0, Math.PI * 2); g.fill(); g.lineWidth = 1; g.strokeStyle = ink; g.stroke();
+    for (let i = 0; i < 5; i++) { const a = Math.PI * (.12 + i * .19), x = cx - Math.cos(a) * (r + .5), y = top + Math.sin(a) * (r + .5) * .32;
+      g.fillStyle = i < 2 ? S[0] : S[1]; g.fillRect(x - 1.4, y - 3.4, 2.8, 3.4); g.lineWidth = .7; strokeBox(g, x - 1.4, y - 3.4, 2.8, 3.4); } };
+  const cone = (cx, base, r, h, cs) => {                   // tiled conical roof with a rim
+    g.fillStyle = lin(cx - r, cx + r, cs); g.beginPath(); g.moveTo(cx - r - 1, base); g.lineTo(cx, base - h); g.lineTo(cx + r + 1, base); g.ellipse(cx, base, r + 1, (r + 1) * .3, 0, 0, Math.PI); g.closePath(); g.fill();
+    g.lineWidth = 1.1; g.strokeStyle = ink; g.stroke();
+    if (detail) { g.strokeStyle = 'rgba(0,0,0,.22)'; g.lineWidth = .7; for (let i = 1; i < 4; i++) { const t = i / 4, rr2 = (r + 1) * (1 - t); g.beginPath(); g.ellipse(cx, base - h * t, rr2, rr2 * .3, 0, 0, Math.PI); g.stroke(); }
+      g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = .9; g.beginPath(); g.moveTo(cx - r * .45, base - 1); g.lineTo(cx - .6, base - h + 1.5); g.stroke(); } };
+  const box3 = (x0, top, w, h, d) => {                     // block with a lit front and a shaded right side
+    g.fillStyle = lin(x0, x0 + w, S); g.fillRect(x0, top, w, h); g.lineWidth = 1.1; g.strokeStyle = ink; strokeBox(g, x0, top, w, h);
+    g.fillStyle = S[2]; g.beginPath(); g.moveTo(x0 + w, top); g.lineTo(x0 + w + d, top - d * .6); g.lineTo(x0 + w + d, top + h - d * .6); g.lineTo(x0 + w, top + h); g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = S[0]; g.beginPath(); g.moveTo(x0, top); g.lineTo(x0 + d, top - d * .6); g.lineTo(x0 + w + d, top - d * .6); g.lineTo(x0 + w, top); g.closePath(); g.fill(); g.stroke();
+    if (detail) { g.strokeStyle = 'rgba(40,32,22,.18)'; g.lineWidth = .7; g.beginPath(); for (let y = top + 5; y < top + h; y += 5) { g.moveTo(x0, y); g.lineTo(x0 + w, y); } g.stroke(); } };
+  const merl = (x0, top, w, d) => { const n = Math.max(2, Math.round(w / 5)), mw = w / (n * 2 - 1);
+    for (let i = 0; i < n; i++) { g.fillStyle = S[0]; g.fillRect(x0 + i * 2 * mw, top - 3.2, mw, 3.2); g.lineWidth = .7; g.strokeStyle = ink; strokeBox(g, x0 + i * 2 * mw, top - 3.2, mw, 3.2); } };
+  const win = (x, y, w, h) => { g.fillStyle = '#1b140e'; g.beginPath(); g.moveTo(x - w / 2, y + h); g.lineTo(x - w / 2, y + w / 2); g.arc(x, y + w / 2, w / 2, Math.PI, 0); g.lineTo(x + w / 2, y + h); g.closePath(); g.fill();
+    if (!neutral) { g.fillStyle = 'rgba(255,196,96,.9)'; g.beginPath(); g.arc(x, y + h * .65, w * .3, 0, Math.PI * 2); g.fill(); } };
+  const gate = (x, bot, w, h) => { g.fillStyle = '#1b140e'; g.beginPath(); g.moveTo(x - w / 2, bot); g.lineTo(x - w / 2, bot - h + w / 2); g.arc(x, bot - h + w / 2, w / 2, Math.PI, 0); g.lineTo(x + w / 2, bot); g.closePath(); g.fill();
+    g.strokeStyle = '#7a5a36'; g.lineWidth = .8; g.beginPath(); for (let i = 1; i < 3; i++) { g.moveTo(x - w / 2 + w * i / 3, bot); g.lineTo(x - w / 2 + w * i / 3, bot - h + 2); } g.stroke(); };
+  const flag = (x, y, h, w) => { if (neutral) return;
+    g.strokeStyle = '#2b2622'; g.lineWidth = 1.3; g.beginPath(); g.moveTo(x, y); g.lineTo(x, y - h); g.stroke();
+    g.fillStyle = '#e8c877'; g.beginPath(); g.arc(x, y - h - 1, 1.4, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.moveTo(x + .6, y - h + .5); g.quadraticCurveTo(x + w * .5, y - h - 1.5, x + w, y - h + 1.5); g.lineTo(x + w * .8, y - h + 4.5); g.lineTo(x + w, y - h + 7.5); g.quadraticCurveTo(x + w * .5, y - h + 5, x + .6, y - h + 8);
+    g.closePath(); const q = g.createLinearGradient(x, 0, x + w, 0); q.addColorStop(0, own); q.addColorStop(1, 'rgba(0,0,0,.35)'); g.fillStyle = own; g.fill(); g.fillStyle = q; g.globalAlpha = .45; g.fill(); g.globalAlpha = 1;
+    g.lineWidth = .8; g.strokeStyle = 'rgba(20,16,12,.8)'; g.stroke(); };
+  const band = (x0, y, w) => { if (neutral) return; g.fillStyle = own; g.fillRect(x0, y, w, 2.6); g.fillStyle = 'rgba(255,255,255,.25)'; g.fillRect(x0, y, w, .8); };
+
+  if (tier === 0) {                                        // palisade camp with a timber watchtower
+    mound(19);
+    const wood = ['#c89662', '#8e6038', '#4e331c'];
+    g.strokeStyle = '#3a2410'; g.lineWidth = 2.4; g.beginPath(); g.moveTo(-8, 14); g.lineTo(-6.5, -8); g.moveTo(8, 14); g.lineTo(6.5, -8); g.stroke();
+    g.lineWidth = 1.2; g.beginPath(); g.moveTo(-7.5, 10); g.lineTo(7.5, -3); g.moveTo(7.5, 10); g.lineTo(-7.5, -3); g.stroke();
+    g.fillStyle = lin(-11, 11, wood); g.fillRect(-10.5, -18, 21, 11); g.lineWidth = 1.1; g.strokeStyle = ink; strokeBox(g, -10.5, -18, 21, 11);
+    if (detail) { g.strokeStyle = 'rgba(40,24,10,.45)'; g.lineWidth = .7; g.beginPath(); for (const x of [-5.5, -.5, 4.5]) { g.moveTo(x, -18); g.lineTo(x, -7); } g.stroke(); }
+    band(-10.5, -10, 21); win(0, -16, 4, 5);
+    cone(0, -18, 13, 13, ['#e0c078', '#b08a3e', '#5e4418']);                                          // thatch
+    for (let i = 0; i < 9; i++) { const x = -17 + i * 4.25, top = 5 + Math.abs(i - 4) * .6;           // palisade in front
+      g.fillStyle = lin(x - 2, x + 2, wood); g.beginPath(); g.moveTo(x - 1.9, 16); g.lineTo(x - 1.9, top); g.lineTo(x, top - 3); g.lineTo(x + 1.9, top); g.lineTo(x + 1.9, 16); g.closePath(); g.fill(); g.lineWidth = .8; g.strokeStyle = ink; g.stroke(); }
+    flag(0, -31, 10, 11);
+  } else if (tier === 1) {                                 // round stone tower with a gatehouse
+    mound(21);
+    cyl(0, -14, 13, 11); band(-11, -8, 22); win(-4, -4, 3, 5); win(4, -4, 3, 5);
+    box3(-9, 3, 18, 11, 3); gate(0, 14, 7, 9); merl(-9, 3, 18);
+    crenel(0, -14, 11); cone(0, -17, 9.5, 15, roofC);
+    flag(0, -32, 11, 12);
+  } else if (tier === 2) {                                 // keep flanked by two round towers
+    mound(26);
+    box3(-12, -20, 24, 34, 5); band(-12, -14, 24); win(-5, -10, 3.4, 6); win(5, -10, 3.4, 6); win(0, -1, 3.4, 6); merl(-12, -20, 24);
+    for (const cx of [-19, 19]) { cyl(cx, -8, 14, 6.5); crenel(cx, -8, 6.5); cone(cx, -11, 5.5, 10, roofC); }
+    box3(-7, 5, 14, 9, 2); gate(0, 14, 7, 8);
+    flag(0, -24, 13, 14);
+  } else {                                                 // castle / citadel: curtain wall, four towers, tall keep
+    mound(29);
+    for (const cx of [-15, 15]) { cyl(cx, -14, 6, 5); crenel(cx, -14, 5); cone(cx, -17, 4.5, 10, roofC); }                   // back towers
+    box3(-10, -30, 20, 40, 5); band(-10, -24, 20); win(-4, -21, 3.2, 6); win(4, -21, 3.2, 6); win(0, -10, 3.4, 6);          // keep
+    if (marble) { g.strokeStyle = 'rgba(210,170,70,.8)'; g.lineWidth = 1; strokeBox(g, -10, -30, 20, 40); }
+    cone(2.5, -30, 13, tier === 4 ? 17 : 15, roofC);
+    box3(-24, 2, 48, 12, 3); merl(-24, 2, 48); band(-24, 5, 48); gate(0, 14, 8, 10);                                         // curtain wall
+    for (const cx of [-25, 25]) { cyl(cx, -6, 15, 5.5); crenel(cx, -6, 5.5); cone(cx, -9, 5, 11, roofC); }                   // front towers
+    if (tier === 4) { for (const [cx, cy] of [[25, -21], [2.5, -47.5]]) { g.fillStyle = '#ffe9a0'; g.beginPath(); g.arc(cx, cy, 1.8, 0, Math.PI * 2); g.fill(); g.lineWidth = .6; g.strokeStyle = ink; g.stroke(); } }
+    flag(-25, -20, 8, 11);
+  }
+}
+
+function paintTemple(g, ownerKey, detail) {
+  const ink = '#2a241b';
+  const step = (x, y, w, h, a, b) => { const q = g.createLinearGradient(x, 0, x + w, 0); q.addColorStop(0, a); q.addColorStop(1, b);
+    g.fillStyle = q; g.fillRect(x, y, w, h); g.lineWidth = 1.1; g.strokeStyle = ink; strokeBox(g, x, y, w, h); };
+  step(-22, 14, 44, 6, '#d9cfb6', '#978b70'); step(-19, 10, 38, 4, '#e2d9c2', '#a3977c'); step(-16.5, 6.5, 33, 3.5, '#ebe3cf', '#ada186');
+  for (const cx of [-12, -4.3, 3.3, 11]) { const q = g.createLinearGradient(cx - 1.9, 0, cx + 1.9, 0); q.addColorStop(0, '#f5efe0'); q.addColorStop(1, '#a99d83');
+    g.fillStyle = q; g.fillRect(cx - 1.9, -8, 3.8, 14.5); g.lineWidth = .9; g.strokeStyle = ink; strokeBox(g, cx - 1.9, -8, 3.8, 14.5); }
+  g.fillStyle = '#d8cdb2'; g.fillRect(-16, -11, 32, 3.2); g.lineWidth = 1.1; g.strokeStyle = ink; strokeBox(g, -16, -11, 32, 3.2);
+  const pd = g.createLinearGradient(0, -24, 0, -11); pd.addColorStop(0, '#f4e1a4'); pd.addColorStop(1, '#b88e44');
+  g.beginPath(); g.moveTo(-18, -11); g.lineTo(0, -23.5); g.lineTo(18, -11); g.closePath(); g.fillStyle = pd; g.fill(); g.lineWidth = 1.3; g.strokeStyle = ink; g.stroke();
+  if (detail) { g.fillStyle = 'rgba(60,40,10,.35)'; g.beginPath(); g.arc(0, -15, 2.2, 0, Math.PI * 2); g.fill(); }
+  g.fillStyle = '#f1d27f'; g.beginPath(); g.moveTo(0, -30); g.lineTo(2.6, -26.5); g.lineTo(0, -23.5); g.lineTo(-2.6, -26.5); g.closePath(); g.fill(); g.lineWidth = .9; g.stroke();
+  if (ownerKey !== 'neutral') { g.fillStyle = BAND[ownerKey]; g.beginPath(); g.moveTo(-3.2, -7.8); g.lineTo(3.2, -7.8); g.lineTo(3.2, 1); g.lineTo(0, -1.2); g.lineTo(-3.2, 1); g.closePath(); g.fill(); }  // owner cloth
+}
+
+function paintGuardianTemple(g, ownerKey, detail) {                             // Wächter-Tempel: temple flanked by two watchtowers, steel-blue dome
+  const ink = '#2a241b';
+  const stone = (x0, x1) => { const q = g.createLinearGradient(x0, 0, x1, 0); q.addColorStop(0, '#ebe6da'); q.addColorStop(1, '#9d9585'); return q; };
+  g.lineJoin = 'round'; g.strokeStyle = ink;
+  for (const [x, y, w, h] of [[-25, 14, 50, 6], [-21, 10, 42, 4]]) { g.fillStyle = stone(x, x + w); g.fillRect(x, y, w, h); g.lineWidth = 1.1; strokeBox(g, x, y, w, h); }
+  for (const sx of [-1, 1]) {                                                    // watchtowers
+    const x = sx < 0 ? -24 : 15;
+    g.fillStyle = stone(x, x + 9); g.fillRect(x, -10, 9, 20); g.lineWidth = 1.1; strokeBox(g, x, -10, 9, 20);
+    for (let i = 0; i < 3; i++) { g.fillRect(x - 0.5 + i * 3.5, -13, 2.5, 3); strokeBox(g, x - 0.5 + i * 3.5, -13, 2.5, 3); }
+    g.fillStyle = '#3a342c'; g.fillRect(x + 3.2, -4, 2.6, 5);
+  }
+  g.fillStyle = '#4a4238'; g.fillRect(-12, -6, 24, 16);                        // cella
+  for (const cx of [-10, -3.4, 3.4, 10]) { g.fillStyle = stone(cx - 1.7, cx + 1.7); g.fillRect(cx - 1.7, -6, 3.4, 16); g.lineWidth = .9; strokeBox(g, cx - 1.7, -6, 3.4, 16); }
+  g.lineWidth = 1.1; g.fillStyle = stone(-14, 14); g.fillRect(-14, -9.5, 28, 3.5); strokeBox(g, -14, -9.5, 28, 3.5);
+  const dg = g.createLinearGradient(-10, -26, 10, -9.5); dg.addColorStop(0, '#dbe8f7'); dg.addColorStop(.5, '#7f9fc6'); dg.addColorStop(1, '#3d5a82');
+  g.beginPath(); g.moveTo(-11, -9.5); g.bezierCurveTo(-11, -20, -4, -24, 0, -24); g.bezierCurveTo(4, -24, 11, -20, 11, -9.5); g.closePath();
+  g.fillStyle = dg; g.fill(); g.lineWidth = 1.3; g.stroke();                   // steel dome
+  if (detail) { g.strokeStyle = 'rgba(20,40,70,.45)'; g.lineWidth = .8; g.beginPath(); g.moveTo(-5, -9.8); g.quadraticCurveTo(-5.3, -19, 0, -23.8); g.moveTo(5, -9.8); g.quadraticCurveTo(5.3, -19, 0, -23.8); g.stroke(); g.strokeStyle = ink; }
+  g.beginPath(); g.moveTo(0, -24); g.lineTo(0, -33); g.lineWidth = 1.4; g.stroke();   // spear finial
+  g.fillStyle = '#e6edf6'; g.beginPath(); g.moveTo(0, -38); g.lineTo(2.4, -33); g.lineTo(-2.4, -33); g.closePath(); g.fill(); g.lineWidth = .9; g.stroke();
+  if (ownerKey !== 'neutral') { g.fillStyle = BAND[ownerKey]; g.beginPath(); g.moveTo(-3.2, -5.5); g.lineTo(3.2, -5.5); g.lineTo(3.2, 3); g.lineTo(0, 1); g.lineTo(-3.2, 3); g.closePath(); g.fill(); }
+}
+
+function paintMegaTemple(g, ownerKey, detail) {                                   // grafted from Parchment & Steel, converted to the 64-box
+  const ink = '#2a241b';
+  const marble = (x0, x1) => { const q = g.createLinearGradient(x0, 0, x1, 0); q.addColorStop(0, '#f3ecdc'); q.addColorStop(.5, '#d6cdb8'); q.addColorStop(1, '#a79d86'); return q; };
+  g.lineJoin = 'round'; g.strokeStyle = ink; g.lineWidth = 1.1;
+  for (const [x, y, w, h] of [[-24, 14, 48, 6], [-21, 10, 42, 4], [-18.5, 6.5, 37, 3.5]]) { g.fillStyle = marble(x, x + w); g.fillRect(x, y, w, h); strokeBox(g, x, y, w, h); }
+  for (const s of [-1, 1]) { g.beginPath(); g.moveTo(s * 25, 14); g.lineTo(s * 25, -6); g.lineTo(s * 26.6, -10.5); g.lineTo(s * 28.2, -6); g.lineTo(s * 28.2, 14); g.closePath();
+    g.fillStyle = marble(s * 25, s * 28.2); g.fill(); g.stroke(); }                                                             // side obelisks
+  g.fillStyle = '#4a4238'; g.fillRect(-16, -8, 32, 14.5);                                                                      // dark cella
+  for (const cx of [-14, -8.4, -2.8, 2.8, 8.4, 14]) { g.fillStyle = marble(cx - 1.7, cx + 1.7); g.fillRect(cx - 1.7, -8, 3.4, 14.5); g.lineWidth = .9; strokeBox(g, cx - 1.7, -8, 3.4, 14.5); }
+  g.lineWidth = 1.1; g.fillStyle = marble(-18, 18); g.fillRect(-18, -11.2, 36, 3.2); strokeBox(g, -18, -11.2, 36, 3.2);          // entablature
+  g.fillStyle = marble(-9, 9); g.fillRect(-9, -16.5, 18, 5.3); strokeBox(g, -9, -16.5, 18, 5.3);                                // drum
+  const dg = g.createLinearGradient(-9, -29, 9, -16.5); dg.addColorStop(0, '#f6dc86'); dg.addColorStop(.55, '#d2a247'); dg.addColorStop(1, '#946a22');
+  g.beginPath(); g.moveTo(-9, -16.5); g.bezierCurveTo(-9, -25, -3.5, -28.5, 0, -28.5); g.bezierCurveTo(3.5, -28.5, 9, -25, 9, -16.5); g.closePath();
+  g.fillStyle = dg; g.fill(); g.lineWidth = 1.3; g.stroke();                                                                  // gold dome
+  if (detail) { g.strokeStyle = 'rgba(120,80,20,.5)'; g.lineWidth = .8; g.beginPath(); g.moveTo(-4, -16.8); g.quadraticCurveTo(-4.3, -24, 0, -28.2);
+    g.moveTo(4, -16.8); g.quadraticCurveTo(4.3, -24, 0, -28.2); g.stroke(); g.strokeStyle = ink; }                           // dome ribs
+  g.lineWidth = 1; g.fillStyle = '#e8c46a'; g.fillRect(-1.5, -32.5, 3, 4); strokeBox(g, -1.5, -32.5, 3, 4);                      // lantern
+  g.beginPath(); g.moveTo(0, -37); g.lineTo(2, -34.7); g.lineTo(0, -32.5); g.lineTo(-2, -34.7); g.closePath(); g.fillStyle = '#f1d27f'; g.fill(); g.stroke();
+  if (ownerKey !== 'neutral') { g.fillStyle = BAND[ownerKey]; g.beginPath(); g.moveTo(-3.2, -7.8); g.lineTo(3.2, -7.8); g.lineTo(3.2, 1); g.lineTo(0, -1.2); g.lineTo(-3.2, 1); g.closePath(); g.fill(); }
+}
+
+function drawGatehouse(g, cx, cy, H, open) {      // front view like the towers: two turrets, a wall, an arch with a portcullis
+    const W = H * 1.3, base = cy + H * .42, top = base - H, wallTop = base - H * .7, tw = W * .27;
+    const stone = '#8f8b84', dark = '#5d5a54', edge = '#23211e';
+    g.save(); g.lineJoin = 'round';
+    g.fillStyle = 'rgba(0,0,0,.28)'; g.beginPath(); g.ellipse(cx, base + H * .03, W * .56, H * .07, 0, 0, Math.PI * 2); g.fill();
+    const merlons = (x0, x1, y, n) => { const mw = (x1 - x0) / (n * 2 - 1); for (let i = 0; i < n; i++) g.rect(x0 + i * 2 * mw, y - mw * .9, mw, mw * .9); };
+    g.beginPath(); g.rect(cx - W * .36, wallTop, W * .72, base - wallTop); merlons(cx - W * .36, cx + W * .36, wallTop, 5);   // wall
+    g.fillStyle = stone; g.fill(); g.lineWidth = 1.2; g.strokeStyle = edge; g.stroke();
+    for (const sx of [-1, 1]) {                                                                                              // turrets
+        const x0 = sx < 0 ? cx - W / 2 : cx + W / 2 - tw;
+        g.beginPath(); g.rect(x0, top, tw, base - top); merlons(x0 - tw * .08, x0 + tw * 1.08, top, 3);
+        const tg = g.createLinearGradient(x0, 0, x0 + tw, 0); tg.addColorStop(0, '#a29e96'); tg.addColorStop(1, '#77736c');
+        g.fillStyle = tg; g.fill(); g.stroke();
+        g.fillStyle = '#1d1a16'; g.fillRect(x0 + tw * .38, top + H * .2, tw * .24, H * .14);                                // arrow slit
+    }
+    g.strokeStyle = 'rgba(40,36,32,.35)'; g.lineWidth = 1;                                                                    // courses
+    for (let y = wallTop + H * .12; y < base - 2; y += H * .12) { g.beginPath(); g.moveTo(cx - W * .23, y); g.lineTo(cx + W * .23, y); g.stroke(); }
+    const aw = W * .3, ah = H * .5, ax = cx - aw / 2, ay = base - ah;                                                          // arch
+    const arch = () => { g.beginPath(); g.moveTo(ax, base); g.lineTo(ax, ay + aw / 2); g.arc(cx, ay + aw / 2, aw / 2, Math.PI, 0); g.lineTo(ax + aw, base); g.closePath(); };
+    arch(); g.fillStyle = open >= 1 ? '#6f5438' : '#15120e'; g.fill();
+    if (open > 0) { arch(); const lg = g.createLinearGradient(0, ay, 0, base); lg.addColorStop(0, 'rgba(255,226,160,' + (.25 * open) + ')'); lg.addColorStop(1, 'rgba(176,134,88,' + open + ')'); g.fillStyle = lg; g.fill(); }
+    g.save(); arch(); g.clip();                                                                                                 // portcullis, raised by `open`
+    const lift = open * ah * .92, bars = 5;
+    g.strokeStyle = '#2e2b27'; g.lineWidth = Math.max(1, aw * .07);
+    g.beginPath();
+    for (let i = 1; i < bars; i++) { const x = ax + aw * i / bars; g.moveTo(x, ay - lift); g.lineTo(x, base - lift); }
+    for (let j = 1; j < 4; j++) { const y = ay + ah * j / 4 - lift; g.moveTo(ax, y); g.lineTo(ax + aw, y); }
+    g.stroke(); g.restore();
+    arch(); g.lineWidth = 1.4; g.strokeStyle = edge; g.stroke();
+    g.fillStyle = dark; g.fillRect(cx - aw * .62, ay - H * .06, aw * 1.24, H * .06);                                            // lintel
+    g.restore();
+}
+/*DESIGN-CODE>>*/
+
+// ---------------- world model ----------------
+const S = 1000, HALF = 7, RIVER = 70;                 // 15 × 15 cells, rivers between them
+const rng = seed => () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+let variant = 'A', view = 'mitte';
+let regions = [], things = [], roads = [], walls = [], bridges = [];
+
+const ringOf = (q, r) => Math.max(Math.abs(q), Math.abs(r));
+const CORNERS = [[-1, -1, 'Nordwest'], [1, -1, 'Nordost'], [-1, 1, 'Südwest'], [1, 1, 'Südost']];
+const SIDES = [[0, -1, 'Nord'], [1, 0, 'Ost'], [0, 1, 'Süd'], [-1, 0, 'West']];
+
+function cellRect(q0, r0, q1, r1) {                   // inclusive cell block → rect inside its rivers
+  return { x0: (q0 - .5) * S + RIVER / 2, y0: (r0 - .5) * S + RIVER / 2, x1: (q1 + .5) * S - RIVER / 2, y1: (r1 + .5) * S - RIVER / 2 };
+}
+function inRect(p, rc, pad) { return p.x > rc.x0 + pad && p.x < rc.x1 - pad && p.y > rc.y0 + pad && p.y < rc.y1 - pad; }
+function segDist(px, py, a, b) {
+  const dx = b.x - a.x, dy = b.y - a.y, L = dx * dx + dy * dy || 1, t = Math.max(0, Math.min(1, ((px - a.x) * dx + (py - a.y) * dy) / L));
+  return Math.hypot(px - a.x - dx * t, py - a.y - dy * t);
+}
+
+function build() {
+  regions = []; things = []; roads = []; walls = []; bridges = [];
+  const R = rng(variant === 'A' ? 7 : 11);
+  const isCentre = (q, r) => variant === 'A' ? ringOf(q, r) <= 1 : ringOf(q, r) === 0;
+  // --- the middle ---
+  if (variant === 'A') {
+    const rc = cellRect(-1, -1, 1, 1);
+    regions.push({ kind: 'throne', rect: rc, name: 'Thronbezirk', desc: 'Ein großes Gebiet, so groß wie 3 × 3 normale Gebiete. Rundherum eine Mauer, hinein nur durch die 4 Tore.' });
+    const pl = 330;                                                   // central plaza
+    roads.push({ a: { x: 0, y: rc.y0 + 40 }, b: { x: 0, y: rc.y1 - 40 }, w: 70 }, { a: { x: rc.x0 + 40, y: 0 }, b: { x: rc.x1 - 40, y: 0 }, w: 70 });
+    const ring = 900; for (let i = 0; i < 4; i++) { const c = [[-ring, -ring], [ring, -ring], [ring, ring], [-ring, ring]]; const a = c[i], b = c[(i + 1) % 4]; roads.push({ a: { x: a[0], y: a[1] }, b: { x: b[0], y: b[1] }, w: 50 }); }
+    for (const [cq, cr] of CORNERS) roads.push({ a: { x: 0, y: 0 }, b: { x: cq * 1100, y: cr * 1100 }, w: 44 });
+    roads.push({ plaza: pl });
+    walls.push({ rect: { x0: rc.x0 + 20, y0: rc.y0 + 20, x1: rc.x1 - 20, y1: rc.y1 - 20 }, w: 34, gaps: 'sides' });
+    things.push({ kind: 'mega', x: 0, y: 0, size: 520, name: 'Haupttempel', desc: 'Die Mitte der Welt. Wer ihn hält, herrscht. 8-facher Tempel-Bonus.' });
+    for (const [cq, cr, nm] of CORNERS) {
+      const x = cq * 1170, y = cr * 1170, b = 250;
+      walls.push({ rect: { x0: x - b, y0: y - b, x1: x + b, y1: y + b }, w: 22, gaps: 'toward', gx: -cq, gy: -cr });
+      things.push({ kind: 'guardian', x, y: y + 60, size: 300, name: 'Wächter-Tempel ' + nm, desc: 'Einer der vier Eck-Tempel, auf einer eigenen Bastion. 3-facher Tempel-Bonus.' });
+    }
+    for (const [sq, sr, nm] of SIDES) {
+      const x = sq * (rc.x1 - 20), y = sr * (rc.y1 - 20);
+      things.push({ kind: 'gate', x, y: y + (sr === 0 ? 0 : 0), size: 150, name: 'Tor ' + nm, desc: 'Einer von nur 4 Wegen in den Thronbezirk. Wer das Tor hält, bestimmt die Maut.' });
+      bridges.push({ x: sq * 1.5 * S, y: sr * 1.5 * S, horiz: sq !== 0 });
+    }
+    scatter(rc, 46, 4, R, p => Math.hypot(p.x, p.y) > pl + 220 && CORNERS.every(([cq, cr]) => Math.max(Math.abs(p.x - cq * 1170), Math.abs(p.y - cr * 1170)) > 330)
+      && Math.abs(p.x) > 90 && Math.abs(p.y) > 90 && Math.abs(Math.abs(p.x) - 900) > 70 && Math.abs(Math.abs(p.y) - 900) > 70, 'Zitadelle', 90);
+  } else {
+    const rc = cellRect(0, 0, 0, 0);
+    regions.push({ kind: 'throne', rect: rc, name: 'Thron-Gebiet', desc: 'Nur der Haupttempel und seine Wachen. Hinein nur über die 4 Vorhöfe.' });
+    roads.push({ plaza: 240 });
+    things.push({ kind: 'mega', x: 0, y: 0, size: 440, name: 'Haupttempel', desc: 'Die Mitte der Welt. Wer ihn hält, herrscht. 8-facher Tempel-Bonus.' });
+    scatter(rc, 8, 4, R, p => Math.hypot(p.x, p.y) > 330, 'Zitadelle', 80);
+    for (const [cq, cr, nm] of CORNERS) {
+      const c = cellRect(cq, cr, cq, cr);
+      regions.push({ kind: 'guardian', rect: c, name: 'Wächter-Gebiet ' + nm, desc: 'Eck-Gebiet mit einem Wächter-Tempel. Grenzt an zwei Vorhöfe und an die äußeren Gebiete.' });
+      things.push({ kind: 'guardian', x: cq * S, y: cr * S + 40, size: 290, name: 'Wächter-Tempel ' + nm, desc: 'Einer der vier Eck-Tempel. 3-facher Tempel-Bonus.' });
+      scatter(c, 18, 3, R, p => Math.hypot(p.x - cq * S, p.y - cr * S) > 260, 'Burg', 80);
+    }
+    for (const [sq, sr, nm] of SIDES) {
+      const c = cellRect(sq, sr, sq, sr);
+      regions.push({ kind: 'court', rect: c, name: 'Vorhof ' + nm, desc: 'Der Weg zur Mitte. Am inneren Ufer steht das Tor zum Thron-Gebiet.' });
+      things.push({ kind: 'gate', x: sq * (S * .5 + RIVER / 2 + 40), y: sr * (S * .5 + RIVER / 2 + 40), size: 130, name: 'Tor ' + nm, desc: 'Einer von nur 4 Wegen zum Haupttempel.' });
+      bridges.push({ x: sq * S * .5, y: sr * S * .5, horiz: sq !== 0 });
+      scatter(c, 20, 3, R, p => Math.hypot(p.x - sq * S * .5, p.y - sr * S * .5) > 200, 'Burg', 80);
+    }
+  }
+  // --- everything around it ---
+  let temples = 0;
+  for (let r = -HALF; r <= HALF; r++) for (let q = -HALF; q <= HALF; q++) {
+    if (variant === 'A' ? ringOf(q, r) <= 1 : ringOf(q, r) <= 1) continue;
+    const ring = ringOf(q, r), c = cellRect(q, r, q, r);
+    const belt = ring >= 3 && ring <= 5, start = ring >= 6;
+    regions.push({ kind: start ? 'start' : 'outer', ring, rect: c, name: start ? 'Startgebiet' : ring === 2 ? 'Vorland der Mitte' : 'Mittlerer Gürtel',
+      desc: start ? 'Hier starten die Spieler. Leichte Basen, keine Tempel.' : ring === 2 ? 'Direkt an der Mitte: starke Basen, keine Tempel.' : 'Hier liegen die normalen Tempel (nicht in jedem Gebiet).' });
+    const hasTemple = belt && (q + r) % 2 === 0;
+    if (hasTemple) { temples++; things.push({ kind: 'temple', x: q * S, y: r * S + 30, size: 210, name: 'Tempel', desc: 'Normaler Tempel. Nur im mittleren Gürtel und nur in jedem zweiten Gebiet.' }); }
+    const tier = ring >= 6 ? 0 : ring >= 5 ? 1 : ring >= 4 ? 1 : ring >= 3 ? 2 : 3;
+    scatter(c, 22, tier, R, p => !hasTemple || Math.hypot(p.x - q * S, p.y - r * S) > 190, ['Lager', 'Rundturm', 'Bergfried', 'Burg', 'Zitadelle'][tier], 70);
+  }
+  // bridges between neighbouring outer cells (and the ring-2 cells among each other)
+  for (let r = -HALF; r <= HALF; r++) for (let q = -HALF; q <= HALF; q++) {
+    for (const [dq, dr] of [[1, 0], [0, 1]]) {
+      const q2 = q + dq, r2 = r + dr; if (q2 > HALF || r2 > HALF) continue;
+      if (isCentre(q, r) || isCentre(q2, r2)) continue;
+      if (variant === 'B' && ringOf(q, r) <= 1 && ringOf(q2, r2) <= 1) { bridges.push({ x: (q + q2) / 2 * S, y: (r + r2) / 2 * S, horiz: dq === 1 }); continue; }
+      bridges.push({ x: (q + q2) / 2 * S, y: (r + r2) / 2 * S, horiz: dq === 1 });
+    }
+  }
+  things.push({ kind: 'tower', tier: 0, owner: 'player', home: true, x: -6 * S, y: 6 * S - 60, size: 120, name: 'Deine Hauptstadt (Beispiel)', desc: 'So weit außen startet man: ganz am Rand, weit weg von der Mitte.' });
+  things.sort((a, b) => a.y - b.y);
+  const bases = things.filter(t => t.kind === 'tower').length;
+  document.getElementById('worldStats').innerHTML = '<b>15 × 15 Gebiete</b> statt 9 × 9. Außen die Startgebiete (ohne Tempel), dann der mittlere Gürtel mit den normalen Tempeln, dann das Vorland der Mitte.<br>' +
+    'In dieser Skizze: <b>' + bases.toLocaleString('de-DE') + ' Basen</b>, <b>' + temples + ' normale Tempel</b> + 4 Wächter + 1 Haupttempel (heute: 72 + 4 + 1).';
+  const nv = document.getElementById('noteVar');
+  nv.querySelector('h2').textContent = variant === 'A' ? 'Variante A · ein großer Bezirk' : 'Variante B · Ecken als Gebiete';
+  nv.querySelector('p').innerHTML = variant === 'A'
+    ? 'Die Mitte ist <b>ein großes, ummauertes Quadrat</b>. Haupttempel in der Mitte, die 4 Wächter-Tempel auf <b>Bastionen in den Ecken</b>. Hinein nur durch <b>4 Tore</b>, eins pro Seite. Straßen führen vom Tor zum Haupttempel und zu den Ecken.'
+    : 'Die Mitte besteht aus <b>3 × 3 Gebieten</b>: in der Mitte der Haupttempel, in den <b>4 Eck-Gebieten</b> die Wächter-Tempel, dazwischen <b>4 Vorhöfe</b> mit den Toren. Der Haupttempel ist nur über die Vorhöfe erreichbar.';
+}
+
+function scatter(rc, n, tier, R, ok, label, gap) {
+  let placed = 0, tries = 0;
+  while (placed < n && tries < n * 60) {
+    tries++;
+    const p = { x: rc.x0 + 70 + R() * (rc.x1 - rc.x0 - 140), y: rc.y0 + 90 + R() * (rc.y1 - rc.y0 - 150) };
+    if (!ok(p)) continue;
+    if (roads.some(rd => rd.a && segDist(p.x, p.y, rd.a, rd.b) < rd.w + 50)) continue;
+    if (things.some(t => Math.hypot(t.x - p.x, t.y - p.y) < (t.kind === 'tower' ? gap * 1.6 : t.size * .7))) continue;
+    things.push({ kind: 'tower', tier, owner: 'neutral', x: p.x, y: p.y, size: 60 + tier * 12, name: label, desc: 'Neutrale Basis (' + label + ').' });
+    placed++;
+  }
+}
+
+// ---------------- sprites (pre-painted while the loader shows) ----------------
+const DPR = Math.min(window.devicePixelRatio || 1, 2.5);
+const BUCKETS = [24, 48, 96, 192, 384];
+const cache = new Map();
+function spriteKey(t, b) { return t.kind + '|' + (t.owner || 'neutral') + '|' + (t.tier || 0) + '|' + (t.home ? 1 : 0) + '|' + b; }
+function paintInto(t, px) {
+  const c = document.createElement('canvas');
+  if (t.kind === 'gate') {
+    const H = px * .8, W = Math.ceil(H * 1.5), Hc = Math.ceil(H * 1.55);
+    c.width = W; c.height = Hc; const g = c.getContext('2d');
+    drawGatehouse(g, W / 2, Hc - H * .5 - H * .1, H, false); c.ax = W / 2; c.ay = Hc - H * .5 - H * .1 + H * .42; return c;
+  }
+  const u = px / 64; c.width = Math.ceil(62 * u) + 2; c.height = Math.ceil(72 * u) + 2;
+  const g = c.getContext('2d'); g.setTransform(u, 0, 0, u, 31 * u + 1, 48 * u + 1); g.lineJoin = 'round';
+  const detail = px >= 28, o = t.owner || 'neutral';
+  if (t.kind === 'tower') paintTowerTier(g, o, detail, !!t.home, t.tier || 0);
+  else if (t.kind === 'temple') paintTemple(g, o, detail);
+  else if (t.kind === 'guardian') paintGuardianTemple(g, o, detail);
+  else paintMegaTemple(g, o, detail);
+  c.ax = 31 * u + 1; c.ay = 48 * u + 1; return c;
+}
+function sprite(t, px) {
+  const need = px * DPR, b = BUCKETS.find(v => v >= need) || BUCKETS[BUCKETS.length - 1], k = spriteKey(t, b);
+  let c = cache.get(k); if (!c) { c = paintInto(t, b); cache.set(k, c); }
+  return { c, s: px / b };
+}
+function preload(done) {                               // every building type × size once, before the map opens
+  const kinds = [];
+  for (let tier = 0; tier <= 4; tier++) kinds.push({ kind: 'tower', tier });
+  kinds.push({ kind: 'tower', tier: 0, owner: 'player', home: true }, { kind: 'temple' }, { kind: 'guardian' }, { kind: 'mega' }, { kind: 'gate' });
+  const jobs = []; for (const t of kinds) for (const b of BUCKETS) jobs.push([t, b]);
+  const fill = document.getElementById('loadFill'), txt = document.getElementById('loadTxt');
+  let i = 0;
+  (function step() {
+    const end = Math.min(jobs.length, i + 4);
+    for (; i < end; i++) { const [t, b] = jobs[i], k = spriteKey(t, b); if (!cache.has(k)) cache.set(k, paintInto(t, b)); }
+    fill.style.width = (i / jobs.length * 100) + '%'; txt.textContent = 'Gebäude ' + i + ' / ' + jobs.length;
+    if (i < jobs.length) requestAnimationFrame(step); else { txt.textContent = 'Fertig · ' + jobs.length + ' Gebäude vorgezeichnet'; setTimeout(done, 250); }
+  })();
+}
+
+// ---------------- camera + drawing ----------------
+const cv = document.getElementById('map'), ctx = cv.getContext('2d'), stage = document.getElementById('stage');
+let W = 0, H = 0, cam = { x: 0, y: 0, z: .2 }, sel = null, dirty = true;
+function resize() { const r = stage.getBoundingClientRect(); W = r.width; H = r.height; cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR); dirty = true; }
+function fitZoom() { const span = view === 'mitte' ? 5.3 * S : (2 * HALF + 1.4) * S; return Math.min(W, H) / span; }
+const toS = (x, y) => [(x - cam.x) * cam.z + W / 2, (y - cam.y) * cam.z + H / 2];
+const toW = (sx, sy) => [(sx - W / 2) / cam.z + cam.x, (sy - H / 2) / cam.z + cam.y];
+
+const GROUND = { throne: ['#a19c90', '#8d887c'], guardian: ['#8f949b', '#7b8088'], court: ['#9a9383', '#877f6f'], outer: ['#5b8a3e', '#4a7733'], start: ['#5f9544', '#4f8238'] };
+function drawRegion(rg) {
+  const [x0, y0] = toS(rg.rect.x0, rg.rect.y0), [x1, y1] = toS(rg.rect.x1, rg.rect.y1);
+  if (x1 < 0 || y1 < 0 || x0 > W || y0 > H) return;
+  let [c1, c2] = GROUND[rg.kind];
+  if (rg.kind === 'outer' && rg.ring === 2) { c1 = '#6c7d4c'; c2 = '#5c6c3f'; }          // Vorland: drier, harder ground
+  const gr = ctx.createLinearGradient(x0, y0, x1, y1); gr.addColorStop(0, c1); gr.addColorStop(1, c2);
+  ctx.fillStyle = gr; rr(ctx, x0, y0, x1 - x0, y1 - y0, Math.max(2, 40 * cam.z)); ctx.fill();
+  ctx.strokeStyle = 'rgba(20,24,20,.35)'; ctx.lineWidth = Math.max(1, 6 * cam.z); ctx.stroke();
+  if (sel && sel.region === rg) { ctx.strokeStyle = '#e4c886'; ctx.lineWidth = 2; ctx.stroke(); }
+}
+function drawRoads() {
+  for (const rd of roads) {
+    if (rd.plaza) {
+      const [x, y] = toS(0, 0), r = rd.plaza * cam.z;
+      ctx.fillStyle = '#c7bea9'; ctx.beginPath(); ctx.rect(x - r, y - r, 2 * r, 2 * r); ctx.fill();
+      ctx.strokeStyle = 'rgba(60,50,40,.5)'; ctx.lineWidth = Math.max(1, 8 * cam.z); strokeBox(ctx, x - r, y - r, 2 * r, 2 * r);
+      continue;
+    }
+    const [ax, ay] = toS(rd.a.x, rd.a.y), [bx, by] = toS(rd.b.x, rd.b.y);
+    ctx.strokeStyle = '#b8ae98'; ctx.lineCap = 'round'; ctx.lineWidth = Math.max(1, rd.w * cam.z); ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
+  }
+}
+function drawWalls() {
+  for (const w of walls) {
+    const { x0, y0, x1, y1 } = w.rect, lw = Math.max(1.5, w.w * cam.z), gap = w.gaps === 'sides' ? 130 : 110;
+    const segs = [];
+    const side = (ax, ay, bx, by, hasGap) => {
+      if (!hasGap) { segs.push([ax, ay, bx, by]); return; }
+      const mx = (ax + bx) / 2, my = (ay + by) / 2, L = Math.hypot(bx - ax, by - ay), ux = (bx - ax) / L, uy = (by - ay) / L;
+      segs.push([ax, ay, mx - ux * gap, my - uy * gap], [mx + ux * gap, my + uy * gap, bx, by]);
+    };
+    const g = w.gaps === 'sides' ? [1, 1, 1, 1] : [w.gy < 0 ? 1 : 0, w.gx > 0 ? 1 : 0, w.gy > 0 ? 1 : 0, w.gx < 0 ? 1 : 0];
+    side(x0, y0, x1, y0, g[0]); side(x1, y0, x1, y1, g[1]); side(x1, y1, x0, y1, g[2]); side(x0, y1, x0, y0, g[3]);
+    for (const [ax, ay, bx, by] of segs) {
+      const [sx, sy] = toS(ax, ay), [ex, ey] = toS(bx, by);
+      ctx.lineCap = 'square'; ctx.strokeStyle = '#4d473f'; ctx.lineWidth = lw + 2; ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(ex, ey); ctx.stroke();
+      ctx.strokeStyle = '#8a8274'; ctx.lineWidth = lw; ctx.stroke();
+    }
+    for (const [cx, cy] of [[x0, y0], [x1, y0], [x1, y1], [x0, y1]]) {            // corner towers
+      const [sx, sy] = toS(cx, cy), r = Math.max(2, w.w * 1.3 * cam.z);
+      ctx.fillStyle = '#8a8274'; ctx.strokeStyle = '#4d473f'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(sx, sy, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    }
+  }
+}
+function drawBridges() {
+  for (const b of bridges) {
+    const [x, y] = toS(b.x, b.y), len = (RIVER + 60) * cam.z, wd = 70 * cam.z;
+    if (x < -50 || y < -50 || x > W + 50 || y > H + 50 || len < 2) continue;
+    ctx.fillStyle = '#8a6a44'; ctx.strokeStyle = '#4a3622'; ctx.lineWidth = 1;
+    ctx.beginPath(); if (b.horiz) ctx.rect(x - len / 2, y - wd / 2, len, wd); else ctx.rect(x - wd / 2, y - len / 2, wd, len); ctx.fill(); ctx.stroke();
+  }
+}
+function drawThing(t) {
+  const px = t.size * cam.z;
+  const [x, y] = toS(t.x, t.y);
+  if (x < -px || y < -px || x > W + px || y > H + px * 1.5) return;
+  if (t.kind === 'tower' && px < 10) {                                              // far away: a dot per base
+    ctx.fillStyle = t.owner === 'player' ? '#3f86d8' : 'rgba(40,40,40,.55)'; ctx.fillRect(x - 1.5, y - 1.5, 3, 3); return;
+  }
+  const minPx = t.kind === 'mega' ? 26 : t.kind === 'guardian' ? 18 : t.kind === 'gate' ? 14 : t.kind === 'temple' ? 12 : 0;
+  const size = Math.max(px, minPx), sp = sprite(t, size), c = sp.c, k = sp.s;
+  ctx.drawImage(c, x - c.ax * k, y - c.ay * k, c.width * k, c.height * k);
+  if (sel && sel.thing === t) { ctx.strokeStyle = '#e4c886'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(x, y + 2, size * .55, size * .22, 0, 0, Math.PI * 2); ctx.stroke(); }
+}
+function drawLabels() {
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (const t of things) {
+    if (t.kind === 'tower' && !t.home) continue;
+    const px = t.size * cam.z; if (t.kind === 'temple' && px < 22) continue; if (t.kind === 'gate' && px < 14) continue; if (t.home && px < 14) continue;
+    const [x, y] = toS(t.x, t.y); if (x < -80 || y < -40 || x > W + 80 || y > H + 60) continue;
+    if (t.kind === 'guardian' && px < 16) continue;
+    const short = { Nordwest: 'NW', Nordost: 'NO', Südwest: 'SW', Südost: 'SO' };
+    const label = t.kind === 'mega' ? 'Haupttempel' : t.kind === 'guardian' && px < 44 ? 'Wächter ' + short[t.name.split(' ').pop()] : t.name;
+    ctx.font = (t.kind === 'mega' ? '700 14px ' : '600 12px ') + "Inter, system-ui, sans-serif";
+    const tw = ctx.measureText(label).width + 14, ly = y + Math.max(px, 14) * .38 + 12;
+    ctx.fillStyle = 'rgba(17,20,26,.82)'; rr(ctx, x - tw / 2, ly - 10, tw, 20, 5); ctx.fill();
+    ctx.fillStyle = t.kind === 'mega' ? '#e4c886' : t.home ? '#9cc3ef' : '#efe6d2'; ctx.fillText(label, x, ly + .5);
+  }
+}
+function draw() {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.fillStyle = '#1c3342'; ctx.fillRect(0, 0, W, H);
+  for (const rg of regions) drawRegion(rg);
+  drawRoads(); drawBridges(); drawWalls();
+  for (const t of things) drawThing(t);
+  drawLabels();
+}
+function loop() { if (dirty) { dirty = false; draw(); } requestAnimationFrame(loop); }
+
+// ---------------- input ----------------
+const pts = new Map(); let moved = 0, pinch = null, anim = null;
+function clampZ(z) { return Math.max(fitZoom() * .6, Math.min(1.2, z)); }
+function zoomAt(sx, sy, f) { const [wx, wy] = toW(sx, sy); cam.z = clampZ(cam.z * f); cam.x = wx - (sx - W / 2) / cam.z; cam.y = wy - (sy - H / 2) / cam.z; dirty = true; }
+cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); pts.set(e.pointerId, { x: e.offsetX, y: e.offsetY }); moved = 0; anim = null; cv.classList.add('drag');
+  if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), z: cam.z }; } });
+cv.addEventListener('pointermove', e => {
+  const p = pts.get(e.pointerId); if (!p) return;
+  const dx = e.offsetX - p.x, dy = e.offsetY - p.y; p.x = e.offsetX; p.y = e.offsetY;
+  if (pts.size === 2 && pinch) { const [a, b] = [...pts.values()], d = Math.hypot(a.x - b.x, a.y - b.y); zoomAt((a.x + b.x) / 2, (a.y + b.y) / 2, pinch.z * d / pinch.d / cam.z); moved += 10; return; }
+  moved += Math.abs(dx) + Math.abs(dy); cam.x -= dx / cam.z; cam.y -= dy / cam.z; dirty = true;
+});
+function up(e) {
+  const had = pts.has(e.pointerId); pts.delete(e.pointerId); if (pts.size < 2) pinch = null; if (!pts.size) cv.classList.remove('drag');
+  if (had && moved < 6 && e.type === 'pointerup') pick(e.offsetX, e.offsetY);
+}
+cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+cv.addEventListener('wheel', e => { e.preventDefault(); zoomAt(e.offsetX, e.offsetY, Math.exp(-e.deltaY * .0015)); }, { passive: false });
+document.getElementById('zIn').onclick = () => zoomAt(W / 2, H / 2, 1.4);
+document.getElementById('zOut').onclick = () => zoomAt(W / 2, H / 2, 1 / 1.4);
+document.getElementById('zFit').onclick = () => flyHome();
+
+function pick(sx, sy) {
+  const [wx, wy] = toW(sx, sy); let best = null, bd = Infinity;
+  for (const t of things) { const r = Math.max(t.size * .5, 14 / cam.z), d = Math.hypot(t.x - wx, t.y - (wy + t.size * .2)); if (d < r && d < bd) { bd = d; best = t; } }
+  const rg = best ? null : regions.find(r => wx > r.rect.x0 && wx < r.rect.x1 && wy > r.rect.y0 && wy < r.rect.y1);
+  sel = best ? { thing: best } : rg ? { region: rg } : null;
+  const o = best || rg;
+  document.getElementById('infoT').textContent = o ? o.name : 'Fluss';
+  document.getElementById('infoD').textContent = o ? o.desc : 'Zwischen den Gebieten fließen Flüsse. Hinüber geht es nur über Brücken.';
+  dirty = true;
+}
+function flyHome() {
+  const target = { x: 0, y: 0, z: fitZoom() }, from = { ...cam }, t0 = performance.now();
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce) { Object.assign(cam, target); dirty = true; return; }
+  anim = t => { const k = Math.min(1, (t - t0) / 420), e = 1 - Math.pow(1 - k, 3);
+    cam.x = from.x + (target.x - from.x) * e; cam.y = from.y + (target.y - from.y) * e; cam.z = from.z * Math.pow(target.z / from.z, e); dirty = true;
+    if (k < 1 && anim) requestAnimationFrame(anim); };
+  requestAnimationFrame(anim);
+}
+function setSeg(id, attr, val) { for (const b of document.querySelectorAll('#' + id + ' button')) b.classList.toggle('on', b.dataset[attr] === val); }
+document.getElementById('viewSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; view = b.dataset.v; setSeg('viewSeg', 'v', view); flyHome(); });
+document.getElementById('varSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; variant = b.dataset.var; setSeg('varSeg', 'var', variant); sel = null; build(); dirty = true;
+  document.getElementById('infoT').textContent = variant === 'A' ? 'Thronbezirk' : 'Thron-Gebiet'; document.getElementById('infoD').textContent = 'Tippe ein Gebäude oder Gebiet an.'; });
+window.addEventListener('resize', () => { resize(); });
+
+resize(); build(); cam.z = fitZoom(); draw();
+preload(() => { document.getElementById('loader').classList.add('done'); dirty = true; loop(); });
+</script>
