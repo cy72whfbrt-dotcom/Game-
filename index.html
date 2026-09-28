@@ -9252,6 +9252,10 @@ body.has-panel .mapctl{display:none}
             revealAround(0, 0, FRAME_HALF * 1.5, false);
             store.set('openWaterGift', 'g1'); saveGame(); updateHud();
         }
+        if (store.get('openWaterGift2') !== 'g2' && playerIslandId !== null && islandById[playerIslandId]) {   // one-time test gift: 999 Mrd. coins + 999 Mrd. troops in the capital
+            coins = Math.max(coins, 999e9); islandTroops[playerIslandId] = Math.max(islandTroops[playerIslandId] || 0, 999e9);
+            store.set('openWaterGift2', 'g2'); saveGame(); updateHud();
+        }
         renderActiveMarches();
         if (bonusGrantedAtBoot) saveGame();      // a reload right after the first start must not lose the grant
         updateZoomBounds(); clampCamera();
