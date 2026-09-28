@@ -42,6 +42,19 @@
   .loader .track { width: min(280px, 70vw); height: 8px; border-radius: 4px; background: var(--panel-2); overflow: hidden; }
   .loader .fill { height: 100%; width: 0; background: linear-gradient(90deg, var(--gold-2), var(--gold)); }
   .loader small { color: var(--tx-2); font-variant-numeric: tabular-nums; }
+  .catalog { display: grid; gap: 14px; }
+  .cat-h { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+  .cat-h h2 { font: 700 20px/1.2 var(--display); margin: 0; letter-spacing: .03em; }
+  .cat-h p { margin: 0; color: var(--tx-2); font-size: 13px; }
+  .cat-row { display: grid; grid-template-columns: 170px 1fr; gap: 12px; align-items: center; padding: 10px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+  .cat-row b { font: 700 16px/1.2 var(--display); display: block; }
+  .cat-row small { color: var(--tx-2); font-variant-numeric: tabular-nums; }
+  .cat-cells { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .cat-cell { display: grid; justify-items: center; gap: 4px; padding: 6px 4px; border-radius: 6px; background: radial-gradient(ellipse at 50% 70%, #6c8f4c, #4d6e36); }
+  .cat-cell canvas { width: 100%; max-width: 150px; height: auto; }
+  .cat-cell span { font: 700 11px/1 var(--ui); letter-spacing: .06em; text-transform: uppercase; padding: 4px 6px; border-radius: 4px; color: #fff; }
+  .own-neutral { background: var(--neutral); } .own-player { background: var(--player); } .own-bot { background: #c9423a; } .own-home { background: #7a5a18; }
+  @media (max-width: 640px) { .cat-row { grid-template-columns: 1fr; } .cat-cells { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   .notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
   .note { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; display: grid; gap: 6px; align-content: start; }
   .note h2 { font: 700 16px/1.2 var(--display); margin: 0; letter-spacing: .03em; }
@@ -79,6 +92,11 @@
       <small id="loadTxt">Gebäude 0 / 0</small>
     </div>
   </div>
+
+  <section class="catalog" aria-labelledby="catH">
+    <div class="cat-h"><h2 id="catH">Alle Gebäude</h2><p>So sieht jede Base auf jeder Stufe aus, neutral, deine und die eines Bots. Darunter die Tempel und das Tor.</p></div>
+    <div id="catalog"></div>
+  </section>
 
   <section class="notes">
     <div class="note">
@@ -175,13 +193,13 @@ function paintTowerTier(g, ownerKey, detail, home, tier, skin) {
   const stone = skin && skin.stone ? skin.stone : STONE, roof = skin && skin.roof ? skin.roof : (home ? '#d9a93f' : ROOF[ownerKey] || ROOF.neutral);
   g.lineJoin = 'round';
   if (tier === 0) {                                          // Lager: palisade, a wooden hall and a tent
-    K.shadow(19, 10);
-    K.poly([K.P(-11, -11, 0), K.P(11, -11, 0), K.P(11, 11, 0), K.P(-11, 11, 0)], '#9c8058', .8);
-    K.box(-11, 11, -11, -10, 0, 4, WOOD, .7); K.box(-11, -10, -11, 11, 0, 4, WOOD, .7);             // back palisade
-    K.sq(-3, -2, 4.5, 0, 6, '#a57b4f'); K.pyramid(-3, -2, 5, 6, 6, roof);
-    K.sq(5, 4, 3, 0, .5, '#9c8058', .5); K.pyramid(5, 4, 3.2, .5, 6.5, own ? shade(own, 1.35) : '#d9ccb0');
-    K.box(-11, 11, 10, 11, 0, 4, WOOD, .7); K.box(10, 11, -11, 11, 0, 4, WOOD, .7);                  // front palisade
-    const [fx, fy] = K.P(-3, -2, 12); K.flag(fx, fy, own || (home ? '#d9a93f' : null));
+    K.shadow(24, 13);
+    K.poly([K.P(-14, -14, 0), K.P(14, -14, 0), K.P(14, 14, 0), K.P(-14, 14, 0)], '#9c8058', .8);
+    K.box(-14, 14, -14, -12.8, 0, 6, WOOD, .7); K.box(-14, -12.8, -14, 14, 0, 6, WOOD, .7);         // back palisade
+    K.sq(-4, -3, 6, 0, 9, '#a57b4f'); const ap = K.pyramid(-4, -3, 6.6, 9, 8, roof);
+    K.sq(6.5, 5, 4, 0, .6, '#9c8058', .5); K.pyramid(6.5, 5, 4.2, .6, 9, own ? shade(own, 1.35) : '#d9ccb0');
+    K.box(-14, 14, 12.8, 14, 0, 6, WOOD, .7); K.box(12.8, 14, -14, 14, 0, 6, WOOD, .7);              // front palisade
+    K.flag(ap[0], ap[1], own || (home ? '#d9a93f' : null));
     return;
   }
   if (tier === 1) {                                          // Rundturm
@@ -239,6 +257,7 @@ function paintTemple(g, ownerKey, detail) {                   // Tempel: square 
   K.sq(0, 0, 10, 15, 17.5, '#efe9dc');
   const ap = K.pyramid(0, 0, 10, 17.5, 9, '#c9a24f');
   g.beginPath(); g.arc(ap[0], ap[1] - 1.5, 1.6, 0, Math.PI * 2); g.fillStyle = '#f3d98a'; g.fill(); g.lineWidth = .7; g.strokeStyle = K.ink; g.stroke();
+  if (own) K.flag(ap[0], ap[1] - 3, own, true);
 }
 
 function paintGuardianTemple(g, ownerKey, detail) {           // Wächter-Tempel: platform, round hall with a steel-blue dome, an obelisk on every corner
@@ -258,6 +277,7 @@ function paintGuardianTemple(g, ownerKey, detail) {           // Wächter-Tempel
   const [dx, dt] = K.dome(0, 0, 6.6, 17, 11, '#7f9fc6');
   g.beginPath(); g.moveTo(dx, dt); g.lineTo(dx, dt - 6); g.lineWidth = 1.2; g.strokeStyle = K.ink; g.stroke();
   g.fillStyle = '#e6edf6'; g.beginPath(); g.moveTo(dx, dt - 9.5); g.lineTo(dx + 2, dt - 6); g.lineTo(dx - 2, dt - 6); g.closePath(); g.fill(); g.lineWidth = .7; g.stroke();
+  if (own) { g.fillStyle = own; g.beginPath(); g.moveTo(dx, dt - 5.5); g.lineTo(dx + 6, dt - 4); g.lineTo(dx, dt - 2.5); g.closePath(); g.fill(); g.lineWidth = .6; g.stroke(); }
   ob(11, 11);
 }
 
@@ -751,6 +771,23 @@ function setSeg(id, attr, val) { for (const b of document.querySelectorAll('#' +
 document.getElementById('viewSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; view = b.dataset.v; setSeg('viewSeg', 'v', view); flyHome(); });
 window.addEventListener('resize', () => { resize(); });
 
+function buildCatalog() {                                  // every building, drawn with the same painters as the map
+  const DPRc = Math.min(window.devicePixelRatio || 1, 2), W0 = 150, H0 = Math.round(W0 * 72 / 62);
+  const paint = (fn) => { const c = document.createElement('canvas'); c.width = W0 * DPRc; c.height = H0 * DPRc;
+    const g = c.getContext('2d'), u = W0 * DPRc / 62; g.setTransform(u, 0, 0, u, 31 * u, 48 * u); g.lineJoin = 'round'; fn(g); return c; };
+  const cell = (canvas, label, cls) => { const d = document.createElement('div'); d.className = 'cat-cell'; d.appendChild(canvas);
+    const sp = document.createElement('span'); sp.className = cls; sp.textContent = label; d.appendChild(sp); return d; };
+  const row = (name, sub, cells) => { const r = document.createElement('div'); r.className = 'cat-row';
+    r.innerHTML = '<div><b>' + name + '</b><small>' + sub + '</small></div>'; const cc = document.createElement('div'); cc.className = 'cat-cells';
+    cells.forEach(c => cc.appendChild(c)); r.appendChild(cc); return r; };
+  const host = document.getElementById('catalog'), OW = [['neutral', 'Neutral'], ['player', 'Du'], ['bot', 'Bot']];
+  const tiers = [['Lager', 'Stufe 1–9'], ['Rundturm', 'Stufe 10–24'], ['Bergfried', 'Stufe 25–49'], ['Burg', 'Stufe 50–79'], ['Zitadelle', 'Stufe 80–100']];
+  tiers.forEach(([n, lv], t) => host.appendChild(row(n, lv, [...OW.map(([k, l]) => cell(paint(g => paintTowerTier(g, k, true, false, t)), l, 'own-' + k)),
+    cell(paint(g => paintTowerTier(g, 'player', true, true, t)), 'Hauptstadt', 'own-home')])));
+  const other = [['Tempel', '24 auf zwei Quadraten', paintTemple], ['Wächter-Tempel', 'die 4 Ecken der Mitte', paintGuardianTemple], ['Haupttempel', 'die Mitte der Welt', paintMegaTemple], ['Tor', 'an jedem Brückenende', paintGateIso]];
+  other.forEach(([n, sub, fn]) => host.appendChild(row(n, sub, OW.map(([k, l]) => cell(paint(g => fn(g, k, true)), l, 'own-' + k)))));
+}
+buildCatalog();
 resize(); build(); cam.z = fitZoom(); draw();
 preload(() => { document.getElementById('loader').classList.add('done'); dirty = true; loop(); });
 </script>
