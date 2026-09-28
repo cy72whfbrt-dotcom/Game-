@@ -34,6 +34,8 @@
   .info { position: absolute; left: 10px; top: 10px; max-width: min(320px, calc(100% - 70px)); padding: 12px 14px; background: rgba(17,20,26,.92); border: 1px solid var(--line); border-radius: 8px; display: grid; gap: 4px; }
   .info b { font: 700 15px/1.25 var(--display); letter-spacing: .02em; color: var(--gold); }
   .info span { color: var(--tx-2); font-size: 13px; }
+  .info .coord, .coordchip { font: 600 12px/1 var(--ui); font-variant-numeric: tabular-nums; color: var(--gold); letter-spacing: .04em; }
+  .coordchip { position: absolute; left: 10px; bottom: 10px; padding: 8px 10px; background: rgba(17,20,26,.88); border: 1px solid var(--line); border-radius: 6px; }
   .loader { position: absolute; inset: 0; display: grid; place-content: center; gap: 12px; background: #11141a; text-align: center; transition: opacity .35s; }
   .loader.done { opacity: 0; pointer-events: none; }
   .loader b { font: 700 18px/1.2 var(--display); letter-spacing: .04em; }
@@ -64,7 +66,8 @@
 
   <div class="stage" id="stage">
     <canvas id="map" aria-label="Karte der neuen Mitte"></canvas>
-    <aside class="info" id="info"><b id="infoT">Thron-Gebiet</b><span id="infoD">Tippe ein Gebäude oder Gebiet an.</span></aside>
+    <aside class="info" id="info"><b id="infoT">Thron-Gebiet</b><span id="infoD">Tippe ein Gebäude oder Gebiet an.</span><span class="coord" id="infoC">X 600 · Y 600</span></aside>
+    <div class="coordchip" id="viewC" aria-live="off">X 600 · Y 600</div>
     <div class="zoom">
       <button type="button" id="zIn" aria-label="Hineinzoomen">+</button>
       <button type="button" id="zOut" aria-label="Herauszoomen">−</button>
@@ -84,6 +87,7 @@
     </div>
     <div class="note">
       <h2>Die Welt drumherum</h2>
+      <p><b>Norden Schnee, Mitte Grasland, Süden Wüste</b>, die Grenzen verlaufen nicht schnurgerade. Jede Stelle hat <b>Koordinaten</b> (X und Y von 0 bis 1200), sie stehen beim Antippen oben links und unten links für die Mitte der Ansicht.</p>
       <p class="stats" id="worldStats"></p>
     </div>
     <div class="note">
@@ -300,6 +304,13 @@ function segDist(px, py, a, b) {
   return Math.hypot(px - a.x - dx * t, py - a.y - dy * t);
 }
 
+// Landscape: snow in the north, green in the middle band, sand in the south; the border wanders a little.
+const BIOME = { snow: { name: 'Schnee', c: ['#e3e8ec', '#c9d2d9'] }, green: { name: 'Grasland', c: ['#5b8a3e', '#4a7733'] }, sand: { name: 'Wüste', c: ['#d9c089', '#c4a86c'] } };
+function biomeOf(q, r) {
+  const h = Math.sin(q * 12.9898 + 78.233) * 43758.5453, wob = Math.round((h - Math.floor(h)) * 2 - 1);   // −1…1, fixed per column
+  const y = r + wob * .6;
+  return y <= -2.6 ? 'snow' : y >= 2.6 ? 'sand' : 'green';
+}
 function build() {
   regions = []; things = []; roads = []; walls = []; bridges = [];
   const R = rng(11);
@@ -339,23 +350,27 @@ function build() {
     scatter(c, 20, 3, R, () => true, 'Burg');
   }
   // --- everything around it ---
-  let temples = 0;
+  let temples = 0, slots = 0;
   for (let r = -HALF; r <= HALF; r++) for (let q = -HALF; q <= HALF; q++) {
     const ring = ringOf(q, r); if (ring <= 1) continue;
     const c = cellRect(q, r, q, r), belt = ring >= 3 && ring <= 5, start = ring >= 6;
-    regions.push({ kind: start ? 'start' : 'outer', ring, rect: c, name: start ? 'Startgebiet' : ring === 2 ? 'Vorland der Mitte' : 'Mittlerer Gürtel',
-      desc: start ? 'Hier starten die Spieler. Leichte Basen, keine Tempel.' : ring === 2 ? 'Direkt am Ring um die Mitte: starke Basen, keine Tempel.' : 'Hier liegen die normalen Tempel (nicht in jedem Gebiet).' });
+    const bio = biomeOf(q, r);
+    regions.push({ kind: start ? 'start' : 'outer', ring, bio, rect: c, name: (start ? 'Startgebiet' : ring === 2 ? 'Vorland der Mitte' : 'Mittlerer Gürtel') + ' · ' + BIOME[bio].name,
+      desc: start ? 'Hier starten die Spieler: 4 feste Startplätze, leichte Basen, keine Tempel.' : ring === 2 ? 'Direkt am Ring um die Mitte: starke Basen, keine Tempel.' : 'Hier liegen die normalen Tempel (nicht in jedem Gebiet).' });
+    if (start) for (const [sx, sy] of [[-.24, -.2], [.24, -.2], [-.24, .26], [.24, .26]]) {   // 4 start places, kept free of neutral bases
+      const x = q * S + sx * S, y = r * S + sy * S;
+      if (q === -6 && r === 6 && sx < 0 && sy > 0) { things.push({ kind: 'tower', tier: 0, owner: 'player', home: true, x, y, size: 120, name: 'Deine Hauptstadt (Beispiel)', desc: 'Ein belegter Startplatz. So weit außen startet man, weit weg von der Mitte.' }); continue; }
+      things.push({ kind: 'slot', x, y, size: 120, name: 'Freier Startplatz', desc: 'Hier kann ein neuer Spieler seine Hauptstadt bekommen. 4 Plätze pro Startgebiet.' }); slots++;
+    }
     const hasTemple = belt && (q + r) % 2 === 0;
     if (hasTemple) { temples++; things.push({ kind: 'temple', x: q * S, y: r * S + 30, size: 210, name: 'Tempel', desc: 'Normaler Tempel. Nur im mittleren Gürtel und nur in jedem zweiten Gebiet.' }); }
     const tier = ring >= 6 ? 0 : ring >= 4 ? 1 : ring >= 3 ? 2 : 3;
     scatter(c, 0, tier, R, p => !hasTemple || Math.hypot(p.x - q * S, p.y - r * S - 40) > 215, ['Lager', 'Rundturm', 'Bergfried', 'Burg', 'Zitadelle'][tier]);
   }
-  things = things.filter(t => t.kind !== 'tower' || Math.hypot(t.x + 6 * S, t.y - 6 * S + 60) > 150);   // room for the example capital
-  things.push({ kind: 'tower', tier: 0, owner: 'player', home: true, x: -6 * S, y: 6 * S - 60, size: 120, name: 'Deine Hauptstadt (Beispiel)', desc: 'So weit außen startet man: ganz am Rand, weit weg von der Mitte.' });
   things.sort((a, b) => a.y - b.y);
   const bases = things.filter(t => t.kind === 'tower').length;
   document.getElementById('worldStats').innerHTML = '<b>15 × 15 Gebiete</b> statt 9 × 9. Außen die Startgebiete (ohne Tempel), dann der mittlere Gürtel mit den normalen Tempeln, dann das Vorland der Mitte.<br>' +
-    'In dieser Skizze: <b>' + bases.toLocaleString('de-DE') + ' Basen</b>, <b>' + gates + ' Tore</b> (eins pro Brücke), <b>' + temples + ' normale Tempel</b> + 4 Wächter + 1 Haupttempel (heute: 72 + 4 + 1).';
+    'In dieser Skizze: <b>' + (slots + 1) + ' Startplätze</b> (4 pro Startgebiet, also Platz für ' + (slots + 1) + ' Spieler), <b>' + bases.toLocaleString('de-DE') + ' Basen</b>, <b>' + gates + ' Tore</b> (eins pro Brücke), <b>' + temples + ' normale Tempel</b> + 4 Wächter + 1 Haupttempel (heute: 72 + 4 + 1).';
 }
 
 // Even spread without gaps and without overlaps (Poisson-disc sampling): every base keeps the same
@@ -365,7 +380,8 @@ function scatter(rc, n, tier, R, ok, label) {
   const d = 128 + tier * 4, mine = [];                // one spacing everywhere; the region is filled completely (n is ignored)
   const inside = p => p.x > rc.x0 + 50 && p.x < rc.x1 - 50 && p.y > rc.y0 + 80 && p.y < rc.y1 - 40;
   const free = p => inside(p) && ok(p) && mine.every(m => Math.hypot(m.x - p.x, m.y - p.y) >= d)
-    && !things.some(t => t.kind !== 'tower' && t.kind !== 'mega' && t.kind !== 'guardian' && t.kind !== 'temple' && Math.hypot(t.x - p.x, (t.y - p.y) * 1.2) < t.size * .6 + 70);
+    && !things.some(t => (t.home || t.kind === 'slot') && Math.hypot(t.x - p.x, t.y - p.y) < 150)
+    && !things.some(t => t.kind !== 'tower' && t.kind !== 'slot' && t.kind !== 'mega' && t.kind !== 'guardian' && t.kind !== 'temple' && Math.hypot(t.x - p.x, (t.y - p.y) * 1.2) < t.size * .6 + 70);
   const cx = (rc.x0 + rc.x1) / 2, cy = (rc.y0 + rc.y1) / 2;
   const newSeed = () => {                               // start (or restart) anywhere free: nearest to the middle first
     let best = null, bd = Infinity;
@@ -440,8 +456,7 @@ const GROUND = { throne: ['#a19c90', '#8d887c'], ring: ['#8f949b', '#7b8088'], o
 function drawRegion(rg) {
   const [x0, y0] = toS(rg.rect.x0, rg.rect.y0), [x1, y1] = toS(rg.rect.x1, rg.rect.y1);
   if (x1 < 0 || y1 < 0 || x0 > W || y0 > H) return;
-  let [c1, c2] = GROUND[rg.kind];
-  if (rg.kind === 'outer' && rg.ring === 2) { c1 = '#6c7d4c'; c2 = '#5c6c3f'; }          // Vorland: drier, harder ground
+  let [c1, c2] = rg.bio ? BIOME[rg.bio].c : GROUND[rg.kind];
   const gr = ctx.createLinearGradient(x0, y0, x1, y1); gr.addColorStop(0, c1); gr.addColorStop(1, c2);
   ctx.fillStyle = gr; rr(ctx, x0, y0, x1 - x0, y1 - y0, Math.max(2, 40 * cam.z)); ctx.fill();
   ctx.strokeStyle = 'rgba(20,24,20,.35)'; ctx.lineWidth = Math.max(1, 6 * cam.z); ctx.stroke();
@@ -501,6 +516,16 @@ function drawBridges() {
 function drawThing(t) {
   const px = t.size * cam.z;
   const [x, y] = toS(t.x, t.y);
+  if (t.kind === 'slot') {                                                         // a free start place: a marked plot
+    if (px < 5 || x < -px || y < -px || x > W + px || y > H + px) return;
+    const w = px * .9, h = px * .5;
+    ctx.save(); ctx.setLineDash([Math.max(2, px * .08), Math.max(2, px * .06)]); ctx.lineWidth = Math.max(1, px * .03);
+    ctx.fillStyle = 'rgba(63,134,216,.14)'; ctx.strokeStyle = 'rgba(63,134,216,.8)';
+    ctx.beginPath(); ctx.ellipse(x, y, w / 2, h / 2, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.restore();
+    if (px > 30) { ctx.fillStyle = 'rgba(63,134,216,.9)'; ctx.font = '600 ' + Math.min(12, px * .12) + 'px Inter, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('frei', x, y); }
+    if (sel && sel.thing === t) { ctx.strokeStyle = '#e4c886'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(x, y, w / 2 + 3, h / 2 + 3, 0, 0, Math.PI * 2); ctx.stroke(); }
+    return;
+  }
   if (x < -px || y < -px || x > W + px || y > H + px * 1.5) return;
   if (t.kind === 'tower' && px < 10) {                                              // far away: a dot per base
     ctx.fillStyle = t.owner === 'player' ? '#3f86d8' : 'rgba(40,40,40,.55)'; ctx.fillRect(x - 1.5, y - 1.5, 3, 3); return;
@@ -514,7 +539,7 @@ function drawThing(t) {
 function drawLabels() {
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   for (const t of things) {
-    if (t.kind === 'tower' && !t.home) continue;
+    if ((t.kind === 'tower' && !t.home) || t.kind === 'slot') continue;
     const px = t.size * cam.z; if (t.kind === 'temple' && px < 22) continue; if (t.kind === 'gate' && (!t.major || px < 14)) continue; if (t.home && px < 14) continue;
     const [x, y] = toS(t.x, t.y); if (x < -80 || y < -40 || x > W + 80 || y > H + 60) continue;
     if (t.kind === 'guardian' && px < 16) continue;
@@ -533,6 +558,7 @@ function draw() {
   drawRoads(); drawBridges(); drawWalls();
   for (const t of things) drawThing(t);
   drawLabels();
+  document.getElementById('viewC').textContent = 'Mitte der Ansicht: ' + coordTxt(cam.x, cam.y);
 }
 function loop() { if (dirty) { dirty = false; draw(); } requestAnimationFrame(loop); }
 
@@ -558,6 +584,8 @@ document.getElementById('zIn').onclick = () => zoomAt(W / 2, H / 2, 1.4);
 document.getElementById('zOut').onclick = () => zoomAt(W / 2, H / 2, 1 / 1.4);
 document.getElementById('zFit').onclick = () => flyHome();
 
+const coordOf = (x, y) => [Math.round((x + (HALF + .5) * S) / (S / 80)), Math.round((y + (HALF + .5) * S) / (S / 80))];   // 0…1200 on both axes
+const coordTxt = (x, y) => { const [cx, cy] = coordOf(x, y); return 'X ' + cx + ' · Y ' + cy; };
 function pick(sx, sy) {
   const [wx, wy] = toW(sx, sy); let best = null, bd = Infinity;
   for (const t of things) { const r = Math.max(t.size * .5, 14 / cam.z), d = Math.hypot(t.x - wx, t.y - (wy + t.size * .2)); if (d < r && d < bd) { bd = d; best = t; } }
@@ -566,6 +594,7 @@ function pick(sx, sy) {
   const o = best || rg;
   document.getElementById('infoT').textContent = o ? o.name : 'Fluss';
   document.getElementById('infoD').textContent = o ? o.desc : 'Zwischen den Gebieten fließen Flüsse. Hinüber geht es nur über Brücken.';
+  document.getElementById('infoC').textContent = best ? coordTxt(best.x, best.y) : coordTxt(wx, wy);
   dirty = true;
 }
 function flyHome() {
