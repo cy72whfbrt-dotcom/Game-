@@ -242,6 +242,8 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 .psub{display:flex;align-items:center;gap:6px;min-width:0;font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-2);white-space:nowrap;overflow:hidden}
 .psub .icon{width:13px;height:13px;color:var(--tx-3)}
 .psub .sep{width:3px;height:3px;border-radius:50%;background:var(--tx-4);flex:none}
+.psub > span:last-child{flex:none}   /* the march time never gets cut, the name truncates instead */
+.psub > span:not(:last-child):not(.sep){min-width:0;overflow:hidden;text-overflow:ellipsis}
 .dot{width:7px;height:7px;border-radius:50%;flex:none;box-shadow:0 0 0 2px rgba(0,0,0,.35)}
 .dot--player{background:var(--f-player)} .dot--enemy{background:var(--f-enemy)} .dot--neutral{background:var(--f-neutral)}
 .btn-x{width:32px;height:32px;display:grid;place-items:center;align-self:start;border-radius:var(--r-sm);color:var(--tx-2);border:1px solid transparent;transition:color var(--dur-1),border-color var(--dur-1)}
@@ -2869,6 +2871,8 @@ body.has-panel .mapctl{display:none}
         }
         function addCombatLogEntry(entry) {
             entry.at = Date.now();
+            entry.names = {};                                // names as they were then (a boss may camp there later)
+            for (const k of ['targetId', 'sourceId', 'toId', 'fromId']) if (entry[k] !== undefined && islandById[entry[k]]) entry.names[entry[k]] = islandTitle(islandById[entry[k]]);
             combatLog.unshift(entry);
             if (combatLog.length > COMBAT_LOG_LIMIT) combatLog.length = COMBAT_LOG_LIMIT;
             store.set('openWaterCombatLog', JSON.stringify(combatLog));
@@ -5048,6 +5052,7 @@ body.has-panel .mapctl{display:none}
         let lastFrameAt = performance.now(), lastDrawAt = 0, lastCamKey = '', lastMarchKey = '';
         function requestRender() { mapDirty = true; }   // hoisted function declaration: safe to call from anywhere
         function frame(now) {
+          requestAnimationFrame(frame);                  // first, so one bad frame can never stop the map for good
           const dt = Math.min(32, now - lastFrameAt); lastFrameAt = now;
           tickPickups();
           const animating = updateCamera(dt, now);
@@ -5061,7 +5066,6 @@ body.has-panel .mapctl{display:none}
             if (isPanelOpen(popup)) positionIslandPopover();
             updateMapControls();
           }
-          requestAnimationFrame(frame);
         }
 
         // ---------------- resize / rotation / dpr ----------------
@@ -6266,12 +6270,13 @@ body.has-panel .mapctl{display:none}
                 combatLogListEl.innerHTML = '<div class="logEmpty">' + icon('battlelog') + 'Noch keine Einträge.</div>';
                 return;
             }
-            const T = id => islandTitle(islandById[id]);
+            let T;
             const ago = e => timeAgoLabel(e.at);
             const fmt1 = v => (v || 0).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
             const fmtM = v => Math.abs(v || 0) >= 1e6 ? fmtCompact(v || 0) : fmtNum(v || 0);   // meta lines: "987,7 Mio."
             const fmtD = v => Math.abs(v || 0) >= 1e8 ? fmtCompact(v || 0) : fmtNum(v || 0);   // detail cards
             combatLogListEl.innerHTML = combatLog.map(entry => {
+                T = id => (entry.names && entry.names[id]) || islandTitle(islandById[id]);
                 if (entry.type === 'send') {
                     return logRowHtml('send', 'send', 'Verstärkung → ' + T(entry.toId), fmtM(entry.troops) + ' Truppen verlegt', ago(entry));
                 }
@@ -7150,7 +7155,7 @@ body.has-panel .mapctl{display:none}
                 }
                 if (fight) {                                  // sparks + dust on the front line
                     for (let i = 0; i < 8; i++) {             // dust haze drifting up off the melee
-                        const ph = ((rt / 1800) + i / 8) % 1, o = ((i * 37) % 11 / 11 - .5) * 60 * k, R = (8 + ph * 16) * k;
+                        const ph = ((Math.max(0, rt) / 1800) + i / 8) % 1, o = ((i * 37) % 11 / 11 - .5) * 60 * k, R = (8 + ph * 16) * k;
                         const px = mx + vx * o + ph * 10 * k, py = my2 + vy * o - s * .3 - ph * 22 * k, gd = ctx.createRadialGradient(px, py, 0, px, py, R);
                         gd.addColorStop(0, 'rgba(150,136,112,' + (.28 * Math.sin(ph * Math.PI)) + ')'); gd.addColorStop(1, 'rgba(150,136,112,0)');
                         ctx.fillStyle = gd; ctx.beginPath(); ctx.arc(px, py, R, 0, Math.PI * 2); ctx.fill(); }
@@ -8470,7 +8475,7 @@ body.has-panel .mapctl{display:none}
         let popupIslandId = null;
         // 'menu' lists the available actions for the tapped island; 'upgrade'
         // and 'preview' (attack) are the preview+confirm screens.
-        let popupView = 'menu';
+        let popupView = 'menu', popupFramedView = null;
         let previewSourceId = null; // base picked for an attack awaiting confirmation
         let previewAttackTroops = null; // how many of the source base's troops to send - adjustable via the slider, defaults to all of them
         let previewFraction = 1;        // share of the garrison picked via "Alle"/25-75 % (follows the growing garrison); null after a manual slider drag
@@ -8662,6 +8667,7 @@ body.has-panel .mapctl{display:none}
             if (island.type === 'temple') return 'Tempel';
             if (island.type === 'gate') return island.gateKind === 'throne' ? 'Thron-Tor' : island.gateKind === 'guardian' ? 'Wächter-Tor' : 'Grenztor';
             if (island.id === playerIslandId) return 'Hauptstadt';
+            for (const bot of BOT_DEFS) if (botCapitalOf(bot.id) === island.id) return 'Hauptstadt von ' + bot.name;
             return 'Turm #' + (island.id + 1);
         }
 
@@ -8762,12 +8768,12 @@ body.has-panel .mapctl{display:none}
                     backBtn.style.display = 'inline-block';
                 } else {
                     const scoutEnRoute = pendingScouts.some(s => s.targetId === island.id);
-                    popupOverline.textContent = bossAt(island.id) ? 'Weltereignis · Boss' : ownerBot ? (isCapital(island.id) ? 'Hauptstadt · kann nicht angegriffen werden' : isTemple ? 'Feindlicher Tempel' : 'Feindliche Basis') : (isTemple ? 'Tempel · unbesetzt' : 'Neutrale Basis');
+                    popupOverline.textContent = bossAt(island.id) ? 'Weltereignis · Boss' : ownerBot ? (isCapital(island.id) ? 'Hauptstadt · kann nicht angegriffen werden' : isTemple ? 'Feindlicher Tempel' : island.type === 'gate' ? 'Feindliches Tor' : 'Feindliche Basis') : (isTemple ? 'Tempel · unbesetzt' : island.type === 'gate' ? 'Tor · unbesetzt' : 'Neutrale Basis');
                     popupStats.innerHTML = '<div class="stat-grid">' +
                         statTile('Truppen', 'troops', scouted ? fmtNum(effectiveTroops(island)) : UNK, scouted && ownerBot ? 'is-enemy' : '') +
                         statTile('Verteidigung', 'defense', scouted ? fmtNum(effectiveDefense(island)) : UNK) + '</div>' +
                         (scouted ? '' : '<div class="notice">' + icon('scout') + '<span>Stärke unbekannt. Spähen deckt Truppen und Verteidigung auf.</span></div>') +
-                        (island.type === 'gate' ? '<div class="notice notice--gold">' + icon('lock') + '<span>Tor: Unbesetzt ist es verschlossen – erobere es, um über die Brücke zu kommen. Wer es besitzt, geht kostenlos durch und bestimmt die Maut für alle anderen.</span></div>' : '') +
+                        (island.type === 'gate' && !ownerBot ? '<div class="notice notice--gold">' + icon('lock') + '<span>Tor: Unbesetzt ist es verschlossen – erobere es, um über die Brücke zu kommen. Wer es besitzt, geht kostenlos durch und bestimmt die Maut für alle anderen.</span></div>' : '') +
                         (isTemple ? '<div class="notice notice--gold">' + icon('temple') + '<span>' + (island.type === 'megaTemple' ? 'Thron der Meere: wer ihn hält, trägt die Krone – +25 % Münzen und Truppen im ganzen Reich.' : island.guardian ? 'Wächter-Tempel: 3-facher Tempel-Bonus, bewacht den Weg zur Thron-Insel.' : 'Tempel: gibt Produktion, Gems und Münzen, sobald erobert.') + '</span></div>' : '') +
                         (bossAt(island.id) ? '<div class="notice notice--gold">' + icon('shop') + '<span><b>Belohnung:</b> Legendäre Kiste + ' + (bossAt(island.id).wander ? WANDER_REWARD_GEMS : BOSS_REWARD_GEMS) + ' Gems · ' + (bossAt(island.id).wander ? 'zieht weiter in' : 'verschwindet in') + ' <b data-boss-clock>' + fmtClock(((bossAt(island.id).wander ? bossAt(island.id).campUntil : bossAt(island.id).endsAt) - Date.now()) / 1000) + '</b></span></div>' : '') +
                         (scoutEnRoute ? '<div class="notice notice--warn">' + icon('hourglass') + '<span>Späher bereits unterwegs …</span></div>' : '');
@@ -8785,7 +8791,8 @@ body.has-panel .mapctl{display:none}
                 openPanel(popup);
                 // camera framing (design-spec §6.6): after layout, so the sheet/popover size is known
                 requestAnimationFrame(() => frameIslandInView(island));
-            }
+            } else if (popupView !== popupFramedView) requestAnimationFrame(() => frameIslandInView(island));   // the preview sheet is taller: keep the target visible
+            popupFramedView = popupView;
         }
 
         // Attack preview. Built ONCE per (target, source, scouted, bonus); later
@@ -8865,11 +8872,12 @@ body.has-panel .mapctl{display:none}
             if (mEl && src) mEl.textContent = fmtClock(travelDurationSeconds(src, island) / (previewHero === 'ida' ? 1 + heroBonus('ida') / 100 : 1));   // Ida marches faster
             if (tEl && src) { const hop = lastHop(src.landmassId, island.landmassId, 'player'), t = tollFor(hop[0], hop[1], shown, 'player', island.id);
                 tEl.innerHTML = t.closed ? '<span class="sep"></span>' + icon('lock') + '<span>Tor geschlossen</span>' : t.cost ? '<span class="sep"></span>' + icon('coin') + '<span>Maut <span class="num">' + fmtCompact(t.cost) + '</span></span>' : ''; }
-            document.getElementById('previewMyTroops').textContent = fmtNum(mine);
+            const fmtBig = v => v >= 1e7 ? fmtCompact(v) : fmtNum(v);    // billions don't fit the preview
+            document.getElementById('previewMyTroops').textContent = fmtBig(mine);
             const raw = document.getElementById('previewRawTroops');
-            if (raw) raw.textContent = fmtNum(shown);
-            document.getElementById('attackTroopsLabel').textContent = fmtNum(shown);
-            popupStats.querySelector('[data-preview="max"]').textContent = fmtNum(maxTroops);
+            if (raw) raw.textContent = fmtBig(shown);
+            document.getElementById('attackTroopsLabel').textContent = fmtBig(shown);
+            popupStats.querySelector('[data-preview="max"]').textContent = fmtBig(maxTroops);
             slider.style.setProperty('--pct', (maxTroops > 1 ? (Math.max(1, shown) - 1) / (maxTroops - 1) * 100 : 100) + '%');
             for (const b of popupStats.querySelectorAll('[data-preview="quick"] button'))
                 b.classList.toggle('on', maxTroops > 0 && (previewFraction !== null
@@ -8877,12 +8885,12 @@ body.has-panel .mapctl{display:none}
                     : Math.max(1, Math.round(maxTroops * parseFloat(b.dataset.f))) === shown));
             if (scouted) {                                      // fog of war: enemy numbers and the ratio exist only when scouted
                 const enemyTroops = effectiveTroops(island), enemyDefense = effectiveDefense(island), total = enemyTroops + enemyDefense;
-                popupStats.querySelector('[data-foe="total"]').textContent = fmtNum(total);
+                popupStats.querySelector('[data-foe="total"]').textContent = total >= 1e7 ? fmtCompact(total) : fmtNum(total);
                 popupStats.querySelector('[data-foe="sub"]').innerHTML = fmtCompact(enemyTroops) + '<span class="xs-hide">\u00a0Truppen</span> +\u00a0' + fmtCompact(enemyDefense) + '\u00a0Vert.';
                 const ratio = total > 0 ? mine / total : Infinity;
                 popupStats.querySelector('[data-preview="balance"]').style.setProperty('--a', (mine + total > 0 ? Math.round(mine / (mine + total) * 100) : 50) + '%');
                 popupStats.querySelector('[data-preview="verdict"]').innerHTML = (ratio > 1 ? 'Überlegen ' : 'Unterlegen ') +
-                    '<b class="' + (ratio > 1 ? '' : 'is-bad') + '">' + (isFinite(ratio) ? (ratio >= 1000 ? '> 999×' : ratio.toLocaleString('de-DE', { maximumFractionDigits: ratio < 10 ? 1 : 0 }) + '×') : '∞') + '</b>';
+                    '<b class="' + (ratio > 1 ? '' : 'is-bad') + '">' + (isFinite(ratio) ? (ratio >= 1000 ? '> 999×' : ratio < 0.1 ? '< 0,1×' : ratio.toLocaleString('de-DE', { maximumFractionDigits: ratio < 10 ? 1 : 0 }) + '×') : '∞') + '</b>';
             }
         }
 
