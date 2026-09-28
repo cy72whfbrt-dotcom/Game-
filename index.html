@@ -983,7 +983,7 @@ body.has-panel .mapctl{display:none}
 .forge-row small{display:block;font:600 var(--fs-13)/1.3 var(--font-ui);color:var(--gold-200);letter-spacing:.08em}
 .forge-row em{font:600 var(--fs-11)/1 var(--font-ui);font-style:normal;color:var(--tx-3)}
 .forge-row.is-empty{color:var(--tx-3);font:500 var(--fs-12)/1.3 var(--font-ui)}
-.tile .stars{position:absolute;left:0;right:0;bottom:2px;display:flex;justify-content:center;gap:0;color:#ffd76a}
+.tile .stars{position:absolute;left:4px;right:24px;bottom:3px;display:flex;justify-content:flex-start;gap:0;color:#ffd76a;overflow:hidden}
 .tile .stars .icon{width:9px;height:9px;filter:drop-shadow(0 0 1px #000)}
 .starbar{display:flex!important;flex-wrap:wrap;gap:1px;margin-top:3px}
 .starbar .icon{width:13px;height:13px;color:#ffd76a}
@@ -2598,6 +2598,10 @@ body.has-panel .mapctl{display:none}
         } catch (e) {
             inventory = {};
         }
+        const STAR_MAX = 5, STAR_PCT = 20;               // forge stars: at most 5, each +20 % of the item's effect
+        for (const it of Object.values(inventory)) {    // older saves could have up to 10 stars: the extra ones are refunded in gems
+            if ((it.stars || 0) > STAR_MAX) { for (let s = STAR_MAX; s < it.stars; s++) gems += 20 * (s + 1); it.stars = STAR_MAX; store.set('openWaterInventory', JSON.stringify(inventory)); store.set('openWaterGems', String(gems)); }
+        }
         let nextItemId = parseInt(store.get('openWaterNextItemId'), 10) || 1;
         let equippedItems; // slot -> item id or null
         try {
@@ -2611,7 +2615,7 @@ body.has-panel .mapctl{display:none}
         function equippedItemBonusPct(slot) {
             const id = equippedItems[slot];
             const item = id ? inventory[id] : null;
-            return item ? itemScore(item) * RARITY_PCT_PER_SCORE * (1 + (item.stars || 0) * 0.2) : 0;
+            return item ? itemScore(item) * RARITY_PCT_PER_SCORE * (1 + (item.stars || 0) * STAR_PCT / 100) : 0;
         }
 
         function pickRandomSlot() {
@@ -5982,7 +5986,7 @@ body.has-panel .mapctl{display:none}
             const isEquipped = equippedItems[item.slot] === item.id;
             const score = itemScore(item);
             const fmt1 = v => v.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-            const starF = 1 + (item.stars || 0) * 0.2;                   // forge stars multiply the item's effect
+            const starF = 1 + (item.stars || 0) * STAR_PCT / 100;                   // forge stars multiply the item's effect
             const bonusText = sc => def.pct !== undefined
                 ? '+' + fmt1(Math.min(item.slot === 'shield' ? 90 : Infinity, sc * RARITY_PCT_PER_SCORE * starF)) + ' % ' + def.desc
                 : '+' + fmt1(sc * RARITY_FLAT_PER_SCORE * starF) + ' ' + def.desc;
@@ -5996,6 +6000,7 @@ body.has-panel .mapctl{display:none}
             const maxed = item.level >= ITEM_MAX_LEVEL;
             chestItemStats.innerHTML =
                 '<div><span>' + icon(def.icon) + 'Bonus</span><b class="up">' + bonusText(score) + '</b></div>' +
+                (item.stars ? '<div><span>' + icon('star') + 'davon Sterne</span><b class="up">' + item.stars + ' × ' + STAR_PCT + ' % = +' + fmt1(score * RARITY_PCT_PER_SCORE * (starF - 1)) + ' %</b></div>' : '') +
                 (isEquipped ? '' : '<div><span>' + icon('info') + 'Status</span><b>wirkt, sobald ausgerüstet</b></div>') +
                 (maxed ? '' : '<div><span>' + icon('upgrade') + 'Nächste Stufe</span><b>' + bonusText(itemScore({ ...item, level: item.level + 1 })) + '</b></div>') +
                 '<div><span>' + icon('points') + 'Verkaufswert</span><b>' + fmtNum(score) + (score === 1 ? ' Punkt' : ' Punkte') + '</b></div>';
@@ -7666,7 +7671,7 @@ body.has-panel .mapctl{display:none}
               desc: 'Hier leben deine Helden. Ein Held zieht mit einem Angriff mit und gibt ihm seinen Bonus. Jede Stufe hebt die Höchststufe der Helden um 2; Stufe 1, 5 und 10 schalten je einen Helden frei.' }
         ];
         var CITY_MAX_LEVEL = 25, CITY_GEMS_PER_MIN = 1;
-        function cityMaxLevel(id) { return id === 'forge' ? 10 : CITY_MAX_LEVEL; }   // the Schmiede stops at 10 stars
+        function cityMaxLevel(id) { return id === 'forge' ? STAR_MAX : CITY_MAX_LEVEL; }   // the Schmiede stops at the star maximum
         var cityState = null;
         function loadCity() {
             if (cityState) return cityState;
@@ -7675,6 +7680,8 @@ body.has-panel .mapctl{display:none}
             for (const b of CITY_BUILDINGS) if (typeof cityState.levels[b.id] !== 'number') cityState.levels[b.id] = 0;
             if (cityState.build && !CITY_BUILDINGS.some(b => b.id === cityState.build.id)) cityState.build = null;   // a removed building was being built
             if (typeof cityState.wounded !== 'number') cityState.wounded = 0;
+            cityState.levels.forge = Math.min(cityState.levels.forge, cityMaxLevel('forge'));   // the Schmiede ends at the star maximum
+            if (cityState.build && cityState.build.id === 'forge' && cityState.build.to > cityMaxLevel('forge')) cityState.build = null;
             return cityState;
         }
         function saveCity() { store.set('openWaterCity', JSON.stringify(cityState)); }
@@ -7883,7 +7890,7 @@ body.has-panel .mapctl{display:none}
         function hospitalLevel() { return loadCity().levels.hospital || 0; }
         function hospitalPct() { return Math.min(60, hospitalLevel() * 5); }
         function hospitalCapacity() { const l = hospitalLevel(); return l ? Math.round(1e6 * Math.pow(1.6, l - 1)) : 0; }
-        const HEAL_COIN_PER_TROOP = 0.1, STAR_MAX = 10;
+        const HEAL_COIN_PER_TROOP = 0.1;
         function hospitalTake(fallen) {                   // Lazarett: part of your fallen (attack won or lost, or defending) are only wounded → how many
             if (!hospitalLevel() || fallen <= 0) return 0;
             const c = loadCity(), room = Math.max(0, hospitalCapacity() - c.wounded), w = Math.min(room, Math.floor(fallen * hospitalPct() / 100));
@@ -7942,7 +7949,7 @@ body.has-panel .mapctl{display:none}
                 const s0 = item.stars || 0, cost = starGemCost(s0);
                 if (s0 >= Math.min(STAR_MAX, forgeLevel()) || gems < cost) return;
                 gems -= cost; item.stars = s0 + 1; saveGame(); saveProgression(); updateHud();
-                flashHint(EQUIPMENT_DEFS[item.slot].name + ' hat jetzt ' + item.stars + (item.stars === 1 ? ' Stern' : ' Sterne') + ' (+' + item.stars * 20 + ' % Wirkung).', 2500); renderCitySheet(); }
+                flashHint(EQUIPMENT_DEFS[item.slot].name + ' hat jetzt ' + item.stars + (item.stars === 1 ? ' Stern' : ' Sterne') + ' (+' + item.stars * STAR_PCT + ' % Wirkung).', 2500); renderCitySheet(); }
             else if (hl) { const c = loadCity(), w = c.wounded, cost = Math.ceil(w * HEAL_COIN_PER_TROOP);
                 if (!w || coins < cost) return;
                 coins -= cost; c.wounded = 0; saveCity();
