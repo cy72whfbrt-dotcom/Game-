@@ -61,6 +61,11 @@
         <button type="button" id="vMitte" data-v="mitte" class="on">Mitte</button>
         <button type="button" id="vWelt" data-v="welt">Ganze Welt</button>
       </div>
+      <div class="seg" id="gateSeg" role="group" aria-label="Tor-Stil">
+        <button type="button" id="gA" data-g="A">A · Brückenturm</button>
+        <button type="button" id="gB" data-g="B">B · Tortürme</button>
+        <button type="button" id="gC" data-g="C" class="on">C · Torburg</button>
+      </div>
     </div>
   </header>
 
@@ -288,7 +293,7 @@ function drawGatehouse(g, cx, cy, H, open) {      // front view like the towers:
 // ---------------- world model ----------------
 const S = 4400, HALF = 7, RIVER = 260, BRIDGE_W = 170;   // 15 × 15 big regions, rivers wide enough for real bridges
 const rng = seed => () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
-let view = 'mitte';
+let view = 'mitte', gateStyle = 'C';
 let regions = [], things = [], roads = [], walls = [], bridges = [];
 
 const ringOf = (q, r) => Math.max(Math.abs(q), Math.abs(r));
@@ -330,7 +335,7 @@ function build() {
       const nm = intoThrone ? 'Thron-Tor ' + dirName(oq, orr) : intoRing ? 'Wächter-Tor' : 'Grenztor';
       const gsz = intoThrone ? 330 : intoRing ? 280 : 240;
       // Every gate stands in the middle of its bridge, the same on every bridge: a bridge tower the road runs through.
-      things.push({ kind: 'gate', x: bx, y: by + (dq === 1 ? BRIDGE_W / 2 + 20 : gsz * .3), size: gsz, name: nm, major: intoThrone,
+      things.push({ kind: 'gate', bx, by, horiz: dq === 1, x: bx, y: by + (dq === 1 ? BRIDGE_W / 2 + 20 : gsz * .3), size: gsz, name: nm, major: intoThrone,
         desc: intoThrone ? 'Einer von nur 4 Wegen zum Haupttempel.' : intoRing ? 'Tor in den Ring um die Mitte. Unbesetzt verschlossen.' : 'Jede Brücke hat ein Tor. Unbesetzt verschlossen, wer es hält, bestimmt die Maut.' });
       gates++;
     }
@@ -543,6 +548,47 @@ function drawBridges() {                               // wooden deck on stone p
     ctx.restore();
   }
 }
+// Gate styles B and C look the same whichever way the bridge runs.
+function turret(x, base, w, h) {                        // square stone turret with merlons and a slit, like on the gatehouse
+  const top = base - h, g = ctx.createLinearGradient(x - w / 2, 0, x + w / 2, 0); g.addColorStop(0, '#a29e96'); g.addColorStop(1, '#6f6b64');
+  ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.beginPath(); ctx.ellipse(x, base, w * .75, w * .22, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.rect(x - w / 2, top, w, h); const mw = w / 5; for (let i = 0; i < 3; i++) ctx.rect(x - w / 2 + i * 2 * mw, top - mw * .9, mw, mw * .9);
+  ctx.fillStyle = g; ctx.fill(); ctx.lineWidth = Math.max(1, w * .05); ctx.strokeStyle = '#23211e'; ctx.stroke();
+  ctx.fillStyle = '#1d1a16'; ctx.fillRect(x - w * .12, top + h * .22, w * .24, h * .16);
+}
+function portcullis(x0, y0, w, h) {                      // iron grid across the road
+  ctx.fillStyle = 'rgba(21,18,14,.85)'; ctx.fillRect(x0, y0, w, h);
+  ctx.strokeStyle = '#6a5642'; ctx.lineWidth = Math.max(1, Math.min(w, h) * .09); ctx.beginPath();
+  const n = 5; for (let i = 1; i < n; i++) { if (w >= h) { ctx.moveTo(x0 + w * i / n, y0); ctx.lineTo(x0 + w * i / n, y0 + h); } else { ctx.moveTo(x0, y0 + h * i / n); ctx.lineTo(x0 + w, y0 + h * i / n); } }
+  if (w >= h) { ctx.moveTo(x0, y0 + h * .5); ctx.lineTo(x0 + w, y0 + h * .5); } else { ctx.moveTo(x0 + w * .5, y0); ctx.lineTo(x0 + w * .5, y0 + h); }
+  ctx.stroke();
+}
+function drawGateStyled(t) {
+  const z = cam.z, [x, y] = toS(t.bx, t.by), wp = BRIDGE_W * z, big = t.major ? 1.3 : 1;
+  const tw = BRIDGE_W * .42 * z * big, th = BRIDGE_W * 1.05 * z * big;
+  if (gateStyle === 'B') {                               // two turrets beside the deck, a portcullis across it
+    if (t.horiz) {                                        // road runs left–right: turrets north and south of it
+      turret(x, y - wp / 2 - 4 * z, tw, th);
+      portcullis(x - wp * .09, y - wp / 2, wp * .18, wp);
+      turret(x, y + wp / 2 + th * .18, tw, th);
+    } else {                                              // road runs up–down: turrets west and east of it
+      portcullis(x - wp / 2, y - wp * .09, wp, wp * .18);
+      turret(x - wp / 2 - tw * .45, y + wp * .15, tw, th); turret(x + wp / 2 + tw * .45, y + wp * .15, tw, th);
+    }
+  } else {                                                // C: a small square castle the road runs straight through
+    const q = wp * 1.9 * big, x0 = x - q / 2, y0 = y - q / 2;
+    ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.fillRect(x0 + 6 * z, y0 + 14 * z, q, q);
+    const g = ctx.createLinearGradient(0, y0, 0, y0 + q); g.addColorStop(0, '#a29e96'); g.addColorStop(1, '#827e76');
+    ctx.fillStyle = g; ctx.fillRect(x0, y0, q, q); ctx.lineWidth = Math.max(1, 4 * z); ctx.strokeStyle = '#23211e'; ctx.strokeRect(x0, y0, q, q);
+    ctx.fillStyle = '#6f6b64'; const m = q * .07;                                              // merlons along the walls
+    for (let i = 0; i < 7; i++) { const o = q * (.08 + i * .14); ctx.fillRect(x0 + o, y0 - m * .5, m, m); ctx.fillRect(x0 + o, y0 + q - m * .5, m, m); ctx.fillRect(x0 - m * .5, y0 + o, m, m); ctx.fillRect(x0 + q - m * .5, y0 + o, m, m); }
+    if (t.horiz) { ctx.fillStyle = '#2a241d'; ctx.fillRect(x0, y - wp * .32, q, wp * .64); portcullis(x0 - 2 * z, y - wp * .32, q * .08, wp * .64); portcullis(x0 + q * .92 + 2 * z, y - wp * .32, q * .08, wp * .64); }
+    else { ctx.fillStyle = '#2a241d'; ctx.fillRect(x - wp * .32, y0, wp * .64, q); portcullis(x - wp * .32, y0 - 2 * z, wp * .64, q * .08); portcullis(x - wp * .32, y0 + q * .92 + 2 * z, wp * .64, q * .08); }
+    const ct = tw * 1.05;
+    for (const [cx, cy] of [[x0, y0], [x0 + q, y0], [x0, y0 + q], [x0 + q, y0 + q]]) turret(cx, cy + ct * .35, ct, ct * 1.5);
+  }
+  if (sel && sel.thing === t) { ctx.strokeStyle = '#e4c886'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(x, y, wp * 1.3, wp * 1.3, 0, 0, Math.PI * 2); ctx.stroke(); }
+}
 function drawThing(t) {
   const px = t.size * cam.z;
   const [x, y] = toS(t.x, t.y);
@@ -552,6 +598,7 @@ function drawThing(t) {
     ctx.fillStyle = t.owner === 'player' ? '#3f86d8' : 'rgba(40,40,40,.55)'; ctx.fillRect(x - 1.5, y - 1.5, 3, 3); return;
   }
   if (t.kind === 'gate' && !t.major && px < 9) return;                               // far away: the border gates hide, the bridges stay
+  if (t.kind === 'gate' && gateStyle !== 'A') { drawGateStyled(t); return; }
   const minPx = t.kind === 'mega' ? 26 : t.kind === 'guardian' ? 18 : t.kind === 'gate' ? (t.major ? 14 : 0) : t.kind === 'temple' ? 12 : 0;
   const size = Math.max(px, minPx), sp = sprite(t, size), c = sp.c, k = sp.s;
   ctx.drawImage(c, x - c.ax * k, y - c.ay * k, c.width * k, c.height * k);
@@ -567,7 +614,7 @@ function drawLabels() {
     const short = { Nordwest: 'NW', Nordost: 'NO', Südwest: 'SW', Südost: 'SO' };
     const label = t.kind === 'mega' ? 'Haupttempel' : t.kind === 'guardian' && px < 44 ? 'Wächter ' + short[t.name.split(' ').pop()] : t.name;
     ctx.font = (t.kind === 'mega' ? '700 14px ' : '600 12px ') + "Inter, system-ui, sans-serif";
-    const tw = ctx.measureText(label).width + 14, ly = t.kind === 'gate' ? y - Math.max(px, 14) * .95 - 12 : y + Math.max(px, 14) * .38 + 12;   // gate names above the gate
+    const tw = ctx.measureText(label).width + 14, ly = t.kind === 'gate' ? (gateStyle === 'A' ? y - Math.max(px, 14) * .95 - 12 : toS(t.bx, t.by)[1] - BRIDGE_W * cam.z * 1.6 - 12) : y + Math.max(px, 14) * .38 + 12;   // gate names above the gate
     ctx.fillStyle = 'rgba(17,20,26,.82)'; rr(ctx, x - tw / 2, ly - 10, tw, 20, 5); ctx.fill();
     ctx.fillStyle = t.kind === 'mega' ? '#e4c886' : t.home ? '#9cc3ef' : '#efe6d2'; ctx.fillText(label, x, ly + .5);
   }
@@ -629,6 +676,7 @@ function flyHome() {
 }
 function setSeg(id, attr, val) { for (const b of document.querySelectorAll('#' + id + ' button')) b.classList.toggle('on', b.dataset[attr] === val); }
 document.getElementById('viewSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; view = b.dataset.v; setSeg('viewSeg', 'v', view); flyHome(); });
+document.getElementById('gateSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; gateStyle = b.dataset.g; setSeg('gateSeg', 'g', gateStyle); dirty = true; });
 window.addEventListener('resize', () => { resize(); });
 
 resize(); build(); cam.z = fitZoom(); draw();
