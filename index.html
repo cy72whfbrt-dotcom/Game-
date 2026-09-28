@@ -3156,7 +3156,8 @@ body.has-panel .mapctl{display:none}
             const won = myTroops > totalStrength;
             const bossHere = bossAt(target.id);
             const losses = Math.round(originalEnemyDefense * (1 - lossReductionPct / 100));
-            const remaining = won ? Math.max(0, Math.min(attack.rawTroops, myTroops - losses)) : 0;   // bonus troops fight, but only the sent ones can survive
+            const sentLoss = won ? Math.min(attack.rawTroops, Math.round(losses * attack.rawTroops / Math.max(1, myTroops))) : 0;   // the losses are shared between sent and bonus troops
+            const remaining = won ? Math.max(0, attack.rawTroops - sentLoss) : 0;
 
             let defenderCasualties;
             let retreatSurvivors = 0, woundedAdded = 0;
@@ -3223,7 +3224,7 @@ body.has-panel .mapctl{display:none}
             scoutedIslands.add(target.id);
             const ribbon = () => spawnBattleFx(target.id, won, won ? (bossHere ? 'Boss besiegt' : 'Sieg') : 'Niederlage', won ? islandTitle(target) + ' erobert' : '−' + fmtCompact(myTroops) + ' Truppen');
             finishMapBattle(attack, { hero: attack.hero || null, sourceId: source.id, targetId: target.id, atk: 'mine', def: bossHere ? 'boss' : targetOwner ? 'bot' : 'neutral',   // fights the player watches play out on the map
-                    my: myTroops, myLoss: won ? Math.min(myTroops, losses) : myTroops - retreatSurvivors, en: originalEnemyTroops,
+                    my: myTroops, myLoss: won ? sentLoss : myTroops - retreatSurvivors, en: originalEnemyTroops,
                     enLoss: won ? originalEnemyTroops : defenderCasualties, won, onEnd: ribbon });
             if (won && bossHere) defeatBoss(bossHere);
             updateHud();
@@ -3242,8 +3243,12 @@ body.has-panel .mapctl{display:none}
                 myTroops: attack.rawTroops,
                 myTroopsBuffed: myTroops,
                 attackBuff: myTroops - attack.rawTroops,
+                skillBuff: atkBonus,
+                titleBuff: myTroops - attack.rawTroops - atkBonus,
+                lossReductionPct,
+                lossSaved: won ? Math.max(0, Math.round((originalEnemyDefense - losses) * attack.rawTroops / Math.max(1, myTroops))) : 0,
                 attackGoldRate: attack.attackGoldRate !== undefined ? attack.attackGoldRate : (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate,
-                attackerCasualties: won ? Math.max(0, losses - woundedAdded) : Math.max(0, myTroops - retreatSurvivors - woundedAdded),   // really dead: not the ones who fled or lie in the Lazarett
+                attackerCasualties: won ? Math.max(0, sentLoss - woundedAdded) : Math.max(0, attack.rawTroops - retreatSurvivors - woundedAdded),   // really dead: not the ones who fled or lie in the Lazarett
                 wounded: woundedAdded,
                 enemyTroops: originalEnemyTroops,
                 enemyDefense: originalEnemyDefense,
@@ -3356,6 +3361,7 @@ body.has-panel .mapctl{display:none}
                     enemyTroops: originalEnemyTroops,
                     enemyDefense: originalEnemyDefense,
                     wounded: defWounded,
+                    armor: defenseBonusFlat(),
                     fallen: won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops),
                     won
                 });
@@ -6332,6 +6338,7 @@ body.has-panel .mapctl{display:none}
                                 '<div class="logSideLabel">Verteidiger · Du</div>' +
                                 '<div class="logLine"><span>Truppen</span><span>' + fmtD(entry.enemyTroops) + '</span></div>' +
                                 '<div class="logLine"><span>Verteidigung</span><span>' + fmtD(entry.enemyDefense) + '</span></div>' +
+                                (entry.armor ? '<div class="logLine buff"><span>davon Rüstung</span><span>+' + fmtD(entry.armor) + '</span></div>' : '') +
                                 '<div class="logSum' + (entry.won ? '' : ' advantage') + '"><span>Gesamt</span><span>' + fmtD(defSum) + '</span></div>' +
                                 '<div class="logCasualty"><span>Gefallen</span><span>−' + fmtD(Math.max(0, fallen - (entry.wounded || 0))) + '</span></div>' +
                                 (entry.wounded ? '<div class="logCasualty wounded"><span>Verwundet</span><span>' + fmtD(entry.wounded) + '</span></div>' : '') +
@@ -6361,10 +6368,14 @@ body.has-panel .mapctl{display:none}
                         '<div class="logSide">' +
                             '<div class="logSideLabel">Angreifer</div>' +
                             '<div class="logLine"><span>Truppen</span><span>' + fmtD(entry.myTroops) + '</span></div>' +
-                            '<div class="logLine buff"><span>Angriff-Buff</span><span>+' + fmtD(entry.attackBuff) + '</span></div>' +
+                            (entry.skillBuff !== undefined
+                                ? '<div class="logLine buff"><span>Angriff-Skill</span><span>+' + fmtD(entry.skillBuff) + '</span></div>' +
+                                  (entry.titleBuff ? '<div class="logLine buff"><span>Titel</span><span>' + (entry.titleBuff > 0 ? '+' : '−') + fmtD(Math.abs(entry.titleBuff)) + '</span></div>' : '')
+                                : '<div class="logLine buff"><span>Angriff-Buff</span><span>+' + fmtD(entry.attackBuff) + '</span></div>') +
                             '<div class="logSum' + (atkTotal >= defTotal ? ' advantage' : '') + '"><span>Gesamt</span><span>' + fmtD(atkTotal) + '</span></div>' +
                             '<div class="logCasualty"><span>Gefallen</span><span>−' + fmtD(entry.attackerCasualties || 0) + '</span></div>' +
                             (entry.wounded ? '<div class="logCasualty wounded"><span>Verwundet</span><span>' + fmtD(entry.wounded) + '</span></div>' : '') +
+                            (entry.lossSaved ? '<div class="logLine buff"><span>Schild −' + Math.round(entry.lossReductionPct) + ' %</span><span>+' + fmtD(entry.lossSaved) + '</span></div>' : '') +
                         '</div>' +
                         '<div class="logVsDivider">VS</div>' +
                         '<div class="logSide">' +
