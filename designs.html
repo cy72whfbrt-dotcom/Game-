@@ -87,11 +87,11 @@ const BAND = { player: '#3f86d8', bot: '#c9423a', neutral: '#7c8088' };
 
 function towerTier(level) { return level >= 80 ? 4 : level >= 50 ? 3 : level >= 25 ? 2 : level >= 10 ? 1 : 0; }
 
-function paintTowerTier(g, ownerKey, detail, home, tier) {
-  // 3/4 view, light from the upper left. Sprite box: x -31…31, y -48…24 (see buildingSprite).
+function paintTowerTier(g, ownerKey, detail, home, tier, skin) {
+  // 3/4 view, light from the upper left. Sprite box: x -31…31, y -48…24 (see buildingSprite). skin: optional { stone, roof } palette (capital skins)
   const ink = '#1e1a16', neutral = ownerKey === 'neutral', own = BAND[ownerKey];
-  const marble = tier === 4, S = marble ? ['#fbf8f1', '#e3ddcf', '#a9a08c'] : neutral ? ['#d2cbbd', '#aaa393', '#716b5d'] : ['#ece5d6', '#c4bba8', '#847b69'];
-  const roofC = tier === 4 ? ['#fff1b8', '#e2b54a', '#7a5414'] : tier >= 3 ? ['#e4745a', '#b03e2a', '#5a1a10'] : tier === 2 ? ['#6f8bb4', '#3f5a86', '#1c2a44'] : ['#9a6a3c', '#6d4524', '#3a2410'];
+  const marble = tier === 4, S = skin ? skin.stone : marble ? ['#fbf8f1', '#e3ddcf', '#a9a08c'] : neutral ? ['#d2cbbd', '#aaa393', '#716b5d'] : ['#ece5d6', '#c4bba8', '#847b69'];
+  const roofC = skin ? skin.roof : tier === 4 ? ['#fff1b8', '#e2b54a', '#7a5414'] : tier >= 3 ? ['#e4745a', '#b03e2a', '#5a1a10'] : tier === 2 ? ['#6f8bb4', '#3f5a86', '#1c2a44'] : ['#9a6a3c', '#6d4524', '#3a2410'];
   const lin = (x0, x1, cs) => { const q = g.createLinearGradient(x0, 0, x1, 0); q.addColorStop(0, cs[0]); q.addColorStop(.45, cs[1]); q.addColorStop(1, cs[2]); return q; };
   const mound = (w) => {                                   // rocky ground the base stands on
     g.beginPath(); g.ellipse(0, 16, w, 7.5, 0, 0, Math.PI * 2);
