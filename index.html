@@ -2829,8 +2829,9 @@ body.has-panel .mapctl{display:none}
         function travelDurationSeconds(source, target, botId) {   // bots march at base speed; the player gets the speed skill + Akademie
             const pts = source.landmassId === target.landmassId ? [source, target] : marchPath(source, target);
             let distance = 0; for (let i = 1; i < pts.length; i++) distance += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
-            const seconds = distance / (BASE_ATTACK_SPEED * (botId ? (BOT_STYLES[botById[botId].style].speed || 1) : attackSpeedMultiplier() * (1 + academyLevel() * 0.02)));
-            return Math.min(MAX_ATTACK_SECONDS, Math.max(MIN_ATTACK_SECONDS, seconds));
+            if (botId) return Math.min(MAX_ATTACK_SECONDS, Math.max(MIN_ATTACK_SECONDS, distance / (BASE_ATTACK_SPEED * (BOT_STYLES[botById[botId].style].speed || 1))));
+            const base = Math.min(MAX_ATTACK_SECONDS, Math.max(MIN_ATTACK_SECONDS, distance / BASE_ATTACK_SPEED));   // clamp first, so the speed skill and the Akademie also shorten long marches
+            return Math.max(1.5, base / (attackSpeedMultiplier() * (1 + academyLevel() * 0.02)));
         }
 
         let pendingAttacks;
@@ -2916,7 +2917,7 @@ body.has-panel .mapctl{display:none}
                 attackerBotId: attackerBotId || null,
                 attackBonus: attackerBotId ? Math.round(rawTroops * botMults(attackerBotId).attackPct / 100) : attackFlatBonus(rawTroops) + (hero === 'sigrun' ? Math.round(rawTroops * heroBonus('sigrun') / 100) : 0),
                 attackGoldRate: attackerBotId ? 0 : (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate,
-                rewardGoldRate: attackerBotId ? 0 : goldPerKillRate() + (hero === 'ida' ? heroBonus('ida') * 0.02 : 0),
+                rewardGoldRate: attackerBotId ? 0 : goldPerKillRate() * (hero === 'ida' ? 1 + heroBonus('ida') / 100 : 1),   // Ida: +X % Beute on the kill gold
                 shieldLossReductionPct: attackerBotId ? 0 : Math.min(90, shieldLossReductionPct() + (hero === 'bernhard' ? heroBonus('bernhard') : 0)),
                 hero
             });
@@ -3196,7 +3197,7 @@ body.has-panel .mapctl{display:none}
             // XP for troops that died in the clash either way: a win kills
             // the whole enemy force, a loss costs your whole attack force
             addXp(won ? totalStrength : defenderCasualties);
-            if (attack.hero) heroGainXp(attack.hero, won ? totalStrength : defenderCasualties);
+            for (const hid of new Set([attack.hero, ...(attack.heroes || [])].filter(Boolean))) heroGainXp(hid, won ? totalStrength : defenderCasualties);
             scoutedIslands.add(target.id);
             const ribbon = () => spawnBattleFx(target.id, won, won ? (bossHere ? 'Boss besiegt' : 'Sieg') : 'Niederlage', won ? islandTitle(target) + ' erobert' : '−' + fmtCompact(myTroops) + ' Truppen');
             finishMapBattle(attack, { hero: attack.hero || null, sourceId: source.id, targetId: target.id, atk: 'mine', def: bossHere ? 'boss' : targetOwner ? 'bot' : 'neutral',   // fights the player watches play out on the map
@@ -5522,7 +5523,10 @@ body.has-panel .mapctl{display:none}
                     }
                     const fight = pendingAttacks.find(p => p !== a && p.fightEndsAt > now && p.targetId === a.targetId && (p.attackerBotId || null) === (a.attackerBotId || null));
                     if (fight) {
-                        fight.rawTroops += a.rawTroops; fight.attackBonus = (fight.attackBonus || 0) + (a.attackBonus || 0); fight.waves = (fight.waves || 1) + (a.waves || 1); fight.hero = fight.hero || a.hero;
+                        fight.rawTroops += a.rawTroops; fight.attackBonus = (fight.attackBonus || 0) + (a.attackBonus || 0); fight.waves = (fight.waves || 1) + (a.waves || 1);
+                        if (a.hero) { if (!fight.hero) fight.hero = a.hero; else if (fight.hero !== a.hero) fight.heroes = [...new Set([...(fight.heroes || []), a.hero])]; }   // every hero in the fight keeps his effect and XP
+                        fight.shieldLossReductionPct = Math.max(fight.shieldLossReductionPct || 0, a.shieldLossReductionPct || 0);
+                        fight.rewardGoldRate = Math.max(fight.rewardGoldRate || 0, a.rewardGoldRate || 0);
                         fight.fightEndsAt = Math.max(fight.fightEndsAt, now + 2500);          // the fresh troops get to fight too
                         pendingAttacks.splice(pendingAttacks.indexOf(a), 1);
                         if (!a.attackerBotId) flashHint('Verstärkung ist im Kampf um ' + islandTitle(islandById[a.targetId]) + ' eingetroffen: +' + fmtNum(a.rawTroops) + ' Truppen, jetzt ' + fmtNum(fight.rawTroops) + '.', 4000);
@@ -7639,7 +7643,7 @@ body.has-panel .mapctl{display:none}
             { id: 'forge',    name: 'Schmiede',      icon: 'weapon',  x: 785, y: 430, roof: '#4a4a52', chimney: true, fx: true,
               desc: 'Wähle oben die Art und dann ein Ausrüstungsteil aus deinem Besitz, um es mit Sternen zu verbessern: jeder Stern +20 % Wirkung des Teils. Jede Stufe erlaubt einen Stern mehr.' },
             { id: 'hospital', name: 'Lazarett',      icon: 'plus',    x: 215, y: 670, roof: '#e8e2d2', cross: true, fx: true,
-              desc: 'Verlierst du einen Angriff, kommen Verwundete hierher statt zu sterben (5 % pro Stufe, bis 60 %). Heile sie gegen Münzen – sie gehen in die Hauptstadt.' },
+              desc: 'Von deinen Gefallenen (Angriff oder Verteidigung) kommen Verwundete hierher statt zu sterben (5 % pro Stufe, bis 60 %). Heile sie gegen Münzen – sie gehen in die Hauptstadt.' },
             { id: 'shrine',   name: 'Tempelschrein', icon: 'temple',  x: 785, y: 670, roof: '#c9a54e', dome: true, desc: 'Wird den Bonus aller deiner Tempel verstärken.' },
             { id: 'wall',     name: 'Mauer',         icon: 'defense', x: 715, y: 815, roof: '#6b6456', gate: true, desc: 'Wird die Verteidigung deiner Hauptstadt erhöhen.' },
             { id: 'heroes',   name: 'Heldenhalle',   icon: 'profile', x: 285, y: 815, roof: '#7a2e2a', fx: true,
@@ -7672,6 +7676,7 @@ body.has-panel .mapctl{display:none}
         }
         function cityBlocker(id) {                        // why this building can't be upgraded right now (or null)
             const c = loadCity(), lvl = c.levels[id];
+            if (!cityDef(id).fx) return 'Kommt in einem späteren Update – noch nicht baubar.';
             if (lvl >= cityMaxLevel(id)) return 'Maximale Stufe erreicht.';
             if (c.build) return c.build.id === id ? 'Wird gerade gebaut.' : 'Der Bauarbeiter ist beschäftigt (' + cityDef(c.build.id).name + ').';
             return null;
@@ -7684,7 +7689,7 @@ body.has-panel .mapctl{display:none}
             coins -= cost;
             c.build = { id, to: lvl + 1, startedAt: Date.now(), endsAt: Date.now() + cityTimeSec(id, lvl) * 1000 };
             saveCity(); saveGame(); updateHud();
-            renderCitySheet();
+            renderCitySheet(); updateCityBuilder();
         }
         function citySpeedCost() {
             const c = loadCity(); if (!c.build) return 0;
@@ -7697,6 +7702,7 @@ body.has-panel .mapctl{display:none}
             const to = c.build.to; c.build = null;
             saveCity();
             if (announce) flashHint(def.name + ' ist fertig – jetzt Stufe ' + to + '.', 3000);
+            if (def.id === 'heroes') for (const h of HEROES) heroGainXp(h.id, 0);   // XP saved up at the old cap turns into levels now
             if (cityOpenId) renderCitySheet();
             updateCityBuilder();
         }
@@ -7792,19 +7798,19 @@ body.has-panel .mapctl{display:none}
                 note.innerHTML = icon('hourglass') + '<span style="flex:1">Ausbau auf Stufe ' + c.build.to + ' · noch <b id="cityBNoteTime"></b><div class="city-progress" style="margin-top:6px"><i></i></div></span>';
             } else {
                 note.className = 'notice';
-                note.innerHTML = icon('info') + '<span>' + (def.fx ? cityEffectText(id, lvl) : 'Die Wirkung dieses Gebäudes kommt in einem späteren Update – ausbauen kannst du es schon jetzt.') + '</span>';
+                note.innerHTML = icon('info') + '<span>' + (def.fx ? cityEffectText(id, lvl) : 'Die Wirkung dieses Gebäudes kommt in einem späteren Update.') + '</span>';
             }
             const cost = lvl < cityMaxLevel(id) ? cityCost(id, lvl) : 0;
             document.getElementById('cityBStats').innerHTML = lvl < cityMaxLevel(id)
                 ? '<div><span>Kosten</span><b class="' + (coins < cost ? 'is-bad' : '') + '">' + icon('coin', 'icon--coin') + fmtCompact(cost) + '</b></div>' +
                   '<div><span>Bauzeit</span><b>' + icon('hourglass') + fmtDuration(cityTimeSec(id, lvl)) + '</b></div>'
                 : '';
-            setBtnLabel(up, lvl ? 'Aufwerten auf ' + (lvl + 1) : 'Bauen');
+            setBtnLabel(up, lvl >= cityMaxLevel(id) ? 'Höchste Stufe' : lvl ? 'Aufwerten auf ' + (lvl + 1) : 'Bauen');
             up.disabled = !!blocker || coins < cost;
             up.title = blocker || '';
             up.style.display = building ? 'none' : '';
             sp.style.display = building ? '' : 'none';
-            if (!building && blocker && !(c.build && c.build.id === id)) {
+            if (!building && blocker && lvl < cityMaxLevel(id) && !(c.build && c.build.id === id)) {
                 note.className = 'notice notice--warn'; note.innerHTML = icon('lock') + '<span>' + blocker + '</span>';
             }
             if (building) renderCitySheetTimer();
@@ -7813,7 +7819,7 @@ body.has-panel .mapctl{display:none}
         // ===== HELDEN: live in the Heldenhalle, march with one attack at a time, level up from the enemies they beat =====
         var HEROES = [
             { id: 'sigrun',   name: 'Sigrun',   title: 'die Eroberin', icon: 'attack',  color: '#b8433a', unlock: 1,  per: 2, what: '% Angriff',              short: 'Angriff' },
-            { id: 'bernhard', name: 'Bernhard', title: 'der Wächter',  icon: 'shield',  color: '#3d6fb3', unlock: 5,  per: 1, what: '% weniger Verluste',     short: 'Verluste' },
+            { id: 'bernhard', name: 'Bernhard', title: 'der Wächter',  icon: 'shield',  color: '#3d6fb3', unlock: 5,  per: 2, what: '% weniger Verluste',     short: 'Verluste' },
             { id: 'ida',      name: 'Ida',      title: 'die Reiterin', icon: 'send',    color: '#c98b2a', unlock: 10, per: 2, what: '% Tempo und Beute',      short: 'Tempo' }
         ];
         var heroState = null;
@@ -7833,13 +7839,12 @@ body.has-panel .mapctl{display:none}
         var HERO_RAR_MULT = [1, 1.2, 1.4, 1.6, 1.8, 2], HERO_RAR_COST = [100, 300, 1000, 3000, 10000], HERO_RAR_LEVEL = [5, 10, 20, 30, 40];
         function heroRarity(id) { return Math.min(RARITY_DEFS.length - 1, loadHeroes()[id].rar || 0); }
         function heroBonus(id) { const h = heroById(id); return h ? Math.round(heroLevel(id) * h.per * HERO_RAR_MULT[heroRarity(id)]) : 0; }
-        function heroBusy(id) { return pendingAttacks.some(a => !a.attackerBotId && a.hero === id); }
-        function heroXpNeed(lvl) { return Math.round(5000 * Math.pow(1.5, lvl - 1)); }
+        function heroBusy(id) { return pendingAttacks.some(a => !a.attackerBotId && (a.hero === id || (a.heroes && a.heroes.includes(id)))); }
+        function heroXpNeed(lvl) { return Math.round(5000 * Math.pow(1.25, lvl - 1)); }
         function heroGainXp(id, amount) {
             const h = heroById(id), st = loadHeroes()[id]; if (!h || !st) return;
             st.xp += Math.max(0, Math.round(amount)); let up = 0;
             while (st.lvl < heroMaxLevel() && st.xp >= heroXpNeed(st.lvl)) { st.xp -= heroXpNeed(st.lvl); st.lvl++; up++; }
-            if (st.lvl >= heroMaxLevel()) st.xp = Math.min(st.xp, heroXpNeed(st.lvl));
             saveHeroes();
             if (up) setTimeout(() => flashHint(h.name + ' ' + h.title + ' steigt auf Stufe ' + st.lvl + ' – jetzt +' + heroBonus(id) + ' ' + h.what + '.', 4500), 2500);
         }
@@ -7851,7 +7856,7 @@ body.has-panel .mapctl{display:none}
                 : '<small class="hero-need">Aufsteigen zu ' + RARITY_DEFS[nx].label + ' ab Stufe ' + HERO_RAR_LEVEL[r] + '</small>') : '';
             return '<div class="hero-card' + (on ? '' : ' is-locked') + '" style="--hc:' + (on ? rd.color : h.color) + '"><span class="hero-ic">' + icon(on ? h.icon : 'lock') + '</span>' +
                 '<span class="hero-t"><b>' + h.name + ' <small>' + h.title + '</small>' + (on ? ' <em class="hero-rar" style="color:' + rd.color + '">' + rd.label + '</em>' : '') + '</b>' +
-                (on ? '<small>Stufe ' + lvl + ' · +' + heroBonus(h.id) + ' ' + h.what + (heroBusy(h.id) ? ' · <em>unterwegs</em>' : '') + '</small>' +
+                (on ? '<small>Stufe ' + lvl + ' · +' + heroBonus(h.id) + ' ' + h.what + (capped ? '' : ' · nächste Stufe +' + Math.round((lvl + 1) * h.per * HERO_RAR_MULT[r])) + (heroBusy(h.id) ? ' · <em>unterwegs</em>' : '') + '</small>' +
                       '<span class="hero-xp"><i style="width:' + (capped ? 100 : Math.min(100, st.xp / need * 100)) + '%"></i></span><small>' + (capped ? 'Höchststufe der Halle erreicht' : fmtCompact(st.xp) + ' / ' + fmtCompact(need) + ' EP') + '</small>'
                     : '<small>Ab Heldenhalle Stufe ' + h.unlock + '</small>') + raise + '</span></div>';
         }
@@ -7872,9 +7877,9 @@ body.has-panel .mapctl{display:none}
         function starGemCost(stars) { return 20 * (stars + 1); }
         function cityEffectText(id, lvl) {
             if (id === 'academy') return 'Jetzt: Truppen laufen +' + (lvl * 2) + ' % schneller.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: +' + ((lvl + 1) * 2) + ' %.' : '');
-            if (id === 'forge') return lvl ? 'Bis zu ' + Math.min(STAR_MAX, lvl) + ' Sterne pro Ausrüstungsteil.' : 'Baue die Schmiede, um Sterne zu setzen.';
-            if (id === 'heroes') return lvl ? 'Helden bis Stufe ' + heroMaxLevel() + ' · ' + HEROES.filter(h => heroUnlocked(h)).length + ' von ' + HEROES.length + ' Helden bereit.' : 'Baue die Heldenhalle, um deinen ersten Helden zu rufen.';
-            if (id === 'hospital') return lvl ? hospitalPct() + ' % der Gefallenen kommen ins Lazarett · Platz für ' + fmtCompact(hospitalCapacity()) : 'Baue das Lazarett, um Verwundete zu retten.';
+            if (id === 'forge') return lvl ? 'Bis zu ' + Math.min(STAR_MAX, lvl) + (Math.min(STAR_MAX, lvl) === 1 ? ' Stern' : ' Sterne') + ' pro Ausrüstungsteil.' + (lvl < STAR_MAX ? ' Nächste Stufe: ' + (lvl + 1) + ' Sterne.' : '') : 'Baue die Schmiede, um Sterne zu setzen.';
+            if (id === 'heroes') return lvl ? 'Helden bis Stufe ' + heroMaxLevel() + ' · ' + HEROES.filter(h => heroUnlocked(h)).length + ' von ' + HEROES.length + ' Helden bereit.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: Helden bis Stufe ' + Math.min(50, (lvl + 1) * 2) + (HEROES.find(h => h.unlock === lvl + 1) ? ', ' + HEROES.find(h => h.unlock === lvl + 1).name + ' kommt dazu' : '') + '.' : '') : 'Baue die Heldenhalle, um deinen ersten Helden zu rufen.';
+            if (id === 'hospital') return lvl ? hospitalPct() + ' % der Gefallenen kommen ins Lazarett · Platz für ' + fmtCompact(hospitalCapacity()) + (lvl < CITY_MAX_LEVEL ? ' · Nächste Stufe: ' + Math.min(60, (lvl + 1) * 5) + ' %, Platz für ' + fmtCompact(Math.round(1e6 * Math.pow(1.6, lvl))) : '') : 'Baue das Lazarett, um Verwundete zu retten.';
             return '';
         }
         function cityExtraHtml(id, lvl) {
@@ -8727,7 +8732,7 @@ body.has-panel .mapctl{display:none}
                 if (island.id === playerIslandId) { document.getElementById('cityBtn').style.display = 'inline-block'; document.getElementById('teleportBtn').style.display = 'inline-block'; }
                 popupStats.innerHTML = '<div class="stat-grid">' +
                     statTile('Truppen hier', 'troops', fmtNum(troopsHere)) +
-                    statTile('Verteidigung', 'defense', fmtNum(defenseForLevel(level))) +
+                    statTile('Verteidigung', 'defense', fmtNum(effectiveDefense(island))) +
                     statTile('Münzen / s', 'coin', '+' + fmtNum(Math.round(coinsPerTick(level) * playerCoinMult() * 1000 / productionTickMs())), 'is-good') +
                     statTile('Truppen / s', 'troops', '+' + fmtNum(Math.round(troopsPerTick(level) * playerTroopMult() * 1000 / productionTickMs())), 'is-good') + '</div>' +
                     (island.type === 'gate' ? gateControlsHtml(island) : '') +
@@ -8804,7 +8809,7 @@ body.has-panel .mapctl{display:none}
                 popupStats.innerHTML =
                     '<div class="versus">' +
                         '<div class="force force--me"><span class="stat-l">' + icon('troops') + 'Angriff</span><b id="previewMyTroops"></b><small>' +
-                            (atkPct > 0 ? '<span id="previewRawTroops"></span> + <span id="previewAtkBonus"></span> Schwert (+' + fmtNum(atkPct) + ' %)' : 'aus ' + islandTitle(source)) + '</small></div>' +
+                            (atkPct > 0 ? '<span id="previewRawTroops"></span> + <span id="previewAtkBonus"></span> Schwert (+' + fmtNum(atkPct) + ' %)<span id="previewHeroBonus"></span>' : 'aus ' + islandTitle(source)) + '</small></div>' +
                         '<div class="vs"><span>VS</span></div>' +
                         '<div class="force force--foe"><span class="stat-l">Abwehr' + icon('defense') + '</span><b data-foe="total">?</b><small data-foe="sub">nicht gespäht</small></div>' +
                     '</div>' +
@@ -8852,9 +8857,10 @@ body.has-panel .mapctl{display:none}
             for (const b of popupStats.querySelectorAll('[data-hero]')) { const id = b.dataset.hero; b.disabled = !!id && heroBusy(id); b.classList.toggle('on', (id || null) === previewHero); }
             const hfx = popupStats.querySelector('[data-preview="herofx"]');
             if (hfx) hfx.textContent = previewHero ? heroById(previewHero).name + ': +' + heroBonus(previewHero) + ' ' + heroById(previewHero).what : '';
-            const atkBonus = attackFlatBonus(shown) + (previewHero === 'sigrun' ? Math.round(shown * heroBonus('sigrun') / 100) : 0);
-            const mine = shown + atkBonus;
-            const bEl = popupStats.querySelector('#previewAtkBonus'); if (bEl) bEl.textContent = fmtNum(atkBonus);
+            const swordBonus = attackFlatBonus(shown), sigrunBonus = previewHero === 'sigrun' ? Math.round(shown * heroBonus('sigrun') / 100) : 0, atkBonus = swordBonus + sigrunBonus;
+            const mine = Math.round((shown + atkBonus) * titleMult('player', 'attack'));        // same maths as resolveAttack
+            const bEl = popupStats.querySelector('#previewAtkBonus'); if (bEl) bEl.textContent = fmtNum(swordBonus);
+            const hbEl = popupStats.querySelector('#previewHeroBonus'); if (hbEl) hbEl.textContent = sigrunBonus ? ' + ' + fmtNum(sigrunBonus) + ' Sigrun' : '';
             const src = islandById[previewSourceId], tEl = popupSub.querySelector('#previewToll'), mEl = popupSub.querySelector('#previewMarch');
             if (mEl && src) mEl.textContent = fmtClock(travelDurationSeconds(src, island) / (previewHero === 'ida' ? 1 + heroBonus('ida') / 100 : 1));   // Ida marches faster
             if (tEl && src) { const hop = lastHop(src.landmassId, island.landmassId, 'player'), t = tollFor(hop[0], hop[1], shown, 'player', island.id);
