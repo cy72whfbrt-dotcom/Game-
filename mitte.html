@@ -328,7 +328,7 @@ function build() {
       const ux = Math.sign(oq - iq), uy = Math.sign(orr - ir), off = RIVER / 2 + 150;   // the gate stands on the bank, right at the bridge's end
       const intoThrone = ringOf(iq, ir) === 0, intoRing = ringOf(iq, ir) === 1 || ringOf(oq, orr) === 1;
       const nm = intoThrone ? 'Thron-Tor ' + dirName(oq, orr) : intoRing ? 'Wächter-Tor' : 'Grenztor';
-      things.push({ kind: 'gate', horiz: dq === 1, x: bx + ux * (dq === 1 ? RIVER / 2 + 190 : off), y: by + uy * off + (dq === 1 ? 95 : uy < 0 ? 40 : 60), size: intoThrone ? 330 : intoRing ? 280 : 240, name: nm, major: intoThrone,
+      things.push({ kind: 'gate', horiz: dq === 1, x: bx + ux * (dq === 1 ? RIVER / 2 + 150 : off), y: by + (dq === 1 ? 0 : uy * off + (uy < 0 ? 40 : 60)), side: dq === 1 ? ux : 0, size: intoThrone ? 330 : intoRing ? 280 : 240, name: nm, major: intoThrone,
         desc: intoThrone ? 'Einer von nur 4 Wegen zum Haupttempel.' : intoRing ? 'Tor in den Ring um die Mitte. Unbesetzt verschlossen.' : 'Jede Brücke hat ein Tor. Unbesetzt verschlossen, wer es hält, bestimmt die Maut.' });
       gates++;
     }
@@ -552,6 +552,11 @@ function drawThing(t) {
   if (t.kind === 'gate' && !t.major && px < 9) return;                               // far away: the border gates hide, the bridges stay
   const minPx = t.kind === 'mega' ? 26 : t.kind === 'guardian' ? 18 : t.kind === 'gate' ? (t.major ? 14 : 0) : t.kind === 'temple' ? 12 : 0;
   const size = Math.max(px, minPx), sp = sprite(t, size), c = sp.c, k = sp.s;
+  if (t.kind === 'gate' && t.side) {                   // east–west bridge: the gatehouse turned so the bridge runs into its back, like on the north–south ones
+    ctx.save(); ctx.translate(x, y); ctx.rotate(t.side > 0 ? -Math.PI / 2 : Math.PI / 2);
+    ctx.drawImage(c, -c.width * k / 2, -c.ay * k + (c.ay - c.height / 2) * k * .15 - c.height * k * .12, c.width * k, c.height * k);
+    ctx.restore();
+  } else
   ctx.drawImage(c, x - c.ax * k, y - c.ay * k, c.width * k, c.height * k);
   if (sel && sel.thing === t) { ctx.strokeStyle = '#e4c886'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(x, y + 2, size * .55, size * .22, 0, 0, Math.PI * 2); ctx.stroke(); }
 }
