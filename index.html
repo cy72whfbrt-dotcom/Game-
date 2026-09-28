@@ -2342,11 +2342,11 @@ body.has-panel .mapctl{display:none}
             { id: 'bot60', name: 'Sarah', color: '#922b21', style: 'templer' }
         ];
         const BOT_STYLES = {
-            raider:   { margin: 1.05, spend: .45, send: 1,   skills: ['attack', 'troops', 'attack', 'defense'], temple: .7, enemy: .55, act: .72 },
-            builder:  { margin: 1.5,  spend: .9,  send: .8,  skills: ['troops', 'defense', 'troops', 'attack'], temple: .6, enemy: 1.2, act: .6 },
-            templer:  { margin: 1.2,  spend: .65, send: .9,  skills: ['attack', 'troops', 'defense'],           temple: .2, enemy: 1,   act: .66 },
-            balanced: { margin: 1.2,  spend: .65, send: .9,  skills: ['troops', 'attack', 'defense'],           temple: .5, enemy: .9,  act: .64 },
-            blitz:    { margin: 1.0,  spend: .9,  send: 1,   skills: ['attack', 'troops'],                      temple: .3, enemy: .5,  act: 1,
+            raider:   { margin: 1.05, commit: .85, spend: .45, send: 1,   skills: ['attack', 'troops', 'attack', 'defense'], temple: .7, enemy: .55, act: .72 },
+            builder:  { margin: 1.5,  commit: .55, spend: .9,  send: .8,  skills: ['troops', 'defense', 'troops', 'attack'], temple: .6, enemy: 1.2, act: .6 },
+            templer:  { margin: 1.2,  commit: .75, spend: .65, send: .9,  skills: ['attack', 'troops', 'defense'],           temple: .2, enemy: 1,   act: .66 },
+            balanced: { margin: 1.2,  commit: .7,  spend: .65, send: .9,  skills: ['troops', 'attack', 'defense'],           temple: .5, enemy: .9,  act: .64 },
+            blitz:    { margin: 1.0,  commit: .8,  spend: .9,  send: 1,   skills: ['attack', 'troops'],                      temple: .3, enemy: .5,  act: 1,
                         troopMult: 60, atkBonus: 300, speed: 14, moveMs: 300, launches: 12, sources: [30, 20] }
         };
         const botById = {};
@@ -3367,6 +3367,7 @@ body.has-panel .mapctl{display:none}
                     neutralTroopOverrides[target.id] = target.neutralTroops;
                 }
             }
+            if (!won) botLearn(bot.id, target.id);                          // a lost fight tells them what's really there
             updateHud();
             if (bossHere && won) { spawnBattleFx(target.id, false, bossHere.name + ' gefallen', bot.name); (bossHere.wander ? endWander : endBoss)(bot.name + ' hat ' + bossHere.name + ' besiegt!'); }
 
@@ -5366,52 +5367,98 @@ body.has-panel .mapctl{display:none}
             g.told = true; saveBotState();
             flashHint(bot.name + ' schlägt zurück – du hast ' + (g.n > 1 ? 'zu oft ' : '') + 'angegriffen. Achte auf ' + islandTitle(islandById[targetId]) + '!', 5000);
         }
+        // What a bot knows about a base: like a person it only knows the numbers after scouting (or fighting) there.
+        // Intel ages: after 10 minutes it scouts again. Scouting takes as long as a scout would walk (about half the march).
+        const BOT_INTEL_MS = 10 * 60000;
+        function botIntel(bot, targetId) {
+            const b = loadBotState()[bot.id], it = b.intel && b.intel[targetId];
+            return it && Date.now() >= it.ready && Date.now() - it.ready < BOT_INTEL_MS ? it : null;
+        }
+        function botScouting(bot, targetId) { const b = loadBotState()[bot.id], it = b.intel && b.intel[targetId]; return !!it && Date.now() < it.ready; }
+        function botLearn(botId, targetId, ready) {                   // (ready = when the report comes in)
+            const b = loadBotState()[botId]; if (!b) return; const t = islandById[targetId]; if (!t) return;
+            const it = (b.intel || (b.intel = {}));
+            it[targetId] = { s: effectiveTroops(t) + effectiveDefense(t), ready: ready || Date.now() };
+            const keys = Object.keys(it); if (keys.length > 120) for (const k of keys.sort((u, v) => it[u].ready - it[v].ready).slice(0, keys.length - 120)) delete it[k];
+        }
         function botThink(bot) {
             const owned = botOwnedIslands[bot.id];
             if (!owned || owned.size === 0) return;
             const st = BOT_STYLES[bot.style], atk = (1 + botMults(bot.id).attackPct / 100) * titleMult(bot.id, 'attack'), ruler = rulerOwner();
-            const cands = [];
-            const shielded = playerShielded();
-            const busy = st.launches ? new Set(pendingAttacks.filter(a => a.attackerBotId === bot.id).map(a => a.targetId)) : null;
+            const shielded = playerShielded(), now = Date.now();
+            const busy = new Set(pendingAttacks.filter(a => a.attackerBotId === bot.id).map(a => a.targetId));
+            const commit = st.commit || .7;                              // how much of a base's army a person sends at once
+            // 1) look around: every reachable target near the bot's bigger armies, with how much the bot could throw at it
+            const T = new Map();                                        // targetId → { target, d, sources: [{ id, have }] }
             for (const sourceId of botSampleSources(owned, st.sources)) {
-                const troopsHere = (islandTroops[sourceId] || 0) * st.send;
-                if (troopsHere < BOT_MIN_GARRISON_TO_ATTACK) continue;
+                const have = Math.floor((islandTroops[sourceId] || 0) * commit);
+                if (have < BOT_MIN_GARRISON_TO_ATTACK) continue;
                 const source = islandById[sourceId];
                 for (const lmId of reachableLandmassIds[source.landmassId]) {
                     if (!landmassesConnected(source.landmassId, lmId)) continue;
-                    const toll = tollFor(source.landmassId, lmId, troopsHere, bot.id).cost, canPass = !toll || (botCoins[bot.id] || 0) >= toll;
+                    const toll = tollFor(source.landmassId, lmId, have, bot.id).cost, canPass = !toll || (botCoins[bot.id] || 0) >= toll;
                     for (const target of islandsByLandmass[lmId] || []) {
-                        if (owned.has(target.id) || isCapital(target.id) || (busy && busy.has(target.id))) continue;   // capitals can't be attacked
-                        if (shielded && islandOwnerOf(target.id) === 'player') continue;                           // the Friedensschild
+                        if (owned.has(target.id) || isCapital(target.id) || busy.has(target.id)) continue;   // capitals can't be attacked
+                        if (shielded && islandOwnerOf(target.id) === 'player') continue;                  // the Friedensschild
                         if (!canPass && !(target.type === 'gate' && gateOnRoute(source.landmassId, lmId) === target)) continue;
-                        const totalStrength = effectiveTroops(target) + effectiveDefense(target);
-                        const grudge = botGrudgeOn(bot.id, islandOwnerOf(target.id));
-                        if (troopsHere * atk < totalStrength * st.margin * (grudge ? 0.85 : 1)) continue;   // revenge makes them a bit bolder
                         let d = Math.hypot(target.x - source.x, target.y - source.y);
-                        if (grudge) d /= 1 + grudge.n;                                          // and pulls them towards whoever hit them
-                        if (target.id === megaTempleId && ruler && ruler !== bot.id) d *= 0.1;   // the throne pulls
-                        else if (bossAt(target.id)) d *= 0.3;
+                        const grudge = botGrudgeOn(bot.id, islandOwnerOf(target.id));
+                        if (grudge) d /= 1 + grudge.n;                                                  // revenge pulls them towards whoever hit them
+                        if (target.id === megaTempleId && ruler !== bot.id) d *= 0.1;                   // the throne pulls
+                        else if (bossAt(target.id)) d *= 0.15;                                         // events: bosses and the Wanderboss are worth a big attack
                         else if (target.type === 'gate' || target.type === 'temple' || target.guardian) d *= st.temple;
-                        else if (islandOwnerOf(target.id)) d *= st.enemy;                       // raiders like hitting other players
-                        cands.push({ d, sourceId, targetId: target.id, troops: Math.round(troopsHere), need: Math.ceil(totalStrength * 1.3 / atk) + 1 });
+                        else if (islandOwnerOf(target.id)) d *= st.enemy;                              // raiders like hitting other players
+                        const e = T.get(target.id) || { target, d: Infinity, sources: [], grudge };
+                        e.d = Math.min(e.d, d); e.sources.push({ id: sourceId, have }); T.set(target.id, e);
                     }
                 }
             }
-            if (!cands.length) { botGather(bot); return; }
-            cands.sort((x, y) => x.d - y.d);
-            if (st.launches) {                               // blitz: many attacks per move, each source splits its army over several targets
-                const left = {}, hit = new Set(); let n = 0;
-                for (const c of cands) {
-                    if (n >= st.launches) break;
-                    if (hit.has(c.targetId)) continue;
-                    const have = left[c.sourceId] ?? (islandTroops[c.sourceId] || 0);
-                    if (have < c.need) continue;
-                    if (launchAttack(c.sourceId, c.targetId, bot.id, c.need)) { left[c.sourceId] = have - c.need; hit.add(c.targetId); n++; botRevengeLaunched(bot, c.targetId); }
+            // events are a rally: every base in reach joins, not just the few the bot happened to look at
+            for (const e of T.values()) if (bossAt(e.target.id) || e.target.id === megaTempleId) {
+                const have0 = new Set(e.sources.map(sv => sv.id));
+                for (const sourceId of owned) {
+                    if (have0.has(sourceId)) continue;
+                    const src = islandById[sourceId], have = Math.floor((islandTroops[sourceId] || 0) * commit);
+                    if (have < BOT_MIN_GARRISON_TO_ATTACK || !(reachableLandmassIds[src.landmassId] || []).includes(e.target.landmassId) || !landmassesConnected(src.landmassId, e.target.landmassId)) continue;
+                    e.sources.push({ id: sourceId, have });
                 }
-                return;
             }
-            const pick = cands[Math.random() < .7 ? 0 : Math.floor(Math.random() * Math.min(3, cands.length))];   // not always the perfect move
-            if (launchAttack(pick.sourceId, pick.targetId, bot.id, pick.troops)) botRevengeLaunched(bot, pick.targetId);
+            if (!T.size) { botGather(bot); return; }
+            const list = [...T.values()].sort((x, y) => x.d - y.d).slice(0, 40);
+            // 2) a person doesn't know the numbers of a base they never scouted: send scouts to the best-looking unknown targets first
+            let scouted = 0;
+            for (const e of list.slice(0, 8)) {
+                if (scouted >= (st.launches ? 4 : 1)) break;
+                if (botIntel(bot, e.target.id) || botScouting(bot, e.target.id)) continue;
+                const src = islandById[e.sources[0].id];
+                botLearn(bot.id, e.target.id, now + travelDurationSeconds(src, e.target, bot.id) * 500);
+                scouted++;
+            }
+            // 3) attack what they know they can beat - with a real army, not the bare minimum; several bases join for a big one
+            const launches = st.launches || 1, used = {}; let n = 0;
+            for (const e of list) {
+                if (n >= launches) break;
+                const boss = bossAt(e.target.id);                                                          // an event's strength is public
+                const it = boss ? { s: boss.troops + boss.defense } : botIntel(bot, e.target.id); if (!it) continue;
+                const margin = st.margin * (e.grudge ? .85 : 1), need = it.s * margin / atk;              // what they believe it takes
+                const srcs = e.sources.map(sv => ({ id: sv.id, have: sv.have - (used[sv.id] || 0) })).filter(sv => sv.have >= BOT_MIN_GARRISON_TO_ATTACK).sort((u, v) => v.have - u.have);
+                const total = srcs.reduce((a2, sv) => a2 + sv.have, 0);
+                if (total < need * (boss ? .35 : 1)) continue;                                             // a boss is worn down by many attacks - worth it with a third
+                const big = bossAt(e.target.id) || e.target.type !== 'tower' || e.target.id === megaTempleId;
+                // a person sends a real army: the best base goes with most of its troops; bosses, temples and gates get a rally of every base in reach
+                const want = big ? Math.max(need * 2.2, total) : Math.max(need * 2, srcs[0].have);
+                let sent = 0;
+                for (const sv of srcs) {
+                    if (sent >= want) break;
+                    const give = Math.min(sv.have, Math.ceil(want - sent) + 1);
+                    if (give < BOT_MIN_GARRISON_TO_ATTACK) continue;
+                    if (launchAttack(sv.id, e.target.id, bot.id, give)) { used[sv.id] = (used[sv.id] || 0) + give; sent += give; }
+                }
+                if (sent > 0) { n++; botRevengeLaunched(bot, e.target.id); }
+                if (launches === 1 && Math.random() < .3) break;                                           // not always every move
+            }
+            if (!n && !scouted) botGather(bot);
+            saveBotState();
         }
 
         // Bots play by the player's rules with no caps: XP and levels (1 skill point per level, spent by their style),
