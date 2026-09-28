@@ -230,57 +230,77 @@ function paintGuardianTemple(g, ownerKey, detail) {                             
   if (ownerKey !== 'neutral') { g.fillStyle = BAND[ownerKey]; g.beginPath(); g.moveTo(-3.2, -5.5); g.lineTo(3.2, -5.5); g.lineTo(3.2, 3); g.lineTo(0, 1); g.lineTo(-3.2, 3); g.closePath(); g.fill(); }
 }
 
-function paintMegaTemple(g, ownerKey, detail) {           // Haupttempel: stepped terrace with a grand stair, an eight-column hall under a
-  const ink = '#2a241b', own = ownerKey !== 'neutral' ? BAND[ownerKey] : null;  // pediment, two corner towers and a tall ribbed gold dome
-  const marble = (x0, x1) => { const q = g.createLinearGradient(x0, 0, x1, 0); q.addColorStop(0, '#f5efe1'); q.addColorStop(.55, '#d8cfba'); q.addColorStop(1, '#a39a84'); return q; };
-  const gold = (y0, y1) => { const q = g.createLinearGradient(0, y0, 0, y1); q.addColorStop(0, '#fbe7a2'); q.addColorStop(.5, '#d9ab4c'); q.addColorStop(1, '#8f6420'); return q; };
-  const box = (x, y, w, h, fill, lw) => { g.fillStyle = fill; g.fillRect(x, y, w, h); g.lineWidth = lw || 1; strokeBox(g, x, y, w, h); };
+function paintMegaTemple(g, ownerKey, detail) {           // Haupttempel in real 3D (isometric): square terrace, round colonnade, drum and gold
+  const ink = '#2a241b', own = ownerKey !== 'neutral' ? BAND[ownerKey] : null;  // dome, a tower on every corner - the same from every side
+  const OY = 5, P = (x, y, z) => [(x - y) * .866, (x + y) * .5 - z + OY];
+  const ER = 1.2247, EY = .7071;                                                // a ground circle of radius r is an ellipse r*ER × r*EY
   g.lineJoin = 'round'; g.strokeStyle = ink;
-  g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(0, 23.5, 32, 3.2, 0, 0, Math.PI * 2); g.fill();
-  // corner towers behind the hall, each with a small gold cupola and the owner's pennant
-  for (const sx of [-1, 1]) {
-    const x0 = sx < 0 ? -27 : 18;
-    box(x0, -24, 9, 34, marble(x0, x0 + 9), 1.1);
-    for (let i = 0; i < 3; i++) box(x0 - .6 + i * 3.6, -27, 2.6, 3, marble(x0, x0 + 9), .8);
-    g.fillStyle = '#3a342c'; g.fillRect(x0 + 3.3, -18, 2.4, 4.5); g.fillRect(x0 + 3.3, -8, 2.4, 4.5);
-    g.beginPath(); g.moveTo(x0 - .5, -27); g.bezierCurveTo(x0 - .5, -32, x0 + 9.5, -32, x0 + 9.5, -27); g.closePath(); g.fillStyle = gold(-32, -27); g.fill(); g.lineWidth = .9; g.stroke();
-    const px = x0 + 4.5; g.beginPath(); g.moveTo(px, -31); g.lineTo(px, -40); g.lineWidth = 1; g.stroke();
-    if (own) { g.fillStyle = own; g.beginPath(); g.moveTo(px, -40); g.lineTo(px + sx * 6, -38.3); g.lineTo(px, -36.6); g.closePath(); g.fill(); g.lineWidth = .7; g.stroke(); }
+  const poly = (pts, fill, lw) => { g.beginPath(); pts.forEach((q, i) => i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1])); g.closePath(); g.fillStyle = fill; g.fill(); g.lineWidth = lw || 1; g.stroke(); };
+  const isoBox = (a, z0, z1, top, left, right) => {
+    poly([P(-a, a, z1), P(a, a, z1), P(a, a, z0), P(-a, a, z0)], left, 1);      // face towards the lower left
+    poly([P(a, -a, z1), P(a, a, z1), P(a, a, z0), P(a, -a, z0)], right, 1);     // face towards the lower right
+    poly([P(-a, -a, z1), P(a, -a, z1), P(a, a, z1), P(-a, a, z1)], top, 1);
+  };
+  const cyl = (cx, cy, r, z0, z1, c1, c2, topFill, lw) => {
+    const [x0, y0] = P(cx, cy, z0), [, y1] = P(cx, cy, z1), rx = r * ER, ry = r * EY;
+    const gr = g.createLinearGradient(x0 - rx, 0, x0 + rx, 0); gr.addColorStop(0, c1); gr.addColorStop(1, c2);
+    g.beginPath(); g.moveTo(x0 - rx, y1); g.lineTo(x0 - rx, y0); g.ellipse(x0, y0, rx, ry, 0, Math.PI, 0, true); g.lineTo(x0 + rx, y1); g.ellipse(x0, y1, rx, ry, 0, 0, Math.PI, true); g.closePath();
+    g.fillStyle = gr; g.fill(); g.lineWidth = lw || 1; g.stroke();
+    if (topFill) { g.beginPath(); g.ellipse(x0, y1, rx, ry, 0, 0, Math.PI * 2); g.fillStyle = topFill; g.fill(); g.stroke(); }
+  };
+  const gold = (y0, y1) => { const q = g.createLinearGradient(0, y0, 0, y1); q.addColorStop(0, '#fbe7a2'); q.addColorStop(.5, '#d9ab4c'); q.addColorStop(1, '#8f6420'); return q; };
+  const dome = (cx, cy, r, z, h) => {
+    const [x0, y0] = P(cx, cy, z), rx = r * ER, ry = r * EY, top = y0 - h;
+    g.beginPath(); g.moveTo(x0 - rx, y0); g.bezierCurveTo(x0 - rx, top + h * .25, x0 - rx * .45, top, x0, top); g.bezierCurveTo(x0 + rx * .45, top, x0 + rx, top + h * .25, x0 + rx, y0);
+    g.ellipse(x0, y0, rx, ry, 0, 0, Math.PI, false); g.closePath();
+    const gr = g.createRadialGradient(x0 - rx * .35, top + h * .35, r * .2, x0, y0 - h * .3, rx * 1.3); gr.addColorStop(0, '#fff1bf'); gr.addColorStop(.45, '#dcae4e'); gr.addColorStop(1, '#7d5618');
+    g.fillStyle = gr; g.fill(); g.lineWidth = 1.2; g.stroke();
+    return [x0, top];
+  };
+  g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(0, OY + 2, 31, 17.5, 0, 0, Math.PI * 2); g.fill();
+  // three-step terrace
+  isoBox(17, 0, 2.6, '#e6dfcf', '#c9c0ab', '#a79e89');
+  isoBox(14.6, 2.6, 5.2, '#ece6d7', '#cfc6b1', '#aaa18c');
+  isoBox(12.2, 5.2, 7.8, '#f2ecdf', '#d4cbb6', '#ada48f');
+  // a stair in the middle of every side (the two facing us are visible)
+  for (const side of [0, 1]) {
+    for (let k = 0; k < 3; k++) {
+      const d = 17 - k * 2.4, w = 3.4, z0 = k * 2.6, z1 = z0 + 2.6, q = (u, v, z) => side ? P(u, v, z) : P(v, u, z);
+      poly([q(-w, d, z1), q(w, d, z1), q(w, d, z0), q(-w, d, z0)], side ? '#d9d1bd' : '#b2a994', .7);           // riser
+      poly([q(-w, d - 2.4, z1), q(w, d - 2.4, z1), q(w, d, z1), q(-w, d, z1)], '#f7f2e6', .7);                  // tread
+    }
   }
-  // drum with arched windows and the ribbed gold dome, lantern and spire
-  box(-12, -24, 24, 12, marble(-12, 12), 1.1);
-  g.fillStyle = '#2f2922';
-  for (const wx of [-8.5, -3, 2.5, 8]) { g.beginPath(); g.moveTo(wx - 1.3, -14.5); g.lineTo(wx - 1.3, -19); g.arc(wx, -19, 1.3, Math.PI, 0); g.lineTo(wx + 1.3, -14.5); g.closePath(); g.fill(); }
-  g.beginPath(); g.moveTo(-13, -24); g.bezierCurveTo(-13, -34, -5, -39.5, 0, -39.5); g.bezierCurveTo(5, -39.5, 13, -34, 13, -24); g.closePath();
-  g.fillStyle = gold(-39.5, -24); g.fill(); g.lineWidth = 1.3; g.stroke();
-  if (detail) { g.strokeStyle = 'rgba(110,70,15,.55)'; g.lineWidth = .8; g.beginPath();
-    for (const r of [-8, -3.5, 3.5, 8]) { g.moveTo(r * 1.1, -24.2); g.quadraticCurveTo(r * .9, -34, 0, -39.3); } g.stroke(); g.strokeStyle = ink; }
-  box(-2, -44, 4, 4.5, gold(-44, -39.5), .9);
-  g.beginPath(); g.moveTo(0, -48); g.lineTo(1.8, -44); g.lineTo(-1.8, -44); g.closePath(); g.fillStyle = '#f3d98a'; g.fill(); g.lineWidth = .8; g.stroke();
-  // three-step terrace (front faces with a lit top edge)
-  for (const [x, y, w, h] of [[-30, 18, 60, 6], [-26.5, 13.5, 53, 4.5], [-23, 9.5, 46, 4]]) {
-    box(x, y, w, h, marble(x, x + w), 1.1); g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(x + .6, y + .5, w - 1.2, 1);
-  }
-  // the hall: dark cella, eight columns with capitals and bases
-  g.fillStyle = '#403830'; g.fillRect(-19, -6, 38, 15.5);
-  if (own) { g.fillStyle = own; g.beginPath(); g.moveTo(-3, -5.5); g.lineTo(3, -5.5); g.lineTo(3, 3.5); g.lineTo(0, 1.6); g.lineTo(-3, 3.5); g.closePath(); g.fill(); }
-  for (let i = 0; i < 8; i++) {
-    const cx = -17 + i * (34 / 7);
-    if (own && Math.abs(cx) < 3) continue;
-    box(cx - 1.5, -6, 3, 15.5, marble(cx - 1.5, cx + 1.5), .8);
-    if (detail) { g.fillStyle = '#e9e1cd'; g.fillRect(cx - 2, -6.8, 4, 1.2); g.fillRect(cx - 2, 8.4, 4, 1.1); }
-  }
-  box(-21.5, -9.8, 43, 3.8, marble(-21.5, 21.5), 1.1);                                      // entablature
-  if (detail) { g.fillStyle = 'rgba(60,50,35,.35)'; for (let x = -20; x < 21; x += 3) g.fillRect(x, -8.9, 1.2, 1.8); }
-  g.beginPath(); g.moveTo(-23, -9.8); g.lineTo(0, -21); g.lineTo(23, -9.8); g.closePath();    // pediment
-  g.fillStyle = marble(-23, 23); g.fill(); g.lineWidth = 1.2; g.stroke();
-  g.beginPath(); g.moveTo(-18, -11.3); g.lineTo(0, -19.4); g.lineTo(18, -11.3); g.closePath(); g.fillStyle = 'rgba(80,68,50,.25)'; g.fill();
-  g.beginPath(); g.arc(0, -13.8, 2.6, 0, Math.PI * 2); g.fillStyle = gold(-16.4, -11.2); g.fill(); g.lineWidth = .8; g.stroke();   // gold sun in the tympanum
-  for (const [ax, ay] of [[-23, -9.8], [23, -9.8], [0, -21]]) { g.beginPath(); g.arc(ax, ay - 1.2, 1.3, 0, Math.PI * 2); g.fillStyle = '#e2bd5c'; g.fill(); g.lineWidth = .6; g.stroke(); }   // acroteria
-  // grand stair down the middle of the terrace
-  g.beginPath(); g.moveTo(-6.5, 9.5); g.lineTo(6.5, 9.5); g.lineTo(9.5, 24); g.lineTo(-9.5, 24); g.closePath(); g.fillStyle = marble(-9.5, 9.5); g.fill(); g.lineWidth = 1.1; g.stroke();
-  if (detail) { g.strokeStyle = 'rgba(60,50,35,.45)'; g.lineWidth = .7; g.beginPath();
-    for (let k = 1; k < 7; k++) { const y = 9.5 + k * 14.5 / 7, hw = 6.5 + k * 3 / 7; g.moveTo(-hw, y); g.lineTo(hw, y); } g.stroke(); g.strokeStyle = ink; }
+  // corner towers (back first) and the temple in the middle, sorted back to front
+  const tower = (x, y) => {
+    cyl(x, y, 2.5, 2.6, 15, '#f1ebdd', '#a39a84', '#ddd4c0', .9);
+    const [tx, ty] = P(x, y, 15);
+    for (let i = -1; i <= 1; i++) { g.fillStyle = '#3a342c'; g.fillRect(tx + i * 1.6 - .5, ty + 4, 1, 2.6); }
+    const [px, pt] = dome(x, y, 2.7, 15, 4.5);
+    g.beginPath(); g.moveTo(px, pt); g.lineTo(px, pt - 7); g.lineWidth = .9; g.stroke();
+    if (own) { g.fillStyle = own; g.beginPath(); g.moveTo(px, pt - 7); g.lineTo(px + 5, pt - 5.6); g.lineTo(px, pt - 4.2); g.closePath(); g.fill(); g.lineWidth = .6; g.stroke(); }
+  };
+  const temple = () => {
+    const R = 8.6, N = 12, cols = [];
+    for (let i = 0; i < N; i++) { const t = i / N * Math.PI * 2 + Math.PI / 12; cols.push([Math.cos(t) * R, Math.sin(t) * R]); }
+    cyl(0, 0, 10, 7.8, 9, '#ece6d7', '#aaa18c', '#f4efe3', .9);                                   // stylobate
+    const col = c => cyl(c[0], c[1], .95, 9, 19.5, '#fbf7ee', '#b3aa94', null, .7);
+    cols.filter(c => c[0] + c[1] < 0).forEach(col);                                                 // back columns
+    cyl(0, 0, 6.4, 9, 19.5, '#6a6053', '#3a332b', null, .9);                                       // dark cella
+    if (own) { const [dx, dy] = P(4.5, 4.5, 9); g.fillStyle = own; g.fillRect(dx - 1.6, dy - 8.5, 3.2, 7); }
+    cols.filter(c => c[0] + c[1] >= 0).forEach(col);                                                // front columns
+    cyl(0, 0, 10, 19.5, 22, '#f4efe3', '#a8a089', '#e9e2d2', 1);                                  // entablature ring
+    if (detail) { const [ex, ey] = P(0, 0, 20.7); g.strokeStyle = 'rgba(60,50,35,.35)'; g.lineWidth = .7; g.beginPath(); g.ellipse(ex, ey, 10 * ER - .5, 10 * EY - .3, 0, .15, Math.PI - .15); g.stroke(); g.strokeStyle = ink; }
+    cyl(0, 0, 6.8, 22, 27, '#f1ebdd', '#9f967f', null, 1);                                         // drum
+    const [wx, wy] = P(0, 0, 22);
+    g.fillStyle = '#2f2922'; for (const f of [-.62, -.2, .2, .62]) { const x = wx + f * 6.8 * ER; g.beginPath(); g.moveTo(x - .9, wy + (1 - f * f) * 4.8 - 1.6); g.lineTo(x - .9, wy - 1.8); g.arc(x, wy - 1.8, .9, Math.PI, 0); g.lineTo(x + .9, wy + (1 - f * f) * 4.8 - 1.6); g.closePath(); g.fill(); }
+    const [dx, dt] = dome(0, 0, 7.3, 27, 11.5);
+    if (detail) { g.strokeStyle = 'rgba(110,70,15,.5)'; g.lineWidth = .7; g.beginPath(); const [cx, cy] = P(0, 0, 27);
+      for (const f of [-.6, -.25, .25, .6]) { g.moveTo(cx + f * 7.3 * ER, cy + Math.sqrt(1 - f * f) * 7.3 * EY - .3); g.quadraticCurveTo(cx + f * 7.3 * ER * .8, dt + 3, dx, dt + .3); } g.stroke(); g.strokeStyle = ink; }
+    cyl(0, 0, 1.5, 27 + 11.2, 27 + 14, '#fbe7a2', '#9a6d24', '#f3d98a', .8);                        // lantern
+    const [lx, ly] = P(0, 0, 27 + 14); g.beginPath(); g.moveTo(lx, ly - 5); g.lineTo(lx + 1.3, ly); g.lineTo(lx - 1.3, ly); g.closePath(); g.fillStyle = '#f3d98a'; g.fill(); g.lineWidth = .7; g.stroke();
+  };
+  const T = 15.2, parts = [[-T, -T, () => tower(-T, -T)], [T, -T, () => tower(T, -T)], [-T, T, () => tower(-T, T)], [0, 0, temple], [T, T, () => tower(T, T)]];
+  parts.sort((u, v) => (u[0] + u[1]) - (v[0] + v[1])).forEach(p => p[2]());
 }
 
 function drawGatehouse(g, cx, cy, H, open) {      // front view like the towers: two turrets, a wall, an arch with a portcullis
@@ -515,8 +535,9 @@ function drawRoads() {
   for (const rd of roads) {
     if (rd.plaza) {
       const [x, y] = toS(0, 0), r = rd.plaza * cam.z;
-      ctx.fillStyle = '#c7bea9'; ctx.beginPath(); ctx.rect(x - r, y - r, 2 * r, 2 * r); ctx.fill();
-      ctx.strokeStyle = 'rgba(60,50,40,.5)'; ctx.lineWidth = Math.max(1, 8 * cam.z); strokeBox(ctx, x - r, y - r, 2 * r, 2 * r);
+      const dy = y + r * .12;                                                       // an iso diamond, square to the 3D temple on it
+      ctx.beginPath(); ctx.moveTo(x, dy - r * .62); ctx.lineTo(x + r * 1.08, dy); ctx.lineTo(x, dy + r * .62); ctx.lineTo(x - r * 1.08, dy); ctx.closePath();
+      ctx.fillStyle = '#c7bea9'; ctx.fill(); ctx.strokeStyle = 'rgba(60,50,40,.5)'; ctx.lineWidth = Math.max(1, 8 * cam.z); ctx.stroke();
       continue;
     }
     if (rd.circle || rd.ring) {
