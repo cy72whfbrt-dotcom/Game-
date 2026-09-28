@@ -329,9 +329,8 @@ function build() {
       const intoThrone = ringOf(iq, ir) === 0, intoRing = ringOf(iq, ir) === 1 || ringOf(oq, orr) === 1;
       const nm = intoThrone ? 'Thron-Tor ' + dirName(oq, orr) : intoRing ? 'Wächter-Tor' : 'Grenztor';
       const gsz = intoThrone ? 330 : intoRing ? 280 : 240;
-      // north–south bridge: the gate stands at the bridge's end, the bridge runs into its back.
-      // east–west bridge: the gate stands on the bank right where the bridge lands, the bridge runs in behind it.
-      things.push({ kind: 'gate', x: bx + ux * (dq === 1 ? RIVER / 2 + gsz * .52 : off), y: by + (dq === 1 ? BRIDGE_W / 2 + 25 : uy * off + (uy < 0 ? 40 : 60)), size: gsz, name: nm, major: intoThrone,
+      // Every gate stands in the middle of its bridge, the same on every bridge: a bridge tower the road runs through.
+      things.push({ kind: 'gate', x: bx, y: by + (dq === 1 ? BRIDGE_W / 2 + 20 : gsz * .3), size: gsz, name: nm, major: intoThrone,
         desc: intoThrone ? 'Einer von nur 4 Wegen zum Haupttempel.' : intoRing ? 'Tor in den Ring um die Mitte. Unbesetzt verschlossen.' : 'Jede Brücke hat ein Tor. Unbesetzt verschlossen, wer es hält, bestimmt die Maut.' });
       gates++;
     }
@@ -568,7 +567,7 @@ function drawLabels() {
     const short = { Nordwest: 'NW', Nordost: 'NO', Südwest: 'SW', Südost: 'SO' };
     const label = t.kind === 'mega' ? 'Haupttempel' : t.kind === 'guardian' && px < 44 ? 'Wächter ' + short[t.name.split(' ').pop()] : t.name;
     ctx.font = (t.kind === 'mega' ? '700 14px ' : '600 12px ') + "Inter, system-ui, sans-serif";
-    const tw = ctx.measureText(label).width + 14, ly = y + Math.max(px, 14) * .38 + 12;
+    const tw = ctx.measureText(label).width + 14, ly = t.kind === 'gate' ? y - Math.max(px, 14) * .95 - 12 : y + Math.max(px, 14) * .38 + 12;   // gate names above the gate
     ctx.fillStyle = 'rgba(17,20,26,.82)'; rr(ctx, x - tw / 2, ly - 10, tw, 20, 5); ctx.fill();
     ctx.fillStyle = t.kind === 'mega' ? '#e4c886' : t.home ? '#9cc3ef' : '#efe6d2'; ctx.fillText(label, x, ly + .5);
   }
