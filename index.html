@@ -557,6 +557,7 @@ body.has-panel .mapctl{display:none}
 .skin-card{display:grid;justify-items:center;gap:2px;padding:6px 4px 8px;border:1px solid var(--line-2);border-radius:8px;background:rgba(255,255,255,.03);color:var(--tx-1);cursor:pointer} .skin-card.on{border-color:var(--gold-300);box-shadow:0 0 0 1px var(--gold-300)}
 .skin-card canvas{width:60px;height:66px} .skin-card small{display:inline-flex;align-items:center;gap:3px;color:var(--tx-2)} .skin-card .icon{width:12px;height:12px}
 .logWounded,.logRetreat.logWounded{color:#f2c94c;font-weight:600}
+.logCasualty.wounded span,.logCasualty.wounded span:last-child{color:#f2c94c}
 .logRow .mact{grid-column:2/4;display:flex;gap:6px;justify-content:flex-end;margin-top:4px}
 .logRow .mact button{display:inline-flex;align-items:center;gap:4px;min-height:30px;padding:0 10px;border-radius:6px;border:1px solid var(--line-2);background:rgba(255,255,255,.04);color:var(--tx-1);font:600 var(--fs-12)/1 var(--font-ui);cursor:pointer}
 .logRow .mact button:hover{border-color:var(--gold-300)} .logRow .mact .icon{width:14px;height:14px}
@@ -3355,6 +3356,7 @@ body.has-panel .mapctl{display:none}
                     enemyTroops: originalEnemyTroops,
                     enemyDefense: originalEnemyDefense,
                     wounded: defWounded,
+                    fallen: won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops),
                     won
                 });
                 flashHint((capitalHolds
@@ -6316,10 +6318,30 @@ body.has-panel .mapctl{display:none}
                     return logRowHtml('retreat', 'recall', 'Rückkehr · ' + T(entry.toId), fmtM(entry.troops) + ' geflohene Truppen zurück', ago(entry));
                 }
                 if (entry.type === 'botAttack') {
-                    const vs = ' (' + fmtM(entry.myTroops) + ' vs ' + fmtM(entry.enemyTroops + entry.enemyDefense) + ')', wd = entry.wounded ? ' · <span class="logWounded">' + fmtM(entry.wounded) + ' im Lazarett</span>' : '';
+                    const vs = ' (' + fmtM(entry.myTroops) + ' vs ' + fmtM(entry.enemyTroops + entry.enemyDefense) + ')';
+                    const fallen = entry.fallen !== undefined ? entry.fallen : (entry.won ? entry.enemyTroops : Math.min(entry.enemyTroops, entry.myTroops));
+                    const defSum = entry.enemyTroops + entry.enemyDefense;
+                    const bdet = '<details><summary>Kampfdetails</summary>' +
+                        '<div class="logCompare">' +
+                            '<div class="logSide">' +
+                                '<div class="logSideLabel">Angreifer · ' + escapeHtml(entry.botName) + '</div>' +
+                                '<div class="logSum' + (entry.won ? ' advantage' : '') + '"><span>Gesamt</span><span>' + fmtD(entry.myTroops) + '</span></div>' +
+                            '</div>' +
+                            '<div class="logVsDivider">VS</div>' +
+                            '<div class="logSide">' +
+                                '<div class="logSideLabel">Verteidiger · Du</div>' +
+                                '<div class="logLine"><span>Truppen</span><span>' + fmtD(entry.enemyTroops) + '</span></div>' +
+                                '<div class="logLine"><span>Verteidigung</span><span>' + fmtD(entry.enemyDefense) + '</span></div>' +
+                                '<div class="logSum' + (entry.won ? '' : ' advantage') + '"><span>Gesamt</span><span>' + fmtD(defSum) + '</span></div>' +
+                                '<div class="logCasualty"><span>Gefallen</span><span>−' + fmtD(Math.max(0, fallen - (entry.wounded || 0))) + '</span></div>' +
+                                (entry.wounded ? '<div class="logCasualty wounded"><span>Verwundet</span><span>' + fmtD(entry.wounded) + '</span></div>' : '') +
+                            '</div>' +
+                        '</div>' +
+                        (entry.wounded ? '<div class="logRetreat logWounded">' + fmtNum(entry.wounded) + ' Verwundete gehen ins Lazarett – heile sie in der Stadt</div>' : '') +
+                        '</details>';
                     return entry.won
-                        ? logRowHtml('loss', 'bot', 'Verloren · ' + T(entry.targetId), escapeHtml(entry.botName) + ' hat die Basis erobert' + vs + wd, ago(entry))
-                        : logRowHtml('win', 'shield', 'Verteidigt · ' + T(entry.targetId), escapeHtml(entry.botName) + ' zurückgeschlagen' + vs + wd, ago(entry));
+                        ? logRowHtml('loss', 'bot', 'Verloren · ' + T(entry.targetId), escapeHtml(entry.botName) + ' hat die Basis erobert' + vs, ago(entry), bdet)
+                        : logRowHtml('win', 'shield', 'Verteidigt · ' + T(entry.targetId), escapeHtml(entry.botName) + ' zurückgeschlagen' + vs, ago(entry), bdet);
                 }
                 // Legacy entries saved before this format existed - fall back
                 // to the old one-liner instead of showing "undefined".
@@ -6342,6 +6364,7 @@ body.has-panel .mapctl{display:none}
                             '<div class="logLine buff"><span>Angriff-Buff</span><span>+' + fmtD(entry.attackBuff) + '</span></div>' +
                             '<div class="logSum' + (atkTotal >= defTotal ? ' advantage' : '') + '"><span>Gesamt</span><span>' + fmtD(atkTotal) + '</span></div>' +
                             '<div class="logCasualty"><span>Gefallen</span><span>−' + fmtD(entry.attackerCasualties || 0) + '</span></div>' +
+                            (entry.wounded ? '<div class="logCasualty wounded"><span>Verwundet</span><span>' + fmtD(entry.wounded) + '</span></div>' : '') +
                         '</div>' +
                         '<div class="logVsDivider">VS</div>' +
                         '<div class="logSide">' +
@@ -6361,7 +6384,7 @@ body.has-panel .mapctl{display:none}
                     (entry.won ? 'Sieg · ' : 'Niederlage · ') + T(entry.targetId),
                     'von ' + T(entry.sourceId) + (entry.won
                         ? ' · ' + fmtM(entry.remaining) + ' übrig'
-                        : (entry.retreatSurvivors ? ' · ' + fmtM(entry.retreatSurvivors) + ' geflohen' : '')) + (entry.wounded ? ' · <span class="logWounded">' + fmtM(entry.wounded) + ' im Lazarett</span>' : ''),
+                        : (entry.retreatSurvivors ? ' · ' + fmtM(entry.retreatSurvivors) + ' geflohen' : '')),
                     ago(entry), details);
             }).join('');
             [...combatLogListEl.children].forEach((row, i) => { if (combatLog[i]) row.dataset.key = combatLogKey(combatLog[i]); });
