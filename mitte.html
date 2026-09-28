@@ -356,7 +356,7 @@ function build() {
     const c = cellRect(q, r, q, r), belt = ring >= 3 && ring <= 5, start = ring >= 6;
     const bio = biomeOf(q, r);
     regions.push({ kind: start ? 'start' : 'outer', ring, bio, rect: c, name: (start ? 'Startgebiet' : ring === 2 ? 'Vorland der Mitte' : 'Mittlerer Gürtel') + ' · ' + BIOME[bio].name,
-      desc: start ? 'Hier starten die Spieler: 4 feste Startplätze, leichte Basen, keine Tempel.' : ring === 2 ? 'Direkt am Ring um die Mitte: starke Basen, keine Tempel.' : 'Hier liegen die normalen Tempel (nicht in jedem Gebiet).' });
+      desc: start ? 'Hier starten die Spieler: 4 Plätze bleiben für Hauptstädte frei, leichte Basen, keine Tempel.' : ring === 2 ? 'Direkt am Ring um die Mitte: starke Basen, keine Tempel.' : 'Hier liegen die normalen Tempel (nicht in jedem Gebiet).' });
     if (start) for (const [sx, sy] of [[-.24, -.2], [.24, -.2], [-.24, .26], [.24, .26]]) {   // 4 start places, kept free of neutral bases
       const x = q * S + sx * S, y = r * S + sy * S;
       if (q === -6 && r === 6 && sx < 0 && sy > 0) { things.push({ kind: 'tower', tier: 0, owner: 'player', home: true, x, y, size: 120, name: 'Deine Hauptstadt (Beispiel)', desc: 'Ein belegter Startplatz. So weit außen startet man, weit weg von der Mitte.' }); continue; }
@@ -516,16 +516,7 @@ function drawBridges() {
 function drawThing(t) {
   const px = t.size * cam.z;
   const [x, y] = toS(t.x, t.y);
-  if (t.kind === 'slot') {                                                         // a free start place: a marked plot
-    if (px < 5 || x < -px || y < -px || x > W + px || y > H + px) return;
-    const w = px * .9, h = px * .5;
-    ctx.save(); ctx.setLineDash([Math.max(2, px * .08), Math.max(2, px * .06)]); ctx.lineWidth = Math.max(1, px * .03);
-    ctx.fillStyle = 'rgba(63,134,216,.14)'; ctx.strokeStyle = 'rgba(63,134,216,.8)';
-    ctx.beginPath(); ctx.ellipse(x, y, w / 2, h / 2, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.restore();
-    if (px > 30) { ctx.fillStyle = 'rgba(63,134,216,.9)'; ctx.font = '600 ' + Math.min(12, px * .12) + 'px Inter, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('frei', x, y); }
-    if (sel && sel.thing === t) { ctx.strokeStyle = '#e4c886'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(x, y, w / 2 + 3, h / 2 + 3, 0, 0, Math.PI * 2); ctx.stroke(); }
-    return;
-  }
+  if (t.kind === 'slot') return;                                                  // free start places stay simply empty ground
   if (x < -px || y < -px || x > W + px || y > H + px * 1.5) return;
   if (t.kind === 'tower' && px < 10) {                                              // far away: a dot per base
     ctx.fillStyle = t.owner === 'player' ? '#3f86d8' : 'rgba(40,40,40,.55)'; ctx.fillRect(x - 1.5, y - 1.5, 3, 3); return;
@@ -588,7 +579,7 @@ const coordOf = (x, y) => [Math.round((x + (HALF + .5) * S) / (S / 80)), Math.ro
 const coordTxt = (x, y) => { const [cx, cy] = coordOf(x, y); return 'X ' + cx + ' · Y ' + cy; };
 function pick(sx, sy) {
   const [wx, wy] = toW(sx, sy); let best = null, bd = Infinity;
-  for (const t of things) { const r = Math.max(t.size * .5, 14 / cam.z), d = Math.hypot(t.x - wx, t.y - (wy + t.size * .2)); if (d < r && d < bd) { bd = d; best = t; } }
+  for (const t of things) { if (t.kind === 'slot') continue; const r = Math.max(t.size * .5, 14 / cam.z), d = Math.hypot(t.x - wx, t.y - (wy + t.size * .2)); if (d < r && d < bd) { bd = d; best = t; } }
   const rg = best ? null : regions.find(r => wx > r.rect.x0 && wx < r.rect.x1 && wy > r.rect.y0 && wy < r.rect.y1);
   sel = best ? { thing: best } : rg ? { region: rg } : null;
   const o = best || rg;
