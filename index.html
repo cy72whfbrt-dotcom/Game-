@@ -7649,6 +7649,14 @@ body.has-panel .mapctl{display:none}
             const w = loadWander();
             return w && w.at === id && w.to === null && w.troops > 0 && !islandOwnerOf(id) ? w : null;   // the Kriegsherr in his camp
         }
+        // A world event is as strong as the world, not as the player: the middle of the five biggest armies on the map
+        // (the player's and every bot's), so one giant army - yours or a bot's - doesn't set the bar for everyone.
+        function worldArmy() {
+            const armies = [totalTroops()];
+            for (const bot of BOT_DEFS) { let sum = 0; for (const id of botOwnedIslands[bot.id] || []) sum += islandTroops[id] || 0; armies.push(sum); }
+            armies.sort((a, b) => b - a);
+            return armies[2] || 0;
+        }
         function spawnBoss() {
             const reach = new Set();
             for (const id of ownedIslands) for (const lm of reachableLandmassIds[islandById[id].landmassId] || [])
@@ -7662,7 +7670,7 @@ body.has-panel .mapctl{display:none}
             cand.sort((a, b) => Math.hypot(a.x - home.x, a.y - home.y) - Math.hypot(b.x - home.x, b.y - home.y));
             const isl = cand[Math.floor(Math.random() * Math.min(25, cand.length))];
             const def = BOSS_KINDS[Math.floor(Math.random() * BOSS_KINDS.length)];
-            const troops = niceRound(Math.max(200000, totalTroops() * (1.2 + Math.random() * 0.8)));
+            const troops = niceRound(Math.max(200000, worldArmy() * (1.2 + Math.random() * 0.8)));
             bossState = { islandId: isl.id, kind: def.kind, name: def.name, troops, defense: niceRound(troops * 0.1), endsAt: Date.now() + BOSS_DURATION_MS };
             scoutedIslands.add(isl.id);                           // its strength is public
             saveBoss(); saveGame();
@@ -7732,7 +7740,7 @@ body.has-panel .mapctl{display:none}
             const cand = islands.filter(i => i.type === 'tower' && !islandOwnerOf(i.id) && !bossAt(i.id) && landmasses[i.landmassId].tier === 'outer' && landmasses[i.landmassId].ring >= 3);
             if (!cand.length) return false;
             const isl = cand[Math.floor(Math.random() * cand.length)], now = Date.now();
-            const troops = niceRound(Math.max(1e6, totalTroops() * (1.5 + Math.random())));
+            const troops = niceRound(Math.max(1e6, worldArmy() * (1.5 + Math.random())));
             wander = { wander: true, name: WANDER_NAMES[Math.floor(Math.random() * WANDER_NAMES.length)], troops, defense: niceRound(troops * .15), max: troops,
                 at: isl.id, from: null, to: null, departAt: 0, arriveAt: 0, campUntil: now + 60000, endsAt: now + 25 * 60 * 1000 };
             scoutedIslands.add(isl.id);
