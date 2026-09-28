@@ -364,14 +364,16 @@ function build() {
     const c = cellRect(q, r, q, r), belt = ring >= 3 && ring <= 5, start = ring >= 6;
     const bio = biomeOf(q, r);
     regions.push({ kind: start ? 'start' : 'outer', ring, bio, rect: c, name: (start ? 'Startgebiet' : ring === 2 ? 'Vorland der Mitte' : 'Mittlerer Gürtel') + ' · ' + BIOME[bio].name,
-      desc: start ? 'Hier starten die Spieler: 4 Plätze bleiben für Hauptstädte frei, leichte Basen, keine Tempel.' : ring === 2 ? 'Direkt am Ring um die Mitte: starke Basen, keine Tempel.' : 'Hier liegen die normalen Tempel (nicht in jedem Gebiet).' });
+      desc: start ? 'Hier starten die Spieler: 4 Plätze bleiben für Hauptstädte frei, leichte Basen, keine Tempel.' : ring === 2 ? 'Direkt am Ring um die Mitte: starke Basen, keine Tempel.' : 'Mittlerer Gürtel. Auf zwei Quadraten um die Mitte stehen die normalen Tempel.' });
     if (start) for (const [sx, sy] of [[-.24, -.2], [.24, -.2], [-.24, .26], [.24, .26]]) {   // 4 start places, kept free of neutral bases
       const x = q * S + sx * S, y = r * S + sy * S;
       if (q === -6 && r === 6 && sx < 0 && sy > 0) { things.push({ kind: 'tower', tier: 0, owner: 'player', home: true, x, y, size: 120, name: 'Deine Hauptstadt (Beispiel)', desc: 'Ein belegter Startplatz. So weit außen startet man, weit weg von der Mitte.' }); continue; }
       things.push({ kind: 'slot', x, y, size: 120, name: 'Freier Startplatz', desc: 'Hier kann ein neuer Spieler seine Hauptstadt bekommen. 4 Plätze pro Startgebiet.' }); slots++;
     }
-    const hasTemple = belt && (q + r) % 2 === 0;
-    if (hasTemple) { temples++; things.push({ kind: 'temple', x: q * S, y: r * S + 80, size: 580, name: 'Tempel', desc: 'Normaler Tempel. Nur im mittleren Gürtel und nur in jedem zweiten Gebiet.' }); }
+    const aq = Math.abs(q), ar = Math.abs(r);           // temples on two clean squares around the middle, mirrored on all sides
+    const hasTemple = (ring === 3 && ((aq === 3 && ar === 3) || q === 0 || r === 0))
+                   || (ring === 5 && ((aq === 5 && ar === 5) || q === 0 || r === 0 || aq === 3 || ar === 3));
+    if (hasTemple) { temples++; things.push({ kind: 'temple', x: q * S, y: r * S + 80, size: 580, name: 'Tempel', desc: 'Normaler Tempel. Die Tempel stehen auf zwei Quadraten um die Mitte, auf allen Seiten gleich.' }); }
     const tier = ring >= 6 ? 0 : ring >= 4 ? 1 : ring >= 3 ? 2 : 3;
     scatter(c, 0, tier, R, p => !hasTemple || Math.hypot(p.x - q * S, p.y - r * S - 100) > 520, ['Lager', 'Rundturm', 'Bergfried', 'Burg', 'Zitadelle'][tier]);
   }
@@ -559,7 +561,11 @@ function drawThing(t) {
     ctx.fillStyle = t.owner === 'player' ? '#3f86d8' : 'rgba(40,40,40,.55)'; ctx.fillRect(x - 1.5, y - 1.5, 3, 3); return;
   }
   if (t.kind === 'gate' && !t.major && px < 9) return;                               // far away: the border gates hide, the bridges stay
-  const minPx = t.kind === 'mega' ? 26 : t.kind === 'guardian' ? 18 : t.kind === 'gate' ? (t.major ? 14 : 0) : t.kind === 'temple' ? 12 : 0;
+  if ((t.kind === 'temple' || t.kind === 'guardian') && px < 40) {                 // zoomed out: a gold ring so every temple is easy to spot
+    ctx.fillStyle = 'rgba(17,20,26,.55)'; ctx.strokeStyle = '#e4c886'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(x, y - 6, t.kind === 'guardian' ? 17 : 14, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  }
+  const minPx = t.kind === 'mega' ? 26 : t.kind === 'guardian' ? 24 : t.kind === 'gate' ? (t.major ? 14 : 0) : t.kind === 'temple' ? 20 : 0;
   const size = Math.max(px, minPx), sp = sprite(t, size), c = sp.c, k = sp.s;
   if (t.kind === 'gate') {
     for (const e of t.ends) { const [ex, ey] = toS(e.x, e.y); ctx.drawImage(c, ex - c.ax * k, ey - c.ay * k, c.width * k, c.height * k); }
