@@ -1533,7 +1533,6 @@ body.has-panel .mapctl{display:none}
     <button id="backBtn" class="btn btn--secondary" type="button"><svg class="icon"><use href="#i-back"/></svg><span>Zurück</span></button>
     <button id="scoutBtn" class="btn btn--secondary btn--grow" type="button"><svg class="icon"><use href="#i-scout"/></svg><span class="lbl">Spähen</span></button>
     <button id="attackBtn" class="btn btn--danger btn--grow" type="button"><svg class="icon"><use href="#i-attack"/></svg><span class="lbl">Angreifen</span></button>
-    <button id="confirmBtn" class="btn btn--primary btn--grow" type="button"><svg class="icon"><use href="#i-upgrade"/></svg><span>Aufwerten</span></button>
   </footer>
 </section>
 
@@ -1559,7 +1558,6 @@ body.has-panel .mapctl{display:none}
         }
         function setBtnLabel(btn, text) { const l = btn.querySelector('.lbl'); if (l) l.textContent = text; else btn.textContent = text; }
         function fmtClock(sec) { sec = Math.max(0, Math.ceil(sec)); return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'); }
-        const RARITY_LABEL = { grau: 'Gewöhnlich', gruen: 'Ungewöhnlich', blau: 'Selten', lila: 'Episch', gold: 'Legendär', rot: 'Mythisch' };
         function statTile(label, iconName, valueHtml, cls) {
           return '<div class="stat"><span class="stat-l">' + icon(iconName) + label + '</span><b class="stat-v' + (cls ? ' ' + cls : '') + '">' + valueHtml + '</b></div>';
         }
@@ -1637,8 +1635,6 @@ body.has-panel .mapctl{display:none}
         // attacking anything anywhere. Spacing found via a search against
         // the actual coastline generator for the tightest hex packing with
         // zero overlap.
-        const CENTER_LANDMASS_RADIUS = 30000; // only the hub is bigger
-        const OUTER_LANDMASS_RADIUS = 20000;
         const GRID_N = 9;          // square world: 9 × 9 landmasses, the Thron-Insel in the middle cell
         const HEX_SPACING = 56120; // distance between orthogonally adjacent cell centres (tightest packing with zero overlap)
         const GRID_HALF = (GRID_N - 1) / 2;
@@ -1658,7 +1654,6 @@ body.has-panel .mapctl{display:none}
         const RING_MULT = { 1: 300, 2: 60, 3: 8, 4: 1 };   // neutral strength of outer regions: the edge is easy, near the middle hard
         function ringMult(lm) { return lm.tier === 'outer' ? (RING_MULT[lm.ring] || 1) : 1; }
         function niceRoundW(n) { const p = Math.pow(10, Math.max(0, Math.floor(Math.log10(n)) - 1)); return Math.round(n / p) * p; }
-        const HUB_TOWERS_PER_LANDMASS = 180; // the hub is 1.5x the radius, so it earns more bases too
         const TOWER_MIN_SPACING_RATIO = 0.10; // relative to the landmass radius
         const ISLAND_RADIUS = 650; // tower footprint - bigger again, still well under the guaranteed minimum spacing between towers
         const NEUTRAL_DEFENSE_MAX = 100;
@@ -2471,15 +2466,26 @@ body.has-panel .mapctl{display:none}
             for (const ownedId of ownedIslands) sum += islandTroops[ownedId] || 0;
             return sum;
         }
+        // The same multipliers runProductionTick uses (equipment/skills, ruler bonus, titles)
+        function playerCoinMult() { return coinProductionMultiplier() * (rulerOwner() === 'player' ? RULER_BONUS : 1) * titleMult('player', 'coins'); }
+        function playerTroopMult() { return troopProductionMultiplier() * (rulerOwner() === 'player' ? RULER_BONUS : 1) * titleMult('player', 'troops'); }
         function totalTroopProductionPerTick() {
-            let sum = 0;
-            for (const ownedId of ownedIslands) sum += troopsPerTick(islandLevels[ownedId] || 1);
-            return sum * troopProductionMultiplier();
+            let sum = 0; const m = playerTroopMult();
+            for (const ownedId of ownedIslands) {
+                sum += Math.round(troopsPerTick(islandLevels[ownedId] || 1) * m);
+                const isl = islandById[ownedId];
+                if (isl && (isl.type === 'temple' || isl.type === 'megaTemple')) sum += Math.round(TEMPLE_TROOP_BONUS_PER_TICK * templeBaseMult(isl) * templeHoldMultiplier(ownedId));
+            }
+            return sum;
         }
         function totalCoinProductionPerTick() {
-            let sum = 0;
-            for (const ownedId of ownedIslands) sum += coinsPerTick(islandLevels[ownedId] || 1);
-            return sum * coinProductionMultiplier();
+            let sum = 0; const m = playerCoinMult();
+            for (const ownedId of ownedIslands) {
+                sum += Math.round(coinsPerTick(islandLevels[ownedId] || 1) * m);
+                const isl = islandById[ownedId];
+                if (isl && (isl.type === 'temple' || isl.type === 'megaTemple')) sum += Math.round(TEMPLE_COIN_BONUS_PER_TICK * templeBaseMult(isl) * templeHoldMultiplier(ownedId));
+            }
+            return sum;
         }
         function updateHud() {
             const troops = totalTroops();
@@ -2621,22 +2627,6 @@ body.has-panel .mapctl{display:none}
             updateHud();
             return item;
         }
-        function itemsBySlotRarity(slot, rarity) {
-            return Object.values(inventory).filter(it => it.slot === slot && it.rarity === rarity && equippedItems[it.slot] !== it.id);
-        }
-        // 3 unequipped items of the same slot+rarity -> 1 new item of the
-        // same slot, one rarity tier up, at level 1.
-        function combineItems(slot, rarity) {
-            if (rarity >= RARITY_DEFS.length - 1) return false;
-            const candidates = itemsBySlotRarity(slot, rarity);
-            if (candidates.length < COMBINE_COUNT) return false;
-            for (let i = 0; i < COMBINE_COUNT; i++) delete inventory[candidates[i].id];
-            addInventoryItem(slot, rarity + 1, 1);
-            saveGame();
-            saveProgression();
-            updateHud();
-            return true;
-        }
         // Combining doesn't need the player to pick anything - the button
         // is just always active whenever 3+ unequipped items of the same
         // slot+rarity exist anywhere in the inventory.
@@ -2661,17 +2651,17 @@ body.has-panel .mapctl{display:none}
                 const groups = {};
                 for (const item of Object.values(inventory)) {
                     if (equippedItems[item.slot] === item.id) continue;
-                    if (item.rarity >= RARITY_DEFS.length - 1) continue;
+                    if (item.rarity >= RARITY_DEFS.length - 1 || (item.stars || 0) > 0) continue;   // starred items are never melted down
                     const key = item.slot + '|' + item.rarity;
                     (groups[key] = groups[key] || []).push(item);
                 }
                 for (const key of Object.keys(groups)) {
-                    const list = groups[key];
+                    const list = groups[key].sort((a, b) => (a.level || 1) - (b.level || 1));   // the weakest go first
                     if (list.length < COMBINE_COUNT) continue;
                     const sepIdx = key.indexOf('|');
                     const slot = key.slice(0, sepIdx);
                     const rarity = parseInt(key.slice(sepIdx + 1), 10);
-                    for (let i = 0; i < COMBINE_COUNT; i++) delete inventory[list[i].id];
+                    for (let i = 0; i < COMBINE_COUNT; i++) { delete inventory[list[i].id]; if (typeof chestSelectedIds !== 'undefined') chestSelectedIds.delete(list[i].id); }
                     addInventoryItem(slot, rarity + 1, 1);
                     totalCombines++;
                     changed = true;
@@ -2715,24 +2705,6 @@ body.has-panel .mapctl{display:none}
             }
             return total;
         }
-        // Combines exactly the 3 selected items (rather than "any 3
-        // matching" like combineItems) - used by the multi-select UI, where
-        // the player picked specific tiles.
-        function combineSelectedItems(itemIds) {
-            if (itemIds.length !== COMBINE_COUNT) return false;
-            const items = itemIds.map(id => inventory[id]).filter(Boolean);
-            if (items.length !== COMBINE_COUNT) return false;
-            const slot = items[0].slot, rarity = items[0].rarity;
-            if (rarity >= RARITY_DEFS.length - 1) return false;
-            const allMatch = items.every(it => it.slot === slot && it.rarity === rarity && equippedItems[it.slot] !== it.id);
-            if (!allMatch) return false;
-            for (const it of items) delete inventory[it.id];
-            addInventoryItem(slot, rarity + 1, 1);
-            saveGame();
-            saveProgression();
-            updateHud();
-            return true;
-        }
         function levelUpItem(itemId) {
             const item = inventory[itemId];
             if (!item || item.level >= ITEM_MAX_LEVEL) return false;
@@ -2747,6 +2719,7 @@ body.has-panel .mapctl{display:none}
             const item = inventory[itemId];
             if (!item) return;
             equippedItems[item.slot] = itemId;
+            if (typeof chestSelectedIds !== 'undefined') chestSelectedIds.delete(itemId);
             saveGame();
             saveProgression();
             updateHud();
@@ -3128,11 +3101,11 @@ body.has-panel .mapctl{display:none}
                 type: 'scout',
                 sourceId: scout.sourceId,
                 targetId: scout.targetId,
-                troops: target.neutralTroops,
-                defense: target.neutralDefense
+                troops: effectiveTroops(target),
+                defense: effectiveDefense(target)
             });
-            flashHint(islandTitle(target) + ' gespäht: ' + fmtNum(target.neutralTroops) +
-                ' Truppen, ' + fmtNum(target.neutralDefense) + ' Verteidigung.', 4000);
+            flashHint(islandTitle(target) + ' gespäht: ' + fmtNum(effectiveTroops(target)) +
+                ' Truppen, ' + fmtNum(effectiveDefense(target)) + ' Verteidigung.', 4000);
         }
 
         function resolveAttack(attack) {
@@ -3219,7 +3192,7 @@ body.has-panel .mapctl{display:none}
             }
             // XP for troops that died in the clash either way: a win kills
             // the whole enemy force, a loss costs your whole attack force
-            addXp(won ? totalStrength : myTroops);
+            addXp(won ? totalStrength : defenderCasualties);
             if (attack.hero) heroGainXp(attack.hero, won ? totalStrength : defenderCasualties);
             scoutedIslands.add(target.id);
             const ribbon = () => spawnBattleFx(target.id, won, won ? (bossHere ? 'Boss besiegt' : 'Sieg') : 'Niederlage', won ? islandTitle(target) + ' erobert' : '−' + fmtCompact(myTroops) + ' Truppen');
@@ -3253,7 +3226,7 @@ body.has-panel .mapctl{display:none}
                 enemyTroops: originalEnemyTroops,
                 enemyDefense: originalEnemyDefense,
                 defenseBuff: 0,
-                defenseGoldRate: 0,
+                defenseGoldRate: (skills.defenseGold || 0) * SKILL_DEFS.defenseGold.rate,
                 defenderCasualties,
                 retreatSurvivors,
                 defenderName: targetOwner ? botById[targetOwner].name : null,
@@ -3267,6 +3240,10 @@ body.has-panel .mapctl{display:none}
         }
 
         function resolveRetreat(retreat) {
+            if (!ownedIslands.has(retreat.toId)) {          // home fell while they walked back: they go to a base that's still ours
+                const home = rewardBaseId(); if (home === null || home === undefined || !islandById[home]) return;
+                retreat.toId = home;
+            }
             const target = islandById[retreat.toId];
             if (!target) return;
             islandTroops[retreat.toId] = (islandTroops[retreat.toId] || 0) + retreat.troops;
@@ -3304,7 +3281,7 @@ body.has-panel .mapctl{display:none}
             const originalEnemyDefense = effectiveDefense(target);
             const totalStrength = originalEnemyTroops + originalEnemyDefense;
             const won = myTroops > totalStrength;
-            addBotXp(bot.id, won ? totalStrength : myTroops);
+            addBotXp(bot.id, won ? totalStrength : Math.min(originalEnemyTroops, myTroops));
             const playerInvolved = targetOwner === 'player';
             const bossHere = bossAt(target.id);
 
@@ -3342,11 +3319,15 @@ body.has-panel .mapctl{display:none}
             updateHud();
             if (bossHere && won) { spawnBattleFx(target.id, false, bossHere.name + ' gefallen', bot.name); (bossHere.wander ? endWander : endBoss)(bot.name + ' hat ' + bossHere.name + ' besiegt!'); }
 
-            let defWounded = 0;
+            let defWounded = 0, defGold = 0;
+            if (playerInvolved && !won) {                                  // "Verteidigung: Gold": every attacker your garrison kills pays out
+                defGold = Math.round(myTroops * (skills.defenseGold || 0) * SKILL_DEFS.defenseGold.rate);
+                if (defGold > 0) coins += defGold;
+            }
             if (playerInvolved) defWounded = hospitalTake(won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops));   // your fallen defenders
             if (playerInvolved) {
                 const ribbon = () => spawnBattleFx(target.id, !won || capitalHolds, capitalHolds ? 'Hauptstadt hält' : won ? 'Basis verloren' : 'Verteidigt', capitalHolds ? 'Garnison gefallen' : won ? 'von ' + bot.name : bot.name + ' abgewehrt');
-                finishMapBattle(attack, { sourceId: source.id, targetId: target.id, atk: 'bot', def: 'mine', my: myTroops, myLoss: won ? Math.min(myTroops, originalEnemyDefense) : myTroops,
+                finishMapBattle(attack, { sourceId: source.id, targetId: target.id, atk: 'bot', def: 'mine', my: myTroops, myLoss: won ? Math.min(myTroops, Math.round(originalEnemyDefense * (1 - botMults(bot.id).shield / 100))) : myTroops,
                         en: originalEnemyTroops, enLoss: won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops), won, onEnd: ribbon });
                 // Only reveals the target to the player when the player was
                 // actually part of this fight - a bot conquering a neutral
@@ -3363,7 +3344,9 @@ body.has-panel .mapctl{display:none}
                     wounded: defWounded,
                     armor: defenseBonusFlat(),
                     fallen: won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops),
-                    won
+                    won,
+                    capitalHolds,
+                    defGold
                 });
                 flashHint((capitalHolds
                     ? bot.name + ' hat deine Hauptstadt geplündert – die Garnison ist gefallen, aber die Stadt hält.'
@@ -3389,7 +3372,6 @@ body.has-panel .mapctl{display:none}
         // ===== MAP RENDERER (verified in the running game; see spec §5) =====
         var viewW = innerWidth, viewH = innerHeight;           // CSS px; written ONLY by sizeBackingStore() (§6) so a resize still knows the old centre.
                                                               // `var` on purpose: sizeBackingStore() already runs at boot, before this block.
-        const setWorld  = g => g.setTransform(dpr * mapState.zoom, 0, 0, dpr * mapState.zoom, dpr * mapState.offsetX, dpr * mapState.offsetY);
         const setScreen = g => g.setTransform(dpr, 0, 0, dpr, 0, 0);
         const toSX = x => x * mapState.zoom + mapState.offsetX, toSY = y => y * mapState.zoom + mapState.offsetY;
 
@@ -3616,11 +3598,6 @@ body.has-panel .mapctl{display:none}
         }
         const WARM = document.createElement('canvas'); WARM.width = WARM.height = 1; const WARMG = WARM.getContext('2d');
         function bgWarm(T) { WARMG.clearRect(0, 0, 1, 1); WARMG.drawImage(T.c, 0, 0, 1, 1); T.drawn = true; }   // rasterise a tile now, not at its first blit
-        function renderBackground(z) {                 // synchronous: a new generation with every visible tile (boot, resize, jumps)
-          const gen = bgShow(bgGen(z));
-          for (const m of bgMissing(gen, 0)) renderTile(gen, m.tx, m.ty);
-          BG.valid = true;
-        }
         function bgOverview() {                        // whole-world land for gaps (transparent sea, no territory), painted at idle in slices, once per dpr:
           let O = BG.over;                             // c = land without grass / forests (far zoom), d = with them (mid / near zoom)
           if (O && O.dpr === dpr && O.done) return O;
@@ -3921,32 +3898,6 @@ body.has-panel .mapctl{display:none}
             for (const cx of [-25, 25]) { cyl(cx, -6, 15, 5.5); crenel(cx, -6, 5.5); cone(cx, -9, 5, 11, roofC); }                   // front towers
             if (tier === 4) { for (const [cx, cy] of [[25, -21], [2.5, -47.5]]) { g.fillStyle = '#ffe9a0'; g.beginPath(); g.arc(cx, cy, 1.8, 0, Math.PI * 2); g.fill(); g.lineWidth = .6; g.strokeStyle = ink; g.stroke(); } }
             flag(-25, -20, 8, 11);
-          }
-        }
-        function paintTower(g, ownerKey, detail, home) {
-          const ink = '#26221d', neutral = ownerKey === 'neutral';
-          const stoneA = neutral ? '#cbc5b8' : '#e3dccd', stoneB = neutral ? '#85806f' : '#958d7d';
-          g.fillStyle = '#4b473f'; rr(g, -19, 13, 38, 8, 2); g.fill(); g.strokeStyle = ink; g.lineWidth = 1.1; g.stroke();          // footing (no ground shadow)
-          if (detail) { g.strokeStyle = 'rgba(255,245,220,.22)'; g.lineWidth = 1; g.beginPath(); g.moveTo(-17, 14.2); g.lineTo(17, 14.2); g.stroke(); }
-          const b = g.createLinearGradient(-14, 0, 14, 0); b.addColorStop(0, stoneA); b.addColorStop(.5, stoneA); b.addColorStop(1, stoneB);
-          g.beginPath(); g.moveTo(-14, 13); g.lineTo(-12.5, -11); g.lineTo(12.5, -11); g.lineTo(14, 13); g.closePath(); g.fillStyle = b; g.fill();
-          g.lineWidth = 1.3; g.strokeStyle = ink; g.stroke();                                                                         // body, light from the left
-          if (detail) { g.strokeStyle = 'rgba(40,34,26,.18)'; g.lineWidth = .9; g.beginPath();
-            for (const yy of [-4, 3, 9]) { g.moveTo(-13, yy); g.lineTo(13, yy); }
-            g.moveTo(-5, -4); g.lineTo(-5, 3); g.moveTo(6, -4); g.lineTo(6, 3); g.moveTo(0, 3); g.lineTo(0, 9); g.stroke(); }          // masonry
-          g.fillStyle = BAND[ownerKey]; g.fillRect(-12.6, -11, 25.2, 3.6);                                                            // owner band
-          const p = g.createLinearGradient(-17, 0, 17, 0); p.addColorStop(0, neutral ? '#d6d0c3' : '#efe8da'); p.addColorStop(1, neutral ? '#8f8a7c' : '#a49c8b');
-          g.beginPath(); g.moveTo(-16.5, -11); g.lineTo(-16.5, -22);
-          const mx = [-16.5, -7.6, 1.3, 10.2];
-          for (let i = 0; i < 4; i++) { g.lineTo(mx[i], -22); g.lineTo(mx[i] + 6.3, -22); g.lineTo(mx[i] + 6.3, -17); if (i < 3) g.lineTo(mx[i + 1], -17); }
-          g.lineTo(16.5, -11); g.closePath(); g.fillStyle = p; g.fill(); g.lineWidth = 1.3; g.strokeStyle = ink; g.stroke();          // parapet + 4 merlons
-          g.fillStyle = '#231e19'; g.beginPath(); g.moveTo(-4.4, 13); g.lineTo(-4.4, 6.5); g.arc(0, 6.5, 4.4, Math.PI, 0); g.lineTo(4.4, 13); g.closePath(); g.fill();   // arched door
-          if (detail) { g.beginPath(); g.moveTo(-1.2, -1); g.lineTo(-1.2, -5); g.arc(0, -5, 1.2, Math.PI, 0); g.lineTo(1.2, -1); g.closePath(); g.fill(); }  // window slit
-          if (!neutral) {                                                                                                             // pennant: owned only, so neutrals recede
-            g.strokeStyle = '#2b2622'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(0, -22); g.lineTo(0, -40); g.stroke();
-            g.beginPath(); g.moveTo(.8, -40); g.lineTo(15, -37.6); g.lineTo(10.8, -34.4); g.lineTo(15, -31.2); g.lineTo(.8, -29.6); g.closePath();
-            g.fillStyle = BAND[ownerKey]; g.fill(); g.lineWidth = 1; g.strokeStyle = 'rgba(20,16,12,.8)'; g.stroke();
-            if (home) { g.fillStyle = '#e8c877'; g.beginPath(); g.arc(0, -41.5, 2.2, 0, Math.PI * 2); g.fill(); g.strokeStyle = ink; g.lineWidth = .8; g.stroke(); }  // gold finial = Heimat
           }
         }
 
@@ -5225,7 +5176,6 @@ body.has-panel .mapctl{display:none}
         // tick, not just as a fallback when there's nothing to attack -
         // otherwise a bot with endless nearby neutral fodder would attack
         // forever and never spend a single coin on leveling up.
-        const BOT_ATTACK_SAFETY_MARGIN = 1.15;
         const BOT_MIN_GARRISON_TO_ATTACK = 10;
         function botThink(bot) {
             const owned = botOwnedIslands[bot.id];
@@ -5667,8 +5617,7 @@ body.has-panel .mapctl{display:none}
         // "Verteidigung: Gold" + "Angriff: Gold": coins earned per enemy
         // troop killed in a won attack (all of the target's troops+defense).
         function goldPerKillRate() {
-            return (skills.defenseGold || 0) * SKILL_DEFS.defenseGold.rate +
-                (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate;
+            return (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate;
         }
         // "Geschwindigkeit" skill: shortens the production tick interval.
         function productionTickMs() {
@@ -5943,7 +5892,7 @@ body.has-panel .mapctl{display:none}
             chestInventoryGrid.classList.toggle('has-selection', chestSelectedIds.size > 0);
 
             chestSelectionBar.style.display = items.length === 0 ? 'none' : 'block';
-            const selected = [...chestSelectedIds].map(id => inventory[id]).filter(Boolean);
+            const selected = [...chestSelectedIds].map(id => inventory[id]).filter(it => it && equippedItems[it.slot] !== it.id);
             // The label is only ever about the Verkaufen selection now -
             // Kombinieren doesn't need anything picked, so there's nothing
             // to prompt for when the selection is empty.
@@ -5980,7 +5929,7 @@ body.has-panel .mapctl{display:none}
         }
 
         chestSelectSellBtn.addEventListener('click', () => {
-            const ids = [...chestSelectedIds];
+            const ids = [...chestSelectedIds].filter(id => inventory[id] && equippedItems[inventory[id].slot] !== id);
             const points = salvageItems(ids);
             chestSelectedIds.clear();
             if (points > 0) showChestFlash(ids.length + ' verkauft für ' + fmtNum(points) + (points === 1 ? ' Punkt' : ' Punkte'));
@@ -6345,8 +6294,11 @@ body.has-panel .mapctl{display:none}
                             '</div>' +
                         '</div>' +
                         (entry.wounded ? '<div class="logRetreat logWounded">' + fmtNum(entry.wounded) + ' Verwundete gehen ins Lazarett – heile sie in der Stadt</div>' : '') +
+                        (entry.defGold ? '<div class="logGold">Verteidigung: Gold +' + fmtNum(entry.defGold) + ' Münzen</div>' : '') +
                         '</details>';
-                    return entry.won
+                    return entry.capitalHolds
+                        ? logRowHtml('loss', 'bot', 'Geplündert · ' + T(entry.targetId), escapeHtml(entry.botName) + ' hat die Garnison geschlagen – die Stadt hält' + vs, ago(entry), bdet)
+                        : entry.won
                         ? logRowHtml('loss', 'bot', 'Verloren · ' + T(entry.targetId), escapeHtml(entry.botName) + ' hat die Basis erobert' + vs, ago(entry), bdet)
                         : logRowHtml('win', 'shield', 'Verteidigt · ' + T(entry.targetId), escapeHtml(entry.botName) + ' zurückgeschlagen' + vs, ago(entry), bdet);
                 }
@@ -6734,9 +6686,7 @@ body.has-panel .mapctl{display:none}
                 ticks++;
             }
             if (ticks > 0) {
-                const ruler = rulerOwner();
-                const coinMult = coinProductionMultiplier() * (ruler === 'player' ? RULER_BONUS : 1) * titleMult('player', 'coins');
-                const troopMult = troopProductionMultiplier() * (ruler === 'player' ? RULER_BONUS : 1) * titleMult('player', 'troops');
+                const ruler = rulerOwner(), coinMult = playerCoinMult(), troopMult = playerTroopMult();
                 for (const ownedId of ownedIslands) {
                     const level = islandLevels[ownedId] || 1;
                     coins += Math.round(coinsPerTick(level) * coinMult) * ticks;
@@ -6811,18 +6761,6 @@ body.has-panel .mapctl{display:none}
             if (ms) hintResetTimer = setTimeout(() => { hintEl.textContent = defaultHint; }, ms);
         }
         // ===== FOG + PASSES (drawing) =====
-        var FOG_PUFF = null;
-        function fogPuff() {                               // soft, low-contrast haze blob (deterministic)
-            if (FOG_PUFF) return FOG_PUFF;
-            const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'), r = mulberry32(4711);
-            for (let i = 0; i < 6; i++) {
-                const px = 44 + r() * 40, py = 44 + r() * 40, rad = 30 + r() * 22;
-                const g2 = x.createRadialGradient(px, py, 0, px, py, rad);
-                g2.addColorStop(0, 'rgba(150,162,182,.34)'); g2.addColorStop(0.6, 'rgba(112,124,146,.18)'); g2.addColorStop(1, 'rgba(90,100,120,0)');
-                x.fillStyle = g2; x.fillRect(0, 0, 128, 128);
-            }
-            return FOG_PUFF = c;
-        }
         function drawWorldFrame() {                        // the square map border: darker sea outside, a framed edge with corner marks
             const z = mapState.zoom, ox = mapState.offsetX, oy = mapState.offsetY;
             const l = -FRAME_HALF * z + ox, t = -FRAME_HALF * z + oy, r = FRAME_HALF * z + ox, b = FRAME_HALF * z + oy;
@@ -7059,6 +6997,7 @@ body.has-panel .mapctl{display:none}
             for (const b of mapBattles.slice()) {
                 const rt = now - b.born, t = b.final ? mbT(b, now) : Math.min(MB_HOLD, mbT(b, now));   // choreography runs slowed down, motion cycles in real time
                 if (t > MB_MS) { b.done = true; mapBattles.splice(mapBattles.indexOf(b), 1); if (b.onEnd) b.onEnd(); continue; }
+                if (!b.final && b.attackId && !pendingAttacks.some(a => a.id === b.attackId)) { mapBattles.splice(mapBattles.indexOf(b), 1); continue; }   // its attack was resolved without a finish (base changed hands mid-fight)
                 const tx = b.x * z + mapState.offsetX, ty = b.y * z + mapState.offsetY;
                 if (tx < -120 || ty < -120 || tx > viewW + 120 || ty > viewH + 120) continue;
                 if (!near) {                                 // far out: a pulsing crossed-swords marker at the base
@@ -7547,7 +7486,12 @@ body.has-panel .mapctl{display:none}
             const tgt = islandById[wander.to], from = wander.from; if (!tgt) return endWander(null);
             const owner = islandOwnerOf(tgt.id), en = effectiveTroops(tgt), def = effectiveDefense(tgt), my = wander.troops, won = my > en + def;
             if (owner === 'player' && playerShielded()) { Object.assign(wander, { at: from, to: null, campUntil: now + 20000 }); saveWander(); return; }
-            if (won) {
+            const capitalHolds = won && isCapital(tgt.id);          // capitals are never razed: only the garrison falls and he pulls back
+            if (capitalHolds) {
+                islandTroops[tgt.id] = 0;
+                wander.troops = Math.max(1, Math.round(my - def * .6 - en * .3));
+                Object.assign(wander, { at: from, to: null, campUntil: now + 45000 });
+            } else if (won) {
                 if (owner) clearIslandOwner(tgt.id);
                 islandTroops[tgt.id] = 0; tgt.neutralTroops = 0; neutralTroopOverrides[tgt.id] = 0;
                 wander.troops = Math.max(1, Math.round(my - def * .6 - en * .3));
@@ -7562,9 +7506,11 @@ body.has-panel .mapctl{display:none}
             if (owner === 'player') {
                 scoutedIslands.add(tgt.id);
                 const name = wander.name;
-                spawnMapBattle({ sourceId: from, targetId: tgt.id, atk: 'boss', def: 'mine', my, myLoss: won ? Math.min(my, def) : my - wander.troops, en, enLoss: won ? en : Math.min(en, my), won,
-                    onEnd: () => spawnBattleFx(tgt.id, !won, won ? 'Basis verloren' : 'Verteidigt', won ? 'von ' + name : name + ' abgewehrt') });
-                flashHint(won ? name + ' hat deine Basis ' + islandTitle(tgt) + ' zerstört!' : 'Verteidigt! ' + name + ' wurde bei ' + islandTitle(tgt) + ' zurückgeschlagen.', 5000);
+                const fallen = won ? en : Math.min(en, my), wounded = hospitalTake(fallen);
+                spawnMapBattle({ sourceId: from, targetId: tgt.id, atk: 'boss', def: 'mine', my, myLoss: my - wander.troops, en, enLoss: fallen, won,
+                    onEnd: () => spawnBattleFx(tgt.id, !won || capitalHolds, capitalHolds ? 'Hauptstadt hält' : won ? 'Basis verloren' : 'Verteidigt', capitalHolds ? 'Garnison gefallen' : won ? 'von ' + name : name + ' abgewehrt') });
+                addCombatLogEntry({ type: 'botAttack', botName: name, targetId: tgt.id, myTroops: my, enemyTroops: en, enemyDefense: def, wounded, armor: defenseBonusFlat(), fallen, won, capitalHolds });
+                flashHint((capitalHolds ? name + ' hat die Garnison deiner Hauptstadt geschlagen – die Stadt hält.' : won ? name + ' hat deine Basis ' + islandTitle(tgt) + ' zerstört!' : 'Verteidigt! ' + name + ' wurde bei ' + islandTitle(tgt) + ' zurückgeschlagen.') + (wounded ? ' ' + fmtCompact(wounded) + ' Verwundete ins Lazarett.' : ''), 5000);
             }
             if (wander.troops <= 0) return endWander(wander.name + ' ist zerschlagen.');
             updateHud(); saveGame(); saveWander(); requestRender();
@@ -7690,6 +7636,7 @@ body.has-panel .mapctl{display:none}
               desc: 'Hier leben deine Helden. Ein Held zieht mit einem Angriff mit und gibt ihm seinen Bonus. Jede Stufe hebt die Höchststufe der Helden um 2; Stufe 1, 5 und 10 schalten je einen Helden frei.' }
         ];
         var CITY_MAX_LEVEL = 25, CITY_GEMS_PER_MIN = 1;
+        function cityMaxLevel(id) { return id === 'forge' ? 10 : CITY_MAX_LEVEL; }   // the Schmiede stops at 10 stars
         var cityState = null;
         function loadCity() {
             if (cityState) return cityState;
@@ -7715,7 +7662,7 @@ body.has-panel .mapctl{display:none}
         }
         function cityBlocker(id) {                        // why this building can't be upgraded right now (or null)
             const c = loadCity(), lvl = c.levels[id];
-            if (lvl >= CITY_MAX_LEVEL) return 'Maximale Stufe erreicht.';
+            if (lvl >= cityMaxLevel(id)) return 'Maximale Stufe erreicht.';
             if (c.build) return c.build.id === id ? 'Wird gerade gebaut.' : 'Der Bauarbeiter ist beschäftigt (' + cityDef(c.build.id).name + ').';
             return null;
         }
@@ -7727,7 +7674,7 @@ body.has-panel .mapctl{display:none}
             coins -= cost;
             c.build = { id, to: lvl + 1, startedAt: Date.now(), endsAt: Date.now() + cityTimeSec(id, lvl) * 1000 };
             saveCity(); saveGame(); updateHud();
-            renderCitySheet(); cityDirty = true;
+            renderCitySheet();
         }
         function citySpeedCost() {
             const c = loadCity(); if (!c.build) return 0;
@@ -7738,7 +7685,7 @@ body.has-panel .mapctl{display:none}
             const def = cityDef(c.build.id);
             c.levels[c.build.id] = c.build.to;
             const to = c.build.to; c.build = null;
-            saveCity(); cityDirty = true;
+            saveCity();
             if (announce) flashHint(def.name + ' ist fertig – jetzt Stufe ' + to + '.', 3000);
             if (cityOpenId) renderCitySheet();
             updateCityBuilder();
@@ -7751,7 +7698,7 @@ body.has-panel .mapctl{display:none}
         setInterval(cityTick, 1000);
 
         // --- view ---
-        var cityPan = 0, cityDrag = null, cityOpenId = null, cityDirty = true, cityRaf = 0, cityHitRects = [], cityFit = { s: 1, ox: 0, oy: 0 };
+        var cityPan = 0, cityDrag = null, cityOpenId = null, cityRaf = 0, cityHitRects = [], cityFit = { s: 1, ox: 0, oy: 0 };
         const cityView = document.getElementById('cityView'), cityCanvas = document.getElementById('cityCanvas'), cityCtx = cityCanvas.getContext('2d');
         function openCity() {
             loadCity();
@@ -7760,7 +7707,7 @@ body.has-panel .mapctl{display:none}
             cityView.hidden = false;
             cityOpenId = null; document.getElementById('citySheet').hidden = true;
             updateCityBuilder();
-            cityDirty = true;
+           
             cancelAnimationFrame(cityRaf); cityRaf = requestAnimationFrame(cityFrame);
         }
         function closeCity() {
@@ -7826,7 +7773,7 @@ body.has-panel .mapctl{display:none}
             document.getElementById('cityBIcon').innerHTML = icon(def.icon);
             document.getElementById('cityBOver').textContent = 'Gebäude';
             document.getElementById('cityBName').textContent = def.name;
-            document.getElementById('cityBLevel').textContent = lvl ? 'Stufe ' + lvl + ' / ' + CITY_MAX_LEVEL : 'Noch nicht gebaut';
+            document.getElementById('cityBLevel').textContent = lvl ? 'Stufe ' + lvl + ' / ' + cityMaxLevel(id) : 'Noch nicht gebaut';
             document.getElementById('cityBDesc').textContent = def.desc;
             const note = document.getElementById('cityBNote'), up = document.getElementById('cityUpgradeBtn'), sp = document.getElementById('citySpeedBtn');
             const building = c.build && c.build.id === id, blocker = cityBlocker(id);
@@ -7837,8 +7784,8 @@ body.has-panel .mapctl{display:none}
                 note.className = 'notice';
                 note.innerHTML = icon('info') + '<span>' + (def.fx ? cityEffectText(id, lvl) : 'Die Wirkung dieses Gebäudes kommt in einem späteren Update – ausbauen kannst du es schon jetzt.') + '</span>';
             }
-            const cost = lvl < CITY_MAX_LEVEL ? cityCost(id, lvl) : 0;
-            document.getElementById('cityBStats').innerHTML = lvl < CITY_MAX_LEVEL
+            const cost = lvl < cityMaxLevel(id) ? cityCost(id, lvl) : 0;
+            document.getElementById('cityBStats').innerHTML = lvl < cityMaxLevel(id)
                 ? '<div><span>Kosten</span><b class="' + (coins < cost ? 'is-bad' : '') + '">' + icon('coin', 'icon--coin') + fmtCompact(cost) + '</b></div>' +
                   '<div><span>Bauzeit</span><b>' + icon('hourglass') + fmtDuration(cityTimeSec(id, lvl)) + '</b></div>'
                 : '';
@@ -7984,7 +7931,7 @@ body.has-panel .mapctl{display:none}
         });
         function teleportCapital(toId) {
             const from = playerIslandId, to = islandById[toId];
-            if (!to || !ownedIslands.has(toId) || toId === from || to.type === 'gate') return false;
+            if (!to || !ownedIslands.has(toId) || toId === from || to.type === 'gate' || gems < TELEPORT_GEMS) return false;
             gems -= TELEPORT_GEMS;
             islandTroops[toId] = (islandTroops[toId] || 0) + (islandTroops[from] || 0); islandTroops[from] = 0;   // the garrison moves along
             playerIslandId = toId; store.set('openWaterPlayerIslandId', playerIslandId);
@@ -7996,7 +7943,7 @@ body.has-panel .mapctl{display:none}
             return true;
         }
         document.getElementById('cityCloseBtn').addEventListener('click', closeCity);
-        document.getElementById('citySheetClose').addEventListener('click', () => { cityOpenId = null; document.getElementById('citySheet').hidden = true; cityDirty = true; });
+        document.getElementById('citySheetClose').addEventListener('click', () => { cityOpenId = null; document.getElementById('citySheet').hidden = true; });
         document.getElementById('cityUpgradeBtn').addEventListener('click', () => {
             if (cityOpenId === '_keep') {                  // the capital itself: same price and rule as upgrading it on the map
                 const level = islandLevels[playerIslandId] || 1; if (level >= MAX_BASE_LEVEL) return;
@@ -8024,7 +7971,7 @@ body.has-panel .mapctl{display:none}
             const hit = cityHitRects.find(h => x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h);
             cityOpenId = hit ? hit.id : null;
             if (hit) renderCitySheet(); else document.getElementById('citySheet').hidden = true;
-            cityDirty = true;
+           
         });
 
         // --- drawing (virtual 1000 x 1000 space, fitted to the screen) ---
@@ -8499,7 +8446,6 @@ body.has-panel .mapctl{display:none}
         const multiAttackBtn = document.getElementById('multiAttackBtn');
         const recallBtn = document.getElementById('recallBtn');
         const scoutBtn = document.getElementById('scoutBtn');
-        const confirmBtn = document.getElementById('confirmBtn');
         const backBtn = document.getElementById('backBtn');
         const closeBtn = document.getElementById('closeBtn');
         const multiAttackBar = document.getElementById('multiAttackBar');
@@ -8596,7 +8542,6 @@ body.has-panel .mapctl{display:none}
             multiAttackBtn.style.display = 'none';
             recallBtn.style.display = 'none';
             scoutBtn.style.display = 'none';
-            confirmBtn.style.display = 'none';
             backBtn.style.display = 'none';
         }
 
@@ -8768,40 +8713,26 @@ body.has-panel .mapctl{display:none}
                 popupSub.innerHTML = '<span class="dot dot--player"></span>' + escapeHtml(profileName.value || 'Du') +
                     (island.id === playerIslandId ? sep + 'Heimat' : '');
 
-                if (popupView === 'upgrade') {
-                    const cost = upgradeCost(level);
-                    const row = (l, a, b) => '<span>' + l + '</span><span class="now">' + fmtNum(a) + '</span><span class="arrow">›</span><span class="next">' + fmtNum(b) + '</span>';
-                    popupOverline.textContent = 'Aufwerten';
-                    popupStats.innerHTML = '<div class="upgrade-table">' + row('Stufe', level, level + 1) +
-                        row('Verteidigung', defenseForLevel(level), defenseForLevel(level + 1)) +
-                        row('Münzen / s', coinsPerTick(level), coinsPerTick(level + 1)) +
-                        row('Truppen / s', troopsPerTick(level), troopsPerTick(level + 1)) + '</div>' +
-                        '<div class="cost-line"><span>Kosten</span><b class="' + (coins < cost ? 'is-bad' : '') + '">' + icon('coin') + fmtNum(cost) + '</b></div>';
-                    confirmBtn.style.display = 'inline-block';
-                    confirmBtn.disabled = coins < cost;
-                    backBtn.style.display = 'inline-block';
-                } else {
-                    popupOverline.textContent = island.id === playerIslandId ? 'Deine Hauptstadt · kann nicht angegriffen werden' : isTemple ? 'Dein Tempel' : island.type === 'gate' ? 'Dein Tor · du kassierst die Maut' : 'Deine Basis';
-                    if (island.id === playerIslandId) { document.getElementById('cityBtn').style.display = 'inline-block'; document.getElementById('teleportBtn').style.display = 'inline-block'; }
-                    popupStats.innerHTML = '<div class="stat-grid">' +
-                        statTile('Truppen hier', 'troops', fmtNum(troopsHere)) +
-                        statTile('Verteidigung', 'defense', fmtNum(defenseForLevel(level))) +
-                        statTile('Münzen / s', 'coin', '+' + fmtNum(coinsPerTick(level)), 'is-good') +
-                        statTile('Truppen / s', 'troops', '+' + fmtNum(troopsPerTick(level)), 'is-good') + '</div>' +
-                        (island.type === 'gate' ? gateControlsHtml(island) : '') +
-                        (isTemple ? templeBonusLine(island) : '');
-                    upgradeCostLabel.innerHTML = level >= MAX_BASE_LEVEL ? 'Max. Stufe' : icon('coin', 'icon--coin') + fmtCompact(upgradeCost(level));
-                    popupActions.hidden = false;
-                    upgradeBtn.style.display = 'inline-block';
-                    sendBtn.style.display = 'inline-block';
-                    sendBtn.disabled = troopsHere <= 0 || ownedIslands.size <= 1;
-                    // Testing only - multi-attack is a player-only feature,
-                    // bots never get it.
-                    multiAttackBtn.style.display = 'inline-block';
-                    multiAttackBtn.disabled = troopsHere <= 0 || gems < MULTI_ATTACK_GEM_COST;
-                    recallBtn.style.display = 'inline-block';
-                    recallBtn.disabled = gems < RECALL_GEM_COST || ownedIslands.size <= 1;
-                }
+                popupOverline.textContent = island.id === playerIslandId ? 'Deine Hauptstadt · kann nicht angegriffen werden' : isTemple ? 'Dein Tempel' : island.type === 'gate' ? 'Dein Tor · du kassierst die Maut' : 'Deine Basis';
+                if (island.id === playerIslandId) { document.getElementById('cityBtn').style.display = 'inline-block'; document.getElementById('teleportBtn').style.display = 'inline-block'; }
+                popupStats.innerHTML = '<div class="stat-grid">' +
+                    statTile('Truppen hier', 'troops', fmtNum(troopsHere)) +
+                    statTile('Verteidigung', 'defense', fmtNum(defenseForLevel(level))) +
+                    statTile('Münzen / s', 'coin', '+' + fmtNum(Math.round(Math.round(coinsPerTick(level) * playerCoinMult()) * 1000 / productionTickMs())), 'is-good') +
+                    statTile('Truppen / s', 'troops', '+' + fmtNum(Math.round(Math.round(troopsPerTick(level) * playerTroopMult()) * 1000 / productionTickMs())), 'is-good') + '</div>' +
+                    (island.type === 'gate' ? gateControlsHtml(island) : '') +
+                    (isTemple ? templeBonusLine(island) : '');
+                upgradeCostLabel.innerHTML = level >= MAX_BASE_LEVEL ? 'Max. Stufe' : icon('coin', 'icon--coin') + fmtCompact(upgradeCost(level));
+                popupActions.hidden = false;
+                upgradeBtn.style.display = 'inline-block';
+                sendBtn.style.display = 'inline-block';
+                sendBtn.disabled = troopsHere <= 0 || ownedIslands.size <= 1;
+                // Testing only - multi-attack is a player-only feature,
+                // bots never get it.
+                multiAttackBtn.style.display = 'inline-block';
+                multiAttackBtn.disabled = troopsHere <= 0 || gems < MULTI_ATTACK_GEM_COST;
+                recallBtn.style.display = 'inline-block';
+                recallBtn.disabled = gems < RECALL_GEM_COST || ownedIslands.size <= 1;
             } else {
                 const scouted = scoutedIslands.has(island.id);
                 popupSub.innerHTML = '<span class="dot dot--' + (bossAt(island.id) ? 'enemy' : kind) + '"></span>' + (bossAt(island.id) ? 'Boss' : ownerBot ? escapeHtml(ownerBot.name) + ' · Stufe ' + loadBotState()[ownerBot.id].lvl + (botOnline(ownerBot, Date.now()) ? ' · online' : ' · offline') +
@@ -8857,7 +8788,7 @@ body.has-panel .mapctl{display:none}
             popupOverline.textContent = 'Angriff vorbereiten';
             // source + march time live in the header subline (frees the body on short screens)
             popupSub.innerHTML = '<span id="previewToll" style="display:contents"></span>' + icon('defense') + '<span>Von ' + islandTitle(source) + '</span><span class="sep"></span>' +
-                icon('hourglass') + '<span><span class="xs-hide">Marsch ca. </span><span class="num">' + fmtClock(travelDurationSeconds(source, island)) + '</span></span>';
+                icon('hourglass') + '<span><span class="xs-hide">Marsch ca. </span><span class="num" id="previewMarch">' + fmtClock(travelDurationSeconds(source, island)) + '</span></span>';
             if (popupStats.dataset.preview !== key || !document.getElementById('attackTroopsSlider')) {
                 popupStats.dataset.preview = key;
                 popupStats.innerHTML =
@@ -8914,7 +8845,8 @@ body.has-panel .mapctl{display:none}
             const atkBonus = attackFlatBonus(shown) + (previewHero === 'sigrun' ? Math.round(shown * heroBonus('sigrun') / 100) : 0);
             const mine = shown + atkBonus;
             const bEl = popupStats.querySelector('#previewAtkBonus'); if (bEl) bEl.textContent = fmtNum(atkBonus);
-            const src = islandById[previewSourceId], tEl = popupSub.querySelector('#previewToll');
+            const src = islandById[previewSourceId], tEl = popupSub.querySelector('#previewToll'), mEl = popupSub.querySelector('#previewMarch');
+            if (mEl && src) mEl.textContent = fmtClock(travelDurationSeconds(src, island) / (previewHero === 'ida' ? 1 + heroBonus('ida') / 100 : 1));   // Ida marches faster
             if (tEl && src) { const hop = lastHop(src.landmassId, island.landmassId, 'player'), t = tollFor(hop[0], hop[1], shown, 'player', island.id);
                 tEl.innerHTML = t.closed ? '<span class="sep"></span>' + icon('lock') + '<span>Tor geschlossen</span>' : t.cost ? '<span class="sep"></span>' + icon('coin') + '<span>Maut <span class="num">' + fmtCompact(t.cost) + '</span></span>' : ''; }
             document.getElementById('previewMyTroops').textContent = fmtNum(mine);
@@ -9004,19 +8936,6 @@ body.has-panel .mapctl{display:none}
                 flashHint('Wähle die Basis, von der aus du angreifst – tippe sie auf der Karte an.');
                 return;
             }
-            popupView = 'menu';
-            renderPopup();
-        });
-
-        confirmBtn.addEventListener('click', () => {
-            if (popupIslandId === null || popupView !== 'upgrade') return;
-            const level = islandLevels[popupIslandId] || 1;
-            const cost = upgradeCost(level);
-            if (coins < cost) return;
-            coins -= cost;
-            islandLevels[popupIslandId] = Math.min(MAX_BASE_LEVEL, level + 1);
-            updateHud();
-            saveGame();
             popupView = 'menu';
             renderPopup();
         });
@@ -9113,8 +9032,8 @@ body.has-panel .mapctl{display:none}
             let target = null, bd = Infinity;
             for (const i of islandsByLandmass[lm.id] || []) { const d = Math.hypot(i.x - f.x, i.y - f.y); if (d < bd) { bd = d; target = i; } }
             if (!target) return;
-            const home = islandById[nearestOwnedIslandTo(f)];
-            fogPrompt = { x: f.x, y: f.y, targetId: target.id, secs: home ? travelDurationSeconds(home, f) : 0, at: performance.now() };
+            const home = islandById[nearestOwnedIslandTo(target)];          // same source and route launchScout will use
+            fogPrompt = { x: f.x, y: f.y, targetId: target.id, secs: home ? travelDurationSeconds(home, target) : 0, at: performance.now() };
             requestRender();
         }
         function fogPromptHit(sx, sy) {                   // → 'go' (the button), 'off' (elsewhere)
@@ -9126,7 +9045,7 @@ body.has-panel .mapctl{display:none}
             if (teleportMode) {
                 teleportMode = false; requestRender();
                 const isl = pickIslandAtScreen(screenX, screenY);
-                if (isl && ownedIslands.has(isl.id) && isl.id !== playerIslandId && isl.type !== 'gate') teleportCapital(isl.id);
+                if (isl && ownedIslands.has(isl.id) && isl.id !== playerIslandId && isl.type !== 'gate') { if (!teleportCapital(isl.id)) flashHint('Nicht genug Edelsteine zum Verlegen.', 2500); }
                 else flashHint('Verlegen abgebrochen.', 2000);
                 return;
             }
