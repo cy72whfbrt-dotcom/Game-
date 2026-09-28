@@ -59,11 +59,6 @@
         <button type="button" id="vMitte" data-v="mitte" class="on">Mitte</button>
         <button type="button" id="vWelt" data-v="welt">Ganze Welt</button>
       </div>
-      <div class="seg" id="laySeg" role="group" aria-label="Verteilung der Basen">
-        <button type="button" id="lDorf" data-l="doerfer" class="on">Dörfer</button>
-        <button type="button" id="lRaster" data-l="raster">Raster</button>
-        <button type="button" id="lRinge" data-l="ringe">Ringe</button>
-      </div>
     </div>
   </header>
 
@@ -93,7 +88,7 @@
     </div>
     <div class="note">
       <h2>Basen ordentlich verteilt</h2>
-      <p>Jedes Gebiet hat <b>Wege von der Mitte zu seinen Toren</b>, die Basen stehen daneben statt wild durcheinander. Oben umschalten: <b>Dörfer</b> (kleine Gruppen um einen Platz), <b>Raster</b> (gleichmäßig) oder <b>Ringe</b> (um die Mitte des Gebiets). Hineinzoomen, um die Wege zu sehen.</p>
+      <p>Die Basen sind <b>gleichmäßig über das ganze Gebiet verteilt</b>: jede hat denselben Mindestabstand zu ihren Nachbarn. So gibt es <b>keine großen Lücken</b> mehr und <b>keine Basen ineinander</b>. Um Tempel und Tore bleibt etwas Platz frei.</p>
     </div>
     <div class="note">
       <h2>Laden ohne Hänger</h2>
@@ -289,7 +284,7 @@ function drawGatehouse(g, cx, cy, H, open) {      // front view like the towers:
 // ---------------- world model ----------------
 const S = 1000, HALF = 7, RIVER = 70;                 // 15 × 15 cells, rivers between them
 const rng = seed => () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
-let view = 'mitte', layout = 'doerfer';
+let view = 'mitte';
 let regions = [], things = [], roads = [], walls = [], bridges = [];
 
 const ringOf = (q, r) => Math.max(Math.abs(q), Math.abs(r));
@@ -331,19 +326,16 @@ function build() {
   regions.push({ kind: 'throne', rect: rc, name: 'Thron-Gebiet', desc: 'Nur der Haupttempel und seine Wachen. Hinein nur über die 4 Thron-Tore.' });
   roads.push({ plaza: 240 });
   things.push({ kind: 'mega', x: 0, y: 0, size: 440, name: 'Haupttempel', desc: 'Die Mitte der Welt. Wer ihn hält, herrscht. 8-facher Tempel-Bonus.' });
-  regionPaths(rc, 240);
   scatter(rc, 8, 4, R, p => Math.hypot(p.x, p.y) > 330, 'Zitadelle');
   for (const [cq, cr, nm] of CORNERS) {
     const c = cellRect(cq, cr, cq, cr);
     regions.push({ kind: 'ring', rect: c, name: 'Wächter-Gebiet ' + nm, desc: 'Eck-Gebiet mit einem Wächter-Tempel.' });
     things.push({ kind: 'guardian', x: cq * S, y: cr * S + 40, size: 290, name: 'Wächter-Tempel ' + nm, desc: 'Einer der vier Eck-Tempel. 3-facher Tempel-Bonus.' });
-    regionPaths(c, 0);
     scatter(c, 18, 3, R, p => Math.hypot(p.x - cq * S, p.y - cr * S) > 260, 'Burg');
   }
   for (const [sq, sr, nm] of SIDES) {
     const c = cellRect(sq, sr, sq, sr);
     regions.push({ kind: 'ring', rect: c, name: 'Vorhof ' + nm, desc: 'Zwischen zwei Wächter-Gebieten. Von hier geht das Thron-Tor zum Haupttempel.' });
-    regionPaths(c, 0);
     scatter(c, 20, 3, R, () => true, 'Burg');
   }
   // --- everything around it ---
@@ -356,9 +348,9 @@ function build() {
     const hasTemple = belt && (q + r) % 2 === 0;
     if (hasTemple) { temples++; things.push({ kind: 'temple', x: q * S, y: r * S + 30, size: 210, name: 'Tempel', desc: 'Normaler Tempel. Nur im mittleren Gürtel und nur in jedem zweiten Gebiet.' }); }
     const tier = ring >= 6 ? 0 : ring >= 4 ? 1 : ring >= 3 ? 2 : 3;
-    regionPaths(c, 0);
     scatter(c, 22, tier, R, p => Math.hypot(p.x - q * S, p.y - r * S) > (hasTemple ? 200 : 60), ['Lager', 'Rundturm', 'Bergfried', 'Burg', 'Zitadelle'][tier]);
   }
+  things = things.filter(t => t.kind !== 'tower' || Math.hypot(t.x + 6 * S, t.y - 6 * S + 60) > 150);   // room for the example capital
   things.push({ kind: 'tower', tier: 0, owner: 'player', home: true, x: -6 * S, y: 6 * S - 60, size: 120, name: 'Deine Hauptstadt (Beispiel)', desc: 'So weit außen startet man: ganz am Rand, weit weg von der Mitte.' });
   things.sort((a, b) => a.y - b.y);
   const bases = things.filter(t => t.kind === 'tower').length;
@@ -366,68 +358,34 @@ function build() {
     'In dieser Skizze: <b>' + bases.toLocaleString('de-DE') + ' Basen</b>, <b>' + gates + ' Tore</b> (eins pro Brücke), <b>' + temples + ' normale Tempel</b> + 4 Wächter + 1 Haupttempel (heute: 72 + 4 + 1).';
 }
 
-// Bases are no longer thrown in at random: every region has paths from its middle to its gates,
-// and the bases sit in a tidy pattern next to them. Three patterns to compare (the switch above the map).
-function regionPaths(rc, fromR) {                       // the cross of paths: middle → each bank that has a bridge
-  const cx = (rc.x0 + rc.x1) / 2, cy = (rc.y0 + rc.y1) / 2, q = Math.round(cx / S), r = Math.round(cy / S);
-  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-    if (Math.abs(q + dx) > HALF || Math.abs(r + dy) > HALF) continue;
-    const a = { x: cx + dx * fromR, y: cy + dy * fromR }, b = { x: dx ? (dx > 0 ? rc.x1 : rc.x0) : cx, y: dy ? (dy > 0 ? rc.y1 : rc.y0) : cy };
-    roads.push({ a, b, w: 26, minor: true });
-  }
-}
+// Even spread without gaps and without overlaps (Poisson-disc sampling): every base keeps the same
+// minimum distance to its neighbours, and new ones are only placed right next to existing ones, so the
+// region fills up evenly from the middle out instead of leaving holes.
 function scatter(rc, n, tier, R, ok, label) {
-  const cx = (rc.x0 + rc.x1) / 2, cy = (rc.y0 + rc.y1) / 2, gapMin = 92;
-  const free = p => p.x > rc.x0 + 70 && p.x < rc.x1 - 70 && p.y > rc.y0 + 95 && p.y < rc.y1 - 55 && ok(p)
-    && !roads.some(rd => rd.a && segDist(p.x, p.y, rd.a, rd.b) < rd.w / 2 + 52)
-    && !things.some(t => Math.hypot(t.x - p.x, t.y - p.y) < (t.kind === 'tower' ? gapMin : t.size * .6 + 40));
-  const put = p => things.push({ kind: 'tower', tier, owner: 'neutral', x: p.x, y: p.y, size: 60 + tier * 12, name: label, desc: 'Neutrale Basis (' + label + ').' });
-  let placed = 0;
-  if (layout === 'raster') {                            // an even lattice, filled from the middle outwards
-    for (let d = 210; d >= 100 && placed < n; d -= 10) {
-      const pts = [];
-      for (let row = 0, y = rc.y0 + 95; y < rc.y1 - 55; y += d * .87, row++)
-        for (let x = rc.x0 + 70 + (row % 2 ? d / 2 : 0); x < rc.x1 - 70; x += d) pts.push({ x: x + (R() - .5) * d * .12, y: y + (R() - .5) * d * .12 });
-      const ok2 = pts.filter(free);
-      if (ok2.length < n && d > 100) continue;
-      ok2.sort((a, b) => Math.hypot(a.x - cx, a.y - cy) - Math.hypot(b.x - cx, b.y - cy));
-      for (const p of ok2) { if (placed >= n) break; if (free(p)) { put(p); placed++; } }
+  const area = (rc.x1 - rc.x0 - 140) * (rc.y1 - rc.y0 - 150);
+  const d = Math.max(105 + tier * 6, Math.sqrt(area * .62 / n)), mine = [];
+  const inside = p => p.x > rc.x0 + 70 && p.x < rc.x1 - 70 && p.y > rc.y0 + 95 && p.y < rc.y1 - 55;
+  const free = p => inside(p) && ok(p) && mine.every(m => Math.hypot(m.x - p.x, m.y - p.y) >= d)
+    && !things.some(t => t.kind !== 'tower' && Math.hypot(t.x - p.x, t.y - p.y) < t.size * .55 + 55);
+  const cx = (rc.x0 + rc.x1) / 2, cy = (rc.y0 + rc.y1) / 2;
+  const newSeed = () => {                               // start (or restart) anywhere free: nearest to the middle first
+    let best = null, bd = Infinity;
+    for (let t = 0; t < 80; t++) { const p = { x: rc.x0 + 70 + R() * (rc.x1 - rc.x0 - 140), y: rc.y0 + 95 + R() * (rc.y1 - rc.y0 - 150) }, dd = Math.hypot(p.x - cx, p.y - cy); if (dd < bd && free(p)) { bd = dd; best = p; } }
+    if (best) { mine.push(best); active.push(best); } return best;
+  };
+  const active = [];
+  if (!newSeed()) return;
+  while (mine.length < n) {
+    if (!active.length && !newSeed()) break;            // a part cut off by a temple or gate gets its own start
+    if (!active.length) continue;
+    const i = Math.floor(R() * active.length), a = active[i]; let found = false;
+    for (let k = 0; k < 30; k++) {
+      const an = R() * Math.PI * 2, rad = d * (1 + R() * .35), p = { x: a.x + Math.cos(an) * rad, y: a.y + Math.sin(an) * rad };
+      if (free(p)) { mine.push(p); active.push(p); found = true; break; }
     }
-  } else if (layout === 'doerfer') {                    // small villages: 4–6 bases around a little square, joined to the paths
-    const k = Math.max(2, Math.round(n / 5)), centres = [];
-    for (let v = 0; v < k; v++) {
-      let best = null, bd = -1;
-      for (let t = 0; t < 30; t++) {                    // best-candidate sampling: spread the villages out
-        const p = { x: rc.x0 + 170 + R() * (rc.x1 - rc.x0 - 340), y: rc.y0 + 190 + R() * (rc.y1 - rc.y0 - 360) };
-        if (!ok(p) || roads.some(rd => rd.a && segDist(p.x, p.y, rd.a, rd.b) < 150) || things.some(t2 => t2.kind !== 'tower' && Math.hypot(t2.x - p.x, t2.y - p.y) < t2.size * .6 + 160)) continue;
-        const dmin = Math.min(...centres.map(c => Math.hypot(c.x - p.x, c.y - p.y)), 9999);
-        if (dmin > bd) { bd = dmin; best = p; }
-      }
-      if (!best || bd < 230) continue;
-      centres.push(best);
-      roads.push({ circle: { x: best.x, y: best.y, r: 48 } });
-      const near = roads.filter(rd => rd.minor).map(rd => { const dx = rd.b.x - rd.a.x, dy = rd.b.y - rd.a.y, L = dx * dx + dy * dy || 1, t = Math.max(0, Math.min(1, ((best.x - rd.a.x) * dx + (best.y - rd.a.y) * dy) / L)); return { x: rd.a.x + dx * t, y: rd.a.y + dy * t }; })
-        .sort((a, b) => Math.hypot(a.x - best.x, a.y - best.y) - Math.hypot(b.x - best.x, b.y - best.y))[0];
-      if (near) roads.push({ a: best, b: near, w: 18, minor: true, lane: true });
-      const m = 4 + Math.floor(R() * 3), rot = R() * Math.PI * 2;
-      for (let j = 0; j < m && placed < n; j++) {
-        const an = rot + j / m * Math.PI * 2, p = { x: best.x + Math.cos(an) * 118, y: best.y + Math.sin(an) * 104 + 20 };
-        if (free(p)) { put(p); placed++; }
-      }
-    }
-  } else {                                              // rings around the middle of the region
-    for (const rad of [210, 320, 425]) {
-      const slots = Math.floor(2 * Math.PI * rad / 118), off = R() * .3;
-      let used = false;
-      for (let j = 0; j < slots && placed < n; j++) {
-        const an = (j + off) / slots * Math.PI * 2, ax = Math.abs(Math.atan2(Math.sin(an * 2), Math.cos(an * 2)));
-        if (ax < .2) continue;                          // keep the four paths free
-        const p = { x: cx + Math.cos(an) * rad, y: cy + Math.sin(an) * rad + 20 };
-        if (free(p)) { put(p); placed++; used = true; }
-      }
-      if (used) roads.push({ ring: { x: cx, y: cy + 20, r: rad } });
-    }
+    if (!found) active.splice(i, 1);
   }
+  for (const p of mine) things.push({ kind: 'tower', tier, owner: 'neutral', x: p.x, y: p.y, size: 60 + tier * 12, name: label, desc: 'Neutrale Basis (' + label + ').' });
 }
 
 // ---------------- sprites (pre-painted while the loader shows) ----------------
@@ -622,7 +580,6 @@ function flyHome() {
 }
 function setSeg(id, attr, val) { for (const b of document.querySelectorAll('#' + id + ' button')) b.classList.toggle('on', b.dataset[attr] === val); }
 document.getElementById('viewSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; view = b.dataset.v; setSeg('viewSeg', 'v', view); flyHome(); });
-document.getElementById('laySeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; layout = b.dataset.l; setSeg('laySeg', 'l', layout); sel = null; build(); dirty = true; });
 window.addEventListener('resize', () => { resize(); });
 
 resize(); build(); cam.z = fitZoom(); draw();
