@@ -542,6 +542,10 @@ body.has-panel .mapctl{display:none}
 .hero-t{display:grid;gap:3px} .hero-t b small{font-weight:500;color:var(--tx-2)} .hero-t small{color:var(--tx-2)} .hero-t em{color:var(--gold-300);font-style:normal}
 .hero-xp{display:block;height:5px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden} .hero-xp i{display:block;height:100%;background:linear-gradient(90deg,var(--hc),#f0d69a)}
 .seg.hero-seg button{display:inline-flex;align-items:center;justify-content:center;gap:4px} .seg.hero-seg button:disabled{opacity:.4}
+.crest-card{display:grid;grid-template-columns:56px 1fr auto;gap:12px;align-items:center;width:100%;padding:10px 12px;margin:4px 0 8px;border:1px solid var(--line-2);border-radius:8px;background:rgba(255,255,255,.03);color:var(--tx-1);text-align:left;cursor:pointer}
+.crest-card:hover{border-color:var(--gold-300)} #crestSmall{width:56px;height:56px} .crest-card-t{display:grid;gap:2px} .crest-card-t small{color:var(--tx-2)}
+.crest-card-go{display:inline-flex;align-items:center;gap:6px;font:600 var(--fs-12)/1 var(--font-ui);color:var(--gold-300)} .crest-card-go .icon{width:14px;height:14px}
+.crest-page{margin:4px 0 10px;padding:12px;border:1px solid var(--gold-300);border-radius:10px;background:rgba(10,10,14,.6)} .crest-page-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .crest-ed{display:grid;grid-template-columns:88px 1fr;gap:12px;align-items:start;margin-bottom:6px} #crestPreview{width:88px;height:88px}
 .crest-opts{display:grid;gap:6px} .crest-row{display:flex;align-items:center;gap:5px;flex-wrap:wrap} .crest-row>span{width:84px;font-size:var(--fs-12);color:var(--tx-2)}
 .crest-row button{width:30px;height:30px;padding:0;border-radius:6px;border:1px solid var(--line-2);background:rgba(255,255,255,.04);display:grid;place-items:center;cursor:pointer}
@@ -1263,10 +1267,17 @@ body.has-panel .mapctl{display:none}
   </div>
   <div class="pbody">
     <div id="tabInfo" class="profileTabPanel active" role="tabpanel">
-      <div class="sect"><h4>Wappen</h4></div>
-      <div class="crest-ed">
-        <canvas id="crestPreview" width="176" height="176" aria-label="Dein Wappen"></canvas>
-        <div class="crest-opts" id="crestOpts"></div>
+      <button id="crestCard" class="crest-card" type="button" aria-label="Wappen bearbeiten">
+        <canvas id="crestSmall" width="112" height="112"></canvas>
+        <span class="crest-card-t"><b>Dein Wappen</b><small>Auf deinen Basen und deiner Kampffahne</small></span>
+        <span class="crest-card-go">Bearbeiten<svg class="icon"><use href="#i-upgrade"/></svg></span>
+      </button>
+      <div id="crestPage" class="crest-page" hidden>
+        <div class="crest-page-head"><b>Wappen bearbeiten</b><button id="crestDone" class="btn btn--primary btn--sm" type="button"><svg class="icon"><use href="#i-check"/></svg><span>Fertig</span></button></div>
+        <div class="crest-ed">
+          <canvas id="crestPreview" width="176" height="176" aria-label="Dein Wappen"></canvas>
+          <div class="crest-opts" id="crestOpts"></div>
+        </div>
       </div>
       <div class="sect"><h4>Reich</h4></div>
       <div class="stat-grid stat-grid--3">
@@ -2968,7 +2979,7 @@ body.has-panel .mapctl{display:none}
         }
 
         // ===== MARCH ORDERS: recall a column on the way, or speed it up with gems =====
-        const marchKeyOf = m => (m.startedAt || 0) + '-' + (m.sourceId ?? m.fromId) + '-' + (m.targetId ?? m.toId);
+        const marchKeyOf = m => m.mid || (m.mid = (m.startedAt || 0) + '-' + (m.sourceId ?? m.fromId) + '-' + (m.targetId ?? m.toId));   // fixed once, so speeding up keeps it
         function pathSoFar(src, tgt, frac) {                // the stretch of the route already walked, from the start to where the column is now
             const pts = marchPath(src, tgt), seg = []; let total = 0;
             for (let i = 1; i < pts.length; i++) total += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
@@ -4478,7 +4489,7 @@ body.has-panel .mapctl{display:none}
           path.push({ x: target.x, y: target.y });
           return path;
         }
-        function drawMarchLine(type, source, target, startedAt, resolveAt, now, pathOverride) {
+        function drawMarchLine(type, source, target, startedAt, resolveAt, now, pathOverride, mk) {
           if (!source || !target) return;
           if (!startedAt) startedAt = resolveAt - MIN_ATTACK_SECONDS * 1000;
           const total = resolveAt - startedAt, progress = total > 0 ? Math.min(1, Math.max(0, (now - startedAt) / total)) : 1;
@@ -4493,7 +4504,7 @@ body.has-panel .mapctl{display:none}
           trace(); ctx.setLineDash(dash); ctx.lineDashOffset = -(now / 40) % 26; ctx.lineWidth = 2.5; ctx.strokeStyle = col; ctx.stroke(); ctx.setLineDash([]);
           const seg = []; let tot = 0; for (let i = 0; i < pts.length - 1; i++) { const l = Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].y - pts[i].y); seg.push(l); tot += l; }
           // placed in drawMarchTokens(), after the nameplates, so the token can start past the source's own plate
-          marchTokens.push({ pts, seg, tot, progress, r: source.radius * mapState.zoom, srcId: source.id, key: type + source.id + '>' + target.id + '@' + resolveAt, col, glyph: glyphName, own: type !== 'incoming', secs: Math.max(0, Math.ceil((resolveAt - now) / 1000)) });
+          marchTokens.push({ pts, seg, tot, progress, r: source.radius * mapState.zoom, srcId: source.id, key: type + source.id + '>' + target.id + '@' + resolveAt, col, glyph: glyphName, own: type !== 'incoming', mk: mk || null, recall: type !== 'retreat', secs: Math.max(0, Math.ceil((resolveAt - now) / 1000)) });
         }
         function marchPointAt(m, d) {                   // screen point at path distance d
           for (let i = 0; i < m.seg.length; i++) { if (d <= m.seg[i] || i === m.seg.length - 1) { const t = m.seg[i] > 0 ? Math.min(1, Math.max(0, d / m.seg[i])) : 1;
@@ -4543,6 +4554,36 @@ body.has-panel .mapctl{display:none}
                   [0, -20, 20, -40, 40].flatMap(dy => [[2, dy], [-2, dy]]), [0, -20, 20, -40, 40].flatMap(dy => [[3, dy], [-3, dy]]));
         let chipDigit = null;                             // the widest digit: chips reserve the width of their widest label
         let chipSlotOf = new Map();                       // cluster key → slot used last frame (a chip only moves when that slot gets blocked)
+        // Tap your own marching column: two small buttons pop up beside it - Zurück and Schneller (gems).
+        var selMarch = null, marchBtnRects = [];
+        function drawMarchButtons() {
+          marchBtnRects = [];
+          if (!selMarch) return;
+          const m = marchTokens.find(t => t.mk === selMarch);
+          if (!m || m.x === undefined) { selMarch = null; return; }
+          setScreen(ctx);
+          const list = [pendingAttacks, pendingSends, pendingRetreats].find(l => l.some(x => marchKeyOf(x) === selMarch)), mm = list && list.find(x => marchKeyOf(x) === selMarch);
+          if (!mm) { selMarch = null; return; }
+          const btns = (m.recall ? [{ act: 'recall', glyph: 'recall', label: 'Zurück' }] : []).concat([{ act: 'speed', glyph: 'hourglass', label: 'Schneller · ' + speedUpCost(mm) }]);
+          ctx.font = '700 12px Inter, system-ui, sans-serif';
+          const ws = btns.map(b => ctx.measureText(b.label).width + 34 + (b.act === 'speed' ? 14 : 0)), total = ws.reduce((a, b) => a + b, 0) + 8 * (btns.length - 1);
+          let x = Math.max(8, Math.min(viewW - total - 8, m.x - total / 2)); const y = Math.max(8, m.y - 74);
+          btns.forEach((b, i) => { const w = ws[i];
+            rr(ctx, x, y, w, 32, 16); ctx.fillStyle = 'rgba(14,12,10,.94)'; ctx.fill(); ctx.lineWidth = 1.4; ctx.strokeStyle = b.act === 'speed' ? '#e4c886' : '#f2a066'; ctx.stroke();
+            drawGlyph(ctx, b.glyph, x + 16, y + 16, 15, '#f3e6c4');
+            ctx.fillStyle = '#f3e6c4'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(b.label, x + 28, y + 16.5);
+            if (b.act === 'speed') drawGlyph(ctx, 'gem', x + w - 14, y + 16, 12, '#7fd0ff');
+            marchBtnRects.push({ act: b.act, x, y, w, h: 32 }); x += w + 8; });
+          ctx.strokeStyle = 'rgba(228,200,134,.8)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(m.x, m.y, 14, 0, Math.PI * 2); ctx.stroke();   // ring round the chosen column
+        }
+        function marchTapAt(sx, sy) {                     // → true when the tap was meant for a column or its buttons
+          const b = marchBtnRects.find(r => sx >= r.x && sx <= r.x + r.w && sy >= r.y && sy <= r.y + r.h);
+          if (b && selMarch) { const k = selMarch; if (b.act === 'recall') { recallMarch(k); selMarch = null; } else speedUpMarch(k); requestRender(); return true; }
+          const t = marchTokens.filter(m => m.mk && m.x !== undefined).map(m => ({ m, d: Math.hypot(m.x - sx, m.y - sy) })).filter(o => o.d < 22).sort((a, c) => a.d - c.d)[0];
+          if (t) { selMarch = selMarch === t.m.mk ? null : t.m.mk; requestRender(); return true; }
+          if (selMarch) { selMarch = null; requestRender(); }
+          return false;
+        }
         function drawMarchChips() {                       // after the nameplates: one chip per cluster of tokens, "×n" when merged
           setScreen(ctx);
           const far = mapState.zoom < 0.006;             // zoomed far out only the player's own
@@ -4632,11 +4673,11 @@ body.has-panel .mapctl{display:none}
           drawRings(vis, z, now);                                                        // 5
           for (const a of pendingAttacks) { if (a.attackerBotId && islandOwnerOf(a.targetId) !== 'player') continue;         // fog of war (unchanged)
             if (a.fightEndsAt) continue;                                                                                     // the fight is on - the battle shows it
-            drawMarchLine(a.attackerBotId ? 'incoming' : 'attack', islandById[a.sourceId], islandById[a.targetId], a.startedAt, a.resolveAt, wallNow); }
+            drawMarchLine(a.attackerBotId ? 'incoming' : 'attack', islandById[a.sourceId], islandById[a.targetId], a.startedAt, a.resolveAt, wallNow, null, a.attackerBotId ? null : marchKeyOf(a)); }
           for (const s of pendingSends) { if (s.senderBotId) continue;                                                        // fog of war (unchanged)
-            drawMarchLine('send', islandById[s.fromId], islandById[s.toId], s.startedAt, s.resolveAt, wallNow); }
+            drawMarchLine('send', islandById[s.fromId], islandById[s.toId], s.startedAt, s.resolveAt, wallNow, null, marchKeyOf(s)); }
           for (const s of pendingScouts) drawMarchLine('scout', islandById[s.sourceId], islandById[s.targetId], s.startedAt, s.resolveAt, wallNow);
-          for (const r of pendingRetreats) drawMarchLine('retreat', islandById[r.fromId], islandById[r.toId], r.startedAt, r.resolveAt, wallNow, r.path);   // 6
+          for (const r of pendingRetreats) drawMarchLine('retreat', islandById[r.fromId], islandById[r.toId], r.startedAt, r.resolveAt, wallNow, r.path, marchKeyOf(r));   // 6
           setScreen(ctx);
           drawBossOverlay(now);                                                                                                // world-event boss aura (under the tower)
           drawBaseAuras(vis, z, now);                                                                                          // level + title auras under the towers
@@ -4652,6 +4693,7 @@ body.has-panel .mapctl{display:none}
           drawTitleBadges(z, now);                                                                                             // crown on the ruler's plates
           drawWander(now, true);
           drawMarchChips();                                                                                                    // 10 countdown chips
+          drawMarchButtons();
           drawPasses(view, now);                                                                                               // chained, time-locked bridges
           drawPickups(now);                                                                                                    // 11 mini-event pickups
           drawMapBattles(now);                                                                                                 // fights playing out at the bases
@@ -5684,8 +5726,20 @@ body.has-panel .mapctl{display:none}
             }
             return rank;
         }
+        function renderCrestCard() {
+            const cv = document.getElementById('crestSmall'); if (!cv) return; const g = cv.getContext('2d');
+            g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, 112, 112); drawCrest(g, 56, 57, 96);
+        }
+        document.getElementById('crestCard').addEventListener('click', () => {
+            const pg = document.getElementById('crestPage'); pg.hidden = !pg.hidden; document.getElementById('crestCard').hidden = !pg.hidden ? true : false;
+            if (!pg.hidden) { renderCrestEditor(); pg.scrollIntoView({ block: 'nearest' }); }
+        });
+        document.getElementById('crestDone').addEventListener('click', () => {
+            document.getElementById('crestPage').hidden = true; document.getElementById('crestCard').hidden = false; renderCrestCard();
+        });
         function renderCrestEditor() {
-            const c = loadCrest(), el = document.getElementById('crestOpts'); if (!el) return;
+            renderCrestCard();
+            const c = loadCrest(), el = document.getElementById('crestOpts'); if (!el || document.getElementById('crestPage').hidden) return;
             const pv = document.getElementById('crestPreview'), pg = pv.getContext('2d'); pg.setTransform(1, 0, 0, 1, 0, 0); pg.clearRect(0, 0, 176, 176); drawCrest(pg, 88, 90, 150);
             const mini = (patch) => { const cv = document.createElement('canvas'); cv.width = cv.height = 44; drawCrest(cv.getContext('2d'), 22, 23, 38, Object.assign({}, c, patch)); return cv; };
             const rows = [['Form', 'shape', CREST_SHAPES.length, i => ({ shape: i })], ['Teilung', 'div', CREST_DIVS.length, i => ({ div: i })],
@@ -7581,15 +7635,15 @@ body.has-panel .mapctl{display:none}
 
         // ===== CAPITAL / CITY (step 1: buildings can be built and upgraded, effects come later) =====
         var CITY_BUILDINGS = [
-            { id: 'academy',  name: 'Akademie',      icon: 'star',    x: 290, y: 390, roof: '#2f4f86', dome: true, fx: true,
+            { id: 'academy',  name: 'Akademie',      icon: 'star',    x: 215, y: 430, roof: '#2f4f86', dome: true, fx: true,
               desc: 'Forschung: Marschtempo. Jede Stufe lässt deine Truppen 5 % schneller laufen (Angriffe, Verstärkung, Späher).' },
-            { id: 'forge',    name: 'Schmiede',      icon: 'weapon',  x: 710, y: 390, roof: '#4a4a52', chimney: true, fx: true,
+            { id: 'forge',    name: 'Schmiede',      icon: 'weapon',  x: 785, y: 430, roof: '#4a4a52', chimney: true, fx: true,
               desc: 'Setzt Sterne auf deine angelegte Ausrüstung: jeder Stern +20 % Wirkung des Teils. Jede Stufe erlaubt einen Stern mehr.' },
-            { id: 'hospital', name: 'Lazarett',      icon: 'plus',    x: 290, y: 690, roof: '#e8e2d2', cross: true, fx: true,
+            { id: 'hospital', name: 'Lazarett',      icon: 'plus',    x: 215, y: 670, roof: '#e8e2d2', cross: true, fx: true,
               desc: 'Verlierst du einen Angriff, kommen Verwundete hierher statt zu sterben (5 % pro Stufe, bis 60 %). Heile sie gegen Münzen – sie gehen in die Hauptstadt.' },
-            { id: 'shrine',   name: 'Tempelschrein', icon: 'temple',  x: 710, y: 690, roof: '#c9a54e', dome: true, desc: 'Wird den Bonus aller deiner Tempel verstärken.' },
-            { id: 'wall',     name: 'Mauer',         icon: 'defense', x: 500, y: 850, roof: '#6b6456', gate: true, desc: 'Wird die Verteidigung deiner Hauptstadt erhöhen.' },
-            { id: 'heroes',   name: 'Heldenhalle',   icon: 'profile', x: 500, y: 255, roof: '#7a2e2a', fx: true,
+            { id: 'shrine',   name: 'Tempelschrein', icon: 'temple',  x: 785, y: 670, roof: '#c9a54e', dome: true, desc: 'Wird den Bonus aller deiner Tempel verstärken.' },
+            { id: 'wall',     name: 'Mauer',         icon: 'defense', x: 715, y: 815, roof: '#6b6456', gate: true, desc: 'Wird die Verteidigung deiner Hauptstadt erhöhen.' },
+            { id: 'heroes',   name: 'Heldenhalle',   icon: 'profile', x: 285, y: 815, roof: '#7a2e2a', fx: true,
               desc: 'Hier leben deine Helden. Ein Held zieht mit einem Angriff mit und gibt ihm seinen Bonus. Jede Stufe hebt die Höchststufe der Helden um 2; Stufe 1, 5 und 10 schalten je einen Helden frei.' }
         ];
         var CITY_MAX_LEVEL = 25, CITY_GEMS_PER_MIN = 1;
@@ -7865,106 +7919,152 @@ body.has-panel .mapctl{display:none}
                 for (const dx of [0, -size, size]) for (const dy of [0, -size, size]) g.fillRect(x + dx, y + dy, w, w * (.6 + r())); }
             return c;
         }
+        // The town in the same 3/4 view as the bases outside: your castle on its courtyard at the top, the market square
+        // below, streets to the building lots, timber-and-plaster houses, and a curtain wall with round towers and a gatehouse.
+        const CITY_KEEP = { x: 500, y: 355 }, CITY_PLAZA = { x: 500, y: 630 };
         function cityPaintTown() {
             const S = 2, c = document.createElement('canvas'); c.width = c.height = 1400 * S; const g = c.getContext('2d');
             g.setTransform(S, 0, 0, S, 200 * S, 200 * S);                      // covers -200 … 1200
-            const grass = g.createPattern(cityTexture(11, '#4f8a3c', ['#5a9644', '#447a33', '#63a14c', '#3d6f2e'], 900, 128), 'repeat');
-            const cob = g.createPattern(cityTexture(12, '#a8977a', ['#b8a787', '#978669', '#c2b294', '#8a7a5f'], 700, 64), 'repeat');
-            const rnd = mulberry32(77);
+            const grass = g.createPattern(cityTexture(11, '#5a8f40', ['#649b48', '#4f8238', '#6ea852', '#477a33'], 900, 128), 'repeat');
+            const cob = g.createPattern(cityTexture(12, '#b3a386', ['#c1b194', '#9d8d70', '#cbbd9f', '#8f8064'], 800, 64), 'repeat');
+            const rnd = mulberry32(77), ink = '#2a241b';
             // meadow + woods outside the walls
-            g.fillStyle = '#2f5a27'; g.fillRect(-200, -200, 1400, 1400);
-            g.fillStyle = grass; g.globalAlpha = .55; g.fillRect(-200, -200, 1400, 1400); g.globalAlpha = 1;
-            const tree = (x, y, r) => { g.fillStyle = 'rgba(0,0,0,.18)'; g.beginPath(); g.ellipse(x + 3, y + r * .7, r * .9, r * .35, 0, 0, Math.PI * 2); g.fill();
-                g.fillStyle = '#5a3d24'; g.fillRect(x - 1.5, y, 3, r * .6);
-                for (const [dx, dy, rr, col] of [[0, 0, 1, '#2b5a26'], [-.35, -.2, .7, '#34692d'], [.3, -.3, .65, '#3d7834'], [-.1, -.5, .5, '#4a8a3c']]) {
-                    g.fillStyle = col; g.beginPath(); g.arc(x + dx * r, y + dy * r, rr * r, 0, Math.PI * 2); g.fill(); } };
-            for (let i = 0; i < 520; i++) { const x = -200 + rnd() * 1400, y = -200 + rnd() * 1400; if (x > 5 && x < 995 && y > 5 && y < 995) continue; tree(x, y, 11 + rnd() * 9); }
+            g.fillStyle = '#35632b'; g.fillRect(-200, -200, 1400, 1400);
+            g.fillStyle = grass; g.globalAlpha = .5; g.fillRect(-200, -200, 1400, 1400); g.globalAlpha = 1;
+            const tree = (x, y, r) => { g.fillStyle = 'rgba(0,0,0,.2)'; g.beginPath(); g.ellipse(x + 2, y + r * .75, r * .95, r * .32, 0, 0, Math.PI * 2); g.fill();
+                g.fillStyle = '#5a3d24'; g.fillRect(x - 2, y, 4, r * .7);
+                for (const [dx, dy, rr, col] of [[0, 0, 1, '#2b5a26'], [-.38, -.18, .72, '#34692d'], [.32, -.3, .66, '#3d7834'], [-.08, -.55, .52, '#4c8c3d']]) {
+                    g.fillStyle = col; g.beginPath(); g.arc(x + dx * r, y + dy * r, rr * r, 0, Math.PI * 2); g.fill(); }
+                g.strokeStyle = 'rgba(20,40,16,.5)'; g.lineWidth = 1; g.beginPath(); g.arc(x, y, r, Math.PI * .1, Math.PI * .9); g.stroke(); };
+            const outside = []; for (let i = 0; i < 560; i++) { const x = -200 + rnd() * 1400, y = -200 + rnd() * 1400; if (x > 0 && x < 1000 && y > 20 && y < 1000) continue; outside.push([x, y, 11 + rnd() * 9]); }
+            outside.sort((p, q) => p[1] - q[1]).forEach(t => tree(t[0], t[1], t[2]));
             // moat
-            g.strokeStyle = '#1f4f6e'; g.lineWidth = 26; g.beginPath(); g.rect(-8, -8, 1016, 1016); g.stroke();
-            g.strokeStyle = 'rgba(160,210,235,.25)'; g.lineWidth = 2; g.beginPath(); g.rect(-16, -16, 1032, 1032); g.stroke();
+            g.strokeStyle = '#24587a'; g.lineWidth = 30; g.beginPath(); g.rect(22, 58, 956, 918); g.stroke();
+            g.strokeStyle = 'rgba(170,215,240,.28)'; g.lineWidth = 2; g.beginPath(); g.rect(10, 46, 980, 942); g.stroke();
             // town ground
-            g.fillStyle = grass; g.fillRect(40, 40, 920, 920);
-            // cobbled streets + the market square
+            g.fillStyle = grass; g.fillRect(40, 76, 920, 880);
+            // streets: from the gate up to the castle, across the square, out to every lot
             const road = (pts, w) => { g.lineJoin = 'round'; g.lineCap = 'round'; g.beginPath(); pts.forEach((q, i) => g[i ? 'lineTo' : 'moveTo'](q[0], q[1]));
-                g.strokeStyle = '#6a5c45'; g.lineWidth = w + 5; g.stroke(); g.strokeStyle = cob; g.lineWidth = w; g.stroke(); };
-            road([[500, 1000], [500, 120]], 34);
-            road([[150, 420], [850, 420]], 24); road([[150, 720], [850, 720]], 24);
-            road([[290, 420], [290, 720]], 20); road([[710, 420], [710, 720]], 20);
-            road([[120, 160], [880, 160]], 16);
-            g.fillStyle = '#6a5c45'; g.beginPath(); g.arc(500, 570, 112, 0, Math.PI * 2); g.fill();
-            g.fillStyle = cob; g.beginPath(); g.arc(500, 570, 107, 0, Math.PI * 2); g.fill();
-            g.strokeStyle = 'rgba(80,68,50,.35)'; g.lineWidth = 1.5; for (const rr of [60, 85]) { g.beginPath(); g.arc(500, 570, rr, 0, Math.PI * 2); g.stroke(); }
-            // fountain
-            g.fillStyle = '#8e8676'; g.beginPath(); g.arc(500, 570, 38, 0, Math.PI * 2); g.fill(); g.strokeStyle = '#4a4336'; g.lineWidth = 2; g.stroke();
-            const wat = g.createRadialGradient(492, 562, 4, 500, 570, 31); wat.addColorStop(0, '#7fc3e6'); wat.addColorStop(1, '#2f6f98');
-            g.fillStyle = wat; g.beginPath(); g.arc(500, 570, 31, 0, Math.PI * 2); g.fill();
-            g.fillStyle = '#a79f8e'; g.beginPath(); g.arc(500, 570, 10, 0, Math.PI * 2); g.fill(); g.stroke();
-            // market stalls around the square
-            const stall = (x, y, col) => { g.fillStyle = '#7a5a36'; g.fillRect(x - 13, y - 6, 26, 14); g.fillStyle = col; g.beginPath(); g.moveTo(x - 16, y - 4); g.lineTo(x + 16, y - 4); g.lineTo(x + 12, y - 14); g.lineTo(x - 12, y - 14); g.closePath(); g.fill();
-                g.fillStyle = 'rgba(255,255,255,.55)'; for (let i = -12; i < 12; i += 8) g.fillRect(x + i, y - 14, 4, 10); g.strokeStyle = '#3a2c1c'; g.lineWidth = 1; g.stroke(); };
-            [[430, 495, '#b33a2e'], [570, 495, '#2f6fa8'], [410, 640, '#c98b2a'], [590, 640, '#3d8a4a']].forEach(q => stall(q[0], q[1], q[2]));
-            // houses in blocks: pitched roofs, chimneys
-            const house = (x, y, w, h, roofCol, rot) => { g.save(); g.translate(x, y); if (rot) g.rotate(rot);
-                g.fillStyle = 'rgba(0,0,0,.2)'; g.fillRect(-w / 2 + 3, -h / 2 + 4, w, h);
-                g.fillStyle = roofCol; g.fillRect(-w / 2, -h / 2, w, h);
-                g.fillStyle = 'rgba(255,255,255,.18)'; g.fillRect(-w / 2, -h / 2, w, h / 2);
-                g.strokeStyle = 'rgba(30,20,12,.8)'; g.lineWidth = 1.2; g.beginPath(); g.rect(-w / 2, -h / 2, w, h); g.stroke();
-                g.beginPath(); g.moveTo(-w / 2, 0); g.lineTo(w / 2, 0); g.stroke();
-                g.fillStyle = '#6b6456'; g.fillRect(w / 4, -h / 2 + 2, 4, 5); g.restore(); };
-            const roofs = ['#8e3a2c', '#7a3226', '#9a4a30', '#6d2a22', '#8a5a34', '#5e5a55'];
-            const block = (x0, y0, x1, y1, seed) => { const r = mulberry32(seed);
-                for (let y = y0; y < y1; y += 30) for (let x = x0; x < x1; x += 34) {
-                    if (CITY_BUILDINGS.some(bd => Math.abs(x + 15 - bd.x) < 88 && y + 13 > bd.y - 95 && y + 13 < bd.y + 62)) { r(); r(); r(); r(); continue; }   // keep the building lots free
-                    if (r() < .22) { tree(x + 14, y + 14, 9 + r() * 4); continue; }
-                    house(x + 15, y + 13, 24 + r() * 6, 18 + r() * 6, roofs[Math.floor(r() * roofs.length)], (r() - .5) * .12); } };
-            block(70, 200, 250, 390, 1); block(750, 200, 940, 390, 2); block(345, 200, 470, 390, 3); block(530, 200, 655, 390, 4);
-            block(70, 450, 240, 690, 5); block(760, 450, 940, 690, 6); block(70, 760, 250, 940, 7); block(750, 760, 940, 940, 8);
-            block(345, 760, 460, 940, 9); block(540, 760, 655, 940, 10);
-            // gardens / flower beds
-            for (const [x, y] of [[372, 470], [628, 470], [372, 680], [628, 680]]) { g.fillStyle = '#3f7a33'; g.beginPath(); g.arc(x, y, 14, 0, Math.PI * 2); g.fill();
-                const r = mulberry32(x + y); for (let i = 0; i < 9; i++) { g.fillStyle = ['#e8c547', '#d9534f', '#f0f0f0', '#b577d6'][i % 4]; g.beginPath(); g.arc(x + (r() - .5) * 20, y + (r() - .5) * 20, 1.8, 0, Math.PI * 2); g.fill(); } }
-            // the wall: walkway on top, crenellations, round towers with cone roofs, the gatehouse
-            const L = 40, R = 960, W2 = 24;
-            const wallBand = (x, y, w, h) => { const gr = g.createLinearGradient(x, y, x + (w > h ? 0 : w), y + (w > h ? h : 0)); gr.addColorStop(0, '#b3ab9a'); gr.addColorStop(1, '#8a8373');
-                g.fillStyle = gr; g.fillRect(x, y, w, h); g.strokeStyle = '#3a342b'; g.lineWidth = 2; g.beginPath(); g.rect(x, y, w, h); g.stroke();
+                g.strokeStyle = '#6f6149'; g.lineWidth = w + 6; g.stroke(); g.strokeStyle = cob; g.lineWidth = w; g.stroke(); };
+            road([[500, 960], [500, 440]], 40);
+            road([[120, CITY_PLAZA.y], [880, CITY_PLAZA.y]], 28);
+            road([[215, 470], [215, 790], [500, 790]], 22); road([[785, 470], [785, 790], [500, 790]], 22);
+            road([[215, 470], [500, 470], [785, 470]], 22);
+            road([[285, 790], [285, 840]], 18); road([[715, 790], [715, 840]], 18);
+            // castle courtyard: paved oval with a low inner wall
+            g.fillStyle = '#6f6149'; g.beginPath(); g.ellipse(CITY_KEEP.x, CITY_KEEP.y - 10, 176, 112, 0, 0, Math.PI * 2); g.fill();
+            g.fillStyle = cob; g.beginPath(); g.ellipse(CITY_KEEP.x, CITY_KEEP.y - 10, 170, 106, 0, 0, Math.PI * 2); g.fill();
+            g.strokeStyle = 'rgba(80,68,50,.35)'; g.lineWidth = 1.5; g.beginPath(); g.ellipse(CITY_KEEP.x, CITY_KEEP.y - 10, 130, 80, 0, 0, Math.PI * 2); g.stroke();
+            // market square with fountain and stalls
+            const P = CITY_PLAZA;
+            g.fillStyle = '#6f6149'; g.beginPath(); g.ellipse(P.x, P.y, 104, 70, 0, 0, Math.PI * 2); g.fill();
+            g.fillStyle = cob; g.beginPath(); g.ellipse(P.x, P.y, 99, 66, 0, 0, Math.PI * 2); g.fill();
+            g.strokeStyle = 'rgba(80,68,50,.3)'; g.lineWidth = 1.2; for (const f of [.45, .72]) { g.beginPath(); g.ellipse(P.x, P.y, 99 * f, 66 * f, 0, 0, Math.PI * 2); g.stroke(); }
+            g.fillStyle = 'rgba(0,0,0,.22)'; g.beginPath(); g.ellipse(P.x + 3, P.y + 8, 38, 16, 0, 0, Math.PI * 2); g.fill();
+            g.fillStyle = '#9d9585'; g.beginPath(); g.ellipse(P.x, P.y + 4, 36, 15, 0, 0, Math.PI * 2); g.fill(); g.strokeStyle = ink; g.lineWidth = 1.5; g.stroke();
+            g.fillStyle = '#8a8272'; g.fillRect(P.x - 36, P.y - 6, 72, 10); g.beginPath(); g.ellipse(P.x, P.y - 6, 36, 15, 0, 0, Math.PI * 2); g.fill(); g.stroke();
+            const wat = g.createRadialGradient(P.x - 8, P.y - 10, 3, P.x, P.y - 6, 32); wat.addColorStop(0, '#8fd0ee'); wat.addColorStop(1, '#2f6f98');
+            g.fillStyle = wat; g.beginPath(); g.ellipse(P.x, P.y - 6, 30, 12, 0, 0, Math.PI * 2); g.fill();
+            g.fillStyle = '#b3ab9a'; g.fillRect(P.x - 4, P.y - 30, 8, 24); g.strokeStyle = ink; g.lineWidth = 1.2; strokeBox(g, P.x - 4, P.y - 30, 8, 24);
+            g.fillStyle = '#c9c1ae'; g.beginPath(); g.ellipse(P.x, P.y - 30, 11, 4.5, 0, 0, Math.PI * 2); g.fill(); g.stroke();
+            const stall = (x, y, col) => { g.fillStyle = 'rgba(0,0,0,.2)'; g.fillRect(x - 14, y + 2, 30, 5);
+                g.fillStyle = '#7a5a36'; g.fillRect(x - 13, y - 10, 26, 12); g.strokeStyle = ink; g.lineWidth = 1; strokeBox(g, x - 13, y - 10, 26, 12);
+                g.fillStyle = col; g.beginPath(); g.moveTo(x - 17, y - 10); g.lineTo(x + 17, y - 10); g.lineTo(x + 13, y - 22); g.lineTo(x - 13, y - 22); g.closePath(); g.fill(); g.stroke();
+                g.fillStyle = 'rgba(255,255,255,.6)'; for (let i = -12; i < 12; i += 8) { g.beginPath(); g.moveTo(x + i, y - 22); g.lineTo(x + i + 4, y - 22); g.lineTo(x + i + 5, y - 10); g.lineTo(x + i + 1, y - 10); g.closePath(); g.fill(); } };
+            [[P.x - 70, P.y - 28, '#b33a2e'], [P.x + 70, P.y - 28, '#2f6fa8'], [P.x - 66, P.y + 44, '#c98b2a'], [P.x + 66, P.y + 44, '#3d8a4a']].forEach(q => stall(q[0], q[1], q[2]));
+            // houses: timber and plaster, pitched roofs, placed on a jittered grid clear of streets, lots, square and courtyard
+            const roofs = ['#8e3a2c', '#7a3226', '#9a4a30', '#6d2a22', '#8a5a34', '#5e5a55', '#7b4a2a'], walls = ['#e9dfc8', '#e2d4b6', '#d9cbab', '#efe6d2'];
+            const house = (x, y, w, h, rh, roof, wall, r2) => {
+                g.fillStyle = 'rgba(0,0,0,.22)'; g.beginPath(); g.ellipse(x + 3, y + 2, w * .62, 5, 0, 0, Math.PI * 2); g.fill();
+                const wg = g.createLinearGradient(x - w / 2, 0, x + w / 2, 0); wg.addColorStop(0, wall); wg.addColorStop(1, '#a99a7c');
+                g.fillStyle = wg; g.fillRect(x - w / 2, y - h, w, h); g.strokeStyle = ink; g.lineWidth = 1.2; strokeBox(g, x - w / 2, y - h, w, h);
+                g.strokeStyle = 'rgba(90,60,30,.6)'; g.lineWidth = 1.4; g.beginPath(); g.moveTo(x - w / 2, y - h * .55); g.lineTo(x + w / 2, y - h * .55); g.stroke();   // timber beam
+                const rg = g.createLinearGradient(0, y - h - rh, 0, y - h); rg.addColorStop(0, roof); rg.addColorStop(1, '#2a1812');
+                g.fillStyle = rg; g.beginPath(); g.moveTo(x - w / 2 - 3, y - h + 1); g.lineTo(x + w / 2 + 3, y - h + 1); g.lineTo(x + w / 2 - 2, y - h - rh); g.lineTo(x - w / 2 + 2, y - h - rh); g.closePath(); g.fill();
+                g.strokeStyle = ink; g.lineWidth = 1.2; g.stroke();
+                g.strokeStyle = 'rgba(0,0,0,.25)'; g.lineWidth = 1; g.beginPath(); for (let i = 1; i < 3; i++) { const yy = y - h - rh * i / 3; g.moveTo(x - w / 2 + 2, yy); g.lineTo(x + w / 2 - 2, yy); } g.stroke();
+                g.fillStyle = 'rgba(255,255,255,.18)'; g.fillRect(x - w / 2 + 2, y - h - rh, w - 4, 2);
+                g.fillStyle = '#3a2616'; g.fillRect(x - 3.5 + (r2 - .5) * w * .4, y - 11, 7, 11);                                    // door
+                g.fillStyle = '#2a2016'; for (const wx of [x - w * .32, x + w * .2]) { g.fillRect(wx, y - h + 4, 6, 6); g.fillStyle = 'rgba(255,214,130,.6)'; g.fillRect(wx + 1, y - h + 5, 4, 2); g.fillStyle = '#2a2016'; }
+                if (r2 > .55) { g.fillStyle = '#6b6456'; g.fillRect(x + w * .22, y - h - rh - 6, 5, 9); g.strokeStyle = ink; strokeBox(g, x + w * .22, y - h - rh - 6, 5, 9); }
+            };
+            const blocked = (x, y) => {
+                if (x < 100 || x > 900 || y < 175 || y > 885) return true;
+                if (Math.abs(x - 500) < 44 || Math.abs(y - CITY_PLAZA.y) < 32 || Math.abs(y - 470) < 28 || Math.abs(y - 790) < 28) return true;   // streets
+                if ((Math.abs(x - 215) < 28 || Math.abs(x - 785) < 28) && y > 440 && y < 800) return true;
+                if (((x - CITY_KEEP.x) / 205) ** 2 + ((y - CITY_KEEP.y + 10) / 140) ** 2 < 1) return true;                            // courtyard
+                if (((x - CITY_PLAZA.x) / 130) ** 2 + ((y - CITY_PLAZA.y) / 95) ** 2 < 1) return true;                                // square
+                return CITY_BUILDINGS.some(bd => Math.abs(x - bd.x) < 92 && y > bd.y - 100 && y < bd.y + 70);                         // lots
+            };
+            const things = [];
+            for (let y = 190; y < 880; y += 42) for (let x = 110; x < 900; x += 46) {
+                const jx = x + (rnd() - .5) * 10, jy = y + (rnd() - .5) * 8, r1 = rnd(), r2 = rnd(), r3 = rnd();
+                if (blocked(jx, jy)) continue;
+                if (r1 < .2) things.push({ y: jy, f: () => tree(jx, jy - 6, 12 + r2 * 5) });
+                else things.push({ y: jy, f: () => house(jx, jy, 30 + r2 * 10, 18 + r3 * 6, 12 + r2 * 5, roofs[Math.floor(r3 * roofs.length)], walls[Math.floor(r1 * walls.length)], r2) });
+            }
+            // the curtain wall: back wall face, side wall walks, corner towers, the front wall with the gatehouse
+            const stoneFace = (x, y, w, h) => { const q = g.createLinearGradient(0, y, 0, y + h); q.addColorStop(0, '#c7bfac'); q.addColorStop(1, '#8c8575');
+                g.fillStyle = q; g.fillRect(x, y, w, h); g.strokeStyle = ink; g.lineWidth = 1.6; strokeBox(g, x, y, w, h);
                 g.strokeStyle = 'rgba(60,54,44,.35)'; g.lineWidth = 1; g.beginPath();
-                if (w > h) for (let i = x + 14; i < x + w; i += 14) { g.moveTo(i, y); g.lineTo(i, y + h); } else for (let i = y + 14; i < y + h; i += 14) { g.moveTo(x, i); g.lineTo(x + w, i); } g.stroke(); };
-            wallBand(L - W2, L - W2, R - L + 2 * W2, W2); wallBand(L - W2, R, R - L + 2 * W2, W2); wallBand(L - W2, L, W2, R - L); wallBand(R, L, W2, R - L);
-            g.fillStyle = '#c4bcab'; g.strokeStyle = '#3a342b'; g.lineWidth = 1;
-            for (let x = L - W2; x < R + W2; x += 16) { for (const y of [L - W2 - 7, R + W2]) { g.beginPath(); g.rect(x, y, 9, 7); g.fill(); g.stroke(); } }
-            for (let y = L; y < R; y += 16) { for (const x of [L - W2 - 7, R + W2]) { g.beginPath(); g.rect(x, y, 7, 9); g.fill(); g.stroke(); } }
-            const tower = (x, y, r) => { const gr = g.createRadialGradient(x - r * .3, y - r * .3, 2, x, y, r); gr.addColorStop(0, '#c9c1ae'); gr.addColorStop(1, '#8a8373');
-                g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); g.strokeStyle = '#3a342b'; g.lineWidth = 2; g.stroke();
-                const rf = g.createLinearGradient(x - r, y - r, x + r, y + r); rf.addColorStop(0, '#a3402f'); rf.addColorStop(1, '#5a1c14');
-                g.fillStyle = rf; g.beginPath(); g.arc(x, y, r * .78, 0, Math.PI * 2); g.fill(); g.stroke();
-                g.strokeStyle = 'rgba(40,10,6,.5)'; g.lineWidth = 1; for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * r * .78, y + Math.sin(a) * r * .78); g.stroke(); }
-                g.fillStyle = '#e8c547'; g.beginPath(); g.arc(x, y, 2.5, 0, Math.PI * 2); g.fill(); };
-            for (const [x, y] of [[L - 12, L - 12], [R + 12, L - 12], [L - 12, R + 12], [R + 12, R + 12], [500, L - 12], [L - 12, 500], [R + 12, 500]]) tower(x, y, 30);
-            g.fillStyle = '#9a9384'; g.fillRect(450, R - 18, 100, 58); g.strokeStyle = '#3a342b'; g.lineWidth = 2; g.beginPath(); g.rect(450, R - 18, 100, 58); g.stroke();   // gatehouse
-            tower(448, R + 12, 22); tower(552, R + 12, 22);
-            g.fillStyle = '#2a1f16'; g.beginPath(); g.moveTo(480, R + 40); g.lineTo(480, R + 10); g.arc(500, R + 10, 20, Math.PI, 0); g.lineTo(520, R + 40); g.fill();
-            for (const x of [470, 530]) { g.fillStyle = '#2b5d9b'; g.fillRect(x - 5, R - 14, 10, 22); g.fillStyle = '#e8c547'; g.fillRect(x - 2, R - 8, 4, 4); }
+                for (let yy = y + 9; yy < y + h; yy += 9) { g.moveTo(x, yy); g.lineTo(x + w, yy); }
+                for (let yy = y, row2 = 0; yy < y + h; yy += 9, row2++) for (let xx = x + (row2 % 2) * 9; xx < x + w; xx += 18) { g.moveTo(xx, yy); g.lineTo(xx, Math.min(y + h, yy + 9)); }
+                g.stroke(); };
+            const merlonRow = (x0, x1, y) => { g.fillStyle = '#d2cab7'; g.strokeStyle = ink; g.lineWidth = 1.2; for (let x = x0; x < x1 - 6; x += 16) { g.fillRect(x, y - 8, 10, 8); strokeBox(g, x, y - 8, 10, 8); } };
+            const walkV = (x, y0, y1) => { g.fillStyle = '#a79f8c'; g.fillRect(x - 12, y0, 24, y1 - y0); g.strokeStyle = ink; g.lineWidth = 1.5; strokeBox(g, x - 12, y0, 24, y1 - y0);
+                g.fillStyle = '#d2cab7'; for (let y = y0 + 6; y < y1 - 6; y += 16) for (const dx of [-12, 8]) { g.fillRect(x + dx, y, 4, 9); } };
+            const roundTower = (x, y, r, h) => { g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(x + 4, y + 4, r * 1.1, r * .4, 0, 0, Math.PI * 2); g.fill();
+                const q = g.createLinearGradient(x - r, 0, x + r, 0); q.addColorStop(0, '#d4ccb9'); q.addColorStop(1, '#847d6d');
+                g.fillStyle = q; g.beginPath(); g.moveTo(x - r, y - h); g.lineTo(x - r, y); g.ellipse(x, y, r, r * .35, 0, Math.PI, 0, true); g.lineTo(x + r, y - h); g.closePath(); g.fill(); g.strokeStyle = ink; g.lineWidth = 1.6; g.stroke();
+                g.fillStyle = '#1d1a16'; g.fillRect(x - 3, y - h * .55, 6, 12);
+                const rf = g.createLinearGradient(x - r, 0, x + r, 0); rf.addColorStop(0, '#b54a36'); rf.addColorStop(1, '#5a1c14');
+                g.fillStyle = rf; g.beginPath(); g.moveTo(x - r - 5, y - h); g.lineTo(x, y - h - r * 1.7); g.lineTo(x + r + 5, y - h); g.closePath(); g.fill(); g.stroke();
+                g.beginPath(); g.ellipse(x, y - h, r + 5, (r + 5) * .3, 0, 0, Math.PI); g.fill(); g.stroke();
+                g.strokeStyle = '#3a2c1c'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x, y - h - r * 1.7); g.lineTo(x, y - h - r * 1.7 - 16); g.stroke();
+                g.fillStyle = '#3f86d8'; g.beginPath(); g.moveTo(x, y - h - r * 1.7 - 16); g.lineTo(x + 14, y - h - r * 1.7 - 12); g.lineTo(x, y - h - r * 1.7 - 8); g.closePath(); g.fill(); };
+            stoneFace(52, 118, 896, 44); merlonRow(52, 948, 118);
+            walkV(52, 162, 930); walkV(948, 162, 930);
+            roundTower(52, 170, 30, 70); roundTower(948, 170, 30, 70); roundTower(500, 150, 22, 50);
+            things.sort((p, q) => p.y - q.y).forEach(t => t.f());
+            stoneFace(52, 900, 400, 50); stoneFace(548, 900, 400, 50); merlonRow(52, 452, 900); merlonRow(548, 948, 900);
+            // gatehouse
+            stoneFace(436, 884, 128, 70); merlonRow(436, 564, 884);
+            g.fillStyle = '#1b140e'; g.beginPath(); g.moveTo(476, 954); g.lineTo(476, 922); g.arc(500, 922, 24, Math.PI, 0); g.lineTo(524, 954); g.closePath(); g.fill(); g.strokeStyle = ink; g.lineWidth = 1.6; g.stroke();
+            g.strokeStyle = '#3a342b'; g.lineWidth = 2; g.beginPath(); for (let x = 482; x < 520; x += 8) { g.moveTo(x, 900); g.lineTo(x, 912); } g.stroke();
+            for (const x of [456, 544]) { g.fillStyle = '#2b5d9b'; g.fillRect(x - 7, 894, 14, 30); g.strokeStyle = ink; g.lineWidth = 1; strokeBox(g, x - 7, 894, 14, 30); g.fillStyle = '#e8c547'; g.fillRect(x - 3, 902, 6, 6); }
+            roundTower(52, 950, 32, 76); roundTower(948, 950, 32, 76); roundTower(430, 950, 22, 80); roundTower(570, 950, 22, 80);
             return CITY_BG = c;
         }
         function cityDrawGround(g) {
             const bg = CITY_BG || cityPaintTown();
-            g.fillStyle = '#2f5a27'; g.fillRect(-5000, -5000, 11000, 11000);
+            if (!cityDrawGround.pat) { const t = cityTexture(11, '#5a8f40', ['#649b48', '#4f8238', '#6ea852', '#477a33'], 900, 128), c2 = document.createElement('canvas'); c2.width = c2.height = 128;
+                const q = c2.getContext('2d'); q.fillStyle = '#35632b'; q.fillRect(0, 0, 128, 128); q.globalAlpha = .5; q.drawImage(t, 0, 0); cityDrawGround.pat = g.createPattern(c2, 'repeat'); }
+            g.fillStyle = cityDrawGround.pat; g.fillRect(-5000, -5000, 11000, 11000);          // the same meadow beyond the painted area
             g.drawImage(bg, -200, -200, 1400, 1400);
         }
-        function cityDrawPlot(g, x, y, r) {            // empty lot: a stone foundation and a sign
-            g.fillStyle = 'rgba(0,0,0,.18)'; g.beginPath(); g.ellipse(x + 3, y + 22, r, r * .45, 0, 0, Math.PI * 2); g.fill();
-            g.fillStyle = '#9a8f78'; g.beginPath(); g.ellipse(x, y + 18, r, r * .45, 0, 0, Math.PI * 2); g.fill(); g.strokeStyle = '#4a4336'; g.lineWidth = 2; g.stroke();
-            g.fillStyle = '#b8ad94'; g.beginPath(); g.ellipse(x, y + 15, r * .8, r * .34, 0, 0, Math.PI * 2); g.fill();
-            g.strokeStyle = 'rgba(80,68,50,.5)'; g.setLineDash([6, 6]); g.lineWidth = 1.5; g.stroke(); g.setLineDash([]);
-            g.fillStyle = '#6b4a2c'; g.fillRect(x + r * .55, y - 12, 3, 26); g.fillStyle = '#e6d8b4'; g.fillRect(x + r * .55 - 9, y - 16, 21, 12); g.strokeStyle = '#3a2c1c'; g.lineWidth = 1; g.beginPath(); g.rect(x + r * .55 - 9, y - 16, 21, 12); g.stroke();
+        function cityDrawPlot(g, x, y, r) {            // empty lot: a fenced building site with timber, stones and a sign
+            const ink = '#2a241b';
+            g.fillStyle = 'rgba(0,0,0,.18)'; g.beginPath(); g.ellipse(x + 3, y + 22, r * 1.05, r * .38, 0, 0, Math.PI * 2); g.fill();
+            g.fillStyle = '#8c7a5a'; g.beginPath(); g.moveTo(x - r, y + 20); g.lineTo(x - r * .8, y - 6); g.lineTo(x + r * .8, y - 6); g.lineTo(x + r, y + 20); g.closePath(); g.fill();   // trodden earth
+            g.strokeStyle = 'rgba(60,45,25,.35)'; g.lineWidth = 1; g.beginPath(); g.moveTo(x - r * .6, y + 4); g.lineTo(x + r * .5, y + 2); g.moveTo(x - r * .4, y + 12); g.lineTo(x + r * .7, y + 13); g.stroke();
+            g.strokeStyle = '#6b4a2c'; g.lineWidth = 2.4;                                                  // fence
+            g.beginPath(); g.moveTo(x - r * .8, y - 4); g.lineTo(x + r * .8, y - 4); g.moveTo(x - r * .8, y - 11); g.lineTo(x + r * .8, y - 11); g.stroke();
+            g.lineWidth = 3; g.beginPath(); for (let i = 0; i <= 6; i++) { const fx = x - r * .8 + i * r * .8 / 3; g.moveTo(fx, y); g.lineTo(fx, y - 16); } g.stroke();
+            for (let i = 0; i < 3; i++) { g.fillStyle = i % 2 ? '#a0783f' : '#8a6634'; g.fillRect(x - r * .55, y + 8 - i * 5, r * .6, 5); g.strokeStyle = ink; g.lineWidth = 1; strokeBox(g, x - r * .55, y + 8 - i * 5, r * .6, 5);
+                g.fillStyle = '#d9b27a'; g.beginPath(); g.arc(x - r * .55, y + 10.5 - i * 5, 2.2, 0, Math.PI * 2); g.fill(); }   // timber stack
+            g.fillStyle = '#9d9585'; for (const [dx, dy] of [[.3, 6], [.45, 11], [.55, 5]]) { g.fillRect(x + r * dx - 5, y + dy, 10, 7); g.strokeStyle = ink; strokeBox(g, x + r * dx - 5, y + dy, 10, 7); }   // stones
+            g.fillStyle = '#6b4a2c'; g.fillRect(x + r * .85, y - 22, 3, 30);                             // sign
+            g.fillStyle = '#e6d8b4'; g.fillRect(x + r * .85 - 12, y - 28, 27, 14); g.strokeStyle = ink; g.lineWidth = 1; strokeBox(g, x + r * .85 - 12, y - 28, 27, 14);
+            drawGlyph(g, 'plus', x + r * .85 + 1.5, y - 21, 10, '#6b4a2c');
         }
         function cityDrawBuilding(g, b, lvl, now) {
             const ink = '#2a241b', x = b.x, y = b.y;
             if (!lvl) { cityDrawPlot(g, x, y, 46); drawGlyph(g, 'plus', x, y + 14, 20, 'rgba(60,50,35,.85)'); return; }
             const tier = lvl >= 15 ? 3 : lvl >= 8 ? 2 : 1, k = 1.05 + Math.min(lvl, 25) * 0.012;
             g.save(); g.translate(x, y); g.scale(k, k); g.lineJoin = 'round'; g.strokeStyle = ink; g.lineWidth = 1.6;
-            g.fillStyle = 'rgba(0,0,0,.2)'; g.beginPath(); g.ellipse(4, 24, 50, 14, 0, 0, Math.PI * 2); g.fill();
-            g.fillStyle = '#8a7f68'; g.beginPath(); g.ellipse(0, 21, 46, 12, 0, 0, Math.PI * 2); g.fill(); g.stroke();       // plinth
+            g.fillStyle = 'rgba(0,0,0,.22)'; g.beginPath(); g.ellipse(6, 26, 56, 11, 0, 0, Math.PI * 2); g.fill();
+            g.fillStyle = '#9d9585'; g.beginPath(); g.moveTo(-54, 26); g.lineTo(-48, 14); g.lineTo(48, 14); g.lineTo(54, 26); g.closePath(); g.fill(); g.stroke();   // stone foundation
+            g.fillStyle = '#7f786a'; g.fillRect(-54, 26, 108, 5); strokeBox(g, -54, 26, 108, 5);
             const wall = (x0, y0, w, h, c1, c2) => { const q = g.createLinearGradient(x0, 0, x0 + w, 0); q.addColorStop(0, c1 || '#f1ead9'); q.addColorStop(1, c2 || '#a99d83');
                 g.fillStyle = q; g.fillRect(x0, y0, w, h); strokeBox(g, x0, y0, w, h);
                 g.strokeStyle = 'rgba(90,75,55,.28)'; g.lineWidth = 1; g.beginPath(); for (let yy = y0 + 8; yy < y0 + h; yy += 8) { g.moveTo(x0, yy); g.lineTo(x0 + w, yy); } g.stroke(); g.strokeStyle = ink; g.lineWidth = 1.6; };
@@ -8028,7 +8128,7 @@ body.has-panel .mapctl{display:none}
             const dpr2 = Math.min(window.devicePixelRatio || 1, 2), W = window.innerWidth, H = window.innerHeight;
             if (cityCanvas.width !== Math.round(W * dpr2) || cityCanvas.height !== Math.round(H * dpr2)) { cityCanvas.width = Math.round(W * dpr2); cityCanvas.height = Math.round(H * dpr2); }
             const narrow = W < 600, top = narrow ? 104 : 70, sheetH = cityOpenId ? Math.min(380, H * 0.46) : 0, availH = H - top - sheetH - 10;
-            const sc = Math.min(availH / 1000, Math.max(W / 1000, W / 640));      // phones: bigger than the width, drag sideways to see all
+            const sc = Math.min(availH / 1000, Math.max(W / 1000, W / 860));      // phones: a little wider than the screen, drag sideways for the edges
             const over = Math.max(0, 1000 * sc - W) / 2;
             cityPan = Math.max(-over, Math.min(over, cityPan));
             cityFit = { s: sc, ox: (W - 1000 * sc) / 2 + cityPan, oy: top + Math.max(0, availH - 1000 * sc) / 2 };
@@ -8036,10 +8136,16 @@ body.has-panel .mapctl{display:none}
             g.setTransform(dpr2, 0, 0, dpr2, 0, 0); g.clearRect(0, 0, W, H);
             g.save(); g.translate(cityFit.ox, cityFit.oy); g.scale(sc, sc);
             cityDrawGround(g);
-            const order = CITY_BUILDINGS.slice().sort((a, b) => a.y - b.y);
+            const order = CITY_BUILDINGS.slice().concat([{ id: '_keep', x: CITY_KEEP.x, y: CITY_KEEP.y, keep: true }]).sort((a, b) => a.y - b.y);
             cityHitRects = [];
             const labels = [];
             for (const b of order) {
+                if (b.keep) {                             // your base, exactly as it stands on the map, only much bigger
+                    const lvl = islandLevels[playerIslandId] || 1, tier = towerTier(lvl), u = [4.4, 3.9, 3.7, 3.9, 4.1][tier];
+                    g.save(); g.translate(b.x, b.y); g.scale(u, u); g.lineJoin = 'round'; paintTowerTier(g, 'player', true, true, tier); g.restore();
+                    labels.push({ b: { x: b.x, y: b.y + 70, name: 'Deine Burg', big: false }, lvl, building: false, keep: true });
+                    continue;
+                }
                 const lvl = c.levels[b.id], building = c.build && c.build.id === b.id;
                 if (cityOpenId === b.id) { g.strokeStyle = 'rgba(255,220,140,.9)'; g.lineWidth = 3; g.beginPath(); g.ellipse(b.x, b.y + 18, b.big ? 100 : 56, b.big ? 44 : 26, 0, 0, Math.PI * 2); g.stroke(); }
                 cityDrawBuilding(g, b, lvl, now);
@@ -8051,13 +8157,14 @@ body.has-panel .mapctl{display:none}
                 }
                 labels.push({ b, lvl, building });
             }
-            for (const { b, lvl, building } of labels) {   // plates last, so no roof or flag covers them
+            for (const { b, lvl, building, keep } of labels) {   // plates last, so no roof or flag covers them
                 const label = b.name + (lvl ? ' · ' + lvl : ''), fs = 15;
                 g.font = '700 ' + fs + 'px Inter, system-ui, sans-serif';
                 const tw = g.measureText(label).width + 20, py = b.y + (b.big ? 66 : 42);
                 g.fillStyle = lvl ? 'rgba(14,14,20,.85)' : 'rgba(14,14,20,.6)'; g.strokeStyle = building ? '#ffd98a' : 'rgba(228,200,134,.6)'; g.lineWidth = 1.4;
                 g.beginPath(); g.roundRect ? g.roundRect(b.x - tw / 2, py, tw, 24, 12) : g.rect(b.x - tw / 2, py, tw, 24); g.fill(); g.stroke();
                 g.fillStyle = lvl ? '#f3e6c4' : '#b9ad92'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(label, b.x, py + 12.5);
+                if (keep) continue;                        // the castle has no menu yet
                 const hx = cityFit.ox + (b.x - (b.big ? 90 : 55)) * sc, hy = cityFit.oy + (b.y - (b.big ? 130 : 70)) * sc;
                 cityHitRects.push({ id: b.id, x: hx, y: hy, w: (b.big ? 180 : 110) * sc, h: ((b.big ? 130 : 70) + (py - b.y) + 26) * sc });
             }
@@ -8909,6 +9016,7 @@ body.has-panel .mapctl{display:none}
                 if (hit === 'go') { launchScout(fp.targetId, true, { x: fp.x, y: fp.y }); return; }
             }
             if (!multiAttackMode && collectPickupAt(screenX, screenY)) return;
+            if (!multiAttackMode && marchTapAt(screenX, screenY)) return;
             const island = pickIslandAtScreen(screenX, screenY);
             if (!island && !multiAttackMode) { const fp = fogPointAt(screenX, screenY); if (fp) { tapFog(fp); return; } }
             if (!island) { if (isPanelOpen(popup) && !multiAttackMode) closeIslandPopup(); return; }
