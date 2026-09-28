@@ -286,7 +286,7 @@ function drawGatehouse(g, cx, cy, H, open) {      // front view like the towers:
 /*DESIGN-CODE>>*/
 
 // ---------------- world model ----------------
-const S = 1000, HALF = 7, RIVER = 70;                 // 15 × 15 cells, rivers between them
+const S = 2200, HALF = 7, RIVER = 110;                // 15 × 15 cells, rivers between them; a region is as roomy as in the game (~90 bases)
 const rng = seed => () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
 let view = 'mitte';
 let regions = [], things = [], roads = [], walls = [], bridges = [];
@@ -309,6 +309,7 @@ const BIOME = { snow: { name: 'Schnee', c: ['#e3e8ec', '#c9d2d9'] }, green: { na
 function biomeOf(q, r) {
   const h = Math.sin(q * 12.9898 + 78.233) * 43758.5453, wob = Math.round((h - Math.floor(h)) * 2 - 1);   // −1…1, fixed per column
   const y = r + wob * .6;
+  if (ringOf(q, r) <= 2) return 'green';                  // right around the middle it stays green
   return y <= -2.6 ? 'snow' : y >= 2.6 ? 'sand' : 'green';
 }
 function build() {
@@ -327,7 +328,7 @@ function build() {
       const ux = Math.sign(oq - iq), uy = Math.sign(orr - ir), off = RIVER / 2 + 70;
       const intoThrone = ringOf(iq, ir) === 0, intoRing = ringOf(iq, ir) === 1 || ringOf(oq, orr) === 1;
       const nm = intoThrone ? 'Thron-Tor ' + dirName(oq, orr) : intoRing ? 'Wächter-Tor' : 'Grenztor';
-      things.push({ kind: 'gate', x: bx + ux * off, y: by + uy * off, size: intoThrone ? 130 : intoRing ? 110 : 85, name: nm, major: intoThrone,
+      things.push({ kind: 'gate', x: bx + ux * off, y: by + uy * off, size: intoThrone ? 240 : intoRing ? 200 : 160, name: nm, major: intoThrone,
         desc: intoThrone ? 'Einer von nur 4 Wegen zum Haupttempel.' : intoRing ? 'Tor in den Ring um die Mitte. Unbesetzt verschlossen.' : 'Jede Brücke hat ein Tor. Unbesetzt verschlossen, wer es hält, bestimmt die Maut.' });
       gates++;
     }
@@ -335,14 +336,14 @@ function build() {
   // --- the middle: 3 × 3 regions ---
   const rc = cellRect(0, 0, 0, 0);
   regions.push({ kind: 'throne', rect: rc, name: 'Thron-Gebiet', desc: 'Nur der Haupttempel und seine Wachen. Hinein nur über die 4 Thron-Tore.' });
-  roads.push({ plaza: 240 });
-  things.push({ kind: 'mega', x: 0, y: 0, size: 440, name: 'Haupttempel', desc: 'Die Mitte der Welt. Wer ihn hält, herrscht. 8-facher Tempel-Bonus.' });
-  scatter(rc, 0, 4, R, p => Math.max(Math.abs(p.x), Math.abs(p.y) * 1.1) > 285, 'Zitadelle');
+  roads.push({ plaza: 470 });
+  things.push({ kind: 'mega', x: 0, y: 0, size: 900, name: 'Haupttempel', desc: 'Die Mitte der Welt. Wer ihn hält, herrscht. 8-facher Tempel-Bonus.' });
+  scatter(rc, 0, 4, R, p => Math.max(Math.abs(p.x), Math.abs(p.y) * 1.1) > 540, 'Zitadelle');
   for (const [cq, cr, nm] of CORNERS) {
     const c = cellRect(cq, cr, cq, cr);
     regions.push({ kind: 'ring', rect: c, name: 'Wächter-Gebiet ' + nm, desc: 'Eck-Gebiet mit einem Wächter-Tempel.' });
-    things.push({ kind: 'guardian', x: cq * S, y: cr * S + 40, size: 290, name: 'Wächter-Tempel ' + nm, desc: 'Einer der vier Eck-Tempel. 3-facher Tempel-Bonus.' });
-    scatter(c, 0, 3, R, p => Math.hypot(p.x - cq * S, p.y - cr * S - 50) > 250, 'Burg');
+    things.push({ kind: 'guardian', x: cq * S, y: cr * S + 70, size: 560, name: 'Wächter-Tempel ' + nm, desc: 'Einer der vier Eck-Tempel. 3-facher Tempel-Bonus.' });
+    scatter(c, 0, 3, R, p => Math.hypot(p.x - cq * S, p.y - cr * S - 80) > 440, 'Burg');
   }
   for (const [sq, sr, nm] of SIDES) {
     const c = cellRect(sq, sr, sq, sr);
@@ -363,9 +364,9 @@ function build() {
       things.push({ kind: 'slot', x, y, size: 120, name: 'Freier Startplatz', desc: 'Hier kann ein neuer Spieler seine Hauptstadt bekommen. 4 Plätze pro Startgebiet.' }); slots++;
     }
     const hasTemple = belt && (q + r) % 2 === 0;
-    if (hasTemple) { temples++; things.push({ kind: 'temple', x: q * S, y: r * S + 30, size: 210, name: 'Tempel', desc: 'Normaler Tempel. Nur im mittleren Gürtel und nur in jedem zweiten Gebiet.' }); }
+    if (hasTemple) { temples++; things.push({ kind: 'temple', x: q * S, y: r * S + 60, size: 400, name: 'Tempel', desc: 'Normaler Tempel. Nur im mittleren Gürtel und nur in jedem zweiten Gebiet.' }); }
     const tier = ring >= 6 ? 0 : ring >= 4 ? 1 : ring >= 3 ? 2 : 3;
-    scatter(c, 0, tier, R, p => !hasTemple || Math.hypot(p.x - q * S, p.y - r * S - 40) > 215, ['Lager', 'Rundturm', 'Bergfried', 'Burg', 'Zitadelle'][tier]);
+    scatter(c, 0, tier, R, p => !hasTemple || Math.hypot(p.x - q * S, p.y - r * S - 70) > 370, ['Lager', 'Rundturm', 'Bergfried', 'Burg', 'Zitadelle'][tier]);
   }
   things.sort((a, b) => a.y - b.y);
   const bases = things.filter(t => t.kind === 'tower').length;
@@ -377,16 +378,22 @@ function build() {
 // minimum distance to its neighbours, and new ones are only placed right next to existing ones, so the
 // region fills up evenly from the middle out instead of leaving holes.
 function scatter(rc, n, tier, R, ok, label) {
-  const d = 128 + tier * 4, mine = [];                // one spacing everywhere; the region is filled completely (n is ignored)
+  const d = 172 + tier * 5, mine = [];                // one spacing everywhere; the region is filled completely (n is ignored)
+  const near = things.filter(t => t.kind !== 'tower' || t.home).filter(t => t.x > rc.x0 - 400 && t.x < rc.x1 + 400 && t.y > rc.y0 - 400 && t.y < rc.y1 + 400);
+  const grid = new Map(), cellOf = p => Math.floor(p.x / d) + ',' + Math.floor(p.y / d);   // neighbour lookup in O(1)
   const inside = p => p.x > rc.x0 + 50 && p.x < rc.x1 - 50 && p.y > rc.y0 + 80 && p.y < rc.y1 - 40;
-  const free = p => inside(p) && ok(p) && mine.every(m => Math.hypot(m.x - p.x, m.y - p.y) >= d)
-    && !things.some(t => (t.home || t.kind === 'slot') && Math.hypot(t.x - p.x, t.y - p.y) < 150)
-    && !things.some(t => t.kind !== 'tower' && t.kind !== 'slot' && t.kind !== 'mega' && t.kind !== 'guardian' && t.kind !== 'temple' && Math.hypot(t.x - p.x, (t.y - p.y) * 1.2) < t.size * .6 + 70);
+  const clash = p => { const gx = Math.floor(p.x / d), gy = Math.floor(p.y / d);
+    for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) for (const m of grid.get((gx + i) + ',' + (gy + j)) || []) if (Math.hypot(m.x - p.x, m.y - p.y) < d) return true;
+    return false; };
+  const free = p => inside(p) && ok(p) && !clash(p)
+    && !near.some(t => (t.home || t.kind === 'slot') && Math.hypot(t.x - p.x, t.y - p.y) < 150)
+    && !near.some(t => t.kind !== 'tower' && t.kind !== 'slot' && t.kind !== 'mega' && t.kind !== 'guardian' && t.kind !== 'temple' && Math.hypot(t.x - p.x, (t.y - p.y) * 1.2) < t.size * .6 + 70);
   const cx = (rc.x0 + rc.x1) / 2, cy = (rc.y0 + rc.y1) / 2;
+  const add = p => { mine.push(p); const k = cellOf(p); (grid.get(k) || grid.set(k, []).get(k)).push(p); };
   const newSeed = () => {                               // start (or restart) anywhere free: nearest to the middle first
     let best = null, bd = Infinity;
-    for (let t = 0; t < 200; t++) { const p = { x: rc.x0 + 50 + R() * (rc.x1 - rc.x0 - 100), y: rc.y0 + 80 + R() * (rc.y1 - rc.y0 - 120) }, dd = Math.hypot(p.x - cx, p.y - cy); if (dd < bd && free(p)) { bd = dd; best = p; } }
-    if (best) { mine.push(best); active.push(best); } return best;
+    for (let t = 0; t < 400; t++) { const p = { x: rc.x0 + 50 + R() * (rc.x1 - rc.x0 - 100), y: rc.y0 + 80 + R() * (rc.y1 - rc.y0 - 120) }, dd = Math.hypot(p.x - cx, p.y - cy); if (dd < bd && free(p)) { bd = dd; best = p; } }
+    if (best) { add(best); active.push(best); } return best;
   };
   const active = [];
   if (!newSeed()) return;
@@ -396,7 +403,7 @@ function scatter(rc, n, tier, R, ok, label) {
     const i = Math.floor(R() * active.length), a = active[i]; let found = false;
     for (let k = 0; k < 40; k++) {
       const an = R() * Math.PI * 2, rad = d * (1 + R() * .25), p = { x: a.x + Math.cos(an) * rad, y: a.y + Math.sin(an) * rad };
-      if (free(p)) { mine.push(p); active.push(p); found = true; break; }
+      if (free(p)) { add(p); active.push(p); found = true; break; }
     }
     if (!found) active.splice(i, 1);
   }
@@ -448,7 +455,7 @@ function preload(done) {                               // every building type ×
 const cv = document.getElementById('map'), ctx = cv.getContext('2d'), stage = document.getElementById('stage');
 let W = 0, H = 0, cam = { x: 0, y: 0, z: .2 }, sel = null, dirty = true;
 function resize() { const r = stage.getBoundingClientRect(); W = r.width; H = r.height; cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR); dirty = true; }
-function fitZoom() { const span = view === 'mitte' ? 5.3 * S : (2 * HALF + 1.4) * S; return Math.min(W, H) / span; }
+function fitZoom() { const span = view === 'mitte' ? 3.4 * S : (2 * HALF + 1.4) * S; return Math.min(W, H) / span; }
 const toS = (x, y) => [(x - cam.x) * cam.z + W / 2, (y - cam.y) * cam.z + H / 2];
 const toW = (sx, sy) => [(sx - W / 2) / cam.z + cam.x, (sy - H / 2) / cam.z + cam.y];
 
