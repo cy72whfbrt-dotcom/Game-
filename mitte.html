@@ -326,12 +326,12 @@ function build() {
   regions.push({ kind: 'throne', rect: rc, name: 'Thron-Gebiet', desc: 'Nur der Haupttempel und seine Wachen. Hinein nur über die 4 Thron-Tore.' });
   roads.push({ plaza: 240 });
   things.push({ kind: 'mega', x: 0, y: 0, size: 440, name: 'Haupttempel', desc: 'Die Mitte der Welt. Wer ihn hält, herrscht. 8-facher Tempel-Bonus.' });
-  scatter(rc, 8, 4, R, p => Math.hypot(p.x, p.y) > 330, 'Zitadelle');
+  scatter(rc, 0, 4, R, p => Math.max(Math.abs(p.x), Math.abs(p.y) * 1.1) > 285, 'Zitadelle');
   for (const [cq, cr, nm] of CORNERS) {
     const c = cellRect(cq, cr, cq, cr);
     regions.push({ kind: 'ring', rect: c, name: 'Wächter-Gebiet ' + nm, desc: 'Eck-Gebiet mit einem Wächter-Tempel.' });
     things.push({ kind: 'guardian', x: cq * S, y: cr * S + 40, size: 290, name: 'Wächter-Tempel ' + nm, desc: 'Einer der vier Eck-Tempel. 3-facher Tempel-Bonus.' });
-    scatter(c, 18, 3, R, p => Math.hypot(p.x - cq * S, p.y - cr * S) > 260, 'Burg');
+    scatter(c, 0, 3, R, p => Math.hypot(p.x - cq * S, p.y - cr * S - 50) > 250, 'Burg');
   }
   for (const [sq, sr, nm] of SIDES) {
     const c = cellRect(sq, sr, sq, sr);
@@ -348,7 +348,7 @@ function build() {
     const hasTemple = belt && (q + r) % 2 === 0;
     if (hasTemple) { temples++; things.push({ kind: 'temple', x: q * S, y: r * S + 30, size: 210, name: 'Tempel', desc: 'Normaler Tempel. Nur im mittleren Gürtel und nur in jedem zweiten Gebiet.' }); }
     const tier = ring >= 6 ? 0 : ring >= 4 ? 1 : ring >= 3 ? 2 : 3;
-    scatter(c, 22, tier, R, p => Math.hypot(p.x - q * S, p.y - r * S) > (hasTemple ? 200 : 60), ['Lager', 'Rundturm', 'Bergfried', 'Burg', 'Zitadelle'][tier]);
+    scatter(c, 0, tier, R, p => !hasTemple || Math.hypot(p.x - q * S, p.y - r * S - 40) > 215, ['Lager', 'Rundturm', 'Bergfried', 'Burg', 'Zitadelle'][tier]);
   }
   things = things.filter(t => t.kind !== 'tower' || Math.hypot(t.x + 6 * S, t.y - 6 * S + 60) > 150);   // room for the example capital
   things.push({ kind: 'tower', tier: 0, owner: 'player', home: true, x: -6 * S, y: 6 * S - 60, size: 120, name: 'Deine Hauptstadt (Beispiel)', desc: 'So weit außen startet man: ganz am Rand, weit weg von der Mitte.' });
@@ -362,25 +362,24 @@ function build() {
 // minimum distance to its neighbours, and new ones are only placed right next to existing ones, so the
 // region fills up evenly from the middle out instead of leaving holes.
 function scatter(rc, n, tier, R, ok, label) {
-  const area = (rc.x1 - rc.x0 - 140) * (rc.y1 - rc.y0 - 150);
-  const d = Math.max(105 + tier * 6, Math.sqrt(area * .62 / n)), mine = [];
-  const inside = p => p.x > rc.x0 + 70 && p.x < rc.x1 - 70 && p.y > rc.y0 + 95 && p.y < rc.y1 - 55;
+  const d = 128 + tier * 4, mine = [];                // one spacing everywhere; the region is filled completely (n is ignored)
+  const inside = p => p.x > rc.x0 + 50 && p.x < rc.x1 - 50 && p.y > rc.y0 + 80 && p.y < rc.y1 - 40;
   const free = p => inside(p) && ok(p) && mine.every(m => Math.hypot(m.x - p.x, m.y - p.y) >= d)
-    && !things.some(t => t.kind !== 'tower' && Math.hypot(t.x - p.x, t.y - p.y) < t.size * .55 + 55);
+    && !things.some(t => t.kind !== 'tower' && t.kind !== 'mega' && t.kind !== 'guardian' && t.kind !== 'temple' && Math.hypot(t.x - p.x, (t.y - p.y) * 1.2) < t.size * .6 + 70);
   const cx = (rc.x0 + rc.x1) / 2, cy = (rc.y0 + rc.y1) / 2;
   const newSeed = () => {                               // start (or restart) anywhere free: nearest to the middle first
     let best = null, bd = Infinity;
-    for (let t = 0; t < 80; t++) { const p = { x: rc.x0 + 70 + R() * (rc.x1 - rc.x0 - 140), y: rc.y0 + 95 + R() * (rc.y1 - rc.y0 - 150) }, dd = Math.hypot(p.x - cx, p.y - cy); if (dd < bd && free(p)) { bd = dd; best = p; } }
+    for (let t = 0; t < 200; t++) { const p = { x: rc.x0 + 50 + R() * (rc.x1 - rc.x0 - 100), y: rc.y0 + 80 + R() * (rc.y1 - rc.y0 - 120) }, dd = Math.hypot(p.x - cx, p.y - cy); if (dd < bd && free(p)) { bd = dd; best = p; } }
     if (best) { mine.push(best); active.push(best); } return best;
   };
   const active = [];
   if (!newSeed()) return;
-  while (mine.length < n) {
+  while (true) {
     if (!active.length && !newSeed()) break;            // a part cut off by a temple or gate gets its own start
     if (!active.length) continue;
     const i = Math.floor(R() * active.length), a = active[i]; let found = false;
-    for (let k = 0; k < 30; k++) {
-      const an = R() * Math.PI * 2, rad = d * (1 + R() * .35), p = { x: a.x + Math.cos(an) * rad, y: a.y + Math.sin(an) * rad };
+    for (let k = 0; k < 40; k++) {
+      const an = R() * Math.PI * 2, rad = d * (1 + R() * .25), p = { x: a.x + Math.cos(an) * rad, y: a.y + Math.sin(an) * rad };
       if (free(p)) { mine.push(p); active.push(p); found = true; break; }
     }
     if (!found) active.splice(i, 1);
