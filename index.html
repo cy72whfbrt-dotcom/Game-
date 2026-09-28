@@ -3747,8 +3747,9 @@ body.has-panel .mapctl{display:none}
             const step = 160 * z;
             if (step >= 4 && bw >= 6) { g.strokeStyle = 'rgba(40,26,14,.5)'; g.lineWidth = 1; g.beginPath();
               for (let s = step; s < len; s += step) { g.moveTo(s, -bw / 2 + 1); g.lineTo(s, bw / 2 - 1); } g.stroke(); }   // planks
-            if (bw >= 5) { g.strokeStyle = 'rgba(222,190,140,.55)'; g.lineWidth = 1; g.beginPath(); g.moveTo(0, -bw / 2 + 1.5); g.lineTo(len, -bw / 2 + 1.5); g.stroke(); }  // rail
-            if (bw >= 7) { g.fillStyle = '#2a1d12'; for (const px of [0, len - 3]) for (const py of [-bw / 2 - 2, bw / 2 - 1]) g.fillRect(px, py, 3, 3); }                          // posts
+            if (bw >= 5) {                                                                                       // stone parapets with merlons on both sides
+              const pw = Math.max(1.5, bw * .16); g.fillStyle = '#8f8b84'; g.fillRect(0, -bw / 2 - pw * .4, len, pw); g.fillRect(0, bw / 2 - pw * .6, len, pw);
+              if (bw >= 9) { g.fillStyle = '#b3aea5'; const m = Math.max(2, pw * 1.1); for (let px = m * .5; px < len - m; px += m * 2) { g.fillRect(px, -bw / 2 - pw * .4 - m * .6, m, m * .6); g.fillRect(px, bw / 2 + pw * .4, m, m * .6); } } }
             g.restore();
           }
           // 4 territory (cached geometry, see below)
