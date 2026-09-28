@@ -2449,13 +2449,16 @@ body.has-panel .mapctl{display:none}
             const owner = islandOwnerOf(island.id);
             return owner ? (islandTroops[island.id] || 0) : island.neutralTroops;
         }
+        function wallDefensePct() {                     // Mauer in the city: +2 % defense per level on every one of your bases
+            try { return (loadCity().levels.wall || 0) * 2; } catch (e) { return 0; }   // (the city isn't set up yet during the very first boot steps)
+        }
         function effectiveDefense(island) {
             const boss = bossAt(island.id); if (boss) return boss.defense;
             const owner = islandOwnerOf(island.id);
             if (!owner) return island.neutralDefense;
             const level = islandLevels[island.id] || 1;
             const garrison = islandTroops[island.id] || 0;   // Verteidigung skill: the garrison fights harder, +3 % of it per level (mirror of the sword)
-            return Math.round((owner === 'player' ? defenseForLevel(level) + garrison * (skills.defense || 0) * SKILL_DEFS.defense.defPct / 100
+            return Math.round((owner === 'player' ? (defenseForLevel(level) + garrison * (skills.defense || 0) * SKILL_DEFS.defense.defPct / 100) * (1 + wallDefensePct() / 100)
                                                   : baseDefenseForLevel(level) * (1 + (botMults(owner).armorPct || 0) / 100) + garrison * (botMults(owner).defensePct || 0) / 100) * titleMult(owner, 'defense'));
         }
         // Removes an island from whichever owner (player or a bot) it
@@ -3156,6 +3159,7 @@ body.has-panel .mapctl{display:none}
             const totalStrength = originalEnemyTroops + originalEnemyDefense;
             const won = myTroops > totalStrength;
             const bossHere = bossAt(target.id);
+            if (targetOwner && targetOwner !== 'player') botGrudge(targetOwner, 'player', won ? 2 : 1);   // the bot remembers this
             const losses = Math.round(originalEnemyDefense * (1 - lossReductionPct / 100));
             const sentLoss = won ? Math.min(attack.rawTroops, Math.round(losses * attack.rawTroops / Math.max(1, myTroops))) : 0;   // the losses are shared between sent and bonus troops
             const remaining = won ? Math.max(0, attack.rawTroops - sentLoss) : 0;
@@ -3309,6 +3313,7 @@ body.has-panel .mapctl{display:none}
             const originalEnemyDefense = effectiveDefense(target);
             const totalStrength = originalEnemyTroops + originalEnemyDefense;
             const won = myTroops > totalStrength;
+            if (targetOwner && targetOwner !== 'player') botGrudge(targetOwner, bot.id, won ? 2 : 1);   // bots hold grudges against each other too
             addBotXp(bot.id, won ? totalStrength : Math.min(originalEnemyTroops, myTroops));
             const playerInvolved = targetOwner === 'player';
             const bossHere = bossAt(target.id);
@@ -5205,6 +5210,24 @@ body.has-panel .mapctl{display:none}
         // otherwise a bot with endless nearby neutral fodder would attack
         // forever and never spend a single coin on leveling up.
         const BOT_MIN_GARRISON_TO_ATTACK = 10;
+        // Rache: a bot remembers who hit it. After a human-like pause (30 s – 2 min) it goes for that enemy's
+        // bases first and dares a little more, for about 20 minutes; every new hit makes the grudge deeper.
+        function botGrudge(botId, who, weight) {
+            const b = loadBotState()[botId]; if (!b || !who || who === botId) return;
+            const g = b.grudge || (b.grudge = {}), now = Date.now(), cur = g[who] && g[who].until > now ? g[who] : null;
+            g[who] = { n: Math.min(5, (cur ? cur.n : 0) + weight), from: cur ? cur.from : now + 30000 + Math.random() * 90000, until: now + 20 * 60000, told: cur ? cur.told : false };
+            saveBotState();
+        }
+        function botGrudgeOn(botId, who) {
+            const b = loadBotState()[botId], g = b && b.grudge && who ? b.grudge[who] : null, now = Date.now();
+            return g && now >= g.from && now < g.until ? g : null;
+        }
+        function botRevengeLaunched(bot, targetId) {        // tell the player once when a bot starts paying them back
+            if (islandOwnerOf(targetId) !== 'player') return;
+            const g = botGrudgeOn(bot.id, 'player'); if (!g || g.told) return;
+            g.told = true; saveBotState();
+            flashHint(bot.name + ' schlägt zurück – du hast ' + (g.n > 1 ? 'zu oft ' : '') + 'angegriffen. Achte auf ' + islandTitle(islandById[targetId]) + '!', 5000);
+        }
         function botThink(bot) {
             const owned = botOwnedIslands[bot.id];
             if (!owned || owned.size === 0) return;
@@ -5224,8 +5247,10 @@ body.has-panel .mapctl{display:none}
                         if (shielded && islandOwnerOf(target.id) === 'player') continue;                           // the Friedensschild
                         if (!canPass && !(target.type === 'gate' && gateOnRoute(source.landmassId, lmId) === target)) continue;
                         const totalStrength = effectiveTroops(target) + effectiveDefense(target);
-                        if (troopsHere * atk < totalStrength * st.margin) continue;
+                        const grudge = botGrudgeOn(bot.id, islandOwnerOf(target.id));
+                        if (troopsHere * atk < totalStrength * st.margin * (grudge ? 0.85 : 1)) continue;   // revenge makes them a bit bolder
                         let d = Math.hypot(target.x - source.x, target.y - source.y);
+                        if (grudge) d /= 1 + grudge.n;                                          // and pulls them towards whoever hit them
                         if (target.id === megaTempleId && ruler && ruler !== bot.id) d *= 0.1;   // the throne pulls
                         else if (bossAt(target.id)) d *= 0.3;
                         else if (target.type === 'gate' || target.type === 'temple' || target.guardian) d *= st.temple;
@@ -5243,12 +5268,12 @@ body.has-panel .mapctl{display:none}
                     if (hit.has(c.targetId)) continue;
                     const have = left[c.sourceId] ?? (islandTroops[c.sourceId] || 0);
                     if (have < c.need) continue;
-                    if (launchAttack(c.sourceId, c.targetId, bot.id, c.need)) { left[c.sourceId] = have - c.need; hit.add(c.targetId); n++; }
+                    if (launchAttack(c.sourceId, c.targetId, bot.id, c.need)) { left[c.sourceId] = have - c.need; hit.add(c.targetId); n++; botRevengeLaunched(bot, c.targetId); }
                 }
                 return;
             }
             const pick = cands[Math.random() < .7 ? 0 : Math.floor(Math.random() * Math.min(3, cands.length))];   // not always the perfect move
-            launchAttack(pick.sourceId, pick.targetId, bot.id, pick.troops);
+            if (launchAttack(pick.sourceId, pick.targetId, bot.id, pick.troops)) botRevengeLaunched(bot, pick.targetId);
         }
 
         // Bots play by the player's rules with no caps: XP and levels (1 skill point per level, spent by their style),
@@ -7667,7 +7692,8 @@ body.has-panel .mapctl{display:none}
             { id: 'hospital', name: 'Lazarett',      icon: 'plus',    x: 215, y: 670, roof: '#e8e2d2', cross: true, fx: true,
               desc: 'Von deinen Gefallenen (Angriff oder Verteidigung) kommen Verwundete hierher statt zu sterben (5 % pro Stufe, bis 60 %). Heile sie gegen Münzen – sie gehen in die Hauptstadt.' },
             { id: 'shrine',   name: 'Tempelschrein', icon: 'temple',  x: 785, y: 670, roof: '#c9a54e', dome: true, desc: 'Wird den Bonus aller deiner Tempel verstärken.' },
-            { id: 'wall',     name: 'Mauer',         icon: 'defense', x: 715, y: 815, roof: '#6b6456', gate: true, desc: 'Wird die Verteidigung deiner Hauptstadt erhöhen.' },
+            { id: 'wall',     name: 'Mauer',         icon: 'defense', x: 715, y: 815, roof: '#6b6456', gate: true, fx: true,
+              desc: 'Stärkt die Verteidigung aller deiner Basen: +2 % pro Stufe (Stufe 25: +50 %). Beispiel: 10 Mio. Verteidigung und Mauer Stufe 5 ergeben 11 Mio.' },
             { id: 'heroes',   name: 'Heldenhalle',   icon: 'profile', x: 285, y: 815, roof: '#7a2e2a', fx: true,
               desc: 'Hier leben deine Helden. Ein Held zieht mit einem Angriff mit und gibt ihm seinen Bonus. Jede Stufe hebt die Höchststufe der Helden um 2; Stufe 1, 5 und 10 schalten je einen Helden frei.' }
         ];
@@ -7900,6 +7926,7 @@ body.has-panel .mapctl{display:none}
         }
         function starGemCost(stars) { return 20 * (stars + 1); }
         function cityEffectText(id, lvl) {
+            if (id === 'wall') return lvl ? 'Jetzt: +' + (lvl * 2) + ' % Verteidigung auf allen Basen.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: +' + ((lvl + 1) * 2) + ' %.' : '') : 'Baue die Mauer für mehr Verteidigung auf allen Basen.';
             if (id === 'academy') return 'Jetzt: Truppen laufen +' + (lvl * 2) + ' % schneller.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: +' + ((lvl + 1) * 2) + ' %.' : '');
             if (id === 'forge') return lvl ? 'Bis zu ' + Math.min(STAR_MAX, lvl) + (Math.min(STAR_MAX, lvl) === 1 ? ' Stern' : ' Sterne') + ' pro Ausrüstungsteil.' + (lvl < STAR_MAX ? ' Nächste Stufe: ' + (lvl + 1) + ' Sterne.' : '') : 'Baue die Schmiede, um Sterne zu setzen.';
             if (id === 'heroes') return lvl ? 'Helden bis Stufe ' + heroMaxLevel() + ' · ' + HEROES.filter(h => heroUnlocked(h)).length + ' von ' + HEROES.length + ' Helden bereit.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: Helden bis Stufe ' + Math.min(50, (lvl + 1) * 2) + (HEROES.find(h => h.unlock === lvl + 1) ? ', ' + HEROES.find(h => h.unlock === lvl + 1).name + ' kommt dazu' : '') + '.' : '') : 'Baue die Heldenhalle, um deinen ersten Helden zu rufen.';
