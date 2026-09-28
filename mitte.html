@@ -109,130 +109,179 @@ function rr(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w
 
 const BAND = { player: '#3f86d8', bot: '#c9423a', neutral: '#7c8088' };
 
+// ===== 3D (isometric) buildings: every building is drawn from the same angle, top + two sides visible =====
+// Sprite box as before: x −31…31, y −48…24, the ground centre of a building sits at y = ISO_OY.
+const ISO_OY = 8, ER = 1.2247, EY = .7071;
+function shade(hex, f) {                                   // darken (f < 1) or lighten (f > 1) a #rrggbb colour
+  const n = parseInt(hex.slice(1), 16), c = v => Math.max(0, Math.min(255, Math.round(f > 1 ? v + (255 - v) * (f - 1) : v * f)));
+  return '#' + [n >> 16, (n >> 8) & 255, n & 255].map(v => c(v).toString(16).padStart(2, '0')).join('');
+}
+function isoKit(g, OY) {
+  const P = (x, y, z) => [(x - y) * .866, (x + y) * .5 - z + OY];
+  const ink = '#2a241b';
+  const poly = (pts, fill, lw) => { g.beginPath(); pts.forEach((q, i) => i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1])); g.closePath(); g.fillStyle = fill; g.fill(); g.lineWidth = lw || 1; g.strokeStyle = ink; g.stroke(); };
+  // box from (x0,y0) to (x1,y1) on the ground, z0…z1 high; col = base colour, the three visible faces are shaded from it
+  const box = (x0, x1, y0, y1, z0, z1, col, lw) => {
+    poly([P(x0, y1, z1), P(x1, y1, z1), P(x1, y1, z0), P(x0, y1, z0)], shade(col, .86), lw);
+    poly([P(x1, y0, z1), P(x1, y1, z1), P(x1, y1, z0), P(x1, y0, z0)], shade(col, .68), lw);
+    poly([P(x0, y0, z1), P(x1, y0, z1), P(x1, y1, z1), P(x0, y1, z1)], shade(col, 1.12), lw);
+  };
+  const sq = (cx, cy, a, z0, z1, col, lw) => box(cx - a, cx + a, cy - a, cy + a, z0, z1, col, lw);
+  const cyl = (cx, cy, r, z0, z1, col, lw, noTop) => {
+    const [x0, y0] = P(cx, cy, z0), [, y1] = P(cx, cy, z1), rx = r * ER, ry = r * EY;
+    const gr = g.createLinearGradient(x0 - rx, 0, x0 + rx, 0); gr.addColorStop(0, shade(col, 1.1)); gr.addColorStop(.45, shade(col, .9)); gr.addColorStop(1, shade(col, .62));
+    g.beginPath(); g.moveTo(x0 - rx, y1); g.lineTo(x0 - rx, y0); g.ellipse(x0, y0, rx, ry, 0, Math.PI, 0, true); g.lineTo(x0 + rx, y1); g.ellipse(x0, y1, rx, ry, 0, 0, Math.PI, true); g.closePath();
+    g.fillStyle = gr; g.fill(); g.lineWidth = lw || 1; g.strokeStyle = ink; g.stroke();
+    if (!noTop) { g.beginPath(); g.ellipse(x0, y1, rx, ry, 0, 0, Math.PI * 2); g.fillStyle = shade(col, 1.15); g.fill(); g.stroke(); }
+  };
+  const cone = (cx, cy, r, z, h, col) => {                  // round roof
+    const [x0, y0] = P(cx, cy, z), rx = r * ER, ry = r * EY, ay = y0 - h;
+    g.beginPath(); g.moveTo(x0 - rx, y0); g.lineTo(x0, ay); g.lineTo(x0 + rx, y0); g.ellipse(x0, y0, rx, ry, 0, 0, Math.PI, false); g.closePath();
+    const gr = g.createLinearGradient(x0 - rx, 0, x0 + rx, 0); gr.addColorStop(0, shade(col, 1.15)); gr.addColorStop(.5, col); gr.addColorStop(1, shade(col, .6));
+    g.fillStyle = gr; g.fill(); g.lineWidth = 1; g.strokeStyle = ink; g.stroke(); return [x0, ay];
+  };
+  const pyramid = (cx, cy, a, z, h, col) => {               // square roof
+    const ap = P(cx, cy, z + h);
+    poly([P(cx - a, cy + a, z), P(cx + a, cy + a, z), ap], shade(col, .95));
+    poly([P(cx + a, cy - a, z), P(cx + a, cy + a, z), ap], shade(col, .7));
+    return ap;
+  };
+  const dome = (cx, cy, r, z, h, col) => {
+    const [x0, y0] = P(cx, cy, z), rx = r * ER, ry = r * EY, top = y0 - h;
+    g.beginPath(); g.moveTo(x0 - rx, y0); g.bezierCurveTo(x0 - rx, top + h * .25, x0 - rx * .45, top, x0, top); g.bezierCurveTo(x0 + rx * .45, top, x0 + rx, top + h * .25, x0 + rx, y0);
+    g.ellipse(x0, y0, rx, ry, 0, 0, Math.PI, false); g.closePath();
+    const gr = g.createRadialGradient(x0 - rx * .35, top + h * .35, r * .2, x0, y0 - h * .3, rx * 1.3); gr.addColorStop(0, shade(col, 1.6)); gr.addColorStop(.45, col); gr.addColorStop(1, shade(col, .5));
+    g.fillStyle = gr; g.fill(); g.lineWidth = 1.1; g.strokeStyle = ink; g.stroke(); return [x0, top];
+  };
+  const merlons = (x0, x1, y0, y1, z, col, n) => {           // battlements along the two front edges of a box top
+    const w = (x1 - x0) / (n * 2 - 1), d = (y1 - y0) / (n * 2 - 1);
+    for (let i = 0; i < n; i++) { box(x0 + i * 2 * w, x0 + i * 2 * w + w, y1 - 1, y1, z, z + 1.8, col, .6); box(x1 - 1, x1, y0 + i * 2 * d, y0 + i * 2 * d + d, z, z + 1.8, col, .6); }
+  };
+  const flag = (x, y, own, big) => {                        // pole + pennant in the owner's colour
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x, y - (big ? 11 : 8)); g.lineWidth = .9; g.strokeStyle = ink; g.stroke();
+    if (own) { const t = y - (big ? 11 : 8); g.fillStyle = own; g.beginPath(); g.moveTo(x, t); g.lineTo(x + (big ? 7 : 5.5), t + 1.6); g.lineTo(x, t + 3.4); g.closePath(); g.fill(); g.lineWidth = .6; g.stroke(); }
+  };
+  const faceWindow = (x, y, z, h) => { const [a, b] = P(x, y, z); g.fillStyle = '#2b2520'; g.fillRect(a - .6, b - h, 1.2, h); };
+  const shadow = (rx, ry) => { g.fillStyle = 'rgba(0,0,0,.22)'; g.beginPath(); g.ellipse(0, OY + 1, rx, ry, 0, 0, Math.PI * 2); g.fill(); };
+  return { P, poly, box, sq, cyl, cone, pyramid, dome, merlons, flag, faceWindow, shadow, ink };
+}
+const STONE = '#d8d1c1', WOOD = '#8a6440';
+const ROOF = { neutral: '#8a5a3c', player: '#3f86d8', bot: '#c9423a' };
+
 function towerTier(level) { return level >= 80 ? 4 : level >= 50 ? 3 : level >= 25 ? 2 : level >= 10 ? 1 : 0; }
 
 function paintTowerTier(g, ownerKey, detail, home, tier, skin) {
-  // 3/4 view, light from the upper left. Sprite box: x -31…31, y -48…24 (see buildingSprite). skin: optional { stone, roof } palette (capital skins)
-  const ink = '#1e1a16', neutral = ownerKey === 'neutral', own = BAND[ownerKey];
-  const marble = tier === 4, S = skin ? skin.stone : marble ? ['#fbf8f1', '#e3ddcf', '#a9a08c'] : neutral ? ['#d2cbbd', '#aaa393', '#716b5d'] : ['#ece5d6', '#c4bba8', '#847b69'];
-  const roofC = skin ? skin.roof : tier === 4 ? ['#fff1b8', '#e2b54a', '#7a5414'] : tier >= 3 ? ['#e4745a', '#b03e2a', '#5a1a10'] : tier === 2 ? ['#6f8bb4', '#3f5a86', '#1c2a44'] : ['#9a6a3c', '#6d4524', '#3a2410'];
-  const lin = (x0, x1, cs) => { const q = g.createLinearGradient(x0, 0, x1, 0); q.addColorStop(0, cs[0]); q.addColorStop(.45, cs[1]); q.addColorStop(1, cs[2]); return q; };
-  const mound = (w) => {                                   // rocky ground the base stands on
-    g.beginPath(); g.ellipse(0, 16, w, 7.5, 0, 0, Math.PI * 2);
-    const q = g.createLinearGradient(0, 9, 0, 24); q.addColorStop(0, '#8a8272'); q.addColorStop(1, '#4b463d'); g.fillStyle = q; g.fill();
-    g.lineWidth = 1; g.strokeStyle = ink; g.stroke();
-    g.fillStyle = 'rgba(255,255,255,.18)'; g.beginPath(); g.ellipse(-w * .25, 13.5, w * .5, 2.4, 0, 0, Math.PI * 2); g.fill();
-    if (detail) { g.fillStyle = '#6d8a3e'; for (const [x, r] of [[-w * .8, 2.4], [w * .75, 2.2], [-w * .45, 1.8], [w * .4, 1.6]]) { g.beginPath(); g.arc(x, 18, r, 0, Math.PI * 2); g.fill(); } } };
-  const cyl = (cx, top, bot, r) => {                       // round stone tower body
-    g.fillStyle = lin(cx - r, cx + r, S); g.beginPath(); g.moveTo(cx - r, top); g.lineTo(cx - r, bot); g.ellipse(cx, bot, r, r * .32, 0, Math.PI, 0, true); g.lineTo(cx + r, top); g.closePath(); g.fill();
-    g.lineWidth = 1.1; g.strokeStyle = ink; g.stroke();
-    if (detail) { g.strokeStyle = 'rgba(40,32,22,.2)'; g.lineWidth = .7; for (let y = top + 5; y < bot; y += 5) { g.beginPath(); g.ellipse(cx, y, r, r * .32, 0, 0, Math.PI); g.stroke(); } } };
-  const crenel = (cx, top, r) => {                         // round parapet with merlons
-    g.fillStyle = lin(cx - r - 1.5, cx + r + 1.5, S); g.beginPath(); g.ellipse(cx, top, r + 1.5, (r + 1.5) * .32, 0, 0, Math.PI * 2); g.fill(); g.lineWidth = 1; g.strokeStyle = ink; g.stroke();
-    for (let i = 0; i < 5; i++) { const a = Math.PI * (.12 + i * .19), x = cx - Math.cos(a) * (r + .5), y = top + Math.sin(a) * (r + .5) * .32;
-      g.fillStyle = i < 2 ? S[0] : S[1]; g.fillRect(x - 1.4, y - 3.4, 2.8, 3.4); g.lineWidth = .7; strokeBox(g, x - 1.4, y - 3.4, 2.8, 3.4); } };
-  const cone = (cx, base, r, h, cs) => {                   // tiled conical roof with a rim
-    g.fillStyle = lin(cx - r, cx + r, cs); g.beginPath(); g.moveTo(cx - r - 1, base); g.lineTo(cx, base - h); g.lineTo(cx + r + 1, base); g.ellipse(cx, base, r + 1, (r + 1) * .3, 0, 0, Math.PI); g.closePath(); g.fill();
-    g.lineWidth = 1.1; g.strokeStyle = ink; g.stroke();
-    if (detail) { g.strokeStyle = 'rgba(0,0,0,.22)'; g.lineWidth = .7; for (let i = 1; i < 4; i++) { const t = i / 4, rr2 = (r + 1) * (1 - t); g.beginPath(); g.ellipse(cx, base - h * t, rr2, rr2 * .3, 0, 0, Math.PI); g.stroke(); }
-      g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = .9; g.beginPath(); g.moveTo(cx - r * .45, base - 1); g.lineTo(cx - .6, base - h + 1.5); g.stroke(); } };
-  const box3 = (x0, top, w, h, d) => {                     // block with a lit front and a shaded right side
-    g.fillStyle = lin(x0, x0 + w, S); g.fillRect(x0, top, w, h); g.lineWidth = 1.1; g.strokeStyle = ink; strokeBox(g, x0, top, w, h);
-    g.fillStyle = S[2]; g.beginPath(); g.moveTo(x0 + w, top); g.lineTo(x0 + w + d, top - d * .6); g.lineTo(x0 + w + d, top + h - d * .6); g.lineTo(x0 + w, top + h); g.closePath(); g.fill(); g.stroke();
-    g.fillStyle = S[0]; g.beginPath(); g.moveTo(x0, top); g.lineTo(x0 + d, top - d * .6); g.lineTo(x0 + w + d, top - d * .6); g.lineTo(x0 + w, top); g.closePath(); g.fill(); g.stroke();
-    if (detail) { g.strokeStyle = 'rgba(40,32,22,.18)'; g.lineWidth = .7; g.beginPath(); for (let y = top + 5; y < top + h; y += 5) { g.moveTo(x0, y); g.lineTo(x0 + w, y); } g.stroke(); } };
-  const merl = (x0, top, w, d) => { const n = Math.max(2, Math.round(w / 5)), mw = w / (n * 2 - 1);
-    for (let i = 0; i < n; i++) { g.fillStyle = S[0]; g.fillRect(x0 + i * 2 * mw, top - 3.2, mw, 3.2); g.lineWidth = .7; g.strokeStyle = ink; strokeBox(g, x0 + i * 2 * mw, top - 3.2, mw, 3.2); } };
-  const win = (x, y, w, h) => { g.fillStyle = '#1b140e'; g.beginPath(); g.moveTo(x - w / 2, y + h); g.lineTo(x - w / 2, y + w / 2); g.arc(x, y + w / 2, w / 2, Math.PI, 0); g.lineTo(x + w / 2, y + h); g.closePath(); g.fill();
-    if (!neutral) { g.fillStyle = 'rgba(255,196,96,.9)'; g.beginPath(); g.arc(x, y + h * .65, w * .3, 0, Math.PI * 2); g.fill(); } };
-  const gate = (x, bot, w, h) => { g.fillStyle = '#1b140e'; g.beginPath(); g.moveTo(x - w / 2, bot); g.lineTo(x - w / 2, bot - h + w / 2); g.arc(x, bot - h + w / 2, w / 2, Math.PI, 0); g.lineTo(x + w / 2, bot); g.closePath(); g.fill();
-    g.strokeStyle = '#7a5a36'; g.lineWidth = .8; g.beginPath(); for (let i = 1; i < 3; i++) { g.moveTo(x - w / 2 + w * i / 3, bot); g.lineTo(x - w / 2 + w * i / 3, bot - h + 2); } g.stroke(); };
-  const flag = (x, y, h, w) => { if (neutral) return;
-    g.strokeStyle = '#2b2622'; g.lineWidth = 1.3; g.beginPath(); g.moveTo(x, y); g.lineTo(x, y - h); g.stroke();
-    g.fillStyle = '#e8c877'; g.beginPath(); g.arc(x, y - h - 1, 1.4, 0, Math.PI * 2); g.fill();
-    g.beginPath(); g.moveTo(x + .6, y - h + .5); g.quadraticCurveTo(x + w * .5, y - h - 1.5, x + w, y - h + 1.5); g.lineTo(x + w * .8, y - h + 4.5); g.lineTo(x + w, y - h + 7.5); g.quadraticCurveTo(x + w * .5, y - h + 5, x + .6, y - h + 8);
-    g.closePath(); const q = g.createLinearGradient(x, 0, x + w, 0); q.addColorStop(0, own); q.addColorStop(1, 'rgba(0,0,0,.35)'); g.fillStyle = own; g.fill(); g.fillStyle = q; g.globalAlpha = .45; g.fill(); g.globalAlpha = 1;
-    g.lineWidth = .8; g.strokeStyle = 'rgba(20,16,12,.8)'; g.stroke(); };
-  const band = (x0, y, w) => { if (neutral) return; g.fillStyle = own; g.fillRect(x0, y, w, 2.6); g.fillStyle = 'rgba(255,255,255,.25)'; g.fillRect(x0, y, w, .8); };
-
-  if (tier === 0) {                                        // palisade camp with a timber watchtower
-    mound(19);
-    const wood = ['#c89662', '#8e6038', '#4e331c'];
-    g.strokeStyle = '#3a2410'; g.lineWidth = 2.4; g.beginPath(); g.moveTo(-8, 14); g.lineTo(-6.5, -8); g.moveTo(8, 14); g.lineTo(6.5, -8); g.stroke();
-    g.lineWidth = 1.2; g.beginPath(); g.moveTo(-7.5, 10); g.lineTo(7.5, -3); g.moveTo(7.5, 10); g.lineTo(-7.5, -3); g.stroke();
-    g.fillStyle = lin(-11, 11, wood); g.fillRect(-10.5, -18, 21, 11); g.lineWidth = 1.1; g.strokeStyle = ink; strokeBox(g, -10.5, -18, 21, 11);
-    if (detail) { g.strokeStyle = 'rgba(40,24,10,.45)'; g.lineWidth = .7; g.beginPath(); for (const x of [-5.5, -.5, 4.5]) { g.moveTo(x, -18); g.lineTo(x, -7); } g.stroke(); }
-    band(-10.5, -10, 21); win(0, -16, 4, 5);
-    cone(0, -18, 13, 13, ['#e0c078', '#b08a3e', '#5e4418']);                                          // thatch
-    for (let i = 0; i < 9; i++) { const x = -17 + i * 4.25, top = 5 + Math.abs(i - 4) * .6;           // palisade in front
-      g.fillStyle = lin(x - 2, x + 2, wood); g.beginPath(); g.moveTo(x - 1.9, 16); g.lineTo(x - 1.9, top); g.lineTo(x, top - 3); g.lineTo(x + 1.9, top); g.lineTo(x + 1.9, 16); g.closePath(); g.fill(); g.lineWidth = .8; g.strokeStyle = ink; g.stroke(); }
-    flag(0, -31, 10, 11);
-  } else if (tier === 1) {                                 // round stone tower with a gatehouse
-    mound(21);
-    cyl(0, -14, 13, 11); band(-11, -8, 22); win(-4, -4, 3, 5); win(4, -4, 3, 5);
-    box3(-9, 3, 18, 11, 3); gate(0, 14, 7, 9); merl(-9, 3, 18);
-    crenel(0, -14, 11); cone(0, -17, 9.5, 15, roofC);
-    flag(0, -32, 11, 12);
-  } else if (tier === 2) {                                 // keep flanked by two round towers
-    mound(26);
-    box3(-12, -20, 24, 34, 5); band(-12, -14, 24); win(-5, -10, 3.4, 6); win(5, -10, 3.4, 6); win(0, -1, 3.4, 6); merl(-12, -20, 24);
-    for (const cx of [-19, 19]) { cyl(cx, -8, 14, 6.5); crenel(cx, -8, 6.5); cone(cx, -11, 5.5, 10, roofC); }
-    box3(-7, 5, 14, 9, 2); gate(0, 14, 7, 8);
-    flag(0, -24, 13, 14);
-  } else {                                                 // castle / citadel: curtain wall, four towers, tall keep
-    mound(29);
-    for (const cx of [-15, 15]) { cyl(cx, -14, 6, 5); crenel(cx, -14, 5); cone(cx, -17, 4.5, 10, roofC); }                   // back towers
-    box3(-10, -30, 20, 40, 5); band(-10, -24, 20); win(-4, -21, 3.2, 6); win(4, -21, 3.2, 6); win(0, -10, 3.4, 6);          // keep
-    if (marble) { g.strokeStyle = 'rgba(210,170,70,.8)'; g.lineWidth = 1; strokeBox(g, -10, -30, 20, 40); }
-    cone(2.5, -30, 13, tier === 4 ? 17 : 15, roofC);
-    box3(-24, 2, 48, 12, 3); merl(-24, 2, 48); band(-24, 5, 48); gate(0, 14, 8, 10);                                         // curtain wall
-    for (const cx of [-25, 25]) { cyl(cx, -6, 15, 5.5); crenel(cx, -6, 5.5); cone(cx, -9, 5, 11, roofC); }                   // front towers
-    if (tier === 4) { for (const [cx, cy] of [[25, -21], [2.5, -47.5]]) { g.fillStyle = '#ffe9a0'; g.beginPath(); g.arc(cx, cy, 1.8, 0, Math.PI * 2); g.fill(); g.lineWidth = .6; g.strokeStyle = ink; g.stroke(); } }
-    flag(-25, -20, 8, 11);
+  const K = isoKit(g, ISO_OY), own = ownerKey !== 'neutral' ? BAND[ownerKey] : null;
+  const stone = skin && skin.stone ? skin.stone : STONE, roof = skin && skin.roof ? skin.roof : (home ? '#d9a93f' : ROOF[ownerKey] || ROOF.neutral);
+  g.lineJoin = 'round';
+  if (tier === 0) {                                          // Lager: palisade, a wooden hall and a tent
+    K.shadow(19, 10);
+    K.poly([K.P(-11, -11, 0), K.P(11, -11, 0), K.P(11, 11, 0), K.P(-11, 11, 0)], '#9c8058', .8);
+    K.box(-11, 11, -11, -10, 0, 4, WOOD, .7); K.box(-11, -10, -11, 11, 0, 4, WOOD, .7);             // back palisade
+    K.sq(-3, -2, 4.5, 0, 6, '#a57b4f'); K.pyramid(-3, -2, 5, 6, 6, roof);
+    K.sq(5, 4, 3, 0, .5, '#9c8058', .5); K.pyramid(5, 4, 3.2, .5, 6.5, own ? shade(own, 1.35) : '#d9ccb0');
+    K.box(-11, 11, 10, 11, 0, 4, WOOD, .7); K.box(10, 11, -11, 11, 0, 4, WOOD, .7);                  // front palisade
+    const [fx, fy] = K.P(-3, -2, 12); K.flag(fx, fy, own || (home ? '#d9a93f' : null));
+    return;
   }
+  if (tier === 1) {                                          // Rundturm
+    K.shadow(15, 8);
+    K.sq(0, 0, 7.5, 0, 2, '#b3aa96');
+    K.cyl(0, 0, 5, 2, 22, stone);
+    K.cyl(0, 0, 5.8, 22, 24.5, stone, .9);
+    if (detail) { K.faceWindow(3.2, 3.2, 12, 3.4); K.faceWindow(4.2, 1.2, 18, 2.6); }
+    const [ax, ay] = K.cone(0, 0, 6.2, 24.5, 11, roof);
+    K.flag(ax, ay, own || (home ? '#d9a93f' : null));
+    return;
+  }
+  if (tier === 2) {                                          // Bergfried: square keep with battlements and a side building
+    K.shadow(19, 10);
+    K.sq(0, 0, 11, 0, 2, '#b3aa96');
+    K.sq(-3, -3, 5.5, 2, 28, stone);
+    if (detail) K.merlons(-8.5, 2.5, -8.5, 2.5, 28, stone, 3);
+    const ap = K.pyramid(-3, -3, 5, 28, 10, roof);
+    K.box(1, 9, -1, 7, 2, 11, stone); K.pyramid(5, 3, 4, 11, 5, roof);
+    if (detail) { K.faceWindow(-3, 2.5, 16, 3.5); K.faceWindow(2.5, -3, 20, 3.5); K.faceWindow(5, 7, 5.5, 3); }
+    K.flag(ap[0], ap[1], own || (home ? '#d9a93f' : null));
+    return;
+  }
+  // tier 3 Burg / tier 4 Zitadelle: walls with round corner towers around a keep
+  const a = tier === 4 ? 13.5 : 12, wh = tier === 4 ? 10 : 8, t = 1.6, tr = tier === 4 ? 3.1 : 2.7, th = wh + (tier === 4 ? 7 : 5);
+  const ka = tier === 4 ? 5 : 4.3, kh = tier === 4 ? 32 : 24;
+  K.shadow(a * 1.75, a * .95);
+  const tower = (x, y) => { K.cyl(x, y, tr, 0, th, stone, .9); const [cx, cy] = K.cone(x, y, tr + .5, th, 6.5, roof); if (tier === 4) K.flag(cx, cy, own); };
+  tower(-a, -a); tower(a, -a); tower(-a, a);
+  K.box(-a, a, -a, -a + t, 0, wh, stone, .9); K.box(-a, -a + t, -a, a, 0, wh, stone, .9);            // back walls
+  if (tier === 4) { K.cyl(4.5, -5, 2.4, 0, kh - 8, stone, .8); K.cone(4.5, -5, 2.9, kh - 8, 6, roof); }
+  K.sq(-1, -1, ka, 0, kh, stone);
+  if (detail) K.merlons(-1 - ka, -1 + ka, -1 - ka, -1 + ka, kh, stone, 3);
+  const ap = K.pyramid(-1, -1, ka - .3, kh, 9, roof);
+  if (detail) { K.faceWindow(-1, -1 + ka, kh * .55, 3.5); K.faceWindow(-1 + ka, -1, kh * .7, 3.5); }
+  K.flag(ap[0], ap[1], own || (home ? '#d9a93f' : null), true);
+  K.box(-a, a, a - t, a, 0, wh, stone, .9); K.box(a - t, a, -a, a, 0, wh, stone, .9);              // front walls
+  if (detail) { K.merlons(-a, a, a - t, a, wh, stone, 6); K.merlons(a - t, a, -a, a, wh, stone, 6); }
+  const [gx, gy] = K.P(0, a, 0); g.fillStyle = '#2b2520'; g.beginPath(); g.moveTo(gx - 2.4, gy + 1.2); g.lineTo(gx - 2.4, gy - 4); g.arc(gx, gy - 4, 2.4, Math.PI, 0); g.lineTo(gx + 2.4, gy - 1.2); g.closePath(); g.fill();   // gate in the front wall
+  tower(a, a);
 }
 
-function paintTemple(g, ownerKey, detail) {
-  const ink = '#2a241b';
-  const step = (x, y, w, h, a, b) => { const q = g.createLinearGradient(x, 0, x + w, 0); q.addColorStop(0, a); q.addColorStop(1, b);
-    g.fillStyle = q; g.fillRect(x, y, w, h); g.lineWidth = 1.1; g.strokeStyle = ink; strokeBox(g, x, y, w, h); };
-  step(-22, 14, 44, 6, '#d9cfb6', '#978b70'); step(-19, 10, 38, 4, '#e2d9c2', '#a3977c'); step(-16.5, 6.5, 33, 3.5, '#ebe3cf', '#ada186');
-  for (const cx of [-12, -4.3, 3.3, 11]) { const q = g.createLinearGradient(cx - 1.9, 0, cx + 1.9, 0); q.addColorStop(0, '#f5efe0'); q.addColorStop(1, '#a99d83');
-    g.fillStyle = q; g.fillRect(cx - 1.9, -8, 3.8, 14.5); g.lineWidth = .9; g.strokeStyle = ink; strokeBox(g, cx - 1.9, -8, 3.8, 14.5); }
-  g.fillStyle = '#d8cdb2'; g.fillRect(-16, -11, 32, 3.2); g.lineWidth = 1.1; g.strokeStyle = ink; strokeBox(g, -16, -11, 32, 3.2);
-  const pd = g.createLinearGradient(0, -24, 0, -11); pd.addColorStop(0, '#f4e1a4'); pd.addColorStop(1, '#b88e44');
-  g.beginPath(); g.moveTo(-18, -11); g.lineTo(0, -23.5); g.lineTo(18, -11); g.closePath(); g.fillStyle = pd; g.fill(); g.lineWidth = 1.3; g.strokeStyle = ink; g.stroke();
-  if (detail) { g.fillStyle = 'rgba(60,40,10,.35)'; g.beginPath(); g.arc(0, -15, 2.2, 0, Math.PI * 2); g.fill(); }
-  g.fillStyle = '#f1d27f'; g.beginPath(); g.moveTo(0, -30); g.lineTo(2.6, -26.5); g.lineTo(0, -23.5); g.lineTo(-2.6, -26.5); g.closePath(); g.fill(); g.lineWidth = .9; g.stroke();
-  if (ownerKey !== 'neutral') { g.fillStyle = BAND[ownerKey]; g.beginPath(); g.moveTo(-3.2, -7.8); g.lineTo(3.2, -7.8); g.lineTo(3.2, 1); g.lineTo(0, -1.2); g.lineTo(-3.2, 1); g.closePath(); g.fill(); }  // owner cloth
+function paintTemple(g, ownerKey, detail) {                   // Tempel: square stepped platform, colonnade on all sides, pyramid roof with a gold tip
+  const K = isoKit(g, ISO_OY), own = ownerKey !== 'neutral' ? BAND[ownerKey] : null;
+  g.lineJoin = 'round'; K.shadow(24, 13);
+  K.sq(0, 0, 14, 0, 2.5, '#e6dfcf'); K.sq(0, 0, 11.5, 2.5, 5, '#ece6d7');
+  const cols = [], A = 8.5;
+  for (let i = 0; i < 4; i++) { const v = -A + i * (2 * A / 3); cols.push([v, -A], [v, A], [-A, v], [A, v]); }
+  const uniq = [...new Map(cols.map(c => [c.join(','), c])).values()];
+  const col = c => K.cyl(c[0], c[1], .9, 5, 15, '#f4efe3', .6);
+  uniq.filter(c => c[0] + c[1] < 0).forEach(col);
+  K.sq(0, 0, 5.8, 5, 15, '#5d544a', .8);
+  if (own) { const [dx, dy] = K.P(0, 5.8, 5); g.fillStyle = own; g.fillRect(dx - 1.4, dy - 8, 2.8, 6.5); }
+  uniq.filter(c => c[0] + c[1] >= 0).forEach(col);
+  K.sq(0, 0, 10, 15, 17.5, '#efe9dc');
+  const ap = K.pyramid(0, 0, 10, 17.5, 9, '#c9a24f');
+  g.beginPath(); g.arc(ap[0], ap[1] - 1.5, 1.6, 0, Math.PI * 2); g.fillStyle = '#f3d98a'; g.fill(); g.lineWidth = .7; g.strokeStyle = K.ink; g.stroke();
 }
 
-function paintGuardianTemple(g, ownerKey, detail) {                             // Wächter-Tempel: temple flanked by two watchtowers, steel-blue dome
-  const ink = '#2a241b';
-  const stone = (x0, x1) => { const q = g.createLinearGradient(x0, 0, x1, 0); q.addColorStop(0, '#ebe6da'); q.addColorStop(1, '#9d9585'); return q; };
-  g.lineJoin = 'round'; g.strokeStyle = ink;
-  for (const [x, y, w, h] of [[-25, 14, 50, 6], [-21, 10, 42, 4]]) { g.fillStyle = stone(x, x + w); g.fillRect(x, y, w, h); g.lineWidth = 1.1; strokeBox(g, x, y, w, h); }
-  for (const sx of [-1, 1]) {                                                    // watchtowers
-    const x = sx < 0 ? -24 : 15;
-    g.fillStyle = stone(x, x + 9); g.fillRect(x, -10, 9, 20); g.lineWidth = 1.1; strokeBox(g, x, -10, 9, 20);
-    for (let i = 0; i < 3; i++) { g.fillRect(x - 0.5 + i * 3.5, -13, 2.5, 3); strokeBox(g, x - 0.5 + i * 3.5, -13, 2.5, 3); }
-    g.fillStyle = '#3a342c'; g.fillRect(x + 3.2, -4, 2.6, 5);
+function paintGuardianTemple(g, ownerKey, detail) {           // Wächter-Tempel: platform, round hall with a steel-blue dome, an obelisk on every corner
+  const K = isoKit(g, ISO_OY), own = ownerKey !== 'neutral' ? BAND[ownerKey] : null;
+  g.lineJoin = 'round'; K.shadow(26, 14);
+  K.sq(0, 0, 15, 0, 2.6, '#dcd6ca'); K.sq(0, 0, 12.5, 2.6, 5.2, '#e3ddd1');
+  const ob = (x, y) => { K.sq(x, y, 1.4, 5.2, 18, '#e8e2d6', .7); K.pyramid(x, y, 1.4, 18, 3.5, '#9fb6d3'); };
+  ob(-11, -11); ob(11, -11); ob(-11, 11);
+  const R = 7.2, cols = [];
+  for (let i = 0; i < 10; i++) { const t = i / 10 * Math.PI * 2 + .3; cols.push([Math.cos(t) * R, Math.sin(t) * R]); }
+  const col = c => K.cyl(c[0], c[1], .85, 5.2, 15, '#f1ede4', .6);
+  cols.filter(c => c[0] + c[1] < 0).forEach(col);
+  K.cyl(0, 0, 5.3, 5.2, 15, '#4f5663', .8, true);
+  if (own) { const [dx, dy] = K.P(3.6, 3.6, 5.2); g.fillStyle = own; g.fillRect(dx - 1.3, dy - 7.5, 2.6, 6); }
+  cols.filter(c => c[0] + c[1] >= 0).forEach(col);
+  K.cyl(0, 0, 8.4, 15, 17, '#ece7dd', .9);
+  const [dx, dt] = K.dome(0, 0, 6.6, 17, 11, '#7f9fc6');
+  g.beginPath(); g.moveTo(dx, dt); g.lineTo(dx, dt - 6); g.lineWidth = 1.2; g.strokeStyle = K.ink; g.stroke();
+  g.fillStyle = '#e6edf6'; g.beginPath(); g.moveTo(dx, dt - 9.5); g.lineTo(dx + 2, dt - 6); g.lineTo(dx - 2, dt - 6); g.closePath(); g.fill(); g.lineWidth = .7; g.stroke();
+  ob(11, 11);
+}
+
+function paintGateIso(g, ownerKey, detail) {                  // Tor: a square gate tower with an arch through it on both sides we see, two round turrets
+  const K = isoKit(g, ISO_OY), own = ownerKey !== 'neutral' ? BAND[ownerKey] : null;
+  g.lineJoin = 'round'; K.shadow(20, 11);
+  const a = 8.5, h = 17;
+  K.cyl(-a, -a, 3, 0, h + 5, STONE, .9); K.cone(-a, -a, 3.5, h + 5, 6, '#6f6b64');
+  K.sq(0, 0, a, 0, h, '#c9c3b6');
+  if (detail) K.merlons(-a, a, -a, a, h, '#c9c3b6', 4);
+  for (const f of [[0, a], [a, 0]]) {                          // arches on the two faces we see, with a portcullis
+    const [x, y] = K.P(f[0], f[1], 0);
+    g.save(); g.transform(1, f[0] ? -.577 : .577, 0, 1, x, y);                          // lie flat on that face
+    g.fillStyle = '#1d1915'; g.beginPath(); g.moveTo(-3.2, 0); g.lineTo(-3.2, -7); g.arc(0, -7, 3.2, Math.PI, 0); g.lineTo(3.2, 0); g.closePath(); g.fill();
+    if (detail) { g.strokeStyle = '#6a5642'; g.lineWidth = .7; g.beginPath(); for (let i = -2; i <= 2; i++) { g.moveTo(i * 1.2, -9.5); g.lineTo(i * 1.2, 0); } g.moveTo(-3.2, -4); g.lineTo(3.2, -4); g.stroke(); }
+    g.restore();
   }
-  g.fillStyle = '#4a4238'; g.fillRect(-12, -6, 24, 16);                        // cella
-  for (const cx of [-10, -3.4, 3.4, 10]) { g.fillStyle = stone(cx - 1.7, cx + 1.7); g.fillRect(cx - 1.7, -6, 3.4, 16); g.lineWidth = .9; strokeBox(g, cx - 1.7, -6, 3.4, 16); }
-  g.lineWidth = 1.1; g.fillStyle = stone(-14, 14); g.fillRect(-14, -9.5, 28, 3.5); strokeBox(g, -14, -9.5, 28, 3.5);
-  const dg = g.createLinearGradient(-10, -26, 10, -9.5); dg.addColorStop(0, '#dbe8f7'); dg.addColorStop(.5, '#7f9fc6'); dg.addColorStop(1, '#3d5a82');
-  g.beginPath(); g.moveTo(-11, -9.5); g.bezierCurveTo(-11, -20, -4, -24, 0, -24); g.bezierCurveTo(4, -24, 11, -20, 11, -9.5); g.closePath();
-  g.fillStyle = dg; g.fill(); g.lineWidth = 1.3; g.stroke();                   // steel dome
-  if (detail) { g.strokeStyle = 'rgba(20,40,70,.45)'; g.lineWidth = .8; g.beginPath(); g.moveTo(-5, -9.8); g.quadraticCurveTo(-5.3, -19, 0, -23.8); g.moveTo(5, -9.8); g.quadraticCurveTo(5.3, -19, 0, -23.8); g.stroke(); g.strokeStyle = ink; }
-  g.beginPath(); g.moveTo(0, -24); g.lineTo(0, -33); g.lineWidth = 1.4; g.stroke();   // spear finial
-  g.fillStyle = '#e6edf6'; g.beginPath(); g.moveTo(0, -38); g.lineTo(2.4, -33); g.lineTo(-2.4, -33); g.closePath(); g.fill(); g.lineWidth = .9; g.stroke();
-  if (ownerKey !== 'neutral') { g.fillStyle = BAND[ownerKey]; g.beginPath(); g.moveTo(-3.2, -5.5); g.lineTo(3.2, -5.5); g.lineTo(3.2, 3); g.lineTo(0, 1); g.lineTo(-3.2, 3); g.closePath(); g.fill(); }
+  K.cyl(a, a, 3, 0, h + 5, STONE, .9); const [fx, fy] = K.cone(a, a, 3.5, h + 5, 6, '#6f6b64');
+  K.flag(fx, fy, own);
 }
 
 function paintMegaTemple(g, ownerKey, detail) {           // Haupttempel in real 3D (isometric): square terrace, round colonnade, drum and gold
   const ink = '#2a241b', own = ownerKey !== 'neutral' ? BAND[ownerKey] : null;  // dome, a tower on every corner - the same from every side
-  const OY = 5, P = (x, y, z) => [(x - y) * .866, (x + y) * .5 - z + OY];
+  const OY = ISO_OY, P = (x, y, z) => [(x - y) * .866, (x + y) * .5 - z + OY];
   const ER = 1.2247, EY = .7071;                                                // a ground circle of radius r is an ellipse r*ER × r*EY
   g.lineJoin = 'round'; g.strokeStyle = ink;
   const poly = (pts, fill, lw) => { g.beginPath(); pts.forEach((q, i) => i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1])); g.closePath(); g.fillStyle = fill; g.fill(); g.lineWidth = lw || 1; g.stroke(); };
@@ -380,13 +429,12 @@ function build() {
       const ux = Math.sign(oq - iq), uy = Math.sign(orr - ir), off = RIVER / 2 + 150;   // the gate stands on the bank, right at the bridge's end
       const intoThrone = ringOf(iq, ir) === 0, intoRing = ringOf(iq, ir) === 1 || ringOf(oq, orr) === 1;
       const nm = intoThrone ? 'Thron-Tor ' + dirName(oq, orr) : intoRing ? 'Wächter-Tor' : 'Grenztor';
-      const gsz = intoThrone ? 330 : intoRing ? 280 : 240;
+      const gsz = intoThrone ? 440 : intoRing ? 380 : 330;
       // One gate per bridge, drawn as a gatehouse at EACH end of it (the same on every bridge), the bridge between walled.
       // North–south: the front gatehouse, the road runs through its arch. East–west: a gatehouse without an arch that
       // stands across the road (the road runs underneath it), so nothing points the wrong way.
-      const Hn = gsz * .8, ew = dq === 1, Wn = Hn * 1.3;
-      const ends = ew ? [{ x: bx - RIVER / 2 - Wn * .5 + 10, y: by + BRIDGE_W / 2 + 10 }, { x: bx + RIVER / 2 + Wn * .5 - 10, y: by + BRIDGE_W / 2 + 10 }]
-                      : [{ x: bx, y: by - RIVER / 2 + 10 }, { x: bx, y: by + RIVER / 2 + Hn * .72 }];
+      const ew = dq === 1, o = RIVER / 2 + gsz * .12;             // a 3D gate tower on each bank, right where the bridge lands
+      const ends = ew ? [{ x: bx - o, y: by }, { x: bx + o, y: by }] : [{ x: bx, y: by - o }, { x: bx, y: by + o }];
       things.push({ kind: 'gate', ends, bx, by, x: bx, y: by + 1, size: gsz, name: nm, major: intoThrone,
         desc: intoThrone ? 'Einer von nur 4 Wegen zum Haupttempel.' : intoRing ? 'Tor in den Ring um die Mitte. Unbesetzt verschlossen.' : 'Jede Brücke hat ein Tor. Unbesetzt verschlossen, wer es hält, bestimmt die Maut.' });
       gates++;
@@ -395,14 +443,14 @@ function build() {
   // --- the middle: 3 × 3 regions ---
   const rc = cellRect(0, 0, 0, 0);
   regions.push({ kind: 'throne', rect: rc, name: 'Thron-Gebiet', desc: 'Nur der Haupttempel und seine Wachen. Hinein nur über die 4 Thron-Tore.' });
-  roads.push({ plaza: 700 });
-  things.push({ kind: 'mega', x: 0, y: 0, size: 1350, name: 'Haupttempel', desc: 'Die Mitte der Welt. Wer ihn hält, herrscht. 8-facher Tempel-Bonus.' });
-  scatter(rc, 0, 4, R, p => Math.max(Math.abs(p.x), Math.abs(p.y) * 1.1) > 820, 'Zitadelle');
+  roads.push({ plaza: 1000 });
+  things.push({ kind: 'mega', x: 0, y: 0, size: 1900, name: 'Haupttempel', desc: 'Die Mitte der Welt. Wer ihn hält, herrscht. 8-facher Tempel-Bonus.' });
+  scatter(rc, 0, 4, R, p => Math.max(Math.abs(p.x), Math.abs(p.y) * 1.1) > 1150, 'Zitadelle');
   for (const [cq, cr, nm] of CORNERS) {
     const c = cellRect(cq, cr, cq, cr);
     regions.push({ kind: 'ring', rect: c, name: 'Wächter-Gebiet ' + nm, desc: 'Eck-Gebiet mit einem Wächter-Tempel.' });
-    things.push({ kind: 'guardian', x: cq * S, y: cr * S + 100, size: 820, name: 'Wächter-Tempel ' + nm, desc: 'Einer der vier Eck-Tempel. 3-facher Tempel-Bonus.' });
-    scatter(c, 0, 3, R, p => Math.hypot(p.x - cq * S, p.y - cr * S - 110) > 640, 'Burg');
+    things.push({ kind: 'guardian', x: cq * S, y: cr * S, size: 1150, name: 'Wächter-Tempel ' + nm, desc: 'Einer der vier Eck-Tempel. 3-facher Tempel-Bonus.' });
+    scatter(c, 0, 3, R, p => Math.hypot(p.x - cq * S, p.y - cr * S) > 700, 'Burg');
   }
   for (const [sq, sr, nm] of SIDES) {
     const c = cellRect(sq, sr, sq, sr);
@@ -419,15 +467,15 @@ function build() {
       desc: start ? 'Hier starten die Spieler: 4 Plätze bleiben für Hauptstädte frei, leichte Basen, keine Tempel.' : ring === 2 ? 'Direkt am Ring um die Mitte: starke Basen, keine Tempel.' : 'Mittlerer Gürtel. Auf zwei Quadraten um die Mitte stehen die normalen Tempel.' });
     if (start) for (const [sx, sy] of [[-.24, -.2], [.24, -.2], [-.24, .26], [.24, .26]]) {   // 4 start places, kept free of neutral bases
       const x = q * S + sx * S, y = r * S + sy * S;
-      if (q === -6 && r === 6 && sx < 0 && sy > 0) { things.push({ kind: 'tower', tier: 0, owner: 'player', home: true, x, y, size: 120, name: 'Deine Hauptstadt (Beispiel)', desc: 'Ein belegter Startplatz. So weit außen startet man, weit weg von der Mitte.' }); continue; }
+      if (q === -6 && r === 6 && sx < 0 && sy > 0) { things.push({ kind: 'tower', tier: 0, owner: 'player', home: true, x, y, size: 200, name: 'Deine Hauptstadt (Beispiel)', desc: 'Ein belegter Startplatz. So weit außen startet man, weit weg von der Mitte.' }); continue; }
       things.push({ kind: 'slot', x, y, size: 120, name: 'Freier Startplatz', desc: 'Hier kann ein neuer Spieler seine Hauptstadt bekommen. 4 Plätze pro Startgebiet.' }); slots++;
     }
     const aq = Math.abs(q), ar = Math.abs(r);           // temples on two clean squares around the middle, mirrored on all sides
     const hasTemple = (ring === 3 && ((aq === 3 && ar === 3) || q === 0 || r === 0))
                    || (ring === 5 && ((aq === 5 && ar === 5) || q === 0 || r === 0 || aq === 3 || ar === 3));
-    if (hasTemple) { temples++; things.push({ kind: 'temple', x: q * S, y: r * S + 80, size: 580, name: 'Tempel', desc: 'Normaler Tempel. Die Tempel stehen auf zwei Quadraten um die Mitte, auf allen Seiten gleich.' }); }
+    if (hasTemple) { temples++; things.push({ kind: 'temple', x: q * S, y: r * S, size: 820, name: 'Tempel', desc: 'Normaler Tempel. Die Tempel stehen auf zwei Quadraten um die Mitte, auf allen Seiten gleich.' }); }
     const tier = ring >= 6 ? 0 : ring >= 4 ? 1 : ring >= 3 ? 2 : 3;
-    scatter(c, 0, tier, R, p => !hasTemple || Math.hypot(p.x - q * S, p.y - r * S - 100) > 520, ['Lager', 'Rundturm', 'Bergfried', 'Burg', 'Zitadelle'][tier]);
+    scatter(c, 0, tier, R, p => !hasTemple || Math.hypot(p.x - q * S, p.y - r * S) > 560, ['Lager', 'Rundturm', 'Bergfried', 'Burg', 'Zitadelle'][tier]);
   }
   things.sort((a, b) => a.y - b.y);
   const bases = things.filter(t => t.kind === 'tower').length;
@@ -468,7 +516,7 @@ function scatter(rc, n, tier, R, ok, label) {
     }
     if (!found) active.splice(i, 1);
   }
-  for (const p of mine) things.push({ kind: 'tower', tier, owner: 'neutral', x: p.x, y: p.y, size: 60 + tier * 12, name: label, desc: 'Neutrale Basis (' + label + ').' });
+  for (const p of mine) things.push({ kind: 'tower', tier, owner: 'neutral', x: p.x, y: p.y, size: 130 + tier * 22, name: label, desc: 'Neutrale Basis (' + label + ').' });
 }
 
 // ---------------- sprites (pre-painted while the loader shows) ----------------
@@ -478,20 +526,15 @@ const cache = new Map();
 function spriteKey(t, b) { return t.kind + '|' + (t.owner || 'neutral') + '|' + (t.tier || 0) + '|' + (t.home ? 1 : 0) + '|' + b; }
 function paintInto(t, px) {
   const c = document.createElement('canvas');
-  if (t.kind === 'gate') {
-    const H = px * .8, W = Math.ceil(H * 1.5), Hc = Math.ceil(H * 1.55);
-    c.width = W; c.height = Hc; const g = c.getContext('2d');
-    drawGatehouse(g, W / 2, Hc - H * .5 - H * .1, H, false);
-    c.ax = W / 2; c.ay = Hc - H * .5 - H * .1 + H * .42; return c;
-  }
   const u = px / 64; c.width = Math.ceil(62 * u) + 2; c.height = Math.ceil(72 * u) + 2;
   const g = c.getContext('2d'); g.setTransform(u, 0, 0, u, 31 * u + 1, 48 * u + 1); g.lineJoin = 'round';
   const detail = px >= 28, o = t.owner || 'neutral';
   if (t.kind === 'tower') paintTowerTier(g, o, detail, !!t.home, t.tier || 0);
   else if (t.kind === 'temple') paintTemple(g, o, detail);
   else if (t.kind === 'guardian') paintGuardianTemple(g, o, detail);
+  else if (t.kind === 'gate') paintGateIso(g, o, detail);
   else paintMegaTemple(g, o, detail);
-  c.ax = 31 * u + 1; c.ay = 48 * u + 1; return c;
+  c.ax = 31 * u + 1; c.ay = (48 + ISO_OY) * u + 1; return c;                     // anchor = the building's ground centre
 }
 function sprite(t, px) {
   const need = px * DPR, b = BUCKETS.find(v => v >= need) || BUCKETS[BUCKETS.length - 1], k = spriteKey(t, b);
@@ -526,8 +569,12 @@ function drawRegion(rg) {
   const [x0, y0] = toS(rg.rect.x0, rg.rect.y0), [x1, y1] = toS(rg.rect.x1, rg.rect.y1);
   if (x1 < 0 || y1 < 0 || x0 > W || y0 > H) return;
   let [c1, c2] = rg.bio ? BIOME[rg.bio].c : GROUND[rg.kind];
+  const cliff = Math.max(1.5, 70 * cam.z), rad = Math.max(2, 40 * cam.z);         // the island is a raised block: an earth cliff below its south edge
+  ctx.fillStyle = 'rgba(0,0,0,.25)'; rr(ctx, x0 + cliff * .4, y0 + cliff * 1.4, x1 - x0, y1 - y0, rad); ctx.fill();
+  const cg = ctx.createLinearGradient(0, y1 - rad, 0, y1 + cliff); cg.addColorStop(0, shade(c2, .62)); cg.addColorStop(1, shade(c2, .4));
+  ctx.fillStyle = cg; rr(ctx, x0, y0 + cliff, x1 - x0, y1 - y0, rad); ctx.fill();
   const gr = ctx.createLinearGradient(x0, y0, x1, y1); gr.addColorStop(0, c1); gr.addColorStop(1, c2);
-  ctx.fillStyle = gr; rr(ctx, x0, y0, x1 - x0, y1 - y0, Math.max(2, 40 * cam.z)); ctx.fill();
+  ctx.fillStyle = gr; rr(ctx, x0, y0, x1 - x0, y1 - y0, rad); ctx.fill();
   ctx.strokeStyle = 'rgba(20,24,20,.35)'; ctx.lineWidth = Math.max(1, 6 * cam.z); ctx.stroke();
   if (sel && sel.region === rg) { ctx.strokeStyle = '#e4c886'; ctx.lineWidth = 2; ctx.stroke(); }
 }
@@ -589,6 +636,8 @@ function drawBridges() {                               // wooden deck on stone p
       ctx.fillStyle = '#8f8b84'; ctx.fillRect(sx * lp / 2 - (sx > 0 ? 70 * z : 0), -wp / 2 - 14 * z, 70 * z, wp + 28 * z);
       ctx.strokeStyle = '#4d4943'; ctx.lineWidth = Math.max(1, 3 * z); ctx.strokeRect(sx * lp / 2 - (sx > 0 ? 70 * z : 0), -wp / 2 - 14 * z, 70 * z, wp + 28 * z);
     }
+    if (b.horiz) { ctx.fillStyle = '#5d5a54'; ctx.fillRect(-lp / 2 + 60 * z, wp / 2, lp - 120 * z, 22 * z);                 // the deck's front edge
+      ctx.fillStyle = 'rgba(20,30,40,.8)'; ctx.beginPath(); ctx.ellipse(0, wp / 2 + 22 * z, lp * .22, 16 * z, 0, Math.PI, 0); ctx.fill(); }   // arch opening over the water
     const dg = ctx.createLinearGradient(0, -wp / 2, 0, wp / 2); dg.addColorStop(0, '#a47d4d'); dg.addColorStop(1, '#7c5a35');
     ctx.fillStyle = dg; ctx.fillRect(-lp / 2 + 60 * z, -wp / 2, lp - 120 * z, wp);                            // deck
     if (wp > 14) {                                                                                             // planks
@@ -638,7 +687,7 @@ function drawLabels() {
     const short = { Nordwest: 'NW', Nordost: 'NO', Südwest: 'SW', Südost: 'SO' };
     const label = t.kind === 'mega' ? 'Haupttempel' : t.kind === 'guardian' && px < 44 ? 'Wächter ' + short[t.name.split(' ').pop()] : t.name;
     ctx.font = (t.kind === 'mega' ? '700 14px ' : '600 12px ') + "Inter, system-ui, sans-serif";
-    const tw = ctx.measureText(label).width + 14, ly = t.kind === 'gate' ? toS(t.bx, t.by)[1] - (RIVER / 2 + t.size * .8) * cam.z - 14 : y + Math.max(px, 14) * .38 + 12;   // gate names above the gate
+    const tw = ctx.measureText(label).width + 14, ly = t.kind === 'gate' ? toS(t.bx, t.by)[1] + (t.by > 1 ? (RIVER / 2 + t.size * .3) * cam.z + 16 : -(RIVER / 2 + t.size * .6) * cam.z - 14) : y + Math.max(px, 14) * .38 + 12;   // gate names above the gate
     ctx.fillStyle = 'rgba(17,20,26,.82)'; rr(ctx, x - tw / 2, ly - 10, tw, 20, 5); ctx.fill();
     ctx.fillStyle = t.kind === 'mega' ? '#e4c886' : t.home ? '#9cc3ef' : '#efe6d2'; ctx.fillText(label, x, ly + .5);
   }
