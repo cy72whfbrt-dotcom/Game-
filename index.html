@@ -556,6 +556,7 @@ body.has-panel .mapctl{display:none}
 .keep-note{display:block;margin-top:6px;color:var(--tx-2)} .skin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
 .skin-card{display:grid;justify-items:center;gap:2px;padding:6px 4px 8px;border:1px solid var(--line-2);border-radius:8px;background:rgba(255,255,255,.03);color:var(--tx-1);cursor:pointer} .skin-card.on{border-color:var(--gold-300);box-shadow:0 0 0 1px var(--gold-300)}
 .skin-card canvas{width:60px;height:66px} .skin-card small{display:inline-flex;align-items:center;gap:3px;color:var(--tx-2)} .skin-card .icon{width:12px;height:12px}
+.logWounded{color:#ff9d8f}
 .logRow .mact{grid-column:2/4;display:flex;gap:6px;justify-content:flex-end;margin-top:4px}
 .logRow .mact button{display:inline-flex;align-items:center;gap:4px;min-height:30px;padding:0 10px;border-radius:6px;border:1px solid var(--line-2);background:rgba(255,255,255,.04);color:var(--tx-1);font:600 var(--fs-12)/1 var(--font-ui);cursor:pointer}
 .logRow .mact button:hover{border-color:var(--gold-300)} .logRow .mact .icon{width:14px;height:14px}
@@ -3157,7 +3158,7 @@ body.has-panel .mapctl{display:none}
             const remaining = won ? Math.max(0, Math.min(attack.rawTroops, myTroops - losses)) : 0;   // bonus troops fight, but only the sent ones can survive
 
             let defenderCasualties;
-            let retreatSurvivors = 0;
+            let retreatSurvivors = 0, woundedAdded = 0;
 
             if (won) {
                 // Capturing a base doesn't reset it to level 1 - it costs
@@ -3203,7 +3204,7 @@ body.has-panel .mapctl{display:none}
                 if (hospitalLevel()) {                                     // Lazarett: part of the fallen are only wounded
                     const c = loadCity(), room = Math.max(0, hospitalCapacity() - c.wounded);
                     const w = Math.min(room, Math.floor((attack.rawTroops - retreatSurvivors) * hospitalPct() / 100));
-                    if (w > 0) { c.wounded += w; saveCity(); setTimeout(() => flashHint(fmtNum(w) + ' Verwundete sind im Lazarett – heile sie in der Stadt.', 4000), 9500); }
+                    if (w > 0) { c.wounded += w; woundedAdded = w; saveCity(); }
                 }
                 if (retreatSurvivors > 0) {
                     const durationSec = travelDurationSeconds(target, source);
@@ -3244,7 +3245,8 @@ body.has-panel .mapctl{display:none}
                 myTroopsBuffed: myTroops,
                 attackBuff: myTroops - attack.rawTroops,
                 attackGoldRate: attack.attackGoldRate !== undefined ? attack.attackGoldRate : (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate,
-                attackerCasualties: won ? losses : myTroops,
+                attackerCasualties: won ? losses : Math.max(0, myTroops - retreatSurvivors - woundedAdded),   // really dead: not the ones who fled or lie in the Lazarett
+                wounded: woundedAdded,
                 enemyTroops: originalEnemyTroops,
                 enemyDefense: originalEnemyDefense,
                 defenseBuff: 0,
@@ -3258,7 +3260,7 @@ body.has-panel .mapctl{display:none}
 
             flashHint((won
                 ? 'Sieg bei ' + islandTitle(target) + (targetOwner ? ' gegen ' + botById[targetOwner].name : '') + '! ' + fmtNum(remaining) + ' Truppen übrig.'
-                : 'Niederlage bei ' + islandTitle(target) + ' – ' + fmtNum(retreatSurvivors) + ' Truppen fliehen zurück.'), 4000);
+                : 'Niederlage bei ' + islandTitle(target) + ' – ' + fmtCompact(retreatSurvivors) + ' fliehen' + (woundedAdded ? ', ' + fmtCompact(woundedAdded) + ' ins Lazarett.' : '.')), 6000);
         }
 
         function resolveRetreat(retreat) {
@@ -6353,12 +6355,13 @@ body.has-panel .mapctl{display:none}
                     '</div>' +
                     '<div class="logGold">Gold/Kill-Bonus: Angriff +' + fmt1(entry.attackGoldRate) + ' · Verteidigung +' + fmt1(entry.defenseGoldRate) + '</div>' +
                     (!entry.won && entry.retreatSurvivors ? '<div class="logRetreat">' + fmtNum(entry.retreatSurvivors) + ' Truppen konnten fliehen und kehren zurück</div>' : '') +
+                    (entry.wounded ? '<div class="logRetreat logWounded">' + fmtNum(entry.wounded) + ' Verwundete liegen im Lazarett – heile sie in der Stadt</div>' : '') +
                     '</details>';
                 return logRowHtml(entry.won ? 'win' : 'loss', entry.won ? 'level' : 'losses',
                     (entry.won ? 'Sieg · ' : 'Niederlage · ') + T(entry.targetId),
                     'von ' + T(entry.sourceId) + (entry.won
                         ? ' · ' + fmtM(entry.remaining) + ' übrig'
-                        : (entry.retreatSurvivors ? ' · ' + fmtM(entry.retreatSurvivors) + ' geflohen' : '')),
+                        : (entry.retreatSurvivors ? ' · ' + fmtM(entry.retreatSurvivors) + ' geflohen' : '') + (entry.wounded ? ' · ' + fmtM(entry.wounded) + ' im Lazarett' : '')),
                     ago(entry), details);
             }).join('');
             [...combatLogListEl.children].forEach((row, i) => { if (combatLog[i]) row.dataset.key = combatLogKey(combatLog[i]); });
@@ -8233,7 +8236,8 @@ body.has-panel .mapctl{display:none}
                 labels.push({ b, lvl, building });
             }
             for (const { b, lvl, building, keep } of labels) {   // plates last, so no roof or flag covers them
-                const label = b.name + (lvl ? ' · ' + lvl : ''), fs = 15;
+                const wnd = b.id === 'hospital' ? loadCity().wounded : 0;
+                const label = b.name + (lvl ? ' · ' + lvl : '') + (wnd ? ' · ' + fmtCompact(wnd) + ' verwundet' : ''), fs = 15;
                 g.font = '700 ' + fs + 'px Inter, system-ui, sans-serif';
                 const tw = g.measureText(label).width + 20, py = b.y + (b.big ? 66 : 42);
                 g.fillStyle = lvl ? 'rgba(14,14,20,.85)' : 'rgba(14,14,20,.6)'; g.strokeStyle = building ? '#ffd98a' : 'rgba(228,200,134,.6)'; g.lineWidth = 1.4;
