@@ -1546,6 +1546,15 @@ body.has-panel .mapctl{display:none}
         const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
                         set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
                         remove(k) { try { localStorage.removeItem(k); } catch (e) {} } };
+        // Full reset (raise the number to start everyone from scratch again): wipes every saved value of the game once.
+        const RESET_VERSION = '1';
+        if (store.get('openWaterReset') !== RESET_VERSION) {
+            try { for (const k of Object.keys(localStorage)) if (k.startsWith('openWater')) localStorage.removeItem(k); } catch (e) {}
+            store.set('openWaterReset', RESET_VERSION);
+            store.set('openWaterGift2', 'g2');                   // the old test gifts don't come back after a reset
+            for (const k of ['openWaterBonusGrant1', 'openWaterBonusGrant2', 'openWaterBonusGrant3']) store.set(k, '1');
+            store.set('openWaterGift', 'g1');
+        }
         const canvas = document.getElementById('mapCanvas');
         const ctx = canvas.getContext('2d');
 
