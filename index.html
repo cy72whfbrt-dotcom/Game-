@@ -5432,6 +5432,8 @@ body.has-panel .mapctl{display:none}
                         if (grudge) d /= 1 + grudge.n;
                         if (rally && rally.t === target.id) d *= .05;                                   // the planned big strike comes first                                                  // revenge pulls them towards whoever hit them
                         if (target.id === megaTempleId && ruler !== bot.id) d *= 0.1;                   // the throne pulls
+                        const inward = landmasses[target.landmassId].ring < landmasses[source.landmassId].ring;
+                        if (inward) d *= target.type === 'gate' ? .3 : .5;                              // everyone wants to get to the middle
                         else if (bossAt(target.id)) d *= 0.15;                                         // events: bosses and the Wanderboss are worth a big attack
                         else if (target.type === 'gate' || target.type === 'temple' || target.guardian) d *= st.temple;
                         else if (islandOwnerOf(target.id)) d *= st.enemy;                              // raiders like hitting other players
@@ -5464,6 +5466,12 @@ body.has-panel .mapctl{display:none}
             // 3) attack what they know they can beat - with a real army, not the bare minimum. Several attacks per move,
             // several bases join when one isn't enough, and now and then they gamble on a base they never scouted.
             const launches = st.launches || st.multi || 1, used = {}; let n = 0, rallied = false, gambles = Math.random() < (st.risk || 0) * .5 ? 1 : 0;
+            // grow like a person: build up what you have before grabbing more empty land. New neutral bases only while the
+            // empire is built up well enough (more bases → higher average level needed), and only one or two per move.
+            // Enemies, events, temples, gates and steps towards the middle are always worth it.
+            let lvSum = 0; for (const id of owned) lvSum += islandLevels[id] || 1;
+            const builtUp = lvSum / owned.size >= Math.min(14, 1 + owned.size / 25);
+            let grabs = builtUp && now - (mem.lastGrabAt || 0) > 1500 ? 1 : 0;                  // at most one new base every 1.5 s, even for the fastest
             for (const e of list) {
                 if (n >= launches) break;
                 const boss = bossAt(e.target.id);                                                          // an event's strength is public
@@ -5472,6 +5480,9 @@ body.has-panel .mapctl{display:none}
                     it = { s: (effectiveTroops(e.target) + effectiveDefense(e.target)) * (.55 + Math.random() * .9) }; gamble = true;
                 }
                 if (!it) continue;
+                const grab = e.target.type === 'tower' && !islandOwnerOf(e.target.id) && !boss && !(rally && rally.t === e.target.id) &&
+                    landmasses[e.target.landmassId].ring >= landmasses[islandById[e.sources[0].id].landmassId].ring;
+                if (grab && grabs <= 0) continue;
                 const margin = st.margin * (e.grudge ? .85 : 1) * (Math.random() < (st.risk || 0) ? .8 : 1);   // sometimes they cut it close
                 const need = it.s * margin / atk;                                                          // what they believe it takes
                 const srcs = e.sources.map(sv => ({ id: sv.id, have: sv.have - (used[sv.id] || 0) })).filter(sv => sv.have >= BOT_MIN_GARRISON_TO_ATTACK).sort((u, v) => v.have - u.have);
@@ -5490,7 +5501,7 @@ body.has-panel .mapctl{display:none}
                     if (give < BOT_MIN_GARRISON_TO_ATTACK) continue;
                     if (launchAttack(sv.id, e.target.id, bot.id, give)) { used[sv.id] = (used[sv.id] || 0) + give; sent += give; }
                 }
-                if (sent > 0) { n++; botRevengeLaunched(bot, e.target.id); if (rally && rally.t === e.target.id) mem.rally = null; }
+                if (sent > 0) { n++; if (grab) { grabs--; mem.lastGrabAt = now; } botRevengeLaunched(bot, e.target.id); if (rally && rally.t === e.target.id) mem.rally = null; }
                 if (launches === 1 && Math.random() < .3) break;                                           // not always every move
             }
             if (!n && !scouted) botGather(bot);
