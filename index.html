@@ -8187,9 +8187,9 @@ body.has-panel .mapctl{display:none}
             if (cityBusy || !cityView.hidden) return;
             closeAllPopups();
             const home = islandById[playerIslandId];
-            if (!home || matchMedia('(prefers-reduced-motion: reduce)').matches) { cityShow(); return; }
+            cityMapReturn = { zoom: mapState.zoom, x: (viewW / 2 - mapState.offsetX) / mapState.zoom, y: (viewH / 2 - mapState.offsetY) / mapState.zoom };   // where the map was, to go back there
+            if (!home) { cityShow(); return; }
             cityBusy = true;
-            cityMapReturn = { zoom: mapState.zoom, x: (viewW / 2 - mapState.offsetX) / mapState.zoom, y: (viewH / 2 - mapState.offsetY) / mapState.zoom };
             flyTo(home.x, home.y, { zoom: maxZoom, ms: 650 });                      // 1) the map dives towards your capital
             setTimeout(() => cloudsRun(420, 0, 1, () => {                            // 2) into the clouds …
                 cityShow(); if (cityCam) cityCam.anim = { from: .35, t0: performance.now(), dur: 900 };   // 3) … the town comes up from below
@@ -8205,9 +8205,10 @@ body.has-panel .mapctl{display:none}
             if (cityCam) cityCam.anim = { from: 1, to: .3, t0: performance.now(), dur: 520 };   // the town falls away …
             cloudsRun(480, 0, 1, () => {                                              // … into the clouds …
                 cityView.hidden = true; cancelAnimationFrame(cityRaf);
-                const home = islandById[playerIslandId], back = cityMapReturn;
+                const home = islandById[playerIslandId], back = cityMapReturn || { zoom: mapState.zoom, x: (viewW / 2 - mapState.offsetX) / mapState.zoom, y: (viewH / 2 - mapState.offsetY) / mapState.zoom };
+                cityMapReturn = null;
                 if (home) flyTo(home.x, home.y, { zoom: maxZoom, instant: true });
-                if (back) flyTo(back.x, back.y, { zoom: back.zoom, ms: 900 }); else requestRender();   // … and the map opens up again
+                flyTo(back.x, back.y, { zoom: back.zoom, ms: 900 });                // … and the map opens up again where it was
                 cloudsRun(700, 1, 0, () => { cityBusy = false; });
             });
             return true;
