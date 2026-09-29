@@ -34,7 +34,6 @@ Liste der Ideen, die für später vorgemerkt sind.
 ### 4. Willkommen zurück + Kriegsbericht
 - Kommst du nach einer Weile zurück: Fenster „Willkommen zurück“ – was in deiner Abwesenheit passiert ist (Angriffe, verlorene/gehaltene Basen, Produktion, fertige Bauten, Verwundete).
 - Im Postfach: Kriegsbericht pro Tag für die letzten 7 Tage.
-- *Meine Ergänzung:* „Emma hat dich 5× angegriffen“ mit Knopf **Rache** (springt zu ihrer nächsten Basis).
 
 ### 5. Design
 - **Postfach neu gestalten:** klar getrennt in Belohnungen · Aufgaben · Berichte.
@@ -47,6 +46,7 @@ Liste der Ideen, die für später vorgemerkt sind.
 
 ## Gestrichen
 - Event mit Truppen als Belohnung – vorerst weg.
+- Rache-Knopf im Kriegsbericht – nicht gewollt.
 
 ## Nicht gewollt
 - Kampfmusik
