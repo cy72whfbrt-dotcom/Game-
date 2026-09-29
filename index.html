@@ -565,6 +565,24 @@ body.has-panel .mapctl{display:none}
 .march-all .mact{display:flex} .logRow .mact,.march-all .mact{grid-column:2/4;display:flex;gap:6px;justify-content:flex-end;margin-top:4px}
 .logRow .mact button,.march-all .mact button{display:inline-flex;align-items:center;gap:4px;min-height:30px;padding:0 10px;border-radius:6px;border:1px solid var(--line-2);background:rgba(255,255,255,.04);color:var(--tx-1);font:600 var(--fs-12)/1 var(--font-ui);cursor:pointer}
 .logRow .mact button:hover,.march-all .mact button:hover{border-color:var(--gold-300)} .logRow .mact .icon,.march-all .mact .icon{width:14px;height:14px}
+.logList .logRow{margin:0 0 6px;border:1px solid var(--line-1);border-radius:10px;padding:8px 10px 8px 12px;overflow:hidden;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--lc) 12%,transparent),rgba(255,255,255,.015) 45%)}
+.logList .logRow::before{top:0;bottom:0;width:3px}
+.logList .logRow .li{border-radius:50%;background:color-mix(in srgb,var(--lc) 14%,transparent);border-color:color-mix(in srgb,var(--lc) 45%,transparent)}
+.lbadge{display:inline-block;margin-right:6px;padding:2px 7px;border-radius:999px;font:700 9.5px/1.3 var(--font-ui);letter-spacing:.08em;text-transform:uppercase;vertical-align:1px;
+  color:var(--lc);background:color-mix(in srgb,var(--lc) 16%,transparent);border:1px solid color-mix(in srgb,var(--lc) 45%,transparent)}
+.lbadge--win{--lc:#8fcf7a} .lbadge--loss{--lc:var(--blood-300)} .lbadge--scout{--lc:var(--gold-300)} .lbadge--send{--lc:var(--f-player-hi)} .lbadge--retreat{--lc:var(--ember-300)}
+.logList .logRow summary{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;border:1px solid var(--line-2);background:rgba(255,255,255,.03)}
+.logList .logRow summary::after{content:"";width:6px;height:6px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg) translateY(-2px);transition:transform .2s}
+.logList .logRow details[open] summary::after{transform:rotate(225deg) translate(-1px,-1px)}
+.logBal{margin:8px 0 4px}
+.logBalBar{position:relative;height:8px;border-radius:4px;overflow:hidden;background:linear-gradient(90deg,#7a2a22,#b3453a)}
+.logBalBar i{position:absolute;inset:0 auto 0 0;width:var(--a);background:linear-gradient(90deg,#3f7f3a,#8fcf7a);box-shadow:2px 0 0 rgba(255,240,200,.85)}
+.logBal--def .logBalBar{background:linear-gradient(90deg,#3f7f3a,#8fcf7a)} .logBal--def .logBalBar i{background:linear-gradient(90deg,#7a2a22,#b3453a)}
+.logBalTxt{display:flex;justify-content:space-between;gap:8px;margin-top:4px;font:600 var(--fs-11)/1.2 var(--font-ui);color:var(--tx-2);font-variant-numeric:tabular-nums}
+.logBalTxt span{display:inline-flex;align-items:center;gap:4px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .logBalTxt .icon{width:12px;height:12px;flex:none}
+.logList .logSide{border-radius:8px;background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(0,0,0,.12))}
+.logList .logSide:first-child .logSideLabel{color:#ff9f8f} .logList .logSide:last-child .logSideLabel{color:#9fc4ff}
 .logRow.win{--lc:#8fcf7a} .logRow.loss{--lc:var(--blood-300)} .logRow.send{--lc:var(--f-player-hi)} .logRow.scout{--lc:var(--gold-300)} .logRow.retreat{--lc:var(--ember-300)} .logRow.attack{--lc:var(--f-enemy-hi)}
 .logRow details{grid-column:1 / -1;margin-top:6px}
 .logRow summary{list-style:none;cursor:pointer;font:600 var(--fs-10)/1 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--gold-300);padding:4px 0}
@@ -1583,6 +1601,11 @@ body.has-panel .mapctl{display:none}
           return '<div class="stat"><span class="stat-l">' + icon(iconName) + label + '</span><b class="stat-v' + (cls ? ' ' + cls : '') + '">' + valueHtml + '</b></div>';
         }
         const UNK = '<span class="unk">' + icon('scout') + 'Erst spähen</span>';
+        const logBadge = (kind, text) => '<span class="lbadge lbadge--' + kind + '">' + text + '</span>';
+        function logBalance(atk, def, atkLabel, defLabel, youDefend) {          // who was stronger, as a bar (like the attack preview) - your side is always green
+            const a = Math.max(0, atk || 0), d = Math.max(0, def || 0), pct = a + d > 0 ? Math.round(a / (a + d) * 100) : 50;
+            return '<div class="logBal' + (youDefend ? ' logBal--def' : '') + '"><div class="logBalBar" style="--a:' + pct + '%"><i></i></div><div class="logBalTxt"><span>' + atkLabel + '</span><span>' + defLabel + '</span></div></div>';
+        }
         function logRowHtml(kind, iconName, title, meta, trailing, extra) {
           return '<div class="logRow ' + kind + '"><span class="li">' + icon(iconName) + '</span><span class="lt"><b>' + title + '</b>' +
             (meta ? '<small>' + meta + '</small>' : '') + '</span><span class="lv">' + (trailing || '') + '</span>' + (extra || '') + '</div>';
@@ -6700,20 +6723,21 @@ body.has-panel .mapctl{display:none}
             combatLogListEl.innerHTML = combatLog.map(entry => {
                 T = id => (entry.names && entry.names[id]) || islandTitle(islandById[id]);
                 if (entry.type === 'send') {
-                    return logRowHtml('send', 'send', 'Verstärkung → ' + T(entry.toId), fmtM(entry.troops) + ' Truppen verlegt', ago(entry));
+                    return logRowHtml('send', 'send', logBadge('send', 'Verstärkung') + T(entry.toId), fmtM(entry.troops) + ' Truppen verlegt', ago(entry));
                 }
                 if (entry.type === 'scout') {
-                    return logRowHtml('scout', 'scout', 'Gespäht · ' + T(entry.targetId),
+                    return logRowHtml('scout', 'scout', logBadge('scout', 'Gespäht') + T(entry.targetId),
                         fmtM(entry.troops) + ' Truppen · ' + fmtM(entry.defense) + ' Verteidigung', ago(entry));
                 }
                 if (entry.type === 'retreat') {
-                    return logRowHtml('retreat', 'recall', 'Rückkehr · ' + T(entry.toId), fmtM(entry.troops) + ' geflohene Truppen zurück', ago(entry));
+                    return logRowHtml('retreat', 'recall', logBadge('retreat', 'Rückkehr') + T(entry.toId), fmtM(entry.troops) + ' geflohene Truppen zurück', ago(entry));
                 }
                 if (entry.type === 'botAttack') {
                     const vs = ' (' + fmtM(entry.myTroops) + ' vs ' + fmtM(entry.enemyTroops + entry.enemyDefense) + ')';
                     const fallen = entry.fallen !== undefined ? entry.fallen : (entry.won ? entry.enemyTroops : Math.min(entry.enemyTroops, entry.myTroops));
                     const defSum = entry.enemyTroops + entry.enemyDefense;
                     const bdet = '<details><summary>Kampfdetails</summary>' +
+                        logBalance(entry.myTroops, defSum, icon('attack') + escapeHtml(entry.botName) + ' ' + fmtM(entry.myTroops), fmtM(defSum) + ' Du' + icon('defense'), true) +
                         '<div class="logCompare">' +
                             '<div class="logSide">' +
                                 '<div class="logSideLabel">Angreifer · ' + escapeHtml(entry.botName) + '</div>' +
@@ -6734,10 +6758,10 @@ body.has-panel .mapctl{display:none}
                         (entry.defGold ? '<div class="logGold">Verteidigung: Gold +' + fmtNum(entry.defGold) + ' Münzen</div>' : '') +
                         '</details>';
                     return entry.capitalHolds
-                        ? logRowHtml('loss', 'bot', 'Geplündert · ' + T(entry.targetId), escapeHtml(entry.botName) + ' hat die Garnison geschlagen – die Stadt hält' + vs, ago(entry), bdet)
+                        ? logRowHtml('loss', 'bot', logBadge('loss', 'Geplündert') + T(entry.targetId), escapeHtml(entry.botName) + ' hat die Garnison geschlagen – die Stadt hält' + vs, ago(entry), bdet)
                         : entry.won
-                        ? logRowHtml('loss', 'bot', 'Verloren · ' + T(entry.targetId), escapeHtml(entry.botName) + ' hat die Basis erobert' + vs, ago(entry), bdet)
-                        : logRowHtml('win', 'shield', 'Verteidigt · ' + T(entry.targetId), escapeHtml(entry.botName) + ' zurückgeschlagen' + vs, ago(entry), bdet);
+                        ? logRowHtml('loss', 'bot', logBadge('loss', 'Verloren') + T(entry.targetId), escapeHtml(entry.botName) + ' hat die Basis erobert' + vs, ago(entry), bdet)
+                        : logRowHtml('win', 'shield', logBadge('win', 'Verteidigt') + T(entry.targetId), escapeHtml(entry.botName) + ' zurückgeschlagen' + vs, ago(entry), bdet);
                 }
                 // Legacy entries saved before this format existed - fall back
                 // to the old one-liner instead of showing "undefined".
@@ -6753,6 +6777,7 @@ body.has-panel .mapctl{display:none}
                 const atkTotal = entry.myTroops + entry.attackBuff;
                 const defTotal = entry.enemyTroops + entry.enemyDefense + entry.defenseBuff;
                 const details = '<details><summary>Kampfdetails</summary>' +
+                    logBalance(atkTotal, defTotal, icon('attack') + 'Du ' + fmtM(atkTotal), fmtM(defTotal) + ' ' + escapeHtml(entry.defenderName || 'Abwehr') + icon('defense')) +
                     '<div class="logCompare">' +
                         '<div class="logSide">' +
                             '<div class="logSideLabel">Angreifer</div>' +
@@ -6781,7 +6806,7 @@ body.has-panel .mapctl{display:none}
                     (entry.wounded ? '<div class="logRetreat logWounded">' + fmtNum(entry.wounded) + ' Verwundete gehen ins Lazarett – heile sie in der Stadt</div>' : '') +
                     '</details>';
                 return logRowHtml(entry.won ? 'win' : 'loss', entry.won ? 'level' : 'losses',
-                    (entry.won ? 'Sieg · ' : 'Niederlage · ') + T(entry.targetId),
+                    logBadge(entry.won ? 'win' : 'loss', entry.won ? 'Sieg' : 'Niederlage') + T(entry.targetId),
                     'von ' + T(entry.sourceId) + (entry.won
                         ? ' · ' + fmtM(entry.remaining) + ' übrig'
                         : (entry.retreatSurvivors ? ' · ' + fmtM(entry.retreatSurvivors) + ' geflohen' : '')),
