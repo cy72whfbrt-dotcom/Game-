@@ -5573,20 +5573,17 @@ body.has-panel .mapctl{display:none}
             const owned = [...botOwnedIslands[bot.id]];
             if (owned.length === 0) return;
             const st = BOT_STYLES[bot.style];
-            // bases: important ones first (Mega-Tempel, gates, Wächter/temples, the strongest bases), then the rest - as far as the coins go
-            const ranked = owned.map(id => islandLevels[id] || 1).sort((x, y) => y - x);
-            const topLevel = ranked[Math.min(2, ranked.length - 1)];
-            const prio = id => { const isl = islandById[id], lvl = islandLevels[id] || 1;
-                return isl.type === 'megaTemple' ? 0 : isl.type === 'gate' || isl.guardian ? 1 : isl.type === 'temple' ? 2 : lvl >= topLevel ? 3 : 4; };
+            // bases like a person builds them: the cheapest step that's worth it comes first, so the whole empire grows,
+            // not just two show-off bases. Throne, gates, Wächter, temples and the capital count extra.
+            const cap = botCapitalOf(bot.id);
+            const weight = id => { const isl = islandById[id]; return isl.type === 'megaTemple' ? .2 : isl.type === 'gate' || isl.guardian ? .4 : isl.type === 'temple' ? .5 : id === cap ? .6 : 1; };
+            const cand = [];
+            for (const id of owned) { const lvl = islandLevels[id] || 1; if (lvl < MAX_BASE_LEVEL) cand.push({ id, cost: upgradeCost(lvl), sc: upgradeCost(lvl) * weight(id) }); }
+            cand.sort((x, y) => x.sc - y.sc);
             let budget = botCoins[bot.id] * st.spend, did = 0;
-            for (let n = 0; n < 8; n++) {
-                let best = null, bestScore = Infinity;
-                for (const id of owned) { const lvl = islandLevels[id] || 1; if (lvl >= MAX_BASE_LEVEL) continue;
-                    const sc = prio(id) * 1000 + lvl; if (sc < bestScore) { bestScore = sc; best = id; } }
-                if (best === null) break;
-                const cost = upgradeCost(islandLevels[best] || 1);
-                if (budget < cost) break;
-                budget -= cost; botCoins[bot.id] -= cost; islandLevels[best] = (islandLevels[best] || 1) + 1; did++;
+            for (const c of cand) {
+                if (did >= 25 || c.cost > budget) break;
+                budget -= c.cost; botCoins[bot.id] -= c.cost; islandLevels[c.id] = (islandLevels[c.id] || 1) + 1; did++;
             }
             if (did) saveGame();
         }
