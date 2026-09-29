@@ -5527,15 +5527,25 @@ body.has-panel .mapctl{display:none}
                 if (n >= launches || slots <= 0) break;
                 const boss = bossAt(e.target.id);                                                          // an event's strength is public
                 let it = boss ? { s: boss.troops + boss.defense } : botIntel(bot, e.target.id), gamble = false;
-                if (!it && gambles > 0 && !botScouting(bot, e.target.id) && Math.random() < .5) { gambles--;           // risky: attack on a guess
+                const vsPlayer = islandOwnerOf(e.target.id) === 'player';
+                if (!it && !vsPlayer && gambles > 0 && !botScouting(bot, e.target.id) && Math.random() < .5) { gambles--;           // risky: attack on a guess (never blind on a real player)
                     it = { s: (effectiveTroops(e.target) + effectiveDefense(e.target)) * (.55 + Math.random() * .9) }; gamble = true;
                 }
                 if (!it) continue;
                 const grab = e.target.type === 'tower' && !islandOwnerOf(e.target.id) && !boss && !(rally && rally.t === e.target.id) &&
                     landmasses[e.target.landmassId].ring >= landmasses[islandById[e.sources[0].id].landmassId].ring;
                 if (grab && grabs <= 0) continue;
-                const margin = st.margin * (e.grudge ? .85 : 1) * (Math.random() < (st.risk || 0) ? .8 : 1);   // sometimes they cut it close
-                const need = it.s * margin / atk;                                                          // what they believe it takes
+                const margin = vsPlayer ? Math.max(1.25, st.margin)                                         // against a real player: always a safe margin
+                                        : st.margin * (e.grudge ? .85 : 1) * (Math.random() < (st.risk || 0) ? .8 : 1);   // sometimes they cut it close
+                // think ahead like a person: a player's base keeps producing - by the time the army arrives there is more.
+                // The report's age plus the march time, at the rate a base of that level makes troops (with some slack).
+                let expect = it.s;
+                if (islandOwnerOf(e.target.id) && it.ready) {
+                    const lvl = islandLevels[e.target.id] || 1, src0 = islandById[e.sources[0].id];
+                    const secs = Math.max(0, now - it.ready) / 1000 + travelDurationSeconds(src0, e.target, bot.id);
+                    expect += troopsPerTick(lvl) * 1000 / productionTickMs() * 1.5 * secs;
+                }
+                const need = expect * margin / atk;                                                        // what they believe it takes
                 const srcs = e.sources.map(sv => ({ id: sv.id, have: sv.have - (used[sv.id] || 0) })).filter(sv => sv.have >= BOT_MIN_GARRISON_TO_ATTACK).sort((u, v) => v.have - u.have);
                 const total = srcs.reduce((a2, sv) => a2 + sv.have, 0);
                 if (total < need * (boss ? .35 : 1)) {                                                     // a boss is worn down by many attacks - worth it with a third
@@ -5545,14 +5555,15 @@ body.has-panel .mapctl{display:none}
                 const big = boss || e.target.type !== 'tower' || e.target.id === megaTempleId || (rally && rally.t === e.target.id);
                 // the best base goes with most of its troops; big targets get every base in reach
                 const want = big ? Math.max(need * 2.2, total) : Math.max(need * (gamble ? 1.3 : 2), srcs[0].have);
-                let sent = 0;
+                let sent = 0; const wave = [];
                 for (const sv of srcs) {
                     if (sent >= want) break;
                     const give = Math.min(sv.have, Math.ceil(want - sent) + 1);
                     if (give < BOT_MIN_GARRISON_TO_ATTACK) continue;
                     if (slots <= 0) break;
-                    if (launchAttack(sv.id, e.target.id, bot.id, give)) { used[sv.id] = (used[sv.id] || 0) + give; sent += give; slots--; }
+                    if (launchAttack(sv.id, e.target.id, bot.id, give)) { used[sv.id] = (used[sv.id] || 0) + give; sent += give; slots--; wave.push(pendingAttacks[pendingAttacks.length - 1]); }
                 }
+                if (wave.length > 1) { const at = Math.max(...wave.map(a => a.resolveAt)); for (const a of wave) a.resolveAt = at; }   // a coordinated strike: everyone lands at once
                 if (sent > 0) { n++; if (grab) { grabs--; mem.lastGrabAt = now; } botRevengeLaunched(bot, e.target.id); if (rally && rally.t === e.target.id) mem.rally = null; }
                 if (launches === 1 && Math.random() < .3) break;                                           // not always every move
             }
