@@ -2560,7 +2560,7 @@ body.has-panel .mapctl{display:none}
             blitz:    { margin: 1.0,  commit: .8,  tapMs: 3000, marches: 8, risk: .3, spend: .9,  send: 1,   skills: ['attack', 'troops', 'speed', 'attackGold'],                      temple: .3, enemy: .5,  act: 1,
                         hunt: 3, moveMs: 1500, launches: 4, sources: [30, 20] }     // no bonus troops: same economy as everyone, just hungrier and quicker to decide
         };
-        const BOT_BUILDINGS = ['academy', 'forge', 'hospital', 'wall', 'barracks', 'treasury', 'watch', 'heroes'];   // the city buildings with an effect
+        const BOT_BUILDINGS = ['academy', 'forge', 'hospital', 'wall', 'barracks', 'treasury', 'watch', 'heroes', 'shrine'];   // the city buildings with an effect
         const BOT_SKILLS = ['troops', 'attack', 'defense', 'speed', 'attackGold', 'defenseGold'];
         const HEROES_IDS = ['sigrun', 'bernhard', 'ida'];
         const botById = {};
@@ -2807,16 +2807,17 @@ body.has-panel .mapctl{display:none}
             for (const ownedId of ownedIslands) {
                 sum += troopsPerTick(islandLevels[ownedId] || 1) * m;
                 const isl = islandById[ownedId];
-                if (isl && (isl.type === 'temple' || isl.type === 'megaTemple')) sum += Math.round(TEMPLE_TROOP_BONUS_PER_TICK * templeBaseMult(isl) * templeHoldMultiplier(ownedId));
+                if (isl && (isl.type === 'temple' || isl.type === 'megaTemple')) sum += Math.round(TEMPLE_TROOP_BONUS_PER_TICK * templeBaseMult(isl) * templeHoldMultiplier(ownedId) * shrineMult('player'));
             }
             return sum;
         }
+        function shrineMult(who) { return 1 + (who === 'player' ? cityLevelSafe('shrine') : botBld(who, 'shrine')) * .05; }   // Tempelschrein: +5 % temple bonus per level
         function totalCoinProductionPerTick() {
             let sum = 0; const m = playerCoinMult();
             for (const ownedId of ownedIslands) {
                 sum += coinsPerTick(islandLevels[ownedId] || 1) * m;
                 const isl = islandById[ownedId];
-                if (isl && (isl.type === 'temple' || isl.type === 'megaTemple')) sum += Math.round(TEMPLE_COIN_BONUS_PER_TICK * templeBaseMult(isl) * templeHoldMultiplier(ownedId));
+                if (isl && (isl.type === 'temple' || isl.type === 'megaTemple')) sum += Math.round(TEMPLE_COIN_BONUS_PER_TICK * templeBaseMult(isl) * templeHoldMultiplier(ownedId) * shrineMult('player'));
             }
             return sum;
         }
@@ -5984,11 +5985,11 @@ body.has-panel .mapctl{display:none}
             c.levels[c.build.id] = c.build.to; c.build = null; saveBotState();
         }
         const BOT_BUILD_PREF = {                                  // what each kind of player builds first (lower = sooner)
-            raider:   { barracks: 1, academy: 1.1, heroes: 1.2, forge: 1.4, hospital: 1.4, wall: 1.7, treasury: 1.5, watch: 1.9 },
-            builder:  { treasury: 1, wall: 1, barracks: 1.1, hospital: 1.2, forge: 1.5, heroes: 1.5, academy: 1.7, watch: 1.9 },
-            templer:  { heroes: 1, barracks: 1.1, wall: 1.2, treasury: 1.2, hospital: 1.3, forge: 1.3, academy: 1.5, watch: 1.7 },
-            balanced: { barracks: 1, treasury: 1, wall: 1.1, heroes: 1.2, hospital: 1.2, forge: 1.3, academy: 1.4, watch: 1.6 },
-            blitz:    { barracks: 1, academy: 1, heroes: 1.1, forge: 1.3, hospital: 1.3, treasury: 1.4, wall: 1.8, watch: 1.8 }
+            raider:   { barracks: 1, academy: 1.1, heroes: 1.2, forge: 1.4, hospital: 1.4, wall: 1.7, treasury: 1.5, watch: 1.9, shrine: 2.2 },
+            builder:  { treasury: 1, wall: 1, barracks: 1.1, hospital: 1.2, forge: 1.5, heroes: 1.5, academy: 1.7, watch: 1.9, shrine: 1.6 },
+            templer:  { heroes: 1, barracks: 1.1, wall: 1.2, treasury: 1.2, hospital: 1.3, forge: 1.3, academy: 1.5, watch: 1.7, shrine: 0.9 },
+            balanced: { barracks: 1, treasury: 1, wall: 1.1, heroes: 1.2, hospital: 1.2, forge: 1.3, academy: 1.4, watch: 1.6, shrine: 1.5 },
+            blitz:    { barracks: 1, academy: 1, heroes: 1.1, forge: 1.3, hospital: 1.3, treasury: 1.4, wall: 1.8, watch: 1.8, shrine: 2.2 }
         };
         function botCityBuild(bot, now) {                         // one builder: start the next building if the coins are there
             const b = loadBotState()[bot.id], c = b.city;
@@ -7897,7 +7898,7 @@ body.has-panel .mapctl{display:none}
 
                     const isl = islandById[ownedId];
                     if (isl && (isl.type === 'temple' || isl.type === 'megaTemple')) {
-                        const mult = templeBaseMult(isl) * templeHoldMultiplier(ownedId);
+                        const mult = templeBaseMult(isl) * templeHoldMultiplier(ownedId) * shrineMult('player');
                         gems += TEMPLE_GEMS_PER_TICK * mult * ticks;
                         coins += Math.round(TEMPLE_COIN_BONUS_PER_TICK * mult) * ticks;
                         islandTroops[rewardBaseId() ?? ownedId] += Math.round(TEMPLE_TROOP_BONUS_PER_TICK * mult) * ticks;   // bonus troops go to the capital
@@ -7919,7 +7920,7 @@ body.has-panel .mapctl{display:none}
                         bc.troops[ownedId] = tc - tw; islandTroops[ownedId] = (islandTroops[ownedId] || 0) + tw;
                         const isl = islandById[ownedId];
                         if (isl && (isl.type === 'temple' || isl.type === 'megaTemple')) {
-                            const mult = templeBaseMult(isl) * templeHoldMultiplier(ownedId);
+                            const mult = templeBaseMult(isl) * templeHoldMultiplier(ownedId) * shrineMult(bot.id);
                             bc.coins += Math.round(TEMPLE_COIN_BONUS_PER_TICK * mult) * bt;
                             const to = cap !== null && cap !== undefined && own.has(cap) ? cap : ownedId;   // bonus troops go to the capital, like yours
                             islandTroops[to] = (islandTroops[to] || 0) + Math.round(TEMPLE_TROOP_BONUS_PER_TICK * mult) * bt;
@@ -8921,7 +8922,7 @@ body.has-panel .mapctl{display:none}
               desc: 'Wähle oben die Art und dann ein Ausrüstungsteil aus deinem Besitz, um es mit Sternen zu verbessern: jeder Stern +20 % Wirkung des Teils. Jede Stufe erlaubt einen Stern mehr.' },
             { id: 'hospital', name: 'Lazarett',      icon: 'plus',    x: 215, y: 670, roof: '#e8e2d2', cross: true, fx: true,
               desc: 'Von deinen Gefallenen (Angriff oder Verteidigung) kommen Verwundete hierher statt zu sterben (5 % pro Stufe, bis 60 %). Heile sie gegen Münzen – sie gehen in die Hauptstadt.' },
-            { id: 'shrine',   name: 'Tempelschrein', icon: 'temple',  x: 785, y: 670, roof: '#c9a54e', dome: true, desc: 'Wird den Bonus aller deiner Tempel verstärken.' },
+            { id: 'shrine',   name: 'Tempelschrein', icon: 'temple',  x: 785, y: 670, roof: '#c9a54e', dome: true, fx: true, desc: 'Verstärkt den Bonus aller deiner Tempel: Münzen, Truppen und Gems.' },
             { id: 'wall',     name: 'Mauer',         icon: 'defense', x: 715, y: 815, roof: '#6b6456', gate: true, fx: true,
               desc: 'Stärkt die Verteidigung aller deiner Basen: +2 % pro Stufe (Stufe 25: +50 %). Beispiel: 10 Mio. Verteidigung und Mauer Stufe 5 ergeben 11 Mio.' },
             { id: 'barracks', name: 'Kaserne',       icon: 'troops',  fx: true,
@@ -9218,6 +9219,11 @@ body.has-panel .mapctl{display:none}
             if (id === 'academy') return 'Jetzt: Truppen laufen +' + (lvl * 2) + ' % schneller.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: +' + ((lvl + 1) * 2) + ' %.' : '');
             if (id === 'forge') return lvl ? 'Bis zu ' + Math.min(STAR_MAX, lvl) + (Math.min(STAR_MAX, lvl) === 1 ? ' Stern' : ' Sterne') + ' pro Ausrüstungsteil.' + (lvl < STAR_MAX ? ' Nächste Stufe: ' + (lvl + 1) + ' Sterne.' : '') : 'Baue die Schmiede, um Sterne zu setzen.';
             if (id === 'heroes') return lvl ? 'Helden bis Stufe ' + heroMaxLevel() + ' · ' + HEROES.filter(h => heroUnlocked(h)).length + ' von ' + HEROES.length + ' Helden bereit.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: Helden bis Stufe ' + Math.min(50, (lvl + 1) * 2) + (HEROES.find(h => h.unlock === lvl + 1) ? ', ' + HEROES.find(h => h.unlock === lvl + 1).name + ' kommt dazu' : '') + '.' : '') : 'Baue die Heldenhalle, um deinen ersten Helden zu rufen.';
+            const nx = (per, what) => (lvl ? 'Jetzt: +' + lvl * per + ' % ' + what + '.' : 'Noch keine Wirkung.') + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: +' + (lvl + 1) * per + ' %.' : '');
+            if (id === 'barracks') return nx(2, 'Truppenproduktion auf allen Basen');
+            if (id === 'treasury') return nx(2, 'Münzproduktion auf allen Basen');
+            if (id === 'watch') return nx(4, 'schnellere Späher');
+            if (id === 'shrine') return nx(5, 'Bonus aus allen deinen Tempeln (Münzen, Truppen, Gems)');
             if (id === 'hospital') return lvl ? hospitalPct() + ' % der Gefallenen kommen ins Lazarett · Platz für ' + fmtCompact(hospitalCapacity()) + (lvl < CITY_MAX_LEVEL ? ' · Nächste Stufe: ' + Math.min(60, (lvl + 1) * 5) + ' %, Platz für ' + fmtCompact(Math.round(1e6 * Math.pow(1.6, lvl))) : '') : 'Baue das Lazarett, um Verwundete zu retten.';
             return '';
         }
