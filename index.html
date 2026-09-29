@@ -3166,6 +3166,7 @@ body.has-panel .mapctl{display:none}
         function attackSpeedMultiplier() {
             return 1 + Math.min(skills.speed || 0, SKILL_DEFS.speed.max) * 0.05;
         }
+        function scoutSecs(from, to, botId) { return travelDurationSeconds(from, to, botId) / (1 + (botId ? botBld(botId, 'watch') : cityLevelSafe('watch')) * .04); }   // a scout's walk, Späherturm included - the same for everyone
         function travelDurationSeconds(source, target, botId) {   // bots march at base speed; the player gets the speed skill + Akademie
             const pts = source.landmassId === target.landmassId ? [source, target] : marchPath(source, target);
             let distance = 0; for (let i = 1; i < pts.length; i++) distance += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
@@ -3435,7 +3436,7 @@ body.has-panel .mapctl{display:none}
             if (!home) return;
             sfx('scout');
 
-            const durationSec = travelDurationSeconds(home, target) / (1 + cityLevelSafe('watch') * .04);   // the Späherturm makes scouts faster
+            const durationSec = scoutSecs(home, target);   // the Späherturm makes scouts faster
             const startedAt = Date.now();
             pendingScouts.push({
                 sourceId,
@@ -5912,7 +5913,7 @@ body.has-panel .mapctl{display:none}
             // nothing to strike: scout the most interesting base they don't know yet (that is this move's order)
             if (!n && !rallied) for (const e of list.slice(0, 8)) {
                 if (botIntel(bot, e.target.id) || botScouting(bot, e.target.id) || bossAt(e.target.id)) continue;
-                const ready = now + travelDurationSeconds(islandById[e.sources[0].id], e.target, bot.id) * 500 / (1 + botBld(bot.id, 'watch') * .04);   // their Späherturm, like yours
+                const ready = now + scoutSecs(islandById[e.sources[0].id], e.target, bot.id) * 1000;   // their scout walks as long as yours would
                 botLearn(bot.id, e.target.id, ready);
                 if (islandOwnerOf(e.target.id) === 'player') botScoutVisible(bot, e.sources[0].id, e.target.id, now, ready);   // you see it coming
                 scouted++; break;
@@ -10324,7 +10325,7 @@ body.has-panel .mapctl{display:none}
                 const boss = bossAt(t.id), it = boss ? { s: boss.troops + boss.defense } : botIntel(bot, t.id);
                 if (!it) {                                                                   // no report yet: scout it from here first
                     if (botScouting(bot, t.id)) continue;
-                    const ready = now + travelDurationSeconds({ x: a.x, y: a.y, landmassId: a.lm }, t, bot.id) * 500 / (1 + botBld(bot.id, 'watch') * .04);
+                    const ready = now + scoutSecs({ x: a.x, y: a.y, landmassId: a.lm }, t, bot.id) * 1000;
                     botLearn(bot.id, t.id, ready);
                     if (islandOwnerOf(t.id) === 'player') { const h = armyHome(a); if (h !== null && h !== undefined) botScoutVisible(bot, h, t.id, now, ready); }
                     return true;
@@ -10812,7 +10813,7 @@ body.has-panel .mapctl{display:none}
             openIslandPopup(isl); requestRender();
         });
         function templeBonusLine(island) {
-            const mult = templeBaseMult(island) * templeHoldMultiplier(island.id);
+            const mult = templeBaseMult(island) * templeHoldMultiplier(island.id) * shrineMult('player');
             const heldSince = templeHoldSince[island.id];
             const heldMin = heldSince ? Math.floor((Date.now() - heldSince) / 60000) : 0;
             return '<div class="notice notice--gold">' + icon('gem') + '<span>+' +
@@ -11289,7 +11290,7 @@ body.has-panel .mapctl{display:none}
             for (const i of islandsByLandmass[lm.id] || []) { const d = Math.hypot(i.x - f.x, i.y - f.y); if (d < bd) { bd = d; target = i; } }
             if (!target) return;
             const home = islandById[nearestOwnedIslandTo(target)];          // same source and route launchScout will use
-            fogPrompt = { x: f.x, y: f.y, targetId: target.id, secs: home ? travelDurationSeconds(home, target) : 0, at: performance.now() };
+            fogPrompt = { x: f.x, y: f.y, targetId: target.id, secs: home ? scoutSecs(home, target) : 0, at: performance.now() };
             requestRender();
         }
         function fogPromptHit(sx, sy) {                   // → 'go' (the button), 'off' (elsewhere)
