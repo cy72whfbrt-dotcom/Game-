@@ -210,6 +210,7 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 .mabar-l .icon{width:18px;height:18px;color:var(--f-multi)}
 .mabar .label{font:600 var(--fs-12)/1.25 var(--font-ui);color:var(--tx-1);overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
 .mabar .row{display:flex;gap:6px;flex:none;margin-left:auto}
+.mabar-seg{flex:1 1 200px;margin-top:0}
 
 /* =====================================================================
    SCRIM
@@ -962,9 +963,9 @@ body.has-panel .mapctl{display:none}
 
 .gate-ctl{display:flex;flex-direction:column;gap:8px;margin-top:10px;padding:10px;border:1px solid var(--line-2);border-radius:var(--r-sm);background:rgba(0,0,0,.22)}
 .gate-row{display:flex;flex-direction:column;gap:6px}
-.seg{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
-.seg button{height:32px;border:1px solid var(--line-2);border-radius:var(--r-xs);background:rgba(255,255,255,.04);color:var(--tx-2);font:700 var(--fs-12)/1 var(--font-ui)}
-.seg button.is-on{border-color:var(--gold-300);background:linear-gradient(180deg,rgba(236,208,138,.28),rgba(236,208,138,.08));color:var(--gold-100)}
+.gate-ctl .seg{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-top:0}
+.gate-ctl .seg button{height:32px;border:1px solid var(--line-2);border-radius:var(--r-xs);background:rgba(255,255,255,.04);color:var(--tx-2);font:700 var(--fs-12)/1 var(--font-ui)}
+.gate-ctl .seg button.is-on{border-color:var(--gold-300);background:linear-gradient(180deg,rgba(236,208,138,.28),rgba(236,208,138,.08));color:var(--gold-100)}
 .gate-note{margin:0;font:500 var(--fs-12)/1.4 var(--font-ui);color:var(--tx-3)}
 .title-card{max-width:440px;width:100%}
 .title-list{display:flex;flex-direction:column;gap:6px;max-height:52vh;overflow:auto;text-align:left}
@@ -1245,6 +1246,7 @@ body.has-panel .mapctl{display:none}
 <!-- Multi-attack floating bar (JS sets style.display='flex') -->
 <div id="multiAttackBar" class="mabar">
   <div class="mabar-l"><svg class="icon"><use href="#i-multiattack"/></svg><span class="label" id="multiAttackLabel">0 Ziele ausgewählt</span></div>
+  <div class="seg mabar-seg" id="multiAttackShare"><button type="button" data-f=".25">25 %</button><button type="button" data-f=".5">50 %</button><button type="button" data-f=".75">75 %</button><button type="button" data-f="1" class="on">Alle</button></div>
   <div class="row">
     <button id="multiAttackCancelBtn" class="btn btn--ghost btn--sm" type="button">Abbrechen</button>
     <button id="multiAttackConfirmBtn" class="btn btn--danger btn--sm" type="button"><svg class="icon"><use href="#i-attack"/></svg><span class="lbl">Angriffe starten</span></button>
@@ -8881,18 +8883,19 @@ body.has-panel .mapctl{display:none}
         const RECALL_GEM_COST = 1;
         let multiAttackMode = false;
         let multiAttackSourceId = null;
-        let multiAttackTargets = [];
+        let multiAttackTargets = [], multiAttackShare = 1;       // share of the base's troops that goes, split over the targets
 
         function updateMultiAttackBar() {
-            const n = multiAttackTargets.length;
-            multiAttackLabel.textContent = n + (n === 1 ? ' Ziel' : ' Ziele') + ' ausgewählt · Basen antippen';
+            const n = multiAttackTargets.length, go = Math.floor((islandTroops[multiAttackSourceId] || 0) * multiAttackShare);
+            multiAttackLabel.textContent = n ? n + (n === 1 ? ' Ziel' : ' Ziele') + ' · je ' + fmtCompact(Math.floor(go / n)) + ' Truppen' : '0 Ziele ausgewählt · Basen antippen';
+            for (const b of document.querySelectorAll('#multiAttackShare button')) b.classList.toggle('on', parseFloat(b.dataset.f) === multiAttackShare);
             multiAttackConfirmBtn.disabled = multiAttackTargets.length === 0;
         }
 
         function startMultiAttack(sourceId) {
             multiAttackMode = true;
             multiAttackSourceId = sourceId;
-            multiAttackTargets = [];
+            multiAttackTargets = []; multiAttackShare = 1;
             multiAttackBar.style.display = 'flex';
             document.body.classList.add('is-multi');
             updateMultiAttackBar();
@@ -8909,6 +8912,10 @@ body.has-panel .mapctl{display:none}
         }
 
         multiAttackCancelBtn.addEventListener('click', cancelMultiAttack);
+        document.getElementById('multiAttackShare').addEventListener('click', e => {
+            const bt = e.target.closest('button[data-f]'); if (!bt) return;
+            multiAttackShare = parseFloat(bt.dataset.f); updateMultiAttackBar();
+        });
 
         multiAttackConfirmBtn.addEventListener('click', () => {
             const sourceId = multiAttackSourceId;
@@ -8918,7 +8925,7 @@ body.has-panel .mapctl{display:none}
                 flashHint('Nicht genug Gems für den Mehrfachangriff.', 3000);
                 return;
             }
-            const available = islandTroops[sourceId] || 0;
+            const available = Math.floor((islandTroops[sourceId] || 0) * multiAttackShare);
             if (available < targets.length) {
                 flashHint('Nicht genug Truppen, um so viele Ziele gleichzeitig anzugreifen.', 3000);
                 return;
@@ -9029,9 +9036,15 @@ body.has-panel .mapctl{display:none}
             document.getElementById('cityBtn').style.display = 'none';
             document.getElementById('teleportBtn').style.display = 'none';
             document.getElementById('titleBtn').style.display = island.type === 'megaTemple' ? 'inline-block' : 'none';
-            if (popupView !== 'preview' && popupView !== 'send') popupStats.dataset.preview = '';
+            if (popupView !== 'preview' && popupView !== 'send' && popupView !== 'recall') popupStats.dataset.preview = '';
 
-            if (isOwned && popupView === 'send') {
+            if (isOwned && popupView === 'recall') {
+                renderRecallPreview(island);
+                setBtnLabel(attackBtn, 'Sammeln');
+                attackBtn.style.display = 'inline-block';
+                attackBtn.disabled = gems < RECALL_GEM_COST;
+                backBtn.style.display = 'inline-block';
+            } else if (isOwned && popupView === 'send') {
                 renderSendPreview(island);
                 setBtnLabel(attackBtn, 'Senden');
                 attackBtn.style.display = 'inline-block';
@@ -9095,7 +9108,7 @@ body.has-panel .mapctl{display:none}
                     scoutBtn.disabled = scoutEnRoute;
                 }
             }
-            if (popupView !== 'preview' && popupView !== 'send') popupSub.insertAdjacentHTML('beforeend', sep + '<span class="num coord">' + coordText(island.x, island.y) + '</span>');
+            if (popupView !== 'preview' && popupView !== 'send' && popupView !== 'recall') popupSub.insertAdjacentHTML('beforeend', sep + '<span class="num coord">' + coordText(island.x, island.y) + '</span>');
             if (!isPanelOpen(popup)) {
                 openPanel(popup);
                 // camera framing (design-spec §6.6): after layout, so the sheet/popover size is known
@@ -9281,32 +9294,56 @@ body.has-panel .mapctl{display:none}
             startMultiAttack(sourceId);
         });
 
-        recallBtn.addEventListener('click', () => {
-            if (popupIslandId === null) return;
-            const targetId = popupIslandId;
-            const target = islandById[targetId];
-            if (!target || gems < RECALL_GEM_COST) return;
-
-            const sources = [];
+        function recallSources(targetId) {
+            const target = islandById[targetId], sources = [];
             for (const id of ownedIslands) {
-                if (id === targetId) continue;
-                if ((islandTroops[id] || 0) <= 0) continue;
+                if (id === targetId || (islandTroops[id] || 0) <= 0) continue;
                 const isl = islandById[id];
                 if (Math.hypot(isl.x - target.x, isl.y - target.y) <= RECALL_RADIUS) sources.push(id);
             }
+            return sources;
+        }
+        // "Sammeln": first a preview - how many bases, how many troops, and which share of each garrison comes
+        function renderRecallPreview(island) {
+            const sources = recallSources(island.id), total = sources.reduce((a, id) => a + (islandTroops[id] || 0), 0);
+            const f = previewFraction || 1, come = sources.reduce((a, id) => a + Math.floor((islandTroops[id] || 0) * f), 0), big = v => v >= 1e7 ? fmtCompact(v) : fmtNum(v);
+            popupOverline.textContent = 'Truppen sammeln';
+            popupSub.innerHTML = icon('send') + '<span>' + (sources.length === 1 ? '1 Basis' : sources.length + ' Basen') + ' im Umkreis</span><span class="sep"></span>' + icon('gem') + '<span>' + RECALL_GEM_COST + ' Gem</span>';
+            popupStats.dataset.preview = 'recall';
+            popupStats.innerHTML = '<div class="stat-grid">' +
+                    statTile('Hier jetzt', 'troops', big(islandTroops[island.id] || 0)) +
+                    statTile('Nach Ankunft', 'troops', big((islandTroops[island.id] || 0) + come), 'is-good') + '</div>' +
+                '<div class="field"><div class="field-top"><span class="field-l">Von jeder Basis</span><span class="val"><b>' + big(come) + '</b> / ' + big(total) + '</span></div>' +
+                    '<div class="seg" data-recall="quick">' + ['.25', '.5', '.75', '1'].map(v => '<button type="button" data-f="' + v + '"' + (+v === f ? ' class="on"' : '') + '>' + (v === '1' ? 'Alle' : Math.round(v * 100) + ' %') + '</button>').join('') + '</div></div>';
+            popupStats.querySelector('[data-recall="quick"]').addEventListener('click', e => {
+                const bt = e.target.closest('button[data-f]'); if (!bt) return;
+                previewFraction = parseFloat(bt.dataset.f); renderPopup();
+            });
+            return sources;
+        }
+        recallBtn.addEventListener('click', () => {
+            if (popupIslandId === null || gems < RECALL_GEM_COST) return;
+            if (!recallSources(popupIslandId).length) { flashHint('Keine eigenen Basen mit Truppen im Umkreis gefunden.', 3000); return; }
+            popupView = 'recall'; previewFraction = 1; previewShownAt = Date.now();
+            renderPopup();
+        });
+        function confirmRecall() {
+            const targetId = popupIslandId;
+            if (targetId === null || gems < RECALL_GEM_COST) return;
+            const sources = recallSources(targetId), f = previewFraction || 1;
             if (sources.length === 0) {
                 flashHint('Keine eigenen Basen mit Truppen im Umkreis gefunden.', 3000);
                 return;
             }
 
             gems -= RECALL_GEM_COST;
-            for (const sourceId of sources) launchSend(sourceId, targetId);
+            for (const sourceId of sources) launchSend(sourceId, targetId, null, Math.max(1, Math.floor((islandTroops[sourceId] || 0) * f)));
             updateHud();
             saveGame();
             saveProgression();
             flashHint('Truppen aus ' + (sources.length === 1 ? '1 Basis' : sources.length + ' Basen') + ' im Umkreis werden zurückgerufen.', 3500);
             closeIslandPopup();
-        });
+        }
 
         backBtn.addEventListener('click', () => {
             if (popupView === 'send') {                        // back to picking the destination
@@ -9330,6 +9367,7 @@ body.has-panel .mapctl{display:none}
         });
 
         attackBtn.addEventListener('click', () => {
+            if (popupView === 'recall') { if (Date.now() - previewShownAt >= 350) confirmRecall(); return; }
             if (popupView === 'send') {
                 if (Date.now() - previewShownAt < 350) return;
                 const toId = popupIslandId, fromId = previewSourceId, available = islandTroops[fromId] || 0;
@@ -9604,6 +9642,19 @@ body.has-panel .mapctl{display:none}
         if (store.get('openWaterGift2') !== 'g2' && playerIslandId !== null && islandById[playerIslandId]) {   // one-time test gift: 999 Mrd. coins + 999 Mrd. troops in the capital
             coins = Math.max(coins, 999e9); islandTroops[playerIslandId] = Math.max(islandTroops[playerIslandId] || 0, 999e9);
             store.set('openWaterGift2', 'g2'); saveGame(); updateHud();
+        }
+        if (store.get('openWaterEmmaNear') !== '1' && playerIslandId !== null && islandById[playerIslandId]) {   // one-time test: Emma moves onto the player's island
+            const home = islandById[playerIslandId], d = i => Math.hypot(i.x - home.x, i.y - home.y);
+            const free = islandsByLandmass[home.landmassId].filter(i => i.type === 'tower' && !islandOwnerOf(i.id) && !bossAt(i.id)).sort((a, b) => d(b) - d(a));
+            if (free.length >= 4) {
+                const cap = free[0], near = free.slice(1).sort((a, b) => Math.hypot(a.x - cap.x, a.y - cap.y) - Math.hypot(b.x - cap.x, b.y - cap.y)).slice(0, 3);
+                const oldCap = botCapitalOf('bot25'), army = Math.max(5000, oldCap !== null ? islandTroops[oldCap] || 0 : 0);
+                for (const isl of [cap, ...near]) { botOwnedIslands.bot25.add(isl.id); islandLevels[isl.id] = Math.max(islandLevels[isl.id] || 1, 3); islandTroops[isl.id] = Math.round(army / (isl === cap ? 2 : 6)); }
+                loadBotState().bot25.capital = cap.id; capitalCache = null;
+                saveBotState(); refreshTerritory(); saveGame(); requestRender();
+                flashHint('Test: Emma ist jetzt auf deiner Insel – ihre Hauptstadt steht bei ' + coordText(cap.x, cap.y) + '.', 7000);
+            }
+            store.set('openWaterEmmaNear', '1');
         }
         renderActiveMarches();
         if (bonusGrantedAtBoot) saveGame();      // a reload right after the first start must not lose the grant
