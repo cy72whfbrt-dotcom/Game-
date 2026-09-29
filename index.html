@@ -568,6 +568,8 @@ body.has-panel .mapctl{display:none}
    ===================================================================== */
 .pointsline{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--r-sm);background:rgba(214,170,90,.06);border:1px solid var(--line-2);font:500 var(--fs-12)/1 var(--font-ui);color:var(--tx-2)}
 .pointsline .icon{width:16px;height:16px;color:var(--gold-300)}
+.skill-reset{display:inline-flex;align-items:center;gap:4px;margin-left:8px;padding:5px 9px;border-radius:999px;border:1px solid var(--line-2);background:rgba(255,255,255,.04);color:var(--tx-2);font:600 var(--fs-11)/1 var(--font-ui);white-space:nowrap}
+.skill-reset .icon{width:13px;height:13px} .skill-reset.is-armed{border-color:#f2a066;color:#f3e6c4;background:rgba(222,115,56,.16)}
 .pointsline b{margin-left:auto;font:600 var(--fs-15)/1 var(--font-ui);color:var(--gold-100);font-variant-numeric:tabular-nums}
 .skillDetail{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px;border-radius:var(--r-sm);background:var(--well);border:1px solid var(--line-1)}
 .skillDetail .icon-box{width:44px;height:44px;display:grid;place-items:center;border-radius:var(--r-sm);background:var(--tile-bg);border:1px solid var(--line-2);color:var(--sk,var(--gold-200))}
@@ -6681,8 +6683,23 @@ body.has-panel .mapctl{display:none}
         let selectedSkillKey = 'troops';
         const skillDetail = document.getElementById('skillDetail');
 
+        // Skills zurücksetzen: every spent point comes back to be placed anew - for gems, and only after a second tap
+        const SKILL_RESET_GEMS = 500;
+        let skillResetArmed = false, skillResetTimer = null;
+        function resetSkills() {
+            const spent = Object.keys(SKILL_DEFS).reduce((a, k) => a + (skills[k] || 0), 0); if (!spent) return;
+            if (gems < SKILL_RESET_GEMS) { flashHint('Zu wenig Gems: Zurücksetzen kostet ' + SKILL_RESET_GEMS + ' Gems.', 3000); return; }
+            if (!skillResetArmed) { skillResetArmed = true; clearTimeout(skillResetTimer); skillResetTimer = setTimeout(() => { skillResetArmed = false; renderSkillGrid(); }, 4000); renderSkillGrid(); return; }
+            skillResetArmed = false; clearTimeout(skillResetTimer);
+            gems -= SKILL_RESET_GEMS; skillPoints += spent; for (const k of Object.keys(SKILL_DEFS)) skills[k] = 0;
+            saveProgression(); saveGame(); updateHud(); renderSkillGrid();
+            flashHint('Skills zurückgesetzt: ' + fmtNum(spent) + ' Skillpunkte sind wieder frei.', 3500);
+        }
         function renderSkillGrid() {
-            skillPointsLine.innerHTML = icon('star') + '<span>Verfügbare Skillpunkte</span><b>' + fmtNum(skillPoints) + '</b>';
+            const spentPts = Object.keys(SKILL_DEFS).reduce((a, k) => a + (skills[k] || 0), 0);
+            skillPointsLine.innerHTML = icon('star') + '<span>Verfügbare Skillpunkte</span><b>' + fmtNum(skillPoints) + '</b>' +
+                (spentPts ? '<button type="button" class="skill-reset' + (skillResetArmed ? ' is-armed' : '') + '" data-skillreset>' + (skillResetArmed ? 'Wirklich? ' + icon('gem') + SKILL_RESET_GEMS : icon('recall') + 'Zurücksetzen') + '</button>' : '');
+            const rb = skillPointsLine.querySelector('[data-skillreset]'); if (rb) rb.addEventListener('click', resetSkills);
 
             const def = SKILL_DEFS[selectedSkillKey];
             const level = skills[selectedSkillKey];
