@@ -2996,15 +2996,16 @@ body.has-panel .mapctl{display:none}
 
         // "Truppen verschicken": same travel time as an attack, but a blue
         // march to one of the player's OWN towers that just merges in.
-        function launchSend(fromId, toId, senderBotId) {
+        function launchSend(fromId, toId, senderBotId, amount) {       // amount: how many go (default: all of them)
             const source = islandById[fromId];
             const target = islandById[toId];
-            const rawTroops = islandTroops[fromId] || 0;
+            const available = islandTroops[fromId] || 0;
+            const rawTroops = amount > 0 ? Math.min(Math.round(amount), available) : available;
             if (!source || !target || rawTroops <= 0) return;
             const hop = lastHop(source.landmassId, target.landmassId, senderBotId || 'player');
             if (!payToll(hop[0], hop[1], rawTroops, senderBotId || 'player')) return;
 
-            islandTroops[fromId] = 0; // troops march out
+            islandTroops[fromId] = available - rawTroops; // troops march out, the rest stays
             const durationSec = travelDurationSeconds(source, target, senderBotId);
             const startedAt = Date.now();
             pendingSends.push({
@@ -9028,9 +9029,15 @@ body.has-panel .mapctl{display:none}
             document.getElementById('cityBtn').style.display = 'none';
             document.getElementById('teleportBtn').style.display = 'none';
             document.getElementById('titleBtn').style.display = island.type === 'megaTemple' ? 'inline-block' : 'none';
-            if (popupView !== 'preview') popupStats.dataset.preview = '';
+            if (popupView !== 'preview' && popupView !== 'send') popupStats.dataset.preview = '';
 
-            if (isOwned) {
+            if (isOwned && popupView === 'send') {
+                renderSendPreview(island);
+                setBtnLabel(attackBtn, 'Senden');
+                attackBtn.style.display = 'inline-block';
+                attackBtn.disabled = (islandTroops[previewSourceId] || 0) <= 0;
+                backBtn.style.display = 'inline-block';
+            } else if (isOwned) {
                 const troopsHere = islandTroops[island.id] || 0;
                 popupSub.innerHTML = '<span class="dot dot--player"></span>' + escapeHtml(profileName.value || 'Du') +
                     (island.id === playerIslandId ? sep + 'Heimat' : '');
@@ -9088,7 +9095,7 @@ body.has-panel .mapctl{display:none}
                     scoutBtn.disabled = scoutEnRoute;
                 }
             }
-            if (popupView !== 'preview') popupSub.insertAdjacentHTML('beforeend', sep + '<span class="num coord">' + coordText(island.x, island.y) + '</span>');
+            if (popupView !== 'preview' && popupView !== 'send') popupSub.insertAdjacentHTML('beforeend', sep + '<span class="num coord">' + coordText(island.x, island.y) + '</span>');
             if (!isPanelOpen(popup)) {
                 openPanel(popup);
                 // camera framing (design-spec §6.6): after layout, so the sheet/popover size is known
@@ -9147,6 +9154,55 @@ body.has-panel .mapctl{display:none}
                 });
             }
             patchAttackPreview();
+        }
+
+        // Sending troops to your own base: like the attack, pick how many go (slider or 25/50/75 % / Alle).
+        function renderSendPreview(island) {
+            const source = islandById[previewSourceId];
+            if (!source) return;
+            popupOverline.textContent = 'Truppen senden';
+            popupSub.innerHTML = icon('defense') + '<span>Von ' + islandTitle(source) + '</span><span class="sep"></span>' +
+                icon('hourglass') + '<span><span class="xs-hide">Marsch ca. </span><span class="num">' + fmtClock(travelDurationSeconds(source, island)) + '</span></span>';
+            const key = 'send:' + island.id + ':' + previewSourceId;
+            if (popupStats.dataset.preview !== key || !document.getElementById('sendTroopsSlider')) {
+                popupStats.dataset.preview = key;
+                popupStats.innerHTML = '<div class="stat-grid">' +
+                        statTile('Hier jetzt', 'troops', '<span data-send="here"></span>') +
+                        statTile('Nach Ankunft', 'troops', '<span data-send="after"></span>', 'is-good') + '</div>' +
+                    '<div class="field"><div class="field-top"><span class="field-l"><span class="sm-hide">Truppen </span>senden</span><span class="val"><b data-send="n"></b> / <span data-send="max"></span></span></div>' +
+                        '<input type="range" id="sendTroopsSlider" class="slider" min="1" max="1" value="1" aria-label="Truppen senden">' +
+                        '<div class="seg" data-send="quick"><button type="button" data-f=".25">25 %</button><button type="button" data-f=".5">50 %</button><button type="button" data-f=".75">75 %</button><button type="button" data-f="1">Alle</button></div></div>';
+                const slider = document.getElementById('sendTroopsSlider');
+                slider.addEventListener('input', () => {
+                    const mx = islandTroops[previewSourceId] || 0;
+                    previewAttackTroops = Math.max(1, Math.min(parseInt(slider.value, 10) || 1, mx));
+                    previewFraction = previewAttackTroops >= mx ? 1 : null;
+                    patchSendPreview();
+                });
+                popupStats.querySelector('[data-send="quick"]').addEventListener('click', e => {
+                    const f = parseFloat(e.target.closest('button') && e.target.closest('button').dataset.f);
+                    if (!f || slider.disabled) return;
+                    previewFraction = f; patchSendPreview();
+                });
+            }
+            patchSendPreview();
+        }
+        function patchSendPreview() {
+            const slider = document.getElementById('sendTroopsSlider'), island = islandById[popupIslandId];
+            if (!slider || !island) return;
+            const mx = islandTroops[previewSourceId] || 0;
+            slider.max = Math.max(1, mx); slider.disabled = mx <= 0;
+            if (previewFraction !== null && mx > 0) previewAttackTroops = Math.max(1, Math.round(mx * previewFraction));
+            if (previewAttackTroops === null || previewAttackTroops > mx) previewAttackTroops = mx;
+            if (mx > 0 && +slider.value !== previewAttackTroops) slider.value = Math.max(1, previewAttackTroops);
+            const n = Math.max(0, previewAttackTroops || 0), big = v => v >= 1e7 ? fmtCompact(v) : fmtNum(v);
+            popupStats.querySelector('[data-send="n"]').textContent = big(n);
+            popupStats.querySelector('[data-send="max"]').textContent = big(mx);
+            popupStats.querySelector('[data-send="here"]').textContent = big(islandTroops[island.id] || 0);
+            popupStats.querySelector('[data-send="after"]').textContent = big((islandTroops[island.id] || 0) + n);
+            slider.style.setProperty('--pct', (mx > 1 ? (Math.max(1, n) - 1) / (mx - 1) * 100 : 100) + '%');
+            for (const b of popupStats.querySelectorAll('[data-send="quick"] button'))
+                b.classList.toggle('on', mx > 0 && (previewFraction !== null ? previewFraction === parseFloat(b.dataset.f) : Math.max(1, Math.round(mx * parseFloat(b.dataset.f))) === n));
         }
 
         // Writes the live numbers of the attack preview (own force, enemy force
@@ -9253,6 +9309,13 @@ body.has-panel .mapctl{display:none}
         });
 
         backBtn.addEventListener('click', () => {
+            if (popupView === 'send') {                        // back to picking the destination
+                const fromId = previewSourceId;
+                closeIslandPopup();
+                pendingSendFromId = fromId;
+                flashHint('Wähle die Zielbasis für deine Truppen – tippe sie auf der Karte an.');
+                return;
+            }
             if (popupView === 'preview') {
                 // Go back to blink-picking a different base
                 const targetId = popupIslandId;
@@ -9267,6 +9330,15 @@ body.has-panel .mapctl{display:none}
         });
 
         attackBtn.addEventListener('click', () => {
+            if (popupView === 'send') {
+                if (Date.now() - previewShownAt < 350) return;
+                const toId = popupIslandId, fromId = previewSourceId, available = islandTroops[fromId] || 0;
+                if (toId === null || fromId === null || available <= 0) return;
+                const picked = previewFraction !== null ? Math.round(available * previewFraction) : previewAttackTroops;
+                launchSend(fromId, toId, null, Math.max(1, Math.min(picked || available, available)));
+                closeIslandPopup();
+                return;
+            }
             if (popupView === 'preview') {
                 // Ignore a click that arrives the instant the preview opened -
                 // a real confirmation tap is a separate, deliberate action
@@ -9448,7 +9520,10 @@ body.has-panel .mapctl{display:none}
                 hintEl.textContent = defaultHint;
 
                 if (ownedIslands.has(island.id) && island.id !== fromId && (islandTroops[fromId] || 0) > 0) {
-                    launchSend(fromId, island.id);
+                    closeAllPopups();                                     // pick how many go, like for an attack
+                    previewSourceId = fromId; popupIslandId = island.id; popupView = 'send';
+                    previewFraction = 1; previewAttackTroops = null; previewShownAt = Date.now();
+                    renderPopup();
                     return;
                 }
                 // Tapped the source again or a neutral island - just cancel
