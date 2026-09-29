@@ -208,6 +208,8 @@ b,strong{font-weight:600}
 .marker-sheet{position:fixed;z-index:45;left:50%;bottom:calc(var(--dock-h) + var(--safe-b) + 14px);transform:translateX(-50%);width:min(360px,calc(100vw - 24px));padding:12px;border-radius:12px;
   background:var(--glass-strong,#141820);border:1px solid var(--line-3);box-shadow:var(--sh-2);font-family:var(--font-ui);display:flex;flex-direction:column;gap:8px}
 .marker-sheet[hidden]{display:none}
+.field-lines{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-3)} .field-lines b{color:var(--tx-1);text-align:right}
+.field-sheet .marker-head b{display:inline-flex;align-items:center;gap:6px} .field-sheet .marker-head .icon{width:16px;height:16px} .field-sheet .btn{justify-content:center}
 .marker-head{display:flex;align-items:center;justify-content:space-between;color:var(--tx-1)}
 .marker-presets{display:flex;flex-wrap:wrap;gap:6px}
 .marker-presets button{padding:6px 10px;border-radius:999px;border:1px solid var(--line-2);background:rgba(255,255,255,.04);color:var(--tx-1);font:600 var(--fs-12)/1 var(--font-ui)}
@@ -1316,6 +1318,7 @@ body.has-panel .mapctl{display:none}
   <button id="musicBtn" type="button" aria-label="Musik an/aus" aria-pressed="true"><svg class="icon"><use href="#i-sound"/></svg></button>
   <button id="markerBtn" type="button" aria-label="Wegmarke setzen"><svg class="icon"><use href="#i-flag"/></svg></button>
 </div>
+<div id="fieldSheet" class="marker-sheet field-sheet" hidden></div>
 <div id="markerSheet" class="marker-sheet" hidden>
   <div class="marker-head"><b id="markerTitle">Wegmarke</b><button id="markerClose" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button></div>
   <div class="marker-presets" id="markerPresets"></div>
@@ -4998,6 +5001,7 @@ body.has-panel .mapctl{display:none}
           drawBossOverlay(now);                                                                                                // world-event boss aura (under the tower)
           drawBaseAuras(vis, z, now);                                                                                          // level + title auras under the towers
           drawThronePlaza(z, now);                                                                                             // the Thronplatz around the Mega-Tempel
+          drawResFields(now, wallNow);                                                                                          // gold mines and gem veins
           for (const isl of vis.slice().sort((a, b) => a.y - b.y)) drawBuilding(isl, ownerKeyOf(isl), z);                    // 7
           drawThroneFx(z, now);
           drawBaseSparks(vis, z, now);
@@ -5720,7 +5724,7 @@ body.has-panel .mapctl{display:none}
                 scouted++; break;
             }
             if (n || rallied || scouted) botTapped(bot);
-            if (!n && !scouted && !rallied && botGather(bot)) botTapped(bot);
+            if (!n && !scouted && !rallied && (botGather(bot) || (Math.random() < .35 && botGatherField(bot)))) botTapped(bot);
             saveBotState();
         }
 
@@ -6892,6 +6896,11 @@ body.has-panel .mapctl{display:none}
                 T = id => (entry.names && entry.names[id]) || islandTitle(islandById[id]);
                 if (entry.type === 'send') {
                     return logRowHtml('send', 'send', logBadge('send', 'Verstärkung') + T(entry.toId), fmtM(entry.troops) + ' Truppen verlegt', ago(entry));
+                }
+                if (entry.type === 'field') {
+                    const K = FIELD_KINDS[entry.fieldKind] || FIELD_KINDS.gold;
+                    return logRowHtml(entry.won ? 'win' : 'loss', K.icon, logBadge(entry.won ? 'win' : 'loss', entry.won ? 'Feld gehalten' : 'Feld verloren') + K.name,
+                        entry.attacker + ' (' + fmtM(entry.atk) + ') gegen ' + entry.defender + ' (' + fmtM(entry.def) + ')', ago(entry));
                 }
                 if (entry.type === 'scout') {
                     return logRowHtml('scout', 'scout', logBadge('scout', 'Gespäht') + T(entry.targetId),
@@ -9364,6 +9373,162 @@ body.has-panel .mapctl{display:none}
 
         // Island tap/click handling: gestures and taps come from the Pointer Events state machine (camera block)
 
+        // ===== RESSOURCENFELDER: gold mines and gem veins out on the map. Send troops to gather, they come home with the
+        // loot. Bots gather too - and whoever is sitting on a field can be driven off it by a stronger army.
+        const FIELD_KINDS = {
+            gold: { name: 'Goldmine', what: 'Münzen', icon: 'coin', rate: .05, load: 10, base: 40000, col: '#e8c547' },
+            gem:  { name: 'Edelsteinader', what: 'Gems', icon: 'gem', rate: .0004, load: .02, base: 60, col: '#7fd0ff' }
+        };
+        const FIELD_REGEN_MS = 20 * 60000;
+        const resFields = (() => {
+            const out = [], r = mulberry32(7771), probe = document.createElement('canvas').getContext('2d');
+            for (const lm of landmasses) {
+                if (lm.tier !== 'outer' || lm.ring < 2) continue;
+                const want = lm.ring >= 5 ? 3 : 2, near = islandsByLandmass[lm.id] || [];
+                for (let k = 0, tries = 0; k < want && tries < 60; tries++) {
+                    const x = lm.x + (r() * 2 - 1) * lm.shapeMaxR * .8, y = lm.y + (r() * 2 - 1) * lm.shapeMaxR * .8;
+                    if (!probe.isPointInPath(lm.path, x, y)) continue;
+                    if (near.some(i => Math.hypot(i.x - x, i.y - y) < ISLAND_RADIUS * 2.4) || out.some(f => Math.hypot(f.x - x, f.y - y) < ISLAND_RADIUS * 4)) continue;
+                    const kind = r() < .78 ? 'gold' : 'gem';
+                    out.push({ id: 'f' + out.length, x, y, landmassId: lm.id, radius: ISLAND_RADIUS * .6, kind, cap: Math.round(FIELD_KINDS[kind].base * ringMult(lm)) }); k++;
+                }
+            }
+            return out;
+        })();
+        const fieldById = {}; for (const f of resFields) fieldById[f.id] = f;
+        let fieldState = (() => { try { return JSON.parse(store.get('openWaterFields')) || {}; } catch (e) { return {}; } })();
+        let fieldMarches = (() => { try { return JSON.parse(store.get('openWaterFieldMarches')) || []; } catch (e) { return []; } })();
+        let fieldSaveAt = 0;
+        function saveFields(now) { if (now && now - fieldSaveAt < 5000) return; fieldSaveAt = now || Date.now(); store.set('openWaterFields', JSON.stringify(fieldState)); store.set('openWaterFieldMarches', JSON.stringify(fieldMarches)); }
+        function fieldInfo(f) { const st = fieldState[f.id] || (fieldState[f.id] = { left: f.cap, occ: null }); if (st.regenAt && Date.now() >= st.regenAt) { st.left = f.cap; st.regenAt = 0; } return st; }
+        const fieldWhoName = who => who === 'player' ? 'Du' : (botById[who] || {}).name || '?';
+        const fieldLoadCap = (f, troops) => troops * FIELD_KINDS[f.kind].load;
+        function fieldTravelSec(from, f, who) { return travelDurationSeconds(from, f, who === 'player' ? undefined : who); }
+        function fieldSend(who, homeId, fieldId, troops) {                        // troops leave a base for a field (gathering, or attacking whoever sits there)
+            const home = islandById[homeId], f = fieldById[fieldId]; if (!home || !f || troops <= 0) return false;
+            islandTroops[homeId] = Math.max(0, (islandTroops[homeId] || 0) - troops);
+            const now = Date.now(); fieldMarches.push({ who, homeId, fieldId, troops, startedAt: now, resolveAt: now + fieldTravelSec(home, f, who) * 1000, back: false, load: 0 });
+            saveFields(); if (who === 'player') { sfx('send'); updateHud(); saveGame(); } requestRender(); return true;
+        }
+        function fieldGoHome(f, st, now) {                                          // the gatherers pack up and walk home with what they have
+            const o = st.occ; if (!o) return;
+            const home = islandById[o.homeId] || islandById[playerIslandId];
+            fieldMarches.push({ who: o.who, homeId: o.homeId, fieldId: f.id, troops: o.troops, startedAt: now, resolveAt: now + fieldTravelSec(home, f, o.who) * 1000, back: true, load: o.got });
+            st.occ = null; if (st.left <= 0) st.regenAt = now + FIELD_REGEN_MS;
+        }
+        function fieldArrive(m, now) {
+            const f = fieldById[m.fieldId], st = fieldInfo(f);
+            if (m.back) {                                                         // home again: troops back into a base, the loot into the coffers
+                const own = m.who === 'player' ? ownedIslands : botOwnedIslands[m.who];
+                const baseId = own && own.has(m.homeId) ? m.homeId : m.who === 'player' ? rewardBaseId() : own && [...own][0];
+                if (baseId !== undefined && baseId !== null) islandTroops[baseId] = (islandTroops[baseId] || 0) + m.troops;
+                const load = Math.floor(m.load);
+                if (m.who === 'player') { if (f.kind === 'gold') coins += load; else gems += load; if (load) { flashHint('Sammler zurück: +' + fmtNum(load) + ' ' + FIELD_KINDS[f.kind].what + ' aus der ' + FIELD_KINDS[f.kind].name + '.', 3500); sfx(f.kind === 'gold' ? 'coin' : 'gem'); } updateHud(); saveGame(); saveProgression(); }
+                else if (botCoins[m.who] !== undefined) { if (f.kind === 'gold') botCoins[m.who] += load; else loadBotState()[m.who].gems += load; }
+                return;
+            }
+            const o = st.occ;
+            if (!o || st.left <= 0 && !o) { st.occ = { who: m.who, troops: m.troops, homeId: m.homeId, since: now, got: 0 }; if (m.who === 'player') flashHint('Deine Truppen sammeln jetzt an der ' + FIELD_KINDS[f.kind].name + '.', 3000); return; }
+            if (o.who === m.who) { o.troops += m.troops; return; }                 // more of your own join the gatherers
+            const won = m.troops > o.troops, involved = m.who === 'player' || o.who === 'player';   // a fight for the field: army against army
+            const loserName = fieldWhoName(won ? o.who : m.who), winnerName = fieldWhoName(won ? m.who : o.who);
+            if (won) st.occ = { who: m.who, troops: m.troops - o.troops, homeId: m.homeId, since: now, got: 0 }; else o.troops -= m.troops;
+            if (involved) {
+                const youWon = (m.who === 'player') === won;
+                addCombatLogEntry({ type: 'field', fieldKind: f.kind, won: youWon, attacker: fieldWhoName(m.who), defender: fieldWhoName(o.who), atk: m.troops, def: o.troops });
+                flashHint(youWon ? 'Du hast die ' + FIELD_KINDS[f.kind].name + ' gegen ' + loserName + ' gehalten/erobert.' : winnerName + ' hat dich von der ' + FIELD_KINDS[f.kind].name + ' vertrieben.', 4000);
+                sfx(youWon ? 'victory' : 'defeat');
+            }
+        }
+        function fieldTick() {
+            const now = Date.now(), dt = 1;
+            const due = fieldMarches.filter(m => m.resolveAt <= now);
+            if (due.length) { fieldMarches = fieldMarches.filter(m => m.resolveAt > now); for (const m of due) fieldArrive(m, now); saveFields(); requestRender(); }
+            for (const f of resFields) {
+                const st = fieldState[f.id]; if (!st || !st.occ) continue;
+                const o = st.occ, cap = fieldLoadCap(f, o.troops), amt = Math.min(FIELD_KINDS[f.kind].rate * o.troops * dt, st.left, cap - o.got);
+                o.got += Math.max(0, amt); st.left -= Math.max(0, amt);
+                if (o.got >= cap - 1e-9 || st.left <= 0) { fieldGoHome(f, st, now); requestRender(); }
+            }
+            saveFields(now);
+        }
+        setInterval(fieldTick, 1000);
+        // bots: an idle bot sends a share of a big base to a field near it - free ones first, or one it can win
+        function botGatherField(bot) {
+            if (fieldMarches.some(m => m.who === bot.id && !m.back) || resFields.some(f => fieldState[f.id] && fieldState[f.id].occ && fieldState[f.id].occ.who === bot.id)) return false;
+            const own = botOwnedIslands[bot.id]; if (!own || !own.size) return false;
+            let base = null; for (const id of own) if (!base || (islandTroops[id] || 0) > (islandTroops[base] || 0)) base = id;
+            const have = Math.floor((islandTroops[base] || 0) * .35); if (have < 300) return false;
+            const b = islandById[base], reach = new Set((reachableLandmassIds[b.landmassId] || [b.landmassId]).filter(l => landmassesConnected(b.landmassId, l)));
+            let best = null, bd = Infinity;
+            for (const f of resFields) { if (!reach.has(f.landmassId)) continue; const st = fieldInfo(f); if (st.left <= 0) continue;
+                if (st.occ && (st.occ.who === 'player' && playerShielded() || st.occ.troops * 1.3 > have)) continue;
+                const d = Math.hypot(f.x - b.x, f.y - b.y) * (st.occ ? 2 : 1); if (d < bd) { bd = d; best = f; } }
+            return best ? fieldSend(bot.id, base, best.id, have) : false;
+        }
+        // drawing: the mine or the vein, the gatherers' tent in their colour with a progress ring, and your columns on the way
+        function fieldAt(sx, sy) { const z = mapState.zoom; if (z < .004) return null; return resFields.find(f => Math.hypot(f.x * z + mapState.offsetX - sx, f.y * z + mapState.offsetY - sy) < Math.max(16, f.radius * z)); }
+        function drawResFields(now, wallNow) {
+            const z = mapState.zoom; if (z < .004) return;
+            for (const m of fieldMarches) if (m.who === 'player') { const f = fieldById[m.fieldId], home = islandById[m.homeId]; if (!f || !home) continue;
+                m.back ? drawMarchLine('send', f, home, m.startedAt, m.resolveAt, wallNow) : drawMarchLine('attack', home, f, m.startedAt, m.resolveAt, wallNow); }
+            setScreen(ctx);
+            const k = Math.max(.6, Math.min(2.2, z / .012));
+            for (const f of resFields) {
+                const x = f.x * z + mapState.offsetX, y = f.y * z + mapState.offsetY; if (x < -40 || x > viewW + 40 || y < -40 || y > viewH + 40) continue;
+                const st = fieldState[f.id], left = st ? st.left : f.cap, empty = left <= 0;
+                ctx.save(); ctx.translate(x, y); ctx.scale(k, k);
+                ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(0, 4, 13, 5, 0, 0, Math.PI * 2); ctx.fill();
+                if (f.kind === 'gold') {                                             // a rocky mine mouth with a heap of gold
+                    ctx.fillStyle = '#7d6b55'; ctx.beginPath(); ctx.moveTo(-13, 4); ctx.quadraticCurveTo(-10, -12, 0, -13); ctx.quadraticCurveTo(10, -12, 13, 4); ctx.closePath(); ctx.fill();
+                    ctx.strokeStyle = '#3a2c1c'; ctx.lineWidth = 1; ctx.stroke();
+                    ctx.fillStyle = '#1e1610'; ctx.beginPath(); ctx.moveTo(-4, 4); ctx.lineTo(-4, -3); ctx.quadraticCurveTo(0, -7, 4, -3); ctx.lineTo(4, 4); ctx.closePath(); ctx.fill();
+                    if (!empty) { ctx.fillStyle = '#e8c547'; for (const [dx, dy, r2] of [[8, 2, 3], [11, 0, 2.2], [6, -1, 2]]) { ctx.beginPath(); ctx.arc(dx, dy, r2, 0, 7); ctx.fill(); } }
+                } else {                                                             // blue crystals out of the rock
+                    ctx.fillStyle = '#6f675a'; ctx.beginPath(); ctx.ellipse(0, 2, 12, 5, 0, 0, Math.PI * 2); ctx.fill();
+                    if (!empty) for (const [dx, h, w] of [[-5, 12, 3], [0, 17, 4], [5, 11, 3], [9, 7, 2.4]]) { ctx.fillStyle = '#7fd0ff'; ctx.beginPath(); ctx.moveTo(dx - w, 2); ctx.lineTo(dx, 2 - h); ctx.lineTo(dx + w, 2); ctx.closePath(); ctx.fill();
+                        ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.moveTo(dx - w * .3, 1); ctx.lineTo(dx, 2 - h); ctx.lineTo(dx + w * .15, 1); ctx.closePath(); ctx.fill(); }
+                }
+                if (st && st.occ) {                                                   // the gatherers' tent and how full their packs are
+                    const o = st.occ, col = o.who === 'player' ? '#3f86d8' : (botById[o.who] || {}).color || '#c9423a', q = Math.min(1, o.got / Math.max(1e-9, fieldLoadCap(f, o.troops)));
+                    ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(-18, 6); ctx.lineTo(-12, -5); ctx.lineTo(-6, 6); ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#2a241b'; ctx.stroke();
+                    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.arc(0, -4, 17, 0, Math.PI * 2); ctx.stroke();
+                    ctx.strokeStyle = col; ctx.beginPath(); ctx.arc(0, -4, 17, -Math.PI / 2, -Math.PI / 2 + q * Math.PI * 2); ctx.stroke();
+                }
+                ctx.restore();
+                if (z >= .008) { ctx.font = '700 10px Inter, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+                    const t = empty ? 'erschöpft' : fmtCompact(Math.floor(left)); const w = ctx.measureText(t).width + 12;
+                    ctx.fillStyle = 'rgba(14,14,20,.8)'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x - w / 2, y + 8 * k, w, 15, 7) : ctx.rect(x - w / 2, y + 8 * k, w, 15); ctx.fill();
+                    ctx.fillStyle = empty ? '#9a927f' : FIELD_KINDS[f.kind].col; ctx.fillText(t, x, y + 8 * k + 3); }
+            }
+        }
+        // the field sheet: what it is, who's there, and send / call back
+        let fieldSheetId = null, fieldShare = .5;
+        function fieldSource(f) { let best = null, bd = Infinity; for (const id of ownedIslands) { const isl = islandById[id]; if ((islandTroops[id] || 0) < 1 || !canReach(isl.landmassId, f.landmassId)) continue;
+            const d = Math.hypot(isl.x - f.x, isl.y - f.y); if (d < bd) { bd = d; best = id; } } return best; }
+        function openFieldSheet(f) {
+            fieldSheetId = f.id; const st = fieldInfo(f), K = FIELD_KINDS[f.kind], o = st.occ, src = fieldSource(f), mine = o && o.who === 'player';
+            const avail = src !== null ? islandTroops[src] || 0 : 0, send = Math.floor(avail * fieldShare);
+            document.getElementById('fieldSheet').innerHTML =
+                '<div class="marker-head"><b>' + icon(K.icon) + ' ' + K.name + '</b><button class="btn-x" type="button" data-fclose aria-label="Schließen">' + icon('close') + '</button></div>' +
+                '<div class="field-lines"><span>Vorrat</span><b>' + (st.left <= 0 ? 'erschöpft – wächst in ' + fmtClock((st.regenAt - Date.now()) / 1000) + ' nach' : fmtNum(Math.floor(st.left)) + ' ' + K.what) + '</b>' +
+                '<span>Besetzt</span><b>' + (o ? fieldWhoName(o.who) + ' · ' + fmtCompact(o.troops) + ' Truppen · ' + fmtNum(Math.floor(o.got)) + ' gesammelt' : 'frei') + '</b>' +
+                '<span>Tragen</span><b>' + (K.load >= 1 ? fmtNum(K.load) + ' ' + K.what + ' pro Truppe' : '1 Gem pro ' + Math.round(1 / K.load) + ' Truppen') + '</b></div>' +
+                (mine ? '<button class="btn btn--secondary btn--sm" type="button" data-frecall>' + icon('recall') + '<span>Mit Beute heimkehren</span></button>' :
+                 src === null ? '<div class="notice">' + icon('lock') + '<span>Keine deiner Basen mit Truppen kommt hierher.</span></div>' :
+                 '<div class="seg" data-fshare>' + ['.25', '.5', '.75', '1'].map(v => '<button type="button" data-f="' + v + '"' + (+v === fieldShare ? ' class="on"' : '') + '>' + (v === '1' ? 'Alle' : Math.round(v * 100) + ' %') + '</button>').join('') + '</div>' +
+                 '<button class="btn btn--primary btn--sm" type="button" data-fsend>' + icon(o ? 'attack' : 'send') + '<span>' + (o ? 'Angreifen und übernehmen' : 'Sammeln') + ' · ' + fmtCompact(send) + ' von ' + islandTitle(islandById[src]) + '</span></button>');
+            document.getElementById('fieldSheet').hidden = false;
+        }
+        function closeFieldSheet() { document.getElementById('fieldSheet').hidden = true; fieldSheetId = null; }
+        document.getElementById('fieldSheet').addEventListener('click', e => {
+            const f = fieldById[fieldSheetId]; if (!f) return;
+            if (e.target.closest('[data-fclose]')) return closeFieldSheet();
+            const sh = e.target.closest('[data-f]'); if (sh && e.target.closest('[data-fshare]')) { fieldShare = +sh.dataset.f; return openFieldSheet(f); }
+            if (e.target.closest('[data-frecall]')) { const st = fieldInfo(f); if (st.occ && st.occ.who === 'player') { fieldGoHome(f, st, Date.now()); saveFields(); flashHint('Deine Sammler kehren mit der Beute heim.', 2500); } return closeFieldSheet(); }
+            if (e.target.closest('[data-fsend]')) { const src = fieldSource(f); if (src === null) return; const n = Math.floor((islandTroops[src] || 0) * fieldShare);
+                if (n < 1) return; fieldSend('player', src, f.id, n); flashHint('Truppen unterwegs zur ' + FIELD_KINDS[f.kind].name + '.', 2500); closeFieldSheet(); }
+        });
         // ===== WEGMARKEN: your own pins on the map ("Angriff hier", "Emma-Gebiet" …) =====
         const MARKER_PRESETS = ['Angriff hier', 'Sammelpunkt', 'Achtung', 'Emma-Gebiet', 'Ziel', 'Verteidigen'];
         const MARKER_COLORS = ['#d9453a', '#e4a53a', '#3f86d8', '#4caf50', '#9b59b6', '#e8e2d2'];
@@ -10157,6 +10322,8 @@ body.has-panel .mapctl{display:none}
                 openMarkerSheet({ id: null, x: w.x, y: w.y, text: MARKER_PRESETS[0], col: MARKER_COLORS[0] }); return;
             }
             { const mk = !multiAttackMode && markerAt(screenX, screenY); if (mk) { openMarkerSheet({ id: mk.id, x: mk.x, y: mk.y, text: mk.text, col: mk.col }); return; } }
+            { const fd = !multiAttackMode && !pickIslandAtScreen(screenX, screenY) && fieldAt(screenX, screenY); if (fd) { closeIslandPopup(); openFieldSheet(fd); return; } }
+            if (fieldSheetId) closeFieldSheet();
             if (fogPrompt) {
                 const hit = fogPromptHit(screenX, screenY), fp = fogPrompt; fogPrompt = null; requestRender();
                 if (hit === 'go') { launchScout(fp.targetId, true, { x: fp.x, y: fp.y }); return; }
