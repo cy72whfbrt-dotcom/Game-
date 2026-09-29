@@ -2479,13 +2479,16 @@ body.has-panel .mapctl{display:none}
             BOT_DEFS.push({ id: 'bot' + n, name, color: 'hsl(' + h + ',62%,' + l + '%)', style: ['raider', 'builder', 'templer', 'balanced', 'balanced', 'builder'][i % 6] });
         });
         const BOT_STYLES = {
-            raider:   { margin: 1.05, commit: .85, tapMs: 4000, marches: 6, hunt: 1, multi: 3, risk: .25, spend: .45, send: 1,   skills: ['attack', 'troops', 'attack', 'defense'], temple: .7, enemy: .55, act: .72 },
-            builder:  { margin: 1.5,  commit: .55, tapMs: 7000, marches: 3, hunt: .2, multi: 1, risk: .05, spend: .9,  send: .8,  skills: ['troops', 'defense', 'troops', 'attack'], temple: .6, enemy: 1.2, act: .6 },
-            templer:  { margin: 1.2,  commit: .75, tapMs: 5000, marches: 5, hunt: .3, multi: 2, risk: .12, spend: .65, send: .9,  skills: ['attack', 'troops', 'defense'],           temple: .2, enemy: 1,   act: .66 },
-            balanced: { margin: 1.2,  commit: .7,  tapMs: 5000, marches: 5, hunt: .5, multi: 2, risk: .12, spend: .65, send: .9,  skills: ['troops', 'attack', 'defense'],           temple: .5, enemy: .9,  act: .64 },
-            blitz:    { margin: 1.0,  commit: .8,  tapMs: 3000, marches: 8, risk: .3, spend: .9,  send: 1,   skills: ['attack', 'troops'],                      temple: .3, enemy: .5,  act: 1,
+            raider:   { margin: 1.05, commit: .85, tapMs: 4000, marches: 6, hunt: 1, multi: 3, risk: .25, spend: .45, send: 1,   skills: ['attack', 'troops', 'attack', 'speed', 'attackGold', 'defense'], temple: .7, enemy: .55, act: .72 },
+            builder:  { margin: 1.5,  commit: .55, tapMs: 7000, marches: 3, hunt: .2, multi: 1, risk: .05, spend: .9,  send: .8,  skills: ['troops', 'defense', 'troops', 'speed', 'defenseGold', 'attack'], temple: .6, enemy: 1.2, act: .6 },
+            templer:  { margin: 1.2,  commit: .75, tapMs: 5000, marches: 5, hunt: .3, multi: 2, risk: .12, spend: .65, send: .9,  skills: ['attack', 'troops', 'defense', 'speed', 'attackGold', 'defenseGold'], temple: .2, enemy: 1,   act: .66 },
+            balanced: { margin: 1.2,  commit: .7,  tapMs: 5000, marches: 5, hunt: .5, multi: 2, risk: .12, spend: .65, send: .9,  skills: ['troops', 'attack', 'defense', 'speed', 'attackGold', 'defenseGold'], temple: .5, enemy: .9,  act: .64 },
+            blitz:    { margin: 1.0,  commit: .8,  tapMs: 3000, marches: 8, risk: .3, spend: .9,  send: 1,   skills: ['attack', 'troops', 'speed', 'attackGold'],                      temple: .3, enemy: .5,  act: 1,
                         hunt: 3, moveMs: 1500, launches: 4, sources: [30, 20] }     // no bonus troops: same economy as everyone, just hungrier and quicker to decide
         };
+        const BOT_BUILDINGS = ['academy', 'forge', 'hospital', 'wall', 'barracks', 'treasury', 'watch', 'heroes'];   // the city buildings with an effect
+        const BOT_SKILLS = ['troops', 'attack', 'defense', 'speed', 'attackGold', 'defenseGold'];
+        const HEROES_IDS = ['sigrun', 'bernhard', 'ida'];
         const botById = {};
         for (const bot of BOT_DEFS) botById[bot.id] = bot;
 
@@ -2639,7 +2642,7 @@ body.has-panel .mapctl{display:none}
             const level = islandLevels[island.id] || 1;
             const garrison = islandTroops[island.id] || 0;   // Verteidigung skill: the garrison fights harder, +3 % of it per level (mirror of the sword)
             return Math.round((owner === 'player' ? (defenseForLevel(level) + garrison * (skills.defense || 0) * SKILL_DEFS.defense.defPct / 100) * (1 + wallDefensePct() / 100)
-                                                  : (baseDefenseForLevel(level) * (1 + (botMults(owner).armorPct || 0) / 100) + garrison * (botMults(owner).defensePct || 0) / 100) * (1 + botCityLevel(owner) * 2 / 100)) * titleMult(owner, 'defense'));
+                                                  : (baseDefenseForLevel(level) * (1 + (botMults(owner).armorPct || 0) / 100) + garrison * (botMults(owner).defensePct || 0) / 100) * (1 + botBld(owner, 'wall') * 2 / 100)) * titleMult(owner, 'defense'));
         }
         // Where every point of a fight comes from - for the battle report, line by line with its source.
         function defenseParts(island) {
@@ -2649,7 +2652,7 @@ body.has-panel .mapctl{display:none}
             const g = islandTroops[island.id] || 0, base = baseDefenseForLevel(L), out = [['Grundverteidigung', base, 'Basis Stufe ' + L]];
             let armor, skill, wallPct, sl;
             if (owner === 'player') { armor = defenseForLevel(L) - base; sl = skills.defense || 0; skill = g * sl * SKILL_DEFS.defense.defPct / 100; wallPct = wallDefensePct(); }
-            else { const m = botMults(owner), b = loadBotState()[owner]; armor = base * (m.armorPct || 0) / 100; sl = b ? b.skills.defense : 0; skill = g * (m.defensePct || 0) / 100; wallPct = botCityLevel(owner) * 2; }
+            else { const m = botMults(owner), b = loadBotState()[owner]; armor = base * (m.armorPct || 0) / 100; sl = b ? b.skills.defense : 0; skill = g * (m.defensePct || 0) / 100; wallPct = botBld(owner, 'wall') * 2; }
             if (armor) out.push(['Rüstung', Math.round(armor), 'Ausrüstung']);
             if (skill) out.push(['Skill Verteidigung', Math.round(skill), 'Stufe ' + sl + ' · +' + sl * SKILL_DEFS.defense.defPct + ' % der Truppen']);
             const sub = base + armor + skill;
@@ -2666,11 +2669,12 @@ body.has-panel .mapctl{display:none}
                 items: slots.map(k => { const it = equippedItems[k] && inventory[equippedItems[k]]; return it ? [k, it.rarity, it.level, it.stars || 0] : [k, -1, 0, 0]; }),
                 forge: slots.map(k => equipment[k] || 0), heroes: [...new Set((heroIds || []).filter(Boolean))].map(id => [id, heroLevel(id), heroRarity(id)]),
                 skills: [skills.attack || 0, skills.defense || 0], city: [cityLevelSafe('wall'), cityLevelSafe('hospital'), cityLevelSafe('heroes')] };
-            const b = loadBotState()[who]; if (!b) return null; const cl = botCityLevel(who);
+            const b = loadBotState()[who]; if (!b) return null;
+            const hs = heroIds === 'bot' ? [] : [...new Set((heroIds || []).filter(Boolean))];
             return { lvl: b.lvl, title: (titleOf(who) || {}).name || null,
-                items: slots.map(k => { const it = botItem(b, k); return it ? [k, it.rarity, it.level, 0] : [k, -1, 0, 0]; }),
-                forge: slots.map(k => b.equip[k] || 0), heroes: heroIds === 'bot' && botHeroPct(who) ? [['sigrun', botHeroPct(who), 0]] : [],
-                skills: [b.skills.attack || 0, b.skills.defense || 0], city: [cl, cl, cl] };
+                items: slots.map(k => { const it = botItem(b, k); return it ? [k, it.rarity, it.level, it.stars] : [k, -1, 0, 0]; }),
+                forge: slots.map(() => 0), heroes: hs.map(id => [id, botHeroLevel(who, id), Math.min(RARITY_DEFS.length - 1, b.heroes[id].rar || 0)]),
+                skills: [b.skills.attack || 0, b.skills.defense || 0], city: [botBld(who, 'wall'), botBld(who, 'hospital'), botBld(who, 'heroes')] };
         }
         function attackParts(who, raw, bonus, total, hero) {
             const out = [];
@@ -2679,10 +2683,9 @@ body.has-panel .mapctl{display:none}
                 if (skill) out.push(['Skill Angriff', skill, 'Stufe ' + (skills.attack || 0) + ' · +' + attackBonusPct() + ' %']);
                 if (bonus - skill) out.push([hero === 'sigrun' ? 'Heldin Sigrun' : 'Helden', bonus - skill, hero === 'sigrun' ? 'Heldenhalle · +' + heroBonus('sigrun') + ' %' : '']);
             } else {
-                const b = loadBotState()[who], st = BOT_STYLES[botById[who].style], sl = b ? b.skills.attack : 0;
-                const ps = [['Skill Angriff', sl * SKILL_DEFS.attack.atkPct, 'Stufe ' + sl + ' · +' + sl * SKILL_DEFS.attack.atkPct + ' %'], ['Kampfstil', st.atkBonus || 0, '+' + (st.atkBonus || 0) + ' %'], ['Heldin Sigrun', botHeroPct(who), 'Heldenhalle · +' + botHeroPct(who) + ' %']].filter(q => q[1] > 0);
-                const tot = ps.reduce((a, q) => a + q[1], 0); let left = bonus;
-                ps.forEach((q, i) => { const v = i === ps.length - 1 ? left : Math.round(bonus * q[1] / tot); left -= v; if (v) out.push([q[0], v, q[2]]); });
+                const b = loadBotState()[who], sl = b ? b.skills.attack : 0, skill = Math.min(bonus, Math.round(raw * sl * SKILL_DEFS.attack.atkPct / 100));
+                if (skill) out.push(['Skill Angriff', skill, 'Stufe ' + sl + ' · +' + sl * SKILL_DEFS.attack.atkPct + ' %']);
+                if (bonus - skill) out.push([hero === 'sigrun' ? 'Heldin Sigrun' : 'Helden', bonus - skill, hero === 'sigrun' ? 'Heldenhalle · +' + botHeroBonus(who, 'sigrun') + ' %' : '']);
             }
             const tv = total - raw - bonus, x = titleOf(who);
             if (tv) out.push(['Titel ' + (x ? x.name : ''), tv, 'Mega-Tempel · ' + (tv > 0 ? '+' : '−') + (x ? Math.round(Math.abs(x.v) * 100) : 25) + ' %']);
@@ -3094,7 +3097,7 @@ body.has-panel .mapctl{display:none}
         function travelDurationSeconds(source, target, botId) {   // bots march at base speed; the player gets the speed skill + Akademie
             const pts = source.landmassId === target.landmassId ? [source, target] : marchPath(source, target);
             let distance = 0; for (let i = 1; i < pts.length; i++) distance += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
-            if (botId) return Math.max(3, Math.min(MAX_ATTACK_SECONDS, Math.max(MIN_ATTACK_SECONDS, distance / (BASE_ATTACK_SPEED * (BOT_STYLES[botById[botId].style].speed || 1)))) / (1 + botCityLevel(botId) * 0.02));   // + their Akademie
+            if (botId) return Math.max(3, Math.min(MAX_ATTACK_SECONDS, Math.max(MIN_ATTACK_SECONDS, distance / BASE_ATTACK_SPEED)) / botMarchMult(botId));   // their speed skill + Akademie, like yours
             const base = Math.min(MAX_ATTACK_SECONDS, Math.max(MIN_ATTACK_SECONDS, distance / BASE_ATTACK_SPEED));   // clamp first, so the speed skill and the Akademie also shorten long marches
             return Math.max(3, base / (attackSpeedMultiplier() * (1 + academyLevel() * 0.02)));
         }
@@ -3166,15 +3169,16 @@ body.has-panel .mapctl{display:none}
             if (!payToll(hop[0], hop[1], rawTroops, attackerBotId || 'player', target.id)) return false;
 
             islandTroops[sourceId] = available - rawTroops; // only the sent troops march out, the rest stay to defend
-            const hero = !attackerBotId && nextAttackHero && heroUnlocked(heroById(nextAttackHero)) && !heroBusy(nextAttackHero) ? nextAttackHero : null;
-            const durationSec = travelDurationSeconds(source, target, attackerBotId) / (hero === 'ida' ? 1 + heroBonus('ida') / 100 : 1);
+            const hero = attackerBotId ? botPickHero(attackerBotId) : nextAttackHero && heroUnlocked(heroById(nextAttackHero)) && !heroBusy(nextAttackHero) ? nextAttackHero : null;
+            const who = attackerBotId || 'player', hb = heroBonusFor(who, hero);
+            const durationSec = Math.max(3, travelDurationSeconds(source, target, attackerBotId) / (hero === 'ida' ? 1 + hb / 100 : 1));
             const startedAt = Date.now();
             // Snapshot every skill/equipment-derived combat bonus NOW, at
             // launch, not when the attack resolves on arrival (which can be
             // many seconds later) - otherwise leveling a skill while troops
             // are already marching would silently change the outcome of an
-            // attack whose preview the player already confirmed. Bots have
-            // no equipment/skills, so their attacks carry no bonuses.
+            // attack whose preview the player already confirmed. Bots get
+            // exactly the same snapshot from their own skills, gear and hero.
             pendingAttacks.push({
                 sourceId,
                 targetId,
@@ -3182,10 +3186,11 @@ body.has-panel .mapctl{display:none}
                 startedAt,
                 resolveAt: startedAt + durationSec * 1000,
                 attackerBotId: attackerBotId || null,
-                attackBonus: attackerBotId ? Math.round(rawTroops * botMults(attackerBotId).attackPct / 100) : attackFlatBonus(rawTroops) + (hero === 'sigrun' ? Math.round(rawTroops * heroBonus('sigrun') / 100) : 0),
-                attackGoldRate: attackerBotId ? 0 : (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate,
-                rewardGoldRate: attackerBotId ? 0 : goldPerKillRate() * (hero === 'ida' ? 1 + heroBonus('ida') / 100 : 1),   // Ida: +X % Beute on the kill gold
-                shieldLossReductionPct: attackerBotId ? 0 : Math.min(90, shieldLossReductionPct() + (hero === 'bernhard' ? heroBonus('bernhard') : 0)),
+                attackBonus: (attackerBotId ? Math.round(rawTroops * botMults(attackerBotId).attackPct / 100) : attackFlatBonus(rawTroops)) + (hero === 'sigrun' ? Math.round(rawTroops * hb / 100) : 0),
+                attackGoldRate: attackerBotId ? botGoldRate(attackerBotId, 'attackGold') : (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate,
+                rewardGoldRate: (attackerBotId ? botGoldRate(attackerBotId, 'attackGold') : goldPerKillRate()) * (hero === 'ida' ? 1 + hb / 100 : 1),   // Ida: +X % Beute on the kill gold
+                shieldLossReductionPct: Math.min(90, (attackerBotId ? botMults(attackerBotId).shield : shieldLossReductionPct()) + (hero === 'bernhard' ? hb : 0)),
+                botShield: !!attackerBotId,
                 hero
             });
             updateHud();
@@ -3424,6 +3429,8 @@ body.has-panel .mapctl{display:none}
             const remaining = won ? Math.max(0, attack.rawTroops - sentLoss) : 0;
 
             let defenderCasualties, enemyWounded = 0;
+            if (targetOwner && targetOwner !== 'player')                    // the defending bot's "Verteidigung: Gold": every attacker its garrison kills pays out
+                botCoins[targetOwner] = (botCoins[targetOwner] || 0) + Math.round((won ? Math.min(myTroops, totalStrength) : myTroops) * botGoldRate(targetOwner, 'defenseGold'));
             let retreatSurvivors = 0, woundedAdded = 0;
 
             if (won) {
@@ -3565,22 +3572,6 @@ body.has-panel .mapctl{display:none}
         // the player's own territory is the one being fought over - bot-
         // vs-bot and bot-vs-neutral fights resolve silently so the log
         // doesn't fill up with battles that have nothing to do with you.
-        const BOT_GOLD_PER_KILL_RATE = 0.3;
-        // Bots follow the same rules as you: part of their fallen are only wounded (their Lazarett grows with their level)
-        // and heal back over time for coins; a lost attack sends 20 % of the troops fleeing home.
-        function botHospitalPct(botId) { return Math.min(60, 5 * botCityLevel(botId)); }
-        function botHospitalTake(botId, fallen) {
-            const b = loadBotState()[botId], w = b ? Math.floor(Math.max(0, fallen) * botHospitalPct(botId) / 100) : 0;
-            if (w > 0) { b.wounded = (b.wounded || 0) + w; saveBotState(); }
-            return w;
-        }
-        setInterval(() => {                                   // once a minute every bot heals what it can pay for, into its capital
-            const st = loadBotState(); let any = false;
-            for (const bot of BOT_DEFS) { const b = st[bot.id]; if (!b || !(b.wounded > 0)) continue; const cap = botCapitalOf(bot.id); if (cap === null || cap === undefined) continue;
-                const n = Math.min(b.wounded, Math.floor((botCoins[bot.id] || 0) / HEAL_COIN_PER_TROOP)); if (n < 1) continue;
-                botCoins[bot.id] -= n * HEAL_COIN_PER_TROOP; b.wounded -= n; islandTroops[cap] = (islandTroops[cap] || 0) + n; any = true; }
-            if (any) saveBotState();
-        }, 60000);
         function resolveBotAttack(attack) {
             const bot = botById[attack.attackerBotId];
             const source = islandById[attack.sourceId];
@@ -3591,18 +3582,20 @@ body.has-panel .mapctl{display:none}
             const targetOwner = islandOwnerOf(target.id);
             const originalEnemyTroops = effectiveTroops(target);
             const originalEnemyDefense = effectiveDefense(target);
-            const partsFor = () => targetOwner === 'player' ? { atkParts: attackParts(bot.id, attack.rawTroops, attack.attackBonus || 0, myTroops), defParts: defenseParts(target) } : null;
+            const partsFor = () => targetOwner === 'player' ? { atkParts: attackParts(bot.id, attack.rawTroops, attack.attackBonus || 0, myTroops, attack.hero), defParts: defenseParts(target) } : null;
+            const red = attack.botShield ? attack.shieldLossReductionPct : botMults(bot.id).shield;   // shield (+ Bernhard), snapshotted at launch
             const parts = partsFor();
             const totalStrength = originalEnemyTroops + originalEnemyDefense;
             const won = myTroops > totalStrength;
             if (targetOwner && targetOwner !== 'player') botGrudge(targetOwner, bot.id, won ? 2 : 1);   // bots hold grudges against each other too
             addBotXp(bot.id, won ? totalStrength : Math.min(originalEnemyTroops, myTroops));
+            for (const hid of new Set([attack.hero, ...(attack.heroes || [])].filter(Boolean))) botHeroGainXp(bot.id, hid, won ? totalStrength : Math.min(originalEnemyTroops, myTroops));
             const playerInvolved = targetOwner === 'player';
             const bossHere = bossAt(target.id);
 
             // The capital can never be taken: a winning raid only wipes out its garrison.
             const capitalHolds = won && target.id === playerIslandId;
-            const survivors = won ? Math.max(0, Math.min(attack.rawTroops, myTroops - Math.round(originalEnemyDefense * (1 - botMults(bot.id).shield / 100)))) : 0;   // the sword bonus fights along but doesn't stay
+            const survivors = won ? Math.max(0, Math.min(attack.rawTroops, myTroops - Math.round(originalEnemyDefense * (1 - red / 100)))) : 0;   // the sword bonus fights along but doesn't stay
             const fled = won ? 0 : Math.floor(attack.rawTroops * RETREAT_RECOVERY_PCT / 100);
             const atkFallen = attack.rawTroops - survivors - fled, atkWounded = botHospitalTake(bot.id, atkFallen);
             const homeAgain = n => { if (n > 0 && botOwnedIslands[bot.id].has(source.id)) islandTroops[source.id] = (islandTroops[source.id] || 0) + n; };
@@ -3620,7 +3613,7 @@ body.has-panel .mapctl{display:none}
                     setGateSettings(target.id, { toll: sty === 'templer' ? 1 : sty === 'builder' ? 0.5 : sty === 'raider' ? 0.25 : GATE_TOLLS[1 + Math.floor(r * 4)],
                                                  closed: sty === 'raider' ? r < .5 : sty === 'templer' ? r < .3 : r < .1 }); }
                 islandLevels[target.id] = levelAfterCapture;
-                botCoins[bot.id] += Math.round(totalStrength * BOT_GOLD_PER_KILL_RATE);
+                botCoins[bot.id] += Math.round(totalStrength * (attack.botShield ? attack.rewardGoldRate || 0 : botGoldRate(bot.id, 'attackGold')));   // "Angriff: Gold" (+ Ida)
                 if (target.type === 'temple' || target.type === 'megaTemple') {
                     templeHoldSince[target.id] = Date.now();
                 }
@@ -3648,10 +3641,13 @@ body.has-panel .mapctl{display:none}
             }
             if (playerInvolved && !won) statBump('defends');
             if (playerInvolved) defWounded = hospitalTake(won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops));   // your fallen defenders
-            else if (targetOwner) botHospitalTake(targetOwner, won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops));   // a bot defender's Lazarett too
+            else if (targetOwner) {                                       // a bot defender: its Lazarett and its "Verteidigung: Gold", like yours
+                botHospitalTake(targetOwner, won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops));
+                botCoins[targetOwner] = (botCoins[targetOwner] || 0) + Math.round((won ? Math.min(myTroops, totalStrength) : myTroops) * botGoldRate(targetOwner, 'defenseGold'));
+            }
             if (playerInvolved) {
                 const ribbon = () => spawnBattleFx(target.id, !won || capitalHolds, capitalHolds ? 'Hauptstadt hält' : won ? 'Basis verloren' : 'Verteidigt', capitalHolds ? 'Garnison gefallen' : won ? 'von ' + bot.name : bot.name + ' abgewehrt');
-                finishMapBattle(attack, { sourceId: source.id, targetId: target.id, atk: 'bot', def: 'mine', my: myTroops, myLoss: won ? Math.min(myTroops, Math.round(originalEnemyDefense * (1 - botMults(bot.id).shield / 100))) : myTroops,
+                finishMapBattle(attack, { sourceId: source.id, targetId: target.id, atk: 'bot', def: 'mine', hero: attack.hero || null, my: myTroops, myLoss: won ? Math.min(myTroops, Math.round(originalEnemyDefense * (1 - red / 100))) : myTroops,
                         en: originalEnemyTroops, enLoss: won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops), won, onEnd: ribbon });
                 // Only reveals the target to the player when the player was
                 // actually part of this fight - a bot conquering a neutral
@@ -3664,7 +3660,7 @@ body.has-panel .mapctl{display:none}
                     targetId: target.id,
                     myTroops,
                     atkRaw: attack.rawTroops, atkBonus: attack.attackBonus || 0, atkFallen, atkWounded, atkFled: fled, ...(parts || {}),
-                    atkGear: fighterSnapshot(bot.id, 'bot'), defGear: fighterSnapshot('player'),
+                    atkGear: fighterSnapshot(bot.id, [attack.hero, ...(attack.heroes || [])]), defGear: fighterSnapshot('player'),
                     enemyTroops: originalEnemyTroops,
                     enemyDefense: originalEnemyDefense,
                     wounded: defWounded,
@@ -5704,7 +5700,7 @@ body.has-panel .mapctl{display:none}
             if (Date.now() < act.next) return;                               // still busy with the last order
             if (act.plan) { if (botPlanStep(bot)) { botTapped(bot); saveBotState(); } return; }   // finish what they started
             if (botArmyStep(bot)) { botTapped(bot); saveBotState(); return; }                  // a field army waiting for orders
-            const st = BOT_STYLES[bot.style], atk = (1 + botMults(bot.id).attackPct / 100) * titleMult(bot.id, 'attack'), ruler = rulerOwner();
+            const st = BOT_STYLES[bot.style], atk = botAtkFactor(bot), ruler = rulerOwner();
             const shielded = playerShielded(), now = Date.now();
             const busy = new Set(pendingAttacks.filter(a => a.attackerBotId === bot.id).map(a => a.targetId));
             // a player has a few march slots, not hundreds: columns on the road (attacks + sends) count against them
@@ -5816,7 +5812,7 @@ body.has-panel .mapctl{display:none}
             // nothing to strike: scout the most interesting base they don't know yet (that is this move's order)
             if (!n && !rallied) for (const e of list.slice(0, 8)) {
                 if (botIntel(bot, e.target.id) || botScouting(bot, e.target.id) || bossAt(e.target.id)) continue;
-                const ready = now + travelDurationSeconds(islandById[e.sources[0].id], e.target, bot.id) * 500;
+                const ready = now + travelDurationSeconds(islandById[e.sources[0].id], e.target, bot.id) * 500 / (1 + botBld(bot.id, 'watch') * .04);   // their Späherturm, like yours
                 botLearn(bot.id, e.target.id, ready);
                 if (islandOwnerOf(e.target.id) === 'player') botScoutVisible(bot, e.sources[0].id, e.target.id, now, ready);   // you see it coming
                 scouted++; break;
@@ -5826,9 +5822,11 @@ body.has-panel .mapctl{display:none}
             saveBotState();
         }
 
-        // Bots play by the player's rules with no caps: XP and levels (1 skill point per level, spent by their style),
-        // coin gear that grows with their level, gems from temples and level-ups spent on crates (grey → red items,
-        // 3 of a kind combine, just like the player's), and bases upgraded as far as their coins allow.
+        // Bots play by exactly the player's rules: XP and levels (1 skill point per level into the same 6 skills), a city
+        // with the same 8 buildings they build themselves (same coins, same build times, one builder), a Lazarett with
+        // room for a limited number of wounded that they heal for coins, the same 3 heroes (XP, rarity, one per attack),
+        // gear from crates (combine 3 → 1, salvage for points, level up, stars in the Schmiede) and bases upgraded
+        // as far as their coins allow. Nothing is derived from their level any more.
         var botState = null;
         function loadBotState() {
             if (botState) return botState;
@@ -5836,11 +5834,46 @@ body.has-panel .mapctl{display:none}
             for (const bot of BOT_DEFS) {
                 const b = botState[bot.id] = Object.assign({ lvl: 1, xp: 0, sp: 0, gems: 0, salvage: 0 }, botState[bot.id] || {});
                 delete b.intel;                                  // (older saves kept scouting reports in here)
-                b.skills = Object.assign({ troops: 0, attack: 0, defense: 0 }, b.skills || {});
+                b.skills = Object.assign({ troops: 0, attack: 0, defense: 0, speed: 0, attackGold: 0, defenseGold: 0 }, b.skills || {});
                 b.equip = Object.assign({ weapon: 0, armor: 0, shield: 0, boots: 0 }, b.equip || {});
-                if (!b.items) { b.items = {}; for (const k of Object.keys(EQUIPMENT_DEFS)) b.items[k] = RARITY_DEFS.map(() => 0); }
+                if (!b.v2 && !b.items) { b.items = {}; for (const k of Object.keys(EQUIPMENT_DEFS)) b.items[k] = RARITY_DEFS.map(() => 0); }
+                if (!b.v2) botMigrateV2(bot, b);
+                b.city.levels = Object.assign(Object.fromEntries(BOT_BUILDINGS.map(k => [k, 0])), b.city.levels || {});
+                for (const h of HEROES_IDS) b.heroes[h] = Object.assign({ lvl: 1, xp: 0, rar: 0 }, b.heroes[h] || {});
+                if (!(b.wounded >= 0)) b.wounded = 0;
             }
             return botState;
+        }
+        function botMigrateV2(bot, b) {                          // older saves: level-derived city/hero, coin gear, item counts → the real thing
+            const idn = parseInt(bot.id.slice(3), 10) || 0, r = mulberry32(idn * 3301 + 17);
+            const cl = Math.min(25, Math.floor(b.lvl / 2));
+            b.city = { levels: {}, build: null };
+            for (const k of BOT_BUILDINGS) b.city.levels[k] = Math.max(0, Math.min(k === 'forge' ? STAR_MAX : 25, cl - Math.floor(r() * 3)));
+            const hall = b.city.levels.heroes, unlock = { sigrun: 1, bernhard: 5, ida: 10 };
+            b.heroes = {}; for (const h of HEROES_IDS) b.heroes[h] = { lvl: hall >= unlock[h] ? Math.max(1, Math.min(50, hall * 2 - Math.floor(r() * 3))) : 1, xp: 0, rar: 0 };
+            let refund = 0; for (const k of Object.keys(b.equip)) { for (let l = 0; l < b.equip[k]; l++) refund += equipmentUpgradeCost(l); b.equip[k] = 0; }   // coin gear no longer exists for anyone
+            if (refund && typeof botCoins !== 'undefined' && botCoins[bot.id] !== undefined) botCoins[bot.id] += refund;
+            b.gear = {}; b.spare = {}; b.pts = 0;
+            for (const k of Object.keys(EQUIPMENT_DEFS)) {
+                const c = (b.items && b.items[k]) || RARITY_DEFS.map(() => 0); let best = -1;
+                for (let q = c.length - 1; q >= 0; q--) if (c[q] > 0) { best = q; break; }
+                b.gear[k] = best >= 0 ? { r: best, lvl: Math.min(ITEM_MAX_LEVEL, 1 + Math.floor((b.salvage || 0) / 12)), st: 0 } : null;
+                b.spare[k] = c.slice(); if (best >= 0) b.spare[k][best]--;
+            }
+            delete b.items; b.items = null;
+            const total = (b.skills.troops || 0) + (b.skills.attack || 0) + (b.skills.defense || 0);   // their points, re-spent over all 6 skills
+            for (const k of BOT_SKILLS) b.skills[k] = 0;
+            b.sp = (b.sp || 0) + total; botSpendSkills(bot, b);
+            b.v2 = 1;
+        }
+        function botSpendSkills(bot, b) {
+            const order = BOT_STYLES[bot.style].skills;
+            for (let guard = 0; b.sp > 0 && guard < 10000; guard++) {
+                const spent = BOT_SKILLS.reduce((a, k) => a + (b.skills[k] || 0), 0);
+                let k = order[spent % order.length];
+                if (SKILL_DEFS[k].max && b.skills[k] >= SKILL_DEFS[k].max) k = order.find(q => !(SKILL_DEFS[q].max && b.skills[q] >= SKILL_DEFS[q].max)) || 'troops';
+                b.skills[k] = (b.skills[k] || 0) + 1; b.sp--;
+            }
         }
         // Bots change their state many times a second: write it out at most every few seconds, and when the page goes away.
         var botSaveTimer = null;
@@ -5848,26 +5881,84 @@ body.has-panel .mapctl{display:none}
         function saveBotState() { if (!botSaveTimer) botSaveTimer = setTimeout(flushBotState, 4000); }
         window.addEventListener('pagehide', flushBotState);
         document.addEventListener('visibilitychange', () => { if (document.hidden) flushBotState(); });
-        function botItem(b, slot) {                              // the best item a bot wears in a slot → { rarity, level } | null
-            const c = b.items[slot]; for (let r = c.length - 1; r >= 0; r--) if (c[r] > 0) return { rarity: r, level: Math.min(ITEM_MAX_LEVEL, 1 + Math.floor(b.salvage / 12)) };
-            return null;
+        // ---- a bot's city ----
+        function botBld(botId, id) { const b = loadBotState()[botId]; return b ? (b.city.levels[id] || 0) : 0; }
+        function botCityFinish(bot, now) {                        // a build is done when its time is up - online or not, like yours
+            const c = loadBotState()[bot.id].city; if (!c.build || now < c.build.endsAt) return;
+            c.levels[c.build.id] = c.build.to; c.build = null; saveBotState();
         }
-        function botItemScore(b, slot) { const it = botItem(b, slot); return it ? itemScore(it) : 0; }
-        // A bot's city grows with its level, like yours with your coins: every building at half its level (max 25).
-        // Same effects as yours: Mauer +2 % defense, Akademie +2 % speed, Schatzkammer / Kaserne +2 % coins / troops,
-        // Lazarett 5 % wounded per level. Its Heldenhalle gives it Sigrun (+1 % attack per hero level, hero level up to 2x hall).
-        function botCityLevel(botId) { const b = loadBotState()[botId]; return b ? Math.min(CITY_MAX_LEVEL, Math.floor(b.lvl / 2)) : 0; }
-        function botHeroPct(botId) { const b = loadBotState()[botId], cl = botCityLevel(botId); return cl ? Math.min(50, cl * 2, b.lvl) : 0; }
+        const BOT_BUILD_PREF = {                                  // what each kind of player builds first (lower = sooner)
+            raider:   { barracks: 1, academy: 1.1, heroes: 1.2, forge: 1.4, hospital: 1.4, wall: 1.7, treasury: 1.5, watch: 1.9 },
+            builder:  { treasury: 1, wall: 1, barracks: 1.1, hospital: 1.2, forge: 1.5, heroes: 1.5, academy: 1.7, watch: 1.9 },
+            templer:  { heroes: 1, barracks: 1.1, wall: 1.2, treasury: 1.2, hospital: 1.3, forge: 1.3, academy: 1.5, watch: 1.7 },
+            balanced: { barracks: 1, treasury: 1, wall: 1.1, heroes: 1.2, hospital: 1.2, forge: 1.3, academy: 1.4, watch: 1.6 },
+            blitz:    { barracks: 1, academy: 1, heroes: 1.1, forge: 1.3, hospital: 1.3, treasury: 1.4, wall: 1.8, watch: 1.8 }
+        };
+        function botCityBuild(bot, now) {                         // one builder: start the next building if the coins are there
+            const b = loadBotState()[bot.id], c = b.city;
+            if (c.build) {                                        // a person with gems finishes the last few minutes now and then
+                const mins = Math.ceil((c.build.endsAt - now) / 60000);
+                if (mins > 0 && mins <= 30 && b.gems >= mins * 4 && Math.random() < .15) { b.gems -= mins; c.build.endsAt = now; botCityFinish(bot, now); }
+                return;
+            }
+            const pref = BOT_BUILD_PREF[bot.style] || BOT_BUILD_PREF.balanced; let best = null, bs = Infinity;
+            for (const k of BOT_BUILDINGS) {
+                const lv = c.levels[k] || 0; if (lv >= cityMaxLevel(k)) continue;
+                const s = (lv + 1) * (pref[k] || 1.5) * (.9 + Math.random() * .2); if (s < bs) { bs = s; best = k; }
+            }
+            if (!best) return;
+            const lv = c.levels[best] || 0, cost = cityCost(best, lv);
+            if ((botCoins[bot.id] || 0) * .5 < cost) return;      // keeps half for troops and bases
+            botCoins[bot.id] -= cost; c.build = { id: best, to: lv + 1, startedAt: now, endsAt: now + cityTimeSec(best, lv) * 1000 }; saveBotState();
+        }
+        // ---- the bot's Lazarett ----
+        function botHospitalPct(botId) { return Math.min(60, 5 * botBld(botId, 'hospital')); }
+        function botHospitalCapacity(botId) { const l = botBld(botId, 'hospital'); return l ? Math.round(1e6 * Math.pow(1.6, l - 1)) : 0; }
+        function botHospitalTake(botId, fallen) {
+            const b = loadBotState()[botId]; if (!b || fallen <= 0 || !botBld(botId, 'hospital')) return 0;
+            const w = Math.min(Math.max(0, botHospitalCapacity(botId) - b.wounded), Math.floor(fallen * botHospitalPct(botId) / 100));
+            if (w > 0) { b.wounded += w; saveBotState(); }
+            return w;
+        }
+        function botHeal(bot) {                                   // heals everyone at once for coins, like your Lazarett - when it can afford it
+            const b = loadBotState()[bot.id]; if (!(b.wounded > 0)) return;
+            const cost = Math.ceil(b.wounded * HEAL_COIN_PER_TROOP), cap = botCapitalOf(bot.id);
+            if (cap === null || cap === undefined || (botCoins[bot.id] || 0) < cost * 2) return;
+            botCoins[bot.id] -= cost; islandTroops[cap] = (islandTroops[cap] || 0) + b.wounded; b.wounded = 0; saveBotState();
+        }
+        // ---- the bot's heroes ----
+        function botHeroLevel(botId, id) { const b = loadBotState()[botId]; return Math.min(b.heroes[id].lvl, Math.max(1, Math.min(50, botBld(botId, 'heroes') * 2))); }
+        function botHeroUnlocked(botId, id) { return botBld(botId, 'heroes') >= heroById(id).unlock; }
+        function botHeroBonus(botId, id) { const h = heroById(id); return h && botHeroUnlocked(botId, id) ? Math.round(botHeroLevel(botId, id) * h.per * HERO_RAR_MULT[Math.min(RARITY_DEFS.length - 1, loadBotState()[botId].heroes[id].rar || 0)]) : 0; }
+        function botHeroBusy(botId, id) { return pendingAttacks.some(a => a.attackerBotId === botId && (a.hero === id || (a.heroes && a.heroes.includes(id)))); }
+        function botPickHero(botId) { for (const id of HEROES_IDS) if (botHeroUnlocked(botId, id) && !botHeroBusy(botId, id)) return id; return null; }
+        function botHeroGainXp(botId, id, amount) {
+            const b = loadBotState()[botId], st = b && b.heroes[id]; if (!st) return;
+            st.xp += Math.max(0, Math.round(amount)); const mx = Math.min(50, botBld(botId, 'heroes') * 2);
+            while (st.lvl < mx && st.xp >= heroXpNeed(st.lvl)) { st.xp -= heroXpNeed(st.lvl); st.lvl++; }
+            saveBotState();
+        }
+        function heroBonusFor(who, id) { return !id ? 0 : who === 'player' ? heroBonus(id) : botHeroBonus(who, id); }
+        // ---- the bot's gear: one worn item per slot, spares for combining, points for levels, stars ----
+        function botItem(b, slot) { const g = b.gear && b.gear[slot]; return g ? { rarity: g.r, level: g.lvl, stars: g.st || 0 } : null; }
+        function botGearPct(b, slot) { const g = b.gear && b.gear[slot]; return g ? itemScore({ rarity: g.r, level: g.lvl }) * RARITY_PCT_PER_SCORE * (1 + (g.st || 0) * STAR_PCT / 100) : 0; }
+        function botCityMult(botId, id) { return 1 + botBld(botId, id) * .02; }
         function botMults(botId) {
-            const b = loadBotState()[botId]; if (!b) return { troops: 1, coins: 1, armorPct: 0, attackPct: 0, shield: 0 };
-            const st = BOT_STYLES[botById[botId].style], city = 1 + botCityLevel(botId) * .02;
-            return { troops: (1 + (b.skills.troops * SKILL_DEFS.troops.pct + b.equip.weapon * EQUIPMENT_DEFS.weapon.pct + botItemScore(b, 'weapon') * RARITY_PCT_PER_SCORE) / 100) * titleMult(botId, 'troops') * (st.troopMult || 1) * city,
-                     coins: (1 + (b.equip.boots * EQUIPMENT_DEFS.boots.pct + botItemScore(b, 'boots') * RARITY_PCT_PER_SCORE) / 100) * titleMult(botId, 'coins') * city,
-                     armorPct: b.equip.armor * EQUIPMENT_DEFS.armor.pct + botItemScore(b, 'armor') * RARITY_PCT_PER_SCORE,   // Rüstung: +% base defense, same rule as the player
+            const b = loadBotState()[botId]; if (!b) return { troops: 1, coins: 1, armorPct: 0, defensePct: 0, attackPct: 0, shield: 0 };
+            return { troops: (1 + (b.skills.troops * SKILL_DEFS.troops.pct + botGearPct(b, 'weapon')) / 100) * titleMult(botId, 'troops') * botCityMult(botId, 'barracks'),
+                     coins: (1 + botGearPct(b, 'boots') / 100) * titleMult(botId, 'coins') * botCityMult(botId, 'treasury'),
+                     armorPct: botGearPct(b, 'armor'),                                         // Rüstung: +% base defense, same rule as the player
                      defensePct: b.skills.defense * SKILL_DEFS.defense.defPct,
-                     attackPct: b.skills.attack * SKILL_DEFS.attack.atkPct + (st.atkBonus || 0) + botHeroPct(botId),
-                     shield: Math.min(90, b.equip.shield * EQUIPMENT_DEFS.shield.pct + botItemScore(b, 'shield') * RARITY_PCT_PER_SCORE) };
+                     attackPct: b.skills.attack * SKILL_DEFS.attack.atkPct,
+                     shield: Math.min(90, botGearPct(b, 'shield')) };
         }
+        function botGoldRate(botId, skill) { const b = loadBotState()[botId]; return b ? (b.skills[skill] || 0) * SKILL_DEFS[skill].rate : 0; }
+        function botAtkFactor(bot) {                              // what the bot expects its next attack to hit with (skill, Sigrun if she's free, title)
+            const sig = botHeroUnlocked(bot.id, 'sigrun') && !botHeroBusy(bot.id, 'sigrun') ? botHeroBonus(bot.id, 'sigrun') : 0;
+            return (1 + (botMults(bot.id).attackPct + sig) / 100) * titleMult(bot.id, 'attack');
+        }
+        function botTickMs(botId) { const b = loadBotState()[botId]; return Math.max(400, 1000 - Math.min(b.skills.speed || 0, SKILL_DEFS.speed.max) * SKILL_DEFS.speed.msPerLevel); }
+        function botMarchMult(botId) { const b = loadBotState()[botId]; return (1 + Math.min(b.skills.speed || 0, SKILL_DEFS.speed.max) * 0.05) * (1 + botBld(botId, 'academy') * 0.02); }
         function botBestRarity(botId) {
             const b = loadBotState()[botId]; let best = -1;
             for (const k of Object.keys(EQUIPMENT_DEFS)) { const it = botItem(b, k); if (it && it.rarity > best) best = it.rarity; }
@@ -5877,30 +5968,44 @@ body.has-panel .mapctl{display:none}
             const b = loadBotState()[botId]; if (!b) return;
             b.xp += amount;
             while (b.xp >= xpNeededForLevel(b.lvl)) { b.xp -= xpNeededForLevel(b.lvl); b.lvl++; b.sp++; b.gems += 3; }
-            const order = BOT_STYLES[botById[botId].style].skills;
-            while (b.sp > 0) { const spent = b.skills.troops + b.skills.attack + b.skills.defense; b.skills[order[spent % order.length]]++; b.sp--; }
+            botSpendSkills(botById[botId], b);
             saveBotState();
         }
-        // Online in sessions: every 20-minute block a bot is on with a chance that depends on its style, so some
-        // play a lot, some rarely, and they come and go at different times - like people.
+        // Online in sessions, like people: everyone has their own day (asleep for about 7 hours, now and then up at night)
+        // and within the day comes and goes in 20-minute stretches at their own times - not all on the same clock.
         function botOnline(bot, now) {
-            const blk = Math.floor(now / 1200000), r = mulberry32(blk * 131 + parseInt(bot.id.slice(3), 10) * 7919)();
-            return r < BOT_STYLES[bot.style].act;
+            const st = BOT_STYLES[bot.style]; if (st.act >= 1) return true;
+            const idn = parseInt(bot.id.slice(3), 10) || 0, hour = (now / 3600000 + (idn * 7.37) % 24) % 24;
+            if (hour < 7) return mulberry32(Math.floor(now / 1200000) * 31 + idn * 977)() < .06;
+            const off = (idn * 104729) % 1200000, blk = Math.floor((now + off) / 1200000), r = mulberry32(blk * 131 + idn * 7919)();
+            return r < Math.min(.95, st.act * 1.15);
         }
-        function botShop(bot) {                                  // gear with coins + crates with gems, the way a player would
-            const b = loadBotState()[bot.id];
-            for (let n = 0; n < 3; n++) {                         // coin gear keeps pace with the bot's level (no cap)
-                const slot = ['weapon', 'armor', 'shield', 'boots'].reduce((a, k) => b.equip[k] < b.equip[a] ? k : a, 'weapon');
-                const cost = equipmentUpgradeCost(b.equip[slot]);
-                if (b.equip[slot] >= b.lvl * 3 || botCoins[bot.id] * .1 < cost) break;
-                botCoins[bot.id] -= cost; b.equip[slot]++;
+        function botShop(bot) {                                  // gems and points spent the way a player would: heroes, stars, crates, gear
+            const b = loadBotState()[bot.id], slots = Object.keys(EQUIPMENT_DEFS);
+            for (const id of HEROES_IDS) {                        // raise a hero's rarity when it's allowed and affordable
+                const s = b.heroes[id], r = s.rar || 0;
+                if (botHeroUnlocked(bot.id, id) && r < RARITY_DEFS.length - 1 && s.lvl >= HERO_RAR_LEVEL[r] && b.gems >= HERO_RAR_COST[r] * 1.5) { b.gems -= HERO_RAR_COST[r]; s.rar = r + 1; break; }
             }
-            for (let n = 0; n < 10 && b.gems >= CRATE_GEM_COST; n++) {   // crates: random slot + rarity, then auto-combine 3 → 1
-                b.gems -= CRATE_GEM_COST; b.salvage++;
-                b.items[pickRandomSlot()][pickRandomRarity()]++;
+            const starCap = Math.min(STAR_MAX, botBld(bot.id, 'forge'));   // one star per visit on the best-worn piece
+            for (const k of slots) { const g = b.gear[k]; if (g && (g.st || 0) < starCap && b.gems >= starGemCost(g.st || 0) * 1.5) { b.gems -= starGemCost(g.st || 0); g.st = (g.st || 0) + 1; break; } }
+            for (let n = 0; n < 10 && b.gems >= CRATE_GEM_COST; n++) {   // crates: random slot + rarity
+                b.gems -= CRATE_GEM_COST; b.spare[pickRandomSlot()][pickRandomRarity()]++;
             }
-            for (const k of Object.keys(b.items)) { const c = b.items[k];
-                for (let r = 0; r < c.length - 1; r++) while (c[r] >= COMBINE_COUNT + 1) { c[r] -= COMBINE_COUNT; c[r + 1]++; } }   // keeps one of each tier
+            for (const k of slots) {
+                const c = b.spare[k];
+                for (let r = 0; r < c.length - 1; r++) while (c[r] >= COMBINE_COUNT) { c[r] -= COMBINE_COUNT; c[r + 1]++; }   // 3 of a kind → 1 of the next
+                let top = -1; for (let r = c.length - 1; r >= 0; r--) if (c[r] > 0) { top = r; break; }
+                const worn = b.gear[k];
+                if (top >= 0 && (!worn || top > worn.r)) {          // a better one: wear it, the old one is salvaged for points
+                    if (worn) b.pts += itemScore({ rarity: worn.r, level: worn.lvl });
+                    b.gear[k] = { r: top, lvl: 1, st: 0 }; c[top]--;
+                }
+                const w = b.gear[k]; if (w) for (let r = 0; r < Math.max(0, w.r - 1); r++) if (c[r] > 0) { b.pts += c[r] * itemScore({ rarity: r, level: 1 }); c[r] = 0; }   // far below: salvage
+            }
+            for (let guard = 0; guard < 60; guard++) {             // level up the lowest worn piece with the points
+                let lo = null; for (const k of slots) { const g = b.gear[k]; if (g && g.lvl < ITEM_MAX_LEVEL && (!lo || g.lvl < lo.lvl)) lo = g; }
+                if (!lo || b.pts < lo.lvl * 5) break; b.pts -= lo.lvl * 5; lo.lvl++;
+            }
             saveBotState();
         }
         function botConsiderUpgrade(bot) {
@@ -5939,7 +6044,7 @@ body.has-panel .mapctl{display:none}
         }
         function botGather(bot) {
             if (pendingSends.some(s => s.senderBotId === bot.id)) return false;
-            const st = BOT_STYLES[bot.style], owned = [...botOwnedIslands[bot.id]], atk = (1 + botMults(bot.id).attackPct / 100) * titleMult(bot.id, 'attack');
+            const st = BOT_STYLES[bot.style], owned = [...botOwnedIslands[bot.id]], atk = botAtkFactor(bot);
             let plan = null;
             for (const sourceId of botSampleSources(owned)) {
                 const source = islandById[sourceId];
@@ -6030,7 +6135,7 @@ body.has-panel .mapctl{display:none}
             const target = islandById[a.targetId]; if (!target) return null;
             const who = a.attackerBotId || 'player', bonus = a.attackBonus !== undefined ? a.attackBonus : attackFlatBonus(a.rawTroops);
             const my = Math.round((a.rawTroops + (bonus || 0)) * titleMult(who, 'attack')), en = effectiveTroops(target), def = effectiveDefense(target), won = my > en + def;
-            const red = a.attackerBotId ? botMults(a.attackerBotId).shield : (a.shieldLossReductionPct !== undefined ? a.shieldLossReductionPct : shieldLossReductionPct());
+            const red = a.attackerBotId ? (a.botShield ? a.shieldLossReductionPct : botMults(a.attackerBotId).shield) : (a.shieldLossReductionPct !== undefined ? a.shieldLossReductionPct : shieldLossReductionPct());
             return { my, en, won, myLoss: won ? Math.min(my, Math.round(def * (1 - red / 100))) : my, enLoss: won ? en : Math.min(en, my) };
         }
         function fightDurationMs(est) {                   // a skirmish is over in ~4 s, a clash of millions takes ~12 s
@@ -6064,14 +6169,22 @@ body.has-panel .mapctl{display:none}
             return m;
         }
         function titleOf(who) { const t = loadTitles(); return TITLES.find(x => t.by[x.key] === who) || null; }
+        function titleCleanup() {                        // someone knocked out of the game can't keep a title
+            const t = loadTitles(); let ch = false;
+            for (const k of Object.keys(t.by)) { const w = t.by[k]; if (w !== 'player' && (!botOwnedIslands[w] || !botOwnedIslands[w].size)) { delete t.by[k]; ch = true; } }
+            if (ch) saveTitles();
+        }
+        setInterval(titleCleanup, 30000);
         function giveTitle(key, who) {                   // who: 'player' | bot id | null
             const t = loadTitles();
             for (const k of Object.keys(t.by)) if (t.by[k] === who && who) delete t.by[k];      // one title per head
             if (who) t.by[key] = who; else delete t.by[key];
             saveTitles();
         }
-        function botRulerTitles(bot) {                    // a bot on the throne: rivals get penalties, a few others the buffs
-            const t = loadTitles(); if (t.ruler !== bot.id || Object.keys(t.by).length) return;
+        function botRulerTitles(bot, now) {               // a bot on the throne: rivals get penalties, a few others the buffs - looked at again every 15 min
+            const t = loadTitles(); if (t.ruler !== bot.id) return;
+            if (Object.keys(t.by).length && (now || Date.now()) - (t.at || 0) < 15 * 60000) return;
+            const before = titleOf('player'); t.by = {}; t.at = now || Date.now();
             const others = BOT_DEFS.filter(b => b.id !== bot.id && botOwnedIslands[b.id].size).map(b => ({ who: b.id, n: botOwnedIslands[b.id].size }));
             others.push({ who: 'player', n: ownedIslands.size * 1.5 });                          // the human is always a suspect
             others.sort((a, c) => c.n - a.n);
@@ -6080,7 +6193,8 @@ body.has-panel .mapctl{display:none}
             const friends = others.slice(bad.length).sort(() => Math.random() - .5);
             good.forEach((x, i) => { if (friends[i]) giveTitle(x.key, friends[i].who); });
             const mine = titleOf('player');
-            if (mine) flashHint(bot.name + ' hat dir den Titel „' + mine.name + '“ gegeben: ' + mine.desc + '.', 6000);
+            if (mine && (!before || before.key !== mine.key)) flashHint(bot.name + ' hat dir den Titel „' + mine.name + '“ gegeben: ' + mine.desc + '.', 6000);
+            saveTitles();
         }
         const titleModal = document.getElementById('titleModal');
         function renderTitleModal() {
@@ -6098,6 +6212,7 @@ body.has-panel .mapctl{display:none}
             const sel = e.target.closest('select[data-title]'); if (!sel || loadTitles().ruler !== 'player') return;
             giveTitle(sel.dataset.title, sel.value || null);
             const x = TITLES.find(q => q.key === sel.dataset.title);
+            if (sel.value && !x.good) botGrudge(sel.value, 'player', 1);                  // nobody likes being made the Narr - they remember who did it
             if (sel.value) flashHint(botById[sel.value].name + ' ist jetzt ' + x.name + ' (' + x.desc + ').', 3000);
             renderTitleModal();
         });
@@ -6115,16 +6230,21 @@ body.has-panel .mapctl{display:none}
         function runBotTick() {
             const now = Date.now();
             for (const bot of BOT_DEFS) {
-                if (botOwnedIslands[bot.id].size === 0) { botRespawn(bot, now); continue; }
-                if (!botOnline(bot, now)) continue;                                   // offline: the empire keeps producing, nobody acts
-                if (now < (botNextAt[bot.id] || 0)) continue;
-                const st = BOT_STYLES[bot.style];
-                botNextAt[bot.id] = now + (st.moveMs || 3000 + Math.random() * 9000);   // a few seconds between moves, never all at once
-                botDefend(bot);
-                botThink(bot);
-                botConsiderUpgrade(bot);
-                botRulerTitles(bot);
-                if (Math.random() < .3) botShop(bot);
+                try {                                                                 // one bot's bad move must never stop all the others
+                    botCityFinish(bot, now);                                          // builds finish on time, online or not
+                    if (botOwnedIslands[bot.id].size === 0) { botRespawn(bot, now); continue; }
+                    if (!botOnline(bot, now)) continue;                               // offline: the empire keeps producing, nobody acts
+                    if (now < (botNextAt[bot.id] || 0)) continue;
+                    const st = BOT_STYLES[bot.style];
+                    botNextAt[bot.id] = now + (st.moveMs || 3000 + Math.random() * 9000);   // a few seconds between moves, never all at once
+                    botDefend(bot);
+                    botThink(bot);
+                    botHeal(bot);
+                    botCityBuild(bot, now);
+                    botConsiderUpgrade(bot);
+                    botRulerTitles(bot, now);
+                    if (Math.random() < .3) botShop(bot);
+                } catch (e) { if (!runBotTick.warned) { runBotTick.warned = true; console.warn('bot move failed', bot.id, e); } }
             }
             setTimeout(runBotTick, BOT_TICK_MS);
         }
@@ -7029,7 +7149,7 @@ body.has-panel .mapctl{display:none}
                 if (entry.type === 'field') {
                     const K = FIELD_KINDS[entry.fieldKind] || FIELD_KINDS.gold;
                     return logRowHtml(entry.won ? 'win' : 'loss', K.icon, logBadge(entry.won ? 'win' : 'loss', entry.won ? 'Feld gehalten' : 'Feld verloren') + K.name,
-                        entry.attacker + ' (' + fmtM(entry.atk) + ') gegen ' + entry.defender + ' (' + fmtM(entry.def) + ')', ago(entry));
+                        escapeHtml(entry.attacker) + ' (' + fmtM(entry.atk) + ') gegen ' + escapeHtml(entry.defender) + ' (' + fmtM(entry.def) + ')', ago(entry));
                 }
                 if (entry.type === 'army') {
                     const side = (n, own) => n === 'Du' ? (own ? 'Deine Armee' : 'deine Armee') : (own ? 'Die Armee von ' : 'die Armee von ') + escapeHtml(n);
@@ -7493,6 +7613,7 @@ body.has-panel .mapctl{display:none}
         // marches (which resolve off absolute timestamps) keep catching up
         // correctly.
         let nextProductionTickAt = Date.now() + productionTickMs();
+        const botProdCarry = {};                         // per bot: time not yet made into a tick of its own, and fractions
         const prodCarry = { coins: 0, troops: {} };      // fractions left over each tick, so small % bonuses aren't rounded away
         function runProductionTick() {
             const now = Date.now();
@@ -7519,25 +7640,31 @@ body.has-panel .mapctl{display:none}
                     }
                 }
                 const cw = Math.floor(prodCarry.coins); coins += cw; prodCarry.coins -= cw;
-                // Bots produce too - same base rates as the player, just
-                // without any equipment/skill multiplier since they don't
-                // have gear of their own.
+                // Bots produce by the same rules: base rates × their own gear, skills, city, title and throne - on their own
+                // clock (their "Geschwindigkeit" skill, not yours), with fractions carried over so small bonuses count.
+                const elapsedMs = ticks * productionTickMs();
                 for (const bot of BOT_DEFS) {
-                    for (const ownedId of botOwnedIslands[bot.id]) {
+                    const own = botOwnedIslands[bot.id]; if (!own.size) continue;
+                    const bc = botProdCarry[bot.id] || (botProdCarry[bot.id] = { ms: 0, coins: 0, troops: {} });
+                    bc.ms += elapsedMs; const bt = Math.floor(bc.ms / botTickMs(bot.id)); if (!bt) continue; bc.ms -= bt * botTickMs(bot.id);
+                    const rb = ruler === bot.id ? RULER_BONUS : 1, bm = botMults(bot.id), cap = botCapitalOf(bot.id), b = loadBotState()[bot.id];
+                    for (const ownedId of own) {
                         const level = islandLevels[ownedId] || 1;
-                        const rb = ruler === bot.id ? RULER_BONUS : 1;
-                        const bm = botMults(bot.id);
-                        botCoins[bot.id] += Math.round(coinsPerTick(level) * rb * bm.coins) * ticks;
-                        islandTroops[ownedId] = (islandTroops[ownedId] || 0) + Math.round(troopsPerTick(level) * rb * bm.troops) * ticks;
+                        bc.coins += coinsPerTick(level) * rb * bm.coins * bt;
+                        const tc = (bc.troops[ownedId] || 0) + troopsPerTick(level) * rb * bm.troops * bt, tw = Math.floor(tc);
+                        bc.troops[ownedId] = tc - tw; islandTroops[ownedId] = (islandTroops[ownedId] || 0) + tw;
                         const isl = islandById[ownedId];
                         if (isl && (isl.type === 'temple' || isl.type === 'megaTemple')) {
                             const mult = templeBaseMult(isl) * templeHoldMultiplier(ownedId);
-                            botCoins[bot.id] += Math.round(TEMPLE_COIN_BONUS_PER_TICK * mult) * ticks;
-                            islandTroops[ownedId] += Math.round(TEMPLE_TROOP_BONUS_PER_TICK * mult) * ticks;
-                            loadBotState()[bot.id].gems += TEMPLE_GEMS_PER_TICK * mult * ticks;
+                            bc.coins += Math.round(TEMPLE_COIN_BONUS_PER_TICK * mult) * bt;
+                            const to = cap !== null && cap !== undefined && own.has(cap) ? cap : ownedId;   // bonus troops go to the capital, like yours
+                            islandTroops[to] = (islandTroops[to] || 0) + Math.round(TEMPLE_TROOP_BONUS_PER_TICK * mult) * bt;
+                            b.gems += TEMPLE_GEMS_PER_TICK * mult * bt;
                         }
                     }
+                    const cw = Math.floor(bc.coins); botCoins[bot.id] = (botCoins[bot.id] || 0) + cw; bc.coins -= cw;
                 }
+                saveBotState();
                 updateHud();
                 saveGame();
                 // Keep any currently-open popup/tab in sync with production -
@@ -8334,6 +8461,7 @@ body.has-panel .mapctl{display:none}
                 Object.assign(wander, { at: from, to: null, campUntil: now + 45000 });
             }
             wander.defense = niceRound(wander.troops * .15);
+            if (owner && owner !== 'player') botHospitalTake(owner, won ? en : Math.min(en, my));
             if (owner === 'player') {
                 scoutedIslands.add(tgt.id);
                 const name = wander.name;
@@ -9581,12 +9709,13 @@ body.has-panel .mapctl{display:none}
             const o = st.occ;
             if (!o || st.left <= 0 && !o) { st.occ = { who: m.who, troops: m.troops, homeId: m.homeId, since: now, got: 0 }; if (m.who === 'player') flashHint('Deine Truppen sammeln jetzt an der ' + FIELD_KINDS[f.kind].name + '.', 3000); return; }
             if (o.who === m.who) { o.troops += m.troops; return; }                 // more of your own join the gatherers
-            const won = m.troops > o.troops, involved = m.who === 'player' || o.who === 'player';   // a fight for the field: army against army
-            const loserName = fieldWhoName(won ? o.who : m.who), winnerName = fieldWhoName(won ? m.who : o.who);
+            const won = m.troops > o.troops, involved = m.who === 'player' || o.who === 'player', defBefore = o.troops, fallen = Math.min(m.troops, o.troops);   // a fight for the field: army against army
+            const loserName = fieldWhoName(won ? o.who : m.who), winnerName = fieldWhoName(won ? m.who : o.who), oWho = o.who;
             if (won) st.occ = { who: m.who, troops: m.troops - o.troops, homeId: m.homeId, since: now, got: 0 }; else o.troops -= m.troops;
+            for (const w of [m.who, oWho]) w === 'player' ? hospitalTake(fallen) : botHospitalTake(w, fallen);   // both sides' Lazarett
             if (involved) {
                 const youWon = (m.who === 'player') === won;
-                addCombatLogEntry({ type: 'field', fieldKind: f.kind, won: youWon, attacker: fieldWhoName(m.who), defender: fieldWhoName(o.who), atk: m.troops, def: o.troops });
+                addCombatLogEntry({ type: 'field', fieldKind: f.kind, won: youWon, attacker: fieldWhoName(m.who), defender: fieldWhoName(oWho), atk: m.troops, def: defBefore });
                 flashHint(youWon ? 'Du hast die ' + FIELD_KINDS[f.kind].name + ' gegen ' + loserName + ' gehalten/erobert.' : winnerName + ' hat dich von der ' + FIELD_KINDS[f.kind].name + ' vertrieben.', 4000);
                 sfx(youWon ? 'victory' : 'defeat');
             }
@@ -9791,7 +9920,8 @@ body.has-panel .mapctl{display:none}
                         shieldLossReductionPct: shieldLossReductionPct(), hero: null });
                     saveGame(); saveProgression(); }
                 else pendingAttacks.push({ sourceId: src, targetId: t.id, rawTroops: a.troops, startedAt: now - 1000, resolveAt: now, attackerBotId: who, fromArmy: true,
-                        attackBonus: Math.round(a.troops * botMults(who).attackPct / 100), attackGoldRate: 0, rewardGoldRate: 0, shieldLossReductionPct: 0, hero: null });
+                        attackBonus: Math.round(a.troops * botMults(who).attackPct / 100), attackGoldRate: botGoldRate(who, 'attackGold'), rewardGoldRate: botGoldRate(who, 'attackGold'),
+                        shieldLossReductionPct: botMults(who).shield, botShield: true, hero: null });
                 renderActiveMarches();
             }
         }
@@ -9831,12 +9961,12 @@ body.has-panel .mapctl{display:none}
                 const boss = bossAt(t.id), it = boss ? { s: boss.troops + boss.defense } : botIntel(bot, t.id);
                 if (!it) {                                                                   // no report yet: scout it from here first
                     if (botScouting(bot, t.id)) continue;
-                    const ready = now + travelDurationSeconds({ x: a.x, y: a.y, landmassId: a.lm }, t, bot.id) * 500;
+                    const ready = now + travelDurationSeconds({ x: a.x, y: a.y, landmassId: a.lm }, t, bot.id) * 500 / (1 + botBld(bot.id, 'watch') * .04);
                     botLearn(bot.id, t.id, ready);
                     if (islandOwnerOf(t.id) === 'player') { const h = armyHome(a); if (h !== null && h !== undefined) botScoutVisible(bot, h, t.id, now, ready); }
                     return true;
                 }
-                const st = BOT_STYLES[bot.style], margin = islandOwnerOf(t.id) === 'player' ? Math.max(1.25, st.margin) : st.margin, atk = (1 + botMults(bot.id).attackPct / 100) * titleMult(bot.id, 'attack');
+                const st = BOT_STYLES[bot.style], margin = islandOwnerOf(t.id) === 'player' ? Math.max(1.25, st.margin) : st.margin, atk = botAtkFactor(bot);
                 if (a.troops * atk < it.s * margin * (boss ? .35 : 1)) { if (now > a.until - 3 * 60000) return goHome(); continue; }   // too strong: wait a bit, then give up
                 if (armyMove(a, { kind: 'base', id: t.id, x: t.x, y: t.y, lm: t.landmassId })) continue;
                 if (islandOwnerOf(t.id) === 'player') { flashHint('Die Armee von ' + bot.name + ' marschiert auf ' + islandTitle(t) + '!', 4500); sfx('warn'); }
@@ -9852,14 +9982,14 @@ body.has-panel .mapctl{display:none}
                 if (a.seen) { const bot = botById[a.seen.bot], base = islandById[a.seen.base];
                     if (now < a.seen.at + 15000) continue;
                     a.seen = null;
-                    if (!bot || !base || islandOwnerOf(base.id) !== bot.id) continue;
+                    if (!bot || !base || islandOwnerOf(base.id) !== bot.id || !botOnline(bot, now)) continue;
                     const n = Math.floor((islandTroops[base.id] || 0) * .6); if (n < a.troops * 1.3) continue;
                     const to = { x: a.x, y: a.y, landmassId: a.lm };
                     islandTroops[base.id] -= n; armyRaids.push({ botId: bot.id, baseId: base.id, armyId: a.id, troops: n, tx: a.x, ty: a.y, lm: a.lm, startedAt: now, resolveAt: now + travelDurationSeconds(base, to, bot.id) * 1000 });
                     flashHint(bot.name + ' greift deine Armee im Feld an!', 4000); sfx('warn'); requestRender(); continue; }
                 if (Math.random() > .25) continue;
                 let best = null, bd = Infinity;
-                for (const bid in botOwnedIslands) { const own = botOwnedIslands[bid], bot = botById[bid]; if (!own || !bot) continue;
+                for (const bid in botOwnedIslands) { const own = botOwnedIslands[bid], bot = botById[bid]; if (!own || !bot || !botOnline(bot, now)) continue;
                     for (const id of own) { const b = islandById[id], d = Math.hypot(b.x - a.x, b.y - a.y); if (d > ISLAND_RADIUS * 14 || d >= bd) continue;
                         if ((islandTroops[id] || 0) * .6 < a.troops * 1.3 || !routeFor(b.landmassId, a.lm, bot.id)) continue; bd = d; best = { bot: bot.id, base: id }; } }
                 if (best) { a.seen = { ...best, at: now }; flashHint(botById[best.bot].name + ' hat deine Armee entdeckt.', 3500); }
@@ -9870,9 +10000,9 @@ body.has-panel .mapctl{display:none}
             const p = a && armyPos(a, now);
             if (!a || Math.hypot(p.x - r.tx, p.y - r.ty) > ISLAND_RADIUS * 2) { back(); if (a) flashHint('Deine Armee ist ' + bot.name + ' ausgewichen.', 3000); return; }
             const won = r.troops > a.troops, def = a.troops;
-            if (won) { armies = armies.filter(x => x !== a); r.troops -= def; back(); const w = hospitalTake(def);
+            if (won) { armies = armies.filter(x => x !== a); r.troops -= def; botHospitalTake(r.botId, def); back(); const w = hospitalTake(def);
                 flashHint(bot.name + ' hat deine Armee im Feld geschlagen (' + fmtCompact(def) + ' Truppen)' + (w ? ', ' + fmtCompact(w) + ' ins Lazarett.' : '.'), 5000); }
-            else { a.troops -= r.troops; statBump('defends'); flashHint('Deine Armee hat den Angriff von ' + bot.name + ' abgewehrt – ' + fmtCompact(a.troops) + ' stehen noch.', 4500); }
+            else { botHospitalTake(r.botId, r.troops); hospitalTake(r.troops); a.troops -= r.troops; statBump('defends'); flashHint('Deine Armee hat den Angriff von ' + bot.name + ' abgewehrt – ' + fmtCompact(a.troops) + ' stehen noch.', 4500); }
             addCombatLogEntry({ type: 'army', won: !won, attacker: bot.name, defender: 'Du', atk: r.troops + (won ? def : 0), def });
             sfx(won ? 'defeat' : 'victory'); updateHud(); saveGame();
         }
@@ -11165,7 +11295,9 @@ body.has-panel .mapctl{display:none}
             Object.assign(b, { lvl: 1, xp: 0, sp: 0, gems: 0, salvage: 0, rally: null, lastGrabAt: 0 });
             for (const k of Object.keys(b.skills)) b.skills[k] = 0;
             for (const k of Object.keys(b.equip)) b.equip[k] = 0;
-            for (const k of Object.keys(b.items)) b.items[k] = b.items[k].map(() => 0);
+            for (const k of Object.keys(EQUIPMENT_DEFS)) { b.gear[k] = null; b.spare[k] = RARITY_DEFS.map(() => 0); }
+            b.pts = 0; b.wounded = 0; b.city = { levels: Object.fromEntries(BOT_BUILDINGS.map(k => [k, 0])), build: null };
+            for (const id of HEROES_IDS) b.heroes[id] = { lvl: 1, xp: 0, rar: 0 };
             delete botIntelMem.bot25;
             store.set('openWaterEmmaFair', '1'); saveBotState(); refreshTerritory(); saveGame(); requestRender();
         }
