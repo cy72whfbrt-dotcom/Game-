@@ -9660,18 +9660,18 @@ body.has-panel .mapctl{display:none}
             coins = Math.max(coins, 999e9); islandTroops[playerIslandId] = Math.max(islandTroops[playerIslandId] || 0, 999e9);
             store.set('openWaterGift2', 'g2'); saveGame(); updateHud();
         }
-        if (store.get('openWaterEmmaNear') !== '1' && playerIslandId !== null && islandById[playerIslandId]) {   // one-time test: Emma moves onto the player's island
-            const home = islandById[playerIslandId], d = i => Math.hypot(i.x - home.x, i.y - home.y);
-            const free = islandsByLandmass[home.landmassId].filter(i => i.type === 'tower' && !islandOwnerOf(i.id) && !bossAt(i.id)).sort((a, b) => d(b) - d(a));
-            if (free.length >= 4) {
-                const cap = free[0], near = free.slice(1).sort((a, b) => Math.hypot(a.x - cap.x, a.y - cap.y) - Math.hypot(b.x - cap.x, b.y - cap.y)).slice(0, 3);
-                const oldCap = botCapitalOf('bot25'), army = Math.max(5000, oldCap !== null ? islandTroops[oldCap] || 0 : 0);
-                for (const isl of [cap, ...near]) { botOwnedIslands.bot25.add(isl.id); islandLevels[isl.id] = Math.max(islandLevels[isl.id] || 1, 3); islandTroops[isl.id] = Math.round(army / (isl === cap ? 2 : 6)); }
-                loadBotState().bot25.capital = cap.id; capitalCache = null;
-                saveBotState(); refreshTerritory(); saveGame(); requestRender();
-                flashHint('Test: Emma ist jetzt auf deiner Insel – ihre Hauptstadt steht bei ' + coordText(cap.x, cap.y) + '.', 7000);
+        if (store.get('openWaterGift3') !== 'g3' && playerIslandId !== null && islandById[playerIslandId]) {   // one-time test gift after the reset: 999 Mrd. coins + troops; Emma leaves the player's island
+            coins = Math.max(coins, 999e9); islandTroops[playerIslandId] = Math.max(islandTroops[playerIslandId] || 0, 999e9);
+            const home = islandById[playerIslandId].landmassId, emma = botOwnedIslands.bot25;
+            const release = id => { emma.delete(id); islandLevels[id] = 1; delete islandTroops[id]; };   // back to a plain neutral base
+            for (const id of [...emma]) if (islandById[id].landmassId === home && emma.size > 1) release(id);
+            if ([...emma].every(id => islandById[id].landmassId === home)) {           // nothing left elsewhere: a fresh start on a free outer base
+                for (const id of [...emma]) release(id);
+                const free = islands.filter(i => i.type === 'tower' && !islandOwnerOf(i.id) && landmasses[i.landmassId].tier === 'outer' && landmasses[i.landmassId].ring >= 6 && i.landmassId !== home);
+                const t = free[Math.floor(Math.random() * free.length)]; emma.add(t.id); islandLevels[t.id] = 1; islandTroops[t.id] = 20;
             }
-            store.set('openWaterEmmaNear', '1');
+            loadBotState().bot25.capital = undefined; capitalCache = null;
+            store.set('openWaterGift3', 'g3'); saveBotState(); refreshTerritory(); saveGame(); updateHud(); requestRender();
         }
         renderActiveMarches();
         if (bonusGrantedAtBoot) saveGame();      // a reload right after the first start must not lose the grant
