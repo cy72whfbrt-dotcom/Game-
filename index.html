@@ -26,21 +26,21 @@
   --tile-bg:linear-gradient(180deg,#191d25,#0d1015);
   --well:rgba(255,255,255,.022);
   /* ---- gold metal (brand accent: progress, level, primary action) ---- */
-  --gold-50:#faf2da; --gold-100:#f0dfb0; --gold-200:#e4c886; --gold-300:#d4ad66; --gold-400:#c29449;
-  --gold-500:#a27832; --gold-600:#795823; --gold-700:#4a3616;
+  --gold-100:#f0dfb0; --gold-200:#e4c886; --gold-300:#d4ad66; --gold-400:#c29449;
+  --gold-500:#a27832; --gold-600:#795823;
   /* ---- ember + blood (warning / hostile / destructive) ---- */
-  --ember-300:#f2a066; --ember-400:#de7338; --ember-500:#b4521f;
-  --blood-300:#f08a7e; --blood-400:#d24c40; --blood-500:#a8342b; --blood-600:#701f19; --blood-700:#48130f;
+  --ember-300:#f2a066;
+  --blood-300:#f08a7e; --blood-400:#d24c40;
   --good:#9fd38a;
   /* ---- text (warm parchment) ---- */
   --tx-1:#eee6d4; --tx-2:#c0b7a3; --tx-3:#8b8373; --tx-4:#5c564b; --tx-inv:#1d1406;
   /* ---- hairlines (every border is a gold-tinted hairline) ---- */
   --line-1:rgba(212,176,102,.14); --line-2:rgba(212,176,102,.30); --line-3:rgba(228,200,134,.62);
   /* ---- factions (identical on map + UI): player blue, bots red, neutral grey ---- */
-  --f-player:#3f86d8; --f-player-hi:#8cc0ff; --f-player-lo:#15325a;
+  --f-player:#3f86d8; --f-player-hi:#8cc0ff;
   --f-enemy:#c9423a;  --f-enemy-hi:#ff8d82;  --f-enemy-lo:#52150f;
-  --f-neutral:#80848c; --f-neutral-hi:#c6c9cf; --f-neutral-lo:#2d2f34;
-  --f-multi:#b98cf0; --f-multi-lo:#5b3a8c;
+  --f-neutral:#80848c;
+  --f-multi:#b98cf0;
   /* ---- rarity (keys = RARITY_DEFS[].key) ---- */
   --r-grau:#a2a6ad; --r-gruen:#5cbf62; --r-blau:#4f9ef2; --r-lila:#a970f2; --r-gold:#eab24a; --r-rot:#ee5046;
   /* ---- resources (upgrade points have their OWN colour + icon) ---- */
@@ -48,12 +48,10 @@
   /* ---- type ---- */
   --font-display:'Cinzel','Trajan Pro',Georgia,serif;
   --font-ui:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
-  --fs-9:9.5px; --fs-10:10px; --fs-11:11px; --fs-12:12px; --fs-13:13px; --fs-15:15px; --fs-17:17px; --fs-22:22px;
+  --fs-9:9.5px; --fs-10:10px; --fs-11:11px; --fs-12:12px; --fs-13:13px; --fs-15:15px; --fs-17:17px;
   --track-caps:.1em; --track-display:.05em;
-  /* ---- spacing (4-pt grid) ---- */
-  --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:20px; --s-6:24px; --s-8:32px;
   /* ---- radii: small, carved - never bubbly ---- */
-  --r-xs:2px; --r-sm:3px; --r-md:4px; --r-lg:6px; --r-pill:999px;
+  --r-xs:2px; --r-sm:3px; --r-lg:6px; --r-pill:999px;
   /* ---- elevation: soft ambient only, NO hard offset shadows, NO gloss ---- */
   --hi-inset:inset 0 1px 0 rgba(255,240,205,.06);
   --sh-1:var(--hi-inset),0 2px 6px rgba(0,0,0,.45);
@@ -63,9 +61,9 @@
   --focus:0 0 0 2px var(--ink-1),0 0 0 4px var(--gold-300);
   /* ---- component sizes ---- */
   --hud-h:30px; --btn-h:34px; --btn-h-sm:28px; --dock-h:58px; --rail-w:64px; --tile:58px; --hud-top-space:46px;
-  --icon-xs:12px; --icon-sm:14px; --icon:18px; --icon-lg:22px;
+  --icon:18px;
   /* ---- motion ---- */
-  --ease-out:cubic-bezier(.2,.8,.2,1); --ease-in-out:cubic-bezier(.45,0,.2,1);
+  --ease-out:cubic-bezier(.2,.8,.2,1);
   --dur-1:120ms; --dur-2:200ms; --dur-3:320ms;
   /* ---- safe areas (viewport meta already has viewport-fit=cover) ---- */
   --safe-t:env(safe-area-inset-top,0px); --safe-r:env(safe-area-inset-right,0px);
@@ -161,10 +159,10 @@ b,strong{font-weight:600}
    MAP CONTROLS
    ===================================================================== */
 .mapctl{position:fixed;z-index:var(--z-mapctl);right:calc(var(--safe-r) + 10px);bottom:calc(var(--dock-h) + var(--safe-b) + 14px);
-  display:flex;flex-direction:column;background:var(--glass);border:1px solid var(--line-2);border-radius:var(--r-sm);box-shadow:var(--sh-1);
+  display:flex;flex-direction:column;background:rgba(14,16,22,.52);border:1px solid rgba(214,170,90,.16);border-radius:var(--r-sm);box-shadow:var(--sh-1);
   -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 .mapctl button{width:34px;height:34px;display:grid;place-items:center;color:var(--tx-2)}
-.mapctl{background:rgba(14,16,22,.52);border-color:rgba(214,170,90,.16)} .mapctl button + button{border-top-color:rgba(255,255,255,.05)}
+.mapctl button + button{border-top-color:rgba(255,255,255,.05)}
 .mapctl button.on{color:var(--gold-100);background:rgba(214,170,90,.18)}
 [data-frame="bronze"]{--fr1:#c9854f;--fr2:#7a4a26} [data-frame="silver"]{--fr1:#e8eef5;--fr2:#8a95a3} [data-frame="gold"]{--fr1:#ffd35a;--fr2:#a0701c}
 [data-frame="platin"]{--fr1:#9fe3da;--fr2:#3f8c86} [data-frame="diamond"]{--fr1:#bfe6ff;--fr2:#3f86d8} [data-frame="master"]{--fr1:#d6a6ff;--fr2:#6a3fa0} [data-frame="legend"]{--fr1:#ffb04a;--fr2:#c0392b}
@@ -965,7 +963,7 @@ body.has-panel .mapctl{display:none}
    LOADING SCREEN
    ===================================================================== */
 .splash{position:fixed;inset:0;z-index:200;overflow:hidden;background:#081c2e;color:var(--tx-1);
-  display:flex;flex-direction:column;justify-content:space-between;align-items:center;
+  display:flex;flex-direction:column;justify-content:flex-start;align-items:center;
   padding:calc(var(--safe-t) + 9vh) 24px calc(var(--safe-b) + 7vh);transition:opacity .7s ease,visibility .7s}
 .splash.is-leaving{opacity:0;visibility:hidden}
 .splash.is-leaving .splash-bg{transform:scale(1.08)}
@@ -974,30 +972,24 @@ body.has-panel .mapctl{display:none}
 .splash-vig{position:absolute;inset:0;pointer-events:none;
   background:radial-gradient(ellipse at 50% 42%,transparent 38%,rgba(0,0,0,.55) 78%,rgba(0,0,0,.85)),linear-gradient(180deg,rgba(0,0,0,.45),transparent 30%,transparent 70%,rgba(0,0,0,.6))}
 .splash-top,.splash-bottom{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center}
-.splash-crest{width:58px;height:66px;margin-bottom:10px;filter:drop-shadow(0 0 14px rgba(236,196,120,.45));animation:sp-rise 1.1s cubic-bezier(.2,.8,.2,1) both}
+.splash-crest{position:relative;width:clamp(120px,34vw,170px);height:auto;aspect-ratio:200/230;margin-bottom:18px;filter:drop-shadow(0 0 14px rgba(236,196,120,.45));animation:sp-rise 1.1s cubic-bezier(.2,.8,.2,1) both}
 .splash-crest svg{width:100%;height:100%}
-.splash-title{margin:0;font:700 clamp(40px,11.5vw,92px)/1 var(--font-display);letter-spacing:.07em;text-transform:uppercase;
-  background:linear-gradient(180deg,#fff6dc 0%,#f0d59a 38%,#c8923e 70%,#8a5d22 100%);-webkit-background-clip:text;background-clip:text;color:transparent;
-  filter:drop-shadow(0 2px 0 rgba(0,0,0,.6)) drop-shadow(0 0 22px rgba(236,190,110,.35));animation:sp-rise 1.1s .15s cubic-bezier(.2,.8,.2,1) both}
-.splash-sub{display:flex;align-items:center;gap:12px;margin-top:12px;font:600 var(--fs-12)/1 var(--font-ui);letter-spacing:.34em;text-transform:uppercase;color:#d9c49a;
-  animation:sp-rise 1.1s .3s cubic-bezier(.2,.8,.2,1) both}
+.splash-title{position:relative;margin:0;font:700 clamp(40px,11.5vw,92px)/1 var(--font-display);letter-spacing:.07em;text-transform:uppercase;   /* engraved gold with a light sweep */
+  background-image:linear-gradient(100deg,#8a5d22 0%,#e9c77e 22%,#fff6dc 30%,#e9c77e 38%,#b07b30 60%,#f3dca0 80%,#8a5d22 100%);background-size:250% 100%;
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 2px 0 rgba(0,0,0,.6)) drop-shadow(0 0 22px rgba(236,190,110,.35));animation:sp-rise 1.1s .15s cubic-bezier(.2,.8,.2,1) both,sp-shine 4.5s 1s ease-in-out infinite}
+.splash-sub{display:flex;align-items:center;gap:12px;margin-top:12px;font:600 var(--fs-13)/1 var(--font-ui);letter-spacing:.34em;text-transform:uppercase;color:#f0d6a0;
+  text-shadow:0 1px 8px rgba(0,0,0,.9),0 0 2px rgba(0,0,0,.9);animation:sp-rise 1.1s .3s cubic-bezier(.2,.8,.2,1) both}
 .splash-sub span{width:34px;height:1px;background:linear-gradient(90deg,transparent,#d9b56a)}
 .splash-sub span:last-child{transform:scaleX(-1)}
 @keyframes sp-rise{from{opacity:0;transform:translateY(14px)}}
-/* title: engraved gold with a light sweep */
-.splash-title{position:relative;background-image:linear-gradient(100deg,#8a5d22 0%,#e9c77e 22%,#fff6dc 30%,#e9c77e 38%,#b07b30 60%,#f3dca0 80%,#8a5d22 100%);
-  background-size:250% 100%;animation:sp-rise 1.1s .15s cubic-bezier(.2,.8,.2,1) both,sp-shine 4.5s 1s ease-in-out infinite}
 @keyframes sp-shine{0%{background-position:100% 0}60%,100%{background-position:0 0}}
-.splash-crest{width:clamp(120px,34vw,170px);height:auto;aspect-ratio:200/230;margin-bottom:18px}
 .splash-crest::after{content:"";position:absolute;left:50%;top:55%;width:260px;height:260px;margin:-130px;border-radius:50%;z-index:-1;
   background:radial-gradient(circle,rgba(255,170,80,.35),transparent 65%);animation:sp-pulse 2.6s ease-in-out infinite}
-.splash-crest{position:relative}
 @keyframes sp-pulse{50%{transform:scale(1.15);opacity:.6}}
 .crest-shine{animation:cr-shine 4.2s 1.2s ease-in-out infinite}
 @keyframes cr-shine{0%{transform:skewX(-20deg) translateX(0)}55%,100%{transform:skewX(-20deg) translateX(330px)}}
 .splash-top{margin-top:auto}.splash-bottom{margin-top:auto}
-.splash{justify-content:flex-start}
-.splash-sub{font-size:var(--fs-13);color:#f0d6a0}
 /* ornate loading bar */
 .splash-barwrap{display:flex;align-items:center;width:100%;gap:0}
 .splash-cap{flex:none;width:12px;height:12px;transform:rotate(45deg);border:1.5px solid #d9b56a;background:#1a1208;box-shadow:0 0 10px rgba(236,190,110,.5)}
@@ -1020,8 +1012,7 @@ body.has-panel .mapctl{display:none}
 @keyframes sp-sheen{to{transform:translateX(100%)}}
 .splash.is-done .splash-bar i{animation:none;width:100%;transition:width .6s ease-out}
 .splash-status{font:600 var(--fs-11)/1 var(--font-ui);letter-spacing:.22em;text-transform:uppercase;color:#a8977a}
-/* portrait phones: the scene is cropped to its middle - move the moon out from behind the title and lower the fortress */
-.splash-sub{text-shadow:0 1px 8px rgba(0,0,0,.9),0 0 2px rgba(0,0,0,.9)}
+/* dark halos behind the title and the loading bar keep them readable over the scene */
 .splash-top::before{content:"";position:absolute;inset:-30px -80px;z-index:-1;background:radial-gradient(ellipse at center,rgba(2,3,8,.55),transparent 70%)}
 .splash-bottom::before{content:"";position:absolute;inset:-40px -60px -30px;z-index:-1;background:radial-gradient(ellipse at center,rgba(2,3,8,.8),transparent 70%)}
 @media (max-height:500px){.splash{padding-top:calc(var(--safe-t) + 4vh);padding-bottom:calc(var(--safe-b) + 4vh)}.splash-crest{width:auto;height:30vh;margin-bottom:6px}.splash-title{font-size:clamp(34px,8vh,60px)}}
@@ -1099,7 +1090,7 @@ body.has-panel .mapctl{display:none}
     </style>
 </head>
 <body>
-<svg id="iconSprite" xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
 <symbol id="i-coin" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0z" fill="currentColor" stroke="none"/><path d="M5.7 12a6.3 6.3 0 1 0 12.6 0a6.3 6.3 0 1 0 -12.6 0z" stroke="#000" stroke-width="1.2" opacity="0.32"/><path d="M12 8.3l1.15 2.55L15.7 12l-2.55 1.15L12 15.7l-1.15-2.55L8.3 12l2.55-1.15z" fill="#000" stroke="none" opacity="0.3"/><path d="M6.1 8.8A7 7 0 0 1 9.5 5.4" stroke="#fff" stroke-width="1.3" opacity="0.6"/></g></symbol>
 <symbol id="i-gem" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7.2 4h9.6l4.7 5.4L12 20.6 2.5 9.4z" fill="currentColor" stroke="none"/><path d="M2.5 9.4h19M7.2 4l2.5 5.4L12 20.6l2.3-11.2L16.8 4" stroke="#000" stroke-width="1" opacity="0.32"/><path d="M9.7 9.4 12 4.3l2.3 5.1" stroke="#000" stroke-width="1" opacity="0.22"/><path d="M4.9 9 7.5 5.4" stroke="#fff" stroke-width="1.2" opacity="0.75"/></g></symbol>
 <symbol id="i-troops" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l3 .45 9.1 9.1-2.55 2.55L4.45 7z" fill="currentColor" stroke="none" opacity="0.18"/><path d="M4 4l3 .45 9.1 9.1-2.55 2.55L4.45 7z"/><path d="M12.4 17.6l5.2-5.2M16.3 16.3l3.7 3.7"/><path d="M20 4l-3 .45-9.1 9.1 2.55 2.55L19.55 7z" fill="currentColor" stroke="none" opacity="0.18"/><path d="M20 4l-3 .45-9.1 9.1 2.55 2.55L19.55 7z"/><path d="M11.6 17.6l-5.2-5.2M7.7 16.3 4 20"/></g></symbol>
@@ -1193,7 +1184,7 @@ body.has-panel .mapctl{display:none}
         <g clip-path="url(#crClip)"><rect class="crest-shine" x="-60" y="30" width="50" height="200" fill="url(#crShine)" transform="skewX(-20)"/></g>
       </svg>
     </div>
-    <h1 class="splash-title" data-text="Open Water">Open Water</h1>
+    <h1 class="splash-title">Open Water</h1>
     <div class="splash-sub"><span></span>Erobere die Inseln<span></span></div>
   </div>
   <div class="splash-bottom">
@@ -1435,8 +1426,8 @@ body.has-panel .mapctl{display:none}
       <div id="chestEquippedGrid" class="slots"></div>
       <div class="sect">
         <h4 id="chestInventoryLabel">Inventar</h4>
-        <div id="chestBottomBar" class="sect-aside">
-          <span id="chestPointsLine" class="pill pill--points" title="Aufwertungspunkte"><svg class="icon"><use href="#i-points"/></svg><b id="chestPointsValue">0</b><small>Punkte</small></span>
+        <div class="sect-aside">
+          <span class="pill pill--points" title="Aufwertungspunkte"><svg class="icon"><use href="#i-points"/></svg><b id="chestPointsValue">0</b><small>Punkte</small></span>
         </div>
       </div>
       <div id="chestInventoryGrid" class="tiles"></div>
@@ -1703,7 +1694,7 @@ body.has-panel .mapctl{display:none}
       <button id="recallBtn" class="act" type="button"><span class="act-ic act-ic--recall"><svg class="icon"><use href="#i-recall"/></svg></span><span class="act-t">Sammeln</span><span class="act-s"><svg class="icon icon--gem"><use href="#i-gem"/></svg><b data-const="RECALL_GEM_COST">1</b> Gem</span></button>
     </div>
   </div>
-  <footer id="popupFoot" class="pfoot">
+  <footer class="pfoot">
     <button id="backBtn" class="btn btn--secondary" type="button"><svg class="icon"><use href="#i-back"/></svg><span>Zurück</span></button>
     <button id="scoutBtn" class="btn btn--secondary btn--grow" type="button"><svg class="icon"><use href="#i-scout"/></svg><span class="lbl">Spähen</span></button>
     <button id="attackBtn" class="btn btn--danger btn--grow" type="button"><svg class="icon"><use href="#i-attack"/></svg><span class="lbl">Angreifen</span></button>
@@ -1721,9 +1712,6 @@ body.has-panel .mapctl{display:none}
         if (store.get('openWaterReset') !== RESET_VERSION) {
             try { for (const k of Object.keys(localStorage)) if (k.startsWith('openWater')) localStorage.removeItem(k); } catch (e) {}
             store.set('openWaterReset', RESET_VERSION);
-            store.set('openWaterGift2', 'g2');                   // the old test gifts don't come back after a reset
-            for (const k of ['openWaterBonusGrant1', 'openWaterBonusGrant2', 'openWaterBonusGrant3']) store.set(k, '1');
-            store.set('openWaterGift', 'g1');
         }
         const canvas = document.getElementById('mapCanvas');
         const ctx = canvas.getContext('2d');
@@ -1875,85 +1863,6 @@ body.has-panel .mapctl{display:none}
         }
         const rand = mulberry32(1337);
 
-        // Organic island coastline generator (design-panel winner: radial
-        // max-distance union of overlapping "lobe" circles, which guarantees
-        // a single-valued r(theta) and therefore a simple polygon that can
-        // never self-intersect - verified across 3000 seeds with 0 failures
-        // - plus a light high-frequency wobble and two smoothing passes so
-        // it reads as a real, slightly irregular island instead of a
-        // perfect square or a smooth circle/blob).
-        function generateIslandShape(centerX, centerY, baseRadius, seededRandomFn) {
-            const lobeCount = 4 + Math.floor(seededRandomFn() * 4); // 4-7 outer lobes
-            const lobes = [{
-                x: centerX,
-                y: centerY,
-                r: baseRadius * (0.5 + seededRandomFn() * 0.2) // 0.5-0.7x core
-            }];
-            for (let i = 0; i < lobeCount; i++) {
-                const angle = (i / lobeCount) * Math.PI * 2 + (seededRandomFn() - 0.5) * 0.8;
-                const offsetDist = baseRadius * (0.25 + seededRandomFn() * 0.45);
-                const lobeRadius = baseRadius * (0.32 + seededRandomFn() * 0.42);
-                lobes.push({
-                    x: centerX + Math.cos(angle) * offsetDist,
-                    y: centerY + Math.sin(angle) * offsetDist,
-                    r: lobeRadius
-                });
-            }
-
-            const fineFreq = 7 + Math.floor(seededRandomFn() * 6); // 7-12 bumps
-            const finePhase = seededRandomFn() * Math.PI * 2;
-            const fineAmplitude = 0.05;
-
-            const pointCount = 32 + Math.floor(seededRandomFn() * 13); // 32-44 samples
-            const rawRadii = [];
-            for (let i = 0; i < pointCount; i++) {
-                const theta = (i / pointCount) * Math.PI * 2;
-                const dirX = Math.cos(theta);
-                const dirY = Math.sin(theta);
-                let maxDist = 0;
-                for (const lobe of lobes) {
-                    const dx = centerX - lobe.x;
-                    const dy = centerY - lobe.y;
-                    const b = 2 * (dx * dirX + dy * dirY);
-                    const c = dx * dx + dy * dy - lobe.r * lobe.r;
-                    const disc = b * b - 4 * c;
-                    if (disc < 0) continue;
-                    const sqrtDisc = Math.sqrt(disc);
-                    const t = Math.max((-b + sqrtDisc) / 2, (-b - sqrtDisc) / 2);
-                    if (t > maxDist) maxDist = t;
-                }
-                if (maxDist <= 0) maxDist = baseRadius * 0.3;
-
-                const fineNoise = 1 + Math.sin(theta * fineFreq + finePhase) * fineAmplitude;
-                rawRadii.push(maxDist * fineNoise);
-            }
-
-            let radii = rawRadii.map(r => r * (0.94 + seededRandomFn() * 0.12));
-            for (let pass = 0; pass < 2; pass++) {
-                radii = radii.map((r, i) => {
-                    const prev = radii[(i - 1 + pointCount) % pointCount];
-                    const next = radii[(i + 1) % pointCount];
-                    return r * 0.6 + prev * 0.2 + next * 0.2;
-                });
-            }
-
-            // Bounds every radius so a shape can't balloon into a
-            // neighbouring island's territory in the packed grid layout
-            const minR = baseRadius * 0.4;
-            const maxR = baseRadius * 1.35;
-            radii = radii.map(r => Math.max(minR, Math.min(maxR, r)));
-
-            const points = [];
-            for (let i = 0; i < pointCount; i++) {
-                const theta = (i / pointCount) * Math.PI * 2;
-                points.push({
-                    x: centerX + Math.cos(theta) * radii[i],
-                    y: centerY + Math.sin(theta) * radii[i]
-                });
-            }
-            return points;
-        }
-
         // Ray-casting point-in-polygon test, used to keep towers from being
         // placed off the edge of a landmass's organic (non-square) coastline.
         function pointInPolygon(px, py, poly) {
@@ -1973,7 +1882,7 @@ body.has-panel .mapctl{display:none}
         // landmass centers crosses the coastline - not just "whichever
         // shape point happens to be closest", which could sit off to the
         // side and make the bridge cut across at a crooked angle. Works
-        // directly off generateIslandShape()'s own parametrization: its
+        // directly off generateRegionShape()'s own parametrization: its
         // points are sampled at uniformly increasing angles around the
         // landmass's center, so the point at any bearing is a straight
         // interpolation between the two samples that bracket it.
@@ -2021,7 +1930,7 @@ body.has-panel .mapctl{display:none}
         // 0 is always the centre (Thron-Insel); the others sit on a square
         // 9 × 9 grid around it.
         // A region of the continent: a square cell whose edges follow the river centre lines between the cells
-        // (shared by both neighbours, so the banks match) - sampled at uniform angles like generateIslandShape,
+        // (shared by both neighbours, so the banks match) - sampled at uniform angles,
         // so polygonPointAtAngle works on it. The continent's outer edge is a gently wavy coast.
         function riverOffset(vertical, line, t) {       // meander of the river line `line` (between cells) at position t along it
             const k = line * 2.37 + (vertical ? 0 : 11.3);
@@ -2318,7 +2227,6 @@ body.has-panel .mapctl{display:none}
              'openWaterBotCoins', 'openWaterNeutralTroopOverrides', 'openWaterScoutedIslands', 'openWaterPendingAttacks', 'openWaterPendingSends',
              'openWaterPendingScouts', 'openWaterPendingRetreats', 'openWaterTempleHoldSince', 'openWaterBoss', 'openWaterBossNext', 'openWaterExplored', 'openWaterFogCells', 'openWaterWorldStart', 'openWaterBotState', 'openWaterTitles', 'openWaterGateCfg', 'openWaterShield', 'openWaterShieldStock', 'openWaterWander', 'openWaterWanderNext'].forEach(k => store.remove(k));
             if (carry > 0) store.set('openWaterCarryTroops', String(Math.round(carry)));
-            store.set('openWaterBalanceV2', '1');
             store.set('openWaterWorldVersion', WORLD_VERSION);
         }
 
@@ -2368,18 +2276,6 @@ body.has-panel .mapctl{display:none}
         } catch (e) {
             islandLevels = {};
         }
-        // One-time conversion from the old linear balance: a base keeps the coins that went
-        // into it (old total 75·L·(L−1)) and gets the level those coins buy under the new costs.
-        if (!store.get('openWaterBalanceV2')) {
-            for (const id of Object.keys(islandLevels)) {
-                const L = islandLevels[id] || 1;
-                const spent = 75 * L * (L - 1);
-                const newL = 1 + Math.floor(Math.log(spent * (UPGRADE_COST_GROWTH - 1) / UPGRADE_BASE_COST + 1) / Math.log(UPGRADE_COST_GROWTH));
-                islandLevels[id] = Math.max(1, Math.min(MAX_BASE_LEVEL, newL));
-            }
-            store.set('openWaterIslandLevels', JSON.stringify(islandLevels));
-            store.set('openWaterBalanceV2', '1');
-        }
         // strong inner islands show (and keep, minus one, on capture) their level
         for (const isl of islands) if (isl.neutralLevel > 1 && islandLevels[isl.id] === undefined) islandLevels[isl.id] = isl.neutralLevel;
         let islandTroops;
@@ -2404,32 +2300,9 @@ body.has-panel .mapctl{display:none}
         let coins = parseFloat(store.get('openWaterCoins')) || 0;   // parseFloat: huge sums are stored as "1e+22"
         let gems = parseFloat(store.get('openWaterGems')) || 0;
 
-        // One-time requested bonus grant for an existing save - adds
-        // (doesn't overwrite) 10,000,000 coins and 10,000,000 troops on the
-        // player's home base, once, guarded by its own flag so reloading
-        // never grants it again.
-        let bonusGrantedAtBoot = false;   // persisted by saveGame() at the end of boot, together with the flags below
-        if (!store.get('openWaterBonusGrant1')) {
-            bonusGrantedAtBoot = true;
-            coins += 10000000;
-            islandTroops[playerIslandId] = (islandTroops[playerIslandId] || 0) + 10000000;
-            store.set('openWaterBonusGrant1', '1');
-        }
-        // Second one-time grant, same pattern - 1,000,000 gems.
-        if (!store.get('openWaterBonusGrant2')) {
-            bonusGrantedAtBoot = true;
-            gems += 1000000;
-            store.set('openWaterBonusGrant2', '1');
-        }
-        // Third one-time test grant: 1 Mrd. coins + 1 Mrd. troops on the home base.
-        if (!store.get('openWaterBonusGrant3')) {
-            bonusGrantedAtBoot = true;
-            coins += 1000000000;
-            islandTroops[playerIslandId] = (islandTroops[playerIslandId] || 0) + 1000000000;
-            store.set('openWaterBonusGrant3', '1');
-        }
+        let bonusGrantedAtBoot = false;   // persisted by saveGame() at the end of boot
         // After the map rebuild: the old army arrives at the new home base.
-        const carriedTroops = parseInt(store.get('openWaterCarryTroops'), 10) || 0;
+        const carriedTroops = parseFloat(store.get('openWaterCarryTroops')) || 0;   // parseFloat: huge armies are stored as "1e+22"
         if (carriedTroops > 0) {
             bonusGrantedAtBoot = true;
             islandTroops[playerIslandId] = (islandTroops[playerIslandId] || 0) + carriedTroops;
@@ -2493,7 +2366,7 @@ body.has-panel .mapctl{display:none}
             { id: 'bot22', name: 'Hanna',        color: '#6e2c00', style: 'builder' },
             { id: 'bot23', name: 'Sturmfalke',   color: '#5b2c6f', style: 'balanced' },
             { id: 'bot24', name: 'Ragnar',       color: '#943126', style: 'raider' },
-            { id: 'bot25', name: 'Emma',         color: '#e84393', style: 'blitz' },    // test bot: always on, lightning fast, takes everything
+            { id: 'bot25', name: 'Emma',         color: '#e84393', style: 'blitz' },    // always online, quick to decide, same economy as everyone
             { id: 'bot26', name: 'Felix_R', color: '#1abc9c', style: 'raider' },
             { id: 'bot27', name: 'Waldläufer', color: '#e67e22', style: 'builder' },
             { id: 'bot28', name: 'Anna.K', color: '#2980b9', style: 'templer' },
@@ -2536,12 +2409,12 @@ body.has-panel .mapctl{display:none}
             BOT_DEFS.push({ id: 'bot' + n, name, color: 'hsl(' + h + ',62%,' + l + '%)', style: ['raider', 'builder', 'templer', 'balanced', 'balanced', 'builder'][i % 6] });
         });
         const BOT_STYLES = {
-            raider:   { margin: 1.05, commit: .85, tapMs: 4000, marches: 6, hunt: 1, multi: 3, risk: .25, spend: .45, send: 1,   skills: ['attack', 'troops', 'attack', 'speed', 'attackGold', 'defense'], temple: .7, enemy: .55, act: .72 },
-            builder:  { margin: 1.5,  commit: .55, tapMs: 7000, marches: 3, hunt: .2, multi: 1, risk: .05, spend: .9,  send: .8,  skills: ['troops', 'defense', 'troops', 'speed', 'defenseGold', 'attack'], temple: .6, enemy: 1.2, act: .6 },
-            templer:  { margin: 1.2,  commit: .75, tapMs: 5000, marches: 5, hunt: .3, multi: 2, risk: .12, spend: .65, send: .9,  skills: ['attack', 'troops', 'defense', 'speed', 'attackGold', 'defenseGold'], temple: .2, enemy: 1,   act: .66 },
-            balanced: { margin: 1.2,  commit: .7,  tapMs: 5000, marches: 5, hunt: .5, multi: 2, risk: .12, spend: .65, send: .9,  skills: ['troops', 'attack', 'defense', 'speed', 'attackGold', 'defenseGold'], temple: .5, enemy: .9,  act: .64 },
+            raider:   { margin: 1.05, commit: .85, tapMs: 4000, marches: 6, hunt: 1, risk: .25, spend: .45, send: 1,   skills: ['attack', 'troops', 'attack', 'speed', 'attackGold', 'defense'], temple: .7, enemy: .55, act: .72 },
+            builder:  { margin: 1.5,  commit: .55, tapMs: 7000, marches: 3, hunt: .2, risk: .05, spend: .9,  send: .8,  skills: ['troops', 'defense', 'troops', 'speed', 'defenseGold', 'attack'], temple: .6, enemy: 1.2, act: .6 },
+            templer:  { margin: 1.2,  commit: .75, tapMs: 5000, marches: 5, hunt: .3, risk: .12, spend: .65, send: .9,  skills: ['attack', 'troops', 'defense', 'speed', 'attackGold', 'defenseGold'], temple: .2, enemy: 1,   act: .66 },
+            balanced: { margin: 1.2,  commit: .7,  tapMs: 5000, marches: 5, hunt: .5, risk: .12, spend: .65, send: .9,  skills: ['troops', 'attack', 'defense', 'speed', 'attackGold', 'defenseGold'], temple: .5, enemy: .9,  act: .64 },
             blitz:    { margin: 1.0,  commit: .8,  tapMs: 3000, marches: 8, risk: .3, spend: .9,  send: 1,   skills: ['attack', 'troops', 'speed', 'attackGold'],                      temple: .3, enemy: .5,  act: 1,
-                        hunt: 3, moveMs: 1500, launches: 4, sources: [30, 20] }     // no bonus troops: same economy as everyone, just hungrier and quicker to decide
+                        hunt: 3, moveMs: 1500, sources: [30, 20] }     // no bonus troops: same economy as everyone, just hungrier and quicker to decide
         };
         const BOT_BUILDINGS = ['academy', 'forge', 'hospital', 'wall', 'barracks', 'treasury', 'watch', 'heroes', 'shrine'];   // the city buildings with an effect
         const BOT_SKILLS = ['troops', 'attack', 'defense', 'speed', 'attackGold', 'defenseGold'];
@@ -2724,13 +2597,13 @@ body.has-panel .mapctl{display:none}
             const slots = Object.keys(EQUIPMENT_DEFS);
             if (who === 'player') return { lvl: playerLvl, title: (titleOf('player') || {}).name || null,
                 items: slots.map(k => { const it = equippedItems[k] && inventory[equippedItems[k]]; return it ? [k, it.rarity, it.level, it.stars || 0] : [k, -1, 0, 0]; }),
-                forge: slots.map(k => equipment[k] || 0), heroes: [...new Set((heroIds || []).filter(Boolean))].map(id => [id, heroLevel(id), heroRarity(id)]),
+                heroes: [...new Set((heroIds || []).filter(Boolean))].map(id => [id, heroLevel(id), heroRarity(id)]),
                 skills: [skills.attack || 0, skills.defense || 0], city: [cityLevelSafe('wall'), cityLevelSafe('hospital'), cityLevelSafe('heroes')] };
             const b = loadBotState()[who]; if (!b) return null;
             const hs = heroIds === 'bot' ? [] : [...new Set((heroIds || []).filter(Boolean))];
             return { lvl: b.lvl, title: (titleOf(who) || {}).name || null,
                 items: slots.map(k => { const it = botItem(b, k); return it ? [k, it.rarity, it.level, it.stars] : [k, -1, 0, 0]; }),
-                forge: slots.map(() => 0), heroes: hs.map(id => [id, botHeroLevel(who, id), Math.min(RARITY_DEFS.length - 1, b.heroes[id].rar || 0)]),
+                heroes: hs.map(id => [id, botHeroLevel(who, id), Math.min(RARITY_DEFS.length - 1, b.heroes[id].rar || 0)]),
                 skills: [b.skills.attack || 0, b.skills.defense || 0], city: [botBld(who, 'wall'), botBld(who, 'hospital'), botBld(who, 'heroes')] };
         }
         function attackParts(who, raw, bonus, total, hero, a) {       // a = the attack: its launch-time skill share and level win over today's values
@@ -2752,7 +2625,7 @@ body.has-panel .mapctl{display:none}
             for (const bot of BOT_DEFS) botOwnedIslands[bot.id].delete(islandId);
         }
 
-        // Many things change many times a second (60 bots): the save is written at most once a second, and when the page goes away.
+        // Many things change many times a second (150 rivals): the save is written at most once a second, and when the page goes away.
         var saveGameTimer = null;
         function saveGame() { if (!saveGameTimer) saveGameTimer = setTimeout(saveGameNow, 1000); }
         window.addEventListener('pagehide', () => { if (saveGameTimer) saveGameNow(); });
@@ -2844,13 +2717,6 @@ body.has-panel .mapctl{display:none}
         };
         const EQUIPMENT_BASE_COST = 100;
 
-        let equipment;
-        try {
-            equipment = JSON.parse(store.get('openWaterEquipment')) || {};
-        } catch (e) {
-            equipment = {};
-        }
-        for (const key of Object.keys(EQUIPMENT_DEFS)) if (!equipment[key]) equipment[key] = 0;
 
         // ===== Shop: gem-bought crates, rarity items, combine, salvage =====
         // A second, separate equipment layer on top of the existing coin-
@@ -2893,9 +2759,6 @@ body.has-panel .mapctl{display:none}
             inventory = {};
         }
         const STAR_MAX = 5, STAR_PCT = 20;               // forge stars: at most 5, each +20 % of the item's effect
-        for (const it of Object.values(inventory)) {    // older saves could have up to 10 stars: the extra ones are refunded in gems
-            if ((it.stars || 0) > STAR_MAX) { for (let s = STAR_MAX; s < it.stars; s++) gems += 20 * (s + 1); it.stars = STAR_MAX; store.set('openWaterInventory', JSON.stringify(inventory)); store.set('openWaterGems', String(gems)); }
-        }
         let nextItemId = parseInt(store.get('openWaterNextItemId'), 10) || 1;
         let equippedItems; // slot -> item id or null
         try {
@@ -3116,7 +2979,6 @@ body.has-panel .mapctl{display:none}
         document.addEventListener('visibilitychange', () => { if (document.hidden && saveProgressionTimer) saveProgressionNow(); });
         function saveProgressionNow() {
             clearTimeout(saveProgressionTimer); saveProgressionTimer = null;
-            store.set('openWaterEquipment', JSON.stringify(equipment));
             store.set('openWaterInventory', JSON.stringify(inventory));
             store.set('openWaterNextItemId', String(nextItemId));
             store.set('openWaterEquippedItems', JSON.stringify(equippedItems));
@@ -3151,7 +3013,7 @@ body.has-panel .mapctl{display:none}
             return 1 + Math.min(skills.speed || 0, SKILL_DEFS.speed.max) * 0.05;
         }
         function scoutSecs(from, to, botId) { return travelDurationSeconds(from, to, botId) / (1 + (botId ? botBld(botId, 'watch') : cityLevelSafe('watch')) * .04); }   // a scout's walk, Späherturm included - the same for everyone
-        function travelDurationSeconds(source, target, botId) {   // bots march at base speed; the player gets the speed skill + Akademie
+        function travelDurationSeconds(source, target, botId) {   // everyone gets their own speed skill + Akademie, never under 3 s
             const pts = source.landmassId === target.landmassId ? [source, target] : marchPath(source, target);
             let distance = 0; for (let i = 1; i < pts.length; i++) distance += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
             if (botId) return Math.max(3, Math.min(MAX_ATTACK_SECONDS, Math.max(MIN_ATTACK_SECONDS, distance / BASE_ATTACK_SPEED)) / botMarchMult(botId));   // their speed skill + Akademie, like yours
@@ -3507,7 +3369,7 @@ body.has-panel .mapctl{display:none}
                 ownedIslands.add(target.id);
                 islandLevels[target.id] = levelAfterCapture;
                 questProgress('capture', 1);
-                warStat('fallen', attack.rawTroops - remaining); warStat('captures'); warStat('kills', originalEnemyTroops);
+                warStat('fallen', attack.rawTroops - remaining - woundedAdded); warStat('captures'); warStat('kills', originalEnemyTroops);
                 statBump('captures'); if (targetOwner === 'bot25') statBump('emmaWins');
                 if (target.type === 'temple' || target.type === 'megaTemple' || target.guardian) statBump('temples');
                 if (target.type === 'gate') setGateSettings(target.id, { toll: target.toll, closed: false });
@@ -3542,9 +3404,10 @@ body.has-panel .mapctl{display:none}
                 }
 
                 warStat('attacksLost'); warStat('kills', defenderCasualties);
-                killGold = Math.round(defenderCasualties * rewardRate); coins += killGold; warStat('fallen', attack.rawTroops - retreatSurvivorsPreview(attack));
+                killGold = Math.round(defenderCasualties * rewardRate); coins += killGold;
                 retreatSurvivors = retreatSurvivorsPreview(attack);
                 woundedAdded = hospitalTake(attack.rawTroops - retreatSurvivors);   // Lazarett: part of the fallen are only wounded
+                warStat('fallen', attack.rawTroops - retreatSurvivors - woundedAdded);
                 if (retreatSurvivors > 0) {
                     const durationSec = travelDurationSeconds(target, source);
                     const startedAt = Date.now();
@@ -3572,10 +3435,8 @@ body.has-panel .mapctl{display:none}
             saveProgression();
             if (!won) renderActiveMarches();
 
-            // Buff breakdown shown in the battle log as plain numbers (not
-            // percentages), split by role so a bot defender's own buffs
-            // already have somewhere to show up (0 for now - bots don't
-            // have equipment/skills yet, just their level-based defense).
+            // Everything the battle log shows: each side's bonuses with their source (atkParts/defParts),
+            // both sides' gear, heroes and city (atkGear/defGear), losses, wounded and gold.
             addCombatLogEntry({
                 type: 'attack',
                 sourceId: attack.sourceId,
@@ -3667,6 +3528,7 @@ body.has-panel .mapctl{display:none}
                 pendingSends.push({ fromId: target.id, toId: source.id, troops: n, startedAt: t0, resolveAt: t0 + travelDurationSeconds(target, source, bot.id) * 1000, senderBotId: bot.id, back: true }); };
             if (capitalHolds) {
                 islandTroops[target.id] = 0;
+                botCoins[bot.id] += Math.round(originalEnemyTroops * botKillRate);   // "Angriff: Gold" for the garrison, like any other win
                 homeAgain(survivors);                                       // the raiders who are left march home with the loot
             } else if (won) {
                 // Same rule as the player's own captures: the new owner
@@ -3709,8 +3571,8 @@ body.has-panel .mapctl{display:none}
                 if (defGold > 0) coins += defGold;
             }
             if (playerInvolved && !won) statBump('defends');
-            if (playerInvolved) { warStat(capitalHolds ? 'plundered' : won ? 'lost' : 'defends', 1, bot.name); warStat('fallen', won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops)); warStat('kills', won ? Math.min(myTroops, totalStrength) : myTroops); }
             if (playerInvolved) defWounded = hospitalTake(won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops));   // your fallen defenders
+            if (playerInvolved) { warStat(capitalHolds ? 'plundered' : won ? 'lost' : 'defends', 1, bot.name); warStat('fallen', (won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops)) - defWounded); warStat('kills', won ? botSentLoss : attack.rawTroops - fled); }
             else if (targetOwner) {                                       // a bot defender: its Lazarett and its "Verteidigung: Gold", like yours
                 botHospitalTake(targetOwner, won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops));
                 botCoins[targetOwner] = (botCoins[targetOwner] || 0) + Math.round((won ? botSentLoss : attack.rawTroops - fled) * botGoldRate(targetOwner, 'defenseGold'));
@@ -5835,7 +5697,7 @@ body.has-panel .mapctl{display:none}
             if (!T.size) { if (botGather(bot)) botTapped(bot); return; }
             const list = [...T.values()].sort((x, y) => x.d - y.d).slice(0, 40);
             let scouted = 0;
-            // 3) attack what they know they can beat - with a real army, not the bare minimum. Several attacks per move,
+            // 3) attack what they know they can beat - with a real army, not the bare minimum. One attack per move,
             // several bases join when one isn't enough, and now and then they gamble on a base they never scouted.
             const launches = 1, used = {}; let n = 0, rallied = false, gambles = Math.random() < (st.risk || 0) * .5 ? 1 : 0;
             // grow like a person: build up what you have before grabbing more empty land. New neutral bases only while the
@@ -5908,7 +5770,7 @@ body.has-panel .mapctl{display:none}
         }
 
         // Bots play by exactly the player's rules: XP and levels (1 skill point per level into the same 6 skills), a city
-        // with the same 8 buildings they build themselves (same coins, same build times, one builder), a Lazarett with
+        // with the same 9 buildings they build themselves (same coins, same build times, one builder), a Lazarett with
         // room for a limited number of wounded that they heal for coins, the same 3 heroes (XP, rarity, one per attack),
         // gear from crates (combine 3 → 1, salvage for points, level up, stars in the Schmiede) and bases upgraded
         // as far as their coins allow. Nothing is derived from their level any more.
@@ -5918,7 +5780,6 @@ body.has-panel .mapctl{display:none}
             try { botState = JSON.parse(store.get('openWaterBotState')) || {}; } catch (e) { botState = {}; }
             for (const bot of BOT_DEFS) {
                 const b = botState[bot.id] = Object.assign({ lvl: 1, xp: 0, sp: 0, gems: 0, salvage: 0 }, botState[bot.id] || {});
-                delete b.intel;                                  // (older saves kept scouting reports in here)
                 b.skills = Object.assign({ troops: 0, attack: 0, defense: 0, speed: 0, attackGold: 0, defenseGold: 0 }, b.skills || {});
                 b.equip = Object.assign({ weapon: 0, armor: 0, shield: 0, boots: 0 }, b.equip || {});
                 if (!b.v2 && !b.items) { b.items = {}; for (const k of Object.keys(EQUIPMENT_DEFS)) b.items[k] = RARITY_DEFS.map(() => 0); }
@@ -6432,13 +6293,11 @@ body.has-panel .mapctl{display:none}
             updateHudPlayer();
         }, 1000);
 
-        // Combined bonus percentage/flat from an equipment slot + a matching
+        // Combined bonus percentage from the item worn in a slot + a matching
         // skill (skillKey may be null when no skill covers that stat)
         function bonusPct(equipKey, skillKey) {
-            const eq = (equipment[equipKey] || 0) * (EQUIPMENT_DEFS[equipKey].pct || 0);
             const sk = skillKey ? (skills[skillKey] || 0) * (SKILL_DEFS[skillKey].pct || 0) : 0;
-            const rarity = equippedItemBonusPct(equipKey);
-            return eq + sk + rarity;
+            return sk + equippedItemBonusPct(equipKey);
         }
         function troopProductionMultiplier() {
             return 1 + bonusPct('weapon', 'troops') / 100;
@@ -6451,7 +6310,7 @@ body.has-panel .mapctl{display:none}
             return bonusPct('armor', null);
         }
         function shieldLossReductionPct() {
-            return Math.min(90, equipment.shield * EQUIPMENT_DEFS.shield.pct + equippedItemBonusPct('shield'));
+            return Math.min(90, equippedItemBonusPct('shield'));
         }
         // "Angriff" skill (Schwert): every attack gets extra troops on top of the ones sent,
         // +3 % of the sent troops per skill level, so it matters at every army size.
@@ -7332,12 +7191,11 @@ body.has-panel .mapctl{display:none}
                 const tiles = g.items.map((it, i) => { const d = EQUIPMENT_DEFS[it[0]], rd = RARITY_DEFS[it[1]];
                     return '<span class="gslot"><span class="tile' + (rd ? '' : ' empty') + '"' + (rd ? ' data-r="' + rd.key + '"' : '') + ' title="' + d.name + (rd ? ' – ' + rd.label + ', Stufe ' + it[2] : ' – leer') + '">' + icon(d.icon) +
                         (rd ? '<span class="lvl">' + it[2] + '</span>' + (it[3] ? '<span class="stars">' + icon('star').repeat(it[3]) + '</span>' : '') : '') + '</span></span>'; }).join('');
-                const forge = g.items.map((it, i) => g.forge[i] ? EQUIPMENT_DEFS[it[0]].name + ' ' + g.forge[i] : '').filter(Boolean).join(' · ');
                 const heroes = g.heroes.map(x => { const hd = heroById(x[0]), rd = RARITY_DEFS[x[2]] || RARITY_DEFS[0];
                     return '<span class="ghero" style="--hc:' + (x[2] ? rd.color : hd.color) + '"><span class="hero-ic">' + icon(hd.icon) + '</span><span><b>' + hd.name + '</b><small>Stufe ' + x[1] + ' · ' + rd.label + '</small></span></span>'; }).join('');
                 return '<div class="logGear"><div class="logGearHead">Stufe ' + g.lvl + (g.title ? ' · Titel ' + escapeHtml(g.title) : '') + '</div>' +
                     '<div class="logGearItems">' + tiles + '</div>' + (heroes ? '<div class="logGearHeroes">' + heroes + '</div>' : '') +
-                    '<div class="logGearMeta">' + (forge ? 'Alter Münz-Ausbau: ' + forge + '<br>' : '') + 'Skill Angriff ' + g.skills[0] + ' · Verteidigung ' + g.skills[1] + '<br>Mauer ' + g.city[0] + ' · Lazarett ' + g.city[1] + ' · Heldenhalle ' + g.city[2] + '</div></div>'; };
+                    '<div class="logGearMeta">Skill Angriff ' + g.skills[0] + ' · Verteidigung ' + g.skills[1] + '<br>Mauer ' + g.city[0] + ' · Lazarett ' + g.city[1] + ' · Heldenhalle ' + g.city[2] + '</div></div>'; };
             const partLines = (parts, first) => (parts || []).map((q, i) => '<div class="logLine' + (first && !i ? '' : q[1] < 0 ? ' buff malus' : ' buff') + '"><span>' + escapeHtml(q[0]) + (q[2] ? '<small class="logSrc">' + escapeHtml(q[2]) + '</small>' : '') + '</span><span>' + (first && !i ? '' : q[1] < 0 ? '−' : '+') + fmtD(Math.abs(q[1])) + '</span></div>').join('');   // each bonus with where it comes from
             combatLogListEl.innerHTML = combatLog.map(entry => {
                 T = id => (entry.names && entry.names[id]) || islandTitle(islandById[id]);
@@ -7363,7 +7221,7 @@ body.has-panel .mapctl{display:none}
                 }
                 if (entry.type === 'botAttack') {
                     const vs = ' (' + fmtM(entry.myTroops) + ' vs ' + fmtM(entry.enemyTroops + entry.enemyDefense) + ')';
-                    const fallen = entry.fallen !== undefined ? entry.fallen : (entry.won ? entry.enemyTroops : Math.min(entry.enemyTroops, entry.myTroops));
+                    const fallen = entry.fallen;
                     const defSum = entry.enemyTroops + entry.enemyDefense;
                     const bdet = '<details><summary>Kampfdetails</summary>' +
                         logBalance(entry.myTroops, defSum, icon('attack') + escapeHtml(entry.botName) + ' ' + fmtM(entry.myTroops), fmtM(defSum) + ' Du' + icon('defense'), true) +
@@ -7404,13 +7262,6 @@ body.has-panel .mapctl{display:none}
                         ? logRowHtml('loss', 'bot', logBadge('loss', 'Verloren') + T(entry.targetId), escapeHtml(entry.botName) + ' hat die Basis erobert' + vs, ago(entry), bdet)
                         : logRowHtml('win', 'shield', logBadge('win', 'Verteidigt') + T(entry.targetId), escapeHtml(entry.botName) + ' zurückgeschlagen' + vs, ago(entry), bdet);
                 }
-                // Legacy entries saved before this format existed - fall back
-                // to the old one-liner instead of showing "undefined".
-                if (entry.myTroopsBuffed === undefined) {
-                    return logRowHtml(entry.won ? 'win' : 'loss', entry.won ? 'level' : 'losses',
-                        (entry.won ? 'Sieg · ' : 'Niederlage · ') + T(entry.targetId),
-                        'von ' + T(entry.sourceId) + ' · ' + fmtM(entry.troops) + ' Truppen', ago(entry));
-                }
                 // Everything each side brings to the fight, added up line by
                 // line into a "Gesamt" sum, side by side - so the two final
                 // numbers sit right next to each other and it's obvious at a
@@ -7423,10 +7274,9 @@ body.has-panel .mapctl{display:none}
                         '<div class="logSide">' +
                             '<div class="logSideLabel">Angreifer</div>' +
                             '<div class="logLine"><span>Truppen</span><span>' + fmtD(entry.myTroops) + '</span></div>' +
-                            (entry.atkParts ? partLines(entry.atkParts) : entry.skillBuff !== undefined
-                                ? '<div class="logLine buff"><span>Angriff-Skill</span><span>+' + fmtD(entry.skillBuff) + '</span></div>' +
-                                  (entry.titleBuff ? '<div class="logLine buff"><span>Titel</span><span>' + (entry.titleBuff > 0 ? '+' : '−') + fmtD(Math.abs(entry.titleBuff)) + '</span></div>' : '')
-                                : '<div class="logLine buff"><span>Angriff-Buff</span><span>+' + fmtD(entry.attackBuff) + '</span></div>') +
+                            (entry.atkParts ? partLines(entry.atkParts)
+                                : '<div class="logLine buff"><span>Angriff-Skill</span><span>+' + fmtD(entry.skillBuff) + '</span></div>' +
+                                  (entry.titleBuff ? '<div class="logLine buff"><span>Titel</span><span>' + (entry.titleBuff > 0 ? '+' : '−') + fmtD(Math.abs(entry.titleBuff)) + '</span></div>' : '')) +
                             '<div class="logSum' + (atkTotal >= defTotal ? ' advantage' : '') + '"><span>Gesamt</span><span>' + fmtD(atkTotal) + '</span></div>' +
                             '<div class="logCasualty"><span>Gefallen</span><span>−' + fmtD(entry.attackerCasualties || 0) + '</span></div>' +
                             (entry.wounded ? '<div class="logCasualty wounded"><span>Verwundet</span><span>' + fmtD(entry.wounded) + '</span></div>' : '') +
@@ -7715,12 +7565,13 @@ body.has-panel .mapctl{display:none}
         }
         // the Postfach has three tabs; a new day's report shows a dot until you've looked at it
         let mailTab = 'rewards';
-        function warUnseen() { const days = Object.keys(warDays).sort(); const last = days[days.length - 1]; return !!last && last < todayKey() && store.get('openWaterWarSeen') !== last; }
+        function lastWarDay() { return Object.keys(warDays).filter(d => d < todayKey()).sort().pop() || ''; }   // the newest finished day
+        function warUnseen() { const last = lastWarDay(); return !!last && last > (store.get('openWaterWarSeen') || ''); }
         function showMailTab(t) {
             mailTab = t;
             for (const b of document.querySelectorAll('#mailTabs [data-mtab]')) { const on = b.dataset.mtab === t; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }
             for (const pn of document.querySelectorAll('#mailPopup [data-mpane]')) pn.hidden = pn.dataset.mpane !== t;
-            if (t === 'reports') { const days = Object.keys(warDays).sort(); if (days.length) store.set('openWaterWarSeen', days[days.length - 1]); }
+            if (t === 'reports' && lastWarDay()) store.set('openWaterWarSeen', lastWarDay());
             updateQuestBadge();
         }
         document.getElementById('mailTabs').addEventListener('click', e => { const b = e.target.closest('[data-mtab]'); if (b) showMailTab(b.dataset.mtab); });
@@ -7961,14 +7812,13 @@ body.has-panel .mapctl{display:none}
             saveLeave(); setInterval(saveLeave, 30000);
         }, 0);
         window.addEventListener('pagehide', saveLeave);
-        let hiddenAt = 0;
+        let hiddenAt = 0, hiddenSnap = null;
         document.addEventListener('visibilitychange', () => {
-            if (document.hidden) { hiddenAt = Date.now(); saveLeave(); return; }
-            if (hiddenAt && Date.now() - hiddenAt >= AWAY_MIN_MS) {                            // the tab kept running: just show what happened
-                try { welcomeFrom = JSON.parse(store.get('openWaterLeave')); } catch (e) { welcomeFrom = null; }
-                if (welcomeFrom) setTimeout(showWelcome, 600);
+            if (document.hidden) { hiddenAt = Date.now(); hiddenSnap = empireSnapshot(); saveLeave(); return; }
+            if (hiddenAt && hiddenSnap && Date.now() - hiddenAt >= AWAY_MIN_MS) {              // the tab kept running: just show what happened since it was hidden
+                welcomeFrom = hiddenSnap; setTimeout(showWelcome, 600);
             }
-            hiddenAt = 0;
+            hiddenAt = 0; hiddenSnap = null;
         });
         function fmtAway(ms) { const m = Math.round(ms / 60000), d = Math.floor(m / 1440), hh = Math.floor(m % 1440 / 60), mm = m % 60;
             return d ? d + (d === 1 ? ' Tag' : ' Tage') + (hh ? ' ' + hh + ' Std.' : '') : hh ? hh + ' Std.' + (mm ? ' ' + mm + ' Min.' : '') : mm + ' Min.'; }
@@ -8918,22 +8768,22 @@ body.has-panel .mapctl{display:none}
 
         // ===== CAPITAL / CITY (step 1: buildings can be built and upgraded, effects come later) =====
         var CITY_BUILDINGS = [
-            { id: 'academy',  name: 'Akademie',      icon: 'star',    x: 215, y: 430, roof: '#2f4f86', dome: true, fx: true,
+            { id: 'academy',  name: 'Akademie',      icon: 'star',    x: 215, y: 430, roof: '#2f4f86', dome: true,
               desc: 'Forschung: Marschtempo. Jede Stufe lässt deine Truppen 2 % schneller laufen (Angriffe, Verstärkung, Späher).' },
-            { id: 'forge',    name: 'Schmiede',      icon: 'weapon',  x: 785, y: 430, roof: '#4a4a52', chimney: true, fx: true,
+            { id: 'forge',    name: 'Schmiede',      icon: 'weapon',  x: 785, y: 430, roof: '#4a4a52', chimney: true,
               desc: 'Wähle oben die Art und dann ein Ausrüstungsteil aus deinem Besitz, um es mit Sternen zu verbessern: jeder Stern +20 % Wirkung des Teils. Jede Stufe erlaubt einen Stern mehr.' },
-            { id: 'hospital', name: 'Lazarett',      icon: 'plus',    x: 215, y: 670, roof: '#e8e2d2', cross: true, fx: true,
+            { id: 'hospital', name: 'Lazarett',      icon: 'plus',    x: 215, y: 670, roof: '#e8e2d2', cross: true,
               desc: 'Von deinen Gefallenen (Angriff oder Verteidigung) kommen Verwundete hierher statt zu sterben (5 % pro Stufe, bis 60 %). Heile sie gegen Münzen – sie gehen in die Hauptstadt.' },
-            { id: 'shrine',   name: 'Tempelschrein', icon: 'temple',  x: 785, y: 670, roof: '#c9a54e', dome: true, fx: true, desc: 'Verstärkt den Bonus aller deiner Tempel: Münzen, Truppen und Gems.' },
-            { id: 'wall',     name: 'Mauer',         icon: 'defense', x: 715, y: 815, roof: '#6b6456', gate: true, fx: true,
+            { id: 'shrine',   name: 'Tempelschrein', icon: 'temple',  x: 785, y: 670, roof: '#c9a54e', dome: true, desc: 'Verstärkt den Bonus aller deiner Tempel: Münzen, Truppen und Gems.' },
+            { id: 'wall',     name: 'Mauer',         icon: 'defense', x: 715, y: 815, roof: '#6b6456', gate: true,
               desc: 'Stärkt die Verteidigung aller deiner Basen: +2 % pro Stufe (Stufe 25: +50 %). Beispiel: 10 Mio. Verteidigung und Mauer Stufe 5 ergeben 11 Mio.' },
-            { id: 'barracks', name: 'Kaserne',       icon: 'troops',  fx: true,
+            { id: 'barracks', name: 'Kaserne',       icon: 'troops',
               desc: 'Bildet Truppen aus: +2 % Truppenproduktion in allen deinen Basen pro Stufe (Stufe 25: +50 %).' },
-            { id: 'treasury', name: 'Schatzkammer',  icon: 'coin',    fx: true,
+            { id: 'treasury', name: 'Schatzkammer',  icon: 'coin',  
               desc: 'Verwaltet das Gold des Reiches: +2 % Münzproduktion in allen deinen Basen pro Stufe (Stufe 25: +50 %).' },
-            { id: 'watch',    name: 'Späherturm',    icon: 'scout',   fx: true,
+            { id: 'watch',    name: 'Späherturm',    icon: 'scout', 
               desc: 'Bildet Späher aus: deine Späher sind pro Stufe 4 % schneller unterwegs (Stufe 25: doppelt so schnell).' },
-            { id: 'heroes',   name: 'Heldenhalle',   icon: 'profile', x: 285, y: 815, roof: '#7a2e2a', fx: true,
+            { id: 'heroes',   name: 'Heldenhalle',   icon: 'profile', x: 285, y: 815, roof: '#7a2e2a',
               desc: 'Hier leben deine Helden. Ein Held zieht mit einem Angriff mit und gibt ihm seinen Bonus. Jede Stufe hebt die Höchststufe der Helden um 2; Stufe 1, 5 und 10 schalten je einen Helden frei.' }
         ];
         var CITY_MAX_LEVEL = 25, CITY_GEMS_PER_MIN = 1;
@@ -8965,7 +8815,6 @@ body.has-panel .mapctl{display:none}
         }
         function cityBlocker(id) {                        // why this building can't be upgraded right now (or null)
             const c = loadCity(), lvl = c.levels[id];
-            if (!cityDef(id).fx) return 'Kommt in einem späteren Update – noch nicht baubar.';
             if (lvl >= cityMaxLevel(id)) return 'Maximale Stufe erreicht.';
             if (c.build) return c.build.id === id ? 'Wird gerade gebaut.' : 'Der Bauarbeiter ist beschäftigt (' + cityDef(c.build.id).name + ').';
             return null;
@@ -9139,7 +8988,7 @@ body.has-panel .mapctl{display:none}
                 note.innerHTML = icon('hourglass') + '<span style="flex:1">Ausbau auf Stufe ' + c.build.to + ' · noch <b id="cityBNoteTime"></b><div class="city-progress" style="margin-top:6px"><i></i></div></span>';
             } else {
                 note.className = 'notice';
-                note.innerHTML = icon('info') + '<span>' + (def.fx ? cityEffectText(id, lvl) : 'Die Wirkung dieses Gebäudes kommt in einem späteren Update.') + '</span>';
+                note.innerHTML = icon('info') + '<span>' + cityEffectText(id, lvl) + '</span>';
             }
             const cost = lvl < cityMaxLevel(id) ? cityCost(id, lvl) : 0;
             document.getElementById('cityBStats').innerHTML = lvl < cityMaxLevel(id)
@@ -10669,13 +10518,10 @@ body.has-panel .mapctl{display:none}
             backBtn.style.display = 'none';
         }
 
-        // Multi-Angriff: pick one of YOUR OWN bases, then tap up to 10
+        // Multi-Angriff: pick one of YOUR OWN bases, then tap any number of
         // enemy/neutral bases on the map to select them as targets, then
         // confirm once to launch all of them at the same time (troops
-        // split evenly across the chosen targets). Costs 1 gem per use -
-        // only available on the player's own bases while this is being
-        // tested, never on bot bases. No cap on target count anymore.
-        const MULTI_ATTACK_MAX_TARGETS = Infinity;
+        // split evenly across the chosen targets). Costs 1 gem per use.
         const MULTI_ATTACK_GEM_COST = 1;
         // "Truppen sammeln": for 1 gem, pulls every OTHER owned base within
         // this radius (world units) that still has troops back home to the
@@ -10884,8 +10730,6 @@ body.has-panel .mapctl{display:none}
                 upgradeBtn.style.display = 'inline-block';
                 sendBtn.style.display = 'inline-block';
                 sendBtn.disabled = troopsHere <= 0 || ownedIslands.size <= 1;
-                // Testing only - multi-attack is a player-only feature,
-                // bots never get it.
                 multiAttackBtn.style.display = 'inline-block';
                 multiAttackBtn.disabled = troopsHere <= 0 || gems < MULTI_ATTACK_GEM_COST;
                 recallBtn.style.display = 'inline-block';
@@ -11341,10 +11185,6 @@ body.has-panel .mapctl{display:none}
                 if (idx !== -1) {
                     multiAttackTargets.splice(idx, 1); // tap again to deselect
                 } else {
-                    if (multiAttackTargets.length >= MULTI_ATTACK_MAX_TARGETS) {
-                        flashHint('Maximal ' + MULTI_ATTACK_MAX_TARGETS + ' Ziele gleichzeitig.', 2500);
-                        return;
-                    }
                     multiAttackTargets.push(island.id);
                 }
                 updateMultiAttackBar();
@@ -11417,7 +11257,7 @@ body.has-panel .mapctl{display:none}
         // Starts with the first tap (browsers only allow sound after one), remembers on/off.
         const Music = (() => {
             // sound: 'all' (music + effects), 'sfx' (effects only), 'off'. Older saves only knew music on/off.
-            let mode = store.get('openWaterSound') || (store.get('openWaterMusic') === '0' ? 'sfx' : 'all');
+            let mode = store.get('openWaterSound') || 'all';
             let ac = null, master = null, fx = null, verb = null, timer = null, nextAt = 0, step = 0, bar = 0, on = mode === 'all';
             const BPM = 70, EIGHTH = 60 / BPM / 2;
             const hz = m => 440 * Math.pow(2, (m - 69) / 12);
@@ -11617,11 +11457,6 @@ body.has-panel .mapctl{display:none}
         })();
 
         exploreOwned();                          // Nebel: the land around every own base is always known
-        if (store.get('openWaterGift') !== 'g1' && playerIslandId !== null && islandById[playerIslandId]) {   // one-time test gift: 1 Mrd. coins + troops, the whole map uncovered
-            coins += 1e9; islandTroops[playerIslandId] = (islandTroops[playerIslandId] || 0) + 1e9;
-            revealAround(0, 0, FRAME_HALF * 1.5, false);
-            store.set('openWaterGift', 'g1'); saveGame(); updateHud();
-        }
         if (store.get('openWaterCoinsMax2') !== '1') {        // one-time test gift: coins topped up to 9.999.999.999.999.999.999.999 again
             coins = Math.max(coins, 9999999999999999999999); store.set('openWaterCoinsMax2', '1'); saveGame(); updateHud();
         }
@@ -11639,10 +11474,6 @@ body.has-panel .mapctl{display:none}
         if (store.get('openWaterFogOff') !== '1') {          // one-time: the whole map uncovered (no fog to test with)
             revealAround(0, 0, FRAME_HALF * 1.5, false);
             store.set('openWaterFogOff', '1'); saveGame(); requestRender();
-        }
-        if (store.get('openWaterGift2') !== 'g2' && playerIslandId !== null && islandById[playerIslandId]) {   // one-time test gift: 999 Mrd. coins + 999 Mrd. troops in the capital
-            coins = Math.max(coins, 999e9); islandTroops[playerIslandId] = Math.max(islandTroops[playerIslandId] || 0, 999e9);
-            store.set('openWaterGift2', 'g2'); saveGame(); updateHud();
         }
         if (store.get('openWaterGift3') !== 'g3' && playerIslandId !== null && islandById[playerIslandId]) {   // one-time test gift after the reset: 999 Mrd. coins + troops; Emma leaves the player's island
             coins = Math.max(coins, 999e9); islandTroops[playerIslandId] = Math.max(islandTroops[playerIslandId] || 0, 999e9);
