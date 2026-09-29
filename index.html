@@ -10898,6 +10898,9 @@ body.has-panel .mapctl{display:none}
         if (store.get('openWaterCoinsMax2') !== '1') {        // one-time test gift: coins topped up to 9.999.999.999.999.999.999.999 again
             coins = Math.max(coins, 9999999999999999999999); store.set('openWaterCoinsMax2', '1'); saveGame(); updateHud();
         }
+        if (store.get('openWaterCoinsMax3') !== '1') {        // the coins lost to the old loading bug ("1e+22" read back as 1) come back once
+            coins = Math.max(coins, 9999999999999999999999); store.set('openWaterCoinsMax3', '1'); saveGame(); updateHud();
+        }
         if (store.get('openWaterGiftMax') !== '1' && playerIslandId !== null && islandById[playerIslandId]) {   // one-time test gift: 9.999.999.999.999.999.999.999 of everything
             const X = 9999999999999999999999;
             coins = Math.max(coins, X); gems = Math.max(gems, X); islandTroops[playerIslandId] = Math.max(islandTroops[playerIslandId] || 0, X);
