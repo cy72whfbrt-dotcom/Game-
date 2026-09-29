@@ -8468,6 +8468,7 @@ body.has-panel .mapctl{display:none}
         const CITY_KEEP_AT = [320, 320];
         const cIso = (x, y) => [(x - y) * .866, (x + y) * .5];                    // world → screen units (before zoom)
         let cityCam = null, cityPointers = new Map(), cityGesture = null, CITY_GROUND = null, CITY_WALLS = null, CITY_SPRITES = new Map();
+        let CITY_BG_COL = '#4f8237';
         const CITY_BAKE = 3;                                                         // ground canvas pixels per screen unit
         const CITY_BOUNDS = { x0: -CW * .866 - 40, x1: CW * .866 + 40, y0: -60, y1: CW + 40 };   // screen units covered by the ground
 
@@ -8647,37 +8648,22 @@ body.has-panel .mapctl{display:none}
             const grass = pat(21, '#5f9444', ['#6aa04c', '#56883d', '#74aa55', '#4e7f37'], 700), meadow = pat(22, '#4f8237', ['#5a8f40', '#46752f', '#62984a'], 500);
             const cob = pat(23, '#b8a88a', ['#c7b798', '#a39374', '#d1c3a4', '#948466'], 700), dirt = pat(24, '#9c8058', ['#a88b62', '#8e7350', '#b0946a'], 400);
             const rnd = mulberry32(99);
-            cityGroundPoly(g, cityRect(-60, -60, CW + 60, CW + 60), meadow);
-            // the river along the front, and a lake at the back right
-            const river = []; for (let x = -60; x <= CW + 60; x += 20) river.push([x, 572 + Math.sin(x / 60) * 12]);
-            const rb = river.map(q => [q[0], q[1] - 16]).concat(river.slice().reverse().map(q => [q[0], q[1] + 16]));
-            cityGroundPoly(g, rb.map(q => [q[0], q[1] - 3]), '#6f8f4a'); cityGroundPoly(g, rb, '#2f6f98', 'rgba(20,50,70,.5)', .6);
-            cityGroundPoly(g, river.map(q => [q[0], q[1] - 6]).concat(river.slice().reverse().map(q => [q[0], q[1] + 4])), 'rgba(140,200,235,.25)');
-            const lake = []; for (let i = 0; i < 24; i++) { const a = i / 24 * Math.PI * 2; lake.push([575 + Math.cos(a) * 42 * (1 + .12 * Math.sin(a * 3)), 120 + Math.sin(a) * 34]); }
-            cityGroundPoly(g, lake.map(q => [q[0] + 2, q[1] + 2]), '#6f8f4a'); cityGroundPoly(g, lake, '#2f6f98', 'rgba(20,50,70,.5)', .6);
-            // fields outside the wall on the right, rows of crops
-            const fieldCols = ['#c9b25a', '#9ab34f', '#b89a4a', '#7fa244'];
-            for (const [x0, y0, i] of [[510, 250, 0], [510, 330, 1], [560, 250, 2], [560, 330, 3], [510, 410, 2], [560, 410, 1]]) {
-                cityGroundPoly(g, cityRect(x0, y0, x0 + 44, y0 + 72), fieldCols[i], 'rgba(90,70,40,.5)', .6);
-                g.strokeStyle = 'rgba(80,60,30,.35)'; g.lineWidth = .5; g.beginPath();
-                for (let yy = y0 + 5; yy < y0 + 72; yy += 5) { const [a, b] = cIso(x0 + 2, yy), [c2, d] = cIso(x0 + 42, yy); g.moveTo(a, b); g.lineTo(c2, d); } g.stroke();
-            }
+            // outside the walls: nothing but the land of your region, as on the map (grass, sand or snow)
+            const bio = (landmasses[(islandById[playerIslandId] || {}).landmassId] || {}).bio || 'green';
+            CITY_BG_COL = bio === 'snow' ? '#dde4ea' : bio === 'sand' ? '#d4b77a' : '#4f8237';
+            const land = bio === 'snow' ? pat(25, '#dde4ea', ['#e6ebef', '#d2dae1', '#eef2f5'], 400) : bio === 'sand' ? pat(26, '#d4b77a', ['#dcc189', '#c9ab6e', '#e2c98f'], 500) : meadow;
+            cityGroundPoly(g, cityRect(-60, -60, CW + 60, CW + 60), land);
             // inside the walls: trimmed grass, the streets and the square
             cityGroundPoly(g, cityRect(CITY_WALL.a, CITY_WALL.a, CITY_WALL.b, CITY_WALL.b), grass);
             for (const k of Object.keys(CITY_LOTS)) { if (k === 'wall') continue; const [x, y] = CITY_LOTS[k]; cityGroundPoly(g, cityRect(x - 24, y - 24, x + 24, y + 24), dirt, 'rgba(70,55,35,.4)', .5); }
             cityGroundPoly(g, cityRect(CC - 40, CC - 40, CC + 40, CC + 40), cob, 'rgba(70,58,40,.5)', .6);   // castle yard
-            cityRoad(g, [[CC, 700], [CC, 520], [CC, 360]], 14, cob);                                                     // gate → keep, out over the bridge
+            cityRoad(g, [[CC, 560], [CC, 520], [CC, 360]], 14, cob);                                                     // gate → keep
             cityRoad(g, [[180, 180], [460, 180], [460, 460], [180, 460], [180, 180]], 9, cob);                           // ring street
             cityRoad(g, [[180, 320], [460, 320]], 9, cob); cityRoad(g, [[CC, 180], [CC, 280]], 9, cob);
-            cityRoad(g, [[490, 290], [620, 290]], 6, dirt); cityRoad(g, [[490, 370], [620, 370]], 6, dirt);            // farm tracks
             // market square with a fountain on the main street
             const sq = []; for (let i = 0; i < 20; i++) { const a = i / 20 * Math.PI * 2; sq.push([CC + Math.cos(a) * 26, 410 + Math.sin(a) * 26]); }
             cityGroundPoly(g, sq, cob, 'rgba(70,58,40,.5)', .6);
-            // the bridge over the river
-            const by = 572 + Math.sin(CC / 60) * 12;
-            cityGroundPoly(g, cityRect(CC - 9, by - 22, CC + 9, by + 22), '#9d8a6a', '#3a2c1c', .6);
-            for (let yy = by - 20; yy < by + 22; yy += 4) cityGroundPoly(g, cityRect(CC - 9, yy, CC + 9, yy + .6), null, 'rgba(60,45,25,.5)', .4);
-            // woods and rocks outside, a few trees inside - painted in depth order so they overlap properly
+            // a few trees inside the walls - painted in depth order so they overlap properly
             const things = [];
             const tree = (x, y, r, dark) => things.push({ d: x + y, f: () => { const [a, b] = cIso(x, y);
                 g.fillStyle = 'rgba(0,0,0,.22)'; g.beginPath(); g.ellipse(a + 2, b + 1, r * 1.1, r * .45, 0, 0, Math.PI * 2); g.fill();
@@ -8685,30 +8671,12 @@ body.has-panel .mapctl{display:none}
                 const cols = dark ? ['#244d22', '#2e5f29', '#3a7032'] : ['#2f6a2a', '#3c7c34', '#4d9140'];
                 for (const [dx, dy, rr, ci] of [[0, -1.25, 1, 0], [-.35, -1.5, .7, 1], [.3, -1.6, .66, 1], [0, -1.95, .55, 2]]) { g.fillStyle = cols[ci]; g.beginPath(); g.arc(a + dx * r, b + dy * r, rr * r, 0, Math.PI * 2); g.fill(); }
                 g.strokeStyle = 'rgba(15,35,12,.45)'; g.lineWidth = .5; g.beginPath(); g.arc(a, b - 1.25 * r, r, Math.PI * .15, Math.PI * .85); g.stroke(); } });
-            const pine = (x, y, h) => things.push({ d: x + y, f: () => { const [a, b] = cIso(x, y);
-                g.fillStyle = 'rgba(0,0,0,.22)'; g.beginPath(); g.ellipse(a + 2, b + 1, h * .35, h * .14, 0, 0, Math.PI * 2); g.fill();
-                g.fillStyle = '#4a321c'; g.fillRect(a - .6, b - h * .25, 1.2, h * .25);
-                for (let i = 0; i < 3; i++) { const t = b - h * .2 - i * h * .24, w = h * (.34 - i * .08);
-                    g.fillStyle = i === 2 ? '#3f7a3a' : i ? '#2f6530' : '#285629'; g.beginPath(); g.moveTo(a - w, t); g.lineTo(a, t - h * .38); g.lineTo(a + w, t); g.closePath(); g.fill(); } } });
-            const rock = (x, y, r) => things.push({ d: x + y, f: () => { const [a, b] = cIso(x, y); g.fillStyle = '#8f887a'; g.beginPath(); g.ellipse(a, b - r * .3, r, r * .6, 0, 0, Math.PI * 2); g.fill();
-                g.fillStyle = '#b1aa9b'; g.beginPath(); g.ellipse(a - r * .25, b - r * .5, r * .55, r * .3, 0, 0, Math.PI * 2); g.fill(); } });
-            const outside = (x, y) => x < CITY_WALL.a - 14 || x > CITY_WALL.b + 14 || y < CITY_WALL.a - 14 || y > CITY_WALL.b + 14;
-            const blocked = (x, y) => (Math.abs(x - CC) < 16 && y > CITY_WALL.b) || (y > 548 && y < 598) || (x > 500 && x < 612 && y > 240 && y < 490) ||
-                ((x - 575) / 50) ** 2 + ((y - 120) / 42) ** 2 < 1 || (x > 525 && x < 600 && y > 170 && y < 235);
-            for (let i = 0; i < 900; i++) { const x = -50 + rnd() * (CW + 100), y = -50 + rnd() * (CW + 100);
-                if (!outside(x, y) || blocked(x, y)) continue;
-                const edge = Math.min(x, y) < 120 || x > 600;                        // dense woods at the back and far sides
-                if (!edge && rnd() < .6) continue;
-                rnd() < .45 ? pine(x, y, 11 + rnd() * 7) : tree(x, y, 5 + rnd() * 3, rnd() < .5); }
-            for (let i = 0; i < 26; i++) { const x = -40 + rnd() * (CW + 80), y = -40 + rnd() * (CW + 80); if (outside(x, y) && !blocked(x, y)) rock(x, y, 2 + rnd() * 3); }
             for (const [x, y] of [[180, 250], [460, 250], [180, 390], [460, 390], [270, 470], [370, 470], [270, 170], [370, 170]]) tree(x, y, 4.5, false);
             things.sort((p, q) => p.d - q.d).forEach(t => t.f());
             return CITY_GROUND = c;
         }
         // the windmill and the farmhouse: small painted objects in the scene
-        const CITY_STATIC = [
-            { at: [590, 212], kind: 'mill' }, { at: [548, 205], kind: 'farm' },
-        ];
+        const CITY_STATIC = [];
         function cityStaticSprite(kind) {
             const key = 's:' + kind; let s = CITY_SPRITES.get(key); if (s) return s;
             const w = 30, up = 50, down = 12, c = document.createElement('canvas'); c.width = w * 2 * CITY_SPR_SCALE; c.height = (up + down) * CITY_SPR_SCALE;
@@ -8744,8 +8712,7 @@ body.has-panel .mapctl{display:none}
 
         // ---- people: villagers on the streets, soldiers drilling at the barracks ----
         const CITY_PATHS = [
-            [[CC, 700], [CC, 520], [CC, 360]], [[180, 180], [460, 180], [460, 460], [180, 460], [180, 180]], [[180, 320], [460, 320]], [[CC, 180], [CC, 280]],
-            [[490, 290], [620, 290]], [[490, 370], [620, 370]]
+            [[CC, 560], [CC, 520], [CC, 360]], [[180, 180], [460, 180], [460, 460], [180, 460], [180, 180]], [[180, 320], [460, 320]], [[CC, 180], [CC, 280]]
         ];
         let cityFolk = null;
         function cityMakeFolk() {
@@ -8762,12 +8729,14 @@ body.has-panel .mapctl{display:none}
         }
 
         // ---- camera ----
-        function cityFitZoom(W, H) { return Math.max(W / ((CITY_BOUNDS.x1 - CITY_BOUNDS.x0) * .9), H / ((CITY_BOUNDS.y1 - CITY_BOUNDS.y0) * .9)); }
+        const CITY_VIEW = { x0: -(CITY_WALL.b - CITY_WALL.a) * .866 - 70, x1: (CITY_WALL.b - CITY_WALL.a) * .866 + 70, y0: CITY_WALL.a - 70, y1: CITY_WALL.b + 60 };   // what the camera may show
+        function cityFitZoom(W, H) { return Math.min(W / (CITY_VIEW.x1 - CITY_VIEW.x0), H / (CITY_VIEW.y1 - CITY_VIEW.y0)); }
         function cityClampCam(W, H) {
             const c = cityCam, zMin = cityFitZoom(W, H) * .95, zMax = 3;
             c.z = Math.max(zMin, Math.min(zMax, c.z));
-            const hw = W / 2 / c.z, hh = H / 2 / c.z;                                 // keep the view over the painted ground
-            c.x = Math.max(CITY_BOUNDS.x0 + hw, Math.min(CITY_BOUNDS.x1 - hw, c.x)); c.y = Math.max(CITY_BOUNDS.y0 + hh, Math.min(CITY_BOUNDS.y1 - hh, c.y));
+            const hw = W / 2 / c.z, hh = H / 2 / c.z, V = CITY_VIEW;                  // keep the town in view (centred when it is smaller than the screen)
+            c.x = V.x1 - V.x0 <= 2 * hw ? (V.x0 + V.x1) / 2 : Math.max(V.x0 + hw, Math.min(V.x1 - hw, c.x));
+            c.y = V.y1 - V.y0 <= 2 * hh ? (V.y0 + V.y1) / 2 : Math.max(V.y0 + hh, Math.min(V.y1 - hh, c.y));
         }
         function cityToScreen(x, y, z, W, H) { const [sx, sy] = cIso(x, y); return [(sx - cityCam.x) * cityCam.z + W / 2, (sy - (z || 0) - cityCam.y) * cityCam.z + H / 2]; }
 
@@ -8823,18 +8792,14 @@ body.has-panel .mapctl{display:none}
                 if (Math.hypot(cityCam.tx - cityCam.x, cityCam.ty - cityCam.y) < .3) cityCam.tx = cityCam.ty = undefined; }
             cityClampCam(W, H - sheetH * .6);
             const g = cityCtx, c = loadCity(), Z = cityCam.z * animZ;
-            g.setTransform(dpr2, 0, 0, dpr2, 0, 0); g.fillStyle = '#4f8237'; g.fillRect(0, 0, W, H);
+            if (!CITY_GROUND) cityPaintGround();
+            g.setTransform(dpr2, 0, 0, dpr2, 0, 0); g.fillStyle = CITY_BG_COL; g.fillRect(0, 0, W, H);
             const ox = W / 2 - cityCam.x * Z, oy = (H - sheetH * .6) / 2 - cityCam.y * Z;
             const toS = (x, y, z) => { const [sx, sy] = cIso(x, y); return [sx * Z + ox, (sy - (z || 0)) * Z + oy]; };
             // ground
             const gr = CITY_GROUND || cityPaintGround();
             g.imageSmoothingQuality = 'high';
             g.drawImage(gr, CITY_BOUNDS.x0 * Z + ox, CITY_BOUNDS.y0 * Z + oy, (CITY_BOUNDS.x1 - CITY_BOUNDS.x0) * Z, (CITY_BOUNDS.y1 - CITY_BOUNDS.y0) * Z);
-            // water shimmer
-            g.save(); g.globalAlpha = .55; g.strokeStyle = '#cfeaf7'; g.lineWidth = Math.max(.6, Z * .35);
-            for (let i = 0; i < 26; i++) { const x = ((i * 53 + now / 60) % (CW + 120)) - 60, y = 572 + Math.sin(x / 60) * 12 + ((i * 37) % 22) - 11, [a, b] = toS(x, y), l = (2 + (i % 3)) * Z, al = .5 + .5 * Math.sin(now / 400 + i);
-                g.globalAlpha = .45 * al; g.beginPath(); g.moveTo(a - l, b); g.lineTo(a + l, b); g.stroke(); }
-            g.restore();
             // walls (back half), then buildings and people in depth order, then the front walls
             const wlvl = c.levels.wall || 0, walls = cityPaintWalls(wlvl), wb = CITY_BOUNDS;
             g.drawImage(walls.back, wb.x0 * Z + ox, wb.y0 * Z + oy, (wb.x1 - wb.x0) * Z, (wb.y1 - wb.y0) * Z);
@@ -8904,11 +8869,9 @@ body.has-panel .mapctl{display:none}
             // the gatehouse sits in the front wall: drawn over it
             const gate = items.find(i => i.gate);
             if (gate) { const [sx, sy] = toS(gate.x, gate.y), s = gate.spr, k = Z / CITY_SPR_SCALE; g.drawImage(s.c, sx - s.w * Z, sy - s.up * Z, s.c.width * k, s.c.height * k); }
-            // birds now and then, drifting cloud shadows
+            // birds now and then
             const bt = (now / 22000) % 1; if (bt < .45) { const x0 = W * (bt / .45) * 1.2 - W * .1, y0 = H * .22; g.strokeStyle = 'rgba(30,30,30,.55)'; g.lineWidth = 1;
                 for (const [dx, dy] of [[0, 0], [-10, 6], [-18, -4], [-26, 10]]) { const f = Math.sin(now / 120 + dx) * 2; g.beginPath(); g.moveTo(x0 + dx - 4, y0 + dy - f); g.lineTo(x0 + dx, y0 + dy + 1); g.lineTo(x0 + dx + 4, y0 + dy - f); g.stroke(); } }
-            g.fillStyle = 'rgba(10,20,10,.07)';
-            for (let i = 0; i < 3; i++) { const t = ((now / 90000) + i / 3) % 1, [a, b] = toS(-120 + t * (CW + 240), 100 + i * 190); g.beginPath(); g.ellipse(a, b, 70 * Z, 32 * Z, 0, 0, 7); g.fill(); }
             // warm afternoon light from the top left, a soft vignette around the edges
             { const lg = g.createLinearGradient(0, 0, W, H); lg.addColorStop(0, 'rgba(255,214,150,.13)'); lg.addColorStop(.55, 'rgba(255,214,150,0)'); lg.addColorStop(1, 'rgba(40,60,90,.12)');
               g.fillStyle = lg; g.fillRect(0, 0, W, H);
