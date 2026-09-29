@@ -9724,6 +9724,17 @@ body.has-panel .mapctl{display:none}
             }
             store.set('openWaterEmmaOnlyMine', '2'); saveBotState(); refreshTerritory(); saveGame(); requestRender();
         }
+        if (store.get('openWaterEmmaStrong') !== '1') {        // one-time test: Emma gets strong enough to be a real opponent for the test gifts
+            const b = loadBotState().bot25, own = [...botOwnedIslands.bot25], cap = botCapitalOf('bot25');
+            for (const id of own) { islandLevels[id] = Math.max(islandLevels[id] || 1, 50); islandTroops[id] = Math.max(islandTroops[id] || 0, id === cap ? 3e21 : 1e21); }
+            botCoins.bot25 = Math.max(botCoins.bot25 || 0, 1e21);
+            if (b.lvl < 100) { b.sp += 100 - b.lvl; b.lvl = 100; }
+            for (const k of Object.keys(b.equip)) b.equip[k] = Math.max(b.equip[k], 300);
+            for (const k of Object.keys(b.items)) b.items[k][RARITY_DEFS.length - 1] = Math.max(1, b.items[k][RARITY_DEFS.length - 1]);
+            b.salvage = Math.max(b.salvage, 12 * ITEM_MAX_LEVEL); b.gems = Math.max(b.gems, 1e6);
+            addBotXp('bot25', 0);                                  // spends the new skill points the way her style does
+            store.set('openWaterEmmaStrong', '1'); saveBotState(); saveGame(); requestRender();
+        }
         renderActiveMarches();
         if (bonusGrantedAtBoot) saveGame();      // a reload right after the first start must not lose the grant
         updateZoomBounds(); clampCamera();
