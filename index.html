@@ -210,6 +210,14 @@ b,strong{font-weight:600}
 .marker-sheet[hidden]{display:none}
 .field-lines{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-3)} .field-lines b{color:var(--tx-1);text-align:right}
 .field-sheet .marker-head b{display:inline-flex;align-items:center;gap:6px} .field-sheet .marker-head .icon{width:16px;height:16px} .field-sheet .btn{justify-content:center}
+.logGear{margin-top:8px;padding-top:8px;border-top:1px solid var(--line-1);display:grid;gap:6px}
+.logGearHead{font:600 var(--fs-11)/1.2 var(--font-ui);color:var(--tx-2)}
+.logGearItems{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+.gslot{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0} .gslot .tile{cursor:default;width:100%} .gslot .tile .lvl{font-size:9px}
+.gslot small{font:500 9px/1.1 var(--font-ui);color:var(--tx-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.logGearHeroes{display:grid;gap:4px} .ghero{display:flex;align-items:center;gap:6px;font:500 var(--fs-11)/1.2 var(--font-ui);color:var(--tx-2)}
+.ghero .hero-ic{width:24px;height:24px;flex:none} .ghero .hero-ic .icon{width:14px;height:14px} .ghero b{display:block;color:var(--tx-1);font-weight:600} .ghero small{color:var(--tx-3);font-size:10px}
+.logGearMeta{font:500 10px/1.35 var(--font-ui);color:var(--tx-3)}
 .logLine.buff.malus span:last-child{color:#ff8d82}
 .logSrc{display:block;font:500 10px/1.25 var(--font-ui);color:var(--tx-3);letter-spacing:0;text-transform:none}
 .army-hint{font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-3)} .army-inc{font-style:normal;color:#8cc0ff;font-weight:600}
@@ -2650,6 +2658,20 @@ body.has-panel .mapctl{display:none}
             out[0][1] += effectiveDefense(island) - out.reduce((a, q) => a + q[1], 0);        // rounding goes to the base line
             return out;
         }
+        // what each side brought: level, title, the 4 equipped items, heroes and the city - kept with the report
+        function fighterSnapshot(who, heroIds) {
+            if (!who) return null;
+            const slots = Object.keys(EQUIPMENT_DEFS);
+            if (who === 'player') return { lvl: playerLvl, title: (titleOf('player') || {}).name || null,
+                items: slots.map(k => { const it = equippedItems[k] && inventory[equippedItems[k]]; return it ? [k, it.rarity, it.level, it.stars || 0] : [k, -1, 0, 0]; }),
+                forge: slots.map(k => equipment[k] || 0), heroes: [...new Set((heroIds || []).filter(Boolean))].map(id => [id, heroLevel(id), heroRarity(id)]),
+                skills: [skills.attack || 0, skills.defense || 0], city: [cityLevelSafe('wall'), cityLevelSafe('hospital'), cityLevelSafe('heroes')] };
+            const b = loadBotState()[who]; if (!b) return null; const cl = botCityLevel(who);
+            return { lvl: b.lvl, title: (titleOf(who) || {}).name || null,
+                items: slots.map(k => { const it = botItem(b, k); return it ? [k, it.rarity, it.level, 0] : [k, -1, 0, 0]; }),
+                forge: slots.map(k => b.equip[k] || 0), heroes: heroIds === 'bot' && botHeroPct(who) ? [['sigrun', botHeroPct(who), 0]] : [],
+                skills: [b.skills.attack || 0, b.skills.defense || 0], city: [cl, cl, cl] };
+        }
         function attackParts(who, raw, bonus, total, hero) {
             const out = [];
             if (who === 'player') {
@@ -3401,7 +3423,7 @@ body.has-panel .mapctl{display:none}
             const sentLoss = won ? Math.min(attack.rawTroops, Math.round(losses * attack.rawTroops / Math.max(1, myTroops))) : 0;   // the losses are shared between sent and bonus troops
             const remaining = won ? Math.max(0, attack.rawTroops - sentLoss) : 0;
 
-            let defenderCasualties;
+            let defenderCasualties, enemyWounded = 0;
             let retreatSurvivors = 0, woundedAdded = 0;
 
             if (won) {
@@ -3422,6 +3444,7 @@ body.has-panel .mapctl{display:none}
                 revealAround(target.x, target.y, REVEAL_BASE, true);
                 coins += Math.round(totalStrength * rewardRate);
                 defenderCasualties = originalEnemyTroops;
+                if (targetOwner && targetOwner !== 'player') enemyWounded = botHospitalTake(targetOwner, originalEnemyTroops);   // the bot's Lazarett takes part of its fallen
                 if (target.type === 'temple' || target.type === 'megaTemple') {
                     // Starts (or restarts) this temple's hold streak - see
                     // templeHoldMultiplier(). Ready for a future PvP
@@ -3439,6 +3462,7 @@ body.has-panel .mapctl{display:none}
                 defenderCasualties = Math.min(originalEnemyTroops, myTroops);
                 if (targetOwner) {
                     islandTroops[target.id] = Math.max(0, (islandTroops[target.id] || 0) - defenderCasualties);
+                    if (targetOwner !== 'player') enemyWounded = botHospitalTake(targetOwner, defenderCasualties);
                 } else if (bossHere) {
                     bossHere.troops = Math.max(0, bossHere.troops - defenderCasualties);
                     saveBoss();
@@ -3501,7 +3525,8 @@ body.has-panel .mapctl{display:none}
                 defenderCasualties,
                 retreatSurvivors,
                 defenderName: targetOwner ? botById[targetOwner].name : null,
-                atkParts, defParts,
+                atkParts, defParts, enemyWounded,
+                atkGear: fighterSnapshot('player', [attack.hero, ...(attack.heroes || [])]), defGear: targetOwner && targetOwner !== 'player' ? fighterSnapshot(targetOwner) : null,
                 won,
                 remaining
             });
@@ -3623,6 +3648,7 @@ body.has-panel .mapctl{display:none}
             }
             if (playerInvolved && !won) statBump('defends');
             if (playerInvolved) defWounded = hospitalTake(won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops));   // your fallen defenders
+            else if (targetOwner) botHospitalTake(targetOwner, won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops));   // a bot defender's Lazarett too
             if (playerInvolved) {
                 const ribbon = () => spawnBattleFx(target.id, !won || capitalHolds, capitalHolds ? 'Hauptstadt hält' : won ? 'Basis verloren' : 'Verteidigt', capitalHolds ? 'Garnison gefallen' : won ? 'von ' + bot.name : bot.name + ' abgewehrt');
                 finishMapBattle(attack, { sourceId: source.id, targetId: target.id, atk: 'bot', def: 'mine', my: myTroops, myLoss: won ? Math.min(myTroops, Math.round(originalEnemyDefense * (1 - botMults(bot.id).shield / 100))) : myTroops,
@@ -3638,6 +3664,7 @@ body.has-panel .mapctl{display:none}
                     targetId: target.id,
                     myTroops,
                     atkRaw: attack.rawTroops, atkBonus: attack.attackBonus || 0, atkFallen, atkWounded, atkFled: fled, ...(parts || {}),
+                    atkGear: fighterSnapshot(bot.id, 'bot'), defGear: fighterSnapshot('player'),
                     enemyTroops: originalEnemyTroops,
                     enemyDefense: originalEnemyDefense,
                     wounded: defWounded,
@@ -6983,6 +7010,16 @@ body.has-panel .mapctl{display:none}
             const fmt1 = v => (v || 0).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
             const fmtM = v => Math.abs(v || 0) >= 1e6 ? fmtCompact(v || 0) : fmtNum(v || 0);   // meta lines: "987,7 Mio."
             const fmtD = v => Math.abs(v || 0) >= 1e8 ? fmtCompact(v || 0) : fmtNum(v || 0);   // detail cards
+            const gearHtml = g => { if (!g) return '';
+                const tiles = g.items.map((it, i) => { const d = EQUIPMENT_DEFS[it[0]], rd = RARITY_DEFS[it[1]];
+                    return '<span class="gslot"><span class="tile' + (rd ? '' : ' empty') + '"' + (rd ? ' data-r="' + rd.key + '"' : '') + ' title="' + d.name + (rd ? ' – ' + rd.label + ', Stufe ' + it[2] : ' – leer') + '">' + icon(d.icon) +
+                        (rd ? '<span class="lvl">' + it[2] + '</span>' + (it[3] ? '<span class="stars">' + icon('star').repeat(it[3]) + '</span>' : '') : '') + '</span></span>'; }).join('');
+                const forge = g.items.map((it, i) => g.forge[i] ? EQUIPMENT_DEFS[it[0]].name + ' ' + g.forge[i] : '').filter(Boolean).join(' · ');
+                const heroes = g.heroes.map(x => { const hd = heroById(x[0]), rd = RARITY_DEFS[x[2]] || RARITY_DEFS[0];
+                    return '<span class="ghero" style="--hc:' + (x[2] ? rd.color : hd.color) + '"><span class="hero-ic">' + icon(hd.icon) + '</span><span><b>' + hd.name + '</b><small>Stufe ' + x[1] + ' · ' + rd.label + '</small></span></span>'; }).join('');
+                return '<div class="logGear"><div class="logGearHead">Stufe ' + g.lvl + (g.title ? ' · Titel ' + escapeHtml(g.title) : '') + '</div>' +
+                    '<div class="logGearItems">' + tiles + '</div>' + (heroes ? '<div class="logGearHeroes">' + heroes + '</div>' : '') +
+                    '<div class="logGearMeta">' + (forge ? 'Schmiede: ' + forge + '<br>' : '') + 'Skill Angriff ' + g.skills[0] + ' · Verteidigung ' + g.skills[1] + '<br>Mauer ' + g.city[0] + ' · Lazarett ' + g.city[1] + ' · Heldenhalle ' + g.city[2] + '</div></div>'; };
             const partLines = (parts, first) => (parts || []).map((q, i) => '<div class="logLine' + (first && !i ? '' : q[1] < 0 ? ' buff malus' : ' buff') + '"><span>' + escapeHtml(q[0]) + (q[2] ? '<small class="logSrc">' + escapeHtml(q[2]) + '</small>' : '') + '</span><span>' + (first && !i ? '' : q[1] < 0 ? '−' : '+') + fmtD(Math.abs(q[1])) + '</span></div>').join('');   // each bonus with where it comes from
             combatLogListEl.innerHTML = combatLog.map(entry => {
                 T = id => (entry.names && entry.names[id]) || islandTitle(islandById[id]);
@@ -7023,6 +7060,7 @@ body.has-panel .mapctl{display:none}
                                 (entry.atkRaw !== undefined ? '<div class="logCasualty"><span>Gefallen</span><span>−' + fmtD(Math.max(0, entry.atkFallen - entry.atkWounded)) + '</span></div>' +
                                     (entry.atkWounded ? '<div class="logCasualty wounded"><span>Verwundet</span><span>' + fmtD(entry.atkWounded) + '</span></div>' : '') +
                                     (entry.atkFled ? '<div class="logLine"><span>Geflohen</span><span>' + fmtD(entry.atkFled) + '</span></div>' : '') : '') +
+                                gearHtml(entry.atkGear) +
                             '</div>' +
                             '<div class="logVsDivider">VS</div>' +
                             '<div class="logSide">' +
@@ -7034,6 +7072,7 @@ body.has-panel .mapctl{display:none}
                                 '<div class="logSum' + (entry.won ? '' : ' advantage') + '"><span>Gesamt</span><span>' + fmtD(defSum) + '</span></div>' +
                                 '<div class="logCasualty"><span>Gefallen</span><span>−' + fmtD(Math.max(0, fallen - (entry.wounded || 0))) + '</span></div>' +
                                 (entry.wounded ? '<div class="logCasualty wounded"><span>Verwundet</span><span>' + fmtD(entry.wounded) + '</span></div>' : '') +
+                                gearHtml(entry.defGear) +
                             '</div>' +
                         '</div>' +
                         (entry.wounded ? '<div class="logRetreat logWounded">' + fmtNum(entry.wounded) + ' Verwundete gehen ins Lazarett – heile sie in der Stadt</div>' : '') +
@@ -7074,6 +7113,7 @@ body.has-panel .mapctl{display:none}
                             '<div class="logCasualty"><span>Gefallen</span><span>−' + fmtD(entry.attackerCasualties || 0) + '</span></div>' +
                             (entry.wounded ? '<div class="logCasualty wounded"><span>Verwundet</span><span>' + fmtD(entry.wounded) + '</span></div>' : '') +
                             (entry.lossSaved ? '<div class="logLine buff"><span>Schild −' + Math.round(entry.lossReductionPct) + ' %</span><span>+' + fmtD(entry.lossSaved) + '</span></div>' : '') +
+                            gearHtml(entry.atkGear) +
                         '</div>' +
                         '<div class="logVsDivider">VS</div>' +
                         '<div class="logSide">' +
@@ -7083,12 +7123,15 @@ body.has-panel .mapctl{display:none}
                               : '<div class="logLine"><span>Verteidigung</span><span>' + fmtD(entry.enemyDefense) + '</span></div>' +
                                 '<div class="logLine buff"><span>Verteidigung-Buff</span><span>+' + fmtD(entry.defenseBuff) + '</span></div>') +
                             '<div class="logSum' + (defTotal > atkTotal ? ' advantage' : '') + '"><span>Gesamt</span><span>' + fmtD(defTotal) + '</span></div>' +
-                            '<div class="logCasualty"><span>Gefallen</span><span>−' + fmtD(entry.defenderCasualties || 0) + '</span></div>' +
+                            '<div class="logCasualty"><span>Gefallen</span><span>−' + fmtD(Math.max(0, (entry.defenderCasualties || 0) - (entry.enemyWounded || 0))) + '</span></div>' +
+                            (entry.enemyWounded ? '<div class="logCasualty wounded"><span>Verwundet</span><span>' + fmtD(entry.enemyWounded) + '</span></div>' : '') +
+                            gearHtml(entry.defGear) +
                         '</div>' +
                     '</div>' +
                     (entry.attackGoldRate ? '<div class="logGold">Angriff: Gold +' + fmt1(entry.attackGoldRate) + ' pro getöteter Truppe</div>' : '') +
                     (!entry.won && entry.retreatSurvivors ? '<div class="logRetreat">' + fmtNum(entry.retreatSurvivors) + ' Truppen konnten fliehen und kehren zurück</div>' : '') +
                     (entry.wounded ? '<div class="logRetreat logWounded">' + fmtNum(entry.wounded) + ' Verwundete gehen ins Lazarett – heile sie in der Stadt</div>' : '') +
+                    (entry.enemyWounded ? '<div class="logRetreat logWounded">' + escapeHtml(entry.defenderName || 'Der Gegner') + ' bringt ' + fmtNum(entry.enemyWounded) + ' Verwundete ins Lazarett</div>' : '') +
                     '</details>';
                 return logRowHtml(entry.won ? 'win' : 'loss', entry.won ? 'level' : 'losses',
                     logBadge(entry.won ? 'win' : 'loss', entry.won ? 'Sieg' : 'Niederlage') + T(entry.targetId),
