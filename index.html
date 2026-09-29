@@ -675,7 +675,7 @@ body.has-panel .mapctl{display:none}
 .rankPos{font:600 var(--fs-13)/1 var(--font-display);color:var(--tx-3);text-align:center}
 .rankRow:nth-child(1) .rankPos{color:var(--gold-200)} .rankRow:nth-child(2) .rankPos{color:#c9ced6} .rankRow:nth-child(3) .rankPos{color:#c88a55}
 .rankDot{width:22px;height:22px;border-radius:var(--r-xs);display:grid;place-items:center;border:1px solid rgba(255,255,255,.15);box-shadow:inset 0 0 0 1px rgba(0,0,0,.4)}
-.rankDot .icon{width:14px;height:14px;color:#fff}
+.rankDot .icon{width:14px;height:14px;color:#fff} .rankCrest{width:16px;height:16px;display:block}
 .rankName{display:flex;align-items:center;min-width:0;font:600 var(--fs-13)/1.2 var(--font-ui);color:var(--tx-1);white-space:nowrap}
 .rankName-t{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}   /* only the name truncates, the DU tag stays whole */
 .rankName .tag{flex:none}
@@ -2444,7 +2444,7 @@ body.has-panel .mapctl{display:none}
             { id: 'bot30', name: 'Tom88', color: '#c0392b', style: 'raider' },
             { id: 'bot31', name: 'Morgenrot', color: '#16a085', style: 'builder' },
             { id: 'bot32', name: 'Jana', color: '#d35400', style: 'templer' },
-            { id: 'bot33', name: 'Kriegsherr', color: '#7d3c98', style: 'balanced' },
+            { id: 'bot33', name: 'Klingenherz', color: '#7d3c98', style: 'balanced' },
             { id: 'bot34', name: 'Leon_B', color: '#2e86c1', style: 'raider' },
             { id: 'bot35', name: 'Sturmwind', color: '#a93226', style: 'builder' },
             { id: 'bot36', name: 'Clara', color: '#117a65', style: 'templer' },
@@ -2474,7 +2474,7 @@ body.has-panel .mapctl{display:none}
             { id: 'bot60', name: 'Sarah', color: '#922b21', style: 'templer' }
         ];
         // More players on the map: 90 more, each with its own colour and way of playing
-        ['Eisenfaust', 'Luca_R', 'Nachtfalke', 'Jana97', 'Sturmbrecher', 'Marco_IT', 'Frostherz', 'Elif', 'Rabenschatten', 'Jonas_K', 'Silberpfeil', 'Nina_S', 'Donnerhall', 'Ben_2004', 'Aschekrone', 'Lea_M', 'Wolfsrudel', 'Timo_B', 'Seewind', 'Aylin', 'Blutmond', 'Felix_W', 'Steinwall', 'Sophie_R', 'Morgenrot', 'Leon_91', 'Dunkelwald', 'Clara_V', 'Kupferkrone', 'Nils_H', 'Feuersturm', 'Emilia', 'Graufalke', 'Paul_DE', 'Nebelreiter', 'Lina_K', 'Hammerfall', 'Yusuf_T', 'Schattenklinge', 'Marie_P', 'Eiswind', 'Finn_O', 'Drachenblut', 'Laura_S', 'Knochenbrecher', 'Max_1999', 'Sonnenlanze', 'Julia_W', 'Rostzahn', 'Elias_G', 'Mondschein', 'Hanna_B', 'Grenzwacht', 'Noah_R', 'Kriegsruf', 'Zoe_L', 'Bernstein', 'Luis_M', 'Sturmkrähe', 'Amelie', 'Wildherz', 'Jan_P', 'Goldfalke', 'Mila_T', 'Eisenwacht', 'Oskar_F', 'Flammenherz', 'Ida_S', 'Wolkenbruch', 'Moritz_D', 'Nordlicht', 'Ella_H', 'Klingensturm', 'Henry_K', 'Morgenstern', 'Lara_J', 'Felsenfaust', 'Anton_R', 'Tiefsee', 'Maja_B', 'Sternenwacht', 'Emil_N', 'Dornenkrone', 'Frieda', 'Brandung', 'Karl_S', 'Waldläufer', 'Lotta_M', 'Himmelsspeer', 'Theo_V'].forEach((name, i) => {
+        ['Eisenfaust', 'Luca_R', 'Nachtfalke', 'Jana97', 'Sturmbrecher', 'Marco_IT', 'Frostherz', 'Elif', 'Rabenschatten', 'Jonas_K', 'Silberwind', 'Nina_S', 'Donnerhall', 'Ben_2004', 'Aschekrone', 'Lea_W', 'Wolfsrudel', 'Timo_B', 'Seewind', 'Aylin', 'Blutmond', 'Felix_W', 'Steinwall', 'Sophie_R', 'Morgentau', 'Leon_91', 'Dunkelwald', 'Clara_V', 'Kupferkrone', 'Nils_H', 'Feuersturm', 'Emilia', 'Graufalke', 'Paul_DE', 'Nebelreiter', 'Lina_K', 'Hammerfall', 'Yusuf_T', 'Schattenklinge', 'Marie_P', 'Eiswind', 'Finn_O', 'Drachenblut', 'Laura_S', 'Knochenbrecher', 'Max_1999', 'Sonnenlanze', 'Julia_W', 'Rostzahn', 'Elias_G', 'Mondschein', 'Hanna_B', 'Grenzwacht', 'Noah_R', 'Kriegsruf', 'Zoe_L', 'Bernstein', 'Luis_M', 'Sturmkrähe', 'Amelie', 'Wildherz', 'Jan_P', 'Goldfalke', 'Mila_T', 'Eisenwacht', 'Oskar_F', 'Flammenherz', 'Ida_S', 'Wolkenbruch', 'Moritz_D', 'Nordlicht', 'Ella_H', 'Klingensturm', 'Henry_K', 'Morgenstern', 'Lara_J', 'Felsenfaust', 'Anton_R', 'Tiefsee', 'Maja_B', 'Sternenwacht', 'Emil_N', 'Dornenkrone', 'Frieda', 'Brandung', 'Karl_S', 'Waldgeist', 'Lotta_M', 'Himmelsspeer', 'Theo_V'].forEach((name, i) => {
             const n = 61 + i, h = Math.round((i * 137.508) % 360), l = 34 + (i % 3) * 8;
             BOT_DEFS.push({ id: 'bot' + n, name, color: 'hsl(' + h + ',62%,' + l + '%)', style: ['raider', 'builder', 'templer', 'balanced', 'balanced', 'builder'][i % 6] });
         });
@@ -3608,7 +3608,7 @@ body.has-panel .mapctl{display:none}
                 const levelAfterCapture = Math.max(1, (islandLevels[target.id] || 1) - 1);
                 if (targetOwner) clearIslandOwner(target.id);
                 islandTroops[target.id] = survivors;
-                botOwnedIslands[bot.id].add(target.id);
+                botOwnedIslands[bot.id].add(target.id); botStat(bot.id, 'caps');
                 if (target.type === 'gate') { const sty = bot.style, r = Math.random();                  // how this player runs a gate
                     setGateSettings(target.id, { toll: sty === 'templer' ? 1 : sty === 'builder' ? 0.5 : sty === 'raider' ? 0.25 : GATE_TOLLS[1 + Math.floor(r * 4)],
                                                  closed: sty === 'raider' ? r < .5 : sty === 'templer' ? r < .3 : r < .1 }); }
@@ -3631,6 +3631,8 @@ body.has-panel .mapctl{display:none}
                 }
             }
             if (!won) botLearn(bot.id, target.id);                          // a lost fight tells them what's really there
+            if (!won && targetOwner && targetOwner !== 'player') botStat(targetOwner, 'defs');
+            if (won && bossHere) botStat(bot.id, 'bosses');
             updateHud();
             if (bossHere && won) { spawnBattleFx(target.id, false, bossHere.name + ' gefallen', bot.name); (bossHere.wander ? endWander : endBoss)(bot.name + ' hat ' + bossHere.name + ' besiegt!'); }
 
@@ -4455,10 +4457,10 @@ body.has-panel .mapctl{display:none}
           const tName = island.type === 'megaTemple' ? 'Mega-Tempel' : island.guardian ? 'Wächter-Tempel' : 'Tempel';
           const boss = bossAt(island.id);
           if (boss) return { kind: 'bot', glyph: 'attack', name: boss.name, troops: fmtCompact(boss.troops), def: null, level, temple: false, p: 4.8 };
-          if (owner === 'player') return { kind: 'player', glyph: isTemple ? 'temple' : island.type === 'gate' ? 'lock' : island.id === playerIslandId ? 'castle' : 'crest:' + crestKey(),
+          if (owner === 'player') return { kind: 'player', glyph: isTemple ? 'temple' : island.type === 'gate' ? 'lock' : island.id === playerIslandId ? 'castle' : 'crest:player:' + crestKey(),
                                            name: island.id === playerIslandId ? 'Hauptstadt' : profileName.value || 'Du',
                                            troops: fmtCompact(islandTroops[island.id] || 0), def: null, level, temple: isTemple, p: 4 };
-          if (owner) return { kind: 'bot', glyph: isTemple ? 'temple' : botCapitalOf(owner) === island.id ? 'castle' : 'bot', name: botById[owner].name,
+          if (owner) return { kind: 'bot', glyph: isTemple ? 'temple' : botCapitalOf(owner) === island.id ? 'castle' : 'crest:' + owner, name: botById[owner].name,
                               troops: scouted ? fmtCompact(islandTroops[island.id] || 0) : '?', def: null, level, temple: isTemple, p: 3 };
           if (island.type === 'gate') return { kind: 'neutral', glyph: 'lock', name: island.gateKind === 'throne' ? 'Thron-Tor' : island.gateKind === 'guardian' ? 'Wächter-Tor' : 'Grenztor',
                    troops: scouted ? fmtCompact(island.neutralTroops) : '?', def: scouted ? fmtCompact(island.neutralDefense) : null, level, temple: false, p: 2.5 };
@@ -4510,11 +4512,25 @@ body.has-panel .mapctl{display:none}
             crestPath(g, x, y, s, shape); g.lineWidth = Math.max(1, s * .05); g.strokeStyle = '#d8b56c'; g.stroke();
             crestPath(g, x, y, s * 1.04, shape); g.lineWidth = Math.max(.8, s * .025); g.strokeStyle = 'rgba(0,0,0,.7)'; g.stroke();
         }
+        // Everyone has a coat of arms: yours from the editor, every other ruler their own (drawn once from their name,
+        // following the old rule: gold or silver on a colour, a colour on gold or silver).
+        const otherCrests = {};
+        function crestFor(who) {
+            if (!who || who === 'player') return loadCrest();
+            if (otherCrests[who]) return otherCrests[who];
+            const idn = parseInt(String(who).replace(/\D/g, ''), 10) || 7, r = mulberry32(idn * 6151 + 3);
+            const c1 = Math.floor(r() * CREST_COLORS.length), metal1 = c1 === 4 || c1 === 5;
+            let c2 = metal1 ? [0, 1, 2, 3, 6][Math.floor(r() * 5)] : [4, 5][Math.floor(r() * 2)];
+            const div = Math.floor(r() * CREST_DIVS.length), sym = 1 + Math.floor(r() * (CREST_SYMBOLS.length - 1));
+            const ink = div === 0 ? (metal1 ? 2 : Math.floor(r() * 2)) : (metal1 ? 2 : (c2 === 4 ? 1 : 0));
+            return otherCrests[who] = { shape: Math.floor(r() * CREST_SHAPES.length), div, c1, c2, sym, ink };
+        }
+        function crestKeyOf(c) { return [c.shape, c.div, c.c1, c.c2, c.sym, c.ink].join('.'); }
         var crestUrlCache = {};
-        function crestDataUrl(px) {                           // for the HTML avatars
-            const k = crestKey() + '@' + px; if (crestUrlCache[k]) return crestUrlCache[k];
+        function crestDataUrl(px, who) {                      // for the HTML avatars (yours by default)
+            const cr = crestFor(who), k = (who || 'player') + ':' + crestKeyOf(cr) + '@' + px; if (crestUrlCache[k]) return crestUrlCache[k];
             const c = document.createElement('canvas'), d = 2; c.width = c.height = px * d; const g = c.getContext('2d'); g.scale(d, d);
-            drawCrest(g, px / 2, px / 2, px * .86); return crestUrlCache[k] = c.toDataURL();
+            drawCrest(g, px / 2, px / 2, px * .86, cr); return crestUrlCache[k] = c.toDataURL();
         }
         function paintPlate(g, T, m, withDef) {           // g translated so the plate's top-left is (0,0); returns nothing
           const o = PLATE[m.kind], name = trunc(m.name, T.max);
@@ -4540,7 +4556,7 @@ body.has-panel .mapctl{display:none}
           g.beginPath(); g.arc(ax, ay, ar - .5, 0, Math.PI * 2); g.fillStyle = rg; g.fill();
           g.lineWidth = 1.4; g.strokeStyle = m.temple ? '#e4c886' : o.hi; g.stroke();
           g.lineWidth = 1; g.strokeStyle = 'rgba(0,0,0,.6)'; g.beginPath(); g.arc(ax, ay, ar + .6, 0, Math.PI * 2); g.stroke();
-          if (m.glyph.startsWith('crest')) drawCrest(g, ax - 1, ay - 1, T.av * .62); else
+          if (m.glyph.startsWith('crest')) drawCrest(g, ax - 1, ay - 1, T.av * .62, crestFor(m.glyph.split(':')[1])); else
           drawGlyph(g, m.glyph, ax - 1.5, ay - 1.5, T.av * .52, '#f5f0e5');                                                                // up-left, clear of the chip
           const ls = T.lv, lx = ax + ar * .78, lyy = Math.min(ay + ar * .66, H + 1.5 - ls / 2);                                          // gold level chip on the rim
           rr(g, lx - ls / 2, lyy - ls / 2, ls, ls, 2); g.fillStyle = '#14110b'; g.fill(); g.lineWidth = 1; g.strokeStyle = '#d8b56c'; g.stroke();
@@ -6457,7 +6473,15 @@ body.has-panel .mapctl{display:none}
         function lookReq(x) { return x.ach ? 'Erfolg „' + ACHIEVEMENTS.find(a => a.id === x.ach).name + '“' : 'Rang ' + RANK_TIERS[x.rank].name; }
         function playerFrame() { const f = FRAMES.find(q => q.id === look.frame); return f && lookUnlocked(f) ? f.id : FRAMES[Math.min(bestRank(), FRAMES.length - 1)].id; }
         function playerTitle() { const t = TITLES_P.find(q => q.id === look.title); return t && lookUnlocked(t) ? t.name : 'Neuling'; }
-        function botLook(botId) { const r = rankIndexFor(botOwnedIslands[botId].size); return { frame: FRAMES[r].id, title: r ? TITLES_P.find(t => t.rank === r).name : 'Neuling' }; }
+        function botLook(botId) {
+            const b = loadBotState()[botId], own = botOwnedIslands[botId]; if (!b) return { frame: FRAMES[0].id, title: 'Neuling' };
+            const r = Math.max(b.bestRank || 0, rankIndexFor(own ? own.size : 0)); if (r > (b.bestRank || 0)) { b.bestRank = r; saveBotState(); }
+            const st = b.stats || {}, cityMin = Math.min(...BOT_BUILDINGS.map(k => b.city.levels[k] || 0));
+            const earned = TITLES_P.filter(t => t.ach ? ({ cap100: (st.caps || 0) >= 100, cap1000: (st.caps || 0) >= 1000, def25: (st.defs || 0) >= 25, boss1: (st.bosses || 0) >= 1, city5: cityMin >= 5, throne: !!st.ruled })[t.ach] : (t.rank || 0) <= r);
+            const idn = parseInt(botId.slice(3), 10) || 0, pick = earned.length > 1 && mulberry32(idn * 31 + earned.length)() < .35 ? earned[earned.length - 2] : earned[earned.length - 1];   // most show off their best, some a favourite
+            return { frame: FRAMES[Math.min(r, FRAMES.length - 1)].id, title: pick ? pick.name : 'Neuling' };
+        }
+        function botStat(botId, k, n) { const b = loadBotState()[botId]; if (!b) return; b.stats = b.stats || {}; b.stats[k] = (b.stats[k] || 0) + (n || 1); saveBotState(); }
         function renderLook() {
             const fr = playerFrame();
             document.getElementById('pAvatarRing').dataset.frame = fr;
@@ -6998,7 +7022,7 @@ body.has-panel .mapctl{display:none}
             entries.sort((a, b) => b.score - a.score);
             rankListEl.innerHTML = entries.map((e, i) =>
                 '<div class="rankRow' + (e.isPlayer ? ' isPlayer' : '') + '"><span class="rankPos">' + (i + 1) + '</span>' +
-                '<span class="rankDot frame-ring" data-frame="' + e.frame + '" style="background:' + e.color + '">' + icon(e.isPlayer ? 'profile' : 'bot') + '</span>' +
+                '<span class="rankDot frame-ring" data-frame="' + e.frame + '" style="background:' + e.color + '"><img class="rankCrest" alt="" src="' + crestDataUrl(28, e.isPlayer ? 'player' : e.id) + '"></span>' +
                 '<span class="rankName"><span class="rankName-t">' + e.name + '<small class="rankTitle">' + escapeHtml(e.title) + '</small></span>' + (e.isPlayer && e.named ? '<span class="tag tag--player">Du</span>' : '') + '</span>' +
                 '<span class="rankScore">' + fmtNum(e.score) + ' ' + (e.score === 1 ? 'Basis' : 'Basen') + '</span></div>'
             ).join('');
@@ -7918,6 +7942,8 @@ body.has-panel .mapctl{display:none}
         function spawnMapBattle(o) {
             sfx('clash');
             const src = islandById[o.sourceId], tgt = islandById[o.targetId]; if (!src || !tgt) { o.onEnd && o.onEnd(); return; }
+            o.atkWho = o.atk === 'mine' ? 'player' : o.atk === 'bot' ? islandOwnerOf(src.id) : null;   // whose arms fly on each side (before the base changes hands)
+            o.defWho = o.def === 'mine' ? 'player' : o.def === 'bot' ? islandOwnerOf(tgt.id) : null;
             const path = marchPath(src, tgt), from = path[path.length - 2];
             const dx = tgt.x - from.x, dy = tgt.y - from.y, l = Math.hypot(dx, dy) || 1, now = performance.now();
             const share = o.my / Math.max(1, o.my + o.en), seed = mulberry32(Math.round(o.my % 9973) + Math.round(o.en % 9967) + o.targetId);
@@ -7999,7 +8025,7 @@ body.has-panel .mapctl{display:none}
                         ctx.lineWidth = .9 * k; ctx.strokeStyle = 'rgba(12,12,16,.8)'; ctx.stroke();
                         ctx.strokeStyle = rimC; ctx.lineWidth = 1.1 * k; ctx.beginPath(); ctx.moveTo(x + fd * bw * .5, top + 3 * k); ctx.lineTo(x + fd * bw * .5, top + bh * .62); ctx.stroke();   // stripe
                         ctx.fillStyle = '#e4c886'; ctx.beginPath(); ctx.arc(x, top - 1.5 * k, 1.8 * k, 0, Math.PI * 2); ctx.fill();   // gold finial
-                        if ((atk ? b.atk : b.def) === 'mine') drawCrest(ctx, x + fd * bw * .5, top + bh * .42, bh * .72);                // your coat of arms on the banner
+                        const cw = atk ? b.atkWho : b.defWho; if (cw) drawCrest(ctx, x + fd * bw * .5, top + bh * .42, bh * .72, crestFor(cw));   // each side's coat of arms on its banner
                         ctx.restore(); } });
                 };
                 bearer(true); bearer(false);
@@ -8013,7 +8039,7 @@ body.has-panel .mapctl{display:none}
                         ctx.fillStyle = '#e8c547'; ctx.beginPath(); ctx.ellipse(hx - face * 1 * k, hy - s * 1.52, 1.3 * k, 3 * k, -face * .4, 0, Math.PI * 2); ctx.fill();   // plume
                         ctx.restore(); } });
                     heroPlate = () => { ctx.save(); ctx.globalAlpha = alpha; ctx.font = '700 11px Inter, system-ui, sans-serif'; const tw = ctx.measureText(hdef.name).width + 12, py = hy + 12;   // on top of every figure
-                        rr(ctx, hx - tw / 2, py - 9, tw, 16, 8); ctx.fillStyle = 'rgba(14,12,10,.88)'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = RARITY_DEFS[heroRarity(hdef.id)].color; ctx.stroke();
+                        rr(ctx, hx - tw / 2, py - 9, tw, 16, 8); ctx.fillStyle = 'rgba(14,12,10,.88)'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = RARITY_DEFS[b.atkWho && b.atkWho !== 'player' && loadBotState()[b.atkWho] ? Math.min(5, loadBotState()[b.atkWho].heroes[hdef.id].rar || 0) : heroRarity(hdef.id)].color; ctx.stroke();
                         ctx.fillStyle = '#f3e6c4'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(hdef.name, hx, py - .5); ctx.restore(); };
                 }
                 {                                             // the battlefield: the ground is trampled, the front glows
@@ -8545,6 +8571,7 @@ body.has-panel .mapctl{display:none}
             if (r === lastRuler) return;
             const was = lastRuler; lastRuler = r;
             if (r === 'player') statBump('throne');
+            if (r && r !== 'player' && botById[r]) { const bs = loadBotState()[r]; bs.stats = bs.stats || {}; bs.stats.ruled = 1; saveBotState(); }
             if (r === 'player') { flashHint('Du bist Herrscher der Meere! +25 % Münzen und Truppen im ganzen Reich.', 6000); spawnBattleFx(megaTempleId, true, 'Herrscher!', 'Herrscher der Meere'); }
             else if (was === 'player') flashHint('Du hast den Mega-Tempel verloren – die Krone ist weg!', 5000);
             else if (r && botById[r]) flashHint(botById[r].name + ' ist jetzt Herrscher der Meere!', 4000);
