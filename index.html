@@ -3262,7 +3262,8 @@ body.has-panel .mapctl{display:none}
                 skillBonus: attackerBotId ? Math.round(rawTroops * botMults(attackerBotId).attackPct / 100) : attackFlatBonus(rawTroops),
                 skillLvl: attackerBotId ? loadBotState()[attackerBotId].skills.attack : skills.attack || 0, heroPct: hero === 'sigrun' ? hb : 0,
                 attackGoldRate: attackerBotId ? botGoldRate(attackerBotId, 'attackGold') : (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate,
-                rewardGoldRate: (attackerBotId ? botGoldRate(attackerBotId, 'attackGold') : goldPerKillRate()) * (hero === 'ida' ? 1 + hb / 100 : 1),   // Ida: +X % Beute on the kill gold
+                rewardGoldRate: (attackerBotId ? botGoldRate(attackerBotId, 'attackGold') : goldPerKillRate()) * (hero === 'ida' ? 1 + hb / 100 : 1) + (hero === 'ida' ? hb / 100 : 0),   // Ida: +X % on the kill gold, and X % of a coin per kill of her own
+                bernPct: hero === 'bernhard' ? hb : 0,
                 shieldLossReductionPct: Math.min(90, (attackerBotId ? botMults(attackerBotId).shield : shieldLossReductionPct()) + (hero === 'bernhard' ? hb : 0)),
                 botShield: !!attackerBotId,
                 hero
@@ -3476,7 +3477,8 @@ body.has-panel .mapctl{display:none}
                 ' Truppen, ' + fmtNum(effectiveDefense(target)) + ' Verteidigung.', 4000);
         }
 
-        function retreatSurvivorsPreview(attack) { return Math.floor(attack.rawTroops * RETREAT_RECOVERY_PCT / 100); }
+        function retreatPct(attack) { return Math.min(60, RETREAT_RECOVERY_PCT + (attack.bernPct || 0) / 2); }   // Bernhard: more of a beaten army gets away
+        function retreatSurvivorsPreview(attack) { return Math.floor(attack.rawTroops * retreatPct(attack) / 100); }
         function resolveAttack(attack) {
             const source = islandById[attack.sourceId];
             const target = islandById[attack.targetId];
@@ -3556,7 +3558,7 @@ body.has-panel .mapctl{display:none}
 
                 warStat('attacksLost'); warStat('kills', defenderCasualties);
                 killGold = Math.round(defenderCasualties * rewardRate); coins += killGold; warStat('fallen', attack.rawTroops - retreatSurvivorsPreview(attack));
-                retreatSurvivors = Math.floor(attack.rawTroops * RETREAT_RECOVERY_PCT / 100);
+                retreatSurvivors = retreatSurvivorsPreview(attack);
                 woundedAdded = hospitalTake(attack.rawTroops - retreatSurvivors);   // Lazarett: part of the fallen are only wounded
                 if (retreatSurvivors > 0) {
                     const durationSec = travelDurationSeconds(target, source);
@@ -3675,7 +3677,7 @@ body.has-panel .mapctl{display:none}
             // The capital can never be taken: a winning raid only wipes out its garrison.
             const capitalHolds = won && target.id === playerIslandId;
             const botSentLoss = won ? sentLossFor(attack.rawTroops, myTroops, originalEnemyDefense, red) : 0, survivors = won ? attack.rawTroops - botSentLoss : 0;   // same rule as yours   // the sword bonus fights along but doesn't stay
-            const fled = won ? 0 : Math.floor(attack.rawTroops * RETREAT_RECOVERY_PCT / 100);
+            const fled = won ? 0 : retreatSurvivorsPreview(attack);
             const atkFallen = attack.rawTroops - survivors - fled, atkWounded = botHospitalTake(bot.id, atkFallen);
             const homeAgain = n => { if (n > 0 && botOwnedIslands[bot.id].has(source.id)) islandTroops[source.id] = (islandTroops[source.id] || 0) + n; };
             if (capitalHolds) {
@@ -6380,6 +6382,7 @@ body.has-panel .mapctl{display:none}
                         if (a.hero) { if (!fight.hero) fight.hero = a.hero; else if (fight.hero !== a.hero) fight.heroes = [...new Set([...(fight.heroes || []), a.hero])]; }   // every hero in the fight keeps his effect and XP
                         fight.shieldLossReductionPct = Math.max(fight.shieldLossReductionPct || 0, a.shieldLossReductionPct || 0);
                         fight.rewardGoldRate = Math.max(fight.rewardGoldRate || 0, a.rewardGoldRate || 0);
+                        fight.bernPct = Math.max(fight.bernPct || 0, a.bernPct || 0);
                         fight.fightEndsAt = Math.max(fight.fightEndsAt, now + 2500);          // the fresh troops get to fight too
                         pendingAttacks.splice(pendingAttacks.indexOf(a), 1);
                         if (!a.attackerBotId) flashHint('Verstärkung ist im Kampf um ' + islandTitle(islandById[a.targetId]) + ' eingetroffen: +' + fmtNum(a.rawTroops) + ' Truppen, jetzt ' + fmtNum(fight.rawTroops) + '.', 4000);
@@ -9159,8 +9162,8 @@ body.has-panel .mapctl{display:none}
         // ===== HELDEN: live in the Heldenhalle, march with one attack at a time, level up from the enemies they beat =====
         var HEROES = [
             { id: 'sigrun',   name: 'Sigrun',   title: 'die Eroberin', icon: 'attack',  color: '#b8433a', unlock: 1,  per: 1, what: '% Angriff',              short: 'Angriff' },
-            { id: 'bernhard', name: 'Bernhard', title: 'der Wächter',  icon: 'shield',  color: '#3d6fb3', unlock: 5,  per: 1, what: '% weniger Verluste',     short: 'Verluste' },
-            { id: 'ida',      name: 'Ida',      title: 'die Reiterin', icon: 'send',    color: '#c98b2a', unlock: 10, per: 1, what: '% Tempo und Beute',      short: 'Tempo' }
+            { id: 'bernhard', name: 'Bernhard', title: 'der Wächter',  icon: 'shield',  color: '#3d6fb3', unlock: 5,  per: 1, what: '% weniger Verluste (bei Niederlage fliehen mehr)', short: 'Verluste' },
+            { id: 'ida',      name: 'Ida',      title: 'die Reiterin', icon: 'send',    color: '#c98b2a', unlock: 10, per: 1, what: '% Tempo und Beute (Münzen pro besiegtem Gegner)', short: 'Tempo' }
         ];
         var heroState = null;
         function loadHeroes() {
@@ -10271,13 +10274,13 @@ body.has-panel .mapctl{display:none}
                     const hr = a.hero && heroUnlocked(heroById(a.hero)) ? a.hero : null, hb = heroBonusFor('player', hr);
                     pendingAttacks.push({ sourceId: src, targetId: t.id, rawTroops: a.troops, startedAt: now - 1000, resolveAt: now, attackerBotId: null, fromArmy: true,
                         attackBonus: attackFlatBonus(a.troops) + (hr === 'sigrun' ? Math.round(a.troops * hb / 100) : 0), skillBonus: attackFlatBonus(a.troops), skillLvl: skills.attack || 0, heroPct: hr === 'sigrun' ? hb : 0,
-                        attackGoldRate: (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate, rewardGoldRate: goldPerKillRate() * (hr === 'ida' ? 1 + hb / 100 : 1),
+                        attackGoldRate: (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate, rewardGoldRate: goldPerKillRate() * (hr === 'ida' ? 1 + hb / 100 : 1) + (hr === 'ida' ? hb / 100 : 0), bernPct: hr === 'bernhard' ? hb : 0,
                         shieldLossReductionPct: Math.min(90, shieldLossReductionPct() + (hr === 'bernhard' ? hb : 0)), hero: hr });
                     saveGame(); saveProgression(); }
                 else { const hr = a.hero && botHeroUnlocked(who, a.hero) ? a.hero : null, hb = heroBonusFor(who, hr), sk = Math.round(a.troops * botMults(who).attackPct / 100);
                     pendingAttacks.push({ sourceId: src, targetId: t.id, rawTroops: a.troops, startedAt: now - 1000, resolveAt: now, attackerBotId: who, fromArmy: true,
                         attackBonus: sk + (hr === 'sigrun' ? Math.round(a.troops * hb / 100) : 0), skillBonus: sk, skillLvl: loadBotState()[who].skills.attack, heroPct: hr === 'sigrun' ? hb : 0,
-                        attackGoldRate: botGoldRate(who, 'attackGold'), rewardGoldRate: botGoldRate(who, 'attackGold') * (hr === 'ida' ? 1 + hb / 100 : 1),
+                        attackGoldRate: botGoldRate(who, 'attackGold'), rewardGoldRate: botGoldRate(who, 'attackGold') * (hr === 'ida' ? 1 + hb / 100 : 1) + (hr === 'ida' ? hb / 100 : 0), bernPct: hr === 'bernhard' ? hb : 0,
                         shieldLossReductionPct: Math.min(90, botMults(who).shield + (hr === 'bernhard' ? hb : 0)), botShield: true, hero: hr }); }
                 renderActiveMarches();
             }
