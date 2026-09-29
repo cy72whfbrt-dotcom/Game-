@@ -561,9 +561,10 @@ body.has-panel .mapctl{display:none}
 .skin-card canvas{width:60px;height:66px} .skin-card small{display:inline-flex;align-items:center;gap:3px;color:var(--tx-2)} .skin-card .icon{width:12px;height:12px}
 .logWounded,.logRetreat.logWounded{color:#f2c94c;font-weight:600}
 .logCasualty.wounded span,.logCasualty.wounded span:last-child{color:#f2c94c}
-.logRow .mact{grid-column:2/4;display:flex;gap:6px;justify-content:flex-end;margin-top:4px}
-.logRow .mact button{display:inline-flex;align-items:center;gap:4px;min-height:30px;padding:0 10px;border-radius:6px;border:1px solid var(--line-2);background:rgba(255,255,255,.04);color:var(--tx-1);font:600 var(--fs-12)/1 var(--font-ui);cursor:pointer}
-.logRow .mact button:hover{border-color:var(--gold-300)} .logRow .mact .icon{width:14px;height:14px}
+.march-all{display:flex;justify-content:flex-end;padding:2px 4px 6px}
+.march-all .mact{display:flex} .logRow .mact,.march-all .mact{grid-column:2/4;display:flex;gap:6px;justify-content:flex-end;margin-top:4px}
+.logRow .mact button,.march-all .mact button{display:inline-flex;align-items:center;gap:4px;min-height:30px;padding:0 10px;border-radius:6px;border:1px solid var(--line-2);background:rgba(255,255,255,.04);color:var(--tx-1);font:600 var(--fs-12)/1 var(--font-ui);cursor:pointer}
+.logRow .mact button:hover,.march-all .mact button:hover{border-color:var(--gold-300)} .logRow .mact .icon,.march-all .mact .icon{width:14px;height:14px}
 .logRow.win{--lc:#8fcf7a} .logRow.loss{--lc:var(--blood-300)} .logRow.send{--lc:var(--f-player-hi)} .logRow.scout{--lc:var(--gold-300)} .logRow.retreat{--lc:var(--ember-300)} .logRow.attack{--lc:var(--f-enemy-hi)}
 .logRow details{grid-column:1 / -1;margin-top:6px}
 .logRow summary{list-style:none;cursor:pointer;font:600 var(--fs-10)/1 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--gold-300);padding:4px 0}
@@ -3078,6 +3079,21 @@ body.has-panel .mapctl{display:none}
                 flashHint('Beschleunigt – noch ' + fmtClock(Math.ceil(rem / 2000)) + '.', 2500);
                 updateHud(); saveGame(); saveProgression(); renderActiveMarches(); requestRender(); return;
             }
+        }
+        // "Alle schneller": halves the time left of every own column on the road at once (same price as one by one)
+        function speedableMarches() {
+            const now = Date.now();
+            return [...pendingAttacks.filter(a => !a.attackerBotId), ...pendingSends.filter(x => !x.senderBotId), ...pendingRetreats].filter(m => !m.fightEndsAt && m.resolveAt - now >= 1500);
+        }
+        function speedUpAll() {
+            const list = speedableMarches(); if (!list.length) return;
+            const cost = list.reduce((a, m) => a + speedUpCost(m), 0);
+            if (gems < cost) { flashHint('Zu wenig Gems – alle beschleunigen kostet ' + fmtNum(cost) + '.', 3000); return; }
+            gems -= cost; const now = Date.now();
+            for (const m of list) { const rem = m.resolveAt - now, pr = Math.max(0, Math.min(.99, (now - m.startedAt) / Math.max(1, m.resolveAt - m.startedAt)));
+                m.resolveAt = now + rem / 2; m.startedAt = m.resolveAt - (rem / 2) / (1 - pr); }
+            flashHint(list.length + (list.length === 1 ? ' Marsch' : ' Märsche') + ' beschleunigt – Restzeit halbiert.', 2500);
+            updateHud(); saveGame(); saveProgression(); renderActiveMarches(); requestRender();
         }
         function marchButtons(m, canRecall) {
             const k = marchKeyOf(m);
@@ -6478,7 +6494,7 @@ body.has-panel .mapctl{display:none}
         const battleLogCloseBtn = document.getElementById('battleLogCloseBtn');
         const activeMarchesEl = document.getElementById('activeMarches');
         activeMarchesEl.addEventListener('click', e => { const bt = e.target.closest('[data-mact]'); if (!bt) return;
-            e.stopPropagation(); if (bt.dataset.mact === 'recall') recallMarch(bt.dataset.k); else speedUpMarch(bt.dataset.k); });
+            e.stopPropagation(); if (bt.dataset.mact === 'recall') recallMarch(bt.dataset.k); else if (bt.dataset.mact === 'speedAll') speedUpAll(); else speedUpMarch(bt.dataset.k); });
         const combatLogListEl = document.getElementById('combatLogList');
         let battleLogRefreshTimer = null;
 
@@ -6543,6 +6559,8 @@ body.has-panel .mapctl{display:none}
                 const secondsLeft = Math.max(0, Math.ceil((retreat.resolveAt - Date.now()) / 1000));
                 rows.push(logRowHtml('retreat', 'recall', fmtNum(retreat.troops) + ' Truppen kehren zurück', 'nach ' + T(retreat.toId), clock(secondsLeft), marchButtons(retreat, false)));
             }
+            const fast = speedableMarches();
+            if (fast.length > 1) rows.unshift('<div class="march-all"><span class="mact"><button type="button" data-mact="speedAll" title="Restzeit aller Märsche halbieren">' + icon('hourglass') + 'Alle schneller (' + fast.length + ') · <b>' + fmtNum(fast.reduce((a, m) => a + speedUpCost(m), 0)) + '</b>' + icon('gem') + '</button></span></div>');
             activeMarchesEl.innerHTML = rows.length
                 ? rows.join('')
                 : '<div class="logEmpty">' + icon('hourglass') + 'Gerade nichts unterwegs.</div>';
@@ -9679,6 +9697,20 @@ body.has-panel .mapctl{display:none}
             }
             loadBotState().bot25.capital = undefined; capitalCache = null;
             store.set('openWaterGift3', 'g3'); saveBotState(); refreshTerritory(); saveGame(); updateHud(); requestRender();
+        }
+        if (store.get('openWaterEmmaOnlyMine') !== '1' && playerIslandId !== null && islandById[playerIslandId]) {   // one-time test: Emma lives ONLY on the player's island
+            const home = islandById[playerIslandId], emma = botOwnedIslands.bot25, d = i => Math.hypot(i.x - home.x, i.y - home.y);
+            for (const id of [...emma]) { emma.delete(id); islandLevels[id] = 1; delete islandTroops[id]; }         // everything else goes back to neutral
+            for (const a of pendingAttacks.filter(x => x.attackerBotId === 'bot25')) pendingAttacks.splice(pendingAttacks.indexOf(a), 1);
+            for (const x of pendingSends.filter(x => x.senderBotId === 'bot25')) pendingSends.splice(pendingSends.indexOf(x), 1);
+            const free = islandsByLandmass[home.landmassId].filter(i => i.type === 'tower' && !islandOwnerOf(i.id) && !bossAt(i.id)).sort((a, b) => d(b) - d(a));
+            if (free.length) {
+                const cap = free[0], near = free.slice(1).sort((a, b) => Math.hypot(a.x - cap.x, a.y - cap.y) - Math.hypot(b.x - cap.x, b.y - cap.y)).slice(0, 3);
+                for (const isl of [cap, ...near]) { emma.add(isl.id); islandLevels[isl.id] = 3; islandTroops[isl.id] = isl === cap ? 5000 : 1500; }
+                const bs = loadBotState().bot25; bs.capital = cap.id; bs.rally = null; capitalCache = null;
+                flashHint('Test: Emma ist jetzt nur noch auf deiner Insel – ihre Hauptstadt steht bei ' + coordText(cap.x, cap.y) + '.', 7000);
+            }
+            store.set('openWaterEmmaOnlyMine', '1'); saveBotState(); refreshTerritory(); saveGame(); requestRender();
         }
         renderActiveMarches();
         if (bonusGrantedAtBoot) saveGame();      // a reload right after the first start must not lose the grant
