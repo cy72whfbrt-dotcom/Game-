@@ -165,6 +165,25 @@ b,strong{font-weight:600}
   -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 .mapctl button{width:36px;height:36px;display:grid;place-items:center;color:var(--tx-2)}
 .mapctl button.on{color:var(--gold-100);background:rgba(214,170,90,.18)}
+[data-frame="bronze"]{--fr1:#c9854f;--fr2:#7a4a26} [data-frame="silver"]{--fr1:#e8eef5;--fr2:#8a95a3} [data-frame="gold"]{--fr1:#ffd35a;--fr2:#a0701c}
+[data-frame="platin"]{--fr1:#9fe3da;--fr2:#3f8c86} [data-frame="diamond"]{--fr1:#bfe6ff;--fr2:#3f86d8} [data-frame="master"]{--fr1:#d6a6ff;--fr2:#6a3fa0} [data-frame="legend"]{--fr1:#ffb04a;--fr2:#c0392b}
+#pAvatarRing[data-frame]{background:conic-gradient(from 200deg,var(--fr1),var(--fr2),var(--fr1),var(--fr2),var(--fr1));padding:3px;box-shadow:0 0 10px color-mix(in srgb,var(--fr1) 45%,transparent)}
+#pAvatarRing[data-frame="legend"],#pAvatarRing[data-frame="master"],#pAvatarRing[data-frame="diamond"]{animation:frame-glow 2.4s ease-in-out infinite alternate}
+@keyframes frame-glow{from{box-shadow:0 0 6px color-mix(in srgb,var(--fr1) 35%,transparent)}to{box-shadow:0 0 16px color-mix(in srgb,var(--fr1) 75%,transparent)}}
+.rankDot.frame-ring{border-radius:50%;border:2px solid var(--fr1);box-shadow:0 0 0 1px var(--fr2),0 0 6px color-mix(in srgb,var(--fr1) 40%,transparent)}
+.rankName-t{display:flex;flex-direction:column;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.rankTitle{font:600 9.5px/1.2 var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--gold-300)}
+.ptitle-tag{margin-top:4px;font:700 10px/1.2 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--gold-200)}
+.look{display:flex;flex-direction:column;gap:10px}
+.look-row{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.look-frame{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 2px;border-radius:8px;border:1px solid transparent;background:none;color:var(--tx-2)}
+.look-frame.on{border-color:var(--gold-300);background:rgba(214,170,90,.12)} .look-frame:disabled{opacity:.4}
+.look-frame .frame-ring{width:30px;height:30px;border-radius:50%;background:conic-gradient(from 200deg,var(--fr1),var(--fr2),var(--fr1),var(--fr2),var(--fr1));box-shadow:inset 0 0 0 5px #141a24}
+.look-frame small{display:inline-flex;align-items:center;gap:2px;font:600 9.5px/1.1 var(--font-ui)} .look-frame small .icon,.look-title .icon{width:10px;height:10px}
+.look-titles{display:flex;flex-wrap:wrap;gap:6px}
+.look-title{display:inline-flex;align-items:center;gap:4px;padding:6px 10px;border-radius:999px;border:1px solid var(--line-2);background:rgba(255,255,255,.03);color:var(--tx-1);font:600 var(--fs-12)/1 var(--font-ui)}
+.look-title.on{border-color:var(--gold-300);background:rgba(214,170,90,.16);color:var(--gold-100)} .look-title:disabled{opacity:.4}
+.look-hint{font:500 var(--fs-11)/1.35 var(--font-ui);color:var(--tx-3)}
 .ach-sum{display:flex;flex-direction:column;gap:6px;font:500 var(--fs-12)/1.2 var(--font-ui);color:var(--tx-2)} .ach-sum b{color:var(--tx-1)}
 .ach-sum-bar,.ach-bar{display:block;height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
 .ach-sum-bar i,.ach-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold-500),var(--gold-200))}
@@ -1326,6 +1345,7 @@ body.has-panel .mapctl{display:none}
       <input id="profileName" class="ptitle ptitle--input" type="text" maxlength="20" placeholder="Dein Name" autocomplete="off" spellcheck="false">
       <div class="xp"><span class="xp-l">Stufe <b id="xpLevelNum">1</b></span><div class="xp-track"><i id="xpFill" class="xpFill"></i></div><span id="xpNums" class="xp-n">0 / 50 XP</span></div>
       <div id="xpNext" class="xp-next"></div>
+      <div id="profileTitle" class="ptitle-tag"></div>
     </div>
     <button id="profileCloseBtn" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button>
   </header>
@@ -1350,6 +1370,8 @@ body.has-panel .mapctl{display:none}
           <div class="crest-opts" id="crestOpts"></div>
         </div>
       </div>
+      <div class="sect"><h4>Titel &amp; Rahmen</h4></div>
+      <div id="lookPicker" class="look"></div>
       <div class="sect"><h4>Reich</h4></div>
       <div class="stat-grid stat-grid--3">
         <div class="stat"><span class="stat-l"><svg class="icon"><use href="#i-troops"/></svg>Truppen</span><b class="stat-v" id="kTroops">0</b></div>
@@ -6180,6 +6202,43 @@ body.has-panel .mapctl{display:none}
             { min: 120, name: 'Meister' },
             { min: 225, name: 'Legende' }
         ];
+        // ===== TITEL & RAHMEN: frames come with the ranks you've reached, titles with ranks and Erfolge =====
+        const FRAMES = [
+            { id: 'bronze', name: 'Bronze', rank: 0 }, { id: 'silver', name: 'Silber', rank: 1 }, { id: 'gold', name: 'Gold', rank: 2 }, { id: 'platin', name: 'Platin', rank: 3 },
+            { id: 'diamond', name: 'Diamant', rank: 4 }, { id: 'master', name: 'Meister', rank: 5 }, { id: 'legend', name: 'Legende', rank: 6 }
+        ];
+        const TITLES_P = [
+            { id: 'novice', name: 'Neuling' },
+            { id: 'knight', name: 'Silberritter', rank: 1 }, { id: 'lord', name: 'Goldfürst', rank: 2 }, { id: 'count', name: 'Platingraf', rank: 3 },
+            { id: 'duke', name: 'Diamantherzog', rank: 4 }, { id: 'master', name: 'Meister der Meere', rank: 5 }, { id: 'legend', name: 'Legende', rank: 6 },
+            { id: 'conq', name: 'Eroberer', ach: 'cap100' }, { id: 'warlord', name: 'Kriegsherr', ach: 'cap1000' }, { id: 'wall', name: 'Standhaft', ach: 'def25' },
+            { id: 'emma', name: 'Emmas Albtraum', ach: 'emma10' }, { id: 'slayer', name: 'Bezwinger', ach: 'boss1' }, { id: 'builder', name: 'Baumeister', ach: 'city5' },
+            { id: 'king', name: 'Herrscher der Meere', ach: 'throne' }
+        ];
+        let look = (() => { try { return JSON.parse(store.get('openWaterLook')) || {}; } catch (e) { return {}; } })();
+        function rankIndexFor(bases) { let r = 0; RANK_TIERS.forEach((t, i) => { if (bases >= t.min) r = i; }); return r; }
+        function bestRank() { const r = rankIndexFor(ownedIslands.size); if (!(look.best >= r)) { look.best = r; store.set('openWaterLook', JSON.stringify(look)); } return look.best; }
+        const lookUnlocked = x => x.ach ? !!(typeof achClaimed !== 'undefined' && (achClaimed[x.ach] || ACHIEVEMENTS.find(a => a.id === x.ach && a.val() >= a.goal))) : (x.rank || 0) <= bestRank();
+        function lookReq(x) { return x.ach ? 'Erfolg „' + ACHIEVEMENTS.find(a => a.id === x.ach).name + '“' : 'Rang ' + RANK_TIERS[x.rank].name; }
+        function playerFrame() { const f = FRAMES.find(q => q.id === look.frame); return f && lookUnlocked(f) ? f.id : FRAMES[Math.min(bestRank(), FRAMES.length - 1)].id; }
+        function playerTitle() { const t = TITLES_P.find(q => q.id === look.title); return t && lookUnlocked(t) ? t.name : 'Neuling'; }
+        function botLook(botId) { const r = rankIndexFor(botOwnedIslands[botId].size); return { frame: FRAMES[r].id, title: r ? TITLES_P.find(t => t.rank === r).name : 'Neuling' }; }
+        function renderLook() {
+            const fr = playerFrame();
+            document.getElementById('pAvatarRing').dataset.frame = fr;
+            document.getElementById('profileTitle').textContent = playerTitle();
+            const el = document.getElementById('lookPicker'); if (!el) return;
+            el.innerHTML = '<div class="look-row">' + FRAMES.map(f => { const ok = lookUnlocked(f);
+                    return '<button type="button" class="look-frame' + (f.id === fr ? ' on' : '') + '" data-frame="' + f.id + '"' + (ok ? '' : ' disabled title="Frei ab ' + lookReq(f) + '"') + '><span class="frame-ring" data-frame="' + f.id + '"></span><small>' + (ok ? f.name : icon('lock') + f.name) + '</small></button>'; }).join('') + '</div>' +
+                '<div class="look-titles">' + TITLES_P.map(t => { const ok = lookUnlocked(t);
+                    return '<button type="button" class="look-title' + (t.name === playerTitle() ? ' on' : '') + '" data-title-id="' + t.id + '"' + (ok ? '' : ' disabled title="Frei ab ' + lookReq(t) + '"') + '>' + (ok ? '' : icon('lock')) + t.name + '</button>'; }).join('') + '</div>' +
+                '<small class="look-hint">Rahmen gibt es mit jedem neuen Rang, Titel mit Rängen und Erfolgen. Beides siehst du in der Rangliste.</small>';
+        }
+        document.getElementById('lookPicker').addEventListener('click', e => {
+            const f = e.target.closest('[data-frame]:not([disabled])'), t = e.target.closest('[data-title-id]:not([disabled])');
+            if (f && f.classList.contains('look-frame')) look.frame = f.dataset.frame; else if (t) look.title = t.dataset.titleId; else return;
+            store.set('openWaterLook', JSON.stringify(look)); renderLook();
+        });
         function currentRank() {
             let rank = RANK_TIERS[0].name;
             for (const tier of RANK_TIERS) {
@@ -6230,6 +6289,7 @@ body.has-panel .mapctl{display:none}
 
             document.getElementById('profileLevelBadge').textContent = playerLvl;
             document.getElementById('profileRank').textContent = currentRank();
+            renderLook();
             const worldPct = ownedIslands.size / islands.length * 100;
             document.getElementById('profileProgress').textContent = worldPct > 0 && worldPct < 0.1
                 ? '< 0,1 %'
@@ -6680,16 +6740,16 @@ body.has-panel .mapctl{display:none}
             // Player blue. Bots keep their BOT_DEFS colour: this list is the only place it appears.
             const playerName = escapeHtml(profileName.value);
             const entries = [
-                { id: 'player', name: playerName || 'Du', color: '#3f86d8', score: ownedIslands.size, isPlayer: true, named: !!playerName }
+                { id: 'player', name: playerName || 'Du', color: '#3f86d8', score: ownedIslands.size, isPlayer: true, named: !!playerName, frame: playerFrame(), title: playerTitle() }
             ];
-            for (const bot of BOT_DEFS) {
-                entries.push({ id: bot.id, name: escapeHtml(bot.name), color: bot.color, score: botOwnedIslands[bot.id].size, isPlayer: false });
+            for (const bot of BOT_DEFS) { const lk = botLook(bot.id);
+                entries.push({ id: bot.id, name: escapeHtml(bot.name), color: bot.color, score: botOwnedIslands[bot.id].size, isPlayer: false, frame: lk.frame, title: lk.title });
             }
             entries.sort((a, b) => b.score - a.score);
             rankListEl.innerHTML = entries.map((e, i) =>
                 '<div class="rankRow' + (e.isPlayer ? ' isPlayer' : '') + '"><span class="rankPos">' + (i + 1) + '</span>' +
-                '<span class="rankDot" style="background:' + e.color + '">' + icon(e.isPlayer ? 'profile' : 'bot') + '</span>' +
-                '<span class="rankName"><span class="rankName-t">' + e.name + '</span>' + (e.isPlayer && e.named ? '<span class="tag tag--player">Du</span>' : '') + '</span>' +
+                '<span class="rankDot frame-ring" data-frame="' + e.frame + '" style="background:' + e.color + '">' + icon(e.isPlayer ? 'profile' : 'bot') + '</span>' +
+                '<span class="rankName"><span class="rankName-t">' + e.name + '<small class="rankTitle">' + escapeHtml(e.title) + '</small></span>' + (e.isPlayer && e.named ? '<span class="tag tag--player">Du</span>' : '') + '</span>' +
                 '<span class="rankScore">' + fmtNum(e.score) + ' ' + (e.score === 1 ? 'Basis' : 'Basen') + '</span></div>'
             ).join('');
         }
