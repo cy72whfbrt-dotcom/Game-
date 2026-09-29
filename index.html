@@ -9656,6 +9656,9 @@ body.has-panel .mapctl{display:none}
             revealAround(0, 0, FRAME_HALF * 1.5, false);
             store.set('openWaterGift', 'g1'); saveGame(); updateHud();
         }
+        if (store.get('openWaterGems9') !== '1') {           // one-time test gift: 9.999.999.999 gems
+            gems = Math.max(gems, 9999999999); store.set('openWaterGems9', '1'); saveProgression(); saveGame(); updateHud();
+        }
         if (store.get('openWaterFogOff') !== '1') {          // one-time: the whole map uncovered (no fog to test with)
             revealAround(0, 0, FRAME_HALF * 1.5, false);
             store.set('openWaterFogOff', '1'); saveGame(); requestRender();
