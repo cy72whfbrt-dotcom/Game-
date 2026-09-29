@@ -5424,7 +5424,7 @@ body.has-panel .mapctl{display:none}
         const BOT_INTEL_MS = 10 * 60000;
         function botIntel(bot, targetId) {
             const it = botIntelMem[bot.id] && botIntelMem[bot.id][targetId];
-            const maxAge = islandOwnerOf(targetId) === 'player' ? BOT_INTEL_MS / (1 + (BOT_STYLES[bot.style].hunt || 0)) : BOT_INTEL_MS;   // the player's bases change fast: look again sooner
+            const maxAge = islandOwnerOf(targetId) === 'player' ? 60000 : BOT_INTEL_MS;   // a player's base can fill up any minute: a report older than a minute isn't worth attacking on
             if (it && it.pending && Date.now() >= it.ready) { const t = islandById[targetId]; it.s = effectiveTroops(t) + effectiveDefense(t); it.pending = false; }   // the scout arrives: what's there now
             return it && Date.now() >= it.ready && Date.now() - it.ready < maxAge ? it : null;
         }
@@ -5449,8 +5449,12 @@ body.has-panel .mapctl{display:none}
             const st = p.steps.shift(); if (!p.steps.length) act.plan = null;
             if (!own.has(st.from) || botFreeSlots(bot) <= 0) return false;
             if (p.kind === 'send') { if ((islandTroops[st.from] || 0) < BOT_MIN_GARRISON_TO_ATTACK) return false; launchSend(st.from, p.t, bot.id); return true; }
+            // before every further order: is it still a good idea? A fresh report showing a stronger base, or a base that no
+            // longer has the troops it was meant to send, calls the whole strike off - nobody sends 100 men against 240.000.
+            const fresh = botIntel(bot, p.t);
+            if (fresh && p.believed && fresh.s > p.believed * 1.15) { act.plan = null; return false; }
             const give = Math.min(st.n, Math.floor((islandTroops[st.from] || 0) * .95));
-            if (give < BOT_MIN_GARRISON_TO_ATTACK) return false;
+            if (give < BOT_MIN_GARRISON_TO_ATTACK || give < st.n * .6) { act.plan = null; return false; }
             return !!launchAttack(st.from, p.t, bot.id, give);
         }
         function botThink(bot) {
@@ -5563,7 +5567,7 @@ body.has-panel .mapctl{display:none}
                 }
                 if (sum < need) continue;
                 steps.sort((u, v) => v.eta - u.eta);
-                act.plan = { kind: 'attack', t: e.target.id, steps, until: now + 90000 };
+                act.plan = { kind: 'attack', t: e.target.id, steps, until: now + 30000, believed: it.s };
                 if (botPlanStep(bot)) { n++; if (grab) { grabs--; mem.lastGrabAt = now; } botRevengeLaunched(bot, e.target.id); if (rally && rally.t === e.target.id) mem.rally = null; }
                 break;                                                                                    // one decision per move
             }
