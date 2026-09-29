@@ -210,6 +210,8 @@ b,strong{font-weight:600}
 .marker-sheet[hidden]{display:none}
 .field-lines{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-3)} .field-lines b{color:var(--tx-1);text-align:right}
 .field-sheet .marker-head b{display:inline-flex;align-items:center;gap:6px} .field-sheet .marker-head .icon{width:16px;height:16px} .field-sheet .btn{justify-content:center}
+.logLine.buff.malus span:last-child{color:#ff8d82}
+.logSrc{display:block;font:500 10px/1.25 var(--font-ui);color:var(--tx-3);letter-spacing:0;text-transform:none}
 .army-hint{font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-3)} .army-inc{font-style:normal;color:#8cc0ff;font-weight:600}
 .army-btns{display:grid;grid-template-columns:1fr 1fr;gap:6px} .army-btns .btn{justify-content:center}
 .marker-head{display:flex;align-items:center;justify-content:space-between;color:var(--tx-1)}
@@ -1626,7 +1628,7 @@ body.has-panel .mapctl{display:none}
     <div id="popupStats" class="popup-stats"></div>
     <div id="popupActions" class="actgrid">
       <button id="teleportBtn" class="act act--city" type="button" style="display:none"><span class="act-ic act-ic--city"><svg class="icon"><use href="#i-send"/></svg></span><span class="act-t">Hauptstadt verlegen</span><span class="act-s">zu einer eigenen Basis · 50 Gems</span></button>
-      <button id="titleBtn" class="act act--city" type="button" style="display:none"><span class="act-ic act-ic--city"><svg class="icon"><use href="#i-temple"/></svg></span><span class="act-t">Titel</span><span class="act-s">Ehren- und Spotttitel vergeben</span></button>
+      <button id="titleBtn" class="act act--city" type="button" style="display:none"><span class="act-ic act-ic--city"><svg class="icon"><use href="#i-temple"/></svg></span><span class="act-t">Titel</span><span class="act-s">Buffs und Strafen vergeben</span></button>
       <button id="cityBtn" class="act act--city" type="button" style="display:none"><span class="act-ic act-ic--city"><svg class="icon"><use href="#i-castle"/></svg></span><span class="act-t">Stadt betreten</span><span class="act-s">Hauptstadt ausbauen</span></button>
       <button id="upgradeBtn" class="act act--primary" type="button"><span class="act-ic"><svg class="icon"><use href="#i-upgrade"/></svg></span><span class="act-t">Aufwerten</span><span class="act-s" id="upgradeCostLabel">–</span></button>
       <button id="sendBtn" class="act" type="button"><span class="act-ic act-ic--send"><svg class="icon"><use href="#i-send"/></svg></span><span class="act-t">Senden</span><span class="act-s">Verstärken</span></button>
@@ -2627,7 +2629,40 @@ body.has-panel .mapctl{display:none}
             const level = islandLevels[island.id] || 1;
             const garrison = islandTroops[island.id] || 0;   // Verteidigung skill: the garrison fights harder, +3 % of it per level (mirror of the sword)
             return Math.round((owner === 'player' ? (defenseForLevel(level) + garrison * (skills.defense || 0) * SKILL_DEFS.defense.defPct / 100) * (1 + wallDefensePct() / 100)
-                                                  : (baseDefenseForLevel(level) * (1 + (botMults(owner).armorPct || 0) / 100) + garrison * (botMults(owner).defensePct || 0) / 100) * (1 + botCityLevel(owner) * 2 / 100)));
+                                                  : (baseDefenseForLevel(level) * (1 + (botMults(owner).armorPct || 0) / 100) + garrison * (botMults(owner).defensePct || 0) / 100) * (1 + botCityLevel(owner) * 2 / 100)) * titleMult(owner, 'defense'));
+        }
+        // Where every point of a fight comes from - for the battle report, line by line with its source.
+        function defenseParts(island) {
+            const boss = bossAt(island.id); if (boss) return [['Verteidigung', boss.defense, 'Boss']];
+            const owner = islandOwnerOf(island.id), L = islandLevels[island.id] || 1;
+            if (!owner) return [['Verteidigung', island.neutralDefense, 'neutrale Basis']];
+            const g = islandTroops[island.id] || 0, base = baseDefenseForLevel(L), out = [['Grundverteidigung', base, 'Basis Stufe ' + L]];
+            let armor, skill, wallPct, sl;
+            if (owner === 'player') { armor = defenseForLevel(L) - base; sl = skills.defense || 0; skill = g * sl * SKILL_DEFS.defense.defPct / 100; wallPct = wallDefensePct(); }
+            else { const m = botMults(owner), b = loadBotState()[owner]; armor = base * (m.armorPct || 0) / 100; sl = b ? b.skills.defense : 0; skill = g * (m.defensePct || 0) / 100; wallPct = botCityLevel(owner) * 2; }
+            if (armor) out.push(['Rüstung', Math.round(armor), 'Ausrüstung']);
+            if (skill) out.push(['Skill Verteidigung', Math.round(skill), 'Stufe ' + sl + ' · +' + sl * SKILL_DEFS.defense.defPct + ' % der Truppen']);
+            const sub = base + armor + skill;
+            if (wallPct) out.push(['Mauer', Math.round(sub * wallPct / 100), 'Stadt · +' + wallPct + ' %']);
+            const x = titleOf(owner); if (x && x.kind === 'defense') out.push(['Titel ' + x.name, Math.round(sub * (1 + wallPct / 100) * x.v), 'Mega-Tempel · ' + (x.v > 0 ? '+' : '−') + Math.round(Math.abs(x.v) * 100) + ' %']);
+            out[0][1] += effectiveDefense(island) - out.reduce((a, q) => a + q[1], 0);        // rounding goes to the base line
+            return out;
+        }
+        function attackParts(who, raw, bonus, total, hero) {
+            const out = [];
+            if (who === 'player') {
+                const skill = Math.min(bonus, attackFlatBonus(raw));
+                if (skill) out.push(['Skill Angriff', skill, 'Stufe ' + (skills.attack || 0) + ' · +' + attackBonusPct() + ' %']);
+                if (bonus - skill) out.push([hero === 'sigrun' ? 'Heldin Sigrun' : 'Helden', bonus - skill, hero === 'sigrun' ? 'Heldenhalle · +' + heroBonus('sigrun') + ' %' : '']);
+            } else {
+                const b = loadBotState()[who], st = BOT_STYLES[botById[who].style], sl = b ? b.skills.attack : 0;
+                const ps = [['Skill Angriff', sl * SKILL_DEFS.attack.atkPct, 'Stufe ' + sl + ' · +' + sl * SKILL_DEFS.attack.atkPct + ' %'], ['Kampfstil', st.atkBonus || 0, '+' + (st.atkBonus || 0) + ' %'], ['Heldin Sigrun', botHeroPct(who), 'Heldenhalle · +' + botHeroPct(who) + ' %']].filter(q => q[1] > 0);
+                const tot = ps.reduce((a, q) => a + q[1], 0); let left = bonus;
+                ps.forEach((q, i) => { const v = i === ps.length - 1 ? left : Math.round(bonus * q[1] / tot); left -= v; if (v) out.push([q[0], v, q[2]]); });
+            }
+            const tv = total - raw - bonus, x = titleOf(who);
+            if (tv) out.push(['Titel ' + (x ? x.name : ''), tv, 'Mega-Tempel · ' + (tv > 0 ? '+' : '−') + (x ? Math.round(Math.abs(x.v) * 100) : 25) + ' %']);
+            return out;
         }
         // Removes an island from whichever owner (player or a bot) it
         // currently belongs to, without touching its troops/level - used
@@ -2668,8 +2703,8 @@ body.has-panel .mapctl{display:none}
         }
         // The same multipliers runProductionTick uses (equipment/skills, ruler bonus, titles)
         function cityLevelSafe(id) { try { return loadCity().levels[id] || 0; } catch (e) { return 0; } }   // (the city isn't set up during the first boot steps)
-        function playerCoinMult() { return coinProductionMultiplier() * (rulerOwner() === 'player' ? RULER_BONUS : 1) * (1 + cityLevelSafe('treasury') * .02); }
-        function playerTroopMult() { return troopProductionMultiplier() * (rulerOwner() === 'player' ? RULER_BONUS : 1) * (1 + cityLevelSafe('barracks') * .02); }
+        function playerCoinMult() { return coinProductionMultiplier() * (rulerOwner() === 'player' ? RULER_BONUS : 1) * titleMult('player', 'coins') * (1 + cityLevelSafe('treasury') * .02); }
+        function playerTroopMult() { return troopProductionMultiplier() * (rulerOwner() === 'player' ? RULER_BONUS : 1) * titleMult('player', 'troops') * (1 + cityLevelSafe('barracks') * .02); }
         function totalTroopProductionPerTick() {
             let sum = 0; const m = playerTroopMult();
             for (const ownedId of ownedIslands) {
@@ -3351,10 +3386,11 @@ body.has-panel .mapctl{display:none}
             const lossReductionPct = attack.shieldLossReductionPct !== undefined ? attack.shieldLossReductionPct : shieldLossReductionPct();
             const rewardRate = attack.rewardGoldRate !== undefined ? attack.rewardGoldRate : goldPerKillRate();
 
-            const myTroops = Math.round((attack.rawTroops + atkBonus));
+            const myTroops = Math.round((attack.rawTroops + atkBonus) * titleMult('player', 'attack'));
             const targetOwner = islandOwnerOf(target.id); // null | 'player' | a bot id
             const originalEnemyTroops = effectiveTroops(target);
-            const originalEnemyDefense = effectiveDefense(target);
+            const originalEnemyDefense = effectiveDefense(target), defParts = defenseParts(target);
+            const atkParts = attackParts('player', attack.rawTroops, atkBonus, myTroops, attack.hero);
             const totalStrength = originalEnemyTroops + originalEnemyDefense;
             const won = myTroops > totalStrength;
             const bossHere = bossAt(target.id);
@@ -3463,6 +3499,7 @@ body.has-panel .mapctl{display:none}
                 defenderCasualties,
                 retreatSurvivors,
                 defenderName: targetOwner ? botById[targetOwner].name : null,
+                atkParts, defParts,
                 won,
                 remaining
             });
@@ -3523,10 +3560,12 @@ body.has-panel .mapctl{display:none}
             const target = islandById[attack.targetId];
             if (!bot || !source || !target) return;
 
-            const myTroops = Math.round((attack.rawTroops + (attack.attackBonus || 0)));
+            const myTroops = Math.round((attack.rawTroops + (attack.attackBonus || 0)) * titleMult(bot.id, 'attack'));
             const targetOwner = islandOwnerOf(target.id);
             const originalEnemyTroops = effectiveTroops(target);
             const originalEnemyDefense = effectiveDefense(target);
+            const partsFor = () => targetOwner === 'player' ? { atkParts: attackParts(bot.id, attack.rawTroops, attack.attackBonus || 0, myTroops), defParts: defenseParts(target) } : null;
+            const parts = partsFor();
             const totalStrength = originalEnemyTroops + originalEnemyDefense;
             const won = myTroops > totalStrength;
             if (targetOwner && targetOwner !== 'player') botGrudge(targetOwner, bot.id, won ? 2 : 1);   // bots hold grudges against each other too
@@ -3596,7 +3635,7 @@ body.has-panel .mapctl{display:none}
                     botName: bot.name,
                     targetId: target.id,
                     myTroops,
-                    atkRaw: attack.rawTroops, atkBonus: attack.attackBonus || 0, atkFallen, atkWounded, atkFled: fled,
+                    atkRaw: attack.rawTroops, atkBonus: attack.attackBonus || 0, atkFallen, atkWounded, atkFled: fled, ...(parts || {}),
                     enemyTroops: originalEnemyTroops,
                     enemyDefense: originalEnemyDefense,
                     wounded: defWounded,
@@ -5636,7 +5675,7 @@ body.has-panel .mapctl{display:none}
             if (Date.now() < act.next) return;                               // still busy with the last order
             if (act.plan) { if (botPlanStep(bot)) { botTapped(bot); saveBotState(); } return; }   // finish what they started
             if (botArmyStep(bot)) { botTapped(bot); saveBotState(); return; }                  // a field army waiting for orders
-            const st = BOT_STYLES[bot.style], atk = (1 + botMults(bot.id).attackPct / 100), ruler = rulerOwner();
+            const st = BOT_STYLES[bot.style], atk = (1 + botMults(bot.id).attackPct / 100) * titleMult(bot.id, 'attack'), ruler = rulerOwner();
             const shielded = playerShielded(), now = Date.now();
             const busy = new Set(pendingAttacks.filter(a => a.attackerBotId === bot.id).map(a => a.targetId));
             // a player has a few march slots, not hundreds: columns on the road (attacks + sends) count against them
@@ -5727,6 +5766,7 @@ body.has-panel .mapctl{display:none}
                     continue;
                 }
                 const big = boss || e.target.type !== 'tower' || e.target.id === megaTempleId || (rally && rally.t === e.target.id);
+                if ((big || islandOwnerOf(e.target.id)) && srcs.length >= 2 && !gamble && Math.random() < .3 && botArmyRally(bot, e.target, need, slots)) { rallied = true; break; }   // a big strike: gather out in the open first
                 // the plan: the strongest base with most of its troops; only if that isn't enough a second or third base joins
                 // (a big target up to four). The farthest goes first - a person's way of getting them there at a similar time.
                 const want = big ? Math.max(need * 2.2, total) : Math.max(need * (gamble ? 1.3 : 1.8), srcs[0].have);
@@ -5792,8 +5832,8 @@ body.has-panel .mapctl{display:none}
         function botMults(botId) {
             const b = loadBotState()[botId]; if (!b) return { troops: 1, coins: 1, armorPct: 0, attackPct: 0, shield: 0 };
             const st = BOT_STYLES[botById[botId].style], city = 1 + botCityLevel(botId) * .02;
-            return { troops: (1 + (b.skills.troops * SKILL_DEFS.troops.pct + b.equip.weapon * EQUIPMENT_DEFS.weapon.pct + botItemScore(b, 'weapon') * RARITY_PCT_PER_SCORE) / 100) * (st.troopMult || 1) * city,
-                     coins: (1 + (b.equip.boots * EQUIPMENT_DEFS.boots.pct + botItemScore(b, 'boots') * RARITY_PCT_PER_SCORE) / 100) * city,
+            return { troops: (1 + (b.skills.troops * SKILL_DEFS.troops.pct + b.equip.weapon * EQUIPMENT_DEFS.weapon.pct + botItemScore(b, 'weapon') * RARITY_PCT_PER_SCORE) / 100) * titleMult(botId, 'troops') * (st.troopMult || 1) * city,
+                     coins: (1 + (b.equip.boots * EQUIPMENT_DEFS.boots.pct + botItemScore(b, 'boots') * RARITY_PCT_PER_SCORE) / 100) * titleMult(botId, 'coins') * city,
                      armorPct: b.equip.armor * EQUIPMENT_DEFS.armor.pct + botItemScore(b, 'armor') * RARITY_PCT_PER_SCORE,   // Rüstung: +% base defense, same rule as the player
                      defensePct: b.skills.defense * SKILL_DEFS.defense.defPct,
                      attackPct: b.skills.attack * SKILL_DEFS.attack.atkPct + (st.atkBonus || 0) + botHeroPct(botId),
@@ -5870,7 +5910,7 @@ body.has-panel .mapctl{display:none}
         }
         function botGather(bot) {
             if (pendingSends.some(s => s.senderBotId === bot.id)) return false;
-            const st = BOT_STYLES[bot.style], owned = [...botOwnedIslands[bot.id]], atk = (1 + botMults(bot.id).attackPct / 100);
+            const st = BOT_STYLES[bot.style], owned = [...botOwnedIslands[bot.id]], atk = (1 + botMults(bot.id).attackPct / 100) * titleMult(bot.id, 'attack');
             let plan = null;
             for (const sourceId of botSampleSources(owned)) {
                 const source = islandById[sourceId];
@@ -5960,7 +6000,7 @@ body.has-panel .mapctl{display:none}
         function fightEstimate(a) {                       // the fight as it stands right now (no side effects) - same maths as resolveAttack/resolveBotAttack
             const target = islandById[a.targetId]; if (!target) return null;
             const who = a.attackerBotId || 'player', bonus = a.attackBonus !== undefined ? a.attackBonus : attackFlatBonus(a.rawTroops);
-            const my = Math.round((a.rawTroops + (bonus || 0))), en = effectiveTroops(target), def = effectiveDefense(target), won = my > en + def;
+            const my = Math.round((a.rawTroops + (bonus || 0)) * titleMult(who, 'attack')), en = effectiveTroops(target), def = effectiveDefense(target), won = my > en + def;
             const red = a.attackerBotId ? botMults(a.attackerBotId).shield : (a.shieldLossReductionPct !== undefined ? a.shieldLossReductionPct : shieldLossReductionPct());
             return { my, en, won, myLoss: won ? Math.min(my, Math.round(def * (1 - red / 100))) : my, enLoss: won ? en : Math.min(en, my) };
         }
@@ -5968,17 +6008,17 @@ body.has-panel .mapctl{display:none}
             return Math.round(Math.max(4000, Math.min(12000, 4000 + 1500 * Math.log10(Math.max(1, est.my + est.en) / 1000))));
         }
         // ===== TITLES (Mega-Tempel) =====
-        // Whoever holds the Mega-Tempel hands out titles: 4 titles of honour for friends, 4 mocking ones for rivals.
-        // They only show on the name - no buffs, no penalties. Bots that hold it hand them out too - you may get the Narr.
+        // Whoever holds the Mega-Tempel hands out titles: 4 buffs for friends, 4 penalties for rivals (±25 %).
+        // A new holder starts with a clean slate. Bots that hold it hand them out too - you may get the Narr.
         var TITLES = [
-            { key: 'herzog',    name: 'Herzog',        good: true,  desc: 'Ehrentitel' },
-            { key: 'schatz',    name: 'Schatzmeister', good: true,  desc: 'Ehrentitel' },
-            { key: 'feldherr',  name: 'Feldherr',      good: true,  desc: 'Ehrentitel' },
-            { key: 'burgherr',  name: 'Burgherr',      good: true,  desc: 'Ehrentitel' },
-            { key: 'narr',      name: 'Narr',          good: false, desc: 'Spotttitel' },
-            { key: 'bettler',   name: 'Bettler',       good: false, desc: 'Spotttitel' },
-            { key: 'feigling',  name: 'Feigling',      good: false, desc: 'Spotttitel' },
-            { key: 'verraeter', name: 'Verräter',      good: false, desc: 'Spotttitel' }
+            { key: 'herzog',    name: 'Herzog',        good: true,  kind: 'troops',  v: .25, desc: '+25 % Truppenproduktion' },
+            { key: 'schatz',    name: 'Schatzmeister', good: true,  kind: 'coins',   v: .25, desc: '+25 % Münzen' },
+            { key: 'feldherr',  name: 'Feldherr',      good: true,  kind: 'attack',  v: .25, desc: '+25 % Angriffsstärke' },
+            { key: 'burgherr',  name: 'Burgherr',      good: true,  kind: 'defense', v: .25, desc: '+25 % Verteidigung' },
+            { key: 'narr',      name: 'Narr',          good: false, kind: 'troops',  v: -.25, desc: '−25 % Truppenproduktion' },
+            { key: 'bettler',   name: 'Bettler',       good: false, kind: 'coins',   v: -.25, desc: '−25 % Münzen' },
+            { key: 'feigling',  name: 'Feigling',      good: false, kind: 'attack',  v: -.25, desc: '−25 % Angriffsstärke' },
+            { key: 'verraeter', name: 'Verräter',      good: false, kind: 'defense', v: -.25, desc: '−25 % Verteidigung' }
         ];
         var titleState = null;
         function loadTitles() {
@@ -5989,6 +6029,11 @@ body.has-panel .mapctl{display:none}
             return titleState;
         }
         function saveTitles() { store.set('openWaterTitles', JSON.stringify(titleState)); }
+        function titleMult(who, kind) {
+            const t = loadTitles(); let m = 1;
+            for (const x of TITLES) if (x.kind === kind && t.by[x.key] === who) m *= 1 + x.v;
+            return m;
+        }
         function titleOf(who) { const t = loadTitles(); return TITLES.find(x => t.by[x.key] === who) || null; }
         function giveTitle(key, who) {                   // who: 'player' | bot id | null
             const t = loadTitles();
@@ -6012,7 +6057,7 @@ body.has-panel .mapctl{display:none}
         function renderTitleModal() {
             const t = loadTitles(), mine = t.ruler === 'player';
             const who = w => w === 'player' ? (profileName.value || 'Du') : w ? botById[w].name : '–';
-            document.getElementById('titleModalSub').textContent = mine ? 'Du hältst den Mega-Tempel: verleihe Ehrentitel an Freunde und Spotttitel an Rivalen. Titel sind nur Zierde, sie geben keine Boni.'
+            document.getElementById('titleModalSub').textContent = mine ? 'Du hältst den Mega-Tempel: verteile Buffs an Freunde und Strafen an Rivalen.'
                 : t.ruler ? botById[t.ruler].name + ' hält den Mega-Tempel und verteilt die Titel.' : 'Niemand hält den Mega-Tempel – erobere ihn, um Titel zu vergeben.';
             const opts = cur => '<option value="">– niemand –</option>' + BOT_DEFS.filter(b => botOwnedIslands[b.id].size).map(b => '<option value="' + b.id + '"' + (cur === b.id ? ' selected' : '') + '>' + escapeHtml(b.name) + '</option>').join('');
             document.getElementById('titleList').innerHTML = TITLES.map(x => '<div class="title-row ' + (x.good ? 'is-good' : 'is-bad') + '"><div><b>' + x.name + '</b><small>' + x.desc + '</small></div>' +
@@ -6921,6 +6966,7 @@ body.has-panel .mapctl{display:none}
             const fmt1 = v => (v || 0).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
             const fmtM = v => Math.abs(v || 0) >= 1e6 ? fmtCompact(v || 0) : fmtNum(v || 0);   // meta lines: "987,7 Mio."
             const fmtD = v => Math.abs(v || 0) >= 1e8 ? fmtCompact(v || 0) : fmtNum(v || 0);   // detail cards
+            const partLines = (parts, first) => (parts || []).map((q, i) => '<div class="logLine' + (first && !i ? '' : q[1] < 0 ? ' buff malus' : ' buff') + '"><span>' + escapeHtml(q[0]) + (q[2] ? '<small class="logSrc">' + escapeHtml(q[2]) + '</small>' : '') + '</span><span>' + (first && !i ? '' : q[1] < 0 ? '−' : '+') + fmtD(Math.abs(q[1])) + '</span></div>').join('');   // each bonus with where it comes from
             combatLogListEl.innerHTML = combatLog.map(entry => {
                 T = id => (entry.names && entry.names[id]) || islandTitle(islandById[id]);
                 if (entry.type === 'send') {
@@ -6952,7 +6998,8 @@ body.has-panel .mapctl{display:none}
                         '<div class="logCompare">' +
                             '<div class="logSide">' +
                                 '<div class="logSideLabel">Angreifer · ' + escapeHtml(entry.botName) + '</div>' +
-                                (entry.atkRaw !== undefined ? '<div class="logLine"><span>Truppen</span><span>' + fmtD(entry.atkRaw) + '</span></div>' +
+                                (entry.atkParts ? '<div class="logLine"><span>Truppen</span><span>' + fmtD(entry.atkRaw) + '</span></div>' + partLines(entry.atkParts) :
+                                 entry.atkRaw !== undefined ? '<div class="logLine"><span>Truppen</span><span>' + fmtD(entry.atkRaw) + '</span></div>' +
                                     (entry.atkBonus ? '<div class="logLine buff"><span>Angriff-Bonus</span><span>+' + fmtD(entry.atkBonus) + '</span></div>' : '') +
                                     (entry.myTroops - entry.atkRaw - entry.atkBonus ? '<div class="logLine buff"><span>Titel</span><span>' + (entry.myTroops - entry.atkRaw - entry.atkBonus > 0 ? '+' : '−') + fmtD(Math.abs(entry.myTroops - entry.atkRaw - entry.atkBonus)) + '</span></div>' : '') : '') +
                                 '<div class="logSum' + (entry.won ? ' advantage' : '') + '"><span>Gesamt</span><span>' + fmtD(entry.myTroops) + '</span></div>' +
@@ -6964,8 +7011,9 @@ body.has-panel .mapctl{display:none}
                             '<div class="logSide">' +
                                 '<div class="logSideLabel">Verteidiger · Du</div>' +
                                 '<div class="logLine"><span>Truppen</span><span>' + fmtD(entry.enemyTroops) + '</span></div>' +
-                                '<div class="logLine"><span>Verteidigung</span><span>' + fmtD(entry.enemyDefense) + '</span></div>' +
-                                (entry.armor ? '<div class="logLine buff"><span>davon Rüstung</span><span>+' + fmtD(entry.armor) + '</span></div>' : '') +
+                                (entry.defParts ? partLines(entry.defParts, true)
+                                  : '<div class="logLine"><span>Verteidigung</span><span>' + fmtD(entry.enemyDefense) + '</span></div>' +
+                                    (entry.armor ? '<div class="logLine buff"><span>davon Rüstung</span><span>+' + fmtD(entry.armor) + '</span></div>' : '')) +
                                 '<div class="logSum' + (entry.won ? '' : ' advantage') + '"><span>Gesamt</span><span>' + fmtD(defSum) + '</span></div>' +
                                 '<div class="logCasualty"><span>Gefallen</span><span>−' + fmtD(Math.max(0, fallen - (entry.wounded || 0))) + '</span></div>' +
                                 (entry.wounded ? '<div class="logCasualty wounded"><span>Verwundet</span><span>' + fmtD(entry.wounded) + '</span></div>' : '') +
@@ -7001,7 +7049,7 @@ body.has-panel .mapctl{display:none}
                         '<div class="logSide">' +
                             '<div class="logSideLabel">Angreifer</div>' +
                             '<div class="logLine"><span>Truppen</span><span>' + fmtD(entry.myTroops) + '</span></div>' +
-                            (entry.skillBuff !== undefined
+                            (entry.atkParts ? partLines(entry.atkParts) : entry.skillBuff !== undefined
                                 ? '<div class="logLine buff"><span>Angriff-Skill</span><span>+' + fmtD(entry.skillBuff) + '</span></div>' +
                                   (entry.titleBuff ? '<div class="logLine buff"><span>Titel</span><span>' + (entry.titleBuff > 0 ? '+' : '−') + fmtD(Math.abs(entry.titleBuff)) + '</span></div>' : '')
                                 : '<div class="logLine buff"><span>Angriff-Buff</span><span>+' + fmtD(entry.attackBuff) + '</span></div>') +
@@ -7014,8 +7062,9 @@ body.has-panel .mapctl{display:none}
                         '<div class="logSide">' +
                             '<div class="logSideLabel">Verteidiger' + (entry.defenderName ? ' · ' + escapeHtml(entry.defenderName) : '') + '</div>' +
                             '<div class="logLine"><span>Truppen</span><span>' + fmtD(entry.enemyTroops) + '</span></div>' +
-                            '<div class="logLine"><span>Verteidigung</span><span>' + fmtD(entry.enemyDefense) + '</span></div>' +
-                            '<div class="logLine buff"><span>Verteidigung-Buff</span><span>+' + fmtD(entry.defenseBuff) + '</span></div>' +
+                            (entry.defParts ? partLines(entry.defParts, true)
+                              : '<div class="logLine"><span>Verteidigung</span><span>' + fmtD(entry.enemyDefense) + '</span></div>' +
+                                '<div class="logLine buff"><span>Verteidigung-Buff</span><span>+' + fmtD(entry.defenseBuff) + '</span></div>') +
                             '<div class="logSum' + (defTotal > atkTotal ? ' advantage' : '') + '"><span>Gesamt</span><span>' + fmtD(defTotal) + '</span></div>' +
                             '<div class="logCasualty"><span>Gefallen</span><span>−' + fmtD(entry.defenderCasualties || 0) + '</span></div>' +
                         '</div>' +
@@ -9727,7 +9776,7 @@ body.has-panel .mapctl{display:none}
                     if (islandOwnerOf(t.id) === 'player') { const h = armyHome(a); if (h !== null && h !== undefined) botScoutVisible(bot, h, t.id, now, ready); }
                     return true;
                 }
-                const st = BOT_STYLES[bot.style], margin = islandOwnerOf(t.id) === 'player' ? Math.max(1.25, st.margin) : st.margin, atk = 1 + botMults(bot.id).attackPct / 100;
+                const st = BOT_STYLES[bot.style], margin = islandOwnerOf(t.id) === 'player' ? Math.max(1.25, st.margin) : st.margin, atk = (1 + botMults(bot.id).attackPct / 100) * titleMult(bot.id, 'attack');
                 if (a.troops * atk < it.s * margin * (boss ? .35 : 1)) { if (now > a.until - 3 * 60000) return goHome(); continue; }   // too strong: wait a bit, then give up
                 if (armyMove(a, { kind: 'base', id: t.id, x: t.x, y: t.y, lm: t.landmassId })) continue;
                 if (islandOwnerOf(t.id) === 'player') { flashHint('Die Armee von ' + bot.name + ' marschiert auf ' + islandTitle(t) + '!', 4500); sfx('warn'); }
@@ -10433,7 +10482,7 @@ body.has-panel .mapctl{display:none}
             const hfx = popupStats.querySelector('[data-preview="herofx"]');
             if (hfx) hfx.textContent = previewHero ? heroById(previewHero).name + ': +' + heroBonus(previewHero) + ' ' + heroById(previewHero).what : '';
             const swordBonus = attackFlatBonus(shown), sigrunBonus = previewHero === 'sigrun' ? Math.round(shown * heroBonus('sigrun') / 100) : 0, atkBonus = swordBonus + sigrunBonus;
-            const mine = Math.round((shown + atkBonus));        // same maths as resolveAttack
+            const mine = Math.round((shown + atkBonus) * titleMult('player', 'attack'));        // same maths as resolveAttack
             const bEl = popupStats.querySelector('#previewAtkBonus'); if (bEl) bEl.textContent = fmtNum(swordBonus);
             const hbEl = popupStats.querySelector('#previewHeroBonus'); if (hbEl) hbEl.textContent = sigrunBonus ? ' + ' + fmtNum(sigrunBonus) + ' Sigrun' : '';
             const src = islandById[previewSourceId], tEl = popupSub.querySelector('#previewToll'), mEl = popupSub.querySelector('#previewMarch');
