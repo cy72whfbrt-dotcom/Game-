@@ -15,3 +15,4 @@ Liste der Ideen, die für später vorgemerkt sind. Oben die, die als Nächstes d
 
 ## Nicht gewollt
 - Kampfmusik
+- Belagerung (Basis umstellen, Verteidigung sinkt mit der Zeit) – vorerst nicht, vielleicht später
