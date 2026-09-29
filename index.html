@@ -2352,14 +2352,22 @@ body.has-panel .mapctl{display:none}
         const botById = {};
         for (const bot of BOT_DEFS) botById[bot.id] = bot;
 
+        // Every bot's bases, plus an index base → bot kept in step with them, so "who owns this?" is one lookup, not 60.
+        const botOwnerIndex = new Map();
+        class BotBaseSet extends Set {
+            constructor(owner, items) { super(); this.owner = owner; for (const id of items || []) this.add(id); }
+            add(id) { botOwnerIndex.set(id, this.owner); return super.add(id); }
+            delete(id) { if (botOwnerIndex.get(id) === this.owner) botOwnerIndex.delete(id); return super.delete(id); }
+            clear() { for (const id of this) if (botOwnerIndex.get(id) === this.owner) botOwnerIndex.delete(id); super.clear(); }
+        }
         let botOwnedIslands;
         try {
             const raw = JSON.parse(store.get('openWaterBotOwnedIslands'));
             botOwnedIslands = {};
-            for (const bot of BOT_DEFS) botOwnedIslands[bot.id] = new Set(raw && raw[bot.id] || []);
+            for (const bot of BOT_DEFS) botOwnedIslands[bot.id] = new BotBaseSet(bot.id, raw && raw[bot.id] || []);
         } catch (e) {
             botOwnedIslands = {};
-            for (const bot of BOT_DEFS) botOwnedIslands[bot.id] = new Set();
+            for (const bot of BOT_DEFS) botOwnedIslands[bot.id] = new BotBaseSet(bot.id);
         }
         let botCoins;
         try {
@@ -2399,8 +2407,7 @@ body.has-panel .mapctl{display:none}
         // be in first.
         function islandOwnerOf(islandId) {
             if (ownedIslands.has(islandId)) return 'player';
-            for (const bot of BOT_DEFS) if (botOwnedIslands[bot.id].has(islandId)) return bot.id;
-            return null;
+            return botOwnerIndex.get(islandId) || null;
         }
         // Actual troops/defense a target currently has, regardless of who
         // (if anyone) owns it - neutral islands use their fixed generated
@@ -2487,7 +2494,13 @@ body.has-panel .mapctl{display:none}
             for (const bot of BOT_DEFS) botOwnedIslands[bot.id].delete(islandId);
         }
 
-        function saveGame() {
+        // Many things change many times a second (60 bots): the save is written at most once a second, and when the page goes away.
+        var saveGameTimer = null;
+        function saveGame() { if (!saveGameTimer) saveGameTimer = setTimeout(saveGameNow, 1000); }
+        window.addEventListener('pagehide', () => { if (saveGameTimer) saveGameNow(); });
+        document.addEventListener('visibilitychange', () => { if (document.hidden && saveGameTimer) saveGameNow(); });
+        function saveGameNow() {
+            clearTimeout(saveGameTimer); saveGameTimer = null;
             store.set('openWaterOwnedIslands', JSON.stringify([...ownedIslands]));
             store.set('openWaterIslandLevels', JSON.stringify(islandLevels));
             store.set('openWaterIslandTroops', JSON.stringify(islandTroops));
@@ -2834,7 +2847,12 @@ body.has-panel .mapctl{display:none}
             if (playerLvl > before) grantLevelRewards(before, playerLvl);
         }
 
-        function saveProgression() {
+        var saveProgressionTimer = null;
+        function saveProgression() { if (!saveProgressionTimer) saveProgressionTimer = setTimeout(saveProgressionNow, 1000); }
+        window.addEventListener('pagehide', () => { if (saveProgressionTimer) saveProgressionNow(); });
+        document.addEventListener('visibilitychange', () => { if (document.hidden && saveProgressionTimer) saveProgressionNow(); });
+        function saveProgressionNow() {
+            clearTimeout(saveProgressionTimer); saveProgressionTimer = null;
             store.set('openWaterEquipment', JSON.stringify(equipment));
             store.set('openWaterInventory', JSON.stringify(inventory));
             store.set('openWaterNextItemId', String(nextItemId));
@@ -5371,13 +5389,14 @@ body.has-panel .mapctl{display:none}
         // Intel ages: after 10 minutes it scouts again. Scouting takes as long as a scout would walk (about half the march).
         const BOT_INTEL_MS = 10 * 60000;
         function botIntel(bot, targetId) {
-            const b = loadBotState()[bot.id], it = b.intel && b.intel[targetId];
+            const it = botIntelMem[bot.id] && botIntelMem[bot.id][targetId];
             return it && Date.now() >= it.ready && Date.now() - it.ready < BOT_INTEL_MS ? it : null;
         }
-        function botScouting(bot, targetId) { const b = loadBotState()[bot.id], it = b.intel && b.intel[targetId]; return !!it && Date.now() < it.ready; }
+        const botIntelMem = {};                                       // kept in memory only: it goes stale in 10 min anyway
+        function botScouting(bot, targetId) { const it = botIntelMem[bot.id] && botIntelMem[bot.id][targetId]; return !!it && Date.now() < it.ready; }
         function botLearn(botId, targetId, ready) {                   // (ready = when the report comes in)
-            const b = loadBotState()[botId]; if (!b) return; const t = islandById[targetId]; if (!t) return;
-            const it = (b.intel || (b.intel = {}));
+            if (!botById[botId]) return; const t = islandById[targetId]; if (!t) return;
+            const it = botIntelMem[botId] || (botIntelMem[botId] = {});
             it[targetId] = { s: effectiveTroops(t) + effectiveDefense(t), ready: ready || Date.now() };
             const keys = Object.keys(it); if (keys.length > 120) for (const k of keys.sort((u, v) => it[u].ready - it[v].ready).slice(0, keys.length - 120)) delete it[k];
         }
@@ -5484,13 +5503,19 @@ body.has-panel .mapctl{display:none}
             try { botState = JSON.parse(store.get('openWaterBotState')) || {}; } catch (e) { botState = {}; }
             for (const bot of BOT_DEFS) {
                 const b = botState[bot.id] = Object.assign({ lvl: 1, xp: 0, sp: 0, gems: 0, salvage: 0 }, botState[bot.id] || {});
+                delete b.intel;                                  // (older saves kept scouting reports in here)
                 b.skills = Object.assign({ troops: 0, attack: 0, defense: 0 }, b.skills || {});
                 b.equip = Object.assign({ weapon: 0, armor: 0, shield: 0, boots: 0 }, b.equip || {});
                 if (!b.items) { b.items = {}; for (const k of Object.keys(EQUIPMENT_DEFS)) b.items[k] = RARITY_DEFS.map(() => 0); }
             }
             return botState;
         }
-        function saveBotState() { store.set('openWaterBotState', JSON.stringify(botState)); }
+        // Bots change their state many times a second: write it out at most every few seconds, and when the page goes away.
+        var botSaveTimer = null;
+        function flushBotState() { if (botSaveTimer) { clearTimeout(botSaveTimer); botSaveTimer = null; } if (botState) store.set('openWaterBotState', JSON.stringify(botState)); }
+        function saveBotState() { if (!botSaveTimer) botSaveTimer = setTimeout(flushBotState, 4000); }
+        window.addEventListener('pagehide', flushBotState);
+        document.addEventListener('visibilitychange', () => { if (document.hidden) flushBotState(); });
         function botItem(b, slot) {                              // the best item a bot wears in a slot → { rarity, level } | null
             const c = b.items[slot]; for (let r = c.length - 1; r >= 0; r--) if (c[r] > 0) return { rarity: r, level: Math.min(ITEM_MAX_LEVEL, 1 + Math.floor(b.salvage / 12)) };
             return null;
@@ -5607,11 +5632,18 @@ body.has-panel .mapctl{display:none}
             if (b.capital === undefined || !own.has(b.capital)) {
                 let best = null; for (const id of own) { const isl = islandById[id]; if (isl.type !== 'tower') continue;
                     if (best === null || (islandLevels[id] || 1) > (islandLevels[best] || 1)) best = id; }
-                b.capital = best ?? [...own][0]; saveBotState();
+                b.capital = best ?? [...own][0]; saveBotState(); capitalCache = null;
             }
             return b.capital;
         }
-        function isCapital(id) { if (id === playerIslandId) return true; for (const bot of BOT_DEFS) if (botCapitalOf(bot.id) === id) return true; return false; }
+        let capitalCache = null, capitalCacheAt = 0;                // the bots' capitals, looked up a few times a second instead of per base
+        function isCapital(id) {
+            if (id === playerIslandId) return true;
+            const now = Date.now();
+            if (!capitalCache || now - capitalCacheAt > 250) { const caps = new Set(); for (const bot of BOT_DEFS) { const c = botCapitalOf(bot.id); if (c !== null) caps.add(c); } capitalCache = caps; capitalCacheAt = now; }
+            if (!capitalCache.has(id)) return false;
+            const o = islandOwnerOf(id); return !!o && o !== 'player' && botCapitalOf(o) === id;     // still that bot's capital right now
+        }
         function botSampleSources(owned, n) {                    // a person looks at their big armies and a few others, not at all 500 bases
             const [top, extra] = n || [10, 8], arr = [...owned], rich = arr.sort((a, c) => (islandTroops[c] || 0) - (islandTroops[a] || 0)).slice(0, top);
             for (let i = 0; i < extra && arr.length > top; i++) rich.push(arr[top + Math.floor(Math.random() * (arr.length - top))]);
