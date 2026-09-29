@@ -1568,8 +1568,11 @@ body.has-panel .mapctl{display:none}
           const a = Math.abs(n);
           if (a < 100000) return fmtNum(n);
           if (a < 1e6) return NF.format(Math.floor(n / 100) / 10) + ' Tsd.';
-          return NF_C.format(n);
+          if (a < 1e15) return NF_C.format(n);
+          for (const [v, u] of [[1e24, 'Quadr.'], [1e21, 'Trd.'], [1e18, 'Trill.'], [1e15, 'Brd.']])   // beyond "Bio.": Billiarde, Trillion, Trilliarde …
+            if (a >= v || v === 1e15) return (a / v >= 1000 ? NF.format(Math.round(n / v)) : NF.format(Math.round(n / v * 10) / 10)) + ' ' + u;
         }
+        const fmtTile = v => Math.abs(v) >= 1e9 ? fmtCompact(v) : fmtNum(v);   // stat tiles: exact up to millions, then short so it fits
         function setBtnLabel(btn, text) { const l = btn.querySelector('.lbl'); if (l) l.textContent = text; else btn.textContent = text; }
         function fmtClock(sec) { sec = Math.max(0, Math.ceil(sec)); return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'); }
         function statTile(label, iconName, valueHtml, cls) {
@@ -9093,8 +9096,8 @@ body.has-panel .mapctl{display:none}
                 popupOverline.textContent = island.id === playerIslandId ? 'Deine Hauptstadt · kann nicht angegriffen werden' : isTemple ? 'Dein Tempel' : island.type === 'gate' ? 'Dein Tor · du kassierst die Maut' : 'Deine Basis';
                 if (island.id === playerIslandId) { document.getElementById('cityBtn').style.display = 'inline-block'; document.getElementById('teleportBtn').style.display = 'inline-block'; }
                 popupStats.innerHTML = '<div class="stat-grid">' +
-                    statTile('Truppen hier', 'troops', fmtNum(troopsHere)) +
-                    statTile('Verteidigung', 'defense', fmtNum(effectiveDefense(island))) +
+                    statTile('Truppen hier', 'troops', fmtTile(troopsHere)) +
+                    statTile('Verteidigung', 'defense', fmtTile(effectiveDefense(island))) +
                     statTile('Münzen / s', 'coin', '+' + fmtNum(Math.round(coinsPerTick(level) * playerCoinMult() * 1000 / productionTickMs())), 'is-good') +
                     statTile('Truppen / s', 'troops', '+' + fmtNum(Math.round(troopsPerTick(level) * playerTroopMult() * 1000 / productionTickMs())), 'is-good') + '</div>' +
                     (island.type === 'gate' ? gateControlsHtml(island) : '') +
@@ -9126,8 +9129,8 @@ body.has-panel .mapctl{display:none}
                     const scoutEnRoute = pendingScouts.some(s => s.targetId === island.id);
                     popupOverline.textContent = bossAt(island.id) ? 'Weltereignis · Boss' : ownerBot ? (isCapital(island.id) ? 'Hauptstadt · kann nicht angegriffen werden' : isTemple ? 'Feindlicher Tempel' : island.type === 'gate' ? 'Feindliches Tor' : 'Feindliche Basis') : (isTemple ? 'Tempel · unbesetzt' : island.type === 'gate' ? 'Tor · unbesetzt' : 'Neutrale Basis');
                     popupStats.innerHTML = '<div class="stat-grid">' +
-                        statTile('Truppen', 'troops', scouted ? fmtNum(effectiveTroops(island)) : UNK, scouted && ownerBot ? 'is-enemy' : '') +
-                        statTile('Verteidigung', 'defense', scouted ? fmtNum(effectiveDefense(island)) : UNK) + '</div>' +
+                        statTile('Truppen', 'troops', scouted ? fmtTile(effectiveTroops(island)) : UNK, scouted && ownerBot ? 'is-enemy' : '') +
+                        statTile('Verteidigung', 'defense', scouted ? fmtTile(effectiveDefense(island)) : UNK) + '</div>' +
                         (scouted ? '' : '<div class="notice">' + icon('scout') + '<span>Stärke unbekannt. Spähen deckt Truppen und Verteidigung auf.</span></div>') +
                         (island.type === 'gate' && !ownerBot ? '<div class="notice notice--gold">' + icon('lock') + '<span>Tor: Unbesetzt ist es verschlossen – erobere es, um über die Brücke zu kommen. Wer es besitzt, geht kostenlos durch und bestimmt die Maut für alle anderen.</span></div>' : '') +
                         (isTemple ? '<div class="notice notice--gold">' + icon('temple') + '<span>' + (island.type === 'megaTemple' ? 'Thron der Meere: wer ihn hält, trägt die Krone – +25 % Münzen und Truppen im ganzen Reich.' : island.guardian ? 'Wächter-Tempel: 3-facher Tempel-Bonus, bewacht den Weg zur Thron-Insel.' : 'Tempel: gibt Produktion, Gems und Münzen, sobald erobert.') + '</span></div>' : '') +
@@ -9673,6 +9676,11 @@ body.has-panel .mapctl{display:none}
             coins += 1e9; islandTroops[playerIslandId] = (islandTroops[playerIslandId] || 0) + 1e9;
             revealAround(0, 0, FRAME_HALF * 1.5, false);
             store.set('openWaterGift', 'g1'); saveGame(); updateHud();
+        }
+        if (store.get('openWaterGiftMax') !== '1' && playerIslandId !== null && islandById[playerIslandId]) {   // one-time test gift: 9.999.999.999.999.999.999.999 of everything
+            const X = 9999999999999999999999;
+            coins = Math.max(coins, X); gems = Math.max(gems, X); islandTroops[playerIslandId] = Math.max(islandTroops[playerIslandId] || 0, X);
+            store.set('openWaterGiftMax', '1'); saveProgression(); saveGame(); updateHud();
         }
         if (store.get('openWaterGems9') !== '1') {           // one-time test gift: 9.999.999.999 gems
             gems = Math.max(gems, 9999999999); store.set('openWaterGems9', '1'); saveProgression(); saveGame(); updateHud();
