@@ -3600,7 +3600,7 @@ body.has-panel .mapctl{display:none}
                 attackBuff: myTroops - attack.rawTroops,
                 skillBuff: atkBonus,
                 titleBuff: myTroops - attack.rawTroops - atkBonus,
-                lossReductionPct,
+                lossReductionPct, bernPct: attack.bernPct || 0,
                 lossSaved: won ? Math.max(0, Math.round((originalEnemyDefense - losses) * attack.rawTroops / Math.max(1, myTroops))) : 0,
                 attackGoldRate: attack.attackGoldRate !== undefined ? attack.attackGoldRate : (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate, killGold,
                 attackerCasualties: won ? Math.max(0, sentLoss - woundedAdded) : Math.max(0, attack.rawTroops - retreatSurvivors - woundedAdded),   // really dead: not the ones who fled or lie in the Lazarett
@@ -5799,7 +5799,7 @@ body.has-panel .mapctl{display:none}
             if (Date.now() < act.next) return;                               // still busy with the last order
             if (act.plan) { if (botPlanStep(bot)) { botTapped(bot); saveBotState(); } return; }   // finish what they started
             if (botArmyStep(bot)) { botTapped(bot); saveBotState(); return; }                  // a field army waiting for orders
-            const st = BOT_STYLES[bot.style], atk = botAtkFactor(bot), ruler = rulerOwner();
+            const st = BOT_STYLES[bot.style], atk = botAtkFactor(bot, true), ruler = rulerOwner();   // several waves: Sigrun only leads one, so she's a bonus, not part of the plan
             const shielded = playerShielded(), now = Date.now();
             const busy = new Set(pendingAttacks.filter(a => a.attackerBotId === bot.id).map(a => a.targetId));
             // a player has a few march slots, not hundreds: columns on the road (attacks + sends) count against them
@@ -5985,7 +5985,8 @@ body.has-panel .mapctl{display:none}
         function botBld(botId, id) { const b = loadBotState()[botId]; return b ? (b.city.levels[id] || 0) : 0; }
         function botCityFinish(bot, now) {                        // a build is done when its time is up - online or not, like yours
             const c = loadBotState()[bot.id].city; if (!c.build || now < c.build.endsAt) return;
-            c.levels[c.build.id] = c.build.to; c.build = null; saveBotState();
+            const id = c.build.id; c.levels[id] = c.build.to; c.build = null; saveBotState();
+            if (id === 'heroes') for (const hid of HEROES_IDS) botHeroGainXp(bot.id, hid, 0);
         }
         const BOT_BUILD_PREF = {                                  // what each kind of player builds first (lower = sooner)
             raider:   { barracks: 1, academy: 1.1, heroes: 1.2, forge: 1.4, hospital: 1.4, wall: 1.7, treasury: 1.5, watch: 1.9, shrine: 2.2 },
@@ -6053,8 +6054,8 @@ body.has-panel .mapctl{display:none}
                      shield: Math.min(90, botGearPct(b, 'shield')) };
         }
         function botGoldRate(botId, skill) { const b = loadBotState()[botId]; return b ? (b.skills[skill] || 0) * SKILL_DEFS[skill].rate : 0; }
-        function botAtkFactor(bot) {                              // what the bot expects its next attack to hit with (skill, Sigrun if she's free, title)
-            const sig = botHeroUnlocked(bot.id, 'sigrun') && !botHeroBusy(bot.id, 'sigrun') ? botHeroBonus(bot.id, 'sigrun') : 0;
+        function botAtkFactor(bot, noHero) {                      // what the bot expects its next attack to hit with (skill, Sigrun if she's free, title)
+            const sig = !noHero && botHeroUnlocked(bot.id, 'sigrun') && !botHeroBusy(bot.id, 'sigrun') ? botHeroBonus(bot.id, 'sigrun') : 0;
             return (1 + (botMults(bot.id).attackPct + sig) / 100) * titleMult(bot.id, 'attack');
         }
         function botTickMs(botId) { const b = loadBotState()[botId]; return Math.max(400, 1000 - Math.min(b.skills.speed || 0, SKILL_DEFS.speed.max) * SKILL_DEFS.speed.msPerLevel); }
@@ -6146,7 +6147,7 @@ body.has-panel .mapctl{display:none}
         }
         function botGather(bot) {
             if (pendingSends.some(s => s.senderBotId === bot.id)) return false;
-            const st = BOT_STYLES[bot.style], owned = [...botOwnedIslands[bot.id]], atk = botAtkFactor(bot);
+            const st = BOT_STYLES[bot.style], owned = [...botOwnedIslands[bot.id]], atk = botAtkFactor(bot, true);
             let plan = null;
             for (const sourceId of botSampleSources(owned)) {
                 const source = islandById[sourceId];
@@ -7435,7 +7436,9 @@ body.has-panel .mapctl{display:none}
                             '<div class="logSum' + (atkTotal >= defTotal ? ' advantage' : '') + '"><span>Gesamt</span><span>' + fmtD(atkTotal) + '</span></div>' +
                             '<div class="logCasualty"><span>Gefallen</span><span>−' + fmtD(entry.attackerCasualties || 0) + '</span></div>' +
                             (entry.wounded ? '<div class="logCasualty wounded"><span>Verwundet</span><span>' + fmtD(entry.wounded) + '</span></div>' : '') +
-                            (entry.lossSaved ? '<div class="logLine buff"><span>Schild −' + Math.round(entry.lossReductionPct) + ' %</span><span>+' + fmtD(entry.lossSaved) + '</span></div>' : '') +
+                            (entry.lossSaved ? (() => { const bern = Math.min(entry.bernPct || 0, entry.lossReductionPct), sh = entry.lossReductionPct - bern, sBern = Math.round(entry.lossSaved * bern / Math.max(1, entry.lossReductionPct));
+                                return (sh > 0 ? '<div class="logLine buff"><span>Schild −' + Math.round(sh) + ' %</span><span>+' + fmtD(entry.lossSaved - sBern) + '</span></div>' : '') +
+                                    (bern > 0 ? '<div class="logLine buff"><span>Held Bernhard −' + Math.round(bern) + ' %</span><span>+' + fmtD(sBern) + '</span></div>' : ''); })() : '') +
                             gearHtml(entry.atkGear) +
                         '</div>' +
                         '<div class="logVsDivider">VS</div>' +
@@ -10326,7 +10329,7 @@ body.has-panel .mapctl{display:none}
                     if (islandOwnerOf(t.id) === 'player') { const h = armyHome(a); if (h !== null && h !== undefined) botScoutVisible(bot, h, t.id, now, ready); }
                     return true;
                 }
-                const st = BOT_STYLES[bot.style], margin = islandOwnerOf(t.id) === 'player' ? Math.max(1.25, st.margin) : st.margin, atk = botAtkFactor(bot);
+                const st = BOT_STYLES[bot.style], margin = islandOwnerOf(t.id) === 'player' ? Math.max(1.25, st.margin) : st.margin, atk = (1 + (botMults(bot.id).attackPct + (a.hero === 'sigrun' ? botHeroBonus(bot.id, 'sigrun') : 0)) / 100) * titleMult(bot.id, 'attack');   // with the army's own hero
                 if (a.troops * atk < it.s * margin * (boss ? .35 : 1)) { if (now > a.until - 3 * 60000) return goHome(); continue; }   // too strong: wait a bit, then give up
                 if (armyMove(a, { kind: 'base', id: t.id, x: t.x, y: t.y, lm: t.landmassId })) continue;
                 if (islandOwnerOf(t.id) === 'player') { flashHint('Die Armee von ' + bot.name + ' marschiert auf ' + islandTitle(t) + '!', 4500); sfx('warn'); }
@@ -11049,7 +11052,8 @@ body.has-panel .mapctl{display:none}
             if (previewHero && (!heroUnlocked(heroById(previewHero)) || heroBusy(previewHero))) previewHero = null;
             for (const b of popupStats.querySelectorAll('[data-hero]')) { const id = b.dataset.hero; b.disabled = !!id && heroBusy(id); b.classList.toggle('on', (id || null) === previewHero); }
             const hfx = popupStats.querySelector('[data-preview="herofx"]');
-            if (hfx) hfx.textContent = previewHero ? heroById(previewHero).name + ': +' + heroBonus(previewHero) + ' ' + heroById(previewHero).what : '';
+            if (hfx) hfx.textContent = !previewHero ? '' : previewHero === 'bernhard' ? 'Bernhard: +' + Math.max(0, Math.min(heroBonus('bernhard'), 90 - shieldLossReductionPct())) + ' % weniger Verluste (max. 90 % mit Schild), bei Niederlage fliehen mehr'
+                : heroById(previewHero).name + ': +' + heroBonus(previewHero) + ' ' + heroById(previewHero).what;
             const swordBonus = attackFlatBonus(shown), sigrunBonus = previewHero === 'sigrun' ? Math.round(shown * heroBonus('sigrun') / 100) : 0, atkBonus = swordBonus + sigrunBonus;
             const mine = Math.round((shown + atkBonus) * titleMult('player', 'attack'));        // same maths as resolveAttack
             const bEl = popupStats.querySelector('#previewAtkBonus'); if (bEl) bEl.textContent = fmtNum(swordBonus);
