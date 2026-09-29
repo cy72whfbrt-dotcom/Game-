@@ -163,7 +163,8 @@ b,strong{font-weight:600}
 .mapctl{position:fixed;z-index:var(--z-mapctl);right:calc(var(--safe-r) + 10px);bottom:calc(var(--dock-h) + var(--safe-b) + 14px);
   display:flex;flex-direction:column;background:var(--glass);border:1px solid var(--line-2);border-radius:var(--r-sm);box-shadow:var(--sh-1);
   -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
-.mapctl button{width:36px;height:36px;display:grid;place-items:center;color:var(--tx-2)}
+.mapctl button{width:34px;height:34px;display:grid;place-items:center;color:var(--tx-2)}
+.mapctl{background:rgba(14,16,22,.52);border-color:rgba(214,170,90,.16)} .mapctl button + button{border-top-color:rgba(255,255,255,.05)}
 .mapctl button.on{color:var(--gold-100);background:rgba(214,170,90,.18)}
 [data-frame="bronze"]{--fr1:#c9854f;--fr2:#7a4a26} [data-frame="silver"]{--fr1:#e8eef5;--fr2:#8a95a3} [data-frame="gold"]{--fr1:#ffd35a;--fr2:#a0701c}
 [data-frame="platin"]{--fr1:#9fe3da;--fr2:#3f8c86} [data-frame="diamond"]{--fr1:#bfe6ff;--fr2:#3f86d8} [data-frame="master"]{--fr1:#d6a6ff;--fr2:#6a3fa0} [data-frame="legend"]{--fr1:#ffb04a;--fr2:#c0392b}
@@ -184,6 +185,41 @@ b,strong{font-weight:600}
 .look-title{display:inline-flex;align-items:center;gap:4px;padding:6px 10px;border-radius:999px;border:1px solid var(--line-2);background:rgba(255,255,255,.03);color:var(--tx-1);font:600 var(--fs-12)/1 var(--font-ui)}
 .look-title.on{border-color:var(--gold-300);background:rgba(214,170,90,.16);color:var(--gold-100)} .look-title:disabled{opacity:.4}
 .look-hint{font:500 var(--fs-11)/1.35 var(--font-ui);color:var(--tx-3)}
+#mailTabs.tabs{grid-template-columns:repeat(3,minmax(0,1fr))}
+.mail-tabs .tab .badge{position:absolute;top:4px;right:8px}
+.mail-tabs .tab .dot-new{position:absolute;top:8px;right:12px;width:7px;height:7px;border-radius:50%;background:#ff8d82;box-shadow:0 0 0 2px rgba(20,24,32,.9)}
+.mail-pane[hidden]{display:none} .mail-pane{display:grid;gap:10px}
+.mail-intro{font:500 var(--fs-12)/1.4 var(--font-ui);color:var(--tx-3)}
+.war{display:grid;gap:6px}
+.war-day{border:1px solid var(--line-1);border-radius:10px;background:rgba(255,255,255,.02);padding:8px 10px}
+.war-day[open]{border-color:var(--line-2);background:rgba(214,170,90,.035)}
+.war-day summary{display:flex;align-items:center;gap:8px;cursor:pointer;list-style:none;font:500 var(--fs-12)/1.2 var(--font-ui);color:var(--tx-2)} .war-day summary::-webkit-details-marker{display:none}
+.war-day summary b{color:var(--tx-1);font-weight:600;min-width:64px}
+.war-sum{display:inline-flex;align-items:center;gap:4px;font-variant-numeric:tabular-nums} .war-sum .icon{width:13px;height:13px;color:var(--tx-3);margin-left:4px}
+.war-trend{margin-left:auto;font:600 10px/1 var(--font-ui);text-transform:uppercase;letter-spacing:.08em;padding:4px 7px;border-radius:999px}
+.war-trend.up{color:#8fcf7a;background:rgba(143,207,122,.1)} .war-trend.down{color:#ff8d82;background:rgba(255,141,130,.1)}
+.war-day ul{margin:8px 0 0;padding-left:16px;display:grid;gap:4px;font:500 var(--fs-12)/1.35 var(--font-ui);color:var(--tx-2)}
+.war-empty{font:500 var(--fs-12)/1.35 var(--font-ui);color:var(--tx-3);padding:6px 2px}
+.welcome-crest{width:44px;height:44px;display:block}
+#welcomeModal .lvlup-rewards li b{white-space:nowrap}
+#welcomeModal .btn + .btn{margin-top:8px}
+.rp-crest{width:52px;height:52px;border-radius:50%;padding:3px;flex:none;background:conic-gradient(from 200deg,var(--fr1,#b08d57),var(--fr2,#6b5433),var(--fr1,#b08d57),var(--fr2,#6b5433),var(--fr1,#b08d57));box-shadow:0 0 10px color-mix(in srgb,var(--fr1,#b08d57) 40%,transparent);position:relative}
+.rp-crest-in{display:grid;place-items:center;width:100%;height:100%;border-radius:50%;background:radial-gradient(circle at 50% 30%,#2a2f3a,#12151c)} .rp-crest img{width:34px;height:34px}
+.rp-crest .lvl{position:absolute;right:-4px;bottom:-4px}
+.rp-online{display:inline-flex;align-items:center;gap:5px;font:600 var(--fs-11)/1 var(--font-ui);color:var(--tx-3)} .rp-online i{width:7px;height:7px;border-radius:50%;background:#5b6070}
+.rp-online.on{color:#8fcf7a} .rp-online.on i{background:#6fd36a;box-shadow:0 0 6px #6fd36a}
+.rp-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.rp-stat{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;border:1px solid var(--line-1);border-radius:10px;background:rgba(255,255,255,.02);min-width:0}
+.rp-stat small{font:600 9px/1 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--tx-3)} .rp-stat b{font:600 var(--fs-13)/1.1 var(--font-ui);color:var(--tx-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.rp-last{font:500 var(--fs-12)/1.4 var(--font-ui);color:var(--tx-2);padding:8px 10px;border-radius:10px;border:1px solid var(--line-1);background:rgba(255,255,255,.02)}
+.rp-gear{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px} .rp-gear .gslot .tile{cursor:default}
+.rp-gear small{font:500 10px/1.4 var(--font-ui);padding-top:1px;color:var(--tx-3);text-align:center}
+.rp-heroes{display:grid;gap:6px}
+.rp-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 14px}
+.rp-grid > div{display:flex;justify-content:space-between;gap:8px;font:500 var(--fs-12)/1.6 var(--font-ui);color:var(--tx-2);border-bottom:1px solid var(--line-1)} .rp-grid b{color:var(--tx-1);font-variant-numeric:tabular-nums}
+.rp-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px} .rp-actions .btn{justify-content:center}
+.who-link{background:none;border:0;padding:0;font:inherit;color:inherit;text-decoration:underline;text-decoration-color:color-mix(in srgb,currentColor 40%,transparent);text-underline-offset:3px;cursor:pointer}
+.rankRow{cursor:pointer} .rankRow:active{background:rgba(255,255,255,.04)}
 .chain{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:10px;border:1px solid var(--line-1);background:rgba(255,255,255,.02)}
 .chain-links{display:grid;grid-template-columns:repeat(7,1fr) 1.3fr;gap:5px;align-items:center}
 .chain-link{height:30px;border-radius:8px;display:grid;place-items:center;border:1px solid var(--line-2);background:rgba(0,0,0,.2);font:700 var(--fs-12)/1 var(--font-ui);color:var(--tx-3)}
@@ -1320,7 +1356,7 @@ body.has-panel .mapctl{display:none}
   <button id="cityNavBtn" class="nav-btn" type="button" title="Hauptstadt betreten"><svg class="icon"><use href="#i-castle"/></svg><span class="nav-l">Stadt</span></button>
   <button id="profileBtn" class="nav-btn" type="button" title="Profil"><svg class="icon"><use href="#i-profile"/></svg><span class="nav-l">Profil</span><span id="profileBadge" class="badge" style="display:none">0</span></button>
   <button id="battleLogBtn" class="nav-btn" type="button" title="Angriffe &amp; Kampflog"><svg class="icon"><use href="#i-battlelog"/></svg><span class="nav-l">Kampf</span><span id="battleLogBadge" class="badge" style="display:none">0</span></button>
-  <button id="mailBtn" class="nav-btn" type="button" title="Aufgaben &amp; tägliche Belohnung"><svg class="icon"><use href="#i-flag"/></svg><span class="nav-l">Aufgaben</span><span id="questBadge" class="badge" style="display:none">0</span></button>
+  <button id="mailBtn" class="nav-btn" type="button" title="Postfach: Belohnungen, Aufgaben, Berichte"><svg class="icon"><use href="#i-mail"/></svg><span class="nav-l">Postfach</span><span id="questBadge" class="badge" style="display:none">0</span></button>
   <button id="shopBtn" class="nav-btn" type="button" title="Shop"><svg class="icon"><use href="#i-shop"/></svg><span class="nav-l">Shop</span></button>
 </nav>
 
@@ -1465,20 +1501,44 @@ body.has-panel .mapctl{display:none}
 </section>
 
 <!-- ============ MAIL ============ -->
+<section id="rulerPopup" class="panel panel--sheet" role="dialog" aria-labelledby="rulerName">
+  <span class="sheet-grab" aria-hidden="true"></span>
+  <header class="phead">
+    <div id="rulerCrest" class="rp-crest"><span class="rp-crest-in"><img alt=""></span><span class="lvl" id="rulerLvl">1</span></div>
+    <div class="phead-text"><div class="overline" id="rulerOver">Profil</div><h3 id="rulerName" class="ptitle">–</h3><div class="psub" id="rulerSub"></div></div>
+    <button id="rulerCloseBtn" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button>
+  </header>
+  <div class="pbody" id="rulerBody"></div>
+</section>
+
 <section id="mailPopup" class="panel panel--sheet" role="dialog" aria-labelledby="mailTitle">
   <span class="sheet-grab" aria-hidden="true"></span>
   <header class="phead">
-    <div class="emblem emblem--gold"><svg class="icon"><use href="#i-flag"/></svg></div>
-    <div class="phead-text"><div class="overline">Täglich neu</div><h3 id="mailTitle" class="ptitle">Aufgaben</h3></div>
+    <div class="emblem emblem--gold"><svg class="icon"><use href="#i-mail"/></svg></div>
+    <div class="phead-text"><div class="overline">Täglich neu</div><h3 id="mailTitle" class="ptitle">Postfach</h3></div>
     <button id="mailCloseBtn" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button>
   </header>
+  <div id="mailTabs" class="tabs mail-tabs" role="tablist">
+    <button class="tab active" type="button" role="tab" data-mtab="rewards"><svg class="icon"><use href="#i-shop"/></svg><span>Belohnungen</span><span class="badge" data-mbadge="rewards" style="display:none">0</span></button>
+    <button class="tab" type="button" role="tab" data-mtab="quests"><svg class="icon"><use href="#i-flag"/></svg><span>Aufgaben</span><span class="badge" data-mbadge="quests" style="display:none">0</span></button>
+    <button class="tab" type="button" role="tab" data-mtab="reports"><svg class="icon"><use href="#i-battlelog"/></svg><span>Berichte</span><span class="dot-new" data-mbadge="reports" style="display:none"></span></button>
+  </div>
   <div class="pbody">
-    <div class="sect"><h4>Tägliche Belohnung</h4></div>
-    <div id="dailyCard" class="daily"></div>
-    <div class="sect"><h4>Wochenkette</h4></div>
-    <div id="chainCard" class="chain"></div>
-    <div class="sect"><h4>Heutige Aufgaben</h4><span id="questReset" class="sect-aside quest-reset"></span></div>
-    <div id="questList" class="quests"></div>
+    <div class="mail-pane" data-mpane="rewards">
+      <div class="sect"><h4>Tägliche Belohnung</h4></div>
+      <div id="dailyCard" class="daily"></div>
+      <div class="sect"><h4>Wochenkette</h4></div>
+      <div id="chainCard" class="chain"></div>
+    </div>
+    <div class="mail-pane" data-mpane="quests" hidden>
+      <div class="sect"><h4>Heutige Aufgaben</h4><span id="questReset" class="sect-aside quest-reset"></span></div>
+      <div id="questList" class="quests"></div>
+    </div>
+    <div class="mail-pane" data-mpane="reports" hidden>
+      <div class="sect"><h4>Kriegsbericht</h4><span class="sect-aside">letzte 7 Tage</span></div>
+      <div class="mail-intro">Was jeden Tag in deinem Reich passiert ist – Eroberungen, Verluste, Angriffe auf dich und was deine Armeen gesammelt haben.</div>
+      <div id="warCard" class="war"></div>
+    </div>
   </div>
 </section>
 
@@ -1558,6 +1618,20 @@ body.has-panel .mapctl{display:none}
 </div>
 
 <!-- ============ DAILY REWARD MODAL ============ -->
+<div id="welcomeModal" class="lvlup" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle" hidden>
+  <div class="lvlup-card">
+    <div class="lvlup-badge"><img id="welcomeCrest" class="welcome-crest" alt=""></div>
+    <div class="lvlup-over">Willkommen zurück</div>
+    <h2 id="welcomeTitle" class="lvlup-title">Schön, dass du da bist</h2>
+    <div id="welcomeSub" class="lvlup-sub"></div>
+    <div class="lvlup-rule"></div>
+    <div class="lvlup-label">Während du weg warst</div>
+    <ul id="welcomeList" class="lvlup-rewards"></ul>
+    <button id="welcomeOkBtn" class="btn btn--primary" type="button"><svg class="icon"><use href="#i-check"/></svg><span>Weiter</span></button>
+    <button id="welcomeReportBtn" class="btn btn--secondary" type="button"><svg class="icon"><use href="#i-battlelog"/></svg><span>Zum Kriegsbericht</span></button>
+  </div>
+</div>
+
 <div id="dailyModal" class="lvlup" role="dialog" aria-modal="true" aria-labelledby="dailyModalTitle" hidden>
   <div class="lvlup-card">
     <div class="lvlup-badge"><svg class="icon" style="width:34px;height:34px;color:var(--gold-100)"><use href="#i-shop"/></svg></div>
@@ -3402,6 +3476,7 @@ body.has-panel .mapctl{display:none}
                 ' Truppen, ' + fmtNum(effectiveDefense(target)) + ' Verteidigung.', 4000);
         }
 
+        function retreatSurvivorsPreview(attack) { return Math.floor(attack.rawTroops * RETREAT_RECOVERY_PCT / 100); }
         function resolveAttack(attack) {
             const source = islandById[attack.sourceId];
             const target = islandById[attack.targetId];
@@ -3445,6 +3520,7 @@ body.has-panel .mapctl{display:none}
                 ownedIslands.add(target.id);
                 islandLevels[target.id] = levelAfterCapture;
                 questProgress('capture', 1);
+                warStat('fallen', attack.rawTroops - remaining); warStat('captures'); warStat('kills', originalEnemyTroops);
                 statBump('captures'); if (targetOwner === 'bot25') statBump('emmaWins');
                 if (target.type === 'temple' || target.type === 'megaTemple' || target.guardian) statBump('temples');
                 if (target.type === 'gate') setGateSettings(target.id, { toll: target.toll, closed: false });
@@ -3478,6 +3554,7 @@ body.has-panel .mapctl{display:none}
                     neutralTroopOverrides[target.id] = target.neutralTroops;
                 }
 
+                warStat('attacksLost'); warStat('kills', defenderCasualties); warStat('fallen', attack.rawTroops - retreatSurvivorsPreview(attack));
                 retreatSurvivors = Math.floor(attack.rawTroops * RETREAT_RECOVERY_PCT / 100);
                 woundedAdded = hospitalTake(attack.rawTroops - retreatSurvivors);   // Lazarett: part of the fallen are only wounded
                 if (retreatSurvivors > 0) {
@@ -3531,7 +3608,7 @@ body.has-panel .mapctl{display:none}
                 defenseGoldRate: (skills.defenseGold || 0) * SKILL_DEFS.defenseGold.rate,
                 defenderCasualties,
                 retreatSurvivors,
-                defenderName: targetOwner ? botById[targetOwner].name : null,
+                defenderName: targetOwner ? botById[targetOwner].name : null, defenderId: targetOwner && targetOwner !== 'player' ? targetOwner : null,
                 atkParts, defParts, enemyWounded,
                 atkGear: fighterSnapshot('player', [attack.hero, ...(attack.heroes || [])]), defGear: targetOwner && targetOwner !== 'player' ? fighterSnapshot(targetOwner) : null,
                 won,
@@ -3642,6 +3719,7 @@ body.has-panel .mapctl{display:none}
                 if (defGold > 0) coins += defGold;
             }
             if (playerInvolved && !won) statBump('defends');
+            if (playerInvolved) { warStat(capitalHolds ? 'plundered' : won ? 'lost' : 'defends', 1, bot.name); warStat('fallen', won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops)); warStat('kills', won ? Math.min(myTroops, totalStrength) : myTroops); }
             if (playerInvolved) defWounded = hospitalTake(won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops));   // your fallen defenders
             else if (targetOwner) {                                       // a bot defender: its Lazarett and its "Verteidigung: Gold", like yours
                 botHospitalTake(targetOwner, won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops));
@@ -3658,7 +3736,7 @@ body.has-panel .mapctl{display:none}
                 scoutedIslands.add(target.id);
                 addCombatLogEntry({
                     type: 'botAttack',
-                    botName: bot.name,
+                    botName: bot.name, botId: bot.id,
                     targetId: target.id,
                     myTroops,
                     atkRaw: attack.rawTroops, atkBonus: attack.attackBonus || 0, atkFallen, atkWounded, atkFled: fled, ...(parts || {}),
@@ -6953,6 +7031,16 @@ body.has-panel .mapctl{display:none}
         let playerStats = (() => { try { return JSON.parse(store.get('openWaterStats')) || {}; } catch (e) { return {}; } })();
         if (!playerStats.seeded) { playerStats.captures = Math.max(playerStats.captures || 0, Math.max(0, ownedIslands.size - 1)); playerStats.seeded = 1; store.set('openWaterStats', JSON.stringify(playerStats)); }   // an existing empire: its bases count as conquered
         let achClaimed = (() => { try { return JSON.parse(store.get('openWaterAch')) || {}; } catch (e) { return {}; } })();
+        // Kriegsbericht: what happened each day, kept for a week and shown in the Postfach
+        let warDays = (() => { try { return JSON.parse(store.get('openWaterWarDays')) || {}; } catch (e) { return {}; } })();
+        function warStat(k, n, foe) {
+            const d = todayKey(), w = warDays[d] || (warDays[d] = { by: {} });
+            w[k] = (w[k] || 0) + (n === undefined ? 1 : n);
+            if (foe) w.by[foe] = (w.by[foe] || 0) + 1;
+            const keys = Object.keys(warDays).sort(); while (keys.length > 8) delete warDays[keys.shift()];
+            store.set('openWaterWarDays', JSON.stringify(warDays));
+            if (typeof updateQuestBadge === 'function') updateQuestBadge();
+        }
         function statBump(k, n) { playerStats[k] = (playerStats[k] || 0) + (n || 1); store.set('openWaterStats', JSON.stringify(playerStats)); achCheckSoon(); }
         const achStat = k => playerStats[k] || 0;
         const cityMinLevel = () => { const c = loadCity(); return Math.min(...CITY_BUILDINGS.map(b => c.levels[b.id] || 0)); };
@@ -7005,6 +7093,86 @@ body.has-panel .mapctl{display:none}
         // currently hold (the same "territory" number the Reich card
         // already shows for the player).
         const rankListEl = document.getElementById('rankList');
+        // ===== PROFIL ANTIPPEN: every ruler's card - yours and everyone else's, the same way =====
+        const botIdByName = {}; for (const bd of BOT_DEFS) botIdByName[bd.name] = bd.id;
+        function whoTroops(who) { let n = 0; for (const id of (who === 'player' ? ownedIslands : botOwnedIslands[who] || [])) n += islandTroops[id] || 0; return n; }
+        function whoBases(who) { return who === 'player' ? ownedIslands.size : (botOwnedIslands[who] || new Set()).size; }
+        function whoProfile(who) {                       // the same facts for you and for anyone else
+            const slots = Object.keys(EQUIPMENT_DEFS);
+            if (who === 'player') {
+                const c = loadCity();
+                return { who, name: profileName.value || 'Du', lvl: playerLvl, frame: playerFrame(), title: playerTitle(), temple: titleOf('player'), bases: ownedIslands.size, troops: whoTroops('player'),
+                    items: slots.map(k => { const it = equippedItems[k] && inventory[equippedItems[k]]; return [k, it ? it.rarity : -1, it ? it.level : 0, it ? it.stars || 0 : 0]; }),
+                    heroes: HEROES.filter(x => heroUnlocked(x)).map(x => [x.id, heroLevel(x.id), heroRarity(x.id)]),
+                    skills: Object.fromEntries(Object.keys(SKILL_DEFS).map(k => [k, skills[k] || 0])), city: Object.assign({}, c.levels), capital: playerIslandId, online: true };
+            }
+            const b = loadBotState()[who], bd = botById[who]; if (!b || !bd) return null; const lk = botLook(who);
+            return { who, name: bd.name, lvl: b.lvl, frame: lk.frame, title: lk.title, temple: titleOf(who), bases: whoBases(who), troops: whoTroops(who),
+                items: slots.map(k => { const it = botItem(b, k); return [k, it ? it.rarity : -1, it ? it.level : 0, it ? it.stars : 0]; }),
+                heroes: HEROES_IDS.filter(id => botHeroUnlocked(who, id)).map(id => [id, botHeroLevel(who, id), Math.min(RARITY_DEFS.length - 1, b.heroes[id].rar || 0)]),
+                skills: Object.assign({}, b.skills), city: Object.assign({}, b.city.levels), capital: botCapitalOf(who), online: botOnline(bd, Date.now()) };
+        }
+        function powerOf(pr) {                           // Macht: troops, bases, gear, heroes, skills and city - one number to compare rulers by
+            let bases = 0; for (const id of (pr.who === 'player' ? ownedIslands : botOwnedIslands[pr.who] || [])) bases += baseDefenseForLevel(islandLevels[id] || 1);
+            const gear = pr.items.reduce((a, it) => a + (it[1] >= 0 ? itemScore({ rarity: it[1], level: it[2] }) * (1 + it[3] * .2) : 0), 0);
+            const heroes = pr.heroes.reduce((a, x) => a + x[1] * (1 + x[2] * .2), 0), sk = Object.values(pr.skills).reduce((a, v) => a + v, 0), city = Object.values(pr.city).reduce((a, v) => a + v, 0);
+            return Math.round(pr.troops + bases + gear * 400 + heroes * 800 + sk * 600 + city * 1500);
+        }
+        function lastFightWith(pr) {                     // what's between the two of you, from the battle log
+            if (pr.who === 'player') return null;
+            const hit = combatLog.find(e => e.type === 'botAttack' && (e.botId === pr.who || e.botName === pr.name));
+            const mine = combatLog.find(e => e.type === 'attack' && (e.defenderId === pr.who || e.defenderName === pr.name));
+            const ago = e => fmtAway(Date.now() - e.at);
+            const parts = [];
+            if (hit) parts.push(escapeHtml(pr.name) + ' hat dich zuletzt vor ' + ago(hit) + ' angegriffen' + (hit.won ? ' und gewonnen.' : ' – du hast gehalten.'));
+            if (mine) parts.push('Du hast ' + escapeHtml(pr.name) + ' zuletzt vor ' + ago(mine) + ' angegriffen' + (mine.won ? ' und gewonnen.' : ' – ohne Erfolg.'));
+            return parts.length ? parts.join('<br>') : escapeHtml(pr.name) + ' und du hattet noch keinen Kampf miteinander.';
+        }
+        const rulerPopup = document.getElementById('rulerPopup');
+        let rulerWho = null;
+        function openRulerProfile(who) {
+            const pr = whoProfile(who); if (!pr) return;
+            closeAllPopups(); rulerWho = who;
+            const ring = document.getElementById('rulerCrest'); ring.dataset.frame = pr.frame; ring.querySelector('img').src = crestDataUrl(40, who);
+            document.getElementById('rulerLvl').textContent = pr.lvl;
+            document.getElementById('rulerName').textContent = pr.name;
+            document.getElementById('rulerOver').textContent = (who === 'player' ? 'Dein Profil' : 'Profil') + ' · Rang ' + RANK_TIERS[rankIndexFor(pr.bases)].name;
+            document.getElementById('rulerSub').innerHTML = '<span class="ptitle-tag" style="margin:0">' + escapeHtml(pr.title) + '</span>' + (who === 'player' ? '' : ' <span class="rp-online' + (pr.online ? ' on' : '') + '"><i></i>' + (pr.online ? 'online' : 'offline') + '</span>');
+            const rd = r => RARITY_DEFS[r];
+            const gear = pr.items.map(it => { const d = EQUIPMENT_DEFS[it[0]], r = rd(it[1]);
+                return '<span class="gslot"><span class="tile' + (r ? '' : ' empty') + '"' + (r ? ' data-r="' + r.key + '"' : '') + ' title="' + d.name + (r ? ' – ' + r.label + ', Stufe ' + it[2] : ' – leer') + '">' + icon(d.icon) +
+                    (r ? '<span class="lvl">' + it[2] + '</span>' + (it[3] ? '<span class="stars">' + icon('star').repeat(it[3]) + '</span>' : '') : '') + '</span><small>' + d.name + '</small></span>'; }).join('');
+            const heroes = pr.heroes.length ? pr.heroes.map(x => { const hd = heroById(x[0]), r = rd(x[2]);
+                return '<span class="ghero" style="--hc:' + (x[2] ? r.color : hd.color) + '"><span class="hero-ic">' + icon(hd.icon) + '</span><span><b>' + hd.name + ' <small>' + hd.title + '</small></b><small>Stufe ' + x[1] + ' · ' + r.label + '</small></span></span>'; }).join('') : '<div class="war-empty">Noch keine Heldenhalle.</div>';
+            const skillsHtml = Object.keys(SKILL_DEFS).map(k => '<div><span>' + SKILL_DEFS[k].name + '</span><b>' + (pr.skills[k] || 0) + '</b></div>').join('');
+            const cityHtml = BOT_BUILDINGS.map(k => '<div><span>' + cityDef(k).name + '</span><b>' + (pr.city[k] || 0) + '</b></div>').join('');
+            const last = lastFightWith(pr);
+            document.getElementById('rulerBody').innerHTML =
+                '<div class="rp-stats"><div class="rp-stat"><small>Macht</small><b>' + fmtCompact(powerOf(pr)) + '</b></div><div class="rp-stat"><small>Basen</small><b>' + fmtNum(pr.bases) + '</b></div>' +
+                '<div class="rp-stat"><small>Stufe</small><b>' + pr.lvl + '</b></div><div class="rp-stat"><small>Tempel</small><b>' + (rulerOwner() === who ? 'Herrscher' : pr.temple ? escapeHtml(pr.temple.name) : '–') + '</b></div></div>' +
+                (last ? '<div class="rp-last">' + last + '</div>' : '') +
+                '<div class="sect"><h4>Ausrüstung</h4></div><div class="rp-gear">' + gear + '</div>' +
+                '<div class="sect"><h4>Helden</h4></div><div class="rp-heroes">' + heroes + '</div>' +
+                '<div class="sect"><h4>Skills</h4></div><div class="rp-grid">' + skillsHtml + '</div>' +
+                '<div class="sect"><h4>Stadt</h4></div><div class="rp-grid">' + cityHtml + '</div>' +
+                '<div class="rp-actions"><button class="btn btn--secondary btn--sm" type="button" data-rp="map">' + icon('flag') + '<span>Zur Karte</span></button>' +
+                '<button class="btn btn--primary btn--sm" type="button" data-rp="capital">' + icon('castle') + '<span>Hauptstadt</span></button></div>';
+            openPanel(rulerPopup);
+        }
+        document.getElementById('rulerCloseBtn').addEventListener('click', () => { closePanel(rulerPopup); rulerWho = null; });
+        document.getElementById('rulerBody').addEventListener('click', e => {
+            const b = e.target.closest('[data-rp]'); if (!b || !rulerWho) return;
+            const who = rulerWho, own = who === 'player' ? ownedIslands : botOwnedIslands[who]; if (!own || !own.size) return;
+            closePanel(rulerPopup); rulerWho = null;
+            if (b.dataset.rp === 'capital') { const cap = who === 'player' ? playerIslandId : botCapitalOf(who), isl = islandById[cap]; if (!isl) return;
+                flyTo(isl.x, isl.y, { zoom: Math.max(mapState.zoom, 0.02) }); setTimeout(() => openIslandPopup(isl), 650); return; }
+            const c = screenToWorld(viewW / 2, viewH / 2); let best = null, bd = Infinity;   // their base nearest to what you're looking at
+            for (const id of own) { const isl = islandById[id], d = Math.hypot(isl.x - c.x, isl.y - c.y); if (d < bd) { bd = d; best = isl; } }
+            if (best) { flyTo(best.x, best.y, { zoom: Math.max(mapState.zoom, 0.015) }); flashHint(whoProfile(who).name + ': ' + own.size + (own.size === 1 ? ' Basis' : ' Basen') + ' auf der Karte.', 2500); }
+        });
+        // every name you see can be tapped: the ranking, the owner line of a base, the battle reports
+        document.addEventListener('click', e => { const l = e.target.closest('[data-profile]'); if (!l) return; e.preventDefault(); e.stopPropagation(); openRulerProfile(l.dataset.profile); }, true);
+        function whoLink(who, name) { return who ? '<button type="button" class="who-link" data-profile="' + who + '">' + escapeHtml(name) + '</button>' : escapeHtml(name); }
         function escapeHtml(str) {
             const div = document.createElement('div');
             div.textContent = str;
@@ -7021,7 +7189,7 @@ body.has-panel .mapctl{display:none}
             }
             entries.sort((a, b) => b.score - a.score);
             rankListEl.innerHTML = entries.map((e, i) =>
-                '<div class="rankRow' + (e.isPlayer ? ' isPlayer' : '') + '"><span class="rankPos">' + (i + 1) + '</span>' +
+                '<div class="rankRow' + (e.isPlayer ? ' isPlayer' : '') + '" data-profile="' + (e.isPlayer ? 'player' : e.id) + '" role="button" tabindex="0"><span class="rankPos">' + (i + 1) + '</span>' +
                 '<span class="rankDot frame-ring" data-frame="' + e.frame + '" style="background:' + e.color + '"><img class="rankCrest" alt="" src="' + crestDataUrl(28, e.isPlayer ? 'player' : e.id) + '"></span>' +
                 '<span class="rankName"><span class="rankName-t">' + e.name + '<small class="rankTitle">' + escapeHtml(e.title) + '</small></span>' + (e.isPlayer && e.named ? '<span class="tag tag--player">Du</span>' : '') + '</span>' +
                 '<span class="rankScore">' + fmtNum(e.score) + ' ' + (e.score === 1 ? 'Basis' : 'Basen') + '</span></div>'
@@ -7163,7 +7331,7 @@ body.has-panel .mapctl{display:none}
                     return '<span class="ghero" style="--hc:' + (x[2] ? rd.color : hd.color) + '"><span class="hero-ic">' + icon(hd.icon) + '</span><span><b>' + hd.name + '</b><small>Stufe ' + x[1] + ' · ' + rd.label + '</small></span></span>'; }).join('');
                 return '<div class="logGear"><div class="logGearHead">Stufe ' + g.lvl + (g.title ? ' · Titel ' + escapeHtml(g.title) : '') + '</div>' +
                     '<div class="logGearItems">' + tiles + '</div>' + (heroes ? '<div class="logGearHeroes">' + heroes + '</div>' : '') +
-                    '<div class="logGearMeta">' + (forge ? 'Schmiede: ' + forge + '<br>' : '') + 'Skill Angriff ' + g.skills[0] + ' · Verteidigung ' + g.skills[1] + '<br>Mauer ' + g.city[0] + ' · Lazarett ' + g.city[1] + ' · Heldenhalle ' + g.city[2] + '</div></div>'; };
+                    '<div class="logGearMeta">' + (forge ? 'Alter Münz-Ausbau: ' + forge + '<br>' : '') + 'Skill Angriff ' + g.skills[0] + ' · Verteidigung ' + g.skills[1] + '<br>Mauer ' + g.city[0] + ' · Lazarett ' + g.city[1] + ' · Heldenhalle ' + g.city[2] + '</div></div>'; };
             const partLines = (parts, first) => (parts || []).map((q, i) => '<div class="logLine' + (first && !i ? '' : q[1] < 0 ? ' buff malus' : ' buff') + '"><span>' + escapeHtml(q[0]) + (q[2] ? '<small class="logSrc">' + escapeHtml(q[2]) + '</small>' : '') + '</span><span>' + (first && !i ? '' : q[1] < 0 ? '−' : '+') + fmtD(Math.abs(q[1])) + '</span></div>').join('');   // each bonus with where it comes from
             combatLogListEl.innerHTML = combatLog.map(entry => {
                 T = id => (entry.names && entry.names[id]) || islandTitle(islandById[id]);
@@ -7195,7 +7363,7 @@ body.has-panel .mapctl{display:none}
                         logBalance(entry.myTroops, defSum, icon('attack') + escapeHtml(entry.botName) + ' ' + fmtM(entry.myTroops), fmtM(defSum) + ' Du' + icon('defense'), true) +
                         '<div class="logCompare">' +
                             '<div class="logSide">' +
-                                '<div class="logSideLabel">Angreifer · ' + escapeHtml(entry.botName) + '</div>' +
+                                '<div class="logSideLabel">Angreifer · ' + whoLink(entry.botId || botIdByName[entry.botName], entry.botName) + '</div>' +
                                 (entry.atkParts ? '<div class="logLine"><span>Truppen</span><span>' + fmtD(entry.atkRaw) + '</span></div>' + partLines(entry.atkParts) :
                                  entry.atkRaw !== undefined ? '<div class="logLine"><span>Truppen</span><span>' + fmtD(entry.atkRaw) + '</span></div>' +
                                     (entry.atkBonus ? '<div class="logLine buff"><span>Angriff-Bonus</span><span>+' + fmtD(entry.atkBonus) + '</span></div>' : '') +
@@ -7261,7 +7429,7 @@ body.has-panel .mapctl{display:none}
                         '</div>' +
                         '<div class="logVsDivider">VS</div>' +
                         '<div class="logSide">' +
-                            '<div class="logSideLabel">Verteidiger' + (entry.defenderName ? ' · ' + escapeHtml(entry.defenderName) : '') + '</div>' +
+                            '<div class="logSideLabel">Verteidiger' + (entry.defenderName ? ' · ' + whoLink(entry.defenderId || botIdByName[entry.defenderName], entry.defenderName) : '') + '</div>' +
                             '<div class="logLine"><span>Truppen</span><span>' + fmtD(entry.enemyTroops) + '</span></div>' +
                             (entry.defParts ? partLines(entry.defParts, true)
                               : '<div class="logLine"><span>Verteidigung</span><span>' + fmtD(entry.enemyDefense) + '</span></div>' +
@@ -7316,8 +7484,10 @@ body.has-panel .mapctl{display:none}
             if (isPanelOpen(mailPopup)) { mailCloseBtn.click(); return; }
             closeAllPopups();
             renderQuestPanel();
+            const c = mailCounts(); showMailTab(c.rewards ? 'rewards' : c.quests ? 'quests' : c.reports ? 'reports' : mailTab);
             openPanel(mailPopup);
         });
+        function openMailReports() { closeAllPopups(); renderQuestPanel(); showMailTab('reports'); openPanel(mailPopup); }
 
         function todayKey(d) {
             d = d || new Date();
@@ -7507,6 +7677,47 @@ body.has-panel .mapctl{display:none}
             const b = document.getElementById('questBadge'); if (!b) return;
             const n = claimableCount();
             b.textContent = n; b.style.display = n > 0 ? 'block' : 'none';
+            if (typeof mailCounts === 'function') { const c = mailCounts();
+                for (const el of document.querySelectorAll('#mailTabs [data-mbadge]')) { const v = c[el.dataset.mbadge];
+                    if (el.classList.contains('dot-new')) el.style.display = v ? 'block' : 'none'; else { el.textContent = v; el.style.display = v > 0 ? 'block' : 'none'; } } }
+        }
+        function warDayText(w) {                                                        // one day in a few plain sentences
+            const parts = [], n = k => w[k] || 0, pl = (x, one, many) => x === 0 ? 'keine ' + many : fmtNum(x) + ' ' + (x === 1 ? one : many);
+            if (n('captures') || n('attacksLost')) parts.push(pl(n('captures'), 'Basis', 'Basen') + ' erobert' + (n('attacksLost') ? ', ' + pl(n('attacksLost'), 'Angriff', 'Angriffe') + ' gescheitert' : ''));
+            if (n('lost') || n('defends') || n('plundered')) parts.push(pl(n('defends'), 'Angriff', 'Angriffe') + ' abgewehrt, ' + pl(n('lost'), 'Basis', 'Basen') + ' verloren' + (n('plundered') ? ', Hauptstadt ' + n('plundered') + '× geplündert' : ''));
+            if (n('armyWins') || n('armyLosses')) parts.push('Armeen im Feld: ' + pl(n('armyWins'), 'Sieg', 'Siege') + ', ' + pl(n('armyLosses'), 'Niederlage', 'Niederlagen'));
+            if (n('fieldCoins') || n('fieldGems')) parts.push('Gesammelt: ' + [n('fieldCoins') ? fmtCompact(n('fieldCoins')) + ' Münzen' : '', n('fieldGems') ? fmtCompact(n('fieldGems')) + ' Gems' : ''].filter(Boolean).join(' und '));
+            if (n('kills') || n('fallen')) parts.push(fmtCompact(n('kills')) + ' Gegner besiegt, ' + fmtCompact(n('fallen')) + ' eigene Truppen gefallen');
+            if (n('offCoins') || n('offTroops')) parts.push('Während du weg warst: +' + fmtCompact(n('offCoins')) + ' Münzen, +' + fmtCompact(n('offTroops')) + ' Truppen');
+            const foes = Object.entries(w.by || {}).sort((a, b) => b[1] - a[1]).slice(0, 3);
+            if (foes.length) parts.push(foes.map(([name, c]) => escapeHtml(name) + ' hat dich ' + (c === 1 ? 'einmal' : c + '×') + ' angegriffen').join(', '));
+            return parts;
+        }
+        function warReportHtml() {
+            const days = Object.keys(warDays).sort().reverse().slice(0, 7);
+            if (!days.length) return '<div class="war-empty">Noch nichts passiert – hier steht jeden Tag, was du erobert und verloren hast.</div>';
+            const today = todayKey(), yest = yesterdayKey();
+            return days.map((d, i) => { const w = warDays[d], lines = warDayText(w), dt = new Date(d + 'T12:00:00');
+                const label = d === today ? 'Heute' : d === yest ? 'Gestern' : dt.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'numeric' });
+                const score = (w.captures || 0) + (w.defends || 0) - (w.lost || 0) - (w.attacksLost || 0) * .5;
+                return '<details class="war-day"' + (i === 0 ? ' open' : '') + '><summary><b>' + label + '</b><span class="war-sum">' + icon('castle') + '+' + (w.captures || 0) + ' ' + icon('shield') + (w.defends || 0) + ' ' + icon('losses') + '−' + (w.lost || 0) +
+                    '</span><span class="war-trend ' + (score >= 0 ? 'up' : 'down') + '">' + (score >= 0 ? 'gut' : 'schwer') + '</span></summary>' +
+                    (lines.length ? '<ul>' + lines.map(l => '<li>' + l + '</li>').join('') + '</ul>' : '<div class="war-empty">Ruhiger Tag.</div>') + '</details>'; }).join('');
+        }
+        // the Postfach has three tabs; a new day's report shows a dot until you've looked at it
+        let mailTab = 'rewards';
+        function warUnseen() { const days = Object.keys(warDays).sort(); const last = days[days.length - 1]; return !!last && last < todayKey() && store.get('openWaterWarSeen') !== last; }
+        function showMailTab(t) {
+            mailTab = t;
+            for (const b of document.querySelectorAll('#mailTabs [data-mtab]')) { const on = b.dataset.mtab === t; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }
+            for (const pn of document.querySelectorAll('#mailPopup [data-mpane]')) pn.hidden = pn.dataset.mpane !== t;
+            if (t === 'reports') { const days = Object.keys(warDays).sort(); if (days.length) store.set('openWaterWarSeen', days[days.length - 1]); }
+            updateQuestBadge();
+        }
+        document.getElementById('mailTabs').addEventListener('click', e => { const b = e.target.closest('[data-mtab]'); if (b) showMailTab(b.dataset.mtab); });
+        function mailCounts() {
+            const q = loadQuests(), quests = q.list.filter(t => !t.claimed && t.progress >= t.target).length + (q.list.every(t => t.claimed) && !q.bonusClaimed ? 1 : 0);
+            return { rewards: (dailyClaimable() ? 1 : 0) + (chainStreak() >= 7 ? 1 : 0), quests, reports: warUnseen() };
         }
         function renderQuestPanel() {
             const q = loadQuests();
@@ -7517,6 +7728,7 @@ body.has-panel .mapctl{display:none}
                 '<small>' + (claimable ? 'Bereit zum Abholen' : 'Nächste Belohnung in ' + fmtHoursLeft(msToMidnight()) + ' · ' + dailyRewardLabel(DAILY_REWARDS[day % 7])) + '</small></div>' +
                 (claimable ? '<button class="btn btn--primary btn--sm" type="button" data-daily>' + icon('shop') + '<span>Abholen</span></button>' : '<span class="quest-ok">Erledigt</span>') + '</div>';
             document.getElementById('questReset').textContent = 'Neu in ' + fmtHoursLeft(msToMidnight());
+            document.getElementById('warCard').innerHTML = warReportHtml();
             { const k = chainStreak(), full = k >= 7;                                        // the week chain: 7 links, the chest at the end
               document.getElementById('chainCard').innerHTML = '<div class="chain-links">' + Array.from({ length: 7 }, (_, i) => '<span class="chain-link' + (i < k ? ' on' : '') + '">' + (i < k ? icon('check') : i + 1) + '</span>').join('') +
                 '<span class="chain-chest' + (full ? ' on' : '') + '">' + icon('shop') + '</span></div>' +
@@ -7549,7 +7761,13 @@ body.has-panel .mapctl{display:none}
             updateQuestBadge();
         }, 60000);
         updateQuestBadge();
-        afterSplash(() => setTimeout(() => { if (dailyClaimable() && document.getElementById('levelUpModal').hidden) showDailyModal(); }, 500));
+        function maybeShowDaily() {
+            if (!dailyClaimable() || !document.getElementById('dailyModal').hidden || isPanelOpen(mailPopup)) return;   // an open Postfach shows it in its own tab
+            const busy = !document.getElementById('levelUpModal').hidden || !document.getElementById('rewardModal').hidden || (typeof welcomeFrom !== 'undefined' && welcomeFrom) || (document.getElementById('welcomeModal') && !document.getElementById('welcomeModal').hidden);
+            if (busy) { setTimeout(maybeShowDaily, 1500); return; }
+            showDailyModal();
+        }
+        afterSplash(() => setTimeout(maybeShowDaily, 500));
         mailCloseBtn.addEventListener('click', () => {
             closePanel(mailPopup);
         });
@@ -7647,6 +7865,22 @@ body.has-panel .mapctl{display:none}
                 ticks++;
             }
             if (ticks > 0) {
+                produceTicks(ticks);
+                // Keep any currently-open popup/tab in sync with production -
+                // without this, an "afford it" button can stay stuck
+                // disabled after coins cross its threshold while the popup
+                // is already open.
+                if (isPanelOpen(popup)) renderPopup();
+                if (isPanelOpen(profilePopup)) {
+                    renderProfile();
+                    renderEquipGrid();
+                    if (profileTabs.rank.panel.classList.contains('active')) renderRankList();
+                }
+            }
+            setTimeout(runProductionTick, Math.max(50, nextProductionTickAt - Date.now()));
+        }
+        function produceTicks(ticks) {                  // everyone's bases produce for `ticks` of your production ticks
+            {
                 const ruler = rulerOwner(), coinMult = playerCoinMult(), troopMult = playerTroopMult();
                 for (const ownedId of ownedIslands) {
                     const level = islandLevels[ownedId] || 1;
@@ -7691,20 +7925,81 @@ body.has-panel .mapctl{display:none}
                 saveBotState();
                 updateHud();
                 saveGame();
-                // Keep any currently-open popup/tab in sync with production -
-                // without this, an "afford it" button can stay stuck
-                // disabled after coins cross its threshold while the popup
-                // is already open.
-                if (isPanelOpen(popup)) renderPopup();
-                if (isPanelOpen(profilePopup)) {
-                    renderProfile();
-                    renderEquipGrid();
-                    if (profileTabs.rank.panel.classList.contains('active')) renderRankList();
-                }
             }
-            setTimeout(runProductionTick, Math.max(50, nextProductionTickAt - Date.now()));
         }
         setTimeout(runProductionTick, productionTickMs());
+
+        // ===== WILLKOMMEN ZURÜCK: the empire keeps producing while you're away (up to 8 hours), and when you come back
+        // after a while a card shows what happened: production, attacks on you, your own fights, buildings, wounded.
+        const AWAY_MIN_MS = 10 * 60000, AWAY_PRODUCE_MAX_MS = 8 * 3600000;
+        function empireSnapshot() {
+            let troops = 0; for (const id of ownedIslands) troops += islandTroops[id] || 0;
+            const c = loadCity();
+            return { at: Date.now(), coins, gems, troops, bases: ownedIslands.size, city: Object.assign({}, c.levels), wounded: c.wounded || 0 };
+        }
+        function saveLeave() { try { store.set('openWaterLeave', JSON.stringify(empireSnapshot())); } catch (e) {} }
+        const leaveAtBoot = (() => { try { return JSON.parse(store.get('openWaterLeave')) || null; } catch (e) { return null; } })();
+        let welcomeFrom = null;                          // the snapshot to compare with when the welcome card is shown
+        setTimeout(() => {                               // right after boot (everything exists): production for the time away
+            if (leaveAtBoot && Date.now() - leaveAtBoot.at > 60000) {
+                const away = Math.min(AWAY_PRODUCE_MAX_MS, Date.now() - leaveAtBoot.at), ticks = Math.floor(away / productionTickMs());
+                const c0 = coins, t0 = empireSnapshot().troops;
+                if (ticks > 0) produceTicks(ticks);
+                const dc = coins - c0, dt = empireSnapshot().troops - t0;
+                if (dc > 0) warStat('offCoins', dc); if (dt > 0) warStat('offTroops', dt);
+                if (Date.now() - leaveAtBoot.at >= AWAY_MIN_MS) welcomeFrom = Object.assign({ produced: { coins: dc, troops: dt, capped: Date.now() - leaveAtBoot.at > AWAY_PRODUCE_MAX_MS } }, leaveAtBoot);
+            }
+            saveLeave(); setInterval(saveLeave, 30000);
+        }, 0);
+        window.addEventListener('pagehide', saveLeave);
+        let hiddenAt = 0;
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) { hiddenAt = Date.now(); saveLeave(); return; }
+            if (hiddenAt && Date.now() - hiddenAt >= AWAY_MIN_MS) {                            // the tab kept running: just show what happened
+                try { welcomeFrom = JSON.parse(store.get('openWaterLeave')); } catch (e) { welcomeFrom = null; }
+                if (welcomeFrom) setTimeout(showWelcome, 600);
+            }
+            hiddenAt = 0;
+        });
+        function fmtAway(ms) { const m = Math.round(ms / 60000), d = Math.floor(m / 1440), hh = Math.floor(m % 1440 / 60), mm = m % 60;
+            return d ? d + (d === 1 ? ' Tag' : ' Tage') + (hh ? ' ' + hh + ' Std.' : '') : hh ? hh + ' Std.' + (mm ? ' ' + mm + ' Min.' : '') : mm + ' Min.'; }
+        function welcomeRows(from) {
+            const rows = [], now = empireSnapshot(), log = combatLog.filter(e => e.at >= from.at);
+            const pr = from.produced;
+            if (pr && (pr.coins > 0 || pr.troops > 0)) rows.push(['coin', 'Produktion' + (pr.capped ? ' (8 Std.)' : ''), '+' + fmtCompact(pr.coins) + ' · ' + fmtCompact(pr.troops) + ' Truppen']);
+            const onYou = log.filter(e => e.type === 'botAttack'), lost = onYou.filter(e => e.won && !e.capitalHolds).length, held = onYou.filter(e => !e.won).length;
+            if (onYou.length) rows.push(['shield', (onYou.length === 1 ? 'Ein Angriff' : onYou.length + ' Angriffe') + ' auf dich', held + ' abgewehrt' + (lost ? ' · ' + lost + ' verloren' : '')]);
+            const foes = {}; for (const e of onYou) foes[e.botName] = (foes[e.botName] || 0) + 1;
+            const top = Object.entries(foes).sort((a, b) => b[1] - a[1])[0];
+            if (top && top[1] > 1) rows.push(['attack', 'Am häufigsten', escapeHtml(top[0]) + ' · ' + top[1] + '×']);
+            const mine = log.filter(e => e.type === 'attack');
+            if (mine.length) rows.push(['flag', 'Deine Angriffe', mine.filter(e => e.won).length + ' Siege' + (mine.some(e => !e.won) ? ' · ' + mine.filter(e => !e.won).length + ' gescheitert' : '')]);
+            const armies = log.filter(e => e.type === 'army' || e.type === 'field');
+            if (armies.length) rows.push(['troops', 'Kämpfe im Feld', armies.filter(e => e.won).length + ' gewonnen · ' + armies.filter(e => !e.won).length + ' verloren']);
+            const built = Object.keys(now.city).filter(k => (now.city[k] || 0) > ((from.city || {})[k] || 0));
+            if (built.length) rows.push(['upgrade', 'Fertig gebaut', built.map(k => cityDef(k).name + ' ' + now.city[k]).join(', ')]);
+            if (now.bases !== from.bases) rows.push(['castle', 'Basen', from.bases + ' → ' + now.bases]);
+            if (now.wounded > (from.wounded || 0)) rows.push(['losses', 'Im Lazarett', fmtCompact(now.wounded) + ' Verwundete']);
+            if (!rows.length) rows.push(['check', 'Alles ruhig', 'Niemand hat dich angegriffen']);
+            return rows;
+        }
+        function showWelcome() {
+            const from = welcomeFrom; if (!from) return;
+            if (!document.getElementById('levelUpModal').hidden || !document.getElementById('dailyModal').hidden || !document.getElementById('rewardModal').hidden) { setTimeout(showWelcome, 800); return; }
+            welcomeFrom = null;
+            document.getElementById('welcomeCrest').src = crestDataUrl(44);
+            document.getElementById('welcomeTitle').textContent = (profileName.value ? profileName.value + ', du' : 'Du') + ' warst ' + fmtAway(Date.now() - from.at) + ' weg';
+            document.getElementById('welcomeSub').textContent = rulerOwner() === 'player' ? 'Herrscher der Meere · ' + ownedIslands.size + ' Basen' : 'Rang ' + currentRank() + ' · ' + ownedIslands.size + (ownedIslands.size === 1 ? ' Basis' : ' Basen');
+            const ul = document.getElementById('welcomeList');
+            ul.innerHTML = welcomeRows(from).map(r => '<li>' + icon(r[0], r[0] === 'coin' ? 'ico-coin' : r[0] === 'troops' ? 'ico-troops' : '') + '<span>' + r[1] + '</span><b>' + r[2] + '</b></li>').join('');
+            [...ul.children].forEach((li, i) => { li.style.animationDelay = (150 + i * 110) + 'ms'; });
+            document.getElementById('welcomeModal').hidden = false;
+        }
+        function closeWelcome() { const m = document.getElementById('welcomeModal'); if (m.hidden) return false; m.hidden = true; return true; }
+        document.getElementById('welcomeOkBtn').addEventListener('click', () => { closeWelcome(); maybeShowDaily(); });
+        document.getElementById('welcomeReportBtn').addEventListener('click', () => { closeWelcome(); openMailReports(); });
+        document.getElementById('welcomeModal').addEventListener('click', e => { if (e.target.id === 'welcomeModal') { closeWelcome(); maybeShowDaily(); } });
+        afterSplash(() => setTimeout(() => { if (welcomeFrom) showWelcome(); }, 700));
 
         // Center the view on the player's island at start
         const startIsland = islandById[playerIslandId];
@@ -9729,7 +10024,7 @@ body.has-panel .mapctl{display:none}
                 const baseId = own && own.has(m.homeId) ? m.homeId : m.who === 'player' ? rewardBaseId() : own && [...own][0];
                 if (baseId !== undefined && baseId !== null) islandTroops[baseId] = (islandTroops[baseId] || 0) + m.troops;
                 const load = Math.floor(m.load);
-                if (m.who === 'player') { if (f.kind === 'gold') coins += load; else gems += load; if (load) { flashHint('Sammler zurück: +' + fmtNum(load) + ' ' + FIELD_KINDS[f.kind].what + ' aus der ' + FIELD_KINDS[f.kind].name + '.', 3500); sfx(f.kind === 'gold' ? 'coin' : 'gem'); } updateHud(); saveGame(); saveProgression(); }
+                if (m.who === 'player') { if (f.kind === 'gold') coins += load; else gems += load; if (load) warStat(f.kind === 'gold' ? 'fieldCoins' : 'fieldGems', load); if (load) { flashHint('Sammler zurück: +' + fmtNum(load) + ' ' + FIELD_KINDS[f.kind].what + ' aus der ' + FIELD_KINDS[f.kind].name + '.', 3500); sfx(f.kind === 'gold' ? 'coin' : 'gem'); } updateHud(); saveGame(); saveProgression(); }
                 else if (botCoins[m.who] !== undefined) { if (f.kind === 'gold') botCoins[m.who] += load; else loadBotState()[m.who].gems += load; }
                 return;
             }
@@ -9923,6 +10218,7 @@ body.has-panel .mapctl{display:none}
             if (!mine) return;
             const youWon = mine === winner, foe = mine === att ? def : att, w = youWon ? wWinner : wLoser;
             addCombatLogEntry({ type: 'army', won: youWon, attacker: armyName(att), defender: armyName(def), atk: A, def: D, wounded: w });
+            warStat(youWon ? 'armyWins' : 'armyLosses', 1, mine === def ? armyName(att) : null);
             flashHint(youWon ? 'Deine Armee hat die Armee von ' + armyName(foe) + ' geschlagen – ' + fmtCompact(winner.troops) + ' stehen noch.'
                              : 'Die Armee von ' + armyName(foe) + ' hat deine Armee geschlagen' + (w ? ', ' + fmtCompact(w) + ' ins Lazarett.' : '.'), 5000);
             if (youWon && mine === def) statBump('defends');
@@ -10031,6 +10327,7 @@ body.has-panel .mapctl{display:none}
                 flashHint(bot.name + ' hat deine Armee im Feld geschlagen (' + fmtCompact(def) + ' Truppen)' + (w ? ', ' + fmtCompact(w) + ' ins Lazarett.' : '.'), 5000); }
             else { botHospitalTake(r.botId, r.troops); hospitalTake(r.troops); a.troops -= r.troops; statBump('defends'); flashHint('Deine Armee hat den Angriff von ' + bot.name + ' abgewehrt – ' + fmtCompact(a.troops) + ' stehen noch.', 4500); }
             addCombatLogEntry({ type: 'army', won: !won, attacker: bot.name, defender: 'Du', atk: r.troops + (won ? def : 0), def });
+            warStat(won ? 'armyLosses' : 'armyWins', 1, bot.name);
             sfx(won ? 'defeat' : 'victory'); updateHud(); saveGame();
         }
         function armyTick() {
@@ -10245,7 +10542,7 @@ body.has-panel .mapctl{display:none}
         // the keyboard handler uses this: map shortcuts only fire while focus is on the page or the canvas
         function isUiElement(target) {
           return !!(target && target.closest && target.closest(
-            '#islandPopup,#hud,#cornerButtons,#profilePopup,#battleLogPopup,#mailPopup,#shopPopup,#chestItemPopup,#multiAttackBar,#mapControls,#uiScrim,#uiScrimTop'));
+            '#islandPopup,#hud,#cornerButtons,#profilePopup,#rulerPopup,#battleLogPopup,#mailPopup,#shopPopup,#chestItemPopup,#multiAttackBar,#mapControls,#uiScrim,#uiScrimTop'));
         }
         const PANEL_NAV = { profilePopup: 'profileBtn', battleLogPopup: 'battleLogBtn', mailPopup: 'mailBtn', shopPopup: 'shopBtn' };
         function isPanelOpen(el) { return el.classList.contains('is-open'); }
@@ -10266,6 +10563,7 @@ body.has-panel .mapctl{display:none}
           requestRender();                       // selection ring / popover follow
         }
         function closeTopmostPanel() {           // scrim click + Escape
+          if (closeWelcome()) { maybeShowDaily(); return; }
           if (closeLevelUpModal()) return;
           if (!document.getElementById('citySheet').hidden && !cityView.hidden) { document.getElementById('citySheetClose').click(); return; }
           if (closeCity()) return;
@@ -10273,7 +10571,7 @@ body.has-panel .mapctl{display:none}
           if (!document.getElementById('rewardModal').hidden) { document.getElementById('rewardModal').hidden = true; return; }
           if (isPanelOpen(chestItemPopup)) return chestItemCloseBtn.click();
           if (isPanelOpen(popup)) return closeBtn.click();
-          for (const [pid, closeId] of [['profilePopup','profileCloseBtn'],['battleLogPopup','battleLogCloseBtn'],['mailPopup','mailCloseBtn'],['shopPopup','shopCloseBtn']])
+          for (const [pid, closeId] of [['rulerPopup','rulerCloseBtn'],['profilePopup','profileCloseBtn'],['battleLogPopup','battleLogCloseBtn'],['mailPopup','mailCloseBtn'],['shopPopup','shopCloseBtn']])
             if (isPanelOpen(document.getElementById(pid))) return document.getElementById(closeId).click();
           if (multiAttackMode) return multiAttackCancelBtn.click();
         }
@@ -10294,6 +10592,7 @@ body.has-panel .mapctl{display:none}
             clearInterval(battleLogRefreshTimer);
             closePanel(mailPopup);
             closePanel(shopPopup);
+            closePanel(document.getElementById('rulerPopup'));
             closePanel(chestItemPopup);
             chestDetailItemId = null;
             chestSelectedIds.clear();
@@ -10515,7 +10814,7 @@ body.has-panel .mapctl{display:none}
                 backBtn.style.display = 'inline-block';
             } else if (isOwned) {
                 const troopsHere = islandTroops[island.id] || 0;
-                popupSub.innerHTML = '<span class="dot dot--player"></span>' + escapeHtml(profileName.value || 'Du') +
+                popupSub.innerHTML = '<span class="dot dot--player"></span>' + whoLink('player', profileName.value || 'Du') +
                     (island.id === playerIslandId ? sep + 'Heimat' : '');
 
                 popupOverline.textContent = island.id === playerIslandId ? 'Deine Hauptstadt · kann nicht angegriffen werden' : isTemple ? 'Dein Tempel' : island.type === 'gate' ? 'Dein Tor · du kassierst die Maut' : 'Deine Basis';
@@ -10540,7 +10839,7 @@ body.has-panel .mapctl{display:none}
                 recallBtn.disabled = gems < RECALL_GEM_COST || ownedIslands.size <= 1;
             } else {
                 const scouted = scoutedIslands.has(island.id);
-                popupSub.innerHTML = '<span class="dot dot--' + (bossAt(island.id) ? 'enemy' : kind) + '"></span>' + (bossAt(island.id) ? 'Boss' : ownerBot ? escapeHtml(ownerBot.name) + ' · Stufe ' + loadBotState()[ownerBot.id].lvl + (botOnline(ownerBot, Date.now()) ? ' · online' : ' · offline') +
+                popupSub.innerHTML = '<span class="dot dot--' + (bossAt(island.id) ? 'enemy' : kind) + '"></span>' + (bossAt(island.id) ? 'Boss' : ownerBot ? whoLink(ownerBot.id, ownerBot.name) + ' · Stufe ' + loadBotState()[ownerBot.id].lvl + (botOnline(ownerBot, Date.now()) ? ' · online' : ' · offline') +
                     (botBestRarity(ownerBot.id) >= 0 ? ' · <span style="color:' + RARITY_DEFS[botBestRarity(ownerBot.id)].color + '">' + RARITY_DEFS[botBestRarity(ownerBot.id)].label + '</span>' : '') : 'Unbesetzt') +
                     (scouted ? sep + '<span class="chip chip--scouted">' + icon('scout') + 'Gespäht</span>' : '');
 
@@ -11210,12 +11509,21 @@ body.has-panel .mapctl{display:none}
             const tips = ['Tipp: Mit dem Schieberegler bestimmst du, wie viele Truppen angreifen.',
                 'Tipp: Späh eine Basis aus, bevor du angreifst – dann siehst du ihre Truppen.',
                 'Tipp: Tempel geben deinem ganzen Reich einen Bonus.',
-                'Tipp: Unter „Aufgaben“ warten jeden Tag neue Belohnungen.',
+                'Tipp: Im Postfach warten jeden Tag Belohnungen, Aufgaben und dein Kriegsbericht.',
                 'Tipp: Glänzende Münzen, Gems und Banner auf der Karte einfach antippen.',
-                'Tipp: Drei gleiche Ausrüstungsteile werden automatisch zu einem besseren.',
-                'Tipp: Tippe auf den Nebel neben deinem Gebiet, um die Insel zu erkunden.'];
+                'Tipp: Drei gleiche Ausrüstungsteile werden zu einem besseren.',
+                'Tipp: Tippe auf den Nebel neben deinem Gebiet, um die Insel zu erkunden.',
+                'Tipp: Tippe auf einen Namen – in der Rangliste, an einer Basis oder im Kampfbericht – und sieh dir das Profil an.',
+                'Tipp: Stelle Armeen im Feld auf und sammle Truppen aus mehreren Basen an einem Punkt.',
+                'Tipp: Goldminen und Edelsteinadern auf der Karte bringen Beute – schick Sammler hin.',
+                'Tipp: Das Lazarett in deiner Stadt rettet Verwundete – heile sie für ein paar Münzen.',
+                'Tipp: Nimm einen Helden mit in den Angriff: Sigrun schlägt härter, Bernhard schützt, Ida ist schneller.',
+                'Tipp: Wer den Mega-Tempel hält, verteilt Titel – gute für Freunde, schlechte für Rivalen.',
+                'Tipp: Setze Wegmarken auf der Karte, um dir Ziele zu merken.'];
             const tipEl = document.getElementById('splashTip'), statusEl = document.getElementById('splashStatus');
-            tipEl.textContent = tips[Math.floor(Math.random() * tips.length)];
+            let tipI = Math.floor(Math.random() * tips.length); tipEl.textContent = tips[tipI];
+            const tipTimer = setInterval(() => { tipI = (tipI + 1) % tips.length; tipEl.textContent = tips[tipI]; }, 2600);
+            setTimeout(() => clearInterval(tipTimer), 20000);
             const steps = ['Welt wird erschaffen …', 'Inseln werden besiedelt …', 'Truppen werden gerüstet …', 'Bereit'];
             const t0 = performance.now();
             // Everything the map draws is painted once up front (every building, owner and size step), so nothing has to be
