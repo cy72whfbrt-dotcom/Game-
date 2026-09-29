@@ -2357,12 +2357,12 @@ body.has-panel .mapctl{display:none}
             { id: 'bot60', name: 'Sarah', color: '#922b21', style: 'templer' }
         ];
         const BOT_STYLES = {
-            raider:   { margin: 1.05, commit: .85, multi: 3, risk: .25, spend: .45, send: 1,   skills: ['attack', 'troops', 'attack', 'defense'], temple: .7, enemy: .55, act: .72 },
-            builder:  { margin: 1.5,  commit: .55, multi: 1, risk: .05, spend: .9,  send: .8,  skills: ['troops', 'defense', 'troops', 'attack'], temple: .6, enemy: 1.2, act: .6 },
-            templer:  { margin: 1.2,  commit: .75, multi: 2, risk: .12, spend: .65, send: .9,  skills: ['attack', 'troops', 'defense'],           temple: .2, enemy: 1,   act: .66 },
-            balanced: { margin: 1.2,  commit: .7,  multi: 2, risk: .12, spend: .65, send: .9,  skills: ['troops', 'attack', 'defense'],           temple: .5, enemy: .9,  act: .64 },
+            raider:   { margin: 1.05, commit: .85, hunt: 1, multi: 3, risk: .25, spend: .45, send: 1,   skills: ['attack', 'troops', 'attack', 'defense'], temple: .7, enemy: .55, act: .72 },
+            builder:  { margin: 1.5,  commit: .55, hunt: .2, multi: 1, risk: .05, spend: .9,  send: .8,  skills: ['troops', 'defense', 'troops', 'attack'], temple: .6, enemy: 1.2, act: .6 },
+            templer:  { margin: 1.2,  commit: .75, hunt: .3, multi: 2, risk: .12, spend: .65, send: .9,  skills: ['attack', 'troops', 'defense'],           temple: .2, enemy: 1,   act: .66 },
+            balanced: { margin: 1.2,  commit: .7,  hunt: .5, multi: 2, risk: .12, spend: .65, send: .9,  skills: ['troops', 'attack', 'defense'],           temple: .5, enemy: .9,  act: .64 },
             blitz:    { margin: 1.0,  commit: .8,  risk: .3, spend: .9,  send: 1,   skills: ['attack', 'troops'],                      temple: .3, enemy: .5,  act: 1,
-                        troopMult: 60, atkBonus: 300, speed: 14, moveMs: 300, launches: 12, sources: [30, 20] }
+                        hunt: 3, moveMs: 1500, launches: 4, sources: [30, 20] }     // no bonus troops: same economy as everyone, just hungrier and quicker to decide
         };
         const botById = {};
         for (const bot of BOT_DEFS) botById[bot.id] = bot;
@@ -2411,7 +2411,7 @@ body.has-panel .mapctl{display:none}
                 if (!tower || usedTowerIds.has(tower.id)) return;
                 botOwnedIslands[bot.id].add(tower.id);
                 islandLevels[tower.id] = 1;
-                islandTroops[tower.id] = 20;
+                islandTroops[tower.id] = 0;                       // every player starts from nothing and builds up
                 usedTowerIds.add(tower.id);
             });
         }
@@ -3004,7 +3004,7 @@ body.has-panel .mapctl{display:none}
             saveProgression();
             if (!attackerBotId) flashHint('Angriff unterwegs zu ' + islandTitle(target) + ' · ca. ' + fmtClock(durationSec));
             if (!attackerBotId) dropShield('Dein Friedensschild ist gefallen, weil du angreifst.');
-            if (!attackerBotId) questProgress('attack', 1);
+            if (!attackerBotId) { questProgress('attack', 1); botsSeeTroopsLeave(sourceId); }
             renderActiveMarches();
             return true;
         }
@@ -3031,7 +3031,7 @@ body.has-panel .mapctl{display:none}
                 resolveAt: startedAt + durationSec * 1000,
                 senderBotId: senderBotId || null
             });
-            if (!senderBotId) questProgress('send', 1);
+            if (!senderBotId) { questProgress('send', 1); botsSeeTroopsLeave(fromId); }
             updateHud();
             saveGame();
             saveProgression();
@@ -5421,7 +5421,8 @@ body.has-panel .mapctl{display:none}
         const BOT_INTEL_MS = 10 * 60000;
         function botIntel(bot, targetId) {
             const it = botIntelMem[bot.id] && botIntelMem[bot.id][targetId];
-            return it && Date.now() >= it.ready && Date.now() - it.ready < BOT_INTEL_MS ? it : null;
+            const maxAge = islandOwnerOf(targetId) === 'player' ? BOT_INTEL_MS / (1 + (BOT_STYLES[bot.style].hunt || 0)) : BOT_INTEL_MS;   // the player's bases change fast: look again sooner
+            return it && Date.now() >= it.ready && Date.now() - it.ready < maxAge ? it : null;
         }
         const botIntelMem = {};                                       // kept in memory only: it goes stale in 10 min anyway
         function botScouting(bot, targetId) { const it = botIntelMem[bot.id] && botIntelMem[bot.id][targetId]; return !!it && Date.now() < it.ready; }
@@ -5430,6 +5431,16 @@ body.has-panel .mapctl{display:none}
             const it = botIntelMem[botId] || (botIntelMem[botId] = {});
             it[targetId] = { s: effectiveTroops(t) + effectiveDefense(t), ready: ready || Date.now() };
             const keys = Object.keys(it); if (keys.length > 120) for (const k of keys.sort((u, v) => it[u].ready - it[v].ready).slice(0, keys.length - 120)) delete it[k];
+        }
+        // Troops leaving one of the player's bases can be seen by every neighbour: bots next to it know at once that it's
+        // weaker now - and a hungry one strikes while the army is away.
+        function botsSeeTroopsLeave(baseId) {
+            const base = islandById[baseId]; if (!base) return;
+            const seen = new Set();
+            for (const lm of reachableLandmassIds[base.landmassId] || [base.landmassId]) for (const isl of islandsByLandmass[lm] || []) {
+                const o = botOwnerIndex.get(isl.id); if (o) seen.add(o);
+            }
+            for (const botId of seen) { botLearn(botId, baseId); if ((BOT_STYLES[botById[botId].style].hunt || 0) >= 1) botNextAt[botId] = 0; }   // the aggressive ones react right away
         }
         function botThink(bot) {
             const owned = botOwnedIslands[bot.id];
@@ -5464,7 +5475,7 @@ body.has-panel .mapctl{display:none}
                         if (inward) d *= target.type === 'gate' ? .3 : .5;                              // everyone wants to get to the middle
                         else if (bossAt(target.id)) d *= 0.15;                                         // events: bosses and the Wanderboss are worth a big attack
                         else if (target.type === 'gate' || target.type === 'temple' || target.guardian) d *= st.temple;
-                        else if (islandOwnerOf(target.id)) d *= st.enemy;                              // raiders like hitting other players
+                        else if (islandOwnerOf(target.id)) d *= st.enemy / (islandOwnerOf(target.id) === 'player' ? 1 + (st.hunt || 0) : 1);   // raiders like hitting other players, the aggressive ones the player most
                         const e = T.get(target.id) || { target, d: Infinity, sources: [], grudge };
                         e.d = Math.min(e.d, d); e.sources.push({ id: sourceId, have }); T.set(target.id, e);
                     }
@@ -5810,7 +5821,7 @@ body.has-panel .mapctl{display:none}
             const free = islands.filter(i => i.type === 'tower' && !islandOwnerOf(i.id) && landmasses[i.landmassId].tier === 'outer' && landmasses[i.landmassId].ring >= 3 && !bossAt(i.id));
             if (!free.length) return;
             const t = free[Math.floor(Math.random() * free.length)];
-            botOwnedIslands[bot.id].add(t.id); islandLevels[t.id] = 1; islandTroops[t.id] = 20; b.outAt = 0; b.capital = t.id;
+            botOwnedIslands[bot.id].add(t.id); islandLevels[t.id] = 1; islandTroops[t.id] = 0; b.outAt = 0; b.capital = t.id;
             saveBotState(); saveGame();
         }
         const botNextAt = {};
@@ -9701,7 +9712,7 @@ body.has-panel .mapctl{display:none}
             if ([...emma].every(id => islandById[id].landmassId === home)) {           // nothing left elsewhere: a fresh start on a free outer base
                 for (const id of [...emma]) release(id);
                 const free = islands.filter(i => i.type === 'tower' && !islandOwnerOf(i.id) && landmasses[i.landmassId].tier === 'outer' && landmasses[i.landmassId].ring >= 6 && i.landmassId !== home);
-                const t = free[Math.floor(Math.random() * free.length)]; emma.add(t.id); islandLevels[t.id] = 1; islandTroops[t.id] = 20;
+                const t = free[Math.floor(Math.random() * free.length)]; emma.add(t.id); islandLevels[t.id] = 1; islandTroops[t.id] = 0;
             }
             loadBotState().bot25.capital = undefined; capitalCache = null;
             store.set('openWaterGift3', 'g3'); saveBotState(); refreshTerritory(); saveGame(); updateHud(); requestRender();
@@ -9724,16 +9735,20 @@ body.has-panel .mapctl{display:none}
             }
             store.set('openWaterEmmaOnlyMine', '2'); saveBotState(); refreshTerritory(); saveGame(); requestRender();
         }
-        if (store.get('openWaterEmmaStrong') !== '1') {        // one-time test: Emma gets strong enough to be a real opponent for the test gifts
-            const b = loadBotState().bot25, own = [...botOwnedIslands.bot25], cap = botCapitalOf('bot25');
-            for (const id of own) { islandLevels[id] = Math.max(islandLevels[id] || 1, 50); islandTroops[id] = Math.max(islandTroops[id] || 0, id === cap ? 3e21 : 1e21); }
-            botCoins.bot25 = Math.max(botCoins.bot25 || 0, 1e21);
-            if (b.lvl < 100) { b.sp += 100 - b.lvl; b.lvl = 100; }
-            for (const k of Object.keys(b.equip)) b.equip[k] = Math.max(b.equip[k], 300);
-            for (const k of Object.keys(b.items)) b.items[k][RARITY_DEFS.length - 1] = Math.max(1, b.items[k][RARITY_DEFS.length - 1]);
-            b.salvage = Math.max(b.salvage, 12 * ITEM_MAX_LEVEL); b.gems = Math.max(b.gems, 1e6);
-            addBotXp('bot25', 0);                                  // spends the new skill points the way her style does
-            store.set('openWaterEmmaStrong', '1'); saveBotState(); saveGame(); requestRender();
+        if (store.get('openWaterEmmaFair') !== '1' && playerIslandId !== null && islandById[playerIslandId]) {   // one-time: Emma starts over fairly - one base on the player's island, nothing else
+            const emma = botOwnedIslands.bot25, cap = botCapitalOf('bot25');
+            for (const id of [...emma]) if (id !== cap) { emma.delete(id); islandLevels[id] = 1; delete islandTroops[id]; }
+            for (const a of pendingAttacks.filter(x => x.attackerBotId === 'bot25')) pendingAttacks.splice(pendingAttacks.indexOf(a), 1);
+            for (const x of pendingSends.filter(x => x.senderBotId === 'bot25')) pendingSends.splice(pendingSends.indexOf(x), 1);
+            if (cap !== null) { islandLevels[cap] = 1; islandTroops[cap] = 0; }
+            botCoins.bot25 = 0;
+            const b = loadBotState().bot25;
+            Object.assign(b, { lvl: 1, xp: 0, sp: 0, gems: 0, salvage: 0, rally: null, lastGrabAt: 0 });
+            for (const k of Object.keys(b.skills)) b.skills[k] = 0;
+            for (const k of Object.keys(b.equip)) b.equip[k] = 0;
+            for (const k of Object.keys(b.items)) b.items[k] = b.items[k].map(() => 0);
+            delete botIntelMem.bot25;
+            store.set('openWaterEmmaFair', '1'); saveBotState(); refreshTerritory(); saveGame(); requestRender();
         }
         renderActiveMarches();
         if (bonusGrantedAtBoot) saveGame();      // a reload right after the first start must not lose the grant
