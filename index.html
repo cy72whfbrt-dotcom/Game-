@@ -1026,6 +1026,7 @@ body.has-panel .mapctl{display:none}
 <symbol id="i-castle" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20.5V9h3v2h2.5V9h5v2H17V9h3v11.5z" fill="currentColor" stroke="none" opacity="0.16"/><path d="M4 20.5V9h3v2h2.5V9h5v2H17V9h3v11.5z"/><path d="M4 6.5V9M20 6.5V9M12 3.5v5.5"/><path d="M12 3.5l3 1.2-3 1.2" fill="currentColor"/><path d="M9.8 20.5v-3.3a2.2 2.2 0 0 1 4.4 0v3.3"/><path d="M3 20.5h18"/></g></symbol>
 <symbol id="i-home" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12a7 7 0 1 0 14 0a7 7 0 1 0 -14 0z"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4"/><path d="M10.4 12a1.6 1.6 0 1 0 3.2 0a1.6 1.6 0 1 0 -3.2 0z" fill="currentColor" stroke="none"/></g></symbol>
 <symbol id="i-sound" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor" fill-opacity=".18"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></g></symbol>
+<symbol id="i-sfx" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor" fill-opacity=".18"/><path d="M15.5 9.5a3.2 3.2 0 0 1 0 5"/><path d="M19 7v3M17.5 8.5h3" /></g></symbol>
 <symbol id="i-mute" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor" fill-opacity=".18"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></g></symbol>
 <symbol id="i-hourglass" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3.5h11M6.5 20.5h11"/><path d="M8 3.5c0 4.2 4 5.3 4 8.5s-4 4.3-4 8.5M16 3.5c0 4.2-4 5.3-4 8.5s4 4.3 4 8.5"/><path d="M9.5 18.8 12 16.2l2.5 2.6z" fill="currentColor" stroke="none"/></g></symbol>
 <symbol id="i-points" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5h15.5V10c-1.9 0-3 .8-3.4 2.5H9.4C8.8 10.6 6.8 9.6 3 7.5z" fill="currentColor" stroke="none" opacity="0.2"/><path d="M3 7.5h15.5V10c-1.9 0-3 .8-3.4 2.5H9.4C8.8 10.6 6.8 9.6 3 7.5z"/><path d="M10.2 12.5v3.2M14.3 12.5v3.2"/><path d="M8.2 15.7h8.1l1.6 3.8H6.6z"/><path d="M18.5 7.5h2.5" opacity="0.6"/></g></symbol>
@@ -2695,6 +2696,7 @@ body.has-panel .mapctl{display:none}
             if (gems < CRATE_GEM_COST) return null;
             gems -= CRATE_GEM_COST;
             const item = addInventoryItem(pickRandomSlot(), pickRandomRarity(), 1);
+            sfx('crate');
             questProgress('crate', 1);
             saveGame();
             saveProgression();
@@ -3007,7 +3009,8 @@ body.has-panel .mapctl{display:none}
             saveProgression();
             if (!attackerBotId) flashHint('Angriff unterwegs zu ' + islandTitle(target) + ' · ca. ' + fmtClock(durationSec));
             if (!attackerBotId) dropShield('Dein Friedensschild ist gefallen, weil du angreifst.');
-            if (!attackerBotId) questProgress('attack', 1);
+            if (!attackerBotId) { questProgress('attack', 1); sfx('attack'); }
+            else if (islandOwnerOf(target.id) === 'player') sfx('warn');      // someone marches on one of your bases
             renderActiveMarches();
             return true;
         }
@@ -3034,7 +3037,7 @@ body.has-panel .mapctl{display:none}
                 resolveAt: startedAt + durationSec * 1000,
                 senderBotId: senderBotId || null
             });
-            if (!senderBotId) questProgress('send', 1);
+            if (!senderBotId) { questProgress('send', 1); sfx('send'); }
             updateHud();
             saveGame();
             saveProgression();
@@ -3166,6 +3169,7 @@ body.has-panel .mapctl{display:none}
             const sourceId = nearestOwnedIslandTo(target);
             const home = islandById[sourceId];
             if (!home) return;
+            sfx('scout');
 
             const durationSec = travelDurationSeconds(home, target);
             const startedAt = Date.now();
@@ -7366,6 +7370,7 @@ body.has-panel .mapctl{display:none}
             const t = mbT(b, now); mbArmyPlan(b, b.A, true, t); mbArmyPlan(b, b.D, false, t);
         }
         function spawnMapBattle(o) {
+            sfx('clash');
             const src = islandById[o.sourceId], tgt = islandById[o.targetId]; if (!src || !tgt) { o.onEnd && o.onEnd(); return; }
             const path = marchPath(src, tgt), from = path[path.length - 2];
             const dx = tgt.x - from.x, dy = tgt.y - from.y, l = Math.hypot(dx, dy) || 1, now = performance.now();
@@ -7635,7 +7640,9 @@ body.has-panel .mapctl{display:none}
         // A flash, a shockwave and sparks at the base when a fight the player is part of resolves,
         // plus "Sieg!" / "Verloren" floating up (screen space, drawn in drawMap).
         var battleFx = [];
+        function sfx(name) { if (window.__sfx) window.__sfx(name); }       // sound effect (no-op until the sound engine is up)
         function spawnBattleFx(islandId, good, label, sub) {
+            sfx(/Herrscher/.test(label) ? 'crown' : /^Weltereignis/.test(sub || '') ? 'event' : / gefallen$/.test(label) ? '' : /verlegt/.test(sub || '') ? 'move' : good ? 'victory' : 'defeat');
             const isl = islandById[islandId]; if (!isl) return;
             const rnd = (a, b) => a + Math.random() * (b - a);
             const shards = [], smoke = [], sparks = [];
@@ -8354,6 +8361,7 @@ body.has-panel .mapctl{display:none}
         document.getElementById('cityCloseBtn').addEventListener('click', closeCity);
         document.getElementById('citySheetClose').addEventListener('click', () => { cityOpenId = null; document.getElementById('citySheet').hidden = true; });
         document.getElementById('cityUpgradeBtn').addEventListener('click', () => {
+            sfx('upgrade');
             if (cityOpenId === '_keep') {                  // the capital itself: same price and rule as upgrading it on the map
                 const level = islandLevels[playerIslandId] || 1; if (level >= MAX_BASE_LEVEL) return;
                 const cost = upgradeCost(level); if (coins < cost) { flashHint('Nicht genug Münzen – benötigt ' + fmtCompact(cost) + '.', 2500); return; }
@@ -8748,6 +8756,7 @@ body.has-panel .mapctl{display:none}
                     label = '+' + fmtNum(p.amount) + ' Truppen';
                 } else { coins += p.amount; label = '+' + fmtNum(p.amount) + ' Münzen'; }
                 pickupFx.push({ x: p.x, y: p.y, kind: p.kind, label, born: performance.now() });
+                sfx(p.kind === 'gem' ? 'gem' : 'coin');
                 questProgress('pickup', 1);
                 updateHud();
                 saveGame();
@@ -9368,6 +9377,7 @@ body.has-panel .mapctl{display:none}
             updateHud();
             saveGame();
             flashHint(islandTitle(islandById[popupIslandId]) + ' ist jetzt Stufe ' + (level + 1) + '.', 1800);
+            sfx('upgrade');
             questProgress('upgrade', 1);
             popupView = 'menu';
             renderPopup();
@@ -9671,7 +9681,9 @@ body.has-panel .mapctl{display:none}
         // a lute that picks the chords, a soft frame drum and now and then a flute over it, all in a little stone-hall reverb.
         // Starts with the first tap (browsers only allow sound after one), remembers on/off.
         const Music = (() => {
-            let ac = null, master = null, verb = null, timer = null, nextAt = 0, step = 0, bar = 0, on = store.get('openWaterMusic') !== '0';
+            // sound: 'all' (music + effects), 'sfx' (effects only), 'off'. Older saves only knew music on/off.
+            let mode = store.get('openWaterSound') || (store.get('openWaterMusic') === '0' ? 'sfx' : 'all');
+            let ac = null, master = null, fx = null, verb = null, timer = null, nextAt = 0, step = 0, bar = 0, on = mode === 'all';
             const BPM = 70, EIGHTH = 60 / BPM / 2;
             const hz = m => 440 * Math.pow(2, (m - 69) / 12);
             // i - VII - VI - VII in D minor, then i - iv - VII - i (as MIDI notes: root, third, fifth, octave)
@@ -9683,7 +9695,9 @@ body.has-panel .mapctl{display:none}
             function init() {
                 ac = new (window.AudioContext || window.webkitAudioContext)();
                 master = ac.createGain(); master.gain.value = 0; master.connect(ac.destination);
+                fx = ac.createGain(); fx.gain.value = .8; fx.connect(ac.destination);
                 verb = ac.createConvolver(); verb.buffer = impulse(2.6); const wet = ac.createGain(); wet.gain.value = .32; verb.connect(wet); wet.connect(master);
+                fxVerb = ac.createConvolver(); fxVerb.buffer = impulse(1.4); const fxWet = ac.createGain(); fxWet.gain.value = .25; fxVerb.connect(fxWet); fxWet.connect(fx);
                 // the drone: D and A, soft saws through a slowly breathing low-pass
                 const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 380; lp.Q.value = .7;
                 const lfo = ac.createOscillator(), lfoG = ac.createGain(); lfo.frequency.value = .05; lfoG.gain.value = 140; lfo.connect(lfoG); lfoG.connect(lp.frequency); lfo.start();
@@ -9713,6 +9727,58 @@ body.has-panel .mapctl{display:none}
                 g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.07, t + .12); g.gain.setValueAtTime(.07, t + dur - .15); g.gain.linearRampToValueAtTime(0, t + dur);
                 o.connect(g); out(g, .7, .7); o.start(t); v.start(t); o.stop(t + dur + .05); v.stop(t + dur + .05);
             }
+            // ===== EFFECTS: short, muted sounds for what happens - built from the same simple parts as the music
+            let fxVerb = null; const lastFx = {};
+            function fo(node, dry, wetAmt) { const g = ac.createGain(); g.gain.value = dry; node.connect(g); g.connect(fx); if (wetAmt) { const w = ac.createGain(); w.gain.value = wetAmt; node.connect(w); w.connect(fxVerb); } }
+            function tone(type, f, t, dur, vol, opt = {}) {
+                const o = ac.createOscillator(), g = ac.createGain(); o.type = type; o.frequency.setValueAtTime(f, t);
+                if (opt.to) o.frequency.exponentialRampToValueAtTime(opt.to, t + dur);
+                g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + (opt.a || .01)); g.gain.exponentialRampToValueAtTime(.0005, t + dur);
+                let n = o; if (opt.lp) { const f2 = ac.createBiquadFilter(); f2.type = 'lowpass'; f2.frequency.value = opt.lp; o.connect(f2); n = f2; }
+                n.connect(g); fo(g, 1, opt.wet || 0); o.start(t); o.stop(t + dur + .05);
+            }
+            function noise(t, dur, vol, type, freq, q) {
+                const n = ac.createBufferSource(), nb = ac.createBuffer(1, Math.ceil(ac.sampleRate * dur), ac.sampleRate), d = nb.getChannelData(0);
+                for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 2);
+                const f = ac.createBiquadFilter(), g = ac.createGain(); f.type = type; f.frequency.value = freq; f.Q.value = q || 1; g.gain.value = vol;
+                n.buffer = nb; n.connect(f); f.connect(g); fo(g, 1, .2); n.start(t);
+            }
+            function horn(t, notes, len, vol) {                           // a brass horn: two detuned saws through a warm filter, a little rise
+                notes.forEach((m, i) => { const tt = t + i * len * .9;
+                    for (const [type, det] of [['sawtooth', -5], ['sawtooth', 6], ['square', 0]]) {
+                        const o = ac.createOscillator(), f = ac.createBiquadFilter(), g = ac.createGain(); o.type = type; o.detune.value = det;
+                        o.frequency.setValueAtTime(hz(m) * .985, tt); o.frequency.linearRampToValueAtTime(hz(m), tt + .07);
+                        f.type = 'lowpass'; f.frequency.setValueAtTime(500, tt); f.frequency.linearRampToValueAtTime(1500, tt + .1); f.frequency.linearRampToValueAtTime(900, tt + len);
+                        g.gain.setValueAtTime(0, tt); g.gain.linearRampToValueAtTime(vol * (type === 'square' ? .35 : .5), tt + .06); g.gain.setValueAtTime(vol * .45, tt + len * .8); g.gain.linearRampToValueAtTime(0, tt + len);
+                        o.connect(f); f.connect(g); fo(g, 1, .5); o.start(tt); o.stop(tt + len + .05); } });
+            }
+            const FX = {
+                attack: t => horn(t, [50, 57], .32, .09),                                       // troops march out: a short call
+                send: t => { for (let i = 0; i < 3; i++) tone('sine', 110, t + i * .16, .18, .12, { to: 70 }); },   // marching drum
+                scout: t => { tone('sine', 1300, t, .12, .03, { to: 1700 }); tone('sine', 1700, t + .1, .15, .025); },
+                warn: t => horn(t, [45, 45, 48], .38, .12),                                     // someone marches on your base
+                clash: t => { for (let i = 0; i < 4; i++) { const tt = t + i * (.18 + Math.random() * .12);
+                    for (const f of [2100, 3350, 5230]) tone('sine', f * (.95 + Math.random() * .1), tt, .25, .018, { wet: .4 }); noise(tt, .07, .06, 'highpass', 2500); } },
+                victory: t => horn(t, [62, 66, 69, 74], .22, .1),                              // D major, up
+                defeat: t => { tone('sine', 70, t, .7, .3, { to: 42 }); tone('sine', 70, t + .45, .8, .25, { to: 40 }); horn(t + .2, [53, 50], .45, .06); },
+                event: t => horn(t, [45, 52, 57], .45, .11),
+                crown: t => { horn(t, [62, 66, 69], .2, .1); horn(t + .62, [74], .9, .11); },
+                upgrade: t => { noise(t, .06, .25, 'bandpass', 1800, 2); tone('sine', 160, t, .12, .2, { to: 90 }); noise(t + .22, .06, .2, 'bandpass', 2000, 2); tone('sine', 150, t + .22, .12, .16, { to: 85 }); },
+                coin: t => { tone('sine', 1760, t, .18, .05, { wet: .3 }); tone('sine', 2350, t + .07, .25, .045, { wet: .3 }); },
+                gem: t => { [2093, 2637, 3136].forEach((f, i) => tone('sine', f, t + i * .05, .3, .035, { wet: .5 })); },
+                crate: t => { [587, 740, 880, 1175, 1480].forEach((f, i) => tone('triangle', f, t + i * .07, .5, .05, { wet: .6 })); noise(t, .35, .04, 'highpass', 6000); },
+                click: t => noise(t, .025, .05, 'bandpass', 2600, 3),
+                move: t => tone('sine', 520, t, .15, .03, { to: 700 }),
+            };
+            const GAP = { click: 60, coin: 90, clash: 900, warn: 6000, attack: 250, send: 250 };
+            function play(name) {
+                if (mode === 'off' || !FX[name]) return;
+                const now = performance.now(); if (now - (lastFx[name] || 0) < (GAP[name] || 150)) return; lastFx[name] = now;
+                if (!ac) init();
+                if (ac.state === 'suspended') ac.resume();
+                FX[name](ac.currentTime + .02);
+            }
+            window.__sfx = play;
             let phrase = null;
             function schedule() {
                 while (nextAt < ac.currentTime + .4) {
@@ -9735,16 +9801,23 @@ body.has-panel .mapctl{display:none}
                 if (!timer) { nextAt = ac.currentTime + .1; timer = setInterval(schedule, 100); }
                 fade(.6, 2.5);
             }
-            function stop() { if (!ac) return; fade(0, .6); clearInterval(timer); timer = null; setTimeout(() => { if (!timer && ac) ac.suspend(); }, 700); }
-            function toggle() { on = !on; store.set('openWaterMusic', on ? '1' : '0'); on ? start() : stop(); paint(); }
-            function paint() { const b = document.getElementById('musicBtn'); if (!b) return; b.setAttribute('aria-pressed', String(on)); b.querySelector('use').setAttribute('href', on ? '#i-sound' : '#i-mute'); }
-            document.addEventListener('visibilitychange', () => { if (!ac || !on) return; if (document.hidden) { clearInterval(timer); timer = null; ac.suspend(); } else start(); });
-            const first = e => { window.removeEventListener('pointerdown', first, true); window.removeEventListener('keydown', first, true); if (!(e.target.closest && e.target.closest('#musicBtn'))) start(); };
+            function stop() { if (!ac) return; fade(0, .6); clearInterval(timer); timer = null; if (mode === 'off') setTimeout(() => { if (!timer && ac && mode === 'off') ac.suspend(); }, 700); }
+            function toggle() {                                            // one button, three steps: music + effects → effects only → off
+                mode = mode === 'all' ? 'sfx' : mode === 'sfx' ? 'off' : 'all'; store.set('openWaterSound', mode);
+                on = mode === 'all'; on ? start() : stop(); paint();
+                flashHint(mode === 'all' ? 'Musik und Effekte an' : mode === 'sfx' ? 'Nur Effekte – Musik aus' : 'Ton aus', 1800);
+                if (mode !== 'off') { if (!ac) init(); if (ac.state === 'suspended') ac.resume(); }
+            }
+            function paint() { const b = document.getElementById('musicBtn'); if (!b) return; b.setAttribute('aria-pressed', String(mode !== 'off')); b.dataset.mode = mode;
+                b.querySelector('use').setAttribute('href', mode === 'all' ? '#i-sound' : mode === 'sfx' ? '#i-sfx' : '#i-mute'); b.setAttribute('aria-label', mode === 'all' ? 'Ton: Musik und Effekte' : mode === 'sfx' ? 'Ton: nur Effekte' : 'Ton aus'); }
+            document.addEventListener('visibilitychange', () => { if (!ac) return; if (document.hidden) { clearInterval(timer); timer = null; ac.suspend(); } else if (on) start(); else if (mode !== 'off') ac.resume(); });
+            const first = e => { window.removeEventListener('pointerdown', first, true); window.removeEventListener('keydown', first, true); if (!(e.target.closest && e.target.closest('#musicBtn'))) { start(); if (mode === 'sfx') { if (!ac) init(); ac.resume(); } } };
             window.addEventListener('pointerdown', first, true); window.addEventListener('keydown', first, true);
             paint();
             return { toggle, start, stop, get on() { return on; } };
         })();
         document.getElementById('musicBtn').addEventListener('click', e => { e.stopPropagation(); Music.toggle(); });
+        document.addEventListener('click', e => { const bt = e.target.closest && e.target.closest('button'); if (bt && !bt.disabled && bt.id !== 'musicBtn') sfx('click'); }, true);   // a soft wooden click on every button
 
         (function finishSplash() {
             const sp = document.getElementById('splash');
