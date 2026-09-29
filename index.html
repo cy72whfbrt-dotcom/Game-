@@ -8719,12 +8719,18 @@ body.has-panel .mapctl{display:none}
             return CITY_GROUND = c;
         }
         // the windmill and the farmhouse: small painted objects in the scene
-        const CITY_STATIC = [];
-        function cityStaticSprite(kind) {
-            const key = 's:' + kind; let s = CITY_SPRITES.get(key); if (s) return s;
+        const CITY_STATIC = [                                                        // the market square: a fountain and three stalls
+            { at: [CC, 410], kind: 'fountain' }, { at: [CC - 20, 392], kind: 'stall', col: '#b33a2e' }, { at: [CC + 22, 396], kind: 'stall', col: '#2f6fa8' }, { at: [CC + 18, 430], kind: 'stall', col: '#c98b2a' },
+        ];
+        function cityStaticSprite(kind, col) {
+            const key = 's:' + kind + (col || ''); let s = CITY_SPRITES.get(key); if (s) return s;
             const w = 30, up = 50, down = 12, c = document.createElement('canvas'); c.width = w * 2 * CITY_SPR_SCALE; c.height = (up + down) * CITY_SPR_SCALE;
             const g = c.getContext('2d'), K = cityPainter(g, CITY_SPR_SCALE, w * CITY_SPR_SCALE, up * CITY_SPR_SCALE);
-            if (kind === 'mill') { K.cyl(0, 0, 7, 0, 26, '#e3d7c0', .8); K.cone(0, 0, 8, 26, 10, '#8a3a2a'); cityDoor(K, 0, 7, 6); }
+            if (kind === 'fountain') { K.cyl(0, 0, 9, 0, 2.5, '#b8b0a0', .6); K.cyl(0, 0, 8, 2.5, 2.8, '#4d9ad0', .4); K.cyl(0, 0, 1.6, 2.5, 9, '#c9c1ae', .5); K.cyl(0, 0, 3.4, 9, 10, '#b8b0a0', .5); }
+            else if (kind === 'stall') { for (const [x, y] of [[-5, -3], [5, -3], [-5, 3], [5, 3]]) K.box(x - .5, x + .5, y - .5, y + .5, 0, 8, '#6b4a2c', .3);
+                K.box(-5, 5, -3, 3, 0, 3.5, '#8a6440', .5); for (const [x, y, c2] of [[-2, 0, '#e8c547'], [1, -1, '#b33a2e'], [3, 1, '#6aa84f']]) K.box(x - 1, x + 1, y - 1, y + 1, 3.5, 5, c2, .3);
+                cityGable(K, -6.5, 6.5, -4.5, 4.5, 8, 3.5, col || '#b33a2e'); }
+            else if (kind === 'mill') { K.cyl(0, 0, 7, 0, 26, '#e3d7c0', .8); K.cone(0, 0, 8, 26, 10, '#8a3a2a'); cityDoor(K, 0, 7, 6); }
             else { K.box(-9, 9, -6, 6, 0, 8, '#e9dfc8', .7); cityGable(K, -10, 10, -7, 7, 8, 6, '#8e3a2c'); cityWindows(K, -6, 6, 6, 5, 2, false); K.box(11, 16, -4, 4, 0, 5, '#c9a86a', .5); }
             s = { c, w, up, down }; CITY_SPRITES.set(key, s); return s;
         }
@@ -8853,7 +8859,12 @@ body.has-panel .mapctl{display:none}
                 const lvl = c.levels[b.id] || 0, tier = cityTierOf(lvl);
                 if (b.id === 'wall') { items.push({ id: 'wall', x: at[0], y: at[1], spr: citySprite('gatehouse', tier), name: b.name, lvl, b, gate: true }); continue; }
                 items.push({ id: b.id, x: at[0], y: at[1], spr: citySprite(tier ? b.id : 'plot', tier, b.id === 'heroes' ? HEROES.filter(h => heroUnlocked(h)).length : ''), name: b.name, lvl, b }); }
-            for (const s of CITY_STATIC) items.push({ x: s.at[0], y: s.at[1], spr: cityStaticSprite(s.kind), deco: s.kind });
+            for (const s of CITY_STATIC) items.push({ x: s.at[0], y: s.at[1], spr: cityStaticSprite(s.kind, s.col), deco: s.kind });
+            const hour = new Date().getHours() + new Date().getMinutes() / 60;             // evening and night: torches, lit windows
+            const night = hour >= 20 || hour < 5.5 ? 1 : hour >= 18 ? (hour - 18) / 2 : hour < 7 ? (7 - hour) / 1.5 : 0;
+            if (c.levels.hospital) for (let i = 0; i < 2; i++) { const [hx, hy] = CITY_LOTS.hospital, a = now / 5200 + i * Math.PI;   // healers going round the tents
+                items.push({ x: hx + Math.cos(a) * 22, y: hy + 10 + Math.sin(a) * 12, healer: true }); }
+            { const [gx, gy] = CITY_LOTS.wall; for (const dx of [-14, 14]) items.push({ x: gx + dx * .55, y: gy + 12, soldier: true, guard: true }); }   // guards at the gate
             if (!cityFolk) cityMakeFolk();
             const dt = Math.min(.1, (now - (cityFrame.last || now)) / 1000); cityFrame.last = now;
             for (const f of cityFolk) { f.t += f.v * dt * (f.cart ? .5 : 1); const [x, y] = cityPathPoint(f.p, f.t); items.push({ x, y, folk: f }); }
@@ -8864,8 +8875,12 @@ body.has-panel .mapctl{display:none}
             const plates = [];
             for (const it of items) {
                 const [sx, sy] = toS(it.x, it.y);
-                if (it.folk || it.soldier) {                                         // a person: body, head, a little bob
-                    const k = Math.max(.7, Z * .55), bob = Math.abs(Math.sin(now / 150 + it.x)) * k * .6;
+                if (it.guard) continue;                                              // (the gate guards stand in front of the wall: drawn after it)
+                if (it.folk || it.soldier || it.healer) {                            // a person: body, head, a little bob
+                    const k = Math.max(.7, Z * .55), bob = it.guard ? 0 : Math.abs(Math.sin(now / 150 + it.x)) * k * .6;
+                    if (it.healer) { g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(sx, sy, 1.6 * k, .7 * k, 0, 0, Math.PI * 2); g.fill();
+                        g.fillStyle = '#f3efe6'; g.fillRect(sx - 1 * k, sy - 3.8 * k - bob, 2 * k, 3.4 * k); g.fillStyle = '#c0392b'; g.fillRect(sx - .3 * k, sy - 3.4 * k - bob, .6 * k, 1.6 * k);
+                        g.fillStyle = '#e8c9a0'; g.beginPath(); g.arc(sx, sy - 4.6 * k - bob, .85 * k, 0, 7); g.fill(); g.fillStyle = '#f3efe6'; g.fillRect(sx - 1 * k, sy - 5.5 * k - bob, 2 * k, .6 * k); continue; }
                     g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(sx, sy, 1.6 * k, .7 * k, 0, 0, Math.PI * 2); g.fill();
                     if (it.folk && it.folk.cart) { g.fillStyle = '#7a5a36'; g.fillRect(sx - 3 * k, sy - 3.4 * k, 6 * k, 2.6 * k); g.fillStyle = '#3a2616'; g.beginPath(); g.arc(sx - 2 * k, sy - .6 * k, .9 * k, 0, 7); g.arc(sx + 2 * k, sy - .6 * k, .9 * k, 0, 7); g.fill(); continue; }
                     g.fillStyle = it.soldier ? '#8a8f99' : it.folk.col; g.fillRect(sx - .9 * k, sy - 3.6 * k - bob, 1.8 * k, 3 * k);
@@ -8893,6 +8908,11 @@ body.has-panel .mapctl{display:none}
                 if (it.id === 'forge' && it.lvl) for (let i = 0; i < 5; i++) {       // chimney smoke
                     const t = ((now / 1800) + i / 5) % 1, [cx2, cy2] = toS(it.x - 9, it.y - 5, 31);
                     g.fillStyle = 'rgba(120,120,120,' + (.5 * (1 - t)) + ')'; g.beginPath(); g.arc(cx2 + t * 8 * Z, cy2 - t * 26 * Z, (1.5 + t * 4) * Z, 0, 7); g.fill(); }
+                if (it.id === 'forge' && it.lvl) { const [ax, ay] = toS(it.x + 16, it.y + 13, 6);            // sparks off the anvil
+                    for (let i = 0; i < 7; i++) { const t = ((now / 700) + i / 7) % 1, an = -Math.PI / 2 + (i - 3) * .35; if (t > .8) continue;
+                        g.fillStyle = 'rgba(255,' + Math.round(200 - t * 120) + ',60,' + (1 - t) + ')'; g.fillRect(ax + Math.cos(an) * t * 12 * Z, ay + Math.sin(an) * t * 10 * Z + t * t * 8 * Z, Math.max(1, Z * .6), Math.max(1, Z * .6)); } }
+                if (it.deco === 'fountain') { const [fx, fy] = toS(it.x, it.y, 10); g.strokeStyle = 'rgba(190,230,250,.8)'; g.lineWidth = Math.max(1, Z * .5);
+                    for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2 + now / 2000, r = 6 * Z; g.beginPath(); g.moveTo(fx, fy); g.quadraticCurveTo(fx + Math.cos(a) * r * .6, fy - 3 * Z, fx + Math.cos(a) * r, fy + Math.sin(a) * r * .5 + 7 * Z); g.stroke(); } }
                 if (it.id === 'shrine' && it.lvl) { const [fx, fy] = toS(it.x, it.y, 10); g.fillStyle = 'rgba(255,210,110,' + (.18 + .1 * Math.sin(now / 350)) + ')'; g.beginPath(); g.arc(fx, fy, 9 * Z, 0, 7); g.fill(); }
                 if (!it.id) continue;
                 const building = c.build && c.build.id === it.id;
@@ -8912,11 +8932,30 @@ body.has-panel .mapctl{display:none}
             // the gatehouse sits in the front wall: drawn over it
             const gate = items.find(i => i.gate);
             if (gate) { const [sx, sy] = toS(gate.x, gate.y), s = gate.spr, k = Z / CITY_SPR_SCALE; g.drawImage(s.c, sx - s.w * Z, sy - s.up * Z, s.c.width * k, s.c.height * k); }
+            for (const it of items) if (it.guard) {                                  // two guards with spears at the gate
+                const [sx, sy] = toS(it.x, it.y), k = Math.max(.7, Z * .55);
+                g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(sx, sy, 1.6 * k, .7 * k, 0, 0, Math.PI * 2); g.fill();
+                g.fillStyle = '#6f7682'; g.fillRect(sx - 1 * k, sy - 3.8 * k, 2 * k, 3.2 * k); g.fillStyle = '#2b5d9b'; g.fillRect(sx - 1 * k, sy - 2.6 * k, 2 * k, 1 * k);
+                g.fillStyle = '#e8c9a0'; g.beginPath(); g.arc(sx, sy - 4.6 * k, .85 * k, 0, 7); g.fill(); g.fillStyle = '#8a8f99'; g.beginPath(); g.arc(sx, sy - 4.9 * k, .9 * k, Math.PI, 0); g.fill();
+                g.strokeStyle = '#5a4a3a'; g.lineWidth = .35 * k; g.beginPath(); g.moveTo(sx + 1.3 * k, sy); g.lineTo(sx + 1.3 * k, sy - 8 * k); g.stroke();
+                g.fillStyle = '#c9c1ae'; g.beginPath(); g.moveTo(sx + 1.3 * k, sy - 9.2 * k); g.lineTo(sx + 1.8 * k, sy - 8 * k); g.lineTo(sx + .8 * k, sy - 8 * k); g.closePath(); g.fill(); }
             // birds now and then
             const bt = (now / 22000) % 1; if (bt < .45) { const x0 = W * (bt / .45) * 1.2 - W * .1, y0 = H * .22; g.strokeStyle = 'rgba(30,30,30,.55)'; g.lineWidth = 1;
                 for (const [dx, dy] of [[0, 0], [-10, 6], [-18, -4], [-26, 10]]) { const f = Math.sin(now / 120 + dx) * 2; g.beginPath(); g.moveTo(x0 + dx - 4, y0 + dy - f); g.lineTo(x0 + dx, y0 + dy + 1); g.lineTo(x0 + dx + 4, y0 + dy - f); g.stroke(); } }
+            if (night > 0) {                                                        // dusk and night: darker, torches glow at the gate, the keep, the square and along the main street
+                g.fillStyle = 'rgba(12,20,48,' + (.5 * night) + ')'; g.fillRect(0, 0, W, H);
+                g.save(); g.globalCompositeOperation = 'lighter';
+                const torches = [[CC - 12, CITY_WALL.b + 2, 14], [CC + 12, CITY_WALL.b + 2, 14], [CC - 30, CC + 30, 20], [CC + 30, CC + 30, 20], [CC - 16, 410, 4], [CC + 16, 410, 4]];
+                for (let y = 450; y < 490; y += 20) torches.push([CC - 9, y, 5], [CC + 9, y, 5]);
+                for (const [x, y] of [[180, 180], [460, 180], [180, 460], [460, 460], [180, 320], [460, 320]]) torches.push([x, y, 6]);
+                for (const [x, y, z] of torches) { const [tx, ty] = toS(x, y, z), fl = .85 + .15 * Math.sin(now / 90 + x * 3.1) * Math.sin(now / 130 + y), r = 16 * Z * fl;
+                    const tg = g.createRadialGradient(tx, ty, 0, tx, ty, r); tg.addColorStop(0, 'rgba(255,190,90,' + (.55 * night) + ')'); tg.addColorStop(1, 'rgba(255,140,40,0)');
+                    g.fillStyle = tg; g.beginPath(); g.arc(tx, ty, r, 0, 7); g.fill();
+                    g.fillStyle = 'rgba(255,230,160,' + (.9 * night) + ')'; g.beginPath(); g.arc(tx, ty - Z * .6, Math.max(1, Z * .7), 0, 7); g.fill(); }
+                g.restore();
+            }
             // warm afternoon light from the top left, a soft vignette around the edges
-            { const lg = g.createLinearGradient(0, 0, W, H); lg.addColorStop(0, 'rgba(255,214,150,.13)'); lg.addColorStop(.55, 'rgba(255,214,150,0)'); lg.addColorStop(1, 'rgba(40,60,90,.12)');
+            if (night < 1) { const lg = g.createLinearGradient(0, 0, W, H); lg.addColorStop(0, 'rgba(255,214,150,' + (.13 * (1 - night)) + ')'); lg.addColorStop(.55, 'rgba(255,214,150,0)'); lg.addColorStop(1, 'rgba(40,60,90,.12)');
               g.fillStyle = lg; g.fillRect(0, 0, W, H);
               const vg = g.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .45, W / 2, H / 2, Math.hypot(W, H) * .62); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(10,16,8,.38)');
               g.fillStyle = vg; g.fillRect(0, 0, W, H); }
