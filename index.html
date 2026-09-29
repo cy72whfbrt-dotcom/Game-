@@ -4692,7 +4692,7 @@ body.has-panel .mapctl{display:none}
         }
 
         const MARCH_STYLE = { attack: ['#ff8d82', [7, 6], 'attack'], incoming: ['#ff8d82', [7, 6], 'bot'], send: ['#8cc0ff', [7, 6], 'send'],
-                              scout: ['#e4c886', [3, 6], 'scout'], retreat: ['#f2a066', [5, 5], 'recall'] };
+                              scout: ['#e4c886', [3, 6], 'scout'], retreat: ['#f2a066', [5, 5], 'recall'], enemyScout: ['#ff9f7a', [3, 6], 'scout'] };
         let marchTokens = [], liveAnimation = false;
         function marchPath(source, target) {             // source → over every bridge on the route → target
           const path = [{ x: source.x, y: source.y }];
@@ -4722,7 +4722,7 @@ body.has-panel .mapctl{display:none}
           trace(); ctx.setLineDash(dash); ctx.lineDashOffset = -(now / 40) % 26; ctx.lineWidth = 2.5; ctx.strokeStyle = col; ctx.stroke(); ctx.setLineDash([]);
           const seg = []; let tot = 0; for (let i = 0; i < pts.length - 1; i++) { const l = Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].y - pts[i].y); seg.push(l); tot += l; }
           // placed in drawMarchTokens(), after the nameplates, so the token can start past the source's own plate
-          marchTokens.push({ pts, seg, tot, progress, r: source.radius * mapState.zoom, srcId: source.id, key: type + source.id + '>' + target.id + '@' + resolveAt, col, glyph: glyphName, own: type !== 'incoming', mk: mk || null, recall: type !== 'retreat', secs: Math.max(0, Math.ceil((resolveAt - now) / 1000)) });
+          marchTokens.push({ pts, seg, tot, progress, r: source.radius * mapState.zoom, srcId: source.id, key: type + source.id + '>' + target.id + '@' + resolveAt, col, glyph: glyphName, own: type !== 'incoming' && type !== 'enemyScout', mk: mk || null, recall: type !== 'retreat', secs: Math.max(0, Math.ceil((resolveAt - now) / 1000)) });
         }
         function marchPointAt(m, d) {                   // screen point at path distance d
           for (let i = 0; i < m.seg.length; i++) { if (d <= m.seg[i] || i === m.seg.length - 1) { const t = m.seg[i] > 0 ? Math.min(1, Math.max(0, d / m.seg[i])) : 1;
@@ -4895,6 +4895,7 @@ body.has-panel .mapctl{display:none}
           for (const s of pendingSends) { if (s.senderBotId) continue;                                                        // fog of war (unchanged)
             drawMarchLine('send', islandById[s.fromId], islandById[s.toId], s.startedAt, s.resolveAt, wallNow, null, marchKeyOf(s)); }
           for (const s of pendingScouts) drawMarchLine('scout', islandById[s.sourceId], islandById[s.targetId], s.startedAt, s.resolveAt, wallNow);
+          for (const s of botScoutsOnMap) drawMarchLine('enemyScout', islandById[s.sourceId], islandById[s.targetId], s.startedAt, s.resolveAt, wallNow);   // a bot's scout coming to look at you
           for (const r of pendingRetreats) drawMarchLine('retreat', islandById[r.fromId], islandById[r.toId], r.startedAt, r.resolveAt, wallNow, r.path, marchKeyOf(r));   // 6
           setScreen(ctx);
           drawBossOverlay(now);                                                                                                // world-event boss aura (under the tower)
@@ -5485,6 +5486,19 @@ body.has-panel .mapctl{display:none}
             if (give < BOT_MIN_GARRISON_TO_ATTACK || give < st.n * .6) { act.plan = null; return false; }
             return !!launchAttack(st.from, p.t, bot.id, give);
         }
+        // Scouts sent at YOUR bases walk the map like yours do - you see them and get told, as in any strategy game.
+        let botScoutsOnMap = [];
+        function botScoutVisible(bot, sourceId, targetId, startedAt, resolveAt) {
+            botScoutsOnMap.push({ bot: bot.id, sourceId, targetId, startedAt, resolveAt });
+            flashHint('Ein Späher von ' + bot.name + ' ist unterwegs zu deiner Basis ' + islandTitle(islandById[targetId]) + '.', 3500);
+            requestRender();
+        }
+        function botScoutsArrive(now) {
+            const due = botScoutsOnMap.filter(s => s.resolveAt <= now); if (!due.length) return;
+            botScoutsOnMap = botScoutsOnMap.filter(s => s.resolveAt > now);
+            for (const s of due) if (islandOwnerOf(s.targetId) === 'player') flashHint(botById[s.bot].name + ' hat deine Basis ' + islandTitle(islandById[s.targetId]) + ' ausgespäht – rechne mit einem Angriff.', 4500);
+            requestRender();
+        }
         function botThink(bot) {
             const owned = botOwnedIslands[bot.id];
             if (!owned || owned.size === 0) return;
@@ -5602,7 +5616,9 @@ body.has-panel .mapctl{display:none}
             // nothing to strike: scout the most interesting base they don't know yet (that is this move's order)
             if (!n && !rallied) for (const e of list.slice(0, 8)) {
                 if (botIntel(bot, e.target.id) || botScouting(bot, e.target.id) || bossAt(e.target.id)) continue;
-                botLearn(bot.id, e.target.id, now + travelDurationSeconds(islandById[e.sources[0].id], e.target, bot.id) * 500);
+                const ready = now + travelDurationSeconds(islandById[e.sources[0].id], e.target, bot.id) * 500;
+                botLearn(bot.id, e.target.id, ready);
+                if (islandOwnerOf(e.target.id) === 'player') botScoutVisible(bot, e.sources[0].id, e.target.id, now, ready);   // you see it coming
                 scouted++; break;
             }
             if (n || rallied || scouted) botTapped(bot);
@@ -5981,6 +5997,7 @@ body.has-panel .mapctl{display:none}
                 for (let d = sc.revD || 0; d <= L * prog; d += 2500) revealAround(home.x + (sc.ex - home.x) * d / L, home.y + (sc.ey - home.y) * d / L, 3400, true);
                 sc.revD = Math.max(sc.revD || 0, Math.floor(L * prog / 2500) * 2500 + 2500);
             }
+            botScoutsArrive(now);
             if (pendingScouts.length > 0) {
                 const dueScouts = pendingScouts.filter(s => s.resolveAt <= now);
                 if (dueScouts.length > 0) {
