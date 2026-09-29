@@ -3247,7 +3247,7 @@ body.has-panel .mapctl{display:none}
                 skillBonus: attackerBotId ? Math.round(rawTroops * botMults(attackerBotId).attackPct / 100) : attackFlatBonus(rawTroops),
                 skillLvl: attackerBotId ? loadBotState()[attackerBotId].skills.attack : skills.attack || 0, heroPct: hero === 'sigrun' ? hb : 0,
                 attackGoldRate: attackerBotId ? botGoldRate(attackerBotId, 'attackGold') : (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate,
-                rewardGoldRate: (attackerBotId ? botGoldRate(attackerBotId, 'attackGold') : goldPerKillRate()) * (hero === 'ida' ? 1 + hb / 100 : 1) + (hero === 'ida' ? hb / 100 : 0),   // Ida: +X % on the kill gold, and X % of a coin per kill of her own
+                rewardGoldRate: killGoldRate(attackerBotId || 'player', hero),
                 bernPct: hero === 'bernhard' ? hb : 0,
                 shieldLossReductionPct: Math.min(90, (attackerBotId ? botMults(attackerBotId).shield : shieldLossReductionPct()) + (hero === 'bernhard' ? hb : 0)),
                 botShield: !!attackerBotId, atkTitle: titleMult(attackerBotId || 'player', 'attack'), atkTitleKey: (titleOf(attackerBotId || 'player') || {}).key || null,
@@ -3562,9 +3562,9 @@ body.has-panel .mapctl{display:none}
             addXp(won ? totalStrength : defenderCasualties);
             for (const hid of new Set([attack.hero, ...(attack.heroes || [])].filter(Boolean))) heroGainXp(hid, won ? totalStrength : defenderCasualties);
             scoutedIslands.add(target.id);
-            const ribbon = () => spawnBattleFx(target.id, won, won ? (bossHere ? 'Boss besiegt' : 'Sieg') : 'Niederlage', won ? islandTitle(target) + ' erobert' : '−' + fmtCompact(myTroops) + ' Truppen');
+            const ribbon = () => spawnBattleFx(target.id, won, won ? (bossHere ? 'Boss besiegt' : 'Sieg') : 'Niederlage', won ? islandTitle(target) + ' erobert' : '−' + fmtCompact(attack.rawTroops - retreatSurvivors) + ' Truppen');
             finishMapBattle(attack, { hero: attack.hero || null, sourceId: source.id, targetId: target.id, atk: 'mine', def: bossHere ? 'boss' : targetOwner ? 'bot' : 'neutral',   // fights the player watches play out on the map
-                    my: myTroops, myLoss: won ? sentLoss : myTroops - retreatSurvivors, en: originalEnemyTroops,
+                    my: myTroops, myLoss: myTroops - (won ? remaining : retreatSurvivors), en: originalEnemyTroops,
                     enLoss: won ? originalEnemyTroops : defenderCasualties, won, onEnd: ribbon });
             if (won && bossHere) defeatBoss(bossHere);
             updateHud();
@@ -3663,7 +3663,8 @@ body.has-panel .mapctl{display:none}
             const botSentLoss = won ? sentLossFor(attack.rawTroops, myTroops, originalEnemyDefense, red) : 0, survivors = won ? attack.rawTroops - botSentLoss : 0;   // same rule as yours   // the sword bonus fights along but doesn't stay
             const fled = won ? 0 : retreatSurvivorsPreview(attack);
             const atkFallen = attack.rawTroops - survivors - fled, atkWounded = botHospitalTake(bot.id, atkFallen);
-            const homeAgain = n => { if (n > 0 && botOwnedIslands[bot.id].has(source.id)) islandTroops[source.id] = (islandTroops[source.id] || 0) + n; };
+            const homeAgain = n => { if (n <= 0) return; const t0 = Date.now();                 // they walk home like yours (a fallen home: resolveSend sends them to another base)
+                pendingSends.push({ fromId: target.id, toId: source.id, troops: n, startedAt: t0, resolveAt: t0 + travelDurationSeconds(target, source, bot.id) * 1000, senderBotId: bot.id, back: true }); };
             if (capitalHolds) {
                 islandTroops[target.id] = 0;
                 homeAgain(survivors);                                       // the raiders who are left march home with the loot
@@ -3716,7 +3717,7 @@ body.has-panel .mapctl{display:none}
             }
             if (playerInvolved) {
                 const ribbon = () => spawnBattleFx(target.id, !won || capitalHolds, capitalHolds ? 'Hauptstadt hält' : won ? 'Basis verloren' : 'Verteidigt', capitalHolds ? 'Garnison gefallen' : won ? 'von ' + bot.name : bot.name + ' abgewehrt');
-                finishMapBattle(attack, { sourceId: source.id, targetId: target.id, atk: 'bot', def: 'mine', hero: attack.hero || null, my: myTroops, myLoss: won ? botSentLoss : myTroops,
+                finishMapBattle(attack, { sourceId: source.id, targetId: target.id, atk: 'bot', def: 'mine', hero: attack.hero || null, my: myTroops, myLoss: myTroops - (won ? survivors : fled),
                         en: originalEnemyTroops, enLoss: won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops), won, onEnd: ribbon });
                 // Only reveals the target to the player when the player was
                 // actually part of this fight - a bot conquering a neutral
@@ -5747,7 +5748,7 @@ body.has-panel .mapctl{display:none}
         const botAct = {};                                          // botId → { next: when the next tap can happen, plan: orders still to give }
         function botActOf(botId) { return botAct[botId] || (botAct[botId] = { next: 0, plan: null }); }
         function botTapped(bot) { botActOf(bot.id).next = Date.now() + (BOT_STYLES[bot.style].tapMs || 5000) * (.7 + Math.random() * .6); }
-        function botFreeSlots(bot) { return (BOT_STYLES[bot.style].marches || 5) - pendingAttacks.filter(a => a.attackerBotId === bot.id).length - pendingSends.filter(x => x.senderBotId === bot.id).length - armyJoins.filter(j => j.who === bot.id).length - armies.filter(a => a.who === bot.id && a.mv).length; }
+        function botFreeSlots(bot) { return (BOT_STYLES[bot.style].marches || 5) - pendingAttacks.filter(a => a.attackerBotId === bot.id).length - pendingSends.filter(x => x.senderBotId === bot.id && !x.back).length - armyJoins.filter(j => j.who === bot.id).length - armies.filter(a => a.who === bot.id && a.mv).length; }
         function botPlanStep(bot) {                                 // gives the next order of the current plan → true when a tap was used
             const act = botActOf(bot.id), p = act.plan, own = botOwnedIslands[bot.id];
             if (!p || Date.now() > p.until || !p.steps.length) { act.plan = null; return false; }
@@ -5787,7 +5788,7 @@ body.has-panel .mapctl{display:none}
             const shielded = playerShielded(), now = Date.now();
             const busy = new Set(pendingAttacks.filter(a => a.attackerBotId === bot.id).map(a => a.targetId));
             // a player has a few march slots, not hundreds: columns on the road (attacks + sends) count against them
-            let slots = (st.marches || 5) - pendingAttacks.filter(a => a.attackerBotId === bot.id).length - pendingSends.filter(x => x.senderBotId === bot.id).length;
+            let slots = (st.marches || 5) - pendingAttacks.filter(a => a.attackerBotId === bot.id).length - pendingSends.filter(x => x.senderBotId === bot.id && !x.back).length;
             const commit = st.commit || .7;                              // how much of a base's army a person sends at once
             // 1) look around: every reachable target near the bot's bigger armies, with how much the bot could throw at it
             const T = new Map();                                        // targetId → { target, d, sources: [{ id, have }] }
@@ -6116,7 +6117,7 @@ body.has-panel .mapctl{display:none}
         // Big targets (gates, temples, Wächter, the throne) need more than one garrison: pull troops together first.
         // Too strong for the armies at hand: pull troops from the bot's other bases into one staging base, strike later.
         function botRally(bot, target, atId, need, maxHelpers) {
-            if (pendingSends.some(sd => sd.senderBotId === bot.id)) return false;
+            if (pendingSends.some(sd => sd.senderBotId === bot.id && !sd.back)) return false;
             const at = islandById[atId], helpers = [];
             let pool = (islandTroops[atId] || 0) * .95;
             const own = [...botOwnedIslands[bot.id]].filter(id => id !== atId && !isCapital(id) && (islandTroops[id] || 0) > BOT_MIN_GARRISON_TO_ATTACK)
@@ -6130,7 +6131,7 @@ body.has-panel .mapctl{display:none}
             return true;
         }
         function botGather(bot) {
-            if (pendingSends.some(s => s.senderBotId === bot.id)) return false;
+            if (pendingSends.some(s => s.senderBotId === bot.id && !s.back)) return false;
             const st = BOT_STYLES[bot.style], owned = [...botOwnedIslands[bot.id]], atk = botAtkFactor(bot, true);
             let plan = null;
             for (const sourceId of botSampleSources(owned)) {
@@ -6190,7 +6191,7 @@ body.has-panel .mapctl{display:none}
                 if (owned.has(attack.targetId)) threatened.add(attack.targetId);
             }
             if (threatened.size === 0 || Date.now() < botActOf(bot.id).next || botFreeSlots(bot) <= 0) return;
-            const helping = new Set(pendingSends.filter(x => x.senderBotId === bot.id).map(x => x.toId));
+            const helping = new Set(pendingSends.filter(x => x.senderBotId === bot.id && !x.back).map(x => x.toId));
             for (const targetId of threatened) {
                 if (helping.has(targetId)) continue;
                 const target = islandById[targetId];
@@ -6224,7 +6225,7 @@ body.has-panel .mapctl{display:none}
             const who = a.attackerBotId || 'player', bonus = a.attackBonus !== undefined ? a.attackBonus : attackFlatBonus(a.rawTroops);
             const my = Math.round((a.rawTroops + (bonus || 0)) * (a.atkTitle !== undefined ? a.atkTitle : titleMult(who, 'attack'))), en = effectiveTroops(target), def = effectiveDefense(target), won = my > en + def;
             const red = a.attackerBotId ? (a.botShield ? a.shieldLossReductionPct : botMults(a.attackerBotId).shield) : (a.shieldLossReductionPct !== undefined ? a.shieldLossReductionPct : shieldLossReductionPct());
-            return { my, en, won, myLoss: won ? sentLossFor(a.rawTroops, my, def, red) : my, enLoss: won ? en : Math.min(en, my) };
+            return { my, en, won, myLoss: my - (won ? a.rawTroops - sentLossFor(a.rawTroops, my, def, red) : retreatSurvivorsPreview(a)), enLoss: won ? en : Math.min(en, my) };   // the counter ends at the troops really left
         }
         function fightDurationMs(est) {                   // a skirmish is over in ~4 s, a clash of millions takes ~12 s
             return Math.round(Math.max(4000, Math.min(12000, 4000 + 1500 * Math.log10(Math.max(1, est.my + est.en) / 1000))));
@@ -6462,6 +6463,15 @@ body.has-panel .mapctl{display:none}
         // troop killed in a won attack (all of the target's troops+defense).
         function goldPerKillRate() {
             return (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate;
+        }
+        function killGoldRate(who, hero) {             // "Angriff: Gold" per enemy killed; Ida: +X % on it, and X % of a coin per kill of her own
+            const ida = hero === 'ida' ? heroBonusFor(who, 'ida') / 100 : 0;
+            return (who === 'player' ? goldPerKillRate() : botGoldRate(who, 'attackGold')) * (1 + ida) + ida;
+        }
+        function defGoldRate(who) { return who === 'player' ? (skills.defenseGold || 0) * SKILL_DEFS.defenseGold.rate : botGoldRate(who, 'defenseGold'); }
+        function payGold(who, n) { n = Math.round(n); if (n <= 0 || !who) return 0; if (who === 'player') coins += n; else botCoins[who] = (botCoins[who] || 0) + n; return n; }
+        function fieldGold(aWho, dWho, fb, aHero) {    // fights in the open pay like fights for bases: the attacker per enemy killed, the defender per attacker killed
+            return { a: payGold(aWho, fb.dLoss * killGoldRate(aWho, aHero)), d: payGold(dWho, fb.aLoss * defGoldRate(dWho)) };
         }
         // "Geschwindigkeit" skill: shortens the production tick interval.
         function productionTickMs() {
@@ -7337,12 +7347,12 @@ body.has-panel .mapctl{display:none}
                 if (entry.type === 'field') {
                     const K = FIELD_KINDS[entry.fieldKind] || FIELD_KINDS.gold;
                     return logRowHtml(entry.won ? 'win' : 'loss', K.icon, logBadge(entry.won ? 'win' : 'loss', entry.won ? 'Feld gehalten' : 'Feld verloren') + K.name,
-                        escapeHtml(entry.attacker) + ' (' + fmtM(entry.atk) + ') gegen ' + escapeHtml(entry.defender) + ' (' + fmtM(entry.def) + ')', ago(entry));
+                        escapeHtml(entry.attacker) + ' (' + fmtM(entry.atk) + ') gegen ' + escapeHtml(entry.defender) + ' (' + fmtM(entry.def) + ')' + (entry.gold ? ' · +' + fmtM(entry.gold) + ' Gold' : ''), ago(entry));
                 }
                 if (entry.type === 'army') {
                     const side = (n, own) => n === 'Du' ? (own ? 'Deine Armee' : 'deine Armee') : (own ? 'Die Armee von ' : 'die Armee von ') + escapeHtml(n);
                     return logRowHtml(entry.won ? 'win' : 'loss', 'troops', logBadge(entry.won ? 'win' : 'loss', entry.won ? 'Armee siegt' : 'Armee geschlagen') + 'Kampf im Feld',
-                        side(entry.attacker, true) + ' (' + fmtM(entry.atk) + ') gegen ' + side(entry.defender, false) + ' (' + fmtM(entry.def) + ')' + (entry.wounded ? ' · ' + fmtM(entry.wounded) + ' ins Lazarett' : ''), ago(entry));
+                        side(entry.attacker, true) + ' (' + fmtM(entry.atk) + ') gegen ' + side(entry.defender, false) + ' (' + fmtM(entry.def) + ')' + (entry.wounded ? ' · ' + fmtM(entry.wounded) + ' ins Lazarett' : '') + (entry.gold ? ' · +' + fmtM(entry.gold) + ' Gold' : ''), ago(entry));
                 }
                 if (entry.type === 'scout') {
                     return logRowHtml('scout', 'scout', logBadge('scout', 'Gespäht') + T(entry.targetId),
@@ -10042,9 +10052,10 @@ body.has-panel .mapctl{display:none}
             const loserName = fieldWhoName(won ? o.who : m.who), winnerName = fieldWhoName(won ? m.who : o.who), oWho = o.who;
             if (won) st.occ = { who: m.who, troops: m.troops - fb.aLoss, homeId: m.homeId, since: now, got: 0 }; else o.troops -= fb.dLoss;
             for (const [w, n] of [[m.who, fb.aLoss], [oWho, fb.dLoss]]) w === 'player' ? hospitalTake(n) : botHospitalTake(w, n);   // both sides' Lazarett
+            const fg = fieldGold(m.who, oWho, fb, null);
             if (involved) {
                 const youWon = (m.who === 'player') === won;
-                addCombatLogEntry({ type: 'field', fieldKind: f.kind, won: youWon, attacker: fieldWhoName(m.who), defender: fieldWhoName(oWho), atk: fb.SA, def: fb.SD });
+                addCombatLogEntry({ type: 'field', fieldKind: f.kind, won: youWon, attacker: fieldWhoName(m.who), defender: fieldWhoName(oWho), atk: fb.SA, def: fb.SD, gold: m.who === 'player' ? fg.a : fg.d });
                 flashHint(youWon ? 'Du hast die ' + FIELD_KINDS[f.kind].name + ' gegen ' + loserName + ' gehalten/erobert.' : winnerName + ' hat dich von der ' + FIELD_KINDS[f.kind].name + ' vertrieben.', 4000);
                 sfx(youWon ? 'victory' : 'defeat');
             }
@@ -10234,10 +10245,11 @@ body.has-panel .mapctl{display:none}
             att.troops -= fb.aLoss; def.troops -= fb.dLoss; armies = armies.filter(x => !((x === att || x === def) && x.troops < 1));
             const hurt = (x, n) => armyWho(x) === 'player' ? hospitalTake(n) : botHospitalTake(x.who, n);
             const wA = hurt(att, fb.aLoss), wD = hurt(def, fb.dLoss), wLoser = won ? wD : wA, wWinner = won ? wA : wD;
+            const fg = fieldGold(armyWho(att), armyWho(def), fb, att.hero);
             const mine = armyWho(att) === 'player' ? att : armyWho(def) === 'player' ? def : null;
             if (!mine) return;
             const youWon = mine === winner, foe = mine === att ? def : att, w = youWon ? wWinner : wLoser;
-            addCombatLogEntry({ type: 'army', won: youWon, attacker: armyName(att), defender: armyName(def), atk: fb.SA, def: fb.SD, wounded: w });
+            addCombatLogEntry({ type: 'army', won: youWon, attacker: armyName(att), defender: armyName(def), atk: fb.SA, def: fb.SD, wounded: w, gold: mine === att ? fg.a : fg.d });
             warStat(youWon ? 'armyWins' : 'armyLosses', 1, mine === def ? armyName(att) : null);
             flashHint(youWon ? 'Deine Armee hat die Armee von ' + armyName(foe) + ' geschlagen – ' + fmtCompact(winner.troops) + ' stehen noch.'
                              : 'Die Armee von ' + armyName(foe) + ' hat deine Armee geschlagen' + (w ? ', ' + fmtCompact(w) + ' ins Lazarett.' : '.'), 5000);
@@ -10261,13 +10273,13 @@ body.has-panel .mapctl{display:none}
                     const hr = a.hero && heroUnlocked(heroById(a.hero)) ? a.hero : null, hb = heroBonusFor('player', hr);
                     pendingAttacks.push({ sourceId: src, targetId: t.id, rawTroops: a.troops, startedAt: now - 1000, resolveAt: now, attackerBotId: null, fromArmy: true,
                         attackBonus: attackFlatBonus(a.troops) + (hr === 'sigrun' ? Math.round(a.troops * hb / 100) : 0), skillBonus: attackFlatBonus(a.troops), skillLvl: skills.attack || 0, heroPct: hr === 'sigrun' ? hb : 0,
-                        attackGoldRate: (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate, rewardGoldRate: goldPerKillRate() * (hr === 'ida' ? 1 + hb / 100 : 1) + (hr === 'ida' ? hb / 100 : 0), bernPct: hr === 'bernhard' ? hb : 0,
+                        attackGoldRate: (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate, rewardGoldRate: killGoldRate('player', hr), bernPct: hr === 'bernhard' ? hb : 0,
                         shieldLossReductionPct: Math.min(90, shieldLossReductionPct() + (hr === 'bernhard' ? hb : 0)), hero: hr, atkTitle: titleMult('player', 'attack') });
                     saveGame(); saveProgression(); }
                 else { const hr = a.hero && botHeroUnlocked(who, a.hero) ? a.hero : null, hb = heroBonusFor(who, hr), sk = Math.round(a.troops * botMults(who).attackPct / 100);
                     pendingAttacks.push({ sourceId: src, targetId: t.id, rawTroops: a.troops, startedAt: now - 1000, resolveAt: now, attackerBotId: who, fromArmy: true,
                         attackBonus: sk + (hr === 'sigrun' ? Math.round(a.troops * hb / 100) : 0), skillBonus: sk, skillLvl: loadBotState()[who].skills.attack, heroPct: hr === 'sigrun' ? hb : 0,
-                        attackGoldRate: botGoldRate(who, 'attackGold'), rewardGoldRate: botGoldRate(who, 'attackGold') * (hr === 'ida' ? 1 + hb / 100 : 1) + (hr === 'ida' ? hb / 100 : 0), bernPct: hr === 'bernhard' ? hb : 0,
+                        attackGoldRate: botGoldRate(who, 'attackGold'), rewardGoldRate: killGoldRate(who, hr), bernPct: hr === 'bernhard' ? hb : 0,
                         shieldLossReductionPct: Math.min(90, botMults(who).shield + (hr === 'bernhard' ? hb : 0)), botShield: true, hero: hr, atkTitle: titleMult(who, 'attack') }); }
                 renderActiveMarches();
             }
@@ -10348,10 +10360,11 @@ body.has-panel .mapctl{display:none}
             if (!a || Math.hypot(p.x - r.tx, p.y - r.ty) > ISLAND_RADIUS * 2) { back(); if (a) flashHint('Deine Armee ist ' + bot.name + ' ausgewichen.', 3000); return; }
             const def = a.troops, atk = r.troops, fb = fieldBattle(r.botId, atk, 'player', def, null, a.hero), won = fb.won;
             if (a.hero) heroGainXp(a.hero, won ? fb.dLoss : fb.SA);
+            const fg = fieldGold(r.botId, 'player', fb, null);
             if (won) { armies = armies.filter(x => x !== a); r.troops -= fb.aLoss; botHospitalTake(r.botId, fb.aLoss); back(); const w = hospitalTake(def);
                 flashHint(bot.name + ' hat deine Armee im Feld geschlagen (' + fmtCompact(def) + ' Truppen)' + (w ? ', ' + fmtCompact(w) + ' ins Lazarett.' : '.'), 5000); }
             else { botHospitalTake(r.botId, atk); hospitalTake(fb.dLoss); a.troops -= fb.dLoss; r.troops = 0; statBump('defends'); flashHint('Deine Armee hat den Angriff von ' + bot.name + ' abgewehrt – ' + fmtCompact(a.troops) + ' stehen noch.', 4500); }
-            addCombatLogEntry({ type: 'army', won: !won, attacker: bot.name, defender: 'Du', atk: fb.SA, def: fb.SD });
+            addCombatLogEntry({ type: 'army', won: !won, attacker: bot.name, defender: 'Du', atk: fb.SA, def: fb.SD, gold: fg.d });
             warStat(won ? 'armyLosses' : 'armyWins', 1, bot.name);
             sfx(won ? 'defeat' : 'victory'); updateHud(); saveGame();
         }
