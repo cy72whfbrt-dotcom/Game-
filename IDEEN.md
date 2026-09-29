@@ -12,37 +12,16 @@ Liste der Ideen, die für später vorgemerkt sind.
 - **Titel und Rahmen fürs Profil** – über Ränge freischaltbar, sichtbar in der Rangliste.
 - **Armeen auf der Karte (Idee von dir)** – aus mehreren Basen an einem Punkt sammeln, frei laufen lassen, Befehle: bewegen, angreifen, Feld besetzen, vereinen, heimkehren, anhalten. Höchstens 5 Armeen; im Feld keine Mauer und keine Produktion; Bots entdecken Armeen und greifen an; Tore und Brücken gelten weiter.
 - **Bot-Späher sichtbar** – man sieht, wenn Emma & Co. vor einem Angriff spähen.
-
-## Plan – als Nächstes einbauen (in dieser Reihenfolge)
-
-### 1. Bots können alles wie du (damit man später nicht merkt, dass es Bots sind)
-- Eigene Stadt mit **allen Gebäuden und echten Stufen** (Mauer, Akademie, Schatzkammer, Kaserne, Lazarett, Heldenhalle, Schmiede, Späherturm …). Sie bauen selbst aus – gleiche Kosten, gleiche Bauzeiten wie du.
-- **Lazarett richtig:** Verwundete liegen dort und werden gegen Münzen und mit Zeit geheilt, Platz ist begrenzt – wie bei dir.
-- **Helden:** Bots haben alle 3 Helden, die mit EP aufsteigen und seltener werden; sie nehmen einen Helden pro Angriff mit.
-- **Ausrüstung:** Kisten, Kombinieren, Aufwerten, Sterne in der Schmiede.
-- **Mega-Tempel:** Bots vergeben Titel mit Buffs, du kannst Bots Titel geben.
-- *Meine Ergänzung – „wie echte Spieler“:* Wappen und Rahmen für jeden Bot, Online-Zeiten mit Pausen (nachts ruhiger), nirgends das Wort „Bot“ in der Oberfläche.
-
-### 2. Alles prüfen, ob es wirklich wirkt
-- Ein Test rechnet jeden Bonus nach – **für dich und für die Bots**: alle Skills, Ausrüstung (Münz-Stufen, Gegenstände, Sterne), alle 3 Helden, alle Gebäude in der Stadt, Lazarett und Heilen, alle 8 Tempel-Titel (vergeben durch dich und durch Bots), Thron-Bonus.
-- Ergebnis als Tabelle: Soll / Ist. Alles, was nicht stimmt, wird repariert.
-
-### 3. Profil antippen
-- Spieler und Bots antippen (Rangliste, Namensschild, Kampfbericht) → Profil: Wappen, Rahmen, Titel, Stufe, Basen, Ausrüstung, Helden, Skills, Stadt-Stufen.
-- *Meine Ergänzung:* ein **Macht-Wert** (Summe aus Truppen, Ausrüstung, Gebäuden – wie in RoK), „hat dich zuletzt angegriffen“, Knöpfe „Auf der Karte zeigen“ und „Hauptstadt ansehen“.
-
-### 4. Willkommen zurück + Kriegsbericht
-- Kommst du nach einer Weile zurück: Fenster „Willkommen zurück“ – was in deiner Abwesenheit passiert ist (Angriffe, verlorene/gehaltene Basen, Produktion, fertige Bauten, Verwundete).
-- Im Postfach: Kriegsbericht pro Tag für die letzten 7 Tage.
-
-### 5. Design
-- **Postfach neu gestalten:** klar getrennt in Belohnungen · Aufgaben · Berichte.
-- **Ladebildschirm** mit Logo, Fortschrittsbalken und kurzen Tipps.
-- *Meine Vorschläge (nur mit deinem OK):* Kampfdetails aufgeräumter (Ausrüstung aufklappbar), einheitliche Kopfzeilen in allen Fenstern, Karten-Knöpfe etwas ruhiger.
-
-### 6. Zum Schluss: alles noch mal prüfen und aufräumen
-- Kompletter Test aller Funktionen (Handy + Desktop), Bots über längere Zeit beobachten.
-- **Alten Code entfernen:** nicht mehr genutzte Funktionen, alte Formate im Kampflog, alte Einmal-Geschenke, ungenutztes CSS.
+- **Mitspieler wie echte Spieler** – jeder hat eine eigene Stadt mit allen Gebäuden, die er selbst ausbaut, dazu Lazarett und Heilen, 3 Helden mit Stufen und Seltenheit, Ausrüstung mit Kisten, Kombinieren und Sternen, Skills, Tempel-Titel (vergeben und bekommen), eigenes Wappen und Rahmen, Online-Zeiten mit Nachtruhe. Das Wort „Bot“ steht nirgends.
+- **Alles nachgerechnet** – Skills, Ausrüstung, Helden, Gebäude, Lazarett, Titel und Thron, jeweils für dich und die anderen. Was nicht stimmte, ist repariert.
+- **Profil antippen** – in der Rangliste, an einer Basis und im Kampfbericht. Es zeigt Wappen, Rahmen, Titel, Stufe, Macht, Ausrüstung, Helden, Skills, Stadt und den letzten Kampf, dazu die Knöpfe „Zur Karte“ und „Hauptstadt“.
+- **Willkommen zurück** – eine Karte zeigt, was passiert ist, während du weg warst. Das Reich produziert bis zu 8 Std. weiter.
+- **Kriegsbericht** – im Postfach pro Tag, für die letzten 7 Tage.
+- **Postfach neu** – aufgeteilt in Belohnungen, Aufgaben und Berichte.
+- **Ladebildschirm** – mit wechselnden Tipps.
+- **Ruhigere Karten-Knöpfe**.
+- **Skills zurücksetzen** für 500 Gems.
+- **Aufgeräumt** – alter Code und ungenutztes CSS sind entfernt.
 
 ## Gestrichen
 - Event mit Truppen als Belohnung – vorerst weg.
