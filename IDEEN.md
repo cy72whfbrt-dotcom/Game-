@@ -1,13 +1,17 @@
-# Ideen-Liste – Open Water
+# Open Water – gemerkte Ideen
 
-Gesammelte Ideen, die später umgesetzt werden sollen.
+Liste der Ideen, die für später vorgemerkt sind. Oben die, die als Nächstes drankommen.
 
-## Vorgemerkt
+## Als Nächstes
+1. **Kampfbericht und Postfach schöner gestalten** – aber so aufgebaut wie jetzt, weil man es so gut versteht.
+2. **Mehr Leben in der Stadt** – mehr Details an den Gebäuden, kleine Szenen (Schmiedefunken, Heilerinnen am Lazarett, Wachen am Tor), abends Fackeln.
 
-### Saisons
-- Eine Saison dauert z. B. 4 Wochen.
-- Am Ende: Rangliste nach Basen, Herrscher-Zeit in der Mitte und besiegten Bossen.
-- Danach startet eine neue Welt (neue Karte, neue Bots).
-- Dauerhaft bleiben: Ausrüstung, Stufe, Titel und eine Saison-Belohnung
-  (z. B. Namensschild-Rahmen oder besondere Kiste).
-- Ziel: Das Spiel wird nie „fertig", jede Saison gibt ein neues Ziel.
+## Gemerkt
+- **Ressourcenfelder** – Goldminen oder Holzlager auf der Karte, zu denen man Truppen zum Sammeln schickt. Bots sammeln dort auch, es gibt Streit um gute Felder.
+- **Wegmarken** – eigene Markierungen auf der Karte setzen („Angriff hier“, „Emma-Gebiet“).
+- **Erfolge** – kleine Abzeichen im Profil, z. B. „100 Basen erobert“, „Emma besiegt“, „Thron gehalten“, mit Gems als Belohnung.
+- **Tägliche Aufgaben mit Kette** – wer 7 Tage alle Aufgaben schafft, bekommt am Ende eine große Kiste.
+- **Titel und Rahmen fürs Profil** – freischaltbar über Ränge, sichtbar in der Rangliste.
+
+## Nicht gewollt
+- Kampfmusik
