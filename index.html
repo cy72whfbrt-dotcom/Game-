@@ -3502,6 +3502,21 @@ body.has-panel .mapctl{display:none}
         // vs-bot and bot-vs-neutral fights resolve silently so the log
         // doesn't fill up with battles that have nothing to do with you.
         const BOT_GOLD_PER_KILL_RATE = 0.3;
+        // Bots follow the same rules as you: part of their fallen are only wounded (their Lazarett grows with their level)
+        // and heal back over time for coins; a lost attack sends 20 % of the troops fleeing home.
+        function botHospitalPct(botId) { const b = loadBotState()[botId]; return b ? Math.min(60, 5 * Math.floor(b.lvl / 2)) : 0; }
+        function botHospitalTake(botId, fallen) {
+            const b = loadBotState()[botId], w = b ? Math.floor(Math.max(0, fallen) * botHospitalPct(botId) / 100) : 0;
+            if (w > 0) { b.wounded = (b.wounded || 0) + w; saveBotState(); }
+            return w;
+        }
+        setInterval(() => {                                   // once a minute every bot heals what it can pay for, into its capital
+            const st = loadBotState(); let any = false;
+            for (const bot of BOT_DEFS) { const b = st[bot.id]; if (!b || !(b.wounded > 0)) continue; const cap = botCapitalOf(bot.id); if (cap === null || cap === undefined) continue;
+                const n = Math.min(b.wounded, Math.floor((botCoins[bot.id] || 0) / HEAL_COIN_PER_TROOP)); if (n < 1) continue;
+                botCoins[bot.id] -= n * HEAL_COIN_PER_TROOP; b.wounded -= n; islandTroops[cap] = (islandTroops[cap] || 0) + n; any = true; }
+            if (any) saveBotState();
+        }, 60000);
         function resolveBotAttack(attack) {
             const bot = botById[attack.attackerBotId];
             const source = islandById[attack.sourceId];
@@ -3521,14 +3536,19 @@ body.has-panel .mapctl{display:none}
 
             // The capital can never be taken: a winning raid only wipes out its garrison.
             const capitalHolds = won && target.id === playerIslandId;
+            const survivors = won ? Math.max(0, Math.min(attack.rawTroops, myTroops - Math.round(originalEnemyDefense * (1 - botMults(bot.id).shield / 100)))) : 0;   // the sword bonus fights along but doesn't stay
+            const fled = won ? 0 : Math.floor(attack.rawTroops * RETREAT_RECOVERY_PCT / 100);
+            const atkFallen = attack.rawTroops - survivors - fled, atkWounded = botHospitalTake(bot.id, atkFallen);
+            const homeAgain = n => { if (n > 0 && botOwnedIslands[bot.id].has(source.id)) islandTroops[source.id] = (islandTroops[source.id] || 0) + n; };
             if (capitalHolds) {
                 islandTroops[target.id] = 0;
+                homeAgain(survivors);                                       // the raiders who are left march home with the loot
             } else if (won) {
                 // Same rule as the player's own captures: the new owner
                 // gets the base one level lower than it was, not reset to 1.
                 const levelAfterCapture = Math.max(1, (islandLevels[target.id] || 1) - 1);
                 if (targetOwner) clearIslandOwner(target.id);
-                islandTroops[target.id] = Math.max(0, Math.min(attack.rawTroops, myTroops - Math.round(originalEnemyDefense * (1 - botMults(bot.id).shield / 100))));   // the sword bonus fights along but doesn't stay
+                islandTroops[target.id] = survivors;
                 botOwnedIslands[bot.id].add(target.id);
                 if (target.type === 'gate') { const sty = bot.style, r = Math.random();                  // how this player runs a gate
                     setGateSettings(target.id, { toll: sty === 'templer' ? 1 : sty === 'builder' ? 0.5 : sty === 'raider' ? 0.25 : GATE_TOLLS[1 + Math.floor(r * 4)],
@@ -3539,6 +3559,7 @@ body.has-panel .mapctl{display:none}
                     templeHoldSince[target.id] = Date.now();
                 }
             } else {
+                homeAgain(fled);
                 const defenderCasualties = Math.min(originalEnemyTroops, myTroops);
                 if (targetOwner) {
                     islandTroops[target.id] = Math.max(0, (islandTroops[target.id] || 0) - defenderCasualties);
@@ -3575,6 +3596,7 @@ body.has-panel .mapctl{display:none}
                     botName: bot.name,
                     targetId: target.id,
                     myTroops,
+                    atkRaw: attack.rawTroops, atkBonus: attack.attackBonus || 0, atkFallen, atkWounded, atkFled: fled,
                     enemyTroops: originalEnemyTroops,
                     enemyDefense: originalEnemyDefense,
                     wounded: defWounded,
@@ -6928,7 +6950,13 @@ body.has-panel .mapctl{display:none}
                         '<div class="logCompare">' +
                             '<div class="logSide">' +
                                 '<div class="logSideLabel">Angreifer · ' + escapeHtml(entry.botName) + '</div>' +
+                                (entry.atkRaw !== undefined ? '<div class="logLine"><span>Truppen</span><span>' + fmtD(entry.atkRaw) + '</span></div>' +
+                                    (entry.atkBonus ? '<div class="logLine buff"><span>Angriff-Bonus</span><span>+' + fmtD(entry.atkBonus) + '</span></div>' : '') +
+                                    (entry.myTroops - entry.atkRaw - entry.atkBonus ? '<div class="logLine buff"><span>Titel</span><span>' + (entry.myTroops - entry.atkRaw - entry.atkBonus > 0 ? '+' : '−') + fmtD(Math.abs(entry.myTroops - entry.atkRaw - entry.atkBonus)) + '</span></div>' : '') : '') +
                                 '<div class="logSum' + (entry.won ? ' advantage' : '') + '"><span>Gesamt</span><span>' + fmtD(entry.myTroops) + '</span></div>' +
+                                (entry.atkRaw !== undefined ? '<div class="logCasualty"><span>Gefallen</span><span>−' + fmtD(Math.max(0, entry.atkFallen - entry.atkWounded)) + '</span></div>' +
+                                    (entry.atkWounded ? '<div class="logCasualty wounded"><span>Verwundet</span><span>' + fmtD(entry.atkWounded) + '</span></div>' : '') +
+                                    (entry.atkFled ? '<div class="logLine"><span>Geflohen</span><span>' + fmtD(entry.atkFled) + '</span></div>' : '') : '') +
                             '</div>' +
                             '<div class="logVsDivider">VS</div>' +
                             '<div class="logSide">' +
@@ -6942,6 +6970,8 @@ body.has-panel .mapctl{display:none}
                             '</div>' +
                         '</div>' +
                         (entry.wounded ? '<div class="logRetreat logWounded">' + fmtNum(entry.wounded) + ' Verwundete gehen ins Lazarett – heile sie in der Stadt</div>' : '') +
+                        (entry.atkWounded ? '<div class="logRetreat logWounded">' + escapeHtml(entry.botName) + ' bringt ' + fmtNum(entry.atkWounded) + ' Verwundete ins Lazarett</div>' : '') +
+                        (entry.atkFled ? '<div class="logRetreat">' + fmtNum(entry.atkFled) + ' Truppen von ' + escapeHtml(entry.botName) + ' fliehen zurück</div>' : '') +
                         (entry.defGold ? '<div class="logGold">Verteidigung: Gold +' + fmtNum(entry.defGold) + ' Münzen</div>' : '') +
                         '</details>';
                     return entry.capitalHolds
