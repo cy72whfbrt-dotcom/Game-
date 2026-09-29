@@ -184,6 +184,12 @@ b,strong{font-weight:600}
 .look-title{display:inline-flex;align-items:center;gap:4px;padding:6px 10px;border-radius:999px;border:1px solid var(--line-2);background:rgba(255,255,255,.03);color:var(--tx-1);font:600 var(--fs-12)/1 var(--font-ui)}
 .look-title.on{border-color:var(--gold-300);background:rgba(214,170,90,.16);color:var(--gold-100)} .look-title:disabled{opacity:.4}
 .look-hint{font:500 var(--fs-11)/1.35 var(--font-ui);color:var(--tx-3)}
+.chain{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:10px;border:1px solid var(--line-1);background:rgba(255,255,255,.02)}
+.chain-links{display:grid;grid-template-columns:repeat(7,1fr) 1.3fr;gap:5px;align-items:center}
+.chain-link{height:30px;border-radius:8px;display:grid;place-items:center;border:1px solid var(--line-2);background:rgba(0,0,0,.2);font:700 var(--fs-12)/1 var(--font-ui);color:var(--tx-3)}
+.chain-link.on{border-color:#8fcf7a;background:rgba(143,207,122,.16);color:#8fcf7a} .chain-link .icon{width:14px;height:14px}
+.chain-chest{height:38px;border-radius:10px;display:grid;place-items:center;border:1px solid var(--line-2);color:var(--tx-3);background:radial-gradient(circle at 50% 30%,rgba(255,255,255,.06),rgba(0,0,0,.2))}
+.chain-chest .icon{width:20px;height:20px} .chain-chest.on{color:#2a1c08;border-color:#f2d27a;background:radial-gradient(circle at 35% 30%,#fff2c4,#d9a93f 60%,#8a6420);box-shadow:0 0 14px rgba(242,210,122,.45)}
 .ach-sum{display:flex;flex-direction:column;gap:6px;font:500 var(--fs-12)/1.2 var(--font-ui);color:var(--tx-2)} .ach-sum b{color:var(--tx-1)}
 .ach-sum-bar,.ach-bar{display:block;height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
 .ach-sum-bar i,.ach-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold-500),var(--gold-200))}
@@ -1450,6 +1456,8 @@ body.has-panel .mapctl{display:none}
   <div class="pbody">
     <div class="sect"><h4>Tägliche Belohnung</h4></div>
     <div id="dailyCard" class="daily"></div>
+    <div class="sect"><h4>Wochenkette</h4></div>
+    <div id="chainCard" class="chain"></div>
     <div class="sect"><h4>Heutige Aufgaben</h4><span id="questReset" class="sect-aside quest-reset"></span></div>
     <div id="questList" class="quests"></div>
   </div>
@@ -7153,10 +7161,28 @@ body.has-panel .mapctl{display:none}
             flashHint('+' + t.gems + ' Gems', 1800);
             renderQuestPanel(); updateQuestBadge();
         }
+        // ---- the week chain: every day with ALL tasks done is a link; 7 in a row = the big chest ----
+        const CHAIN_REWARD = { crates: 3, minRarity: 3, gems: 150 };
+        let questChain = (() => { try { return JSON.parse(store.get('openWaterQuestChain')) || { streak: 0, last: null }; } catch (e) { return { streak: 0, last: null }; } })();
+        function chainStreak() { return questChain.last === todayKey() || questChain.last === yesterdayKey() ? questChain.streak : 0; }   // a missed day breaks the chain
+        function chainLink() {
+            if (questChain.last === todayKey()) return;
+            questChain.streak = (questChain.last === yesterdayKey() ? questChain.streak : 0) + 1; questChain.last = todayKey();
+            store.set('openWaterQuestChain', JSON.stringify(questChain));
+            flashHint(questChain.streak >= 7 ? 'Wochenkette voll – hol dir die große Kiste!' : 'Wochenkette: Tag ' + questChain.streak + ' von 7 geschafft.', 3500);
+        }
+        function claimChain() {
+            if (chainStreak() < 7) return;
+            const items = []; for (let i = 0; i < CHAIN_REWARD.crates; i++) items.push(grantFreeCrate(CHAIN_REWARD.minRarity));
+            gems += CHAIN_REWARD.gems; questChain.streak = 0; store.set('openWaterQuestChain', JSON.stringify(questChain));
+            saveGame(); saveProgression(); updateHud(); sfx('crate');
+            flashHint('Große Kiste: ' + items.map(it => RARITY_DEFS[it.rarity].label + ' ' + EQUIPMENT_DEFS[it.slot].name).join(', ') + ' + ' + CHAIN_REWARD.gems + ' Gems', 5000);
+            renderQuestPanel(); updateQuestBadge();
+        }
         function claimQuestBonus() {
             const q = loadQuests();
             if (q.bonusClaimed || !q.list.every(t => t.claimed)) return;
-            q.bonusClaimed = true;
+            q.bonusClaimed = true; chainLink();
             const items = [];
             for (let i = 0; i < QUEST_BONUS.crates; i++) items.push(grantFreeCrate(0));
             gems += QUEST_BONUS.gems;
@@ -7170,6 +7196,7 @@ body.has-panel .mapctl{display:none}
             let n = q.list.filter(t => !t.claimed && t.progress >= t.target).length;
             if (!q.bonusClaimed && q.list.every(t => t.claimed)) n++;
             if (dailyClaimable()) n++;
+            if (chainStreak() >= 7) n++;
             return n;
         }
         function updateQuestBadge() {
@@ -7186,6 +7213,11 @@ body.has-panel .mapctl{display:none}
                 '<small>' + (claimable ? 'Bereit zum Abholen' : 'Nächste Belohnung in ' + fmtHoursLeft(msToMidnight()) + ' · ' + dailyRewardLabel(DAILY_REWARDS[day % 7])) + '</small></div>' +
                 (claimable ? '<button class="btn btn--primary btn--sm" type="button" data-daily>' + icon('shop') + '<span>Abholen</span></button>' : '<span class="quest-ok">Erledigt</span>') + '</div>';
             document.getElementById('questReset').textContent = 'Neu in ' + fmtHoursLeft(msToMidnight());
+            { const k = chainStreak(), full = k >= 7;                                        // the week chain: 7 links, the chest at the end
+              document.getElementById('chainCard').innerHTML = '<div class="chain-links">' + Array.from({ length: 7 }, (_, i) => '<span class="chain-link' + (i < k ? ' on' : '') + '">' + (i < k ? icon('check') : i + 1) + '</span>').join('') +
+                '<span class="chain-chest' + (full ? ' on' : '') + '">' + icon('shop') + '</span></div>' +
+                '<div class="daily-row"><div class="daily-txt"><b>' + (full ? 'Große Kiste bereit!' : k + ' von 7 Tagen') + '</b><small>' + (full ? CHAIN_REWARD.crates + ' Kisten (mind. episch) + ' + CHAIN_REWARD.gems + ' Gems' : 'Schaffe jeden Tag alle Aufgaben – ein verpasster Tag bricht die Kette.') + '</small></div>' +
+                (full ? '<button class="btn btn--primary btn--sm" type="button" data-chain>' + icon('shop') + '<span>Abholen</span></button>' : '') + '</div>'; }
             let html = q.list.map((t, i) => {
                 const def = QUEST_DEFS[t.type], done = t.progress >= t.target;
                 return '<div class="quest' + (t.claimed ? ' is-claimed' : done ? ' is-done' : '') + '">' + icon(def.icon) +
@@ -7206,6 +7238,7 @@ body.has-panel .mapctl{display:none}
             if (b.hasAttribute('data-daily')) showDailyModal();
             else if (b.dataset.quest !== undefined) claimQuest(+b.dataset.quest);
             else if (b.hasAttribute('data-bonus')) claimQuestBonus();
+            else if (b.hasAttribute('data-chain')) claimChain();
         });
         setInterval(() => {                 // day rollover while the game stays open
             if (questState && questState.date !== todayKey()) { loadQuests(); if (isPanelOpen(mailPopup)) renderQuestPanel(); }
