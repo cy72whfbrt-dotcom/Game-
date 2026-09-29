@@ -1386,6 +1386,7 @@ body.has-panel .mapctl{display:none}
 <div id="multiAttackBar" class="mabar">
   <div class="mabar-l"><svg class="icon"><use href="#i-multiattack"/></svg><span class="label" id="multiAttackLabel">0 Ziele ausgewählt</span></div>
   <div class="seg mabar-seg" id="multiAttackShare"><button type="button" data-f=".25">25 %</button><button type="button" data-f=".5">50 %</button><button type="button" data-f=".75">75 %</button><button type="button" data-f="1" class="on">Alle</button></div>
+  <div class="seg mabar-seg hero-seg" id="multiAttackHero" hidden></div>
   <div class="row">
     <button id="multiAttackCancelBtn" class="btn btn--ghost btn--sm" type="button">Abbrechen</button>
     <button id="multiAttackConfirmBtn" class="btn btn--danger btn--sm" type="button"><svg class="icon"><use href="#i-attack"/></svg><span class="lbl">Angriffe starten</span></button>
@@ -6027,7 +6028,7 @@ body.has-panel .mapctl{display:none}
         function botHeroLevel(botId, id) { const b = loadBotState()[botId]; return Math.min(b.heroes[id].lvl, Math.max(1, Math.min(50, botBld(botId, 'heroes') * 2))); }
         function botHeroUnlocked(botId, id) { return botBld(botId, 'heroes') >= heroById(id).unlock; }
         function botHeroBonus(botId, id) { const h = heroById(id); return h && botHeroUnlocked(botId, id) ? Math.round(botHeroLevel(botId, id) * h.per * HERO_RAR_MULT[Math.min(RARITY_DEFS.length - 1, loadBotState()[botId].heroes[id].rar || 0)]) : 0; }
-        function botHeroBusy(botId, id) { return pendingAttacks.some(a => a.attackerBotId === botId && (a.hero === id || (a.heroes && a.heroes.includes(id)))); }
+        function botHeroBusy(botId, id) { return pendingAttacks.some(a => a.attackerBotId === botId && (a.hero === id || (a.heroes && a.heroes.includes(id)))) || (typeof armies !== 'undefined' && armies.some(x => x.who === botId && x.hero === id)); }
         function botPickHero(botId) { for (const id of HEROES_IDS) if (botHeroUnlocked(botId, id) && !botHeroBusy(botId, id)) return id; return null; }
         function botHeroGainXp(botId, id, amount) {
             const b = loadBotState()[botId], st = b && b.heroes[id]; if (!st) return;
@@ -9178,7 +9179,7 @@ body.has-panel .mapctl{display:none}
         var HERO_RAR_MULT = [1, 1.2, 1.4, 1.6, 1.8, 2], HERO_RAR_COST = [100, 300, 1000, 3000, 10000], HERO_RAR_LEVEL = [5, 10, 20, 30, 40];
         function heroRarity(id) { return Math.min(RARITY_DEFS.length - 1, loadHeroes()[id].rar || 0); }
         function heroBonus(id) { const h = heroById(id); return h ? Math.round(heroLevel(id) * h.per * HERO_RAR_MULT[heroRarity(id)]) : 0; }
-        function heroBusy(id) { return pendingAttacks.some(a => !a.attackerBotId && (a.hero === id || (a.heroes && a.heroes.includes(id)))); }
+        function heroBusy(id) { return pendingAttacks.some(a => !a.attackerBotId && (a.hero === id || (a.heroes && a.heroes.includes(id)))) || (typeof armies !== 'undefined' && armies.some(x => !x.who && x.hero === id)); }
         function heroXpNeed(lvl) { return Math.round(5000 * Math.pow(1.25, lvl - 1)); }
         function heroGainXp(id, amount) {
             const h = heroById(id), st = loadHeroes()[id]; if (!h || !st) return;
@@ -10210,7 +10211,8 @@ body.has-panel .mapctl{display:none}
             if (!routeFor(a.lm, t.lm, who)) return 'route';
             if (a.lm !== t.lm) { const hop = lastHop(a.lm, t.lm, who); if (!payToll(hop[0], hop[1], a.troops, who, t.kind === 'base' ? t.id : undefined)) return 'toll'; }
             const from = { x: a.x, y: a.y, landmassId: a.lm }, to = { x: t.x, y: t.y, landmassId: t.lm };
-            a.mv = { path: marchPath(from, to), startedAt: now, resolveAt: now + travelDurationSeconds(from, to, who === 'player' ? undefined : who) * 1000, to: t };
+            const ida = a.hero === 'ida' ? 1 + heroBonusFor(who, 'ida') / 100 : 1;          // Ida: the army marches faster
+            a.mv = { path: marchPath(from, to), startedAt: now, resolveAt: now + Math.max(3, travelDurationSeconds(from, to, who === 'player' ? undefined : who) / ida) * 1000, to: t };
             saveArmies(); requestRender(); return '';
         }
         function armyOrder(a, t) {
@@ -10228,14 +10230,17 @@ body.has-panel .mapctl{display:none}
         }
         function fieldAtkPct(who) { return who === 'player' ? attackBonusPct() : botMults(who).attackPct; }
         function fieldShield(who) { return who === 'player' ? shieldLossReductionPct() : botMults(who).shield; }
-        function fieldBattle(aWho, aTroops, dWho, dTroops) {   // every fight out in the open (armies, raids, fields): no walls - troops × Angriff × title, the winner's shield saves some
-            const fa = (1 + fieldAtkPct(aWho) / 100) * titleMult(aWho, 'attack'), fd = (1 + fieldAtkPct(dWho) / 100) * titleMult(dWho, 'attack');
+        function fieldBattle(aWho, aTroops, dWho, dTroops, aHero, dHero) {   // every fight out in the open (armies, raids, fields): no walls - troops × Angriff (+ Sigrun) × title, the winner's shield (+ Bernhard) saves some
+            const hp = (who, hr, k) => hr === k ? heroBonusFor(who, hr) : 0;
+            const fa = (1 + (fieldAtkPct(aWho) + hp(aWho, aHero, 'sigrun')) / 100) * titleMult(aWho, 'attack'), fd = (1 + (fieldAtkPct(dWho) + hp(dWho, dHero, 'sigrun')) / 100) * titleMult(dWho, 'attack');
             const SA = aTroops * fa, SD = dTroops * fd, won = SA > SD;
-            const winLoss = Math.min(won ? aTroops : dTroops, Math.round((won ? SD / fa : SA / fd) * (1 - fieldShield(won ? aWho : dWho) / 100)));
+            const sh = Math.min(90, won ? fieldShield(aWho) + hp(aWho, aHero, 'bernhard') : fieldShield(dWho) + hp(dWho, dHero, 'bernhard'));
+            const winLoss = Math.min(won ? aTroops : dTroops, Math.round((won ? SD / fa : SA / fd) * (1 - sh / 100)));
             return { won, SA: Math.round(SA), SD: Math.round(SD), aLoss: won ? winLoss : aTroops, dLoss: won ? dTroops : winLoss };
         }
         function armyClash(att, def) {                                              // army against army out in the open
-            const A = att.troops, D = def.troops, fb = fieldBattle(armyWho(att), A, armyWho(def), D), won = fb.won, loser = won ? def : att, winner = won ? att : def;
+            const A = att.troops, D = def.troops, fb = fieldBattle(armyWho(att), A, armyWho(def), D, att.hero, def.hero), won = fb.won, loser = won ? def : att, winner = won ? att : def;
+            for (const [x, xp] of [[att, won ? fb.SD : fb.aLoss], [def, won ? fb.dLoss : fb.SA]]) if (x.hero) (armyWho(x) === 'player' ? heroGainXp(x.hero, xp) : botHeroGainXp(x.who, x.hero, xp));   // the leaders learn from it
             att.troops -= fb.aLoss; def.troops -= fb.dLoss; armies = armies.filter(x => !((x === att || x === def) && x.troops < 1));
             const hurt = (x, n) => armyWho(x) === 'player' ? hospitalTake(n) : botHospitalTake(x.who, n);
             const wA = hurt(att, fb.aLoss), wD = hurt(def, fb.dLoss), wLoser = won ? wD : wA, wWinner = won ? wA : wD;
@@ -10263,13 +10268,17 @@ body.has-panel .mapctl{display:none}
                 const src = armyHome(a); if (src === null || src === undefined) return;
                 gone();
                 if (me) { dropShield('Dein Friedensschild ist gefallen, weil du angreifst.'); questProgress('attack', 1);
+                    const hr = a.hero && heroUnlocked(heroById(a.hero)) ? a.hero : null, hb = heroBonusFor('player', hr);
                     pendingAttacks.push({ sourceId: src, targetId: t.id, rawTroops: a.troops, startedAt: now - 1000, resolveAt: now, attackerBotId: null, fromArmy: true,
-                        attackBonus: attackFlatBonus(a.troops), attackGoldRate: (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate, rewardGoldRate: goldPerKillRate(),
-                        shieldLossReductionPct: shieldLossReductionPct(), hero: null });
+                        attackBonus: attackFlatBonus(a.troops) + (hr === 'sigrun' ? Math.round(a.troops * hb / 100) : 0), skillBonus: attackFlatBonus(a.troops), skillLvl: skills.attack || 0, heroPct: hr === 'sigrun' ? hb : 0,
+                        attackGoldRate: (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate, rewardGoldRate: goldPerKillRate() * (hr === 'ida' ? 1 + hb / 100 : 1),
+                        shieldLossReductionPct: Math.min(90, shieldLossReductionPct() + (hr === 'bernhard' ? hb : 0)), hero: hr });
                     saveGame(); saveProgression(); }
-                else pendingAttacks.push({ sourceId: src, targetId: t.id, rawTroops: a.troops, startedAt: now - 1000, resolveAt: now, attackerBotId: who, fromArmy: true,
-                        attackBonus: Math.round(a.troops * botMults(who).attackPct / 100), attackGoldRate: botGoldRate(who, 'attackGold'), rewardGoldRate: botGoldRate(who, 'attackGold'),
-                        shieldLossReductionPct: botMults(who).shield, botShield: true, hero: null });
+                else { const hr = a.hero && botHeroUnlocked(who, a.hero) ? a.hero : null, hb = heroBonusFor(who, hr), sk = Math.round(a.troops * botMults(who).attackPct / 100);
+                    pendingAttacks.push({ sourceId: src, targetId: t.id, rawTroops: a.troops, startedAt: now - 1000, resolveAt: now, attackerBotId: who, fromArmy: true,
+                        attackBonus: sk + (hr === 'sigrun' ? Math.round(a.troops * hb / 100) : 0), skillBonus: sk, skillLvl: loadBotState()[who].skills.attack, heroPct: hr === 'sigrun' ? hb : 0,
+                        attackGoldRate: botGoldRate(who, 'attackGold'), rewardGoldRate: botGoldRate(who, 'attackGold') * (hr === 'ida' ? 1 + hb / 100 : 1),
+                        shieldLossReductionPct: Math.min(90, botMults(who).shield + (hr === 'bernhard' ? hb : 0)), botShield: true, hero: hr }); }
                 renderActiveMarches();
             }
         }
@@ -10291,7 +10300,7 @@ body.has-panel .mapctl{display:none}
             for (const id of strong) { if (pool >= need * 1.3 || helpers.length >= Math.min(6, Math.max(1, maxHelpers || 6))) break;
                 if (!routeFor(islandById[id].landmassId, pt.lm, bot.id)) continue; helpers.push(id); pool += Math.floor((islandTroops[id] || 0) * .9); }
             if (pool < need * 1.1) return false;
-            const a = { id: 'b' + Date.now().toString(36) + Math.floor(Math.random() * 1e4), who: bot.id, x: pt.x, y: pt.y, lm: pt.lm, troops: 0, homeId: helpers[0], mv: null, t: target.id, until: Date.now() + 8 * 60000 };
+            const a = { id: 'b' + Date.now().toString(36) + Math.floor(Math.random() * 1e4), who: bot.id, hero: botPickHero(bot.id), x: pt.x, y: pt.y, lm: pt.lm, troops: 0, homeId: helpers[0], mv: null, t: target.id, until: Date.now() + 8 * 60000 };
             armies.push(a); let sent = 0;
             for (const id of helpers) { const n = Math.floor((islandTroops[id] || 0) * .9); if (armySendFrom(a, id, n)) sent += n; }
             if (!sent) { armies = armies.filter(x => x !== a); return false; }
@@ -10347,7 +10356,8 @@ body.has-panel .mapctl{display:none}
             const a = armyById(r.armyId), bot = botById[r.botId], back = () => { if (botOwnedIslands[r.botId] && botOwnedIslands[r.botId].has(r.baseId)) islandTroops[r.baseId] = (islandTroops[r.baseId] || 0) + r.troops; };
             const p = a && armyPos(a, now);
             if (!a || Math.hypot(p.x - r.tx, p.y - r.ty) > ISLAND_RADIUS * 2) { back(); if (a) flashHint('Deine Armee ist ' + bot.name + ' ausgewichen.', 3000); return; }
-            const def = a.troops, atk = r.troops, fb = fieldBattle(r.botId, atk, 'player', def), won = fb.won;
+            const def = a.troops, atk = r.troops, fb = fieldBattle(r.botId, atk, 'player', def, null, a.hero), won = fb.won;
+            if (a.hero) heroGainXp(a.hero, won ? fb.dLoss : fb.SA);
             if (won) { armies = armies.filter(x => x !== a); r.troops -= fb.aLoss; botHospitalTake(r.botId, fb.aLoss); back(); const w = hospitalTake(def);
                 flashHint(bot.name + ' hat deine Armee im Feld geschlagen (' + fmtCompact(def) + ' Truppen)' + (w ? ', ' + fmtCompact(w) + ' ins Lazarett.' : '.'), 5000); }
             else { botHospitalTake(r.botId, atk); hospitalTake(fb.dLoss); a.troops -= fb.dLoss; r.troops = 0; statBump('defends'); flashHint('Deine Armee hat den Angriff von ' + bot.name + ' abgewehrt – ' + fmtCompact(a.troops) + ' stehen noch.', 4500); }
@@ -10414,6 +10424,11 @@ body.has-panel .mapctl{display:none}
         // the army sheet: set one up (pick the bases), or give an existing one its orders
         function openArmySheet(s) { armySheet = s; if (s.mode === 'new' || s.mode === 'more') { const src = armySources(s.mode === 'new' ? s : armyPosXY(armyById(s.id))); armySel = new Set(src.slice(0, 1)); } renderArmySheet(); requestRender(); }
         function closeArmySheet() { document.getElementById('armySheet').hidden = true; armySheet = null; requestRender(); }
+        function armyHeroSeg(a) {                        // which hero marches with this army (one army or attack per hero)
+            const hs = HEROES.filter(x => heroUnlocked(x)); if (!hs.length) return '';
+            return '<div class="seg hero-seg army-hero">' + '<button type="button" data-ahero=""' + (!a.hero ? ' class="on"' : '') + '>Kein Held</button>' +
+                hs.map(x => '<button type="button" data-ahero="' + x.id + '"' + (a.hero === x.id ? ' class="on"' : '') + (heroBusy(x.id) && a.hero !== x.id ? ' disabled' : '') + ' style="--hc:' + RARITY_DEFS[heroRarity(x.id)].color + '">' + icon(x.icon) + x.name + '</button>').join('') + '</div>';
+        }
         function renderArmySheet() {
             const s = armySheet, el = document.getElementById('armySheet'); if (!s) return;
             const a = s.id && armyById(s.id); if (s.mode !== 'new' && !a) return closeArmySheet();
@@ -10441,7 +10456,7 @@ body.has-panel .mapctl{display:none}
                     '<div class="field-lines"><span>Truppen</span><b>' + fmtNum(Math.floor(a.troops)) + (inc ? ' <em class="army-inc">+' + fmtCompact(inc) + ' unterwegs</em>' : '') + '</b><span>Status</span><b>' + st + '</b>' +
                     '<span>Heimat</span><b>' + (armyHome(a) !== null && armyHome(a) !== undefined ? islandTitle(islandById[armyHome(a)]) : '–') + '</b></div>' +
                     (raid ? '<div class="notice notice--warn">' + icon('attack') + '<span>' + botById[raid.botId].name + ' greift an (' + fmtCompact(raid.troops) + ') · ' + fmtClock((raid.resolveAt - now) / 1000) + '</span></div>' : '') +
-                    '<div class="army-hint">Im Feld gibt es keine Mauer und keine Produktion.</div>' +
+                    '<div class="army-hint">Im Feld gibt es keine Mauer und keine Produktion.</div>' + armyHeroSeg(a) +
                     '<div class="army-btns"><button class="btn btn--primary btn--sm" type="button" data-aorder>' + icon('attack') + '<span>Befehl geben</span></button>' +
                     '<button class="btn btn--secondary btn--sm" type="button" data-amore>' + icon('plus') + '<span>Verstärken</span></button>' +
                     (a.mv ? '<button class="btn btn--secondary btn--sm" type="button" data-ahalt>' + icon('hourglass') + '<span>Anhalten</span></button>' : '') +
@@ -10464,6 +10479,7 @@ body.has-panel .mapctl{display:none}
             if (!a) return;
             if (e.target.closest('[data-afoe]')) { const best = myArmies().filter(x => x.troops >= 1).sort((u, v) => v.troops - u.troops)[0]; if (best && armyOrder(best, { kind: 'army', id: a.id, ...armyPosXY(a) })) closeArmySheet(); return; }
             if (armyWho(a) !== 'player') return;
+            const hb = e.target.closest('[data-ahero]:not([disabled])'); if (hb) { a.hero = hb.dataset.ahero || null; saveArmies(); flashHint(a.hero ? heroById(a.hero).name + ' führt jetzt diese Armee.' : 'Die Armee zieht ohne Helden.', 2200); return renderArmySheet(); }
             if (e.target.closest('[data-amore]')) return openArmySheet({ mode: 'more', id: a.id });
             if (e.target.closest('[data-ahalt]')) { armyHalt(a, Date.now()); saveArmies(); flashHint('Die Armee hält an und lagert hier.', 2500); return renderArmySheet(); }
             if (e.target.closest('[data-ahome]')) { const h = armyHome(a); if (h === null || h === undefined) return; const b = islandById[h];
@@ -10667,18 +10683,23 @@ body.has-panel .mapctl{display:none}
         let multiAttackMode = false;
         let multiAttackSourceId = null;
         let multiAttackTargets = [], multiAttackShare = 1;       // share of the base's troops that goes, split over the targets
+        let multiAttackHero = null;                               // a hero leads the first wave
 
         function updateMultiAttackBar() {
             const n = multiAttackTargets.length, go = Math.floor((islandTroops[multiAttackSourceId] || 0) * multiAttackShare);
             multiAttackLabel.textContent = n ? n + (n === 1 ? ' Ziel' : ' Ziele') + ' · je ' + fmtCompact(Math.floor(go / n)) + ' Truppen' : '0 Ziele ausgewählt · Basen antippen';
             for (const b of document.querySelectorAll('#multiAttackShare button')) b.classList.toggle('on', parseFloat(b.dataset.f) === multiAttackShare);
+            const hs = HEROES.filter(x => heroUnlocked(x)), hb = document.getElementById('multiAttackHero');
+            if (multiAttackHero && (!heroUnlocked(heroById(multiAttackHero)) || heroBusy(multiAttackHero))) multiAttackHero = null;
+            hb.hidden = !hs.length;
+            hb.innerHTML = hs.length ? '<button type="button" data-mhero=""' + (!multiAttackHero ? ' class="on"' : '') + '>Kein Held</button>' + hs.map(x => '<button type="button" data-mhero="' + x.id + '"' + (multiAttackHero === x.id ? ' class="on"' : '') + (heroBusy(x.id) ? ' disabled' : '') + ' style="--hc:' + RARITY_DEFS[heroRarity(x.id)].color + '">' + icon(x.icon) + x.name + '</button>').join('') : '';
             multiAttackConfirmBtn.disabled = multiAttackTargets.length === 0;
         }
 
         function startMultiAttack(sourceId) {
             multiAttackMode = true;
             multiAttackSourceId = sourceId;
-            multiAttackTargets = []; multiAttackShare = 1;
+            multiAttackTargets = []; multiAttackShare = 1; multiAttackHero = null;
             multiAttackBar.style.display = 'flex';
             document.body.classList.add('is-multi');
             updateMultiAttackBar();
@@ -10695,6 +10716,7 @@ body.has-panel .mapctl{display:none}
         }
 
         multiAttackCancelBtn.addEventListener('click', cancelMultiAttack);
+        document.getElementById('multiAttackHero').addEventListener('click', e => { const bt = e.target.closest('button[data-mhero]:not([disabled])'); if (!bt) return; multiAttackHero = bt.dataset.mhero || null; updateMultiAttackBar(); });
         document.getElementById('multiAttackShare').addEventListener('click', e => {
             const bt = e.target.closest('button[data-f]'); if (!bt) return;
             multiAttackShare = parseFloat(bt.dataset.f); updateMultiAttackBar();
@@ -10720,7 +10742,9 @@ body.has-panel .mapctl{display:none}
             for (const targetId of targets) {
                 let troopsForThis = perTarget;
                 if (remainder > 0) { troopsForThis++; remainder--; }
+                nextAttackHero = ok === 0 ? multiAttackHero : null;                  // the hero leads the first wave that goes out
                 if (launchAttack(sourceId, targetId, null, troopsForThis)) ok++; else failed.push(targetId);
+                nextAttackHero = null;
             }
             if (!ok) {                                                               // nothing went out: no gem spent, the selection stays so the player can fix it
                 flashHint('Kein Angriff gestartet – ' + (failed.length === 1 ? 'das Ziel ist' : 'die Ziele sind') + ' gerade nicht erreichbar (geschlossenes Tor oder zu wenig Münzen für die Maut).', 4500);
