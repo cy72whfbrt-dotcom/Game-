@@ -164,6 +164,19 @@ b,strong{font-weight:600}
   display:flex;flex-direction:column;background:var(--glass);border:1px solid var(--line-2);border-radius:var(--r-sm);box-shadow:var(--sh-1);
   -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 .mapctl button{width:36px;height:36px;display:grid;place-items:center;color:var(--tx-2)}
+.mapctl button.on{color:var(--gold-100);background:rgba(214,170,90,.18)}
+.marker-sheet{position:fixed;z-index:45;left:50%;bottom:calc(var(--dock-h) + var(--safe-b) + 14px);transform:translateX(-50%);width:min(360px,calc(100vw - 24px));padding:12px;border-radius:12px;
+  background:var(--glass-strong,#141820);border:1px solid var(--line-3);box-shadow:var(--sh-2);font-family:var(--font-ui);display:flex;flex-direction:column;gap:8px}
+.marker-sheet[hidden]{display:none}
+.marker-head{display:flex;align-items:center;justify-content:space-between;color:var(--tx-1)}
+.marker-presets{display:flex;flex-wrap:wrap;gap:6px}
+.marker-presets button{padding:6px 10px;border-radius:999px;border:1px solid var(--line-2);background:rgba(255,255,255,.04);color:var(--tx-1);font:600 var(--fs-12)/1 var(--font-ui)}
+.marker-presets button.on{border-color:var(--gold-300);background:rgba(214,170,90,.16)}
+.marker-input{width:100%;box-sizing:border-box;padding:8px 10px;border-radius:8px;border:1px solid var(--line-2);background:rgba(0,0,0,.25);color:var(--tx-1);font:500 var(--fs-13)/1.2 var(--font-ui)}
+.marker-colors{display:flex;gap:8px}
+.marker-colors button{width:26px;height:26px;border-radius:50%;border:2px solid rgba(255,255,255,.25)}
+.marker-colors button.on{border-color:#fff;box-shadow:0 0 0 2px rgba(214,170,90,.7)}
+.marker-actions{display:flex;justify-content:space-between;gap:8px}
 .mapctl button:hover{color:var(--gold-100);background:rgba(255,255,255,.03)}
 .mapctl button:active{background:rgba(214,170,90,.12)}
 .mapctl button:disabled{color:var(--tx-4);cursor:default}
@@ -1261,6 +1274,14 @@ body.has-panel .mapctl{display:none}
   <button id="zoomOutBtn" type="button" aria-label="Herauszoomen"><svg class="icon"><use href="#i-minus"/></svg></button>
   <button id="homeBtn" type="button" aria-label="Zur Heimat"><svg class="icon"><use href="#i-home"/></svg></button>
   <button id="musicBtn" type="button" aria-label="Musik an/aus" aria-pressed="true"><svg class="icon"><use href="#i-sound"/></svg></button>
+  <button id="markerBtn" type="button" aria-label="Wegmarke setzen"><svg class="icon"><use href="#i-flag"/></svg></button>
+</div>
+<div id="markerSheet" class="marker-sheet" hidden>
+  <div class="marker-head"><b id="markerTitle">Wegmarke</b><button id="markerClose" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button></div>
+  <div class="marker-presets" id="markerPresets"></div>
+  <input id="markerText" class="marker-input" maxlength="24" placeholder="Eigener Text …" autocomplete="off">
+  <div class="marker-colors" id="markerColors"></div>
+  <div class="marker-actions"><button id="markerDelete" class="btn btn--ghost btn--sm" type="button">Entfernen</button><button id="markerSave" class="btn btn--primary btn--sm" type="button">Speichern</button></div>
 </div>
 
 <!-- Toast: text-only, JS writes textContent. Empty = hidden. -->
@@ -4939,6 +4960,7 @@ body.has-panel .mapctl{display:none}
           drawPasses(view, now);                                                                                               // chained, time-locked bridges
           drawPickups(now);                                                                                                    // 11 mini-event pickups
           drawMapBattles(now);                                                                                                 // fights playing out at the bases
+          drawMarkers();                                                                                                       // your own Wegmarken
           drawBattleFx(now);                                                                                                   // 13 battle flashes + "Sieg!"
           if (shake) { mapState.offsetX -= shake.x; mapState.offsetY -= shake.y; }
           ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -9169,6 +9191,55 @@ body.has-panel .mapctl{display:none}
 
         // Island tap/click handling: gestures and taps come from the Pointer Events state machine (camera block)
 
+        // ===== WEGMARKEN: your own pins on the map ("Angriff hier", "Emma-Gebiet" …) =====
+        const MARKER_PRESETS = ['Angriff hier', 'Sammelpunkt', 'Achtung', 'Emma-Gebiet', 'Ziel', 'Verteidigen'];
+        const MARKER_COLORS = ['#d9453a', '#e4a53a', '#3f86d8', '#4caf50', '#9b59b6', '#e8e2d2'];
+        const MARKER_MAX = 30;
+        let markers = (() => { try { return JSON.parse(store.get('openWaterMarkers')) || []; } catch (e) { return []; } })();
+        let markerMode = false, markerEdit = null;                                  // markerEdit: { id|null, x, y, text, col }
+        function saveMarkers() { store.set('openWaterMarkers', JSON.stringify(markers)); }
+        function markerAt(sx, sy) { const z = mapState.zoom; return markers.slice().reverse().find(m => Math.hypot(m.x * z + mapState.offsetX - sx, m.y * z + mapState.offsetY - 14 - sy) < 20); }
+        function openMarkerSheet(edit) {
+            markerEdit = edit; const sh = document.getElementById('markerSheet');
+            document.getElementById('markerTitle').textContent = edit.id ? 'Wegmarke bearbeiten' : 'Neue Wegmarke';
+            document.getElementById('markerText').value = edit.text || '';
+            document.getElementById('markerDelete').style.visibility = edit.id ? 'visible' : 'hidden';
+            document.getElementById('markerPresets').innerHTML = MARKER_PRESETS.map(t => '<button type="button" data-t="' + t + '"' + (t === edit.text ? ' class="on"' : '') + '>' + t + '</button>').join('');
+            document.getElementById('markerColors').innerHTML = MARKER_COLORS.map(c => '<button type="button" data-c="' + c + '" style="background:' + c + '"' + (c === edit.col ? ' class="on"' : '') + ' aria-label="Farbe"></button>').join('');
+            sh.hidden = false;
+        }
+        function closeMarkerSheet() { document.getElementById('markerSheet').hidden = true; markerEdit = null; requestRender(); }
+        function setMarkerMode(on) { markerMode = on; document.getElementById('markerBtn').classList.toggle('on', on); if (on) flashHint('Wegmarke: tippe auf die Karte, wo die Markierung hin soll.', 3000); }
+        document.getElementById('markerBtn').addEventListener('click', e => { e.stopPropagation(); closeMarkerSheet(); setMarkerMode(!markerMode); });
+        document.getElementById('markerPresets').addEventListener('click', e => { const b = e.target.closest('[data-t]'); if (!b || !markerEdit) return;
+            markerEdit.text = b.dataset.t; document.getElementById('markerText').value = b.dataset.t;
+            for (const x of document.querySelectorAll('#markerPresets button')) x.classList.toggle('on', x === b); });
+        document.getElementById('markerColors').addEventListener('click', e => { const b = e.target.closest('[data-c]'); if (!b || !markerEdit) return;
+            markerEdit.col = b.dataset.c; for (const x of document.querySelectorAll('#markerColors button')) x.classList.toggle('on', x === b); });
+        document.getElementById('markerClose').addEventListener('click', closeMarkerSheet);
+        document.getElementById('markerSave').addEventListener('click', () => {
+            if (!markerEdit) return;
+            const text = (document.getElementById('markerText').value || '').trim().slice(0, 24) || 'Markierung';
+            if (markerEdit.id) { const m = markers.find(q => q.id === markerEdit.id); if (m) { m.text = text; m.col = markerEdit.col; } }
+            else { if (markers.length >= MARKER_MAX) markers.shift(); markers.push({ id: Date.now().toString(36), x: markerEdit.x, y: markerEdit.y, text, col: markerEdit.col }); }
+            saveMarkers(); closeMarkerSheet(); flashHint('Wegmarke gespeichert.', 1800);
+        });
+        document.getElementById('markerDelete').addEventListener('click', () => { if (!markerEdit || !markerEdit.id) return; markers = markers.filter(m => m.id !== markerEdit.id); saveMarkers(); closeMarkerSheet(); });
+        function drawMarkers() {                                                     // a pin with a flag and the text beside it
+            if (!markers.length) return;
+            const z = mapState.zoom; setScreen(ctx);
+            for (const m of markers) {
+                const x = m.x * z + mapState.offsetX, y = m.y * z + mapState.offsetY;
+                if (x < -120 || x > viewW + 120 || y < -60 || y > viewH + 60) continue;
+                ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(x, y, 6, 2.4, 0, 0, Math.PI * 2); ctx.fill();
+                ctx.strokeStyle = '#2a241b'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y - 28); ctx.stroke();
+                ctx.fillStyle = m.col; ctx.beginPath(); ctx.moveTo(x, y - 28); ctx.lineTo(x + 16, y - 23); ctx.lineTo(x, y - 17); ctx.closePath(); ctx.fill(); ctx.lineWidth = 1; ctx.stroke();
+                ctx.font = '700 12px Inter, system-ui, sans-serif'; const tw = ctx.measureText(m.text).width + 14;
+                ctx.fillStyle = 'rgba(14,14,20,.86)'; ctx.strokeStyle = m.col; ctx.lineWidth = 1.2;
+                ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x + 18, y - 33, tw, 20, 10) : ctx.rect(x + 18, y - 33, tw, 20); ctx.fill(); ctx.stroke();
+                ctx.fillStyle = '#f3e6c4'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(m.text, x + 25, y - 22.5);
+            }
+        }
         function screenToWorld(screenX, screenY) {
             return {
                 x: (screenX - mapState.offsetX) / mapState.zoom,
@@ -9908,6 +9979,11 @@ body.has-panel .mapctl{display:none}
                 else flashHint('Verlegen abgebrochen.', 2000);
                 return;
             }
+            if (markerMode) {                                                        // placing a Wegmarke
+                setMarkerMode(false); const w = screenToWorld(screenX, screenY);
+                openMarkerSheet({ id: null, x: w.x, y: w.y, text: MARKER_PRESETS[0], col: MARKER_COLORS[0] }); return;
+            }
+            { const mk = !multiAttackMode && markerAt(screenX, screenY); if (mk) { openMarkerSheet({ id: mk.id, x: mk.x, y: mk.y, text: mk.text, col: mk.col }); return; } }
             if (fogPrompt) {
                 const hit = fogPromptHit(screenX, screenY), fp = fogPrompt; fogPrompt = null; requestRender();
                 if (hit === 'go') { launchScout(fp.targetId, true, { x: fp.x, y: fp.y }); return; }
