@@ -210,6 +210,8 @@ b,strong{font-weight:600}
 .marker-sheet[hidden]{display:none}
 .field-lines{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-3)} .field-lines b{color:var(--tx-1);text-align:right}
 .field-sheet .marker-head b{display:inline-flex;align-items:center;gap:6px} .field-sheet .marker-head .icon{width:16px;height:16px} .field-sheet .btn{justify-content:center}
+.army-hint{font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-3)} .army-inc{font-style:normal;color:#8cc0ff;font-weight:600}
+.army-btns{display:grid;grid-template-columns:1fr 1fr;gap:6px} .army-btns .btn{justify-content:center}
 .marker-head{display:flex;align-items:center;justify-content:space-between;color:var(--tx-1)}
 .marker-presets{display:flex;flex-wrap:wrap;gap:6px}
 .marker-presets button{padding:6px 10px;border-radius:999px;border:1px solid var(--line-2);background:rgba(255,255,255,.04);color:var(--tx-1);font:600 var(--fs-12)/1 var(--font-ui)}
@@ -1317,7 +1319,9 @@ body.has-panel .mapctl{display:none}
   <button id="homeBtn" type="button" aria-label="Zur Heimat"><svg class="icon"><use href="#i-home"/></svg></button>
   <button id="musicBtn" type="button" aria-label="Musik an/aus" aria-pressed="true"><svg class="icon"><use href="#i-sound"/></svg></button>
   <button id="markerBtn" type="button" aria-label="Wegmarke setzen"><svg class="icon"><use href="#i-flag"/></svg></button>
+  <button id="armyBtn" type="button" aria-label="Armee aufstellen"><svg class="icon"><use href="#i-troops"/></svg></button>
 </div>
+<div id="armySheet" class="marker-sheet field-sheet" hidden></div>
 <div id="fieldSheet" class="marker-sheet field-sheet" hidden></div>
 <div id="markerSheet" class="marker-sheet" hidden>
   <div class="marker-head"><b id="markerTitle">Wegmarke</b><button id="markerClose" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button></div>
@@ -2328,7 +2332,7 @@ body.has-panel .mapctl{display:none}
             }
         }
 
-        let coins = parseInt(store.get('openWaterCoins'), 10) || 0;
+        let coins = parseFloat(store.get('openWaterCoins')) || 0;   // parseFloat: huge sums are stored as "1e+22"
         let gems = parseFloat(store.get('openWaterGems')) || 0;
 
         // One-time requested bonus grant for an existing save - adds
@@ -2937,7 +2941,7 @@ body.has-panel .mapctl{display:none}
 
         // XP/level: killing enemy troops in a won attack grants XP; filling
         // the XP bar levels the player up and grants a skill point.
-        let playerXp = parseInt(store.get('openWaterXp'), 10) || 0;
+        let playerXp = parseFloat(store.get('openWaterXp')) || 0;
         let playerLvl = parseInt(store.get('openWaterLevel'), 10) || 1;
 
         // Each player level needs 30 % more XP than the one before (XP = enemy troops killed),
@@ -5002,6 +5006,7 @@ body.has-panel .mapctl{display:none}
           drawBaseAuras(vis, z, now);                                                                                          // level + title auras under the towers
           drawThronePlaza(z, now);                                                                                             // the Thronplatz around the Mega-Tempel
           drawResFields(now, wallNow);                                                                                          // gold mines and gem veins
+          drawArmies(now, wallNow);                                                                                             // your armies out in the open
           for (const isl of vis.slice().sort((a, b) => a.y - b.y)) drawBuilding(isl, ownerKeyOf(isl), z);                    // 7
           drawThroneFx(z, now);
           drawBaseSparks(vis, z, now);
@@ -5009,6 +5014,7 @@ body.has-panel .mapctl{display:none}
           const plates = layoutBanners(vis, z, isPanelOpen(popup) ? popupIslandId : null);
           drawMarchTokens();                                                                                                   // 8 tokens (clear of the plates)
           paintBanners(plates);                                                                                                // 9 nameplates on top
+          drawArmyCamps(now);                                                                                                  // armies camping in the field
           drawRulerCrowns(plates);
           drawTitleBadges(z, now);                                                                                             // crown on the ruler's plates
           drawWander(now, true);
@@ -6901,6 +6907,10 @@ body.has-panel .mapctl{display:none}
                     const K = FIELD_KINDS[entry.fieldKind] || FIELD_KINDS.gold;
                     return logRowHtml(entry.won ? 'win' : 'loss', K.icon, logBadge(entry.won ? 'win' : 'loss', entry.won ? 'Feld gehalten' : 'Feld verloren') + K.name,
                         entry.attacker + ' (' + fmtM(entry.atk) + ') gegen ' + entry.defender + ' (' + fmtM(entry.def) + ')', ago(entry));
+                }
+                if (entry.type === 'army') {
+                    return logRowHtml(entry.won ? 'win' : 'loss', 'troops', logBadge(entry.won ? 'win' : 'loss', entry.won ? 'Armee hält' : 'Armee geschlagen') + 'Armee im Feld',
+                        entry.attacker + ' (' + fmtM(entry.atk) + ') gegen deine Armee (' + fmtM(entry.def) + ')', ago(entry));
                 }
                 if (entry.type === 'scout') {
                     return logRowHtml('scout', 'scout', logBadge('scout', 'Gespäht') + T(entry.targetId),
@@ -9529,6 +9539,235 @@ body.has-panel .mapctl{display:none}
             if (e.target.closest('[data-fsend]')) { const src = fieldSource(f); if (src === null) return; const n = Math.floor((islandTroops[src] || 0) * fieldShare);
                 if (n < 1) return; fieldSend('player', src, f.id, n); flashHint('Truppen unterwegs zur ' + FIELD_KINDS[f.kind].name + '.', 2500); closeFieldSheet(); }
         });
+        // ===== ARMEEN AUF DER KARTE: troops that stand out in the open instead of in a base. Gather them from several
+        // bases at one spot, walk them anywhere and give orders: move, attack a base, take a field, join another army,
+        // go home. Out there they have no walls and produce nothing - and bots that notice them may come for them.
+        const ARMY_MAX = 5, ARMY_COL = '#3f86d8';
+        let armies = [], armyJoins = [], armyRaids = [];
+        try { const s = JSON.parse(store.get('openWaterArmies')) || {}; armies = s.armies || []; armyJoins = s.joins || []; armyRaids = s.raids || []; } catch (e) {}
+        let armySaveAt = 0, armyPick = null, armyPlace = false, armySheet = null, armyShare = .5, armySel = new Set(), armyBotCheckAt = 0;
+        function saveArmies(now) { if (now && now - armySaveAt < 4000) return; armySaveAt = now || Date.now(); store.set('openWaterArmies', JSON.stringify({ armies, joins: armyJoins, raids: armyRaids })); }
+        const armyById = id => armies.find(a => a.id === id);
+        function landmassAtWorld(x, y) { return landmasses.find(l => Math.hypot(x - l.x, y - l.y) <= l.shapeMaxR && pointInPolygon(x, y, l.shape)) || null; }
+        function armyPos(a, now) {                                                    // where the army is right now (walking: along its path)
+            if (!a.mv) return { x: a.x, y: a.y, landmassId: a.lm };
+            const p = a.mv.path, q = Math.min(1, Math.max(0, ((now || Date.now()) - a.mv.startedAt) / Math.max(1, a.mv.resolveAt - a.mv.startedAt)));
+            let tot = 0; const seg = []; for (let i = 1; i < p.length; i++) { const l = Math.hypot(p[i].x - p[i - 1].x, p[i].y - p[i - 1].y); seg.push(l); tot += l; }
+            let d = tot * q; for (let i = 0; i < seg.length; i++) { if (d <= seg[i] || i === seg.length - 1) { const t = seg[i] ? Math.min(1, d / seg[i]) : 1;
+                const x = p[i].x + (p[i + 1].x - p[i].x) * t, y = p[i].y + (p[i + 1].y - p[i].y) * t, lm = landmassAtWorld(x, y);
+                return { x, y, landmassId: lm ? lm.id : q < .5 ? a.lm : a.mv.to.lm }; } d -= seg[i]; }
+            return { x: p[0].x, y: p[0].y, landmassId: a.lm };
+        }
+        function armyHalt(a, now) { if (!a.mv) return; const p = armyPos(a, now); a.x = p.x; a.y = p.y; a.lm = p.landmassId; a.mv = null; }
+        function armyHome(a) { return ownedIslands.has(a.homeId) ? a.homeId : rewardBaseId(); }
+        function armySources(pt) {                                                    // your nearest bases with troops that can reach this spot
+            const out = []; for (const id of ownedIslands) { const isl = islandById[id]; if ((islandTroops[id] || 0) < 1 || !canReach(isl.landmassId, pt.lm)) continue; out.push({ id, d: Math.hypot(isl.x - pt.x, isl.y - pt.y) }); }
+            return out.sort((a, b) => a.d - b.d).slice(0, 5).map(o => o.id);
+        }
+        function armySendFrom(a, baseId, n) {                                        // troops leave a base to join the army out there
+            const isl = islandById[baseId], p = armyPos(a); if (!isl || n < 1) return false;
+            if (isl.landmassId !== p.landmassId) { const hop = lastHop(isl.landmassId, p.landmassId, 'player'); if (!payToll(hop[0], hop[1], n, 'player')) return false; }
+            islandTroops[baseId] = Math.max(0, (islandTroops[baseId] || 0) - n);
+            const now = Date.now(); armyJoins.push({ armyId: a.id, homeId: baseId, troops: n, startedAt: now, resolveAt: now + travelDurationSeconds(isl, p) * 1000 });
+            return true;
+        }
+        function armyCreate(pt, sources, share) {
+            if (armies.length >= ARMY_MAX) { flashHint('Höchstens ' + ARMY_MAX + ' Armeen gleichzeitig im Feld.', 3000); return null; }
+            const a = { id: 'a' + Date.now().toString(36), x: pt.x, y: pt.y, lm: pt.lm, troops: 0, homeId: sources[0], mv: null };
+            armies.push(a); let sent = 0;
+            for (const id of sources) { const n = Math.floor((islandTroops[id] || 0) * share); if (armySendFrom(a, id, n)) sent += n; }
+            if (!sent) { armies = armies.filter(x => x !== a); return null; }
+            sfx('send'); updateHud(); saveGame(); saveArmies(); requestRender();
+            flashHint('Armee wird aufgestellt: ' + fmtCompact(sent) + ' Truppen aus ' + sources.length + (sources.length === 1 ? ' Basis' : ' Basen') + ' sind unterwegs.', 3500);
+            return a;
+        }
+        function armyTargetAt(sx, sy, self) {                                         // what a tap on the map means as an order
+            const other = armyAt(sx, sy, self); if (other) return { kind: 'army', id: other.id, ...armyPosXY(other) };
+            const isl = pickIslandAtScreen(sx, sy); if (isl) return { kind: 'base', id: isl.id, x: isl.x, y: isl.y, lm: isl.landmassId };
+            const f = fieldAt(sx, sy); if (f) return { kind: 'field', id: f.id, x: f.x, y: f.y, lm: f.landmassId };
+            const w = screenToWorld(sx, sy), lm = landmassAtWorld(w.x, w.y);
+            return lm ? { kind: 'point', x: w.x, y: w.y, lm: lm.id } : null;
+        }
+        const armyPosXY = a => { const p = armyPos(a); return { x: p.x, y: p.y, lm: p.landmassId }; };
+        function armyOrder(a, t) {
+            if (!t) { flashHint('Dort ist Wasser – tippe auf Land, eine Basis, ein Feld oder eine Armee.', 3000); return false; }
+            if (a.troops < 1) { flashHint('Die Armee hat noch keine Truppen – warte, bis die ersten angekommen sind.', 3000); return false; }
+            const now = Date.now(); armyHalt(a, now);
+            if (t.kind === 'base' && ownedIslands.has(t.id)) t.kind = 'home';
+            if (t.kind === 'base' && isCapital(t.id)) { flashHint('Das ist die Hauptstadt von ' + (botById[islandOwnerOf(t.id)] || {}).name + ' – Hauptstädte können nicht angegriffen werden.', 3500); return false; }
+            if (!canReach(a.lm, t.lm)) { flashHint(noRouteHint(a.lm, t.lm), 3500); return false; }
+            if (a.lm !== t.lm) { const hop = lastHop(a.lm, t.lm, 'player'); if (!payToll(hop[0], hop[1], a.troops, 'player', t.kind === 'base' ? t.id : undefined)) return false; }
+            const from = { x: a.x, y: a.y, landmassId: a.lm }, to = { x: t.x, y: t.y, landmassId: t.lm };
+            a.mv = { path: marchPath(from, to), startedAt: now, resolveAt: now + travelDurationSeconds(from, to) * 1000, to: t };
+            const what = t.kind === 'base' ? 'greift ' + islandTitle(islandById[t.id]) + ' an' : t.kind === 'home' ? 'zieht nach ' + islandTitle(islandById[t.id]) : t.kind === 'field' ? 'zieht zur ' + FIELD_KINDS[fieldById[t.id].kind].name
+                : t.kind === 'army' ? 'vereint sich mit der anderen Armee' : 'marschiert los';
+            flashHint('Armee ' + what + ' · ca. ' + fmtClock((a.mv.resolveAt - now) / 1000), 3000);
+            sfx(t.kind === 'base' ? 'attack' : 'send'); saveArmies(); requestRender(); return true;
+        }
+        function armyArrive(a, now) {
+            const t = a.mv.to; a.x = t.x; a.y = t.y; a.lm = t.lm; a.mv = null;
+            const gone = () => { armies = armies.filter(x => x !== a); armyJoins.forEach(j => { if (j.armyId === a.id) j.armyId = null; }); };
+            if (t.kind === 'home' && ownedIslands.has(t.id)) { islandTroops[t.id] = (islandTroops[t.id] || 0) + a.troops; gone();
+                flashHint('Armee ist in ' + islandTitle(islandById[t.id]) + ' eingezogen: +' + fmtCompact(a.troops) + ' Truppen.', 3000); updateHud(); saveGame(); return; }
+            if (t.kind === 'army') { const b = armyById(t.id); if (b) { b.troops += a.troops; gone(); flashHint('Armeen vereint: jetzt ' + fmtCompact(b.troops) + ' Truppen.', 3000); } return; }
+            if (t.kind === 'field') { gone(); fieldArrive({ who: 'player', homeId: armyHome(a), fieldId: t.id, troops: a.troops, back: false }, now); saveFields(); return; }
+            if (t.kind === 'base') {                                                  // storming a base: the fight runs exactly like a normal attack
+                if (ownedIslands.has(t.id)) { islandTroops[t.id] = (islandTroops[t.id] || 0) + a.troops; gone(); updateHud(); saveGame(); return; }
+                const src = armyHome(a); if (src === null || src === undefined) return;
+                gone(); dropShield('Dein Friedensschild ist gefallen, weil du angreifst.'); questProgress('attack', 1);
+                pendingAttacks.push({ sourceId: src, targetId: t.id, rawTroops: a.troops, startedAt: now - 1000, resolveAt: now, attackerBotId: null, fromArmy: true,
+                    attackBonus: attackFlatBonus(a.troops), attackGoldRate: (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate, rewardGoldRate: goldPerKillRate(),
+                    shieldLossReductionPct: shieldLossReductionPct(), hero: null });
+                saveGame(); saveProgression(); renderActiveMarches();
+            }
+        }
+        // bots: a bot whose base lies near a camped army notices it, waits a moment, and attacks if it clearly has more
+        function armyBotWatch(now) {
+            if (playerShielded()) return;
+            for (const a of armies) {
+                if (a.mv || a.troops < 1 || armyRaids.some(r => r.armyId === a.id)) continue;
+                if (a.seen) { const bot = botById[a.seen.bot], base = islandById[a.seen.base];
+                    if (now < a.seen.at + 15000) continue;
+                    a.seen = null;
+                    if (!bot || !base || islandOwnerOf(base.id) !== bot.id) continue;
+                    const n = Math.floor((islandTroops[base.id] || 0) * .6); if (n < a.troops * 1.3) continue;
+                    const to = { x: a.x, y: a.y, landmassId: a.lm };
+                    islandTroops[base.id] -= n; armyRaids.push({ botId: bot.id, baseId: base.id, armyId: a.id, troops: n, tx: a.x, ty: a.y, lm: a.lm, startedAt: now, resolveAt: now + travelDurationSeconds(base, to, bot.id) * 1000 });
+                    flashHint(bot.name + ' greift deine Armee im Feld an!', 4000); sfx('warn'); requestRender(); continue; }
+                if (Math.random() > .25) continue;
+                let best = null, bd = Infinity;
+                for (const bid in botOwnedIslands) { const own = botOwnedIslands[bid], bot = botById[bid]; if (!own || !bot) continue;
+                    for (const id of own) { const b = islandById[id], d = Math.hypot(b.x - a.x, b.y - a.y); if (d > ISLAND_RADIUS * 14 || d >= bd) continue;
+                        if ((islandTroops[id] || 0) * .6 < a.troops * 1.3 || !routeFor(b.landmassId, a.lm, bot.id)) continue; bd = d; best = { bot: bot.id, base: id }; } }
+                if (best) { a.seen = { ...best, at: now }; flashHint(botById[best.bot].name + ' hat deine Armee entdeckt.', 3500); }
+            }
+        }
+        function armyRaidArrive(r, now) {
+            const a = armyById(r.armyId), bot = botById[r.botId], back = () => { if (botOwnedIslands[r.botId] && botOwnedIslands[r.botId].has(r.baseId)) islandTroops[r.baseId] = (islandTroops[r.baseId] || 0) + r.troops; };
+            const p = a && armyPos(a, now);
+            if (!a || Math.hypot(p.x - r.tx, p.y - r.ty) > ISLAND_RADIUS * 2) { back(); if (a) flashHint('Deine Armee ist ' + bot.name + ' ausgewichen.', 3000); return; }
+            const won = r.troops > a.troops, def = a.troops;
+            if (won) { armies = armies.filter(x => x !== a); r.troops -= def; back(); const w = hospitalTake(def);
+                flashHint(bot.name + ' hat deine Armee im Feld geschlagen (' + fmtCompact(def) + ' Truppen)' + (w ? ', ' + fmtCompact(w) + ' ins Lazarett.' : '.'), 5000); }
+            else { a.troops -= r.troops; statBump('defends'); flashHint('Deine Armee hat den Angriff von ' + bot.name + ' abgewehrt – ' + fmtCompact(a.troops) + ' stehen noch.', 4500); }
+            addCombatLogEntry({ type: 'army', won: !won, attacker: bot.name, defender: 'Du', atk: r.troops + (won ? def : 0), def });
+            sfx(won ? 'defeat' : 'victory'); updateHud(); saveGame();
+        }
+        function armyTick() {
+            const now = Date.now(); let dirty = false;
+            for (const j of armyJoins.filter(j => j.resolveAt <= now)) { dirty = true;
+                const a = j.armyId && armyById(j.armyId);
+                if (a) a.troops += j.troops; else { const h = ownedIslands.has(j.homeId) ? j.homeId : rewardBaseId(); if (h !== null && h !== undefined) islandTroops[h] = (islandTroops[h] || 0) + j.troops; } }
+            if (dirty) armyJoins = armyJoins.filter(j => j.resolveAt > now);
+            for (const a of armies.slice()) if (a.mv && a.mv.resolveAt <= now) { dirty = true; armyArrive(a, now); }
+            for (const r of armyRaids.filter(r => r.resolveAt <= now)) { dirty = true; armyRaids = armyRaids.filter(x => x !== r); armyRaidArrive(r, now); }
+            if (now >= armyBotCheckAt) { armyBotCheckAt = now + 5000; armyBotWatch(now); }
+            if (dirty) { saveArmies(); requestRender(); if (armySheet) renderArmySheet(); } else saveArmies(now);
+        }
+        setInterval(armyTick, 1000);
+        // drawing: a camp is a little block of soldiers under your banner; a marching army is a column along its path
+        function armyAt(sx, sy, except) { const z = mapState.zoom; if (z < .004) return null;
+            return armies.find(a => a !== except && (() => { const p = armyPos(a); return Math.hypot(p.x * z + mapState.offsetX - sx, p.y * z + mapState.offsetY - 8 - sy) < 22; })()) || null; }
+        function drawArmies(now, wallNow) {
+            const z = mapState.zoom; if (z < .004 || !(armies.length || armyRaids.length)) return;
+            for (const j of armyJoins) { const a = j.armyId && armyById(j.armyId), home = islandById[j.homeId]; if (!a || !home) continue; const p = armyPos(a, wallNow);
+                drawMarchLine('send', home, { x: p.x, y: p.y, landmassId: p.landmassId, radius: 0, id: 'army' }, j.startedAt, j.resolveAt, wallNow); }
+            for (const r of armyRaids) { const b = islandById[r.baseId]; if (b) drawMarchLine('incoming', b, { x: r.tx, y: r.ty, landmassId: r.lm, radius: 0, id: 'army' }, r.startedAt, r.resolveAt, wallNow); }
+            for (const a of armies) if (a.mv) { const p = a.mv.path, t = a.mv.to;
+                drawMarchLine(t.kind === 'base' ? 'attack' : 'send', { x: p[0].x, y: p[0].y, radius: 0, id: 'army' + a.id }, { x: t.x, y: t.y, id: t.id }, a.mv.startedAt, a.mv.resolveAt, wallNow, p); }
+        }
+        function drawArmyCamps(now) {                                                 // after the nameplates: an army out there must never hide under one
+            const z = mapState.zoom; if (z < .004 || !armies.length) return;
+            setScreen(ctx); const k = Math.max(.7, Math.min(2, z / .012)), sel = armySheet && armySheet.id;
+            for (const a of armies) {
+                if (a.mv) continue;
+                const x = a.x * z + mapState.offsetX, y = a.y * z + mapState.offsetY; if (x < -60 || x > viewW + 60 || y < -60 || y > viewH + 60) continue;
+                ctx.save(); ctx.translate(x, y); ctx.scale(k, k);
+                ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.beginPath(); ctx.ellipse(0, 3, 17, 6, 0, 0, Math.PI * 2); ctx.fill();
+                if (sel === a.id) { ctx.strokeStyle = 'rgba(228,200,134,.9)'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.ellipse(0, 3, 21, 8.5, 0, 0, Math.PI * 2); ctx.stroke(); }
+                const n = a.troops >= 1 ? 9 : 0;
+                for (let i = 0; i < n; i++) { const cx = (i % 3 - 1) * 7 + (Math.floor(i / 3) % 2) * 2 - 1, cy = (Math.floor(i / 3) - 1) * 4.2 + 2, bob = Math.abs(Math.sin(now / 420 + i * 1.3)) * .5;
+                    ctx.fillStyle = '#1a1d24'; ctx.fillRect(cx - 1.7, cy - 5 - bob, 3.4, 6);
+                    ctx.fillStyle = ARMY_COL; ctx.fillRect(cx + .6, cy - 4.4 - bob, 1.8, 3.6);
+                    ctx.fillStyle = '#aab2bc'; ctx.beginPath(); ctx.arc(cx, cy - 6.3 - bob, 1.6, 0, Math.PI * 2); ctx.fill();
+                    ctx.strokeStyle = '#c9b48a'; ctx.lineWidth = .8; ctx.beginPath(); ctx.moveTo(cx - 1.2, cy - bob); ctx.lineTo(cx - 1.2, cy - 11 - bob); ctx.stroke(); }
+                const wave = Math.sin(now / 300) * 1.5;                                     // the banner
+                ctx.strokeStyle = '#2a241b'; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(13, 4); ctx.lineTo(13, -20); ctx.stroke();
+                ctx.fillStyle = ARMY_COL; ctx.beginPath(); ctx.moveTo(13, -20); ctx.quadraticCurveTo(19, -19 + wave, 25, -18); ctx.lineTo(25, -11); ctx.quadraticCurveTo(19, -12 - wave, 13, -12); ctx.closePath(); ctx.fill();
+                ctx.lineWidth = .8; ctx.stroke();
+                ctx.restore();
+                const incoming = armyJoins.some(j => j.armyId === a.id), raid = armyRaids.some(r => r.armyId === a.id);
+                const t = a.troops >= 1 ? fmtCompact(a.troops) : 'sammelt …';
+                ctx.font = '700 11px Inter, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                const w = ctx.measureText(t).width + 14 + (incoming ? 10 : 0), ly = y - 15 * k, lx = x + 26 * k + w / 2;   // beside the banner, clear of any nameplate below a tower
+                ctx.fillStyle = 'rgba(14,14,20,.86)'; ctx.strokeStyle = raid ? '#ff8d82' : ARMY_COL; ctx.lineWidth = 1.2;
+                ctx.beginPath(); ctx.roundRect ? ctx.roundRect(lx - w / 2, ly - 9, w, 18, 9) : ctx.rect(lx - w / 2, ly - 9, w, 18); ctx.fill(); ctx.stroke();
+                ctx.fillStyle = '#f3e6c4'; ctx.fillText(t, lx - (incoming ? 5 : 0), ly + .5);
+                if (incoming) { ctx.fillStyle = '#8cc0ff'; ctx.fillText('+', lx + w / 2 - 9, ly + .5); }
+            }
+        }
+        // the army sheet: set one up (pick the bases), or give an existing one its orders
+        function openArmySheet(s) { armySheet = s; if (s.mode === 'new' || s.mode === 'more') { const src = armySources(s.mode === 'new' ? s : armyPosXY(armyById(s.id))); armySel = new Set(src.slice(0, 1)); } renderArmySheet(); requestRender(); }
+        function closeArmySheet() { document.getElementById('armySheet').hidden = true; armySheet = null; requestRender(); }
+        function renderArmySheet() {
+            const s = armySheet, el = document.getElementById('armySheet'); if (!s) return;
+            const a = s.id && armyById(s.id); if (s.mode !== 'new' && !a) return closeArmySheet();
+            const head = t => '<div class="marker-head"><b>' + icon('troops') + ' ' + t + '</b><button class="btn-x" type="button" data-aclose aria-label="Schließen">' + icon('close') + '</button></div>';
+            if (s.mode === 'new' || s.mode === 'more') {
+                const pt = s.mode === 'new' ? s : armyPosXY(a), src = armySources(pt);
+                const sum = [...armySel].reduce((n, id) => n + Math.floor((islandTroops[id] || 0) * armyShare), 0);
+                el.innerHTML = head(s.mode === 'new' ? 'Armee aufstellen' : 'Armee verstärken') +
+                    (src.length ? '<div class="army-hint">Aus welchen Basen sollen Truppen kommen?</div><div class="marker-presets">' + src.map(id => '<button type="button" data-asrc="' + id + '"' + (armySel.has(id) ? ' class="on"' : '') + '>' + islandTitle(islandById[id]) + ' · ' + fmtCompact(islandTroops[id] || 0) + '</button>').join('') + '</div>' +
+                        '<div class="seg" data-ashare>' + ['.25', '.5', '.75', '1'].map(v => '<button type="button" data-f="' + v + '"' + (+v === armyShare ? ' class="on"' : '') + '>' + (v === '1' ? 'Alle' : Math.round(v * 100) + ' %') + '</button>').join('') + '</div>' +
+                        '<button class="btn btn--primary btn--sm" type="button" data-ago' + (sum < 1 ? ' disabled' : '') + '>' + icon('send') + '<span>' + (s.mode === 'new' ? 'Aufstellen' : 'Schicken') + ' · ' + fmtCompact(sum) + ' Truppen</span></button>'
+                      : '<div class="notice">' + icon('lock') + '<span>Keine deiner Basen mit Truppen kommt hierher.</span></div>');
+            } else {
+                const now = Date.now(), inc = armyJoins.filter(j => j.armyId === a.id).reduce((n, j) => n + j.troops, 0), raid = armyRaids.find(r => r.armyId === a.id);
+                const t = a.mv && a.mv.to, st = a.mv ? (t.kind === 'base' ? 'Angriff auf ' + islandTitle(islandById[t.id]) : t.kind === 'home' ? 'Heimweg' : t.kind === 'field' ? 'zur ' + FIELD_KINDS[fieldById[t.id].kind].name : 'marschiert') + ' · ' + fmtClock((a.mv.resolveAt - now) / 1000) : 'lagert';
+                el.innerHTML = head('Armee im Feld') +
+                    '<div class="field-lines"><span>Truppen</span><b>' + fmtNum(Math.floor(a.troops)) + (inc ? ' <em class="army-inc">+' + fmtCompact(inc) + ' unterwegs</em>' : '') + '</b><span>Status</span><b>' + st + '</b>' +
+                    '<span>Heimat</span><b>' + (armyHome(a) !== null && armyHome(a) !== undefined ? islandTitle(islandById[armyHome(a)]) : '–') + '</b></div>' +
+                    (raid ? '<div class="notice notice--warn">' + icon('attack') + '<span>' + botById[raid.botId].name + ' greift an (' + fmtCompact(raid.troops) + ') · ' + fmtClock((raid.resolveAt - now) / 1000) + '</span></div>' : '') +
+                    '<div class="army-hint">Im Feld gibt es keine Mauer und keine Produktion.</div>' +
+                    '<div class="army-btns"><button class="btn btn--primary btn--sm" type="button" data-aorder>' + icon('attack') + '<span>Befehl geben</span></button>' +
+                    '<button class="btn btn--secondary btn--sm" type="button" data-amore>' + icon('plus') + '<span>Verstärken</span></button>' +
+                    (a.mv ? '<button class="btn btn--secondary btn--sm" type="button" data-ahalt>' + icon('hourglass') + '<span>Anhalten</span></button>' : '') +
+                    '<button class="btn btn--secondary btn--sm" type="button" data-ahome>' + icon('recall') + '<span>Heimkehren</span></button></div>';
+            }
+            el.hidden = false;
+        }
+        document.getElementById('armySheet').addEventListener('click', e => {
+            const s = armySheet; if (!s) return; const a = s.id && armyById(s.id);
+            if (e.target.closest('[data-aclose]')) return closeArmySheet();
+            const src = e.target.closest('[data-asrc]'); if (src) { const id = +src.dataset.asrc; armySel.has(id) ? armySel.delete(id) : armySel.add(id); return renderArmySheet(); }
+            const sh = e.target.closest('[data-f]'); if (sh && e.target.closest('[data-ashare]')) { armyShare = +sh.dataset.f; return renderArmySheet(); }
+            if (e.target.closest('[data-ago]')) {
+                const ids = armySources(s.mode === 'new' ? s : armyPosXY(a)).filter(id => armySel.has(id)); if (!ids.length) return;
+                if (s.mode === 'new') { const n = armyCreate(s, ids, armyShare); if (n) openArmySheet({ mode: 'army', id: n.id }); return; }
+                let sent = 0; for (const id of ids) { const n = Math.floor((islandTroops[id] || 0) * armyShare); if (armySendFrom(a, id, n)) sent += n; }
+                if (sent) { sfx('send'); updateHud(); saveGame(); saveArmies(); flashHint(fmtCompact(sent) + ' Truppen sind unterwegs zur Armee.', 3000); }
+                return openArmySheet({ mode: 'army', id: a.id });
+            }
+            if (!a) return;
+            if (e.target.closest('[data-amore]')) return openArmySheet({ mode: 'more', id: a.id });
+            if (e.target.closest('[data-ahalt]')) { armyHalt(a, Date.now()); saveArmies(); flashHint('Die Armee hält an und lagert hier.', 2500); return renderArmySheet(); }
+            if (e.target.closest('[data-ahome]')) { const h = armyHome(a); if (h === null || h === undefined) return; const b = islandById[h];
+                if (armyOrder(a, { kind: 'home', id: h, x: b.x, y: b.y, lm: b.landmassId })) closeArmySheet(); return; }
+            if (e.target.closest('[data-aorder]')) { closeArmySheet(); armyPick = a.id; armySheet = { mode: 'army', id: a.id }; document.getElementById('armySheet').hidden = true; requestRender();
+                flashHint('Tippe das Ziel: Land = hinlaufen, fremde Basis = angreifen, Feld = sammeln, eigene Armee = vereinen, eigene Basis = einziehen.', 6000); }
+        });
+        function setArmyPlace(on) { armyPlace = on; document.getElementById('armyBtn').classList.toggle('on', on); if (on) flashHint('Armee: tippe auf freies Land, wo sich die Truppen sammeln sollen.', 3500); }
+        document.getElementById('armyBtn').addEventListener('click', e => { e.stopPropagation(); closeArmySheet(); armyPick = null;
+            if (!armyPlace && armies.length >= ARMY_MAX) { flashHint('Höchstens ' + ARMY_MAX + ' Armeen gleichzeitig im Feld.', 3000); return; } setArmyPlace(!armyPlace); });
+        function armyHandleTap(sx, sy) {                                              // → true when the tap belonged to the armies
+            if (armyPick) { const a = armyById(armyPick); armyPick = null; armySheet = null; if (a) armyOrder(a, armyTargetAt(sx, sy, a)); requestRender(); return true; }
+            if (armyPlace) { setArmyPlace(false); const w = screenToWorld(sx, sy), lm = landmassAtWorld(w.x, w.y);
+                if (!lm || pickIslandAtScreen(sx, sy) || (islandsByLandmass[lm.id] || []).some(i => Math.hypot(i.x - w.x, i.y - w.y) < ISLAND_RADIUS * 2.5)) { flashHint('Dort geht es nicht – tippe auf freies Land mit etwas Abstand zu den Basen.', 3000); return true; }
+                closeIslandPopup(); openArmySheet({ mode: 'new', x: w.x, y: w.y, lm: lm.id }); return true; }
+            const a = armyAt(sx, sy); if (a) { closeIslandPopup(); if (fieldSheetId) closeFieldSheet(); openArmySheet({ mode: 'army', id: a.id }); return true; }
+            if (armySheet) closeArmySheet();
+            return false;
+        }
         // ===== WEGMARKEN: your own pins on the map ("Angriff hier", "Emma-Gebiet" …) =====
         const MARKER_PRESETS = ['Angriff hier', 'Sammelpunkt', 'Achtung', 'Emma-Gebiet', 'Ziel', 'Verteidigen'];
         const MARKER_COLORS = ['#d9453a', '#e4a53a', '#3f86d8', '#4caf50', '#9b59b6', '#e8e2d2'];
@@ -10317,6 +10556,7 @@ body.has-panel .mapctl{display:none}
                 else flashHint('Verlegen abgebrochen.', 2000);
                 return;
             }
+            if (!multiAttackMode && armyHandleTap(screenX, screenY)) return;       // armies in the field: place, select, give orders
             if (markerMode) {                                                        // placing a Wegmarke
                 setMarkerMode(false); const w = screenToWorld(screenX, screenY);
                 openMarkerSheet({ id: null, x: w.x, y: w.y, text: MARKER_PRESETS[0], col: MARKER_COLORS[0] }); return;
