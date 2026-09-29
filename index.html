@@ -3968,9 +3968,9 @@ body.has-panel .mapctl{display:none}
           const n = parseInt(hex.slice(1), 16), c = v => Math.max(0, Math.min(255, Math.round(f > 1 ? v + (255 - v) * (f - 1) : v * f)));
           return '#' + [n >> 16, (n >> 8) & 255, n & 255].map(v => c(v).toString(16).padStart(2, '0')).join('');
         }
-        function isoKit(g, OY) {
+        function isoKit(g, OY, inkCol) {
           const P = (x, y, z) => [(x - y) * .866, (x + y) * .5 - z + OY];
-          const ink = '#2a241b';
+          const ink = inkCol || '#2a241b';
           const poly = (pts, fill, lw) => { g.beginPath(); pts.forEach((q, i) => i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1])); g.closePath(); g.fillStyle = fill; g.fill(); g.lineWidth = lw || 1; g.strokeStyle = ink; g.stroke(); };
           // box from (x0,y0) to (x1,y1) on the ground, z0…z1 high; col = base colour, the three visible faces are shaded from it
           const box = (x0, x1, y0, y1, z0, z1, col, lw) => {
@@ -8146,19 +8146,70 @@ body.has-panel .mapctl{display:none}
         // --- view ---
         var cityDrag = null, cityOpenId = null, cityRaf = 0, cityHitRects = [];
         const cityView = document.getElementById('cityView'), cityCanvas = document.getElementById('cityCanvas'), cityCtx = cityCanvas.getContext('2d');
-        function openCity() {
+        // ===== ENTERING AND LEAVING: like the big strategy games - the map dives into your capital, you pass through the
+        // clouds and come out above your town; leaving, the town falls away below the clouds and the map opens up again.
+        const cloudFx = document.createElement('canvas');
+        cloudFx.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;z-index:60;pointer-events:none;display:none';
+        document.body.appendChild(cloudFx);
+        const CLOUD_PUFFS = (() => { const r = mulberry32(31), out = []; for (let i = 0; i < 22; i++) { const a = r() * Math.PI * 2; out.push({ a, d: .15 + r() * .55, s: .28 + r() * .32, sh: .82 + r() * .14 }); } return out; })();
+        let cloudAnim = null, cityMapReturn = null, cityBusy = false;
+        function cloudsRun(dur, c0, c1, then) {                                   // cover goes c0 → c1 (0 = clear sky, 1 = inside the cloud)
+            cloudAnim = { t0: performance.now(), dur, c0, c1, then }; cloudFx.style.display = 'block';
+            const step = now => {
+                const a = cloudAnim; if (!a) return;
+                const q = Math.min(1, (now - a.t0) / a.dur), e = q < .5 ? 2 * q * q : 1 - Math.pow(-2 * q + 2, 2) / 2, c = a.c0 + (a.c1 - a.c0) * e;
+                const dpr3 = Math.min(window.devicePixelRatio || 1, 2), W = window.innerWidth, H = window.innerHeight;
+                if (cloudFx.width !== Math.round(W * dpr3)) { cloudFx.width = Math.round(W * dpr3); cloudFx.height = Math.round(H * dpr3); }
+                const g = cloudFx.getContext('2d'); g.setTransform(dpr3, 0, 0, dpr3, 0, 0); g.clearRect(0, 0, W, H);
+                const R = Math.hypot(W, H);
+                if (c > .6) { g.fillStyle = 'rgba(236,240,244,' + Math.min(1, (c - .6) / .35) + ')'; g.fillRect(0, 0, W, H); }   // deep inside: white-out
+                for (const p of CLOUD_PUFFS) {                                     // puffs drift in from the edges as the cover grows, part again as it falls
+                    const dist = (p.d + (1 - c) * .9) * R * .6, x = W / 2 + Math.cos(p.a) * dist, y = H / 2 + Math.sin(p.a) * dist * .75, rad = p.s * R * (.55 + c * .5);
+                    const gr = g.createRadialGradient(x - rad * .2, y - rad * .25, rad * .05, x, y, rad);
+                    const al = Math.min(1, c * 1.6);
+                    gr.addColorStop(0, 'rgba(255,255,255,' + al + ')'); gr.addColorStop(.55, 'rgba(' + Math.round(235 * p.sh) + ',' + Math.round(240 * p.sh) + ',' + Math.round(246 * p.sh) + ',' + (al * .85) + ')'); gr.addColorStop(1, 'rgba(220,228,236,0)');
+                    g.fillStyle = gr; g.beginPath(); g.arc(x, y, rad, 0, Math.PI * 2); g.fill();
+                }
+                if (q < 1) requestAnimationFrame(step);
+                else { const t = a.then; cloudAnim = null; if (c1 <= 0) cloudFx.style.display = 'none'; if (t) t(); }
+            };
+            requestAnimationFrame(step);
+        }
+        function cityShow() {
             loadCity();
-            closeAllPopups();
             document.getElementById('cityName').textContent = (profileName.value || 'Deine') + (profileName.value ? 's Hauptstadt' : ' Hauptstadt');
             cityView.hidden = false;
             cityOpenId = null; document.getElementById('citySheet').hidden = true;
             updateCityBuilder();
-           
             cancelAnimationFrame(cityRaf); cityRaf = requestAnimationFrame(cityFrame);
         }
+        function openCity() {
+            if (cityBusy || !cityView.hidden) return;
+            closeAllPopups();
+            const home = islandById[playerIslandId];
+            if (!home || matchMedia('(prefers-reduced-motion: reduce)').matches) { cityShow(); return; }
+            cityBusy = true;
+            cityMapReturn = { zoom: mapState.zoom, x: (viewW / 2 - mapState.offsetX) / mapState.zoom, y: (viewH / 2 - mapState.offsetY) / mapState.zoom };
+            flyTo(home.x, home.y, { zoom: maxZoom, ms: 650 });                      // 1) the map dives towards your capital
+            setTimeout(() => cloudsRun(420, 0, 1, () => {                            // 2) into the clouds …
+                cityShow(); if (cityCam) cityCam.anim = { from: .35, t0: performance.now(), dur: 900 };   // 3) … the town comes up from below
+                else cityPendingAnim = true;
+                cloudsRun(750, 1, 0, () => { cityBusy = false; });
+            }), 300);
+        }
+        let cityPendingAnim = false;
         function closeCity() {
             if (cityView.hidden) return false;
-            cityView.hidden = true; cityOpenId = null; cancelAnimationFrame(cityRaf); requestRender();
+            if (cityBusy) return true;
+            cityBusy = true; cityOpenId = null; document.getElementById('citySheet').hidden = true;
+            if (cityCam) cityCam.anim = { from: 1, to: .3, t0: performance.now(), dur: 520 };   // the town falls away …
+            cloudsRun(480, 0, 1, () => {                                              // … into the clouds …
+                cityView.hidden = true; cancelAnimationFrame(cityRaf);
+                const home = islandById[playerIslandId], back = cityMapReturn;
+                if (home) flyTo(home.x, home.y, { zoom: maxZoom, instant: true });
+                if (back) flyTo(back.x, back.y, { zoom: back.zoom, ms: 900 }); else requestRender();   // … and the map opens up again
+                cloudsRun(700, 1, 0, () => { cityBusy = false; });
+            });
             return true;
         }
         function updateCityBuilder() {
@@ -8439,7 +8490,8 @@ body.has-panel .mapctl{display:none}
             g.strokeStyle = 'rgba(70,58,40,.55)'; g.lineWidth = w + 3; g.stroke(); g.strokeStyle = pat; g.lineWidth = w; g.stroke(); g.restore();
         }
         // a small painter: iso kit on a scaled context, anchored at the ground point (ax, ay) of the canvas
-        function cityPainter(g, scale, ax, ay) { g.setTransform(scale, 0, 0, scale, ax, ay); g.lineJoin = 'round'; return isoKit(g, 0); }
+        const CITY_INK = 'rgba(52,38,24,.55)';                                      // softer outlines than on the map: the town is seen up close
+        function cityPainter(g, scale, ax, ay) { g.setTransform(scale, 0, 0, scale, ax, ay); g.lineJoin = 'round'; return isoKit(g, 0, CITY_INK); }
         function cityGable(K, x0, x1, y0, y1, z, h, col) {                           // pitched roof, ridge along x
             const yc = (y0 + y1) / 2;
             K.poly([K.P(x0, y1, z), K.P(x1, y1, z), K.P(x1, yc, z + h), K.P(x0, yc, z + h)], shade(col, .95));
@@ -8683,9 +8735,9 @@ body.has-panel .mapctl{display:none}
             const tower = (K, x, y, big) => { if (!t) { K.box(x - 5, x + 5, y - 5, y + 5, 0, hgt + 8, '#8a6440', .6); K.pyramid(x, y, 6, hgt + 8, 6, '#6b4a2c'); return; }
                 const r = big ? 8 : 6.5; K.cyl(x, y, r, 0, th + (big ? 4 : 0), col, .8); K.cone(x, y, r + 1.5, th + (big ? 4 : 0), 9 + t * 2, roof);
                 if (t >= 2) { const [a, b] = K.P(x, y, th + 12 + t * 2); K.flag(a, b, BAND.player, true); } };
-            { const K = isoKit(back.g, 0);                                          // back: the top corner, the two far runs and the side corners
+            { const K = isoKit(back.g, 0, CITY_INK);                                          // back: the top corner, the two far runs and the side corners
                 seg(K, A, A, Bw, A); seg(K, A, A, A, Bw); tower(K, A, A, true); tower(K, CC, A); tower(K, A, CC); tower(K, Bw, A, true); tower(K, A, Bw, true); }
-            { const K = isoKit(front.g, 0);                                         // front: the two near runs (with the gap for the gatehouse) and the bottom corner
+            { const K = isoKit(front.g, 0, CITY_INK);                                         // front: the two near runs (with the gap for the gatehouse) and the bottom corner
                 seg(K, Bw, A, Bw, Bw); seg(K, A, Bw, CC - 16, Bw); seg(K, CC + 16, Bw, Bw, Bw); tower(K, Bw, CC); tower(K, Bw, Bw, true); }
             return CITY_WALLS = { key, back: back.c, front: front.c, S };
         }
@@ -8761,12 +8813,16 @@ body.has-panel .mapctl{display:none}
             if (cityView.hidden) return;
             const dpr2 = Math.min(window.devicePixelRatio || 1, 2), W = window.innerWidth, H = window.innerHeight;
             if (cityCanvas.width !== Math.round(W * dpr2) || cityCanvas.height !== Math.round(H * dpr2)) { cityCanvas.width = Math.round(W * dpr2); cityCanvas.height = Math.round(H * dpr2); }
-            if (!cityCam) { const [kx, ky] = cIso(CC, CC + 40); cityCam = { x: kx, y: ky - 20, z: Math.max(cityFitZoom(W, H), Math.min(2.2, W / 330)) }; }
+            if (!cityCam) { const [kx, ky] = cIso(CC, CC + 40); cityCam = { x: kx, y: ky - 20, z: Math.max(cityFitZoom(W, H), Math.min(2.2, W / 330)) };
+                if (cityPendingAnim) { cityCam.anim = { from: .35, t0: now, dur: 900 }; cityPendingAnim = false; } }
+            let animZ = 1;
+            if (cityCam.anim) { const a = cityCam.anim, q = Math.min(1, (now - a.t0) / a.dur), e = 1 - Math.pow(1 - q, 3), to = a.to ?? 1;
+                animZ = a.from + (to - a.from) * e; if (q >= 1 && to === 1) cityCam.anim = null; }
             const sheetH = cityOpenId && !document.getElementById('citySheet').hidden ? Math.min(380, H * .46) : 0;
             if (cityCam.tx !== undefined && !cityDrag) { const f = Math.min(1, .16); cityCam.x += (cityCam.tx - cityCam.x) * f; cityCam.y += (cityCam.ty - cityCam.y) * f;
                 if (Math.hypot(cityCam.tx - cityCam.x, cityCam.ty - cityCam.y) < .3) cityCam.tx = cityCam.ty = undefined; }
             cityClampCam(W, H - sheetH * .6);
-            const g = cityCtx, c = loadCity(), Z = cityCam.z;
+            const g = cityCtx, c = loadCity(), Z = cityCam.z * animZ;
             g.setTransform(dpr2, 0, 0, dpr2, 0, 0); g.fillStyle = '#4f8237'; g.fillRect(0, 0, W, H);
             const ox = W / 2 - cityCam.x * Z, oy = (H - sheetH * .6) / 2 - cityCam.y * Z;
             const toS = (x, y, z) => { const [sx, sy] = cIso(x, y); return [sx * Z + ox, (sy - (z || 0)) * Z + oy]; };
@@ -8814,6 +8870,9 @@ body.has-panel .mapctl{display:none}
                 if (it.id && cityOpenId === it.id) {                                // selected: a golden ring on the ground
                     g.save(); g.strokeStyle = 'rgba(255,220,140,.95)'; g.lineWidth = 2; g.setLineDash([6, 4]); g.lineDashOffset = -now / 40;
                     g.beginPath(); const r = (it.keep ? 40 : 26) * Z; g.ellipse(sx, sy, r * .866 * 1.4, r * .5 * 1.4, 0, 0, Math.PI * 2); g.stroke(); g.restore(); }
+                { const r = (it.keep ? 46 : it.deco ? 14 : 28) * Z, shx = sx + r * .35, shy = sy + r * .12;   // soft shadow falling to the lower right (sun top left)
+                  const sg = g.createRadialGradient(shx, shy, r * .1, shx, shy, r * 1.1); sg.addColorStop(0, 'rgba(20,30,10,.32)'); sg.addColorStop(1, 'rgba(20,30,10,0)');
+                  g.fillStyle = sg; g.beginPath(); g.ellipse(shx, shy, r * 1.1, r * .55, 0, 0, Math.PI * 2); g.fill(); }
                 g.drawImage(s.c, dx, dy, s.c.width * k, s.c.height * k);
                 if (it.deco === 'mill') {                                           // turning sails
                     const [hx, hy] = toS(it.x + 5, it.y + 5, 22), L = 17 * Z, a0 = now / 1400;
@@ -8850,6 +8909,11 @@ body.has-panel .mapctl{display:none}
                 for (const [dx, dy] of [[0, 0], [-10, 6], [-18, -4], [-26, 10]]) { const f = Math.sin(now / 120 + dx) * 2; g.beginPath(); g.moveTo(x0 + dx - 4, y0 + dy - f); g.lineTo(x0 + dx, y0 + dy + 1); g.lineTo(x0 + dx + 4, y0 + dy - f); g.stroke(); } }
             g.fillStyle = 'rgba(10,20,10,.07)';
             for (let i = 0; i < 3; i++) { const t = ((now / 90000) + i / 3) % 1, [a, b] = toS(-120 + t * (CW + 240), 100 + i * 190); g.beginPath(); g.ellipse(a, b, 70 * Z, 32 * Z, 0, 0, 7); g.fill(); }
+            // warm afternoon light from the top left, a soft vignette around the edges
+            { const lg = g.createLinearGradient(0, 0, W, H); lg.addColorStop(0, 'rgba(255,214,150,.13)'); lg.addColorStop(.55, 'rgba(255,214,150,0)'); lg.addColorStop(1, 'rgba(40,60,90,.12)');
+              g.fillStyle = lg; g.fillRect(0, 0, W, H);
+              const vg = g.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .45, W / 2, H / 2, Math.hypot(W, H) * .62); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(10,16,8,.38)');
+              g.fillStyle = vg; g.fillRect(0, 0, W, H); }
             // name plates last
             for (const { it, sx, sy, building } of plates) {
                 const wnd = it.id === 'hospital' ? c.wounded : 0;
