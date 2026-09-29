@@ -1025,6 +1025,8 @@ body.has-panel .mapctl{display:none}
 <symbol id="i-minus" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 12h13"/></g></symbol>
 <symbol id="i-castle" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20.5V9h3v2h2.5V9h5v2H17V9h3v11.5z" fill="currentColor" stroke="none" opacity="0.16"/><path d="M4 20.5V9h3v2h2.5V9h5v2H17V9h3v11.5z"/><path d="M4 6.5V9M20 6.5V9M12 3.5v5.5"/><path d="M12 3.5l3 1.2-3 1.2" fill="currentColor"/><path d="M9.8 20.5v-3.3a2.2 2.2 0 0 1 4.4 0v3.3"/><path d="M3 20.5h18"/></g></symbol>
 <symbol id="i-home" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12a7 7 0 1 0 14 0a7 7 0 1 0 -14 0z"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4"/><path d="M10.4 12a1.6 1.6 0 1 0 3.2 0a1.6 1.6 0 1 0 -3.2 0z" fill="currentColor" stroke="none"/></g></symbol>
+<symbol id="i-sound" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor" fill-opacity=".18"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></g></symbol>
+<symbol id="i-mute" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor" fill-opacity=".18"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></g></symbol>
 <symbol id="i-hourglass" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3.5h11M6.5 20.5h11"/><path d="M8 3.5c0 4.2 4 5.3 4 8.5s-4 4.3-4 8.5M16 3.5c0 4.2-4 5.3-4 8.5s4 4.3 4 8.5"/><path d="M9.5 18.8 12 16.2l2.5 2.6z" fill="currentColor" stroke="none"/></g></symbol>
 <symbol id="i-points" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5h15.5V10c-1.9 0-3 .8-3.4 2.5H9.4C8.8 10.6 6.8 9.6 3 7.5z" fill="currentColor" stroke="none" opacity="0.2"/><path d="M3 7.5h15.5V10c-1.9 0-3 .8-3.4 2.5H9.4C8.8 10.6 6.8 9.6 3 7.5z"/><path d="M10.2 12.5v3.2M14.3 12.5v3.2"/><path d="M8.2 15.7h8.1l1.6 3.8H6.6z"/><path d="M18.5 7.5h2.5" opacity="0.6"/></g></symbol>
 <symbol id="i-combine" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4v4.2c0 2.8 6 3.8 6 7.6V20M18 4v4.2c0 2.8-6 3.8-6 7.6"/><path d="M9 17.3l3 3 3-3"/></g></symbol>
@@ -1239,6 +1241,7 @@ body.has-panel .mapctl{display:none}
   <button id="zoomInBtn" type="button" aria-label="Hineinzoomen"><svg class="icon"><use href="#i-plus"/></svg></button>
   <button id="zoomOutBtn" type="button" aria-label="Herauszoomen"><svg class="icon"><use href="#i-minus"/></svg></button>
   <button id="homeBtn" type="button" aria-label="Zur Heimat"><svg class="icon"><use href="#i-home"/></svg></button>
+  <button id="musicBtn" type="button" aria-label="Musik an/aus" aria-pressed="true"><svg class="icon"><use href="#i-sound"/></svg></button>
 </div>
 
 <!-- Toast: text-only, JS writes textContent. Empty = hidden. -->
@@ -9660,6 +9663,85 @@ body.has-panel .mapctl{display:none}
         // ===== LOADING SCREEN =====
         // Shown from the first paint (markup + CSS); the bar runs to ~72 % on its own while the
         // world is generated, then finishes here and fades into the map (min. ~2 s on screen).
+        // ===== MUSIK: generated live with Web Audio - no files to load. A calm medieval piece in D minor: a low drone,
+        // a lute that picks the chords, a soft frame drum and now and then a flute over it, all in a little stone-hall reverb.
+        // Starts with the first tap (browsers only allow sound after one), remembers on/off.
+        const Music = (() => {
+            let ac = null, master = null, verb = null, timer = null, nextAt = 0, step = 0, bar = 0, on = store.get('openWaterMusic') !== '0';
+            const BPM = 70, EIGHTH = 60 / BPM / 2;
+            const hz = m => 440 * Math.pow(2, (m - 69) / 12);
+            // i - VII - VI - VII in D minor, then i - iv - VII - i (as MIDI notes: root, third, fifth, octave)
+            const CHORDS = [[50, 53, 57, 62], [48, 52, 55, 60], [46, 50, 53, 58], [48, 52, 55, 60], [50, 53, 57, 62], [55, 58, 62, 67], [48, 52, 55, 60], [50, 53, 57, 62]];
+            const PICK = [0, 2, 1, 3, 2, 1, 3, 2];                          // the lute's pattern over the four chord tones
+            const FLUTE = [62, 64, 65, 67, 69, 72, 74];                      // D dorian-ish, high
+            function impulse(sec) { const len = ac.sampleRate * sec, b = ac.createBuffer(2, len, ac.sampleRate);
+                for (let c = 0; c < 2; c++) { const d = b.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3); } return b; }
+            function init() {
+                ac = new (window.AudioContext || window.webkitAudioContext)();
+                master = ac.createGain(); master.gain.value = 0; master.connect(ac.destination);
+                verb = ac.createConvolver(); verb.buffer = impulse(2.6); const wet = ac.createGain(); wet.gain.value = .32; verb.connect(wet); wet.connect(master);
+                // the drone: D and A, soft saws through a slowly breathing low-pass
+                const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 380; lp.Q.value = .7;
+                const lfo = ac.createOscillator(), lfoG = ac.createGain(); lfo.frequency.value = .05; lfoG.gain.value = 140; lfo.connect(lfoG); lfoG.connect(lp.frequency); lfo.start();
+                const dg = ac.createGain(); dg.gain.value = .05; lp.connect(dg); dg.connect(master); dg.connect(verb);
+                for (const [m, det] of [[38, -4], [45, 3], [50, 0]]) { const o = ac.createOscillator(); o.type = 'sawtooth'; o.frequency.value = hz(m); o.detune.value = det; o.connect(lp); o.start(); }
+            }
+            function out(node, dry, wetAmt) { const g = ac.createGain(); g.gain.value = dry; node.connect(g); g.connect(master); const w = ac.createGain(); w.gain.value = wetAmt; node.connect(w); w.connect(verb); }
+            function lute(m, t, vel) {                                       // a plucked string: bright attack, fast decay
+                const o = ac.createOscillator(), o2 = ac.createOscillator(), f = ac.createBiquadFilter(), g = ac.createGain();
+                o.type = 'triangle'; o2.type = 'sawtooth'; o.frequency.value = hz(m); o2.frequency.value = hz(m) * 1.002;
+                f.type = 'lowpass'; f.frequency.setValueAtTime(2600, t); f.frequency.exponentialRampToValueAtTime(500, t + .5);
+                g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.16 * vel, t + .008); g.gain.exponentialRampToValueAtTime(.0008, t + 1.6);
+                const g2 = ac.createGain(); g2.gain.value = .25; o.connect(f); o2.connect(g2); g2.connect(f); f.connect(g); out(g, .9, .5);
+                o.start(t); o2.start(t); o.stop(t + 1.7); o2.stop(t + 1.7);
+            }
+            function drum(t, vel) {                                          // frame drum: a low thump and a little skin noise
+                const o = ac.createOscillator(), g = ac.createGain(); o.frequency.setValueAtTime(95, t); o.frequency.exponentialRampToValueAtTime(48, t + .25);
+                g.gain.setValueAtTime(.32 * vel, t); g.gain.exponentialRampToValueAtTime(.001, t + .45); o.connect(g); out(g, .8, .25); o.start(t); o.stop(t + .5);
+                const n = ac.createBufferSource(), nb = ac.createBuffer(1, ac.sampleRate * .15, ac.sampleRate), d = nb.getChannelData(0);
+                for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+                const nf = ac.createBiquadFilter(), ng = ac.createGain(); nf.type = 'bandpass'; nf.frequency.value = 900; ng.gain.value = .05 * vel;
+                n.buffer = nb; n.connect(nf); nf.connect(ng); out(ng, .8, .3); n.start(t);
+            }
+            function flute(m, t, dur) {                                      // breathy sine with a slow vibrato
+                const o = ac.createOscillator(), v = ac.createOscillator(), vg = ac.createGain(), g = ac.createGain();
+                o.type = 'sine'; o.frequency.value = hz(m); v.frequency.value = 5; vg.gain.value = hz(m) * .006; v.connect(vg); vg.connect(o.frequency);
+                g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.07, t + .12); g.gain.setValueAtTime(.07, t + dur - .15); g.gain.linearRampToValueAtTime(0, t + dur);
+                o.connect(g); out(g, .7, .7); o.start(t); v.start(t); o.stop(t + dur + .05); v.stop(t + dur + .05);
+            }
+            let phrase = null;
+            function schedule() {
+                while (nextAt < ac.currentTime + .4) {
+                    const chord = CHORDS[bar % CHORDS.length], t = nextAt, s8 = step % 8;
+                    if (!(s8 === 7 && Math.random() < .35)) lute(chord[PICK[s8]] + (s8 === 0 ? -12 : 0), t, s8 === 0 ? 1 : .55 + Math.random() * .3);
+                    if (s8 === 0 || (s8 === 4 && Math.random() < .7)) drum(t, s8 === 0 ? 1 : .6);
+                    if (s8 === 0 && bar % 16 >= 8) {                          // the flute joins every other section with a short phrase
+                        if (bar % 2 === 0) phrase = Array.from({ length: 3 }, () => FLUTE[Math.floor(Math.random() * FLUTE.length)]);
+                        if (phrase && Math.random() < .8) phrase.forEach((m, i) => flute(m, t + i * EIGHTH * 2, EIGHTH * 2.2));
+                    }
+                    nextAt += EIGHTH * (s8 % 2 ? .94 : 1.06); step++;         // a little swing, like a person playing
+                    if (step % 8 === 0) bar++;
+                }
+            }
+            function fade(to, sec) { const t = ac.currentTime; master.gain.cancelScheduledValues(t); master.gain.setValueAtTime(master.gain.value, t); master.gain.linearRampToValueAtTime(to, t + sec); }
+            function start() {
+                if (!on) return;
+                if (!ac) init();
+                if (ac.state === 'suspended') ac.resume();
+                if (!timer) { nextAt = ac.currentTime + .1; timer = setInterval(schedule, 100); }
+                fade(.6, 2.5);
+            }
+            function stop() { if (!ac) return; fade(0, .6); clearInterval(timer); timer = null; setTimeout(() => { if (!timer && ac) ac.suspend(); }, 700); }
+            function toggle() { on = !on; store.set('openWaterMusic', on ? '1' : '0'); on ? start() : stop(); paint(); }
+            function paint() { const b = document.getElementById('musicBtn'); if (!b) return; b.setAttribute('aria-pressed', String(on)); b.querySelector('use').setAttribute('href', on ? '#i-sound' : '#i-mute'); }
+            document.addEventListener('visibilitychange', () => { if (!ac || !on) return; if (document.hidden) { clearInterval(timer); timer = null; ac.suspend(); } else start(); });
+            const first = e => { window.removeEventListener('pointerdown', first, true); window.removeEventListener('keydown', first, true); if (!(e.target.closest && e.target.closest('#musicBtn'))) start(); };
+            window.addEventListener('pointerdown', first, true); window.addEventListener('keydown', first, true);
+            paint();
+            return { toggle, start, stop, get on() { return on; } };
+        })();
+        document.getElementById('musicBtn').addEventListener('click', e => { e.stopPropagation(); Music.toggle(); });
+
         (function finishSplash() {
             const sp = document.getElementById('splash');
             if (!sp) return;
