@@ -2996,8 +2996,9 @@ body.has-panel .mapctl{display:none}
                     const sepIdx = key.indexOf('|');
                     const slot = key.slice(0, sepIdx);
                     const rarity = parseInt(key.slice(sepIdx + 1), 10);
+                    const keep = Math.max(1, Math.round(list.slice(0, COMBINE_COUNT).reduce((s, it) => s + (it.level || 1), 0) / COMBINE_COUNT / 2));   // half the average level carries over
                     for (let i = 0; i < COMBINE_COUNT; i++) { delete inventory[list[i].id]; if (typeof chestSelectedIds !== 'undefined') chestSelectedIds.delete(list[i].id); }
-                    addInventoryItem(slot, rarity + 1, 1);
+                    addInventoryItem(slot, rarity + 1, keep);
                     totalCombines++;
                     changed = true;
                 }
@@ -3011,11 +3012,12 @@ body.has-panel .mapctl{display:none}
         }
         // Melts an unequipped item into upgrade points (can't salvage
         // whatever's currently equipped - unequip/replace it first).
+        function starRefund(item) { let g = 0; for (let s = 0; s < (item.stars || 0); s++) g += starGemCost(s); return g; }
         function salvageItem(itemId) {
             const item = inventory[itemId];
             if (!item || equippedItems[item.slot] === itemId) return 0;
             const points = itemScore(item);
-            upgradePoints += points;
+            upgradePoints += points; gems += starRefund(item);   // the gems paid for its stars come back
             delete inventory[itemId];
             saveGame();
             saveProgression();
@@ -3029,7 +3031,7 @@ body.has-panel .mapctl{display:none}
             for (const id of itemIds) {
                 const item = inventory[id];
                 if (!item || equippedItems[item.slot] === id) continue;
-                total += itemScore(item);
+                total += itemScore(item); gems += starRefund(item);
                 delete inventory[id];
             }
             if (total > 0) {
@@ -7637,7 +7639,8 @@ body.has-panel .mapctl{display:none}
                 if (t.progress >= t.target) finished = t;
             }
             saveQuests();
-            if (finished) flashHint('Aufgabe erledigt: ' + QUEST_DEFS[finished.type].text(finished.target) + ' – unter „Aufgaben“ abholen.', 3500);
+            if (finished) flashHint('Aufgabe erledigt: ' + QUEST_DEFS[finished.type].text(finished.target) + ' – im Postfach unter „Aufgaben“ abholen.', 3500);
+            if (finished && q.list.every(t => t.progress >= t.target)) chainLink();
             updateQuestBadge();
             if (isPanelOpen(mailPopup)) renderQuestPanel();
         }
