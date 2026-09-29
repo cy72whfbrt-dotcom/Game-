@@ -9698,19 +9698,23 @@ body.has-panel .mapctl{display:none}
             loadBotState().bot25.capital = undefined; capitalCache = null;
             store.set('openWaterGift3', 'g3'); saveBotState(); refreshTerritory(); saveGame(); updateHud(); requestRender();
         }
-        if (store.get('openWaterEmmaOnlyMine') !== '1' && playerIslandId !== null && islandById[playerIslandId]) {   // one-time test: Emma lives ONLY on the player's island
+        if (store.get('openWaterEmmaOnlyMine') !== '2' && playerIslandId !== null && islandById[playerIslandId]) {   // one-time test: Emma lives ONLY on the player's island
             const home = islandById[playerIslandId], emma = botOwnedIslands.bot25, d = i => Math.hypot(i.x - home.x, i.y - home.y);
             for (const id of [...emma]) { emma.delete(id); islandLevels[id] = 1; delete islandTroops[id]; }         // everything else goes back to neutral
             for (const a of pendingAttacks.filter(x => x.attackerBotId === 'bot25')) pendingAttacks.splice(pendingAttacks.indexOf(a), 1);
             for (const x of pendingSends.filter(x => x.senderBotId === 'bot25')) pendingSends.splice(pendingSends.indexOf(x), 1);
-            const free = islandsByLandmass[home.landmassId].filter(i => i.type === 'tower' && !islandOwnerOf(i.id) && !bossAt(i.id)).sort((a, b) => d(b) - d(a));
+            // her spot: free towers first, then other bots', and if the player owns the whole island, the player's own outer towers
+            const rank = i => { const o = islandOwnerOf(i.id); return !o ? 0 : o !== 'player' ? 1 : 2; };
+            const free = islandsByLandmass[home.landmassId].filter(i => i.type === 'tower' && i.id !== playerIslandId && !isCapital(i.id) && !bossAt(i.id)).sort((a, b) => rank(a) - rank(b) || d(b) - d(a)).slice(0, 4);
+            free.sort((a, b) => d(b) - d(a));
+            for (const i of free) if (islandOwnerOf(i.id)) clearIslandOwner(i.id);
             if (free.length) {
                 const cap = free[0], near = free.slice(1).sort((a, b) => Math.hypot(a.x - cap.x, a.y - cap.y) - Math.hypot(b.x - cap.x, b.y - cap.y)).slice(0, 3);
                 for (const isl of [cap, ...near]) { emma.add(isl.id); islandLevels[isl.id] = 3; islandTroops[isl.id] = isl === cap ? 5000 : 1500; }
                 const bs = loadBotState().bot25; bs.capital = cap.id; bs.rally = null; capitalCache = null;
                 flashHint('Test: Emma ist jetzt nur noch auf deiner Insel – ihre Hauptstadt steht bei ' + coordText(cap.x, cap.y) + '.', 7000);
             }
-            store.set('openWaterEmmaOnlyMine', '1'); saveBotState(); refreshTerritory(); saveGame(); requestRender();
+            store.set('openWaterEmmaOnlyMine', '2'); saveBotState(); refreshTerritory(); saveGame(); requestRender();
         }
         renderActiveMarches();
         if (bonusGrantedAtBoot) saveGame();      // a reload right after the first start must not lose the grant
