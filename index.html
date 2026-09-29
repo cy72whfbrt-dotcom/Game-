@@ -6572,8 +6572,8 @@ body.has-panel .mapctl{display:none}
                 '<small class="look-hint">Rahmen gibt es mit jedem neuen Rang, Titel mit Rängen und Erfolgen. Beides siehst du in der Rangliste.</small>';
         }
         document.getElementById('lookPicker').addEventListener('click', e => {
-            const f = e.target.closest('[data-frame]:not([disabled])'), t = e.target.closest('[data-title-id]:not([disabled])');
-            if (f && f.classList.contains('look-frame')) look.frame = f.dataset.frame; else if (t) look.title = t.dataset.titleId; else return;
+            const f = e.target.closest('.look-frame:not([disabled])'), t = e.target.closest('[data-title-id]:not([disabled])');
+            if (f) look.frame = f.dataset.frame; else if (t) look.title = t.dataset.titleId; else return;
             store.set('openWaterLook', JSON.stringify(look)); renderLook();
         });
         function currentRank() {
@@ -6616,8 +6616,8 @@ body.has-panel .mapctl{display:none}
             for (const av of document.querySelectorAll('#hudPlayer .avatar, #pAvatarRing .avatar')) av.innerHTML = '<img alt="" src="' + crestDataUrl(64) + '">';
         }
         applyCrestAvatars();
-        function renderProfile() {
-            renderCrestEditor();
+        function renderProfile(live) {                  // live = the per-second refresh: numbers only, the editor and pickers stay put
+            if (!live) renderCrestEditor();
             const home = islandById[playerIslandId];
             const homeLandmass = landmasses.find(lm => lm.id === home.landmassId);
             const homeLabel = homeLandmass
@@ -6626,7 +6626,7 @@ body.has-panel .mapctl{display:none}
 
             document.getElementById('profileLevelBadge').textContent = playerLvl;
             document.getElementById('profileRank').textContent = currentRank();
-            renderLook();
+            if (!live) renderLook();
             const worldPct = ownedIslands.size / islands.length * 100;
             document.getElementById('profileProgress').textContent = worldPct > 0 && worldPct < 0.1
                 ? '< 0,1 %'
@@ -7872,9 +7872,9 @@ body.has-panel .mapctl{display:none}
                 // is already open.
                 if (isPanelOpen(popup)) renderPopup();
                 if (isPanelOpen(profilePopup)) {
-                    renderProfile();
+                    renderProfile(true);
                     renderEquipGrid();
-                    if (profileTabs.rank.panel.classList.contains('active')) renderRankList();
+                    if (profileTabs.rank.panel.classList.contains('active') && Date.now() - (renderRankList.at || 0) > 5000) { renderRankList.at = Date.now(); renderRankList(); }   // not every tick: rows stay tappable
                 }
             }
             setTimeout(runProductionTick, Math.max(50, nextProductionTickAt - Date.now()));
@@ -8701,6 +8701,7 @@ body.has-panel .mapctl{display:none}
             setTimeout(() => { bossRewardPending = false; document.getElementById('rewardModal').hidden = false; }, 9800);   // after the fight on the map
         }
         document.getElementById('rewardModalBtn').addEventListener('click', () => { document.getElementById('rewardModal').hidden = true; });
+        document.getElementById('rewardModal').addEventListener('click', e => { if (e.target.id === 'rewardModal') document.getElementById('rewardModal').hidden = true; });
         function bossTick() {
             checkRuler();
             loadBoss();
@@ -10001,6 +10002,7 @@ body.has-panel .mapctl{display:none}
         let fieldMarches = (() => { try { return JSON.parse(store.get('openWaterFieldMarches')) || []; } catch (e) { return []; } })();
         let fieldSaveAt = 0;
         function saveFields(now) { if (now && now - fieldSaveAt < 5000) return; fieldSaveAt = now || Date.now(); store.set('openWaterFields', JSON.stringify(fieldState)); store.set('openWaterFieldMarches', JSON.stringify(fieldMarches)); }
+        window.addEventListener('pagehide', () => saveFields()); document.addEventListener('visibilitychange', () => { if (document.hidden) saveFields(); });
         function fieldInfo(f) { const st = fieldState[f.id] || (fieldState[f.id] = { left: f.cap, occ: null }); if (st.regenAt && Date.now() >= st.regenAt) { st.left = f.cap; st.regenAt = 0; } return st; }
         const fieldWhoName = who => who === 'player' ? 'Du' : (botById[who] || {}).name || '?';
         const fieldLoadCap = (f, troops) => troops * FIELD_KINDS[f.kind].load;
@@ -10139,6 +10141,7 @@ body.has-panel .mapctl{display:none}
         try { const s = JSON.parse(store.get('openWaterArmies')) || {}; armies = s.armies || []; armyJoins = s.joins || []; armyRaids = s.raids || []; } catch (e) {}
         let armySaveAt = 0, armyPick = null, armyPlace = false, armySheet = null, armyShare = .5, armySel = new Set(), armyBotCheckAt = 0;
         function saveArmies(now) { if (now && now - armySaveAt < 4000) return; armySaveAt = now || Date.now(); store.set('openWaterArmies', JSON.stringify({ armies, joins: armyJoins, raids: armyRaids })); }
+        window.addEventListener('pagehide', () => saveArmies()); document.addEventListener('visibilitychange', () => { if (document.hidden) saveArmies(); });
         const armyById = id => armies.find(a => a.id === id);
         function landmassAtWorld(x, y) { return landmasses.find(l => Math.hypot(x - l.x, y - l.y) <= l.shapeMaxR && pointInPolygon(x, y, l.shape)) || null; }
         function armyPos(a, now) {                                                    // where the army is right now (walking: along its path)
@@ -10568,7 +10571,8 @@ body.has-panel .mapctl{display:none}
           if (!document.getElementById('citySheet').hidden && !cityView.hidden) { document.getElementById('citySheetClose').click(); return; }
           if (closeCity()) return;
           if (closeDailyModal()) return;
-          if (!document.getElementById('rewardModal').hidden) { document.getElementById('rewardModal').hidden = true; return; }
+          if (!document.getElementById('rewardModal').hidden) { document.getElementById('rewardModalBtn').click(); return; }
+          if (!document.getElementById('titleModal').hidden) { document.getElementById('titleModal').hidden = true; return; }
           if (isPanelOpen(chestItemPopup)) return chestItemCloseBtn.click();
           if (isPanelOpen(popup)) return closeBtn.click();
           for (const [pid, closeId] of [['rulerPopup','rulerCloseBtn'],['profilePopup','profileCloseBtn'],['battleLogPopup','battleLogCloseBtn'],['mailPopup','mailCloseBtn'],['shopPopup','shopCloseBtn']])
