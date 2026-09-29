@@ -2360,6 +2360,11 @@ body.has-panel .mapctl{display:none}
             { id: 'bot59', name: 'Goldklinge', color: '#2471a3', style: 'builder' },
             { id: 'bot60', name: 'Sarah', color: '#922b21', style: 'templer' }
         ];
+        // More players on the map: 90 more, each with its own colour and way of playing
+        ['Eisenfaust', 'Luca_R', 'Nachtfalke', 'Jana97', 'Sturmbrecher', 'Marco_IT', 'Frostherz', 'Elif', 'Rabenschatten', 'Jonas_K', 'Silberpfeil', 'Nina_S', 'Donnerhall', 'Ben_2004', 'Aschekrone', 'Lea_M', 'Wolfsrudel', 'Timo_B', 'Seewind', 'Aylin', 'Blutmond', 'Felix_W', 'Steinwall', 'Sophie_R', 'Morgenrot', 'Leon_91', 'Dunkelwald', 'Clara_V', 'Kupferkrone', 'Nils_H', 'Feuersturm', 'Emilia', 'Graufalke', 'Paul_DE', 'Nebelreiter', 'Lina_K', 'Hammerfall', 'Yusuf_T', 'Schattenklinge', 'Marie_P', 'Eiswind', 'Finn_O', 'Drachenblut', 'Laura_S', 'Knochenbrecher', 'Max_1999', 'Sonnenlanze', 'Julia_W', 'Rostzahn', 'Elias_G', 'Mondschein', 'Hanna_B', 'Grenzwacht', 'Noah_R', 'Kriegsruf', 'Zoe_L', 'Bernstein', 'Luis_M', 'Sturmkrähe', 'Amelie', 'Wildherz', 'Jan_P', 'Goldfalke', 'Mila_T', 'Eisenwacht', 'Oskar_F', 'Flammenherz', 'Ida_S', 'Wolkenbruch', 'Moritz_D', 'Nordlicht', 'Ella_H', 'Klingensturm', 'Henry_K', 'Morgenstern', 'Lara_J', 'Felsenfaust', 'Anton_R', 'Tiefsee', 'Maja_B', 'Sternenwacht', 'Emil_N', 'Dornenkrone', 'Frieda', 'Brandung', 'Karl_S', 'Waldläufer', 'Lotta_M', 'Himmelsspeer', 'Theo_V'].forEach((name, i) => {
+            const n = 61 + i, h = Math.round((i * 137.508) % 360), l = 34 + (i % 3) * 8;
+            BOT_DEFS.push({ id: 'bot' + n, name, color: 'hsl(' + h + ',62%,' + l + '%)', style: ['raider', 'builder', 'templer', 'balanced', 'balanced', 'builder'][i % 6] });
+        });
         const BOT_STYLES = {
             raider:   { margin: 1.05, commit: .85, tapMs: 4000, marches: 6, hunt: 1, multi: 3, risk: .25, spend: .45, send: 1,   skills: ['attack', 'troops', 'attack', 'defense'], temple: .7, enemy: .55, act: .72 },
             builder:  { margin: 1.5,  commit: .55, tapMs: 7000, marches: 3, hunt: .2, multi: 1, risk: .05, spend: .9,  send: .8,  skills: ['troops', 'defense', 'troops', 'attack'], temple: .6, enemy: 1.2, act: .6 },
@@ -2418,6 +2423,24 @@ body.has-panel .mapctl{display:none}
                 islandTroops[tower.id] = 0;                       // every player starts from nothing and builds up
                 usedTowerIds.add(tower.id);
             });
+            // more players than start places: the rest start on a free outer base, as far as possible from everyone else
+            const late = BOT_DEFS.filter(bot => botOwnedIslands[bot.id].size === 0);
+            if (late.length) {
+                const taken = [...usedTowerIds].map(id => islandById[id]).filter(Boolean);
+                for (const bot of BOT_DEFS) { let k = 0; for (const id of botOwnedIslands[bot.id]) { if (k++ % 25 === 0) taken.push(islandById[id]); } }   // a sample of every empire is enough
+                const pool = islands.filter(i => i.type === 'tower' && !usedTowerIds.has(i.id) && !islandOwnerOf(i.id) && landmasses[i.landmassId].tier === 'outer' && landmasses[i.landmassId].ring >= 5 && i.landmassId !== home.landmassId);
+                const rnd = mulberry32(4242);
+                for (const bot of late) {
+                    let best = null, bestD = -1;
+                    for (let k = 0; k < 250 && pool.length; k++) {
+                        const c = pool[Math.floor(rnd() * pool.length)]; if (usedTowerIds.has(c.id)) continue;
+                        let dmin = Infinity; for (const t of taken) { const dd = (t.x - c.x) ** 2 + (t.y - c.y) ** 2; if (dd < dmin) dmin = dd; }
+                        if (dmin > bestD) { bestD = dmin; best = c; }
+                    }
+                    if (!best) break;
+                    botOwnedIslands[bot.id].add(best.id); islandLevels[best.id] = 1; islandTroops[best.id] = 0; usedTowerIds.add(best.id); taken.push(best);
+                }
+            }
         }
 
         // Who owns a given island right now: 'player', a bot id, or null
@@ -8088,7 +8111,7 @@ body.has-panel .mapctl{display:none}
             if (coins < cost) { flashHint('Nicht genug Münzen – benötigt ' + fmtCompact(cost) + '.', 2500); return; }
             coins -= cost;
             c.build = { id, to: lvl + 1, startedAt: Date.now(), endsAt: Date.now() + cityTimeSec(id, lvl) * 1000 };
-            saveCity(); saveGame(); updateHud();
+            saveCity(); saveGame(); updateHud(); sfx('upgrade');
             renderCitySheet(); updateCityBuilder();
         }
         function citySpeedCost() {
@@ -8361,11 +8384,10 @@ body.has-panel .mapctl{display:none}
         document.getElementById('cityCloseBtn').addEventListener('click', closeCity);
         document.getElementById('citySheetClose').addEventListener('click', () => { cityOpenId = null; document.getElementById('citySheet').hidden = true; });
         document.getElementById('cityUpgradeBtn').addEventListener('click', () => {
-            sfx('upgrade');
             if (cityOpenId === '_keep') {                  // the capital itself: same price and rule as upgrading it on the map
                 const level = islandLevels[playerIslandId] || 1; if (level >= MAX_BASE_LEVEL) return;
                 const cost = upgradeCost(level); if (coins < cost) { flashHint('Nicht genug Münzen – benötigt ' + fmtCompact(cost) + '.', 2500); return; }
-                coins -= cost; islandLevels[playerIslandId] = level + 1; updateHud(); saveGame(); questProgress('upgrade', 1);
+                coins -= cost; islandLevels[playerIslandId] = level + 1; updateHud(); saveGame(); questProgress('upgrade', 1); sfx('upgrade');
                 flashHint('Deine Burg ist jetzt Stufe ' + (level + 1) + '.', 2000); renderKeepSheet(); requestRender(); return;
             }
             if (cityOpenId) cityStartBuild(cityOpenId); });
