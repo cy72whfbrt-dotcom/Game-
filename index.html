@@ -9267,19 +9267,24 @@ body.has-panel .mapctl{display:none}
                 return;
             }
 
-            gems -= MULTI_ATTACK_GEM_COST;
             const perTarget = Math.floor(available / targets.length);
-            let remainder = available - perTarget * targets.length;
+            let remainder = available - perTarget * targets.length, ok = 0;
+            const failed = [];
             for (const targetId of targets) {
                 let troopsForThis = perTarget;
                 if (remainder > 0) { troopsForThis++; remainder--; }
-                launchAttack(sourceId, targetId, null, troopsForThis);
+                if (launchAttack(sourceId, targetId, null, troopsForThis)) ok++; else failed.push(targetId);
             }
+            if (!ok) {                                                               // nothing went out: no gem spent, the selection stays so the player can fix it
+                flashHint('Kein Angriff gestartet – ' + (failed.length === 1 ? 'das Ziel ist' : 'die Ziele sind') + ' gerade nicht erreichbar (geschlossenes Tor oder zu wenig Münzen für die Maut).', 4500);
+                return;
+            }
+            gems -= MULTI_ATTACK_GEM_COST;
             saveGame();
             saveProgression();
             updateHud();
-            flashHint(targets.length + ' Angriffe gleichzeitig gestartet.', 3000);
-            cancelMultiAttack();
+            cancelMultiAttack();                                                     // (first: it resets the hint line)
+            flashHint(failed.length ? ok + ' von ' + targets.length + ' Angriffen gestartet – ' + failed.length + ' kam' + (failed.length === 1 ? '' : 'en') + ' nicht durch (Tor oder Maut).' : ok + ' Angriffe gleichzeitig gestartet.', 4000);
         });
 
         // ===== UI boot (design-spec §4.4): constants into the markup, shop odds,
@@ -9843,6 +9848,11 @@ body.has-panel .mapctl{display:none}
                     return;
                 }
                 const idx = multiAttackTargets.indexOf(island.id);
+                if (idx === -1) {                                                    // a shut gate on the way: say so right away, not after "Angriffe starten"
+                    const hop = lastHop(source.landmassId, island.landmassId, 'player'), tl = tollFor(hop[0], hop[1], 1, 'player', island.id);
+                    if (tl.closed && tl.gate && tl.gate.id !== island.id) { const ow = islandOwnerOf(tl.gate.id);
+                        flashHint((ow ? 'Das Tor davor ist geschlossen (' + botById[ow].name + ')' : 'Das Tor davor ist verschlossen') + ' – erobere zuerst das Tor, dann kommst du durch.', 4000); return; }
+                }
                 if (idx !== -1) {
                     multiAttackTargets.splice(idx, 1); // tap again to deselect
                 } else {
