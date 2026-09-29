@@ -2758,7 +2758,7 @@ body.has-panel .mapctl{display:none}
             if (skill) out.push(['Skill Angriff', skill, 'Stufe ' + sl + ' · +' + sl * SKILL_DEFS.attack.atkPct + ' %']);
             const sig = hero === 'sigrun' || (a && a.heroes && a.heroes.includes('sigrun')), hp = a && a.heroPct ? a.heroPct : who === 'player' ? heroBonus('sigrun') : botHeroBonus(who, 'sigrun');
             if (bonus - skill) out.push([sig ? 'Heldin Sigrun' : 'Helden', bonus - skill, sig ? 'Heldenhalle · +' + hp + ' %' : '']);
-            const tv = total - raw - bonus, x = titleOf(who);
+            const tv = total - raw - bonus, x = a && a.atkTitleKey !== undefined ? TITLES.find(q => q.key === a.atkTitleKey) : titleOf(who);   // the title it marched with
             if (tv) out.push(['Titel ' + (x ? x.name : ''), tv, 'Mega-Tempel · ' + (tv > 0 ? '+' : '−') + (x ? Math.round(Math.abs(x.v) * 100) : 25) + ' %']);
             return out;
         }
@@ -3268,7 +3268,7 @@ body.has-panel .mapctl{display:none}
                 rewardGoldRate: (attackerBotId ? botGoldRate(attackerBotId, 'attackGold') : goldPerKillRate()) * (hero === 'ida' ? 1 + hb / 100 : 1) + (hero === 'ida' ? hb / 100 : 0),   // Ida: +X % on the kill gold, and X % of a coin per kill of her own
                 bernPct: hero === 'bernhard' ? hb : 0,
                 shieldLossReductionPct: Math.min(90, (attackerBotId ? botMults(attackerBotId).shield : shieldLossReductionPct()) + (hero === 'bernhard' ? hb : 0)),
-                botShield: !!attackerBotId,
+                botShield: !!attackerBotId, atkTitle: titleMult(attackerBotId || 'player', 'attack'), atkTitleKey: (titleOf(attackerBotId || 'player') || {}).key || null,
                 hero
             });
             updateHud();
@@ -3495,7 +3495,7 @@ body.has-panel .mapctl{display:none}
             const lossReductionPct = attack.shieldLossReductionPct !== undefined ? attack.shieldLossReductionPct : shieldLossReductionPct();
             const rewardRate = attack.rewardGoldRate !== undefined ? attack.rewardGoldRate : goldPerKillRate();
 
-            const myTroops = Math.round((attack.rawTroops + atkBonus) * titleMult('player', 'attack'));
+            const myTroops = Math.round((attack.rawTroops + atkBonus) * (attack.atkTitle !== undefined ? attack.atkTitle : titleMult('player', 'attack')));
             const targetOwner = islandOwnerOf(target.id); // null | 'player' | a bot id
             const originalEnemyTroops = effectiveTroops(target);
             const originalEnemyDefense = effectiveDefense(target), defParts = defenseParts(target);
@@ -3661,7 +3661,7 @@ body.has-panel .mapctl{display:none}
             const target = islandById[attack.targetId];
             if (!bot || !source || !target) return;
 
-            const myTroops = Math.round((attack.rawTroops + (attack.attackBonus || 0)) * titleMult(bot.id, 'attack'));
+            const myTroops = Math.round((attack.rawTroops + (attack.attackBonus || 0)) * (attack.atkTitle !== undefined ? attack.atkTitle : titleMult(bot.id, 'attack')));
             const targetOwner = islandOwnerOf(target.id);
             const originalEnemyTroops = effectiveTroops(target);
             const originalEnemyDefense = effectiveDefense(target);
@@ -5882,7 +5882,7 @@ body.has-panel .mapctl{display:none}
                 if (islandOwnerOf(e.target.id) && it.ready) {
                     const lvl = islandLevels[e.target.id] || 1, src0 = islandById[e.sources[0].id];
                     const secs = Math.max(0, now - it.ready) / 1000 + travelDurationSeconds(src0, e.target, bot.id);
-                    const ow = islandOwnerOf(e.target.id), perSec = ow === 'player' ? playerTroopMult() * 1000 / productionTickMs() : botMults(ow).troops * 1000 / botTickMs(ow);
+                    const ow = islandOwnerOf(e.target.id), perSec = ow === 'player' ? playerTroopMult() * 1000 / productionTickMs() : botMults(ow).troops * (rulerOwner() === ow ? RULER_BONUS : 1) * 1000 / botTickMs(ow);
                     expect += troopsPerTick(lvl) * perSec * 1.5 * secs;
                 }
                 const need = expect * margin / atk;                                                        // what they believe it takes
@@ -6241,7 +6241,7 @@ body.has-panel .mapctl{display:none}
         function fightEstimate(a) {                       // the fight as it stands right now (no side effects) - same maths as resolveAttack/resolveBotAttack
             const target = islandById[a.targetId]; if (!target) return null;
             const who = a.attackerBotId || 'player', bonus = a.attackBonus !== undefined ? a.attackBonus : attackFlatBonus(a.rawTroops);
-            const my = Math.round((a.rawTroops + (bonus || 0)) * titleMult(who, 'attack')), en = effectiveTroops(target), def = effectiveDefense(target), won = my > en + def;
+            const my = Math.round((a.rawTroops + (bonus || 0)) * (a.atkTitle !== undefined ? a.atkTitle : titleMult(who, 'attack'))), en = effectiveTroops(target), def = effectiveDefense(target), won = my > en + def;
             const red = a.attackerBotId ? (a.botShield ? a.shieldLossReductionPct : botMults(a.attackerBotId).shield) : (a.shieldLossReductionPct !== undefined ? a.shieldLossReductionPct : shieldLossReductionPct());
             return { my, en, won, myLoss: won ? sentLossFor(a.rawTroops, my, def, red) : my, enLoss: won ? en : Math.min(en, my) };
         }
@@ -10282,13 +10282,13 @@ body.has-panel .mapctl{display:none}
                     pendingAttacks.push({ sourceId: src, targetId: t.id, rawTroops: a.troops, startedAt: now - 1000, resolveAt: now, attackerBotId: null, fromArmy: true,
                         attackBonus: attackFlatBonus(a.troops) + (hr === 'sigrun' ? Math.round(a.troops * hb / 100) : 0), skillBonus: attackFlatBonus(a.troops), skillLvl: skills.attack || 0, heroPct: hr === 'sigrun' ? hb : 0,
                         attackGoldRate: (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate, rewardGoldRate: goldPerKillRate() * (hr === 'ida' ? 1 + hb / 100 : 1) + (hr === 'ida' ? hb / 100 : 0), bernPct: hr === 'bernhard' ? hb : 0,
-                        shieldLossReductionPct: Math.min(90, shieldLossReductionPct() + (hr === 'bernhard' ? hb : 0)), hero: hr });
+                        shieldLossReductionPct: Math.min(90, shieldLossReductionPct() + (hr === 'bernhard' ? hb : 0)), hero: hr, atkTitle: titleMult('player', 'attack') });
                     saveGame(); saveProgression(); }
                 else { const hr = a.hero && botHeroUnlocked(who, a.hero) ? a.hero : null, hb = heroBonusFor(who, hr), sk = Math.round(a.troops * botMults(who).attackPct / 100);
                     pendingAttacks.push({ sourceId: src, targetId: t.id, rawTroops: a.troops, startedAt: now - 1000, resolveAt: now, attackerBotId: who, fromArmy: true,
                         attackBonus: sk + (hr === 'sigrun' ? Math.round(a.troops * hb / 100) : 0), skillBonus: sk, skillLvl: loadBotState()[who].skills.attack, heroPct: hr === 'sigrun' ? hb : 0,
                         attackGoldRate: botGoldRate(who, 'attackGold'), rewardGoldRate: botGoldRate(who, 'attackGold') * (hr === 'ida' ? 1 + hb / 100 : 1) + (hr === 'ida' ? hb / 100 : 0), bernPct: hr === 'bernhard' ? hb : 0,
-                        shieldLossReductionPct: Math.min(90, botMults(who).shield + (hr === 'bernhard' ? hb : 0)), botShield: true, hero: hr }); }
+                        shieldLossReductionPct: Math.min(90, botMults(who).shield + (hr === 'bernhard' ? hb : 0)), botShield: true, hero: hr, atkTitle: titleMult(who, 'attack') }); }
                 renderActiveMarches();
             }
         }
@@ -10960,7 +10960,7 @@ body.has-panel .mapctl{display:none}
                 popupStats.innerHTML =
                     '<div class="versus">' +
                         '<div class="force force--me"><span class="stat-l">' + icon('troops') + 'Angriff</span><b id="previewMyTroops"></b><small>' +
-                            (atkPct > 0 ? '<span id="previewRawTroops"></span> + <span id="previewAtkBonus"></span> Schwert (+' + fmtNum(atkPct) + ' %)<span id="previewHeroBonus"></span>' : 'aus ' + islandTitle(source)) + '</small></div>' +
+                            (atkPct > 0 ? '<span id="previewRawTroops"></span> + <span id="previewAtkBonus"></span> Schwert (+' + fmtNum(atkPct) + ' %)<span id="previewHeroBonus"></span><span id="previewTitleBonus"></span>' : 'aus ' + islandTitle(source) + '<span id="previewHeroBonus"></span><span id="previewTitleBonus"></span>') + '</small></div>' +
                         '<div class="vs"><span>VS</span></div>' +
                         '<div class="force force--foe"><span class="stat-l">Abwehr' + icon('defense') + '</span><b data-foe="total">?</b><small data-foe="sub">nicht gespäht</small></div>' +
                     '</div>' +
@@ -11062,6 +11062,8 @@ body.has-panel .mapctl{display:none}
             const mine = Math.round((shown + atkBonus) * titleMult('player', 'attack'));        // same maths as resolveAttack
             const bEl = popupStats.querySelector('#previewAtkBonus'); if (bEl) bEl.textContent = fmtNum(swordBonus);
             const hbEl = popupStats.querySelector('#previewHeroBonus'); if (hbEl) hbEl.textContent = sigrunBonus ? ' + ' + fmtNum(sigrunBonus) + ' Sigrun' : '';
+            const tv = mine - Math.round(shown + atkBonus), tx = titleOf('player'), tbEl = popupStats.querySelector('#previewTitleBonus');
+            if (tbEl) tbEl.textContent = tv && tx ? (tv > 0 ? ' + ' : ' − ') + fmtNum(Math.abs(tv)) + ' Titel ' + tx.name : '';
             const src = islandById[previewSourceId], tEl = popupSub.querySelector('#previewToll'), mEl = popupSub.querySelector('#previewMarch');
             if (mEl && src) mEl.textContent = fmtClock(travelDurationSeconds(src, island) / (previewHero === 'ida' ? 1 + heroBonus('ida') / 100 : 1));   // Ida marches faster
             if (tEl && src) { const hop = lastHop(src.landmassId, island.landmassId, 'player'), t = tollFor(hop[0], hop[1], shown, 'player', island.id);
