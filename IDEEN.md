@@ -29,6 +29,9 @@ Liste der Ideen, die für später vorgemerkt sind.
 - ~~Sammelangriff~~ (11) – nein.
 - **Barbaren-Lager zum Farmen** (13) – ja.
 - **Rangliste nach Macht, Eroberungen, Titeln** (18) – ja, Rangliste auf jeden Fall überarbeiten.
+- **Barbaren-Lager** zählt zu den Events (Karte).
+- **Wochenend-Turnier um die Mitte:** Sa+So Turnierpunkte (Thron halten pro Minute, Wächter-Tempel, besiegte Truppen in der Mitte/an den Toren), eigene Live-Rangliste Top 10 mit Countdown, Preise nach Platz (1: Gems+Splitter+Turnier-Titel mit Ring für 1 Woche; 2–3; 4–10; Trostpreis). Kein SvS. Mitspieler kommen am Wochenende öfter.
+- **Basis-Skins:** im Aussehen-Bereich (Reiter Basis-Skin), zu kaufen mit Gems/Thron-Punkten; passen zur Baukunst.
 - **Ereignisse doch ja:** Wochenend-Turnier um die Mitte, Kopfgeld auf den Herrscher, Saison-Pass, tägliche Bosse; dazu **mehr Erfolge** (nur Gems).
 - **Schönerer Ladebildschirm** (24) – auf jeden Fall: Meer mit Burg, echte Tageszeit, Tipps mit Bildern (**ohne** Name und Wappen).
 - **Marsch-Skins und Banner** (26), **richtige Heldenbilder** (28), **Balance der hohen Stufen** (29) – ja.
