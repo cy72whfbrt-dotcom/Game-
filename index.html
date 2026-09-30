@@ -674,7 +674,11 @@ body.has-panel .mapctl{display:none}
 .avatar img{width:78%;height:78%;object-fit:contain}
 .forge-tabs{display:flex;flex-wrap:wrap;margin:8px 0} .forge-tabs button{display:inline-flex;align-items:center;gap:4px} .forge-tabs .icon{width:14px;height:14px} .forge-on{font-style:normal;font-size:var(--fs-12);color:var(--gold-300)}
 .keep-h{margin:12px 0 6px;font:700 var(--fs-12)/1 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--tx-2)} .keep-shields{display:grid;grid-template-columns:repeat(3,1fr);gap:6px} .keep-shields .btn{justify-content:center;gap:4px}
-.keep-note{display:block;margin-top:6px;color:var(--tx-2)} .ring-legend{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:var(--fs-12);color:var(--tx-2)} .ring-legend i{display:inline-block;width:12px;height:12px;border-radius:50%;border:3px solid var(--c);margin-right:5px;vertical-align:-2px} .ring-legend i.blood{box-shadow:0 0 0 2px #ffd05a} .skin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.keep-note{display:block;margin-top:6px;color:var(--tx-2)} .ring-legend{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:var(--fs-12);color:var(--tx-2)} .ring-legend i{display:inline-block;width:12px;height:12px;border-radius:50%;border:3px solid var(--c);margin-right:5px;vertical-align:-2px} .ring-legend i.blood{box-shadow:0 0 0 2px #ffd05a} .ring-legend{margin-top:8px} .ring-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:6px;margin-top:6px}
+.ring-card{display:grid;justify-items:center;gap:3px;padding:8px 4px;border:1px solid var(--line-2);border-radius:8px;background:rgba(255,255,255,.03);color:var(--tx-1);cursor:pointer;font-size:var(--fs-12)} .ring-card.on{border-color:var(--gold-300);box-shadow:0 0 0 1px var(--gold-300)}
+.ring-card small{display:inline-flex;align-items:center;gap:3px;color:var(--tx-2)} .ring-card .icon{width:12px;height:12px}
+.ring-prev{width:30px;height:30px;border-radius:50%;border:4px solid var(--c);box-shadow:0 0 0 2px rgba(10,8,4,.55),0 0 0 4px var(--c2)} .ring-prev.is-none{border:2px dashed var(--line-3);box-shadow:none}
+.skin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
 .skin-card{display:grid;justify-items:center;gap:2px;padding:6px 4px 8px;border:1px solid var(--line-2);border-radius:8px;background:rgba(255,255,255,.03);color:var(--tx-1);cursor:pointer} .skin-card.on{border-color:var(--gold-300);box-shadow:0 0 0 1px var(--gold-300)}
 .skin-card canvas{width:60px;height:66px} .skin-card small{display:inline-flex;align-items:center;gap:3px;color:var(--tx-2)} .skin-card .icon{width:12px;height:12px}
 .logWounded,.logRetreat.logWounded{color:#f2c94c;font-weight:600}
@@ -1606,6 +1610,14 @@ body.has-panel .mapctl{display:none}
           <button type="button" class="btn btn--secondary" data-shield="8"><span>8 Std.</span><span class="cost cost--gem"><svg class="icon"><use href="#i-gem"/></svg><b>120</b></span></button>
           <button type="button" class="btn btn--secondary" data-shield="24"><span>24 Std.</span><span class="cost cost--gem"><svg class="icon"><use href="#i-gem"/></svg><b>300</b></span></button>
         </div>
+      </div>
+    </article>
+    <article class="offer">
+      <div class="offer-art"><svg class="icon"><use href="#i-star"/></svg></div>
+      <div class="offer-text">
+        <h4>Ring-Skins</h4>
+        <p>Ein Ring um alle deine Basen. Anlegen in der Stadt über deine Burg. Ein Titel aus der Mitte geht vor.</p>
+        <div id="shopRings"></div>
       </div>
     </article>
     </div>
@@ -4447,29 +4459,7 @@ body.has-panel .mapctl{display:none}
           for (const x of TITLES) { const who = t.by[x.key]; if (!who) continue; const cap = who === 'player' ? playerIslandId : botCapitalOf(who); if (cap !== null && cap !== undefined) out.set(cap, x); }
           return out;
         }
-        // ---- base effects: the stronger the base, the louder the show ----
-        //  25+  soft glow in the owner's colour · 50+ golden rune circle turning on the ground
-        //  80+  rune circle + pillar of light + orbiting sparks · titles: halo, god rays (buff) or cursed purple fire (penalty)
-        function fxRuneCircle(x, y, R, now, col, n) {
-          ctx.save(); ctx.translate(x, y); ctx.scale(1, .38);
-          const gr = ctx.createRadialGradient(0, 0, R * .2, 0, 0, R * 1.15); gr.addColorStop(0, col.replace('A', '.28')); gr.addColorStop(.7, col.replace('A', '.12')); gr.addColorStop(1, col.replace('A', '0'));
-          ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(0, 0, R * 1.15, 0, Math.PI * 2); ctx.fill();
-          ctx.rotate(now / 2600);
-          ctx.strokeStyle = col.replace('A', '.9'); ctx.lineWidth = 2.2; ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.stroke();
-          ctx.lineWidth = 1.2; ctx.setLineDash([R * .12, R * .08]); ctx.beginPath(); ctx.arc(0, 0, R * .82, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
-          for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2, rx = Math.cos(a) * R * .91, ry = Math.sin(a) * R * .91;
-            ctx.save(); ctx.translate(rx, ry); ctx.rotate(a); ctx.fillStyle = col.replace('A', '1'); ctx.beginPath(); ctx.moveTo(0, -R * .06); ctx.lineTo(R * .05, 0); ctx.lineTo(0, R * .06); ctx.lineTo(-R * .05, 0); ctx.closePath(); ctx.fill(); ctx.restore(); }
-          ctx.rotate(-now / 1300); ctx.strokeStyle = col.replace('A', '.5'); ctx.lineWidth = 1;
-          ctx.beginPath(); for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; ctx.moveTo(Math.cos(a) * R * .82, Math.sin(a) * R * .82); ctx.lineTo(Math.cos(a + Math.PI * 2 / 3) * R * .82, Math.sin(a + Math.PI * 2 / 3) * R * .82); } ctx.stroke();
-          ctx.restore();
-        }
-        function fxPillar(x, y, w, h, now, col) {
-          const pulse = .75 + .25 * Math.sin(now / 350);
-          const gr = ctx.createLinearGradient(0, y - h, 0, y); gr.addColorStop(0, col.replace('A', '0')); gr.addColorStop(.6, col.replace('A', (.35 * pulse).toFixed(2))); gr.addColorStop(1, col.replace('A', (.7 * pulse).toFixed(2)));
-          ctx.fillStyle = gr; ctx.beginPath(); ctx.moveTo(x - w * .5, y); ctx.lineTo(x - w * .25, y - h); ctx.lineTo(x + w * .25, y - h); ctx.lineTo(x + w * .5, y); ctx.closePath(); ctx.fill();
-          const core = ctx.createLinearGradient(0, y - h, 0, y); core.addColorStop(0, 'rgba(255,255,255,0)'); core.addColorStop(1, 'rgba(255,255,255,' + (.55 * pulse).toFixed(2) + ')');
-          ctx.fillStyle = core; ctx.fillRect(x - w * .08, y - h, w * .16, h);
-        }
+        // ---- base effects: nothing by level any more - only titles from the middle: halo, god rays (buff) or cursed purple fire (penalty) ----
         function fxCurseFlames(x, y, R, now) {
           for (let i = 0; i < 9; i++) {
             const a = i / 9 * Math.PI * 2 + now / 3000, fx = x + Math.cos(a) * R, fy = y + Math.sin(a) * R * .38, fl = .7 + .3 * Math.sin(now / 90 + i * 1.9), h = R * .75 * fl;
@@ -4561,11 +4551,10 @@ body.has-panel .mapctl{display:none}
         function drawBaseAuras(vis, z, now) {             // under the towers
           if (z < 0.006) return;
           setScreen(ctx); ctx.save(); ctx.globalCompositeOperation = 'lighter';
-          const titled = titledCapitals(), rankOf = ringStatusByOwner();
+          const titled = titledCapitals(); if (!titled.size) { ctx.restore(); return; }
           for (const isl of vis) {
-            if (isl.type !== 'tower' || !islandOwnerOf(isl.id)) continue;
-            const lvl = islandLevels[isl.id] || 1, x = toSX(isl.x), y = toSY(isl.y), r = Math.max(20, isl.radius * z * 1.25), t = titled.get(isl.id), mine = ownedIslands.has(isl.id);
-            const rk = rankOf.get(islandOwnerOf(isl.id)) || 0, fx = rk === 4 ? 'rgba(255,90,60,A)' : rk === 3 ? 'rgba(255,214,110,A)' : 'rgba(220,230,245,A)';   // gold only with a title
+            const t = titled.get(isl.id); if (!t || isl.type !== 'tower') continue;
+            const x = toSX(isl.x), y = toSY(isl.y), r = Math.max(20, isl.radius * z * 1.25);
             if (x < -r * 5 || x > viewW + r * 5 || y < -r * 5 || y > viewH + r * 5) continue;
             if (t && t.good) {                             // god rays behind the base
               ctx.save(); ctx.translate(x, y - r * .6); ctx.rotate(now / 3500);
@@ -4578,23 +4567,16 @@ body.has-panel .mapctl{display:none}
               ctx.strokeStyle = 'rgba(170,80,255,.7)'; ctx.lineWidth = 2; for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(0, 0, r * (1 + i * .45), i, i + 4); ctx.stroke(); }
               ctx.restore(); liveAnimation = true;
             }
-            if (lvl >= 80) { fxRuneCircle(x, y + r * .35, r * 2.1, now, fx, 12); liveAnimation = true; }
-            else if (lvl >= 50) { fxRuneCircle(x, y + r * .35, r * 1.8, now, fx, 8); liveAnimation = true; }
-            else if (lvl >= 25) { const gr = ctx.createRadialGradient(x, y + r * .3, r * .2, x, y + r * .3, r * 1.7), c = mine ? '120,180,255' : '255,130,110';
-              gr.addColorStop(0, 'rgba(' + c + ',.55)'); gr.addColorStop(1, 'rgba(' + c + ',0)'); ctx.fillStyle = gr; ctx.beginPath(); ctx.ellipse(x, y + r * .3, r * 1.7, r * .7, 0, 0, Math.PI * 2); ctx.fill();
-              const ph = (now / 1600) % 1; ctx.strokeStyle = 'rgba(' + c + ',' + (.8 * (1 - ph)).toFixed(2) + ')'; ctx.lineWidth = 2;   // a pulse ring rolling outwards
-              ctx.beginPath(); ctx.ellipse(x, y + r * .3, r * (.8 + ph * 1.1), r * (.32 + ph * .45), 0, 0, Math.PI * 2); ctx.stroke(); liveAnimation = true; }
           }
           ctx.restore();
         }
         function drawBaseSparks(vis, z, now) {            // over the towers
           if (z < 0.006) return;
           setScreen(ctx); const shOwn = shieldedOwners(Date.now());
-          const titled = titledCapitals(), rankOf = ringStatusByOwner();
+          const titled = titledCapitals();
           for (const isl of vis) {
             if (!islandOwnerOf(isl.id)) continue;
-            const lvl = islandLevels[isl.id] || 1, t = titled.get(isl.id), x = toSX(isl.x), y = toSY(isl.y), r = Math.max(20, isl.radius * z * 1.25);
-            const rk = rankOf.get(islandOwnerOf(isl.id)) || 0, spark = rk === 4 ? '255,120,80' : rk === 3 ? '255,226,140' : '225,235,250';   // gold only with a title
+            const t = titled.get(isl.id), x = toSX(isl.x), y = toSY(isl.y), r = Math.max(20, isl.radius * z * 1.25);
             if (x < -r * 5 || x > viewW + r * 5 || y < -r * 6 || y > viewH + r * 5) continue;
             const shOw = islandOwnerOf(isl.id);
             if (shOwn.has(shOw) && shieldCovers(isl)) { const r = isl.radius * z;                                               // Friedensschild: a pale dome over every base of its owner
@@ -4608,27 +4590,20 @@ body.has-panel .mapctl{display:none}
               if (shOw !== 'player' && botById[shOw]) ring(x, y - R * .2, R + 3, 1.5, botById[shOw].color);   // whose shield it is
               liveAnimation = true;
             }
-            if (isl.type !== 'tower') continue;                                                             // level and title effects: towers only
-            if (lvl >= 80) {                               // pillar of light + sparks orbiting and rising
-              fxPillar(x, y + r * .3, r * 1.6, r * 7, now, 'rgba(' + spark + ',A)');
-              for (let i = 0; i < 10; i++) { const a = now / 700 + i / 10 * Math.PI * 2, ox = Math.cos(a) * r * 1.5, oy = Math.sin(a) * r * .55 - r * .5 - Math.sin(now / 500 + i) * r * .3;
-                ctx.fillStyle = 'rgba(' + spark + ',' + (.6 + .4 * Math.sin(a)) + ')'; ctx.beginPath(); ctx.arc(x + ox, y + oy, 1.6 + Math.max(0, Math.sin(a)) * 1.4, 0, Math.PI * 2); ctx.fill(); }
-            }
-            if (lvl >= 50 || (t && t.good)) {
-              for (let i = 0; i < (lvl >= 80 ? 14 : 8); i++) { const ph = ((now / 1700) + i / 14) % 1, a = i * 2.4;
-                ctx.fillStyle = 'rgba(' + spark + ',' + (0.95 * (1 - ph)) + ')'; ctx.beginPath(); ctx.arc(x + Math.cos(a) * r * 1.1 + Math.sin(now / 300 + i) * 2, y - r * .2 - ph * r * 3.2, 1.2 + (1 - ph) * 1.6, 0, Math.PI * 2); ctx.fill(); }
-            }
-            if (t && t.good) {                             // a golden halo floating over the base
+            if (isl.type !== 'tower' || !t) continue;                                                       // title effects: towers only (nothing by level)
+            if (t.good) for (let i = 0; i < 8; i++) { const ph = ((now / 1700) + i / 14) % 1, a = i * 2.4;   // golden sparks rising
+                ctx.fillStyle = 'rgba(255,226,140,' + (0.95 * (1 - ph)) + ')'; ctx.beginPath(); ctx.arc(x + Math.cos(a) * r * 1.1 + Math.sin(now / 300 + i) * 2, y - r * .2 - ph * r * 3.2, 1.2 + (1 - ph) * 1.6, 0, Math.PI * 2); ctx.fill(); }
+            if (t.good) {                                  // a golden halo floating over the base
               const hy = y - r * 2.9 + Math.sin(now / 500) * 2;
               ctx.save(); ctx.translate(x, hy); ctx.scale(1, .32);
               ctx.strokeStyle = 'rgba(255,230,150,.95)'; ctx.lineWidth = 3.2; ctx.beginPath(); ctx.arc(0, 0, r * .9, 0, Math.PI * 2); ctx.stroke();
               ctx.strokeStyle = 'rgba(255,255,230,.8)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(0, 0, r * .9, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
-            } else if (t) {                                 // cursed purple fire and smoke
+            } else {                                        // cursed purple fire and smoke
               fxCurseFlames(x, y + r * .3, r * 1.35, now);
               for (let i = 0; i < 6; i++) { const ph = ((now / 2400) + i / 6) % 1;
                 ctx.fillStyle = 'rgba(60,20,70,' + (0.5 * (1 - ph)) + ')'; ctx.beginPath(); ctx.arc(x + Math.sin(i * 1.7 + now / 800) * r * .5, y - r * 1.2 - ph * r * 3, r * (.3 + ph * .5), 0, Math.PI * 2); ctx.fill(); }
             }
-            if (lvl >= 50 || t) liveAnimation = true;
+            liveAnimation = true;
           }
         }
         function drawTitleBadges(z, now) {                // the title's name over the titled capital
@@ -4650,17 +4625,6 @@ body.has-panel .mapctl{display:none}
           ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI * 2); ctx.lineWidth = w; ctx.strokeStyle = color;
           ctx.setLineDash(dash || []); ctx.lineDashOffset = offset || 0; ctx.stroke(); ctx.setLineDash([]);
         }
-        const RANK_RING = [null, ['rgba(214,150,96,.85)', 'rgba(214,150,96,.35)', 'rgba(214,150,96,A)'],       // bronze
-                           ['rgba(222,230,240,.9)', 'rgba(222,230,240,.4)', 'rgba(222,230,240,A)'],                          // silver
-                           ['rgba(255,208,90,.95)', 'rgba(255,208,90,.5)', 'rgba(255,220,120,A)'],                           // gold
-                           ['rgba(235,60,50,.95)', 'rgba(255,208,90,.7)', 'rgba(255,90,60,A)']];                             // blood red and gold
-        // Rank ring: the SHAPE comes with the base level (10/25/50/80: notches, pulse, spin), the COLOUR with the rank:
-        // bronze from 10, silver from 25 - gold only with a good title from the throne, blood-red and gold only for the ruler.
-        function ringOf(isl, st) {
-          const shape = towerTier(baseLevelOf(isl)), o = islandOwnerOf(isl.id), k = o ? st.get(o) || 0 : 0;
-          if (k && (shape > 0 || isCapital(isl.id))) return { shape: Math.max(2, shape), skin: k };
-          return { shape, skin: Math.min(shape, 2) };
-        }
         function drawRings(visible, z, now) {
           setScreen(ctx); const rankOf = ringStatusByOwner();
           const pulse = .5 + .5 * Math.sin(now / 280);
@@ -4675,18 +4639,18 @@ body.has-panel .mapctl{display:none}
                 ctx.moveTo(x + Math.cos(a) * r * 1.44, y + Math.sin(a) * r * 1.44); ctx.lineTo(x + Math.cos(a) * r * 1.52, y + Math.sin(a) * r * 1.52); }
                 ctx.lineWidth = 1.2; ctx.strokeStyle = 'rgba(228,200,134,.7)'; ctx.stroke(); }
             }
-            if (isl.type === 'tower' && z >= 0.006) {                                  // rank ring (see ringOf)
-              const { shape: tier, skin } = ringOf(isl, rankOf);
-              if (tier > 0) {
-                const col = RANK_RING[skin], R1 = Math.max(r * 1.35, 17 + tier * 2), R2 = R1 + Math.max(r * .28, 5), W = 2 + tier * .6;
-                ring(x, y, R1, W + 2.5, 'rgba(10,8,4,.55)'); ring(x, y, R1, W, col[0]);          // dark underlay so the ring reads on grass and territory
-                ring(x, y, R2, 3, 'rgba(10,8,4,.35)'); ring(x, y, R2, 1.4, col[1]);
-                if (tier >= 2) { const n = tier >= 3 ? 24 : 16, spin = tier >= 4 ? now / 4000 : 0;   // notches like the mega temple
-                  ctx.beginPath(); for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2 + spin;
+            if (isl.type === 'tower' && z >= 0.006) {                                  // ring round every base: a title from the middle or a bought Ring-Skin (see ringStatusByOwner)
+              const o = islandOwnerOf(isl.id), st = o ? rankOf.get(o) : null;
+              if (st) {
+                const R1 = Math.max(r * 1.35, 21), R2 = R1 + Math.max(r * .28, 5), W = 3.4;
+                ring(x, y, R1, W + 2.5, 'rgba(10,8,4,.55)'); ring(x, y, R1, W, st.c0);          // dark underlay so the ring reads on grass and territory
+                ring(x, y, R2, 3, 'rgba(10,8,4,.35)'); ring(x, y, R2, 1.4, st.c1);
+                if (st.n) { const spin = st.spin ? now / 4000 : 0;                             // notches like the mega temple
+                  ctx.beginPath(); for (let i = 0; i < st.n; i++) { const a = i / st.n * Math.PI * 2 + spin;
                     ctx.moveTo(x + Math.cos(a) * R1 * 1.07, y + Math.sin(a) * R1 * 1.07); ctx.lineTo(x + Math.cos(a) * R2 * .97, y + Math.sin(a) * R2 * .97); }
-                  ctx.lineWidth = 2; ctx.strokeStyle = col[0]; ctx.stroke(); }
-                if (tier >= 3) { const p2 = (now / 1800) % 1; ring(x, y, R2 + p2 * Math.max(r * .6, 12), 2, col[2].replace('A', (.8 * (1 - p2)).toFixed(2))); liveAnimation = true; }
-                if (tier >= 4) { ring(x, y, R2 + 5, 2, skin === 4 ? 'rgba(255,214,110,.9)' : col[0], [8, 5], -now / 40); }
+                  ctx.lineWidth = 2; ctx.strokeStyle = st.c0; ctx.stroke(); if (st.spin) liveAnimation = true; }
+                if (st.pulse) { const p2 = (now / 1800) % 1; ctx.globalAlpha = .8 * (1 - p2); ring(x, y, R2 + p2 * Math.max(r * .6, 12), 2, st.c0); ctx.globalAlpha = 1; liveAnimation = true; }
+                if (st.dash) { ring(x, y, R2 + 5, 2, st.dash, [8, 5], -now / 40); liveAnimation = true; }
               }
             }
             if (isl.id === playerIslandId && z >= 0.006) {                            // the capital: blue-gold double ring
@@ -5495,15 +5459,21 @@ body.has-panel .mapctl{display:none}
             return titleState;
         }
         function saveTitles() { titleVer++; store.set('openWaterTitles', JSON.stringify(titleState)); requestRender(); }
-        // The ring colour is a rank, not a level: gold only while someone wears a good title from the throne,
-        // blood-red and gold only for the ruler of the throne himself. owner → 3 gold | 4 blood-red+gold
+        // The ring round someone's bases - nothing by level any more: a title from the middle while it holds (good = gold, penalty = red,
+        // the ruler himself blood-red and gold), otherwise a bought Ring-Skin. The title ring wins. owner → ring style { k, name, c0, c1, n, spin, pulse, dash }
+        const RING_TITLE = { ruler: { k: 'ruler', c0: 'rgba(235,60,50,.95)', c1: 'rgba(255,208,90,.7)', n: 24, spin: 1, pulse: 1, dash: 'rgba(255,214,110,.9)' },
+                             good:  { k: 'good',  c0: 'rgba(255,208,90,.95)', c1: 'rgba(255,208,90,.5)', n: 24, pulse: 1 },
+                             bad:   { k: 'bad',   c0: 'rgba(225,48,48,.95)', c1: 'rgba(150,20,30,.6)', n: 16, pulse: 1 } };
+        var ringVer = 0;                                  // bumped whenever anyone buys or puts on a Ring-Skin
         function ringStatusByOwner() {
             const t = loadTitles(), ruler = rulerOwner() || null;          // (loadTitles first: a new ruler wipes the titles)
-            if (ringMemo && ringMemo.ver === titleVer && ringMemo.ruler === ruler) return ringMemo.map;
-            const map = new Map();
-            for (const x of TITLES) if (x.good && t.by[x.key]) map.set(t.by[x.key], 3);
-            if (ruler) map.set(ruler, 4);
-            ringMemo = { ver: titleVer, ruler, map }; return map;
+            if (ringMemo && ringMemo.ver === titleVer && ringMemo.rv === ringVer && ringMemo.ruler === ruler) return ringMemo.map;
+            const map = new Map(), bs = loadBotState();
+            const ps = ringSkinOf('player'); if (ps) map.set('player', ps);
+            for (const id in bs) { const sk = ringSkinOf(id); if (sk) map.set(id, sk); }
+            for (const x of TITLES) if (t.by[x.key]) map.set(t.by[x.key], x.good ? RING_TITLE.good : RING_TITLE.bad);
+            if (ruler) map.set(ruler, RING_TITLE.ruler);
+            ringMemo = { ver: titleVer, rv: ringVer, ruler, map }; return map;
         }
         function titleMult(who, kind) {
             const t = loadTitles(); let m = 1;
@@ -5765,6 +5735,44 @@ body.has-panel .mapctl{display:none}
             { id: 'king', name: 'Herrscher der Meere', ach: 'throne' }, { id: 'keeper', name: 'Thronhüter', buy: 'throne' }
         ];
         let look = (() => { try { return JSON.parse(store.get('openWaterLook')) || {}; } catch (e) { return {}; } })();
+        // Ring-Skins: a ring round all your bases, only to buy - with Gems (Händler) or Thron-Punkte (Thron-Shop). A title from the middle goes over it.
+        const RING_SKINS = [
+            { id: 'bronze', name: 'Bronze', gems: 300, c0: '#d6965f', c1: 'rgba(214,150,96,.45)' },
+            { id: 'silver', name: 'Silber', gems: 600, c0: '#dee6f0', c1: 'rgba(222,230,240,.45)' },
+            { id: 'jade', name: 'Jade', gems: 1000, c0: '#4fd39a', c1: 'rgba(150,240,200,.5)', n: 12 },
+            { id: 'midnight', name: 'Mitternacht', gems: 1500, c0: '#7d86ff', c1: 'rgba(200,180,255,.55)', n: 16 },
+            { id: 'star', name: 'Sternenlicht', tp: 2500, c0: '#eaf4ff', c1: 'rgba(130,185,255,.7)', n: 20, spin: 1 },
+            { id: 'ember', name: 'Glut', tp: 4000, c0: '#ff8a3a', c1: 'rgba(255,200,90,.6)', n: 20, pulse: 1 }
+        ];
+        for (const r of RING_SKINS) r.k = 'skin';
+        const ringSkinDef = id => RING_SKINS.find(r => r.id === id) || null;
+        function ringSkinsOf(who) { if (who === 'player') return look.rings || []; const b = loadBotState()[who]; return (b && b.rings) || []; }
+        function ringSkinOf(who) { const id = who === 'player' ? look.ring : (loadBotState()[who] || {}).ring; return id && ringSkinsOf(who).includes(id) ? ringSkinDef(id) : null; }
+        function ringGive(who, id) {                     // someone gets a Ring-Skin and puts it on
+            if (who === 'player') { look.rings = [...new Set([...(look.rings || []), id])]; look.ring = id; store.set('openWaterLook', JSON.stringify(look)); }
+            else { const b = loadBotState()[who]; if (!b) return; b.rings = [...new Set([...(b.rings || []), id])]; b.ring = id; saveBotState(); }
+            ringVer++; requestRender();
+        }
+        if (!look.ringMig) { let L = 0; for (const id of ownedIslands) L = Math.max(L, islandLevels[id] || 1);   // rings no longer come with the level: what you wore stays yours as a skin
+            look.rings = [...new Set([...(look.rings || []), ...(L >= 10 ? ['bronze'] : []), ...(L >= 25 ? ['silver'] : [])])]; look.ringMig = 1; store.set('openWaterLook', JSON.stringify(look)); }
+        function ringCardsHtml(list, pick) {             // pick: the keep sheet (choose / buy), else the shop (buy only)
+            const own = ringSkinsOf('player'), cur = ringSkinOf('player');
+            return '<div class="ring-grid">' + (pick ? '<button type="button" class="ring-card' + (cur ? '' : ' on') + '" data-ring=""><i class="ring-prev is-none"></i><b>Kein Ring</b><small>' + (cur ? 'Wählen' : 'Aktiv') + '</small></button>' : '') +
+                list.map(r => { const has = own.includes(r.id), on = cur && cur.id === r.id;
+                    return '<button type="button" class="ring-card' + (on ? ' on' : '') + '" data-ring="' + r.id + '"><i class="ring-prev" style="--c:' + r.c0 + ';--c2:' + r.c1 + '"></i><b>' + r.name + '</b><small>' +
+                        (on ? 'Aktiv' : has ? (pick ? 'Wählen' : 'Gehört dir') : r.gems ? icon('gem') + fmtNum(r.gems) : icon('crown') + fmtNum(r.tp)) + '</small></button>'; }).join('') + '</div>';
+        }
+        document.addEventListener('click', e => {
+            const b = e.target.closest('[data-ring]'); if (!b) return;
+            const id = b.dataset.ring, r = ringSkinDef(id), inShop = !!b.closest('#shopPopup');
+            if (!id) { look.ring = ''; store.set('openWaterLook', JSON.stringify(look)); ringVer++; requestRender(); }
+            else if (ringSkinsOf('player').includes(id)) { if (inShop) return; look.ring = id; store.set('openWaterLook', JSON.stringify(look)); ringVer++; requestRender(); flashHint('Ring „' + r.name + '“ angelegt' + (titleOf('player') || rulerOwner() === 'player' ? ' – solange du einen Titel trägst, siehst du den Titel-Ring.' : '.'), 3000); }
+            else if (r.tp) { throneBuy('ring_' + id); if (!ringSkinsOf('player').includes(id)) return; }
+            else { if (gems < r.gems) { flashHint('Zu wenig Gems – Ring „' + r.name + '“ kostet ' + fmtNum(r.gems) + '.', 2500); return; }
+                gems -= r.gems; ringGive('player', id); updateHud(); saveGame(); sfx('coin'); flashHint('Ring „' + r.name + '“ gekauft und angelegt.', 2500); }
+            if (isPanelOpen(shopPopup)) renderShop();
+            if (cityOpenId === '_keep') renderKeepSheet();
+        });
         function rankIndexFor(bases) { let r = 0; RANK_TIERS.forEach((t, i) => { if (bases >= t.min) r = i; }); return r; }
         function bestRank() { const r = rankIndexFor(ownedIslands.size); if (!(look.best >= r)) { look.best = r; store.set('openWaterLook', JSON.stringify(look)); } return look.best; }
         const lookUnlocked = x => x.buy ? !!(look.bought && look.bought[x.buy]) : x.ach ? !!(typeof achClaimed !== 'undefined' && (achClaimed[x.ach] || ACHIEVEMENTS.find(a => a.id === x.ach && a.val() >= a.goal))) : (x.rank || 0) <= bestRank();
@@ -7023,8 +7031,10 @@ body.has-panel .mapctl{display:none}
             { id: 'gems',   name: '100 Gems',            icon: 'gem',    cost: 150 },
             { id: 'crate',  name: 'Ausrüstungskiste',    icon: 'shop',   cost: 60 },
             { id: 'royal',  name: 'Königliche Kiste',    icon: 'shop',   cost: 400 },
-            { id: 'look',   name: 'Titel „Thronhüter“ + Thron-Rahmen', icon: 'crown', cost: 3000, once: true }
+            { id: 'look',   name: 'Titel „Thronhüter“ + Thron-Rahmen', icon: 'crown', cost: 3000, once: true },
+            ...RING_SKINS.filter(r => r.tp).map(r => ({ id: 'ring_' + r.id, name: 'Ring „' + r.name + '“', icon: 'crown', cost: r.tp, once: true, ring: r.id }))
         ];
+        const throneOwned = (who, o) => o.ring ? ringSkinsOf(who).includes(o.ring) : who === 'player' ? !!(look.bought && look.bought.throne) : !!(loadBotState()[who] || {}).throneLook;
         function weekKeyOf(t) { const d = new Date(t); d.setDate(d.getDate() - (d.getDay() + 6) % 7); return todayKey(d); }
         var throneState = (() => { try { return JSON.parse(store.get('openWaterThrone')) || null; } catch (e) { return null; } })() || { pts: 0 };
         (() => { const now = Date.now(), ts = throneState;               // no points or volleys pile up while the game was closed
@@ -7054,11 +7064,12 @@ body.has-panel .mapctl{display:none}
                 const it = addInventoryItem(slot, r, 1); sfx('crate'); return RARITY_DEFS[r].label + ' ' + EQUIPMENT_DEFS[slot].name + ' im Inventar'; }
             if (id === 'look') { if (b) b.throneLook = true; else { look.bought = Object.assign({}, look.bought, { throne: true }); look.title = 'keeper'; look.frame = 'throne'; store.set('openWaterLook', JSON.stringify(look)); renderLook(); }
                 return 'Titel „Thronhüter“ und Thron-Rahmen – schon angelegt'; }
+            if (id.startsWith('ring_')) { const r = ringSkinDef(id.slice(5)); if (!r) return ''; ringGive(who, r.id); return 'Ring „' + r.name + '“ – schon angelegt'; }
             return '';
         }
         function throneBuy(id) {
             const o = THRONE_OFFERS.find(x => x.id === id); if (!o) return;
-            if (o.once && look.bought && look.bought.throne) return;
+            if (o.once && throneOwned('player', o)) return;
             if ((throneState.pts || 0) < o.cost) { flashHint('Zu wenig Thron-Punkte – das kostet ' + fmtNum(o.cost) + '.', 3000); return; }
             throneState.pts -= o.cost; const what = throneGive('player', id); saveThrone(); updateHud(); saveGame(); saveProgression();
             flashHint('Gekauft: ' + what + '.', 3500); sfx('coin'); renderShop();
@@ -7138,7 +7149,7 @@ body.has-panel .mapctl{display:none}
         }
         function renderThroneShop() {
             const el = document.getElementById('throneShop'); if (!el) return;
-            const ts = throneState, hd = rulerOwner(), sh = throneShooters(), inc = throneIncome('player'), owned = look.bought && look.bought.throne;
+            const ts = throneState, hd = rulerOwner(), sh = throneShooters(), inc = throneIncome('player');
             const hdName = hd === 'player' ? '<span class="me">Du</span>' : hd ? whoLink(hd, botById[hd].name) : 'niemand';
             const week = Object.entries(ts.week || {}).sort((a, b) => b[1] - a[1]).slice(0, 5);
             el.innerHTML = '<div class="throne-status">' +
@@ -7149,9 +7160,9 @@ body.has-panel .mapctl{display:none}
                 '</div>' +
                 '<p class="mail-intro">Wer den Mega-Tempel hält, bekommt alle 3 Min. ' + THRONE_PTS_MEGA + ' Thron-Punkte, jeder Wächter-Tempel bringt ' + THRONE_PTS_GUARD + '. Genauso oft feuern die Wächter-Tempel, die dem Herrscher nicht gehören, auf die Truppen im Mega-Tempel (je ' + THRONE_FIRE_PCT + ' %) – die Getroffenen kommen ins Lazarett, soweit Platz ist.</p>' +
                 '<div class="sect"><h4>Eintauschen</h4></div><div class="throne-list">' +
-                THRONE_OFFERS.map(o => { const done = o.once && owned, n = throneAmount('player', o.id);
+                THRONE_OFFERS.map(o => { const done = o.once && throneOwned('player', o), n = throneAmount('player', o.id);
                     const sub = o.id === 'coins' ? fmtCompact(n) + ' – so viel, wie dein Reich in 1 Std. verdient' : o.id === 'troops' ? fmtCompact(n) + ' – eine Stunde deiner Ausbildung, in die Hauptstadt'
-                        : o.id === 'gems' ? 'für Kisten, Helden und Sterne' : o.id === 'crate' ? 'ein zufälliges Teil, jede Seltenheit möglich' : o.id === 'royal' ? 'mindestens Lila' : done ? 'gehört dir' : 'gibt es nur hier';
+                        : o.id === 'gems' ? 'für Kisten, Helden und Sterne' : o.id === 'crate' ? 'ein zufälliges Teil, jede Seltenheit möglich' : o.id === 'royal' ? 'mindestens Lila' : done ? 'gehört dir' : o.ring ? 'Ring um alle deine Basen – nur hier' : 'gibt es nur hier';
                     return '<div class="throne-row' + (o.once ? ' is-special' : '') + '"><span class="tr-ic">' + icon(o.icon, 'ico-' + o.icon) + '</span><span class="tr-t"><b>' + o.name + '</b><small>' + sub + '</small></span>' +
                         (done ? '<span class="chip">' + icon('check') + 'Gekauft</span>' : '<button type="button" class="btn btn--primary btn--sm" data-throne-buy="' + o.id + '"' + ((ts.pts || 0) < o.cost ? ' disabled' : '') + '>' + icon('crown') + '<b>' + fmtNum(o.cost) + '</b></button>') + '</div>'; }).join('') + '</div>' +
                 '<div class="sect"><h4>Diese Woche am Thron</h4></div>' +
@@ -7197,6 +7208,7 @@ body.has-panel .mapctl{display:none}
             renderShieldState();
             const tc = document.getElementById('shopThroneCount'); tc.textContent = fmtCompact(throneState.pts || 0); tc.title = fmtNum(throneState.pts || 0) + ' Thron-Punkte';
             if (shopTab === 'throne') renderThroneShop();
+            document.getElementById('shopRings').innerHTML = ringCardsHtml(RING_SKINS.filter(r => r.gems), false);
             shopGemCount.textContent = fmtCompact(Math.floor(gems));
             shopGemCount.title = fmtNum(Math.floor(gems)) + ' Gems';
             shopOpenCrateBtn.disabled = gems < CRATE_GEM_COST;
@@ -8280,16 +8292,16 @@ body.has-panel .mapctl{display:none}
                 drawCrown(it.rect.x + it.rect.h * 0.5, it.rect.y + 2, w);
             }
         }
-        var lastRuler, lastGoodTitle = null;       // the player's good title under the current ruler (a new ruler wipes all titles)
+        var lastRuler, lastGoodTitle = null;       // the player's title under the current ruler (a new ruler wipes all titles)
         function checkRuler() {             // announces a change of ruler once
             const r = rulerOwner();
-            if (lastRuler === undefined || r === lastRuler) { lastRuler = r; const m = titleOf('player'); lastGoodTitle = m && m.good ? m : null; return; }
+            if (lastRuler === undefined || r === lastRuler) { lastRuler = r; lastGoodTitle = titleOf('player'); return; }
             const was = lastRuler; lastRuler = r;
-            const lost = lastGoodTitle && r !== 'player' ? ' Dein Titel „' + lastGoodTitle.name + '“ ist verfallen, der Goldring ist weg.' : ''; lastGoodTitle = null;
+            const lost = lastGoodTitle && r !== 'player' ? ' Dein Titel „' + lastGoodTitle.name + '“ ist verfallen, der ' + (lastGoodTitle.good ? 'Goldring' : 'rote Ring') + ' ist weg.' : ''; lastGoodTitle = null;
             if (r === 'player') statBump('throne');
             if (r && r !== 'player' && botById[r]) { const bs = loadBotState()[r]; bs.stats = bs.stats || {}; bs.stats.ruled = 1; saveBotState(); }
-            if (r === 'player') { flashHint('Du bist Herrscher der Meere! +25 % Münzen und Truppen, blutroter Ring um deine Basen.', 6000); spawnBattleFx(megaTempleId, true, 'Herrscher!', 'Herrscher der Meere'); }
-            else if (was === 'player') flashHint('Du hast den Mega-Tempel verloren – die Krone und der blutrote Ring sind weg!', 5000);
+            if (r === 'player') { flashHint('Du bist Herrscher der Meere! +25 % Münzen und Truppen, blutrot-goldener Ring um deine Basen.', 6000); spawnBattleFx(megaTempleId, true, 'Herrscher!', 'Herrscher der Meere'); }
+            else if (was === 'player') flashHint('Du hast den Mega-Tempel verloren – die Krone und der blutrot-goldene Ring sind weg!', 5000);
             else if (r && botById[r]) flashHint(botById[r].name + ' ist jetzt Herrscher der Meere!' + lost, lost ? 6000 : 4000);
             else if (lost) flashHint(lost.trim(), 5000);
             updateHudPlayer(); requestRender();
@@ -8529,10 +8541,10 @@ body.has-panel .mapctl{display:none}
                 '<small class="keep-note">Schilde kaufst du im Shop, hier schaltest du sie ein. Greifst du selbst an, fällt der Schild.</small>' +
                 '<div class="keep-h">Rahmen &amp; Titel</div><div class="look" data-look-picker></div>' +
                 '<div class="keep-h">Wappen</div><button type="button" class="crest-card keep-crest" data-keep-crest><img alt="" src="' + crestDataUrl(56) + '"><span class="crest-card-t"><b>Dein Wappen</b><small>Auf deinen Basen und deiner Kampffahne</small></span><span class="crest-card-go">Bearbeiten' + icon('upgrade') + '</span></button>' +
-                '<div class="keep-h">Ring um deine Basen</div><div class="ring-legend"><span><i style="--c:#d6965f"></i>Bronze · ab Stufe 10</span><span><i style="--c:#dee6f0"></i>Silber · ab Stufe 25</span>' +
-                '<span><i style="--c:#ffd05a"></i>Gold · nur mit gutem Titel (ab Stufe 10 und an der Hauptstadt)</span><span><i class="blood" style="--c:#eb3c32"></i>Blutrot-Gold · nur der Herrscher</span></div>' +
-                '<small class="keep-note">Mit der Stufe kommen Zacken und Glanz dazu. Gold vergibt der Herrscher der Meere mit einem guten Titel, Blutrot-Gold trägt nur, wer den Mega-Tempel hält – beides nur, solange es gilt.' +
-                ({ 3: ' Du trägst gerade Gold.', 4: ' Du trägst gerade Blutrot-Gold.' }[ringStatusByOwner().get('player')] || '') + '</small>' +
+                '<div class="keep-h">Ring um deine Basen</div>' + ringCardsHtml(RING_SKINS, true) +
+                '<div class="ring-legend"><span><i style="--c:#ffd05a"></i>Gold · guter Titel</span><span><i style="--c:#e13030"></i>Rot · Straf-Titel</span><span><i class="blood" style="--c:#eb3c32"></i>Blutrot-Gold · Herrscher</span></div>' +
+                '<small class="keep-note">Ringe gibt es nur zu kaufen – mit Gems oder im Thron-Shop. Ein Titel aus der Mitte geht vor, solange er gilt.' +
+                ({ ruler: ' Du trägst gerade Blutrot-Gold.', good: ' Du trägst gerade Gold.', bad: ' Du trägst gerade Rot.' }[(ringStatusByOwner().get('player') || {}).k] || '') + '</small>' +
                 '<div class="keep-h">Burg-Skin</div><div class="skin-grid">' + Object.values(SKIN_DEFS).map(d => { const own = sk.own.includes(d.id), on = sk.active === d.id;
                     return '<button type="button" class="skin-card' + (on ? ' on' : '') + '" data-skin="' + d.id + '"><canvas data-skin-prev="' + d.id + '" width="120" height="132"></canvas><b>' + d.name + '</b><small>' +
                         (on ? 'Aktiv' : own ? 'Wählen' : icon('gem') + d.cost + ' Gems') + '</small></button>'; }).join('') + '</div>';
@@ -10152,13 +10164,15 @@ body.has-panel .mapctl{display:none}
             else return;
             openIslandPopup(isl); requestRender();
         });
-        function ringNotice(isl) {                         // a gold or blood-red ring: who wears which rank
+        function ringNotice(isl) {                         // whose ring is it: a title from the middle or a bought Ring-Skin
             if (isl.type !== 'tower') return '';
-            const o = islandOwnerOf(isl.id), k = o ? ringOf(isl, ringStatusByOwner()).skin : 0; if (k < 3) return '';   // only where the ring is really drawn (level 10+ or the capital)
+            const o = islandOwnerOf(isl.id), st = o ? ringStatusByOwner().get(o) : null; if (!st) return '';
             const me = o === 'player', n = me ? '' : escapeHtml(botById[o].name), t = titleOf(o);
-            return '<div class="notice notice--gold">' + icon(k === 4 ? 'crown' : 'star') + '<span>' + (k === 4
-                ? (me ? 'Blutroter Ring: Du bist Herrscher der Meere – er bleibt, solange du den Mega-Tempel hältst.' : 'Blutroter Ring: ' + n + ' ist Herrscher der Meere.')
-                : (me ? 'Goldring: Du trägst den Titel „' + t.name + '“ – solange du ihn behältst, leuchten deine Basen golden.' : 'Goldring: ' + n + ' trägt den Titel „' + t.name + '“ vom Herrscher der Meere.')) + '</span></div>';
+            const txt = st.k === 'ruler' ? (me ? 'Blutrot-goldener Ring: Du bist Herrscher der Meere – er bleibt, solange du den Mega-Tempel hältst.' : 'Blutrot-goldener Ring: ' + n + ' ist Herrscher der Meere.')
+                : st.k === 'good' ? (me ? 'Goldring: Du trägst den Titel „' + t.name + '“ – solange du ihn behältst.' : 'Goldring: ' + n + ' trägt den Titel „' + t.name + '“ aus der Mitte.')
+                : st.k === 'bad' ? (me ? 'Roter Ring: Du trägst den Straf-Titel „' + t.name + '“ – solange er gilt.' : 'Roter Ring: ' + n + ' trägt den Straf-Titel „' + t.name + '“.')
+                : (me ? 'Ring „' + st.name + '“ – wechseln in deiner Burg.' : 'Ring „' + st.name + '“.');
+            return '<div class="notice' + (st.k === 'bad' ? ' notice--warn' : st.k === 'skin' ? '' : ' notice--gold') + '">' + icon(st.k === 'ruler' ? 'crown' : st.k === 'bad' ? 'losses' : 'star') + '<span>' + txt + '</span></div>';
         }
         function throneNotice(island) {                   // your own throne or Wächter-Tempel: points and fire at a glance
             if (island.type === 'megaTemple') { const sh = throneShooters().length;
