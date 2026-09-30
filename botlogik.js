@@ -580,7 +580,7 @@ function botThink(bot) {
             const toll = tollFor(source.landmassId, lmId, have, bot.id).cost, canPass = !toll || (botCoins[bot.id] || 0) >= toll;
             for (const target of islandsByLandmass[lmId] || []) {
                 if (owned.has(target.id) || isCapital(target.id) || busy.has(target.id)) continue;   // capitals can't be attacked
-                if (shOwn.has(islandOwnerOf(target.id))) continue;                                   // anyone's Friedensschild
+                if (shOwn.has(islandOwnerOf(target.id)) && shieldCovers(target)) continue;                                   // anyone's Friedensschild
                 if (!canPass && !(target.type === 'gate' && gateOnRoute(source.landmassId, lmId) === target)) continue;
                 let d = Math.hypot(target.x - source.x, target.y - source.y);
                 const grudge = botGrudgeOn(bot.id, islandOwnerOf(target.id));
@@ -1045,7 +1045,7 @@ function botDefend(bot) {
     const act = botActOf(bot.id), now = Date.now(); if (now < (act.defNext || 0)) return;      // (paced by its own timer - own columns on the road never block it)
     const notice = 1 + botBld(bot.id, 'watch') * .05, threats = new Map(), covered = loadBotState()[bot.id].shieldUntil || 0;
     const see = (id, startedAt, at, str) => {
-        if (!owned.has(id) || isCapital(id) || at < covered) return;                                     // (it bounces off the shield anyway)
+        if (!owned.has(id) || isCapital(id) || (at < covered && shieldCovers(islandById[id]))) return;                                     // (it bounces off the shield anyway)
         if (now - startedAt < (3000 + (startedAt % 9000)) / notice) return;                             // not seen yet
         const t = threats.get(id) || { id, str: 0, at: Infinity }; t.str += str; t.at = Math.min(t.at, at); threats.set(id, t);
     };
@@ -1075,7 +1075,7 @@ function botDefend(bot) {
         plans.push({ th, target, def, gap, helpers, can: helpers.reduce((s2, h) => s2 + h.n, 0) });
     }
     // 2) several bases, a big share of the empire, or a string of losses at once: a careful person may switch the shield on
-    const lost = plans.filter(p => p.def + p.can < p.th.str).map(p => p.th);
+    const lost = plans.filter(p => p.def + p.can < p.th.str && shieldCovers(p.target)).map(p => p.th);   // (the shield only saves towers)
     if (lost.length && botShieldCrisis(bot, now, lost)) { tapped(); return; }
     // 3) otherwise help where it can be held, pull the troops out where it can't
     for (const { th, target, def, gap, helpers, can } of plans) {
@@ -1114,8 +1114,8 @@ function botUseShield(bot, why, needMs, now) {
     for (let i = pendingAttacks.length - 1; i >= 0; i--) { const a = pendingAttacks[i]; if (a.attackerBotId !== bot.id || a.fightEndsAt) continue;   // its own columns on the road turn round
         const back = botOwnedIslands[bot.id].has(a.sourceId) ? a.sourceId : botCapitalOf(bot.id); if (back !== null && back !== undefined) islandTroops[back] = (islandTroops[back] || 0) + a.rawTroops; pendingAttacks.splice(i, 1); }
     const own = botOwnedIslands[bot.id];
-    const mine = pendingAttacks.filter(a => !a.attackerBotId && !a.fightEndsAt && own.has(a.targetId)).length
-               + armies.filter(a => armyWho(a) === 'player' && a.mv && a.mv.to.kind === 'base' && own.has(a.mv.to.id)).length;
+    const mine = pendingAttacks.filter(a => !a.attackerBotId && !a.fightEndsAt && own.has(a.targetId) && shieldCovers(islandById[a.targetId])).length
+               + armies.filter(a => armyWho(a) === 'player' && a.mv && a.mv.to.kind === 'base' && own.has(a.mv.to.id) && shieldCovers(islandById[a.mv.to.id])).length;
     if (mine) flashHint('Friedensschild bei ' + bot.name + ' (noch ' + fmtHours(b.shieldUntil - now) + ') – ' +
         (mine === 1 ? 'dein Angriff prallt' : 'deine ' + mine + ' Angriffe prallen') + ' ab.', 5500);
     saveBotState(); saveArmies(); saveGame(); renderActiveMarches(); requestRender(); return true;
@@ -1442,7 +1442,7 @@ function botArmyRethink(bot, a, atk, needS, now) {
     let best = null, bs = Infinity, unknown = null, ud = Infinity;
     for (const l of lms) for (const t of islandsByLandmass[l] || []) {
         const ow = islandOwnerOf(t.id); if (!ow || ow === bot.id || isCapital(t.id) || t.id === a.t) continue;
-        if (ownerShielded(ow, now)) continue;
+        if (shieldCovers(t) && ownerShielded(ow, now)) continue;
         const d = Math.hypot(t.x - a.x, t.y - a.y) * botSituation(bot, st, t, ow, now), pull = ow === 'player' ? (v && v.who === 'player' ? .2 : g ? .4 : .6) : 1;
         const it = botIntel(bot, t.id);
         if (!it) { if (!botScouting(bot, t.id) && !botHopeless(bot, t, st, atk) && d * pull < ud) { ud = d * pull; unknown = t; } continue; }

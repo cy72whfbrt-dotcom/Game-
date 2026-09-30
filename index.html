@@ -1599,7 +1599,7 @@ body.has-panel .mapctl{display:none}
       <div class="offer-art"><svg class="icon"><use href="#i-shield"/></svg></div>
       <div class="offer-text">
         <h4>Friedensschild</h4>
-        <p>Niemand kann deine Basen angreifen, solange der Schild steht. Gekaufte Schilde kommen in den Vorrat – einschalten kannst du sie in der Stadt über deine Burg. Greifst du selbst an, fällt der Schild sofort.</p>
+        <p>Niemand kann deine Türme angreifen, solange der Schild steht – Tore, Tempel und der Thron bleiben angreifbar. Gekaufte Schilde kommen in den Vorrat – einschalten kannst du sie in der Stadt über deine Burg. Greifst du selbst an, fällt der Schild sofort.</p>
         <p id="shieldState" class="shield-state"></p>
         <div class="shield-opts">
           <button type="button" class="btn btn--secondary" data-shield="2"><span>2 Std.</span><span class="cost cost--gem"><svg class="icon"><use href="#i-gem"/></svg><b>40</b></span></button>
@@ -1793,7 +1793,12 @@ body.has-panel .mapctl{display:none}
         }
         const fmtTile = v => Math.abs(v) >= 1e9 ? fmtCompact(v) : fmtNum(v);   // stat tiles: exact up to millions, then short so it fits
         function setBtnLabel(btn, text) { const l = btn.querySelector('.lbl'); if (l) l.textContent = text; else btn.textContent = text; }
-        function fmtClock(sec) { sec = Math.max(0, Math.ceil(sec)); return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'); }
+        function fmtDHMS(sec) {                           // every longer time the same way: 3 T 4 h 5 m 6 s (units that are 0 at the front are left out)
+            sec = Math.max(0, Math.ceil(sec));
+            const d = Math.floor(sec / 86400), h = Math.floor(sec % 86400 / 3600), m = Math.floor(sec % 3600 / 60), s2 = sec % 60;
+            return d ? d + ' T ' + h + ' h ' + m + ' m ' + s2 + ' s' : h ? h + ' h ' + m + ' m ' + s2 + ' s' : m ? m + ' m ' + s2 + ' s' : s2 + ' s';
+        }
+        function fmtClock(sec) { sec = Math.max(0, Math.ceil(sec)); return sec >= 3600 ? fmtDHMS(sec) : Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'); }
         function statTile(label, iconName, valueHtml, cls) {
           return '<div class="stat"><span class="stat-l">' + icon(iconName) + label + '</span><b class="stat-v' + (cls ? ' ' + cls : '') + '">' + valueHtml + '</b></div>';
         }
@@ -2168,8 +2173,7 @@ body.has-panel .mapctl{display:none}
             return true;
         }
         function fmtPassWait(ms) {
-            const m = Math.max(1, Math.ceil(ms / 60000)), d = Math.floor(m / 1440), h = Math.floor(m % 1440 / 60), mm = m % 60;
-            return d ? d + (d === 1 ? ' Tag ' : ' Tage ') + h + ' Std.' : h ? h + ' Std. ' + mm + ' Min.' : mm + ' Min.';
+            return fmtDHMS(ms / 1000);
         }
         function noRouteHint(a, b) {
             const br = bridgeBetween(a, b);
@@ -3066,7 +3070,7 @@ body.has-panel .mapctl{display:none}
             if (!source || !target || rawTroops <= 0) return false;
             if (!attackerBotId && target.id === playerIslandId) return false;
             const tOwner = islandOwnerOf(target.id);
-            if (tOwner && tOwner !== (attackerBotId || 'player') && ownerShielded(tOwner)) { if (!attackerBotId) flashHint(shieldBlockText(tOwner), 4000); return false; }   // the Friedensschild
+            if (tOwner && tOwner !== (attackerBotId || 'player') && target.type === 'tower' && ownerShielded(tOwner)) { if (!attackerBotId) flashHint(shieldBlockText(tOwner), 4000); return false; }   // the Friedensschild
             if (isCapital(target.id)) {                                   // nobody's capital can be attacked
                 if (!attackerBotId) flashHint('Das ist die Hauptstadt von ' + (botById[islandOwnerOf(target.id)] || {}).name + ' – Hauptstädte können nicht angegriffen werden.', 3500);
                 return false;
@@ -4588,12 +4592,12 @@ body.has-panel .mapctl{display:none}
           setScreen(ctx); const shOwn = shieldedOwners(Date.now());
           const titled = titledCapitals(), rankOf = ringStatusByOwner();
           for (const isl of vis) {
-            if (!islandOwnerOf(isl.id)) continue;                                                           // the Friedensschild dome covers every island of its owner (gates, temples, throne too)
+            if (!islandOwnerOf(isl.id)) continue;
             const lvl = islandLevels[isl.id] || 1, t = titled.get(isl.id), x = toSX(isl.x), y = toSY(isl.y), r = Math.max(20, isl.radius * z * 1.25);
             const rk = rankOf.get(islandOwnerOf(isl.id)) || 0, spark = rk === 4 ? '255,120,80' : rk === 3 ? '255,226,140' : '225,235,250';   // gold only with a title
             if (x < -r * 5 || x > viewW + r * 5 || y < -r * 6 || y > viewH + r * 5) continue;
             const shOw = islandOwnerOf(isl.id);
-            if (shOwn.has(shOw)) { const r = isl.radius * z;                                               // Friedensschild: a pale dome over every base of its owner
+            if (shOwn.has(shOw) && shieldCovers(isl)) { const r = isl.radius * z;                                               // Friedensschild: a pale dome over every base of its owner
               const R = Math.max(r * 1.45, 16), ph = .6 + .4 * Math.sin(now / 700 + isl.id);
               const gd = ctx.createRadialGradient(x, y - R * .2, R * .3, x, y - R * .2, R);
               gd.addColorStop(0, 'rgba(210,235,255,.12)'); gd.addColorStop(.7, 'rgba(190,225,255,' + (.28 * ph).toFixed(2) + ')'); gd.addColorStop(1, 'rgba(230,245,255,' + (.6 * ph).toFixed(2) + ')');
@@ -5553,7 +5557,7 @@ body.has-panel .mapctl{display:none}
                 // A wave that comes after the fight is decided starts a fight of its own.
                 for (const a of pendingAttacks.filter(x => x.resolveAt <= now && !x.fightEndsAt)) {
                     const tow = islandOwnerOf(a.targetId), atkr = a.attackerBotId || 'player';
-                    if (tow && tow !== atkr && ownerShielded(tow, Math.min(now, a.resolveAt))) {                 // bounces off the Friedensschild (as it stood when the wave arrived) - the troops come back
+                    if (tow && tow !== atkr && shieldCovers(islandById[a.targetId]) && ownerShielded(tow, Math.min(now, a.resolveAt))) {                 // bounces off the Friedensschild (as it stood when the wave arrived) - the troops come back
                         const own = atkr === 'player' ? ownedIslands : botOwnedIslands[atkr];
                         const back = own && own.has(a.sourceId) ? a.sourceId : atkr === 'player' ? rewardBaseId() : botCapitalOf(atkr);
                         if (back !== null && back !== undefined) islandTroops[back] = (islandTroops[back] || 0) + a.rawTroops;
@@ -6475,7 +6479,7 @@ body.has-panel .mapctl{display:none}
                     // isn't the player's business and stays out of this list.
                     // No enemy numbers here (fog of war).
                     relevantAttackCount++;
-                    const bounces = !attack.fightEndsAt && ownerShielded('player', attack.resolveAt);   // the Friedensschild still stands when they arrive
+                    const bounces = !attack.fightEndsAt && shieldCovers(islandById[attack.targetId]) && ownerShielded('player', attack.resolveAt);   // the Friedensschild still stands when they arrive
                     rows.push(logRowHtml(bounces ? 'win' : 'loss', bounces ? 'shield' : 'bot', escapeHtml(botById[attack.attackerBotId].name) + ' greift ' + T(attack.targetId) + ' an',
                         bounces ? 'Dein Friedensschild hält – prallt ab' : 'Deine Basis wird angegriffen', clock(secondsLeft)));
                 }
@@ -6719,7 +6723,7 @@ body.has-panel .mapctl{display:none}
         }
         function yesterdayKey() { const d = new Date(); d.setDate(d.getDate() - 1); return todayKey(d); }
         function msToMidnight() { const d = new Date(); const m = new Date(d); m.setHours(24, 0, 0, 0); return m - d; }
-        function fmtHoursLeft(ms) { const h = Math.floor(ms / 3600000), m = Math.floor(ms % 3600000 / 60000); return h > 0 ? h + ' Std. ' + m + ' Min.' : m + ' Min.'; }
+        function fmtHoursLeft(ms) { return fmtDHMS(ms / 1000); }
 
         // Grants one crate item (like the shop) - minRarity for the big day-7 chest.
         function grantFreeCrate(minRarity) {
@@ -7175,11 +7179,12 @@ body.has-panel .mapctl{display:none}
         // attack them while it stands (scouting still works), and it falls the moment its owner attacks.
         function ownerShieldUntil(who) { return !who ? 0 : who === 'player' ? shieldUntil() : ((loadBotState()[who] || {}).shieldUntil || 0); }
         function ownerShielded(who, now) { return !!who && (now || Date.now()) < ownerShieldUntil(who); }
-        function baseShieldedFor(id, by, now) { const ow = islandOwnerOf(id); return !!ow && ow !== by && ownerShielded(ow, now); }   // by: 'player' | bot id
+        function shieldCovers(isl) { return !!isl && isl.type === 'tower'; }   // the shield covers the towers - never gates, temples or the throne (the middle stays open to everyone)
+        function baseShieldedFor(id, by, now) { const ow = islandOwnerOf(id); return !!ow && ow !== by && shieldCovers(islandById[id]) && ownerShielded(ow, now); }   // by: 'player' | bot id
         function shieldedOwners(now) { const s = new Set(); if (now < shieldUntil()) s.add('player'); const bs = loadBotState(); for (const bot of BOT_DEFS) if (bs[bot.id].shieldUntil > now) s.add(bot.id); return s; }
         function shieldBlockText(ow) { const n = (botById[ow] || {}).name || 'Dieser Spieler';
             return 'Friedensschild: ' + n + ' ist noch ' + fmtHours(ownerShieldUntil(ow) - Date.now()) + ' unangreifbar.'; }
-        function fmtHours(ms) { const m = Math.ceil(ms / 60000); return m >= 60 ? Math.floor(m / 60) + ' Std. ' + (m % 60) + ' Min.' : m + ' Min.'; }
+        function fmtHours(ms) { return fmtDHMS(ms / 1000); }
         function renderShieldState() { const el = document.getElementById('shieldState'); if (!el) return; const st = shieldStock();
             el.textContent = (playerShielded() ? 'Aktiv – noch ' + fmtHours(shieldUntil() - Date.now()) + ' · ' : '') + 'Im Vorrat: ' + st[2] + '× 2 Std., ' + st[8] + '× 8 Std., ' + st[24] + '× 24 Std.'; }
         shopPopup.addEventListener('click', e => { const bt = e.target.closest('[data-shield]'); if (!bt) return;
@@ -8165,7 +8170,7 @@ body.has-panel .mapctl{display:none}
             let best = null;
             for (const lm of lms) for (const isl of islandsByLandmass[lm] || []) {
                 if (isl.type !== 'tower' || isl.id === here.id || isCapital(isl.id) || bossAt(isl.id)) continue;
-                const ow = islandOwnerOf(isl.id); if (ownerShielded(ow)) continue;
+                const ow = islandOwnerOf(isl.id); if (shieldCovers(isl) && ownerShielded(ow)) continue;
                 const d = Math.hypot(isl.x - here.x, isl.y - here.y) * (ow ? (ow === 'player' ? .45 : .6) : 1.6) * (.8 + Math.random() * .4);
                 if (!best || d < best.d) best = { d, isl };
             }
@@ -8178,7 +8183,7 @@ body.has-panel .mapctl{display:none}
         function wanderArrive(now) {                          // the storm: same maths as any attack; a win razes the base and he camps there
             const tgt = islandById[wander.to], from = wander.from; if (!tgt) return endWander(null);
             const owner = islandOwnerOf(tgt.id), en = effectiveTroops(tgt), def = effectiveDefense(tgt), my = wander.troops, won = my > en + def;
-            if (ownerShielded(owner, Math.min(now, wander.arriveAt || now))) { Object.assign(wander, { at: from, to: null, campUntil: now + 20000 }); saveWander(); return; }
+            if (shieldCovers(islandById[wander.to]) && ownerShielded(owner, Math.min(now, wander.arriveAt || now))) { Object.assign(wander, { at: from, to: null, campUntil: now + 20000 }); saveWander(); return; }
             const capitalHolds = won && isCapital(tgt.id);          // capitals are never razed: only the garrison falls and he pulls back
             if (capitalHolds) {
                 islandTroops[tgt.id] = 0;
@@ -8364,9 +8369,7 @@ body.has-panel .mapctl{display:none}
             return Math.round(20 * Math.pow(1.6, level));
         }
         function fmtDuration(sec) {
-            sec = Math.max(0, Math.ceil(sec));
-            const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s2 = sec % 60;
-            return h ? h + ' Std. ' + m + ' Min.' : m ? m + ':' + String(s2).padStart(2, '0') + ' Min.' : s2 + ' s';
+            return fmtDHMS(sec);
         }
         function cityBlocker(id) {                        // why this building can't be upgraded right now (or null)
             const c = loadCity(), lvl = c.levels[id];
@@ -10240,7 +10243,7 @@ body.has-panel .mapctl{display:none}
                 recallBtn.style.display = 'inline-block';
                 recallBtn.disabled = gems < RECALL_GEM_COST || ownedIslands.size <= 1;
             } else {
-                const scouted = scoutedIslands.has(island.id), shieldOw = ownerBot && ownerShielded(ownerBot.id) ? ownerBot : null;
+                const scouted = scoutedIslands.has(island.id), shieldOw = ownerBot && shieldCovers(island) && ownerShielded(ownerBot.id) ? ownerBot : null;
                 if (popupView === 'preview' && shieldOw) popupView = 'menu';
                 popupSub.innerHTML = '<span class="dot dot--' + (bossAt(island.id) ? 'enemy' : kind) + '"></span>' + (bossAt(island.id) ? 'Boss' : ownerBot ? '<span class="psub-who">' + whoLink(ownerBot.id, ownerBot.name) + ' · Stufe ' + loadBotState()[ownerBot.id].lvl + (botOnline(ownerBot, Date.now()) ? ' · online' : ' · offline') +
                     (botBestRarity(ownerBot.id) >= 0 ? ' · <b style="color:' + RARITY_DEFS[botBestRarity(ownerBot.id)].color + ';font-weight:600">' + RARITY_DEFS[botBestRarity(ownerBot.id)].label + '</b>' : '') + '</span>' : 'Unbesetzt') +
@@ -10265,7 +10268,7 @@ body.has-panel .mapctl{display:none}
                         (bossAt(island.id) ? '<div class="notice notice--gold">' + icon('shop') + '<span><b>Belohnung:</b> Legendäre Kiste + ' + (bossAt(island.id).wander ? WANDER_REWARD_GEMS : BOSS_REWARD_GEMS) + ' Gems · ' + (bossAt(island.id).wander ? 'zieht weiter in' : 'verschwindet in') + ' <b data-boss-clock>' + fmtClock(((bossAt(island.id).wander ? bossAt(island.id).campUntil : bossAt(island.id).endsAt) - Date.now()) / 1000) + '</b></span></div>' : '') +
                         (scoutEnRoute ? '<div class="notice notice--warn">' + icon('hourglass') + '<span>Späher bereits unterwegs …</span></div>' : '') +
                         (shieldOw ? '<div class="notice notice--gold">' + icon('shield') + '<span>Friedensschild – ' + escapeHtml(shieldOw.name) + ' ist noch ' + fmtHours(ownerShieldUntil(shieldOw.id) - Date.now()) +
-                            ' geschützt. Solange der Schild hält, kann niemand die Basen von ' + escapeHtml(shieldOw.name) + ' angreifen – Spähen geht.</span></div>' : '');
+                            ' geschützt. Solange der Schild hält, kann niemand die Türme von ' + escapeHtml(shieldOw.name) + ' angreifen (Tore und Tempel schon) – Spähen geht.</span></div>' : '');
                     if (shieldOw && !isCapital(island.id)) popupOverline.textContent = 'Friedensschild · unangreifbar';
                     setBtnLabel(attackBtn, shieldOw ? 'Schild aktiv' : 'Angreifen');
                     attackBtn.disabled = !!shieldOw;
@@ -10606,7 +10609,7 @@ body.has-panel .mapctl{display:none}
             // without this, popupIslandId is already null and this would
             // wrongly clear pendingAttackTargetId and show a stale hint.
             if (popupIslandId === null) return;
-            { const ow = islandOwnerOf(popupIslandId); if (ow && ow !== 'player' && ownerShielded(ow)) { flashHint(shieldBlockText(ow), 4000); return; } }
+            { const ow = islandOwnerOf(popupIslandId); if (ow && ow !== 'player' && baseShieldedFor(popupIslandId, 'player')) { flashHint(shieldBlockText(ow), 4000); return; } }
             // pick the own base next to the target with the most troops (same region or one bridge away) - no hunting on the map
             const target = islandById[popupIslandId];
             let best = null;
@@ -10716,7 +10719,7 @@ body.has-panel .mapctl{display:none}
                     return;
                 }
                 const idx = multiAttackTargets.indexOf(island.id);
-                if (idx === -1 && islandOwnerOf(island.id) && islandOwnerOf(island.id) !== 'player' && ownerShielded(islandOwnerOf(island.id))) { flashHint(shieldBlockText(islandOwnerOf(island.id)), 3500); return; }
+                if (idx === -1 && baseShieldedFor(island.id, 'player')) { flashHint(shieldBlockText(islandOwnerOf(island.id)), 3500); return; }
                 if (idx === -1) {                                                    // a shut gate on the way: say so right away, not after "Angriffe starten"
                     const hop = lastHop(source.landmassId, island.landmassId, 'player'), tl = tollFor(hop[0], hop[1], 1, 'player', island.id);
                     if (tl.closed && tl.gate && tl.gate.id !== island.id) { const ow = islandOwnerOf(tl.gate.id);
