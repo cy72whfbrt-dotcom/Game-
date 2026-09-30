@@ -35,6 +35,15 @@ Liste der Ideen, die für später vorgemerkt sind.
 - **Erfolge und Aufgaben zusammenlegen** (in der Basis).
 - **Aussehen aufräumen – ist zu viel:** Wappen, Rahmen, Titel, Basis-Skin, Marsch-Skin an einem Ort sortieren. Titel kommen heute aus Erfolgen, Rang, Thron-Shop UND die Thron-Titel aus der Mitte – das muss vereinfacht werden.
 
+## Geplant: Baukunst – neue Basen in 3D (Entwurf: https://claude.ai/artifact/T3jrVwCsFV5sHc39fU57fG)
+- Alle 10 Stufen ein neues Design (Lager … Himmelsfeste), bei jeder 5 kleine Zusätze, Stufe 100 eigene Krönung.
+- Stufe am Material (Holz → Feldstein → Sandstein → Schiefer → Marmor mit Gold), Besitzer nur an Dach und Fahne.
+- Jeder Spieler eigener Baustil (Klassisch, Nordisch, Südländisch, Morgenland, Fernost) + Wappen auf allen Fahnen, zufälliges Umland.
+- Hauptstadt: Sockel oder Wasserschloss; Steg mit Boot am Ufer; eigene Formen für Tempel, Wächter-Tempel, Thron, Tore.
+- Zustände an der Basis: Schildkuppel, Brand, Rauch, Gerüst beim Ausbau, Erobern-Effekt; Tag/Abend/Nacht.
+- Modelle werden beim Laden einmal zu Bildern gerendert (wie die heutigen Sprites).
+- **Offen/abstimmen:** Entwurf sagt „Außenkreis nur mit Titel oder Skin“ (keine Bronze/Silber-Ringe nach Stufe) und „rot bei Straf-Titel“ – im Spiel ist heute Blutrot-Gold der Herrscher. Muss vor dem Einbau entschieden werden.
+
 ## Umgesetzt
 - **Kampfbericht und Postfach schöner** – gleicher Aufbau, klarere Abzeichen und Kräftebalken.
 - **Mehr Leben in der Stadt** – Brunnen, Marktstände, Heilerinnen, Torwachen, Schmiedefunken, abends Fackeln.
