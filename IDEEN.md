@@ -22,6 +22,19 @@ Liste der Ideen, die für später vorgemerkt sind.
 - Design des Entwurfs ist noch nicht getroffen (V1 und V2) – weiter abstimmen, Inhalt passt.
 - Die Mitspieler bekommen dieselben Helden.
 
+## Geplant: weitere Punkte (Stand heute Abend)
+- **Spielstand-Sicherung → ganz am Ende über einen Server** (nicht jetzt).
+- **Zweiter Bauarbeiter** (4) – ja.
+- **Taverne, Lager, Deko, Mauer-Skins** (7) – erst Demo zeigen.
+- **Sammelangriff mit Treffpunkt und Countdown** (11) – erst Demo zeigen.
+- **Barbaren-Lager zum Farmen** (13) – erst Demo zeigen.
+- **Rangliste nach Macht, Eroberungen, Titeln** (18) – ja, Rangliste auf jeden Fall überarbeiten.
+- **Ereignisse** (19–22) – nein; nur **mehr Erfolge** (23).
+- **Schönerer Ladebildschirm** (24) – auf jeden Fall.
+- **Marsch-Skins und Banner** (26), **richtige Heldenbilder** (28), **Balance der hohen Stufen** (29) – ja.
+- **Erfolge und Aufgaben zusammenlegen** (in der Basis).
+- **Aussehen aufräumen – ist zu viel:** Wappen, Rahmen, Titel, Basis-Skin, Marsch-Skin an einem Ort sortieren. Titel kommen heute aus Erfolgen, Rang, Thron-Shop UND die Thron-Titel aus der Mitte – das muss vereinfacht werden.
+
 ## Umgesetzt
 - **Kampfbericht und Postfach schöner** – gleicher Aufbau, klarere Abzeichen und Kräftebalken.
 - **Mehr Leben in der Stadt** – Brunnen, Marktstände, Heilerinnen, Torwachen, Schmiedefunken, abends Fackeln.
