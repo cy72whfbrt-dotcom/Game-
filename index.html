@@ -177,6 +177,7 @@ b,strong{font-weight:600}
 .look-row{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
 .look-frame{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 2px;border-radius:8px;border:1px solid transparent;background:none;color:var(--tx-2)}
 .look-frame.on{border-color:var(--gold-300);background:rgba(214,170,90,.12)} .look-frame:disabled{opacity:.4}
+.look-now-ring{background:conic-gradient(from 200deg,var(--fr1),var(--fr2),var(--fr1),var(--fr2),var(--fr1));box-shadow:inset 0 0 0 6px #141a24}
 .look-frame .frame-ring{width:30px;height:30px;border-radius:50%;background:conic-gradient(from 200deg,var(--fr1),var(--fr2),var(--fr1),var(--fr2),var(--fr1));box-shadow:inset 0 0 0 5px #141a24}
 .look-frame small{display:inline-flex;align-items:center;gap:2px;font:600 9.5px/1.1 var(--font-ui)} .look-frame small .icon,.look-title .icon{width:10px;height:10px}
 .look-titles{display:flex;flex-wrap:wrap;gap:6px}
@@ -232,6 +233,11 @@ b,strong{font-weight:600}
 .rp-gear small{font:500 10px/1.4 var(--font-ui);padding-top:1px;color:var(--tx-3);text-align:center}
 .rp-heroes{display:grid;gap:6px}
 .rp-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 14px}
+.rp-blds{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.rp-bld{display:grid;justify-items:center;gap:4px;padding:8px 4px 6px;border:1px solid var(--line-1);border-radius:10px;background:rgba(0,0,0,.22)}
+.rp-bld-ic{position:relative;width:34px;height:34px;display:grid;place-items:center;border-radius:8px;border:1px solid var(--line-2);background:var(--tile-bg)} .rp-bld-ic .icon{width:18px;height:18px;color:var(--gold-200)}
+.rp-bld-ic b{position:absolute;right:-7px;bottom:-6px;min-width:18px;height:16px;padding:0 3px;border-radius:5px;background:#1b1f27;border:1px solid var(--line-2);font:700 10px/14px var(--font-ui);color:var(--tx-1);text-align:center}
+.rp-bld small{font:500 var(--fs-11)/1.2 var(--font-ui);color:var(--tx-3);text-align:center} .rp-bld.is-zero{opacity:.5}
 .rp-grid > div{display:flex;justify-content:space-between;gap:8px;font:500 var(--fs-12)/1.6 var(--font-ui);color:var(--tx-2);border-bottom:1px solid var(--line-1)} .rp-grid b{color:var(--tx-1);font-variant-numeric:tabular-nums}
 .rp-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px} .rp-actions .btn{justify-content:center}
 .who-link{background:none;border:0;padding:0;font:inherit;color:inherit;text-decoration:underline;text-decoration-color:color-mix(in srgb,currentColor 40%,transparent);text-underline-offset:3px;cursor:pointer}
@@ -650,6 +656,10 @@ body.has-panel .mapctl{display:none}
 .seg.hero-seg button{display:inline-flex;align-items:center;justify-content:center;gap:4px} .seg.hero-seg button:disabled{opacity:.4}
 .crest-card{display:grid;grid-template-columns:56px 1fr auto;gap:12px;align-items:center;width:100%;padding:10px 12px;margin:4px 0 8px;border:1px solid var(--line-2);border-radius:8px;background:rgba(255,255,255,.03);color:var(--tx-1);text-align:left;cursor:pointer}
 .crest-card:hover{border-color:var(--gold-300)} #crestSmall{width:56px;height:56px} .crest-card-t{display:grid;gap:2px} .crest-card-t small{color:var(--tx-2)}
+.look-now{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:1px solid var(--line-2);border-radius:10px;background:rgba(0,0,0,.22);text-align:left;color:inherit}
+.look-now-in{display:flex;align-items:center;gap:10px;flex:1;min-width:0} .look-now-ring{width:34px;height:34px;border-radius:50%;flex:none}
+.look-now-t b{display:block;font:600 var(--fs-13)/1.2 var(--font-ui);color:var(--tx-1)} .look-now-t small{display:block;margin-top:2px;font:500 var(--fs-11)/1.3 var(--font-ui);color:var(--tx-3)}
+.keep-crest{margin-bottom:4px} .keep-crest img{width:56px;height:56px;flex:none}
 .crest-card-go{display:inline-flex;align-items:center;gap:6px;font:600 var(--fs-12)/1 var(--font-ui);color:var(--gold-300)} .crest-card-go .icon{width:14px;height:14px}
 .crest-page{margin:4px 0 10px;padding:12px;border:1px solid var(--gold-300);border-radius:10px;background:rgba(10,10,14,.6)} .crest-page-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .crest-ed{display:grid;grid-template-columns:88px 1fr;gap:12px;align-items:start;margin-bottom:6px} #crestPreview{width:88px;height:88px}
@@ -700,6 +710,11 @@ body.has-panel .mapctl{display:none}
 .logSum.advantage span:last-child{color:var(--good)}
 .logCasualty span:last-child{color:var(--blood-300)}
 .logVsDivider{align-self:center;text-align:center;font:600 9px/1 var(--font-display);color:var(--gold-200)}
+@media (max-width:520px){                                               /* phones: attacker above, defender below - room for every line */
+  .logCompare{grid-template-columns:minmax(0,1fr);gap:4px}
+  .logVsDivider{display:flex;align-items:center;gap:8px;font-size:9px} .logVsDivider::before,.logVsDivider::after{content:"";flex:1;height:1px;background:var(--line-1)}
+  .logGearItems{grid-template-columns:repeat(4,48px) !important;justify-content:start}
+}
 .logGold,.logRetreat{margin-top:6px;font:500 var(--fs-11)/1.3 var(--font-ui);color:var(--tx-3)}
 .logEmpty,.empty-state{display:flex;flex-direction:column;align-items:center;gap:6px;padding:18px 12px;text-align:center;font:500 var(--fs-12)/1.4 var(--font-ui);color:var(--tx-3)}
 .empty-state .icon{width:30px;height:30px;color:var(--gold-500)}
@@ -707,7 +722,9 @@ body.has-panel .mapctl{display:none}
 .empty-state b{font:600 var(--fs-13)/1.2 var(--font-display);letter-spacing:.04em;color:var(--tx-2)}
 .rankRow{display:grid;grid-template-columns:30px 22px minmax(0,1fr) auto;gap:10px;align-items:center;min-height:42px;padding:0 6px;border-bottom:1px solid var(--line-1)}
 .rankPos{font:600 var(--fs-13)/1 var(--font-display);color:var(--tx-3);text-align:center}
-.rankRow:nth-child(1) .rankPos{color:var(--gold-200)} .rankRow:nth-child(2) .rankPos{color:#c9ced6} .rankRow:nth-child(3) .rankPos{color:#c88a55}
+.rankRow:nth-child(-n+3) .rankPos{width:24px;height:24px;margin:0 auto;display:grid;place-items:center;border-radius:50%;color:#1a1204;font-size:12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 1px 3px rgba(0,0,0,.5)}
+.rankRow:nth-child(1) .rankPos{background:linear-gradient(180deg,#ffe28a,#c9922e)} .rankRow:nth-child(2) .rankPos{background:linear-gradient(180deg,#f1f4f8,#9aa3ae)} .rankRow:nth-child(3) .rankPos{background:linear-gradient(180deg,#f0b27d,#9a5a2c)}
+.rankRow:nth-child(1){background:linear-gradient(90deg,rgba(242,199,92,.10),transparent 70%)} .rankRow:nth-child(2){background:linear-gradient(90deg,rgba(210,216,224,.07),transparent 70%)} .rankRow:nth-child(3){background:linear-gradient(90deg,rgba(200,138,85,.08),transparent 70%)}
 .rankDot{width:22px;height:22px;border-radius:var(--r-xs);display:grid;place-items:center;border:1px solid rgba(255,255,255,.15);box-shadow:inset 0 0 0 1px rgba(0,0,0,.4)}
 .rankDot .icon{width:14px;height:14px;color:#fff} .rankCrest{width:16px;height:16px;display:block}
 .rankName{display:flex;align-items:center;min-width:0;font:600 var(--fs-13)/1.2 var(--font-ui);color:var(--tx-1);white-space:nowrap}
@@ -716,7 +733,7 @@ body.has-panel .mapctl{display:none}
 .rankScore{font:600 var(--fs-12)/1 var(--font-ui);color:var(--tx-2);font-variant-numeric:tabular-nums;white-space:nowrap}
 .tag{display:inline-flex;align-items:center;height:16px;padding:0 5px;margin-left:6px;border-radius:var(--r-xs);font:600 9.5px/1 var(--font-ui);letter-spacing:.08em;text-transform:uppercase;vertical-align:2px}
 .tag--player{color:#cfe3ff;background:rgba(63,134,216,.2);border:1px solid rgba(140,192,255,.4)}
-.rankRow.isPlayer{background:linear-gradient(90deg,rgba(63,134,216,.16),transparent);box-shadow:inset 2px 0 0 var(--f-player)}
+.rankRow.isPlayer{background:linear-gradient(90deg,#284670,#161b24);box-shadow:inset 2px 0 0 var(--f-player);position:sticky;top:0;bottom:0;z-index:2}   /* your row stays in view while you scroll */
 
 /* =====================================================================
    SLIDER  #attackTroopsSlider  (JS keeps --pct in sync)
@@ -780,8 +797,6 @@ body.has-panel .mapctl{display:none}
   .tile .selectDot::after{width:12px;height:12px}
   .tile .lvl{height:13px;min-width:15px;line-height:11px;font-size:9px}
   .statChip span{font-size:9px}
-  .logCompare{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
-  .logVsDivider{display:none}
   .logSide{padding:6px}
   .logLine span:first-child{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .bonus-row{gap:4px}
@@ -1438,8 +1453,8 @@ body.has-panel .mapctl{display:none}
           <div class="crest-opts" id="crestOpts"></div>
         </div>
       </div>
-      <div class="sect"><h4>Titel &amp; Rahmen</h4></div>
-      <div id="lookPicker" class="look"></div>
+      <div class="sect"><h4>Aussehen</h4></div>
+      <button id="lookGo" class="look-now" type="button"><span id="lookNow" class="look-now-in"></span><span class="crest-card-go">In der Burg ändern<svg class="icon"><use href="#i-upgrade"/></svg></span></button>
       <div class="sect"><h4>Reich</h4></div>
       <div class="stat-grid stat-grid--3">
         <div class="stat"><span class="stat-l"><svg class="icon"><use href="#i-troops"/></svg>Truppen</span><b class="stat-v" id="kTroops">0</b></div>
@@ -2123,13 +2138,13 @@ body.has-panel .mapctl{display:none}
         function loadGateCfg() { if (!gateCfg) { try { gateCfg = JSON.parse(store.get('openWaterGateCfg')) || {}; } catch (e) { gateCfg = {}; } } return gateCfg; }
         function gateSettings(gate) { return Object.assign({ toll: gate.toll, closed: false }, loadGateCfg()[gate.id] || {}); }
         function setGateSettings(gateId, patch) { const c = loadGateCfg(); c[gateId] = Object.assign(gateSettings(islandById[gateId]), patch); store.set('openWaterGateCfg', JSON.stringify(c)); }
-        const GATE_TOLLS = [0, 0.1, 0.25, 0.5, 1, 2];
+        const GATE_TOLLS = [0, 0.1, 0.25, 0.5, 1, 2], TOLL_MAX = 1e6;   // per troop, but never more than 1 Mio. per march
         function tollFor(fromLm, toLm, troops, payer, targetId) {  // → { gate, cost, closed } (free for the gate's owner - and for an attack ON the gate itself)
             const gate = gateOnRoute(fromLm, toLm);
             if (!gate || islandOwnerOf(gate.id) === payer || gate.id === targetId) return { gate, cost: 0 };
             const cfg = gateSettings(gate);
             if (!islandOwnerOf(gate.id) || cfg.closed) return { gate, cost: Infinity, closed: true };   // unowned gates are shut
-            return { gate, cost: cfg.toll > 0 ? Math.max(100, Math.round(Math.max(0, troops) * cfg.toll)) : 0 };
+            return { gate, cost: cfg.toll > 0 ? Math.max(100, Math.min(TOLL_MAX, Math.round(Math.max(0, troops) * cfg.toll))) : 0 };
         }
         function payToll(fromLm, toLm, troops, payer, targetId) { // payer: 'player' | bot id → false when it can't pay
             const { gate, cost, closed } = tollFor(fromLm, toLm, troops, payer, targetId);
@@ -3463,6 +3478,7 @@ body.has-panel .mapctl{display:none}
             // XP for troops that died in the clash either way: a win kills
             // the whole enemy force, a loss costs your whole attack force
             noteBattle(target.id, won ? originalEnemyTroops : attack.rawTroops - retreatSurvivors, won ? targetOwner : 'player');
+            if (targetOwner && targetOwner !== 'player') botMoodAdd(targetOwner, won ? -.25 : .1);
             addXp(won ? totalStrength : defenderCasualties);
             for (const hid of new Set([attack.hero, ...(attack.heroes || [])].filter(Boolean))) heroGainXp(hid, won ? totalStrength : defenderCasualties);
             scoutedIslands.add(target.id);
@@ -3601,6 +3617,7 @@ body.has-panel .mapctl{display:none}
                 }
             }
             noteBattle(target.id, won ? originalEnemyTroops : attack.rawTroops - fled, won ? targetOwner : bot.id);   // the neighbours saw it
+            botMoodAdd(bot.id, won ? .15 : -.2); if (targetOwner && targetOwner !== 'player') botMoodAdd(targetOwner, won ? -.25 : .1);
             if (!won) botNoteFail(bot.id, target.id);
             if (!won) botLearn(bot.id, target.id);                          // a lost fight tells them what's really there
             if (!won && targetOwner && targetOwner !== 'player') botStat(targetOwner, 'defs');
@@ -5717,10 +5734,16 @@ body.has-panel .mapctl{display:none}
             schatz:    { spend: 1.3, build: .7 },
             bettler:   { spend: .7, build: .35 }
         };
+        function botMood(botId) { const b = loadBotState()[botId], md = b && b.mood; return md ? md.v * Math.pow(.5, (Date.now() - md.at) / (20 * 60000)) : 0; }   // fades in ~20 min
+        function botMoodAdd(botId, dv) { const b = loadBotState()[botId]; if (!b) return; b.mood = { v: Math.max(-1, Math.min(1, botMood(botId) + dv)), at: Date.now() }; }
         function botStyle(bot) {
-            const st = BOT_STYLES[bot.style], t = titleOf(bot.id), tp = t && TITLE_PLAY[t.key]; if (!tp) return st;
+            const st0 = BOT_STYLES[bot.style], t = titleOf(bot.id), tp = t && TITLE_PLAY[t.key], mood = botMood(bot.id);
+            const st = Math.abs(mood) < .3 ? st0 : Object.assign({}, st0, mood > 0                  // after a few wins: bolder and quicker; after losses: careful and slower
+                ? { margin: st0.margin * .9, tapMs: st0.tapMs * .85, risk: Math.max(.2, st0.risk || 0), mood: 'mutig' }
+                : { margin: st0.margin * 1.2, tapMs: st0.tapMs * 1.3, risk: 0, mood: 'vorsichtig' });
+            if (!tp) return st;
             const m = Object.assign({}, st, { title: t.key });
-            for (const k of ['margin', 'tapMs', 'hunt', 'spend']) if (tp[k] !== undefined) m[k] = (st[k] ?? (k === 'hunt' ? .5 : 1)) * tp[k];
+            for (const k of ['margin', 'tapMs', 'hunt', 'spend']) if (tp[k] !== undefined) m[k] = (st[k] ?? (k === 'hunt' ? .5 : 1)) * tp[k];   // (on top of the mood)
             if (tp.commit) m.commit = Math.min(.95, (st.commit || .7) * tp.commit);
             if (tp.spend) m.spend = Math.min(.95, m.spend);
             if (tp.risk !== undefined) m.risk = tp.risk;
@@ -6556,14 +6579,17 @@ body.has-panel .mapctl{display:none}
             const fr = playerFrame();
             document.getElementById('pAvatarRing').dataset.frame = fr;
             document.getElementById('profileTitle').textContent = playerTitle();
-            const el = document.getElementById('lookPicker'); if (!el) return;
-            el.innerHTML = '<div class="look-row">' + FRAMES.map(f => { const ok = lookUnlocked(f);
+            const html = '<div class="look-row">' + FRAMES.map(f => { const ok = lookUnlocked(f);
                     return '<button type="button" class="look-frame' + (f.id === fr ? ' on' : '') + '" data-frame="' + f.id + '"' + (ok ? '' : ' disabled title="Frei ab ' + lookReq(f) + '"') + '><span class="frame-ring" data-frame="' + f.id + '"></span><small>' + (ok ? f.name : icon('lock') + f.name) + '</small></button>'; }).join('') + '</div>' +
                 '<div class="look-titles">' + TITLES_P.map(t => { const ok = lookUnlocked(t);
                     return '<button type="button" class="look-title' + (t.name === playerTitle() ? ' on' : '') + '" data-title-id="' + t.id + '"' + (ok ? '' : ' disabled title="Frei ab ' + lookReq(t) + '"') + '>' + (ok ? '' : icon('lock')) + t.name + '</button>'; }).join('') + '</div>' +
                 '<small class="look-hint">Rahmen gibt es mit jedem neuen Rang, Titel mit Rängen und Erfolgen, „Thronhüter“ und den Thron-Rahmen im Thron-Shop. Beides siehst du in der Rangliste.</small>';
+            for (const el of document.querySelectorAll('[data-look-picker]')) el.innerHTML = html;
+            const cur = document.getElementById('lookNow');
+            if (cur) cur.innerHTML = '<span class="frame-ring look-now-ring" data-frame="' + fr + '"></span><span class="look-now-t"><b>' + escapeHtml(playerTitle()) + '</b><small>Rahmen ' + (FRAMES.find(f => f.id === fr) || FRAMES[0]).name + ' · Burg ' + (SKIN_DEFS[loadSkins().active] || SKIN_DEFS.standard).name + '</small></span>';
         }
-        document.getElementById('lookPicker').addEventListener('click', e => {
+        document.addEventListener('click', e => {
+            if (!e.target.closest('[data-look-picker]')) return;
             const f = e.target.closest('.look-frame:not([disabled])'), t = e.target.closest('[data-title-id]:not([disabled])');
             if (f) look.frame = f.dataset.frame; else if (t) look.title = t.dataset.titleId; else return;
             store.set('openWaterLook', JSON.stringify(look)); renderLook();
@@ -7137,7 +7163,7 @@ body.has-panel .mapctl{display:none}
             const heroes = pr.heroes.length ? pr.heroes.map(x => { const hd = heroById(x[0]), r = rd(x[2]);
                 return '<span class="ghero" style="--hc:' + (x[2] ? r.color : hd.color) + '"><span class="hero-ic">' + icon(hd.icon) + '</span><span><b>' + hd.name + ' <small>' + hd.title + '</small></b><small>Stufe ' + x[1] + ' · ' + r.label + '</small></span></span>'; }).join('') : '<div class="war-empty">Noch keine Heldenhalle.</div>';
             const skillsHtml = Object.keys(SKILL_DEFS).map(k => '<div><span>' + SKILL_DEFS[k].name + '</span><b>' + (pr.skills[k] || 0) + '</b></div>').join('');
-            const cityHtml = BOT_BUILDINGS.map(k => '<div><span>' + cityDef(k).name + '</span><b>' + (pr.city[k] || 0) + '</b></div>').join('');
+            const cityHtml = BOT_BUILDINGS.map(k => '<div class="rp-bld' + ((pr.city[k] || 0) ? '' : ' is-zero') + '"><span class="rp-bld-ic">' + icon(cityDef(k).icon) + '<b>' + (pr.city[k] || 0) + '</b></span><small>' + cityDef(k).name + '</small></div>').join('');
             const last = lastFightWith(pr);
             document.getElementById('rulerBody').innerHTML =
                 '<div class="rp-stats"><div class="rp-stat"><small>Macht</small><b>' + fmtCompact(powerOf(pr)) + '</b></div><div class="rp-stat"><small>Basen</small><b>' + fmtNum(pr.bases) + '</b></div>' +
@@ -7146,7 +7172,7 @@ body.has-panel .mapctl{display:none}
                 '<div class="sect"><h4>Ausrüstung</h4></div><div class="rp-gear">' + gear + '</div>' +
                 '<div class="sect"><h4>Helden</h4></div><div class="rp-heroes">' + heroes + '</div>' +
                 '<div class="sect"><h4>Skills</h4></div><div class="rp-grid">' + skillsHtml + '</div>' +
-                '<div class="sect"><h4>Stadt</h4></div><div class="rp-grid">' + cityHtml + '</div>' +
+                '<div class="sect"><h4>Stadt</h4></div><div class="rp-blds">' + cityHtml + '</div>' +
                 '<div class="rp-actions"><button class="btn btn--secondary btn--sm" type="button" data-rp="map">' + icon('flag') + '<span>Zur Karte</span></button>' +
                 '<button class="btn btn--primary btn--sm" type="button" data-rp="capital">' + icon('castle') + '<span>Hauptstadt</span></button></div>';
             openPanel(rulerPopup);
@@ -7844,7 +7870,7 @@ body.has-panel .mapctl{display:none}
                 const o = THRONE_OFFERS.find(x => x.id === id); if (!(b.tp >= o.cost)) break; b.tp -= o.cost; throneGive(botId, id); }
         }
         var throneShots = [];                                  // volleys flying across the map (screen-space drawing below)
-        function throneAward() {
+        function throneAward(silent) {
             const ts = throneState, now = Date.now();
             if (ts.weekKey !== weekKeyOf(now)) { ts.week = {}; ts.weekKey = weekKeyOf(now); }
             const got = {};
@@ -7855,27 +7881,30 @@ body.has-panel .mapctl{display:none}
                 else { const b = loadBotState()[who]; if (!b) continue; b.tp = (b.tp || 0) + n; }
                 ts.week[who] = (ts.week[who] || 0) + n;
             }
-            if (got.player) flashHint('+' + got.player + ' Thron-Punkte – du hältst ' + (rulerOwner() === 'player' ? 'die Mitte' : 'einen Wächter-Tempel') + '. Einlösen im Shop unter „Thron“.', 3500);
+            if (got.player && !silent) flashHint('+' + got.player + ' Thron-Punkte – du hältst ' + (rulerOwner() === 'player' ? 'die Mitte' : 'einen Wächter-Tempel') + '. Einlösen im Shop unter „Thron“.', 3500);
             saveBotState();
         }
-        function throneVolley() {
-            const holder = rulerOwner(), shooters = throneShooters(); if (!holder || !shooters.length) return;
+        function throneVolley(times, silent) {                // times: several volleys at once (the time you were away)
+            times = times || 1;
+            const holder = rulerOwner(), shooters = throneShooters(); if (!holder || !shooters.length) return null;
             const g0 = islandTroops[megaTempleId] || 0;
-            const loss = Math.floor(g0 * (1 - Math.pow(1 - THRONE_FIRE_PCT / 100, shooters.length)));
+            const loss = Math.floor(g0 * (1 - Math.pow(1 - THRONE_FIRE_PCT / 100, shooters.length * times)));
             const m = islandById[megaTempleId];
-            shooters.forEach((g, i) => throneShots.push({ from: islandById[g], to: m, delay: i * 140 })); requestRender();   // the clock starts at the first frame
-            if (loss <= 0) return;
+            if (!silent) { shooters.forEach((g, i) => throneShots.push({ from: islandById[g], to: m, delay: i * 140 })); requestRender(); }   // the clock starts at the first frame
+            if (loss <= 0) return null;
             islandTroops[megaTempleId] = g0 - loss;
-            if (holder === 'player') { const w = hospitalTake(loss, 100); warStat('fallen', loss - w);   // everyone hit is carried to the Lazarett, as far as there is room
-                setTimeout(() => spawnBattleFx(megaTempleId, false, 'Beschuss', '−' + fmtCompact(loss) + ' Truppen'), 1100);
+            let w = 0;
+            if (holder === 'player') { w = hospitalTake(loss, 100); warStat('fallen', loss - w);   // everyone hit is carried to the Lazarett, as far as there is room
+                if (!silent) setTimeout(() => spawnBattleFx(megaTempleId, false, 'Beschuss', '−' + fmtCompact(loss) + ' Truppen'), 1100);
                 const prev = combatLog[0], shotBy = shooters.map(g => { const o = islandOwnerOf(g); return o && o !== 'player' ? botById[o].name : 'unbesetzt'; });
                 if (prev && prev.type === 'volley' && Date.now() - prev.at < 30 * 60000) {          // one report for a run of volleys, not one every few minutes
-                    Object.assign(prev, { n: prev.n + 1, hit: prev.hit + loss, wounded: prev.wounded + w, left: g0 - loss, shotBy, at: Date.now() });
+                    Object.assign(prev, { n: prev.n + times, hit: prev.hit + loss, wounded: prev.wounded + w, left: g0 - loss, shotBy, at: Date.now() });
                     store.set('openWaterCombatLog', JSON.stringify(combatLog)); refreshOpenCombatLog();
-                } else addCombatLogEntry({ type: 'volley', targetId: megaTempleId, n: 1, before: g0, hit: loss, wounded: w, left: g0 - loss, shotBy });
-                flashHint(shooters.length + (shooters.length === 1 ? ' Wächter-Tempel feuert' : ' Wächter-Tempel feuern') + ' auf den Thron: ' + fmtCompact(loss) + ' Truppen getroffen' + (w ? ', ' + fmtCompact(w) + ' davon ins Lazarett.' : ' – kein Platz im Lazarett.') + ' Erobere die Wächter-Tempel, dann schweigen sie.', 4500); }
+                } else addCombatLogEntry({ type: 'volley', targetId: megaTempleId, n: times, before: g0, hit: loss, wounded: w, left: g0 - loss, shotBy });
+                if (!silent) flashHint(shooters.length + (shooters.length === 1 ? ' Wächter-Tempel feuert' : ' Wächter-Tempel feuern') + ' auf den Thron: ' + fmtCompact(loss) + ' Truppen getroffen' + (w ? ', ' + fmtCompact(w) + ' davon ins Lazarett.' : ' – kein Platz im Lazarett.') + ' Erobere die Wächter-Tempel, dann schweigen sie.', 4500); }
             else botHospitalTake(holder, loss, 100);
             saveGame();
+            return { loss, w };
         }
         function throneTick() {
             const now = Date.now(), ts = throneState; let dirty = false;
@@ -8178,8 +8207,11 @@ body.has-panel .mapctl{display:none}
                 const c0 = coins, t0 = empireSnapshot().troops;
                 if (ticks > 0) produceTicks(ticks);
                 const dc = coins - c0, dt = empireSnapshot().troops - t0;
+                const tp0 = throneState.pts || 0, nPts = Math.floor(away / THRONE_TICK_MS);        // the throne went on too: points and volleys for the time away
+                for (let i = 0; i < nPts; i++) throneAward(true);
+                const vol = throneVolley(Math.floor(away / THRONE_FIRE_MS), true), dtp = (throneState.pts || 0) - tp0; saveThrone();
                 if (dc > 0) warStat('offCoins', dc); if (dt > 0) warStat('offTroops', dt);
-                if (Date.now() - leaveAtBoot.at >= AWAY_MIN_MS) welcomeFrom = Object.assign({ produced: { coins: dc, troops: dt, capped: Date.now() - leaveAtBoot.at > AWAY_PRODUCE_MAX_MS } }, leaveAtBoot);
+                if (Date.now() - leaveAtBoot.at >= AWAY_MIN_MS) welcomeFrom = Object.assign({ produced: { coins: dc, troops: dt, capped: Date.now() - leaveAtBoot.at > AWAY_PRODUCE_MAX_MS, thronePts: dtp, throneHit: vol && rulerOwner() === 'player' ? vol : null } }, leaveAtBoot);
             }
             if (ffSummary && !welcomeFrom) afterSplash(() => setTimeout(() => flashHint('Die anderen waren ' + ffSummary.days + ' Tage aktiv: +' + ffSummary.caps + ' Basen erobert, ' + ffSummary.fights + ' Kämpfe untereinander.', 6000), 1500));
             saveLeave(); setInterval(saveLeave, 30000);
@@ -8199,6 +8231,8 @@ body.has-panel .mapctl{display:none}
             const rows = [], now = empireSnapshot(), log = combatLog.filter(e => e.at >= from.at);
             const pr = from.produced;
             if (pr && (pr.coins > 0 || pr.troops > 0)) rows.push(['coin', 'Produktion' + (pr.capped ? ' (8 Std.)' : ''), '+' + fmtCompact(pr.coins) + ' · ' + fmtCompact(pr.troops) + ' Truppen']);
+            if (pr && pr.thronePts > 0) rows.push(['crown', 'Am Thron', '+' + fmtNum(pr.thronePts) + ' Thron-Punkte']);
+            if (pr && pr.throneHit) rows.push(['attack', 'Beschuss auf den Thron', fmtCompact(pr.throneHit.loss) + ' getroffen · ' + fmtCompact(pr.throneHit.w) + ' im Lazarett']);
             const onYou = log.filter(e => e.type === 'botAttack'), lost = onYou.filter(e => e.won && !e.capitalHolds).length, held = onYou.filter(e => !e.won).length;
             if (onYou.length) rows.push(['shield', (onYou.length === 1 ? 'Ein Angriff' : onYou.length + ' Angriffe') + ' auf dich', held + ' abgewehrt' + (lost ? ' · ' + lost + ' verloren' : '')]);
             const foes = {}; for (const e of onYou) foes[e.botName] = (foes[e.botName] || 0) + 1;
@@ -9161,7 +9195,7 @@ body.has-panel .mapctl{display:none}
               desc: 'Hier leben deine Helden. Ein Held zieht mit einem Angriff mit und gibt ihm seinen Bonus. Jede Stufe hebt die Höchststufe der Helden um 2; Stufe 1, 5 und 10 schalten je einen Helden frei.' }
         ];
         var CITY_MAX_LEVEL = 25, CITY_GEMS_PER_MIN = 1;
-        function cityMaxLevel(id) { return id === 'forge' ? STAR_MAX : CITY_MAX_LEVEL; }   // the Schmiede stops at the star maximum
+        function cityMaxLevel(id) { return id === 'forge' ? STAR_MAX : id === 'hospital' ? 40 : CITY_MAX_LEVEL; }   // the Schmiede stops at the star maximum, the Lazarett goes on to 40 (room for huge armies)
         var cityState = null;
         function loadCity() {
             if (cityState) return cityState;
@@ -9338,9 +9372,12 @@ body.has-panel .mapctl{display:none}
             document.getElementById('cityBExtra').innerHTML =
                 '<div class="keep-h">Friedensschild</div><div class="keep-shields">' + [2, 8, 24].map(h => '<button type="button" class="btn btn--secondary btn--sm" data-shield-use="' + h + '"' + (stock[h] ? '' : ' disabled') + '>' + icon('shield') + h + ' Std. · ' + stock[h] + '×</button>').join('') + '</div>' +
                 '<small class="keep-note">Schilde kaufst du im Shop, hier schaltest du sie ein. Greifst du selbst an, fällt der Schild.</small>' +
-                '<div class="keep-h">Skin</div><div class="skin-grid">' + Object.values(SKIN_DEFS).map(d => { const own = sk.own.includes(d.id), on = sk.active === d.id;
+                '<div class="keep-h">Rahmen &amp; Titel</div><div class="look" data-look-picker></div>' +
+                '<div class="keep-h">Wappen</div><button type="button" class="crest-card keep-crest" data-keep-crest><img alt="" src="' + crestDataUrl(56) + '"><span class="crest-card-t"><b>Dein Wappen</b><small>Auf deinen Basen und deiner Kampffahne</small></span><span class="crest-card-go">Bearbeiten' + icon('upgrade') + '</span></button>' +
+                '<div class="keep-h">Burg-Skin</div><div class="skin-grid">' + Object.values(SKIN_DEFS).map(d => { const own = sk.own.includes(d.id), on = sk.active === d.id;
                     return '<button type="button" class="skin-card' + (on ? ' on' : '') + '" data-skin="' + d.id + '"><canvas data-skin-prev="' + d.id + '" width="120" height="132"></canvas><b>' + d.name + '</b><small>' +
                         (on ? 'Aktiv' : own ? 'Wählen' : icon('gem') + d.cost + ' Gems') + '</small></button>'; }).join('') + '</div>';
+            renderLook();
             const tier = towerTier(lvl);
             for (const cv of document.querySelectorAll('[data-skin-prev]')) { const g = cv.getContext('2d'), d = SKIN_DEFS[cv.dataset.skinPrev];
                 g.setTransform(1.75, 0, 0, 1.75, 60, 90); g.lineJoin = 'round'; paintTowerTier(g, 'player', true, true, tier, d.stone ? d : null); }
@@ -9505,6 +9542,15 @@ body.has-panel .mapctl{display:none}
         });
         document.getElementById('cityBtn').addEventListener('click', openCity);
         document.getElementById('cityNavBtn').addEventListener('click', openCity);
+        function openKeep() { cityOpenId = '_keep'; renderCitySheet(); }
+        document.getElementById('lookGo').addEventListener('click', () => {           // the look is chosen in your castle
+            if (!cityView.hidden) { closeAllPopups(); openKeep(); return; }
+            openCity(); setTimeout(openKeep, 1900);
+        });
+        document.getElementById('cityBExtra').addEventListener('click', e => {        // the crest editor lives in the profile
+            if (!e.target.closest('[data-keep-crest]')) return;
+            profileBtn.click(); showProfileTab('info'); const pg = document.getElementById('crestPage'); if (pg.hidden) document.getElementById('crestCard').click();
+        });
         // Hauptstadt verlegen (teleport): pick one of your own bases, the capital status and its garrison move there.
         var teleportMode = false;
         const TELEPORT_GEMS = 50;
@@ -11018,7 +11064,7 @@ body.has-panel .mapctl{display:none}
             return '<div class="gate-ctl"><div class="gate-row"><span class="stat-l">' + icon('coin') + 'Maut pro Truppe</span><div class="seg">' +
                 GATE_TOLLS.map(v => '<button type="button" data-toll="' + v + '" class="' + (cfg.toll === v ? 'is-on' : '') + '">' + (v ? v.toLocaleString('de-DE') : 'frei') + '</button>').join('') + '</div></div>' +
                 '<button type="button" data-gate-toggle class="btn ' + (cfg.closed ? 'btn--primary' : 'btn--secondary') + ' btn--grow">' + icon('lock') + '<span>' + (cfg.closed ? 'Tor öffnen' : 'Tor schließen') + '</span></button>' +
-                '<p class="gate-note">' + (cfg.closed ? 'Geschlossen: niemand sonst kommt über die Brücke – nur wer das Tor erobert.' : 'Offen: andere zahlen die Maut an dich.') + '</p></div>';
+                '<p class="gate-note">' + (cfg.closed ? 'Geschlossen: niemand sonst kommt über die Brücke – nur wer das Tor erobert.' : 'Offen: andere zahlen die Maut an dich – höchstens 1 Mio. Münzen pro Marsch.') + '</p></div>';
         }
         popupStats.addEventListener('click', e => {
             const isl = islandById[popupIslandId]; if (!isl || isl.type !== 'gate' || !ownedIslands.has(isl.id)) return;
