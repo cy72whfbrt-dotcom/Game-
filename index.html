@@ -1218,6 +1218,7 @@ body.has-panel .mapctl{display:none}
   var ls = null; try { ls = window.localStorage; } catch (e) {}
   var shift = 0; try { shift = parseFloat(ls.getItem('openWaterTimeShift')) || 0; } catch (e) {}
   try { if (ls && ls.getItem('openWaterJump3d') !== '1') { shift += 3 * 86400000; ls.setItem('openWaterTimeShift', String(shift)); ls.setItem('openWaterJump3d', '1'); } } catch (e) {}   // "3 Tage in die Zukunft" (one time)
+  try { if (ls && ls.getItem('openWaterJumpCenter') !== '1') { shift += 8 * 86400000; ls.setItem('openWaterTimeShift', String(shift)); ls.setItem('openWaterJumpCenter', '1'); } } catch (e) {}   // "bis in die Mitte": 8 more days (one time)
   try { if (ls && ls.getItem('openWaterJump6d') !== '1') { shift += 6 * 86400000; ls.setItem('openWaterTimeShift', String(shift)); ls.setItem('openWaterJump6d', '1'); } } catch (e) {}   // and "6 Tage vor" (one time)
   if (!shift) return;
   var RealDate = Date;
@@ -8019,8 +8020,8 @@ body.has-panel .mapctl{display:none}
         // The others lived through time nobody watched (the one-time 3-day jump): same rules, summed up instead of played
         // second by second - they spread out, fight each other, produce, build their city, level up, gear up. Your bases stay yours.
         var ffSummary = null;
-        function botsFastForward(hours) {
-            const now = Date.now(), days = hours / 24, sum = { caps: 0, fights: 0 };
+        function botsFastForward(hours, toCenter) {        // toCenter: they push region by region towards the throne (gates, Wächter-Tempel)
+            const now = Date.now(), days = hours / 24, sum = { caps: 0, fights: 0 }, mega = islandById[megaTempleId];
             const reach = botId => { const s = new Set(); for (const id of botOwnedIslands[botId]) { const l = islandById[id].landmassId; s.add(l);
                 for (const r of reachableLandmassIds[l] || []) if (landmassesConnected(l, r)) s.add(r); } return s; };
             const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -8033,8 +8034,10 @@ body.has-panel .mapctl{display:none}
             for (const bot of bots) {                              // 1) spread out: the nearest free towers (and a border gate now and then) they can reach
                 const st = BOT_STYLES[bot.style], want = Math.round(dd * (3 + (st.act || .65) * 8) * (.7 + Math.random() * .6));   // about 8 a day, like an active player
                 const rs = reach(bot.id), home = islandById[botCapitalOf(bot.id)] || islandById[[...botOwnedIslands[bot.id]][0]], pw = power(bot.id);
-                const free = islands.filter(i => (i.type === 'tower' || i.type === 'gate' && i.gateKind === 'border') && rs.has(i.landmassId) && !islandOwnerOf(i.id) && !bossAt(i.id)
-                    && (i.type === 'tower' || pw > (effectiveTroops(i) + effectiveDefense(i)) * 1.3)).sort((a, b) => dist(a, home) - dist(b, home));
+                const big = i => i.type === 'gate' && (i.gateKind === 'border' || toCenter) || toCenter && i.type === 'temple';   // gates, and on the way in the temples and Wächter-Tempel
+                const score = i => toCenter ? dist(i, mega) + dist(i, home) * .3 : dist(i, home);
+                const free = [...rs].flatMap(l => islandsByLandmass[l] || []).filter(i => (i.type === 'tower' || big(i)) && !islandOwnerOf(i.id) && !bossAt(i.id)
+                    && (i.type === 'tower' || pw > (effectiveTroops(i) + effectiveDefense(i)) * 1.3)).sort((a, b) => score(a) - score(b));
                 for (const i of free.slice(0, want)) { take(bot.id, i.id); if (i.type === 'gate') setGateSettings(i.id, { toll: .25, closed: false }); }
             }
             for (const bot of bots) {                              // 2) rivals: now and then the stronger neighbour takes a base
@@ -8042,7 +8045,7 @@ body.has-panel .mapctl{display:none}
                 for (let n = 0; n < tries; n++) {
                     const rs = reach(bot.id), home = islandById[botCapitalOf(bot.id)]; if (!home) break;
                     let best = null, bd = Infinity;
-                    for (const i of islands) { const o = islandOwnerOf(i.id); if (!o || o === 'player' || o === bot.id || i.type !== 'tower' || isCapital(i.id) || !rs.has(i.landmassId)) continue;
+                    for (const l of rs) for (const i of islandsByLandmass[l] || []) { const o = islandOwnerOf(i.id); if (!o || o === 'player' || o === bot.id || i.type !== 'tower' || isCapital(i.id)) continue;
                         const d = dist(i, home); if (d < bd) { bd = d; best = i; } }
                     if (!best) break;
                     const foe = islandOwnerOf(best.id); sum.fights++; botGrudge(foe, bot.id, 2);
@@ -8071,6 +8074,7 @@ body.has-panel .mapctl{display:none}
         }
         setTimeout(() => {                               // right after boot (everything exists): production for the time away
             if (store.get('openWaterBotsJump3d') !== '1') { store.set('openWaterBotsJump3d', '1'); try { ffSummary = botsFastForward(72); } catch (e) { console.warn(e); } }   // one time: the others catch up on the 3 days
+            if (store.get('openWaterBotsCenter') !== '1') { store.set('openWaterBotsCenter', '1'); try { const s = botsFastForward(8 * 24, true); ffSummary = ffSummary ? { caps: ffSummary.caps + s.caps, fights: ffSummary.fights + s.fights, days: ffSummary.days + 8 } : s; } catch (e) { console.warn(e); } }   // and on to the middle
             if (store.get('openWaterBotsJump6d') !== '1') { store.set('openWaterBotsJump6d', '1'); try { const s = botsFastForward(144); ffSummary = ffSummary ? { caps: ffSummary.caps + s.caps, fights: ffSummary.fights + s.fights, days: ffSummary.days + 6 } : s; } catch (e) { console.warn(e); } }   // and the 6-day jump
             if (leaveAtBoot && Date.now() - leaveAtBoot.at > 60000) {
                 const away = Math.min(AWAY_PRODUCE_MAX_MS, Date.now() - leaveAtBoot.at), ticks = Math.floor(away / productionTickMs());
