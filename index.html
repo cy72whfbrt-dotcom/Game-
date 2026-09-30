@@ -1220,7 +1220,7 @@ body.has-panel .mapctl{display:none}
   try { if (ls && ls.getItem('openWaterJump3d') !== '1') { shift += 3 * 86400000; ls.setItem('openWaterTimeShift', String(shift)); ls.setItem('openWaterJump3d', '1'); } } catch (e) {}   // "3 Tage in die Zukunft" (one time)
   try { if (ls && ls.getItem('openWaterJumpCenter') !== '1') { shift += 8 * 86400000; ls.setItem('openWaterTimeShift', String(shift)); ls.setItem('openWaterJumpCenter', '1'); } } catch (e) {}   // "bis in die Mitte": 8 more days (one time)
   try { if (ls && ls.getItem('openWaterJump6d') !== '1') { shift += 6 * 86400000; ls.setItem('openWaterTimeShift', String(shift)); ls.setItem('openWaterJump6d', '1'); } } catch (e) {}   // and "6 Tage vor" (one time)
-  if (!shift) return;
+  window.__addTimeShift = function (ms) { shift += ms; try { ls.setItem('openWaterTimeShift', String(shift)); } catch (e) {} };   // the game can move its own clock on
   var RealDate = Date;
   class ShiftedDate extends RealDate { constructor(...a) { if (a.length) super(...a); else super(RealDate.now() + shift); } static now() { return RealDate.now() + shift; } }
   window.Date = ShiftedDate;
@@ -8075,6 +8075,13 @@ body.has-panel .mapctl{display:none}
         setTimeout(() => {                               // right after boot (everything exists): production for the time away
             if (store.get('openWaterBotsJump3d') !== '1') { store.set('openWaterBotsJump3d', '1'); try { ffSummary = botsFastForward(72); } catch (e) { console.warn(e); } }   // one time: the others catch up on the 3 days
             if (store.get('openWaterBotsCenter') !== '1') { store.set('openWaterBotsCenter', '1'); try { const s = botsFastForward(8 * 24, true); ffSummary = ffSummary ? { caps: ffSummary.caps + s.caps, fights: ffSummary.fights + s.fights, days: ffSummary.days + 8 } : s; } catch (e) { console.warn(e); } }   // and on to the middle
+            if (store.get('openWaterBotsCenter2') !== '1') {        // "so weit vorspulen, bis sie in der Mitte sind": day by day until the throne gates and the Wächter land are theirs
+                store.set('openWaterBotsCenter2', '1');
+                const reached = () => { const tg = islands.filter(i => i.type === 'gate' && i.gateKind === 'throne'), gl = islands.filter(i => i.type === 'tower' && landmasses[i.landmassId].tier === 'guardian');
+                    return tg.every(i => islandOwnerOf(i.id)) && gl.filter(i => islandOwnerOf(i.id)).length >= gl.length * .8; };
+                let d = 0; try { while (!reached() && d < 25) { const s = botsFastForward(24, true); d++; ffSummary = ffSummary ? { caps: ffSummary.caps + s.caps, fights: ffSummary.fights + s.fights, days: ffSummary.days + 1 } : Object.assign(s, { days: 1 }); } } catch (e) { console.warn(e); }
+                if (d && window.__addTimeShift) window.__addTimeShift(d * 86400000);   // the clock goes along
+            }
             if (store.get('openWaterBotsJump6d') !== '1') { store.set('openWaterBotsJump6d', '1'); try { const s = botsFastForward(144); ffSummary = ffSummary ? { caps: ffSummary.caps + s.caps, fights: ffSummary.fights + s.fights, days: ffSummary.days + 6 } : s; } catch (e) { console.warn(e); } }   // and the 6-day jump
             if (leaveAtBoot && Date.now() - leaveAtBoot.at > 60000) {
                 const away = Math.min(AWAY_PRODUCE_MAX_MS, Date.now() - leaveAtBoot.at), ticks = Math.floor(away / productionTickMs());
