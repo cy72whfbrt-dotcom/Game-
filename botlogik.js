@@ -559,7 +559,8 @@ function botThink(bot) {
     if (Date.now() < act.next) return;                               // still busy with the last order
     if (!(act.plan && act.plan.kind === 'attack') && botArmyStep(bot)) { botTapped(bot); saveBotState(); return; }   // a field army waiting for orders (gathering troops can wait one tap)
     if (act.plan) { if (botPlanStep(bot)) { botTapped(bot); saveBotState(); } return; }   // finish what they started
-    if (botKeepsShield(bot, Date.now())) { if (Math.random() < .3 && botGatherField(bot, true)) botTapped(bot); return; }   // under their own shield: no attacks, only gathering
+    if (botKeepsShield(bot, Date.now())) { if (Math.random() < .3 && (botGatherField(bot, true) || botBarbHunt(bot))) botTapped(bot); return; }   // under their own shield: no attacks, only gathering and camps
+    if (Math.random() < .1 && (botBarbHunt(bot) || botDayBoss(bot))) { botTapped(bot); saveBotState(); return; }   // now and then a camp or a strike at the daily boss (that is this move's order)
     const st = botStyle(bot), atk = botAtkFactor(bot, true), ruler = rulerOwner();   // several waves: a hero only leads one, so he's a bonus, not part of the plan
     const shielded = playerShielded(), now = Date.now(), shOwn = shieldedOwners(now);
     const busy = new Set(pendingAttacks.filter(a => a.attackerBotId === bot.id).map(a => a.targetId)), thr = botThreatened(bot.id);
@@ -1353,7 +1354,7 @@ const BOT_GOAL_VAL = {
     wanders: (b, st) => st.wanders, temples: (b, st) => st.temples, throne: (b, st) => st.ruled ? 1 : 0, throneMin: (b, st) => st.throneMin, throneEarned: (b, st) => st.tpEarned, scouts: (b, st) => st.scouts,
     cityMin: b => Math.min(...BOT_BUILDINGS.map(k => b.city.levels[k] || 0)), baseTop: (b, st, id) => goalBaseTop(id), gates: (b, st, id) => goalGates(id), tolls: (b, st) => st.tolls, tollCoins: (b, st) => st.tollCoins,
     armyWins: (b, st) => st.armyWins, heroes: (b, st, id) => goalHeroes(id), heroStars: (b, st, id) => goalHeroStars(id), heroFires: (b, st) => st.heroFires,
-    healed: (b, st) => st.healed, shields: (b, st) => st.shields, teleports: (b, st) => st.teleports
+    healed: (b, st) => st.healed, shields: (b, st) => st.shields, teleports: (b, st) => st.teleports, barb: (b, st) => st.barb, dboss: (b, st) => st.dboss
 };
 function botGoalVal(botId, k) { const b = loadBotState()[botId], f = BOT_GOAL_VAL[k]; return b && f ? f(b, b.stats || {}, botId) || 0 : 0; }
 function botClaimGoals(bot) {
@@ -1622,4 +1623,36 @@ function botConquests(botId) {                         // Eroberungen for the Ra
     const b = loadBotState()[botId]; if (!b) return 0; const st = b.stats = b.stats || {};
     if (!st.capSeed) { st.caps = Math.max(st.caps || 0, Math.max(0, (botOwnedIslands[botId] ? botOwnedIslands[botId].size : 0) - 1)); st.capSeed = 1; }
     return st.caps || 0;
+}
+
+// ==============================================================================================================
+// 10) BARBAREN-LAGER UND TAGESBOSS – farmen wie du: Stufe für Stufe, höchstens 20 Lager am Tag, ein paar Treffer am Boss
+// ==============================================================================================================
+const botBarbNext = {};                                   // a person farms camps now and then, not all in one go
+function botBarbBase(bot) {                               // their biggest base that nobody is marching on
+    const own = botOwnedIslands[bot.id]; if (!own || !own.size) return null;
+    const thr = botThreatened(bot.id); let base = null; for (const id of own) if (!thr.has(id) && (base === null || (islandTroops[id] || 0) > (islandTroops[base] || 0))) base = id;
+    return base;
+}
+function botBarbHunt(bot) {                               // the strongest camp they may attack (level up to their best + 1) that one base beats with room to spare
+    const now = Date.now(); if (botBarbNext[bot.id] === undefined) botBarbNext[bot.id] = now + Math.random() * 90000;
+    if (botBarbNext[bot.id] > now || barbLeft(bot.id) <= 0 || barbOut(bot.id)) return false;
+    botBarbNext[bot.id] = now + (6 + Math.random() * 12) * 60000;
+    const base = botBarbBase(bot); if (base === null) return false;
+    const have = (islandTroops[base] || 0) * .5, b = islandById[base], fa = barbFa(bot.id), best = barbRec(bot.id).b;
+    const reach = new Set((reachableLandmassIds[b.landmassId] || [b.landmassId]).filter(l => l === b.landmassId || landmassesConnected(b.landmassId, l)));
+    const taken = new Set(barbMarches.filter(m => !m.back && m.k === 'c').map(m => m.tid));
+    const cand = []; let pick = null;
+    for (const c of barbState.camps) if (c.L <= best + 1 && !taken.has(c.id) && c.t * 1.3 / fa <= have) cand.push([c.L * 3 - Math.hypot(c.x - b.x, c.y - b.y) / 4000, c]);
+    cand.sort((x, y) => y[0] - x[0]);
+    for (const [, c] of cand.slice(0, 6)) if (reach.has(c.lm) || canReach(b.landmassId, c.lm, bot.id)) { pick = c; break; }   // the next ones first, further ones over the bridges
+    if (!pick) return false;
+    const n = Math.min(have, Math.ceil(pick.t * (1.3 + Math.random() * .4) / fa));
+    return barbSend(bot.id, base, 'c', pick.id, n, heroPickBest(bot.id, null, null, n));
+}
+function botDayBoss(bot) {                                // the daily boss: a few strikes a day with a share of their biggest free base
+    const d = dbossEnsure(); if (!d || d.hp <= 0 || barbRec(bot.id).h >= DBOSS_HITS || barbOut(bot.id, 'b') || Math.random() < .5) return false;
+    const base = botBarbBase(bot); if (base === null) return false;
+    const n = Math.floor((islandTroops[base] || 0) * (.15 + Math.random() * .2)); if (n < 1000) return false;
+    return barbSend(bot.id, base, 'b', null, n, heroPickBest(bot.id, null, null, n));
 }

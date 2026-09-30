@@ -289,6 +289,17 @@ b,strong{font-weight:600}
 .marker-sheet[hidden]{display:none}
 .field-lines{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-3)} .field-lines b{color:var(--tx-1);text-align:right}
 .field-sheet .marker-head b{display:inline-flex;align-items:center;gap:6px} .field-sheet .marker-head .icon{width:16px;height:16px} .field-sheet .btn{justify-content:center}
+.barb-sheet{max-height:calc(100vh - var(--dock-h) - var(--safe-b) - 120px);overflow-y:auto} .field-lines small{color:var(--tx-3);font-weight:500}
+.barb-lv{padding:2px 7px;border-radius:999px;border:1px solid var(--bc);color:var(--bc);font:700 var(--fs-11)/1.2 var(--font-ui)}
+.barb-hp{position:relative;height:18px;border-radius:9px;background:var(--well,rgba(0,0,0,.35));border:1px solid var(--line-2);overflow:hidden}
+.barb-hp i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#7a1a16,#d8453a)} .barb-hp span{position:relative;display:block;text-align:center;font:700 var(--fs-11)/17px var(--font-ui);color:var(--tx-1);text-shadow:0 1px 2px rgba(0,0,0,.8);font-variant-numeric:tabular-nums}
+.barb-rank{list-style:none;margin:0;padding:0;display:grid;gap:3px}
+.barb-rank li{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:var(--r-xs);background:rgba(255,255,255,.03);border:1px solid var(--line-1);font:500 var(--fs-12)/1.2 var(--font-ui);color:var(--tx-2)}
+.barb-rank li em{width:16px;font-style:normal;font-weight:700;color:var(--gold-300);text-align:center} .barb-rank li:nth-child(-n+3) em{color:var(--gold-100)} .barb-rank li span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.barb-rank li b{color:var(--tx-1);font-variant-numeric:tabular-nums} .barb-rank li.me{border-color:var(--line-3);background:rgba(214,170,90,.1)}
+.barb-note{font:500 var(--fs-11)/1.35 var(--font-ui);color:var(--tx-3)}
+.barb-card{display:flex;flex-direction:column;gap:6px;padding:9px 10px;border-radius:var(--r-sm);background:rgba(255,255,255,.03);border:1px solid var(--line-1)}
+.barb-ct{display:flex;align-items:baseline;justify-content:space-between;gap:8px} .barb-ct b{display:inline-flex;align-items:center;gap:6px;font:700 var(--fs-13)/1.2 var(--font-ui);color:var(--tx-1)} .barb-ct .icon{width:15px;height:15px;color:var(--gold-300)} .barb-ct small{font:600 var(--fs-11)/1 var(--font-ui);color:var(--gold-200)}
 .logGear{margin-top:8px;padding-top:8px;border-top:1px solid var(--line-1);display:grid;gap:6px}
 .logGearHead{font:600 var(--fs-11)/1.2 var(--font-ui);color:var(--tx-2)}
 .logGearItems{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
@@ -1581,9 +1592,11 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
   <button id="musicBtn" type="button" aria-label="Musik an/aus" aria-pressed="true"><svg class="icon"><use href="#i-sound"/></svg></button>
   <button id="markerBtn" type="button" aria-label="Wegmarke setzen"><svg class="icon"><use href="#i-flag"/></svg></button>
   <button id="armyBtn" type="button" aria-label="Armee aufstellen"><svg class="icon"><use href="#i-troops"/></svg></button>
+  <button id="eventBtn" type="button" aria-label="Ereignisse: Tagesboss und Barbaren-Lager"><svg class="icon"><use href="#i-attack"/></svg></button>
 </div>
 <div id="armySheet" class="marker-sheet field-sheet" hidden></div>
 <div id="fieldSheet" class="marker-sheet field-sheet" hidden></div>
+<div id="barbSheet" class="marker-sheet field-sheet barb-sheet" hidden></div>
 <div id="markerSheet" class="marker-sheet" hidden>
   <div class="marker-head"><b id="markerTitle">Wegmarke</b><button id="markerClose" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button></div>
   <div class="marker-presets" id="markerPresets"></div>
@@ -5232,6 +5245,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
           drawBaseAuras(vis, z, now);                                                                                          // level + title auras under the towers
           drawThronePlaza(z, now);                                                                                             // the Thronplatz around the Mega-Tempel
           drawResFields(now, wallNow);                                                                                          // gold mines and gem veins
+          drawBarb(now, wallNow);                                                                                               // Barbaren-Lager, the Tagesboss and the columns on their way
           drawArmies(now, wallNow);                                                                                             // your armies out in the open
           for (const isl of vis.slice().sort((a, b) => a.y - b.y)) drawBuilding(isl, ownerKeyOf(isl), z);                    // 7
           drawThroneFx(z, now);
@@ -6624,7 +6638,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             temples: () => achStat('temples'), throne: () => achStat('throne'), throneMin: () => achStat('throneMin'), throneEarned: () => throneState.earned || 0, scouts: () => achStat('scouts'),
             cityMin: cityMinLevel, baseTop: () => goalBaseTop('player'), gates: () => goalGates('player'), tolls: () => achStat('tolls'), tollCoins: () => achStat('tollCoins'),
             armyWins: () => achStat('armyWins'), heroes: () => goalHeroes('player'), heroStars: () => goalHeroStars('player'), heroFires: () => achStat('heroFires'),
-            healed: () => achStat('healed'), shields: () => achStat('shields'), teleports: () => achStat('teleports')
+            healed: () => achStat('healed'), shields: () => achStat('shields'), teleports: () => achStat('teleports'), barb: () => achStat('barb'), dboss: () => achStat('dboss')
         };
         const ACHIEVEMENTS = [   // the old ids stay (claims are kept); the tiers of one kind share k
             { id: 'cap1',    name: 'Erste Eroberung',  icon: 'flag',    desc: 'Erobere deine erste Basis.',             goal: 1,    k: 'captures', gems: 20 },
@@ -6675,6 +6689,9 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             { id: 'shield10', name: 'Vorsichtig',      icon: 'shield',  desc: 'Setz 10 Friedensschilde ein.',           goal: 10,   k: 'shields', gems: 150 },
             { id: 'tele1',   name: 'Umzug',            icon: 'home',    desc: 'Verlege deine Hauptstadt.',              goal: 1,    k: 'teleports', gems: 30 },
             { id: 'tele10',  name: 'Nomade',           icon: 'home',    desc: 'Verlege deine Hauptstadt 10 Mal.',       goal: 10,   k: 'teleports', gems: 200 },
+            { id: 'barb25',  name: 'Barbarenschreck',  icon: 'attack',  desc: 'Besiege 25 Barbaren-Lager.',             goal: 25,   k: 'barb', gems: 100 },
+            { id: 'barb250', name: 'Lagerstürmer',     icon: 'attack',  desc: 'Besiege 250 Barbaren-Lager.',            goal: 250,  k: 'barb', gems: 500 },
+            { id: 'dboss5',  name: 'Bossbrecher',      icon: 'crown',   desc: 'Kämpf bei 5 gefallenen Tagesbossen mit.', goal: 5,   k: 'dboss', gems: 300 },
         ];
         const achVal = a => GOAL_VAL[a.k]();
         const achDone = a => achVal(a) >= a.goal;
@@ -7024,6 +7041,11 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
                     return logRowHtml(entry.won ? 'win' : 'loss', K.icon, logBadge(entry.won ? 'win' : 'loss', entry.won ? 'Feld gehalten' : 'Feld verloren') + K.name,
                         escapeHtml(entry.attacker) + ' (' + fmtM(entry.atk) + ') gegen ' + escapeHtml(entry.defender) + ' (' + fmtM(entry.def) + ')' + (entry.gold ? ' · +' + fmtM(entry.gold) + ' Gold' : '') + fieldHeroLine(entry), ago(entry), fieldHeroDet(entry));
                 }
+                if (entry.type === 'barb') return logRowHtml(entry.won ? 'win' : 'loss', 'attack', logBadge(entry.won ? 'win' : 'loss', entry.won ? 'Besiegt' : 'Abgewehrt') + 'Barbaren · Stufe ' + entry.L,
+                    'Du (' + fmtM(entry.atk) + ') gegen ' + fmtM(entry.def) + ' Krieger' + (entry.loss ? ' · ' + fmtM(entry.loss) + ' gefallen' : '') + (entry.wounded ? ' · ' + fmtM(entry.wounded) + ' ins Lazarett' : '') + (entry.gold ? ' · +' + fmtM(entry.gold) + ' Gold' : '') +
+                    (entry.crate ? ' · Kiste: ' + escapeHtml(entry.crate) : '') + (entry.sh ? ' · ' + escapeHtml(entry.sh) : '') + fieldHeroLine(entry), ago(entry), fieldHeroDet(entry));
+                if (entry.type === 'dboss') return logRowHtml('win', 'crown', logBadge('win', 'Tagesboss') + escapeHtml(entry.name),
+                    fmtM(entry.dmg) + ' Schaden · noch ' + fmtM(entry.left) + ' Leben' + (entry.loss ? ' · ' + fmtM(entry.loss) + ' gefallen' : '') + (entry.wounded ? ' · ' + fmtM(entry.wounded) + ' ins Lazarett' : '') + (entry.gold ? ' · +' + fmtM(entry.gold) + ' Gold' : '') + fieldHeroLine(entry), ago(entry), fieldHeroDet(entry));
                 if (entry.type === 'army') {
                     const side = (n, own) => n === 'Du' ? (own ? 'Deine Armee' : 'deine Armee') : (own ? 'Die Armee von ' : 'die Armee von ') + escapeHtml(n);
                     return logRowHtml(entry.won ? 'win' : 'loss', 'troops', logBadge(entry.won ? 'win' : 'loss', entry.won ? 'Armee siegt' : 'Armee geschlagen') + 'Kampf im Feld',
@@ -8422,7 +8444,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         function sfx(name) { if (window.__sfx) window.__sfx(name); }       // sound effect (no-op until the sound engine is up)
         function spawnBattleFx(islandId, good, label, sub) {
             sfx(/Herrscher/.test(label) ? 'crown' : /^Weltereignis/.test(sub || '') ? 'event' : / gefallen$/.test(label) ? '' : /verlegt/.test(sub || '') ? 'move' : good ? 'victory' : 'defeat');
-            const isl = islandById[islandId]; if (!isl) return;
+            const isl = typeof islandId === 'object' ? islandId : islandById[islandId]; if (!isl) return;   // a base, or a point on the map ({ x, y })
             const rnd = (a, b) => a + Math.random() * (b - a);
             const shards = [], smoke = [], sparks = [];
             for (let i = 0; i < 14; i++) shards.push({ a: rnd(0, Math.PI * 2), v: rnd(70, 170), rot: rnd(0, 6.3), vr: rnd(-12, 12), s: rnd(2.5, 5.5) });
@@ -9282,7 +9304,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         function heroMergeHx(f, a) { if (!a || !f) return f || a; if (f.id === a.id) return f;                                              // two waves with two heroes in one fight: both count
             return Object.assign({}, f, { def: Math.max(f.def, a.def), hosp: Math.max(f.hosp, a.hosp), flee: Math.max(f.flee, a.flee), ret: Math.max(f.ret, a.ret), gold: Math.max(f.gold, a.gold),
                 extra: [...(f.extra || []), { id: a.id, q: a.q, fired: a.fired, skill: a.skill, lines: a.lines }] }); }
-        function heroOnField(who, id) { try { return fieldMarches.some(m => m.who === who && m.hero === id) || resFields.some(f => { const o = fieldState[f.id] && fieldState[f.id].occ; return !!o && o.who === who && o.hero === id; }); } catch (e) { return false; } }
+        function heroOnField(who, id) { try { return fieldMarches.some(m => m.who === who && m.hero === id) || barbMarches.some(m => m.who === who && m.hero === id) || resFields.some(f => { const o = fieldState[f.id] && fieldState[f.id].occ; return !!o && o.who === who && o.hero === id; }); } catch (e) { return false; } }
         function heroBusy(who, id) {                        // one attack, army or field march per hero at a time
             const mine = x => who === 'player' ? !x || x === 'player' : x === who;
             return pendingAttacks.some(a => mine(a.attackerBotId) && (a.hero === id || (a.hx && (a.hx.extra || []).some(e => e.id === id))))
@@ -10337,6 +10359,337 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             if (e.target.closest('[data-fsend]')) { const src = fieldSource(f); if (src === null) return; const n = Math.floor((islandTroops[src] || 0) * fieldShare);
                 if (n < 1) return; fieldSend('player', src, f.id, n, fieldHero); fieldHero = null; flashHint('Truppen unterwegs zur ' + FIELD_KINDS[f.kind].name + '.', 2500); closeFieldSheet(); }
         });
+        // ===== BARBAREN-LAGER + TAGESBOSS: camps (Stufe 1-25) out on the land and one boss a day with a big pool of life for everyone.
+        // A camp of level N only after N-1 (level 1 always), 20 camp wins a day (reset at midnight) - the same for you and every other player.
+        const BARB_MAX_L = 25, BARB_DAY = 20, BARB_WANT = 110, DBOSS_HITS = 10, DBOSS_CAP = .05;   // camps on the map · a boss hit takes at most 5 % of its life
+        const barbTroopsOf = L => niceRound(2000 * Math.pow(2, L - 1));                         // 2 Tsd. at 1, ~1 Mio. at 10, ~34 Mrd. at 25
+        const barbLootOf = L => niceRound(barbTroopsOf(L) * .6 + 500 * L * L);                    // coins for a win (+ Angriff: Gold per warrior)
+        const barbTier = L => L >= 21 ? 4 : L >= 15 ? 3 : L >= 8 ? 2 : 1;                         // badge colour like the gear rarities
+        const DBOSS_KINDS = [{ k: 'kraken', name: 'Kraken Thalor', col: '#3fb0c4' }, { k: 'giant', name: 'Steinriese Gorm', col: '#b39b72' }, { k: 'dragon', name: 'Feuerdrache Ignar', col: '#ee6a34' }, { k: 'wraith', name: 'Nebelkönig Morvan', col: '#9d86ea' }];
+        const DBOSS_PRIZE = [{ gems: 300, crate: 4, sh: 30 }, { gems: 200, crate: 3, sh: 20 }, { gems: 150, crate: 3, sh: 15 }, { gems: 80, crate: 2, sh: 10 }, { gems: 30, crate: -1, sh: 5 }];   // 1 · 2 · 3 · 4-10 · everyone else who hit it
+        const dbossPrizeOf = i => DBOSS_PRIZE[i < 3 ? i : i < 10 ? 3 : 4];
+        const barbLoad = (k, d) => { try { return JSON.parse(store.get(k)) || d; } catch (e) { return d; } };
+        let barbState = barbLoad('openWaterBarb', { camps: [], n: 0, next: 0 }), barbMarches = barbLoad('openWaterBarbMarches', []), barbWho = barbLoad('openWaterBarbWho', {}), dayBoss = barbLoad('openWaterDayBoss', null), barbSaveAt = 0;
+        function saveBarb(now) { if (now && now - barbSaveAt < 5000) return; barbSaveAt = now || Date.now();
+            store.set('openWaterBarb', JSON.stringify(barbState)); store.set('openWaterBarbMarches', JSON.stringify(barbMarches)); store.set('openWaterBarbWho', JSON.stringify(barbWho)); store.set('openWaterDayBoss', JSON.stringify(dayBoss)); }
+        window.addEventListener('pagehide', () => saveBarb()); document.addEventListener('visibilitychange', () => { if (document.hidden) saveBarb(); });
+        const barbCampById = id => barbState.camps.find(c => c.id === id);
+        function barbRec(who) { const r = barbWho[who] || (barbWho[who] = { b: 0, d: '', n: 0, h: 0 }), d = todayKey(); if (r.d !== d) { r.d = d; r.n = 0; r.h = 0; } return r; }   // b: best level beaten · n: camp wins today · h: boss hits today
+        const barbOut = (who, k) => barbMarches.filter(m => m.who === who && !m.back && m.k === (k || 'c')).length;
+        const barbLeft = who => Math.max(0, BARB_DAY - barbRec(who).n - barbOut(who));
+        const barbOpenFor = (who, L) => L <= barbRec(who).b + 1;
+        const barbPt = o => ({ id: 'barb' + (o.id || o.tid || 'b'), x: o.x, y: o.y, landmassId: o.lm, radius: ISLAND_RADIUS * .6 });
+        const barbFa = who => (1 + fieldAtkPct(who) / 100) * titleMult(who, 'attack');
+        const BARB_LMS = landmasses.filter(l => l.tier === 'outer'), barbProbe = document.createElement('canvas').getContext('2d');
+        function barbSpot(lm, r, edge) {                    // a free place on the land: clear of bases, fields, other camps and the boss (edge: room to the shore)
+            const e = ISLAND_RADIUS * (edge || 1);
+            for (let t = 0; t < 30; t++) {
+                const x = lm.x + (r() * 2 - 1) * lm.shapeMaxR * .85, y = lm.y + (r() * 2 - 1) * lm.shapeMaxR * .85;
+                if (!barbProbe.isPointInPath(lm.path, x, y) || [[e, 0], [-e, 0], [0, e], [0, -e]].some(([dx, dy]) => !barbProbe.isPointInPath(lm.path, x + dx, y + dy)) || (islandsByLandmass[lm.id] || []).some(i => Math.hypot(i.x - x, i.y - y) < ISLAND_RADIUS * 3)) continue;
+                if (resFields.some(f => f.landmassId === lm.id && Math.hypot(f.x - x, f.y - y) < ISLAND_RADIUS * 2.2) || barbState.camps.some(c => Math.hypot(c.x - x, c.y - y) < ISLAND_RADIUS * 3)) continue;
+                if (dayBoss && Math.hypot(dayBoss.x - x, dayBoss.y - y) < ISLAND_RADIUS * 5) continue;
+                return { x, y };
+            }
+            return null;
+        }
+        function barbSpawn() {                              // a third near you, 40 % near someone else (at a level that fits them), the rest anywhere
+            const r = Math.random(), who = r < .3 ? 'player' : r < .7 ? BOT_DEFS[Math.floor(Math.random() * BOT_DEFS.length)].id : null, own = who && (who === 'player' ? ownedIslands : botOwnedIslands[who]);
+            let lm = null, L = Math.min(BARB_MAX_L, 1 + Math.floor(BARB_MAX_L * Math.pow(Math.random(), 1.7)));   // anywhere: many small camps, few big ones
+            if (own && own.size) { const ids = [...own], b = islandById[ids[Math.floor(Math.random() * ids.length)]];
+                if (b) { const rs = (reachableLandmassIds[b.landmassId] || [b.landmassId]).filter(l => l === b.landmassId || landmassesConnected(b.landmassId, l)); lm = landmasses[rs[Math.floor(Math.random() * rs.length)]]; }
+                L = Math.max(1, Math.min(BARB_MAX_L, barbRec(who).b + 1 - Math.floor(Math.pow(Math.random(), 2) * 5))); }
+            if (!lm || lm.tier !== 'outer') lm = BARB_LMS[Math.floor(Math.random() * BARB_LMS.length)];
+            const p = barbSpot(lm, Math.random); if (!p) return false;
+            const t = barbTroopsOf(L); barbState.camps.push({ id: 'c' + (barbState.n++), x: Math.round(p.x), y: Math.round(p.y), lm: lm.id, L, t, max: t, until: Date.now() + (3 + Math.random() * 3) * 36e5 }); return true;   // moves on after 3-6 h
+        }
+        function dbossEnsure() {                            // today's boss: the kind turns every day, the place is the same for everyone today
+            const d = todayKey(); if (dayBoss && dayBoss.d === d) return dayBoss;
+            const now = new Date(), n = Math.round(new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12).getTime() / 864e5), K = DBOSS_KINDS[n % DBOSS_KINDS.length], r = mulberry32(n * 7919 + 13);
+            const lms = BARB_LMS.filter(l => l.ring <= 3); let p = null, lm = null;
+            for (let t = 0; t < 20 && !p; t++) { lm = lms[Math.floor(r() * lms.length)]; p = barbSpot(lm, r, 3.5); }
+            if (!p) p = { x: lm.x, y: lm.y };
+            let pool = 0; for (const bot of BOT_DEFS) { let big = 0; for (const id of botOwnedIslands[bot.id] || []) big = Math.max(big, islandTroops[id] || 0); pool += big * .25 * DBOSS_HITS; }
+            const hp = niceRound(Math.max(5e7, pool * .8)), had = !!dayBoss;                        // life: about 80 % of what everyone's strikes can take in a day
+            dayBoss = { d, k: K.k, name: K.name, x: Math.round(p.x), y: Math.round(p.y), lm: lm.id, hp, max: hp, dmg: {}, fell: 0 };
+            saveBarb(); if (had) flashHint('Neuer Tagesboss: ' + K.name + ' ist erschienen!', 5000);
+            return dayBoss;
+        }
+        const dbossKind = b => DBOSS_KINDS.find(K => K.k === b.k) || DBOSS_KINDS[0];
+        const dbossRanks = b => Object.entries(b.dmg || {}).sort((x, y) => y[1] - x[1]);
+        function barbSend(who, homeId, k, tid, troops, hero) {  // troops leave a base for a camp (k 'c') or the boss (k 'b') - a hero may lead them
+            const home = islandById[homeId], t = k === 'b' ? dbossEnsure() : barbCampById(tid); troops = Math.floor(troops); if (!home || !t || troops < 1) return false;
+            if (hero && (!heroOwned(who, hero) || heroBusy(who, hero))) hero = null; const mx = heroMarchFx(who, hero), now = Date.now();
+            islandTroops[homeId] = Math.max(0, (islandTroops[homeId] || 0) - troops);
+            barbMarches.push({ who, homeId, k, tid: k === 'b' ? null : tid, d: k === 'b' ? t.d : null, x: t.x, y: t.y, lm: t.lm, troops, hero: hero || null, startedAt: now,
+                resolveAt: now + travelDurationSeconds(home, barbPt(t), who === 'player' ? undefined : who) / (1 + (mx ? mx.spd : 0) / 100) * 1000, back: false });
+            if (k === 'b') barbRec(who).h++;
+            saveBarb(); if (who === 'player') { sfx('send'); updateHud(); saveGame(); } requestRender(); return true;
+        }
+        function barbHome(m, n, now) { if (n < 1) return; const home = islandById[m.homeId] || islandById[playerIslandId]; if (!home) return;   // the survivors walk home
+            barbMarches.push({ who: m.who, homeId: m.homeId, k: m.k, tid: m.tid, d: m.d, x: m.x, y: m.y, lm: m.lm, troops: Math.floor(n), hero: m.hero, startedAt: now, resolveAt: now + travelDurationSeconds(home, barbPt(m), m.who === 'player' ? undefined : m.who) * 1000, back: true }); }
+        function barbCrate(who, minR) {                     // a gear crate: yours into the inventory, theirs into their spares
+            const r = Math.max(minR, pickRandomRarity());
+            if (who === 'player') return grantFreeCrate(r);
+            const bs = loadBotState()[who], sp = bs && bs.spare && bs.spare[pickRandomSlot()]; if (sp) sp[r] = (sp[r] || 0) + 1; return null;
+        }
+        function barbFight(who, troops, hx, foes) {         // out in the open: (troops + Gefolge) × Angriff (+ hero) × title against the camp, your shield (+ hero) saves some
+            const h = hx || HX0, fa = (1 + (fieldAtkPct(who) + h.atk) / 100) * titleMult(who, 'attack'), SA = (troops + h.gef) * fa, won = SA > foes;
+            const sh = Math.min(90, fieldShield(who) + h.loss), loss = won ? Math.min(troops, Math.round(foes / fa * (1 - sh / 100))) : troops;
+            return { won, SA: Math.round(SA), loss, kill: won ? foes : Math.min(foes, Math.round(SA)) };
+        }
+        function barbArrive(m, now) {
+            const who = m.who, isP = who === 'player';
+            if (m.back) {                                    // home again
+                const own = isP ? ownedIslands : botOwnedIslands[who], baseId = own && own.has(m.homeId) ? m.homeId : isP ? rewardBaseId() : own && [...own][0];
+                if (baseId !== undefined && baseId !== null) islandTroops[baseId] = (islandTroops[baseId] || 0) + m.troops;
+                if (isP) { updateHud(); saveGame(); } return;
+            }
+            if (m.k === 'b') return dbossHit(m, now);
+            const c = barbCampById(m.tid), rec = barbRec(who);
+            if (!c || rec.n >= BARB_DAY) { barbHome(m, m.troops, now); if (isP) flashHint(c ? 'Für heute genug Lager: ' + BARB_DAY + ' / ' + BARB_DAY + ' heute.' : 'Das Lager ist schon geräumt – deine Truppen kehren um.', 3500); return; }
+            const hx = heroFieldFx(who, m.hero, {}), before = c.t, fb = barbFight(who, m.troops, hx, c.t), wounded = fieldHurt(who, fb.loss, hx);   // the leader: a full rage fires now, every fight fills it
+            let gold = 0, item = null, sh = null, shN = 1 + Math.floor(c.L / 5);
+            if (fb.won) {
+                barbState.camps = barbState.camps.filter(x => x !== c); rec.n++; rec.b = Math.max(rec.b, c.L); goalBump(who, 'barb');
+                gold = payGold(who, barbLootOf(c.L) + fb.kill * killGoldRate(who, hx));
+                if (Math.random() < .1 + c.L * .015) item = barbCrate(who, Math.floor(c.L / 8));
+                if (Math.random() < .15 + c.L * .01) sh = heroGrantShards(who, shN);
+                barbHome(m, m.troops - fb.loss, now);
+            } else c.t = Math.max(1, Math.round(c.t - fb.kill));
+            if (!isP) return;
+            const it = item && item.rarity !== undefined ? EQUIPMENT_DEFS[item.slot].name + ' (' + RARITY_DEFS[item.rarity].label + ')' : '';
+            addCombatLogEntry({ type: 'barb', L: c.L, won: fb.won, atk: fb.SA, def: before, loss: fb.loss, wounded, gold, crate: it, sh: sh ? shN + ' Splitter ' + sh.name : '', attacker: 'Du', hA: heroTag(hx), hx: heroReportOf(hx) });
+            spawnBattleFx({ x: c.x, y: c.y }, fb.won, fb.won ? 'Lager besiegt' : 'Abgewehrt', fb.won ? 'Stufe ' + c.L + ' · ' + rec.n + ' / ' + BARB_DAY + ' heute' : '−' + fmtCompact(fb.loss) + ' Truppen');
+            flashHint(fb.won ? 'Barbaren-Lager Stufe ' + c.L + ' besiegt: +' + fmtCompact(gold) + ' Münzen' + (it ? ', Kiste: ' + it : '') + (sh ? ', ' + shN + ' Splitter ' + sh.name : '') + '.' : 'Das Lager hat standgehalten – es hat jetzt noch ' + fmtCompact(c.t) + ' Krieger.', 4500);
+            updateHud(); saveGame(); saveProgression(); barbSheetRefresh();
+        }
+        function dbossHit(m, now) {                         // every attack takes life off the boss (at most 5 %); a quarter of those who struck fall (Lazarett as usual), the rest come home
+            const b = dayBoss, who = m.who, isP = who === 'player';
+            if (!b || b.d !== m.d || b.d !== todayKey() || b.hp <= 0) { barbHome(m, m.troops, now); if (isP) flashHint('Der Tagesboss ist schon gefallen – deine Truppen kehren um.', 3500); return; }
+            const hx = heroFieldFx(who, m.hero, {}), h = hx || HX0, fa = (1 + (fieldAtkPct(who) + h.atk) / 100) * titleMult(who, 'attack');
+            const dmg = Math.max(1, Math.min(b.hp, Math.round((m.troops + h.gef) * fa), Math.round(b.max * DBOSS_CAP)));
+            const used = Math.min(m.troops, dmg / fa), loss = Math.min(m.troops, Math.round(used * .25 * (1 - Math.min(90, fieldShield(who) + h.loss) / 100))), wounded = fieldHurt(who, loss, hx);   // a quarter of those who struck
+            b.hp -= dmg; b.dmg[who] = (b.dmg[who] || 0) + dmg;
+            const gold = payGold(who, dmg * .3 * (1 + h.gold / 100));
+            barbHome(m, m.troops - loss, now);
+            if (isP) {
+                addCombatLogEntry({ type: 'dboss', name: b.name, dmg, loss, wounded, gold, left: Math.max(0, b.hp), max: b.max, attacker: 'Du', hA: heroTag(hx), hx: heroReportOf(hx) });
+                spawnBattleFx({ x: b.x, y: b.y }, true, 'Treffer', '−' + fmtCompact(dmg) + ' Leben');
+                flashHint('Treffer bei ' + b.name + ': ' + fmtCompact(dmg) + ' Schaden, +' + fmtCompact(gold) + ' Münzen.', 3500); updateHud(); saveGame();
+            }
+            if (b.hp <= 0) { b.hp = 0; b.fell = now; dbossPayout(b); }
+            if (isP || barbView && barbView.kind !== 'camp') barbSheetRefresh();
+        }
+        function dbossPayout(b) {                           // the boss falls: everyone who hit it gets a prize by damage (top 3 extra)
+            const rk = dbossRanks(b); let bs = null;
+            rk.forEach(([who], i) => { const p = dbossPrizeOf(i); goalBump(who, 'dboss');
+                if (who === 'player') { gems += p.gems; const item = p.crate >= 0 ? grantFreeCrate(p.crate) : null, s = heroGrantShards('player', p.sh); saveProgression(); saveGame(); updateHud(); dbossRewardModal(b, i, p, item, s); }
+                else if (botById[who]) { bs = bs || loadBotState(); if (bs[who]) bs[who].gems += p.gems; if (p.crate >= 0) barbCrate(who, p.crate); heroGrantShards(who, p.sh); } });
+            if (bs) saveBotState();
+            spawnBattleFx({ x: b.x, y: b.y }, true, b.name + ' gefallen', rk.length + ' Kämpfer belohnt');
+            if (!b.dmg.player) flashHint(b.name + ' ist gefallen! ' + rk.length + ' Kämpfer werden nach Schaden belohnt.', 5000);
+            saveBarb();
+        }
+        function dbossRewardModal(b, i, p, item, s) {
+            const rd = item && RARITY_DEFS[item.rarity], d = item && EQUIPMENT_DEFS[item.slot];
+            document.getElementById('rewardModalOver').textContent = 'Tagesboss';
+            document.getElementById('rewardModalTitle').textContent = b.name + ' gefallen!';
+            document.getElementById('rewardModalSub').textContent = 'Dein Schaden: ' + fmtCompact(b.dmg.player || 0) + ' · Platz ' + (i + 1) + ' von ' + dbossRanks(b).length;
+            const list = document.getElementById('rewardModalRewards');
+            list.innerHTML = '<li>' + icon('gem', 'ico-gem') + '<span>Gems</span><b>+' + p.gems + '</b></li>' +
+                (item ? '<li style="border-color:' + rd.color + '66"><svg class="icon" style="color:' + rd.color + '"><use href="#i-' + d.icon + '"/></svg><span>' + d.name + '</span><b style="color:' + rd.color + '">' + rd.label + '</b></li>' : '') +
+                (s ? '<li style="border-color:' + RARITY_DEFS[s.r].color + '66">' + icon(s.icon) + '<span>Splitter ' + s.name + '</span><b style="color:' + RARITY_DEFS[s.r].color + '">+' + p.sh + '</b></li>' : '');
+            [...list.children].forEach((li, k) => { li.style.animationDelay = (200 + k * 120) + 'ms'; });
+            setTimeout(() => { document.getElementById('rewardModal').hidden = false; }, 2600);
+        }
+        function barbTick() {
+            const now = Date.now(), due = barbMarches.filter(m => m.resolveAt <= now); dbossEnsure();   // after midnight: the new boss first
+            if (due.length) { barbMarches = barbMarches.filter(m => m.resolveAt > now); for (const m of due) barbArrive(m, now); saveBarb(); requestRender(); }
+            if (now >= (barbState.next || 0) && !document.hidden) {                 // new camps every 10 s (an empty map fills at once)
+                barbState.next = now + 10000; let k = barbState.camps.length < BARB_WANT * .5 ? BARB_WANT : 2;
+                if (barbState.camps.some(c => c.until < now)) { const aim = new Set(barbMarches.map(m => m.tid)); barbState.camps = barbState.camps.filter(c => !(c.until < now) || aim.has(c.id)); }   // old camps move on (unless someone is on the way)
+                while (k-- > 0 && barbState.camps.length < BARB_WANT) barbSpawn();
+                dbossEnsure(); saveBarb(now); requestRender();
+            }
+            const el = document.querySelector('[data-bclock]'); if (el) el.textContent = fmtDHMS(msToMidnight() / 1000);
+        }
+        setInterval(barbTick, 1000);
+        // drawing: small tents with a level badge, the boss with its life bar, your columns like any march, the others' as thin lines
+        const barbPathMem = new WeakMap(), barbSprites = {};
+        function barbScreen(o) { const z = mapState.zoom; return { x: o.x * z + mapState.offsetX, y: o.y * z + mapState.offsetY }; }
+        const barbK = () => Math.max(.6, Math.min(2.2, mapState.zoom / .012));
+        function barbAt(sx, sy) {                           // → { kind: 'boss' } or { kind: 'camp', id } under a tap
+            const z = mapState.zoom, k = barbK(), b = dayBoss && dayBoss.d === todayKey() ? dayBoss : null;
+            if (b && z >= .0025) { const s = barbScreen(b); if (Math.hypot(s.x - sx, s.y - sy - 10 * k) < Math.max(22, 26 * k)) return { kind: 'boss' }; }
+            if (z < .004) return null;
+            let best = null, bd = Math.max(16, 15 * k);
+            for (const c of barbState.camps) { const s = barbScreen(c), d = Math.hypot(s.x - sx, s.y - sy + 4 * k); if (d < bd) { bd = d; best = c; } }
+            return best ? { kind: 'camp', id: best.id } : null;
+        }
+        function barbAlong(pts, q) {                        // the point q (0-1) along a screen polyline
+            let tot = 0; const seg = []; for (let i = 1; i < pts.length; i++) { const l = Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y); seg.push(l); tot += l; }
+            let d = tot * q; for (let i = 0; i < seg.length; i++) { if (d <= seg[i] || i === seg.length - 1) { const f = seg[i] ? Math.min(1, d / seg[i]) : 0; return { x: pts[i].x + (pts[i + 1].x - pts[i].x) * f, y: pts[i].y + (pts[i + 1].y - pts[i].y) * f }; } d -= seg[i]; }
+            return pts[0];
+        }
+        function dbossSprite(kind, col) {                   // each boss drawn once into a small image
+            if (barbSprites[kind]) return barbSprites[kind];
+            const cv = document.createElement('canvas'); cv.width = cv.height = 120; const g = cv.getContext('2d'); g.translate(60, 70);
+            const dark = '#1b1418', eye = kind === 'wraith' ? '#bff3ff' : '#ffd24a';
+            g.fillStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.ellipse(0, 36, 40, 10, 0, 0, 7); g.fill();
+            g.lineWidth = 2.5; g.strokeStyle = dark; g.fillStyle = col;
+            if (kind === 'kraken') {                          // a dome head with tentacles curling out of the ground
+                g.beginPath(); g.ellipse(0, -6, 24, 30, 0, Math.PI, 0); g.lineTo(24, 16); g.quadraticCurveTo(0, 26, -24, 16); g.closePath(); g.fill(); g.stroke();
+                for (let i = -3; i <= 3; i++) { if (!i) continue; const s = Math.sign(i), a = Math.abs(i); g.beginPath(); g.moveTo(i * 6, 18); g.bezierCurveTo(i * 10, 34, s * (22 + a * 10), 38, s * (26 + a * 8), 20 - a * 6);   // tentacles curling out in front
+                    g.lineWidth = 7; g.strokeStyle = dark; g.stroke(); g.lineWidth = 4.5; g.strokeStyle = col; g.stroke(); }
+                g.lineWidth = 2.5; g.strokeStyle = dark;
+            } else if (kind === 'giant') {                    // a hulk of stone with fists
+                g.beginPath(); g.moveTo(-30, 34); g.lineTo(-34, -6); g.lineTo(-18, -26); g.lineTo(18, -26); g.lineTo(34, -6); g.lineTo(30, 34); g.closePath(); g.fill(); g.stroke();
+                for (const s of [-1, 1]) { g.beginPath(); g.arc(s * 38, 18, 11, 0, 7); g.fill(); g.stroke(); }
+                g.beginPath(); g.arc(0, -30, 14, 0, 7); g.fill(); g.stroke();
+                g.strokeStyle = 'rgba(0,0,0,.3)'; g.beginPath(); g.moveTo(-14, -6); g.lineTo(-4, 8); g.lineTo(-12, 22); g.moveTo(12, 0); g.lineTo(20, 16); g.stroke();
+            } else if (kind === 'dragon') {                   // wings up, a long neck and a horned head
+                for (const s of [-1, 1]) { g.beginPath(); g.moveTo(0, 0); g.lineTo(s * 50, -34); g.lineTo(s * 40, -8); g.lineTo(s * 52, -2); g.lineTo(s * 30, 14); g.closePath(); g.fillStyle = col; g.fill(); g.stroke(); }
+                g.fillStyle = col; g.beginPath(); g.ellipse(0, 16, 20, 18, 0, 0, 7); g.fill(); g.stroke();
+                g.beginPath(); g.moveTo(-6, 4); g.quadraticCurveTo(-4, -22, 4, -34); g.lineTo(18, -30); g.lineTo(10, -22); g.quadraticCurveTo(6, -8, 8, 4); g.closePath(); g.fill(); g.stroke();
+                g.fillStyle = '#f2e6c8'; g.beginPath(); g.moveTo(2, -34); g.lineTo(-4, -44); g.lineTo(8, -35); g.fill();
+            } else {                                          // a hooded shade in torn robes
+                g.beginPath(); g.moveTo(0, -40); g.quadraticCurveTo(28, -34, 30, 34); g.lineTo(18, 26); g.lineTo(8, 36); g.lineTo(-4, 26); g.lineTo(-16, 36); g.lineTo(-30, 34); g.quadraticCurveTo(-28, -34, 0, -40); g.closePath(); g.fill(); g.stroke();
+                g.fillStyle = dark; g.beginPath(); g.ellipse(0, -18, 13, 15, 0, 0, 7); g.fill();
+            }
+            const ey = kind === 'dragon' ? -30 : kind === 'giant' ? -32 : kind === 'wraith' ? -18 : -4;   // glowing eyes: a soft halo, then the eye
+            for (const s of kind === 'dragon' ? [1] : [-1, 1]) for (const [r, a] of [[6, .25], [2.8, 1]]) { g.globalAlpha = a; g.fillStyle = eye; g.beginPath(); g.arc((kind === 'dragon' ? 10 : 0) + s * 6, ey, r, 0, 7); g.fill(); }
+            g.globalAlpha = 1;
+            return barbSprites[kind] = cv;
+        }
+        function drawBarb(now, wallNow) {
+            const z = mapState.zoom; if (z < .0025) return;
+            for (const m of barbMarches) {                   // the columns: yours like every march, the others' as thin lines in their colour
+                const home = islandById[m.homeId]; if (!home) continue;
+                const pt = barbPt(m);
+                if (m.who === 'player') { m.back ? drawMarchLine('send', pt, home, m.startedAt, m.resolveAt, wallNow) : drawMarchLine('attack', home, pt, m.startedAt, m.resolveAt, wallNow); continue; }
+                if (z < .006) continue;
+                let p = barbPathMem.get(m); if (!p) { p = m.back ? marchPath(pt, home) : marchPath(home, pt); barbPathMem.set(m, p); }
+                const sp = p.map(q => ({ x: toSX(q.x), y: toSY(q.y) })); let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+                for (const q of sp) { x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); y0 = Math.min(y0, q.y); y1 = Math.max(y1, q.y); }
+                if (x1 < -20 || x0 > viewW + 20 || y1 < -20 || y0 > viewH + 20) continue;
+                const col = (botById[m.who] || {}).color || '#c9423a', q = Math.max(0, Math.min(1, (wallNow - m.startedAt) / Math.max(1, m.resolveAt - m.startedAt))), at = barbAlong(sp, q);
+                setScreen(ctx); ctx.save(); ctx.globalAlpha = .55; ctx.setLineDash([5, 6]); ctx.lineDashOffset = -(now / 50) % 22; ctx.lineWidth = 1.6; ctx.strokeStyle = col;
+                ctx.beginPath(); ctx.moveTo(sp[0].x, sp[0].y); for (let i = 1; i < sp.length; i++) ctx.lineTo(sp[i].x, sp[i].y); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1;
+                ctx.fillStyle = col; ctx.strokeStyle = 'rgba(8,9,12,.85)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(at.x, at.y, 4, 0, 7); ctx.fill(); ctx.stroke(); ctx.restore();
+                liveAnimation = true;
+            }
+            setScreen(ctx);
+            const k = barbK(), best = barbRec('player').b;
+            if (z >= .004) for (const c of barbState.camps) {
+                const x = c.x * z + mapState.offsetX, y = c.y * z + mapState.offsetY; if (x < -40 || x > viewW + 40 || y < -40 || y > viewH + 40 || !isCellOpen(c.x, c.y)) continue;
+                const open = c.L <= best + 1, rd = RARITY_DEFS[barbTier(c.L)];
+                ctx.save(); ctx.translate(x, y); ctx.scale(k, k); if (!open) ctx.globalAlpha = .6;
+                ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(0, 5, 15, 5, 0, 0, 7); ctx.fill();
+                for (const [dx, s, col] of [[-6, 1, '#8a5a33'], [6, .8, '#a0412e']]) {        // two hide tents
+                    ctx.fillStyle = col; ctx.strokeStyle = '#2a1a10'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(dx - 8 * s, 5); ctx.lineTo(dx, 5 - 13 * s); ctx.lineTo(dx + 8 * s, 5); ctx.closePath(); ctx.fill(); ctx.stroke();
+                    ctx.fillStyle = '#1e140c'; ctx.beginPath(); ctx.moveTo(dx - 2 * s, 5); ctx.lineTo(dx, 5 - 6 * s); ctx.lineTo(dx + 2 * s, 5); ctx.closePath(); ctx.fill();
+                }
+                ctx.strokeStyle = '#3a2618'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(-6, -8); ctx.lineTo(-6, -16); ctx.stroke();   // a skull pole with a rag
+                ctx.fillStyle = '#b8342a'; ctx.beginPath(); ctx.moveTo(-6, -16); ctx.lineTo(1, -14); ctx.lineTo(-6, -11); ctx.fill();
+                ctx.fillStyle = '#ffae3a'; ctx.beginPath(); ctx.arc(0, 6, 1.8 + Math.sin(now / 160 + c.x) * .4, 0, 7); ctx.fill();   // the fire
+                ctx.globalAlpha = 1; ctx.beginPath(); ctx.arc(11, -9, 6.5, 0, 7); ctx.fillStyle = 'rgba(14,12,16,.92)'; ctx.fill(); ctx.lineWidth = 1.4; ctx.strokeStyle = open ? rd.color : '#6b6660'; ctx.stroke();
+                ctx.fillStyle = open ? '#f4ecdc' : '#9a938a'; ctx.font = '800 7.5px Inter, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(String(c.L), 11, -8.6);
+                ctx.restore();
+            }
+            const b = dayBoss && dayBoss.d === todayKey() ? dayBoss : null; if (!b) return;
+            const s = barbScreen(b), kb = Math.max(.55, Math.min(1.6, z / .02)); if (s.x < -120 || s.x > viewW + 120 || s.y < -120 || s.y > viewH + 120) return;
+            const K = dbossKind(b), dead = b.hp <= 0, pulse = .5 + .5 * Math.sin(now / 420);
+            if (!dead) { const R = 64 * kb, gr = ctx.createRadialGradient(s.x, s.y, 4, s.x, s.y, R); gr.addColorStop(0, K.col + '66'); gr.addColorStop(1, K.col + '00'); ctx.globalAlpha = .6 + .4 * pulse; ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(s.x, s.y, R, 0, 7); ctx.fill(); ctx.globalAlpha = 1; }
+            const im = dbossSprite(b.k, K.col), W = 84 * kb; ctx.save(); if (dead) { ctx.globalAlpha = .45; ctx.filter = 'grayscale(1)'; }
+            ctx.drawImage(im, s.x - W / 2, s.y - W * 70 / 120 - (dead ? 0 : Math.sin(now / 600) * 2 * kb), W, W); ctx.restore();
+            const bw = Math.max(70, 96 * kb), by = s.y + 26 * kb;                                    // name and life
+            ctx.font = '700 11px Inter, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            const label = dead ? b.name + ' · besiegt' : b.name, tw = ctx.measureText(label).width + 16;
+            rr(ctx, s.x - tw / 2, by, tw, 18, 9); ctx.fillStyle = 'rgba(18,10,14,.9)'; ctx.fill(); ctx.lineWidth = 1.2; ctx.strokeStyle = K.col; ctx.stroke();
+            ctx.fillStyle = '#fbeee4'; ctx.fillText(label, s.x, by + 9.5);
+            if (!dead) { rr(ctx, s.x - bw / 2, by + 22, bw, 6, 3); ctx.fillStyle = 'rgba(10,8,10,.85)'; ctx.fill(); rr(ctx, s.x - bw / 2 + 1, by + 23, Math.max(2, (bw - 2) * b.hp / b.max), 4, 2); ctx.fillStyle = '#e0483a'; ctx.fill(); }
+            liveAnimation = true;
+        }
+        // the sheet: a camp, the boss, or both at a glance (map button)
+        let barbView = null, barbShare = 'fit', barbHero = null;
+        const barbSheetEl = document.getElementById('barbSheet');
+        function barbSource(pt, need, any) {                // your base for this march: the nearest one that has enough, else the one with the most
+            let best = null, bs = -Infinity;
+            for (const id of ownedIslands) { const isl = islandById[id], n = islandTroops[id] || 0; if (n < 1 || (!any && !canReach(isl.landmassId, pt.lm))) continue;
+                const s = (n >= need ? 1e12 : n) - Math.hypot(isl.x - pt.x, isl.y - pt.y) / 1e3; if (s > bs) { bs = s; best = id; } }
+            return best;
+        }
+        const barbShares = () => barbView && barbView.kind === 'boss' ? [['.1', '10 %'], ['.25', '25 %'], ['.5', '50 %'], ['1', 'Alle']] : [['fit', 'Passend'], ['.25', '25 %'], ['.5', '50 %'], ['1', 'Alle']];
+        const barbShareNow = () => barbShares().some(x => x[0] === barbShare) ? barbShare : barbShares()[1][0];
+        function barbShareOf(avail, need) { const sh = barbShareNow(); return Math.max(0, Math.min(avail, sh === 'fit' ? Math.ceil(need) : Math.floor(avail * +sh))); }
+        function barbAttackHtml(avail, need, src, lbl) {    // share, hero and the button
+            const n = barbShareOf(avail, need);
+            if (barbHero && (!heroOwned('player', barbHero) || heroBusy('player', barbHero))) barbHero = null;
+            return '<div class="seg" data-bshare>' + barbShares().map(([v, t]) => '<button type="button" data-bs="' + v + '"' + (v === barbShareNow() ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>' +
+                (heroSegHtml('data-bhero', barbHero) ? '<div class="seg hero-seg">' + heroSegHtml('data-bhero', barbHero) + '</div>' : '') +
+                '<button class="btn btn--primary btn--sm" type="button" data-bgo' + (n < 1 ? ' disabled' : '') + '>' + icon('attack') + '<span>' + lbl + ' · ' + fmtCompact(n) + ' von ' + islandTitle(islandById[src]) + '</span></button>';
+        }
+        function barbSheetHtml() {
+            const v = barbView, rec = barbRec('player'), head = (ic, t) => '<div class="marker-head"><b>' + icon(ic) + ' ' + t + '</b><button class="btn-x" type="button" data-bclose aria-label="Schließen">' + icon('close') + '</button></div>';
+            const b = dbossEnsure(), mid = '<b data-bclock>' + fmtDHMS(msToMidnight() / 1000) + '</b>';
+            if (v.kind === 'camp') {
+                const c = barbCampById(v.id); if (!c) return head('attack', 'Barbaren-Lager') + '<div class="notice">' + icon('check') + '<span>Dieses Lager ist schon geräumt.</span></div>';
+                const open = barbOpenFor('player', c.L), left = barbLeft('player'), need = c.t * 1.15 / barbFa('player'), src = barbSource(c, need), rd = RARITY_DEFS[barbTier(c.L)];
+                return head('attack', 'Barbaren-Lager <span class="barb-lv" style="--bc:' + rd.color + '">Stufe ' + c.L + '</span>') +
+                    '<div class="field-lines"><span>Krieger</span><b>' + fmtNum(c.t) + (c.t < c.max ? ' <small>von ' + fmtCompact(c.max) + '</small>' : '') + '</b>' +
+                    '<span>Beute</span><b>' + fmtCompact(barbLootOf(c.L)) + ' Münzen</b><span>Mit Glück</span><b>Kiste · ' + (1 + Math.floor(c.L / 5)) + ' Splitter</b>' +
+                    '<span>Heute</span><b>' + rec.n + ' / ' + BARB_DAY + ' heute</b>' +
+                    '<span>Freigeschaltet</span><b>bis Stufe ' + Math.min(BARB_MAX_L, rec.b + 1) + '</b></div>' +
+                    (!open ? '<div class="notice">' + icon('lock') + '<span>Erst ein Lager der Stufe ' + (c.L - 1) + ' besiegen – dann ist Stufe ' + c.L + ' dran.</span></div>' :
+                     left <= 0 ? '<div class="notice notice--gold">' + icon('hourglass') + '<span>Für heute genug: ' + BARB_DAY + ' / ' + BARB_DAY + ' heute. Neue Lager in ' + mid + '.</span></div>' :
+                     src === null ? '<div class="notice">' + icon('lock') + '<span>Keine deiner Basen mit Truppen kommt hierher.</span></div>' :
+                     barbAttackHtml(islandTroops[src] || 0, need, src, 'Angreifen'));
+            }
+            const K = dbossKind(b), rk = dbossRanks(b), mine = rk.findIndex(e => e[0] === 'player'), dead = b.hp <= 0;
+            const row = (e, i) => '<li' + (e[0] === 'player' ? ' class="me"' : '') + '><em>' + (i + 1) + '</em><span>' + escapeHtml(fieldWhoName(e[0])) + '</span><b>' + fmtCompact(e[1]) + '</b></li>';
+            const bossHtml = head('crown', 'Tagesboss · ' + K.name) +
+                '<div class="barb-hp"><i style="width:' + (b.hp / b.max * 100).toFixed(1) + '%"></i><span>' + (dead ? 'Besiegt' : fmtCompact(b.hp) + ' / ' + fmtCompact(b.max) + ' Leben') + '</span></div>' +
+                '<div class="field-lines"><span>' + (dead ? 'Neuer Boss in' : 'Verschwindet in') + '</span>' + mid + '<span>Deine Angriffe</span><b>' + rec.h + ' / ' + DBOSS_HITS + ' heute</b>' +
+                '<span>Dein Schaden</span><b>' + (mine >= 0 ? fmtCompact(rk[mine][1]) + ' · Platz ' + (mine + 1) : '–') + '</b></div>' +
+                (rk.length ? '<ol class="barb-rank">' + rk.slice(0, 5).map(row).join('') + (mine >= 5 ? row(rk[mine], mine) : '') + '</ol>' : '<div class="notice">' + icon('info') + '<span>Noch hat niemand angegriffen.</span></div>');
+            const rules = '<div class="barb-note">Pro Angriff Münzen nach Schaden, ein Viertel der Kämpfer fällt, höchstens 5 % Leben pro Angriff. Fällt der Boss, gibt es für alle nach Rang Gems, Kisten und Splitter – Platz 1 bis 3 extra.</div>';
+            if (v.kind === 'boss') {
+                const src = barbSource(b, 1, true);
+                return bossHtml + (dead ? '' : rec.h >= DBOSS_HITS ? '<div class="notice notice--gold">' + icon('hourglass') + '<span>Heute keine Angriffe mehr – morgen wieder.</span></div>' :
+                    src === null ? '<div class="notice">' + icon('lock') + '<span>Keine deiner Basen hat Truppen.</span></div>' : barbAttackHtml(islandTroops[src] || 0, (islandTroops[src] || 0) * .5, src, 'Angreifen')) + rules;
+            }
+            const near = barbNearest();                       // both at a glance
+            return head('attack', 'Ereignisse') +
+                '<div class="barb-card"><div class="barb-ct"><b>' + icon('crown') + ' ' + K.name + '</b><small>Tagesboss</small></div><div class="barb-hp"><i style="width:' + (b.hp / b.max * 100).toFixed(1) + '%"></i><span>' + (dead ? 'Besiegt' : fmtCompact(b.hp) + ' Leben') + '</span></div>' +
+                '<button class="btn btn--secondary btn--sm" type="button" data-bgoto="boss">' + icon('send') + '<span>Zum Boss</span></button></div>' +
+                '<div class="barb-card"><div class="barb-ct"><b>' + icon('attack') + ' Barbaren-Lager</b><small>' + rec.n + ' / ' + BARB_DAY + ' heute</small></div>' +
+                '<div class="field-lines"><span>Freigeschaltet</span><b>bis Stufe ' + Math.min(BARB_MAX_L, rec.b + 1) + '</b><span>Neuer Tag in</span>' + mid + '</div>' +
+                (near ? '<button class="btn btn--secondary btn--sm" type="button" data-bgoto="camp">' + icon('send') + '<span>Nächstes Lager · Stufe ' + near.L + '</span></button>' : '<div class="notice">' + icon('info') + '<span>Gerade kein passendes Lager in deiner Nähe.</span></div>') + '</div>';
+        }
+        function barbNearest() {                            // the closest camp you may attack, the highest level first
+            const home = islandById[rewardBaseId() ?? playerIslandId]; if (!home) return null; const best = barbRec('player').b;
+            let pick = null, ps = -Infinity; for (const c of barbState.camps) { if (c.L > best + 1) continue; const s = c.L * 3 - Math.hypot(c.x - home.x, c.y - home.y) / 4000; if (s > ps) { ps = s; pick = c; } }
+            return pick;
+        }
+        function openBarbSheet(v) { barbView = v; barbSheetEl.innerHTML = barbSheetHtml(); barbSheetEl.hidden = false; }
+        function closeBarbSheet() { barbSheetEl.hidden = true; barbView = null; }
+        function barbSheetRefresh() { if (barbView && !barbSheetEl.hidden) barbSheetEl.innerHTML = barbSheetHtml(); }
+        barbSheetEl.addEventListener('click', e => {
+            if (!barbView) return;
+            if (e.target.closest('[data-bclose]')) return closeBarbSheet();
+            const sh = e.target.closest('[data-bs]'); if (sh) { barbShare = sh.dataset.bs; return barbSheetRefresh(); }
+            const hh = e.target.closest('[data-bhero]:not([disabled])'); if (hh) { barbHero = hh.dataset.bhero || null; return barbSheetRefresh(); }
+            const go = e.target.closest('[data-bgoto]'); if (go) { const t = go.dataset.bgoto === 'boss' ? dbossEnsure() : barbNearest(); if (!t) return;
+                flyTo(t.x, t.y, { zoom: Math.max(mapState.zoom, .02), screenY: viewH * .2 }); return openBarbSheet(go.dataset.bgoto === 'boss' ? { kind: 'boss' } : { kind: 'camp', id: t.id }); }
+            if (!e.target.closest('[data-bgo]')) return;
+            if (barbView.kind === 'camp') { const c = barbCampById(barbView.id); if (!c || !barbOpenFor('player', c.L) || barbLeft('player') <= 0) return barbSheetRefresh();
+                const need = c.t * 1.15 / barbFa('player'), src = barbSource(c, need); if (src === null) return; const n = barbShareOf(islandTroops[src] || 0, need); if (n < 1) return;
+                barbSend('player', src, 'c', c.id, n, barbHero); flashHint('Truppen unterwegs zum Barbaren-Lager (Stufe ' + c.L + ').', 2500); }
+            else { const b = dbossEnsure(); if (b.hp <= 0 || barbRec('player').h >= DBOSS_HITS) return barbSheetRefresh(); const src = barbSource(b, 1, true); if (src === null) return;
+                const n = barbShareOf(islandTroops[src] || 0, (islandTroops[src] || 0) * .5); if (n < 1) return; barbSend('player', src, 'b', null, n, barbHero); flashHint('Truppen unterwegs zu ' + b.name + '.', 2500); }
+            barbHero = null; closeBarbSheet();
+        });
+        document.getElementById('eventBtn').addEventListener('click', () => { closeIslandPopup(); if (fieldSheetId) closeFieldSheet(); barbView && barbView.kind === 'list' ? closeBarbSheet() : openBarbSheet({ kind: 'list' }); });
         // ===== ARMEEN AUF DER KARTE: troops that stand out in the open instead of in a base. Gather them from several
         // bases at one spot, walk them anywhere and give orders: move, attack a base, take a field, join another army,
         // go home. Out there they have no walls and produce nothing - and bots that notice them may come for them.
@@ -11456,6 +11809,8 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
                 openMarkerSheet({ id: null, x: w.x, y: w.y, text: MARKER_PRESETS[0], col: MARKER_COLORS[0] }); return;
             }
             { const mk = !multiAttackMode && markerAt(screenX, screenY); if (mk) { openMarkerSheet({ id: mk.id, x: mk.x, y: mk.y, text: mk.text, col: mk.col }); return; } }
+            { const bb = !multiAttackMode && !pickIslandAtScreen(screenX, screenY) && barbAt(screenX, screenY); if (bb) { closeIslandPopup(); if (fieldSheetId) closeFieldSheet(); openBarbSheet(bb); return; } }
+            if (barbView) closeBarbSheet();
             { const fd = !multiAttackMode && !pickIslandAtScreen(screenX, screenY) && fieldAt(screenX, screenY); if (fd) { closeIslandPopup(); openFieldSheet(fd); return; } }
             if (fieldSheetId) closeFieldSheet();
             if (fogPrompt) {
