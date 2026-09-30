@@ -5,10 +5,11 @@ Liste der Ideen, die für später vorgemerkt sind.
 ## Geplant: Helden neu (Entwurf: https://claude.ai/artifact/Bm52vwUkwSNK6qr5Ru6A3s)
 - 14 Helden mit Bild, Rolle, Seltenheit, Sternen und Splittern – ersetzen die alten 3 (Sigrun, Bernhard, Ida bleiben mit dabei).
 - Je Held: aktive Fähigkeit (Wut im Kampf), 2 passive Fähigkeiten, Talentbaum mit 3 Ästen, „passt gut zu“.
-- Zwei Helden pro Armee (Anführer + Unterstützer) mit Paar-Bonus; Heldenfigur an der Spitze der Kolonne auf der Karte.
+- ~~Zwei Helden pro Armee / Armee-Paar~~ – gestrichen: weiter ein Held pro Angriff/Armee; Heldenfigur an der Spitze der Kolonne auf der Karte.
 - **Keine Heldenausrüstung** – gewünscht weggelassen.
-- **Heldenkisten zum Ziehen kommen in den Shop** (nicht in eine eigene Taverne).
-- Layout des Entwurfs gefiel nicht – neu gestalten, Inhalt passt.
+- **Heldenkisten kommen später in unseren bestehenden Shop** (nicht ins Heldenfenster, keine Taverne).
+- **Alles muss im Kampfbericht stehen:** welcher Held, Stufe/Sterne, ob die Fähigkeit gezündet hat und was sie bewirkt hat, Talent- und Passiv-Boni.
+- Design des Entwurfs ist noch nicht getroffen (V1 und V2) – weiter abstimmen, Inhalt passt.
 - Die Mitspieler bekommen dieselben Helden.
 
 ## Umgesetzt
