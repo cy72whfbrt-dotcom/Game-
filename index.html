@@ -295,7 +295,7 @@ b,strong{font-weight:600}
 .gslot{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0} .gslot .tile{cursor:default;width:100%} .gslot .tile .lvl{font-size:9px}
 .gslot small{font:500 9px/1.1 var(--font-ui);color:var(--tx-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .logGearHeroes{display:grid;gap:4px} .ghero{display:flex;align-items:center;gap:6px;font:500 var(--fs-11)/1.2 var(--font-ui);color:var(--tx-2)}
-.ghero .hero-ic{width:24px;height:24px;flex:none} .ghero .hero-ic .icon{width:14px;height:14px} .ghero b{display:block;color:var(--tx-1);font-weight:600} .ghero small{color:var(--tx-3);font-size:10px}
+.ghero .hero-pic{width:44px;height:44px;flex:none;border-radius:8px;border:2px solid var(--hc,var(--line-2));box-shadow:0 2px 6px #0008} .ghero b{display:block;color:var(--tx-1);font-weight:600} .ghero small{color:var(--tx-3);font-size:10px}
 .logGearMeta{font:500 10px/1.35 var(--font-ui);color:var(--tx-3)}
 .logLine.buff.malus span:last-child{color:#ff8d82}
 .logSrc{display:block;font:500 10px/1.25 var(--font-ui);color:var(--tx-3);letter-spacing:0;text-transform:none}
@@ -671,9 +671,8 @@ body.has-panel .mapctl{display:none}
 .logRow .lt b{display:block;font:600 var(--fs-13)/1.25 var(--font-ui);color:var(--tx-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .logRow .lt small{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;margin-top:2px;font:500 var(--fs-11)/1.25 var(--font-ui);color:var(--tx-3);white-space:normal;overflow:hidden;overflow-wrap:anywhere}
 .logRow .lv{font:600 var(--fs-12)/1 var(--font-ui);color:var(--tx-2);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
-.hero-ic{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--hc);color:#fff}
-.seg.hero-seg{display:flex;flex-wrap:wrap} .seg.hero-seg button{flex:1 1 28%;display:inline-flex;align-items:center;justify-content:center;gap:4px;padding:0 6px;border-left:3px solid var(--hc,var(--line-1))} .seg.hero-seg button small{color:var(--gold-200);font-size:10px} .seg.hero-seg button:disabled{opacity:.4}
-.logHero{padding:6px 0;border-top:1px solid var(--line-1)} .logHero .ghero .hero-ic{background:var(--hc)} .logHeroFire{font-style:normal;color:var(--gold-200);font-weight:700}
+.seg.hero-seg{display:flex;flex-wrap:wrap} .seg.hero-seg button{flex:1 1 28%;display:inline-flex;align-items:center;justify-content:center;gap:4px;padding:0 6px;border-left:3px solid var(--hc,var(--line-1))} .seg.hero-seg button small{color:var(--gold-200);font-size:10px} .seg.hero-seg button:disabled{opacity:.4} .seg.hero-seg .hero-pic{width:22px;height:22px;flex:none;border-radius:5px;border:1px solid var(--hc)} .seg.hero-seg button small{white-space:nowrap}
+.logHero{padding:6px 0;border-top:1px solid var(--line-1)} .logHeroFire{font-style:normal;color:var(--gold-200);font-weight:700}
 /* Heldenhalle: grid of tall rarity cards → one hero (figure left, info right; stacked on phones) */
 .hh{position:fixed;inset:0;z-index:58;overflow-y:auto;overscroll-behavior:contain;background:var(--noise),radial-gradient(circle at 50% 0,#1d1a14,#07080b 70%);color:var(--tx-1);padding:calc(var(--safe-t) + 8px) 12px calc(var(--safe-b) + 16px);animation:fade-in var(--dur-2) var(--ease-out)}
 .hh[hidden]{display:none}
@@ -686,7 +685,7 @@ body.has-panel .mapctl{display:none}
 .hh-card{position:relative;aspect-ratio:3/4.3;border-radius:var(--r-lg);overflow:hidden;cursor:pointer;border:2px solid var(--rc);background:linear-gradient(170deg,var(--rc) 0%,#0b0c10 78%);padding:0;color:var(--tx-1);font:inherit;box-shadow:0 4px 10px #0008;transition:transform var(--dur-1) ease}
 .hh-card:active{transform:scale(.98)}
 .hh-card.is-locked{background:linear-gradient(170deg,color-mix(in srgb,var(--rc) 35%,#0b0c10) 0%,#0b0c10 78%)}
-.hh-art{position:absolute;inset:12% 12% 30%;border-radius:40% 40% 8px 8px;background:linear-gradient(180deg,var(--c),transparent);display:grid;place-items:center;font:700 40px/1 var(--font-display);color:#ffffffcc;text-shadow:0 4px 12px #000}
+.hh-art{position:absolute;left:0;right:0;top:0;aspect-ratio:1;-webkit-mask:linear-gradient(#000 62%,#0000);mask:linear-gradient(#000 62%,#0000)} .hh-art .hero-pic{display:block;width:100%;height:100%}
 .hh-card.is-locked .hh-art{filter:grayscale(1) brightness(.45)}
 .hh-lk{position:absolute;right:5px;top:5px;font:700 9px/1 var(--font-ui);letter-spacing:.06em;text-transform:uppercase;background:#000c;border:1px solid var(--rc);border-radius:var(--r-pill);padding:3px 6px}
 .hh-dot{position:absolute;left:6px;top:6px;width:11px;height:11px;border-radius:50%;background:#e33;border:2px solid #000}
@@ -705,16 +704,8 @@ body.has-panel .mapctl{display:none}
 .hh-ttl{font:500 var(--fs-13)/1.2 var(--font-ui);color:var(--tx-2)}
 .hh-id .hh-qstars i{width:22px;height:22px}
 .hh-floor{position:absolute;left:10%;right:10%;bottom:14px;height:40px;border-radius:50%;background:radial-gradient(ellipse,#000a,transparent 70%)}
-.hh-fig{position:absolute;left:50%;bottom:30px;transform:translateX(-50%);width:210px;height:380px;z-index:0}
-.hh-fig i{position:absolute;display:block}
-.hh-fig .cape{left:10px;right:10px;top:95px;bottom:10px;border-radius:30px 30px 80px 80px;background:linear-gradient(180deg,var(--c2),#000c)}
-.hh-fig .torso{left:40px;right:40px;top:92px;height:170px;border-radius:40px 40px 18px 18px;background:linear-gradient(180deg,var(--c),#0009);border:3px solid #0007}
-.hh-fig .belt{left:40px;right:40px;top:230px;height:14px;background:var(--gold-500)}
-.hh-fig .legs{left:62px;right:62px;top:250px;height:120px;background:linear-gradient(90deg,#20262c 0 44%,transparent 44% 56%,#20262c 56%)}
-.hh-fig .head{left:50%;top:14px;transform:translateX(-50%);width:78px;height:86px;border-radius:48% 48% 44% 44%;background:#e0bf9f;border:3px solid #0007}
-.hh-fig .hair{left:50%;top:4px;transform:translateX(-50%);width:92px;height:52px;border-radius:46px 46px 12px 12px;background:var(--hair)}
-.hh-fig .weapon{right:-14px;top:40px;width:16px;height:300px;border-radius:6px;background:linear-gradient(180deg,#f4f4f4,#7a7a7a);transform:rotate(10deg)}
-.hh-fig .shield{left:-18px;top:130px;width:84px;height:104px;border-radius:14px 14px 50px 50px;background:var(--c);border:5px solid var(--gold-500)}
+.hh-portrait{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);width:min(300px,76%);aspect-ratio:1;border-radius:18px;border:2px solid var(--rc);box-shadow:0 0 0 4px #0007,0 12px 44px var(--glow);z-index:0}
+.hh-portrait.is-locked{filter:grayscale(.85) brightness(.6)}
 .hh-panel{background:linear-gradient(180deg,rgba(20,22,28,.9),rgba(12,13,17,.95));border-left:1px solid var(--line-2)}
 .hh-blk{padding:12px 14px;border-bottom:1px solid var(--line-1)}
 .hh-blk h3{margin:0 0 8px;font:700 var(--fs-11)/1 var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--tx-3)}
@@ -754,7 +745,7 @@ body.has-panel .mapctl{display:none}
 .hh-i{width:28px;height:28px;display:grid;place-items:center;border-radius:50%;background:#5e4410;color:#ffe08a}
 .hh-steps .icon,.seg.hero-seg small .icon{width:10px;height:10px;vertical-align:-1px;margin-right:1px} .hh-i .icon{width:15px;height:15px}
 .hh-open{width:100%} .hh-badge{min-width:20px;height:20px;margin-left:4px;border-radius:10px;background:#e33;color:#fff;font:800 11px/20px var(--font-ui);font-style:normal;text-align:center;padding:0 5px;text-shadow:none}
-@media (max-width:760px){.hh-hero{grid-template-columns:1fr} .hh-panel{border-left:0;border-top:1px solid var(--line-2)} .hh-stage{position:relative;height:auto;min-height:330px} .hh-fig{left:68%;transform:translateX(-50%) scale(.66);transform-origin:bottom center;bottom:6px}}
+@media (max-width:760px){.hh-hero{grid-template-columns:1fr} .hh-panel{border-left:0;border-top:1px solid var(--line-2)} .hh-stage{position:relative;height:auto;min-height:330px} .hh-stage{min-height:360px} .hh-portrait{width:240px;bottom:14px}}
 .crest-card{display:grid;grid-template-columns:56px 1fr auto;gap:12px;align-items:center;width:100%;padding:10px 12px;margin:4px 0 8px;border:1px solid var(--line-2);border-radius:8px;background:rgba(255,255,255,.03);color:var(--tx-1);text-align:left;cursor:pointer}
 .crest-card:hover{border-color:var(--gold-300)} #crestSmall{width:56px;height:56px} .crest-card-t{display:grid;gap:2px} .crest-card-t small{color:var(--tx-2)}
 .look-now{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:1px solid var(--line-2);border-radius:10px;background:rgba(0,0,0,.22);text-align:left;color:inherit}
@@ -1522,16 +1513,20 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
     var TIPS = [
         ['<path d="M4 41h40"/><path d="M17 41V24h14v17z" fill="currentColor" fill-opacity=".2"/><path d="M15 24v-5h4v3h3v-3h4v3h3v-3h4v5z"/><path d="M22 41v-6a2 2 0 0 1 4 0v6"/><path d="M6 41a18 18 0 0 1 36 0" stroke="#8fc6ff" stroke-dasharray="3 3"/>', 'Der Friedensschild schützt nur deine Türme – Tore, Tempel und der Thron bleiben angreifbar.'],
         ['<path d="M4 24s7-11 20-11 20 11 20 11-7 11-20 11S4 24 4 24z"/><circle cx="24" cy="24" r="6.5" fill="currentColor" fill-opacity=".25"/><circle cx="24" cy="24" r="2.5" fill="currentColor"/>', 'Späh eine Basis aus, bevor du angreifst – dann siehst du ihre Truppen.'],
-        ['<path d="M13 37l-4-11 4-9 4 9z"/><path d="M24 42l-5-16 5-14 5 14z" fill="#b48cff" fill-opacity=".35" stroke="#c9a8ff"/><path d="M35 36l-4-10 4-8 4 8z"/><path d="M24 6v2M18 9l1 2M30 9l-1 2" opacity=".7"/>', 'Helden schaltest du mit Splittern frei – seltenere Helden sind immer stärker.'],
+        ['<path d="M13 37l-4-11 4-9 4 9z"/><path d="M24 42l-5-16 5-14 5 14z" fill="#b48cff" fill-opacity=".35" stroke="#c9a8ff"/><path d="M35 36l-4-10 4-8 4 8z"/><path d="M24 6v2M18 9l1 2M30 9l-1 2" opacity=".7"/>', 'Helden schaltest du mit Splittern frei – die gibt es von Bossen und für tägliche Aufgaben. Seltenere sind immer stärker.'],
         ['<path d="M17 18.6V37.6L12.8 40.4 16.4 27.5 5.9 19.1z" fill="currentColor" stroke="none"/><path d="' + starPath(24, 25, 19, 8) + '"/>', 'Jedes Aufwerten füllt einen Viertel-Stern. Pro halbem Stern gibt es einen Fähigkeitspunkt.'],
         ['<path d="M33 7h8v8L22 34l-8-8z" fill="currentColor" fill-opacity=".2"/><path d="M11 23l14 14M17 31l-8 8"/><circle cx="8" cy="40" r="2"/><rect x="26" y="40" width="16" height="4" rx="2" stroke-width="1.5"/><rect x="26" y="40" width="16" height="4" rx="2" fill="#e0603a" stroke="none"/>', 'Heldenfähigkeiten wirken nur, wenn der Held mitkämpft. Ist die Wut voll, zündet die aktive.'],
         ['<path d="M8 34l-2-18 10 8 8-12 8 12 10-8-2 18z" fill="currentColor" fill-opacity=".22"/><path d="M9 40h30"/><circle cx="24" cy="28" r="2.6" fill="#d8342a" stroke="none"/><circle cx="15" cy="30" r="1.8" fill="#7fb6ff" stroke="none"/><circle cx="33" cy="30" r="1.8" fill="#7fb6ff" stroke="none"/>', 'Wer die Mitte hält, sammelt Thron-Punkte und vergibt Titel – gute für Freunde, schlechte für Rivalen.'],
-        ['<circle cx="24" cy="27" r="13" stroke-width="4.5"/><circle cx="24" cy="27" r="13" stroke="#c0392b" stroke-width="1.4" stroke-dasharray="4 6"/><path d="M19 12l5-6 5 6-5 4z" fill="#d8342a" stroke="#f3d593" stroke-width="1.2"/>', 'Ein Titel aus der Mitte gibt deinem Bild einen Ring: Gold, Rot oder für den Herrscher Blutrot-Gold.'],
+        ['<circle cx="24" cy="21" r="13" stroke="#e8c35a" stroke-width="3"/><circle cx="24" cy="18" r="4.5" fill="currentColor" fill-opacity=".3"/><path d="M15.5 29a9.5 9.5 0 0 1 17 0" fill="currentColor" fill-opacity=".3"/><path d="M12 42l12-5 12 5" stroke="#d8342a" stroke-width="2.4"/>', 'Unter „Aussehen“ gibt es Rahmen, Titel, Ringe und Skins für Basis und Marsch – für Gems oder Thron-Punkte.'],
         ['<path d="M7 40V18l17-8 17 8v22"/><path d="M17 40V28a7 7 0 0 1 14 0v12" fill="currentColor" fill-opacity=".15"/><path d="M21 25v15M24 22v18M27 25v15" opacity=".6"/><circle cx="38" cy="36" r="6" fill="#e8c35a" stroke="#6b4a12" stroke-width="1.5"/><path d="M38 33v6" stroke="#6b4a12" stroke-width="1.5"/>', 'An fremden Toren kostet der Durchgang Maut – ohne genug Münzen kommst du nicht vorbei.'],
         ['<rect x="9" y="9" width="30" height="30" rx="7" fill="currentColor" fill-opacity=".12"/><path d="M24 16v16M16 24h16" stroke="#e05a4a" stroke-width="5" stroke-linecap="butt"/>', 'Das Lazarett rettet Verwundete – heile sie für ein paar Münzen.'],
         ['<path d="M24 38V12l11 4-11 4" fill="currentColor" fill-opacity=".25"/><path d="M18 38h12"/><path d="M5 10l11 14M5 42l11-8M43 40l-11-7" stroke-dasharray="3 3"/><circle cx="5" cy="10" r="2" fill="currentColor"/><circle cx="5" cy="42" r="2" fill="currentColor"/><circle cx="43" cy="40" r="2" fill="currentColor"/>', 'Stelle Armeen im Feld auf und sammle Truppen aus mehreren Basen an einem Punkt.'],
         ['<path d="M6 42h20M9 42V28h14v14M6 28h20l-10-8z" fill="currentColor" fill-opacity=".15"/><path d="M24 22L38 11" stroke="#8fc6ff" stroke-width="2.6"/><path d="M36 13l-2-7 5 3 3-5 3 5 0 7z" fill="currentColor" fill-opacity=".3" stroke-width="1.5"/>', 'Die Wächter-Tempel feuern auf den Herrscher der Mitte – erobere sie, dann schweigen sie.'],
-        ['<path d="M20 9Q36 8 41 24" stroke-width="3"/><path d="M12 36L31 15"/><path d="M8 42l4-6 6 2 1 4z" fill="#e8c35a" stroke="#8a6420" stroke-width="1.4"/><path d="M28 42l3-5 5 1 2 4z" fill="#7fd0ff" stroke="#3a7aa0" stroke-width="1.4"/><path d="M4 42h40" opacity=".5"/>', 'Goldminen und Edelsteinadern bringen Beute – schick Sammler hin.']];
+        ['<path d="M20 9Q36 8 41 24" stroke-width="3"/><path d="M12 36L31 15"/><path d="M8 42l4-6 6 2 1 4z" fill="#e8c35a" stroke="#8a6420" stroke-width="1.4"/><path d="M28 42l3-5 5 1 2 4z" fill="#7fd0ff" stroke="#3a7aa0" stroke-width="1.4"/><path d="M4 42h40" opacity=".5"/>', 'Goldminen und Edelsteinadern bringen Beute – schick Sammler hin.'],
+        ['<rect x="8" y="20" width="32" height="20" rx="3" fill="currentColor" fill-opacity=".15"/><path d="M8 28h32M12 20q12-10 24 0"/><rect x="21" y="25" width="6" height="7" rx="1.5" fill="#e8c35a" stroke="#6b4a12" stroke-width="1.4"/><circle cx="39" cy="11" r="5" fill="#e8c35a" stroke="#6b4a12" stroke-width="1.5"/>', 'Das Lager schützt deine Münzen: fällt eine Basis, nimmt der Sieger nie, was im Lager liegt.'],
+        ['<path d="M5 42h38"/><path d="M9 42V30h12v12M27 42V26h12v16" fill="currentColor" fill-opacity=".15"/><path d="M11 24l7-7"/><path d="M15 11l6 6-3 3-6-6z" fill="currentColor"/><path d="M29 20l7-7" stroke="#8fc6ff"/><path d="M33 7l6 6-3 3-6-6z" fill="#7fd0ff" stroke="#3a7aa0" stroke-width="1.4"/>', 'Ein zweiter Bauarbeiter kostet einmal Gems – danach wachsen zwei Gebäude gleichzeitig.'],
+        ['<rect x="6" y="8" width="22" height="32" rx="3" fill="currentColor" fill-opacity=".12"/><path d="M11 17l2 2 4-4M11 27l2 2 4-4M20 17h4M20 27h4"/><path d="M32 18h11v5a5.5 5.5 0 0 1-11 0z" fill="#e8c35a" stroke="#6b4a12" stroke-width="1.4"/><path d="M37.5 29v6M33.5 38h8"/>', 'Unter „Ziele“ warten tägliche Aufgaben und Erfolge – dort holst du dir Gems und Heldensplitter ab.'],
+        ['<path d="M5 41h38"/><path d="M18 41V19h12v22z" fill="#e8c35a" fill-opacity=".35"/><path d="M6 41V27h12v14M30 41V31h12v10"/><path d="M24 5l1.8 3.6 4 .6-2.9 2.8.7 4-3.6-1.9-3.6 1.9.7-4-2.9-2.8 4-.6z" fill="currentColor"/>', 'Die Rangliste zählt Macht, Eroberungen und Titel aus der Mitte – dazu die Thron-Punkte der Woche.']];
     var card = document.getElementById('splashTipCard'), pic = document.getElementById('splashTipPic'), txt = document.getElementById('splashTip'), tipI = Math.floor(Math.random() * TIPS.length);
     function showTip(i) { if (!pic || !txt) return; pic.innerHTML = S + TIPS[i][0] + '</svg>'; txt.textContent = TIPS[i][1]; }
     showTip(tipI);
@@ -7003,10 +6998,10 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
                     return '<span class="gslot"><span class="tile' + (rd ? '' : ' empty') + '"' + (rd ? ' data-r="' + rd.key + '"' : '') + ' title="' + d.name + (rd ? ' – ' + rd.label + ', Stufe ' + it[2] : ' – leer') + '">' + icon(d.icon) +
                         (rd ? '<span class="lvl">' + it[2] + '</span>' + (it[3] ? '<span class="stars">' + icon('star').repeat(it[3]) + '</span>' : '') : '') + '</span></span>'; }).join('');
                 const heroes = (g.hx ? [g.hx, ...(g.hx.extra || [])] : []).map(x => { const hd = heroById(x.id); if (!hd) return ''; const rd = RARITY_DEFS[hd.r];   // who led, his stars, whether the rage fired, every bonus
-                        return '<div class="logHero" style="--hc:' + rd.color + '"><span class="ghero"><span class="hero-ic">' + icon(hd.icon) + '</span><span><b>' + hd.name + ' <small>' + heroStarTxt(x.q) + ' · ' + rd.label + '</small></b>' +
+                        return '<div class="logHero" style="--hc:' + rd.color + '"><span class="ghero">' + heroImg(hd.id) + '<span><b>' + hd.name + ' <small>' + heroStarTxt(x.q) + ' · ' + rd.label + '</small></b>' +
                             '<small>' + (x.fired ? '<em class="logHeroFire">' + escapeHtml(x.skill || '') + ' gezündet</em>' : 'Aktive Fähigkeit nicht gezündet') + '</small></span></span>' +
                             (x.lines || []).map(l => '<div class="logLine buff"><span>' + escapeHtml(l[0]) + '</span><span>' + escapeHtml(l[1]) + '</span></div>').join('') + '</div>'; }).join('') +
-                    (g.heroes || []).map(x => { const hd = heroById(x[0]); return hd ? '<span class="ghero"><span class="hero-ic">' + icon(hd.icon) + '</span><span><b>' + hd.name + '</b><small>Stufe ' + x[1] + '</small></span></span>' : ''; }).join('');   // (older reports)
+                    (g.heroes || []).map(x => { const hd = heroById(x[0]); return hd ? '<span class="ghero" style="--hc:' + RARITY_DEFS[hd.r].color + '">' + heroImg(hd.id) + '<span><b>' + hd.name + '</b><small>Stufe ' + x[1] + '</small></span></span>' : ''; }).join('');   // (older reports)
                 if (g.heroOnly) return '<div class="logGear"><div class="logGearHeroes">' + heroes + '</div></div>';
                 return '<div class="logGear"><div class="logGearHead">Stufe ' + g.lvl + (g.title ? ' · Titel ' + escapeHtml(g.title) : '') + '</div>' +
                     '<div class="logGearItems">' + tiles + '</div>' + (heroes ? '<div class="logGearHeroes">' + heroes + '</div>' : '') +
@@ -9311,15 +9306,144 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         // ---- the Heldenhalle screen: a grid of tall rarity cards → one hero with figure, stars, skills and values ----
         let hhCur = null;
         const hhStars = q => '<span class="hh-qstars">' + [0, 1, 2, 3, 4].map(k => '<i style="--f:' + (k < Math.floor(q / 4) ? 100 : k === Math.floor(q / 4) ? q % 4 * 25 : 0) + '%"></i>').join('') + '</span>';
-        function hhFigure(h) { return '<div class="hh-fig" style="--c:' + h.color + ';--c2:' + h.c2 + ';--hair:' + h.hair + '"><i class="cape"></i><i class="legs"></i><i class="torso"></i><i class="belt"></i><i class="hair"></i><i class="head"></i>' +
-            (h.g !== 'none' ? '<i class="weapon"></i>' : '') + (h.g === 'shield' ? '<i class="shield"></i>' : '') + '</div>'; }
+        // ---- hero portraits: one painted SVG bust per hero from a few looks, turned once into a data URL (each <img> is its own document, so the ids never clash) ----
+        const HERO_LOOK = {   // f woman · age 0-2 · sk skin · ey eyes · hs hair · bd beard · hat · arm armour · wp weapon behind · fr item in front · mk mark
+            brunhild: { f: 1, sk: '#f1d0b2', ey: '#4a86c0', hs: 'braids', hat: 'wing', arm: 'mail', wp: 'spear', fr: 'shield' },
+            ragna:    { f: 1, age: 1, sk: '#eccaa9', ey: '#2f98a8', hs: 'long', hat: 'crown', arm: 'robe', wp: 'trident', fr: 'pearls' },
+            sigrun:   { f: 1, sk: '#c68b5e', ey: '#5a3a1e', hs: 'pony', hat: 'band', arm: 'leather', wp: 'sword', mk: 'scar', br: 1 },
+            aldric:   { age: 1, sk: '#d9a982', ey: '#5a4632', hs: 'short', bd: 'full', hat: 'helm', arm: 'plate', wp: 'hammer' },
+            kasimir:  { age: 2, sk: '#dfb592', ey: '#4a3a5a', hs: 'long', bd: 'goatee', hat: 'broken', arm: 'royal', wp: 'scepter', gr: '#8a8a90' },
+            yrsa:     { f: 1, sk: '#e8c3a2', ey: '#3f9a52', hs: 'long', hat: 'hood', arm: 'robe', wp: 'staff', fr: 'gem', mk: 'rune' },
+            ida:      { f: 1, sk: '#f3d4b8', ey: '#5a9a4a', hs: 'pony', hat: 'feather', arm: 'leather', wp: 'walk', mk: 'freckles' },
+            bernhard: { age: 2, sk: '#e9c3a1', ey: '#4a5a7a', hs: 'fringe', bd: 'mous', arm: 'coat', mk: 'glasses', fr: 'cross', gr: '#b8b8b8' },
+            mira:     { f: 1, sk: '#8d5a3a', ey: '#c09040', hs: 'long', hat: 'hoodd', arm: 'leather', wp: 'bow' },
+            nora:     { f: 1, sk: '#ebc19e', ey: '#3a7a9a', hs: 'braids', hat: 'pelt', arm: 'fur', wp: 'spear2' },
+            fenn:     { sk: '#e3b48b', ey: '#4a8a5a', hs: 'messy', bd: 'stub', hat: 'bandana', arm: 'vest', wp: 'pick', fr: 'nugget', mk: 'freckles' },
+            otto:     { age: 1, fat: 1, sk: '#ecb793', ey: '#5a4a2a', hs: 'fringe', bd: 'walrus', hat: 'cap', arm: 'merchant', fr: 'coin' },
+            greta:    { f: 1, age: 2, sk: '#e7c5a9', ey: '#6a8a4a', hs: 'bun', hat: 'scarf', arm: 'shawl', fr: 'herbs', gr: '#d8d8cc' },
+            hagen:    { sk: '#c58c6c', ey: '#5a4632', hs: 'bald', bd: 'full', arm: 'mail', wp: 'axe', mk: 'patch', br: 1 }
+        };
+        const heroPicCache = {};
+        function heroPic(id) { return heroPicCache[id] || (heroPicCache[id] = 'data:image/svg+xml,' + encodeURIComponent(heroSvg(id))); }
+        function heroImg(id, cls) { const h = heroById(id); return h ? '<img class="hero-pic' + (cls ? ' ' + cls : '') + '" src="' + heroPic(id) + '" alt="' + h.name + '" draggable="false">' : ''; }
+        function heroSvg(id) {
+            const h = heroById(id), L = HERO_LOOK[id] || {}, rc = RARITY_DEFS[h.r].color, hx = c => c.length === 4 ? '#' + c[1] + c[1] + c[2] + c[2] + c[3] + c[3] : c, sd = (c, f) => shade(hx(c), f);
+            const f = L.f, w = f ? 12.6 : 13.6 + (L.fat ? 1.4 : 0), jw = f ? 7.6 : L.fat ? 12.5 : 10.4, cy = f ? 63 : 65, lx = 50 - w, rx = 50 + w, n = v => Math.round(v * 10) / 10;
+            const hair = hx(L.gr || h.hair), hd = sd(hair, .55), sk = L.sk, skd = sd(sk, .72), c1 = h.color, c2 = h.c2, gold = 'url(#gd)', metal = 'url(#mt)', ink = '#1c120c';
+            const P = (d, fl, x) => '<path d="' + d + '" fill="' + fl + '"' + (x || '') + '/>', S = (d, st, sw, x) => P(d, 'none', ' stroke="' + st + '" stroke-width="' + sw + '" stroke-linecap="round" stroke-linejoin="round"' + (x || '')),
+                C = (x, y, r, fl, e) => '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="' + fl + '"' + (e || '') + '/>', E = (x, y, a, b, fl, e) => '<ellipse cx="' + x + '" cy="' + y + '" rx="' + a + '" ry="' + b + '" fill="' + fl + '"' + (e || '') + '/>',
+                op = o => ' opacity="' + o + '"', G = (id, st, a) => '<linearGradient id="' + id + '" ' + (a || 'x1="0" y1="0" x2="0" y2="1"') + '>' + st.map((c, i) => '<stop offset="' + i / (st.length - 1) + '" stop-color="' + c + '"/>').join('') + '</linearGradient>';
+            const face = 'M' + lx + ',42C' + lx + ',29 ' + n(50 - w * .55) + ',22.5 50,22.5C' + n(50 + w * .55) + ',22.5 ' + rx + ',29 ' + rx + ',42C' + rx + ',52 ' + n(50 + jw) + ',' + (cy - 5) + ' 50,' + cy + 'C' + n(50 - jw) + ',' + (cy - 5) + ' ' + lx + ',52 ' + lx + ',42Z';
+            const bw = L.fat ? 2 : 0, body = 'M2,101C4,86 ' + (18 - bw) + ',77 35,73.5Q50,78 65,73.5C' + (82 + bw) + ',77 96,86 98,101Z';
+            let o = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs>' +
+                '<radialGradient id="bg" cx=".5" cy=".38" r=".75"><stop offset="0" stop-color="' + sd(rc, 1.25) + '"/><stop offset=".45" stop-color="' + sd(rc, .5) + '"/><stop offset="1" stop-color="#07080c"/></radialGradient>' +
+                '<radialGradient id="sk" cx=".4" cy=".36" r=".75"><stop offset="0" stop-color="' + sd(sk, 1.12) + '"/><stop offset=".55" stop-color="' + sk + '"/><stop offset="1" stop-color="' + skd + '"/></radialGradient>' +
+                G('hr', [sd(hair, 1.35), hair, hd]) + G('sh', [skd + '00', skd + '00', sd(sk, .45) + '88'], 'x1="0" y1="0" x2="1" y2=".2"') + G('ar', [sd(c1, 1.45), c1, sd(c1, .45)]) + G('cl', [sd(c2, 1.5), c2, sd(c2, .5)]) +
+                G('mt', ['#fbfdff', '#b9c2cc', '#59616b', '#a9b2bc'], 'x1="0" y1="0" x2=".4" y2="1"') + G('gd', ['#fff0b0', '#e6b440', '#8a5a14'], 'x1="0" y1="0" x2=".3" y2="1"') + G('wd', ['#9a6a3a', '#5a3a1e']) +
+                G('rim', [rc + '00', rc + '00', sd(rc, 1.6)], 'x1="0" y1="0" x2="1" y2=".3"') + G('vg', ['#0000', '#0000', '#000a']) +
+                '<clipPath id="fc"><path d="' + face + '"/></clipPath><pattern id="ml" width="2.4" height="2" patternUnits="userSpaceOnUse"><path d="M0,1a1.2,1 0 0 0 2.4,0" fill="none" stroke="#1a1d22" stroke-width=".45" opacity=".6"/></pattern></defs>' +
+                '<rect width="100" height="100" fill="url(#bg)"/>' + S('M8,6L40,50M92,4L60,50M50,0V40', sd(rc, 1.5), 6, op(.07)) + E(50, 40, 30, 30, sd(rc, 1.4), op(.18));
+            // weapon behind the shoulders
+            const wp = L.wp;
+            if (wp === 'sword') o += P('M83,80L81.5,14L84,6L86.5,14L85,80Z', metal) + S('M84,12V78', '#fff', .5, op(.7));
+            if (wp === 'spear' || wp === 'spear2') o += S('M84,100L86,18', 'url(#wd)', 2.6) + P('M86,4Q90.5,12 87.2,22L84.6,22Q82,12 86,4Z', metal) + (wp === 'spear2' ? S('M85.5,24L81,32M85.5,24L90,31', '#e8e2d0', .9) : P('M83.4,22h5v2.4h-5z', gold));
+            if (wp === 'trident') o += S('M84,100V20', gold, 2.6) + S('M77,22Q84,26 91,22M77,22V10M84,24V4M91,22V10', gold, 2) + P('M75.6,11L77,5L78.4,11ZM82.6,6L84,0L85.4,6ZM89.6,11L91,5L92.4,11Z', gold);
+            if (wp === 'hammer') o += S('M72,100L86,24', 'url(#wd)', 2.8) + P('M77,14L95,19L92.6,29L74.6,24Z', metal) + P('M83,19l5,1.3l-1.3,5l-5,-1.3z', sd(c1, 1.2));
+            if (wp === 'axe') o += S('M70,100L84,20', 'url(#wd)', 2.8) + P('M82,16C92,12 99,20 97,32C92,28 88,28 83,30Z', metal) + S('M83,17L81.6,31', '#2a2d33', 1.4);
+            if (wp === 'scepter') o += S('M82,100L85,26', gold, 2.2) + C(85.3, 21, 4.6, gold) + C(85.3, 21, 2.2, '#c02a3a') + C(84, 19.6, .9, '#fff', op(.8));
+            if (wp === 'staff') o += E(84, 14, 9, 9, '#8f8', op(.25)) + S('M82,100L84,20', 'url(#wd)', 2.6) + S('M84,21Q79,14 84,8Q89,14 84,21', 'url(#wd)', 1.6) + C(84, 14, 3, '#7af09a') + C(83, 13, 1, '#fff');
+            if (wp === 'walk') o += S('M85,100L83,14', 'url(#wd)', 2.4) + S('M83,18q4,1 5,5M83,18q3,4 1,8', '#d84a3a', 1.2);
+            if (wp === 'pick') o += S('M72,100L84,24', 'url(#wd)', 2.6) + P('M70,22Q84,12 99,26Q85,20 70,24Z', metal);
+            if (wp === 'bow') o += S('M16,96Q-2,50 22,8', 'url(#wd)', 2.8) + S('M16,96L22,8', '#e8e0c8', .5) + S('M78,76L86,18M82,76L91,20M86,78L95,24', 'url(#wd)', 1.2) + P('M84,20l2,-6l2,6l-2,-1.5zM89,22l2,-6l2,6l-2,-1.5zM93.4,26l2,-6l2,6l-2,-1.5z', '#e8e2d0');
+            // hair and hoods behind the head
+            const long = L.hs === 'long' || L.hs === 'braids', hood = L.hat === 'hood' || L.hat === 'hoodd', hc = L.hat === 'hoodd' ? '#2a3020' : c2;
+            if (long && !hood) o += P('M' + (lx - 3) + ',40C' + (lx - 6) + ',22 42,15 50,15C58,15 ' + (rx + 6) + ',22 ' + (rx + 3) + ',40C' + (rx + 4) + ',56 ' + (rx + (L.hs === 'long' ? 8 : 3)) + ',70 ' + (rx + 5) + ',' + (L.hs === 'long' ? 84 : 72) + 'L' + (lx - 5) + ',' + (L.hs === 'long' ? 84 : 72) + 'C' + (lx - (L.hs === 'long' ? 8 : 3)) + ',70 ' + (lx - 4) + ',56 ' + (lx - 3) + ',40Z', hd);
+            if (hood) o += P('M' + (lx - 9) + ',86C' + (lx - 12) + ',50 ' + (lx - 8) + ',14 50,12C' + (rx + 8) + ',14 ' + (rx + 12) + ',50 ' + (rx + 9) + ',86Z', 'url(#cl)') + (L.hs === 'long' ? P('M' + (lx - 1) + ',36C' + (lx - 4) + ',52 ' + (lx - 3) + ',66 ' + (lx + 2) + ',76L' + (lx + 6) + ',74C' + (lx + 2) + ',60 ' + (lx + 1) + ',46 ' + (lx + 3) + ',36Z', 'url(#hr)') : '');
+            if (L.hat === 'pelt') o += P('M' + (lx - 8) + ',84C' + (lx - 12) + ',50 ' + (lx - 6) + ',16 50,14C' + (rx + 6) + ',16 ' + (rx + 12) + ',50 ' + (rx + 8) + ',84Z', '#6a6258');
+            if (L.hs === 'pony') o += P('M' + (rx - 2) + ',26C' + (rx + 10) + ',24 ' + (rx + 12) + ',44 ' + (rx + 7) + ',60C' + (rx + 5) + ',50 ' + (rx + 3) + ',40 ' + (rx - 3) + ',34Z', 'url(#hr)');
+                        // body: armour, robe or coat
+            o += P(body, 'url(#ar)'); const arm = L.arm;
+            if (arm === 'mail') o += P(body, 'url(#mt)', op(.9)) + P(body, 'url(#ml)') + P('M2,101C4,90 12,82 22,79L30,101Z', 'url(#ar)') + P('M98,101C96,90 88,82 78,79L70,101Z', 'url(#ar)') + (id === 'brunhild' ? P('M28,76Q50,86 72,76Q66,72 50,74Q34,72 28,76Z', '#d8cdb8') + S('M30,77q3,3 6,1M38,79q3,3 6,1M48,80q3,2 5,0M56,79q3,3 6,0M64,77q3,3 5,0', '#8a7a64', .6) : S('M24,78L70,101', '#4a3322', 4) + C(40, 85.5, 1.6, gold));
+            if (arm === 'plate') o += P('M2,101C3,86 12,78 26,76C34,76 38,82 36,92L30,101Z', metal) + P('M98,101C97,86 88,78 74,76C66,76 62,82 64,92L70,101Z', metal) + P('M40,78L60,78L58,101L42,101Z', 'url(#ar)') + S('M50,79V101', sd(c1, 1.5), .8) + C(22, 84, .9, '#333') + C(78, 84, .9, '#333');
+            if (arm === 'robe') o += P('M38,74L50,92L62,74L65,75L50,98L35,75Z', gold) + S('M8,92Q30,86 36,101M92,92Q70,86 64,101', sd(c1, .5), .8, op(.6));
+            if (arm === 'leather') o += P('M2,101C4,86 18,77 35,73.5L40,80Q22,84 14,101Z', 'url(#cl)') + P('M98,101C96,86 82,77 65,73.5L60,80Q78,84 86,101Z', 'url(#cl)') + S('M34,76L64,101', '#3a2616', 3.2) + P('M44,83h4.4v4h-4.4z', gold, ' transform="rotate(40 46 85)"');
+            if (arm === 'royal') o += P('M22,78Q50,92 78,78Q84,84 82,90Q50,102 18,90Q16,84 22,78Z', '#f4f0e6') + [28, 38, 50, 62, 72].map((x, i) => P('M' + x + ',' + (86 + (i % 2) * 3) + 'l.8,2.4h-1.6z', '#1a1a1a')).join('') + S('M34,92Q50,99 66,92', gold, 1.2) + C(50, 97, 2.2, gold);
+            if (arm === 'coat') o += P('M36,74L50,84L64,74L60,101L40,101Z', '#ece6da') + P('M36,74L46,90L42,101L28,101Z', sd(c1, .7)) + P('M64,74L54,90L58,101L72,101Z', sd(c1, .7)) + C(48, 94, .8, gold) + C(52, 94, .8, gold);
+            if (arm === 'fur') o += P('M4,101C6,86 16,76 34,72Q50,82 66,72C84,76 94,86 96,101Q88,90 80,94Q72,86 64,92Q56,86 50,92Q44,86 36,92Q28,86 20,94Q12,90 4,101Z', '#7a6a58') + S('M14,90l3,-4M24,86l2,-5M76,86l-2,-5M86,90l-3,-4M40,86l1,-5M60,86l-1,-5', '#b8a890', .8);
+            if (arm === 'vest') o += P('M38,74L50,82L62,74L60,101L40,101Z', '#e8dcc4') + P('M36,74L47,86L44,101L30,101Z', '#6a4a2a') + P('M64,74L53,86L56,101L70,101Z', '#6a4a2a') + P('M42,74Q50,82 58,74L54,80Q50,84 46,80Z', '#c04a2a');
+            if (arm === 'merchant') o += P('M4,101C6,84 20,74 36,72Q50,80 64,72C80,74 94,84 96,101Q84,86 70,84Q60,90 50,90Q40,90 30,84Q16,86 4,101Z', '#6a4a30') + S('M30,86Q50,100 70,86', gold, 1.4) + C(50, 94, 3, gold);
+            if (arm === 'shawl') o += P('M6,101C8,86 20,76 36,72Q50,80 64,72C80,76 92,86 94,101Q72,86 50,101Q28,86 6,101Z', '#6a5a3a') + S('M18,92l3,3M26,88l3,3M74,88l-3,3M82,92l-3,3', '#8a7a5a', .8);
+            o += S(body, 'url(#rim)', 1.4);
+            // neck, ears, face
+            o += P('M' + (50 - jw * .62) + ',56L' + (50 - jw * .6) + ',74Q50,79 ' + (50 + jw * .6) + ',74L' + (50 + jw * .62) + ',56Z', skd) + P('M' + (50 - jw * .6) + ',62Q50,70 ' + (50 + jw * .6) + ',62L' + (50 + jw * .6) + ',58L' + (50 - jw * .6) + ',58Z', sd(sk, .55), op(.6));
+            if (!hood && L.hat !== 'scarf' && L.hat !== 'pelt') o += E(lx + .3, 45, 2.4, 4.2, skd) + E(rx - .3, 45, 2.4, 4.2, skd) + E(lx + .6, 45, 1, 2.4, sd(sk, .5), op(.6));
+            const ey = 44, eL = 44.2, eR = 55.8, ang = L.br ? 1.2 : 0;
+            o += P(face, 'url(#sk)') + S(face, 'url(#rim)', .9, op(.8)) + '<g clip-path="url(#fc)">' + P(face, 'url(#sh)') + E(50, 25, 16, 5, sd(sk, .5), op(.3)) + E(43, 33, 5, 3, '#fff', op(.14)) + E(42.5, 52, 3.4, 2.2, '#e0706a', op(f ? .3 : .16)) + E(57.5, 52, 3.4, 2.2, '#e0706a', op(f ? .3 : .16)) +
+                (L.bd === 'stub' || L.bd === 'full' ? P('M' + lx + ',48Q50,58 ' + rx + ',48V70H' + lx + 'Z', hd, op(.28)) : '') + E(50, cy + 1, 9, 3, sd(sk, .5), op(.3)) + '</g>';
+            // eyes, brows, nose, mouth
+            [eL, eR].forEach((x, i) => { const s = i ? 1 : -1, almond = 'M' + (x - 3.1) + ',' + ey + 'Q' + x + ',' + (ey - 2.7) + ' ' + (x + 3.1) + ',' + ey + 'Q' + x + ',' + (ey + 2.1) + ' ' + (x - 3.1) + ',' + ey + 'Z';
+                if (L.mk === 'patch' && !i) { o += P('M' + (x - 3.8) + ',' + (ey - 3) + 'Q' + x + ',' + (ey - 4.2) + ' ' + (x + 3.8) + ',' + (ey - 3) + 'Q' + (x + 3.4) + ',' + (ey + 3.6) + ' ' + x + ',' + (ey + 3.2) + 'Q' + (x - 3.6) + ',' + (ey + 3) + ' ' + (x - 3.8) + ',' + (ey - 3) + 'Z', '#161616') + S('M' + (x - 3.4) + ',' + (ey - 2.6) + 'L' + (lx - 1) + ',' + (ey - 6) + 'M' + (x + 3.4) + ',' + (ey - 2.6) + 'L' + (rx + 1) + ',' + (ey - 7.5), '#161616', .7); return; }
+                o += '<clipPath id="e' + i + '"><path d="' + almond + '"/></clipPath>' + P(almond, '#f4ede4') + '<g clip-path="url(#e' + i + ')">' + C(x, ey - .1, 1.6, L.ey) + C(x, ey - .1, 1.6, 'none', ' stroke="' + sd(L.ey, .5) + '" stroke-width=".4"') + C(x, ey - .1, .78, '#0c0806') + C(x - .6, ey - .8, .5, '#fff') + P('M' + (x - 4) + ',' + (ey - 3) + 'H' + (x + 4) + 'V' + (ey - 1) + 'H' + (x - 4) + 'Z', sd(sk, .4), op(.35)) + '</g>' +
+                    S('M' + (x - 3.3) + ',' + (ey + .2) + 'Q' + x + ',' + (ey - 2.9) + ' ' + (x + 3.3) + ',' + (ey + .1) + (f ? 'l' + s * .9 + ',-.9' : ''), ink, f ? 1.05 : .8) + S('M' + (x - 2.6) + ',' + (ey - 2) + 'Q' + x + ',' + (ey - 3.9) + ' ' + (x + 2.6) + ',' + (ey - 2), sd(sk, .5), .45, op(.55)) +
+                    (L.age ? S('M' + (x - 2.4) + ',' + (ey + 2) + 'Q' + x + ',' + (ey + 3.1) + ' ' + (x + 2.4) + ',' + (ey + 2), sd(sk, .55), .4, op(.6)) + S('M' + (x + s * 3.8) + ',' + (ey - .8) + 'l' + s * 1.6 + ',-.8M' + (x + s * 3.8) + ',' + (ey + .4) + 'l' + s * 1.6 + ',.5', sd(sk, .55), .35, op(.6)) : '') +
+                    S('M' + (x - s * 3.6) + ',' + (ey - 4.2 - (L.age > 1 ? 0 : .4)) + 'Q' + (x + s * .4) + ',' + (ey - 6.8) + ' ' + (x + s * 3.4) + ',' + (ey - 4.6 + ang), L.age > 1 ? hair : sd(hair, .7), f ? .9 : 1.5); });
+            o += S('M50.8,45.5L51,51', '#fff', 1.1, op(.2)) + S('M49.2,47Q48,51 47.3,52.2Q48.8,53.8 50,53.3Q51.2,53.8 52.7,52.2', sd(sk, .5), .75, op(.75)) + E(48.3, 52.6, .7, .4, sd(sk, .4), op(.6)) + E(51.7, 52.6, .7, .4, sd(sk, .4), op(.6));
+            const lip = f ? '#b8505a' : sd(sk, .72), my = 57.6;
+            o += P('M45.8,' + my + 'Q48,' + (my - 1.4) + ' 50,' + (my - .6) + 'Q52,' + (my - 1.4) + ' 54.2,' + my + 'Q50,' + (my + .5) + ' 45.8,' + my + 'Z', sd(lip, .85)) + P('M46.4,' + (my + .2) + 'Q50,' + (my + 3) + ' 53.6,' + (my + .2) + 'Q50,' + (my + .9) + ' 46.4,' + (my + .2) + 'Z', lip) + S('M45.8,' + my + 'Q50,' + (my + .6) + ' 54.2,' + my, sd(lip, .5), .6) + E(50, my + 1.9, 1.6, .5, '#fff', op(f ? .25 : .1));
+            if (L.age > 1) o += S('M45,50Q43.6,54 44.8,57.6M55,50Q56.4,54 55.2,57.6M44,33.5Q50,32.4 56,33.5M45,31Q50,30 55,31', sd(sk, .6), .45, op(.55));
+            if (L.mk === 'scar') o += S('M57.5,48L61,55', '#8a4a3a', .9, op(.8)) + S('M58,49.6l1.6,-.6M59,51.8l1.6,-.6M60,54l1.4,-.6', '#8a4a3a', .45);
+            if (L.mk === 'freckles') o += [[42, 49], [44, 50.4], [41.4, 51.2], [58, 49], [56, 50.4], [58.6, 51.2], [47.6, 48.2], [52.4, 48.2]].map(p => C(p[0], p[1], .4, sd(sk, .6), op(.8))).join('');
+            if (L.mk === 'rune') o += S('M50,33v4.4M48.2,34.4l1.8,1.8l1.8,-1.8', '#6af09a', .7) + C(50, 35, 3, '#6af09a', op(.15));
+            if (L.mk === 'glasses') o += C(eL, ey, 3.6, '#bfe4ff', op(.18)) + C(eR, ey, 3.6, '#bfe4ff', op(.18)) + C(eL, ey, 3.6, 'none', ' stroke="#b89a4a" stroke-width=".7"') + C(eR, ey, 3.6, 'none', ' stroke="#b89a4a" stroke-width=".7"') + S('M47.8,43.4Q50,42.2 52.2,43.4M' + (eL - 3.6) + ',43.4L' + (lx + .4) + ',42.6M' + (eR + 3.6) + ',43.4L' + (rx - .4) + ',42.6', '#b89a4a', .6);
+            // beards
+            const bd = L.bd, mus = 'M44.4,58.6Q46,54.4 50,55.8Q54,54.4 55.6,58.6Q53,56.8 50,57.2Q47,56.8 44.4,58.6Z';
+            if (bd === 'full') o += P('M' + lx + ',44C' + lx + ',58 42,' + (cy + 6) + ' 50,' + (cy + 7) + 'C58,' + (cy + 6) + ' ' + rx + ',58 ' + rx + ',44C' + (rx - 1.4) + ',52 57,53.6 55.6,57Q55,61.4 50,61.6Q45,61.4 44.4,57C43,53.6 ' + (lx + 1.4) + ',52 ' + lx + ',44Z', 'url(#hr)') + S('M44,62q2,4 3,6M50,63v6M56,62q-2,4 -3,6M' + (lx + 3) + ',54q2,5 5,8M' + (rx - 3) + ',54q-2,5 -5,8', hd, .5, op(.6)) + P(mus, 'url(#hr)');
+            if (bd === 'goatee') o += P(mus, 'url(#hr)') + P('M46.6,60.8Q50,62.4 53.4,60.8L52,' + (cy + 5) + 'Q50,' + (cy + 8) + ' 48,' + (cy + 5) + 'Z', 'url(#hr)');
+            if (bd === 'mous') o += P(mus, 'url(#hr)');
+            if (bd === 'walrus') o += P('M42,61Q43,54 50,55.2Q57,54 58,61Q55,57.6 50,58Q45,57.6 42,61Z', 'url(#hr)') + S('M46,57l-1,2M54,57l1,2M50,56.4v1.6', hd, .4);
+            // hair in front
+            const hs = L.hs, cap = 'M' + (lx - 1.4) + ',45C' + (lx - 2) + ',27 42,19.5 50,19.5C58,19.5 ' + (rx + 2) + ',27 ' + (rx + 1.4) + ',45';
+            if (hs === 'long' || hs === 'braids' || hs === 'pony' || hs === 'bun') o += P(cap + 'C' + (rx - .4) + ',36 ' + (rx - 4) + ',30 53,28.4Q47,31.6 ' + (lx + 2.6) + ',36C' + (lx + 1.4) + ',39 ' + (lx + .6) + ',42 ' + (lx - 1.4) + ',45Z', 'url(#hr)') + S('M50,20Q47,24 45,30M52,21Q56,24 60,28M46,21Q40,24 ' + (lx + 1) + ',34', hd, .5, op(.5)) +
+                (hs === 'long' && !hood ? P('M' + (lx - 1.4) + ',42C' + (lx - 3) + ',54 ' + (lx - 2) + ',64 ' + (lx + 2) + ',74L' + (lx + 4) + ',66C' + (lx + 1) + ',58 ' + (lx + .4) + ',50 ' + (lx + 1) + ',42Z', 'url(#hr)') + P('M' + (rx + 1.4) + ',42C' + (rx + 3) + ',54 ' + (rx + 2) + ',64 ' + (rx - 2) + ',74L' + (rx - 4) + ',66C' + (rx - 1) + ',58 ' + (rx - .4) + ',50 ' + (rx - 1) + ',42Z', 'url(#hr)') : '');
+            if (hs === 'braids') [lx - .5, rx + .5].forEach(x => { for (let k = 0; k < 6; k++) o += E(x, 48 + k * 5, 2.8 - k * .15, 3, 'url(#hr)') + S('M' + (x - 2) + ',' + (48 + k * 5) + 'q2,2 4,-.4', hd, .45); o += P('M' + (x - 1.6) + ',77l1.6,5l1.6,-5z', 'url(#hr)') + P('M' + (x - 2) + ',75.6h4v1.6h-4z', id === 'nora' ? '#6a4a2a' : gold); });
+            if (hs === 'short') o += P(cap + 'C' + rx + ',38 ' + (rx - 2) + ',31 56,30Q50,31.6 44,30C' + (lx + 2) + ',31 ' + lx + ',38 ' + (lx - 1.4) + ',45Z', 'url(#hr)');
+            if (hs === 'messy') o += P(cap + 'L' + (rx - 1) + ',38L' + (rx - 4) + ',34L57,34L55,30L51,33L47,29.6L44,33L41,31L' + (lx + 2) + ',36L' + (lx + 1) + ',40Z', 'url(#hr)');
+            if (hs === 'fringe') o += P('M' + (lx - 1.6) + ',47C' + (lx - 2.4) + ',38 ' + (lx - 1) + ',32 ' + (lx + 3) + ',29C' + (lx + 2) + ',34 ' + (lx + 1.4) + ',40 ' + (lx + 1) + ',46Z', 'url(#hr)') + P('M' + (rx + 1.6) + ',47C' + (rx + 2.4) + ',38 ' + (rx + 1) + ',32 ' + (rx - 3) + ',29C' + (rx - 2) + ',34 ' + (rx - 1.4) + ',40 ' + (rx - 1) + ',46Z', 'url(#hr)') + E(45, 26, 4, 2, '#fff', op(.18));
+            if (hs === 'bald') o += E(44, 27, 4.4, 2.4, '#fff', op(.2)) + P('M' + (lx - .4) + ',47C' + (lx - 1) + ',38 ' + (lx + 1) + ',33 ' + (lx + 3) + ',31L' + (lx + 2) + ',44Z', hd, op(.4)) + P('M' + (rx + .4) + ',47C' + (rx + 1) + ',38 ' + (rx - 1) + ',33 ' + (rx - 3) + ',31L' + (rx - 2) + ',44Z', hd, op(.4));
+            // headgear
+            const hat = L.hat, dome = 'M' + (lx - 2) + ',36C' + (lx - 2) + ',19 42,13 50,13C58,13 ' + (rx + 2) + ',19 ' + (rx + 2) + ',36Q50,31 ' + (lx - 2) + ',36Z';
+            if (hat === 'wing') o += [-1, 1].map(s => P('M' + (50 + s * (w + 1)) + ',30C' + (50 + s * (w + 9)) + ',28 ' + (50 + s * (w + 15)) + ',16 ' + (50 + s * (w + 13)) + ',3C' + (50 + s * (w + 10)) + ',12 ' + (50 + s * (w + 6)) + ',15 ' + (50 + s * (w - 1)) + ',20Z', '#f4f1ea') + S('M' + (50 + s * (w + 2)) + ',27q' + s * 6 + ',-3 ' + s * 9 + ',-14M' + (50 + s * (w + 1)) + ',23q' + s * 5 + ',-3 ' + s * 8 + ',-12', '#a8a498', .5)).join('') + P(dome, metal) + P('M' + (lx - 2.4) + ',36Q50,30.6 ' + (rx + 2.4) + ',36L' + (rx + 2.2) + ',32.6Q50,27 ' + (lx - 2.2) + ',32.6Z', gold) + S('M50,14V30', '#fff', .7, op(.6));
+            if (hat === 'helm') o += P(dome, metal) + P('M' + (lx - 9) + ',35Q50,27 ' + (rx + 9) + ',35Q' + (rx + 6) + ',39.4 50,37.6Q' + (lx - 6) + ',39.4 ' + (lx - 9) + ',35Z', metal) + S('M' + (lx - 8.6) + ',35.2Q50,39 ' + (rx + 8.6) + ',35.2', '#3a3f46', .6) + C(41, 31, .6, '#333') + C(50, 30, .6, '#333') + C(59, 31, .6, '#333') + S('M47,15Q44,22 44,29', '#fff', .8, op(.5));
+            if (hat === 'crown') o += P('M' + (lx + .4) + ',31L' + (lx - 1) + ',15L42,24L45.4,11L50,22L54.6,11L58,24L' + (rx + 1) + ',15L' + (rx - .4) + ',31Q50,28 ' + (lx + .4) + ',31Z', gold) + C(lx - 1, 14.4, 1.4, '#f4f0ff') + C(45.4, 10.4, 1.4, '#f4f0ff') + C(54.6, 10.4, 1.4, '#f4f0ff') + C(rx + 1, 14.4, 1.4, '#f4f0ff') + C(50, 26.4, 2, '#2fb0d0') + C(49.4, 25.8, .6, '#fff');
+            if (hat === 'broken') o += '<g transform="rotate(-9 50 26)">' + P('M' + (lx + 1) + ',31L' + lx + ',17L43,24L46,15L48,21L50,18L52.4,24L' + (rx + 1) + ',15L' + (rx - .4) + ',31Q50,28 ' + (lx + 1) + ',31Z', 'url(#gd)', op(.85)) + S('M48,21L50,18L52.4,24', '#5a3a10', .5) + C(44, 28.4, 1.3, '#8a2a4a') + C(56, 28.4, 1.3, '#8a2a4a') + '</g>';
+            if (hood) o += S('M' + (lx - 1) + ',66C' + (lx - 4) + ',40 ' + (lx - 1) + ',21 50,19.6C' + (rx + 1) + ',21 ' + (rx + 4) + ',40 ' + (rx + 1) + ',66', sd(hc, 1.3), 4.4) + S('M' + (lx - 3.2) + ',66C' + (lx - 6) + ',40 ' + (lx - 3) + ',18 50,16.8', sd(hc, .6), 1, op(.6)) +
+                (hat === 'hood' ? S('M' + (lx + 1) + ',33Q50,25 ' + (rx - 1) + ',33', gold, 1.2) + C(50, 28.4, 1.5, '#6af09a') : P('M' + lx + ',40Q50,26 ' + rx + ',40L' + rx + ',30Q50,20 ' + lx + ',30Z', '#000', op(.35)));
+            if (hat === 'band') o += S('M' + (lx - .6) + ',33Q50,26.6 ' + (rx + .6) + ',33', '#b8282a', 2) + P('M' + (rx + .4) + ',32q5,1 7,6q-4,-2 -7,-3z', '#b8282a');
+            if (hat === 'feather') o += P('M' + (rx - 1) + ',28C' + (rx + 8) + ',18 ' + (rx + 16) + ',10 ' + (rx + 20) + ',3C' + (rx + 14) + ',16 ' + (rx + 8) + ',24 ' + (rx + 1) + ',31Z', '#d84a3a') + S('M' + (rx) + ',29.4C' + (rx + 8) + ',20 ' + (rx + 14) + ',12 ' + (rx + 19) + ',4', '#f4e0c0', .5) +
+                P('M' + (lx - 3) + ',32C' + (lx - 1) + ',17 ' + (rx - 2) + ',13 ' + (rx + 3) + ',26Q' + (rx + 5) + ',32 ' + (rx + 3) + ',32Q50,26.6 ' + (lx - 3) + ',32Z', 'url(#ar)') + S('M' + (lx - 2.6) + ',32Q50,27 ' + (rx + 3) + ',32', '#3a2616', 1.6);
+            if (hat === 'pelt') o += P('M' + (lx - 3) + ',44C' + (lx - 5) + ',24 42,12 50,12C58,12 ' + (rx + 5) + ',24 ' + (rx + 3) + ',44Q' + (rx - 1) + ',32 50,30.6Q' + (lx + 1) + ',32 ' + (lx - 3) + ',44Z', '#7a7064') + P('M' + (lx - 1) + ',22L' + (lx - 2) + ',8L' + (lx + 7) + ',16ZM' + (rx + 1) + ',22L' + (rx + 2) + ',8L' + (rx - 7) + ',16Z', '#5a5248') + P('M42,26Q50,19 58,26Q55,33 50,34Q45,33 42,26Z', '#8a8072') + E(50, 32, 2, 1.3, '#1a1a1a') + E(44.4, 24.4, 1, .6, '#e8c040') + E(55.6, 24.4, 1, .6, '#e8c040') + S('M' + (lx - 2) + ',30q2,-3 4,-2M' + (rx + 2) + ',30q-2,-3 -4,-2M46,16q4,-2 8,0', '#b0a898', .6);
+            if (hat === 'scarf') o += P('M' + (lx - 2.4) + ',60C' + (lx - 5) + ',40 ' + (lx - 2) + ',15 50,15C' + (rx + 2) + ',15 ' + (rx + 5) + ',40 ' + (rx + 2.4) + ',60Q' + (rx - 2) + ',52 ' + (rx - 1) + ',42C' + (rx - 1) + ',32 ' + (rx - 5) + ',28 50,28C' + (lx + 5) + ',28 ' + (lx + 1) + ',32 ' + (lx + 1) + ',42Q' + (lx + 2) + ',52 ' + (lx - 2.4) + ',60Z', 'url(#ar)') +
+                P('M' + (lx + 1) + ',37C' + (lx + 2) + ',31 44,29 50,28.6C56,29 ' + (rx - 2) + ',31 ' + (rx - 1) + ',37Q50,30.6 ' + (lx + 1) + ',37Z', 'url(#hr)') + [[40, 21], [50, 18.6], [60, 21], [36, 30], [64, 30], [45, 24], [55, 24]].map(p => C(p[0], p[1], .9, '#f4e6c8', op(.7))).join('') + P('M' + (lx + 3) + ',60Q50,66 ' + (rx - 3) + ',60L' + (rx - 5) + ',70Q50,74 ' + (lx + 5) + ',70Z', 'url(#ar)');
+            if (hat === 'cap') o += P('M' + (lx - 4) + ',30C' + (lx - 6) + ',16 ' + (rx + 8) + ',10 ' + (rx + 7) + ',26Q' + (rx + 4) + ',31 ' + (rx + 1) + ',30Q50,26 ' + (lx - 4) + ',30Z', '#8e2c2c') + E(46, 19, 7, 3, '#fff', op(.15)) + S('M' + (lx - 3.6) + ',30Q50,25.4 ' + (rx + 1) + ',30', gold, 1.6) + P('M' + (rx - 2) + ',22c6,-10 12,-12 16,-12c-4,4 -8,10 -14,15z', '#f4efe2');
+            if (hat === 'bandana') o += P('M' + (lx - 1.6) + ',35C' + (lx - 1) + ',24 44,19.4 50,19.4C56,19.4 ' + (rx + 1) + ',24 ' + (rx + 1.6) + ',35Q50,29 ' + (lx - 1.6) + ',35Z', '#3a6a9a') + [[44, 25], [52, 23], [58, 28], [40, 31]].map(p => C(p[0], p[1], .8, '#e8f0ff', op(.8))).join('') + P('M' + (rx + 1) + ',33l6,2l-2,5z', '#3a6a9a');
+            // what the hero carries in front
+            const fr = L.fr;
+            if (fr === 'shield') o += C(16, 90, 19, 'url(#gd)') + C(16, 90, 16.6, 'url(#ar)') + S('M16,74V106M0,90H32', '#f0e6d0', 2.6, op(.8)) + C(16, 90, 5, metal) + C(14.6, 88.6, 1.4, '#fff', op(.8)) + C(16, 90, 19, 'none', ' stroke="url(#rim)" stroke-width="1"');
+            if (fr === 'pearls') o += [...Array(11)].map((_, i) => { const a = Math.PI * (.12 + i * .076); return C(n(50 - Math.cos(a) * 11), n(71 + Math.sin(a) * 7), 1.1, '#f6f2ff') + C(n(49.7 - Math.cos(a) * 11), n(70.6 + Math.sin(a) * 7), .35, '#fff'); }).join('') + P('M50,79l3,4l-3,4l-3,-4z', '#2fb0d0');
+            if (fr === 'gem') o += S('M40,74Q50,86 60,74', gold, .7) + C(50, 84, 6, '#6af09a', op(.25)) + P('M50,79l3.4,4.6l-3.4,4.6l-3.4,-4.6z', '#3ad07a') + P('M50,79l1.6,4.6l-1.6,1.2z', '#dfffe8', op(.7));
+            if (fr === 'cross') o += C(32, 88, 5.4, '#f4f0e8') + P('M31,84h2v3h3v2h-3v3h-2v-3h-3v-2h3z', '#c82a2a');
+            if (fr === 'coin') o += C(82, 88, 9.4, 'url(#gd)') + C(82, 88, 7, 'none', ' stroke="#8a5a14" stroke-width=".8"') + P('M78,91l-1,-6l2.6,2.4l2.4,-4l2.4,4l2.6,-2.4l-1,6z', '#8a5a14', op(.8)) + E(79, 84, 2.4, 1.2, '#fff', op(.5));
+            if (fr === 'herbs') o += S('M76,101L82,80M80,101L88,82M84,101L92,86', '#4a6a2a', 1) + [[82, 80], [88, 82], [92, 86], [79, 86], [86, 88], [90, 93]].map((p, i) => P('M' + p[0] + ',' + p[1] + 'q' + (i % 2 ? 4 : -4) + ',-2 ' + (i % 2 ? 2 : -2) + ',-6q-3,2 -2,6z', i % 3 ? '#6aa04a' : '#9ac86a')).join('') + C(88, 80, 1.2, '#c06ac0') + C(91, 84, 1, '#f0e060') + S('M77,96l6,1', '#c8a060', 1.4);
+            if (fr === 'nugget') o += P('M76,92l4,-6l7,-1l5,4l-1,6l-7,3l-6,-1z', 'url(#gd)') + P('M80,86l3,3l4,-4', '#fff8c0', op(.6));
+            return o + '<rect width="100" height="100" fill="url(#vg)"/></svg>';
+        }
         function hhGrid() {
             const H = loadHeroes(), list = HEROES.slice().sort((a, b) => (H[b.id].own - H[a.id].own) || b.r - a.r || H[b.id].q - H[a.id].q);
             return '<div class="hh-head"><span class="hh-ghost"></span><h2>Helden</h2><button class="btn-x" type="button" data-hh-close aria-label="Schließen">' + icon('close') + '</button></div>' +
                 '<div class="hh-count">' + HEROES.filter(h => H[h.id].own).length + ' / ' + HEROES.length + ' freigeschaltet · Splitter gibt es von Bossen und für tägliche Aufgaben</div>' +
                 '<div class="hh-cards">' + list.map(h => { const s = H[h.id], need = s.own ? heroStepCost(h, s.q) : HERO_UNLOCK[h.r], rd = RARITY_DEFS[h.r];
                     return '<button type="button" class="hh-card' + (s.own ? '' : ' is-locked') + '" data-hh="' + h.id + '" style="--rc:' + rd.color + ';--c:' + h.color + '">' +
-                        '<span class="hh-art">' + h.name[0] + '</span>' + (heroCanDo('player', h.id) ? '<span class="hh-dot"></span>' : '') + (s.own ? '' : '<span class="hh-lk">Gesperrt</span>') +
+                        '<span class="hh-art">' + heroImg(h.id) + '</span>' + (heroCanDo('player', h.id) ? '<span class="hh-dot"></span>' : '') + (s.own ? '' : '<span class="hh-lk">Gesperrt</span>') +
                         '<span class="hh-foot"><b>' + h.name + '</b><small>' + h.role + '</small>' + (s.own ? hhStars(s.q) : '<span class="hh-frag"><i style="width:' + Math.min(100, Math.round(s.sh / need * 100)) + '%"></i></span><small>' + s.sh + ' / ' + need + '</small>') + '</span></button>'; }).join('') + '</div>';
         }
         function hhHero(id) {
@@ -9337,7 +9461,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             return '<div class="hh-head"><button class="btn-x" type="button" data-hh-back aria-label="Zurück">' + icon('back') + '</button><h2>' + h.name + '</h2><button class="btn-x" type="button" data-hh-close aria-label="Schließen">' + icon('close') + '</button></div>' +
                 '<div class="hh-hero" style="--glow:' + h.color + '88;--rc:' + rd.color + '">' +
                     '<div class="hh-stage"><div class="hh-id"><span class="hh-gem">' + rd.label + '</span><span class="hh-nm">' + h.name + '</span><span class="hh-ttl">' + h.title + ' · ' + h.role + '</span>' + hhStars(s.q) + '</div>' +
-                        '<div class="hh-floor"></div>' + hhFigure(h) + '</div>' +
+                        '<div class="hh-floor"></div>' + heroImg(id, 'hh-portrait' + (s.own ? '' : ' is-locked')) + '</div>' +
                     '<div class="hh-panel">' +
                         '<div class="hh-blk hh-top"><div><h3>Macht</h3><b class="hh-pow">' + (s.own ? fmtNum(heroPower('player', id)) : 'Gesperrt') + '</b></div><div class="hh-role">' + (busy ? '<em>unterwegs</em>' : s.own ? 'bereit' : '') + '</div></div>' +
                         '<div class="hh-blk"><h3>Sterne</h3>' + hhStars(s.q) + stars + '</div>' +
@@ -9374,10 +9498,10 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         function heroSegHtml(attr, cur) {                   // the hero choice for an attack, an army or a field march: the ones you have, with their stars
             const hs = HEROES.filter(h => heroOwned('player', h.id)).sort((a, b) => b.r - a.r || heroSt('player', b.id).q - heroSt('player', a.id).q); if (!hs.length) return '';
             return '<button type="button" ' + attr + '=""' + (!cur ? ' class="on"' : '') + '>Kein Held</button>' + hs.map(h => '<button type="button" ' + attr + '="' + h.id + '"' + (cur === h.id ? ' class="on"' : '') + (heroBusy('player', h.id) && cur !== h.id ? ' disabled' : '') +
-                ' style="--hc:' + RARITY_DEFS[h.r].color + '">' + h.name + '<small>' + icon('star') + heroStarNum(heroSt('player', h.id).q) + '</small></button>').join('');
+                ' style="--hc:' + RARITY_DEFS[h.r].color + '">' + heroImg(h.id) + h.name + '<small>' + icon('star') + heroStarNum(heroSt('player', h.id).q) + '</small></button>').join('');
         }
         function heroChipHtml(id, q) { const h = heroById(id); if (!h) return ''; const rd = RARITY_DEFS[h.r];   // profile + report: a hero with rarity and stars
-            return '<span class="ghero" style="--hc:' + rd.color + '"><span class="hero-ic">' + icon(h.icon) + '</span><span><b>' + h.name + ' <small>' + h.title + '</small></b><small>' + heroStarTxt(q) + ' · ' + rd.label + '</small></span></span>'; }
+            return '<span class="ghero" style="--hc:' + rd.color + '">' + heroImg(id) + '<span><b>' + h.name + ' <small>' + h.title + '</small></b><small>' + heroStarTxt(q) + ' · ' + rd.label + '</small></span></span>'; }
         // ---- building effects ----
         function academyLevel() { return loadCity().levels.academy || 0; }
         function forgeLevel() { return loadCity().levels.forge || 0; }
