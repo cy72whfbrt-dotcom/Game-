@@ -50,7 +50,7 @@ Liste der Ideen, die für später vorgemerkt sind.
 - Hauptstadt: Sockel oder Wasserschloss; Steg mit Boot am Ufer; eigene Formen für Tempel, Wächter-Tempel, Thron, Tore.
 - Zustände an der Basis: Schildkuppel, Brand, Rauch, Gerüst beim Ausbau, Erobern-Effekt; Tag/Abend/Nacht.
 - Modelle werden beim Laden einmal zu Bildern gerendert (wie die heutigen Sprites).
-- **Offen/abstimmen:** Entwurf sagt „Außenkreis nur mit Titel oder Skin“ (keine Bronze/Silber-Ringe nach Stufe) und „rot bei Straf-Titel“ – im Spiel ist heute Blutrot-Gold der Herrscher. Muss vor dem Einbau entschieden werden.
+- **Entschieden:** Außenkreis nur mit Titel aus der Mitte oder Ring-Skin (siehe „Ringe und Aussehen“): guter Titel Gold, Straf-Titel Rot, Herrscher Blutrot-Gold.
 
 ## Umgesetzt
 - **Kampfbericht und Postfach schöner** – gleicher Aufbau, klarere Abzeichen und Kräftebalken.
