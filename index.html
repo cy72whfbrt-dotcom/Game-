@@ -10707,6 +10707,8 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         function closeTopmostPanel() {           // scrim click + Escape
           if (closeWelcome()) { maybeShowDaily(); return; }
           if (closeLevelUpModal()) return;
+          if (!document.getElementById('lookSheet').hidden) return closeLookSheet();      // the full-screen sheets lie above everything else
+          if (!document.getElementById('heroHall').hidden) return closeHeroHall();
           if (!document.getElementById('citySheet').hidden && !cityView.hidden) { document.getElementById('citySheetClose').click(); return; }
           if (closeCity()) return;
           if (closeDailyModal()) return;
@@ -10738,6 +10740,8 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             closePanel(shopPopup);
             closePanel(document.getElementById('rulerPopup'));
             closePanel(document.getElementById('rankPopup'));
+            if (!document.getElementById('lookSheet').hidden) closeLookSheet();
+            if (!document.getElementById('heroHall').hidden) closeHeroHall();
             closePanel(chestItemPopup);
             chestDetailItemId = null;
             chestSelectedIds.clear();
