@@ -1213,6 +1213,16 @@ body.has-panel .mapctl{display:none}
   </div>
 </div>
 <script>
+// Test clock: the game can run ahead of the real time (openWaterTimeShift, in ms). A requested jump is applied once on load.
+(function () {
+  var ls = null; try { ls = window.localStorage; } catch (e) {}
+  var shift = 0; try { shift = parseFloat(ls.getItem('openWaterTimeShift')) || 0; } catch (e) {}
+  try { if (ls && ls.getItem('openWaterJump3d') !== '1') { shift += 3 * 86400000; ls.setItem('openWaterTimeShift', String(shift)); ls.setItem('openWaterJump3d', '1'); } } catch (e) {}   // "3 Tage in die Zukunft" (one time)
+  if (!shift) return;
+  var RealDate = Date;
+  class ShiftedDate extends RealDate { constructor(...a) { if (a.length) super(...a); else super(RealDate.now() + shift); } static now() { return RealDate.now() + shift; } }
+  window.Date = ShiftedDate;
+})();
 // ===== LOADING SCREEN BACKGROUND: dark gold smoke, light rays, embers (runs before the game script) =====
 (function () {
     var cv = document.getElementById('splashCanvas');
