@@ -5888,9 +5888,9 @@ body.has-panel .mapctl{display:none}
         // ---- the bot's Lazarett ----
         function botHospitalPct(botId) { return Math.min(60, 5 * botBld(botId, 'hospital')); }
         function botHospitalCapacity(botId) { const l = botBld(botId, 'hospital'); return l ? Math.round(1e6 * Math.pow(1.6, l - 1)) : 0; }
-        function botHospitalTake(botId, fallen) {
+        function botHospitalTake(botId, fallen, pct) {
             const b = loadBotState()[botId]; if (!b || fallen <= 0 || !botBld(botId, 'hospital')) return 0;
-            const w = Math.min(Math.max(0, botHospitalCapacity(botId) - b.wounded), Math.floor(fallen * botHospitalPct(botId) / 100));
+            const w = Math.min(Math.max(0, botHospitalCapacity(botId) - b.wounded), Math.floor(fallen * (pct ?? botHospitalPct(botId)) / 100));
             if (w > 0) { b.wounded += w; saveBotState(); }
             return w;
         }
@@ -7241,6 +7241,23 @@ body.has-panel .mapctl{display:none}
                     return logRowHtml(entry.won ? 'win' : 'loss', 'troops', logBadge(entry.won ? 'win' : 'loss', entry.won ? 'Armee siegt' : 'Armee geschlagen') + 'Kampf im Feld',
                         side(entry.attacker, true) + ' (' + fmtM(entry.atk) + ') gegen ' + side(entry.defender, false) + ' (' + fmtM(entry.def) + ')' + (entry.wounded ? ' · ' + fmtM(entry.wounded) + ' ins Lazarett' : '') + (entry.gold ? ' · +' + fmtM(entry.gold) + ' Gold' : ''), ago(entry));
                 }
+                if (entry.type === 'volley') {
+                    const dead = entry.hit - entry.wounded;
+                    const vdet = '<details><summary>Kampfdetails</summary><div class="logCompare"><div class="logSide">' +
+                        '<div class="logSideLabel">Beschuss</div>' +
+                        (entry.shotBy || []).map((s, i) => '<div class="logLine"><span>Wächter ' + (i + 1) + '</span><span>' + escapeHtml(s) + '</span></div>').join('') +
+                        '<div class="logLine"><span>Je Wächter</span><span>' + THRONE_FIRE_PCT + ' %</span></div>' +
+                        (entry.n > 1 ? '<div class="logLine"><span>Salven</span><span>' + entry.n + '</span></div>' : '') +
+                        '</div><div class="logVsDivider">VS</div><div class="logSide"><div class="logSideLabel">Du · Thron</div>' +
+                        (entry.n === 1 ? '<div class="logLine"><span>Truppen vorher</span><span>' + fmtD(entry.before) + '</span></div>' : '') +
+                        '<div class="logLine"><span>Getroffen</span><span>' + fmtD(entry.hit) + '</span></div>' +
+                        '<div class="logCasualty wounded"><span>Ins Lazarett</span><span>' + fmtD(entry.wounded) + '</span></div>' +
+                        (dead > 0 ? '<div class="logCasualty"><span>Gefallen (kein Platz)</span><span>−' + fmtD(dead) + '</span></div>' : '') +
+                        '<div class="logSum"><span>Noch im Thron</span><span>' + fmtD(entry.left) + '</span></div>' +
+                        '</div></div><div class="logRetreat">Erobere die Wächter-Tempel, dann schweigen sie. Verwundete heilst du im Lazarett in deiner Stadt.</div></details>';
+                    return logRowHtml('loss', 'attack', logBadge('loss', 'Beschuss') + T(entry.targetId),
+                        (entry.shotBy || []).length + ' Wächter-Tempel · ' + fmtM(entry.hit) + ' getroffen · ' + fmtM(entry.wounded) + ' ins Lazarett' + (entry.n > 1 ? ' · ' + entry.n + ' Salven' : ''), ago(entry), vdet);
+                }
                 if (entry.type === 'scout') {
                     return logRowHtml('scout', 'scout', logBadge('scout', 'Gespäht') + T(entry.targetId),
                         fmtM(entry.troops) + ' Truppen · ' + fmtM(entry.defense) + ' Verteidigung', ago(entry));
@@ -7674,7 +7691,7 @@ body.has-panel .mapctl{display:none}
         // ===== THRON-PUNKTE: the middle is always open to attack. Every few minutes whoever holds the Mega-Tempel gets
         // Thron-Punkte (each Wächter-Tempel a few too), and the 4 Wächter-Tempel fire on the holder's garrison unless he
         // holds them himself. The points buy things in the shop's "Thron" tab - for you and for everyone else alike.
-        const THRONE_TICK_MS = 3 * 60000, THRONE_PTS_MEGA = 30, THRONE_PTS_GUARD = 10, THRONE_FIRE_MS = 2 * 60000, THRONE_FIRE_PCT = 3;
+        const THRONE_TICK_MS = 3 * 60000, THRONE_PTS_MEGA = 30, THRONE_PTS_GUARD = 10, THRONE_FIRE_MS = 3 * 60000, THRONE_FIRE_PCT = 1;   // 1 % per Wächter-Tempel; the hit are wounded, not killed
         const guardianTempleIds = islands.filter(i => i.guardian).map(i => i.id);
         const THRONE_OFFERS = [
             { id: 'coins',  name: 'Münzen',              icon: 'coin',   cost: 150 },
@@ -7751,10 +7768,15 @@ body.has-panel .mapctl{display:none}
             shooters.forEach((g, i) => throneShots.push({ from: islandById[g], to: m, delay: i * 140 })); requestRender();   // the clock starts at the first frame
             if (loss <= 0) return;
             islandTroops[megaTempleId] = g0 - loss;
-            if (holder === 'player') { const w = hospitalTake(loss); warStat('fallen', loss - w);
+            if (holder === 'player') { const w = hospitalTake(loss, 100); warStat('fallen', loss - w);   // everyone hit is carried to the Lazarett, as far as there is room
                 setTimeout(() => spawnBattleFx(megaTempleId, false, 'Beschuss', '−' + fmtCompact(loss) + ' Truppen'), 1100);
-                flashHint(shooters.length + (shooters.length === 1 ? ' Wächter-Tempel feuert' : ' Wächter-Tempel feuern') + ' auf den Thron: −' + fmtCompact(loss) + ' Truppen' + (w ? ', ' + fmtCompact(w) + ' ins Lazarett.' : '.') + ' Erobere sie, dann schweigen sie.', 4500); }
-            else botHospitalTake(holder, loss);
+                const prev = combatLog[0], shotBy = shooters.map(g => { const o = islandOwnerOf(g); return o && o !== 'player' ? botById[o].name : 'unbesetzt'; });
+                if (prev && prev.type === 'volley' && Date.now() - prev.at < 30 * 60000) {          // one report for a run of volleys, not one every few minutes
+                    Object.assign(prev, { n: prev.n + 1, hit: prev.hit + loss, wounded: prev.wounded + w, left: g0 - loss, shotBy, at: Date.now() });
+                    store.set('openWaterCombatLog', JSON.stringify(combatLog)); refreshOpenCombatLog();
+                } else addCombatLogEntry({ type: 'volley', targetId: megaTempleId, n: 1, before: g0, hit: loss, wounded: w, left: g0 - loss, shotBy });
+                flashHint(shooters.length + (shooters.length === 1 ? ' Wächter-Tempel feuert' : ' Wächter-Tempel feuern') + ' auf den Thron: ' + fmtCompact(loss) + ' Truppen getroffen' + (w ? ', ' + fmtCompact(w) + ' davon ins Lazarett.' : ' – kein Platz im Lazarett.') + ' Erobere die Wächter-Tempel, dann schweigen sie.', 4500); }
+            else botHospitalTake(holder, loss, 100);
             saveGame();
         }
         function throneTick() {
@@ -7800,7 +7822,7 @@ body.has-panel .mapctl{display:none}
                     '<div class="ts-row">' + icon('attack') + '<span>Beschuss' + (hd ? ' · ' + sh.length + ' Wächter' : '') + '</span><b' + (hd === 'player' && sh.length ? ' class="warn"' : '') + ' data-throne-fire>' + fmtClock((ts.nextFire - Date.now()) / 1000) + '</b></div>' +
                     '<div class="ts-row">' + icon('points') + '<span>Du bekommst</span><b>' + (inc ? '+' + inc + ' alle 3 Min.' : 'nichts – erobere die Mitte') + '</b></div>' +
                 '</div>' +
-                '<p class="mail-intro">Wer den Mega-Tempel hält, bekommt alle 3 Min. ' + THRONE_PTS_MEGA + ' Thron-Punkte, jeder Wächter-Tempel bringt ' + THRONE_PTS_GUARD + '. Alle 2 Min. feuern die Wächter-Tempel, die dem Herrscher nicht gehören, auf die Garnison im Mega-Tempel (je ' + THRONE_FIRE_PCT + ' %).</p>' +
+                '<p class="mail-intro">Wer den Mega-Tempel hält, bekommt alle 3 Min. ' + THRONE_PTS_MEGA + ' Thron-Punkte, jeder Wächter-Tempel bringt ' + THRONE_PTS_GUARD + '. Genauso oft feuern die Wächter-Tempel, die dem Herrscher nicht gehören, auf die Truppen im Mega-Tempel (je ' + THRONE_FIRE_PCT + ' %) – die Getroffenen kommen ins Lazarett, soweit Platz ist.</p>' +
                 '<div class="sect"><h4>Eintauschen</h4></div><div class="throne-list">' +
                 THRONE_OFFERS.map(o => { const done = o.once && owned, n = throneAmount('player', o.id);
                     const sub = o.id === 'coins' ? fmtCompact(n) + ' – so viel, wie dein Reich in 1 Std. verdient' : o.id === 'troops' ? fmtCompact(n) + ' – eine Stunde deiner Ausbildung, in die Hauptstadt'
@@ -9241,9 +9263,9 @@ body.has-panel .mapctl{display:none}
         function hospitalPct() { return Math.min(60, hospitalLevel() * 5); }
         function hospitalCapacity() { const l = hospitalLevel(); return l ? Math.round(1e6 * Math.pow(1.6, l - 1)) : 0; }
         const HEAL_COIN_PER_TROOP = 0.1;
-        function hospitalTake(fallen) {                   // Lazarett: part of your fallen (attack won or lost, or defending) are only wounded → how many
+        function hospitalTake(fallen, pct) {              // Lazarett: part of your fallen (attack won or lost, or defending) are only wounded → how many
             if (!hospitalLevel() || fallen <= 0) return 0;
-            const c = loadCity(), room = Math.max(0, hospitalCapacity() - c.wounded), w = Math.min(room, Math.floor(fallen * hospitalPct() / 100));
+            const c = loadCity(), room = Math.max(0, hospitalCapacity() - c.wounded), w = Math.min(room, Math.floor(fallen * (pct ?? hospitalPct()) / 100));
             if (w > 0) { c.wounded += w; saveCity(); }
             return w;
         }
@@ -10944,7 +10966,7 @@ body.has-panel .mapctl{display:none}
                         statTile('Verteidigung', 'defense', scouted ? fmtTile(effectiveDefense(island)) : UNK) + '</div>' +
                         (scouted ? '' : '<div class="notice">' + icon('scout') + '<span>Stärke unbekannt. Spähen deckt Truppen und Verteidigung auf.</span></div>') +
                         (island.type === 'gate' && !ownerBot ? '<div class="notice notice--gold">' + icon('lock') + '<span>Tor: Unbesetzt ist es verschlossen – erobere es, um über die Brücke zu kommen. Wer es besitzt, geht kostenlos durch und bestimmt die Maut für alle anderen.</span></div>' : '') +
-                        (isTemple ? '<div class="notice notice--gold">' + icon('temple') + '<span>' + (island.type === 'megaTemple' ? 'Thron der Meere: wer ihn hält, trägt die Krone – +25 % Münzen und Truppen im ganzen Reich und alle 3 Min. ' + THRONE_PTS_MEGA + ' Thron-Punkte. Die Wächter-Tempel feuern auf ihn – nächster Beschuss in <b data-throne-fire>' + fmtClock((throneState.nextFire - Date.now()) / 1000) + '</b>.' : island.guardian ? 'Wächter-Tempel: 3-facher Tempel-Bonus und alle 3 Min. ' + THRONE_PTS_GUARD + ' Thron-Punkte. Gehört er nicht dem Herrscher, feuert er alle 2 Min. auf den Thron.' : 'Tempel: gibt Produktion, Gems und Münzen, sobald erobert.') + '</span></div>' : '') +
+                        (isTemple ? '<div class="notice notice--gold">' + icon('temple') + '<span>' + (island.type === 'megaTemple' ? 'Thron der Meere: wer ihn hält, trägt die Krone – +25 % Münzen und Truppen im ganzen Reich und alle 3 Min. ' + THRONE_PTS_MEGA + ' Thron-Punkte. Die Wächter-Tempel feuern auf ihn – nächster Beschuss in <b data-throne-fire>' + fmtClock((throneState.nextFire - Date.now()) / 1000) + '</b>.' : island.guardian ? 'Wächter-Tempel: 3-facher Tempel-Bonus und alle 3 Min. ' + THRONE_PTS_GUARD + ' Thron-Punkte. Gehört er nicht dem Herrscher, feuert er alle 3 Min. auf den Thron.' : 'Tempel: gibt Produktion, Gems und Münzen, sobald erobert.') + '</span></div>' : '') +
                         (bossAt(island.id) ? '<div class="notice notice--gold">' + icon('shop') + '<span><b>Belohnung:</b> Legendäre Kiste + ' + (bossAt(island.id).wander ? WANDER_REWARD_GEMS : BOSS_REWARD_GEMS) + ' Gems · ' + (bossAt(island.id).wander ? 'zieht weiter in' : 'verschwindet in') + ' <b data-boss-clock>' + fmtClock(((bossAt(island.id).wander ? bossAt(island.id).campUntil : bossAt(island.id).endsAt) - Date.now()) / 1000) + '</b></span></div>' : '') +
                         (scoutEnRoute ? '<div class="notice notice--warn">' + icon('hourglass') + '<span>Späher bereits unterwegs …</span></div>' : '');
                     setBtnLabel(attackBtn, 'Angreifen');
