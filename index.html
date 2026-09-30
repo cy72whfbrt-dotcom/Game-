@@ -3623,8 +3623,9 @@ body.has-panel .mapctl{display:none}
                 }
             }
             noteBattle(target.id, won ? originalEnemyTroops : attack.rawTroops - fled, won ? targetOwner : bot.id);   // the neighbours saw it
-            botMoodAdd(bot.id, won ? .15 : -.2); if (targetOwner && targetOwner !== 'player') botMoodAdd(targetOwner, won ? -.25 : .1);
-            if (!won) botNoteFail(bot.id, target.id);
+            const counts = won || !attack.planId || attack.lastWave;                    // an early wave of a planned strike failing isn't a lesson yet
+            if (counts) botMoodAdd(bot.id, won ? .15 : -.2); if (targetOwner && targetOwner !== 'player') botMoodAdd(targetOwner, won ? -.25 : .1);
+            if (!won && counts) botNoteFail(bot.id, target.id);
             if (!won) botLearn(bot.id, target.id);                          // a lost fight tells them what's really there
             if (!won && targetOwner && targetOwner !== 'player') botStat(targetOwner, 'defs');
             if (won && bossHere) botStat(bot.id, 'bosses');
@@ -5655,7 +5656,7 @@ body.has-panel .mapctl{display:none}
         }
         function botRevengeLaunched(bot, targetId) {        // tell the player once when a bot starts paying them back
             if (islandOwnerOf(targetId) !== 'player') return;
-            const g = botGrudgeOn(bot.id, 'player'); if (!g || g.told) return;
+            const v = botVendetta(bot, Date.now()), g = botGrudgeOn(bot.id, 'player') || (v && v.who === 'player' ? (v.g || (v.g = { n: 4 })) : null); if (!g || g.told) return;
             g.told = true; saveBotState();
             flashHint(bot.name + ' schlägt zurück – du hast ' + (g.n > 1 ? 'zu oft ' : '') + 'angegriffen. Achte auf ' + islandTitle(islandById[targetId]) + '!', 5000);
         }
@@ -5713,7 +5714,7 @@ body.has-panel .mapctl{display:none}
         const BOT_INTEL_MS = 10 * 60000;
         function botIntel(bot, targetId) {
             const it = botIntelMem[bot.id] && botIntelMem[bot.id][targetId];
-            const maxAge = islandOwnerOf(targetId) === 'player' ? 60000 : BOT_INTEL_MS;   // a player's base can fill up any minute: a report older than a minute isn't worth attacking on
+            const maxAge = islandOwnerOf(targetId) === 'player' ? 5 * 60000 : targetId === megaTempleId && coalitionOn(Date.now()) ? 90000 : BOT_INTEL_MS;   // (their growth since the report is estimated anyway)   // a player's base can fill up any minute: a report older than a minute isn't worth attacking on
             if (it && it.pending && Date.now() >= it.ready) { const t = islandById[targetId]; it.s = effectiveTroops(t) + effectiveDefense(t); it.pending = false; }   // the scout arrives: what's there now
             return it && Date.now() >= it.ready && Date.now() - it.ready < maxAge ? it : null;
         }
@@ -5772,7 +5773,9 @@ body.has-panel .mapctl{display:none}
             if (fresh && p.believed && fresh.s > p.believed * 1.15) { act.plan = null; return false; }
             const give = Math.min(st.n, Math.floor((islandTroops[st.from] || 0) * .95));
             if (give < BOT_MIN_GARRISON_TO_ATTACK || give < st.n * .6) { act.plan = null; return false; }
-            return !!launchAttack(st.from, p.t, bot.id, give);
+            const ok = !!launchAttack(st.from, p.t, bot.id, give);
+            if (ok) { const a = pendingAttacks[pendingAttacks.length - 1]; if (a && a.attackerBotId === bot.id) { a.planId = p.id || (p.id = Date.now() + '-' + p.t); a.lastWave = !p.steps.length; } }
+            return ok;
         }
         // Scouts sent at YOUR bases walk the map like yours do - you see them and get told, as in any strategy game.
         let botScoutsOnMap = [];
@@ -5807,6 +5810,7 @@ body.has-panel .mapctl{display:none}
             const rally = mem.rally, sampled = botSampleSources(owned, st.sources);
             if (rally && !sampled.includes(rally.at)) sampled.push(rally.at);
             for (const sourceId of sampled) {
+                if (sourceId === megaTempleId && !(rally && rally.at === sourceId)) continue;              // nobody empties the throne for an ordinary attack
                 const have = Math.floor((islandTroops[sourceId] || 0) * (rally && rally.at === sourceId ? .95 : commit));   // the gathered army goes almost whole
                 if (have < BOT_MIN_GARRISON_TO_ATTACK) continue;
                 const source = islandById[sourceId];
@@ -5915,7 +5919,7 @@ body.has-panel .mapctl{display:none}
                 if ((big || islandOwnerOf(e.target.id)) && srcs.length >= 2 && !gamble && Math.random() < .3 && botArmyRally(bot, e.target, need, slots)) { rallied = true; break; }   // a big strike: gather out in the open first
                 // the plan: the strongest base with most of its troops; only if that isn't enough a second or third base joins
                 // (a big target up to four). The farthest goes first - a person's way of getting them there at a similar time.
-                const want = big ? Math.max(need * 2.2, total) : Math.max(need * (gamble ? 1.3 : 1.8), srcs[0].have);
+                const want = big ? Math.min(Math.max(need * 2.2, total), need * 3) : need * (gamble ? 1.3 : 1.8);   // enough with a good margin, not everything they have
                 const steps = []; let sum = 0;
                 for (const sv of srcs) {
                     if (sum >= want || steps.length >= Math.min(big ? 4 : 3, Math.max(1, slots))) break;
@@ -5931,7 +5935,7 @@ body.has-panel .mapctl{display:none}
                 break;                                                                                    // one decision per move
             }
             // nothing to strike: scout the most interesting base they don't know yet (that is this move's order)
-            if (!n && !rallied) for (const e of list.slice(0, 8)) {
+            if (!n && !rallied && !scouted) for (const e of list.slice(0, 8)) {
                 if (botIntel(bot, e.target.id) || botScouting(bot, e.target.id) || bossAt(e.target.id)) continue;
                 const ready = now + scoutSecs(islandById[e.sources[0].id], e.target, bot.id) * 1000;   // their scout walks as long as yours would
                 botLearn(bot.id, e.target.id, ready);
@@ -6156,7 +6160,7 @@ body.has-panel .mapctl{display:none}
             if (pendingSends.some(sd => sd.senderBotId === bot.id && !sd.back)) return false;
             const at = islandById[atId], helpers = [];
             let pool = (islandTroops[atId] || 0) * .95;
-            const own = [...botOwnedIslands[bot.id]].filter(id => id !== atId && !isCapital(id) && (islandTroops[id] || 0) > BOT_MIN_GARRISON_TO_ATTACK)
+            const own = [...botOwnedIslands[bot.id]].filter(id => id !== atId && id !== megaTempleId && !isCapital(id) && (islandTroops[id] || 0) > BOT_MIN_GARRISON_TO_ATTACK)
                 .map(id => ({ id, isl: islandById[id] })).filter(h => h.isl.landmassId === at.landmassId || landmassesConnected(h.isl.landmassId, at.landmassId))
                 .sort((u, v) => (islandTroops[v.id] || 0) - (islandTroops[u.id] || 0));
             for (const h of own) { if (pool >= need * 1.3 || helpers.length >= Math.min(8, maxHelpers ?? 8)) break; helpers.push(h.id); pool += (islandTroops[h.id] || 0) * .95; }
@@ -6226,7 +6230,7 @@ body.has-panel .mapctl{display:none}
             for (const attack of pendingAttacks) {
                 if (owned.has(attack.targetId)) threatened.add(attack.targetId);
             }
-            if (threatened.size === 0 || Date.now() < botActOf(bot.id).next || botFreeSlots(bot) <= 0) return;
+            const act = botActOf(bot.id); if (threatened.size === 0 || Date.now() < (act.defNext || 0) || botFreeSlots(bot) <= 0) return;
             const helping = new Set(pendingSends.filter(x => x.senderBotId === bot.id && !x.back).map(x => x.toId));
             for (const targetId of threatened) {
                 if (helping.has(targetId)) continue;
@@ -6246,7 +6250,7 @@ body.has-panel .mapctl{display:none}
                 }
                 if (bestSourceId !== null) {
                     launchSend(bestSourceId, targetId, bot.id);
-                    botTapped(bot); return;                              // one order per tap
+                    act.defNext = Date.now() + (botStyle(bot).tapMs || 5000) * (.7 + Math.random() * .6); return;   // one defence order at a time (its own pace - it doesn't stop the armies)
                 }
             }
         }
@@ -10586,7 +10590,7 @@ body.has-panel .mapctl{display:none}
         const botArmies = botId => armies.filter(a => a.who === botId);
         function botArmyRally(bot, target, need, maxHelpers) {
             if (botArmies(bot.id).length >= ((BOT_STYLES[bot.style].marches || 5) >= 8 ? 2 : 1)) return false;
-            const own = botOwnedIslands[bot.id], strong = [...own].filter(id => !isCapital(id) && (islandTroops[id] || 0) > BOT_MIN_GARRISON_TO_ATTACK).sort((u, v) => (islandTroops[v] || 0) - (islandTroops[u] || 0));
+            const own = botOwnedIslands[bot.id], strong = [...own].filter(id => !isCapital(id) && id !== megaTempleId && (islandTroops[id] || 0) > BOT_MIN_GARRISON_TO_ATTACK).sort((u, v) => (islandTroops[v] || 0) - (islandTroops[u] || 0));
             if (!strong.length) return false;
             const src0 = islandById[strong[0]]; let pt = null;
             for (const f of [.35, .5, .25, .6, .45]) {
@@ -10617,10 +10621,10 @@ body.has-panel .mapctl{display:none}
             for (const l of lms) for (const t of islandsByLandmass[l] || []) {
                 const ow = islandOwnerOf(t.id); if (!ow || ow === bot.id || isCapital(t.id) || t.id === a.t) continue;
                 if (ow === 'player' && playerShielded()) continue;
-                const d = Math.hypot(t.x - a.x, t.y - a.y), pull = ow === 'player' ? (v && v.who === 'player' ? .2 : g ? .4 : .6) : 1;
+                const d = Math.hypot(t.x - a.x, t.y - a.y) * botSituation(bot, botStyle(bot), t, ow, now), pull = ow === 'player' ? (v && v.who === 'player' ? .2 : g ? .4 : .6) : 1;
                 const it = botIntel(bot, t.id);
                 if (!it) { if (!botScouting(bot, t.id) && d * pull < ud) { ud = d * pull; unknown = t; } continue; }
-                const m = ow === 'player' ? Math.max(1.25, botStyle(bot).margin) : botStyle(bot).margin;
+                const m = (ow === 'player' ? Math.max(1.25, botStyle(bot).margin) : botStyle(bot).margin) * botMarginFor(bot, t, ow, now);
                 if (a.troops * atk >= it.s * m && d * pull < bs) { bs = d * pull; best = t; }
             }
             if (best) {                                                                   // a base it can take: turn towards that one
@@ -10630,7 +10634,7 @@ body.has-panel .mapctl{display:none}
                 saveArmies(); return true;
             }
             if ((a.calls || 0) < 3) {                                                     // call up more troops
-                const gap = needS / atk - a.troops, helpers = [...botOwnedIslands[bot.id]].filter(id => !isCapital(id) && (islandTroops[id] || 0) > BOT_MIN_GARRISON_TO_ATTACK && routeFor(islandById[id].landmassId, a.lm, bot.id))
+                const gap = needS / atk - a.troops, helpers = [...botOwnedIslands[bot.id]].filter(id => !isCapital(id) && id !== megaTempleId && (islandTroops[id] || 0) > BOT_MIN_GARRISON_TO_ATTACK && routeFor(islandById[id].landmassId, a.lm, bot.id))
                     .sort((u, w) => (islandTroops[w] || 0) - (islandTroops[u] || 0)).slice(0, 4);
                 const pool = helpers.reduce((s, id) => s + Math.floor((islandTroops[id] || 0) * .8), 0);
                 if (pool >= gap * .6) {
@@ -10669,7 +10673,7 @@ body.has-panel .mapctl{display:none}
                     if (now > a.until - 3 * 60000) return goHome(); continue;                 // nothing to do about it: give up and go home
                 }
                 if (armyMove(a, { kind: 'base', id: t.id, x: t.x, y: t.y, lm: t.landmassId })) continue;
-                if (islandOwnerOf(t.id) === 'player') { flashHint('Die Armee von ' + bot.name + ' marschiert auf ' + islandTitle(t) + '!', 4500); sfx('warn'); }
+                if (islandOwnerOf(t.id) === 'player') { flashHint('Die Armee von ' + bot.name + ' marschiert auf ' + islandTitle(t) + '!', 4500); sfx('warn'); botRevengeLaunched(bot, t.id); }
                 return true;
             }
             return false;
