@@ -8015,7 +8015,56 @@ body.has-panel .mapctl{display:none}
         function saveLeave() { try { store.set('openWaterLeave', JSON.stringify(empireSnapshot())); } catch (e) {} }
         const leaveAtBoot = (() => { try { return JSON.parse(store.get('openWaterLeave')) || null; } catch (e) { return null; } })();
         let welcomeFrom = null;                          // the snapshot to compare with when the welcome card is shown
+        // The others lived through time nobody watched (the one-time 3-day jump): same rules, summed up instead of played
+        // second by second - they spread out, fight each other, produce, build their city, level up, gear up. Your bases stay yours.
+        var ffSummary = null;
+        function botsFastForward(hours) {
+            const now = Date.now(), days = hours / 24, sum = { caps: 0, fights: 0 };
+            const reach = botId => { const s = new Set(); for (const id of botOwnedIslands[botId]) { const l = islandById[id].landmassId; s.add(l);
+                for (const r of reachableLandmassIds[l] || []) if (landmassesConnected(l, r)) s.add(r); } return s; };
+            const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+            const take = (botId, id) => { const isl = islandById[id]; clearIslandOwner(id); botOwnedIslands[botId].add(id);
+                islandLevels[id] = Math.max(1, (islandLevels[id] || isl.neutralLevel || 1) - 1); islandTroops[id] = Math.round((isl.neutralTroops || 1000) * .5); botStat(botId, 'caps'); sum.caps++; };
+            const bots = BOT_DEFS.filter(b => botOwnedIslands[b.id] && botOwnedIslands[b.id].size).sort(() => Math.random() - .5);
+            for (const bot of bots) {                              // 1) spread out: the nearest free towers they can reach
+                const st = BOT_STYLES[bot.style], want = Math.round(days * (1 + (st.act || .65) * 3) * (.6 + Math.random() * .8));
+                const rs = reach(bot.id), home = islandById[botCapitalOf(bot.id)] || islandById[[...botOwnedIslands[bot.id]][0]];
+                const free = islands.filter(i => i.type === 'tower' && rs.has(i.landmassId) && !islandOwnerOf(i.id) && !bossAt(i.id)).sort((a, b) => dist(a, home) - dist(b, home));
+                for (const i of free.slice(0, want)) take(bot.id, i.id);
+            }
+            const power = botId => { let t = 0; for (const id of botOwnedIslands[botId]) t += islandTroops[id] || 0; return t * botAtkFactor(botById[botId], true); };
+            for (const bot of bots) {                              // 2) rivals: now and then the stronger neighbour takes a base
+                const st = BOT_STYLES[bot.style], tries = Math.round(days * (st.hunt || .5) * .8 * Math.random() * 2);
+                for (let n = 0; n < tries; n++) {
+                    const rs = reach(bot.id), home = islandById[botCapitalOf(bot.id)]; if (!home) break;
+                    let best = null, bd = Infinity;
+                    for (const i of islands) { const o = islandOwnerOf(i.id); if (!o || o === 'player' || o === bot.id || i.type !== 'tower' || isCapital(i.id) || !rs.has(i.landmassId)) continue;
+                        const d = dist(i, home); if (d < bd) { bd = d; best = i; } }
+                    if (!best) break;
+                    const foe = islandOwnerOf(best.id); sum.fights++; botGrudge(foe, bot.id, 2);
+                    if (power(bot.id) > power(foe) * (.8 + Math.random() * .4)) { take(bot.id, best.id); sum.caps--; botStat(foe, 'lost'); }
+                    else botStat(foe, 'defs');
+                }
+            }
+            for (const bot of bots) {                              // 3) produce, build, level up, gear up
+                const b = loadBotState()[bot.id], own = botOwnedIslands[bot.id]; if (!own.size) continue;
+                const hp = hourProduction(bot.id), troops = hp.troops * hours * .5, per = Math.round(troops / own.size);   // half of it went into fights
+                for (const id of own) islandTroops[id] = (islandTroops[id] || 0) + per;
+                botCoins[bot.id] = (botCoins[bot.id] || 0) + Math.round(hp.coins * hours);
+                const c = b.city; let busy = 0;
+                if (c.build) { c.build.endsAt = now; botCityFinish(bot, now); }
+                for (let n = 0; n < 200 && busy < hours * 3600000; n++) { botCityBuild(bot, now); if (!c.build) break; busy += c.build.endsAt - c.build.startedAt; c.build.endsAt = now; botCityFinish(bot, now); }
+                for (let n = 0; n < 8; n++) botConsiderUpgrade(bot);
+                addBotXp(bot.id, Math.round(hp.troops * hours * .25));
+                for (const hid of HEROES_IDS) if (botHeroUnlocked(bot.id, hid)) botHeroGainXp(bot.id, hid, Math.round(hp.troops * hours * .05));
+                b.gems += Math.round(hours * 15); b.wounded = 0;
+                for (let n = 0; n < 6; n++) botShop(bot);
+            }
+            capitalCache = null; saveBotState(); refreshTerritory(); saveGame(); requestRender();
+            return sum;
+        }
         setTimeout(() => {                               // right after boot (everything exists): production for the time away
+            if (store.get('openWaterBotsJump3d') !== '1') { store.set('openWaterBotsJump3d', '1'); try { ffSummary = botsFastForward(72); } catch (e) { console.warn(e); } }   // one time: the others catch up on the 3 days
             if (leaveAtBoot && Date.now() - leaveAtBoot.at > 60000) {
                 const away = Math.min(AWAY_PRODUCE_MAX_MS, Date.now() - leaveAtBoot.at), ticks = Math.floor(away / productionTickMs());
                 const c0 = coins, t0 = empireSnapshot().troops;
@@ -8024,6 +8073,7 @@ body.has-panel .mapctl{display:none}
                 if (dc > 0) warStat('offCoins', dc); if (dt > 0) warStat('offTroops', dt);
                 if (Date.now() - leaveAtBoot.at >= AWAY_MIN_MS) welcomeFrom = Object.assign({ produced: { coins: dc, troops: dt, capped: Date.now() - leaveAtBoot.at > AWAY_PRODUCE_MAX_MS } }, leaveAtBoot);
             }
+            if (ffSummary && !welcomeFrom) afterSplash(() => setTimeout(() => flashHint('Die anderen waren 3 Tage aktiv: +' + ffSummary.caps + ' Basen erobert, ' + ffSummary.fights + ' Kämpfe untereinander.', 6000), 1500));
             saveLeave(); setInterval(saveLeave, 30000);
         }, 0);
         window.addEventListener('pagehide', saveLeave);
@@ -8054,6 +8104,7 @@ body.has-panel .mapctl{display:none}
             if (built.length) rows.push(['upgrade', 'Fertig gebaut', built.map(k => cityDef(k).name + ' ' + now.city[k]).join(', ')]);
             if (now.bases !== from.bases) rows.push(['castle', 'Basen', from.bases + ' → ' + now.bases]);
             if (now.wounded > (from.wounded || 0)) rows.push(['losses', 'Im Lazarett', fmtCompact(now.wounded) + ' Verwundete']);
+            if (ffSummary) rows.push(['castle', 'Die anderen', '+' + ffSummary.caps + ' Basen erobert · ' + ffSummary.fights + ' Kämpfe untereinander']);
             if (!rows.length) rows.push(['check', 'Alles ruhig', 'Niemand hat dich angegriffen']);
             return rows;
         }
