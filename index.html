@@ -852,6 +852,35 @@ body.has-panel .mapctl{display:none}
 .tag{display:inline-flex;align-items:center;height:16px;padding:0 5px;margin-left:6px;border-radius:var(--r-xs);font:600 9.5px/1 var(--font-ui);letter-spacing:.08em;text-transform:uppercase;vertical-align:2px}
 .tag--player{color:#cfe3ff;background:rgba(63,134,216,.2);border:1px solid rgba(140,192,255,.4)}
 .rankRow.isPlayer{background:linear-gradient(90deg,#284670,#161b24);box-shadow:inset 2px 0 0 var(--f-player);position:sticky;top:0;bottom:0;z-index:2}   /* your row stays in view while you scroll */
+/* Rangliste sheet: rank, crest in its frame + level, name, value; top 3 gold/silver/bronze, your row blue (pinned in the foot when outside the list) */
+#rankPopup{height:var(--sheet-max)}   /* steady: switching tabs never makes the sheet jump */
+ #rankTabs.tabs{grid-template-columns:repeat(4,minmax(0,1fr))} #rankBody{gap:6px;padding:10px 10px 14px}
+.lb-row{--acc:transparent;display:grid;grid-template-columns:30px 40px minmax(0,1fr) auto;gap:10px;align-items:center;min-height:54px;padding:6px 10px 6px 6px;border-radius:var(--r-sm);
+  border:1px solid var(--line-1);background:rgba(255,255,255,.025);box-shadow:inset 3px 0 0 var(--acc);cursor:pointer;text-align:left;color:inherit}
+.lb-row:hover{background-color:rgba(255,255,255,.05)} .lb-row:active{transform:scale(.995)}
+.lb-row.is-1{--acc:#f2c75c;--med:linear-gradient(180deg,#ffe28a,#c9922e);background:linear-gradient(90deg,rgba(242,199,92,.16),rgba(242,199,92,.02) 70%);border-color:rgba(242,199,92,.35)}
+.lb-row.is-2{--acc:#d2d8e0;--med:linear-gradient(180deg,#f1f4f8,#9aa3ae);background:linear-gradient(90deg,rgba(210,216,224,.11),rgba(210,216,224,.02) 70%);border-color:rgba(210,216,224,.25)}
+.lb-row.is-3{--acc:#c88a55;--med:linear-gradient(180deg,#f0b27d,#9a5a2c);background:linear-gradient(90deg,rgba(200,138,85,.13),rgba(200,138,85,.02) 70%);border-color:rgba(200,138,85,.3)}
+.lb-row.isMe{--acc:var(--f-player);background:linear-gradient(90deg,#284670,#161b24);border-color:rgba(140,192,255,.45)}
+.lb-pos{font:700 var(--fs-13)/1 var(--font-display);color:var(--tx-3);text-align:center;font-variant-numeric:tabular-nums}
+.lb-row.is-1 .lb-pos,.lb-row.is-2 .lb-pos,.lb-row.is-3 .lb-pos{width:26px;height:26px;margin:0 auto;display:grid;place-items:center;border-radius:50%;background:var(--med);color:#1a1204;font-size:13px;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 1px 3px rgba(0,0,0,.5)}
+.lb-row.isMe .lb-pos{color:#cfe3ff}
+.lb-crest{position:relative;width:40px;height:40px;border-radius:50%;padding:2px;background:conic-gradient(from 200deg,var(--fr1,#b08d57),var(--fr2,#6b5433),var(--fr1,#b08d57),var(--fr2,#6b5433),var(--fr1,#b08d57));box-shadow:0 0 7px color-mix(in srgb,var(--fr1,#b08d57) 35%,transparent)}
+.lb-crest-in{display:grid;place-items:center;width:100%;height:100%;border-radius:50%;background:radial-gradient(circle at 50% 30%,#2a2f3a,#12151c)} .lb-crest img{width:24px;height:24px;display:block}
+.lb-crest .lvl{right:-7px;bottom:-5px;min-width:18px;height:17px;font-size:9.5px}
+.lb-name{display:flex;flex-direction:column;gap:3px;min-width:0}
+.lb-name b{display:flex;align-items:center;min-width:0;font:600 var(--fs-13)/1.2 var(--font-ui);color:var(--tx-1);white-space:nowrap}
+.lb-name b span:first-child{overflow:hidden;text-overflow:ellipsis} .lb-name .tag{flex:none}
+.lb-name small{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 9.5px/1.3 var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--gold-300)}
+.lb-name small i{font-style:normal;color:var(--tx-3);letter-spacing:.02em;text-transform:none;font-size:10.5px}
+.lb-t{display:inline-block;padding:1px 5px;border-radius:var(--r-xs);border:1px solid rgba(242,199,92,.4);color:var(--gold-100);background:rgba(242,199,92,.1)}
+.lb-t.is-bad{border-color:rgba(225,72,60,.5);color:#ffb3aa;background:rgba(225,48,48,.12)} .lb-t.is-ruler{border-color:rgba(255,208,90,.6);color:#ffe7a8;background:linear-gradient(90deg,rgba(200,40,40,.45),rgba(255,208,90,.2))}
+.lb-val{display:flex;flex-direction:column;align-items:flex-end;gap:3px;text-align:right}
+.lb-val b{font:700 var(--fs-15)/1 var(--font-display);color:var(--gold-100);font-variant-numeric:tabular-nums;white-space:nowrap}
+.lb-val small{font:600 9px/1 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--tx-3)}
+.lb-gap{display:flex;align-items:center;gap:8px;margin-top:4px;font:600 9.5px/1 var(--font-ui);letter-spacing:.12em;text-transform:uppercase;color:var(--tx-3)}
+.lb-gap::before,.lb-gap::after{content:"";flex:1;height:1px;background:var(--line-1)}
+.lb-foot{flex-direction:column;align-items:stretch;gap:6px;padding:8px 10px 10px} .lb-foot .lb-row{min-height:50px}
 
 /* =====================================================================
    SLIDER  #attackTroopsSlider  (JS keeps --pct in sync)
@@ -1643,7 +1672,6 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
     </div>
 
     <div id="tabRank" class="profileTabPanel" role="tabpanel">
-      <div id="rankList" class="logList"></div>
     </div>
   </div>
   <footer id="profileFoot" class="pfoot">
@@ -1682,6 +1710,24 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
     <button id="rulerCloseBtn" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button>
   </header>
   <div class="pbody" id="rulerBody"></div>
+</section>
+
+<!-- ============ RANGLISTE ============ -->
+<section id="rankPopup" class="panel panel--sheet" role="dialog" aria-labelledby="rankTitle">
+  <span class="sheet-grab" aria-hidden="true"></span>
+  <header class="phead">
+    <div class="emblem emblem--gold"><svg class="icon"><use href="#i-rank"/></svg></div>
+    <div class="phead-text"><div class="overline">Rangliste</div><h3 id="rankTitle" class="ptitle">Macht</h3><div class="psub" id="rankSub"></div></div>
+    <button id="rankCloseBtn" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button>
+  </header>
+  <div id="rankTabs" class="tabs" role="tablist">
+    <button class="tab active" type="button" role="tab" data-rtab="power"><svg class="icon"><use href="#i-attack"/></svg><span>Macht</span></button>
+    <button class="tab" type="button" role="tab" data-rtab="caps"><svg class="icon"><use href="#i-flag"/></svg><span>Eroberungen</span></button>
+    <button class="tab" type="button" role="tab" data-rtab="titles"><svg class="icon"><use href="#i-crown"/></svg><span>Titel</span></button>
+    <button class="tab" type="button" role="tab" data-rtab="week"><svg class="icon"><use href="#i-points"/></svg><span>Thron (Woche)</span></button>
+  </div>
+  <div class="pbody" id="rankBody"></div>
+  <footer class="pfoot lb-foot" id="rankFoot"></footer>
 </section>
 
 <section id="mailPopup" class="panel panel--sheet" role="dialog" aria-labelledby="mailTitle">
@@ -6532,6 +6578,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             rank: { btn: document.getElementById('tabBtnRank'), panel: document.getElementById('tabRank') }
         };
         function showProfileTab(name) {
+            if (name === 'rank') { openRankings(); return; }   // the Rangliste has its own sheet now
             profilePopup.dataset.tab = name;
             for (const key of Object.keys(profileTabs)) {
                 const isActive = key === name;
@@ -6541,7 +6588,6 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             }
             if (name === 'equip') { renderEquipGrid(); renderChestEquipment(); }
             if (name === 'skills') renderSkillGrid();
-            if (name === 'rank') renderRankList();
         }
         profileTabs.info.btn.addEventListener('click', () => showProfileTab('info'));
         profileTabs.equip.btn.addEventListener('click', () => showProfileTab('equip'));
@@ -6683,10 +6729,6 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         });
         document.getElementById('achList').addEventListener('toggle', e => { if (e.target.classList && e.target.classList.contains('ach-done')) achOpenDone = e.target.open; }, true);
 
-        // Rangliste: player + every bot, ranked by how many bases they
-        // currently hold (the same "territory" number the Reich card
-        // already shows for the player).
-        const rankListEl = document.getElementById('rankList');
         // ===== PROFIL ANTIPPEN: every ruler's card - yours and everyone else's, the same way =====
         const botIdByName = {}; for (const bd of BOT_DEFS) botIdByName[bd.name] = bd.id;
         function whoTroops(who) { let n = 0; for (const id of (who === 'player' ? ownedIslands : botOwnedIslands[who] || [])) n += islandTroops[id] || 0; return n; }
@@ -6772,23 +6814,62 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             div.textContent = str;
             return div.innerHTML;
         }
-        function renderRankList() {
-            // Player blue. Bots keep their BOT_DEFS colour: this list is the only place it appears.
-            const playerName = escapeHtml(profileName.value);
-            const entries = [
-                { id: 'player', name: playerName || 'Du', color: '#3f86d8', score: ownedIslands.size, isPlayer: true, named: !!playerName, frame: playerFrame(), title: playerTitle() }
-            ];
-            for (const bot of BOT_DEFS) { const lk = botLook(bot.id);
-                entries.push({ id: bot.id, name: escapeHtml(bot.name), color: bot.color, score: botOwnedIslands[bot.id].size, isPlayer: false, frame: lk.frame, title: lk.title });
-            }
-            entries.sort((a, b) => b.score - a.score);
-            rankListEl.innerHTML = entries.map((e, i) =>
-                '<div class="rankRow' + (e.isPlayer ? ' isPlayer' : '') + '" data-profile="' + (e.isPlayer ? 'player' : e.id) + '" role="button" tabindex="0"><span class="rankPos">' + (i + 1) + '</span>' +
-                '<span class="rankDot frame-ring" data-frame="' + e.frame + '" style="background:' + e.color + '"><img class="rankCrest" alt="" src="' + crestDataUrl(28, e.isPlayer ? 'player' : e.id) + '"></span>' +
-                '<span class="rankName"><span class="rankName-t">' + e.name + '<small class="rankTitle">' + escapeHtml(e.title) + '</small></span>' + (e.isPlayer && e.named ? '<span class="tag tag--player">Du</span>' : '') + '</span>' +
-                '<span class="rankScore">' + fmtNum(e.score) + ' ' + (e.score === 1 ? 'Basis' : 'Basen') + '</span></div>'
-            ).join('');
+        // ===== RANGLISTE: Macht, Eroberungen, Titel (aus der Mitte) und Thron-Punkte der Woche. Worked out once when opened or a tab
+        // is picked - never per frame. Everyone is listed the same way; your row is blue and waits in the foot when you're outside the top.
+        const rankPopup = document.getElementById('rankPopup'), RANK_TOP = 50;
+        let rankTab = 'power';
+        const RANK_TABS = { power: { t: 'Macht', sub: 'Die Stärke des ganzen Reichs', unit: 'Macht' },
+            caps: { t: 'Eroberungen', sub: 'Eroberte Basen insgesamt', unit: 'erobert' },
+            titles: { t: 'Titel', sub: 'Wer die Mitte hält und wer einen Titel trägt', unit: 'Thron-P.' },
+            week: { t: 'Thron (Woche)', sub: '', unit: 'Thron-P.' } };
+        function conquestsOf(who) { return who === 'player' ? playerStats.captures || 0 : botConquests(who); }
+        function weekEndsAt() { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - (d.getDay() + 6) % 7 + 7); return d.getTime(); }
+        function rankPeople() {                                  // everyone once: name, frame, look title, level, bases
+            const bs = loadBotState(), out = [{ who: 'player', name: profileName.value || 'Du', frame: playerFrame(), title: playerTitle(), lvl: playerLvl, bases: ownedIslands.size }];
+            for (const bd of BOT_DEFS) { const lk = botLook(bd.id); out.push({ who: bd.id, name: bd.name, frame: lk.frame, title: lk.title, lvl: (bs[bd.id] || {}).lvl || 1, bases: whoBases(bd.id) }); }
+            return out;
         }
+        function rankRowHtml(e, pos, medals) {
+            const me = e.who === 'player', v = e.val;
+            return '<div class="lb-row' + (medals && pos <= 3 ? ' is-' + pos : '') + (me ? ' isMe' : '') + '" data-profile="' + e.who + '" role="button" tabindex="0">' +
+                '<span class="lb-pos">' + pos + '</span>' +
+                '<span class="lb-crest" data-frame="' + e.frame + '"><span class="lb-crest-in"><img alt="" src="' + crestDataUrl(28, e.who) + '"></span><span class="lvl">' + e.lvl + '</span></span>' +
+                '<span class="lb-name"><b><span>' + escapeHtml(e.name) + '</span>' + (me && profileName.value ? '<span class="tag tag--player">Du</span>' : '') + '</b><small>' + e.sub + '</small></span>' +
+                '<span class="lb-val"><b>' + (v >= 1e5 ? fmtCompact(v) : fmtNum(v)) + '</b><small>' + RANK_TABS[rankTab].unit + '</small></span></div>';
+        }
+        function renderRankings() {
+            const tab = RANK_TABS[rankTab], people = rankPeople(), week = throneState.week || {}, t = loadTitles(), ruler = rulerOwner() || null;
+            const basesTxt = n => fmtNum(n) + (n === 1 ? ' Basis' : ' Basen');
+            let list, medals = true, empty = '';
+            if (rankTab === 'power') { for (const e of people) { const pr = whoProfile(e.who); e.val = pr ? powerOf(pr) : 0; e.sub = escapeHtml(e.title) + ' <i>· ' + basesTxt(e.bases) + '</i>'; } list = people.slice(); }
+            else if (rankTab === 'caps') { for (const e of people) { e.val = conquestsOf(e.who); e.sub = escapeHtml(e.title) + ' <i>· hält ' + basesTxt(e.bases) + '</i>'; } list = people.slice(); saveBotState(); }
+            else if (rankTab === 'titles') {                      // the ruler first, then everyone wearing a title from the middle
+                medals = false; const by = {}; for (const x of TITLES) if (t.by[x.key]) by[t.by[x.key]] = x;
+                for (const e of people) { const x = by[e.who]; e.val = week[e.who] || 0;
+                    e.sub = e.who === ruler ? '<span class="lb-t is-ruler">Herrscher</span>' : x ? '<span class="lb-t' + (x.good ? '' : ' is-bad') + '" title="' + x.desc + '">' + x.name + '</span> <i>' + (x.v > 0 ? '+' : '−') + Math.round(Math.abs(x.v) * 100) + ' % ' + ({ troops: 'Truppen', coins: 'Münzen', attack: 'Angriff', defense: 'Abwehr' })[x.kind] + '</i>' : '<i>kein Titel</i>'; }
+                const tr = e => e.who === ruler ? 0 : by[e.who] ? (by[e.who].good ? 1 : 2) : 3;
+                list = people.filter(e => tr(e) < 3).sort((a, b) => tr(a) - tr(b) || b.val - a.val);
+                empty = ruler ? '' : 'Niemand hält gerade die Mitte – erobere den Mega-Tempel, dann verteilst du die Titel.';
+            } else { for (const e of people) { e.val = week[e.who] || 0; e.sub = escapeHtml(e.title) + ' <i>· ' + basesTxt(e.bases) + '</i>'; } list = people.filter(e => e.val > 0);
+                empty = 'Diese Woche hat noch niemand Thron-Punkte geholt. Halte die Mitte oder einen Wächter-Tempel.'; }
+            if (rankTab !== 'titles') list.sort((a, b) => b.val - a.val || b.lvl - a.lvl);
+            const top = list.slice(0, RANK_TOP), mi = list.findIndex(e => e.who === 'player');
+            document.getElementById('rankTitle').textContent = tab.t;
+            document.getElementById('rankSub').textContent = rankTab === 'week' ? 'Neue Woche in ' + fmtDHMS((weekEndsAt() - Date.now()) / 1000) : tab.sub;
+            for (const b of document.querySelectorAll('#rankTabs [data-rtab]')) { const on = b.dataset.rtab === rankTab; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }
+            document.getElementById('rankBody').innerHTML = top.length ? top.map((e, i) => rankRowHtml(e, i + 1, medals)).join('') + (list.length > RANK_TOP ? '<div class="lb-gap">Top ' + RANK_TOP + ' von ' + fmtNum(list.length) + '</div>' : '')
+                : '<div class="empty-state">' + icon(rankTab === 'titles' ? 'crown' : 'points') + '<b>Noch leer</b>' + empty + '</div>';
+            const foot = document.getElementById('rankFoot');
+            foot.innerHTML = mi >= 0 && mi < RANK_TOP ? '' : rankRowHtml(people[0], mi >= 0 ? mi + 1 : '–', false);   // outside the top: your row waits down here
+            foot.hidden = !foot.innerHTML;
+        }
+        function openRankings(tab) {
+            closeAllPopups(); if (tab && RANK_TABS[tab]) rankTab = tab;
+            renderRankings(); openPanel(rankPopup); document.getElementById('rankBody').scrollTop = 0;
+        }
+        document.getElementById('rankTabs').addEventListener('click', e => { const b = e.target.closest('[data-rtab]'); if (!b || b.dataset.rtab === rankTab) return; rankTab = b.dataset.rtab; renderRankings(); document.getElementById('rankBody').scrollTop = 0; });
+        document.getElementById('rankCloseBtn').addEventListener('click', () => closePanel(rankPopup));
+        rankPopup.addEventListener('keydown', e => { const r = e.target.closest('[data-profile]'); if (r && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openRulerProfile(r.dataset.profile); } });
 
         profileBtn.addEventListener('click', () => {
             if (isPanelOpen(profilePopup)) { profileCloseBtn.click(); return; }
@@ -7687,7 +7768,6 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
                 if (isPanelOpen(profilePopup)) {
                     renderProfile(true);
                     renderEquipGrid();
-                    if (profileTabs.rank.panel.classList.contains('active') && Date.now() - (renderRankList.at || 0) > 5000) { renderRankList.at = Date.now(); renderRankList(); }   // not every tick: rows stay tappable
                 }
             }
             setTimeout(runProductionTick, Math.max(50, nextProductionTickAt - Date.now()));
@@ -10604,7 +10684,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         // the keyboard handler uses this: map shortcuts only fire while focus is on the page or the canvas
         function isUiElement(target) {
           return !!(target && target.closest && target.closest(
-            '#islandPopup,#hud,#cornerButtons,#profilePopup,#rulerPopup,#battleLogPopup,#mailPopup,#goalsPopup,#shopPopup,#chestItemPopup,#multiAttackBar,#mapControls,#uiScrim,#uiScrimTop'));
+            '#islandPopup,#hud,#cornerButtons,#profilePopup,#rulerPopup,#rankPopup,#battleLogPopup,#mailPopup,#goalsPopup,#shopPopup,#chestItemPopup,#multiAttackBar,#mapControls,#uiScrim,#uiScrimTop'));
         }
         const PANEL_NAV = { profilePopup: 'profileBtn', battleLogPopup: 'battleLogBtn', mailPopup: 'mailBtn', goalsPopup: 'goalsBtn', shopPopup: 'shopBtn' };
         function isPanelOpen(el) { return el.classList.contains('is-open'); }
@@ -10634,7 +10714,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
           if (!document.getElementById('titleModal').hidden) { document.getElementById('titleModal').hidden = true; return; }
           if (isPanelOpen(chestItemPopup)) return chestItemCloseBtn.click();
           if (isPanelOpen(popup)) return closeBtn.click();
-          for (const [pid, closeId] of [['rulerPopup','rulerCloseBtn'],['profilePopup','profileCloseBtn'],['battleLogPopup','battleLogCloseBtn'],['mailPopup','mailCloseBtn'],['goalsPopup','goalsCloseBtn'],['shopPopup','shopCloseBtn']])
+          for (const [pid, closeId] of [['rulerPopup','rulerCloseBtn'],['rankPopup','rankCloseBtn'],['profilePopup','profileCloseBtn'],['battleLogPopup','battleLogCloseBtn'],['mailPopup','mailCloseBtn'],['goalsPopup','goalsCloseBtn'],['shopPopup','shopCloseBtn']])
             if (isPanelOpen(document.getElementById(pid))) return document.getElementById(closeId).click();
           if (multiAttackMode) return multiAttackCancelBtn.click();
         }
@@ -10657,6 +10737,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             closePanel(document.getElementById('goalsPopup'));
             closePanel(shopPopup);
             closePanel(document.getElementById('rulerPopup'));
+            closePanel(document.getElementById('rankPopup'));
             closePanel(chestItemPopup);
             chestDetailItemId = null;
             chestSelectedIds.clear();
