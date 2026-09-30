@@ -141,7 +141,7 @@ b,strong{font-weight:600}
    NAVIGATION  #cornerButtons  (phone = bottom dock)
    ===================================================================== */
 .nav{position:fixed;z-index:var(--z-dock);left:0;right:0;bottom:0;height:calc(var(--dock-h) + var(--safe-b));
-  padding:0 calc(var(--safe-r) + 6px) var(--safe-b) calc(var(--safe-l) + 6px);display:grid;grid-template-columns:repeat(5,1fr);
+  padding:0 calc(var(--safe-r) + 6px) var(--safe-b) calc(var(--safe-l) + 6px);display:grid;grid-template-columns:repeat(6,1fr);
   background:linear-gradient(180deg,rgb(18,21,28),rgb(8,10,13));border-top:1px solid var(--line-2);box-shadow:0 -12px 30px rgba(0,0,0,.45)}
 .nav::before{content:"";position:absolute;left:18%;right:18%;top:-1px;height:1px;background:linear-gradient(90deg,transparent,var(--gold-200),transparent)}
 .nav-btn{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:0;color:var(--tx-3);transition:color var(--dur-1)}
@@ -266,6 +266,23 @@ b,strong{font-weight:600}
 .ach-claim{display:inline-flex;align-items:center;gap:4px;padding:8px 10px;border-radius:8px;border:1px solid var(--gold-300);background:rgba(214,170,90,.16);color:var(--gold-100);font:700 var(--fs-12)/1 var(--font-ui)}
 .ach-claim:disabled{opacity:.4;border-color:var(--line-2);background:none;color:var(--tx-3)} .ach-claim .icon{width:14px;height:14px}
 .ach-claim.done{border:0;background:none;color:#8fcf7a}
+/* Ziele: tasks + Erfolge in one sheet */
+#goalsPopup .pbody > .mail-pane{display:grid;gap:10px} #goalsPopup .mail-pane[hidden]{display:none}
+.ach-sum{padding:10px 12px;border:1px solid var(--line-2);border-radius:var(--r-sm);background:rgba(0,0,0,.22)}
+.ach-sum-t{display:flex;align-items:center;justify-content:space-between;gap:8px} .ach-sum-gem{display:inline-flex;align-items:center;gap:4px;color:#9fe0ff;font-weight:700} .ach-sum-gem .icon{width:13px;height:13px}
+.ach-list > .sect{margin-top:6px} .ach-list > .sect .btn{order:7} .ach-list > .sect .sect-aside{font:600 var(--fs-11)/1 var(--font-ui);color:var(--tx-3)}
+.ach.is-ready .ach-claim{border-color:var(--gold-200);background:linear-gradient(180deg,var(--gold-200),var(--gold-400));color:#2a1c08;box-shadow:0 0 10px rgba(242,210,122,.3)}
+.ach-t b{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ach-tier{display:inline-flex;gap:3px} .ach-tier em{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.14)}
+.ach-tier em.on{background:var(--gold-300)} .ach-tier em.cur{background:none;box-shadow:inset 0 0 0 1.5px var(--gold-300)}
+.ach.is-got{opacity:.7} .ach.is-got .ach-medal{box-shadow:none}
+.ach-done{margin-top:6px} .ach-done > .ach-list{margin-top:8px}
+.ach-done summary{display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--line-1);border-radius:var(--r-sm);background:rgba(255,255,255,.02);cursor:pointer;list-style:none;
+  font:600 var(--fs-12)/1 var(--font-display);letter-spacing:.08em;color:var(--gold-100)}
+.ach-done summary::-webkit-details-marker{display:none}
+.ach-done summary em{font:700 var(--fs-11)/1 var(--font-ui);font-style:normal;color:var(--tx-3)} .ach-done summary .icon{width:14px;height:14px;margin-left:auto;color:var(--tx-3);transform:rotate(180deg);transition:transform var(--dur-1)}
+.ach-done[open] summary .icon{transform:none}
+#goalsSub .pill .icon{color:var(--gold-300)}
 #profileTabs .tab{position:relative} #profileTabs .badge{position:absolute;top:2px;right:4px}
 .marker-sheet{position:fixed;z-index:45;left:50%;bottom:calc(var(--dock-h) + var(--safe-b) + 14px);transform:translateX(-50%);width:min(360px,calc(100vw - 24px));padding:12px;border-radius:12px;
   background:var(--glass-strong,#141820);border:1px solid var(--line-3);box-shadow:var(--sh-2);font-family:var(--font-ui);display:flex;flex-direction:column;gap:8px}
@@ -324,7 +341,7 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 /* phone: while a sheet is open the toast docks just above the sheet's footer (never over the HUD values or the sheet header) */
 @media (max-width:899px) and (min-height:501px){
   body.has-sheet .toast{top:auto;bottom:calc(var(--dock-h) + var(--safe-b) + 72px);box-shadow:var(--sh-2),0 0 0 1px rgba(0,0,0,.35)}
-  body.has-sheet:has(#battleLogPopup.is-open,#mailPopup.is-open,#shopPopup.is-open,#profilePopup.is-open:not([data-tab="equip"])) .toast{bottom:calc(var(--dock-h) + var(--safe-b) + 16px)}
+  body.has-sheet:has(#battleLogPopup.is-open,#mailPopup.is-open,#goalsPopup.is-open,#shopPopup.is-open,#profilePopup.is-open:not([data-tab="equip"])) .toast{bottom:calc(var(--dock-h) + var(--safe-b) + 16px)}
 }
 
 /* =====================================================================
@@ -1278,6 +1295,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 <symbol id="i-crown" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17.5 3 7.5l5 4 4-6.5 4 6.5 5-4-1 10z" fill="currentColor" stroke="none" opacity="0.18"/><path d="M4 17.5 3 7.5l5 4 4-6.5 4 6.5 5-4-1 10z"/><path d="M4.5 20.5h15"/></g></symbol>
 <symbol id="i-rank" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v5.5a4 4 0 0 1-8 0z" fill="currentColor" stroke="none" opacity="0.14"/><path d="M8 4h8v5.5a4 4 0 0 1-8 0z"/><path d="M8 6H5.2a3 3 0 0 0 3 3.6M16 6h2.8a3 3 0 0 1-3 3.6"/><path d="M12 13.5v3.5"/><path d="M8.5 20.5h7l-.8-3.5H9.3z"/></g></symbol>
 <symbol id="i-flag" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21V3.5"/><path d="M6 4.5h12l-2.8 3.8L18 12H6" fill="currentColor" stroke="none" opacity="0.16"/><path d="M6 4.5h12l-2.8 3.8L18 12H6"/></g></symbol>
+<symbol id="i-goal" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5" fill="currentColor" fill-opacity=".16"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><path d="M12 12l6.5-6.5M16 5.5h2.5V8"/></g></symbol>
 <symbol id="i-info" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 1 0 17 0a8.5 8.5 0 1 0 -17 0z"/><path d="M12 11v5.5"/><path d="M10.9 7.9a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0 -2.2 0z" fill="currentColor" stroke="none"/></g></symbol>
 </svg>
 
@@ -1521,7 +1539,8 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
   <button id="cityNavBtn" class="nav-btn" type="button" title="Hauptstadt betreten"><svg class="icon"><use href="#i-castle"/></svg><span class="nav-l">Stadt</span></button>
   <button id="profileBtn" class="nav-btn" type="button" title="Profil"><svg class="icon"><use href="#i-profile"/></svg><span class="nav-l">Profil</span><span id="profileBadge" class="badge" style="display:none">0</span></button>
   <button id="battleLogBtn" class="nav-btn" type="button" title="Angriffe &amp; Kampflog"><svg class="icon"><use href="#i-battlelog"/></svg><span class="nav-l">Kampf</span><span id="battleLogBadge" class="badge" style="display:none">0</span></button>
-  <button id="mailBtn" class="nav-btn" type="button" title="Postfach: Belohnungen, Aufgaben, Berichte"><svg class="icon"><use href="#i-mail"/></svg><span class="nav-l">Postfach</span><span id="questBadge" class="badge" style="display:none">0</span></button>
+  <button id="goalsBtn" class="nav-btn" type="button" title="Ziele: Aufgaben und Erfolge"><svg class="icon"><use href="#i-goal"/></svg><span class="nav-l">Ziele</span><span id="goalsBadge" class="badge" style="display:none">0</span></button>
+  <button id="mailBtn" class="nav-btn" type="button" title="Postfach: Belohnungen und Berichte"><svg class="icon"><use href="#i-mail"/></svg><span class="nav-l">Postfach</span><span id="questBadge" class="badge" style="display:none">0</span></button>
   <button id="shopBtn" class="nav-btn" type="button" title="Shop"><svg class="icon"><use href="#i-shop"/></svg><span class="nav-l">Shop</span></button>
 </nav>
 
@@ -1581,7 +1600,6 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
     <button id="tabBtnEquip" class="tab" type="button" role="tab"><svg class="icon"><use href="#i-shield"/></svg><span>Ausrüstung</span></button>
     <button id="tabBtnSkills" class="tab" type="button" role="tab"><svg class="icon"><use href="#i-star"/></svg><span>Skills</span></button>
     <button id="tabBtnRank" class="tab" type="button" role="tab"><svg class="icon"><use href="#i-rank"/></svg><span>Rangliste</span></button>
-    <button id="tabBtnAch" class="tab" type="button" role="tab"><svg class="icon"><use href="#i-star"/></svg><span>Erfolge</span><span id="achBadge" class="badge" style="display:none">0</span></button>
   </div>
   <div class="pbody">
     <div id="tabInfo" class="profileTabPanel active" role="tabpanel">
@@ -1626,10 +1644,6 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 
     <div id="tabRank" class="profileTabPanel" role="tabpanel">
       <div id="rankList" class="logList"></div>
-    </div>
-    <div id="tabAch" class="profileTabPanel" role="tabpanel">
-      <div id="achSummary" class="ach-sum"></div>
-      <div id="achList" class="ach-list"></div>
     </div>
   </div>
   <footer id="profileFoot" class="pfoot">
@@ -1679,24 +1693,42 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
   </header>
   <div id="mailTabs" class="tabs mail-tabs" role="tablist">
     <button class="tab active" type="button" role="tab" data-mtab="rewards"><svg class="icon"><use href="#i-shop"/></svg><span>Belohnungen</span><span class="badge" data-mbadge="rewards" style="display:none">0</span></button>
-    <button class="tab" type="button" role="tab" data-mtab="quests"><svg class="icon"><use href="#i-flag"/></svg><span>Aufgaben</span><span class="badge" data-mbadge="quests" style="display:none">0</span></button>
     <button class="tab" type="button" role="tab" data-mtab="reports"><svg class="icon"><use href="#i-battlelog"/></svg><span>Berichte</span><span class="dot-new" data-mbadge="reports" style="display:none"></span></button>
   </div>
   <div class="pbody">
     <div class="mail-pane" data-mpane="rewards">
       <div class="sect"><h4>Tägliche Belohnung</h4></div>
       <div id="dailyCard" class="daily"></div>
-      <div class="sect"><h4>Wochenkette</h4></div>
-      <div id="chainCard" class="chain"></div>
-    </div>
-    <div class="mail-pane" data-mpane="quests" hidden>
-      <div class="sect"><h4>Heutige Aufgaben</h4><span id="questReset" class="sect-aside quest-reset"></span></div>
-      <div id="questList" class="quests"></div>
     </div>
     <div class="mail-pane" data-mpane="reports" hidden>
       <div class="sect"><h4>Kriegsbericht</h4><span class="sect-aside">letzte 7 Tage</span></div>
       <div class="mail-intro">Was jeden Tag in deinem Reich passiert ist – Eroberungen, Verluste, Angriffe auf dich und was deine Armeen gesammelt haben.</div>
       <div id="warCard" class="war"></div>
+    </div>
+  </div>
+</section>
+
+<section id="goalsPopup" class="panel panel--sheet" role="dialog" aria-labelledby="goalsTitle">
+  <span class="sheet-grab" aria-hidden="true"></span>
+  <header class="phead">
+    <div class="emblem emblem--gold"><svg class="icon"><use href="#i-goal"/></svg></div>
+    <div class="phead-text"><div class="overline">Aufgaben &amp; Erfolge</div><h3 id="goalsTitle" class="ptitle">Ziele</h3><div class="psub" id="goalsSub"></div></div>
+    <button id="goalsCloseBtn" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button>
+  </header>
+  <div id="goalsTabs" class="tabs mail-tabs" role="tablist">
+    <button class="tab active" type="button" role="tab" data-gtab="daily"><svg class="icon"><use href="#i-flag"/></svg><span>Täglich</span><span class="badge" data-gbadge="daily" style="display:none">0</span></button>
+    <button class="tab" type="button" role="tab" data-gtab="ach"><svg class="icon"><use href="#i-star"/></svg><span>Erfolge</span><span class="badge" data-gbadge="ach" style="display:none">0</span></button>
+  </div>
+  <div class="pbody">
+    <div class="mail-pane" data-gpane="daily">
+      <div class="sect"><h4>Heutige Aufgaben</h4><span id="questReset" class="sect-aside quest-reset"></span></div>
+      <div id="questList" class="quests"></div>
+      <div class="sect"><h4>Wochenkette</h4></div>
+      <div id="chainCard" class="chain"></div>
+    </div>
+    <div class="mail-pane" data-gpane="ach" hidden>
+      <div id="achSummary" class="ach-sum"></div>
+      <div id="achList" class="ach-list"></div>
     </div>
   </div>
 </section>
@@ -2338,6 +2370,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             if (owner === 'player') { coins += cost; flashHint(botById[payer].name + ' zahlt ' + fmtNum(cost) + ' Münzen Maut an deinem Tor.', 3500); }
             else if (owner) botCoins[owner] = (botCoins[owner] || 0) + cost;
             if (payer === 'player') flashHint('Maut bezahlt: ' + fmtNum(cost) + ' Münzen' + (owner ? ' an ' + botById[owner].name : '') + '.', 3500);
+            goalBump(payer, 'tolls'); goalBump(owner, 'tollCoins', cost);
             return true;
         }
         function fmtPassWait(ms) {
@@ -6053,7 +6086,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         function bestRank() { const r = rankIndexFor(ownedIslands.size); if (!(look.best >= r)) { look.best = r; store.set('openWaterLook', JSON.stringify(look)); } return look.best; }
         function lookOldUnlocked(x) {                       // the old rule (rank / Erfolg) - only to carry an old save over
             if (x.buy) return !!(look.bought && look.bought[x.buy]);
-            if (x.ach) { try { return !!(achClaimed[x.ach] || ACHIEVEMENTS.find(a => a.id === x.ach && a.val() >= a.goal)); } catch (e) { return false; } }
+            if (x.ach) { try { return achLookKept(x.ach) || !!(achClaimed[x.ach] || ACHIEVEMENTS.find(a => a.id === x.ach && a.val() >= a.goal)); } catch (e) { return false; } }
             return (x.rank || 0) <= bestRank();
         }
         function lookMigrate() {                            // once: everything unlocked so far becomes owned, from now on looks are only bought
@@ -6496,8 +6529,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             info: { btn: document.getElementById('tabBtnInfo'), panel: document.getElementById('tabInfo') },
             equip: { btn: document.getElementById('tabBtnEquip'), panel: document.getElementById('tabEquip') },
             skills: { btn: document.getElementById('tabBtnSkills'), panel: document.getElementById('tabSkills') },
-            rank: { btn: document.getElementById('tabBtnRank'), panel: document.getElementById('tabRank') },
-            ach: { btn: document.getElementById('tabBtnAch'), panel: document.getElementById('tabAch') }
+            rank: { btn: document.getElementById('tabBtnRank'), panel: document.getElementById('tabRank') }
         };
         function showProfileTab(name) {
             profilePopup.dataset.tab = name;
@@ -6510,15 +6542,13 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             if (name === 'equip') { renderEquipGrid(); renderChestEquipment(); }
             if (name === 'skills') renderSkillGrid();
             if (name === 'rank') renderRankList();
-            if (name === 'ach') renderAchievements();
         }
         profileTabs.info.btn.addEventListener('click', () => showProfileTab('info'));
         profileTabs.equip.btn.addEventListener('click', () => showProfileTab('equip'));
         profileTabs.skills.btn.addEventListener('click', () => showProfileTab('skills'));
         profileTabs.rank.btn.addEventListener('click', () => showProfileTab('rank'));
-        profileTabs.ach.btn.addEventListener('click', () => showProfileTab('ach'));
 
-        // ===== ERFOLGE: badges for what you've done, each with gems to collect =====
+        // ===== ERFOLGE: badges for what you've done, each with gems to collect (only gems - the look is bought, not earned) =====
         let playerStats = (() => { try { return JSON.parse(store.get('openWaterStats')) || {}; } catch (e) { return {}; } })();
         if (!playerStats.seeded) { playerStats.captures = Math.max(playerStats.captures || 0, Math.max(0, ownedIslands.size - 1)); playerStats.seeded = 1; store.set('openWaterStats', JSON.stringify(playerStats)); }   // an existing empire: its bases count as conquered
         let achClaimed = (() => { try { return JSON.parse(store.get('openWaterAch')) || {}; } catch (e) { return {}; } })();
@@ -6533,54 +6563,125 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             if (typeof updateQuestBadge === 'function') updateQuestBadge();
         }
         function statBump(k, n) { playerStats[k] = (playerStats[k] || 0) + (n || 1); store.set('openWaterStats', JSON.stringify(playerStats)); achCheckSoon(); }
+        function goalBump(who, k, n) { if (!who) return; if (who === 'player') { try { statBump(k, n); } catch (e) {} } else if (botById[who]) botStat(who, k, n); }   // a counter for the Erfolge - yours or anyone else's
         const achStat = k => playerStats[k] || 0;
         const cityMinLevel = () => { const c = loadCity(); return Math.min(...CITY_BUILDINGS.filter(b => b.id !== 'storage').map(b => c.levels[b.id] || 0)); };   // (the newer Lager doesn't count: nothing earned is lost)
         const pvpWins = () => achStat('pvpWins') + achStat('emmaWins');   // (old saves counted only one player in emmaWins, frozen now - the two never overlap; ids stay so claims are kept)
-        const ACHIEVEMENTS = [
-            { id: 'cap1',    name: 'Erste Eroberung',  icon: 'flag',    desc: 'Erobere deine erste Basis.',             goal: 1,    val: () => achStat('captures'), gems: 20 },
-            { id: 'cap100',  name: 'Eroberer',         icon: 'flag',    desc: 'Erobere 100 Basen.',                     goal: 100,  val: () => achStat('captures'), gems: 200 },
-            { id: 'cap1000', name: 'Kriegsherr',       icon: 'flag',    desc: 'Erobere 1.000 Basen.',                   goal: 1000, val: () => achStat('captures'), gems: 1000 },
-            { id: 'emp50',   name: 'Weites Reich',     icon: 'home',    desc: 'Halte 50 Basen gleichzeitig.',           goal: 50,   val: () => ownedIslands.size, gems: 300 },
-            { id: 'def25',   name: 'Standhaft',        icon: 'shield',  desc: 'Wehre 25 Angriffe ab.',                  goal: 25,   val: () => achStat('defends'), gems: 150 },
-            { id: 'emma1',   name: 'Kräftemessen',     icon: 'attack',  desc: 'Erobere eine Basis eines anderen Spielers.', goal: 1,  val: pvpWins, gems: 100 },
-            { id: 'emma10',  name: 'Gefürchtet',       icon: 'attack',  desc: 'Erobere 10 Basen von anderen Spielern.', goal: 10,   val: pvpWins, gems: 400 },
-            { id: 'boss1',   name: 'Bezwinger',        icon: 'attack',  desc: 'Besiege einen Boss oder den Wanderboss.', goal: 1,   val: () => achStat('bosses'), gems: 150 },
-            { id: 'temple1', name: 'Tempelherr',       icon: 'temple',  desc: 'Erobere einen Tempel.',                  goal: 1,    val: () => achStat('temples'), gems: 100 },
-            { id: 'throne',  name: 'Herrscher der Meere', icon: 'star', desc: 'Halte den Thron in der Mitte.',          goal: 1,    val: () => achStat('throne'), gems: 1000 },
-            { id: 'scout50', name: 'Späher',           icon: 'scout',   desc: 'Späh 50 Mal.',                           goal: 50,   val: () => achStat('scouts'), gems: 50 },
-            { id: 'city5',   name: 'Baumeister',       icon: 'upgrade', desc: 'Bring alle Gebäude der Stadt auf Stufe 5.', goal: 5, val: () => cityMinLevel(), gems: 300 },
+        // the same numbers for everyone (the other players' side: botGoalVal in botlogik.js)
+        const whoIslands = who => who === 'player' ? ownedIslands : botOwnedIslands[who] || new Set();
+        function goalBaseTop(who) { let L = 0; for (const id of whoIslands(who)) L = Math.max(L, islandLevels[id] || 1); return L; }
+        function goalGates(who) { let n = 0; for (const id of whoIslands(who)) if (islandById[id] && islandById[id].type === 'gate') n++; return n; }
+        const goalHeroes = who => HEROES.filter(h => heroOwned(who, h.id)).length;
+        const goalHeroStars = who => Math.floor(Math.max(0, ...HEROES.map(h => { const s = heroSt(who, h.id); return s && s.own ? s.q : 0; })) / 4);   // the best hero's whole stars
+        const GOAL_VAL = {
+            captures: () => achStat('captures'), empire: () => ownedIslands.size, defends: () => achStat('defends'), pvp: pvpWins, bosses: () => achStat('bosses'), wanders: () => achStat('wanders'),
+            temples: () => achStat('temples'), throne: () => achStat('throne'), throneMin: () => achStat('throneMin'), throneEarned: () => throneState.earned || 0, scouts: () => achStat('scouts'),
+            cityMin: cityMinLevel, baseTop: () => goalBaseTop('player'), gates: () => goalGates('player'), tolls: () => achStat('tolls'), tollCoins: () => achStat('tollCoins'),
+            armyWins: () => achStat('armyWins'), heroes: () => goalHeroes('player'), heroStars: () => goalHeroStars('player'), heroFires: () => achStat('heroFires'),
+            healed: () => achStat('healed'), shields: () => achStat('shields'), teleports: () => achStat('teleports')
+        };
+        const ACHIEVEMENTS = [   // the old ids stay (claims are kept); the tiers of one kind share k
+            { id: 'cap1',    name: 'Erste Eroberung',  icon: 'flag',    desc: 'Erobere deine erste Basis.',             goal: 1,    k: 'captures', gems: 20 },
+            { id: 'cap10',   name: 'Landnahme',        icon: 'flag',    desc: 'Erobere 10 Basen.',                      goal: 10,   k: 'captures', gems: 50 },
+            { id: 'cap100',  name: 'Eroberer',         icon: 'flag',    desc: 'Erobere 100 Basen.',                     goal: 100,  k: 'captures', gems: 300 },
+            { id: 'cap500',  name: 'Feldherr',         icon: 'flag',    desc: 'Erobere 500 Basen.',                     goal: 500,  k: 'captures', gems: 600 },
+            { id: 'cap1000', name: 'Kriegsherr',       icon: 'flag',    desc: 'Erobere 1.000 Basen.',                   goal: 1000, k: 'captures', gems: 1500 },
+            { id: 'emp50',   name: 'Weites Reich',     icon: 'home',    desc: 'Halte 50 Basen gleichzeitig.',           goal: 50,   k: 'empire', gems: 300 },
+            { id: 'emp150',  name: 'Großreich',        icon: 'home',    desc: 'Halte 150 Basen gleichzeitig.',          goal: 150,  k: 'empire', gems: 800 },
+            { id: 'def25',   name: 'Standhaft',        icon: 'shield',  desc: 'Wehre 25 Angriffe ab.',                  goal: 25,   k: 'defends', gems: 250 },
+            { id: 'def100',  name: 'Unbezwingbar',     icon: 'shield',  desc: 'Wehre 100 Angriffe ab.',                 goal: 100,  k: 'defends', gems: 500 },
+            { id: 'emma1',   name: 'Kräftemessen',     icon: 'attack',  desc: 'Erobere eine Basis eines anderen Spielers.', goal: 1,  k: 'pvp', gems: 100 },
+            { id: 'emma10',  name: 'Gefürchtet',       icon: 'attack',  desc: 'Erobere 10 Basen von anderen Spielern.', goal: 10,   k: 'pvp', gems: 500 },
+            { id: 'pvp50',   name: 'Schrecken der Meere', icon: 'attack', desc: 'Erobere 50 Basen von anderen Spielern.', goal: 50, k: 'pvp', gems: 1000 },
+            { id: 'boss1',   name: 'Bezwinger',        icon: 'attack',  desc: 'Besiege einen Boss oder den Wanderboss.', goal: 1,   k: 'bosses', gems: 250 },
+            { id: 'boss10',  name: 'Bossjäger',        icon: 'attack',  desc: 'Besiege 10 Bosse.',                      goal: 10,   k: 'bosses', gems: 500 },
+            { id: 'wander1', name: 'Wanderjäger',      icon: 'troops',  desc: 'Besiege den Wanderboss.',                goal: 1,    k: 'wanders', gems: 200 },
+            { id: 'wander5', name: 'Fährtenleser',     icon: 'troops',  desc: 'Besiege den Wanderboss 5 Mal.',          goal: 5,    k: 'wanders', gems: 600 },
+            { id: 'temple1', name: 'Tempelherr',       icon: 'temple',  desc: 'Erobere einen Tempel.',                  goal: 1,    k: 'temples', gems: 100 },
+            { id: 'temple10', name: 'Tempelwächter',   icon: 'temple',  desc: 'Erobere 10 Tempel.',                     goal: 10,   k: 'temples', gems: 300 },
+            { id: 'throne',  name: 'Herrscher der Meere', icon: 'crown', desc: 'Halte den Thron in der Mitte.',        goal: 1,    k: 'throne', gems: 1500 },
+            { id: 'thr60',   name: 'Thronwache',       icon: 'crown',   desc: 'Halte den Thron 60 Minuten lang.',       goal: 60,   k: 'throneMin', gems: 200 },
+            { id: 'thr600',  name: 'Langer Atem',      icon: 'crown',   desc: 'Halte den Thron 10 Stunden lang.',       goal: 600,  k: 'throneMin', gems: 700 },
+            { id: 'tp1k',    name: 'Thron-Sammler',    icon: 'points',  desc: 'Verdiene 1.000 Thron-Punkte.',           goal: 1000, k: 'throneEarned', gems: 100 },
+            { id: 'tp10k',   name: 'Thron-Schatz',     icon: 'points',  desc: 'Verdiene 10.000 Thron-Punkte.',          goal: 10000, k: 'throneEarned', gems: 500 },
+            { id: 'scout50', name: 'Späher',           icon: 'scout',   desc: 'Späh 50 Mal.',                           goal: 50,   k: 'scouts', gems: 50 },
+            { id: 'scout250', name: 'Kundschafter',    icon: 'scout',   desc: 'Späh 250 Mal.',                          goal: 250,  k: 'scouts', gems: 200 },
+            { id: 'city5',   name: 'Baumeister',       icon: 'upgrade', desc: 'Bring alle Gebäude der Stadt auf Stufe 5.', goal: 5, k: 'cityMin', gems: 400 },
+            { id: 'base25',  name: 'Festung',          icon: 'castle',  desc: 'Bau eine Basis auf Stufe 25 aus.',       goal: 25,   k: 'baseTop', gems: 100 },
+            { id: 'base50',  name: 'Bollwerk',         icon: 'castle',  desc: 'Bau eine Basis auf Stufe 50 aus.',       goal: 50,   k: 'baseTop', gems: 300 },
+            { id: 'base100', name: 'Himmelsfeste',     icon: 'castle',  desc: 'Bau eine Basis auf Stufe 100 aus.',      goal: 100,  k: 'baseTop', gems: 1000 },
+            { id: 'gate1',   name: 'Torhüter',         icon: 'lock',    desc: 'Halte ein Tor.',                         goal: 1,    k: 'gates', gems: 50 },
+            { id: 'gate3',   name: 'Herr der Brücken', icon: 'lock',    desc: 'Halte 3 Tore gleichzeitig.',             goal: 3,    k: 'gates', gems: 250 },
+            { id: 'toll10',  name: 'Brückengänger',    icon: 'coin',    desc: 'Zahl 10 Mal Maut an einem Tor.',         goal: 10,   k: 'tolls', gems: 40 },
+            { id: 'tollin',  name: 'Zöllner',          icon: 'coin',    desc: 'Nimm 100.000 Münzen Maut ein.',          goal: 100000, k: 'tollCoins', gems: 300 },
+            { id: 'army5',   name: 'Feldschlacht',     icon: 'troops',  desc: 'Gewinn 5 Kämpfe mit Armeen im Feld.',    goal: 5,    k: 'armyWins', gems: 80 },
+            { id: 'army50',  name: 'Heerführer',       icon: 'troops',  desc: 'Gewinn 50 Kämpfe mit Armeen im Feld.',   goal: 50,   k: 'armyWins', gems: 400 },
+            { id: 'hero1',   name: 'Erster Held',      icon: 'profile', desc: 'Schalte einen Helden frei.',             goal: 1,    k: 'heroes', gems: 30 },
+            { id: 'hero4',   name: 'Heldenrunde',      icon: 'profile', desc: 'Schalte 4 Helden frei.',                 goal: 4,    k: 'heroes', gems: 150 },
+            { id: 'heroall', name: 'Heldensaal',       icon: 'profile', desc: 'Schalte alle ' + HEROES.length + ' Helden frei.', goal: HEROES.length, k: 'heroes', gems: 800 },
+            { id: 'star3',   name: 'Aufsteiger',       icon: 'star',    desc: 'Bring einen Helden auf 3 Sterne.',       goal: 3,    k: 'heroStars', gems: 150 },
+            { id: 'star5',   name: 'Sternenheld',      icon: 'star',    desc: 'Bring einen Helden auf 5 Sterne.',       goal: 5,    k: 'heroStars', gems: 600 },
+            { id: 'fire10',  name: 'Kampfrausch',      icon: 'level',   desc: 'Lass Helden 10 Mal ihre Fähigkeit zünden.', goal: 10, k: 'heroFires', gems: 80 },
+            { id: 'fire100', name: 'Heldensturm',      icon: 'level',   desc: 'Lass Helden 100 Mal ihre Fähigkeit zünden.', goal: 100, k: 'heroFires', gems: 400 },
+            { id: 'heal10k', name: 'Feldscher',        icon: 'plus',    desc: 'Heil 10.000 Verwundete im Lazarett.',    goal: 10000, k: 'healed', gems: 60 },
+            { id: 'heal1m',  name: 'Heiler der Meere', icon: 'plus',    desc: 'Heil 1.000.000 Verwundete im Lazarett.', goal: 1000000, k: 'healed', gems: 500 },
+            { id: 'shield1', name: 'Schutzschild',     icon: 'shield',  desc: 'Setz einen Friedensschild ein.',         goal: 1,    k: 'shields', gems: 20 },
+            { id: 'shield10', name: 'Vorsichtig',      icon: 'shield',  desc: 'Setz 10 Friedensschilde ein.',           goal: 10,   k: 'shields', gems: 150 },
+            { id: 'tele1',   name: 'Umzug',            icon: 'home',    desc: 'Verlege deine Hauptstadt.',              goal: 1,    k: 'teleports', gems: 30 },
+            { id: 'tele10',  name: 'Nomade',           icon: 'home',    desc: 'Verlege deine Hauptstadt 10 Mal.',       goal: 10,   k: 'teleports', gems: 200 },
         ];
-        const achDone = a => a.val() >= a.goal;
-        function achClaimable() { return ACHIEVEMENTS.filter(a => achDone(a) && !achClaimed[a.id]); }
+        const achVal = a => GOAL_VAL[a.k]();
+        const achDone = a => achVal(a) >= a.goal;
+        function achClaimable() { return ACHIEVEMENTS.filter(a => !achClaimed[a.id] && achDone(a)); }
+        // Erfolge gave titles before: what you had reached then stays yours (noted once), nothing new comes from them
+        var achLookSet = null;
+        function achLookKept(id) { if (!achLookSet) { try { achLookSet = JSON.parse(store.get('openWaterAchLook')); } catch (e) {} } return !!(achLookSet ? achLookSet.includes(id) : achClaimed[id]); }
+        if (store.get('openWaterAchLook') === null) {                            // (the city is loaded later - Baumeister is checked on the first round below)
+            achLookSet = [...new Set([...Object.keys(achClaimed), ...['cap100', 'cap1000', 'def25', 'emma10', 'boss1', 'throne'].filter(id => achDone(ACHIEVEMENTS.find(a => a.id === id)))])]; achLookSet.late = 1; }
+        const goalsPopup = document.getElementById('goalsPopup'); var goalsTab = 'daily', achReadyN = 0;   // Ziele: the daily tasks and the Erfolge in one sheet
         let achKnown = null, achTimer = null;
         function achCheckSoon() { clearTimeout(achTimer); achTimer = setTimeout(achCheck, 400); }
         function achCheck() {                                                        // newly reached ones are announced once
+            if (achLookSet && achLookSet.late) { delete achLookSet.late; if (achDone(ACHIEVEMENTS.find(a => a.id === 'city5')) && !achLookSet.includes('city5')) achLookSet.push('city5'); store.set('openWaterAchLook', JSON.stringify(achLookSet)); }
             const ready = achClaimable();
             if (achKnown === null) achKnown = new Set(ready.map(a => a.id));
-            for (const a of ready) if (!achKnown.has(a.id)) { achKnown.add(a.id); flashHint('Erfolg erreicht: ' + a.name + ' – hol dir ' + a.gems + ' Gems im Profil ab.', 4500); sfx('crown'); }
-            const n = ready.length;
-            for (const id of ['achBadge', 'profileBadge']) { const b = document.getElementById(id); b.textContent = n; b.style.display = n ? '' : 'none'; }
-            if (profilePopup.dataset.tab === 'ach' && isPanelOpen(profilePopup)) renderAchievements();
+            for (const a of ready) if (!achKnown.has(a.id)) { achKnown.add(a.id); flashHint('Erfolg erreicht: ' + a.name + ' – hol dir ' + a.gems + ' Gems unter „Ziele“ ab.', 4500); sfx('crown'); }
+            updateGoalsBadge(ready.length);
+            if (isPanelOpen(goalsPopup) && goalsTab === 'ach') renderAchievements();
         }
         setInterval(achCheck, 3000);
+        let achOpenDone = false;
         function renderAchievements() {
-            const done = ACHIEVEMENTS.filter(a => achClaimed[a.id]).length;
-            document.getElementById('achSummary').innerHTML = '<b>' + done + ' / ' + ACHIEVEMENTS.length + '</b> Erfolge abgeholt<div class="ach-sum-bar"><i style="width:' + Math.round(done / ACHIEVEMENTS.length * 100) + '%"></i></div>';
-            const rank = a => achClaimed[a.id] ? 2 : Math.min(a.goal, a.val()) >= a.goal ? 0 : 1;   // ready to collect first, collected last
-            document.getElementById('achList').innerHTML = ACHIEVEMENTS.slice().sort((x, y) => rank(x) - rank(y)).map(a => {
-                const v = Math.min(a.goal, a.val()), ok = v >= a.goal, got = !!achClaimed[a.id];
-                return '<div class="ach' + (got ? ' is-got' : ok ? ' is-ready' : '') + '"><span class="ach-medal">' + icon(a.icon) + '</span>' +
-                    '<span class="ach-t"><b>' + a.name + '</b><small>' + a.desc + '</small><span class="ach-bar"><i style="width:' + Math.round(v / a.goal * 100) + '%"></i></span><small class="ach-n">' + fmtNum(v) + ' / ' + fmtNum(a.goal) + '</small></span>' +
-                    (got ? '<span class="ach-claim done">' + icon('check') + '</span>' : '<button class="ach-claim" type="button" data-ach="' + a.id + '"' + (ok ? '' : ' disabled') + '>' + icon('gem') + a.gems + '</button>') + '</div>';
-            }).join('');
+            const got = ACHIEVEMENTS.filter(a => achClaimed[a.id]), left = ACHIEVEMENTS.reduce((s, a) => s + (achClaimed[a.id] ? 0 : a.gems), 0);
+            document.getElementById('achSummary').innerHTML = '<div class="ach-sum-t"><span><b>' + got.length + ' / ' + ACHIEVEMENTS.length + '</b> abgeholt</span><span class="ach-sum-gem">' + icon('gem') + fmtNum(left) + ' noch zu holen</span></div><div class="ach-sum-bar"><i style="width:' + Math.round(got.length / ACHIEVEMENTS.length * 100) + '%"></i></div>';
+            const fam = {}; for (const a of ACHIEVEMENTS) (fam[a.k] = fam[a.k] || []).push(a);
+            for (const k in fam) fam[k].sort((x, y) => x.goal - y.goal);
+            const ready = achClaimable(), frac = a => Math.min(1, achVal(a) / a.goal);
+            const going = Object.values(fam).map(l => l.find(a => !achClaimed[a.id] && !achDone(a))).filter(a => a && !fam[a.k].some(b => b.goal < a.goal && !achClaimed[b.id])).sort((x, y) => frac(y) - frac(x));   // one per kind: the next tier, once the ones below are collected
+            const card = a => { const v = Math.min(a.goal, achVal(a)), ok = v >= a.goal, has = !!achClaimed[a.id], tiers = fam[a.k], ti = tiers.indexOf(a);
+                return '<div class="ach' + (has ? ' is-got' : ok ? ' is-ready' : '') + '"><span class="ach-medal">' + icon(a.icon) + '</span>' +
+                    '<span class="ach-t"><b>' + a.name + (tiers.length > 1 ? '<i class="ach-tier" title="Stufe ' + (ti + 1) + ' von ' + tiers.length + '">' + tiers.map((t, i) => '<em class="' + (achClaimed[t.id] ? 'on' : i === ti ? 'cur' : '') + '"></em>').join('') + '</i>' : '') + '</b><small>' + a.desc + '</small>' +
+                    (has ? '' : '<span class="ach-bar"><i style="width:' + Math.round(v / a.goal * 100) + '%"></i></span><small class="ach-n">' + fmtNum(Math.floor(v)) + ' / ' + fmtNum(a.goal) + '</small>') + '</span>' +
+                    (has ? '<span class="ach-claim done">' + icon('check') + '</span>' : '<button class="ach-claim" type="button" data-ach="' + a.id + '"' + (ok ? '' : ' disabled') + '>' + icon('gem') + fmtNum(a.gems) + '</button>') + '</div>'; };
+            document.getElementById('achList').innerHTML =
+                (ready.length ? '<div class="sect"><h4>Abholbereit</h4>' + (ready.length > 1 ? '<button class="btn btn--primary btn--sm ach-all" type="button" data-ach-all>' + icon('gem') + '<span>Alle · ' + fmtNum(ready.reduce((s, a) => s + a.gems, 0)) + '</span></button>' : '') + '</div>' + ready.map(card).join('') : '') +
+                (going.length ? '<div class="sect"><h4>Im Gange</h4><span class="sect-aside">' + going.length + '</span></div>' + going.map(card).join('') : '') +
+                (got.length ? '<details class="ach-done"' + (achOpenDone ? ' open' : '') + '><summary><span>Erledigt</span><em>' + got.length + '</em>' + icon('upgrade') + '</summary><div class="ach-list">' + got.slice().sort((x, y) => achClaimed[y.id] - achClaimed[x.id]).map(card).join('') + '</div></details>' : '');
+            if (isPanelOpen(goalsPopup)) renderGoalsSub();
+        }
+        function claimAch(a) {
+            if (!a || achClaimed[a.id] || !achDone(a)) return 0;
+            achClaimed[a.id] = Date.now(); store.set('openWaterAch', JSON.stringify(achClaimed)); gems += a.gems; return a.gems;
         }
         document.getElementById('achList').addEventListener('click', e => {
+            if (e.target.closest('[data-ach-all]')) { const l = achClaimable(), n = l.reduce((s, a) => s + claimAch(a), 0); if (!n) return;
+                saveProgression(); updateHud(); sfx('gem'); flashHint('+' + fmtNum(n) + ' Gems für ' + l.length + ' Erfolge.', 2500); renderAchievements(); achCheck(); return; }
             const b = e.target.closest('[data-ach]'); if (!b || b.disabled) return;
-            const a = ACHIEVEMENTS.find(q => q.id === b.dataset.ach); if (!a || achClaimed[a.id] || !achDone(a)) return;
-            achClaimed[a.id] = Date.now(); store.set('openWaterAch', JSON.stringify(achClaimed));
-            gems += a.gems; saveProgression(); updateHud(); sfx('gem'); flashHint('+' + a.gems + ' Gems für „' + a.name + '“.', 2500);
+            const a = ACHIEVEMENTS.find(q => q.id === b.dataset.ach), n = claimAch(a); if (!n) return;
+            saveProgression(); updateHud(); sfx('gem'); flashHint('+' + fmtNum(n) + ' Gems für „' + a.name + '“.', 2500);
             renderAchievements(); achCheck();
         });
+        document.getElementById('achList').addEventListener('toggle', e => { if (e.target.classList && e.target.classList.contains('ach-done')) achOpenDone = e.target.open; }, true);
 
         // Rangliste: player + every bot, ranked by how many bases they
         // currently hold (the same "territory" number the Reich card
@@ -6996,7 +7097,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             if (isPanelOpen(mailPopup)) { mailCloseBtn.click(); return; }
             closeAllPopups();
             renderQuestPanel();
-            const c = mailCounts(); showMailTab(c.rewards ? 'rewards' : c.quests ? 'quests' : c.reports ? 'reports' : mailTab);
+            const c = mailCounts(); showMailTab(c.rewards ? 'rewards' : c.reports ? 'reports' : mailTab);
             openPanel(mailPopup);
         });
         function openMailReports() { closeAllPopups(); renderQuestPanel(); showMailTab('reports'); openPanel(mailPopup); }
@@ -7134,10 +7235,10 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
                 if (t.progress >= t.target) finished = t;
             }
             saveQuests();
-            if (finished) flashHint('Aufgabe erledigt: ' + QUEST_DEFS[finished.type].text(finished.target) + ' – im Postfach unter „Aufgaben“ abholen.', 3500);
+            if (finished) flashHint('Aufgabe erledigt: ' + QUEST_DEFS[finished.type].text(finished.target) + ' – unter „Ziele“ abholen.', 3500);
             if (finished && q.list.every(t => t.progress >= t.target)) chainLink();
             updateQuestBadge();
-            if (isPanelOpen(mailPopup)) renderQuestPanel();
+            if (isPanelOpen(goalsPopup)) renderQuestPanel();
         }
         function claimQuest(i) {
             const q = loadQuests(), t = q.list[i];
@@ -7179,18 +7280,20 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             flashHint('Bonus: ' + RARITY_DEFS[it.rarity].label + ' ' + EQUIPMENT_DEFS[it.slot].name + ' + ' + QUEST_BONUS.gems + ' Gems' + (shH ? ' + ' + HERO_SHARDS_DAY + ' Splitter ' + shH.name : ''), 3000);
             renderQuestPanel(); updateQuestBadge();
         }
-        function claimableCount() {
+        function claimableCount() { return dailyClaimable() ? 1 : 0; }   // the Postfach: only the daily reward is left to collect there
+        function dailyGoalCount() {                                      // Ziele → Täglich: tasks, the bonus and the week chain
             const q = loadQuests();
-            let n = q.list.filter(t => !t.claimed && t.progress >= t.target).length;
-            if (!q.bonusClaimed && q.list.every(t => t.claimed)) n++;
-            if (dailyClaimable()) n++;
-            if (chainStreak() >= 7) n++;
-            return n;
+            return q.list.filter(t => !t.claimed && t.progress >= t.target).length + (!q.bonusClaimed && q.list.every(t => t.claimed) ? 1 : 0) + (chainStreak() >= 7 ? 1 : 0);
+        }
+        function updateGoalsBadge(nAch) {
+            if (nAch === undefined) nAch = achReadyN; else achReadyN = nAch;   // (the Erfolge are counted by achCheck - not before everything has loaded)
+            const nd = dailyGoalCount(), n = nd + nAch, set = (el, v) => { if (el) { el.textContent = v; el.style.display = v > 0 ? 'block' : 'none'; } };
+            set(document.getElementById('goalsBadge'), n); set(goalsPopup.querySelector('[data-gbadge="daily"]'), nd); set(goalsPopup.querySelector('[data-gbadge="ach"]'), nAch);
         }
         function updateQuestBadge() {
             const b = document.getElementById('questBadge'); if (!b) return;
             const n = claimableCount();
-            b.textContent = n; b.style.display = n > 0 ? 'block' : 'none';
+            b.textContent = n; b.style.display = n > 0 ? 'block' : 'none'; updateGoalsBadge();
             if (typeof mailCounts === 'function') { const c = mailCounts();
                 for (const el of document.querySelectorAll('#mailTabs [data-mbadge]')) { const v = c[el.dataset.mbadge];
                     if (el.classList.contains('dot-new')) el.style.display = v ? 'block' : 'none'; else { el.textContent = v; el.style.display = v > 0 ? 'block' : 'none'; } } }
@@ -7219,7 +7322,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
                     '</span><span class="war-trend ' + (score >= 0 ? 'up' : 'down') + '">' + (score >= 0 ? 'gut' : 'schwer') + '</span></summary>' +
                     (lines.length ? '<ul>' + lines.map(l => '<li>' + l + '</li>').join('') + '</ul>' : '<div class="war-empty">Ruhiger Tag.</div>') + '</details>'; }).join('');
         }
-        // the Postfach has three tabs; a new day's report shows a dot until you've looked at it
+        // the Postfach has two tabs; a new day's report shows a dot until you've looked at it
         let mailTab = 'rewards';
         function lastWarDay() { return Object.keys(warDays).filter(d => d < todayKey()).sort().pop() || ''; }   // the newest finished day
         function warUnseen() { const last = lastWarDay(); return !!last && last > (store.get('openWaterWarSeen') || ''); }
@@ -7232,8 +7335,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         }
         document.getElementById('mailTabs').addEventListener('click', e => { const b = e.target.closest('[data-mtab]'); if (b) showMailTab(b.dataset.mtab); });
         function mailCounts() {
-            const q = loadQuests(), quests = q.list.filter(t => !t.claimed && t.progress >= t.target).length + (q.list.every(t => t.claimed) && !q.bonusClaimed ? 1 : 0);
-            return { rewards: (dailyClaimable() ? 1 : 0) + (chainStreak() >= 7 ? 1 : 0), quests, reports: warUnseen() };
+            return { rewards: dailyClaimable() ? 1 : 0, reports: warUnseen() };
         }
         function renderQuestPanel() {
             const q = loadQuests();
@@ -7268,12 +7370,34 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         mailPopup.addEventListener('click', e => {
             const b = e.target.closest('button'); if (!b) return;
             if (b.hasAttribute('data-daily')) showDailyModal();
-            else if (b.dataset.quest !== undefined) claimQuest(+b.dataset.quest);
+        });
+        // ---- Ziele: one sheet, two tabs - Täglich (tasks + week chain) and Erfolge ----
+        function showGoalsTab(t) {
+            goalsTab = t;
+            for (const b of goalsPopup.querySelectorAll('[data-gtab]')) { const on = b.dataset.gtab === t; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }
+            for (const pn of goalsPopup.querySelectorAll('[data-gpane]')) pn.hidden = pn.dataset.gpane !== t;
+            if (t === 'ach') renderAchievements(); else renderQuestPanel();
+            goalsPopup.querySelector('.pbody').scrollTop = 0; updateGoalsBadge();
+        }
+        function renderGoalsSub() { const q = loadQuests(), nd = q.list.filter(t => t.claimed).length, na = ACHIEVEMENTS.filter(a => achClaimed[a.id]).length;
+            document.getElementById('goalsSub').innerHTML = '<span class="pill">' + icon('flag') + '<b>' + nd + ' / 3</b><small>heute</small></span><span class="pill">' + icon('star') + '<b>' + na + ' / ' + ACHIEVEMENTS.length + '</b><small>Erfolge</small></span>'; }
+        function openGoals(tab) {
+            closeAllPopups(); renderGoalsSub();
+            const nd = dailyGoalCount(), na = achClaimable().length;
+            showGoalsTab(tab || (nd ? 'daily' : na ? 'ach' : goalsTab)); openPanel(goalsPopup);
+        }
+        document.getElementById('goalsBtn').addEventListener('click', () => { if (isPanelOpen(goalsPopup)) closePanel(goalsPopup); else openGoals(); });
+        document.getElementById('goalsCloseBtn').addEventListener('click', () => closePanel(goalsPopup));
+        document.getElementById('goalsTabs').addEventListener('click', e => { const b = e.target.closest('[data-gtab]'); if (b) showGoalsTab(b.dataset.gtab); });
+        goalsPopup.addEventListener('click', e => {
+            const b = e.target.closest('button'); if (!b || !e.target.closest('[data-gpane="daily"]')) return;
+            if (b.dataset.quest !== undefined) claimQuest(+b.dataset.quest);
             else if (b.hasAttribute('data-bonus')) claimQuestBonus();
             else if (b.hasAttribute('data-chain')) claimChain();
+            renderGoalsSub();
         });
         setInterval(() => {                 // day rollover while the game stays open
-            if (questState && questState.date !== todayKey()) { loadQuests(); if (isPanelOpen(mailPopup)) renderQuestPanel(); }
+            if (questState && questState.date !== todayKey()) { loadQuests(); if (isPanelOpen(goalsPopup)) renderQuestPanel(); }
             updateQuestBadge();
         }, 60000);
         updateQuestBadge();
@@ -7358,9 +7482,10 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             const got = {};
             const add = (who, n) => { if (!who) return; got[who] = (got[who] || 0) + n; };
             add(rulerOwner(), THRONE_PTS_MEGA); for (const g of guardianTempleIds) add(islandOwnerOf(g), THRONE_PTS_GUARD);
+            goalBump(rulerOwner(), 'throneMin', THRONE_TICK_MS / 60000);   // minutes on the throne (Erfolge)
             for (const [who, n] of Object.entries(got)) {
                 if (who === 'player') { ts.pts = (ts.pts || 0) + n; ts.earned = (ts.earned || 0) + n; warStat('thronePts', n); }
-                else { const b = loadBotState()[who]; if (!b) continue; b.tp = (b.tp || 0) + n; }
+                else { const b = loadBotState()[who]; if (!b) continue; b.tp = (b.tp || 0) + n; b.stats = b.stats || {}; b.stats.tpEarned = (b.stats.tpEarned || 0) + n; }
                 ts.week[who] = (ts.week[who] || 0) + n;
             }
             if (got.player && !silent) flashHint('+' + got.player + ' Thron-Punkte – du hältst ' + (rulerOwner() === 'player' ? 'die Mitte' : 'einen Wächter-Tempel') + '. Einlösen im Shop unter „Thron“.', 3500);
@@ -8390,7 +8515,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             if (isPanelOpen(popup)) renderPopup();
         }
         function defeatBoss(boss) {
-            statBump('bosses');
+            statBump('bosses'); if (boss.wander) statBump('wanders');
             const item = grantFreeCrate(4);                        // legendary or better
             const rewardGems = boss.wander ? WANDER_REWARD_GEMS : BOSS_REWARD_GEMS;
             gems += rewardGems; const shH = heroGrantShards('player', boss.wander ? HERO_SHARDS_WANDER : HERO_SHARDS_BOSS);   // hero shards for a random hero
@@ -9059,7 +9184,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         function heroPeek(who, id, src, target, raw) { const s = heroSt(who, id); return s && s.own ? heroFx(who, id, heroBaseCtx(who, src, target, raw), heroWouldFire(s), s) : null; }
         function heroLaunch(who, id, src, target, raw) {    // the hero marches off: a full rage fires the active skill in this fight
             const s = heroSt(who, id); if (!s || !s.own) return null;
-            const fired = heroWouldFire(s); if (fired) { s.rage = 0; heroSave(who); }
+            const fired = heroWouldFire(s); if (fired) { s.rage = 0; heroSave(who); goalBump(who, 'heroFires'); }
             return heroFx(who, id, heroBaseCtx(who, src, target, raw), fired, s);
         }
         function heroRageUp(who, id) { const h = heroById(id), s = heroSt(who, id); if (!h || !s || !s.own) return;
@@ -9068,7 +9193,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         function heroFought(who, hx) { if (!hx || !hx.id) return; heroRageUp(who, hx.id); for (const e of hx.extra || []) heroRageUp(who, e.id); }   // every fight a hero leads fills his rage
         function heroFieldFx(who, id, ctx) {                // a fight out in the open: fires (and refills) the rage right away
             const s = id && heroSt(who, id); if (!s || !s.own) return null;
-            const fired = heroWouldFire(s); if (fired) s.rage = 0;
+            const fired = heroWouldFire(s); if (fired) { s.rage = 0; goalBump(who, 'heroFires'); }
             const fx = heroFx(who, id, Object.assign({ fight: 1, field: 1, vsArmy: 1 }, ctx, { fdefending: !!ctx.defending, gatherDef: !!(ctx.res && ctx.defending) }), fired, s);
             heroRageUp(who, id); return fx;
         }
@@ -9231,7 +9356,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             if (e.target.closest('[data-hero-open]')) { openHeroHall(); return; }
             const su = e.target.closest('[data-shield-use]');
             if (su) { const h = +su.dataset.shieldUse, stock = shieldStock(); if (!stock[h]) return;
-                stock[h]--; store.set('openWaterShieldStock', JSON.stringify(stock));
+                stock[h]--; store.set('openWaterShieldStock', JSON.stringify(stock)); statBump('shields');
                 store.set('openWaterShield', String(Math.max(Date.now(), shieldUntil()) + h * 3600000)); shieldMemAt = 0;
                 flashHint('Friedensschild aktiv – noch ' + fmtHours(shieldUntil() - Date.now()), 3000); renderKeepSheet(); requestRender(); return; }
             const st = e.target.closest('[data-star]'), hl = e.target.closest('[data-heal]');
@@ -9242,7 +9367,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
                 flashHint(EQUIPMENT_DEFS[item.slot].name + ' hat jetzt ' + item.stars + (item.stars === 1 ? ' Stern' : ' Sterne') + ' (+' + item.stars * STAR_PCT + ' % Wirkung).', 2500); renderCitySheet(); }
             else if (hl) { const c = loadCity(), w = c.wounded, cost = Math.ceil(w * HEAL_COIN_PER_TROOP);
                 if (!w || coins < cost) return;
-                coins -= cost; c.wounded = 0; saveCity();
+                coins -= cost; c.wounded = 0; saveCity(); statBump('healed', w);
                 const base = rewardBaseId(); if (base !== null) islandTroops[base] = (islandTroops[base] || 0) + w;
                 saveGame(); updateHud(); flashHint(fmtNum(w) + ' Truppen geheilt – sie sind in deiner Hauptstadt.', 3000); renderCitySheet(); }
         });
@@ -9264,7 +9389,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             if (!to || !ownedIslands.has(toId) || toId === from || to.type !== 'tower' || gems < TELEPORT_GEMS) return false;   // a tower - never a gate, a temple or the throne
             gems -= TELEPORT_GEMS;
             islandTroops[toId] = (islandTroops[toId] || 0) + (islandTroops[from] || 0); islandTroops[from] = 0;   // the garrison moves along
-            playerIslandId = toId; store.set('openWaterPlayerIslandId', playerIslandId);
+            playerIslandId = toId; store.set('openWaterPlayerIslandId', playerIslandId); statBump('teleports');
             revealAround(to.x, to.y, REVEAL_BASE, true);
             flushBannerSprites();
             saveGame(); saveProgression(); updateHud();
@@ -10232,6 +10357,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             const wA = fieldHurt(armyWho(att), fb.aLoss, aHx), wD = fieldHurt(armyWho(def), fb.dLoss, dHx), wLoser = won ? wD : wA, wWinner = won ? wA : wD;
             const fg = fieldGold(armyWho(att), armyWho(def), fb, aHx, dHx);
             const mine = armyWho(att) === 'player' ? att : armyWho(def) === 'player' ? def : null;
+            goalBump(armyWho(winner), 'armyWins');
             if (!mine) return;
             const youWon = mine === winner, foe = mine === att ? def : att, w = youWon ? wWinner : wLoser;
             addCombatLogEntry({ type: 'army', won: youWon, attacker: armyName(att), defender: armyName(def), atk: fb.SA, def: fb.SD, wounded: w, gold: mine === att ? fg.a : fg.d, hA: heroTag(aHx), hD: heroTag(dHx), hx: heroReportOf(mine === att ? aHx : dHx) });
@@ -10478,9 +10604,9 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         // the keyboard handler uses this: map shortcuts only fire while focus is on the page or the canvas
         function isUiElement(target) {
           return !!(target && target.closest && target.closest(
-            '#islandPopup,#hud,#cornerButtons,#profilePopup,#rulerPopup,#battleLogPopup,#mailPopup,#shopPopup,#chestItemPopup,#multiAttackBar,#mapControls,#uiScrim,#uiScrimTop'));
+            '#islandPopup,#hud,#cornerButtons,#profilePopup,#rulerPopup,#battleLogPopup,#mailPopup,#goalsPopup,#shopPopup,#chestItemPopup,#multiAttackBar,#mapControls,#uiScrim,#uiScrimTop'));
         }
-        const PANEL_NAV = { profilePopup: 'profileBtn', battleLogPopup: 'battleLogBtn', mailPopup: 'mailBtn', shopPopup: 'shopBtn' };
+        const PANEL_NAV = { profilePopup: 'profileBtn', battleLogPopup: 'battleLogBtn', mailPopup: 'mailBtn', goalsPopup: 'goalsBtn', shopPopup: 'shopBtn' };
         function isPanelOpen(el) { return el.classList.contains('is-open'); }
         function openPanel(el) { el.style.removeProperty('display'); el.classList.add('is-open'); syncPanelState(); }
         function closePanel(el) { el.classList.remove('is-open'); syncPanelState(); }
@@ -10508,7 +10634,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
           if (!document.getElementById('titleModal').hidden) { document.getElementById('titleModal').hidden = true; return; }
           if (isPanelOpen(chestItemPopup)) return chestItemCloseBtn.click();
           if (isPanelOpen(popup)) return closeBtn.click();
-          for (const [pid, closeId] of [['rulerPopup','rulerCloseBtn'],['profilePopup','profileCloseBtn'],['battleLogPopup','battleLogCloseBtn'],['mailPopup','mailCloseBtn'],['shopPopup','shopCloseBtn']])
+          for (const [pid, closeId] of [['rulerPopup','rulerCloseBtn'],['profilePopup','profileCloseBtn'],['battleLogPopup','battleLogCloseBtn'],['mailPopup','mailCloseBtn'],['goalsPopup','goalsCloseBtn'],['shopPopup','shopCloseBtn']])
             if (isPanelOpen(document.getElementById(pid))) return document.getElementById(closeId).click();
           if (multiAttackMode) return multiAttackCancelBtn.click();
         }
@@ -10528,6 +10654,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             closePanel(battleLogPopup);
             clearInterval(battleLogRefreshTimer);
             closePanel(mailPopup);
+            closePanel(document.getElementById('goalsPopup'));
             closePanel(shopPopup);
             closePanel(document.getElementById('rulerPopup'));
             closePanel(chestItemPopup);
