@@ -177,6 +177,7 @@ b,strong{font-weight:600}
 .look-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
 .look-frame small{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .troop-in{width:9.5em;max-width:46vw;height:30px;padding:0 8px;border:1px solid var(--line-2);border-radius:var(--r-xs);background:#12151b;color:var(--tx-1);font:700 var(--fs-13)/1 var(--font-ui);text-align:right;font-variant-numeric:tabular-nums}
+.troop-in.is-bad{border-color:#e0685c;box-shadow:0 0 0 2px rgba(224,104,92,.25)} @media (pointer:coarse){ .troop-in{height:36px} }
 .troop-in:focus{outline:none;border-color:var(--gold-300);box-shadow:0 0 0 2px rgba(214,170,90,.25)}
 .look-frame{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 2px;border-radius:8px;border:1px solid transparent;background:none;color:var(--tx-2)}
 .look-frame.on{border-color:var(--gold-300);background:rgba(214,170,90,.12)} .look-frame:disabled{opacity:.4}
@@ -184,7 +185,7 @@ b,strong{font-weight:600}
 .look-frame .frame-ring{width:30px;height:30px;border-radius:50%;background:conic-gradient(from 200deg,var(--fr1),var(--fr2),var(--fr1),var(--fr2),var(--fr1));box-shadow:inset 0 0 0 5px #141a24}
 .look-frame small{display:inline-flex;align-items:center;gap:2px;font:600 9.5px/1.1 var(--font-ui)} .look-frame small .icon,.look-title .icon{width:10px;height:10px}
 .look-titles{display:flex;flex-wrap:wrap;gap:6px}
-.look-title{display:inline-flex;align-items:center;gap:4px;padding:6px 10px;border-radius:999px;border:1px solid var(--line-2);background:rgba(255,255,255,.03);color:var(--tx-1);font:600 var(--fs-12)/1 var(--font-ui)}
+.look-title{display:inline-flex;align-items:center;gap:4px;min-height:34px;padding:6px 12px;border-radius:999px;border:1px solid var(--line-2);background:rgba(255,255,255,.03);color:var(--tx-1);font:600 var(--fs-12)/1 var(--font-ui)}
 .look-title.on{border-color:var(--gold-300);background:rgba(214,170,90,.16);color:var(--gold-100)} .look-title:disabled{opacity:.4}
 .look-hint{font:500 var(--fs-11)/1.35 var(--font-ui);color:var(--tx-3)}
 .pfoot[hidden]{display:none} #mailTabs.tabs{grid-template-columns:repeat(3,minmax(0,1fr))} #shopTabs.tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -221,7 +222,7 @@ b,strong{font-weight:600}
 .war-day ul{margin:8px 0 0;padding-left:16px;display:grid;gap:4px;font:500 var(--fs-12)/1.35 var(--font-ui);color:var(--tx-2)}
 .war-empty{font:500 var(--fs-12)/1.35 var(--font-ui);color:var(--tx-3);padding:6px 2px}
 .welcome-crest{width:44px;height:44px;display:block}
-#welcomeModal .lvlup-rewards li b{white-space:nowrap}
+#welcomeModal .lvlup-rewards li b{white-space:normal;text-align:right;min-width:0}
 #welcomeModal .btn + .btn{margin-top:8px}
 .rp-crest{width:52px;height:52px;border-radius:50%;padding:3px;flex:none;background:conic-gradient(from 200deg,var(--fr1,#b08d57),var(--fr2,#6b5433),var(--fr1,#b08d57),var(--fr2,#6b5433),var(--fr1,#b08d57));box-shadow:0 0 10px color-mix(in srgb,var(--fr1,#b08d57) 40%,transparent);position:relative}
 .rp-crest-in{display:grid;place-items:center;width:100%;height:100%;border-radius:50%;background:radial-gradient(circle at 50% 30%,#2a2f3a,#12151c)} .rp-crest img{width:34px;height:34px}
@@ -243,7 +244,7 @@ b,strong{font-weight:600}
 .rp-bld small{font:500 var(--fs-11)/1.2 var(--font-ui);color:var(--tx-3);text-align:center} .rp-bld.is-zero{opacity:.5}
 .rp-grid > div{display:flex;justify-content:space-between;gap:8px;font:500 var(--fs-12)/1.6 var(--font-ui);color:var(--tx-2);border-bottom:1px solid var(--line-1)} .rp-grid b{color:var(--tx-1);font-variant-numeric:tabular-nums}
 .rp-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px} .rp-actions .btn{justify-content:center}
-.who-link{background:none;border:0;padding:0;font:inherit;color:inherit;text-decoration:underline;text-decoration-color:color-mix(in srgb,currentColor 40%,transparent);text-underline-offset:3px;cursor:pointer}
+.who-link{background:none;border:0;padding:6px 2px;margin:-6px -2px;font:inherit;color:inherit;text-decoration:underline;text-decoration-color:color-mix(in srgb,currentColor 40%,transparent);text-underline-offset:3px;cursor:pointer}
 .rankRow{cursor:pointer} .rankRow:active{background:rgba(255,255,255,.04)}
 .chain{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:10px;border:1px solid var(--line-1);background:rgba(255,255,255,.02)}
 .chain-links{display:grid;grid-template-columns:repeat(7,1fr) 1.3fr;gap:5px;align-items:center}
@@ -323,7 +324,7 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 /* phone: while a sheet is open the toast docks just above the sheet's footer (never over the HUD values or the sheet header) */
 @media (max-width:899px) and (min-height:501px){
   body.has-sheet .toast{top:auto;bottom:calc(var(--dock-h) + var(--safe-b) + 72px);box-shadow:var(--sh-2),0 0 0 1px rgba(0,0,0,.35)}
-  body.has-sheet:has(#battleLogPopup.is-open,#mailPopup.is-open,#profilePopup.is-open:not([data-tab="equip"])) .toast{bottom:calc(var(--dock-h) + var(--safe-b) + 16px)}
+  body.has-sheet:has(#battleLogPopup.is-open,#mailPopup.is-open,#shopPopup.is-open,#profilePopup.is-open:not([data-tab="equip"])) .toast{bottom:calc(var(--dock-h) + var(--safe-b) + 16px)}
 }
 
 /* =====================================================================
@@ -373,6 +374,7 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 .psub .sep{width:3px;height:3px;border-radius:50%;background:var(--tx-4);flex:none}
 .psub > span:last-child{flex:none}   /* the march time never gets cut, the name truncates instead */
 .psub > span:not(:last-child):not(.sep){min-width:0;overflow:hidden;text-overflow:ellipsis}
+.psub > .psub-who{flex:0 1 auto;white-space:nowrap}
 .dot{width:7px;height:7px;border-radius:50%;flex:none;box-shadow:0 0 0 2px rgba(0,0,0,.35)}
 .dot--player{background:var(--f-player)} .dot--enemy{background:var(--f-enemy)} .dot--neutral{background:var(--f-neutral)}
 .btn-x{width:32px;height:32px;display:grid;place-items:center;align-self:start;border-radius:var(--r-sm);color:var(--tx-2);border:1px solid transparent;transition:color var(--dur-1),border-color var(--dur-1)}
@@ -954,7 +956,7 @@ body.has-panel .mapctl{display:none}
 .lvlup-next{font:500 var(--fs-11)/1.4 var(--font-ui);color:var(--tx-3);margin-bottom:14px}
 .lvlup-next b{color:var(--tx-2);font-weight:600}
 .lvlup .btn{width:100%}
-.xp-next{margin-top:4px;font:500 var(--fs-11)/1.3 var(--font-ui);color:var(--tx-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.xp-next{margin-top:4px;font:500 var(--fs-11)/1.3 var(--font-ui);color:var(--tx-3)}
 .xp-next b{color:var(--tx-2);font-weight:600}
 .ico-coin{color:var(--gold-300)} .ico-gem{color:#7fd3ff} .ico-troops{color:#e8e2d2} .ico-points{color:var(--gold-200)}
 @media (prefers-reduced-motion:reduce){.lvlup-card,.lvlup-card::before,.lvlup-rewards li{animation:none;opacity:1}}
@@ -1073,7 +1075,7 @@ body.has-panel .mapctl{display:none}
 .city-builder b{color:var(--gold-100);font-variant-numeric:tabular-nums}
 .city-sheet{position:absolute;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;padding:14px 14px calc(var(--safe-b) + 14px);
   background:var(--noise),var(--panel-bg);border:1px solid var(--line-2);border-bottom:0;border-radius:var(--r-lg) var(--r-lg) 0 0;box-shadow:var(--sh-3);
-  display:flex;flex-direction:column;gap:10px;animation:panel-in var(--dur-3) var(--ease-out)}
+  display:flex;flex-direction:column;gap:10px;animation:panel-in var(--dur-3) var(--ease-out);max-height:calc(100% - 90px);overflow-y:auto;overscroll-behavior:contain}
 .city-sheet[hidden]{display:none}
 .city-sheet-head{display:flex;align-items:center;gap:12px}
 .city-bicon{width:48px;height:48px;flex:none;display:grid;place-items:center;border-radius:var(--r-sm);border:1px solid var(--line-3);
@@ -1094,6 +1096,7 @@ body.has-panel .mapctl{display:none}
 .city-progress i{display:block;height:100%;width:var(--p,0%);background:linear-gradient(90deg,var(--gold-500),var(--gold-200))}
 
 
+.gate-ctl .btn{flex:none}
 .gate-ctl{display:flex;flex-direction:column;gap:8px;margin-top:10px;padding:10px;border:1px solid var(--line-2);border-radius:var(--r-sm);background:rgba(0,0,0,.22)}
 .gate-row{display:flex;flex-direction:column;gap:6px}
 .gate-ctl .seg{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-top:0}
@@ -1638,7 +1641,7 @@ body.has-panel .mapctl{display:none}
 <div id="levelUpModal" class="lvlup" role="dialog" aria-modal="true" aria-labelledby="levelUpTitle" hidden>
   <div class="lvlup-card">
     <div class="lvlup-badge"><b id="levelUpLevel">2</b></div>
-    <div class="lvlup-over">Level Up</div>
+    <div class="lvlup-over">Stufe erreicht</div>
     <h2 id="levelUpTitle" class="lvlup-title">Stufe 2</h2>
     <div id="levelUpSub" class="lvlup-sub"></div>
     <div class="lvlup-rule"></div>
@@ -1783,9 +1786,9 @@ body.has-panel .mapctl{display:none}
           const a = Math.abs(n);
           if (a < 100000) return fmtNum(n);
           if (a < 1e6) return NF.format(Math.floor(n / 100) / 10) + ' Tsd.';
-          if (a < 1e15) return NF_C.format(n);
-          for (const [v, u] of [[1e24, 'Quadr.'], [1e21, 'Trd.'], [1e18, 'Trill.'], [1e15, 'Brd.']])   // beyond "Bio.": Billiarde, Trillion, Trilliarde …
-            if (a >= v || v === 1e15) return (a / v >= 1000 ? NF.format(Math.round(n / v)) : NF.format(Math.round(n / v * 10) / 10)) + ' ' + u;
+          if (a < 1e15 * .99995) return NF_C.format(n);
+          for (const [v, u] of [[1e24, 'Quadr.'], [1e21, 'Trd.'], [1e18, 'Trill.'], [1e15, 'Brd.']])   // beyond "Bio.": Billiarde, Trillion, Trilliarde … (unit chosen on the rounded value)
+            if (a >= v * .99995 || v === 1e15) return (a / v >= 1000 ? NF.format(Math.round(n / v)) : NF.format(Math.round(n / v * 10) / 10)) + ' ' + u;
         }
         const fmtTile = v => Math.abs(v) >= 1e9 ? fmtCompact(v) : fmtNum(v);   // stat tiles: exact up to millions, then short so it fits
         function setBtnLabel(btn, text) { const l = btn.querySelector('.lbl'); if (l) l.textContent = text; else btn.textContent = text; }
@@ -6701,7 +6704,7 @@ body.has-panel .mapctl{display:none}
             const activeCount = playerRelevantAttackCount() + playerRelevantSendCount() + pendingScouts.length + pendingRetreats.length;
             profileStats.innerHTML =
                 '<div class="statRow"><span>' + icon('star') + 'Skillpunkte</span><b>' + fmtNum(skillPoints) + '</b></div>' +
-                '<div class="statRow"><span>' + icon('gem') + 'Gems</span><b>' + fmtNum(Math.floor(gems)) + '</b></div>' +
+                '<div class="statRow"><span>' + icon('gem') + 'Gems</span><b>' + fmtTile(Math.floor(gems)) + '</b></div>' +
                 (activeCount > 0 ? '<div class="statRow"><span>' + icon('hourglass') + 'Unterwegs</span><b>' + fmtNum(activeCount) + '</b></div>' : '') +
                 '<div class="statRow"><span>' + icon('home') + 'Heimat</span><b>' + homeLabel + '</b></div>';
             updateHudPlayer();
@@ -7116,7 +7119,8 @@ body.has-panel .mapctl{display:none}
         function renderAchievements() {
             const done = ACHIEVEMENTS.filter(a => achClaimed[a.id]).length;
             document.getElementById('achSummary').innerHTML = '<b>' + done + ' / ' + ACHIEVEMENTS.length + '</b> Erfolge abgeholt<div class="ach-sum-bar"><i style="width:' + Math.round(done / ACHIEVEMENTS.length * 100) + '%"></i></div>';
-            document.getElementById('achList').innerHTML = ACHIEVEMENTS.map(a => {
+            const rank = a => achClaimed[a.id] ? 2 : Math.min(a.goal, a.val()) >= a.goal ? 0 : 1;   // ready to collect first, collected last
+            document.getElementById('achList').innerHTML = ACHIEVEMENTS.slice().sort((x, y) => rank(x) - rank(y)).map(a => {
                 const v = Math.min(a.goal, a.val()), ok = v >= a.goal, got = !!achClaimed[a.id];
                 return '<div class="ach' + (got ? ' is-got' : ok ? ' is-ready' : '') + '"><span class="ach-medal">' + icon(a.icon) + '</span>' +
                     '<span class="ach-t"><b>' + a.name + '</b><small>' + a.desc + '</small><span class="ach-bar"><i style="width:' + Math.round(v / a.goal * 100) + '%"></i></span><small class="ach-n">' + fmtNum(v) + ' / ' + fmtNum(a.goal) + '</small></span>' +
@@ -7754,7 +7758,7 @@ body.has-panel .mapctl{display:none}
             return days.map((d, i) => { const w = warDays[d], lines = warDayText(w), dt = new Date(d + 'T12:00:00');
                 const label = d === today ? 'Heute' : d === yest ? 'Gestern' : dt.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'numeric' });
                 const score = (w.captures || 0) + (w.defends || 0) - (w.lost || 0) - (w.attacksLost || 0) * .5;
-                return '<details class="war-day"' + (i === 0 ? ' open' : '') + '><summary><b>' + label + '</b><span class="war-sum">' + icon('castle') + '+' + (w.captures || 0) + ' ' + icon('shield') + (w.defends || 0) + ' ' + icon('losses') + '−' + (w.lost || 0) +
+                return '<details class="war-day"' + (i === 0 ? ' open' : '') + '><summary><b>' + label + '</b><span class="war-sum">' + icon('castle') + '+' + (w.captures || 0) + ' ' + icon('shield') + (w.defends || 0) + ' ' + icon('losses') + (w.lost ? '−' + w.lost : '0') +
                     '</span><span class="war-trend ' + (score >= 0 ? 'up' : 'down') + '">' + (score >= 0 ? 'gut' : 'schwer') + '</span></summary>' +
                     (lines.length ? '<ul>' + lines.map(l => '<li>' + l + '</li>').join('') + '</ul>' : '<div class="war-empty">Ruhiger Tag.</div>') + '</details>'; }).join('');
         }
@@ -8237,7 +8241,7 @@ body.has-panel .mapctl{display:none}
                 if (dc > 0) warStat('offCoins', dc); if (dt > 0) warStat('offTroops', dt);
                 if (Date.now() - leaveAtBoot.at >= AWAY_MIN_MS) welcomeFrom = Object.assign({ produced: { coins: dc, troops: dt, capped: Date.now() - leaveAtBoot.at > AWAY_PRODUCE_MAX_MS, thronePts: dtp, throneHit: vol && rulerOwner() === 'player' ? vol : null } }, leaveAtBoot);
             }
-            if (ffSummary && !welcomeFrom) afterSplash(() => setTimeout(() => flashHint('Die anderen waren ' + ffSummary.days + ' Tage aktiv: +' + ffSummary.caps + ' Basen erobert, ' + ffSummary.fights + ' Kämpfe untereinander.', 6000), 1500));
+            if (ffSummary && !welcomeFrom) afterSplash(() => setTimeout(() => flashHint('Die anderen waren ' + ffSummary.days + ' Tage aktiv: +' + fmtNum(ffSummary.caps) + ' Basen erobert, ' + fmtNum(ffSummary.fights) + ' Kämpfe untereinander.', 6000), 1500));
             saveLeave(); setInterval(saveLeave, 30000);
         }, 0);
         window.addEventListener('pagehide', saveLeave);
@@ -8270,7 +8274,7 @@ body.has-panel .mapctl{display:none}
             if (built.length) rows.push(['upgrade', 'Fertig gebaut', built.map(k => cityDef(k).name + ' ' + now.city[k]).join(', ')]);
             if (now.bases !== from.bases) rows.push(['castle', 'Basen', from.bases + ' → ' + now.bases]);
             if (now.wounded > (from.wounded || 0)) rows.push(['losses', 'Im Lazarett', fmtCompact(now.wounded) + ' Verwundete']);
-            if (ffSummary) rows.push(['castle', 'Die anderen', '+' + ffSummary.caps + ' Basen erobert · ' + ffSummary.fights + ' Kämpfe untereinander']);
+            if (ffSummary) rows.push(['castle', 'Die anderen', '+' + fmtNum(ffSummary.caps) + ' Basen erobert · ' + fmtNum(ffSummary.fights) + ' Kämpfe untereinander']);
             if (!rows.length) rows.push(['check', 'Alles ruhig', 'Niemand hat dich angegriffen']);
             return rows;
         }
@@ -10775,7 +10779,7 @@ body.has-panel .mapctl{display:none}
             const head = t => '<div class="marker-head"><b>' + icon('troops') + ' ' + t + '</b><button class="btn-x" type="button" data-aclose aria-label="Schließen">' + icon('close') + '</button></div>';
             if (a && armyWho(a) !== 'player') {                                          // someone else's army: what you can see of it
                 el.innerHTML = head('Armee von ' + escapeHtml(armyName(a))) +
-                    '<div class="field-lines"><span>Truppen</span><b>' + fmtNum(Math.floor(a.troops)) + '</b><span>Status</span><b>' + (a.mv ? 'marschiert' : a.troops < 1 ? 'sammelt sich' : 'lagert') + '</b></div>' +
+                    '<div class="field-lines"><span>Truppen</span><b>' + fmtTile(Math.floor(a.troops)) + '</b><span>Status</span><b>' + (a.mv ? 'marschiert' : a.troops < 1 ? 'sammelt sich' : 'lagert') + '</b></div>' +
                     '<div class="army-hint">Im Feld hat sie keine Mauer – eine stärkere Armee schlägt sie.</div>' +
                     (myArmies().some(x => x.troops >= 1) ? '<button class="btn btn--primary btn--sm" type="button" data-afoe>' + icon('attack') + '<span>Mit deiner stärksten Armee angreifen</span></button>'
                         : '<div class="notice">' + icon('info') + '<span>Stelle eine Armee auf (Knopf rechts), um sie im Feld anzugreifen.</span></div>');
@@ -10793,7 +10797,7 @@ body.has-panel .mapctl{display:none}
                 const now = Date.now(), inc = armyJoins.filter(j => j.armyId === a.id).reduce((n, j) => n + j.troops, 0), raid = armyRaids.find(r => r.armyId === a.id);
                 const t = a.mv && a.mv.to, st = a.mv ? (t.kind === 'base' ? 'Angriff auf ' + islandTitle(islandById[t.id]) : t.kind === 'home' ? 'Heimweg' : t.kind === 'field' ? 'zur ' + FIELD_KINDS[fieldById[t.id].kind].name : 'marschiert') + ' · ' + fmtClock((a.mv.resolveAt - now) / 1000) : 'lagert';
                 el.innerHTML = head('Armee im Feld') +
-                    '<div class="field-lines"><span>Truppen</span><b>' + fmtNum(Math.floor(a.troops)) + (inc ? ' <em class="army-inc">+' + fmtCompact(inc) + ' unterwegs</em>' : '') + '</b><span>Status</span><b>' + st + '</b>' +
+                    '<div class="field-lines"><span>Truppen</span><b>' + fmtTile(Math.floor(a.troops)) + (inc ? ' <em class="army-inc">+' + fmtCompact(inc) + ' unterwegs</em>' : '') + '</b><span>Status</span><b>' + st + '</b>' +
                     '<span>Heimat</span><b>' + (armyHome(a) !== null && armyHome(a) !== undefined ? islandTitle(islandById[armyHome(a)]) : '–') + '</b></div>' +
                     (raid ? '<div class="notice notice--warn">' + icon('attack') + '<span>' + botById[raid.botId].name + ' greift an (' + fmtCompact(raid.troops) + ') · ' + fmtClock((raid.resolveAt - now) / 1000) + '</span></div>' : '') +
                     '<div class="army-hint">Im Feld gibt es keine Mauer und keine Produktion.</div>' + armyHeroSeg(a) +
@@ -11211,7 +11215,7 @@ body.has-panel .mapctl{display:none}
                 popupSub.innerHTML = '<span class="dot dot--player"></span>' + whoLink('player', profileName.value || 'Du') +
                     (island.id === playerIslandId ? sep + 'Heimat' : '');
 
-                popupOverline.textContent = island.id === playerIslandId ? 'Deine Hauptstadt · kann nicht angegriffen werden' : isTemple ? 'Dein Tempel' : island.type === 'gate' ? 'Dein Tor · du kassierst die Maut' : 'Deine Basis';
+                popupOverline.textContent = island.id === playerIslandId ? 'Deine Hauptstadt · unangreifbar' : isTemple ? 'Dein Tempel' : island.type === 'gate' ? 'Dein Tor · Maut für dich' : 'Deine Basis';
                 if (island.id === playerIslandId) { document.getElementById('cityBtn').style.display = 'inline-block'; document.getElementById('teleportBtn').style.display = 'inline-block'; }
                 popupStats.innerHTML = '<div class="stat-grid">' +
                     statTile('Truppen hier', 'troops', fmtTile(troopsHere)) +
@@ -11231,8 +11235,8 @@ body.has-panel .mapctl{display:none}
                 recallBtn.disabled = gems < RECALL_GEM_COST || ownedIslands.size <= 1;
             } else {
                 const scouted = scoutedIslands.has(island.id);
-                popupSub.innerHTML = '<span class="dot dot--' + (bossAt(island.id) ? 'enemy' : kind) + '"></span>' + (bossAt(island.id) ? 'Boss' : ownerBot ? whoLink(ownerBot.id, ownerBot.name) + ' · Stufe ' + loadBotState()[ownerBot.id].lvl + (botOnline(ownerBot, Date.now()) ? ' · online' : ' · offline') +
-                    (botBestRarity(ownerBot.id) >= 0 ? ' · <span style="color:' + RARITY_DEFS[botBestRarity(ownerBot.id)].color + '">' + RARITY_DEFS[botBestRarity(ownerBot.id)].label + '</span>' : '') : 'Unbesetzt') +
+                popupSub.innerHTML = '<span class="dot dot--' + (bossAt(island.id) ? 'enemy' : kind) + '"></span>' + (bossAt(island.id) ? 'Boss' : ownerBot ? '<span class="psub-who">' + whoLink(ownerBot.id, ownerBot.name) + ' · Stufe ' + loadBotState()[ownerBot.id].lvl + (botOnline(ownerBot, Date.now()) ? ' · online' : ' · offline') +
+                    (botBestRarity(ownerBot.id) >= 0 ? ' · <b style="color:' + RARITY_DEFS[botBestRarity(ownerBot.id)].color + ';font-weight:600">' + RARITY_DEFS[botBestRarity(ownerBot.id)].label + '</b>' : '') + '</span>' : 'Unbesetzt') +
                     (scouted ? sep + '<span class="chip chip--scouted">' + icon('scout') + 'Gespäht</span>' : '');
 
                 if (popupView === 'preview') {
@@ -11243,7 +11247,7 @@ body.has-panel .mapctl{display:none}
                     backBtn.style.display = 'inline-block';
                 } else {
                     const scoutEnRoute = pendingScouts.some(s => s.targetId === island.id);
-                    popupOverline.textContent = bossAt(island.id) ? 'Weltereignis · Boss' : ownerBot ? (isCapital(island.id) ? 'Hauptstadt · kann nicht angegriffen werden' : isTemple ? 'Feindlicher Tempel' : island.type === 'gate' ? 'Feindliches Tor' : 'Feindliche Basis') : (isTemple ? 'Tempel · unbesetzt' : island.type === 'gate' ? 'Tor · unbesetzt' : 'Neutrale Basis');
+                    popupOverline.textContent = bossAt(island.id) ? 'Weltereignis · Boss' : ownerBot ? (isCapital(island.id) ? 'Hauptstadt · unangreifbar' : isTemple ? 'Feindlicher Tempel' : island.type === 'gate' ? 'Feindliches Tor' : 'Feindliche Basis') : (isTemple ? 'Tempel · unbesetzt' : island.type === 'gate' ? 'Tor · unbesetzt' : 'Neutrale Basis');
                     popupStats.innerHTML = '<div class="stat-grid">' +
                         statTile('Truppen', 'troops', scouted ? fmtTile(effectiveTroops(island)) : UNK, scouted && ownerBot ? 'is-enemy' : '') +
                         statTile('Verteidigung', 'defense', scouted ? fmtTile(effectiveDefense(island)) : UNK) + '</div>' +
@@ -11332,19 +11336,22 @@ body.has-panel .mapctl{display:none}
         function troopsToSlider(n, mx) { return mx > 0 ? Math.max(0, Math.min(SLIDER_STEPS, Math.round((n || 0) / mx * SLIDER_STEPS))) : 0; }
         function parseTroopInput(s) {
             s = String(s || '').trim().toLowerCase().replace(/\s+/g, '');
-            const units = [['quadr', 1e24], ['trd', 1e21], ['trill', 1e18], ['brd', 1e15], ['bio', 1e12], ['mrd', 1e9], ['mio', 1e6], ['tsd', 1e3], ['k', 1e3]];
+            const units = [['quadrilliarden', 1e27], ['quadrillionen', 1e24], ['quadrillion', 1e24], ['quadr', 1e24], ['trilliarden', 1e21], ['trilliarde', 1e21], ['trd', 1e21],
+                ['trillionen', 1e18], ['trillion', 1e18], ['trill', 1e18], ['billiarden', 1e15], ['billiarde', 1e15], ['brd', 1e15], ['billionen', 1e12], ['billion', 1e12], ['bio', 1e12],
+                ['milliarden', 1e9], ['milliarde', 1e9], ['mrd', 1e9], ['millionen', 1e6], ['million', 1e6], ['mio', 1e6], ['tausend', 1e3], ['tsd', 1e3], ['k', 1e3], ['m', 1e6]];
             let mult = 1; for (const [u, v] of units) { const i = s.lastIndexOf(u); if (i > 0 && /^\.?$/.test(s.slice(i + u.length))) { mult = v; s = s.slice(0, i); break; } }
             s = mult === 1 ? s.replace(/\./g, '').replace(',', '.') : s.replace(',', '.');
+            if (!/^\d+(\.\d+)?$/.test(s)) return NaN;                                   // letters left over: not a number
             const n = parseFloat(s); return isFinite(n) && n >= 0 ? Math.round(n * mult) : NaN;
         }
         function setTroopInput(el, n) { if (el && document.activeElement !== el) el.value = n >= 1e7 ? fmtCompact(n) : fmtNum(n); }   // never overwritten while you type
         function bindTroopInput(el, maxFn, patch) {
             if (!el) return;
             el.addEventListener('focus', () => el.select());
-            el.addEventListener('input', () => { const n = parseTroopInput(el.value), mx = maxFn(); if (!(n >= 1) || mx <= 0) return;
+            el.addEventListener('input', () => { const n = parseTroopInput(el.value), mx = maxFn(); el.classList.toggle('is-bad', !(n >= 1) && el.value.trim() !== ''); if (!(n >= 1) || mx <= 0) return;
                 previewAttackTroops = Math.min(mx, n); previewFraction = n >= mx ? 1 : null; patch(); });
             el.addEventListener('keydown', e => { if (e.key === 'Enter') el.blur(); });
-            el.addEventListener('blur', () => patch());
+            el.addEventListener('blur', () => { el.classList.remove('is-bad'); patch(); });
         }
 
         // Sending troops to your own base: like the attack, pick how many go (slider or 25/50/75 % / Alle).
