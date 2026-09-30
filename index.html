@@ -804,6 +804,7 @@ body.has-panel .mapctl{display:none}
   .logGearItems{grid-template-columns:repeat(4,48px) !important;justify-content:start}
 }
 .logGold,.logRetreat{margin-top:6px;font:500 var(--fs-11)/1.3 var(--font-ui);color:var(--tx-3)}
+.logGold.logPlunder{color:#f0a08a}
 .logEmpty,.empty-state{display:flex;flex-direction:column;align-items:center;gap:6px;padding:18px 12px;text-align:center;font:500 var(--fs-12)/1.4 var(--font-ui);color:var(--tx-3)}
 .empty-state .icon{width:30px;height:30px;color:var(--gold-500)}
 .logEmpty .icon{width:22px;height:22px;color:var(--gold-500)}
@@ -1152,12 +1153,18 @@ body.has-panel .mapctl{display:none}
 .city-head{position:absolute;left:0;right:0;top:0;display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding:calc(var(--safe-t) + 10px) 12px 10px;
   background:linear-gradient(180deg,rgba(6,8,12,.92),rgba(6,8,12,.55) 70%,transparent)}
 .city-title{flex:1;min-width:0}
-@media (max-width:599px){.city-builder{flex-basis:100%;justify-content:center}}
+@media (max-width:599px){.city-builder{flex-basis:100%;justify-content:center}.cb-slot{padding:6px 9px}}
 .city-title h2{margin:2px 0 0;font:700 var(--fs-18,18px)/1.1 var(--font-display);color:var(--gold-100);letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.city-builder{order:3;display:flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid var(--line-2);border-radius:var(--r-pill);background:rgba(10,10,14,.75);
-  font:600 var(--fs-11)/1 var(--font-ui);color:var(--tx-2);white-space:nowrap}
-.city-builder .icon{width:14px;height:14px;color:var(--gold-300)}
-.city-builder b{color:var(--gold-100);font-variant-numeric:tabular-nums}
+.city-builder{order:3;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.cb-slot{display:flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid var(--line-2);border-radius:var(--r-pill);background:rgba(10,10,14,.75);
+  font:600 var(--fs-11)/1 var(--font-ui);color:var(--tx-2);white-space:nowrap;min-width:0}
+button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.cb-slot>span{overflow:hidden;text-overflow:ellipsis}
+.cb-slot .icon{width:14px;height:14px;flex:none;color:var(--gold-300)}
+.cb-slot b{display:flex;align-items:center;gap:3px;color:var(--gold-100);font-variant-numeric:tabular-nums}
+.cb-slot.is-busy{border-color:color-mix(in srgb,var(--gold-300) 45%,transparent)}
+.cb-buy{border-style:dashed;color:var(--gold-100)}
+.cb-buy.is-armed{border-style:solid;border-color:var(--gold-300);background:color-mix(in srgb,var(--gold-300) 22%,rgba(10,10,14,.8))}
 .city-sheet{position:absolute;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;padding:14px 14px calc(var(--safe-b) + 14px);
   background:var(--noise),var(--panel-bg);border:1px solid var(--line-2);border-bottom:0;border-radius:var(--r-lg) var(--r-lg) 0 0;box-shadow:var(--sh-3);
   display:flex;flex-direction:column;gap:10px;animation:panel-in var(--dur-3) var(--ease-out);max-height:calc(100% - 90px);overflow-y:auto;overscroll-behavior:contain}
@@ -1939,6 +1946,11 @@ body.has-panel .mapctl{display:none}
         function logBalance(atk, def, atkLabel, defLabel, youDefend) {          // who was stronger, as a bar (like the attack preview) - your side is always green
             const a = Math.max(0, atk || 0), d = Math.max(0, def || 0), pct = a + d > 0 ? Math.round(a / (a + d) * 100) : 50;
             return '<div class="logBal' + (youDefend ? ' logBal--def' : '') + '"><div class="logBalBar" style="--a:' + pct + '%"><i></i></div><div class="logBalTxt"><span>' + atkLabel + '</span><span>' + defLabel + '</span></div></div>';
+        }
+        function plunderLine(e, mine) {                     // Lager: what changed hands when a base fell, and what the Lager kept safe
+            if (!e.plunder && !e.plunderSafe) return '';
+            const safe = e.plunderSafe ? fmtNum(e.plunderSafe) + ' geschützt durch Lager' : '';
+            return '<div class="logGold' + (mine ? '' : ' logPlunder') + '">' + (e.plunder ? (mine ? 'Beute: +' : 'Geplündert: −') + fmtNum(e.plunder) + ' Münzen' + (safe ? ' · ' + safe : '') : (mine ? 'Keine Beute – ' : 'Keine Münzen verloren – ') + safe) + '</div>';
         }
         function logRowHtml(kind, iconName, title, meta, trailing, extra) {
           return '<div class="logRow ' + kind + '"><span class="li">' + icon(iconName) + '</span><span class="lt"><b>' + title + '</b>' +
@@ -3519,6 +3531,8 @@ body.has-panel .mapctl{display:none}
             if (targetOwner && targetOwner !== 'player')                    // the defending bot's "Verteidigung: Gold": every attacker its garrison really kills pays out
                 botCoins[targetOwner] = (botCoins[targetOwner] || 0) + Math.round((won ? sentLoss : attack.rawTroops - retreatSurvivorsPreview(attack)) * botGoldRate(targetOwner, 'defenseGold'));
             let retreatSurvivors = 0, woundedAdded = 0;
+            const plunder = won && targetOwner && targetOwner !== 'player' ? plunderOf(targetOwner, capitalHolds) : null;   // Lager: you carry off part of his coins above his protection
+            if (plunder) plunderMove(targetOwner, 'player', plunder.loot);
 
             if (capitalHolds) {                                                     // the garrison falls, the base stays theirs - your survivors walk home
                 islandTroops[target.id] = 0; defenderCasualties = originalEnemyTroops;
@@ -3628,7 +3642,7 @@ body.has-panel .mapctl{display:none}
                 defenderCasualties,
                 retreatSurvivors,
                 defenderName: targetOwner ? botById[targetOwner].name : null, defenderId: targetOwner && targetOwner !== 'player' ? targetOwner : null,
-                atkParts, defParts, enemyWounded,
+                atkParts, defParts, enemyWounded, plunder: plunder ? plunder.loot : 0, plunderSafe: plunder ? plunder.safe : 0,
                 atkGear: fighterSnapshot('player', attack.hx), defGear: targetOwner && targetOwner !== 'player' ? fighterSnapshot(targetOwner) : null,
                 won,
                 remaining
@@ -3636,7 +3650,7 @@ body.has-panel .mapctl{display:none}
 
             flashHint(capitalHolds ? 'Die Hauptstadt von ' + botById[targetOwner].name + ' hält – ihre Garnison ist gefallen, ' + fmtCompact(remaining) + ' Truppen kehren zurück.' : (won
                 ? 'Sieg bei ' + islandTitle(target) + (targetOwner ? ' gegen ' + botById[targetOwner].name : '') + '! ' + fmtCompact(remaining) + ' übrig' + (woundedAdded ? ', ' + fmtCompact(woundedAdded) + ' ins Lazarett.' : '.')
-                : 'Niederlage bei ' + islandTitle(target) + ' – ' + fmtCompact(retreatSurvivors) + ' fliehen' + (woundedAdded ? ', ' + fmtCompact(woundedAdded) + ' ins Lazarett.' : '.')), 6000);
+                : 'Niederlage bei ' + islandTitle(target) + ' – ' + fmtCompact(retreatSurvivors) + ' fliehen' + (woundedAdded ? ', ' + fmtCompact(woundedAdded) + ' ins Lazarett.' : '.')) + (plunder && plunder.loot ? ' Beute: ' + fmtCompact(plunder.loot) + ' Münzen.' : ''), 6000);
         }
 
         function resolveRetreat(retreat) {
@@ -6464,7 +6478,7 @@ body.has-panel .mapctl{display:none}
         }
         function statBump(k, n) { playerStats[k] = (playerStats[k] || 0) + (n || 1); store.set('openWaterStats', JSON.stringify(playerStats)); achCheckSoon(); }
         const achStat = k => playerStats[k] || 0;
-        const cityMinLevel = () => { const c = loadCity(); return Math.min(...CITY_BUILDINGS.map(b => c.levels[b.id] || 0)); };
+        const cityMinLevel = () => { const c = loadCity(); return Math.min(...CITY_BUILDINGS.filter(b => b.id !== 'storage').map(b => c.levels[b.id] || 0)); };   // (the newer Lager doesn't count: nothing earned is lost)
         const pvpWins = () => achStat('pvpWins') + achStat('emmaWins');   // (old saves counted only one player in emmaWins, frozen now - the two never overlap; ids stay so claims are kept)
         const ACHIEVEMENTS = [
             { id: 'cap1',    name: 'Erste Eroberung',  icon: 'flag',    desc: 'Erobere deine erste Basis.',             goal: 1,    val: () => achStat('captures'), gems: 20 },
@@ -6837,6 +6851,7 @@ body.has-panel .mapctl{display:none}
                         (entry.atkWounded ? '<div class="logRetreat logWounded">' + escapeHtml(entry.botName) + ' bringt ' + fmtNum(entry.atkWounded) + ' Verwundete ins Lazarett</div>' : '') +
                         (entry.atkFled ? '<div class="logRetreat">' + fmtNum(entry.atkFled) + ' Truppen von ' + escapeHtml(entry.botName) + ' fliehen zurück</div>' : '') +
                         (entry.defGold ? '<div class="logGold">Verteidigung: Gold +' + fmtNum(entry.defGold) + ' Münzen</div>' : '') +
+                        plunderLine(entry, false) +
                         '</details>';
                     return entry.capitalHolds
                         ? logRowHtml('loss', 'bot', logBadge('loss', 'Geplündert') + T(entry.targetId), escapeHtml(entry.botName) + ' hat die Garnison geschlagen – die Stadt hält' + vs, ago(entry), bdet)
@@ -6884,6 +6899,7 @@ body.has-panel .mapctl{display:none}
                     (!entry.won && entry.retreatSurvivors ? '<div class="logRetreat">' + fmtNum(entry.retreatSurvivors) + ' Truppen konnten fliehen und kehren zurück</div>' : '') +
                     (entry.wounded ? '<div class="logRetreat logWounded">' + fmtNum(entry.wounded) + ' Verwundete gehen ins Lazarett – heile sie in der Stadt</div>' : '') +
                     (entry.enemyWounded ? '<div class="logRetreat logWounded">' + escapeHtml(entry.defenderName || 'Der Gegner') + ' bringt ' + fmtNum(entry.enemyWounded) + ' Verwundete ins Lazarett</div>' : '') +
+                    plunderLine(entry, true) +
                     '</details>';
                 return logRowHtml(entry.won ? 'win' : 'loss', entry.won ? 'level' : 'losses',
                     logBadge(entry.won ? 'win' : 'loss', entry.won ? 'Sieg' : 'Niederlage') + T(entry.targetId),
@@ -8562,23 +8578,44 @@ body.has-panel .mapctl{display:none}
             { id: 'watch',    name: 'Späherturm',    icon: 'scout', 
               desc: 'Bildet Späher aus: deine Späher sind pro Stufe 4 % schneller unterwegs (Stufe 25: doppelt so schnell).' },
             { id: 'heroes',   name: 'Heldenhalle',   icon: 'profile', x: 285, y: 815, roof: '#7a2e2a',
-              desc: 'Hier leben deine Helden: mit Splittern freischalten, Sterne aufwerten, Fähigkeiten wählen. Ein Held führt einen Angriff oder eine Armee. Jede Stufe gibt allen Helden +' + HERO_HALL_GEF + ' % Gefolge.' }
+              desc: 'Hier leben deine Helden: mit Splittern freischalten, Sterne aufwerten, Fähigkeiten wählen. Ein Held führt einen Angriff oder eine Armee. Jede Stufe gibt allen Helden +' + HERO_HALL_GEF + ' % Gefolge.' },
+            { id: 'storage',  name: 'Lager',         icon: 'lock',
+              desc: 'Schützt deine Münzen: fällt eine deiner Basen oder die Garnison der Hauptstadt, nimmt der Sieger einen Teil deiner Münzen mit – aber nie, was im Lager liegt. Jede Stufe schützt mehr.' }
         ];
+        // Lager: what a fallen base (or a beaten capital garrison) gives away - the same for everyone
+        var PLUNDER_PCT = { base: .04, capital: .08 };
+        function storageSafe(lvl) { return lvl ? niceRound(10000 * Math.pow(1.85, lvl - 1)) : 0; }   // coins no attacker can take: 10 Tsd. at 1, ~2,5 Mio. at 10, ~23 Mrd. at 25
+        function plunderOf(who, capital) {                  // { loot, safe }: the share of the coins above the Lager's protection
+            const have = Math.max(0, who === 'player' ? coins : botCoins[who] || 0), safe = storageSafe(who === 'player' ? cityLevelSafe('storage') : botBld(who, 'storage'));
+            return { loot: Math.floor(Math.max(0, have - safe) * PLUNDER_PCT[capital ? 'capital' : 'base']), safe: Math.min(have, safe) };
+        }
+        function plunderMove(from, to, loot) {              // the coins change hands (the player's or anyone's coffers)
+            if (!(loot > 0)) return; if (from === 'player') coins -= loot; else botCoins[from] = Math.max(0, (botCoins[from] || 0) - loot);
+            if (to === 'player') coins += loot; else if (to) botCoins[to] = (botCoins[to] || 0) + loot;
+        }
         var CITY_MAX_LEVEL = 25, CITY_GEMS_PER_MIN = 1;
-        function cityMaxLevel(id) { return id === 'forge' ? STAR_MAX : id === 'hospital' ? 40 : CITY_MAX_LEVEL; }   // the Schmiede stops at the star maximum, the Lazarett goes on to 40 (room for huge armies)
+        function cityMaxLevel(id) { return id === 'forge' ? STAR_MAX : id === 'hospital' || id === 'storage' ? 40 : CITY_MAX_LEVEL; }   // the Schmiede stops at the star maximum, the Lazarett and the Lager go on to 40 (room for huge armies and coffers)
         var cityState = null;
         function loadCity() {
             if (cityState) return cityState;
             try { cityState = JSON.parse(store.get('openWaterCity')) || null; } catch (e) { cityState = null; }
-            if (!cityState || !cityState.levels) cityState = { levels: {}, build: null };
+            if (!cityState || !cityState.levels) cityState = { levels: {}, builds: [] };
             for (const b of CITY_BUILDINGS) if (typeof cityState.levels[b.id] !== 'number') cityState.levels[b.id] = 0;
-            if (cityState.build && !CITY_BUILDINGS.some(b => b.id === cityState.build.id)) cityState.build = null;   // a removed building was being built
+            cityBuildsFix(cityState);
             if (typeof cityState.wounded !== 'number') cityState.wounded = 0;
-            cityClampBuild(cityState.build, Date.now());
             cityState.levels.forge = Math.min(cityState.levels.forge, cityMaxLevel('forge'));   // the Schmiede ends at the star maximum
-            if (cityState.build && cityState.build.id === 'forge' && cityState.build.to > cityMaxLevel('forge')) cityState.build = null;
             return cityState;
         }
+        function cityBuildsFix(c) {                       // one builder (c.build) → a list of builds (c.builds); a running build keeps going. Also for everyone else's city
+            if (!Array.isArray(c.builds)) c.builds = c.build ? [c.build] : []; delete c.build;
+            if (typeof c.builder2 !== 'boolean') c.builder2 = false;
+            if (typeof CITY_BUILDINGS !== 'undefined' && CITY_BUILDINGS) c.builds = c.builds.filter(b => b && CITY_BUILDINGS.some(d => d.id === b.id) && b.to <= cityMaxLevel(b.id)).slice(0, c.builder2 ? 2 : 1);   // (a removed building, a Schmiede above the star maximum)
+            for (const b of c.builds) cityClampBuild(b, Date.now());
+            return c;
+        }
+        var CITY_BUILDER2_GEMS = 500;                     // the second builder: bought once, for good
+        const citySlots = c => c.builder2 ? 2 : 1;
+        const cityBuildOf = (c, id) => c.builds.find(b => b.id === id) || null;
         function saveCity() { store.set('openWaterCity', JSON.stringify(cityState)); }
         function cityDef(id) { return CITY_BUILDINGS.find(b => b.id === id); }
         function cityCost(id, level) {                    // coins to go from `level` to level + 1
@@ -8597,7 +8634,8 @@ body.has-panel .mapctl{display:none}
         function cityBlocker(id) {                        // why this building can't be upgraded right now (or null)
             const c = loadCity(), lvl = c.levels[id];
             if (lvl >= cityMaxLevel(id)) return 'Maximale Stufe erreicht.';
-            if (c.build) return c.build.id === id ? 'Wird gerade gebaut.' : 'Der Bauarbeiter ist beschäftigt (' + cityDef(c.build.id).name + ').';
+            if (cityBuildOf(c, id)) return 'Wird gerade gebaut.';
+            if (c.builds.length >= citySlots(c)) return c.builder2 ? 'Beide Bauarbeiter sind beschäftigt.' : 'Der Bauarbeiter ist beschäftigt (' + cityDef(c.builds[0].id).name + '). Ein zweiter kostet ' + CITY_BUILDER2_GEMS + ' Gems.';
             return null;
         }
         function cityStartBuild(id) {
@@ -8606,19 +8644,19 @@ body.has-panel .mapctl{display:none}
             const cost = cityCost(id, lvl);
             if (coins < cost) { flashHint('Nicht genug Münzen – benötigt ' + fmtCompact(cost) + '.', 2500); return; }
             coins -= cost;
-            c.build = { id, to: lvl + 1, startedAt: Date.now(), endsAt: Date.now() + cityTimeSec(id, lvl) * 1000 };
+            c.builds.push({ id, to: lvl + 1, startedAt: Date.now(), endsAt: Date.now() + cityTimeSec(id, lvl) * 1000 });
             saveCity(); saveGame(); updateHud(); sfx('upgrade');
             renderCitySheet(); updateCityBuilder();
         }
-        function citySpeedCost() {
-            const c = loadCity(); if (!c.build) return 0;
-            return Math.max(1, Math.ceil((c.build.endsAt - Date.now()) / 60000) * CITY_GEMS_PER_MIN);
+        function citySpeedCost(id) {
+            const c = loadCity(), b = cityBuildOf(c, id); if (!b) return 0;
+            return Math.max(1, Math.ceil((b.endsAt - Date.now()) / 60000) * CITY_GEMS_PER_MIN);
         }
-        function cityFinishBuild(announce) {
-            const c = loadCity(); if (!c.build) return;
-            const def = cityDef(c.build.id);
-            c.levels[c.build.id] = c.build.to;
-            const to = c.build.to; c.build = null;
+        function cityFinishBuild(announce, id) {
+            const c = loadCity(), b = cityBuildOf(c, id); if (!b) return;
+            const def = cityDef(b.id);
+            c.levels[b.id] = b.to;
+            const to = b.to; c.builds = c.builds.filter(x => x !== b);
             saveCity();
             if (announce) flashHint(def.name + ' ist fertig – jetzt Stufe ' + to + '.', 3000);
             if (cityOpenId) renderCitySheet();
@@ -8626,7 +8664,7 @@ body.has-panel .mapctl{display:none}
         }
         function cityTick() {
             const c = loadCity();
-            if (c.build && Date.now() >= c.build.endsAt) cityFinishBuild(true);
+            for (const b of c.builds.slice()) if (Date.now() >= b.endsAt) cityFinishBuild(true, b.id);
             if (!document.getElementById('cityView').hidden) { updateCityBuilder(); if (cityOpenId) renderCitySheetTimer(); }
         }
         setInterval(cityTick, 1000);
@@ -8701,21 +8739,36 @@ body.has-panel .mapctl{display:none}
             });
             return true;
         }
+        let cityB2Armed = 0;                              // the buy button asks once more before 500 gems go
         function updateCityBuilder() {
-            const c = loadCity(), el = document.getElementById('cityBuilder');
-            el.innerHTML = c.build
-                ? icon('hourglass') + '<span>' + cityDef(c.build.id).name + '</span><b>' + fmtClock((c.build.endsAt - Date.now()) / 1000) + '</b>'
-                : icon('check') + '<span>Bauarbeiter frei</span>';
+            const c = loadCity(), el = document.getElementById('cityBuilder'), now = Date.now();
+            el.innerHTML = [0, 1].map(i => { const b = c.builds[i];
+                if (b) return '<button type="button" class="cb-slot is-busy" data-cb-open="' + b.id + '">' + icon('hourglass') + '<span>' + cityDef(b.id).name + '</span><b>' + fmtDuration(Math.max(0, (b.endsAt - now) / 1000)) + '</b></button>';
+                if (i === 0 || c.builder2) return '<span class="cb-slot">' + icon('check') + '<span>' + (c.builder2 ? (i + 1) + '. Bauarbeiter frei' : 'Bauarbeiter frei') + '</span></span>';
+                return '<button type="button" class="cb-slot cb-buy' + (cityB2Armed > now ? ' is-armed' : '') + '" data-cb-buy>' + icon('plus') + '<span>' + (cityB2Armed > now ? 'Wirklich kaufen?' : '2. Bauarbeiter') + '</span><b>' + icon('gem') + CITY_BUILDER2_GEMS + '</b></button>';
+            }).join('');
         }
+        function cityBuyBuilder2() {
+            const c = loadCity(); if (c.builder2) return;
+            if (gems < CITY_BUILDER2_GEMS) { flashHint('Zu wenig Gems – der zweite Bauarbeiter kostet ' + CITY_BUILDER2_GEMS + ' Gems.', 2500); return; }
+            if (cityB2Armed < Date.now()) { cityB2Armed = Date.now() + 4000; updateCityBuilder(); return; }
+            gems -= CITY_BUILDER2_GEMS; c.builder2 = true; cityB2Armed = 0; saveCity(); saveGame(); updateHud(); sfx('upgrade');
+            flashHint('Dein zweiter Bauarbeiter ist da – jetzt bauen zwei Gebäude gleichzeitig.', 3000);
+            updateCityBuilder(); if (cityOpenId) renderCitySheet();
+        }
+        document.getElementById('cityBuilder').addEventListener('click', e => {
+            if (e.target.closest('[data-cb-buy]')) return cityBuyBuilder2();
+            const o = e.target.closest('[data-cb-open]'); if (o) { cityFocus(o.dataset.cbOpen); renderCitySheet(); }
+        });
         function renderCitySheetTimer() {
-            const c = loadCity();
-            if (!c.build || c.build.id !== cityOpenId) return;
+            const c = loadCity(), b = cityBuildOf(c, cityOpenId);
+            if (!b) return;
             const el = document.querySelector('#cityBNote .city-progress i'); if (!el) return renderCitySheet();
-            const tot = c.build.endsAt - c.build.startedAt, done = Date.now() - c.build.startedAt;
+            const tot = b.endsAt - b.startedAt, done = Date.now() - b.startedAt;
             el.style.setProperty('--p', Math.min(100, done / tot * 100) + '%');
-            document.querySelector('#cityBNoteTime').textContent = fmtDuration((c.build.endsAt - Date.now()) / 1000);
-            setBtnLabel(document.getElementById('citySpeedBtn'), 'Fertig für ' + citySpeedCost() + ' Gems');
-            document.getElementById('citySpeedBtn').disabled = gems < citySpeedCost();
+            document.querySelector('#cityBNoteTime').textContent = fmtDuration((b.endsAt - Date.now()) / 1000);
+            setBtnLabel(document.getElementById('citySpeedBtn'), 'Fertig für ' + citySpeedCost(b.id) + ' Gems');
+            document.getElementById('citySpeedBtn').disabled = gems < citySpeedCost(b.id);
         }
         // ===== DEINE BURG (tap the castle in the city): upgrade it, pick a skin, switch on a Friedensschild =====
         var SKIN_DEFS = {
@@ -8776,10 +8829,10 @@ body.has-panel .mapctl{display:none}
             document.getElementById('cityBLevel').textContent = lvl ? 'Stufe ' + lvl + ' / ' + cityMaxLevel(id) : 'Noch nicht gebaut';
             document.getElementById('cityBDesc').textContent = def.desc;
             const note = document.getElementById('cityBNote'), up = document.getElementById('cityUpgradeBtn'), sp = document.getElementById('citySpeedBtn');
-            const building = c.build && c.build.id === id, blocker = cityBlocker(id);
+            const bld = cityBuildOf(c, id), building = !!bld, blocker = cityBlocker(id);
             if (building) {
                 note.className = 'notice notice--gold';
-                note.innerHTML = icon('hourglass') + '<span style="flex:1">Ausbau auf Stufe ' + c.build.to + ' · noch <b id="cityBNoteTime"></b><div class="city-progress" style="margin-top:6px"><i></i></div></span>';
+                note.innerHTML = icon('hourglass') + '<span style="flex:1">Ausbau auf Stufe ' + bld.to + ' · noch <b id="cityBNoteTime"></b><div class="city-progress" style="margin-top:6px"><i></i></div></span>';
             } else {
                 note.className = 'notice';
                 note.innerHTML = icon('info') + '<span>' + cityEffectText(id, lvl) + '</span>';
@@ -8794,7 +8847,7 @@ body.has-panel .mapctl{display:none}
             up.title = blocker || '';
             up.style.display = building ? 'none' : '';
             sp.style.display = building ? '' : 'none';
-            if (!building && blocker && lvl < cityMaxLevel(id) && !(c.build && c.build.id === id)) {
+            if (!building && blocker && lvl < cityMaxLevel(id)) {
                 note.className = 'notice notice--warn'; note.innerHTML = icon('lock') + '<span>' + blocker + '</span>';
             }
             if (building) renderCitySheetTimer();
@@ -9009,6 +9062,9 @@ body.has-panel .mapctl{display:none}
             if (id === 'treasury') return nx(2, 'Münzproduktion auf allen Basen');
             if (id === 'watch') return nx(4, 'schnellere Späher');
             if (id === 'shrine') return nx(5, 'Bonus aus allen deinen Tempeln (Münzen, Truppen, Gems)');
+            if (id === 'storage') { const safe = storageSafe(lvl), pl = Math.round(PLUNDER_PCT.base * 100) + ' % pro gefallener Basis, ' + Math.round(PLUNDER_PCT.capital * 100) + ' % bei der Hauptstadt';
+                return (lvl ? 'Geschützt: ' + fmtCompact(safe) + ' Münzen' + (coins <= safe ? ' – gerade alles sicher.' : ' – darüber verlierst du ' + pl + '.') : 'Noch nichts geschützt: fällt eine Basis, verlierst du ' + pl + ' deiner Münzen.') +
+                    (lvl < cityMaxLevel(id) ? ' Nächste Stufe schützt ' + fmtCompact(storageSafe(lvl + 1)) + (/\.$/.test(fmtCompact(storageSafe(lvl + 1))) ? '' : '.') : ''); }
             if (id === 'hospital') return lvl ? hospitalPct() + ' % der Gefallenen kommen ins Lazarett · Platz für ' + fmtCompact(hospitalCapacity()) + (lvl < CITY_MAX_LEVEL ? ' · Nächste Stufe: ' + Math.min(60, (lvl + 1) * 5) + ' %, Platz für ' + fmtCompact(Math.round(1e6 * Math.pow(1.6, lvl))) : '') : 'Baue das Lazarett, um Verwundete zu retten.';
             return '';
         }
@@ -9107,8 +9163,8 @@ body.has-panel .mapctl{display:none}
             }
             if (cityOpenId) cityStartBuild(cityOpenId); });
         document.getElementById('citySpeedBtn').addEventListener('click', () => {
-            const cost = citySpeedCost(); if (!cost || gems < cost) return;
-            gems -= cost; saveGame(); updateHud(); cityFinishBuild(true);
+            const cost = citySpeedCost(cityOpenId); if (!cost || gems < cost) return;
+            gems -= cost; saveGame(); updateHud(); cityFinishBuild(true, cityOpenId);
         });
         // ===== THE CITY, ISOMETRIC =====
         // Your capital like in the big mobile strategy games: a walled town seen from above at an angle, every building on
@@ -9120,7 +9176,7 @@ body.has-panel .mapctl{display:none}
         const CITY_LOTS = {                                                          // building lots (ground centre, world units)
             academy: [222, 222], shrine: [320, 206], heroes: [418, 222],
             forge: [206, 320], barracks: [434, 320],
-            hospital: [222, 418], treasury: [418, 418], watch: [236, 470], wall: [320, 490]
+            hospital: [222, 418], treasury: [418, 418], watch: [236, 470], storage: [462, 236], wall: [320, 490]
         };
         const CITY_KEEP_AT = [320, 320];
         const cIso = (x, y) => [(x - y) * .866, (x + y) * .5];                    // world → screen units (before zoom)
@@ -9273,6 +9329,17 @@ body.has-panel .mapctl{display:none}
                 for (const x of [-15, 15]) { K.cyl(x, 0, 7, 0, h + 6, s, .8); K.cone(x, 0, 8.5, h + 6, 10 + t * 2, roof); const [fa, fb] = K.P(x, 0, h + 16 + t * 2); K.flag(fa, fb, BAND.player, true); }
                 if (t >= 2) { cityBanner(K, -6, 6.2, h - 3, '#2b5d9b'); cityBanner(K, 6, 6.2, h - 3, '#2b5d9b'); }
             },
+            storage(K, t) {                                                         // the Lager: a timber barn with crates and sacks, stone and gold-bound chests later
+                cityPlinth(K, 19, 2, '#8e8676');
+                const wall = t >= 3 ? '#d8d1c1' : '#b98d5a', roof = t >= 2 ? '#6b4a8a' : '#7a5230';
+                K.box(-14, 10, -12, 8, 2, 13, wall, .8); cityGable(K, -15, 11, -13, 9, 13, 8, roof);
+                const [dx, dy] = K.P(-2, 8, 2); K.poly([[dx - 5, dy + 2.9], [dx + 5, dy - 2.9], [dx + 5, dy - 11.5], [dx - 5, dy - 5.7]], '#4a3018', .6);   // the big barn door
+                K.poly([[dx - 5, dy + 2.9], [dx + 5, dy - 11.5]], null, .5); K.poly([[dx + 5, dy - 2.9], [dx - 5, dy - 5.7]], null, .5);
+                for (const [x, y, z] of [[14, 12, 2], [18, 12, 2], [14, 16, 2], [16, 14, 6]]) K.box(x - 2, x + 2, y - 2, y + 2, z, z + 4, '#a0783f', .4);   // crates
+                for (const [x, y] of [[-15, 14], [-11, 15]]) K.cyl(x, y, 2.2, 2, 6, '#d9c9a0', .4);                          // sacks
+                if (t >= 2) { K.box(12, 19, -16, -6, 2, 11, wall, .7); cityGableY(K, 11, 20, -17, -5, 11, 5, roof); }
+                if (t >= 3) { for (const [x, y] of [[4, 15], [8, 15]]) { K.box(x - 1.8, x + 1.8, y - 1.4, y + 1.4, 2, 5.2, '#7a5230', .4); K.box(x - 1.8, x + 1.8, y - 1.4, y + 1.4, 4.6, 5.4, '#e8c547', .3); } cityBanner(K, -12, 8.2, 12, '#6b4a8a'); }
+            },
             watch(K, t) {
                 const h = 30 + t * 8;
                 K.box(-9, 9, -9, 9, 0, 2, '#9d9585', .7);
@@ -9328,7 +9395,7 @@ body.has-panel .mapctl{display:none}
                 const cols = dark ? ['#244d22', '#2e5f29', '#3a7032'] : ['#2f6a2a', '#3c7c34', '#4d9140'];
                 for (const [dx, dy, rr, ci] of [[0, -1.25, 1, 0], [-.35, -1.5, .7, 1], [.3, -1.6, .66, 1], [0, -1.95, .55, 2]]) { g.fillStyle = cols[ci]; g.beginPath(); g.arc(a + dx * r, b + dy * r, rr * r, 0, Math.PI * 2); g.fill(); }
                 g.strokeStyle = 'rgba(15,35,12,.45)'; g.lineWidth = .5; g.beginPath(); g.arc(a, b - 1.25 * r, r, Math.PI * .15, Math.PI * .85); g.stroke(); } });
-            for (const [x, y] of [[180, 250], [460, 250], [180, 390], [460, 390], [270, 470], [370, 470], [270, 170], [370, 170]]) tree(x, y, 4.5, false);
+            for (const [x, y] of [[180, 250], [460, 282], [180, 390], [460, 390], [270, 470], [370, 470], [270, 170], [370, 170]]) tree(x, y, 4.5, false);
             things.sort((p, q) => p.d - q.d).forEach(t => t.f());
             return CITY_GROUND = c;
         }
@@ -9528,7 +9595,7 @@ body.has-panel .mapctl{display:none}
                     for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2 + now / 2000, r = 6 * Z; g.beginPath(); g.moveTo(fx, fy); g.quadraticCurveTo(fx + Math.cos(a) * r * .6, fy - 3 * Z, fx + Math.cos(a) * r, fy + Math.sin(a) * r * .5 + 7 * Z); g.stroke(); } }
                 if (it.id === 'shrine' && it.lvl) { const [fx, fy] = toS(it.x, it.y, 10); g.fillStyle = 'rgba(255,210,110,' + (.18 + .1 * Math.sin(now / 350)) + ')'; g.beginPath(); g.arc(fx, fy, 9 * Z, 0, 7); g.fill(); }
                 if (!it.id) continue;
-                const building = c.build && c.build.id === it.id;
+                const building = !!cityBuildOf(c, it.id);
                 if (building) {                                                      // scaffolding + a bouncing hammer
                     g.save(); g.strokeStyle = '#8a6a44'; g.lineWidth = Math.max(1.2, Z * .7);
                     for (const [px, py] of [[-18, 18], [18, 18], [18, -18], [-18, -18]]) { const [a, b] = toS(it.x + px, it.y + py), [, b2] = toS(it.x + px, it.y + py, 24); g.beginPath(); g.moveTo(a, b); g.lineTo(a, b2); g.stroke(); }
@@ -9581,7 +9648,7 @@ body.has-panel .mapctl{display:none}
                 g.fillStyle = it.lvl ? 'rgba(14,14,20,.84)' : 'rgba(14,14,20,.6)'; g.strokeStyle = building ? '#ffd98a' : 'rgba(228,200,134,.6)'; g.lineWidth = 1.2;
                 g.beginPath(); g.roundRect ? g.roundRect(sx - tw / 2, py, tw, fs + 8, (fs + 8) / 2) : g.rect(sx - tw / 2, py, tw, fs + 8); g.fill(); g.stroke();
                 g.fillStyle = it.lvl ? '#f3e6c4' : '#b9ad92'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(label, sx, py + (fs + 8) / 2 + .5);
-                if (building) { const b2 = c.build, tl = fmtClock((b2.endsAt - Date.now()) / 1000); g.font = '700 ' + (fs - 1) + 'px Inter, system-ui, sans-serif';
+                if (building) { const b2 = cityBuildOf(c, it.id), tl = fmtClock((b2.endsAt - Date.now()) / 1000); g.font = '700 ' + (fs - 1) + 'px Inter, system-ui, sans-serif';
                     const w2 = g.measureText(tl).width + 26, yy = py + fs + 11; g.fillStyle = 'rgba(20,6,5,.92)'; g.strokeStyle = 'rgba(255,110,80,.9)';
                     g.beginPath(); g.roundRect ? g.roundRect(sx - w2 / 2, yy, w2, fs + 6, 4) : g.rect(sx - w2 / 2, yy, w2, fs + 6); g.fill(); g.stroke();
                     drawGlyph(g, 'hourglass', sx - w2 / 2 + 10, yy + (fs + 6) / 2, fs - 1, '#ffb3a0'); g.fillStyle = '#ffe2d8'; g.fillText(tl, sx + 6, yy + (fs + 6) / 2 + .5); }
@@ -11412,7 +11479,7 @@ body.has-panel .mapctl{display:none}
             for (const k of Object.keys(b.skills)) b.skills[k] = 0;
             for (const k of Object.keys(b.equip)) b.equip[k] = 0;
             for (const k of Object.keys(EQUIPMENT_DEFS)) { b.gear[k] = null; b.spare[k] = RARITY_DEFS.map(() => 0); }
-            b.pts = 0; b.wounded = 0; b.city = { levels: Object.fromEntries(BOT_BUILDINGS.map(k => [k, 0])), build: null };
+            b.pts = 0; b.wounded = 0; b.city = { levels: Object.fromEntries(BOT_BUILDINGS.map(k => [k, 0])), builds: [], builder2: false };
             b.hs = botHeroFreshSet();
             delete botIntelMem.bot25;
             store.set('openWaterEmmaFair', '1'); saveBotState(); refreshTerritory(); saveGame(); requestRender();

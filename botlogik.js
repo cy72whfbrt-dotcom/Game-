@@ -116,7 +116,7 @@ function botCanCross(who, a, b, n, targetId) {   // can n troops of a bot really
     return !t.closed && (botCoins[who] || 0) >= t.cost;
 }
 
-const BOT_BUILDINGS = ['academy', 'forge', 'hospital', 'wall', 'barracks', 'treasury', 'watch', 'heroes', 'shrine'];   // the city buildings with an effect
+const BOT_BUILDINGS = ['academy', 'forge', 'hospital', 'wall', 'barracks', 'treasury', 'watch', 'heroes', 'shrine', 'storage'];   // the city buildings with an effect
 
 const BOT_SKILLS = ['troops', 'attack', 'defense', 'speed', 'attackGold', 'defenseGold'];
 
@@ -162,6 +162,8 @@ function resolveBotAttack(attack) {
     const atkFallen = attack.rawTroops - survivors - fled, atkWounded = botHospitalTake(bot.id, atkFallen, hosp);
     const homeAgain = n => { if (n <= 0) return; const t0 = Date.now();                 // they walk home like yours (a fallen home: resolveSend sends them to another base)
         pendingSends.push({ fromId: target.id, toId: source.id, troops: n, startedAt: t0, resolveAt: t0 + retreatSecs(attack, target, source, bot.id) * 1000, senderBotId: bot.id, back: true }); };
+    const plunder = won && targetOwner ? plunderOf(targetOwner, capitalHolds) : null;   // Lager: the winner carries off part of the coins above the loser's protection - yours too
+    if (plunder) plunderMove(targetOwner, bot.id, plunder.loot);
     if (capitalHolds) {
         islandTroops[target.id] = 0;
         botCoins[bot.id] += Math.round(originalEnemyTroops * botKillRate);   // "Angriff: Gold" for the garrison, like any other win
@@ -240,13 +242,13 @@ function resolveBotAttack(attack) {
             fallen: won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops),
             won,
             capitalHolds,
-            defGold
+            defGold, plunder: plunder ? plunder.loot : 0, plunderSafe: plunder ? plunder.safe : 0
         });
         flashHint((capitalHolds
             ? bot.name + ' hat deine Hauptstadt geplündert – die Garnison ist gefallen, aber die Stadt hält.'
             : won
             ? bot.name + ' hat deine Basis ' + islandTitle(target) + ' erobert!'
-            : 'Verteidigung erfolgreich – ' + bot.name + ' bei ' + islandTitle(target) + ' zurückgeschlagen.') + (defWounded ? ' ' + fmtCompact(defWounded) + ' Verwundete ins Lazarett.' : ''), 5000);
+            : 'Verteidigung erfolgreich – ' + bot.name + ' bei ' + islandTitle(target) + ' zurückgeschlagen.') + (defWounded ? ' ' + fmtCompact(defWounded) + ' Verwundete ins Lazarett.' : '') + (plunder && plunder.loot ? ' −' + fmtCompact(plunder.loot) + ' Münzen geplündert.' : ''), 5000);
         renderActiveMarches();
         if (isPanelOpen(popup) && popupIslandId === target.id) renderPopup();
     }
@@ -738,10 +740,9 @@ function loadBotState() {
         b.equip = Object.assign({ weapon: 0, armor: 0, shield: 0, boots: 0 }, b.equip || {});
         if (!b.v2 && !b.items) { b.items = {}; for (const k of Object.keys(EQUIPMENT_DEFS)) b.items[k] = RARITY_DEFS.map(() => 0); }
         if (!b.v2) botMigrateV2(bot, b);
-        b.city.levels = Object.assign(Object.fromEntries(BOT_BUILDINGS.map(k => [k, 0])), b.city.levels || {});
+        b.city.levels = Object.assign(Object.fromEntries(BOT_BUILDINGS.map(k => [k, 0])), b.city.levels || {}); cityBuildsFix(b.city);   // one build → a list (a second builder can be bought, like yours)
         if (!b.hs) b.hs = heroConvert(b.heroes, b.city.levels.heroes || 0); heroFix(b.hs); delete b.heroes;   // the old 3 heroes → stars, like yours (+ the same starter shards)
         if (!(b.wounded >= 0)) b.wounded = 0;
-        if (b.city) cityClampBuild(b.city.build, Date.now());
         b.shields = Object.assign({ 2: 0, 8: 0, 24: 0 }, b.shields || {}); if (!(b.shieldUntil > 0)) b.shieldUntil = 0;
     }
     return botState;
@@ -750,7 +751,7 @@ function loadBotState() {
 function botMigrateV2(bot, b) {                          // older saves: level-derived city/hero, coin gear, item counts → the real thing
     const idn = parseInt(bot.id.slice(3), 10) || 0, r = mulberry32(idn * 3301 + 17);
     const cl = Math.min(25, Math.floor(b.lvl / 2));
-    b.city = { levels: {}, build: null };
+    b.city = { levels: {}, builds: [], builder2: false };
     for (const k of BOT_BUILDINGS) b.city.levels[k] = Math.max(0, Math.min(k === 'forge' ? STAR_MAX : 25, cl - Math.floor(r() * 3)));
     const hall = b.city.levels.heroes;
     b.heroes = {}; for (const h of ['sigrun', 'bernhard', 'ida']) b.heroes[h] = { lvl: Math.max(1, Math.min(50, hall * 2 - Math.floor(r() * 3))), xp: 0, rar: 0 };   // (turned into stars right after)
@@ -791,34 +792,34 @@ function saveBotState() { if (!botSaveTimer) botSaveTimer = setTimeout(flushBotS
 function botBld(botId, id) { const b = loadBotState()[botId]; return b ? (b.city.levels[id] || 0) : 0; }
 
 function botCityFinish(bot, now) {                        // a build is done when its time is up - online or not, like yours
-    const c = loadBotState()[bot.id].city; if (!c.build || now < c.build.endsAt) return;
-    c.levels[c.build.id] = c.build.to; c.build = null; saveBotState();
+    const c = loadBotState()[bot.id].city, done = c.builds.filter(x => now >= x.endsAt); if (!done.length) return;
+    for (const x of done) c.levels[x.id] = x.to; c.builds = c.builds.filter(x => now < x.endsAt); saveBotState();
 }
 
 const BOT_BUILD_PREF = {                                  // what each kind of player builds first (lower = sooner)
-    raider:   { barracks: 1, academy: 1.1, heroes: 1.2, forge: 1.4, hospital: 1.4, wall: 1.7, treasury: 1.5, watch: 1.9, shrine: 2.2 },
-    builder:  { treasury: 1, wall: 1, barracks: 1.1, hospital: 1.2, forge: 1.5, heroes: 1.5, academy: 1.7, watch: 1.9, shrine: 1.6 },
-    templer:  { heroes: 1, barracks: 1.1, wall: 1.2, treasury: 1.2, hospital: 1.3, forge: 1.3, academy: 1.5, watch: 1.7, shrine: 0.9 },
-    balanced: { barracks: 1, treasury: 1, wall: 1.1, heroes: 1.2, hospital: 1.2, forge: 1.3, academy: 1.4, watch: 1.6, shrine: 1.5 },
-    veteran:  { barracks: 1, academy: 1, heroes: 1.1, forge: 1.3, hospital: 1.3, treasury: 1.4, wall: 1.8, watch: 1.8, shrine: 2.2 }
+    raider:   { barracks: 1, academy: 1.1, heroes: 1.2, forge: 1.4, hospital: 1.4, wall: 1.7, treasury: 1.5, watch: 1.9, shrine: 2.2, storage: 2 },
+    builder:  { treasury: 1, wall: 1, barracks: 1.1, hospital: 1.2, forge: 1.5, heroes: 1.5, academy: 1.7, watch: 1.9, shrine: 1.6, storage: 1.1 },
+    templer:  { heroes: 1, barracks: 1.1, wall: 1.2, treasury: 1.2, hospital: 1.3, forge: 1.3, academy: 1.5, watch: 1.7, shrine: 0.9, storage: 1.5 },
+    balanced: { barracks: 1, treasury: 1, wall: 1.1, heroes: 1.2, hospital: 1.2, forge: 1.3, academy: 1.4, watch: 1.6, shrine: 1.5, storage: 1.4 },
+    veteran:  { barracks: 1, academy: 1, heroes: 1.1, forge: 1.3, hospital: 1.3, treasury: 1.4, wall: 1.8, watch: 1.8, shrine: 2.2, storage: 1.6 }
 };
 
-function botCityBuild(bot, now) {                         // one builder: start the next building if the coins are there
+function botCityBuild(bot, now) {                         // one builder (two once bought): start the next building if the coins are there
     const b = loadBotState()[bot.id], c = b.city;
-    if (c.build) {                                        // a person with gems finishes the last few minutes now and then
-        const mins = Math.ceil((c.build.endsAt - now) / 60000);
-        if (mins > 0 && mins <= 30 && b.gems >= mins * 4 && b.gems - mins >= TELEPORT_GEMS && Math.random() < .15) { b.gems -= mins; c.build.endsAt = now; botCityFinish(bot, now); }
-        return;
+    for (const x of c.builds.slice()) {                   // a person with gems finishes the last few minutes now and then
+        const mins = Math.ceil((x.endsAt - now) / 60000);
+        if (mins > 0 && mins <= 30 && b.gems >= mins * 4 && b.gems - mins >= TELEPORT_GEMS && Math.random() < .15) { b.gems -= mins; x.endsAt = now; botCityFinish(bot, now); }
     }
+    if (c.builds.length >= citySlots(c)) return;
     const pref = BOT_BUILD_PREF[bot.style] || BOT_BUILD_PREF.balanced; let best = null, bs = Infinity;
     for (const k of BOT_BUILDINGS) {
-        const lv = c.levels[k] || 0; if (lv >= cityMaxLevel(k)) continue;
+        const lv = c.levels[k] || 0; if (lv >= cityMaxLevel(k) || c.builds.some(x => x.id === k)) continue;
         const s = (lv + 1) * (pref[k] || 1.5) * (.9 + Math.random() * .2); if (s < bs) { bs = s; best = k; }
     }
     if (!best) return;
     const lv = c.levels[best] || 0, cost = cityCost(best, lv);
     if ((botCoins[bot.id] || 0) * (botStyle(bot).build || .5) < cost) return;   // keeps half for troops and bases (a Schatzmeister less, a Bettler more)
-    botCoins[bot.id] -= cost; c.build = { id: best, to: lv + 1, startedAt: now, endsAt: now + cityTimeSec(best, lv) * 1000 }; saveBotState();
+    botCoins[bot.id] -= cost; c.builds.push({ id: best, to: lv + 1, startedAt: now, endsAt: now + cityTimeSec(best, lv) * 1000 }); saveBotState();
 }
 
 // ---- the bot's Lazarett ----
@@ -939,6 +940,7 @@ function botShop(bot) {                                  // gems and points spen
         const g = b.gear[k]; if ((g.st || 0) < starCap && b.gems >= starGemCost(g.st || 0) * 1.5 && b.gems - starGemCost(g.st || 0) >= TELEPORT_GEMS) { b.gems -= starGemCost(g.st || 0); g.st = (g.st || 0) + 1; break; } }
     const user = botShieldUser(bot), want = user ? { 8: bot.style === 'builder' ? 2 : 1, 2: 1 } : { 2: bot.style === 'raider' ? 0 : 1 };   // a small stock of shields
     for (const h of [8, 2]) while ((b.shields[h] || 0) < (want[h] || 0) && b.gems >= SHIELD_PRICES[h] * 1.25 && b.gems - SHIELD_PRICES[h] >= TELEPORT_GEMS) { b.gems -= SHIELD_PRICES[h]; b.shields[h]++; }
+    if (!b.city.builder2 && b.gems >= CITY_BUILDER2_GEMS * 1.5 && b.gems - CITY_BUILDER2_GEMS >= TELEPORT_GEMS + 100) { b.gems -= CITY_BUILDER2_GEMS; b.city.builder2 = true; }   // rich enough: the second builder, for good
     const reserve = TELEPORT_GEMS + Object.entries(want).reduce((s2, [h, n]) => s2 + Math.max(0, n - (b.shields[h] || 0)) * SHIELD_PRICES[h], 0);   // (and 50 for a capital move)
     for (let n = 0; n < 10 && b.gems - reserve >= CRATE_GEM_COST; n++) {   // crates: random slot + rarity
         b.gems -= CRATE_GEM_COST; b.spare[pickRandomSlot()][pickRandomRarity()]++;
@@ -1314,7 +1316,7 @@ function runBotTick() {
 function botLook(botId) {
     const b = loadBotState()[botId], own = botOwnedIslands[botId]; if (!b) return { frame: FRAMES[0].id, title: 'Neuling' };
     const r = Math.max(b.bestRank || 0, rankIndexFor(own ? own.size : 0)); if (r > (b.bestRank || 0)) { b.bestRank = r; saveBotState(); }
-    const st = b.stats || {}, cityMin = Math.min(...BOT_BUILDINGS.map(k => b.city.levels[k] || 0));
+    const st = b.stats || {}, cityMin = Math.min(...BOT_BUILDINGS.filter(k => k !== 'storage').map(k => b.city.levels[k] || 0));   // (the newer Lager doesn't count, like yours)
     const earned = TITLES_P.filter(t => t.buy ? !!b.throneLook : t.ach ? ({ cap100: (st.caps || 0) >= 100, cap1000: (st.caps || 0) >= 1000, def25: (st.defs || 0) >= 25, boss1: (st.bosses || 0) >= 1, emma10: (st.pvp || 0) >= 10, city5: cityMin >= 5, throne: !!st.ruled })[t.ach] : (t.rank || 0) <= r);
     const idn = parseInt(botId.slice(3), 10) || 0, pick = earned[earned.length - 1 - Math.floor(mulberry32(idn * 31 + earned.length)() * Math.min(3, earned.length))];   // one of their three best - everyone has a favourite
     return { frame: b.throneLook ? 'throne' : FRAMES[Math.min(r, 6)].id, title: pick ? pick.name : 'Neuling' };
@@ -1383,8 +1385,8 @@ function botsFastForward(hours, toCenter) {        // toCenter: they push region
         for (const id of own) islandTroops[id] = (islandTroops[id] || 0) + per;
         botCoins[bot.id] = (botCoins[bot.id] || 0) + Math.round(hp.coins * hours);
         const c = b.city; let busy = 0;
-        if (c.build) { c.build.endsAt = now; botCityFinish(bot, now); }
-        for (let n = 0; n < 200 && busy < hours * 3600000; n++) { botCityBuild(bot, now); if (!c.build) break; busy += c.build.endsAt - c.build.startedAt; c.build.endsAt = now; botCityFinish(bot, now); }
+        for (const x of c.builds) x.endsAt = now; botCityFinish(bot, now);
+        for (let n = 0; n < 200 && busy < hours * 3600000 * citySlots(c); n++) { botCityBuild(bot, now); if (!c.builds.length) break; for (const x of c.builds) { busy += x.endsAt - x.startedAt; x.endsAt = now; } botCityFinish(bot, now); }   // (two builders get twice as much done)
         for (let n = 0; n < 8; n++) botConsiderUpgrade(bot);
         addBotXp(bot.id, Math.round(hp.troops * hours * .25));
         for (let d = 1; d <= Math.floor(hours / 24); d++) { heroGrantShards(bot.id, HERO_SHARDS_DAY); if (d % 7 === 0) heroGrantShards(bot.id, HERO_SHARDS_CHAIN); }   // the days away: their daily shards
