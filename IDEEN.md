@@ -22,6 +22,7 @@ Liste der Ideen, die für später vorgemerkt sind.
 - **Ruhigere Karten-Knöpfe**.
 - **Skills zurücksetzen** für 500 Gems.
 - **Aufgeräumt** – alter Code und ungenutztes CSS sind entfernt.
+- **Kampf um den Thron (dauerhaft, statt SvS)** – wer die Mitte hält, bekommt alle 3 Min. Thron-Punkte (jeder Wächter-Tempel ein paar), die 4 Wächter-Tempel feuern alle 2 Min. auf den Halter, außer sie gehören ihm. Punkte gibt es im Shop unter „Thron“ gegen Münzen, Truppen, Gems, Kisten und Titel „Thronhüter“ mit Thron-Rahmen. Die Mitspieler sammeln und tauschen auch. Rangliste der Woche.
 
 ## Gestrichen
 - Event mit Truppen als Belohnung – vorerst weg.

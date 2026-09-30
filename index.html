@@ -165,9 +165,9 @@ b,strong{font-weight:600}
 .mapctl button + button{border-top-color:rgba(255,255,255,.05)}
 .mapctl button.on{color:var(--gold-100);background:rgba(214,170,90,.18)}
 [data-frame="bronze"]{--fr1:#c9854f;--fr2:#7a4a26} [data-frame="silver"]{--fr1:#e8eef5;--fr2:#8a95a3} [data-frame="gold"]{--fr1:#ffd35a;--fr2:#a0701c}
-[data-frame="platin"]{--fr1:#9fe3da;--fr2:#3f8c86} [data-frame="diamond"]{--fr1:#bfe6ff;--fr2:#3f86d8} [data-frame="master"]{--fr1:#d6a6ff;--fr2:#6a3fa0} [data-frame="legend"]{--fr1:#ffb04a;--fr2:#c0392b}
+[data-frame="platin"]{--fr1:#9fe3da;--fr2:#3f8c86} [data-frame="diamond"]{--fr1:#bfe6ff;--fr2:#3f86d8} [data-frame="master"]{--fr1:#d6a6ff;--fr2:#6a3fa0} [data-frame="legend"]{--fr1:#ffb04a;--fr2:#c0392b} [data-frame="throne"]{--fr1:#f7d77c;--fr2:#7a1420}
 #pAvatarRing[data-frame]{background:conic-gradient(from 200deg,var(--fr1),var(--fr2),var(--fr1),var(--fr2),var(--fr1));padding:3px;box-shadow:0 0 10px color-mix(in srgb,var(--fr1) 45%,transparent)}
-#pAvatarRing[data-frame="legend"],#pAvatarRing[data-frame="master"],#pAvatarRing[data-frame="diamond"]{animation:frame-glow 2.4s ease-in-out infinite alternate}
+#pAvatarRing[data-frame="throne"],#pAvatarRing[data-frame="legend"],#pAvatarRing[data-frame="master"],#pAvatarRing[data-frame="diamond"]{animation:frame-glow 2.4s ease-in-out infinite alternate}
 @keyframes frame-glow{from{box-shadow:0 0 6px color-mix(in srgb,var(--fr1) 35%,transparent)}to{box-shadow:0 0 16px color-mix(in srgb,var(--fr1) 75%,transparent)}}
 .rankDot.frame-ring{border-radius:50%;border:2px solid var(--fr1);box-shadow:0 0 0 1px var(--fr2),0 0 6px color-mix(in srgb,var(--fr1) 40%,transparent)}
 .rankName-t{display:flex;flex-direction:column;min-width:0;overflow:hidden;text-overflow:ellipsis}
@@ -183,7 +183,25 @@ b,strong{font-weight:600}
 .look-title{display:inline-flex;align-items:center;gap:4px;padding:6px 10px;border-radius:999px;border:1px solid var(--line-2);background:rgba(255,255,255,.03);color:var(--tx-1);font:600 var(--fs-12)/1 var(--font-ui)}
 .look-title.on{border-color:var(--gold-300);background:rgba(214,170,90,.16);color:var(--gold-100)} .look-title:disabled{opacity:.4}
 .look-hint{font:500 var(--fs-11)/1.35 var(--font-ui);color:var(--tx-3)}
-#mailTabs.tabs{grid-template-columns:repeat(3,minmax(0,1fr))}
+.pfoot[hidden]{display:none} #mailTabs.tabs{grid-template-columns:repeat(3,minmax(0,1fr))} #shopTabs.tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
+.pill--throne .icon{color:#f2c75c} .psub .pill + .pill{margin-left:6px}
+.throne-status{display:grid;gap:6px;padding:10px 12px;border:1px solid var(--line-2);border-radius:10px;
+  background:radial-gradient(120% 90% at 50% 0%,rgba(242,199,92,.10),transparent 60%),rgba(255,255,255,.02)}
+.throne-status .ts-row{display:flex;align-items:center;gap:8px;font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-3)}
+.throne-status .ts-row .icon{width:15px;height:15px;color:#f2c75c;flex:none}
+.throne-status .ts-row b{margin-left:auto;color:var(--tx-1);font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+.throne-status .ts-row b.warn{color:#ff9d8f}
+.throne-list{display:grid;gap:6px}
+.throne-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line-1);border-radius:10px;background:rgba(0,0,0,.22)}
+.throne-row .tr-ic{width:38px;height:38px;flex:none;display:grid;place-items:center;border-radius:8px;border:1px solid var(--line-2);background:var(--tile-bg)}
+.throne-row .tr-ic .icon{width:20px;height:20px;color:var(--gold-200)} .throne-row .tr-ic .ico-coin{color:var(--res-coin)} .throne-row .tr-ic .ico-gem{color:var(--res-gem)} .throne-row .tr-ic .ico-troops{color:var(--res-troop)}
+.throne-row.is-special{border-color:rgba(242,199,92,.45);background:radial-gradient(100% 140% at 0% 50%,rgba(242,199,92,.12),transparent 70%),rgba(0,0,0,.22)}
+.throne-row .tr-t{flex:1;min-width:0} .throne-row .tr-t b{display:block;font:600 var(--fs-13)/1.2 var(--font-ui);color:var(--tx-1)}
+.throne-row .tr-t small{display:block;margin-top:2px;font:500 var(--fs-11)/1.3 var(--font-ui);color:var(--tx-3)}
+.throne-row .btn{flex:none;min-width:78px} .throne-row .btn .icon{color:#f2c75c}
+.throne-week{display:grid;gap:2px;font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-2)}
+.throne-week div{display:flex;gap:8px;padding:5px 2px;border-bottom:1px solid var(--line-1)} .throne-week div:last-child{border-bottom:0}
+.throne-week i{font-style:normal;width:18px;color:var(--tx-3)} .throne-week b{margin-left:auto;font-variant-numeric:tabular-nums} .throne-week .me{color:var(--f-player-hi)}
 .mail-tabs .tab .badge{position:absolute;top:4px;right:8px}
 .mail-tabs .tab .dot-new{position:absolute;top:8px;right:12px;width:7px;height:7px;border-radius:50%;background:#ff8d82;box-shadow:0 0 0 2px rgba(20,24,32,.9)}
 .mail-pane[hidden]{display:none} .mail-pane{display:grid;gap:10px}
@@ -1130,6 +1148,7 @@ body.has-panel .mapctl{display:none}
 <symbol id="i-sell" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4.5h6l-1.6 3h-2.8z"/><path d="M10.6 7.5C6.8 9 5 12.2 5 15.2 5 18.4 7.6 20 12 20s7-1.6 7-4.8c0-3-1.8-6.2-5.6-7.7" fill="currentColor" stroke="none" opacity="0.14"/><path d="M10.6 7.5C6.8 9 5 12.2 5 15.2 5 18.4 7.6 20 12 20s7-1.6 7-4.8c0-3-1.8-6.2-5.6-7.7"/><path d="M12 11.5l1.2 2.3 2.3 1.2-2.3 1.2L12 18.5l-1.2-2.3-2.3-1.2 2.3-1.2z" fill="currentColor" stroke="none" opacity="0.8"/></g></symbol>
 <symbol id="i-losses" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.8c-4 0-7 2.9-7 6.8 0 2.2 1 3.9 2.6 5v3.9h8.8v-3.9c1.6-1.1 2.6-2.8 2.6-5 0-3.9-3-6.8-7-6.8z" fill="currentColor" stroke="none" opacity="0.14"/><path d="M12 3.8c-4 0-7 2.9-7 6.8 0 2.2 1 3.9 2.6 5v3.9h8.8v-3.9c1.6-1.1 2.6-2.8 2.6-5 0-3.9-3-6.8-7-6.8z"/><path d="M7.7 11a1.6 1.6 0 1 0 3.2 0a1.6 1.6 0 1 0 -3.2 0z" fill="currentColor" stroke="none"/><path d="M13.1 11a1.6 1.6 0 1 0 3.2 0a1.6 1.6 0 1 0 -3.2 0z" fill="currentColor" stroke="none"/><path d="M10.3 19.5v-2.2M13.7 19.5v-2.2" opacity="0.7"/></g></symbol>
 <symbol id="i-question" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.2 9.2a2.9 2.9 0 1 1 4.2 2.6c-.9.5-1.4 1.1-1.4 2.1v.6"/><path d="M11 17.6a1 1 0 1 0 2 0a1 1 0 1 0 -2 0z" fill="currentColor" stroke="none"/></g></symbol>
+<symbol id="i-crown" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17.5 3 7.5l5 4 4-6.5 4 6.5 5-4-1 10z" fill="currentColor" stroke="none" opacity="0.18"/><path d="M4 17.5 3 7.5l5 4 4-6.5 4 6.5 5-4-1 10z"/><path d="M4.5 20.5h15"/></g></symbol>
 <symbol id="i-rank" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v5.5a4 4 0 0 1-8 0z" fill="currentColor" stroke="none" opacity="0.14"/><path d="M8 4h8v5.5a4 4 0 0 1-8 0z"/><path d="M8 6H5.2a3 3 0 0 0 3 3.6M16 6h2.8a3 3 0 0 1-3 3.6"/><path d="M12 13.5v3.5"/><path d="M8.5 20.5h7l-.8-3.5H9.3z"/></g></symbol>
 <symbol id="i-flag" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21V3.5"/><path d="M6 4.5h12l-2.8 3.8L18 12H6" fill="currentColor" stroke="none" opacity="0.16"/><path d="M6 4.5h12l-2.8 3.8L18 12H6"/></g></symbol>
 <symbol id="i-info" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 1 0 17 0a8.5 8.5 0 1 0 -17 0z"/><path d="M12 11v5.5"/><path d="M10.9 7.9a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0 -2.2 0z" fill="currentColor" stroke="none"/></g></symbol>
@@ -1522,10 +1541,16 @@ body.has-panel .mapctl{display:none}
   <header class="phead">
     <div class="emblem emblem--gold"><svg class="icon"><use href="#i-shop"/></svg></div>
     <div class="phead-text"><div class="overline">Händler</div><h3 id="shopTitle" class="ptitle">Shop</h3>
-      <div class="psub"><span class="pill pill--gem"><svg class="icon"><use href="#i-gem"/></svg><b id="shopGemCount">0</b><small>Gems</small></span></div></div>
+      <div class="psub"><span class="pill pill--gem"><svg class="icon"><use href="#i-gem"/></svg><b id="shopGemCount">0</b><small>Gems</small></span><span class="pill pill--throne"><svg class="icon"><use href="#i-crown"/></svg><b id="shopThroneCount">0</b><small>Thron</small></span></div></div>
     <button id="shopCloseBtn" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button>
   </header>
+  <div id="shopTabs" class="tabs mail-tabs" role="tablist">
+    <button class="tab active" type="button" role="tab" data-stab="gems"><svg class="icon"><use href="#i-gem"/></svg><span>Händler</span></button>
+    <button class="tab" type="button" role="tab" data-stab="throne"><svg class="icon"><use href="#i-crown"/></svg><span>Thron</span></button>
+  </div>
   <div class="pbody">
+    <div class="mail-pane" data-spane="throne" hidden><div id="throneShop"></div></div>
+    <div class="mail-pane" data-spane="gems">
     <article class="offer">
       <div class="offer-art"><svg class="icon"><use href="#i-shop"/></svg></div>
       <div class="offer-text">
@@ -1548,8 +1573,9 @@ body.has-panel .mapctl{display:none}
         </div>
       </div>
     </article>
+    </div>
   </div>
-  <footer class="pfoot">
+  <footer class="pfoot" id="shopFoot">
     <button id="shopToEquipBtn" class="btn btn--secondary" type="button"><svg class="icon"><use href="#i-shield"/></svg><span>Ausrüstung</span></button>
     <button id="shopOpenCrateBtn" class="btn btn--primary btn--grow" type="button"><span class="lbl">Kiste öffnen</span><span class="cost cost--gem"><svg class="icon"><use href="#i-gem"/></svg><b data-const="CRATE_GEM_COST">5</b></span></button>
   </footer>
@@ -5055,6 +5081,7 @@ body.has-panel .mapctl{display:none}
           drawPasses(view, now);                                                                                               // chained, time-locked bridges
           drawPickups(now);                                                                                                    // 11 mini-event pickups
           drawMapBattles(now);                                                                                                 // fights playing out at the bases
+          drawThroneShots(now);                                                                                                // the Wächter-Tempel firing on the throne
           drawMarkers();                                                                                                       // your own Wegmarken
           drawBattleFx(now);                                                                                                   // 13 battle flashes + "Sieg!"
           if (shake) { mapState.offsetX -= shake.x; mapState.offsetY -= shake.y; }
@@ -5928,6 +5955,7 @@ body.has-panel .mapctl{display:none}
             return r < Math.min(.95, st.act * 1.15);
         }
         function botShop(bot) {                                  // gems and points spent the way a player would: heroes, stars, crates, gear
+            botThroneShop(bot.id);
             const b = loadBotState()[bot.id], slots = Object.keys(EQUIPMENT_DEFS);
             for (const id of HEROES_IDS) {                        // raise a hero's rarity when it's allowed and affordable
                 const s = b.heroes[id], r = s.rar || 0;
@@ -6399,7 +6427,8 @@ body.has-panel .mapctl{display:none}
         // ===== TITEL & RAHMEN: frames come with the ranks you've reached, titles with ranks and Erfolge =====
         const FRAMES = [
             { id: 'bronze', name: 'Bronze', rank: 0 }, { id: 'silver', name: 'Silber', rank: 1 }, { id: 'gold', name: 'Gold', rank: 2 }, { id: 'platin', name: 'Platin', rank: 3 },
-            { id: 'diamond', name: 'Diamant', rank: 4 }, { id: 'master', name: 'Meister', rank: 5 }, { id: 'legend', name: 'Legende', rank: 6 }
+            { id: 'diamond', name: 'Diamant', rank: 4 }, { id: 'master', name: 'Meister', rank: 5 }, { id: 'legend', name: 'Legende', rank: 6 },
+            { id: 'throne', name: 'Thron', buy: 'throne' }
         ];
         const TITLES_P = [
             { id: 'novice', name: 'Neuling' },
@@ -6407,22 +6436,22 @@ body.has-panel .mapctl{display:none}
             { id: 'duke', name: 'Diamantherzog', rank: 4 }, { id: 'master', name: 'Meister der Meere', rank: 5 }, { id: 'legend', name: 'Legende', rank: 6 },
             { id: 'conq', name: 'Eroberer', ach: 'cap100' }, { id: 'warlord', name: 'Kriegsherr', ach: 'cap1000' }, { id: 'wall', name: 'Standhaft', ach: 'def25' },
             { id: 'emma', name: 'Emmas Albtraum', ach: 'emma10' }, { id: 'slayer', name: 'Bezwinger', ach: 'boss1' }, { id: 'builder', name: 'Baumeister', ach: 'city5' },
-            { id: 'king', name: 'Herrscher der Meere', ach: 'throne' }
+            { id: 'king', name: 'Herrscher der Meere', ach: 'throne' }, { id: 'keeper', name: 'Thronhüter', buy: 'throne' }
         ];
         let look = (() => { try { return JSON.parse(store.get('openWaterLook')) || {}; } catch (e) { return {}; } })();
         function rankIndexFor(bases) { let r = 0; RANK_TIERS.forEach((t, i) => { if (bases >= t.min) r = i; }); return r; }
         function bestRank() { const r = rankIndexFor(ownedIslands.size); if (!(look.best >= r)) { look.best = r; store.set('openWaterLook', JSON.stringify(look)); } return look.best; }
-        const lookUnlocked = x => x.ach ? !!(typeof achClaimed !== 'undefined' && (achClaimed[x.ach] || ACHIEVEMENTS.find(a => a.id === x.ach && a.val() >= a.goal))) : (x.rank || 0) <= bestRank();
-        function lookReq(x) { return x.ach ? 'Erfolg „' + ACHIEVEMENTS.find(a => a.id === x.ach).name + '“' : 'Rang ' + RANK_TIERS[x.rank].name; }
+        const lookUnlocked = x => x.buy ? !!(look.bought && look.bought[x.buy]) : x.ach ? !!(typeof achClaimed !== 'undefined' && (achClaimed[x.ach] || ACHIEVEMENTS.find(a => a.id === x.ach && a.val() >= a.goal))) : (x.rank || 0) <= bestRank();
+        function lookReq(x) { return x.buy ? 'Kauf im Thron-Shop' : x.ach ? 'Erfolg „' + ACHIEVEMENTS.find(a => a.id === x.ach).name + '“' : 'Rang ' + RANK_TIERS[x.rank].name; }
         function playerFrame() { const f = FRAMES.find(q => q.id === look.frame); return f && lookUnlocked(f) ? f.id : FRAMES[Math.min(bestRank(), FRAMES.length - 1)].id; }
         function playerTitle() { const t = TITLES_P.find(q => q.id === look.title); return t && lookUnlocked(t) ? t.name : 'Neuling'; }
         function botLook(botId) {
             const b = loadBotState()[botId], own = botOwnedIslands[botId]; if (!b) return { frame: FRAMES[0].id, title: 'Neuling' };
             const r = Math.max(b.bestRank || 0, rankIndexFor(own ? own.size : 0)); if (r > (b.bestRank || 0)) { b.bestRank = r; saveBotState(); }
             const st = b.stats || {}, cityMin = Math.min(...BOT_BUILDINGS.map(k => b.city.levels[k] || 0));
-            const earned = TITLES_P.filter(t => t.ach ? ({ cap100: (st.caps || 0) >= 100, cap1000: (st.caps || 0) >= 1000, def25: (st.defs || 0) >= 25, boss1: (st.bosses || 0) >= 1, city5: cityMin >= 5, throne: !!st.ruled })[t.ach] : (t.rank || 0) <= r);
+            const earned = TITLES_P.filter(t => t.buy ? !!b.throneLook : t.ach ? ({ cap100: (st.caps || 0) >= 100, cap1000: (st.caps || 0) >= 1000, def25: (st.defs || 0) >= 25, boss1: (st.bosses || 0) >= 1, city5: cityMin >= 5, throne: !!st.ruled })[t.ach] : (t.rank || 0) <= r);
             const idn = parseInt(botId.slice(3), 10) || 0, pick = earned.length > 1 && mulberry32(idn * 31 + earned.length)() < .35 ? earned[earned.length - 2] : earned[earned.length - 1];   // most show off their best, some a favourite
-            return { frame: FRAMES[Math.min(r, FRAMES.length - 1)].id, title: pick ? pick.name : 'Neuling' };
+            return { frame: b.throneLook ? 'throne' : FRAMES[Math.min(r, 6)].id, title: pick ? pick.name : 'Neuling' };
         }
         function botStat(botId, k, n) { const b = loadBotState()[botId]; if (!b) return; b.stats = b.stats || {}; b.stats[k] = (b.stats[k] || 0) + (n || 1); saveBotState(); }
         function renderLook() {
@@ -6434,7 +6463,7 @@ body.has-panel .mapctl{display:none}
                     return '<button type="button" class="look-frame' + (f.id === fr ? ' on' : '') + '" data-frame="' + f.id + '"' + (ok ? '' : ' disabled title="Frei ab ' + lookReq(f) + '"') + '><span class="frame-ring" data-frame="' + f.id + '"></span><small>' + (ok ? f.name : icon('lock') + f.name) + '</small></button>'; }).join('') + '</div>' +
                 '<div class="look-titles">' + TITLES_P.map(t => { const ok = lookUnlocked(t);
                     return '<button type="button" class="look-title' + (t.name === playerTitle() ? ' on' : '') + '" data-title-id="' + t.id + '"' + (ok ? '' : ' disabled title="Frei ab ' + lookReq(t) + '"') + '>' + (ok ? '' : icon('lock')) + t.name + '</button>'; }).join('') + '</div>' +
-                '<small class="look-hint">Rahmen gibt es mit jedem neuen Rang, Titel mit Rängen und Erfolgen. Beides siehst du in der Rangliste.</small>';
+                '<small class="look-hint">Rahmen gibt es mit jedem neuen Rang, Titel mit Rängen und Erfolgen, „Thronhüter“ und den Thron-Rahmen im Thron-Shop. Beides siehst du in der Rangliste.</small>';
         }
         document.getElementById('lookPicker').addEventListener('click', e => {
             const f = e.target.closest('.look-frame:not([disabled])'), t = e.target.closest('[data-title-id]:not([disabled])');
@@ -7547,6 +7576,7 @@ body.has-panel .mapctl{display:none}
             if (n('armyWins') || n('armyLosses')) parts.push('Armeen im Feld: ' + pl(n('armyWins'), 'Sieg', 'Siege') + ', ' + pl(n('armyLosses'), 'Niederlage', 'Niederlagen'));
             if (n('fieldCoins') || n('fieldGems')) parts.push('Gesammelt: ' + [n('fieldCoins') ? fmtCompact(n('fieldCoins')) + ' Münzen' : '', n('fieldGems') ? fmtCompact(n('fieldGems')) + ' Gems' : ''].filter(Boolean).join(' und '));
             if (n('kills') || n('fallen')) parts.push(fmtCompact(n('kills')) + ' Gegner besiegt, ' + fmtCompact(n('fallen')) + ' eigene Truppen gefallen');
+            if (n('thronePts')) parts.push('Am Thron: +' + fmtNum(n('thronePts')) + ' Thron-Punkte');
             if (n('offCoins') || n('offTroops')) parts.push('Während du weg warst: +' + fmtCompact(n('offCoins')) + ' Münzen, +' + fmtCompact(n('offTroops')) + ' Truppen');
             const foes = Object.entries(w.by || {}).sort((a, b) => b[1] - a[1]).slice(0, 3);
             if (foes.length) parts.push(foes.map(([name, c]) => escapeHtml(name) + ' hat dich ' + (c === 1 ? 'einmal' : c + '×') + ' angegriffen').join(', '));
@@ -7641,6 +7671,157 @@ body.has-panel .mapctl{display:none}
         const shopToEquipBtn = document.getElementById('shopToEquipBtn');
         const shopCloseBtn = document.getElementById('shopCloseBtn');
 
+        // ===== THRON-PUNKTE: the middle is always open to attack. Every few minutes whoever holds the Mega-Tempel gets
+        // Thron-Punkte (each Wächter-Tempel a few too), and the 4 Wächter-Tempel fire on the holder's garrison unless he
+        // holds them himself. The points buy things in the shop's "Thron" tab - for you and for everyone else alike.
+        const THRONE_TICK_MS = 3 * 60000, THRONE_PTS_MEGA = 30, THRONE_PTS_GUARD = 10, THRONE_FIRE_MS = 2 * 60000, THRONE_FIRE_PCT = 3;
+        const guardianTempleIds = islands.filter(i => i.guardian).map(i => i.id);
+        const THRONE_OFFERS = [
+            { id: 'coins',  name: 'Münzen',              icon: 'coin',   cost: 150 },
+            { id: 'troops', name: 'Truppen',             icon: 'troops', cost: 200 },
+            { id: 'gems',   name: '100 Gems',            icon: 'gem',    cost: 150 },
+            { id: 'crate',  name: 'Ausrüstungskiste',    icon: 'shop',   cost: 60 },
+            { id: 'royal',  name: 'Königliche Kiste',    icon: 'shop',   cost: 400 },
+            { id: 'look',   name: 'Titel „Thronhüter“ + Thron-Rahmen', icon: 'crown', cost: 3000, once: true }
+        ];
+        function weekKeyOf(t) { const d = new Date(t); d.setDate(d.getDate() - (d.getDay() + 6) % 7); return todayKey(d); }
+        var throneState = (() => { try { return JSON.parse(store.get('openWaterThrone')) || null; } catch (e) { return null; } })() || { pts: 0 };
+        (() => { const now = Date.now(), ts = throneState;               // no points or volleys pile up while the game was closed
+            if (!(ts.nextPts > now)) ts.nextPts = now + THRONE_TICK_MS; if (!(ts.nextFire > now)) ts.nextFire = now + THRONE_FIRE_MS;
+            if (!ts.week || ts.weekKey !== weekKeyOf(now)) { ts.week = {}; ts.weekKey = weekKeyOf(now); } })();
+        function saveThrone() { store.set('openWaterThrone', JSON.stringify(throneState)); }
+        function thronePoints(who) { return who === 'player' ? throneState.pts || 0 : (loadBotState()[who] || {}).tp || 0; }
+        function throneIncome(who) { return (rulerOwner() === who ? THRONE_PTS_MEGA : 0) + guardianTempleIds.filter(g => islandOwnerOf(g) === who).length * THRONE_PTS_GUARD; }
+        function throneShooters() { const hd = rulerOwner(); return hd ? guardianTempleIds.filter(g => islandOwnerOf(g) !== hd) : []; }
+        function hourProduction(who) {                       // what an empire makes in an hour (the coin and troop offers pay this much)
+            if (who === 'player') { const k = 3600000 / productionTickMs(); return { coins: totalCoinProductionPerTick() * k, troops: totalTroopProductionPerTick() * k }; }
+            const own = botOwnedIslands[who]; if (!own) return { coins: 0, troops: 0 };
+            const bm = botMults(who), rb = rulerOwner() === who ? RULER_BONUS : 1, k = 3600000 / botTickMs(who); let c = 0, t = 0;
+            for (const id of own) { const L = islandLevels[id] || 1; c += coinsPerTick(L) * rb * bm.coins; t += troopsPerTick(L) * rb * bm.troops; }
+            return { coins: c * k, troops: t * k };
+        }
+        function throneAmount(who, id) { const hp = hourProduction(who);
+            return id === 'coins' ? Math.max(5000, Math.round(hp.coins)) : id === 'troops' ? Math.max(1000, Math.round(hp.troops)) : id === 'gems' ? 100 : 1; }
+        function throneGive(who, id) {                        // hands one offer over; returns what it was, for the hint
+            const n = throneAmount(who, id), b = who === 'player' ? null : loadBotState()[who];
+            if (id === 'coins') { if (b) botCoins[who] = (botCoins[who] || 0) + n; else coins += n; return '+' + fmtCompact(n) + ' Münzen'; }
+            if (id === 'gems') { if (b) b.gems += n; else gems += n; return '+' + n + ' Gems'; }
+            if (id === 'troops') { const to = b ? botCapitalOf(who) : rewardBaseId(); if (to === null || to === undefined) return '';
+                islandTroops[to] = (islandTroops[to] || 0) + n; return '+' + fmtCompact(n) + ' Truppen in ' + (b ? 'die Hauptstadt' : islandTitle(islandById[to])); }
+            if (id === 'crate' || id === 'royal') { const r = id === 'royal' ? Math.max(3, pickRandomRarity()) : pickRandomRarity(), slot = pickRandomSlot();
+                if (b) { b.spare[slot][r]++; return ''; }
+                const it = addInventoryItem(slot, r, 1); sfx('crate'); return RARITY_DEFS[r].label + ' ' + EQUIPMENT_DEFS[slot].name + ' im Inventar'; }
+            if (id === 'look') { if (b) b.throneLook = true; else { look.bought = Object.assign({}, look.bought, { throne: true }); look.title = 'keeper'; look.frame = 'throne'; store.set('openWaterLook', JSON.stringify(look)); renderLook(); }
+                return 'Titel „Thronhüter“ und Thron-Rahmen – schon angelegt'; }
+            return '';
+        }
+        function throneBuy(id) {
+            const o = THRONE_OFFERS.find(x => x.id === id); if (!o) return;
+            if (o.once && look.bought && look.bought.throne) return;
+            if ((throneState.pts || 0) < o.cost) { flashHint('Zu wenig Thron-Punkte – das kostet ' + fmtNum(o.cost) + '.', 3000); return; }
+            throneState.pts -= o.cost; const what = throneGive('player', id); saveThrone(); updateHud(); saveGame(); saveProgression();
+            flashHint('Gekauft: ' + what + '.', 3500); sfx('coin'); renderShop();
+        }
+        function botThroneShop(botId) {                       // the others spend their points the way a player would
+            const b = loadBotState()[botId]; if (!b) return;
+            for (let n = 0; n < 5; n++) { const r = Math.random();
+                const id = !b.throneLook && b.tp >= 3000 && r < .4 ? 'look' : r < .45 ? 'troops' : r < .7 ? 'coins' : r < .85 ? 'crate' : r < .95 ? 'gems' : 'royal';
+                const o = THRONE_OFFERS.find(x => x.id === id); if (!(b.tp >= o.cost)) break; b.tp -= o.cost; throneGive(botId, id); }
+        }
+        var throneShots = [];                                  // volleys flying across the map (screen-space drawing below)
+        function throneAward() {
+            const ts = throneState, now = Date.now();
+            if (ts.weekKey !== weekKeyOf(now)) { ts.week = {}; ts.weekKey = weekKeyOf(now); }
+            const got = {};
+            const add = (who, n) => { if (!who) return; got[who] = (got[who] || 0) + n; };
+            add(rulerOwner(), THRONE_PTS_MEGA); for (const g of guardianTempleIds) add(islandOwnerOf(g), THRONE_PTS_GUARD);
+            for (const [who, n] of Object.entries(got)) {
+                if (who === 'player') { ts.pts = (ts.pts || 0) + n; ts.earned = (ts.earned || 0) + n; warStat('thronePts', n); }
+                else { const b = loadBotState()[who]; if (!b) continue; b.tp = (b.tp || 0) + n; }
+                ts.week[who] = (ts.week[who] || 0) + n;
+            }
+            if (got.player) flashHint('+' + got.player + ' Thron-Punkte – du hältst ' + (rulerOwner() === 'player' ? 'die Mitte' : 'einen Wächter-Tempel') + '. Einlösen im Shop unter „Thron“.', 3500);
+            saveBotState();
+        }
+        function throneVolley() {
+            const holder = rulerOwner(), shooters = throneShooters(); if (!holder || !shooters.length) return;
+            const g0 = islandTroops[megaTempleId] || 0;
+            const loss = Math.floor(g0 * (1 - Math.pow(1 - THRONE_FIRE_PCT / 100, shooters.length)));
+            const m = islandById[megaTempleId];
+            shooters.forEach((g, i) => throneShots.push({ from: islandById[g], to: m, delay: i * 140 })); requestRender();   // the clock starts at the first frame
+            if (loss <= 0) return;
+            islandTroops[megaTempleId] = g0 - loss;
+            if (holder === 'player') { const w = hospitalTake(loss); warStat('fallen', loss - w);
+                setTimeout(() => spawnBattleFx(megaTempleId, false, 'Beschuss', '−' + fmtCompact(loss) + ' Truppen'), 1100);
+                flashHint(shooters.length + (shooters.length === 1 ? ' Wächter-Tempel feuert' : ' Wächter-Tempel feuern') + ' auf den Thron: −' + fmtCompact(loss) + ' Truppen' + (w ? ', ' + fmtCompact(w) + ' ins Lazarett.' : '.') + ' Erobere sie, dann schweigen sie.', 4500); }
+            else botHospitalTake(holder, loss);
+            saveGame();
+        }
+        function throneTick() {
+            const now = Date.now(), ts = throneState; let dirty = false;
+            for (let n = 0; ts.nextPts <= now; n++) { ts.nextPts += THRONE_TICK_MS; dirty = true; if (n < 3) throneAward(); }   // a throttled background tab catches up a little, not for hours
+            for (let n = 0; ts.nextFire <= now; n++) { ts.nextFire += THRONE_FIRE_MS; dirty = true; if (n < 3) throneVolley(); }
+            if (dirty) { saveThrone(); if (isPanelOpen(shopPopup)) renderShop(); }
+            const clock = ms => fmtClock(Math.max(0, ms) / 1000);
+            for (const el of document.querySelectorAll('[data-throne-pts]')) el.textContent = clock(ts.nextPts - now);
+            for (const el of document.querySelectorAll('[data-throne-fire]')) el.textContent = clock(ts.nextFire - now);
+        }
+        setInterval(throneTick, 1000);
+        function drawThroneShots(now) {                        // glowing shots on an arc from each Wächter-Tempel to the throne
+            if (!throneShots || !throneShots.length) return;
+            const z = mapState.zoom, DUR = 1100;
+            for (const s of throneShots.slice()) {
+                s.el = (s.el === undefined ? -s.delay : s.el + Math.min(50, now - s.last)); s.last = now;   // per frame, so a slow frame never skips the flight
+                const t = s.el / DUR; if (t > 1.5) { throneShots.splice(throneShots.indexOf(s), 1); continue; }
+                liveAnimation = true; if (t < 0) continue;
+                const ax = toSX(s.from.x), ay = toSY(s.from.y) - 14, bx = toSX(s.to.x), by = toSY(s.to.y) - 10, d = Math.hypot(bx - ax, by - ay), lift = Math.min(160, d * .35);
+                const at = q => { const u = 1 - q; return [u * u * ax + 2 * u * q * (ax + bx) / 2 + q * q * bx, u * u * ay + 2 * u * q * ((ay + by) / 2 - lift) + q * q * by]; };
+                if (t <= 1) {
+                    const sc = Math.max(1, Math.min(1.6, z / .008));
+                    const [x, y] = at(t), gr = ctx.createRadialGradient(x, y, 0, x, y, 22 * sc);
+                    gr.addColorStop(0, 'rgba(255,190,90,.8)'); gr.addColorStop(.45, 'rgba(255,110,30,.35)'); gr.addColorStop(1, 'rgba(255,80,20,0)'); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, 22 * sc, 0, Math.PI * 2); ctx.fill();
+                    for (let k = 9; k >= 0; k--) { const q = Math.max(0, t - k * .02), [px, py] = at(q), r = (k ? 5 - k * .42 : 6.5) * sc;   // a burning tail, then the white-hot core
+                        ctx.beginPath(); ctx.arc(px, py, r, 0, Math.PI * 2); ctx.fillStyle = k ? 'rgba(255,' + (150 - k * 8) + ',50,' + (.85 - k * .08) + ')' : '#fff4d6'; ctx.fill(); }
+                } else {                                         // impact: a quick ring at the throne
+                    const q = (t - 1) / .5, fl = ctx.createRadialGradient(bx, by, 0, bx, by, 30 * (1 - q * .4));
+                    fl.addColorStop(0, 'rgba(255,220,150,' + (.7 * (1 - q)) + ')'); fl.addColorStop(1, 'rgba(255,110,30,0)'); ctx.fillStyle = fl; ctx.beginPath(); ctx.arc(bx, by, 30, 0, Math.PI * 2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(bx, by, 8 + 34 * q, 0, Math.PI * 2); ctx.lineWidth = 3.5 * (1 - q); ctx.strokeStyle = 'rgba(255,160,70,' + (1 - q) + ')'; ctx.stroke();
+                }
+            }
+        }
+        function renderThroneShop() {
+            const el = document.getElementById('throneShop'); if (!el) return;
+            const ts = throneState, hd = rulerOwner(), sh = throneShooters(), inc = throneIncome('player'), owned = look.bought && look.bought.throne;
+            const hdName = hd === 'player' ? '<span class="me">Du</span>' : hd ? whoLink(hd, botById[hd].name) : 'niemand';
+            const week = Object.entries(ts.week || {}).sort((a, b) => b[1] - a[1]).slice(0, 5);
+            el.innerHTML = '<div class="throne-status">' +
+                    '<div class="ts-row">' + icon('crown') + '<span>Die Mitte hält</span><b>' + hdName + '</b></div>' +
+                    '<div class="ts-row">' + icon('hourglass') + '<span>Nächste Thron-Punkte</span><b data-throne-pts>' + fmtClock((ts.nextPts - Date.now()) / 1000) + '</b></div>' +
+                    '<div class="ts-row">' + icon('attack') + '<span>Beschuss' + (hd ? ' · ' + sh.length + ' Wächter' : '') + '</span><b' + (hd === 'player' && sh.length ? ' class="warn"' : '') + ' data-throne-fire>' + fmtClock((ts.nextFire - Date.now()) / 1000) + '</b></div>' +
+                    '<div class="ts-row">' + icon('points') + '<span>Du bekommst</span><b>' + (inc ? '+' + inc + ' alle 3 Min.' : 'nichts – erobere die Mitte') + '</b></div>' +
+                '</div>' +
+                '<p class="mail-intro">Wer den Mega-Tempel hält, bekommt alle 3 Min. ' + THRONE_PTS_MEGA + ' Thron-Punkte, jeder Wächter-Tempel bringt ' + THRONE_PTS_GUARD + '. Alle 2 Min. feuern die Wächter-Tempel, die dem Herrscher nicht gehören, auf die Garnison im Mega-Tempel (je ' + THRONE_FIRE_PCT + ' %).</p>' +
+                '<div class="sect"><h4>Eintauschen</h4></div><div class="throne-list">' +
+                THRONE_OFFERS.map(o => { const done = o.once && owned, n = throneAmount('player', o.id);
+                    const sub = o.id === 'coins' ? fmtCompact(n) + ' – so viel, wie dein Reich in 1 Std. verdient' : o.id === 'troops' ? fmtCompact(n) + ' – eine Stunde deiner Ausbildung, in die Hauptstadt'
+                        : o.id === 'gems' ? 'für Kisten, Helden und Sterne' : o.id === 'crate' ? 'ein zufälliges Teil, jede Seltenheit möglich' : o.id === 'royal' ? 'mindestens Lila' : done ? 'gehört dir' : 'gibt es nur hier';
+                    return '<div class="throne-row' + (o.once ? ' is-special' : '') + '"><span class="tr-ic">' + icon(o.icon, 'ico-' + o.icon) + '</span><span class="tr-t"><b>' + o.name + '</b><small>' + sub + '</small></span>' +
+                        (done ? '<span class="chip">' + icon('check') + 'Gekauft</span>' : '<button type="button" class="btn btn--primary btn--sm" data-throne-buy="' + o.id + '"' + ((ts.pts || 0) < o.cost ? ' disabled' : '') + '>' + icon('crown') + '<b>' + fmtNum(o.cost) + '</b></button>') + '</div>'; }).join('') + '</div>' +
+                '<div class="sect"><h4>Diese Woche am Thron</h4></div>' +
+                (week.length ? '<div class="throne-week">' + week.map(([who, n], i) => '<div' + (who === 'player' ? ' class="me"' : '') + '><i>' + (i + 1) + '</i><span>' + (who === 'player' ? 'Du' : whoLink(who, botById[who].name)) + '</span><b>' + fmtNum(n) + '</b></div>').join('') + '</div>'
+                    : '<div class="war-empty">Diese Woche hat noch niemand Thron-Punkte geholt.</div>');
+        }
+        let shopTab = 'gems';
+        function showShopTab(t) {
+            shopTab = t;
+            for (const b of document.querySelectorAll('#shopTabs [data-stab]')) { const on = b.dataset.stab === t; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }
+            for (const pn of document.querySelectorAll('#shopPopup [data-spane]')) pn.hidden = pn.dataset.spane !== t;
+            document.getElementById('shopFoot').hidden = t !== 'gems';
+            renderShop();
+        }
+        document.getElementById('shopTabs').addEventListener('click', e => { const b = e.target.closest('[data-stab]'); if (b) showShopTab(b.dataset.stab); });
+        document.getElementById('throneShop').addEventListener('click', e => { const b = e.target.closest('[data-throne-buy]'); if (b && !b.disabled) throneBuy(b.dataset.throneBuy); });
+
         // ===== FRIEDENSSCHILD: nobody may attack the player's bases while it stands; attacking yourself drops it =====
         const SHIELD_PRICES = { 2: 40, 8: 120, 24: 300 };
         function shieldUntil() { return parseInt(store.get('openWaterShield'), 10) || 0; }
@@ -7657,6 +7838,8 @@ body.has-panel .mapctl{display:none}
             flashHint('Schild (' + h + ' Std.) liegt im Vorrat – einschalten in der Stadt: tippe deine Burg an.', 4000); });
         function renderShop() {
             renderShieldState();
+            const tc = document.getElementById('shopThroneCount'); tc.textContent = fmtCompact(throneState.pts || 0); tc.title = fmtNum(throneState.pts || 0) + ' Thron-Punkte';
+            if (shopTab === 'throne') renderThroneShop();
             shopGemCount.textContent = fmtCompact(Math.floor(gems));
             shopGemCount.title = fmtNum(Math.floor(gems)) + ' Gems';
             shopOpenCrateBtn.disabled = gems < CRATE_GEM_COST;
@@ -10654,6 +10837,13 @@ body.has-panel .mapctl{display:none}
             else return;
             openIslandPopup(isl); requestRender();
         });
+        function throneNotice(island) {                   // your own throne or Wächter-Tempel: points and fire at a glance
+            if (island.type === 'megaTemple') { const sh = throneShooters().length;
+                return '<div class="notice ' + (sh ? 'notice--warn' : 'notice--gold') + '">' + icon('crown') + '<span>+' + throneIncome('player') + ' Thron-Punkte alle 3 Min. · ' +
+                    (sh ? sh + (sh === 1 ? ' Wächter-Tempel feuert' : ' Wächter-Tempel feuern') + ' in <b data-throne-fire>' + fmtClock((throneState.nextFire - Date.now()) / 1000) + '</b> (je ' + THRONE_FIRE_PCT + ' % der Truppen hier)' : 'alle Wächter-Tempel gehören dir – kein Beschuss') + '</span></div>'; }
+            if (island.guardian) return '<div class="notice notice--gold">' + icon('crown') + '<span>+' + THRONE_PTS_GUARD + ' Thron-Punkte alle 3 Min. ' + (rulerOwner() === 'player' ? 'Dieser Tempel feuert nicht auf deinen Thron.' : 'Hältst du den Thron, feuert er nicht auf dich.') + '</span></div>';
+            return '';
+        }
         function templeBonusLine(island) {
             const mult = templeBaseMult(island) * templeHoldMultiplier(island.id) * shrineMult('player');
             const heldSince = templeHoldSince[island.id];
@@ -10724,7 +10914,7 @@ body.has-panel .mapctl{display:none}
                     statTile('Münzen / s', 'coin', '+' + fmtNum(Math.round(coinsPerTick(level) * playerCoinMult() * 1000 / productionTickMs())), 'is-good') +
                     statTile('Truppen / s', 'troops', '+' + fmtNum(Math.round(troopsPerTick(level) * playerTroopMult() * 1000 / productionTickMs())), 'is-good') + '</div>' +
                     (island.type === 'gate' ? gateControlsHtml(island) : '') +
-                    (isTemple ? templeBonusLine(island) : '');
+                    (isTemple ? templeBonusLine(island) : '') + throneNotice(island);
                 upgradeCostLabel.innerHTML = level >= MAX_BASE_LEVEL ? 'Max. Stufe' : icon('coin', 'icon--coin') + fmtCompact(upgradeCost(level));
                 popupActions.hidden = false;
                 upgradeBtn.style.display = 'inline-block';
@@ -10754,7 +10944,7 @@ body.has-panel .mapctl{display:none}
                         statTile('Verteidigung', 'defense', scouted ? fmtTile(effectiveDefense(island)) : UNK) + '</div>' +
                         (scouted ? '' : '<div class="notice">' + icon('scout') + '<span>Stärke unbekannt. Spähen deckt Truppen und Verteidigung auf.</span></div>') +
                         (island.type === 'gate' && !ownerBot ? '<div class="notice notice--gold">' + icon('lock') + '<span>Tor: Unbesetzt ist es verschlossen – erobere es, um über die Brücke zu kommen. Wer es besitzt, geht kostenlos durch und bestimmt die Maut für alle anderen.</span></div>' : '') +
-                        (isTemple ? '<div class="notice notice--gold">' + icon('temple') + '<span>' + (island.type === 'megaTemple' ? 'Thron der Meere: wer ihn hält, trägt die Krone – +25 % Münzen und Truppen im ganzen Reich.' : island.guardian ? 'Wächter-Tempel: 3-facher Tempel-Bonus, bewacht den Weg zur Thron-Insel.' : 'Tempel: gibt Produktion, Gems und Münzen, sobald erobert.') + '</span></div>' : '') +
+                        (isTemple ? '<div class="notice notice--gold">' + icon('temple') + '<span>' + (island.type === 'megaTemple' ? 'Thron der Meere: wer ihn hält, trägt die Krone – +25 % Münzen und Truppen im ganzen Reich und alle 3 Min. ' + THRONE_PTS_MEGA + ' Thron-Punkte. Die Wächter-Tempel feuern auf ihn – nächster Beschuss in <b data-throne-fire>' + fmtClock((throneState.nextFire - Date.now()) / 1000) + '</b>.' : island.guardian ? 'Wächter-Tempel: 3-facher Tempel-Bonus und alle 3 Min. ' + THRONE_PTS_GUARD + ' Thron-Punkte. Gehört er nicht dem Herrscher, feuert er alle 2 Min. auf den Thron.' : 'Tempel: gibt Produktion, Gems und Münzen, sobald erobert.') + '</span></div>' : '') +
                         (bossAt(island.id) ? '<div class="notice notice--gold">' + icon('shop') + '<span><b>Belohnung:</b> Legendäre Kiste + ' + (bossAt(island.id).wander ? WANDER_REWARD_GEMS : BOSS_REWARD_GEMS) + ' Gems · ' + (bossAt(island.id).wander ? 'zieht weiter in' : 'verschwindet in') + ' <b data-boss-clock>' + fmtClock(((bossAt(island.id).wander ? bossAt(island.id).campUntil : bossAt(island.id).endsAt) - Date.now()) / 1000) + '</b></span></div>' : '') +
                         (scoutEnRoute ? '<div class="notice notice--warn">' + icon('hourglass') + '<span>Späher bereits unterwegs …</span></div>' : '');
                     setBtnLabel(attackBtn, 'Angreifen');
