@@ -172,7 +172,7 @@ function resolveBotAttack(attack) {
         const levelAfterCapture = Math.max(1, (islandLevels[target.id] || 1) - 1);
         if (targetOwner) { botNoteLoss(targetOwner, target.id); clearIslandOwner(target.id); }
         islandTroops[target.id] = survivors;
-        botOwnedIslands[bot.id].add(target.id); botStat(bot.id, 'caps'); if (targetOwner) botStat(bot.id, 'pvp');
+        botOwnedIslands[bot.id].add(target.id); botStat(bot.id, 'caps'); if (targetOwner) botStat(bot.id, 'pvp'); if (target.type === 'temple' || target.type === 'megaTemple' || target.guardian) botStat(bot.id, 'temples');
         if (target.type === 'gate') { const sty = bot.style, r = Math.random();                  // how this player runs a gate
             setGateSettings(target.id, { toll: sty === 'templer' ? 1 : sty === 'builder' ? 0.5 : sty === 'raider' ? 0.25 : GATE_TOLLS[1 + Math.floor(r * 4)],
                                          closed: sty === 'raider' ? r < .5 : sty === 'templer' ? r < .3 : r < .1 }); }
@@ -201,7 +201,7 @@ function resolveBotAttack(attack) {
     if (!won && counts) botNoteFail(bot.id, target.id);
     if (!won) botLearn(bot.id, target.id);                          // a lost fight tells them what's really there
     if (!won && targetOwner && targetOwner !== 'player') botStat(targetOwner, 'defs');
-    if (won && bossHere) { botStat(bot.id, 'bosses'); heroGrantShards(bot.id, bossHere.wander ? HERO_SHARDS_WANDER : HERO_SHARDS_BOSS); }   // the same shards you get
+    if (won && bossHere) { botStat(bot.id, 'bosses'); if (bossHere.wander) botStat(bot.id, 'wanders'); heroGrantShards(bot.id, bossHere.wander ? HERO_SHARDS_WANDER : HERO_SHARDS_BOSS); }   // the same shards you get
     updateHud();
     if (bossHere && won) { spawnBattleFx(target.id, false, bossHere.name + ' gefallen', bot.name); (bossHere.wander ? endWander : endBoss)(bot.name + ' hat ' + bossHere.name + ' besiegt!'); }
 
@@ -438,6 +438,7 @@ function botLearn(botId, targetId, ready) {                   // (ready = when t
     const it = botIntelMem[botId] || (botIntelMem[botId] = {});
     it[targetId] = { s: effectiveTroops(t) + effectiveDefense(t), ready: ready || Date.now(), pending: !!ready && ready > Date.now() };
     const keys = Object.keys(it); if (keys.length > 120) for (const k of keys.sort((u, v) => it[u].ready - it[v].ready).slice(0, keys.length - 120)) delete it[k];
+    if (ready) botStat(botId, 'scouts');                                  // a scout sent out (Erfolge)
 }
 
 // A person can only tap so fast: every order (attack, send, scout, reinforce) takes a few seconds, and a strike
@@ -743,6 +744,9 @@ function loadBotState() {
         if (!(b.wounded >= 0)) b.wounded = 0;
         if (b.city) cityClampBuild(b.city.build, Date.now());
         b.shields = Object.assign({ 2: 0, 8: 0, 24: 0 }, b.shields || {}); if (!(b.shieldUntil > 0)) b.shieldUntil = 0;
+        if (!b.achLook) { const st = b.stats || {}, cm = Math.min(...BOT_BUILDINGS.map(k => b.city.levels[k] || 0));   // Erfolge give no titles any more: the ones reached so far stay
+            b.achLook = Object.entries({ cap100: (st.caps || 0) >= 100, cap1000: (st.caps || 0) >= 1000, def25: (st.defs || 0) >= 25, boss1: (st.bosses || 0) >= 1, emma10: (st.pvp || 0) >= 10, city5: cm >= 5, throne: !!st.ruled }).filter(e => e[1]).map(e => e[0]); }
+        if (!b.goals) b.goals = {};                                   // Erfolge already collected (gems)
     }
     return botState;
 }
@@ -837,7 +841,7 @@ function botHeal(bot) {                                   // heals everyone at o
     const b = loadBotState()[bot.id]; if (!(b.wounded > 0)) return;
     const cost = Math.ceil(b.wounded * HEAL_COIN_PER_TROOP), cap = botCapitalOf(bot.id);
     if (cap === null || cap === undefined || (botCoins[bot.id] || 0) < cost * 2) return;
-    botCoins[bot.id] -= cost; islandTroops[cap] = (islandTroops[cap] || 0) + b.wounded; b.wounded = 0; saveBotState();
+    botCoins[bot.id] -= cost; islandTroops[cap] = (islandTroops[cap] || 0) + b.wounded; botStat(bot.id, 'healed', b.wounded); b.wounded = 0; saveBotState();
 }
 
 // ---- the bot's heroes: the same 14 as yours - the same shards, quarter stars, skill points and rage ----
@@ -1124,7 +1128,7 @@ function botUseShield(bot, why, needMs, now) {
     const b = loadBotState()[bot.id], has = h => b.shields[h] > 0 || b.gems >= SHIELD_PRICES[h];
     const h = [2, 8, 24].find(x => x * 3600000 >= needMs * .9 && has(x)) || [24, 8, 2].find(has); if (!h) return false;
     if (b.shields[h] > 0) b.shields[h]--; else b.gems -= SHIELD_PRICES[h];                           // in a hurry a person buys one right there
-    b.shieldUntil = Math.max(now, b.shieldUntil || 0) + h * 3600000; b.shieldWhy = why; b.shieldAt = now;
+    b.shieldUntil = Math.max(now, b.shieldUntil || 0) + h * 3600000; b.shieldWhy = why; b.shieldAt = now; botStat(bot.id, 'shields');
     b.shieldKeep = why !== 'night' || Math.random() > (botStyle(bot).hunt || .5) * .5;
     const act = botActOf(bot.id); if (act.plan && act.plan.kind === 'attack') act.plan = null; b.rally = null;
     for (const a of armies) if (a.who === bot.id) { a.until = Math.min(a.until || now, now - 1);      // the armies out there come home - also one already marching (arriving would drop the shield)
@@ -1209,7 +1213,7 @@ function botTeleportCapital(bot, toId) {
     if (!botCapitalMoveOk(bot.id, toId) || b.gems < TELEPORT_GEMS) return false;
     b.gems -= TELEPORT_GEMS;
     islandTroops[toId] = (islandTroops[toId] || 0) + (islandTroops[from] || 0); islandTroops[from] = 0;     // the garrison moves along, like yours
-    b.capital = toId; b.capMovedAt = Date.now(); b.capWish = null; if (b.rally && b.rally.at === from) b.rally = null;
+    b.capital = toId; b.capMovedAt = Date.now(); b.capWish = null; botStat(bot.id, 'teleports'); if (b.rally && b.rally.at === from) b.rally = null;
     { const act = botActOf(bot.id); if (act.plan && act.plan.kind === 'send' && act.plan.t === from) act.plan = null; }
     capitalCache = null;                                                                                    // isCapital() caches for 250 ms
     saveBotState(); saveGame(); requestRender(); botCapitalNotice(bot, from, toId); return true; }
@@ -1299,6 +1303,7 @@ function runBotTick() {
             botConsiderCapital(bot, now);
             botThink(bot);
             botHeal(bot);
+            if (Math.random() < .2) botClaimGoals(bot);
             botCityBuild(bot, now);
             botConsiderUpgrade(bot);
             botRulerTitles(bot, now);
@@ -1314,8 +1319,7 @@ function runBotTick() {
 function botLook(botId) {
     const b = loadBotState()[botId], own = botOwnedIslands[botId]; if (!b) return { frame: FRAMES[0].id, title: 'Neuling' };
     const r = Math.max(b.bestRank || 0, rankIndexFor(own ? own.size : 0)); if (r > (b.bestRank || 0)) { b.bestRank = r; saveBotState(); }
-    const st = b.stats || {}, cityMin = Math.min(...BOT_BUILDINGS.map(k => b.city.levels[k] || 0));
-    const earned = TITLES_P.filter(t => t.buy ? !!b.throneLook : t.ach ? ({ cap100: (st.caps || 0) >= 100, cap1000: (st.caps || 0) >= 1000, def25: (st.defs || 0) >= 25, boss1: (st.bosses || 0) >= 1, emma10: (st.pvp || 0) >= 10, city5: cityMin >= 5, throne: !!st.ruled })[t.ach] : (t.rank || 0) <= r);
+    const earned = TITLES_P.filter(t => t.buy ? !!b.throneLook : t.ach ? (b.achLook || []).includes(t.ach) : (t.rank || 0) <= r);
     const idn = parseInt(botId.slice(3), 10) || 0, pick = earned[earned.length - 1 - Math.floor(mulberry32(idn * 31 + earned.length)() * Math.min(3, earned.length))];   // one of their three best - everyone has a favourite
     return { frame: b.throneLook ? 'throne' : FRAMES[Math.min(r, 6)].id, title: pick ? pick.name : 'Neuling' };
 }
@@ -1326,6 +1330,21 @@ function botBaustil(botId) {
     if (botBaustilMem[botId]) return botBaustilMem[botId];
     const r = mulberry32((parseInt(String(botId).replace(/\D/g, ''), 10) || 7) * 97 + 11), keys = Object.keys(BAUSTILE);
     return botBaustilMem[botId] = { style: keys[Math.floor(r() * keys.length)], cap: r() < .33 ? 'wasser' : 'huegel' };
+}
+
+// Erfolge: the same list as yours (ACHIEVEMENTS), counted from their own numbers - each one collected once for its gems, one at a time like a person tapping
+const BOT_GOAL_VAL = {
+    captures: (b, st) => st.caps, empire: (b, st, id) => (botOwnedIslands[id] || new Set()).size, defends: (b, st) => st.defs, pvp: (b, st) => st.pvp, bosses: (b, st) => st.bosses,
+    wanders: (b, st) => st.wanders, temples: (b, st) => st.temples, throne: (b, st) => st.ruled ? 1 : 0, throneMin: (b, st) => st.throneMin, throneEarned: (b, st) => st.tpEarned, scouts: (b, st) => st.scouts,
+    cityMin: b => Math.min(...BOT_BUILDINGS.map(k => b.city.levels[k] || 0)), baseTop: (b, st, id) => goalBaseTop(id), gates: (b, st, id) => goalGates(id), tolls: (b, st) => st.tolls, tollCoins: (b, st) => st.tollCoins,
+    armyWins: (b, st) => st.armyWins, heroes: (b, st, id) => goalHeroes(id), heroStars: (b, st, id) => goalHeroStars(id), heroFires: (b, st) => st.heroFires,
+    healed: (b, st) => st.healed, shields: (b, st) => st.shields, teleports: (b, st) => st.teleports
+};
+function botGoalVal(botId, k) { const b = loadBotState()[botId], f = BOT_GOAL_VAL[k]; return b && f ? f(b, b.stats || {}, botId) || 0 : 0; }
+function botClaimGoals(bot) {
+    const b = loadBotState()[bot.id]; if (!b) return; b.goals = b.goals || {};
+    const a = ACHIEVEMENTS.find(x => !b.goals[x.id] && botGoalVal(bot.id, x.k) >= x.goal); if (!a) return;
+    b.goals[a.id] = Date.now(); b.gems += a.gems; saveBotState();
 }
 
 function botStat(botId, k, n) { const b = loadBotState()[botId]; if (!b) return; b.stats = b.stats || {}; b.stats[k] = (b.stats[k] || 0) + (n || 1); saveBotState(); }
@@ -1573,6 +1592,7 @@ function armyRaidArrive(r, now) {
     const dHx = heroFieldFx('player', a.hero, { defending: 1 });                     // your army's hero (Bollwerk, Zäh …) - a full rage fires now
     const def = a.troops, atk = r.troops, fb = fieldBattle(r.botId, atk, 'player', def, null, dHx), won = fb.won;
     const fg = fieldGold(r.botId, 'player', fb, null, dHx);
+    goalBump(won ? r.botId : 'player', 'armyWins');
     if (won) { armies = armies.filter(x => x !== a); r.troops -= fb.aLoss; botHospitalTake(r.botId, fb.aLoss); back(); const w = fieldHurt('player', def, dHx);
         flashHint(bot.name + ' hat deine Armee im Feld geschlagen (' + fmtCompact(def) + ' Truppen)' + (w ? ', ' + fmtCompact(w) + ' ins Lazarett.' : '.'), 5000); }
     else { botHospitalTake(r.botId, atk); fieldHurt('player', fb.dLoss, dHx); a.troops -= fb.dLoss; r.troops = 0; statBump('defends'); flashHint('Deine Armee hat den Angriff von ' + bot.name + ' abgewehrt – ' + fmtCompact(a.troops) + ' stehen noch.', 4500); }
