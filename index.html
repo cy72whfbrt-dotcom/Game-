@@ -10602,6 +10602,47 @@ body.has-panel .mapctl{display:none}
             if (islandOwnerOf(target.id) === 'player') flashHint(bot.name + ' sammelt eine Armee vor deiner Basis ' + islandTitle(target) + '.', 4500);
             saveArmies(); requestRender(); return true;
         }
+        // A camped army facing a wall it can't break: switch to a base it can beat (yours first if it's personal), call up more
+        // troops from its own bases, or scout around for a better target - one order at a time, like anyone would.
+        function botArmyRethink(bot, a, atk, needS, now) {
+            if (now < (a.rethinkAt || 0)) return false;
+            a.rethinkAt = now + 12000 + Math.random() * 10000;
+            const pos = { x: a.x, y: a.y, landmassId: a.lm }, v = botVendetta(bot, now), g = botGrudgeOn(bot.id, 'player');
+            const lms = (reachableLandmassIds[a.lm] || [a.lm]).filter(l => l === a.lm || landmassesConnected(a.lm, l));
+            let best = null, bs = Infinity, unknown = null, ud = Infinity;
+            for (const l of lms) for (const t of islandsByLandmass[l] || []) {
+                const ow = islandOwnerOf(t.id); if (!ow || ow === bot.id || isCapital(t.id) || t.id === a.t) continue;
+                if (ow === 'player' && playerShielded()) continue;
+                const d = Math.hypot(t.x - a.x, t.y - a.y), pull = ow === 'player' ? (v && v.who === 'player' ? .2 : g ? .4 : .6) : 1;
+                const it = botIntel(bot, t.id);
+                if (!it) { if (!botScouting(bot, t.id) && d * pull < ud) { ud = d * pull; unknown = t; } continue; }
+                const m = ow === 'player' ? Math.max(1.25, botStyle(bot).margin) : botStyle(bot).margin;
+                if (a.troops * atk >= it.s * m && d * pull < bs) { bs = d * pull; best = t; }
+            }
+            if (best) {                                                                   // a base it can take: turn towards that one
+                const was = islandById[a.t]; a.t = best.id; a.until = Math.max(a.until, now + 5 * 60000);
+                if (islandOwnerOf(best.id) === 'player') flashHint('Die Armee von ' + bot.name + ' schwenkt um – ihr neues Ziel ist deine Basis ' + islandTitle(best) + '!', 4500);
+                else if (was && islandOwnerOf(was.id) === 'player') flashHint(bot.name + ' kommt an ' + islandTitle(was) + ' nicht vorbei und sucht sich ein anderes Ziel.', 3500);
+                saveArmies(); return true;
+            }
+            if ((a.calls || 0) < 3) {                                                     // call up more troops
+                const gap = needS / atk - a.troops, helpers = [...botOwnedIslands[bot.id]].filter(id => !isCapital(id) && (islandTroops[id] || 0) > BOT_MIN_GARRISON_TO_ATTACK && routeFor(islandById[id].landmassId, a.lm, bot.id))
+                    .sort((u, w) => (islandTroops[w] || 0) - (islandTroops[u] || 0)).slice(0, 4);
+                const pool = helpers.reduce((s, id) => s + Math.floor((islandTroops[id] || 0) * .8), 0);
+                if (pool >= gap * .6) {
+                    let sent = 0; for (const id of helpers) { if (sent >= gap * 1.2) break; const n = Math.floor((islandTroops[id] || 0) * .8); if (armySendFrom(a, id, n)) sent += n; }
+                    if (sent) { a.calls = (a.calls || 0) + 1; a.until = Math.max(a.until, now + 6 * 60000);
+                        if (islandOwnerOf(a.t) === 'player') flashHint(bot.name + ' holt Verstärkung für die Armee vor ' + islandTitle(islandById[a.t]) + '.', 4000);
+                        saveArmies(); return true; }
+                }
+            }
+            if (unknown) {                                                                 // look around for something better
+                const ready = now + scoutSecs(pos, unknown, bot.id) * 1000; botLearn(bot.id, unknown.id, ready);
+                if (islandOwnerOf(unknown.id) === 'player') { const hm = armyHome(a); if (hm !== null && hm !== undefined) botScoutVisible(bot, hm, unknown.id, now, ready); }
+                return true;
+            }
+            return false;
+        }
         function botArmyStep(bot) {                                                   // one order for a camped field army → true when a tap was used
             const now = Date.now();
             for (const a of botArmies(bot.id)) {
@@ -10619,7 +10660,10 @@ body.has-panel .mapctl{display:none}
                     return true;
                 }
                 const st = botStyle(bot), margin = islandOwnerOf(t.id) === 'player' ? Math.max(1.25, st.margin) : st.margin, atk = (1 + (botMults(bot.id).attackPct + (a.hero === 'sigrun' ? botHeroBonus(bot.id, 'sigrun') : 0)) / 100) * titleMult(bot.id, 'attack');   // with the army's own hero
-                if (a.troops * atk < it.s * margin * (boss ? .35 : 1)) { if (now > a.until - 3 * 60000) return goHome(); continue; }   // too strong: wait a bit, then give up
+                if (a.troops * atk < it.s * margin * (boss ? .35 : 1)) {                     // too strong: a person doesn't just stand there
+                    if (botArmyRethink(bot, a, atk, it.s * margin, now)) return true;
+                    if (now > a.until - 3 * 60000) return goHome(); continue;                 // nothing to do about it: give up and go home
+                }
                 if (armyMove(a, { kind: 'base', id: t.id, x: t.x, y: t.y, lm: t.landmassId })) continue;
                 if (islandOwnerOf(t.id) === 'player') { flashHint('Die Armee von ' + bot.name + ' marschiert auf ' + islandTitle(t) + '!', 4500); sfx('warn'); }
                 return true;
