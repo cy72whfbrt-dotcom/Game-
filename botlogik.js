@@ -124,8 +124,8 @@ const BOT_SKILLS = ['troops', 'attack', 'defense', 'speed', 'attackGold', 'defen
 // A bot attack that wins takes the target for that bot (clearing
 // whoever owned it before, including the player); a bot attack
 // that loses damages the defender the same way a player's failed
-// attack does - same rules as yours: shield (+ Bernhard) on a win,
-// 20 % flee on a loss, Lazarett, kill gold. Only logged/announced to the player when
+// attack does - same rules as yours: shield (+ the hero) on a win,
+// 20 % flee on a loss (+ the hero), Lazarett, kill gold. Only logged/announced to the player when
 // the player's own territory is the one being fought over - bot-
 // vs-bot and bot-vs-neutral fights resolve silently so the log
 // doesn't fill up with battles that have nothing to do with you.
@@ -141,16 +141,17 @@ function resolveBotAttack(attack) {
     const myTroops = Math.round((attack.rawTroops + (attack.attackBonus || 0)) * (attack.atkTitle !== undefined ? attack.atkTitle : titleMult(bot.id, 'attack')));
     const targetOwner = islandOwnerOf(target.id);
     const originalEnemyTroops = effectiveTroops(target);
-    const originalEnemyDefense = effectiveDefense(target);
-    const partsFor = () => targetOwner === 'player' ? { atkParts: attackParts(bot.id, attack.rawTroops, attack.attackBonus || 0, myTroops, attack.hero, attack), defParts: defenseParts(target) } : null;
-    const red = attack.botShield ? attack.shieldLossReductionPct : botMults(bot.id).shield;   // shield (+ Bernhard), snapshotted at launch
+    const fullDefense = effectiveDefense(target), originalEnemyDefense = Math.round(fullDefense * (1 - heroDefCut(attack)));   // (a hero's Rammbock, Sturmflut, Mauerbrecher)
+    const partsFor = () => targetOwner === 'player' ? { atkParts: attackParts(bot.id, attack.rawTroops, attack.attackBonus || 0, myTroops, attack.hero, attack), defParts: heroDefPart(defenseParts(target), attack, fullDefense) } : null;
+    const red = attack.botShield ? attack.shieldLossReductionPct : botMults(bot.id).shield;   // shield (+ the hero), snapshotted at launch
+    const hosp = attack.hx ? Math.min(100, botHospitalPct(bot.id) + attack.hx.hosp) : undefined;
     const botKillRate = attack.botShield ? attack.rewardGoldRate || 0 : botGoldRate(bot.id, 'attackGold');
     const parts = partsFor();
     const totalStrength = originalEnemyTroops + originalEnemyDefense;
     const won = myTroops > totalStrength;
     if (targetOwner && targetOwner !== 'player') botGrudge(targetOwner, bot.id, won ? 2 : 1);   // bots hold grudges against each other too
     addBotXp(bot.id, won ? totalStrength : Math.min(originalEnemyTroops, myTroops));
-    for (const hid of new Set([attack.hero, ...(attack.heroes || [])].filter(Boolean))) botHeroGainXp(bot.id, hid, won ? totalStrength : Math.min(originalEnemyTroops, myTroops));
+    heroFought(bot.id, attack.hx);                                   // the hero's rage fills, like yours
     const playerInvolved = targetOwner === 'player';
     const bossHere = bossAt(target.id);
 
@@ -158,9 +159,9 @@ function resolveBotAttack(attack) {
     const capitalHolds = won && isCapital(target.id);
     const botSentLoss = won ? sentLossFor(attack.rawTroops, myTroops, originalEnemyDefense, red) : 0, survivors = won ? attack.rawTroops - botSentLoss : 0;   // same rule as yours   // the sword bonus fights along but doesn't stay
     const fled = won ? 0 : retreatSurvivorsPreview(attack);
-    const atkFallen = attack.rawTroops - survivors - fled, atkWounded = botHospitalTake(bot.id, atkFallen);
+    const atkFallen = attack.rawTroops - survivors - fled, atkWounded = botHospitalTake(bot.id, atkFallen, hosp);
     const homeAgain = n => { if (n <= 0) return; const t0 = Date.now();                 // they walk home like yours (a fallen home: resolveSend sends them to another base)
-        pendingSends.push({ fromId: target.id, toId: source.id, troops: n, startedAt: t0, resolveAt: t0 + travelDurationSeconds(target, source, bot.id) * 1000, senderBotId: bot.id, back: true }); };
+        pendingSends.push({ fromId: target.id, toId: source.id, troops: n, startedAt: t0, resolveAt: t0 + retreatSecs(attack, target, source, bot.id) * 1000, senderBotId: bot.id, back: true }); };
     if (capitalHolds) {
         islandTroops[target.id] = 0;
         botCoins[bot.id] += Math.round(originalEnemyTroops * botKillRate);   // "Angriff: Gold" for the garrison, like any other win
@@ -176,7 +177,7 @@ function resolveBotAttack(attack) {
             setGateSettings(target.id, { toll: sty === 'templer' ? 1 : sty === 'builder' ? 0.5 : sty === 'raider' ? 0.25 : GATE_TOLLS[1 + Math.floor(r * 4)],
                                          closed: sty === 'raider' ? r < .5 : sty === 'templer' ? r < .3 : r < .1 }); }
         islandLevels[target.id] = levelAfterCapture;
-        botCoins[bot.id] += Math.round(originalEnemyTroops * botKillRate);   // "Angriff: Gold" (+ Ida): per enemy troop killed
+        botCoins[bot.id] += Math.round(originalEnemyTroops * botKillRate);   // "Angriff: Gold" (+ the hero's Gold): per enemy troop killed
         if (target.type === 'temple' || target.type === 'megaTemple') {
             templeHoldSince[target.id] = Date.now();
         }
@@ -200,7 +201,7 @@ function resolveBotAttack(attack) {
     if (!won && counts) botNoteFail(bot.id, target.id);
     if (!won) botLearn(bot.id, target.id);                          // a lost fight tells them what's really there
     if (!won && targetOwner && targetOwner !== 'player') botStat(targetOwner, 'defs');
-    if (won && bossHere) botStat(bot.id, 'bosses');
+    if (won && bossHere) { botStat(bot.id, 'bosses'); heroGrantShards(bot.id, bossHere.wander ? HERO_SHARDS_WANDER : HERO_SHARDS_BOSS); }   // the same shards you get
     updateHud();
     if (bossHere && won) { spawnBattleFx(target.id, false, bossHere.name + ' gefallen', bot.name); (bossHere.wander ? endWander : endBoss)(bot.name + ' hat ' + bossHere.name + ' besiegt!'); }
 
@@ -231,7 +232,7 @@ function resolveBotAttack(attack) {
             targetId: target.id,
             myTroops,
             atkRaw: attack.rawTroops, atkBonus: attack.attackBonus || 0, atkFallen, atkWounded, atkFled: fled, ...(parts || {}),
-            atkGear: fighterSnapshot(bot.id, [attack.hero, ...(attack.heroes || [])]), defGear: fighterSnapshot('player'),
+            atkGear: fighterSnapshot(bot.id, attack.hx), defGear: fighterSnapshot('player'),
             enemyTroops: originalEnemyTroops,
             enemyDefense: originalEnemyDefense,
             wounded: defWounded,
@@ -556,7 +557,7 @@ function botThink(bot) {
     if (!(act.plan && act.plan.kind === 'attack') && botArmyStep(bot)) { botTapped(bot); saveBotState(); return; }   // a field army waiting for orders (gathering troops can wait one tap)
     if (act.plan) { if (botPlanStep(bot)) { botTapped(bot); saveBotState(); } return; }   // finish what they started
     if (botKeepsShield(bot, Date.now())) { if (Math.random() < .3 && botGatherField(bot, true)) botTapped(bot); return; }   // under their own shield: no attacks, only gathering
-    const st = botStyle(bot), atk = botAtkFactor(bot, true), ruler = rulerOwner();   // several waves: Sigrun only leads one, so she's a bonus, not part of the plan
+    const st = botStyle(bot), atk = botAtkFactor(bot, true), ruler = rulerOwner();   // several waves: a hero only leads one, so he's a bonus, not part of the plan
     const shielded = playerShielded(), now = Date.now(), shOwn = shieldedOwners(now);
     const busy = new Set(pendingAttacks.filter(a => a.attackerBotId === bot.id).map(a => a.targetId)), thr = botThreatened(bot.id);
     for (const a of armies) if (a.who === bot.id && a.t != null) busy.add(a.t);                 // their own army out there is already on it
@@ -720,7 +721,7 @@ function botThink(bot) {
 
 // Bots play by exactly the player's rules: XP and levels (1 skill point per level into the same 6 skills), a city
 // with the same 9 buildings they build themselves (same coins, same build times, one builder), a Lazarett with
-// room for a limited number of wounded that they heal for coins, the same 3 heroes (XP, rarity, one per attack),
+// room for a limited number of wounded that they heal for coins, the same 14 heroes (shards, stars, skills, one per attack),
 // gear from crates (combine 3 → 1, salvage for points, level up, stars in the Schmiede) and bases upgraded
 // as far as their coins allow. Nothing is derived from their level any more.
 // ==============================================================================================================
@@ -738,7 +739,7 @@ function loadBotState() {
         if (!b.v2 && !b.items) { b.items = {}; for (const k of Object.keys(EQUIPMENT_DEFS)) b.items[k] = RARITY_DEFS.map(() => 0); }
         if (!b.v2) botMigrateV2(bot, b);
         b.city.levels = Object.assign(Object.fromEntries(BOT_BUILDINGS.map(k => [k, 0])), b.city.levels || {});
-        for (const h of HEROES_IDS) b.heroes[h] = Object.assign({ lvl: 1, xp: 0, rar: 0 }, b.heroes[h] || {});
+        if (!b.hs) b.hs = heroConvert(b.heroes, b.city.levels.heroes || 0); heroFix(b.hs); delete b.heroes;   // the old 3 heroes → stars, like yours (+ the same starter shards)
         if (!(b.wounded >= 0)) b.wounded = 0;
         if (b.city) cityClampBuild(b.city.build, Date.now());
         b.shields = Object.assign({ 2: 0, 8: 0, 24: 0 }, b.shields || {}); if (!(b.shieldUntil > 0)) b.shieldUntil = 0;
@@ -751,8 +752,8 @@ function botMigrateV2(bot, b) {                          // older saves: level-d
     const cl = Math.min(25, Math.floor(b.lvl / 2));
     b.city = { levels: {}, build: null };
     for (const k of BOT_BUILDINGS) b.city.levels[k] = Math.max(0, Math.min(k === 'forge' ? STAR_MAX : 25, cl - Math.floor(r() * 3)));
-    const hall = b.city.levels.heroes, unlock = { sigrun: 1, bernhard: 5, ida: 10 };
-    b.heroes = {}; for (const h of HEROES_IDS) b.heroes[h] = { lvl: hall >= unlock[h] ? Math.max(1, Math.min(50, hall * 2 - Math.floor(r() * 3))) : 1, xp: 0, rar: 0 };
+    const hall = b.city.levels.heroes;
+    b.heroes = {}; for (const h of ['sigrun', 'bernhard', 'ida']) b.heroes[h] = { lvl: Math.max(1, Math.min(50, hall * 2 - Math.floor(r() * 3))), xp: 0, rar: 0 };   // (turned into stars right after)
     let refund = 0; for (const k of Object.keys(b.equip)) { for (let l = 0; l < b.equip[k]; l++) refund += equipmentUpgradeCost(l); b.equip[k] = 0; }   // coin gear no longer exists for anyone
     if (refund && typeof botCoins !== 'undefined' && botCoins[bot.id] !== undefined) botCoins[bot.id] += refund;
     b.gear = {}; b.spare = {}; b.pts = 0;
@@ -791,8 +792,7 @@ function botBld(botId, id) { const b = loadBotState()[botId]; return b ? (b.city
 
 function botCityFinish(bot, now) {                        // a build is done when its time is up - online or not, like yours
     const c = loadBotState()[bot.id].city; if (!c.build || now < c.build.endsAt) return;
-    const id = c.build.id; c.levels[id] = c.build.to; c.build = null; saveBotState();
-    if (id === 'heroes') for (const hid of HEROES_IDS) botHeroGainXp(bot.id, hid, 0);
+    c.levels[c.build.id] = c.build.to; c.build = null; saveBotState();
 }
 
 const BOT_BUILD_PREF = {                                  // what each kind of player builds first (lower = sooner)
@@ -840,22 +840,31 @@ function botHeal(bot) {                                   // heals everyone at o
     botCoins[bot.id] -= cost; islandTroops[cap] = (islandTroops[cap] || 0) + b.wounded; b.wounded = 0; saveBotState();
 }
 
-// ---- the bot's heroes ----
-function botHeroLevel(botId, id) { const b = loadBotState()[botId]; return Math.min(b.heroes[id].lvl, Math.max(1, Math.min(50, botBld(botId, 'heroes') * 2))); }
+// ---- the bot's heroes: the same 14 as yours - the same shards, quarter stars, skill points and rage ----
+function botHeroFreshSet() { return heroFix(heroConvert(null, 0)); }
 
-function botHeroUnlocked(botId, id) { return botBld(botId, 'heroes') >= heroById(id).unlock; }
+function botPickHero(botId, src, target, raw) { return heroPickBest(botId, src, target, raw); }   // the free hero who does the most in this attack
 
-function botHeroBonus(botId, id) { const h = heroById(id); return h && botHeroUnlocked(botId, id) ? Math.round(botHeroLevel(botId, id) * h.per * HERO_RAR_MULT[Math.min(RARITY_DEFS.length - 1, loadBotState()[botId].heroes[id].rar || 0)]) : 0; }
+function botHeroAtk(botId) { let m = 0; for (const h of HEROES) if (heroOwned(botId, h.id) && !heroBusy(botId, h.id)) m = Math.max(m, heroStats(botId, h.id).atk); return m; }   // what the best free hero adds
 
-function botHeroBusy(botId, id) { return pendingAttacks.some(a => a.attackerBotId === botId && (a.hero === id || (a.heroes && a.heroes.includes(id)))) || (typeof armies !== 'undefined' && armies.some(x => x.who === botId && x.hero === id)); }
+const BOT_HERO_LIKES = { raider: ['atk', 'strongAtk', 'neutralAtk', 'fieldAtk', 'gateAtk'], builder: ['loss', 'hosp', 'flee', 'gold', 'carry'], templer: ['templeAtk', 'templeLoss', 'midAtk', 'guardAtk', 'siegeAtk'],
+    balanced: ['atk', 'loss'], veteran: ['atk', 'loss', 'rage', 'spd'] };
 
-function botPickHero(botId) { for (const id of HEROES_IDS) if (botHeroUnlocked(botId, id) && !botHeroBusy(botId, id)) return id; return null; }
-
-function botHeroGainXp(botId, id, amount) {
-    const b = loadBotState()[botId], st = b && b.heroes[id]; if (!st) return;
-    st.xp += Math.max(0, Math.round(amount)); const mx = Math.min(50, botBld(botId, 'heroes') * 2);
-    while (st.lvl < mx && st.xp >= heroXpNeed(st.lvl)) { st.xp -= heroXpNeed(st.lvl); st.lvl++; }
-    saveBotState();
+function botHeroCare(bot) {                               // like a player in the Heldenhalle: the day's shards, unlock, quarter stars, points into what suits their style
+    const b = loadBotState()[bot.id], day = todayKey(); if (!b || !b.hs) return;
+    if (b.hsDay !== day) { const first = !b.hsDay; b.hsDay = day;               // the daily tasks' shards - on the days they play enough to finish them
+        if (!first && Math.random() < Math.min(.95, (BOT_STYLES[bot.style].act || .6) + .2)) { heroGrantShards(bot.id, HERO_SHARDS_DAY); b.hsDays = (b.hsDays || 0) + 1; if (b.hsDays % 7 === 0) heroGrantShards(bot.id, HERO_SHARDS_CHAIN); } }
+    const like = BOT_HERO_LIKES[bot.style] || [];
+    for (const h of HEROES) {
+        const s = b.hs[h.id]; if (!s) continue;
+        if (!s.own) heroDoUnlock(bot.id, h.id);
+        for (let n = 0; n < HERO_MAXQ && s.own && heroDoStep(bot.id, h.id); n++);
+        for (let n = 0; n < 10 && s.own && heroFree(s) > 0; n++) {             // the active skill first, then the passive that suits them
+            let k = s.sk[0] < 5 ? 0 : -1;
+            if (k < 0) { const opts = [1, 2, 3].filter(q => s.sk[q] < 5); if (!opts.length) break; k = opts.find(q => like.includes(h.sk[q][2])) || opts[0]; }
+            if (!heroDoSkill(bot.id, h.id, k)) break;
+        }
+    }
 }
 
 // ---- the bot's gear: one worn item per slot, spares for combining, points for levels, stars ----
@@ -877,9 +886,8 @@ function botMults(botId) {
 
 function botGoldRate(botId, skill) { const b = loadBotState()[botId]; return b ? (b.skills[skill] || 0) * SKILL_DEFS[skill].rate : 0; }
 
-function botAtkFactor(bot, noHero) {                      // what the bot expects its next attack to hit with (skill, Sigrun if she's free, title)
-    const sig = !noHero && botHeroUnlocked(bot.id, 'sigrun') && !botHeroBusy(bot.id, 'sigrun') ? botHeroBonus(bot.id, 'sigrun') : 0;
-    return (1 + (botMults(bot.id).attackPct + sig) / 100) * titleMult(bot.id, 'attack');
+function botAtkFactor(bot, noHero) {                      // what the bot expects its next attack to hit with (skill, its best free hero, title)
+    return (1 + (botMults(bot.id).attackPct + (noHero ? 0 : botHeroAtk(bot.id))) / 100) * titleMult(bot.id, 'attack');
 }
 
 function botTickMs(botId) { const b = loadBotState()[botId]; return Math.max(400, 1000 - Math.min(b.skills.speed || 0, SKILL_DEFS.speed.max) * SKILL_DEFS.speed.msPerLevel); }
@@ -925,10 +933,7 @@ function botShop(bot) {                                  // gems and points spen
     botThroneShop(bot.id);
     const b = loadBotState()[bot.id], slots = Object.keys(EQUIPMENT_DEFS);
     botRings(bot, b);
-    for (const id of HEROES_IDS) {                        // raise a hero's rarity when it's allowed and affordable
-        const s = b.heroes[id], r = s.rar || 0;
-        if (botHeroUnlocked(bot.id, id) && r < RARITY_DEFS.length - 1 && s.lvl >= HERO_RAR_LEVEL[r] && b.gems >= HERO_RAR_COST[r] * 1.5 && b.gems - HERO_RAR_COST[r] >= TELEPORT_GEMS) { b.gems -= HERO_RAR_COST[r]; s.rar = r + 1; break; }
-    }
+    botHeroCare(bot);                                    // shards → unlock, stars, skill points
     const starCap = Math.min(STAR_MAX, botBld(bot.id, 'forge'));   // one star per visit on the best-worn piece
     for (const k of slots.filter(q => b.gear[q]).sort((x, y) => botGearPct(b, y) - botGearPct(b, x))) {   // the strongest piece first
         const g = b.gear[k]; if ((g.st || 0) < starCap && b.gems >= starGemCost(g.st || 0) * 1.5 && b.gems - starGemCost(g.st || 0) >= TELEPORT_GEMS) { b.gems -= starGemCost(g.st || 0); g.st = (g.st || 0) + 1; break; } }
@@ -1057,12 +1062,12 @@ function botDefend(bot) {
     if (!owned || owned.size === 0) return;
     const act = botActOf(bot.id), now = Date.now(); if (now < (act.defNext || 0)) return;      // (paced by its own timer - own columns on the road never block it)
     const notice = 1 + botBld(bot.id, 'watch') * .05, threats = new Map(), covered = loadBotState()[bot.id].shieldUntil || 0;
-    const see = (id, startedAt, at, str) => {
+    const see = (id, startedAt, at, str, late) => {
         if (!owned.has(id) || isCapital(id) || (at < covered && shieldCovers(islandById[id]))) return;                                     // (it bounces off the shield anyway)
-        if (now - startedAt < (3000 + (startedAt % 9000)) / notice) return;                             // not seen yet
+        if (now - startedAt < (3000 + (startedAt % 9000)) / notice + (at - startedAt) * (late || 0) / 100) return;   // not seen yet (Spurlos: a hero's column is seen later)
         const t = threats.get(id) || { id, str: 0, at: Infinity }; t.str += str; t.at = Math.min(t.at, at); threats.set(id, t);
     };
-    for (const a of pendingAttacks) if (a.attackerBotId !== bot.id) see(a.targetId, a.startedAt, a.resolveAt, (a.rawTroops + (a.attackBonus || 0)) * (a.atkTitle || 1));   // (own later waves just move in)
+    for (const a of pendingAttacks) if (a.attackerBotId !== bot.id) see(a.targetId, a.startedAt, a.resolveAt, (a.rawTroops + (a.attackBonus || 0)) * (a.atkTitle || 1), a.hx ? a.hx.late : 0);   // (own later waves just move in)
     for (const a of armies) if (a.mv && a.mv.to.kind === 'base') { const w = armyWho(a);                 // a field army marching on the base is on the map too
         if (w !== bot.id) see(a.mv.to.id, a.mv.startedAt, a.mv.resolveAt, a.troops * (1 + fieldAtkPct(w) / 100) * titleMult(w, 'attack')); }
     if (!threats.size) return;
@@ -1374,7 +1379,7 @@ function botsFastForward(hours, toCenter) {        // toCenter: they push region
         for (let n = 0; n < 200 && busy < hours * 3600000; n++) { botCityBuild(bot, now); if (!c.build) break; busy += c.build.endsAt - c.build.startedAt; c.build.endsAt = now; botCityFinish(bot, now); }
         for (let n = 0; n < 8; n++) botConsiderUpgrade(bot);
         addBotXp(bot.id, Math.round(hp.troops * hours * .25));
-        for (const hid of HEROES_IDS) if (botHeroUnlocked(bot.id, hid)) botHeroGainXp(bot.id, hid, Math.round(hp.troops * hours * .05));
+        for (let d = 1; d <= Math.floor(hours / 24); d++) { heroGrantShards(bot.id, HERO_SHARDS_DAY); if (d % 7 === 0) heroGrantShards(bot.id, HERO_SHARDS_CHAIN); }   // the days away: their daily shards
         b.gems += Math.round(hours * 15); b.wounded = 0;
         for (let n = 0; n < 6; n++) botShop(bot);
     }
@@ -1398,7 +1403,9 @@ function botGatherField(bot, freeOnly) {                 // freeOnly: under thei
     for (const f of resFields) { if (!reach.has(f.landmassId)) continue; const st = fieldInfo(f); if (st.left <= 0) continue;
         if (st.occ && (freeOnly || st.occ.who !== bot.id && ownerShielded(st.occ.who) || st.occ.troops * 1.3 > have)) continue;
         const d = Math.hypot(f.x - b.x, f.y - b.y) * (st.occ ? 2 : 1); if (d < bd) { bd = d; best = f; } }
-    return best ? fieldSend(bot.id, base, best.id, have) : false;
+    if (!best) return false;
+    const gh = HEROES.find(h => heroOwned(bot.id, h.id) && !heroBusy(bot.id, h.id) && h.sk.some((x, k) => k && (x[2] === 'carry' || x[2] === 'gatherSpd' || x[2] === 'gatherDef') && heroSt(bot.id, h.id).sk[k]));   // a gatherer hero (Fenn, Otto) if one is free
+    return fieldSend(bot.id, base, best.id, have, gh ? gh.id : null);
 }
 
 // bots set up field armies too: when one base isn't enough for a target, they gather in front of it out in the open,
@@ -1422,7 +1429,7 @@ function botArmyRally(bot, target, need, srcList) {
     for (const id of strong) { if (pool >= need * 1.3 || helpers.length >= most) break;
         if (!botCanCross(bot.id, islandById[id].landmassId, pt.lm, Math.floor((islandTroops[id] || 0) * .9))) continue; helpers.push(id); pool += Math.floor((islandTroops[id] || 0) * .9); }
     if (pool < need * 1.1) return false;
-    const a = { id: 'b' + Date.now().toString(36) + Math.floor(Math.random() * 1e4), who: bot.id, hero: botPickHero(bot.id), x: pt.x, y: pt.y, lm: pt.lm, troops: 0, homeId: helpers[0], mv: null, t: target.id, until: Date.now() + (helpers.length > 6 ? 12 : 8) * 60000 };
+    const a = { id: 'b' + Date.now().toString(36) + Math.floor(Math.random() * 1e4), who: bot.id, hero: botPickHero(bot.id, null, null, need), x: pt.x, y: pt.y, lm: pt.lm, troops: 0, homeId: helpers[0], mv: null, t: target.id, until: Date.now() + (helpers.length > 6 ? 12 : 8) * 60000 };
     armies.push(a); let sent = 0;
     for (const id of helpers) { const n = Math.floor((islandTroops[id] || 0) * .9); if (armySendFrom(a, id, n)) sent += n; }
     if (!sent) { armies = armies.filter(x => x !== a); return false; }
@@ -1510,7 +1517,7 @@ function botArmyStep(bot) {                                                   //
             if (islandOwnerOf(t.id) === 'player') { const h = armyHome(a); if (h !== null && h !== undefined) botScoutVisible(bot, h, t.id, now, ready); }
             return true;
         }
-        const st = botStyle(bot), margin = islandOwnerOf(t.id) === 'player' ? Math.max(1.25, st.margin) : st.margin, atk = (1 + (botMults(bot.id).attackPct + (a.hero === 'sigrun' ? botHeroBonus(bot.id, 'sigrun') : 0)) / 100) * titleMult(bot.id, 'attack');   // with the army's own hero
+        const st = botStyle(bot), margin = islandOwnerOf(t.id) === 'player' ? Math.max(1.25, st.margin) : st.margin, atk = (1 + (botMults(bot.id).attackPct + (a.hero && heroOwned(bot.id, a.hero) ? heroStats(bot.id, a.hero).atk : 0)) / 100) * titleMult(bot.id, 'attack');   // with the army's own hero
         if (a.troops * atk < it.s * margin * (boss ? .35 : 1)) {                     // too strong: a person doesn't just stand there
             if (botArmyRethink(bot, a, atk, it.s * margin, now)) return true;
             if (now > a.until - 3 * 60000) return goHome(); continue;                 // nothing to do about it: give up and go home
@@ -1555,13 +1562,13 @@ function armyRaidArrive(r, now) {
     if (a && ownerShielded('player', Math.min(now, r.resolveAt || now))) { back(); flashHint('Dein Friedensschild hat den Angriff von ' + bot.name + ' auf deine Armee abgewehrt.', 4000); return; }   // the shield covers field armies too
     const p = a && armyPos(a, now);
     if (!a || Math.hypot(p.x - r.tx, p.y - r.ty) > ISLAND_RADIUS * 2) { back(); if (a) flashHint('Deine Armee ist ' + bot.name + ' ausgewichen.', 3000); return; }
-    const def = a.troops, atk = r.troops, fb = fieldBattle(r.botId, atk, 'player', def, null, a.hero), won = fb.won;
-    if (a.hero) heroGainXp(a.hero, won ? fb.dLoss : fb.SA);
-    const fg = fieldGold(r.botId, 'player', fb, null);
-    if (won) { armies = armies.filter(x => x !== a); r.troops -= fb.aLoss; botHospitalTake(r.botId, fb.aLoss); back(); const w = hospitalTake(def);
+    const dHx = heroFieldFx('player', a.hero, { defending: 1 });                     // your army's hero (Bollwerk, Zäh …) - a full rage fires now
+    const def = a.troops, atk = r.troops, fb = fieldBattle(r.botId, atk, 'player', def, null, dHx), won = fb.won;
+    const fg = fieldGold(r.botId, 'player', fb, null, dHx);
+    if (won) { armies = armies.filter(x => x !== a); r.troops -= fb.aLoss; botHospitalTake(r.botId, fb.aLoss); back(); const w = fieldHurt('player', def, dHx);
         flashHint(bot.name + ' hat deine Armee im Feld geschlagen (' + fmtCompact(def) + ' Truppen)' + (w ? ', ' + fmtCompact(w) + ' ins Lazarett.' : '.'), 5000); }
-    else { botHospitalTake(r.botId, atk); hospitalTake(fb.dLoss); a.troops -= fb.dLoss; r.troops = 0; statBump('defends'); flashHint('Deine Armee hat den Angriff von ' + bot.name + ' abgewehrt – ' + fmtCompact(a.troops) + ' stehen noch.', 4500); }
-    addCombatLogEntry({ type: 'army', won: !won, attacker: bot.name, defender: 'Du', atk: fb.SA, def: fb.SD, gold: fg.d });
+    else { botHospitalTake(r.botId, atk); fieldHurt('player', fb.dLoss, dHx); a.troops -= fb.dLoss; r.troops = 0; statBump('defends'); flashHint('Deine Armee hat den Angriff von ' + bot.name + ' abgewehrt – ' + fmtCompact(a.troops) + ' stehen noch.', 4500); }
+    addCombatLogEntry({ type: 'army', won: !won, attacker: bot.name, defender: 'Du', atk: fb.SA, def: fb.SD, gold: fg.d, hD: heroTag(dHx), hx: heroReportOf(dHx) });
     warStat(won ? 'armyLosses' : 'armyWins', 1, bot.name);
     sfx(won ? 'defeat' : 'victory'); updateHud(); saveGame();
 }
