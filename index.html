@@ -3462,6 +3462,7 @@ body.has-panel .mapctl{display:none}
             }
             // XP for troops that died in the clash either way: a win kills
             // the whole enemy force, a loss costs your whole attack force
+            noteBattle(target.id, won ? originalEnemyTroops : attack.rawTroops - retreatSurvivors, won ? targetOwner : 'player');
             addXp(won ? totalStrength : defenderCasualties);
             for (const hid of new Set([attack.hero, ...(attack.heroes || [])].filter(Boolean))) heroGainXp(hid, won ? totalStrength : defenderCasualties);
             scoutedIslands.add(target.id);
@@ -3599,6 +3600,8 @@ body.has-panel .mapctl{display:none}
                     neutralTroopOverrides[target.id] = target.neutralTroops;
                 }
             }
+            noteBattle(target.id, won ? originalEnemyTroops : attack.rawTroops - fled, won ? targetOwner : bot.id);   // the neighbours saw it
+            if (!won) botNoteFail(bot.id, target.id);
             if (!won) botLearn(bot.id, target.id);                          // a lost fight tells them what's really there
             if (!won && targetOwner && targetOwner !== 'player') botStat(targetOwner, 'defs');
             if (won && bossHere) botStat(bot.id, 'bosses');
@@ -5617,6 +5620,10 @@ body.has-panel .mapctl{display:none}
             const b = loadBotState()[botId]; if (!b || !who || who === botId) return;
             const g = b.grudge || (b.grudge = {}), now = Date.now(), cur = g[who] && g[who].until > now ? g[who] : null;
             g[who] = { n: Math.min(5, (cur ? cur.n : 0) + weight), from: cur ? cur.from : now + 30000 + Math.random() * 90000, until: now + 20 * 60000, told: cur ? cur.told : false };
+            if (g[who].n >= 4 && !(b.vendetta && b.vendetta.who === who && now < b.vendetta.until)) {        // hit again and again: now it's personal - a real plan
+                b.vendetta = { who, until: now + 45 * 60000 };
+                if (who === 'player') setTimeout(() => flashHint(botById[botId].name + ' schwört Rache: er sammelt Truppen und späht deine Basen aus.', 5500), 2000);
+            }
             saveBotState();
         }
         function botGrudgeOn(botId, who) {
@@ -5628,6 +5635,54 @@ body.has-panel .mapctl{display:none}
             const g = botGrudgeOn(bot.id, 'player'); if (!g || g.told) return;
             g.told = true; saveBotState();
             flashHint(bot.name + ' schlägt zurück – du hast ' + (g.n > 1 ? 'zu oft ' : '') + 'angegriffen. Achte auf ' + islandTitle(islandById[targetId]) + '!', 5000);
+        }
+        // ===== How people read the map (all of it still goes through scouting before an attack) =====
+        // Brennpunkte: where it kept crashing lately. Raiders are drawn there and pick off a base the winner just took with
+        // few survivors (Aasgeier); careful players stay away. Schwäche: an owner who just lost a lot, or is offline, is a
+        // "now or never" target. Lernen: a base that beat them twice is left alone for a while, the next try brings much
+        // more. Rache mit Plan: whoever hit them again and again gets a proper answer - gather, scout, one big strike.
+        // Gemeinsam gegen den Herrscher: whoever sits on the throne too long gets everyone at the gates (not his friends).
+        const battleHeat = {}, baseFought = {}, ownerLoss = {};         // landmass → { v, at } · island → when · owner → { v, at }
+        const decayed = (o, now, halfMs) => o ? o.v * Math.pow(.5, (now - o.at) / halfMs) : 0;
+        function noteBattle(islandId, fallen, loser) {
+            const isl = islandById[islandId]; if (!isl) return; const now = Date.now();
+            const h0 = battleHeat[isl.landmassId]; battleHeat[isl.landmassId] = { v: decayed(h0, now, 10 * 60000) + 1, at: now };
+            baseFought[islandId] = now;
+            if (loser && fallen > 0) { const o = ownerLoss[loser]; ownerLoss[loser] = { v: decayed(o, now, 10 * 60000) + fallen, at: now }; }
+        }
+        function heatAt(lmId, now) { return decayed(battleHeat[lmId], now, 10 * 60000); }
+        function ownerWeak(who, now) {                              // just lost a big share of the army, or not at the screen
+            if (!who) return false;
+            if (who !== 'player' && botById[who] && !botOnline(botById[who], now)) return true;
+            let have = 0; for (const id of who === 'player' ? ownedIslands : botOwnedIslands[who] || []) have += islandTroops[id] || 0;
+            return decayed(ownerLoss[who], now, 10 * 60000) > Math.max(1, have) * .3;
+        }
+        function botFails(bot, targetId, now) { const f = (loadBotState()[bot.id].fails || {})[targetId]; return f && now - f.at < 30 * 60000 ? f.n : 0; }
+        function botNoteFail(botId, targetId) { const b = loadBotState()[botId]; if (!b) return; const f = b.fails || (b.fails = {}), now = Date.now();
+            const old = f[targetId] && now - f[targetId].at < 30 * 60000 ? f[targetId].n : 0; f[targetId] = { n: old + 1, at: now };
+            for (const k of Object.keys(f)) if (now - f[k].at > 30 * 60000) delete f[k]; }
+        function botVendetta(bot, now) { const v = loadBotState()[bot.id].vendetta; return v && now < v.until ? v : null; }
+        function coalitionOn(now) {                                  // the throne held for 20 min: the others stop quarrelling and go for it
+            const r = rulerOwner(); return r && throneState.rulerSince && now - throneState.rulerSince > 20 * 60000 ? r : null;
+        }
+        function botLoyal(bot) { const t = titleOf(bot.id); return !!(t && t.good); }   // the ruler gave them a good title: they stay out of it
+        function botSituation(bot, st, target, owner, now) {        // how the moment changes the pull of a target (lower = more wanted)
+            let m = 1; const bold = (st.risk || 0) >= .12 || (st.hunt || 0) >= .5;
+            const heat = heatAt(target.landmassId, now);
+            if (heat > .5) m *= bold ? 1 / (1 + Math.min(3, heat) * .4) : 1 + Math.min(3, heat) * .5;       // drawn to the fighting, or keeping clear
+            if (owner && bold && baseFought[target.id] && now - baseFought[target.id] < 4 * 60000) m *= .35;   // Aasgeier: the winner is thin right now
+            if (owner && owner !== bot.id && ownerWeak(owner, now)) m *= .6;                                   // jetzt oder nie
+            const v = botVendetta(bot, now); if (v && owner === v.who) m *= .08;                               // the answer they swore
+            const co = coalitionOn(now);
+            if (co && co !== bot.id && !botLoyal(bot) && (target.id === megaTempleId || owner === co)) m *= target.id === megaTempleId ? .1 : .5;
+            const fails = botFails(bot, target.id, now); if (fails >= 2) m *= 4;                               // that wall hurt twice: not now
+            return m;
+        }
+        function botMarginFor(bot, target, owner, now) {             // how careful: a vendetta and past failures bring more, weakness less
+            let k = 1 + botFails(bot, target.id, now) * .45;
+            const v = botVendetta(bot, now); if (v && owner === v.who) k *= 1.3;
+            if (owner && ownerWeak(owner, now)) k *= .9;
+            return k;
         }
         // What a bot knows about a base: like a person it only knows the numbers after scouting (or fighting) there.
         // Intel ages: after 10 minutes it scouts again. Scouting takes as long as a scout would walk (about half the march).
@@ -5735,6 +5790,7 @@ body.has-panel .mapctl{display:none}
                         let d = Math.hypot(target.x - source.x, target.y - source.y);
                         const grudge = botGrudgeOn(bot.id, islandOwnerOf(target.id));
                         if (grudge) d /= 1 + grudge.n;
+                        d *= botSituation(bot, st, target, islandOwnerOf(target.id), now);
                         if (rally && rally.t === target.id) d *= .05;                                   // the planned big strike comes first                                                  // revenge pulls them towards whoever hit them
                         if (target.id === megaTempleId && ruler !== bot.id) d *= 0.1;                   // the throne pulls
                         const inward = landmasses[target.landmassId].ring < landmasses[source.landmassId].ring;
@@ -5774,15 +5830,20 @@ body.has-panel .mapctl{display:none}
                 const boss = bossAt(e.target.id);                                                          // an event's strength is public
                 let it = boss ? { s: boss.troops + boss.defense } : botIntel(bot, e.target.id), gamble = false;
                 const vsPlayer = islandOwnerOf(e.target.id) === 'player';
-                if (!it && !vsPlayer && gambles > 0 && !botScouting(bot, e.target.id) && Math.random() < .5) { gambles--;           // risky: attack on a guess (never blind on a real player)
+                if (!it && !vsPlayer && e.target.type === 'tower' && gambles > 0 && !botScouting(bot, e.target.id) && Math.random() < .5) { gambles--;   // risky: attack on a guess (never blind on a real player, the throne, a gate or a temple)
                     it = { s: (effectiveTroops(e.target) + effectiveDefense(e.target)) * (.55 + Math.random() * .9) }; gamble = true;
                 }
                 if (!it) continue;
                 const grab = e.target.type === 'tower' && !islandOwnerOf(e.target.id) && !boss && !(rally && rally.t === e.target.id) &&
                     landmasses[e.target.landmassId].ring >= landmasses[islandById[e.sources[0].id].landmassId].ring;
                 if (grab && grabs <= 0) continue;
-                const margin = vsPlayer ? Math.max(1.25, st.margin)                                         // against a real player: always a safe margin
-                                        : st.margin * (e.grudge ? .85 : 1) * (Math.random() < (st.risk || 0) ? .8 : 1);   // sometimes they cut it close
+                const margin = (vsPlayer ? Math.max(1.25, st.margin)                                        // against a real player: always a safe margin
+                                        : st.margin * (e.grudge ? .85 : 1) * (Math.random() < (st.risk || 0) ? .8 : 1))   // sometimes they cut it close
+                                  * botMarginFor(bot, e.target, islandOwnerOf(e.target.id), now);                   // a vendetta or a lesson learned brings more
+                if (botFails(bot, e.target.id, now) >= 2 && !(rally && rally.t === e.target.id) && !gamble) {        // not the same wall a third time with a normal army
+                    if (!rallied && !mem.rally) rallied = botRally(bot, e.target, e.sources[0].id, it.s * margin / atk, slots);
+                    if (rallied) break; continue;
+                }
                 // think ahead like a person: a player's base keeps producing - by the time the army arrives there is more.
                 // The report's age plus the march time, at the rate a base of that level makes troops (with some slack).
                 let expect = it.s;
@@ -7818,6 +7879,10 @@ body.has-panel .mapctl{display:none}
         }
         function throneTick() {
             const now = Date.now(), ts = throneState; let dirty = false;
+            const r = rulerOwner(); if ((ts.ruler || null) !== (r || null)) { ts.ruler = r || null; ts.rulerSince = now; ts.coTold = false; dirty = true; }
+            if (!ts.coTold && coalitionOn(now)) { ts.coTold = true; dirty = true;                  // everyone else turns on the throne
+                flashHint(r === 'player' ? 'Du hältst den Thron schon lange – die anderen verbünden sich gegen dich. Rechne mit Angriffen von allen Seiten!'
+                    : 'Die anderen verbünden sich gegen ' + botById[r].name + ' – der Thron wird von allen Seiten angegriffen.', 6000); }
             for (let n = 0; ts.nextPts <= now; n++) { ts.nextPts += THRONE_TICK_MS; dirty = true; if (n < 3) throneAward(); }   // a throttled background tab catches up a little, not for hours
             for (let n = 0; ts.nextFire <= now; n++) { ts.nextFire += THRONE_FIRE_MS; dirty = true; if (n < 3) throneVolley(); }
             if (dirty) { saveThrone(); if (isPanelOpen(shopPopup)) renderShop(); }
