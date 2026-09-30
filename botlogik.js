@@ -198,6 +198,7 @@ function resolveBotAttack(attack) {
         }
     }
     noteBattle(target.id, won ? originalEnemyTroops : attack.rawTroops - fled, won ? targetOwner : bot.id);   // the neighbours saw it
+    midFight(target.id, bot.id, won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops), targetOwner, won ? botSentLoss : attack.rawTroops - fled, won, targetOwner);   // Turnier-Punkte, Kopfgeld-Anteil - like yours
     const counts = won || !attack.planId || attack.lastWave;                    // an early wave of a planned strike failing isn't a lesson yet
     if (counts) botMoodAdd(bot.id, won ? .15 : -.2); if (targetOwner && targetOwner !== 'player') botMoodAdd(targetOwner, won ? -.25 : .1);
     if (!won && counts) botNoteFail(bot.id, target.id);
@@ -330,6 +331,13 @@ function botVendetta(bot, now) { const v = loadBotState()[bot.id].vendetta; retu
 
 function coalitionOn(now) {                                  // the throne held for 20 min: the others stop quarrelling and go for it
     const r = rulerOwner(); return r && throneState.rulerSince && now - throneState.rulerSince > 20 * 60000 ? r : null;
+}
+
+function botMidPull(bot, target, ruler, now) {             // weekends (Turnier) draw everyone to the middle and its gates; a fat Kopfgeld to the ruler's bases
+    let m = 1;
+    if (midZoneIds.has(target.id) && tourOn(now)) m *= target.id === megaTempleId ? .5 : target.guardian ? .55 : .7;
+    if (ruler && ruler !== bot.id && (target.id === megaTempleId || islandOwnerOf(target.id) === ruler)) { const g = bountyGems(); if (g > 0) m /= 1 + Math.min(2, g / 1000); }
+    return m;
 }
 
 // Worth the trouble? A person doesn't attack every base on the map - only the ones in the way: a foreign base inside
@@ -592,6 +600,7 @@ function botThink(bot) {
                 d *= sitOf(target, islandOwnerOf(target.id));
                 if (rally && rally.t === target.id) d *= .05;                                   // the planned big strike comes first                                                  // revenge pulls them towards whoever hit them
                 if (target.id === megaTempleId && ruler !== bot.id) d *= 0.1;                   // the throne pulls
+                d *= botMidPull(bot, target, ruler, now);                                         // the Turnier on weekends, the Kopfgeld on the ruler
                 const inward = landmasses[target.landmassId].ring < landmasses[source.landmassId].ring;
                 if (inward) d *= target.type === 'gate' ? .3 : .5;                              // everyone wants to get to the middle
                 else if (bossAt(target.id)) d *= 0.15;                                         // events: bosses and the Wanderboss are worth a big attack
@@ -1363,6 +1372,10 @@ function botClaimGoals(bot) {
 }
 
 function botStat(botId, k, n) { const b = loadBotState()[botId]; if (!b) return; b.stats = b.stats || {}; b.stats[k] = (b.stats[k] || 0) + (n || 1); saveBotState(); }
+
+// Wochenend-Turnier and Kopfgeld: their prizes land where yours do - gems, hero shards (one hero, like a boss), coins
+function botTourReward(botId, gems, shards) { const b = loadBotState()[botId]; if (!b) return; b.gems = (b.gems || 0) + gems; heroGrantShards(botId, shards); botStat(botId, 'tourPrizes'); }
+function botBountyReward(botId, gems, coins) { const b = loadBotState()[botId]; if (!b) return; b.gems = (b.gems || 0) + gems; botCoins[botId] = (botCoins[botId] || 0) + coins; botStat(botId, 'bounty', gems); }
 
 function botThroneShop(botId) {                       // the others spend their points the way a player would
     const b = loadBotState()[botId]; if (!b) return;
