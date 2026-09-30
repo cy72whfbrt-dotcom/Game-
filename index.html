@@ -654,11 +654,90 @@ body.has-panel .mapctl{display:none}
 .logRow .lt b{display:block;font:600 var(--fs-13)/1.25 var(--font-ui);color:var(--tx-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .logRow .lt small{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;margin-top:2px;font:500 var(--fs-11)/1.25 var(--font-ui);color:var(--tx-3);white-space:normal;overflow:hidden;overflow-wrap:anywhere}
 .logRow .lv{font:600 var(--fs-12)/1 var(--font-ui);color:var(--tx-2);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
-.hero-list{display:grid;gap:8px;margin-top:10px} .hero-card{display:grid;grid-template-columns:40px 1fr;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line-2);border-left:3px solid var(--hc);border-radius:8px;background:rgba(255,255,255,.03)}
-.hero-card.is-locked{opacity:.55;border-left-color:var(--line-2)} .hero-ic{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--hc);color:#fff} .hero-card.is-locked .hero-ic{background:#3a3a44}
-.hero-t{display:grid;gap:3px} .hero-rar{font-style:normal;font-size:var(--fs-12);font-weight:700} .hero-up{justify-self:start;margin-top:4px;gap:4px} .hero-up .icon{width:13px;height:13px} .hero-need{color:var(--tx-2);font-style:italic} .hero-t b small{font-weight:500;color:var(--tx-2)} .hero-t small{color:var(--tx-2)} .hero-t em{color:var(--gold-300);font-style:normal}
-.hero-xp{display:block;height:5px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden} .hero-xp i{display:block;height:100%;background:linear-gradient(90deg,var(--hc),#f0d69a)}
-.seg.hero-seg button{display:inline-flex;align-items:center;justify-content:center;gap:4px} .seg.hero-seg button:disabled{opacity:.4}
+.hero-ic{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--hc);color:#fff}
+.seg.hero-seg{display:flex;flex-wrap:wrap} .seg.hero-seg button{flex:1 1 28%;display:inline-flex;align-items:center;justify-content:center;gap:4px;padding:0 6px;border-left:3px solid var(--hc,var(--line-1))} .seg.hero-seg button small{color:var(--gold-200);font-size:10px} .seg.hero-seg button:disabled{opacity:.4}
+.logHero{padding:6px 0;border-top:1px solid var(--line-1)} .logHero .ghero .hero-ic{background:var(--hc)} .logHeroFire{font-style:normal;color:var(--gold-200);font-weight:700}
+/* Heldenhalle: grid of tall rarity cards → one hero (figure left, info right; stacked on phones) */
+.hh{position:fixed;inset:0;z-index:58;overflow-y:auto;overscroll-behavior:contain;background:var(--noise),radial-gradient(circle at 50% 0,#1d1a14,#07080b 70%);color:var(--tx-1);padding:calc(var(--safe-t) + 8px) 12px calc(var(--safe-b) + 16px);animation:fade-in var(--dur-2) var(--ease-out)}
+.hh[hidden]{display:none}
+.hh > *{max-width:980px;margin-left:auto;margin-right:auto}
+.hh-head{display:flex;align-items:center;gap:10px;padding:6px 0 10px;border-bottom:1px solid var(--line-2)}
+.hh-head h2{flex:1;margin:0;text-align:center;font:700 20px/1.1 var(--font-display);letter-spacing:.08em;color:var(--gold-100)}
+.hh-ghost{width:34px}
+.hh-count{padding:8px 0;font:500 var(--fs-12)/1.4 var(--font-ui);color:var(--tx-3);text-align:center}
+.hh-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px;padding:4px 0 8px}
+.hh-card{position:relative;aspect-ratio:3/4.3;border-radius:var(--r-lg);overflow:hidden;cursor:pointer;border:2px solid var(--rc);background:linear-gradient(170deg,var(--rc) 0%,#0b0c10 78%);padding:0;color:var(--tx-1);font:inherit;box-shadow:0 4px 10px #0008;transition:transform var(--dur-1) ease}
+.hh-card:active{transform:scale(.98)}
+.hh-card.is-locked{background:linear-gradient(170deg,color-mix(in srgb,var(--rc) 35%,#0b0c10) 0%,#0b0c10 78%)}
+.hh-art{position:absolute;inset:12% 12% 30%;border-radius:40% 40% 8px 8px;background:linear-gradient(180deg,var(--c),transparent);display:grid;place-items:center;font:700 40px/1 var(--font-display);color:#ffffffcc;text-shadow:0 4px 12px #000}
+.hh-card.is-locked .hh-art{filter:grayscale(1) brightness(.45)}
+.hh-lk{position:absolute;right:5px;top:5px;font:700 9px/1 var(--font-ui);letter-spacing:.06em;text-transform:uppercase;background:#000c;border:1px solid var(--rc);border-radius:var(--r-pill);padding:3px 6px}
+.hh-dot{position:absolute;left:6px;top:6px;width:11px;height:11px;border-radius:50%;background:#e33;border:2px solid #000}
+.hh-foot{position:absolute;left:0;right:0;bottom:0;padding:6px 4px 7px;background:linear-gradient(0deg,#000e,#0000);text-align:center;display:grid;gap:1px;justify-items:center}
+.hh-foot b{font:700 var(--fs-13)/1.1 var(--font-ui);text-shadow:0 1px 2px #000}
+.hh-foot small{font-size:10px;color:#ffffffaa}
+.hh-frag{display:block;width:80%;height:6px;border-radius:3px;background:#0009;overflow:hidden;margin-top:3px} .hh-frag i{display:block;height:100%;background:var(--gold-300)}
+.hh-qstars{display:inline-flex;gap:3px;align-items:center}
+.hh-qstars i{width:14px;height:14px;clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);background:linear-gradient(90deg,var(--gold-200) 0 var(--f),#ffffff26 var(--f) 100%)}
+.hh-hero{position:relative;display:grid;grid-template-columns:1fr 320px;margin-top:10px;border:1px solid var(--line-2);border-radius:var(--r-lg);overflow:hidden;background:radial-gradient(circle at 35% 40%,var(--glow),#0a0b0e 65%)}
+.hh-stage{position:sticky;top:0;align-self:start;height:min(560px,calc(100vh - 140px));min-height:440px}
+.hh-id{position:absolute;left:14px;top:12px;display:flex;flex-direction:column;gap:4px;z-index:2;text-shadow:0 1px 3px #000}
+.hh-gem{display:inline-flex;align-items:center;gap:6px;font:800 11px/1 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--rc)}
+.hh-gem::before{content:"";width:11px;height:11px;transform:rotate(45deg);background:var(--rc);border:2px solid #000}
+.hh-nm{font:700 30px/1 var(--font-display);text-shadow:0 3px 10px #000}
+.hh-ttl{font:500 var(--fs-13)/1.2 var(--font-ui);color:var(--tx-2)}
+.hh-id .hh-qstars i{width:22px;height:22px}
+.hh-floor{position:absolute;left:10%;right:10%;bottom:14px;height:40px;border-radius:50%;background:radial-gradient(ellipse,#000a,transparent 70%)}
+.hh-fig{position:absolute;left:50%;bottom:30px;transform:translateX(-50%);width:210px;height:380px;z-index:0}
+.hh-fig i{position:absolute;display:block}
+.hh-fig .cape{left:10px;right:10px;top:95px;bottom:10px;border-radius:30px 30px 80px 80px;background:linear-gradient(180deg,var(--c2),#000c)}
+.hh-fig .torso{left:40px;right:40px;top:92px;height:170px;border-radius:40px 40px 18px 18px;background:linear-gradient(180deg,var(--c),#0009);border:3px solid #0007}
+.hh-fig .belt{left:40px;right:40px;top:230px;height:14px;background:var(--gold-500)}
+.hh-fig .legs{left:62px;right:62px;top:250px;height:120px;background:linear-gradient(90deg,#20262c 0 44%,transparent 44% 56%,#20262c 56%)}
+.hh-fig .head{left:50%;top:14px;transform:translateX(-50%);width:78px;height:86px;border-radius:48% 48% 44% 44%;background:#e0bf9f;border:3px solid #0007}
+.hh-fig .hair{left:50%;top:4px;transform:translateX(-50%);width:92px;height:52px;border-radius:46px 46px 12px 12px;background:var(--hair)}
+.hh-fig .weapon{right:-14px;top:40px;width:16px;height:300px;border-radius:6px;background:linear-gradient(180deg,#f4f4f4,#7a7a7a);transform:rotate(10deg)}
+.hh-fig .shield{left:-18px;top:130px;width:84px;height:104px;border-radius:14px 14px 50px 50px;background:var(--c);border:5px solid var(--gold-500)}
+.hh-panel{background:linear-gradient(180deg,rgba(20,22,28,.9),rgba(12,13,17,.95));border-left:1px solid var(--line-2)}
+.hh-blk{padding:12px 14px;border-bottom:1px solid var(--line-1)}
+.hh-blk h3{margin:0 0 8px;font:700 var(--fs-11)/1 var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--tx-3)}
+.hh-top{display:flex;justify-content:space-between;align-items:flex-end;gap:10px}
+.hh-pow{font:700 22px/1 var(--font-display);color:var(--gold-200)}
+.hh-role{font-size:var(--fs-12);color:var(--tx-3)} .hh-role em{font-style:normal;color:var(--ember-300)}
+.hh-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:8px}
+.hh-steps span{font-size:10.5px;text-align:center;padding:4px 2px;border-radius:var(--r-sm);background:#0006;color:var(--tx-3)}
+.hh-steps span.on{background:rgba(228,200,134,.15);color:var(--gold-200)}
+.hh-qinfo{display:flex;justify-content:space-between;gap:8px;font-size:var(--fs-12);color:var(--tx-3);margin-top:8px;font-variant-numeric:tabular-nums} .hh-qinfo b{color:var(--tx-1);white-space:nowrap}
+.hh-bar{height:9px;border-radius:5px;background:#0008;overflow:hidden;margin-top:4px;border:1px solid #ffffff14}
+.hh-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold-500),var(--gold-200))}
+.hh-bar.hh-rage i{background:linear-gradient(90deg,#8a2a1a,#f08a4a)}
+.hh-skh{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px} .hh-skh h3{margin:0}
+.hh-pts{font:800 11px/1 var(--font-ui);color:var(--tx-inv);background:var(--gold-200);border-radius:var(--r-pill);padding:4px 9px}
+.hh-pts.off{background:#0006;color:var(--tx-3);border:1px solid var(--line-2)}
+.hh-sklist{display:flex;flex-direction:column;gap:8px}
+.hh-sk{display:grid;grid-template-columns:40px 1fr 32px;gap:10px;align-items:center;background:#0005;border:1px solid var(--line-1);border-radius:var(--r-lg);padding:8px}
+.hh-sk.is-locked{opacity:.5}
+.hh-hx{width:40px;height:46px;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);display:grid;place-items:center;font:700 17px/1 var(--font-display);color:#fff;background:linear-gradient(180deg,var(--sc),#0009)}
+.hh-hx.act{background:linear-gradient(180deg,#ffd76a,#c9771f);color:#2a1a05}
+.hh-skt{min-width:0} .hh-skt b{font-size:var(--fs-13)}
+.hh-skt small{display:block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--tx-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hh-skt p{margin:3px 0 4px;font-size:var(--fs-12);color:var(--tx-2);line-height:1.4} .hh-skt .hh-max{font-size:11px;color:var(--tx-4);margin-top:0}
+.hh-pips{display:flex;gap:3px} .hh-pips i{width:8px;height:8px;border-radius:50%;background:#ffffff25} .hh-pips i.on{background:var(--gold-200)}
+.hh-plus{width:32px;height:32px;border-radius:var(--r-lg);border:1px solid #8a6414;background:linear-gradient(180deg,#fff0b8,#e6b340);color:#1b1400;font:900 18px/1 var(--font-ui);cursor:pointer;box-shadow:inset 0 -2px 0 #a8791c,0 2px 0 #5e4410}
+.hh-plus:active{transform:translateY(1px)} .hh-plus:disabled{filter:grayscale(1);opacity:.35;box-shadow:none;cursor:default}
+.hh-hint{margin:8px 0 0;font-size:11.5px;line-height:1.45;color:var(--tx-3)}
+.hh-reset{margin-top:8px;width:100%;font:700 var(--fs-12)/1 var(--font-ui);color:var(--tx-1);background:var(--ink-4);border:1px solid var(--line-2);border-radius:var(--r-lg);padding:9px;cursor:pointer} .hh-reset:disabled{opacity:.4;cursor:default}
+.hh-vals{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.hh-vals div{display:flex;justify-content:space-between;gap:8px;background:#0006;border-radius:var(--r-sm);padding:6px 8px;font-size:12.5px;white-space:nowrap} .hh-vals span{color:var(--tx-3)}
+.hh-actions{position:sticky;bottom:0;padding:10px 0 0;background:linear-gradient(0deg,#07080b 60%,transparent)}
+.hh-go{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px;font:800 14px/1.1 var(--font-ui);color:#1b1400;border:1px solid #8a6414;border-radius:10px;cursor:pointer;
+  background:linear-gradient(180deg,#fff0b8 0%,#f5cf62 45%,#d9a02a 100%);box-shadow:inset 0 1px 0 #fffbe6,inset 0 -3px 0 #a8791c,0 3px 0 #5e4410,0 6px 14px #0008}
+.hh-go:active{transform:translateY(2px)} .hh-go:disabled{filter:grayscale(.8) brightness(.7);cursor:default;transform:none}
+.hh-go small{font-weight:800;font-size:10.5px;background:#5e441022;border:1px solid #8a641455;border-radius:var(--r-pill);padding:2px 8px;color:#5a4000}
+.hh-i{width:28px;height:28px;display:grid;place-items:center;border-radius:50%;background:#5e4410;color:#ffe08a}
+.hh-steps .icon,.seg.hero-seg small .icon{width:10px;height:10px;vertical-align:-1px;margin-right:1px} .hh-i .icon{width:15px;height:15px}
+.hh-open{width:100%} .hh-badge{min-width:20px;height:20px;margin-left:4px;border-radius:10px;background:#e33;color:#fff;font:800 11px/20px var(--font-ui);font-style:normal;text-align:center;padding:0 5px;text-shadow:none}
+@media (max-width:760px){.hh-hero{grid-template-columns:1fr} .hh-panel{border-left:0;border-top:1px solid var(--line-2)} .hh-stage{position:relative;height:auto;min-height:330px} .hh-fig{left:68%;transform:translateX(-50%) scale(.66);transform-origin:bottom center;bottom:6px}}
 .crest-card{display:grid;grid-template-columns:56px 1fr auto;gap:12px;align-items:center;width:100%;padding:10px 12px;margin:4px 0 8px;border:1px solid var(--line-2);border-radius:8px;background:rgba(255,255,255,.03);color:var(--tx-1);text-align:left;cursor:pointer}
 .crest-card:hover{border-color:var(--gold-300)} #crestSmall{width:56px;height:56px} .crest-card-t{display:grid;gap:2px} .crest-card-t small{color:var(--tx-2)}
 .look-now{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:1px solid var(--line-2);border-radius:10px;background:rgba(0,0,0,.22);text-align:left;color:inherit}
@@ -1731,6 +1810,9 @@ body.has-panel .mapctl{display:none}
   </section>
 </div>
 
+<!-- ============ HELDENHALLE: the heroes ============ -->
+<section id="heroHall" class="hh" role="dialog" aria-label="Helden" hidden></section>
+
 <!-- ============ ISLAND / BASE POPUP ============ -->
 <section id="islandPopup" class="panel panel--island" role="dialog" aria-labelledby="popupTitle">
   <span class="sheet-grab" aria-hidden="true"></span>
@@ -2151,15 +2233,15 @@ body.has-panel .mapctl{display:none}
         function gateSettings(gate) { return Object.assign({ toll: gate.toll, closed: false }, loadGateCfg()[gate.id] || {}); }
         function setGateSettings(gateId, patch) { const c = loadGateCfg(); c[gateId] = Object.assign(gateSettings(islandById[gateId]), patch); store.set('openWaterGateCfg', JSON.stringify(c)); }
         const GATE_TOLLS = [0, 0.1, 0.25, 0.5, 1, 2], TOLL_MAX = 1e6;   // per troop, but never more than 1 Mio. per march
-        function tollFor(fromLm, toLm, troops, payer, targetId) {  // → { gate, cost, closed } (free for the gate's owner - and for an attack ON the gate itself)
+        function tollFor(fromLm, toLm, troops, payer, targetId, cut) {  // → { gate, cost, closed } (free for the gate's owner - and for an attack ON the gate itself); cut = a hero's −% Maut
             const gate = gateOnRoute(fromLm, toLm);
             if (!gate || islandOwnerOf(gate.id) === payer || gate.id === targetId) return { gate, cost: 0 };
             const cfg = gateSettings(gate);
             if (!islandOwnerOf(gate.id) || cfg.closed) return { gate, cost: Infinity, closed: true };   // unowned gates are shut
-            return { gate, cost: cfg.toll > 0 ? Math.max(100, Math.min(TOLL_MAX, Math.round(Math.max(0, troops) * cfg.toll))) : 0 };
+            return { gate, cost: cfg.toll > 0 ? Math.round(Math.max(100, Math.min(TOLL_MAX, Math.round(Math.max(0, troops) * cfg.toll))) * (1 - Math.min(90, cut || 0) / 100)) : 0 };
         }
-        function payToll(fromLm, toLm, troops, payer, targetId) { // payer: 'player' | bot id → false when it can't pay
-            const { gate, cost, closed } = tollFor(fromLm, toLm, troops, payer, targetId);
+        function payToll(fromLm, toLm, troops, payer, targetId, cut) { // payer: 'player' | bot id → false when it can't pay
+            const { gate, cost, closed } = tollFor(fromLm, toLm, troops, payer, targetId, cut);
             if (!cost) return true;
             if (closed) { if (payer === 'player') { const ow = islandOwnerOf(gate.id);
                 flashHint(ow ? 'Das Tor ist geschlossen – ' + botById[ow].name + ' lässt niemanden durch. Erobere das Tor.' : 'Das Tor ist unbesetzt und verschlossen – erobere es zuerst, dann kommst du durch.', 4000); } return false; }
@@ -2408,7 +2490,44 @@ body.has-panel .mapctl{display:none}
             scoutedIslands = new Set();
         }
 
-        const HEROES_IDS = ['sigrun', 'bernhard', 'ida'];
+        // ===== HELDEN: 14 heroes with a fixed rarity like the gear (1 grün · 2 blau · 3 lila · 4 gold). Shards unlock them, then
+        // quarter stars up to 5; 1 skill point per half star for 4 skills (1 active at full rage, 3 passive). Only in fights they lead.
+        const HEROES = [
+            { id: 'brunhild', name: 'Brunhild', title: 'Schildmaid des Nordens', role: 'Verteidigung', r: 4, icon: 'shield', color: '#8a4f2c', c2: '#3b2a4a', hair: '#c9a15a', g: 'shield', base: [4, 8, 0],
+              sk: [['Schildwall', 'In diesem Kampf {v} % weniger Verluste.', 'loss'], ['Eisenhaut', '{v} % weniger Verluste in jedem Kampf.', 'loss'], ['Bollwerk', '+{v} % Verteidigung ihrer Armee im Feld.', 'fieldDef'], ['Standhaft', 'Verliert sie, fliehen {v} % mehr Truppen zurück.', 'flee']] },
+            { id: 'ragna', name: 'Ragna', title: 'Seekönigin', role: 'Brücken & Tore', r: 4, icon: 'send', color: '#1f5f8a', c2: '#0f2f4a', hair: '#e0e0e0', g: 'weapon', base: [8, 3, 6],
+              sk: [['Sturmflut', 'Greift sie über eine Brücke an: Verteidigung des Ziels −{v} %.', 'bridgeDef'], ['Seefahrerin', '+{v} % Marschtempo.', 'spd'], ['Gezeiten', '−{v} % Maut an fremden Toren.', 'toll'], ['Torbrecherin', '+{v} % Angriff gegen Tore.', 'gateAtk']] },
+            { id: 'sigrun', name: 'Sigrun', title: 'Klinge des Südens', role: 'Angriff', r: 3, icon: 'attack', color: '#9b2f2f', c2: '#1f1f2f', hair: '#d8d0c0', g: 'weapon', base: [8, 0, 2],
+              sk: [['Sturmangriff', 'In diesem Kampf +{v} % Angriff.', 'atk'], ['Klingenmeisterin', '+{v} % Angriff.', 'atk'], ['Blutrausch', 'Wut füllt sich um {v} % schneller.', 'rage'], ['Todesmut', '+{v} % Angriff gegen stärkere Gegner.', 'strongAtk']] },
+            { id: 'aldric', name: 'Aldric', title: 'Meister der Belagerung', role: 'Tore & Tempel', r: 3, icon: 'castle', color: '#5b4a8a', c2: '#2b2b2b', hair: '#3a2a1a', g: 'weapon', base: [7, 2, 0],
+              sk: [['Rammbock', 'Verteidigung von Tor oder Tempel −{v} % für diesen Angriff.', 'siegeDef'], ['Belagerer', '+{v} % Angriff gegen Tore und Tempel.', 'siegeAtk'], ['Pioniere', '−{v} % Maut an fremden Toren.', 'toll'], ['Mauerbrecher', 'Die Verteidigung einer Basis zählt {v} % weniger.', 'defCut']] },
+            { id: 'kasimir', name: 'Kasimir', title: 'Gestürzter König', role: 'Thron', r: 3, icon: 'crown', color: '#6a2f5b', c2: '#2a1a2a', hair: '#2a1a1a', g: 'weapon', base: [6, 3, 0],
+              sk: [['Königsruf', 'Im Kampf um die Mitte: +{v} % Angriff.', 'midAtk'], ['Thronsturm', '+{v} % Angriff gegen die Wächter-Tempel.', 'guardAtk'], ['Rache am Thron', '+{v} % Angriff gegen den Herrscher.', 'rulerAtk'], ['Altes Wissen', '{v} % weniger Verluste im Kampf um die Mitte.', 'midLoss']] },
+            { id: 'yrsa', name: 'Yrsa', title: 'Tempelwächterin', role: 'Tempel', r: 3, icon: 'temple', color: '#4a6a4a', c2: '#2a3a2a', hair: '#b0602a', g: 'shield', base: [3, 7, 0],
+              sk: [['Heilige Mauer', 'Greift sie einen Tempel an: {v} % weniger Verluste.', 'templeLoss'], ['Tempelgold', '+{v} % Gold aus Kämpfen um Tempel.', 'templeGold'], ['Pilgerin', '+{v} % Angriff gegen Tempel.', 'templeAtk'], ['Segen', '+{v} % Verwundete statt Gefallene bei Tempelkämpfen.', 'templeHosp']] },
+            { id: 'ida', name: 'Ida', title: 'Pfadfinderin', role: 'Tempo', r: 2, icon: 'boots', color: '#2f7a6a', c2: '#1f3a2f', hair: '#7a3a1a', g: 'weapon', base: [2, 2, 8],
+              sk: [['Eilmarsch', 'Ihre Armee marschiert {v} % schneller.', 'spd'], ['Kartenkunde', '+{v} % Marschtempo.', 'spd'], ['Leichtfuß', 'Verliert sie, fliehen {v} % mehr Truppen zurück.', 'flee'], ['Rückweg', 'Rückzüge sind {v} % schneller.', 'ret']] },
+            { id: 'bernhard', name: 'Bernhard', title: 'Feldscher', role: 'Lazarett', r: 2, icon: 'plus', color: '#3d6b9b', c2: '#2a2a3a', hair: '#555', g: 'shield', base: [0, 6, 0],
+              sk: [['Feldlazarett', '+{v} % der Gefallenen kommen ins Lazarett.', 'hosp'], ['Wundarzt', '{v} % weniger Verluste.', 'loss'], ['Sanitäter', 'Verliert er, fliehen {v} % mehr Truppen zurück.', 'flee'], ['Feldküche', 'Rückzüge sind {v} % schneller.', 'ret']] },
+            { id: 'mira', name: 'Mira', title: 'Späherin', role: 'Späher', r: 2, icon: 'scout', color: '#6b7a2f', c2: '#2f3a1f', hair: '#1a1a1a', g: 'weapon', base: [2, 3, 4],
+              sk: [['Adlerauge', '+{v} % Angriff gegen eine Basis, die du vorher ausgespäht hast.', 'scoutAtk'], ['Leise Sohlen', '+{v} % Marschtempo.', 'spd'], ['Spurlos', 'Die anderen bemerken ihren Angriff {v} % später.', 'late'], ['Fährtenleserin', '+{v} % Angriff gegen Armeen im Feld.', 'fieldAtk']] },
+            { id: 'nora', name: 'Nora', title: 'Jägerin', role: 'Feldkampf', r: 2, icon: 'troops', color: '#4a5a8a', c2: '#20283a', hair: '#6a2a2a', g: 'weapon', base: [6, 2, 4],
+              sk: [['Hinterhalt', 'Gegen Armeen im Feld: +{v} % Angriff.', 'fieldAtk'], ['Pirsch', '+{v} % Marschtempo im Feld.', 'fieldSpd'], ['Beute', '+{v} % Gold aus Kämpfen im Feld.', 'fieldGold'], ['Zäh', '{v} % weniger Verluste im Feld.', 'fieldLoss']] },
+            { id: 'fenn', name: 'Fenn', title: 'Goldsucher', role: 'Felder', r: 2, icon: 'coin', color: '#7a6a4a', c2: '#3a3020', hair: '#a07a3a', g: 'none', base: [2, 3, 3],
+              sk: [['Goldrausch', 'Im Kampf um ein Feld: +{v} % Angriff.', 'resAtk'], ['Spürnase', 'Seine Sammler sind {v} % schneller.', 'gatherSpd'], ['Packesel', '+{v} % Traglast seiner Sammler.', 'carry'], ['Lagerwache', 'Seine Sammler verteidigen mit +{v} %.', 'gatherDef']] },
+            { id: 'otto', name: 'Otto', title: 'Händler', role: 'Gold', r: 1, icon: 'sell', color: '#8a7a2e', c2: '#3a2f1f', hair: '#8a6a3a', g: 'none', base: [3, 2, 0],
+              sk: [['Beutezug', 'Dieser Kampf bringt +{v} % Gold.', 'gold'], ['Feilschen', '+{v} % Gold aus Kämpfen.', 'gold'], ['Lastträger', '+{v} % Traglast seiner Sammler.', 'carry'], ['Sparsam', '−{v} % Maut an fremden Toren.', 'toll']] },
+            { id: 'greta', name: 'Greta', title: 'Kräuterfrau', role: 'Lazarett', r: 1, icon: 'plus', color: '#8a4a5b', c2: '#3a2030', hair: '#c0c0a0', g: 'none', base: [0, 6, 0],
+              sk: [['Kräutersud', '+{v} % der Gefallenen kommen ins Lazarett.', 'hosp'], ['Salben', '{v} % weniger Verluste.', 'loss'], ['Hausmittel', 'Verliert sie, fliehen {v} % mehr Truppen zurück.', 'flee'], ['Wegzehrung', 'Rückzüge sind {v} % schneller.', 'ret']] },
+            { id: 'hagen', name: 'Hagen', title: 'Söldner', role: 'Angriff', r: 1, icon: 'weapon', color: '#5a5a5a', c2: '#2a2a2a', hair: '#3a3a3a', g: 'weapon', base: [8, 0, 2],
+              sk: [['Wucht', 'In diesem Kampf +{v} % Angriff.', 'atk'], ['Söldner', '+{v} % Angriff.', 'atk'], ['Raufbold', '+{v} % Angriff gegen neutrale Basen.', 'neutralAtk'], ['Hartgesotten', '{v} % weniger Verluste.', 'loss']] }
+        ];
+        const HEROES_IDS = HEROES.map(h => h.id);
+        // rarity rule: in the same role rarer is always stronger. a/p = active/passive value at skill level 5, st = the stat multiplier
+        const HERO_TIER = { 1: { a: 15, p: 5, st: 1 }, 2: { a: 20, p: 8, st: 1.6 }, 3: { a: 30, p: 12, st: 2.4 }, 4: { a: 40, p: 15, st: 3.2 } };
+        const HERO_UNLOCK = { 1: 10, 2: 20, 3: 40, 4: 80 }, HERO_START_SHARDS = { 1: 10, 2: 8, 3: 6, 4: 4 };   // shards to unlock · everyone's starter shards
+        const HERO_MAXQ = 20, HERO_RAGE = 25, HERO_RESET_GEMS = 200, HERO_HALL_GEF = 3;
+        const HERO_SHARDS_BOSS = 15, HERO_SHARDS_WANDER = 25, HERO_SHARDS_DAY = 5, HERO_SHARDS_CHAIN = 30;   // where shards come from (hero chests in the shop come later)                // 5 stars in quarters · rage per fight · reset price · +3 % Gefolge per hall level
         const botById = {};
         for (const bot of BOT_DEFS) botById[bot.id] = bot;
 
@@ -2581,19 +2700,19 @@ body.has-panel .mapctl{display:none}
             out[0][1] += effectiveDefense(island) - out.reduce((a, q) => a + q[1], 0);        // rounding goes to the base line
             return out;
         }
-        // what each side brought: level, title, the 4 equipped items, heroes and the city - kept with the report
-        function fighterSnapshot(who, heroIds) {
+        // what each side brought: level, title, the 4 equipped items, the hero who led (stars, rage, every bonus) and the city - kept with the report
+        function heroReportOf(hx) { return hx && hx.id ? { id: hx.id, q: hx.q, fired: !!hx.fired, skill: hx.skill || null, lines: hx.lines || [], extra: (hx.extra || []).map(e => ({ id: e.id, q: e.q, fired: !!e.fired, skill: e.skill || null, lines: e.lines || [] })) } : null; }
+        function fighterSnapshot(who, hx) {
             if (!who) return null;
             const slots = Object.keys(EQUIPMENT_DEFS);
             if (who === 'player') return { lvl: playerLvl, title: (titleOf('player') || {}).name || null,
                 items: slots.map(k => { const it = equippedItems[k] && inventory[equippedItems[k]]; return it ? [k, it.rarity, it.level, it.stars || 0] : [k, -1, 0, 0]; }),
-                heroes: [...new Set((heroIds || []).filter(Boolean))].map(id => [id, heroLevel(id), heroRarity(id)]),
+                heroes: [], hx: heroReportOf(hx),
                 skills: [skills.attack || 0, skills.defense || 0], city: [cityLevelSafe('wall'), cityLevelSafe('hospital'), cityLevelSafe('heroes')] };
             const b = loadBotState()[who]; if (!b) return null;
-            const hs = heroIds === 'bot' ? [] : [...new Set((heroIds || []).filter(Boolean))];
             return { lvl: b.lvl, title: (titleOf(who) || {}).name || null,
                 items: slots.map(k => { const it = botItem(b, k); return it ? [k, it.rarity, it.level, it.stars] : [k, -1, 0, 0]; }),
-                heroes: hs.map(id => [id, botHeroLevel(who, id), Math.min(RARITY_DEFS.length - 1, b.heroes[id].rar || 0)]),
+                heroes: [], hx: heroReportOf(hx),
                 skills: [b.skills.attack || 0, b.skills.defense || 0], city: [botBld(who, 'wall'), botBld(who, 'hospital'), botBld(who, 'heroes')] };
         }
         function attackParts(who, raw, bonus, total, hero, a) {       // a = the attack: its launch-time skill share and level win over today's values
@@ -2601,11 +2720,20 @@ body.has-panel .mapctl{display:none}
             const sl = snap && a.skillLvl !== undefined ? a.skillLvl : who === 'player' ? skills.attack || 0 : (loadBotState()[who] || { skills: {} }).skills.attack || 0;
             const skill = Math.min(bonus, snap ? a.skillBonus : who === 'player' ? attackFlatBonus(raw) : Math.round(raw * sl * SKILL_DEFS.attack.atkPct / 100));
             if (skill) out.push(['Skill Angriff', skill, 'Stufe ' + sl + ' · +' + sl * SKILL_DEFS.attack.atkPct + ' %']);
-            const sig = hero === 'sigrun' || (a && a.heroes && a.heroes.includes('sigrun')), hp = a && a.heroPct ? a.heroPct : who === 'player' ? heroBonus('sigrun') : botHeroBonus(who, 'sigrun');
-            if (bonus - skill) out.push([sig ? 'Heldin Sigrun' : 'Helden', bonus - skill, sig ? 'Heldenhalle · +' + hp + ' %' : '']);
+            const hx = a && a.hx, hd = hx && heroById(hx.id);             // the hero's Angriff and Gefolge (a fired skill included)
+            if (bonus - skill) out.push([hd ? 'Held ' + hd.name + ' ' + heroStarTxt(hx.q) : 'Helden', bonus - skill, hd ? 'Angriff +' + Math.round(hx.atk) + ' %' + (hx.gef ? ' · Gefolge +' + fmtCompact(hx.gef) : '') + (hx.fired ? ' · ' + hx.skill + ' gezündet' : '') : '']);
             const tv = total - raw - bonus, x = a && a.atkTitleKey !== undefined ? TITLES.find(q => q.key === a.atkTitleKey) : titleOf(who);   // the title it marched with
             if (tv) out.push(['Titel ' + (x ? x.name : ''), tv, 'Mega-Tempel · ' + (tv > 0 ? '+' : '−') + (x ? Math.round(Math.abs(x.v) * 100) : 25) + ' %']);
             return out;
+        }
+        function heroDefCut(a) { return a && a.hx ? Math.min(90, a.hx.def || 0) / 100 : 0; }    // Rammbock, Sturmflut, Mauerbrecher: the target's defense counts less
+        function heroDefPart(parts, a, full) { const cut = Math.round(full * heroDefCut(a)), hd = cut && heroById(a.hx.id); if (hd) parts.push(['Held ' + hd.name, -cut, 'Verteidigung −' + Math.round(a.hx.def) + ' %']); return parts; }
+        function attackFields(who, src, target, raw, hx) {      // everything an attack takes along at launch (skills, gear, title, hero) - for you and for everyone else
+            const bot = who !== 'player', sk = bot ? Math.round(raw * botMults(who).attackPct / 100) : attackFlatBonus(raw);
+            return { attackBonus: sk + (hx ? Math.round(raw * hx.atk / 100) + hx.gef : 0), skillBonus: sk, skillLvl: bot ? loadBotState()[who].skills.attack : skills.attack || 0,
+                attackGoldRate: bot ? botGoldRate(who, 'attackGold') : (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate, rewardGoldRate: killGoldRate(who, hx),
+                shieldLossReductionPct: Math.min(90, (bot ? botMults(who).shield : shieldLossReductionPct()) + (hx ? hx.loss : 0)), botShield: bot,
+                atkTitle: titleMult(who, 'attack'), atkTitleKey: (titleOf(who) || {}).key || null, hero: hx ? hx.id : null, hx: hx || null };
         }
         // Removes an island from whichever owner (player or a bot) it
         // currently belongs to, without touching its troops/level - used
@@ -3075,13 +3203,13 @@ body.has-panel .mapctl{display:none}
                 if (!attackerBotId) flashHint('Das ist die Hauptstadt von ' + (botById[islandOwnerOf(target.id)] || {}).name + ' – Hauptstädte können nicht angegriffen werden.', 3500);
                 return false;
             }
-            const hop = lastHop(source.landmassId, target.landmassId, attackerBotId || 'player');
-            if (!payToll(hop[0], hop[1], rawTroops, attackerBotId || 'player', target.id)) return false;
+            const who = attackerBotId || 'player', hero = attackerBotId ? botPickHero(attackerBotId, source, target, rawTroops) : nextAttackHero && heroOwned('player', nextAttackHero) && !heroBusy('player', nextAttackHero) ? nextAttackHero : null;
+            const hop = lastHop(source.landmassId, target.landmassId, who), hp = hero && heroPeek(who, hero, source, target, rawTroops);
+            if (!payToll(hop[0], hop[1], rawTroops, who, target.id, hp ? hp.toll : 0)) return false;
 
             islandTroops[sourceId] = available - rawTroops; // only the sent troops march out, the rest stay to defend
-            const hero = attackerBotId ? botPickHero(attackerBotId) : nextAttackHero && heroUnlocked(heroById(nextAttackHero)) && !heroBusy(nextAttackHero) ? nextAttackHero : null;
-            const who = attackerBotId || 'player', hb = heroBonusFor(who, hero);
-            const durationSec = Math.max(3, travelDurationSeconds(source, target, attackerBotId) / (hero === 'ida' ? 1 + hb / 100 : 1));
+            const hx = hero ? heroLaunch(who, hero, source, target, rawTroops) : null;   // a full rage fires the hero's active skill in this fight
+            const durationSec = Math.max(3, travelDurationSeconds(source, target, attackerBotId) / (1 + (hx ? hx.spd : 0) / 100));
             const startedAt = Date.now();
             // Snapshot every skill/equipment-derived combat bonus NOW, at
             // launch, not when the attack resolves on arrival (which can be
@@ -3096,15 +3224,7 @@ body.has-panel .mapctl{display:none}
                 startedAt,
                 resolveAt: startedAt + durationSec * 1000,
                 attackerBotId: attackerBotId || null,
-                attackBonus: (attackerBotId ? Math.round(rawTroops * botMults(attackerBotId).attackPct / 100) : attackFlatBonus(rawTroops)) + (hero === 'sigrun' ? Math.round(rawTroops * hb / 100) : 0),
-                skillBonus: attackerBotId ? Math.round(rawTroops * botMults(attackerBotId).attackPct / 100) : attackFlatBonus(rawTroops),
-                skillLvl: attackerBotId ? loadBotState()[attackerBotId].skills.attack : skills.attack || 0, heroPct: hero === 'sigrun' ? hb : 0,
-                attackGoldRate: attackerBotId ? botGoldRate(attackerBotId, 'attackGold') : (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate,
-                rewardGoldRate: killGoldRate(attackerBotId || 'player', hero),
-                bernPct: hero === 'bernhard' ? hb : 0,
-                shieldLossReductionPct: Math.min(90, (attackerBotId ? botMults(attackerBotId).shield : shieldLossReductionPct()) + (hero === 'bernhard' ? hb : 0)),
-                botShield: !!attackerBotId, atkTitle: titleMult(attackerBotId || 'player', 'attack'), atkTitleKey: (titleOf(attackerBotId || 'player') || {}).key || null,
-                hero
+                ...attackFields(who, source, target, rawTroops, hx)
             });
             updateHud();
             saveGame();
@@ -3315,7 +3435,8 @@ body.has-panel .mapctl{display:none}
                 ' Truppen, ' + fmtNum(effectiveDefense(target)) + ' Verteidigung.', 4000);
         }
 
-        function retreatPct(attack) { return Math.min(60, RETREAT_RECOVERY_PCT + (attack.bernPct || 0) / 2); }   // Bernhard: more of a beaten army gets away
+        function retreatPct(attack) { return Math.min(60, RETREAT_RECOVERY_PCT + (attack.hx ? attack.hx.flee : (attack.bernPct || 0) / 2)); }   // a hero (Standhaft, Leichtfuß …): more of a beaten army gets away
+        function retreatSecs(attack, from, to, botId) { return travelDurationSeconds(from, to, botId) / (1 + (attack.hx ? attack.hx.ret : 0) / 100); }   // Rückweg, Feldküche: faster home
         function retreatSurvivorsPreview(attack) { return Math.floor(attack.rawTroops * retreatPct(attack) / 100); }
         function resolveAttack(attack) {
             const source = islandById[attack.sourceId];
@@ -3333,8 +3454,8 @@ body.has-panel .mapctl{display:none}
             const myTroops = Math.round((attack.rawTroops + atkBonus) * (attack.atkTitle !== undefined ? attack.atkTitle : titleMult('player', 'attack')));
             const targetOwner = islandOwnerOf(target.id); // null | 'player' | a bot id
             const originalEnemyTroops = effectiveTroops(target);
-            const originalEnemyDefense = effectiveDefense(target), defParts = defenseParts(target);
-            const atkParts = attackParts('player', attack.rawTroops, atkBonus, myTroops, attack.hero, attack);
+            const fullDefense = effectiveDefense(target), originalEnemyDefense = Math.round(fullDefense * (1 - heroDefCut(attack))), defParts = heroDefPart(defenseParts(target), attack, fullDefense);
+            const atkParts = attackParts('player', attack.rawTroops, atkBonus, myTroops, attack.hero, attack), hosp = attack.hx ? Math.min(100, hospitalPct() + attack.hx.hosp) : undefined;
             const totalStrength = originalEnemyTroops + originalEnemyDefense;
             const won = myTroops > totalStrength;
             const bossHere = bossAt(target.id);
@@ -3352,9 +3473,9 @@ body.has-panel .mapctl{display:none}
             if (capitalHolds) {                                                     // the garrison falls, the base stays theirs - your survivors walk home
                 islandTroops[target.id] = 0; defenderCasualties = originalEnemyTroops;
                 enemyWounded = botHospitalTake(targetOwner, originalEnemyTroops);
-                woundedAdded = hospitalTake(sentLoss); warStat('fallen', sentLoss - woundedAdded); warStat('kills', originalEnemyTroops);
+                woundedAdded = hospitalTake(sentLoss, hosp); warStat('fallen', sentLoss - woundedAdded); warStat('kills', originalEnemyTroops);
                 killGold = Math.round(originalEnemyTroops * rewardRate); coins += killGold; retreatSurvivors = remaining;
-                if (remaining > 0) { const t0 = Date.now(); pendingRetreats.push({ fromId: target.id, toId: source.id, troops: remaining, startedAt: t0, resolveAt: t0 + travelDurationSeconds(target, source) * 1000 }); }
+                if (remaining > 0) { const t0 = Date.now(); pendingRetreats.push({ fromId: target.id, toId: source.id, troops: remaining, startedAt: t0, resolveAt: t0 + retreatSecs(attack, target, source) * 1000 }); }
             } else if (won) {
                 // Capturing a base doesn't reset it to level 1 - it costs
                 // the previous owner one level of upgrades, same as losing
@@ -3363,7 +3484,7 @@ body.has-panel .mapctl{display:none}
                 const levelAfterCapture = Math.max(1, (islandLevels[target.id] || 1) - 1);
                 if (targetOwner) { botNoteLoss(targetOwner, target.id); clearIslandOwner(target.id); } // taken from a bot (or, later, another player)
                 islandTroops[target.id] = remaining;
-                woundedAdded = hospitalTake(attack.rawTroops - remaining);          // your fallen in a won fight: part of them only wounded
+                woundedAdded = hospitalTake(attack.rawTroops - remaining, hosp);    // your fallen in a won fight: part of them only wounded
                 ownedIslands.add(target.id);
                 islandLevels[target.id] = levelAfterCapture;
                 questProgress('capture', 1);
@@ -3404,10 +3525,10 @@ body.has-panel .mapctl{display:none}
                 warStat('attacksLost'); warStat('kills', defenderCasualties);
                 killGold = Math.round(defenderCasualties * rewardRate); coins += killGold;
                 retreatSurvivors = retreatSurvivorsPreview(attack);
-                woundedAdded = hospitalTake(attack.rawTroops - retreatSurvivors);   // Lazarett: part of the fallen are only wounded
+                woundedAdded = hospitalTake(attack.rawTroops - retreatSurvivors, hosp);   // Lazarett (+ a hero's Feldlazarett): part of the fallen are only wounded
                 warStat('fallen', attack.rawTroops - retreatSurvivors - woundedAdded);
                 if (retreatSurvivors > 0) {
-                    const durationSec = travelDurationSeconds(target, source);
+                    const durationSec = retreatSecs(attack, target, source);
                     const startedAt = Date.now();
                     pendingRetreats.push({
                         fromId: target.id,
@@ -3423,7 +3544,7 @@ body.has-panel .mapctl{display:none}
             noteBattle(target.id, won ? originalEnemyTroops : attack.rawTroops - retreatSurvivors, won ? targetOwner : 'player');
             if (targetOwner && targetOwner !== 'player') botMoodAdd(targetOwner, won ? -.25 : .1);
             addXp(won ? totalStrength : defenderCasualties);
-            for (const hid of new Set([attack.hero, ...(attack.heroes || [])].filter(Boolean))) heroGainXp(hid, won ? totalStrength : defenderCasualties);
+            heroFought('player', attack.hx);                                     // every fight the hero leads fills his rage
             scoutedIslands.add(target.id);
             const ribbon = () => spawnBattleFx(target.id, won, capitalHolds ? 'Geplündert' : won ? (bossHere ? 'Boss besiegt' : 'Sieg') : 'Niederlage', capitalHolds ? 'die Hauptstadt hält' : won ? islandTitle(target) + ' erobert' : '−' + fmtCompact(attack.rawTroops - retreatSurvivors) + ' Truppen');
             finishMapBattle(attack, { hero: attack.hero || null, sourceId: source.id, targetId: target.id, atk: 'mine', def: bossHere ? 'boss' : targetOwner ? 'bot' : 'neutral',   // fights the player watches play out on the map
@@ -3446,7 +3567,7 @@ body.has-panel .mapctl{display:none}
                 attackBuff: myTroops - attack.rawTroops,
                 skillBuff: atkBonus,
                 titleBuff: myTroops - attack.rawTroops - atkBonus,
-                lossReductionPct, bernPct: attack.bernPct || 0,
+                lossReductionPct, heroLossPct: attack.hx ? attack.hx.loss : 0,
                 lossSaved: won ? Math.max(0, Math.round((originalEnemyDefense - losses) * attack.rawTroops / Math.max(1, myTroops))) : 0,
                 attackGoldRate: attack.attackGoldRate !== undefined ? attack.attackGoldRate : (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate, killGold,
                 attackerCasualties: won ? Math.max(0, sentLoss - woundedAdded) : Math.max(0, attack.rawTroops - retreatSurvivors - woundedAdded),   // really dead: not the ones who fled or lie in the Lazarett
@@ -3458,7 +3579,7 @@ body.has-panel .mapctl{display:none}
                 retreatSurvivors,
                 defenderName: targetOwner ? botById[targetOwner].name : null, defenderId: targetOwner && targetOwner !== 'player' ? targetOwner : null,
                 atkParts, defParts, enemyWounded,
-                atkGear: fighterSnapshot('player', [attack.hero, ...(attack.heroes || [])]), defGear: targetOwner && targetOwner !== 'player' ? fighterSnapshot(targetOwner) : null,
+                atkGear: fighterSnapshot('player', attack.hx), defGear: targetOwner && targetOwner !== 'player' ? fighterSnapshot(targetOwner) : null,
                 won,
                 remaining
             });
@@ -5451,7 +5572,6 @@ body.has-panel .mapctl{display:none}
 
         window.addEventListener('pagehide', flushBotState);
         document.addEventListener('visibilitychange', () => { if (document.hidden) flushBotState(); });
-        function heroBonusFor(who, id) { return !id ? 0 : who === 'player' ? heroBonus(id) : botHeroBonus(who, id); }
         let capitalCache = null, capitalCacheAt = 0;                // the bots' capitals, looked up a few times a second instead of per base
         function isCapital(id) {
             if (id === playerIslandId) return true;
@@ -5466,7 +5586,7 @@ body.has-panel .mapctl{display:none}
         function fightEstimate(a) {                       // the fight as it stands right now (no side effects) - same maths as resolveAttack/resolveBotAttack
             const target = islandById[a.targetId]; if (!target) return null;
             const who = a.attackerBotId || 'player', bonus = a.attackBonus !== undefined ? a.attackBonus : attackFlatBonus(a.rawTroops);
-            const my = Math.round((a.rawTroops + (bonus || 0)) * (a.atkTitle !== undefined ? a.atkTitle : titleMult(who, 'attack'))), en = effectiveTroops(target), def = effectiveDefense(target), won = my > en + def;
+            const my = Math.round((a.rawTroops + (bonus || 0)) * (a.atkTitle !== undefined ? a.atkTitle : titleMult(who, 'attack'))), en = effectiveTroops(target), def = Math.round(effectiveDefense(target) * (1 - heroDefCut(a))), won = my > en + def;
             const red = a.attackerBotId ? (a.botShield ? a.shieldLossReductionPct : botMults(a.attackerBotId).shield) : (a.shieldLossReductionPct !== undefined ? a.shieldLossReductionPct : shieldLossReductionPct());
             return { my, en, won, myLoss: my - (won ? a.rawTroops - sentLossFor(a.rawTroops, my, def, red) : retreatSurvivorsPreview(a)), enLoss: won ? en : Math.min(en, my) };   // the counter ends at the troops really left
         }
@@ -5580,10 +5700,9 @@ body.has-panel .mapctl{display:none}
                     if (fight) {
                         fight.rawTroops += a.rawTroops; fight.attackBonus = (fight.attackBonus || 0) + (a.attackBonus || 0);
                         if (fight.skillBonus !== undefined || a.skillBonus !== undefined) fight.skillBonus = (fight.skillBonus || 0) + (a.skillBonus !== undefined ? a.skillBonus : a.attackBonus || 0); fight.waves = (fight.waves || 1) + (a.waves || 1);
-                        if (a.hero) { if (!fight.hero) fight.hero = a.hero; else if (fight.hero !== a.hero) fight.heroes = [...new Set([...(fight.heroes || []), a.hero])]; }   // every hero in the fight keeps his effect and XP
+                        if (a.hx) { if (!fight.hx) { fight.hx = a.hx; fight.hero = a.hero; } else fight.hx = heroMergeHx(fight.hx, a.hx); }   // every hero in the fight keeps his effect and his rage
                         fight.shieldLossReductionPct = Math.max(fight.shieldLossReductionPct || 0, a.shieldLossReductionPct || 0);
                         fight.rewardGoldRate = Math.max(fight.rewardGoldRate || 0, a.rewardGoldRate || 0);
-                        fight.bernPct = Math.max(fight.bernPct || 0, a.bernPct || 0);
                         fight.fightEndsAt = Math.max(fight.fightEndsAt, now + 2500);          // the fresh troops get to fight too
                         pendingAttacks.splice(pendingAttacks.indexOf(a), 1);
                         if (!a.attackerBotId) flashHint('Verstärkung ist im Kampf um ' + islandTitle(islandById[a.targetId]) + ' eingetroffen: +' + fmtNum(a.rawTroops) + ' Truppen, jetzt ' + fmtNum(fight.rawTroops) + '.', 4000);
@@ -5677,14 +5796,15 @@ body.has-panel .mapctl{display:none}
         function goldPerKillRate() {
             return (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate;
         }
-        function killGoldRate(who, hero) {             // "Angriff: Gold" per enemy killed; Ida: +X % on it, and X % of a coin per kill of her own
-            const ida = hero === 'ida' ? heroBonusFor(who, 'ida') / 100 : 0;
-            return (who === 'player' ? goldPerKillRate() : botGoldRate(who, 'attackGold')) * (1 + ida) + ida;
+        function killGoldRate(who, hx) {               // "Angriff: Gold" per enemy killed; a hero's +X % Gold: X % on it, and X % of a coin per kill of his own
+            const g = hx ? (hx.gold || 0) / 100 : 0;
+            return (who === 'player' ? goldPerKillRate() : botGoldRate(who, 'attackGold')) * (1 + g) + g;
         }
         function defGoldRate(who) { return who === 'player' ? (skills.defenseGold || 0) * SKILL_DEFS.defenseGold.rate : botGoldRate(who, 'defenseGold'); }
         function payGold(who, n) { n = Math.round(n); if (n <= 0 || !who) return 0; if (who === 'player') coins += n; else botCoins[who] = (botCoins[who] || 0) + n; return n; }
-        function fieldGold(aWho, dWho, fb, aHero) {    // fights in the open pay like fights for bases: the attacker per enemy killed, the defender per attacker killed
-            return { a: payGold(aWho, fb.dLoss * killGoldRate(aWho, aHero)), d: payGold(dWho, fb.aLoss * defGoldRate(dWho)) };
+        function fieldGold(aWho, dWho, fb, aHx, dHx) {  // fights in the open pay like fights for bases: the attacker per enemy killed, the defender per attacker killed (+ each side's hero)
+            const g = dHx ? (dHx.gold || 0) / 100 : 0;
+            return { a: payGold(aWho, fb.dLoss * killGoldRate(aWho, aHx)), d: payGold(dWho, fb.aLoss * (defGoldRate(dWho) * (1 + g) + g)) };
         }
         // "Geschwindigkeit" skill: shortens the production tick interval.
         function productionTickMs() {
@@ -6319,19 +6439,19 @@ body.has-panel .mapctl{display:none}
                 const c = loadCity();
                 return { who, name: profileName.value || 'Du', lvl: playerLvl, frame: playerFrame(), title: playerTitle(), temple: titleOf('player'), bases: ownedIslands.size, troops: whoTroops('player'),
                     items: slots.map(k => { const it = equippedItems[k] && inventory[equippedItems[k]]; return [k, it ? it.rarity : -1, it ? it.level : 0, it ? it.stars || 0 : 0]; }),
-                    heroes: HEROES.filter(x => heroUnlocked(x)).map(x => [x.id, heroLevel(x.id), heroRarity(x.id)]),
+                    heroes: HEROES.filter(x => heroOwned('player', x.id)).map(x => [x.id, heroSt('player', x.id).q, x.r]),
                     skills: Object.fromEntries(Object.keys(SKILL_DEFS).map(k => [k, skills[k] || 0])), city: Object.assign({}, c.levels), capital: playerIslandId, online: true };
             }
             const b = loadBotState()[who], bd = botById[who]; if (!b || !bd) return null; const lk = botLook(who);
             return { who, name: bd.name, lvl: b.lvl, frame: lk.frame, title: lk.title, temple: titleOf(who), bases: whoBases(who), troops: whoTroops(who),
                 items: slots.map(k => { const it = botItem(b, k); return [k, it ? it.rarity : -1, it ? it.level : 0, it ? it.stars : 0]; }),
-                heroes: HEROES_IDS.filter(id => botHeroUnlocked(who, id)).map(id => [id, botHeroLevel(who, id), Math.min(RARITY_DEFS.length - 1, b.heroes[id].rar || 0)]),
+                heroes: HEROES.filter(x => heroOwned(who, x.id)).map(x => [x.id, heroSt(who, x.id).q, x.r]),
                 skills: Object.assign({}, b.skills), city: Object.assign({}, b.city.levels), capital: botCapitalOf(who), online: botOnline(bd, Date.now()) };
         }
         function powerOf(pr) {                           // Macht: troops, bases, gear, heroes, skills and city - one number to compare rulers by
             let bases = 0; for (const id of (pr.who === 'player' ? ownedIslands : botOwnedIslands[pr.who] || [])) bases += baseDefenseForLevel(islandLevels[id] || 1);
             const gear = pr.items.reduce((a, it) => a + (it[1] >= 0 ? itemScore({ rarity: it[1], level: it[2] }) * (1 + it[3] * .2) : 0), 0);
-            const heroes = pr.heroes.reduce((a, x) => a + x[1] * (1 + x[2] * .2), 0), sk = Object.values(pr.skills).reduce((a, v) => a + v, 0), city = Object.values(pr.city).reduce((a, v) => a + v, 0);
+            const heroes = pr.heroes.reduce((a, x) => a + (4 + x[1]) * x[2] / 2, 0), sk = Object.values(pr.skills).reduce((a, v) => a + v, 0), city = Object.values(pr.city).reduce((a, v) => a + v, 0);
             return Math.round(pr.troops + bases + gear * 400 + heroes * 800 + sk * 600 + city * 1500);
         }
         function lastFightWith(pr) {                     // what's between the two of you, from the battle log
@@ -6358,8 +6478,7 @@ body.has-panel .mapctl{display:none}
             const gear = pr.items.map(it => { const d = EQUIPMENT_DEFS[it[0]], r = rd(it[1]);
                 return '<span class="gslot"><span class="tile' + (r ? '' : ' empty') + '"' + (r ? ' data-r="' + r.key + '"' : '') + ' title="' + d.name + (r ? ' – ' + r.label + ', Stufe ' + it[2] : ' – leer') + '">' + icon(d.icon) +
                     (r ? '<span class="lvl">' + it[2] + '</span>' + (it[3] ? '<span class="stars">' + icon('star').repeat(it[3]) + '</span>' : '') : '') + '</span><small>' + d.name + '</small></span>'; }).join('');
-            const heroes = pr.heroes.length ? pr.heroes.map(x => { const hd = heroById(x[0]), r = rd(x[2]);
-                return '<span class="ghero" style="--hc:' + (x[2] ? r.color : hd.color) + '"><span class="hero-ic">' + icon(hd.icon) + '</span><span><b>' + hd.name + ' <small>' + hd.title + '</small></b><small>Stufe ' + x[1] + ' · ' + r.label + '</small></span></span>'; }).join('') : '<div class="war-empty">Noch keine Heldenhalle.</div>';
+            const heroes = pr.heroes.length ? pr.heroes.slice().sort((a, b) => b[2] - a[2] || b[1] - a[1]).map(x => heroChipHtml(x[0], x[1])).join('') : '<div class="war-empty">Noch keine Helden freigeschaltet.</div>';
             const skillsHtml = Object.keys(SKILL_DEFS).map(k => '<div><span>' + SKILL_DEFS[k].name + '</span><b>' + (pr.skills[k] || 0) + '</b></div>').join('');
             const cityHtml = BOT_BUILDINGS.map(k => '<div class="rp-bld' + ((pr.city[k] || 0) ? '' : ' is-zero') + '"><span class="rp-bld-ic">' + icon(cityDef(k).icon) + '<b>' + (pr.city[k] || 0) + '</b></span><small>' + cityDef(k).name + '</small></div>').join('');
             const last = lastFightWith(pr);
@@ -6544,11 +6663,17 @@ body.has-panel .mapctl{display:none}
                 const tiles = g.items.map((it, i) => { const d = EQUIPMENT_DEFS[it[0]], rd = RARITY_DEFS[it[1]];
                     return '<span class="gslot"><span class="tile' + (rd ? '' : ' empty') + '"' + (rd ? ' data-r="' + rd.key + '"' : '') + ' title="' + d.name + (rd ? ' – ' + rd.label + ', Stufe ' + it[2] : ' – leer') + '">' + icon(d.icon) +
                         (rd ? '<span class="lvl">' + it[2] + '</span>' + (it[3] ? '<span class="stars">' + icon('star').repeat(it[3]) + '</span>' : '') : '') + '</span></span>'; }).join('');
-                const heroes = g.heroes.map(x => { const hd = heroById(x[0]), rd = RARITY_DEFS[x[2]] || RARITY_DEFS[0];
-                    return '<span class="ghero" style="--hc:' + (x[2] ? rd.color : hd.color) + '"><span class="hero-ic">' + icon(hd.icon) + '</span><span><b>' + hd.name + '</b><small>Stufe ' + x[1] + ' · ' + rd.label + '</small></span></span>'; }).join('');
+                const heroes = (g.hx ? [g.hx, ...(g.hx.extra || [])] : []).map(x => { const hd = heroById(x.id); if (!hd) return ''; const rd = RARITY_DEFS[hd.r];   // who led, his stars, whether the rage fired, every bonus
+                        return '<div class="logHero" style="--hc:' + rd.color + '"><span class="ghero"><span class="hero-ic">' + icon(hd.icon) + '</span><span><b>' + hd.name + ' <small>' + heroStarTxt(x.q) + ' · ' + rd.label + '</small></b>' +
+                            '<small>' + (x.fired ? '<em class="logHeroFire">' + escapeHtml(x.skill || '') + ' gezündet</em>' : 'Aktive Fähigkeit nicht gezündet') + '</small></span></span>' +
+                            (x.lines || []).map(l => '<div class="logLine buff"><span>' + escapeHtml(l[0]) + '</span><span>' + escapeHtml(l[1]) + '</span></div>').join('') + '</div>'; }).join('') +
+                    (g.heroes || []).map(x => { const hd = heroById(x[0]); return hd ? '<span class="ghero"><span class="hero-ic">' + icon(hd.icon) + '</span><span><b>' + hd.name + '</b><small>Stufe ' + x[1] + '</small></span></span>' : ''; }).join('');   // (older reports)
+                if (g.heroOnly) return '<div class="logGear"><div class="logGearHeroes">' + heroes + '</div></div>';
                 return '<div class="logGear"><div class="logGearHead">Stufe ' + g.lvl + (g.title ? ' · Titel ' + escapeHtml(g.title) : '') + '</div>' +
                     '<div class="logGearItems">' + tiles + '</div>' + (heroes ? '<div class="logGearHeroes">' + heroes + '</div>' : '') +
                     '<div class="logGearMeta">Skill Angriff ' + g.skills[0] + ' · Verteidigung ' + g.skills[1] + '<br>Mauer ' + g.city[0] + ' · Lazarett ' + g.city[1] + ' · Heldenhalle ' + g.city[2] + '</div></div>'; };
+            const fieldHeroLine = e => [[e.attacker, e.hA], [e.defender, e.hD]].map(([n, t]) => t ? ' · ' + (n === 'Du' ? 'dein Held ' : escapeHtml(n) + ' mit ') + escapeHtml(t) : '').join('');   // who led out in the open
+            const fieldHeroDet = e => e.hx ? '<details><summary>Dein Held</summary>' + gearHtml({ items: [], lvl: playerLvl, hx: e.hx, skills: [], city: [], heroOnly: 1 }) + '</details>' : undefined;
             const partLines = (parts, first) => (parts || []).map((q, i) => '<div class="logLine' + (first && !i ? '' : q[1] < 0 ? ' buff malus' : ' buff') + '"><span>' + escapeHtml(q[0]) + (q[2] ? '<small class="logSrc">' + escapeHtml(q[2]) + '</small>' : '') + '</span><span>' + (first && !i ? '' : q[1] < 0 ? '−' : '+') + fmtD(Math.abs(q[1])) + '</span></div>').join('');   // each bonus with where it comes from
             combatLogListEl.innerHTML = combatLog.map(entry => {
                 T = id => (entry.names && entry.names[id]) || islandTitle(islandById[id]);
@@ -6558,12 +6683,12 @@ body.has-panel .mapctl{display:none}
                 if (entry.type === 'field') {
                     const K = FIELD_KINDS[entry.fieldKind] || FIELD_KINDS.gold;
                     return logRowHtml(entry.won ? 'win' : 'loss', K.icon, logBadge(entry.won ? 'win' : 'loss', entry.won ? 'Feld gehalten' : 'Feld verloren') + K.name,
-                        escapeHtml(entry.attacker) + ' (' + fmtM(entry.atk) + ') gegen ' + escapeHtml(entry.defender) + ' (' + fmtM(entry.def) + ')' + (entry.gold ? ' · +' + fmtM(entry.gold) + ' Gold' : ''), ago(entry));
+                        escapeHtml(entry.attacker) + ' (' + fmtM(entry.atk) + ') gegen ' + escapeHtml(entry.defender) + ' (' + fmtM(entry.def) + ')' + (entry.gold ? ' · +' + fmtM(entry.gold) + ' Gold' : '') + fieldHeroLine(entry), ago(entry), fieldHeroDet(entry));
                 }
                 if (entry.type === 'army') {
                     const side = (n, own) => n === 'Du' ? (own ? 'Deine Armee' : 'deine Armee') : (own ? 'Die Armee von ' : 'die Armee von ') + escapeHtml(n);
                     return logRowHtml(entry.won ? 'win' : 'loss', 'troops', logBadge(entry.won ? 'win' : 'loss', entry.won ? 'Armee siegt' : 'Armee geschlagen') + 'Kampf im Feld',
-                        side(entry.attacker, true) + ' (' + fmtM(entry.atk) + ') gegen ' + side(entry.defender, false) + ' (' + fmtM(entry.def) + ')' + (entry.wounded ? ' · ' + fmtM(entry.wounded) + ' ins Lazarett' : '') + (entry.gold ? ' · +' + fmtM(entry.gold) + ' Gold' : ''), ago(entry));
+                        side(entry.attacker, true) + ' (' + fmtM(entry.atk) + ') gegen ' + side(entry.defender, false) + ' (' + fmtM(entry.def) + ')' + (entry.wounded ? ' · ' + fmtM(entry.wounded) + ' ins Lazarett' : '') + (entry.gold ? ' · +' + fmtM(entry.gold) + ' Gold' : '') + fieldHeroLine(entry), ago(entry), fieldHeroDet(entry));
                 }
                 if (entry.type === 'volley') {
                     const dead = entry.hit - entry.wounded;
@@ -6650,9 +6775,9 @@ body.has-panel .mapctl{display:none}
                             '<div class="logSum' + (atkTotal >= defTotal ? ' advantage' : '') + '"><span>Gesamt</span><span>' + fmtD(atkTotal) + '</span></div>' +
                             '<div class="logCasualty"><span>Gefallen</span><span>−' + fmtD(entry.attackerCasualties || 0) + '</span></div>' +
                             (entry.wounded ? '<div class="logCasualty wounded"><span>Verwundet</span><span>' + fmtD(entry.wounded) + '</span></div>' : '') +
-                            (entry.lossSaved ? (() => { const bern = Math.min(entry.bernPct || 0, entry.lossReductionPct), sh = entry.lossReductionPct - bern, sBern = Math.round(entry.lossSaved * bern / Math.max(1, entry.lossReductionPct));
+                            (entry.lossSaved ? (() => { const bern = Math.min(entry.heroLossPct || entry.bernPct || 0, entry.lossReductionPct), sh = entry.lossReductionPct - bern, sBern = Math.round(entry.lossSaved * bern / Math.max(1, entry.lossReductionPct));
                                 return (sh > 0 ? '<div class="logLine buff"><span>Schild −' + Math.round(sh) + ' %</span><span>+' + fmtD(entry.lossSaved - sBern) + '</span></div>' : '') +
-                                    (bern > 0 ? '<div class="logLine buff"><span>Held Bernhard −' + Math.round(bern) + ' %</span><span>+' + fmtD(sBern) + '</span></div>' : ''); })() : '') +
+                                    (bern > 0 ? '<div class="logLine buff"><span>Held −' + Math.round(bern) + ' % Verluste</span><span>+' + fmtD(sBern) + '</span></div>' : ''); })() : '') +
                             gearHtml(entry.atkGear) +
                         '</div>' +
                         '<div class="logVsDivider">VS</div>' +
@@ -6878,8 +7003,9 @@ body.has-panel .mapctl{display:none}
             if (chainStreak() < 7) return;
             const items = []; for (let i = 0; i < CHAIN_REWARD.crates; i++) items.push(grantFreeCrate(CHAIN_REWARD.minRarity));
             gems += CHAIN_REWARD.gems; questChain.streak = 0; store.set('openWaterQuestChain', JSON.stringify(questChain));
+            const shH = heroGrantShards('player', HERO_SHARDS_CHAIN);
             saveGame(); saveProgression(); updateHud(); sfx('crate');
-            flashHint('Große Kiste: ' + items.map(it => RARITY_DEFS[it.rarity].label + ' ' + EQUIPMENT_DEFS[it.slot].name).join(', ') + ' + ' + CHAIN_REWARD.gems + ' Gems', 5000);
+            flashHint('Große Kiste: ' + items.map(it => RARITY_DEFS[it.rarity].label + ' ' + EQUIPMENT_DEFS[it.slot].name).join(', ') + ' + ' + CHAIN_REWARD.gems + ' Gems' + (shH ? ' + ' + HERO_SHARDS_CHAIN + ' Splitter ' + shH.name : ''), 5000);
             renderQuestPanel(); updateQuestBadge();
         }
         function claimQuestBonus() {
@@ -6888,10 +7014,10 @@ body.has-panel .mapctl{display:none}
             q.bonusClaimed = true; chainLink();
             const items = [];
             for (let i = 0; i < QUEST_BONUS.crates; i++) items.push(grantFreeCrate(0));
-            gems += QUEST_BONUS.gems;
+            gems += QUEST_BONUS.gems; const shH = heroGrantShards('player', HERO_SHARDS_DAY);
             saveQuests(); saveGame(); saveProgression(); updateHud();
             const it = items[0];
-            flashHint('Bonus: ' + RARITY_DEFS[it.rarity].label + ' ' + EQUIPMENT_DEFS[it.slot].name + ' + ' + QUEST_BONUS.gems + ' Gems', 3000);
+            flashHint('Bonus: ' + RARITY_DEFS[it.rarity].label + ' ' + EQUIPMENT_DEFS[it.slot].name + ' + ' + QUEST_BONUS.gems + ' Gems' + (shH ? ' + ' + HERO_SHARDS_DAY + ' Splitter ' + shH.name : ''), 3000);
             renderQuestPanel(); updateQuestBadge();
         }
         function claimableCount() {
@@ -7752,7 +7878,7 @@ body.has-panel .mapctl{display:none}
                         ctx.fillStyle = '#e8c547'; ctx.beginPath(); ctx.ellipse(hx - face * 1 * k, hy - s * 1.52, 1.3 * k, 3 * k, -face * .4, 0, Math.PI * 2); ctx.fill();   // plume
                         ctx.restore(); } });
                     heroPlate = () => { ctx.save(); ctx.globalAlpha = alpha; ctx.font = '700 11px Inter, system-ui, sans-serif'; const tw = ctx.measureText(hdef.name).width + 12, py = hy + 12;   // on top of every figure
-                        rr(ctx, hx - tw / 2, py - 9, tw, 16, 8); ctx.fillStyle = 'rgba(14,12,10,.88)'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = RARITY_DEFS[b.atkWho && b.atkWho !== 'player' && loadBotState()[b.atkWho] ? Math.min(5, loadBotState()[b.atkWho].heroes[hdef.id].rar || 0) : heroRarity(hdef.id)].color; ctx.stroke();
+                        rr(ctx, hx - tw / 2, py - 9, tw, 16, 8); ctx.fillStyle = 'rgba(14,12,10,.88)'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = RARITY_DEFS[hdef.r].color; ctx.stroke();
                         ctx.fillStyle = '#f3e6c4'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(hdef.name, hx, py - .5); ctx.restore(); };
                 }
                 {                                             // the battlefield: the ground is trampled, the front glows
@@ -8104,7 +8230,7 @@ body.has-panel .mapctl{display:none}
             statBump('bosses');
             const item = grantFreeCrate(4);                        // legendary or better
             const rewardGems = boss.wander ? WANDER_REWARD_GEMS : BOSS_REWARD_GEMS;
-            gems += rewardGems;
+            gems += rewardGems; const shH = heroGrantShards('player', boss.wander ? HERO_SHARDS_WANDER : HERO_SHARDS_BOSS);   // hero shards for a random hero
             saveProgression(); saveGame(); updateHud();
             if (boss.wander) endWander(null); else endBoss(null);
             const rd = RARITY_DEFS[item.rarity], d = EQUIPMENT_DEFS[item.slot];
@@ -8113,7 +8239,8 @@ body.has-panel .mapctl{display:none}
             document.getElementById('rewardModalSub').textContent = boss.name + ' ist gefallen – die Beute gehört dir.';
             const list = document.getElementById('rewardModalRewards');
             list.innerHTML = '<li style="border-color:' + rd.color + '66"><svg class="icon" style="color:' + rd.color + '"><use href="#i-' + d.icon + '"/></svg><span>' + d.name + '</span><b style="color:' + rd.color + '">' + rd.label + '</b></li>' +
-                '<li>' + icon('gem', 'ico-gem') + '<span>Gems</span><b>+' + rewardGems + '</b></li>';
+                '<li>' + icon('gem', 'ico-gem') + '<span>Gems</span><b>+' + rewardGems + '</b></li>' +
+                (shH ? '<li style="border-color:' + RARITY_DEFS[shH.r].color + '66">' + icon(shH.icon) + '<span>Splitter ' + shH.name + '</span><b style="color:' + RARITY_DEFS[shH.r].color + '">+' + (boss.wander ? HERO_SHARDS_WANDER : HERO_SHARDS_BOSS) + '</b></li>' : '');
             [...list.children].forEach((li, i) => { li.style.animationDelay = (200 + i * 120) + 'ms'; });
             bossRewardPending = true;
             setTimeout(() => { bossRewardPending = false; document.getElementById('rewardModal').hidden = false; }, 9800);   // after the fight on the map
@@ -8344,7 +8471,7 @@ body.has-panel .mapctl{display:none}
             { id: 'watch',    name: 'Späherturm',    icon: 'scout', 
               desc: 'Bildet Späher aus: deine Späher sind pro Stufe 4 % schneller unterwegs (Stufe 25: doppelt so schnell).' },
             { id: 'heroes',   name: 'Heldenhalle',   icon: 'profile', x: 285, y: 815, roof: '#7a2e2a',
-              desc: 'Hier leben deine Helden. Ein Held zieht mit einem Angriff mit und gibt ihm seinen Bonus. Jede Stufe hebt die Höchststufe der Helden um 2; Stufe 1, 5 und 10 schalten je einen Helden frei.' }
+              desc: 'Hier leben deine Helden: mit Splittern freischalten, Sterne aufwerten, Fähigkeiten wählen. Ein Held führt einen Angriff oder eine Armee. Jede Stufe gibt allen Helden +' + HERO_HALL_GEF + ' % Gefolge.' }
         ];
         var CITY_MAX_LEVEL = 25, CITY_GEMS_PER_MIN = 1;
         function cityMaxLevel(id) { return id === 'forge' ? STAR_MAX : id === 'hospital' ? 40 : CITY_MAX_LEVEL; }   // the Schmiede stops at the star maximum, the Lazarett goes on to 40 (room for huge armies)
@@ -8403,7 +8530,6 @@ body.has-panel .mapctl{display:none}
             const to = c.build.to; c.build = null;
             saveCity();
             if (announce) flashHint(def.name + ' ist fertig – jetzt Stufe ' + to + '.', 3000);
-            if (def.id === 'heroes') for (const h of HEROES) heroGainXp(h.id, 0);   // XP saved up at the old cap turns into levels now
             if (cityOpenId) renderCitySheet();
             updateCityBuilder();
         }
@@ -8576,51 +8702,191 @@ body.has-panel .mapctl{display:none}
             if (building) renderCitySheetTimer();
             document.getElementById('cityBExtra').innerHTML = cityExtraHtml(id, lvl);
         }
-        // ===== HELDEN: live in the Heldenhalle, march with one attack at a time, level up from the enemies they beat =====
-        var HEROES = [
-            { id: 'sigrun',   name: 'Sigrun',   title: 'die Eroberin', icon: 'attack',  color: '#b8433a', unlock: 1,  per: 1, what: '% Angriff',              short: 'Angriff' },
-            { id: 'bernhard', name: 'Bernhard', title: 'der Wächter',  icon: 'shield',  color: '#3d6fb3', unlock: 5,  per: 1, what: '% weniger Verluste (bei Niederlage fliehen mehr)', short: 'Verluste' },
-            { id: 'ida',      name: 'Ida',      title: 'die Reiterin', icon: 'send',    color: '#c98b2a', unlock: 10, per: 1, what: '% Tempo und Beute (Münzen pro besiegtem Gegner)', short: 'Tempo' }
-        ];
-        var heroState = null;
+        // ===== HELDEN: shards → unlock → quarter stars → skill points. A hero only works in the fight he leads - for you and everyone else =====
+        var heroState = null;                              // { id: { sh, q, own, sk: [4 levels], rage } } in openWaterHeroes2 (the old openWaterHeroes is only read to convert)
+        function heroFresh(h) { return { sh: HERO_START_SHARDS[h.r], q: 0, own: false, sk: [0, 0, 0, 0], rage: 0 }; }
+        function heroConvert(old, hall) {                   // old level + rarity → quarter stars, generously; Sigrun, Bernhard and Ida stay unlocked
+            const out = {};
+            for (const h of HEROES) out[h.id] = heroFresh(h);
+            for (const id of ['sigrun', 'bernhard', 'ida']) { const o = old && old[id] || {}, lvl = Math.max(1, Math.min(o.lvl || 1, Math.max(1, hall * 2)));
+                out[id] = { sh: 0, q: Math.min(HERO_MAXQ, Math.ceil(lvl / 3) + (o.rar || 0) * 2), own: true, sk: [0, 0, 0, 0], rage: 0 }; }
+            return out;
+        }
+        function heroFix(set) { for (const h of HEROES) { const s = set[h.id] = Object.assign(heroFresh(h), set[h.id] || {}); if (!Array.isArray(s.sk) || s.sk.length !== 4) s.sk = [0, 0, 0, 0]; s.q = Math.max(0, Math.min(HERO_MAXQ, s.q | 0)); } return set; }
         function loadHeroes() {
             if (heroState) return heroState;
-            try { heroState = JSON.parse(store.get('openWaterHeroes')) || {}; } catch (e) { heroState = {}; }
-            for (const h of HEROES) heroState[h.id] = Object.assign({ lvl: 1, xp: 0, rar: 0 }, heroState[h.id] || {});
-            return heroState;
+            try { heroState = JSON.parse(store.get('openWaterHeroes2')) || null; } catch (e) { heroState = null; }
+            if (!heroState) { let old = null; try { old = JSON.parse(store.get('openWaterHeroes')); } catch (e) { old = null; }
+                heroState = heroConvert(old, cityLevelSafe('heroes')); heroFix(heroState); saveHeroes(); }
+            return heroFix(heroState);
         }
-        function saveHeroes() { store.set('openWaterHeroes', JSON.stringify(heroState)); }
+        function saveHeroes() { store.set('openWaterHeroes2', JSON.stringify(heroState)); }
         function heroById(id) { return HEROES.find(h => h.id === id) || null; }
-        function hallLevel() { return loadCity().levels.heroes || 0; }
-        function heroUnlocked(h) { return hallLevel() >= h.unlock; }
-        function heroMaxLevel() { return Math.min(50, hallLevel() * 2); }
-        function heroLevel(id) { return Math.min(loadHeroes()[id].lvl, Math.max(1, heroMaxLevel())); }
-        // Seltenheit like the gear (grau → rot): multiplies the hero's bonus; raise it in the Heldenhalle with gems once the hero is strong enough
-        var HERO_RAR_MULT = [1, 1.2, 1.4, 1.6, 1.8, 2], HERO_RAR_COST = [100, 300, 1000, 3000, 10000], HERO_RAR_LEVEL = [5, 10, 20, 30, 40];
-        function heroRarity(id) { return Math.min(RARITY_DEFS.length - 1, loadHeroes()[id].rar || 0); }
-        function heroBonus(id) { const h = heroById(id); return h ? Math.round(heroLevel(id) * h.per * HERO_RAR_MULT[heroRarity(id)]) : 0; }
-        function heroBusy(id) { return pendingAttacks.some(a => !a.attackerBotId && (a.hero === id || (a.heroes && a.heroes.includes(id)))) || (typeof armies !== 'undefined' && armies.some(x => !x.who && x.hero === id)); }
-        function heroXpNeed(lvl) { return Math.round(5000 * Math.pow(1.25, lvl - 1)); }
-        function heroGainXp(id, amount) {
-            const h = heroById(id), st = loadHeroes()[id]; if (!h || !st) return;
-            st.xp += Math.max(0, Math.round(amount)); let up = 0;
-            while (st.lvl < heroMaxLevel() && st.xp >= heroXpNeed(st.lvl)) { st.xp -= heroXpNeed(st.lvl); st.lvl++; up++; }
-            saveHeroes();
-            if (up) setTimeout(() => flashHint(h.name + ' ' + h.title + ' steigt auf Stufe ' + st.lvl + ' – jetzt +' + heroBonus(id) + ' ' + h.what + '.', 4500), 2500);
+        function heroSt(who, id) { if (!heroById(id)) return null; if (who === 'player') return loadHeroes()[id]; const b = loadBotState()[who]; return b && b.hs ? b.hs[id] : null; }
+        function heroOwned(who, id) { const s = heroSt(who, id); return !!(s && s.own); }
+        function heroSave(who) { if (who === 'player') saveHeroes(); else saveBotState(); }
+        const heroPoints = s => Math.floor(s.q / 2);                                       // 1 point per half star: 10 at five stars
+        const heroFree = s => Math.max(0, heroPoints(s) - s.sk.reduce((a, v) => a + v, 0));
+        const heroStepCost = (h, q) => Math.round(HERO_UNLOCK[h.r] / 4 * (1 + Math.floor(q / 4)));
+        const heroStarNum = q => (q >= 4 || !q ? Math.floor(q / 4) : '') + ['', '¼', '½', '¾'][q % 4];   // 2½
+        function heroStarTxt(q) { return heroStarNum(q) + (q && q <= 4 ? ' Stern' : ' Sterne'); }
+        const heroNum = v => (+v).toLocaleString('de-DE', { maximumFractionDigits: 1 });   // 2,4
+        function heroSkillVal(h, k, lv) { const t = HERO_TIER[h.r]; return Math.round((k ? t.p : t.a) * lv / 5 * 10) / 10; }
+        function heroLead(who) { return who === 'player' ? { lvl: playerLvl, hall: cityLevelSafe('heroes') } : { lvl: (loadBotState()[who] || {}).lvl || 1, hall: botBld(who, 'heroes') }; }
+        function heroStats(who, id, s) {                    // Angriff, Verteidigung (fewer losses), Tempo in % and the Gefolge: grow with rarity, stars, your level and the Heldenhalle
+            const h = heroById(id); s = s || heroSt(who, id); if (!h || !s) return { atk: 0, def: 0, spd: 0, gef: 0 };
+            const t = HERO_TIER[h.r], m = t.st * (1 + s.q / 4 * .15), L = heroLead(who);
+            return { atk: Math.round(h.base[0] * m), def: Math.round(h.base[1] * m), spd: Math.round(h.base[2] * m),
+                     gef: Math.round(1e5 * t.st * (1 + s.q * .45) * levelRewardTroops(L.lvl) / 2e6 * (1 + L.hall * HERO_HALL_GEF / 100)) };
         }
-        function heroCardHtml(h) {
-            const st = loadHeroes()[h.id], on = heroUnlocked(h), lvl = heroLevel(h.id), need = heroXpNeed(st.lvl), capped = st.lvl >= heroMaxLevel();
-            const r = heroRarity(h.id), rd = RARITY_DEFS[r], nx = r < RARITY_DEFS.length - 1 ? r + 1 : null;
-            const raise = on && nx !== null ? (st.lvl >= HERO_RAR_LEVEL[r]
-                ? '<button type="button" class="btn btn--secondary btn--sm hero-up" data-hero-up="' + h.id + '"' + (gems < HERO_RAR_COST[r] ? ' disabled' : '') + '>' + icon('upgrade') + 'Aufsteigen zu <b style="color:' + RARITY_DEFS[nx].color + '">' + RARITY_DEFS[nx].label + '</b> · ' + HERO_RAR_COST[r] + ' ' + icon('gem') + '</button>'
-                : '<small class="hero-need">Aufsteigen zu ' + RARITY_DEFS[nx].label + ' ab Stufe ' + HERO_RAR_LEVEL[r] + '</small>') : '';
-            return '<div class="hero-card' + (on ? '' : ' is-locked') + '" style="--hc:' + (on ? rd.color : h.color) + '"><span class="hero-ic">' + icon(on ? h.icon : 'lock') + '</span>' +
-                '<span class="hero-t"><b>' + h.name + ' <small>' + h.title + '</small>' + (on ? ' <em class="hero-rar" style="color:' + rd.color + '">' + rd.label + '</em>' : '') + '</b>' +
-                (on ? '<small>Stufe ' + lvl + ' · +' + heroBonus(h.id) + ' ' + h.what + (capped ? '' : ' · nächste Stufe +' + Math.round((lvl + 1) * h.per * HERO_RAR_MULT[r])) + (heroBusy(h.id) ? ' · <em>unterwegs</em>' : '') + '</small>' +
-                      '<span class="hero-xp"><i style="width:' + (capped ? 100 : Math.min(100, st.xp / need * 100)) + '%"></i></span><small>' + (capped ? 'Höchststufe der Halle erreicht' : fmtCompact(st.xp) + ' / ' + fmtCompact(need) + ' EP') + '</small>'
-                    : '<small>Ab Heldenhalle Stufe ' + h.unlock + '</small>') + raise + '</span></div>';
+        function heroPower(who, id) { const h = heroById(id), s = heroSt(who, id); if (!h || !s || !s.own) return 0; return Math.round((4 + s.q) * HERO_TIER[h.r].st * 2500 + s.sk.reduce((a, v) => a + v, 0) * 1200); }
+        // what every skill does: [the fx it raises, the kind of fight it needs]
+        const HERO_EFF = { atk: ['atk', 'fight'], loss: ['loss', 'fight'], hosp: ['hosp', 'fight'], gold: ['gold', 'fight'], flee: ['flee', 'base'], ret: ['ret', 'base'], late: ['late', 'base'], defCut: ['def', 'base'],
+            spd: ['spd', 'march'], toll: ['toll', 'march'], fieldSpd: ['spd', 'fieldMarch'], bridgeDef: ['def', 'bridge'], gateAtk: ['atk', 'gate'], siegeDef: ['def', 'siege'], siegeAtk: ['atk', 'siege'],
+            strongAtk: ['atk', 'strong'], midAtk: ['atk', 'mid'], midLoss: ['loss', 'mid'], guardAtk: ['atk', 'guard'], rulerAtk: ['atk', 'ruler'], templeLoss: ['loss', 'temple'], templeGold: ['gold', 'temple'],
+            templeAtk: ['atk', 'temple'], templeHosp: ['hosp', 'temple'], scoutAtk: ['atk', 'scouted'], neutralAtk: ['atk', 'neutral'], fieldAtk: ['atk', 'vsArmy'], fieldGold: ['gold', 'field'],
+            fieldLoss: ['loss', 'field'], fieldDef: ['fdef', 'fdefending'], resAtk: ['atk', 'res'], gatherDef: ['fdef', 'gatherDef'], gatherSpd: ['gSpd', 'gather'], carry: ['carry', 'gather'], rage: [null, 'never'] };
+        const HERO_FX_TXT = { atk: v => '+' + v + ' % Angriff', loss: v => '−' + v + ' % Verluste', def: v => 'Verteidigung −' + v + ' %', hosp: v => '+' + v + ' % ins Lazarett', gold: v => '+' + v + ' % Gold',
+            flee: v => '+' + v + ' % fliehen', ret: v => 'Rückzug +' + v + ' % Tempo', late: v => v + ' % später bemerkt', spd: v => '+' + v + ' % Tempo', toll: v => '−' + v + ' % Maut',
+            fdef: v => '+' + v + ' % Verteidigung', gSpd: v => '+' + v + ' % Sammeln', carry: v => '+' + v + ' % Traglast' };
+        const HX0 = { atk: 0, loss: 0, def: 0, hosp: 0, gold: 0, flee: 0, ret: 0, late: 0, spd: 0, toll: 0, fdef: 0, gSpd: 0, carry: 0, gef: 0 };
+        function heroFx(who, id, ctx, fired, s) {           // → the hero's numbers for this fight or march, with a line for the report per value that counts
+            const h = heroById(id); s = s || heroSt(who, id); if (!h || !s || !s.own) return null;
+            const st = heroStats(who, id, s), fx = Object.assign({ id, q: s.q, fired: !!fired, lines: [] }, HX0);
+            if (ctx.fight) { fx.atk += st.atk; fx.loss += st.def; fx.gef = st.gef;
+                if (st.atk) fx.lines.push(['Angriff', '+' + st.atk + ' %']); if (st.def) fx.lines.push(['Verteidigung', '−' + st.def + ' % Verluste']); if (st.gef) fx.lines.push(['Gefolge', '+' + fmtNum(st.gef) + ' Truppen']); }
+            if (ctx.march && st.spd) { fx.spd += st.spd; fx.lines.push(['Tempo', '+' + st.spd + ' %']); }
+            h.sk.forEach((x, k) => { const lv = s.sk[k] || 0; if (!lv || (k === 0 && !fired)) return;
+                const e = HERO_EFF[x[2]]; if (!e || !e[0] || !ctx[e[1]]) return;
+                const v = heroSkillVal(h, k, lv); fx[e[0]] += v; fx.lines.push([x[0] + (k ? '' : ' · Wut'), HERO_FX_TXT[e[0]](heroNum(v))]); });
+            if (fired) fx.skill = h.sk[0][0];
+            fx.loss = Math.min(90, fx.loss); fx.def = Math.min(90, fx.def);
+            return fx;
         }
+        function heroBaseCtx(who, src, target, raw) {       // what kind of attack this is, for the skills that need one
+            const ow = islandOwnerOf(target.id), temple = target.type === 'temple' || target.type === 'megaTemple' || !!target.guardian, gate = target.type === 'gate', lm = landmasses[target.landmassId];
+            return { fight: 1, base: 1, march: 1, bridge: !!src && src.landmassId !== target.landmassId, gate, temple, siege: gate || temple, guard: !!target.guardian,
+                mid: !!lm && lm.tier !== 'outer', ruler: !!ow && ow !== who && rulerOwner() === ow, neutral: !ow, strong: effectiveTroops(target) + effectiveDefense(target) > raw,
+                scouted: who === 'player' ? scoutedIslands.has(target.id) : !!(typeof botIntel === 'function' && botById[who] && botIntel(botById[who], target.id)) };
+        }
+        const heroWouldFire = s => s.sk[0] > 0 && s.rage >= 100;
+        function heroPeek(who, id, src, target, raw) { const s = heroSt(who, id); return s && s.own ? heroFx(who, id, heroBaseCtx(who, src, target, raw), heroWouldFire(s), s) : null; }
+        function heroLaunch(who, id, src, target, raw) {    // the hero marches off: a full rage fires the active skill in this fight
+            const s = heroSt(who, id); if (!s || !s.own) return null;
+            const fired = heroWouldFire(s); if (fired) { s.rage = 0; heroSave(who); }
+            return heroFx(who, id, heroBaseCtx(who, src, target, raw), fired, s);
+        }
+        function heroRageUp(who, id) { const h = heroById(id), s = heroSt(who, id); if (!h || !s || !s.own) return;
+            const bl = h.sk.findIndex(x => x[2] === 'rage'), fast = bl >= 0 && s.sk[bl] ? heroSkillVal(h, bl, s.sk[bl]) : 0;
+            s.rage = Math.min(100, (s.rage || 0) + HERO_RAGE * (1 + fast / 100)); heroSave(who); }
+        function heroFought(who, hx) { if (!hx || !hx.id) return; heroRageUp(who, hx.id); for (const e of hx.extra || []) heroRageUp(who, e.id); }   // every fight a hero leads fills his rage
+        function heroFieldFx(who, id, ctx) {                // a fight out in the open: fires (and refills) the rage right away
+            const s = id && heroSt(who, id); if (!s || !s.own) return null;
+            const fired = heroWouldFire(s); if (fired) s.rage = 0;
+            const fx = heroFx(who, id, Object.assign({ fight: 1, field: 1, vsArmy: 1 }, ctx, { fdefending: !!ctx.defending, gatherDef: !!(ctx.res && ctx.defending) }), fired, s);
+            heroRageUp(who, id); return fx;
+        }
+        function heroMarchFx(who, id, field) { return id && heroOwned(who, id) ? heroFx(who, id, { march: 1, fieldMarch: !!field }, false) : null; }   // walking only: Tempo and Maut
+        function heroGatherFx(o) { return o && o.hero && heroOwned(o.who, o.hero) ? heroFx(o.who, o.hero, { gather: 1 }, false) : null; }
+        function heroMergeHx(f, a) { if (!a || !f) return f || a; if (f.id === a.id) return f;                                              // two waves with two heroes in one fight: both count
+            return Object.assign({}, f, { def: Math.max(f.def, a.def), hosp: Math.max(f.hosp, a.hosp), flee: Math.max(f.flee, a.flee), ret: Math.max(f.ret, a.ret), gold: Math.max(f.gold, a.gold),
+                extra: [...(f.extra || []), { id: a.id, q: a.q, fired: a.fired, skill: a.skill, lines: a.lines }] }); }
+        function heroOnField(who, id) { try { return fieldMarches.some(m => m.who === who && m.hero === id) || resFields.some(f => { const o = fieldState[f.id] && fieldState[f.id].occ; return !!o && o.who === who && o.hero === id; }); } catch (e) { return false; } }
+        function heroBusy(who, id) {                        // one attack, army or field march per hero at a time
+            const mine = x => who === 'player' ? !x || x === 'player' : x === who;
+            return pendingAttacks.some(a => mine(a.attackerBotId) && (a.hero === id || (a.hx && (a.hx.extra || []).some(e => e.id === id))))
+                || (typeof armies !== 'undefined' && armies.some(x => mine(x.who) && x.hero === id)) || heroOnField(who, id);
+        }
+        function heroPickBest(who, src, target, raw) {      // the free hero that does the most in this attack (the others use it, and so can you)
+            let best = null, bs = 0; const def = target ? effectiveDefense(target) : 0;
+            for (const h of HEROES) { if (!heroOwned(who, h.id) || heroBusy(who, h.id)) continue;
+                const fx = target ? heroPeek(who, h.id, src, target, raw) : heroFx(who, h.id, { fight: 1, field: 1, vsArmy: 1, march: 1 }, false);
+                const sc = raw * (fx.atk / 100) + fx.gef + def * (fx.def + fx.loss) / 100 + raw * fx.spd / 400 + 1;
+                if (sc > bs) { bs = sc; best = h.id; } }
+            return best;
+        }
+        // shards, stars and points: the same steps for you and for everyone else
+        function heroGrantShards(who, n, id) {              // n shards for one hero (a random one: the commoner the likelier, maxed ones left out)
+            const pool = HEROES.filter(h => { const s = heroSt(who, h.id); return s && !(s.own && s.q >= HERO_MAXQ); }); if (!pool.length) return null;
+            let h = id && heroById(id); if (!h) { const w = pool.map(x => 5 - x.r), tot = w.reduce((a, v) => a + v, 0); let r = Math.random() * tot; h = pool[pool.length - 1]; for (let i = 0; i < pool.length; i++) { r -= w[i]; if (r < 0) { h = pool[i]; break; } } }
+            const s = heroSt(who, h.id); s.sh += n; heroSave(who); return h;
+        }
+        function heroDoUnlock(who, id) { const h = heroById(id), s = heroSt(who, id); if (!h || !s || s.own || s.sh < HERO_UNLOCK[h.r]) return false; s.sh -= HERO_UNLOCK[h.r]; s.own = true; s.q = 0; heroSave(who); return true; }
+        function heroDoStep(who, id) { const h = heroById(id), s = heroSt(who, id); if (!h || !s || !s.own || s.q >= HERO_MAXQ) return false; const c = heroStepCost(h, s.q); if (s.sh < c) return false; s.sh -= c; s.q++; heroSave(who); return true; }
+        function heroDoSkill(who, id, k) { const s = heroSt(who, id); if (!s || !s.own || !heroFree(s) || s.sk[k] >= 5) return false; s.sk[k]++; heroSave(who); return true; }
+        function heroCanDo(who, id) { const h = heroById(id), s = heroSt(who, id); if (!h || !s) return false; return s.own ? heroFree(s) > 0 || (s.q < HERO_MAXQ && s.sh >= heroStepCost(h, s.q)) : s.sh >= HERO_UNLOCK[h.r]; }
+        function heroTag(hx) { if (!hx) return ''; const h = heroById(hx.id); return h ? h.name + ' ' + heroStarTxt(hx.q) + (hx.fired ? ' · ' + hx.skill + ' gezündet' : '') : ''; }   // one line for the short reports
         var previewHero = null, nextAttackHero = null;
+        // ---- the Heldenhalle screen: a grid of tall rarity cards → one hero with figure, stars, skills and values ----
+        let hhCur = null;
+        const hhStars = q => '<span class="hh-qstars">' + [0, 1, 2, 3, 4].map(k => '<i style="--f:' + (k < Math.floor(q / 4) ? 100 : k === Math.floor(q / 4) ? q % 4 * 25 : 0) + '%"></i>').join('') + '</span>';
+        function hhFigure(h) { return '<div class="hh-fig" style="--c:' + h.color + ';--c2:' + h.c2 + ';--hair:' + h.hair + '"><i class="cape"></i><i class="legs"></i><i class="torso"></i><i class="belt"></i><i class="hair"></i><i class="head"></i>' +
+            (h.g !== 'none' ? '<i class="weapon"></i>' : '') + (h.g === 'shield' ? '<i class="shield"></i>' : '') + '</div>'; }
+        function hhGrid() {
+            const H = loadHeroes(), list = HEROES.slice().sort((a, b) => (H[b.id].own - H[a.id].own) || b.r - a.r || H[b.id].q - H[a.id].q);
+            return '<div class="hh-head"><span class="hh-ghost"></span><h2>Helden</h2><button class="btn-x" type="button" data-hh-close aria-label="Schließen">' + icon('close') + '</button></div>' +
+                '<div class="hh-count">' + HEROES.filter(h => H[h.id].own).length + ' / ' + HEROES.length + ' freigeschaltet · Splitter gibt es von Bossen und für tägliche Aufgaben</div>' +
+                '<div class="hh-cards">' + list.map(h => { const s = H[h.id], need = s.own ? heroStepCost(h, s.q) : HERO_UNLOCK[h.r], rd = RARITY_DEFS[h.r];
+                    return '<button type="button" class="hh-card' + (s.own ? '' : ' is-locked') + '" data-hh="' + h.id + '" style="--rc:' + rd.color + ';--c:' + h.color + '">' +
+                        '<span class="hh-art">' + h.name[0] + '</span>' + (heroCanDo('player', h.id) ? '<span class="hh-dot"></span>' : '') + (s.own ? '' : '<span class="hh-lk">Gesperrt</span>') +
+                        '<span class="hh-foot"><b>' + h.name + '</b><small>' + h.role + '</small>' + (s.own ? hhStars(s.q) : '<span class="hh-frag"><i style="width:' + Math.min(100, Math.round(s.sh / need * 100)) + '%"></i></span><small>' + s.sh + ' / ' + need + '</small>') + '</span></button>'; }).join('') + '</div>';
+        }
+        function hhHero(id) {
+            const h = heroById(id), s = heroSt('player', id), rd = RARITY_DEFS[h.r], st = heroStats('player', id), full = Math.floor(s.q / 4), part = s.q % 4, busy = s.own && heroBusy('player', id);
+            const need = s.own ? heroStepCost(h, s.q) : HERO_UNLOCK[h.r], maxed = s.own && s.q >= HERO_MAXQ, free = heroFree(s);
+            const stars = s.own ? '<div class="hh-steps">' + ['¼', '½', '¾', icon('star')].map((t, k) => '<span' + (k < part ? ' class="on"' : '') + '>' + t + '</span>').join('') + '</div>' +
+                    (maxed ? '<div class="hh-qinfo"><span>5 Sterne – ganz oben</span><b>' + s.sh + ' Splitter übrig</b></div>' : '<div class="hh-qinfo"><span>Nächstes Viertel · Stern ' + (full + 1) + '</span><b>' + s.sh + ' / ' + need + '</b></div><div class="hh-bar"><i style="width:' + Math.min(100, Math.round(s.sh / need * 100)) + '%"></i></div>')
+                : '<div class="hh-qinfo"><span>Freischalten</span><b>' + s.sh + ' / ' + need + '</b></div><div class="hh-bar"><i style="width:' + Math.min(100, Math.round(s.sh / need * 100)) + '%"></i></div><div class="hh-qinfo"><span>Startet danach mit 0 Sternen.</span></div>';
+            const skills = h.sk.map((x, k) => { const lv = s.sk[k], max = heroSkillVal(h, k, 5);
+                return '<div class="hh-sk' + (s.own ? '' : ' is-locked') + '"><span class="hh-hx' + (k ? '' : ' act') + '" style="--sc:' + h.color + '">' + x[0][0] + '</span><div class="hh-skt"><b>' + x[0] + '</b><small>' + (k ? 'Passiv' : 'Aktiv · bei voller Wut') + ' · Stufe ' + lv + '/5</small>' +
+                    '<p>' + (lv ? x[1].replace('{v}', heroNum(heroSkillVal(h, k, lv))) : 'Stufe 1: ' + x[1].replace('{v}', heroNum(heroSkillVal(h, k, 1)))) + '</p>' + (lv < 5 ? '<p class="hh-max">Stufe 5: ' + x[1].replace('{v}', heroNum(max)) + '</p>' : '') +
+                    (s.own ? '<span class="hh-pips">' + [1, 2, 3, 4, 5].map(q => '<i' + (q <= lv ? ' class="on"' : '') + '></i>').join('') + '</span>' : '') + '</div>' +
+                    (s.own && lv < 5 ? '<button type="button" class="hh-plus" data-hh-sk="' + k + '"' + (free ? '' : ' disabled') + ' aria-label="' + x[0] + ' verbessern">+</button>' : '<span></span>') + '</div>'; }).join('');
+            const spent = s.sk.reduce((a, v) => a + v, 0);
+            return '<div class="hh-head"><button class="btn-x" type="button" data-hh-back aria-label="Zurück">' + icon('back') + '</button><h2>' + h.name + '</h2><button class="btn-x" type="button" data-hh-close aria-label="Schließen">' + icon('close') + '</button></div>' +
+                '<div class="hh-hero" style="--glow:' + h.color + '88;--rc:' + rd.color + '">' +
+                    '<div class="hh-stage"><div class="hh-id"><span class="hh-gem">' + rd.label + '</span><span class="hh-nm">' + h.name + '</span><span class="hh-ttl">' + h.title + ' · ' + h.role + '</span>' + hhStars(s.q) + '</div>' +
+                        '<div class="hh-floor"></div>' + hhFigure(h) + '</div>' +
+                    '<div class="hh-panel">' +
+                        '<div class="hh-blk hh-top"><div><h3>Macht</h3><b class="hh-pow">' + (s.own ? fmtNum(heroPower('player', id)) : 'Gesperrt') + '</b></div><div class="hh-role">' + (busy ? '<em>unterwegs</em>' : s.own ? 'bereit' : '') + '</div></div>' +
+                        '<div class="hh-blk"><h3>Sterne</h3>' + hhStars(s.q) + stars + '</div>' +
+                        (s.own ? '<div class="hh-blk"><h3>Wut</h3><div class="hh-qinfo"><span>' + (s.sk[0] ? (s.rage >= 100 ? 'Voll – ' + h.sk[0][0] + ' zündet im nächsten Kampf' : '+' + HERO_RAGE + ' % pro Kampf, den ' + h.name + ' führt') : 'Erst mit ' + h.sk[0][0] + ' auf Stufe 1') + '</span><b>' + Math.round(s.rage || 0) + ' %</b></div><div class="hh-bar hh-rage"><i style="width:' + Math.round(s.rage || 0) + '%"></i></div></div>' : '') +
+                        '<div class="hh-blk"><div class="hh-skh"><h3>Fähigkeiten</h3>' + (s.own ? '<span class="hh-pts">' + free + (free === 1 ? ' Punkt' : ' Punkte') + ' frei</span>' : '<span class="hh-pts off">nach dem Freischalten</span>') + '</div><div class="hh-sklist">' + skills + '</div>' +
+                            (s.own ? '<p class="hh-hint">Jeder halbe Stern gibt 1 Punkt – bei 5 Sternen 10. Das reicht für 2 Fähigkeiten auf Stufe 5. Bisher ' + heroPoints(s) + ' von 10.</p><button type="button" class="hh-reset" data-hh-reset' + (spent ? '' : ' disabled') + '>Fähigkeiten zurücksetzen · ' + HERO_RESET_GEMS + ' Gems</button>' : '') + '</div>' +
+                        '<div class="hh-blk"><h3>Werte · wenn ' + h.name + ' mitkämpft</h3><div class="hh-vals"><div><span>Angriff</span><b>+' + st.atk + ' %</b></div><div><span>Verteidigung</span><b>+' + st.def + ' %</b></div><div><span>Tempo</span><b>+' + st.spd + ' %</b></div><div><span>Gefolge</span><b>+' + fmtCompact(st.gef) + '</b></div></div>' +
+                            '<p class="hh-hint">Verteidigung: weniger eigene Verluste. Gefolge: so viele Truppen kämpfen zusätzlich mit – wächst mit Sternen, deiner Stufe und der Heldenhalle.</p></div>' +
+                    '</div></div>' +
+                '<div class="hh-actions">' + (maxed ? '<button class="hh-go" type="button" disabled>5 Sterne erreicht</button>'
+                    : '<button class="hh-go" type="button" data-hh-up' + (s.sh >= need ? '' : ' disabled') + '><span class="hh-i">' + (s.own ? icon('star') : '+') + '</span>' + (s.own ? 'Aufwerten · ¼ Stern' + (s.q % 2 ? ' + 1 Fähigkeitspunkt' : '') : 'Freischalten') + '<small>' + s.sh + ' / ' + need + ' Splitter</small></button>') + '</div>';
+        }
+        function renderHeroHall() { const el = document.getElementById('heroHall'); if (el.hidden) return; const top = el.scrollTop; el.innerHTML = hhCur ? hhHero(hhCur) : hhGrid(); el.scrollTop = top; }
+        function openHeroHall(id) { const el = document.getElementById('heroHall'); hhCur = id || null; el.hidden = false; renderHeroHall(); el.scrollTop = 0; }
+        function closeHeroHall() { document.getElementById('heroHall').hidden = true; hhCur = null; if (!document.getElementById('citySheet').hidden) renderCitySheet(); }
+        document.getElementById('heroHall').addEventListener('click', e => {
+            const el = document.getElementById('heroHall');
+            if (e.target.closest('[data-hh-close]')) return closeHeroHall();
+            if (e.target.closest('[data-hh-back]')) { hhCur = null; renderHeroHall(); el.scrollTop = 0; return; }
+            const c = e.target.closest('[data-hh]'); if (c) { hhCur = c.dataset.hh; renderHeroHall(); el.scrollTop = 0; return; }
+            if (!hhCur) return; const h = heroById(hhCur), s = heroSt('player', hhCur);
+            const sk = e.target.closest('[data-hh-sk]:not([disabled])');
+            if (sk) { if (heroDoSkill('player', hhCur, +sk.dataset.hhSk)) { sfx('upgrade'); flashHint(h.sk[+sk.dataset.hhSk][0] + ' ist jetzt auf Stufe ' + s.sk[+sk.dataset.hhSk] + '.', 2000); } return renderHeroHall(); }
+            if (e.target.closest('[data-hh-reset]:not([disabled])')) {
+                if (gems < HERO_RESET_GEMS) { flashHint('Zu wenig Gems – Zurücksetzen kostet ' + HERO_RESET_GEMS + '.', 2500); return; }
+                gems -= HERO_RESET_GEMS; s.sk = [0, 0, 0, 0]; saveHeroes(); updateHud(); saveGame(); flashHint('Fähigkeiten von ' + h.name + ' zurückgesetzt – ' + heroPoints(s) + ' Punkte frei.', 2500); return renderHeroHall(); }
+            if (e.target.closest('[data-hh-up]:not([disabled])')) {
+                const was = s.own;
+                if (was ? heroDoStep('player', hhCur) : heroDoUnlock('player', hhCur)) { sfx('upgrade');
+                    flashHint(was ? h.name + ' hat jetzt ' + heroStarTxt(s.q) + (s.q % 2 ? '' : ' – 1 Fähigkeitspunkt dazu') + '.' : h.name + ' ist freigeschaltet!', 2500); }
+                return renderHeroHall();
+            }
+        });
+        function heroSegHtml(attr, cur) {                   // the hero choice for an attack, an army or a field march: the ones you have, with their stars
+            const hs = HEROES.filter(h => heroOwned('player', h.id)).sort((a, b) => b.r - a.r || heroSt('player', b.id).q - heroSt('player', a.id).q); if (!hs.length) return '';
+            return '<button type="button" ' + attr + '=""' + (!cur ? ' class="on"' : '') + '>Kein Held</button>' + hs.map(h => '<button type="button" ' + attr + '="' + h.id + '"' + (cur === h.id ? ' class="on"' : '') + (heroBusy('player', h.id) && cur !== h.id ? ' disabled' : '') +
+                ' style="--hc:' + RARITY_DEFS[h.r].color + '">' + h.name + '<small>' + icon('star') + heroStarNum(heroSt('player', h.id).q) + '</small></button>').join('');
+        }
+        function heroChipHtml(id, q) { const h = heroById(id); if (!h) return ''; const rd = RARITY_DEFS[h.r];   // profile + report: a hero with rarity and stars
+            return '<span class="ghero" style="--hc:' + rd.color + '"><span class="hero-ic">' + icon(h.icon) + '</span><span><b>' + h.name + ' <small>' + h.title + '</small></b><small>' + heroStarTxt(q) + ' · ' + rd.label + '</small></span></span>'; }
         // ---- building effects ----
         function academyLevel() { return loadCity().levels.academy || 0; }
         function forgeLevel() { return loadCity().levels.forge || 0; }
@@ -8639,7 +8905,7 @@ body.has-panel .mapctl{display:none}
             if (id === 'wall') return lvl ? 'Jetzt: +' + (lvl * 2) + ' % Verteidigung auf allen Basen.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: +' + ((lvl + 1) * 2) + ' %.' : '') : 'Baue die Mauer für mehr Verteidigung auf allen Basen.';
             if (id === 'academy') return 'Jetzt: Truppen laufen +' + (lvl * 2) + ' % schneller.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: +' + ((lvl + 1) * 2) + ' %.' : '');
             if (id === 'forge') return lvl ? 'Bis zu ' + Math.min(STAR_MAX, lvl) + (Math.min(STAR_MAX, lvl) === 1 ? ' Stern' : ' Sterne') + ' pro Ausrüstungsteil.' + (lvl < STAR_MAX ? ' Nächste Stufe: ' + (lvl + 1) + ' Sterne.' : '') : 'Baue die Schmiede, um Sterne zu setzen.';
-            if (id === 'heroes') return lvl ? 'Helden bis Stufe ' + heroMaxLevel() + ' · ' + HEROES.filter(h => heroUnlocked(h)).length + ' von ' + HEROES.length + ' Helden bereit.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: Helden bis Stufe ' + Math.min(50, (lvl + 1) * 2) + (HEROES.find(h => h.unlock === lvl + 1) ? ', ' + HEROES.find(h => h.unlock === lvl + 1).name + ' kommt dazu' : '') + '.' : '') : 'Baue die Heldenhalle, um deinen ersten Helden zu rufen.';
+            if (id === 'heroes') { const n = HEROES.filter(h => heroOwned('player', h.id)).length; return (lvl ? 'Jetzt: +' + lvl * HERO_HALL_GEF + ' % Gefolge für alle Helden.' : 'Noch kein Bonus aufs Gefolge.') + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: +' + (lvl + 1) * HERO_HALL_GEF + ' %.' : '') + ' ' + n + ' von ' + HEROES.length + ' Helden freigeschaltet.'; }
             const nx = (per, what) => (lvl ? 'Jetzt: +' + lvl * per + ' % ' + what + '.' : 'Noch keine Wirkung.') + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: +' + (lvl + 1) * per + ' %.' : '');
             if (id === 'barracks') return nx(2, 'Truppenproduktion auf allen Basen');
             if (id === 'treasury') return nx(2, 'Münzproduktion auf allen Basen');
@@ -8649,7 +8915,8 @@ body.has-panel .mapctl{display:none}
             return '';
         }
         function cityExtraHtml(id, lvl) {
-            if (id === 'heroes') return '<div class="hero-list">' + HEROES.map(h => heroCardHtml(h)).join('') + '</div>';
+            if (id === 'heroes') { const up = HEROES.filter(h => heroCanDo('player', h.id)).length;   // the way into the hero screen
+                return '<button type="button" class="btn btn--primary btn--grow hh-open" data-hero-open>' + icon('profile') + '<span>Helden öffnen</span>' + (up ? '<em class="hh-badge">' + up + '</em>' : '') + '</button>'; }
             if (id === 'forge' && lvl) {                   // pick a slot, then any piece you own in it - equipped or in the chest
                 const slots = Object.keys(EQUIPMENT_DEFS), cap = Math.min(STAR_MAX, lvl);
                 const items = Object.values(inventory).filter(it => it.slot === forgeSlot)
@@ -8672,11 +8939,7 @@ body.has-panel .mapctl{display:none}
         var forgeSlot = 'weapon';
         document.getElementById('citySheet').addEventListener('click', e => {
             const fs = e.target.closest('[data-forge-slot]'); if (fs) { forgeSlot = fs.dataset.forgeSlot; renderCitySheet(); return; }
-            const hu = e.target.closest('[data-hero-up]');
-            if (hu) { const id = hu.dataset.heroUp, st = loadHeroes()[id], r = heroRarity(id), cost = HERO_RAR_COST[r];
-                if (r >= RARITY_DEFS.length - 1 || st.lvl < HERO_RAR_LEVEL[r] || gems < cost) return;
-                gems -= cost; st.rar = r + 1; saveHeroes(); updateHud(); saveGame();
-                flashHint(heroById(id).name + ' ist jetzt ' + RARITY_DEFS[r + 1].label + ' – Bonus ×' + HERO_RAR_MULT[r + 1] + '.', 3000); renderCitySheet(); return; }
+            if (e.target.closest('[data-hero-open]')) { openHeroHall(); return; }
             const su = e.target.closest('[data-shield-use]');
             if (su) { const h = +su.dataset.shieldUse, stock = shieldStock(); if (!stock[h]) return;
                 stock[h]--; store.set('openWaterShieldStock', JSON.stringify(stock));
@@ -8879,8 +9142,8 @@ body.has-panel .mapctl{display:none}
                 cityPlinth(K, 21, 2);
                 K.box(-17, 15, -12, 8, 2, 16, '#efe6d2', .8); cityGable(K, -18, 16, -13, 9, 16, 12, '#7a2e2a'); cityWindows(K, -14, 12, 8, 13, 5, true);
                 if (t >= 2) { K.box(-6, 4, -6, 2, 16, 30, '#e6dcc6', .7); K.pyramid(-1, -2, 6, 30, 10, '#7a2e2a'); }
-                const on = HEROES.filter(h => heroUnlocked(h)).length;
-                HEROES.forEach((h, i) => { const x = -10 + i * 10; K.box(x - 2, x + 2, 13, 17, 2, 5, '#8a7f68', .5); K.cyl(x, 15, 1.4, 5, 10, i < on ? '#d9b454' : '#9a927f', .4); });
+                const on = Math.ceil(HEROES.filter(h => heroOwned('player', h.id)).length / HEROES.length * 3);   // a lit statue for every third of the heroes
+                [0, 1, 2].forEach(i => { const x = -10 + i * 10; K.box(x - 2, x + 2, 13, 17, 2, 5, '#8a7f68', .5); K.cyl(x, 15, 1.4, 5, 10, i < on ? '#d9b454' : '#9a927f', .4); });
                 cityBanner(K, -15, 8.2, 14, '#7a2e2a'); cityBanner(K, 13, 8.2, 14, '#7a2e2a'); if (t >= 3) cityBanner(K, -1, 2.2, 26, '#e4c886');
             },
             barracks(K, t) {
@@ -9107,7 +9370,7 @@ body.has-panel .mapctl{display:none}
             for (const b of CITY_BUILDINGS) { const at = CITY_LOTS[b.id]; if (!at) continue;
                 const lvl = c.levels[b.id] || 0, tier = cityTierOf(lvl);
                 if (b.id === 'wall') { items.push({ id: 'wall', x: at[0], y: at[1], spr: citySprite('gatehouse', tier), name: b.name, lvl, b, gate: true }); continue; }
-                items.push({ id: b.id, x: at[0], y: at[1], spr: citySprite(tier ? b.id : 'plot', tier, b.id === 'heroes' ? HEROES.filter(h => heroUnlocked(h)).length : ''), name: b.name, lvl, b }); }
+                items.push({ id: b.id, x: at[0], y: at[1], spr: citySprite(tier ? b.id : 'plot', tier, b.id === 'heroes' ? Math.ceil(HEROES.filter(h => heroOwned('player', h.id)).length / HEROES.length * 3) : ''), name: b.name, lvl, b }); }
             for (const s of CITY_STATIC) items.push({ x: s.at[0], y: s.at[1], spr: cityStaticSprite(s.kind, s.col), deco: s.kind });
             const hour = new Date().getHours() + new Date().getMinutes() / 60;             // evening and night: torches, lit windows
             const night = hour >= 20 || hour < 5.5 ? 1 : hour >= 18 ? (hour - 18) / 2 : hour < 7 ? (7 - hour) / 1.5 : 0;
@@ -9449,17 +9712,20 @@ body.has-panel .mapctl{display:none}
         function fieldInfo(f) { const st = fieldState[f.id] || (fieldState[f.id] = { left: f.cap, occ: null }); if (st.regenAt && Date.now() >= st.regenAt) { st.left = f.cap; st.regenAt = 0; } return st; }
         const fieldWhoName = who => who === 'player' ? 'Du' : (botById[who] || {}).name || '?';
         const fieldLoadCap = (f, troops) => troops * FIELD_KINDS[f.kind].load;
+        const fieldCapOf = (f, o, gx) => fieldLoadCap(f, o.troops) * (1 + ((gx === undefined ? heroGatherFx(o) : gx) || HX0).carry / 100);   // Packesel, Lastträger: they carry more
+        function fieldHurt(who, n, hx) { return who === 'player' ? hospitalTake(n, hx ? Math.min(100, hospitalPct() + hx.hosp) : undefined) : botHospitalTake(who, n, hx ? Math.min(100, botHospitalPct(who) + hx.hosp) : undefined); }
         function fieldTravelSec(from, f, who) { return travelDurationSeconds(from, f, who === 'player' ? undefined : who); }
-        function fieldSend(who, homeId, fieldId, troops) {                        // troops leave a base for a field (gathering, or attacking whoever sits there)
+        function fieldSend(who, homeId, fieldId, troops, hero) {                  // troops leave a base for a field (gathering, or attacking whoever sits there) - a hero may lead them
             const home = islandById[homeId], f = fieldById[fieldId]; if (!home || !f || troops <= 0) return false;
+            if (hero && (!heroOwned(who, hero) || heroBusy(who, hero))) hero = null; const mx = heroMarchFx(who, hero);
             islandTroops[homeId] = Math.max(0, (islandTroops[homeId] || 0) - troops);
-            const now = Date.now(); fieldMarches.push({ who, homeId, fieldId, troops, startedAt: now, resolveAt: now + fieldTravelSec(home, f, who) * 1000, back: false, load: 0 });
+            const now = Date.now(); fieldMarches.push({ who, homeId, fieldId, troops, hero: hero || null, startedAt: now, resolveAt: now + fieldTravelSec(home, f, who) / (1 + (mx ? mx.spd : 0) / 100) * 1000, back: false, load: 0 });
             saveFields(); if (who === 'player') { sfx('send'); updateHud(); saveGame(); } requestRender(); return true;
         }
         function fieldGoHome(f, st, now) {                                          // the gatherers pack up and walk home with what they have
             const o = st.occ; if (!o) return;
             const home = islandById[o.homeId] || islandById[playerIslandId];
-            fieldMarches.push({ who: o.who, homeId: o.homeId, fieldId: f.id, troops: o.troops, startedAt: now, resolveAt: now + fieldTravelSec(home, f, o.who) * 1000, back: true, load: o.got });
+            fieldMarches.push({ who: o.who, homeId: o.homeId, fieldId: f.id, troops: o.troops, hero: o.hero || null, startedAt: now, resolveAt: now + fieldTravelSec(home, f, o.who) * 1000, back: true, load: o.got });
             st.occ = null; if (st.left <= 0) st.regenAt = now + FIELD_REGEN_MS;
         }
         function fieldArrive(m, now) {
@@ -9476,23 +9742,24 @@ body.has-panel .mapctl{display:none}
             const o = st.occ;
             if (o && o.who !== m.who && ownerShielded(o.who, Math.min(now, m.resolveAt || now))) {                             // the gatherers there stand under a Friedensschild: back home
                 const home = islandById[m.homeId] || islandById[playerIslandId];
-                fieldMarches.push({ who: m.who, homeId: m.homeId, fieldId: f.id, troops: m.troops, startedAt: now, resolveAt: now + fieldTravelSec(home, f, m.who) * 1000, back: true, load: 0 });
+                fieldMarches.push({ who: m.who, homeId: m.homeId, fieldId: f.id, troops: m.troops, hero: m.hero || null, startedAt: now, resolveAt: now + fieldTravelSec(home, f, m.who) * 1000, back: true, load: 0 });
                 if (m.who === 'player') flashHint('Friedensschild bei ' + fieldWhoName(o.who) + ' – deine Truppen kehren von der ' + FIELD_KINDS[f.kind].name + ' zurück.', 4000);
                 return;
             }
-            if (!o || st.left <= 0 && !o) { st.occ = { who: m.who, troops: m.troops, homeId: m.homeId, since: now, got: 0 }; if (m.who === 'player') flashHint('Deine Truppen sammeln jetzt an der ' + FIELD_KINDS[f.kind].name + '.', 3000); return; }
-            if (o.who === m.who) { o.troops += m.troops; return; }                 // more of your own join the gatherers
+            if (!o || st.left <= 0 && !o) { st.occ = { who: m.who, troops: m.troops, homeId: m.homeId, hero: m.hero || null, since: now, got: 0 }; if (m.who === 'player') flashHint('Deine Truppen sammeln jetzt an der ' + FIELD_KINDS[f.kind].name + '.', 3000); return; }
+            if (o.who === m.who) { o.troops += m.troops; if (!o.hero) o.hero = m.hero || null; return; }   // more of your own join the gatherers (a second hero just goes along)
             if (m.who !== 'player' && botById[m.who] && botKeepsShield(botById[m.who], now)) { const home = islandById[m.homeId] || islandById[playerIslandId];   // under their own shield: no fight, back home
-                fieldMarches.push({ who: m.who, homeId: m.homeId, fieldId: f.id, troops: m.troops, startedAt: now, resolveAt: now + fieldTravelSec(home, f, m.who) * 1000, back: true, load: 0 }); return; }
+                fieldMarches.push({ who: m.who, homeId: m.homeId, fieldId: f.id, troops: m.troops, hero: m.hero || null, startedAt: now, resolveAt: now + fieldTravelSec(home, f, m.who) * 1000, back: true, load: 0 }); return; }
             if (m.who === 'player') dropShield('Dein Friedensschild ist gefallen, weil du angreifst.'); else botDropShield(m.who);   // a fight for the field is an attack
-            const fb = fieldBattle(m.who, m.troops, o.who, o.troops), won = fb.won, involved = m.who === 'player' || o.who === 'player', defBefore = o.troops;   // a fight for the field: army against army
+            const aHx = heroFieldFx(m.who, m.hero, { res: 1 }), dHx = heroFieldFx(o.who, o.hero, { res: 1, defending: 1, gather: 1 });   // both leaders: Goldrausch, Lagerwache …
+            const fb = fieldBattle(m.who, m.troops, o.who, o.troops, aHx, dHx), won = fb.won, involved = m.who === 'player' || o.who === 'player', defBefore = o.troops;   // a fight for the field: army against army
             const loserName = fieldWhoName(won ? o.who : m.who), winnerName = fieldWhoName(won ? m.who : o.who), oWho = o.who;
-            if (won) st.occ = { who: m.who, troops: m.troops - fb.aLoss, homeId: m.homeId, since: now, got: 0 }; else o.troops -= fb.dLoss;
-            for (const [w, n] of [[m.who, fb.aLoss], [oWho, fb.dLoss]]) w === 'player' ? hospitalTake(n) : botHospitalTake(w, n);   // both sides' Lazarett
-            const fg = fieldGold(m.who, oWho, fb, null);
+            if (won) st.occ = { who: m.who, troops: m.troops - fb.aLoss, homeId: m.homeId, hero: m.hero || null, since: now, got: 0 }; else o.troops -= fb.dLoss;
+            for (const [w, n, hx] of [[m.who, fb.aLoss, aHx], [oWho, fb.dLoss, dHx]]) fieldHurt(w, n, hx);   // both sides' Lazarett (+ their hero)
+            const fg = fieldGold(m.who, oWho, fb, aHx, dHx);
             if (involved) {
                 const youWon = (m.who === 'player') === won;
-                addCombatLogEntry({ type: 'field', fieldKind: f.kind, won: youWon, attacker: fieldWhoName(m.who), defender: fieldWhoName(oWho), atk: fb.SA, def: fb.SD, gold: m.who === 'player' ? fg.a : fg.d });
+                addCombatLogEntry({ type: 'field', fieldKind: f.kind, won: youWon, attacker: fieldWhoName(m.who), defender: fieldWhoName(oWho), atk: fb.SA, def: fb.SD, gold: m.who === 'player' ? fg.a : fg.d, hA: heroTag(aHx), hD: heroTag(dHx), hx: heroReportOf(m.who === 'player' ? aHx : dHx) });
                 flashHint(youWon ? 'Du hast die ' + FIELD_KINDS[f.kind].name + ' gegen ' + loserName + ' gehalten/erobert.' : winnerName + ' hat dich von der ' + FIELD_KINDS[f.kind].name + ' vertrieben.', 4000);
                 sfx(youWon ? 'victory' : 'defeat');
             }
@@ -9503,7 +9770,7 @@ body.has-panel .mapctl{display:none}
             if (due.length) { fieldMarches = fieldMarches.filter(m => m.resolveAt > now); for (const m of due) fieldArrive(m, now); saveFields(); requestRender(); }
             for (const f of resFields) {
                 const st = fieldState[f.id]; if (!st || !st.occ) continue;
-                const o = st.occ, cap = fieldLoadCap(f, o.troops), amt = Math.min(FIELD_KINDS[f.kind].rate * o.troops * dt, st.left, cap - o.got);
+                const o = st.occ, gx = heroGatherFx(o), cap = fieldCapOf(f, o, gx), amt = Math.min(FIELD_KINDS[f.kind].rate * o.troops * dt * (1 + (gx ? gx.gSpd : 0) / 100), st.left, cap - o.got);   // Spürnase: faster
                 o.got += Math.max(0, amt); st.left -= Math.max(0, amt);
                 if (o.got >= cap - 1e-9 || st.left <= 0) { fieldGoHome(f, st, now); requestRender(); }
             }
@@ -9534,7 +9801,7 @@ body.has-panel .mapctl{display:none}
                         ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.moveTo(dx - w * .3, 1); ctx.lineTo(dx, 2 - h); ctx.lineTo(dx + w * .15, 1); ctx.closePath(); ctx.fill(); }
                 }
                 if (st && st.occ) {                                                   // the gatherers' tent and how full their packs are
-                    const o = st.occ, col = o.who === 'player' ? '#3f86d8' : (botById[o.who] || {}).color || '#c9423a', q = Math.min(1, o.got / Math.max(1e-9, fieldLoadCap(f, o.troops)));
+                    const o = st.occ, col = o.who === 'player' ? '#3f86d8' : (botById[o.who] || {}).color || '#c9423a', q = Math.min(1, o.got / Math.max(1e-9, fieldCapOf(f, o)));
                     ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(-18, 6); ctx.lineTo(-12, -5); ctx.lineTo(-6, 6); ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#2a241b'; ctx.stroke();
                     ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.arc(0, -4, 17, 0, Math.PI * 2); ctx.stroke();
                     ctx.strokeStyle = col; ctx.beginPath(); ctx.arc(0, -4, 17, -Math.PI / 2, -Math.PI / 2 + q * Math.PI * 2); ctx.stroke();
@@ -9547,21 +9814,23 @@ body.has-panel .mapctl{display:none}
             }
         }
         // the field sheet: what it is, who's there, and send / call back
-        let fieldSheetId = null, fieldShare = .5;
+        let fieldSheetId = null, fieldShare = .5, fieldHero = null;
         function fieldSource(f) { let best = null, bd = Infinity; for (const id of ownedIslands) { const isl = islandById[id]; if ((islandTroops[id] || 0) < 1 || !canReach(isl.landmassId, f.landmassId)) continue;
             const d = Math.hypot(isl.x - f.x, isl.y - f.y); if (d < bd) { bd = d; best = id; } } return best; }
         function openFieldSheet(f) {
             fieldSheetId = f.id; const st = fieldInfo(f), K = FIELD_KINDS[f.kind], o = st.occ, src = fieldSource(f), mine = o && o.who === 'player';
             const avail = src !== null ? islandTroops[src] || 0 : 0, send = Math.floor(avail * fieldShare);
+            if (fieldHero && (!heroOwned('player', fieldHero) || heroBusy('player', fieldHero))) fieldHero = null;
             document.getElementById('fieldSheet').innerHTML =
                 '<div class="marker-head"><b>' + icon(K.icon) + ' ' + K.name + '</b><button class="btn-x" type="button" data-fclose aria-label="Schließen">' + icon('close') + '</button></div>' +
                 '<div class="field-lines"><span>Vorrat</span><b>' + (st.left <= 0 ? 'erschöpft – wächst in ' + fmtClock((st.regenAt - Date.now()) / 1000) + ' nach' : fmtNum(Math.floor(st.left)) + ' ' + K.what) + '</b>' +
-                '<span>Besetzt</span><b>' + (o ? fieldWhoName(o.who) + ' · ' + fmtCompact(o.troops) + ' Truppen · ' + fmtNum(Math.floor(o.got)) + ' gesammelt' : 'frei') + '</b>' +
+                '<span>Besetzt</span><b>' + (o ? fieldWhoName(o.who) + (o.hero && heroById(o.hero) ? ' mit ' + heroById(o.hero).name : '') + ' · ' + fmtCompact(o.troops) + ' Truppen · ' + fmtNum(Math.floor(o.got)) + ' gesammelt' : 'frei') + '</b>' +
                 '<span>Tragen</span><b>' + (K.load >= 1 ? fmtNum(K.load) + ' ' + K.what + ' pro Truppe' : '1 Gem pro ' + Math.round(1 / K.load) + ' Truppen') + '</b></div>' +
                 (mine ? '<button class="btn btn--secondary btn--sm" type="button" data-frecall>' + icon('recall') + '<span>Mit Beute heimkehren</span></button>' :
                  src === null ? '<div class="notice">' + icon('lock') + '<span>Keine deiner Basen mit Truppen kommt hierher.</span></div>' :
                  o && ownerShielded(o.who) ? '<div class="notice notice--gold">' + icon('shield') + '<span>' + fieldWhoName(o.who) + ' steht unter einem Friedensschild (noch ' + fmtHours(ownerShieldUntil(o.who) - Date.now()) + ') – die Sammler dort kann niemand angreifen.</span></div>' :
                  '<div class="seg" data-fshare>' + ['.25', '.5', '.75', '1'].map(v => '<button type="button" data-f="' + v + '"' + (+v === fieldShare ? ' class="on"' : '') + '>' + (v === '1' ? 'Alle' : Math.round(v * 100) + ' %') + '</button>').join('') + '</div>' +
+                 (heroSegHtml('data-fhero', fieldHero) ? '<div class="seg hero-seg">' + heroSegHtml('data-fhero', fieldHero) + '</div>' : '') +
                  '<button class="btn btn--primary btn--sm" type="button" data-fsend>' + icon(o ? 'attack' : 'send') + '<span>' + (o ? 'Angreifen und übernehmen' : 'Sammeln') + ' · ' + fmtCompact(send) + ' von ' + islandTitle(islandById[src]) + '</span></button>');
             document.getElementById('fieldSheet').hidden = false;
         }
@@ -9570,9 +9839,10 @@ body.has-panel .mapctl{display:none}
             const f = fieldById[fieldSheetId]; if (!f) return;
             if (e.target.closest('[data-fclose]')) return closeFieldSheet();
             const sh = e.target.closest('[data-f]'); if (sh && e.target.closest('[data-fshare]')) { fieldShare = +sh.dataset.f; return openFieldSheet(f); }
+            const fh = e.target.closest('[data-fhero]:not([disabled])'); if (fh) { fieldHero = fh.dataset.fhero || null; return openFieldSheet(f); }
             if (e.target.closest('[data-frecall]')) { const st = fieldInfo(f); if (st.occ && st.occ.who === 'player') { fieldGoHome(f, st, Date.now()); saveFields(); flashHint('Deine Sammler kehren mit der Beute heim.', 2500); } return closeFieldSheet(); }
             if (e.target.closest('[data-fsend]')) { const src = fieldSource(f); if (src === null) return; const n = Math.floor((islandTroops[src] || 0) * fieldShare);
-                if (n < 1) return; fieldSend('player', src, f.id, n); flashHint('Truppen unterwegs zur ' + FIELD_KINDS[f.kind].name + '.', 2500); closeFieldSheet(); }
+                if (n < 1) return; fieldSend('player', src, f.id, n, fieldHero); fieldHero = null; flashHint('Truppen unterwegs zur ' + FIELD_KINDS[f.kind].name + '.', 2500); closeFieldSheet(); }
         });
         // ===== ARMEEN AUF DER KARTE: troops that stand out in the open instead of in a base. Gather them from several
         // bases at one spot, walk them anywhere and give orders: move, attack a base, take a field, join another army,
@@ -9637,10 +9907,10 @@ body.has-panel .mapctl{display:none}
             if (t.kind === 'base' && baseShieldedFor(t.id, who)) return 'shield';
             if (t.kind === 'army') { const b = armyById(t.id); if (b && armyWho(b) !== who && ownerShielded(armyWho(b))) return 'shield'; }
             if (!routeFor(a.lm, t.lm, who)) return 'route';
-            if (a.lm !== t.lm) { const hop = lastHop(a.lm, t.lm, who); if (!payToll(hop[0], hop[1], a.troops, who, t.kind === 'base' ? t.id : undefined)) return 'toll'; }
+            const mx = heroMarchFx(who, a.hero, true);                                  // its hero: Tempo, Pirsch, Maut
+            if (a.lm !== t.lm) { const hop = lastHop(a.lm, t.lm, who); if (!payToll(hop[0], hop[1], a.troops, who, t.kind === 'base' ? t.id : undefined, mx ? mx.toll : 0)) return 'toll'; }
             const from = { x: a.x, y: a.y, landmassId: a.lm }, to = { x: t.x, y: t.y, landmassId: t.lm };
-            const ida = a.hero === 'ida' ? 1 + heroBonusFor(who, 'ida') / 100 : 1;          // Ida: the army marches faster
-            a.mv = { path: marchPath(from, to), startedAt: now, resolveAt: now + Math.max(3, travelDurationSeconds(from, to, who === 'player' ? undefined : who) / ida) * 1000, to: t };
+            a.mv = { path: marchPath(from, to), startedAt: now, resolveAt: now + Math.max(3, travelDurationSeconds(from, to, who === 'player' ? undefined : who) / (1 + (mx ? mx.spd : 0) / 100)) * 1000, to: t };
             saveArmies(); requestRender(); return '';
         }
         function armyOrder(a, t) {
@@ -9659,25 +9929,24 @@ body.has-panel .mapctl{display:none}
         }
         function fieldAtkPct(who) { return who === 'player' ? attackBonusPct() : botMults(who).attackPct; }
         function fieldShield(who) { return who === 'player' ? shieldLossReductionPct() : botMults(who).shield; }
-        function fieldBattle(aWho, aTroops, dWho, dTroops, aHero, dHero) {   // every fight out in the open (armies, raids, fields): no walls - troops × Angriff (+ Sigrun) × title, the winner's shield (+ Bernhard) saves some
-            const hp = (who, hr, k) => hr === k ? heroBonusFor(who, hr) : 0;
-            const fa = (1 + (fieldAtkPct(aWho) + hp(aWho, aHero, 'sigrun')) / 100) * titleMult(aWho, 'attack'), fd = (1 + (fieldAtkPct(dWho) + hp(dWho, dHero, 'sigrun')) / 100) * titleMult(dWho, 'attack');
-            const SA = aTroops * fa, SD = dTroops * fd, won = SA > SD;
-            const sh = Math.min(90, won ? fieldShield(aWho) + hp(aWho, aHero, 'bernhard') : fieldShield(dWho) + hp(dWho, dHero, 'bernhard'));
+        function fieldBattle(aWho, aTroops, dWho, dTroops, aHx, dHx) {   // every fight out in the open (armies, raids, fields): no walls - (troops + Gefolge) × Angriff (+ hero) × title, the winner's shield (+ hero) saves some
+            const ah = aHx || HX0, dh = dHx || HX0;
+            const fa = (1 + (fieldAtkPct(aWho) + ah.atk) / 100) * titleMult(aWho, 'attack'), fd = (1 + (fieldAtkPct(dWho) + dh.atk + dh.fdef) / 100) * titleMult(dWho, 'attack');
+            const SA = (aTroops + ah.gef) * fa, SD = (dTroops + dh.gef) * fd, won = SA > SD;
+            const sh = Math.min(90, won ? fieldShield(aWho) + ah.loss : fieldShield(dWho) + dh.loss);
             const winLoss = Math.min(won ? aTroops : dTroops, Math.round((won ? SD / fa : SA / fd) * (1 - sh / 100)));
             return { won, SA: Math.round(SA), SD: Math.round(SD), aLoss: won ? winLoss : aTroops, dLoss: won ? dTroops : winLoss };
         }
         function armyClash(att, def) {                                              // army against army out in the open
-            const A = att.troops, D = def.troops, fb = fieldBattle(armyWho(att), A, armyWho(def), D, att.hero, def.hero), won = fb.won, loser = won ? def : att, winner = won ? att : def;
-            for (const [x, xp] of [[att, won ? fb.SD : fb.aLoss], [def, won ? fb.dLoss : fb.SA]]) if (x.hero) (armyWho(x) === 'player' ? heroGainXp(x.hero, xp) : botHeroGainXp(x.who, x.hero, xp));   // the leaders learn from it
+            const aHx = heroFieldFx(armyWho(att), att.hero, {}), dHx = heroFieldFx(armyWho(def), def.hero, { defending: 1 });   // both leaders (a full rage fires now)
+            const A = att.troops, D = def.troops, fb = fieldBattle(armyWho(att), A, armyWho(def), D, aHx, dHx), won = fb.won, loser = won ? def : att, winner = won ? att : def;
             att.troops -= fb.aLoss; def.troops -= fb.dLoss; armies = armies.filter(x => !((x === att || x === def) && x.troops < 1));
-            const hurt = (x, n) => armyWho(x) === 'player' ? hospitalTake(n) : botHospitalTake(x.who, n);
-            const wA = hurt(att, fb.aLoss), wD = hurt(def, fb.dLoss), wLoser = won ? wD : wA, wWinner = won ? wA : wD;
-            const fg = fieldGold(armyWho(att), armyWho(def), fb, att.hero);
+            const wA = fieldHurt(armyWho(att), fb.aLoss, aHx), wD = fieldHurt(armyWho(def), fb.dLoss, dHx), wLoser = won ? wD : wA, wWinner = won ? wA : wD;
+            const fg = fieldGold(armyWho(att), armyWho(def), fb, aHx, dHx);
             const mine = armyWho(att) === 'player' ? att : armyWho(def) === 'player' ? def : null;
             if (!mine) return;
             const youWon = mine === winner, foe = mine === att ? def : att, w = youWon ? wWinner : wLoser;
-            addCombatLogEntry({ type: 'army', won: youWon, attacker: armyName(att), defender: armyName(def), atk: fb.SA, def: fb.SD, wounded: w, gold: mine === att ? fg.a : fg.d });
+            addCombatLogEntry({ type: 'army', won: youWon, attacker: armyName(att), defender: armyName(def), atk: fb.SA, def: fb.SD, wounded: w, gold: mine === att ? fg.a : fg.d, hA: heroTag(aHx), hD: heroTag(dHx), hx: heroReportOf(mine === att ? aHx : dHx) });
             warStat(youWon ? 'armyWins' : 'armyLosses', 1, mine === def ? armyName(att) : null);
             flashHint(youWon ? 'Deine Armee hat die Armee von ' + armyName(foe) + ' geschlagen – ' + fmtCompact(winner.troops) + ' stehen noch.'
                              : 'Die Armee von ' + armyName(foe) + ' hat deine Armee geschlagen' + (w ? ', ' + fmtCompact(w) + ' ins Lazarett.' : '.'), 5000);
@@ -9694,22 +9963,14 @@ body.has-panel .mapctl{display:none}
                 else if (ownerShielded(armyWho(b), now)) { if (me) flashHint('Die Armee von ' + armyName(b) + ' steht unter einem Friedensschild – kein Kampf.', 3500); }
                 else { const p = armyPos(b, now); if (Math.hypot(p.x - a.x, p.y - a.y) < ISLAND_RADIUS * 2) { if (me) dropShield('Dein Friedensschild ist gefallen, weil du angreifst.'); else botDropShield(who); armyClash(a, b); } else if (me) flashHint('Die Armee von ' + armyName(b) + ' ist weitergezogen.', 3000); }
                 return; }
-            if (t.kind === 'field') { gone(); fieldArrive({ who, homeId: armyHome(a), fieldId: t.id, troops: a.troops, back: false }, now); saveFields(); return; }
+            if (t.kind === 'field') { gone(); fieldArrive({ who, homeId: armyHome(a), fieldId: t.id, troops: a.troops, hero: a.hero || null, back: false }, now); saveFields(); return; }
             if (t.kind === 'base') {                                                  // storming a base: the fight runs exactly like a normal attack
                 const src = armyHome(a); if (src === null || src === undefined) return;
                 gone();
-                if (me) { dropShield('Dein Friedensschild ist gefallen, weil du angreifst.'); questProgress('attack', 1);
-                    const hr = a.hero && heroUnlocked(heroById(a.hero)) ? a.hero : null, hb = heroBonusFor('player', hr);
-                    pendingAttacks.push({ sourceId: src, targetId: t.id, rawTroops: a.troops, startedAt: now - 1000, resolveAt: now, attackerBotId: null, fromArmy: true,
-                        attackBonus: attackFlatBonus(a.troops) + (hr === 'sigrun' ? Math.round(a.troops * hb / 100) : 0), skillBonus: attackFlatBonus(a.troops), skillLvl: skills.attack || 0, heroPct: hr === 'sigrun' ? hb : 0,
-                        attackGoldRate: (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate, rewardGoldRate: killGoldRate('player', hr), bernPct: hr === 'bernhard' ? hb : 0,
-                        shieldLossReductionPct: Math.min(90, shieldLossReductionPct() + (hr === 'bernhard' ? hb : 0)), hero: hr, atkTitle: titleMult('player', 'attack') });
-                    saveGame(); saveProgression(); }
-                else { botDropShield(who); const hr = a.hero && botHeroUnlocked(who, a.hero) ? a.hero : null, hb = heroBonusFor(who, hr), sk = Math.round(a.troops * botMults(who).attackPct / 100);
-                    pendingAttacks.push({ sourceId: src, targetId: t.id, rawTroops: a.troops, startedAt: now - 1000, resolveAt: now, attackerBotId: who, fromArmy: true,
-                        attackBonus: sk + (hr === 'sigrun' ? Math.round(a.troops * hb / 100) : 0), skillBonus: sk, skillLvl: loadBotState()[who].skills.attack, heroPct: hr === 'sigrun' ? hb : 0,
-                        attackGoldRate: botGoldRate(who, 'attackGold'), rewardGoldRate: killGoldRate(who, hr), bernPct: hr === 'bernhard' ? hb : 0,
-                        shieldLossReductionPct: Math.min(90, botMults(who).shield + (hr === 'bernhard' ? hb : 0)), botShield: true, hero: hr, atkTitle: titleMult(who, 'attack') }); }
+                if (me) { dropShield('Dein Friedensschild ist gefallen, weil du angreifst.'); questProgress('attack', 1); } else botDropShield(who);
+                const tg = islandById[t.id], hx = a.hero && heroOwned(who, a.hero) ? heroLaunch(who, a.hero, islandById[src], tg, a.troops) : null;   // the army's hero leads the storm
+                pendingAttacks.push({ sourceId: src, targetId: t.id, rawTroops: a.troops, startedAt: now - 1000, resolveAt: now, attackerBotId: me ? null : who, fromArmy: true, ...attackFields(who, islandById[src], tg, a.troops, hx) });
+                if (me) { saveGame(); saveProgression(); }
                 renderActiveMarches();
             }
         }
@@ -9773,9 +10034,7 @@ body.has-panel .mapctl{display:none}
         function openArmySheet(s) { armySheet = s; if (s.mode === 'new' || s.mode === 'more') { const src = armySources(s.mode === 'new' ? s : armyPosXY(armyById(s.id))); armySel = new Set(src.slice(0, 1)); } renderArmySheet(); requestRender(); }
         function closeArmySheet() { document.getElementById('armySheet').hidden = true; armySheet = null; requestRender(); }
         function armyHeroSeg(a) {                        // which hero marches with this army (one army or attack per hero)
-            const hs = HEROES.filter(x => heroUnlocked(x)); if (!hs.length) return '';
-            return '<div class="seg hero-seg army-hero">' + '<button type="button" data-ahero=""' + (!a.hero ? ' class="on"' : '') + '>Kein Held</button>' +
-                hs.map(x => '<button type="button" data-ahero="' + x.id + '"' + (a.hero === x.id ? ' class="on"' : '') + (heroBusy(x.id) && a.hero !== x.id ? ' disabled' : '') + ' style="--hc:' + RARITY_DEFS[heroRarity(x.id)].color + '">' + icon(x.icon) + x.name + '</button>').join('') + '</div>';
+            const seg = heroSegHtml('data-ahero', a.hero); return seg ? '<div class="seg hero-seg army-hero">' + seg + '</div>' : '';
         }
         function renderArmySheet() {
             const s = armySheet, el = document.getElementById('armySheet'); if (!s) return;
@@ -9827,7 +10086,7 @@ body.has-panel .mapctl{display:none}
             if (!a) return;
             if (e.target.closest('[data-afoe]')) { const best = myArmies().filter(x => x.troops >= 1).sort((u, v) => v.troops - u.troops)[0]; if (best && armyOrder(best, { kind: 'army', id: a.id, ...armyPosXY(a) })) closeArmySheet(); return; }
             if (armyWho(a) !== 'player') return;
-            const hb = e.target.closest('[data-ahero]:not([disabled])'); if (hb) { a.hero = hb.dataset.ahero || null; saveArmies(); flashHint(a.hero ? heroById(a.hero).name + ' führt jetzt diese Armee.' : 'Die Armee zieht ohne Helden.', 2200); return renderArmySheet(); }
+            const hb = e.target.closest('[data-ahero]:not([disabled])'); if (hb) { if (a.mv) { flashHint('Die Armee ist unterwegs – den Helden wechselst du, wenn sie lagert.', 2500); return; } a.hero = hb.dataset.ahero || null; saveArmies(); flashHint(a.hero ? heroById(a.hero).name + ' führt jetzt diese Armee.' : 'Die Armee zieht ohne Helden.', 2200); return renderArmySheet(); }
             if (e.target.closest('[data-amore]')) return openArmySheet({ mode: 'more', id: a.id });
             if (e.target.closest('[data-ahalt]')) { armyHalt(a, Date.now()); saveArmies(); flashHint('Die Armee hält an und lagert hier.', 2500); return renderArmySheet(); }
             if (e.target.closest('[data-ahome]')) { const h = armyHome(a); if (h === null || h === undefined) return; const b = islandById[h];
@@ -10034,10 +10293,9 @@ body.has-panel .mapctl{display:none}
             const n = multiAttackTargets.length, go = Math.floor((islandTroops[multiAttackSourceId] || 0) * multiAttackShare);
             multiAttackLabel.textContent = n ? n + (n === 1 ? ' Ziel' : ' Ziele') + ' · je ' + fmtCompact(Math.floor(go / n)) + ' Truppen' : '0 Ziele ausgewählt · Basen antippen';
             for (const b of document.querySelectorAll('#multiAttackShare button')) b.classList.toggle('on', parseFloat(b.dataset.f) === multiAttackShare);
-            const hs = HEROES.filter(x => heroUnlocked(x)), hb = document.getElementById('multiAttackHero');
-            if (multiAttackHero && (!heroUnlocked(heroById(multiAttackHero)) || heroBusy(multiAttackHero))) multiAttackHero = null;
-            hb.hidden = !hs.length;
-            hb.innerHTML = hs.length ? '<button type="button" data-mhero=""' + (!multiAttackHero ? ' class="on"' : '') + '>Kein Held</button>' + hs.map(x => '<button type="button" data-mhero="' + x.id + '"' + (multiAttackHero === x.id ? ' class="on"' : '') + (heroBusy(x.id) ? ' disabled' : '') + ' style="--hc:' + RARITY_DEFS[heroRarity(x.id)].color + '">' + icon(x.icon) + x.name + '</button>').join('') : '';
+            const hb = document.getElementById('multiAttackHero');
+            if (multiAttackHero && (!heroOwned('player', multiAttackHero) || heroBusy('player', multiAttackHero))) multiAttackHero = null;
+            const seg = heroSegHtml('data-mhero', multiAttackHero); hb.hidden = !seg; hb.innerHTML = seg;
             multiAttackConfirmBtn.disabled = multiAttackTargets.length === 0;
         }
 
@@ -10326,8 +10584,8 @@ body.has-panel .mapctl{display:none}
                     '<div class="field"><div class="field-top"><span class="field-l"><span class="sm-hide">Truppen </span>entsenden</span><span class="val"><input id="attackTroopsLabel" class="troop-in" inputmode="decimal" autocomplete="off" enterkeyhint="done" aria-label="Anzahl Truppen"> / <span data-preview="max"></span></span></div>' +
                         '<input type="range" id="attackTroopsSlider" class="slider" min="0" max="' + SLIDER_STEPS + '" value="' + troopsToSlider(previewAttackTroops || 0, maxTroops) + '"' + (maxTroops <= 0 ? ' disabled' : '') + ' aria-label="Truppen entsenden">' +
                         '<div class="seg" data-preview="quick"><button type="button" data-f=".25">25 %</button><button type="button" data-f=".5">50 %</button><button type="button" data-f=".75">75 %</button><button type="button" data-f="1">Alle</button></div></div>' +
-                    (HEROES.some(h => heroUnlocked(h)) ? '<div class="field"><div class="field-top"><span class="field-l">Held</span><span class="val" data-preview="herofx"></span></div><div class="seg hero-seg" data-preview="hero">' +
-                        '<button type="button" data-hero="">Keiner</button>' + HEROES.filter(h => heroUnlocked(h)).map(h => '<button type="button" data-hero="' + h.id + '" style="color:' + RARITY_DEFS[heroRarity(h.id)].color + '">' + icon(h.icon) + h.name + '</button>').join('') + '</div></div>' : '');
+                    (heroSegHtml('data-hero', previewHero) ? '<div class="field"><div class="field-top"><span class="field-l">Held</span><span class="val" data-preview="herofx"></span></div><div class="seg hero-seg" data-preview="hero">' +
+                        heroSegHtml('data-hero', previewHero) + '</div></div>' : '');
                 const slider = document.getElementById('attackTroopsSlider');
                 slider.addEventListener('input', () => {
                     const mx = sourceTroops();
@@ -10435,20 +10693,19 @@ body.has-panel .mapctl{display:none}
             if (previewFraction !== null && maxTroops > 0) previewAttackTroops = Math.max(1, Math.round(maxTroops * previewFraction));
             if (maxTroops > 0) slider.value = troopsToSlider(previewAttackTroops, maxTroops);
             const shown = Math.max(0, previewAttackTroops || 0);
-            if (previewHero && (!heroUnlocked(heroById(previewHero)) || heroBusy(previewHero))) previewHero = null;
-            for (const b of popupStats.querySelectorAll('[data-hero]')) { const id = b.dataset.hero; b.disabled = !!id && heroBusy(id); b.classList.toggle('on', (id || null) === previewHero); }
-            const hfx = popupStats.querySelector('[data-preview="herofx"]');
-            if (hfx) hfx.textContent = !previewHero ? '' : previewHero === 'bernhard' ? 'Bernhard: +' + Math.max(0, Math.min(heroBonus('bernhard'), 90 - shieldLossReductionPct())) + ' % weniger Verluste (max. 90 % mit Schild), bei Niederlage fliehen mehr'
-                : heroById(previewHero).name + ': +' + heroBonus(previewHero) + ' ' + heroById(previewHero).what;
-            const swordBonus = attackFlatBonus(shown), sigrunBonus = previewHero === 'sigrun' ? Math.round(shown * heroBonus('sigrun') / 100) : 0, atkBonus = swordBonus + sigrunBonus;
+            if (previewHero && (!heroOwned('player', previewHero) || heroBusy('player', previewHero))) previewHero = null;
+            for (const b of popupStats.querySelectorAll('[data-hero]')) { const id = b.dataset.hero; b.disabled = !!id && heroBusy('player', id); b.classList.toggle('on', (id || null) === previewHero); }
+            const src0 = islandById[previewSourceId], px = previewHero && src0 ? heroPeek('player', previewHero, src0, island, shown) : null, hfx = popupStats.querySelector('[data-preview="herofx"]');   // what the hero does in THIS attack
+            if (hfx) hfx.textContent = !px ? '' : heroStarTxt(px.q) + (px.fired ? ' · ' + px.skill + ' zündet' : '') + ' · ' + px.lines.filter(l => l[0] !== 'Gefolge' && l[0] !== 'Tempo').map(l => l[1]).join(', ');
+            const swordBonus = attackFlatBonus(shown), heroTroops = px ? Math.round(shown * px.atk / 100) + px.gef : 0, atkBonus = swordBonus + heroTroops;
             const mine = Math.round((shown + atkBonus) * titleMult('player', 'attack'));        // same maths as resolveAttack
             const bEl = popupStats.querySelector('#previewAtkBonus'); if (bEl) bEl.textContent = fmtNum(swordBonus);
-            const hbEl = popupStats.querySelector('#previewHeroBonus'); if (hbEl) hbEl.textContent = sigrunBonus ? ' + ' + fmtNum(sigrunBonus) + ' Sigrun' : '';
+            const hbEl = popupStats.querySelector('#previewHeroBonus'); if (hbEl) hbEl.textContent = heroTroops ? ' + ' + fmtNum(heroTroops) + ' ' + heroById(previewHero).name : '';
             const tv = mine - Math.round(shown + atkBonus), tx = titleOf('player'), tbEl = popupStats.querySelector('#previewTitleBonus');
             if (tbEl) tbEl.textContent = tv && tx ? (tv > 0 ? ' + ' : ' − ') + fmtNum(Math.abs(tv)) + ' Titel ' + tx.name : '';
             const src = islandById[previewSourceId], tEl = popupSub.querySelector('#previewToll'), mEl = popupSub.querySelector('#previewMarch');
-            if (mEl && src) mEl.textContent = fmtClock(travelDurationSeconds(src, island) / (previewHero === 'ida' ? 1 + heroBonus('ida') / 100 : 1));   // Ida marches faster
-            if (tEl && src) { const hop = lastHop(src.landmassId, island.landmassId, 'player'), t = tollFor(hop[0], hop[1], shown, 'player', island.id);
+            if (mEl && src) mEl.textContent = fmtClock(travelDurationSeconds(src, island) / (1 + (px ? px.spd : 0) / 100));   // the hero's Tempo
+            if (tEl && src) { const hop = lastHop(src.landmassId, island.landmassId, 'player'), t = tollFor(hop[0], hop[1], shown, 'player', island.id, px ? px.toll : 0);
                 tEl.innerHTML = t.closed ? '<span class="sep"></span>' + icon('lock') + '<span>Tor geschlossen</span>' : t.cost ? '<span class="sep"></span>' + icon('coin') + '<span>Maut <span class="num">' + fmtCompact(t.cost) + '</span></span>' : ''; }
             const fmtBig = v => v >= 1e7 ? fmtCompact(v) : fmtNum(v);    // billions don't fit the preview
             document.getElementById('previewMyTroops').textContent = fmtBig(mine);
@@ -10462,7 +10719,7 @@ body.has-panel .mapctl{display:none}
                     ? previewFraction === parseFloat(b.dataset.f)
                     : Math.max(1, Math.round(maxTroops * parseFloat(b.dataset.f))) === shown));
             if (scouted) {                                      // fog of war: enemy numbers and the ratio exist only when scouted
-                const enemyTroops = effectiveTroops(island), enemyDefense = effectiveDefense(island), total = enemyTroops + enemyDefense;
+                const enemyTroops = effectiveTroops(island), enemyDefense = Math.round(effectiveDefense(island) * (1 - (px ? Math.min(90, px.def) : 0) / 100)), total = enemyTroops + enemyDefense;   // (Rammbock & Co. cut it)
                 popupStats.querySelector('[data-foe="total"]').textContent = total >= 1e7 ? fmtCompact(total) : fmtNum(total);
                 popupStats.querySelector('[data-foe="sub"]').innerHTML = fmtCompact(enemyTroops) + '<span class="xs-hide">\u00a0Truppen</span> +\u00a0' + fmtCompact(enemyDefense) + '\u00a0Vert.';
                 const ratio = total > 0 ? mine / total : Infinity;
@@ -10961,7 +11218,7 @@ body.has-panel .mapctl{display:none}
                 'Tipp: Stelle Armeen im Feld auf und sammle Truppen aus mehreren Basen an einem Punkt.',
                 'Tipp: Goldminen und Edelsteinadern auf der Karte bringen Beute – schick Sammler hin.',
                 'Tipp: Das Lazarett in deiner Stadt rettet Verwundete – heile sie für ein paar Münzen.',
-                'Tipp: Nimm einen Helden mit in den Angriff: Sigrun schlägt härter, Bernhard schützt, Ida ist schneller.',
+                'Tipp: Ein Held führt deinen Angriff – Splitter von Bossen schalten neue frei, Sterne geben Fähigkeitspunkte.',
                 'Tipp: Wer den Mega-Tempel hält, verteilt Titel – gute für Freunde, schlechte für Rivalen.',
                 'Tipp: Setze Wegmarken auf der Karte, um dir Ziele zu merken.'];
             const tipEl = document.getElementById('splashTip'), statusEl = document.getElementById('splashStatus');
@@ -11070,7 +11327,7 @@ body.has-panel .mapctl{display:none}
             for (const k of Object.keys(b.equip)) b.equip[k] = 0;
             for (const k of Object.keys(EQUIPMENT_DEFS)) { b.gear[k] = null; b.spare[k] = RARITY_DEFS.map(() => 0); }
             b.pts = 0; b.wounded = 0; b.city = { levels: Object.fromEntries(BOT_BUILDINGS.map(k => [k, 0])), build: null };
-            for (const id of HEROES_IDS) b.heroes[id] = { lvl: 1, xp: 0, rar: 0 };
+            b.hs = botHeroFreshSet();
             delete botIntelMem.bot25;
             store.set('openWaterEmmaFair', '1'); saveBotState(); refreshTerritory(); saveGame(); requestRender();
         }
