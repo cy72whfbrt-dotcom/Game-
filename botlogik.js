@@ -869,17 +869,25 @@ function botHeroCare(bot) {                               // like a player in th
     const b = loadBotState()[bot.id], day = todayKey(); if (!b || !b.hs) return;
     if (b.hsDay !== day) { const first = !b.hsDay; b.hsDay = day;               // the daily tasks' shards - on the days they play enough to finish them
         if (!first && Math.random() < Math.min(.95, (BOT_STYLES[bot.style].act || .6) + .2)) { heroGrantShards(bot.id, HERO_SHARDS_DAY); b.hsDays = (b.hsDays || 0) + 1; if (b.hsDays % 7 === 0) heroGrantShards(bot.id, HERO_SHARDS_CHAIN); } }
-    const like = BOT_HERO_LIKES[bot.style] || [];
+    const like = botHeroLikes(bot), rank = t => { const i = like.indexOf(t); return i < 0 ? 99 : i; }, now = Date.now();
     for (const h of HEROES) {
         const s = b.hs[h.id]; if (!s) continue;
         if (!s.own) heroDoUnlock(bot.id, h.id);
         for (let n = 0; n < HERO_MAXQ && s.own && heroDoStep(bot.id, h.id); n++);
-        for (let n = 0; n < 10 && s.own && heroFree(s) > 0; n++) {             // the active skill first, then the passive that suits them
+        const pr = q => rank(h.sk[q][2]), best = [1, 2, 3].sort((x, y) => pr(x) - pr(y))[0];
+        if (s.own && pr(best) < 99 && !s.sk[best] && [1, 2, 3].some(q => s.sk[q] && pr(q) > pr(best)) && now - ((b.hsReset || {})[h.id] || 0) > 7 * 86400000
+            && b.gems >= HERO_RESET_GEMS * 3 && b.gems - HERO_RESET_GEMS >= TELEPORT_GEMS && Math.random() < .3) {   // the points sit in the wrong passive for what they do now (the middle, the ruler): reset for gems, like yours
+            b.gems -= HERO_RESET_GEMS; s.sk = [0, 0, 0, 0]; (b.hsReset || (b.hsReset = {}))[h.id] = now; botStat(bot.id, 'heroResets'); }
+        for (let n = 0; n < 10 && s.own && heroFree(s) > 0; n++) {             // the active skill first, then the passive that suits them best
             let k = s.sk[0] < 5 ? 0 : -1;
-            if (k < 0) { const opts = [1, 2, 3].filter(q => s.sk[q] < 5); if (!opts.length) break; k = opts.find(q => like.includes(h.sk[q][2])) || opts[0]; }
+            if (k < 0) { const opts = [1, 2, 3].filter(q => s.sk[q] < 5).sort((x, y) => pr(x) - pr(y)); if (!opts.length) break; k = opts[0]; }
             if (!heroDoSkill(bot.id, h.id, k)) break;
         }
     }
+}
+function botHeroLikes(bot) {                              // what their heroes should be good at: the moment first (the middle when they hold part of it, the ruler with a bounty on him), then their style
+    const r = rulerOwner(), mid = [...botOwnedIslands[bot.id] || []].some(id => midZoneIds.has(id));
+    return [...(r && r !== bot.id && bountyGems() >= 300 ? ['rulerAtk'] : []), ...(mid ? ['midAtk', 'guardAtk', 'midLoss', 'templeAtk'] : []), ...(BOT_HERO_LIKES[bot.style] || [])];
 }
 
 // ---- the bot's gear: one worn item per slot, spares for combining, points for levels, stars ----
@@ -925,12 +933,13 @@ function addBotXp(botId, amount) {
 
 // Online in sessions, like people: everyone has their own day (asleep for about 7 hours, now and then up at night)
 // and within the day comes and goes in 20-minute stretches at their own times - not all on the same clock.
+function botWeekend(now) { try { return tourOn(now); } catch (e) { return false; } }   // (not yet set up while the game boots)
 function botOnline(bot, now) {
     const st = BOT_STYLES[bot.style]; if (st.act >= 1) return true;
-    const idn = parseInt(bot.id.slice(3), 10) || 0, hour = (now / 3600000 + (idn * 7.37) % 24) % 24;
-    if (hour < 7) return mulberry32(Math.floor(now / 1200000) * 31 + idn * 977)() < .06;
+    const idn = parseInt(bot.id.slice(3), 10) || 0, hour = (now / 3600000 + (idn * 7.37) % 24) % 24, we = botWeekend(now);   // Turnier-Wochenende: they come more often (and stay up longer)
+    if (hour < 7) return mulberry32(Math.floor(now / 1200000) * 31 + idn * 977)() < (we ? .12 : .06);
     const off = (idn * 104729) % 1200000, blk = Math.floor((now + off) / 1200000), r = mulberry32(blk * 131 + idn * 7919)();
-    return r < Math.min(.95, st.act * 1.15);
+    return r < Math.min(.97, st.act * (we ? 1.45 : 1.15));
 }
 
 // Ring-Skins: about a third of them like a ring round their bases - always the same favourite, bought with gems or Thron-Punkte like the player
