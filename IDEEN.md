@@ -25,12 +25,12 @@ Liste der Ideen, die für später vorgemerkt sind.
 ## Geplant: weitere Punkte (Stand heute Abend)
 - **Spielstand-Sicherung → ganz am Ende über einen Server** (nicht jetzt).
 - **Zweiter Bauarbeiter** (4) – ja.
-- **Taverne, Lager, Deko, Mauer-Skins** (7) – erst Demo zeigen.
-- **Sammelangriff mit Treffpunkt und Countdown** (11) – erst Demo zeigen.
-- **Barbaren-Lager zum Farmen** (13) – erst Demo zeigen.
+- **Lager** (7) – ja. ~~Taverne, Deko, Mauer-Skins~~ – nein.
+- ~~Sammelangriff~~ (11) – nein.
+- **Barbaren-Lager zum Farmen** (13) – ja.
 - **Rangliste nach Macht, Eroberungen, Titeln** (18) – ja, Rangliste auf jeden Fall überarbeiten.
-- **Ereignisse** (19–22) – nein; nur **mehr Erfolge** (23).
-- **Schönerer Ladebildschirm** (24) – auf jeden Fall.
+- **Ereignisse doch ja:** Wochenend-Turnier um die Mitte, Kopfgeld auf den Herrscher, Saison-Pass, tägliche Bosse; dazu **mehr Erfolge** (nur Gems).
+- **Schönerer Ladebildschirm** (24) – auf jeden Fall: Meer mit Burg, echte Tageszeit, Tipps mit Bildern (**ohne** Name und Wappen).
 - **Marsch-Skins und Banner** (26), **richtige Heldenbilder** (28), **Balance der hohen Stufen** (29) – ja.
 - **Erfolge und Aufgaben zusammenlegen** (in der Basis).
 - **Aussehen aufräumen – ist zu viel:** Wappen, Rahmen, Titel, Basis-Skin, Marsch-Skin an einem Ort sortieren. Titel kommen heute aus Erfolgen, Rang, Thron-Shop UND die Thron-Titel aus der Mitte – das muss vereinfacht werden.
