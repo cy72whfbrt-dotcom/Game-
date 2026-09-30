@@ -6,6 +6,10 @@ Liste der Ideen, die für später vorgemerkt sind.
 - 14 Helden mit Bild, Rolle, Seltenheit, Sternen und Splittern – ersetzen die alten 3 (Sigrun, Bernhard, Ida bleiben mit dabei).
 - **Nur mit Splittern:** X Splitter zum Freischalten, danach Start mit 0 Sternen. Jedes Aufwerten füllt ¼ Stern (¼ → ½ → ¾ → voller Stern), bis 5 Sterne. Keine Stufen/EP.
 - Je Held 4 Fähigkeiten: 1 aktive (Wut im Kampf) + 3 passive; jeder Held kann etwas anderes besser. **Fähigkeitspunkte: 1 Punkt pro halbem Stern** (½, 1, 1½ … 5 Sterne) = 10 Punkte bei 5 Sternen. Alle 4 Fähigkeiten starten bei Stufe 0, je max. Stufe 5 → man kann nur 2 Fähigkeiten maxen, muss sich entscheiden. **Zurücksetzen kostet Gems** (Entwurf: 200).
+- **Seltenheiten wie bei der Ausrüstung im Spiel:** Grün Ungewöhnlich, Blau Selten, Lila Episch, Gold Legendär (gleiche Farben).
+- **Fähigkeiten wirken nur, wenn der Held mitkämpft** (Angriff, Armee, Sammler). Keine reichsweiten Boni.
+- **Aktive Fähigkeit:** Wut füllt sich über mehrere Kämpfe; ist sie voll, zündet die Fähigkeit im nächsten Kampf („in diesem Kampf …“) – keine Sekunden-Angaben.
+- **Werte:** Angriff, Verteidigung, Tempo, **Gefolge** (statt „Führung“): so viele Truppen kämpfen zusätzlich mit, wächst mit Seltenheit und Sternen.
 - **Seltenheitsregel:** in derselben Rolle ist seltener immer stärker (Fortgeschritten < Elite < Episch < Legendär). Stufe-5-Werte aktiv 15/20/30/40 %, passiv 5/8/12/15 %. Nur Fähigkeiten, die es im Spiel gibt (Angriff, Verluste, Lazarett, Tempo, Maut, Tore, Tempel, Thron, Späher, Felder, Feldkampf, Gold).
 - **Keine Talente** (gestrichen).
 - Layout: V4/V5 (Aufbau wie RoK) gefällt – nur noch minimal verbessern.
