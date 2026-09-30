@@ -910,9 +910,21 @@ function botOnline(bot, now) {
     return r < Math.min(.95, st.act * 1.15);
 }
 
+// Ring-Skins: about a third of them like a ring round their bases - always the same favourite, bought with gems or Thron-Punkte like the player
+function botRingFav(botId) { const idn = parseInt(botId.slice(3), 10) || 0, r = mulberry32(idn * 613 + 29); return r() < .3 ? RING_SKINS[Math.floor(r() * RING_SKINS.length)] : null; }
+function botRings(bot, b) {
+    if (!b.ringMig) { let L = 0; for (const id of botOwnedIslands[bot.id] || []) L = Math.max(L, islandLevels[id] || 1);   // what they wore by level stays theirs as a skin (as for the player)
+        b.rings = [...new Set([...(b.rings || []), ...(L >= 10 ? ['bronze'] : []), ...(L >= 25 ? ['silver'] : [])])]; b.ringMig = 1; }
+    const fav = botRingFav(bot.id); if (!fav) return;
+    if (fav.gems && !b.rings.includes(fav.id) && b.gems >= fav.gems * 2 && b.gems - fav.gems >= TELEPORT_GEMS) { b.gems -= fav.gems; b.rings.push(fav.id); }
+    const wear = b.rings.includes(fav.id) ? fav.id : b.rings[b.rings.length - 1] || '';   // the favourite, until then the best they have
+    if ((b.ring || '') !== wear) { b.ring = wear; ringVer++; requestRender(); }
+}
+
 function botShop(bot) {                                  // gems and points spent the way a player would: heroes, stars, crates, gear
     botThroneShop(bot.id);
     const b = loadBotState()[bot.id], slots = Object.keys(EQUIPMENT_DEFS);
+    botRings(bot, b);
     for (const id of HEROES_IDS) {                        // raise a hero's rarity when it's allowed and affordable
         const s = b.heroes[id], r = s.rar || 0;
         if (botHeroUnlocked(bot.id, id) && r < RARITY_DEFS.length - 1 && s.lvl >= HERO_RAR_LEVEL[r] && b.gems >= HERO_RAR_COST[r] * 1.5 && b.gems - HERO_RAR_COST[r] >= TELEPORT_GEMS) { b.gems -= HERO_RAR_COST[r]; s.rar = r + 1; break; }
@@ -1249,8 +1261,8 @@ function botRulerTitles(bot, now) {               // a bot on the throne: rivals
     const friends = others.slice(bad.length).sort(() => Math.random() - .5);
     good.forEach((x, i) => { if (friends[i]) giveTitle(x.key, friends[i].who); });
     const mine = titleOf('player');
-    if (mine && (!before || before.key !== mine.key)) flashHint('Titel „' + mine.name + '“ von ' + bot.name + ': ' + mine.desc + (mine.good ? ' – Goldring um deine Basen.' : before && before.good ? ' – der Goldring ist weg.' : '.'), 6000);
-    else if (before && before.good && !(mine && mine.good)) flashHint('Dein Titel „' + before.name + '“ ist neu vergeben – der Goldring um deine Basen ist weg.', 5000);
+    if (mine && (!before || before.key !== mine.key)) flashHint('Titel „' + mine.name + '“ von ' + bot.name + ': ' + mine.desc + (mine.good ? ' – Goldring um deine Basen.' : ' – roter Ring um deine Basen, solange er gilt.'), 6000);
+    else if (before && !mine) flashHint('Dein Titel „' + before.name + '“ ist neu vergeben – der ' + (before.good ? 'Goldring' : 'rote Ring') + ' um deine Basen ist weg.', 5000);
     saveTitles();
 }
 
@@ -1307,6 +1319,8 @@ function botStat(botId, k, n) { const b = loadBotState()[botId]; if (!b) return;
 
 function botThroneShop(botId) {                       // the others spend their points the way a player would
     const b = loadBotState()[botId]; if (!b) return;
+    const fav = botRingFav(botId);                        // a favourite ring from the Thron-Shop comes first, once they can spare the points
+    if (fav && fav.tp && !(b.rings || []).includes(fav.id) && b.tp >= fav.tp * 1.2 && Math.random() < .5) { b.tp -= fav.tp; throneGive(botId, 'ring_' + fav.id); }
     for (let n = 0; n < 5; n++) { const r = Math.random();
         const id = !b.throneLook && b.tp >= 3000 && r < .4 ? 'look' : r < .45 ? 'troops' : r < .7 ? 'coins' : r < .85 ? 'crate' : r < .95 ? 'gems' : 'royal';
         const o = THRONE_OFFERS.find(x => x.id === id); if (!(b.tp >= o.cost)) break; b.tp -= o.cost; throneGive(botId, id); }
