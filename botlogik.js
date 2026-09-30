@@ -949,6 +949,7 @@ function botShop(bot) {                                  // gems and points spen
     const b = loadBotState()[bot.id], slots = Object.keys(EQUIPMENT_DEFS);
     botRings(bot, b);
     botLookShop(bot, b);                                 // frame, title, Marsch-Skin
+    botPassCare(bot, b);                                 // Saison-Pass: premium (some), rewards as they climb
     botHeroCare(bot);                                    // shards → unlock, stars, skill points
     const starCap = Math.min(STAR_MAX, botBld(bot.id, 'forge'));   // one star per visit on the best-worn piece
     for (const k of slots.filter(q => b.gear[q]).sort((x, y) => botGearPct(b, y) - botGearPct(b, x))) {   // the strongest piece first
@@ -1337,7 +1338,7 @@ function botLook(botId) {
         b.titles = [...new Set([...(b.titles || []), ...TITLES_P.filter(t => !t.buy && (t.ach ? ach[t.ach] || (b.achLook || []).includes(t.ach) : (t.rank || 0) <= r)).map(t => t.id)])]; b.lookMig = 1; saveBotState(); }
     const earned = TITLES_P.filter(t => t.buy ? !!b.throneLook : t.gems === 0 || b.titles.includes(t.id));
     const idn = parseInt(botId.slice(3), 10) || 0, pick = earned[earned.length - 1 - Math.floor(mulberry32(idn * 31 + earned.length)() * Math.min(3, earned.length))];   // one of their three best - everyone has a favourite
-    return { frame: b.throneLook ? 'throne' : [...FRAMES].reverse().find(f => !f.buy && (f.gems === 0 || b.frames.includes(f.id))).id, title: pick ? pick.name : 'Neuling' };
+    return { frame: b.throneLook ? 'throne' : (b.frames || []).includes('saison') ? 'saison' : [...FRAMES].reverse().find(f => !f.buy && (f.gems === 0 || b.frames.includes(f.id))).id, title: pick ? pick.name : 'Neuling' };
 }
 // Looks are only bought: everyone has a favourite frame, title and (6 in 10) a Marsch-Skin, bought once they can spare it - like the player in the Aussehen sheet
 function botLookFav(botId) { const r = mulberry32((parseInt(botId.slice(3), 10) || 0) * 389 + 71), gf = FRAMES.filter(f => f.gems), gt = TITLES_P.filter(t => t.gems), ms = MARCH_SKINS.filter(m => m.gems || m.tp);
@@ -1370,6 +1371,24 @@ function botClaimGoals(bot) {
     const b = loadBotState()[bot.id]; if (!b) return; b.goals = b.goals || {};
     const a = ACHIEVEMENTS.find(x => !b.goals[x.id] && botGoalVal(bot.id, x.k) >= x.goal); if (!a) return;
     b.goals[a.id] = Date.now(); b.gems += a.gems; saveBotState();
+}
+
+// Saison-Pass: their points are what their stats grew by since the season began (+ 200 for each day with all tasks done) - no work per tick.
+// A third of them buy premium once they can spare the gems; rewards go out as they climb, the same ones you get.
+function botPassScore(b) { const st = b.stats || {}; let s = (b.hsDays || 0) * 200; for (const k in PASS_BOT_XP) s += (st[k] || 0) * PASS_BOT_XP[k]; return s; }
+function botPassInfo(botId) { const b = loadBotState()[botId]; if (!b || !b.ps || b.ps.s !== passNo(Date.now())) return { lvl: 0, prem: false };
+    return { lvl: Math.min(PASS_LVLS, Math.floor(Math.max(0, botPassScore(b) - b.ps.base) / PASS_STEP)), prem: !!b.ps.prem }; }
+function botPassCare(bot, b) {
+    const now = Date.now(), n = passNo(now); if (b.ps && (b.ps.s > n || (b.ps.s === n && now < (b.ps.at || 0)))) return;   // once a minute is plenty (and never backwards)
+    if (!b.ps || b.ps.s !== n) { if (b.ps) { b.ps.at = 0; botPassPay(bot.id, b); }             // the old season: what they reached is still paid out, then a fresh pass
+        b.ps = { s: n, base: botPassScore(b), f: 0, p: 0, prem: false, want: mulberry32((parseInt(bot.id.slice(3), 10) || 0) * 53 + n * 7)() < .35 }; }
+    b.ps.at = now + 60000;
+    if (!b.ps.prem && b.ps.want && b.gems >= PASS_PREMIUM * 1.5 && b.gems - PASS_PREMIUM >= TELEPORT_GEMS) { b.gems -= PASS_PREMIUM; b.ps.prem = true; }
+    botPassPay(bot.id, b);
+}
+function botPassPay(botId, b) { const ps = b.ps, L = Math.min(PASS_LVLS, Math.floor(Math.max(0, botPassScore(b) - ps.base) / PASS_STEP));
+    while (ps.f < L) passGive(botId, passRewardAt(++ps.f, 0));
+    if (ps.prem) while (ps.p < L) passGive(botId, passRewardAt(++ps.p, 1));
 }
 
 function botStat(botId, k, n) { const b = loadBotState()[botId]; if (!b) return; b.stats = b.stats || {}; b.stats[k] = (b.stats[k] || 0) + (n || 1); saveBotState(); }

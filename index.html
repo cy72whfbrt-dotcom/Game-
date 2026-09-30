@@ -174,9 +174,9 @@ b,strong{font-weight:600}
 .mapctl button + button{border-top-color:rgba(255,255,255,.05)}
 .mapctl button.on{color:var(--gold-100);background:rgba(214,170,90,.18)}
 [data-frame="bronze"]{--fr1:#c9854f;--fr2:#7a4a26} [data-frame="silver"]{--fr1:#e8eef5;--fr2:#8a95a3} [data-frame="gold"]{--fr1:#ffd35a;--fr2:#a0701c}
-[data-frame="platin"]{--fr1:#9fe3da;--fr2:#3f8c86} [data-frame="diamond"]{--fr1:#bfe6ff;--fr2:#3f86d8} [data-frame="master"]{--fr1:#d6a6ff;--fr2:#6a3fa0} [data-frame="legend"]{--fr1:#ffb04a;--fr2:#c0392b} [data-frame="throne"]{--fr1:#f7d77c;--fr2:#7a1420}
+[data-frame="platin"]{--fr1:#9fe3da;--fr2:#3f8c86} [data-frame="diamond"]{--fr1:#bfe6ff;--fr2:#3f86d8} [data-frame="master"]{--fr1:#d6a6ff;--fr2:#6a3fa0} [data-frame="legend"]{--fr1:#ffb04a;--fr2:#c0392b} [data-frame="throne"]{--fr1:#f7d77c;--fr2:#7a1420} [data-frame="saison"]{--fr1:#8ff5e6;--fr2:#5b3fc4}
 #pAvatarRing[data-frame]{background:conic-gradient(from 200deg,var(--fr1),var(--fr2),var(--fr1),var(--fr2),var(--fr1));padding:3px;box-shadow:0 0 10px color-mix(in srgb,var(--fr1) 45%,transparent)}
-#pAvatarRing[data-frame="throne"],#pAvatarRing[data-frame="legend"],#pAvatarRing[data-frame="master"],#pAvatarRing[data-frame="diamond"]{animation:frame-glow 2.4s ease-in-out infinite alternate}
+#pAvatarRing[data-frame="saison"],#pAvatarRing[data-frame="throne"],#pAvatarRing[data-frame="legend"],#pAvatarRing[data-frame="master"],#pAvatarRing[data-frame="diamond"]{animation:frame-glow 2.4s ease-in-out infinite alternate}
 @keyframes frame-glow{from{box-shadow:0 0 6px color-mix(in srgb,var(--fr1) 35%,transparent)}to{box-shadow:0 0 16px color-mix(in srgb,var(--fr1) 75%,transparent)}}
 .rankDot.frame-ring{border-radius:50%;border:2px solid var(--fr1);box-shadow:0 0 0 1px var(--fr2),0 0 6px color-mix(in srgb,var(--fr1) 40%,transparent)}
 .rankName-t{display:flex;flex-direction:column;min-width:0;overflow:hidden;text-overflow:ellipsis}
@@ -313,6 +313,55 @@ b,strong{font-weight:600}
 .ach-done summary::-webkit-details-marker{display:none}
 .ach-done summary em{font:700 var(--fs-11)/1 var(--font-ui);font-style:normal;color:var(--tx-3)} .ach-done summary .icon{width:14px;height:14px;margin-left:auto;color:var(--tx-3);transform:rotate(180deg);transition:transform var(--dur-1)}
 .ach-done[open] summary .icon{transform:none}
+/* Saison-Pass (Ziele → Pass): head card, premium offer, the track of 40 levels (free | level | premium) */
+.pass{display:grid;gap:10px}
+.pass-hero{display:grid;gap:8px;padding:12px;border-radius:12px;border:1px solid rgba(242,210,122,.35);background:radial-gradient(120% 140% at 0% 0%,rgba(242,199,92,.14),transparent 60%),rgba(0,0,0,.24)}
+.pass-hero.is-prem{border-color:rgba(143,245,230,.45);background:radial-gradient(120% 140% at 0% 0%,rgba(143,245,230,.14),transparent 60%),radial-gradient(100% 120% at 100% 100%,rgba(91,63,196,.18),transparent 60%),rgba(0,0,0,.24)}
+.pass-top{display:flex;align-items:center;gap:12px}
+.pass-lvl{width:52px;height:52px;flex:none;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#2a1c08;background:radial-gradient(circle at 35% 30%,#fff2c4,#d9a93f 60%,#8a6420);border:2px solid #f2d27a;box-shadow:0 0 14px rgba(242,210,122,.35)}
+.pass-lvl small{font:700 9px/1 var(--font-ui);letter-spacing:.06em;text-transform:uppercase} .pass-lvl b{font:800 20px/1 var(--font-display)}
+.pass-ht{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px} .pass-ht b{font:700 var(--fs-16,16px)/1.1 var(--font-display);color:var(--gold-100)} .pass-ht small{font:500 var(--fs-12)/1.2 var(--font-ui);color:var(--tx-3);font-variant-numeric:tabular-nums}
+.pass-tag{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:var(--r-pill);border:1px solid rgba(143,245,230,.5);color:#bff8ef;font:700 var(--fs-11)/1 var(--font-ui);background:rgba(31,138,138,.25)} .pass-tag .icon{width:12px;height:12px}
+.pass-bar{height:8px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden} .pass-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold-500),var(--gold-200));transition:width var(--dur-2,.3s)}
+.pass-bar-t{display:flex;justify-content:space-between;gap:8px;font:600 var(--fs-11)/1 var(--font-ui);color:var(--tx-3);font-variant-numeric:tabular-nums} .pass-bar-t span:first-child{color:var(--tx-2)}
+.pass-prem,.pass-old{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;border:1px solid rgba(143,245,230,.3);background:linear-gradient(100deg,rgba(91,63,196,.16),rgba(31,138,138,.1))}
+.pass-prem > .icon,.pass-old > .icon{width:22px;height:22px;flex:none;color:#8ff5e6} .pass-old{border-color:rgba(242,210,122,.4);background:rgba(214,170,90,.08)} .pass-old > .icon{color:var(--gold-300)}
+.pass-prem > span,.pass-old > span{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px} .pass-prem b,.pass-old b{font:700 var(--fs-13)/1.2 var(--font-ui);color:var(--tx-1)}
+.pass-prem small,.pass-old small{font:500 var(--fs-11)/1.3 var(--font-ui);color:var(--tx-3);font-variant-numeric:tabular-nums} .pass-prem .btn{flex:none;gap:4px}
+.pass-all{width:100%;justify-content:center}
+.pass-track{display:grid;gap:6px;position:relative}
+.pass-head{display:grid;grid-template-columns:minmax(0,1fr) 34px minmax(0,1fr);gap:6px;font:700 var(--fs-11)/1 var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--tx-3);text-align:center}
+.pass-head span{display:inline-flex;align-items:center;justify-content:center;gap:4px} .pass-head .icon{width:11px;height:11px} .pass-head span:last-child{color:#8ff5e6}
+.pass-row{display:grid;grid-template-columns:minmax(0,1fr) 34px minmax(0,1fr);gap:6px;align-items:stretch;position:relative}
+.pass-row::before{content:"";position:absolute;left:50%;top:-6px;bottom:0;width:4px;margin-left:-2px;background:rgba(255,255,255,.08);z-index:0}
+.pass-row.is-on::before{background:linear-gradient(180deg,var(--gold-300),var(--gold-500))}
+.pass-row:first-child::before{top:50%}
+.pass-node{align-self:center;justify-self:center;position:relative;z-index:1;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font:800 var(--fs-12)/1 var(--font-ui);color:var(--tx-3);background:#1c1f27;border:2px solid var(--line-2)}
+.pass-row.is-on .pass-node{color:#2a1c08;border-color:#f2d27a;background:radial-gradient(circle at 35% 30%,#fff2c4,#d9a93f 60%,#8a6420)}
+.pass-row.is-next .pass-node{border-color:var(--gold-300);color:var(--gold-100);box-shadow:0 0 0 3px rgba(242,210,122,.15)}
+.pass-cell{position:relative;display:flex;align-items:center;gap:8px;min-height:50px;padding:6px 8px;border-radius:10px;border:1px solid var(--line-1);background:rgba(255,255,255,.025);text-align:left;color:var(--tx-2)}
+.pass-cell.is-p{background:linear-gradient(100deg,rgba(91,63,196,.12),rgba(31,138,138,.08));border-color:rgba(143,245,230,.18)}
+.pass-cell.is-lock{opacity:.55} .pass-cell.is-closed{opacity:.5}
+.pass-cell.is-ready{border-color:var(--gold-200);background:radial-gradient(120% 140% at 0% 50%,rgba(242,199,92,.22),transparent 70%),rgba(0,0,0,.2);box-shadow:0 0 10px rgba(242,210,122,.28);cursor:pointer;animation:pass-glow 1.6s ease-in-out infinite alternate}
+@keyframes pass-glow{from{box-shadow:0 0 4px rgba(242,210,122,.2)}to{box-shadow:0 0 12px rgba(242,210,122,.45)}}
+.pass-cell.is-got{opacity:.6}
+.pass-cell.is-special:not(.is-got){border-color:rgba(143,245,230,.55)}
+.pc-ic{width:28px;height:28px;flex:none;display:grid;place-items:center;border-radius:8px;background:var(--tile-bg,rgba(0,0,0,.25));border:1px solid var(--line-2)}
+.pc-ic .icon{width:16px;height:16px;color:var(--gold-200)} .pc-ic .ico-coin{color:var(--res-coin)} .pc-ic .ico-gem{color:var(--res-gem)} .pc-ic .ico-tp{color:#f2c75c} .pc-ic .ico-shard{color:#d6a6ff} .pc-ic .ico-royal{color:#ffb04a}
+.pc-ic.is-look{width:32px;height:32px;border:0;background:none}
+.pc-frame{display:block;width:30px;height:30px;border-radius:50%;padding:3px;background:conic-gradient(from 200deg,var(--fr1),var(--fr2),var(--fr1),var(--fr2),var(--fr1))} .pc-frame img{display:block;width:100%;height:100%;border-radius:50%}
+.pc-flag{position:relative;width:30px;height:22px;display:block} .pc-flag::before{content:"";position:absolute;left:3px;top:1px;width:2px;height:21px;background:#d9d2c0;border-radius:1px}
+.pc-flag::after{content:"";position:absolute;left:5px;top:2px;width:20px;height:12px;background:var(--c);clip-path:polygon(0 0,100% 0,78% 50%,100% 100%,0 100%);box-shadow:0 0 8px var(--t)}
+.pc-t{min-width:0;display:flex;flex-direction:column;gap:2px} .pc-t b{font:700 var(--fs-13)/1.1 var(--font-ui);color:var(--tx-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc-t small{font:500 10px/1.15 var(--font-ui);color:var(--tx-3);overflow:hidden;text-overflow:ellipsis}
+.pc-ok{position:absolute;top:4px;right:5px;width:15px;height:15px;border-radius:50%;display:grid;place-items:center;background:#8fcf7a;color:#10200c} .pc-ok .icon{width:10px;height:10px}
+.pc-ok.is-lock{background:rgba(0,0,0,.45);color:var(--tx-3)}
+.pass-how-l{display:grid;gap:2px;margin-top:8px;padding:4px 10px;border:1px solid var(--line-1);border-radius:var(--r-sm);background:rgba(0,0,0,.18)}
+.pass-how-l div{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line-1);font:500 var(--fs-12)/1.2 var(--font-ui);color:var(--tx-2)} .pass-how-l div:last-child{border-bottom:0}
+.pass-how-l .icon{width:14px;height:14px;color:var(--gold-300);flex:none} .pass-how-l b{margin-left:auto;color:var(--gold-100);font-variant-numeric:tabular-nums}
+.rp-pass{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--r-sm);border:1px solid var(--line-2);background:rgba(0,0,0,.2);font:500 var(--fs-12)/1.2 var(--font-ui);color:var(--tx-2)}
+.rp-pass .icon{width:15px;height:15px;color:var(--gold-300)} .rp-pass b{color:var(--gold-100)} .rp-pass em{margin-left:auto;font:700 var(--fs-11)/1 var(--font-ui);font-style:normal;padding:3px 8px;border-radius:var(--r-pill);border:1px solid rgba(143,245,230,.5);color:#bff8ef;background:rgba(31,138,138,.25)}
+.rp-pass.is-prem{border-color:rgba(143,245,230,.3)} .rp-pass.is-prem .icon{color:#8ff5e6}
 #goalsSub .pill .icon{color:var(--gold-300)}
 #profileTabs .tab{position:relative} #profileTabs .badge{position:absolute;top:2px;right:4px}
 .marker-sheet{position:fixed;z-index:45;left:50%;bottom:calc(var(--dock-h) + var(--safe-b) + 14px);transform:translateX(-50%);width:min(360px,calc(100vw - 24px));padding:12px;border-radius:12px;
@@ -1814,6 +1863,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
   <div id="goalsTabs" class="tabs mail-tabs" role="tablist">
     <button class="tab active" type="button" role="tab" data-gtab="daily"><svg class="icon"><use href="#i-flag"/></svg><span>Täglich</span><span class="badge" data-gbadge="daily" style="display:none">0</span></button>
     <button class="tab" type="button" role="tab" data-gtab="ach"><svg class="icon"><use href="#i-star"/></svg><span>Erfolge</span><span class="badge" data-gbadge="ach" style="display:none">0</span></button>
+    <button class="tab" type="button" role="tab" data-gtab="pass"><svg class="icon"><use href="#i-crown"/></svg><span>Pass</span><span class="badge" data-gbadge="pass" style="display:none">0</span></button>
   </div>
   <div class="pbody">
     <div class="mail-pane" data-gpane="daily">
@@ -1825,6 +1875,9 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
     <div class="mail-pane" data-gpane="ach" hidden>
       <div id="achSummary" class="ach-sum"></div>
       <div id="achList" class="ach-list"></div>
+    </div>
+    <div class="mail-pane" data-gpane="pass" hidden>
+      <div id="passPane" class="pass"></div>
     </div>
   </div>
 </section>
@@ -6121,7 +6174,8 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         const FRAMES = [
             { id: 'bronze', name: 'Bronze', rank: 0, gems: 0 }, { id: 'silver', name: 'Silber', rank: 1, gems: 200 }, { id: 'gold', name: 'Gold', rank: 2, gems: 400 }, { id: 'platin', name: 'Platin', rank: 3, gems: 700 },
             { id: 'diamond', name: 'Diamant', rank: 4, gems: 1000 }, { id: 'master', name: 'Meister', rank: 5, gems: 1500 }, { id: 'legend', name: 'Legende', rank: 6, gems: 2500 },
-            { id: 'throne', name: 'Thron', buy: 'throne', tp: 3000 }
+            { id: 'throne', name: 'Thron', buy: 'throne', tp: 3000 },
+            { id: 'saison', name: 'Saisonkrone', buy: 'pass' }                     // only from the Saison-Pass (premium, level 40)
         ];
         const TITLES_P = [                                  // rank / ach: only for the old save (lookMigrate), nothing unlocks by it any more
             { id: 'novice', name: 'Neuling', gems: 0 },
@@ -6139,7 +6193,8 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             { id: 'wald', name: 'Waldläufer', gems: 800, flag: '#3f7a3a', trail: '#a6dc6a', fx: 'leaf' },
             { id: 'glut', name: 'Glutmarsch', gems: 1500, flag: '#b8441c', trail: '#ffa23a', fx: 'ember' },
             { id: 'gold', name: 'Goldzug', tp: 2000, flag: '#d8a93a', trail: '#ffe38a', fx: 'spark' },
-            { id: 'schatten', name: 'Schattenzug', tp: 3500, flag: '#3a2a55', trail: '#b98cf0', fx: 'smoke' }
+            { id: 'schatten', name: 'Schattenzug', tp: 3500, flag: '#3a2a55', trail: '#b98cf0', fx: 'smoke' },
+            { id: 'saison', name: 'Saisonzug', buy: 'pass', flag: '#1f8a8a', trail: '#8ff5e6', fx: 'spark' }   // only from the Saison-Pass (premium, level 20)
         ];
         // Basis-Skins: the Baustil of all your bases (baukunst.js) - Klassisch is free, the style you chose before stays yours
         const BAUSTIL_PRICE = { klassisch: { gems: 0 }, nordisch: { gems: 400 }, suedlich: { gems: 400 }, morgenland: { gems: 700 }, fernost: { tp: 1500 } };
@@ -6663,7 +6718,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             store.set('openWaterWarDays', JSON.stringify(warDays));
             if (typeof updateQuestBadge === 'function') updateQuestBadge();
         }
-        function statBump(k, n) { playerStats[k] = (playerStats[k] || 0) + (n || 1); store.set('openWaterStats', JSON.stringify(playerStats)); achCheckSoon(); }
+        function statBump(k, n) { playerStats[k] = (playerStats[k] || 0) + (n || 1); store.set('openWaterStats', JSON.stringify(playerStats)); achCheckSoon(); passBump(k, n); }
         function goalBump(who, k, n) { if (!who) return; if (who === 'player') { try { statBump(k, n); } catch (e) {} } else if (botById[who]) botStat(who, k, n); }   // a counter for the Erfolge - yours or anyone else's
         const achStat = k => playerStats[k] || 0;
         const cityMinLevel = () => { const c = loadCity(); return Math.min(...CITY_BUILDINGS.filter(b => b.id !== 'storage').map(b => c.levels[b.id] || 0)); };   // (the newer Lager doesn't count: nothing earned is lost)
@@ -6844,7 +6899,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
                 '<div class="rp-stats"><div class="rp-stat"><small>Macht</small><b>' + fmtCompact(powerOf(pr)) + '</b></div><div class="rp-stat"><small>Basen</small><b>' + fmtNum(pr.bases) + '</b></div>' +
                 '<div class="rp-stat"><small>Stufe</small><b>' + pr.lvl + '</b></div><div class="rp-stat"><small>Tempel</small><b>' + (rulerOwner() === who ? 'Herrscher' : pr.temple ? escapeHtml(pr.temple.name) : '–') + '</b></div></div>' +
                 (ownerShielded(who) ? '<div class="notice notice--gold">' + icon('shield') + '<span>' + (who === 'player' ? 'Dein Friedensschild' : 'Friedensschild') + ' aktiv – noch ' + fmtHours(ownerShieldUntil(who) - Date.now()) + '</span></div>' : '') +
-                (last ? '<div class="rp-last">' + last + '</div>' : '') +
+                passChip(who) + (last ? '<div class="rp-last">' + last + '</div>' : '') +
                 '<div class="sect"><h4>Ausrüstung</h4></div><div class="rp-gear">' + gear + '</div>' +
                 '<div class="sect"><h4>Helden</h4></div><div class="rp-heroes">' + heroes + '</div>' +
                 '<div class="sect"><h4>Skills</h4></div><div class="rp-grid">' + skillsHtml + '</div>' +
@@ -7381,7 +7436,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         }
         function saveQuests() { store.set('openWaterQuests', JSON.stringify(questState)); }
         function questProgress(type, n) {
-            const q = loadQuests();
+            passBump(type, n); const q = loadQuests();
             let finished = null;
             for (const t of q.list) {
                 if (t.type !== type || t.progress >= t.target) continue;
@@ -7397,7 +7452,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         function claimQuest(i) {
             const q = loadQuests(), t = q.list[i];
             if (!t || t.claimed || t.progress < t.target) return;
-            t.claimed = true;
+            t.claimed = true; passBump('quest');
             gems += t.gems;
             saveQuests(); saveGame(); updateHud();
             flashHint('+' + t.gems + ' Gems', 1800);
@@ -7425,7 +7480,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         function claimQuestBonus() {
             const q = loadQuests();
             if (q.bonusClaimed || !q.list.every(t => t.claimed)) return;
-            q.bonusClaimed = true; chainLink();
+            q.bonusClaimed = true; chainLink(); passBump('questBonus');
             const items = [];
             for (let i = 0; i < QUEST_BONUS.crates; i++) items.push(grantFreeCrate(0));
             gems += QUEST_BONUS.gems; const shH = heroGrantShards('player', HERO_SHARDS_DAY);
@@ -7441,8 +7496,8 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         }
         function updateGoalsBadge(nAch) {
             if (nAch === undefined) nAch = achReadyN; else achReadyN = nAch;   // (the Erfolge are counted by achCheck - not before everything has loaded)
-            const nd = dailyGoalCount(), n = nd + nAch, set = (el, v) => { if (el) { el.textContent = v; el.style.display = v > 0 ? 'block' : 'none'; } };
-            set(document.getElementById('goalsBadge'), n); set(goalsPopup.querySelector('[data-gbadge="daily"]'), nd); set(goalsPopup.querySelector('[data-gbadge="ach"]'), nAch);
+            const nd = dailyGoalCount(), np = passReadyAll().length, n = nd + nAch + np, set = (el, v) => { if (el) { el.textContent = v; el.style.display = v > 0 ? 'block' : 'none'; } };
+            set(document.getElementById('goalsBadge'), n); set(goalsPopup.querySelector('[data-gbadge="daily"]'), nd); set(goalsPopup.querySelector('[data-gbadge="ach"]'), nAch); set(goalsPopup.querySelector('[data-gbadge="pass"]'), np);
         }
         function updateQuestBadge() {
             const b = document.getElementById('questBadge'); if (!b) return;
@@ -7530,15 +7585,15 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             goalsTab = t;
             for (const b of goalsPopup.querySelectorAll('[data-gtab]')) { const on = b.dataset.gtab === t; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }
             for (const pn of goalsPopup.querySelectorAll('[data-gpane]')) pn.hidden = pn.dataset.gpane !== t;
-            if (t === 'ach') renderAchievements(); else renderQuestPanel();
-            goalsPopup.querySelector('.pbody').scrollTop = 0; updateGoalsBadge();
+            if (t === 'ach') renderAchievements(); else if (t === 'pass') renderPass(); else renderQuestPanel();
+            goalsPopup.querySelector('.pbody').scrollTop = 0; if (t === 'pass') requestAnimationFrame(passScroll); updateGoalsBadge();
         }
         function renderGoalsSub() { const q = loadQuests(), nd = q.list.filter(t => t.claimed).length, na = ACHIEVEMENTS.filter(a => achClaimed[a.id]).length;
             document.getElementById('goalsSub').innerHTML = '<span class="pill">' + icon('flag') + '<b>' + nd + ' / 3</b><small>heute</small></span><span class="pill">' + icon('star') + '<b>' + na + ' / ' + ACHIEVEMENTS.length + '</b><small>Erfolge</small></span>'; }
         function openGoals(tab) {
             closeAllPopups(); renderGoalsSub();
             const nd = dailyGoalCount(), na = achClaimable().length;
-            showGoalsTab(tab || (nd ? 'daily' : na ? 'ach' : goalsTab)); openPanel(goalsPopup);
+            showGoalsTab(tab || (nd ? 'daily' : na ? 'ach' : passReadyAll().length ? 'pass' : goalsTab)); openPanel(goalsPopup);
         }
         document.getElementById('goalsBtn').addEventListener('click', () => { if (isPanelOpen(goalsPopup)) closePanel(goalsPopup); else openGoals(); });
         document.getElementById('goalsCloseBtn').addEventListener('click', () => closePanel(goalsPopup));
@@ -7555,6 +7610,123 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             updateQuestBadge();
         }, 60000);
         updateQuestBadge();
+        // ===== SAISON-PASS: 28 days on one calendar for everyone, 40 levels of 300 points, a free row and a premium row (Gems, never money). Points come from what you do anyway =====
+        var PASS_EPOCH = Date.UTC(2026, 0, 5), PASS_LEN = 28 * 86400000, PASS_GRACE = 3 * 86400000, PASS_LVLS = 40, PASS_STEP = 300, PASS_PREMIUM = 1000, PASS_OWNED_GEMS = 1000;
+        var PASS_XP = { quest: 40, questBonus: 80, captures: 20, pvpWins: 10, defends: 15, armyWins: 15, bosses: 60, wanders: 120, temples: 25, throneMin: 2, upgrade: 4, pickup: 8, crate: 3, scouts: 3, heroFires: 2 };   // what each deed is worth
+        var PASS_BOT_XP = { caps: 20, pvp: 10, defs: 15, armyWins: 15, bosses: 60, wanders: 120, temples: 25, throneMin: 2, scouts: 3, heroFires: 2 };   // the same by the names in the others' stats (+ 200 a day with all tasks done)
+        var PASS_HOW = [['goal', 'Tagesaufgabe abgeholt', 40], ['star', 'Alle drei Aufgaben (Bonus)', 80], ['flag', 'Basis erobert', 20], ['attack', 'Basis eines Spielers (zusätzlich)', '+10'], ['shield', 'Angriff abgewehrt', 15], ['troops', 'Armee siegt im Feld', 15],
+            ['losses', 'Boss besiegt', 60], ['losses', 'Wanderboss (zusätzlich)', '+120'], ['temple', 'Tempel erobert', 25], ['crown', 'Minute auf dem Thron', 2], ['upgrade', 'Basis ausgebaut', 4], ['coin', 'Karten-Belohnung', 8], ['scout', 'Späher ausgeschickt', 3], ['shop', 'Kiste geöffnet', 3]];
+        function passRewardAt(L, prem) {                          // what level L gives in each row
+            if (!prem) return L % 10 === 0 ? { k: 'royal', n: 1 } : L % 5 === 0 ? { k: 'gems', n: 50 } : L % 4 === 0 ? { k: 'shards', n: 5 } : L % 3 === 0 ? { k: 'crate', n: 2 } : L % 2 === 0 ? { k: 'coins', n: 1 } : { k: 'gems', n: 15 };
+            return L === 20 ? { k: 'march', id: 'saison' } : L === 40 ? { k: 'frame', id: 'saison' } : L % 10 === 0 ? { k: 'gems', n: 200 } : L % 5 === 0 ? { k: 'royal', n: 1 } : L % 4 === 0 ? { k: 'shards', n: 15 } :
+                L % 6 === 0 ? { k: 'tp', n: 150 } : L % 3 === 0 ? { k: 'shield', n: 8 } : L % 2 === 0 ? { k: 'coins', n: 3 } : { k: 'gems', n: 40 };
+        }
+        var passState = null, passArm = 0, passTimer = null;
+        function passLoad() { if (!passState) { try { passState = JSON.parse(store.get('openWaterPass')); } catch (e) {} if (!passState || typeof passState !== 'object' || !passState.s) passState = { s: {} }; } return passState; }
+        function passSave() { store.set('openWaterPass', JSON.stringify(passLoad())); }
+        function passNo(t) { return Math.floor((t - PASS_EPOCH) / PASS_LEN) + 1; }             // Saison N, the same for everyone
+        function passEndOf(n) { return PASS_EPOCH + n * PASS_LEN; }
+        function passOf(n) { const ps = passLoad(); return ps.s[n] || (ps.s[n] = { xp: 0, prem: false, f: [], p: [] }); }
+        function passLvl(x) { return x ? Math.min(PASS_LVLS, Math.floor((x.xp || 0) / PASS_STEP)) : 0; }
+        function passOpen(n) { const now = Date.now(), c = passNo(now); return n === c || (n === c - 1 && now < passEndOf(n) + PASS_GRACE); }   // the old season: 3 more days to collect
+        function passReady(n) { const x = passLoad().s[n]; if (!x || !passOpen(n)) return []; const L = passLvl(x), out = [];
+            for (let l = 1; l <= L; l++) { if (!x.f.includes(l)) out.push([n, l, 0]); if (x.prem && !x.p.includes(l)) out.push([n, l, 1]); } return out; }
+        function passReadyAll() { const n = passNo(Date.now()); return passReady(n - 1).concat(passReady(n)); }
+        function passPrune() { const ps = passLoad(), c = passNo(Date.now()); let ch = 0; for (const k of Object.keys(ps.s)) if (+k < c && !passOpen(+k)) { delete ps.s[k]; ch = 1; } if (ch) passSave(); }   // then the pass starts over
+        function passBump(k, n) { try { const v = PASS_XP && PASS_XP[k]; if (v) passXp(v * (n || 1)); } catch (e) {} }
+        function passXp(v) {
+            const x = passOf(passNo(Date.now())), L0 = passLvl(x); x.xp = (x.xp || 0) + v; passSave(); const L1 = passLvl(x);
+            if (L1 > L0) { flashHint('Saison-Pass: Stufe ' + L1 + ' erreicht – hol dir die Belohnung unter „Ziele“.', 3500); updateGoalsBadge(); }
+            if (isPanelOpen(goalsPopup) && goalsTab === 'pass') passRenderSoon();
+        }
+        function passGive(who, r) {                               // one reward to anyone (you or the others) - returns the text for the hint
+            const b = who === 'player' ? null : loadBotState()[who]; if (who !== 'player' && !b) return ''; const n = r.n || 1;
+            if (r.k === 'coins') { const c = Math.max(5000, Math.round(hourProduction(who).coins)) * n; if (b) botCoins[who] = (botCoins[who] || 0) + c; else coins += c; return '+' + fmtCompact(c) + ' Münzen'; }
+            if (r.k === 'gems') { if (b) b.gems += n; else gems += n; return '+' + n + ' Gems'; }
+            if (r.k === 'tp') { if (b) b.tp = (b.tp || 0) + n; else { throneState.pts = (throneState.pts || 0) + n; saveThrone(); } return '+' + n + ' Thron-Punkte'; }
+            if (r.k === 'shards') { const h = heroGrantShards(who, n); return h ? '+' + n + ' Splitter ' + h.name : ''; }
+            if (r.k === 'shield') { if (b) { b.shields = b.shields || {}; b.shields[n] = (b.shields[n] || 0) + 1; } else { const st = shieldStock(); st[n] = (st[n] || 0) + 1; store.set('openWaterShieldStock', JSON.stringify(st)); } return 'Friedensschild ' + n + ' h'; }
+            if (r.k === 'crate' || r.k === 'royal') { const t = [];
+                for (let i = 0; i < n; i++) { const rr = r.k === 'royal' ? Math.max(3, pickRandomRarity()) : pickRandomRarity(), slot = pickRandomSlot();
+                    if (b) b.spare[slot][rr]++; else { addInventoryItem(slot, rr, 1); t.push(RARITY_DEFS[rr].label + ' ' + EQUIPMENT_DEFS[slot].name); } } return t.join(', '); }
+            if (r.k === 'frame' || r.k === 'march') { const d = lkDef(r.k, r.id), key = r.k + 's', has = ((b ? b[key] : look[key]) || []).includes(r.id);
+                if (has) { if (b) b.gems += PASS_OWNED_GEMS; else gems += PASS_OWNED_GEMS; return '+' + PASS_OWNED_GEMS + ' Gems („' + d.name + '“ hast du schon)'; }   // a later season: gems instead
+                if (b) { b[key] = [...(b[key] || []), r.id]; if (r.k === 'march') b.march = r.id; }
+                else { look[key] = [...new Set([...(look[key] || []), r.id])]; look[r.k] = r.id; saveLook(); renderLook(); }
+                return (r.k === 'frame' ? 'Rahmen' : 'Marsch-Skin') + ' „' + d.name + '“ – schon angelegt'; }
+            return '';
+        }
+        function passClaim(list) {                                // [[season, level, premium], …] → hand out, one hint
+            const got = [];
+            for (const [n, l, pr] of list) { const x = passLoad().s[n]; if (!x || !passOpen(n) || l > passLvl(x) || (pr && !x.prem)) continue; const arr = pr ? x.p : x.f; if (arr.includes(l)) continue;
+                arr.push(l); got.push(passGive('player', passRewardAt(l, pr)) || 'Belohnung'); }
+            if (!got.length) return; passSave(); saveGame(); saveProgression(); updateHud(); sfx('crate');
+            flashHint(got.length > 3 ? got.length + ' Belohnungen abgeholt: ' + got.slice(0, 2).join(' · ') + ' …' : got.join(' · '), 4000);
+            renderPass(); updateGoalsBadge();
+        }
+        function passBuy() {
+            const x = passOf(passNo(Date.now())); if (x.prem) return;
+            if (gems < PASS_PREMIUM) { flashHint('Zu wenig Gems – Premium kostet ' + fmtNum(PASS_PREMIUM) + '.', 2500); return; }
+            if (Date.now() - passArm > 4000) { passArm = Date.now(); renderPass(); return; }            // tap twice: 1000 Gems are a lot
+            gems -= PASS_PREMIUM; x.prem = true; passArm = 0; passSave(); saveGame(); updateHud(); sfx('coin');
+            flashHint('Premium freigeschaltet – die zweite Reihe gehört dir, auch für erreichte Stufen.', 3500); renderPass(); updateGoalsBadge();
+        }
+        function passCellHtml(r, hp, got) {                            // icon + amount of one reward
+            const k = r.k, n = r.n || 1, row = (ic, b, s, cls) => '<span class="pc-ic' + (cls ? ' ' + cls : '') + '">' + ic + '</span><span class="pc-t"><b>' + b + '</b><small>' + s + '</small></span>';
+            if (k === 'coins') return row(icon('coin', 'ico-coin'), fmtCompact(Math.max(5000, Math.round(hp.coins)) * n), 'Münzen');
+            if (k === 'gems') return row(icon('gem', 'ico-gem'), '+' + n, 'Gems');
+            if (k === 'tp') return row(icon('crown', 'ico-tp'), '+' + n, 'Thron-Punkte');
+            if (k === 'shards') return row(icon('star', 'ico-shard'), '+' + n, 'Helden-Splitter');
+            if (k === 'shield') return row(icon('shield'), n + ' h', 'Friedensschild');
+            if (k === 'crate') return row(icon('shop'), n + '×', n === 1 ? 'Kiste' : 'Kisten');
+            if (k === 'royal') return row(icon('shop', 'ico-royal'), '1×', 'Königliche Kiste');
+            const d = lkDef(k, r.id), own = !got && lkHas(k, r.id);
+            if (k === 'frame') return row('<span class="frame-ring pc-frame" data-frame="' + r.id + '"><img alt="" src="' + crestDataUrl(28) + '"></span>', d.name, own ? 'Schon da: 1.000 Gems' : 'Rahmen', 'is-look');
+            return row('<i class="pc-flag" style="--c:' + d.flag + ';--t:' + d.trail + '"></i>', d.name, own ? 'Schon da: 1.000 Gems' : 'Marsch-Skin', 'is-look');
+        }
+        function passChip(who) { try { const x = who === 'player' ? passOf(passNo(Date.now())) : null, i = x ? { lvl: passLvl(x), prem: x.prem } : botPassInfo(who);   // the pass level in the profile
+            return '<div class="rp-pass' + (i.prem ? ' is-prem' : '') + '">' + icon('crown') + '<span>Saison-Pass</span><b>Stufe ' + i.lvl + '</b>' + (i.prem ? '<em>Premium</em>' : '') + '</div>'; } catch (e) { return ''; } }
+        function passRenderSoon() { if (!passTimer) passTimer = setTimeout(() => { passTimer = null; renderPass(); }, 250); }
+        function passLeftTick() {                                 // the countdowns, once a second while the tab is open
+            const now = Date.now(), n = passNo(now), a = goalsPopup.querySelector('#passLeft'), o = goalsPopup.querySelector('#passOldLeft');
+            if (a) a.textContent = fmtDHMS((passEndOf(n) - now) / 1000); if (o) o.textContent = fmtDHMS((passEndOf(n - 1) + PASS_GRACE - now) / 1000);
+        }
+        function renderPass() {
+            const el = document.getElementById('passPane'); if (!el || goalsTab !== 'pass') return;
+            passPrune(); const n = passNo(Date.now()), x = passOf(n), L = passLvl(x), xp = x.xp || 0, max = L >= PASS_LVLS, into = max ? PASS_STEP : xp - L * PASS_STEP, hp = hourProduction('player');
+            const ready = passReady(n), old = passReady(n - 1), arm = Date.now() - passArm < 4000;
+            let h = '<div class="pass-hero' + (x.prem ? ' is-prem' : '') + '"><div class="pass-top"><span class="pass-lvl"><small>Stufe</small><b>' + L + '</b></span>' +
+                '<span class="pass-ht"><b>Saison ' + n + '</b><small>Endet in <span id="passLeft"></span></small></span>' + (x.prem ? '<span class="pass-tag">' + icon('crown') + 'Premium</span>' : '') + '</div>' +
+                '<div class="pass-bar"><i style="width:' + Math.round(into / PASS_STEP * 100) + '%"></i></div>' +
+                '<div class="pass-bar-t"><span>' + (max ? 'Höchste Stufe erreicht' : fmtNum(into) + ' / ' + PASS_STEP + ' Punkte') + '</span><span>' + (max ? fmtNum(xp) + ' Punkte' : 'bis Stufe ' + (L + 1)) + '</span></div></div>';
+            if (!x.prem) h += '<div class="pass-prem">' + icon('crown') + '<span><b>Premium-Reihe</b><small>Mehr Gems, Königliche Kisten, Marsch-Skin „Saisonzug“ (Stufe 20) und Rahmen „Saisonkrone“ (Stufe 40) – auch für erreichte Stufen.</small></span>' +
+                '<button class="btn btn--primary btn--sm" type="button" data-pass-buy>' + (arm ? '<span>Sicher?</span>' : '') + icon('gem') + '<span>' + fmtNum(PASS_PREMIUM) + '</span></button></div>';
+            if (old.length) h += '<div class="pass-old">' + icon('hourglass') + '<span><b>Saison ' + (n - 1) + ': ' + old.length + (old.length === 1 ? ' Belohnung' : ' Belohnungen') + ' offen</b><small>Noch <span id="passOldLeft"></span> abholbar</small></span>' +
+                '<button class="btn btn--primary btn--sm" type="button" data-pass-old><span>Abholen</span></button></div>';
+            if (ready.length > 1) h += '<button class="btn btn--primary pass-all" type="button" data-pass-all>' + icon('check') + '<span>Alle abholen · ' + ready.length + '</span></button>';
+            h += '<div class="pass-track"><div class="pass-head"><span>Frei</span><span></span><span>' + (x.prem ? '' : icon('lock')) + 'Premium</span></div>';
+            for (let l = 1; l <= PASS_LVLS; l++) { const cell = pr => { const got = (pr ? x.p : x.f).includes(l), ok = l <= L && (!pr || x.prem), r = passRewardAt(l, pr);
+                    return '<button type="button" class="pass-cell' + (pr ? ' is-p' : '') + (r.id ? ' is-special' : '') + (got ? ' is-got' : ok ? ' is-ready' : ' is-lock') + (pr && !x.prem ? ' is-closed' : '') + '"' + (ok && !got ? ' data-pass-l="' + l + '" data-pass-p="' + pr + '"' : '') + '>' +
+                        passCellHtml(r, hp, got) + (got ? '<span class="pc-ok">' + icon('check') + '</span>' : pr && !x.prem ? '<span class="pc-ok is-lock">' + icon('lock') + '</span>' : '') + '</button>'; };
+                h += '<div class="pass-row' + (l <= L ? ' is-on' : '') + (l === L + 1 ? ' is-next' : '') + '" data-pass-row="' + l + '">' + cell(0) + '<span class="pass-node">' + l + '</span>' + cell(1) + '</div>'; }
+            h += '</div><details class="ach-done pass-how"><summary><span>So sammelst du Punkte</span><em>' + PASS_STEP + ' je Stufe</em>' + icon('upgrade') + '</summary><div class="pass-how-l">' +
+                PASS_HOW.map(([ic, t, v]) => '<div>' + icon(ic) + '<span>' + t + '</span><b>' + (typeof v === 'string' ? v : '+' + v) + '</b></div>').join('') + '</div></details>';
+            const pb = goalsPopup.querySelector('.pbody'), top = pb.scrollTop, how = el.querySelector('.pass-how'), wasOpen = !!(how && how.open); el.innerHTML = h; pb.scrollTop = top;
+            if (wasOpen) el.querySelector('.pass-how').open = true; passLeftTick();
+        }
+        function passScroll() { const L = passLvl(passOf(passNo(Date.now()))), pb = goalsPopup.querySelector('.pbody'), r = goalsPopup.querySelector('[data-pass-row="' + Math.max(1, L) + '"]');   // the level you're on in view
+            if (r && L > 3) pb.scrollTop = Math.max(0, pb.scrollTop + r.getBoundingClientRect().top - pb.getBoundingClientRect().top - pb.clientHeight / 2); }
+        document.getElementById('passPane').addEventListener('click', e => {
+            const b = e.target.closest('button'); if (!b) return;
+            if (b.hasAttribute('data-pass-buy')) passBuy();
+            else if (b.hasAttribute('data-pass-all')) passClaim(passReady(passNo(Date.now())));
+            else if (b.hasAttribute('data-pass-old')) passClaim(passReady(passNo(Date.now()) - 1));
+            else if (b.dataset.passL) passClaim([[passNo(Date.now()), +b.dataset.passL, +b.dataset.passP]]);
+            renderGoalsSub();
+        });
+        setInterval(() => { if (isPanelOpen(goalsPopup) && goalsTab === 'pass') passLeftTick(); }, 1000);
+        setInterval(() => { const n = passNo(Date.now()), ps = passLoad(); if (ps.n !== n) { ps.n = n; passPrune(); passSave(); if (isPanelOpen(goalsPopup) && goalsTab === 'pass') renderPass(); } updateGoalsBadge(); }, 60000);   // a new season while the game stays open
+        passPrune();
         function maybeShowDaily() {
             if (!dailyClaimable() || !document.getElementById('dailyModal').hidden || isPanelOpen(mailPopup)) return;   // an open Postfach shows it in its own tab
             const busy = !document.getElementById('levelUpModal').hidden || !document.getElementById('rewardModal').hidden || (typeof welcomeFrom !== 'undefined' && welcomeFrom) || (document.getElementById('welcomeModal') && !document.getElementById('welcomeModal').hidden);
@@ -9268,7 +9440,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         }
         // ===== AUSSEHEN: every look in one place - Wappen, Rahmen, Titel, Basis-Skin (+ Ring), Marsch-Skin. Only to buy (Gems or Thron-Punkte) or a title from the middle =====
         var lkTab = 'frame';
-        function lkPrice(d) { return d.tp ? '<span class="lk-cost' + ((throneState.pts || 0) < d.tp ? ' is-bad' : '') + '">' + icon('crown') + fmtNum(d.tp) + '</span>' : '<span class="lk-cost' + (gems < d.gems ? ' is-bad' : '') + '">' + icon('gem') + fmtNum(d.gems) + '</span>'; }
+        function lkPrice(d) { if (d.buy === 'pass') return '<span class="lk-cost">' + icon('crown') + 'Saison-Pass</span>'; return d.tp ? '<span class="lk-cost' + ((throneState.pts || 0) < d.tp ? ' is-bad' : '') + '">' + icon('crown') + fmtNum(d.tp) + '</span>' : '<span class="lk-cost' + (gems < d.gems ? ' is-bad' : '') + '">' + icon('gem') + fmtNum(d.gems) + '</span>'; }
         function lkCard(kind, d, prev, has, on, label) {     // one look: preview, name, and Angelegt / Anlegen / price
             return '<button type="button" class="skin-card lk-card' + (on ? ' on' : '') + (has ? '' : ' is-shop') + '" data-lk="' + kind + ':' + d.id + '">' + prev + (label === false ? '' : '<b>' + (label || d.name) + '</b>') +
                 '<small>' + (on ? icon('check') + 'Angelegt' : has ? 'Anlegen' : lkPrice(d)) + '</small></button>';
@@ -9290,6 +9462,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         function lkBuy(kind, id) {                            // Gems or Thron-Punkte; bought = put on at once
             const d = lkDef(kind, id); if (!d) return;
             if (lkHas(kind, id)) { lkUse(kind, id); return; }
+            if (d.buy === 'pass') { flashHint('„' + d.name + '“ gibt es nur im Saison-Pass (Premium-Reihe) – unter „Ziele“.', 3000); return; }
             const cost = d.tp || d.gems || 0;
             if (d.tp ? (throneState.pts || 0) < cost : gems < cost) { flashHint('Zu wenig ' + (d.tp ? 'Thron-Punkte' : 'Gems') + ' – „' + d.name + '“ kostet ' + fmtNum(cost) + '.', 2500); return; }
             if (d.tp) { throneState.pts -= cost; saveThrone(); } else gems -= cost;

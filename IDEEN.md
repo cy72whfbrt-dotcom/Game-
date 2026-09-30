@@ -73,6 +73,7 @@ Liste der Ideen, die für später vorgemerkt sind.
 - **Skills zurücksetzen** für 500 Gems.
 - **Aufgeräumt** – alter Code und ungenutztes CSS sind entfernt.
 - **Kampf um den Thron (dauerhaft, statt SvS)** – wer die Mitte hält, bekommt alle 3 Min. Thron-Punkte (jeder Wächter-Tempel ein paar), die 4 Wächter-Tempel feuern alle 3 Min. auf den Halter (je 1 %, die Getroffenen kommen ins Lazarett, mit Kampfbericht), außer sie gehören ihm. Punkte gibt es im Shop unter „Thron“ gegen Münzen, Truppen, Gems, Kisten und Titel „Thronhüter“ mit Thron-Rahmen. Die Mitspieler sammeln und tauschen auch. Rangliste der Woche.
+- **Saison-Pass** – 28 Tage für alle gleich, 40 Stufen mit freier und Premium-Reihe (1.000 Gems, kein Echtgeld). Punkte aus Aufgaben, Eroberungen, Kämpfen, Thron-Minuten. Premium Stufe 20: Marsch-Skin „Saisonzug“, Stufe 40: Rahmen „Saisonkrone“. Unter „Ziele“ → Pass; nach Saisonende 3 Tage zum Abholen. Die anderen steigen mit.
 
 ## Gestrichen
 - Event mit Truppen als Belohnung – vorerst weg.
