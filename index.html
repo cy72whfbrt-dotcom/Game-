@@ -3792,7 +3792,7 @@ body.has-panel .mapctl{display:none}
           const cur = new Map(); let r = null;
           for (const id of ownedIslands) cur.set(id, 0);
           BOT_DEFS.forEach((bot, i) => { for (const id of botOwnedIslands[bot.id]) cur.set(id, i + 1); });
-          const grow = id => { const isl = islandById[id], m = TERRITORY_CONNECT_MAX_DIST + isl.radius + TERRITORY_PADDING;
+          const grow = id => { const isl = islandById[id]; if (!isl) return; const m = TERRITORY_CONNECT_MAX_DIST + isl.radius + TERRITORY_PADDING;
             (r = r || []).push({ l: isl.x - m, t: isl.y - m, r: isl.x + m, b: isl.y + m }); };   // per base: one far capture never touches the view's tiles
           for (const [id, tag] of cur) if (OWNER_SNAPSHOT.get(id) !== tag) grow(id);
           for (const id of OWNER_SNAPSHOT.keys()) if (!cur.has(id)) grow(id);
