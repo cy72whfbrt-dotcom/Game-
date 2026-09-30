@@ -1088,6 +1088,8 @@ body.has-panel .mapctl{display:none}
 .title-row b{font:700 var(--fs-13)/1.2 var(--font-ui);color:var(--tx-1)}
 .title-row small{display:block;font:600 var(--fs-11)/1.3 var(--font-ui)}
 .title-row.is-good small{color:#8fd38a} .title-row.is-bad small{color:#ff9d90}
+.title-row .holder.is-me{color:var(--f-player-hi)}
+.notice [data-view-titles]{flex:none;margin-left:auto}
 .title-row select{max-width:150px;height:32px;border:1px solid var(--line-2);border-radius:var(--r-xs);background:#15171c;color:var(--tx-1);font:600 var(--fs-12)/1 var(--font-ui);padding:0 6px}
 .title-row .holder{font:600 var(--fs-12)/1.2 var(--font-ui);color:var(--gold-100)}
 
@@ -6194,9 +6196,10 @@ body.has-panel .mapctl{display:none}
                 : t.ruler ? botById[t.ruler].name + ' hält den Mega-Tempel und verteilt die Titel.' : 'Niemand hält den Mega-Tempel – erobere ihn, um Titel zu vergeben.';
             const opts = cur => '<option value="">– niemand –</option>' + BOT_DEFS.filter(b => botOwnedIslands[b.id].size).map(b => '<option value="' + b.id + '"' + (cur === b.id ? ' selected' : '') + '>' + escapeHtml(b.name) + '</option>').join('');
             document.getElementById('titleList').innerHTML = TITLES.map(x => '<div class="title-row ' + (x.good ? 'is-good' : 'is-bad') + '"><div><b>' + x.name + '</b><small>' + x.desc + '</small></div>' +
-                (mine ? '<select data-title="' + x.key + '">' + opts(t.by[x.key]) + '</select>' : '<span class="holder">' + escapeHtml(who(t.by[x.key])) + '</span>') + '</div>').join('');
+                (mine ? '<select data-title="' + x.key + '">' + opts(t.by[x.key]) + '</select>' : '<span class="holder' + (t.by[x.key] === 'player' ? ' is-me' : '') + '">' + escapeHtml(who(t.by[x.key])) + '</span>') + '</div>').join('');
         }
         document.getElementById('titleBtn').addEventListener('click', () => { closeIslandPopup(); renderTitleModal(); titleModal.hidden = false; });
+        document.getElementById('popupStats').addEventListener('click', e => { if (!e.target.closest('[data-view-titles]')) return; closeIslandPopup(); renderTitleModal(); titleModal.hidden = false; });   // anyone may look who wears what
         document.getElementById('titleModalBtn').addEventListener('click', () => { titleModal.hidden = true; });
         document.getElementById('titleList').addEventListener('change', e => {
             const sel = e.target.closest('select[data-title]'); if (!sel || loadTitles().ruler !== 'player') return;
@@ -11045,6 +11048,7 @@ body.has-panel .mapctl{display:none}
                         statTile('Verteidigung', 'defense', scouted ? fmtTile(effectiveDefense(island)) : UNK) + '</div>' +
                         (scouted ? '' : '<div class="notice">' + icon('scout') + '<span>Stärke unbekannt. Spähen deckt Truppen und Verteidigung auf.</span></div>') +
                         (island.type === 'gate' && !ownerBot ? '<div class="notice notice--gold">' + icon('lock') + '<span>Tor: Unbesetzt ist es verschlossen – erobere es, um über die Brücke zu kommen. Wer es besitzt, geht kostenlos durch und bestimmt die Maut für alle anderen.</span></div>' : '') +
+                        (island.type === 'megaTemple' ? '<div class="notice">' + icon('rank') + '<span>' + (ownerBot ? escapeHtml(ownerBot.name) + ' verteilt die Titel (neu alle 15 Min.).' : 'Niemand verteilt gerade Titel.') + '</span><button type="button" class="btn btn--secondary btn--sm" data-view-titles>Titel ansehen</button></div>' : '') +
                         (isTemple ? '<div class="notice notice--gold">' + icon('temple') + '<span>' + (island.type === 'megaTemple' ? 'Thron der Meere: wer ihn hält, trägt die Krone – +25 % Münzen und Truppen im ganzen Reich und alle 3 Min. ' + THRONE_PTS_MEGA + ' Thron-Punkte. Die Wächter-Tempel feuern auf ihn – nächster Beschuss in <b data-throne-fire>' + fmtClock((throneState.nextFire - Date.now()) / 1000) + '</b>.' : island.guardian ? 'Wächter-Tempel: 3-facher Tempel-Bonus und alle 3 Min. ' + THRONE_PTS_GUARD + ' Thron-Punkte. Gehört er nicht dem Herrscher, feuert er alle 3 Min. auf den Thron.' : 'Tempel: gibt Produktion, Gems und Münzen, sobald erobert.') + '</span></div>' : '') +
                         (bossAt(island.id) ? '<div class="notice notice--gold">' + icon('shop') + '<span><b>Belohnung:</b> Legendäre Kiste + ' + (bossAt(island.id).wander ? WANDER_REWARD_GEMS : BOSS_REWARD_GEMS) + ' Gems · ' + (bossAt(island.id).wander ? 'zieht weiter in' : 'verschwindet in') + ' <b data-boss-clock>' + fmtClock(((bossAt(island.id).wander ? bossAt(island.id).campUntil : bossAt(island.id).endsAt) - Date.now()) / 1000) + '</b></span></div>' : '') +
                         (scoutEnRoute ? '<div class="notice notice--warn">' + icon('hourglass') + '<span>Späher bereits unterwegs …</span></div>' : '');
@@ -11758,6 +11762,9 @@ body.has-panel .mapctl{display:none}
             const X = 9999999999999999999999;
             coins = Math.max(coins, X); gems = Math.max(gems, X); islandTroops[playerIslandId] = Math.max(islandTroops[playerIslandId] || 0, X);
             store.set('openWaterGiftMax', '1'); saveProgression(); saveGame(); updateHud();
+        }
+        if (store.get('openWaterCoinsMax4') !== '1') {        // the tolls at the others' gates (10 Trd. troops × toll) ate the test coins: back once
+            coins = Math.max(coins, 9999999999999999999999); store.set('openWaterCoinsMax4', '1'); saveGame(); updateHud();
         }
         if (store.get('openWaterGems9') !== '1') {           // one-time test gift: 9.999.999.999 gems
             gems = Math.max(gems, 9999999999); store.set('openWaterGems9', '1'); saveProgression(); saveGame(); updateHud();
