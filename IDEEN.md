@@ -14,6 +14,8 @@ Liste der Ideen, die für später vorgemerkt sind.
 - **Keine Talente** (gestrichen).
 - Layout: V4/V5 (Aufbau wie RoK) gefällt – nur noch minimal verbessern.
 - ~~Zwei Helden pro Armee / Armee-Paar~~ – gestrichen: weiter ein Held pro Angriff/Armee; Heldenfigur an der Spitze der Kolonne auf der Karte.
+- **Altes Heldensystem komplett raus nehmen:** Helden-Stufen und EP (heroGainXp/botHeroGainXp), Seltenheit-Aufwerten mit Gems (HERO_RAR_COST/LEVEL), Stufengrenze durch das Gebäude „Heldenhalle“, alte Anzeigen in Stadt, Profil, Kampfbericht und Popups – für dich und alle Mitspieler. Die Heldenhalle bekommt eine neue Aufgabe oder fällt weg.
+- **Umrechnung ohne Verlust:** bisherige Stufe + Seltenheit von Sigrun, Bernhard, Ida werden zu Sternen/Viertel-Sternen + passenden Fähigkeitspunkten (auch bei den Mitspielern).
 - **Keine Heldenausrüstung** – gewünscht weggelassen.
 - **Heldenkisten kommen später in unseren bestehenden Shop** (nicht ins Heldenfenster, keine Taverne).
 - **Alles muss im Kampfbericht stehen:** welcher Held, Stufe/Sterne, ob die Fähigkeit gezündet hat und was sie bewirkt hat, Talent- und Passiv-Boni.
