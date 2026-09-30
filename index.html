@@ -7082,9 +7082,8 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             }
             const fast = speedableMarches();
             if (fast.length > 1) rows.unshift('<div class="march-all"><span class="mact"><button type="button" data-mact="speedAll" title="Restzeit aller Märsche halbieren">' + icon('hourglass') + 'Alle schneller (' + fast.length + ') · <b>' + fmtNum(fast.reduce((a, m) => a + speedUpCost(m), 0)) + '</b>' + icon('gem') + '</button></span></div>');
-            activeMarchesEl.innerHTML = rows.length
-                ? rows.join('')
-                : '<div class="logEmpty">' + icon('hourglass') + 'Gerade nichts unterwegs.</div>';
+            const amHtml = rows.length ? rows.join('') : '<div class="logEmpty">' + icon('hourglass') + 'Gerade nichts unterwegs.</div>';
+            if (amHtml !== activeMarchesEl._html) { activeMarchesEl._html = amHtml; activeMarchesEl.innerHTML = amHtml; }   // many fights resolve per second: rebuild only on change (keeps the buttons tappable)
             battleLogPopup.classList.toggle('has-entries', rows.length > 0 || combatLog.length > 0);
 
             const total = relevantAttackCount + relevantSendCount + pendingScouts.length + pendingRetreats.length;
