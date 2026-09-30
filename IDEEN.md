@@ -5,7 +5,8 @@ Liste der Ideen, die für später vorgemerkt sind.
 ## Geplant: Helden neu (Entwurf: https://claude.ai/artifact/Bm52vwUkwSNK6qr5Ru6A3s)
 - 14 Helden mit Bild, Rolle, Seltenheit, Sternen und Splittern – ersetzen die alten 3 (Sigrun, Bernhard, Ida bleiben mit dabei).
 - **Nur mit Splittern:** X Splitter zum Freischalten, danach Start mit 0 Sternen. Jedes Aufwerten füllt ¼ Stern (¼ → ½ → ¾ → voller Stern), bis 5 Sterne. Keine Stufen/EP.
-- Je Held 4 Fähigkeiten: 1 aktive (Wut im Kampf) + 3 passive; jeder Held kann etwas anderes besser. Wie sie aufgewertet werden: noch offen (Vorschlag: Fähigkeitspunkte aus Viertel-Sternen).
+- Je Held 4 Fähigkeiten: 1 aktive (Wut im Kampf) + 3 passive; jeder Held kann etwas anderes besser. **Fähigkeitspunkte: 1 Punkt pro halbem Stern** (½, 1, 1½ … 5 Sterne) = 10 Punkte bei 5 Sternen. Alle 4 Fähigkeiten starten bei Stufe 0, je max. Stufe 5 → man kann nur 2 Fähigkeiten maxen, muss sich entscheiden. **Zurücksetzen kostet Gems** (Entwurf: 200).
+- **Seltenheitsregel:** in derselben Rolle ist seltener immer stärker (Fortgeschritten < Elite < Episch < Legendär). Stufe-5-Werte aktiv 15/20/30/40 %, passiv 5/8/12/15 %. Nur Fähigkeiten, die es im Spiel gibt (Angriff, Verluste, Lazarett, Tempo, Maut, Tore, Tempel, Thron, Späher, Felder, Feldkampf, Gold).
 - **Keine Talente** (gestrichen).
 - Layout: V4/V5 (Aufbau wie RoK) gefällt – nur noch minimal verbessern.
 - ~~Zwei Helden pro Armee / Armee-Paar~~ – gestrichen: weiter ein Held pro Angriff/Armee; Heldenfigur an der Spitze der Kolonne auf der Karte.
