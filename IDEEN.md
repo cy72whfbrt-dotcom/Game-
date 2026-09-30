@@ -35,6 +35,11 @@ Liste der Ideen, die für später vorgemerkt sind.
 - **Erfolge und Aufgaben zusammenlegen** (in der Basis).
 - **Aussehen aufräumen – ist zu viel:** Wappen, Rahmen, Titel, Basis-Skin, Marsch-Skin an einem Ort sortieren. Titel kommen heute aus Erfolgen, Rang, Thron-Shop UND die Thron-Titel aus der Mitte – das muss vereinfacht werden.
 
+## Entschieden: Ringe und Aussehen (Stand Nacht)
+- **Kein Ring mehr nach Stufe** (Bronze/Silber weg).
+- Ringe nur über **Ring-Skin** (kaufen) oder **Titel aus der Mitte** (solange er gilt): guter Titel Gold, Straf-Titel Rot, Herrscher Blutrot-Gold. Titel-Ring vor Skin-Ring.
+- **Erfolge geben kein Aussehen mehr** (nur noch Gems o. Ä.). Aussehen (Skins, Rahmen, Titel-Schilder, Ringe …) gibt es nur noch **zu kaufen: mit Gems im Shop oder mit Thron-Punkten im Thron-Shop** – oder als Titel aus der Mitte. Bereits Freigeschaltetes bleibt erhalten.
+
 ## Geplant: Baukunst – neue Basen in 3D (Entwurf: https://claude.ai/artifact/T3jrVwCsFV5sHc39fU57fG)
 - Alle 10 Stufen ein neues Design (Lager … Himmelsfeste), bei jeder 5 kleine Zusätze, Stufe 100 eigene Krönung.
 - Stufe am Material (Holz → Feldstein → Sandstein → Schiefer → Marmor mit Gold), Besitzer nur an Dach und Fahne.
