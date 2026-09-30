@@ -1580,3 +1580,9 @@ function armyRaidArrive(r, now) {
     warStat(won ? 'armyLosses' : 'armyWins', 1, bot.name);
     sfx(won ? 'defeat' : 'victory'); updateHud(); saveGame();
 }
+
+function botConquests(botId) {                         // Eroberungen for the Rangliste; older saves start from the bases they hold (like yours)
+    const b = loadBotState()[botId]; if (!b) return 0; const st = b.stats = b.stats || {};
+    if (!st.capSeed) { st.caps = Math.max(st.caps || 0, Math.max(0, (botOwnedIslands[botId] ? botOwnedIslands[botId].size : 0) - 1)); st.capSeed = 1; }
+    return st.caps || 0;
+}
