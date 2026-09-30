@@ -8356,6 +8356,7 @@ body.has-panel .mapctl{display:none}
             for (const b of CITY_BUILDINGS) if (typeof cityState.levels[b.id] !== 'number') cityState.levels[b.id] = 0;
             if (cityState.build && !CITY_BUILDINGS.some(b => b.id === cityState.build.id)) cityState.build = null;   // a removed building was being built
             if (typeof cityState.wounded !== 'number') cityState.wounded = 0;
+            cityClampBuild(cityState.build, Date.now());
             cityState.levels.forge = Math.min(cityState.levels.forge, cityMaxLevel('forge'));   // the Schmiede ends at the star maximum
             if (cityState.build && cityState.build.id === 'forge' && cityState.build.to > cityMaxLevel('forge')) cityState.build = null;
             return cityState;
@@ -8366,7 +8367,11 @@ body.has-panel .mapctl{display:none}
             return niceRound(500 * Math.pow(1.9, level));
         }
         function cityTimeSec(id, level) {                 // build time for level -> level + 1
-            return Math.round(20 * Math.pow(1.6, level));
+            // fast at first (20 s … 1,5 h up to level 12), then +20 % per level, never more than 7 days - like the big strategy games
+            return Math.round(Math.min(7 * 86400, level <= 12 ? 20 * Math.pow(1.6, level) : 20 * Math.pow(1.6, 12) * Math.pow(1.2, level - 12)));
+        }
+        function cityClampBuild(b, now) {                 // a build started under the old, far too long times ends by the new rule at the latest
+            if (b && b.endsAt - (b.startedAt || now) > cityTimeSec(b.id, b.to - 1) * 1000) b.endsAt = Math.min(b.endsAt, (b.startedAt || now) + cityTimeSec(b.id, b.to - 1) * 1000);
         }
         function fmtDuration(sec) {
             return fmtDHMS(sec);

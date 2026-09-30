@@ -740,6 +740,7 @@ function loadBotState() {
         b.city.levels = Object.assign(Object.fromEntries(BOT_BUILDINGS.map(k => [k, 0])), b.city.levels || {});
         for (const h of HEROES_IDS) b.heroes[h] = Object.assign({ lvl: 1, xp: 0, rar: 0 }, b.heroes[h] || {});
         if (!(b.wounded >= 0)) b.wounded = 0;
+        if (b.city) cityClampBuild(b.city.build, Date.now());
         b.shields = Object.assign({ 2: 0, 8: 0, 24: 0 }, b.shields || {}); if (!(b.shieldUntil > 0)) b.shieldUntil = 0;
     }
     return botState;
