@@ -1218,6 +1218,7 @@ body.has-panel .mapctl{display:none}
   var ls = null; try { ls = window.localStorage; } catch (e) {}
   var shift = 0; try { shift = parseFloat(ls.getItem('openWaterTimeShift')) || 0; } catch (e) {}
   try { if (ls && ls.getItem('openWaterJump3d') !== '1') { shift += 3 * 86400000; ls.setItem('openWaterTimeShift', String(shift)); ls.setItem('openWaterJump3d', '1'); } } catch (e) {}   // "3 Tage in die Zukunft" (one time)
+  try { if (ls && ls.getItem('openWaterJump6d') !== '1') { shift += 6 * 86400000; ls.setItem('openWaterTimeShift', String(shift)); ls.setItem('openWaterJump6d', '1'); } } catch (e) {}   // and "6 Tage vor" (one time)
   if (!shift) return;
   var RealDate = Date;
   class ShiftedDate extends RealDate { constructor(...a) { if (a.length) super(...a); else super(RealDate.now() + shift); } static now() { return RealDate.now() + shift; } }
@@ -8025,16 +8026,19 @@ body.has-panel .mapctl{display:none}
             const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
             const take = (botId, id) => { const isl = islandById[id]; clearIslandOwner(id); botOwnedIslands[botId].add(id);
                 islandLevels[id] = Math.max(1, (islandLevels[id] || isl.neutralLevel || 1) - 1); islandTroops[id] = Math.round((isl.neutralTroops || 1000) * .5); botStat(botId, 'caps'); sum.caps++; };
-            const bots = BOT_DEFS.filter(b => botOwnedIslands[b.id] && botOwnedIslands[b.id].size).sort(() => Math.random() - .5);
-            for (const bot of bots) {                              // 1) spread out: the nearest free towers they can reach
-                const st = BOT_STYLES[bot.style], want = Math.round(days * (1 + (st.act || .65) * 3) * (.6 + Math.random() * .8));
-                const rs = reach(bot.id), home = islandById[botCapitalOf(bot.id)] || islandById[[...botOwnedIslands[bot.id]][0]];
-                const free = islands.filter(i => i.type === 'tower' && rs.has(i.landmassId) && !islandOwnerOf(i.id) && !bossAt(i.id)).sort((a, b) => dist(a, home) - dist(b, home));
-                for (const i of free.slice(0, want)) take(bot.id, i.id);
-            }
             const power = botId => { let t = 0; for (const id of botOwnedIslands[botId]) t += islandTroops[id] || 0; return t * botAtkFactor(botById[botId], true); };
+            for (let day = 0; day < Math.ceil(days); day++) {      // day by day, so the empires grow region by region
+            const dd = Math.min(1, days - day);
+            const bots = BOT_DEFS.filter(b => botOwnedIslands[b.id] && botOwnedIslands[b.id].size).sort(() => Math.random() - .5);
+            for (const bot of bots) {                              // 1) spread out: the nearest free towers (and a border gate now and then) they can reach
+                const st = BOT_STYLES[bot.style], want = Math.round(dd * (3 + (st.act || .65) * 8) * (.7 + Math.random() * .6));   // about 8 a day, like an active player
+                const rs = reach(bot.id), home = islandById[botCapitalOf(bot.id)] || islandById[[...botOwnedIslands[bot.id]][0]], pw = power(bot.id);
+                const free = islands.filter(i => (i.type === 'tower' || i.type === 'gate' && i.gateKind === 'border') && rs.has(i.landmassId) && !islandOwnerOf(i.id) && !bossAt(i.id)
+                    && (i.type === 'tower' || pw > (effectiveTroops(i) + effectiveDefense(i)) * 1.3)).sort((a, b) => dist(a, home) - dist(b, home));
+                for (const i of free.slice(0, want)) { take(bot.id, i.id); if (i.type === 'gate') setGateSettings(i.id, { toll: .25, closed: false }); }
+            }
             for (const bot of bots) {                              // 2) rivals: now and then the stronger neighbour takes a base
-                const st = BOT_STYLES[bot.style], tries = Math.round(days * (st.hunt || .5) * .8 * Math.random() * 2);
+                const st = BOT_STYLES[bot.style], tries = Math.round(dd * (1 + (st.hunt || .5)) * Math.random() * 2);
                 for (let n = 0; n < tries; n++) {
                     const rs = reach(bot.id), home = islandById[botCapitalOf(bot.id)]; if (!home) break;
                     let best = null, bd = Infinity;
@@ -8046,7 +8050,8 @@ body.has-panel .mapctl{display:none}
                     else botStat(foe, 'defs');
                 }
             }
-            for (const bot of bots) {                              // 3) produce, build, level up, gear up
+            }
+            for (const bot of BOT_DEFS.filter(b => botOwnedIslands[b.id] && botOwnedIslands[b.id].size)) {   // 3) produce, build, level up, gear up
                 const b = loadBotState()[bot.id], own = botOwnedIslands[bot.id]; if (!own.size) continue;
                 const hp = hourProduction(bot.id), troops = hp.troops * hours * .5, per = Math.round(troops / own.size);   // half of it went into fights
                 for (const id of own) islandTroops[id] = (islandTroops[id] || 0) + per;
@@ -8061,10 +8066,12 @@ body.has-panel .mapctl{display:none}
                 for (let n = 0; n < 6; n++) botShop(bot);
             }
             capitalCache = null; saveBotState(); refreshTerritory(); saveGame(); requestRender();
+            sum.days = Math.round(days);
             return sum;
         }
         setTimeout(() => {                               // right after boot (everything exists): production for the time away
             if (store.get('openWaterBotsJump3d') !== '1') { store.set('openWaterBotsJump3d', '1'); try { ffSummary = botsFastForward(72); } catch (e) { console.warn(e); } }   // one time: the others catch up on the 3 days
+            if (store.get('openWaterBotsJump6d') !== '1') { store.set('openWaterBotsJump6d', '1'); try { const s = botsFastForward(144); ffSummary = ffSummary ? { caps: ffSummary.caps + s.caps, fights: ffSummary.fights + s.fights, days: ffSummary.days + 6 } : s; } catch (e) { console.warn(e); } }   // and the 6-day jump
             if (leaveAtBoot && Date.now() - leaveAtBoot.at > 60000) {
                 const away = Math.min(AWAY_PRODUCE_MAX_MS, Date.now() - leaveAtBoot.at), ticks = Math.floor(away / productionTickMs());
                 const c0 = coins, t0 = empireSnapshot().troops;
@@ -8073,7 +8080,7 @@ body.has-panel .mapctl{display:none}
                 if (dc > 0) warStat('offCoins', dc); if (dt > 0) warStat('offTroops', dt);
                 if (Date.now() - leaveAtBoot.at >= AWAY_MIN_MS) welcomeFrom = Object.assign({ produced: { coins: dc, troops: dt, capped: Date.now() - leaveAtBoot.at > AWAY_PRODUCE_MAX_MS } }, leaveAtBoot);
             }
-            if (ffSummary && !welcomeFrom) afterSplash(() => setTimeout(() => flashHint('Die anderen waren 3 Tage aktiv: +' + ffSummary.caps + ' Basen erobert, ' + ffSummary.fights + ' Kämpfe untereinander.', 6000), 1500));
+            if (ffSummary && !welcomeFrom) afterSplash(() => setTimeout(() => flashHint('Die anderen waren ' + ffSummary.days + ' Tage aktiv: +' + ffSummary.caps + ' Basen erobert, ' + ffSummary.fights + ' Kämpfe untereinander.', 6000), 1500));
             saveLeave(); setInterval(saveLeave, 30000);
         }, 0);
         window.addEventListener('pagehide', saveLeave);
