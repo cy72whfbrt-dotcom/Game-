@@ -1303,6 +1303,14 @@ function botLook(botId) {
     return { frame: b.throneLook ? 'throne' : FRAMES[Math.min(r, 6)].id, title: pick ? pick.name : 'Neuling' };
 }
 
+// Baukunst: like you, everyone builds in one style of their own (picked once, the same on every device) and 1 in 3 set their capital in water
+const botBaustilMem = {};
+function botBaustil(botId) {
+    if (botBaustilMem[botId]) return botBaustilMem[botId];
+    const r = mulberry32((parseInt(String(botId).replace(/\D/g, ''), 10) || 7) * 97 + 11), keys = Object.keys(BAUSTILE);
+    return botBaustilMem[botId] = { style: keys[Math.floor(r() * keys.length)], cap: r() < .33 ? 'wasser' : 'huegel' };
+}
+
 function botStat(botId, k, n) { const b = loadBotState()[botId]; if (!b) return; b.stats = b.stats || {}; b.stats[k] = (b.stats[k] || 0) + (n || 1); saveBotState(); }
 
 function botThroneShop(botId) {                       // the others spend their points the way a player would

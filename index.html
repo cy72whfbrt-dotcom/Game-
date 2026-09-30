@@ -1762,6 +1762,8 @@ body.has-panel .mapctl{display:none}
   </footer>
 </section>
 
+    <script defer src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script><!-- 3D bases: deferred, so a slow or missing network never holds the game up -->
+    <script defer src="baukunst.js"></script>
     <script src="botlogik.js"></script>
     <script>
         // Every storage access goes through here: blocked site data, sandboxed frames and a full quota must not stop the
@@ -4234,7 +4236,8 @@ body.has-panel .mapctl{display:none}
             const [[x1, y1], [x2, y2]] = island.ends, mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
             const spots = [[x1, y1], [x2, y2]].map(([ex, ey]) => { const l = Math.hypot(ex - mx, ey - my) || 1, off = ISLAND_RADIUS * .55; return [toSX(ex + (ex - mx) / l * off), toSY(ey + (ey - my) / l * off)]; })
               .sort((a, b) => a[1] - b[1]);                                                 // the one further back first
-            for (const [gx, gy] of spots) ctx.drawImage(sp.c, gx - 31 * u - 1 / dpr, gy - (48 + ISO_OY) * u - 1 / dpr, sp.c.width / dpr * k, sp.c.height / dpr * k);
+            const bk = bkSprite(island, ownerKey, open, z);
+            for (const [gx, gy] of spots) if (!bkDraw(bk, gx, gy)) ctx.drawImage(sp.c, gx - 31 * u - 1 / dpr, gy - (48 + ISO_OY) * u - 1 / dpr, sp.c.width / dpr * k, sp.c.height / dpr * k);
             return;
           }
           if (size < 6) {                                                              // LOD: dot / diamond
@@ -4253,9 +4256,49 @@ body.has-panel .mapctl{display:none}
           if (ownerKey !== 'neutral' && size < 20) {                                   // owner band under the small sprite, fading out by 20 px
             ctx.globalAlpha = Math.min(1, (20 - size) / 5); rr(ctx, x - 22 * u, y + 21 * u, 44 * u, Math.max(2, 5 * u), 1); ctx.fillStyle = BAND[ownerKey]; ctx.fill(); }
           ctx.globalAlpha = Math.min(1, (size - 12) / 5);
-          ctx.drawImage(sp.c, x - 31 * u - 1 / dpr, y - 48 * u - 1 / dpr, sp.c.width / dpr * k, sp.c.height / dpr * k);
+          if (!bkDraw(bkSprite(island, ownerKey, false, z), x, y + ISO_OY * u)) ctx.drawImage(sp.c, x - 31 * u - 1 / dpr, y - 48 * u - 1 / dpr, sp.c.width / dpr * k, sp.c.height / dpr * k);
           ctx.globalAlpha = 1;
         }
+
+        // ===== BAUKUNST: the bases in 3D (baukunst.js), each model rendered once into a sprite (OW.game, lazy + cached) =====
+        // Until a sprite is ready, and without three.js or WebGL (offline), the drawn sprites above stay. Owner colour only on roofs
+        // and flags, every owner builds in their own style with their coat of arms on the flags; the level shows in the material.
+        const BAUSTILE = { klassisch: 'Klassisch', nordisch: 'Nordisch', suedlich: 'Südländisch', morgenland: 'Morgenland', fernost: 'Fernost' };
+        const BK_K = ISLAND_RADIUS * .12, BK_SCALE = { mega: 2.2, tempel: 1.6, waechter: 1.6 }, BK_ELEM = ['nebel', 'gezeiten', 'fels', 'sonne'], BK_GRADE = { throne: 'thron', guardian: 'waechter' };
+        function loadBaustil() { let v; try { v = JSON.parse(store.get('openWaterBaustil')); } catch (e) {} v = Object.assign({ style: 'klassisch', cap: 'huegel' }, v || {}); if (!BAUSTILE[v.style]) v.style = 'klassisch'; if (v.cap !== 'wasser') v.cap = 'huegel'; return v; }
+        function baustilOf(owner) { return owner === 'player' ? loadBaustil() : owner ? botBaustil(owner) : null; }
+        function bk3d() { const G = window.OW && OW.game; if (!G || G.off) return null; if (!G.onReady) G.onReady = () => { BK_PREVIEW.forEach(f => f()); requestRender(); }; return G; }
+        const BK_PREVIEW = new Set();                                                  // open previews that wait for a sprite
+        let bkGuards = null;
+        function bkModel(island, ownerKey, open, style) {                                // → [cache id, model config]; style: try another one (keep sheet)
+          if (island.type === 'gate') { const gr = BK_GRADE[island.gateKind] || 'grenz'; return ['t|' + ownerKey + '|' + gr + '|' + (open ? 1 : 0), { model: 'tor', owner: ownerKey, variant: { grade: gr, open, houseOnly: true } }]; }
+          if (island.type === 'megaTemple') return ['m|' + ownerKey, { model: 'mega', owner: ownerKey }];
+          const o = islandOwnerOf(island.id);
+          if (island.guardian) { bkGuards = bkGuards || islands.filter(i => i.guardian).map(i => i.id); const el = BK_ELEM[Math.max(0, bkGuards.indexOf(island.id)) % 4];
+            return ['w|' + ownerKey + '|' + el, { model: 'waechter', owner: ownerKey, variant: { element: el } }]; }
+          if (island.type === 'temple') { const held = templeHoldSince[island.id] ? Date.now() - templeHoldSince[island.id] : -1, sz = !o ? 'klein' : held >= TEMPLE_HOLD_STREAK_MS ? 'gross' : 'mittel';   // the longer it is held, the bigger
+            return ['p|' + ownerKey + '|' + sz, { model: 'tempel', owner: ownerKey, variant: { size: sz, bonus: 'gems' } }]; }
+          const lv = baseLevelOf(island), step = lv >= 100 ? 100 : Math.max(1, Math.floor(lv / 10) * 10 + (lv % 10 >= 5 ? 5 : 0));   // a new design every 10 levels, small additions at every 5
+          const home = island.id === playerIslandId, cap = home || isCapital(island.id), b0 = baustilOf(o) || { style: Object.keys(BAUSTILE)[island.landmassId % 5], cap: 'huegel' }, bs = style ? { style, cap: b0.cap } : b0;   // free land: the style of its region
+          const seed = o === 'player' ? 7 : o ? (parseInt(String(o).replace(/\D/g, ''), 10) || 7) * 13 + 5 : 1 + island.id % 4, cr = o ? crestFor(o) : null;
+          const crest = cr ? { div: cr.div, t: [1, 0, 2][cr.ink] || 0 } : null, skin = home ? (activeSkin() || {}).id || '' : '';
+          return ['b|' + step + '|' + ownerKey + '|' + (cap ? bs.cap : '') + '|' + bs.style + '|' + seed + '|' + (crest ? crest.div + '.' + crest.t : '') + '|' + skin,
+                  { model: 'basis', level: step, owner: ownerKey, capital: cap, capStyle: bs.cap, style: bs.style, seed, crest, skin }];
+        }
+        function bkSprite(island, ownerKey, open, z) {                                   // → { s: sprite, W: width in px } or null
+          const G = bk3d(); if (!G) return null;
+          const [id, c] = bkModel(island, ownerKey, open), W = 2 * G.frameOf(c).v * BK_K * z * (BK_SCALE[c.model] || 1), need = W * dpr;
+          const s = G.get(id, c, need <= 140 ? 128 : need <= 300 ? 256 : 512); return s ? { s, W } : null;
+        }
+        function bkPreviews() {                                                          // the keep sheet's style cards: your capital in each style
+          const cvs = [...document.querySelectorAll('[data-bk-prev]')]; if (!cvs.length) { BK_PREVIEW.delete(bkPreviews); return; }
+          const G = bk3d(), isl = islandById[playerIslandId]; let waiting = false;
+          for (const cv of cvs) { const g = cv.getContext('2d'), [id, c] = bkModel(isl, 'player', false, cv.dataset.bkPrev), s = G && G.get(id, c, 256); g.clearRect(0, 0, cv.width, cv.height);
+            if (s) { const w = s.px * .6; g.drawImage(s.c, (s.px - w) / 2, Math.max(0, s.px * s.ay - w * .82), w, w, (cv.width - cv.height) / 2, 0, cv.height, cv.height); }   // cut out the building
+            else { waiting = !!G; g.save(); g.setTransform(1.6, 0, 0, 1.6, cv.width / 2, cv.height * .72); paintTowerTier(g, 'player', true, true, towerTier(islandLevels[playerIslandId] || 1), activeSkin()); g.restore(); } }
+          if (waiting) BK_PREVIEW.add(bkPreviews); else BK_PREVIEW.delete(bkPreviews);
+        }
+        function bkDraw(b, x, y) { if (!b) return false; ctx.drawImage(b.s.c, x - b.W / 2, y - b.W * b.s.ay, b.W, b.W); return true; }   // (x, y) = the ground centre
 
         function bannerModel(island) {
           const owner = islandOwnerOf(island.id), isTemple = island.type === 'temple' || island.type === 'megaTemple';
@@ -8518,7 +8561,7 @@ body.has-panel .mapctl{display:none}
             document.getElementById('cityBOver').textContent = 'Deine Burg';
             document.getElementById('cityBName').textContent = 'Hauptstadt';
             document.getElementById('cityBLevel').textContent = 'Stufe ' + lvl + ' / ' + MAX_BASE_LEVEL;
-            document.getElementById('cityBDesc').textContent = 'Deine Hauptstadt-Base, genau die Burg auf der Karte. Mit jeder Stufe wird sie größer: Lager, Rundturm, Bergfried, Burg, Zitadelle.';
+            document.getElementById('cityBDesc').textContent = 'Deine Hauptstadt-Base, genau die Burg auf der Karte. Alle 10 Stufen ein neues Bauwerk, vom Lager bis zur Himmelsfeste, bei jeder 5 kommt etwas dazu.';
             const note = document.getElementById('cityBNote'); note.className = 'notice';
             note.innerHTML = icon('shield') + '<span>' + (playerShielded() ? 'Friedensschild aktiv – noch ' + fmtHours(shieldUntil() - Date.now()) : 'Kein Friedensschild aktiv.') + '</span>';
             document.getElementById('cityBStats').innerHTML = max ? '' : '<div><span>Aufwerten</span><b class="' + (coins < cost ? 'is-bad' : '') + '">' + icon('coin', 'icon--coin') + fmtCompact(cost) + '</b></div><div><span>Danach</span><b>Stufe ' + (lvl + 1) + '</b></div>';
@@ -8529,6 +8572,7 @@ body.has-panel .mapctl{display:none}
                 '<small class="keep-note">Schilde kaufst du im Shop, hier schaltest du sie ein. Greifst du selbst an, fällt der Schild.</small>' +
                 '<div class="keep-h">Rahmen &amp; Titel</div><div class="look" data-look-picker></div>' +
                 '<div class="keep-h">Wappen</div><button type="button" class="crest-card keep-crest" data-keep-crest><img alt="" src="' + crestDataUrl(56) + '"><span class="crest-card-t"><b>Dein Wappen</b><small>Auf deinen Basen und deiner Kampffahne</small></span><span class="crest-card-go">Bearbeiten' + icon('upgrade') + '</span></button>' +
+                keepBaustilHtml() +
                 '<div class="keep-h">Ring um deine Basen</div><div class="ring-legend"><span><i style="--c:#d6965f"></i>Bronze · ab Stufe 10</span><span><i style="--c:#dee6f0"></i>Silber · ab Stufe 25</span>' +
                 '<span><i style="--c:#ffd05a"></i>Gold · nur mit gutem Titel (ab Stufe 10 und an der Hauptstadt)</span><span><i class="blood" style="--c:#eb3c32"></i>Blutrot-Gold · nur der Herrscher</span></div>' +
                 '<small class="keep-note">Mit der Stufe kommen Zacken und Glanz dazu. Gold vergibt der Herrscher der Meere mit einem guten Titel, Blutrot-Gold trägt nur, wer den Mega-Tempel hält – beides nur, solange es gilt.' +
@@ -8536,10 +8580,16 @@ body.has-panel .mapctl{display:none}
                 '<div class="keep-h">Burg-Skin</div><div class="skin-grid">' + Object.values(SKIN_DEFS).map(d => { const own = sk.own.includes(d.id), on = sk.active === d.id;
                     return '<button type="button" class="skin-card' + (on ? ' on' : '') + '" data-skin="' + d.id + '"><canvas data-skin-prev="' + d.id + '" width="120" height="132"></canvas><b>' + d.name + '</b><small>' +
                         (on ? 'Aktiv' : own ? 'Wählen' : icon('gem') + d.cost + ' Gems') + '</small></button>'; }).join('') + '</div>';
-            renderLook();
+            renderLook(); bkPreviews();
             const tier = towerTier(lvl);
             for (const cv of document.querySelectorAll('[data-skin-prev]')) { const g = cv.getContext('2d'), d = SKIN_DEFS[cv.dataset.skinPrev];
                 g.setTransform(1.75, 0, 0, 1.75, 60, 90); g.lineJoin = 'round'; paintTowerTier(g, 'player', true, true, tier, d.stone ? d : null); }
+        }
+        function keepBaustilHtml() {                        // Baustil: one style for all your bases, and how your capital stands
+            const bs = loadBaustil();
+            return '<div class="keep-h">Baustil</div><div class="skin-grid">' + Object.keys(BAUSTILE).map(k => '<button type="button" class="skin-card' + (bs.style === k ? ' on' : '') + '" data-baustil="' + k + '"><canvas data-bk-prev="' + k + '" width="120" height="132"></canvas><b>' + BAUSTILE[k] + '</b><small>' + (bs.style === k ? 'Aktiv' : 'Wählen') + '</small></button>').join('') + '</div>' +
+                '<div class="keep-h">Hauptstadt</div><div class="keep-shields">' + [['huegel', 'Auf Sockel'], ['wasser', 'Wasserschloss']].map(([k, n]) => '<button type="button" class="btn btn--' + (bs.cap === k ? 'primary' : 'secondary') + ' btn--sm" data-bk-cap="' + k + '">' + n + '</button>').join('') + '</div>' +
+                '<small class="keep-note">Gilt für alle deine Basen. Die Stufe zeigt der Stein, dich zeigen Dach und Fahne mit deinem Wappen.</small>';
         }
         function renderCitySheet() {
             const id = cityOpenId; if (!id) return;
@@ -8682,6 +8732,9 @@ body.has-panel .mapctl{display:none}
                 stock[h]--; store.set('openWaterShieldStock', JSON.stringify(stock));
                 store.set('openWaterShield', String(Math.max(Date.now(), shieldUntil()) + h * 3600000)); shieldMemAt = 0;
                 flashHint('Friedensschild aktiv – noch ' + fmtHours(shieldUntil() - Date.now()), 3000); renderKeepSheet(); requestRender(); return; }
+            const bst = e.target.closest('[data-baustil],[data-bk-cap]');
+            if (bst) { const v = loadBaustil(); if (bst.dataset.baustil) v.style = bst.dataset.baustil; else v.cap = bst.dataset.bkCap;
+                store.set('openWaterBaustil', JSON.stringify(v)); renderKeepSheet(); requestRender(); return; }
             const skb = e.target.closest('[data-skin]');
             if (skb) { const d = SKIN_DEFS[skb.dataset.skin], sk = loadSkins();
                 if (!sk.own.includes(d.id)) { if (gems < d.cost) { flashHint('Zu wenig Gems – ' + d.name + ' kostet ' + d.cost + '.', 2500); return; }
