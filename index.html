@@ -5650,7 +5650,29 @@ body.has-panel .mapctl{display:none}
         // from several bases is sent one base after the other - they arrive when they arrive, like anyone's would.
         const botAct = {};                                          // botId → { next: when the next tap can happen, plan: orders still to give }
         function botActOf(botId) { return botAct[botId] || (botAct[botId] = { next: 0, plan: null }); }
-        function botTapped(bot) { botActOf(bot.id).next = Date.now() + (BOT_STYLES[bot.style].tapMs || 5000) * (.7 + Math.random() * .6); }
+        // A person plays to the title they wear: a Feldherr attacks more and bolder, a Feigling only goes for sure things,
+        // a Burgherr can send more of each garrison out, a Verräter keeps more at home, a Schatzmeister builds more, a Bettler saves.
+        const TITLE_PLAY = {
+            feldherr:  { margin: .85, tapMs: .7, commit: 1.15, hunt: 1.4 },
+            feigling:  { margin: 1.25, tapMs: 1.5, hunt: .5, risk: 0 },
+            burgherr:  { commit: 1.15 },
+            verraeter: { commit: .75, risk: 0 },
+            herzog:    { tapMs: .8, commit: 1.1 },
+            narr:      { tapMs: 1.2, commit: .9 },
+            schatz:    { spend: 1.3, build: .7 },
+            bettler:   { spend: .7, build: .35 }
+        };
+        function botStyle(bot) {
+            const st = BOT_STYLES[bot.style], t = titleOf(bot.id), tp = t && TITLE_PLAY[t.key]; if (!tp) return st;
+            const m = Object.assign({}, st, { title: t.key });
+            for (const k of ['margin', 'tapMs', 'hunt', 'spend']) if (tp[k] !== undefined) m[k] = (st[k] ?? (k === 'hunt' ? .5 : 1)) * tp[k];
+            if (tp.commit) m.commit = Math.min(.95, (st.commit || .7) * tp.commit);
+            if (tp.spend) m.spend = Math.min(.95, m.spend);
+            if (tp.risk !== undefined) m.risk = tp.risk;
+            if (tp.build) m.build = tp.build;
+            return m;
+        }
+        function botTapped(bot) { botActOf(bot.id).next = Date.now() + (botStyle(bot).tapMs || 5000) * (.7 + Math.random() * .6); }
         function botFreeSlots(bot) { return (BOT_STYLES[bot.style].marches || 5) - pendingAttacks.filter(a => a.attackerBotId === bot.id).length - pendingSends.filter(x => x.senderBotId === bot.id && !x.back).length - armyJoins.filter(j => j.who === bot.id).length - armies.filter(a => a.who === bot.id && a.mv).length; }
         function botPlanStep(bot) {                                 // gives the next order of the current plan → true when a tap was used
             const act = botActOf(bot.id), p = act.plan, own = botOwnedIslands[bot.id];
@@ -5687,7 +5709,7 @@ body.has-panel .mapctl{display:none}
             if (Date.now() < act.next) return;                               // still busy with the last order
             if (act.plan) { if (botPlanStep(bot)) { botTapped(bot); saveBotState(); } return; }   // finish what they started
             if (botArmyStep(bot)) { botTapped(bot); saveBotState(); return; }                  // a field army waiting for orders
-            const st = BOT_STYLES[bot.style], atk = botAtkFactor(bot, true), ruler = rulerOwner();   // several waves: Sigrun only leads one, so she's a bonus, not part of the plan
+            const st = botStyle(bot), atk = botAtkFactor(bot, true), ruler = rulerOwner();   // several waves: Sigrun only leads one, so she's a bonus, not part of the plan
             const shielded = playerShielded(), now = Date.now();
             const busy = new Set(pendingAttacks.filter(a => a.attackerBotId === bot.id).map(a => a.targetId));
             // a player has a few march slots, not hundreds: columns on the road (attacks + sends) count against them
@@ -5896,7 +5918,7 @@ body.has-panel .mapctl{display:none}
             }
             if (!best) return;
             const lv = c.levels[best] || 0, cost = cityCost(best, lv);
-            if ((botCoins[bot.id] || 0) * .5 < cost) return;      // keeps half for troops and bases
+            if ((botCoins[bot.id] || 0) * (botStyle(bot).build || .5) < cost) return;   // keeps half for troops and bases (a Schatzmeister less, a Bettler more)
             botCoins[bot.id] -= cost; c.build = { id: best, to: lv + 1, startedAt: now, endsAt: now + cityTimeSec(best, lv) * 1000 }; saveBotState();
         }
         // ---- the bot's Lazarett ----
@@ -6002,7 +6024,7 @@ body.has-panel .mapctl{display:none}
         function botConsiderUpgrade(bot) {
             const owned = [...botOwnedIslands[bot.id]];
             if (owned.length === 0) return;
-            const st = BOT_STYLES[bot.style];
+            const st = botStyle(bot);
             // bases like a person builds them: the cheapest step that's worth it comes first, so the whole empire grows,
             // not just two show-off bases. Throne, gates, Wächter, temples and the capital count extra.
             const cap = botCapitalOf(bot.id);
@@ -6035,7 +6057,7 @@ body.has-panel .mapctl{display:none}
         }
         function botGather(bot) {
             if (pendingSends.some(s => s.senderBotId === bot.id && !s.back)) return false;
-            const st = BOT_STYLES[bot.style], owned = [...botOwnedIslands[bot.id]], atk = botAtkFactor(bot, true);
+            const st = botStyle(bot), owned = [...botOwnedIslands[bot.id]], atk = botAtkFactor(bot, true);
             let plan = null;
             for (const sourceId of botSampleSources(owned)) {
                 const source = islandById[sourceId];
@@ -10461,7 +10483,7 @@ body.has-panel .mapctl{display:none}
                     if (islandOwnerOf(t.id) === 'player') { const h = armyHome(a); if (h !== null && h !== undefined) botScoutVisible(bot, h, t.id, now, ready); }
                     return true;
                 }
-                const st = BOT_STYLES[bot.style], margin = islandOwnerOf(t.id) === 'player' ? Math.max(1.25, st.margin) : st.margin, atk = (1 + (botMults(bot.id).attackPct + (a.hero === 'sigrun' ? botHeroBonus(bot.id, 'sigrun') : 0)) / 100) * titleMult(bot.id, 'attack');   // with the army's own hero
+                const st = botStyle(bot), margin = islandOwnerOf(t.id) === 'player' ? Math.max(1.25, st.margin) : st.margin, atk = (1 + (botMults(bot.id).attackPct + (a.hero === 'sigrun' ? botHeroBonus(bot.id, 'sigrun') : 0)) / 100) * titleMult(bot.id, 'attack');   // with the army's own hero
                 if (a.troops * atk < it.s * margin * (boss ? .35 : 1)) { if (now > a.until - 3 * 60000) return goHome(); continue; }   // too strong: wait a bit, then give up
                 if (armyMove(a, { kind: 'base', id: t.id, x: t.x, y: t.y, lm: t.landmassId })) continue;
                 if (islandOwnerOf(t.id) === 'player') { flashHint('Die Armee von ' + bot.name + ' marschiert auf ' + islandTitle(t) + '!', 4500); sfx('warn'); }
