@@ -317,11 +317,14 @@ function noteBattle(islandId, fallen, loser) {
 
 function heatAt(lmId, now) { return decayed(battleHeat[lmId], now, 10 * 60000); }
 
+const ownerWeakMem = {};                                     // (asked for every base of theirs a bot looks at: worked out once a second)
 function ownerWeak(who, now) {                              // just lost a big share of the army, or not at the screen
     if (!who) return false;
-    if (who !== 'player' && botById[who] && !botOnline(botById[who], now)) return true;
-    let have = 0; for (const id of who === 'player' ? ownedIslands : botOwnedIslands[who] || []) have += islandTroops[id] || 0;
-    return decayed(ownerLoss[who], now, 10 * 60000) > Math.max(1, have) * .3;
+    const c = ownerWeakMem[who]; if (c && Math.abs(now - c.at) < 1000) return c.v;
+    let v = who !== 'player' && botById[who] && !botOnline(botById[who], now);
+    if (!v) { let have = 0; for (const id of who === 'player' ? ownedIslands : botOwnedIslands[who] || []) have += islandTroops[id] || 0;
+        v = decayed(ownerLoss[who], now, 10 * 60000) > Math.max(1, have) * .3; }
+    ownerWeakMem[who] = { v, at: now }; return v;
 }
 
 function botFails(bot, targetId, now) { const f = (loadBotState()[bot.id].fails || {})[targetId]; return f && now - f.at < 30 * 60000 ? f.n : 0; }
@@ -409,22 +412,29 @@ function botLoyal(bot) { const t = titleOf(bot.id); return !!(t && t.good); }   
 
 function botRespects(bot, owner) { if (!owner || owner === bot.id) return false; const t = titleOf(bot.id); return !!(t && t.good) && owner === rulerOwner(); }   // a good title from the ruler is respect: they attack the ruler much less while they wear it
 
+let sitCtx = null;                                           // what botSituation needs about the bot and each owner - worked out once per move, not for every base
+function botSitCtx(bot, now) {
+    if (sitCtx && sitCtx.bot === bot.id && sitCtx.now === now) return sitCtx;
+    const v = botVendetta(bot, now), b = loadBotState()[bot.id];
+    return (sitCtx = { bot: bot.id, now, mt: titleOf(bot.id), ruler: rulerOwner(), v, co: coalitionOn(now), loyal: botLoyal(bot), fails: b.fails || {}, own: {} });
+}
 function botSituation(bot, st, target, owner, now) {        // how the moment changes the pull of a target (lower = more wanted)
-    let m = botRespects(bot, owner) ? 4 : 1;                                                           // respect: the ruler's bases are much less tempting (not off limits)
-    const ot = owner && owner !== bot.id ? titleOf(owner) : null; if (ot && !ot.good) m *= .6;
-    const mt = titleOf(bot.id); if (mt && !mt.good && owner && owner === rulerOwner()) m *= .5;        // a penalty title makes them angry at whoever gave it: the ruler gets attacked more   // a penalty title: weaker - everyone else smells it const bold = (st.risk || 0) >= .12 || (st.hunt || 0) >= .5;
+    const c = botSitCtx(bot, now), o = c.own[owner] || (c.own[owner] = { respect: botRespects(bot, owner), ot: owner && owner !== bot.id ? titleOf(owner) : null,
+        weak: !!owner && owner !== bot.id && ownerWeak(owner, now), personal: !!owner && !!(botGrudgeOn(bot.id, owner) || (c.v || {}).who === owner) });
+    let m = o.respect ? 4 : 1;                                                                         // respect: the ruler's bases are much less tempting (not off limits)
+    if (o.ot && !o.ot.good) m *= .6;                                                                   // a penalty title: weaker - everyone else smells it
+    if (c.mt && !c.mt.good && owner && owner === c.ruler) m *= .5;                                     // a penalty title makes them angry at whoever gave it: the ruler gets attacked more
+    const bold = (st.risk || 0) >= .12 || (st.hunt || 0) >= .5;
     const heat = heatAt(target.landmassId, now);
     if (heat > .5) m *= bold ? 1 / (1 + Math.min(3, heat) * .4) : 1 + Math.min(3, heat) * .5;       // drawn to the fighting, or keeping clear
     if (owner && bold && baseFought[target.id] && now - baseFought[target.id] < 4 * 60000) m *= .5;    // Aasgeier: the winner is thin right now
-    if (owner && owner !== bot.id && ownerWeak(owner, now)) m *= .75;                                  // jetzt oder nie
+    if (o.weak) m *= .75;                                                                              // jetzt oder nie
     const sv = owner && owner !== bot.id ? botStrategic(bot, target) : 1; m *= sv;                     // in the way, at the border, next to home
-    const personal = owner && (botGrudgeOn(bot.id, owner) || (botVendetta(bot, now) || {}).who === owner);
-    if (owner === 'player') m *= sv < .9 || personal ? .12 : .3;                                         // the human is everyone's favourite rival - most of all when in the way
-    else if (owner && sv >= .9 && !personal) m *= 1.8;                                                   // someone else's base far away: not worth the trouble
-    const v = botVendetta(bot, now); if (v && owner === v.who) m *= .08;                               // the answer they swore
-    const co = coalitionOn(now);
-    if (co && co !== bot.id && !botLoyal(bot) && (target.id === megaTempleId || owner === co)) m *= target.id === megaTempleId ? .1 : .5;
-    const fails = botFails(bot, target.id, now); if (fails >= 2) m *= 4;                               // that wall hurt twice: not now
+    if (owner === 'player') m *= sv < .9 || o.personal ? .12 : .3;                                     // the human is everyone's favourite rival - most of all when in the way
+    else if (owner && sv >= .9 && !o.personal) m *= 1.8;                                               // someone else's base far away: not worth the trouble
+    if (c.v && owner === c.v.who) m *= .08;                                                            // the answer they swore
+    if (c.co && c.co !== bot.id && !c.loyal && (target.id === megaTempleId || owner === c.co)) m *= target.id === megaTempleId ? .1 : .5;
+    const f = c.fails[target.id]; if (f && now - f.at < 30 * 60000 && f.n >= 2) m *= 4;               // that wall hurt twice: not now
     return m;
 }
 
@@ -558,12 +568,23 @@ function scoutNotesFlush() {
 
 function botHopeless(bot, target, st, atk) {        // known to be far too strong for all they have? (last report, or "zu stark" noted)
     const ow = islandOwnerOf(target.id); if (!ow || bossAt(target.id)) return false;
-    const seen = botLastSeen(bot, target.id), rec = botTooStrongMem[bot.id] && botTooStrongMem[bot.id][target.id];
-    if (seen === null && !rec) return false;
+    const seen = botLastSeen(bot, target.id), rec = botTooStrongMem[bot.id] && botTooStrongMem[bot.id][target.id], lg = botTooStrongMem[bot.id] && botTooStrongMem[bot.id]['o:' + ow];
+    if (seen === null && !rec && !lg) return false;
     const pool = botPoolFor(bot, target).s;
+    if (lg && Date.now() < lg.until && pool < lg.pool * 1.3) return true;                // no scout after scout at an empire far beyond them
     if (botTooStrong(bot, target.id, pool)) return true;
-    if (seen !== null && pool * atk < seen * Math.max(1.25, st.margin)) { if (!rec) botNoteTooStrong(bot, target.id, pool); return true; }
+    if (seen !== null && pool * atk < seen * Math.max(1.25, st.margin)) { if (!rec) botNoteTooStrong(bot, target.id, pool); if (seen > pool * atk * 100) botTooStrongMem[bot.id]['o:' + ow] = { until: Date.now() + 45 * 60000, pool }; return true; }   // 100x beyond all they have: that owner plays in another league
     return false;
+}
+
+function botThroneHold(bot) {                       // the ruler sends a big army from nearby into the throne while it is thin (stops once it holds ~2x their biggest base)
+    if (rulerOwner() !== bot.id || pendingSends.some(x => x.senderBotId === bot.id && !x.back && x.toId === megaTempleId)) return false;
+    const m = islandById[megaTempleId], g = islandTroops[megaTempleId] || 0, thr = botThreatened(bot.id); let best = null;
+    for (const id of botOwnedIslands[bot.id]) { if (id === megaTempleId || thr.has(id)) continue; const isl = islandById[id], n = Math.floor((islandTroops[id] || 0) * .6);
+        if (n < Math.max(BOT_MIN_GARRISON_TO_ATTACK, g * .3) || (best && n <= best.n)) continue;
+        if (isl.landmassId !== m.landmassId && !(landmassesConnected(isl.landmassId, m.landmassId) && botCanCross(bot.id, isl.landmassId, m.landmassId, n))) continue;
+        best = { id, n }; }
+    if (!best) return false; const k = pendingSends.length; launchSend(best.id, megaTempleId, bot.id, best.n); return pendingSends.length > k;
 }
 
 function botThink(bot) {
@@ -574,6 +595,7 @@ function botThink(bot) {
     if (!(act.plan && act.plan.kind === 'attack') && botArmyStep(bot)) { botTapped(bot); saveBotState(); return; }   // a field army waiting for orders (gathering troops can wait one tap)
     if (act.plan) { if (botPlanStep(bot)) { botTapped(bot); saveBotState(); } return; }   // finish what they started
     if (botKeepsShield(bot, Date.now())) { if (Math.random() < .3 && (botGatherField(bot, true) || botBarbHunt(bot))) botTapped(bot); return; }   // under their own shield: no attacks, only gathering and camps
+    if (Math.random() < .5 && botThroneHold(bot)) { botTapped(bot); saveBotState(); return; }   // just took the throne: fill it up before the next one comes
     if (Math.random() < .1 && (botBarbHunt(bot) || botDayBoss(bot))) { botTapped(bot); saveBotState(); return; }   // now and then a camp or a strike at the daily boss (that is this move's order)
     const st = botStyle(bot), atk = botAtkFactor(bot, true), ruler = rulerOwner();   // several waves: a hero only leads one, so he's a bonus, not part of the plan
     const shielded = playerShielded(), now = Date.now(), shOwn = shieldedOwners(now);
@@ -585,6 +607,14 @@ function botThink(bot) {
     // 1) look around: every reachable target near the bot's bigger armies, with how much the bot could throw at it
     const T = new Map(), sitM = new Map();                      // targetId → { target, d, sources: [{ id, have }] }
     const sitOf = (t, ow) => { let v = sitM.get(t.id); if (v === undefined) { v = botSituation(bot, st, t, ow, now); sitM.set(t.id, v); } return v; };   // (the same for every base looking at it)
+    const okM = new Map(), okOf = t => { let v = okM.get(t.id); if (v === undefined) okM.set(t.id, v = !(owned.has(t.id) || isCapital(t.id) || busy.has(t.id)   // capitals can't be attacked
+        || (shOwn.has(islandOwnerOf(t.id)) && shieldCovers(t)))); return v; };                       // anyone's Friedensschild
+    const pullM = new Map(), pullOf = t => { let v = pullM.get(t.id); if (v) return v;                // everything about a target that doesn't depend on where they look from (once per move, not per base)
+        const ow = islandOwnerOf(t.id), grudge = botGrudgeOn(bot.id, ow);                          // revenge pulls them towards whoever hit them
+        const k = (grudge ? 1 / (1 + grudge.n) : 1) * sitOf(t, ow) * (rally && rally.t === t.id ? .05 : 1)   // the planned big strike comes first
+            * (t.id === megaTempleId && ruler !== bot.id ? (ruler ? .1 : .015) : 1)                // the throne pulls - an empty one most of all (the crown is free)
+            * botMidPull(bot, t, ruler, now);                                                       // the Turnier on weekends, the Kopfgeld on the ruler
+        pullM.set(t.id, v = { ow, grudge, k }); return v; };
     const mem = loadBotState()[bot.id];
     if (mem.rally && (now > mem.rally.until || !owned.has(mem.rally.at) || owned.has(mem.rally.t) || isCapital(mem.rally.t))) mem.rally = null;
     const rally = mem.rally, sampled = botSampleSources(owned, st.sources);
@@ -598,21 +628,15 @@ function botThink(bot) {
             if (!landmassesConnected(source.landmassId, lmId)) continue;
             const toll = tollFor(source.landmassId, lmId, have, bot.id).cost, canPass = !toll || (botCoins[bot.id] || 0) >= toll;
             for (const target of islandsByLandmass[lmId] || []) {
-                if (owned.has(target.id) || isCapital(target.id) || busy.has(target.id)) continue;   // capitals can't be attacked
-                if (shOwn.has(islandOwnerOf(target.id)) && shieldCovers(target)) continue;                                   // anyone's Friedensschild
+                if (!okOf(target)) continue;                                                   // theirs, a capital, already on it, or under a shield
                 if (!canPass && !(target.type === 'gate' && gateOnRoute(source.landmassId, lmId) === target)) continue;
-                let d = Math.hypot(target.x - source.x, target.y - source.y);
-                const grudge = botGrudgeOn(bot.id, islandOwnerOf(target.id));
-                if (grudge) d /= 1 + grudge.n;
-                d *= sitOf(target, islandOwnerOf(target.id));
-                if (rally && rally.t === target.id) d *= .05;                                   // the planned big strike comes first                                                  // revenge pulls them towards whoever hit them
-                if (target.id === megaTempleId && ruler !== bot.id) d *= 0.1;                   // the throne pulls
-                d *= botMidPull(bot, target, ruler, now);                                         // the Turnier on weekends, the Kopfgeld on the ruler
+                const pv = pullOf(target), grudge = pv.grudge, tOwner = pv.ow;
+                let d = Math.hypot(target.x - source.x, target.y - source.y) * pv.k;
                 const inward = landmasses[target.landmassId].ring < landmasses[source.landmassId].ring;
                 if (inward) d *= target.type === 'gate' ? .3 : .5;                              // everyone wants to get to the middle
                 else if (bossAt(target.id)) d *= 0.15;                                         // events: bosses and the Wanderboss are worth a big attack
                 else if (target.type === 'gate' || target.type === 'temple' || target.guardian) d *= st.temple;
-                else if (islandOwnerOf(target.id)) d *= st.enemy / (islandOwnerOf(target.id) === 'player' ? 1 + (st.hunt || 0) : 1);   // raiders like hitting other players, the aggressive ones the player most
+                else if (tOwner) d *= st.enemy / (tOwner === 'player' ? 1 + (st.hunt || 0) : 1);   // raiders like hitting other players, the aggressive ones the player most
                 const e = T.get(target.id) || { target, d: Infinity, sources: [], grudge };
                 e.d = Math.min(e.d, d); e.sources.push({ id: sourceId, have }); T.set(target.id, e);
             }
@@ -1301,10 +1325,11 @@ function botRulerTitles(bot, now) {               // a bot on the throne hands o
     const calm = sc.filter(x => x.a < .5).sort((x, y) => x.a - y.a || y.n - x.n);                                    // the peaceful ones, the strong first (good to have as friends)
     const bad = TITLES.filter(x => !x.good), good = TITLES.filter(x => x.good), pick = [];
     t.by = {}; t.at = now;
-    bad.forEach((x, i) => { const f = foes[i] || calm[calm.length - 1 - (i - foes.length)]; if (f && !pick.includes(f.w)) { giveTitle(x.key, f.w); pick.push(f.w); } });   // not enough foes: the weakest of the rest
+    const filler = calm.filter(x => x.w !== 'player').reverse();                                                    // not enough foes: the weakest of the rest - never you for nothing
+    bad.forEach((x, i) => { const f = foes[i] || filler[i - foes.length]; if (f && !pick.includes(f.w)) { giveTitle(x.key, f.w); pick.push(f.w); } });
     const friends = calm.filter(x => !pick.includes(x.w));
     good.forEach((x, i) => { if (friends[i]) giveTitle(x.key, friends[i].w); });
-    const mine = titleOf('player'), why = hitting.player ? ' – du greifst ihn gerade an' : botAnnoyOf(b, 'player', now) >= .5 ? ' – er hat nicht vergessen, wie oft du ihn angegriffen hast' : mine && mine.good ? ' – du hast ihn in Ruhe gelassen' : '';
+    const mine = titleOf('player'), why = hitting.player ? ' – du greifst gerade an' : botAnnoyOf(b, 'player', now) >= .5 ? ' – deine Angriffe sind nicht vergessen' : mine && mine.good ? ' – du hast Ruhe gegeben' : '';   // (no he/she: names don't say which)
     if (mine && (!mine0 || mine0.key !== mine.key)) flashHint('Titel „' + mine.name + '“ von ' + bot.name + why + ': ' + mine.desc + '.', 6500);
     else if (mine0 && !mine) flashHint(bot.name + ' hat dir den Titel „' + mine0.name + '“ wieder genommen.', 5000);
     saveTitles();
@@ -1314,10 +1339,14 @@ function botRespawn(bot, now) {                   // knocked out: like a player 
     const b = loadBotState()[bot.id];
     if (!b.outAt) { b.outAt = now; saveBotState(); return; }
     if (now - b.outAt < 600000 || !botOnline(bot, now)) return;
-    const free = islands.filter(i => i.type === 'tower' && !islandOwnerOf(i.id) && landmasses[i.landmassId].tier === 'outer' && landmasses[i.landmassId].ring >= 3 && !bossAt(i.id));
+    const edge = i => i.type === 'tower' && landmasses[i.landmassId].tier === 'outer' && landmasses[i.landmassId].ring >= 3 && !bossAt(i.id);
+    let free = islands.filter(i => edge(i) && !islandOwnerOf(i.id));
+    if (!free.length) { const big = BOT_DEFS.filter(x => x.id !== bot.id).sort((u, v) => botOwnedIslands[v.id].size - botOwnedIslands[u.id].size)[0];   // the map is full: a fresh start on the edge of the biggest empire
+        free = big && botOwnedIslands[big.id].size >= 40 ? [...botOwnedIslands[big.id]].map(id => islandById[id]).filter(i => edge(i) && !isCapital(i.id) && !pendingAttacks.some(a => a.targetId === i.id)) : []; }
     if (!free.length) return;
-    const t = free[Math.floor(Math.random() * free.length)];
+    const t = free[Math.floor(Math.random() * free.length)]; clearIslandOwner(t.id);
     botOwnedIslands[bot.id].add(t.id); islandLevels[t.id] = 1; islandTroops[t.id] = 0; b.outAt = 0; b.capital = t.id; b.capMovedAt = now; b.capWish = null; capitalCache = null;
+    b.shieldUntil = now + 3600000; b.shieldWhy = 'start'; b.shieldAt = now;                   // an hour of peace to get going (a lone base in someone's land would fall at once)
     saveBotState(); saveGame();
 }
 
