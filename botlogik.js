@@ -408,7 +408,8 @@ function botRespects(bot, owner) { if (!owner || owner === bot.id) return false;
 
 function botSituation(bot, st, target, owner, now) {        // how the moment changes the pull of a target (lower = more wanted)
     let m = botRespects(bot, owner) ? 4 : 1;                                                           // respect: the ruler's bases are much less tempting (not off limits)
-    const ot = owner && owner !== bot.id ? titleOf(owner) : null; if (ot && !ot.good) m *= .6;   // a penalty title: weaker - everyone else smells it const bold = (st.risk || 0) >= .12 || (st.hunt || 0) >= .5;
+    const ot = owner && owner !== bot.id ? titleOf(owner) : null; if (ot && !ot.good) m *= .6;
+    const mt = titleOf(bot.id); if (mt && !mt.good && owner && owner === rulerOwner()) m *= .5;        // a penalty title makes them angry at whoever gave it: the ruler gets attacked more   // a penalty title: weaker - everyone else smells it const bold = (st.risk || 0) >= .12 || (st.hunt || 0) >= .5;
     const heat = heatAt(target.landmassId, now);
     if (heat > .5) m *= bold ? 1 / (1 + Math.min(3, heat) * .4) : 1 + Math.min(3, heat) * .5;       // drawn to the fighting, or keeping clear
     if (owner && bold && baseFought[target.id] && now - baseFought[target.id] < 4 * 60000) m *= .5;    // Aasgeier: the winner is thin right now
@@ -467,7 +468,7 @@ function botActOf(botId) { return botAct[botId] || (botAct[botId] = { next: 0, p
 // ==============================================================================================================
 const TITLE_PLAY = {
     feldherr:  { margin: .85, tapMs: .7, commit: 1.15, hunt: 1.4 },
-    feigling:  { margin: 1.25, tapMs: 1.5, hunt: .5, risk: 0 },
+    feigling:  { margin: 1.15, risk: 0 },                         // (weaker, so a bit more careful - but still angry, see botSituation)
     burgherr:  { commit: 1.15 },
     verraeter: { commit: .75, risk: 0 },
     herzog:    { tapMs: .8, commit: 1.1 },
