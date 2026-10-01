@@ -340,6 +340,10 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
 **Erster Start live (1.10., 21:01):** Welt geladen (6.632 Basen), 37 Pulse in 90 s, 256 MB, 0 Fehler. Dabei gefunden:
 der Start aus PHP heraus hing (PHP wartete auf das Hintergrund-Programm). Behoben in wachhund.php: das Programm wird ganz
 abgelöst gestartet (eigene Gruppe mit setsid, Ein-/Ausgabe umgeleitet) – lokal kommt der Start in 0,02 s zurück.
+Live nachgeprüft: Start kommt nach 0,5 s zurück. **Cronjob-Knopf** schlug live fehl (das crontab-Programm des Servers
+schneidet lange Dateipfade ab; bestehende Cronjobs blieben unverändert). Behoben: die Liste geht direkt über die Eingabe
+(`crontab -`, `wr_crontab_setzen`). Lokal mit nachgebautem crontab getestet: lapush-Eintrag bleibt, Wachhund-Zeile kommt
+dazu, zweiter Klick ändert nichts, Sicherung `crontab_sicherung.php` wird angelegt.
 **Server-Test am 1.10. (Testdateien wieder gelöscht):** Office-Server (netcup-Webhosting, gehört Alexander, dort laufen
 auch seine anderen Seiten) kann: Node.js 22 (`/opt/plesk/node/22/bin/node`), Programme über PHP starten (exec),
 Cronjobs (Konto hat schon einen für cron.lapush.de – nie anfassen, nur eigene Zeile dazu, vorher sichern).

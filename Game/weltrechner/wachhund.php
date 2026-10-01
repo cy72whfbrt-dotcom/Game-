@@ -143,21 +143,28 @@ function wr_php() {
     foreach (['/usr/local/php73/bin/php', '/usr/local/php83/bin/php', PHP_BINDIR . '/php'] as $p) if (trim((string)@shell_exec('test -x ' . escapeshellarg($p) . ' && echo ja')) === 'ja') return $p;
     return 'php';
 }
+// Neue Cronjob-Liste setzen: direkt über die Eingabe von „crontab -“ (der Server schneidet lange Dateipfade ab)
+function wr_crontab_setzen($text) {
+    $p = proc_open('crontab -', [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $r);
+    if (!is_resource($p)) return [1, 'crontab nicht startbar'];
+    fwrite($r[0], $text); fclose($r[0]);
+    $aus = trim(stream_get_contents($r[1]) . ' ' . stream_get_contents($r[2])); fclose($r[1]); fclose($r[2]);
+    return [proc_close($p), $aus];
+}
 function wachhund_cron_da() { return strpos((string)@shell_exec('crontab -l 2>/dev/null'), __FILE__) !== false; }
 function wachhund_cron_einrichten() {
     $alt = (string)@shell_exec('crontab -l 2>/dev/null');
     if (strpos($alt, __FILE__) !== false) return 'Der Cronjob ist schon eingerichtet.';
     file_put_contents(WR_ORDNER . '/crontab_sicherung.php', WR_SPERRE . $alt);
     $neu = rtrim($alt, "\n") . ($alt === '' ? '' : "\n") . '* * * * * ' . wr_php() . ' -f ' . escapeshellarg(__FILE__) . " > /dev/null 2>&1\n";
-    $tmp = WR_ORDNER . '/crontab_neu.php'; file_put_contents($tmp, $neu);
-    exec('crontab ' . escapeshellarg($tmp) . ' 2>&1', $aus, $rc); @unlink($tmp);
+    [$rc, $aus] = wr_crontab_setzen($neu);
     $jetzt = (string)@shell_exec('crontab -l 2>/dev/null');
     foreach (explode("\n", trim($alt)) as $z) if (trim($z) !== '' && strpos($jetzt, trim($z)) === false) {   // etwas Altes fehlt: sofort zurück
-        $t2 = WR_ORDNER . '/crontab_neu.php'; file_put_contents($t2, $alt); exec('crontab ' . escapeshellarg($t2)); @unlink($t2);
+        wr_crontab_setzen($alt);
         wr_log('Cronjob NICHT eingerichtet (alte Einträge wären verloren gegangen) – alter Stand wiederhergestellt');
         return 'Fehler – nichts verändert, alter Stand wiederhergestellt.';
     }
-    if ($rc !== 0 || strpos($jetzt, __FILE__) === false) { wr_log('Cronjob einrichten fehlgeschlagen: ' . implode(' ', $aus)); return 'Fehler beim Einrichten: ' . implode(' ', $aus); }
+    if ($rc !== 0 || strpos($jetzt, __FILE__) === false) { wr_log('Cronjob einrichten fehlgeschlagen: ' . $aus); return 'Fehler beim Einrichten: ' . $aus; }
     wr_log('Cronjob eingerichtet (jede Minute)');
     return 'Cronjob eingerichtet: der Wachhund schaut jetzt jede Minute nach.';
 }
