@@ -262,6 +262,9 @@ Startbildschirm“ → `app/`. Kein Service-Worker (der würde Dateien im Browse
 **HOCHGELADEN am 1.10. (Alexanders Ja):** App für den Startbildschirm (Ordner `app/`) – mit Wartung. Live geprüft:
 Installier-Seite, App-Datei (application/manifest+json), Logos erreichbar, Wartung wieder aus.
 
+**HOCHGELADEN am 1.10. (Alexanders Ja):** Wartung für alle, kein Markieren/Kopieren, Statusleiste schwarz (kein
+Streifen unten), „Hier weiterspielen“ sofort – mit Wartung. Live geprüft: Startseite ok, Wartung aus.
+
 ## 11. Offen
 - **GitHub aufräumen (macht Alexander, Claude darf es nicht):** Unter Settings → General → Default branch auf
   `claude/neues-projekt-8agldl` stellen. Danach unter Branches alle anderen löschen (`claude/chat-session-k7ozkc`,
