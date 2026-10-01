@@ -224,6 +224,10 @@ Welt nochmal frisch zurückgesetzt. Wer als Erster das Spiel öffnet, erschafft 
   könnte als Weltrechner die Welt oder Münz-Nachrichten verfälschen. Ganz verhindern ließe sich das nur, wenn der Server
   selbst rechnet (großer Umbau).
 
+**HOCHGELADEN am 1.10. (Alexanders Ja):** Version mit Admin-Seite, Wartung, Rauswurf, Namenswahl, Nebel-Fixes,
+Mitspieler-Nebel, Sammel-Bericht, Anfängerschutz und Sicherheits-Fixes. Live geprüft: Seiten erreichbar, Wartung aus,
+`admin_ids` = [3], alexander ist Admin. Spielstände wurden dabei NICHT zurückgesetzt.
+
 ## 11. Offen
 - **GitHub aufräumen (macht Alexander, Claude darf es nicht):** Unter Settings → General → Default branch auf
   `claude/neues-projekt-8agldl` stellen. Danach unter Branches alle anderen löschen (`claude/chat-session-k7ozkc`,
