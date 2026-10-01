@@ -799,7 +799,7 @@ body.has-panel .mapctl{display:none}
 .hh-hx{width:40px;height:46px;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);display:grid;place-items:center;font:700 17px/1 var(--font-display);color:#fff;background:linear-gradient(180deg,var(--sc),#0009)}
 .hh-hx.act{background:linear-gradient(180deg,#ffd76a,#c9771f);color:#2a1a05}
 .hh-skt{min-width:0} .hh-skt b{font-size:var(--fs-13)}
-.hh-skt small{display:block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--tx-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hh-skt small{display:block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--tx-3)}
 .hh-skt p{margin:3px 0 4px;font-size:var(--fs-12);color:var(--tx-2);line-height:1.4} .hh-skt .hh-max{font-size:11px;color:var(--tx-4);margin-top:0}
 .hh-pips{display:flex;gap:3px} .hh-pips i{width:8px;height:8px;border-radius:50%;background:#ffffff25} .hh-pips i.on{background:var(--gold-200)}
 .hh-plus{width:32px;height:32px;border-radius:var(--r-lg);border:1px solid #8a6414;background:linear-gradient(180deg,#fff0b8,#e6b340);color:#1b1400;font:900 18px/1 var(--font-ui);cursor:pointer;box-shadow:inset 0 -2px 0 #a8791c,0 2px 0 #5e4410}
@@ -1098,7 +1098,7 @@ body.has-panel .mapctl{display:none}
   body.has-sheet .mapctl{right:432px}
   .mabar{left:50%;right:auto;bottom:22px;transform:translateX(-50%);width:min(560px,calc(100vw - 40px))}
   body.is-multi .mapctl{display:flex;bottom:18px}
-  .toast{top:auto;bottom:22px;max-width:min(640px,calc(100vw - 40px))}
+  .toast,body.has-midbar:not(.has-sheet) .toast{top:auto;bottom:22px;max-width:min(640px,calc(100vw - 40px))}   /* (the mid-bar rule set a top too: the toast stretched over the whole height) */
   body.has-sheet .toast{left:calc(50% - 209px);max-width:min(640px,calc(100vw - 458px))}   /* centred in the map area left of the drawer */
   body.is-multi .toast{bottom:88px}
   .scrim{display:none!important}
@@ -6862,9 +6862,10 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             return parts.length ? parts.join('<br>') : escapeHtml(pr.name) + ' und du hattet noch keinen Kampf miteinander.';
         }
         const rulerPopup = document.getElementById('rulerPopup');
-        let rulerWho = null;
+        let rulerWho = null, rulerBack = null;                 // rulerBack: opened from the ranking → closing goes back there (same tab and scroll)
         function openRulerProfile(who) {
             const pr = whoProfile(who); if (!pr) return;
+            rulerBack = isPanelOpen(rankPopup) ? document.getElementById('rankBody').scrollTop : null;
             closeAllPopups(); rulerWho = who;
             const ring = document.getElementById('rulerCrest'); ring.dataset.frame = pr.frame; ring.querySelector('img').src = crestDataUrl(40, who);
             document.getElementById('rulerLvl').textContent = pr.lvl;
@@ -6892,11 +6893,12 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
                 '<button class="btn btn--primary btn--sm" type="button" data-rp="capital">' + icon('castle') + '<span>Hauptstadt</span></button></div>';
             openPanel(rulerPopup);
         }
-        document.getElementById('rulerCloseBtn').addEventListener('click', () => { closePanel(rulerPopup); rulerWho = null; });
+        document.getElementById('rulerCloseBtn').addEventListener('click', () => { closePanel(rulerPopup); rulerWho = null;
+            if (rulerBack !== null) { const y = rulerBack; rulerBack = null; openRankings(); document.getElementById('rankBody').scrollTop = y; } });
         document.getElementById('rulerBody').addEventListener('click', e => {
             const b = e.target.closest('[data-rp]'); if (!b || !rulerWho) return;
             const who = rulerWho, own = who === 'player' ? ownedIslands : botOwnedIslands[who]; if (!own || !own.size) return;
-            closePanel(rulerPopup); rulerWho = null;
+            closePanel(rulerPopup); rulerWho = null; rulerBack = null;
             if (b.dataset.rp === 'capital') { const cap = who === 'player' ? playerIslandId : botCapitalOf(who), isl = islandById[cap]; if (!isl) return;
                 flyTo(isl.x, isl.y, { zoom: Math.max(mapState.zoom, 0.02) }); setTimeout(() => openIslandPopup(isl), 650); return; }
             const c = screenToWorld(viewW / 2, viewH / 2); let best = null, bd = Infinity;   // their base nearest to what you're looking at
@@ -8099,7 +8101,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         shopBtn.addEventListener('click', () => {
             if (isPanelOpen(shopPopup)) { shopCloseBtn.click(); return; }
             closeAllPopups();
-            shopCrateResult.style.display = 'none';
+            shopCrateResult.style.display = 'none'; document.getElementById('shopHeroResult').hidden = true;   // no old chest results on a fresh visit
             renderShop();
             openPanel(shopPopup);
         });
@@ -11560,14 +11562,17 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         function closeTopmostPanel() {           // scrim click + Escape
           if (closeWelcome()) { maybeShowDaily(); return; }
           if (closeLevelUpModal()) return;
+          if (closeDailyModal()) return;                                                  // the modals lie above the full-screen sheets and the town
+          if (!document.getElementById('rewardModal').hidden) { document.getElementById('rewardModalBtn').click(); return; }
+          if (!document.getElementById('titleModal').hidden) { document.getElementById('titleModal').hidden = true; return; }
           if (!document.getElementById('lookSheet').hidden) return closeLookSheet();      // the full-screen sheets lie above everything else
           if (!document.getElementById('heroHall').hidden) return closeHeroHall();
           if (!barbSheetEl.hidden) return closeBarbSheet();
+          if (fieldSheetId) return closeFieldSheet();
+          if (!document.getElementById('armySheet').hidden) return closeArmySheet();
+          if (!document.getElementById('markerSheet').hidden) return closeMarkerSheet();
           if (!document.getElementById('citySheet').hidden && !cityView.hidden) { document.getElementById('citySheetClose').click(); return; }
           if (closeCity()) return;
-          if (closeDailyModal()) return;
-          if (!document.getElementById('rewardModal').hidden) { document.getElementById('rewardModalBtn').click(); return; }
-          if (!document.getElementById('titleModal').hidden) { document.getElementById('titleModal').hidden = true; return; }
           if (isPanelOpen(chestItemPopup)) return chestItemCloseBtn.click();
           if (isPanelOpen(popup)) return closeBtn.click();
           for (const [pid, closeId] of [['rulerPopup','rulerCloseBtn'],['rankPopup','rankCloseBtn'],['profilePopup','profileCloseBtn'],['battleLogPopup','battleLogCloseBtn'],['goalsPopup','goalsCloseBtn'],['shopPopup','shopCloseBtn']])
@@ -11596,6 +11601,9 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             if (!document.getElementById('lookSheet').hidden) closeLookSheet();
             if (!document.getElementById('heroHall').hidden) closeHeroHall();
             if (!barbSheetEl.hidden) closeBarbSheet();
+            if (fieldSheetId) closeFieldSheet();                                   // the small map sheets lie above the panels: never leave one on top of a new sheet or the town
+            if (!document.getElementById('armySheet').hidden) closeArmySheet();
+            if (!document.getElementById('markerSheet').hidden) closeMarkerSheet();
             closePanel(chestItemPopup);
             chestDetailItemId = null;
             chestSelectedIds.clear();
