@@ -236,6 +236,9 @@ Welt nochmal frisch zurückgesetzt. Wer als Erster das Spiel öffnet, erschafft 
 Mitspieler-Nebel, Sammel-Bericht, Anfängerschutz und Sicherheits-Fixes. Live geprüft: Seiten erreichbar, Wartung aus,
 `admin_ids` = [3], alexander ist Admin. Spielstände wurden dabei NICHT zurückgesetzt.
 
+**HOCHGELADEN am 1.10. (Alexanders Ja):** Späher/Tore, Anfängerschutz für alle mit 50-Mio.-Grenze, kein Admin-Knopf.
+Mit Wartung (an → 10 s Speichern → hochladen → aus). Live geprüft: kein Admin-Link auf der Startseite, Wartung aus.
+
 ## 11. Offen
 - **GitHub aufräumen (macht Alexander, Claude darf es nicht):** Unter Settings → General → Default branch auf
   `claude/neues-projekt-8agldl` stellen. Danach unter Branches alle anderen löschen (`claude/chat-session-k7ozkc`,
