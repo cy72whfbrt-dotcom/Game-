@@ -5933,7 +5933,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         function renderTitleModal() {
             const t = loadTitles(), mine = t.ruler === 'player';
             const who = w => w === 'player' ? (profileName.value || 'Du') : w ? botById[w].name : '–';
-            document.getElementById('titleModalSub').textContent = mine ? 'Du hältst den Mega-Tempel: verteile Buffs an Freunde und Strafen an Rivalen.'
+            document.getElementById('titleModalSub').textContent = mine ? 'Du hältst den Mega-Tempel. Ein guter Titel ist Respekt: wer ihn trägt, greift deine Basen nicht an. Ein Straf-Titel schwächt – und die anderen gehen eher auf ihn los.'
                 : t.ruler ? botById[t.ruler].name + ' hält den Mega-Tempel und verteilt die Titel.' : 'Niemand hält den Mega-Tempel – erobere ihn, um Titel zu vergeben.';
             const opts = cur => '<option value="">– niemand –</option>' + BOT_DEFS.filter(b => botOwnedIslands[b.id].size).map(b => '<option value="' + b.id + '"' + (cur === b.id ? ' selected' : '') + '>' + escapeHtml(b.name) + '</option>').join('');
             document.getElementById('titleList').innerHTML = TITLES.map(x => '<div class="title-row ' + (x.good ? 'is-good' : 'is-bad') + '"><div><b>' + x.name + '</b><small>' + x.desc + '</small></div>' +

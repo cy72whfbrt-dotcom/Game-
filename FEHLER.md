@@ -19,3 +19,4 @@ Gesammelt beim Anspielen. ✅ = erledigt (Runde 1, 1.10.).
 14. ✅ **Turniersieger-Ring sah aus wie ein Titel aus der Mitte** – eigenes Abzeichen: Pokal (Mitte: Krone/Totenkopf), Abzeichen etwas größer.
 15. ✅ **Kopfgeld bei jedem Angriff** – es gab 3 % für jeden Sieg gegen eine Basis des Herrschers (24 Einträge im Abholfach). Jetzt kassiert das Kopfgeld nur, wer den Thron nimmt. Alte Einzel-Einträge werden zu einem zusammengefasst.
 16. ✅ **Plündern immer noch zu viel** – jetzt 2 % pro Basis / 4 % bei der Hauptstadt, höchstens 30 Min. Einnahmen des Opfers pro Kampf.
+17. ✅ **Titel ohne Wirkung auf dich:** Ein guter Titel vom Herrscher ist jetzt Respekt – wer ihn trägt, greift die Basen des Herrschers (also deine, wenn du herrschst) nicht mehr an. Straf-Titel: schwächer und die anderen gehen eher auf den Träger los.
