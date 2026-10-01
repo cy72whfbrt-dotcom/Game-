@@ -2082,16 +2082,17 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         function icon(name, cls) { return '<svg class="icon' + (cls ? ' ' + cls : '') + '" aria-hidden="true"><use href="#i-' + name + '"/></svg>'; }
         const NF = new Intl.NumberFormat('de-DE');
         const NF_C = new Intl.NumberFormat('de-DE', { notation: 'compact', maximumFractionDigits: 1 });
-        function fmtNum(n) { return NF.format(Math.round(n)); }
+        function fmtExact(n) { return NF.format(Math.round(n)); }   // every digit - only where exact counts matter
+        function fmtNum(n) { return Math.abs(n) >= 1e7 ? fmtCompact(n) : fmtExact(n); }   // from 10 Mio. on short like the HUD ("18,4 Mrd."), never 20 digits
         function fmtCompact(n) {
           const a = Math.abs(n);
-          if (a < 100000) return fmtNum(n);
+          if (a < 100000) return fmtExact(n);
           if (a < 1e6) return NF.format(Math.floor(n / 100) / 10) + ' Tsd.';
           if (a < 1e15 * .99995) return NF_C.format(n);
           for (const [v, u] of [[1e24, 'Quadr.'], [1e21, 'Trd.'], [1e18, 'Trill.'], [1e15, 'Brd.']])   // beyond "Bio.": Billiarde, Trillion, Trilliarde … (unit chosen on the rounded value)
             if (a >= v * .99995 || v === 1e15) return (a / v >= 1000 ? NF.format(Math.round(n / v)) : NF.format(Math.round(n / v * 10) / 10)) + ' ' + u;
         }
-        const fmtTile = v => Math.abs(v) >= 1e9 ? fmtCompact(v) : fmtNum(v);   // stat tiles: exact up to millions, then short so it fits
+        const fmtTile = fmtNum;   // stat tiles: same rule as everywhere
         function setBtnLabel(btn, text) { const l = btn.querySelector('.lbl'); if (l) l.textContent = text; else btn.textContent = text; }
         function fmtDHMS(sec) {                           // every longer time the same way: 3 T 4 h 5 m 6 s (units that are 0 at the front are left out)
             sec = Math.max(0, Math.ceil(sec));
@@ -2108,7 +2109,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             const a = Math.max(0, atk || 0), d = Math.max(0, def || 0), pct = a + d > 0 ? Math.round(a / (a + d) * 100) : 50;
             return '<div class="logBal' + (youDefend ? ' logBal--def' : '') + '"><div class="logBalBar" style="--a:' + pct + '%"><i></i></div><div class="logBalTxt"><span>' + atkLabel + '</span><span>' + defLabel + '</span></div></div>';
         }
-        const fmtBig = n => n >= 1e12 ? fmtCompact(n) : fmtNum(n);   // huge sums read as "227,1 Trill.", not as 21 digits
+        const fmtBig = fmtNum;   // huge sums read as "227,1 Trill.", not as 21 digits
         function plunderLine(e, mine) {                     // Lager: what changed hands when a base fell, and what the Lager kept safe
             if (!e.plunder && !e.plunderSafe) return '';
             const safe = e.plunderSafe ? fmtBig(e.plunderSafe) + ' geschützt durch Lager' : '';
@@ -7108,7 +7109,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             const ago = e => timeAgoLabel(e.at);
             const fmt1 = v => (v || 0).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
             const fmtM = v => Math.abs(v || 0) >= 1e6 ? fmtCompact(v || 0) : fmtNum(v || 0);   // meta lines: "987,7 Mio."
-            const fmtD = v => Math.abs(v || 0) >= 1e8 ? fmtCompact(v || 0) : fmtNum(v || 0);   // detail cards
+            const fmtD = v => fmtNum(v || 0);   // detail cards
             const gearHtml = g => { if (!g) return '';
                 const tiles = g.items.map((it, i) => { const d = EQUIPMENT_DEFS[it[0]], rd = RARITY_DEFS[it[1]];
                     return '<span class="gslot"><span class="tile' + (rd ? '' : ' empty') + '"' + (rd ? ' data-r="' + rd.key + '"' : '') + ' title="' + d.name + (rd ? ' – ' + rd.label + ', Stufe ' + it[2] : ' – leer') + '">' + icon(d.icon) +
@@ -11976,7 +11977,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             if (!/^\d+(\.\d+)?$/.test(s)) return NaN;                                   // letters left over: not a number
             const n = parseFloat(s); return isFinite(n) && n >= 0 ? Math.round(n * mult) : NaN;
         }
-        function setTroopInput(el, n) { if (el && document.activeElement !== el) el.value = n >= 1e7 ? fmtCompact(n) : fmtNum(n); }   // never overwritten while you type
+        function setTroopInput(el, n) { if (el && document.activeElement !== el) el.value = fmtNum(n); }   // never overwritten while you type
         function bindTroopInput(el, maxFn, patch) {
             if (!el) return;
             el.addEventListener('focus', () => el.select());
@@ -12026,7 +12027,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             if (previewFraction !== null && mx > 0) previewAttackTroops = Math.max(1, Math.round(mx * previewFraction));
             if (previewAttackTroops === null || previewAttackTroops > mx) previewAttackTroops = mx;
             if (mx > 0) slider.value = troopsToSlider(previewAttackTroops, mx);
-            const n = Math.max(0, previewAttackTroops || 0), big = v => v >= 1e7 ? fmtCompact(v) : fmtNum(v);
+            const n = Math.max(0, previewAttackTroops || 0), big = fmtNum;
             setTroopInput(popupStats.querySelector('[data-send="n"]'), n);
             popupStats.querySelector('[data-send="max"]').textContent = big(mx);
             popupStats.querySelector('[data-send="here"]').textContent = big(islandTroops[island.id] || 0);
@@ -12062,7 +12063,6 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             if (mEl && src) mEl.textContent = fmtClock(travelDurationSeconds(src, island) / (1 + (px ? px.spd : 0) / 100));   // the hero's Tempo
             if (tEl && src) { const hop = lastHop(src.landmassId, island.landmassId, 'player'), t = tollFor(hop[0], hop[1], shown, 'player', island.id, px ? px.toll : 0);
                 tEl.innerHTML = t.closed ? '<span class="sep"></span>' + icon('lock') + '<span>Tor geschlossen</span>' : t.cost ? '<span class="sep"></span>' + icon('coin') + '<span>Maut <span class="num">' + fmtCompact(t.cost) + '</span></span>' : ''; }
-            const fmtBig = v => v >= 1e7 ? fmtCompact(v) : fmtNum(v);    // billions don't fit the preview
             document.getElementById('previewMyTroops').textContent = fmtBig(mine);
             const raw = document.getElementById('previewRawTroops');
             if (raw) raw.textContent = fmtBig(shown);
@@ -12075,7 +12075,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
                     : Math.max(1, Math.round(maxTroops * parseFloat(b.dataset.f))) === shown));
             if (scouted) {                                      // fog of war: enemy numbers and the ratio exist only when scouted
                 const enemyTroops = effectiveTroops(island), enemyDefense = Math.round(effectiveDefense(island) * (1 - (px ? Math.min(90, px.def) : 0) / 100)), total = enemyTroops + enemyDefense;   // (Rammbock & Co. cut it)
-                popupStats.querySelector('[data-foe="total"]').textContent = total >= 1e7 ? fmtCompact(total) : fmtNum(total);
+                popupStats.querySelector('[data-foe="total"]').textContent = fmtNum(total);
                 popupStats.querySelector('[data-foe="sub"]').innerHTML = fmtCompact(enemyTroops) + '<span class="xs-hide">\u00a0Truppen</span> +\u00a0' + fmtCompact(enemyDefense) + '\u00a0Vert.';
                 const ratio = total > 0 ? mine / total : Infinity;
                 popupStats.querySelector('[data-preview="balance"]').style.setProperty('--a', (mine + total > 0 ? Math.round(mine / (mine + total) * 100) : 50) + '%');
@@ -12126,7 +12126,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         // "Sammeln": first a preview - how many bases, how many troops, and which share of each garrison comes
         function renderRecallPreview(island) {
             const sources = recallSources(island.id), total = sources.reduce((a, id) => a + (islandTroops[id] || 0), 0);
-            const f = previewFraction || 1, come = sources.reduce((a, id) => a + Math.floor((islandTroops[id] || 0) * f), 0), big = v => v >= 1e7 ? fmtCompact(v) : fmtNum(v);
+            const f = previewFraction || 1, come = sources.reduce((a, id) => a + Math.floor((islandTroops[id] || 0) * f), 0), big = fmtNum;
             popupOverline.textContent = 'Truppen sammeln';
             popupSub.innerHTML = icon('send') + '<span>' + (sources.length === 1 ? '1 Basis' : sources.length + ' Basen') + ' im Umkreis</span><span class="sep"></span>' + icon('gem') + '<span>' + RECALL_GEM_COST + ' Gem</span>';
             popupStats.dataset.preview = 'recall';
