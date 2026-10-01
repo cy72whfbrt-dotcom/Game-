@@ -2,7 +2,18 @@
 
 Liste der Ideen, die für später vorgemerkt sind.
 
-## Geplant: Helden neu (Entwurf: https://claude.ai/artifact/Bm52vwUkwSNK6qr5Ru6A3s)
+## Noch offen
+- **Heldenkisten im Shop** (später, nicht im Heldenfenster).
+- **Spielstand-Sicherung über einen Server** – ganz am Ende.
+- Feinschliff nach dem Anspielen: Preise im Aussehen, Gefolge-Werte, Mega-Tempel-Gems (MEGA_TEMPLE_MULT).
+
+## Nacht 30.9./1.10. – alles eingebaut
+- Ringe nur noch über Titel aus der Mitte oder Ring-Skin · 14 Helden mit Splittern, Viertel-Sternen, Fähigkeiten, Wut, Gefolge und echten Bildern · Baukunst (3D-Basen) · neuer Ladebildschirm.
+- Lager (schützt Münzen, Plündern 4 %/8 %) · zweiter Bauarbeiter (500 Gems) · Aussehen mit 5 Reitern (nur kaufen) · Ziele (Aufgaben + 48 Erfolge, nur Gems) · Rangliste (Macht, Eroberungen, Titel, Thron, Turnier).
+- Ereignisse: Barbaren-Lager (1–25, 20 am Tag), Tagesboss, Wochenend-Turnier, Kopfgeld auf den Herrscher, Saison-Pass (28 Tage, Premium 1.000 Gems).
+- Schlussrunde: Balance (Lager-Schutz, Gefolge, Tagesboss, Tempel-Gems, Kopfgeld), Mitspieler-Prüfung (nutzen alles, kein Schummeln), Fehlersuche, Leistung (Karte bis 4× schneller beim Zeichnen), alter Code weg.
+
+## Umgesetzt (Nacht): Helden neu (Entwurf: https://claude.ai/artifact/Bm52vwUkwSNK6qr5Ru6A3s)
 - 14 Helden mit Bild, Rolle, Seltenheit, Sternen und Splittern – ersetzen die alten 3 (Sigrun, Bernhard, Ida bleiben mit dabei).
 - **Nur mit Splittern:** X Splitter zum Freischalten, danach Start mit 0 Sternen. Jedes Aufwerten füllt ¼ Stern (¼ → ½ → ¾ → voller Stern), bis 5 Sterne. Keine Stufen/EP.
 - Je Held 4 Fähigkeiten: 1 aktive (Wut im Kampf) + 3 passive; jeder Held kann etwas anderes besser. **Fähigkeitspunkte: 1 Punkt pro halbem Stern** (½, 1, 1½ … 5 Sterne) = 10 Punkte bei 5 Sternen. Alle 4 Fähigkeiten starten bei Stufe 0, je max. Stufe 5 → man kann nur 2 Fähigkeiten maxen, muss sich entscheiden. **Zurücksetzen kostet Gems** (Entwurf: 200).
@@ -19,10 +30,9 @@ Liste der Ideen, die für später vorgemerkt sind.
 - **Keine Heldenausrüstung** – gewünscht weggelassen.
 - **Heldenkisten kommen später in unseren bestehenden Shop** (nicht ins Heldenfenster, keine Taverne).
 - **Alles muss im Kampfbericht stehen:** welcher Held, Stufe/Sterne, ob die Fähigkeit gezündet hat und was sie bewirkt hat, Talent- und Passiv-Boni.
-- Design des Entwurfs ist noch nicht getroffen (V1 und V2) – weiter abstimmen, Inhalt passt.
 - Die Mitspieler bekommen dieselben Helden.
 
-## Geplant: weitere Punkte (Stand heute Abend)
+## Umgesetzt (Nacht): weitere Punkte
 - **Spielstand-Sicherung → ganz am Ende über einen Server** (nicht jetzt).
 - **Zweiter Bauarbeiter** (4) – ja.
 - **Lager** (7) – ja. ~~Taverne, Deko, Mauer-Skins~~ – nein.
@@ -38,12 +48,12 @@ Liste der Ideen, die für später vorgemerkt sind.
 - **Erfolge und Aufgaben zusammenlegen** (in der Basis).
 - **Aussehen aufräumen – ist zu viel:** Wappen, Rahmen, Titel, Basis-Skin, Marsch-Skin an einem Ort sortieren. Titel kommen heute aus Erfolgen, Rang, Thron-Shop UND die Thron-Titel aus der Mitte – das muss vereinfacht werden.
 
-## Entschieden: Ringe und Aussehen (Stand Nacht)
+## Umgesetzt (Nacht): Ringe und Aussehen
 - **Kein Ring mehr nach Stufe** (Bronze/Silber weg).
 - Ringe nur über **Ring-Skin** (kaufen) oder **Titel aus der Mitte** (solange er gilt): guter Titel Gold, Straf-Titel Rot, Herrscher Blutrot-Gold. Titel-Ring vor Skin-Ring.
 - **Erfolge geben kein Aussehen mehr** (nur noch Gems o. Ä.). Aussehen (Skins, Rahmen, Titel-Schilder, Ringe …) gibt es nur noch **zu kaufen: mit Gems im Shop oder mit Thron-Punkten im Thron-Shop** – oder als Titel aus der Mitte. Bereits Freigeschaltetes bleibt erhalten.
 
-## Geplant: Baukunst – neue Basen in 3D (Entwurf: https://claude.ai/artifact/T3jrVwCsFV5sHc39fU57fG)
+## Umgesetzt (Nacht): Baukunst – neue Basen in 3D (Entwurf: https://claude.ai/artifact/T3jrVwCsFV5sHc39fU57fG)
 - Alle 10 Stufen ein neues Design (Lager … Himmelsfeste), bei jeder 5 kleine Zusätze, Stufe 100 eigene Krönung.
 - Stufe am Material (Holz → Feldstein → Sandstein → Schiefer → Marmor mit Gold), Besitzer nur an Dach und Fahne.
 - Jeder Spieler eigener Baustil (Klassisch, Nordisch, Südländisch, Morgenland, Fernost) + Wappen auf allen Fahnen, zufälliges Umland.
