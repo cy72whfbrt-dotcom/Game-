@@ -217,9 +217,24 @@ function resolveBotAttack(attack) {
     if (playerInvolved) defWounded = hospitalTake(won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops));   // your fallen defenders
     if (playerInvolved) { warStat(capitalHolds ? 'plundered' : won ? 'lost' : 'defends', 1, bot.name); warStat('fallen', (won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops)) - defWounded); warStat('kills', won ? botSentLoss : attack.rawTroops - fled); }
     else if (targetOwner) {                                       // a bot defender: its Lazarett and its "Verteidigung: Gold", like yours
-        botHospitalTake(targetOwner, won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops));
-        botCoins[targetOwner] = (botCoins[targetOwner] || 0) + Math.round((won ? botSentLoss : attack.rawTroops - fled) * botGoldRate(targetOwner, 'defenseGold'));
+        const dw = botHospitalTake(targetOwner, won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops));
+        const dg = Math.round((won ? botSentLoss : attack.rawTroops - fled) * botGoldRate(targetOwner, 'defenseGold'));
+        botCoins[targetOwner] = (botCoins[targetOwner] || 0) + dg;
+        if (window.WELT && botById[targetOwner] && botById[targetOwner].mensch) WELT.bericht(targetOwner, {    // ein echter Spieler wurde angegriffen: sein Bericht
+            type: 'botAttack', botName: bot.name, botId: bot.id, targetId: target.id, myTroops, atkRaw: attack.rawTroops, atkBonus: attack.attackBonus || 0, atkFallen, atkWounded, atkFled: fled,
+            atkGear: fighterSnapshot(bot.id, attack.hx), defGear: fighterSnapshot(targetOwner), enemyTroops: originalEnemyTroops, enemyDefense: originalEnemyDefense, wounded: dw || 0,
+            fallen: won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops), won, capitalHolds, defGold: dg, plunder: plunder ? plunder.loot : 0, plunderSafe: plunder ? plunder.safe : 0 },
+            capitalHolds ? bot.name + ' hat deine Hauptstadt geplündert – die Garnison ist gefallen, aber die Stadt hält.' : won ? bot.name + ' hat deine Basis ' + islandTitle(target) + ' erobert!' : 'Verteidigung erfolgreich – ' + bot.name + ' bei ' + islandTitle(target) + ' zurückgeschlagen.');
     }
+    if (window.WELT && bot.mensch) WELT.bericht(bot.id, {                // ein echter Spieler hat angegriffen: sein Bericht
+        type: 'attack', sourceId: source.id, targetId: target.id, myTroops: attack.rawTroops, myTroopsBuffed: myTroops, attackBuff: myTroops - attack.rawTroops, skillBuff: attack.attackBonus || 0, titleBuff: 0,
+        lossReductionPct: red, heroLossPct: attack.hx ? attack.hx.loss : 0, lossSaved: 0, attackGoldRate: botKillRate, killGold: Math.round((won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops)) * botKillRate),
+        attackerCasualties: Math.max(0, atkFallen - (atkWounded || 0)), wounded: atkWounded || 0, enemyTroops: originalEnemyTroops, enemyDefense: originalEnemyDefense, defenseBuff: 0,
+        defenderCasualties: won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops), retreatSurvivors: fled,
+        defenderName: targetOwner ? (targetOwner === 'player' ? (window.profileName && profileName.value) || 'Spieler' : botById[targetOwner].name) : null, defenderId: targetOwner || null,
+        enemyWounded: 0, plunder: plunder ? plunder.loot : 0, plunderSafe: plunder ? plunder.safe : 0, atkGear: fighterSnapshot(bot.id, attack.hx), defGear: targetOwner ? fighterSnapshot(targetOwner) : null,
+        won, remaining: won ? survivors : 0 },
+        capitalHolds ? 'Hauptstadt von ' + (targetOwner === 'player' ? 'deinem Gegner' : (botById[targetOwner] || {}).name) + ' geplündert!' : won ? islandTitle(target) + ' erobert!' : 'Angriff auf ' + islandTitle(target) + ' gescheitert.');
     if (playerInvolved) {
         const ribbon = () => spawnBattleFx(target.id, !won || capitalHolds, capitalHolds ? 'Hauptstadt hält' : won ? 'Basis verloren' : 'Verteidigt', capitalHolds ? 'Garnison gefallen' : won ? 'von ' + bot.name : bot.name + ' abgewehrt');
         finishMapBattle(attack, { sourceId: source.id, targetId: target.id, atk: 'bot', def: 'mine', hero: attack.hero || null, my: myTroops, myLoss: myTroops - (won ? survivors : fled),
