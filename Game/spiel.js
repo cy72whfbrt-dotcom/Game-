@@ -52,13 +52,42 @@ function fmtCompact(n) {
     if (a >= v * .99995 || v === 1e15) return (a / v >= 1000 ? NF.format(Math.round(n / v)) : NF.format(Math.round(n / v * 10) / 10)) + ' ' + u;
 }
 const fmtTile = fmtNum;   // stat tiles: same rule as everywhere
-function setBtnLabel(btn, text) { const l = btn.querySelector('.lbl'); if (l) l.textContent = text; else btn.textContent = text; }
+function setBtnLabel(btn, text) { const l = btn.querySelector('.lbl') || btn; if (l.textContent !== text) l.textContent = text; }   // (nur bei einer Änderung: offene Fenster ziehen jede Sekunde nach)
 function fmtDHMS(sec) {                           // every longer time the same way: 3 T 4 h 5 m 6 s (units that are 0 at the front are left out)
     sec = Math.max(0, Math.ceil(sec));
     const d = Math.floor(sec / 86400), h = Math.floor(sec % 86400 / 3600), m = Math.floor(sec % 3600 / 60), s2 = sec % 60;
     return d ? d + ' T ' + h + ' h ' + m + ' m ' + s2 + ' s' : h ? h + ' h ' + m + ' m ' + s2 + ' s' : m ? m + ' m ' + s2 + ' s' : s2 + ' s';
 }
 function fmtClock(sec) { sec = Math.max(0, Math.ceil(sec)); return sec >= 3600 ? fmtDHMS(sec) : Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'); }
+// ===== LIVE-ANZEIGE (Bausteine): offene Fenster werden jede Sekunde neu gerechnet (liveTick, unten), aber nur das
+// geschrieben, was sich wirklich geändert hat – kein Flackern, Knöpfe bleiben antippbar, Scroll-Position und Eingaben bleiben.
+// Laufende Uhren (uhrHtml) zählen dabei nicht als Änderung: die stellt liveUhren() jede Sekunde selbst weiter.
+const UHR_RE = /(<[a-z]+ [^>]*data-(?:uhr|bclock|boss-clock|throne-fire|throne-pts|tour-left|mb-left)\b[^>]*>)[^<]*/g;
+function liveHtml(el, h) {                          // → true, wenn neu geschrieben wurde
+    if (!el) return false;
+    const k = h.replace(UHR_RE, '$1'), meins = el._lh !== undefined && el._lhErst === el.firstChild;   // (hat anderer Code den Inhalt ersetzt, ist das erste Kind ein anderes)
+    if (meins && el._lh === k) return false;
+    if (meins && el.childNodes.length) {            // nur einzelne Teile anders: genau die tauschen – was gleich blieb (z. B. ein Knopf unter dem Finger), bleibt stehen
+        const t = document.createElement('template'); t.innerHTML = h;
+        const neu = [...t.content.childNodes], alt = [...el.childNodes];
+        if (neu.length === alt.length) {
+            for (let i = 0; i < neu.length; i++) if (!alt[i].isEqualNode(neu[i])) el.replaceChild(neu[i], alt[i]);
+            el._lh = k; el._lhErst = el.firstChild; return true;
+        }
+    }
+    el.innerHTML = h; el._lh = k; el._lhErst = el.firstChild; return true;
+}
+function uhrText(bis, art) { const s = (bis - Date.now()) / 1000; return art === 'clock' ? fmtClock(s) : art === 'vor' ? fmtDHMS(Math.max(1, -s)) : fmtDHMS(s); }
+function uhrHtml(bis, art) {                        // eine Restzeit, die von selbst herunterzählt (bis = Zeitpunkt in ms; art 'clock' = 4:05, 'vor' = seitdem vergangen, sonst 3 h 4 m 5 s)
+    bis = Math.round(bis); return '<span data-uhr="' + bis + '"' + (art ? ' data-uhr-art="' + art + '"' : '') + '>' + uhrText(bis, art) + '</span>';
+}
+function liveUhren(root) {                          // → true, wenn eine Uhr gerade abgelaufen ist (dann muss das Fenster gleich umstellen)
+    let ab = false; const now = Date.now();
+    for (const el of (root || document).querySelectorAll('[data-uhr]')) { const bis = +el.dataset.uhr, t = uhrText(bis, el.dataset.uhrArt);
+        if (el.textContent !== t) el.textContent = t;
+        if (bis <= now && !el._ab && el.dataset.uhrArt !== 'vor') { el._ab = true; ab = true; } }
+    return ab;
+}
 function statTile(label, iconName, valueHtml, cls) {
   return '<div class="stat"><span class="stat-l">' + icon(iconName) + label + '</span><b class="stat-v' + (cls ? ' ' + cls : '') + '">' + valueHtml + '</b></div>';
 }
@@ -3779,7 +3808,8 @@ function frame(now) {
   if (marchKey !== lastMarchKey) { lastMarchKey = marchKey; mapDirty = true; }
   const live = liveAnimation || multiAttackMode || pendingAttackTargetId !== null || pendingSendFromId !== null ||
                (isPanelOpen(popup) && popupView === 'preview');                           // dashes / pulses → 30 fps
-  if (mapDirty || animating || BG.pending || camKey !== lastCamKey || (live && now - lastDrawAt >= 33) || now - lastDrawAt >= 1000) {
+  const verdeckt = !cityView.hidden || cloudCover >= .95;                  // die Stadt (oder dichte Wolken) deckt die Karte ganz zu: nicht unsichtbar weiterzeichnen
+  if (!verdeckt && (mapDirty || animating || BG.pending || camKey !== lastCamKey || (live && now - lastDrawAt >= 33) || now - lastDrawAt >= 1000)) {
     drawMap(); lastDrawAt = now; lastCamKey = camKey; mapDirty = false;
     if (isPanelOpen(popup)) positionIslandPopover();
     updateMapControls();
@@ -4358,44 +4388,44 @@ function renderProfile(live) {                  // live = the per-second refresh
         ? 'Insel ' + (homeLandmass.id + 1) + ' · Turm #' + (home.id + 1)
         : 'Turm #' + (home.id + 1);
 
-    document.getElementById('profileLevelBadge').textContent = playerLvl;
-    document.getElementById('profileRank').textContent = currentRank();
+    setText(document.getElementById('profileLevelBadge'), playerLvl);      // (live: jede Sekunde aus liveTick – geschrieben wird nur, was sich ändert)
+    setText(document.getElementById('profileRank'), currentRank());
     if (!live) renderLook();
     const worldPct = ownedIslands.size / islands.length * 100;
-    document.getElementById('profileProgress').textContent = worldPct > 0 && worldPct < 0.1
+    setText(document.getElementById('profileProgress'), worldPct > 0 && worldPct < 0.1
         ? '< 0,1 %'
-        : worldPct.toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' %';
+        : worldPct.toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' %');
 
     // XP sits in the profile header, always visible.
     const xpNeeded = xpNeededForLevel(playerLvl);
-    document.getElementById('xpLevelNum').textContent = playerLvl;
-    document.getElementById('xpNums').textContent = fmtNum(playerXp) + ' / ' + fmtNum(xpNeeded) + ' XP';
+    setText(document.getElementById('xpLevelNum'), playerLvl);
+    setText(document.getElementById('xpNums'), fmtNum(playerXp) + ' / ' + fmtNum(xpNeeded) + ' XP');
     document.getElementById('xpFill').style.width = Math.min(100, Math.round(playerXp / xpNeeded * 100)) + '%';
-    document.getElementById('xpNext').innerHTML = 'Stufe ' + (playerLvl + 1) + ': ' + levelRewardText(playerLvl + 1);
+    liveHtml(document.getElementById('xpNext'), 'Stufe ' + (playerLvl + 1) + ': ' + levelRewardText(playerLvl + 1));
 
     const troops = totalTroops();
     const kTroopsEl = document.getElementById('kTroops');
-    kTroopsEl.textContent = fmtCompact(troops);
+    setText(kTroopsEl, fmtCompact(troops));
     kTroopsEl.title = fmtNum(troops) + ' Truppen';
-    document.getElementById('kBases').textContent = fmtNum(ownedIslands.size) + ' / ' + fmtNum(islands.length);
+    setText(document.getElementById('kBases'), fmtNum(ownedIslands.size) + ' / ' + fmtNum(islands.length));
     const kCoinsEl = document.getElementById('kCoins');
-    kCoinsEl.textContent = fmtCompact(Math.floor(coins));
+    setText(kCoinsEl, fmtCompact(Math.floor(coins)));
     kCoinsEl.title = fmtNum(Math.floor(coins)) + ' Münzen';
-    document.getElementById('kTroopsRate').textContent =
-        '+' + fmtNum(Math.round(totalTroopProductionPerTick()));
-    document.getElementById('kCoinsRate').textContent =
-        '+' + fmtNum(Math.round(totalCoinProductionPerTick()));
+    setText(document.getElementById('kTroopsRate'),
+        '+' + fmtNum(Math.round(totalTroopProductionPerTick())));
+    setText(document.getElementById('kCoinsRate'),
+        '+' + fmtNum(Math.round(totalCoinProductionPerTick())));
 
     const progressPct = Math.round(ownedIslands.size / islands.length * 100);
     const avatarRing = document.getElementById('pAvatarRing');
     if (avatarRing) avatarRing.style.setProperty('--progress', progressPct);
 
     const activeCount = playerRelevantAttackCount() + playerRelevantSendCount() + pendingScouts.length + pendingRetreats.length;
-    profileStats.innerHTML =
+    liveHtml(profileStats,
         '<div class="statRow"><span>' + icon('star') + 'Skillpunkte</span><b>' + fmtNum(skillPoints) + '</b></div>' +
         '<div class="statRow"><span>' + icon('gem') + 'Gems</span><b>' + fmtTile(Math.floor(gems)) + '</b></div>' +
         (activeCount > 0 ? '<div class="statRow"><span>' + icon('hourglass') + 'Unterwegs</span><b>' + fmtNum(activeCount) + '</b></div>' : '') +
-        '<div class="statRow"><span>' + icon('home') + 'Heimat</span><b>' + homeLabel + '</b></div>';
+        '<div class="statRow"><span>' + icon('home') + 'Heimat</span><b>' + homeLabel + '</b></div>');
     updateHudPlayer();
 }
 
@@ -4410,11 +4440,11 @@ function renderEquipGrid() {
         const r = Math.round(v);
         return '<div class="statChip">' + icon(ic) + '<b' + (r > 0 ? ' class="good">' + sign : '>') + fmtNum(r) + unit + '</b><span>' + label + '</span></div>';
     };
-    equipStats.innerHTML =
+    liveHtml(equipStats,
         chip('troops', bonusPct('weapon', 'troops'), '+', ' %', 'Truppen') +
         chip('coin', bonusPct('boots', null), '+', ' %', 'Münzen') +
         chip('defense', armorDefensePct(), '+', ' %', 'Verteidigung') +
-        chip('losses', shieldLossReductionPct(), '−', ' %', 'Verluste');
+        chip('losses', shieldLossReductionPct(), '−', ' %', 'Verluste'));
 }
 
 // The gem-crate rarity item layer: one equipped card per slot
@@ -4863,7 +4893,7 @@ setInterval(achCheck, 3000);
 let achOpenDone = false;
 function renderAchievements() {
     const got = ACHIEVEMENTS.filter(a => achClaimed[a.id]), left = ACHIEVEMENTS.reduce((s, a) => s + (achClaimed[a.id] ? 0 : a.gems), 0);
-    document.getElementById('achSummary').innerHTML = '<div class="ach-sum-t"><span><b>' + got.length + ' / ' + ACHIEVEMENTS.length + '</b> abgeholt</span><span class="ach-sum-gem">' + icon('gem') + fmtNum(left) + ' noch zu holen</span></div><div class="ach-sum-bar"><i style="width:' + Math.round(got.length / ACHIEVEMENTS.length * 100) + '%"></i></div>';
+    liveHtml(document.getElementById('achSummary'), '<div class="ach-sum-t"><span><b>' + got.length + ' / ' + ACHIEVEMENTS.length + '</b> abgeholt</span><span class="ach-sum-gem">' + icon('gem') + fmtNum(left) + ' noch zu holen</span></div><div class="ach-sum-bar"><i style="width:' + Math.round(got.length / ACHIEVEMENTS.length * 100) + '%"></i></div>');
     const fam = {}; for (const a of ACHIEVEMENTS) (fam[a.k] = fam[a.k] || []).push(a);
     for (const k in fam) fam[k].sort((x, y) => x.goal - y.goal);
     const ready = achClaimable(), frac = a => Math.min(1, achVal(a) / a.goal);
@@ -4873,10 +4903,10 @@ function renderAchievements() {
             '<span class="ach-t"><b>' + a.name + (tiers.length > 1 ? '<i class="ach-tier" title="Stufe ' + (ti + 1) + ' von ' + tiers.length + '">' + tiers.map((t, i) => '<em class="' + (achClaimed[t.id] ? 'on' : i === ti ? 'cur' : '') + '"></em>').join('') + '</i>' : '') + '</b><small>' + a.desc + '</small>' +
             (has ? '' : '<span class="ach-bar"><i style="width:' + Math.round(v / a.goal * 100) + '%"></i></span><small class="ach-n">' + fmtNum(Math.floor(v)) + ' / ' + fmtNum(a.goal) + '</small>') + '</span>' +
             (has ? '<span class="ach-claim done">' + icon('check') + '</span>' : '<button class="ach-claim" type="button" data-ach="' + a.id + '"' + (ok ? '' : ' disabled') + '>' + icon('gem') + fmtNum(a.gems) + '</button>') + '</div>'; };
-    document.getElementById('achList').innerHTML =
+    liveHtml(document.getElementById('achList'),                  // (alle 3 s aus achCheck: neu geschrieben nur, was sich geändert hat)
         (ready.length ? '<div class="sect"><h4>Abholbereit</h4>' + (ready.length > 1 ? '<button class="btn btn--primary btn--sm ach-all" type="button" data-ach-all>' + icon('gem') + '<span>Alle · ' + fmtNum(ready.reduce((s, a) => s + a.gems, 0)) + '</span></button>' : '') + '</div>' + ready.map(card).join('') : '') +
         (going.length ? '<div class="sect"><h4>Im Gange</h4><span class="sect-aside">' + going.length + '</span></div>' + going.map(card).join('') : '') +
-        (got.length ? '<details class="ach-done"' + (achOpenDone ? ' open' : '') + '><summary><span>Erledigt</span><em>' + got.length + '</em>' + icon('upgrade') + '</summary><div class="ach-list">' + got.slice().sort((x, y) => achClaimed[y.id] - achClaimed[x.id]).map(card).join('') + '</div></details>' : '');
+        (got.length ? '<details class="ach-done"' + (achOpenDone ? ' open' : '') + '><summary><span>Erledigt</span><em>' + got.length + '</em>' + icon('upgrade') + '</summary><div class="ach-list">' + got.slice().sort((x, y) => achClaimed[y.id] - achClaimed[x.id]).map(card).join('') + '</div></details>' : ''));
     if (isPanelOpen(goalsPopup)) renderGoalsSub();
 }
 function claimAch(a) {
@@ -5029,13 +5059,13 @@ function renderRankings() {
     document.getElementById('rankTitle').textContent = tab.t;
     document.getElementById('rankSub').textContent = tab.sub;                     // one line what this list counts (the Turnier clock is in its card)
     for (const b of document.querySelectorAll('#rankTabs [data-rtab]')) { const on = b.dataset.rtab === rankTab; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }
-    document.getElementById('rankBody').innerHTML = (rankTab === 'tour' ? tourCardHtml() + '<div class="lb-gap">' + (tw.on ? 'Live · Top ' + TOUR_TOP : 'Letztes Turnier') + '</div>' : '') +
+    liveHtml(document.getElementById('rankBody'), (rankTab === 'tour' ? tourCardHtml() + '<div class="lb-gap">' + (tw.on ? 'Live · Top ' + TOUR_TOP : 'Letztes Turnier') + '</div>' : '') +
         (rankTab === 'week' ? '<p class="mail-intro lb-intro">Thron-Punkte gibt es fürs Halten der Mitte: +' + THRONE_PTS_MEGA + ' alle 3 Min. für den Thron, +' + THRONE_PTS_GUARD + ' je Wächter-Tempel. Du gibst sie im Shop unter „Thron“ aus – hier zählt alles je Verdiente, ohne Neustart. Das Turnier am Wochenende zählt eigene Punkte.</p>' : '') +
         (top.length ? top.map((e, i) => rankRowHtml(e, i + 1, medals)).join('') + (list.length > lim ? '<div class="lb-gap">Top ' + lim + ' von ' + fmtNum(list.length) + '</div>' : '')
-        : rankTab === 'tour' ? '<div class="war-empty">' + empty + '</div>' : '<div class="empty-state">' + icon(rankTab === 'titles' ? 'crown' : 'points') + '<b>Noch leer</b>' + empty + '</div>');
+        : rankTab === 'tour' ? '<div class="war-empty">' + empty + '</div>' : '<div class="empty-state">' + icon(rankTab === 'titles' ? 'crown' : 'points') + '<b>Noch leer</b>' + empty + '</div>'));
     const foot = document.getElementById('rankFoot');
     const myPos = tourMe ? tourMe.place : mi + 1;
-    foot.innerHTML = myPos > 0 && myPos <= lim ? '' : rankRowHtml(people[0], myPos > 0 ? myPos : '–', false);   // outside the top: your row waits down here
+    liveHtml(foot, myPos > 0 && myPos <= lim ? '' : rankRowHtml(people[0], myPos > 0 ? myPos : '–', false));   // outside the top: your row waits down here
     foot.hidden = !foot.innerHTML;
 }
 function openRankings(tab) {
@@ -5596,10 +5626,10 @@ function inboxClaim(id) {                           // into your coffers - retur
 function renderInbox() {
     const L = inboxList(), now = Date.now(), el = document.getElementById('inboxList'); if (!el) return;
     setText(document.getElementById('inboxAside'), L.length ? L.length + ' bereit' : '');
-    el.innerHTML = L.length ? L.map(x => { const d = INBOX_SRC[x.src] || INBOX_SRC.fight;
-        return '<div class="inbox-row' + (x.src === 'fight' ? '' : ' is-gold') + '">' + icon(d.ic) + '<div><b>' + escapeHtml(x.title || d.t) + '</b><small>' + inboxWhat(x) + '</small><small>' + (x.n > 1 ? x.n + (x.src === 'fight' ? ' Kämpfe' : '×') + ' · zuletzt ' : '') + 'vor ' + fmtDHMS(Math.max(1, (now - x.at) / 1000)) + '</small></div>' +
+    liveHtml(el, L.length ? L.map(x => { const d = INBOX_SRC[x.src] || INBOX_SRC.fight;
+        return '<div class="inbox-row' + (x.src === 'fight' ? '' : ' is-gold') + '">' + icon(d.ic) + '<div><b>' + escapeHtml(x.title || d.t) + '</b><small>' + inboxWhat(x) + '</small><small>' + (x.n > 1 ? x.n + (x.src === 'fight' ? ' Kämpfe' : '×') + ' · zuletzt ' : '') + 'vor ' + uhrHtml(x.at, 'vor') + '</small></div>' +
             '<button class="btn btn--primary btn--sm" type="button" data-inbox="' + x.id + '"><span>Abholen</span></button></div>'; }).join('') + (L.length > 1 ? '<button class="btn btn--secondary btn--sm inbox-all" type="button" data-inbox-all><span>Alle abholen · ' + L.length + '</span></button>' : '')
-        : '<div class="inbox-empty">Gerade nichts zum Abholen. Preise aus Turnier und Tagesboss, das Kopfgeld und die Beute aus deinen Kämpfen landen hier.</div>';
+        : '<div class="inbox-empty">Gerade nichts zum Abholen. Preise aus Turnier und Tagesboss, das Kopfgeld und die Beute aus deinen Kämpfen landen hier.</div>');
 }
 goalsPopup.addEventListener('click', e => {
     const one = e.target.closest('[data-inbox]'), all = e.target.closest('[data-inbox-all]'); if (!one && !all) return;
@@ -5617,11 +5647,11 @@ function renderQuestPanel() {
     document.getElementById('dailyCard').innerHTML =
         '<div class="daily-days">' + dailyDaysHtml() + '</div>' +
         '<div class="daily-row"><div class="daily-txt"><b>' + (claimable ? 'Tag ' + day + ': ' + dailyRewardLabel(r) : 'Heute abgeholt') + '</b>' +
-        '<small>' + (claimable ? 'Bereit zum Abholen' : 'Nächste Belohnung in ' + fmtHoursLeft(msToMidnight()) + ' · ' + dailyRewardLabel(DAILY_REWARDS[day % 7])) + '</small></div>' +
+        '<small>' + (claimable ? 'Bereit zum Abholen' : 'Nächste Belohnung in ' + uhrHtml(new Date().setHours(24, 0, 0, 0)) + ' · ' + dailyRewardLabel(DAILY_REWARDS[day % 7])) + '</small></div>' +
         (claimable ? '<button class="btn btn--primary btn--sm" type="button" data-daily>' + icon('shop') + '<span>Abholen</span></button>' : '<span class="quest-ok">Erledigt</span>') + '</div>';
     document.getElementById('dailyWeek').innerHTML = DAILY_REWARDS.map((w, i) => { const d = i + 1, done = d < day || (d === day && !claimable);   // the whole week at a glance
         return '<div class="' + (d === day && claimable ? 'is-today' : done ? 'is-done' : '') + '"><b>Tag ' + d + '</b><span>' + dailyRewardLabel(w) + '</span>' + (done ? icon('check') : '') + '</div>'; }).join('');
-    document.getElementById('questReset').textContent = 'Neu in ' + fmtHoursLeft(msToMidnight());
+    liveHtml(document.getElementById('questReset'), 'Neu in ' + uhrHtml(new Date().setHours(24, 0, 0, 0)));   // (zählt live herunter)
     { const k = chainStreak(), full = k >= 7;                                        // the week chain: 7 links, the chest at the end
       document.getElementById('chainCard').innerHTML = '<div class="chain-links">' + Array.from({ length: 7 }, (_, i) => '<span class="chain-link' + (i < k ? ' on' : '') + '">' + (i < k ? icon('check') : i + 1) + '</span>').join('') +
         '<span class="chain-chest' + (full ? ' on' : '') + '">' + icon('shop') + '</span></div>' +
@@ -5651,7 +5681,7 @@ function showGoalsTab(t) {
     goalsPopup.querySelector('.pbody').scrollTop = 0; if (t === 'pass') requestAnimationFrame(passScroll); updateGoalsBadge();
 }
 function renderGoalsSub() { const q = loadQuests(), nd = q.list.filter(t => t.claimed).length, na = ACHIEVEMENTS.filter(a => achClaimed[a.id]).length;
-    document.getElementById('goalsSub').innerHTML = '<span class="pill">' + icon('flag') + '<b>' + nd + ' / 3</b><small>heute</small></span><span class="pill">' + icon('star') + '<b>' + na + ' / ' + ACHIEVEMENTS.length + '</b><small>Erfolge</small></span>'; }
+    liveHtml(document.getElementById('goalsSub'), '<span class="pill">' + icon('flag') + '<b>' + nd + ' / 3</b><small>heute</small></span><span class="pill">' + icon('star') + '<b>' + na + ' / ' + ACHIEVEMENTS.length + '</b><small>Erfolge</small></span>'); }
 function openGoals(tab) {
     closeAllPopups(); renderGoalsSub();
     const nd = dailyGoalCount(), na = achClaimable().length;
@@ -5948,7 +5978,7 @@ function renderThroneShop() {
     const ts = throneState, hd = rulerOwner(), sh = throneShooters(), inc = throneIncome('player'), bo = bountyOf(), tw = tourWin();
     const hdName = hd === 'player' ? '<span class="me">Du</span>' : hd ? whoLink(hd, botById[hd].name) : 'niemand';
     const week = throneEarnedList().slice(0, 5);
-    el.innerHTML = '<div class="throne-status">' +
+    liveHtml(el, '<div class="throne-status">' +
             '<div class="ts-row">' + icon('crown') + '<span>Die Mitte hält</span><b>' + hdName + '</b></div>' +
             '<div class="ts-row">' + icon('hourglass') + '<span>Nächste Thron-Punkte</span><b data-throne-pts>' + fmtClock((ts.nextPts - Date.now()) / 1000) + '</b></div>' +
             '<div class="ts-row">' + icon('attack') + '<span>Beschuss' + (hd ? ' · ' + sh.length + ' Wächter' : '') + '</span><b' + (hd === 'player' && sh.length ? ' class="warn"' : '') + ' data-throne-fire>' + fmtClock((ts.nextFire - Date.now()) / 1000) + '</b></div>' +
@@ -5967,7 +5997,7 @@ function renderThroneShop() {
             '<div class="throne-row is-special"><span class="tr-ic">' + icon('star', 'ico-crown') + '</span><span class="tr-t"><b>Aussehen</b><small>Rahmen, Titel, Ringe, Basis- und Marsch-Skins</small></span><button type="button" class="btn btn--primary btn--sm" data-look-open>Öffnen</button></div></div>' +
         '<div class="sect"><h4>Die meisten Thron-Punkte</h4></div>' +
         (week.length ? '<div class="throne-week">' + week.map(([who, n], i) => '<div' + (who === 'player' ? ' class="me"' : '') + '><i>' + (i + 1) + '</i><span>' + (who === 'player' ? 'Du' : whoLink(who, botById[who].name)) + '</span><b>' + fmtNum(n) + '</b></div>').join('') + '</div>'
-            : '<div class="war-empty">Noch hat niemand Thron-Punkte geholt.</div>');
+            : '<div class="war-empty">Noch hat niemand Thron-Punkte geholt.</div>'));
 }
 let shopTab = 'gems';
 function showShopTab(t) {
@@ -6156,8 +6186,8 @@ function shieldBlockText(ow) { const n = (botById[ow] || {}).name || 'Dieser Spi
     if (b && botNeulingBis(ow, b) > Date.now() && botNeulingBis(ow, b) >= (b.shieldUntil || 0)) return 'Anfängerschutz: ' + n + ' ist neu und noch ' + fmtHours(b.neuBis - Date.now()) + ' unangreifbar.';
     return 'Friedensschild: ' + n + ' ist noch ' + fmtHours(ownerShieldUntil(ow) - Date.now()) + ' unangreifbar.'; }
 function fmtHours(ms) { return fmtDHMS(ms / 1000); }
-function renderShieldState() { const el = document.getElementById('shieldState'); if (!el) return; const st = shieldStock();
-    el.textContent = (playerShielded() ? 'Aktiv – noch ' + fmtHours(shieldUntil() - Date.now()) + ' · ' : '') + 'Im Vorrat: ' + st[2] + '× 2 Std., ' + st[8] + '× 8 Std., ' + st[24] + '× 24 Std.'; }
+function renderShieldState() { const el = document.getElementById('shieldState'); if (!el) return; const st = shieldStock(), sh = shieldUntil() > Date.now() ? shieldUntil() : 0;   // (die Restzeit zählt live)
+    liveHtml(el, (sh ? 'Aktiv – noch ' + uhrHtml(sh) + ' · ' : '') + 'Im Vorrat: ' + st[2] + '× 2 Std., ' + st[8] + '× 8 Std., ' + st[24] + '× 24 Std.'); }
 shopPopup.addEventListener('click', e => { const bt = e.target.closest('[data-shield]'); if (!bt) return;
     const h = +bt.dataset.shield, cost = SHIELD_PRICES[h];
     if (gems < cost) { flashHint('Zu wenig Gems – der Schild kostet ' + cost + '.', 3000); return; }
@@ -6167,10 +6197,10 @@ shopPopup.addEventListener('click', e => { const bt = e.target.closest('[data-sh
 function heroChestPool(minR) { return HEROES.filter(h => { const s = heroSt('player', h.id); return s && !(s.own && s.q >= HERO_MAXQ) && h.r >= minR; }); }
 function renderHeroChests() {                       // the odds per rarity follow your heroes: maxed ones drop out
     const pool = heroChestPool(1), tot = pool.reduce((a, h) => a + 5 - h.r, 0);
-    document.getElementById('heroChestOdds').innerHTML = [1, 2, 3, 4].map(r => { const w = pool.filter(h => h.r === r).reduce((a, h) => a + 5 - h.r, 0); const rd = RARITY_DEFS[r];
-        return '<span class="chip" style="color:' + rd.color + ';border-color:' + rd.color + '88">' + rd.label + ' ' + (tot ? Math.round(w / tot * 100) : 0) + ' %</span>'; }).join('');
-    document.getElementById('heroChestOpts').innerHTML = HERO_CHESTS.map(c => '<button type="button" class="btn btn--secondary" data-hchest="' + c.id + '"' + (gems < c.gems || !heroChestPool(c.minR).length ? ' disabled' : '') + '><span class="hc-t"><span>' + c.name + '</span><small>' + c.txt + '</small></span>' +
-        '<span class="cost cost--gem"><svg class="icon"><use href="#i-gem"/></svg><b>' + fmtNum(c.gems) + '</b></span></button>').join('');
+    liveHtml(document.getElementById('heroChestOdds'), [1, 2, 3, 4].map(r => { const w = pool.filter(h => h.r === r).reduce((a, h) => a + 5 - h.r, 0); const rd = RARITY_DEFS[r];
+        return '<span class="chip" style="color:' + rd.color + ';border-color:' + rd.color + '88">' + rd.label + ' ' + (tot ? Math.round(w / tot * 100) : 0) + ' %</span>'; }).join(''));
+    liveHtml(document.getElementById('heroChestOpts'), HERO_CHESTS.map(c => '<button type="button" class="btn btn--secondary" data-hchest="' + c.id + '"' + (gems < c.gems || !heroChestPool(c.minR).length ? ' disabled' : '') + '><span class="hc-t"><span>' + c.name + '</span><small>' + c.txt + '</small></span>' +
+        '<span class="cost cost--gem"><svg class="icon"><use href="#i-gem"/></svg><b>' + fmtNum(c.gems) + '</b></span></button>').join(''));
 }
 function heroChestOpen(who, c) {                    // the same chest for you and the others: n draws of c.sh shards
     const got = []; for (let i = 0; i < c.n; i++) { const h = heroGrantShards(who, c.sh, null, c.minR); if (h) got.push(h); } return got;
@@ -6188,9 +6218,9 @@ shopPopup.addEventListener('click', e => { const bt = e.target.closest('[data-hc
 shopPopup.addEventListener('click', e => { if (e.target.closest('[data-hchest-hall]')) { closeAllPopups(); openHeroHall(); } });
 function renderShop() {
     renderShieldState(); renderHeroChests();
-    const tc = document.getElementById('shopThroneCount'); tc.textContent = fmtCompact(throneState.pts || 0); tc.title = fmtNum(throneState.pts || 0) + ' Thron-Punkte';
+    const tc = document.getElementById('shopThroneCount'); setText(tc, fmtCompact(throneState.pts || 0)); tc.title = fmtNum(throneState.pts || 0) + ' Thron-Punkte';
     if (shopTab === 'throne') renderThroneShop();
-    shopGemCount.textContent = fmtCompact(Math.floor(gems));
+    setText(shopGemCount, fmtCompact(Math.floor(gems)));
     shopGemCount.title = fmtNum(Math.floor(gems)) + ' Gems';
     shopOpenCrateBtn.disabled = gems < CRATE_GEM_COST;
 }
@@ -7433,14 +7463,19 @@ const cloudFx = document.createElement('canvas');
 cloudFx.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;z-index:60;pointer-events:none;display:none';
 document.body.appendChild(cloudFx);
 const CLOUD_PUFFS = (() => { const r = mulberry32(31), out = []; for (let i = 0; i < 22; i++) { const a = r() * Math.PI * 2; out.push({ a, d: .15 + r() * .55, s: .28 + r() * .32, sh: .82 + r() * .14 }); } return out; })();
-let cloudAnim = null, cityMapReturn = null, cityBusy = false;
+let cloudAnim = null, cityMapReturn = null, cityBusy = false, cloudCover = 0;   // cloudCover: wie dicht die Wolken gerade sind (ab .95 alles weiß – dahinter muss nichts gezeichnet werden)
+// Die Wolken sind weiche Verläufe ohne Kanten: sie werden in halber Auflösung gemalt (CLOUD_RES Bildpunkte pro Bildschirm-
+// Punkt) und vom Browser hochgezogen – sieht gleich aus, kostet am Handy aber nur einen Bruchteil (vorher ~22 bildschirmgroße
+// Verläufe in voller Auflösung pro Bild, und dahinter liefen Stadt und Karte weiter).
+const CLOUD_RES = .5;
 function cloudsRun(dur, c0, c1, then) {                                   // cover goes c0 → c1 (0 = clear sky, 1 = inside the cloud)
     cloudAnim = { t0: performance.now(), dur, c0, c1, then }; cloudFx.style.display = 'block';
     const step = now => {
         const a = cloudAnim; if (!a) return;
         const q = Math.min(1, (now - a.t0) / a.dur), e = q < .5 ? 2 * q * q : 1 - Math.pow(-2 * q + 2, 2) / 2, c = a.c0 + (a.c1 - a.c0) * e;
-        const dpr3 = Math.min(window.devicePixelRatio || 1, 2), W = window.innerWidth, H = window.innerHeight;
-        if (cloudFx.width !== Math.round(W * dpr3)) { cloudFx.width = Math.round(W * dpr3); cloudFx.height = Math.round(H * dpr3); }
+        cloudCover = c;
+        const dpr3 = CLOUD_RES, W = window.innerWidth, H = window.innerHeight;
+        if (cloudFx.width !== Math.round(W * dpr3) || cloudFx.height !== Math.round(H * dpr3)) { cloudFx.width = Math.round(W * dpr3); cloudFx.height = Math.round(H * dpr3); }
         const g = cloudFx.getContext('2d'); g.setTransform(dpr3, 0, 0, dpr3, 0, 0); g.clearRect(0, 0, W, H);
         const R = Math.hypot(W, H);
         if (c > .6) { g.fillStyle = 'rgba(236,240,244,' + Math.min(1, (c - .6) / .35) + ')'; g.fillRect(0, 0, W, H); }   // deep inside: white-out
@@ -7452,7 +7487,7 @@ function cloudsRun(dur, c0, c1, then) {                                   // cov
             g.fillStyle = gr; g.beginPath(); g.arc(x, y, rad, 0, Math.PI * 2); g.fill();
         }
         if (q < 1) requestAnimationFrame(step);
-        else { const t = a.then; cloudAnim = null; if (c1 <= 0) cloudFx.style.display = 'none'; if (t) t(); }
+        else { const t = a.then; cloudAnim = null; if (c1 <= 0) { cloudFx.style.display = 'none'; cloudCover = 0; } if (t) t(); }
     };
     requestAnimationFrame(step);
 }
@@ -7485,7 +7520,7 @@ function closeCity() {
     cityBusy = true; cityOpenId = null; document.getElementById('citySheet').hidden = true;
     if (cityCam) cityCam.anim = { from: 1, to: .3, t0: performance.now(), dur: 520 };   // the town falls away …
     cloudsRun(480, 0, 1, () => {                                              // … into the clouds …
-        cityView.hidden = true; cancelAnimationFrame(cityRaf);
+        cityView.hidden = true; cancelAnimationFrame(cityRaf); cityLagenFrei();
         const home = islandById[playerIslandId], back = cityMapReturn || { zoom: mapState.zoom, x: (viewW / 2 - mapState.offsetX) / mapState.zoom, y: (viewH / 2 - mapState.offsetY) / mapState.zoom };
         cityMapReturn = null;
         if (home) flyTo(home.x, home.y, { zoom: maxZoom, instant: true });
@@ -7497,11 +7532,11 @@ function closeCity() {
 let cityB2Armed = 0;                              // the buy button asks once more before 500 gems go
 function updateCityBuilder() {
     const c = loadCity(), el = document.getElementById('cityBuilder'), now = Date.now();
-    el.innerHTML = [0, 1].map(i => { const b = c.builds[i];
-        if (b) return '<button type="button" class="cb-slot is-busy" data-cb-open="' + b.id + '">' + icon('hourglass') + '<span>' + cityDef(b.id).name + '</span><b>' + fmtDuration(Math.max(0, (b.endsAt - now) / 1000)) + '</b></button>';
+    liveHtml(el, [0, 1].map(i => { const b = c.builds[i];          // (jede Sekunde: neu geschrieben wird nur, was sich ändert – die Restzeit zählt von selbst)
+        if (b) return '<button type="button" class="cb-slot is-busy" data-cb-open="' + b.id + '">' + icon('hourglass') + '<span>' + cityDef(b.id).name + '</span><b>' + uhrHtml(b.endsAt) + '</b></button>';
         if (i === 0 || c.builder2) return '<span class="cb-slot">' + icon('check') + '<span>' + (c.builder2 ? (i + 1) + '. Bauarbeiter frei' : 'Bauarbeiter frei') + '</span></span>';
         return '<button type="button" class="cb-slot cb-buy' + (cityB2Armed > now ? ' is-armed' : '') + '" data-cb-buy>' + icon('plus') + '<span>' + (cityB2Armed > now ? 'Wirklich kaufen?' : '2. Bauarbeiter') + '</span><b>' + icon('gem') + CITY_BUILDER2_GEMS + '</b></button>';
-    }).join('');
+    }).join(''));
 }
 function cityBuyBuilder2() {
     const c = loadCity(); if (c.builder2) return;
@@ -7538,21 +7573,23 @@ function activeSkin() { const v = loadSkins(), d = SKIN_DEFS[v.active]; return d
 function shieldStock() { let v; try { v = JSON.parse(store.get('openWaterShieldStock')); } catch (e) {} return Object.assign({ 2: 0, 8: 0, 24: 0 }, v || {}); }
 function renderKeepSheet() {
     const lvl = islandLevels[playerIslandId] || 1, max = lvl >= MAX_BASE_LEVEL, cost = max ? 0 : upgradeCost(lvl), stock = shieldStock();
+    // (läuft auch jede Sekunde aus liveTick: geschrieben wird nur, was sich ändert – die Schild-Restzeit zählt von selbst)
+    const now = Date.now(), sh = shieldUntil() > now ? shieldUntil() : 0, neu = sh ? 0 : neulingBis();
     document.getElementById('citySheet').hidden = false;
-    document.getElementById('cityBIcon').innerHTML = icon('castle');
-    document.getElementById('cityBOver').textContent = 'Deine Burg';
-    document.getElementById('cityBName').textContent = 'Hauptstadt';
-    document.getElementById('cityBLevel').textContent = 'Stufe ' + lvl + ' / ' + MAX_BASE_LEVEL;
-    document.getElementById('cityBDesc').textContent = 'Deine Hauptstadt-Base, genau die Burg auf der Karte. Alle 10 Stufen ein neues Bauwerk, vom Lager bis zur Himmelsfeste, bei jeder 5 kommt etwas dazu.';
-    const note = document.getElementById('cityBNote'); note.className = 'notice';
-    note.innerHTML = icon('shield') + '<span>' + (playerShielded() ? 'Friedensschild aktiv – noch ' + fmtHours(shieldUntil() - Date.now()) : 'Kein Friedensschild aktiv.') + '</span>';
-    document.getElementById('cityBStats').innerHTML = max ? '' : '<div><span>Aufwerten</span><b class="' + (coins < cost ? 'is-bad' : '') + '">' + icon('coin', 'icon--coin') + fmtCompact(cost) + '</b></div><div><span>Danach</span><b>Stufe ' + (lvl + 1) + '</b></div>';
+    liveHtml(document.getElementById('cityBIcon'), icon('castle'));
+    setText(document.getElementById('cityBOver'), 'Deine Burg');
+    setText(document.getElementById('cityBName'), 'Hauptstadt');
+    setText(document.getElementById('cityBLevel'), 'Stufe ' + lvl + ' / ' + MAX_BASE_LEVEL);
+    setText(document.getElementById('cityBDesc'), 'Deine Hauptstadt-Base, genau die Burg auf der Karte. Alle 10 Stufen ein neues Bauwerk, vom Lager bis zur Himmelsfeste, bei jeder 5 kommt etwas dazu.');
+    const note = document.getElementById('cityBNote'); if (note.className !== 'notice') note.className = 'notice';
+    liveHtml(note, icon('shield') + '<span>' + (sh ? 'Friedensschild aktiv – noch ' + uhrHtml(sh) : neu > now ? 'Anfängerschutz – noch ' + uhrHtml(neu) : 'Kein Friedensschild aktiv.') + '</span>');
+    liveHtml(document.getElementById('cityBStats'), max ? '' : '<div><span>Aufwerten</span><b class="' + (coins < cost ? 'is-bad' : '') + '">' + icon('coin', 'icon--coin') + fmtCompact(cost) + '</b></div><div><span>Danach</span><b>Stufe ' + (lvl + 1) + '</b></div>');
     const up = document.getElementById('cityUpgradeBtn'); setBtnLabel(up, max ? 'Höchste Stufe' : 'Aufwerten auf ' + (lvl + 1)); up.disabled = max || coins < cost; up.title = ''; up.style.display = '';
     document.getElementById('citySpeedBtn').style.display = 'none';
-    document.getElementById('cityBExtra').innerHTML =
+    liveHtml(document.getElementById('cityBExtra'),
         '<div class="keep-h">Friedensschild</div><div class="keep-shields">' + [2, 8, 24].map(h => '<button type="button" class="btn btn--secondary btn--sm" data-shield-use="' + h + '"' + (stock[h] ? '' : ' disabled') + '>' + icon('shield') + h + ' Std. · ' + stock[h] + '×</button>').join('') + '</div>' +
         '<small class="keep-note">Schilde kaufst du im Shop, hier schaltest du sie ein. Greifst du selbst an, fällt der Schild.</small>' +
-        '<div class="keep-h">Aussehen</div><button type="button" class="crest-card keep-crest" data-look-open><img alt="" src="' + crestDataUrl(56) + '"><span class="crest-card-t"><b>' + escapeHtml(playerTitle()) + '</b><small>Wappen, Rahmen, Titel, Basis- und Marsch-Skins, Ringe</small></span><span class="crest-card-go">Öffnen' + icon('upgrade') + '</span></button>';
+        '<div class="keep-h">Aussehen</div><button type="button" class="crest-card keep-crest" data-look-open><img alt="" src="' + crestDataUrl(56) + '"><span class="crest-card-t"><b>' + escapeHtml(playerTitle()) + '</b><small>Wappen, Rahmen, Titel, Basis- und Marsch-Skins, Ringe</small></span><span class="crest-card-go">Öffnen' + icon('upgrade') + '</span></button>');
 }
 // ===== AUSSEHEN: every look in one place - Wappen, Rahmen, Titel, Basis-Skin (+ Ring), Marsch-Skin. Only to buy (Gems or Thron-Punkte) or a title from the middle =====
 var lkTab = 'frame';
@@ -7592,9 +7629,9 @@ function lkBuy(kind, id) {                            // Gems or Thron-Punkte; b
 function renderLookTop() {                            // what you wear now + what you can pay with
     const el = document.getElementById('lkTop'); if (!el || document.getElementById('lookSheet').hidden) return;
     const fr = playerFrame(), mt = titleOf('player'), rl = rulerOwner() === 'player';
-    el.innerHTML = '<span class="frame-ring lk-me" data-frame="' + fr + '"><img alt="" src="' + crestDataUrl(48) + '"></span>' +
+    liveHtml(el, '<span class="frame-ring lk-me" data-frame="' + fr + '"><img alt="" src="' + crestDataUrl(48) + '"></span>' +
         '<span class="lk-me-t"><b>' + escapeHtml(profileName.value || 'Du') + '</b><small>' + escapeHtml(playerTitle()) + (rl ? ' · Herrscher der Mitte' : mt ? ' · ' + mt.name : '') + '</small></span>' +
-        '<span class="lk-pay"><span class="pill pill--gem">' + icon('gem') + '<b>' + fmtCompact(Math.floor(gems)) + '</b></span><span class="pill pill--throne">' + icon('crown') + '<b>' + fmtCompact(throneState.pts || 0) + '</b></span></span>';
+        '<span class="lk-pay"><span class="pill pill--gem">' + icon('gem') + '<b>' + fmtCompact(Math.floor(gems)) + '</b></span><span class="pill pill--throne">' + icon('crown') + '<b>' + fmtCompact(throneState.pts || 0) + '</b></span></span>');
 }
 function lkMarchPrev() {                              // the march cards: a little column with your flag and the trail
     for (const cv of document.querySelectorAll('[data-march-prev]')) { const g = cv.getContext('2d'), sk = MARCH_SKINS.find(m => m.id === cv.dataset.marchPrev), K = cv.width / 110, W = 110, y = 38;   // drawn on a 110 x 55 grid
@@ -7608,13 +7645,14 @@ function lkMarchPrev() {                              // the march cards: a litt
         g.beginPath(); g.arc(tip, y, 7.5, 0, Math.PI * 2); g.fillStyle = '#141820'; g.fill(); g.lineWidth = 1.5; g.strokeStyle = '#ff8d82'; g.stroke(); drawGlyph(g, 'attack', tip, y, 10, '#ff8d82');
         marchFlag(g, tip, y, sk, 'player'); }
 }
-function renderLookSheet() {
+function renderLookSheet(live) {                     // live = jede Sekunde aus liveTick: der Wappen-Editor bleibt, wie er ist
     const sh = document.getElementById('lookSheet'); if (!sh || sh.hidden) return;
     const top = sh.scrollTop; renderLookTop();
+    if (live && lkTab === 'crest') return;
     for (const b of document.querySelectorAll('#lkTabs [data-lk-tab]')) { const on = b.dataset.lkTab === lkTab; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }
     document.getElementById('crestPage').hidden = lkTab !== 'crest';
     const el = document.getElementById('lkPane'); el.hidden = lkTab === 'crest'; let h = '';
-    if (lkTab === 'crest') renderCrestEditor();
+    if (lkTab === 'crest') { if (!live) renderCrestEditor(); }
     else if (lkTab === 'frame') { const fr = playerFrame(), img = '<img alt="" src="' + crestDataUrl(36) + '">';
         h = '<div class="skin-grid lk-grid">' + FRAMES.map(f => lkCard('frame', f, '<span class="frame-ring lk-frame" data-frame="' + f.id + '">' + img + '</span>', lkHas('frame', f.id), f.id === fr)).join('') + '</div>' +
             '<small class="keep-note">Dein Rahmen um Wappen und Profil – so sehen dich alle in der Rangliste. Der Thron-Rahmen kommt mit dem Titel „Thronhüter“.</small>'; }
@@ -7635,7 +7673,7 @@ function renderLookSheet() {
     else if (lkTab === 'march') { const cur = marchSkinOf('player').id;
         h = '<div class="skin-grid lk-grid lk-grid--m">' + MARCH_SKINS.map(m => lkCard('march', m, '<canvas data-march-prev="' + m.id + '" width="308" height="154"></canvas>', lkHas('march', m.id), m.id === cur)).join('') + '</div>' +
             '<small class="keep-note">So ziehen deine Truppen über die Karte: die Fahne mit deinem Wappen vorneweg, dahinter die Spur.</small>'; }
-    el.innerHTML = h;
+    if (!liveHtml(el, h) && live) return;                // live und nichts geändert: die Vorschau-Bilder bleiben stehen
     if (lkTab === 'base') { bkPreviews(); const tier = towerTier(islandLevels[playerIslandId] || 1);
         for (const cv of el.querySelectorAll('[data-skin-prev]')) { const g = cv.getContext('2d'), d = SKIN_DEFS[cv.dataset.skinPrev];
             g.setTransform(1.75, 0, 0, 1.75, 60, 90); g.lineJoin = 'round'; paintTowerTier(g, 'player', true, true, tier, d.stone ? d : null); } }
@@ -7653,40 +7691,37 @@ document.getElementById('lookSheet').addEventListener('click', e => {
 });
 document.addEventListener('click', e => { if (e.target.closest('[data-look-open]')) openLookSheet(); });   // from the keep, the shop and the Thron-Shop
 setTimeout(lookMigrate, 0);                             // after the whole script: the old rank / Erfolg looks become owned
-function renderCitySheet() {
+function renderCitySheet() {                       // (läuft auch jede Sekunde aus liveTick: geschrieben wird nur, was sich ändert)
     const id = cityOpenId; if (!id) return;
     if (id === '_keep') return renderKeepSheet();
     const c = loadCity(), def = cityDef(id), lvl = c.levels[id];
     document.getElementById('citySheet').hidden = false;
-    document.getElementById('cityBIcon').innerHTML = icon(def.icon);
-    document.getElementById('cityBOver').textContent = 'Gebäude';
-    document.getElementById('cityBName').textContent = def.name;
-    document.getElementById('cityBLevel').textContent = lvl ? 'Stufe ' + lvl + ' / ' + cityMaxLevel(id) : 'Noch nicht gebaut';
-    document.getElementById('cityBDesc').textContent = def.desc;
+    liveHtml(document.getElementById('cityBIcon'), icon(def.icon));
+    setText(document.getElementById('cityBOver'), 'Gebäude');
+    setText(document.getElementById('cityBName'), def.name);
+    setText(document.getElementById('cityBLevel'), lvl ? 'Stufe ' + lvl + ' / ' + cityMaxLevel(id) : 'Noch nicht gebaut');
+    setText(document.getElementById('cityBDesc'), def.desc);
     const note = document.getElementById('cityBNote'), up = document.getElementById('cityUpgradeBtn'), sp = document.getElementById('citySpeedBtn');
     const bld = cityBuildOf(c, id), building = !!bld, blocker = cityBlocker(id);
-    if (building) {
-        note.className = 'notice notice--gold';
-        note.innerHTML = icon('hourglass') + '<span style="flex:1">Ausbau auf Stufe ' + bld.to + ' · noch <b id="cityBNoteTime"></b><div class="city-progress" style="margin-top:6px"><i></i></div></span>';
-    } else {
-        note.className = 'notice';
-        note.innerHTML = icon('info') + '<span>' + cityEffectText(id, lvl) + '</span>';
-    }
+    let cls, nh;
+    if (building) { cls = 'notice notice--gold';
+        nh = icon('hourglass') + '<span style="flex:1">Ausbau auf Stufe ' + bld.to + ' · noch <b id="cityBNoteTime"></b><div class="city-progress" style="margin-top:6px"><i></i></div></span>'; }
+    else if (blocker && lvl < cityMaxLevel(id)) { cls = 'notice notice--warn'; nh = icon('lock') + '<span>' + blocker + '</span>'; }
+    else { cls = 'notice'; nh = icon('info') + '<span>' + cityEffectText(id, lvl) + '</span>'; }
+    if (note.className !== cls) note.className = cls;
+    liveHtml(note, nh);
     const cost = lvl < cityMaxLevel(id) ? cityCost(id, lvl) : 0;
-    document.getElementById('cityBStats').innerHTML = lvl < cityMaxLevel(id)
+    liveHtml(document.getElementById('cityBStats'), lvl < cityMaxLevel(id)
         ? '<div><span>Kosten</span><b class="' + (coins < cost ? 'is-bad' : '') + '">' + icon('coin', 'icon--coin') + fmtCompact(cost) + '</b></div>' +
           '<div><span>Bauzeit</span><b>' + icon('hourglass') + fmtDuration(cityTimeSec(id, lvl)) + '</b></div>'
-        : '';
+        : '');
     setBtnLabel(up, lvl >= cityMaxLevel(id) ? 'Höchste Stufe' : lvl ? 'Aufwerten auf ' + (lvl + 1) : 'Bauen');
     up.disabled = !!blocker || coins < cost;
     up.title = blocker || '';
     up.style.display = building ? 'none' : '';
     sp.style.display = building ? '' : 'none';
-    if (!building && blocker && lvl < cityMaxLevel(id)) {
-        note.className = 'notice notice--warn'; note.innerHTML = icon('lock') + '<span>' + blocker + '</span>';
-    }
     if (building) renderCitySheetTimer();
-    document.getElementById('cityBExtra').innerHTML = cityExtraHtml(id, lvl);
+    liveHtml(document.getElementById('cityBExtra'), cityExtraHtml(id, lvl));
 }
 // ===== HELDEN: shards → unlock → quarter stars → skill points. A hero only works in the fight he leads - for you and everyone else =====
 var heroState = null;                              // { id: { sh, q, own, sk: [4 levels], rage } } in openWaterHeroes2 (the old openWaterHeroes is only read to convert)
@@ -7975,7 +8010,12 @@ function hhHero(id) {
         '<div class="hh-actions">' + (maxed ? '<button class="hh-go" type="button" disabled>5 Sterne erreicht</button>'
             : '<button class="hh-go" type="button" data-hh-up' + (s.sh >= need ? '' : ' disabled') + '><span class="hh-i">' + (s.own ? icon('star') : '+') + '</span>' + (s.own ? 'Aufwerten · ¼ Stern' + (s.q % 2 ? ' + 1 Fähigkeitspunkt' : '') : 'Freischalten') + '<small>' + s.sh + ' / ' + need + ' Splitter</small></button>') + '</div>';
 }
-function renderHeroHall() { const el = document.getElementById('heroHall'); if (el.hidden) return; const top = el.scrollTop; el.innerHTML = hhCur ? hhHero(hhCur) : hhGrid(); el.scrollTop = top; }
+function renderHeroHall() { const el = document.getElementById('heroHall'); if (el.hidden) return; const top = el.scrollTop; if (liveHtml(el, hhCur ? hhHero(hhCur) : hhGrid())) el.scrollTop = top; }
+function heroHallLive() {                            // (liveTick) neue Splitter, Wut, Stufe, „unterwegs“: nur bei einer Änderung neu zeichnen
+    const el = document.getElementById('heroHall'); if (el.hidden) return;
+    const sig = JSON.stringify(loadHeroes()) + '|' + hhCur + '|' + playerLvl + '|' + cityLevelSafe('heroes') + '|' + HEROES.map(h => heroBusy('player', h.id) ? 1 : 0).join('');
+    if (sig !== el._sig) { el._sig = sig; renderHeroHall(); }
+}
 function openHeroHall(id) { const el = document.getElementById('heroHall'); hhCur = id || null; el.hidden = false; renderHeroHall(); el.scrollTop = 0; }
 function closeHeroHall() { document.getElementById('heroHall').hidden = true; hhCur = null; if (!document.getElementById('citySheet').hidden) renderCitySheet(); }
 document.getElementById('heroHall').addEventListener('click', e => {
@@ -8455,9 +8495,45 @@ function cityFocus(id, now) {                                             // gli
     const [x, y] = cIso(at[0], at[1]); cityCam.tx = x; cityCam.ty = y - 14;
     if (now) { cityCam.x = cityCam.tx; cityCam.y = cityCam.ty; cityCam.tx = cityCam.ty = undefined; }
 }
+// ---- fertige Bild-Lagen für die Stadt (siehe cityFrame): unten = Boden + hintere Mauer + Schatten, oben = vordere Mauer, licht = Licht + Rand ----
+const CITY_LAGEN = { letzt: '', letztZ: 0, key: '', lichtKey: '', unten: null, oben: null, licht: null };
+function cityLage(name, W, H, dpr2, paint) {
+    const c = CITY_LAGEN[name] || (CITY_LAGEN[name] = document.createElement('canvas')), w = Math.round(W * dpr2), h = Math.round(H * dpr2);
+    if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
+    const g = c.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, w, h); g.setTransform(dpr2, 0, 0, dpr2, 0, 0); g.imageSmoothingQuality = 'high'; paint(g);
+}
+function cityLagenFrei() {                                                   // the town is closed: give the memory back
+    for (const n of ['unten', 'oben', 'licht']) if (CITY_LAGEN[n]) { CITY_LAGEN[n].width = CITY_LAGEN[n].height = 0; CITY_LAGEN[n] = null; }
+    CITY_LAGEN.key = CITY_LAGEN.lichtKey = CITY_LAGEN.letzt = ''; CITY_LAGEN.letztZ = 0;
+}
+function cityUnten(g, W, H, Z, ox, oy, walls, list, toS) {                   // background, ground, back walls and the soft shadows of all houses
+    const wb = CITY_BOUNDS;
+    g.fillStyle = CITY_BG_COL; g.fillRect(0, 0, W, H);
+    g.drawImage(CITY_GROUND || cityPaintGround(), wb.x0 * Z + ox, wb.y0 * Z + oy, (wb.x1 - wb.x0) * Z, (wb.y1 - wb.y0) * Z);
+    g.drawImage(walls.back, wb.x0 * Z + ox, wb.y0 * Z + oy, (wb.x1 - wb.x0) * Z, (wb.y1 - wb.y0) * Z);
+    for (const it of list) { const [sx, sy] = toS(it.x, it.y), r = (it.keep ? 46 : it.deco ? 14 : 28) * Z, shx = sx + r * .35, shy = sy + r * .12;   // soft shadow falling to the lower right (sun top left)
+        const sg = g.createRadialGradient(shx, shy, r * .1, shx, shy, r * 1.1); sg.addColorStop(0, 'rgba(20,30,10,.32)'); sg.addColorStop(1, 'rgba(20,30,10,0)');
+        g.fillStyle = sg; g.beginPath(); g.ellipse(shx, shy, r * 1.1, r * .55, 0, 0, Math.PI * 2); g.fill(); }
+}
+function cityOben(g, Z, ox, oy, walls) { const wb = CITY_BOUNDS; g.drawImage(walls.front, wb.x0 * Z + ox, wb.y0 * Z + oy, (wb.x1 - wb.x0) * Z, (wb.y1 - wb.y0) * Z); }
+// a house picture: painted large once (CITY_SPR_SCALE), shrunk to the current zoom once more and kept - then every
+// frame is a 1:1 copy instead of shrinking the big picture again (the same look, a fraction of the work)
+const CITY_SPR_FERTIG = new WeakMap();
+function citySprDraw(g, s, dx, dy, k, dpr2, zStill) {
+    if (!zStill) { g.drawImage(s.c, dx, dy, s.c.width * k, s.c.height * k); return; }
+    const f = k * dpr2; let m = CITY_SPR_FERTIG.get(s);
+    if (!m || m.f !== f) { const c = m ? m.c : document.createElement('canvas'); c.width = Math.ceil(s.c.width * f); c.height = Math.ceil(s.c.height * f);
+        const cg = c.getContext('2d'); cg.imageSmoothingQuality = 'high'; cg.setTransform(f, 0, 0, f, 0, 0); cg.drawImage(s.c, 0, 0); m = { f, c }; CITY_SPR_FERTIG.set(s, m); }
+    g.drawImage(m.c, dx, dy, m.c.width / dpr2, m.c.height / dpr2);
+}
 // ---- one frame ----
 function cityFrame(now) {
     if (cityView.hidden) return;
+    // Handy schonen: steht alles still (kein Finger, keine Kamerafahrt, keine Wolken), reichen 30 Bilder pro Sekunde – die
+    // Leute gehen langsam, man sieht keinen Unterschied. Ganz in den Wolken (alles weiß) wird die Stadt gar nicht gezeichnet.
+    const bewegt = !!(cityDrag || cityGesture || cloudAnim || !cityCam || cityCam.anim || cityCam.tx !== undefined);
+    if ((!bewegt && now - (cityFrame.drawn || 0) < 30) || (cloudCover >= .95 && CITY_GROUND)) { cityRaf = requestAnimationFrame(cityFrame); return; }   // (beim allerersten Mal wird unter den Wolken schon gemalt)
+    cityFrame.drawn = now;
     const dpr2 = Math.min(window.devicePixelRatio || 1, 2), W = window.innerWidth, H = window.innerHeight;
     if (cityCanvas.width !== Math.round(W * dpr2) || cityCanvas.height !== Math.round(H * dpr2)) { cityCanvas.width = Math.round(W * dpr2); cityCanvas.height = Math.round(H * dpr2); }
     if (!cityCam) { const [kx, ky] = cIso(CC, CC + 40); cityCam = { x: kx, y: ky - 20, z: Math.max(cityFitZoom(W, H), Math.min(2.2, W / 330)) };
@@ -8471,16 +8547,10 @@ function cityFrame(now) {
     cityClampCam(W, H - sheetH * .6);
     const g = cityCtx, c = loadCity(), Z = cityCam.z * animZ;
     if (!CITY_GROUND) cityPaintGround();
-    g.setTransform(dpr2, 0, 0, dpr2, 0, 0); g.fillStyle = CITY_BG_COL; g.fillRect(0, 0, W, H);
     const ox = W / 2 - cityCam.x * Z, oy = (H - sheetH * .6) / 2 - cityCam.y * Z;
     const toS = (x, y, z) => { const [sx, sy] = cIso(x, y); return [sx * Z + ox, (sy - (z || 0)) * Z + oy]; };
-    // ground
-    const gr = CITY_GROUND || cityPaintGround();
-    g.imageSmoothingQuality = 'high';
-    g.drawImage(gr, CITY_BOUNDS.x0 * Z + ox, CITY_BOUNDS.y0 * Z + oy, (CITY_BOUNDS.x1 - CITY_BOUNDS.x0) * Z, (CITY_BOUNDS.y1 - CITY_BOUNDS.y0) * Z);
-    // walls (back half), then buildings and people in depth order, then the front walls
-    const wlvl = c.levels.wall || 0, walls = cityPaintWalls(wlvl), wb = CITY_BOUNDS;
-    g.drawImage(walls.back, wb.x0 * Z + ox, wb.y0 * Z + oy, (wb.x1 - wb.x0) * Z, (wb.y1 - wb.y0) * Z);
+    // ground and walls (back half), then buildings and people in depth order, then the front walls
+    const wlvl = c.levels.wall || 0, walls = cityPaintWalls(wlvl);
     const items = [];
     const lvlKeep = islandLevels[playerIslandId] || 1;
     items.push({ id: '_keep', x: CITY_KEEP_AT[0], y: CITY_KEEP_AT[1], spr: citySprite('keep', towerTier(lvlKeep)), name: 'Deine Burg', lvl: lvlKeep, keep: true });
@@ -8500,6 +8570,19 @@ function cityFrame(now) {
     if (c.levels.barracks) for (let i = 0; i < 9; i++) { const [bx, by] = CITY_LOTS.barracks, step = Math.sin(now / 900) * 5;
         items.push({ x: bx + 2 + (i % 3) * 5 + step, y: by + 4 + Math.floor(i / 3) * 5, soldier: true }); }
     items.sort((p, q) => (p.x + p.y) - (q.x + q.y));
+    // Boden, hintere Mauer und die weichen Schatten der Häuser ändern sich nur mit der Kamera. Steht sie still, liegen sie
+    // fertig in einem Bild (CITY_LAGEN, wird einmal gemalt) – das spart pro Bild das teure Verkleinern der großen Boden- und
+    // Mauerbilder und ~20 Farbverläufe. Bewegt sich die Kamera, wird wie bisher direkt gezeichnet (genau gleich).
+    const LG = CITY_LAGEN, lkey = [W, H, dpr2, Z, ox, oy, walls.key, CITY_BG_COL].join(','), still = lkey === LG.letzt, zStill = Z === LG.letztZ;
+    LG.letzt = lkey; LG.letztZ = Z;
+    const mitSchatten = items.filter(it => it.spr);
+    if (still) {
+        if (LG.key !== lkey) { cityLage('unten', W, H, dpr2, gg => cityUnten(gg, W, H, Z, ox, oy, walls, mitSchatten, toS)); cityLage('oben', W, H, dpr2, gg => cityOben(gg, Z, ox, oy, walls)); LG.key = lkey; }
+        g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(LG.unten, 0, 0);
+    }
+    g.setTransform(dpr2, 0, 0, dpr2, 0, 0); g.imageSmoothingQuality = zStill ? 'high' : 'low';   // (nur während des kurzen Hinein-/Herauszoomens unter den Wolken: einfacher verkleinern)
+    if (!still) cityUnten(g, W, H, Z, ox, oy, walls, mitSchatten, toS);
+    g.imageSmoothingQuality = 'high';
     cityHitRects = [];
     const plates = [];
     for (const it of items) {
@@ -8522,10 +8605,7 @@ function cityFrame(now) {
         if (it.id && cityOpenId === it.id) {                                // selected: a golden ring on the ground
             g.save(); g.strokeStyle = 'rgba(255,220,140,.95)'; g.lineWidth = 2; g.setLineDash([6, 4]); g.lineDashOffset = -now / 40;
             g.beginPath(); const r = (it.keep ? 40 : 26) * Z; g.ellipse(sx, sy, r * .866 * 1.4, r * .5 * 1.4, 0, 0, Math.PI * 2); g.stroke(); g.restore(); }
-        { const r = (it.keep ? 46 : it.deco ? 14 : 28) * Z, shx = sx + r * .35, shy = sy + r * .12;   // soft shadow falling to the lower right (sun top left)
-          const sg = g.createRadialGradient(shx, shy, r * .1, shx, shy, r * 1.1); sg.addColorStop(0, 'rgba(20,30,10,.32)'); sg.addColorStop(1, 'rgba(20,30,10,0)');
-          g.fillStyle = sg; g.beginPath(); g.ellipse(shx, shy, r * 1.1, r * .55, 0, 0, Math.PI * 2); g.fill(); }
-        g.drawImage(s.c, dx, dy, s.c.width * k, s.c.height * k);
+        citySprDraw(g, s, dx, dy, k, dpr2, zStill);                         // (the soft shadow underneath is part of cityUnten)
         if (it.deco === 'mill') {                                           // turning sails
             const [hx, hy] = toS(it.x + 5, it.y + 5, 22), L = 17 * Z, a0 = now / 1400;
             g.save(); g.strokeStyle = '#5a3d24'; g.lineWidth = Math.max(1, Z * .8); g.fillStyle = 'rgba(240,232,212,.92)';
@@ -8557,10 +8637,10 @@ function cityFrame(now) {
         cityHitRects.push({ id: it.id, x: sx - hw, y: top, w: hw * 2, h: sy + 14 * Z - top, cx: sx, cy: sy - (it.keep ? 30 : 16) * Z, depth: it.x + it.y });
         plates.push({ it, sx, sy, building });
     }
-    g.drawImage(walls.front, wb.x0 * Z + ox, wb.y0 * Z + oy, (wb.x1 - wb.x0) * Z, (wb.y1 - wb.y0) * Z);
+    if (still) { g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(LG.oben, 0, 0); g.setTransform(dpr2, 0, 0, dpr2, 0, 0); } else { g.imageSmoothingQuality = zStill ? 'high' : 'low'; cityOben(g, Z, ox, oy, walls); g.imageSmoothingQuality = 'high'; }
     // the gatehouse sits in the front wall: drawn over it
     const gate = items.find(i => i.gate);
-    if (gate) { const [sx, sy] = toS(gate.x, gate.y), s = gate.spr, k = Z / CITY_SPR_SCALE; g.drawImage(s.c, sx - s.w * Z, sy - s.up * Z, s.c.width * k, s.c.height * k); }
+    if (gate) { const [sx, sy] = toS(gate.x, gate.y), s = gate.spr, k = Z / CITY_SPR_SCALE; citySprDraw(g, s, sx - s.w * Z, sy - s.up * Z, k, dpr2, zStill); }
     for (const it of items) if (it.guard) {                                  // two guards with spears at the gate
         const [sx, sy] = toS(it.x, it.y), k = Math.max(.7, Z * .55);
         g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(sx, sy, 1.6 * k, .7 * k, 0, 0, Math.PI * 2); g.fill();
@@ -8584,10 +8664,13 @@ function cityFrame(now) {
         g.restore();
     }
     // warm afternoon light from the top left, a soft vignette around the edges
-    if (night < 1) { const lg = g.createLinearGradient(0, 0, W, H); lg.addColorStop(0, 'rgba(255,214,150,' + (.13 * (1 - night)) + ')'); lg.addColorStop(.55, 'rgba(255,214,150,0)'); lg.addColorStop(1, 'rgba(40,60,90,.12)');
-      g.fillStyle = lg; g.fillRect(0, 0, W, H);
-      const vg = g.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .45, W / 2, H / 2, Math.hypot(W, H) * .62); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(10,16,8,.38)');
-      g.fillStyle = vg; g.fillRect(0, 0, W, H); }
+    if (night < 1) { const nq = Math.round(night * 50) / 50, lk = [W, H, dpr2, nq].join(',');   // (both lie ready in one picture: two full-screen gradients cost more than one picture)
+      if (CITY_LAGEN.lichtKey !== lk) { cityLage('licht', W, H, dpr2, gg => {
+          const lg = gg.createLinearGradient(0, 0, W, H); lg.addColorStop(0, 'rgba(255,214,150,' + (.13 * (1 - nq)) + ')'); lg.addColorStop(.55, 'rgba(255,214,150,0)'); lg.addColorStop(1, 'rgba(40,60,90,.12)');
+          gg.fillStyle = lg; gg.fillRect(0, 0, W, H);
+          const vg = gg.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .45, W / 2, H / 2, Math.hypot(W, H) * .62); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(10,16,8,.38)');
+          gg.fillStyle = vg; gg.fillRect(0, 0, W, H); }); CITY_LAGEN.lichtKey = lk; }
+      g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(CITY_LAGEN.licht, 0, 0); g.setTransform(dpr2, 0, 0, dpr2, 0, 0); }
     // name plates last
     for (const { it, sx, sy, building } of plates) {
         const wnd = it.id === 'hospital' ? c.wounded : 0;
@@ -8948,17 +9031,17 @@ function openFieldSheet(f) {
     fieldSheetId = f.id; const st = fieldInfo(f), K = FIELD_KINDS[f.kind], o = st.occ, src = fieldSource(f), mine = o && o.who === 'player';
     const avail = src !== null ? islandTroops[src] || 0 : 0, send = Math.floor(avail * fieldShare);
     if (fieldHero && (!heroOwned('player', fieldHero) || heroBusy('player', fieldHero))) fieldHero = null;
-    document.getElementById('fieldSheet').innerHTML =
+    liveHtml(document.getElementById('fieldSheet'),                   // (live: liveTick – neu geschrieben nur bei einer Änderung, die Uhren zählen von selbst)
         '<div class="marker-head"><b>' + icon(K.icon) + ' ' + K.name + '</b><button class="btn-x" type="button" data-fclose aria-label="Schließen">' + icon('close') + '</button></div>' +
-        '<div class="field-lines"><span>Vorrat</span><b>' + (st.left <= 0 ? 'erschöpft – wächst in ' + fmtClock((st.regenAt - Date.now()) / 1000) + ' nach' : fmtNum(Math.floor(st.left)) + ' ' + K.what) + '</b>' +
+        '<div class="field-lines"><span>Vorrat</span><b>' + (st.left <= 0 ? 'erschöpft – wächst in ' + uhrHtml(st.regenAt, 'clock') + ' nach' : fmtNum(Math.floor(st.left)) + ' ' + K.what) + '</b>' +
         '<span>Besetzt</span><b>' + (o ? fieldWhoName(o.who) + (o.hero && heroById(o.hero) ? ' mit ' + heroById(o.hero).name : '') + ' · ' + fmtCompact(o.troops) + ' Truppen · ' + fmtNum(Math.floor(o.got)) + ' gesammelt' : 'frei') + '</b>' +
         '<span>Tragen</span><b>' + (K.load >= 1 ? fmtNum(K.load) + ' ' + K.what + ' pro Truppe' : '1 Gem pro ' + Math.round(1 / K.load) + ' Truppen') + '</b></div>' +
         (mine ? '<button class="btn btn--secondary btn--sm" type="button" data-frecall>' + icon('recall') + '<span>Mit Beute heimkehren</span></button>' :
          src === null ? '<div class="notice">' + icon('lock') + '<span>Keine deiner Basen mit Truppen kommt hierher.</span></div>' :
-         o && ownerShielded(o.who) ? '<div class="notice notice--gold">' + icon('shield') + '<span>' + fieldWhoName(o.who) + ' steht unter einem Friedensschild (noch ' + fmtHours(ownerShieldUntil(o.who) - Date.now()) + ') – die Sammler dort kann niemand angreifen.</span></div>' :
+         o && ownerShielded(o.who) ? '<div class="notice notice--gold">' + icon('shield') + '<span>' + fieldWhoName(o.who) + ' steht unter einem Friedensschild (noch ' + uhrHtml(ownerShieldUntil(o.who)) + ') – die Sammler dort kann niemand angreifen.</span></div>' :
          '<div class="seg" data-fshare>' + ['.25', '.5', '.75', '1'].map(v => '<button type="button" data-f="' + v + '"' + (+v === fieldShare ? ' class="on"' : '') + '>' + (v === '1' ? 'Alle' : Math.round(v * 100) + ' %') + '</button>').join('') + '</div>' +
          (heroSegHtml('data-fhero', fieldHero) ? '<div class="seg hero-seg">' + heroSegHtml('data-fhero', fieldHero) + '</div>' : '') +
-         '<button class="btn btn--primary btn--sm" type="button" data-fsend>' + icon(o ? 'attack' : 'send') + '<span>' + (o ? 'Angreifen und übernehmen' : 'Sammeln') + ' · ' + fmtCompact(send) + ' von ' + islandTitle(islandById[src]) + '</span></button>');
+         '<button class="btn btn--primary btn--sm" type="button" data-fsend>' + icon(o ? 'attack' : 'send') + '<span>' + (o ? 'Angreifen und übernehmen' : 'Sammeln') + ' · ' + fmtCompact(send) + ' von ' + islandTitle(islandById[src]) + '</span></button>'));
     document.getElementById('fieldSheet').hidden = false;
 }
 function closeFieldSheet() { document.getElementById('fieldSheet').hidden = true; fieldSheetId = null; }
@@ -9279,9 +9362,9 @@ function barbNearest() {                            // the closest camp you may 
     let pick = null, ps = -Infinity; for (const c of barbState.camps) { if (c.L > best + 1 || !isCellOpen(c.x, c.y)) continue; const s = c.L * 3 - Math.hypot(c.x - home.x, c.y - home.y) / 4000; if (s > ps) { ps = s; pick = c; } }
     return pick;
 }
-function openBarbSheet(v) { barbView = v; barbSheetEl.innerHTML = barbSheetHtml(); barbSheetEl.hidden = false; }
+function openBarbSheet(v) { barbView = v; liveHtml(barbSheetEl, barbSheetHtml()); barbSheetEl.hidden = false; }
 function closeBarbSheet() { barbSheetEl.hidden = true; barbView = null; }
-function barbSheetRefresh() { if (barbView && !barbSheetEl.hidden) barbSheetEl.innerHTML = barbSheetHtml(); }
+function barbSheetRefresh() { if (barbView && !barbSheetEl.hidden) liveHtml(barbSheetEl, barbSheetHtml()); }   // (auch jede Sekunde aus liveTick)
 barbSheetEl.addEventListener('click', e => {
     if (!barbView) return;
     if (e.target.closest('[data-bclose]')) return closeBarbSheet();
@@ -9502,33 +9585,33 @@ function renderArmySheet() {
     const a = s.id && armyById(s.id); if (s.mode !== 'new' && !a) return closeArmySheet();
     const head = t => '<div class="marker-head"><b>' + icon('troops') + ' ' + t + '</b><button class="btn-x" type="button" data-aclose aria-label="Schließen">' + icon('close') + '</button></div>';
     if (a && armyWho(a) !== 'player') {                                          // someone else's army: what you can see of it
-        el.innerHTML = head('Armee von ' + escapeHtml(armyName(a))) +
+        liveHtml(el, head('Armee von ' + escapeHtml(armyName(a))) +
             '<div class="field-lines"><span>Truppen</span><b>' + fmtTile(Math.floor(a.troops)) + '</b><span>Status</span><b>' + (a.mv ? 'marschiert' : a.troops < 1 ? 'sammelt sich' : 'lagert') + '</b></div>' +
             '<div class="army-hint">Im Feld hat sie keine Mauer – eine stärkere Armee schlägt sie.</div>' +
             (myArmies().some(x => x.troops >= 1) ? '<button class="btn btn--primary btn--sm" type="button" data-afoe>' + icon('attack') + '<span>Mit deiner stärksten Armee angreifen</span></button>'
-                : '<div class="notice">' + icon('info') + '<span>Stelle eine Armee auf (Knopf rechts), um sie im Feld anzugreifen.</span></div>');
+                : '<div class="notice">' + icon('info') + '<span>Stelle eine Armee auf (Knopf rechts), um sie im Feld anzugreifen.</span></div>'));
         el.hidden = false; return;
     }
     if (s.mode === 'new' || s.mode === 'more') {
         const pt = s.mode === 'new' ? s : armyPosXY(a), src = armySources(pt);
         const sum = [...armySel].reduce((n, id) => n + Math.floor((islandTroops[id] || 0) * armyShare), 0);
-        el.innerHTML = head(s.mode === 'new' ? 'Armee aufstellen' : 'Armee verstärken') +
+        liveHtml(el, head(s.mode === 'new' ? 'Armee aufstellen' : 'Armee verstärken') +
             (src.length ? '<div class="army-hint">Aus welchen Basen sollen Truppen kommen?</div><div class="marker-presets">' + src.map(id => '<button type="button" data-asrc="' + id + '"' + (armySel.has(id) ? ' class="on"' : '') + '>' + islandTitle(islandById[id]) + ' · ' + fmtCompact(islandTroops[id] || 0) + '</button>').join('') + '</div>' +
                 '<div class="seg" data-ashare>' + ['.25', '.5', '.75', '1'].map(v => '<button type="button" data-f="' + v + '"' + (+v === armyShare ? ' class="on"' : '') + '>' + (v === '1' ? 'Alle' : Math.round(v * 100) + ' %') + '</button>').join('') + '</div>' +
                 '<button class="btn btn--primary btn--sm" type="button" data-ago' + (sum < 1 ? ' disabled' : '') + '>' + icon('send') + '<span>' + (s.mode === 'new' ? 'Aufstellen' : 'Schicken') + ' · ' + fmtCompact(sum) + ' Truppen</span></button>'
-              : '<div class="notice">' + icon('lock') + '<span>Keine deiner Basen mit Truppen kommt hierher.</span></div>');
+              : '<div class="notice">' + icon('lock') + '<span>Keine deiner Basen mit Truppen kommt hierher.</span></div>'));
     } else {
         const now = Date.now(), inc = armyJoins.filter(j => j.armyId === a.id).reduce((n, j) => n + j.troops, 0), raid = armyRaids.find(r => r.armyId === a.id);
-        const t = a.mv && a.mv.to, st = a.mv ? (t.kind === 'base' ? 'Angriff auf ' + islandTitle(islandById[t.id]) : t.kind === 'home' ? 'Heimweg' : t.kind === 'field' ? 'zur ' + FIELD_KINDS[fieldById[t.id].kind].name : 'marschiert') + ' · ' + fmtClock((a.mv.resolveAt - now) / 1000) : 'lagert';
-        el.innerHTML = head('Armee im Feld') +
+        const t = a.mv && a.mv.to, st = a.mv ? (t.kind === 'base' ? 'Angriff auf ' + islandTitle(islandById[t.id]) : t.kind === 'home' ? 'Heimweg' : t.kind === 'field' ? 'zur ' + FIELD_KINDS[fieldById[t.id].kind].name : 'marschiert') + ' · ' + uhrHtml(a.mv.resolveAt, 'clock') : 'lagert';
+        liveHtml(el, head('Armee im Feld') +
             '<div class="field-lines"><span>Truppen</span><b>' + fmtTile(Math.floor(a.troops)) + (inc ? ' <em class="army-inc">+' + fmtCompact(inc) + ' unterwegs</em>' : '') + '</b><span>Status</span><b>' + st + '</b>' +
             '<span>Heimat</span><b>' + (armyHome(a) !== null && armyHome(a) !== undefined ? islandTitle(islandById[armyHome(a)]) : '–') + '</b></div>' +
-            (raid ? '<div class="notice notice--warn">' + icon('attack') + '<span>' + botById[raid.botId].name + ' greift an (' + fmtCompact(raid.troops) + ') · ' + fmtClock((raid.resolveAt - now) / 1000) + '</span></div>' : '') +
+            (raid ? '<div class="notice notice--warn">' + icon('attack') + '<span>' + botById[raid.botId].name + ' greift an (' + fmtCompact(raid.troops) + ') · ' + uhrHtml(raid.resolveAt, 'clock') + '</span></div>' : '') +
             '<div class="army-hint">Im Feld gibt es keine Mauer und keine Produktion.</div>' + armyHeroSeg(a) +
             '<div class="army-btns"><button class="btn btn--primary btn--sm" type="button" data-aorder>' + icon('attack') + '<span>Befehl geben</span></button>' +
             '<button class="btn btn--secondary btn--sm" type="button" data-amore>' + icon('plus') + '<span>Verstärken</span></button>' +
             (a.mv ? '<button class="btn btn--secondary btn--sm" type="button" data-ahalt>' + icon('hourglass') + '<span>Anhalten</span></button>' : '') +
-            '<button class="btn btn--secondary btn--sm" type="button" data-ahome>' + icon('recall') + '<span>Heimkehren</span></button></div>';
+            '<button class="btn btn--secondary btn--sm" type="button" data-ahome>' + icon('recall') + '<span>Heimkehren</span></button></div>');
     }
     el.hidden = false;
 }
@@ -9766,11 +9849,11 @@ let multiAttackHero = null;                               // a hero leads the fi
 
 function updateMultiAttackBar() {
     const n = multiAttackTargets.length, go = Math.floor((islandTroops[multiAttackSourceId] || 0) * multiAttackShare);
-    multiAttackLabel.textContent = n ? n + (n === 1 ? ' Ziel' : ' Ziele') + ' · je ' + fmtCompact(Math.floor(go / n)) + ' Truppen' : '0 Ziele ausgewählt · Basen antippen';
+    setText(multiAttackLabel, n ? n + (n === 1 ? ' Ziel' : ' Ziele') + ' · je ' + fmtCompact(Math.floor(go / n)) + ' Truppen' : '0 Ziele ausgewählt · Basen antippen');   // (live: liveTick, die Truppen wachsen)
     for (const b of document.querySelectorAll('#multiAttackShare button')) b.classList.toggle('on', parseFloat(b.dataset.f) === multiAttackShare);
     const hb = document.getElementById('multiAttackHero');
     if (multiAttackHero && (!heroOwned('player', multiAttackHero) || heroBusy('player', multiAttackHero))) multiAttackHero = null;
-    const seg = heroSegHtml('data-mhero', multiAttackHero); hb.hidden = !seg; hb.innerHTML = seg;
+    const seg = heroSegHtml('data-mhero', multiAttackHero); hb.hidden = !seg; liveHtml(hb, seg);
     multiAttackConfirmBtn.disabled = multiAttackTargets.length === 0;
 }
 
@@ -9892,7 +9975,7 @@ function ringNotice(isl) {                         // whose ring is it: a title 
     const txt = st.k === 'ruler' ? (me ? 'Blutrot-goldener Ring: Du bist Herrscher der Meere – er bleibt, solange du den Mega-Tempel hältst.' : 'Blutrot-goldener Ring: ' + n + ' ist Herrscher der Meere.')
         : st.k === 'good' ? (me ? 'Goldring: Du trägst den Titel „' + t.name + '“ – solange du ihn behältst.' : 'Goldring: ' + n + ' trägt den Titel „' + t.name + '“ aus der Mitte.')
         : st.k === 'bad' ? (me ? 'Roter Ring: Du trägst den Straf-Titel „' + t.name + '“ – solange er gilt.' : 'Roter Ring: ' + n + ' trägt den Straf-Titel „' + t.name + '“.')
-        : st.k === 'champ' ? (me ? 'Lila-goldener Ring: Du bist Turniersieger – noch ' : 'Lila-goldener Ring: ' + n + ' ist Turniersieger – noch ') + fmtDHMS((tourState.champ.until - Date.now()) / 1000) + '.'
+        : st.k === 'champ' ? (me ? 'Lila-goldener Ring: Du bist Turniersieger – noch ' : 'Lila-goldener Ring: ' + n + ' ist Turniersieger – noch ') + uhrHtml(tourState.champ.until) + '.'
         : (me ? 'Ring „' + st.name + '“ – wechseln unter „Aussehen“.' : 'Ring „' + st.name + '“.');
     return '<div class="notice' + (st.k === 'bad' ? ' notice--warn' : st.k === 'skin' ? '' : ' notice--gold') + '">' + icon(st.k === 'ruler' ? 'crown' : st.k === 'bad' ? 'losses' : 'star') + '<span>' + txt + '</span></div>';
 }
@@ -9938,6 +10021,7 @@ function renderPopup() {
     const kind = isOwned ? 'player' : ownerBot ? 'enemy' : 'neutral';
     const sep = '<span class="sep"></span>';
     const isBoss = !!bossAt(island.id);
+    let subH = '';                                   // (Kopfzeile und Werte: jede Sekunde neu gerechnet aus liveTick, geschrieben nur bei einer Änderung)
     popupEmblem.className = 'emblem emblem--' + (isBoss ? 'enemy' : kind);
     popupEmblem.querySelector('use').setAttribute('href', '#i-' + (isBoss ? 'attack' : isTemple ? 'temple' : isOwned ? 'profile' : ownerBot ? 'bot' : 'question'));
     popupLevel.textContent = level;
@@ -9962,19 +10046,20 @@ function renderPopup() {
         backBtn.style.display = 'inline-block';
     } else if (isOwned) {
         const troopsHere = islandTroops[island.id] || 0;
-        popupSub.innerHTML = '<span class="dot dot--player"></span>' + whoLink('player', profileName.value || 'Du') +
+        subH = '<span class="dot dot--player"></span>' + whoLink('player', profileName.value || 'Du') +
             (island.id === playerIslandId ? sep + 'Heimat' : '');
 
         popupOverline.textContent = island.id === playerIslandId ? 'Deine Hauptstadt · unangreifbar' : isTemple ? 'Dein Tempel' : island.type === 'gate' ? 'Dein Tor · Maut für dich' : 'Deine Basis';
         if (island.id === playerIslandId) { document.getElementById('cityBtn').style.display = 'inline-block'; document.getElementById('teleportBtn').style.display = 'inline-block'; }
-        popupStats.innerHTML = '<div class="stat-grid">' +
+        liveHtml(popupStats, '<div class="stat-grid">' +
             statTile('Truppen hier', 'troops', fmtTile(troopsHere)) +
             statTile('Verteidigung', 'defense', fmtTile(effectiveDefense(island))) +
             statTile('Münzen / s', 'coin', '+' + fmtNum(Math.round(coinsPerTick(level) * playerCoinMult() * 1000 / productionTickMs())), 'is-good') +
             statTile('Truppen / s', 'troops', '+' + fmtNum(Math.round(troopsPerTick(level) * playerTroopMult() * 1000 / productionTickMs())), 'is-good') + '</div>' +
             (island.type === 'gate' ? gateControlsHtml(island) : '') +
-            (isTemple ? templeBonusLine(island) : '') + throneNotice(island) + midNotice(island) + ringNotice(island);
-        upgradeCostLabel.innerHTML = level >= MAX_BASE_LEVEL ? 'Max. Stufe' : icon('coin', 'icon--coin') + fmtCompact(upgradeCost(level));
+            (isTemple ? templeBonusLine(island) : '') + throneNotice(island) + midNotice(island) + ringNotice(island));
+        liveHtml(upgradeCostLabel, level >= MAX_BASE_LEVEL ? 'Max. Stufe' : icon('coin', 'icon--coin') + fmtCompact(upgradeCost(level)));
+        upgradeCostLabel.classList.toggle('is-bad', level < MAX_BASE_LEVEL && coins < upgradeCost(level));   // reichen die Münzen? (live: liveTick)
         popupActions.hidden = false;
         upgradeBtn.style.display = 'inline-block';
         sendBtn.style.display = 'inline-block';
@@ -9986,7 +10071,7 @@ function renderPopup() {
     } else {
         const scouted = scoutedIslands.has(island.id), shieldOw = ownerBot && shieldCovers(island) && ownerShielded(ownerBot.id) ? ownerBot : null;
         if (popupView === 'preview' && shieldOw) popupView = 'menu';
-        popupSub.innerHTML = '<span class="dot dot--' + (bossAt(island.id) ? 'enemy' : kind) + '"></span>' + (bossAt(island.id) ? 'Boss' : ownerBot ? '<span class="psub-who">' + whoLink(ownerBot.id, ownerBot.name) + ' · Stufe ' + loadBotState()[ownerBot.id].lvl + (botOnline(ownerBot, Date.now()) ? ' · online' : ' · offline') +
+        subH = '<span class="dot dot--' + (bossAt(island.id) ? 'enemy' : kind) + '"></span>' + (bossAt(island.id) ? 'Boss' : ownerBot ? '<span class="psub-who">' + whoLink(ownerBot.id, ownerBot.name) + ' · Stufe ' + loadBotState()[ownerBot.id].lvl + (botOnline(ownerBot, Date.now()) ? ' · online' : ' · offline') +
             (botBestRarity(ownerBot.id) >= 0 ? ' · <b style="color:' + RARITY_DEFS[botBestRarity(ownerBot.id)].color + ';font-weight:600">' + RARITY_DEFS[botBestRarity(ownerBot.id)].label + '</b>' : '') + '</span>' : 'Unbesetzt') +
             (scouted ? sep + '<span class="chip chip--scouted">' + icon('scout') + 'Gespäht</span>' : '');
 
@@ -9999,7 +10084,7 @@ function renderPopup() {
         } else {
             const scoutEnRoute = pendingScouts.some(s => s.targetId === island.id);
             popupOverline.textContent = bossAt(island.id) ? 'Weltereignis · Boss' : ownerBot ? (isCapital(island.id) ? 'Hauptstadt · unangreifbar' : isTemple ? 'Feindlicher Tempel' : island.type === 'gate' ? 'Feindliches Tor' : 'Feindliche Basis') : (isTemple ? 'Tempel · unbesetzt' : island.type === 'gate' ? 'Tor · unbesetzt' : 'Neutrale Basis');
-            popupStats.innerHTML = '<div class="stat-grid">' +
+            liveHtml(popupStats, '<div class="stat-grid">' +
                 statTile('Truppen', 'troops', scouted ? fmtTile(effectiveTroops(island)) : UNK, scouted && ownerBot ? 'is-enemy' : '') +
                 statTile('Verteidigung', 'defense', scouted ? fmtTile(effectiveDefense(island)) : UNK) + '</div>' +
                 (scouted ? '' : '<div class="notice">' + icon('scout') + '<span>Stärke unbekannt. Spähen deckt Truppen und Verteidigung auf.</span></div>') + midNotice(island) + ringNotice(island) +
@@ -10008,8 +10093,8 @@ function renderPopup() {
                 (isTemple ? '<div class="notice notice--gold">' + icon('temple') + '<span>' + (island.type === 'megaTemple' ? 'Thron der Meere: wer ihn hält, trägt die Krone – +25 % Münzen und Truppen im ganzen Reich und alle 3 Min. ' + THRONE_PTS_MEGA + ' Thron-Punkte. Die Wächter-Tempel feuern auf ihn – nächster Beschuss in <b data-throne-fire>' + fmtClock((throneState.nextFire - Date.now()) / 1000) + '</b>.' : island.guardian ? 'Wächter-Tempel: 3-facher Tempel-Bonus und alle 3 Min. ' + THRONE_PTS_GUARD + ' Thron-Punkte. Gehört er nicht dem Herrscher, feuert er alle 3 Min. auf den Thron.' : 'Tempel: gibt Produktion, Gems und Münzen, sobald erobert.') + '</span></div>' : '') +
                 (bossAt(island.id) ? '<div class="notice notice--gold">' + icon('shop') + '<span><b>Belohnung:</b> Legendäre Kiste + ' + (bossAt(island.id).wander ? WANDER_REWARD_GEMS : BOSS_REWARD_GEMS) + ' Gems · ' + (bossAt(island.id).wander ? 'zieht weiter in' : 'verschwindet in') + ' <b data-boss-clock>' + fmtClock(((bossAt(island.id).wander ? bossAt(island.id).campUntil : bossAt(island.id).endsAt) - Date.now()) / 1000) + '</b></span></div>' : '') +
                 (scoutEnRoute ? '<div class="notice notice--warn">' + icon('hourglass') + '<span>Späher bereits unterwegs …</span></div>' : '') +
-                (shieldOw ? '<div class="notice notice--gold">' + icon('shield') + '<span>Friedensschild – ' + escapeHtml(shieldOw.name) + ' ist noch ' + fmtHours(ownerShieldUntil(shieldOw.id) - Date.now()) +
-                    ' geschützt. Solange der Schild hält, kann niemand die Türme von ' + escapeHtml(shieldOw.name) + ' angreifen (Tore und Tempel schon) – Spähen geht.</span></div>' : '');
+                (shieldOw ? '<div class="notice notice--gold">' + icon('shield') + '<span>Friedensschild – ' + escapeHtml(shieldOw.name) + ' ist noch ' + uhrHtml(ownerShieldUntil(shieldOw.id)) +
+                    ' geschützt. Solange der Schild hält, kann niemand die Türme von ' + escapeHtml(shieldOw.name) + ' angreifen (Tore und Tempel schon) – Spähen geht.</span></div>' : ''));
             if (shieldOw && !isCapital(island.id)) popupOverline.textContent = 'Friedensschild · unangreifbar';
             setBtnLabel(attackBtn, shieldOw ? 'Schild aktiv' : 'Angreifen');
             attackBtn.disabled = !!shieldOw;
@@ -10022,7 +10107,7 @@ function renderPopup() {
             scoutBtn.disabled = scoutEnRoute;
         }
     }
-    if (popupView !== 'preview' && popupView !== 'send' && popupView !== 'recall') popupSub.insertAdjacentHTML('beforeend', sep + '<span class="num coord">' + coordText(island.x, island.y) + '</span>');
+    if (popupView !== 'preview' && popupView !== 'send' && popupView !== 'recall') liveHtml(popupSub, subH + sep + '<span class="num coord">' + coordText(island.x, island.y) + '</span>');
     if (!isPanelOpen(popup)) {
         openPanel(popup);
         // camera framing (design-spec §6.6): after layout, so the sheet/popover size is known
@@ -10735,6 +10820,45 @@ document.addEventListener('selectstart', e => { if (!feldErlaubt(e.target)) e.pr
 document.addEventListener('contextmenu', e => { if (!feldErlaubt(e.target)) e.preventDefault(); });
 
 // ===================================================================================================================
+// ===== LIVE-ANZEIGE: was offen ist, zieht von selbst nach =====
+// ===================================================================================================================
+// Jede Sekunde – und gleich nach neuen Welt-Daten oder Münzen vom Server, aber höchstens 1× pro Sekunde – werden NUR die
+// gerade sichtbaren Fenster neu gerechnet. liveHtml schreibt davon nur, was sich wirklich geändert hat (kein Flackern,
+// Knöpfe bleiben antippbar, die Scroll-Position bleibt), die Restzeiten (uhrHtml) zählen von selbst herunter.
+// Läuft eine Restzeit ab (z. B. der Friedensschild), stellt das Fenster beim nächsten Schritt um.
+let liveZuletzt = 0, liveWartet = 0, liveTitelVer = -1, liveRangAt = 0, liveSkillSig = '', liveGemeldet = false;
+function liveBald() {                                  // neue Daten: gleich nachziehen, aber höchstens 1× pro Sekunde
+    if (liveWartet) return;
+    liveWartet = setTimeout(() => { liveWartet = 0; liveTick(); }, Math.max(0, liveZuletzt + 1000 - Date.now()));
+}
+function liveTick() {
+    if (SYSTEM || document.hidden) return;              // (der Weltrechner zeigt nichts an, ein Tab im Hintergrund auch nicht)
+    liveZuletzt = Date.now();
+    const offen = id => { const el = document.getElementById(id); return !!el && !el.hidden; };
+    const teil = f => { try { f(); } catch (e) { if (!liveGemeldet) { liveGemeldet = true; console.warn('Live-Anzeige:', e); } } };
+    if (!cityView.hidden && cityOpenId && offen('citySheet')) teil(renderCitySheet);                    // Burg / Gebäude: Schild, Kosten, Knopf
+    if (isPanelOpen(popup) && popupIslandId !== null) teil(renderPopup);                                  // Inselfenster
+    if (isPanelOpen(profilePopup)) teil(() => {                                                             // Profil
+        renderProfile(true);
+        const tab = profilePopup.dataset.tab;
+        if (tab === 'equip') renderEquipGrid();
+        if (tab === 'skills') { const sig = skillPoints + JSON.stringify(skills); if (sig !== liveSkillSig) { liveSkillSig = sig; renderSkillGrid(); } }
+    });
+    if (isPanelOpen(shopPopup)) teil(renderShop);                                                         // Shop: Gems, Schild-Restzeit, Thron-Punkte
+    if (isPanelOpen(goalsPopup) && goalsTab === 'reward') teil(renderInbox);                              // Ziele → Belohnung
+    if (isPanelOpen(rankPopup) && liveZuletzt - liveRangAt >= 5000) { liveRangAt = liveZuletzt; teil(renderRankings); }   // Rangliste: alle 5 s reicht
+    teil(heroHallLive);                                                                                     // Helden
+    if (offen('lookSheet')) teil(() => renderLookSheet(true));                                             // Aussehen: Gems / Thron-Punkte
+    if (fieldSheetId !== null && fieldById[fieldSheetId] && offen('fieldSheet')) teil(() => openFieldSheet(fieldById[fieldSheetId]));
+    if (offen('barbSheet')) teil(barbSheetRefresh);
+    if (armySheet && offen('armySheet')) teil(renderArmySheet);
+    if (multiAttackMode) teil(updateMultiAttackBar);
+    if (offen('titleModal') && titleVer !== liveTitelVer && !document.getElementById('titleList').contains(document.activeElement)) { liveTitelVer = titleVer; teil(renderTitleModal); }   // (nie mitten in einer Auswahl)
+    teil(() => { if (liveUhren()) liveBald(); });     // alle Restzeiten weiter; ist eine abgelaufen, gleich noch einmal
+}
+setInterval(liveTick, 1000);
+
+// ===================================================================================================================
 // ===== DIE EINE WELT: Verbindung zu welt.js =====
 // ===================================================================================================================
 if (window.WELT) {
@@ -10985,4 +11109,10 @@ if (window.WELT) {
         } else if (laeuft && rechnerWeg) { rechnerWeg.remove(); rechnerWeg = null; }
     };
     WELT.start();
+}
+// Neue Welt-Daten (Puls) oder Münzen/Gems vom Weltrechner: offene Fenster gleich nachziehen (höchstens 1× pro Sekunde)
+if (window.WELT && window.__weltLaden) {
+    const vorLive = window.__weltLaden;
+    window.__weltLaden = function (keys) { vorLive(keys); liveBald(); };
+    WELT.beiNachricht.push(function (e) { if (e && (e.art === 'delta' || e.art === 'bericht' || e.art === 'geschenk')) liveBald(); });
 }
