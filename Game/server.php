@@ -4,6 +4,8 @@
 // Im Browser liegt nur der Login-Cookie (HttpOnly, 30 Tage) - alles andere steht hier in der Datenbank.
 
 ini_set('serialize_precision', '-1');   // Kommazahlen exakt wie im Browser
+ini_set('display_errors', '0');         // nie Pfade, SQL oder Werte im Browser zeigen – nur ins Fehlerprotokoll
+ini_set('log_errors', '1');
 
 const COOKIE_NAME = 'ow_login';
 const COOKIE_TAGE = 30;
@@ -73,9 +75,13 @@ function abmelden() {
 
 // ===== Sicherheit =====
 // Sicherheits-Kopfzeilen für jede Seite (keine fremden Rahmen, kein Rätselraten beim Dateityp, keine Herkunft nach außen)
-header('X-Frame-Options: SAMEORIGIN');
+header('X-Frame-Options: DENY');                                    // nie in einem fremden (oder Office-)Rahmen
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: same-origin');
+header('Strict-Transport-Security: max-age=31536000');               // immer HTTPS, auch beim ersten Aufruf
+header('Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()');
+// Nur eigene Dateien + three.js (3D) + Google-Schriften; Daten gehen nur an den eigenen Server (kein Abfluss nach außen)
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
 
 // Admins (dürfen admin.php benutzen und auch während der Wartung spielen): feste Spieler-Nummern aus config.php
 // ('admin_ids'), nicht Namen – einen Namen könnte sich sonst jemand anderes registrieren.
@@ -111,26 +117,34 @@ function profil_bereinigen($text) {
     $zahl = function ($v, $max = 1e30) { return is_numeric($v) && is_finite((float)$v) ? max(-$max, min($max, $v + 0)) : 0; };
     $karte = function ($v, $wert, $max = 80) use ($id) { $r = []; if (is_array($v)) foreach ($v as $k => $x) { if (count($r) >= $max) break; if ($id((string)$k) !== null) $r[(string)$k] = $wert($x); } return (object)$r; };
     $liste = function ($v) use ($id) { $r = []; if (is_array($v)) foreach (array_slice($v, 0, 60) as $x) if ($id($x) !== null) $r[] = $x; return $r; };
+    // Obergrenzen = die echten Höchstwerte des Spiels (spiel.js): nichts Ehrliches wird gekappt, Fantasiewerte schon
+    $plus = function ($v, $max) use ($zahl) { return max(0, $zahl($v, $max)); };
+    $lvl = (int)max(1, $plus($p['lvl'] ?? 1, 2000));
     $gear = [];
-    foreach (['weapon', 'armor', 'shield', 'boots'] as $sl) { $g = $p['gear'][$sl] ?? null; $gear[$sl] = is_array($g) ? ['r' => (int)$zahl($g['r'] ?? 0, 9), 'lvl' => (int)$zahl($g['lvl'] ?? 1, 999), 'st' => (int)$zahl($g['st'] ?? 0, 99)] : null; }
-    $hs = $karte($p['hs'] ?? [], function ($h) use ($zahl) { $h = is_array($h) ? $h : [];
-        $sk = []; foreach (array_slice((array)($h['sk'] ?? []), 0, 4) as $x) $sk[] = (int)$zahl($x, 99);
-        return ['sh' => (int)$zahl($h['sh'] ?? 0, 1e9), 'q' => (int)$zahl($h['q'] ?? 0, 99), 'own' => !empty($h['own']), 'sk' => $sk, 'rage' => $zahl($h['rage'] ?? 0, 1e6)]; }, 40);
+    foreach (['weapon', 'armor', 'shield', 'boots'] as $sl) { $g = $p['gear'][$sl] ?? null; $gear[$sl] = is_array($g) ? ['r' => (int)$plus($g['r'] ?? 0, 5), 'lvl' => (int)max(1, $plus($g['lvl'] ?? 1, 20)), 'st' => (int)$plus($g['st'] ?? 0, 5)] : null; }   // RARITY_DEFS 0–5, ITEM_MAX_LEVEL 20, STAR_MAX 5
+    $hs = $karte($p['hs'] ?? [], function ($h) use ($plus) { $h = is_array($h) ? $h : [];
+        $sk = []; foreach (array_slice((array)($h['sk'] ?? []), 0, 4) as $x) $sk[] = (int)$plus($x, 5);
+        return ['sh' => (int)$plus($h['sh'] ?? 0, 1e6), 'q' => (int)$plus($h['q'] ?? 0, 20), 'own' => !empty($h['own']), 'sk' => $sk, 'rage' => $plus($h['rage'] ?? 0, 1000)]; }, 40);   // HERO_MAXQ 20
+    $sk = []; foreach (['troops', 'attack', 'defense', 'speed', 'attackGold', 'defenseGold'] as $k) $sk[$k] = (int)$plus($p['skills'][$k] ?? 0, $k === 'speed' ? 10 : 2000);
+    if (array_sum($sk) > $lvl + 20) { $f = ($lvl + 20) / array_sum($sk); foreach ($sk as $k => $v) $sk[$k] = (int)floor($v * $f); }   // 1 Skillpunkt pro Stufe
+    $STADT = ['academy' => 25, 'forge' => 5, 'hospital' => 40, 'shrine' => 25, 'wall' => 25, 'barracks' => 25, 'treasury' => 25, 'watch' => 25, 'heroes' => 25, 'storage' => 40];   // cityMaxLevel
+    $stadt = []; foreach ($STADT as $k => $mx) if (isset($p['city']['levels'][$k])) $stadt[$k] = (int)$plus($p['city']['levels'][$k], $mx);
+    $jetztMs = time() * 1000;
     $lk = is_array($p['look'] ?? null) ? $p['look'] : [];
     $cr = is_array($p['crest'] ?? null) ? $p['crest'] : null;
     $bs = is_array($p['baustil'] ?? null) ? $p['baustil'] : null;
     return json_encode([
-        'lvl' => (int)$zahl($p['lvl'] ?? 1, 10000),
-        'skills' => $karte($p['skills'] ?? [], function ($x) use ($zahl) { return (int)$zahl($x, 100000); }, 20),
+        'lvl' => $lvl,
+        'skills' => (object)$sk,
         'gear' => $gear,
-        'city' => ['levels' => $karte($p['city']['levels'] ?? [], function ($x) use ($zahl) { return (int)$zahl($x, 1000); }, 20)],
-        'wounded' => $zahl($p['wounded'] ?? 0),
+        'city' => ['levels' => (object)$stadt],
+        'wounded' => $plus($p['wounded'] ?? 0, 1e13),
         'hs' => $hs,
-        'shieldUntil' => $zahl($p['shieldUntil'] ?? 0), 'neuBis' => $zahl($p['neuBis'] ?? 0),
+        'shieldUntil' => min($plus($p['shieldUntil'] ?? 0, 1e15), $jetztMs + 8 * 86400000), 'neuBis' => min($plus($p['neuBis'] ?? 0, 1e15), $jetztMs + 48 * 3600000),   // längster Schild 8 Tage, Anfängerschutz 48 h
         'look' => ['ring' => $id($lk['ring'] ?? null), 'rings' => $liste($lk['rings'] ?? []), 'march' => $id($lk['march'] ?? null), 'marchs' => $liste($lk['marchs'] ?? []),
                    'frame' => $id($lk['frame'] ?? null), 'title' => $id($lk['title'] ?? null), 'throne' => !empty($lk['throne'])],
-        'stats' => $karte($p['stats'] ?? [], function ($x) use ($zahl) { return $zahl($x); }, 80),
-        'earned' => $zahl($p['earned'] ?? 0), 'coins' => $zahl($p['coins'] ?? 0),
+        'stats' => $karte($p['stats'] ?? [], function ($x) use ($plus) { return $plus($x, 1e15); }, 80),
+        'earned' => $plus($p['earned'] ?? 0, 1e12), 'coins' => $plus($p['coins'] ?? 0, 1e15),
         'crest' => $cr ? array_map(function ($k) use ($cr, $zahl) { return (int)$zahl($cr[$k] ?? 0, 99); }, ['shape' => 'shape', 'div' => 'div', 'c1' => 'c1', 'c2' => 'c2', 'sym' => 'sym', 'ink' => 'ink']) : null,
         'baustil' => $bs ? ['style' => $id($bs['style'] ?? null) ?: 'klassisch', 'cap' => ($bs['cap'] ?? '') === 'wasser' ? 'wasser' : 'huegel'] : null,
     ], JSON_UNESCAPED_UNICODE);
@@ -146,6 +160,31 @@ function flicken_anwenden($obj, $p) {
         foreach ((array)($sub->w ?? []) as $kk) unset($obj->{$k}->{$kk});
     }
     return true;
+}
+// Befehle der Spieler an den Weltrechner: nur bekannte Arten, nur saubere Werte (keine Texte statt Zahlen, nichts
+// Unendliches, keine Riesenzahlen, nicht zu tief verschachtelt). Der Weltrechner prüft dann noch die Spielregeln.
+const BEFEHL_ARTEN = ['angriff', 'senden', 'zurueck', 'schneller', 'ausbau', 'hauptstadt', 'truppen', 'tor', 'titel', 'feld', 'feldHeim', 'lager', 'armee', 'beitreten'];
+const BEFEHL_MENGEN = ['n', 'stufe', 'anteil', 'tr'];   // müssen echte Zahlen ≥ 0 sein
+function befehl_ok($b) {
+    if (!is_array($b) || !in_array($b['art'] ?? null, BEFEHL_ARTEN, true)) return false;
+    foreach (BEFEHL_MENGEN as $f) if (array_key_exists($f, $b) && $b[$f] !== null && (!(is_int($b[$f]) || is_float($b[$f])) || !is_finite($b[$f]) || $b[$f] < 0 || $b[$f] > 1e13)) return false;
+    $gut = function ($v, $t) use (&$gut) {
+        if ($t > 4) return false;
+        if (is_string($v)) return strlen($v) <= 200 && strpbrk($v, '<>') === false;
+        if (is_int($v) || is_float($v)) return is_finite($v) && abs($v) <= 1e15;
+        if (is_bool($v) || $v === null) return true;
+        if (is_array($v)) { if (count($v) > 100) return false; foreach ($v as $k => $x) if (strlen((string)$k) > 40 || !$gut($x, $t + 1)) return false; return true; }
+        return false;
+    };
+    return $gut($b, 0);
+}
+// Die Namen aller Mitspieler (fest in bots.js): id => Name – 60 feste und 90 aus der Namensliste (bot61 …)
+function bot_namen() {
+    static $n = null; if ($n !== null) return $n;
+    $n = []; $src = (string)@file_get_contents(__DIR__ . '/bots.js');
+    if (preg_match_all("/\\{ id: '(bot\\d+)',\\s*name: '([^']+)'/", $src, $m, PREG_SET_ORDER)) foreach ($m as $x) $n[$x[1]] = $x[2];
+    if (preg_match("/\\/\\/ More players on the map[^\\n]*\\n\\[([^\\]]+)\\]\\.forEach/", $src, $m) && preg_match_all("/'([^']+)'/", $m[1], $nm)) foreach ($nm[1] as $i => $x) $n['bot' . (61 + $i)] = $x;
+    return $n;
 }
 // Nachrichten, die der Weltrechner an andere schicken darf (Geschenke nur über admin.php)
 const WELTRECHNER_NACHRICHTEN = ['delta', 'bericht', 'startschild'];
@@ -337,10 +376,16 @@ class MysqlLager {
         $da = $this->db->query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'ow_spieler'")->fetchAll(PDO::FETCH_COLUMN);
         $neu = ['stufe' => 'INT NULL', 'muenzen' => 'DOUBLE NULL', 'gems' => 'DOUBLE NULL', 'anzahl_basen' => 'INT NULL', 'zuletzt_gespeichert' => 'DATETIME NULL', 'abschied' => "CHAR(32) NOT NULL DEFAULT ''",
                 'profil' => 'MEDIUMTEXT NULL', 'profil_zeit' => 'INT UNSIGNED NOT NULL DEFAULT 0', 'online_bis' => 'INT UNSIGNED NOT NULL DEFAULT 0',
-                'anzeigename' => 'VARCHAR(20) NULL'];
+                'anzeigename' => 'VARCHAR(20) NULL', 'puls_minute' => 'INT UNSIGNED NOT NULL DEFAULT 0', 'puls_anzahl' => 'INT UNSIGNED NOT NULL DEFAULT 0'];
         foreach ($neu as $sp => $typ) if (!in_array($sp, $da, true)) $this->db->exec("ALTER TABLE ow_spieler ADD COLUMN $sp $typ");
+        // Indizes (Aufräumen und Zählen ohne die ganze Tabelle zu lesen) und ein eindeutiger Anzeigename
+        $idx = $this->db->query("SELECT CONCAT(TABLE_NAME, '.', INDEX_NAME) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME LIKE 'ow\\_%'")->fetchAll(PDO::FETCH_COLUMN);
+        foreach (['ow_bremse.seit' => 'ow_bremse ADD KEY seit (seit)', 'ow_sitzungen.ablauf' => 'ow_sitzungen ADD KEY ablauf (ablauf)',
+                  'ow_befehle.spieler_id' => 'ow_befehle ADD KEY spieler_id (spieler_id)', 'ow_befehle.erstellt' => 'ow_befehle ADD KEY erstellt (erstellt)',
+                  'ow_ereignisse.erstellt' => 'ow_ereignisse ADD KEY erstellt (erstellt)', 'ow_spieler.anzeigename' => 'ow_spieler ADD UNIQUE KEY anzeigename (anzeigename)'] as $n => $sql)
+            if (!in_array($n, $idx, true)) { try { $this->db->exec('ALTER TABLE ' . $sql); } catch (PDOException $e) { error_log('Open Water Index ' . $n . ': ' . $e->getMessage()); } }
     }
-    function sperren($uid) { $this->db->query("SELECT GET_LOCK('ow_spieler_" . (int)$uid . "', 15)"); }
+    function sperren($uid) { if ((int)$this->db->query("SELECT GET_LOCK('ow_spieler_" . (int)$uid . "', 15)")->fetchColumn() !== 1) throw new RuntimeException('Spieler-Sperre nicht bekommen'); }
     function entsperren($uid) { $this->db->query("SELECT RELEASE_LOCK('ow_spieler_" . (int)$uid . "')"); }
     function abschied($uid) {
         $q = $this->db->prepare('SELECT abschied FROM ow_spieler WHERE id = ?');
@@ -490,12 +535,12 @@ class MysqlLager {
     // true = noch erlaubt (und mitgezählt), false = zu viele Versuche
     function bremse($k, $max, $sek) {
         $jetzt = time();
-        $this->db->prepare('DELETE FROM ow_bremse WHERE seit < ?')->execute([$jetzt - 86400]);
-        $q = $this->db->prepare('SELECT anzahl, seit FROM ow_bremse WHERE schluessel = ?'); $q->execute([$k]); $r = $q->fetch();
-        if (!$r || $r['seit'] < $jetzt - $sek) { $this->db->prepare('REPLACE INTO ow_bremse (schluessel, anzahl, seit) VALUES (?, 1, ?)')->execute([$k, $jetzt]); return true; }
-        if ((int)$r['anzahl'] >= $max) return false;
-        $this->db->prepare('UPDATE ow_bremse SET anzahl = anzahl + 1 WHERE schluessel = ?')->execute([$k]);
-        return true;
+        if (mt_rand(1, 50) === 1) $this->db->prepare('DELETE FROM ow_bremse WHERE seit < ?')->execute([$jetzt - 86400]);
+        // zählen in einem einzigen Schritt (viele gleichzeitige Anfragen können nicht alle „noch frei“ lesen)
+        $this->db->prepare('INSERT INTO ow_bremse (schluessel, anzahl, seit) VALUES (?, 1, ?)
+            ON DUPLICATE KEY UPDATE anzahl = IF(seit < ?, 1, anzahl + 1), seit = IF(seit < ?, VALUES(seit), seit)')->execute([$k, $jetzt, $jetzt - $sek, $jetzt - $sek]);
+        $q = $this->db->prepare('SELECT anzahl FROM ow_bremse WHERE schluessel = ?'); $q->execute([$k]);
+        return (int)$q->fetchColumn() <= $max;
     }
     function bremse_frei($k) { $this->db->prepare('DELETE FROM ow_bremse WHERE schluessel = ?')->execute([$k]); }
     // Anzeigename: frei, wenn ihn kein anderer Spieler als Login- oder Anzeigenamen hat
@@ -504,11 +549,15 @@ class MysqlLager {
         $q->execute([$uid, $name, $name]);
         return !(int)$q->fetchColumn();
     }
-    function anzeigename_setzen($uid, $name) { $this->db->prepare('UPDATE ow_spieler SET anzeigename = ? WHERE id = ?')->execute([$name, $uid]); }
+    // false = gleichzeitig hat ihn jemand anderes bekommen (eindeutiger Schlüssel auf anzeigename)
+    function anzeigename_setzen($uid, $name) {
+        try { $this->db->prepare('UPDATE ow_spieler SET anzeigename = ? WHERE id = ?')->execute([$name, $uid]); return true; }
+        catch (PDOException $e) { if ($e->getCode() === '23000') return false; throw $e; }
+    }
     function alle_spieler() { return $this->db->query('SELECT id, name, anzeigename, stufe, muenzen, gems, anzahl_basen, online_bis, erstellt FROM ow_spieler ORDER BY id')->fetchAll(); }
 
     // ===== Welt =====
-    function welt_sperren() { $this->db->query("SELECT GET_LOCK('ow_welt', 15)"); }
+    function welt_sperren() { if ((int)$this->db->query("SELECT GET_LOCK('ow_welt', 15)")->fetchColumn() !== 1) throw new RuntimeException('Welt-Sperre nicht bekommen'); }
     function welt_entsperren() { $this->db->query("SELECT RELEASE_LOCK('ow_welt')"); }
     function welt_info() {
         $r = $this->db->query('SELECT version, versionen, leiter_id, leiter_token, leiter_bis, welt_zeit FROM ow_welt_info WHERE id = 1')->fetch();
@@ -624,12 +673,21 @@ class MysqlLager {
         $this->welt_entsperren();
         return true;
     }
+    // Wie groß wäre der Spielstand eines Spielers mit diesen neuen Teilen? (Bytes)
+    function groesse_nach($uid, $setzen) {
+        $q = $this->db->prepare('SELECT schluessel, LENGTH(wert) l FROM ow_spielstand WHERE spieler_id = ?'); $q->execute([$uid]);
+        $g = []; foreach ($q as $z) $g[$z['schluessel']] = (int)$z['l'];
+        foreach ($setzen as $k => $v) $g[$k] = strlen($v);
+        return array_sum($g);
+    }
     function aufraeumen() {   // alte Befehle (niemand hat gerechnet) und nie abgeholte Nachrichten
         $this->db->exec('DELETE FROM ow_befehle WHERE erstellt < NOW() - INTERVAL 1 DAY');
         $this->db->exec('DELETE FROM ow_ereignisse WHERE erstellt < NOW() - INTERVAL 60 DAY');
     }
     function befehl_ablegen($uid, $b) { $this->db->prepare('INSERT INTO ow_befehle (spieler_id, befehl) VALUES (?, ?)')->execute([$uid, $b]); }
+    function offene_befehle($uid) { $q = $this->db->prepare('SELECT COUNT(*) FROM ow_befehle WHERE spieler_id = ?'); $q->execute([$uid]); return (int)$q->fetchColumn(); }
     function befehle_abholen() {
+        $this->db->exec('DELETE FROM ow_befehle WHERE erstellt < NOW() - INTERVAL 10 MINUTE');   // zu alt: die Lage hat sich geändert
         $r = $this->db->query('SELECT id, spieler_id, befehl FROM ow_befehle ORDER BY id LIMIT 500')->fetchAll();
         if ($r) $this->db->prepare('DELETE FROM ow_befehle WHERE id <= ?')->execute([end($r)['id']]);
         return array_map(function ($z) { return ['von' => (int)$z['spieler_id'], 'b' => json_decode($z['befehl'])]; }, $r);
@@ -663,9 +721,15 @@ class MysqlLager {
     function push_weg($ids) { $q = $this->db->prepare('DELETE FROM ow_push WHERE id = ?'); foreach ($ids as $id) $q->execute([(int)$id]); }
     function profil_setzen($uid, $p) { $this->db->prepare('UPDATE ow_spieler SET profil = ?, profil_zeit = ? WHERE id = ?')->execute([$p, time(), $uid]); }
     function online($uid, $bis) { $this->db->prepare('UPDATE ow_spieler SET online_bis = ? WHERE id = ?')->execute([$bis, $uid]); }
+    // Puls zählen (zugleich „online“ setzen) – gibt zurück, wie viele Pulse in dieser Minute schon kamen
+    function puls_zaehlen($uid, $jetzt) {
+        $m = intdiv($jetzt, 60);
+        $this->db->prepare('UPDATE ow_spieler SET online_bis = ?, puls_anzahl = IF(puls_minute = ?, puls_anzahl + 1, 1), puls_minute = ? WHERE id = ?')->execute([$jetzt + 20, $m, $m, $uid]);
+        $q = $this->db->prepare('SELECT puls_anzahl FROM ow_spieler WHERE id = ?'); $q->execute([$uid]); return (int)$q->fetchColumn();
+    }
     // Alle echten Spieler (für die Karte), Profile nur wenn neuer als $seit
     function spieler_liste($seit) {
-        $q = $this->db->prepare('SELECT id, COALESCE(anzeigename, name) name, online_bis, profil_zeit, IF(profil_zeit > ?, profil, NULL) profil FROM ow_spieler');
+        $q = $this->db->prepare('SELECT id, COALESCE(anzeigename, CONCAT(\'Spieler \', id)) name, online_bis, profil_zeit, IF(profil_zeit > ?, profil, NULL) profil FROM ow_spieler');
         $q->execute([(int)$seit]);
         return array_map(function ($z) { return ['id' => (int)$z['id'], 'name' => $z['name'], 'online' => (int)$z['online_bis'] > time(), 'profil_zeit' => (int)$z['profil_zeit'], 'profil' => $z['profil'] !== null ? json_decode($z['profil'], false, 12) : null]; }, $q->fetchAll());
     }
@@ -725,6 +789,7 @@ function speichern_anfrage() {
         if (count($setzen) > 150 || count($loeschen) > 150) json_antwort(400, ['fehler' => 'zu viel']);
         foreach ($setzen as $v) if (strlen($v) > 6 * 1024 * 1024) json_antwort(400, ['fehler' => 'zu groß']);
         if (lager()->anzahl_teile($ich['id'], array_keys($setzen)) > 150) json_antwort(400, ['fehler' => 'zu viele Teile']);
+        if (lager()->groesse_nach($ich['id'], $setzen) > 40 * 1024 * 1024) json_antwort(413, ['fehler' => 'Spielstand zu groß']);   // höchstens 40 MB pro Konto
         $t2 = microtime(true);
         lager()->stand_schreiben($ich['id'], $setzen, $loeschen);
         header(sprintf('Server-Timing: lesen;dur=%d, warten;dur=%d, schreiben;dur=%d', ($t1 - $t0) * 1000, ($t2 - $t1) * 1000, (microtime(true) - $t2) * 1000));
@@ -798,10 +863,12 @@ function name_anfrage($ich, $d) {
     $l = lager();
     if (!hash_equals($l->spiel_token($ich['id']), (string)($d['token'] ?? ''))) json_antwort(409, ['fehler' => 'anderswo geöffnet']);
     $name = trim(preg_replace('/\s+/u', ' ', (string)($d['name'] ?? '')));
-    if (!preg_match('/^[\p{L}\p{N} _.-]{3,20}$/u', $name)) json_antwort(200, ['ok' => false, 'grund' => 'Der Name braucht 3 bis 20 Zeichen (Buchstaben, Zahlen, Leerzeichen, _ . -).']);
+    // nur lateinische Buchstaben (auch Umlaute) – keine Doppelgänger wie kyrillisches „а“ in „аlexander“
+    if (!preg_match('/^[\p{Latin}\p{N} _.-]{3,20}$/u', $name)) json_antwort(200, ['ok' => false, 'grund' => 'Der Name braucht 3 bis 20 Zeichen (Buchstaben, Zahlen, Leerzeichen, _ . -).']);
     if (!bremse('name:' . $ich['id'], 10, 3600)) json_antwort(200, ['ok' => false, 'grund' => 'Zu viele Versuche – bitte später nochmal.']);
-    if (!$l->name_frei($ich['id'], $name)) json_antwort(200, ['ok' => false, 'grund' => 'Diesen Namen hat schon jemand.']);
-    $l->anzeigename_setzen($ich['id'], $name);
+    $klein = mb_strtolower($name, 'UTF-8');
+    foreach (bot_namen() as $bn) if (mb_strtolower($bn, 'UTF-8') === $klein) json_antwort(200, ['ok' => false, 'grund' => 'Diesen Namen hat schon jemand.']);
+    if (!$l->name_frei($ich['id'], $name) || !$l->anzeigename_setzen($ich['id'], $name)) json_antwort(200, ['ok' => false, 'grund' => 'Diesen Namen hat schon jemand.']);
     json_antwort(200, ['ok' => true, 'name' => $name]);
 }
 
@@ -818,13 +885,14 @@ function welt_puls($ich, $d) {
     $tok = (string)($d['token'] ?? '');
     if (!$sys && !hash_equals($l->spiel_token($uid), $tok)) json_antwort(409, ['fehler' => 'anderswo geöffnet']);
     $jetzt = time();
-    if (!$sys) $l->online($uid, $jetzt + 20);
+    if (!$sys && $l->puls_zaehlen($uid, $jetzt) > 150) json_antwort(429, ['fehler' => 'zu schnell']);   // normal: 30 pro Minute (+ einer pro Befehl)
     // Zur Sicherheit (falls der Cronjob fehlt): ist ein Spieler da und der Weltrechner schlägt nicht mehr, schaut der Wachhund nach
     if (!$sys && $jetzt - (int)@filemtime(__DIR__ . '/weltrechner/herz.php') > 60 && $jetzt - (int)@filemtime(__DIR__ . '/weltrechner/zustand.php') > 30 && is_file(__DIR__ . '/weltrechner/wachhund.php')) {
         try { require_once __DIR__ . '/weltrechner/wachhund.php'; wachhund_runde('spieler'); } catch (Throwable $e) { error_log('Open Water Wachhund: ' . $e->getMessage()); }
     }
     if (!$sys && isset($d['profil']) && is_string($d['profil']) && strlen($d['profil']) < 400000 && ($pr = profil_bereinigen($d['profil'])) !== null && $pr !== false) $l->profil_setzen($uid, $pr);
-    if (!$sys) foreach (array_slice((array)($d['befehle'] ?? []), 0, 60) as $b) if (is_array($b) && sauber($b)) { $j = json_encode($b, JSON_UNESCAPED_UNICODE); if ($j !== false && strlen($j) < 20000) $l->befehl_ablegen($uid, $j); }
+    if (!$sys && !empty($d['befehle']) && $l->offene_befehle($uid) < 200)   // nie mehr als 200 wartende Befehle pro Spieler (kein Stau für alle)
+        foreach (array_slice((array)$d['befehle'], 0, 30) as $b) if (befehl_ok($b)) { $j = json_encode($b, JSON_UNESCAPED_UNICODE); if ($j !== false && strlen($j) < 8000) $l->befehl_ablegen($uid, $j); }
 
     $l->welt_sperren();
     $i = $l->welt_info();
