@@ -1683,7 +1683,8 @@ function botBarbHunt(bot) {                               // the strongest camp 
     return barbSend(bot.id, base, 'c', pick.id, n, heroPickBest(bot.id, null, null, n));
 }
 function botDayBoss(bot) {                                // the daily boss: a few strikes a day with a share of their biggest free base
-    const d = dbossEnsure(); if (!d || d.hp <= 0 || barbRec(bot.id).h >= DBOSS_HITS || barbOut(bot.id, 'b') || Math.random() < .5) return false;
+    const d = dbossEnsure(), due = Math.min(DBOSS_HITS, Math.ceil(DBOSS_HITS * (1 - msToMidnight() / 864e5)));   // spread over the day (strikes not made yet are caught up): the boss falls in the evening, not in the first hour
+    if (!d || d.hp <= 0 || barbRec(bot.id).h >= due || barbOut(bot.id, 'b') || Math.random() < .5) return false;
     const base = botBarbBase(bot); if (base === null) return false;
     const n = Math.floor((islandTroops[base] || 0) * (.15 + Math.random() * .2)); if (n < 1000) return false;
     return barbSend(bot.id, base, 'b', null, n, heroPickBest(bot.id, null, null, n));

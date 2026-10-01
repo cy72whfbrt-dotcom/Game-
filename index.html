@@ -2258,7 +2258,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         const MEGA_TEMPLE_MULT = 8;        // Mega-Tempel (centre): 8x a normal temple's bonus
         const GUARDIAN_TEMPLE_MULT = 3;    // Wächter-Tempel (the 4 guardian islands): 3x
         function templeBaseMult(isl) { return isl.type === 'megaTemple' ? MEGA_TEMPLE_MULT : isl.guardian ? GUARDIAN_TEMPLE_MULT : 1; }
-        const TEMPLE_GEMS_PER_TICK = 0.08;
+        const TEMPLE_GEMS_PER_TICK = 0.0015;   // ~5 Gems an hour (up to ~24 held with a full Tempelschrein): a few hundred a day, not tens of thousands
         const TEMPLE_COIN_BONUS_PER_TICK = 15;
         const TEMPLE_TROOP_BONUS_PER_TICK = 6;
         const TEMPLE_HOLD_STREAK_MS = 30 * 60 * 1000; // 30min to reach the max hold bonus
@@ -2984,7 +2984,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             const skill = Math.min(bonus, snap ? a.skillBonus : who === 'player' ? attackFlatBonus(raw) : Math.round(raw * sl * SKILL_DEFS.attack.atkPct / 100));
             if (skill) out.push(['Skill Angriff', skill, 'Stufe ' + sl + ' · +' + sl * SKILL_DEFS.attack.atkPct + ' %']);
             const hx = a && a.hx, hd = hx && heroById(hx.id);             // the hero's Angriff and Gefolge (a fired skill included)
-            if (bonus - skill) out.push([hd ? 'Held ' + hd.name + ' ' + heroStarTxt(hx.q) : 'Helden', bonus - skill, hd ? 'Angriff +' + Math.round(hx.atk) + ' %' + (hx.gef ? ' · Gefolge +' + fmtCompact(hx.gef) : '') + (hx.fired ? ' · ' + hx.skill + ' gezündet' : '') : '']);
+            if (bonus - skill) out.push([hd ? 'Held ' + hd.name + ' ' + heroStarTxt(hx.q) : 'Helden', bonus - skill, hd ? 'Angriff +' + Math.round(hx.atk) + ' %' + (heroGefOf(hx, raw) ? ' · Gefolge +' + fmtCompact(heroGefOf(hx, raw)) : '') + (hx.fired ? ' · ' + hx.skill + ' gezündet' : '') : '']);
             const tv = total - raw - bonus, x = a && a.atkTitleKey !== undefined ? TITLES.find(q => q.key === a.atkTitleKey) : titleOf(who);   // the title it marched with
             if (tv) out.push(['Titel ' + (x ? x.name : ''), tv, 'Mega-Tempel · ' + (tv > 0 ? '+' : '−') + (x ? Math.round(Math.abs(x.v) * 100) : 25) + ' %']);
             return out;
@@ -2993,7 +2993,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         function heroDefPart(parts, a, full) { const cut = Math.round(full * heroDefCut(a)), hd = cut && heroById(a.hx.id); if (hd) parts.push(['Held ' + hd.name, -cut, 'Verteidigung −' + Math.round(a.hx.def) + ' %']); return parts; }
         function attackFields(who, src, target, raw, hx) {      // everything an attack takes along at launch (skills, gear, title, hero) - for you and for everyone else
             const bot = who !== 'player', sk = bot ? Math.round(raw * botMults(who).attackPct / 100) : attackFlatBonus(raw);
-            return { attackBonus: sk + (hx ? Math.round(raw * hx.atk / 100) + hx.gef : 0), skillBonus: sk, skillLvl: bot ? loadBotState()[who].skills.attack : skills.attack || 0,
+            return { attackBonus: sk + (hx ? Math.round(raw * hx.atk / 100) + heroGefOf(hx, raw) : 0), skillBonus: sk, skillLvl: bot ? loadBotState()[who].skills.attack : skills.attack || 0,
                 attackGoldRate: bot ? botGoldRate(who, 'attackGold') : (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate, rewardGoldRate: killGoldRate(who, hx),
                 shieldLossReductionPct: Math.min(90, (bot ? botMults(who).shield : shieldLossReductionPct()) + (hx ? hx.loss : 0)), botShield: bot,
                 atkTitle: titleMult(who, 'attack'), atkTitleKey: (titleOf(who) || {}).key || null, hero: hx ? hx.id : null, hx: hx || null };
@@ -7959,7 +7959,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         }
         // ===== KOPFGELD AUF DEN HERRSCHER: while someone holds the throne a bounty grows (gems + coins, every 3 min with the Thron-Punkte).
         // Whoever takes the Mega-Tempel from him collects all of it; every won fight against one of his bases pays a small share.
-        const BOUNTY_GEMS = 5, BOUNTY_GEMS_MAX = 2500, BOUNTY_COIN_H = .1, BOUNTY_COIN_MAX_H = 24, BOUNTY_SHARE = .03;
+        const BOUNTY_GEMS = 3, BOUNTY_GEMS_MAX = 1000, BOUNTY_COIN_H = .1, BOUNTY_COIN_MAX_H = 24, BOUNTY_SHARE = .03;
         var bountyState = (() => { try { return JSON.parse(store.get('openWaterBounty')) || null; } catch (e) { return null; } })() || { ruler: null, gems: 0, coins: 0 };
         function saveBounty() { store.set('openWaterBounty', JSON.stringify(bountyState)); }
         function bountyOf() { const r = rulerOwner(); return r && bountyState.ruler === r ? { who: r, gems: Math.floor(bountyState.gems || 0), coins: Math.floor(bountyState.coins || 0) } : null; }
@@ -9217,7 +9217,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         ];
         // Lager: what a fallen base (or a beaten capital garrison) gives away - the same for everyone
         var PLUNDER_PCT = { base: .04, capital: .08 };
-        function storageSafe(lvl) { return lvl ? niceRound(10000 * Math.pow(1.85, lvl - 1)) : 0; }   // coins no attacker can take: 10 Tsd. at 1, ~2,5 Mio. at 10, ~23 Mrd. at 25
+        function storageSafe(lvl) { return lvl ? niceRound(10000 * Math.pow(1.65, lvl - 1)) : 0; }   // coins no attacker can take: 10 Tsd. at 1, ~900 Tsd. at 10, ~1,7 Mrd. at 25 (a share of a full coffer, not all of it - plunder stays worth it)
         function plunderOf(who, capital) {                  // { loot, safe }: the share of the coins above the Lager's protection
             const have = Math.max(0, who === 'player' ? coins : botCoins[who] || 0), safe = storageSafe(who === 'player' ? cityLevelSafe('storage') : botBld(who, 'storage'));
             return { loot: Math.floor(Math.max(0, have - safe) * PLUNDER_PCT[capital ? 'capital' : 'base']), safe: Math.min(have, safe) };
@@ -9601,7 +9601,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             const h = heroById(id); s = s || heroSt(who, id); if (!h || !s) return { atk: 0, def: 0, spd: 0, gef: 0 };
             const t = HERO_TIER[h.r], m = t.st * (1 + s.q / 4 * .15), L = heroLead(who);
             return { atk: Math.round(h.base[0] * m), def: Math.round(h.base[1] * m), spd: Math.round(h.base[2] * m),
-                     gef: Math.round(1e5 * t.st * (1 + s.q * .45) * levelRewardTroops(L.lvl) / 2e6 * (1 + L.hall * HERO_HALL_GEF / 100)) };
+                     gef: Math.round(5e4 * t.st * (1 + s.q * .15) * levelRewardTroops(L.lvl) / 2e6 * (1 + L.hall * HERO_HALL_GEF / 100)) };
         }
         function heroPower(who, id) { const h = heroById(id), s = heroSt(who, id); if (!h || !s || !s.own) return 0; return Math.round((4 + s.q) * HERO_TIER[h.r].st * 2500 + s.sk.reduce((a, v) => a + v, 0) * 1200); }
         // what every skill does: [the fx it raises, the kind of fight it needs]
@@ -9613,6 +9613,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         const HERO_FX_TXT = { atk: v => '+' + v + ' % Angriff', loss: v => '−' + v + ' % Verluste', def: v => 'Verteidigung −' + v + ' %', hosp: v => '+' + v + ' % ins Lazarett', gold: v => '+' + v + ' % Gold',
             flee: v => '+' + v + ' % fliehen', ret: v => 'Rückzug +' + v + ' % Tempo', late: v => v + ' % später bemerkt', spd: v => '+' + v + ' % Tempo', toll: v => '−' + v + ' % Maut',
             fdef: v => '+' + v + ' % Verteidigung', gSpd: v => '+' + v + ' % Sammeln', carry: v => '+' + v + ' % Traglast' };
+        function heroGefOf(hx, n) { return hx ? Math.min(hx.gef || 0, Math.max(0, n)) : 0; }   // Gefolge: never more than the troops the hero leads (no 1-troop marches with a big following)
         const HX0 = { atk: 0, loss: 0, def: 0, hosp: 0, gold: 0, flee: 0, ret: 0, late: 0, spd: 0, toll: 0, fdef: 0, gSpd: 0, carry: 0, gef: 0 };
         function heroFx(who, id, ctx, fired, s) {           // → the hero's numbers for this fight or march, with a line for the report per value that counts
             const h = heroById(id); s = s || heroSt(who, id); if (!h || !s || !s.own) return null;
@@ -9665,7 +9666,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             let best = null, bs = 0; const def = target ? effectiveDefense(target) : 0;
             for (const h of HEROES) { if (!heroOwned(who, h.id) || heroBusy(who, h.id)) continue;
                 const fx = target ? heroPeek(who, h.id, src, target, raw) : heroFx(who, h.id, { fight: 1, field: 1, vsArmy: 1, march: 1 }, false);
-                const sc = raw * (fx.atk / 100) + fx.gef + def * (fx.def + fx.loss) / 100 + raw * fx.spd / 400 + 1;
+                const sc = raw * (fx.atk / 100) + heroGefOf(fx, raw) + def * (fx.def + fx.loss) / 100 + raw * fx.spd / 400 + 1;
                 if (sc > bs) { bs = sc; best = h.id; } }
             return best;
         }
@@ -9847,7 +9848,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
                         '<div class="hh-blk"><div class="hh-skh"><h3>Fähigkeiten</h3>' + (s.own ? '<span class="hh-pts">' + free + (free === 1 ? ' Punkt' : ' Punkte') + ' frei</span>' : '<span class="hh-pts off">nach dem Freischalten</span>') + '</div><div class="hh-sklist">' + skills + '</div>' +
                             (s.own ? '<p class="hh-hint">Jeder halbe Stern gibt 1 Punkt – bei 5 Sternen 10. Das reicht für 2 Fähigkeiten auf Stufe 5. Bisher ' + heroPoints(s) + ' von 10.</p><button type="button" class="hh-reset" data-hh-reset' + (spent ? '' : ' disabled') + '>Fähigkeiten zurücksetzen · ' + HERO_RESET_GEMS + ' Gems</button>' : '') + '</div>' +
                         '<div class="hh-blk"><h3>Werte · wenn ' + h.name + ' mitkämpft</h3><div class="hh-vals"><div><span>Angriff</span><b>+' + st.atk + ' %</b></div><div><span>Verteidigung</span><b>+' + st.def + ' %</b></div><div><span>Tempo</span><b>+' + st.spd + ' %</b></div><div><span>Gefolge</span><b>+' + fmtCompact(st.gef) + '</b></div></div>' +
-                            '<p class="hh-hint">Verteidigung: weniger eigene Verluste. Gefolge: so viele Truppen kämpfen zusätzlich mit – wächst mit Sternen, deiner Stufe und der Heldenhalle.</p></div>' +
+                            '<p class="hh-hint">Verteidigung: weniger eigene Verluste. Gefolge: so viele Truppen kämpfen zusätzlich mit (höchstens so viele, wie der Held anführt) – wächst mit Sternen, deiner Stufe und der Heldenhalle.</p></div>' +
                     '</div></div>' +
                 '<div class="hh-actions">' + (maxed ? '<button class="hh-go" type="button" disabled>5 Sterne erreicht</button>'
                     : '<button class="hh-go" type="button" data-hh-up' + (s.sh >= need ? '' : ' disabled') + '><span class="hh-i">' + (s.own ? icon('star') : '+') + '</span>' + (s.own ? 'Aufwerten · ¼ Stern' + (s.q % 2 ? ' + 1 Fähigkeitspunkt' : '') : 'Freischalten') + '<small>' + s.sh + ' / ' + need + ' Splitter</small></button>') + '</div>';
@@ -10888,8 +10889,8 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             const lms = BARB_LMS.filter(l => l.ring <= 3); let p = null, lm = null;
             for (let t = 0; t < 20 && !p; t++) { lm = lms[Math.floor(r() * lms.length)]; p = barbSpot(lm, r, 3.5); }
             if (!p) p = { x: lm.x, y: lm.y };
-            let pool = 0; for (const bot of BOT_DEFS) { let big = 0; for (const id of botOwnedIslands[bot.id] || []) big = Math.max(big, islandTroops[id] || 0); pool += big * .25 * DBOSS_HITS; }
-            const hp = niceRound(Math.max(5e7, pool * .8)), had = !!dayBoss;                        // life: about 80 % of what everyone's strikes can take in a day
+            let pool = 0; for (const bot of BOT_DEFS) { let big = 0; for (const id of botOwnedIslands[bot.id] || []) big = Math.max(big, islandTroops[id] || 0); pool += big * .25 * DBOSS_HITS * barbFa(bot.id); }
+            const hp = niceRound(Math.max(5e7, pool * .8)), had = !!dayBoss;                        // life: about 80 % of what everyone's strikes (× their Angriff) can take in a day - it falls in the evening
             dayBoss = { d, k: K.k, name: K.name, x: Math.round(p.x), y: Math.round(p.y), lm: lm.id, hp, max: hp, dmg: {}, fell: 0 };
             saveBarb(); if (had) flashHint('Neuer Tagesboss: ' + K.name + ' ist erschienen!', 5000);
             return dayBoss;
@@ -10913,7 +10914,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             const bs = loadBotState()[who], sp = bs && bs.spare && bs.spare[pickRandomSlot()]; if (sp) sp[r] = (sp[r] || 0) + 1; return null;
         }
         function barbFight(who, troops, hx, foes) {         // out in the open: (troops + Gefolge) × Angriff (+ hero) × title against the camp, your shield (+ hero) saves some
-            const h = hx || HX0, fa = (1 + (fieldAtkPct(who) + h.atk) / 100) * titleMult(who, 'attack'), SA = (troops + h.gef) * fa, won = SA > foes;
+            const h = hx || HX0, fa = (1 + (fieldAtkPct(who) + h.atk) / 100) * titleMult(who, 'attack'), SA = (troops + heroGefOf(h, troops)) * fa, won = SA > foes;
             const sh = Math.min(90, fieldShield(who) + h.loss), loss = won ? Math.min(troops, Math.round(foes / fa * (1 - sh / 100))) : troops;
             return { won, SA: Math.round(SA), loss, kill: won ? foes : Math.min(foes, Math.round(SA)) };
         }
@@ -10947,7 +10948,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             const b = dayBoss, who = m.who, isP = who === 'player';
             if (!b || b.d !== m.d || b.d !== todayKey() || b.hp <= 0) { barbHome(m, m.troops, now); if (isP) flashHint('Der Tagesboss ist schon gefallen – deine Truppen kehren um.', 3500); return; }
             const hx = heroFieldFx(who, m.hero, {}), h = hx || HX0, fa = (1 + (fieldAtkPct(who) + h.atk) / 100) * titleMult(who, 'attack');
-            const dmg = Math.max(1, Math.min(b.hp, Math.round((m.troops + h.gef) * fa), Math.round(b.max * DBOSS_CAP)));
+            const dmg = Math.max(1, Math.min(b.hp, Math.round((m.troops + heroGefOf(h, m.troops)) * fa), Math.round(b.max * DBOSS_CAP)));
             const used = Math.min(m.troops, dmg / fa), loss = Math.min(m.troops, Math.round(used * .25 * (1 - Math.min(90, fieldShield(who) + h.loss) / 100))), wounded = fieldHurt(who, loss, hx);   // a quarter of those who struck
             b.hp -= dmg; b.dmg[who] = (b.dmg[who] || 0) + dmg;
             const gold = payGold(who, dmg * .3 * (1 + h.gold / 100));
@@ -11258,7 +11259,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         function fieldBattle(aWho, aTroops, dWho, dTroops, aHx, dHx) {   // every fight out in the open (armies, raids, fields): no walls - (troops + Gefolge) × Angriff (+ hero) × title, the winner's shield (+ hero) saves some
             const ah = aHx || HX0, dh = dHx || HX0;
             const fa = (1 + (fieldAtkPct(aWho) + ah.atk) / 100) * titleMult(aWho, 'attack'), fd = (1 + (fieldAtkPct(dWho) + dh.atk + dh.fdef) / 100) * titleMult(dWho, 'attack');
-            const SA = (aTroops + ah.gef) * fa, SD = (dTroops + dh.gef) * fd, won = SA > SD;
+            const SA = (aTroops + heroGefOf(ah, aTroops)) * fa, SD = (dTroops + heroGefOf(dh, dTroops)) * fd, won = SA > SD;
             const sh = Math.min(90, won ? fieldShield(aWho) + ah.loss : fieldShield(dWho) + dh.loss);
             const winLoss = Math.min(won ? aTroops : dTroops, Math.round((won ? SD / fa : SA / fd) * (1 - sh / 100)));
             return { won, SA: Math.round(SA), SD: Math.round(SD), aLoss: won ? winLoss : aTroops, dLoss: won ? dTroops : winLoss };
@@ -11768,7 +11769,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             const heldSince = templeHoldSince[island.id];
             const heldMin = heldSince ? Math.floor((Date.now() - heldSince) / 60000) : 0;
             return '<div class="notice notice--gold">' + icon('gem') + '<span>+' +
-                (TEMPLE_GEMS_PER_TICK * mult).toLocaleString('de-DE', { maximumFractionDigits: 2 }) + ' Gems · +' +
+                fmtNum(TEMPLE_GEMS_PER_TICK * mult * 3600000 / productionTickMs()) + ' Gems pro Stunde · +' +
                 fmtNum(TEMPLE_COIN_BONUS_PER_TICK * mult) + ' Münzen · +' + fmtNum(TEMPLE_TROOP_BONUS_PER_TICK * mult) + ' Truppen pro Tick' +
                 (heldSince ? ' · gehalten seit ' + heldMin + ' Min. (×' +
                     templeHoldMultiplier(island.id).toLocaleString('de-DE', { maximumFractionDigits: 2 }) + ')' : '') + '</span></div>';
@@ -12035,7 +12036,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             for (const b of popupStats.querySelectorAll('[data-hero]')) { const id = b.dataset.hero; b.disabled = !!id && heroBusy('player', id); b.classList.toggle('on', (id || null) === previewHero); }
             const src0 = islandById[previewSourceId], px = previewHero && src0 ? heroPeek('player', previewHero, src0, island, shown) : null, hfx = popupStats.querySelector('[data-preview="herofx"]');   // what the hero does in THIS attack
             if (hfx) hfx.textContent = !px ? '' : heroStarTxt(px.q) + (px.fired ? ' · ' + px.skill + ' zündet' : '') + ' · ' + px.lines.filter(l => l[0] !== 'Gefolge' && l[0] !== 'Tempo').map(l => l[1]).join(', ');
-            const swordBonus = attackFlatBonus(shown), heroTroops = px ? Math.round(shown * px.atk / 100) + px.gef : 0, atkBonus = swordBonus + heroTroops;
+            const swordBonus = attackFlatBonus(shown), heroTroops = px ? Math.round(shown * px.atk / 100) + heroGefOf(px, shown) : 0, atkBonus = swordBonus + heroTroops;
             const mine = Math.round((shown + atkBonus) * titleMult('player', 'attack'));        // same maths as resolveAttack
             const bEl = popupStats.querySelector('#previewAtkBonus'); if (bEl) bEl.textContent = fmtNum(swordBonus);
             const hbEl = popupStats.querySelector('#previewHeroBonus'); if (hbEl) hbEl.textContent = heroTroops ? ' + ' + fmtNum(heroTroops) + ' ' + heroById(previewHero).name : '';
