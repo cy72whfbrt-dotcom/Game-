@@ -2108,10 +2108,11 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             const a = Math.max(0, atk || 0), d = Math.max(0, def || 0), pct = a + d > 0 ? Math.round(a / (a + d) * 100) : 50;
             return '<div class="logBal' + (youDefend ? ' logBal--def' : '') + '"><div class="logBalBar" style="--a:' + pct + '%"><i></i></div><div class="logBalTxt"><span>' + atkLabel + '</span><span>' + defLabel + '</span></div></div>';
         }
+        const fmtBig = n => n >= 1e12 ? fmtCompact(n) : fmtNum(n);   // huge sums read as "227,1 Trill.", not as 21 digits
         function plunderLine(e, mine) {                     // Lager: what changed hands when a base fell, and what the Lager kept safe
             if (!e.plunder && !e.plunderSafe) return '';
-            const safe = e.plunderSafe ? fmtNum(e.plunderSafe) + ' geschützt durch Lager' : '';
-            return '<div class="logGold' + (mine ? '' : ' logPlunder') + '">' + (e.plunder ? (mine ? 'Beute: +' : 'Geplündert: −') + fmtNum(e.plunder) + ' Münzen' + (safe ? ' · ' + safe : '') : (mine ? 'Keine Beute – ' : 'Keine Münzen verloren – ') + safe) + '</div>';
+            const safe = e.plunderSafe ? fmtBig(e.plunderSafe) + ' geschützt durch Lager' : '';
+            return '<div class="logGold' + (mine ? '' : ' logPlunder') + '">' + (e.plunder ? (mine ? 'Beute: +' : 'Geplündert: −') + fmtBig(e.plunder) + ' Münzen' + (safe ? ' · ' + safe : '') : (mine ? 'Keine Beute – ' : 'Keine Münzen verloren – ') + safe) + '</div>';
         }
         function logRowHtml(kind, iconName, title, meta, trailing, extra) {
           return '<div class="logRow ' + kind + '"><span class="li">' + icon(iconName) + '</span><span class="lt"><b>' + title + '</b>' +
@@ -7138,8 +7139,8 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
                         : '<div class="logSide"><div class="logSideLabel">Barbaren-Lager · Stufe ' + entry.L + '</div><div class="logLine"><span>Krieger</span><span>' + fmtD(entry.def) + '</span></div>' +
                             '<div class="logSum' + (entry.won ? '' : ' advantage') + '"><span>Gesamt</span><span>' + fmtD(entry.def) + '</span></div>' +
                             '<div class="logCasualty"><span>Gefallen</span><span>−' + fmtD(entry.kill) + '</span></div>' + (!entry.won ? '<div class="logLine"><span>Noch im Lager</span><span>' + fmtD(entry.left) + '</span></div>' : '') + '</div>';
-                    const rew = boss ? (entry.gold ? '<div class="logGold">Beute: +' + fmtNum(entry.gold) + ' Münzen nach Schaden</div>' : '') + (entry.capped ? '<div class="logRetreat">Höchstens 5 % Leben pro Angriff.</div>' : '')
-                        : (entry.gold ? '<div class="logGold">Beute: +' + fmtNum(entry.gold) + ' Münzen' + (entry.kGold ? ' (davon ' + fmtNum(entry.kGold) + ' Angriff: Gold)' : '') + '</div>' : '') +
+                    const rew = boss ? (entry.gold ? '<div class="logGold">Beute: +' + fmtBig(entry.gold) + ' Münzen nach Schaden</div>' : '') + (entry.capped ? '<div class="logRetreat">Höchstens 5 % Leben pro Angriff.</div>' : '')
+                        : (entry.gold ? '<div class="logGold">Beute: +' + fmtBig(entry.gold) + ' Münzen' + (entry.kGold ? ' (davon ' + fmtBig(entry.kGold) + ' Angriff: Gold)' : '') + '</div>' : '') +
                           (entry.crate ? '<div class="logGold">Kiste: ' + escapeHtml(entry.crate) + '</div>' : '') + (entry.sh ? '<div class="logGold">' + escapeHtml(entry.sh) + '</div>' : '') +
                           (entry.n !== undefined ? '<div class="logRetreat">' + (entry.up ? 'Stufe ' + entry.open + ' freigeschaltet · ' : entry.open ? 'Freigeschaltet bis Stufe ' + entry.open + ' · ' : '') + entry.n + ' / ' + BARB_DAY + ' heute</div>' : '');
                     const det = tr === undefined ? fieldHeroDet(entry) : '<details><summary>Kampfdetails</summary>' + (boss ? '' : logBalance(entry.atk, entry.def, icon('attack') + 'Du ' + fmtM(entry.atk), fmtM(entry.def) + ' Lager' + icon('defense'))) +
@@ -7218,7 +7219,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
                         (entry.wounded ? '<div class="logRetreat logWounded">' + fmtNum(entry.wounded) + ' Verwundete gehen ins Lazarett – heile sie in der Stadt</div>' : '') +
                         (entry.atkWounded ? '<div class="logRetreat logWounded">' + escapeHtml(entry.botName) + ' bringt ' + fmtNum(entry.atkWounded) + ' Verwundete ins Lazarett</div>' : '') +
                         (entry.atkFled ? '<div class="logRetreat">' + fmtNum(entry.atkFled) + ' Truppen von ' + escapeHtml(entry.botName) + ' fliehen zurück</div>' : '') +
-                        (entry.defGold ? '<div class="logGold">Verteidigung: Gold +' + fmtNum(entry.defGold) + ' Münzen</div>' : '') +
+                        (entry.defGold ? '<div class="logGold">Verteidigung: Gold +' + fmtBig(entry.defGold) + ' Münzen</div>' : '') +
                         plunderLine(entry, false) +
                         '</details>';
                     return entry.capitalHolds
@@ -7263,7 +7264,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
                             gearHtml(entry.defGear) +
                         '</div>' +
                     '</div>' +
-                    (entry.killGold ? '<div class="logGold">Angriff: Gold +' + fmtNum(entry.killGold) + ' Münzen für getötete Truppen</div>' : entry.killGold === undefined && entry.attackGoldRate ? '<div class="logGold">Angriff: Gold +' + fmt1(entry.attackGoldRate) + ' pro getöteter Truppe</div>' : '') +
+                    (entry.killGold ? '<div class="logGold">Angriff: Gold +' + fmtBig(entry.killGold) + ' Münzen für getötete Truppen</div>' : entry.killGold === undefined && entry.attackGoldRate ? '<div class="logGold">Angriff: Gold +' + fmt1(entry.attackGoldRate) + ' pro getöteter Truppe</div>' : '') +
                     (!entry.won && entry.retreatSurvivors ? '<div class="logRetreat">' + fmtNum(entry.retreatSurvivors) + ' Truppen konnten fliehen und kehren zurück</div>' : '') +
                     (entry.wounded ? '<div class="logRetreat logWounded">' + fmtNum(entry.wounded) + ' Verwundete gehen ins Lazarett – heile sie in der Stadt</div>' : '') +
                     (entry.enemyWounded ? '<div class="logRetreat logWounded">' + escapeHtml(entry.defenderName || 'Der Gegner') + ' bringt ' + fmtNum(entry.enemyWounded) + ' Verwundete ins Lazarett</div>' : '') +
@@ -9230,11 +9231,12 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
               desc: 'Schützt deine Münzen: fällt eine deiner Basen oder die Garnison der Hauptstadt, nimmt der Sieger einen Teil deiner Münzen mit – aber nie, was im Lager liegt. Jede Stufe schützt mehr.' }
         ];
         // Lager: what a fallen base (or a beaten capital garrison) gives away - the same for everyone
-        var PLUNDER_PCT = { base: .04, capital: .08 };
+        var PLUNDER_PCT = { base: .04, capital: .08 }, PLUNDER_CAP_H = 2;   // a share of the coins above the Lager, at most 2 h of the victim's income per fight
         function storageSafe(lvl) { return lvl ? niceRound(10000 * Math.pow(1.65, lvl - 1)) : 0; }   // coins no attacker can take: 10 Tsd. at 1, ~900 Tsd. at 10, ~1,7 Mrd. at 25 (a share of a full coffer, not all of it - plunder stays worth it)
         function plunderOf(who, capital) {                  // { loot, safe }: the share of the coins above the Lager's protection
             const have = Math.max(0, who === 'player' ? coins : botCoins[who] || 0), safe = storageSafe(who === 'player' ? cityLevelSafe('storage') : botBld(who, 'storage'));
-            return { loot: Math.floor(Math.max(0, have - safe) * PLUNDER_PCT[capital ? 'capital' : 'base']), safe: Math.min(have, safe) };
+            const cap = Math.max(1e6, hourProduction(who).coins * PLUNDER_CAP_H);   // at most a few hours of the victim's income per fight - a big coffer isn't drained base by base
+            return { loot: Math.floor(Math.min(cap, Math.max(0, have - safe) * PLUNDER_PCT[capital ? 'capital' : 'base'])), safe: Math.min(have, safe) };
         }
         function plunderMove(from, to, loot) {              // the coins change hands (the player's or anyone's coffers)
             if (!(loot > 0)) return; if (from === 'player') coins -= loot; else botCoins[from] = Math.max(0, (botCoins[from] || 0) - loot);
@@ -9919,7 +9921,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             if (id === 'treasury') return nx(2, 'Münzproduktion auf allen Basen');
             if (id === 'watch') return nx(4, 'schnellere Späher');
             if (id === 'shrine') return nx(5, 'Bonus aus allen deinen Tempeln (Münzen, Truppen, Gems)');
-            if (id === 'storage') { const safe = storageSafe(lvl), pl = Math.round(PLUNDER_PCT.base * 100) + ' % pro gefallener Basis, ' + Math.round(PLUNDER_PCT.capital * 100) + ' % bei der Hauptstadt';
+            if (id === 'storage') { const safe = storageSafe(lvl), pl = Math.round(PLUNDER_PCT.base * 100) + ' % pro gefallener Basis, ' + Math.round(PLUNDER_PCT.capital * 100) + ' % bei der Hauptstadt (höchstens ' + PLUNDER_CAP_H + ' Std. deiner Einnahmen pro Kampf)';
                 return (lvl ? 'Geschützt: ' + fmtCompact(safe) + ' Münzen' + (coins <= safe ? ' – gerade alles sicher.' : ' – darüber verlierst du ' + pl + '.') : 'Noch nichts geschützt: fällt eine Basis, verlierst du ' + pl + ' deiner Münzen.') +
                     (lvl < cityMaxLevel(id) ? ' Nächste Stufe schützt ' + fmtCompact(storageSafe(lvl + 1)) + (/\.$/.test(fmtCompact(storageSafe(lvl + 1))) ? '' : '.') : ''); }
             if (id === 'hospital') return lvl ? hospitalPct() + ' % der Gefallenen kommen ins Lazarett · Platz für ' + fmtCompact(hospitalCapacity()) + (lvl < CITY_MAX_LEVEL ? ' · Nächste Stufe: ' + Math.min(60, (lvl + 1) * 5) + ' %, Platz für ' + fmtCompact(Math.round(1e6 * Math.pow(1.6, lvl))) : '') : 'Baue das Lazarett, um Verwundete zu retten.';
