@@ -218,7 +218,9 @@ b,strong{font-weight:600}
 .tour-head small{display:block;margin-top:3px;font:500 var(--fs-11)/1.3 var(--font-ui);color:var(--tx-3)} .tour-head small b{display:inline;font:600 var(--fs-11)/1 var(--font-ui);letter-spacing:0;color:var(--tx-1);font-variant-numeric:tabular-nums}
 .tour-me{display:grid;grid-template-columns:1fr 1fr;gap:6px} .tour-me span{display:flex;flex-direction:column;gap:3px;padding:7px 9px;border:1px solid var(--line-1);border-radius:var(--r-sm);background:rgba(0,0,0,.22);font:600 9.5px/1 var(--font-ui);letter-spacing:.08em;text-transform:uppercase;color:var(--tx-3)}
 .tour-me b{font:700 var(--fs-15)/1 var(--font-display);letter-spacing:0;text-transform:none;color:var(--gold-100);font-variant-numeric:tabular-nums}
-.tour-rules{display:grid;gap:5px} .tour-rules span{display:flex;align-items:center;gap:8px;font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-2)} .tour-rules .icon{width:15px;height:15px;flex:none;color:#c9a2ff}
+.tour-by{display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:6px} .tour-by span{display:flex;flex-direction:column;gap:3px;padding:6px 8px;border:1px solid var(--line-1);border-radius:var(--r-sm);background:rgba(0,0,0,.16);font:600 9px/1 var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--tx-3)}
+.tour-by .icon{width:12px;height:12px;color:#c9a2ff} .tour-by b{font:700 var(--fs-13)/1 var(--font-display);letter-spacing:0;text-transform:none;color:var(--tx-1);font-variant-numeric:tabular-nums}
+.tour-rules b{color:var(--tx-1);font-weight:700} .tour-rules span span{display:block} .tour-rules{display:grid;gap:5px} .tour-rules span{display:flex;align-items:center;gap:8px;font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-2)} .tour-rules .icon{width:15px;height:15px;flex:none;color:#c9a2ff}
 .tour-prizes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
 .tour-prize{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 3px;border:1px solid var(--line-1);border-radius:var(--r-sm);background:rgba(0,0,0,.22);text-align:center;min-width:0}
 .tour-prize b{font:700 var(--fs-12)/1.1 var(--font-display);color:var(--gold-100)} .tour-prize span{display:flex;align-items:center;gap:3px;font:600 10.5px/1.1 var(--font-ui);color:var(--tx-2);white-space:nowrap}
@@ -1796,7 +1798,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
     <button class="tab active" type="button" role="tab" data-rtab="power"><svg class="icon"><use href="#i-attack"/></svg><span>Macht</span></button>
     <button class="tab" type="button" role="tab" data-rtab="caps"><svg class="icon"><use href="#i-flag"/></svg><span>Eroberungen</span></button>
     <button class="tab" type="button" role="tab" data-rtab="titles"><svg class="icon"><use href="#i-crown"/></svg><span>Titel</span></button>
-    <button class="tab" type="button" role="tab" data-rtab="week"><svg class="icon"><use href="#i-points"/></svg><span>Thron (Woche)</span></button>
+    <button class="tab" type="button" role="tab" data-rtab="week"><svg class="icon"><use href="#i-points"/></svg><span>Thron-Punkte</span></button>
     <button class="tab" type="button" role="tab" data-rtab="tour"><svg class="icon"><use href="#i-crown"/></svg><span>Turnier</span></button>
   </div>
   <div class="pbody" id="rankBody"></div>
@@ -6915,16 +6917,16 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             div.textContent = str;
             return div.innerHTML;
         }
-        // ===== RANGLISTE: Macht, Eroberungen, Titel (aus der Mitte) und Thron-Punkte der Woche. Worked out once when opened or a tab
+        // ===== RANGLISTE: Macht, Eroberungen, Titel (aus der Mitte), Thron-Punkte (all ever earned) and the Wochenend-Turnier. Worked out once when opened or a tab
         // is picked - never per frame. Everyone is listed the same way; your row is blue and waits in the foot when you're outside the top.
         const rankPopup = document.getElementById('rankPopup'), RANK_TOP = 50;
         let rankTab = 'power';
         const RANK_TABS = { power: { t: 'Macht', sub: 'Die Stärke des ganzen Reichs', unit: 'Macht' },
             caps: { t: 'Eroberungen', sub: 'Eroberte Basen insgesamt', unit: 'erobert' },
             titles: { t: 'Titel', sub: 'Wer die Mitte hält und wer einen Titel trägt', unit: 'Thron-P.' },
-            week: { t: 'Thron (Woche)', sub: '', unit: 'Thron-P.' }, tour: { t: 'Wochenend-Turnier', sub: '', unit: 'Punkte' } };
+            week: { t: 'Thron-Punkte', sub: 'Fürs Halten der Mitte · alle je verdienten', unit: 'Thron-P.' },
+            tour: { t: 'Wochenend-Turnier', sub: 'Nur am Wochenende · Preise für die Besten', unit: 'Punkte' } };
         function conquestsOf(who) { return who === 'player' ? playerStats.captures || 0 : botConquests(who); }
-        function weekEndsAt() { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - (d.getDay() + 6) % 7 + 7); return d.getTime(); }
         function rankPeople() {                                  // everyone once: name, frame, look title, level, bases
             const bs = loadBotState(), out = [{ who: 'player', name: profileName.value || 'Du', frame: playerFrame(), title: playerTitle(), lvl: playerLvl, bases: ownedIslands.size }];
             for (const bd of BOT_DEFS) { const lk = botLook(bd.id); out.push({ who: bd.id, name: bd.name, frame: lk.frame, title: lk.title, lvl: (bs[bd.id] || {}).lvl || 1, bases: whoBases(bd.id) }); }
@@ -6939,14 +6941,14 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
                 '<span class="lb-val"><b>' + (v >= 1e5 ? fmtCompact(v) : fmtNum(v)) + '</b><small>' + RANK_TABS[rankTab].unit + '</small></span></div>';
         }
         function renderRankings() {
-            const tab = RANK_TABS[rankTab], people = rankPeople(), week = throneState.week || {}, t = loadTitles(), ruler = rulerOwner() || null;
+            const tab = RANK_TABS[rankTab], people = rankPeople(), bs = loadBotState(), t = loadTitles(), ruler = rulerOwner() || null;
             const basesTxt = n => fmtNum(n) + (n === 1 ? ' Basis' : ' Basen');
             let list, medals = true, empty = '', tourMe = null;
             if (rankTab === 'power') { for (const e of people) { const pr = whoProfile(e.who); e.val = pr ? powerOf(pr) : 0; e.sub = escapeHtml(e.title) + ' <i>· ' + basesTxt(e.bases) + '</i>'; } list = people.slice(); }
             else if (rankTab === 'caps') { for (const e of people) { e.val = conquestsOf(e.who); e.sub = escapeHtml(e.title) + ' <i>· hält ' + basesTxt(e.bases) + '</i>'; } list = people.slice(); saveBotState(); }
             else if (rankTab === 'titles') {                      // the ruler first, then everyone wearing a title from the middle
                 medals = false; const by = {}; for (const x of TITLES) if (t.by[x.key]) by[t.by[x.key]] = x;
-                for (const e of people) { const x = by[e.who]; e.val = week[e.who] || 0;
+                for (const e of people) { const x = by[e.who]; e.val = throneEarnedOf(e.who, bs);
                     e.sub = e.who === ruler ? '<span class="lb-t is-ruler">Herrscher</span>' : x ? '<span class="lb-t' + (x.good ? '' : ' is-bad') + '" title="' + x.desc + '">' + x.name + '</span> <i>' + (x.v > 0 ? '+' : '−') + Math.round(Math.abs(x.v) * 100) + ' % ' + ({ troops: 'Truppen', coins: 'Münzen', attack: 'Angriff', defense: 'Abwehr' })[x.kind] + '</i>' : '<i>kein Titel</i>'; }
                 const tr = e => e.who === ruler ? 0 : by[e.who] ? (by[e.who].good ? 1 : 2) : 3;
                 list = people.filter(e => tr(e) < 3).sort((a, b) => tr(a) - tr(b) || b.val - a.val);
@@ -6959,14 +6961,15 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
                 if (!live && last && last.me) { tourMe = last.me; people[0].val = last.me.pts; }          // your place last time, even outside the top 10
                 empty = live ? 'Noch hat niemand Punkte. Halte den Thron oder einen Wächter-Tempel, oder kämpfe in der Mitte.' : 'Am Samstag geht es los.';
                 if (last && !live && !last.seen) { last.seen = true; tourDirty = true; }
-            } else { for (const e of people) { e.val = week[e.who] || 0; e.sub = escapeHtml(e.title) + ' <i>· ' + basesTxt(e.bases) + '</i>'; } list = people.filter(e => e.val > 0);
-                empty = 'Diese Woche hat noch niemand Thron-Punkte geholt. Halte die Mitte oder einen Wächter-Tempel.'; }
+            } else { for (const e of people) { e.val = throneEarnedOf(e.who, bs); e.sub = escapeHtml(e.title) + ' <i>· ' + basesTxt(e.bases) + '</i>'; } list = people.filter(e => e.val > 0);
+                empty = 'Noch hat niemand Thron-Punkte geholt. Halte die Mitte oder einen Wächter-Tempel.'; }
             if (rankTab !== 'titles') list.sort((a, b) => b.val - a.val || b.lvl - a.lvl);
             const lim = rankTab === 'tour' ? TOUR_TOP : RANK_TOP, top = list.slice(0, lim), mi = list.findIndex(e => e.who === 'player'), tw = tourWin();
             document.getElementById('rankTitle').textContent = tab.t;
-            document.getElementById('rankSub').textContent = rankTab === 'week' ? 'Neue Woche in ' + fmtDHMS((weekEndsAt() - Date.now()) / 1000) : rankTab === 'tour' ? (tw.on ? 'Endet in ' : 'Beginnt in ') + fmtDHMS(((tw.on ? tw.end : tw.start) - Date.now()) / 1000) : tab.sub;
+            document.getElementById('rankSub').textContent = tab.sub;                     // one line what this list counts (the Turnier clock is in its card)
             for (const b of document.querySelectorAll('#rankTabs [data-rtab]')) { const on = b.dataset.rtab === rankTab; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }
             document.getElementById('rankBody').innerHTML = (rankTab === 'tour' ? tourCardHtml() + '<div class="lb-gap">' + (tw.on ? 'Live · Top ' + TOUR_TOP : 'Letztes Turnier') + '</div>' : '') +
+                (rankTab === 'week' ? '<p class="mail-intro lb-intro">Thron-Punkte gibt es fürs Halten der Mitte: +' + THRONE_PTS_MEGA + ' alle 3 Min. für den Thron, +' + THRONE_PTS_GUARD + ' je Wächter-Tempel. Du gibst sie im Shop unter „Thron“ aus – hier zählt alles je Verdiente, ohne Neustart. Das Turnier am Wochenende zählt eigene Punkte.</p>' : '') +
                 (top.length ? top.map((e, i) => rankRowHtml(e, i + 1, medals)).join('') + (list.length > lim ? '<div class="lb-gap">Top ' + lim + ' von ' + fmtNum(list.length) + '</div>' : '')
                 : rankTab === 'tour' ? '<div class="war-empty">' + empty + '</div>' : '<div class="empty-state">' + icon(rankTab === 'titles' ? 'crown' : 'points') + '<b>Noch leer</b>' + empty + '</div>');
             const foot = document.getElementById('rankFoot');
@@ -7749,12 +7752,14 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             ...RING_SKINS.filter(r => r.tp).map(r => ({ id: 'ring_' + r.id, name: 'Ring „' + r.name + '“', icon: 'crown', cost: r.tp, once: true, ring: r.id }))
         ];
         const throneOwned = (who, o) => o.ring ? ringSkinsOf(who).includes(o.ring) : who === 'player' ? !!(look.bought && look.bought.throne) : !!(loadBotState()[who] || {}).throneLook;
-        function weekKeyOf(t) { const d = new Date(t); d.setDate(d.getDate() - (d.getDay() + 6) % 7); return todayKey(d); }
         var throneState = (() => { try { return JSON.parse(store.get('openWaterThrone')) || null; } catch (e) { return null; } })() || { pts: 0 };
         (() => { const now = Date.now(), ts = throneState;               // no points or volleys pile up while the game was closed
             if (!(ts.nextPts > now)) ts.nextPts = now + THRONE_TICK_MS; if (!(ts.nextFire > now)) ts.nextFire = now + THRONE_FIRE_MS;
-            if (!ts.week || ts.weekKey !== weekKeyOf(now)) { ts.week = {}; ts.weekKey = weekKeyOf(now); } })();
+            ts.week = ts.week || {}; })();                                                // (ts.week: Thron-Punkte ever earned per person - no weekly reset any more, the old week stays in)
         function saveThrone() { store.set('openWaterThrone', JSON.stringify(throneState)); }
+        function throneEarnedOf(who, bs) { const ts = throneState, w = (ts.week || {})[who] || 0;   // all Thron-Punkte ever earned (the ranking) - the larger of the tally and the old totals, so nobody loses any
+            return Math.floor(Math.max(w, who === 'player' ? ts.earned || 0 : (((bs || loadBotState())[who] || {}).stats || {}).tpEarned || 0)); }
+        function throneEarnedList(bs) { bs = bs || loadBotState(); return ['player', ...BOT_DEFS.map(b => b.id)].map(w => [w, throneEarnedOf(w, bs)]).filter(e => e[1] > 0).sort((a, b) => b[1] - a[1]); }
         function throneIncome(who) { return (rulerOwner() === who ? THRONE_PTS_MEGA : 0) + guardianTempleIds.filter(g => islandOwnerOf(g) === who).length * THRONE_PTS_GUARD; }
         function throneShooters() { const hd = rulerOwner(); return hd ? guardianTempleIds.filter(g => islandOwnerOf(g) !== hd) : []; }
         function hourProduction(who) {                       // what an empire makes in an hour (the coin and troop offers pay this much)
@@ -7789,13 +7794,12 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         }
         var throneShots = [];                                  // volleys flying across the map (screen-space drawing below)
         function throneAward(silent, at) {                    // at: when this award happened (the time you were away is caught up afterwards)
-            const ts = throneState, now = Date.now();
-            if (ts.weekKey !== weekKeyOf(now)) { ts.week = {}; ts.weekKey = weekKeyOf(now); }
+            const ts = throneState; ts.week = ts.week || {};
             const got = {};
             const add = (who, n) => { if (!who) return; got[who] = (got[who] || 0) + n; };
             add(rulerOwner(), THRONE_PTS_MEGA); for (const g of guardianTempleIds) add(islandOwnerOf(g), THRONE_PTS_GUARD);
             goalBump(rulerOwner(), 'throneMin', THRONE_TICK_MS / 60000);   // minutes on the throne (Erfolge)
-            const tm = THRONE_TICK_MS / 60000; tourAdd(rulerOwner(), TOUR_PTS_MEGA * tm, at); for (const g of guardianTempleIds) tourAdd(islandOwnerOf(g), TOUR_PTS_GUARD * tm, at);   // Wochenend-Turnier
+            tourHold(at);                                                                 // Wochenend-Turnier
             bountyGrow();                                                                 // the Kopfgeld on the ruler grows
             for (const [who, n] of Object.entries(got)) {
                 if (who === 'player') { ts.pts = (ts.pts || 0) + n; ts.earned = (ts.earned || 0) + n; warStat('thronePts', n); }
@@ -7834,7 +7838,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             if (!ts.coTold && coalitionOn(now)) { ts.coTold = true; dirty = true;                  // everyone else turns on the throne
                 flashHint(r === 'player' ? 'Du hältst den Thron schon lange – die anderen verbünden sich gegen dich. Rechne mit Angriffen von allen Seiten!'
                     : 'Die anderen verbünden sich gegen ' + botById[r].name + ' – der Thron wird von allen Seiten angegriffen.', 6000); }
-            for (let n = 0; ts.nextPts <= now; n++) { ts.nextPts += THRONE_TICK_MS; dirty = true; if (n < 3) throneAward(); }   // a throttled background tab catches up a little, not for hours
+            for (let n = 0; ts.nextPts <= now; n++) { ts.nextPts += THRONE_TICK_MS; dirty = true; if (n < 3) throneAward(); else if (n < 160) tourHold(ts.nextPts - THRONE_TICK_MS); }   // a throttled background tab catches up a little, not for hours - the Turnier minutes in full (up to 8 h, like offline)
             for (let n = 0; ts.nextFire <= now; n++) { ts.nextFire += THRONE_FIRE_MS; dirty = true; if (n < 3) throneVolley(); }
             if (dirty) { saveThrone(); if (isPanelOpen(shopPopup)) renderShop(); }
             const clock = ms => fmtClock(Math.max(0, ms) / 1000);
@@ -7868,7 +7872,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             const el = document.getElementById('throneShop'); if (!el) return;
             const ts = throneState, hd = rulerOwner(), sh = throneShooters(), inc = throneIncome('player'), bo = bountyOf(), tw = tourWin();
             const hdName = hd === 'player' ? '<span class="me">Du</span>' : hd ? whoLink(hd, botById[hd].name) : 'niemand';
-            const week = Object.entries(ts.week || {}).sort((a, b) => b[1] - a[1]).slice(0, 5);
+            const week = throneEarnedList().slice(0, 5);
             el.innerHTML = '<div class="throne-status">' +
                     '<div class="ts-row">' + icon('crown') + '<span>Die Mitte hält</span><b>' + hdName + '</b></div>' +
                     '<div class="ts-row">' + icon('hourglass') + '<span>Nächste Thron-Punkte</span><b data-throne-pts>' + fmtClock((ts.nextPts - Date.now()) / 1000) + '</b></div>' +
@@ -7886,9 +7890,9 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
                     return '<div class="throne-row' + (o.once ? ' is-special' : '') + '"><span class="tr-ic">' + icon(o.icon, 'ico-' + o.icon) + '</span><span class="tr-t"><b>' + o.name + '</b><small>' + sub + '</small></span>' +
                         (done ? '<span class="chip">' + icon('check') + 'Gekauft</span>' : '<button type="button" class="btn btn--primary btn--sm" data-throne-buy="' + o.id + '"' + ((ts.pts || 0) < o.cost ? ' disabled' : '') + '>' + icon('crown') + '<b>' + fmtNum(o.cost) + '</b></button>') + '</div>'; }).join('') +
                     '<div class="throne-row is-special"><span class="tr-ic">' + icon('star', 'ico-crown') + '</span><span class="tr-t"><b>Aussehen</b><small>Rahmen, Titel, Ringe, Basis- und Marsch-Skins</small></span><button type="button" class="btn btn--primary btn--sm" data-look-open>Öffnen</button></div></div>' +
-                '<div class="sect"><h4>Diese Woche am Thron</h4></div>' +
+                '<div class="sect"><h4>Die meisten Thron-Punkte</h4></div>' +
                 (week.length ? '<div class="throne-week">' + week.map(([who, n], i) => '<div' + (who === 'player' ? ' class="me"' : '') + '><i>' + (i + 1) + '</i><span>' + (who === 'player' ? 'Du' : whoLink(who, botById[who].name)) + '</span><b>' + fmtNum(n) + '</b></div>').join('') + '</div>'
-                    : '<div class="war-empty">Diese Woche hat noch niemand Thron-Punkte geholt.</div>');
+                    : '<div class="war-empty">Noch hat niemand Thron-Punkte geholt.</div>');
         }
         let shopTab = 'gems';
         function showShopTab(t) {
@@ -7902,13 +7906,14 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         document.getElementById('throneShop').addEventListener('click', e => { if (e.target.closest('[data-tour-open]')) { openRankings('tour'); return; } const b = e.target.closest('[data-throne-buy]'); if (b && !b.disabled) throneBuy(b.dataset.throneBuy); });
 
         // ===== WOCHENEND-TURNIER UM DIE MITTE: Sa 0:00 bis So 23:59:59 (local time) everyone collects Turnier-Punkte - holding the throne (per minute),
-        // a Wächter-Tempel (fewer) and troops beaten in fights in the middle and at its gates (per 1.000). When it ends the places are paid once
+        // a Wächter-Tempel (fewer) and troops beaten in fights in the middle and at its gates (per 1.000, attacking and defending alike - at most
+        // 30 a fight and on average no more than the throne: 10 a minute, so many fights can't bury holding the middle). When it ends the places are paid once
         // (also when you were away), the winner wears "Turniersieger" with a purple-gold ring for 7 days. The same for everyone.
-        const TOUR_PTS_MEGA = 10, TOUR_PTS_GUARD = 3, TOUR_KILL_PER = 1000, TOUR_KILL_MAX = 30, TOUR_CHAMP_MS = 7 * 86400000, TOUR_TOP = 10;
+        const TOUR_PTS_MEGA = 10, TOUR_PTS_GUARD = 3, TOUR_KILL_PER = 1000, TOUR_KILL_MAX = 30, TOUR_KILL_MIN = 10, TOUR_CHAMP_MS = 7 * 86400000, TOUR_TOP = 10;
         const TOUR_PRIZES = [{ to: 1, gems: 3000, sh: 60, t: '1.' }, { to: 3, gems: 1500, sh: 30, t: '2.–3.' }, { to: 10, gems: 600, sh: 12, t: '4.–10.' }, { to: Infinity, gems: 100, sh: 3, t: 'Alle anderen' }];
         const midZoneIds = new Set(islands.filter(i => { const lm = landmasses[i.landmassId]; return i.type === 'megaTemple' || i.guardian || i.type === 'gate' && (i.gateKind === 'throne' || i.gateKind === 'guardian') || !!lm && (lm.tier === 'throne' || lm.tier === 'guardian'); }).map(i => i.id));
         var tourState = (() => { try { return JSON.parse(store.get('openWaterTourney')) || null; } catch (e) { return null; } })() || {};
-        tourState.pts = tourState.pts || {}; tourState.hist = tourState.hist || [];
+        tourState.pts = tourState.pts || {}; tourState.hist = tourState.hist || []; tourState.by = tourState.by || {}; tourState.kb = tourState.kb || {};   // by: who got what for what (thr / tmp / fig), kb: fight-point allowance
         let tourDirty = false, tourWinMemo = null, tourRankMemo = null;
         function saveTour() { tourDirty = false; store.set('openWaterTourney', JSON.stringify(tourState)); }
         window.addEventListener('pagehide', () => { if (tourDirty) saveTour(); });   // (points are saved once a second - the last second too)
@@ -7922,10 +7927,16 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         function tourRoll(now) {                              // a finished weekend pays out once, a new one starts empty
             const ts = tourState, w = tourWin(now);
             if (ts.key && !ts.paid && now >= ts.end) tourPay();
-            if (w.on && ts.key !== w.key) { ts.key = w.key; ts.end = w.end; ts.pts = {}; ts.paid = false; tourDirty = true; tourRankMemo = null; }
+            if (w.on && ts.key !== w.key) { ts.key = w.key; ts.end = w.end; ts.pts = {}; ts.by = {}; ts.kb = {}; ts.paid = false; tourDirty = true; tourRankMemo = null; }
         }
-        function tourAdd(who, n, at) { if (!who || !(n > 0)) return; at = at || Date.now(); if (!tourOn(at)) return; tourRoll(at);
-            tourState.pts[who] = (tourState.pts[who] || 0) + n; tourDirty = true; }
+        function tourAdd(who, n, at, kind) { if (!who || !(n > 0)) return; at = at || Date.now(); if (!tourOn(at)) return; tourRoll(at);
+            tourState.pts[who] = (tourState.pts[who] || 0) + n; if (kind) { const b = tourState.by[who] = tourState.by[who] || {}; b[kind] = (b[kind] || 0) + n; } tourDirty = true; }
+        function tourHold(at) { const tm = THRONE_TICK_MS / 60000;   // one Thron-Punkte tick: the throne and each Wächter-Tempel, per minute held
+            tourAdd(rulerOwner(), TOUR_PTS_MEGA * tm, at, 'thr'); for (const g of guardianTempleIds) tourAdd(islandOwnerOf(g), TOUR_PTS_GUARD * tm, at, 'tmp'); }
+        function tourFight(who, kills) {                      // 1 per 1.000 beaten, at most 30 a fight; an allowance refills at 10 a minute (up to 30) - attacker and defender alike
+            if (!who || !(kills > 0) || !tourOn()) return; const now = Date.now(), k = tourState.kb[who] || [TOUR_KILL_MAX, now];
+            const left = Math.min(TOUR_KILL_MAX, k[0] + Math.max(0, now - k[1]) / 60000 * TOUR_KILL_MIN), n = Math.min(TOUR_KILL_MAX, kills / TOUR_KILL_PER, left);
+            tourState.kb[who] = [left - n, now]; tourAdd(who, n, now, 'fig'); }
         function tourList() {                                 // [who, points] best first (memoised a few seconds)
             const now = Date.now(); if (tourRankMemo && now - tourRankMemo.at < 3000 && tourRankMemo.key === tourState.key) return tourRankMemo.list;
             const list = tourState.key === tourWin().key ? Object.entries(tourState.pts).filter(e => e[1] >= 1 && (e[0] === 'player' || botById[e[0]])).sort((a, b) => b[1] - a[1]) : [];
@@ -7952,7 +7963,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         })();
         function tourChamp(now) { const c = tourState && tourState.champ; return c && (now || Date.now()) < c.until ? c.who : null; }
         function midFight(tid, aWho, aKills, dWho, dKills, won, dOwner) {     // after every fight for a base: Turnier-Punkte in the middle, a share of the Kopfgeld
-            if (midZoneIds.has(tid) && tourOn()) { tourAdd(aWho, Math.min(TOUR_KILL_MAX, aKills / TOUR_KILL_PER)); tourAdd(dWho, Math.min(TOUR_KILL_MAX, dKills / TOUR_KILL_PER)); }   // (capped per fight: holding the throne must still count)
+            if (midZoneIds.has(tid) && tourOn()) { tourFight(aWho, aKills); tourFight(dWho, dKills); }   // (capped per fight and per minute: holding the throne must still count)
             if (won && dOwner && dOwner !== aWho && tid !== megaTempleId && dOwner === rulerOwner()) bountyShare(aWho);
         }
         // ===== KOPFGELD AUF DEN HERRSCHER: while someone holds the throne a bounty grows (gems + coins, every 3 min with the Thron-Punkte).
@@ -8009,29 +8020,32 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             tourRoll(now); if (tourDirty) saveTour();
             renderMidBar();
             const w = tourWin(now); for (const el of document.querySelectorAll('[data-tour-left]')) el.textContent = fmtDHMS(((w.on ? w.end : w.start) - now) / 1000);
-            if (isPanelOpen(rankPopup) && rankTab === 'tour') { document.getElementById('rankSub').textContent = (w.on ? 'Endet in ' : 'Beginnt in ') + fmtDHMS(((w.on ? w.end : w.start) - now) / 1000);
-                if (now % 5000 < 1000) renderRankings(); }
+            if (isPanelOpen(rankPopup) && rankTab === 'tour' && now % 5000 < 1000) renderRankings();
         }
         function tourCardHtml() {                             // the head of the "Turnier" tab: state, your points, rules, prizes, last winners
             const now = Date.now(), w = tourWin(now), me = tourState.key === w.key ? Math.floor(tourState.pts.player || 0) : 0, pl = tourPlaceOf('player'), ch = tourChamp(now), last = tourState.last;
             const prizes = TOUR_PRIZES.map((p, i) => '<div class="tour-prize' + (i ? '' : ' is-1') + '"><b>' + p.t + '</b><span>' + icon('gem') + fmtNum(p.gems) + '</span><span>' + icon('star') + p.sh + '</span>' + (i ? '' : '<em>Titel + Ring</em>') + '</div>').join('');
             return '<div class="tour-card">' +
                 '<div class="tour-head"><span class="tour-badge">' + icon('crown') + '</span><div><b>Wochenend-Turnier um die Mitte</b><small>' + (w.on ? 'Läuft · endet in ' : 'Samstag und Sonntag · beginnt in ') + '<b data-tour-left>' + fmtDHMS(((w.on ? w.end : w.start) - now) / 1000) + '</b></small></div></div>' +
-                (w.on ? '<div class="tour-me"><span>Deine Punkte<b>' + fmtNum(me) + '</b></span><span>Dein Platz<b>' + (pl || '–') + '</b></span></div>' : '') +
+                (w.on ? '<div class="tour-me"><span>Deine Punkte<b>' + fmtNum(me) + '</b></span><span>Dein Platz<b>' + (pl || '–') + '</b></span></div>' + tourByHtml(me) : '') +
                 (!w.on && last && last.me ? '<div class="tour-me"><span>Letztes Turnier<b>Platz ' + last.me.place + '</b></span><span>Belohnung<b>' + fmtNum(last.me.gems) + ' Gems</b></span></div>' : '') +
-                '<div class="tour-rules"><span>' + icon('crown') + 'Thron halten: ' + TOUR_PTS_MEGA + ' Punkte pro Minute</span><span>' + icon('temple') + 'Wächter-Tempel halten: ' + TOUR_PTS_GUARD + ' Punkte pro Minute</span>' +
-                    '<span>' + icon('attack') + '1 Punkt je ' + fmtNum(TOUR_KILL_PER) + ' besiegte Truppen in der Mitte und an ihren Toren (bis ' + TOUR_KILL_MAX + ' pro Kampf)</span></div>' +
+                '<div class="tour-rules"><span>' + icon('crown') + '<span><b>+' + TOUR_PTS_MEGA + ' Punkte pro Minute</b> Thron halten</span></span><span>' + icon('temple') + '<span><b>+' + TOUR_PTS_GUARD + ' Punkte pro Minute</b> je Wächter-Tempel</span></span>' +
+                    '<span>' + icon('attack') + '<span><b>+1 Punkt pro ' + fmtNum(TOUR_KILL_PER) + ' besiegte Truppen</b> in der Mitte und an ihren Toren – Angriff und Verteidigung zählen (höchstens ' + TOUR_KILL_MAX + ' pro Kampf, im Schnitt ' + TOUR_KILL_MIN + ' pro Minute)</span></span></div>' +
                 '<div class="tour-prizes">' + prizes + '</div><small class="tour-note">Preise: Gems und Helden-Splitter ' + icon('star') + ' · der Sieger trägt 7 Tage den Titel „Turniersieger“ mit lila-goldenem Ring.</small>' +
                 (tourState.hist.length ? '<div class="tour-hist">' + icon('star') + '<span>Letzter Sieger: ' + whoLink(tourState.hist[0].who === 'player' ? 'player' : tourState.hist[0].who, tourState.hist[0].who === 'player' ? profileName.value || 'Du' : tourState.hist[0].name) + ' · ' + fmtNum(tourState.hist[0].pts) + ' Punkte' +
                     (ch ? ' · Titel noch ' + fmtDHMS((tourState.champ.until - now) / 1000) : '') + '</span></div>' : '') + '</div>';
         }
+        function tourByHtml(me) {                            // your points by source: Thron / Tempel / Kämpfe (+ what came without a source: older points, a bonus)
+            const b = tourState.by.player || {}, c = [['crown', 'Thron', b.thr], ['temple', 'Tempel', b.tmp], ['attack', 'Kämpfe', b.fig]], rest = me - c.reduce((s, x) => s + Math.floor(x[2] || 0), 0);
+            if (rest >= 1) c.push(['star', 'Sonstiges', rest]);
+            return '<div class="tour-by">' + c.map(x => '<span>' + icon(x[0]) + x[1] + '<b>' + fmtNum(Math.floor(x[2] || 0)) + '</b></span>').join('') + '</div>'; }
         function midNotice(island) {                          // Kopfgeld and Turnier at a glance on the middle's bases and the ruler's
             const b = bountyOf(), w = tourOn(); let h = '';
             if (b && island.type === 'megaTemple') h += b.who === 'player' ? '<div class="notice notice--warn">' + icon('losses') + '<span><b>Kopfgeld auf dich: ' + fmtNum(b.gems) + ' Gems + ' + fmtCompact(b.coins) + ' Münzen.</b> Wer dir den Thron abnimmt, kassiert alles – je länger du herrschst, desto mehr kommen.</span></div>'
                 : '<div class="notice notice--gold">' + icon('coin') + '<span><b>Kopfgeld auf ' + escapeHtml(botById[b.who].name) + ': ' + fmtNum(b.gems) + ' Gems + ' + fmtCompact(b.coins) + ' Münzen.</b> Nimm den Thron und kassiere alles.</span></div>';
             else if (b && b.who !== 'player' && island.type === 'tower' && islandOwnerOf(island.id) === b.who && b.gems >= 5)
                 h += '<div class="notice notice--gold">' + icon('coin') + '<span>Kopfgeld: jeder Sieg gegen den Herrscher bringt ' + Math.round(BOUNTY_SHARE * 100) + ' % davon (jetzt ' + fmtNum(Math.floor(b.gems * BOUNTY_SHARE)) + ' Gems).</span></div>';
-            if (w && midZoneIds.has(island.id)) h += '<div class="notice notice--tour">' + icon('crown') + '<span>Turnier läuft: ' + (island.type === 'megaTemple' ? 'der Thron bringt ' + TOUR_PTS_MEGA + ' Punkte pro Minute' : island.guardian ? 'dieser Tempel bringt ' + TOUR_PTS_GUARD + ' Punkte pro Minute' : 'Kämpfe hier bringen Punkte') + ', dazu 1 je ' + fmtNum(TOUR_KILL_PER) + ' besiegte Truppen (bis ' + TOUR_KILL_MAX + ' pro Kampf).</span></div>';
+            if (w && midZoneIds.has(island.id)) h += '<div class="notice notice--tour">' + icon('crown') + '<span>Turnier läuft: ' + (island.type === 'megaTemple' ? 'der Thron bringt +' + TOUR_PTS_MEGA + ' Punkte pro Minute' : island.guardian ? 'dieser Tempel bringt +' + TOUR_PTS_GUARD + ' Punkte pro Minute' : 'Kämpfe hier bringen Punkte') + ', dazu +1 Punkt pro ' + fmtNum(TOUR_KILL_PER) + ' besiegte Truppen – auch beim Verteidigen (höchstens ' + TOUR_KILL_MAX + ' pro Kampf).</span></div>';
             return h;
         }
 
