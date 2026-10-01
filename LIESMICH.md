@@ -345,8 +345,10 @@ Kämpfe, Münzen), auch wenn niemand online ist. Handys zeigen nur an und schick
 2. Rechenzeit: niedrige Priorität (`nice 19`), die anderen Seiten haben Vorrang. Jeder Rechenschritt hat ein Zeitbudget.
 3. Wachhund (Cron, jede Minute): Das Programm schreibt alle paar Sekunden einen „Herzschlag“. Ist er älter als
    60 Sekunden (Endlosschleife, hängt) → hart beenden und neu starten.
-4. Keine Absturz-Schleife: Mehr als 5 Neustarts in 10 Minuten → keine Neustarts mehr, Notbetrieb: die Handys rechnen
-   wieder wie heute (alter Weg bleibt als Ersatz drin), rote Warnung auf der Admin-Seite.
+4. Keine Absturz-Schleife: Mehr als 5 Neustarts in 10 Minuten → keine Neustarts mehr, Notbetrieb: die Welt
+   PAUSIERT (Spieler sehen „Welt wird repariert“, nichts geht verloren), rote Warnung auf der Admin-Seite.
+   **REGEL (Alexander): Niemals ein Handy/Gerät eines Spielers die Welt rechnen lassen – auch nicht als Ersatz.**
+   Der alte Weg (Handy-Weltrechner) wird beim Umstieg ganz entfernt.
 5. Prüfer nach jedem Schritt: keine kaputten Zahlen (NaN, minus Truppen, Münzen explodieren, Basen ohne Besitzer).
    Fehler → nicht speichern, letzten guten Stand behalten, ins Log schreiben.
 6. Sicherungen: jede Stunde ein Abbild der Welt (die letzten 48 bleiben). Admin kann zurückspringen.
@@ -354,5 +356,5 @@ Kämpfe, Münzen), auch wenn niemand online ist. Handys zeigen nur an und schick
 8. Uhr: alles nach echter Uhrzeit, Nachholen höchstens begrenzt – die Welt kann nie „zu schnell“ laufen.
 9. Admin-Seite: Status (läuft / Notbetrieb), Speicher, Zeit pro Schritt, Neustarts, letzte Fehler,
    Knöpfe „neu starten“, „Notbetrieb“, „Sicherung zurückspielen“.
-10. Erst testen: lokal mit 4000 simulierten Spielern; dann „Schattenbetrieb“ (Server rechnet mit, ohne Wirkung,
-    Vergleich mit dem Handy-Weltrechner); erst dann umschalten.
+10. Erst testen: lokal mit 4000 simulierten Spielern, dann auf dem Server mit einer Test-Welt (eigene Tabellen, die
+    echte Welt bleibt unberührt); erst dann umschalten.
