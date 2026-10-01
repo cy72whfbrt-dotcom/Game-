@@ -96,11 +96,15 @@
         var p = document.createElement('p'); p.textContent = text; p.style.cssText = 'margin:0 0 16px;font-size:16px;line-height:1.4';
         box.appendChild(h); box.appendChild(p);
         if (knopf) { var a = document.createElement('a'); a.href = knopf[1]; a.textContent = knopf[0];
-            a.style.cssText = 'display:inline-block;padding:11px 18px;border-radius:8px;background:linear-gradient(#c9a227,#a8831a);color:#2b1d05;font-weight:bold;text-decoration:none'; box.appendChild(a); }
+            a.style.cssText = 'display:inline-block;padding:13px 22px;border-radius:8px;background:linear-gradient(#c9a227,#a8831a);color:#2b1d05;font-weight:bold;text-decoration:none;cursor:pointer';
+            var los = function (e) { if (e) { e.preventDefault(); e.stopPropagation(); } a.textContent = 'Lädt …'; a.style.opacity = '.7'; location.href = knopf[1]; };
+            a.addEventListener('click', los); a.addEventListener('touchend', los, { passive: false });   // (das Spiel fängt Berührungen ab – hier direkt reagieren)
+            box.appendChild(a); }
+        ['touchstart', 'touchmove', 'pointerdown', 'wheel'].forEach(function (t) { vorhang.addEventListener(t, function (e) { e.stopPropagation(); }, { passive: true }); });
         vorhang.appendChild(box);
     }
     var RAUS = {
-        409: ['Verbindung getrennt', 'Du bist auf einem anderen Gerät oder in einem anderen Fenster angemeldet. Hier geht es nicht weiter.', ['Hier weiterspielen', 'spiel.php']],
+        409: ['Verbindung getrennt', 'Du bist auf einem anderen Gerät oder in einem anderen Fenster angemeldet. Hier geht es nicht weiter.', ['Hier weiterspielen', 'spiel.php?weiter=1']],
         401: ['Abgemeldet', 'Du bist nicht mehr angemeldet.', ['Neu anmelden', './']],
         503: ['Wartung', 'Gerade wird eine neue Version aufgespielt. Dein Spielstand ist gesichert – in ein paar Minuten geht es weiter.', ['Nochmal versuchen', './']]
     };

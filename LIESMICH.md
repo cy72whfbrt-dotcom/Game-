@@ -135,6 +135,8 @@ Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
     (CSS `user-select:none`, `-webkit-touch-callout:none` + `selectstart`/`contextmenu` blockiert); Eingabefelder gehen weiter.
 28. ✅ **Schwarzer Streifen unten (iPhone-App):** iOS-Fehler mit Statusleiste „black-translucent“ (Höhe um die
     Statusleiste zu klein) → Statusleiste jetzt „black“. Evtl. App einmal vom Home-Bildschirm löschen und neu hinzufügen.
+29. ✅ **„Hier weiterspielen“ reagierte nicht:** Der Knopf zeigt sofort „Lädt …“, reagiert direkt aufs Tippen, und
+    `spiel.php?weiter=1` übernimmt sofort (ohne bis zu 8 s auf das alte Gerät zu warten). Getestet: 1,7 s, altes Gerät fliegt raus.
 26. ✅ **Anfängerschutz auch für Mitspieler:** gleiche Regeln (48 Std. ab Weltstart bzw. ab ihrem Neustart, endet mit
     50 Mio. Macht oder wenn sie einen echten Spieler angreifen; `botNeulingBis`). Text: „Anfängerschutz: … ist neu und
     noch … unangreifbar.“

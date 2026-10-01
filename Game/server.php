@@ -148,7 +148,8 @@ function spielseite_vorbereiten() {
         // Gerade noch gespielt (Neuladen)? Dann auf den "Abschied" des alten Fensters warten (seine letzte Sicherung),
         // höchstens 8 Sekunden - so lädt die neue Seite nie einen älteren Stand.
         $altTok = lager()->spiel_token($ich['id']);
-        if ($altTok !== '' && time() - lager()->zuletzt_gespeichert($ich['id']) < 60) {
+        $uebernehmen = ($_GET['weiter'] ?? '') === '1';   // "Hier weiterspielen": sofort übernehmen (das andere Gerät fliegt raus)
+        if (!$uebernehmen && $altTok !== '' && time() - lager()->zuletzt_gespeichert($ich['id']) < 60) {
             for ($i = 0; $i < 80 && lager()->abschied($ich['id']) !== $altTok; $i++) usleep(100000);
         }
         lager()->sperren($ich['id']);
