@@ -108,7 +108,7 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 
-## 10. EINE Welt für alle (im Bau)
+## 10. EINE Welt für alle (läuft auf dem Server)
 Alexander will: **Alle Spieler und alle Mitspieler auf einer einzigen Karte.** Keine eigenen Welten pro Spieler.
 
 **Plan (so wird es gebaut):**
@@ -170,7 +170,10 @@ Befehle und Nachrichten verteilen, Spielerliste mit Profilen.
   3. ganze Karte voll → Randbasis vom größten Mitspieler-Reich (nie von einem echten Spieler, nie eine Hauptstadt),
      dazu 1 Stunde Friedensschild (wie bei den Mitspielern). Getestet mit voller Karte: klappt.
 
-**Beim Hochladen der Eine-Welt-Version:** alle Spielstände auf Null (auch Alexanders), Welt startet neu.
+**HOCHGELADEN am 1.10. (Alexanders Ja):** Eine-Welt-Version liegt auf dem Server (`./hochladen.sh`, Ordner genau wie
+GitHub). Alle Spielstände und die Welt auf Null gesetzt (Konten bleiben, nur noch `alexander`). Live mit zwei
+Test-Konten geprüft (Angriff, Eroberung, Bericht, Ausbau, Gegenangriff – alles ok), danach Test-Konten gelöscht und
+Welt nochmal frisch zurückgesetzt. Wer als Erster das Spiel öffnet, erschafft die Welt und ist Weltrechner.
 
 ## 11. Offen
 - **GitHub aufräumen (macht Alexander, Claude darf es nicht):** Unter Settings → General → Default branch auf
