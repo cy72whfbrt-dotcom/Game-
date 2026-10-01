@@ -50,12 +50,16 @@ Das Spiel speichert nur im Browser-Speicher der Claude-App. Die App leert diesen
 - Der Spielstand auf dem Server fängt bei Null an.
 - Erst bauen/hochladen, wenn der Spieler „ja“ sagt und die erste Sitzung ihren Gesamtcheck gepusht hat.
 
-## Stand 1.10. (dritte Sitzung) – Server-Ordner gebaut, noch nicht hochgeladen
-- Quellen in `server/` (Login `index.php`, `spiel.php`, `api/lib.php`, `api/speichern.php`, `js/speicher.js`). `tools/baue_game.sh` baut daraus `dist/Game` (nicht im Git) mit dem aktuellen Spiel.
-- `api/config.php` (nicht im Git, Vorlage `config.beispiel.php`): `speicher` = `mysql` oder `dateien`.
+## Stand 1.10. (dritte Sitzung) – SPIEL IST ONLINE
+- **Adresse: https://office.hobbitonhill.de/html/725/klassenarbeit_GR4/Game/** (Login/Registrieren → Spiel).
+- Quellen in `server/` (Login `index.php`, `spiel.php`, `api/lib.php`, `api/speichern.php`, `js/speicher.js`).
+- **Update hochladen:** `tools/baue_game.sh && tools/office_hochladen.sh` (packt das aktuelle `index.html`/`botlogik.js`/`baukunst.js` mit ein; `api/config.php` auf dem Server bleibt unberührt).
+- `api/config.php` liegt nur auf dem Server (nicht im Git): MySQL `dbwebintern.silentnetwork.de`, Datenbank `k17700_alex`. Office erreicht die Datenbank (PHP 7.3, MySQL 8.4).
+- Tabellen `ow_spieler`, `ow_sitzungen`, `ow_spielstand` (legen sich selbst an). **In der Datenbank liegen fremde Tabellen eines anderen Spiels (nutzer, mail, handel …) – nie anfassen.**
 - `js/speicher.js` ersetzt `localStorage` durch einen Speicher im Arbeitsspeicher; alle 10 s und beim Wechsel in den Hintergrund gehen die geänderten Teile gzip-gepackt an `api/speichern.php`. Im Browser liegt nur der Cookie `ow_login` (HttpOnly, 30 Tage).
 - Nur das zuletzt geöffnete Fenster speichert (Spiel-Token); ältere Fenster zeigen einen Hinweis.
 - Neue Spieler: keine Test-Zeitsprünge, kein Turnier-Test, Spielername = Login-Name.
-- Lokal getestet (Playwright): Registrieren, Anmelden, falsches Passwort, Abmelden, Neu laden mit Spielstand, zweites Fenster, beide Speicherarten (MariaDB lokal).
-- Office-Login klappt; der Editor erlaubt nur `…/html/725/klassenarbeit_GR4/`. Ziel: `…/klassenarbeit_GR4/Game/`.
-- Offen: Hochladen (wurde von der Sicherheitsprüfung blockiert), Datenbankname, und ob der Office-Server die Datenbank `dbwebintern.silentnetwork.de` (interne Adresse 10.35.47.236) überhaupt erreicht.
+- Getestet lokal und live (Playwright): Registrieren, Anmelden, falsches Passwort, Abmelden, Neu laden mit Spielstand, zweites Fenster. Test-Konten wieder gelöscht.
+- Office-Editor: nur `…/html/725/klassenarbeit_GR4/` erlaubt. Löschen einer Datei: Ordner-Pfad + Feld `file=<name>` + `button=delete`.
+- Playwright durch den Proxy der Cloud-Umgebung: `channel: 'chromium'`, `--disable-quic`, `--ignore-certificate-errors-spki-list=<SPKI von /root/.ccr/agent-proxy-ca.crt>`.
+- Der Spieler hat seine Passwörter im Chat geschrieben – ihm wurde geraten, sie zu ändern (dann auch `api/config.php` auf dem Server anpassen).
