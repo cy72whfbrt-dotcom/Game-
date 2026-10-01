@@ -325,6 +325,14 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
 - Kleinigkeiten: Schild-Restzeit in der Burg zählt nicht live; Ausbau-Knopf schaltet nicht live frei; Stadt-Ansicht am
   Handy manchmal langsam (Wolken).
 
+## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
+- ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
+  sie SELBST aufleveln, das kostet Rohstoffe (Münzen u. a.) – wie ein eigenes Gebäude, nicht automatisch mit dem Level.
+- ⭐ **Gems kommen zu schnell:** Man kann sich innerhalb weniger Stunden Gold-Ausrüstung holen – sieht man bei den
+  Mitspielern. Gem-Quellen und Preise prüfen und bremsen (für Spieler UND Mitspieler gleich).
+- **Punkt 11 – Münz-Wirtschaft:** bei hohen Stufen fühlen sich Münzen nichts wert an.
+- **Punkt 6 – Bündnis-Signale statt Chat** (siehe Abschnitt 12).
+
 ## 12. Ideen (gemerkt, noch nicht gebaut)
 - **Bündnis-Signale statt Chat (Alexander: „B finde ich gut“):** Kein freier Text. Feste Knöpfe: „Hilfe!“, „Greif
   mit mir diese Basis an“, „Danke!“, „Rückzug“. Bots antworten mit Taten (Truppen schicken, mit angreifen, 👍),
