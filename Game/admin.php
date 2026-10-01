@@ -39,7 +39,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $ids = [];
                 foreach (lager()->alle_spieler() as $sp) if ($an === 'alle' || (string)$sp['id'] === $an) $ids[] = (int)$sp['id'];
                 if (!$ids) $fehler = 'Spieler nicht gefunden.';
-                foreach ($ids as $id) lager()->ereignis_ablegen($id, json_encode(['art' => 'geschenk', 'gems' => $gems, 'coins' => $coins, 'sh' => $sh, 'tr' => $tr, 'crate' => $crate]));
+                foreach ($ids as $id) {
+                    lager()->ereignis_ablegen($id, json_encode(['art' => 'geschenk', 'gems' => $gems, 'coins' => $coins, 'sh' => $sh, 'tr' => $tr, 'crate' => $crate]));
+                    // Schummel-Schutz: dem Weltrechner sagen, dass dieser Spieler so viele Truppen/Münzen geschenkt bekommt –
+                    // sonst hält er das Abholen für gefälscht (Befehl unter Spieler 0, das kann nur admin.php)
+                    if ($tr > 0 || $coins > 0) lager()->befehl_ablegen(0, json_encode(['art' => 'admin', 'was' => 'gutschrift', 'an' => $id, 'tr' => $tr, 'coins' => $coins]));
+                }
                 if ($ids) $meldung = 'Geschenk verschickt an ' . count($ids) . ' Spieler – es liegt im Abholfach (Ziele → Belohnung).';
             }
         }
@@ -66,6 +71,13 @@ $spieler = lager()->alle_spieler();
 $wrH = wr_herz(); $wrZ = wr_zustand(); $wrCron = wachhund_cron_da();
 $wrLaeuft = $wrH && empty($wrH['ende']) && wr_laeuft($wrH['pid'] ?? 0) && time() - (int)(($wrH['zeit'] ?? 0) / 1000) <= WR_HERZ_ALT;
 $wrSicherungen = lager()->sicherungen_liste();
+// Auffälligkeiten (Schummel-Schutz des Weltrechners, weltrechner/schummel.php): wer, was, wann – mit Namen statt u-Nummer
+$auffaellig = (wr_lesen('schummel.php') ?: [])['liste'] ?? [];
+if (!is_array($auffaellig)) $auffaellig = [];
+$spielerName = [];
+foreach ($spieler as $sp) $spielerName[(int)$sp['id']] = $sp['anzeigename'] ?: $sp['name'];
+$AUFF_ART = ['truppen' => 'Truppen', 'ausbau' => 'Ausbau', 'muenzen' => 'Münzen', 'stufe' => 'Stufe', 'lazarett' => 'Lazarett', 'kaputt' => 'kaputter Befehl',
+             'schneller' => 'Beschleunigen', 'hauptstadt' => 'Hauptstadt', 'flut' => 'zu viele Befehle'];
 function h($s) { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 $spielerOptionen = '';
 foreach ($spieler as $sp) $spielerOptionen .= '<option value="' . (int)$sp['id'] . '">' . h($sp['anzeigename'] ?: $sp['name']) . ($sp['anzeigename'] && $sp['anzeigename'] !== $sp['name'] ? ' (' . h($sp['name']) . ')' : '') . '</option>';
@@ -141,6 +153,25 @@ function zahl($n) { return $n === null ? '–' : number_format((float)$n, 0, ','
     <select id="sicherung" name="sicherung"><?php foreach ($wrSicherungen as $sc): ?><option value="<?= (int)$sc['id'] ?>"><?= h(date('d.m.Y H:i', strtotime($sc['erstellt']))) ?> (<?= round($sc['groesse'] / 1024) ?> KB)</option><?php endforeach; ?></select>
     <button class="rot">Zurückspielen</button>
   </form>
+  <?php endif; ?>
+</div>
+
+<div class="karte">
+  <h2>Auffälligkeiten (<?= count($auffaellig) ?>)</h2>
+  <p>Der Weltrechner prüft jeden Befehl der Spieler. Was er ablehnen oder kappen musste oder was verdächtig springt,
+     steht hier (die letzten 200, gleiche innerhalb einer Stunde zusammengefasst). Ein einzelner Eintrag kann auch ein
+     Zufall sein – auffällig ist, wenn sich bei einem Spieler viel sammelt.</p>
+  <?php if (!$auffaellig): ?><p><b>Nichts Auffälliges.</b></p>
+  <?php else: ?>
+  <div class="tabelle" style="max-height:420px;overflow:auto"><table>
+    <tr><th>Zuletzt</th><th>Spieler</th><th>Was</th><th>Wie oft</th></tr>
+    <?php foreach ($auffaellig as $a): if (!is_array($a)) continue; $uid = (int)($a['uid'] ?? 0); ?>
+    <tr><td style="white-space:nowrap"><?= h(date('d.m. H:i', (int)(($a['letzte'] ?? 0) / 1000))) ?></td>
+        <td><?= h($spielerName[$uid] ?? ('Spieler ' . $uid)) ?></td>
+        <td><b><?= h($AUFF_ART[$a['was'] ?? ''] ?? ($a['was'] ?? '')) ?>:</b> <?= h($a['text'] ?? '') ?></td>
+        <td><?= zahl($a['anzahl'] ?? 1) ?>×<?php if ((int)($a['anzahl'] ?? 1) > 1): ?><br><small>seit <?= h(date('d.m. H:i', (int)(($a['erste'] ?? 0) / 1000))) ?></small><?php endif; ?></td></tr>
+    <?php endforeach; ?>
+  </table></div>
   <?php endif; ?>
 </div>
 

@@ -38,7 +38,7 @@ ed /Game -F "file=@$T/wartung.txt" -F "button=upload" -o /dev/null -w "Wartung a
 sleep 10  # die laufenden Spiele merken es beim nächsten Puls (alle 2 s) und sichern noch
 for f in $(cd Game && find . -type f | sed 's#^\./##' | sort); do
   [ "$f" = config.php ] && continue
-  case "$f" in weltrechner/herz*.php|weltrechner/log*.php|weltrechner/zustand*.php|weltrechner/sperre.php|weltrechner/crontab*.php) continue;; esac   # entstehen nur auf dem Server
+  case "$f" in weltrechner/herz*.php|weltrechner/log*.php|weltrechner/zustand*.php|weltrechner/sperre.php|weltrechner/crontab*.php|weltrechner/schummel*.php) continue;; esac   # entstehen nur auf dem Server
   dir=$(dirname "$f"); [ "$dir" = . ] && dir="" || { dir="/$dir"; ed /Game -F text= -F "file=${dir#/}" -F "button=new folder" -o /dev/null; }
   ed "/Game$dir" -F "file=@Game/$f" -F "button=upload" -o /dev/null -w "$f %{http_code}\n"
 done
