@@ -299,6 +299,19 @@ class MysqlLager {
             groesse INT UNSIGNED NOT NULL DEFAULT 0,
             daten LONGBLOB NOT NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=ascii");
+        // Handy-Benachrichtigungen (Web-Push): ein Eintrag pro Gerät (ein Spieler kann mehrere haben). endpoint = Adresse
+        // beim Push-Dienst (Apple/Google/Mozilla/Microsoft), p256dh/auth = Schlüssel des Geräts zum Verschlüsseln.
+        $this->db->exec("CREATE TABLE IF NOT EXISTS ow_push (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            spieler_id INT UNSIGNED NOT NULL,
+            endpoint_hash CHAR(64) NOT NULL,
+            endpoint TEXT NOT NULL,
+            p256dh VARCHAR(100) NOT NULL,
+            auth VARCHAR(40) NOT NULL,
+            erstellt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY endpoint_hash (endpoint_hash),
+            KEY spieler_id (spieler_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=ascii");
         // Übersicht in der Spieler-Tabelle (zum Anschauen in phpMyAdmin)
         $da = $this->db->query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'ow_spieler'")->fetchAll(PDO::FETCH_COLUMN);
         $neu = ['stufe' => 'INT NULL', 'muenzen' => 'DOUBLE NULL', 'gems' => 'DOUBLE NULL', 'anzahl_basen' => 'INT NULL', 'zuletzt_gespeichert' => 'DATETIME NULL', 'abschied' => "CHAR(32) NOT NULL DEFAULT ''",
@@ -556,6 +569,25 @@ class MysqlLager {
         if ($r) $this->db->prepare('DELETE FROM ow_ereignisse WHERE spieler_id = ? AND id <= ?')->execute([$uid, end($r)['id']]);
         return array_map(function ($z) { return json_decode($z['ereignis']); }, $r);
     }
+    // ===== Handy-Benachrichtigungen (Web-Push) =====
+    // Ein Gerät gehört immer dem, der sich dort zuletzt angemeldet hat (gleiches Gerät, anderes Konto → wird umgeschrieben).
+    function push_speichern($uid, $endpoint, $p256dh, $auth) {
+        $this->db->prepare('INSERT INTO ow_push (spieler_id, endpoint_hash, endpoint, p256dh, auth) VALUES (?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE spieler_id = VALUES(spieler_id), endpoint = VALUES(endpoint), p256dh = VALUES(p256dh), auth = VALUES(auth), erstellt = CURRENT_TIMESTAMP')
+            ->execute([$uid, hash('sha256', $endpoint), $endpoint, $p256dh, $auth]);
+        // höchstens 10 Geräte pro Spieler: die ältesten fliegen raus
+        $q = $this->db->prepare('SELECT id FROM ow_push WHERE spieler_id = ? ORDER BY erstellt DESC, id DESC LIMIT 100 OFFSET 10');
+        $q->execute([$uid]);
+        foreach ($q->fetchAll(PDO::FETCH_COLUMN) as $id) $this->db->prepare('DELETE FROM ow_push WHERE id = ?')->execute([(int)$id]);
+    }
+    function push_abmelden($uid, $endpoint) { $this->db->prepare('DELETE FROM ow_push WHERE spieler_id = ? AND endpoint_hash = ?')->execute([$uid, hash('sha256', $endpoint)]); }
+    function push_hat($uid, $endpoint) { $q = $this->db->prepare('SELECT COUNT(*) FROM ow_push WHERE spieler_id = ? AND endpoint_hash = ?'); $q->execute([$uid, hash('sha256', $endpoint)]); return (int)$q->fetchColumn() > 0; }
+    function push_anzahl($uid) { $q = $this->db->prepare('SELECT COUNT(*) FROM ow_push WHERE spieler_id = ?'); $q->execute([$uid]); return (int)$q->fetchColumn(); }
+    function push_alle() {   // nur für den Weltrechner
+        return array_map(function ($z) { return ['id' => (int)$z['id'], 'uid' => (int)$z['spieler_id'], 'endpoint' => $z['endpoint'], 'p256dh' => $z['p256dh'], 'auth' => $z['auth']]; },
+            $this->db->query('SELECT id, spieler_id, endpoint, p256dh, auth FROM ow_push ORDER BY id LIMIT 20000')->fetchAll());
+    }
+    function push_weg($ids) { $q = $this->db->prepare('DELETE FROM ow_push WHERE id = ?'); foreach ($ids as $id) $q->execute([(int)$id]); }
     function profil_setzen($uid, $p) { $this->db->prepare('UPDATE ow_spieler SET profil = ?, profil_zeit = ? WHERE id = ?')->execute([$p, time(), $uid]); }
     function online($uid, $bis) { $this->db->prepare('UPDATE ow_spieler SET online_bis = ? WHERE id = ?')->execute([$bis, $uid]); }
     // Alle echten Spieler (für die Karte), Profile nur wenn neuer als $seit
@@ -599,6 +631,7 @@ function speichern_anfrage() {
         if (!is_array($d)) json_antwort(400, ['fehler' => 'kaputt']);
 
         $aktion = (string)($d['aktion'] ?? '');
+        if (strpos($aktion, 'push_') === 0) push_anfrage($ich, $d, $aktion);   // Handy-Benachrichtigungen (eigener Teil, siehe unten)
         if (!empty($ich['system']) && $aktion !== 'puls') json_antwort(200, ['ok' => true]);   // der Weltrechner hat keinen eigenen Spielstand
         if ($aktion === 'name') name_anfrage($ich, $d);
         if ($aktion === 'puls') { if (wartung()) json_antwort(503, ['fehler' => 'wartung']); welt_puls($ich, $d); }   // Wartung gilt für alle
@@ -628,6 +661,63 @@ function speichern_anfrage() {
         error_log('Open Water Speichern: ' . $e->getMessage());
         json_antwort(503, ['fehler' => 'server']);
     }
+}
+
+// ===== Handy-Benachrichtigungen (Web-Push) =====
+// Spieler (nur mit Login):  push_info → {an, schluessel}   push_an {abo:{endpoint, keys:{p256dh, auth}}}   push_ab {endpoint}
+// Weltrechner (nur mit X-Weltrechner-Schlüssel): push_abos → alle Abos + VAPID-Schlüssel   push_weg {ids} (abgelaufene Abos)
+// Gesendet wird vom Weltrechner (weltrechner/push.js). Ohne vapid_public/vapid_private in config.php ist Push aus.
+function push_schluessel() {
+    $c = cfg();
+    $pub = (string)($c['vapid_public'] ?? ''); $priv = (string)($c['vapid_private'] ?? '');
+    if (!preg_match('/^[A-Za-z0-9_-]{87}$/', $pub) || !preg_match('/^[A-Za-z0-9_-]{42,43}$/', $priv)) return null;
+    return ['public' => $pub, 'private' => $priv];
+}
+function b64url_bytes($s) {   // Länge in Byte, wenn $s sauberes base64url ist – sonst -1
+    if (!is_string($s) || !preg_match('/^[A-Za-z0-9_-]{1,200}$/', $s)) return -1;
+    $b = base64_decode(strtr($s, '-_', '+/') . str_repeat('=', (4 - strlen($s) % 4) % 4), true);
+    return $b === false ? -1 : strlen($b);
+}
+// Nur https-Adressen der bekannten Push-Dienste (sonst könnte man den Weltrechner Anfragen an beliebige Adressen schicken lassen)
+function push_endpoint_ok($e) {
+    if (!is_string($e) || strlen($e) > 800 || !preg_match('#^https://[A-Za-z0-9._~:/?\#\[\]@!$&\'()*+,;=%-]+$#', $e)) return false;
+    $u = parse_url($e);
+    if (!$u || ($u['scheme'] ?? '') !== 'https' || isset($u['user']) || isset($u['pass']) || (isset($u['port']) && (int)$u['port'] !== 443)) return false;
+    $h = strtolower((string)($u['host'] ?? ''));
+    return (bool)preg_match('/^(fcm\.googleapis\.com|([a-z0-9-]+\.)*push\.apple\.com|([a-z0-9-]+\.)*push\.services\.mozilla\.com|([a-z0-9-]+\.)*notify\.windows\.com)$/', $h);
+}
+function push_anfrage($ich, $d, $aktion) {
+    $l = lager();
+    $s = push_schluessel();
+    if (!empty($ich['system'])) {   // der Weltrechner
+        if ($aktion === 'push_abos') json_antwort(200, $s ? ['an' => true, 'public' => $s['public'], 'private' => $s['private'], 'sub' => (string)(cfg()['spiel_url'] ?? 'mailto:admin@hobbitonhill.de'), 'abos' => $l->push_alle()] : ['an' => false]);
+        if ($aktion === 'push_weg') { $l->push_weg(array_slice(array_filter(array_map('intval', (array)($d['ids'] ?? []))), 0, 500)); json_antwort(200, ['ok' => true]); }
+        json_antwort(400, ['fehler' => 'unbekannt']);
+    }
+    $uid = (int)$ich['id'];
+    if ($aktion === 'push_info') {   // mit endpoint: ist dieses Gerät für mich eingetragen? (sonst trägt das Spiel es neu ein)
+        $e = $d['endpoint'] ?? null;
+        json_antwort(200, ['an' => (bool)$s, 'schluessel' => $s ? $s['public'] : null, 'geraete' => $l->push_anzahl($uid),
+            'dieses' => is_string($e) && strlen($e) <= 800 ? $l->push_hat($uid, $e) : false]);
+    }
+    if (!bremse('push:' . $uid, 30, 3600)) json_antwort(429, ['fehler' => 'Zu viele Versuche – bitte später nochmal.']);
+    if ($aktion === 'push_an') {
+        if (!$s) json_antwort(200, ['ok' => false, 'grund' => 'Benachrichtigungen sind auf dem Server noch nicht eingeschaltet.']);
+        $a = $d['abo'] ?? null;
+        $j = json_encode($a);
+        if (!is_array($a) || $j === false || strlen($j) > 2000) json_antwort(400, ['fehler' => 'ungültig']);
+        $e = $a['endpoint'] ?? ''; $p = $a['keys']['p256dh'] ?? ''; $au = $a['keys']['auth'] ?? '';
+        if (!push_endpoint_ok($e)) json_antwort(200, ['ok' => false, 'grund' => 'Dieser Push-Dienst wird nicht unterstützt.']);
+        if (b64url_bytes($p) !== 65 || b64url_bytes($au) !== 16) json_antwort(400, ['fehler' => 'ungültig']);
+        $l->push_speichern($uid, $e, $p, $au);
+        json_antwort(200, ['ok' => true]);
+    }
+    if ($aktion === 'push_ab') {
+        $e = $d['endpoint'] ?? '';
+        if (is_string($e) && strlen($e) <= 800) $l->push_abmelden($uid, $e);
+        json_antwort(200, ['ok' => true]);
+    }
+    json_antwort(400, ['fehler' => 'unbekannt']);
 }
 
 // ===== Spielername wählen (Willkommen-Fenster) =====

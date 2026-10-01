@@ -22,9 +22,11 @@ ls_ordner() { curl -sS -b $T/jar "$E?h=48&w=138&sid=$SID&path=$B$1" | grep -o 'p
 # 2) config.php aus den Umgebungsvariablen
 if [ -n "$DB_PASS" ]; then
   # admin_ids: feste Spieler-Nummern der Admins (alexander = 3), änderbar über die Variable ADMIN_IDS (z. B. "3,5")
+  # vapid_public/vapid_private: Schlüssel für Handy-Benachrichtigungen (Variablen VAPID_PUBLIC, VAPID_PRIVATE) – leer = Push aus
   php -r '$c = ["db_host" => getenv("DB_HOST") ?: "dbwebintern.silentnetwork.de", "db_name" => getenv("DB_NAME") ?: "k17700_alex", "db_user" => getenv("DB_USER"), "db_pass" => getenv("DB_PASS"),
     "admin_ids" => array_map("intval", array_filter(explode(",", getenv("ADMIN_IDS") ?: "3"))),
-    "spiel_url" => "https://office.hobbitonhill.de/html/725/klassenarbeit_GR4/Game/"];
+    "spiel_url" => "https://office.hobbitonhill.de/html/725/klassenarbeit_GR4/Game/",
+    "vapid_public" => getenv("VAPID_PUBLIC") ?: "", "vapid_private" => getenv("VAPID_PRIVATE") ?: ""];
     file_put_contents($argv[1], "<?php\n// Zugangsdaten der Datenbank - nur auf dem Server, nie ins Git\nreturn " . var_export($c, true) . ";\n");' "$T/config.php"
 fi
 
@@ -53,7 +55,7 @@ for x in $(ls_ordner /Game); do
 done
 
 # 5) Prüfen: Dateien unverändert angekommen?
-for f in ladebildschirm.js spiel.js bots.js welt.js baukunst.js speichern.js weltrechner/start.js weltrechner/jsdom.js app/manifest.webmanifest app/icon-512.png app/logo.svg; do
+for f in ladebildschirm.js spiel.js bots.js welt.js baukunst.js speichern.js weltrechner/start.js weltrechner/push.js weltrechner/jsdom.js sw.js benachrichtigung.js app/manifest.webmanifest app/icon-512.png app/logo.svg; do
   [ "$(sha1sum < Game/$f)" = "$(curl -sS "$U/$f" | sha1sum)" ] && echo "geprüft: $f" || { echo "FEHLER: $f anders"; exit 1; }
 done
 # 6) Wartung aus – alle können wieder spielen

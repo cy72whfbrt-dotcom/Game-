@@ -43,7 +43,7 @@ function herzSchreiben(extra) {
     const m = process.memoryUsage();
     const h = Object.assign({ zeit: Date.now(), pid: process.pid, gestartet: START, speicherMb: Math.round(m.rss / 1048576), heapMb: Math.round(m.heapUsed / 1048576),
         grenzeMb: SPEICHER_MB, pulseOk: stat.pulseOk, pulseFehler: stat.pulseFehler, letzterPuls: stat.letzterPuls, pulsMs: stat.pulsMs,
-        fehlerProMinute: stat.fehlerMinute.length, prueferFehler: stat.prueferFehler, befehle: stat.befehle }, extra || {});
+        fehlerProMinute: stat.fehlerMinute.length, prueferFehler: stat.prueferFehler, befehle: stat.befehle, push: stat.push || null }, extra || {});
     const neu = path.join(ORDNER, 'herz_neu.php'); fs.writeFileSync(neu, SPERRE + JSON.stringify(h)); fs.renameSync(neu, HERZ);
 }
 setInterval(() => {
@@ -196,5 +196,11 @@ async function los() {
 
     stat.letzterPuls = Date.now();
     herzSchreiben();
+
+    // Handy-Benachrichtigungen (push.js): alle 5 s schauen, ob ein echter Spieler angegriffen wird, eine Basis verliert
+    // oder ein Späher kommt – und ihm (nur wenn er nicht im Spiel ist) eine Nachricht aufs Handy schicken
+    const push = require('./push.js').melder(holen, log);
+    stat.push = push.stat;
+    setInterval(() => push.runde(w), 5000).unref();
 }
 los().catch(e => ende(5, 'Start fehlgeschlagen: ' + (e && e.stack || e)));
