@@ -468,7 +468,6 @@ function botActOf(botId) { return botAct[botId] || (botAct[botId] = { next: 0, p
 // ==============================================================================================================
 const TITLE_PLAY = {
     feldherr:  { margin: .85, tapMs: .7, commit: 1.15, hunt: 1.4 },
-    feigling:  { margin: 1.15, risk: 0 },                         // (weaker, so a bit more careful - but still angry, see botSituation)
     burgherr:  { commit: 1.15 },
     verraeter: { commit: .75, risk: 0 },
     herzog:    { tapMs: .8, commit: 1.1 },

@@ -20,4 +20,4 @@ Gesammelt beim Anspielen. ✅ = erledigt (Runde 1, 1.10.).
 15. ✅ **Kopfgeld bei jedem Angriff** – es gab 3 % für jeden Sieg gegen eine Basis des Herrschers (24 Einträge im Abholfach). Jetzt kassiert das Kopfgeld nur, wer den Thron nimmt. Alte Einzel-Einträge werden zu einem zusammengefasst.
 16. ✅ **Plündern immer noch zu viel** – jetzt 2 % pro Basis / 4 % bei der Hauptstadt, höchstens 30 Min. Einnahmen des Opfers pro Kampf.
 17. ✅ **Titel ohne Wirkung auf dich:** Ein guter Titel vom Herrscher ist jetzt Respekt – wer ihn trägt, greift den Herrscher (also dich, wenn du herrschst) deutlich seltener an (nicht verboten). Straf-Titel: schwächer und die anderen gehen eher auf den Träger los.
-18. ✅ **Straf-Titel machte Gegner zahm:** Mit „Feigling“ wurde der Träger sehr vorsichtig und griff kaum noch an (Aschekrone). Jetzt ist er nur schwächer (−25 %), aber wütend auf den Herrscher, der ihm den Titel gab, und greift ihn eher öfter an.
+18. ✅ **Straf-Titel machte Gegner zahm:** „Feigling“ machte den Träger ängstlich. Jetzt nur noch −25 % Angriffsstärke (mehr Verluste) – wer stark genug ist, greift trotzdem an, und er grollt dem Herrscher, der ihm den Titel gab.
