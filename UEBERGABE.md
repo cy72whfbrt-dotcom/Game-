@@ -49,3 +49,10 @@ Das Spiel speichert nur im Browser-Speicher der Claude-App. Die App leert diesen
 - **Im Browser wird NICHTS gespeichert** (kein localStorage, kein sessionStorage, kein IndexedDB) – **einzige Ausnahme: ein Login-Cookie** (nur der Sitzungs-Schlüssel, HttpOnly, läuft nach 30 Tagen ab). Das Spiel hält den Stand im Arbeitsspeicher und speichert laufend auf den Server (z. B. über `store` in index.html).
 - Der Spielstand auf dem Server fängt bei Null an.
 - Erst bauen/hochladen, wenn der Spieler „ja“ sagt und die erste Sitzung ihren Gesamtcheck gepusht hat.
+
+## Stand 1.10. (dritte Sitzung) – Server-Version gebaut, noch NICHT hochgeladen
+- Branch: `claude/game-server-setup-0n2gbr`.
+- Neuer Ordner `server/Game` (siehe `server/LIESMICH.md`): Login-Seite, Spiel-Seite, Speichern in MySQL, stündliche Sicherungen.
+- `index.html`: `store` und die Test-Uhr nutzen `window.__OW_MEM`, wenn die Seite vom Server kommt – sonst wie bisher localStorage (Artifact läuft unverändert).
+- Lokal getestet (PHP + Test-Datenbank, Playwright): Registrieren, falsches Passwort, Speichern alle 10 s, Neuladen, neu anmelden, altes Fenster gesperrt, kein Browser-Speicher, nur Cookie `ow_sid`.
+- Fehlt noch: Datenbank-Zugangsdaten (`DB_USER`, `DB_PASS`, `DB_HOST`, `DB_NAME`) in den Umgebungsvariablen, dann hochladen.

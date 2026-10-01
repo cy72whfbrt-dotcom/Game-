@@ -1,1 +1,6 @@
 __pycache__/
+# Server: Zugangsdaten und vom Bau-Skript kopierte Dateien
+server/Game/inc/config.php
+server/Game/inc/spiel.html
+server/Game/js/botlogik.js
+server/Game/js/baukunst.js
