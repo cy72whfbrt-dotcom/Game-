@@ -7919,6 +7919,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         tourState.pts = tourState.pts || {}; tourState.hist = tourState.hist || [];
         let tourDirty = false, tourWinMemo = null, tourRankMemo = null;
         function saveTour() { tourDirty = false; store.set('openWaterTourney', JSON.stringify(tourState)); }
+        window.addEventListener('pagehide', () => { if (tourDirty) saveTour(); });   // (points are saved once a second - the last second too)
         function tourWin(now) {                               // this weekend or the next one: { on, start, end, key } (memoised until it changes)
             now = now || Date.now(); const m = tourWinMemo; if (m && now >= m.from && now < m.to) return m.w;
             const d = new Date(now); d.setHours(0, 0, 0, 0); const wd = d.getDay(); d.setDate(d.getDate() + (wd === 6 ? 0 : wd === 0 ? -1 : 6 - wd));
@@ -9391,7 +9392,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         }
         document.getElementById('cityBuilder').addEventListener('click', e => {
             if (e.target.closest('[data-cb-buy]')) return cityBuyBuilder2();
-            const o = e.target.closest('[data-cb-open]'); if (o) { cityFocus(o.dataset.cbOpen); renderCitySheet(); }
+            const o = e.target.closest('[data-cb-open]'); if (o) { cityOpenId = o.dataset.cbOpen; cityFocus(cityOpenId); renderCitySheet(); }   // opens that building's sheet
         });
         function renderCitySheetTimer() {
             const c = loadCity(), b = cityBuildOf(c, cityOpenId);
@@ -11754,7 +11755,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
                 : st.k === 'good' ? (me ? 'Goldring: Du trägst den Titel „' + t.name + '“ – solange du ihn behältst.' : 'Goldring: ' + n + ' trägt den Titel „' + t.name + '“ aus der Mitte.')
                 : st.k === 'bad' ? (me ? 'Roter Ring: Du trägst den Straf-Titel „' + t.name + '“ – solange er gilt.' : 'Roter Ring: ' + n + ' trägt den Straf-Titel „' + t.name + '“.')
                 : st.k === 'champ' ? (me ? 'Lila-goldener Ring: Du bist Turniersieger – noch ' : 'Lila-goldener Ring: ' + n + ' ist Turniersieger – noch ') + fmtDHMS((tourState.champ.until - Date.now()) / 1000) + '.'
-                : (me ? 'Ring „' + st.name + '“ – wechseln in deiner Burg.' : 'Ring „' + st.name + '“.');
+                : (me ? 'Ring „' + st.name + '“ – wechseln unter „Aussehen“.' : 'Ring „' + st.name + '“.');
             return '<div class="notice' + (st.k === 'bad' ? ' notice--warn' : st.k === 'skin' ? '' : ' notice--gold') + '">' + icon(st.k === 'ruler' ? 'crown' : st.k === 'bad' ? 'losses' : 'star') + '<span>' + txt + '</span></div>';
         }
         function throneNotice(island) {                   // your own throne or Wächter-Tempel: points and fire at a glance
