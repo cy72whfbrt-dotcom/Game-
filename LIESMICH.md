@@ -336,7 +336,10 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
   Regel „nichts im Browser“, Alexander muss zustimmen), ein Schlüsselpaar auf dem Server, die Erlaubnis jedes Spielers
   (Knopf antippen) und dass der Office-Server nach außen zu Apple senden darf (noch prüfen). Noch nicht entschieden.
 
-## 13. Weltrechner auf dem Server (Node.js) – GEBAUT, lokal getestet, noch NICHT hochgeladen
+## 13. Weltrechner auf dem Server (Node.js) – LÄUFT LIVE seit 1.10. (Alexanders Ja)
+**Erster Start live (1.10., 21:01):** Welt geladen (6.632 Basen), 37 Pulse in 90 s, 256 MB, 0 Fehler. Dabei gefunden:
+der Start aus PHP heraus hing (PHP wartete auf das Hintergrund-Programm). Behoben in wachhund.php: das Programm wird ganz
+abgelöst gestartet (eigene Gruppe mit setsid, Ein-/Ausgabe umgeleitet) – lokal kommt der Start in 0,02 s zurück.
 **Server-Test am 1.10. (Testdateien wieder gelöscht):** Office-Server (netcup-Webhosting, gehört Alexander, dort laufen
 auch seine anderen Seiten) kann: Node.js 22 (`/opt/plesk/node/22/bin/node`), Programme über PHP starten (exec),
 Cronjobs (Konto hat schon einen für cron.lapush.de – nie anfassen, nur eigene Zeile dazu, vorher sichern).

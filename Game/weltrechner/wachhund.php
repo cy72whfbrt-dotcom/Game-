@@ -70,7 +70,8 @@ function wr_starten() {
     if ($url === '') { wr_log('kann nicht starten: Adresse des Spiels unbekannt (spiel_url in config.php)'); return false; }
     if (!is_file(WR_ORDNER . '/log.php')) file_put_contents(WR_ORDNER . '/log.php', WR_SPERRE);
     $env = 'OW_URL=' . escapeshellarg($url) . ' OW_SCHLUESSEL=' . escapeshellarg(weltrechner_schluessel()) . ' OW_SPEICHER_MB=' . WR_SPEICHER_MB;
-    $cmd = 'cd ' . escapeshellarg(WR_ORDNER) . ' && ' . $env . ' nohup nice -n 19 ' . escapeshellarg(wr_node()) . ' --max-old-space-size=450 start.js >> log.php 2>&1 &';
+    // ganz vom Aufrufer lösen (eigene Gruppe, keine offene Leitung) – sonst wartet PHP, bis der Weltrechner endet
+    $cmd = '(cd ' . escapeshellarg(WR_ORDNER) . ' && ' . $env . ' exec ' . (trim((string)@shell_exec('command -v setsid')) !== '' ? 'setsid ' : '') . 'nohup nice -n 19 ' . escapeshellarg(wr_node()) . ' --max-old-space-size=450 start.js >> log.php 2>&1 < /dev/null) > /dev/null 2>&1 &';
     exec($cmd);
     wr_log('Weltrechner gestartet');
     return true;
