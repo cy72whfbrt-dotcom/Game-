@@ -2673,11 +2673,17 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         }
 
         // Islands the player owns, each with its own level and troop garrison
+        var ownVer = 0;                                                  // bumped whenever anyone's bases change: the map skips its ownership scans while it stays
+        class OwnSet extends Set {
+            add(id) { if (!this.has(id)) ownVer++; return super.add(id); }
+            delete(id) { const r = super.delete(id); if (r) ownVer++; return r; }
+            clear() { if (this.size) ownVer++; super.clear(); }
+        }
         let ownedIslands;
         try {
-            ownedIslands = new Set(JSON.parse(store.get('openWaterOwnedIslands')));
+            ownedIslands = new OwnSet(JSON.parse(store.get('openWaterOwnedIslands')));
         } catch (e) {
-            ownedIslands = new Set();
+            ownedIslands = new OwnSet();
         }
         ownedIslands.add(playerIslandId);
 
@@ -2798,9 +2804,9 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         const botOwnerIndex = new Map();
         class BotBaseSet extends Set {
             constructor(owner, items) { super(); this.owner = owner; for (const id of items || []) this.add(id); }
-            add(id) { botOwnerIndex.set(id, this.owner); return super.add(id); }
-            delete(id) { if (botOwnerIndex.get(id) === this.owner) botOwnerIndex.delete(id); return super.delete(id); }
-            clear() { for (const id of this) if (botOwnerIndex.get(id) === this.owner) botOwnerIndex.delete(id); super.clear(); }
+            add(id) { if (!this.has(id)) ownVer++; botOwnerIndex.set(id, this.owner); return super.add(id); }
+            delete(id) { if (botOwnerIndex.get(id) === this.owner) botOwnerIndex.delete(id); const r = super.delete(id); if (r) ownVer++; return r; }
+            clear() { for (const id of this) if (botOwnerIndex.get(id) === this.owner) botOwnerIndex.delete(id); if (this.size) ownVer++; super.clear(); }
         }
         let botOwnedIslands;
         try {
@@ -3058,14 +3064,17 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             }
             return sum;
         }
+        function setText(el, v) { v = String(v); if (el && el.textContent !== v) el.textContent = v; }        // DOM writes only on a change: an equal write still costs a layout
+        function setShown(el, on) { const d = on ? 'block' : 'none'; if (el && el.style.display !== d) el.style.display = d; }
         function updateHud() {
             const troops = totalTroops();
-            coinCountEl.textContent = fmtCompact(Math.floor(coins));
-            coinCountEl.parentNode.title = fmtNum(Math.floor(coins)) + ' Münzen';
-            gemCountEl.textContent = fmtCompact(Math.floor(gems));
-            gemCountEl.parentNode.title = fmtNum(Math.floor(gems)) + ' Gems';
-            troopCountEl.textContent = fmtCompact(troops);
-            troopCountEl.parentNode.title = fmtNum(troops) + ' Truppen';
+            setText(coinCountEl, fmtCompact(Math.floor(coins)));
+            const tc = fmtNum(Math.floor(coins)) + ' Münzen', tg = fmtNum(Math.floor(gems)) + ' Gems', tt = fmtNum(troops) + ' Truppen';
+            if (coinCountEl.parentNode.title !== tc) coinCountEl.parentNode.title = tc;
+            setText(gemCountEl, fmtCompact(Math.floor(gems)));
+            if (gemCountEl.parentNode.title !== tg) gemCountEl.parentNode.title = tg;
+            setText(troopCountEl, fmtCompact(troops));
+            if (troopCountEl.parentNode.title !== tt) troopCountEl.parentNode.title = tt;
             requestRender();   // HUD changes coincide with state changes -> the map may need a redraw
         }
         // Desktop player plate (#hudPlayer). Called at boot, from the 1s
@@ -3073,9 +3082,9 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         // and RANK_TIERS, which are declared further down, so it must never
         // run before the script has passed those lines.
         function updateHudPlayer() {
-            document.getElementById('hudName').textContent = profileName.value || 'Du';
-            document.getElementById('hudLevel').textContent = playerLvl;
-            document.getElementById('hudRankLine').textContent = rulerOwner() === 'player' ? 'Herrscher der Meere' : 'Rang ' + currentRank();
+            setText(document.getElementById('hudName'), profileName.value || 'Du');
+            setText(document.getElementById('hudLevel'), playerLvl);
+            setText(document.getElementById('hudRankLine'), rulerOwner() === 'player' ? 'Herrscher der Meere' : 'Rang ' + currentRank());
         }
         updateHud();
 
@@ -4014,7 +4023,9 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         }
 
         let OWNER_SNAPSHOT = new Map();                                // islandId -> 0 (player) | 1..n (bot index)
+        let ownDeltaVer = -1, terrVer = -1;                            // ownVer seen by ownershipDelta / refreshTerritory (nothing changed → no scan of ~2000 ids per frame)
         function ownershipDelta() {                                    // world rects a capture can influence (one per changed base: base ± connect distance), or null
+          if (ownDeltaVer === ownVer) return null; ownDeltaVer = ownVer;
           const cur = new Map(); let r = null;
           for (const id of ownedIslands) cur.set(id, 0);
           BOT_DEFS.forEach((bot, i) => { for (const id of botOwnedIslands[bot.id]) cur.set(id, i + 1); });
@@ -4026,6 +4037,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
           return r;
         }
         function refreshTerritory() {
+          if (terrVer === ownVer) return null; terrVer = ownVer;
           const sigs = territorySigs(); let changed = null;
           const grow = bb => { changed = changed ? { l: Math.min(changed.l, bb.l), t: Math.min(changed.t, bb.t), r: Math.max(changed.r, bb.r), b: Math.max(changed.b, bb.b) } : { ...bb }; };
           for (const grp of ['player', 'enemy']) {
@@ -4651,7 +4663,8 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         const BAUSTILE = { klassisch: 'Klassisch', nordisch: 'Nordisch', suedlich: 'Südländisch', morgenland: 'Morgenland', fernost: 'Fernost' };
         const BK_K = ISLAND_RADIUS * .12, BK_SCALE = { mega: 2.2, tempel: 1.6, waechter: 1.6 }, BK_ELEM = ['nebel', 'gezeiten', 'fels', 'sonne'], BK_GRADE = { throne: 'thron', guardian: 'waechter' };
         function loadBaustil() { let v; try { v = JSON.parse(store.get('openWaterBaustil')); } catch (e) {} v = Object.assign({ style: 'klassisch', cap: 'huegel' }, v || {}); if (!BAUSTILE[v.style]) v.style = 'klassisch'; if (v.cap !== 'wasser') v.cap = 'huegel'; if (!Array.isArray(v.own)) v.own = [...new Set(['klassisch', v.style])]; return v; }   // own: the Basis-Skins you have (the style picked before stays yours)
-        function baustilOf(owner) { return owner === 'player' ? loadBaustil() : owner ? botBaustil(owner) : null; }
+        let baustilMem = null;                                                          // [raw, value]: the map asks for every base in every frame - parse only when it changed
+        function baustilOf(owner) { if (owner !== 'player') return owner ? botBaustil(owner) : null; const raw = store.get('openWaterBaustil'); if (!baustilMem || baustilMem[0] !== raw) baustilMem = [raw, loadBaustil()]; return baustilMem[1]; }   // (read only: the sheet changes loadBaustil()'s own copy)
         function bk3d() { const G = window.OW && OW.game; if (!G || G.off) return null; if (!G.onReady) G.onReady = () => { BK_PREVIEW.forEach(f => f()); requestRender(); }; return G; }
         const BK_PREVIEW = new Set();                                                  // open previews that wait for a sprite
         let bkGuards = null;
@@ -7082,8 +7095,8 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             battleLogPopup.classList.toggle('has-entries', rows.length > 0 || combatLog.length > 0);
 
             const total = relevantAttackCount + relevantSendCount + pendingScouts.length + pendingRetreats.length;
-            battleLogBadge.textContent = total;
-            battleLogBadge.style.display = total > 0 ? 'block' : 'none';
+            setText(battleLogBadge, total);
+            setShown(battleLogBadge, total > 0);
         }
 
         const combatLogKey = e => e.at + '|' + e.type + '|' + (e.targetId ?? e.toId);
@@ -7490,7 +7503,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         }
         function updateGoalsBadge(nAch) {
             if (nAch === undefined) nAch = achReadyN; else achReadyN = nAch;   // (the Erfolge are counted by achCheck - not before everything has loaded)
-            const nd = dailyGoalCount(), np = passReadyAll().length, n = nd + nAch + np, set = (el, v) => { if (el) { el.textContent = v; el.style.display = v > 0 ? 'block' : 'none'; } };
+            const nd = dailyGoalCount(), np = passReadyAll().length, n = nd + nAch + np, set = (el, v) => { setText(el, v); setShown(el, v > 0); };   // (only on a change: this runs every few seconds)
             set(document.getElementById('goalsBadge'), n); set(goalsPopup.querySelector('[data-gbadge="daily"]'), nd); set(goalsPopup.querySelector('[data-gbadge="ach"]'), nAch); set(goalsPopup.querySelector('[data-gbadge="pass"]'), np);
         }
         function updateQuestBadge() {
@@ -7998,11 +8011,12 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         function renderMidBar() {
             const now = Date.now(), w = tourWin(now), b = bountyOf(), last = tourState.last; let h = '';
             if (w.on) { const pl = tourPlaceOf('player');
-                h += '<button type="button" class="mb-chip is-tour" data-mb="tour">' + icon('crown') + '<span>Turnier</span>' + (pl ? '<b>Platz ' + pl + '</b>' : '') + '<i>' + fmtDHMS((w.end - now) / 1000) + '</i></button>'; }
+                h += '<button type="button" class="mb-chip is-tour" data-mb="tour">' + icon('crown') + '<span>Turnier</span>' + (pl ? '<b>Platz ' + pl + '</b>' : '') + '<i data-mb-left></i></button>'; }   // the clock is set below: no rebuild every second
             else if (last && last.me && !last.seen) h += '<button type="button" class="mb-chip is-tour" data-mb="tour">' + icon('crown') + '<span>Turnier vorbei</span><b>Platz ' + last.me.place + '</b></button>';
             if (b && b.gems >= 5) h += '<button type="button" class="mb-chip' + (b.who === 'player' ? ' is-warn' : '') + '" data-mb="bounty">' + icon(b.who === 'player' ? 'losses' : 'coin') +
                 '<span>' + (b.who === 'player' ? 'Kopfgeld auf dich' : 'Kopfgeld') + '</span><b>' + fmtNum(b.gems) + '</b>' + icon('gem', 'mb-gem') + '</button>';
             if (h !== midBarHtml) { midBarHtml = h; midBar.innerHTML = h; midBar.hidden = !h; document.body.classList.toggle('has-midbar', !!h); document.body.style.setProperty('--mb-h', midBar.children.length * 31 + 'px'); }   // the toast moves below the chips
+            if (w.on) { const el = midBar.querySelector('[data-mb-left]'), t = fmtDHMS((w.end - now) / 1000); if (el && el.textContent !== t) el.textContent = t; }
         }
         midBar.addEventListener('click', e => { const c = e.target.closest('[data-mb]'); if (!c) return;
             if (c.dataset.mb === 'tour') { openRankings('tour'); return; }
