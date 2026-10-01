@@ -438,3 +438,89 @@ Ein Schummler könnte Befehle wie „Truppen dazu“ oder „Ausbau“ fälschen
 Konto auf den Server (nächster großer Schritt).
 
 **Admin-Seite:** zeigt jetzt alle 150 Bots (60 feste + 90 aus der Namensliste in bots.js), nicht nur 60.
+
+## 14. Handy-Benachrichtigungen (Web-Push) – gebaut 1.10., lokal getestet
+Spieler bekommen eine Nachricht aufs Handy, auch wenn die App zu ist: „X greift deine Basis Y an (Ankunft in 4 Minuten)“,
+„Basis Y verloren an X“, „Ein Späher von X ist unterwegs zu deiner Basis Y“.
+- **Einschalten:** Profil → Spieler → „Benachrichtigungen“ → „Benachrichtigungen erlauben“ (erst nach Antippen gefragt).
+  **iPhone/iPad:** nur, wenn Open Water als App auf dem Home-Bildschirm liegt (ab iOS 16.4) – sonst ein Hinweis.
+- **Nicht nerven:** nur wenn man gerade NICHT im Spiel ist, höchstens 1 Nachricht pro Minute, zusammengefasst.
+- **So geht es:** `weltrechner/push.js` merkt Angriffe/Späher/verlorene Basen und schickt verschlüsselt (RFC 8291, ohne
+  Zusatzpakete) an Apple/Google. Geräte in Tabelle `ow_push` (mehrere pro Spieler), abgelaufene werden gelöscht.
+- **Ausnahme (Alexander erlaubt): Service-Worker `Game/sw.js` nur für Push** – kein Zwischenspeicher, keine Spieldaten.
+- **Schlüssel (VAPID):** einmal erzeugen mit
+  `node -e "const c=require('crypto').createECDH('prime256v1');c.generateKeys();console.log('VAPID_PUBLIC='+c.getPublicKey('base64url'));console.log('VAPID_PRIVATE='+c.getPrivateKey('base64url'))"`
+  und als Umgebungsvariablen `VAPID_PUBLIC`/`VAPID_PRIVATE` in der Cloud-Umgebung „Unity“ eintragen (nie ins Git, nie
+  in den Chat). Ohne Schlüssel ist Push aus. Schlüssel nie ändern (sonst müssen alle neu erlauben).
+- Offen: ob der Office-Server nach außen zu Apple/Google senden darf, zeigt erst der Live-Betrieb (Protokoll „Push:“).
+
+## 14b. Schummel-Schutz: Weltrechner prüft jeden Befehl (3A) – gebaut 1.10.
+Münzen/Gems/Stufe rechnet noch das Handy (bis 3B). Darum prüft der Weltrechner jeden Befehl (spiel.js vor `BEFEHLE`):
+nur richtige Zahlen, eigene Basen, echte Orte; Feld/Lager/Armee nie mehr Truppen, als die Basis hat; geschenkte Truppen
+nur aus echten Quellen (Stufenaufstieg je Stufe einmal, Thron-Shop, Lazarett, Fund, Admin-Geschenk); Ausbau nur +1 und
+nur mit (geschätzten) Münzen; Grenzen für zu viele Befehle. Abgelehntes erscheint auf der Admin-Seite unter
+**„Auffälligkeiten“** (`weltrechner/schummel.php`, gesperrt, nie im Git). Echte Spieler wurden in keinem Test blockiert.
+Grenzen: pro Stunde ist noch ein kleiner Gratis-Ausbau-Spielraum möglich; Gems prüft der Server noch nicht (→ 3B).
+
+## 14c. Mitspieler reagieren wie Menschen mit Handy – gebaut 1.10.
+Offline angegriffen → „Benachrichtigung“: tagsüber meist nach 2–30 Min. reinschauen (manchmal 1–2 Std.), nachts fast
+immer erst morgens (zu spät). Wer rechtzeitig reinschaut, ist ein paar Minuten online und verteidigt sich wie sonst
+(Hilfe, Truppen raus, Notschild), dann wieder offline. Gemerkt in `b.handy` (übersteht Neustarts). bots.js.
+
+## 14d. Anzeige live + Stadt schneller – gebaut 1.10.
+Alles in offenen Fenstern zieht von selbst nach (Schild-Restzeit, Ausbau-Knöpfe, Inselfenster, Profil, Shop, Helden,
+Ziele, Rangliste …) – geschrieben wird nur, was sich ändert (kein Flackern). Stadt am Handy: Boden/Mauern als fertiges
+Bild, Wolken in halber Auflösung, in Ruhe 30 statt 60 Bilder/s – gemessen ~20 statt 2 Bilder/s (Prozessor 4× gedrosselt).
+
+## 15. SICHERHEITS-AUDIT (Nacht 1.→2.10.) – Zweig `audit/full-review`
+Geprüft: das ganze Projekt (Server, Datenbank, Anfragen, Schummeln, Datenlecks, Abhängigkeiten, Fehler). Drei Prüfer
+haben gelesen, alles Gefundene wurde behoben und getestet. Tests: `php tests/server_test.php` (41) und
+`node tests/welt_test.js` (13, u. a. 2000 Zufallsfälle für die Flicken) – beide liegen nicht auf dem Server.
+
+**Zugangsdaten:** In der ganzen Git-Geschichte (13 Zweige) stehen die echten Passwörter NIE – nur Platzhalter in alten
+Beispieldateien. Es gab nie eine config.php/.env im Git. `.env.example` (ohne Werte) beschreibt, was hochladen.sh braucht.
+Trotzdem ändern: die Passwörter, die am 1.10. im Chat standen (Office, Datenbank).
+
+**Behoben (Server, PHP):**
+- Kein PHP-Fehlertext mehr im Browser (`display_errors` aus, eigener Fehler-Fänger); Admin-Seite/Spielseite nie im Zwischenspeicher.
+- Sicherheits-Kopfzeilen: HSTS (immer HTTPS), CSP (nur eigene Dateien + three.js + Google-Schriften; Daten nur an den
+  eigenen Server), `X-Frame-Options: DENY`, Permissions-Policy. three.js mit Echtheitsprüfung (`integrity`).
+- Formulare (Anmelden, Registrieren, Abmelden, Admin) und Puls/Speichern nur von dieser Seite (`herkunft_ok`).
+- Login-Bremse in einem Schritt (nicht mit vielen gleichzeitigen Anfragen umgehbar), pro Konto UND Gerät (niemand kann
+  ein fremdes Konto von außen aussperren) + Grenze pro Konto über alle Geräte. Neue Passwörter ab 10, höchstens 72 Zeichen.
+- Namen: nur lateinische Buchstaben (keine Doppelgänger wie kyrillisches „а“), Namen der Mitspieler gesperrt,
+  eindeutiger Anzeigename in der Datenbank (zwei gleichzeitig → nur einer bekommt ihn).
+- Puls-Bremse (höchstens 150/Minute), höchstens 30 Befehle pro Puls, höchstens 200 wartende Befehle pro Spieler, Befehle
+  älter als 10 Minuten verfallen. Befehle nur bekannter Art mit echten Zahlen (`befehl_ok`).
+- Speicher pro Konto höchstens 40 MB. Datenbank-Sperren werden geprüft. Neue Indizes (Aufräumen ohne Tabellen-Scan).
+- Profil mit echten Spielgrenzen (Stufe ≤ 2000, Münzen ≤ 10¹⁵, Schild ≤ 8 Tage, Anfängerschutz ≤ 48 h, Skills,
+  Ausrüstung, Helden, Stadt nur bis zu ihren Höchststufen).
+
+**Behoben (Weltrechner):** eigener Zufalls-Schlüssel bei jedem Hochladen (nicht mehr aus dem DB-Passwort abgeleitet),
+nur über die Umgebung übergeben (nie in einer Befehlszeile), nur an den eigenen Server gesendet. Node im
+**Sicherheitsmodus** (`--permission`): darf nur die Spiel-Skripte und den eigenen Ordner lesen, nur dort schreiben,
+keine Programme starten – getestet: config.php lesen → verweigert. Das Spiel-Fenster bekommt keine Node-Objekte mehr.
+Prüfer-Neustarts zählen nicht mehr für die Notbremse (sonst hätte ein Schummler das Spiel in Wartung zwingen können);
+erst 10 in 30 Minuten. Kein Ersatz-Hostname aus Anfragen.
+
+**Behoben (Schummeln):** Angriff auf die eigene Basis (Gratis-EP), Tagesgrenzen Boss/Lager nur auf dem Handy, Beschleunigen
+15× in Folge, freie Startplatzwahl, Dauer-Anfängerschutz und Dauer-Schild per gefälschtem Profil, Münzen-Riesenwerte,
+„Befehl raus, App weg, Münzen behalten“ (jetzt wird vor jedem Befehl gespeichert).
+
+**Behoben (Datenlecks in den Paketen):** Spieler bekommen keine Gedanken der Mitspieler mehr (Groll, Rache-Ziel, Pläne,
+geplante Verlegung, Handy-Reaktionszeit, Schummel-Merkliste), keine Münzen/Verwundeten anderer, keine Login-Namen.
+
+**Geprüft und sicher:** SQL-Injection (überall Platzhalter), Passwörter (bcrypt), Login-Cookie (HttpOnly, nur Hash in der
+DB), Admin (feste Nummer + Formular-Zeichen), keine Datei gibt Geheimnisse preis (config.php 0 Bytes, Weltrechner-Dateien
+404, Ordnerlisten 403), keine Daten anderer Spieler in Antworten, Push-Adressen gegen 16 Umgehungsversuche geprüft.
+jsdom (einzige Abhängigkeit): 0 bekannte Lücken (`npm audit`).
+
+**Noch offen (braucht Alexander / größere Umbauten):**
+- **Eigene Subdomain** (z. B. `spiel.hobbitonhill.de`, eigener Plesk-Ordner, config.php außerhalb des Webordners): heute
+  teilt sich das Spiel die Adresse mit dem Office-System. Wer dort Dateien ablegen kann, wäre „dieselbe Seite“. Wenn außer
+  Alexander niemand Office-Zugang hat, ist das Risiko klein. → Alexander: klären, wer Office-Konten hat.
+- **Nebel ist im Paket umgehbar:** jeder Spieler bekommt die Truppen aller Inseln. Ohne Nebel auf dem Server (3B) nicht lösbar.
+- **3B (Konto auf dem Server):** Münzen, Gems, Stufe, Helden, Ausrüstung nur noch auf dem Server – erst dann ist Schummeln
+  mit gefälschter Stufe/Gems ganz ausgeschlossen.
+- Spielregel-Frage an Alexander: Hauptstadt auf eine gerade angegriffene Basis verlegen erlauben? (heute ja – damit
+  rettet man jede Basis).
