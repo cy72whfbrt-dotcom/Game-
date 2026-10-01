@@ -275,6 +275,7 @@ const BOT_MIN_GARRISON_TO_ATTACK = 10;
 function botGrudge(botId, who, weight) {
     const b = loadBotState()[botId]; if (!b || !who || who === botId) return;
     const g = b.grudge || (b.grudge = {}), now = Date.now(), cur = g[who] && g[who].until > now ? g[who] : null;
+    const an = b.annoy || (b.annoy = {}); an[who] = { v: Math.min(20, botAnnoyOf(b, who, now) + weight), at: now };   // the long memory (fades over hours): who keeps bothering me
     g[who] = { n: Math.min(5, (cur ? cur.n : 0) + weight), from: cur ? cur.from : now + 30000 + Math.random() * 90000, until: now + 20 * 60000, told: cur ? cur.told : false };
     if (g[who].n >= 4 && !(b.vendetta && b.vendetta.who === who && now < b.vendetta.until)) {        // hit again and again: now it's personal - a real plan
         b.vendetta = { who, until: now + 45 * 60000 };
@@ -282,6 +283,8 @@ function botGrudge(botId, who, weight) {
     }
     saveBotState();
 }
+
+function botAnnoyOf(b, who, now) { const x = b && b.annoy && b.annoy[who]; return x ? x.v * Math.pow(.5, ((now || Date.now()) - x.at) / (3 * 3600000)) : 0; }   // halves every 3 h
 
 function botGrudgeOn(botId, who) {
     const b = loadBotState()[botId], g = b && b.grudge && who ? b.grudge[who] : null, now = Date.now();
@@ -1286,20 +1289,24 @@ function botKeepsShield(bot, now) {                    // under their own shield
 // ==============================================================================================================
 const BOT_TICK_MS = 1000;
 
-function botRulerTitles(bot, now) {               // a bot on the throne: rivals get penalties, a few others the buffs - looked at again every 15 min
-    const t = loadTitles(); if (t.ruler !== bot.id) return;
-    if (Object.keys(t.by).length && (now || Date.now()) - (t.at || 0) < 15 * 60000) return;
-    const before = titleOf('player'); t.by = {}; t.at = now || Date.now();
-    const others = BOT_DEFS.filter(b => b.id !== bot.id && botOwnedIslands[b.id].size).map(b => ({ who: b.id, n: botOwnedIslands[b.id].size }));
-    others.push({ who: 'player', n: ownedIslands.size * 1.5 });                          // the human is always a suspect
-    others.sort((a, c) => c.n - a.n);
-    const bad = TITLES.filter(x => !x.good), good = TITLES.filter(x => x.good);
-    bad.forEach((x, i) => { if (others[i]) giveTitle(x.key, others[i].who); });
-    const friends = others.slice(bad.length).sort(() => Math.random() - .5);
-    good.forEach((x, i) => { if (friends[i]) giveTitle(x.key, friends[i].who); });
-    const mine = titleOf('player');
-    if (mine && (!before || before.key !== mine.key)) flashHint('Titel „' + mine.name + '“ von ' + bot.name + ': ' + mine.desc + (mine.good ? ' – Goldring um deine Basen.' : ' – roter Ring um deine Basen, solange er gilt.'), 6000);
-    else if (before && !mine) flashHint('Dein Titel „' + before.name + '“ ist neu vergeben – der ' + (before.good ? 'Goldring' : 'rote Ring') + ' um deine Basen ist weg.', 5000);
+function botRulerTitles(bot, now) {               // a bot on the throne hands out titles like a person: whoever keeps attacking it gets a penalty, the peaceful ones the buffs - looked at every 3 min
+    const t = loadTitles(); if (t.ruler !== bot.id) return; now = now || Date.now();
+    if (Object.keys(t.by).length && now - (t.at || 0) < 3 * 60000) return;
+    const b = loadBotState()[bot.id], mine0 = titleOf('player');
+    const hitting = {}; for (const a of pendingAttacks) { const w = a.attackerBotId || 'player'; if (w !== bot.id && islandOwnerOf(a.targetId) === bot.id) hitting[w] = (hitting[w] || 0) + 1; }   // attacking me right now
+    const others = BOT_DEFS.filter(x => x.id !== bot.id && botOwnedIslands[x.id].size).map(x => x.id).concat(ownedIslands.size ? ['player'] : []);
+    const size = w => w === 'player' ? ownedIslands.size : botOwnedIslands[w].size;
+    const sc = others.map(w => ({ w, a: botAnnoyOf(b, w, now) + (hitting[w] ? 3 + hitting[w] : 0), n: size(w) }));
+    const foes = sc.filter(x => x.a >= .5).sort((x, y) => y.a - x.a || y.n - x.n);                                  // the most annoying first
+    const calm = sc.filter(x => x.a < .5).sort((x, y) => x.a - y.a || y.n - x.n);                                    // the peaceful ones, the strong first (good to have as friends)
+    const bad = TITLES.filter(x => !x.good), good = TITLES.filter(x => x.good), pick = [];
+    t.by = {}; t.at = now;
+    bad.forEach((x, i) => { const f = foes[i] || calm[calm.length - 1 - (i - foes.length)]; if (f && !pick.includes(f.w)) { giveTitle(x.key, f.w); pick.push(f.w); } });   // not enough foes: the weakest of the rest
+    const friends = calm.filter(x => !pick.includes(x.w));
+    good.forEach((x, i) => { if (friends[i]) giveTitle(x.key, friends[i].w); });
+    const mine = titleOf('player'), why = hitting.player ? ' – du greifst ihn gerade an' : botAnnoyOf(b, 'player', now) >= .5 ? ' – er hat nicht vergessen, wie oft du ihn angegriffen hast' : mine && mine.good ? ' – du hast ihn in Ruhe gelassen' : '';
+    if (mine && (!mine0 || mine0.key !== mine.key)) flashHint('Titel „' + mine.name + '“ von ' + bot.name + why + ': ' + mine.desc + '.', 6500);
+    else if (mine0 && !mine) flashHint(bot.name + ' hat dir den Titel „' + mine0.name + '“ wieder genommen.', 5000);
     saveTitles();
 }
 
