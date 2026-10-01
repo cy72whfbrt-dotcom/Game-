@@ -3,7 +3,7 @@
 Liste der Ideen, die für später vorgemerkt sind.
 
 ## Noch offen
-- **Heldenkisten im Shop** (später, nicht im Heldenfenster).
+- ~~Heldenkisten im Shop~~ – eingebaut: Heldenkiste 150, Große Kiste 500, Epische Kiste 1.200 Gems (auch die Mitspieler kaufen).
 - **Spielstand-Sicherung über einen Server** – ganz am Ende.
 - Feinschliff nach dem Anspielen: Preise im Aussehen, Gefolge-Werte, Mega-Tempel-Gems (MEGA_TEMPLE_MULT).
 

@@ -869,6 +869,8 @@ function botHeroCare(bot) {                               // like a player in th
     const b = loadBotState()[bot.id], day = todayKey(); if (!b || !b.hs) return;
     if (b.hsDay !== day) { const first = !b.hsDay; b.hsDay = day;               // the daily tasks' shards - on the days they play enough to finish them
         if (!first && Math.random() < Math.min(.95, (BOT_STYLES[bot.style].act || .6) + .2)) { heroGrantShards(bot.id, HERO_SHARDS_DAY); b.hsDays = (b.hsDays || 0) + 1; if (b.hsDays % 7 === 0) heroGrantShards(bot.id, HERO_SHARDS_CHAIN); } }
+    if (b.hcDay !== day && (b.hcDay = day) && Math.random() < .3) {               // a hero chest from the shop now and then (at most one a day), only from gems they can spare - like the player
+        const c = [...HERO_CHESTS].reverse().find(x => b.gems >= x.gems * 3 + TELEPORT_GEMS); if (c && heroChestOpen(bot.id, c).length) { b.gems -= c.gems; b.hcN = (b.hcN || 0) + 1; } }
     const like = botHeroLikes(bot), rank = t => { const i = like.indexOf(t); return i < 0 ? 99 : i; }, now = Date.now();
     for (const h of HEROES) {
         const s = b.hs[h.id]; if (!s) continue;
