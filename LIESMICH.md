@@ -335,7 +335,7 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
 **Server-Test am 1.10. (Testdateien wieder gelöscht):** Office-Server (netcup-Webhosting, gehört Alexander, dort laufen
 auch seine anderen Seiten) kann: Node.js 22 (`/opt/plesk/node/22/bin/node`), Programme über PHP starten (exec),
 Cronjobs (Konto hat schon einen für cron.lapush.de – nie anfassen, nur eigene Zeile dazu, vorher sichern).
-16 Kerne, 64 GB (geteilt mit allen Seiten). Kein Chrome. 10-Minuten-Test bestanden: ein Node-Programm im Hintergrund lief 12 Minuten ohne Unterbrechung (jede Minute ein Eintrag), hat sich dann selbst beendet; Testdatei gelöscht. Dauerbetrieb ist also möglich (mit Wachhund zur Sicherheit).
+16 Kerne, 64 GB (geteilt mit allen Seiten). Kein Chrome. 10-Minuten-Test bestanden: ein Node-Programm im Hintergrund lief 12 Minuten ohne Unterbrechung (jede Minute ein Eintrag), hat sich dann selbst beendet; Testdatei gelöscht. Dauerbetrieb ist also möglich (mit Wachhund zur Sicherheit). Speicher: Node selbst braucht ca. 49 MB (gemessen beim Rechentest); Schätzung für den echten Weltrechner 100–300 MB, Grenze 600 MB.
 
 **Ziel:** Kein Handy rechnet mehr die Welt. Ein Node-Programm auf dem Server rechnet rund um die Uhr (Bots, Märsche,
 Kämpfe, Münzen), auch wenn niemand online ist. Handys zeigen nur an und schicken Befehle. Ziel: bis 4000 Spieler.
@@ -345,8 +345,10 @@ Kämpfe, Münzen), auch wenn niemand online ist. Handys zeigen nur an und schick
 2. Rechenzeit: niedrige Priorität (`nice 19`), die anderen Seiten haben Vorrang. Jeder Rechenschritt hat ein Zeitbudget.
 3. Wachhund (Cron, jede Minute): Das Programm schreibt alle paar Sekunden einen „Herzschlag“. Ist er älter als
    60 Sekunden (Endlosschleife, hängt) → hart beenden und neu starten.
-4. Keine Absturz-Schleife: Mehr als 5 Neustarts in 10 Minuten → keine Neustarts mehr, Notbetrieb: die Welt
-   PAUSIERT (Spieler sehen „Welt wird repariert“, nichts geht verloren), rote Warnung auf der Admin-Seite.
+4. Kurzer Neustart (Wachhund/Speicher voll): Spieler sehen „Verbindung wird wiederhergestellt …“.
+   Großer Hänger oder 5 Abstürze in 5 Minuten → automatisch WARTUNG an (wie beim Hochladen: niemand kommt rein,
+   alle sehen die Wartungsmeldung, die Welt steht, nichts geht verloren), keine Neustarts mehr, Nachricht an
+   Alexander auf der Admin-Seite (mit Grund und Log). Wartung beendet nur Alexander.
    **REGEL (Alexander): Niemals ein Handy/Gerät eines Spielers die Welt rechnen lassen – auch nicht als Ersatz.**
    Der alte Weg (Handy-Weltrechner) wird beim Umstieg ganz entfernt.
 5. Prüfer nach jedem Schritt: keine kaputten Zahlen (NaN, minus Truppen, Münzen explodieren, Basen ohne Besitzer).
