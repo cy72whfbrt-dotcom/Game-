@@ -4665,10 +4665,13 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
           return ['b|' + step + '|' + ownerKey + '|' + (cap ? bs.cap : '') + '|' + bs.style + '|' + seed + '|' + (crest ? crest.div + '.' + crest.t : '') + '|' + skin,
                   { model: 'basis', level: step, owner: ownerKey, capital: cap, capStyle: bs.cap, style: bs.style, seed, crest, skin }];
         }
+        const BK_LAST = new Map();                                                       // island → id of the 3D sprite drawn last
         function bkSprite(island, ownerKey, open, z) {                                   // → { s: sprite, W: width in px } or null
           const G = bk3d(); if (!G) return null;
-          const [id, c] = bkModel(island, ownerKey, open), W = 2 * G.frameOf(c).v * BK_K * z * (BK_SCALE[c.model] || 1), need = W * dpr;
-          const s = G.get(id, c, need <= 140 ? 128 : need <= 300 ? 256 : 512); return s ? { s, W } : null;
+          const [id, c] = bkModel(island, ownerKey, open), k = BK_K * z * (BK_SCALE[c.model] || 1), need = 2 * G.frameOf(c).v * k * dpr;
+          let s = G.get(id, c, need <= 140 ? 128 : need <= 300 ? 256 : 512);
+          if (s) BK_LAST.set(island.id, id); else { const o = BK_LAST.get(island.id); s = o && G.peek(o) || null; }   // new look (upgrade, +5 step) still rendering: the old 3D sprite stays, not the big drawn one
+          return s ? { s, W: 2 * s.v * k } : null;                                     // W from the sprite's own frame: an old sprite keeps its size
         }
         function bkPreviews() {                                                          // the keep sheet's style cards: your capital in each style
           const cvs = [...document.querySelectorAll('[data-bk-prev]')]; if (!cvs.length) { BK_PREVIEW.delete(bkPreviews); return; }

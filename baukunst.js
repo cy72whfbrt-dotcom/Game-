@@ -4208,6 +4208,7 @@ if (typeof THREE !== 'undefined') try {
     for (const p of [256, 512, 128]) { const o = cache.get(id + '@' + p); if (o) return o; }
     return null;
   };
+  G.peek = function (id) { if (G.off) return null; for (const p of [512, 256, 128]) { const o = cache.get(id + '@' + p); if (o) return o; } return null; };   // a cached sprite of this model in any size, without queueing (the old look while the new one renders)
   G.now = function (id, c, px) {                                                  // render right away (previews)
     if (G.off) return null; const key = id + '@' + px; let s = cache.get(key); if (s) return s;
     try { s = render(c, px); cache.set(key, s); pixels += px * px; return s; } catch (e) { console.warn('Baukunst', e); if (++G.fails >= 3) G.off = true; return null; }
