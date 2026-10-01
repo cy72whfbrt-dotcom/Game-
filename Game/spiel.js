@@ -6,8 +6,9 @@ const SYSTEM = !!(window.__OW && window.__OW.system);
 function alsBefehl(art, daten) { if (rechnet()) return false; WELT.befehl(art, daten); return true; }
 const neutralId = id => (id === 'player' && window.WELT) ? WELT.ich : id;     // 'player' → u<meine id> (für Befehle/Nachrichten)
 const lokalId = id => (window.WELT && id === WELT.ich) ? 'player' : id;
-// Truppen, die dir geschenkt werden (Stufe, Thron-Shop, Lazarett, Funde): beim Zuschauer macht es der Weltrechner
-function eigeneTruppenDazu(base, n) { if (base === null || base === undefined || !(n > 0)) return; islandTroops[base] = (islandTroops[base] || 0) + n; alsBefehl('truppen', { n }); }
+// Truppen, die dir geschenkt werden (Stufe, Thron-Shop, Lazarett, Funde, Admin): beim Zuschauer macht es der Weltrechner.
+// q = woher (stufe/thron/heil/fund/geschenk) – der Weltrechner prüft danach, wie viele es höchstens sein dürfen (Schummel-Schutz).
+function eigeneTruppenDazu(base, n, q, mehr) { if (base === null || base === undefined || !(n > 0)) return; islandTroops[base] = (islandTroops[base] || 0) + n; alsBefehl('truppen', Object.assign({ n, q }, mehr || {})); }
 // iPhone Home-Bildschirm-App: iOS macht die Seite um die Statusleiste zu kurz (unten bleibt ein schwarzer Streifen).
 // Die Lücke wird gemessen, und die Leiste unten rutscht genau so weit runter (CSS-Wert --dock-off).
 (function dockLuecke() {
@@ -1325,7 +1326,7 @@ function grantLevelRewards(from, to) {
     const baseId = rewardBaseId();
     coins += c;
     gems += g;
-    if (baseId !== null) eigeneTruppenDazu(baseId, t);
+    if (baseId !== null) eigeneTruppenDazu(baseId, t, 'stufe', { von: from, bis: to });
     else t = 0;
     queueLevelUpModal(from, to, { coins: c, troops: t, gems: g, points: to - from });
 }
@@ -5590,7 +5591,7 @@ function inboxClaim(id) {                           // into your coffers - retur
     if (x.gems) { gems += x.gems; got.push('+' + fmtNum(x.gems) + ' Gems'); } if (x.coins) { coins += x.coins; got.push('+' + fmtCompact(x.coins) + ' Münzen'); }
     if (x.crate >= 0) { const it = grantFreeCrate(x.crate); if (it && it.rarity !== undefined) got.push(EQUIPMENT_DEFS[it.slot].name + ' (' + RARITY_DEFS[it.rarity].label + ')'); }
     if (x.sh) { const h = heroGrantShards('player', x.sh); if (h) got.push(x.sh + ' Splitter ' + h.name); else { gems += x.sh * 20; got.push('+' + x.sh * 20 + ' Gems (alle Helden voll)'); } }
-    if (x.tr) { const b = rewardBaseId(); if (b !== null) { eigeneTruppenDazu(b, x.tr); got.push('+' + fmtCompact(x.tr) + ' Truppen'); } else L.splice(i, 0, Object.assign({}, x, { gems: 0, coins: 0, sh: 0, crate: -1 })); }   // no base right now: only the troops stay in the inbox
+    if (x.tr) { const b = rewardBaseId(); if (b !== null) { eigeneTruppenDazu(b, x.tr, 'geschenk'); got.push('+' + fmtCompact(x.tr) + ' Truppen'); } else L.splice(i, 0, Object.assign({}, x, { gems: 0, coins: 0, sh: 0, crate: -1 })); }   // no base right now: only the troops stay in the inbox
     inboxSave(); saveGame(); saveProgression(); updateHud(); return got.join(', ');
 }
 function renderInbox() {
@@ -5846,7 +5847,7 @@ function throneGive(who, id) {                        // hands one offer over; r
     if (id === 'coins') { if (b) botCoins[who] = (botCoins[who] || 0) + n; else coins += n; return '+' + fmtCompact(n) + ' Münzen'; }
     if (id === 'gems') { if (b) b.gems += n; else gems += n; return '+' + n + ' Gems'; }
     if (id === 'troops') { const to = b ? botCapitalOf(who) : rewardBaseId(); if (to === null || to === undefined) return '';
-        if (b) islandTroops[to] = (islandTroops[to] || 0) + n; else eigeneTruppenDazu(to, n); return '+' + fmtCompact(n) + ' Truppen in ' + (b ? 'die Hauptstadt' : islandTitle(islandById[to])); }
+        if (b) islandTroops[to] = (islandTroops[to] || 0) + n; else eigeneTruppenDazu(to, n, 'thron'); return '+' + fmtCompact(n) + ' Truppen in ' + (b ? 'die Hauptstadt' : islandTitle(islandById[to])); }
     if (id === 'crate' || id === 'royal') { const r = id === 'royal' ? Math.max(3, pickRandomRarity()) : pickRandomRarity(), slot = pickRandomSlot();
         if (b) { b.spare[slot][r]++; return ''; }
         addInventoryItem(slot, r, 1); sfx('crate'); return RARITY_DEFS[r].label + ' ' + EQUIPMENT_DEFS[slot].name + ' im Inventar'; }
@@ -8073,7 +8074,7 @@ document.getElementById('citySheet').addEventListener('click', e => {
     else if (hl) { const c = loadCity(), w = c.wounded, cost = Math.ceil(w * HEAL_COIN_PER_TROOP);
         if (!w || coins < cost) return;
         coins -= cost; c.wounded = 0; saveCity(); statBump('healed', w);
-        const base = rewardBaseId(); if (base !== null) eigeneTruppenDazu(base, w);
+        const base = rewardBaseId(); if (base !== null) eigeneTruppenDazu(base, w, 'heil');
         saveGame(); updateHud(); flashHint(fmtNum(w) + ' Truppen geheilt – sie sind in deiner Hauptstadt.', 3000); renderCitySheet(); }
 });
 document.getElementById('cityBtn').addEventListener('click', openCity);
@@ -8702,7 +8703,7 @@ function collectPickupAt(sx, sy) {
         if (p.kind === 'gem') { gems += p.amount; label = '+' + fmtNum(p.amount) + (p.amount === 1 ? ' Gem' : ' Gems'); }
         else if (p.kind === 'troops') {
             const baseId = rewardBaseId();
-            if (baseId !== null) eigeneTruppenDazu(baseId, p.amount);
+            if (baseId !== null) eigeneTruppenDazu(baseId, p.amount, 'fund');
             label = '+' + fmtNum(p.amount) + ' Truppen';
         } else { coins += p.amount; label = '+' + fmtNum(p.amount) + ' Münzen'; }
         pickupFx.push({ x: p.x, y: p.y, kind: p.kind, label, born: performance.now() });
@@ -10787,6 +10788,7 @@ if (window.WELT) {
         try { if (titleState) store.set('openWaterTitles', JSON.stringify(titleState)); } catch (e) {}
         try { if (bossLoaded) saveBoss(); else if (wander !== undefined) saveWander(); } catch (e) {}
         try { saveFields(); saveBarb(); saveArmies(); } catch (e) {}
+        try { wacheRunde(); } catch (e) { console.warn('Schummel-Schutz:', e); }   // (unten) Konten der Spieler + wartende Befehle
     };
     // Weltrechner geworden / nicht mehr
     window.__weltLeiterWechsel = function (an, neu, weltZeit) {
@@ -10807,10 +10809,255 @@ if (window.WELT) {
     // (Weltrechner) Befehle der anderen Spieler ausführen
     const gehoert = (id, who) => islandOwnerOf(id) === who;
     const marschVon = (who, key) => pendingAttacks.find(x => x.attackerBotId === who && marchKeyOf(x) === key) || pendingSends.find(x => x.senderBotId === who && marchKeyOf(x) === key);
+
+    // ===== Schummel-Schutz (nur beim Weltrechner) =====
+    // Münzen, Gems und Stufe eines Spielers rechnet noch sein eigenes Handy. Ein Schummler könnte also Befehle fälschen
+    // („gib mir Truppen“, „Basis auf Stufe 99“), ohne zu bezahlen. Darum prüft der Weltrechner hier jeden Befehl:
+    //   - Zahlen nur endlich und größer 0, mit Obergrenze; Kennungen nur Buchstaben/Ziffern; nur eigene Basen
+    //   - Truppen-Geschenke nur so viel, wie die Quelle wirklich hergibt (Stufe, Thron-Shop, Lazarett, Fund, Admin-Geschenk)
+    //   - Ausbau nur genau +1 Stufe und nur, wenn er die Münzen haben kann (eigenes „Konto“, siehe wacheSehen)
+    //   - zu viele Befehle in kurzer Zeit → der Rest verfällt
+    // Echte Spieler werden nie blockiert: passt etwas (noch) nicht, wartet der Befehl bis zu 60 s auf das nächste Profil
+    // (das Handy schickt es alle 10 s). Was abgelehnt/gekappt wird oder auffällig springt, landet in WELT.warnungen →
+    // weltrechner/start.js schreibt es in weltrechner/schummel.php → admin.php zeigt es unter „Auffälligkeiten“.
+    WELT.warnungen = WELT.warnungen || [];
+    const WACHE_WARTEN_MS = 60000, WACHE_MAX = 1e15;
+    const zahlOk = (v, max) => typeof v === 'number' && Number.isFinite(v) && v > 0 && v <= (max || WACHE_MAX);
+    const inselOk = v => Number.isInteger(v) && !!islandById[v];
+    const kennungOk = v => typeof v === 'string' && /^[A-Za-z0-9_.:-]{1,80}$/.test(v);
+    const nn = v => typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : 0;      // nie negativ, nie kaputt
+    const fz = n => fmtCompact(Math.round(n));
+    function warnen(who, was, text, wert) {
+        const uid = parseInt(String(who).slice(1), 10); if (!(uid > 0)) return;
+        WELT.warnungen.push({ uid, was, text: String(text).slice(0, 300), wert: nn(wert), zeit: Date.now() });
+        if (WELT.warnungen.length > 500) WELT.warnungen.splice(0, WELT.warnungen.length - 500);   // start.js holt sie alle 5 s ab
+    }
+    // Merkzettel je Spieler: im Arbeitsspeicher (wacheMem) und – was einen Neustart überleben muss – in der Welt (bs.wache)
+    const wacheMem = {};
+    const wm = who => wacheMem[who] || (wacheMem[who] = { init: false, zeiten: {}, warte: { ausbau: [], truppen: [] }, c: { u: 0, vor: 0, vorT: 0 }, w: { u: 0, vor: 0, vorT: 0 }, sr: [], ein: [], flug: [], lvlLog: [], lvl: 1 });
+    function wd(who) {   // lv: bis zu welcher Stufe die Stufen-Truppen bezahlt sind, tk: Thron-Truppen gekauft, gTr/gC: Admin-Geschenke (Truppen/Münzen)
+        const b = loadBotState()[who]; if (!b) return null;
+        if (!b.wache || typeof b.wache !== 'object') b.wache = { lv: 0, tk: 0, gTr: 0, gC: 0 };
+        return b.wache;
+    }
+    function zuOft(m, art, max, ms) {    // mehr als max-mal in ms? (dann zählt dieser nicht mit)
+        const now = Date.now(), l = m.zeiten[art] || (m.zeiten[art] = []);
+        while (l.length && now - l[0] > ms) l.shift();
+        if (l.length >= max) return true;
+        l.push(now); return false;
+    }
+    const profilVon = who => { const x = WELT.menschen[who]; return x && x.profil && typeof x.profil === 'object' ? x.profil : null; };
+    const zahlOderNull = v => typeof v === 'number' && Number.isFinite(v) ? v : 0;
+    // Das „Konto“ eines Spielers: wie viele Münzen (und Verwundete) KANN er höchstens haben – unabhängig von seinem Handy:
+    //   + genau das, was der Weltrechner ihm schickt (Nachrichten „delta“: Produktion, Beute, Maut, Kämpfe, EP, Verwundete –
+    //     mitgezählt in wacheDelta, bevor welt.js sie verschickt)
+    //   + ein Spielraum pro Stunde für das, was nur sein Handy gibt (Stufen-Belohnung, Thron-Shop, Saison-Pass, Funde)
+    //   + Admin-Geschenke (admin.php meldet sie dem Weltrechner als Gutschrift)
+    // Zeigt sein Profil weniger, gilt das Profil (er hat ausgegeben – der Unterschied ist „Vorschuss“ für Befehle, die
+    // gleich noch kommen). Zeigt es mehr, als möglich ist → Warnung, das Konto bleibt beim Möglichen.
+    // Nachrichten können noch „unterwegs“ sein (sein Profil kennt sie noch nicht): bis zu ein paar Sekunden, und wenn er
+    // offline ist, bis er wiederkommt (das erste Profil danach entsteht, bevor sein Handy sie abholt). Darum zählen
+    // Nachrichten als unterwegs, bis danach zwei Profile von ihm kamen (m.flug, je Minute zusammengefasst).
+    // EP kommen nur vom Weltrechner (Kämpfe): daraus folgt die höchste Stufe, die er haben kann (m.lvl).
+    // Spielraum pro Stunde: Stufen-Münzen der letzten Stunde (+ nächste Stufe) und ein paar Stunden-Einnahmen (Thron-Shop,
+    // Saison-Pass zahlen „eine Stunde Produktion“). Die Stunden-Einnahme ist GEMESSEN (was der Weltrechner ihm in der
+    // letzten Stunde schickte) – nie aus seinen jetzigen Basis-Stufen, sonst würde ein erschlichener Ausbau den Spielraum
+    // gleich weiter vergrößern. Am Anfang (noch keine Stunde gemessen) gilt die Produktion beim ersten Sehen (m.hp0).
+    const FLUG_MS = 10000, FLUG_MAX_MS = 48 * 3600000;
+    function spielraumStunde(who, m) {
+        const L = Math.max(1, m.lvl), now = Date.now();
+        let von = L; for (const x of m.lvlLog) if (x.l < von) von = x.l;
+        let lv = 0; for (let l = Math.max(2, von); l <= L + 1 && l <= von + 300; l++) lv += levelRewardCoins(l);
+        while (m.ein.length && now - m.ein[0].t > 3600000) m.ein.shift();
+        const gemessen = m.ein.reduce((a, x) => a + x.n, 0), dauer = now - m.initT;
+        const stunde = dauer >= 3600000 ? gemessen : Math.max(m.hp0, gemessen * 3600000 / Math.max(dauer, 600000));
+        return 50000 + lv + 3 * Math.max(5000, stunde) + 3 * levelRewardCoins(L + 1);
+    }
+    function spielraumFrei(who, m) {
+        const now = Date.now(); while (m.sr.length && now - m.sr[0].t > 3600000) m.sr.shift();
+        return Math.max(0, spielraumStunde(who, m) - m.sr.reduce((a, x) => a + x.n, 0));
+    }
+    // (welt.js → Server) jede Nachricht „delta“ an einen Spieler mitzählen – genau das kommt bei ihm an
+    function wacheDelta(who, e) {
+        const m = wacheSehen(who); if (!m.init) return;
+        const now = Date.now(), c = zahlOderNull(e.coins), w = zahlOderNull(e.wounded);
+        m.c.u = Math.max(0, m.c.u + c); m.w.u = Math.max(0, m.w.u + w);
+        if (c > 0) { const t = now - now % 60000, l = m.ein[m.ein.length - 1]; if (l && l.t === t) l.n += c; else m.ein.push({ t, n: c }); }   // Einnahmen je Minute
+        if (c || w) { let f = m.flug[m.flug.length - 1]; if (!f || f.n || now - f.t > 60000) m.flug.push(f = { t: now, cP: 0, cM: 0, wP: 0, wM: 0, n: 0 });
+            if (c > 0) f.cP += c; else f.cM -= c; if (w > 0) f.wP += w; else f.wM -= w; }
+        m.xpRest += nn(e.xp);
+        for (let i = 0; i < 1000 && m.xpRest >= xpNeededForLevel(m.lvl); i++) { m.xpRest -= xpNeededForLevel(m.lvl); m.lvl++; }
+        const d = wd(who); if (d) d.lm = m.lvl;
+    }
+    if (Array.isArray(WELT.ereignisseRaus)) {        // (nur zuschauen – welt.js verschickt die Liste wie bisher)
+        const raus = WELT.ereignisseRaus;
+        raus.push = function (...xs) {
+            for (const x of xs) try { if (x && x.e && x.e.art === 'delta' && x.an > 0) wacheDelta('u' + x.an, x.e); } catch (e) { console.warn('Schummel-Schutz:', e); }
+            return Array.prototype.push.apply(this, xs);
+        };
+    }
+    // Ein Wert aus seinem neuen Profil gegen das Konto k halten (für Münzen und Verwundete gleich).
+    // → wie viel MEHR das Profil zeigt, als möglich ist (vor Spielraum/Geschenk); 0 = in Ordnung
+    function kontoProfil(k, pw, flugPlus, flugMinus, now) {
+        const hi = k.u + flugMinus, lo = Math.max(0, k.u - flugPlus);   // hi: er kennt die Nachrichten unterwegs schon, lo: noch nicht
+        if (pw > hi) { k.u = pw; return pw - hi; }
+        if (pw < lo) { k.vor = (now - k.vorT < WACHE_WARTEN_MS ? k.vor : 0) + (lo - pw); k.vorT = now; k.u = pw + flugPlus; }
+        return 0;                                       // dazwischen: unklar, wie viel unterwegs schon drin ist – das Konto bleibt
+    }
+    function wacheSehen(who) {
+        const m = wm(who), p = profilVon(who), b = loadBotState()[who]; if (!b) return m;
+        const now = Date.now(), d = wd(who);
+        if (!m.init) {                                 // zum ersten Mal gesehen (auch nach einem Neustart des Weltrechners)
+            m.init = true; m.prof = p; m.initT = now;
+            try { m.hp0 = nn(hourProduction(who).coins); } catch (e) { m.hp0 = 0; }
+            // Was der Weltrechner schon über ihn weiß, steht in der Welt (bs.wache) – das zählt mehr als sein Profil in der
+            // Datenbank (das hat ja sein Handy geschickt). Nur wer noch nie gesehen wurde, wird einmal am Profil „geeicht“.
+            m.geeicht = Number.isFinite(d.u);
+            m.c.u = p ? nn(p.coins) : nn(botCoins[who]); if (m.geeicht) m.c.u = Math.min(m.c.u, d.u) + m.hp0 * 0.25;   // (+ eine Viertelstunde: was zuletzt nicht mehr gespeichert wurde)
+            m.w.u = p ? nn(p.wounded) : nn(b.wounded); if (Number.isFinite(d.w)) m.w.u = Math.min(m.w.u, d.w) + 1000;
+            m.lvl = Number.isFinite(d.lm) && d.lm >= 1 ? d.lm : Math.max(1, Math.floor(nn(p ? p.lvl : b.lvl) || 1));
+            m.xpRest = xpNeededForLevel(m.lvl) - 1;    // wie voll sein Balken ist, weiß niemand: voll (großzügig)
+            m.lvlLog = [{ t: now, l: m.lvl }];
+        }
+        m.flug = m.flug.filter(f => !(f.n >= 2 && now - f.t > FLUG_MS) && now - f.t < FLUG_MAX_MS);   // angekommen (zwei Profile später) oder uralt
+        if (p && p !== m.prof && !m.geeicht) {         // noch nie gesehen: das erste frische Profil gilt (das in der Datenbank kann
+            m.prof = p; m.geeicht = true;              // älter sein als sein Spielstand) – ab hier wird gezählt
+            m.c.u = nn(p.coins); m.w.u = nn(p.wounded); for (const f of m.flug) { m.c.u += f.cP; m.w.u += f.wP; f.n++; }
+            const pl = Math.max(1, Math.floor(nn(p.lvl) || 1)); if (pl > m.lvl) { m.lvl = pl; m.xpRest = xpNeededForLevel(pl) - 1; }
+        }
+        if (p && p !== m.prof) {                       // ein neues Profil von seinem Handy
+            m.prof = p;
+            const pl = Math.max(1, Math.floor(nn(p.lvl) || 1));
+            if (pl > m.lvl + 1) warnen(who, 'stufe', 'Stufe springt: das Handy sagt Stufe ' + pl + ', mit seinen EP geht höchstens Stufe ' + m.lvl + '.', pl - m.lvl);
+            else if (pl > m.lvl) { m.lvl = pl; m.xpRest = 0; }
+            m.lvlLog.push({ t: now, l: Math.min(pl, m.lvl) }); while (m.lvlLog.length > 1 && now - m.lvlLog[0].t > 3600000) m.lvlLog.shift();
+            let cP = 0, cM = 0, wP = 0, wM = 0; for (const f of m.flug) { cP += f.cP; cM += f.cM; wP += f.wP; wM += f.wM; f.n++; }
+            // Münzen: mehr als möglich → erst ein Admin-Geschenk (sicher bekannt), dann der Spielraum, der Rest ist auffällig
+            const pc = nn(p.coins); let mehr = kontoProfil(m.c, pc, cP, cM, now);
+            if (mehr > 0) {
+                const roh = mehr;
+                if (d.gC > 0) { const g = Math.min(d.gC, mehr); d.gC -= g; mehr -= g; saveBotState(); }
+                const nimm = Math.min(mehr, spielraumFrei(who, m)); if (nimm > 0) m.sr.push({ t: now, n: nimm }); mehr -= nimm;
+                m.c.u = pc - mehr;
+                if (mehr >= 1) warnen(who, 'muenzen', 'Münzen springen: +' + fz(roh) + ' mehr als erwartet, möglich wären höchstens +' + fz(roh - mehr) + '.', mehr);
+            }
+            // Verwundete (entstehen nur in Kämpfen, die der Weltrechner rechnet)
+            const pw = nn(p.wounded), ew = m.w.u, wm2 = kontoProfil(m.w, pw, wP, wM, now);
+            if (wm2 > ew * 0.05 + 1000) { m.w.u = ew; warnen(who, 'lazarett', 'Verwundete springen: das Handy sagt ' + fz(pw) + ', möglich wären höchstens ' + fz(ew + wM) + '.', wm2); }
+        }
+        if (m.geeicht) { d.u = Math.round(m.c.u); d.w = Math.round(m.w.u); }   // für den nächsten Start merken (geht mit der Welt mit)
+        d.lm = m.lvl;
+        return m;
+    }
+    // aus dem Konto bezahlen (Vorschuss → Konto → Admin-Geschenk → Spielraum); false = reicht (noch) nicht
+    function wacheBezahlen(who, m, kosten) {
+        const now = Date.now(); if (now - m.c.vorT > WACHE_WARTEN_MS) m.c.vor = 0;
+        const frei = spielraumFrei(who, m), d = wd(who), gesch = d ? nn(d.gC) : 0;
+        if (m.c.vor + m.c.u + frei + gesch < kosten) return false;
+        let r = kosten, x;
+        x = Math.min(r, m.c.vor); m.c.vor -= x; r -= x;
+        x = Math.min(r, m.c.u); m.c.u -= x; r -= x;
+        x = Math.min(r, gesch); if (x > 0) { d.gC = Math.max(0, d.gC - x); saveBotState(); } r -= x;
+        if (r > 0) m.sr.push({ t: now, n: r });
+        return true;
+    }
+    // Ausbau prüfen: 'ok' | 'warten' (Münzen noch nicht zu sehen) | 'nein'
+    function ausbauPruefen(who, b, ende) {
+        if (!inselOk(b.insel) || !Number.isInteger(b.stufe)) { warnen(who, 'kaputt', 'Ausbau mit kaputten Angaben (Basis ' + String(b.insel).slice(0, 20) + ', Stufe ' + String(b.stufe).slice(0, 20) + ').'); return 'nein'; }
+        if (!gehoert(b.insel, who)) return 'nein';                         // gerade verloren – kommt vor, keine Warnung
+        const L = islandLevels[b.insel] || 1;
+        if (b.stufe <= L || L >= MAX_BASE_LEVEL) return 'nein';            // doppelt geschickt / schon ganz oben – nichts zu tun
+        if (b.stufe > L + 1) { warnen(who, 'ausbau', 'Ausbau springt: ' + islandTitle(islandById[b.insel]) + ' von Stufe ' + L + ' auf ' + b.stufe + ' – erlaubt ist nur +1.', b.stufe - L); return 'nein'; }
+        const m = wacheSehen(who), kosten = upgradeCost(L);
+        if (wacheBezahlen(who, m, kosten)) return 'ok';
+        return ende ? 'pleite' : 'warten';
+    }
+    // Truppen-Geschenk prüfen → wie viele er bekommt (0 = nichts), oder -1 = warten (z. B. Stufe/Profil noch nicht da)
+    const TRUPPEN_QUELLEN = { stufe: 'Stufen-Belohnung', thron: 'Thron-Shop', heil: 'Lazarett', fund: 'Fund auf der Karte', geschenk: 'Admin-Geschenk' };
+    function truppenPruefen(who, b, ende) {
+        const q = b.q, name = TRUPPEN_QUELLEN[q] || 'unbekannte Quelle';
+        if (!zahlOk(b.n, 1e13)) { warnen(who, 'truppen', 'Truppen-Geschenk mit kaputter Zahl (' + String(b.n).slice(0, 30) + ') – abgelehnt.'); return 0; }
+        if (!TRUPPEN_QUELLEN[q]) { warnen(who, 'truppen', 'Truppen-Geschenk ohne gültige Quelle: ' + fz(b.n) + ' Truppen – abgelehnt.', b.n); return 0; }
+        const m = wacheSehen(who), d = wd(who), now = Date.now(); if (!d) return 0;
+        let n = b.n, erlaubt;
+        if (q === 'stufe') {                           // jede Stufe zahlt genau einmal ihre Truppen (levelRewardTroops)
+            if (!Number.isInteger(b.von) || !Number.isInteger(b.bis) || b.von < 0 || b.bis <= b.von || b.bis - b.von > 400) { warnen(who, 'truppen', 'Stufen-Belohnung mit kaputten Stufen – abgelehnt.'); return 0; }
+            if (b.bis > m.lvl && !ende) return -1;     // seine EP sind evtl. noch unterwegs
+            if (!d.lv) { const pl = Math.max(1, Math.floor(nn((m.prof || {}).lvl) || m.lvl)); d.lv = Math.max(b.von, pl - 3); }   // zum ersten Mal: ein paar Stufen Spielraum nach hinten
+            const hoch = Math.min(b.bis, m.lvl), ab = Math.max(b.von, d.lv);
+            erlaubt = 0; for (let l = ab + 1; l <= hoch; l++) erlaubt += levelRewardTroops(l);
+            if (hoch > d.lv) { d.lv = hoch; saveBotState(); }
+            if (b.bis > hoch) warnen(who, 'truppen', 'Stufen-Belohnung bis Stufe ' + b.bis + ', mit seinen EP geht höchstens Stufe ' + m.lvl + '.', b.bis - m.lvl);
+        } else if (q === 'thron') {                    // Thron-Shop: eine Stunde Truppenproduktion, je 200 Thron-Punkte
+            const kaeufe = Math.floor(throneEarnedOf(who) / 200) + 5;
+            if (d.tk + 1 > kaeufe) { if (!ende) return -1; warnen(who, 'truppen', 'Thron-Shop: ' + (d.tk + 1) + '. Truppen-Kauf, mit seinen Thron-Punkten gehen höchstens ' + kaeufe + ' – abgelehnt.', b.n); return 0; }
+            d.tk++; saveBotState();
+            erlaubt = 3 * Math.max(1000, hourProduction(who).troops) + 1000;   // ×3: sein Handy rechnet die Produktion mit eigenen Boni etwas anders
+        } else if (q === 'heil') {                     // Lazarett: höchstens so viele, wie verwundet sind
+            if (now - m.w.vorT > WACHE_WARTEN_MS) m.w.vor = 0;
+            erlaubt = (m.w.vor + m.w.u) * 1.02 + 10;
+            if (n > erlaubt && !ende) return -1;
+            let r = Math.min(n, erlaubt), x = Math.min(r, m.w.vor); m.w.vor -= x; r -= x; m.w.u = Math.max(0, m.w.u - r);
+        } else if (q === 'fund') {                     // Fund auf der Karte: höchstens 3 liegen herum, alle 20–45 s ein neuer
+            if (zuOft(m, 'fund', 20, 600000)) { warnen(who, 'truppen', 'Zu viele Funde auf der Karte (über 20 in 10 Minuten) – abgelehnt.', b.n); return 0; }
+            erlaubt = Math.max(100, niceRound(levelRewardTroops(Math.max(m.lvl, 2)) * 0.05)) * 1.05 + 10;
+        } else {                                       // Admin-Geschenk: nur so viel, wie der Admin geschickt hat
+            if (n > nn(d.gTr) + 0.5 && !ende) return -1;
+            erlaubt = nn(d.gTr); d.gTr = Math.max(0, nn(d.gTr) - Math.min(n, erlaubt)); saveBotState();
+        }
+        if (n > erlaubt) { warnen(who, 'truppen', name + ': ' + fz(n) + ' Truppen verlangt, erlaubt sind ' + fz(erlaubt) + ' – gekappt.', n - erlaubt); n = erlaubt; }
+        return Math.max(0, Math.floor(n));
+    }
+    function truppenGeben(who, n) { const cap = botCapitalOf(who); if (n >= 1 && cap !== null && cap !== undefined) { islandTroops[cap] = (islandTroops[cap] || 0) + n; saveGame(); } }
+    // Wartende Befehle (Ausbau/Truppen) der Reihe nach abarbeiten – nie überholen, sonst stimmen die Stufen nicht
+    function wacheAbarbeiten(who) {
+        const m = wm(who), now = Date.now();
+        for (const art of ['ausbau', 'truppen']) {
+            const l = m.warte[art];
+            while (l.length) {
+                const x = l[0], ende = now >= x.bis;
+                if (art === 'ausbau') { const r = ausbauPruefen(who, x.b, ende); if (r === 'warten') break;
+                    if (r === 'ok') { islandLevels[x.b.insel] = (islandLevels[x.b.insel] || 1) + 1; saveGame(); requestRender(); }
+                    if (r === 'pleite') {                  // nach 60 s immer noch nicht bezahlbar: ablehnen – die weiteren Stufen dieser Basis auch
+                        const L = islandLevels[x.b.insel] || 1, m2 = wacheSehen(who), weitere = l.filter((y, i) => i > 0 && y.b.insel === x.b.insel).length;
+                        for (let i = l.length - 1; i > 0; i--) if (l[i].b.insel === x.b.insel) l.splice(i, 1);
+                        warnen(who, 'ausbau', 'Ausbau ohne Münzen: ' + islandTitle(islandById[x.b.insel]) + ' auf Stufe ' + (L + 1) + ' kostet ' + fz(upgradeCost(L)) + ', er kann höchstens ' + fz(m2.c.u + m2.c.vor + spielraumFrei(who, m2)) + ' haben – abgelehnt' + (weitere ? ' (und ' + weitere + ' weitere Stufen dieser Basis)' : '') + '.', upgradeCost(L));
+                    } }
+                else { const n = truppenPruefen(who, x.b, ende); if (n < 0) break; truppenGeben(who, n); }
+                l.shift();
+            }
+        }
+    }
+    // (vor jedem Puls) alle echten Spieler ansehen, Wartendes erledigen
+    function wacheRunde() {
+        for (const id in WELT.menschen) { if (!botById[id] || !loadBotState()[id]) continue; wacheSehen(id); wacheAbarbeiten(id); }
+    }
+    // Ziel einer Armee/Ort einer neuen Armee: nur echte Orte (Basis, Feld, Armee, Punkt auf Land)
+    function punktOk(p) {
+        if (!p || !Number.isFinite(p.x) || !Number.isFinite(p.y) || Math.abs(p.x) > FRAME_HALF || Math.abs(p.y) > FRAME_HALF) return false;
+        const lm = landmasses.find(l => l.id === p.lm); return !!lm && Math.hypot(p.x - lm.x, p.y - lm.y) <= lm.shapeMaxR * 1.2;
+    }
+    function zielPruefen(t) {
+        if (!t || typeof t !== 'object') return null;
+        if (t.kind === 'base' || t.kind === 'home') { const i = Number.isInteger(t.id) ? islandById[t.id] : null; return i ? { kind: t.kind, id: i.id, x: i.x, y: i.y, lm: i.landmassId } : null; }
+        if (t.kind === 'field') { const f = (typeof t.id === 'number' || typeof t.id === 'string') ? fieldById[t.id] : null; return f ? { kind: 'field', id: f.id, x: f.x, y: f.y, lm: f.landmassId } : null; }
+        if (t.kind === 'army') { const a = kennungOk(t.id) ? armyById(t.id) : null; return a ? Object.assign({ kind: 'army', id: a.id }, armyPosXY(a)) : null; }
+        if (t.kind === 'point') return punktOk(t) ? { kind: 'point', x: t.x, y: t.y, lm: t.lm } : null;
+        return null;
+    }
+    const heldOk = h => kennungOk(h) ? h : null;
+    const truppenVon = (id, n) => zahlOk(n) ? Math.floor(Math.min(n, islandTroops[id] || 0)) : 0;   // nie mehr, als die Basis hat
     const BEFEHLE = {
-        angriff(who, b) { if (gehoert(b.src, who)) launchAttack(b.src, b.ziel, who, b.n, b.held); },
-        senden(who, b) { if (gehoert(b.von, who) && gehoert(b.nach, who)) launchSend(b.von, b.nach, who, b.n); },
+        angriff(who, b) {
+            if (!inselOk(b.src) || !inselOk(b.ziel) || !zahlOk(b.n)) { warnen(who, 'kaputt', 'Angriff mit kaputten Angaben – abgelehnt.'); return; }
+            if (gehoert(b.src, who)) launchAttack(b.src, b.ziel, who, b.n, heldOk(b.held));
+        },
+        senden(who, b) {
+            if (!inselOk(b.von) || !inselOk(b.nach) || !zahlOk(b.n)) { warnen(who, 'kaputt', 'Senden mit kaputten Angaben – abgelehnt.'); return; }
+            if (gehoert(b.von, who) && gehoert(b.nach, who)) launchSend(b.von, b.nach, who, b.n);
+        },
         zurueck(who, b) {                             // umkehren: wie bei dir, nur als "Marsch zurück" dieses Spielers
+            if (!kennungOk(b.key)) return;
             const m = marschVon(who, b.key); if (!m || m.fightEndsAt) return;
             const now = Date.now(), fromId = m.sourceId ?? m.fromId, toId = m.targetId ?? m.toId, troops = m.rawTroops ?? m.troops;
             (pendingAttacks.includes(m) ? pendingAttacks : pendingSends).splice((pendingAttacks.includes(m) ? pendingAttacks : pendingSends).indexOf(m), 1);
@@ -10818,35 +11065,68 @@ if (window.WELT) {
             pendingSends.push({ fromId: toId, toId: home, troops, startedAt: now, resolveAt: now + Math.max(1000, now - m.startedAt), senderBotId: who, back: true });
             saveGame(); saveProgression(); requestRender();
         },
-        schneller(who, b) {                           // (die Gems hat er schon selbst bezahlt)
-            const now = Date.now();
-            for (const key of b.keys || []) { const m = marschVon(who, key); if (!m || m.fightEndsAt) continue; const rem = m.resolveAt - now; if (rem < 1500) continue;
+        schneller(who, b) {                           // (die Gems hat er schon selbst bezahlt – Gems kennt der Weltrechner noch nicht)
+            if (!Array.isArray(b.keys)) return;
+            if (zuOft(wm(who), 'schneller', 60, 60000)) { warnen(who, 'schneller', 'Beschleunigen über 60-mal pro Minute – der Rest verfällt.'); return; }
+            const now = Date.now(), keys = [...new Set(b.keys.filter(kennungOk))].slice(0, 200);
+            for (const key of keys) { const m = marschVon(who, key); if (!m || m.fightEndsAt) continue; const rem = m.resolveAt - now; if (rem < 1500) continue;
                 const pr = Math.max(0, Math.min(.99, (now - m.startedAt) / Math.max(1, m.resolveAt - m.startedAt))); m.resolveAt = now + rem / 2; m.startedAt = m.resolveAt - (rem / 2) / (1 - pr); }
             saveProgression();
         },
-        ausbau(who, b) { if (gehoert(b.insel, who) && (islandLevels[b.insel] || 1) < b.stufe && b.stufe <= MAX_BASE_LEVEL) { islandLevels[b.insel] = b.stufe; saveGame(); requestRender(); } },
+        ausbau(who, b) {                              // die Münzen zahlt er selbst – der Weltrechner prüft, ob er sie haben kann
+            const m = wm(who);
+            if (zuOft(m, 'ausbau', 60, 10000)) { warnen(who, 'ausbau', 'Ausbau über 60-mal in 10 s – der Rest verfällt.'); return; }
+            m.warte.ausbau.push({ b, bis: Date.now() + WACHE_WARTEN_MS }); wacheAbarbeiten(who);
+        },
         hauptstadt(who, b) {
+            if (!inselOk(b.insel)) return;
             const to = islandById[b.insel], bs = loadBotState()[who]; if (!to || to.type !== 'tower' || !gehoert(b.insel, who) || !bs) return;
+            if (zuOft(wm(who), 'hauptstadt', 20, 3600000)) { warnen(who, 'hauptstadt', 'Hauptstadt über 20-mal in einer Stunde verlegt – abgelehnt.'); return; }
             const from = botCapitalOf(who); if (from !== null && from !== undefined && from !== b.insel) { islandTroops[b.insel] = (islandTroops[b.insel] || 0) + (islandTroops[from] || 0); islandTroops[from] = 0; }
             bs.capital = b.insel; capitalCache = null; saveBotState(); saveGame(); requestRender();
         },
-        truppen(who, b) { const cap = botCapitalOf(who); if (cap !== null && cap !== undefined && b.n > 0) { islandTroops[cap] = (islandTroops[cap] || 0) + Math.round(b.n); saveGame(); } },
-        tor(who, b) { if (gehoert(b.tor, who) && b.patch) setGateSettings(b.tor, b.patch); },
-        titel(who, b) { if (rulerOwner() === who) giveTitle(b.key, b.wem ? lokalId(b.wem) : null); },
-        feld(who, b) { const f = resFields.find(x => x.id === b.feld); if (f && gehoert(b.home, who)) fieldSend(who, b.home, b.feld, b.n, b.held || null); },
+        truppen(who, b) {                             // geschenkte Truppen (Stufe, Thron-Shop, Lazarett, Fund, Admin) → Hauptstadt
+            wm(who).warte.truppen.push({ b, bis: Date.now() + WACHE_WARTEN_MS }); wacheAbarbeiten(who);
+        },
+        tor(who, b) {
+            if (!inselOk(b.tor) || islandById[b.tor].type !== 'gate' || !gehoert(b.tor, who) || !b.patch || typeof b.patch !== 'object') return;
+            const patch = {};
+            if (b.patch.toll !== undefined) { if (!GATE_TOLLS.includes(b.patch.toll)) { warnen(who, 'kaputt', 'Tor-Maut mit ungültigem Wert (' + String(b.patch.toll).slice(0, 20) + ') – abgelehnt.'); return; } patch.toll = b.patch.toll; }
+            if (b.patch.closed !== undefined) patch.closed = b.patch.closed === true;
+            if (Object.keys(patch).length) setGateSettings(b.tor, patch);
+        },
+        titel(who, b) {
+            if (rulerOwner() !== who || !TITLES.some(x => x.key === b.key)) return;
+            const wem = b.wem ? (kennungOk(b.wem) ? lokalId(b.wem) : null) : null;
+            if (b.wem && (!wem || !botById[wem])) return;
+            giveTitle(b.key, wem);
+        },
+        feld(who, b) {
+            const f = (typeof b.feld === 'number' || typeof b.feld === 'string') ? resFields.find(x => x.id === b.feld) : null;
+            if (!f || !inselOk(b.home) || !gehoert(b.home, who)) return;
+            const n = truppenVon(b.home, b.n); if (n >= 1) fieldSend(who, b.home, b.feld, n, heldOk(b.held));
+        },
         feldHeim(who, b) { const f = resFields.find(x => x.id === b.feld), st = f && fieldInfo(f); if (st && st.occ && st.occ.who === who) { fieldGoHome(f, st, Date.now()); saveFields(); } },
-        lager(who, b) { if (gehoert(b.home, who)) barbSend(who, b.home, b.k, b.tid, b.n, b.held || null); },
+        lager(who, b) {
+            if (!inselOk(b.home) || !gehoert(b.home, who) || (b.k !== 'c' && b.k !== 'b')) return;
+            const n = truppenVon(b.home, b.n); if (n >= 1) barbSend(who, b.home, b.k, b.k === 'c' ? b.tid : null, n, heldOk(b.held));
+        },
         armee(who, b) {
-            if (b.op === 'neu') { const q = (b.quellen || []).filter(id => gehoert(id, who)); if (q.length) armyCreate(b.pt, q, Math.max(0, Math.min(1, b.anteil || .5)), who); return; }
-            const a = armyById(b.id); if (!a || armyWho(a) !== who) return;
-            if (b.op === 'dazu' && gehoert(b.quelle, who)) armySendFrom(a, b.quelle, b.n);
-            if (b.op === 'ziehen' && b.ziel) armyMove(a, b.ziel);
+            if (b.op === 'neu') {
+                if (!b.pt || !punktOk(b.pt) || !Array.isArray(b.quellen)) return;
+                const q = b.quellen.slice(0, 10).filter(id => inselOk(id) && gehoert(id, who));
+                const anteil = zahlOk(b.anteil, 1) ? b.anteil : .5;
+                if (q.length) armyCreate({ x: b.pt.x, y: b.pt.y, lm: b.pt.lm }, q, anteil, who); return;
+            }
+            const a = kennungOk(b.id) ? armyById(b.id) : null; if (!a || armyWho(a) !== who) return;
+            if (b.op === 'dazu' && inselOk(b.quelle) && gehoert(b.quelle, who)) { const n = truppenVon(b.quelle, b.n); if (n >= 1) armySendFrom(a, b.quelle, n); }
+            if (b.op === 'ziehen') { const t = zielPruefen(b.ziel); if (t) armyMove(a, t); }
             saveArmies(); requestRender();
         },
         beitreten(who, b) {                           // ein neuer Spieler braucht seinen Platz auf der Karte
             if (!botOwnedIslands[who]) window.__weltNeuerMensch(who);
             if (botOwnedIslands[who] && botOwnedIslands[who].size) return;      // hat schon einen
-            let isl = islandById[b.insel], aus = null;
+            let isl = inselOk(b.insel) ? islandById[b.insel] : null, aus = null;
             if (!isl || isl.type !== 'tower' || islandOwnerOf(isl.id)) {
                 const besitz = { player: [...ownedIslands] }; for (const bot of BOT_DEFS) besitz[bot.id] = [...(botOwnedIslands[bot.id] || [])];
                 const p = freierStartplatz(besitz); isl = p.insel; aus = p.aus || null;
@@ -10859,9 +11139,17 @@ if (window.WELT) {
             capitalCache = null; saveGame(); saveBotState(); requestRender();
         }
     };
-    // Vom Admin (kommt nur von admin.php – der Server legt es unter Spieler 0 ab): Geschenk an einen Bot oder alle Bots
+    // Vom Admin (kommt nur von admin.php – der Server legt es unter Spieler 0 ab): Geschenk an einen Bot oder alle Bots,
+    // oder die Gutschrift für ein Geschenk an einen echten Spieler (damit der Schummel-Schutz es beim Abholen durchlässt)
     function adminBefehl(b) {
-        if (!b || b.art !== 'admin' || b.was !== 'geschenk_bot') return;
+        if (!b || b.art !== 'admin') return;
+        if (b.was === 'gutschrift') {
+            const who = 'u' + parseInt(b.an, 10); if (!(parseInt(b.an, 10) > 0)) return;
+            if (!botById[who]) { WELT.menschEintragen(who); window.__weltNeuerMensch(who); }
+            const d = wd(who); if (!d) return;
+            d.gTr = nn(d.gTr) + (zahlOk(b.tr) ? b.tr : 0); d.gC = nn(d.gC) + (zahlOk(b.coins) ? b.coins : 0); saveBotState(); return;
+        }
+        if (b.was !== 'geschenk_bot') return;
         const bs = loadBotState(), ziele = BOT_DEFS.filter(d => !d.mensch && (b.bot === 'alle' || d.id === b.bot));
         for (const d of ziele) { const st = bs[d.id]; if (!st) continue;
             if (b.gems > 0) st.gems = (st.gems || 0) + Math.round(b.gems);
@@ -10874,9 +11162,11 @@ if (window.WELT) {
     }
     window.__weltBefehl = function (who, b) {
         if (who === 'u0') return adminBefehl(b);
-        const f = BEFEHLE[b && b.art]; if (!f) return;
+        if (!b || typeof b !== 'object' || !Object.prototype.hasOwnProperty.call(BEFEHLE, b.art)) return;
+        const f = BEFEHLE[b.art];
         if (!botById[who]) { WELT.menschEintragen(who); window.__weltNeuerMensch(who); }
         if (!botById[who]) return;
+        if (zuOft(wm(who), 'alle', 600, 60000)) { warnen(who, 'flut', 'Über 600 Befehle in einer Minute – der Rest verfällt.'); return; }
         f(who, b);
     };
     WELT.BEFEHLE = BEFEHLE;

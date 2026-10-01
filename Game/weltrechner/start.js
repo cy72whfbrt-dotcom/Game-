@@ -53,6 +53,32 @@ setInterval(() => {
     if (stat.letzterPuls && jetzt - stat.letzterPuls > 120000) ende(7, 'seit 2 Minuten kein Puls beim Server angekommen');
     herzSchreiben();
 }, 5000).unref();
+// ===== Auffälligkeiten (Schummel-Schutz in spiel.js → WELT.warnungen) → schummel.php → Admin-Seite =====
+// Höchstens die letzten 200; gleiche (selber Spieler, selbe Art, gleicher Text bis auf die Zahlen, innerhalb einer
+// Stunde) werden zusammengefasst (Anzahl, letzter Text).
+// Die Datei überlebt Neustarts (wird beim Start gelesen) und ist wie herz.php gesperrt (im Browser 404).
+const SCHUMMEL = path.join(ORDNER, 'schummel.php');
+let auffaellig = [];
+try { const t = fs.readFileSync(SCHUMMEL, 'utf8'); const v = JSON.parse(t.slice(t.indexOf('{'))); if (Array.isArray(v.liste)) auffaellig = v.liste.slice(0, 200); } catch (e) {}
+const muster = t => String(t || '').replace(/[0-9][0-9.,]*([\s ]*(Tsd|Mio|Mrd|Bio|Brd|Trill|Trd|Quadr)\.)?/g, '#').replace(/#\.+/g, '#');
+function auffaelligSammeln(neu) {
+    if (!neu || !neu.length) return;
+    for (const w of neu) {
+        if (!w || !(w.uid > 0)) continue;
+        const text = String(w.text).slice(0, 300), m = muster(text);
+        const gleich = auffaellig.find(x => x.uid === w.uid && x.was === w.was && muster(x.text) === m && w.zeit - x.letzte < 3600000);
+        if (gleich) { gleich.anzahl++; gleich.letzte = w.zeit; gleich.text = text; gleich.wert = Math.max(gleich.wert || 0, w.wert || 0); }
+        else auffaellig.push({ uid: w.uid, was: String(w.was).slice(0, 20), text, wert: w.wert || 0, erste: w.zeit, letzte: w.zeit, anzahl: 1 });
+    }
+    auffaellig.sort((a, b) => b.letzte - a.letzte); auffaellig = auffaellig.slice(0, 200);
+    try { const neuD = path.join(ORDNER, 'schummel_neu.php'); fs.writeFileSync(neuD, SPERRE + JSON.stringify({ zeit: Date.now(), liste: auffaellig })); fs.renameSync(neuD, SCHUMMEL); }
+    catch (e) { log('Warnung: schummel.php nicht schreibbar (' + e.message + ')'); }
+}
+let spielFenster = null;   // (los) das Fenster des Spiels – daraus holt der Takt unten die Auffälligkeiten
+setInterval(() => {
+    try { const W = spielFenster && spielFenster.WELT; if (W && Array.isArray(W.warnungen) && W.warnungen.length) auffaelligSammeln(W.warnungen.splice(0)); }
+    catch (e) { log('Warnung: Auffälligkeiten (' + e.message + ')'); }
+}, 5000).unref();
 function fehler(t) {
     stat.fehlerMinute.push(Date.now()); log('FEHLER:', t);
     if (stat.fehlerMinute.length > 120) ende(4, 'zu viele Fehler (über 120 in einer Minute)');
@@ -186,7 +212,7 @@ async function los() {
             w.__weltrechnerEnde = status => ende(status === 503 ? 0 : 5, status === 503 ? 'Wartung' : 'Server sagt ' + status + ' (anderer Weltrechner?)');
         }
     });
-    const w = dom.window;
+    const w = dom.window; spielFenster = w;
     await new Promise(res => w.addEventListener('load', res));
     await new Promise(res => setTimeout(res, 3000));
     if (!w.WELT || !w.WELT.system) ende(5, 'Spiel nicht richtig gestartet (WELT fehlt)');
