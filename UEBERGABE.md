@@ -28,5 +28,16 @@ Das Spiel speichert nur im Browser-Speicher der Claude-App. Die App leert diesen
 - Vorher dem Spieler kurz erklären, was gemacht wird, und nichts auf dem Server löschen oder überschreiben, ohne zu fragen.
 - Alternative, falls das nicht klappt: Sicherung über den eingebauten Artifact-Speicher (`db`-Capability, privater Bereich `data/users/<id>/`) – der Spieler hat dazu noch nicht „ja“ gesagt.
 
+## Stand 1.10. (zweite Sitzung) – nur angeschaut, NICHTS hochgeladen
+- Der Spieler hat gesagt: **noch nichts hochladen, noch nichts bauen.** Erst wieder anfangen, wenn er „ja“ sagt.
+- **Entschieden:** Auf dem Server darf das Spiel **bei Null anfangen**. Ein Übertragen des alten Spielstands aus der Claude-App wird **nicht** gebaut.
+- Office-Login klappt: `POST https://office.hobbitonhill.de/index.php?` mit den Feldern `name`, `pw`, `login=login`. Danach steht in den Links eine `sid=…`, die bei jedem Aufruf mitgeschickt werden muss.
+- Datei-Editor: `html/editor.php?h=48&w=138&sid=…&path=<Ordner>`. Er kann Dateien öffnen, speichern, anlegen, umbenennen, löschen und hochladen (Formularfeld `button` = save / new file / new folder / upload …).
+- Sichtbarer Ordner: `…/office.hobbitonhill.de/html/725/klassenarbeit_GR4/`, darin `Main_game_folder_` (Unterordner `PNG` mit Bildern und `backup_vor_cleanup` mit alten Dateien eines anderen Spiels). **Nichts davon anfassen.**
+- Was dort liegt, ist öffentlich erreichbar unter `https://office.hobbitonhill.de/html/725/klassenarbeit_GR4/…`, und PHP läuft dort.
+- Idee für später: einen eigenen neuen Ordner (z. B. `open_water`) anlegen und das Spiel plus `save.php` dort hineinlegen. Spielstände könnten auch ohne MySQL als Dateien gespeichert werden.
+- Im Spiel laufen alle Speicherzugriffe über `store` (index.html, Anfang des Hauptscripts). Dort ließe sich die Server-Sicherung einbauen.
+- Branch dieser Sitzung: `claude/office-login-game-server-u7tgrc`.
+
 ## Was der Spieler im neuen Chat schreiben kann
 „Lies UEBERGABE.md und mach mit dem Plan weiter: logge dich bei Office ein und bring das Spiel auf meinen Server.“
