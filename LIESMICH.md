@@ -335,7 +335,7 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
 **Server-Test am 1.10. (Testdateien wieder gelöscht):** Office-Server (netcup-Webhosting, gehört Alexander, dort laufen
 auch seine anderen Seiten) kann: Node.js 22 (`/opt/plesk/node/22/bin/node`), Programme über PHP starten (exec),
 Cronjobs (Konto hat schon einen für cron.lapush.de – nie anfassen, nur eigene Zeile dazu, vorher sichern).
-16 Kerne, 64 GB (geteilt mit allen Seiten). Kein Chrome. 10-Minuten-Test „läuft ein Hintergrund-Programm weiter?“ läuft.
+16 Kerne, 64 GB (geteilt mit allen Seiten). Kein Chrome. 10-Minuten-Test bestanden: ein Node-Programm im Hintergrund lief 12 Minuten ohne Unterbrechung (jede Minute ein Eintrag), hat sich dann selbst beendet; Testdatei gelöscht. Dauerbetrieb ist also möglich (mit Wachhund zur Sicherheit).
 
 **Ziel:** Kein Handy rechnet mehr die Welt. Ein Node-Programm auf dem Server rechnet rund um die Uhr (Bots, Märsche,
 Kämpfe, Münzen), auch wenn niemand online ist. Handys zeigen nur an und schicken Befehle. Ziel: bis 4000 Spieler.
