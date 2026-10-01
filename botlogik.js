@@ -198,7 +198,7 @@ function resolveBotAttack(attack) {
         }
     }
     noteBattle(target.id, won ? originalEnemyTroops : attack.rawTroops - fled, won ? targetOwner : bot.id);   // the neighbours saw it
-    midFight(target.id, bot.id, won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops), targetOwner, won ? botSentLoss : attack.rawTroops - fled, won, targetOwner);   // Turnier-Punkte - like yours
+    midFight(target.id, bot.id, won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops), targetOwner, won ? botSentLoss : attack.rawTroops - fled);   // Turnier-Punkte - like yours
     const counts = won || !attack.planId || attack.lastWave;                    // an early wave of a planned strike failing isn't a lesson yet
     if (counts) botMoodAdd(bot.id, won ? .15 : -.2); if (targetOwner && targetOwner !== 'player') botMoodAdd(targetOwner, won ? -.25 : .1);
     if (!won && counts) botNoteFail(bot.id, target.id);

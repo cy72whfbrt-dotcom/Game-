@@ -278,7 +278,6 @@ b,strong{font-weight:600}
 .ach-claim:disabled{opacity:.4;border-color:var(--line-2);background:none;color:var(--tx-3)} .ach-claim .icon{width:14px;height:14px}
 .ach-claim.done{border:0;background:none;color:#8fcf7a}
 /* Ziele: tasks + Erfolge in one sheet */
-#goalsPopup .pbody > .mail-pane{display:grid;gap:10px} #goalsPopup .mail-pane[hidden]{display:none}
 .ach-sum{padding:10px 12px;border:1px solid var(--line-2);border-radius:var(--r-sm);background:rgba(0,0,0,.22)}
 .ach-sum-t{display:flex;align-items:center;justify-content:space-between;gap:8px} .ach-sum-gem{display:inline-flex;align-items:center;gap:4px;color:#9fe0ff;font-weight:700} .ach-sum-gem .icon{width:13px;height:13px}
 .ach-list > .sect{margin-top:6px} .ach-list > .sect .btn{order:7} .ach-list > .sect .sect-aside{font:600 var(--fs-11)/1 var(--font-ui);color:var(--tx-3)}
@@ -1972,7 +1971,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 <div id="rewardModal" class="lvlup" role="dialog" aria-modal="true" aria-labelledby="rewardModalTitle" hidden>
   <div class="lvlup-card">
     <div class="lvlup-badge"><svg class="icon" style="width:34px;height:34px;color:var(--gold-100)"><use href="#i-attack"/></svg></div>
-    <div id="rewardModalOver" class="lvlup-over">Weltereignis</div>
+    <div class="lvlup-over">Weltereignis</div>
     <h2 id="rewardModalTitle" class="lvlup-title">Boss besiegt!</h2>
     <div id="rewardModalSub" class="lvlup-sub"></div>
     <div class="lvlup-rule"></div>
@@ -3508,7 +3507,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         // ===== MARCH ORDERS: recall a column on the way, or speed it up with gems =====
         const marchKeyOf = m => m.mid || (m.mid = (m.startedAt || 0) + '-' + (m.sourceId ?? m.fromId) + '-' + (m.targetId ?? m.toId));   // fixed once, so speeding up keeps it
         function pathSoFar(src, tgt, frac) {                // the stretch of the route already walked, from the start to where the column is now
-            const pts = marchPath(src, tgt), seg = []; let total = 0;
+            const pts = marchPath(src, tgt); let total = 0;
             for (let i = 1; i < pts.length; i++) total += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
             let left = total * frac; const out = [pts[0]];
             for (let i = 1; i < pts.length; i++) { const d = Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
@@ -3780,7 +3779,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             // XP for troops that died in the clash either way: a win kills
             // the whole enemy force, a loss costs your whole attack force
             noteBattle(target.id, won ? originalEnemyTroops : attack.rawTroops - retreatSurvivors, won ? targetOwner : 'player');
-            midFight(target.id, 'player', won ? originalEnemyTroops : defenderCasualties, targetOwner, won ? sentLoss : attack.rawTroops - retreatSurvivors, won, targetOwner);   // Turnier-Punkte
+            midFight(target.id, 'player', won ? originalEnemyTroops : defenderCasualties, targetOwner, won ? sentLoss : attack.rawTroops - retreatSurvivors);   // Turnier-Punkte
             if (targetOwner && targetOwner !== 'player') botMoodAdd(targetOwner, won ? -.25 : .1);
             addXp(won ? totalStrength : defenderCasualties);
             heroFought('player', attack.hx);                                     // every fight the hero leads fills his rage
@@ -4514,7 +4513,6 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             g.fillStyle = gr; g.fill(); g.lineWidth = lw || 1; g.stroke();
             if (topFill) { g.beginPath(); g.ellipse(x0, y1, rx, ry, 0, 0, Math.PI * 2); g.fillStyle = topFill; g.fill(); g.stroke(); }
           };
-          const gold = (y0, y1) => { const q = g.createLinearGradient(0, y0, 0, y1); q.addColorStop(0, '#fbe7a2'); q.addColorStop(.5, '#d9ab4c'); q.addColorStop(1, '#8f6420'); return q; };
           const dome = (cx, cy, r, z, h) => {
             const [x0, y0] = P(cx, cy, z), rx = r * ER, ry = r * EY, top = y0 - h;
             g.beginPath(); g.moveTo(x0 - rx, y0); g.bezierCurveTo(x0 - rx, top + h * .25, x0 - rx * .45, top, x0, top); g.bezierCurveTo(x0 + rx * .45, top, x0 + rx, top + h * .25, x0 + rx, y0);
@@ -7370,7 +7368,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             gems += r.gems;
             dailyState = { last: todayKey(), day };
             store.set('openWaterDaily', JSON.stringify(dailyState));
-            saveGame(); saveProgression(); updateHud(); updateQuestBadge();
+            saveGame(); saveProgression(); updateHud(); updateGoalsBadge();
             return { day, gems: r.gems, items };
         }
         function itemRewardRow(item) {
@@ -7452,7 +7450,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             saveQuests();
             if (finished) flashHint('Aufgabe erledigt: ' + QUEST_DEFS[finished.type].text(finished.target) + ' – unter „Ziele“ abholen.', 3500);
             if (finished && q.list.every(t => t.progress >= t.target)) chainLink();
-            updateQuestBadge();
+            updateGoalsBadge();
             if (isPanelOpen(goalsPopup)) renderQuestPanel();
         }
         function claimQuest(i) {
@@ -7462,7 +7460,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             gems += t.gems;
             saveQuests(); saveGame(); updateHud();
             flashHint('+' + t.gems + ' Gems', 1800);
-            renderQuestPanel(); updateQuestBadge();
+            renderQuestPanel(); updateGoalsBadge();
         }
         // ---- the week chain: every day with ALL tasks done is a link; 7 in a row = the big chest ----
         const CHAIN_REWARD = { crates: 3, minRarity: 3, gems: 150 };
@@ -7481,7 +7479,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             const shH = heroGrantShards('player', HERO_SHARDS_CHAIN);
             saveGame(); saveProgression(); updateHud(); sfx('crate');
             flashHint('Große Kiste: ' + items.map(it => RARITY_DEFS[it.rarity].label + ' ' + EQUIPMENT_DEFS[it.slot].name).join(', ') + ' + ' + CHAIN_REWARD.gems + ' Gems' + (shH ? ' + ' + HERO_SHARDS_CHAIN + ' Splitter ' + shH.name : ''), 5000);
-            renderQuestPanel(); updateQuestBadge();
+            renderQuestPanel(); updateGoalsBadge();
         }
         function claimQuestBonus() {
             const q = loadQuests();
@@ -7493,7 +7491,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             saveQuests(); saveGame(); saveProgression(); updateHud();
             const it = items[0];
             flashHint('Bonus: ' + RARITY_DEFS[it.rarity].label + ' ' + EQUIPMENT_DEFS[it.slot].name + ' + ' + QUEST_BONUS.gems + ' Gems' + (shH ? ' + ' + HERO_SHARDS_DAY + ' Splitter ' + shH.name : ''), 3000);
-            renderQuestPanel(); updateQuestBadge();
+            renderQuestPanel(); updateGoalsBadge();
         }
         function dailyGoalCount() {                                      // Ziele → Täglich: tasks, the bonus and the week chain
             const q = loadQuests();
@@ -7541,7 +7539,6 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             const nd = dailyGoalCount(), nr = (dailyClaimable() ? 1 : 0) + inboxList().length, np = passReadyAll().length, n = nd + nr + nAch + np, set = (el, v) => { setText(el, v); setShown(el, v > 0); };   // (only on a change: this runs every few seconds)
             set(document.getElementById('goalsBadge'), n); set(goalsPopup.querySelector('[data-gbadge="daily"]'), nd); set(goalsPopup.querySelector('[data-gbadge="reward"]'), nr); set(goalsPopup.querySelector('[data-gbadge="ach"]'), nAch); set(goalsPopup.querySelector('[data-gbadge="pass"]'), np);
         }
-        function updateQuestBadge() { updateGoalsBadge(); }   // the daily reward now counts in the Ziele badge
         function renderQuestPanel() {
             const q = loadQuests();
             const day = dailyNextDay(), claimable = dailyClaimable(), r = DAILY_REWARDS[day - 1];
@@ -7601,9 +7598,9 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         });
         setInterval(() => {                 // day rollover while the game stays open
             if (questState && questState.date !== todayKey()) { loadQuests(); if (isPanelOpen(goalsPopup)) renderQuestPanel(); }
-            updateQuestBadge();
+            updateGoalsBadge();
         }, 60000);
-        updateQuestBadge();
+        updateGoalsBadge();
         // ===== SAISON-PASS: 28 days on one calendar for everyone, 40 levels of 300 points, a free row and a premium row (Gems, never money). Points come from what you do anyway =====
         var PASS_EPOCH = Date.UTC(2026, 0, 5), PASS_LEN = 28 * 86400000, PASS_GRACE = 3 * 86400000, PASS_LVLS = 40, PASS_STEP = 300, PASS_PREMIUM = 1000, PASS_OWNED_GEMS = 1000;
         var PASS_XP = { quest: 40, questBonus: 80, captures: 20, pvpWins: 10, defends: 15, armyWins: 15, bosses: 60, wanders: 120, temples: 25, throneMin: 2, upgrade: 4, pickup: 8, crate: 3, scouts: 3, heroFires: 2 };   // what each deed is worth
@@ -7780,7 +7777,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
                 islandTroops[to] = (islandTroops[to] || 0) + n; return '+' + fmtCompact(n) + ' Truppen in ' + (b ? 'die Hauptstadt' : islandTitle(islandById[to])); }
             if (id === 'crate' || id === 'royal') { const r = id === 'royal' ? Math.max(3, pickRandomRarity()) : pickRandomRarity(), slot = pickRandomSlot();
                 if (b) { b.spare[slot][r]++; return ''; }
-                const it = addInventoryItem(slot, r, 1); sfx('crate'); return RARITY_DEFS[r].label + ' ' + EQUIPMENT_DEFS[slot].name + ' im Inventar'; }
+                addInventoryItem(slot, r, 1); sfx('crate'); return RARITY_DEFS[r].label + ' ' + EQUIPMENT_DEFS[slot].name + ' im Inventar'; }
             if (id === 'look') { if (b) b.throneLook = true; else { look.bought = Object.assign({}, look.bought, { throne: true }); look.title = 'keeper'; look.frame = 'throne'; store.set('openWaterLook', JSON.stringify(look)); renderLook(); }
                 return 'Titel „Thronhüter“ und Thron-Rahmen – schon angelegt'; }
             if (id.startsWith('ring_')) { const r = ringSkinDef(id.slice(5)); if (!r) return ''; ringGive(who, r.id); return 'Ring „' + r.name + '“ – schon angelegt'; }
@@ -7952,7 +7949,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             let me = null;
             list.forEach(([who, p], i) => { const pr = tourPrizeFor(i + 1);
                 if (who !== 'player') { botTourReward(who, pr.gems, pr.sh); return; }
-                inboxAdd({ src: 'tour', title: 'Wochenend-Turnier · Platz ' + (i + 1), gems: pr.gems, sh: pr.sh }); me = { place: i + 1, pts: Math.floor(p), gems: pr.gems, sh: pr.sh, hero: '' }; });   // the prize is sent to the Abholfach
+                inboxAdd({ src: 'tour', title: 'Wochenend-Turnier · Platz ' + (i + 1), gems: pr.gems, sh: pr.sh }); me = { place: i + 1, pts: Math.floor(p), gems: pr.gems, sh: pr.sh }; });   // the prize is sent to the Abholfach
             if (list.length) { const w = list[0][0]; ts.champ = { who: w, until: ts.end + TOUR_CHAMP_MS };
                 ts.hist.unshift({ key: ts.key, who: w, name: w === 'player' ? profileName.value || 'Du' : botById[w].name, pts: Math.floor(list[0][1]) }); ts.hist = ts.hist.slice(0, 6); ringVer++; }
             ts.last = { key: ts.key, top: list.slice(0, TOUR_TOP).map(e => [e[0], Math.floor(e[1])]), n: list.length, me, seen: !me };
@@ -7965,12 +7962,12 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             tourWinMemo = null; tourRankMemo = null; saveTour(); store.set('openWaterTourTest1', '1');
         })();
         function tourChamp(now) { const c = tourState && tourState.champ; return c && (now || Date.now()) < c.until ? c.who : null; }
-        function midFight(tid, aWho, aKills, dWho, dKills, won, dOwner) {     // after every fight for a base: Turnier-Punkte in the middle
+        function midFight(tid, aWho, aKills, dWho, dKills) {     // after every fight for a base: Turnier-Punkte in the middle
             if (midZoneIds.has(tid) && tourOn()) { tourFight(aWho, aKills); tourFight(dWho, dKills); }   // (capped per fight and per minute: holding the throne must still count)
         }
         // ===== KOPFGELD AUF DEN HERRSCHER: while someone holds the throne a bounty grows (gems + coins, every 3 min with the Thron-Punkte).
         // Whoever takes the Mega-Tempel from him collects all of it.
-        const BOUNTY_GEMS = 3, BOUNTY_GEMS_MAX = 1000, BOUNTY_COIN_H = .1, BOUNTY_COIN_MAX_H = 24;   // (only whoever takes the throne collects it - no shares per fight)
+        const BOUNTY_GEMS = 3, BOUNTY_GEMS_MAX = 1000, BOUNTY_COIN_H = .1, BOUNTY_COIN_MAX_H = 24;
         var bountyState = (() => { try { return JSON.parse(store.get('openWaterBounty')) || null; } catch (e) { return null; } })() || { ruler: null, gems: 0, coins: 0 };
         function saveBounty() { store.set('openWaterBounty', JSON.stringify(bountyState)); }
         function bountyOf() { const r = rulerOwner(); return r && bountyState.ruler === r ? { who: r, gems: Math.floor(bountyState.gems || 0), coins: Math.floor(bountyState.coins || 0) } : null; }
@@ -8035,7 +8032,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             const b = tourState.by.player || {}, c = [['crown', 'Thron', b.thr], ['temple', 'Tempel', b.tmp], ['attack', 'Kämpfe', b.fig]], rest = me - c.reduce((s, x) => s + Math.floor(x[2] || 0), 0);
             if (rest >= 1) c.push(['star', 'Sonstiges', rest]);
             return '<div class="tour-by">' + c.map(x => '<span>' + icon(x[0]) + x[1] + '<b>' + fmtNum(Math.floor(x[2] || 0)) + '</b></span>').join('') + '</div>'; }
-        function midNotice(island) {                          // Kopfgeld and Turnier at a glance on the middle's bases and the ruler's
+        function midNotice(island) {                          // Kopfgeld and Turnier at a glance on the middle's bases
             const b = bountyOf(), w = tourOn(); let h = '';
             if (b && island.type === 'megaTemple') h += b.who === 'player' ? '<div class="notice notice--warn">' + icon('losses') + '<span><b>Kopfgeld auf dich: ' + fmtNum(b.gems) + ' Gems + ' + fmtCompact(b.coins) + ' Münzen.</b> Wer dir den Thron abnimmt, kassiert alles – je länger du herrschst, desto mehr kommen.</span></div>'
                 : '<div class="notice notice--gold">' + icon('coin') + '<span><b>Kopfgeld auf ' + escapeHtml(botById[b.who].name) + ': ' + fmtNum(b.gems) + ' Gems + ' + fmtCompact(b.coins) + ' Münzen.</b> Nimm den Thron und kassiere alles.</span></div>';
@@ -8676,7 +8673,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
                 }
                 const mx = tx - ux * (dFront + 6.5 * k), my2 = ty - uy * (dFront + 6.5 * k);
                 if (t > 780 && t < 1400) {                   // the impact: a hard white-hot flash and a wall of dust thrown sideways
-                    const q = (t - 780) / 620, ang = Math.atan2(vy, vx);
+                    const q = (t - 780) / 620;
                     ctx.save(); ctx.globalCompositeOperation = 'lighter';
                     if (q < .45) { const qq = q / .45, R = (16 + 46 * qq) * k, gb = ctx.createRadialGradient(mx, my2 - s * .5, 0, mx, my2 - s * .5, R);
                         gb.addColorStop(0, 'rgba(255,250,235,' + (1 - qq) + ')'); gb.addColorStop(.35, 'rgba(255,205,130,' + (.55 * (1 - qq)) + ')'); gb.addColorStop(1, 'rgba(255,150,60,0)');
@@ -8865,7 +8862,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         function drawBattleFx(now) {       // screen space (setScreen active)
             battleFx = battleFx.filter(f => now - f.born < FX_MS);
             for (const f of battleFx) {
-                const ms = now - f.born, t = ms / FX_MS;
+                const ms = now - f.born;
                 const sx = f.x * mapState.zoom + mapState.offsetX, sy = f.y * mapState.zoom + mapState.offsetY;
                 if (sx < -200 || sy < -200 || sx > viewW + 200 || sy > viewH + 200) continue;
                 const hot = f.good ? '255,214,120' : '255,110,80';
@@ -9000,8 +8997,6 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             inboxAdd({ src: 'wboss', title: boss.name + ' besiegt', gems: rewardGems, crate: 4, sh: shN });   // a legendary crate, gems and shards - sent to the Abholfach
             saveProgression(); saveGame(); updateHud();
             if (boss.wander) endWander(null); else endBoss(null);
-            document.getElementById('rewardModalOver').textContent = 'Weltereignis';
-            document.getElementById('rewardModalTitle').textContent = 'Boss besiegt!';
             document.getElementById('rewardModalSub').textContent = boss.name + ' ist gefallen – die Beute liegt unter Ziele → Belohnung.';
             const list = document.getElementById('rewardModalRewards'), rd = RARITY_DEFS[4];
             list.innerHTML = '<li style="border-color:' + rd.color + '66">' + icon('shop') + '<span>Kiste</span><b style="color:' + rd.color + '">mind. ' + rd.label + '</b></li>' +
@@ -10224,7 +10219,6 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             const pat = (seed, base, spots, n) => g.createPattern(cityTexture(seed, base, spots, n, 128), 'repeat');
             const grass = pat(21, '#5f9444', ['#6aa04c', '#56883d', '#74aa55', '#4e7f37'], 700), meadow = pat(22, '#4f8237', ['#5a8f40', '#46752f', '#62984a'], 500);
             const cob = pat(23, '#b8a88a', ['#c7b798', '#a39374', '#d1c3a4', '#948466'], 700), dirt = pat(24, '#9c8058', ['#a88b62', '#8e7350', '#b0946a'], 400);
-            const rnd = mulberry32(99);
             // outside the walls: nothing but the land of your region, as on the map (grass, sand or snow)
             const bio = (landmasses[(islandById[playerIslandId] || {}).landmassId] || {}).bio || 'green';
             CITY_BG_COL = bio === 'snow' ? '#dde4ea' : bio === 'sand' ? '#d4b77a' : '#4f8237';
@@ -10620,7 +10614,6 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             return false;
         }
         function drawPickups(now) {          // screen space (setScreen active)
-            const z = mapState.zoom;
             for (const p of pickups) {
                 const s = pickupScreenPos(p);
                 if (s.x < -40 || s.y < -40 || s.x > viewW + 40 || s.y > viewH + 40) continue;
@@ -11287,7 +11280,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         }
         function armyClash(att, def) {                                              // army against army out in the open
             const aHx = heroFieldFx(armyWho(att), att.hero, {}), dHx = heroFieldFx(armyWho(def), def.hero, { defending: 1 });   // both leaders (a full rage fires now)
-            const A = att.troops, D = def.troops, fb = fieldBattle(armyWho(att), A, armyWho(def), D, aHx, dHx), won = fb.won, loser = won ? def : att, winner = won ? att : def;
+            const A = att.troops, D = def.troops, fb = fieldBattle(armyWho(att), A, armyWho(def), D, aHx, dHx), won = fb.won, winner = won ? att : def;
             att.troops -= fb.aLoss; def.troops -= fb.dLoss; armies = armies.filter(x => !((x === att || x === def) && x.troops < 1));
             const wA = fieldHurt(armyWho(att), fb.aLoss, aHx), wD = fieldHurt(armyWho(def), fb.dLoss, dHx), wLoser = won ? wD : wA, wWinner = won ? wA : wD;
             const fg = fieldGold(armyWho(att), armyWho(def), fb, aHx, dHx);
@@ -12575,7 +12568,6 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
                 const v = Math.min(100, Math.round(f.getBoundingClientRect().width / Math.max(1, barEl.clientWidth - 4) * 100)); pctEl.textContent = v + ' %'; requestAnimationFrame(pct); })();
             const statusEl = document.getElementById('splashStatus');   // (the tips rotate in the loading screen's own script)
             const steps = ['Welt wird erschaffen …', 'Inseln werden besiedelt …', 'Truppen werden gerüstet …', 'Bereit'];
-            const t0 = performance.now();
             // Everything the map draws is painted once up front (every building, owner and size step), so nothing has to be
             // drawn for the first time while you play - no stutter when zooming or scrolling. Later: images and music too.
             const jobs = [], sizes = [16, 23, 32, 45, 64, 91, 128, 181];
