@@ -41,3 +41,11 @@ Das Spiel speichert nur im Browser-Speicher der Claude-App. Die App leert diesen
 
 ## Was der Spieler im neuen Chat schreiben kann
 „Lies UEBERGABE.md und mach mit dem Plan weiter: logge dich bei Office ein und bring das Spiel auf meinen Server.“
+
+## Entschieden vom Spieler (1.10., erste Sitzung)
+- Im Office-Editor einen **eigenen Ordner `Game`** anlegen, darin alles sauber sortiert (z. B. `index.html` mit Login, `js/` fürs Spiel, `api/` für die PHP-Skripte).
+- **Login mit Nutzer + Passwort** (Registrieren/Anmelden), Passwörter nur gehasht (`password_hash`). Danach geht es ins Spiel. Jeder Spieler hat seinen eigenen Spielstand.
+- **Alle Spielstände in der MySQL-Datenbank auf db.lapush.de.** Die Datenbank-Zugangsdaten trägt der Spieler später selbst in die Umgebungsvariablen ein (`DB_USER`, `DB_PASS`, ggf. `DB_HOST`, `DB_NAME`) – laut ihm klappt der Zugriff.
+- **Im Browser wird NICHTS gespeichert** (kein localStorage, kein sessionStorage, kein IndexedDB) – **einzige Ausnahme: ein Login-Cookie** (nur der Sitzungs-Schlüssel, HttpOnly, läuft nach 30 Tagen ab). Das Spiel hält den Stand im Arbeitsspeicher und speichert laufend auf den Server (z. B. über `store` in index.html).
+- Der Spielstand auf dem Server fängt bei Null an.
+- Erst bauen/hochladen, wenn der Spieler „ja“ sagt und die erste Sitzung ihren Gesamtcheck gepusht hat.
