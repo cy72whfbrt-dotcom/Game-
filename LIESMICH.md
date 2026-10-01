@@ -35,7 +35,9 @@ Game/                  ← genau dieser Ordner liegt auf dem Server
   bots.js              alles über die Mitspieler (Denken, Angriffe, Stadt, Helden …)
   baukunst.js          3D-Bilder der Basen (braucht three.js aus dem Netz, sonst 2D)
   speichern.js         Speichern/Laden: hält den Stand im Arbeitsspeicher, schickt ihn an server.php
-  server.php           alles auf dem Server: Datenbank, Login, Laden, Speichern
+  welt.js              die EINE Welt: Umrechnen, andere Spieler, Weltrechner, Puls, Befehle, Nachrichten
+  server.php           alles auf dem Server: Datenbank, Login, Laden, Speichern, Welt, Sicherheit
+  admin.php            nur für Admins (alexander): Wartung an/aus, Geschenke verschicken, Spielerliste
   config.php           Datenbank-Zugang – NUR auf dem Server, nie im Git (wird von hochladen.sh erzeugt)
 LIESMICH.md            diese Datei
 hochladen.sh           lädt Game/ auf den Server (ein Befehl)
@@ -174,6 +176,27 @@ Befehle und Nachrichten verteilen, Spielerliste mit Profilen.
 GitHub). Alle Spielstände und die Welt auf Null gesetzt (Konten bleiben, nur noch `alexander`). Live mit zwei
 Test-Konten geprüft (Angriff, Eroberung, Bericht, Ausbau, Gegenangriff – alles ok), danach Test-Konten gelöscht und
 Welt nochmal frisch zurückgesetzt. Wer als Erster das Spiel öffnet, erschafft die Welt und ist Weltrechner.
+
+## 10b. Admin, Wartung, Namen, Rauswurf, Sicherheit (1.10., lokal getestet)
+- **Admin-Seite** `admin.php` (Startseite → Knopf „Admin“, nur für Login-Namen aus `config.php` → `admins`, sonst
+  `alexander`): Wartung starten/beenden, Geschenk verschicken (Gems, Münzen, Helden-Splitter, Kiste; an einen oder alle
+  Spieler) → kommt als Nachricht, landet im **Abholfach** (Ziele → Belohnung, Quelle „Geschenk“) und muss normal
+  abgeholt werden; Spielerliste (Name, Login, Stufe, Münzen, Gems, Basen, online).
+- **Wartung** = Datei `Game/wartung.txt`. Solange sie da ist: Startseite zeigt „neue Version wird aufgespielt“,
+  `spiel.php` lässt niemanden rein, laufende Spiele bekommen beim nächsten Puls ein großes Fenster „Wartung“ (vorher
+  wird noch gesichert). Admins kommen trotzdem rein. `hochladen.sh` schaltet die Wartung **automatisch** an und am
+  Ende wieder aus (bricht es ab, bleibt sie an – dann in admin.php beenden).
+- **Rauswurf**: Meldet sich jemand mit demselben Konto woanders an, bekommt das alte Gerät ein großes Fenster
+  „Verbindung getrennt – auf einem anderen Gerät angemeldet“ (geht nicht mehr weiter).
+- **Willkommen-Fenster**: Jeder neue Spieler wählt einmal seinen Namen (3–20 Zeichen, frei, nicht der Name eines anderen
+  oder eines Mitspielers). Gespeichert als `ow_spieler.anzeigename`, alle sehen ihn. Im Profil änderbar (wird geprüft).
+- **Alter Fehler behoben**: Abmelden + neues Konto übernahm früher den alten Stand (Browser-Speicher). Jetzt liegt
+  nichts mehr im Browser → neues Konto startet sauber (getestet).
+- **Sicherheit (server.php/index.php)**: Bremse gegen Passwort-Raten (8 Versuche/15 Min. pro Name, 30 pro Gerät),
+  höchstens 5 neue Konten pro Stunde pro Gerät, gleich lange Passwort-Prüfung (verrät nicht, ob es den Namen gibt),
+  Daten mit `<`/`>` werden abgelehnt (kein eingeschleuster Code bei anderen Spielern), Größen-Grenzen (8 MB gepackt,
+  24 MB entpackt, 150 Teile pro Spieler, 80 Teile Welt), Sicherheits-Kopfzeilen, alte Befehle/Nachrichten räumen sich
+  weg. Passwörter nur als bcrypt-Hash; kein Weg liefert Hashes oder Zugangsdaten an den Browser.
 
 ## 11. Offen
 - **GitHub aufräumen (macht Alexander, Claude darf es nicht):** Unter Settings → General → Default branch auf

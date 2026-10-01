@@ -81,6 +81,30 @@
         schild.style.display = '';
     }
     function verstecke() { if (schild) schild.style.display = 'none'; }
+    // Großes Fenster über allem (das Spiel ist hier zu Ende): anderes Gerät, abgemeldet, Wartung
+    var vorhang = null;
+    function vorhangZeigen(titel, text, knopf) {
+        if (!document.body) { document.addEventListener('DOMContentLoaded', function () { vorhangZeigen(titel, text, knopf); }); return; }
+        verstecke();
+        if (!vorhang) { vorhang = document.createElement('div'); document.body.appendChild(vorhang); }
+        vorhang.style.cssText = 'position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;padding:16px;' +
+            'background:rgba(8,20,36,.88);font-family:Georgia,serif';
+        vorhang.innerHTML = '';
+        var box = document.createElement('div');
+        box.style.cssText = 'max-width:380px;width:100%;background:#f6efe0;color:#2b2118;border:2px solid #c9a227;border-radius:14px;padding:22px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.6)';
+        var h = document.createElement('h2'); h.textContent = titel; h.style.cssText = 'margin:0 0 10px;color:#1d3b5c;font-size:22px';
+        var p = document.createElement('p'); p.textContent = text; p.style.cssText = 'margin:0 0 16px;font-size:16px;line-height:1.4';
+        box.appendChild(h); box.appendChild(p);
+        if (knopf) { var a = document.createElement('a'); a.href = knopf[1]; a.textContent = knopf[0];
+            a.style.cssText = 'display:inline-block;padding:11px 18px;border-radius:8px;background:linear-gradient(#c9a227,#a8831a);color:#2b1d05;font-weight:bold;text-decoration:none'; box.appendChild(a); }
+        vorhang.appendChild(box);
+    }
+    var RAUS = {
+        409: ['Verbindung getrennt', 'Du bist auf einem anderen Gerät oder in einem anderen Fenster angemeldet. Hier geht es nicht weiter.', ['Hier weiterspielen', 'spiel.php']],
+        401: ['Abgemeldet', 'Du bist nicht mehr angemeldet.', ['Neu anmelden', './']],
+        503: ['Wartung', 'Gerade wird eine neue Version aufgespielt. Dein Spielstand ist gesichert – in ein paar Minuten geht es weiter.', ['Nochmal versuchen', './']]
+    };
+    function rauswurf(status) { var r = RAUS[status]; if (!r) return false; gestoppt = true; vorhangZeigen(r[0], r[1], r[2]); return true; }
 
     // ===== senden =====
     // Regelmäßig alle 3 s. Beim Schließen/Neuladen/Wegschieben sofort und im selben Moment (gzip ohne Warten, fflate),
@@ -106,8 +130,7 @@
     }
     function antwort(r) {
         if (r.ok) { fehlerZahl = 0; verstecke(); return; }
-        if (r.status === 401) { gestoppt = true; zeige('Du bist abgemeldet – dein Spiel wird nicht mehr gespeichert.', ['Neu anmelden', './']); return; }
-        if (r.status === 409) { gestoppt = true; zeige('Du spielst gerade in einem anderen Fenster oder auf einem anderen Gerät. Hier wird nicht mehr gespeichert.', ['Hier weiterspielen', 'spiel.php']); return; }
+        if (r.status === 401 || r.status === 409) { rauswurf(r.status); return; }
         throw new Error('HTTP ' + r.status);
     }
     function fehlgeschlagen(keys) {
@@ -162,7 +185,8 @@
         roh: function (k, v) { if (v === null || v === undefined) delete daten[k]; else daten[k] = String(v); },
         set beimSetzen(f) { beimSetzen = f; },
         privat: function (k, v) { v = String(v); if (daten[k] === v) return; daten[k] = v; geaendert.add(k); },
-        get gestoppt() { return gestoppt; }, token: OW.token, stoppe: function (text, knopf) { gestoppt = true; zeige(text, knopf); }
+        get gestoppt() { return gestoppt; }, token: OW.token, stoppe: function (text, knopf) { gestoppt = true; zeige(text, knopf); },
+        rauswurf: function (status) { if (status === 503) { try { sofort(true); } catch (e) {} } return rauswurf(status); }   // Wartung: vorher noch alles sichern
     };
     window.__owSofort = sofort;
 })();

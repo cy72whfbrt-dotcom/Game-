@@ -17,7 +17,8 @@ try {
         $name = trim((string)($_POST['name'] ?? ''));
         $pw = (string)($_POST['pw'] ?? '');
         if ($modus === 'neu') {
-            if (!preg_match('/^[\p{L}\p{N} _.-]{3,20}$/u', $name)) $fehler = 'Name: 3 bis 20 Zeichen (Buchstaben, Zahlen, Leerzeichen, _ . -).';
+            if (!bremse('neu:' . client_ip(), 5, 3600)) $fehler = 'Zu viele neue Konten von hier – bitte später nochmal.';
+            elseif (!preg_match('/^[\p{L}\p{N} _.-]{3,20}$/u', $name)) $fehler = 'Name: 3 bis 20 Zeichen (Buchstaben, Zahlen, Leerzeichen, _ . -).';
             elseif (mb_strlen($pw) < 6) $fehler = 'Das Passwort braucht mindestens 6 Zeichen.';
             elseif ($pw !== (string)($_POST['pw2'] ?? '')) $fehler = 'Die beiden Passwörter sind nicht gleich.';
             else {
@@ -26,10 +27,15 @@ try {
                 else { anmelden($uid); header('Location: spiel.php'); exit; }
             }
         } else {
-            $u = $name !== '' ? lager()->spieler_nach_name($name) : null;
-            if ($u && password_verify($pw, $u['pw_hash'])) { anmelden((int)$u['id']); header('Location: spiel.php'); exit; }
-            sleep(1);   // bremst Passwort-Raten
-            $fehler = 'Name oder Passwort stimmt nicht.';
+            $sperre = 'login:' . mb_strtolower($name, 'UTF-8');
+            if (!bremse($sperre, 8, 900) || !bremse('loginip:' . client_ip(), 30, 900)) { sleep(1); $fehler = 'Zu viele Versuche – bitte in 15 Minuten nochmal.'; }
+            else {
+                $u = $name !== '' ? lager()->spieler_nach_name($name) : null;
+                $hash = $u ? $u['pw_hash'] : '$2y$10$PxK0RyR6Ng9cebr4sv40xeBHhcwZlL4gVKoVfvcJFrVmDh4qaH.ma';   // gleich lange prüfen, ob es den Namen gibt oder nicht
+                if (password_verify($pw, $hash) && $u) { lager()->bremse_frei(hash('sha256', $sperre)); anmelden((int)$u['id']); header('Location: spiel.php'); exit; }
+                sleep(1);   // bremst Passwort-Raten
+                $fehler = 'Name oder Passwort stimmt nicht.';
+            }
         }
     }
 } catch (Throwable $e) {
@@ -71,9 +77,16 @@ function h($s) { return htmlspecialchars($s, ENT_QUOTES, 'UTF-8'); }
 <main class="karte">
   <h1>Open Water</h1>
   <p class="unter">Erobere die Inseln, halte den Thron.</p>
-<?php if ($ich): ?>
+<?php if ($ich && wartung() && !ist_admin($ich)): ?>
   <p class="hallo">Angemeldet als <b><?= h($ich['name']) ?></b></p>
+  <div class="fehler">Gerade wird eine neue Version aufgespielt. In ein paar Minuten geht es weiter.</div>
+  <form action="./" method="get"><button type="submit">Nochmal versuchen</button></form>
+  <form action="?aus=1" method="post"><button type="submit" class="leise">Abmelden</button></form>
+<?php elseif ($ich): ?>
+  <p class="hallo">Angemeldet als <b><?= h($ich['name']) ?></b></p>
+  <?php if (wartung()): ?><div class="fehler">Wartung ist an – nur Admins kommen ins Spiel.</div><?php endif; ?>
   <form action="spiel.php" method="get"><button type="submit">Weiterspielen</button></form>
+  <?php if (ist_admin($ich)): ?><form action="admin.php" method="get"><button type="submit" class="leise">Admin</button></form><?php endif; ?>
   <form action="?aus=1" method="post"><button type="submit" class="leise">Abmelden</button></form>
 <?php else: ?>
   <nav class="reiter">

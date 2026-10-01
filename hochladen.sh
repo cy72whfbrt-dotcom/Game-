@@ -1,5 +1,7 @@
 #!/bin/bash
 # hochladen.sh – lädt den Ordner Game/ auf office.hobbitonhill.de (…/klassenarbeit_GR4/Game/).
+# Während des Hochladens ist WARTUNG an (Datei wartung.txt): niemand außer den Admins kommt ins Spiel.
+# NUR nach Alexanders Ja benutzen (Regel in LIESMICH.md).
 # Zugangsdaten nur aus den Umgebungsvariablen: OFFICE_USER, OFFICE_PASS, DB_USER, DB_PASS (DB_HOST, DB_NAME optional).
 # config.php (Datenbank-Zugang) wird dabei aus den Variablen erzeugt – sie liegt nie im Git.
 set -e
@@ -23,8 +25,12 @@ if [ -n "$DB_PASS" ]; then
     file_put_contents($argv[1], "<?php\n// Zugangsdaten der Datenbank - nur auf dem Server, nie ins Git\nreturn " . var_export($c, true) . ";\n");' "$T/config.php"
 fi
 
-# 3) Ordner Game anlegen (falls weg) und alle Dateien hochladen
+# 3) Ordner Game anlegen (falls weg), WARTUNG an (niemand kommt ins Spiel, Spielende werden mit "Wartung" rausgebeten),
+#    dann alle Dateien hochladen
 ed "" -F text= -F file=Game -F "button=new folder" -o /dev/null
+echo "Wartung seit $(date '+%d.%m.%Y %H:%M') (hochladen.sh)" > $T/wartung.txt
+ed /Game -F "file=@$T/wartung.txt" -F "button=upload" -o /dev/null -w "Wartung an: %{http_code}\n"
+sleep 5   # die laufenden Spiele merken es beim nächsten Puls (alle 2 s) und sichern noch
 for f in $(cd Game && ls -1); do
   [ "$f" = config.php ] && continue
   ed /Game -F "file=@Game/$f" -F "button=upload" -o /dev/null -w "$f %{http_code}\n"
@@ -34,7 +40,7 @@ done
 # 4) Alles auf dem Server, was nicht (mehr) zum Spiel gehört, aus Game/ entfernen (alte Ordner api, js, inhalt, daten …)
 weg() { local ordner=$1 name=$2; ed "$ordner" -F text= -F "file=$name" -F "button=delete" -o /dev/null; echo "entfernt: Game${ordner#/Game}/$name"; }
 for x in $(ls_ordner /Game); do
-  if [ -f "Game/$x" ] || [ "$x" = config.php ]; then continue; fi
+  if [ -f "Game/$x" ] || [ "$x" = config.php ] || [ "$x" = wartung.txt ]; then continue; fi
   if curl -sS -b $T/jar "$E?h=48&w=138&sid=$SID&path=$B/Game/$x" | grep -q "klassenarbeit_GR4/Game/$x/\.\.\""; then   # ist ein Ordner: erst leeren
     for y in $(ls_ordner "/Game/$x"); do weg "/Game/$x" "$y"; done
   fi
@@ -42,7 +48,9 @@ for x in $(ls_ordner /Game); do
 done
 
 # 5) Prüfen: Dateien unverändert angekommen?
-for f in ladebildschirm.js spiel.js bots.js baukunst.js speichern.js; do
+for f in ladebildschirm.js spiel.js bots.js welt.js baukunst.js speichern.js; do
   [ "$(sha1sum < Game/$f)" = "$(curl -sS "$U/$f" | sha1sum)" ] && echo "geprüft: $f" || { echo "FEHLER: $f anders"; exit 1; }
 done
+# 6) Wartung aus – alle können wieder spielen
+ed /Game -F text= -F file=wartung.txt -F "button=delete" -o /dev/null && echo "Wartung aus"
 echo "Auf dem Server: $(ls_ordner /Game | tr '\n' ' ')"

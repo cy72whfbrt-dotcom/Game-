@@ -185,6 +185,7 @@
         for (const s of liste || []) {
             const id = 'u' + s.id, m = W.menschen[id] || (W.menschen[id] = { id, uid: s.id });
             m.name = s.name; m.online = s.online;
+            if (typeof BOT_DEFS !== 'undefined') { const bd = BOT_DEFS.find(b => b.id === id); if (bd && bd.mensch) bd.name = s.name; }   // neuer Name sichtbar
             if (s.profil) { m.profil = s.profil; m.profilNeu = true; }
             if (s.profil_zeit > W.spielerSeit) W.spielerSeit = s.profil_zeit;
         }
@@ -269,8 +270,7 @@
             const text = J(anfrage), gz = packen(text);
             const kopf = { 'X-Open-Water': '1', 'Content-Type': 'application/octet-stream' }; if (gz) kopf['X-Gepackt'] = '1';
             const r = await fetch('server.php', { method: 'POST', headers: kopf, body: gz || text, credentials: 'same-origin', cache: 'no-store' });
-            if (r.status === 409) { S.stoppe('Du spielst gerade in einem anderen Fenster oder auf einem anderen Gerät. Hier wird nicht mehr gespeichert.', ['Hier weiterspielen', 'spiel.php']); return; }
-            if (r.status === 401) { S.stoppe('Du bist abgemeldet – dein Spiel wird nicht mehr gespeichert.', ['Neu anmelden', './']); return; }
+            if (r.status === 409 || r.status === 401 || r.status === 503) { S.rauswurf(r.status); return; }
             if (!r.ok) throw new Error('HTTP ' + r.status);
             const a = await r.json();
             antwortVerarbeiten(a, anfrage);

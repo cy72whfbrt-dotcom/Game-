@@ -4148,9 +4148,28 @@ const skillGrid = document.getElementById('skillGrid');
 
 profileName.value = store.get('openWaterPlayerName') || '';
 profileName.addEventListener('input', () => {
+    if (window.WELT) return;                     // in der EINEN Welt: der Name muss frei sein → wird beim Verlassen des Feldes geprüft
     store.set('openWaterPlayerName', profileName.value);
     updateHudPlayer();
 });
+profileName.addEventListener('change', () => {
+    if (!window.WELT) return;
+    const alt = store.get('openWaterPlayerName') || '';
+    if (profileName.value.trim() === alt) return;
+    weltNameSetzen(profileName.value).then(r => { if (!r.ok) { flashHint(r.grund, 3500); profileName.value = alt; } else flashHint('Du heißt jetzt ' + r.name + '.', 2500); });
+});
+// Spielername auf dem Server prüfen und setzen (frei, 3–20 Zeichen, kein Name eines anderen – auch keiner der Mitspieler)
+async function weltNameSetzen(name) {
+    name = String(name || '').trim().replace(/\s+/g, ' ');
+    if (BOT_DEFS.some(b => !b.mensch && b.name.toLowerCase() === name.toLowerCase())) return { ok: false, grund: 'Diesen Namen hat schon jemand.' };
+    try {
+        const r = await fetch('server.php', { method: 'POST', headers: { 'X-Open-Water': '1', 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ aktion: 'name', token: window.__owSpeicher.token, name }) });
+        if (!r.ok) return { ok: false, grund: 'Gerade keine Verbindung – bitte gleich nochmal.' };
+        const a = await r.json();
+        if (a.ok) { store.set('openWaterPlayerName', a.name); profileName.value = a.name; try { updateHudPlayer(); } catch (e) {} requestRender(); }
+        return a;
+    } catch (e) { return { ok: false, grund: 'Gerade keine Verbindung – bitte gleich nochmal.' }; }
+}
 
 const RANK_TIERS = [
     { min: 0, name: 'Bronze' },
@@ -5511,7 +5530,7 @@ function inboxList() { if (!inboxState) { try { inboxState = JSON.parse(store.ge
 function inboxSave() { store.set('openWaterInbox', JSON.stringify(inboxList())); }
 const INBOX_PILE = { fight: 1, bounty: 1 };   // these pile up in one entry each
 const inboxPiles = x => !!INBOX_PILE[x.src] && !(x.crate >= 0);   // a crate keeps its own entry (one entry holds one crate)
-const INBOX_SRC = { fight: { ic: 'attack', t: 'Kampfbeute' }, tour: { ic: 'crown', t: 'Wochenend-Turnier' }, boss: { ic: 'star', t: 'Tagesboss' }, wboss: { ic: 'star', t: 'Weltboss' }, bounty: { ic: 'losses', t: 'Kopfgeld' } };
+const INBOX_SRC = { gift: { ic: 'gem', t: 'Geschenk' }, fight: { ic: 'attack', t: 'Kampfbeute' }, tour: { ic: 'crown', t: 'Wochenend-Turnier' }, boss: { ic: 'star', t: 'Tagesboss' }, wboss: { ic: 'star', t: 'Weltboss' }, bounty: { ic: 'losses', t: 'Kopfgeld' } };
 function inboxAdd(o) {                              // o: { src, title?, gems, coins, sh (hero shards), crate (lowest rarity, -1 none) } - all fights' spoils pile up in one entry
     o = Object.assign({ gems: 0, coins: 0, sh: 0, crate: -1, n: 1 }, o); o.gems = Math.round(o.gems); o.coins = Math.round(o.coins);
     if (!(o.gems > 0 || o.coins > 0 || o.sh > 0 || o.crate >= 0)) return 0;
@@ -10784,6 +10803,35 @@ if (window.WELT) {
         if (x.targetId !== undefined && islandById[x.targetId]) spawnBattleFx(x.targetId, x.type === 'attack' ? !!x.won : !x.won || !!x.capitalHolds, x.type === 'attack' ? (x.won ? 'Sieg' : 'Niederlage') : (x.won ? (x.capitalHolds ? 'Hauptstadt hält' : 'Basis verloren') : 'Verteidigt'), x.botName || x.defenderName || '');
         sfx(x.won === (x.type === 'attack') ? 'win' : 'warn');
     });
+    WELT.beiNachricht.push(function (e) {             // Geschenk (vom Admin): liegt im Abholfach, wird normal abgeholt
+        if (!e || e.art !== 'geschenk') return;
+        if (inboxAdd({ src: 'gift', title: 'Geschenk', gems: e.gems || 0, coins: e.coins || 0, sh: e.sh || 0, crate: e.crate >= 0 ? e.crate : -1 })) flashHint('Ein Geschenk liegt für dich bereit – Ziele → Belohnung.', 4500);
+        else if (e.sh > 0 || e.crate >= 0) flashHint('Ein Geschenk liegt für dich bereit – Ziele → Belohnung.', 4500);
+    });
+    // Willkommen: einmal den Namen wählen
+    if (!window.__OW || !__OW.nameGewaehlt) afterSplash(() => setTimeout(willkommenFenster, 400));
+    function willkommenFenster() {
+        const v = document.createElement('div');
+        v.style.cssText = 'position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(8,20,36,.8);font-family:Georgia,serif';
+        v.innerHTML = '<div style="max-width:380px;width:100%;background:#f6efe0;color:#2b2118;border:2px solid #c9a227;border-radius:14px;padding:22px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.6)">' +
+            '<h2 style="margin:0 0 6px;color:#1d3b5c;font-size:24px">Willkommen!</h2><p style="margin:0 0 14px;font-size:16px">Willkommen auf den Inseln von Open Water. Wie willst du heißen?</p>' +
+            '<input id="wkName" maxlength="20" style="width:100%;padding:11px;font-size:17px;border:1px solid #d8c9a6;border-radius:8px;box-sizing:border-box" placeholder="Dein Name">' +
+            '<p class="wf" style="min-height:20px;margin:8px 0 0;color:#a33a2a;font-size:14px"></p>' +
+            '<button type="button" style="margin-top:10px;width:100%;padding:12px;font-size:17px;font-family:inherit;border:0;border-radius:8px;cursor:pointer;background:linear-gradient(#c9a227,#a8831a);font-weight:bold">Los geht’s</button></div>';
+        document.body.appendChild(v);
+        const inp = v.querySelector('input'), msg = v.querySelector('.wf'), btn = v.querySelector('button');
+        inp.value = (window.__OW && __OW.name) || store.get('openWaterPlayerName') || '';
+        setTimeout(() => { inp.focus(); inp.select(); }, 50);
+        const los = async () => {
+            btn.disabled = true; msg.textContent = '';
+            const r = await weltNameSetzen(inp.value);
+            btn.disabled = false;
+            if (!r.ok) { msg.textContent = r.grund; return; }
+            v.remove(); flashHint('Willkommen, ' + r.name + '!', 3000);
+        };
+        btn.addEventListener('click', los);
+        inp.addEventListener('keydown', e => { if (e.key === 'Enter') los(); });
+    }
     WELT.beiNachricht.push(function (e) {             // Startschild (Platz mitten in fremdem Land)
         if (!e || e.art !== 'startschild' || !(e.bis > Date.now())) return;
         if (shieldUntil() < e.bis) { store.set('openWaterShield', String(e.bis)); shieldMemAt = 0; }
