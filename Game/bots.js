@@ -957,6 +957,7 @@ function botBestRarity(botId) {
 
 function addBotXp(botId, amount) {
     const b = loadBotState()[botId]; if (!b) return;
+    if (botById[botId] && botById[botId].mensch) { b.xpNeu = (b.xpNeu || 0) + amount; return; }   // echter Spieler: die EP gehen als Nachricht zu ihm
     b.xp += amount;
     while (b.xp >= xpNeededForLevel(b.lvl)) { b.xp -= xpNeededForLevel(b.lvl); b.lvl++; b.sp++; b.gems += 3; }
     botSpendSkills(botById[botId], b);
@@ -967,6 +968,7 @@ function addBotXp(botId, amount) {
 // and within the day comes and goes in 20-minute stretches at their own times - not all on the same clock.
 function botWeekend(now) { try { return tourOn(now); } catch (e) { return false; } }   // (not yet set up while the game boots)
 function botOnline(bot, now) {
+    if (bot.mensch) return !!(window.WELT && WELT.menschen[bot.id] && WELT.menschen[bot.id].online);   // echte Spieler: wirklich online?
     const st = BOT_STYLES[bot.style]; if (st.act >= 1) return true;
     const idn = parseInt(bot.id.slice(3), 10) || 0, hour = (now / 3600000 + (idn * 7.37) % 24) % 24, we = botWeekend(now);   // Turnier-Wochenende: they come more often (and stay up longer)
     if (hour < 7) return mulberry32(Math.floor(now / 1200000) * 31 + idn * 977)() < (we ? .12 : .06);
@@ -1354,7 +1356,9 @@ const botNextAt = {};
 
 function runBotTick() {
     const now = Date.now();
+    if (window.WELT && !WELT.leiter) { setTimeout(runBotTick, BOT_TICK_MS); return; }   // nur der Weltrechner lässt die Mitspieler denken
     for (const bot of BOT_DEFS) {
+        if (bot.mensch) continue;                                             // echte Spieler spielen selbst
         try {                                                                 // one bot's bad move must never stop all the others
             botCityFinish(bot, now);                                          // builds finish on time, online or not
             if (botOwnedIslands[bot.id].size === 0) { botRespawn(bot, now); continue; }
@@ -1382,6 +1386,7 @@ function runBotTick() {
 // ==============================================================================================================
 function botLook(botId) {
     const b = loadBotState()[botId]; if (!b) return { frame: FRAMES[0].id, title: 'Neuling' };
+    if (b.mensch) { const t = TITLES_P.find(x => x.id === b.lookTitle); return { frame: b.throneLook ? 'throne' : b.lookFrame || FRAMES[0].id, title: t ? t.name : 'Neuling' }; }   // echter Spieler: sein Aussehen
     if (!b.lookMig) { const own = botOwnedIslands[botId], r = Math.max(b.bestRank || 0, rankIndexFor(own ? own.size : 0)), st = b.stats || {}, cityMin = Math.min(...BOT_BUILDINGS.filter(k => k !== 'storage').map(k => b.city.levels[k] || 0));   // once: what they had by rank and deeds stays theirs - from now on looks are only bought (as for the player)
         const ach = { cap100: (st.caps || 0) >= 100, cap1000: (st.caps || 0) >= 1000, def25: (st.defs || 0) >= 25, boss1: (st.bosses || 0) >= 1, emma10: (st.pvp || 0) >= 10, city5: cityMin >= 5, throne: !!st.ruled };
         b.frames = [...new Set([...(b.frames || []), ...FRAMES.filter(f => !f.buy && (f.rank || 0) <= r).map(f => f.id)])];
@@ -1403,6 +1408,7 @@ function botLookShop(bot, b) {
 // Baukunst: like you, everyone builds in one style of their own (picked once, the same on every device) and 1 in 3 set their capital in water
 const botBaustilMem = {};
 function botBaustil(botId) {
+    const pm = window.WELT && WELT.menschen[botId]; if (pm && pm.profil && pm.profil.baustil) return pm.profil.baustil;   // echter Spieler: sein Baustil
     if (botBaustilMem[botId]) return botBaustilMem[botId];
     const r = mulberry32((parseInt(String(botId).replace(/\D/g, ''), 10) || 7) * 97 + 11), keys = Object.keys(BAUSTILE);
     return botBaustilMem[botId] = { style: keys[Math.floor(r() * keys.length)], cap: r() < .33 ? 'wasser' : 'huegel' };
@@ -1678,7 +1684,7 @@ function armyBotWatch(now) {
             flashHint(bot.name + ' greift deine Armee im Feld an!', 4000); sfx('warn'); requestRender(); continue; }
         if (Math.random() > .25) continue;
         let best = null, bd = Infinity;
-        for (const bid in botOwnedIslands) { const own = botOwnedIslands[bid], bot = botById[bid]; if (!own || !bot || !botOnline(bot, now) || ownerShielded(bid, now)) continue;
+        for (const bid in botOwnedIslands) { const own = botOwnedIslands[bid], bot = botById[bid]; if (!own || !bot || bot.mensch || !botOnline(bot, now) || ownerShielded(bid, now)) continue;
             for (const id of own) { const b = islandById[id], d = Math.hypot(b.x - a.x, b.y - a.y); if (d > ISLAND_RADIUS * 14 || d >= bd) continue;
                 if ((islandTroops[id] || 0) * .6 < a.troops * 1.3 || !routeFor(b.landmassId, a.lm, bot.id)) continue; bd = d; best = { bot: bot.id, base: id }; } }
         if (best) { a.seen = { ...best, at: now }; flashHint(botById[best.bot].name + ' hat deine Armee entdeckt.', 3500); }

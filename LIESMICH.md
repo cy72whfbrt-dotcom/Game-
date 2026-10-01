@@ -132,8 +132,24 @@ Alexander will: **Alle Spieler und alle Mitspieler auf einer einzigen Karte.** K
 `ow_spieler`. Anfrage `aktion: "puls"` an `server.php`: Weltrechner wählen, Welt schreiben/lesen (nur geänderte Teile),
 Befehle und Nachrichten verteilen, Spielerliste mit Profilen.
 
-**Als Nächstes:** Browser-Teil (`welt.js`): Welt-Teile vom privaten Spielstand trennen, umrechnen („du“ ↔ `u<id>`),
-andere Spieler als Mitspieler einblenden, Weltrechner-Betrieb vs. Zuschauer-Betrieb, Befehle senden/ausführen.
+**Browser-Teil, Stufe 1 (fertig, lokal mit 2 Spielern getestet, noch nicht hochgeladen):**
+- Neue Datei `Game/welt.js` (geladen nach bots.js, vor spiel.js): rechnet Welt-Teile um (neutral `u<id>` ↔ `'player'`,
+  6 Arten, wie „du“ im Spiel markiert bist – siehe Kommentare), trägt andere echte Spieler als Mitspieler ein
+  (`BOT_DEFS` mit `mensch: true`, Datensatz aus ihrem Profil), Puls alle 2 s, Weltrechner/Zuschauer-Wechsel,
+  Unterschiede bei Münzen/Gems/EP/Thron-Punkten/Lazarett/Splittern der anderen als Nachrichten.
+- `speichern.js`: Welt-Teile gehen nicht mehr in den eigenen Spielstand (Liste `WELT`); Thron-/Turnier-Teile werden
+  geteilt (privat: `openWaterThroneMein`, `openWaterTourMein`).
+- `bots.js`: Mitspieler-Gehirn überspringt echte Spieler, `botOnline` = wirklich online, EP gehen als Nachricht,
+  Aussehen/Baustil aus dem Profil.
+- `spiel.js`: Welt-Takte (Märsche, Kämpfe, Produktion, Thron, Boss, Wanderer, Felder, Lager, Armeen, Titel) nur beim
+  Weltrechner (`rechnet()`); neuer Spieler bekommt einen freien Startplatz (`freierStartplatz`) und meldet ihn an
+  (Befehl `beitreten`); Zuschauer laden die Welt laufend neu (`__weltLaden`); verpasste Zeit wird nachgeholt (`weltNachholen`).
+- `server.php`: Spielseite bringt Welt, Spielerliste und „bin ich Weltrechner“ gleich mit.
+- Test: Anna (Weltrechner) + Bernd (Zuschauer) sehen sich auf derselben Karte mit allen 150 Mitspielern; Bernds Münzen/
+  Truppen wachsen über den Weltrechner; Anna schließt → Bernd wird nach ~12 s Weltrechner. Keine Fehler.
+
+**Als Nächstes:** Befehle der Zuschauer (angreifen, senden, zurückrufen, ausbauen, Hauptstadt, Tore, Felder, Lager,
+Armeen, Heilen …), Kampfberichte und Warnungen für alle echten Spieler, beim Hochladen alle Spielstände auf Null.
 
 ## 11. Offen
 - **GitHub aufräumen (macht Alexander, Claude darf es nicht):** Unter Settings → General → Default branch auf

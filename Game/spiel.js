@@ -1,3 +1,5 @@
+// Rechnet dieses Spiel gerade die Welt (Weltrechner)? Ohne welt.js: immer.
+function rechnet() { return !window.WELT || WELT.leiter; }
 // ===== spiel.js – das ganze Spiel Open Water (Karte, Stadt, Kämpfe, Helden, Ereignisse, Fenster …) =====
 // Mitspieler: bots.js · 3D-Basen: baukunst.js · Speichern: speichern.js (alles geht über "store")
 // Every storage access goes through here: blocked site data, sandboxed frames and a full quota must not stop the
@@ -563,11 +565,25 @@ function centerIsland() {
     return islands.filter(i => i.startSlot).reduce((a, b) => (b.y > a.y + 1 || (Math.abs(b.y - a.y) <= 1 && Math.abs(b.x) < Math.abs(a.x))) ? b : a);
 }
 
+// Ein freier Startplatz in der EINEN Welt: eine freie Basis am Rand, auf der Landmasse mit den wenigsten Besitzern
+function freierStartplatz() {
+    const besetzt = new Set(), proLm = {};
+    try { const r = JSON.parse(store.get('openWaterBotOwnedIslands')) || {}; for (const k in r) for (const id of r[k]) besetzt.add(id); } catch (e) {}
+    try { for (const id of JSON.parse(store.get('openWaterOwnedIslands')) || []) besetzt.add(id); } catch (e) {}
+    if (!besetzt.size) return centerIsland();                                   // ganz neue Welt: der klassische Platz
+    for (const id of besetzt) { const i = islandById[id]; if (i) proLm[i.landmassId] = (proLm[i.landmassId] || 0) + 1; }
+    const frei = islands.filter(i => i.type === 'tower' && !besetzt.has(i.id) && landmasses[i.landmassId].tier === 'outer');
+    if (!frei.length) return centerIsland();
+    const min = Math.min(...frei.map(i => proLm[i.landmassId] || 0)), beste = frei.filter(i => (proLm[i.landmassId] || 0) === min);
+    return beste.find(i => i.startSlot) || beste[Math.floor(Math.random() * beste.length)];
+}
+var startplatzNeu = false;                       // (welt.js) frisch beigetreten: den Platz beim Weltrechner anmelden
 const storedId = parseInt(store.get('openWaterPlayerIslandId'), 10);
 if (!Number.isNaN(storedId) && islandById[storedId]) {
     playerIslandId = storedId;
 } else {
-    playerIslandId = centerIsland().id;
+    playerIslandId = freierStartplatz().id;
+    startplatzNeu = true;
     store.set('openWaterPlayerIslandId', playerIslandId);
 }
 
@@ -735,11 +751,12 @@ for (const bot of BOT_DEFS) if (!botCoins[bot.id]) botCoins[bot.id] = 0;
     // every bot starts on one of the start places round the edge, spread out, never on the player's
     const usedTowerIds = new Set([playerIslandId]);
     for (const bot of BOT_DEFS) for (const id of botOwnedIslands[bot.id]) usedTowerIds.add(id);
+    for (const id of ownedIslands) usedTowerIds.add(id);
     const home = islandById[playerIslandId], slots = islands.filter(i => i.startSlot && !usedTowerIds.has(i.id) && i.landmassId !== home.landmassId)
         .sort((u, v) => Math.atan2(u.y, u.x) - Math.atan2(v.y, v.x));
     const stepB = Math.max(1, slots.length / BOT_DEFS.length);
     BOT_DEFS.forEach((bot, i) => {
-        if (botOwnedIslands[bot.id].size > 0) return;
+        if (bot.mensch || botOwnedIslands[bot.id].size > 0) return;      // echte Spieler bekommen ihren Platz vom Weltrechner
         const tower = slots[Math.floor(i * stepB) % slots.length];
         if (!tower || usedTowerIds.has(tower.id)) return;
         botOwnedIslands[bot.id].add(tower.id);
@@ -748,7 +765,7 @@ for (const bot of BOT_DEFS) if (!botCoins[bot.id]) botCoins[bot.id] = 0;
         usedTowerIds.add(tower.id);
     });
     // more players than start places: the rest start on a free outer base, as far as possible from everyone else
-    const late = BOT_DEFS.filter(bot => botOwnedIslands[bot.id].size === 0);
+    const late = BOT_DEFS.filter(bot => !bot.mensch && botOwnedIslands[bot.id].size === 0);
     if (late.length) {
         const taken = [...usedTowerIds].map(id => islandById[id]).filter(Boolean);
         for (const bot of BOT_DEFS) { let k = 0; for (const id of botOwnedIslands[bot.id]) { if (k++ % 25 === 0) taken.push(islandById[id]); } }   // a sample of every empire is enough
@@ -2666,6 +2683,7 @@ function drawCrest(g, x, y, s, c) {
 const otherCrests = {};
 function crestFor(who) {
     if (!who || who === 'player') return loadCrest();
+    const pm = window.WELT && WELT.menschen[who]; if (pm && pm.profil && pm.profil.crest) return pm.profil.crest;   // echter Spieler: sein Wappen
     if (otherCrests[who]) return otherCrests[who];
     const idn = parseInt(String(who).replace(/\D/g, ''), 10) || 7, r = mulberry32(idn * 6151 + 3);
     const c1 = Math.floor(r() * CREST_COLORS.length), metal1 = c1 === 4 || c1 === 5;
@@ -3854,6 +3872,7 @@ function titleMult(who, kind) {
 }
 function titleOf(who) { const t = loadTitles(); return TITLES.find(x => t.by[x.key] === who) || null; }
 function titleCleanup() {                        // someone knocked out of the game can't keep a title
+    if (!rechnet()) return;
     const t = loadTitles(); let ch = false;
     for (const k of Object.keys(t.by)) { const w = t.by[k]; if (w !== 'player' && (!botOwnedIslands[w] || !botOwnedIslands[w].size)) { delete t.by[k]; ch = true; } }
     if (ch) saveTitles();
@@ -3892,7 +3911,7 @@ setTimeout(runBotTick, BOT_TICK_MS);
 // has arrived
 setInterval(() => {
     const now = Date.now();
-    if (pendingAttacks.length > 0) {
+    if (pendingAttacks.length > 0 && rechnet()) {
         // A wave that arrives starts fighting at once and the fight plays out on the map; it lasts longer the more
         // troops clash. Another wave of the same side that reaches the target while the fight is on joins it, and
         // so do the defender's reinforcements (they land in the garrison) - one battle, everything counted.
@@ -3955,7 +3974,7 @@ setInterval(() => {
             }
         }
     }
-    if (pendingSends.length > 0) {
+    if (pendingSends.length > 0 && rechnet()) {
         const dueSends = pendingSends.filter(s => s.resolveAt <= now);
         if (dueSends.length > 0) {
             pendingSends = pendingSends.filter(s => s.resolveAt > now);
@@ -3977,7 +3996,7 @@ setInterval(() => {
             for (const scout of dueScouts) resolveScout(scout);
         }
     }
-    if (pendingRetreats.length > 0) {
+    if (pendingRetreats.length > 0 && rechnet()) {
         const dueRetreats = pendingRetreats.filter(r => r.resolveAt <= now);
         if (dueRetreats.length > 0) {
             pendingRetreats = pendingRetreats.filter(r => r.resolveAt > now);
@@ -5768,6 +5787,7 @@ function throneVolley(times, silent) {                // times: several volleys 
 }
 function throneTick() {
     const now = Date.now(), ts = throneState; let dirty = false;
+    if (!rechnet()) { throneUhren(now, ts); return; }
     const r = rulerOwner(); if ((ts.ruler || null) !== (r || null)) { ts.ruler = r || null; ts.rulerSince = now; ts.coTold = false; dirty = true; }
     bountyCheck(r); tourTick(now);                                                // Kopfgeld to whoever took the throne; the Turnier clock
     if (!ts.coTold && coalitionOn(now)) { ts.coTold = true; dirty = true;                  // everyone else turns on the throne
@@ -5776,6 +5796,9 @@ function throneTick() {
     for (let n = 0; ts.nextPts <= now; n++) { ts.nextPts += THRONE_TICK_MS; dirty = true; if (n < 3) throneAward(); else if (n < 160) tourHold(ts.nextPts - THRONE_TICK_MS); }   // a throttled background tab catches up a little, not for hours - the Turnier minutes in full (up to 8 h, like offline)
     for (let n = 0; ts.nextFire <= now; n++) { ts.nextFire += THRONE_FIRE_MS; dirty = true; if (n < 3) throneVolley(); }
     if (dirty) { saveThrone(); if (isPanelOpen(shopPopup)) renderShop(); }
+    throneUhren(now, ts);
+}
+function throneUhren(now, ts) {
     const clock = ms => fmtClock(Math.max(0, ms) / 1000);
     for (const el of document.querySelectorAll('[data-throne-pts]')) el.textContent = clock(ts.nextPts - now);
     for (const el of document.querySelectorAll('[data-throne-fire]')) el.textContent = clock(ts.nextFire - now);
@@ -6088,7 +6111,7 @@ function runProductionTick() {
         nextProductionTickAt += productionTickMs();
         ticks++;
     }
-    if (ticks > 0) {
+    if (ticks > 0 && rechnet()) {
         produceTicks(ticks);
         // Keep any currently-open popup/tab in sync with production -
         // without this, an "afford it" button can stay stuck
@@ -6166,8 +6189,17 @@ let welcomeFrom = null;                          // the snapshot to compare with
 // The others lived through time nobody watched (the one-time 3-day jump): same rules, summed up instead of played
 // second by second - they spread out, fight each other, produce, build their city, level up, gear up. Your bases stay yours.
 var ffSummary = null;
+function weltNachholen(seit) {                    // (Weltrechner) die Zeit, in der niemand die Welt gerechnet hat
+    const away = Math.min(AWAY_PRODUCE_MAX_MS, Date.now() - seit), ticks = Math.floor(away / productionTickMs());
+    if (ticks > 0) produceTicks(ticks);
+    const nPts = Math.floor(away / THRONE_TICK_MS);
+    for (let i = 0; i < nPts; i++) throneAward(true, Date.now() - away + (i + 1) * THRONE_TICK_MS);
+    throneVolley(Math.floor(away / THRONE_FIRE_MS), true); saveThrone();
+    const ts = throneState, now = Date.now(); if (ts.nextPts < now) ts.nextPts = now + THRONE_TICK_MS; if (ts.nextFire < now) ts.nextFire = now + THRONE_FIRE_MS;
+}
 setTimeout(() => {                               // right after boot (everything exists): production for the time away
-    if (leaveAtBoot && Date.now() - leaveAtBoot.at > 60000) {
+    if (window.WELT) { if (WELT.leiter && WELT.weltZeit && Date.now() - WELT.weltZeit > 60000) weltNachholen(WELT.weltZeit); }
+    else if (leaveAtBoot && Date.now() - leaveAtBoot.at > 60000) {
         const away = Math.min(AWAY_PRODUCE_MAX_MS, Date.now() - leaveAtBoot.at), ticks = Math.floor(away / productionTickMs());
         const c0 = coins, t0 = empireSnapshot().troops;
         if (ticks > 0) produceTicks(ticks);
@@ -6933,11 +6965,11 @@ function bossTick() {
     checkRuler();
     loadBoss();
     const now = Date.now();
-    if (bossState && (bossState.endsAt <= now || islandOwnerOf(bossState.islandId))) {
+    if (bossState && rechnet() && (bossState.endsAt <= now || islandOwnerOf(bossState.islandId))) {
         const name = bossState.name;
         endBoss(islandOwnerOf(bossState.islandId) ? null : name + ' ist wieder verschwunden.');
     }
-    if (!bossState && now >= nextBossAt && !document.hidden) { if (!spawnBoss()) nextBossAt = now + 60000; saveBoss(); }
+    if (!bossState && now >= nextBossAt && rechnet()) { if (!spawnBoss()) nextBossAt = now + 60000; saveBoss(); }
     const el = document.querySelector('[data-boss-clock]'), pb = popupIslandId !== null && bossAt(popupIslandId);
     if (el && pb) el.textContent = fmtClock(((pb.wander ? pb.campUntil : pb.endsAt) - now) / 1000);
     if (bossState) requestRender();
@@ -7027,7 +7059,8 @@ function wanderArrive(now) {                          // the storm: same maths a
 }
 function wanderTick() {
     loadWander(); const now = Date.now();
-    if (!wander) { if (now >= nextWanderAt && !document.hidden && !spawnWander()) nextWanderAt = now + 60000; return; }
+    if (!rechnet()) return;
+    if (!wander) { if (now >= nextWanderAt && !spawnWander()) nextWanderAt = now + 60000; return; }
     if (now >= wander.endsAt) return endWander(wander.name + ' ist weitergezogen.');
     if (wander.to !== null) { if (now >= wander.arriveAt) wanderArrive(now); else requestRender(); }
     else if (islandOwnerOf(wander.at)) endWander(null);           // someone took his camp (reward handled by the fight)
@@ -8701,6 +8734,7 @@ function fieldArrive(m, now) {
     }
 }
 function fieldTick() {
+    if (!rechnet()) return;
     const now = Date.now(), dt = 1;
     const due = fieldMarches.filter(m => m.resolveAt <= now);
     if (due.length) { fieldMarches = fieldMarches.filter(m => m.resolveAt > now); for (const m of due) fieldArrive(m, now); saveFields(); requestRender(); }
@@ -8920,9 +8954,9 @@ function dbossPayout(b) {                           // the boss falls: everyone 
     saveBarb();
 }
 function barbTick() {
-    const now = Date.now(), due = barbMarches.filter(m => m.resolveAt <= now); dbossEnsure();   // after midnight: the new boss first
+    const now = Date.now(), due = rechnet() ? barbMarches.filter(m => m.resolveAt <= now) : []; if (rechnet()) dbossEnsure();   // after midnight: the new boss first
     if (due.length) { barbMarches = barbMarches.filter(m => m.resolveAt > now); for (const m of due) barbArrive(m, now); saveBarb(); requestRender(); }
-    if (now >= (barbState.next || 0) && !document.hidden) {                 // new camps every 10 s (an empty map fills at once)
+    if (now >= (barbState.next || 0) && rechnet()) {                 // new camps every 10 s (an empty map fills at once)
         barbState.next = now + 10000; let k = barbState.camps.length < BARB_WANT * .5 ? BARB_WANT : 2;
         if (barbState.camps.some(c => c.until < now)) { const aim = new Set(barbMarches.map(m => m.tid)); barbState.camps = barbState.camps.filter(c => !(c.until < now) || aim.has(c.id)); }   // old camps move on (unless someone is on the way)
         while (k-- > 0 && barbState.camps.length < BARB_WANT) barbSpawn();
@@ -9239,6 +9273,7 @@ function armyArrive(a, now) {
     }
 }
 function armyTick() {
+    if (!rechnet()) return;
     const now = Date.now(); let dirty = false;
     for (const j of armyJoins.filter(j => j.resolveAt <= now)) { dirty = true;
         const a = j.armyId && armyById(j.armyId);
@@ -10529,3 +10564,113 @@ renderActiveMarches();
 if (bonusGrantedAtBoot) saveGame();      // a reload right after the first start must not lose the grant
 updateZoomBounds(); clampCamera();
 requestAnimationFrame(frame);
+
+// ===================================================================================================================
+// ===== DIE EINE WELT: Verbindung zu welt.js =====
+// ===================================================================================================================
+if (window.WELT) {
+    const PJ = k => { try { return JSON.parse(store.get(k)); } catch (e) { return null; } };
+    // (Zuschauer) neue Welt-Teile vom Server → in die laufenden Spiel-Variablen übernehmen
+    window.__weltLaden = function (keys) {
+        const k = new Set(keys);
+        if (k.has('openWaterPlayerIslandId')) { const v = parseInt(store.get('openWaterPlayerIslandId'), 10); if (!Number.isNaN(v) && islandById[v]) { playerIslandId = v; capitalCache = null; } }
+        if (k.has('openWaterOwnedIslands')) { const neu = new Set(PJ('openWaterOwnedIslands') || []); for (const id of [...ownedIslands]) if (!neu.has(id)) ownedIslands.delete(id); for (const id of neu) ownedIslands.add(id); }
+        if (k.has('openWaterBotOwnedIslands')) {
+            const r = PJ('openWaterBotOwnedIslands') || {};
+            for (const bot of BOT_DEFS) { const set = botOwnedIslands[bot.id] || (botOwnedIslands[bot.id] = new BotBaseSet(bot.id)); const neu = new Set(r[bot.id] || []); for (const id of [...set]) if (!neu.has(id)) set.delete(id); }
+            for (const bot of BOT_DEFS) for (const id of r[bot.id] || []) botOwnedIslands[bot.id].add(id);
+        }
+        if (k.has('openWaterIslandLevels')) { islandLevels = PJ('openWaterIslandLevels') || {}; for (const isl of islands) if (isl.neutralLevel > 1 && islandLevels[isl.id] === undefined) islandLevels[isl.id] = isl.neutralLevel; }
+        if (k.has('openWaterIslandTroops')) islandTroops = PJ('openWaterIslandTroops') || {};
+        if (k.has('openWaterNeutralTroopOverrides')) { neutralTroopOverrides = PJ('openWaterNeutralTroopOverrides') || {}; for (const id in neutralTroopOverrides) if (islandById[id]) islandById[id].neutralTroops = neutralTroopOverrides[id]; }
+        if (k.has('openWaterTempleHoldSince')) templeHoldSince = PJ('openWaterTempleHoldSince') || {};
+        if (k.has('openWaterGateCfg')) gateCfg = null;
+        if (k.has('openWaterPendingAttacks')) pendingAttacks = PJ('openWaterPendingAttacks') || [];
+        if (k.has('openWaterPendingSends')) pendingSends = PJ('openWaterPendingSends') || [];
+        if (k.has('openWaterPendingRetreats')) pendingRetreats = PJ('openWaterPendingRetreats') || [];
+        if (k.has('openWaterTitles')) { titleState = PJ('openWaterTitles'); titleVer++; ringMemo = null; }
+        if (k.has('openWaterThrone')) throneState = PJ('openWaterThrone') || { pts: 0 };
+        if (k.has('openWaterTourney')) tourState = PJ('openWaterTourney') || {};
+        if (k.has('openWaterBounty')) bountyState = PJ('openWaterBounty') || { ruler: null, gems: 0, coins: 0 };
+        if (k.has('openWaterBoss') || k.has('openWaterBossNext')) { bossLoaded = false; loadBoss(); }
+        if (k.has('openWaterWander') || k.has('openWaterWanderNext')) { wander = undefined; loadWander(); }
+        if (k.has('openWaterFields')) fieldState = PJ('openWaterFields') || {};
+        if (k.has('openWaterFieldMarches')) fieldMarches = PJ('openWaterFieldMarches') || [];
+        if (k.has('openWaterBarb')) barbState = PJ('openWaterBarb') || { camps: [], n: 0, next: 0 };
+        if (k.has('openWaterBarbMarches')) barbMarches = PJ('openWaterBarbMarches') || [];
+        if (k.has('openWaterBarbWho')) barbWho = PJ('openWaterBarbWho') || {};
+        if (k.has('openWaterDayBoss')) dayBoss = PJ('openWaterDayBoss');
+        if (k.has('openWaterArmies')) { const a = PJ('openWaterArmies') || {}; armies = a.armies || []; armyJoins = a.joins || []; armyRaids = a.raids || []; }
+        if (k.has('openWaterBotState')) { if (botSaveTimer) { clearTimeout(botSaveTimer); botSaveTimer = null; } botState = null; loadBotState(); }
+        if (k.has('openWaterBotCoins')) { botCoins = PJ('openWaterBotCoins') || {}; for (const bot of BOT_DEFS) if (!botCoins[bot.id]) botCoins[bot.id] = 0; }
+        ownVer++; capitalCache = null;
+        try { refreshTerritory(); } catch (e) {}
+        if (!isPanelOpen(battleLogPopup)) renderActiveMarches();
+        updateHud(); requestRender();
+        if (isPanelOpen(popup)) renderPopup();
+    };
+    // (Weltrechner) vor dem Puls: alles, was noch in einem Speicher-Timer wartet, jetzt in die Daten schreiben
+    window.__weltVorPuls = function () {
+        try { saveGameNow(); } catch (e) {}
+        try { flushBotState(); } catch (e) {}
+        try { saveProgressionNow(); } catch (e) {}
+        try { saveThrone(); saveTour(); saveBounty(); } catch (e) {}
+        try { if (titleState) store.set('openWaterTitles', JSON.stringify(titleState)); } catch (e) {}
+        try { if (bossLoaded) saveBoss(); else if (wander !== undefined) saveWander(); } catch (e) {}
+        try { saveFields(); saveBarb(); saveArmies(); } catch (e) {}
+    };
+    // Weltrechner geworden / nicht mehr
+    window.__weltLeiterWechsel = function (an, neu, weltZeit) {
+        if (an) {
+            if (weltZeit && Date.now() - weltZeit > 60000) weltNachholen(weltZeit);   // niemand hat gerechnet: nachholen
+            nextProductionTickAt = Date.now() + productionTickMs();
+        } else WELT.version = 0;                       // die Welt beim nächsten Puls ganz neu holen (meine Rechnung zählt nicht mehr)
+    };
+    // ein neuer echter Spieler ist dazugekommen
+    window.__weltNeuerMensch = function (id) {
+        const bd = BOT_DEFS.find(b => b.id === id); if (!bd) return;
+        botById[id] = bd;
+        if (!botOwnedIslands[id]) botOwnedIslands[id] = new BotBaseSet(id);
+        if (!botCoins[id]) botCoins[id] = 0;
+        const bs = loadBotState(); bs[id] = WELT.profilZuBot(WELT.menschen[id] && WELT.menschen[id].profil, bs[id]);
+        capitalCache = null; requestRender();
+    };
+    // (Weltrechner) Befehle der anderen Spieler ausführen
+    const BEFEHLE = {
+        beitreten(who, b) {                           // ein neuer Spieler braucht seinen Platz auf der Karte
+            if (!botOwnedIslands[who]) window.__weltNeuerMensch(who);
+            if (botOwnedIslands[who] && botOwnedIslands[who].size) return;      // hat schon einen
+            let isl = islandById[b.insel];
+            if (!isl || isl.type !== 'tower' || islandOwnerOf(isl.id)) isl = freierStartplatz();
+            if (!isl || islandOwnerOf(isl.id)) return;
+            botOwnedIslands[who].add(isl.id); islandLevels[isl.id] = 1; islandTroops[isl.id] = PLAYER_START_TROOPS;
+            const bs = loadBotState(); bs[who] = WELT.profilZuBot(WELT.menschen[who] && WELT.menschen[who].profil, bs[who]); bs[who].capital = isl.id;
+            capitalCache = null; saveGame(); saveBotState(); requestRender();
+        }
+    };
+    window.__weltBefehl = function (who, b) {
+        const f = BEFEHLE[b && b.art]; if (!f) return;
+        if (!botById[who]) { WELT.menschEintragen(who); window.__weltNeuerMensch(who); }
+        if (!botById[who]) return;
+        f(who, b);
+    };
+    WELT.BEFEHLE = BEFEHLE;
+
+    // Nachrichten vom Weltrechner an mich: Münzen, Gems, EP, Thron-Punkte, Lazarett, Splitter, Zahlen
+    const STAT_NAMEN = { caps: 'captures', pvp: 'pvpWins', defs: 'defends', bosses: 'bosses', wanders: 'wanders', temples: 'temples', scouts: 'scouts', tolls: 'tolls', tollCoins: 'tollCoins', armyWins: 'armyWins', healed: 'healed', barb: 'barb', dboss: 'dboss' };
+    WELT.beiNachricht.push(function (e) {
+        if (!e || e.art !== 'delta') return;
+        if (e.coins) coins = Math.max(0, coins + e.coins);
+        if (e.gems) gems = Math.max(0, gems + e.gems);
+        if (e.tp) { throneState.pts = Math.max(0, (throneState.pts || 0) + e.tp); if (e.tp > 0) throneState.earned = (throneState.earned || 0) + e.tp; saveThrone(); }
+        if (e.xp > 0) addXp(e.xp);
+        if (e.wounded) { const c = loadCity(); c.wounded = Math.max(0, (c.wounded || 0) + e.wounded); saveCity(); }
+        if (e.sh) { const hs = loadHeroes(); for (const h in e.sh) if (hs[h]) hs[h].sh = Math.max(0, (hs[h].sh || 0) + e.sh[h]); saveHeroes(); }
+        if (e.stats) for (const k in e.stats) if (STAT_NAMEN[k]) statBump(STAT_NAMEN[k], e.stats[k]);
+        updateHud(); saveGame(); saveProgression();
+    });
+
+    // frisch beigetreten und nicht selbst Weltrechner: den Platz anmelden
+    if (startplatzNeu && !WELT.leiter) WELT.befehl('beitreten', { insel: playerIslandId });
+    WELT.start();
+}

@@ -14,7 +14,24 @@
     var gestoppt = false;               // abgemeldet oder anderswo geöffnet: nicht mehr speichern
     var fehlerZahl = 0;
 
-    function merke(k) { if (String(k).indexOf('openWater') === 0) geaendert.add(String(k)); }
+    // Teile der EINEN Welt (gemeinsam für alle) - die gehen NICHT in den eigenen Spielstand, sondern über welt.js an den Server
+    var WELT = ['openWaterOwnedIslands', 'openWaterBotOwnedIslands', 'openWaterPlayerIslandId', 'openWaterIslandLevels', 'openWaterIslandTroops',
+        'openWaterNeutralTroopOverrides', 'openWaterTempleHoldSince', 'openWaterWorldStart', 'openWaterGateCfg', 'openWaterPendingAttacks',
+        'openWaterPendingSends', 'openWaterPendingRetreats', 'openWaterTitles', 'openWaterThrone', 'openWaterTourney', 'openWaterBounty',
+        'openWaterBoss', 'openWaterBossNext', 'openWaterWander', 'openWaterWanderNext', 'openWaterFields', 'openWaterFieldMarches',
+        'openWaterBarb', 'openWaterBarbMarches', 'openWaterBarbWho', 'openWaterDayBoss', 'openWaterArmies', 'openWaterBotState',
+        'openWaterBotCoins', 'openWaterWorldVersion'];
+    var istWelt = Object.create(null);
+    WELT.forEach(function (k) { istWelt[k] = true; });
+    var weltGeaendert = new Set();      // Welt-Teile, die sich hier geändert haben (schickt welt.js, wenn wir Weltrechner sind)
+    var beimSetzen = null;              // welt.js hängt sich hier ein (Thron/Turnier: privaten Teil abspalten)
+
+    function merke(k) {
+        k = String(k);
+        if (k.indexOf('openWater') !== 0) return;
+        if (istWelt[k]) { weltGeaendert.add(k); if (beimSetzen) beimSetzen(k); }
+        else geaendert.add(k);
+    }
     var api = {
         getItem: function (k) { k = String(k); return k in daten ? daten[k] : null; },
         setItem: function (k, v) { k = String(k); v = String(v); if (daten[k] === v) return; daten[k] = v; merke(k); },
@@ -139,6 +156,14 @@
     window.addEventListener('pagehide', function () { sofort(true); });
     window.addEventListener('beforeunload', function () { sofort(true); });   // kommt beim Neuladen VOR dem Laden der neuen Seite
     window.__owSpeichern = senden;   // für Tests
+    // für welt.js: direkter Zugriff (Welt-Teile setzen, ohne sie als "hier geändert" zu markieren)
+    window.__owSpeicher = {
+        WELT: WELT, istWelt: istWelt, daten: daten, weltGeaendert: weltGeaendert,
+        roh: function (k, v) { if (v === null || v === undefined) delete daten[k]; else daten[k] = String(v); },
+        set beimSetzen(f) { beimSetzen = f; },
+        privat: function (k, v) { v = String(v); if (daten[k] === v) return; daten[k] = v; geaendert.add(k); },
+        get gestoppt() { return gestoppt; }, token: OW.token, stoppe: function (text, knopf) { gestoppt = true; zeige(text, knopf); }
+    };
     window.__owSofort = sofort;
 })();
 

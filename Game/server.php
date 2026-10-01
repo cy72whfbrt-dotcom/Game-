@@ -86,6 +86,14 @@ function spielseite_vorbereiten() {
         $tok = bin2hex(random_bytes(16));
         lager()->spiel_token_setzen($ich['id'], $tok);
         $stand = lager()->stand_laden($ich['id']);
+        // die EINE Welt: ganzer Stand, alle Spieler, und wer rechnet (ist gerade niemand da, rechne ich)
+        lager()->welt_sperren();
+        $wi = lager()->welt_info();
+        $leiter = (int)$wi['leiter_bis'] < time() || (int)$wi['leiter_id'] === (int)$ich['id'];
+        if ($leiter) lager()->leiter_setzen($ich['id'], $tok, time() + 30);
+        $welt = lager()->welt_seit(0);
+        lager()->welt_entsperren();
+        $spieler = lager()->spieler_liste(0);
         $neu = !$stand;
         if ($neu) {   // neuer Spieler: Start bei Null, Spielername = Login-Name - sofort in die Datenbank
             $stand = ['openWaterReset' => '1', 'openWaterPlayerName' => $ich['name']];
@@ -99,6 +107,7 @@ function spielseite_vorbereiten() {
     }
     return '<script>window.__OW = ' . json_encode([
         'stand' => (object)$stand, 'neu' => $neu, 'token' => $tok, 'name' => $ich['name'],
+        'uid' => (int)$ich['id'], 'leiter' => $leiter, 'welt' => $welt, 'spieler' => $spieler,
     ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_INVALID_UTF8_SUBSTITUTE) . ';</script>'
         . '<script src="speichern.js?v=' . filemtime(__DIR__ . '/speichern.js') . '"></script>';
 }
