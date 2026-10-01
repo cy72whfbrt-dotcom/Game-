@@ -319,3 +319,14 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
 - Münz-Wirtschaft bei hohen Stufen riesig („Münzen fühlen sich nichts wert an“).
 - Kleinigkeiten: Schild-Restzeit in der Burg zählt nicht live; Ausbau-Knopf schaltet nicht live frei; Stadt-Ansicht am
   Handy manchmal langsam (Wolken).
+
+## 12. Ideen (gemerkt, noch nicht gebaut)
+- **Bündnis-Signale statt Chat (Alexander: „B finde ich gut“):** Kein freier Text. Feste Knöpfe: „Hilfe!“, „Greif
+  mit mir diese Basis an“, „Danke!“, „Rückzug“. Bots antworten mit Taten (Truppen schicken, mit angreifen, 👍),
+  nicht mit Worten. So verhalten sich Bots und Menschen gleich, und niemand merkt etwas. Kein freier Chat mit Bots.
+- Weitere Ideen aus der Liste: Nachricht an alle (Admin), Welt-Ereignis auf Knopfdruck (Admin), Schatzkarten im
+  Nebel, Wetter, Leuchttürme, Saison-Rangliste, Thron-Krieg am Wochenende, Handel, Statistik-Seite.
+- **Handy-Benachrichtigung („Deine Basis wird angegriffen“):** geht auf dem iPhone seit iOS 16.4, aber nur für die App
+  auf dem Home-Bildschirm. Braucht: einen Service-Worker (eine kleine Datei, die im Browser bleibt – Ausnahme von der
+  Regel „nichts im Browser“, Alexander muss zustimmen), ein Schlüsselpaar auf dem Server, die Erlaubnis jedes Spielers
+  (Knopf antippen) und dass der Office-Server nach außen zu Apple senden darf (noch prüfen). Noch nicht entschieden.
