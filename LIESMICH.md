@@ -161,6 +161,9 @@ Befehle und Nachrichten verteilen, Spielerliste mit Profilen.
   gleich; Weltrechner greift Zuschauer an → Bericht „Anna hat deine Basis erobert“; Weltrechner geht mitten im Angriff
   offline → anderer Spieler übernimmt nach ~12 s und rechnet den Angriff fertig; Rückkehrer sieht alles. Keine Fehler.
 
+- `ow_spieler.anzahl_basen` wird jetzt aus der gemeinsamen Welt gefüllt (Weltrechner schreibt die Besitzer).
+- Dauertest 3 Min. mit 2 Spielern: stabil, Münzen/Truppen wachsen bei beiden gleich, keine Fehler.
+
 **Beim Hochladen der Eine-Welt-Version:** alle Spielstände auf Null (auch Alexanders), Welt startet neu.
 
 ## 11. Offen
