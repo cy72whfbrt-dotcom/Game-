@@ -16,7 +16,7 @@ function v($f) { return filemtime(__DIR__ . '/' . $f); }   // neue Version = Bro
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Open Water">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -102,6 +102,9 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--ink-0);color:var
   font:400 var(--fs-13)/1.4 var(--font-ui);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;
   overscroll-behavior:none;touch-action:manipulation}
 body{position:fixed;inset:0;height:100dvh}
+/* Nichts markieren/kopieren (langes Drücken öffnet kein „Kopieren / Nachschlagen“) – nur Eingabefelder bleiben normal */
+body,body *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+input,textarea,select,[contenteditable]{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 button,input{font:inherit;color:inherit}
 button{background:none;border:0;padding:0;cursor:pointer;-webkit-user-select:none;user-select:none}
 button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:none;box-shadow:var(--focus)}

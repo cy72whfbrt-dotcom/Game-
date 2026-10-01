@@ -10693,6 +10693,11 @@ if (bonusGrantedAtBoot) saveGame();      // a reload right after the first start
 updateZoomBounds(); clampCamera();
 requestAnimationFrame(frame);
 
+// Nichts markieren und kein Kopieren-Menü beim langen Drücken (außer in Eingabefeldern)
+const feldErlaubt = t => t && t.closest && t.closest('input,textarea,select,[contenteditable]');
+document.addEventListener('selectstart', e => { if (!feldErlaubt(e.target)) e.preventDefault(); });
+document.addEventListener('contextmenu', e => { if (!feldErlaubt(e.target)) e.preventDefault(); });
+
 // ===================================================================================================================
 // ===== DIE EINE WELT: Verbindung zu welt.js =====
 // ===================================================================================================================

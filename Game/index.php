@@ -58,7 +58,7 @@ function h($s) { return htmlspecialchars($s, ENT_QUOTES, 'UTF-8'); }
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Open Water">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <style>
   :root { --meer1: #0b2a4a; --meer2: #12507e; --karte: #f6efe0; --text: #2b2118; --gold: #c9a227; --gold2: #a8831a; --rot: #a33a2a; --rand: #d8c9a6; }
   * { box-sizing: border-box; }
