@@ -475,9 +475,12 @@ const botIntelMem = {};                                       // kept in memory 
 
 function botScouting(bot, targetId) { const it = botIntelMem[bot.id] && botIntelMem[bot.id][targetId]; return !!it && Date.now() < it.ready; }
 
-function botLearn(botId, targetId, ready) {                   // (ready = when the report comes in)
-    if (!botById[botId]) return; const t = islandById[targetId]; if (!t) return;
-    if (ready) { const cap = islandById[botCapitalOf(botId)]; if (cap && !spaeherWeg(cap.landmassId, t.landmassId, botId)) return false; }   // geschlossenes Tor: der Späher kommt nicht durch
+function botLearn(botId, targetId, ready, vonLm) {            // (ready = when the report comes in; vonLm = Landmasse, von der der Späher losläuft)
+    if (!botById[botId]) return false; const t = islandById[targetId]; if (!t) return false;
+    if (ready) {                                              // geschlossenes fremdes Tor auf dem Weg: der Späher kommt nicht durch – dann geht er gar nicht erst los
+        if (vonLm === undefined) { const cap = islandById[botCapitalOf(botId)]; vonLm = cap ? cap.landmassId : undefined; }
+        if (vonLm !== undefined && !spaeherWeg(vonLm, t.landmassId, botId)) return false;
+    }
     const it = botIntelMem[botId] || (botIntelMem[botId] = {});
     it[targetId] = { s: effectiveTroops(t) + effectiveDefense(t), ready: ready || Date.now(), pending: !!ready && ready > Date.now() };
     const keys = Object.keys(it); if (keys.length > 120) for (const k of keys.sort((u, v) => it[u].ready - it[v].ready).slice(0, keys.length - 120)) delete it[k];
@@ -725,7 +728,7 @@ function botThink(bot) {
         if (!it) {                                                                               // their best targets they don't know yet: scout those first
             if (botHopeless(bot, e.target, st, atk)) continue;                                   // they saw it last time - far beyond them
             if (li < 3 && !botScouting(bot, e.target.id)) { const ready = now + scoutSecs(islandById[e.sources[0].id], e.target, bot.id) * 1000;
-                if (botLearn(bot.id, e.target.id, ready) !== false && islandOwnerOf(e.target.id) === 'player') botScoutVisible(bot, e.sources[0].id, e.target.id, now, ready);
+                if (botLearn(bot.id, e.target.id, ready, islandById[e.sources[0].id].landmassId) !== false && islandOwnerOf(e.target.id) === 'player') botScoutVisible(bot, e.sources[0].id, e.target.id, now, ready);
                 scouted++; break; }
             continue;
         }
@@ -788,7 +791,7 @@ function botThink(bot) {
         if (ow && ow !== 'player' && botStrategic(bot, e.target) >= .9 && !botGrudgeOn(bot.id, ow)) continue;   // a far base of someone else: not worth a look
         if (botHopeless(bot, e.target, st, atk)) continue;
         const ready = now + scoutSecs(islandById[e.sources[0].id], e.target, bot.id) * 1000;   // their scout walks as long as yours would
-        botLearn(bot.id, e.target.id, ready);
+        if (botLearn(bot.id, e.target.id, ready, islandById[e.sources[0].id].landmassId) === false) continue;   // Tor zu: anderes Ziel
         if (islandOwnerOf(e.target.id) === 'player') botScoutVisible(bot, e.sources[0].id, e.target.id, now, ready);   // you see it coming
         scouted++; break;
     }
@@ -1648,7 +1651,8 @@ function botArmyRethink(bot, a, atk, needS, now) {
         saveArmies(); return true;
     }
     if (unknown) {                                                                 // look around for something better
-        const ready = now + scoutSecs(pos, unknown, bot.id) * 1000; botLearn(bot.id, unknown.id, ready);
+        const ready = now + scoutSecs(pos, unknown, bot.id) * 1000;
+        if (botLearn(bot.id, unknown.id, ready, a.lm) === false) return false;
         if (islandOwnerOf(unknown.id) === 'player') { const hm = armyHome(a); if (hm !== null && hm !== undefined) botScoutVisible(bot, hm, unknown.id, now, ready); }
         return true;
     }
@@ -1683,7 +1687,7 @@ function botArmyStep(bot) {                                                   //
         if (!it) {                                                                   // no report yet: scout it from here first
             if (botScouting(bot, t.id)) continue;
             const ready = now + scoutSecs({ x: a.x, y: a.y, landmassId: a.lm }, t, bot.id) * 1000;
-            botLearn(bot.id, t.id, ready);
+            if (botLearn(bot.id, t.id, ready, a.lm) === false) return goHome();   // Tor zu: die Armee kommt da nicht hin
             if (islandOwnerOf(t.id) === 'player') { const h = armyHome(a); if (h !== null && h !== undefined) botScoutVisible(bot, h, t.id, now, ready); }
             return true;
         }
@@ -1694,7 +1698,8 @@ function botArmyStep(bot) {                                                   //
         }
         const canMarch = () => a.lm === t.landmassId || botCanCross(bot.id, a.lm, t.landmassId, a.troops, t.id);
         if (islandOwnerOf(t.id) === 'player' && it.ready && now - it.ready > 2 * 60000 && !botScouting(bot, t.id) && canMarch()) {   // one more look right before the strike
-            const ready = now + scoutSecs({ x: a.x, y: a.y, landmassId: a.lm }, t, bot.id) * 1000; botLearn(bot.id, t.id, ready);
+            const ready = now + scoutSecs({ x: a.x, y: a.y, landmassId: a.lm }, t, bot.id) * 1000;
+            if (botLearn(bot.id, t.id, ready, a.lm) === false) return goHome();
             const h = armyHome(a); if (h !== null && h !== undefined) botScoutVisible(bot, h, t.id, now, ready);
             return true;
         }

@@ -1,6 +1,7 @@
 <?php
 // ===== admin.php – nur für Admins (Alexander): Wartung an/aus, Geschenke an Spieler, Spielerliste =====
 require __DIR__ . '/server.php';
+require __DIR__ . '/weltrechner/wachhund.php';
 
 $ich = null;
 try { $ich = aktueller_spieler(); } catch (Throwable $e) { $ich = null; }
@@ -12,6 +13,8 @@ $meldung = ''; $fehler = '';
 // Die Bots (fest in bots.js): id => Name
 $BOTS = [];
 if (preg_match_all("/\\{ id: '(bot\\d+)',\\s*name: '([^']+)'/", (string)@file_get_contents(__DIR__ . '/bots.js'), $m, PREG_SET_ORDER)) foreach ($m as $x) $BOTS[$x[1]] = $x[2];
+// … und die 90 weiteren, die bots.js aus einer Namensliste erzeugt (bot61 …)
+if (preg_match("/\\/\\/ More players on the map[^\\n]*\\n\\[([^\\]]+)\\]\\.forEach/", (string)@file_get_contents(__DIR__ . '/bots.js'), $m) && preg_match_all("/'([^']+)'/", $m[1], $nm)) foreach ($nm[1] as $i => $n) $BOTS['bot' . (61 + $i)] = $n;
 $KISTEN = ['Gewöhnlich', 'Ungewöhnlich', 'Selten', 'Episch', 'Legendär', 'Mythisch'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -40,6 +43,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($ids) $meldung = 'Geschenk verschickt an ' . count($ids) . ' Spieler – es liegt im Abholfach (Ziele → Belohnung).';
             }
         }
+        // ===== Weltrechner =====
+        if ($was === 'wr_neustart') { $r = wachhund_neustart(); $meldung = 'Weltrechner neu gestartet (' . $r . ').'; }
+        if ($was === 'wr_entsperren') { wachhund_entsperren(); $meldung = 'Sperre aufgehoben. Wenn der Fehler behoben ist: Wartung beenden – dann startet der Weltrechner von selbst.'; }
+        if ($was === 'wr_cron') $meldung = wachhund_cron_einrichten();
+        if ($was === 'wr_sicherung') {
+            $sid = (int)($_POST['sicherung'] ?? 0); $h = wr_herz();
+            if ($h) wr_beenden((int)($h['pid'] ?? 0), 'Sicherung wird zurückgespielt');
+            if (lager()->sicherung_zurueck($sid)) { wr_log('Sicherung ' . $sid . ' vom Admin zurückgespielt'); wachhund_neustart(); $meldung = 'Sicherung zurückgespielt – die Welt ist wieder auf dem Stand von damals. Der Weltrechner startet neu.'; }
+            else $fehler = 'Sicherung nicht gefunden oder kaputt – nichts verändert.';
+        }
         if ($was === 'nebel') {
             $an = (string)($_POST['an'] ?? ''); $ids = [];
             foreach (lager()->alle_spieler() as $sp) if ($an === 'alle' || (string)$sp['id'] === $an) $ids[] = (int)$sp['id'];
@@ -50,6 +63,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 $spieler = lager()->alle_spieler();
+$wrH = wr_herz(); $wrZ = wr_zustand(); $wrCron = wachhund_cron_da();
+$wrLaeuft = $wrH && empty($wrH['ende']) && wr_laeuft($wrH['pid'] ?? 0) && time() - (int)(($wrH['zeit'] ?? 0) / 1000) <= WR_HERZ_ALT;
+$wrSicherungen = lager()->sicherungen_liste();
 function h($s) { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 $spielerOptionen = '';
 foreach ($spieler as $sp) $spielerOptionen .= '<option value="' . (int)$sp['id'] . '">' . h($sp['anzeigename'] ?: $sp['name']) . ($sp['anzeigename'] && $sp['anzeigename'] !== $sp['name'] ? ' (' . h($sp['name']) . ')' : '') . '</option>';
@@ -83,6 +99,49 @@ function zahl($n) { return $n === null ? '–' : number_format((float)$n, 0, ','
   <p>Angemeldet als <b><?= h($ich['name']) ?></b> · <a href="spiel.php">ins Spiel</a></p>
   <?php if ($meldung): ?><div class="ok"><?= h($meldung) ?></div><?php endif; ?>
   <?php if ($fehler): ?><div class="fehler"><?= h($fehler) ?></div><?php endif; ?>
+</div>
+
+<?php if (!empty($wrZ['gesperrt'])): ?>
+<div class="karte" style="border-color:#a33a2a;background:#f5d9d3">
+  <h2 style="color:#a33a2a">⚠️ Alarm: Weltrechner gestoppt</h2>
+  <p><b><?= h($wrZ['grund'] ?? '') ?></b> (<?= h(date('d.m.Y H:i', (int)($wrZ['alarm']['zeit'] ?? time()))) ?>). Die Wartung ist automatisch an: niemand kommt rein, die Welt steht still, nichts geht verloren.</p>
+  <p>Was tun: Fehler beheben lassen (das Protokoll unten zeigt den Grund) → „Sperre aufheben“ → „Wartung beenden“.</p>
+  <pre style="white-space:pre-wrap;font-size:12px;max-height:240px;overflow:auto;background:#fff;padding:8px;border-radius:6px"><?= h($wrZ['alarm']['log'] ?? '') ?></pre>
+  <form method="post"><input type="hidden" name="zeichen" value="<?= h($zeichen) ?>"><button class="gruen" name="was" value="wr_entsperren">Sperre aufheben</button></form>
+</div>
+<?php endif; ?>
+
+<div class="karte">
+  <h2>Weltrechner (rechnet die Welt auf dem Server)</h2>
+  <p class="status">Zurzeit: <b><?= !empty($wrZ['gesperrt']) ? '⛔ gestoppt (Alarm)' : (wartung() ? '⏸ wartet (Wartung)' : ($wrLaeuft ? '✅ läuft' : '⏳ startet / nicht da')) ?></b></p>
+  <?php if ($wrH): ?>
+  <table>
+    <tr><td>Speicher</td><td><b><?= (int)($wrH['speicherMb'] ?? 0) ?> MB</b> von höchstens <?= (int)($wrH['grenzeMb'] ?? 600) ?> MB</td></tr>
+    <tr><td>Letzter Herzschlag</td><td>vor <?= max(0, time() - (int)(($wrH['zeit'] ?? 0) / 1000)) ?> s</td></tr>
+    <tr><td>Läuft seit</td><td><?= h(date('d.m.Y H:i', (int)(($wrH['gestartet'] ?? 0) / 1000))) ?></td></tr>
+    <tr><td>Puls zum Server</td><td><?= (int)($wrH['pulsMs'] ?? 0) ?> ms · <?= zahl($wrH['pulseOk'] ?? 0) ?> gut, <?= zahl($wrH['pulseFehler'] ?? 0) ?> Fehler</td></tr>
+    <tr><td>Befehle der Spieler</td><td><?= zahl($wrH['befehle'] ?? 0) ?></td></tr>
+    <tr><td>Fehler (letzte Minute)</td><td><?= (int)($wrH['fehlerProMinute'] ?? 0) ?> · Prüfer hat <?= (int)($wrH['prueferFehler'] ?? 0) ?>× kaputte Zahlen verhindert</td></tr>
+    <tr><td>Abstürze (letzte 5 Min.)</td><td><?= count($wrZ['abstuerze'] ?? []) ?> von höchstens <?= WR_ABSTUERZE - 1 ?></td></tr>
+    <tr><td>Wachhund (Cronjob)</td><td><?= $wrCron ? '✅ jede Minute' : '❌ nicht eingerichtet – nur wenn Spieler online sind' ?></td></tr>
+    <?php if (!empty($wrH['ende'])): ?><tr><td>Zuletzt beendet</td><td><?= h($wrH['ende']) ?></td></tr><?php endif; ?>
+  </table>
+  <?php endif; ?>
+  <form method="post" style="display:flex;gap:8px;flex-wrap:wrap">
+    <input type="hidden" name="zeichen" value="<?= h($zeichen) ?>">
+    <button name="was" value="wr_neustart">Neu starten</button>
+    <?php if (!$wrCron): ?><button name="was" value="wr_cron">Wachhund-Cronjob einrichten</button><?php endif; ?>
+  </form>
+  <details style="margin-top:10px"><summary>Protokoll (letzte 40 Zeilen)</summary>
+    <pre style="white-space:pre-wrap;font-size:12px;max-height:300px;overflow:auto;background:#fff;padding:8px;border-radius:6px"><?= h(wr_log_ende(40)) ?></pre></details>
+  <?php if ($wrSicherungen): ?>
+  <form method="post" style="margin-top:10px" onsubmit="return confirm('Wirklich? Die Welt springt auf diesen Stand zurück. Alles danach ist weg.')">
+    <input type="hidden" name="zeichen" value="<?= h($zeichen) ?>"><input type="hidden" name="was" value="wr_sicherung">
+    <label for="sicherung">Sicherung zurückspielen (jede Stunde eine, die letzten 48)</label>
+    <select id="sicherung" name="sicherung"><?php foreach ($wrSicherungen as $sc): ?><option value="<?= (int)$sc['id'] ?>"><?= h(date('d.m.Y H:i', strtotime($sc['erstellt']))) ?> (<?= round($sc['groesse'] / 1024) ?> KB)</option><?php endforeach; ?></select>
+    <button class="rot">Zurückspielen</button>
+  </form>
+  <?php endif; ?>
 </div>
 
 <div class="karte">

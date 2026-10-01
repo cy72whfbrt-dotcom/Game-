@@ -40,6 +40,17 @@ function lager() {
     return $l;
 }
 
+// ===== Der Weltrechner auf dem Server (weltrechner/start.js) =====
+// Er meldet sich mit einem geheimen Schlüssel (Kopfzeile X-Weltrechner), nicht mit einem Login. Der Schlüssel wird aus dem
+// Datenbank-Passwort abgeleitet (steht nirgends sonst); wachhund.php gibt ihn beim Start mit. Nur er rechnet die Welt –
+// niemals das Gerät eines Spielers (Regel von Alexander).
+function weltrechner_schluessel() { return hash_hmac('sha256', 'open-water-weltrechner', (string)(cfg()['db_pass'] ?? '')); }
+function system_zugang() {
+    $k = (string)($_SERVER['HTTP_X_WELTRECHNER'] ?? '');
+    if ($k === '' || !hash_equals(weltrechner_schluessel(), $k)) return null;
+    return ['id' => 0, 'name' => 'Weltrechner', 'login' => '', 'anzeigename' => null, 'system' => true];
+}
+
 // Angemeldeter Spieler (['id' => …, 'name' => …]) oder null
 function aktueller_spieler() {
     $t = $_COOKIE[COOKIE_NAME] ?? '';
@@ -141,6 +152,7 @@ function json_antwort($code, $daten) {
 // Login prüfen, auf die letzte Sicherung eines gerade geschlossenen Fensters warten, Spielstand laden.
 // Gibt die Zeilen für den Seitenkopf zurück (Spielstand + speichern.js).
 function spielseite_vorbereiten() {
+    if ($sys = system_zugang()) return weltrechner_seite($sys);
     try {
         $ich = aktueller_spieler();
         if (!$ich) { header('Location: ./'); exit; }
@@ -157,11 +169,9 @@ function spielseite_vorbereiten() {
         $tok = bin2hex(random_bytes(16));
         lager()->spiel_token_setzen($ich['id'], $tok);
         $stand = lager()->stand_laden($ich['id']);
-        // die EINE Welt: ganzer Stand, alle Spieler, und wer rechnet (ist gerade niemand da, rechne ich)
+        // die EINE Welt: ganzer Stand und alle Spieler. Rechnen tut sie nur der Weltrechner auf dem Server – nie ein Spieler.
         lager()->welt_sperren();
-        $wi = lager()->welt_info();
-        $leiter = (int)$wi['leiter_bis'] < time() || (int)$wi['leiter_id'] === (int)$ich['id'];
-        if ($leiter) lager()->leiter_setzen($ich['id'], $tok, time() + 30);
+        $leiter = false;
         $welt = lager()->welt_seit(0);
         lager()->welt_entsperren();
         $spieler = lager()->spieler_liste(0);
@@ -182,6 +192,25 @@ function spielseite_vorbereiten() {
         'nameGewaehlt' => !empty($ich['anzeigename']), 'admin' => ist_admin($ich),
     ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_INVALID_UTF8_SUBSTITUTE | JSON_PARTIAL_OUTPUT_ON_ERROR);
     if ($ow === false) { http_response_code(503); exit('Der Server hat gerade ein Problem. Bitte gleich nochmal versuchen.'); }
+    return '<script>window.__OW = ' . $ow . ';</script>'
+        . '<script src="speichern.js?v=' . filemtime(__DIR__ . '/speichern.js') . '"></script>';
+}
+// Die Spielseite für den Weltrechner: kein eigener Spielstand, keine Basis – nur die Welt und alle Spieler
+function weltrechner_seite($sys) {
+    if (wartung()) { http_response_code(503); exit('wartung'); }
+    try {
+        $tok = bin2hex(random_bytes(16));
+        lager()->welt_sperren();
+        $wi = lager()->welt_info();
+        if ((int)$wi['leiter_id'] === 0 && (int)$wi['leiter_bis'] >= time() && $wi['leiter_token'] !== '') { lager()->welt_entsperren(); http_response_code(409); exit('läuft schon'); }   // nie zwei Weltrechner
+        lager()->leiter_setzen(0, $tok, time() + 30);
+        $welt = lager()->welt_seit(0);
+        lager()->welt_entsperren();
+        $spieler = lager()->spieler_liste(0);
+    } catch (Throwable $e) { http_response_code(503); exit('datenbank'); }
+    $ow = json_encode(['stand' => ['openWaterReset' => '1'], 'neu' => false, 'token' => $tok, 'name' => 'Weltrechner', 'uid' => 0, 'leiter' => true, 'system' => true,
+        'welt' => $welt, 'spieler' => $spieler, 'nameGewaehlt' => true, 'admin' => false],
+        JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_INVALID_UTF8_SUBSTITUTE | JSON_PARTIAL_OUTPUT_ON_ERROR);
     return '<script>window.__OW = ' . $ow . ';</script>'
         . '<script src="speichern.js?v=' . filemtime(__DIR__ . '/speichern.js') . '"></script>';
 }
@@ -263,6 +292,13 @@ class MysqlLager {
             erstellt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             KEY spieler_id (spieler_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin");
+        // Sicherungen der Welt (wachhund.php: jede Stunde eine, die letzten 48 bleiben; Admin kann zurückspielen)
+        $this->db->exec("CREATE TABLE IF NOT EXISTS ow_sicherungen (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            erstellt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            groesse INT UNSIGNED NOT NULL DEFAULT 0,
+            daten LONGBLOB NOT NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=ascii");
         // Übersicht in der Spieler-Tabelle (zum Anschauen in phpMyAdmin)
         $da = $this->db->query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'ow_spieler'")->fetchAll(PDO::FETCH_COLUMN);
         $neu = ['stufe' => 'INT NULL', 'muenzen' => 'DOUBLE NULL', 'gems' => 'DOUBLE NULL', 'anzahl_basen' => 'INT NULL', 'zuletzt_gespeichert' => 'DATETIME NULL', 'abschied' => "CHAR(32) NOT NULL DEFAULT ''",
@@ -467,6 +503,41 @@ class MysqlLager {
         foreach ($neu as $k) $da[$k] = 1;
         return count($da);
     }
+    // ===== Sicherungen der Welt =====
+    function sicherung_anlegen() {
+        $sp = $this->db->query('SELECT schluessel, wert FROM ow_spielstand WHERE spieler_id = 0')->fetchAll();
+        $bo = $this->db->query('SELECT bot_id, nr, stufe, muenzen, anzahl_basen, basen, zustand FROM ow_bots WHERE spieler_id = 0')->fetchAll();
+        if (!$sp) return 0;
+        $gz = gzencode(json_encode(['spielstand' => $sp, 'bots' => $bo], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), 6);
+        $this->db->prepare('INSERT INTO ow_sicherungen (groesse, daten) VALUES (?, ?)')->execute([strlen($gz), $gz]);
+        $id = (int)$this->db->lastInsertId();
+        $this->db->exec('DELETE FROM ow_sicherungen WHERE id <= ' . ($id - 48));   // die letzten 48 bleiben
+        return $id;
+    }
+    function letzte_sicherung_zeit() { return (int)$this->db->query('SELECT UNIX_TIMESTAMP(MAX(erstellt)) FROM ow_sicherungen')->fetchColumn(); }
+    function sicherungen_liste() { return $this->db->query('SELECT id, erstellt, groesse FROM ow_sicherungen ORDER BY id DESC')->fetchAll(); }
+    // Eine Sicherung zurückspielen (der Weltrechner muss dafür aus sein). Alle Teile bekommen eine neue Version → alle laden neu.
+    function sicherung_zurueck($id) {
+        $q = $this->db->prepare('SELECT daten FROM ow_sicherungen WHERE id = ?'); $q->execute([(int)$id]);
+        $d = json_decode((string)@gzdecode((string)$q->fetchColumn()), true);
+        if (!is_array($d) || empty($d['spielstand'])) return false;
+        $this->welt_sperren();
+        $this->db->beginTransaction();
+        $this->db->exec('DELETE FROM ow_spielstand WHERE spieler_id = 0');
+        $this->db->exec('DELETE FROM ow_bots WHERE spieler_id = 0');
+        $s = $this->db->prepare('INSERT INTO ow_spielstand (spieler_id, schluessel, wert) VALUES (0, ?, ?)');
+        foreach ($d['spielstand'] as $z) $s->execute([$z['schluessel'], $z['wert']]);
+        $b = $this->db->prepare('INSERT INTO ow_bots (spieler_id, bot_id, nr, stufe, muenzen, anzahl_basen, basen, zustand) VALUES (0, ?, ?, ?, ?, ?, ?, ?)');
+        foreach ($d['bots'] as $z) $b->execute([$z['bot_id'], $z['nr'], $z['stufe'], $z['muenzen'], $z['anzahl_basen'], $z['basen'], $z['zustand']]);
+        $i = $this->welt_info(); $v = (int)$i['version'] + 1; $vs = [];
+        foreach ($d['spielstand'] as $z) if ($z['schluessel'] !== '_bot_teile') $vs[$z['schluessel']] = $v;
+        foreach (array_keys(self::BOT_TEILE) as $k) $vs[$k] = $v;
+        foreach ($i['versionen'] as $k => $_) if (!isset($vs[$k])) $vs[$k] = $v;   // was es damals nicht gab: wird gelöscht
+        $this->db->prepare('UPDATE ow_welt_info SET version = ?, versionen = ?, leiter_bis = 0 WHERE id = 1')->execute([$v, json_encode($vs)]);
+        $this->db->commit();
+        $this->welt_entsperren();
+        return true;
+    }
     function aufraeumen() {   // alte Befehle (niemand hat gerechnet) und nie abgeholte Nachrichten
         $this->db->exec('DELETE FROM ow_befehle WHERE erstellt < NOW() - INTERVAL 1 DAY');
         $this->db->exec('DELETE FROM ow_ereignisse WHERE erstellt < NOW() - INTERVAL 60 DAY');
@@ -516,7 +587,7 @@ function speichern_anfrage() {
     if (($_SERVER['HTTP_X_OPEN_WATER'] ?? '') !== '1') json_antwort(403, ['fehler' => 'falscher Aufruf']);   // nur aus dem Spiel (fremde Seiten dürfen diese Kopfzeile nicht setzen)
 
     try {
-        $ich = aktueller_spieler();
+        $ich = system_zugang() ?: aktueller_spieler();
         if (!$ich) json_antwort(401, ['fehler' => 'abgemeldet']);
 
         $roh = file_get_contents('php://input', false, null, 0, 8 * 1024 * 1024);
@@ -528,6 +599,7 @@ function speichern_anfrage() {
         if (!is_array($d)) json_antwort(400, ['fehler' => 'kaputt']);
 
         $aktion = (string)($d['aktion'] ?? '');
+        if (!empty($ich['system']) && $aktion !== 'puls') json_antwort(200, ['ok' => true]);   // der Weltrechner hat keinen eigenen Spielstand
         if ($aktion === 'name') name_anfrage($ich, $d);
         if ($aktion === 'puls') { if (wartung()) json_antwort(503, ['fehler' => 'wartung']); welt_puls($ich, $d); }   // Wartung gilt für alle
         $t1 = microtime(true);
@@ -579,16 +651,23 @@ const LEITER_SEK = 12;
 function welt_puls($ich, $d) {
     $l = lager();
     $uid = $ich['id'];
+    $sys = !empty($ich['system']);
     $tok = (string)($d['token'] ?? '');
-    if (!hash_equals($l->spiel_token($uid), $tok)) json_antwort(409, ['fehler' => 'anderswo geöffnet']);
+    if (!$sys && !hash_equals($l->spiel_token($uid), $tok)) json_antwort(409, ['fehler' => 'anderswo geöffnet']);
     $jetzt = time();
-    $l->online($uid, $jetzt + 20);
-    if (isset($d['profil']) && is_string($d['profil']) && strlen($d['profil']) < 400000 && ($pr = profil_bereinigen($d['profil'])) !== null && $pr !== false) $l->profil_setzen($uid, $pr);
-    foreach (array_slice((array)($d['befehle'] ?? []), 0, 60) as $b) if (is_array($b) && sauber($b)) { $j = json_encode($b, JSON_UNESCAPED_UNICODE); if ($j !== false && strlen($j) < 20000) $l->befehl_ablegen($uid, $j); }
+    if (!$sys) $l->online($uid, $jetzt + 20);
+    // Zur Sicherheit (falls der Cronjob fehlt): ist ein Spieler da und der Weltrechner schlägt nicht mehr, schaut der Wachhund nach
+    if (!$sys && $jetzt - (int)@filemtime(__DIR__ . '/weltrechner/herz.php') > 60 && $jetzt - (int)@filemtime(__DIR__ . '/weltrechner/zustand.php') > 30 && is_file(__DIR__ . '/weltrechner/wachhund.php')) {
+        try { require_once __DIR__ . '/weltrechner/wachhund.php'; wachhund_runde('spieler'); } catch (Throwable $e) { error_log('Open Water Wachhund: ' . $e->getMessage()); }
+    }
+    if (!$sys && isset($d['profil']) && is_string($d['profil']) && strlen($d['profil']) < 400000 && ($pr = profil_bereinigen($d['profil'])) !== null && $pr !== false) $l->profil_setzen($uid, $pr);
+    if (!$sys) foreach (array_slice((array)($d['befehle'] ?? []), 0, 60) as $b) if (is_array($b) && sauber($b)) { $j = json_encode($b, JSON_UNESCAPED_UNICODE); if ($j !== false && strlen($j) < 20000) $l->befehl_ablegen($uid, $j); }
 
     $l->welt_sperren();
     $i = $l->welt_info();
-    $bin_leiter = (int)$i['leiter_id'] === $uid && hash_equals((string)$i['leiter_token'], $tok) && (int)$i['leiter_bis'] >= $jetzt;
+    // Rechnen darf nur der Weltrechner auf dem Server (uid 0, mit seinem Zeichen) – nie ein Spieler
+    $bin_leiter = $sys && (int)$i['leiter_id'] === 0 && hash_equals((string)$i['leiter_token'], $tok);
+    if ($sys && !$bin_leiter && (int)$i['leiter_id'] === 0 && (int)$i['leiter_bis'] >= $jetzt) { $l->welt_entsperren(); json_antwort(409, ['fehler' => 'ein anderer Weltrechner läuft']); }
     $antwort = [];
     if ($bin_leiter && isset($d['welt'])) {   // nur der Weltrechner darf die Welt schreiben
         $w = $d['welt'];
@@ -602,9 +681,9 @@ function welt_puls($ich, $d) {
             $j = json_encode($e['e'], JSON_UNESCAPED_UNICODE); if ($j !== false && strlen($j) < 200000) $l->ereignis_ablegen((int)$e['an'], $j); }
     }
     $neu_leiter = false;
-    if ($bin_leiter || (int)$i['leiter_bis'] < $jetzt) {   // Weltrechner bleiben oder freien Platz übernehmen
+    if ($sys) {   // Weltrechner bleibt (oder übernimmt nach einem Neustart)
         $neu_leiter = !$bin_leiter;
-        $l->leiter_setzen($uid, $tok, $jetzt + LEITER_SEK);
+        $l->leiter_setzen(0, $tok, $jetzt + LEITER_SEK);
         $bin_leiter = true;
     }
     $seit = (int)($d['seit'] ?? 0);
@@ -613,6 +692,7 @@ function welt_puls($ich, $d) {
     if ($bin_leiter) $antwort['befehle'] = $l->befehle_abholen();
     $l->welt_entsperren();
     $antwort['leiter'] = $bin_leiter;
+    $antwort['rechner'] = $bin_leiter || ((int)$i['leiter_id'] === 0 && (int)$i['leiter_bis'] >= $jetzt);   // läuft der Weltrechner? (sonst: „Verbindung wird wiederhergestellt …“)
     $antwort['neu_leiter'] = $neu_leiter;
     $antwort['version'] = $antwort['welt']['version'];
     $antwort['ereignisse'] = $l->ereignisse_abholen($uid);

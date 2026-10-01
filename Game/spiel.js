@@ -1,5 +1,7 @@
 // Rechnet dieses Spiel gerade die Welt (Weltrechner)? Ohne welt.js: immer.
 function rechnet() { return !window.WELT || WELT.leiter; }
+// Läuft hier der Weltrechner auf dem Server (weltrechner/start.js)? Dann: kein eigener Spieler, keine Basis, nichts zeichnen.
+const SYSTEM = !!(window.__OW && window.__OW.system);
 // Zuschauer: Befehl an den Weltrechner (gibt true zurück, wenn er geschickt wurde – dann nur noch das Private hier tun)
 function alsBefehl(art, daten) { if (rechnet()) return false; WELT.befehl(art, daten); return true; }
 const neutralId = id => (id === 'player' && window.WELT) ? WELT.ich : id;     // 'player' → u<meine id> (für Befehle/Nachrichten)
@@ -28,7 +30,7 @@ const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { ret
                 remove(k) { try { localStorage.removeItem(k); } catch (e) {} } };
 // Full reset (raise the number to start everyone from scratch again): wipes every saved value of the game once.
 const RESET_VERSION = '1';
-if (store.get('openWaterReset') !== RESET_VERSION) {
+if (!SYSTEM && store.get('openWaterReset') !== RESET_VERSION) {   // (nie beim Weltrechner – der würde sonst die ganze Welt löschen)
     try { for (const k of Object.keys(localStorage)) if (k.startsWith('openWater')) localStorage.removeItem(k); } catch (e) {}
     store.set('openWaterReset', RESET_VERSION);
 }
@@ -196,6 +198,17 @@ const rand = mulberry32(1337);
 
 // Ray-casting point-in-polygon test, used to keep towers from being
 // placed off the edge of a landmass's organic (non-square) coastline.
+// Liegt (x, y) auf dem Land? Reine Rechnung (die geglättete Küste in feine Stücke zerlegt) – gibt in jedem Browser und
+// auf dem Server genau dasselbe Ergebnis (früher über die Zeichenfläche: je nach Browser minimal anders, auf dem Server gar nicht).
+function aufLand(lm, x, y) {
+    if (!lm.feinKueste) { const P = lm.shape, n = P.length, out = [], mid = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+        let m0 = mid(P[n - 1], P[0]);
+        for (let i = 0; i < n; i++) { const c = P[i], m1 = mid(P[i], P[(i + 1) % n]);
+            for (let k = 0; k < 12; k++) { const t = k / 12, u = 1 - t; out.push({ x: u * u * m0.x + 2 * u * t * c.x + t * t * m1.x, y: u * u * m0.y + 2 * u * t * c.y + t * t * m1.y }); }
+            m0 = m1; }
+        lm.feinKueste = out; }
+    return pointInPolygon(x, y, lm.feinKueste);
+}
 function pointInPolygon(px, py, poly) {
     let inside = false;
     for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
@@ -623,7 +636,9 @@ function freierStartplatz(besitz) {
 }
 var startplatzNeu = false, startplatzAus = null; // (welt.js) frisch beigetreten: den Platz beim Weltrechner anmelden (aus: gehörte einem Mitspieler)
 const storedId = parseInt(store.get('openWaterPlayerIslandId'), 10);
-if (!Number.isNaN(storedId) && islandById[storedId]) {
+if (SYSTEM) {
+    playerIslandId = centerIsland().id;                          // nur ein Bezugspunkt – der Weltrechner besitzt nichts
+} else if (!Number.isNaN(storedId) && islandById[storedId]) {
     playerIslandId = storedId;
 } else {
     const sp = freierStartplatz();
@@ -645,7 +660,7 @@ try {
 } catch (e) {
     ownedIslands = new OwnSet();
 }
-ownedIslands.add(playerIslandId);
+if (!SYSTEM) ownedIslands.add(playerIslandId);
 
 let islandLevels;
 try {
@@ -8790,13 +8805,13 @@ const FIELD_KINDS = {
 };
 const FIELD_REGEN_MS = 20 * 60000;
 const resFields = (() => {
-    const out = [], r = mulberry32(7771), probe = document.createElement('canvas').getContext('2d');
+    const out = [], r = mulberry32(7771);
     for (const lm of landmasses) {
         if (lm.tier !== 'outer' || lm.ring < 2) continue;
         const want = lm.ring >= 5 ? 3 : 2, near = islandsByLandmass[lm.id] || [];
         for (let k = 0, tries = 0; k < want && tries < 60; tries++) {
             const x = lm.x + (r() * 2 - 1) * lm.shapeMaxR * .8, y = lm.y + (r() * 2 - 1) * lm.shapeMaxR * .8;
-            if (!probe.isPointInPath(lm.path, x, y)) continue;
+            if (!aufLand(lm, x, y)) continue;
             if (near.some(i => Math.hypot(i.x - x, i.y - y) < ISLAND_RADIUS * 2.4) || out.some(f => Math.hypot(f.x - x, f.y - y) < ISLAND_RADIUS * 4)) continue;
             const kind = r() < .78 ? 'gold' : 'gem';
             out.push({ id: 'f' + out.length, x, y, landmassId: lm.id, radius: ISLAND_RADIUS * .6, kind, cap: Math.round(FIELD_KINDS[kind].base * ringMult(lm)) }); k++;
@@ -8830,7 +8845,14 @@ function fieldGoHome(f, st, now) {                                          // t
     st.occ = null; if (st.left <= 0) st.regenAt = now + FIELD_REGEN_MS;
 }
 function fieldArrive(m, now) {
-    const f = fieldById[m.fieldId], st = fieldInfo(f);
+    const f = fieldById[m.fieldId];
+    if (!f) {                                                             // das Feld gibt es nicht (mehr): die Truppen gehen einfach nach Hause
+        const own = m.who === 'player' ? ownedIslands : botOwnedIslands[m.who];
+        const baseId = own && own.has(m.homeId) ? m.homeId : own && own.size ? [...own][0] : null;
+        if (baseId !== null && m.troops > 0) islandTroops[baseId] = (islandTroops[baseId] || 0) + m.troops;
+        return;
+    }
+    const st = fieldInfo(f);
     if (m.back) {                                                         // home again: troops back into a base, the loot into the coffers
         const own = m.who === 'player' ? ownedIslands : botOwnedIslands[m.who];
         const baseId = own && own.has(m.homeId) ? m.homeId : m.who === 'player' ? rewardBaseId() : own && [...own][0];
@@ -8970,12 +8992,12 @@ const barbLeft = who => Math.max(0, BARB_DAY - barbRec(who).n - barbOut(who));
 const barbOpenFor = (who, L) => L <= barbRec(who).b + 1;
 const barbPt = o => ({ id: 'barb' + (o.id || o.tid || 'b'), x: o.x, y: o.y, landmassId: o.lm, radius: ISLAND_RADIUS * .6 });
 const barbFa = who => (1 + fieldAtkPct(who) / 100) * titleMult(who, 'attack');
-const BARB_LMS = landmasses.filter(l => l.tier === 'outer'), barbProbe = document.createElement('canvas').getContext('2d');
+const BARB_LMS = landmasses.filter(l => l.tier === 'outer');
 function barbSpot(lm, r, edge) {                    // a free place on the land: clear of bases, fields, other camps and the boss (edge: room to the shore)
     const e = ISLAND_RADIUS * (edge || 1);
     for (let t = 0; t < 30; t++) {
         const x = lm.x + (r() * 2 - 1) * lm.shapeMaxR * .85, y = lm.y + (r() * 2 - 1) * lm.shapeMaxR * .85;
-        if (!barbProbe.isPointInPath(lm.path, x, y) || [[e, 0], [-e, 0], [0, e], [0, -e]].some(([dx, dy]) => !barbProbe.isPointInPath(lm.path, x + dx, y + dy)) || (islandsByLandmass[lm.id] || []).some(i => Math.hypot(i.x - x, i.y - y) < ISLAND_RADIUS * 3)) continue;
+        if (!aufLand(lm, x, y) || [[e, 0], [-e, 0], [0, e], [0, -e]].some(([dx, dy]) => !aufLand(lm, x + dx, y + dy)) || (islandsByLandmass[lm.id] || []).some(i => Math.hypot(i.x - x, i.y - y) < ISLAND_RADIUS * 3)) continue;
         if (resFields.some(f => f.landmassId === lm.id && Math.hypot(f.x - x, f.y - y) < ISLAND_RADIUS * 2.2) || barbState.camps.some(c => Math.hypot(c.x - x, c.y - y) < ISLAND_RADIUS * 3)) continue;
         if (dayBoss && Math.hypot(dayBoss.x - x, dayBoss.y - y) < ISLAND_RADIUS * 5) continue;
         return { x, y };
@@ -10949,5 +10971,18 @@ if (window.WELT) {
         clearIslandOwner(playerIslandId); ownedIslands.add(playerIslandId); islandLevels[playerIslandId] = 1; islandTroops[playerIslandId] = PLAYER_START_TROOPS;
         store.set('openWaterShield', String(Date.now() + 3600000)); shieldMemAt = 0; saveGame();
     }
+    // Läuft der Weltrechner auf dem Server gerade nicht (Neustart nach einem Hänger)? Dann wartet die Welt – das zeigen wir
+    // allen, statt dass Befehle scheinbar nichts tun. Kommt er zurück, geht es von selbst weiter.
+    let rechnerWeg = null;
+    window.__weltRechnerStatus = function (laeuft) {
+        if (SYSTEM) return;
+        if (!laeuft && !rechnerWeg) {
+            rechnerWeg = document.createElement('div');
+            rechnerWeg.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(5,6,8,.72);font-family:Georgia,serif';
+            rechnerWeg.innerHTML = '<div style="max-width:340px;background:#f6efe0;color:#2b2118;border:2px solid #c9a227;border-radius:14px;padding:20px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.6)">' +
+                '<h2 style="margin:0 0 6px;color:#1d3b5c;font-size:21px">Verbindung wird wiederhergestellt …</h2><p style="margin:0;font-size:15px">Die Welt ist gleich wieder da. Es geht nichts verloren.</p></div>';
+            document.body.appendChild(rechnerWeg);
+        } else if (laeuft && rechnerWeg) { rechnerWeg.remove(); rechnerWeg = null; }
+    };
     WELT.start();
 }

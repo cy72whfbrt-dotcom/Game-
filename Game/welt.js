@@ -10,11 +10,13 @@
     'use strict';
     const OW = window.__OW || {}, S = window.__owSpeicher;
     const ICH = 'u' + OW.uid;
+    const SYSTEM = !!OW.system;              // der Weltrechner auf dem Server (weltrechner/start.js): hat keine eigenen Basen
     const P = s => { try { return s == null ? null : JSON.parse(s); } catch (e) { return null; } };
     const J = v => JSON.stringify(v);
 
     const W = window.WELT = {
-        ich: ICH, uid: OW.uid,
+        ich: ICH, uid: OW.uid, system: SYSTEM,
+        rechner: true,                    // (Spieler) läuft der Weltrechner auf dem Server gerade?
         leiter: !!OW.leiter,              // rechne ich gerade die Welt?
         version: OW.welt ? OW.welt.version : 0,
         weltZeit: OW.welt ? OW.welt.welt_zeit : 0,
@@ -113,7 +115,8 @@
             if (k === 'openWaterOwnedIslands' || k === 'openWaterPlayerIslandId' || k === 'openWaterWorldVersion') continue;
             if (!(k in d)) continue;
             let v = P(d[k]);
-            if (k === 'openWaterBotOwnedIslands') { v = v || {}; v[ICH] = P(d.openWaterOwnedIslands) || []; }
+            if (SYSTEM && (k === 'openWaterBotOwnedIslands' || k === 'openWaterBotState' || k === 'openWaterBotCoins')) { v = v || {}; if (k === 'openWaterBotState') v = UMRECHNEN.openWaterBotState(v, 'w'); delete v[ICH]; }   // der Weltrechner selbst ist kein Mitspieler
+            else if (k === 'openWaterBotOwnedIslands') { v = v || {}; v[ICH] = P(d.openWaterOwnedIslands) || []; }
             else if (k === 'openWaterBotState') { v = UMRECHNEN.openWaterBotState(v || {}, 'w'); v[ICH] = profilZuBot(meinProfil(), v[ICH]); v[ICH].capital = parseInt(d.openWaterPlayerIslandId, 10); }
             else if (k === 'openWaterBotCoins') { v = v || {}; v[ICH] = parseFloat(d.openWaterCoins) || 0; }
             else if (k === 'openWaterThrone' && v) { delete v.pts; delete v.earned; v = UMRECHNEN[k](v, 'w'); }
@@ -257,7 +260,7 @@
         const anfrage = { aktion: 'puls', token: S.token, seit: W.version, spieler_seit: W.spielerSeit };
         try {
             const jetzt = Date.now();
-            if (jetzt - profilAt > 10000) { const pr = J(meinProfil()); if (pr !== letztesProfil) { anfrage.profil = pr; letztesProfil = pr; } profilAt = jetzt; }
+            if (!SYSTEM && jetzt - profilAt > 10000) { const pr = J(meinProfil()); if (pr !== letztesProfil) { anfrage.profil = pr; letztesProfil = pr; } profilAt = jetzt; }
             if (W.befehle.length) anfrage.befehle = W.befehle.splice(0);
             let gesendet = null;
             if (W.leiter) {
@@ -271,7 +274,7 @@
             const text = J(anfrage), gz = packen(text);
             const kopf = { 'X-Open-Water': '1', 'Content-Type': 'application/octet-stream' }; if (gz) kopf['X-Gepackt'] = '1';
             const r = await fetch('server.php', { method: 'POST', headers: kopf, body: gz || text, credentials: 'same-origin', cache: 'no-store' });
-            if (r.status === 409 || r.status === 401 || r.status === 503) { S.rauswurf(r.status); return; }
+            if (r.status === 409 || r.status === 401 || r.status === 503) { if (SYSTEM && window.__weltrechnerEnde) window.__weltrechnerEnde(r.status); else S.rauswurf(r.status); return; }
             if (!r.ok) throw new Error('HTTP ' + r.status);
             const a = await r.json();
             antwortVerarbeiten(a, anfrage);
@@ -300,6 +303,8 @@
         }
         const warLeiter = W.leiter;
         W.leiter = !!a.leiter;
+        const rechnerVorher = W.rechner; W.rechner = SYSTEM || a.rechner !== false;
+        if (W.rechner !== rechnerVorher && window.__weltRechnerStatus) window.__weltRechnerStatus(W.rechner);
         // Welt übernehmen (Zuschauer, oder gerade eben Weltrechner geworden)
         const w = a.welt || {};
         if (w.setzen && Object.keys(w.setzen).length || (w.loeschen && w.loeschen.length)) {

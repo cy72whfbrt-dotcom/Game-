@@ -178,10 +178,12 @@
         if (rest.length) los(rest, false, abschied);   // zu groß für "keepalive": normal hinterher
     }
     window.addEventListener('pageshow', function (e) { if (e.persisted) abschiedGesendet = false; });
-    setInterval(senden, 3000);
-    document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') sofort(false); });
-    window.addEventListener('pagehide', function () { sofort(true); });
-    window.addEventListener('beforeunload', function () { sofort(true); });   // kommt beim Neuladen VOR dem Laden der neuen Seite
+    if (!OW.system) {   // der Weltrechner auf dem Server hat keinen eigenen Spielstand (die Welt schickt welt.js)
+        setInterval(senden, 3000);
+        document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') sofort(false); });
+        window.addEventListener('pagehide', function () { sofort(true); });
+        window.addEventListener('beforeunload', function () { sofort(true); });   // kommt beim Neuladen VOR dem Laden der neuen Seite
+    }
     window.__owSpeichern = senden;   // für Tests
     // für welt.js: direkter Zugriff (Welt-Teile setzen, ohne sie als "hier geändert" zu markieren)
     window.__owSpeicher = {

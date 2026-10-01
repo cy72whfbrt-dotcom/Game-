@@ -45,6 +45,11 @@ Game/                  ← genau dieser Ordner liegt auf dem Server
     manifest.webmanifest  App-Datei (Name, Logo, startet ohne Browser-Leiste)
     logo.svg           das App-Logo (Krone über Burg auf einer Insel im Meer)
     icon-192.png, icon-512.png, apple-touch-icon.png   das Logo als Bild (aus logo.svg gerendert)
+  weltrechner/         der Weltrechner auf dem Server (rechnet die Welt, nie ein Handy) – siehe Abschnitt 13
+    start.js           das Programm (Node.js): Spiel ohne Bildschirm, Prüfer, Herzschlag, Speichergrenze
+    jsdom.js           „Browser ohne Bildschirm“ (jsdom 24.1.3, eine Datei)
+    wachhund.php       Cronjob jede Minute: starten, Hänger beenden, Notbremse, Sicherungen, Cronjob einrichten
+    herz.php, log.php, zustand.php …   entstehen nur auf dem Server (gesperrt, nie im Git)
   config.php           Datenbank-Zugang – NUR auf dem Server, nie im Git (wird von hochladen.sh erzeugt)
 LIESMICH.md            diese Datei
 hochladen.sh           lädt Game/ auf den Server (ein Befehl)
@@ -331,32 +336,71 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
   Regel „nichts im Browser“, Alexander muss zustimmen), ein Schlüsselpaar auf dem Server, die Erlaubnis jedes Spielers
   (Knopf antippen) und dass der Office-Server nach außen zu Apple senden darf (noch prüfen). Noch nicht entschieden.
 
-## 13. Plan: Weltrechner auf dem Server (Node.js) – noch NICHT gebaut
+## 13. Weltrechner auf dem Server (Node.js) – GEBAUT, lokal getestet, noch NICHT hochgeladen
 **Server-Test am 1.10. (Testdateien wieder gelöscht):** Office-Server (netcup-Webhosting, gehört Alexander, dort laufen
 auch seine anderen Seiten) kann: Node.js 22 (`/opt/plesk/node/22/bin/node`), Programme über PHP starten (exec),
 Cronjobs (Konto hat schon einen für cron.lapush.de – nie anfassen, nur eigene Zeile dazu, vorher sichern).
-16 Kerne, 64 GB (geteilt mit allen Seiten). Kein Chrome. 10-Minuten-Test bestanden: ein Node-Programm im Hintergrund lief 12 Minuten ohne Unterbrechung (jede Minute ein Eintrag), hat sich dann selbst beendet; Testdatei gelöscht. Dauerbetrieb ist also möglich (mit Wachhund zur Sicherheit). Speicher: Node selbst braucht ca. 49 MB (gemessen beim Rechentest); Schätzung für den echten Weltrechner 100–300 MB, Grenze 600 MB.
+16 Kerne, 64 GB (geteilt mit allen Seiten). Kein Chrome. 10-Minuten-Test bestanden: ein Node-Programm im Hintergrund
+lief 12 Minuten ohne Unterbrechung. Dauerbetrieb ist also möglich (mit Wachhund zur Sicherheit).
 
-**Ziel:** Kein Handy rechnet mehr die Welt. Ein Node-Programm auf dem Server rechnet rund um die Uhr (Bots, Märsche,
-Kämpfe, Münzen), auch wenn niemand online ist. Handys zeigen nur an und schicken Befehle. Ziel: bis 4000 Spieler.
+**REGEL (Alexander): Niemals ein Handy/Gerät eines Spielers die Welt rechnen lassen – auch nicht als Ersatz.**
+Höchstens 600 MB Speicher. Vor einem Testlauf auf dem Server Alexander Bescheid sagen.
 
-**Grenzen und Schutz (Alexanders Vorgabe: höchstens 600 MB Speicher):**
-1. Speicher: Node mit fester Grenze (zusammen nie über 600 MB). Voll → Programm endet, Neustart durch Cron.
-2. Rechenzeit: niedrige Priorität (`nice 19`), die anderen Seiten haben Vorrang. Jeder Rechenschritt hat ein Zeitbudget.
-3. Wachhund (Cron, jede Minute): Das Programm schreibt alle paar Sekunden einen „Herzschlag“. Ist er älter als
-   60 Sekunden (Endlosschleife, hängt) → hart beenden und neu starten.
-4. Kurzer Neustart (Wachhund/Speicher voll): Spieler sehen „Verbindung wird wiederhergestellt …“.
-   Großer Hänger oder 5 Abstürze in 5 Minuten → automatisch WARTUNG an (wie beim Hochladen: niemand kommt rein,
-   alle sehen die Wartungsmeldung, die Welt steht, nichts geht verloren), keine Neustarts mehr, Nachricht an
-   Alexander auf der Admin-Seite (mit Grund und Log). Wartung beendet nur Alexander.
-   **REGEL (Alexander): Niemals ein Handy/Gerät eines Spielers die Welt rechnen lassen – auch nicht als Ersatz.**
-   Der alte Weg (Handy-Weltrechner) wird beim Umstieg ganz entfernt.
-5. Prüfer nach jedem Schritt: keine kaputten Zahlen (NaN, minus Truppen, Münzen explodieren, Basen ohne Besitzer).
-   Fehler → nicht speichern, letzten guten Stand behalten, ins Log schreiben.
-6. Sicherungen: jede Stunde ein Abbild der Welt (die letzten 48 bleiben). Admin kann zurückspringen.
-7. Befehle prüft der Server (nur eigene Basen, genug Truppen, nicht zu viele pro Sekunde).
-8. Uhr: alles nach echter Uhrzeit, Nachholen höchstens begrenzt – die Welt kann nie „zu schnell“ laufen.
-9. Admin-Seite: Status (läuft / Notbetrieb), Speicher, Zeit pro Schritt, Neustarts, letzte Fehler,
-   Knöpfe „neu starten“, „Notbetrieb“, „Sicherung zurückspielen“.
-10. Erst testen: lokal mit 4000 simulierten Spielern, dann auf dem Server mit einer Test-Welt (eigene Tabellen, die
-    echte Welt bleibt unberührt); erst dann umschalten.
+**So funktioniert es (Prinzip „Schiedsrichter“):** Der Weltrechner ist ein Node-Programm auf dem Server
+(`Game/weltrechner/start.js`). Es lädt die Spielseite ohne Bildschirm (jsdom, eine Datei `weltrechner/jsdom.js`, 6 MB,
+jsdom 24.1.3 mit esbuild zu einer Datei gebündelt) und lässt GENAU DENSELBEN Spiel-Code laufen (spiel.js, bots.js,
+welt.js) – nur ohne Zeichnen. Er ist der einzige „Leiter“: rechnet Bots, Märsche, Kämpfe, Münzen, rund um die Uhr.
+Alle Spieler sind Zuschauer: sie zeigen an und schicken Befehle (wie bisher die Zuschauer).
+- Anmeldung des Weltrechners: Kopfzeile `X-Weltrechner` mit einem Schlüssel = HMAC aus dem Datenbank-Passwort
+  (`weltrechner_schluessel()` in server.php). Steht in keiner Datei; wachhund.php gibt ihn beim Start als
+  Umgebungsvariable mit. Der Weltrechner ist Spieler-Nummer 0 (= die Welt), hat keine Basis, keinen Spielstand.
+- server.php: Leiter darf NUR der Weltrechner sein (`welt_puls`, `weltrechner_seite`); nie zwei gleichzeitig.
+  Spieler bekommen im Puls `rechner: true/false`. Ist er weg → „Verbindung wird wiederhergestellt …“ (spiel.js).
+- welt.js/spiel.js/speichern.js: `SYSTEM`-Modus (keine eigene Basis, kein Startplatz, kein privates Speichern,
+  nie die Welt zurücksetzen).
+
+**Schutzgeländer (alle lokal getestet):**
+1. Speicher: über 600 MB → Programm beendet sich, Wachhund startet neu. Node-Heap 450 MB. Niedrigste Priorität (nice 19).
+2. Herzschlag alle 5 s (`weltrechner/herz.php`). Wachhund (`weltrechner/wachhund.php`, Cronjob jede Minute +
+   zur Sicherheit bei jedem Spieler-Puls, wenn der Herzschlag älter als 60 s ist): hängt → hart beenden, neu starten.
+   Test: eingefroren → nach 68 s beendet und neu gestartet. ✔
+3. Notbremse: 5 Abstürze in 5 Minuten → keine Neustarts mehr, WARTUNG an, roter Alarm mit Protokoll auf der
+   Admin-Seite. Sperre und Wartung hebt nur Alexander auf. Test: 5 Abstürze → Wartung an. ✔
+4. Prüfer vor JEDEM Schreiben der Welt (vom allerersten Puls an): keine kaputten Zahlen (NaN, minus, zu groß), keine
+   Basis mit zwei Besitzern, und die Welt darf nicht verschwinden (weniger als 80 % der Basen oder unter 20 % der
+   Truppen auf einmal). Kaputt → nicht schreiben; 3-mal hintereinander → beenden (Neustart lädt den guten Stand).
+   Test: absichtlich eingebauter Fehler, der die Welt löschen wollte → Datenbank blieb unversehrt. ✔
+5. Sicherungen: jede Stunde (Tabelle `ow_sicherungen`, die letzten 48). Admin: „Zurückspielen“. Test ✔
+6. Zu viele Fehler (über 120 pro Minute) → beenden. Wartung → sauber beenden (zählt nie als Absturz).
+7. Dateien in `weltrechner/` (herz, log, zustand) heißen .php und beginnen mit einer Sperre: im Browser 404, leer.
+8. Admin-Seite: Status (läuft/wartet/gestoppt), Speicher, Herzschlag, Puls, Fehler, Abstürze, Cronjob, Protokoll,
+   Knöpfe „Neu starten“, „Wachhund-Cronjob einrichten“ (sichert vorher die bestehenden Cronjobs, fügt nur eine Zeile
+   hinzu, prüft danach), „Sicherung zurückspielen“, „Sperre aufheben“.
+
+**Tests mit der ECHTEN Welt (lokale Kopie, ohne Passwörter; Export-Dateien auf dem Server sofort wieder gelöscht):**
+- Gefunden und behoben: Der Weltrechner hätte beim ersten Start die ganze Welt zurückgesetzt (Spiel-Reset ohne
+  eigenen Spielstand). Doppelt behoben + Prüfer-Regel „Welt darf nicht verschwinden“.
+- Gefunden und behoben: Rohstoff-Felder und Barbarenlager wurden über die Zeichenfläche des Browsers platziert
+  (`isPointInPath`) – auf dem Server gar nicht, und je nach Browser evtl. minimal anders. Jetzt reine Rechnung
+  (`aufLand` in spiel.js). Geprüft: alle 576 Felder liegen exakt an derselben Stelle wie vorher.
+- Gefunden und behoben: Sammel-Marsch zu einem Feld, das es nicht gibt → Absturz bei jedem Schritt. Jetzt gehen die
+  Truppen nach Hause.
+- Weltrechner 3 Minuten auf der echten Welt: 0 Fehler, ~290 MB. Spieler (iceman, echter Spielstand): 0 Fehler in der
+  Konsole. Auch die jetzige Online-Version (Handy rechnet) zeigt in Chrome 0 Fehler → Alexanders Fehler kommen evtl.
+  von Safari (hier nicht testbar) – Bildschirmfoto der Fehler erbeten.
+- Belastungstest: 100 Spieler gleichzeitig, 3 Minuten, 3.643 Befehle (679 absichtlich kaputt): 0 Fehler, keine
+  Abstürze, keine Schleifen, Prüfer nie nötig, Weltrechner 190–280 MB, Antwort Ø 55 ms.
+  **Problem gefunden:** jeder Spieler bekommt pro Puls Ø ~780 KB (ungepackt), weil geänderte Welt-Teile immer ganz
+  geschickt werden (Mitspieler-Daten 400 KB, Insel-Stufen 166 KB, Truppen 97 KB). Für viele Spieler nötig: nur noch
+  Änderungen schicken. Noch nicht gebaut.
+
+**Späher durch geschlossene Tore (Alexanders Meldung) – behoben (bots.js):** Bots schickten Späher los, obwohl die
+Tor-Prüfung „zu“ sagte (Ergebnis wurde an 4 Stellen nicht beachtet), und geprüft wurde vom Hauptsitz aus statt von der
+Basis/Armee, von der der Späher wirklich losläuft. Jetzt: `botLearn(…, vonLm)` prüft vom echten Startpunkt, und ohne
+freien Weg geht kein Späher los (und es gibt keine Meldung „Späher unterwegs“).
+
+**Bekannte Schwachstelle (noch offen):** Münzen/Gems eines Spielers rechnet noch sein eigenes Gerät (privater Spielstand).
+Ein Schummler könnte Befehle wie „Truppen dazu“ oder „Ausbau“ fälschen, ohne zu bezahlen. Lösung: auch das private
+Konto auf den Server (nächster großer Schritt).
+
+**Admin-Seite:** zeigt jetzt alle 150 Bots (60 feste + 90 aus der Namensliste in bots.js), nicht nur 60.
