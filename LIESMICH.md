@@ -7,6 +7,8 @@ Neuer Chat? **Nur diese Datei lesen**, dann ist man auf dem Stand.
 1. **Jede Änderung** (Code, Infos, Entscheidungen) wird **sofort hier in LIESMICH.md** eingetragen (Abschnitt 8 „Verlauf“ bzw. passender Abschnitt).
 2. Code kommt **immer zuerst auf GitHub** (committen + pushen).
 3. **Erst Alexander fragen**, ob diese Version auf den Server soll – `./hochladen.sh` nur nach seinem Ja.
+   **Hochladen IMMER mit Wartung:** Wartung an → alle Spiele speichern (10 s) → hochladen → prüfen → Wartung aus.
+   Genau das macht `./hochladen.sh` automatisch – niemals Dateien anders (z. B. einzeln im Editor) hochladen.
 4. Es gibt **nur EINE Welt**, in der alle echten Spieler und alle Mitspieler zusammen spielen – nie eine eigene Welt pro Spieler.
 5. Alles, was nicht zu Open Water gehört, kommt weg (Server, GitHub, alte Sitzungen).
 
@@ -249,6 +251,9 @@ auf die App-Datei (Manifest, Logo, Apple-Angaben). Auf der Startseite steht „�
 Startbildschirm“ → `app/`. Kein Service-Worker (der würde Dateien im Browser speichern – Regel: nichts im Browser).
 `hochladen.sh` lädt jetzt auch Unterordner (app/) hoch. Logo neu zeichnen: `logo.svg` ändern und die PNGs neu rendern
 (Playwright: SVG in 512/192/180 Pixel abfotografieren).
+
+**HOCHGELADEN am 1.10. (Alexanders Ja):** App für den Startbildschirm (Ordner `app/`) – mit Wartung. Live geprüft:
+Installier-Seite, App-Datei (application/manifest+json), Logos erreichbar, Wartung wieder aus.
 
 ## 11. Offen
 - **GitHub aufräumen (macht Alexander, Claude darf es nicht):** Unter Settings → General → Default branch auf
