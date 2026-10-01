@@ -973,6 +973,10 @@ body.has-panel .mapctl{display:none}
 .hchest-row{display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:10px;padding:6px 8px;border-radius:var(--r-sm);border:1px solid color-mix(in srgb,var(--rc) 55%,transparent);background:rgba(0,0,0,.2)}
 .hchest-row .hchest-pic{width:44px;height:44px;border-radius:8px} .hchest-row span{display:grid;gap:2px} .hchest-row small{font-size:var(--fs-10)} .hchest-row i{font-style:normal;font-weight:700;color:var(--gold-100);font-size:var(--fs-12);text-align:right}
 .hchest-res .btn{justify-self:start}
+.inbox{display:grid;gap:6px;margin-bottom:6px} .inbox-row{display:grid;grid-template-columns:34px minmax(0,1fr) auto;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--r-sm);background:var(--well);border:1px solid var(--line-2)}
+.inbox-row.is-gold{border-color:color-mix(in srgb,var(--gold-300) 55%,transparent)} .inbox-row>.icon{width:22px;height:22px;color:var(--gold-200);justify-self:center}
+.inbox-row b{display:block;font:600 var(--fs-12)/1.3 var(--font-ui);color:var(--gold-100)} .inbox-row small{display:block;color:var(--tx-3);font-size:var(--fs-11);line-height:1.35}
+.inbox-empty{padding:10px 12px;border-radius:var(--r-sm);border:1px dashed var(--line-2);color:var(--tx-3);font-size:var(--fs-12);line-height:1.4} .inbox-all{justify-self:end}
 .loot{align-items:center;gap:12px;padding:10px 12px;border-radius:var(--r-sm);border:1px solid color-mix(in srgb,var(--rc,var(--line-2)) 60%,transparent);
   background:radial-gradient(80% 120% at 0% 50%,color-mix(in srgb,var(--rc,transparent) 16%,transparent),transparent 70%),rgba(0,0,0,.2);animation:panel-in var(--dur-3) var(--ease-out)}
 .loot[style*="block"]{display:flex!important}
@@ -1816,6 +1820,8 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
       <div id="chainCard" class="chain"></div>
     </div>
     <div class="mail-pane" data-gpane="reward" hidden>
+      <div class="sect"><h4>Zum Abholen</h4><span id="inboxAside" class="sect-aside"></span></div>
+      <div id="inboxList" class="inbox"></div>
       <div class="sect"><h4>Tägliche Belohnung</h4></div>
       <div id="dailyCard" class="daily"></div>
       <div class="sect"><h4>Die Woche</h4><span class="sect-aside">verpasster Tag = Tag 1</span></div>
@@ -3698,13 +3704,13 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
                 botCoins[targetOwner] = (botCoins[targetOwner] || 0) + Math.round((won ? sentLoss : attack.rawTroops - retreatSurvivorsPreview(attack)) * botGoldRate(targetOwner, 'defenseGold'));
             let retreatSurvivors = 0, woundedAdded = 0;
             const plunder = won && targetOwner && targetOwner !== 'player' ? plunderOf(targetOwner, capitalHolds) : null;   // Lager: you carry off part of his coins above his protection
-            if (plunder) plunderMove(targetOwner, 'player', plunder.loot);
+            if (plunder) { plunderMove(targetOwner, null, plunder.loot); inboxAdd({ src: 'fight', coins: plunder.loot }); }   // (the spoils wait in the Abholfach)
 
             if (capitalHolds) {                                                     // the garrison falls, the base stays theirs - your survivors walk home
                 islandTroops[target.id] = 0; defenderCasualties = originalEnemyTroops;
                 enemyWounded = botHospitalTake(targetOwner, originalEnemyTroops);
                 woundedAdded = hospitalTake(sentLoss, hosp); warStat('fallen', sentLoss - woundedAdded); warStat('kills', originalEnemyTroops);
-                killGold = Math.round(originalEnemyTroops * rewardRate); coins += killGold; retreatSurvivors = remaining;
+                killGold = Math.round(originalEnemyTroops * rewardRate); inboxAdd({ src: 'fight', coins: killGold }); retreatSurvivors = remaining;
                 if (remaining > 0) { const t0 = Date.now(); pendingRetreats.push({ fromId: target.id, toId: source.id, troops: remaining, startedAt: t0, resolveAt: t0 + retreatSecs(attack, target, source) * 1000 }); }
             } else if (won) {
                 // Capturing a base doesn't reset it to level 1 - it costs
@@ -3723,7 +3729,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
                 if (target.type === 'temple' || target.type === 'megaTemple' || target.guardian) statBump('temples');
                 if (target.type === 'gate') setGateSettings(target.id, { toll: target.toll, closed: false });
                 revealAround(target.x, target.y, REVEAL_BASE, true);
-                killGold = Math.round(originalEnemyTroops * rewardRate); coins += killGold;   // "Angriff: Gold": per enemy troop killed
+                killGold = Math.round(originalEnemyTroops * rewardRate); inboxAdd({ src: 'fight', coins: killGold });   // "Angriff: Gold": per enemy troop killed
                 defenderCasualties = originalEnemyTroops;
                 if (targetOwner && targetOwner !== 'player') enemyWounded = botHospitalTake(targetOwner, originalEnemyTroops);   // the bot's Lazarett takes part of its fallen
                 if (target.type === 'temple' || target.type === 'megaTemple') {
@@ -3753,7 +3759,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
                 }
 
                 warStat('attacksLost'); warStat('kills', defenderCasualties);
-                killGold = Math.round(defenderCasualties * rewardRate); coins += killGold;
+                killGold = Math.round(defenderCasualties * rewardRate); inboxAdd({ src: 'fight', coins: killGold });
                 retreatSurvivors = retreatSurvivorsPreview(attack);
                 woundedAdded = hospitalTake(attack.rawTroops - retreatSurvivors, hosp);   // Lazarett (+ a hero's Feldlazarett): part of the fallen are only wounded
                 warStat('fallen', attack.rawTroops - retreatSurvivors - woundedAdded);
@@ -6068,7 +6074,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             return (who === 'player' ? goldPerKillRate() : botGoldRate(who, 'attackGold')) * (1 + g) + g;
         }
         function defGoldRate(who) { return who === 'player' ? (skills.defenseGold || 0) * SKILL_DEFS.defenseGold.rate : botGoldRate(who, 'defenseGold'); }
-        function payGold(who, n) { n = Math.round(n); if (n <= 0 || !who) return 0; if (who === 'player') coins += n; else botCoins[who] = (botCoins[who] || 0) + n; return n; }
+        function payGold(who, n) { n = Math.round(n); if (n <= 0 || !who) return 0; if (who === 'player') inboxAdd({ src: 'fight', coins: n }); else botCoins[who] = (botCoins[who] || 0) + n; return n; }
         function fieldGold(aWho, dWho, fb, aHx, dHx) {  // fights in the open pay like fights for bases: the attacker per enemy killed, the defender per attacker killed (+ each side's hero)
             const g = dHx ? (dHx.gold || 0) / 100 : 0;
             return { a: payGold(aWho, fb.dLoss * killGoldRate(aWho, aHx)), d: payGold(dWho, fb.aLoss * (defGoldRate(dWho) * (1 + g) + g)) };
@@ -7477,9 +7483,42 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             const q = loadQuests();
             return q.list.filter(t => !t.claimed && t.progress >= t.target).length + (!q.bonusClaimed && q.list.every(t => t.claimed) ? 1 : 0) + (chainStreak() >= 7 ? 1 : 0);
         }
+        // ---- Abholfach: prizes and spoils are sent here and collected by hand (Turnier, Tagesboss, Kopfgeld, Weltboss, Kampfbeute) ----
+        var inboxState = null;
+        function inboxList() { if (!inboxState) { try { inboxState = JSON.parse(store.get('openWaterInbox')); } catch (e) { inboxState = null; } if (!Array.isArray(inboxState)) inboxState = []; } return inboxState; }
+        function inboxSave() { store.set('openWaterInbox', JSON.stringify(inboxList())); }
+        const INBOX_SRC = { fight: { ic: 'attack', t: 'Kampfbeute' }, tour: { ic: 'crown', t: 'Wochenend-Turnier' }, boss: { ic: 'star', t: 'Tagesboss' }, wboss: { ic: 'star', t: 'Weltboss' }, bounty: { ic: 'losses', t: 'Kopfgeld' } };
+        function inboxAdd(o) {                              // o: { src, title?, gems, coins, sh (hero shards), crate (lowest rarity, -1 none) } - all fights' spoils pile up in one entry
+            o = Object.assign({ gems: 0, coins: 0, sh: 0, crate: -1, n: 1 }, o); o.gems = Math.round(o.gems); o.coins = Math.round(o.coins);
+            if (!(o.gems > 0 || o.coins > 0 || o.sh > 0 || o.crate >= 0)) return 0;
+            const L = inboxList(), now = Date.now(), pile = o.src === 'fight' && L.find(x => x.src === 'fight');
+            if (pile) { pile.coins += o.coins; pile.gems += o.gems; pile.n++; pile.at = now; } else L.unshift(Object.assign(o, { id: now.toString(36) + Math.floor(Math.random() * 1e6).toString(36), at: now }));
+            inboxSave(); updateGoalsBadge(); if (isPanelOpen(goalsPopup) && goalsTab === 'reward') renderInbox(); return o.coins || o.gems;
+        }
+        function inboxWhat(x) { return [x.gems ? '+' + fmtNum(x.gems) + ' Gems' : '', x.coins ? '+' + fmtCompact(x.coins) + ' Münzen' : '', x.crate >= 0 ? 'Kiste (mind. ' + RARITY_DEFS[x.crate].label + ')' : '', x.sh ? x.sh + ' Helden-Splitter' : ''].filter(Boolean).join(' · '); }
+        function inboxClaim(id) {                           // into your coffers - returns what you got
+            const L = inboxList(), i = L.findIndex(x => x.id === id); if (i < 0) return ''; const x = L.splice(i, 1)[0], got = [];
+            if (x.gems) { gems += x.gems; got.push('+' + fmtNum(x.gems) + ' Gems'); } if (x.coins) { coins += x.coins; got.push('+' + fmtCompact(x.coins) + ' Münzen'); }
+            if (x.crate >= 0) { const it = grantFreeCrate(x.crate); if (it && it.rarity !== undefined) got.push(EQUIPMENT_DEFS[it.slot].name + ' (' + RARITY_DEFS[it.rarity].label + ')'); }
+            if (x.sh) { const h = heroGrantShards('player', x.sh); if (h) got.push(x.sh + ' Splitter ' + h.name); else { gems += x.sh * 20; got.push('+' + x.sh * 20 + ' Gems (alle Helden voll)'); } }
+            inboxSave(); saveGame(); saveProgression(); updateHud(); return got.join(', ');
+        }
+        function renderInbox() {
+            const L = inboxList(), now = Date.now(), el = document.getElementById('inboxList'); if (!el) return;
+            setText(document.getElementById('inboxAside'), L.length ? L.length + ' bereit' : '');
+            el.innerHTML = L.length ? L.map(x => { const d = INBOX_SRC[x.src] || INBOX_SRC.fight;
+                return '<div class="inbox-row' + (x.src === 'fight' ? '' : ' is-gold') + '">' + icon(d.ic) + '<div><b>' + escapeHtml(x.title || d.t) + '</b><small>' + inboxWhat(x) + '</small><small>' + (x.src === 'fight' && x.n > 1 ? x.n + ' Kämpfe · zuletzt ' : '') + 'vor ' + fmtDHMS(Math.max(1, (now - x.at) / 1000)) + '</small></div>' +
+                    '<button class="btn btn--primary btn--sm" type="button" data-inbox="' + x.id + '"><span>Abholen</span></button></div>'; }).join('') + (L.length > 1 ? '<button class="btn btn--secondary btn--sm inbox-all" type="button" data-inbox-all><span>Alle abholen · ' + L.length + '</span></button>' : '')
+                : '<div class="inbox-empty">Gerade nichts zum Abholen. Preise aus Turnier und Tagesboss, das Kopfgeld und die Beute aus deinen Kämpfen landen hier.</div>';
+        }
+        goalsPopup.addEventListener('click', e => {
+            const one = e.target.closest('[data-inbox]'), all = e.target.closest('[data-inbox-all]'); if (!one && !all) return;
+            const txt = all ? inboxList().map(x => x.id).map(inboxClaim).filter(Boolean).join(', ') : inboxClaim(one.dataset.inbox);
+            if (txt) { sfx('coin'); flashHint('Abgeholt: ' + txt + '.', 4500); } renderInbox(); updateGoalsBadge();
+        });
         function updateGoalsBadge(nAch) {
             if (nAch === undefined) nAch = achReadyN; else achReadyN = nAch;   // (the Erfolge are counted by achCheck - not before everything has loaded)
-            const nd = dailyGoalCount(), nr = dailyClaimable() ? 1 : 0, np = passReadyAll().length, n = nd + nr + nAch + np, set = (el, v) => { setText(el, v); setShown(el, v > 0); };   // (only on a change: this runs every few seconds)
+            const nd = dailyGoalCount(), nr = (dailyClaimable() ? 1 : 0) + inboxList().length, np = passReadyAll().length, n = nd + nr + nAch + np, set = (el, v) => { setText(el, v); setShown(el, v > 0); };   // (only on a change: this runs every few seconds)
             set(document.getElementById('goalsBadge'), n); set(goalsPopup.querySelector('[data-gbadge="daily"]'), nd); set(goalsPopup.querySelector('[data-gbadge="reward"]'), nr); set(goalsPopup.querySelector('[data-gbadge="ach"]'), nAch); set(goalsPopup.querySelector('[data-gbadge="pass"]'), np);
         }
         function updateQuestBadge() { updateGoalsBadge(); }   // the daily reward now counts in the Ziele badge
@@ -7519,7 +7558,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             goalsTab = t;
             for (const b of goalsPopup.querySelectorAll('[data-gtab]')) { const on = b.dataset.gtab === t; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }
             for (const pn of goalsPopup.querySelectorAll('[data-gpane]')) pn.hidden = pn.dataset.gpane !== t;
-            if (t === 'ach') renderAchievements(); else if (t === 'pass') renderPass(); else renderQuestPanel();
+            if (t === 'ach') renderAchievements(); else if (t === 'pass') renderPass(); else renderQuestPanel(); if (t === 'reward') renderInbox();
             goalsPopup.querySelector('.pbody').scrollTop = 0; if (t === 'pass') requestAnimationFrame(passScroll); updateGoalsBadge();
         }
         function renderGoalsSub() { const q = loadQuests(), nd = q.list.filter(t => t.claimed).length, na = ACHIEVEMENTS.filter(a => achClaimed[a.id]).length;
@@ -7527,7 +7566,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         function openGoals(tab) {
             closeAllPopups(); renderGoalsSub();
             const nd = dailyGoalCount(), na = achClaimable().length;
-            showGoalsTab(tab || (nd ? 'daily' : dailyClaimable() ? 'reward' : na ? 'ach' : passReadyAll().length ? 'pass' : goalsTab)); openPanel(goalsPopup);
+            showGoalsTab(tab || (nd ? 'daily' : dailyClaimable() || inboxList().length ? 'reward' : na ? 'ach' : passReadyAll().length ? 'pass' : goalsTab)); openPanel(goalsPopup);
         }
         document.getElementById('goalsBtn').addEventListener('click', () => { if (isPanelOpen(goalsPopup)) closePanel(goalsPopup); else openGoals(); });
         document.getElementById('goalsCloseBtn').addEventListener('click', () => closePanel(goalsPopup));
@@ -7863,7 +7902,9 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             now = now || Date.now(); const m = tourWinMemo; if (m && now >= m.from && now < m.to) return m.w;
             const d = new Date(now); d.setHours(0, 0, 0, 0); const wd = d.getDay(); d.setDate(d.getDate() + (wd === 6 ? 0 : wd === 0 ? -1 : 6 - wd));
             const start = d.getTime(), key = todayKey(d); d.setDate(d.getDate() + 2); const full = d.getTime(), ts = tourState || {}, end = ts.testKey === key && ts.testEnd < full ? Math.max(start, ts.testEnd) : full, on = now >= start && now < end;   // (a test run may end it early)
-            tourWinMemo = { w: { on, start, end, key }, from: on ? start : now, to: on ? end : now < start ? start : full }; return tourWinMemo.w;
+            if (!on && now >= start) { const n = new Date(start); n.setDate(n.getDate() + 7); const ns = n.getTime(), nk = todayKey(n); n.setDate(n.getDate() + 2);   // ended early (test): the next weekend is the one to wait for
+                tourWinMemo = { w: { on: false, start: ns, end: n.getTime(), key: nk }, from: now, to: full }; return tourWinMemo.w; }
+            tourWinMemo = { w: { on, start, end, key }, from: on ? start : now, to: on ? end : start }; return tourWinMemo.w;
         }
         function tourOn(now) { return tourWin(now).on; }
         function tourRoll(now) {                              // a finished weekend pays out once, a new one starts empty
@@ -7891,12 +7932,12 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             let me = null;
             list.forEach(([who, p], i) => { const pr = tourPrizeFor(i + 1);
                 if (who !== 'player') { botTourReward(who, pr.gems, pr.sh); return; }
-                gems += pr.gems; const h = heroGrantShards('player', pr.sh); me = { place: i + 1, pts: Math.floor(p), gems: pr.gems, sh: pr.sh, hero: h ? h.name : '' }; });
+                inboxAdd({ src: 'tour', title: 'Wochenend-Turnier · Platz ' + (i + 1), gems: pr.gems, sh: pr.sh }); me = { place: i + 1, pts: Math.floor(p), gems: pr.gems, sh: pr.sh, hero: '' }; });   // the prize is sent to the Abholfach
             if (list.length) { const w = list[0][0]; ts.champ = { who: w, until: ts.end + TOUR_CHAMP_MS };
                 ts.hist.unshift({ key: ts.key, who: w, name: w === 'player' ? profileName.value || 'Du' : botById[w].name, pts: Math.floor(list[0][1]) }); ts.hist = ts.hist.slice(0, 6); ringVer++; }
             ts.last = { key: ts.key, top: list.slice(0, TOUR_TOP).map(e => [e[0], Math.floor(e[1])]), n: list.length, me, seen: !me };
             saveTour(); saveBotState(); updateHud(); saveGame(); saveProgression(); requestRender();
-            if (me) afterSplash(() => setTimeout(() => flashHint('Turnier vorbei: Platz ' + me.place + ' – +' + fmtNum(me.gems) + ' Gems, +' + me.sh + ' Splitter' + (me.hero ? ' für ' + me.hero : '') + (me.place === 1 ? ' und der Titel „Turniersieger“!' : '.'), 7000), 2500));
+            if (me) afterSplash(() => setTimeout(() => flashHint('Turnier vorbei: Platz ' + me.place + ' – ' + fmtNum(me.gems) + ' Gems und ' + me.sh + ' Splitter liegen unter Ziele → Belohnung' + (me.place === 1 ? ', dazu der Titel „Turniersieger“!' : '.'), 7000), 2500));
         }
         (function tourTestOnce() {                           // one-time test run (asked for): the running tournament ends in 10 min and you get 10.000 points
             if (store.get('openWaterTourTest1')) return; const now = Date.now(); if (!tourOn(now)) return; tourRoll(now);
@@ -7922,7 +7963,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         }
         function bountyPay(who, g, c) {
             if (who !== 'player') { botBountyReward(who, g, c); return; }
-            gems += g; coins += c; updateHud(); saveGame(); saveProgression();
+            inboxAdd({ src: 'bounty', title: 'Kopfgeld', gems: g, coins: c });
         }
         function bountyCheck(r) {                             // a new ruler: whoever took the throne collects everything, the bounty starts again at 0
             const b = bountyState; r = r || null; if ((b.ruler || null) === r) return;
@@ -7930,7 +7971,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             bountyState = { ruler: r, gems: 0, coins: 0, since: Date.now() }; saveBounty();
             if (!was || !r || !(g || c) || (was !== 'player' && !botById[was]) || (r !== 'player' && !botById[r])) return;
             bountyPay(r, g, c);
-            const txt = r === 'player' ? 'Kopfgeld kassiert: +' + fmtNum(g) + ' Gems und +' + fmtCompact(c) + ' Münzen für den Sturz von ' + botById[was].name + '!'
+            const txt = r === 'player' ? 'Kopfgeld für den Sturz von ' + botById[was].name + ': ' + fmtNum(g) + ' Gems und ' + fmtCompact(c) + ' Münzen – abholen unter Ziele → Belohnung!'
                 : was === 'player' ? botById[r].name + ' hat das Kopfgeld auf dich kassiert: ' + fmtNum(g) + ' Gems.' : g >= 100 ? botById[r].name + ' kassiert das Kopfgeld auf ' + botById[was].name + ': ' + fmtNum(g) + ' Gems.' : '';
             if (txt) afterSplash(() => setTimeout(() => flashHint(txt, 5000), 4500));
             if (r === 'player') sfx('coin');
@@ -7939,7 +7980,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             const b = bountyState; if (!who || b.ruler !== rulerOwner() || who === b.ruler) return;
             const g = Math.floor((b.gems || 0) * BOUNTY_SHARE), c = Math.floor((b.coins || 0) * BOUNTY_SHARE); if (!g && !c) return;
             b.gems -= g; b.coins -= c; saveBounty(); bountyPay(who, g, c);
-            if (who === 'player') setTimeout(() => flashHint('Kopfgeld-Anteil für den Sieg gegen den Herrscher: +' + fmtNum(g) + ' Gems, +' + fmtCompact(c) + ' Münzen.', 4000), 3500);
+            if (who === 'player') setTimeout(() => flashHint('Kopfgeld-Anteil für den Sieg gegen den Herrscher: ' + fmtNum(g) + ' Gems, ' + fmtCompact(c) + ' Münzen – liegt unter Ziele → Belohnung.', 4000), 3500);
         }
         // ---- what you see: a chip under the HUD (Turnier / Kopfgeld), a card in the Thron tab, notices at the middle, the "Turnier" tab in the Rangliste
         const midBar = document.getElementById('midBar');
@@ -8944,19 +8985,16 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         }
         function defeatBoss(boss) {
             statBump('bosses'); if (boss.wander) statBump('wanders');
-            const item = grantFreeCrate(4);                        // legendary or better
-            const rewardGems = boss.wander ? WANDER_REWARD_GEMS : BOSS_REWARD_GEMS;
-            gems += rewardGems; const shH = heroGrantShards('player', boss.wander ? HERO_SHARDS_WANDER : HERO_SHARDS_BOSS);   // hero shards for a random hero
+            const rewardGems = boss.wander ? WANDER_REWARD_GEMS : BOSS_REWARD_GEMS, shN = boss.wander ? HERO_SHARDS_WANDER : HERO_SHARDS_BOSS;
+            inboxAdd({ src: 'wboss', title: boss.name + ' besiegt', gems: rewardGems, crate: 4, sh: shN });   // a legendary crate, gems and shards - sent to the Abholfach
             saveProgression(); saveGame(); updateHud();
             if (boss.wander) endWander(null); else endBoss(null);
-            const rd = RARITY_DEFS[item.rarity], d = EQUIPMENT_DEFS[item.slot];
             document.getElementById('rewardModalOver').textContent = 'Weltereignis';
             document.getElementById('rewardModalTitle').textContent = 'Boss besiegt!';
-            document.getElementById('rewardModalSub').textContent = boss.name + ' ist gefallen – die Beute gehört dir.';
-            const list = document.getElementById('rewardModalRewards');
-            list.innerHTML = '<li style="border-color:' + rd.color + '66"><svg class="icon" style="color:' + rd.color + '"><use href="#i-' + d.icon + '"/></svg><span>' + d.name + '</span><b style="color:' + rd.color + '">' + rd.label + '</b></li>' +
-                '<li>' + icon('gem', 'ico-gem') + '<span>Gems</span><b>+' + rewardGems + '</b></li>' +
-                (shH ? '<li style="border-color:' + RARITY_DEFS[shH.r].color + '66">' + icon(shH.icon) + '<span>Splitter ' + shH.name + '</span><b style="color:' + RARITY_DEFS[shH.r].color + '">+' + (boss.wander ? HERO_SHARDS_WANDER : HERO_SHARDS_BOSS) + '</b></li>' : '');
+            document.getElementById('rewardModalSub').textContent = boss.name + ' ist gefallen – die Beute liegt unter Ziele → Belohnung.';
+            const list = document.getElementById('rewardModalRewards'), rd = RARITY_DEFS[4];
+            list.innerHTML = '<li style="border-color:' + rd.color + '66">' + icon('shop') + '<span>Kiste</span><b style="color:' + rd.color + '">mind. ' + rd.label + '</b></li>' +
+                '<li>' + icon('gem', 'ico-gem') + '<span>Gems</span><b>+' + rewardGems + '</b></li><li>' + icon('star') + '<span>Helden-Splitter</span><b>+' + shN + '</b></li>';
             [...list.children].forEach((li, i) => { li.style.animationDelay = (200 + i * 120) + 'ms'; });
             bossRewardPending = true;
             setTimeout(() => { bossRewardPending = false; document.getElementById('rewardModal').hidden = false; }, 9800);   // after the fight on the map
@@ -9046,7 +9084,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             wander.defense = niceRound(wander.troops * .15);
             const wKilled = Math.max(0, my - wander.troops);
             if (owner && owner !== 'player') { botHospitalTake(owner, won ? en : Math.min(en, my)); botCoins[owner] = (botCoins[owner] || 0) + Math.round(wKilled * botGoldRate(owner, 'defenseGold')); }
-            const wGold = owner === 'player' ? Math.round(wKilled * (skills.defenseGold || 0) * SKILL_DEFS.defenseGold.rate) : 0; if (wGold) coins += wGold;
+            const wGold = owner === 'player' ? Math.round(wKilled * (skills.defenseGold || 0) * SKILL_DEFS.defenseGold.rate) : 0; if (wGold) inboxAdd({ src: 'fight', coins: wGold });
             if (owner === 'player') {
                 scoutedIslands.add(tgt.id);
                 const name = wander.name;
@@ -10911,16 +10949,16 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             if (fb.won) {
                 barbState.camps = barbState.camps.filter(x => x !== c); rec.n++; rec.b = Math.max(rec.b, c.L); goalBump(who, 'barb');
                 kGold = Math.round(fb.kill * killGoldRate(who, hx)); gold = payGold(who, barbLootOf(c.L) + kGold);
-                if (Math.random() < .1 + c.L * .015) item = barbCrate(who, Math.floor(c.L / 8));
-                if (Math.random() < .15 + c.L * .01) sh = heroGrantShards(who, shN);
+                if (Math.random() < .1 + c.L * .015) item = isP ? (inboxAdd({ src: 'fight', crate: Math.floor(c.L / 8) }), { box: Math.floor(c.L / 8) }) : barbCrate(who, Math.floor(c.L / 8));   // yours wait in the Abholfach
+                if (Math.random() < .15 + c.L * .01) sh = isP ? (inboxAdd({ src: 'fight', sh: shN }), { name: '' }) : heroGrantShards(who, shN);
                 barbHome(m, m.troops - fb.loss, now);
             } else c.t = Math.max(1, Math.round(c.t - fb.kill));
             if (!isP) return;
-            const it = item && item.rarity !== undefined ? EQUIPMENT_DEFS[item.slot].name + ' (' + RARITY_DEFS[item.rarity].label + ')' : '';
-            addCombatLogEntry({ type: 'barb', L: c.L, won: fb.won, atk: fb.SA, def: before, left: fb.won ? 0 : c.t, kill: fb.kill, troops: m.troops, gef: fb.gef, shPct: fb.sh, loss: fb.loss, wounded, gold, kGold, crate: it, sh: sh ? shN + ' Splitter ' + sh.name : '',
+            const it = item && item.box !== undefined ? 'Kiste (mind. ' + RARITY_DEFS[item.box].label + ')' : '';
+            addCombatLogEntry({ type: 'barb', L: c.L, won: fb.won, atk: fb.SA, def: before, left: fb.won ? 0 : c.t, kill: fb.kill, troops: m.troops, gef: fb.gef, shPct: fb.sh, loss: fb.loss, wounded, gold, kGold, crate: it, sh: sh ? shN + ' Helden-Splitter' : '',
                 n: rec.n, open: Math.min(BARB_MAX_L, rec.b + 1), up: rec.b > best0 && rec.b < BARB_MAX_L, sourceId: m.homeId, attacker: 'Du', hA: heroTag(hx), hx: heroReportOf(hx) });
             spawnBattleFx({ x: c.x, y: c.y }, fb.won, fb.won ? 'Lager besiegt' : 'Abgewehrt', fb.won ? 'Stufe ' + c.L + ' · ' + rec.n + ' / ' + BARB_DAY + ' heute' : '−' + fmtCompact(fb.loss) + ' Truppen');
-            flashHint(fb.won ? 'Barbaren-Lager Stufe ' + c.L + ' besiegt: +' + fmtCompact(gold) + ' Münzen' + (it ? ', Kiste: ' + it : '') + (sh ? ', ' + shN + ' Splitter ' + sh.name : '') + '.' : 'Das Lager hat standgehalten – es hat jetzt noch ' + fmtCompact(c.t) + ' Krieger.', 4500);
+            flashHint(fb.won ? 'Barbaren-Lager Stufe ' + c.L + ' besiegt: +' + fmtCompact(gold) + ' Münzen' + (it ? ', Kiste: ' + it : '') + (sh ? ', ' + shN + ' Splitter' : '') + ' – abholen unter Ziele.' : 'Das Lager hat standgehalten – es hat jetzt noch ' + fmtCompact(c.t) + ' Krieger.', 4500);
             updateHud(); saveGame(); saveProgression(); barbSheetRefresh();
         }
         function dbossHit(m, now) {                         // every attack takes life off the boss (at most 5 %); a quarter of those who struck fall (Lazarett as usual), the rest come home
@@ -10945,26 +10983,14 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         function dbossPayout(b) {                           // the boss falls: everyone who hit it gets a prize by damage (top 3 extra)
             const rk = dbossRanks(b); let bs = null;
             rk.forEach(([who], i) => { const p = dbossPrizeOf(i); goalBump(who, 'dboss');
-                if (who === 'player') { gems += p.gems; const item = p.crate >= 0 ? grantFreeCrate(p.crate) : null, s = heroGrantShards('player', p.sh); saveProgression(); saveGame(); updateHud(); dbossRewardModal(b, i, p, item, s);
-                    addCombatLogEntry({ type: 'dbossWin', name: b.name, rank: i + 1, of: rk.length, dmg: b.dmg.player || 0, gems: p.gems, crate: item && item.rarity !== undefined ? EQUIPMENT_DEFS[item.slot].name + ' (' + RARITY_DEFS[item.rarity].label + ')' : '', sh: s ? p.sh + ' Splitter ' + s.name : '' });
-                    flashHint(b.name + ' ist gefallen! Platz ' + (i + 1) + ': +' + p.gems + ' Gems' + (s ? ', ' + p.sh + ' Splitter ' + s.name : '') + '.', 5000); }
+                if (who === 'player') { inboxAdd({ src: 'boss', title: b.name + ' · Platz ' + (i + 1), gems: p.gems, crate: p.crate >= 0 ? p.crate : -1, sh: p.sh });   // the prize is sent to the Abholfach
+                    addCombatLogEntry({ type: 'dbossWin', name: b.name, rank: i + 1, of: rk.length, dmg: b.dmg.player || 0, gems: p.gems, crate: p.crate >= 0 ? 'Kiste (mind. ' + RARITY_DEFS[p.crate].label + ')' : '', sh: p.sh ? p.sh + ' Helden-Splitter' : '' });
+                    flashHint(b.name + ' ist gefallen! Platz ' + (i + 1) + ': dein Preis liegt unter Ziele → Belohnung.', 5000); }
                 else if (botById[who]) { bs = bs || loadBotState(); if (bs[who]) bs[who].gems += p.gems; if (p.crate >= 0) barbCrate(who, p.crate); heroGrantShards(who, p.sh); } });
             if (bs) saveBotState();
             spawnBattleFx({ x: b.x, y: b.y }, true, b.name + ' gefallen', rk.length + ' Kämpfer belohnt');
             if (!b.dmg.player) flashHint(b.name + ' ist gefallen! ' + rk.length + ' Kämpfer werden nach Schaden belohnt.', 5000);
             saveBarb();
-        }
-        function dbossRewardModal(b, i, p, item, s) {
-            const rd = item && RARITY_DEFS[item.rarity], d = item && EQUIPMENT_DEFS[item.slot];
-            document.getElementById('rewardModalOver').textContent = 'Tagesboss';
-            document.getElementById('rewardModalTitle').textContent = b.name + ' gefallen!';
-            document.getElementById('rewardModalSub').textContent = 'Dein Schaden: ' + fmtCompact(b.dmg.player || 0) + ' · Platz ' + (i + 1) + ' von ' + dbossRanks(b).length;
-            const list = document.getElementById('rewardModalRewards');
-            list.innerHTML = '<li>' + icon('gem', 'ico-gem') + '<span>Gems</span><b>+' + p.gems + '</b></li>' +
-                (item ? '<li style="border-color:' + rd.color + '66"><svg class="icon" style="color:' + rd.color + '"><use href="#i-' + d.icon + '"/></svg><span>' + d.name + '</span><b style="color:' + rd.color + '">' + rd.label + '</b></li>' : '') +
-                (s ? '<li style="border-color:' + RARITY_DEFS[s.r].color + '66">' + icon(s.icon) + '<span>Splitter ' + s.name + '</span><b style="color:' + RARITY_DEFS[s.r].color + '">+' + p.sh + '</b></li>' : '');
-            [...list.children].forEach((li, k) => { li.style.animationDelay = (200 + k * 120) + 'ms'; });
-            setTimeout(() => { document.getElementById('rewardModal').hidden = false; }, 2600);
         }
         function barbTick() {
             const now = Date.now(), due = barbMarches.filter(m => m.resolveAt <= now); dbossEnsure();   // after midnight: the new boss first

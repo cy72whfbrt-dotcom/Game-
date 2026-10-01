@@ -211,7 +211,7 @@ function resolveBotAttack(attack) {
     let defWounded = 0, defGold = 0;
     if (playerInvolved) {                                          // "Verteidigung: Gold": every attacker your garrison kills pays out (also when the base falls)
         defGold = Math.round((won ? botSentLoss : attack.rawTroops - fled) * (skills.defenseGold || 0) * SKILL_DEFS.defenseGold.rate);
-        if (defGold > 0) coins += defGold;
+        if (defGold > 0) inboxAdd({ src: 'fight', coins: defGold });   // (your defense's gold waits in the Abholfach)
     }
     if (playerInvolved && !won) statBump('defends');
     if (playerInvolved) defWounded = hospitalTake(won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops));   // your fallen defenders
