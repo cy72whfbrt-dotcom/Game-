@@ -492,6 +492,14 @@ function payToll(fromLm, toLm, troops, payer, targetId, cut) { // payer: 'player
     goalBump(payer, 'tolls'); goalBump(owner, 'tollCoins', cost);
     return true;
 }
+// (Zuschauer) vor dem Befehl prüfen, ob das Tor offen ist und die Maut reicht – bezahlt wird beim Weltrechner
+function mautVorab(fromLm, toLm, troops, targetId, cut) {
+    const { gate, cost, closed } = tollFor(fromLm, toLm, troops, 'player', targetId, cut);
+    if (!cost) return true;
+    if (closed) { const ow = islandOwnerOf(gate.id); flashHint(ow ? 'Das Tor ist geschlossen – ' + botById[ow].name + ' lässt niemanden durch. Erobere das Tor.' : 'Das Tor ist unbesetzt und verschlossen – erobere es zuerst, dann kommst du durch.', 4000); return false; }
+    if (coins < cost) { flashHint('Maut am Tor: ' + fmtNum(cost) + ' Münzen – du hast zu wenig. Erobere das Tor, dann ist es kostenlos.', 4000); return false; }
+    return true;
+}
 function fmtPassWait(ms) {
     return fmtDHMS(ms / 1000);
 }
@@ -1485,6 +1493,7 @@ function launchAttack(sourceId, targetId, attackerBotId, troopsOverride, heldWun
         return false;
     }
     if (!attackerBotId && !rechnet()) {                           // Zuschauer: der Weltrechner schickt die Truppen los
+        const vh = lastHop(source.landmassId, target.landmassId, 'player'); if (!mautVorab(vh[0], vh[1], rawTroops, target.id)) return false;
         WELT.befehl('angriff', { src: sourceId, ziel: targetId, n: rawTroops, held: nextAttackHero && heroOwned('player', nextAttackHero) && !heroBusy('player', nextAttackHero) ? nextAttackHero : null });
         islandTroops[sourceId] = available - rawTroops;
         updateHud(); flashHint('Angriff unterwegs zu ' + islandTitle(target) + '.');
@@ -1538,6 +1547,7 @@ function launchSend(fromId, toId, senderBotId, amount) {       // amount: how ma
     const rawTroops = amount > 0 ? Math.min(Math.round(amount), available) : available;
     if (!source || !target || rawTroops <= 0) return;
     if (!senderBotId && !rechnet()) {                             // Zuschauer: der Weltrechner schickt sie los
+        const vh = lastHop(source.landmassId, target.landmassId, 'player'); if (!mautVorab(vh[0], vh[1], rawTroops)) return;
         WELT.befehl('senden', { von: fromId, nach: toId, n: rawTroops });
         islandTroops[fromId] = available - rawTroops; questProgress('send', 1); sfx('send'); updateHud();
         flashHint('Truppen unterwegs zu ' + islandTitle(target) + '.'); return;
@@ -8162,7 +8172,7 @@ document.getElementById('cityUpgradeBtn').addEventListener('click', () => {
     if (cityOpenId === '_keep') {                  // the capital itself: same price and rule as upgrading it on the map
         const level = islandLevels[playerIslandId] || 1; if (level >= MAX_BASE_LEVEL) return;
         const cost = upgradeCost(level); if (coins < cost) { flashHint('Nicht genug Münzen – benötigt ' + fmtCompact(cost) + '.', 2500); return; }
-        coins -= cost; islandLevels[playerIslandId] = level + 1; alsBefehl('ausbau', { insel: playerIslandId, stufe: level + 1 }); updateHud(); saveGame(); questProgress('upgrade', 1); sfx('upgrade');
+        coins -= cost; islandLevels[playerIslandId] = level + 1; ausbauMerken(playerIslandId, level + 1); alsBefehl('ausbau', { insel: playerIslandId, stufe: level + 1 }); updateHud(); saveGame(); questProgress('upgrade', 1); sfx('upgrade');
         flashHint('Deine Burg ist jetzt Stufe ' + (level + 1) + '.', 2000); renderKeepSheet(); requestRender(); return;
     }
     if (cityOpenId) cityStartBuild(cityOpenId); });
@@ -10305,6 +10315,17 @@ function patchAttackPreview() {
     }
 }
 
+// (Zuschauer) eben ausgebaute Stufen merken: bis der Weltrechner sie bestätigt, überschreibt die nächste Welt-Lieferung
+// sie nicht wieder mit der alten Stufe (sonst springt die Anzeige zurück und man bezahlt dieselbe Stufe zweimal)
+const wartendeAusbauten = new Map();   // Basis → { stufe, bis }
+function ausbauMerken(id, stufe) { if (window.WELT && !WELT.leiter) wartendeAusbauten.set(id, { stufe, bis: Date.now() + 90000 }); }
+function ausbauDrueber() {
+    for (const [id, w] of wartendeAusbauten) {
+        if ((islandLevels[id] || 1) >= w.stufe || Date.now() > w.bis || islandOwnerOf(id) !== 'player') wartendeAusbauten.delete(id);
+        else islandLevels[id] = w.stufe;
+    }
+}
+
 // One tap upgrades right away (no confirmation step); tapping again
 // keeps levelling up as long as the coins last.
 upgradeBtn.addEventListener('click', () => {
@@ -10318,6 +10339,7 @@ upgradeBtn.addEventListener('click', () => {
     }
     coins -= cost;
     islandLevels[popupIslandId] = level + 1;
+    ausbauMerken(popupIslandId, level + 1);
     alsBefehl('ausbau', { insel: popupIslandId, stufe: level + 1 });
     updateHud();
     saveGame();
@@ -10887,7 +10909,7 @@ if (window.WELT) {
             for (const bot of BOT_DEFS) { const set = botOwnedIslands[bot.id] || (botOwnedIslands[bot.id] = new BotBaseSet(bot.id)); const neu = new Set(r[bot.id] || []); for (const id of [...set]) if (!neu.has(id)) set.delete(id); }
             for (const bot of BOT_DEFS) for (const id of r[bot.id] || []) botOwnedIslands[bot.id].add(id);
         }
-        if (k.has('openWaterIslandLevels')) { islandLevels = PJ('openWaterIslandLevels') || {}; for (const isl of islands) if (isl.neutralLevel > 1 && islandLevels[isl.id] === undefined) islandLevels[isl.id] = isl.neutralLevel; }
+        if (k.has('openWaterIslandLevels')) { islandLevels = PJ('openWaterIslandLevels') || {}; for (const isl of islands) if (isl.neutralLevel > 1 && islandLevels[isl.id] === undefined) islandLevels[isl.id] = isl.neutralLevel; ausbauDrueber(); }
         if (k.has('openWaterIslandTroops')) islandTroops = PJ('openWaterIslandTroops') || {};
         if (k.has('openWaterNeutralTroopOverrides')) { neutralTroopOverrides = PJ('openWaterNeutralTroopOverrides') || {}; for (const id in neutralTroopOverrides) if (islandById[id]) islandById[id].neutralTroops = neutralTroopOverrides[id]; }
         if (k.has('openWaterTempleHoldSince')) templeHoldSince = PJ('openWaterTempleHoldSince') || {};
@@ -11103,7 +11125,8 @@ if (window.WELT) {
         if (!inselOk(b.insel) || !Number.isInteger(b.stufe)) { warnen(who, 'kaputt', 'Ausbau mit kaputten Angaben (Basis ' + String(b.insel).slice(0, 20) + ', Stufe ' + String(b.stufe).slice(0, 20) + ').'); return 'nein'; }
         if (!gehoert(b.insel, who)) return 'nein';                         // gerade verloren – kommt vor, keine Warnung
         const L = islandLevels[b.insel] || 1;
-        if (b.stufe <= L || L >= MAX_BASE_LEVEL) return 'nein';            // doppelt geschickt / schon ganz oben – nichts zu tun
+        if (L >= MAX_BASE_LEVEL) return 'nein';
+        if (b.stufe <= L) return 'nein';                                   // doppelt geschickt – nichts zu tun
         if (b.stufe > L + 1) { warnen(who, 'ausbau', 'Ausbau springt: ' + islandTitle(islandById[b.insel]) + ' von Stufe ' + L + ' auf ' + b.stufe + ' – erlaubt ist nur +1.', b.stufe - L); return 'nein'; }
         const m = wacheSehen(who), kosten = upgradeCost(L);
         if (wacheBezahlen(who, m, kosten)) return 'ok';
@@ -11363,7 +11386,7 @@ if (window.WELT) {
         v.style.cssText = 'position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(8,20,36,.8);font-family:Georgia,serif';
         v.innerHTML = '<div style="max-width:380px;width:100%;background:#f6efe0;color:#2b2118;border:2px solid #c9a227;border-radius:14px;padding:22px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.6)">' +
             '<h2 style="margin:0 0 6px;color:#1d3b5c;font-size:24px">Willkommen!</h2><p style="margin:0 0 14px;font-size:16px">Willkommen auf den Inseln von Open Water. Wie willst du heißen?</p>' +
-            '<input id="wkName" maxlength="20" style="width:100%;padding:11px;font-size:17px;border:1px solid #d8c9a6;border-radius:8px;box-sizing:border-box" placeholder="Dein Name">' +
+            '<input id="wkName" maxlength="20" style="width:100%;padding:11px;font-size:17px;background:#fff;color:#2b2118;border:1px solid #d8c9a6;border-radius:8px;box-sizing:border-box" placeholder="Dein Name">' +
             '<p class="wf" style="min-height:20px;margin:8px 0 0;color:#a33a2a;font-size:14px"></p>' +
             '<button type="button" style="margin-top:10px;width:100%;padding:12px;font-size:17px;font-family:inherit;border:0;border-radius:8px;cursor:pointer;background:linear-gradient(#c9a227,#a8831a);font-weight:bold">Los geht’s</button></div>';
         document.body.appendChild(v);
@@ -11390,6 +11413,7 @@ if (window.WELT) {
     window.__weltLaden = function (keys) {
         altLaden(keys);
         if (!keys.includes('openWaterPendingAttacks')) return;
+        if (gewarnt.size > 500) { const da = new Set(pendingAttacks.map(marchKeyOf)); for (const k of gewarnt) if (!da.has(k)) gewarnt.delete(k); }   // vorbei → vergessen
         for (const a of pendingAttacks) { const k = marchKeyOf(a); if (!a.attackerBotId || gewarnt.has(k)) continue; gewarnt.add(k);
             if (islandOwnerOf(a.targetId) === 'player') { sfx('warn'); flashHint((botById[a.attackerBotId] || {}).name + ' greift ' + islandTitle(islandById[a.targetId]) + ' an!', 4000); } }
     };

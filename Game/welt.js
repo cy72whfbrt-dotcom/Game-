@@ -288,15 +288,20 @@
             // Online: sofort. Offline: sammeln und höchstens alle 5 Minuten als EINE Nachricht ablegen (sonst läge für jeden
             // abwesenden Spieler alle 2 s ein Eintrag in der Datenbank – nach 8 Stunden ~14.000)
             if (Object.keys(e).length) deltaMerken(id, e);
+            if (!offen[id] && botState[id] && botState[id].dOffen && botState[id].dOffen.e) offen[id] = botState[id].dOffen;   // nach einem Neustart
             const o = offen[id];
-            if (o && (W.menschen[id].online || Date.now() - o.seit > 300000)) { delete offen[id]; W.ereignisseRaus.push({ an: parseInt(id.slice(1), 10), e: Object.assign({ art: 'delta' }, o.e) }); }
+            if (o && (W.menschen[id].online || Date.now() - o.seit > 300000)) { delete offen[id]; if (botState[id]) delete botState[id].dOffen; W.ereignisseRaus.push({ an: parseInt(id.slice(1), 10), e: Object.assign({ art: 'delta' }, o.e) }); }
         }
     }
-    const offen = {};   // (Weltrechner) gesammelte Änderungen für Spieler, die gerade nicht online sind
+    // (Weltrechner) gesammelte Änderungen für Spieler, die gerade nicht online sind. Liegen auch in botState[id].dOffen
+    // (nur der Weltrechner sieht das), damit bei einem Neustart des Weltrechners nichts verloren geht
+    const offen = {};
     function deltaMerken(id, e) {
+        if (!offen[id] && botState[id] && botState[id].dOffen && botState[id].dOffen.e) offen[id] = botState[id].dOffen;
         const o = offen[id] || (offen[id] = { seit: Date.now(), e: {} }), z = o.e;
         for (const k of ['coins', 'gems', 'tp', 'xp', 'wounded']) if (e[k]) z[k] = (z[k] || 0) + e[k];
         for (const g of ['sh', 'stats']) if (e[g]) { const t = z[g] || (z[g] = {}); for (const k in e[g]) t[k] = (t[k] || 0) + e[g][k]; }
+        if (botState[id]) botState[id].dOffen = o;
     }
     function botById(id) { return typeof BOT_DEFS !== 'undefined' && BOT_DEFS.find(b => b.id === id); }
     W.nachricht = function (uid, e) { if (('u' + uid) === ICH) { for (const f of W.beiNachricht) try { f(e); } catch (x) { console.warn(x); } } else W.ereignisseRaus.push({ an: uid, e }); };

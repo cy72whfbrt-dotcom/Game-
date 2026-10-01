@@ -189,7 +189,7 @@ function befehl_ok($b) {
 // ===== Was Spieler NICHT bekommen (Datenlecks) =====
 // Gedanken der Mitspieler (wen sie als Nächstes angreifen, Pläne, wann sie „aufs Handy schauen“ …) und die Merkliste des
 // Schummel-Schutzes braucht nur der Weltrechner. Spieler bekommen diese Felder nie – weder im ganzen Teil noch in Flicken.
-const NUR_WELTRECHNER = ['grudge', 'annoy', 'vendetta', 'capWish', 'mood', 'kennt', 'fails', 'outAt', 'rally', 'plan', 'wache'];
+const NUR_WELTRECHNER = ['grudge', 'annoy', 'vendetta', 'capWish', 'mood', 'kennt', 'fails', 'outAt', 'rally', 'plan', 'wache', 'dOffen'];
 function mitspieler_kuerzen($b, $jetztMs) {
     if (!is_object($b)) return $b;
     foreach (NUR_WELTRECHNER as $f) unset($b->{$f});

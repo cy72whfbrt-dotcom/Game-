@@ -422,7 +422,7 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
   width:max-content;max-width:min(calc(100vw - 32px),440px);padding:7px 12px 7px 26px;pointer-events:none;
   background:var(--glass);border:1px solid var(--line-2);border-radius:var(--r-sm);box-shadow:var(--sh-2);
   font:500 var(--fs-12)/1.35 var(--font-ui);color:var(--tx-1);text-align:left;white-space:normal;overflow-wrap:anywhere;
-  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden;
   -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);animation:toast-in var(--dur-2) var(--ease-out)}
 .toast::before{content:"";position:absolute;left:11px;top:50%;width:6px;height:6px;margin-top:-3px;transform:rotate(45deg);background:var(--gold-300);box-shadow:0 0 6px rgba(214,170,90,.6)}
 .toast:empty{display:none}

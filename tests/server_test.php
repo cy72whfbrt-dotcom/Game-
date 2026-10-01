@@ -49,7 +49,7 @@ pruefe('Flicken auf fehlenden Eintrag', flicken_anwenden(json_decode('{"a":1}'),
 // --- Datenlecks: Gedanken der Mitspieler kommen nie beim Spieler an
 $b = json_decode(weltteil_fuer_spieler('openWaterBotState', '{"bot1":{"lvl":5,"grudge":{"u3":1},"vendetta":{"who":"u3"},"plan":[1],"wache":{"lv":3},"handy":{"k":1,"n":1,"r":5,"bis":0}}}'), true);
 pruefe('Bot behält Stufe', $b['bot1']['lvl'], 5);
-pruefe('Bot ohne Groll/Rache/Plan/Wache', array_intersect(array_keys($b['bot1']), ['grudge', 'vendetta', 'plan', 'wache']), []);
+pruefe('Bot ohne Groll/Rache/Plan/Wache', array_intersect(array_keys($b['bot1']), ['grudge', 'vendetta', 'plan', 'wache', 'dOffen']), []);
 pruefe('Handy-Reaktionszeit verborgen', isset($b['bot1']['handy']), false);
 $f = json_decode(flicken_fuer_spieler('openWaterBotState', '{"d":{"bot1":{"s":{"grudge":{"u3":2},"lvl":6,"handy":{"r":9,"bis":0}}}}}'), true);
 pruefe('Flicken ohne Groll', isset($f['d']['bot1']['s']['grudge']), false);

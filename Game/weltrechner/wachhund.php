@@ -33,7 +33,9 @@ function wr_schreiben($name, $v) {
 }
 function wr_log($text) {
     $f = WR_ORDNER . '/log.php';
-    if (is_file($f) && filesize($f) > 2 * 1024 * 1024) { @rename($f, WR_ORDNER . '/log_alt.php'); }   // nie größer als 2 MB (+ eine alte)
+    // nie größer als 2 MB (+ eine alte). Kopieren + leeren statt umbenennen: der Weltrechner schreibt mit offener Datei weiter hinein
+    clearstatcache(true, $f);
+    if (is_file($f) && filesize($f) > 2 * 1024 * 1024 && @copy($f, WR_ORDNER . '/log_alt.php')) { $h = @fopen($f, 'r+'); if ($h) { ftruncate($h, 0); fwrite($h, WR_SPERRE); fclose($h); } }
     if (!is_file($f)) file_put_contents($f, WR_SPERRE);
     file_put_contents($f, date('c') . ' Wachhund: ' . $text . "\n", FILE_APPEND);
 }

@@ -510,6 +510,17 @@ erst 10 in 30 Minuten. Kein Ersatz-Hostname aus Anfragen.
 **Behoben (Datenlecks in den Paketen):** Spieler bekommen keine Gedanken der Mitspieler mehr (Groll, Rache-Ziel, Pläne,
 geplante Verlegung, Handy-Reaktionszeit, Schummel-Merkliste), keine Münzen/Verwundeten anderer, keine Login-Namen.
 
+**Behoben (Fehler, 3. Prüfer):**
+- Ausbau als Zuschauer: die Stufe sprang beim nächsten Puls kurz zurück, man konnte dieselbe Stufe zweimal bezahlen.
+  Jetzt merkt sich das Handy den Ausbau 90 s (`wartendeAusbauten`), bis der Weltrechner ihn bestätigt.
+- Angriff/Truppen schicken als Zuschauer: geschlossenes Tor und Maut werden jetzt vorher geprüft (`mautVorab`).
+  Mehrfachangriff kostet keine Gems mehr, wenn nichts losgeht.
+- Weltrechner-Log: Kopieren + Leeren statt Umbenennen (sonst wuchs die alte Datei endlos weiter).
+- Gesammelte Münzen/EP für Spieler, die offline sind, liegen jetzt auch in der Welt (`dOffen`, sieht nur der Weltrechner).
+  Bei einem Neustart geht nichts mehr verloren.
+- Hinweise oben: bis 4 Zeilen statt 2 (lange Texte waren abgeschnitten). Namensfeld: dunkle Schrift auf Weiß.
+  Angriffs-Warnungen: die Merkliste wird aufgeräumt.
+
 **Geprüft und sicher:** SQL-Injection (überall Platzhalter), Passwörter (bcrypt), Login-Cookie (HttpOnly, nur Hash in der
 DB), Admin (feste Nummer + Formular-Zeichen), keine Datei gibt Geheimnisse preis (config.php 0 Bytes, Weltrechner-Dateien
 404, Ordnerlisten 403), keine Daten anderer Spieler in Antworten, Push-Adressen gegen 16 Umgehungsversuche geprüft.
@@ -524,3 +535,4 @@ jsdom (einzige Abhängigkeit): 0 bekannte Lücken (`npm audit`).
   mit gefälschter Stufe/Gems ganz ausgeschlossen.
 - Spielregel-Frage an Alexander: Hauptstadt auf eine gerade angegriffene Basis verlegen erlauben? (heute ja – damit
   rettet man jede Basis).
+- Klein: Handy-Uhr falsch gestellt → Marschzeiten wirken verschoben (Handys stellen die Uhr meist selbst; nicht gebaut).
