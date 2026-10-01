@@ -6343,7 +6343,19 @@ function weltNachholen(seit) {                    // (Weltrechner) die Zeit, in 
     const ts = throneState, now = Date.now(); if (ts.nextPts < now) ts.nextPts = now + THRONE_TICK_MS; if (ts.nextFire < now) ts.nextFire = now + THRONE_FIRE_MS;
 }
 setTimeout(() => {                               // right after boot (everything exists): production for the time away
-    if (window.WELT) { if (WELT.leiter && WELT.weltZeit && Date.now() - WELT.weltZeit > 60000) weltNachholen(WELT.weltZeit); }
+    if (window.WELT && !WELT.leiter && !SYSTEM && leaveAtBoot && Date.now() - leaveAtBoot.at >= AWAY_MIN_MS) {
+        // Zuschauer (die Welt rechnet der Server): was in der Abwesenheit passiert ist, kommt mit den ersten Pulsen
+        // (Münzen, Truppen, Berichte). Erst wenn alles da ist, die Begrüßung „Du warst … weg“ zeigen.
+        const c0 = leaveAtBoot.coins || 0, t0 = leaveAtBoot.troops || 0, tp0 = throneState.pts || 0, los = Date.now();
+        const warten = () => {
+            if ((WELT.pulse || 0) < 3 || (WELT.nachrichtenOffen && Date.now() - los < 30000)) { setTimeout(warten, 500); return; }
+            const dc = coins - c0, dt = empireSnapshot().troops - t0, dtp = (throneState.pts || 0) - tp0;
+            welcomeFrom = Object.assign({ produced: { coins: Math.max(0, dc), troops: Math.max(0, dt), capped: false, thronePts: Math.max(0, dtp), throneHit: null } }, leaveAtBoot);
+            afterSplash(() => setTimeout(showWelcome, 300));
+        };
+        setTimeout(warten, 500);
+    }
+    else if (window.WELT) { if (WELT.leiter && WELT.weltZeit && Date.now() - WELT.weltZeit > 60000) weltNachholen(WELT.weltZeit); }
     else if (leaveAtBoot && Date.now() - leaveAtBoot.at > 60000) {
         const away = Math.min(AWAY_PRODUCE_MAX_MS, Date.now() - leaveAtBoot.at), ticks = Math.floor(away / productionTickMs());
         const c0 = coins, t0 = empireSnapshot().troops;

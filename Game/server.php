@@ -135,6 +135,18 @@ function profil_bereinigen($text) {
         'baustil' => $bs ? ['style' => $id($bs['style'] ?? null) ?: 'klassisch', 'cap' => ($bs['cap'] ?? '') === 'wasser' ? 'wasser' : 'huegel'] : null,
     ], JSON_UNESCAPED_UNICODE);
 }
+// Einen Flicken auf einen Welt-Teil anwenden (Objekte, nicht Arrays – leere {} bleiben {}):
+//   s: {Eintrag: neuer Wert}   w: [Einträge, die wegfallen]   d: {Eintrag: {s: {Feld: Wert}, w: [Felder]}} (eine Ebene tiefer)
+function flicken_anwenden($obj, $p) {
+    foreach ((array)($p->s ?? []) as $k => $v) $obj->{$k} = $v;
+    foreach ((array)($p->w ?? []) as $k) unset($obj->{$k});
+    foreach ((array)($p->d ?? []) as $k => $sub) {
+        if (!isset($obj->{$k}) || !is_object($obj->{$k}) || !is_object($sub)) return false;
+        foreach ((array)($sub->s ?? []) as $kk => $vv) $obj->{$k}->{$kk} = $vv;
+        foreach ((array)($sub->w ?? []) as $kk) unset($obj->{$k}->{$kk});
+    }
+    return true;
+}
 // Nachrichten, die der Weltrechner an andere schicken darf (Geschenke nur über admin.php)
 const WELTRECHNER_NACHRICHTEN = ['delta', 'bericht', 'startschild'];
 
@@ -292,6 +304,15 @@ class MysqlLager {
             erstellt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             KEY spieler_id (spieler_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin");
+        // Änderungen der Welt („Flicken“): der Weltrechner schickt bei großen Teilen nur, was sich geändert hat. Die Spieler
+        // bekommen dann auch nur diese Änderungen (statt jedes Mal den ganzen Teil). Gemerkt werden die letzten ~600 Versionen.
+        // flicken = NULL: in dieser Version wurde der Teil ganz neu geschrieben (dann bekommt man ihn ganz).
+        $this->db->exec("CREATE TABLE IF NOT EXISTS ow_welt_flicken (
+            version BIGINT UNSIGNED NOT NULL,
+            schluessel VARCHAR(100) NOT NULL,
+            flicken MEDIUMTEXT NULL,
+            PRIMARY KEY (version, schluessel)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin");
         // Sicherungen der Welt (wachhund.php: jede Stunde eine, die letzten 48 bleiben; Admin kann zurückspielen)
         $this->db->exec("CREATE TABLE IF NOT EXISTS ow_sicherungen (
             id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -425,6 +446,9 @@ class MysqlLager {
     }
     private function bots_schreiben($uid, $sp, $obj) {
         $this->bots_leeren($uid, $sp);
+        $this->bots_einige($uid, $sp, $obj);
+    }
+    private function bots_einige($uid, $sp, $obj) {
         $reihen = [];
         foreach ($obj as $id => $wert) {
             $id = (string)$id;
@@ -439,6 +463,16 @@ class MysqlLager {
                  . implode(',', array_fill(0, count($block), '(?,?,?,?,?,?,?,?)')) . " ON DUPLICATE KEY UPDATE $upd";
             $this->db->prepare($sql)->execute(array_merge(...$block));
         }
+    }
+    // Nur die geänderten Mitspieler-Zeilen schreiben (statt alle 150 neu): $obj = der ganze neue Teil, $p = der Flicken
+    private function bots_teilweise($uid, $sp, $obj, $p) {
+        $ids = array_merge(array_keys((array)($p->s ?? [])), array_keys((array)($p->d ?? [])));
+        if ($ids) { $teil = new stdClass; foreach ($ids as $id) if (property_exists($obj, (string)$id)) $teil->{$id} = $obj->{$id}; $this->bots_einige($uid, $sp, $teil); }
+        foreach ((array)($p->w ?? []) as $id) {
+            $extra = $sp === 'basen' ? ', anzahl_basen = NULL' : ($sp === 'zustand' ? ', stufe = NULL' : '');
+            $this->db->prepare("UPDATE ow_bots SET $sp = NULL$extra WHERE spieler_id = ? AND bot_id = ?")->execute([$uid, (string)$id]);
+        }
+        $this->db->prepare('DELETE FROM ow_bots WHERE spieler_id = ? AND zustand IS NULL AND muenzen IS NULL AND basen IS NULL')->execute([$uid]);
     }
     // true = noch erlaubt (und mitgezählt), false = zu viele Versuche
     function bremse($k, $max, $sek) {
@@ -472,15 +506,35 @@ class MysqlLager {
         $this->db->prepare('UPDATE ow_welt_info SET leiter_id = ?, leiter_token = ?, leiter_bis = ? WHERE id = 1')->execute([$uid, $tok, $bis]);
     }
     // Weltrechner schreibt: Teile speichern, Version hochzählen, je Teil merken, in welcher Version er zuletzt geändert wurde
-    function welt_schreiben($setzen, $loeschen, $welt_zeit) {
+    // $flicken: [schluessel => Flicken-Text] – nur die Änderungen eines großen Teils (siehe flicken_anwenden).
+    // Gibt die Version zurück und in $voll die Teile, deren Flicken nicht passte (die soll der Weltrechner ganz schicken).
+    function welt_schreiben($setzen, $loeschen, $welt_zeit, $flicken = [], &$voll = []) {
         $i = $this->welt_info();
         $v = (int)$i['version'] + 1;
         $vs = $i['versionen'];
-        foreach ($setzen as $k => $_) $vs[$k] = $v;
-        foreach ($loeschen as $k) $vs[$k] = $v;
+        $voll = []; $gemerkt = [];
+        foreach ($setzen as $k => $_) { $vs[$k] = $v; $gemerkt[$k] = null; }   // ganz geschrieben
+        foreach ($loeschen as $k) { $vs[$k] = $v; $gemerkt[$k] = null; }
+        if ($flicken) {
+            $alt = $this->stand_laden(0, array_keys($flicken));
+            foreach ($flicken as $k => $text) {
+                $p = json_decode($text);
+                $obj = isset($alt[$k]) ? json_decode($alt[$k]) : null;
+                if (!is_object($p) || !is_object($obj) || !flicken_anwenden($obj, $p)) { $voll[] = $k; continue; }
+                $neu = json_encode($obj, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION);
+                if ($neu === false || !sauber_json($neu)) { $voll[] = $k; continue; }
+                if ($k === 'openWaterBotOwnedIslands') $basenNeu = $obj;
+                if (isset(self::BOT_TEILE[$k])) $this->bots_teilweise(0, self::BOT_TEILE[$k], $obj, $p);   // nur geänderte Zeilen
+                else $setzen[$k] = $neu;
+                $vs[$k] = $v; $gemerkt[$k] = $text;
+            }
+        }
         $this->stand_schreiben(0, $setzen, $loeschen);
-        if (isset($setzen['openWaterBotOwnedIslands'])) {   // Übersicht: Basen jedes echten Spielers in ow_spieler
-            $b = json_decode($setzen['openWaterBotOwnedIslands'], true) ?: [];
+        $f = $this->db->prepare('INSERT INTO ow_welt_flicken (version, schluessel, flicken) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE flicken = VALUES(flicken)');
+        foreach ($gemerkt as $k => $text) $f->execute([$v, $k, $text]);
+        if ($v % 50 === 0) $this->db->prepare('DELETE FROM ow_welt_flicken WHERE version < ?')->execute([$v - 600]);
+        if (isset($setzen['openWaterBotOwnedIslands']) || isset($basenNeu)) {   // Übersicht: Basen jedes echten Spielers in ow_spieler
+            $b = isset($basenNeu) ? json_decode(json_encode($basenNeu), true) : (json_decode($setzen['openWaterBotOwnedIslands'], true) ?: []);
             $q = $this->db->prepare('UPDATE ow_spieler SET anzahl_basen = ? WHERE id = ?');
             foreach ($b as $wer => $liste) if (preg_match('/^u(\d+)$/', $wer, $m)) $q->execute([is_array($liste) ? count($liste) : 0, (int)$m[1]]);
         }
@@ -495,6 +549,25 @@ class MysqlLager {
         $teile = $this->stand_laden(0, $neu);
         foreach ($neu as $k) if (!isset($teile[$k])) $weg[] = $k;
         return ['version' => (int)$i['version'], 'setzen' => (object)$teile, 'loeschen' => $weg, 'welt_zeit' => (int)$i['welt_zeit']];
+    }
+    // Für die Spieler: wie welt_seit, aber große Teile nur als Änderungen („flicken“: [Teil => [Flicken-Texte der Reihe nach]]),
+    // wenn alle Änderungen seit $seit noch gemerkt sind – sonst der ganze Teil.
+    function welt_seit_flicken($seit) {
+        $i = $this->welt_info();
+        $neu = []; foreach ($i['versionen'] as $k => $v) if ($v > $seit) $neu[] = $k;
+        $flicken = []; $ganz = $neu;
+        if ($seit > 0 && $neu && $seit >= (int)$i['version'] - 590) {
+            $in = implode(',', array_fill(0, count($neu), '?'));
+            $q = $this->db->prepare("SELECT version, schluessel, flicken FROM ow_welt_flicken WHERE version > ? AND schluessel IN ($in) ORDER BY version");
+            $q->execute(array_merge([(int)$seit], $neu));
+            $liste = []; $kaputt = [];
+            foreach ($q as $z) { if ($z['flicken'] === null) $kaputt[$z['schluessel']] = true; else $liste[$z['schluessel']][] = $z['flicken']; }
+            $ganz = [];
+            foreach ($neu as $k) { if (isset($kaputt[$k]) || empty($liste[$k])) $ganz[] = $k; else $flicken[$k] = $liste[$k]; }
+        }
+        $teile = $this->stand_laden(0, $ganz);
+        $weg = []; foreach ($ganz as $k) if (!isset($teile[$k])) $weg[] = $k;
+        return ['version' => (int)$i['version'], 'setzen' => (object)$teile, 'flicken' => (object)$flicken, 'loeschen' => $weg, 'welt_zeit' => (int)$i['welt_zeit']];
     }
     // wie viele Teile hätte der Spielstand mit diesen neuen Schlüsseln? (Schutz gegen Müll-Schlüssel)
     function anzahl_teile($uid, $neu) {
@@ -674,8 +747,12 @@ function welt_puls($ich, $d) {
         $setzen = [];
         foreach ((array)($w['setzen'] ?? []) as $k => $v) if (is_string($k) && preg_match('/^openWater[A-Za-z0-9_]{1,90}$/', $k) && is_string($v) && sauber_json($v)) $setzen[$k] = $v;
         $loeschen = array_values(array_filter((array)($w['loeschen'] ?? []), function ($k) { return is_string($k) && preg_match('/^openWater[A-Za-z0-9_]{1,90}$/', $k); }));
+        $flicken = [];   // nur Änderungen großer Teile (als Text, damit {} und [] erhalten bleiben)
+        foreach ((array)($w['flicken'] ?? []) as $k => $t) if (is_string($k) && preg_match('/^openWater[A-Za-z0-9_]{1,90}$/', $k) && is_string($t) && strlen($t) < 6 * 1024 * 1024 && sauber_json($t)) $flicken[$k] = $t;
         if ($setzen && $l->anzahl_teile(0, array_keys($setzen)) > 80) $setzen = [];   // die Welt hat nur eine feste Zahl Teile
-        if ($setzen || $loeschen) $l->welt_schreiben($setzen, $loeschen, (int)($w['welt_zeit'] ?? 0));
+        $voll = [];
+        if ($setzen || $loeschen || $flicken) $l->welt_schreiben($setzen, $loeschen, (int)($w['welt_zeit'] ?? 0), $flicken, $voll);
+        if ($voll) $antwort['welt_voll'] = $voll;   // diese Teile beim nächsten Mal ganz schicken
         if (mt_rand(1, 500) === 1) $l->aufraeumen();
         foreach (array_slice((array)($d['ereignisse'] ?? []), 0, 500) as $e) if (isset($e['an'], $e['e']) && (int)$e['an'] > 0 && is_array($e['e']) && in_array($e['e']['art'] ?? '', WELTRECHNER_NACHRICHTEN, true) && sauber($e['e'])) {
             $j = json_encode($e['e'], JSON_UNESCAPED_UNICODE); if ($j !== false && strlen($j) < 200000) $l->ereignis_ablegen((int)$e['an'], $j); }
@@ -687,7 +764,7 @@ function welt_puls($ich, $d) {
         $bin_leiter = true;
     }
     $seit = (int)($d['seit'] ?? 0);
-    $antwort['welt'] = $l->welt_seit($bin_leiter && !$neu_leiter ? PHP_INT_MAX : $seit);   // der Weltrechner hat schon alles
+    $antwort['welt'] = $bin_leiter ? $l->welt_seit($neu_leiter ? $seit : PHP_INT_MAX) : $l->welt_seit_flicken($seit);   // der Weltrechner hat schon alles; Spieler bekommen nur Änderungen
     if ($bin_leiter && !$neu_leiter) { $antwort['welt']['setzen'] = new stdClass; $antwort['welt']['loeschen'] = []; }
     if ($bin_leiter) $antwort['befehle'] = $l->befehle_abholen();
     $l->welt_entsperren();

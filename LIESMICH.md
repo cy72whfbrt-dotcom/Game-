@@ -409,6 +409,25 @@ Alle Spieler sind Zuschauer: sie zeigen an und schicken Befehle (wie bisher die 
   geschickt werden (Mitspieler-Daten 400 KB, Insel-Stufen 166 KB, Truppen 97 KB). Für viele Spieler nötig: nur noch
   Änderungen schicken. Noch nicht gebaut.
 
+**Weniger Daten: nur Änderungen schicken („Flicken“, 1.10., lokal getestet, noch NICHT hochgeladen):**
+Große Welt-Teile ändern sich alle 2 s nur an wenigen Stellen. Jetzt schickt der Weltrechner (welt.js `flickenBauen`) bei
+großen Teilen nur den Unterschied: neue/geänderte Einträge, weggefallene, und bei Mitspielern sogar nur die geänderten
+Felder. server.php setzt den Flicken auf den gespeicherten Teil (`flicken_anwenden`, schreibt bei Mitspielern nur die
+geänderten Zeilen in `ow_bots`) und merkt ihn sich (Tabelle `ow_welt_flicken`, die letzten ~600 Versionen). Spieler
+bekommen dann auch nur die Flicken (`welt_seit_flicken`) und setzen sie auf ihren Stand (welt.js `flickenAnwenden`).
+Passt einmal etwas nicht → der Spieler holt sich beim nächsten Puls die ganze Welt (nichts geht kaputt).
+Gemessen mit der echten Welt: vorher ~864 KB pro Puls, jetzt Ø 249 KB ungepackt / **66 KB über die Leitung**.
+Geprüft: 3× die Welt beim Spieler mit der Datenbank verglichen – jedes Mal genau gleich, 0 Fehler.
+(Truppen ändern sich bei jedem Schritt auf fast allen Inseln – die gehen weiter ganz; später evtl. seltener schicken.)
+
+**„Du warst … weg“ wieder da (Alexanders Meldung):** Die Begrüßung gab es nur, wenn das eigene Gerät die Welt
+nachrechnete – als Zuschauer nie. Jetzt (spiel.js): nach dem Einloggen warten, bis die Nachrichten der Abwesenheit da
+sind (3 Pulse), dann Begrüßung mit Produktion, Angriffen, Berichten. Getestet: „iceman, du warst 58 Min. weg | Produktion
++958,5 Mio. · 5,2 Mrd. Truppen“.
+**Datenbank-Flut verhindert:** Für Spieler, die offline sind, legte der Weltrechner alle 2 s eine Nachricht („+Münzen“)
+ab – nach 8 Stunden ~14.000 Einträge pro Spieler. Jetzt (welt.js `deltaMerken`): gesammelt und höchstens alle 5 Minuten
+EINE Nachricht; online sofort.
+
 **Späher durch geschlossene Tore (Alexanders Meldung) – behoben (bots.js):** Bots schickten Späher los, obwohl die
 Tor-Prüfung „zu“ sagte (Ergebnis wurde an 4 Stellen nicht beachtet), und geprüft wurde vom Hauptsitz aus statt von der
 Basis/Armee, von der der Späher wirklich losläuft. Jetzt: `botLearn(…, vonLm)` prüft vom echten Startpunkt, und ohne

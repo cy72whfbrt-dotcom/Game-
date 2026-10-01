@@ -13,6 +13,39 @@
     const SYSTEM = !!OW.system;              // der Weltrechner auf dem Server (weltrechner/start.js): hat keine eigenen Basen
     const P = s => { try { return s == null ? null : JSON.parse(s); } catch (e) { return null; } };
     const J = v => JSON.stringify(v);
+    const istObjekt = v => v !== null && typeof v === 'object' && !Array.isArray(v);
+
+    // ===== Nur Änderungen schicken („Flicken“) =====
+    // Große Welt-Teile (Mitspieler, Insel-Stufen, Besitz …) ändern sich alle 2 s nur an wenigen Stellen. Statt des ganzen
+    // Teils geht nur der Unterschied über die Leitung: s = neue/geänderte Einträge, w = weggefallene, d = eine Ebene tiefer
+    // nur die geänderten Felder (z. B. bei einem Mitspieler nur sein Zähler, nicht sein ganzer Datensatz).
+    function flickenBauen(alt, neu) {
+        if (!istObjekt(alt) || !istObjekt(neu)) return null;
+        const s = {}, w = [], d = {}; let n = 0;
+        for (const k in neu) {
+            const b = neu[k];
+            if (!(k in alt)) { s[k] = b; n++; continue; }
+            const a = alt[k]; if (a === b) continue;
+            if (istObjekt(a) && istObjekt(b)) {
+                const ss = {}, ww = []; let m = 0;
+                for (const kk in b) if (!(kk in a) || J(a[kk]) !== J(b[kk])) { ss[kk] = b[kk]; m++; }
+                for (const kk in a) if (!(kk in b)) { ww.push(kk); m++; }
+                if (m) { d[k] = ww.length ? { s: ss, w: ww } : { s: ss }; n++; }
+            } else if (J(a) !== J(b)) { s[k] = b; n++; }
+        }
+        for (const k in alt) if (!(k in neu)) { w.push(k); n++; }
+        const f = {}; if (Object.keys(s).length) f.s = s; if (w.length) f.w = w; if (Object.keys(d).length) f.d = d;
+        return f;
+    }
+    function flickenAnwenden(obj, f) {
+        if (!istObjekt(obj) || !istObjekt(f)) return false;
+        for (const k in f.s || {}) obj[k] = f.s[k];
+        for (const k of f.w || []) delete obj[k];
+        for (const k in f.d || {}) { const z = obj[k], sub = f.d[k]; if (!istObjekt(z)) return false; for (const kk in sub.s || {}) z[kk] = sub.s[kk]; for (const kk of sub.w || []) delete z[kk]; }
+        return true;
+    }
+    const gesendet = {};   // (Weltrechner) Stand jedes Teils, wie ihn der Server zuletzt sicher bekommen hat
+    const neutral = {};    // (Spieler) die Welt-Teile in neutraler Form – auf sie werden die Flicken gesetzt
 
     const W = window.WELT = {
         ich: ICH, uid: OW.uid, system: SYSTEM,
@@ -25,6 +58,7 @@
         befehle: [],                      // warten auf den nächsten Puls
         ereignisseRaus: [],               // (Weltrechner) Nachrichten an andere Spieler
         beiNachricht: [],                 // spiel.js hängt sich hier ein
+        flickenBauen, flickenAnwenden,    // (auch für Tests)
         istMensch: id => !!(id && W.menschen[id]),
         name: id => (W.menschen[id] || {}).name
     };
@@ -206,6 +240,7 @@
     for (const id in W.menschen) menschEintragen(id);
     for (const k of S.WELT) S.roh(k, null);   // Welt-Teile aus einem alten eigenen Spielstand zählen nicht – es gibt nur die EINE Welt
     if (OW.welt && OW.welt.version > 0) {
+        for (const k in OW.welt.setzen) { const v = P(OW.welt.setzen[k]); if (istObjekt(v)) neutral[k] = v; }
         const teile = Object.assign({}, OW.welt.setzen);
         rueckzuegeZuClient(teile);
         weltZuClient(teile);
@@ -246,8 +281,18 @@
             if (botState[id] && botState[id].xpNeu) botState[id].xpNeu = 0;
             jetzt.xp = 0;
             basis[id] = jetzt;
-            if (Object.keys(e).length) W.ereignisseRaus.push({ an: parseInt(id.slice(1), 10), e: Object.assign({ art: 'delta' }, e) });
+            // Online: sofort. Offline: sammeln und höchstens alle 5 Minuten als EINE Nachricht ablegen (sonst läge für jeden
+            // abwesenden Spieler alle 2 s ein Eintrag in der Datenbank – nach 8 Stunden ~14.000)
+            if (Object.keys(e).length) deltaMerken(id, e);
+            const o = offen[id];
+            if (o && (W.menschen[id].online || Date.now() - o.seit > 300000)) { delete offen[id]; W.ereignisseRaus.push({ an: parseInt(id.slice(1), 10), e: Object.assign({ art: 'delta' }, o.e) }); }
         }
+    }
+    const offen = {};   // (Weltrechner) gesammelte Änderungen für Spieler, die gerade nicht online sind
+    function deltaMerken(id, e) {
+        const o = offen[id] || (offen[id] = { seit: Date.now(), e: {} }), z = o.e;
+        for (const k of ['coins', 'gems', 'tp', 'xp', 'wounded']) if (e[k]) z[k] = (z[k] || 0) + e[k];
+        for (const g of ['sh', 'stats']) if (e[g]) { const t = z[g] || (z[g] = {}); for (const k in e[g]) t[k] = (t[k] || 0) + e[g][k]; }
     }
     function botById(id) { return typeof BOT_DEFS !== 'undefined' && BOT_DEFS.find(b => b.id === id); }
     W.nachricht = function (uid, e) { if (('u' + uid) === ICH) { for (const f of W.beiNachricht) try { f(e); } catch (x) { console.warn(x); } } else W.ereignisseRaus.push({ an: uid, e }); };
@@ -262,26 +307,38 @@
             const jetzt = Date.now();
             if (!SYSTEM && jetzt - profilAt > 10000) { const pr = J(meinProfil()); if (pr !== letztesProfil) { anfrage.profil = pr; letztesProfil = pr; } profilAt = jetzt; }
             if (W.befehle.length) anfrage.befehle = W.befehle.splice(0);
-            let gesendet = null;
+            let gesendetKs = null;
             if (W.leiter) {
                 if (typeof window.__weltVorPuls === 'function') window.__weltVorPuls();   // spiel.js: alles in die Daten schreiben
                 deltasSammeln();
                 const ks = Array.from(S.weltGeaendert); S.weltGeaendert.clear();
-                if (ks.length) { anfrage.welt = { setzen: clientZuWelt(ks), loeschen: [], welt_zeit: jetzt }; gesendet = ks; }
-                else anfrage.welt = { setzen: {}, loeschen: [], welt_zeit: jetzt };
+                anfrage.welt = { setzen: ks.length ? clientZuWelt(ks) : {}, loeschen: [], welt_zeit: jetzt };
+                // große Teile nur als Änderung, wenn das deutlich kleiner ist (Stand erst nach gutem Puls übernehmen)
+                anfrage.neuGesendet = {};
+                for (const k in anfrage.welt.setzen) {
+                    const neu = P(anfrage.welt.setzen[k]); if (!istObjekt(neu)) { delete gesendet[k]; continue; }
+                    anfrage.neuGesendet[k] = neu;
+                    if (!gesendet[k] || anfrage.welt.setzen[k].length < 3000) continue;
+                    const f = J(flickenBauen(gesendet[k], neu));
+                    if (f.length < anfrage.welt.setzen[k].length * .6) { (anfrage.welt.flicken || (anfrage.welt.flicken = {}))[k] = f; delete anfrage.welt.setzen[k]; }
+                }
+                if (ks.length) gesendetKs = ks;
                 if (W.ereignisseRaus.length) anfrage.ereignisse = W.ereignisseRaus.splice(0);
             }
+            const neuGesendet = anfrage.neuGesendet; delete anfrage.neuGesendet;
             const text = J(anfrage), gz = packen(text);
             const kopf = { 'X-Open-Water': '1', 'Content-Type': 'application/octet-stream' }; if (gz) kopf['X-Gepackt'] = '1';
             const r = await fetch('server.php', { method: 'POST', headers: kopf, body: gz || text, credentials: 'same-origin', cache: 'no-store' });
             if (r.status === 409 || r.status === 401 || r.status === 503) { if (SYSTEM && window.__weltrechnerEnde) window.__weltrechnerEnde(r.status); else S.rauswurf(r.status); return; }
             if (!r.ok) throw new Error('HTTP ' + r.status);
             const a = await r.json();
+            if (neuGesendet) Object.assign(gesendet, neuGesendet);   // der Server hat sie: ab jetzt nur noch Änderungen dazu
+            for (const k of a.welt_voll || []) { delete gesendet[k]; S.weltGeaendert.add(k === 'openWaterBotOwnedIslands' ? 'openWaterOwnedIslands' : k); }   // Flicken passte nicht: nächstes Mal ganz
             antwortVerarbeiten(a, anfrage);
         } catch (e) {
             // nichts verloren: Befehle/Welt-Teile/Nachrichten beim nächsten Mal nochmal
             if (anfrage.befehle) W.befehle.unshift(...anfrage.befehle);
-            if (anfrage.welt && anfrage.welt.setzen) for (const k of Object.keys(anfrage.welt.setzen)) S.weltGeaendert.add(k === 'openWaterBotOwnedIslands' ? 'openWaterOwnedIslands' : k);
+            if (anfrage.welt) for (const k of Object.keys(Object.assign({}, anfrage.welt.setzen, anfrage.welt.flicken))) S.weltGeaendert.add(k === 'openWaterBotOwnedIslands' ? 'openWaterOwnedIslands' : k);
             if (anfrage.ereignisse) W.ereignisseRaus.unshift(...anfrage.ereignisse);
             if (anfrage.profil) letztesProfil = '';
             console.warn('Welt-Puls:', e);
@@ -289,6 +346,7 @@
     }
 
     function antwortVerarbeiten(a, anfrage) {
+        W.pulse = (W.pulse || 0) + 1; W.nachrichtenOffen = (a.ereignisse || []).length >= 200;   // (spiel.js: Begrüßung erst, wenn alles da ist)
         if (a.spieler) {
             const vorher = new Set(Object.keys(W.menschen));
             menschenAktualisieren(a.spieler);
@@ -307,14 +365,23 @@
         if (W.rechner !== rechnerVorher && window.__weltRechnerStatus) window.__weltRechnerStatus(W.rechner);
         // Welt übernehmen (Zuschauer, oder gerade eben Weltrechner geworden)
         const w = a.welt || {};
-        if (w.setzen && Object.keys(w.setzen).length || (w.loeschen && w.loeschen.length)) {
+        for (const k in w.setzen || {}) { const v = P(w.setzen[k]); if (istObjekt(v)) neutral[k] = v; else delete neutral[k]; }
+        for (const k of w.loeschen || []) delete neutral[k];
+        let fehlt = false;
+        for (const k in w.flicken || {}) {   // nur Änderungen: auf den eigenen Stand setzen, dann wie ein ganzer Teil weiter
+            const o = neutral[k]; let ok = !!o;
+            for (const t of w.flicken[k]) if (ok) ok = flickenAnwenden(o, P(t));
+            if (ok) (w.setzen || (w.setzen = {}))[k] = J(o); else { delete neutral[k]; fehlt = true; }
+        }
+        // (passte etwas nicht zusammen: diesmal nichts übernehmen und beim nächsten Puls die ganze Welt holen)
+        if (!fehlt && (w.setzen && Object.keys(w.setzen).length || (w.loeschen && w.loeschen.length))) {
             const teile = Object.assign({}, w.setzen);
             rueckzuegeZuClient(teile);
             const ks = weltZuClient(teile);
             for (const k of w.loeschen || []) { S.roh(k, null); ks.add(k); }
             if (window.__weltLaden) window.__weltLaden(Array.from(ks));
         }
-        if (typeof w.version === 'number') W.version = w.version;
+        if (typeof w.version === 'number') W.version = fehlt ? 0 : w.version;
         if (w.welt_zeit) W.weltZeit = w.welt_zeit;
         if (W.leiter && !warLeiter && window.__weltLeiterWechsel) window.__weltLeiterWechsel(true, a.neu_leiter, w.welt_zeit);
         if (!W.leiter && warLeiter && window.__weltLeiterWechsel) window.__weltLeiterWechsel(false);
