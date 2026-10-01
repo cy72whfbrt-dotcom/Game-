@@ -93,7 +93,7 @@ function h($s) { return htmlspecialchars($s, ENT_QUOTES, 'UTF-8'); }
   <form action="?aus=1" method="post"><button type="submit" class="leise">Abmelden</button></form>
 <?php elseif ($ich): ?>
   <p class="hallo">Angemeldet als <b><?= h($ich['name']) ?></b></p>
-  <form action="spiel.php" method="get"><button type="submit">Weiterspielen</button></form>
+  <form action="spiel.php" method="get" onsubmit="var k=this.querySelector('button');k.textContent='Lädt …';k.disabled=true"><button type="submit">Weiterspielen</button></form>
   <form action="?aus=1" method="post"><button type="submit" class="leise">Abmelden</button></form>
 <?php else: ?>
   <nav class="reiter">

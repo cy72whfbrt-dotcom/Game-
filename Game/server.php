@@ -150,7 +150,7 @@ function spielseite_vorbereiten() {
         $altTok = lager()->spiel_token($ich['id']);
         $uebernehmen = ($_GET['weiter'] ?? '') === '1';   // "Hier weiterspielen": sofort übernehmen (das andere Gerät fliegt raus)
         if (!$uebernehmen && $altTok !== '' && time() - lager()->zuletzt_gespeichert($ich['id']) < 60) {
-            for ($i = 0; $i < 80 && lager()->abschied($ich['id']) !== $altTok; $i++) usleep(100000);
+            for ($i = 0; $i < 20 && lager()->abschied($ich['id']) !== $altTok; $i++) usleep(100000);
         }
         lager()->sperren($ich['id']);
         // Wer hier zuletzt das Spiel öffnet, darf speichern - ein älterer Tab/anderes Gerät wird gestoppt.

@@ -172,6 +172,10 @@ b,strong{font-weight:600}
 .nav{position:fixed;z-index:var(--z-dock);left:0;right:0;bottom:0;height:calc(var(--dock-h) + var(--safe-b));
   padding:0 calc(var(--safe-r) + 6px) var(--safe-b) calc(var(--safe-l) + 6px);display:grid;grid-template-columns:repeat(5,1fr);
   background:linear-gradient(180deg,rgb(18,21,28),rgb(8,10,13));border-top:1px solid var(--line-2);box-shadow:0 -12px 30px rgba(0,0,0,.45)}
+@media (max-width:899px) and (min-height:501px){
+  .nav{padding-bottom:calc(var(--safe-b) * .45)}                                                   /* iPhone: icons sit lower, no empty strip above the home bar */
+  .nav::after{content:"";position:absolute;left:0;right:0;top:100%;height:200px;background:rgb(8,10,13)} /* fills anything below the dock */
+}
 .nav::before{content:"";position:absolute;left:18%;right:18%;top:-1px;height:1px;background:linear-gradient(90deg,transparent,var(--gold-200),transparent)}
 .nav-btn{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:0;color:var(--tx-3);transition:color var(--dur-1)}
 .nav-btn .icon{width:22px;height:22px}

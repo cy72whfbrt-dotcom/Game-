@@ -265,6 +265,12 @@ Installier-Seite, App-Datei (application/manifest+json), Logos erreichbar, Wartu
 **HOCHGELADEN am 1.10. (Alexanders Ja):** Wartung für alle, kein Markieren/Kopieren, Statusleiste schwarz (kein
 Streifen unten), „Hier weiterspielen“ sofort – mit Wartung. Live geprüft: Startseite ok, Wartung aus.
 
+**Schneller rein + Rand unten (1.10., lokal getestet, noch NICHT hochgeladen):** „Weiterspielen“ auf der Startseite
+zeigt sofort „Lädt …“. Beim Betreten wartet der Server nur noch höchstens 2 s (statt 8 s) auf das letzte Speichern
+des alten Fensters (`server.php`, `spielseite_vorbereiten`). Lokal: Spiel nach 1,5 s da. Handy-Leiste unten: Knöpfe
+sitzen tiefer (nur 45 % des iPhone-Abstands zum Home-Balken), und unter der Leiste ist alles in Leistenfarbe gefüllt
+(`spiel.php`, `.nav` / `.nav::after`, nur Handy hochkant).
+
 ## 11. Offen
 - **GitHub aufräumen (macht Alexander, Claude darf es nicht):** Unter Settings → General → Default branch auf
   `claude/neues-projekt-8agldl` stellen. Danach unter Branches alle anderen löschen (`claude/chat-session-k7ozkc`,
