@@ -73,7 +73,8 @@ function ist_admin($ich) {
     $ids = array_map('intval', (array)(cfg()['admin_ids'] ?? []));
     return in_array((int)$ich['id'], $ids, true);
 }
-// Wartung (neue Version wird hochgeladen): solange die Datei wartung.txt da ist, kommt niemand außer den Admins ins Spiel
+// Wartung (neue Version wird hochgeladen): solange die Datei wartung.txt da ist, kommt NIEMAND ins Spiel (auch kein Admin;
+// Admins können sie in admin.php beenden)
 const WARTUNG_DATEI = __DIR__ . '/wartung.txt';
 function wartung() { return is_file(WARTUNG_DATEI); }
 
@@ -143,7 +144,7 @@ function spielseite_vorbereiten() {
     try {
         $ich = aktueller_spieler();
         if (!$ich) { header('Location: ./'); exit; }
-        if (wartung() && !ist_admin($ich)) { header('Location: ./'); exit; }   // Wartung: zurück zur Startseite (dort steht es)
+        if (wartung()) { header('Location: ./'); exit; }   // Wartung: niemand kommt ins Spiel (auch kein Admin) – zurück zur Startseite
         // Gerade noch gespielt (Neuladen)? Dann auf den "Abschied" des alten Fensters warten (seine letzte Sicherung),
         // höchstens 8 Sekunden - so lädt die neue Seite nie einen älteren Stand.
         $altTok = lager()->spiel_token($ich['id']);
@@ -527,7 +528,7 @@ function speichern_anfrage() {
 
         $aktion = (string)($d['aktion'] ?? '');
         if ($aktion === 'name') name_anfrage($ich, $d);
-        if ($aktion === 'puls') { if (wartung() && !ist_admin($ich)) json_antwort(503, ['fehler' => 'wartung']); welt_puls($ich, $d); }
+        if ($aktion === 'puls') { if (wartung()) json_antwort(503, ['fehler' => 'wartung']); welt_puls($ich, $d); }   // Wartung gilt für alle
         $t1 = microtime(true);
         lager()->sperren($ich['id']);   // Laden (spiel.php) wartet, bis diese Sicherung drin ist
         if (!hash_equals(lager()->spiel_token($ich['id']), (string)($d['token'] ?? ''))) json_antwort(409, ['fehler' => 'anderswo geöffnet']);

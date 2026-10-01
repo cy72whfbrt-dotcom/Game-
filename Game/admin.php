@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!hash_equals($zeichen, (string)($_POST['zeichen'] ?? ''))) { $fehler = 'Ungültiges Formular – Seite neu laden.'; }
     else {
         $was = (string)($_POST['was'] ?? '');
-        if ($was === 'wartung_an') { file_put_contents(WARTUNG_DATEI, 'Wartung seit ' . date('d.m.Y H:i') . "\n"); $meldung = 'Wartung ist AN – nur Admins kommen ins Spiel, alle anderen werden rausgeworfen.'; }
+        if ($was === 'wartung_an') { file_put_contents(WARTUNG_DATEI, 'Wartung seit ' . date('d.m.Y H:i') . "\n"); $meldung = 'Wartung ist AN – niemand kommt ins Spiel (auch du nicht), alle werden rausgeworfen.'; }
         if ($was === 'wartung_aus') { @unlink(WARTUNG_DATEI); $meldung = 'Wartung ist AUS – alle können wieder spielen.'; }
         if ($was === 'geschenk') {
             $gems = max(0, min(1000000, (int)($_POST['gems'] ?? 0)));
@@ -70,7 +70,7 @@ function zahl($n) { return $n === null ? '–' : number_format((float)$n, 0, ','
 
 <div class="karte">
   <h2>Wartung (neue Version wird aufgespielt)</h2>
-  <p class="status">Zurzeit: <b><?= wartung() ? 'AN – nur Admins kommen ins Spiel' : 'AUS – alle können spielen' ?></b></p>
+  <p class="status">Zurzeit: <b><?= wartung() ? 'AN – niemand kommt ins Spiel' : 'AUS – alle können spielen' ?></b></p>
   <form method="post">
     <input type="hidden" name="zeichen" value="<?= h($zeichen) ?>">
     <?php if (wartung()): ?><button class="gruen" name="was" value="wartung_aus">Wartung beenden</button>

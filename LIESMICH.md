@@ -211,7 +211,8 @@ Welt nochmal frisch zurückgesetzt. Wer als Erster das Spiel öffnet, erschafft 
   abgeholt werden; Spielerliste (Name, Login, Stufe, Münzen, Gems, Basen, online).
 - **Wartung** = Datei `Game/wartung.txt`. Solange sie da ist: Startseite zeigt „neue Version wird aufgespielt“,
   `spiel.php` lässt niemanden rein, laufende Spiele bekommen beim nächsten Puls ein großes Fenster „Wartung“ (vorher
-  wird noch gesichert). Admins kommen trotzdem rein. `hochladen.sh` schaltet die Wartung **automatisch** an und am
+  wird noch gesichert). **Gilt für ALLE, auch für Admins** (Alexanders Wunsch) – nur admin.php bleibt erreichbar, um
+  die Wartung zu beenden. `hochladen.sh` schaltet die Wartung **automatisch** an und am
   Ende wieder aus (bricht es ab, bleibt sie an – dann in admin.php beenden).
 - **Rauswurf**: Meldet sich jemand mit demselben Konto woanders an, bekommt das alte Gerät ein großes Fenster
   „Verbindung getrennt – auf einem anderen Gerät angemeldet“ (geht nicht mehr weiter).

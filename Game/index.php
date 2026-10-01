@@ -86,14 +86,13 @@ function h($s) { return htmlspecialchars($s, ENT_QUOTES, 'UTF-8'); }
 <main class="karte">
   <h1>Open Water</h1>
   <p class="unter">Erobere die Inseln, halte den Thron.</p>
-<?php if ($ich && wartung() && !ist_admin($ich)): ?>
+<?php if ($ich && wartung()): ?>
   <p class="hallo">Angemeldet als <b><?= h($ich['name']) ?></b></p>
   <div class="fehler">Gerade wird eine neue Version aufgespielt. In ein paar Minuten geht es weiter.</div>
   <form action="./" method="get"><button type="submit">Nochmal versuchen</button></form>
   <form action="?aus=1" method="post"><button type="submit" class="leise">Abmelden</button></form>
 <?php elseif ($ich): ?>
   <p class="hallo">Angemeldet als <b><?= h($ich['name']) ?></b></p>
-  <?php if (wartung()): ?><div class="fehler">Wartung ist an – nur Admins kommen ins Spiel.</div><?php endif; ?>
   <form action="spiel.php" method="get"><button type="submit">Weiterspielen</button></form>
   <form action="?aus=1" method="post"><button type="submit" class="leise">Abmelden</button></form>
 <?php else: ?>
