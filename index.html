@@ -3780,7 +3780,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             // XP for troops that died in the clash either way: a win kills
             // the whole enemy force, a loss costs your whole attack force
             noteBattle(target.id, won ? originalEnemyTroops : attack.rawTroops - retreatSurvivors, won ? targetOwner : 'player');
-            midFight(target.id, 'player', won ? originalEnemyTroops : defenderCasualties, targetOwner, won ? sentLoss : attack.rawTroops - retreatSurvivors, won, targetOwner);   // Turnier-Punkte, Kopfgeld-Anteil
+            midFight(target.id, 'player', won ? originalEnemyTroops : defenderCasualties, targetOwner, won ? sentLoss : attack.rawTroops - retreatSurvivors, won, targetOwner);   // Turnier-Punkte
             if (targetOwner && targetOwner !== 'player') botMoodAdd(targetOwner, won ? -.25 : .1);
             addXp(won ? totalStrength : defenderCasualties);
             heroFought('player', attack.hx);                                     // every fight the hero leads fills his rage
@@ -7500,16 +7500,17 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         // ---- Abholfach: prizes and spoils are sent here and collected by hand (Turnier, Tagesboss, Kopfgeld, Weltboss, Kampfbeute) ----
         var inboxState = null;
         function inboxList() { if (!inboxState) { try { inboxState = JSON.parse(store.get('openWaterInbox')); } catch (e) { inboxState = null; } if (!Array.isArray(inboxState)) inboxState = [];
-                const m = {}; inboxState = inboxState.filter(x => { const p = INBOX_PILE[x.src] && m[x.src]; if (!p) { if (INBOX_PILE[x.src]) m[x.src] = x; return true; } p.gems += x.gems || 0; p.coins += x.coins || 0; p.n = (p.n || 1) + (x.n || 1); return false; }); }   // (older saves: many single entries become one)
+                const m = {}; inboxState = inboxState.filter(x => { const k = inboxPiles(x), p = k && m[x.src]; if (!p) { if (k) m[x.src] = x; return true; } p.gems = (p.gems || 0) + (x.gems || 0); p.coins = (p.coins || 0) + (x.coins || 0); p.sh = (p.sh || 0) + (x.sh || 0); p.n = (p.n || 1) + (x.n || 1); return false; }); }   // (older saves: many single entries become one)
             return inboxState; }
         function inboxSave() { store.set('openWaterInbox', JSON.stringify(inboxList())); }
         const INBOX_PILE = { fight: 1, bounty: 1 };   // these pile up in one entry each
+        const inboxPiles = x => !!INBOX_PILE[x.src] && !(x.crate >= 0);   // a crate keeps its own entry (one entry holds one crate)
         const INBOX_SRC = { fight: { ic: 'attack', t: 'Kampfbeute' }, tour: { ic: 'crown', t: 'Wochenend-Turnier' }, boss: { ic: 'star', t: 'Tagesboss' }, wboss: { ic: 'star', t: 'Weltboss' }, bounty: { ic: 'losses', t: 'Kopfgeld' } };
         function inboxAdd(o) {                              // o: { src, title?, gems, coins, sh (hero shards), crate (lowest rarity, -1 none) } - all fights' spoils pile up in one entry
             o = Object.assign({ gems: 0, coins: 0, sh: 0, crate: -1, n: 1 }, o); o.gems = Math.round(o.gems); o.coins = Math.round(o.coins);
             if (!(o.gems > 0 || o.coins > 0 || o.sh > 0 || o.crate >= 0)) return 0;
-            const L = inboxList(), now = Date.now(), pile = INBOX_PILE[o.src] && L.find(x => x.src === o.src);
-            if (pile) { pile.coins += o.coins; pile.gems += o.gems; pile.n++; pile.at = now; } else L.unshift(Object.assign(o, { id: now.toString(36) + Math.floor(Math.random() * 1e6).toString(36), at: now }));
+            const L = inboxList(), now = Date.now(), pile = inboxPiles(o) && L.find(x => x.src === o.src && inboxPiles(x));
+            if (pile) { pile.coins = (pile.coins || 0) + o.coins; pile.gems = (pile.gems || 0) + o.gems; pile.sh = (pile.sh || 0) + (o.sh || 0); pile.n = (pile.n || 1) + 1; pile.at = now; } else L.unshift(Object.assign(o, { id: now.toString(36) + Math.floor(Math.random() * 1e6).toString(36), at: now }));   // (shards pile up too)
             inboxSave(); updateGoalsBadge(); if (isPanelOpen(goalsPopup) && goalsTab === 'reward') renderInbox(); return o.coins || o.gems;
         }
         function inboxWhat(x) { return [x.gems ? '+' + fmtNum(x.gems) + ' Gems' : '', x.coins ? '+' + fmtCompact(x.coins) + ' Münzen' : '', x.crate >= 0 ? 'Kiste (mind. ' + RARITY_DEFS[x.crate].label + ')' : '', x.sh ? x.sh + ' Helden-Splitter' : ''].filter(Boolean).join(' · '); }
@@ -7962,11 +7963,11 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             tourWinMemo = null; tourRankMemo = null; saveTour(); store.set('openWaterTourTest1', '1');
         })();
         function tourChamp(now) { const c = tourState && tourState.champ; return c && (now || Date.now()) < c.until ? c.who : null; }
-        function midFight(tid, aWho, aKills, dWho, dKills, won, dOwner) {     // after every fight for a base: Turnier-Punkte in the middle, a share of the Kopfgeld
+        function midFight(tid, aWho, aKills, dWho, dKills, won, dOwner) {     // after every fight for a base: Turnier-Punkte in the middle
             if (midZoneIds.has(tid) && tourOn()) { tourFight(aWho, aKills); tourFight(dWho, dKills); }   // (capped per fight and per minute: holding the throne must still count)
         }
         // ===== KOPFGELD AUF DEN HERRSCHER: while someone holds the throne a bounty grows (gems + coins, every 3 min with the Thron-Punkte).
-        // Whoever takes the Mega-Tempel from him collects all of it; every won fight against one of his bases pays a small share.
+        // Whoever takes the Mega-Tempel from him collects all of it.
         const BOUNTY_GEMS = 3, BOUNTY_GEMS_MAX = 1000, BOUNTY_COIN_H = .1, BOUNTY_COIN_MAX_H = 24;   // (only whoever takes the throne collects it - no shares per fight)
         var bountyState = (() => { try { return JSON.parse(store.get('openWaterBounty')) || null; } catch (e) { return null; } })() || { ruler: null, gems: 0, coins: 0 };
         function saveBounty() { store.set('openWaterBounty', JSON.stringify(bountyState)); }
@@ -9238,11 +9239,11 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
               desc: 'Schützt deine Münzen: fällt eine deiner Basen oder die Garnison der Hauptstadt, nimmt der Sieger einen Teil deiner Münzen mit – aber nie, was im Lager liegt. Jede Stufe schützt mehr.' }
         ];
         // Lager: what a fallen base (or a beaten capital garrison) gives away - the same for everyone
-        var PLUNDER_PCT = { base: .02, capital: .04 }, PLUNDER_CAP_H = .5;   // a share of the coins above the Lager, at most 2 h of the victim's income per fight
+        var PLUNDER_PCT = { base: .02, capital: .04 }, PLUNDER_CAP_H = .5;   // a share of the coins above the Lager, at most 30 min of the victim's income per fight
         function storageSafe(lvl) { return lvl ? niceRound(10000 * Math.pow(1.65, lvl - 1)) : 0; }   // coins no attacker can take: 10 Tsd. at 1, ~900 Tsd. at 10, ~1,7 Mrd. at 25 (a share of a full coffer, not all of it - plunder stays worth it)
         function plunderOf(who, capital) {                  // { loot, safe }: the share of the coins above the Lager's protection
             const have = Math.max(0, who === 'player' ? coins : botCoins[who] || 0), safe = storageSafe(who === 'player' ? cityLevelSafe('storage') : botBld(who, 'storage'));
-            const cap = Math.max(1e6, hourProduction(who).coins * PLUNDER_CAP_H);   // at most a few hours of the victim's income per fight - a big coffer isn't drained base by base
+            const cap = Math.max(1e6, hourProduction(who).coins * PLUNDER_CAP_H);   // at most half an hour of the victim's income per fight - a big coffer isn't drained base by base
             return { loot: Math.floor(Math.min(cap, Math.max(0, have - safe) * PLUNDER_PCT[capital ? 'capital' : 'base'])), safe: Math.min(have, safe) };
         }
         function plunderMove(from, to, loot) {              // the coins change hands (the player's or anyone's coffers)
