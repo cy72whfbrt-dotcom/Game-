@@ -571,6 +571,7 @@ body.has-panel .mapctl{display:none}
 .act-t{font:600 var(--fs-12)/1.3 var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--tx-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .act-s{display:flex;align-items:center;gap:3px;font:500 var(--fs-11)/1.1 var(--font-ui);color:var(--tx-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
 .act-s .icon{width:12px;height:12px}
+.act-s.is-bad{color:#ff8d7e}   /* Aufwerten: die Münzen reichen (noch) nicht – färbt sich live um */
 .act--primary{border-color:var(--line-3)}
 @media (hover:hover){ .act:not(:disabled):hover{border-color:var(--line-2);background:linear-gradient(180deg,#20262f,#151920)} }
 .act:not(:disabled):active{transform:translateY(1px)}
