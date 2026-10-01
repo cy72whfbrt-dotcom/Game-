@@ -5020,9 +5020,11 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
           ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI * 2); ctx.lineWidth = w; ctx.strokeStyle = color;
           ctx.setLineDash(dash || []); ctx.lineDashOffset = offset || 0; ctx.stroke(); ctx.setLineDash([]);
         }
-        function ringBadge(x, y, b, st) {                  // the title's sign on top of the ring: a crown (good title, ruler, Turniersieger) or a skull (penalty)
+        function ringBadge(x, y, b, st) {                  // the title's sign on top of the ring: a crown (good title, ruler), a cup (Turniersieger) or a skull (penalty)
           ctx.beginPath(); ctx.arc(x, y, b + 1.5, 0, Math.PI * 2); ctx.fillStyle = 'rgba(10,8,4,.85)'; ctx.fill(); ctx.lineWidth = 1.6; ctx.strokeStyle = st.c0; ctx.stroke();
           ctx.fillStyle = st.k === 'bad' ? '#f1e6dc' : st.k === 'champ' ? '#e2c7ff' : '#ffd25a';
+          if (st.k === 'champ') { const w = b * .55; ctx.beginPath(); ctx.moveTo(x - w, y - b * .55); ctx.lineTo(x + w, y - b * .55); ctx.quadraticCurveTo(x + w, y + b * .15, x, y + b * .2); ctx.quadraticCurveTo(x - w, y + b * .15, x - w, y - b * .55); ctx.fill();   // Turniersieger: a cup
+            ctx.fillRect(x - b * .1, y + b * .15, b * .2, b * .3); ctx.fillRect(x - b * .35, y + b * .42, b * .7, b * .16); return; }
           if (st.k === 'bad') { ctx.beginPath(); ctx.arc(x, y - b * .12, b * .55, 0, Math.PI * 2); ctx.fill(); ctx.fillRect(x - b * .32, y + b * .2, b * .64, b * .38);
             ctx.fillStyle = 'rgba(10,8,4,.95)'; ctx.beginPath(); ctx.arc(x - b * .22, y - b * .1, b * .14, 0, Math.PI * 2); ctx.arc(x + b * .22, y - b * .1, b * .14, 0, Math.PI * 2); ctx.fill(); }
           else { const w = b * .7, h = b * .55; ctx.beginPath(); ctx.moveTo(x - w, y + h * .6); ctx.lineTo(x - w, y - h * .5); ctx.lineTo(x - w * .45, y); ctx.lineTo(x, y - h); ctx.lineTo(x + w * .45, y); ctx.lineTo(x + w, y - h * .5); ctx.lineTo(x + w, y + h * .6); ctx.closePath(); ctx.fill(); }
@@ -5055,7 +5057,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
                   ctx.lineWidth = 2; ctx.strokeStyle = st.c0; ctx.stroke(); if (st.spin) liveAnimation = true; }
                 if (st.pulse) { const p2 = (now / 1800) % 1; ctx.globalAlpha = .8 * (1 - p2); ring(x, y, R2 + p2 * Math.max(r * .6, 12), 2, st.c0); ctx.globalAlpha = 1; liveAnimation = true; }
                 if (st.dash) { ring(x, y, R2 + 5, 2, st.dash, [8, 5], -now / 40); liveAnimation = true; }
-                if (R1 >= 18) ringBadge(x, y - R2 - 1, Math.min(12, Math.max(7, r * .2)), st);
+                if (R1 >= 18) ringBadge(x, y - R2 - 1, Math.min(13, Math.max(9, r * .22)), st);
               }
             }
             if (isl.id === playerIslandId && z >= 0.006) {                            // the capital: blue-gold double ring
@@ -7496,13 +7498,16 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         }
         // ---- Abholfach: prizes and spoils are sent here and collected by hand (Turnier, Tagesboss, Kopfgeld, Weltboss, Kampfbeute) ----
         var inboxState = null;
-        function inboxList() { if (!inboxState) { try { inboxState = JSON.parse(store.get('openWaterInbox')); } catch (e) { inboxState = null; } if (!Array.isArray(inboxState)) inboxState = []; } return inboxState; }
+        function inboxList() { if (!inboxState) { try { inboxState = JSON.parse(store.get('openWaterInbox')); } catch (e) { inboxState = null; } if (!Array.isArray(inboxState)) inboxState = [];
+                const m = {}; inboxState = inboxState.filter(x => { const p = INBOX_PILE[x.src] && m[x.src]; if (!p) { if (INBOX_PILE[x.src]) m[x.src] = x; return true; } p.gems += x.gems || 0; p.coins += x.coins || 0; p.n = (p.n || 1) + (x.n || 1); return false; }); }   // (older saves: many single entries become one)
+            return inboxState; }
         function inboxSave() { store.set('openWaterInbox', JSON.stringify(inboxList())); }
+        const INBOX_PILE = { fight: 1, bounty: 1 };   // these pile up in one entry each
         const INBOX_SRC = { fight: { ic: 'attack', t: 'Kampfbeute' }, tour: { ic: 'crown', t: 'Wochenend-Turnier' }, boss: { ic: 'star', t: 'Tagesboss' }, wboss: { ic: 'star', t: 'Weltboss' }, bounty: { ic: 'losses', t: 'Kopfgeld' } };
         function inboxAdd(o) {                              // o: { src, title?, gems, coins, sh (hero shards), crate (lowest rarity, -1 none) } - all fights' spoils pile up in one entry
             o = Object.assign({ gems: 0, coins: 0, sh: 0, crate: -1, n: 1 }, o); o.gems = Math.round(o.gems); o.coins = Math.round(o.coins);
             if (!(o.gems > 0 || o.coins > 0 || o.sh > 0 || o.crate >= 0)) return 0;
-            const L = inboxList(), now = Date.now(), pile = o.src === 'fight' && L.find(x => x.src === 'fight');
+            const L = inboxList(), now = Date.now(), pile = INBOX_PILE[o.src] && L.find(x => x.src === o.src);
             if (pile) { pile.coins += o.coins; pile.gems += o.gems; pile.n++; pile.at = now; } else L.unshift(Object.assign(o, { id: now.toString(36) + Math.floor(Math.random() * 1e6).toString(36), at: now }));
             inboxSave(); updateGoalsBadge(); if (isPanelOpen(goalsPopup) && goalsTab === 'reward') renderInbox(); return o.coins || o.gems;
         }
@@ -7518,7 +7523,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             const L = inboxList(), now = Date.now(), el = document.getElementById('inboxList'); if (!el) return;
             setText(document.getElementById('inboxAside'), L.length ? L.length + ' bereit' : '');
             el.innerHTML = L.length ? L.map(x => { const d = INBOX_SRC[x.src] || INBOX_SRC.fight;
-                return '<div class="inbox-row' + (x.src === 'fight' ? '' : ' is-gold') + '">' + icon(d.ic) + '<div><b>' + escapeHtml(x.title || d.t) + '</b><small>' + inboxWhat(x) + '</small><small>' + (x.src === 'fight' && x.n > 1 ? x.n + ' Kämpfe · zuletzt ' : '') + 'vor ' + fmtDHMS(Math.max(1, (now - x.at) / 1000)) + '</small></div>' +
+                return '<div class="inbox-row' + (x.src === 'fight' ? '' : ' is-gold') + '">' + icon(d.ic) + '<div><b>' + escapeHtml(x.title || d.t) + '</b><small>' + inboxWhat(x) + '</small><small>' + (x.n > 1 ? x.n + (x.src === 'fight' ? ' Kämpfe' : '×') + ' · zuletzt ' : '') + 'vor ' + fmtDHMS(Math.max(1, (now - x.at) / 1000)) + '</small></div>' +
                     '<button class="btn btn--primary btn--sm" type="button" data-inbox="' + x.id + '"><span>Abholen</span></button></div>'; }).join('') + (L.length > 1 ? '<button class="btn btn--secondary btn--sm inbox-all" type="button" data-inbox-all><span>Alle abholen · ' + L.length + '</span></button>' : '')
                 : '<div class="inbox-empty">Gerade nichts zum Abholen. Preise aus Turnier und Tagesboss, das Kopfgeld und die Beute aus deinen Kämpfen landen hier.</div>';
         }
@@ -7958,11 +7963,10 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         function tourChamp(now) { const c = tourState && tourState.champ; return c && (now || Date.now()) < c.until ? c.who : null; }
         function midFight(tid, aWho, aKills, dWho, dKills, won, dOwner) {     // after every fight for a base: Turnier-Punkte in the middle, a share of the Kopfgeld
             if (midZoneIds.has(tid) && tourOn()) { tourFight(aWho, aKills); tourFight(dWho, dKills); }   // (capped per fight and per minute: holding the throne must still count)
-            if (won && dOwner && dOwner !== aWho && tid !== megaTempleId && dOwner === rulerOwner()) bountyShare(aWho);
         }
         // ===== KOPFGELD AUF DEN HERRSCHER: while someone holds the throne a bounty grows (gems + coins, every 3 min with the Thron-Punkte).
         // Whoever takes the Mega-Tempel from him collects all of it; every won fight against one of his bases pays a small share.
-        const BOUNTY_GEMS = 3, BOUNTY_GEMS_MAX = 1000, BOUNTY_COIN_H = .1, BOUNTY_COIN_MAX_H = 24, BOUNTY_SHARE = .03;
+        const BOUNTY_GEMS = 3, BOUNTY_GEMS_MAX = 1000, BOUNTY_COIN_H = .1, BOUNTY_COIN_MAX_H = 24;   // (only whoever takes the throne collects it - no shares per fight)
         var bountyState = (() => { try { return JSON.parse(store.get('openWaterBounty')) || null; } catch (e) { return null; } })() || { ruler: null, gems: 0, coins: 0 };
         function saveBounty() { store.set('openWaterBounty', JSON.stringify(bountyState)); }
         function bountyOf() { const r = rulerOwner(); return r && bountyState.ruler === r ? { who: r, gems: Math.floor(bountyState.gems || 0), coins: Math.floor(bountyState.coins || 0) } : null; }
@@ -7986,12 +7990,6 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
                 : was === 'player' ? botById[r].name + ' hat das Kopfgeld auf dich kassiert: ' + fmtNum(g) + ' Gems.' : g >= 100 ? botById[r].name + ' kassiert das Kopfgeld auf ' + botById[was].name + ': ' + fmtNum(g) + ' Gems.' : '';
             if (txt) afterSplash(() => setTimeout(() => flashHint(txt, 5000), 4500));
             if (r === 'player') sfx('coin');
-        }
-        function bountyShare(who) {                           // a won fight against one of the ruler's bases: 3 % of the bounty
-            const b = bountyState; if (!who || b.ruler !== rulerOwner() || who === b.ruler) return;
-            const g = Math.floor((b.gems || 0) * BOUNTY_SHARE), c = Math.floor((b.coins || 0) * BOUNTY_SHARE); if (!g && !c) return;
-            b.gems -= g; b.coins -= c; saveBounty(); bountyPay(who, g, c);
-            if (who === 'player') setTimeout(() => flashHint('Kopfgeld-Anteil für den Sieg gegen den Herrscher: ' + fmtNum(g) + ' Gems, ' + fmtCompact(c) + ' Münzen – liegt unter Ziele → Belohnung.', 4000), 3500);
         }
         // ---- what you see: a chip under the HUD (Turnier / Kopfgeld), a card in the Thron tab, notices at the middle, the "Turnier" tab in the Rangliste
         const midBar = document.getElementById('midBar');
@@ -8037,8 +8035,6 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             const b = bountyOf(), w = tourOn(); let h = '';
             if (b && island.type === 'megaTemple') h += b.who === 'player' ? '<div class="notice notice--warn">' + icon('losses') + '<span><b>Kopfgeld auf dich: ' + fmtNum(b.gems) + ' Gems + ' + fmtCompact(b.coins) + ' Münzen.</b> Wer dir den Thron abnimmt, kassiert alles – je länger du herrschst, desto mehr kommen.</span></div>'
                 : '<div class="notice notice--gold">' + icon('coin') + '<span><b>Kopfgeld auf ' + escapeHtml(botById[b.who].name) + ': ' + fmtNum(b.gems) + ' Gems + ' + fmtCompact(b.coins) + ' Münzen.</b> Nimm den Thron und kassiere alles.</span></div>';
-            else if (b && b.who !== 'player' && island.type === 'tower' && islandOwnerOf(island.id) === b.who && b.gems >= 5)
-                h += '<div class="notice notice--gold">' + icon('coin') + '<span>Kopfgeld: jeder Sieg gegen den Herrscher bringt ' + Math.round(BOUNTY_SHARE * 100) + ' % davon (jetzt ' + fmtNum(Math.floor(b.gems * BOUNTY_SHARE)) + ' Gems).</span></div>';
             if (w && midZoneIds.has(island.id)) h += '<div class="notice notice--tour">' + icon('crown') + '<span>Turnier läuft: ' + (island.type === 'megaTemple' ? 'der Thron bringt +' + TOUR_PTS_MEGA + ' Punkte pro Minute' : island.guardian ? 'dieser Tempel bringt +' + TOUR_PTS_GUARD + ' Punkte pro Minute' : 'Kämpfe hier bringen Punkte') + ', dazu +1 Punkt pro ' + fmtNum(TOUR_KILL_PER) + ' besiegte Truppen – auch beim Verteidigen (höchstens ' + TOUR_KILL_MAX + ' pro Kampf).</span></div>';
             return h;
         }
@@ -9241,7 +9237,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
               desc: 'Schützt deine Münzen: fällt eine deiner Basen oder die Garnison der Hauptstadt, nimmt der Sieger einen Teil deiner Münzen mit – aber nie, was im Lager liegt. Jede Stufe schützt mehr.' }
         ];
         // Lager: what a fallen base (or a beaten capital garrison) gives away - the same for everyone
-        var PLUNDER_PCT = { base: .04, capital: .08 }, PLUNDER_CAP_H = 2;   // a share of the coins above the Lager, at most 2 h of the victim's income per fight
+        var PLUNDER_PCT = { base: .02, capital: .04 }, PLUNDER_CAP_H = .5;   // a share of the coins above the Lager, at most 2 h of the victim's income per fight
         function storageSafe(lvl) { return lvl ? niceRound(10000 * Math.pow(1.65, lvl - 1)) : 0; }   // coins no attacker can take: 10 Tsd. at 1, ~900 Tsd. at 10, ~1,7 Mrd. at 25 (a share of a full coffer, not all of it - plunder stays worth it)
         function plunderOf(who, capital) {                  // { loot, safe }: the share of the coins above the Lager's protection
             const have = Math.max(0, who === 'player' ? coins : botCoins[who] || 0), safe = storageSafe(who === 'player' ? cityLevelSafe('storage') : botBld(who, 'storage'));
@@ -9931,7 +9927,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             if (id === 'treasury') return nx(2, 'Münzproduktion auf allen Basen');
             if (id === 'watch') return nx(4, 'schnellere Späher');
             if (id === 'shrine') return nx(5, 'Bonus aus allen deinen Tempeln (Münzen, Truppen, Gems)');
-            if (id === 'storage') { const safe = storageSafe(lvl), pl = Math.round(PLUNDER_PCT.base * 100) + ' % pro gefallener Basis, ' + Math.round(PLUNDER_PCT.capital * 100) + ' % bei der Hauptstadt (höchstens ' + PLUNDER_CAP_H + ' Std. deiner Einnahmen pro Kampf)';
+            if (id === 'storage') { const safe = storageSafe(lvl), pl = Math.round(PLUNDER_PCT.base * 100) + ' % pro gefallener Basis, ' + Math.round(PLUNDER_PCT.capital * 100) + ' % bei der Hauptstadt (höchstens ' + Math.round(PLUNDER_CAP_H * 60) + ' Min. deiner Einnahmen pro Kampf)';
                 return (lvl ? 'Geschützt: ' + fmtCompact(safe) + ' Münzen' + (coins <= safe ? ' – gerade alles sicher.' : ' – darüber verlierst du ' + pl + '.') : 'Noch nichts geschützt: fällt eine Basis, verlierst du ' + pl + ' deiner Münzen.') +
                     (lvl < cityMaxLevel(id) ? ' Nächste Stufe schützt ' + fmtCompact(storageSafe(lvl + 1)) + (/\.$/.test(fmtCompact(storageSafe(lvl + 1))) ? '' : '.') : ''); }
             if (id === 'hospital') return lvl ? hospitalPct() + ' % der Gefallenen kommen ins Lazarett · Platz für ' + fmtCompact(hospitalCapacity()) + (lvl < CITY_MAX_LEVEL ? ' · Nächste Stufe: ' + Math.min(60, (lvl + 1) * 5) + ' %, Platz für ' + fmtCompact(Math.round(1e6 * Math.pow(1.6, lvl))) : '') : 'Baue das Lazarett, um Verwundete zu retten.';

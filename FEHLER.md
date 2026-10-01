@@ -16,3 +16,6 @@ Gesammelt beim Anspielen. ✅ = erledigt (Runde 1, 1.10.).
 12. ✅ **Plündern zu hart bei großem Vermögen** – 4 % von Billiarden pro gefallener Basis hat die Kasse in Minuten geleert. Jetzt höchstens 2 Std. Einnahmen des Opfers pro Kampf (für alle gleich).
 13. ✅ **Ringe nicht unterscheidbar:** Titel-Ringe aus der Mitte (Gold gut / Rot Strafe / Blutrot-Gold Herrscher) und gekaufte Ring-Skins (Bronze, Jade, Glut …) sehen gleich aus; dazu liegt jeder Ring um ALLE Basen des Besitzers → Karte voller Kreise. Titel-Ring muss eindeutig anders aussehen (z. B. doppelt + Symbol Krone/Totenkopf), Skin-Ring schlicht.
     → Titel-Ring: dicker Doppelring + Abzeichen oben (Krone = guter Titel/Herrscher/Turniersieger, Totenkopf = Straf-Titel). Ring-Skin: nur ein dünner schlichter Ring.
+14. ✅ **Turniersieger-Ring sah aus wie ein Titel aus der Mitte** – eigenes Abzeichen: Pokal (Mitte: Krone/Totenkopf), Abzeichen etwas größer.
+15. ✅ **Kopfgeld bei jedem Angriff** – es gab 3 % für jeden Sieg gegen eine Basis des Herrschers (24 Einträge im Abholfach). Jetzt kassiert das Kopfgeld nur, wer den Thron nimmt. Alte Einzel-Einträge werden zu einem zusammengefasst.
+16. ✅ **Plündern immer noch zu viel** – jetzt 2 % pro Basis / 4 % bei der Hauptstadt, höchstens 30 Min. Einnahmen des Opfers pro Kampf.
