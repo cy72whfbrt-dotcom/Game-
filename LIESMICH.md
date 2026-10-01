@@ -301,6 +301,14 @@ sitzen tiefer (nur 45 % des iPhone-Abstands zum Home-Balken), und unter der Leis
   `revealAround` über die ganze Karte, wird mit dem Spielstand gespeichert). Lokal: 13 → 46.656 offene Felder,
   der andere Spieler unverändert.
 
+**Rand unten, dritter Versuch (1.10., lokal getestet, noch NICHT hochgeladen):** Alexanders neues Foto zeigt: Die
+Leiste nach unten zu schieben war falsch. iOS malt unterhalb der (zu kurzen) Seite nichts, nur die Hintergrundfarbe
+der Seite. Darum waren die Beschriftungen abgeschnitten. Jetzt: Die Leiste bleibt ganz in der Seite. Von der
+Home-Balken-Lücke wird nur so viel freigelassen, wie noch innerhalb der Seite liegt (`--safe-bd` = Home-Abstand minus
+gemessene Lücke, nie unter 0). Die Hintergrundfarbe der Seite (`html`) ist genau die Farbe unten in der Leiste
+(rgb 8,10,13). So sieht der Streifen darunter aus wie ein Teil der Leiste (wie bei iPhone-Apps). Die Startseite war
+schon richtig (dort geht der Hintergrund bis ganz unten).
+
 ## 11. Offen
 - **GitHub aufräumen (macht Alexander, Claude darf es nicht):** Unter Settings → General → Default branch auf
   `claude/neues-projekt-8agldl` stellen. Danach unter Branches alle anderen löschen (`claude/chat-session-k7ozkc`,
