@@ -21,14 +21,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $gems = max(0, min(1000000, (int)($_POST['gems'] ?? 0)));
             $coins = max(0, min(1e15, (float)($_POST['coins'] ?? 0)));
             $sh = max(0, min(10000, (int)($_POST['sh'] ?? 0)));
+            $tr = max(0, min(1e12, (int)($_POST['tr'] ?? 0)));
             $crate = (int)($_POST['crate'] ?? -1); if ($crate < -1 || $crate > 5) $crate = -1;
             $an = (string)($_POST['an'] ?? '');
-            if (!$gems && !$coins && !$sh && $crate < 0) $fehler = 'Das Geschenk ist leer.';
+            if (!$gems && !$coins && !$sh && !$tr && $crate < 0) $fehler = 'Das Geschenk ist leer.';
             else {
                 $ids = [];
                 foreach (lager()->alle_spieler() as $sp) if ($an === 'alle' || (string)$sp['id'] === $an) $ids[] = (int)$sp['id'];
                 if (!$ids) $fehler = 'Spieler nicht gefunden.';
-                foreach ($ids as $id) lager()->ereignis_ablegen($id, json_encode(['art' => 'geschenk', 'gems' => $gems, 'coins' => $coins, 'sh' => $sh, 'crate' => $crate]));
+                foreach ($ids as $id) lager()->ereignis_ablegen($id, json_encode(['art' => 'geschenk', 'gems' => $gems, 'coins' => $coins, 'sh' => $sh, 'tr' => $tr, 'crate' => $crate]));
                 if ($ids) $meldung = 'Geschenk verschickt an ' . count($ids) . ' Spieler – es liegt im Abholfach (Ziele → Belohnung).';
             }
         }
@@ -93,6 +94,7 @@ function zahl($n) { return $n === null ? '–' : number_format((float)$n, 0, ','
       <div><label for="gems">Gems</label><input id="gems" name="gems" type="number" min="0" value="0"></div>
       <div><label for="coins">Münzen</label><input id="coins" name="coins" type="number" min="0" value="0"></div>
       <div><label for="sh">Helden-Splitter</label><input id="sh" name="sh" type="number" min="0" value="0"></div>
+      <div><label for="tr">Truppen</label><input id="tr" name="tr" type="number" min="0" value="0"></div>
       <div><label for="crate">Kiste</label><select id="crate" name="crate"><option value="-1">keine</option><?php foreach ($KISTEN as $i => $k): ?><option value="<?= $i ?>">mind. <?= h($k) ?></option><?php endforeach; ?></select></div>
     </div>
     <button>Verschicken</button>

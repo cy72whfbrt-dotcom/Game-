@@ -6,6 +6,19 @@ const neutralId = id => (id === 'player' && window.WELT) ? WELT.ich : id;     //
 const lokalId = id => (window.WELT && id === WELT.ich) ? 'player' : id;
 // Truppen, die dir geschenkt werden (Stufe, Thron-Shop, Lazarett, Funde): beim Zuschauer macht es der Weltrechner
 function eigeneTruppenDazu(base, n) { if (base === null || base === undefined || !(n > 0)) return; islandTroops[base] = (islandTroops[base] || 0) + n; alsBefehl('truppen', { n }); }
+// iPhone Home-Bildschirm-App: iOS macht die Seite um die Statusleiste zu kurz (unten bleibt ein schwarzer Streifen).
+// Die Lücke wird gemessen, und die Leiste unten rutscht genau so weit runter (CSS-Wert --dock-off).
+(function dockLuecke() {
+    const setzen = () => { let off = 0;
+        try { const app = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+              const w = innerWidth, h = innerHeight, sh = Math.max(screen.width, screen.height);
+              const probe = document.createElement('div'); probe.style.cssText = 'position:fixed;top:0;height:0;padding-top:env(safe-area-inset-top,0px);visibility:hidden';
+              document.body.appendChild(probe); const safeT = probe.offsetHeight; probe.remove();
+              if (app && h > w && w < 900 && h > 500 && safeT > 0) off = Math.max(0, Math.min(safeT, Math.round(sh - h))); } catch (e) {}   // (nie mehr als die Statusleiste)
+        document.documentElement.style.setProperty('--dock-off', off + 'px'); };
+    if (document.body) setzen(); else addEventListener('DOMContentLoaded', setzen);
+    addEventListener('resize', () => setTimeout(setzen, 50)); addEventListener('orientationchange', () => setTimeout(setzen, 300));
+})();
 // ===== spiel.js – das ganze Spiel Open Water (Karte, Stadt, Kämpfe, Helden, Ereignisse, Fenster …) =====
 // Mitspieler: bots.js · 3D-Basen: baukunst.js · Speichern: speichern.js (alles geht über "store")
 // Every storage access goes through here: blocked site data, sandboxed frames and a full quota must not stop the
@@ -595,7 +608,7 @@ function freierStartplatz(besitz) {
     if (!wem.size) return { insel: centerIsland() };                          // ganz neue Welt: der klassische Platz
     for (const id of wem.keys()) { const i = islandById[id]; if (i) proLm[i.landmassId] = (proLm[i.landmassId] || 0) + 1; }
     const besterOrt = liste => { const min = Math.min(...liste.map(i => proLm[i.landmassId] || 0)), beste = liste.filter(i => (proLm[i.landmassId] || 0) === min); return beste.find(i => i.startSlot) || beste[Math.floor(Math.random() * beste.length)]; };
-    const turm = i => i.type === 'tower' && (typeof bossAt !== 'function' || !bossAt(i.id));
+    const turm = i => { if (i.type !== 'tower') return false; try { return !bossAt(i.id); } catch (e) { return true; } };   // (beim Laden gibt es den Besitz noch nicht – dann prüft es der Weltrechner)
     let frei = islands.filter(i => turm(i) && !wem.has(i.id) && landmasses[i.landmassId].tier === 'outer');
     if (frei.length) return { insel: besterOrt(frei) };
     frei = islands.filter(i => turm(i) && !wem.has(i.id) && landmasses[i.landmassId].tier !== 'throne' && landmasses[i.landmassId].tier !== 'guardian');
@@ -5550,18 +5563,19 @@ const INBOX_PILE = { fight: 1, bounty: 1 };   // these pile up in one entry each
 const inboxPiles = x => !!INBOX_PILE[x.src] && !(x.crate >= 0);   // a crate keeps its own entry (one entry holds one crate)
 const INBOX_SRC = { gift: { ic: 'gem', t: 'Geschenk' }, fight: { ic: 'attack', t: 'Kampfbeute' }, tour: { ic: 'crown', t: 'Wochenend-Turnier' }, boss: { ic: 'star', t: 'Tagesboss' }, wboss: { ic: 'star', t: 'Weltboss' }, bounty: { ic: 'losses', t: 'Kopfgeld' } };
 function inboxAdd(o) {                              // o: { src, title?, gems, coins, sh (hero shards), crate (lowest rarity, -1 none) } - all fights' spoils pile up in one entry
-    o = Object.assign({ gems: 0, coins: 0, sh: 0, crate: -1, n: 1 }, o); o.gems = Math.round(o.gems); o.coins = Math.round(o.coins);
-    if (!(o.gems > 0 || o.coins > 0 || o.sh > 0 || o.crate >= 0)) return 0;
+    o = Object.assign({ gems: 0, coins: 0, sh: 0, crate: -1, tr: 0, n: 1 }, o); o.gems = Math.round(o.gems); o.coins = Math.round(o.coins); o.tr = Math.round(o.tr);
+    if (!(o.gems > 0 || o.coins > 0 || o.sh > 0 || o.crate >= 0 || o.tr > 0)) return 0;
     const L = inboxList(), now = Date.now(), pile = inboxPiles(o) && L.find(x => x.src === o.src && inboxPiles(x));
     if (pile) { pile.coins = (pile.coins || 0) + o.coins; pile.gems = (pile.gems || 0) + o.gems; pile.sh = (pile.sh || 0) + (o.sh || 0); pile.n = (pile.n || 1) + 1; pile.at = now; } else L.unshift(Object.assign(o, { id: now.toString(36) + Math.floor(Math.random() * 1e6).toString(36), at: now }));   // (shards pile up too)
     inboxSave(); updateGoalsBadge(); if (isPanelOpen(goalsPopup) && goalsTab === 'reward') renderInbox(); return o.coins || o.gems;
 }
-function inboxWhat(x) { return [x.gems ? '+' + fmtNum(x.gems) + ' Gems' : '', x.coins ? '+' + fmtCompact(x.coins) + ' Münzen' : '', x.crate >= 0 ? 'Kiste (mind. ' + RARITY_DEFS[x.crate].label + ')' : '', x.sh ? x.sh + ' Helden-Splitter' : ''].filter(Boolean).join(' · '); }
+function inboxWhat(x) { return [x.gems ? '+' + fmtNum(x.gems) + ' Gems' : '', x.coins ? '+' + fmtCompact(x.coins) + ' Münzen' : '', x.crate >= 0 ? 'Kiste (mind. ' + RARITY_DEFS[x.crate].label + ')' : '', x.sh ? x.sh + ' Helden-Splitter' : '', x.tr ? '+' + fmtCompact(x.tr) + ' Truppen' : ''].filter(Boolean).join(' · '); }
 function inboxClaim(id) {                           // into your coffers - returns what you got
     const L = inboxList(), i = L.findIndex(x => x.id === id); if (i < 0) return ''; const x = L.splice(i, 1)[0], got = [];
     if (x.gems) { gems += x.gems; got.push('+' + fmtNum(x.gems) + ' Gems'); } if (x.coins) { coins += x.coins; got.push('+' + fmtCompact(x.coins) + ' Münzen'); }
     if (x.crate >= 0) { const it = grantFreeCrate(x.crate); if (it && it.rarity !== undefined) got.push(EQUIPMENT_DEFS[it.slot].name + ' (' + RARITY_DEFS[it.rarity].label + ')'); }
     if (x.sh) { const h = heroGrantShards('player', x.sh); if (h) got.push(x.sh + ' Splitter ' + h.name); else { gems += x.sh * 20; got.push('+' + x.sh * 20 + ' Gems (alle Helden voll)'); } }
+    if (x.tr) { const b = rewardBaseId(); if (b !== null) { eigeneTruppenDazu(b, x.tr); got.push('+' + fmtCompact(x.tr) + ' Truppen'); } else L.splice(i, 0, Object.assign({}, x, { gems: 0, coins: 0, sh: 0, crate: -1 })); }   // no base right now: only the troops stay in the inbox
     inboxSave(); saveGame(); saveProgression(); updateHud(); return got.join(', ');
 }
 function renderInbox() {
@@ -10865,8 +10879,8 @@ if (window.WELT) {
     });
     WELT.beiNachricht.push(function (e) {             // Geschenk (vom Admin): liegt im Abholfach, wird normal abgeholt
         if (!e || e.art !== 'geschenk') return;
-        if (inboxAdd({ src: 'gift', title: 'Geschenk', gems: e.gems || 0, coins: e.coins || 0, sh: e.sh || 0, crate: e.crate >= 0 ? e.crate : -1 })) flashHint('Ein Geschenk liegt für dich bereit – Ziele → Belohnung.', 4500);
-        else if (e.sh > 0 || e.crate >= 0) flashHint('Ein Geschenk liegt für dich bereit – Ziele → Belohnung.', 4500);
+        if (inboxAdd({ src: 'gift', title: 'Geschenk', gems: e.gems || 0, coins: e.coins || 0, sh: e.sh || 0, crate: e.crate >= 0 ? e.crate : -1, tr: e.tr || 0 })) flashHint('Ein Geschenk liegt für dich bereit – Ziele → Belohnung.', 4500);
+        else if (e.sh > 0 || e.crate >= 0 || e.tr > 0) flashHint('Ein Geschenk liegt für dich bereit – Ziele → Belohnung.', 4500);
     });
     // Willkommen: einmal den Namen wählen
     if (!window.__OW || !__OW.nameGewaehlt) afterSplash(() => setTimeout(willkommenFenster, 400));

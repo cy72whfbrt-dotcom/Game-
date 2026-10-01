@@ -271,6 +271,21 @@ des alten Fensters (`server.php`, `spielseite_vorbereiten`). Lokal: Spiel nach 1
 sitzen tiefer (nur 45 % des iPhone-Abstands zum Home-Balken), und unter der Leiste ist alles in Leistenfarbe gefüllt
 (`spiel.php`, `.nav` / `.nav::after`, nur Handy hochkant).
 
+**Rand unten, richtige Ursache + Truppen im Admin (1.10., lokal getestet, noch NICHT hochgeladen):**
+- Rand unten: Alexanders Bildschirmfoto zeigt, dass iOS die Seite in der Home-Bildschirm-App um die Statusleiste
+  (ca. 59 Punkte) zu kurz macht. Darum endete die Leiste zu früh. `spiel.js` (oben, `dockLuecke`) misst die Lücke
+  (Bildschirmhöhe minus Seitenhöhe, höchstens so hoch wie die Statusleiste, nur in der App, nur hochkant) und setzt
+  den CSS-Wert `--dock-off`. Die Leiste rutscht um so viel nach unten, und alles, was auf der Leiste sitzt (Fenster,
+  Knöpfe, Meldungen), rutscht mit (`spiel.php`). Die 45-%-Änderung von vorher ist wieder raus. Im Browser und ohne
+  Lücke bleibt alles wie bisher (0 px).
+- Admin-Seite: Beim Geschenk gibt es jetzt auch „Truppen“. Sie landen im Abholfach und kommen beim Abholen in die
+  Hauptstadt (beim Zuschauer als Befehl an den Weltrechner, wie alle geschenkten Truppen). Hat der Spieler gerade keine
+  Basis, bleiben die Truppen im Abholfach. Lokal getestet: 250.000 geschickt → abgeholt → beim Spieler und beim
+  Weltrechner +250.000.
+- Alten Absturz behoben: Die Startplatz-Suche für neue Spieler (`freierStartplatz`) stürzte ab, wenn gerade ein
+  Tagesboss auf einem Turm stand (Besitz war beim Laden noch nicht da). Jetzt wird das abgefangen, und den Platz prüft
+  der Weltrechner.
+
 ## 11. Offen
 - **GitHub aufräumen (macht Alexander, Claude darf es nicht):** Unter Settings → General → Default branch auf
   `claude/neues-projekt-8agldl` stellen. Danach unter Branches alle anderen löschen (`claude/chat-session-k7ozkc`,

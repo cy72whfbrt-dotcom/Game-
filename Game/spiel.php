@@ -84,7 +84,7 @@ function v($f) { return filemtime(__DIR__ . '/' . $f); }   // neue Version = Bro
   --dur-1:120ms; --dur-2:200ms; --dur-3:320ms;
   /* ---- safe areas (viewport meta already has viewport-fit=cover) ---- */
   --safe-t:env(safe-area-inset-top,0px); --safe-r:env(safe-area-inset-right,0px);
-  --safe-b:env(safe-area-inset-bottom,0px); --safe-l:env(safe-area-inset-left,0px);
+  --safe-b:env(safe-area-inset-bottom,0px); --dock-off:0px; --safe-l:env(safe-area-inset-left,0px);
   /* ---- stacking ---- */
   --z-map:0; --z-vignette:1; --z-hud:20; --z-mapctl:21; --z-mabar:22; --z-scrim:23; --z-dock:25;
   --z-popover:30; --z-sheet:40; --z-scrim-top:55; --z-modal:60; --z-toast:80;
@@ -173,7 +173,7 @@ b,strong{font-weight:600}
   padding:0 calc(var(--safe-r) + 6px) var(--safe-b) calc(var(--safe-l) + 6px);display:grid;grid-template-columns:repeat(5,1fr);
   background:linear-gradient(180deg,rgb(18,21,28),rgb(8,10,13));border-top:1px solid var(--line-2);box-shadow:0 -12px 30px rgba(0,0,0,.45)}
 @media (max-width:899px) and (min-height:501px){
-  .nav{padding-bottom:calc(var(--safe-b) * .45)}                                                   /* iPhone: icons sit lower, no empty strip above the home bar */
+  .nav{bottom:calc(-1 * var(--dock-off))}   /* iPhone home-screen app: iOS makes the page too short by the status bar - the dock goes down to the real bottom */
   .nav::after{content:"";position:absolute;left:0;right:0;top:100%;height:200px;background:rgb(8,10,13)} /* fills anything below the dock */
 }
 .nav::before{content:"";position:absolute;left:18%;right:18%;top:-1px;height:1px;background:linear-gradient(90deg,transparent,var(--gold-200),transparent)}
@@ -191,7 +191,7 @@ b,strong{font-weight:600}
 /* =====================================================================
    MAP CONTROLS
    ===================================================================== */
-.mapctl{position:fixed;z-index:var(--z-mapctl);right:calc(var(--safe-r) + 10px);bottom:calc(var(--dock-h) + var(--safe-b) + 14px);
+.mapctl{position:fixed;z-index:var(--z-mapctl);right:calc(var(--safe-r) + 10px);bottom:calc(var(--dock-h) + var(--safe-b) - var(--dock-off) + 14px);
   display:flex;flex-direction:column;background:rgba(14,16,22,.52);border:1px solid rgba(214,170,90,.16);border-radius:var(--r-sm);box-shadow:var(--sh-1);
   -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 .mapctl button{width:34px;height:34px;display:grid;place-items:center;color:var(--tx-2)}
@@ -366,12 +366,12 @@ b,strong{font-weight:600}
 .rp-pass .icon{width:15px;height:15px;color:var(--gold-300)} .rp-pass b{color:var(--gold-100)} .rp-pass em{margin-left:auto;font:700 var(--fs-11)/1 var(--font-ui);font-style:normal;padding:3px 8px;border-radius:var(--r-pill);border:1px solid rgba(143,245,230,.5);color:#bff8ef;background:rgba(31,138,138,.25)}
 .rp-pass.is-prem{border-color:rgba(143,245,230,.3)} .rp-pass.is-prem .icon{color:#8ff5e6}
 #goalsSub .pill .icon{color:var(--gold-300)}
-.marker-sheet{position:fixed;z-index:45;left:50%;bottom:calc(var(--dock-h) + var(--safe-b) + 14px);transform:translateX(-50%);width:min(360px,calc(100vw - 24px));padding:12px;border-radius:12px;
+.marker-sheet{position:fixed;z-index:45;left:50%;bottom:calc(var(--dock-h) + var(--safe-b) - var(--dock-off) + 14px);transform:translateX(-50%);width:min(360px,calc(100vw - 24px));padding:12px;border-radius:12px;
   background:var(--glass-strong,#141820);border:1px solid var(--line-3);box-shadow:var(--sh-2);font-family:var(--font-ui);display:flex;flex-direction:column;gap:8px}
 .marker-sheet[hidden]{display:none}
 .field-lines{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-3)} .field-lines b{color:var(--tx-1);text-align:right}
 .field-sheet .marker-head b{display:inline-flex;align-items:center;gap:6px} .field-sheet .marker-head .icon{width:16px;height:16px} .field-sheet .btn{justify-content:center}
-.barb-sheet{max-height:calc(100vh - var(--dock-h) - var(--safe-b) - 120px);overflow-y:auto} .field-lines small{color:var(--tx-3);font-weight:500}
+.barb-sheet{max-height:calc(100vh - var(--dock-h) - var(--safe-b) + var(--dock-off) - 120px);overflow-y:auto} .field-lines small{color:var(--tx-3);font-weight:500}
 .barb-lv{padding:2px 7px;border-radius:999px;border:1px solid var(--bc);color:var(--bc);font:700 var(--fs-11)/1.2 var(--font-ui)}
 .barb-hp{position:relative;height:18px;border-radius:9px;background:var(--well,rgba(0,0,0,.35));border:1px solid var(--line-2);overflow:hidden}
 .barb-hp i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#7a1a16,#d8453a)} .barb-hp span{position:relative;display:block;text-align:center;font:700 var(--fs-11)/17px var(--font-ui);color:var(--tx-1);text-shadow:0 1px 2px rgba(0,0,0,.8);font-variant-numeric:tabular-nums}
@@ -434,14 +434,14 @@ body.has-midbar:not(.has-sheet) .toast{top:calc(var(--safe-t) + var(--hud-top-sp
 /* a full sheet starts right under the HUD: the toast then floats over the HUD row instead of the sheet header */
 /* phone: while a sheet is open the toast docks just above the sheet's footer (never over the HUD values or the sheet header) */
 @media (max-width:899px) and (min-height:501px){
-  body.has-sheet .toast{top:auto;bottom:calc(var(--dock-h) + var(--safe-b) + 72px);box-shadow:var(--sh-2),0 0 0 1px rgba(0,0,0,.35)}
-  body.has-sheet:has(#battleLogPopup.is-open,#goalsPopup.is-open,#shopPopup.is-open,#profilePopup.is-open:not([data-tab="equip"])) .toast{bottom:calc(var(--dock-h) + var(--safe-b) + 16px)}
+  body.has-sheet .toast{top:auto;bottom:calc(var(--dock-h) + var(--safe-b) - var(--dock-off) + 72px);box-shadow:var(--sh-2),0 0 0 1px rgba(0,0,0,.35)}
+  body.has-sheet:has(#battleLogPopup.is-open,#goalsPopup.is-open,#shopPopup.is-open,#profilePopup.is-open:not([data-tab="equip"])) .toast{bottom:calc(var(--dock-h) + var(--safe-b) - var(--dock-off) + 16px)}
 }
 
 /* =====================================================================
    MULTI-ATTACK BAR  (JS: style.display = 'flex' | 'none')
    ===================================================================== */
-.mabar{position:fixed;z-index:var(--z-mabar);left:calc(var(--safe-l) + 10px);right:calc(var(--safe-r) + 10px);bottom:calc(var(--dock-h) + var(--safe-b) + 12px);
+.mabar{position:fixed;z-index:var(--z-mabar);left:calc(var(--safe-l) + 10px);right:calc(var(--safe-r) + 10px);bottom:calc(var(--dock-h) + var(--safe-b) - var(--dock-off) + 12px);
   display:none;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 10px;min-height:52px;padding:8px 8px 8px 12px;
   background:var(--glass);border:1px solid var(--line-2);border-radius:var(--r-sm);box-shadow:var(--sh-2);font-family:var(--font-ui);
   -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
@@ -512,15 +512,15 @@ body.has-midbar:not(.has-sheet) .toast{top:calc(var(--safe-t) + var(--hud-top-sp
 .pfoot:not(:has(> :not([style*="display: none"]):not([hidden]))){display:none}
 
 /* ---- panel placement: PHONE PORTRAIT (default) ---- */
-.panel--sheet{--sheet-max:calc(100dvh - var(--safe-t) - var(--hud-top-space) - var(--dock-h) - var(--safe-b));
-  left:var(--safe-l);right:var(--safe-r);top:auto;bottom:calc(var(--dock-h) + var(--safe-b));max-height:var(--sheet-max);
+.panel--sheet{--sheet-max:calc(100dvh - var(--safe-t) - var(--hud-top-space) - var(--dock-h) - var(--safe-b) + var(--dock-off));
+  left:var(--safe-l);right:var(--safe-r);top:auto;bottom:calc(var(--dock-h) + var(--safe-b) - var(--dock-off));max-height:var(--sheet-max);
   z-index:var(--z-sheet);border-radius:var(--r-lg) var(--r-lg) 0 0}   /* bottom-anchored, hugs its content up to the HUD */
 #profilePopup{min-height:min(680px,var(--sheet-max))}   /* stable height: switching tabs never makes the sheet jump */
 #battleLogPopup.has-entries{height:var(--sheet-max)}    /* live rows come and go every second: keep it steady once it has any */
-.panel--island{left:var(--safe-l);right:var(--safe-r);bottom:calc(var(--dock-h) + var(--safe-b));z-index:var(--z-sheet);
-  max-height:min(62dvh,calc(100dvh - var(--dock-h) - var(--safe-b) - var(--safe-t) - var(--hud-top-space)));border-radius:var(--r-lg) var(--r-lg) 0 0}
-.panel--item{left:var(--safe-l);right:var(--safe-r);bottom:calc(var(--dock-h) + var(--safe-b));z-index:var(--z-modal);
-  max-height:min(76dvh,calc(100dvh - var(--dock-h) - var(--safe-b) - var(--safe-t) - var(--hud-top-space)));border-radius:var(--r-lg) var(--r-lg) 0 0}
+.panel--island{left:var(--safe-l);right:var(--safe-r);bottom:calc(var(--dock-h) + var(--safe-b) - var(--dock-off));z-index:var(--z-sheet);
+  max-height:min(62dvh,calc(100dvh - var(--dock-h) - var(--safe-b) + var(--dock-off) - var(--safe-t) - var(--hud-top-space)));border-radius:var(--r-lg) var(--r-lg) 0 0}
+.panel--item{left:var(--safe-l);right:var(--safe-r);bottom:calc(var(--dock-h) + var(--safe-b) - var(--dock-off));z-index:var(--z-modal);
+  max-height:min(76dvh,calc(100dvh - var(--dock-h) - var(--safe-b) + var(--dock-off) - var(--safe-t) - var(--hud-top-space)));border-radius:var(--r-lg) var(--r-lg) 0 0}
 .panel .sheet-grab + .phead{padding-top:4px}
 @media (max-width:899px),(max-height:500px){ body.has-sheet .mabar{display:none!important} }
 body.has-panel .mapctl{display:none}
