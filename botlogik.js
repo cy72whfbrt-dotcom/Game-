@@ -198,7 +198,7 @@ function resolveBotAttack(attack) {
         }
     }
     noteBattle(target.id, won ? originalEnemyTroops : attack.rawTroops - fled, won ? targetOwner : bot.id);   // the neighbours saw it
-    midFight(target.id, bot.id, won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops), targetOwner, won ? botSentLoss : attack.rawTroops - fled, won, targetOwner);   // Turnier-Punkte, Kopfgeld-Anteil - like yours
+    midFight(target.id, bot.id, won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops), targetOwner, won ? botSentLoss : attack.rawTroops - fled, won, targetOwner);   // Turnier-Punkte - like yours
     const counts = won || !attack.planId || attack.lastWave;                    // an early wave of a planned strike failing isn't a lesson yet
     if (counts) botMoodAdd(bot.id, won ? .15 : -.2); if (targetOwner && targetOwner !== 'player') botMoodAdd(targetOwner, won ? -.25 : .1);
     if (!won && counts) botNoteFail(bot.id, target.id);
@@ -411,8 +411,9 @@ function botRespects(bot, owner) { if (!owner || owner === bot.id) return false;
 
 function botSituation(bot, st, target, owner, now) {        // how the moment changes the pull of a target (lower = more wanted)
     let m = botRespects(bot, owner) ? 4 : 1;                                                           // respect: the ruler's bases are much less tempting (not off limits)
-    const ot = owner && owner !== bot.id ? titleOf(owner) : null; if (ot && !ot.good) m *= .6;
-    const mt = titleOf(bot.id); if (mt && !mt.good && owner && owner === rulerOwner()) m *= .5;        // a penalty title makes them angry at whoever gave it: the ruler gets attacked more   // a penalty title: weaker - everyone else smells it const bold = (st.risk || 0) >= .12 || (st.hunt || 0) >= .5;
+    const ot = owner && owner !== bot.id ? titleOf(owner) : null; if (ot && !ot.good) m *= .6;   // a penalty title: weaker - everyone else smells it
+    const mt = titleOf(bot.id); if (mt && !mt.good && owner && owner === rulerOwner()) m *= .5;        // a penalty title makes them angry at whoever gave it: the ruler gets attacked more
+    const bold = (st.risk || 0) >= .12 || (st.hunt || 0) >= .5;
     const heat = heatAt(target.landmassId, now);
     if (heat > .5) m *= bold ? 1 / (1 + Math.min(3, heat) * .4) : 1 + Math.min(3, heat) * .5;       // drawn to the fighting, or keeping clear
     if (owner && bold && baseFought[target.id] && now - baseFought[target.id] < 4 * 60000) m *= .5;    // Aasgeier: the winner is thin right now
@@ -1667,7 +1668,7 @@ function armyRaidArrive(r, now) {
     goalBump(won ? r.botId : 'player', 'armyWins');
     if (won) { armies = armies.filter(x => x !== a); r.troops -= fb.aLoss; botHospitalTake(r.botId, fb.aLoss); back(); const w = fieldHurt('player', def, dHx);
         flashHint(bot.name + ' hat deine Armee im Feld geschlagen (' + fmtCompact(def) + ' Truppen)' + (w ? ', ' + fmtCompact(w) + ' ins Lazarett.' : '.'), 5000); }
-    else { botHospitalTake(r.botId, atk); fieldHurt('player', fb.dLoss, dHx); a.troops -= fb.dLoss; r.troops = 0; statBump('defends'); flashHint('Deine Armee hat den Angriff von ' + bot.name + ' abgewehrt – ' + fmtCompact(a.troops) + ' stehen noch.', 4500); }
+    else { botHospitalTake(r.botId, atk); fieldHurt('player', fb.dLoss, dHx); a.troops -= fb.dLoss; if (a.troops < 1) armies = armies.filter(x => x !== a); r.troops = 0; statBump('defends'); flashHint('Deine Armee hat den Angriff von ' + bot.name + ' abgewehrt – ' + fmtCompact(a.troops) + ' stehen noch.', 4500); }
     addCombatLogEntry({ type: 'army', won: !won, attacker: bot.name, defender: 'Du', atk: fb.SA, def: fb.SD, gold: fg.d, hD: heroTag(dHx), hx: heroReportOf(dHx) });
     warStat(won ? 'armyLosses' : 'armyWins', 1, bot.name);
     sfx(won ? 'defeat' : 'victory'); updateHud(); saveGame();
