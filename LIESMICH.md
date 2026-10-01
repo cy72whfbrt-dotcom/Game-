@@ -286,6 +286,21 @@ sitzen tiefer (nur 45 % des iPhone-Abstands zum Home-Balken), und unter der Leis
   Tagesboss auf einem Turm stand (Besitz war beim Laden noch nicht da). Jetzt wird das abgefangen, und den Platz prüft
   der Weltrechner.
 
+**Admin: Nebel freischalten, Geschenke an Bots, Bot-Liste (1.10., lokal getestet, noch NICHT hochgeladen):**
+- Wer bekommt ein Geschenk? Nur der ausgewählte Spieler (oder alle Spieler, wenn „ALLE“ gewählt ist). Das Geschenk
+  liegt in `ow_ereignisse` unter seiner Spieler-Nummer, und nur er bekommt es beim Puls. Der Weltrechner darf keine
+  Geschenke verschicken (nur `delta`, `bericht`, `startschild`). Lokal geprüft: Bot-Geschenk → der andere Spieler
+  und der Admin selbst bekommen nichts.
+- Geschenk an Bots: In der Auswahl „An“ gibt es zwei Gruppen, „Spieler“ und „Bots“ (alle 60 einzeln und „an ALLE
+  Bots“). Die Bot-Namen liest `admin.php` aus `bots.js`. Das Geschenk für Bots geht als Befehl unter Spieler 0 in
+  `ow_befehle` (nur `admin.php` kann unter 0 schreiben). Der Weltrechner gibt es dem Bot direkt
+  (`spiel.js`, `adminBefehl`): Gems, Münzen, Helden-Splitter, Truppen in die Hauptstadt, Kiste als Ausrüstung im
+  Lager. Kommt an, sobald jemand im Spiel ist. Lokal: Kevin_93 +777 Gems, +5.000 Truppen; andere Bots unverändert.
+- Neue Karte „Bots“ auf der Admin-Seite: Liste aller Bots (Name, Kennung).
+- „Nebel freischalten“: Für einen Spieler (oder alle) wird die ganze Karte aufgedeckt (Ereignis `nebel` →
+  `revealAround` über die ganze Karte, wird mit dem Spielstand gespeichert). Lokal: 13 → 46.656 offene Felder,
+  der andere Spieler unverändert.
+
 ## 11. Offen
 - **GitHub aufräumen (macht Alexander, Claude darf es nicht):** Unter Settings → General → Default branch auf
   `claude/neues-projekt-8agldl` stellen. Danach unter Branches alle anderen löschen (`claude/chat-session-k7ozkc`,

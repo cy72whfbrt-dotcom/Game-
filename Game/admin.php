@@ -9,6 +9,9 @@ if (!$ich || !ist_admin($ich)) { header('Location: ./'); exit; }
 // Schutz gegen fremde Formulare: jede Aktion braucht dieses Zeichen (hängt am Login-Cookie)
 $zeichen = hash_hmac('sha256', 'admin', (string)($_COOKIE[COOKIE_NAME] ?? ''));
 $meldung = ''; $fehler = '';
+// Die Bots (fest in bots.js): id => Name
+$BOTS = [];
+if (preg_match_all("/\\{ id: '(bot\\d+)',\\s*name: '([^']+)'/", (string)@file_get_contents(__DIR__ . '/bots.js'), $m, PREG_SET_ORDER)) foreach ($m as $x) $BOTS[$x[1]] = $x[2];
 $KISTEN = ['Gewöhnlich', 'Ungewöhnlich', 'Selten', 'Episch', 'Legendär', 'Mythisch'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -25,6 +28,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $crate = (int)($_POST['crate'] ?? -1); if ($crate < -1 || $crate > 5) $crate = -1;
             $an = (string)($_POST['an'] ?? '');
             if (!$gems && !$coins && !$sh && !$tr && $crate < 0) $fehler = 'Das Geschenk ist leer.';
+            elseif ($an === 'bots' || isset($BOTS[$an])) {   // Bots: der Weltrechner gibt es ihnen direkt (sie sammeln es selbst ein)
+                lager()->befehl_ablegen(0, json_encode(['art' => 'admin', 'was' => 'geschenk_bot', 'bot' => $an === 'bots' ? 'alle' : $an, 'gems' => $gems, 'coins' => $coins, 'sh' => $sh, 'tr' => $tr, 'crate' => $crate]));
+                $meldung = 'Geschenk verschickt an ' . ($an === 'bots' ? 'alle ' . count($BOTS) . ' Bots' : 'den Bot ' . $BOTS[$an]) . ' – kommt an, sobald jemand im Spiel ist.';
+            }
             else {
                 $ids = [];
                 foreach (lager()->alle_spieler() as $sp) if ($an === 'alle' || (string)$sp['id'] === $an) $ids[] = (int)$sp['id'];
@@ -33,10 +40,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($ids) $meldung = 'Geschenk verschickt an ' . count($ids) . ' Spieler – es liegt im Abholfach (Ziele → Belohnung).';
             }
         }
+        if ($was === 'nebel') {
+            $an = (string)($_POST['an'] ?? ''); $ids = [];
+            foreach (lager()->alle_spieler() as $sp) if ($an === 'alle' || (string)$sp['id'] === $an) $ids[] = (int)$sp['id'];
+            foreach ($ids as $id) lager()->ereignis_ablegen($id, json_encode(['art' => 'nebel']));
+            if ($ids) $meldung = 'Nebel freigeschaltet für ' . count($ids) . ' Spieler – die ganze Karte ist aufgedeckt (beim nächsten Öffnen des Spiels, wenn er gerade nicht spielt).';
+            else $fehler = 'Spieler nicht gefunden.';
+        }
     }
 }
 $spieler = lager()->alle_spieler();
 function h($s) { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
+$spielerOptionen = '';
+foreach ($spieler as $sp) $spielerOptionen .= '<option value="' . (int)$sp['id'] . '">' . h($sp['anzeigename'] ?: $sp['name']) . ($sp['anzeigename'] && $sp['anzeigename'] !== $sp['name'] ? ' (' . h($sp['name']) . ')' : '') . '</option>';
 function zahl($n) { return $n === null ? '–' : number_format((float)$n, 0, ',', '.'); }
 ?><!DOCTYPE html>
 <html lang="de">
@@ -87,8 +103,8 @@ function zahl($n) { return $n === null ? '–' : number_format((float)$n, 0, ','
     <input type="hidden" name="was" value="geschenk">
     <label for="an">An</label>
     <select id="an" name="an">
-      <?php foreach ($spieler as $sp): ?><option value="<?= (int)$sp['id'] ?>"><?= h($sp['anzeigename'] ?: $sp['name']) ?><?= $sp['anzeigename'] && $sp['anzeigename'] !== $sp['name'] ? ' (' . h($sp['name']) . ')' : '' ?></option><?php endforeach; ?>
-      <option value="alle">— an ALLE Spieler —</option>
+      <optgroup label="Spieler"><?= $spielerOptionen ?><option value="alle">— an ALLE Spieler —</option></optgroup>
+      <optgroup label="Bots"><?php foreach ($BOTS as $id => $n): ?><option value="<?= h($id) ?>"><?= h($n) ?></option><?php endforeach; ?><option value="bots">— an ALLE Bots —</option></optgroup>
     </select>
     <div class="reihe">
       <div><label for="gems">Gems</label><input id="gems" name="gems" type="number" min="0" value="0"></div>
@@ -99,6 +115,26 @@ function zahl($n) { return $n === null ? '–' : number_format((float)$n, 0, ','
     </div>
     <button>Verschicken</button>
   </form>
+</div>
+
+<div class="karte">
+  <h2>Nebel freischalten</h2>
+  <p>Deckt für den Spieler die ganze Karte auf.</p>
+  <form method="post">
+    <input type="hidden" name="zeichen" value="<?= h($zeichen) ?>">
+    <input type="hidden" name="was" value="nebel">
+    <label for="nebelAn">Für</label>
+    <select id="nebelAn" name="an"><?= $spielerOptionen ?><option value="alle">— ALLE Spieler —</option></select>
+    <button>Nebel freischalten</button>
+  </form>
+</div>
+
+<div class="karte">
+  <h2>Bots (<?= count($BOTS) ?>)</h2>
+  <p>Die Mitspieler, die die Welt beleben. Geschenke an sie gibt es oben bei „Geschenk verschicken“ (Gruppe „Bots“).</p>
+  <div class="tabelle"><table><tr><th>Name</th><th>Kennung</th></tr>
+    <?php foreach ($BOTS as $id => $n): ?><tr><td><?= h($n) ?></td><td><?= h($id) ?></td></tr><?php endforeach; ?>
+  </table></div>
 </div>
 
 <div class="karte">

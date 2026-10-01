@@ -10837,7 +10837,21 @@ if (window.WELT) {
             capitalCache = null; saveGame(); saveBotState(); requestRender();
         }
     };
+    // Vom Admin (kommt nur von admin.php – der Server legt es unter Spieler 0 ab): Geschenk an einen Bot oder alle Bots
+    function adminBefehl(b) {
+        if (!b || b.art !== 'admin' || b.was !== 'geschenk_bot') return;
+        const bs = loadBotState(), ziele = BOT_DEFS.filter(d => !d.mensch && (b.bot === 'alle' || d.id === b.bot));
+        for (const d of ziele) { const st = bs[d.id]; if (!st) continue;
+            if (b.gems > 0) st.gems = (st.gems || 0) + Math.round(b.gems);
+            if (b.coins > 0) botCoins[d.id] = (botCoins[d.id] || 0) + Math.round(b.coins);
+            if (b.sh > 0) try { heroGrantShards(d.id, Math.round(b.sh)); } catch (e) {}
+            if (b.tr > 0) { const c = botCapitalOf(d.id); if (c !== null && c !== undefined) islandTroops[c] = (islandTroops[c] || 0) + Math.round(b.tr); }
+            if (b.crate >= 0 && st.spare) { const k = pickRandomSlot(); if (st.spare[k]) st.spare[k][Math.max(b.crate, pickRandomRarity())]++; }   // wie eine Kiste: der Bot legt sie selbst an
+        }
+        saveBotState(); saveGame(); requestRender();
+    }
     window.__weltBefehl = function (who, b) {
+        if (who === 'u0') return adminBefehl(b);
         const f = BEFEHLE[b && b.art]; if (!f) return;
         if (!botById[who]) { WELT.menschEintragen(who); window.__weltNeuerMensch(who); }
         if (!botById[who]) return;
@@ -10876,6 +10890,10 @@ if (window.WELT) {
         if (e.hint) flashHint(e.hint, 5000);
         if (x.targetId !== undefined && islandById[x.targetId]) spawnBattleFx(x.targetId, x.type === 'attack' ? !!x.won : !x.won || !!x.capitalHolds, x.type === 'attack' ? (x.won ? 'Sieg' : 'Niederlage') : (x.won ? (x.capitalHolds ? 'Hauptstadt hält' : 'Basis verloren') : 'Verteidigt'), x.botName || x.defenderName || '');
         sfx(x.won === (x.type === 'attack') ? 'win' : 'warn');
+    });
+    WELT.beiNachricht.push(function (e) {             // Nebel freischalten (vom Admin): die ganze Karte ist aufgedeckt
+        if (!e || e.art !== 'nebel') return;
+        revealAround(0, 0, FRAME_HALF * 1.5, false); flashHint('Der Nebel hat sich gelichtet – du siehst jetzt die ganze Karte.', 5000);
     });
     WELT.beiNachricht.push(function (e) {             // Geschenk (vom Admin): liegt im Abholfach, wird normal abgeholt
         if (!e || e.art !== 'geschenk') return;
