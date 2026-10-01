@@ -76,7 +76,14 @@ function wr_starten() {
     $G = dirname(WR_ORDNER);
     $lesen = [WR_ORDNER];
     foreach (['speichern.js', 'ladebildschirm.js', 'bots.js', 'welt.js', 'spiel.js'] as $d) $lesen[] = $G . '/' . $d;
-    $rechte = '--permission' . implode('', array_map(function ($p) { return ' --allow-fs-read=' . escapeshellarg($p); }, $lesen)) . ' --allow-fs-write=' . escapeshellarg(WR_ORDNER);
+    $erlaubt = implode('', array_map(function ($p) { return ' --allow-fs-read=' . escapeshellarg($p); }, $lesen)) . ' --allow-fs-write=' . escapeshellarg(WR_ORDNER);
+    // Kennt dieses Node den Sicherheitsmodus? (Node 22.13+: --permission, älter: --experimental-permission) – vorher kurz ausprobieren
+    $rechte = '';
+    foreach (['--permission', '--experimental-permission'] as $schalter) {
+        $probe = trim((string)@shell_exec('cd ' . escapeshellarg(WR_ORDNER) . ' && timeout 20 ' . escapeshellarg(wr_node()) . ' ' . $schalter . $erlaubt . ' -e "process.stdout.write(\'ja\')" 2>/dev/null'));
+        if ($probe === 'ja') { $rechte = $schalter . $erlaubt; break; }
+    }
+    if ($rechte === '') wr_log('WARNUNG: Node kennt den Sicherheitsmodus nicht – Weltrechner läuft ohne ihn (Node aktualisieren)');
     $cmd = 'exec ' . (trim((string)@shell_exec('command -v setsid')) !== '' ? 'setsid ' : '') . 'nohup nice -n 19 ' . escapeshellarg(wr_node()) . ' ' . $rechte . ' --max-old-space-size=450 start.js >> log.php 2>&1 < /dev/null';
     $env = ['OW_URL' => $url, 'OW_SCHLUESSEL' => weltrechner_schluessel(), 'OW_SPEICHER_MB' => (string)WR_SPEICHER_MB, 'PATH' => (string)(getenv('PATH') ?: '/usr/local/bin:/usr/bin:/bin')];
     // ganz vom Aufrufer lösen (eigene Gruppe, keine offene Leitung) – sonst wartet PHP, bis der Weltrechner endet

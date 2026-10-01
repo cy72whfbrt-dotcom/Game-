@@ -499,7 +499,7 @@ Trotzdem ändern: die Passwörter, die am 1.10. im Chat standen (Office, Datenba
 **Behoben (Weltrechner):** eigener Zufalls-Schlüssel bei jedem Hochladen (nicht mehr aus dem DB-Passwort abgeleitet),
 nur über die Umgebung übergeben (nie in einer Befehlszeile), nur an den eigenen Server gesendet. Node im
 **Sicherheitsmodus** (`--permission`): darf nur die Spiel-Skripte und den eigenen Ordner lesen, nur dort schreiben,
-keine Programme starten – getestet: config.php lesen → verweigert. Das Spiel-Fenster bekommt keine Node-Objekte mehr.
+keine Programme starten – getestet: config.php lesen → verweigert. Der Wachhund probiert vor jedem Start aus, ob Node den Modus kennt (sonst `--experimental-permission`, sonst ohne + Warnung im Log) – nie eine Absturz-Schleife wegen eines alten Node. Das Spiel-Fenster bekommt keine Node-Objekte mehr.
 Prüfer-Neustarts zählen nicht mehr für die Notbremse (sonst hätte ein Schummler das Spiel in Wartung zwingen können);
 erst 10 in 30 Minuten. Kein Ersatz-Hostname aus Anfragen.
 
