@@ -21,7 +21,9 @@ ls_ordner() { curl -sS -b $T/jar "$E?h=48&w=138&sid=$SID&path=$B$1" | grep -o 'p
 
 # 2) config.php aus den Umgebungsvariablen
 if [ -n "$DB_PASS" ]; then
-  php -r '$c = ["db_host" => getenv("DB_HOST") ?: "dbwebintern.silentnetwork.de", "db_name" => getenv("DB_NAME") ?: "k17700_alex", "db_user" => getenv("DB_USER"), "db_pass" => getenv("DB_PASS")];
+  # admin_ids: feste Spieler-Nummern der Admins (alexander = 3), änderbar über die Variable ADMIN_IDS (z. B. "3,5")
+  php -r '$c = ["db_host" => getenv("DB_HOST") ?: "dbwebintern.silentnetwork.de", "db_name" => getenv("DB_NAME") ?: "k17700_alex", "db_user" => getenv("DB_USER"), "db_pass" => getenv("DB_PASS"),
+    "admin_ids" => array_map("intval", array_filter(explode(",", getenv("ADMIN_IDS") ?: "3")))];
     file_put_contents($argv[1], "<?php\n// Zugangsdaten der Datenbank - nur auf dem Server, nie ins Git\nreturn " . var_export($c, true) . ";\n");' "$T/config.php"
 fi
 

@@ -21,6 +21,7 @@ try {
             elseif (!preg_match('/^[\p{L}\p{N} _.-]{3,20}$/u', $name)) $fehler = 'Name: 3 bis 20 Zeichen (Buchstaben, Zahlen, Leerzeichen, _ . -).';
             elseif (mb_strlen($pw) < 6) $fehler = 'Das Passwort braucht mindestens 6 Zeichen.';
             elseif ($pw !== (string)($_POST['pw2'] ?? '')) $fehler = 'Die beiden Passwörter sind nicht gleich.';
+            elseif (!lager()->name_frei(0, $name)) $fehler = 'Diesen Namen gibt es schon.';
             else {
                 $uid = lager()->spieler_anlegen($name, password_hash($pw, PASSWORD_DEFAULT));
                 if ($uid === null) $fehler = 'Diesen Namen gibt es schon.';

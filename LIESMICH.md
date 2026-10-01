@@ -110,9 +110,17 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 
-20. **Nebel zeigt zu viel:** Unter dem Nebel (noch nicht erforschtes Gebiet) sind Sachen zu sehen. (offen)
-21. **Angriff in den Nebel:** Man kann Basen/Ziele unter dem Nebel angreifen, obwohl man das Gebiet nicht erforscht hat. (offen)
-22. **Mitspieler ohne Nebel?** Prüfen, ob die Mitspieler auch Nebel haben – wenn nicht, für sie auch einbauen (gleiche Regeln wie für dich). (offen)
+20. ✅ **Nebel zeigt zu viel:** Boss, Wanderer, Felder, Lager, Tagesboss, fremde Armeen/Märsche, Kampf-Effekte und
+    Thron-Effekte werden unter dem Nebel nicht mehr gezeichnet.
+21. ✅ **Angriff in den Nebel:** Basen, Felder, Lager, Boss und fremde Armeen im Nebel lassen sich nicht antippen und
+    nicht angreifen („liegt im Nebel – schick zuerst einen Späher“). Auch „Zum Boss“/„nächstes Lager“ führen nicht in den Nebel.
+22. ✅ **Nebel für Mitspieler:** Sie kennen nur Inseln mit eigenen Basen (auch früheren) und deren direkte Nachbarn über
+    eine Brücke (`botKennt` in bots.js, gespeichert als `kennt`); nur dort greifen sie an, jagen Lager, sammeln, schlagen den Tagesboss.
+23. ✅ **Sammeln ohne Bericht:** Kehren Sammler zurück, gibt es einen Bericht „Sammler zurück · Goldmine · +… Münzen ·
+    … Truppen zurück“ (auch für Zuschauer, über den Weltrechner).
+24. ✅ **Neue Spieler sofort plattgemacht:** **Anfängerschutz** – 48 Std. unangreifbar (für Mitspieler und echte
+    Spieler), auch wenn man selbst Mitspieler/Lager/Felder angreift. Endet früher mit 30 Basen oder wenn man einen echten
+    Spieler angreift. Gilt auch für alle, die schon spielen und ihn noch nie hatten (einmalig ab dem nächsten Start).
 
 ## 10. EINE Welt für alle (läuft auf dem Server)
 Alexander will: **Alle Spieler und alle Mitspieler auf einer einzigen Karte.** Keine eigenen Welten pro Spieler.
@@ -201,6 +209,20 @@ Welt nochmal frisch zurückgesetzt. Wer als Erster das Spiel öffnet, erschafft 
   Daten mit `<`/`>` werden abgelehnt (kein eingeschleuster Code bei anderen Spielern), Größen-Grenzen (8 MB gepackt,
   24 MB entpackt, 150 Teile pro Spieler, 80 Teile Welt), Sicherheits-Kopfzeilen, alte Befehle/Nachrichten räumen sich
   weg. Passwörter nur als bcrypt-Hash; kein Weg liefert Hashes oder Zugangsdaten an den Browser.
+
+**Sicherheitsprüfung (1.10., Prüf-Agent wie ein Angreifer) – behoben:**
+- Kritisch: eingeschleuster Code über das Profil (Anführungszeichen in Attributen) → `escapeHtml` maskiert jetzt auch
+  `" '`, und der Server baut jedes Profil neu auf (`profil_bereinigen`: nur bekannte Felder, Zahlen, Kennungen aus
+  Buchstaben/Ziffern/_/-).
+- Kritisch: Admin über den Login-Namen → jetzt feste Spieler-Nummern (`config.php` → `admin_ids`, alexander = 3;
+  `hochladen.sh` schreibt das, Variable `ADMIN_IDS`). Login-Namen dürfen außerdem keinem Anzeigenamen gleichen.
+- Hoch: Der Weltrechner kann keine Geschenke fälschen (nur Nachrichten `delta`, `bericht`, `startschild`).
+- Spielseite kann durch ein kaputtes Profil nicht mehr zerbrechen; Befehle/Nachrichten haben Größen-Grenzen.
+- In Ordnung laut Prüfung: alle Datenbank-Befehle (keine SQL-Einschleusung), Passwörter (bcrypt), Sitzungen/Cookie,
+  keine abrufbaren Zugangsdaten oder Dateien, keine Fehlermeldungen mit Interna.
+- **Bleibt (Bauart „Weltrechner“):** Der Browser des Weltrechners rechnet die Welt. Ein Betrüger mit Programmierkenntnissen
+  könnte als Weltrechner die Welt oder Münz-Nachrichten verfälschen. Ganz verhindern ließe sich das nur, wenn der Server
+  selbst rechnet (großer Umbau).
 
 ## 11. Offen
 - **GitHub aufräumen (macht Alexander, Claude darf es nicht):** Unter Settings → General → Default branch auf

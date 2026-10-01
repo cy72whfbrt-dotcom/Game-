@@ -66,11 +66,12 @@ header('X-Frame-Options: SAMEORIGIN');
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: same-origin');
 
-// Admins (dürfen admin.php benutzen und auch während der Wartung spielen): Login-Namen aus config.php, sonst "alexander"
+// Admins (dürfen admin.php benutzen und auch während der Wartung spielen): feste Spieler-Nummern aus config.php
+// ('admin_ids'), nicht Namen – einen Namen könnte sich sonst jemand anderes registrieren.
 function ist_admin($ich) {
     if (!$ich) return false;
-    $liste = array_map('mb_strtolower', (array)(cfg()['admins'] ?? ['alexander']));
-    return in_array(mb_strtolower($ich['login'] ?? $ich['name'], 'UTF-8'), $liste, true);
+    $ids = array_map('intval', (array)(cfg()['admin_ids'] ?? []));
+    return in_array((int)$ich['id'], $ids, true);
 }
 // Wartung (neue Version wird hochgeladen): solange die Datei wartung.txt da ist, kommt niemand außer den Admins ins Spiel
 const WARTUNG_DATEI = __DIR__ . '/wartung.txt';
@@ -89,6 +90,42 @@ function sauber_json($text) { if (!is_string($text) || strpbrk($text, '<>') === 
 function bremse($schluessel, $max, $sek) {
     return lager()->bremse(hash('sha256', $schluessel), $max, $sek);
 }
+// Profil eines Spielers (sehen alle anderen): wird komplett neu aufgebaut – nur bekannte Felder, Zahlen als Zahlen,
+// Kennungen nur aus Buchstaben/Ziffern/_/- (nichts, was anderswo Code einschleusen könnte)
+function profil_bereinigen($text) {
+    $p = json_decode((string)$text, true, 12);
+    if (!is_array($p)) return null;
+    $id = function ($v) { return is_string($v) && preg_match('/^[A-Za-z0-9_-]{1,40}$/', $v) ? $v : null; };
+    $zahl = function ($v, $max = 1e30) { return is_numeric($v) && is_finite((float)$v) ? max(-$max, min($max, $v + 0)) : 0; };
+    $karte = function ($v, $wert, $max = 80) use ($id) { $r = []; if (is_array($v)) foreach ($v as $k => $x) { if (count($r) >= $max) break; if ($id((string)$k) !== null) $r[(string)$k] = $wert($x); } return (object)$r; };
+    $liste = function ($v) use ($id) { $r = []; if (is_array($v)) foreach (array_slice($v, 0, 60) as $x) if ($id($x) !== null) $r[] = $x; return $r; };
+    $gear = [];
+    foreach (['weapon', 'armor', 'shield', 'boots'] as $sl) { $g = $p['gear'][$sl] ?? null; $gear[$sl] = is_array($g) ? ['r' => (int)$zahl($g['r'] ?? 0, 9), 'lvl' => (int)$zahl($g['lvl'] ?? 1, 999), 'st' => (int)$zahl($g['st'] ?? 0, 99)] : null; }
+    $hs = $karte($p['hs'] ?? [], function ($h) use ($zahl) { $h = is_array($h) ? $h : [];
+        $sk = []; foreach (array_slice((array)($h['sk'] ?? []), 0, 4) as $x) $sk[] = (int)$zahl($x, 99);
+        return ['sh' => (int)$zahl($h['sh'] ?? 0, 1e9), 'q' => (int)$zahl($h['q'] ?? 0, 99), 'own' => !empty($h['own']), 'sk' => $sk, 'rage' => $zahl($h['rage'] ?? 0, 1e6)]; }, 40);
+    $lk = is_array($p['look'] ?? null) ? $p['look'] : [];
+    $cr = is_array($p['crest'] ?? null) ? $p['crest'] : null;
+    $bs = is_array($p['baustil'] ?? null) ? $p['baustil'] : null;
+    return json_encode([
+        'lvl' => (int)$zahl($p['lvl'] ?? 1, 10000),
+        'skills' => $karte($p['skills'] ?? [], function ($x) use ($zahl) { return (int)$zahl($x, 100000); }, 20),
+        'gear' => $gear,
+        'city' => ['levels' => $karte($p['city']['levels'] ?? [], function ($x) use ($zahl) { return (int)$zahl($x, 1000); }, 20)],
+        'wounded' => $zahl($p['wounded'] ?? 0),
+        'hs' => $hs,
+        'shieldUntil' => $zahl($p['shieldUntil'] ?? 0), 'neuBis' => $zahl($p['neuBis'] ?? 0),
+        'look' => ['ring' => $id($lk['ring'] ?? null), 'rings' => $liste($lk['rings'] ?? []), 'march' => $id($lk['march'] ?? null), 'marchs' => $liste($lk['marchs'] ?? []),
+                   'frame' => $id($lk['frame'] ?? null), 'title' => $id($lk['title'] ?? null), 'throne' => !empty($lk['throne'])],
+        'stats' => $karte($p['stats'] ?? [], function ($x) use ($zahl) { return $zahl($x); }, 80),
+        'earned' => $zahl($p['earned'] ?? 0), 'coins' => $zahl($p['coins'] ?? 0),
+        'crest' => $cr ? array_map(function ($k) use ($cr, $zahl) { return (int)$zahl($cr[$k] ?? 0, 99); }, ['shape' => 'shape', 'div' => 'div', 'c1' => 'c1', 'c2' => 'c2', 'sym' => 'sym', 'ink' => 'ink']) : null,
+        'baustil' => $bs ? ['style' => $id($bs['style'] ?? null) ?: 'klassisch', 'cap' => ($bs['cap'] ?? '') === 'wasser' ? 'wasser' : 'huegel'] : null,
+    ], JSON_UNESCAPED_UNICODE);
+}
+// Nachrichten, die der Weltrechner an andere schicken darf (Geschenke nur über admin.php)
+const WELTRECHNER_NACHRICHTEN = ['delta', 'bericht', 'startschild'];
+
 function client_ip() { return (string)($_SERVER['REMOTE_ADDR'] ?? '?'); }
 
 function json_antwort($code, $daten) {
@@ -137,11 +174,13 @@ function spielseite_vorbereiten() {
         http_response_code(503);
         exit('Der Server hat gerade ein Problem. Bitte gleich nochmal versuchen.');
     }
-    return '<script>window.__OW = ' . json_encode([
+    $ow = json_encode([
         'stand' => (object)$stand, 'neu' => $neu, 'token' => $tok, 'name' => $ich['name'],
         'uid' => (int)$ich['id'], 'leiter' => $leiter, 'welt' => $welt, 'spieler' => $spieler,
         'nameGewaehlt' => !empty($ich['anzeigename']), 'admin' => ist_admin($ich),
-    ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_INVALID_UTF8_SUBSTITUTE) . ';</script>'
+    ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_INVALID_UTF8_SUBSTITUTE | JSON_PARTIAL_OUTPUT_ON_ERROR);
+    if ($ow === false) { http_response_code(503); exit('Der Server hat gerade ein Problem. Bitte gleich nochmal versuchen.'); }
+    return '<script>window.__OW = ' . $ow . ';</script>'
         . '<script src="speichern.js?v=' . filemtime(__DIR__ . '/speichern.js') . '"></script>';
 }
 
@@ -450,7 +489,7 @@ class MysqlLager {
     function spieler_liste($seit) {
         $q = $this->db->prepare('SELECT id, COALESCE(anzeigename, name) name, online_bis, profil_zeit, IF(profil_zeit > ?, profil, NULL) profil FROM ow_spieler');
         $q->execute([(int)$seit]);
-        return array_map(function ($z) { return ['id' => (int)$z['id'], 'name' => $z['name'], 'online' => (int)$z['online_bis'] > time(), 'profil_zeit' => (int)$z['profil_zeit'], 'profil' => $z['profil'] !== null ? json_decode($z['profil']) : null]; }, $q->fetchAll());
+        return array_map(function ($z) { return ['id' => (int)$z['id'], 'name' => $z['name'], 'online' => (int)$z['online_bis'] > time(), 'profil_zeit' => (int)$z['profil_zeit'], 'profil' => $z['profil'] !== null ? json_decode($z['profil'], false, 12) : null]; }, $q->fetchAll());
     }
 
     // Lesbare Übersicht in ow_spieler
@@ -542,8 +581,8 @@ function welt_puls($ich, $d) {
     if (!hash_equals($l->spiel_token($uid), $tok)) json_antwort(409, ['fehler' => 'anderswo geöffnet']);
     $jetzt = time();
     $l->online($uid, $jetzt + 20);
-    if (isset($d['profil']) && is_string($d['profil']) && strlen($d['profil']) < 2000000 && sauber_json($d['profil'])) $l->profil_setzen($uid, $d['profil']);
-    foreach (array_slice((array)($d['befehle'] ?? []), 0, 60) as $b) if (sauber($b)) $l->befehl_ablegen($uid, json_encode($b, JSON_UNESCAPED_UNICODE));
+    if (isset($d['profil']) && is_string($d['profil']) && strlen($d['profil']) < 400000 && ($pr = profil_bereinigen($d['profil'])) !== null && $pr !== false) $l->profil_setzen($uid, $pr);
+    foreach (array_slice((array)($d['befehle'] ?? []), 0, 60) as $b) if (is_array($b) && sauber($b)) { $j = json_encode($b, JSON_UNESCAPED_UNICODE); if ($j !== false && strlen($j) < 20000) $l->befehl_ablegen($uid, $j); }
 
     $l->welt_sperren();
     $i = $l->welt_info();
@@ -557,7 +596,8 @@ function welt_puls($ich, $d) {
         if ($setzen && $l->anzahl_teile(0, array_keys($setzen)) > 80) $setzen = [];   // die Welt hat nur eine feste Zahl Teile
         if ($setzen || $loeschen) $l->welt_schreiben($setzen, $loeschen, (int)($w['welt_zeit'] ?? 0));
         if (mt_rand(1, 500) === 1) $l->aufraeumen();
-        foreach (array_slice((array)($d['ereignisse'] ?? []), 0, 500) as $e) if (isset($e['an'], $e['e']) && (int)$e['an'] > 0 && sauber($e['e'])) $l->ereignis_ablegen((int)$e['an'], json_encode($e['e'], JSON_UNESCAPED_UNICODE));
+        foreach (array_slice((array)($d['ereignisse'] ?? []), 0, 500) as $e) if (isset($e['an'], $e['e']) && (int)$e['an'] > 0 && is_array($e['e']) && in_array($e['e']['art'] ?? '', WELTRECHNER_NACHRICHTEN, true) && sauber($e['e'])) {
+            $j = json_encode($e['e'], JSON_UNESCAPED_UNICODE); if ($j !== false && strlen($j) < 200000) $l->ereignis_ablegen((int)$e['an'], $j); }
     }
     $neu_leiter = false;
     if ($bin_leiter || (int)$i['leiter_bis'] < $jetzt) {   // Weltrechner bleiben oder freien Platz übernehmen

@@ -1406,6 +1406,8 @@ function launchAttack(sourceId, targetId, attackerBotId, troopsOverride, heldWun
         : available;
     if (!source || !target || rawTroops <= 0) return false;
     if (!attackerBotId && target.id === playerIslandId) return false;
+    if (!attackerBotId && !islandSeen(target)) { flashHint('Dieses Ziel liegt im Nebel – schick zuerst einen Späher.', 3000); return false; }   // nichts im Nebel angreifen
+    if (!attackerBotId) { const tw = islandOwnerOf(target.id); if (tw && botById[tw] && botById[tw].mensch) neulingEnde('Dein Anfängerschutz ist vorbei – du hast einen echten Spieler angegriffen.'); }
     const tOwner = islandOwnerOf(target.id);
     if (tOwner && tOwner !== (attackerBotId || 'player') && target.type === 'tower' && ownerShielded(tOwner)) { if (!attackerBotId) flashHint(shieldBlockText(tOwner), 4000); return false; }   // the Friedensschild
     if (isCapital(target.id)) {                                   // nobody's capital can be attacked
@@ -2869,7 +2871,7 @@ function fxCurseFlames(x, y, R, now) {
 // a paved round plaza with obelisks, paths and a slowly turning rune circle, fire bowls at the edge;
 // a beacon that shows from afar; the ruler's pillar of light and god rays over the Mega-Tempel.
 function drawThronePlaza(z, now) {
-    if (megaTempleId === undefined) return;
+    if (megaTempleId === undefined || !islandSeen(islandById[megaTempleId])) return;   // (unter dem Nebel nicht)
     const m = islandById[megaTempleId], x = toSX(m.x), y = toSY(m.y), R = Math.max(10, m.radius * z * 3.4);
     if (x < -R * 2 || y < -R * 2 || x > viewW + R * 2 || y > viewH + R * 2) return;
     setScreen(ctx); ctx.save();
@@ -2928,7 +2930,7 @@ function drawThronePlaza(z, now) {
     liveAnimation = true;
 }
 function drawThroneFx(z, now) {                      // over the Mega-Tempel: a warm glow, and when someone rules: their pillar of light and god rays
-    if (megaTempleId === undefined || z < 0.006) return;
+    if (megaTempleId === undefined || z < 0.006 || !islandSeen(islandById[megaTempleId])) return;
     const m = islandById[megaTempleId], x = toSX(m.x), y = toSY(m.y), r = Math.max(12, m.radius * z * 2.3);
     if (x < -r * 6 || y < -r * 8 || x > viewW + r * 6 || y > viewH + r * 6) return;
     const ruler = rulerOwner(), rc = ruler === 'player' ? '140,195,255' : ruler ? '255,130,110' : '255,220,140';
@@ -4931,10 +4933,8 @@ document.getElementById('rulerBody').addEventListener('click', e => {
 // every name you see can be tapped: the ranking, the owner line of a base, the battle reports
 document.addEventListener('click', e => { const l = e.target.closest('[data-profile]'); if (!l) return; e.preventDefault(); e.stopPropagation(); openRulerProfile(l.dataset.profile); }, true);
 function whoLink(who, name) { return who ? '<button type="button" class="who-link" data-profile="' + who + '">' + escapeHtml(name) + '</button>' : escapeHtml(name); }
-function escapeHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
+function escapeHtml(str) {                         // auch Anführungszeichen: sicher in Text UND in Attributen
+    return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 // ===== RANGLISTE: Macht, Eroberungen, Titel (aus der Mitte), Thron-Punkte (all ever earned) and the Wochenend-Turnier. Worked out once when opened or a tab
 // is picked - never per frame. Everyone is listed the same way; your row is blue and waits in the foot when you're outside the top.
@@ -5155,6 +5155,10 @@ function renderCombatLog() {
         T = id => (entry.names && entry.names[id]) || islandTitle(islandById[id]);
         if (entry.type === 'send') {
             return logRowHtml('send', 'send', logBadge('send', 'Verstärkung') + T(entry.toId), fmtM(entry.troops) + ' Truppen verlegt', ago(entry));
+        }
+        if (entry.type === 'sammeln') {                          // Sammler sind vom Feld zurück
+            const K = FIELD_KINDS[entry.fieldKind] || FIELD_KINDS.gold;
+            return logRowHtml('win', K.icon, logBadge('win', 'Sammler zurück') + K.name, '+' + fmtM(entry.load || 0) + ' ' + escapeHtml(K.what) + ' · ' + fmtM(entry.troops || 0) + ' Truppen zurück' + (entry.toId !== undefined && entry.toId !== null ? ' in ' + T(entry.toId) : ''), ago(entry));
         }
         if (entry.type === 'field') {
             const K = FIELD_KINDS[entry.fieldKind] || FIELD_KINDS.gold;
@@ -5880,6 +5884,7 @@ function drawThroneShots(now) {                        // glowing shots on an ar
         s.el = (s.el === undefined ? -s.delay : s.el + Math.min(50, now - s.last)); s.last = now;   // per frame, so a slow frame never skips the flight
         const t = s.el / DUR; if (t > 1.5) { throneShots.splice(throneShots.indexOf(s), 1); continue; }
         liveAnimation = true; if (t < 0) continue;
+        if (!isCellOpen(s.to.x, s.to.y)) continue;                                // der Thron liegt im Nebel
         const ax = toSX(s.from.x), ay = toSY(s.from.y) - 14, bx = toSX(s.to.x), by = toSY(s.to.y) - 10, d = Math.hypot(bx - ax, by - ay), lift = Math.min(160, d * .35);
         const at = q => { const u = 1 - q; return [u * u * ax + 2 * u * q * (ax + bx) / 2 + q * q * bx, u * u * ay + 2 * u * q * ((ay + by) / 2 - lift) + q * q * by]; };
         if (t <= 1) {
@@ -6068,16 +6073,26 @@ function midNotice(island) {                          // Kopfgeld and Turnier at
 const SHIELD_PRICES = { 2: 40, 8: 120, 24: 300 };
 var shieldMemAt = 0, shieldMemV = 0;                                   // hot loops ask thousands of times - no storage read each time
 function shieldUntil() { const t = Date.now(); if (t - shieldMemAt > 500) { shieldMemV = parseInt(store.get('openWaterShield'), 10) || 0; shieldMemAt = t; } return shieldMemV; }
-function playerShielded() { return Date.now() < shieldUntil(); }
+function playerShielded() { return Date.now() < ownerShieldUntil('player'); }
 function dropShield(reason) { if (!playerShielded()) return; store.set('openWaterShield', '0'); shieldMemAt = 0; if (reason) flashHint(reason, 4000); requestRender(); }
 // Everyone's Friedensschild works the same: it covers ALL bases (and field armies, gatherers) of its owner, nobody can
 // attack them while it stands (scouting still works), and it falls the moment its owner attacks.
-function ownerShieldUntil(who) { return !who ? 0 : who === 'player' ? shieldUntil() : ((loadBotState()[who] || {}).shieldUntil || 0); }
+function ownerShieldUntil(who) {
+    if (!who) return 0;
+    if (who === 'player') return Math.max(shieldUntil(), neulingBis());
+    const b = loadBotState()[who] || {}; return Math.max(b.shieldUntil || 0, b.mensch ? b.neuBis || 0 : 0);   // echte Spieler: auch ihr Anfängerschutz
+}
+// ANFÄNGERSCHUTZ (EINE Welt): neue Spieler sind 48 Std. unangreifbar – auch wenn sie selbst Mitspieler, Lager oder Felder
+// angreifen. Er endet früher mit 30 Basen oder sobald sie einen echten Spieler angreifen.
+const NEULING_MS = 48 * 3600000, NEULING_BASEN = 30;
+function neulingBis() { if (!window.WELT) return 0; const t = parseFloat(store.get('openWaterNeulingBis')) || 0; return ownedIslands.size >= NEULING_BASEN ? 0 : t; }
+function neulingEnde(grund) { if (neulingBis() <= Date.now()) return; store.set('openWaterNeulingBis', '0'); if (grund) flashHint(grund, 4500); requestRender(); }
 function ownerShielded(who, now) { return !!who && (now || Date.now()) < ownerShieldUntil(who); }
 function shieldCovers(isl) { return !!isl && isl.type === 'tower'; }   // the shield covers the towers - never gates, temples or the throne (the middle stays open to everyone)
 function baseShieldedFor(id, by, now) { const ow = islandOwnerOf(id); return !!ow && ow !== by && shieldCovers(islandById[id]) && ownerShielded(ow, now); }   // by: 'player' | bot id
-function shieldedOwners(now) { const s = new Set(); if (now < shieldUntil()) s.add('player'); const bs = loadBotState(); for (const bot of BOT_DEFS) if (bs[bot.id].shieldUntil > now) s.add(bot.id); return s; }
-function shieldBlockText(ow) { const n = (botById[ow] || {}).name || 'Dieser Spieler';
+function shieldedOwners(now) { const s = new Set(); if (now < ownerShieldUntil('player')) s.add('player'); for (const bot of BOT_DEFS) if (ownerShieldUntil(bot.id) > now) s.add(bot.id); return s; }
+function shieldBlockText(ow) { const n = (botById[ow] || {}).name || 'Dieser Spieler', b = ow !== 'player' && loadBotState()[ow];
+    if (b && b.mensch && (b.neuBis || 0) > Date.now() && (b.neuBis || 0) >= (b.shieldUntil || 0)) return 'Anfängerschutz: ' + n + ' ist neu und noch ' + fmtHours(b.neuBis - Date.now()) + ' unangreifbar.';
     return 'Friedensschild: ' + n + ' ist noch ' + fmtHours(ownerShieldUntil(ow) - Date.now()) + ' unangreifbar.'; }
 function fmtHours(ms) { return fmtDHMS(ms / 1000); }
 function renderShieldState() { const el = document.getElementById('shieldState'); if (!el) return; const st = shieldStock();
@@ -6887,7 +6902,7 @@ function drawBattleFx(now) {       // screen space (setScreen active)
     for (const f of battleFx) {
         const ms = now - f.born;
         const sx = f.x * mapState.zoom + mapState.offsetX, sy = f.y * mapState.zoom + mapState.offsetY;
-        if (sx < -200 || sy < -200 || sx > viewW + 200 || sy > viewH + 200) continue;
+        if (sx < -200 || sy < -200 || sx > viewW + 200 || sy > viewH + 200 || !isCellOpen(f.x, f.y)) continue;
         const hot = f.good ? '255,214,120' : '255,110,80';
         ctx.save();
         // 1) two blades sweep in and clash (0-380 ms)
@@ -7141,10 +7156,11 @@ function drawWander(now, chipOnly) {                // screen space: the marchin
     const z = mapState.zoom; let wx, wy, marching = w.to !== null;
     if (marching) { const a = islandById[w.from], b2 = islandById[w.to], q = Math.max(0, Math.min(1, (Date.now() - w.departAt) / Math.max(1, w.arriveAt - w.departAt)));
         wx = a.x + (b2.x - a.x) * q; wy = a.y + (b2.y - a.y) * q;
+        if (!isCellOpen(wx, wy) && !isCellOpen(b2.x, b2.y)) return;                // ganz im Nebel
         const ex = b2.x * z + mapState.offsetX, ey = b2.y * z + mapState.offsetY;
         ctx.save(); ctx.setLineDash([8, 6]); ctx.lineDashOffset = -now / 40; ctx.lineWidth = 2.5; ctx.strokeStyle = 'rgba(150,30,70,.85)';
         ctx.beginPath(); ctx.moveTo(wx * z + mapState.offsetX, wy * z + mapState.offsetY); ctx.lineTo(ex, ey); ctx.stroke(); ctx.restore();
-    } else { const c = islandById[w.at]; if (!c) return; wx = c.x; wy = c.y; }
+    } else { const c = islandById[w.at]; if (!c || !islandSeen(c)) return; wx = c.x; wy = c.y; }
     const sx = wx * z + mapState.offsetX, sy = wy * z + mapState.offsetY;
     if (sx < -200 || sy < -200 || sx > viewW + 200 || sy > viewH + 200) return;
     const k = Math.max(.8, Math.min(2.2, z / 0.015)), pulse = .5 + .5 * Math.sin(now / 350);
@@ -7209,7 +7225,7 @@ function checkRuler() {             // announces a change of ruler once
 function drawBossOverlay(now) {    // screen space: pulsing aura, rotating rune ring, countdown chip
     loadBoss();
     const b = bossState; if (!b || b.endsAt <= Date.now()) return;
-    const isl = islandById[b.islandId], z = mapState.zoom;
+    const isl = islandById[b.islandId], z = mapState.zoom; if (!isl || !islandSeen(isl)) return;   // unter dem Nebel: nichts zu sehen
     const sx = isl.x * z + mapState.offsetX, sy = isl.y * z + mapState.offsetY, r = Math.max(22, isl.radius * z * 1.5);
     if (sx < -r * 3 || sy < -r * 3 || sx > viewW + r * 3 || sy > viewH + r * 3) return;
     const pulse = 0.5 + 0.5 * Math.sin(now / 380);
@@ -8776,6 +8792,9 @@ function fieldArrive(m, now) {
         const load = Math.floor(m.load);
         if (m.who === 'player') { if (f.kind === 'gold') coins += load; else gems += load; if (load) warStat(f.kind === 'gold' ? 'fieldCoins' : 'fieldGems', load); if (load) { flashHint('Sammler zurück: +' + fmtNum(load) + ' ' + FIELD_KINDS[f.kind].what + ' aus der ' + FIELD_KINDS[f.kind].name + '.', 3500); sfx(f.kind === 'gold' ? 'coin' : 'gem'); } updateHud(); saveGame(); saveProgression(); }
         else if (botCoins[m.who] !== undefined) { if (f.kind === 'gold') botCoins[m.who] += load; else loadBotState()[m.who].gems += load; }
+        const bericht = { type: 'sammeln', fieldKind: f.kind, load, troops: m.troops, toId: baseId };   // Sammel-Bericht (auch ohne Beute: die Truppen sind zurück)
+        if (m.who === 'player') addCombatLogEntry(bericht);
+        else if (window.WELT && botById[m.who] && botById[m.who].mensch) WELT.bericht(m.who, bericht, 'Sammler zurück: +' + fmtNum(load) + ' ' + FIELD_KINDS[f.kind].what + '.');
         return;
     }
     const o = st.occ;
@@ -8818,7 +8837,7 @@ function fieldTick() {
 }
 setInterval(fieldTick, 1000);
 // drawing: the mine or the vein, the gatherers' tent in their colour with a progress ring, and your columns on the way
-function fieldAt(sx, sy) { const z = mapState.zoom; if (z < .004) return null; return resFields.find(f => Math.hypot(f.x * z + mapState.offsetX - sx, f.y * z + mapState.offsetY - sy) < Math.max(16, f.radius * z)); }
+function fieldAt(sx, sy) { const z = mapState.zoom; if (z < .004) return null; return resFields.find(f => isCellOpen(f.x, f.y) && Math.hypot(f.x * z + mapState.offsetX - sx, f.y * z + mapState.offsetY - sy) < Math.max(16, f.radius * z)); }
 function drawResFields(now, wallNow) {
     const z = mapState.zoom; if (z < .004) return;
     for (const m of fieldMarches) if (m.who === 'player') { const f = fieldById[m.fieldId], home = islandById[m.homeId]; if (!f || !home) continue;
@@ -8826,7 +8845,7 @@ function drawResFields(now, wallNow) {
     setScreen(ctx);
     const k = Math.max(.6, Math.min(2.2, z / .012));
     for (const f of resFields) {
-        const x = f.x * z + mapState.offsetX, y = f.y * z + mapState.offsetY; if (x < -40 || x > viewW + 40 || y < -40 || y > viewH + 40) continue;
+        const x = f.x * z + mapState.offsetX, y = f.y * z + mapState.offsetY; if (x < -40 || x > viewW + 40 || y < -40 || y > viewH + 40 || !isCellOpen(f.x, f.y)) continue;
         const st = fieldState[f.id], left = st ? st.left : f.cap, empty = left <= 0;
         ctx.save(); ctx.translate(x, y); ctx.scale(k, k);
         ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(0, 4, 13, 5, 0, 0, Math.PI * 2); ctx.fill();
@@ -9041,10 +9060,10 @@ function barbScreen(o) { const z = mapState.zoom; return { x: o.x * z + mapState
 const barbK = () => Math.max(.6, Math.min(2.2, mapState.zoom / .012));
 function barbAt(sx, sy) {                           // → { kind: 'boss' } or { kind: 'camp', id } under a tap
     const z = mapState.zoom, k = barbK(), b = dbossOnMap();
-    if (b && z >= .0025) { const s = barbScreen(b); if (Math.hypot(s.x - sx, s.y - sy - 10 * k) < Math.max(22, 26 * k)) return { kind: 'boss' }; }
+    if (b && z >= .0025 && isCellOpen(b.x, b.y)) { const s = barbScreen(b); if (Math.hypot(s.x - sx, s.y - sy - 10 * k) < Math.max(22, 26 * k)) return { kind: 'boss' }; }
     if (z < .004) return null;
     let best = null, bd = Math.max(16, 15 * k);
-    for (const c of barbState.camps) { const s = barbScreen(c), d = Math.hypot(s.x - sx, s.y - sy + 4 * k); if (d < bd) { bd = d; best = c; } }
+    for (const c of barbState.camps) { if (!isCellOpen(c.x, c.y)) continue; const s = barbScreen(c), d = Math.hypot(s.x - sx, s.y - sy + 4 * k); if (d < bd) { bd = d; best = c; } }
     return best ? { kind: 'camp', id: best.id } : null;
 }
 function barbAlong(pts, q) {                        // the point q (0-1) along a screen polyline
@@ -9088,7 +9107,7 @@ function drawBarb(now, wallNow) {
         const home = islandById[m.homeId]; if (!home) continue;
         const pt = barbPt(m);
         if (m.who === 'player') { m.back ? drawMarchLine('send', pt, home, m.startedAt, m.resolveAt, wallNow) : drawMarchLine('attack', home, pt, m.startedAt, m.resolveAt, wallNow); continue; }
-        if (z < .006) continue;
+        if (z < .006 || (!isCellOpen(pt.x, pt.y) && !isCellOpen(home.x, home.y))) continue;
         let p = barbPathMem.get(m); if (!p) { p = m.back ? marchPath(pt, home) : marchPath(home, pt); barbPathMem.set(m, p); }
         const sp = p.map(q => ({ x: toSX(q.x), y: toSY(q.y) })); let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
         for (const q of sp) { x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); y0 = Math.min(y0, q.y); y1 = Math.max(y1, q.y); }
@@ -9117,7 +9136,7 @@ function drawBarb(now, wallNow) {
         ctx.fillStyle = open ? '#f4ecdc' : '#9a938a'; ctx.font = '800 7.5px Inter, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(String(c.L), 11, -8.6);
         ctx.restore();
     }
-    const b = dbossOnMap(); if (!b) return;
+    const b = dbossOnMap(); if (!b || !isCellOpen(b.x, b.y)) return;
     const s = barbScreen(b), kb = Math.max(.55, Math.min(1.6, z / .02)); if (s.x < -120 || s.x > viewW + 120 || s.y < -120 || s.y > viewH + 120) return;
     const K = dbossKind(b), dead = b.hp <= 0, pulse = .5 + .5 * Math.sin(now / 420);
     if (!dead) { const R = 64 * kb, gr = ctx.createRadialGradient(s.x, s.y, 4, s.x, s.y, R); gr.addColorStop(0, K.col + '66'); gr.addColorStop(1, K.col + '00'); ctx.globalAlpha = .6 + .4 * pulse; ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(s.x, s.y, R, 0, 7); ctx.fill(); ctx.globalAlpha = 1; }
@@ -9189,7 +9208,7 @@ function barbSheetHtml() {
 }
 function barbNearest() {                            // the closest camp you may attack, the highest level first
     const home = islandById[rewardBaseId() ?? playerIslandId]; if (!home) return null; const best = barbRec('player').b;
-    let pick = null, ps = -Infinity; for (const c of barbState.camps) { if (c.L > best + 1) continue; const s = c.L * 3 - Math.hypot(c.x - home.x, c.y - home.y) / 4000; if (s > ps) { ps = s; pick = c; } }
+    let pick = null, ps = -Infinity; for (const c of barbState.camps) { if (c.L > best + 1 || !isCellOpen(c.x, c.y)) continue; const s = c.L * 3 - Math.hypot(c.x - home.x, c.y - home.y) / 4000; if (s > ps) { ps = s; pick = c; } }
     return pick;
 }
 function openBarbSheet(v) { barbView = v; barbSheetEl.innerHTML = barbSheetHtml(); barbSheetEl.hidden = false; }
@@ -9200,7 +9219,8 @@ barbSheetEl.addEventListener('click', e => {
     if (e.target.closest('[data-bclose]')) return closeBarbSheet();
     const sh = e.target.closest('[data-bs]'); if (sh) { barbShare = sh.dataset.bs; return barbSheetRefresh(); }
     const hh = e.target.closest('[data-bhero]:not([disabled])'); if (hh) { barbHero = hh.dataset.bhero || null; return barbSheetRefresh(); }
-    const go = e.target.closest('[data-bgoto]'); if (go) { const t = go.dataset.bgoto === 'boss' ? dbossOnMap() : barbNearest(); if (!t) return barbSheetRefresh();
+    const go = e.target.closest('[data-bgoto]'); if (go) { const t = go.dataset.bgoto === 'boss' ? dbossOnMap() : barbNearest(); if (!t) { if (go.dataset.bgoto !== 'boss') flashHint('Kein Lager in erforschtem Gebiet – schick zuerst Späher in den Nebel.', 3500); return barbSheetRefresh(); }
+        if (!isCellOpen(t.x, t.y)) { flashHint('Der Tagesboss steht im Nebel – erforsche zuerst das Gebiet.', 3500); return; }
         flyTo(t.x, t.y, { zoom: Math.max(mapState.zoom, .02), screenY: viewH * .2 }); return openBarbSheet(go.dataset.bgoto === 'boss' ? { kind: 'boss' } : { kind: 'camp', id: t.id }); }
     if (!e.target.closest('[data-bgo]')) return;
     if (barbView.kind === 'camp') { const c = barbCampById(barbView.id); if (!c || !barbOpenFor('player', c.L) || barbLeft('player') <= 0) return barbSheetRefresh();
@@ -9361,7 +9381,7 @@ function armyTick() {
 setInterval(armyTick, 1000);
 // drawing: a camp is a little block of soldiers under your banner; a marching army is a column along its path
 function armyAt(sx, sy, except) { const z = mapState.zoom; if (z < .004) return null;
-    return armies.find(a => a !== except && (() => { const p = armyPos(a); return Math.hypot(p.x * z + mapState.offsetX - sx, p.y * z + mapState.offsetY - 8 - sy) < 22; })()) || null; }
+    return armies.find(a => a !== except && (() => { const p = armyPos(a); if (armyWho(a) !== 'player' && !isCellOpen(p.x, p.y)) return false; return Math.hypot(p.x * z + mapState.offsetX - sx, p.y * z + mapState.offsetY - 8 - sy) < 22; })()) || null; }
 function drawArmies(now, wallNow) {
     const z = mapState.zoom; if (z < .004 || !(armies.length || armyRaids.length)) return;
     for (const j of armyJoins) { const a = j.armyId && armyById(j.armyId), home = islandById[j.homeId]; if (!a || !home || armyWho(a) !== 'player') continue; const p = armyPos(a, wallNow);
@@ -9378,6 +9398,7 @@ function drawArmyCamps(now) {                                                 //
     for (const a of armies) {
         const mine = armyWho(a) === 'player', col = armyCol(a); if (a.mv && mine) continue;       // yours march as a column; a bot's army walks as its camp
         const ap = armyPos(a), x = ap.x * z + mapState.offsetX, y = ap.y * z + mapState.offsetY; if (x < -60 || x > viewW + 60 || y < -60 || y > viewH + 60) continue;
+        if (!mine && !isCellOpen(ap.x, ap.y)) continue;                                           // fremde Armeen im Nebel: unsichtbar
         ctx.save(); ctx.translate(x, y); ctx.scale(k, k);
         ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.beginPath(); ctx.ellipse(0, 3, 17, 6, 0, 0, Math.PI * 2); ctx.fill();
         if (sel === a.id) { ctx.strokeStyle = 'rgba(228,200,134,.9)'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.ellipse(0, 3, 21, 8.5, 0, 0, Math.PI * 2); ctx.stroke(); }
@@ -9633,6 +9654,7 @@ function closeAllPopups() {
 }
 
 function openIslandPopup(island) {
+    if (island && !islandSeen(island) && islandOwnerOf(island.id) !== 'player') { flashHint('Dieses Gebiet liegt im Nebel – schick zuerst einen Späher.', 3000); return; }
     closeAllPopups();
     popupIslandId = island.id;
     popupView = 'menu';
@@ -10760,6 +10782,7 @@ if (window.WELT) {
             if (aus) { clearIslandOwner(isl.id); WELT.nachricht(parseInt(who.slice(1), 10), { art: 'startschild', bis: Date.now() + 3600000 }); }   // mitten in fremdem Land: 1 Stunde Frieden zum Ankommen (wie bei den Mitspielern)
             botOwnedIslands[who].add(isl.id); islandLevels[isl.id] = 1; islandTroops[isl.id] = PLAYER_START_TROOPS;
             const bs = loadBotState(); bs[who] = WELT.profilZuBot(WELT.menschen[who] && WELT.menschen[who].profil, bs[who]); bs[who].capital = isl.id;
+            if (!(bs[who].neuBis > Date.now())) bs[who].neuBis = Date.now() + NEULING_MS;          // Anfängerschutz ab der ersten Sekunde
             capitalCache = null; saveGame(); saveBotState(); requestRender();
         }
     };
@@ -10846,6 +10869,10 @@ if (window.WELT) {
             if (islandOwnerOf(a.targetId) === 'player') { sfx('warn'); flashHint((botById[a.attackerBotId] || {}).name + ' greift ' + islandTitle(islandById[a.targetId]) + ' an!', 4000); } }
     };
 
+    if (store.get('openWaterNeulingBis') === null && ownedIslands.size < NEULING_BASEN) {
+        store.set('openWaterNeulingBis', String(Date.now() + NEULING_MS));
+        afterSplash(() => setTimeout(() => flashHint('Anfängerschutz: 48 Stunden kann dich niemand angreifen – bau dich in Ruhe auf. (Er endet früher mit 30 Basen oder wenn du einen echten Spieler angreifst.)', 9000), 4000));
+    }
     // frisch beigetreten und nicht selbst Weltrechner: den Platz anmelden
     if (startplatzNeu && !WELT.leiter) WELT.befehl('beitreten', { insel: playerIslandId });
     // selbst Weltrechner und der Platz gehörte einem Mitspieler (Karte voll): übernehmen, mit Startschild

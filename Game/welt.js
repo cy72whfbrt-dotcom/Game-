@@ -147,6 +147,7 @@
             name: d.openWaterPlayerName || OW.name, lvl: parseInt(d.openWaterLevel, 10) || 1,
             skills: P(d.openWaterSkills) || {}, gear, city: { levels: city.levels || {} }, wounded: city.wounded || 0,
             hs: P(d.openWaterHeroes2) || {}, shieldUntil: parseFloat(d.openWaterShield) || 0,
+            neuBis: (P(d.openWaterOwnedIslands) || []).length >= 30 ? 0 : parseFloat(d.openWaterNeulingBis) || 0,
             look: { ring: look.ring || null, rings: look.rings || [], march: look.march || null, marchs: look.marchs || [], frame: look.frame || null, title: look.title || null, throne: !!(look.bought && look.bought.throne) },
             stats: P(d.openWaterStats) || {}, earned: thr.earned || 0, coins: parseFloat(d.openWaterCoins) || 0,
             crest: P(d.openWaterCrest), baustil: P(d.openWaterBaustil)
@@ -166,7 +167,7 @@
         b.city = { levels: Object.assign({}, (b.city && b.city.levels) || {}, (p.city && p.city.levels) || {}), builds: [], builder2: false };
         b.wounded = p.wounded || 0;
         if (p.hs) b.hs = p.hs; else if (!b.hs) b.hs = {};
-        b.shields = { 2: 0, 8: 0, 24: 0 }; b.shieldUntil = p.shieldUntil || 0;
+        b.shields = { 2: 0, 8: 0, 24: 0 }; b.shieldUntil = p.shieldUntil || 0; b.neuBis = p.neuBis || 0;
         const lk = p.look || {};
         b.ring = lk.ring || null; b.rings = lk.rings || []; b.march = lk.march || null; b.marchs = lk.marchs || [];
         b.frames = lk.frame ? [lk.frame] : []; b.titles = lk.title ? [lk.title] : []; b.throneLook = lk.throne ? 1 : 0;

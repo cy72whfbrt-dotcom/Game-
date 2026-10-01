@@ -602,6 +602,24 @@ function botThroneHold(bot) {                       // the ruler sends a big arm
     if (!best) return false; const k = pendingSends.length; launchSend(best.id, megaTempleId, bot.id, best.n); return pendingSends.length > k;
 }
 
+// Nebel auch für die Mitspieler: sie kennen nur die Inseln, auf denen sie Basen haben (oder hatten), und die direkten
+// Nachbarn über eine Brücke – wie dein Nebel, der um deine Basen aufgeht. Was einmal erforscht ist, bleibt bekannt.
+const botKenntMem = {}, botKenntBasen = {};
+let lmNachbarn = null;
+function botKennt(botId) {
+    if (!lmNachbarn) { lmNachbarn = {}; for (const br of bridges) { (lmNachbarn[br.a] = lmNachbarn[br.a] || []).push(br.b); (lmNachbarn[br.b] = lmNachbarn[br.b] || []).push(br.a); } }
+    const b = loadBotState()[botId]; if (!b) return new Set();
+    let k = botKenntMem[botId];
+    if (!k) k = botKenntMem[botId] = new Set(b.kennt || []);
+    const own = botOwnedIslands[botId];
+    if (own && botKenntBasen[botId] !== own.size) {                 // nur neu rechnen, wenn sich ihre Basen geändert haben
+        botKenntBasen[botId] = own.size; const vor = k.size, lms = new Set();
+        for (const id of own) { const i = islandById[id]; if (i) lms.add(i.landmassId); }
+        for (const lm of lms) { k.add(lm); for (const n of lmNachbarn[lm] || []) k.add(n); }
+        if (k.size !== vor) { b.kennt = [...k]; saveBotState(); }
+    }
+    return k;
+}
 function botThink(bot) {
     const owned = botOwnedIslands[bot.id];
     if (!owned || owned.size === 0) return;
@@ -632,7 +650,7 @@ function botThink(bot) {
         pullM.set(t.id, v = { ow, grudge, k }); return v; };
     const mem = loadBotState()[bot.id];
     if (mem.rally && (now > mem.rally.until || !owned.has(mem.rally.at) || owned.has(mem.rally.t) || isCapital(mem.rally.t))) mem.rally = null;
-    const rally = mem.rally, sampled = botSampleSources(owned, st.sources);
+    const rally = mem.rally, sampled = botSampleSources(owned, st.sources), kennt = botKennt(bot.id);
     if (rally && !sampled.includes(rally.at)) sampled.push(rally.at);
     for (const sourceId of sampled) {
         if (thr.has(sourceId) || sourceId === megaTempleId && !(rally && rally.at === sourceId)) continue;   // nobody empties the throne for an ordinary attack - or a base the enemy is marching on
@@ -640,7 +658,7 @@ function botThink(bot) {
         if (have < BOT_MIN_GARRISON_TO_ATTACK) continue;
         const source = islandById[sourceId];
         for (const lmId of reachableLandmassIds[source.landmassId]) {
-            if (!landmassesConnected(source.landmassId, lmId)) continue;
+            if (!landmassesConnected(source.landmassId, lmId) || !kennt.has(lmId)) continue;   // nur was sie erforscht haben (Nebel)
             const toll = tollFor(source.landmassId, lmId, have, bot.id).cost, canPass = !toll || (botCoins[bot.id] || 0) >= toll;
             for (const target of islandsByLandmass[lmId] || []) {
                 if (!okOf(target)) continue;                                                   // theirs, a capital, already on it, or under a shield
@@ -662,6 +680,7 @@ function botThink(bot) {
         const cap = islandById[botCapitalOf(bot.id)] || islandById[[...owned][0]];
         const near = [...ownedIslands].filter(id => !isCapital(id) && !busy.has(id)).map(id => islandById[id]).sort((u, v) => Math.hypot(u.x - cap.x, u.y - cap.y) - Math.hypot(v.x - cap.x, v.y - cap.y)).slice(0, 12);
         for (const pt of near) {
+            if (!kennt.has(pt.landmassId)) continue;                    // im Nebel: kennen sie nicht
             let best = null, bd = Infinity;
             for (const l of reachableLandmassIds[pt.landmassId] || []) { if (!landmassesConnected(l, pt.landmassId)) continue;
                 for (const s of islandsByLandmass[l] || []) { if (!owned.has(s.id) || thr.has(s.id)) continue; const have = Math.floor((islandTroops[s.id] || 0) * commit); if (have < BOT_MIN_GARRISON_TO_ATTACK) continue;
@@ -1080,12 +1099,12 @@ function botRally(bot, target, atId, need, maxHelpers) {
 
 function botGather(bot) {
     if (pendingSends.some(s => s.senderBotId === bot.id && !s.back)) return false;
-    const st = botStyle(bot), thr = botThreatened(bot.id), owned = [...botOwnedIslands[bot.id]].filter(id => !thr.has(id)), atk = botAtkFactor(bot, true);
+    const st = botStyle(bot), thr = botThreatened(bot.id), owned = [...botOwnedIslands[bot.id]].filter(id => !thr.has(id)), atk = botAtkFactor(bot, true), kennt = botKennt(bot.id);
     let plan = null;
     for (const sourceId of botSampleSources(owned)) {
         const source = islandById[sourceId];
         for (const lmId of reachableLandmassIds[source.landmassId]) {
-            if (!landmassesConnected(source.landmassId, lmId)) continue;
+            if (!landmassesConnected(source.landmassId, lmId) || !kennt.has(lmId)) continue;   // (Nebel)
             for (const target of islandsByLandmass[lmId] || []) {
                 if (botOwnedIslands[bot.id].has(target.id) || isCapital(target.id) || baseShieldedFor(target.id, bot.id)) continue;
                 if (!(target.type === 'gate' || target.type === 'temple' || target.type === 'megaTemple')) continue;
@@ -1547,7 +1566,7 @@ function botGatherField(bot, freeOnly) {                 // freeOnly: under thei
     const thr = botThreatened(bot.id); let base = null; for (const id of own) if (!thr.has(id) && (base === null || (islandTroops[id] || 0) > (islandTroops[base] || 0))) base = id;
     if (base === null) return false;
     const have = Math.floor((islandTroops[base] || 0) * .35); if (have < 300) return false;
-    const b = islandById[base], reach = new Set((reachableLandmassIds[b.landmassId] || [b.landmassId]).filter(l => landmassesConnected(b.landmassId, l)));
+    const kennt = botKennt(bot.id), b = islandById[base], reach = new Set((reachableLandmassIds[b.landmassId] || [b.landmassId]).filter(l => landmassesConnected(b.landmassId, l) && kennt.has(l)));
     let best = null, bd = Infinity;
     for (const f of resFields) { if (!reach.has(f.landmassId)) continue; const st = fieldInfo(f); if (st.left <= 0) continue;
         if (st.occ && (freeOnly || st.occ.who !== bot.id && ownerShielded(st.occ.who) || st.occ.troops * 1.3 > have)) continue;
@@ -1744,7 +1763,7 @@ function botBarbHunt(bot) {                               // the strongest camp 
     botBarbNext[bot.id] = now + (6 + Math.random() * 12) * 60000;
     const base = botBarbBase(bot); if (base === null) return false;
     const have = (islandTroops[base] || 0) * .5, b = islandById[base], fa = barbFa(bot.id), best = barbRec(bot.id).b;
-    const reach = new Set((reachableLandmassIds[b.landmassId] || [b.landmassId]).filter(l => l === b.landmassId || landmassesConnected(b.landmassId, l)));
+    const kennt = botKennt(bot.id), reach = new Set((reachableLandmassIds[b.landmassId] || [b.landmassId]).filter(l => (l === b.landmassId || landmassesConnected(b.landmassId, l)) && kennt.has(l)));
     const taken = new Set(barbMarches.filter(m => !m.back && m.k === 'c').map(m => m.tid));
     const cand = []; let pick = null;
     for (const c of barbState.camps) if (c.L <= best + 1 && !taken.has(c.id) && c.t * 1.3 / fa <= have) cand.push([c.L * 3 - Math.hypot(c.x - b.x, c.y - b.y) / 4000, c]);
@@ -1758,6 +1777,7 @@ function botDayBoss(bot) {                                // the daily boss: a f
     const d = dbossEnsure(), due = Math.min(DBOSS_HITS, Math.ceil(DBOSS_HITS * (1 - msToMidnight() / 864e5)));   // spread over the day (strikes not made yet are caught up): the boss falls in the evening, not in the first hour
     if (!d || d.hp <= 0 || barbRec(bot.id).h >= due || barbOut(bot.id, 'b') || Math.random() < .5) return false;
     const base = botBarbBase(bot); if (base === null) return false;
+    if (d.lm !== undefined && !botKennt(bot.id).has(d.lm)) return false;      // der Boss steht im Nebel
     const n = Math.floor((islandTroops[base] || 0) * (.15 + Math.random() * .2)); if (n < 1000) return false;
     return barbSend(bot.id, base, 'b', null, n, heroPickBest(bot.id, null, null, n));
 }
