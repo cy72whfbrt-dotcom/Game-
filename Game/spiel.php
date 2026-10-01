@@ -643,6 +643,11 @@ body.has-panel .mapctl{display:none}
 .sect h4{margin:0;font:600 var(--fs-12)/1 var(--font-display);letter-spacing:.08em;color:var(--gold-100);white-space:nowrap}
 .sect::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line-2),transparent);order:5;min-width:12px}
 .sect-aside{order:6;display:inline-flex;align-items:center;gap:6px}
+/* Handy-Benachrichtigungen im Profil (benachrichtigung.js) */
+.push-karte{display:flex;flex-direction:column;gap:8px}
+.push-karte[hidden],.push-karte .btn[hidden]{display:none}
+.push-text{margin:0;font-size:var(--fs-13);line-height:1.45;color:var(--tx-2)}
+.push-karte .btn{align-self:flex-start}
 
 /* =====================================================================
    TABS  #profileTabs (class .active is toggled by showProfileTab)
@@ -1531,6 +1536,12 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
       </div>
       <div class="sect"><h4>Übersicht</h4></div>
       <div id="profileStats" class="kv"></div>
+      <!-- Handy-Benachrichtigungen (benachrichtigung.js): bleibt versteckt, bis klar ist, was geht -->
+      <div id="pushKarte" class="push-karte" hidden>
+        <div class="sect"><h4>Benachrichtigungen</h4></div>
+        <p id="pushText" class="push-text"></p>
+        <button id="pushKnopf" class="btn btn--secondary btn--sm" type="button" hidden></button>
+      </div>
     </div>
 
     <div id="tabEquip" class="profileTabPanel" role="tabpanel">
@@ -1876,5 +1887,6 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
     <script src="bots.js?v=<?= v('bots.js') ?>"></script>
     <script src="welt.js?v=<?= v('welt.js') ?>"></script>
     <script src="spiel.js?v=<?= v('spiel.js') ?>"></script>
+    <script src="benachrichtigung.js?v=<?= v('benachrichtigung.js') ?>"></script>
 </body>
 </html>
