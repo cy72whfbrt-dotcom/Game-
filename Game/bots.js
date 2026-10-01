@@ -1007,6 +1007,11 @@ function addBotXp(botId, amount) {
 function botWeekend(now) { try { return tourOn(now); } catch (e) { return false; } }   // (not yet set up while the game boots)
 function botOnline(bot, now) {
     if (bot.mensch) return !!(window.WELT && WELT.menschen[bot.id] && WELT.menschen[bot.id].online);   // echte Spieler: wirklich online?
+    const h = botState && botState[bot.id] && botState[bot.id].handy;              // nach einer Angriffs-Meldung kurz in die App geschaut (botHandy)
+    if (h && h.bis > 0 && now >= h.r && now < h.bis) return true;
+    return botOnlinePlan(bot, now);
+}
+function botOnlinePlan(bot, now) {                                                // ihr gewohnter Tag (ohne Handy-Meldung)
     const st = BOT_STYLES[bot.style]; if (st.act >= 1) return true;
     const idn = parseInt(bot.id.slice(3), 10) || 0, hour = (now / 3600000 + (idn * 7.37) % 24) % 24, we = botWeekend(now);   // Turnier-Wochenende: they come more often (and stay up longer)
     if (hour < 7) return mulberry32(Math.floor(now / 1200000) * 31 + idn * 977)() < (we ? .12 : .06);
@@ -1345,6 +1350,46 @@ function botKeepsShield(bot, now) {                    // under their own shield
     return true;
 }
 
+// ===== HANDY-MELDUNG: angegriffen, während sie offline sind =====
+// Wie ein Mensch mit Benachrichtigung auf dem Handy: ein Angriff auf eine ihrer Basen meldet sich, sie schauen aber
+// erst nach einer Weile in die App – tagsüber meist nach 2–30 Minuten, manchmal erst nach 1–2 Stunden (Arbeit, Schule),
+// nachts fast immer erst am Morgen. Dann sind sie ein paar Minuten da und machen, was sie auch sonst online bei Gefahr
+// tun (botDefend: Hilfe schicken, Truppen rausziehen, Schild; Rache …) – danach wieder weg. Ist der Angriff schneller,
+// ist die Basis weg. Gemerkt im Spielstand der Mitspieler (übersteht einen Neustart): b.handy = { k: der neueste
+// gemeldete Angriff (Startzeit), n: gemeldet um, r: schaut nach um, bis: da bis (0 = noch nicht entschieden, -1 = nichts zu tun) }.
+function botHandyLage(now) {                          // Mitspieler → Startzeit des neuesten Angriffs auf eine ihrer Basen (einmal pro Takt)
+    const m = new Map(), note = (id, who, at, an) => {
+        const ow = islandOwnerOf(id), bot = ow && botById[ow]; if (!bot || bot.mensch || ow === who) return;
+        if (ownerShieldUntil(ow) > an && shieldCovers(islandById[id])) return;     // prallt am Schild ab: keine Sorge
+        if (at > (m.get(ow) || 0)) m.set(ow, at);
+    };
+    for (const a of pendingAttacks) note(a.targetId, a.attackerBotId || 'player', a.startedAt || now, a.resolveAt || now);
+    for (const x of armies) if (x.mv && x.mv.to && x.mv.to.kind === 'base') note(x.mv.to.id, armyWho(x), x.mv.startedAt || now, x.mv.resolveAt || now);
+    return m;
+}
+
+function botHandy(bot, now, lage) {
+    const b = loadBotState()[bot.id], neu = lage.get(bot.id) || 0; let h = b.handy;
+    if (h && h.bis === 0 && now >= h.r) {                                          // jetzt schauen sie aufs Handy
+        const r = mulberry32((parseInt(bot.id.slice(3), 10) || 0) * 6007 + Math.floor(h.k / 1000))(), los = botLosses(bot.id, now - h.n + 60000, now).length;
+        h.bis = Math.round(neu ? now + (4 + r * 6) * 60000 : los ? now + (2 + r * 3) * 60000 : -1);   // noch Gefahr: ein paar Minuten da; schon verloren: kurz den Schaden ansehen; alles gut: gleich wieder weg
+        saveBotState();
+    }
+    if (h && h.bis > 0 && now >= h.r && now < h.bis) { if (neu > h.k) { h.k = neu; saveBotState(); } return; }   // gerade da: sie sehen alles selbst
+    if (!neu) { if (h && h.bis !== 0) { delete b.handy; saveBotState(); } return; }   // nichts mehr unterwegs: vergessen (sparsam)
+    if (h && (neu <= h.k || h.bis === 0)) return;                                 // schon gemeldet, oder sie haben noch nicht nachgeschaut
+    if (botOnlinePlan(bot, now)) return;                                           // ohnehin online: sie sehen es selbst
+    const idn = parseInt(bot.id.slice(3), 10) || 0, rnd = mulberry32(idn * 7919 + Math.floor(neu / 1000)), c = botClock(bot, now);   // fest pro Mitspieler und Angriff
+    const u1 = rnd(), u2 = rnd(), u3 = rnd(), act = BOT_STYLES[bot.style].act || .6;
+    let r;
+    if (c.hour < 7 || (c.hour >= 23 && u1 < .5)) {                                 // schläft (Handy leise): selten wach, sonst erst am Morgen
+        r = u2 < .12 ? now + (3 + u3 * 37) * 60000 : now + ((c.hour < 7 ? 7 - c.hour : 31 - c.hour) * 60 + u3 * 75) * 60000;
+    } else if (u2 < (.32 - act * .2) * (botWeekend(now) ? .5 : 1)) r = now + (45 + u3 * 105) * 60000;   // auf der Arbeit / unterwegs: sieht es erst viel später
+    else r = now + (2 + 28 * Math.pow(u3, 1.6)) * 60000;                          // meist ein paar Minuten
+    if (h && h.bis > 0) r = Math.max(r, h.bis + 10 * 60000);                      // gerade erst weggelegt: nicht gleich wieder
+    b.handy = { k: neu, n: now, r: Math.round(r), bis: 0 }; saveBotState();
+}
+
 // Faster than before so a bot notices and reacts to an incoming
 // attack (botDefend) before it can resolve, instead of only
 // reconsidering once every 9 seconds.
@@ -1396,11 +1441,14 @@ const botNextAt = {};
 function runBotTick() {
     const now = Date.now();
     if (window.WELT && !WELT.leiter) { setTimeout(runBotTick, BOT_TICK_MS); return; }   // nur der Weltrechner lässt die Mitspieler denken
+    let lage = null;                                                          // (Angriffe auf ihre Basen, für die Handy-Meldung)
+    try { lage = botHandyLage(now); } catch (e) { if (!runBotTick.warnedH) { runBotTick.warnedH = true; console.warn('Handy-Lage', e); } }
     for (const bot of BOT_DEFS) {
         if (bot.mensch) continue;                                             // echte Spieler spielen selbst
         try {                                                                 // one bot's bad move must never stop all the others
             botCityFinish(bot, now);                                          // builds finish on time, online or not
             if (botOwnedIslands[bot.id].size === 0) { botRespawn(bot, now); continue; }
+            if (lage) botHandy(bot, now, lage);                               // angegriffen, während sie weg sind: die Meldung aufs Handy
             if (!botOnline(bot, now)) continue;                               // offline: the empire keeps producing, nobody acts
             if (now < (botNextAt[bot.id] || 0)) continue;
             const st = BOT_STYLES[bot.style];
