@@ -164,6 +164,12 @@ Befehle und Nachrichten verteilen, Spielerliste mit Profilen.
 - `ow_spieler.anzahl_basen` wird jetzt aus der gemeinsamen Welt gefüllt (Weltrechner schreibt die Besitzer).
 - Dauertest 3 Min. mit 2 Spielern: stabil, Münzen/Truppen wachsen bei beiden gleich, keine Fehler.
 
+- **Startplatz neuer Spieler** (`freierStartplatz` in spiel.js, ausgeführt vom Weltrechner beim Befehl `beitreten`):
+  1. freie Basis am äußeren Rand, auf der Landmasse mit den wenigsten Besitzern;
+  2. Rand voll → irgendeine freie Basis (nie Mitte/Wächter-Land);
+  3. ganze Karte voll → Randbasis vom größten Mitspieler-Reich (nie von einem echten Spieler, nie eine Hauptstadt),
+     dazu 1 Stunde Friedensschild (wie bei den Mitspielern). Getestet mit voller Karte: klappt.
+
 **Beim Hochladen der Eine-Welt-Version:** alle Spielstände auf Null (auch Alexanders), Welt startet neu.
 
 ## 11. Offen

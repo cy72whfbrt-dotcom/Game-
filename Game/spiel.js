@@ -571,24 +571,38 @@ function centerIsland() {
     return islands.filter(i => i.startSlot).reduce((a, b) => (b.y > a.y + 1 || (Math.abs(b.y - a.y) <= 1 && Math.abs(b.x) < Math.abs(a.x))) ? b : a);
 }
 
-// Ein freier Startplatz in der EINEN Welt: eine freie Basis am Rand, auf der Landmasse mit den wenigsten Besitzern
-function freierStartplatz() {
-    const besetzt = new Set(), proLm = {};
-    try { const r = JSON.parse(store.get('openWaterBotOwnedIslands')) || {}; for (const k in r) for (const id of r[k]) besetzt.add(id); } catch (e) {}
-    try { for (const id of JSON.parse(store.get('openWaterOwnedIslands')) || []) besetzt.add(id); } catch (e) {}
-    if (!besetzt.size) return centerIsland();                                   // ganz neue Welt: der klassische Platz
-    for (const id of besetzt) { const i = islandById[id]; if (i) proLm[i.landmassId] = (proLm[i.landmassId] || 0) + 1; }
-    const frei = islands.filter(i => i.type === 'tower' && !besetzt.has(i.id) && landmasses[i.landmassId].tier === 'outer');
-    if (!frei.length) return centerIsland();
-    const min = Math.min(...frei.map(i => proLm[i.landmassId] || 0)), beste = frei.filter(i => (proLm[i.landmassId] || 0) === min);
-    return beste.find(i => i.startSlot) || beste[Math.floor(Math.random() * beste.length)];
+// Startplatz für einen neuen Spieler in der EINEN Welt (gibt { insel, aus } zurück; aus = Mitspieler, dem sie gehörte):
+// 1. eine freie Basis am äußeren Rand, auf der Landmasse mit den wenigsten Besitzern
+// 2. Rand voll: irgendeine freie Basis (nie in der Mitte oder bei den Wächter-Tempeln)
+// 3. Karte voll: eine Randbasis vom größten Mitspieler-Reich (nie von einem echten Spieler, nie eine Hauptstadt) – wie bei den Mitspielern
+// besitz: { besitzer: [Basen] } – beim Weltrechner die lebenden Daten, sonst aus dem Speicher
+function freierStartplatz(besitz) {
+    if (!besitz) { besitz = {}; try { Object.assign(besitz, JSON.parse(store.get('openWaterBotOwnedIslands')) || {}); } catch (e) {} try { besitz.player = JSON.parse(store.get('openWaterOwnedIslands')) || []; } catch (e) {} }
+    const wem = new Map(), proLm = {};
+    for (const k in besitz) for (const id of besitz[k] || []) wem.set(id, k);
+    if (!wem.size) return { insel: centerIsland() };                          // ganz neue Welt: der klassische Platz
+    for (const id of wem.keys()) { const i = islandById[id]; if (i) proLm[i.landmassId] = (proLm[i.landmassId] || 0) + 1; }
+    const besterOrt = liste => { const min = Math.min(...liste.map(i => proLm[i.landmassId] || 0)), beste = liste.filter(i => (proLm[i.landmassId] || 0) === min); return beste.find(i => i.startSlot) || beste[Math.floor(Math.random() * beste.length)]; };
+    const turm = i => i.type === 'tower' && (typeof bossAt !== 'function' || !bossAt(i.id));
+    let frei = islands.filter(i => turm(i) && !wem.has(i.id) && landmasses[i.landmassId].tier === 'outer');
+    if (frei.length) return { insel: besterOrt(frei) };
+    frei = islands.filter(i => turm(i) && !wem.has(i.id) && landmasses[i.landmassId].tier !== 'throne' && landmasses[i.landmassId].tier !== 'guardian');
+    if (frei.length) return { insel: besterOrt(frei) };
+    const reiche = Object.keys(besitz).filter(k => /^bot\d+$/.test(k)).sort((u, v) => (besitz[v] || []).length - (besitz[u] || []).length);
+    try { for (const k of reiche) {
+        const caps = new Set(); try { const c = loadBotState()[k].capital; if (c !== undefined) caps.add(c); } catch (e) {}
+        const rand = (besitz[k] || []).map(id => islandById[id]).filter(i => i && turm(i) && landmasses[i.landmassId].tier === 'outer' && !caps.has(i.id) && !(typeof isCapital === 'function' && isCapital(i.id)) && !(typeof pendingAttacks !== 'undefined' && pendingAttacks.some(a => a.targetId === i.id)));
+        if (rand.length) return { insel: rand[Math.floor(Math.random() * rand.length)], aus: k };
+    } } catch (e) {}                                                         // (beim Start ist noch nicht alles geladen)
+    return { insel: null };
 }
-var startplatzNeu = false;                       // (welt.js) frisch beigetreten: den Platz beim Weltrechner anmelden
+var startplatzNeu = false, startplatzAus = null; // (welt.js) frisch beigetreten: den Platz beim Weltrechner anmelden (aus: gehörte einem Mitspieler)
 const storedId = parseInt(store.get('openWaterPlayerIslandId'), 10);
 if (!Number.isNaN(storedId) && islandById[storedId]) {
     playerIslandId = storedId;
 } else {
-    playerIslandId = freierStartplatz().id;
+    const sp = freierStartplatz();
+    playerIslandId = (sp.insel || centerIsland()).id; startplatzAus = sp.aus || null;
     startplatzNeu = true;
     store.set('openWaterPlayerIslandId', playerIslandId);
 }
@@ -10718,9 +10732,13 @@ if (window.WELT) {
         beitreten(who, b) {                           // ein neuer Spieler braucht seinen Platz auf der Karte
             if (!botOwnedIslands[who]) window.__weltNeuerMensch(who);
             if (botOwnedIslands[who] && botOwnedIslands[who].size) return;      // hat schon einen
-            let isl = islandById[b.insel];
-            if (!isl || isl.type !== 'tower' || islandOwnerOf(isl.id)) isl = freierStartplatz();
-            if (!isl || islandOwnerOf(isl.id)) return;
+            let isl = islandById[b.insel], aus = null;
+            if (!isl || isl.type !== 'tower' || islandOwnerOf(isl.id)) {
+                const besitz = { player: [...ownedIslands] }; for (const bot of BOT_DEFS) besitz[bot.id] = [...(botOwnedIslands[bot.id] || [])];
+                const p = freierStartplatz(besitz); isl = p.insel; aus = p.aus || null;
+            }
+            if (!isl || (islandOwnerOf(isl.id) && !aus)) return;
+            if (aus) { clearIslandOwner(isl.id); WELT.nachricht(parseInt(who.slice(1), 10), { art: 'startschild', bis: Date.now() + 3600000 }); }   // mitten in fremdem Land: 1 Stunde Frieden zum Ankommen (wie bei den Mitspielern)
             botOwnedIslands[who].add(isl.id); islandLevels[isl.id] = 1; islandTroops[isl.id] = PLAYER_START_TROOPS;
             const bs = loadBotState(); bs[who] = WELT.profilZuBot(WELT.menschen[who] && WELT.menschen[who].profil, bs[who]); bs[who].capital = isl.id;
             capitalCache = null; saveGame(); saveBotState(); requestRender();
@@ -10766,6 +10784,10 @@ if (window.WELT) {
         if (x.targetId !== undefined && islandById[x.targetId]) spawnBattleFx(x.targetId, x.type === 'attack' ? !!x.won : !x.won || !!x.capitalHolds, x.type === 'attack' ? (x.won ? 'Sieg' : 'Niederlage') : (x.won ? (x.capitalHolds ? 'Hauptstadt hält' : 'Basis verloren') : 'Verteidigt'), x.botName || x.defenderName || '');
         sfx(x.won === (x.type === 'attack') ? 'win' : 'warn');
     });
+    WELT.beiNachricht.push(function (e) {             // Startschild (Platz mitten in fremdem Land)
+        if (!e || e.art !== 'startschild' || !(e.bis > Date.now())) return;
+        if (shieldUntil() < e.bis) { store.set('openWaterShield', String(e.bis)); shieldMemAt = 0; }
+    });
     // Zuschauer: ein neuer Angriff auf eine deiner Basen → Warnung (wie beim Weltrechner)
     const gewarnt = new Set();
     const altLaden = window.__weltLaden;
@@ -10778,5 +10800,10 @@ if (window.WELT) {
 
     // frisch beigetreten und nicht selbst Weltrechner: den Platz anmelden
     if (startplatzNeu && !WELT.leiter) WELT.befehl('beitreten', { insel: playerIslandId });
+    // selbst Weltrechner und der Platz gehörte einem Mitspieler (Karte voll): übernehmen, mit Startschild
+    if (startplatzNeu && WELT.leiter && startplatzAus && islandById[playerIslandId]) {
+        clearIslandOwner(playerIslandId); ownedIslands.add(playerIslandId); islandLevels[playerIslandId] = 1; islandTroops[playerIslandId] = PLAYER_START_TROOPS;
+        store.set('openWaterShield', String(Date.now() + 3600000)); shieldMemAt = 0; saveGame();
+    }
     WELT.start();
 }
