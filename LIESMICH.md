@@ -108,10 +108,32 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 
-## 10. Als Nächstes: EINE Welt für alle
+## 10. EINE Welt für alle (im Bau)
 Alexander will: **Alle Spieler und alle Mitspieler auf einer einzigen Karte.** Keine eigenen Welten pro Spieler.
-Heute hat jeder Spieler noch seine eigene Welt (das Spiel rechnet alles im Browser). Plan siehe Chat vom 1.10.;
-Stand der Umsetzung wird hier eingetragen.
+
+**Plan (so wird es gebaut):**
+1. **Die Welt liegt einmal in der Datenbank** – wie ein Spielstand mit der Nummer 0 (`ow_spielstand`/`ow_bots` mit
+   `spieler_id = 0`): Karte, Besitzer aller Basen, Truppen, Märsche, Thron, Ereignisse, die 150 Mitspieler.
+   Jeder Spieler behält seinen eigenen Teil (Münzen, Gems, Stadt, Helden, Skills, Aufgaben, Aussehen, Nebel, Berichte).
+2. **Weltrechner:** Der Server kann nicht dauernd selbst rechnen (normales Webhosting). Darum rechnet **ein** Spieler,
+   der gerade online ist, die Welt für alle (Mitspieler denken, Märsche kommen an, Kämpfe, Thron …) und schickt sie alle
+   ~2 s an den Server. Meldet er sich 12 s nicht, übernimmt automatisch der nächste.
+3. **Alle anderen** holen sich die Welt alle ~2 s (nur geänderte Teile). Ihre Befehle (angreifen, senden, spähen,
+   ausbauen …) gehen über den Server an den Weltrechner, der sie ausführt.
+4. **Andere echte Spieler** erscheinen in jedem Browser wie Mitspieler (Eintrag in der Mitspieler-Liste, Kennung `u<id>`,
+   ohne eigenes Denken) – so funktionieren Karte, Kämpfe, Titel, Rangliste und Profil für sie gleich mit. Ihre Kampfwerte
+   (Skills, Ausrüstung, Helden, Stadt) schicken sie als „Profil“ an den Server.
+5. **Nachrichten** vom Weltrechner an einen Spieler (geplündert, Beute, Belohnung) laufen über `ow_ereignisse`.
+6. Niemand online → die Welt steht still; der nächste Weltrechner holt die verpasste Zeit nach (wie „Willkommen zurück“).
+7. Start der neuen Welt: **alle fangen bei Null an.**
+
+**Server-Teil (fertig, lokal getestet, noch nicht hochgeladen):** in `server.php` → Tabellen `ow_welt_info`
+(Version, wer Weltrechner ist), `ow_befehle`, `ow_ereignisse`, neue Spalten `profil`, `profil_zeit`, `online_bis` in
+`ow_spieler`. Anfrage `aktion: "puls"` an `server.php`: Weltrechner wählen, Welt schreiben/lesen (nur geänderte Teile),
+Befehle und Nachrichten verteilen, Spielerliste mit Profilen.
+
+**Als Nächstes:** Browser-Teil (`welt.js`): Welt-Teile vom privaten Spielstand trennen, umrechnen („du“ ↔ `u<id>`),
+andere Spieler als Mitspieler einblenden, Weltrechner-Betrieb vs. Zuschauer-Betrieb, Befehle senden/ausführen.
 
 ## 11. Offen
 - **GitHub aufräumen (macht Alexander, Claude darf es nicht):** Unter Settings → General → Default branch auf

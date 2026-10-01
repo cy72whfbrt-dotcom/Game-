@@ -147,9 +147,37 @@ class MysqlLager {
             geaendert TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (spieler_id, bot_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin");
+        // ===== Die EINE Welt =====
+        // Der Weltstand selbst liegt wie ein Spielstand mit der Nummer 0 in ow_spielstand / ow_bots (spieler_id = 0).
+        $this->db->exec("CREATE TABLE IF NOT EXISTS ow_welt_info (
+            id TINYINT UNSIGNED PRIMARY KEY,
+            version BIGINT UNSIGNED NOT NULL DEFAULT 0,
+            versionen MEDIUMTEXT NULL,
+            leiter_id INT UNSIGNED NOT NULL DEFAULT 0,
+            leiter_token CHAR(32) NOT NULL DEFAULT '',
+            leiter_bis INT UNSIGNED NOT NULL DEFAULT 0,
+            welt_zeit BIGINT UNSIGNED NOT NULL DEFAULT 0
+        ) ENGINE=InnoDB DEFAULT CHARSET=ascii");
+        $this->db->exec("INSERT IGNORE INTO ow_welt_info (id) VALUES (1)");
+        // Befehle der Spieler an den Weltrechner (angreifen, senden, ausbauen …)
+        $this->db->exec("CREATE TABLE IF NOT EXISTS ow_befehle (
+            id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            spieler_id INT UNSIGNED NOT NULL,
+            befehl MEDIUMTEXT NOT NULL,
+            erstellt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin");
+        // Nachrichten vom Weltrechner an einen Spieler (geplündert, Beute, Belohnung …)
+        $this->db->exec("CREATE TABLE IF NOT EXISTS ow_ereignisse (
+            id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            spieler_id INT UNSIGNED NOT NULL,
+            ereignis MEDIUMTEXT NOT NULL,
+            erstellt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            KEY spieler_id (spieler_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin");
         // Übersicht in der Spieler-Tabelle (zum Anschauen in phpMyAdmin)
         $da = $this->db->query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'ow_spieler'")->fetchAll(PDO::FETCH_COLUMN);
-        $neu = ['stufe' => 'INT NULL', 'muenzen' => 'DOUBLE NULL', 'gems' => 'DOUBLE NULL', 'anzahl_basen' => 'INT NULL', 'zuletzt_gespeichert' => 'DATETIME NULL', 'abschied' => "CHAR(32) NOT NULL DEFAULT ''"];
+        $neu = ['stufe' => 'INT NULL', 'muenzen' => 'DOUBLE NULL', 'gems' => 'DOUBLE NULL', 'anzahl_basen' => 'INT NULL', 'zuletzt_gespeichert' => 'DATETIME NULL', 'abschied' => "CHAR(32) NOT NULL DEFAULT ''",
+                'profil' => 'MEDIUMTEXT NULL', 'profil_zeit' => 'INT UNSIGNED NOT NULL DEFAULT 0', 'online_bis' => 'INT UNSIGNED NOT NULL DEFAULT 0'];
         foreach ($neu as $sp => $typ) if (!in_array($sp, $da, true)) $this->db->exec("ALTER TABLE ow_spieler ADD COLUMN $sp $typ");
     }
     function sperren($uid) { $this->db->query("SELECT GET_LOCK('ow_spieler_" . (int)$uid . "', 15)"); }
@@ -203,11 +231,14 @@ class MysqlLager {
     // Die drei Mitspieler-Teile des Spielstands und ihre Spalte in ow_bots
     const BOT_TEILE = ['openWaterBotState' => 'zustand', 'openWaterBotCoins' => 'muenzen', 'openWaterBotOwnedIslands' => 'basen'];
 
-    function stand_laden($uid) {
+    // $nur: nur diese Teile laden (Liste von Schlüsseln) - sonst alles
+    function stand_laden($uid, $nur = null) {
+        if ($nur !== null && !$nur) return [];
         $q = $this->db->prepare('SELECT schluessel, wert FROM ow_spielstand WHERE spieler_id = ?');
         $q->execute([$uid]);
         $r = [];
-        foreach ($q as $z) $r[$z['schluessel']] = $z['wert'];
+        foreach ($q as $z) if ($nur === null || in_array($z['schluessel'], $nur, true)) $r[$z['schluessel']] = $z['wert'];
+        if ($nur !== null && !array_intersect(array_keys(self::BOT_TEILE), $nur)) return $r;
         // Mitspieler wieder zusammensetzen (nur wenn der Teil nicht als Ganzes in ow_spielstand liegt)
         $q = $this->db->prepare('SELECT bot_id, muenzen, basen, zustand FROM ow_bots WHERE spieler_id = ? ORDER BY nr, bot_id');
         $q->execute([$uid]);
@@ -219,7 +250,7 @@ class MysqlLager {
         }
         unset($r['_bot_teile']);
         $da = $this->bot_teile_da($uid);
-        foreach (self::BOT_TEILE as $k => $sp) if (!isset($r[$k]) && !empty($da[$sp])) $r[$k] = '{' . implode(',', $teile[$sp]) . '}';
+        foreach (self::BOT_TEILE as $k => $sp) if (!isset($r[$k]) && !empty($da[$sp]) && ($nur === null || in_array($k, $nur, true))) $r[$k] = '{' . implode(',', $teile[$sp]) . '}';
         return $r;
     }
     // Welche Mitspieler-Teile gibt es (auch leere Objekte "{}")? Merker in ow_spielstand.
@@ -283,8 +314,63 @@ class MysqlLager {
             $this->db->prepare($sql)->execute(array_merge(...$block));
         }
     }
+    // ===== Welt =====
+    function welt_sperren() { $this->db->query("SELECT GET_LOCK('ow_welt', 15)"); }
+    function welt_entsperren() { $this->db->query("SELECT RELEASE_LOCK('ow_welt')"); }
+    function welt_info() {
+        $r = $this->db->query('SELECT version, versionen, leiter_id, leiter_token, leiter_bis, welt_zeit FROM ow_welt_info WHERE id = 1')->fetch();
+        $r['versionen'] = json_decode((string)$r['versionen'], true) ?: [];
+        return $r;
+    }
+    function leiter_setzen($uid, $tok, $bis) {
+        $this->db->prepare('UPDATE ow_welt_info SET leiter_id = ?, leiter_token = ?, leiter_bis = ? WHERE id = 1')->execute([$uid, $tok, $bis]);
+    }
+    // Weltrechner schreibt: Teile speichern, Version hochzählen, je Teil merken, in welcher Version er zuletzt geändert wurde
+    function welt_schreiben($setzen, $loeschen, $welt_zeit) {
+        $i = $this->welt_info();
+        $v = (int)$i['version'] + 1;
+        $vs = $i['versionen'];
+        foreach ($setzen as $k => $_) $vs[$k] = $v;
+        foreach ($loeschen as $k) $vs[$k] = $v;
+        $this->stand_schreiben(0, $setzen, $loeschen);
+        $this->db->prepare('UPDATE ow_welt_info SET version = ?, versionen = ?, welt_zeit = GREATEST(welt_zeit, ?) WHERE id = 1')->execute([$v, json_encode($vs), (int)$welt_zeit]);
+        return $v;
+    }
+    // Was hat sich seit Version $seit geändert? (seit = 0: alles)
+    function welt_seit($seit) {
+        $i = $this->welt_info();
+        $neu = []; $weg = [];
+        foreach ($i['versionen'] as $k => $v) if ($v > $seit) $neu[] = $k;
+        $teile = $this->stand_laden(0, $neu);
+        foreach ($neu as $k) if (!isset($teile[$k])) $weg[] = $k;
+        return ['version' => (int)$i['version'], 'setzen' => (object)$teile, 'loeschen' => $weg, 'welt_zeit' => (int)$i['welt_zeit']];
+    }
+    function befehl_ablegen($uid, $b) { $this->db->prepare('INSERT INTO ow_befehle (spieler_id, befehl) VALUES (?, ?)')->execute([$uid, $b]); }
+    function befehle_abholen() {
+        $r = $this->db->query('SELECT id, spieler_id, befehl FROM ow_befehle ORDER BY id LIMIT 500')->fetchAll();
+        if ($r) $this->db->prepare('DELETE FROM ow_befehle WHERE id <= ?')->execute([end($r)['id']]);
+        return array_map(function ($z) { return ['von' => (int)$z['spieler_id'], 'b' => json_decode($z['befehl'])]; }, $r);
+    }
+    function ereignis_ablegen($uid, $e) { $this->db->prepare('INSERT INTO ow_ereignisse (spieler_id, ereignis) VALUES (?, ?)')->execute([$uid, $e]); }
+    function ereignisse_abholen($uid) {
+        $q = $this->db->prepare('SELECT id, ereignis FROM ow_ereignisse WHERE spieler_id = ? ORDER BY id LIMIT 200');
+        $q->execute([$uid]);
+        $r = $q->fetchAll();
+        if ($r) $this->db->prepare('DELETE FROM ow_ereignisse WHERE spieler_id = ? AND id <= ?')->execute([$uid, end($r)['id']]);
+        return array_map(function ($z) { return json_decode($z['ereignis']); }, $r);
+    }
+    function profil_setzen($uid, $p) { $this->db->prepare('UPDATE ow_spieler SET profil = ?, profil_zeit = ? WHERE id = ?')->execute([$p, time(), $uid]); }
+    function online($uid, $bis) { $this->db->prepare('UPDATE ow_spieler SET online_bis = ? WHERE id = ?')->execute([$bis, $uid]); }
+    // Alle echten Spieler (für die Karte), Profile nur wenn neuer als $seit
+    function spieler_liste($seit) {
+        $q = $this->db->prepare('SELECT id, name, online_bis, profil_zeit, IF(profil_zeit > ?, profil, NULL) profil FROM ow_spieler');
+        $q->execute([(int)$seit]);
+        return array_map(function ($z) { return ['id' => (int)$z['id'], 'name' => $z['name'], 'online' => (int)$z['online_bis'] > time(), 'profil_zeit' => (int)$z['profil_zeit'], 'profil' => $z['profil'] !== null ? json_decode($z['profil']) : null]; }, $q->fetchAll());
+    }
+
     // Lesbare Übersicht in ow_spieler
     private function uebersicht($uid, $setzen) {
+        if (!$uid) return;
         $f = ['zuletzt_gespeichert = NOW()']; $w = [];
         if (isset($setzen['openWaterLevel'])) { $f[] = 'stufe = ?'; $w[] = (int)$setzen['openWaterLevel']; }
         if (isset($setzen['openWaterCoins'])) { $f[] = 'muenzen = ?'; $w[] = (float)$setzen['openWaterCoins']; }
@@ -315,6 +401,7 @@ function speichern_anfrage() {
         $d = json_decode($roh, true);
         if (!is_array($d)) json_antwort(400, ['fehler' => 'kaputt']);
 
+        if (($d['aktion'] ?? '') === 'puls') welt_puls($ich, $d);
         $t1 = microtime(true);
         lager()->sperren($ich['id']);   // Laden (spiel.php) wartet, bis diese Sicherung drin ist
         if (!hash_equals(lager()->spiel_token($ich['id']), (string)($d['token'] ?? ''))) json_antwort(409, ['fehler' => 'anderswo geöffnet']);
@@ -338,6 +425,63 @@ function speichern_anfrage() {
         error_log('Open Water Speichern: ' . $e->getMessage());
         json_antwort(503, ['fehler' => 'server']);
     }
+}
+
+// ===== Puls der EINEN Welt (alle ~2 s von jedem Spieler) =====
+// Anfrage:  {aktion:"puls", token, seit, spieler_seit, befehle:[…], profil?, welt?:{setzen,loeschen,welt_zeit}, ereignisse?:[{an, e}]}
+//           welt/ereignisse schickt nur der Weltrechner.
+// Antwort:  {leiter, version, welt:{setzen,loeschen}, befehle:[{von,b}] (nur Weltrechner), ereignisse:[…], spieler:[…]}
+// Der Weltrechner ist der Spieler, der gerade rechnet; meldet er sich 12 s nicht, übernimmt der nächste.
+const LEITER_SEK = 12;
+function welt_puls($ich, $d) {
+    $l = lager();
+    $uid = $ich['id'];
+    $tok = (string)($d['token'] ?? '');
+    if (!hash_equals($l->spiel_token($uid), $tok)) json_antwort(409, ['fehler' => 'anderswo geöffnet']);
+    $jetzt = time();
+    $l->online($uid, $jetzt + 20);
+    if (isset($d['profil']) && is_string($d['profil']) && strlen($d['profil']) < 2000000) $l->profil_setzen($uid, $d['profil']);
+    foreach ((array)($d['befehle'] ?? []) as $b) $l->befehl_ablegen($uid, json_encode($b, JSON_UNESCAPED_UNICODE));
+
+    $l->welt_sperren();
+    $i = $l->welt_info();
+    $bin_leiter = (int)$i['leiter_id'] === $uid && hash_equals((string)$i['leiter_token'], $tok) && (int)$i['leiter_bis'] >= $jetzt;
+    $antwort = [];
+    if ($bin_leiter && isset($d['welt'])) {   // nur der Weltrechner darf die Welt schreiben
+        $w = $d['welt'];
+        $setzen = [];
+        foreach ((array)($w['setzen'] ?? []) as $k => $v) if (is_string($k) && preg_match('/^openWater[A-Za-z0-9_]{1,90}$/', $k) && is_string($v)) $setzen[$k] = $v;
+        $loeschen = array_values(array_filter((array)($w['loeschen'] ?? []), function ($k) { return is_string($k) && preg_match('/^openWater[A-Za-z0-9_]{1,90}$/', $k); }));
+        if ($setzen || $loeschen) $l->welt_schreiben($setzen, $loeschen, (int)($w['welt_zeit'] ?? 0));
+        foreach ((array)($d['ereignisse'] ?? []) as $e) if (isset($e['an'], $e['e']) && (int)$e['an'] > 0) $l->ereignis_ablegen((int)$e['an'], json_encode($e['e'], JSON_UNESCAPED_UNICODE));
+    }
+    $neu_leiter = false;
+    if ($bin_leiter || (int)$i['leiter_bis'] < $jetzt) {   // Weltrechner bleiben oder freien Platz übernehmen
+        $neu_leiter = !$bin_leiter;
+        $l->leiter_setzen($uid, $tok, $jetzt + LEITER_SEK);
+        $bin_leiter = true;
+    }
+    $seit = (int)($d['seit'] ?? 0);
+    $antwort['welt'] = $l->welt_seit($bin_leiter && !$neu_leiter ? PHP_INT_MAX : $seit);   // der Weltrechner hat schon alles
+    if ($bin_leiter && !$neu_leiter) { $antwort['welt']['setzen'] = new stdClass; $antwort['welt']['loeschen'] = []; }
+    if ($bin_leiter) $antwort['befehle'] = $l->befehle_abholen();
+    $l->welt_entsperren();
+    $antwort['leiter'] = $bin_leiter;
+    $antwort['neu_leiter'] = $neu_leiter;
+    $antwort['version'] = $antwort['welt']['version'];
+    $antwort['ereignisse'] = $l->ereignisse_abholen($uid);
+    $antwort['spieler'] = $l->spieler_liste((int)($d['spieler_seit'] ?? 0));
+    $antwort['zeit'] = $jetzt;
+    welt_antwort($antwort);
+}
+// Antwort gepackt, wenn der Browser das kann (Welt-Teile sind groß)
+function welt_antwort($a) {
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: no-store');
+    $j = json_encode($a, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    if (strpos($_SERVER['HTTP_ACCEPT_ENCODING'] ?? '', 'gzip') !== false && strlen($j) > 2000) { header('Content-Encoding: gzip'); $j = gzencode($j, 5); }
+    echo $j;
+    exit;
 }
 
 if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) speichern_anfrage();
