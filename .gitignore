@@ -4,4 +4,6 @@ Game/weltrechner/log*.php
 Game/weltrechner/zustand*.php
 Game/weltrechner/sperre.php
 Game/weltrechner/crontab*.php
+Game/weltrechner/schummel*.php
 .claude/
+.env
