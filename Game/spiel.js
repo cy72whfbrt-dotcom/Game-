@@ -390,6 +390,18 @@ function routeFor(a, b, payer) {
     return null;
 }
 function canReach(a, b, payer) { return !!routeFor(a, b, payer || 'player'); }
+// Kommt ein Späher von a nach b? Ein geschlossenes fremdes Tor lässt ihn nicht durch (offene Tore schon).
+// false nur, wenn genau ein geschlossenes Tor den Weg versperrt – sonst wie bisher.
+function spaeherWeg(a, b, who) {
+    if (a === b) return true;
+    const suche = streng => { const seen = new Set([a]), q = [a];
+        while (q.length) { const cur = q.shift();
+            for (const nb of reachableLandmassIds[cur] || []) { if (seen.has(nb) || !landmassesConnected(cur, nb)) continue;
+                if (streng) { const g = gateOnRoute(cur, nb); if (g && islandOwnerOf(g.id) !== who && gateSettings(g).closed) continue; }
+                if (nb === b) return true; seen.add(nb); q.push(nb); } }
+        return false; };
+    return suche(true) || !suche(false);
+}
 function lastHop(a, b, payer) { const r = routeFor(a, b, payer); return r && r.length > 1 ? [r[r.length - 2], r[r.length - 1]] : [a, b]; }
 function gateOnRoute(fromLm, toLm) {            // the gate base guarding the bridge between two regions (or null)
     if (fromLm === toLm) return null;
@@ -1422,6 +1434,7 @@ function launchAttack(sourceId, targetId, attackerBotId, troopsOverride, heldWun
         return true;
     }
     const mensch = attackerBotId && botById[attackerBotId] && botById[attackerBotId].mensch;   // ein echter Spieler (Befehl): sein gewählter Held, sonst keiner
+    if (attackerBotId && window.WELT) { const tw = islandOwnerOf(target.id); if (tw === 'player' || (botById[tw] && botById[tw].mensch)) { const ab = loadBotState()[attackerBotId]; if (ab && ab.neuBis) { ab.neuBis = 0; saveBotState(); } } }   // greift einen echten Spieler an: Anfängerschutz weg
     const who = attackerBotId || 'player', hero = mensch ? (heldWunsch && heroOwned(attackerBotId, heldWunsch) && !heroBusy(attackerBotId, heldWunsch) ? heldWunsch : null)
         : attackerBotId ? botPickHero(attackerBotId, source, target, rawTroops) : nextAttackHero && heroOwned('player', nextAttackHero) && !heroBusy('player', nextAttackHero) ? nextAttackHero : null;
     const hop = lastHop(source.landmassId, target.landmassId, who), hp = hero && heroPeek(who, hero, source, target, rawTroops);
@@ -1624,6 +1637,7 @@ function launchScout(targetId, explore, at) {
     const sourceId = nearestOwnedIslandTo(target);
     const home = islandById[sourceId];
     if (!home) return;
+    if (!spaeherWeg(home.landmassId, target.landmassId, 'player')) { flashHint('Ein geschlossenes Tor versperrt den Weg – dein Späher kommt nicht durch.', 3500); return; }
     sfx('scout');
 
     const durationSec = scoutSecs(home, target);   // the Späherturm makes scouts faster
@@ -6080,19 +6094,37 @@ function dropShield(reason) { if (!playerShielded()) return; store.set('openWate
 function ownerShieldUntil(who) {
     if (!who) return 0;
     if (who === 'player') return Math.max(shieldUntil(), neulingBis());
-    const b = loadBotState()[who] || {}; return Math.max(b.shieldUntil || 0, b.mensch ? b.neuBis || 0 : 0);   // echte Spieler: auch ihr Anfängerschutz
+    const b = loadBotState()[who] || {}; return Math.max(b.shieldUntil || 0, botNeulingBis(who, b));   // auch ihr Anfängerschutz
 }
-// ANFÄNGERSCHUTZ (EINE Welt): neue Spieler sind 48 Std. unangreifbar – auch wenn sie selbst Mitspieler, Lager oder Felder
-// angreifen. Er endet früher mit 30 Basen oder sobald sie einen echten Spieler angreifen.
-const NEULING_MS = 48 * 3600000, NEULING_BASEN = 30;
-function neulingBis() { if (!window.WELT) return 0; const t = parseFloat(store.get('openWaterNeulingBis')) || 0; return ownedIslands.size >= NEULING_BASEN ? 0 : t; }
+// ANFÄNGERSCHUTZ (EINE Welt) – für echte Spieler UND Mitspieler gleich: 48 Std. unangreifbar (auch wenn sie selbst
+// Mitspieler, Lager oder Felder angreifen). Endet früher, sobald die Macht (Gesamtstärke) 50 Mio. erreicht oder sie
+// einen echten Spieler angreifen.
+const NEULING_MS = 48 * 3600000, NEULING_MACHT = 50e6;
+const staerkeMem = {};
+function staerke(who) {                           // Macht wie in der Rangliste, höchstens einmal pro Minute neu gerechnet
+    const m = staerkeMem[who], now = Date.now(); if (m && now - m.at < 60000) return m.v;
+    let v = 0; try { v = powerOf(whoProfile(who)); } catch (e) { v = 0; }
+    staerkeMem[who] = { v, at: now }; return v;
+}
+function neulingBis() {
+    if (!window.WELT) return 0; const t = parseFloat(store.get('openWaterNeulingBis')) || 0; if (t <= Date.now()) return 0;
+    if (staerke('player') >= NEULING_MACHT) { store.set('openWaterNeulingBis', '0'); afterSplash(() => flashHint('Dein Anfängerschutz ist vorbei – dein Reich hat 50 Mio. Macht erreicht.', 5000)); return 0; }
+    return t;
+}
+function botNeulingBis(who, b) {
+    if (!window.WELT || !b) return 0;
+    if (b.neuBis === undefined && !b.mensch) b.neuBis = worldStartAt() + NEULING_MS;   // Mitspieler der laufenden Welt: ab Weltstart
+    const t = b.neuBis || 0; if (t <= Date.now()) return 0;
+    if (!b.mensch && staerke(who) >= NEULING_MACHT) { b.neuBis = 0; saveBotState(); return 0; }   // (echte Spieler melden das selbst)
+    return t;
+}
 function neulingEnde(grund) { if (neulingBis() <= Date.now()) return; store.set('openWaterNeulingBis', '0'); if (grund) flashHint(grund, 4500); requestRender(); }
 function ownerShielded(who, now) { return !!who && (now || Date.now()) < ownerShieldUntil(who); }
 function shieldCovers(isl) { return !!isl && isl.type === 'tower'; }   // the shield covers the towers - never gates, temples or the throne (the middle stays open to everyone)
 function baseShieldedFor(id, by, now) { const ow = islandOwnerOf(id); return !!ow && ow !== by && shieldCovers(islandById[id]) && ownerShielded(ow, now); }   // by: 'player' | bot id
 function shieldedOwners(now) { const s = new Set(); if (now < ownerShieldUntil('player')) s.add('player'); for (const bot of BOT_DEFS) if (ownerShieldUntil(bot.id) > now) s.add(bot.id); return s; }
 function shieldBlockText(ow) { const n = (botById[ow] || {}).name || 'Dieser Spieler', b = ow !== 'player' && loadBotState()[ow];
-    if (b && b.mensch && (b.neuBis || 0) > Date.now() && (b.neuBis || 0) >= (b.shieldUntil || 0)) return 'Anfängerschutz: ' + n + ' ist neu und noch ' + fmtHours(b.neuBis - Date.now()) + ' unangreifbar.';
+    if (b && botNeulingBis(ow, b) > Date.now() && botNeulingBis(ow, b) >= (b.shieldUntil || 0)) return 'Anfängerschutz: ' + n + ' ist neu und noch ' + fmtHours(b.neuBis - Date.now()) + ' unangreifbar.';
     return 'Friedensschild: ' + n + ' ist noch ' + fmtHours(ownerShieldUntil(ow) - Date.now()) + ' unangreifbar.'; }
 function fmtHours(ms) { return fmtDHMS(ms / 1000); }
 function renderShieldState() { const el = document.getElementById('shieldState'); if (!el) return; const st = shieldStock();
@@ -10869,9 +10901,9 @@ if (window.WELT) {
             if (islandOwnerOf(a.targetId) === 'player') { sfx('warn'); flashHint((botById[a.attackerBotId] || {}).name + ' greift ' + islandTitle(islandById[a.targetId]) + ' an!', 4000); } }
     };
 
-    if (store.get('openWaterNeulingBis') === null && ownedIslands.size < NEULING_BASEN) {
+    if (store.get('openWaterNeulingBis') === null) {
         store.set('openWaterNeulingBis', String(Date.now() + NEULING_MS));
-        afterSplash(() => setTimeout(() => flashHint('Anfängerschutz: 48 Stunden kann dich niemand angreifen – bau dich in Ruhe auf. (Er endet früher mit 30 Basen oder wenn du einen echten Spieler angreifst.)', 9000), 4000));
+        afterSplash(() => setTimeout(() => flashHint('Anfängerschutz: 48 Stunden kann dich niemand angreifen – bau dich in Ruhe auf. (Er endet früher, wenn dein Reich 50 Mio. Macht hat oder du einen echten Spieler angreifst.)', 9000), 4000));
     }
     // frisch beigetreten und nicht selbst Weltrechner: den Platz anmelden
     if (startplatzNeu && !WELT.leiter) WELT.befehl('beitreten', { insel: playerIslandId });

@@ -477,6 +477,7 @@ function botScouting(bot, targetId) { const it = botIntelMem[bot.id] && botIntel
 
 function botLearn(botId, targetId, ready) {                   // (ready = when the report comes in)
     if (!botById[botId]) return; const t = islandById[targetId]; if (!t) return;
+    if (ready) { const cap = islandById[botCapitalOf(botId)]; if (cap && !spaeherWeg(cap.landmassId, t.landmassId, botId)) return false; }   // geschlossenes Tor: der Späher kommt nicht durch
     const it = botIntelMem[botId] || (botIntelMem[botId] = {});
     it[targetId] = { s: effectiveTroops(t) + effectiveDefense(t), ready: ready || Date.now(), pending: !!ready && ready > Date.now() };
     const keys = Object.keys(it); if (keys.length > 120) for (const k of keys.sort((u, v) => it[u].ready - it[v].ready).slice(0, keys.length - 120)) delete it[k];
@@ -724,7 +725,7 @@ function botThink(bot) {
         if (!it) {                                                                               // their best targets they don't know yet: scout those first
             if (botHopeless(bot, e.target, st, atk)) continue;                                   // they saw it last time - far beyond them
             if (li < 3 && !botScouting(bot, e.target.id)) { const ready = now + scoutSecs(islandById[e.sources[0].id], e.target, bot.id) * 1000;
-                botLearn(bot.id, e.target.id, ready); if (islandOwnerOf(e.target.id) === 'player') botScoutVisible(bot, e.sources[0].id, e.target.id, now, ready);
+                if (botLearn(bot.id, e.target.id, ready) !== false && islandOwnerOf(e.target.id) === 'player') botScoutVisible(bot, e.sources[0].id, e.target.id, now, ready);
                 scouted++; break; }
             continue;
         }
@@ -1383,6 +1384,7 @@ function botRespawn(bot, now) {                   // knocked out: like a player 
     const t = free[Math.floor(Math.random() * free.length)]; clearIslandOwner(t.id);
     botOwnedIslands[bot.id].add(t.id); islandLevels[t.id] = 1; islandTroops[t.id] = 0; b.outAt = 0; b.capital = t.id; b.capMovedAt = now; b.capWish = null; capitalCache = null;
     b.shieldUntil = now + 3600000; b.shieldWhy = 'start'; b.shieldAt = now;                   // an hour of peace to get going (a lone base in someone's land would fall at once)
+    if (window.WELT) b.neuBis = now + NEULING_MS;                                                // Neustart: wieder Anfängerschutz (wie jeder Neue)
     saveBotState(); saveGame();
 }
 

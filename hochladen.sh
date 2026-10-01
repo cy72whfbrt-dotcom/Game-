@@ -32,7 +32,7 @@ fi
 ed "" -F text= -F file=Game -F "button=new folder" -o /dev/null
 echo "Wartung seit $(date '+%d.%m.%Y %H:%M') (hochladen.sh)" > $T/wartung.txt
 ed /Game -F "file=@$T/wartung.txt" -F "button=upload" -o /dev/null -w "Wartung an: %{http_code}\n"
-sleep 5   # die laufenden Spiele merken es beim nächsten Puls (alle 2 s) und sichern noch
+sleep 10  # die laufenden Spiele merken es beim nächsten Puls (alle 2 s) und sichern noch
 for f in $(cd Game && ls -1); do
   [ "$f" = config.php ] && continue
   ed /Game -F "file=@Game/$f" -F "button=upload" -o /dev/null -w "$f %{http_code}\n"
