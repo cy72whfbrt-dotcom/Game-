@@ -404,11 +404,11 @@ function botLastSeen(bot, targetId) { const it = botIntelMem[bot.id] && botIntel
 
 function botLoyal(bot) { const t = titleOf(bot.id); return !!(t && t.good); }   // the ruler gave them a good title: they stay out of it
 
-function botRespects(bot, owner) { if (!owner || owner === bot.id) return false; const t = titleOf(bot.id); return !!(t && t.good) && owner === rulerOwner(); }   // a good title from the ruler is respect: they leave the ruler's bases alone while they wear it
+function botRespects(bot, owner) { if (!owner || owner === bot.id) return false; const t = titleOf(bot.id); return !!(t && t.good) && owner === rulerOwner(); }   // a good title from the ruler is respect: they attack the ruler much less while they wear it
 
 function botSituation(bot, st, target, owner, now) {        // how the moment changes the pull of a target (lower = more wanted)
-    if (botRespects(bot, owner)) return 60;                                                            // (practically never)
-    let m = 1; const ot = owner && owner !== bot.id ? titleOf(owner) : null; if (ot && !ot.good) m *= .6;   // a penalty title: weaker - everyone else smells it const bold = (st.risk || 0) >= .12 || (st.hunt || 0) >= .5;
+    let m = botRespects(bot, owner) ? 4 : 1;                                                           // respect: the ruler's bases are much less tempting (not off limits)
+    const ot = owner && owner !== bot.id ? titleOf(owner) : null; if (ot && !ot.good) m *= .6;   // a penalty title: weaker - everyone else smells it const bold = (st.risk || 0) >= .12 || (st.hunt || 0) >= .5;
     const heat = heatAt(target.landmassId, now);
     if (heat > .5) m *= bold ? 1 / (1 + Math.min(3, heat) * .4) : 1 + Math.min(3, heat) * .5;       // drawn to the fighting, or keeping clear
     if (owner && bold && baseFought[target.id] && now - baseFought[target.id] < 4 * 60000) m *= .5;    // Aasgeier: the winner is thin right now
