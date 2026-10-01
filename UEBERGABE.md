@@ -49,3 +49,13 @@ Das Spiel speichert nur im Browser-Speicher der Claude-App. Die App leert diesen
 - **Im Browser wird NICHTS gespeichert** (kein localStorage, kein sessionStorage, kein IndexedDB) – **einzige Ausnahme: ein Login-Cookie** (nur der Sitzungs-Schlüssel, HttpOnly, läuft nach 30 Tagen ab). Das Spiel hält den Stand im Arbeitsspeicher und speichert laufend auf den Server (z. B. über `store` in index.html).
 - Der Spielstand auf dem Server fängt bei Null an.
 - Erst bauen/hochladen, wenn der Spieler „ja“ sagt und die erste Sitzung ihren Gesamtcheck gepusht hat.
+
+## Stand 1.10. (dritte Sitzung) – Server-Ordner gebaut, noch nicht hochgeladen
+- Quellen in `server/` (Login `index.php`, `spiel.php`, `api/lib.php`, `api/speichern.php`, `js/speicher.js`). `tools/baue_game.sh` baut daraus `dist/Game` (nicht im Git) mit dem aktuellen Spiel.
+- `api/config.php` (nicht im Git, Vorlage `config.beispiel.php`): `speicher` = `mysql` oder `dateien`.
+- `js/speicher.js` ersetzt `localStorage` durch einen Speicher im Arbeitsspeicher; alle 10 s und beim Wechsel in den Hintergrund gehen die geänderten Teile gzip-gepackt an `api/speichern.php`. Im Browser liegt nur der Cookie `ow_login` (HttpOnly, 30 Tage).
+- Nur das zuletzt geöffnete Fenster speichert (Spiel-Token); ältere Fenster zeigen einen Hinweis.
+- Neue Spieler: keine Test-Zeitsprünge, kein Turnier-Test, Spielername = Login-Name.
+- Lokal getestet (Playwright): Registrieren, Anmelden, falsches Passwort, Abmelden, Neu laden mit Spielstand, zweites Fenster, beide Speicherarten (MariaDB lokal).
+- Office-Login klappt; der Editor erlaubt nur `…/html/725/klassenarbeit_GR4/`. Ziel: `…/klassenarbeit_GR4/Game/`.
+- Offen: Hochladen (wurde von der Sicherheitsprüfung blockiert), Datenbankname, und ob der Office-Server die Datenbank `dbwebintern.silentnetwork.de` (interne Adresse 10.35.47.236) überhaupt erreicht.

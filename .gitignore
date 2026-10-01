@@ -1,1 +1,5 @@
 __pycache__/
+dist/
+server/api/config.php
+server/daten/*
+!server/daten/index.php
