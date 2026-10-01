@@ -6,6 +6,7 @@ $fehler = '';
 $modus = ($_GET['m'] ?? '') === 'neu' ? 'neu' : 'login';
 
 try {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && !herkunft_ok()) { http_response_code(403); exit('Ungültige Anfrage.'); }   // Formulare nur von dieser Seite
     if (($_GET['aus'] ?? '') === '1' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         abmelden();
         header('Location: ./');
@@ -18,8 +19,10 @@ try {
         $pw = (string)($_POST['pw'] ?? '');
         if ($modus === 'neu') {
             if (!bremse('neu:' . client_ip(), 5, 3600)) $fehler = 'Zu viele neue Konten von hier – bitte später nochmal.';
-            elseif (!preg_match('/^[\p{L}\p{N} _.-]{3,20}$/u', $name)) $fehler = 'Name: 3 bis 20 Zeichen (Buchstaben, Zahlen, Leerzeichen, _ . -).';
-            elseif (mb_strlen($pw) < 6) $fehler = 'Das Passwort braucht mindestens 6 Zeichen.';
+            elseif (!preg_match('/^[\p{Latin}\p{N} _.-]{3,20}$/u', $name)) $fehler = 'Name: 3 bis 20 Zeichen (Buchstaben, Zahlen, Leerzeichen, _ . -).';
+            elseif (in_array(mb_strtolower($name, 'UTF-8'), array_map(function ($n) { return mb_strtolower($n, 'UTF-8'); }, bot_namen()), true)) $fehler = 'Diesen Namen gibt es schon.';
+            elseif (mb_strlen($pw) < 10) $fehler = 'Das Passwort braucht mindestens 10 Zeichen.';
+            elseif (strlen($pw) > 72) $fehler = 'Das Passwort darf höchstens 72 Zeichen haben.';
             elseif ($pw !== (string)($_POST['pw2'] ?? '')) $fehler = 'Die beiden Passwörter sind nicht gleich.';
             elseif (!lager()->name_frei(0, $name)) $fehler = 'Diesen Namen gibt es schon.';
             else {
@@ -28,10 +31,13 @@ try {
                 else { anmelden($uid); header('Location: spiel.php'); exit; }
             }
         } else {
-            $sperre = 'login:' . mb_strtolower($name, 'UTF-8');
-            if (!bremse($sperre, 8, 900) || !bremse('loginip:' . client_ip(), 30, 900)) { sleep(1); $fehler = 'Zu viele Versuche – bitte in 15 Minuten nochmal.'; }
+            // Bremse pro Konto UND Gerät (so kann niemand von außen ein fremdes Konto aussperren), dazu eine große Grenze
+            // pro Konto über alle Geräte (gegen Raten von vielen Rechnern) und eine pro Gerät
+            $u = $name !== '' && strlen($name) <= 60 ? lager()->spieler_nach_name($name) : null;
+            $konto = $u ? 'id' . $u['id'] : 'name:' . mb_strtolower(mb_substr($name, 0, 60), 'UTF-8');
+            $sperre = 'login:' . $konto . ':' . client_ip();
+            if (!bremse($sperre, 8, 900) || !bremse('loginkonto:' . $konto, 60, 900) || !bremse('loginip:' . client_ip(), 30, 900)) { sleep(1); $fehler = 'Zu viele Versuche – bitte in 15 Minuten nochmal.'; }
             else {
-                $u = $name !== '' ? lager()->spieler_nach_name($name) : null;
                 $hash = $u ? $u['pw_hash'] : '$2y$10$PxK0RyR6Ng9cebr4sv40xeBHhcwZlL4gVKoVfvcJFrVmDh4qaH.ma';   // gleich lange prüfen, ob es den Namen gibt oder nicht
                 if (password_verify($pw, $hash) && $u) { lager()->bremse_frei(hash('sha256', $sperre)); anmelden((int)$u['id']); header('Location: spiel.php'); exit; }
                 sleep(1);   // bremst Passwort-Raten

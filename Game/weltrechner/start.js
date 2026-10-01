@@ -21,6 +21,7 @@ const fs = require('fs'), path = require('path');
 const ORDNER = __dirname, GAME = path.join(__dirname, '..');
 const URL_BASIS = String(process.env.OW_URL || '').replace(/\/?$/, '/');
 const SCHLUESSEL = String(process.env.OW_SCHLUESSEL || '');
+delete process.env.OW_SCHLUESSEL;   // nur noch hier im Programm, nicht mehr in der Umgebung (die das Spiel sehen könnte)
 const SPEICHER_MB = Math.min(600, parseInt(process.env.OW_SPEICHER_MB || '600', 10) || 600);
 const HERZ = path.join(ORDNER, 'herz.php');   // .php mit Sperre davor: im Browser nie lesbar (nur wachhund.php/admin.php lesen es)
 const SPERRE = '<?php http_response_code(404); exit; ?>\n';
@@ -89,7 +90,9 @@ async function holen(url, opt) {
     opt = Object.assign({}, opt || {});
     const kopf = Object.assign({}, opt.headers || {}); kopf['X-Weltrechner'] = SCHLUESSEL;
     let body = opt.body; if (body && typeof body !== 'string') body = Buffer.from(body.buffer ? new Uint8Array(body.buffer, body.byteOffset, body.byteLength) : body);
-    return fetch(new URL(url, URL_BASIS + 'spiel.php').href, { method: opt.method || 'GET', headers: kopf, body, signal: AbortSignal.timeout(30000) });
+    const ziel = new URL(url, URL_BASIS + 'spiel.php').href;
+    if (!ziel.startsWith(URL_BASIS)) throw new Error('fremde Adresse – der Schlüssel geht nur an den eigenen Server');
+    return fetch(ziel, { method: opt.method || 'GET', headers: kopf, body, signal: AbortSignal.timeout(30000) });
 }
 
 // ===== Prüfer: sind die Zahlen der Welt in Ordnung? (läuft im Spiel, vor jedem Schreiben) =====
@@ -197,19 +200,37 @@ async function los() {
     const dom = new JSDOM(html, {
         url: URL_BASIS + 'spiel.php', runScripts: 'dangerously', resources: new Lader(), virtualConsole: konsole, pretendToBeVisual: false,
         beforeParse(w) {
-            w.fetch = geprueftHolen(w);   // vom ersten Puls an: nur geprüfte Welt wird geschrieben
-            w.requestAnimationFrame = () => 0; w.cancelAnimationFrame = () => {};   // nie zeichnen
-            w.matchMedia = q => ({ matches: false, media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
-            w.ResizeObserver = w.IntersectionObserver = w.MutationObserver = class { observe() {} unobserve() {} disconnect() {} takeRecords() { return []; } };
-            w.HTMLCanvasElement.prototype.getContext = function () { return this.__ctx || (this.__ctx = leinwand(this)); };
-            w.Path2D = class { constructor() { return new Proxy(this, { get: (t, k) => k in t ? t[k] : () => undefined }); } };
-            w.HTMLCanvasElement.prototype.toDataURL = () => 'data:,';
-            w.HTMLCanvasElement.prototype.toBlob = cb => cb && cb(null);
-            w.Element.prototype.scrollIntoView = function () {}; w.Element.prototype.scrollTo = function () {}; w.scrollTo = () => {};
-            w.navigator.sendBeacon = () => true; w.navigator.vibrate = () => true;
+            // Brücken ins Spiel hängen am Function des Spiel-Fensters – über sie kommt man nicht an Node heran (zusätzlich
+            // läuft Node im Sicherheitsmodus: config.php ist nicht lesbar, keine Programme startbar; siehe wachhund.php)
+            const bruecke = f => Object.setPrototypeOf(f, w.Function.prototype);
+            // die einzige Brücke nach draußen: gibt nur Zahlen und Texte zurück
+            const holenGeprueft = geprueftHolen(w);
+            w.__holenRoh = bruecke((url, opt, ja, nein) => {
+                const o = { method: opt.method, headers: Object.assign({}, opt.headers || {}), body: opt.body };
+                holenGeprueft(url, o).then(async r => { const t = await r.text(); const k = {}; r.headers.forEach((v, n) => { k[n.toLowerCase()] = v; }); ja(r.status, r.ok, t, JSON.stringify(k)); })
+                    .catch(e => nein(String(e && e.message || e)));
+            });
+            // Alle Ersatz-Teile (nie zeichnen, kein Bildschirm) entstehen IM Spiel-Fenster – das Spiel bekommt keine
+            // Node-Objekte in die Hand (über die man sonst an Node herankäme).
+            w.eval('(function () {' +
+                'window.requestAnimationFrame = function () { return 0; }; window.cancelAnimationFrame = function () {};' +
+                'window.matchMedia = function (q) { return { matches: false, media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} }; };' +
+                'window.ResizeObserver = window.IntersectionObserver = class { observe() {} unobserve() {} disconnect() {} takeRecords() { return []; } };' +
+                'var leinwand = ' + leinwand.toString() + ';' +
+                'HTMLCanvasElement.prototype.getContext = function () { return this.__ctx || (this.__ctx = leinwand(this)); };' +
+                'window.Path2D = class { constructor() { return new Proxy(this, { get: function (t, k) { return k in t ? t[k] : function () {}; } }); } };' +
+                "HTMLCanvasElement.prototype.toDataURL = function () { return 'data:,'; }; HTMLCanvasElement.prototype.toBlob = function (cb) { if (cb) cb(null); };" +
+                'Element.prototype.scrollIntoView = function () {}; Element.prototype.scrollTo = function () {}; window.scrollTo = function () {};' +
+                'navigator.sendBeacon = function () { return true; }; navigator.vibrate = function () { return true; };' +
+                // fetch: die Antwort wird im Spiel-Fenster als reine Daten nachgebaut
+                'var roh = window.__holenRoh; delete window.__holenRoh;' +
+                'function antwort(s, ok, text, kopf) { kopf = JSON.parse(kopf); return { ok: ok, status: s, headers: { get: function (n) { var v = kopf[String(n).toLowerCase()]; return v == null ? null : v; } },' +
+                '  text: function () { return Promise.resolve(text); }, json: function () { return new Promise(function (a, b) { try { a(JSON.parse(text)); } catch (e) { b(e); } }); }, clone: function () { return antwort(s, ok, text, JSON.stringify(kopf)); } }; }' +
+                'window.fetch = function (url, opt) { return new Promise(function (ja, nein) { roh(String(url), opt || {}, function (s, ok, text, kopf) { ja(antwort(s, ok, text, kopf)); }, function (m) { nein(new Error(m)); }); }); };' +
+                '})()');
             w.addEventListener('error', e => fehler('Spiel: ' + (e.error && e.error.stack || e.message)));
-            w.__prVorher = grundlinie;
-            w.__weltrechnerEnde = status => ende(status === 503 ? 0 : 5, status === 503 ? 'Wartung' : 'Server sagt ' + status + ' (anderer Weltrechner?)');
+            w.__prVorher = grundlinie ? w.JSON.parse(JSON.stringify(grundlinie)) : null;   // als Daten des Spiel-Fensters
+            w.__weltrechnerEnde = bruecke(status => ende(status === 503 ? 0 : 5, status === 503 ? 'Wartung' : 'Server sagt ' + status + ' (anderer Weltrechner?)'));
         }
     });
     const w = dom.window; spielFenster = w;

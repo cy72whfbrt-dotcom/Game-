@@ -1493,6 +1493,7 @@ function launchAttack(sourceId, targetId, attackerBotId, troopsOverride, heldWun
     }
     const mensch = attackerBotId && botById[attackerBotId] && botById[attackerBotId].mensch;   // ein echter Spieler (Befehl): sein gewählter Held, sonst keiner
     if (attackerBotId && window.WELT) { const tw = islandOwnerOf(target.id); if (tw === 'player' || (botById[tw] && botById[tw].mensch)) { const ab = loadBotState()[attackerBotId]; if (ab && ab.neuBis) { ab.neuBis = 0; saveBotState(); } } }   // greift einen echten Spieler an: Anfängerschutz weg
+    if (attackerBotId && window.WELT && botById[attackerBotId] && botById[attackerBotId].mensch) { const ab = loadBotState()[attackerBotId]; if (ab && ab.shieldUntil > Date.now()) { ab.schildAlt = ab.shieldUntil; ab.shieldUntil = 0; saveBotState(); } }   // ein echter Spieler greift an: sein Schild fällt (auch wenn sein Handy es nicht meldet)
     const who = attackerBotId || 'player', hero = mensch ? (heldWunsch && heroOwned(attackerBotId, heldWunsch) && !heroBusy(attackerBotId, heldWunsch) ? heldWunsch : null)
         : attackerBotId ? botPickHero(attackerBotId, source, target, rawTroops) : nextAttackHero && heroOwned('player', nextAttackHero) && !heroBusy('player', nextAttackHero) ? nextAttackHero : null;
     const hop = lastHop(source.landmassId, target.landmassId, who), hp = hero && heroPeek(who, hero, source, target, rawTroops);
@@ -11186,6 +11187,7 @@ if (window.WELT) {
     const BEFEHLE = {
         angriff(who, b) {
             if (!inselOk(b.src) || !inselOk(b.ziel) || !zahlOk(b.n)) { warnen(who, 'kaputt', 'Angriff mit kaputten Angaben – abgelehnt.'); return; }
+            if (islandOwnerOf(b.ziel) === who) { warnen(who, 'kaputt', 'Angriff auf die eigene Basis – abgelehnt.'); return; }   // (brachte sonst Gratis-EP)
             if (gehoert(b.src, who)) launchAttack(b.src, b.ziel, who, b.n, heldOk(b.held));
         },
         senden(who, b) {
@@ -11206,6 +11208,7 @@ if (window.WELT) {
             if (zuOft(wm(who), 'schneller', 60, 60000)) { warnen(who, 'schneller', 'Beschleunigen über 60-mal pro Minute – der Rest verfällt.'); return; }
             const now = Date.now(), keys = [...new Set(b.keys.filter(kennungOk))].slice(0, 200);
             for (const key of keys) { const m = marschVon(who, key); if (!m || m.fightEndsAt) continue; const rem = m.resolveAt - now; if (rem < 1500) continue;
+                if (m.spAt && now - m.spAt < 2000) continue; m.spAt = now;   // derselbe Marsch höchstens alle 2 s (15× hintereinander ging sonst auf 1,5 s)
                 const pr = Math.max(0, Math.min(.99, (now - m.startedAt) / Math.max(1, m.resolveAt - m.startedAt))); m.resolveAt = now + rem / 2; m.startedAt = m.resolveAt - (rem / 2) / (1 - pr); }
             saveProgression();
         },
@@ -11245,6 +11248,10 @@ if (window.WELT) {
         feldHeim(who, b) { const f = resFields.find(x => x.id === b.feld), st = f && fieldInfo(f); if (st && st.occ && st.occ.who === who) { fieldGoHome(f, st, Date.now()); saveFields(); } },
         lager(who, b) {
             if (!inselOk(b.home) || !gehoert(b.home, who) || (b.k !== 'c' && b.k !== 'b')) return;
+            // Tagesgrenzen wie auf dem Handy (Boss 10 Angriffe, Lager 20 pro Tag) – auch, was gerade unterwegs ist, zählt mit
+            // (Boss: der Zähler steigt schon beim Losschicken; Lager: beim Sieg – darum zählen dort die unterwegs mit, wie barbLeft)
+            if (b.k === 'b' ? barbRec(who).h >= DBOSS_HITS : barbLeft(who) <= 0) { warnen(who, 'lager', 'Tagesgrenze für ' + (b.k === 'b' ? 'den Boss' : 'Lager') + ' überschritten – abgelehnt.'); return; }
+            if (b.k === 'c') { const c = barbCampById(b.tid); if (!c || !barbOpenFor(who, c.L)) return; }   // nur Lager, die schon freigespielt sind
             const n = truppenVon(b.home, b.n); if (n >= 1) barbSend(who, b.home, b.k, b.k === 'c' ? b.tid : null, n, heldOk(b.held));
         },
         armee(who, b) {
@@ -11263,6 +11270,7 @@ if (window.WELT) {
             if (!botOwnedIslands[who]) window.__weltNeuerMensch(who);
             if (botOwnedIslands[who] && botOwnedIslands[who].size) return;      // hat schon einen
             let isl = inselOk(b.insel) ? islandById[b.insel] : null, aus = null;
+            if (isl && landmasses[isl.landmassId].tier !== 'outer') isl = null;   // Start nur am äußeren Rand (nicht in der Mitte oder bei den Wächtern)
             if (!isl || isl.type !== 'tower' || islandOwnerOf(isl.id)) {
                 const besitz = { player: [...ownedIslands] }; for (const bot of BOT_DEFS) besitz[bot.id] = [...(botOwnedIslands[bot.id] || [])];
                 const p = freierStartplatz(besitz); isl = p.insel; aus = p.aus || null;

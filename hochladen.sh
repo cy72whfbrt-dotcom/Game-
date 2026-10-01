@@ -13,7 +13,9 @@ T=$(mktemp -d)
 trap 'rm -rf "$T"' EXIT
 
 # 1) Anmelden
-curl -sS -c $T/jar -b $T/jar -L 'https://office.hobbitonhill.de/index.php?' --data-urlencode "name=$OFFICE_USER" --data-urlencode "pw=$OFFICE_PASS" -d login=login -o $T/login.html
+# (Zugangsdaten über eine Datei statt in der Befehlszeile – dort wären sie in der Prozessliste sichtbar)
+umask 077; printf 'name=%s&pw=%s&login=login' "$(php -r 'echo rawurlencode(getenv("OFFICE_USER"));')" "$(php -r 'echo rawurlencode(getenv("OFFICE_PASS"));')" > $T/anmelden
+curl -sS -c $T/jar -b $T/jar -L 'https://office.hobbitonhill.de/index.php?' --data-binary @$T/anmelden -o $T/login.html; rm -f $T/anmelden
 SID=$(grep -o 'sid=[a-f0-9]*' $T/login.html | head -1 | cut -d= -f2)
 [ -n "$SID" ] || { echo "Office-Login fehlgeschlagen"; exit 1; }
 ed() { local pfad=$1; shift; curl -sS -b $T/jar "$E?h=48&w=138&sid=$SID&path=$B$pfad&charset=&lines=" "$@"; }
@@ -26,6 +28,7 @@ if [ -n "$DB_PASS" ]; then
   php -r '$c = ["db_host" => getenv("DB_HOST") ?: "dbwebintern.silentnetwork.de", "db_name" => getenv("DB_NAME") ?: "k17700_alex", "db_user" => getenv("DB_USER"), "db_pass" => getenv("DB_PASS"),
     "admin_ids" => array_map("intval", array_filter(explode(",", getenv("ADMIN_IDS") ?: "3"))),
     "spiel_url" => "https://office.hobbitonhill.de/html/725/klassenarbeit_GR4/Game/",
+    "wr_schluessel" => bin2hex(random_bytes(32)),   // Schlüssel des Weltrechners: bei jedem Hochladen neu, zufällig, steht nur in config.php
     "vapid_public" => getenv("VAPID_PUBLIC") ?: "", "vapid_private" => getenv("VAPID_PRIVATE") ?: ""];
     file_put_contents($argv[1], "<?php\n// Zugangsdaten der Datenbank - nur auf dem Server, nie ins Git\nreturn " . var_export($c, true) . ";\n");' "$T/config.php"
 fi
@@ -45,7 +48,8 @@ done
 [ -f $T/config.php ] && ed /Game -F "file=@$T/config.php" -F "button=upload" -o /dev/null -w "config.php %{http_code}\n"
 
 # 4) Alles auf dem Server, was nicht (mehr) zum Spiel gehört, aus Game/ entfernen (alte Ordner api, js, inhalt, daten …)
-weg() { local ordner=$1 name=$2; ed "$ordner" -F text= -F "file=$name" -F "button=delete" -o /dev/null; echo "entfernt: Game${ordner#/Game}/$name"; }
+# (--form-string: ein Dateiname vom Server, der mit @ oder < beginnt, lädt nie eine lokale Datei hoch)
+weg() { local ordner=$1 name=$2; ed "$ordner" -F text= --form-string "file=$name" -F "button=delete" -o /dev/null; echo "entfernt: Game${ordner#/Game}/$name"; }
 for x in $(ls_ordner /Game); do
   if [ -e "Game/$x" ] || [ "$x" = config.php ] || [ "$x" = wartung.txt ]; then continue; fi
   if curl -sS -b $T/jar "$E?h=48&w=138&sid=$SID&path=$B/Game/$x" | grep -q "klassenarbeit_GR4/Game/$x/\.\.\""; then   # ist ein Ordner: erst leeren

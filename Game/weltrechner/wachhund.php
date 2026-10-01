@@ -62,17 +62,24 @@ function wr_node() {
 function wr_url() {
     $c = cfg();
     if (!empty($c['spiel_url'])) return $c['spiel_url'];
-    if (!empty($_SERVER['HTTP_HOST'])) return (ist_https() ? 'https://' : 'http://') . $_SERVER['HTTP_HOST'] . preg_replace('#/weltrechner/?$#', '/', basis_pfad());
+    // (kein Ersatz aus der Anfrage: ein gefälschter Host-Kopf könnte den Weltrechner samt Schlüssel woandershin schicken)
     return '';
 }
 function wr_starten() {
     $url = wr_url();
     if ($url === '') { wr_log('kann nicht starten: Adresse des Spiels unbekannt (spiel_url in config.php)'); return false; }
     if (!is_file(WR_ORDNER . '/log.php')) file_put_contents(WR_ORDNER . '/log.php', WR_SPERRE);
-    $env = 'OW_URL=' . escapeshellarg($url) . ' OW_SCHLUESSEL=' . escapeshellarg(weltrechner_schluessel()) . ' OW_SPEICHER_MB=' . WR_SPEICHER_MB;
+    // Node im Sicherheitsmodus: lesen nur die Spiel-Skripte und den eigenen Ordner (NIE config.php), schreiben nur im eigenen
+    // Ordner, keine anderen Programme starten. Der Schlüssel geht nur über die Umgebung (nie in einer Befehlszeile – ps).
+    $G = dirname(WR_ORDNER);
+    $lesen = [WR_ORDNER];
+    foreach (['speichern.js', 'ladebildschirm.js', 'bots.js', 'welt.js', 'spiel.js'] as $d) $lesen[] = $G . '/' . $d;
+    $rechte = '--permission' . implode('', array_map(function ($p) { return ' --allow-fs-read=' . escapeshellarg($p); }, $lesen)) . ' --allow-fs-write=' . escapeshellarg(WR_ORDNER);
+    $cmd = 'exec ' . (trim((string)@shell_exec('command -v setsid')) !== '' ? 'setsid ' : '') . 'nohup nice -n 19 ' . escapeshellarg(wr_node()) . ' ' . $rechte . ' --max-old-space-size=450 start.js >> log.php 2>&1 < /dev/null';
+    $env = ['OW_URL' => $url, 'OW_SCHLUESSEL' => weltrechner_schluessel(), 'OW_SPEICHER_MB' => (string)WR_SPEICHER_MB, 'PATH' => (string)(getenv('PATH') ?: '/usr/local/bin:/usr/bin:/bin')];
     // ganz vom Aufrufer lösen (eigene Gruppe, keine offene Leitung) – sonst wartet PHP, bis der Weltrechner endet
-    $cmd = '(cd ' . escapeshellarg(WR_ORDNER) . ' && ' . $env . ' exec ' . (trim((string)@shell_exec('command -v setsid')) !== '' ? 'setsid ' : '') . 'nohup nice -n 19 ' . escapeshellarg(wr_node()) . ' --max-old-space-size=450 start.js >> log.php 2>&1 < /dev/null) > /dev/null 2>&1 &';
-    exec($cmd);
+    $p = proc_open('(' . $cmd . ') > /dev/null 2>&1 &', [0 => ['file', '/dev/null', 'r'], 1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']], $leit, WR_ORDNER, $env);
+    if (is_resource($p)) proc_close($p);
     wr_log('Weltrechner gestartet');
     return true;
 }
@@ -100,13 +107,16 @@ function wachhund_runde($quelle = 'cron') {
             $z['abstuerze'][] = $jetzt; $z['gezaehlt'] = $pid;
         } elseif ($h && $pid && (int)($z['gezaehlt'] ?? 0) !== $pid) {   // beendet: geplant (Wartung, Code 0) oder Absturz?
             $z['gezaehlt'] = $pid;
-            if (!isset($h['code']) || (int)$h['code'] !== 0) { $z['abstuerze'][] = $jetzt; wr_log('Absturz erkannt: ' . ($h['ende'] ?? 'ohne Meldung beendet (Speicher? hart beendet?)')); }
+            if (isset($h['code']) && (int)$h['code'] === 6) { $z['pruefer'][] = $jetzt; wr_log('Prüfer-Neustart (zählt nicht als Absturz): ' . ($h['ende'] ?? '')); }   // kaputte Zahlen verhindert – kein Grund für die Notbremse
+            elseif (!isset($h['code']) || (int)$h['code'] !== 0) { $z['abstuerze'][] = $jetzt; wr_log('Absturz erkannt: ' . ($h['ende'] ?? 'ohne Meldung beendet (Speicher? hart beendet?)')); }
         }
         // gestartet, aber nie ein Herzschlag (z. B. Fehler gleich beim Laden) → auch ein Absturz
         if (!$laeuft && $letzterStart && $jetzt - $letzterStart >= 50 && (!$h || (int)(($h['gestartet'] ?? 0) / 1000) < $letzterStart - 5) && (int)($z['ohneHerz'] ?? 0) !== $letzterStart) {
             $z['ohneHerz'] = $letzterStart; $z['abstuerze'][] = $jetzt; wr_log('Absturz erkannt: gestartet, aber nie ein Herzschlag');
         }
         $z['abstuerze'] = array_values(array_filter($z['abstuerze'], function ($t) use ($jetzt) { return $jetzt - $t <= WR_FENSTER; }));
+        $z['pruefer'] = array_values(array_filter($z['pruefer'] ?? [], function ($t) use ($jetzt) { return $jetzt - $t <= 1800; }));
+        if (!$z['gesperrt'] && count($z['pruefer']) >= 10) $z['abstuerze'] = array_merge($z['abstuerze'], [$jetzt, $jetzt, $jetzt, $jetzt, $jetzt]);   // 10 Prüfer-Neustarts in 30 Min.: dann stimmt wirklich etwas nicht
         if (!$z['gesperrt'] && count($z['abstuerze']) >= WR_ABSTUERZE) {   // Notbremse
             $z['gesperrt'] = true;
             $z['grund'] = count($z['abstuerze']) . ' Abstürze in ' . (WR_FENSTER / 60) . ' Minuten';

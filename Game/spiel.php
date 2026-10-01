@@ -1883,7 +1883,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
   </footer>
 </section>
 
-    <script defer src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script><!-- 3D bases: deferred, so a slow or missing network never holds the game up -->
+    <script defer src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js" integrity="sha384-qOkzR5Ke/XkQxuGVJ9hpFEpDlcoLtWwVYhnJf06cLIZa2vaIptSqaubivErzmD5O" crossorigin="anonymous"></script><!-- 3D bases: deferred, so a slow or missing network never holds the game up -->
     <script defer src="baukunst.js?v=<?= v('baukunst.js') ?>"></script>
     <script src="bots.js?v=<?= v('bots.js') ?>"></script>
     <script src="welt.js?v=<?= v('welt.js') ?>"></script>

@@ -132,7 +132,7 @@
         }
         if ('openWaterBotCoins' in teile) {
             const bc = P(teile.openWaterBotCoins) || {}; delete bc[ICH];
-            for (const id in W.menschen) if (id !== ICH && W.menschen[id].profil) bc[id] = W.menschen[id].profil.coins || 0;
+            for (const id in W.menschen) if (id !== ICH && W.menschen[id].profil) bc[id] = Math.max(0, Math.min(1e15, +W.menschen[id].profil.coins || 0));
             S.roh('openWaterBotCoins', J(bc)); geaendert.add('openWaterBotCoins');
         }
         S.roh('openWaterWorldVersion', '6');
@@ -204,7 +204,11 @@
         b.city = { levels: Object.assign({}, (b.city && b.city.levels) || {}, (p.city && p.city.levels) || {}), builds: [], builder2: false };
         b.wounded = p.wounded || 0;
         if (p.hs) b.hs = p.hs; else if (!b.hs) b.hs = {};
-        b.shields = { 2: 0, 8: 0, 24: 0 }; b.shieldUntil = p.shieldUntil || 0; b.neuBis = p.neuBis || 0;
+        // Schild und Anfängerschutz kommen vom Handy – darum mit Grenzen: Anfängerschutz kann nur kürzer werden (nie neu
+        // anfangen), höchstens 48 h; ein Schild, der beim Angreifen gefallen ist, gilt erst wieder, wenn ein neuer kommt
+        const jetzt = Date.now(), ps = Math.min(+p.shieldUntil || 0, jetzt + 8 * 86400000);
+        b.shields = { 2: 0, 8: 0, 24: 0 }; b.shieldUntil = alt && alt.schildAlt && ps <= alt.schildAlt ? 0 : ps;
+        b.neuBis = Math.max(0, Math.min(+p.neuBis || 0, jetzt + 48 * 3600000, alt && alt.neuBis !== undefined ? +alt.neuBis || 0 : Infinity));
         const lk = p.look || {};
         b.ring = lk.ring || null; b.rings = lk.rings || []; b.march = lk.march || null; b.marchs = lk.marchs || [];
         b.frames = lk.frame ? [lk.frame] : []; b.titles = lk.title ? [lk.title] : []; b.throneLook = lk.throne ? 1 : 0;
@@ -355,7 +359,7 @@
             for (const id in W.menschen) {
                 const m = W.menschen[id]; if (!m.profilNeu || id === ICH) continue; m.profilNeu = false;
                 if (typeof botState !== 'undefined' && botState && botState[id]) Object.assign(botState[id], profilZuBot(m.profil, botState[id]));
-                if (typeof botCoins !== 'undefined' && m.profil) botCoins[id] = m.profil.coins || 0;
+                if (typeof botCoins !== 'undefined' && m.profil) botCoins[id] = Math.max(0, Math.min(1e15, +m.profil.coins || 0));
                 if (W.leiter) basis[id] = topf(id);
             }
         }
@@ -393,7 +397,10 @@
     }
 
     // Befehl an den Weltrechner (bin ich es selbst, führt spiel.js ihn direkt aus)
-    W.befehl = function (art, daten) { W.befehle.push(Object.assign({ art, at: Date.now() }, daten || {})); setTimeout(puls, 50); };
+    W.befehl = function (art, daten) {
+        try { if (!SYSTEM && window.__owSofort) window.__owSofort(false); } catch (e) {}   // erst den eigenen Stand (bezahlte Münzen) sichern, dann der Befehl
+        W.befehle.push(Object.assign({ art, at: Date.now() }, daten || {})); setTimeout(puls, 150);
+    };
 
     W.start = function () { puls(); setInterval(puls, PULS_MS); document.addEventListener('visibilitychange', () => { if (!document.hidden) puls(); }); };
 })();

@@ -2,6 +2,7 @@
 // ===== admin.php – nur für Admins (Alexander): Wartung an/aus, Geschenke an Spieler, Spielerliste =====
 require __DIR__ . '/server.php';
 require __DIR__ . '/weltrechner/wachhund.php';
+header('Cache-Control: no-store');
 
 $ich = null;
 try { $ich = aktueller_spieler(); } catch (Throwable $e) { $ich = null; }
@@ -17,6 +18,7 @@ if (preg_match_all("/\\{ id: '(bot\\d+)',\\s*name: '([^']+)'/", (string)@file_ge
 if (preg_match("/\\/\\/ More players on the map[^\\n]*\\n\\[([^\\]]+)\\]\\.forEach/", (string)@file_get_contents(__DIR__ . '/bots.js'), $m) && preg_match_all("/'([^']+)'/", $m[1], $nm)) foreach ($nm[1] as $i => $n) $BOTS['bot' . (61 + $i)] = $n;
 $KISTEN = ['Gewöhnlich', 'Ungewöhnlich', 'Selten', 'Episch', 'Legendär', 'Mythisch'];
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !herkunft_ok()) { http_response_code(403); exit('Ungültige Anfrage.'); }
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!hash_equals($zeichen, (string)($_POST['zeichen'] ?? ''))) { $fehler = 'Ungültiges Formular – Seite neu laden.'; }
     else {
