@@ -110,6 +110,10 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 
+20. **Nebel zeigt zu viel:** Unter dem Nebel (noch nicht erforschtes Gebiet) sind Sachen zu sehen. (offen)
+21. **Angriff in den Nebel:** Man kann Basen/Ziele unter dem Nebel angreifen, obwohl man das Gebiet nicht erforscht hat. (offen)
+22. **Mitspieler ohne Nebel?** Prüfen, ob die Mitspieler auch Nebel haben – wenn nicht, für sie auch einbauen (gleiche Regeln wie für dich). (offen)
+
 ## 10. EINE Welt für alle (läuft auf dem Server)
 Alexander will: **Alle Spieler und alle Mitspieler auf einer einzigen Karte.** Keine eigenen Welten pro Spieler.
 
