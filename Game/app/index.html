@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Open Water als App</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#0b2a4a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Open Water">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px;
+         font-family: Georgia, 'Times New Roman', serif; color: #2b2118; background: radial-gradient(ellipse at 50% 20%, #12507e, #0b2a4a 70%); }
+  .karte { width: 100%; max-width: 400px; background: #f6efe0; border: 2px solid #d8c9a6; border-radius: 14px; padding: 24px 22px; text-align: center; box-shadow: 0 12px 40px rgba(0,0,0,.45); }
+  img { width: 120px; height: 120px; border-radius: 26px; box-shadow: 0 6px 18px rgba(0,0,0,.35); }
+  h1 { margin: 14px 0 4px; color: #1d3b5c; font-size: 28px; }
+  p { font-size: 16px; line-height: 1.45; margin: 10px 0; }
+  button, a.knopf { display: block; width: 100%; margin-top: 14px; padding: 13px; font-size: 17px; font-family: inherit; border: 0; border-radius: 9px; cursor: pointer;
+           background: linear-gradient(#c9a227, #a8831a); color: #2b1d05; font-weight: bold; text-decoration: none; }
+  a.leise { background: #e9dfc8; font-weight: normal; }
+  ol { text-align: left; padding-left: 22px; font-size: 16px; line-height: 1.55; margin: 8px 0 0; }
+  .teilen { display: inline-block; vertical-align: -3px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main class="karte">
+  <img src="icon-192.png" alt="Open Water Logo">
+  <h1>Open Water als App</h1>
+  <p>Leg das Spiel auf deinen Startbildschirm – dann startet es wie eine eigene App, ohne Browser-Leiste.</p>
+
+  <div id="fertig" hidden><p><b>Schon installiert!</b> Du findest Open Water auf deinem Startbildschirm.</p></div>
+  <button id="installieren" hidden>Zum Startbildschirm hinzufügen</button>
+
+  <div id="iphone" hidden>
+    <p><b>So geht's auf dem iPhone/iPad (Safari):</b></p>
+    <ol>
+      <li>Unten auf <b>Teilen</b> tippen
+        <svg class="teilen" width="18" height="22" viewBox="0 0 18 22"><path d="M9 1v13M4.5 5.5 9 1l4.5 4.5M3 9H1.5v11.5h15V9H15" fill="none" stroke="#1d6fd8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></li>
+      <li><b>„Zum Home-Bildschirm“</b> wählen</li>
+      <li>Oben rechts <b>„Hinzufügen“</b> tippen</li>
+    </ol>
+  </div>
+  <div id="andere" hidden>
+    <p><b>So geht's (Chrome/Android):</b></p>
+    <ol>
+      <li>Oben rechts auf <b>⋮</b> (Menü) tippen</li>
+      <li><b>„Zum Startbildschirm hinzufügen“</b> oder <b>„App installieren“</b> wählen</li>
+    </ol>
+  </div>
+
+  <a class="knopf leise" href="../">Ohne App weiterspielen</a>
+</main>
+<script>
+  // Nichts wird im Browser gespeichert – diese Seite zeigt nur, wie man das Spiel auf den Startbildschirm legt.
+  var ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var schonApp = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  var frage = null;
+  if (schonApp) document.getElementById('fertig').hidden = false;
+  else if (ios) document.getElementById('iphone').hidden = false;
+  else document.getElementById('andere').hidden = false;
+  window.addEventListener('beforeinstallprompt', function (e) {       // Android/Chrome: ein echter Knopf zum Installieren
+    e.preventDefault(); frage = e;
+    document.getElementById('installieren').hidden = false; document.getElementById('andere').hidden = true;
+  });
+  document.getElementById('installieren').addEventListener('click', function () {
+    if (!frage) return; frage.prompt();
+    frage.userChoice.then(function (w) { if (w.outcome === 'accepted') { document.getElementById('installieren').hidden = true; document.getElementById('fertig').hidden = false; } frage = null; });
+  });
+  window.addEventListener('appinstalled', function () { document.getElementById('installieren').hidden = true; document.getElementById('fertig').hidden = false; });
+</script>
+</body>
+</html>

@@ -38,6 +38,11 @@ Game/                  ← genau dieser Ordner liegt auf dem Server
   welt.js              die EINE Welt: Umrechnen, andere Spieler, Weltrechner, Puls, Befehle, Nachrichten
   server.php           alles auf dem Server: Datenbank, Login, Laden, Speichern, Welt, Sicherheit
   admin.php            nur für Admins (alexander): Wartung an/aus, Geschenke verschicken, Spielerliste
+  app/                 Open Water als App auf dem Startbildschirm:
+    index.html         Installier-Seite (Android: Knopf „Zum Startbildschirm hinzufügen“, iPhone: Anleitung)
+    manifest.webmanifest  App-Datei (Name, Logo, startet ohne Browser-Leiste)
+    logo.svg           das App-Logo (Krone über Burg auf einer Insel im Meer)
+    icon-192.png, icon-512.png, apple-touch-icon.png   das Logo als Bild (aus logo.svg gerendert)
   config.php           Datenbank-Zugang – NUR auf dem Server, nie im Git (wird von hochladen.sh erzeugt)
 LIESMICH.md            diese Datei
 hochladen.sh           lädt Game/ auf den Server (ein Befehl)
@@ -238,6 +243,12 @@ Mitspieler-Nebel, Sammel-Bericht, Anfängerschutz und Sicherheits-Fixes. Live ge
 
 **HOCHGELADEN am 1.10. (Alexanders Ja):** Späher/Tore, Anfängerschutz für alle mit 50-Mio.-Grenze, kein Admin-Knopf.
 Mit Wartung (an → 10 s Speichern → hochladen → aus). Live geprüft: kein Admin-Link auf der Startseite, Wartung aus.
+
+**App für den Startbildschirm (1.10.):** Ordner `Game/app/` (siehe Abschnitt 2). Startseite und Spielseite verweisen
+auf die App-Datei (Manifest, Logo, Apple-Angaben). Auf der Startseite steht „📱 Open Water als App auf den
+Startbildschirm“ → `app/`. Kein Service-Worker (der würde Dateien im Browser speichern – Regel: nichts im Browser).
+`hochladen.sh` lädt jetzt auch Unterordner (app/) hoch. Logo neu zeichnen: `logo.svg` ändern und die PNGs neu rendern
+(Playwright: SVG in 512/192/180 Pixel abfotografieren).
 
 ## 11. Offen
 - **GitHub aufräumen (macht Alexander, Claude darf es nicht):** Unter Settings → General → Default branch auf

@@ -9,6 +9,15 @@ function v($f) { return filemtime(__DIR__ . '/' . $f); }   // neue Version = Bro
 <html lang="de">
 <head>
 <?= $kopf ?>
+<link rel="manifest" href="app/manifest.webmanifest">
+<link rel="icon" href="app/logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="app/apple-touch-icon.png">
+<meta name="theme-color" content="#0b2a4a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Open Water">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Open Water</title>

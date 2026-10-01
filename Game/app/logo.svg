@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="himmel" cx="50%" cy="30%" r="75%">
+      <stop offset="0" stop-color="#2b6a9e"/><stop offset=".55" stop-color="#16456f"/><stop offset="1" stop-color="#0b2a4a"/>
+    </radialGradient>
+    <linearGradient id="meer" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1f5f8f"/><stop offset="1" stop-color="#0a2540"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffe08a"/><stop offset=".5" stop-color="#e2b23c"/><stop offset="1" stop-color="#a8831a"/>
+    </linearGradient>
+    <linearGradient id="stein" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#cfc6b3"/><stop offset=".55" stop-color="#b3a88f"/><stop offset="1" stop-color="#8d8370"/>
+    </linearGradient>
+    <linearGradient id="dach" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3f86d8"/><stop offset="1" stop-color="#1d4f8a"/>
+    </linearGradient>
+    <radialGradient id="schein" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#ffd76a" stop-opacity=".55"/><stop offset="1" stop-color="#ffd76a" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#himmel)"/>
+  <circle cx="256" cy="170" r="150" fill="url(#schein)"/>
+  <!-- Meer -->
+  <path d="M0 330 Q64 312 128 330 T256 330 T384 330 T512 330 V512 H0 Z" fill="url(#meer)"/>
+  <path d="M0 372 Q64 356 128 372 T256 372 T384 372 T512 372" fill="none" stroke="#5fa8d8" stroke-opacity=".45" stroke-width="6" stroke-linecap="round"/>
+  <path d="M40 418 Q100 404 160 418 M300 430 Q360 416 420 430" fill="none" stroke="#5fa8d8" stroke-opacity=".3" stroke-width="5" stroke-linecap="round"/>
+  <g transform="translate(256 262) scale(.8) translate(-256 -262)">
+  <!-- Insel -->
+  <ellipse cx="256" cy="338" rx="150" ry="34" fill="#c9a86a"/>
+  <path d="M120 336 Q256 270 392 336 Q256 352 120 336 Z" fill="#4f8a3c"/>
+  <path d="M150 334 Q256 290 362 334" fill="none" stroke="#6aa84f" stroke-width="6" stroke-linecap="round"/>
+  <!-- Burg: Mauer mit zwei Türmen und Bergfried -->
+  <rect x="176" y="250" width="160" height="78" fill="url(#stein)"/>
+  <path d="M176 250 h20 v-14 h20 v14 h20 v-14 h20 v14 h20 v-14 h20 v14 h20 v-14 h20 v14 h20" fill="url(#stein)"/>
+  <rect x="150" y="214" width="46" height="116" fill="url(#stein)"/>
+  <rect x="316" y="214" width="46" height="116" fill="url(#stein)"/>
+  <path d="M144 216 L173 176 L202 216 Z" fill="url(#dach)"/>
+  <path d="M310 216 L339 176 L368 216 Z" fill="url(#dach)"/>
+  <rect x="222" y="196" width="68" height="132" fill="url(#stein)"/>
+  <path d="M214 198 L256 140 L298 198 Z" fill="url(#dach)"/>
+  <path d="M240 328 v-40 a16 16 0 0 1 32 0 v40 Z" fill="#3a2a1a"/>
+  <rect x="246" y="222" width="20" height="28" rx="10" fill="#2a1e14"/>
+  <rect x="164" y="244" width="16" height="22" rx="8" fill="#2a1e14"/>
+  <rect x="332" y="244" width="16" height="22" rx="8" fill="#2a1e14"/>
+  <!-- Fahne -->
+  <path d="M256 140 V104" stroke="#3a2a1a" stroke-width="5"/>
+  <path d="M258 104 L292 114 L258 124 Z" fill="#c9423a"/>
+  <!-- Krone -->
+  <g transform="translate(256 70)">
+    <path d="M-62 26 L-70 -22 L-36 2 L0 -34 L36 2 L70 -22 L62 26 Z" fill="url(#gold)" stroke="#7a5a10" stroke-width="4" stroke-linejoin="round"/>
+    <rect x="-64" y="24" width="128" height="16" rx="5" fill="url(#gold)" stroke="#7a5a10" stroke-width="4"/>
+    <circle cx="0" cy="-34" r="8" fill="#e85a4a" stroke="#7a5a10" stroke-width="3"/>
+    <circle cx="-70" cy="-22" r="7" fill="#6ccbee" stroke="#7a5a10" stroke-width="3"/>
+    <circle cx="70" cy="-22" r="7" fill="#6ccbee" stroke="#7a5a10" stroke-width="3"/>
+    <circle cx="0" cy="32" r="5" fill="#e85a4a"/>
+  </g>
+  </g>
+</svg>

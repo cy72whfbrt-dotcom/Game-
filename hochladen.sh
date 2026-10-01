@@ -33,16 +33,17 @@ ed "" -F text= -F file=Game -F "button=new folder" -o /dev/null
 echo "Wartung seit $(date '+%d.%m.%Y %H:%M') (hochladen.sh)" > $T/wartung.txt
 ed /Game -F "file=@$T/wartung.txt" -F "button=upload" -o /dev/null -w "Wartung an: %{http_code}\n"
 sleep 10  # die laufenden Spiele merken es beim nächsten Puls (alle 2 s) und sichern noch
-for f in $(cd Game && ls -1); do
+for f in $(cd Game && find . -type f | sed 's#^\./##' | sort); do
   [ "$f" = config.php ] && continue
-  ed /Game -F "file=@Game/$f" -F "button=upload" -o /dev/null -w "$f %{http_code}\n"
+  dir=$(dirname "$f"); [ "$dir" = . ] && dir="" || { dir="/$dir"; ed /Game -F text= -F "file=${dir#/}" -F "button=new folder" -o /dev/null; }
+  ed "/Game$dir" -F "file=@Game/$f" -F "button=upload" -o /dev/null -w "$f %{http_code}\n"
 done
 [ -f $T/config.php ] && ed /Game -F "file=@$T/config.php" -F "button=upload" -o /dev/null -w "config.php %{http_code}\n"
 
 # 4) Alles auf dem Server, was nicht (mehr) zum Spiel gehört, aus Game/ entfernen (alte Ordner api, js, inhalt, daten …)
 weg() { local ordner=$1 name=$2; ed "$ordner" -F text= -F "file=$name" -F "button=delete" -o /dev/null; echo "entfernt: Game${ordner#/Game}/$name"; }
 for x in $(ls_ordner /Game); do
-  if [ -f "Game/$x" ] || [ "$x" = config.php ] || [ "$x" = wartung.txt ]; then continue; fi
+  if [ -e "Game/$x" ] || [ "$x" = config.php ] || [ "$x" = wartung.txt ]; then continue; fi
   if curl -sS -b $T/jar "$E?h=48&w=138&sid=$SID&path=$B/Game/$x" | grep -q "klassenarbeit_GR4/Game/$x/\.\.\""; then   # ist ein Ordner: erst leeren
     for y in $(ls_ordner "/Game/$x"); do weg "/Game/$x" "$y"; done
   fi
@@ -50,7 +51,7 @@ for x in $(ls_ordner /Game); do
 done
 
 # 5) Prüfen: Dateien unverändert angekommen?
-for f in ladebildschirm.js spiel.js bots.js welt.js baukunst.js speichern.js; do
+for f in ladebildschirm.js spiel.js bots.js welt.js baukunst.js speichern.js app/manifest.webmanifest app/icon-512.png app/logo.svg; do
   [ "$(sha1sum < Game/$f)" = "$(curl -sS "$U/$f" | sha1sum)" ] && echo "geprüft: $f" || { echo "FEHLER: $f anders"; exit 1; }
 done
 # 6) Wartung aus – alle können wieder spielen

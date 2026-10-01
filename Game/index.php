@@ -51,6 +51,14 @@ function h($s) { return htmlspecialchars($s, ENT_QUOTES, 'UTF-8'); }
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Open Water</title>
+<link rel="manifest" href="app/manifest.webmanifest">
+<link rel="icon" href="app/logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="app/apple-touch-icon.png">
+<meta name="theme-color" content="#0b2a4a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Open Water">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>
   :root { --meer1: #0b2a4a; --meer2: #12507e; --karte: #f6efe0; --text: #2b2118; --gold: #c9a227; --gold2: #a8831a; --rot: #a33a2a; --rand: #d8c9a6; }
   * { box-sizing: border-box; }
@@ -106,6 +114,7 @@ function h($s) { return htmlspecialchars($s, ENT_QUOTES, 'UTF-8'); }
     <?php endif; ?>
     <button type="submit"><?= $modus === 'neu' ? 'Konto anlegen' : 'Anmelden' ?></button>
   </form>
+  <p class="hinweis"><a href="app/">📱 Open Water als App auf den Startbildschirm</a></p>
   <p class="hinweis">Dein Spielstand wird auf dem Server gespeichert. Im Browser bleibt nur ein Login-Cookie (30 Tage).</p>
 <?php endif; ?>
 </main>
