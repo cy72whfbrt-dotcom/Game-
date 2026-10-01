@@ -361,7 +361,7 @@ if (typeof THREE !== 'undefined') try {
 })();
 
 
-// ===== Open Water Baukunst · stage: renderer, ink outlines, light and time of day, island diorama, states, map thumbnails =====
+// ===== Open Water Baukunst · stage: ink outlines, capital plinth, map thumbnails (the game renders every model once into a sprite) =====
 (function () {
   const T = THREE, K = OW.K, M = OW.M;
   const S = OW.stage = {};
@@ -414,123 +414,18 @@ if (typeof THREE !== 'undefined') try {
     const u = this.quad.material.uniforms; u.tC.value = this.rtC.texture; u.tN.value = this.rtN.texture; u.uInk.value = ink;
     R.setRenderTarget(null); R.render(this.qScene, this.qCam);
   };
-  S.Pipeline = Pipeline;
 
-  // ---------- times of day ----------
+  // ---------- daylight ----------
   const SKY = {
     tag:   { top: '#8fb9d6', mid: '#cfe0e6', bot: '#e9e4d6', sun: 0xfff0d8, sunI: 2.9, sunPos: [9, 15, 7],  hemiS: 0xd6e6ff, hemiG: 0x75654f, hemiI: .75, fog: 0xd9e2e2, night: 0, exp: 1.0 },
-    abend: { top: '#3d3f6e', mid: '#c77a5a', bot: '#f0b27a', sun: 0xffa35c, sunI: 2.4, sunPos: [12, 4.5, -5], hemiS: 0xf0a078, hemiG: 0x3b2c3a, hemiI: .5, fog: 0xc58a72, night: .45, exp: 1.05 },
-    nacht: { top: '#070b18', mid: '#14203a', bot: '#26324a', sun: 0x9db4ff, sunI: .8, sunPos: [-7, 13, 5], hemiS: 0x3a5282, hemiG: 0x0b0d12, hemiI: .55, fog: 0x141c2e, night: 1, exp: 1.1 }
   };
-  // environment for reflections (metal, gold): an equirect gradient per time of day, prefiltered
+  // environment for reflections (metal, gold): an equirect gradient, prefiltered
   function envTex(p, renderer) {
     const c = document.createElement('canvas'); c.width = 256; c.height = 128; const g = c.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 128);
     gr.addColorStop(0, p.top); gr.addColorStop(.42, p.mid); gr.addColorStop(.5, p.bot); gr.addColorStop(.53, '#6f6250'); gr.addColorStop(1, '#2c2620'); g.fillStyle = gr; g.fillRect(0, 0, 256, 128);
     const sx = 40, sy = p.night > .9 ? 26 : p.night > .3 ? 58 : 22, sg = g.createRadialGradient(sx, sy, 0, sx, sy, 26); sg.addColorStop(0, 'rgba(255,248,230,1)'); sg.addColorStop(1, 'rgba(255,240,210,0)'); g.fillStyle = sg; g.fillRect(0, 0, 256, 128);
     const t = new T.CanvasTexture(c); t.mapping = T.EquirectangularReflectionMapping; t.colorSpace = T.SRGBColorSpace;
     const pm = new T.PMREMGenerator(renderer); const rt = pm.fromEquirectangular(t); pm.dispose(); t.dispose(); return rt.texture;
-  }
-  function skyTex(p) { const c = document.createElement('canvas'); c.width = 4; c.height = 256; const g = c.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 256);
-    gr.addColorStop(0, p.top); gr.addColorStop(.55, p.mid); gr.addColorStop(1, p.bot); g.fillStyle = gr; g.fillRect(0, 0, 4, 256); const t = new T.CanvasTexture(c); t.colorSpace = T.SRGBColorSpace; return t; }
-
-  // ---------- main stage ----------
-  let R, scene, cam, pipe, world, modelRoot, overlayRoot, sun, hemi, canvas, W = 1, H = 1, DPR = 1;
-  const env = { night: 0, dt: 0, t: 0 };
-  let sky = 'tag', skyFrom = SKY.tag, skyTo = SKY.tag, skyK = 1, bgTex = {}, envMaps = {};
-  const orbit = { az: .75, el: .5, dist: 30, target: new T.Vector3(0, 3, 0), auto: true, idle: 0, iso: false, distGoal: 30 };
-  const stageAnim = [];                       // ticks that belong to the stage (island water, overlays)
-  let current = null, cfg = null, ink = 1;
-
-  S.init = function (cv, o = {}) {
-    canvas = cv;
-    R = new T.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance', preserveDrawingBuffer: !!o.preserve });
-    R.shadowMap.enabled = true; R.shadowMap.type = T.PCFSoftShadowMap; R.toneMapping = T.ACESFilmicToneMapping; R.outputColorSpace = T.SRGBColorSpace; R.autoClear = true;
-    scene = new T.Scene();
-    for (const k in SKY) { bgTex[k] = skyTex(SKY[k]); envMaps[k] = envTex(SKY[k], R); }
-    scene.background = bgTex.tag; scene.environment = envMaps.tag; scene.fog = new T.Fog(SKY.tag.fog, 60, 160);
-    cam = new T.PerspectiveCamera(32, 1, .5, 400);
-    hemi = new T.HemisphereLight(SKY.tag.hemiS, SKY.tag.hemiG, SKY.tag.hemiI); scene.add(hemi);
-    sun = new T.DirectionalLight(SKY.tag.sun, SKY.tag.sunI); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -.0004; sun.shadow.normalBias = .03;
-    const sc = sun.shadow.camera; sc.left = sc.bottom = -20; sc.right = sc.top = 20; sc.near = 1; sc.far = 90; scene.add(sun); scene.add(sun.target);
-    world = new T.Group(); scene.add(world); modelRoot = new T.Group(); overlayRoot = new T.Group(); scene.add(modelRoot); scene.add(overlayRoot);
-    pipe = new Pipeline(R, { samples: o.samples });
-    bindOrbit(cv);
-    S.resize(); window.addEventListener('resize', S.resize);
-    let last = performance.now();
-    const loop = (now) => { env.dt = Math.min(.05, (now - last) / 1000); last = now; env.t += env.dt; S.frame(); if (!S.paused) requestAnimationFrame(loop); };
-    if (!o.noLoop) requestAnimationFrame(loop);
-    return S;
-  };
-  S.resize = function () {
-    const r = canvas.getBoundingClientRect(); W = Math.max(1, r.width); H = Math.max(1, r.height); DPR = Math.min(window.devicePixelRatio || 1, 2);
-    R.setPixelRatio(DPR); R.setSize(W, H, false); pipe.setSize(W, H, DPR); cam.aspect = W / H; cam.updateProjectionMatrix();
-  };
-
-  // ---------- camera: drag to turn, pinch or wheel to zoom, slow turn when idle ----------
-  function bindOrbit(el) {
-    const pts = new Map(); let pinch0 = 0, dist0 = 0;
-    el.addEventListener('pointerdown', e => { el.setPointerCapture(e.pointerId); pts.set(e.pointerId, { x: e.clientX, y: e.clientY }); orbit.auto = false; orbit.idle = 0;
-      if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch0 = Math.hypot(a.x - b.x, a.y - b.y); dist0 = orbit.distGoal; } });
-    el.addEventListener('pointermove', e => { const p = pts.get(e.pointerId); if (!p) return; orbit.idle = 0;
-      if (pts.size === 1) { orbit.az -= (e.clientX - p.x) * .008; orbit.el = Math.max(.08, Math.min(1.35, orbit.el + (e.clientY - p.y) * .006)); orbit.iso = false; }
-      p.x = e.clientX; p.y = e.clientY;
-      if (pts.size === 2) { const [a, b] = [...pts.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y); if (pinch0 > 0) orbit.distGoal = clampDist(dist0 * pinch0 / d); } });
-    const up = e => { pts.delete(e.pointerId); if (pts.size < 2) pinch0 = 0; };
-    el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
-    el.addEventListener('wheel', e => { e.preventDefault(); orbit.distGoal = clampDist(orbit.distGoal * Math.exp(e.deltaY * .0012)); orbit.idle = 0; }, { passive: false });
-  }
-  const clampDist = d => Math.max(orbit.minD || 10, Math.min(orbit.maxD || 80, d));
-  S.isoView = function () { orbit.az = Math.PI / 4; orbit.el = Math.atan(.62); orbit.auto = false; orbit.iso = true; };
-  S.autoTurn = function (on) { orbit.auto = on; orbit.idle = 0; };
-
-  // ---------- time of day ----------
-  S.setTime = function (k, instant) { sky = k; skyFrom = currentSky(); skyTo = SKY[k]; skyK = instant ? 1 : 0; scene.background = bgTex[k]; scene.environment = envMaps[k]; };
-  let skyNow = Object.assign({}, SKY.tag);
-  function currentSky() { return Object.assign({}, skyNow); }
-  function lerpSky(dt) {
-    skyK = Math.min(1, skyK + dt * 1.6); const k = skyK * skyK * (3 - 2 * skyK), a = skyFrom, b = skyTo, c = new T.Color();
-    skyNow = { sun: c.set(a.sun).lerp(new T.Color(b.sun), k).getHex(), sunI: a.sunI + (b.sunI - a.sunI) * k, sunPos: a.sunPos.map((v, i) => v + (b.sunPos[i] - v) * k),
-      hemiS: c.set(a.hemiS).lerp(new T.Color(b.hemiS), k).getHex(), hemiG: c.set(a.hemiG).lerp(new T.Color(b.hemiG), k).getHex(), hemiI: a.hemiI + (b.hemiI - a.hemiI) * k,
-      fog: c.set(a.fog).lerp(new T.Color(b.fog), k).getHex(), night: a.night + (b.night - a.night) * k, exp: a.exp + (b.exp - a.exp) * k };
-    sun.color.setHex(skyNow.sun); sun.intensity = skyNow.sunI; hemi.color.setHex(skyNow.hemiS); hemi.groundColor.setHex(skyNow.hemiG); hemi.intensity = skyNow.hemiI;
-    scene.fog.color.setHex(skyNow.fog); env.night = skyNow.night; R.toneMappingExposure = skyNow.exp;
-  }
-
-  // ---------- island diorama (the ground every base stands on) ----------
-  function islandShape(R0, seed, clip) {
-    const r = K.rng(seed), pts = [], n = 72, wob = [];
-    for (let i = 0; i < 6; i++) wob.push([r() * 6.28, .35 + r() * .5, 2 + (i % 3)]);
-    for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2; let rr = R0; for (const [ph, amp, f] of wob) rr += Math.sin(a * f + ph) * amp; pts.push(new T.Vector2(Math.cos(a) * rr, Math.sin(a) * rr)); }
-    if (!clip) return [pts];
-    // a river along x: two banks, |y| > clip (shape coords: y = world -z)
-    const banks = [];
-    for (const side of [1, -1]) { const b = pts.filter(p => p.y * side > clip); b.sort((p, q) => Math.atan2(p.y, p.x) - Math.atan2(q.y, q.x));
-      const bank = side > 0 ? b : b.slice().sort((p, q) => Math.atan2(-p.y, -p.x) - Math.atan2(-q.y, -q.x));
-      const first = bank[0], last = bank[bank.length - 1], edge = [];
-      for (let x = last.x; side > 0 ? x <= first.x + .01 : x >= first.x - .01; x += side > 0 ? .8 : -.8) edge.push(new T.Vector2(x, side * (clip + Math.sin(x * .9 + side) * .25)));
-      banks.push(bank.concat(edge)); }
-    return banks;
-  }
-  function buildIsland(o) {
-    while (world.children.length) world.remove(world.children[0]);
-    stageAnim.length = 0;
-    const R0 = o.islandR || 13, g = new T.Group(); world.add(g);
-    const shapes = islandShape(R0, 11, o.river ? o.river : 0);
-    for (const pts of shapes) {
-      const sh = new T.Shape(pts);
-      const top = new T.ShapeGeometry(sh, 1); top.rotateX(-Math.PI / 2); K.worldUV(top, .12);
-      const topM = new T.Mesh(top, M.grass()); topM.receiveShadow = true; g.add(topM);
-      const side = new T.ExtrudeGeometry(sh, { depth: 3.2, bevelEnabled: true, bevelThickness: .5, bevelSize: .6, bevelSegments: 1, steps: 1 }); side.rotateX(-Math.PI / 2); side.translate(0, -3.72, 0); K.worldUV(side, .18);
-      const sideM = new T.Mesh(side, M.earth()); sideM.receiveShadow = true; sideM.castShadow = true; g.add(sideM);
-    }
-    // sea: a big calm disc, fading into the fog
-    const sea = K.water(g, { r: 140, y: -.9 }); sea.renderOrder = -1;
-    // shore dressing: rocks, bushes, a few trees outside the plot
-    const r = K.rng(5), keep = o.plotR || 8.2;
-    for (let i = 0; i < 26; i++) { const a = r() * 6.28, d = keep + 1 + r() * (R0 - keep - 1.6); const x = Math.cos(a) * d, z = Math.sin(a) * d;
-      if (o.river && Math.abs(z) < o.river + 1.2) continue; if (o.clear && o.clear(x, z)) continue;
-      const k = r(); if (k < .35) K.rock(g, x, 0, z, .35 + r() * .5); else if (k < .75) K.bush(g, x, 0, z, .35 + r() * .35); else K.tree(g, x, 0, z, .8 + r() * .5); }
-    for (let i = 0; i < 10; i++) { const a = r() * 6.28, d = R0 + .3 + r() * 1.2; K.rock(g, Math.cos(a) * d, -.8, Math.sin(a) * d, .5 + r() * .7); }
   }
 
   // ---------- capital plinth and water castle ----------
@@ -553,97 +448,6 @@ if (typeof THREE !== 'undefined') try {
     g.userData.h = h; return g;
   }
 
-  // ---------- a jetty with a boat that grows with the tier (the Open Water signature) ----------
-  function buildJetty(p, tier, owner, R0) {
-    const g = new T.Group(); g.position.set(R0 - .8, 0, 2.5); g.rotation.y = 0; p.add(g);
-    const len = 4.2; K.box(g, len, .15, 1.3, M.wood(), len / 2, .05, 0); for (let i = 0; i <= 3; i++) for (const s of [-1, 1]) K.cyl(g, .1, .1, 1.6, M.darkWood(), i * len / 3 + .2, -1.4, s * .6, { seg: 6 });
-    K.lantern(g, len - .2, .2, .55, { h: 1.1 });
-    const b = new T.Group(); b.position.set(len * .6, -.75, -1.9); g.add(b);
-    const sail = M.cloth(owner === 'neutral' ? 'neutral' : owner);
-    const hull = (L, Wd, Hh) => { const s = new T.Shape(); s.moveTo(-L / 2, Hh); s.quadraticCurveTo(-L / 2 + .2, 0, -L / 2 + L * .25, 0); s.lineTo(L / 2 - L * .2, 0); s.quadraticCurveTo(L / 2, 0, L / 2 + .3, Hh); s.closePath();
-      const geo = new T.ExtrudeGeometry(s, { depth: Wd, bevelEnabled: true, bevelThickness: .08, bevelSize: .06, bevelSegments: 1 }); geo.translate(0, 0, -Wd / 2); K.worldUV(geo, .4); return K.put(b, geo, M.wood(), 0, 0, 0); };
-    if (tier === 0) { for (let i = 0; i < 4; i++) K.cyl(b, .16, .16, 2.4, M.rawWood(), -1.2, .1, -.5 + i * .33, { rz: Math.PI / 2, seg: 7 }); }
-    else if (tier === 1) { hull(2.6, .9, .45); K.box(b, .08, .06, 1.4, M.darkWood(), .3, .45, 0, { ry: .5 }); }
-    else { const L = [0, 0, 3.4, 4.4, 5.6][tier], Wd = [0, 0, 1.2, 1.6, 1.9][tier]; hull(L, Wd, .75 + tier * .1);
-      K.box(b, L * .7, .06, Wd * .9, M.darkWood(), .1, .75 + tier * .1, 0);
-      const masts = tier === 4 ? [-.9, .9] : [0];
-      for (const mx of masts) { const mh = 2.6 + tier * .5; K.cyl(b, .06, .08, mh, M.darkWood(), mx, .8, 0, { seg: 6 });
-        const sg = new T.PlaneGeometry(Wd * 1.4, mh * .55, 6, 4); const pos = sg.attributes.position; for (let i = 0; i < pos.count; i++) pos.setZ(i, (1 - Math.pow(pos.getX(i) / (Wd * .7), 2)) * .25); sg.computeVertexNormals();
-        const sm = new T.Mesh(sg, sail); sm.position.set(mx + .12, .8 + mh * .55, 0); sm.rotation.y = Math.PI / 2; sm.castShadow = true; b.add(sm);
-        K.flag(b, { x: mx, y: .8 + mh, z: 0, poleH: .01, w: .5, h: .22, owner, pennant: true, dir: Math.PI }); }
-      if (tier === 4) for (let i = 0; i < 6; i++) K.box(b, .06, .06, 1.4, M.darkWood(), -1.8 + i * .7, .5, Wd / 2 + .3, { rx: .5 }); }
-    K.tick((t) => { b.position.y = -.75 + Math.sin(t * 1.3) * .06; b.rotation.z = Math.sin(t * 1.1) * .03; b.rotation.x = Math.sin(t * .9) * .02; });
-  }
-
-  // ---------- states drawn on the base ----------
-  function shieldDome(p, r) {
-    const mat = new T.ShaderMaterial({ transparent: true, depthWrite: false, side: T.DoubleSide, blending: T.AdditiveBlending,
-      uniforms: { uTime: OW.waterUniforms.uTime },
-      vertexShader: `varying vec3 vN; varying vec3 vV; varying vec3 vP; void main(){ vec4 mv = modelViewMatrix * vec4(position,1.); vN = normalize(normalMatrix*normal); vV = normalize(-mv.xyz); vP = position; gl_Position = projectionMatrix*mv; }`,
-      fragmentShader: `uniform float uTime; varying vec3 vN; varying vec3 vV; varying vec3 vP;
-        void main(){ float f = pow(1. - abs(dot(vN, vV)), 2.6); float band = smoothstep(.1, 0., abs(fract(vP.y * .12 - uTime * .25) - .5) - .38);
-          float hex = step(.92, max(abs(sin(vP.x * 2.2 + vP.y)), abs(sin(vP.z * 2.2 - vP.y))));
-          vec3 c = vec3(.95,.93,.86); float a = f * .75 + band * .10 + hex * .05 + .015; gl_FragColor = vec4(c * a, a);
-          #include <colorspace_fragment>
-        }` });
-    const m = new T.Mesh(new T.SphereGeometry(r, 48, 24, 0, Math.PI * 2, 0, Math.PI / 2), mat); m.userData.noOutline = true; p.add(m);
-    const ring = new T.Mesh(new T.TorusGeometry(r, .06, 6, 64), M.glow(0xf2ecd8, 1.2)); ring.rotation.x = Math.PI / 2; ring.position.y = .05; p.add(ring);
-    stageAnim.push((t) => { m.scale.setScalar(1 + Math.sin(t * 2) * .004); });
-  }
-  function battleSmoke(p, pts) {
-    for (const [x, y, z] of pts) { K.smoke(p, x, y, z, { color: 0x6d6a66, size: .9, rise: 7, life: 5, alpha: .7, spread: 1.4, drift: 1.8, n: 16 }); K.sparkles(p, x, y, z, { color: 0xffb35a, n: 8, r: .5, h: 2, size: .12 }); }
-    const fl = new T.PointLight(0xffc27a, 0, 30, 1.5); fl.position.set(0, 6, 0); p.add(fl); let k = 0;
-    stageAnim.push((t, e) => { k += e.dt; fl.intensity = k < 1.2 ? 260 * Math.exp(-k * 4) : 0; });
-  }
-  function scaffold(p, x, z, w, h) {
-    const g = new T.Group(); g.position.set(x, 0, z); p.add(g); const mat = M.wood();
-    for (const sx of [-w / 2, 0, w / 2]) for (const sz of [0, .9]) K.cyl(g, .06, .06, h, mat, sx, 0, sz, { seg: 5 });
-    for (let y = 1.4; y < h; y += 1.6) { K.box(g, w + .3, .08, 1.1, mat, 0, y, .45); K.box(g, w, .05, .05, mat, 0, y + .7, .95); }
-    K.box(g, w * 1.1, .06, .06, mat, 0, h * .5, 0, { rz: Math.atan2(h, w) * .6 });
-    K.crate(g, w / 2 + .6, 0, .3); K.crate(g, w / 2 + .6, .55, .3, .4, .4); K.barrel(g, -w / 2 - .5, 0, .6);
-    const sp = K.sparkles(g, 0, h * .6, .8, { color: 0xffd08a, n: 10, r: .3, h: .8, size: .1 });
-    stageAnim.push((t) => { sp.visible = (t % 1.1) < .35; });
-  }
-  function confetti(p, owner, top) {
-    const col = OW.COL[owner === 'capital' ? 'player' : owner] || 0xffffff, parts = [], g = new T.Group(); p.add(g);
-    for (let i = 0; i < 90; i++) { const m = new T.Mesh(new T.PlaneGeometry(.18, .1), new T.MeshBasicMaterial({ color: i % 3 ? col : 0xe7b84f, side: T.DoubleSide, transparent: true }));
-      m.userData.noOutline = true; m.userData.v = new T.Vector3((Math.random() - .5) * 7, 6 + Math.random() * 6, (Math.random() - .5) * 7); m.position.set(0, top, 0); g.add(m); parts.push(m); }
-    let k = 0; stageAnim.push((t, e) => { k += e.dt; for (const m of parts) { m.userData.v.y -= 9.8 * e.dt * .6; m.position.addScaledVector(m.userData.v, e.dt); m.rotation.x += e.dt * 7; m.rotation.y += e.dt * 5; if (m.position.y < .1) m.position.y = .1; m.material.opacity = Math.max(0, 1 - Math.max(0, k - 2.5)); } if (k > 4) g.visible = false; });
-  }
-  // title / skin circle on the ground: the ONLY aura a base can have (no more level effects)
-  const RING_COL = { gold: 0xffd46e, rot: 0xff4a3a, skin: 0x5fe0c0 };
-  let ringTex = null;
-  function runeRingTex() {
-    if (ringTex) return ringTex;
-    const S2 = 512, c = document.createElement('canvas'); c.width = c.height = S2; const g = c.getContext('2d'), m = S2 / 2;
-    const gr = g.createRadialGradient(m, m, m * .5, m, m, m * .98); gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(.75, 'rgba(255,255,255,.16)'); gr.addColorStop(.9, 'rgba(255,255,255,.3)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
-    g.fillStyle = gr; g.fillRect(0, 0, S2, S2);
-    g.strokeStyle = '#fff'; g.lineWidth = 7; g.beginPath(); g.arc(m, m, m * .9, 0, 7); g.stroke();
-    g.lineWidth = 3; g.beginPath(); g.arc(m, m, m * .96, 0, 7); g.stroke();
-    g.lineWidth = 3; g.setLineDash([22, 14]); g.beginPath(); g.arc(m, m, m * .8, 0, 7); g.stroke(); g.setLineDash([]);
-    for (let i = 0; i < 16; i++) { const a = i / 16 * Math.PI * 2; g.save(); g.translate(m + Math.cos(a) * m * .85, m + Math.sin(a) * m * .85); g.rotate(a);
-      g.fillStyle = '#fff'; g.beginPath(); if (i % 2) { g.moveTo(0, -12); g.lineTo(9, 0); g.lineTo(0, 12); g.lineTo(-9, 0); } else { g.moveTo(-5, -9); g.lineTo(5, -9); g.lineTo(5, 9); g.lineTo(-5, 9); } g.closePath(); g.fill(); g.restore(); }
-    const t = new T.CanvasTexture(c); t.colorSpace = T.SRGBColorSpace; return ringTex = t;
-  }
-  function titleRing(p, rad, kind) {
-    const col = RING_COL[kind] || RING_COL.gold, g = new T.Group(); p.add(g);
-    const mk = (r, op, spin) => { const m = new T.Mesh(new T.PlaneGeometry(r * 2, r * 2), new T.MeshBasicMaterial({ map: runeRingTex(), color: col, transparent: true, opacity: op, depthWrite: false, blending: T.AdditiveBlending, side: T.DoubleSide }));
-      m.rotation.x = -Math.PI / 2; m.position.y = .22; m.userData.noOutline = true; m.userData.spin = spin; g.add(m); return m; };
-    const outer = mk(rad * 1.18, .95, .18), inner = mk(rad * .98, .45, -.3);
-    const glow = new T.Mesh(new T.CircleGeometry(rad * 1.25, 48), new T.MeshBasicMaterial({ map: OW.TEX.soft(), color: col, transparent: true, opacity: .16, depthWrite: false, blending: T.AdditiveBlending }));
-    glow.rotation.x = -Math.PI / 2; glow.position.y = .18; glow.userData.noOutline = true; g.add(glow);
-    const motes = K.sparkles(g, 0, .2, 0, { color: col, n: 22, r: rad * 1.1, h: kind === 'rot' ? 4 : 6, size: .22, alpha: .8 });
-    stageAnim.push((t) => { outer.rotation.z = t * outer.userData.spin; inner.rotation.z = t * inner.userData.spin; const k = .85 + Math.sin(t * 2.2) * .15; outer.material.opacity = .95 * k; glow.material.opacity = .16 * k; });
-    return g;
-  }
-  function tierBurst(p, rad) {
-    const ring = new T.Mesh(new T.RingGeometry(.8, 1, 48), new T.MeshBasicMaterial({ color: 0xf3e3bd, transparent: true, side: T.DoubleSide, depthWrite: false }));
-    ring.rotation.x = -Math.PI / 2; ring.position.y = .15; ring.userData.noOutline = true; p.add(ring);
-    K.smoke(p, 0, .1, 0, { color: 0xd9c9a8, size: 1.5, rise: 1.2, life: 1.4, alpha: .6, spread: rad * 1.6, drift: 0, n: 18 });
-    const sp = K.sparkles(p, 0, 0, 0, { color: 0xffe6a0, n: 30, r: rad * .7, h: 9, size: .3 });
-    let k = 0; stageAnim.push((t, e) => { k += e.dt; const s = 1 + k * rad * 1.4; ring.scale.set(s, s, s); ring.material.opacity = Math.max(0, 1 - k / 1.1); if (k > 2.4) { sp.visible = false; } });
-  }
-
   // ---------- building a model into the stage ----------
   function ownerKeys(c) { return { roofKey: c.owner === 'player' && c.capital ? 'capital' : c.owner, cloth: c.owner }; }
   function buildModel(c, into) {
@@ -658,60 +462,6 @@ if (typeof THREE !== 'undefined') try {
     const a = OW.anim, l = OW.nightLights; OW.anim = []; OW.nightLights = [];
     try { return fn(); } finally { const res = { anim: OW.anim, lights: OW.nightLights }; OW.anim = a; OW.nightLights = l; S._lastScope = res; }
   };
-  S.show = function (c, o = {}) {
-    const prevTier = cfg && cfg.model === c.model ? cfg.tier : null;
-    cfg = Object.assign({}, c);
-    const def = OW.models[c.model]; const meta = (def.meta && def.meta(c)) || {};
-    cfg.tier = meta.tier;
-    // clear
-    for (const r of [modelRoot, overlayRoot]) { while (r.children.length) { const ch = r.children[0]; r.remove(ch); } }
-    OW.anim = []; OW.nightLights = [];
-    const islandKey = JSON.stringify([meta.islandR, meta.river, meta.plotR, c.capital, c.capStyle]);
-    if (S._island !== islandKey) { buildIsland(meta); S._island = islandKey; }
-    else stageAnim.length = 0;
-    let lift = 0; const holder = new T.Group(); modelRoot.add(holder);
-    if (c.capital && meta.canCapital !== false) { const pl = buildPlinth(holder, (meta.plotR || 7) * 1.12, c.capStyle, c.owner); lift = pl.userData.h; }
-    const inner = new T.Group(); inner.position.y = lift; holder.add(inner);
-    const { group } = buildModel(c, inner);
-    if (c.capital && meta.canCapital !== false) inner.scale.setScalar(1.12);
-    if (c.shore && meta.shore !== false) buildJetty(modelRoot, meta.tier || 0, c.owner, meta.islandR || 13);
-    const top = (group.userData.top || 10) * inner.scale.y + lift, rad = (group.userData.radius || 6) * inner.scale.x;
-    // states
-    if (c.state === 'schild') shieldDome(overlayRoot, Math.max(rad * 1.12, top * .75) + .6);
-    const fireMode = c.state === 'brand' || c.state === 'qualm' ? c.state : c.state === 'kampf' && OW.fire ? 'brand' : null;
-    if (fireMode && OW.fire) OW.fire.build(overlayRoot, group, { top, rad, lift }, fireMode);
-    else if (c.state === 'kampf') battleSmoke(overlayRoot, (group.userData.smoke || [[0, top * .75, 0], [rad * .5, top * .5, -rad * .4]]).map(p => [p[0], p[1] + lift, p[2]]));
-    if (c.state === 'ausbau') scaffold(overlayRoot, rad * .55, rad * .55, 2.6, Math.min(top * .7, 9));
-    const ringKey = c.title || (c.capital && c.skin && OW.SKINS && OW.SKINS[c.skin] ? OW.SKINS[c.skin].ring : '');
-    if (ringKey) { if (!(OW.rings && OW.rings.build(overlayRoot, rad, ringKey))) titleRing(overlayRoot, rad, ringKey); }
-    if (o.conquer) confetti(overlayRoot, c.capital && c.owner === 'player' ? 'capital' : c.owner, top);
-    if (prevTier != null && meta.tier != null && prevTier !== meta.tier) tierBurst(overlayRoot, rad);
-    // camera frame
-    orbit.target.set(0, top * .4, 0);
-    const fit = Math.max(top * 1.5, rad * 2.5, 14); orbit.minD = fit * .5; orbit.maxD = fit * 3;
-    if (!o.keepCam) { orbit.distGoal = orbit.dist = fit * 1.75; if (meta.camAz != null) orbit.az = meta.camAz; }
-    const sc = sun.shadow.camera; const ext = Math.max(16, (meta.islandR || 13) + 2); sc.left = sc.bottom = -ext; sc.right = sc.top = ext; sc.updateProjectionMatrix();
-    S.info = { top, rad, meta };
-    return S.info;
-  };
-  S.setInk = function (v) { ink = v; };
-
-  S.frame = function (fo) {
-    if (!R) return;
-    lerpSky(env.dt);
-    OW.waterUniforms.uTime.value = env.t; OW.waterUniforms.uNight.value = env.night;
-    M.window().emissiveIntensity = .12 + env.night * 2.6;
-    for (const f of OW.anim) f(env.t, env); for (const f of stageAnim) f(env.t, env);
-    // camera
-    orbit.idle += env.dt; if (!orbit.auto && !orbit.iso && orbit.idle > 8) orbit.auto = true;
-    if (orbit.auto) orbit.az += env.dt * .12;
-    orbit.dist += (orbit.distGoal - orbit.dist) * Math.min(1, env.dt * 6);
-    const d = orbit.dist, ce = Math.cos(orbit.el);
-    cam.position.set(orbit.target.x + Math.sin(orbit.az) * ce * d, orbit.target.y + Math.sin(orbit.el) * d, orbit.target.z + Math.cos(orbit.az) * ce * d); cam.lookAt(orbit.target);
-    const sp = skyNow.sunPos; sun.position.set(sp[0] * 2.2, sp[1] * 2.2, sp[2] * 2.2); sun.target.position.set(0, 0, 0);
-    if (!(fo && fo.noRender)) pipe.render(scene, cam, ink);
-  };
-
   // ---------- map thumbnails: the same model, tiny, from the game's angle, on transparent ground ----------
   let TR = null, tScene, tCam, tPipe, tSun, tHemi;
   S.thumb = function (c, px, out) {
@@ -730,8 +480,7 @@ if (typeof THREE !== 'undefined') try {
       if (c.capital) { const pl = buildPlinth(holder, (meta.plotR || 7) * 1.12, c.capStyle, c.owner); lift = pl.userData.h; }
       const inner = new T.Group(); inner.position.y = lift; holder.add(inner); const { group } = buildModel(c, inner); if (c.capital) inner.scale.setScalar(1.12);
       info = { top: (group.userData.top || 10) + lift, rad: (group.userData.radius || 6) * (c.capital ? 1.12 : 1) + (c.capital ? 1 : 0), lift };
-      if ((c.state === 'brand' || c.state === 'qualm' || c.state === 'russ') && OW.fire) OW.fire.build(g, group, info, c.state);
-      const rk = c.title || (c.capital && c.skin && OW.SKINS && OW.SKINS[c.skin] ? OW.SKINS[c.skin].ring : ''); if (rk && OW.rings && !c.noRing) OW.rings.build(g, info.rad, rk); });
+      if ((c.state === 'brand' || c.state === 'qualm' || c.state === 'russ') && OW.fire) OW.fire.build(g, group, info, c.state); });
     for (const f of S._lastScope.anim) f(1.3, { night: 0, dt: 0, t: 1.3 });
     const v = c.frame || 13; tCam.left = -v; tCam.right = v; tCam.top = v * 1.08; tCam.bottom = -v * .92; tCam.updateProjectionMatrix();
     const az = Math.PI / 4, el = Math.atan(.62), D = 120; tCam.position.set(Math.sin(az) * Math.cos(el) * D, Math.sin(el) * D + (c.lookY || 4), Math.cos(az) * Math.cos(el) * D); tCam.lookAt(0, c.lookY || 4, 0);
@@ -740,7 +489,6 @@ if (typeof THREE !== 'undefined') try {
     g.traverse(o => { if (o.geometry) o.geometry.dispose(); }); tScene.remove(g);
     return info;
   };
-  S.env = env; S.orbit = orbit; S.buildModel = buildModel; S.buildPlinth = buildPlinth; S.titleRing = titleRing; S.envTex = envTex; S.SKY = SKY;
 })();
 
 
@@ -751,8 +499,7 @@ if (typeof THREE !== 'undefined') try {
   // Ten looks, one per ten levels (1-9, 10-19 … 90-100). Inside a tier, level x5-x9 adds a small step (step 1); level 100 is step 2.
   const tierOf = (lv) => Math.min(9, Math.floor(lv / 10));
   const stepOf = (lv) => lv >= 100 ? 2 : (lv % 10 >= 5 ? 1 : 0);
-  const TIER_NAMES = ['Lager', 'Rundturm', 'Bergfried', 'Turmhof', 'Burg', 'Festung', 'Hafenfestung', 'Palastburg', 'Zitadelle', 'Himmelsfeste'];
-  OW.tierOf = tierOf; OW.stepOf = stepOf; OW.TIER_NAMES = TIER_NAMES;
+  OW.tierOf = tierOf; OW.stepOf = stepOf;
   OW.TIERS = OW.TIERS || [];                 // [i] = { build(ctx) → Group, plotR, islandR }
   OW.addTier = (i, def) => { OW.TIERS[i] = def; };
   OW.basisHelpers = { plate: (...a) => plate(...a), squarePlate: (...a) => squarePlate(...a) };
@@ -1208,7 +955,7 @@ if (typeof THREE !== 'undefined') try {
       const th = new T.Group(); th.position.set(0, y, rc + 1.9); g.add(th);
       K.box(th, 3.2, .3, 2.2, M.cap()); K.box(th, 2.4, .3, 1.6, M.marble(), 0, .3, -.1); K.box(th, 1.2, .5, .9, M.gold(), 0, .6, -.2); K.box(th, 1.2, 1.9, .22, M.gold(), 0, .6, -.6);
       K.cone(th, .6, .5, M.gold(), 0, 2.5, -.6, { seg: 4 }); for (const s of [-1, 1]) K.box(th, .2, .5, .9, M.gold(), s * .6, 1.0, -.2);
-      const cush = K.box(th, 1.0, .12, .7, held ? ctx.cloth : M.tint(0x7a2a2a), 0, 1.1, -.15);
+      K.box(th, 1.0, .12, .7, held ? ctx.cloth : M.tint(0x7a2a2a), 0, 1.1, -.15);
       // held: banners down all four stairways · free: guardian statues on the stairs
       if (held) { for (let s = 0; s < 4; s++) { const a = s * Math.PI / 2; for (const side of [-1, 1]) K.banner(g, { x: Math.sin(a) * 6.1 + Math.cos(a) * side * 2.6, y: 4.15, z: Math.cos(a) * 6.1 - Math.sin(a) * side * 2.6, ry: a, w: 1.1, h: 3.8, mat: ctx.cloth, emblem: M.gold() }); } }
       else for (let s = 0; s < 4; s++) { const a = s * Math.PI / 2 + Math.PI / 4; statue(g, Math.sin(a) * 9.3, 2.94, Math.cos(a) * 9.3, a, 1.05, M.bronze(), { shield: M.gold() }); }
@@ -1399,10 +1146,10 @@ if (typeof THREE !== 'undefined') try {
   const T = THREE, M = OW.M;
   // the game's four skins (SKIN_DEFS in index.html): stone and roof colours for the player's capital
   const SKINS = OW.SKINS = {
-    winter:   { name: 'Winterburg',    stone: 0xdfe6ee, roof: 0xe9f1fa, trim: 0x9fb4cc, ring: 'winter' },
-    wald:     { name: 'Waldfestung',   stone: 0xa4aa86, roof: 0x3f7a3a, trim: 0x63694b, ring: 'wald' },
-    schatten: { name: 'Schattenfeste', stone: 0x6a6576, roof: 0x5b2c6f, trim: 0x2e2b36, ring: 'schatten' },
-    gold:     { name: 'Goldene Feste', stone: 0xe8d4a4, roof: 0xe2b54a, trim: 0x8e6d35, ring: 'goldfeste' }
+    winter:   { name: 'Winterburg',    stone: 0xdfe6ee, roof: 0xe9f1fa, trim: 0x9fb4cc },
+    wald:     { name: 'Waldfestung',   stone: 0xa4aa86, roof: 0x3f7a3a, trim: 0x63694b },
+    schatten: { name: 'Schattenfeste', stone: 0x6a6576, roof: 0x5b2c6f, trim: 0x2e2b36 },
+    gold:     { name: 'Goldene Feste', stone: 0xe8d4a4, roof: 0xe2b54a, trim: 0x8e6d35 }
   };
   const STONE_KEYS = ['field', 'sand', 'slate', 'cap', 'marble', 'darkStone'];
 
@@ -1427,7 +1174,6 @@ if (typeof THREE !== 'undefined') try {
     const m = new T.MeshStandardMaterial({ color: 0xffffff, map: tex, side: T.DoubleSide, roughness: .85 }); m.userData.key = 'cloth.' + owner;
     return clothCache[key] = m;
   };
-  OW.randomCrest = (seed) => ({ div: (seed * 7 + 3) % DIVS.length, t: (seed * 13 + 1) % 3 });
 
   // ---------- skins: recolour stone and roofs of a finished model ----------
   function applySkin(model, skin) {
@@ -2098,7 +1844,6 @@ if (typeof THREE !== 'undefined') try {
     reed: () => mat('reed', 0x8b8a4f), lily: () => mat('lily', 0x5a8944), beak: () => mat('beak', 0xd9a03d),
     mound: () => mat('mound', 0x4f433a, { map: TEX.dirt() }), terra: () => mat('terra', 0xb57a55), bread: () => mat('bread', 0xc39457),
     foam: () => mat('foam', 0xdcefea, { smooth: true }),
-    pine1: () => M.tint(0x4f7d3a), pine2: () => M.tint(0x5b8b42),
     // the five building cultures (c.style): walls and roofs of the surroundings follow the base's culture
     white: () => mat('white', 0xf1ece1, { map: TEX.cloth(), bump: .1 }),                  // Südlich: whitewash
     clay: () => mat('clay', 0xb38e6f, { map: TEX.shingle(), bump: .7 }),                  // Südlich: pale clay tiles (brown, never owner red)
@@ -2194,7 +1939,6 @@ if (typeof THREE !== 'undefined') try {
   };
   BP.water = function (rx, rz, x, y, z, rect) { this.add(rect ? G.wrect() : G.disc(), K.waterMat(), x, y, z, { sx: rx, sz: rz, flat: true }); };
   BP.lantern = function (x, z, h = 1.0, y = 0) { this.cyl(M.iron(), .03, .045, h, x, y, z, { seg: 6 }); this.box(M.window(), .15, .18, .15, x, y + h, z); this.pyr(M.iron(), .23, .23, .12, x, y + h + .18, z); };
-  BP.pine = function (x, z, s) { this.cyl(M.darkWood(), .1 * s, .13 * s, .9 * s, x, 0, z, { seg: 6 }); this.cone(MT.pine1(), .7 * s, 1.3 * s, x, .65 * s, z, { seg: 7 }); this.cone(MT.pine2(), .55 * s, 1.05 * s, x, 1.3 * s, z, { seg: 7 }); };
   BP.fence = function (x1, z1, x2, z2, h = .42) {
     const L = Math.hypot(x2 - x1, z2 - z1), n = Math.max(1, Math.round(L / .45)), a = Math.atan2(z2 - z1, x2 - x1);
     for (let i = 0; i <= n; i++) { const t = i / n; this.box(M.darkWood(), .05, h, .05, x1 + (x2 - x1) * t, 0, z1 + (z2 - z1) * t); }
@@ -3123,7 +2867,7 @@ if (typeof THREE !== 'undefined') try {
   const BELL = () => mat('bell', { color: 0xb57b3c, metalness: .75, roughness: .4, side: T.DoubleSide, flatShading: false });
 
   // ---- batching: many small repeated parts (merlons, corbels, quoins) become one mesh per material ----
-  function Batch(root) { this.root = root; this.m = new Map(); this.tmp = new T.Matrix4(); }
+  function Batch(root) { this.root = root; this.m = new Map(); }
   Batch.prototype.add = function (mat, geo, x, y, z, ry = 0, par = null) {
     const gg = geo.index ? geo.toNonIndexed() : geo; if (gg !== geo) geo.dispose();
     const mt = new T.Matrix4().makeRotationY(ry); mt.setPosition(x, y, z);
@@ -3358,14 +3102,6 @@ if (typeof THREE !== 'undefined') try {
   const HULL = () => mat('hull', { color: 0x8b6541, map: OW.TEX.planks(), bumpScale: .7, side: T.DoubleSide });
   const DECK = () => mat('deck', { color: 0xb38f63, map: OW.TEX.planks(), bumpScale: .5 });
   const LAMP = () => mat('lamp', { color: 0xfff3d6, emissive: 0xffd488, emissiveIntensity: .5, roughness: .35, flatShading: false });
-  // the sweeping night beam: additive, fades along its length, only visible at night (uN is driven by the builder's tick)
-  const beamU = { uN: { value: 0 } };
-  let beamMat = null;
-  const BEAM = () => beamMat || (beamMat = new T.ShaderMaterial({ uniforms: beamU, transparent: true, depthWrite: false, blending: T.AdditiveBlending, side: T.DoubleSide,
-    vertexShader: `varying float vK; void main(){ vK = uv.y; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }`,
-    fragmentShader: `uniform float uN; varying float vK; void main(){ float a = uN * .26 * pow(vK, 1.6); gl_FragColor = vec4(vec3(1., .9, .7), a);
-      #include <colorspace_fragment>
-    }` }));
 
   // ---- batching: many small repeated parts become one mesh per material ----
   function Batch(root) { this.root = root; this.m = new Map(); }
@@ -3988,8 +3724,7 @@ if (typeof THREE !== 'undefined') try {
     for (const s of [-1, 1]) balustrade(B, s * bx, ZC + 3.3, s * bx, ZC - 3.3, RY, M.gold());
 
     // ---------------- four slender corner towers ----------------
-    let towerTip = 0;
-    for (const sx of [-1, 1]) for (const sz of [-1, 1]) towerTip = tower(B, g, ctx, sx * TX, ZC + sz * TD, sx, sz, st);
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) tower(B, g, ctx, sx * TX, ZC + sz * TD, sx, sz, st);
 
     // ---------------- wings ----------------
     for (const s of [-1, 1]) wing(B, g, ctx, s, st);
@@ -4450,7 +4185,7 @@ if (typeof THREE !== 'undefined') try {
     const t = OW.tierOf(c.level); return { v: FRAME[t] * (c.capital ? 1.2 : 1) * 1.18, lookY: LOOKY[t] + (c.capital ? 1 : 0) }; };
   function render(c, px) {
     const f = G.frameOf(c), cv = document.createElement('canvas'), t0 = performance.now();
-    OW.stage.thumb(Object.assign({ variant: {} }, c, { frame: f.v, lookY: f.lookY, noRing: true }), px / 2, cv);
+    OW.stage.thumb(Object.assign({ variant: {} }, c, { frame: f.v, lookY: f.lookY }), px / 2, cv);
     G.renders++; G.ms += performance.now() - t0;
     return { c: cv, px, v: f.v, ay: (1.08 * f.v + f.lookY * CE) / (2 * f.v) };    // ay: where the ground centre sits (fraction of the height)
   }

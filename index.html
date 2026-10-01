@@ -178,25 +178,15 @@ b,strong{font-weight:600}
 #pAvatarRing[data-frame]{background:conic-gradient(from 200deg,var(--fr1),var(--fr2),var(--fr1),var(--fr2),var(--fr1));padding:3px;box-shadow:0 0 10px color-mix(in srgb,var(--fr1) 45%,transparent)}
 #pAvatarRing[data-frame="saison"],#pAvatarRing[data-frame="throne"],#pAvatarRing[data-frame="legend"],#pAvatarRing[data-frame="master"],#pAvatarRing[data-frame="diamond"]{animation:frame-glow 2.4s ease-in-out infinite alternate}
 @keyframes frame-glow{from{box-shadow:0 0 6px color-mix(in srgb,var(--fr1) 35%,transparent)}to{box-shadow:0 0 16px color-mix(in srgb,var(--fr1) 75%,transparent)}}
-.rankDot.frame-ring{border-radius:50%;border:2px solid var(--fr1);box-shadow:0 0 0 1px var(--fr2),0 0 6px color-mix(in srgb,var(--fr1) 40%,transparent)}
-.rankName-t{display:flex;flex-direction:column;min-width:0;overflow:hidden;text-overflow:ellipsis}
-.rankTitle{font:600 9.5px/1.2 var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--gold-300)}
 .ptitle-tag{margin-top:4px;font:700 10px/1.2 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--gold-200)}
-.look{display:flex;flex-direction:column;gap:10px}
-.look-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
-.look-frame small{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .troop-in{width:9.5em;max-width:46vw;height:30px;padding:0 8px;border:1px solid var(--line-2);border-radius:var(--r-xs);background:#12151b;color:var(--tx-1);font:700 var(--fs-13)/1 var(--font-ui);text-align:right;font-variant-numeric:tabular-nums}
 .troop-in.is-bad{border-color:#e0685c;box-shadow:0 0 0 2px rgba(224,104,92,.25)} @media (pointer:coarse){ .troop-in{height:36px} }
 .troop-in:focus{outline:none;border-color:var(--gold-300);box-shadow:0 0 0 2px rgba(214,170,90,.25)}
-.look-frame{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 2px;border-radius:8px;border:1px solid transparent;background:none;color:var(--tx-2)}
-.look-frame.on{border-color:var(--gold-300);background:rgba(214,170,90,.12)} .look-frame:disabled{opacity:.4}
 .look-now-ring{background:conic-gradient(from 200deg,var(--fr1),var(--fr2),var(--fr1),var(--fr2),var(--fr1));box-shadow:inset 0 0 0 6px #141a24}
-.look-frame .frame-ring{width:30px;height:30px;border-radius:50%;background:conic-gradient(from 200deg,var(--fr1),var(--fr2),var(--fr1),var(--fr2),var(--fr1));box-shadow:inset 0 0 0 5px #141a24}
-.look-frame small{display:inline-flex;align-items:center;gap:2px;font:600 9.5px/1.1 var(--font-ui)} .look-frame small .icon,.look-title .icon{width:10px;height:10px}
+.look-title .icon{width:10px;height:10px}
 .look-titles{display:flex;flex-wrap:wrap;gap:6px}
 .look-title{display:inline-flex;align-items:center;gap:4px;min-height:34px;padding:6px 12px;border-radius:999px;border:1px solid var(--line-2);background:rgba(255,255,255,.03);color:var(--tx-1);font:600 var(--fs-12)/1 var(--font-ui)}
 .look-title.on{border-color:var(--gold-300);background:rgba(214,170,90,.16);color:var(--gold-100)} .look-title:disabled{opacity:.4}
-.look-hint{font:500 var(--fs-11)/1.35 var(--font-ui);color:var(--tx-3)}
 .pfoot[hidden]{display:none} #mailTabs.tabs{grid-template-columns:repeat(3,minmax(0,1fr))} #shopTabs.tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
 .pill--throne .icon{color:#f2c75c} .psub .pill + .pill{margin-left:6px}
 .throne-status{display:grid;gap:6px;padding:10px 12px;border:1px solid var(--line-2);border-radius:10px;
@@ -276,7 +266,6 @@ b,strong{font-weight:600}
 .rp-grid > div{display:flex;justify-content:space-between;gap:8px;font:500 var(--fs-12)/1.6 var(--font-ui);color:var(--tx-2);border-bottom:1px solid var(--line-1)} .rp-grid b{color:var(--tx-1);font-variant-numeric:tabular-nums}
 .rp-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px} .rp-actions .btn{justify-content:center}
 .who-link{background:none;border:0;padding:6px 2px;margin:-6px -2px;font:inherit;color:inherit;text-decoration:underline;text-decoration-color:color-mix(in srgb,currentColor 40%,transparent);text-underline-offset:3px;cursor:pointer}
-.rankRow{cursor:pointer} .rankRow:active{background:rgba(255,255,255,.04)}
 .chain{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:10px;border:1px solid var(--line-1);background:rgba(255,255,255,.02)}
 .chain-links{display:grid;grid-template-columns:repeat(7,1fr) 1.3fr;gap:5px;align-items:center}
 .chain-link{height:30px;border-radius:8px;display:grid;place-items:center;border:1px solid var(--line-2);background:rgba(0,0,0,.2);font:700 var(--fs-12)/1 var(--font-ui);color:var(--tx-3)}
@@ -363,7 +352,6 @@ b,strong{font-weight:600}
 .rp-pass .icon{width:15px;height:15px;color:var(--gold-300)} .rp-pass b{color:var(--gold-100)} .rp-pass em{margin-left:auto;font:700 var(--fs-11)/1 var(--font-ui);font-style:normal;padding:3px 8px;border-radius:var(--r-pill);border:1px solid rgba(143,245,230,.5);color:#bff8ef;background:rgba(31,138,138,.25)}
 .rp-pass.is-prem{border-color:rgba(143,245,230,.3)} .rp-pass.is-prem .icon{color:#8ff5e6}
 #goalsSub .pill .icon{color:var(--gold-300)}
-#profileTabs .tab{position:relative} #profileTabs .badge{position:absolute;top:2px;right:4px}
 .marker-sheet{position:fixed;z-index:45;left:50%;bottom:calc(var(--dock-h) + var(--safe-b) + 14px);transform:translateX(-50%);width:min(360px,calc(100vw - 24px));padding:12px;border-radius:12px;
   background:var(--glass-strong,#141820);border:1px solid var(--line-3);box-shadow:var(--sh-2);font-family:var(--font-ui);display:flex;flex-direction:column;gap:8px}
 .marker-sheet[hidden]{display:none}
@@ -752,7 +740,7 @@ body.has-panel .mapctl{display:none}
 :is(.skillNode,.skillDetail)[data-skill="attackGold"],:is(.skillNode,.skillDetail)[data-skill="defenseGold"]{--sk:var(--gold-300)}
 
 /* =====================================================================
-   LIST ROWS  (.logList .logRow  - battle log;  .rankRow - ranking)
+   LIST ROWS  (.logList .logRow  - battle log)
    ===================================================================== */
 .logList{display:flex;flex-direction:column}
 .logRow{--lc:var(--line-2);position:relative;display:grid;grid-template-columns:28px minmax(0,1fr) auto;column-gap:10px;align-items:center;min-height:46px;padding:6px 4px 6px 10px;border-bottom:1px solid var(--line-1)}
@@ -845,7 +833,6 @@ body.has-panel .mapctl{display:none}
 .look-now-t b{display:block;font:600 var(--fs-13)/1.2 var(--font-ui);color:var(--tx-1)} .look-now-t small{display:block;margin-top:2px;font:500 var(--fs-11)/1.3 var(--font-ui);color:var(--tx-3)}
 .keep-crest{margin-bottom:4px} .keep-crest img{width:56px;height:56px;flex:none}
 .crest-card-go{display:inline-flex;align-items:center;gap:6px;font:600 var(--fs-12)/1 var(--font-ui);color:var(--gold-300)} .crest-card-go .icon{width:14px;height:14px}
-.crest-page{margin:4px 0 10px;padding:12px;border:1px solid var(--gold-300);border-radius:10px;background:rgba(10,10,14,.6)} .crest-page-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .crest-ed{display:grid;grid-template-columns:88px 1fr;gap:12px;align-items:start;margin-bottom:6px} #crestPreview{width:88px;height:88px}
 .crest-opts{display:grid;gap:6px} .crest-row{display:flex;align-items:center;gap:5px;flex-wrap:wrap} .crest-row>span{width:84px;font-size:var(--fs-12);color:var(--tx-2)}
 .crest-row button{width:30px;height:30px;padding:0;border-radius:6px;border:1px solid var(--line-2);background:rgba(255,255,255,.04);display:grid;place-items:center;cursor:pointer}
@@ -921,20 +908,8 @@ body.has-panel .mapctl{display:none}
 .empty-state .icon{width:30px;height:30px;color:var(--gold-500)}
 .logEmpty .icon{width:22px;height:22px;color:var(--gold-500)}
 .empty-state b{font:600 var(--fs-13)/1.2 var(--font-display);letter-spacing:.04em;color:var(--tx-2)}
-.rankRow{display:grid;grid-template-columns:30px 22px minmax(0,1fr) auto;gap:10px;align-items:center;min-height:42px;padding:0 6px;border-bottom:1px solid var(--line-1)}
-.rankPos{font:600 var(--fs-13)/1 var(--font-display);color:var(--tx-3);text-align:center}
-.rankRow:nth-child(-n+3) .rankPos{width:24px;height:24px;margin:0 auto;display:grid;place-items:center;border-radius:50%;color:#1a1204;font-size:12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 1px 3px rgba(0,0,0,.5)}
-.rankRow:nth-child(1) .rankPos{background:linear-gradient(180deg,#ffe28a,#c9922e)} .rankRow:nth-child(2) .rankPos{background:linear-gradient(180deg,#f1f4f8,#9aa3ae)} .rankRow:nth-child(3) .rankPos{background:linear-gradient(180deg,#f0b27d,#9a5a2c)}
-.rankRow:nth-child(1){background:linear-gradient(90deg,rgba(242,199,92,.10),transparent 70%)} .rankRow:nth-child(2){background:linear-gradient(90deg,rgba(210,216,224,.07),transparent 70%)} .rankRow:nth-child(3){background:linear-gradient(90deg,rgba(200,138,85,.08),transparent 70%)}
-.rankDot{width:22px;height:22px;border-radius:var(--r-xs);display:grid;place-items:center;border:1px solid rgba(255,255,255,.15);box-shadow:inset 0 0 0 1px rgba(0,0,0,.4)}
-.rankDot .icon{width:14px;height:14px;color:#fff} .rankCrest{width:16px;height:16px;display:block}
-.rankName{display:flex;align-items:center;min-width:0;font:600 var(--fs-13)/1.2 var(--font-ui);color:var(--tx-1);white-space:nowrap}
-.rankName-t{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}   /* only the name truncates, the DU tag stays whole */
-.rankName .tag{flex:none}
-.rankScore{font:600 var(--fs-12)/1 var(--font-ui);color:var(--tx-2);font-variant-numeric:tabular-nums;white-space:nowrap}
 .tag{display:inline-flex;align-items:center;height:16px;padding:0 5px;margin-left:6px;border-radius:var(--r-xs);font:600 9.5px/1 var(--font-ui);letter-spacing:.08em;text-transform:uppercase;vertical-align:2px}
 .tag--player{color:#cfe3ff;background:rgba(63,134,216,.2);border:1px solid rgba(140,192,255,.4)}
-.rankRow.isPlayer{background:linear-gradient(90deg,#284670,#161b24);box-shadow:inset 2px 0 0 var(--f-player);position:sticky;top:0;bottom:0;z-index:2}   /* your row stays in view while you scroll */
 /* Rangliste sheet: rank, crest in its frame + level, name, value; top 3 gold/silver/bronze, your row blue (pinned in the foot when outside the list) */
 #rankPopup{height:var(--sheet-max)}   /* steady: switching tabs never makes the sheet jump */
  #rankTabs.tabs{grid-template-columns:repeat(5,minmax(0,1fr))} #rankBody{gap:6px;padding:10px 10px 14px}
@@ -1657,7 +1632,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 <!-- Navigation: phone = bottom dock, landscape phone = left rail, desktop = top-right cluster -->
 <nav id="cornerButtons" class="nav" aria-label="Hauptmenü">
   <button id="cityNavBtn" class="nav-btn" type="button" title="Hauptstadt betreten"><svg class="icon"><use href="#i-castle"/></svg><span class="nav-l">Stadt</span></button>
-  <button id="profileBtn" class="nav-btn" type="button" title="Profil"><svg class="icon"><use href="#i-profile"/></svg><span class="nav-l">Profil</span><span id="profileBadge" class="badge" style="display:none">0</span></button>
+  <button id="profileBtn" class="nav-btn" type="button" title="Profil"><svg class="icon"><use href="#i-profile"/></svg><span class="nav-l">Profil</span></button>
   <button id="battleLogBtn" class="nav-btn" type="button" title="Angriffe &amp; Kampflog"><svg class="icon"><use href="#i-battlelog"/></svg><span class="nav-l">Kampf</span><span id="battleLogBadge" class="badge" style="display:none">0</span></button>
   <button id="goalsBtn" class="nav-btn" type="button" title="Ziele: Aufgaben und Erfolge"><svg class="icon"><use href="#i-goal"/></svg><span class="nav-l">Ziele</span><span id="goalsBadge" class="badge" style="display:none">0</span></button>
   <button id="mailBtn" class="nav-btn" type="button" title="Postfach: Belohnungen und Berichte"><svg class="icon"><use href="#i-mail"/></svg><span class="nav-l">Postfach</span><span id="questBadge" class="badge" style="display:none">0</span></button>
@@ -1764,8 +1739,6 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
       <div id="skillGrid" class="skillCross"></div>
     </div>
 
-    <div id="tabRank" class="profileTabPanel" role="tabpanel">
-    </div>
   </div>
   <footer id="profileFoot" class="pfoot">
     <div id="chestSelectionBar" class="selbar">
@@ -2791,7 +2764,6 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             { id: 'hagen', name: 'Hagen', title: 'Söldner', role: 'Angriff', r: 1, icon: 'weapon', color: '#5a5a5a', c2: '#2a2a2a', hair: '#3a3a3a', g: 'weapon', base: [8, 0, 2],
               sk: [['Wucht', 'In diesem Kampf +{v} % Angriff.', 'atk'], ['Söldner', '+{v} % Angriff.', 'atk'], ['Raufbold', '+{v} % Angriff gegen neutrale Basen.', 'neutralAtk'], ['Hartgesotten', '{v} % weniger Verluste.', 'loss']] }
         ];
-        const HEROES_IDS = HEROES.map(h => h.id);
         // rarity rule: in the same role rarer is always stronger. a/p = active/passive value at skill level 5, st = the stat multiplier
         const HERO_TIER = { 1: { a: 15, p: 5, st: 1 }, 2: { a: 20, p: 8, st: 1.6 }, 3: { a: 30, p: 12, st: 2.4 }, 4: { a: 40, p: 15, st: 3.2 } };
         const HERO_UNLOCK = { 1: 10, 2: 20, 3: 40, 4: 80 }, HERO_START_SHARDS = { 1: 10, 2: 8, 3: 6, 4: 4 };   // shards to unlock · everyone's starter shards
@@ -2888,7 +2860,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         // every island bridged to it; a scout sent into the fog explores the island it reaches.
         // The fog lifts in small sections (FOG_CELL squares): around every own base, and wherever a scout goes.
         const FOG_CELL = 4000, REVEAL_BASE = 7000, REVEAL_SCOUT = 8000;
-        var fogCells = null, fogLmCount = {}, cellLm = null, fogFx = [], fogVer = {}, fogMaskDirty = true, fogPrompt = null;
+        var fogCells = null, fogLmCount = {}, cellLm = null, fogFx = [], fogMaskDirty = true, fogPrompt = null;
         function fogKey(cx, cy) { return cx + ',' + cy; }
         function fogLandCells() {                        // key → landmass id for every cell that touches land
             if (cellLm) return cellLm;
@@ -6692,11 +6664,9 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         const profileTabs = {
             info: { btn: document.getElementById('tabBtnInfo'), panel: document.getElementById('tabInfo') },
             equip: { btn: document.getElementById('tabBtnEquip'), panel: document.getElementById('tabEquip') },
-            skills: { btn: document.getElementById('tabBtnSkills'), panel: document.getElementById('tabSkills') },
-            rank: { btn: document.getElementById('tabBtnRank'), panel: document.getElementById('tabRank') }
+            skills: { btn: document.getElementById('tabBtnSkills'), panel: document.getElementById('tabSkills') }
         };
         function showProfileTab(name) {
-            if (name === 'rank') { openRankings(); return; }   // the Rangliste has its own sheet now
             profilePopup.dataset.tab = name;
             for (const key of Object.keys(profileTabs)) {
                 const isActive = key === name;
@@ -6710,7 +6680,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         profileTabs.info.btn.addEventListener('click', () => showProfileTab('info'));
         profileTabs.equip.btn.addEventListener('click', () => showProfileTab('equip'));
         profileTabs.skills.btn.addEventListener('click', () => showProfileTab('skills'));
-        profileTabs.rank.btn.addEventListener('click', () => showProfileTab('rank'));
+        document.getElementById('tabBtnRank').addEventListener('click', () => openRankings());   // the Rangliste has its own sheet
 
         // ===== ERFOLGE: badges for what you've done, each with gems to collect (only gems - the look is bought, not earned) =====
         let playerStats = (() => { try { return JSON.parse(store.get('openWaterStats')) || {}; } catch (e) { return {}; } })();
@@ -7775,7 +7745,6 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             if (!(ts.nextPts > now)) ts.nextPts = now + THRONE_TICK_MS; if (!(ts.nextFire > now)) ts.nextFire = now + THRONE_FIRE_MS;
             if (!ts.week || ts.weekKey !== weekKeyOf(now)) { ts.week = {}; ts.weekKey = weekKeyOf(now); } })();
         function saveThrone() { store.set('openWaterThrone', JSON.stringify(throneState)); }
-        function thronePoints(who) { return who === 'player' ? throneState.pts || 0 : (loadBotState()[who] || {}).tp || 0; }
         function throneIncome(who) { return (rulerOwner() === who ? THRONE_PTS_MEGA : 0) + guardianTempleIds.filter(g => islandOwnerOf(g) === who).length * THRONE_PTS_GUARD; }
         function throneShooters() { const hd = rulerOwner(); return hd ? guardianTempleIds.filter(g => islandOwnerOf(g) !== hd) : []; }
         function hourProduction(who) {                       // what an empire makes in an hour (the coin and troop offers pay this much)
@@ -9971,7 +9940,6 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         });
         document.getElementById('cityBtn').addEventListener('click', openCity);
         document.getElementById('cityNavBtn').addEventListener('click', openCity);
-        function openKeep() { cityOpenId = '_keep'; renderCitySheet(); }
         document.getElementById('lookGo').addEventListener('click', () => openLookSheet());
         // Hauptstadt verlegen (teleport): pick one of your own bases, the capital status and its garrison move there.
         var teleportMode = false;
@@ -10763,7 +10731,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
                 fieldMarches.push({ who: m.who, homeId: m.homeId, fieldId: f.id, troops: m.troops, hero: m.hero || null, startedAt: now, resolveAt: now + fieldTravelSec(home, f, m.who) * 1000, back: true, load: 0 }); return; }
             if (m.who === 'player') dropShield('Dein Friedensschild ist gefallen, weil du angreifst.'); else botDropShield(m.who);   // a fight for the field is an attack
             const aHx = heroFieldFx(m.who, m.hero, { res: 1 }), dHx = heroFieldFx(o.who, o.hero, { res: 1, defending: 1, gather: 1 });   // both leaders: Goldrausch, Lagerwache …
-            const fb = fieldBattle(m.who, m.troops, o.who, o.troops, aHx, dHx), won = fb.won, involved = m.who === 'player' || o.who === 'player', defBefore = o.troops;   // a fight for the field: army against army
+            const fb = fieldBattle(m.who, m.troops, o.who, o.troops, aHx, dHx), won = fb.won, involved = m.who === 'player' || o.who === 'player';   // a fight for the field: army against army
             const loserName = fieldWhoName(won ? o.who : m.who), winnerName = fieldWhoName(won ? m.who : o.who), oWho = o.who;
             if (won) st.occ = { who: m.who, troops: m.troops - fb.aLoss, homeId: m.homeId, hero: m.hero || null, since: now, got: 0 }; else o.troops -= fb.dLoss;
             for (const [w, n, hx] of [[m.who, fb.aLoss, aHx], [oWho, fb.dLoss, dHx]]) fieldHurt(w, n, hx);   // both sides' Lazarett (+ their hero)
@@ -11121,7 +11089,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         function barbAttackHtml(avail, need, src, lbl) {    // share, hero and the button
             const n = barbShareOf(avail, need);
             if (barbHero && (!heroOwned('player', barbHero) || heroBusy('player', barbHero))) barbHero = null;
-            return '<div class="seg" data-bshare>' + barbShares().map(([v, t]) => '<button type="button" data-bs="' + v + '"' + (v === barbShareNow() ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>' +
+            return '<div class="seg">' + barbShares().map(([v, t]) => '<button type="button" data-bs="' + v + '"' + (v === barbShareNow() ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>' +
                 (heroSegHtml('data-bhero', barbHero) ? '<div class="seg hero-seg">' + heroSegHtml('data-bhero', barbHero) + '</div>' : '') +
                 '<button class="btn btn--primary btn--sm" type="button" data-bgo' + (n < 1 ? ' disabled' : '') + '>' + icon('attack') + '<span>' + lbl + ' · ' + fmtCompact(n) + ' von ' + islandTitle(islandById[src]) + '</span></button>';
         }
