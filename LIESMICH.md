@@ -198,8 +198,8 @@ Test-Konten geprüft (Angriff, Eroberung, Bericht, Ausbau, Gegenangriff – alle
 Welt nochmal frisch zurückgesetzt. Wer als Erster das Spiel öffnet, erschafft die Welt und ist Weltrechner.
 
 ## 10b. Admin, Wartung, Namen, Rauswurf, Sicherheit (1.10., lokal getestet)
-- **Admin-Seite** `admin.php` (Startseite → Knopf „Admin“, nur für Login-Namen aus `config.php` → `admins`, sonst
-  `alexander`): Wartung starten/beenden, Geschenk verschicken (Gems, Münzen, Helden-Splitter, Kiste; an einen oder alle
+- **Admin-Seite** `admin.php` – **nirgends verlinkt** (Alexanders Wunsch: kein Admin-Knopf auf der Startseite), nur
+  direkt über die Adresse `…/Game/admin.php`; lässt nur Admins rein (`config.php` → `admin_ids`, alexander = 3): Wartung starten/beenden, Geschenk verschicken (Gems, Münzen, Helden-Splitter, Kiste; an einen oder alle
   Spieler) → kommt als Nachricht, landet im **Abholfach** (Ziele → Belohnung, Quelle „Geschenk“) und muss normal
   abgeholt werden; Spielerliste (Name, Login, Stufe, Münzen, Gems, Basen, online).
 - **Wartung** = Datei `Game/wartung.txt`. Solange sie da ist: Startseite zeigt „neue Version wird aufgespielt“,

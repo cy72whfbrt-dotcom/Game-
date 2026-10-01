@@ -63,7 +63,7 @@ function zahl($n) { return $n === null ? '–' : number_format((float)$n, 0, ','
 <body>
 <div class="karte">
   <h1>Admin</h1>
-  <p>Angemeldet als <b><?= h($ich['name']) ?></b> · <a href="./">zur Startseite</a> · <a href="spiel.php">ins Spiel</a></p>
+  <p>Angemeldet als <b><?= h($ich['name']) ?></b> · <a href="spiel.php">ins Spiel</a></p>
   <?php if ($meldung): ?><div class="ok"><?= h($meldung) ?></div><?php endif; ?>
   <?php if ($fehler): ?><div class="fehler"><?= h($fehler) ?></div><?php endif; ?>
 </div>
