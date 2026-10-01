@@ -342,6 +342,11 @@ class MysqlLager {
         foreach ($setzen as $k => $_) $vs[$k] = $v;
         foreach ($loeschen as $k) $vs[$k] = $v;
         $this->stand_schreiben(0, $setzen, $loeschen);
+        if (isset($setzen['openWaterBotOwnedIslands'])) {   // Übersicht: Basen jedes echten Spielers in ow_spieler
+            $b = json_decode($setzen['openWaterBotOwnedIslands'], true) ?: [];
+            $q = $this->db->prepare('UPDATE ow_spieler SET anzahl_basen = ? WHERE id = ?');
+            foreach ($b as $wer => $liste) if (preg_match('/^u(\d+)$/', $wer, $m)) $q->execute([is_array($liste) ? count($liste) : 0, (int)$m[1]]);
+        }
         $this->db->prepare('UPDATE ow_welt_info SET version = ?, versionen = ?, welt_zeit = GREATEST(welt_zeit, ?) WHERE id = 1')->execute([$v, json_encode($vs), (int)$welt_zeit]);
         return $v;
     }
