@@ -271,7 +271,7 @@ des alten Fensters (`server.php`, `spielseite_vorbereiten`). Lokal: Spiel nach 1
 sitzen tiefer (nur 45 % des iPhone-Abstands zum Home-Balken), und unter der Leiste ist alles in Leistenfarbe gefüllt
 (`spiel.php`, `.nav` / `.nav::after`, nur Handy hochkant).
 
-**Rand unten, richtige Ursache + Truppen im Admin (1.10., lokal getestet, noch NICHT hochgeladen):**
+**Rand unten, richtige Ursache + Truppen im Admin (1.10.) – HOCHGELADEN mit Wartung (Alexanders Ja), Wartung wieder aus:**
 - Rand unten: Alexanders Bildschirmfoto zeigt, dass iOS die Seite in der Home-Bildschirm-App um die Statusleiste
   (ca. 59 Punkte) zu kurz macht. Darum endete die Leiste zu früh. `spiel.js` (oben, `dockLuecke`) misst die Lücke
   (Bildschirmhöhe minus Seitenhöhe, höchstens so hoch wie die Statusleiste, nur in der App, nur hochkant) und setzt
