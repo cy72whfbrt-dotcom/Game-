@@ -330,3 +330,29 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
   auf dem Home-Bildschirm. Braucht: einen Service-Worker (eine kleine Datei, die im Browser bleibt – Ausnahme von der
   Regel „nichts im Browser“, Alexander muss zustimmen), ein Schlüsselpaar auf dem Server, die Erlaubnis jedes Spielers
   (Knopf antippen) und dass der Office-Server nach außen zu Apple senden darf (noch prüfen). Noch nicht entschieden.
+
+## 13. Plan: Weltrechner auf dem Server (Node.js) – noch NICHT gebaut
+**Server-Test am 1.10. (Testdateien wieder gelöscht):** Office-Server (netcup-Webhosting, gehört Alexander, dort laufen
+auch seine anderen Seiten) kann: Node.js 22 (`/opt/plesk/node/22/bin/node`), Programme über PHP starten (exec),
+Cronjobs (Konto hat schon einen für cron.lapush.de – nie anfassen, nur eigene Zeile dazu, vorher sichern).
+16 Kerne, 64 GB (geteilt mit allen Seiten). Kein Chrome. 10-Minuten-Test „läuft ein Hintergrund-Programm weiter?“ läuft.
+
+**Ziel:** Kein Handy rechnet mehr die Welt. Ein Node-Programm auf dem Server rechnet rund um die Uhr (Bots, Märsche,
+Kämpfe, Münzen), auch wenn niemand online ist. Handys zeigen nur an und schicken Befehle. Ziel: bis 4000 Spieler.
+
+**Grenzen und Schutz (Alexanders Vorgabe: höchstens 600 MB Speicher):**
+1. Speicher: Node mit fester Grenze (zusammen nie über 600 MB). Voll → Programm endet, Neustart durch Cron.
+2. Rechenzeit: niedrige Priorität (`nice 19`), die anderen Seiten haben Vorrang. Jeder Rechenschritt hat ein Zeitbudget.
+3. Wachhund (Cron, jede Minute): Das Programm schreibt alle paar Sekunden einen „Herzschlag“. Ist er älter als
+   60 Sekunden (Endlosschleife, hängt) → hart beenden und neu starten.
+4. Keine Absturz-Schleife: Mehr als 5 Neustarts in 10 Minuten → keine Neustarts mehr, Notbetrieb: die Handys rechnen
+   wieder wie heute (alter Weg bleibt als Ersatz drin), rote Warnung auf der Admin-Seite.
+5. Prüfer nach jedem Schritt: keine kaputten Zahlen (NaN, minus Truppen, Münzen explodieren, Basen ohne Besitzer).
+   Fehler → nicht speichern, letzten guten Stand behalten, ins Log schreiben.
+6. Sicherungen: jede Stunde ein Abbild der Welt (die letzten 48 bleiben). Admin kann zurückspringen.
+7. Befehle prüft der Server (nur eigene Basen, genug Truppen, nicht zu viele pro Sekunde).
+8. Uhr: alles nach echter Uhrzeit, Nachholen höchstens begrenzt – die Welt kann nie „zu schnell“ laufen.
+9. Admin-Seite: Status (läuft / Notbetrieb), Speicher, Zeit pro Schritt, Neustarts, letzte Fehler,
+   Knöpfe „neu starten“, „Notbetrieb“, „Sicherung zurückspielen“.
+10. Erst testen: lokal mit 4000 simulierten Spielern; dann „Schattenbetrieb“ (Server rechnet mit, ohne Wirkung,
+    Vergleich mit dem Handy-Weltrechner); erst dann umschalten.
