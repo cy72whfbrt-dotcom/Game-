@@ -286,7 +286,7 @@ sitzen tiefer (nur 45 % des iPhone-Abstands zum Home-Balken), und unter der Leis
   Tagesboss auf einem Turm stand (Besitz war beim Laden noch nicht da). Jetzt wird das abgefangen, und den Platz prüft
   der Weltrechner.
 
-**Admin: Nebel freischalten, Geschenke an Bots, Bot-Liste (1.10., lokal getestet, noch NICHT hochgeladen):**
+**Admin: Nebel freischalten, Geschenke an Bots, Bot-Liste (1.10.) – HOCHGELADEN mit Wartung (Alexanders Ja), Wartung wieder aus, admin.php ohne Login → Startseite:**
 - Wer bekommt ein Geschenk? Nur der ausgewählte Spieler (oder alle Spieler, wenn „ALLE“ gewählt ist). Das Geschenk
   liegt in `ow_ereignisse` unter seiner Spieler-Nummer, und nur er bekommt es beim Puls. Der Weltrechner darf keine
   Geschenke verschicken (nur `delta`, `bericht`, `startschild`). Lokal geprüft: Bot-Geschenk → der andere Spieler
