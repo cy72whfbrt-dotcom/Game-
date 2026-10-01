@@ -7915,8 +7915,8 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         function tourWin(now) {                               // this weekend or the next one: { on, start, end, key } (memoised until it changes)
             now = now || Date.now(); const m = tourWinMemo; if (m && now >= m.from && now < m.to) return m.w;
             const d = new Date(now); d.setHours(0, 0, 0, 0); const wd = d.getDay(); d.setDate(d.getDate() + (wd === 6 ? 0 : wd === 0 ? -1 : 6 - wd));
-            const start = d.getTime(), key = todayKey(d); d.setDate(d.getDate() + 2); const end = d.getTime(), on = now >= start && now < end;
-            tourWinMemo = { w: { on, start, end, key }, from: on ? start : now, to: on ? end : start }; return tourWinMemo.w;
+            const start = d.getTime(), key = todayKey(d); d.setDate(d.getDate() + 2); const full = d.getTime(), ts = tourState || {}, end = ts.testKey === key && ts.testEnd < full ? Math.max(start, ts.testEnd) : full, on = now >= start && now < end;   // (a test run may end it early)
+            tourWinMemo = { w: { on, start, end, key }, from: on ? start : now, to: on ? end : now < start ? start : full }; return tourWinMemo.w;
         }
         function tourOn(now) { return tourWin(now).on; }
         function tourRoll(now) {                              // a finished weekend pays out once, a new one starts empty
@@ -7945,6 +7945,11 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             saveTour(); saveBotState(); updateHud(); saveGame(); saveProgression(); requestRender();
             if (me) afterSplash(() => setTimeout(() => flashHint('Turnier vorbei: Platz ' + me.place + ' – +' + fmtNum(me.gems) + ' Gems, +' + me.sh + ' Splitter' + (me.hero ? ' für ' + me.hero : '') + (me.place === 1 ? ' und der Titel „Turniersieger“!' : '.'), 7000), 2500));
         }
+        (function tourTestOnce() {                           // one-time test run (asked for): the running tournament ends in 10 min and you get 10.000 points
+            if (store.get('openWaterTourTest1')) return; const now = Date.now(); if (!tourOn(now)) return; tourRoll(now);
+            const ts = tourState; ts.testKey = ts.key; ts.testEnd = now + 10 * 60000; ts.end = ts.testEnd; ts.pts.player = (ts.pts.player || 0) + 10000;
+            tourWinMemo = null; tourRankMemo = null; saveTour(); store.set('openWaterTourTest1', '1');
+        })();
         function tourChamp(now) { const c = tourState && tourState.champ; return c && (now || Date.now()) < c.until ? c.who : null; }
         function midFight(tid, aWho, aKills, dWho, dKills, won, dOwner) {     // after every fight for a base: Turnier-Punkte in the middle, a share of the Kopfgeld
             if (midZoneIds.has(tid) && tourOn()) { tourAdd(aWho, Math.min(TOUR_KILL_MAX, aKills / TOUR_KILL_PER)); tourAdd(dWho, Math.min(TOUR_KILL_MAX, dKills / TOUR_KILL_PER)); }   // (capped per fight: holding the throne must still count)
