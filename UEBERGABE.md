@@ -1,5 +1,7 @@
 # Übergabe für eine neue Sitzung (Open Water)
 
+> **Neu: Zuerst `LIESMICH.md` lesen** – dort steht alles Aktuelle (Server, Datenbank, Hochladen, Verlauf vom 1.10.).
+
 Lies diese Datei zuerst. Danach `FEHLER.md` (Fehlerliste mit Stand) und `IDEEN.md` (entschiedene Pläne).
 
 ## Projekt
@@ -11,6 +13,7 @@ Lies diese Datei zuerst. Danach `FEHLER.md` (Fehlerliste mit Stand) und `IDEEN.m
 
 ## Wichtigste Regeln
 - **Der Spielstand darf nie verloren gehen:** `WORLD_VERSION`, Kartenerzeugung und die `openWater…`-Speicherschlüssel nicht ändern oder umbenennen; alte Stände immer ohne Verlust umrechnen.
+- Test-Uhr und Einmal-Test-Geschenke sind seit 1.10. entfernt (Echtzeit). Das Artifact wird nicht mehr veröffentlicht – der Server ist das Zuhause.
 - Texte im Spiel kurz, deutsch, nie „Bot“/„KI“ (die Mitspieler sind normale Spieler).
 - Vor jedem Veröffentlichen testen (Playwright, Syntax-Check), dann committen, pushen, veröffentlichen.
 

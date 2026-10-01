@@ -7,9 +7,13 @@ rm -rf dist/Game
 mkdir -p dist/Game/api dist/Game/js dist/Game/inhalt dist/Game/daten
 cp server/index.php server/spiel.php dist/Game/
 cp server/api/lib.php server/api/speichern.php server/api/config.beispiel.php dist/Game/api/
-[ -f server/api/config.php ] && cp server/api/config.php dist/Game/api/
+# Zugangsdaten nur aus den Umgebungsvariablen (nie ins Git): DB_USER, DB_PASS, DB_HOST, DB_NAME
+if [ -n "$DB_PASS" ]; then
+  php -r '$c = ["speicher" => "mysql", "db_host" => getenv("DB_HOST") ?: "dbwebintern.silentnetwork.de", "db_name" => getenv("DB_NAME") ?: "k17700_alex", "db_user" => getenv("DB_USER"), "db_pass" => getenv("DB_PASS")];
+    file_put_contents("dist/Game/api/config.php", "<?php\n// Zugangsdaten - nie ins Git\nreturn " . var_export($c, true) . ";\n");'
+fi
 cp server/daten/index.php dist/Game/daten/
-cp server/js/speicher.js botlogik.js baukunst.js dist/Game/js/
+cp server/js/speicher.js server/js/fflate.min.js botlogik.js baukunst.js dist/Game/js/
 printf '<?php http_response_code(404); exit;\n' > dist/Game/inhalt/index.php
 # Spielseite: erste Zeile sperrt den direkten Aufruf, Skripte liegen in js/
 { printf '<?php http_response_code(404); exit; ?>\n'

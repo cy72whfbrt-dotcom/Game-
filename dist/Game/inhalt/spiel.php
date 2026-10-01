@@ -1,3 +1,4 @@
+<?php http_response_code(404); exit; ?>
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -2049,8 +2050,8 @@ window.__realNow = function () { return Date.now(); };
 </section>
 
     <script defer src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script><!-- 3D bases: deferred, so a slow or missing network never holds the game up -->
-    <script defer src="baukunst.js"></script>
-    <script src="botlogik.js"></script>
+    <script defer src="js/baukunst.js"></script>
+    <script src="js/botlogik.js"></script>
     <script>
         // Every storage access goes through here: blocked site data, sandboxed frames and a full quota must not stop the
         // game - it then simply runs in memory.
