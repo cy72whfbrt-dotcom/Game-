@@ -1,5 +1,5 @@
-// ===== baukunst.js – die Basen in 3D (Entwurf "Open Water Baukunst") =====
-// Geladen nach three.js und vor botlogik.js. Hier stehen nur die Bausätze und Modelle (Basis in 10 Stufen, Tempel,
+// ===== baukunst.js – die Basen in 3D =====
+// Geladen nach three.js (verzögert). Hier stehen nur die Bausätze und Modelle (Basis in 10 Stufen, Tempel,
 // Wächter-Tempel, Thron, Tor, fünf Baustile, Umland, Wappen, Skins); nichts läuft beim Laden schon los.
 // Das Spiel ruft OW.game.get(...) auf: jedes Modell wird EINMAL (beim ersten Bedarf, in Leerlauf-Häppchen) mit einer
 // Orthokamera im Blickwinkel der Karte zu einem Bild gerendert und im Speicher gehalten (begrenzt). Ohne three.js (offline)

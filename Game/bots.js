@@ -1,5 +1,5 @@
-// ===== botlogik.js – alles, was die anderen Spieler (Mitspieler) denken und tun =====
-// Geladen vor dem Hauptskript von index.html. Hier stehen nur Tabellen und Funktionen: nichts davon läuft beim Laden
+// ===== bots.js – alles, was die anderen Spieler (Mitspieler) denken und tun =====
+// Geladen vor spiel.js. Hier stehen nur Tabellen und Funktionen: nichts davon läuft beim Laden
 // schon los (bis auf das Sortieren der Gruppen), alles andere ruft das Spiel später auf.
 // Kapitel: 1) Gruppen  2) Spieler  3) wie sie die Karte lesen  4) Angreifen, Spähen, Sammeln  5) Stand, Stadt, Helden,
 // Ausrüstung  6) Verteidigen, Schild, Hauptstadt  7) Titel, Takt  8) Aussehen, Thron-Shop, Vorspulen  9) Felder und Armeen

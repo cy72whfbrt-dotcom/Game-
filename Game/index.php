@@ -1,6 +1,6 @@
 <?php
-// Startseite: Anmelden oder Registrieren. Danach geht es ins Spiel (spiel.php).
-require __DIR__ . '/api/lib.php';
+// ===== index.php – Startseite: Anmelden oder Registrieren. Danach geht es ins Spiel (spiel.php). =====
+require __DIR__ . '/server.php';
 
 $fehler = '';
 $modus = ($_GET['m'] ?? '') === 'neu' ? 'neu' : 'login';

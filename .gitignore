@@ -1,5 +1,1 @@
-__pycache__/
-dist/Game/api/config.php
-server/api/config.php
-server/daten/*
-!server/daten/index.php
+Game/config.php

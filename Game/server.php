@@ -1,8 +1,7 @@
 <?php
-// Gemeinsame Teile: Einstellungen, Login-Cookie und die beiden Speicher (MySQL oder Dateien).
-// Im Browser liegt nur der Login-Cookie (HttpOnly, 30 Tage) - alles andere steht hier auf dem Server.
-
-if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === 'lib.php') { http_response_code(404); exit; }
+// ===== server.php – alles auf dem Server: Datenbank, Login, Spielstand laden und speichern =====
+// Wird von index.php und spiel.php eingebunden. Direkt aufgerufen (POST von speichern.js) speichert es den Spielstand.
+// Im Browser liegt nur der Login-Cookie (HttpOnly, 30 Tage) - alles andere steht hier in der Datenbank.
 
 ini_set('serialize_precision', '-1');   // Kommazahlen exakt wie im Browser
 
@@ -22,7 +21,6 @@ function cfg() {
 // Pfad des Game-Ordners in der Adresse (für den Cookie), z. B. /html/725/klassenarbeit_GR4/Game/
 function basis_pfad() {
     $p = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
-    if (basename($p) === 'api') $p = dirname($p);
     return rtrim($p, '/') . '/';
 }
 
@@ -38,7 +36,7 @@ function setze_cookie($wert, $ablauf) {
 
 function lager() {
     static $l = null;
-    if ($l === null) $l = (cfg()['speicher'] ?? 'mysql') === 'dateien' ? new DateiLager(__DIR__ . '/../daten') : new MysqlLager(cfg());
+    if ($l === null) $l = new MysqlLager(cfg());
     return $l;
 }
 
@@ -68,6 +66,41 @@ function json_antwort($code, $daten) {
     header('Cache-Control: no-store');
     echo json_encode($daten, JSON_UNESCAPED_UNICODE);
     exit;
+}
+
+// ===== Spielseite vorbereiten (spiel.php) =====
+// Login prüfen, auf die letzte Sicherung eines gerade geschlossenen Fensters warten, Spielstand laden.
+// Gibt die Zeilen für den Seitenkopf zurück (Spielstand + speichern.js).
+function spielseite_vorbereiten() {
+    try {
+        $ich = aktueller_spieler();
+        if (!$ich) { header('Location: ./'); exit; }
+        // Gerade noch gespielt (Neuladen)? Dann auf den "Abschied" des alten Fensters warten (seine letzte Sicherung),
+        // höchstens 8 Sekunden - so lädt die neue Seite nie einen älteren Stand.
+        $altTok = lager()->spiel_token($ich['id']);
+        if ($altTok !== '' && time() - lager()->zuletzt_gespeichert($ich['id']) < 60) {
+            for ($i = 0; $i < 80 && lager()->abschied($ich['id']) !== $altTok; $i++) usleep(100000);
+        }
+        lager()->sperren($ich['id']);
+        // Wer hier zuletzt das Spiel öffnet, darf speichern - ein älterer Tab/anderes Gerät wird gestoppt.
+        $tok = bin2hex(random_bytes(16));
+        lager()->spiel_token_setzen($ich['id'], $tok);
+        $stand = lager()->stand_laden($ich['id']);
+        $neu = !$stand;
+        if ($neu) {   // neuer Spieler: Start bei Null, Spielername = Login-Name - sofort in die Datenbank
+            $stand = ['openWaterReset' => '1', 'openWaterPlayerName' => $ich['name']];
+            lager()->stand_schreiben($ich['id'], $stand, []);
+        }
+        lager()->entsperren($ich['id']);
+    } catch (Throwable $e) {
+        error_log('Open Water Spiel: ' . $e->getMessage());
+        http_response_code(503);
+        exit('Der Server hat gerade ein Problem. Bitte gleich nochmal versuchen.');
+    }
+    return '<script>window.__OW = ' . json_encode([
+        'stand' => (object)$stand, 'neu' => $neu, 'token' => $tok, 'name' => $ich['name'],
+    ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_INVALID_UTF8_SUBSTITUTE) . ';</script>'
+        . '<script src="speichern.js?v=' . filemtime(__DIR__ . '/speichern.js') . '"></script>';
 }
 
 // ===== MySQL =====
@@ -262,72 +295,49 @@ class MysqlLager {
     }
 }
 
-// ===== Dateien (falls die Datenbank nicht erreichbar ist) =====
-// Jede Datei beginnt mit einer PHP-Sperre, damit niemand sie über die Adresse lesen kann.
-class DateiLager {
-    private $dir;
-    const SPERRE = "<?php http_response_code(404); exit; ?>\n";
-    function __construct($dir) {
-        $this->dir = $dir;
-        foreach (['', '/spieler', '/sitzungen', '/staende'] as $u) if (!is_dir($dir . $u)) mkdir($dir . $u, 0750, true);
-    }
-    private function lesen($f) {
-        if (!is_file($f)) return null;
-        $s = file_get_contents($f);
-        return json_decode(substr($s, strlen(self::SPERRE)), true);
-    }
-    private function schreiben($f, $daten) {
-        $tmp = $f . '.' . bin2hex(random_bytes(4)) . '.tmp';
-        file_put_contents($tmp, self::SPERRE . json_encode($daten, JSON_UNESCAPED_UNICODE), LOCK_EX);
-        rename($tmp, $f);   // erst fertig schreiben, dann austauschen: nie halbe Spielstände
-    }
-    private function name_datei($name) { return $this->dir . '/spieler/' . bin2hex(mb_strtolower($name, 'UTF-8')) . '.php'; }
-    private function id_datei($uid) { return $this->dir . '/spieler/id_' . (int)$uid . '.php'; }
-    function spieler_nach_name($name) {
-        $n = $this->lesen($this->name_datei($name));
-        return $n ? $this->lesen($this->id_datei($n['id'])) : null;
-    }
-    function spieler_anlegen($name, $hash) {
-        $lock = fopen($this->dir . '/spieler/.lock', 'c');
-        flock($lock, LOCK_EX);
-        try {
-            if (is_file($this->name_datei($name))) return null;
-            $zf = $this->dir . '/spieler/zaehler.php';
-            $id = (int)($this->lesen($zf)['n'] ?? 0) + 1;
-            $this->schreiben($zf, ['n' => $id]);
-            $this->schreiben($this->id_datei($id), ['id' => $id, 'name' => $name, 'pw_hash' => $hash, 'spiel_token' => '']);
-            $this->schreiben($this->name_datei($name), ['id' => $id]);
-            return $id;
-        } finally { flock($lock, LOCK_UN); fclose($lock); }
-    }
-    function sitzung_anlegen($th, $uid, $ablauf) {
-        $this->schreiben($this->dir . '/sitzungen/' . $th . '.php', ['id' => $uid, 'ablauf' => $ablauf]);
-    }
-    function sitzung_holen($th) {
-        $s = $this->lesen($this->dir . '/sitzungen/' . $th . '.php');
-        if (!$s || $s['ablauf'] < time()) return null;
-        $u = $this->lesen($this->id_datei($s['id']));
-        return $u ? ['id' => (int)$u['id'], 'name' => $u['name']] : null;
-    }
-    function sitzung_loeschen($th) { @unlink($this->dir . '/sitzungen/' . $th . '.php'); }
-    function spiel_token_setzen($uid, $tok) {
-        $u = $this->lesen($this->id_datei($uid));
-        $u['spiel_token'] = $tok;
-        $this->schreiben($this->id_datei($uid), $u);
-    }
-    function spiel_token($uid) { return (string)($this->lesen($this->id_datei($uid))['spiel_token'] ?? ''); }
-    private $sperre = null;
-    function sperren($uid) { $this->sperre = fopen($this->dir . '/staende/' . (int)$uid . '.php.lock', 'c'); flock($this->sperre, LOCK_EX); }
-    function entsperren($uid) { if ($this->sperre) { flock($this->sperre, LOCK_UN); fclose($this->sperre); $this->sperre = null; } }
-    function abschied($uid) { return (string)($this->lesen($this->id_datei($uid))['abschied'] ?? ''); }
-    function abschied_setzen($uid, $tok) { $u = $this->lesen($this->id_datei($uid)); $u['abschied'] = $tok; $this->schreiben($this->id_datei($uid), $u); }
-    function zuletzt_gespeichert($uid) { $f = $this->dir . '/staende/' . (int)$uid . '.php'; clearstatcache(); return is_file($f) ? filemtime($f) : 0; }
-    function stand_laden($uid) { return $this->lesen($this->dir . '/staende/' . (int)$uid . '.php') ?: []; }
-    function stand_schreiben($uid, $setzen, $loeschen) {
-        $f = $this->dir . '/staende/' . (int)$uid . '.php';   // gesperrt wird vorher mit sperren()
-        $st = $this->lesen($f) ?: [];
-        foreach ($setzen as $k => $v) $st[$k] = $v;
-        foreach ($loeschen as $k) unset($st[$k]);
-        $this->schreiben($f, (object)$st);
+
+// ===== Speichern (POST von speichern.js) =====
+// Inhalt: {"token": "...", "setzen": {schluessel: wert}, "loeschen": [schluessel], "abschied": 1?}, meist gzip-gepackt (X-Gepackt: 1)
+function speichern_anfrage() {
+    $t0 = microtime(true);
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') json_antwort(405, ['fehler' => 'nur POST']);
+    if (($_SERVER['HTTP_X_OPEN_WATER'] ?? '') !== '1') json_antwort(403, ['fehler' => 'falscher Aufruf']);   // nur aus dem Spiel (fremde Seiten dürfen diese Kopfzeile nicht setzen)
+
+    try {
+        $ich = aktueller_spieler();
+        if (!$ich) json_antwort(401, ['fehler' => 'abgemeldet']);
+
+        $roh = file_get_contents('php://input', false, null, 0, 40 * 1024 * 1024);
+        if (($_SERVER['HTTP_X_GEPACKT'] ?? '') === '1') {
+            $roh = @gzdecode($roh, 200 * 1024 * 1024);
+            if ($roh === false) json_antwort(400, ['fehler' => 'kaputt']);
+        }
+        $d = json_decode($roh, true);
+        if (!is_array($d)) json_antwort(400, ['fehler' => 'kaputt']);
+
+        $t1 = microtime(true);
+        lager()->sperren($ich['id']);   // Laden (spiel.php) wartet, bis diese Sicherung drin ist
+        if (!hash_equals(lager()->spiel_token($ich['id']), (string)($d['token'] ?? ''))) json_antwort(409, ['fehler' => 'anderswo geöffnet']);
+
+        $setzen = [];
+        foreach ((array)($d['setzen'] ?? []) as $k => $v) {
+            if (!is_string($k) || !preg_match('/^openWater[A-Za-z0-9_]{1,90}$/', $k) || !is_string($v)) json_antwort(400, ['fehler' => 'ungültig']);
+            $setzen[$k] = $v;
+        }
+        $loeschen = [];
+        foreach ((array)($d['loeschen'] ?? []) as $k) {
+            if (!is_string($k) || !preg_match('/^openWater[A-Za-z0-9_]{1,90}$/', $k)) json_antwort(400, ['fehler' => 'ungültig']);
+            $loeschen[] = $k;
+        }
+        $t2 = microtime(true);
+        lager()->stand_schreiben($ich['id'], $setzen, $loeschen);
+        header(sprintf('Server-Timing: lesen;dur=%d, warten;dur=%d, schreiben;dur=%d', ($t1 - $t0) * 1000, ($t2 - $t1) * 1000, (microtime(true) - $t2) * 1000));
+        if (!empty($d['abschied'])) lager()->abschied_setzen($ich['id'], (string)$d['token']);   // Fenster wird geschlossen/neu geladen
+        json_antwort(200, ['ok' => true]);
+    } catch (Throwable $e) {
+        error_log('Open Water Speichern: ' . $e->getMessage());
+        json_antwort(503, ['fehler' => 'server']);
     }
 }
+
+if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) speichern_anfrage();
