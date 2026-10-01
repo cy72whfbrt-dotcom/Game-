@@ -150,7 +150,7 @@ b,strong{font-weight:600}
    NAVIGATION  #cornerButtons  (phone = bottom dock)
    ===================================================================== */
 .nav{position:fixed;z-index:var(--z-dock);left:0;right:0;bottom:0;height:calc(var(--dock-h) + var(--safe-b));
-  padding:0 calc(var(--safe-r) + 6px) var(--safe-b) calc(var(--safe-l) + 6px);display:grid;grid-template-columns:repeat(6,1fr);
+  padding:0 calc(var(--safe-r) + 6px) var(--safe-b) calc(var(--safe-l) + 6px);display:grid;grid-template-columns:repeat(5,1fr);
   background:linear-gradient(180deg,rgb(18,21,28),rgb(8,10,13));border-top:1px solid var(--line-2);box-shadow:0 -12px 30px rgba(0,0,0,.45)}
 .nav::before{content:"";position:absolute;left:18%;right:18%;top:-1px;height:1px;background:linear-gradient(90deg,transparent,var(--gold-200),transparent)}
 .nav-btn{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:0;color:var(--tx-3);transition:color var(--dur-1)}
@@ -187,7 +187,7 @@ b,strong{font-weight:600}
 .look-titles{display:flex;flex-wrap:wrap;gap:6px}
 .look-title{display:inline-flex;align-items:center;gap:4px;min-height:34px;padding:6px 12px;border-radius:999px;border:1px solid var(--line-2);background:rgba(255,255,255,.03);color:var(--tx-1);font:600 var(--fs-12)/1 var(--font-ui)}
 .look-title.on{border-color:var(--gold-300);background:rgba(214,170,90,.16);color:var(--gold-100)} .look-title:disabled{opacity:.4}
-.pfoot[hidden]{display:none} #mailTabs.tabs{grid-template-columns:repeat(2,minmax(0,1fr))} #profileTabs.tabs{grid-template-columns:repeat(4,minmax(0,1fr))} #shopTabs.tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
+.pfoot[hidden]{display:none} #goalsTabs.tabs{grid-template-columns:repeat(4,minmax(0,1fr))} #profileTabs.tabs{grid-template-columns:repeat(4,minmax(0,1fr))} #shopTabs.tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
 .pill--throne .icon{color:#f2c75c} .psub .pill + .pill{margin-left:6px}
 .throne-status{display:grid;gap:6px;padding:10px 12px;border:1px solid var(--line-2);border-radius:10px;
   background:radial-gradient(120% 90% at 50% 0%,rgba(242,199,92,.10),transparent 60%),rgba(255,255,255,.02)}
@@ -231,19 +231,8 @@ b,strong{font-weight:600}
 .tour-hist{display:flex;align-items:center;gap:8px;font:500 var(--fs-12)/1.35 var(--font-ui);color:var(--tx-2)} .tour-hist > .icon{width:15px;height:15px;flex:none;color:#f2c75c}
 .throne-week i{font-style:normal;width:18px;color:var(--tx-3)} .throne-week b{margin-left:auto;font-variant-numeric:tabular-nums} .throne-week .me{color:var(--f-player-hi)}
 .mail-tabs .tab .badge{position:absolute;top:4px;right:8px}
-.mail-tabs .tab .dot-new{position:absolute;top:8px;right:12px;width:7px;height:7px;border-radius:50%;background:#ff8d82;box-shadow:0 0 0 2px rgba(20,24,32,.9)}
 .mail-pane[hidden]{display:none} .mail-pane{display:grid;gap:10px}
 .mail-intro{font:500 var(--fs-12)/1.4 var(--font-ui);color:var(--tx-3)}
-.war{display:grid;gap:6px}
-.war-day{border:1px solid var(--line-1);border-radius:10px;background:rgba(255,255,255,.02);padding:8px 10px}
-.war-day[open]{border-color:var(--line-2);background:rgba(214,170,90,.035)}
-.war-day summary{display:flex;align-items:center;gap:8px;cursor:pointer;list-style:none;font:500 var(--fs-12)/1.2 var(--font-ui);color:var(--tx-2)} .war-day summary::-webkit-details-marker{display:none}
-.war-day summary b{color:var(--tx-1);font-weight:600;min-width:64px}
-.war-sum{display:inline-flex;align-items:center;gap:4px;font-variant-numeric:tabular-nums} .war-sum .icon{width:13px;height:13px;color:var(--tx-3);margin-left:4px}
-.war-trend{margin-left:auto;font:600 10px/1 var(--font-ui);text-transform:uppercase;letter-spacing:.08em;padding:4px 7px;border-radius:999px}
-.war-trend.up{color:#8fcf7a;background:rgba(143,207,122,.1)} .war-trend.down{color:#ff8d82;background:rgba(255,141,130,.1)}
-.war-day ul{margin:8px 0 0;padding-left:16px;display:grid;gap:4px;font:500 var(--fs-12)/1.35 var(--font-ui);color:var(--tx-2)}
-.war-empty{font:500 var(--fs-12)/1.35 var(--font-ui);color:var(--tx-3);padding:6px 2px}
 .welcome-crest{width:44px;height:44px;display:block}
 #welcomeModal .lvlup-rewards li b{white-space:normal;text-align:right;min-width:0}
 #welcomeModal .btn + .btn{margin-top:8px}
@@ -423,7 +412,7 @@ body.has-midbar:not(.has-sheet) .toast{top:calc(var(--safe-t) + var(--hud-top-sp
 /* phone: while a sheet is open the toast docks just above the sheet's footer (never over the HUD values or the sheet header) */
 @media (max-width:899px) and (min-height:501px){
   body.has-sheet .toast{top:auto;bottom:calc(var(--dock-h) + var(--safe-b) + 72px);box-shadow:var(--sh-2),0 0 0 1px rgba(0,0,0,.35)}
-  body.has-sheet:has(#battleLogPopup.is-open,#mailPopup.is-open,#goalsPopup.is-open,#shopPopup.is-open,#profilePopup.is-open:not([data-tab="equip"])) .toast{bottom:calc(var(--dock-h) + var(--safe-b) + 16px)}
+  body.has-sheet:has(#battleLogPopup.is-open,#goalsPopup.is-open,#shopPopup.is-open,#profilePopup.is-open:not([data-tab="equip"])) .toast{bottom:calc(var(--dock-h) + var(--safe-b) + 16px)}
 }
 
 /* =====================================================================
@@ -1116,7 +1105,7 @@ body.has-panel .mapctl{display:none}
   .panel--island::after{content:"";position:absolute;left:-7px;top:var(--py,60px);width:12px;height:12px;transform:rotate(45deg);background:#12161d;border-left:1px solid var(--line-3);border-bottom:1px solid var(--line-3)}
   .panel--island .pfoot .btn{padding:0 12px}   /* two grow buttons side by side: "Erneut spähen" fits the 360px popover */
   .panel--island.is-left::after{left:auto;right:-7px;border-left:0;border-bottom:0;border-right:1px solid var(--line-3);border-top:1px solid var(--line-3)}
-  /* profile / battle log / mail / shop = right drawer under the nav */
+  /* profile / battle log / goals / shop = right drawer under the nav */
   .panel--sheet{--sheet-max:calc(100dvh - 86px);top:72px;bottom:auto;right:14px;left:auto;width:404px;border-radius:var(--r-xs)}
   /* item detail = card left of the drawer */
   .panel--item{top:72px;right:432px;left:auto;bottom:auto;width:320px;max-height:calc(100dvh - 86px);border-radius:var(--r-xs)}
@@ -1187,6 +1176,9 @@ body.has-panel .mapctl{display:none}
 .daily-row .daily-txt b{display:block;font:600 var(--fs-13)/1.3 var(--font-ui);color:var(--tx-1)}
 .daily-row .daily-txt small{display:block;font:500 var(--fs-11)/1.35 var(--font-ui);color:var(--tx-3)}
 .daily .daily-days{margin-top:0}
+.daily-week{display:grid;gap:4px} .daily-week > div{display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--line-1);border-radius:8px;font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-2)}
+.daily-week b{min-width:42px;color:var(--tx-3);font-weight:600} .daily-week span{flex:1} .daily-week .icon{width:14px;height:14px;color:var(--gold-400)}
+.daily-week .is-today{border-color:var(--gold-300);color:var(--tx-1)} .daily-week .is-today b{color:var(--gold-100)} .daily-week .is-done{opacity:.55}
 .quests{display:flex;flex-direction:column;gap:8px}
 .quest{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line-1);border-radius:var(--r-sm);background:rgba(0,0,0,.22)}
 .quest.is-done{border-color:var(--line-3);background:linear-gradient(90deg,rgba(236,208,138,.10),rgba(0,0,0,.2))}
@@ -1357,7 +1349,6 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 <symbol id="i-profile" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11.2a7 7 0 0 1 14 0v6l-2.7 2.8H7.7L5 17.2z" fill="currentColor" stroke="none" opacity="0.14"/><path d="M5 11.2a7 7 0 0 1 14 0v6l-2.7 2.8H7.7L5 17.2z"/><path d="M7.6 12.4h8.8"/><path d="M12 12.4v7.4"/><path d="M12 4.3v5" opacity="0.55"/><path d="M8.6 15.6h.01M15.4 15.6h.01" stroke-width="2"/></g></symbol>
 <symbol id="i-bot" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.2 12.2a5.8 5.8 0 0 1 11.6 0v5.2l-2.3 2.6h-7l-2.3-2.6z" fill="currentColor" stroke="none" opacity="0.14"/><path d="M6.2 12.2a5.8 5.8 0 0 1 11.6 0v5.2l-2.3 2.6h-7l-2.3-2.6z"/><path d="M6.6 9.6C4.3 9.2 3 7.2 3.3 4.4c1 1.8 2.5 2.7 4.6 2.9"/><path d="M17.4 9.6c2.3-.4 3.6-2.4 3.3-5.2-1 1.8-2.5 2.7-4.6 2.9"/><path d="M8.7 13.4h6.6M12 13.4v6.3"/></g></symbol>
 <symbol id="i-battlelog" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 5.2h10v13.6H7z" fill="currentColor" stroke="none" opacity="0.12"/><path d="M7 5.2v13.6M17 5.2v13.6"/><path d="M4.3 5.2h15.4M4.3 18.8h15.4" stroke-width="2"/><path d="M9.6 9.2h4.8M9.6 12h4.8M9.6 14.8h3" opacity="0.7"/></g></symbol>
-<symbol id="i-mail" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6.5h17v11h-17z" fill="currentColor" stroke="none" opacity="0.12"/><path d="M3.5 6.5h17v11h-17z"/><path d="M3.5 7l8.5 6 8.5-6"/><path d="M9.5 13.4a2.5 2.5 0 1 0 5 0a2.5 2.5 0 1 0 -5 0z" fill="currentColor" stroke="none"/><path d="M10.9 13.4h2.2" stroke="#000" stroke-width="1" opacity="0.35"/></g></symbol>
 <symbol id="i-shop" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 11h17v8.5h-17z" fill="currentColor" stroke="none" opacity="0.14"/><path d="M4 11V9a4.5 4.5 0 0 1 4.5-4.5h7A4.5 4.5 0 0 1 20 9v2"/><path d="M3.5 11h17v8.5h-17z"/><path d="M8 4.8v14.7M16 4.8v14.7" opacity="0.5"/><path d="M10.4 9.6h3.2v4h-3.2z" fill="currentColor" stroke="none"/></g></symbol>
 <symbol id="i-shield" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2l7.3 2.5v5.6c0 4.6-3 8-7.3 9.6-4.3-1.6-7.3-5-7.3-9.6V5.7z" fill="currentColor" stroke="none" opacity="0.14"/><path d="M12 3.2l7.3 2.5v5.6c0 4.6-3 8-7.3 9.6-4.3-1.6-7.3-5-7.3-9.6V5.7z"/><path d="M12 6.4v11.8M8 10.2h8" opacity="0.6"/></g></symbol>
 <symbol id="i-boots" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8.2 3.5h5.3v8.6l4.6 2a2.8 2.8 0 0 1 1.7 2.6v2.8H6.6z" fill="currentColor" stroke="none" opacity="0.14"/><path d="M8.2 3.5h5.3v8.6l4.6 2a2.8 2.8 0 0 1 1.7 2.6v2.8H6.6z"/><path d="M6.9 16.9h12.9" opacity="0.6"/><path d="M8 6.6h5.5" opacity="0.6"/></g></symbol>
@@ -1642,8 +1633,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
   <button id="cityNavBtn" class="nav-btn" type="button" title="Hauptstadt betreten"><svg class="icon"><use href="#i-castle"/></svg><span class="nav-l">Stadt</span></button>
   <button id="profileBtn" class="nav-btn" type="button" title="Profil"><svg class="icon"><use href="#i-profile"/></svg><span class="nav-l">Profil</span></button>
   <button id="battleLogBtn" class="nav-btn" type="button" title="Angriffe &amp; Kampflog"><svg class="icon"><use href="#i-battlelog"/></svg><span class="nav-l">Kampf</span><span id="battleLogBadge" class="badge" style="display:none">0</span></button>
-  <button id="goalsBtn" class="nav-btn" type="button" title="Ziele: Aufgaben und Erfolge"><svg class="icon"><use href="#i-goal"/></svg><span class="nav-l">Ziele</span><span id="goalsBadge" class="badge" style="display:none">0</span></button>
-  <button id="mailBtn" class="nav-btn" type="button" title="Postfach: Belohnungen und Berichte"><svg class="icon"><use href="#i-mail"/></svg><span class="nav-l">Postfach</span><span id="questBadge" class="badge" style="display:none">0</span></button>
+  <button id="goalsBtn" class="nav-btn" type="button" title="Ziele: Aufgaben, Belohnung und Erfolge"><svg class="icon"><use href="#i-goal"/></svg><span class="nav-l">Ziele</span><span id="goalsBadge" class="badge" style="display:none">0</span></button>
   <button id="shopBtn" class="nav-btn" type="button" title="Shop"><svg class="icon"><use href="#i-shop"/></svg><span class="nav-l">Shop</span></button>
 </nav>
 
@@ -1775,7 +1765,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
   </div>
 </section>
 
-<!-- ============ MAIL ============ -->
+<!-- ============ RULER ============ -->
 <section id="rulerPopup" class="panel panel--sheet" role="dialog" aria-labelledby="rulerName">
   <span class="sheet-grab" aria-hidden="true"></span>
   <header class="phead">
@@ -1805,30 +1795,6 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
   <footer class="pfoot lb-foot" id="rankFoot"></footer>
 </section>
 
-<section id="mailPopup" class="panel panel--sheet" role="dialog" aria-labelledby="mailTitle">
-  <span class="sheet-grab" aria-hidden="true"></span>
-  <header class="phead">
-    <div class="emblem emblem--gold"><svg class="icon"><use href="#i-mail"/></svg></div>
-    <div class="phead-text"><div class="overline">Täglich neu</div><h3 id="mailTitle" class="ptitle">Postfach</h3></div>
-    <button id="mailCloseBtn" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button>
-  </header>
-  <div id="mailTabs" class="tabs mail-tabs" role="tablist">
-    <button class="tab active" type="button" role="tab" data-mtab="rewards"><svg class="icon"><use href="#i-shop"/></svg><span>Belohnungen</span><span class="badge" data-mbadge="rewards" style="display:none">0</span></button>
-    <button class="tab" type="button" role="tab" data-mtab="reports"><svg class="icon"><use href="#i-battlelog"/></svg><span>Berichte</span><span class="dot-new" data-mbadge="reports" style="display:none"></span></button>
-  </div>
-  <div class="pbody">
-    <div class="mail-pane" data-mpane="rewards">
-      <div class="sect"><h4>Tägliche Belohnung</h4></div>
-      <div id="dailyCard" class="daily"></div>
-    </div>
-    <div class="mail-pane" data-mpane="reports" hidden>
-      <div class="sect"><h4>Kriegsbericht</h4><span class="sect-aside">letzte 7 Tage</span></div>
-      <div class="mail-intro">Was jeden Tag in deinem Reich passiert ist – Eroberungen, Verluste, Angriffe auf dich und was deine Armeen gesammelt haben.</div>
-      <div id="warCard" class="war"></div>
-    </div>
-  </div>
-</section>
-
 <section id="goalsPopup" class="panel panel--sheet" role="dialog" aria-labelledby="goalsTitle">
   <span class="sheet-grab" aria-hidden="true"></span>
   <header class="phead">
@@ -1838,6 +1804,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
   </header>
   <div id="goalsTabs" class="tabs mail-tabs" role="tablist">
     <button class="tab active" type="button" role="tab" data-gtab="daily"><svg class="icon"><use href="#i-flag"/></svg><span>Täglich</span><span class="badge" data-gbadge="daily" style="display:none">0</span></button>
+    <button class="tab" type="button" role="tab" data-gtab="reward"><svg class="icon"><use href="#i-shop"/></svg><span>Belohnung</span><span class="badge" data-gbadge="reward" style="display:none">0</span></button>
     <button class="tab" type="button" role="tab" data-gtab="ach"><svg class="icon"><use href="#i-star"/></svg><span>Erfolge</span><span class="badge" data-gbadge="ach" style="display:none">0</span></button>
     <button class="tab" type="button" role="tab" data-gtab="pass"><svg class="icon"><use href="#i-crown"/></svg><span>Pass</span><span class="badge" data-gbadge="pass" style="display:none">0</span></button>
   </div>
@@ -1847,6 +1814,12 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
       <div id="questList" class="quests"></div>
       <div class="sect"><h4>Wochenkette</h4></div>
       <div id="chainCard" class="chain"></div>
+    </div>
+    <div class="mail-pane" data-gpane="reward" hidden>
+      <div class="sect"><h4>Tägliche Belohnung</h4></div>
+      <div id="dailyCard" class="daily"></div>
+      <div class="sect"><h4>Die Woche</h4><span class="sect-aside">verpasster Tag = Tag 1</span></div>
+      <div id="dailyWeek" class="daily-week"></div>
     </div>
     <div class="mail-pane" data-gpane="ach" hidden>
       <div id="achSummary" class="ach-sum"></div>
@@ -1961,7 +1934,6 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
     <div class="lvlup-label">Während du weg warst</div>
     <ul id="welcomeList" class="lvlup-rewards"></ul>
     <button id="welcomeOkBtn" class="btn btn--primary" type="button"><svg class="icon"><use href="#i-check"/></svg><span>Weiter</span></button>
-    <button id="welcomeReportBtn" class="btn btn--secondary" type="button"><svg class="icon"><use href="#i-battlelog"/></svg><span>Zum Kriegsbericht</span></button>
   </div>
 </div>
 
@@ -6698,7 +6670,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         let playerStats = (() => { try { return JSON.parse(store.get('openWaterStats')) || {}; } catch (e) { return {}; } })();
         if (!playerStats.seeded) { playerStats.captures = Math.max(playerStats.captures || 0, Math.max(0, ownedIslands.size - 1)); playerStats.seeded = 1; store.set('openWaterStats', JSON.stringify(playerStats)); }   // an existing empire: its bases count as conquered
         let achClaimed = (() => { try { return JSON.parse(store.get('openWaterAch')) || {}; } catch (e) { return {}; } })();
-        // Kriegsbericht: what happened each day, kept for a week and shown in the Postfach
+        // Kriegsbericht: what happened each day, kept for a week (the Willkommen-zurück summary covers the time away)
         let warDays = (() => { try { return JSON.parse(store.get('openWaterWarDays')) || {}; } catch (e) { return {}; } })();
         function warStat(k, n, foe) {
             const d = todayKey(), w = warDays[d] || (warDays[d] = { by: {} });
@@ -6706,7 +6678,6 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             if (foe) w.by[foe] = (w.by[foe] || 0) + 1;
             const keys = Object.keys(warDays).sort(); while (keys.length > 8) delete warDays[keys.shift()];
             store.set('openWaterWarDays', JSON.stringify(warDays));
-            if (typeof updateQuestBadge === 'function') updateQuestBadge();
         }
         function statBump(k, n) { playerStats[k] = (playerStats[k] || 0) + (n || 1); store.set('openWaterStats', JSON.stringify(playerStats)); achCheckSoon(); passBump(k, n); }
         function goalBump(who, k, n) { if (!who) return; if (who === 'player') { try { statBump(k, n); } catch (e) {} } else if (botById[who]) botStat(who, k, n); }   // a counter for the Erfolge - yours or anyone else's
@@ -7320,18 +7291,6 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         });
 
         // ===== AUFGABEN (daily quests) + TÄGLICHE BELOHNUNG =====
-        // The panel keeps its old ids (mailBtn / mailPopup) so the panel system needs no changes.
-        const mailBtn = document.getElementById('mailBtn');
-        const mailPopup = document.getElementById('mailPopup');
-        const mailCloseBtn = document.getElementById('mailCloseBtn');
-        mailBtn.addEventListener('click', () => {
-            if (isPanelOpen(mailPopup)) { mailCloseBtn.click(); return; }
-            closeAllPopups();
-            renderQuestPanel();
-            const c = mailCounts(); showMailTab(c.rewards ? 'rewards' : c.reports ? 'reports' : mailTab);
-            openPanel(mailPopup);
-        });
-        function openMailReports() { closeAllPopups(); renderQuestPanel(); showMailTab('reports'); openPanel(mailPopup); }
 
         function todayKey(d) {
             d = d || new Date();
@@ -7413,7 +7372,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         function closeDailyModal() {
             if (dailyModal.hidden) return false;
             dailyModal.hidden = true;
-            if (isPanelOpen(mailPopup)) renderQuestPanel();
+            if (isPanelOpen(goalsPopup)) { renderQuestPanel(); updateGoalsBadge(); }
             return true;
         }
         document.getElementById('dailyModalBtn').addEventListener('click', () => {
@@ -7511,63 +7470,16 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             flashHint('Bonus: ' + RARITY_DEFS[it.rarity].label + ' ' + EQUIPMENT_DEFS[it.slot].name + ' + ' + QUEST_BONUS.gems + ' Gems' + (shH ? ' + ' + HERO_SHARDS_DAY + ' Splitter ' + shH.name : ''), 3000);
             renderQuestPanel(); updateQuestBadge();
         }
-        function claimableCount() { return dailyClaimable() ? 1 : 0; }   // the Postfach: only the daily reward is left to collect there
         function dailyGoalCount() {                                      // Ziele → Täglich: tasks, the bonus and the week chain
             const q = loadQuests();
             return q.list.filter(t => !t.claimed && t.progress >= t.target).length + (!q.bonusClaimed && q.list.every(t => t.claimed) ? 1 : 0) + (chainStreak() >= 7 ? 1 : 0);
         }
         function updateGoalsBadge(nAch) {
             if (nAch === undefined) nAch = achReadyN; else achReadyN = nAch;   // (the Erfolge are counted by achCheck - not before everything has loaded)
-            const nd = dailyGoalCount(), np = passReadyAll().length, n = nd + nAch + np, set = (el, v) => { setText(el, v); setShown(el, v > 0); };   // (only on a change: this runs every few seconds)
-            set(document.getElementById('goalsBadge'), n); set(goalsPopup.querySelector('[data-gbadge="daily"]'), nd); set(goalsPopup.querySelector('[data-gbadge="ach"]'), nAch); set(goalsPopup.querySelector('[data-gbadge="pass"]'), np);
+            const nd = dailyGoalCount(), nr = dailyClaimable() ? 1 : 0, np = passReadyAll().length, n = nd + nr + nAch + np, set = (el, v) => { setText(el, v); setShown(el, v > 0); };   // (only on a change: this runs every few seconds)
+            set(document.getElementById('goalsBadge'), n); set(goalsPopup.querySelector('[data-gbadge="daily"]'), nd); set(goalsPopup.querySelector('[data-gbadge="reward"]'), nr); set(goalsPopup.querySelector('[data-gbadge="ach"]'), nAch); set(goalsPopup.querySelector('[data-gbadge="pass"]'), np);
         }
-        function updateQuestBadge() {
-            const b = document.getElementById('questBadge'); if (!b) return;
-            const n = claimableCount();
-            b.textContent = n; b.style.display = n > 0 ? 'block' : 'none'; updateGoalsBadge();
-            if (typeof mailCounts === 'function') { const c = mailCounts();
-                for (const el of document.querySelectorAll('#mailTabs [data-mbadge]')) { const v = c[el.dataset.mbadge];
-                    if (el.classList.contains('dot-new')) el.style.display = v ? 'block' : 'none'; else { el.textContent = v; el.style.display = v > 0 ? 'block' : 'none'; } } }
-        }
-        function warDayText(w) {                                                        // one day in a few plain sentences
-            const parts = [], n = k => w[k] || 0, pl = (x, one, many) => x === 0 ? 'keine ' + many : fmtNum(x) + ' ' + (x === 1 ? one : many);
-            if (n('captures') || n('attacksLost')) parts.push(pl(n('captures'), 'Basis', 'Basen') + ' erobert' + (n('attacksLost') ? ', ' + pl(n('attacksLost'), 'Angriff', 'Angriffe') + ' gescheitert' : ''));
-            if (n('lost') || n('defends') || n('plundered')) parts.push(pl(n('defends'), 'Angriff', 'Angriffe') + ' abgewehrt, ' + pl(n('lost'), 'Basis', 'Basen') + ' verloren' + (n('plundered') ? ', Hauptstadt ' + n('plundered') + '× geplündert' : ''));
-            if (n('armyWins') || n('armyLosses')) parts.push('Armeen im Feld: ' + pl(n('armyWins'), 'Sieg', 'Siege') + ', ' + pl(n('armyLosses'), 'Niederlage', 'Niederlagen'));
-            if (n('fieldCoins') || n('fieldGems')) parts.push('Gesammelt: ' + [n('fieldCoins') ? fmtCompact(n('fieldCoins')) + ' Münzen' : '', n('fieldGems') ? fmtCompact(n('fieldGems')) + ' Gems' : ''].filter(Boolean).join(' und '));
-            if (n('kills') || n('fallen')) parts.push(fmtCompact(n('kills')) + ' Gegner besiegt, ' + fmtCompact(n('fallen')) + ' eigene Truppen gefallen');
-            if (n('thronePts')) parts.push('Am Thron: +' + fmtNum(n('thronePts')) + ' Thron-Punkte');
-            if (n('offCoins') || n('offTroops')) parts.push('Während du weg warst: +' + fmtCompact(n('offCoins')) + ' Münzen, +' + fmtCompact(n('offTroops')) + ' Truppen');
-            const foes = Object.entries(w.by || {}).sort((a, b) => b[1] - a[1]).slice(0, 3);
-            if (foes.length) parts.push(foes.map(([name, c]) => escapeHtml(name) + ' hat dich ' + (c === 1 ? 'einmal' : c + '×') + ' angegriffen').join(', '));
-            return parts;
-        }
-        function warReportHtml() {
-            const days = Object.keys(warDays).sort().reverse().slice(0, 7);
-            if (!days.length) return '<div class="war-empty">Noch nichts passiert – hier steht jeden Tag, was du erobert und verloren hast.</div>';
-            const today = todayKey(), yest = yesterdayKey();
-            return days.map((d, i) => { const w = warDays[d], lines = warDayText(w), dt = new Date(d + 'T12:00:00');
-                const label = d === today ? 'Heute' : d === yest ? 'Gestern' : dt.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'numeric' });
-                const score = (w.captures || 0) + (w.defends || 0) - (w.lost || 0) - (w.attacksLost || 0) * .5;
-                return '<details class="war-day"' + (i === 0 ? ' open' : '') + '><summary><b>' + label + '</b><span class="war-sum">' + icon('castle') + '+' + (w.captures || 0) + ' ' + icon('shield') + (w.defends || 0) + ' ' + icon('losses') + (w.lost ? '−' + w.lost : '0') +
-                    '</span><span class="war-trend ' + (score >= 0 ? 'up' : 'down') + '">' + (score >= 0 ? 'gut' : 'schwer') + '</span></summary>' +
-                    (lines.length ? '<ul>' + lines.map(l => '<li>' + l + '</li>').join('') + '</ul>' : '<div class="war-empty">Ruhiger Tag.</div>') + '</details>'; }).join('');
-        }
-        // the Postfach has two tabs; a new day's report shows a dot until you've looked at it
-        let mailTab = 'rewards';
-        function lastWarDay() { return Object.keys(warDays).filter(d => d < todayKey()).sort().pop() || ''; }   // the newest finished day
-        function warUnseen() { const last = lastWarDay(); return !!last && last > (store.get('openWaterWarSeen') || ''); }
-        function showMailTab(t) {
-            mailTab = t;
-            for (const b of document.querySelectorAll('#mailTabs [data-mtab]')) { const on = b.dataset.mtab === t; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }
-            for (const pn of document.querySelectorAll('#mailPopup [data-mpane]')) pn.hidden = pn.dataset.mpane !== t;
-            if (t === 'reports' && lastWarDay()) store.set('openWaterWarSeen', lastWarDay());
-            updateQuestBadge();
-        }
-        document.getElementById('mailTabs').addEventListener('click', e => { const b = e.target.closest('[data-mtab]'); if (b) showMailTab(b.dataset.mtab); });
-        function mailCounts() {
-            return { rewards: dailyClaimable() ? 1 : 0, reports: warUnseen() };
-        }
+        function updateQuestBadge() { updateGoalsBadge(); }   // the daily reward now counts in the Ziele badge
         function renderQuestPanel() {
             const q = loadQuests();
             const day = dailyNextDay(), claimable = dailyClaimable(), r = DAILY_REWARDS[day - 1];
@@ -7576,8 +7488,9 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
                 '<div class="daily-row"><div class="daily-txt"><b>' + (claimable ? 'Tag ' + day + ': ' + dailyRewardLabel(r) : 'Heute abgeholt') + '</b>' +
                 '<small>' + (claimable ? 'Bereit zum Abholen' : 'Nächste Belohnung in ' + fmtHoursLeft(msToMidnight()) + ' · ' + dailyRewardLabel(DAILY_REWARDS[day % 7])) + '</small></div>' +
                 (claimable ? '<button class="btn btn--primary btn--sm" type="button" data-daily>' + icon('shop') + '<span>Abholen</span></button>' : '<span class="quest-ok">Erledigt</span>') + '</div>';
+            document.getElementById('dailyWeek').innerHTML = DAILY_REWARDS.map((w, i) => { const d = i + 1, done = d < day || (d === day && !claimable);   // the whole week at a glance
+                return '<div class="' + (d === day && claimable ? 'is-today' : done ? 'is-done' : '') + '"><b>Tag ' + d + '</b><span>' + dailyRewardLabel(w) + '</span>' + (done ? icon('check') : '') + '</div>'; }).join('');
             document.getElementById('questReset').textContent = 'Neu in ' + fmtHoursLeft(msToMidnight());
-            document.getElementById('warCard').innerHTML = warReportHtml();
             { const k = chainStreak(), full = k >= 7;                                        // the week chain: 7 links, the chest at the end
               document.getElementById('chainCard').innerHTML = '<div class="chain-links">' + Array.from({ length: 7 }, (_, i) => '<span class="chain-link' + (i < k ? ' on' : '') + '">' + (i < k ? icon('check') : i + 1) + '</span>').join('') +
                 '<span class="chain-chest' + (full ? ' on' : '') + '">' + icon('shop') + '</span></div>' +
@@ -7598,11 +7511,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
                 (q.bonusClaimed ? '<span class="quest-ok">Abgeholt</span>' : allClaimed ? '<button class="btn btn--primary btn--sm" type="button" data-bonus><span>Abholen</span></button>' : '') + '</div></div>';
             document.getElementById('questList').innerHTML = html;
         }
-        mailPopup.addEventListener('click', e => {
-            const b = e.target.closest('button'); if (!b) return;
-            if (b.hasAttribute('data-daily')) showDailyModal();
-        });
-        // ---- Ziele: one sheet, two tabs - Täglich (tasks + week chain) and Erfolge ----
+        // ---- Ziele: one sheet, four tabs - Täglich (tasks + week chain), Belohnung (the 7-day login chest), Erfolge and Pass ----
         function showGoalsTab(t) {
             goalsTab = t;
             for (const b of goalsPopup.querySelectorAll('[data-gtab]')) { const on = b.dataset.gtab === t; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }
@@ -7615,13 +7524,14 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         function openGoals(tab) {
             closeAllPopups(); renderGoalsSub();
             const nd = dailyGoalCount(), na = achClaimable().length;
-            showGoalsTab(tab || (nd ? 'daily' : na ? 'ach' : passReadyAll().length ? 'pass' : goalsTab)); openPanel(goalsPopup);
+            showGoalsTab(tab || (nd ? 'daily' : dailyClaimable() ? 'reward' : na ? 'ach' : passReadyAll().length ? 'pass' : goalsTab)); openPanel(goalsPopup);
         }
         document.getElementById('goalsBtn').addEventListener('click', () => { if (isPanelOpen(goalsPopup)) closePanel(goalsPopup); else openGoals(); });
         document.getElementById('goalsCloseBtn').addEventListener('click', () => closePanel(goalsPopup));
         document.getElementById('goalsTabs').addEventListener('click', e => { const b = e.target.closest('[data-gtab]'); if (b) showGoalsTab(b.dataset.gtab); });
         goalsPopup.addEventListener('click', e => {
-            const b = e.target.closest('button'); if (!b || !e.target.closest('[data-gpane="daily"]')) return;
+            const b = e.target.closest('button'); if (b && b.hasAttribute('data-daily')) return showDailyModal();   // Belohnung: the quick-claim window does the rest
+            if (!b || !e.target.closest('[data-gpane="daily"]')) return;
             if (b.dataset.quest !== undefined) claimQuest(+b.dataset.quest);
             else if (b.hasAttribute('data-bonus')) claimQuestBonus();
             else if (b.hasAttribute('data-chain')) claimChain();
@@ -7750,15 +7660,12 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         setInterval(() => { const n = passNo(Date.now()), ps = passLoad(); if (ps.n !== n) { ps.n = n; passPrune(); passSave(); if (isPanelOpen(goalsPopup) && goalsTab === 'pass') renderPass(); } updateGoalsBadge(); }, 60000);   // a new season while the game stays open
         passPrune();
         function maybeShowDaily() {
-            if (!dailyClaimable() || !document.getElementById('dailyModal').hidden || isPanelOpen(mailPopup)) return;   // an open Postfach shows it in its own tab
+            if (!dailyClaimable() || !document.getElementById('dailyModal').hidden || (isPanelOpen(goalsPopup) && goalsTab === 'reward')) return;   // an open Belohnung tab shows it already
             const busy = !document.getElementById('levelUpModal').hidden || !document.getElementById('rewardModal').hidden || (typeof welcomeFrom !== 'undefined' && welcomeFrom) || (document.getElementById('welcomeModal') && !document.getElementById('welcomeModal').hidden);
             if (busy) { setTimeout(maybeShowDaily, 1500); return; }
             showDailyModal();
         }
         afterSplash(() => setTimeout(maybeShowDaily, 500));
-        mailCloseBtn.addEventListener('click', () => {
-            closePanel(mailPopup);
-        });
 
         // Shop: buy gem crates, opens straight into a result readout.
         const shopBtn = document.getElementById('shopBtn');
@@ -8348,7 +8255,6 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         }
         function closeWelcome() { const m = document.getElementById('welcomeModal'); if (m.hidden) return false; m.hidden = true; return true; }
         document.getElementById('welcomeOkBtn').addEventListener('click', () => { closeWelcome(); maybeShowDaily(); });
-        document.getElementById('welcomeReportBtn').addEventListener('click', () => { closeWelcome(); openMailReports(); });
         document.getElementById('welcomeModal').addEventListener('click', e => { if (e.target.id === 'welcomeModal') { closeWelcome(); maybeShowDaily(); } });
         afterSplash(() => setTimeout(() => { if (welcomeFrom) showWelcome(); }, 700));
 
@@ -11592,9 +11498,9 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         // the keyboard handler uses this: map shortcuts only fire while focus is on the page or the canvas
         function isUiElement(target) {
           return !!(target && target.closest && target.closest(
-            '#islandPopup,#hud,#cornerButtons,#profilePopup,#rulerPopup,#rankPopup,#battleLogPopup,#mailPopup,#goalsPopup,#shopPopup,#chestItemPopup,#multiAttackBar,#mapControls,#uiScrim,#uiScrimTop'));
+            '#islandPopup,#hud,#cornerButtons,#profilePopup,#rulerPopup,#rankPopup,#battleLogPopup,#goalsPopup,#shopPopup,#chestItemPopup,#multiAttackBar,#mapControls,#uiScrim,#uiScrimTop'));
         }
-        const PANEL_NAV = { profilePopup: 'profileBtn', battleLogPopup: 'battleLogBtn', mailPopup: 'mailBtn', goalsPopup: 'goalsBtn', shopPopup: 'shopBtn' };
+        const PANEL_NAV = { profilePopup: 'profileBtn', battleLogPopup: 'battleLogBtn', goalsPopup: 'goalsBtn', shopPopup: 'shopBtn' };
         function isPanelOpen(el) { return el.classList.contains('is-open'); }
         function openPanel(el) { el.style.removeProperty('display'); el.classList.add('is-open'); syncPanelState(); }
         function closePanel(el) { el.classList.remove('is-open'); syncPanelState(); }
@@ -11625,7 +11531,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
           if (!document.getElementById('titleModal').hidden) { document.getElementById('titleModal').hidden = true; return; }
           if (isPanelOpen(chestItemPopup)) return chestItemCloseBtn.click();
           if (isPanelOpen(popup)) return closeBtn.click();
-          for (const [pid, closeId] of [['rulerPopup','rulerCloseBtn'],['rankPopup','rankCloseBtn'],['profilePopup','profileCloseBtn'],['battleLogPopup','battleLogCloseBtn'],['mailPopup','mailCloseBtn'],['goalsPopup','goalsCloseBtn'],['shopPopup','shopCloseBtn']])
+          for (const [pid, closeId] of [['rulerPopup','rulerCloseBtn'],['rankPopup','rankCloseBtn'],['profilePopup','profileCloseBtn'],['battleLogPopup','battleLogCloseBtn'],['goalsPopup','goalsCloseBtn'],['shopPopup','shopCloseBtn']])
             if (isPanelOpen(document.getElementById(pid))) return document.getElementById(closeId).click();
           if (multiAttackMode) return multiAttackCancelBtn.click();
         }
@@ -11644,7 +11550,6 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
             closePanel(profilePopup);
             closePanel(battleLogPopup);
             clearInterval(battleLogRefreshTimer);
-            closePanel(mailPopup);
             closePanel(document.getElementById('goalsPopup'));
             closePanel(shopPopup);
             closePanel(document.getElementById('rulerPopup'));
