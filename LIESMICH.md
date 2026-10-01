@@ -3,6 +3,13 @@
 Neuer Chat? **Nur diese Datei lesen**, dann ist man auf dem Stand.
 
 ## 0. Mit wem und wie
+**Feste Regeln von Alexander (immer einhalten):**
+1. **Jede Änderung** (Code, Infos, Entscheidungen) wird **sofort hier in LIESMICH.md** eingetragen (Abschnitt 8 „Verlauf“ bzw. passender Abschnitt).
+2. Code kommt **immer zuerst auf GitHub** (committen + pushen).
+3. **Erst Alexander fragen**, ob diese Version auf den Server soll – `./hochladen.sh` nur nach seinem Ja.
+4. Es gibt **nur EINE Welt**, in der alle echten Spieler und alle Mitspieler zusammen spielen – nie eine eigene Welt pro Spieler.
+5. Alles, was nicht zu Open Water gehört, kommt weg (Server, GitHub, alte Sitzungen).
+
 - Spieler und Chef: **Alexander**. Schreibt am Handy, kurz, mit Tippfehlern. **Immer auf Deutsch, einfach, ohne Fachchinesisch.**
 - Er testet viel und schickt Screenshots. Sagt er „Fehler sammeln“: nur eine nummerierte Liste führen (Abschnitt 9), nichts reparieren, bis er „mach das alles“ sagt.
 - Große Aufgaben gern mit Agenten parallel, danach zusammenführen, testen, committen, pushen, hochladen.
@@ -35,7 +42,7 @@ hochladen.sh           lädt Game/ auf den Server (ein Befehl)
 ```
 **Server kaputt oder Editor abgestürzt?** Einfach `./hochladen.sh` – lädt alles neu hoch, erzeugt `config.php` aus den
 Umgebungsvariablen, entfernt fremde Reste aus `Game/` und prüft, dass alles heil angekommen ist.
-**Nach jeder Änderung:** testen → committen → pushen → `./hochladen.sh`. So bleiben GitHub und Server gleich.
+**Nach jeder Änderung:** testen → LIESMICH.md ergänzen → committen → pushen → **Alexander fragen** → erst dann `./hochladen.sh`.
 
 ## 3. Zugänge (in den Umgebungsvariablen der Cloud-Umgebung „Unity“)
 | Variable | Wofür |
@@ -53,7 +60,7 @@ Umgebungsvariablen, entfernt fremde Reste aus `Game/` und prüft, dass alles hei
 - Editor: `html/editor.php?h=48&w=138&sid=…&path=<Ordner>`; Formularfeld `button`: `new folder`, `upload` (Datei im Feld `file`),
   `delete` (Ordner-Pfad + `file=<Name>`). Erlaubt ist nur `…/office.hobbitonhill.de/html/725/klassenarbeit_GR4/`.
 - PHP 7.3, MySQL 8.4, schafft mehrere Anfragen gleichzeitig. Eine Sicherung dauert auf dem Server ~60 ms.
-- Neben `Game` liegt **`Main_game_folder_`** (anderes Spiel: Bilder, Backup). **Nicht anfassen**, bis Alexander klar „löschen“ sagt.
+- Im Editor liegt nur noch der Ordner `Game` (`Main_game_folder_` vom anderen Spiel am 1.10. auf Alexanders Wunsch gelöscht).
 
 ## 5. Datenbank `k17700_alex`
 | Tabelle | Inhalt |
@@ -94,6 +101,9 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Alexanders kaputter Stand zurückgesetzt. Mitspieler-Tabelle `ow_bots`. Alles sortiert: ein Ordner `Game` mit wenigen,
   klar benannten Dateien, GitHub = Server, nur noch diese eine Info-Datei. Alte Entwurfsseiten (designs.html, mitte.html)
   und die Claude-Artifact-Version sind raus (liegen noch in der Git-Geschichte).
+- **1.10. Aufräumen (Alexanders Wunsch „alles weg, was nicht zum Spiel gehört“):** `Main_game_folder_` auf dem Server
+  gelöscht, 27 alte Claude-Sitzungen archiviert. Alte GitHub-Branches kann Claude nicht löschen (GitHub sperrt das, 403)
+  → Alexander löscht sie selbst (siehe Abschnitt 11). Neue feste Regeln in Abschnitt 0.
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
@@ -104,7 +114,12 @@ Heute hat jeder Spieler noch seine eigene Welt (das Spiel rechnet alles im Brows
 Stand der Umsetzung wird hier eingetragen.
 
 ## 11. Offen
-- `Main_game_folder_` löschen? Wartet auf Alexanders klares Ja.
+- **GitHub aufräumen (macht Alexander, Claude darf es nicht):** Unter Settings → General → Default branch auf
+  `claude/neues-projekt-8agldl` stellen. Danach unter Branches alle anderen löschen (`claude/chat-session-k7ozkc`,
+  `claude/aaa-rpg-character-vfx-9ydhnc`, `claude/game-server-setup-0n2gbr`, `claude/login-finance-dashboard-89et7f`,
+  `claude/office-login-game-server-u7tgrc`, `claude/rpg-player-effects-design-kxqmsb`, `claude/spiel-anzeigen-6e8l5z`).
+  Das andere Repo `-Open-source-pixel-art-game-project-built` gehört nicht zu Open Water – löschen kann es nur Alexander.
+- Fremde Tabellen eines anderen Spiels in der Datenbank (`nutzer`, `mail`, `handel` …): löschen? Noch nicht gefragt.
 - Münz-Wirtschaft bei hohen Stufen riesig („Münzen fühlen sich nichts wert an“).
 - Kleinigkeiten: Schild-Restzeit in der Burg zählt nicht live; Ausbau-Knopf schaltet nicht live frei; Stadt-Ansicht am
   Handy manchmal langsam (Wolken).
