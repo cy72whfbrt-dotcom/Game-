@@ -1096,3 +1096,10 @@ Alles in spiel.js (Abschnitt „THE CITY, ISOMETRIC“), nur Aussehen – Gebäu
   Auszahlung ins Abholfach, Anzeige; mit Server + Weltrechner kommt das Wochen-Event beim Spieler an. Keine Fehler, Tests grün.
 - Nachtrag (Alexander: „man sieht die Top 10 nicht“): In Events → Turnier steht die **Top 10 jetzt gleich unter dem Kopf**
   (wer wie viele Punkte hat, live; sonst das letzte Ergebnis), Regeln und Preise darunter – bei Wochen-Event und Mitte.
+
+## 29. Turnier um die Mitte KOMPLETT RAUS (Alexander 2.10.) – NICHT hochgeladen
+- Es gibt kein Wochenend-Turnier mehr (`tourWin` liefert immer „aus“: keine Turnier-Punkte, kein Hinweis, keine Ankündigung,
+  kein Turniersieger, kein +50 % Thron-Punkte am Wochenende; Mitspieler verhalten sich am Wochenende wie unter der Woche).
+- **Die Mitte selbst bleibt** wie immer: angreifen, halten, Thron-Punkte alle 3 Min., Kopfgeld, Titel.
+- Das **Wochen-Event läuft jetzt die ganze Woche Mo 0:00 – So 23:59** (Sammel-Rausch → Krieger-Woche → Boss-Jagd → Bauherr),
+  Auszahlung Sonntag um Mitternacht. Der Reiter in Events heißt jetzt „Wochen-Event“ (Top 10 oben).

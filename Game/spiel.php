@@ -1839,7 +1839,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
     <button class="tab" type="button" role="tab" data-gtab="reward"><svg class="icon"><use href="#i-shop"/></svg><span>Belohnung</span><span class="badge" data-gbadge="reward" style="display:none">0</span></button>
     <button class="tab" type="button" role="tab" data-gtab="ach"><svg class="icon"><use href="#i-star"/></svg><span>Erfolge</span><span class="badge" data-gbadge="ach" style="display:none">0</span></button>
     <button class="tab" type="button" role="tab" data-gtab="pass"><svg class="icon"><use href="#i-crown"/></svg><span>Pass</span><span class="badge" data-gbadge="pass" style="display:none">0</span></button>
-    <button class="tab" type="button" role="tab" data-gtab="tour"><svg class="icon"><use href="#i-rank"/></svg><span>Turnier</span><span class="badge" data-gbadge="tour" style="display:none">!</span></button>
+    <button class="tab" type="button" role="tab" data-gtab="tour"><svg class="icon"><use href="#i-rank"/></svg><span>Wochen-Event</span><span class="badge" data-gbadge="tour" style="display:none">!</span></button>
     <button class="tab" type="button" role="tab" data-gtab="inv"><svg class="icon"><use href="#i-defense"/></svg><span>Invasion</span><span class="badge" data-gbadge="inv" style="display:none">!</span></button>
     <button class="tab" type="button" role="tab" data-gtab="drache"><svg class="icon"><use href="#i-attack"/></svg><span>Drache</span><span class="badge" data-gbadge="drache" style="display:none">!</span></button>
     <button class="tab" type="button" role="tab" data-gtab="boss"><svg class="icon"><use href="#i-event"/></svg><span>Boss &amp; Lager</span></button>

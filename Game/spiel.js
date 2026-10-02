@@ -6409,7 +6409,9 @@ tourState.pts = tourState.pts || {}; tourState.hist = tourState.hist || []; tour
 let tourDirty = false, tourWinMemo = null, tourRankMemo = null;
 function saveTour() { tourDirty = false; store.set('openWaterTourney', JSON.stringify(tourState)); }
 window.addEventListener('pagehide', () => { if (tourDirty) saveTour(); });   // (points are saved once a second - the last second too)
-function tourWin(now) {                               // this weekend or the next one: { on, start, end, key } (memoised until it changes)
+const TOUR_AUS = { on: false, start: Infinity, end: Infinity, key: '' };   // Alexander 2.10.: das Wochenend-Turnier um die Mitte ist ganz raus (die Mitte selbst bleibt)
+function tourWin(now) { return TOUR_AUS; }
+function tourWinAlt(now) {                            // (alt, nicht mehr benutzt) this weekend or the next one
     now = now || Date.now(); const m = tourWinMemo; if (m && now >= m.from && now < m.to) return m.w;
     const d = new Date(now); d.setHours(0, 0, 0, 0); const wd = d.getDay(); d.setDate(d.getDate() + (wd === 6 ? 0 : wd === 0 ? -1 : 6 - wd));
     const start = d.getTime(), key = todayKey(d); d.setDate(d.getDate() + 2); const full = d.getTime(), ts = tourState || {}, end = ts.testKey === key && ts.testEnd < full ? Math.max(start, ts.testEnd) : full, on = now >= start && now < end;   // (a test run may end it early)
@@ -6452,7 +6454,7 @@ function tourPay() {                                  // places 1, 2-3, 4-10 and
     if (me) afterSplash(() => setTimeout(() => flashHint('Turnier vorbei: Platz ' + me.place + ' – ' + fmtNum(me.gems) + ' Gems und ' + me.sh + ' Splitter liegen unter Events → Belohnung' + (me.place === 1 ? ', dazu der Titel „Turniersieger“!' : '.'), 7000), 2500));
 }
 function tourChamp(now) { const c = tourState && tourState.champ; return c && (now || Date.now()) < c.until ? c.who : null; }
-function midFight(tid, aWho, aKills, dWho, dKills) {     // after every fight for a base: Krieger-Woche (Mo–Fr) überall, das Turnier (Sa+So) in der Mitte
+function midFight(tid, aWho, aKills, dWho, dKills) {     // after every fight for a base: Krieger-Woche überall, das Turnier (Sa+So) in der Mitte
     evPunkte('krieg', aWho, aKills / TOUR_KILL_PER); evPunkte('krieg', dWho, dKills / TOUR_KILL_PER);
     if (tourOn() && midZoneIds.has(tid)) { tourFight(aWho, aKills); tourFight(dWho, dKills); }   // (capped per fight and per minute: holding the throne must still count)
 }
@@ -6489,9 +6491,6 @@ let midBarHtml = '';
 function tourPlaceOf(who) { const i = tourList().findIndex(e => e[0] === who); return i < 0 ? 0 : i + 1; }
 function renderMidBar() {
     const now = Date.now(), w = tourWin(now), b = bountyOf(), last = tourState.last, chips = [];   // [Dringlichkeit, html] – gezeigt wird nur der dringendste
-    if (w.on) { const pl = tourPlaceOf('player'), th = evThemaAm(now);
-        chips.push([4, '<button type="button" class="mb-chip is-tour" data-mb="tour">' + icon(th.ic) + '<span>Turnier · ' + th.name + '</span>' + (pl ? '<b>Platz ' + pl + '</b>' : '') + '<i data-mb-left></i></button>']); }   // the clock is set below: no rebuild every second
-    else if (last && last.me && !last.seen) chips.push([5, '<button type="button" class="mb-chip is-tour" data-mb="tour">' + icon('crown') + '<span>Turnier vorbei</span><b>Platz ' + last.me.place + '</b></button>']);
     if (woOn(now)) { const th = woThemaAm(now), W = evState.wo || {}, rk = W.key === woWin(now).key ? evRang(W.pts) : [], pl = rk.findIndex(e => e[0] === 'player') + 1;   // Wochen-Event (Mo–Fr)
         chips.push([9, '<button type="button" class="mb-chip is-tour" data-mb="woche">' + icon(th.ic) + '<span>Wochen-Event · ' + th.name + '</span>' + (pl ? '<b>Platz ' + pl + '</b>' : '') + '</button>']); }
     if (b && b.gems >= 5) chips.push([b.who === 'player' ? 1 : 7, '<button type="button" class="mb-chip' + (b.who === 'player' ? ' is-warn' : '') + '" data-mb="bounty">' + icon(b.who === 'player' ? 'losses' : 'coin') +
@@ -10198,12 +10197,11 @@ barbSheetEl.addEventListener('click', e => {
         const n = barbShareOf(islandTroops[src] || 0, (islandTroops[src] || 0) * .5); if (n < 1) return; if (alsBefehl('lager', { home: src, k: 'b', tid: null, n, held: barbHero, held2: barbHero2 })) islandTroops[src] = Math.max(0, (islandTroops[src] || 0) - n); else barbSend('player', src, 'b', null, n, barbHero, barbHero2); flashHint('Truppen unterwegs zu ' + b.name + '.', 2500); }
     barbHero = null; barbHero2 = null; closeBarbSheet();
 });
-// ===== EVENTS (Paket B): Turnier um die Mitte, Wochen-Event, Barbaren-Invasion, Drache – alles rechnet der Weltrechner, Zuschauer sehen es =====
-// Zeitpläne (Ortszeit des Weltrechners): Turnier „Kampf um die Mitte“ JEDES Wochenende Sa+So (Alexander 2.10., Ankündigung ab
-// Freitag), Wochen-Event Mo–Fr mit wechselndem Thema, Invasion alle 3 Tage 20:00–21:00, Drache sonntags 19:00–22:00.
-// Welt-Schlüssel: openWaterEvents (evState, das Wochen-Event in evState.wo).
+// ===== EVENTS (Paket B): Wochen-Event, Barbaren-Invasion, Drache – alles rechnet der Weltrechner, Zuschauer sehen es =====
+// Zeitpläne (Ortszeit des Weltrechners): Wochen-Event Mo–So mit wechselndem Thema (das Wochenend-Turnier um die Mitte ist seit
+// 2.10. ganz raus, Alexander), Invasion alle 3 Tage 20:00–21:00, Drache sonntags 19:00–22:00. Welt-Schlüssel: openWaterEvents (evState, Wochen-Event in evState.wo).
 var EV_TEST = null;   // NUR für Tests in einer lokalen Kopie: { inv: Startzeit, dr: Startzeit } – im echten Spiel immer null
-// ---- Themen: [0] ist die Mitte (jedes Wochenende), die anderen 4 wechseln wöchentlich im Wochen-Event (Mo–Fr): wofür es Punkte gibt + ein Bonus ----
+// ---- Themen: [0] war das Turnier um die Mitte (raus), die anderen 4 wechseln wöchentlich im Wochen-Event (Mo–So): wofür es Punkte gibt + ein Bonus ----
 const EV_THEMEN = [
     { k: 'thron', name: 'Kampf um die Mitte', ic: 'crown', pkt: 'Thron und Wächter-Tempel halten, Kämpfe in der Mitte', bonus: 'Thron-Punkte +50 %' },
     { k: 'sam', name: 'Sammel-Rausch', ic: 'coin', pkt: 'Gesammeltes – ein volles Feld bringt 30', bonus: 'Sammeln 50 % schneller' },
@@ -10214,14 +10212,13 @@ const EV_THEMEN = [
 const EV_WOCHE = EV_THEMEN.slice(1);
 function evThemaAm(t) { return EV_THEMEN[0]; }        // das Wochenend-Turnier: immer „Kampf um die Mitte“
 function evThema() { return EV_THEMEN[0]; }
-// ---- WOCHEN-EVENT Mo 0:00 – Fr 23:59: jede Woche eins der 4 Themen, eigene Punkte (wie beim Turnier gedeckelt), Rangliste und kleine Preise ----
+// ---- WOCHEN-EVENT Mo 0:00 – So 23:59 (das Turnier um die Mitte ist raus): jede Woche eins der 4 Themen, eigene Punkte (wie beim Turnier gedeckelt), Rangliste und kleine Preise ----
 const WO_PRIZES = [{ to: 1, gems: 200, sh: 10, crate: 3, t: '1.' }, { to: 3, gems: 100, sh: 5, crate: 2, t: '2.–3.' }, { to: 10, gems: 40, sh: 2, crate: 1, t: '4.–10.' }, { to: Infinity, gems: 10, sh: 1, crate: -1, t: 'Alle anderen' }];
 let woWinMemo = null;
-function woWin(now) {                                 // diese Woche (Mo–Fr) oder – am Wochenende – die nächste: { on, start, end, key }
+function woWin(now) {                                 // diese Woche (Mo 0:00 – So 23:59): { on, start, end, key }
     now = now || Date.now(); const m = woWinMemo; if (m && now >= m.from && now < m.to) return m.w;
     const d = new Date(now); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7));   // Montag dieser Woche
-    let start = d.getTime(), key = todayKey(d); d.setDate(d.getDate() + 5); let end = d.getTime();
-    if (now >= end) { const n = new Date(start); n.setDate(n.getDate() + 7); start = n.getTime(); key = todayKey(n); n.setDate(n.getDate() + 5); end = n.getTime(); }
+    let start = d.getTime(), key = todayKey(d); d.setDate(d.getDate() + 7); let end = d.getTime();
     const on = now >= start && now < end;
     woWinMemo = { w: { on, start, end, key }, from: on ? start : now, to: on ? end : start }; return woWinMemo.w;
 }
@@ -10571,7 +10568,7 @@ function drSheetHtml(head) {
 // ---- die Ereignisse im Events-Fenster (Dock → Events, untere Reiter): Termine, Uhren, Ranglisten ----
 var evTab = 'boss', evRenderAt = 0;
 function evJetzt(now) {                              // was gerade läuft (für das „!“ am Reiter und den ersten Blick ins Fenster)
-    try { now = now || Date.now(); return invAktiv(now) ? 'inv' : drAktiv(now) ? 'drache' : tourWin(now).on ? 'tour' : null; } catch (e) { return null; }
+    try { now = now || Date.now(); return invAktiv(now) ? 'inv' : drAktiv(now) ? 'drache' : null; } catch (e) { return null; }
 }
 const evUhr = (bis) => '<b data-ev-bis="' + bis + '">' + fmtDHMS(Math.max(0, bis - Date.now()) / 1000) + '</b>';
 const evWann = t => { const d = new Date(t); return ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'][d.getDay()] + ' ' + d.getDate() + '.' + (d.getMonth() + 1) + '. ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
@@ -10583,13 +10580,14 @@ function evRangHtml(list, fmt, lim) {                // Top 10 (+ deine Zeile)
 function evKarte(ic, titel, sub, inhalt, cls) { return '<div class="barb-card ev-card' + (cls ? ' ' + cls : '') + '"><div class="barb-ct"><b>' + icon(ic) + ' ' + titel + '</b><small>' + sub + '</small></div>' + inhalt + '</div>'; }
 var tourSicht = null;                                 // Events → Turnier: 'woche' (Mo–Fr) oder 'mitte' (Sa+So); null = was gerade läuft
 function evTourHtml() {
-    const sicht = tourSicht || (tourOn() ? 'mitte' : 'woche');
+    return woHtml();                                  // (das Turnier um die Mitte ist raus – nur noch das Wochen-Event)
+    const sicht = tourSicht || 'woche';
     const seg = '<div class="seg ev-seg">' + [['woche', 'Wochen-Event (Mo–Fr)'], ['mitte', 'Mitte (Sa+So)']].map(([k, t]) => '<button type="button" data-tw="' + k + '"' + (k === sicht ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>';
     return seg + (sicht === 'woche' ? woHtml() : tourCardHtml('kopf') + tourRangHtml() + tourCardHtml('regeln'));   // die Top 10 gleich oben   // die ganze Rangliste nur hier
 }
 function woHtml() {                                   // das Wochen-Event: Thema, Uhr, dein Platz, Preise, Rangliste, die nächsten Wochen
     const now = Date.now(), w = woWin(now), th = woThemaAm(now), W = evState.wo || {}, live = w.on && W.key === w.key, rk = live ? evRang(W.pts) : [], mine = rk.findIndex(e => e[0] === 'player') + 1;
-    const kopf = (w.on ? 'Läuft · endet in ' : 'Montag bis Freitag · beginnt in ') + evUhr(w.on ? w.end : w.start);
+    const kopf = (w.on ? 'Läuft · endet in ' : 'Montag bis Sonntag · beginnt in ') + evUhr(w.on ? w.end : w.start);
     const preise = WO_PRIZES.map((p, i) => '<div class="tour-prize' + (i ? '' : ' is-1') + '"><b>' + p.t + '</b><span>' + icon('gem') + fmtNum(p.gems) + '</span><span>' + icon('star') + p.sh + '</span>' + (p.crate >= 0 ? '<em>' + RARITY_DEFS[p.crate].label + '-Kiste</em>' : '') + '</div>').join('');
     const plan = [1, 2, 3, 4].map(i => { const t = w.start + 7 * 864e5 * i + 3600000, x = woThemaAm(t); return '<span>' + evWann(t).slice(0, -6) + '</span><b>' + icon(x.ic) + ' ' + x.name + '</b>'; }).join('');
     const alt = !live && W.last && W.last.top ? W.last.top : null, liste = live ? rk : alt || [];
@@ -10598,7 +10596,7 @@ function woHtml() {                                   // das Wochen-Event: Thema
         '<div class="lb-gap">' + (live ? 'Live · Top 10' : alt ? 'Letzte Woche · Top 10' : 'Top 10') + '</div>' +
         (evRangHtml(liste, v => fmtNum(Math.floor(v)) + ' P.') || '<div class="war-empty">' + (w.on ? 'Noch hat niemand Punkte – sobald jemand Punkte holt, steht er hier.' : 'Am Montag geht es los.') + '</div>') +
         '<div class="lb-gap">Preise</div><div class="tour-prizes">' + preise + '</div>' +
-        '<div class="tour-rules"><span>' + icon('hourglass') + '<span>Höchstens ' + TOUR_KILL_MAX + ' Punkte auf einmal, im Schnitt ' + TOUR_KILL_MIN + ' pro Minute. Jede Woche ein anderes Thema – am Wochenende ist das Turnier um die Mitte.</span></span></div>' +
+        '<div class="tour-rules"><span>' + icon('hourglass') + '<span>Höchstens ' + TOUR_KILL_MAX + ' Punkte auf einmal, im Schnitt ' + TOUR_KILL_MIN + ' pro Minute. Jede Woche (Mo–So) ein anderes Thema.</span></span></div>' +
         '<div class="lb-gap">Nächste Wochen</div><div class="field-lines ev-plan">' + plan + '</div>';
 }
 function evInvHtml() {
@@ -10667,7 +10665,7 @@ function evChips(now) {
     else if (ip.start > now && ip.start - now <= 30 * 60000) out.push([3, '<button type="button" class="mb-chip is-warn" data-mb="ev-inv">' + icon('defense') + '<span>Barbaren-Invasion in</span><i data-ev-bis="' + ip.start + '"></i></button>']);
     if (D) out.push([2, '<button type="button" class="mb-chip is-drache" data-mb="ev-drache">' + icon('star') + '<span>Drache</span><b>' + Math.ceil(D.hp / D.max * 100) + ' %</b><i data-ev-bis="' + D.end + '"></i></button>']);
     else if (dp.start > now && dp.start - now <= 30 * 60000) out.push([3, '<button type="button" class="mb-chip is-drache" data-mb="ev-drache">' + icon('star') + '<span>Der Drache kommt in</span><i data-ev-bis="' + dp.start + '"></i></button>']);
-    if (!w.on && w.start > now && w.start - now <= 864e5) { const th = evThemaAm(now); out.push([8, '<button type="button" class="mb-chip is-tour" data-mb="ev-tour">' + icon(th.ic) + '<span>Ab Samstag: ' + th.name + '</span><i data-ev-bis="' + w.start + '"></i></button>']); }
+   
     return out;
 }
 // ===== ARMEEN AUF DER KARTE: troops that stand out in the open instead of in a base. Gather them from several
