@@ -9967,13 +9967,7 @@ function barbSheetHtml() {
         return bossHtml + (dead ? '' : rec.h >= dbossHitsMax() ? '<div class="notice notice--gold">' + icon('hourglass') + '<span>Heute keine Angriffe mehr – morgen wieder.</span></div>' :
             src === null ? '<div class="notice">' + icon('lock') + '<span>Keine deiner Basen hat Truppen.</span></div>' : barbAttackHtml(islandTroops[src] || 0, (islandTroops[src] || 0) * .5, src, 'Angreifen')) + rules;
     }
-    const near = barbNearest();                       // both at a glance
-    return head('attack', 'Ereignisse') +
-        '<div class="barb-card"><div class="barb-ct"><b>' + icon('crown') + ' ' + K.name + '</b><small>Tagesboss</small></div><div class="barb-hp"><i style="width:' + (b.hp / b.max * 100).toFixed(1) + '%"></i><span>' + (dead ? 'Besiegt' : fmtCompact(b.hp) + ' Leben') + '</span></div>' +
-        (dbossOnMap() ? '<button class="btn btn--secondary btn--sm" type="button" data-bgoto="boss">' + icon('send') + '<span>Zum Boss</span></button>' : '<div class="field-lines"><span>Neuer Boss in</span>' + mid + '</div>') + '</div>' +
-        '<div class="barb-card"><div class="barb-ct"><b>' + icon('attack') + ' Barbaren-Lager</b><small>' + rec.n + ' / ' + barbTagMax() + ' heute</small></div>' +
-        '<div class="field-lines"><span>Freigeschaltet</span><b>bis Stufe ' + Math.min(BARB_MAX_L, rec.b + 1) + '</b><span>Neuer Tag in</span>' + mid + '</div>' +
-        (near ? '<button class="btn btn--secondary btn--sm" type="button" data-bgoto="camp">' + icon('send') + '<span>Nächstes Lager · Stufe ' + near.L + '</span></button>' : '<div class="notice">' + icon('info') + '<span>Gerade kein passendes Lager in deiner Nähe.</span></div>') + '</div>';
+    return bossHtml + rules;                          // (Tagesboss und Lager im Überblick: Events → Boss & Lager)
 }
 function barbNearest() {                            // the closest camp you may attack, the highest level first
     const home = islandById[rewardBaseId() ?? playerIslandId]; if (!home) return null; const best = barbRec('player').b;

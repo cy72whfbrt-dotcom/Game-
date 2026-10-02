@@ -973,6 +973,8 @@ für beide Spieler. Keine Fehler in der Konsole oder im Weltrechner, keine Schum
 - Getestet (Vorschau, iPhone-Größe): alle 6 Dock-Knöpfe, alle 8 Events-Reiter mit Inhalt, Schild kaufen + einschalten im
   Shop, Markt verkaufen im Shop, Händler-Reiter erscheint mit Händler, Ton in den Einstellungen, Rangliste ohne Turnier,
   immer höchstens 1 Hinweis, Burg ohne Schild/Aussehen. Keine Fehler. Server- und Spiel-Tests grün.
+- Danach 3B (Abschnitt 24) zusammengeführt und alles zusammen lokal mit Server + Weltrechner + Handy getestet: keine Fehler
+  in Konsole und Weltrechner. Vorschau (Abschnitt 25) ist auf diesem Stand.
 
 
 ## 24. 3B – Konto beim Server (2.10., lokal getestet – NICHT hochgeladen, am besten mit Welt-Neustart)
