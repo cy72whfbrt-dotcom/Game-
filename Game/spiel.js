@@ -1497,8 +1497,10 @@ function launchAttack(sourceId, targetId, attackerBotId, troopsOverride, heldWun
     }
     if (!attackerBotId && !rechnet()) {                           // Zuschauer: der Weltrechner schickt die Truppen los
         const vh = lastHop(source.landmassId, target.landmassId, 'player'); if (!mautVorab(vh[0], vh[1], rawTroops, target.id)) return false;
-        WELT.befehl('angriff', { src: sourceId, ziel: targetId, n: rawTroops, held: nextAttackHero && heroOwned('player', nextAttackHero) && !heroBusy('player', nextAttackHero) ? nextAttackHero : null });
+        const vHeld = nextAttackHero && heroOwned('player', nextAttackHero) && !heroBusy('player', nextAttackHero) ? nextAttackHero : null;
+        WELT.befehl('angriff', { src: sourceId, ziel: targetId, n: rawTroops, held: vHeld });
         islandTroops[sourceId] = available - rawTroops;
+        { const t0 = Date.now(); vorlaeufigDazu('a', { sourceId, targetId, rawTroops, startedAt: t0, resolveAt: t0 + Math.max(3, travelDurationSeconds(source, target)) * 1000, attackerBotId: null, hero: vHeld }); }
         updateHud(); flashHint('Angriff unterwegs zu ' + islandTitle(target) + '.');
         dropShield('Dein Friedensschild ist gefallen, weil du angreifst.'); questProgress('attack', 1); sfx('attack');
         return true;
@@ -1552,7 +1554,8 @@ function launchSend(fromId, toId, senderBotId, amount) {       // amount: how ma
     if (!senderBotId && !rechnet()) {                             // Zuschauer: der Weltrechner schickt sie los
         const vh = lastHop(source.landmassId, target.landmassId, 'player'); if (!mautVorab(vh[0], vh[1], rawTroops)) return;
         WELT.befehl('senden', { von: fromId, nach: toId, n: rawTroops });
-        islandTroops[fromId] = available - rawTroops; questProgress('send', 1); sfx('send'); updateHud();
+        islandTroops[fromId] = available - rawTroops;
+        { const t0 = Date.now(); vorlaeufigDazu('s', { fromId, toId, troops: rawTroops, startedAt: t0, resolveAt: t0 + travelDurationSeconds(source, target) * 1000, senderBotId: null }); } questProgress('send', 1); sfx('send'); updateHud();
         flashHint('Truppen unterwegs zu ' + islandTitle(target) + '.'); return;
     }
     const hop = lastHop(source.landmassId, target.landmassId, senderBotId || 'player');
@@ -1595,6 +1598,7 @@ function recallMarch(key) {                          // an attack or a send turn
     if (!rechnet()) {                                 // Zuschauer: der Weltrechner lässt sie umkehren
         const m = pendingAttacks.find(x => marchKeyOf(x) === key) || pendingSends.find(x => marchKeyOf(x) === key);
         if (m && m.fightEndsAt) { flashHint('Die Truppen kämpfen schon – zu spät zum Zurückrufen.', 3000); return; }
+        if (m && m.vorlaeufig) { flashHint('Einen Moment – der Marsch läuft gerade los.', 1500); return; }
         if (m) { WELT.befehl('zurueck', { key }); flashHint('Deine Truppen kehren um.', 3000); }
         return;
     }
@@ -1625,17 +1629,34 @@ function schnellerDrueber() {
         m.resolveAt = w.resolveAt; m.startedAt = w.startedAt;
     }
 }
-const schnellerZuletzt = new Map();                 // der Weltrechner nimmt pro Marsch höchstens alle 2 s ein Beschleunigen an
+// (Zuschauer) Losgeschickt → der Marsch steht SOFORT auf der Karte (vorläufig), bis der echte vom Weltrechner kommt
+// (sonst sähe man ihn erst ~1 s später loslaufen). Spätestens nach 10 s verschwindet ein vorläufiger ohne echten.
+const vorlaeufigeMaersche = [];                      // { art: 'a' | 's', m, bis }
+function vorlaeufigDazu(art, m) {
+    m.vorlaeufig = true; vorlaeufigeMaersche.push({ art, m, bis: Date.now() + 10000 });
+    (art === 'a' ? pendingAttacks : pendingSends).push(m); renderActiveMarches(); requestRender();
+}
+function vorlaeufigDrueber() {
+    if (!vorlaeufigeMaersche.length) return;
+    const now = Date.now(), vergeben = new Set();
+    for (let i = vorlaeufigeMaersche.length - 1; i >= 0; i--) {
+        const v = vorlaeufigeMaersche[i], liste = v.art === 'a' ? pendingAttacks : pendingSends, m = v.m;
+        const von = v.art === 'a' ? 'sourceId' : 'fromId', nach = v.art === 'a' ? 'targetId' : 'toId', wer = v.art === 'a' ? 'attackerBotId' : 'senderBotId';
+        const echt = liste.find(x => !x.vorlaeufig && !vergeben.has(x) && !x[wer] && x[von] === m[von] && x[nach] === m[nach] && x.startedAt >= m.startedAt - 3000);
+        if (echt || now > v.bis) { if (echt) vergeben.add(echt); vorlaeufigeMaersche.splice(i, 1); const j = liste.indexOf(m); if (j >= 0) liste.splice(j, 1); continue; }
+        if (!liste.includes(m)) liste.push(m);
+    }
+}
 function speedUpCost(m) { return Math.max(1, Math.ceil((m.resolveAt - Date.now()) / 60000)); }   // 1 gem per minute still to go
 function speedUpMarch(key) {                         // halves the time still to go; the column keeps its place on the road
     const now = Date.now();
     for (const list of [pendingAttacks, pendingSends, pendingRetreats]) {
         const m = list.find(x => marchKeyOf(x) === key); if (!m) continue;
         if (m.fightEndsAt) return;
+        if (m.vorlaeufig) { flashHint('Einen Moment – der Marsch läuft gerade los.', 1500); return; }
         const rem = m.resolveAt - now; if (rem < 1500) return;
-        if (now - (schnellerZuletzt.get(key) || 0) < 2100) return;   // (zu schnell hintereinander: zählt beim Weltrechner nicht)
         const cost = speedUpCost(m); if (gems < cost) { flashHint('Zu wenig Gems – Beschleunigen kostet ' + cost + '.', 3000); return; }
-        gems -= cost; schnellerZuletzt.set(key, now);
+        gems -= cost;
         alsBefehl('schneller', { keys: [key] });
         const p = Math.max(0, Math.min(.99, (now - m.startedAt) / Math.max(1, m.resolveAt - m.startedAt)));
         m.resolveAt = now + rem / 2; m.startedAt = m.resolveAt - (rem / 2) / (1 - p); schnellerMerken(m);
@@ -1646,7 +1667,7 @@ function speedUpMarch(key) {                         // halves the time still to
 // "Alle schneller": halves the time left of every own column on the road at once (same price as one by one)
 function speedableMarches() {
     const now = Date.now();
-    return [...pendingAttacks.filter(a => !a.attackerBotId), ...pendingSends.filter(x => !x.senderBotId), ...pendingRetreats].filter(m => !m.fightEndsAt && m.resolveAt - now >= 1500 && now - (schnellerZuletzt.get(marchKeyOf(m)) || 0) >= 2100);
+    return [...pendingAttacks.filter(a => !a.attackerBotId), ...pendingSends.filter(x => !x.senderBotId), ...pendingRetreats].filter(m => !m.fightEndsAt && !m.vorlaeufig && m.resolveAt - now >= 1500);
 }
 function speedUpAll() {
     const list = speedableMarches(); if (!list.length) return;
@@ -1655,7 +1676,7 @@ function speedUpAll() {
     gems -= cost; const now = Date.now();
     alsBefehl('schneller', { keys: list.map(marchKeyOf) });
     for (const m of list) { const rem = m.resolveAt - now, pr = Math.max(0, Math.min(.99, (now - m.startedAt) / Math.max(1, m.resolveAt - m.startedAt)));
-        m.resolveAt = now + rem / 2; m.startedAt = m.resolveAt - (rem / 2) / (1 - pr); schnellerMerken(m); schnellerZuletzt.set(marchKeyOf(m), now); }
+        m.resolveAt = now + rem / 2; m.startedAt = m.resolveAt - (rem / 2) / (1 - pr); schnellerMerken(m); }
     flashHint(list.length + (list.length === 1 ? ' Marsch' : ' Märsche') + ' beschleunigt – Restzeit halbiert.', 2500);
     updateHud(); saveGame(); saveProgression(); renderActiveMarches(); requestRender();
 }
@@ -10963,7 +10984,7 @@ if (window.WELT) {
         if (k.has('openWaterPendingAttacks')) pendingAttacks = PJ('openWaterPendingAttacks') || [];
         if (k.has('openWaterPendingSends')) pendingSends = PJ('openWaterPendingSends') || [];
         if (k.has('openWaterPendingRetreats')) pendingRetreats = PJ('openWaterPendingRetreats') || [];
-        if (k.has('openWaterPendingAttacks') || k.has('openWaterPendingSends') || k.has('openWaterPendingRetreats')) schnellerDrueber();
+        if (k.has('openWaterPendingAttacks') || k.has('openWaterPendingSends') || k.has('openWaterPendingRetreats')) { vorlaeufigDrueber(); schnellerDrueber(); }
         if (k.has('openWaterTitles')) { titleState = PJ('openWaterTitles'); titleVer++; ringMemo = null; }
         if (k.has('openWaterThrone')) throneState = PJ('openWaterThrone') || { pts: 0 };
         if (k.has('openWaterTourney')) tourState = PJ('openWaterTourney') || {};
@@ -11278,7 +11299,6 @@ if (window.WELT) {
             if (zuOft(wm(who), 'schneller', 60, 60000)) { warnen(who, 'schneller', 'Beschleunigen über 60-mal pro Minute – der Rest verfällt.'); return; }
             const now = Date.now(), keys = [...new Set(b.keys.filter(kennungOk))].slice(0, 200);
             for (const key of keys) { const m = marschVon(who, key); if (!m || m.fightEndsAt) continue; const rem = m.resolveAt - now; if (rem < 1500) continue;
-                if (m.spAt && now - m.spAt < 2000) continue; m.spAt = now;   // derselbe Marsch höchstens alle 2 s (15× hintereinander ging sonst auf 1,5 s)
                 const pr = Math.max(0, Math.min(.99, (now - m.startedAt) / Math.max(1, m.resolveAt - m.startedAt))); m.resolveAt = now + rem / 2; m.startedAt = m.resolveAt - (rem / 2) / (1 - pr); }
             saveProgression();
         },

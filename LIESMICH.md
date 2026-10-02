@@ -541,7 +541,11 @@ geplante Verlegung, Handy-Reaktionszeit, Schummel-Merkliste), keine Münzen/Verw
   ausgeführten Befehlen speichert er gleich (60 ms); das Handy holt nach einem Befehl nach 1,1 und 2 s extra ab.
   Gemessen: Angriff nach 1 s auf der Karte, Beschleunigen nach 0,4–0,8 s bestätigt.
 - Beschleunigen sprang auf dem Handy kurz zurück (wie früher der Ausbau): jetzt gemerkt (`wartendSchneller`), bis der
-  Weltrechner es übernommen hat. Pro Marsch höchstens alle 2 s (das nimmt der Weltrechner auch nur an).
+  Weltrechner es übernommen hat.
+- Schnell hintereinander beschleunigen zählt wieder jedes Mal (die 2-s-Sperre pro Marsch ist weg – sie schützte nichts,
+  weil die Gems noch auf dem Handy liegen; Grenze bleibt 60× pro Minute). Test: 5× in 0,6 s → 55 s auf 1 s.
+- Losschicken (Angriff, Mehrfach, Senden, Sammeln): der Marsch steht sofort auf der Karte (`vorlaeufigeMaersche`), bis
+  der echte vom Weltrechner da ist (~1 s) – nie doppelt; Beschleunigen/Zurückrufen erst, wenn der echte da ist.
 
 **Geprüft und sicher:** SQL-Injection (überall Platzhalter), Passwörter (bcrypt), Login-Cookie (HttpOnly, nur Hash in der
 DB), Admin (feste Nummer + Formular-Zeichen), keine Datei gibt Geheimnisse preis (config.php 0 Bytes, Weltrechner-Dateien
