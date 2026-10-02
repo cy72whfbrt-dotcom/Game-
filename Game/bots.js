@@ -150,7 +150,7 @@ function resolveBotAttack(attack) {
     const totalStrength = originalEnemyTroops + originalEnemyDefense;
     const won = myTroops > totalStrength;
     if (targetOwner && targetOwner !== 'player') botGrudge(targetOwner, bot.id, won ? 2 : 1);   // bots hold grudges against each other too
-    addBotXp(bot.id, won ? totalStrength : Math.min(originalEnemyTroops, myTroops));   // (gedeckelt in addBotXp)
+    addBotXp(bot.id, won ? totalStrength : Math.min(originalEnemyTroops, myTroops), totalStrength, myTroops);   // (gedeckelt in addBotXp: ¼ Stufe, weniger gegen Schwächere)
     heroFought(bot.id, attack.hx);                                   // the hero's rage fills, like yours
     const playerInvolved = targetOwner === 'player';
     const bossHere = bossAt(target.id);
@@ -1005,9 +1005,9 @@ function botBestRarity(botId) {
     return best;
 }
 
-function addBotXp(botId, amount) {
+function addBotXp(botId, amount, gegner, eigene) {
     const b = loadBotState()[botId]; if (!b) return;
-    amount = kampfEp(amount, b.lvl);                                                  // höchstens ¼ Stufe pro Kampf (wie bei dir)
+    amount = kampfEp(amount, b.lvl, gegner, eigene);                                                  // höchstens ¼ Stufe pro Kampf (wie bei dir)
     if (botById[botId] && botById[botId].mensch) { b.xpNeu = (b.xpNeu || 0) + amount; return; }   // echter Spieler: die EP gehen als Nachricht zu ihm
     b.xp += amount;
     while (b.xp >= xpNeededForLevel(b.lvl)) { b.xp -= xpNeededForLevel(b.lvl); b.lvl++; b.sp++; b.gems += 3; }

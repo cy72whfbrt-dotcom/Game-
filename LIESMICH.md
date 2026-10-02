@@ -753,3 +753,13 @@ Neue Datei `Game/buendnis.js` (nach spiel.js geladen; der Weltrechner lädt sie 
 - **Offen:** Die Bündnis-Daten (Signale, Rallys) sieht technisch jeder Spieler (wie die übrige Welt) – im Spiel gezeigt
   werden nur die eigenen (und Rallys gegen dich). Gebiet der Verbündeten wird nicht aus dem Nebel geholt.
 
+## 21b. Nachschärfen 2.10. mittags (Alexander: „Bots nach 2 Std. schon Stufe 60, lila 5 Sterne“) – NICHT hochgeladen
+- Live lief da noch der Stand von morgens (Gem-Bremse war noch nicht oben).
+- **EP nur gegen Ebenbürtige:** `kampfEp(roh, lvl, gegner, eigene)` – höchstens ¼ Stufe pro Kampf UND mal (Gegner-Stärke /
+  eigene Stärke), höchstens 1. Wer mit zehnfacher Übermacht angreift, bekommt ein Zehntel. Gilt für Spieler und Mitspieler.
+- **Kisten:** Gold (Legendär) und Rot gibt es nicht mehr aus gekauften/freien Kisten (`RARITY_DROP_WEIGHTS = [60, 25, 11, 4, 0, 0]`),
+  nur durch Zusammenlegen (3 → 1) oder als Hauptpreis (Kiste „mind. Legendär“, z. B. Platz 1 Tagesboss/Drache).
+  Eine Kiste kostet 30 Gems (vorher 5, dann 15).
+- **Zu schnelles Ausbreiten der Mitspieler** (600 Basen in 4 Std.): wird mit der Marsch-Grenze aus Paket D (Burg-Stufe) auch
+  für Mitspieler gebremst.
+

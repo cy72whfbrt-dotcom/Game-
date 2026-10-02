@@ -1183,8 +1183,8 @@ const RARITY_DEFS = [
   { key: 'rot',   name: 'Rot',   label: 'Mythisch',     color: '#ee5046' }
 ];
 const ITEM_MAX_LEVEL = 20;
-const RARITY_DROP_WEIGHTS = [60, 25, 10, 4, 0.9, 0.1]; // grau..rot
-const CRATE_GEM_COST = 15;   // (2.10.: vorher 5 – Gold-Ausrüstung kam zu schnell)
+const RARITY_DROP_WEIGHTS = [60, 25, 11, 4, 0, 0]; // grau..rot – Gold und Rot gibt es NICHT aus Kisten (2.10.), nur durch Zusammenlegen oder als Hauptpreis (Kiste „mind. Legendär“)
+const CRATE_GEM_COST = 30;   // (2.10.: vorher 5 – Gold-Ausrüstung kam zu schnell)
 const COMBINE_COUNT = 3;
 const RARITY_PCT_PER_SCORE = 0.15;
 const RARITY_FLAT_PER_SCORE = 0.3;
@@ -1409,7 +1409,12 @@ function grantLevelRewards(from, to) {
 // EP aus einem Kampf: höchstens ein Viertel der Stufe, auf der man gerade ist (Wirtschaft 2.10.). Vorher gab es so viele EP,
 // wie der Gegner Truppen hatte – ein Sieg über eine große Basis brachte Stufe 1 → 65 auf einmal.
 const KAMPF_EP_ANTEIL = 0.25;
-function kampfEp(roh, lvl) { return Math.max(0, Math.min(roh || 0, Math.ceil(xpNeededForLevel(Math.max(1, lvl || 1)) * KAMPF_EP_ANTEIL))); }
+// … und nur, wenn der Gegner ebenbürtig war: wer mit der zehnfachen Übermacht eine schwache Basis überrennt, bekommt nur ein
+// Zehntel davon (vorher holten sich die Mitspieler so in 4 Std. Stufe 60 – mit hunderten leichten Siegen)
+function kampfEp(roh, lvl, gegner, eigene) {
+    const anteil = eigene > 0 && gegner >= 0 ? Math.min(1, gegner / eigene) : 1;
+    return Math.max(0, Math.min(roh || 0, Math.ceil(xpNeededForLevel(Math.max(1, lvl || 1)) * KAMPF_EP_ANTEIL * anteil)));
+}
 function addXp(amount) {
     const before = playerLvl;
     playerXp += amount;
@@ -1974,7 +1979,7 @@ function resolveAttack(attack) {
     noteBattle(target.id, won ? originalEnemyTroops : attack.rawTroops - retreatSurvivors, won ? targetOwner : 'player');
     midFight(target.id, 'player', won ? originalEnemyTroops : defenderCasualties, targetOwner, won ? sentLoss : attack.rawTroops - retreatSurvivors);   // Turnier-Punkte
     if (targetOwner && targetOwner !== 'player') botMoodAdd(targetOwner, won ? -.25 : .1);
-    addXp(kampfEp(won ? totalStrength : defenderCasualties, playerLvl));
+    addXp(kampfEp(won ? totalStrength : defenderCasualties, playerLvl, totalStrength, myTroops));
     heroFought('player', attack.hx);                                     // every fight the hero leads fills his rage
     scoutedIslands.add(target.id);
     const ribbon = () => spawnBattleFx(target.id, won, capitalHolds ? 'Geplündert' : won ? (bossHere ? 'Boss besiegt' : 'Sieg') : 'Niederlage', capitalHolds ? 'die Hauptstadt hält' : won ? islandTitle(target) + ' erobert' : '−' + fmtCompact(attack.rawTroops - retreatSurvivors) + ' Truppen');
@@ -10691,8 +10696,9 @@ multiAttackConfirmBtn.addEventListener('click', () => {
 // HUD shortcuts, first-launch toast, player plate =====
 for (const el of document.querySelectorAll('[data-const]'))
     el.textContent = fmtNum({ CRATE_GEM_COST, MULTI_ATTACK_GEM_COST, RECALL_GEM_COST }[el.dataset.const]);
-document.getElementById('shopOdds').innerHTML = RARITY_DEFS.map((rd, i) =>
-    '<span class="chip chip--rar" data-r="' + rd.key + '">' + rd.label + ' ' + RARITY_DROP_WEIGHTS[i].toLocaleString('de-DE') + ' %</span>').join('');
+document.getElementById('shopOdds').innerHTML = RARITY_DEFS.map((rd, i) => RARITY_DROP_WEIGHTS[i] > 0 ?
+    '<span class="chip chip--rar" data-r="' + rd.key + '">' + rd.label + ' ' + RARITY_DROP_WEIGHTS[i].toLocaleString('de-DE') + ' %</span>' : '').join('') +
+    '<span class="chip chip--rar">' + RARITY_DEFS[4].label + ' + ' + RARITY_DEFS[5].label + ': nur durch Zusammenlegen</span>';
 // HUD shortcuts only ever open (the nav buttons toggle)
 document.getElementById('hudShopBtn').addEventListener('click', () => { if (!isPanelOpen(shopPopup)) shopBtn.click(); });
 document.getElementById('hudPlayer').addEventListener('click', () => { if (!isPanelOpen(profilePopup)) profileBtn.click(); });
