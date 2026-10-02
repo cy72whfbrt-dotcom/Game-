@@ -1409,6 +1409,47 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .starbar .icon{width:13px;height:13px;color:#ffd76a}
 .starbar i{display:contents}
 .starbar i .icon{color:rgba(255,255,255,.18)}
+/* ===== AUFBAU (aufbau.js, Paket D): Rohstoffe im HUD, Kosten, Forschung, Markt, Truppen-Stufe ===== */
+.res--roh{flex:0 0 auto;max-width:none;cursor:pointer;color:var(--tx-1);padding:0 8px}
+.res--roh > .icon{color:#d9b27a}
+.res--roh.on{border-color:var(--line-3);background:rgba(214,170,90,.16)}
+.roh-mini{display:none;align-items:center;gap:10px}
+.roh-v{display:flex;align-items:center;gap:4px} .roh-v .icon{width:15px;height:15px}
+.roh-h .icon,.icon.roh-h{color:#c08a4c} .roh-s .icon,.icon.roh-s{color:#aab3bd} .roh-e .icon,.icon.roh-e{color:#8fb6e0}
+.roh-drop{position:fixed;z-index:calc(var(--z-hud) + 1);top:calc(var(--safe-t) + 14px + var(--hud-h));right:calc(var(--safe-r) + 10px);width:min(300px,calc(100vw - 20px));padding:10px 12px;border-radius:var(--r-sm);
+  background:var(--glass);border:1px solid var(--line-2);box-shadow:var(--sh-2);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.roh-drop[hidden]{display:none}
+.roh-row{display:grid;grid-template-columns:22px 1fr auto;grid-template-rows:auto auto;column-gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid var(--line-1)}
+.roh-row .icon{width:20px;height:20px;grid-row:1 / 3} .roh-row span{font:600 var(--fs-13)/1.2 var(--font-ui);color:var(--tx-2)}
+.roh-row b{font:700 var(--fs-15)/1.2 var(--font-ui);color:var(--tx-1);font-variant-numeric:tabular-nums;text-align:right}
+.roh-row small{grid-column:2 / 4;font:600 var(--fs-11)/1.2 var(--font-ui);color:#9fd28a;text-align:right}
+.roh-hint{display:block;margin-top:8px;font:500 var(--fs-11)/1.35 var(--font-ui);color:var(--tx-3)}
+.city-bstats > .city-kosten{grid-column:1 / -1}
+.city-bstats b .kost,.fo-k .kost{display:inline-flex;align-items:center;gap:3px;margin:0 10px 0 0;white-space:nowrap;letter-spacing:0;text-transform:none;font:700 var(--fs-15)/1.2 var(--font-ui);color:var(--tx-1)}
+.fo-k .kost{font-size:var(--fs-12)}
+.city-bstats b{flex-wrap:wrap}
+.kost.is-bad,.city-bstats b .kost.is-bad,.fo-k .kost.is-bad{color:#ff8d7e}.kost--h .icon{color:#c08a4c} .kost--s .icon{color:#aab3bd} .kost--e .icon{color:#8fb6e0}
+.auf-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.auf-grid > div{padding:7px 8px;border:1px solid var(--line-1);border-radius:var(--r-sm);background:rgba(0,0,0,.22)}
+.auf-grid span{display:block;font:600 10px/1.2 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--tx-3)}
+.auf-grid b{display:block;margin-top:3px;font:700 var(--fs-12)/1.25 var(--font-ui);color:var(--tx-1)}
+.auf-frei{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.auf-frei li{display:flex;align-items:center;gap:6px;font:600 var(--fs-13)/1.3 var(--font-ui);color:var(--tx-1)} .auf-frei .icon{width:14px;height:14px;color:#9fd28a;flex:none}
+.fo-tabs{grid-template-columns:repeat(3,1fr);margin:10px 0 8px}
+.fo-list{display:flex;flex-direction:column;gap:6px}
+.fo-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding:8px 10px;border:1px solid var(--line-1);border-radius:var(--r-sm);background:rgba(0,0,0,.22)}
+.fo-row > .icon{width:20px;height:20px;color:var(--gold-200);flex:none}
+.fo-row .fo-t{flex:1;min-width:0}
+.fo-row b{display:block;font:700 var(--fs-13)/1.25 var(--font-ui);color:var(--tx-1)} .fo-row b em{font-style:normal;color:var(--gold-200);font-weight:600}
+.fo-row small{display:block;font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-2)}
+.fo-row .fo-k{display:flex;flex-wrap:wrap;margin-top:3px;font-weight:600;color:var(--tx-1)} .fo-row .fo-k .icon{width:13px;height:13px}
+.fo-row .fo-why{flex-basis:100%;color:var(--tx-3);font-size:var(--fs-11)}
+.fo-row > em{font:600 var(--fs-11)/1 var(--font-ui);font-style:normal;color:var(--tx-3)} .fo-row .fo-ok .icon{width:18px;height:18px;color:#9fd28a}
+.fo-row.is-max{opacity:.75} .fo-row.is-run{border-color:var(--line-3);background:rgba(214,170,90,.1)}
+.fo-row .btn .icon{width:13px;height:13px}
+.fo-lauf{margin-top:8px;align-items:center;gap:10px}
+@media (min-width:900px) and (min-height:501px){ .res--roh{min-width:0;padding:0 14px} .roh-drop{top:72px;left:14px;right:auto} }
+@media (min-width:1560px) and (min-height:501px){ .roh-mini{display:flex} }   /* nur bei viel Platz die drei Zahlen im HUD (sonst stößt es an die Leiste rechts) */
 /* ===== BÜNDNIS (buendnis.js) ===== */
 #bundPopup{height:var(--sheet-max)} #bundTabs.tabs{grid-template-columns:repeat(4,minmax(0,1fr))}
 .mapctl button{position:relative} #bundBadge{top:1px;right:1px;left:auto}
@@ -1492,6 +1533,13 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 <symbol id="i-goal" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5" fill="currentColor" fill-opacity=".16"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><path d="M12 12l6.5-6.5M16 5.5h2.5V8"/></g></symbol>
 <symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33a1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></g></symbol>
 <symbol id="i-bund" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3.6l5 1.7v3.9c0 3.2-2 5.5-5 6.6-3-1.1-5-3.4-5-6.6V5.3z" fill="currentColor" stroke="none" opacity="0.16"/><path d="M9 3.6l5 1.7v3.9c0 3.2-2 5.5-5 6.6-3-1.1-5-3.4-5-6.6V5.3z"/><path d="M16.2 7.4l3.8 1.3v3.9c0 3.2-2 5.5-5 6.6-1.8-.7-3.2-1.7-4-3.1"/></g></symbol>
+<symbol id="i-wood" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15.5h11a2.5 2.5 0 0 0 0-5H4a2.5 2.5 0 0 0 0 5z" fill="currentColor" stroke="none" opacity="0.25"/><path d="M4 15.5h11M4 10.5h11M4 10.5a2.5 2.5 0 0 0 0 5"/><path d="M15 10.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 1 1 0-5z"/><path d="M8 20h11M8 15.5a2.25 2.25 0 0 0 0 4.5M19 15.5a2.25 2.25 0 1 1 0 4.5"/><path d="M8 6h9M8 6a2.2 2.2 0 0 0 0 4.4M17 6a2.2 2.2 0 1 1 0 4.4"/></g></symbol>
+<symbol id="i-stone" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19l2.5-7 5-2 3.5 3 1 6z" fill="currentColor" stroke="none" opacity="0.25"/><path d="M3 19l2.5-7 5-2 3.5 3 1 6z"/><path d="M13 13l3.5-4.5 4 2 .5 8.5h-6"/><path d="M8 7.5l2-3.5 3.5 1.5L13 9"/></g></symbol>
+<symbol id="i-iron" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 17.5l2.5-6h12l2.5 6z" fill="currentColor" stroke="none" opacity="0.3"/><path d="M3.5 17.5l2.5-6h12l2.5 6z"/><path d="M7.5 11.5l1.8-4.5h5.4l1.8 4.5"/><path d="M8.5 14.5h7" opacity="0.6"/></g></symbol>
+<symbol id="i-crate" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5l8-4 8 4v8l-8 4-8-4z" fill="currentColor" stroke="none" opacity="0.22"/><path d="M4 8.5l8-4 8 4v8l-8 4-8-4z"/><path d="M4 8.5l8 4 8-4M12 12.5v8"/><path d="M8 6.5l8 4" opacity="0.6"/></g></symbol>
+<symbol id="i-flask" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 3.5h5M10.5 3.5v5.2L5.2 17.6A2 2 0 0 0 7 20.5h10a2 2 0 0 0 1.8-2.9L13.5 8.7V3.5"/><path d="M7.6 14.5h8.8l2.4 3.1a2 2 0 0 1-1.8 2.9H7a2 2 0 0 1-1.8-2.9z" fill="currentColor" stroke="none" opacity="0.35"/><path d="M10 17h.01M13.5 16.2h.01"/></g></symbol>
+<symbol id="i-tower" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21l1-11h6l1 11z" fill="currentColor" stroke="none" opacity="0.25"/><path d="M8 21l1-11h6l1 11z"/><path d="M7 10h10V6.5h-2v1.5h-2V6.5h-2V8H9V6.5H7z"/><path d="M12 3v3.5M12 3l3 1-3 1" /><path d="M11 14h2"/></g></symbol>
+<symbol id="i-market" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5l1.5-5h13L20 9.5z" fill="currentColor" stroke="none" opacity="0.3"/><path d="M4 9.5l1.5-5h13L20 9.5z"/><path d="M4 9.5a2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0"/><path d="M5.5 11.5v8.5h13v-8.5"/><path d="M10 20v-4.5h4V20"/></g></symbol>
 <symbol id="i-info" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 1 0 17 0a8.5 8.5 0 1 0 -17 0z"/><path d="M12 11v5.5"/><path d="M10.9 7.9a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0 -2.2 0z" fill="currentColor" stroke="none"/></g></symbol>
 </svg>
 
@@ -1523,7 +1571,9 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
   <div class="res res--gem" title="Gems"><svg class="icon"><use href="#i-gem"/></svg><b id="gemCount">0</b>
     <button id="hudShopBtn" class="res-add" type="button" aria-label="Gems im Shop"><svg class="icon"><use href="#i-plus"/></svg></button></div>
   <div class="res res--troop" title="Truppen"><svg class="icon"><use href="#i-troops"/></svg><b id="troopCount">0</b></div>
+  <button id="hudRoh" class="res res--roh" type="button" title="Rohstoffe" aria-label="Rohstoffe"><svg class="icon"><use href="#i-crate"/></svg><span class="roh-mini"><span class="roh-v roh-h"><svg class="icon"><use href="#i-wood"/></svg><b data-r="h">0</b></span><span class="roh-v roh-s"><svg class="icon"><use href="#i-stone"/></svg><b data-r="s">0</b></span><span class="roh-v roh-e"><svg class="icon"><use href="#i-iron"/></svg><b data-r="e">0</b></span></span></button>
 </div>
+<div id="rohDrop" class="roh-drop" hidden></div>
 
 <div id="midBar" class="midbar" hidden></div>
 
@@ -2061,6 +2111,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
     <script src="bots.js?v=<?= v('bots.js') ?>"></script>
     <script src="welt.js?v=<?= v('welt.js') ?>"></script>
     <script src="spiel.js?v=<?= v('spiel.js') ?>"></script>
+    <script src="aufbau.js?v=<?= v('aufbau.js') ?>"></script>
     <script src="buendnis.js?v=<?= v('buendnis.js') ?>"></script>
     <script src="benachrichtigung.js?v=<?= v('benachrichtigung.js') ?>"></script>
 </body>

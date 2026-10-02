@@ -135,8 +135,13 @@ function profil_bereinigen($text) {
         return ['sh' => (int)$plus($h['sh'] ?? 0, 1e6), 'q' => (int)$plus($h['q'] ?? 0, 20), 'own' => !empty($h['own']), 'sk' => $sk, 'rage' => $plus($h['rage'] ?? 0, 1000)]; }, 40);   // HERO_MAXQ 20
     $sk = []; foreach (['troops', 'attack', 'defense', 'speed', 'attackGold', 'defenseGold'] as $k) $sk[$k] = (int)$plus($p['skills'][$k] ?? 0, $k === 'speed' ? 10 : 50);
     if (array_sum($sk) > $lvl + 20) { $f = ($lvl + 20) / array_sum($sk); foreach ($sk as $k => $v) $sk[$k] = (int)floor($v * $f); }   // 1 Skillpunkt pro Stufe
-    $STADT = ['academy' => 25, 'forge' => 5, 'hospital' => 40, 'shrine' => 25, 'wall' => 25, 'barracks' => 25, 'treasury' => 25, 'watch' => 25, 'heroes' => 25, 'storage' => 40];   // cityMaxLevel
+    $STADT = ['academy' => 25, 'forge' => 5, 'hospital' => 40, 'shrine' => 25, 'wall' => 25, 'barracks' => 25, 'treasury' => 25, 'watch' => 25, 'heroes' => 25, 'storage' => 40,
+              'keep' => 25, 'tower' => 25, 'embassy' => 25, 'market' => 25];   // cityMaxLevel · Paket D: Burg-Stufe (keep), Wachturm, Botschaft, Markt
     $stadt = []; foreach ($STADT as $k => $mx) if (isset($p['city']['levels'][$k])) $stadt[$k] = (int)$plus($p['city']['levels'][$k], $mx);
+    // Paket D: Forschung (feste Liste, Höchststufen wie FORSCHUNG in aufbau.js), Truppen-Stufe 1–5, Rohstoffe wie Münzen
+    $FO = ['w_prod' => 10, 'w_sam' => 10, 'w_last' => 10, 'm_atk' => 10, 'm_def' => 10, 'm_laz' => 10, 'm_t2' => 1, 'm_t3' => 1, 'm_t4' => 1, 'm_t5' => 1, 'x_tempo' => 10, 'x_spaeh' => 5, 'x_nebel' => 5];
+    $fo = []; foreach ($FO as $k => $mx) if (isset($p['fo'][$k])) $fo[$k] = (int)$plus($p['fo'][$k], $mx);
+    $res = []; foreach (['h', 's', 'e'] as $k) $res[$k] = $plus($p['res'][$k] ?? 0, 1e15);
     $jetztMs = time() * 1000;
     $lk = is_array($p['look'] ?? null) ? $p['look'] : [];
     $cr = is_array($p['crest'] ?? null) ? $p['crest'] : null;
@@ -146,6 +151,7 @@ function profil_bereinigen($text) {
         'skills' => (object)$sk,
         'gear' => $gear,
         'city' => ['levels' => (object)$stadt],
+        'fo' => (object)$fo, 'tier' => (int)max(1, $plus($p['tier'] ?? 1, 5)), 'tierBez' => (int)max(1, $plus($p['tierBez'] ?? 1, 5)), 'res' => $res,
         'wounded' => $plus($p['wounded'] ?? 0, 1e13),
         'hs' => $hs,
         'shieldUntil' => min($plus($p['shieldUntil'] ?? 0, 1e15), $jetztMs + 8 * 86400000), 'neuBis' => min($plus($p['neuBis'] ?? 0, 1e15), $jetztMs + 48 * 3600000),   // längster Schild 8 Tage, Anfängerschutz 48 h
@@ -189,7 +195,7 @@ function befehl_ok($b) {
 // ===== Was Spieler NICHT bekommen (Datenlecks) =====
 // Gedanken der Mitspieler (wen sie als Nächstes angreifen, Pläne, wann sie „aufs Handy schauen“ …) und die Merkliste des
 // Schummel-Schutzes braucht nur der Weltrechner. Spieler bekommen diese Felder nie – weder im ganzen Teil noch in Flicken.
-const NUR_WELTRECHNER = ['grudge', 'annoy', 'vendetta', 'capWish', 'mood', 'kennt', 'fails', 'outAt', 'rally', 'plan', 'wache', 'dOffen'];
+const NUR_WELTRECHNER = ['grudge', 'annoy', 'vendetta', 'capWish', 'mood', 'kennt', 'fails', 'outAt', 'rally', 'plan', 'wache', 'dOffen', 'res'];   // res: Rohstoffe der anderen (Paket D)
 function mitspieler_kuerzen($b, $jetztMs) {
     if (!is_object($b)) return $b;
     foreach (NUR_WELTRECHNER as $f) unset($b->{$f});
@@ -801,7 +807,7 @@ class MysqlLager {
         $q->execute([(int)$seit]);
         return array_map(function ($z) use ($alles) {
             $p = $z['profil'] !== null ? json_decode($z['profil'], false, 12) : null;
-            if ($p && !$alles) { unset($p->coins, $p->wounded); }   // Münzen und Verwundete anderer sieht nur der Weltrechner
+            if ($p && !$alles) { unset($p->coins, $p->wounded, $p->res); }   // Münzen, Verwundete und Rohstoffe anderer sieht nur der Weltrechner
             return ['id' => (int)$z['id'], 'name' => $z['name'], 'online' => (int)$z['online_bis'] > time(), 'profil_zeit' => (int)$z['profil_zeit'], 'profil' => $p]; }, $q->fetchAll());
     }
 

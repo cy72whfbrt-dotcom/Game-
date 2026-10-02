@@ -39,6 +39,7 @@ Game/                  ← genau dieser Ordner liegt auf dem Server
   speichern.js         Speichern/Laden: hält den Stand im Arbeitsspeicher, schickt ihn an server.php
   welt.js              die EINE Welt: Umrechnen, andere Spieler, Weltrechner, Puls, Befehle, Nachrichten
   buendnis.js          Bündnisse: Gründen, Beitreten, Signale, Rally, Geschenke, Tempel-Bonus, Gebiet (Abschnitt 18)
+  aufbau.js            Aufbau: Burg-Stufe, Holz/Stein/Eisen, Forschung, Truppen-Stufen, Markt, Marsch-Plätze (Abschnitt 22)
   server.php           alles auf dem Server: Datenbank, Login, Laden, Speichern, Welt, Sicherheit
   admin.php            nur für Admins (alexander): Wartung an/aus, Geschenke verschicken, Spielerliste
   app/                 Open Water als App auf dem Startbildschirm:
@@ -610,6 +611,89 @@ Push bleiben. Der Weltrechner baut beim Start eine neue Welt (150 Mitspieler). L
   Friedensschild, die 3 besten Helden mit Sternen, Fähigkeiten (Angriff/Verteidigung/Truppen), Mauer-Stufe und die
   4 Ausrüstungsteile mit Seltenheit, Stufe und Sternen (`spaeherBlick`; im Kampflog unter „Spähbericht“).
 - Idee 5 (Tempel-Bonus fürs Bündnis) kommt mit den Bündnissen (Paket A).
+
+## 22. Aufbau (Paket D) – wie Rise of Kingdoms (2.10., lokal getestet – NICHT hochgeladen, braucht Welt-Neustart)
+Alexanders Auswahl 8, 9, 10, 11, 14. Neue Datei **`Game/aufbau.js`** (nach spiel.js, vor buendnis.js; Weltrechner lädt sie
+mit: start.js, wachhund.php; auch hochladen.sh, Vorschau, Tests). spiel.js/bots.js/welt.js/buendnis.js rufen alles über
+`AUF` (in bots.js `var AUF = null`, solange aufbau.js noch nicht geladen ist → dann gelten die alten Werte).
+Gleiche Regeln für dich, die Mitspieler und andere echte Spieler. **Die Welt muss neu gestartet werden** (neue Saison) –
+alte Spielstände stürzen nicht ab: fehlende Felder werden vorbelegt (Burg 1, keine Forschung, T1, Start-Rohstoffe).
+- **8 Burg wie das RoK-Rathaus:** eigene **Burg-Stufe 1–25** (`city.levels.keep`), getrennt von der Basis-Stufe draußen
+  (die Basen auf der Karte, auch die Hauptstadt, bleiben sofort aufwertbar ohne Bauzeit). Aufwerten in der Stadt (Burg
+  antippen): braucht einen Bauarbeiter, hat Bauzeit, mit Gems beschleunigbar (1 Gem/Min. wie Gebäude), VIP −2 %/Stufe.
+  - Kosten Stufe L → L+1: Münzen 2.000 × 1,85^(L−1), Holz 1.000 × 1,72^(L−1), Stein 80 % davon (ab 2), Eisen 40 % (ab 5).
+    Beispiel L 1→2: 2.000 Münzen + 1.000 Holz; L 24→25: ~2,8 Mrd. Münzen + ~260 Mio. Holz.
+  - Bauzeit: 60 s × 1,55^(L−1) bis Stufe 14 (~5 Std.), dann × 1,25 je Stufe, höchstens 7 Tage (24→25 ≈ 2 Tage, zusammen ~10 Tage).
+  - Schaltet frei: **Stadt-Gebäude höchstens bis zur Burg-Stufe** (ab Burg 25 bis zu ihrem Höchstwert); **Marsch-Plätze**
+    2 + (Burg−1)/6 → Burg 1: 2, 7: 3, 13: 4, 19: 5, 25: 6; **Truppen-Stufen** T2 ab Burg 6, T3 ab 11, T4 ab 16, T5 ab 21
+    (mit Forschung); neue Gebäude: Wachturm ab Burg 3, Markt ab 4, Botschaft ab 5. **Keine Grenze für die Zahl der Basen.**
+  - Burg-Fenster (`AUF.renderKeep`, ersetzt `renderKeepSheet`): Kosten, Bauzeit, „Jetzt“ (Marsch-Plätze belegt/frei,
+    Gebäude bis Stufe, Truppen-Stufe), „Burg-Stufe X schaltet frei“, Friedensschild, Aussehen. Die Burg in der Stadt wächst
+    mit der Burg-Stufe (alle 5 Stufen größer).
+- **Marsch-Plätze (gilt für ALLE, auch Mitspieler – Wunsch Koordinator, live haben Bots ohne Grenze in 4 Std. 600 Basen
+  erobert):** eine Aktion = ein Angriff, eine Verstärkung (Senden, Bündnis-Hilfe, Rally-Beitrag), ein Sammler (auf dem Weg
+  oder am Feld), ein Marsch zu Lager/Tagesboss/Drache/Invasion, eine Armee im Feld, eine eigene Rally. Rückwege zählen nicht,
+  Truppen zu einer bestehenden Armee auch nicht. **Ein Mehrfachangriff (und „Truppen sammeln“) zählt als EINE Aktion**
+  (Kennung `grp`, nur vom selben Ort, nur innerhalb 60 s). Geprüft wird ganz unten in `launchAttack`, `launchSend`,
+  `fieldSend`, `barbSend`, `armyCreate`, `bundMarsch`, `bundRallyStart` (`marschPlatz` in spiel.js) – also für dich (mit
+  Hinweis „Alle 2 Marsch-Plätze sind belegt …“), für jeden Mitspieler und beim Weltrechner für jeden Befehl (gefälschte
+  Befehle am Handy vorbei werden abgelehnt). Mitspieler rechnen mit `AUF.marschFrei` (botThink, botFreeSlots, Sammeln).
+- **9 Rohstoffe Holz, Stein, Eisen** (`openWaterRes`, privat wie die Münzen; Start 3.000 / 2.000 / 500):
+  - Jede Basis macht nebenbei 2 je Takt × 1,15^(Stufe−1) (= ⅕ der Münzen) × Landschaft: Wiese Holz 1 / Stein 0,5 /
+    Eisen 0,25 · Wüste 0,3 / 1 / 0,5 · Schnee 0,45 / 0,6 / 1 – dazu je Region eine feste Laune 0,8–1,2, innere Regionen ×1,3.
+  - **Neue Felder** (eigener Zufall, die Gold-/Gem-Felder bleiben genau, wo sie waren): Holzfällerei, Steinbruch, Eisenmine,
+    je äußere Region 2 (ganz außen 3), passend zur Landschaft. Gleiche RoK-Regel wie Gold: feste Dauer (außen 1 Std. …
+    innen 4 Std.), Vorrat 8.000 / 8.000 / 6.000 × Regions-Faktor, Traglast 2 / 2 / 1,5 je Truppe.
+  - HUD: Knopf mit Kiste rechts (am PC mit den drei Zahlen), antippen → Liste mit Menge und „+…/Std.“.
+  - Weltrechner: Rohstoffe der anderen in `botState[id].res` (nur der Weltrechner sieht sie: server.php `NUR_WELTRECHNER`,
+    Profil ohne `res` an andere). Für echte Spieler gehen Änderungen als Nachricht `delta` mit `res` (welt.js `topf`/
+    `deltaMerken`), das Profil schickt `res` zurück. **Schummel-Schutz:** zählt die geschickten Rohstoffe mit; zeigt das
+    Profil mehr als möglich (Spielraum 30.000 + 2,5 Std. Einnahmen + ein Tag Markt) → Warnung „rohstoffe“ auf der Admin-Seite.
+- **10 Neue Gebäude** (Stadt-Ansicht mit eigenem Bild und Bauplatz, Kosten jetzt Münzen + Rohstoffe: Holz 300 × 1,75^L,
+  Stein ab Stufe 2, Eisen ab Stufe 6, je Gebäude etwas anders gemischt):
+  - **Akademie** (gab es schon, +2 % Marschtempo/Stufe bleibt): hier wird jetzt geforscht.
+  - **Wachturm** (`tower`): Angriffe auf dich zeigen im Kampf-Fenster die Stärke (ab 1 ungefähr, ab 10 genau mit
+    Truppen-Stufe und Held); Spähberichte zeigen Burg + Truppen-Stufe, ab 5 die Militär-Forschung. Mitspieler bemerken
+    Angriffe früher (+8 %/Stufe) und auch „Spurlos“-Helden eher (−3 %/Stufe).
+  - **Botschaft** (`embassy`): Hilfe- und Rally-Märsche zu Bündnis-Mitgliedern +3 %/Stufe schneller, Bündnis-Geschenke an
+    dich +4 %/Stufe (buendnis.js).
+  - **Markt** (`market`): Rohstoff ↔ Münzen, 1 Rohstoff = 5 Münzen, Gebühr 24 % (Stufe 1) … 5 % (ab 20), Tageslimit je
+    Richtung max(50.000, Stunden-Münzen × (0,2 + 0,032 × Stufe)) Münzen-Wert (Stufe 25 ≈ eine Stunde Einnahmen).
+- **11 Forschung** (Akademie, eine gleichzeitig, mit Gems beschleunigbar, VIP gilt; Stufe L braucht Akademie „ab“ + 2 × (L−1)):
+  - Wirtschaft: Ertrag +3 % Münzen und Rohstoffe (10 Stufen, ab Akademie 1) · Sammeln +5 % schneller (10, ab 2) ·
+    Traglast +6 % (10, ab 3).
+  - Militär: Angriff +2 % Kampfkraft (10, ab 2) · Verteidigung +2 % (10, ab 2) · Lazarett +2 % der Gefallenen (10, ab 4) ·
+    Truppen-Stufe T2 (Akademie 5, Burg 6), T3 (10/11), T4 (15/16), T5 (20/21), jede braucht die vorige.
+  - Erkundung: Marschtempo +3 % (10, ab 1) · Späher +10 % schneller (5, ab 3) · Kundschaft +15 % Nebel beim Erobern
+    (5, ab 6; Mitspieler kennen ab Stufe 3 auch die Nachbarn der Nachbarn).
+  - Kosten Stufe L: Münzen 3.000 / Holz 1.500 / Stein 1.200 / Eisen 600 (Militär ×1,6) × 1,6^(Akademie-ab − 1) × 1,8^(L−1),
+    Truppen-Stufen ×30. Zeit: 5 Min. × 1,7^(L−1) × 1,35^(ab − 1), Truppen-Stufen ×8, höchstens 7 Tage
+    (z. B. Angriff 1: 6½ Min., T2 ≈ 2 Std., T3 ≈ 10 Std., T4 ≈ 2 Tage, T5 7 Tage).
+  - Wirkungen beim Weltrechner über das Profil (`fo`) → `profilZuBot` → `AUF.kampf`, `botMults` (Ertrag), `botMarchMult`,
+    `botHospitalPct`, Sammeln/Traglast, `scoutSecs`. server.php `profil_bereinigen`: feste Liste mit Höchststufen.
+- **14 Truppen-Stufen T1–T5, nur EINE Truppenart:** die Qualität des ganzen Reiches. T1 Standard, T2 +10 %, T3 +25 %,
+  T4 +45 %, T5 +70 % Kampfkraft (Angriff UND Verteidigung). Wählen in der **Kaserne**; jede neue Stufe kostet einmal Eisen
+  (T2 20.000, T3 250.000, T4 3 Mio., T5 30 Mio.), zurückstellen ist frei. Rechnung (`AUF.kampf`): Angriff = Truppen ×
+  Titel × Stufe × (1 + Forschung Angriff) – beim Losschicken festgehalten (`atkKraft`, `atkTier`), gilt in `resolveAttack`,
+  `resolveBotAttack`, `fightEstimate`, Vorschau, Feld-/Armee-Kämpfen, Lager/Boss/Drache. Verteidigung: Besatzung UND
+  Verteidigung zählen × Stufe × (1 + Forschung Verteidigung) (in `effectiveDefense`, Kampfbericht-Zeile „Truppen-Stufe T3“).
+  Der Weltrechner zählt eine Stufe nur so hoch, wie Burg und Forschung im Profil erlauben (Profil mit T5 ohne Forschung → T1/…).
+- **Mitspieler (bots.js + aufbau.js) nutzen alles mit gleichen Kosten:** Burg (sobald Gebäude an sie stoßen), neue Gebäude,
+  Forschung nach Spielstil (`BOT_FO_LIEBER`), Truppen-Stufe (wenn Eisen mit Polster da ist), Markt (kaufen nur, was fehlt,
+  mit übrigen Münzen), sammeln Rohstoffe (der für die Burg fehlende lockt mehr; Fleißige 2 Sammler), Vorspulen inklusive.
+- **Getestet (Port 8784, DB `owtest_au`, Weltrechner + 3 Spieler):** Burg-Ausbau mit Bauzeit + Gems; Gebäude über Burg-Stufe
+  gesperrt; Forschung (eine gleichzeitig) + Gems; T3 gewählt (250.000 Eisen weg); Markt (1.000 Holz → 4.000 Münzen bei 20 %);
+  Angriff des Zuschauers kommt beim Weltrechner mit Kampfkraft 1,25 × 1,02 = 1,275 an, Bericht 20.000 → 25.500; anderer
+  Spieler sieht Burg 11/T3, obwohl das Profil T5 meldet; 4 gefälschte Angriffs-Befehle → nur 2 angenommen (Burg 1),
+  Sammeln dann abgelehnt; Mehrfachangriff auf 3 Ziele + 1 Angriff = 2 Aktionen, der nächste abgelehnt; Eisen-Sammler kommt
+  mit 59 Eisen zurück (Nachricht kommt an); Wachturm/Spähbericht; alte Stände ohne Felder. Mitspieler nach ~15 Min.:
+  alle innerhalb ihrer Marsch-Plätze, Burg 2–4, Akademie/Wachturm gebaut, Forschung läuft. Keine Fehler in Konsole/Weltrechner.
+- **Offen:** Burg-Stufe, Gebäude, Forschung und Rohstoffe rechnet weiter das Handy (privat, wie Stadt und Münzen bis 3B) –
+  der Weltrechner prüft nur Plausibilität (Stufe nur mit Burg + Forschung, Rohstoff-Sprünge als Warnung). Ein Schummler könnte
+  sich eine höhere Burg-Stufe ins Profil schreiben (mehr Marsch-Plätze) – erst mit 3B ganz sicher.
+- **Beobachtung:** Auch mit 2 Marsch-Plätzen nehmen Mitspieler am Anfang schnell neutrale Basen (die Märsche am Rand dauern
+  nur Sekunden): im Test nach ~30 Min. der beste 36 Basen, Ø 15. Die Grenze wirkt (nie mehr als erlaubt gleichzeitig),
+  das Tempo der Ausbreitung selbst hängt an den Marschzeiten und der Stärke der neutralen Basen.
 
 ## 21. Paket F + Gem-Bremse (2.10., lokal getestet – NICHT hochgeladen)
 - **Gem-Bremse:** Erfolge geben 5× weniger Gems (vorher zusammen ~18.000 → Gold-Ausrüstung in Stunden, auch bei Bots),

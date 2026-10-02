@@ -54,7 +54,7 @@ function bundMitte(a) { let x = 0, y = 0, n = 0; for (const w of a.mit) { const 
 function bundLog(a, t) { (a.log || (a.log = [])).unshift({ at: Date.now(), t: String(t).slice(0, 160) }); if (a.log.length > 12) a.log.length = 12; }
 function bundUnterAngriff(id) {                                  // kommt gerade ein Angriff (oder eine Armee) von außerhalb des Bündnisses?
     const ow = islandOwnerOf(id); if (!ow) return null; let str = 0, at = Infinity;
-    for (const a of pendingAttacks) if (a.targetId === id && !a.fightEndsAt && (a.attackerBotId || 'player') !== ow && !bundVerbuendet(a.attackerBotId || 'player', ow)) { str += (a.rawTroops + (a.attackBonus || 0)) * (a.atkTitle || 1); at = Math.min(at, a.resolveAt); }
+    for (const a of pendingAttacks) if (a.targetId === id && !a.fightEndsAt && (a.attackerBotId || 'player') !== ow && !bundVerbuendet(a.attackerBotId || 'player', ow)) { str += (a.rawTroops + (a.attackBonus || 0)) * (a.atkTitle || 1) * (a.atkKraft || 1); at = Math.min(at, a.resolveAt); }
     for (const x of armies) if (x.mv && x.mv.to && x.mv.to.kind === 'base' && x.mv.to.id === id) { const w = armyWho(x); if (w !== ow && !bundVerbuendet(w, ow)) { str += x.troops; at = Math.min(at, x.mv.resolveAt); } }
     return str > 0 ? { str, at } : null;
 }
@@ -188,10 +188,11 @@ function bundHilfe(who, von, nach, n) {
 function bundMarsch(who, von, nach, n, extra) {                  // ein Marsch zur Basis eines anderen Mitglieds (Rally oder Hilfe) → '' oder Grund
     const src = islandById[von], dst = islandById[nach];
     n = Math.floor(Math.min(n, islandTroops[von] || 0)); if (n < 1) return 'Keine Truppen dort';
+    if (AUF && !AUF.marschOk(who)) return AUF.marschVoll(who);                // Marsch-Plätze der Burg (Paket D) – gilt für alle
     if (!routeFor(src.landmassId, dst.landmassId, who)) return 'Kein Weg dorthin (Tor zu?)';
     const hop = lastHop(src.landmassId, dst.landmassId, who); if (!payToll(hop[0], hop[1], n, who)) return 'Das Tor ist zu oder die Maut zu teuer';
     islandTroops[von] -= n;
-    const t0 = Date.now(), m = Object.assign({ fromId: von, toId: nach, troops: n, startedAt: t0, resolveAt: t0 + travelDurationSeconds(src, dst, who) * 1000, senderBotId: who }, extra || {});
+    const t0 = Date.now(), m = Object.assign({ fromId: von, toId: nach, troops: n, startedAt: t0, resolveAt: t0 + travelDurationSeconds(src, dst, who) / (AUF ? AUF.botschaftTempo(who) : 1) * 1000, senderBotId: who }, extra || {});   // Botschaft: schneller
     pendingSends.push(m); saveGame(); saveProgression();
     return '';
 }
@@ -230,6 +231,7 @@ function bundRallyStart(a, who, b) {
     if (!bundGehoert(at, who) || !Number.isInteger(t) || !BUND.RALLY_MIN.includes(min) || !bundZahl(b.n)) return 'kaputt';
     const why = bundZielOk(who, t); if (why) return why;
     if (bund.r.some(r => r.by === who)) return 'Du hast schon eine Rally laufen';
+    if (AUF && !AUF.marschOk(who)) return AUF.marschVoll(who);                // eine Rally = ein Marsch-Platz (Paket D)
     if (bund.r.filter(r => r.aid === a.id).length >= BUND.RALLY_PRO_BUND) return 'Dein Bündnis hat schon ' + BUND.RALLY_PRO_BUND + ' Rallys laufen';
     if (!routeFor(islandById[at].landmassId, islandById[t].landmassId, who)) return 'Vom Sammelpunkt gibt es keinen Weg zum Ziel';
     const n = Math.floor(Math.min(b.n, islandTroops[at] || 0)); if (n < 1) return 'Keine Truppen am Sammelpunkt';
@@ -277,7 +279,8 @@ function bundRallyLos(r) {
         return bundRallyEnde(r, ow === by || bundVerbuendet(ow, by) ? 'das Ziel gehört inzwischen dem Bündnis' : isCapital(r.t) ? 'das Ziel ist jetzt eine Hauptstadt' : 'das Ziel steht unter einem Friedensschild'); }
     const total = bundRallyTruppen(r);
     islandTroops[r.at] = (islandTroops[r.at] || 0) + total;
-    const k = pendingAttacks.length, ok = launchAttack(r.at, r.t, by, total);
+    if (AUF) AUF.frei.an();                                                     // (der gemeinsame Angriff war schon als Rally gezählt)
+    const k = pendingAttacks.length; let ok = false; try { ok = launchAttack(r.at, r.t, by, total); } finally { if (AUF) AUF.frei.aus(); }
     const atk = ok && pendingAttacks.length > k ? pendingAttacks[pendingAttacks.length - 1] : null;
     if (!atk || atk.attackerBotId !== by) { islandTroops[r.at] = Math.max(0, (islandTroops[r.at] || 0) - total); return bundRallyEnde(r, 'der Weg ist versperrt (Tor zu oder Maut zu teuer)'); }
     atk.rally = { id: r.id, by, an: [[by, r.at, r.n0]].concat(r.j.filter(j => j.da).map(j => [j.w, j.f, j.n])) };
@@ -324,7 +327,7 @@ function bundGeschenk(geber, grund) {
     for (const w of a.mit) {
         if (w === geber || (g.n[w] || 0) >= BUND.GESCHENKE_TAG) continue;
         g.n[w] = (g.n[w] || 0) + 1;
-        const hp = hourProduction(w), c = Math.round(Math.max(2000, hp.coins * .05)), tr = Math.round(Math.max(500, hp.troops * .05));
+        const hp = hourProduction(w), bg = AUF ? AUF.botschaftGeschenk(w) : 1, c = Math.round(Math.max(2000, hp.coins * .05) * bg), tr = Math.round(Math.max(500, hp.troops * .05) * bg);   // (Botschaft: größer)
         const x = Math.random(), crate = x < .03 ? 1 : x < .12 ? 0 : -1;                       // selten eine graue oder grüne Ausrüstung
         if (botById[w] && botById[w].mensch) {
             if (WELT.wache) WELT.wache.gutschrift(w, c, tr);                                   // (damit der Schummel-Schutz das Abholen durchlässt)
