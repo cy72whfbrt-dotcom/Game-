@@ -67,7 +67,6 @@ Umgebungsvariablen, entfernt fremde Reste aus `Game/` und prüft, dass alles hei
 | `DB_NAME` | `k17700_alex` |
 - Datenbank ansehen: phpMyAdmin auf **db.lapush.de**.
 - Claude-Code-Modus auf **„Fragen“** stellen, nicht „Auto“ – sonst blockiert die Sicherheitsprüfung das Hochladen.
-- Alexander sollte seine Passwörter ändern (standen am 1.10. im Chat). Neues DB-Passwort → Variable ändern → `./hochladen.sh`.
 
 ## 4. Office-Server
 - Login: `POST https://office.hobbitonhill.de/index.php?` mit `name`, `pw`, `login=login` → `sid` steht in den Links.
@@ -480,7 +479,6 @@ haben gelesen, alles Gefundene wurde behoben und getestet. Tests: `php tests/ser
 
 **Zugangsdaten:** In der ganzen Git-Geschichte (13 Zweige) stehen die echten Passwörter NIE – nur Platzhalter in alten
 Beispieldateien. Es gab nie eine config.php/.env im Git. `.env.example` (ohne Werte) beschreibt, was hochladen.sh braucht.
-Trotzdem ändern: die Passwörter, die am 1.10. im Chat standen (Office, Datenbank).
 
 **Behoben (Server, PHP):**
 - Kein PHP-Fehlertext mehr im Browser (`display_errors` aus, eigener Fehler-Fänger); Admin-Seite/Spielseite nie im Zwischenspeicher.
@@ -553,9 +551,6 @@ DB), Admin (feste Nummer + Formular-Zeichen), keine Datei gibt Geheimnisse preis
 jsdom (einzige Abhängigkeit): 0 bekannte Lücken (`npm audit`).
 
 **Noch offen (braucht Alexander / größere Umbauten):**
-- **Eigene Subdomain** (z. B. `spiel.hobbitonhill.de`, eigener Plesk-Ordner, config.php außerhalb des Webordners): heute
-  teilt sich das Spiel die Adresse mit dem Office-System. Wer dort Dateien ablegen kann, wäre „dieselbe Seite“. Wenn außer
-  Alexander niemand Office-Zugang hat, ist das Risiko klein. → Alexander: klären, wer Office-Konten hat.
 - **Nebel ist im Paket umgehbar:** jeder Spieler bekommt die Truppen aller Inseln. Ohne Nebel auf dem Server (3B) nicht lösbar.
 - **3B (Konto auf dem Server):** Münzen, Gems, Stufe, Helden, Ausrüstung nur noch auf dem Server – erst dann ist Schummeln
   mit gefälschter Stufe/Gems ganz ausgeschlossen.
