@@ -1103,7 +1103,8 @@ Alles in spiel.js (Abschnitt „THE CITY, ISOMETRIC“), nur Aussehen – Gebäu
 - **Die Mitte selbst bleibt** wie immer: angreifen, halten, Thron-Punkte alle 3 Min., Kopfgeld, Titel.
 - Das **Wochen-Event läuft Mo 0:00 – Fr 23:59** (Sammel-Rausch → Krieger-Woche → Boss-Jagd → Bauherr), Auszahlung
   Freitag um Mitternacht. **Das Wochenende ist frei, da passiert nichts** (Alexander: „Wochenende bleibt frei“; kurz war es
-  Mo–So, das ist wieder zurück). Der Reiter in Events heißt „Wochen-Event“ (Top 10 oben).
+  Mo–So, das ist wieder zurück). Der Reiter in Events heißt „Wochen-Event“ (Top 10 oben). Unter „Nächste Wochen“ steht
+  jetzt „Mo 5. – Fr 9.10.“ statt nur „Mo 5.10.“ (Alexander dachte, Events sind nur montags).
 
 ## 30. VIP KOMPLETT RAUS (Alexander 2.10.: „VIP find ich totaler Müll“) – NICHT hochgeladen
 - Weg: VIP-Stufen, Spieltage zählen (`openWaterVip`), VIP-Tageskiste, „Neue VIP-Stufe“-Hinweis, VIP-Zeile im Profil,
