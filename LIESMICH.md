@@ -657,3 +657,44 @@ Push bleiben. Der Weltrechner baut beim Start eine neue Welt (150 Mitspieler). L
   stimmt (Zweitheld halb, ×1,1), Bruno ist belegt; gefälschte Zweithelden (nicht im Besitz, belegt, doppelt) fallen weg;
   Feld mit Pia + Fenn, Armee mit Otto + Greta (belegter Zweitheld abgelehnt); Bericht zeigt den Zweithelden; Mitspieler
   ziehen mit Zweithelden los (Angriffe, Armeen, Lager, Felder). Keine Fehler in der Konsole.
+
+## 19. Events (Paket B) – wie Rise of Kingdoms (2.10., lokal getestet – NOCH NICHT hochgeladen)
+Alles rechnet der Weltrechner (Welt-Schlüssel **`openWaterEvents`**, in `speichern.js` WELT und `welt.js` UMRECHNEN),
+Spieler sehen es als Zuschauer. Zeiten = Uhr des Weltrechners. Neu im Spiel-Code: Abschnitt „EVENTS (Paket B)“ in spiel.js.
+- **Ereignis-Knopf** an der Karte (`#eventBtn`, neues Zeichen) öffnet das Fenster **„Ereignisse“** (`#eventPopup`) mit
+  Übersicht (Turnier, Invasion, Drache, Tagesboss, Lager – Termine, Uhren, „Zur …“-Knöpfe) und je einem Reiter mit
+  Regeln, Preisen und Rangliste (Top 10 + deine Zeile). Unter dem HUD erscheinen Hinweise: „Barbaren-Invasion in …“
+  (30 Min. vorher), „Invasion · Welle 3/6“, „Der Drache kommt in …“, „Drache 63 %“, freitags „Ab Samstag: <Thema>“.
+- **Wochenend-Turnier mit Themen** (Sa+So wie bisher, jede Woche ein anderes Thema, für alle gleich, rotierend):
+  „Kampf um die Mitte“ (wie bisher: Thron/Tempel/Kämpfe in der Mitte · Bonus Thron-Punkte +50 %), „Sammel-Rausch“
+  (Punkte fürs Gesammelte, volles Feld = 30 · Sammeln 50 % schneller), „Krieger-Woche“ (Punkte für besiegte Truppen
+  überall, 1 je 1.000 · 10 Barbaren-Lager mehr pro Tag), „Boss-Jagd“ (Punkte für Schaden an Tagesboss und Drache ·
+  Weltbosse doppelt so oft, 5 Tagesboss-Angriffe mehr), „Bauherr“ (Punkte fürs Aufwerten, 2 + neue Stufe · Ausbau 20 %
+  günstiger – auch der Schummel-Schutz rechnet mit dem Rabatt). Gedeckelt wie bisher: höchstens 30 Punkte auf einmal,
+  im Schnitt 10 pro Minute (`tourDeckel`). **Preise maßvoller:** 1.: 1.000 Gems + 30 Splitter + goldene Kiste ·
+  2.–3.: 500 + 15 + lila · 4.–10.: 200 + 6 + blau · alle anderen 50 + 2 (vorher 3.000/1.500/600/100 Gems).
+- **Barbaren-Invasion:** alle 3 Tage um 20 Uhr eine Stunde. 6 Wellen (alle 9 Min.): Barbaren-Armeen kommen vom Rand
+  ihrer Insel und marschieren 5–7 Min. auf eine Basis – jeder echte Spieler bekommt pro Welle eine (seine äußerste
+  Basis), dazu 12 Mitspieler-Basen; nie in der Mitte, nie bei Friedensschild. Stärke wie das Ziel (spätere Wellen
+  stärker); wer noch Anfängerschutz hat, bekommt nur halb so starke Armeen (meist ein Sieg mit Punkten). Barbaren erobern nichts: wer verliert, verliert 60 % der Truppen; wer abwehrt, verliert
+  etwas und bekommt **+15 Punkte**. Armeen kann man unterwegs abfangen (antippen → „Abfangen“, nur wenn man rechtzeitig
+  ankommt): Sieg **+20 Punkte**, Teilschaden anteilig – auch für Armeen auf Nachbarn. Belohnung danach (klein): ab 10
+  Punkten 10 Gems + 1 Splitter, ab 40: 30 + 3 + grüne Kiste, ab 100: 60 + 6 + blaue Kiste. Mitspieler schicken
+  Verstärkung in bedrohte Basen und fangen Armeen in ihrer Nähe ab (`botInvasion` in bots.js, gleiche Regeln).
+- **Der Drache** („Urdrache Vharak“): jeden Sonntag 19–22 Uhr über dem Thron, sehr viel Leben (≈ 75 % dessen, was alle
+  zusammen schaffen). 10 Angriffe pro Person, höchstens 2 % Leben pro Angriff, ein Drittel der Kämpfer fällt, Münzen
+  nach Schaden. Fällt er: Platz 1 goldene Kiste + 150 Gems + 20 Splitter, Platz 2–10 lila Kiste + 60 + 8, alle anderen
+  15 Gems + 2 Splitter. Entkommt er: alle Kämpfer das Kleine. Mitspieler greifen über den Abend verteilt an (`botDrache`).
+  Auf der Karte gezeichnet (Flügelschlag, Feueratem, Lebensbalken), auch im Nebel sichtbar.
+- Angriffe auf Armeen/Drachen laufen über den bekannten Befehl `lager` (neue Arten `k: 'i'` und `k: 'd'`, Weltrechner
+  prüft: Armee/Drache da, höchstens 10 Drachen-Angriffe, höchstens 40 Event-Angriffe pro Stunde). Märsche wie bei
+  Lager/Tagesboss (`barbMarches`). Preise für echte Spieler kommen als Nachricht `evPreis` ins Abholfach (auch Kisten –
+  gilt jetzt auch fürs Turnier; server.php `WELTRECHNER_NACHRICHTEN` kennt `evPreis`), Berichte als Kampflog-Eintrag
+  (Art `ev`).
+- **Handy-Nachrichten** (push.js): „Barbaren-Invasion beginnt in 10 Minuten“ und „Der Drache ist erschienen“ an alle
+  echten Spieler (nur wer gerade nicht im Spiel ist). Neue Arten `invasion`, `drache` in server.php `PUSH_ARTEN` und in
+  den Einstellungen (`#pushArten`) einzeln abschaltbar.
+- Behoben nebenbei: Zuschauer sahen die Turnier-Leiste unter dem HUD nie (sie wurde nur beim Weltrechner gezeichnet).
+  Und: `sfx()` tut beim Weltrechner nichts mehr (jsdom hat keinen Ton – ein Kampf-Effekt warf dort einen Fehler).
+- **Test-Zeiten:** `var EV_TEST = null` in spiel.js. Nur in einer lokalen Kopie auf z. B. `{ inv: Date.now() + 240000,
+  dr: Date.now() + 150000 }` setzen – im Git bleibt es `null` (echte Zeitpläne).
