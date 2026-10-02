@@ -646,6 +646,24 @@ body.has-panel .mapctl{display:none}
 .sect-aside{order:6;display:inline-flex;align-items:center;gap:6px}
 /* Handy-Benachrichtigungen im Profil (benachrichtigung.js) */
 .push-karte{display:flex;flex-direction:column;gap:8px}
+.set-body{display:flex;flex-direction:column;gap:10px}
+.set-liste{display:flex;flex-direction:column}
+.set-liste[hidden],.set-pw[hidden]{display:none}
+.set-zeile{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:40px;border-bottom:1px solid var(--line-1);font:500 var(--fs-13)/1.25 var(--font-ui);color:var(--tx-1);cursor:pointer}
+.set-zeile:last-child{border-bottom:0}
+.set-zeile span{display:flex;flex-direction:column;gap:2px}
+.set-zeile small{font-size:var(--fs-11);color:var(--tx-3)}
+.set-zeile input{width:22px;height:22px;accent-color:var(--gold-300);flex:0 0 auto}
+.set-wahl{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.set-wahl button{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;border:1px solid var(--line-2);border-radius:var(--r-sm);background:transparent;color:var(--tx-2);font:500 var(--fs-11)/1.2 var(--font-ui)}
+.set-wahl button .icon{width:18px;height:18px}
+.set-wahl button.on{border-color:var(--gold-300);color:var(--gold-100);background:rgba(214,170,90,.12)}
+.set-knoepfe{display:flex;gap:8px;flex-wrap:wrap}
+.set-pw{display:flex;flex-direction:column;gap:6px}
+.set-pw input{height:38px;padding:0 10px;border:1px solid var(--line-2);border-radius:var(--r-sm);background:#fff;color:#2b2118;font-size:16px}
+.set-pw small{color:var(--tx-3);font-size:var(--fs-11)}
+.set-ab{margin:0}
+.set-hilfe p{margin:0 0 6px;font:400 var(--fs-12)/1.4 var(--font-ui);color:var(--tx-2)}
 .push-karte[hidden],.push-karte .btn[hidden]{display:none}
 .push-text{margin:0;font-size:var(--fs-13);line-height:1.45;color:var(--tx-2)}
 .push-karte .btn{align-self:flex-start}
@@ -1414,6 +1432,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 <symbol id="i-rank" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v5.5a4 4 0 0 1-8 0z" fill="currentColor" stroke="none" opacity="0.14"/><path d="M8 4h8v5.5a4 4 0 0 1-8 0z"/><path d="M8 6H5.2a3 3 0 0 0 3 3.6M16 6h2.8a3 3 0 0 1-3 3.6"/><path d="M12 13.5v3.5"/><path d="M8.5 20.5h7l-.8-3.5H9.3z"/></g></symbol>
 <symbol id="i-flag" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21V3.5"/><path d="M6 4.5h12l-2.8 3.8L18 12H6" fill="currentColor" stroke="none" opacity="0.16"/><path d="M6 4.5h12l-2.8 3.8L18 12H6"/></g></symbol>
 <symbol id="i-goal" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5" fill="currentColor" fill-opacity=".16"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><path d="M12 12l6.5-6.5M16 5.5h2.5V8"/></g></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33a1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></g></symbol>
 <symbol id="i-info" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 1 0 17 0a8.5 8.5 0 1 0 -17 0z"/><path d="M12 11v5.5"/><path d="M10.9 7.9a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0 -2.2 0z" fill="currentColor" stroke="none"/></g></symbol>
 </svg>
 
@@ -1467,6 +1486,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
   <button id="markerBtn" type="button" aria-label="Wegmarke setzen"><svg class="icon"><use href="#i-flag"/></svg></button>
   <button id="armyBtn" type="button" aria-label="Armee aufstellen"><svg class="icon"><use href="#i-troops"/></svg></button>
   <button id="eventBtn" type="button" aria-label="Ereignisse: Tagesboss und Barbaren-Lager"><svg class="icon"><use href="#i-attack"/></svg></button>
+  <button id="settingsBtn" type="button" aria-label="Einstellungen"><svg class="icon"><use href="#i-gear"/></svg></button>
 </div>
 <div id="armySheet" class="marker-sheet field-sheet" hidden></div>
 <div id="fieldSheet" class="marker-sheet field-sheet" hidden></div>
@@ -1537,12 +1557,6 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
       </div>
       <div class="sect"><h4>Übersicht</h4></div>
       <div id="profileStats" class="kv"></div>
-      <!-- Handy-Benachrichtigungen (benachrichtigung.js): bleibt versteckt, bis klar ist, was geht -->
-      <div id="pushKarte" class="push-karte" hidden>
-        <div class="sect"><h4>Benachrichtigungen</h4></div>
-        <p id="pushText" class="push-text"></p>
-        <button id="pushKnopf" class="btn btn--secondary btn--sm" type="button" hidden></button>
-      </div>
     </div>
 
     <div id="tabEquip" class="profileTabPanel" role="tabpanel">
@@ -1604,6 +1618,60 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 </section>
 
 <!-- ============ RANGLISTE ============ -->
+<!-- ============ EINSTELLUNGEN (Zahnrad an der Karte) ============ -->
+<section id="settingsPopup" class="panel panel--sheet" role="dialog" aria-labelledby="settingsTitle">
+  <span class="sheet-grab" aria-hidden="true"></span>
+  <header class="phead">
+    <div class="emblem emblem--gold"><svg class="icon"><use href="#i-gear"/></svg></div>
+    <div class="phead-text"><div class="overline">Open Water</div><h3 id="settingsTitle" class="ptitle">Einstellungen</h3></div>
+    <button id="settingsCloseBtn" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button>
+  </header>
+  <div class="pbody set-body">
+    <!-- Handy-Benachrichtigungen (benachrichtigung.js) -->
+    <div class="sect"><h4>Benachrichtigungen</h4></div>
+    <div id="pushKarte" class="push-karte">
+      <p id="pushText" class="push-text">Einen Moment …</p>
+      <button id="pushKnopf" class="btn btn--secondary btn--sm" type="button" hidden></button>
+      <div id="pushArten" class="set-liste" hidden>
+        <label class="set-zeile"><span>Angriff auf deine Basis</span><input type="checkbox" data-push-art="angriff"></label>
+        <label class="set-zeile"><span>Späher unterwegs zu dir</span><input type="checkbox" data-push-art="spaeher"></label>
+        <label class="set-zeile"><span>Basis verloren</span><input type="checkbox" data-push-art="verloren"></label>
+      </div>
+    </div>
+    <div class="sect"><h4>Ton</h4></div>
+    <div id="setTon" class="set-wahl" role="radiogroup" aria-label="Ton">
+      <button type="button" data-ton="all"><svg class="icon"><use href="#i-sound"/></svg>Musik + Effekte</button>
+      <button type="button" data-ton="sfx"><svg class="icon"><use href="#i-sfx"/></svg>Nur Effekte</button>
+      <button type="button" data-ton="off"><svg class="icon"><use href="#i-mute"/></svg>Aus</button>
+    </div>
+    <div class="sect"><h4>Grafik</h4></div>
+    <div class="set-liste">
+      <label class="set-zeile"><span>Akku sparen<small>Karte ruhiger, weniger Bilder pro Sekunde</small></span><input type="checkbox" id="setAkku"></label>
+    </div>
+    <div class="sect"><h4>Konto</h4></div>
+    <div class="kv"><div><span>Name</span><b id="setName"></b></div><div><span>Spieler-Nummer</span><b id="setNr"></b></div></div>
+    <div class="set-knoepfe"><button id="setNameBtn" class="btn btn--secondary btn--sm" type="button">Name ändern</button>
+      <button id="setPwOffen" class="btn btn--secondary btn--sm" type="button">Passwort ändern</button></div>
+    <form id="setPwForm" class="set-pw" hidden autocomplete="on">
+      <input id="setPwAlt" type="password" autocomplete="current-password" placeholder="Altes Passwort" maxlength="200">
+      <input id="setPwNeu" type="password" autocomplete="new-password" placeholder="Neues Passwort (10–72 Zeichen)" maxlength="72">
+      <button class="btn btn--primary btn--sm" type="submit">Speichern</button>
+      <small>Danach bist du auf allen anderen Geräten abgemeldet.</small>
+    </form>
+    <form action="index.php?aus=1" method="post" class="set-ab"><button class="btn btn--secondary btn--sm" type="submit">Abmelden</button></form>
+    <div class="sect"><h4>Hilfe</h4></div>
+    <div class="set-hilfe">
+      <p><b>Basis antippen</b> → angreifen, Truppen senden, aufwerten.</p>
+      <p><b>Mehrfach</b> → mehrere Ziele auf einmal angreifen (1 Gem).</p>
+      <p><b>Felder</b> (Gold, Edelsteine) → Truppen sammeln dort, außen 1 Std., innen bis 4 Std.</p>
+      <p><b>Stadt</b> → Gebäude geben Boni, das Lazarett rettet Verwundete.</p>
+      <p><b>Mitte</b> → wer den Mega-Tempel hält, herrscht über die Welt.</p>
+    </div>
+    <div class="sect"><h4>Info</h4></div>
+    <div class="kv"><div><span>Version</span><b id="setVersion"></b></div></div>
+  </div>
+</section>
+
 <section id="rankPopup" class="panel panel--sheet" role="dialog" aria-labelledby="rankTitle">
   <span class="sheet-grab" aria-hidden="true"></span>
   <header class="phead">

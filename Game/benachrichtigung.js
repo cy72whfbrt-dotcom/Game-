@@ -8,7 +8,7 @@
     'use strict';
     const OW = window.__OW || {};
     if (OW.system) return;                           // der Weltrechner hat kein Handy
-    const karte = document.getElementById('pushKarte'), text = document.getElementById('pushText'), knopf = document.getElementById('pushKnopf');
+    const karte = document.getElementById('pushKarte'), text = document.getElementById('pushText'), knopf = document.getElementById('pushKnopf'), arten = document.getElementById('pushArten');
     if (!karte || !text || !knopf) return;
     const kann = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window && window.isSecureContext;
     const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -35,15 +35,17 @@
 
     const TEXTE = {
         aus: ['Bekomme eine Nachricht aufs Handy, wenn deine Basen angegriffen werden – auch wenn das Spiel zu ist.', 'Benachrichtigungen erlauben'],
-        an: ['✓ An. Du bekommst eine Nachricht, wenn deine Basis angegriffen wird, eine Basis fällt oder ein Späher kommt – nur wenn du gerade nicht im Spiel bist (höchstens eine pro Minute).', 'Ausschalten'],
+        an: ['✓ An – nur wenn du gerade nicht im Spiel bist (höchstens eine pro Minute). Welche Nachrichten du willst:', 'Ausschalten'],
+        serverAus: ['Benachrichtigungen gibt es gerade nicht.', ''],
         iosApp: ['Auf dem iPhone geht das nur in der App: im Browser auf Teilen → „Zum Home-Bildschirm“ tippen, dann Open Water vom Home-Bildschirm öffnen und hier erlauben.', 'So geht’s'],
         kannNicht: ['Dieser Browser kann leider keine Benachrichtigungen.', ''],
         verboten: ['Benachrichtigungen sind für Open Water verboten. Erlauben kannst du sie in den Einstellungen deines Handys (bzw. Browsers) – danach hier nochmal tippen.', 'Nochmal versuchen']
     };
     function zeigen(z) {
         zustand = z;
-        if (z === 'serverAus') { karte.hidden = true; return; }   // ohne Schlüssel auf dem Server gibt es nichts zu erlauben
         karte.hidden = false;
+        if (arten) arten.hidden = z !== 'an';
+        if (z === 'an' && info) for (const c of arten.querySelectorAll('[data-push-art]')) c.checked = !(info.aus || []).includes(c.dataset.pushArt);
         text.textContent = TEXTE[z][0];
         knopf.textContent = TEXTE[z][1]; knopf.hidden = !TEXTE[z][1]; knopf.disabled = beschaeftigt;
     }
@@ -103,6 +105,13 @@
             zeigen(vorher === 'an' ? 'an' : 'aus');
         }
         finally { beschaeftigt = false; knopf.disabled = false; }
+    });
+
+    // Einstellungen: welche Arten (Angriff, Späher, Basis verloren) – wird auf dem Server gemerkt, der Weltrechner richtet sich danach
+    if (arten) arten.addEventListener('change', async () => {
+        const aus = [...arten.querySelectorAll('[data-push-art]')].filter(c => !c.checked).map(c => c.dataset.pushArt);
+        try { const r = await server('push_arten', { aus }); if (info) info.aus = r.aus || aus; hinweis('Gespeichert.', 1500); }
+        catch (e) { hinweis('Das hat nicht geklappt – bitte nochmal.'); }
     });
 
     setTimeout(pruefen, 2500);   // nach dem Laden (das Spiel geht vor)

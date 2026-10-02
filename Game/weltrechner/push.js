@@ -170,8 +170,10 @@ function melder(holen, log) {
                 const meine = abos.filter(a => a.uid === uid);
                 warte.delete(uid);
                 if (aus || !meine.length) continue;
+                const nichtGewollt = meine[0].aus || [], gewollt = frisch.filter(e => !nichtGewollt.includes(e.art));   // Einstellungen: Arten, die er ausgeschaltet hat
+                if (!gewollt.length) continue;
                 zuletzt.set(uid, jetzt);
-                const daten = nachrichtBauen(frisch, jetzt), weg = [];
+                const daten = nachrichtBauen(gewollt, jetzt), weg = [];
                 for (const abo of meine.slice(0, 10)) {
                     let erg = 'fehler'; try { erg = await sendenAn(abo, daten); } catch (x) { log('Push-Fehler: ' + (x && x.message || x)); }
                     if (erg === 'ok') stat.gesendet++; else if (erg === 'weg') { weg.push(abo.id); stat.weg++; } else stat.fehler++;

@@ -593,3 +593,20 @@ Gems, Ausrüstung, Stadt), leert `spiel_token` (alte offene Fenster können nich
 Push bleiben. Der Weltrechner baut beim Start eine neue Welt (150 Mitspieler). Lokal getestet 2.10.
 - **Bug 2.10.:** Mehrfachangriff auf 100 Ziele – nur ~30 kamen an. Der Server nimmt höchstens 30 Befehle pro Puls und
   warf den Rest still weg. Jetzt schickt das Handy je 30 und gleich danach die nächsten 30 (welt.js). Test: 84/84 angenommen.
+
+## 17. Einstellungen + Spähbericht (2.10., lokal getestet – NOCH NICHT hochgeladen)
+- **Einstellungen (Idee 51):** Zahnrad unten in der Kartenleiste (`#settingsBtn`, `#settingsPopup` in spiel.php).
+  - Benachrichtigungen (aus dem Profil hierher umgezogen) + je Art an/aus: Angriff, Späher, Basis verloren. Gespeichert
+    auf dem Server (`ow_spieler.push_aus`, Aktion `push_arten`, nur diese 3 Arten erlaubt); der Weltrechner (push.js)
+    lässt ausgeschaltete Arten weg.
+  - Ton: Musik + Effekte / nur Effekte / aus (gleich wie der Knopf an der Karte, `Music.setMode`).
+  - Akku sparen: halb so viele Bilder pro Sekunde, Schärfe 1,5 statt 2 (`akkuSparen`).
+  - Konto: Name (führt zum Namensfeld im Profil), Spieler-Nummer, **Passwort ändern** (Aktion `passwort`: altes
+    Passwort nötig, neues 10–72 Zeichen, höchstens 5 Versuche in 15 Min., danach alle anderen Geräte abgemeldet),
+    **Abmelden** (POST an index.php?aus=1).
+  - Hilfe (kurz) und Version (Datum von spiel.js).
+- **Spähbericht (Idee 17):** Der Späher bringt jetzt zusätzlich mit (bei Basen von Mitspielern): Herr + Stufe + Titel,
+  Friedensschild, die 3 besten Helden mit Sternen, Fähigkeiten (Angriff/Verteidigung/Truppen), Mauer-Stufe und die
+  4 Ausrüstungsteile mit Seltenheit, Stufe und Sternen (`spaeherBlick`; im Kampflog unter „Spähbericht“).
+- Idee 5 (Tempel-Bonus fürs Bündnis) kommt mit den Bündnissen (Paket A).
+

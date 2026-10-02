@@ -1769,6 +1769,29 @@ function launchScout(targetId, explore, at) {
     renderActiveMarches();
 }
 
+// Spähbericht: was der Späher über den Herrn der Basis herausfindet – Stufe, Helden, Ausrüstung, Fähigkeiten, Mauer,
+// Titel, Friedensschild (so, wie es gerade ist; nur bei Mitspielern – neutrale Basen haben keinen Herrn)
+function spaeherBlick(owner) {
+    if (!owner || owner === 'player' || !botById[owner]) return null;
+    const b = loadBotState()[owner]; if (!b) return null;
+    const gear = {}; for (const k of Object.keys(EQUIPMENT_DEFS)) { const it = botItem(b, k); gear[k] = it ? [it.rarity, it.level, it.stars] : null; }
+    const held = Object.entries(b.hs || {}).filter(([id, h]) => h && h.own && heroById(id)).sort((x, y) => (y[1].q || 0) - (x[1].q || 0)).slice(0, 3).map(([id, h]) => [heroById(id).name, (h.q || 0) / 2]);
+    const t = titleOf(owner);
+    return { name: botById[owner].name, lvl: b.lvl || 1, sk: { attack: (b.skills || {}).attack || 0, defense: (b.skills || {}).defense || 0, troops: (b.skills || {}).troops || 0 },
+        gear, held, wall: botBld(owner, 'wall') || 0, titel: t ? t.name : '', schild: !!ownerShielded(owner) };
+}
+function spaeherBlickHtml(s) {
+    if (!s) return '';
+    const stern = n => n ? ' ' + '★'.repeat(Math.floor(n)) + (n % 1 ? '½' : '') : '';
+    const gear = Object.keys(EQUIPMENT_DEFS).map(k => { const g = s.gear[k]; return '<div class="logLine"><span>' + EQUIPMENT_DEFS[k].name + '</span><span' + (g ? ' style="color:' + RARITY_DEFS[g[0]].color + '"' : '') + '>' +
+        (g ? RARITY_DEFS[g[0]].label + ' · St. ' + g[1] + (g[2] ? ' · ' + g[2] + '★' : '') : '—') + '</span></div>'; }).join('');
+    return '<details><summary>Spähbericht</summary><div class="logSide" style="margin-top:6px">' +
+        '<div class="logLine"><span>Herr</span><span>' + escapeHtml(s.name) + ' · Stufe ' + fmtNum(s.lvl) + (s.titel ? ' · ' + escapeHtml(s.titel) : '') + '</span></div>' +
+        '<div class="logLine"><span>Friedensschild</span><span>' + (s.schild ? 'aktiv' : 'keiner') + '</span></div>' +
+        '<div class="logLine"><span>Helden</span><span>' + (s.held.length ? s.held.map(h => escapeHtml(h[0]) + stern(h[1])).join(', ') : 'keine') + '</span></div>' +
+        '<div class="logLine"><span>Fähigkeiten</span><span>Angriff ' + s.sk.attack + ' · Vert. ' + s.sk.defense + ' · Truppen ' + s.sk.troops + '</span></div>' +
+        '<div class="logLine"><span>Mauer</span><span>Stufe ' + s.wall + '</span></div>' + gear + '</div></details>';
+}
 function resolveScout(scout) {
     const target = islandById[scout.targetId];
     if (!target) return;
@@ -1788,7 +1811,8 @@ function resolveScout(scout) {
         sourceId: scout.sourceId,
         targetId: scout.targetId,
         troops: effectiveTroops(target),
-        defense: effectiveDefense(target)
+        defense: effectiveDefense(target),
+        spy: spaeherBlick(islandOwnerOf(target.id))
     });
     flashHint(islandTitle(target) + ' gespäht: ' + fmtNum(effectiveTroops(target)) +
         ' Truppen, ' + fmtNum(effectiveDefense(target)) + ' Verteidigung.', 4000);
@@ -3851,6 +3875,7 @@ function pickIslandAtScreen(sx, sy) {
 
 // ---------------- render loop (render on demand) ----------------
 var mapDirty = true;   // `var` on purpose: updateHud() → requestRender() already runs at boot, before this block
+var akkuSparen = store.get('openWaterAkku') === '1';   // (Einstellungen) weniger Bilder pro Sekunde, schärfe 1,5 statt 2
 let lastFrameAt = performance.now(), lastDrawAt = 0, lastCamKey = '', lastMarchKey = '';
 function requestRender() { mapDirty = true; }   // hoisted function declaration: safe to call from anywhere
 function frame(now) {
@@ -3863,8 +3888,8 @@ function frame(now) {
   if (marchKey !== lastMarchKey) { lastMarchKey = marchKey; mapDirty = true; }
   const live = liveAnimation || multiAttackMode || pendingAttackTargetId !== null || pendingSendFromId !== null ||
                (isPanelOpen(popup) && popupView === 'preview');                           // dashes / pulses → 30 fps
-  const verdeckt = !cityView.hidden || cloudCover >= .95;                  // die Stadt (oder dichte Wolken) deckt die Karte ganz zu: nicht unsichtbar weiterzeichnen
-  if (!verdeckt && (mapDirty || animating || BG.pending || camKey !== lastCamKey || (live && now - lastDrawAt >= 33) || now - lastDrawAt >= 1000)) {
+  const verdeckt = !cityView.hidden || cloudCover >= .95, liveMs = akkuSparen ? 66 : 33, ruheMs = akkuSparen ? 2000 : 1000;   // Akku sparen: halb so viele Bilder                  // die Stadt (oder dichte Wolken) deckt die Karte ganz zu: nicht unsichtbar weiterzeichnen
+  if (!verdeckt && (mapDirty || animating || BG.pending || camKey !== lastCamKey || (live && now - lastDrawAt >= liveMs) || now - lastDrawAt >= ruheMs)) {
     drawMap(); lastDrawAt = now; lastCamKey = camKey; mapDirty = false;
     if (isPanelOpen(popup)) positionIslandPopover();
     updateMapControls();
@@ -3874,7 +3899,7 @@ function frame(now) {
 // ---------------- resize / rotation / dpr ----------------
 function sizeBackingStore() {             // safe at boot
   viewW = window.innerWidth; viewH = window.innerHeight;
-  dpr = Math.min(window.devicePixelRatio || 1, 2);                 // cap: 2 is plenty and halves fill cost on 3x phones
+  dpr = Math.min(window.devicePixelRatio || 1, (typeof akkuSparen === 'boolean' ? akkuSparen : store.get('openWaterAkku') === '1') ? 1.5 : 2);   // cap: 2 is plenty and halves fill cost on 3x phones (Akku sparen: 1,5)
   const bw = Math.round(viewW * dpr), bh = Math.round(viewH * dpr);
   if (canvas.width !== bw || canvas.height !== bh) { canvas.width = bw; canvas.height = bh; }
   canvas.style.width = viewW + 'px'; canvas.style.height = viewH + 'px';
@@ -5348,7 +5373,7 @@ function renderCombatLog() {
         }
         if (entry.type === 'scout') {
             return logRowHtml('scout', 'scout', logBadge('scout', 'Gespäht') + T(entry.targetId),
-                fmtM(entry.troops) + ' Truppen · ' + fmtM(entry.defense) + ' Verteidigung', ago(entry));
+                fmtM(entry.troops) + ' Truppen · ' + fmtM(entry.defense) + ' Verteidigung' + (entry.spy ? ' · ' + escapeHtml(entry.spy.name) + ', Stufe ' + fmtNum(entry.spy.lvl) : ''), ago(entry), spaeherBlickHtml(entry.spy));
         }
         if (entry.type === 'retreat') {
             return logRowHtml('retreat', 'recall', logBadge('retreat', 'Rückkehr') + T(entry.toId), fmtM(entry.troops) + ' geflohene Truppen zurück', ago(entry));
@@ -9867,7 +9892,7 @@ function closeTopmostPanel() {           // scrim click + Escape
   if (closeCity()) return;
   if (isPanelOpen(chestItemPopup)) return chestItemCloseBtn.click();
   if (isPanelOpen(popup)) return closeBtn.click();
-  for (const [pid, closeId] of [['rulerPopup','rulerCloseBtn'],['rankPopup','rankCloseBtn'],['profilePopup','profileCloseBtn'],['battleLogPopup','battleLogCloseBtn'],['goalsPopup','goalsCloseBtn'],['shopPopup','shopCloseBtn']])
+  for (const [pid, closeId] of [['settingsPopup','settingsCloseBtn'],['rulerPopup','rulerCloseBtn'],['rankPopup','rankCloseBtn'],['profilePopup','profileCloseBtn'],['battleLogPopup','battleLogCloseBtn'],['goalsPopup','goalsCloseBtn'],['shopPopup','shopCloseBtn']])
     if (isPanelOpen(document.getElementById(pid))) return document.getElementById(closeId).click();
   if (multiAttackMode) return multiAttackCancelBtn.click();
 }
@@ -10868,9 +10893,46 @@ const Music = (() => {
     const first = e => { window.removeEventListener('pointerdown', first, true); window.removeEventListener('keydown', first, true); if (!(e.target.closest && e.target.closest('#musicBtn'))) { start(); if (mode === 'sfx') { if (!ac) init(); ac.resume(); } } };
     window.addEventListener('pointerdown', first, true); window.addEventListener('keydown', first, true);
     paint();
-    return { toggle, start, stop, get on() { return on; } };
+    function setMode(m) { if (!['all', 'sfx', 'off'].includes(m) || m === mode) return; mode = m === 'all' ? 'off' : m === 'sfx' ? 'all' : 'sfx'; toggle(); }   // (Einstellungen) – über toggle, damit alles gleich bleibt
+    return { toggle, start, stop, setMode, get on() { return on; }, get mode() { return mode; } };
 })();
-document.getElementById('musicBtn').addEventListener('click', e => { e.stopPropagation(); Music.toggle(); });
+document.getElementById('musicBtn').addEventListener('click', e => { e.stopPropagation(); Music.toggle(); einstellungenZeigen(); });
+
+// ===== EINSTELLUNGEN (Zahnrad an der Karte): Benachrichtigungen (benachrichtigung.js), Ton, Akku sparen, Konto, Hilfe =====
+const settingsPopup = document.getElementById('settingsPopup');
+function einstellungenZeigen() {
+    if (!settingsPopup || !isPanelOpen(settingsPopup)) return;
+    for (const b of document.querySelectorAll('#setTon [data-ton]')) { const on = b.dataset.ton === Music.mode; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); }
+    document.getElementById('setAkku').checked = akkuSparen;
+    setText(document.getElementById('setName'), profileName.value || '–');
+    setText(document.getElementById('setNr'), String((window.__OW || {}).uid || '–'));
+    const sc = document.querySelector('script[src*="spiel.js"]'), v = sc && /[?&]v=(\d+)/.exec(sc.src);
+    setText(document.getElementById('setVersion'), v ? new Date(+v[1] * 1000).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '–');
+}
+document.getElementById('settingsBtn').addEventListener('click', e => { e.stopPropagation(); openPanel(settingsPopup); einstellungenZeigen(); settingsPopup.querySelector('.pbody').scrollTop = 0; });
+document.getElementById('settingsCloseBtn').addEventListener('click', () => { closePanel(settingsPopup); document.getElementById('setPwForm').hidden = true; });
+document.getElementById('setTon').addEventListener('click', e => { const b = e.target.closest('[data-ton]'); if (!b) return; Music.setMode(b.dataset.ton); einstellungenZeigen(); });
+document.getElementById('setAkku').addEventListener('change', e => {
+    akkuSparen = e.target.checked; store.set('openWaterAkku', akkuSparen ? '1' : '0'); onViewportResize();
+    flashHint(akkuSparen ? 'Akku sparen: an' : 'Akku sparen: aus', 1500);
+});
+document.getElementById('setNameBtn').addEventListener('click', () => {   // der Name steht oben im Profil – dorthin
+    closePanel(settingsPopup); document.getElementById('profileBtn').click();
+    setTimeout(() => { profileName.focus(); profileName.select(); }, 350);
+});
+document.getElementById('setPwOffen').addEventListener('click', () => { const f = document.getElementById('setPwForm'); f.hidden = !f.hidden; if (!f.hidden) document.getElementById('setPwAlt').focus(); });
+document.getElementById('setPwForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const alt = document.getElementById('setPwAlt'), neu = document.getElementById('setPwNeu');
+    if (neu.value.length < 10 || neu.value.length > 72) { flashHint('Das neue Passwort braucht 10 bis 72 Zeichen.', 3000); return; }
+    try {
+        const r = await fetch('server.php', { method: 'POST', headers: { 'X-Open-Water': '1', 'Content-Type': 'application/json' }, credentials: 'same-origin', cache: 'no-store', body: JSON.stringify({ aktion: 'passwort', alt: alt.value, neu: neu.value }) });
+        const a = await r.json();
+        if (!a.ok) { flashHint(a.grund || 'Das hat nicht geklappt.', 3500); return; }
+        alt.value = ''; neu.value = ''; document.getElementById('setPwForm').hidden = true;
+        flashHint('Passwort geändert. Andere Geräte sind jetzt abgemeldet.', 4000);
+    } catch (x) { flashHint('Das hat nicht geklappt – bitte nochmal.', 3000); }
+});
 document.addEventListener('click', e => { const bt = e.target.closest && e.target.closest('button'); if (bt && !bt.disabled && bt.id !== 'musicBtn') sfx('click'); }, true);   // a soft wooden click on every button
 
 (function finishSplash() {

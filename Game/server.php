@@ -429,7 +429,8 @@ class MysqlLager {
         $da = $this->db->query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'ow_spieler'")->fetchAll(PDO::FETCH_COLUMN);
         $neu = ['stufe' => 'INT NULL', 'muenzen' => 'DOUBLE NULL', 'gems' => 'DOUBLE NULL', 'anzahl_basen' => 'INT NULL', 'zuletzt_gespeichert' => 'DATETIME NULL', 'abschied' => "CHAR(32) NOT NULL DEFAULT ''",
                 'profil' => 'MEDIUMTEXT NULL', 'profil_zeit' => 'INT UNSIGNED NOT NULL DEFAULT 0', 'online_bis' => 'INT UNSIGNED NOT NULL DEFAULT 0',
-                'anzeigename' => 'VARCHAR(20) NULL', 'puls_minute' => 'INT UNSIGNED NOT NULL DEFAULT 0', 'puls_anzahl' => 'INT UNSIGNED NOT NULL DEFAULT 0'];
+                'anzeigename' => 'VARCHAR(20) NULL', 'puls_minute' => 'INT UNSIGNED NOT NULL DEFAULT 0', 'puls_anzahl' => 'INT UNSIGNED NOT NULL DEFAULT 0',
+                'push_aus' => "VARCHAR(60) NOT NULL DEFAULT ''"];   // push_aus: Benachrichtigungs-Arten, die der Spieler ausgeschaltet hat (Einstellungen)
         foreach ($neu as $sp => $typ) if (!in_array($sp, $da, true)) $this->db->exec("ALTER TABLE ow_spieler ADD COLUMN $sp $typ");
         // Indizes (Aufräumen und Zählen ohne die ganze Tabelle zu lesen) und ein eindeutiger Anzeigename
         $idx = $this->db->query("SELECT CONCAT(TABLE_NAME, '.', INDEX_NAME) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME LIKE 'ow\\_%'")->fetchAll(PDO::FETCH_COLUMN);
@@ -768,10 +769,16 @@ class MysqlLager {
     }
     function push_abmelden($uid, $endpoint) { $this->db->prepare('DELETE FROM ow_push WHERE spieler_id = ? AND endpoint_hash = ?')->execute([$uid, hash('sha256', $endpoint)]); }
     function push_hat($uid, $endpoint) { $q = $this->db->prepare('SELECT COUNT(*) FROM ow_push WHERE spieler_id = ? AND endpoint_hash = ?'); $q->execute([$uid, hash('sha256', $endpoint)]); return (int)$q->fetchColumn() > 0; }
+    function push_aus($uid) { $q = $this->db->prepare('SELECT push_aus FROM ow_spieler WHERE id = ?'); $q->execute([$uid]); $v = (string)$q->fetchColumn(); return $v === '' ? [] : explode(',', $v); }
+    function push_aus_setzen($uid, $arten) { $this->db->prepare('UPDATE ow_spieler SET push_aus = ? WHERE id = ?')->execute([implode(',', $arten), $uid]); }
+    function pw_hash_von($uid) { $q = $this->db->prepare('SELECT pw_hash FROM ow_spieler WHERE id = ?'); $q->execute([$uid]); return (string)$q->fetchColumn(); }
+    function pw_setzen($uid, $hash) { $this->db->prepare('UPDATE ow_spieler SET pw_hash = ? WHERE id = ?')->execute([$hash, $uid]); }
+    function andere_sitzungen_loeschen($uid, $behalten) { $this->db->prepare('DELETE FROM ow_sitzungen WHERE spieler_id = ? AND token_hash <> ?')->execute([$uid, $behalten]); }
     function push_anzahl($uid) { $q = $this->db->prepare('SELECT COUNT(*) FROM ow_push WHERE spieler_id = ?'); $q->execute([$uid]); return (int)$q->fetchColumn(); }
     function push_alle() {   // nur für den Weltrechner
-        return array_map(function ($z) { return ['id' => (int)$z['id'], 'uid' => (int)$z['spieler_id'], 'endpoint' => $z['endpoint'], 'p256dh' => $z['p256dh'], 'auth' => $z['auth']]; },
-            $this->db->query('SELECT id, spieler_id, endpoint, p256dh, auth FROM ow_push ORDER BY id LIMIT 20000')->fetchAll());
+        return array_map(function ($z) { return ['id' => (int)$z['id'], 'uid' => (int)$z['spieler_id'], 'endpoint' => $z['endpoint'], 'p256dh' => $z['p256dh'], 'auth' => $z['auth'],
+                'aus' => $z['push_aus'] === '' || $z['push_aus'] === null ? [] : explode(',', $z['push_aus'])]; },
+            $this->db->query('SELECT p.id, p.spieler_id, p.endpoint, p.p256dh, p.auth, s.push_aus FROM ow_push p LEFT JOIN ow_spieler s ON s.id = p.spieler_id ORDER BY p.id LIMIT 20000')->fetchAll());
     }
     function push_weg($ids) { $q = $this->db->prepare('DELETE FROM ow_push WHERE id = ?'); foreach ($ids as $id) $q->execute([(int)$id]); }
     function profil_setzen($uid, $p) { $this->db->prepare('UPDATE ow_spieler SET profil = ?, profil_zeit = ? WHERE id = ?')->execute([$p, time(), $uid]); }
@@ -831,6 +838,7 @@ function speichern_anfrage() {
         if (!empty($ich['system']) && $aktion === 'befehle_da') json_antwort(200, ['da' => lager()->befehle_da()]);   // (Weltrechner: liegen Befehle da? dann gleich ein Puls)
         if (!empty($ich['system']) && $aktion !== 'puls') json_antwort(200, ['ok' => true]);   // der Weltrechner hat keinen eigenen Spielstand
         if ($aktion === 'name') name_anfrage($ich, $d);
+        if ($aktion === 'passwort') passwort_anfrage($ich, $d);
         if ($aktion === 'puls') { if (wartung()) json_antwort(503, ['fehler' => 'wartung']); welt_puls($ich, $d); }   // Wartung gilt für alle
         $t1 = microtime(true);
         lager()->sperren($ich['id']);   // Laden (spiel.php) wartet, bis diese Sicherung drin ist
@@ -911,6 +919,7 @@ function push_endpoint_ok($e) {
     $h = strtolower((string)($u['host'] ?? ''));
     return (bool)preg_match('/^(fcm\.googleapis\.com|([a-z0-9-]+\.)*push\.apple\.com|([a-z0-9-]+\.)*push\.services\.mozilla\.com|([a-z0-9-]+\.)*notify\.windows\.com)$/', $h);
 }
+const PUSH_ARTEN = ['angriff', 'spaeher', 'verloren'];   // die Arten von Handy-Nachrichten (weltrechner/push.js)
 function push_anfrage($ich, $d, $aktion) {
     $l = lager();
     $s = push_schluessel();
@@ -922,7 +931,7 @@ function push_anfrage($ich, $d, $aktion) {
     $uid = (int)$ich['id'];
     if ($aktion === 'push_info') {   // mit endpoint: ist dieses Gerät für mich eingetragen? (sonst trägt das Spiel es neu ein)
         $e = $d['endpoint'] ?? null;
-        json_antwort(200, ['an' => (bool)$s, 'schluessel' => $s ? $s['public'] : null, 'geraete' => $l->push_anzahl($uid),
+        json_antwort(200, ['an' => (bool)$s, 'schluessel' => $s ? $s['public'] : null, 'geraete' => $l->push_anzahl($uid), 'aus' => $l->push_aus($uid),
             'dieses' => is_string($e) && strlen($e) <= 800 ? $l->push_hat($uid, $e) : false]);
     }
     if (!bremse('push:' . $uid, 30, 3600)) json_antwort(429, ['fehler' => 'Zu viele Versuche – bitte später nochmal.']);
@@ -937,12 +946,31 @@ function push_anfrage($ich, $d, $aktion) {
         $l->push_speichern($uid, $e, $p, $au);
         json_antwort(200, ['ok' => true]);
     }
+    if ($aktion === 'push_arten') {   // Einstellungen: welche Arten von Nachrichten will er NICHT
+        $aus = array_values(array_intersect(PUSH_ARTEN, array_map('strval', (array)($d['aus'] ?? []))));
+        $l->push_aus_setzen($uid, $aus);
+        json_antwort(200, ['ok' => true, 'aus' => $aus]);
+    }
     if ($aktion === 'push_ab') {
         $e = $d['endpoint'] ?? '';
         if (is_string($e) && strlen($e) <= 800) $l->push_abmelden($uid, $e);
         json_antwort(200, ['ok' => true]);
     }
     json_antwort(400, ['fehler' => 'unbekannt']);
+}
+
+// ===== Passwort ändern (Einstellungen): altes Passwort nötig; danach sind alle anderen Geräte abgemeldet =====
+function passwort_anfrage($ich, $d) {
+    $l = lager();
+    if (!bremse('pw:' . $ich['id'], 5, 900)) json_antwort(200, ['ok' => false, 'grund' => 'Zu viele Versuche – bitte in 15 Minuten nochmal.']);
+    $alt = (string)($d['alt'] ?? ''); $neu = (string)($d['neu'] ?? '');
+    if (strlen($alt) > 200 || !password_verify($alt, $l->pw_hash_von($ich['id']))) json_antwort(200, ['ok' => false, 'grund' => 'Das alte Passwort stimmt nicht.']);
+    if (strlen($neu) < 10 || strlen($neu) > 72) json_antwort(200, ['ok' => false, 'grund' => 'Das neue Passwort braucht 10 bis 72 Zeichen.']);
+    if ($neu === $alt) json_antwort(200, ['ok' => false, 'grund' => 'Das neue Passwort ist dasselbe wie das alte.']);
+    $l->pw_setzen($ich['id'], password_hash($neu, PASSWORD_DEFAULT));
+    $t = $_COOKIE[COOKIE_NAME] ?? '';
+    $l->andere_sitzungen_loeschen($ich['id'], is_string($t) ? hash('sha256', $t) : '');
+    json_antwort(200, ['ok' => true]);
 }
 
 // ===== Spielername wählen (Willkommen-Fenster) =====
