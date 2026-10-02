@@ -381,7 +381,7 @@ b,strong{font-weight:600}
 .barb-rank li b{color:var(--tx-1);font-variant-numeric:tabular-nums} .barb-rank li.me{border-color:var(--line-3);background:rgba(214,170,90,.1)}
 .barb-note{font:500 var(--fs-11)/1.35 var(--font-ui);color:var(--tx-3)}
 /* Ereignisse (Paket B) */
-.ev-body{display:flex;flex-direction:column;gap:8px}
+.ev-body{display:flex;flex-direction:column;gap:8px} .seg.ev-seg{grid-template-columns:1fr 1fr;margin:0 0 2px} .seg.ev-seg button{height:auto;min-height:36px;padding:6px 4px;font-size:var(--fs-12)}
 .ev-card .field-lines b{display:flex;align-items:center;justify-content:flex-end;gap:5px;flex-wrap:wrap} .ev-card .field-lines .icon{width:13px;height:13px;color:var(--gold-300)}
 .ev-card.is-tour{border-color:rgba(176,120,255,.4);background:rgba(160,92,235,.08)} .ev-card.is-warn{border-color:rgba(225,72,60,.55);background:rgba(150,30,30,.12)} .ev-card.is-drache{border-color:rgba(255,140,70,.55);background:rgba(170,60,20,.12)}
 .ev-card .barb-ct{flex-wrap:wrap;row-gap:2px} .ev-card .barb-ct > b{white-space:nowrap} .ev-card .barb-ct small{margin-left:auto;text-align:right} .ev-card .barb-ct small b{font-variant-numeric:tabular-nums;color:var(--tx-1)} .ev-rot{color:#ff8a7a} .ev-prizes3{grid-template-columns:repeat(3,minmax(0,1fr))}

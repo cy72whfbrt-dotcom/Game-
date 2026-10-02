@@ -1078,3 +1078,19 @@ Alles in spiel.js (Abschnitt „THE CITY, ISOMETRIC“), nur Aussehen – Gebäu
 - Speicher: die Mauer-Bilder sind viel kleiner (nur noch so groß wie die Mauer), das Boden-Bild etwas kleiner.
 - Getestet (Vorschau, iPhone-Größe): neue Stadt, ausgebaute Stadt, ganz weit, ganz nah, Grün/Sand/Schnee; Antippen von Burg,
   Gebäude und leerem Platz („Bauen“) klappt; Boden-Bild malt in ~50 ms; keine Fehler. Spiel- und Server-Tests grün.
+
+## 28. Turnier um die Mitte wieder JEDES Wochenende + neues Wochen-Event Mo–Fr (Alexander 2.10.) – NICHT hochgeladen
+- **Wochenend-Turnier (Sa 0:00 – So 23:59): immer „Kampf um die Mitte“** wie früher – Thron halten, Wächter-Tempel, Kämpfe in
+  der Mitte; Bonus Thron-Punkte +50 %; Preise wie bisher (Platz 1: 1.000 Gems, 30 Splitter, Gold-Kiste, Titel + Ring).
+  Die Mitte angreifen und halten geht wie immer jeden Tag (Thron-Punkte alle 3 Min., Kopfgeld, Titel).
+- **Neu: Wochen-Event (Mo 0:00 – Fr 23:59)** mit den 4 anderen Themen, jede Woche ein anderes: Sammel-Rausch → Krieger-Woche →
+  Boss-Jagd → Bauherr → … (Punkte und Bonus wie vorher am Wochenende; höchstens 30 Punkte auf einmal, im Schnitt 10/Min.).
+  Preise (kleiner als das Turnier, die Wirtschaft bleibt langsam): Platz 1 200 Gems + 10 Splitter + Episch-Kiste,
+  2.–3. 100 + 5 + Selten-Kiste, 4.–10. 40 + 2 + Ungewöhnlich-Kiste, alle anderen mit Punkten 10 Gems + 1 Splitter.
+  Gleich für dich, echte Spieler (Preis kommt als Nachricht ins Abholfach) und Mitspieler.
+- Wo: **Events → Turnier**, oben umschalten „Wochen-Event (Mo–Fr)“ / „Mitte (Sa+So)“ (offen ist, was gerade läuft); dazu Hinweis
+  unter dem HUD (ganz unten in der Wichtigkeit). Im Abholfach Quelle „Wochen-Event“.
+- Technik: Zustand in `openWaterEvents` → `evState.wo` (kein neuer Welt-Schlüssel, welt.js rechnet die Kennungen um),
+  `woWin`/`woThema`/`woDeckel`/`woRoll`/`woPay` in spiel.js; der Weltrechner zahlt am Freitag um Mitternacht aus.
+- Getestet: Wochenenden 3.10.–31.10. alle „Mitte“, Wochen wechseln die Themen, Punkte nur fürs laufende Thema (mit Deckel),
+  Auszahlung ins Abholfach, Anzeige; mit Server + Weltrechner kommt das Wochen-Event beim Spieler an. Keine Fehler, Tests grün.
