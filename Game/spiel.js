@@ -964,8 +964,13 @@ function fogSet() {
 }
 function isCellOpen(x, y) { return fogSet().has(fogKey(Math.floor(x / FOG_CELL), Math.floor(y / FOG_CELL))); }
 function islandSeen(isl) {                      // a base is visible when its spot is explored - a gate also from its bridge
-    return isCellOpen(isl.x, isl.y) || (isl.ends && isl.ends.some(e => isCellOpen(e[0], e[1])));
+    if (!(isCellOpen(isl.x, isl.y) || (isl.ends && isl.ends.some(e => isCellOpen(e[0], e[1]))))) return false;
+    return !nebelVomServer() || truppenBekannt(isl);
 }
+// 3B – Nebel auf dem Server: fremde Truppenzahlen kommen nur für Inseln, die der Weltrechner dich sehen lässt. Fehlt die Zahl
+// einer fremden Basis, liegt sie für dich (noch) im Nebel („?“) – auch wenn dein Handy das Feld schon aufgedeckt hat.
+function nebelVomServer() { return !SYSTEM && !!window.WELT && !WELT.leiter && WELT.sichtV >= 0; }
+function truppenBekannt(isl) { const ow = islandOwnerOf(isl.id); return !ow || ow === 'player' || Object.prototype.hasOwnProperty.call(islandTroops, isl.id); }
 function isExplored(lmId) { fogSet(); return (fogLmCount[lmId] || 0) > 0; }             // any part of the island known
 function revealAround(x, y, r, fade) {
     const set = fogSet(), cl = fogLandCells(), now = performance.now(), rr2 = r + FOG_CELL * .35;
@@ -1830,6 +1835,7 @@ function launchScout(targetId, explore, at) {
         explore: !!explore,
         ex: at ? at.x : undefined, ey: at ? at.y : undefined
     });
+    if (explore) alsBefehl('spaehen', { ziel: targetId, ex: at ? Math.round(at.x) : undefined, ey: at ? Math.round(at.y) : undefined });   // 3B: der Weltrechner deckt den Nebel auf dem Server mit auf
     questProgress('scout', 1);
     saveGame();
     saveProgression();
@@ -5087,7 +5093,9 @@ document.getElementById('achList').addEventListener('toggle', e => { if (e.targe
 
 // ===== PROFIL ANTIPPEN: every ruler's card - yours and everyone else's, the same way =====
 const botIdByName = {}; for (const bd of BOT_DEFS) botIdByName[bd.name] = bd.id;
-function whoTroops(who) { let n = 0; for (const id of (who === 'player' ? ownedIslands : botOwnedIslands[who] || [])) n += islandTroops[id] || 0; return n; }
+function whoTroops(who) {
+    if (who !== 'player' && typeof nebelVomServer === 'function' && nebelVomServer()) { const b = loadBotState()[who]; if (b && b.tt >= 0) return b.tt; }   // 3B: fremde Truppen kennst du nicht alle – die Summe zählt der Weltrechner
+    let n = 0; for (const id of (who === 'player' ? ownedIslands : botOwnedIslands[who] || [])) n += islandTroops[id] || 0; return n; }
 function whoBases(who) { return who === 'player' ? ownedIslands.size : (botOwnedIslands[who] || new Set()).size; }
 function whoProfile(who) {                       // the same facts for you and for anyone else
     const slots = Object.keys(EQUIPMENT_DEFS);
@@ -7684,11 +7692,12 @@ function cityCost(id, level) {                    // coins to go from `level` to
     if (id === 'keep') return niceRound(2000 * Math.pow(1.85, level - 1));   // Burg-Stufe (dazu Rohstoffe: aufbau.js)
     return niceRound(500 * Math.pow(1.9, level));
 }
-function cityTimeSec(id, level) {                 // build time for level -> level + 1
+function cityTimeRoh(id, level) {                 // build time for level -> level + 1 (before VIP) – auch der Weltrechner prüft damit (Hauptbuch)
     // fast at first (20 s … 1,5 h up to level 12), then +20 % per level, never more than 7 days - like the big strategy games
-    // VIP: −2 % je Stufe (höchstens −20 %)
-    const roh = id === 'keep' ? (AUF ? AUF.burgZeitRoh(level) : 60 * Math.pow(1.55, level - 1)) : Math.min(7 * 86400, level <= 12 ? 20 * Math.pow(1.6, level) : 20 * Math.pow(1.6, 12) * Math.pow(1.2, level - 12));   // die Burg: eigene, längere Zeiten
-    return Math.round((1 - (typeof vipStufe === 'function' ? vipStufe() : 0) * 0.02) * roh);
+    return id === 'keep' ? (AUF ? AUF.burgZeitRoh(level) : 60 * Math.pow(1.55, level - 1)) : Math.min(7 * 86400, level <= 12 ? 20 * Math.pow(1.6, level) : 20 * Math.pow(1.6, 12) * Math.pow(1.2, level - 12));   // die Burg: eigene, längere Zeiten
+}
+function cityTimeSec(id, level) {                 // VIP: −2 % je Stufe (höchstens −20 %)
+    return Math.round((1 - (typeof vipStufe === 'function' ? vipStufe() : 0) * 0.02) * cityTimeRoh(id, level));
 }
 function cityClampBuild(b, now) {                 // a build started under the old, far too long times ends by the new rule at the latest
     if (b && b.endsAt - (b.startedAt || now) > cityTimeSec(b.id, b.to - 1) * 1000) b.endsAt = Math.min(b.endsAt, (b.startedAt || now) + cityTimeSec(b.id, b.to - 1) * 1000);
@@ -11871,7 +11880,7 @@ if (window.WELT) {
         botById[id] = bd;
         if (!botOwnedIslands[id]) botOwnedIslands[id] = new BotBaseSet(id);
         if (!botCoins[id]) botCoins[id] = 0;
-        const bs = loadBotState(); bs[id] = WELT.profilZuBot(WELT.menschen[id] && WELT.menschen[id].profil, bs[id]);
+        const bs = loadBotState(); bs[id] = WELT.profilZuBot(WELT.menschen[id] && WELT.menschen[id].profil, bs[id], id);   // (Weltrechner: gegen das Hauptbuch geklemmt – 3B)
         capitalCache = null; requestRender();
     };
     // (Weltrechner) Befehle der anderen Spieler ausführen
@@ -11902,7 +11911,8 @@ if (window.WELT) {
     }
     // Merkzettel je Spieler: im Arbeitsspeicher (wacheMem) und – was einen Neustart überleben muss – in der Welt (bs.wache)
     const wacheMem = {};
-    const wm = who => wacheMem[who] || (wacheMem[who] = { init: false, zeiten: {}, warte: { ausbau: [], truppen: [] }, c: { u: 0, vor: 0, vorT: 0 }, w: { u: 0, vor: 0, vorT: 0 }, sr: [], ein: [], flug: [], lvlLog: [], lvl: 1, r: null, rEin: [] });
+    const konto = () => ({ u: 0, vor: 0, vorT: 0 });   // u: so viel kann er höchstens haben · vor: gerade ausgegeben (sein Handy zeigt schon weniger)
+    const wm = who => wacheMem[who] || (wacheMem[who] = { init: false, zeiten: {}, warte: { ausbau: [], truppen: [] }, c: konto(), w: konto(), g: konto(), rk: null, sr: [], ein: [], flug: [], lvlLog: [], lvl: 1, rEin: [], rsr: [] });
     function wd(who) {   // lv: bis zu welcher Stufe die Stufen-Truppen bezahlt sind, tk: Thron-Truppen gekauft, gTr/gC: Admin-Geschenke (Truppen/Münzen)
         const b = loadBotState()[who]; if (!b) return null;
         if (!b.wache || typeof b.wache !== 'object') b.wache = { lv: 0, tk: 0, gTr: 0, gC: 0 };
@@ -11946,22 +11956,39 @@ if (window.WELT) {
         return Math.max(0, spielraumStunde(who, m) - m.sr.reduce((a, x) => a + x.n, 0));
     }
     // (welt.js → Server) jede Nachricht „delta“ an einen Spieler mitzählen – genau das kommt bei ihm an
+    // Unterwegs (m.flug): je Art (c Münzen, w Verwundete, g Gems, h/s/e Rohstoffe) P = dazu, M = weg
+    const FLUG_K = ['c', 'w', 'g', 'h', 's', 'e'];
     function wacheDelta(who, e) {
         const m = wacheSehen(who); if (!m.init) return;
-        const now = Date.now(), c = zahlOderNull(e.coins), w = zahlOderNull(e.wounded);
-        m.c.u = Math.max(0, m.c.u + c); m.w.u = Math.max(0, m.w.u + w);
-        if (c > 0) { const t = now - now % 60000, l = m.ein[m.ein.length - 1]; if (l && l.t === t) l.n += c; else m.ein.push({ t, n: c }); }   // Einnahmen je Minute
-        if (c || w) { let f = m.flug[m.flug.length - 1]; if (!f || f.n || now - f.t > 60000) m.flug.push(f = { t: now, cP: 0, cM: 0, wP: 0, wM: 0, n: 0 });
-            if (c > 0) f.cP += c; else f.cM -= c; if (w > 0) f.wP += w; else f.wM -= w; }
+        const now = Date.now(), x = { c: zahlOderNull(e.coins), w: zahlOderNull(e.wounded), g: zahlOderNull(e.gems) };
+        if (e.res && typeof e.res === 'object') for (const k of ROHK) x[k] = zahlOderNull(e.res[k]);   // Paket D: Rohstoffe wie die Münzen mitzählen
+        m.c.u = Math.max(0, m.c.u + x.c); m.w.u = Math.max(0, m.w.u + x.w); m.g.u = Math.max(0, m.g.u + x.g);
+        if (m.rk) for (const k of ROHK) if (x[k]) m.rk[k].u = Math.max(0, m.rk[k].u + x[k]);
+        if (x.c > 0) { const t = now - now % 60000, l = m.ein[m.ein.length - 1]; if (l && l.t === t) l.n += x.c; else m.ein.push({ t, n: x.c }); }   // Einnahmen je Minute
+        for (const k of ROHK) if (x[k] > 0) { const t = now - now % 60000, l = m.rEin[m.rEin.length - 1]; if (l && l.t === t) l[k] += x[k]; else m.rEin.push(Object.assign({ t, h: 0, s: 0, e: 0 }, { [k]: x[k] })); }
+        if (FLUG_K.some(k => x[k])) { let f = m.flug[m.flug.length - 1]; if (!f || f.n || now - f.t > 60000) m.flug.push(f = { t: now, n: 0, P: {}, M: {} });
+            for (const k of FLUG_K) if (x[k] > 0) f.P[k] = (f.P[k] || 0) + x[k]; else if (x[k] < 0) f.M[k] = (f.M[k] || 0) - x[k]; }
         m.xpRest += nn(e.xp);
-        if (e.res && typeof e.res === 'object') rohWacheDelta(m, e.res, now);           // Paket D: Rohstoffe wie die Münzen mitzählen
         for (let i = 0; i < 1000 && m.xpRest >= xpNeededForLevel(m.lvl); i++) { m.xpRest -= xpNeededForLevel(m.lvl); m.lvl++; }
         const d = wd(who); if (d) d.lm = m.lvl;
+        const hb = hbDa(who);                          // 3B: sichere Helden-Splitter fürs Hauptbuch
+        if (hb && e.sh && typeof e.sh === 'object') for (const h in e.sh) if (zahlOk(e.sh[h], 1e6)) hb.shB += e.sh[h];
+    }
+    // (3B) andere Nachrichten des Weltrechners an ihn: Preise (Gems, Splitter, Kisten), Bündnis-Geschenke, Startschild
+    function wacheNachricht(who, e) {
+        const hb = hbDa(who); if (!hb) return;
+        if (e.art === 'evPreis' || e.art === 'bundGeschenk') {
+            if (zahlOk(e.gems, 1e7)) hb.gIn += e.gems;                         // liegt im Abholfach – kommt später in seinem Profil an
+            if (zahlOk(e.sh, 1e6)) hb.shB += e.sh;
+            if (Number.isInteger(e.crate) && e.crate >= 0 && e.crate <= 5) hbKisteDazu(hb, e.crate);
+        }
+        if (e.art === 'startschild' && zahlOk(e.bis, 1e15)) hb.schild = Math.max(nn(hb.schild), e.bis);
+        saveBotState();
     }
     if (Array.isArray(WELT.ereignisseRaus)) {        // (nur zuschauen – welt.js verschickt die Liste wie bisher)
         const raus = WELT.ereignisseRaus;
         raus.push = function (...xs) {
-            for (const x of xs) try { if (x && x.e && x.e.art === 'delta' && x.an > 0) wacheDelta('u' + x.an, x.e); } catch (e) { console.warn('Schummel-Schutz:', e); }
+            for (const x of xs) try { if (x && x.e && x.an > 0) { if (x.e.art === 'delta') wacheDelta('u' + x.an, x.e); else wacheNachricht('u' + x.an, x.e); } } catch (e) { console.warn('Schummel-Schutz:', e); }
             return Array.prototype.push.apply(this, xs);
         };
     }
@@ -11973,28 +12000,32 @@ if (window.WELT) {
         if (pw < lo) { k.vor = (now - k.vorT < WACHE_WARTEN_MS ? k.vor : 0) + (lo - pw); k.vorT = now; k.u = pw + flugPlus; }
         return 0;                                       // dazwischen: unklar, wie viel unterwegs schon drin ist – das Konto bleibt
     }
-    // Rohstoffe (Paket D): das „Konto“ je Rohstoff = was der Weltrechner ihm geschickt hat. Zeigt sein Profil mehr, als
-    // möglich ist (Spielraum: Start + gut 2 Stunden seiner gemessenen Einnahmen + ein Tag Markt-Kauf), gibt es eine Warnung.
-    // Bezahlt wird mit Rohstoffen nur auf seinem Handy (Burg, Gebäude, Forschung) – darum hier nur Warnungen, keine Sperre.
+    // Rohstoffe (Paket D, 3B): ein Konto je Rohstoff wie bei den Münzen = was der Weltrechner ihm geschickt hat. Mehr im Profil
+    // (Markt-Kauf) geht nur im Spielraum pro Stunde (2.000 + ¼ Stunde seiner Einnahmen + Markt-Tageslimit), der Rest
+    // ist auffällig und zählt nicht. Was sein Profil weniger zeigt, hat er ausgegeben (Topf hb.rA – bezahlt Burg, Gebäude,
+    // Forschung, Truppen-Stufe im Hauptbuch).
     const ROHK = ['h', 's', 'e'];
-    function rohWacheDelta(m, d, now) {
-        if (!m.r) return;
-        for (const k of ROHK) { const x = zahlOderNull(d[k]); m.r[k] = Math.max(0, m.r[k] + x); if (x > 0) { const t = now - now % 60000, l = m.rEin[m.rEin.length - 1]; if (l && l.t === t) l[k] += x; else m.rEin.push(Object.assign({ t, h: 0, s: 0, e: 0 }, { [k]: x })); } }
-    }
-    function rohWacheProfil(who, m, p, now) {
+    function rohWacheProfil(who, m, p, P, M, now) {
         if (!p || !p.res || typeof p.res !== 'object') return;
-        if (!m.r) { m.r = {}; for (const k of ROHK) m.r[k] = nn(p.res[k]); m.rEin = []; return; }   // zum ersten Mal: geeicht
+        const hb = hbDa(who);
+        if (!m.rk) { m.rk = {}; for (const k of ROHK) { m.rk[k] = konto(); m.rk[k].u = nn(p.res[k]); } return; }   // zum ersten Mal (und das Hauptbuch weiß noch nichts): geeicht
         while (m.rEin.length && now - m.rEin[0].t > 3600000) m.rEin.shift();
+        while (m.rsr.length && now - m.rsr[0].t > 3600000) m.rsr.shift();
         let lim = 0; try { lim = AUF ? AUF.marktLimit(who) / AUF.MARKT_WERT : 0; } catch (e) {}
         for (const k of ROHK) {
-            const pr = nn(p.res[k]), stunde = m.rEin.reduce((a, x) => a + x[k], 0), raum = 30000 + 2.5 * Math.max(stunde, (m.rHp0 || {})[k] || 0) + lim;
-            if (pr > m.r[k] + raum) warnen(who, 'rohstoffe', AUF.ROH_DEF[k].name + ' springt: das Handy sagt ' + fz(pr) + ', möglich wären höchstens ' + fz(m.r[k] + raum) + '.', pr - m.r[k] - raum);
-            m.r[k] = pr;                                    // (ausgegeben oder nicht: das Profil gilt ab hier)
+            const pr = nn(p.res[k]), kk = m.rk[k]; let mehr = kontoProfil(kk, pr, P[k] || 0, M[k] || 0, now);
+            if (kk.vor > 0) { if (hb) hb.rA[k] = nn(hb.rA[k]) + kk.vor; kk.vor = 0; }      // ausgegeben → Topf
+            if (mehr <= 0) continue;
+            const stunde = m.rEin.reduce((a, x) => a + x[k], 0), raum = Math.max(0, 2000 + .25 * Math.max(stunde, (m.rHp0 || {})[k] || 0) + lim - m.rsr.reduce((a, x) => a + (x[k] || 0), 0));
+            const nimm = Math.min(mehr, raum); if (nimm > 0) m.rsr.push({ t: now, [k]: nimm }); mehr -= nimm;
+            if (mehr >= 1) { kk.u = pr - mehr; warnen(who, 'rohstoffe', AUF.ROH_DEF[k].name + ' springt: das Handy sagt ' + fz(pr) + ', möglich wären höchstens ' + fz(pr - mehr) + '.', mehr); }
         }
     }
+    // Münzen, die er ausgegeben hat und die kein Befehl abgeholt hat (nach 60 s) → Topf hb.cA (bezahlt Bauen/Forschen im Hauptbuch)
+    function vorAltern(who, m, now) { if (m.c.vor > 0 && now - m.c.vorT > WACHE_WARTEN_MS) { const hb = hbDa(who); if (hb) hb.cA = nn(hb.cA) + m.c.vor; m.c.vor = 0; } }
     function wacheSehen(who) {
         const m = wm(who), p = profilVon(who), b = loadBotState()[who]; if (!b) return m;
-        const now = Date.now(), d = wd(who);
+        const now = Date.now(), d = wd(who), hb = b.hb && b.hb.v === HB_V ? b.hb : null;
         if (!m.init) {                                 // zum ersten Mal gesehen (auch nach einem Neustart des Weltrechners)
             m.init = true; m.prof = p; m.initT = now;
             try { m.hp0 = nn(hourProduction(who).coins); } catch (e) { m.hp0 = 0; }
@@ -12003,26 +12034,33 @@ if (window.WELT) {
             m.geeicht = Number.isFinite(d.u);
             m.c.u = p ? nn(p.coins) : nn(botCoins[who]); if (m.geeicht) m.c.u = Math.min(m.c.u, d.u) + m.hp0 * 0.25;   // (+ eine Viertelstunde: was zuletzt nicht mehr gespeichert wurde)
             m.w.u = p ? nn(p.wounded) : nn(b.wounded); if (Number.isFinite(d.w)) m.w.u = Math.min(m.w.u, d.w) + 1000;
+            const gHb = !!(hb && Number.isFinite(hb.gU));   // 3B: Gems wie die Münzen (das Hauptbuch weiß es besser als das Profil)
+            m.g.u = gHb ? hb.gU : p ? nn(p.gems) : 0; m.gGeeicht = gHb || !!(p && p.gems != null);
             m.lvl = Number.isFinite(d.lm) && d.lm >= 1 ? d.lm : Math.max(1, Math.floor(nn(p ? p.lvl : b.lvl) || 1));
             m.xpRest = xpNeededForLevel(m.lvl) - 1;    // wie voll sein Balken ist, weiß niemand: voll (großzügig)
             m.lvlLog = [{ t: now, l: m.lvl }];
-            m.rEin = []; m.r = null; try { m.rHp0 = AUF ? AUF.rohStunde(who) : null; } catch (e) { m.rHp0 = null; }
-            if (p && p.res) rohWacheProfil(who, m, p, now);
+            m.rEin = []; m.rk = null; try { m.rHp0 = AUF ? AUF.rohStunde(who) : null; } catch (e) { m.rHp0 = null; }
+            if (hb && hb.rU) { m.rk = {}; for (const k of ROHK) { m.rk[k] = konto(); m.rk[k].u = nn(hb.rU[k]); } }   // (3B: was der Weltrechner weiß – gleich ab jetzt mitzählen)
+            else if (p && p.res) rohWacheProfil(who, m, p, {}, {}, now);
         }
         m.flug = m.flug.filter(f => !(f.n >= 2 && now - f.t > FLUG_MS) && now - f.t < FLUG_MAX_MS);   // angekommen (zwei Profile später) oder uralt
         if (p && p !== m.prof && !m.geeicht) {         // noch nie gesehen: das erste frische Profil gilt (das in der Datenbank kann
             m.prof = p; m.geeicht = true;              // älter sein als sein Spielstand) – ab hier wird gezählt
-            m.c.u = nn(p.coins); m.w.u = nn(p.wounded); for (const f of m.flug) { m.c.u += f.cP; m.w.u += f.wP; f.n++; }
+            m.c.u = nn(p.coins); m.w.u = nn(p.wounded); const gNeu = !m.gGeeicht && p.gems != null; if (gNeu) { m.g.u = nn(p.gems); m.gGeeicht = true; }
+            for (const f of m.flug) { m.c.u += f.P.c || 0; m.w.u += f.P.w || 0; if (gNeu) m.g.u += f.P.g || 0; f.n++; }
             const pl = Math.max(1, Math.floor(nn(p.lvl) || 1)); if (pl > m.lvl) { m.lvl = pl; m.xpRest = xpNeededForLevel(pl) - 1; }
         }
         if (p && p !== m.prof) {                       // ein neues Profil von seinem Handy
             m.prof = p;
             const pl = Math.max(1, Math.floor(nn(p.lvl) || 1));
             if (pl > m.lvl + 1) warnen(who, 'stufe', 'Stufe springt: das Handy sagt Stufe ' + pl + ', mit seinen EP geht höchstens Stufe ' + m.lvl + '.', pl - m.lvl);
-            else if (pl > m.lvl) { m.lvl = pl; m.xpRest = 0; }
+            // (3B: die Stufe kommt nur aus den EP, die der Weltrechner schickt – sein Balken gilt beim ersten Sehen als voll,
+            //  darum ist m.lvl nie kleiner als die echte Stufe; ein Profil hebt sie nicht mehr an)
             m.lvlLog.push({ t: now, l: Math.min(pl, m.lvl) }); while (m.lvlLog.length > 1 && now - m.lvlLog[0].t > 3600000) m.lvlLog.shift();
-            let cP = 0, cM = 0, wP = 0, wM = 0; for (const f of m.flug) { cP += f.cP; cM += f.cM; wP += f.wP; wM += f.wM; f.n++; }
+            const P = {}, M = {}; for (const f of m.flug) { for (const k in f.P) P[k] = (P[k] || 0) + f.P[k]; for (const k in f.M) M[k] = (M[k] || 0) + f.M[k]; f.n++; }
+            const cP = P.c || 0, cM = M.c || 0, wP = P.w || 0, wM = M.w || 0;
             // Münzen: mehr als möglich → erst ein Admin-Geschenk (sicher bekannt), dann der Spielraum, der Rest ist auffällig
+            vorAltern(who, m, now);
             const pc = nn(p.coins); let mehr = kontoProfil(m.c, pc, cP, cM, now);
             if (mehr > 0) {
                 const roh = mehr;
@@ -12034,20 +12072,36 @@ if (window.WELT) {
             // Verwundete (entstehen nur in Kämpfen, die der Weltrechner rechnet)
             const pw = nn(p.wounded), ew = m.w.u, wm2 = kontoProfil(m.w, pw, wP, wM, now);
             if (wm2 > ew * 0.05 + 1000) { m.w.u = ew; warnen(who, 'lazarett', 'Verwundete springen: das Handy sagt ' + fz(pw) + ', möglich wären höchstens ' + fz(ew + wM) + '.', wm2); }
-            rohWacheProfil(who, m, p, now);
+            // 3B Gems: weniger → ausgegeben (Topf hb.gA). Mehr als möglich → erst sicher Geschicktes aus dem Abholfach (hb.gIn), dann
+            // Stern-Rückgabe beim Verkaufen (hb.sternG), dann der Spielraum (Tagesbelohnung, Aufgaben, Erfolge, Pass, Funde – hb.fr.g).
+            // Der Rest ist auffällig und zählt nicht (das Konto bleibt beim Möglichen).
+            if (hb && p.gems != null) {                // (ein Profil ohne Gems – altes Handy – zählt hier nicht)
+                hbFreiDazu(who, hb, now);
+                const pg = nn(p.gems); let mg = kontoProfil(m.g, pg, P.g || 0, M.g || 0, now);
+                if (m.g.vor > 0) { hb.gA = nn(hb.gA) + m.g.vor; m.g.vor = 0; }
+                if (mg > 0) {
+                    const roh = mg;
+                    for (const q of ['gIn', 'sternG']) { const x = Math.min(mg, nn(hb[q])); hb[q] = nn(hb[q]) - x; mg -= x; }
+                    { const x = Math.min(mg, nn(hb.fr.g)); hb.fr.g -= x; mg -= x; }
+                    if (mg >= 1) { m.g.u = pg - mg; warnen(who, 'gems', 'Gems springen: +' + fz(roh) + ' mehr als erwartet, möglich wären höchstens +' + fz(roh - mg) + '.', mg); }
+                }
+            }
+            rohWacheProfil(who, m, p, P, M, now);
         }
         if (m.geeicht) { d.u = Math.round(m.c.u); d.w = Math.round(m.w.u); }   // für den nächsten Start merken (geht mit der Welt mit)
+        if (hb && m.gGeeicht && now - (m.hbMerkT || 0) > 60000) hbKontenMerken(hb, m, now);   // (3B: höchstens jede Minute – sonst ginge das Hauptbuch bei jedem Puls über die Leitung)
         d.lm = m.lvl;
         return m;
     }
-    // aus dem Konto bezahlen (Vorschuss → Konto → Admin-Geschenk → Spielraum); false = reicht (noch) nicht
+    // aus dem Konto bezahlen (Vorschuss → Konto → Topf (3B) → Admin-Geschenk → Spielraum); false = reicht (noch) nicht
     function wacheBezahlen(who, m, kosten) {
-        const now = Date.now(); if (now - m.c.vorT > WACHE_WARTEN_MS) m.c.vor = 0;
-        const frei = spielraumFrei(who, m), d = wd(who), gesch = d ? nn(d.gC) : 0;
-        if (m.c.vor + m.c.u + frei + gesch < kosten) return false;
+        const now = Date.now(); vorAltern(who, m, now);
+        const frei = spielraumFrei(who, m), d = wd(who), gesch = d ? nn(d.gC) : 0, hb = hbDa(who), topf = hb ? nn(hb.cA) : 0;
+        if (m.c.vor + m.c.u + topf + frei + gesch < kosten) return false;
         let r = kosten, x;
         x = Math.min(r, m.c.vor); m.c.vor -= x; r -= x;
         x = Math.min(r, m.c.u); m.c.u -= x; r -= x;
+        x = Math.min(r, topf); if (x > 0) hb.cA = topf - x; r -= x;
         x = Math.min(r, gesch); if (x > 0) { d.gC = Math.max(0, d.gC - x); saveBotState(); } r -= x;
         if (r > 0) m.sr.push({ t: now, n: r });
         return true;
@@ -12123,6 +12177,354 @@ if (window.WELT) {
     // (vor jedem Puls) alle echten Spieler ansehen, Wartendes erledigen
     function wacheRunde() {
         for (const id in WELT.menschen) { if (!botById[id] || !loadBotState()[id]) continue; wacheSehen(id); wacheAbarbeiten(id); }
+        hbRunde(Date.now());
+    }
+
+    // ===== HAUPTBUCH (3B): das Konto eines echten Spielers liegt beim Weltrechner =====
+    // Das Handy rechnet weiter (Münzen, Gems, Stadt, Ausrüstung …), aber was die WELT benutzt (Kampf, Marsch-Plätze, Truppen-
+    // Stufe, Forschung, Helden, Schild), kommt aus diesem Hauptbuch – nicht aus dem rohen Profil. Gespeichert in
+    // botState[u<id>].hb (geht mit der Welt mit, Spieler bekommen es nie: server.php NUR_WELTRECHNER).
+    // Sichere Quellen zählt der Weltrechner selbst (EP, Kampf-Beute, Preise, Splitter, Kisten aus Nachrichten, Admin-Geschenke).
+    // Was nur das Handy gibt (Tagesbelohnung, Aufgaben, Erfolge, Funde, Pass, VIP), kommt als Spielraum pro Tag dazu (HB_TAG).
+    // Jede Neuerung im Profil wird nach festen Regeln angenommen – oder nicht:
+    //   Burg/Gebäude: +1 Stufe nach der anderen, frühestens nach der Bauzeit (VIP höchstens so hoch, wie er Tage dabei ist),
+    //     schneller nur mit Gems (1 je Minute); Kosten (Münzen, Holz, Stein, Eisen) aus Konto + Topf des Ausgegebenen
+    //   Forschung: wie Gebäude, eine nach der anderen, Akademie/Burg/Vorgänger wie im Spiel
+    //   Truppen-Stufe: nur mit Burg + Forschung, jede neue Stufe einmal Eisen
+    //   Ausrüstung: Seltenheit/Stufe nur so hoch, wie er (statistisch) Kisten geöffnet haben kann; Sterne bis zur Schmiede-Stufe,
+    //     jeder Stern kostet Gems
+    //   Helden: Freischalten + Sterne kosten Splitter – nie mehr, als er bekommen haben kann
+    //   Stufe = aus seinen EP (Weltrechner), Fähigkeiten = 1 Punkt je Stufe · Friedensschild nur gekauft (Gems) oder geschenkt
+    // Abgelehntes zählt nicht (die Welt nimmt das zuletzt Angenommene) und wartet: steht es nach 2 Min. immer noch im Profil,
+    // gibt es eine Auffälligkeit (warnen → Admin-Seite). So bekommen echte Spieler keine Fehlalarme, wenn Gems/Münzen erst
+    // einen Puls später im Konto stehen.
+    const HB_V = 1, HB_WARTEN_MS = 120000, TAG = 864e5;
+    const HB_SLOTS = Object.keys(EQUIPMENT_DEFS);
+    const HB_TAG = {                                  // Spielraum pro Tag – je Quelle die Grenze aus dem Spiel
+        g: 25 + 40 + 150 / 7,                         // Gems: Tagesbelohnung (höchstens 25), 3 Aufgaben + Bonus (40), Wochenkette (150 / 7 Tage)
+        k: 3 + 1 + 1 + 3 / 7 + 1 / 7,                 // Kisten: Tagesbelohnung (bis 3), Aufgaben-Bonus, VIP-Kiste, Wochenkette (3), epische Tageskiste
+        kg: (3 * 27 + 27) / 7,                        // davon „mind. Episch“ (Wochenkette, Tag 7) als sicherer Kisten-Wert (Episch = 27)
+        sh: HERO_SHARDS_DAY + HERO_SHARDS_CHAIN / 7   // Splitter: Aufgaben-Bonus, Wochenkette
+    };
+    const HB_ONLINE_STUNDE_G = 40;                    // Karten-Funde: 1–3 Gems, alle 20–45 s einer, 15 % davon Gems – nur solange er online ist
+    const HB_KAPPE_TAGE = 14;                         // so viele Tage Spielraum sammeln sich höchstens an
+    const HB_SH_GEMS = Math.min(...HERO_CHESTS.map(c => c.gems / (c.sh * c.n)));   // Gems je Splitter über die beste Heldenkiste
+    const hbDa = who => { const b = loadBotState()[who]; return b && b.hb && b.hb.v === HB_V ? b.hb : null; };
+    const hbStufe = who => { const m = wm(who); if (m.init) return Math.max(1, m.lvl); const d = wd(who); return d && d.lm >= 1 ? d.lm : 1; };
+    const hbBauten = () => ['keep', ...CITY_BUILDINGS.map(d => d.id)];          // die Burg zuerst (sie schaltet die anderen frei)
+    const hbMax = id => id === 'keep' ? (AUF ? AUF.BURG_MAX : 25) : cityMaxLevel(id);
+    let hbAch = null, hbPassTopf = null, hbE0 = null, hbTtT = 0;
+    const HB_ACH = () => hbAch !== null ? hbAch : (hbAch = ACHIEVEMENTS.reduce((a, x) => a + (x.gems || 0), 0));
+    function hbPass() {                               // was der Saison-Pass (frei + Premium) höchstens gibt
+        if (hbPassTopf) return hbPassTopf; const t = { g: 0, k: 0, kg: 0, sh: 0, schild: 0 };
+        for (let L = 1; L <= PASS_LVLS; L++) for (const prem of [false, true]) { const r = passRewardAt(L, prem), n = r.n || 1;
+            if (r.k === 'gems') t.g += n; else if (r.k === 'crate') t.k += n; else if (r.k === 'royal') { t.k += n; t.kg += 27 * n; }
+            else if (r.k === 'shards') t.sh += n; else if (r.k === 'shield') t.schild += n; else if (r.k === 'frame' || r.k === 'march') t.g += PASS_OWNED_GEMS; }
+        return hbPassTopf = t;
+    }
+    // Helden: „Splitter-Wert“ = unverbrauchte Splitter + was Freischalten und Sterne gekostet haben
+    const hbHeldZeile = s => [s && s.own ? 1 : 0, Math.min(HERO_MAXQ, Math.floor(nn(s && s.q))), Math.floor(nn(s && s.sh)), ...[0, 1, 2, 3].map(i => Math.min(5, Math.floor(nn(s && s.sk && s.sk[i]))))];
+    const hbHeldObj = z => ({ own: !!z[0], q: z[1], sh: z[2], sk: z.slice(3, 7) });
+    function hbHeldWert(id, z) { const h = heroById(id); if (!h || !z) return 0; let v = z[2]; if (z[0]) { v += HERO_UNLOCK[h.r]; for (let i = 0; i < z[1]; i++) v += heroStepCost(h, i); } return v; }
+    const hbHeldenWert = hs => HEROES.reduce((a, h) => a + hbHeldWert(h.id, hs[h.id]), 0);
+    function hbHeldenStart() { const s = heroFix(heroConvert(null, 0)), o = {}; for (const h of HEROES) o[h.id] = hbHeldZeile(s[h.id]); return o; }
+    const hbE0f = () => hbE0 !== null ? hbE0 : (hbE0 = hbHeldenWert(hbHeldenStart()));
+    // Ausrüstung: Kisten-Wert je Platz (Seltenheit r zählt 3^r – 3 gleiche ergeben eine höhere). Aus N Kisten kommen je Platz im
+    // Schnitt 0,855 (¼ Chance auf diesen Platz × Ø 3,42), Streuung 3,08 je Kiste. Erlaubt: Schnitt + 3-fache Streuung + ein
+    // glückliches Lila. Gold braucht so etwa 20 Kisten (im Schnitt 95), Rot etwa 150. Sichere „mind. Episch/Legendär“-Kisten
+    // (Preise, Wochenkette) zählen extra (hb.kG).
+    const kWert = r => Math.pow(3, r);
+    const hbKistenGrenze = N => N >= 1 ? 0.855 * N + 3 * 3.08 * Math.sqrt(N) + 27 : 0;
+    const hbKistenGesamt = N => N >= 1 ? 3.42 * N + 3 * 5.4 * Math.sqrt(N) + 27 : 0;   // alle 4 Plätze zusammen (Ø 3,42 je Kiste, Streuung 5,4) – das glückliche Lila nur einmal
+    const hbPunkteGrenze = N => 25.6 * N + 300;      // Stufen-Punkte (aus verkauften Teilen): Ø 12,8 je Kiste, doppelt + Start
+    const hbLvlPunkte = l => 2.5 * l * (l - 1);       // Stufe 1 → l kostet 5 + 10 + … Punkte
+    const hbItemWert = z => (z[0] * ITEM_MAX_LEVEL + z[1]) * (1 + z[2] * STAR_PCT / 100);
+    function hbKisteDazu(hb, minR) { hb.kN = nn(hb.kN) + 1; if (minR >= 3) hb.kG = nn(hb.kG) + kWert(minR); }
+    function hbVip(hb, now) { const tage = hb.t0 ? Math.floor((now - hb.t0) / TAG) + 1 : 999; let s = 0; for (let i = 1; i < VIP_TAGE.length; i++) if (tage >= VIP_TAGE[i]) s = i; return 1 - s * .02; }
+    function hbNeu(who, now, p, frisch) {
+        const hb = { v: HB_V, t0: frisch ? now : 0, st: {}, fo: {}, foT: frisch ? now : 0, tb: 1, gear: {}, kN: 0, kG: 0, hs: hbHeldenStart(), shB: 0,
+            gA: 0, cA: 0, rA: { h: 0, s: 0, e: 0 }, gIn: 0, sternG: 0, fr: { g: 10, k: 1, kg: 0, sh: 0, schild: 0 }, frT: frisch ? now : 0, ach: 0, lvG: 1, pass: 0, passF: 0,
+            schild: 0, w: {}, sp: [] };                // (fr am Anfang: die Anleitung gibt einmal 10 Gems + 1 Kiste)
+        for (const id of hbBauten()) hb.st[id] = [id === 'keep' ? 1 : 0, hb.t0];
+        for (const s of HB_SLOTS) hb.gear[s] = [];
+        if (!frisch && p) {                            // ein Spielstand von vor 3B: einmal so übernehmen, wie sein Handy es sagt
+            const pl = (p.city && p.city.levels) || {};
+            for (const id of hbBauten()) hb.st[id][0] = Math.max(id === 'keep' ? 1 : 0, Math.min(hbMax(id), Math.floor(nn(pl[id]))));
+            if (AUF) for (const d of AUF.FORSCHUNG) { const v = Math.min(d.max, Math.floor(nn((p.fo || {})[d.id]))); if (v > 0) hb.fo[d.id] = v; }
+            hb.tb = Math.max(1, Math.min(5, Math.floor(nn(p.tierBez)) || 1));
+            for (const s of HB_SLOTS) { const g = p.gear && p.gear[s]; if (g) hb.gear[s] = [[Math.min(5, g.r | 0), Math.max(1, Math.min(ITEM_MAX_LEVEL, g.lvl | 0)), Math.min(STAR_MAX, g.st | 0)]]; }
+            if (p.hs && typeof p.hs === 'object') { for (const h of HEROES) if (p.hs[h.id]) hb.hs[h.id] = hbHeldZeile(p.hs[h.id]); hb.shB = Math.max(0, hbHeldenWert(hb.hs) - hbE0f()); }
+            hb.schild = nn(p.shieldUntil);
+        }
+        return hb;
+    }
+    // Spielraum wächst mit der Zeit (je Quelle die Tages-Grenze), dazu Erfolge, Stufen-Gems und der Saison-Pass
+    function hbKontenMerken(hb, m, now) { m.hbMerkT = now; hb.gU = Math.round(m.g.u); if (m.rk) hb.rU = { h: Math.round(m.rk.h.u), s: Math.round(m.rk.s.u), e: Math.round(m.rk.e.u) }; saveBotState(); }   // (für einen Neustart)
+    function hbFreiDazu(who, hb, now) {
+        const dt = Math.min(HB_KAPPE_TAGE * TAG, now - nn(hb.frT)); if (dt < 300000) return; hb.frT = now;   // (in 5-Minuten-Schritten: das Hauptbuch ändert sich nicht bei jedem Profil)
+        const f = hb.fr, on = !!(WELT.menschen[who] && WELT.menschen[who].online), t = dt / TAG;
+        const dazu = (k, v, kappe) => { const vorher = nn(f[k]); f[k] = Math.max(vorher, Math.min(vorher + v, kappe)); };
+        dazu('g', HB_TAG.g * t + (on ? HB_ONLINE_STUNDE_G * dt / 36e5 : 0), HB_KAPPE_TAGE * (HB_TAG.g + 8 * HB_ONLINE_STUNDE_G));
+        dazu('k', HB_TAG.k * t, HB_KAPPE_TAGE * HB_TAG.k); dazu('kg', HB_TAG.kg * t, HB_KAPPE_TAGE * HB_TAG.kg); dazu('sh', HB_TAG.sh * t, HB_KAPPE_TAGE * HB_TAG.sh);
+        const L = hbStufe(who), alter = hb.t0 ? (now - hb.t0) / TAG : 999;
+        const ach = HB_ACH() * Math.min(1, alter / 30 + (L - 1) / 100);                   // Erfolge: nach und nach (30 Tage bzw. Stufe 100)
+        if (ach > nn(hb.ach)) { f.g = nn(f.g) + ach - nn(hb.ach); hb.ach = ach; }
+        for (let l = Math.max(1, hb.lvG | 0) + 1; l <= L && l < 5000; l++) f.g = nn(f.g) + levelRewardGems(l);   // Stufen-Gems (EP sind sicher)
+        if (L > (hb.lvG | 0)) hb.lvG = L;
+        const n = passNo(now); if (hb.pass !== n) { hb.pass = n; hb.passF = 0; }             // Saison-Pass: nach und nach in einer halben Saison (ab Saison-Beginn bzw. ab seinem Start)
+        const frac = Math.min(1, 2 * Math.max(0, now - Math.max(PASS_EPOCH + (n - 1) * PASS_LEN, nn(hb.t0))) / PASS_LEN);
+        if (frac > nn(hb.passF)) { const T = hbPass(), d = frac - nn(hb.passF); hb.passF = frac; for (const k of ['g', 'k', 'kg', 'sh', 'schild']) f[k] = nn(f[k]) + T[k] * d; }
+    }
+    // Kosten {c, g, h, s, e}: aus Topf (ausgegeben), Konto und Spielraum – alles oder nichts
+    function hbVorrat(who, hb, m, k) {
+        if (k === 'c') { vorAltern(who, m, Date.now()); const d = wd(who); return m.c.vor + m.c.u + nn(hb.cA) + spielraumFrei(who, m) + (d ? nn(d.gC) : 0); }
+        if (k === 'g') return nn(hb.gA) + nn(hb.gIn) + m.g.u + nn(hb.fr.g);    // (gIn: sicher geschickt – evtl. schon abgeholt und gleich ausgegeben)
+        return nn(hb.rA[k]) + (m.rk ? m.rk[k].u : 0);
+    }
+    function hbZahlen(who, hb, m, kosten) {
+        const ks = Object.keys(kosten).filter(k => kosten[k] > 0);
+        if (ks.some(k => hbVorrat(who, hb, m, k) < kosten[k] - 1e-6)) return false;
+        for (const k of ks) {
+            let r = kosten[k], x;
+            if (k === 'c') { wacheBezahlen(who, m, r); continue; }
+            if (k === 'g') { for (const q of ['gA', 'gIn']) { x = Math.min(r, nn(hb[q])); hb[q] = nn(hb[q]) - x; r -= x; } x = Math.min(r, m.g.u); m.g.u -= x; r -= x; hb.fr.g = Math.max(0, nn(hb.fr.g) - r); continue; }
+            x = Math.min(r, nn(hb.rA[k])); hb.rA[k] = nn(hb.rA[k]) - x; r -= x; if (m.rk) m.rk[k].u = Math.max(0, m.rk[k].u - r);
+        }
+        return true;
+    }
+    // abgelehnt: erst nach 2 Min. (immer noch im Profil) eine Auffälligkeit – einmal
+    function hbWarte(who, hb, key, now, text, wert) {
+        const w = hb.w || (hb.w = {}); wm(who).hbOffen = 1;
+        if (!w[key]) w[key] = now; else if (w[key] > 0 && now - w[key] > HB_WARTEN_MS) { warnen(who, 'hauptbuch', text, wert); w[key] = -1; }
+    }
+    const hbGut = (hb, key) => { if (hb.w && hb.w[key]) delete hb.w[key]; };
+    // Burg/Gebäude: eine Stufe weiter → 'ok' | 'nein' (Regel) | 'geld' (Bauzeit-Gems, Münzen oder Rohstoffe reichen nicht)
+    function hbStadtSchritt(who, hb, m, id, now) {
+        const [L, T] = hb.st[id], B = hb.st.keep[0];
+        if (L + 1 > hbMax(id)) return 'nein';
+        if (id !== 'keep' && AUF) { if (!L && AUF.BAU_AB_BURG[id] > B) return 'nein'; if (L + 1 > (B >= AUF.BURG_MAX ? hbMax(id) : Math.min(hbMax(id), B))) return 'nein'; }
+        const need = cityTimeRoh(id, L) * hbVip(hb, now) * 1000, fehlt = need - (now - T) - 60000;
+        const g = fehlt > 0 ? Math.ceil(fehlt / 60000) * CITY_GEMS_PER_MIN : 0;
+        const k = Object.assign({}, AUF ? AUF.stadtKosten(id, L) : { c: cityCost(id, L) }); if (g) k.g = g;
+        if (!hbZahlen(who, hb, m, k)) return 'geld';
+        hb.st[id] = [L + 1, g ? now : Math.min(now, T + need)];       // (fertig spätestens jetzt – die nächste Stufe zählt ab da)
+        return 'ok';
+    }
+    function hbFoSchritt(who, hb, m, d, now) {
+        const L = (hb.fo[d.id] | 0) + 1;
+        if (L > d.max || (hb.st.academy || [0])[0] < AUF.foAkaFuer(d, L)) return 'nein';
+        if (d.tier && hb.st.keep[0] < AUF.TIER_BURG[d.tier]) return 'nein';
+        if (d.vor && !((hb.fo[d.vor] | 0) >= 1)) return 'nein';
+        const need = AUF.foZeitRoh(d, L) * hbVip(hb, now) * 1000, T = nn(hb.foT), fehlt = need - (now - T) - 60000;
+        const g = fehlt > 0 ? Math.ceil(fehlt / 60000) * CITY_GEMS_PER_MIN : 0;
+        const k = Object.assign({}, AUF.foKosten(d, L)); if (g) k.g = g;
+        if (!hbZahlen(who, hb, m, k)) return 'geld';
+        hb.fo[d.id] = L; hb.foT = g ? now : Math.min(now, T + need);    // eine Forschung gleichzeitig: die nächste zählt ab da
+        return 'ok';
+    }
+    // ein neuer Gegenstand in Platz s (z = [Seltenheit, Stufe, Sterne]) → '' (angenommen) oder warum nicht
+    function hbGearNeu(who, hb, m, s, z, forge) {
+        if (z[2] > forge) return 'die Schmiede (Stufe ' + forge + ') erlaubt höchstens ' + forge + ' Sterne';
+        const A = hb.gear[s], N = nn(hb.kN), wert = kWert(z[0]);
+        const gesamt = HB_SLOTS.reduce((a, x) => a + Math.max(x === s ? wert : 0, ...(hb.gear[x] || []).map(b => kWert(b[0])), 0), 0);   // bester Kisten-Wert je Platz, zusammen
+        const punkte = HB_SLOTS.reduce((a, x) => { const l = (hb.gear[x] || []).reduce((y, b) => Math.max(y, b[1]), x === s ? z[1] : 1); return a + hbLvlPunkte(l); }, 0);
+        let n = 0; const mehr = () => n < 10 ? 1 : Math.ceil(n * .1);
+        while (n < 20000 && (wert > hbKistenGrenze(N + n) + nn(hb.kG) || gesamt > hbKistenGesamt(N + n) + nn(hb.kG) || punkte > hbPunkteGrenze(N + n))) n += mehr();
+        if (n >= 20000) return 'unmöglich viele Kisten';
+        const basis = A.filter(a => a[0] === z[0] && a[1] <= z[1]).reduce((x, a) => Math.max(x, a[2]), 0);   // (derselbe Gegenstand, nur höher)
+        let sternG = 0; for (let i = basis; i < z[2]; i++) sternG += starGemCost(i);
+        const freiK = Math.min(n, Math.floor(nn(hb.fr.k))), gems = (n - freiK) * CRATE_GEM_COST + sternG;
+        if (gems > 0 && !hbZahlen(who, hb, m, { g: gems })) return n > freiK ? 'dafür hätte er ' + (N + n > 1 ? 'etwa ' + Math.round(N + n) : 'eine') + ' Kisten öffnen müssen, ' + fz(gems) + ' Gems fehlen' : 'die Sterne kosten ' + sternG + ' Gems';
+        hb.fr.k = nn(hb.fr.k) - freiK; hb.kN = N + n; hb.sternG = nn(hb.sternG) + sternG;
+        const ueber = Math.max(wert - hbKistenGrenze(hb.kN), gesamt - hbKistenGesamt(hb.kN)); if (ueber > 0) hb.kG = Math.max(0, nn(hb.kG) - ueber);   // die sichere Kiste ist verbraucht
+        A.push(z);
+        for (let i = A.length - 1; i >= 0; i--) if (A.some((b, j) => j !== i && b[0] === A[i][0] && b[1] >= A[i][1] && b[2] >= A[i][2] && (b[1] > A[i][1] || b[2] > A[i][2] || j < i))) A.splice(i, 1);
+        A.sort((a, b) => hbItemWert(b) - hbItemWert(a)); if (A.length > 4) A.length = 4;
+        return '';
+    }
+    // alle Neuerungen eines Profils gegen das Hauptbuch prüfen (und das Angenommene bezahlen)
+    function hbPruefen(who, hb, p, m, now) {
+        const mm = wm(who); mm.hbOffen = 0; mm.hbPrT = now;
+        hbFreiDazu(who, hb, now);
+        const pl = (p.city && p.city.levels) || {}, will = id => Math.min(hbMax(id), Math.floor(nn(pl[id])));
+        for (let runde = 0, weiter = true; weiter && runde < 80; runde++) { weiter = false;
+            for (const id of hbBauten()) if (will(id) > hb.st[id][0] && hbStadtSchritt(who, hb, m, id, now) === 'ok') weiter = true; }
+        for (const id of hbBauten()) { if (will(id) <= hb.st[id][0]) { hbGut(hb, 'stadt:' + id); continue; }
+            hbWarte(who, hb, 'stadt:' + id, now, (cityDef(id) || {}).name + ': das Handy sagt Stufe ' + will(id) + ', möglich ist Stufe ' + hb.st[id][0] + ' (Bauzeit, Kosten oder Burg-Stufe passen nicht).', will(id) - hb.st[id][0]); }
+        if (AUF) {                                     // Forschung: die billigste zuerst, so lange etwas weitergeht
+            const pf = p.fo || {}, offen = () => AUF.FORSCHUNG.filter(d => Math.min(d.max, Math.floor(nn(pf[d.id]))) > (hb.fo[d.id] | 0));
+            for (let runde = 0, weiter = true; weiter && runde < 80; runde++) { weiter = false;
+                for (const d of offen().sort((a, b) => AUF.foKosten(a, (hb.fo[a.id] | 0) + 1).c - AUF.foKosten(b, (hb.fo[b.id] | 0) + 1).c)) if (hbFoSchritt(who, hb, m, d, now) === 'ok') { weiter = true; break; } }
+            for (const d of AUF.FORSCHUNG) { const w = Math.min(d.max, Math.floor(nn(pf[d.id]))); if (w <= (hb.fo[d.id] | 0)) { hbGut(hb, 'fo:' + d.id); continue; }
+                hbWarte(who, hb, 'fo:' + d.id, now, 'Forschung ' + d.name + ': das Handy sagt Stufe ' + w + ', möglich ist ' + (hb.fo[d.id] | 0) + ' (Zeit, Kosten, Akademie oder Burg passen nicht).', w - (hb.fo[d.id] | 0)); }
+            const ptb = Math.max(1, Math.min(5, Math.floor(nn(p.tierBez)) || 1));
+            while (hb.tb < ptb) { const T = hb.tb + 1;      // Truppen-Stufe: Burg + Forschung, einmal Eisen
+                if (hb.st.keep[0] < AUF.TIER_BURG[T] || !((hb.fo['m_t' + T] | 0) >= 1) || !hbZahlen(who, hb, m, { e: AUF.TIER_EISEN[T] })) break;
+                hb.tb = T; }
+            if (hb.tb < ptb) hbWarte(who, hb, 'tier', now, 'Truppen-Stufe: das Handy sagt T' + ptb + ', möglich ist T' + hb.tb + ' (Burg, Forschung oder Eisen fehlen).', ptb - hb.tb); else hbGut(hb, 'tier');
+        }
+        const forge = Math.min(STAR_MAX, (hb.st.forge || [0])[0]);
+        for (const s of HB_SLOTS) {                    // Ausrüstung
+            const g = p.gear && p.gear[s]; if (!g) { hbGut(hb, 'gear:' + s); continue; }
+            const z = [Math.max(0, Math.min(5, g.r | 0)), Math.max(1, Math.min(ITEM_MAX_LEVEL, g.lvl | 0 || 1)), Math.max(0, Math.min(STAR_MAX, g.st | 0))], A = hb.gear[s] || (hb.gear[s] = []);
+            if (A.some(a => a[0] === z[0] && a[1] >= z[1] && a[2] >= z[2])) { hbGut(hb, 'gear:' + s); continue; }
+            const grund = hbGearNeu(who, hb, m, s, z, forge);
+            if (grund) hbWarte(who, hb, 'gear:' + s, now, EQUIPMENT_DEFS[s].name + ' ' + RARITY_DEFS[z[0]].label + ' Stufe ' + z[1] + (z[2] ? ' mit ' + z[2] + ' Sternen' : '') + ': ' + grund + '.', z[0] + 1);
+            else hbGut(hb, 'gear:' + s);
+        }
+        hbHeldenPruefen(who, hb, m, p, now);
+        hbSchildPruefen(who, hb, m, p, now);
+    }
+    // Helden: Splitter-Wert aller Helden höchstens so viel, wie er an Splittern bekommen haben kann (sicher + Spielraum + Heldenkisten)
+    function hbHeldenPruefen(who, hb, m, p, now) {
+        if (!p.hs || typeof p.hs !== 'object') return;
+        const E0 = hbE0f(), neu = {};
+        for (const h of HEROES) { const z = p.hs[h.id] ? hbHeldZeile(p.hs[h.id]) : hb.hs[h.id]; if (!z) continue;
+            const pts = z[0] ? Math.floor(z[1] / 2) : 0, sum = z[3] + z[4] + z[5] + z[6];   // Fähigkeiten: 1 Punkt je halbem Stern
+            if (sum > pts) for (let i = 3; i < 7; i++) z[i] = Math.floor(z[i] * pts / sum);
+            neu[h.id] = z; }
+        const gleich = (a, b) => !!a && !!b && a.every((v, i) => v === b[i]);
+        const geaendert = HEROES.filter(h => neu[h.id] && !gleich(neu[h.id], hb.hs[h.id])); if (!geaendert.length) { hbGut(hb, 'helden'); return; }
+        const wert = hs => hbHeldenWert(hs) - E0;
+        let bedarf = wert(neu) - nn(hb.shB);
+        if (bedarf > 0) { const aus = Math.min(bedarf, nn(hb.fr.sh)); hb.fr.sh = nn(hb.fr.sh) - aus; hb.shB = nn(hb.shB) + aus; bedarf -= aus;
+            if (bedarf > 0 && hbZahlen(who, hb, m, { g: Math.ceil(bedarf * HB_SH_GEMS) })) hb.shB += bedarf; }
+        if (wert(neu) <= nn(hb.shB) + 1e-6) { hb.hs = Object.assign({}, hb.hs, neu); hbGut(hb, 'helden'); return; }
+        let jetzt = Object.assign({}, hb.hs);          // sonst Held für Held, die billigsten Änderungen zuerst
+        const zu = [];
+        for (const h of geaendert.sort((a, b) => (hbHeldWert(a.id, neu[a.id]) - hbHeldWert(a.id, hb.hs[a.id])) - (hbHeldWert(b.id, neu[b.id]) - hbHeldWert(b.id, hb.hs[b.id])))) {
+            const v = Object.assign({}, jetzt, { [h.id]: neu[h.id] }); if (wert(v) <= nn(hb.shB) + 1e-6) jetzt = v; else zu.push(h.name); }
+        hb.hs = jetzt;
+        if (zu.length) hbWarte(who, hb, 'helden', now, 'Helden: ' + zu.join(', ') + ' – dafür reichen seine Splitter nicht (' + fz(wert(neu)) + ' verlangt, möglich ' + fz(nn(hb.shB)) + ').', wert(neu) - nn(hb.shB));
+    }
+    // Friedensschild: länger nur, wenn er ihn gekauft (Gems, 24 Std. = 300) oder geschenkt bekommen haben kann (Pass, Startschild)
+    function hbSchildPruefen(who, hb, m, p, now) {
+        const S = Math.min(nn(p.shieldUntil), now + 8 * TAG);
+        if (S <= nn(hb.schild) + 60000) { if (S < nn(hb.schild)) hb.schild = S; hbGut(hb, 'schild'); return; }   // (gefallen oder kürzer: gilt)
+        const stunden = (S - Math.max(now, nn(hb.schild))) / 36e5, frei = Math.min(stunden, nn(hb.fr.schild)), g = Math.ceil((stunden - frei) * SHIELD_PRICES[24] / 24 - 1e-9);
+        if (g > 0 && !hbZahlen(who, hb, m, { g })) { hbWarte(who, hb, 'schild', now, 'Friedensschild bis ' + new Date(S).toLocaleString('de-DE') + ' – den kann er nicht gekauft haben (' + g + ' Gems fehlen).', stunden); return; }
+        hb.fr.schild = nn(hb.fr.schild) - frei; hb.schild = S; hbGut(hb, 'schild');
+    }
+    // was die Welt von ihm benutzt: aus dem Hauptbuch (nie mehr als das Profil sagt)
+    function hbSchreiben(who, hb, b, p, alt) {
+        const L = hbStufe(who), now = Date.now();
+        b.lvl = Math.max(1, Math.min(Math.floor(nn(p.lvl)) || 1, L));
+        const sk = {}; let sum = 0;
+        for (const k of Object.keys(SKILL_DEFS)) { sk[k] = Math.max(0, Math.min(SKILL_DEFS[k].max || 50, Math.floor(nn((p.skills || {})[k])))); sum += sk[k]; }
+        const maxP = Math.max(0, L - 1) + 2;          // 1 Fähigkeits-Punkt je Stufe
+        if (sum > maxP) { for (const k in sk) sk[k] = Math.floor(sk[k] * maxP / sum); hbWarte(who, hb, 'skills', now, 'Fähigkeiten: ' + sum + ' Punkte verteilt, mit Stufe ' + L + ' gehen höchstens ' + maxP + '.', sum - maxP); } else hbGut(hb, 'skills');
+        b.skills = sk;
+        const pl = (p.city && p.city.levels) || {}, lv = {};
+        for (const id of hbBauten()) lv[id] = Math.max(0, Math.min(Math.floor(nn(pl[id])), hb.st[id][0])); if (!(lv.keep >= 1)) lv.keep = 1;
+        const fo = {}; if (AUF) for (const d of AUF.FORSCHUNG) { const v = Math.min(Math.floor(nn((p.fo || {})[d.id])), hb.fo[d.id] | 0); if (v > 0) fo[d.id] = v; }
+        b.city = Object.assign({}, b.city, { levels: lv, fo, tier: Math.max(1, Math.min(Math.floor(nn(p.tier)) || 1, hb.tb)), tierBez: hb.tb });
+        b.gear = {};
+        for (const s of HB_SLOTS) { const g = p.gear && p.gear[s], A = hb.gear[s] || [];
+            if (g && A.some(a => a[0] === (g.r | 0) && a[1] >= (g.lvl | 0) && a[2] >= (g.st | 0))) b.gear[s] = { r: g.r | 0, lvl: Math.max(1, g.lvl | 0), st: g.st | 0 };
+            else b.gear[s] = g && A.length ? { r: A[0][0], lvl: A[0][1], st: A[0][2] } : null; }
+        const hs = {};
+        for (const h of HEROES) { const z = hb.hs[h.id]; if (!z) continue; const o = hbHeldObj(z), a = alt && alt.hs && alt.hs[h.id];
+            o.rage = Math.max(0, Math.min(100, nn(a && a.rage))); hs[h.id] = o; }    // (die Wut rechnet nur der Weltrechner)
+        b.hs = hs;
+        if (nn(b.shieldUntil) > nn(hb.schild)) b.shieldUntil = nn(hb.schild);
+        b.hbK = 1;
+    }
+    // (welt.js profilZuBot, nur beim Weltrechner) ein Profil kommt an → Hauptbuch prüfen, Mitspieler-Datensatz klemmen
+    function hbKlemmen(who, b, p, alt) {
+        if (!AUF) { if (alt && alt.hbK) for (const k of ['lvl', 'skills', 'gear', 'city', 'hs', 'shieldUntil', 'hbK']) if (alt[k] !== undefined) b[k] = alt[k]; return; }   // (aufbau.js noch nicht geladen: die Welt-Werte bleiben)
+        const now = Date.now();
+        let hb = alt && alt.hb && alt.hb.v === HB_V ? alt.hb : b.hb && b.hb.v === HB_V ? b.hb : null;
+        if (!hb) {
+            const frisch = !(alt && alt.city);         // ganz neu (noch nie in der Welt) → alles bei Null, sonst einmal aus dem Profil
+            hb = hbNeu(who, now, p, frisch);
+            if (frisch) { b.wache = Object.assign({ lv: 0, tk: 0, gTr: 0, gC: 0 }, b.wache || {}, { u: 0, w: 0, lm: 1 }); hb.gU = 0; hb.rU = AUF ? Object.assign({}, AUF.ROH_START) : { h: 0, s: 0, e: 0 }; }
+        }
+        b.hb = hb; if (alt && alt !== b) alt.hb = hb;
+        const m = wacheSehen(who);
+        hbPruefen(who, hb, p, m, now);
+        hbSchreiben(who, hb, b, p, alt);
+        if (m.init && m.gGeeicht && now - (m.hbMerkT || 0) > 60000) hbKontenMerken(hb, m, now);
+        const d = b.wache; if (m.init && m.geeicht && d) d.u = Math.round(m.c.u);
+        saveBotState();                                // (das Hauptbuch geht mit der Welt mit)
+    }
+    WELT.klemmen = hbKlemmen;
+    WELT.kontoMuenzen = who => { const m = wm(who); return m.init ? m.c.u + m.c.vor : Infinity; };
+    WELT.hauptbuch = who => hbDa(who);                // (für Tests und die Admin-Ansicht)
+
+    // ===== Nebel auf dem Server (3B) =====
+    // Der Weltrechner führt für jeden echten Spieler die aufgedeckten Nebel-Felder (wie openWaterFogCells auf seinem Handy):
+    // rund um jede Basis, die er hat oder hatte (Sichtweite mit Forschung Kundschaft), und wo seine Erkundungs-Späher laufen.
+    // Daraus: welche Inseln er sieht (wie islandSeen) → als Bitfeld an den Server (WELT.sichtRaus → server.php ow_spieler.sicht).
+    // Der Server schickt ihm dann Truppenzahlen nur dieser Inseln (und seiner eigenen).
+    let nbIdx = null; const nbMem = {};
+    function nbIndex() {                              // alle Felder, die für die Sicht zählen (Land, Inseln, Brücken-Enden) → Bit-Nummer
+        if (nbIdx) return nbIdx;
+        const keys = new Set(Object.keys(fogLandCells())), zelle = (x, y) => fogKey(Math.floor(x / FOG_CELL), Math.floor(y / FOG_CELL));
+        let maxId = 0;
+        for (const i of islands) { keys.add(zelle(i.x, i.y)); if (i.ends) for (const e of i.ends) keys.add(zelle(e[0], e[1])); if (i.id > maxId) maxId = i.id; }
+        const liste = [...keys].sort();
+        return nbIdx = { map: new Map(liste.map((k, i) => [k, i])), n: liste.length, maxId, sig: liste.length + '/' + maxId };
+    }
+    const bitsZu = u => { let s = ''; for (let i = 0; i < u.length; i += 8192) s += String.fromCharCode.apply(null, u.subarray(i, i + 8192)); return btoa(s); };
+    const bitHat = (u, i) => (u[i >> 3] >> (i & 7)) & 1, bitSetz = (u, i) => { u[i >> 3] |= 1 << (i & 7); };
+    // aufgedeckte Felder fürs Hauptbuch: nur die Nummern der gesetzten Bits (Abstände, Basis 36) – viel kürzer als das ganze Bitfeld
+    function nbPacken(u, n) { const t = []; let vor = -1; for (let i = 0; i < n; i++) if ((u[i >> 3] >> (i & 7)) & 1) { t.push((i - vor).toString(36)); vor = i; } return t.join('.'); }
+    function nbAuspacken(s, n) { const u = new Uint8Array(Math.ceil(n / 8)); if (typeof s !== 'string' || !s) return u; let i = -1; for (const x of s.split('.')) { i += parseInt(x, 36); if (!(i >= 0 && i < n)) break; bitSetz(u, i); } return u; }
+    function nbAufdecken(z, x, y, r) {                // wie revealAround
+        const I = nbIndex(), rr2 = r + FOG_CELL * .35; let neu = false;
+        for (let cx = Math.floor((x - r) / FOG_CELL); cx <= Math.floor((x + r) / FOG_CELL); cx++)
+            for (let cy = Math.floor((y - r) / FOG_CELL); cy <= Math.floor((y + r) / FOG_CELL); cy++) {
+                const i = I.map.get(fogKey(cx, cy)); if (i === undefined || bitHat(z.zellen, i)) continue;
+                const mx = (cx + .5) * FOG_CELL, my = (cy + .5) * FOG_CELL;
+                if (Math.abs(mx) > FRAME_HALF + FOG_CELL || Math.abs(my) > FRAME_HALF + FOG_CELL || Math.hypot(mx - x, my - y) > rr2) continue;
+                bitSetz(z.zellen, i); neu = true;
+            }
+        return neu;
+    }
+    const nbOffen = (z, I, x, y) => { const i = I.map.get(fogKey(Math.floor(x / FOG_CELL), Math.floor(y / FOG_CELL))); return i !== undefined && bitHat(z.zellen, i) === 1; };
+    function nbZ(who, hb) { const I = nbIndex(); return nbMem[who] || (nbMem[who] = { zellen: nbAuspacken(hb.nbSig === I.sig ? hb.nb : '', I.n), gesehen: new Set(), dirty: true, gesendet: null }); }
+    function nbKennt(who, hb, lmId) {                 // kennt er dieses Gebiet (oder ein Nachbar-Gebiet über eine Brücke)?
+        const z = nbZ(who, hb), I = nbIndex(), on = id => ((landmasses[id] || {}).fogCells || []).some(c => { const i = I.map.get(c.k); return i !== undefined && bitHat(z.zellen, i); });
+        return !!hb.nbAlle || on(lmId) || bridges.some(br => (br.a === lmId && on(br.b)) || (br.b === lmId && on(br.a)));
+    }
+    function nebelRunde(who, hb, now) {
+        const z = nbZ(who, hb), I = nbIndex(), own = botOwnedIslands[who], weit = REVEAL_BASE * (AUF ? AUF.nebelWeite(who) : 1);
+        if (own) for (const id of own) if (!z.gesehen.has(id)) { z.gesehen.add(id); const i = islandById[id]; if (i && nbAufdecken(z, i.x, i.y, weit)) z.dirty = true; }
+        if (hb.sp && hb.sp.length) hb.sp = hb.sp.filter(sc => {    // Erkundungs-Späher: unterwegs eine Gasse, am Ziel die Umgebung
+            const h = islandById[sc[0]]; if (!h) return false;
+            const L = Math.hypot(sc[1] - h.x, sc[2] - h.y) || 1, prog = Math.max(0, Math.min(1, (now - sc[3]) / Math.max(1, sc[4] - sc[3])));
+            for (let d = sc[5] || 0; d <= L * prog; d += 2500) if (nbAufdecken(z, h.x + (sc[1] - h.x) * d / L, h.y + (sc[2] - h.y) * d / L, 3400)) z.dirty = true;
+            sc[5] = Math.max(sc[5] || 0, Math.floor(L * prog / 2500) * 2500 + 2500);
+            if (now < sc[4]) return true;
+            if (nbAufdecken(z, sc[1], sc[2], REVEAL_SCOUT)) z.dirty = true; return false;
+        });
+        if (!z.dirty) return;
+        z.dirty = false; hb.nb = nbPacken(z.zellen, I.n); hb.nbSig = I.sig; saveBotState();
+        const s = new Uint8Array((I.maxId >> 3) + 1);
+        for (const i of islands) if (hb.nbAlle || nbOffen(z, I, i.x, i.y) || (i.ends && i.ends.some(e => nbOffen(z, I, e[0], e[1])))) bitSetz(s, i.id);
+        const b64 = bitsZu(s);
+        if (b64 !== z.gesendet) { z.gesendet = b64; WELT.sichtRaus[parseInt(who.slice(1), 10)] = b64; }
+    }
+    // (jeden Puls) Nebel, Abgelehntes nochmal prüfen, jede Minute die Truppen-Summen für die Rangliste
+    let hbErst = true;
+    function hbRunde(now) {
+        if (!AUF) return;                              // (der allererste Puls kommt, bevor aufbau.js geladen ist)
+        const bs = loadBotState();
+        if (hbErst && SYSTEM) {                        // Weltrechner gestartet: alle bekannten echten Spieler einmal gegen ihr Hauptbuch klemmen
+            hbErst = false;                            // (die Welt kam beim Laden roh aus den Profilen; jetzt ist auch aufbau.js da)
+            for (const who in WELT.menschen) if (bs[who] && WELT.menschen[who].profil) try { Object.assign(bs[who], WELT.profilZuBot(WELT.menschen[who].profil, bs[who], who)); } catch (e) { console.warn('Hauptbuch:', e); }
+        }
+        for (const who in WELT.menschen) {
+            const b = bs[who], hb = b && b.hb && b.hb.v === HB_V ? b.hb : null; if (!hb || !botById[who]) continue;
+            try { nebelRunde(who, hb, now); } catch (e) { console.warn('Nebel:', e); }
+            const mm = wm(who); if (mm.hbOffen && now - nn(mm.hbPrT) > 10000) { const p = profilVon(who); if (p) Object.assign(b, WELT.profilZuBot(p, b, who)); else mm.hbOffen = 0; }   // (Münzen/Gems kommen evtl. später)
+        }
+        if (now - hbTtT > 60000) {                     // Truppen-Summe je Herrscher (Spieler bekommen fremde Truppen nur, wo sie hinsehen dürfen)
+            if (Math.floor(now / 600000) !== Math.floor(hbTtT / 600000)) for (const who in nbMem) if (nbMem[who].gesendet) WELT.sichtRaus[parseInt(who.slice(1), 10)] = nbMem[who].gesendet;   // (alle 10 Min. die Sicht nochmal – falls ein Puls sie verloren hat; der Server ändert nur Neues)
+            hbTtT = now;
+            for (const bd of BOT_DEFS) { const b = bs[bd.id]; if (!b) continue; let n = 0; for (const id of botOwnedIslands[bd.id] || []) n += islandTroops[id] || 0;
+                const r = n < 1000 ? Math.round(n) : Number(n.toPrecision(3)); if (b.tt !== r && Math.abs((b.tt || 0) - r) > r * .01) b.tt = r; }
+        }
     }
     // Ziel einer Armee/Ort einer neuen Armee: nur echte Orte (Basis, Feld, Armee, Punkt auf Land)
     function punktOk(p) {
@@ -12162,13 +12564,26 @@ if (window.WELT) {
             pendingSends.push({ fromId: toId, toId: home, troops, startedAt: now, resolveAt: now + Math.max(1000, now - m.startedAt), senderBotId: who, back: true });
             saveGame(); saveProgression(); requestRender();
         },
-        schneller(who, b) {                           // (die Gems hat er schon selbst bezahlt – Gems kennt der Weltrechner noch nicht)
+        schneller(who, b) {                           // die Gems zahlt er auf seinem Handy – 3B: das Hauptbuch zieht sie ab (kann er sie haben?)
             if (!Array.isArray(b.keys)) return;
             if (zuOft(wm(who), 'schneller', 60, 60000)) { warnen(who, 'schneller', 'Beschleunigen über 60-mal pro Minute – der Rest verfällt.'); return; }
-            const now = Date.now(), keys = [...new Set(b.keys.filter(kennungOk))].slice(0, 200);
-            for (const key of keys) { const m = marschVon(who, key); if (!m || m.fightEndsAt) continue; const rem = m.resolveAt - now; if (rem < 1500) continue;
+            const now = Date.now(), keys = [...new Set(b.keys.filter(kennungOk))].slice(0, 200), ms = [];
+            for (const key of keys) { const m = marschVon(who, key); if (!m || m.fightEndsAt || m.resolveAt - now < 1500) continue; ms.push(m); }
+            const kosten = ms.reduce((a, m) => a + speedUpCost(m), 0), hb = hbDa(who);
+            if (hb && kosten > 0 && !hbZahlen(who, hb, wacheSehen(who), { g: kosten })) { warnen(who, 'gems', 'Beschleunigen für ' + kosten + ' Gems – so viele kann er nicht haben. Abgelehnt.', kosten); return; }
+            for (const m of ms) { const rem = m.resolveAt - now;
                 const pr = Math.max(0, Math.min(.99, (now - m.startedAt) / Math.max(1, m.resolveAt - m.startedAt))); m.resolveAt = now + rem / 2; m.startedAt = m.resolveAt - (rem / 2) / (1 - pr); }
             saveProgression();
+        },
+        spaehen(who, b) {                             // 3B: Erkundungs-Späher – der Weltrechner deckt seinen Nebel (auf dem Server) mit auf
+            const hb = hbDa(who); if (!hb || !inselOk(b.ziel)) return;
+            if (zuOft(wm(who), 'spaehen', 120, 3600000)) { warnen(who, 'spaehen', 'Über 120 Späher in einer Stunde – abgelehnt.'); return; }
+            const t = islandById[b.ziel], pt = { x: Number.isFinite(b.ex) ? b.ex : t.x, y: Number.isFinite(b.ey) ? b.ey : t.y, lm: t.landmassId };
+            if (!punktOk(pt)) { warnen(who, 'kaputt', 'Späher mit kaputtem Ziel – abgelehnt.'); return; }
+            let home = null, bd = Infinity; for (const id of botOwnedIslands[who] || []) { const i = islandById[id]; if (!i) continue; const d = Math.hypot(i.x - t.x, i.y - t.y); if (d < bd) { bd = d; home = i; } }
+            if (!home || !spaeherWeg(home.landmassId, t.landmassId, who)) return;                 // (wie auf dem Handy: von der nächsten eigenen Basis, nicht durch zu Tore)
+            if (!nbKennt(who, hb, t.landmassId)) { warnen(who, 'spaehen', 'Späher in ein Gebiet, das er nicht kennen kann – abgelehnt.'); return; }
+            const now = Date.now(); hb.sp = (hb.sp || []).slice(-40); hb.sp.push([home.id, Math.round(pt.x), Math.round(pt.y), now, now + scoutSecs(home, t, who) * 1000, 0]); saveBotState();
         },
         ausbau(who, b) {                              // die Münzen zahlt er selbst – der Weltrechner prüft, ob er sie haben kann
             const m = wm(who);
@@ -12243,7 +12658,7 @@ if (window.WELT) {
             if (!isl || (islandOwnerOf(isl.id) && !aus)) return;
             if (aus) { clearIslandOwner(isl.id); WELT.nachricht(parseInt(who.slice(1), 10), { art: 'startschild', bis: Date.now() + 3600000 }); }   // mitten in fremdem Land: 1 Stunde Frieden zum Ankommen (wie bei den Mitspielern)
             botOwnedIslands[who].add(isl.id); islandLevels[isl.id] = 1; islandTroops[isl.id] = PLAYER_START_TROOPS;
-            const bs = loadBotState(); bs[who] = WELT.profilZuBot(WELT.menschen[who] && WELT.menschen[who].profil, bs[who]); bs[who].capital = isl.id;
+            const bs = loadBotState(); bs[who] = WELT.profilZuBot(WELT.menschen[who] && WELT.menschen[who].profil, bs[who], who); bs[who].capital = isl.id;
             if (!(bs[who].neuBis > Date.now())) bs[who].neuBis = Date.now() + NEULING_MS;          // Anfängerschutz ab der ersten Sekunde
             capitalCache = null; saveGame(); saveBotState(); requestRender();
         }
@@ -12256,7 +12671,16 @@ if (window.WELT) {
             const who = 'u' + parseInt(b.an, 10); if (!(parseInt(b.an, 10) > 0)) return;
             if (!botById[who]) { WELT.menschEintragen(who); window.__weltNeuerMensch(who); }
             const d = wd(who); if (!d) return;
-            d.gTr = nn(d.gTr) + (zahlOk(b.tr) ? b.tr : 0); d.gC = nn(d.gC) + (zahlOk(b.coins) ? b.coins : 0); saveBotState(); return;
+            d.gTr = nn(d.gTr) + (zahlOk(b.tr) ? b.tr : 0); d.gC = nn(d.gC) + (zahlOk(b.coins) ? b.coins : 0);
+            const hb = hbDa(who); if (hb) {             // 3B: Gems, Splitter und Kiste kennt jetzt auch das Hauptbuch
+                if (zahlOk(b.gems, 1e9)) hb.gIn = nn(hb.gIn) + b.gems; if (zahlOk(b.sh, 1e6)) hb.shB = nn(hb.shB) + b.sh;
+                if (Number.isInteger(b.crate) && b.crate >= 0 && b.crate <= 5) hbKisteDazu(hb, b.crate); }
+            saveBotState(); return;
+        }
+        if (b.was === 'nebel') {                       // 3B: Nebel freischalten (admin.php) – auch auf dem Server die ganze Karte
+            const bs = loadBotState();
+            for (const who in WELT.menschen) { if (b.an !== 'alle' && who !== 'u' + parseInt(b.an, 10)) continue; const hb = hbDa(who); if (!hb) continue; hb.nbAlle = 1; if (nbMem[who]) nbMem[who].dirty = true; }
+            saveBotState(); return;
         }
         if (b.was !== 'geschenk_bot') return;
         const bs = loadBotState(), ziele = BOT_DEFS.filter(d => !d.mensch && (b.bot === 'alle' || d.id === b.bot));
@@ -12281,7 +12705,7 @@ if (window.WELT) {
     WELT.BEFEHLE = BEFEHLE;
     // für buendnis.js: Münzen prüfen (ohne abzuziehen – das geht als Nachricht „−Münzen“), Gutschrift für Geschenke, Warnungen
     WELT.wache = {
-        kann(who, kosten) { const m = wacheSehen(who), d = wd(who); if (Date.now() - m.c.vorT > WACHE_WARTEN_MS) m.c.vor = 0; return m.c.vor + m.c.u + spielraumFrei(who, m) + (d ? nn(d.gC) : 0) >= kosten; },
+        kann(who, kosten) { const m = wacheSehen(who), d = wd(who), hb = hbDa(who); vorAltern(who, m, Date.now()); return m.c.vor + m.c.u + (hb ? nn(hb.cA) : 0) + spielraumFrei(who, m) + (d ? nn(d.gC) : 0) >= kosten; },
         gutschrift(who, c, tr) { const d = wd(who); if (!d) return; d.gC = nn(d.gC) + nn(c); d.gTr = nn(d.gTr) + nn(tr); saveBotState(); },
         warnen, zuOft: (who, art, max, ms) => zuOft(wm(who), art, max, ms)
     };

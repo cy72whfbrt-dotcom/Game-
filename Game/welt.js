@@ -57,6 +57,8 @@
         spielerSeit: 0,
         befehle: [],                      // warten auf den nächsten Puls
         ereignisseRaus: [],               // (Weltrechner) Nachrichten an andere Spieler
+        sichtRaus: {},                    // (Weltrechner, 3B) neue Sicht je Spieler: uid → Bitfeld (base64) – nur für den Server
+        sichtV: typeof OW.sicht_v === 'number' ? OW.sicht_v : -1,   // (Spieler, 3B) Stand der Sicht, die ich habe
         beiNachricht: [],                 // spiel.js hängt sich hier ein
         flickenBauen, flickenAnwenden,    // (auch für Tests)
         istMensch: id => !!(id && W.menschen[id]),
@@ -201,13 +203,22 @@
             fo: city.fo || {}, tier: city.tier || 1, tierBez: city.tierBez || 1, res: P(d.openWaterRes) || null,   // Paket D: Forschung, Truppen-Stufe, Rohstoffe (Burg-Stufe steht in city.levels.keep)
             neuBis: typeof neulingBis === 'function' ? neulingBis() : 0,
             look: { ring: look.ring || null, rings: look.rings || [], march: look.march || null, marchs: look.marchs || [], frame: look.frame || null, title: look.title || null, throne: !!(look.bought && look.bought.throne) },
-            stats: P(d.openWaterStats) || {}, earned: thr.earned || 0, coins: parseFloat(d.openWaterCoins) || 0,
+            stats: P(d.openWaterStats) || {}, earned: thr.earned || 0, coins: parseFloat(d.openWaterCoins) || 0, gems: parseFloat(d.openWaterGems) || 0,   // (Gems sieht nur der Weltrechner – 3B: Hauptbuch)
             crest: P(d.openWaterCrest), baustil: P(d.openWaterBaustil)
         };
     }
     W.meinProfil = meinProfil;
-    // Mitspieler-Datensatz für einen echten Spieler: Kampfwerte aus seinem Profil, Welt-Felder (Hauptstadt, Groll …) bleiben
-    function profilZuBot(p, alt) {
+    // Mitspieler-Datensatz für einen echten Spieler: Kampfwerte aus seinem Profil, Welt-Felder (Hauptstadt, Groll …) bleiben.
+    // 3B: Beim Weltrechner (id gegeben) hält W.klemmen (spiel.js, Hauptbuch) Stufe, Skills, Ausrüstung, Helden, Stadt,
+    // Forschung und Truppen-Stufe gegen das, was er wirklich haben kann. Zuschauer übernehmen diese Werte aus der Welt
+    // (Merker hbK) – ein gefälschtes Profil zeigt bei den anderen also auch nichts.
+    function profilZuBot(p, alt, id) {
+        const b = profilZuBotRoh(p, alt);
+        if (SYSTEM && id && typeof W.klemmen === 'function') { try { W.klemmen(id, b, p || {}, alt); } catch (e) { console.warn('Hauptbuch:', e); } }
+        else if (alt && alt.hbK) { b.hbK = 1; for (const k of ['lvl', 'skills', 'gear', 'city', 'hs', 'shieldUntil']) if (alt[k] !== undefined) b[k] = alt[k]; }
+        return b;
+    }
+    function profilZuBotRoh(p, alt) {
         const b = Object.assign({ lvl: 1, xp: 0, sp: 0, gems: 0, salvage: 0, tp: 0, pts: 0 }, alt || {});
         p = p || {};
         b.mensch = 1; b.v2 = 1; b.lookMig = 1; b.ringMig = 1;
@@ -287,7 +298,7 @@
     function topf(id) {
         const b = typeof botState !== 'undefined' && botState && botState[id];
         const sh = {}; if (b && b.hs) for (const h in b.hs) sh[h] = b.hs[h].sh || 0;
-        const res = b && b.res ? { h: b.res.h || 0, s: b.res.s || 0, e: b.res.e || 0 } : { h: 0, s: 0, e: 0 };   // Paket D: Holz, Stein, Eisen
+        const res = b && b.res ? { h: b.res.h || 0, s: b.res.s || 0, e: b.res.e || 0 } : null;   // Paket D: Holz, Stein, Eisen (null: noch keine – 3B: sonst kämen die Start-Rohstoffe doppelt an)
         return { coins: (typeof botCoins !== 'undefined' && botCoins[id]) || 0, gems: b ? b.gems || 0 : 0, tp: b ? b.tp || 0 : 0, xp: b ? b.xpNeu || 0 : 0, wounded: b ? b.wounded || 0 : 0, sh, res, stats: b ? Object.assign({}, b.stats || {}) : {} };
     }
     // (Weltrechner) was hat sich bei den anderen Menschen getan? → Nachrichten
@@ -299,7 +310,7 @@
             const e = {};
             for (const k of ['coins', 'gems', 'tp', 'xp', 'wounded']) { const dd = jetzt[k] - alt[k]; if (Math.abs(dd) > 1e-9) e[k] = dd; }
             const sh = {}; for (const h in jetzt.sh) { const dd = jetzt.sh[h] - (alt.sh[h] || 0); if (dd) sh[h] = dd; } if (Object.keys(sh).length) e.sh = sh;
-            const rs = {}; for (const k of ['h', 's', 'e']) { const dd = Math.round(jetzt.res[k] - ((alt.res || {})[k] || 0)); if (dd) rs[k] = dd; } if (Object.keys(rs).length) e.res = rs;   // Rohstoffe
+            const rs = {}; if (jetzt.res && alt.res) for (const k of ['h', 's', 'e']) { const dd = Math.round(jetzt.res[k] - alt.res[k]); if (dd) rs[k] = dd; } if (Object.keys(rs).length) e.res = rs;   // Rohstoffe
             const st = {}; for (const k in jetzt.stats) { const dd = (jetzt.stats[k] || 0) - (alt.stats[k] || 0); if (typeof dd === 'number' && dd > 0 && k !== 'tpEarned') st[k] = dd; } if (Object.keys(st).length) e.stats = st;
             if (botState[id] && botState[id].xpNeu) botState[id].xpNeu = 0;
             jetzt.xp = 0;
@@ -331,6 +342,8 @@
         if (pulsLaeuft || S.gestoppt) return;
         pulsLaeuft = true; pulsStart = Date.now();
         const anfrage = { aktion: 'puls', token: S.token, seit: W.version, spieler_seit: W.spielerSeit };
+        if (!SYSTEM) anfrage.sicht_v = W.sichtV;                              // 3B: welche Sicht (Nebel auf dem Server) ich schon habe
+        else if (Object.keys(W.sichtRaus).length) { anfrage.sicht = W.sichtRaus; W.sichtRaus = {}; }   // (Weltrechner) neue Sicht einzelner Spieler
         try {
             const jetzt = Date.now();
             if (!SYSTEM && jetzt - profilAt > 10000) { const pr = J(meinProfil()); if (pr !== letztesProfil) { anfrage.profil = pr; letztesProfil = pr; } profilAt = jetzt; }
@@ -368,6 +381,7 @@
             if (anfrage.befehle) W.befehle.unshift(...anfrage.befehle);
             if (anfrage.welt) for (const k of Object.keys(Object.assign({}, anfrage.welt.setzen, anfrage.welt.flicken))) S.weltGeaendert.add(k === 'openWaterBotOwnedIslands' ? 'openWaterOwnedIslands' : k);
             if (anfrage.ereignisse) W.ereignisseRaus.unshift(...anfrage.ereignisse);
+            if (anfrage.sicht) W.sichtRaus = Object.assign(anfrage.sicht, W.sichtRaus);
             if (anfrage.profil) letztesProfil = '';
             console.warn('Welt-Puls:', e);
         } finally {
@@ -379,6 +393,7 @@
 
     function antwortVerarbeiten(a, anfrage) {
         W.pulse = (W.pulse || 0) + 1; W.nachrichtenOffen = (a.ereignisse || []).length >= 200;   // (spiel.js: Begrüßung erst, wenn alles da ist)
+        if (typeof a.sicht_v === 'number') W.sichtV = a.sicht_v;
         if (a.spieler) {
             const vorher = new Set(Object.keys(W.menschen));
             menschenAktualisieren(a.spieler);
@@ -386,8 +401,8 @@
             // neue Profile anderer Menschen: ihren Mitspieler-Datensatz und ihren Münz-Spiegel auffrischen
             for (const id in W.menschen) {
                 const m = W.menschen[id]; if (!m.profilNeu || id === ICH) continue; m.profilNeu = false;
-                if (typeof botState !== 'undefined' && botState && botState[id]) Object.assign(botState[id], profilZuBot(m.profil, botState[id]));
-                if (typeof botCoins !== 'undefined' && m.profil) botCoins[id] = Math.max(0, Math.min(1e15, +m.profil.coins || 0));
+                if (typeof botState !== 'undefined' && botState && botState[id]) Object.assign(botState[id], profilZuBot(m.profil, botState[id], id));
+                if (typeof botCoins !== 'undefined' && m.profil) { let c = Math.max(0, Math.min(1e15, +m.profil.coins || 0)); if (SYSTEM && typeof W.kontoMuenzen === 'function') c = Math.min(c, W.kontoMuenzen(id)); botCoins[id] = c; }   // (3B: nie mehr, als sein Konto hergibt)
                 if (W.leiter) basis[id] = topf(id);
             }
         }

@@ -478,6 +478,8 @@ nur aus echten Quellen (Stufenaufstieg je Stufe einmal, Thron-Shop, Lazarett, Fu
 nur mit (geschätzten) Münzen; Grenzen für zu viele Befehle. Abgelehntes erscheint auf der Admin-Seite unter
 **„Auffälligkeiten“** (`weltrechner/schummel.php`, gesperrt, nie im Git). Echte Spieler wurden in keinem Test blockiert.
 Grenzen: pro Stunde ist noch ein kleiner Gratis-Ausbau-Spielraum möglich; Gems prüft der Server noch nicht (→ 3B).
+**Seit 3B (Abschnitt 24):** Gems, Stufe, Stadt, Forschung, Truppen-Stufe, Ausrüstung, Helden und Schild stehen im Hauptbuch
+des Weltrechners; die Welt benutzt nur noch, was er wirklich haben kann.
 
 ## 14c. Mitspieler reagieren wie Menschen mit Handy – gebaut 1.10.
 Offline angegriffen → „Benachrichtigung“: tagsüber meist nach 2–30 Min. reinschauen (manchmal 1–2 Std.), nachts fast
@@ -568,9 +570,9 @@ DB), Admin (feste Nummer + Formular-Zeichen), keine Datei gibt Geheimnisse preis
 jsdom (einzige Abhängigkeit): 0 bekannte Lücken (`npm audit`).
 
 **Noch offen (braucht Alexander / größere Umbauten):**
-- **Nebel ist im Paket umgehbar:** jeder Spieler bekommt die Truppen aller Inseln. Ohne Nebel auf dem Server (3B) nicht lösbar.
-- **3B (Konto auf dem Server):** Münzen, Gems, Stufe, Helden, Ausrüstung nur noch auf dem Server – erst dann ist Schummeln
-  mit gefälschter Stufe/Gems ganz ausgeschlossen.
+- ~~Nebel ist im Paket umgehbar~~ – Truppenzahlen gelöst mit 3B (Abschnitt 24: Nebel auf dem Server). Märsche, Armeen und
+  Sammler anderer stehen weiter im Paket.
+- ~~3B (Konto auf dem Server)~~ – gebaut, siehe Abschnitt 24 (Hauptbuch beim Weltrechner).
 - Spielregel-Frage an Alexander: Hauptstadt auf eine gerade angegriffene Basis verlegen erlauben? (heute ja – damit
   rettet man jede Basis).
 - Klein: Handy-Uhr falsch gestellt → Marschzeiten wirken verschoben (Handys stellen die Uhr meist selbst; nicht gebaut).
@@ -690,7 +692,8 @@ alte Spielstände stürzen nicht ab: fehlende Felder werden vorbelegt (Burg 1, k
   alle innerhalb ihrer Marsch-Plätze, Burg 2–4, Akademie/Wachturm gebaut, Forschung läuft. Keine Fehler in Konsole/Weltrechner.
 - **Offen:** Burg-Stufe, Gebäude, Forschung und Rohstoffe rechnet weiter das Handy (privat, wie Stadt und Münzen bis 3B) –
   der Weltrechner prüft nur Plausibilität (Stufe nur mit Burg + Forschung, Rohstoff-Sprünge als Warnung). Ein Schummler könnte
-  sich eine höhere Burg-Stufe ins Profil schreiben (mehr Marsch-Plätze) – erst mit 3B ganz sicher.
+  sich eine höhere Burg-Stufe ins Profil schreiben (mehr Marsch-Plätze) – erst mit 3B ganz sicher. **→ erledigt mit 3B
+  (Abschnitt 24): Burg, Gebäude, Forschung, Truppen-Stufe zählen nur noch so, wie das Hauptbuch sie angenommen hat.**
 - **Beobachtung:** Auch mit 2 Marsch-Plätzen nehmen Mitspieler am Anfang schnell neutrale Basen (die Märsche am Rand dauern
   nur Sekunden): im Test nach ~30 Min. der beste 36 Basen, Ø 15. Die Grenze wirkt (nie mehr als erlaubt gleichzeitig),
   das Tempo der Ausbreitung selbst hängt an den Marschzeiten und der Stärke der neutralen Basen.
@@ -847,3 +850,85 @@ Neue Datei `Game/buendnis.js` (nach spiel.js geladen; der Weltrechner lädt sie 
 - **Zu schnelles Ausbreiten der Mitspieler** (600 Basen in 4 Std.): wird mit der Marsch-Grenze aus Paket D (Burg-Stufe) auch
   für Mitspieler gebremst.
 
+## 24. 3B – Konto beim Server (2.10., lokal getestet – NICHT hochgeladen, am besten mit Welt-Neustart)
+Bis 3A rechnete das Handy Münzen, Gems, Stufe, Stadt, Ausrüstung, Helden – und die Welt glaubte seinem Profil (nur gekappt).
+Jetzt führt der **Weltrechner für jeden echten Spieler ein Hauptbuch** (spiel.js, Abschnitt „HAUPTBUCH (3B)“ im Schummel-Schutz;
+gespeichert in `botState[u<id>].hb`, Spieler bekommen es nie: server.php `NUR_WELTRECHNER` + `'hb'`). Das Handy rechnet weiter
+wie bisher (flüssig), aber **was die Welt benutzt, kommt aus dem Hauptbuch**: welt.js `profilZuBot(p, alt, id)` ruft beim
+Weltrechner `WELT.klemmen` (= `hbKlemmen`) – Stufe, Fähigkeiten, Ausrüstung, Helden, Burg/Gebäude (→ Marsch-Plätze), Forschung,
+Truppen-Stufe (→ Kampfkraft) und Friedensschild sind nie höher als angenommen. Andere Spieler sehen dieselben Werte (Merker `hbK`:
+ihr Handy nimmt die Welt-Werte statt des rohen Profils).
+
+**Woher das Hauptbuch weiß, was einer haben kann:**
+- *Sicher (zählt der Weltrechner selbst):* EP (→ Stufe, nur noch aus EP, das Profil hebt sie nicht mehr), Beute/Produktion/Gems/
+  Rohstoffe aus den Nachrichten `delta`, Splitter, Preise (`evPreis`: Gems, Splitter, Kisten), Bündnis-Geschenke, Startschild,
+  Admin-Geschenke (admin.php schickt jetzt auch Gems/Splitter/Kiste als Gutschrift).
+- *Nur vom Handy:* Spielraum je Quelle und Tag (`HB_TAG`): Gems 25 (Tagesbelohnung) + 40 (Aufgaben) + 150/7 (Wochenkette),
+  Karten-Funde 40/Std. nur online; Kisten 3 + 1 + 1 (VIP) + Wochenkette; Splitter 5 + 30/7. Erfolge nach und nach (30 Tage
+  bzw. Stufe 100), Stufen-Gems mit der Stufe, Saison-Pass in einer halben Saison. Höchstens 14 Tage sammeln sich an.
+- *Konten wie die Münzen (3A):* Gems (`gems` jetzt im Profil, nur der Weltrechner sieht sie) und Holz/Stein/Eisen. Zeigt das
+  Profil weniger, ist es ausgegeben → **Topf** (`hb.gA`, `hb.cA`, `hb.rA`). Zeigt es mehr, als möglich, zählt das Mehr nicht
+  (Auffälligkeit „Gems“/„Rohstoffe“). Rohstoffe: Spielraum nur noch 2.000/Std. + Markt-Tageslimit.
+
+**Regeln für Neues im Profil (alles oder nichts, bezahlt aus Topf → Konto → Spielraum):**
+- **Burg/Gebäude:** +1 Stufe nach der anderen; frühestens nach der Bauzeit (`cityTimeRoh`, VIP nur so hoch, wie er Tage dabei
+  ist), schneller nur mit Gems (1 je Minute); Kosten wie im Spiel (`AUF.stadtKosten`); Burg-Grenze und „neues Gebäude ab Burg“.
+- **Forschung:** eine nach der anderen (Zeit läuft ab der letzten), Akademie/Burg/Vorgänger wie im Spiel, Kosten `AUF.foKosten`.
+- **Truppen-Stufe:** nur mit Burg + Forschung; jede neue Stufe einmal Eisen.
+- **Ausrüstung:** Seltenheit/Stufe nur so hoch, wie er (statistisch) Kisten geöffnet haben kann: je Platz Ø + 3-fache Streuung +
+  ein glückliches Lila, alle 4 Plätze zusammen dasselbe – Gold braucht so ~20 Kisten (im Schnitt 95), Rot ~150; sichere Kisten
+  „mind. Episch/Legendär“ zählen extra. Fehlende Kisten zahlt erst der Spielraum, dann 30 Gems je Kiste. Sterne nur bis zur
+  Schmiede-Stufe, jeder Stern kostet Gems wie im Spiel.
+- **Helden:** Freischalten + Viertel-Sterne kosten Splitter; der „Splitter-Wert“ aller Helden ist nie höher als bekommen
+  (sicher + Spielraum + Heldenkisten aus Gems). Fähigkeiten ≤ 1 Punkt je halbem Stern. Die **Wut** rechnet nur noch der
+  Weltrechner (vorher kam sie aus dem Profil).
+- **Fähigkeiten** (Skills): höchstens Stufe − 1 (+2) Punkte. **Friedensschild:** länger nur, wenn gekauft (Gems) oder geschenkt.
+- **Beschleunigen** (Befehl `schneller`): kostet jetzt auch im Hauptbuch Gems – wer sie nicht haben kann, wird abgelehnt.
+- Abgelehntes zählt nicht und wird alle 10 s neu geprüft (Gems/Münzen kommen evtl. einen Puls später); steht es nach **2 Min.**
+  noch im Profil, gibt es EINE Auffälligkeit „Hauptbuch“ (Admin-Seite, neue Namen in `$AUFF_ART`).
+- Alte Spielstände (ohne Hauptbuch) stürzen nicht ab: beim ersten Sehen wird das Hauptbuch **einmal aus dem Profil übernommen**
+  (wie bisher gekappt). Ganz neue Spieler (und nach einem Welt-Neustart alle) beginnen bei Null – darum am besten mit neuer Saison.
+
+**Nebel auf dem Server:** Der Weltrechner führt für jeden Spieler die aufgedeckten Nebel-Felder (`hb.nb`, wie
+`openWaterFogCells`): um jede Basis, die er hat oder hatte (mit Forschung Kundschaft), und wo seine **Erkundungs-Späher** laufen
+– dafür schickt das Handy jetzt den Befehl **`spaehen`** (server.php `BEFEHL_ARTEN`; geprüft: nächste eigene Basis, kein
+geschlossenes Tor, bekanntes Gebiet, höchstens 120/Std.). Daraus die sichtbaren Inseln (wie `islandSeen`) als Bitfeld →
+im Puls `sicht` → server.php speichert es in `ow_spieler.sicht` (+ `sicht_v`). Spieler bekommen **`openWaterIslandTroops` und
+`openWaterNeutralTroopOverrides` nur für sichtbare + eigene Inseln** (`nebel_welt` – ganze Teile und Flicken; ändert sich die
+Sicht, kommen diese Teile einmal ganz). Am Handy: fehlt die Zahl einer fremden Basis, liegt sie im Nebel („?“,
+`truppenBekannt`). Die Rangliste nimmt fremde Truppen-Summen vom Weltrechner (`botState[id].tt`, jede Minute). Admin
+„Nebel freischalten“ deckt jetzt auch auf dem Server alles auf. Ändert sich die Karte (andere Felder/Inseln, z. B. neue Saison mit
+größerer Karte), passt `hb.nbSig` nicht mehr und der Server-Nebel fängt neu an (um die eigenen Basen sofort wieder offen).
+
+**Nebenbei behoben:** Neue Spieler bekamen ihre Start-Rohstoffe doppelt (3.000 Holz kamen zusätzlich als Nachricht). Profile
+ohne Rohstoffe/Gems (altes Handy) zählen jetzt als „unbekannt“ statt als 0.
+
+**Gemessen (gleiche Welt, 2 Spieler, 90 s):** Puls vorher Ø 139,7 KB roh / 22 KB gepackt → nachher Ø 110,2 KB / 12,8 KB
+(fremde Truppen fallen weg). Weltrechner 265–280 MB vorher wie nachher (Heap 105 → 120 MB). Hauptbuch je Spieler ~1,5–2,5 KB.
+Server: Filtern eines 100-KB-Truppenteils ~1 ms.
+
+**Getestet (Port 8786, DB `owtest_3b`, Weltrechner + bis 3 Spieler):**
+- Ehrlich: Geschenk abholen, Tagesbelohnung, 20 und 300 Kisten + Zusammenlegen (2× Rot, Gold) + Verkaufen + Leveln, Akademie +
+  Burg 1→2 mit Bauzeit, Burg 2→3 und Schmiede mit Gems, Forschung mit Gems, Mauer, Stern in der Schmiede, Heldenkiste + Helden
+  aufwerten, Schild kaufen und einschalten, Angriff + Beschleunigen, Markt kaufen/verkaufen, Erkundungs-Späher → Welt = Handy,
+  **keine Auffälligkeit**.
+- Schummeln (Profil: Stufe 2000, 1 Mio. Gems, 1 Bio. Münzen, 1 Mrd. Rohstoffe, Gold-Ausrüstung Stufe 20 mit 5 Sternen, alle
+  Gebäude/Burg 25, alle Forschung, T5, alle Helden 5 Sterne, 8-Tage-Schild; Befehle: 1 Mrd. Stufen-Truppen, Truppen ohne
+  Quelle, Ausbau +49, Späher ins Unbekannte, 4 Angriffe bei 2 Marsch-Plätzen): in der Welt Stufe 1, Burg 2 (was die
+  Start-Rohstoffe hergeben), T1, keine Forschung, keine Ausrüstung, Start-Helden, kein Schild, 2 von 4 Angriffen; ein anderer
+  Spieler sieht dieselben Werte; im Paket nur Truppen der eigenen/sichtbaren Inseln. Nach 2 Min. alle Auffälligkeiten da.
+- Weltrechner-Neustart: Hauptbuch und Werte unverändert, weiterspielen ohne Fehlalarm. Alter Stand ohne Hauptbuch: wird
+  übernommen, kein Absturz. Admin-Seite zeigt die neuen Arten, Admin-„Nebel freischalten“ öffnet auch den Server-Nebel.
+  Keine Fehler in Konsole, Weltrechner-Log oder PHP-Log. `php tests/server_test.php` (64, u. a. Nebel-Filter) und
+  `node tests/welt_test.js` grün.
+
+**Bewusst offen (3B ist ein Schiedsrichter, kein zweites Spiel):**
+- Das Handy rechnet weiter selbst – der Weltrechner prüft Plausibilität, er kennt nicht jede Kiste/jeden Gegenstand einzeln.
+  Ein Schummler bekommt höchstens, was ein ehrlicher Spieler mit allen Tages-Quellen (Spielraum) auch hätte, und Glück bei
+  Kisten nur im Rahmen der Statistik. Bauen geht mit Gems schneller – auch mit Spielraum-Gems.
+- Zwei Bauarbeiter werden nicht gezählt (jedes Gebäude hat seine eigene Bauzeit-Kette).
+- Kleine Gem-Ausgaben ohne Welt-Wirkung prüft das Hauptbuch nicht einzeln (Zurückrufen, Mehrfachangriff, Verlegen, 2. Bauarbeiter,
+  Aussehen) – sie senken nur sein Gem-Konto.
+- Nebel: Truppen in Märschen, Armeen, Sammlern und Rallys anderer stehen weiter im Paket (gezeichnet wird im Nebel nichts);
+  Insel-Stufen auch. Unterwegs zeigt ein Erkundungs-Späher die Zahlen erst, wenn der Weltrechner ihn sieht (~1–2 s später).
+- Münzen-Spielraum wie 3A (pro Stunde etwas Gratis möglich). Weltrechner selbst bleibt die Vertrauensstelle.

@@ -63,6 +63,30 @@ pruefe('Flicken ohne Groll', isset($f['d']['bot1']['s']['grudge']), false);
 pruefe('Flicken behält Stufe', $f['d']['bot1']['s']['lvl'], 6);
 pruefe('Flicken löscht Handy beim Spieler', in_array('handy', $f['d']['bot1']['w'] ?? [], true), true);
 
+// --- 3B: Hauptbuch und Gems nie beim Spieler, Nebel auf dem Server
+$b = json_decode(weltteil_fuer_spieler('openWaterBotState', '{"u3":{"lvl":5,"hb":{"st":{"keep":[3,0]}},"hbK":1}}'), true);
+pruefe('Hauptbuch verborgen', isset($b['u3']['hb']), false);
+pruefe('Merker hbK bleibt', $b['u3']['hbK'], 1);
+$p = json_decode(profil_bereinigen(json_encode(['lvl' => 3, 'gems' => 1e20])), true);
+pruefe('Gems im Profil gedeckelt', (float)$p['gems'], 1e13);
+pruefe('Rohstoffe fehlen → null (nicht 0)', $p['res'], null);
+$p = json_decode(profil_bereinigen(json_encode(['lvl' => 3])), true);
+pruefe('Gems fehlen → null', $p['gems'], null);
+$bits = str_repeat("\0", 4); $bits[1] = chr(1 << 2);   // Insel 10 sichtbar
+$s = ['bits' => $bits, 'eigen' => [3 => true]];
+pruefe('sieht Insel 10', nebel_sieht($s, '10'), true);
+pruefe('sieht eigene Insel 3', nebel_sieht($s, 3), true);
+pruefe('sieht Insel 11 nicht', nebel_sieht($s, 11), false);
+pruefe('sieht Insel außerhalb nicht', nebel_sieht($s, 9999), false);
+pruefe('Truppen gefiltert', nebel_teil('{"3":500,"10":7,"11":900,"200":1}', $s), '{"3":500,"10":7}');
+pruefe('leerer Teil bleibt {}', nebel_teil('{"11":900}', $s), '{}');
+pruefe('Flicken gefiltert', nebel_flicken('{"s":{"10":8,"11":901},"w":["12"]}', $s), '{"s":{"10":8},"w":["12"]}');
+$w = nebel_welt(['setzen' => (object)['openWaterIslandTroops' => '{"10":1,"11":2}', 'openWaterIslandLevels' => '{"11":5}'], 'flicken' => (object)['openWaterNeutralTroopOverrides' => ['{"s":{"11":1}}']]], $s);
+pruefe('Welt: Truppen gefiltert', $w['setzen']->openWaterIslandTroops, '{"10":1}');
+pruefe('Welt: andere Teile unverändert', $w['setzen']->openWaterIslandLevels, '{"11":5}');
+pruefe('Welt: Flicken gefiltert', $w['flicken']->openWaterNeutralTroopOverrides[0], '{"s":{}}');
+pruefe('Befehl spaehen erlaubt', befehl_ok(['art' => 'spaehen', 'ziel' => 12, 'ex' => -300, 'ey' => 4000, 'at' => 1]), true);
+
 // --- Herkunft: fremde Seiten dürfen nichts abschicken
 $_SERVER['HTTP_HOST'] = 'office.hobbitonhill.de';
 unset($_SERVER['HTTP_ORIGIN'], $_SERVER['HTTP_SEC_FETCH_SITE']); pruefe('ohne Origin (alter Browser)', herkunft_ok(), true);
