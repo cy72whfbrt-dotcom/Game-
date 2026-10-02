@@ -1,6 +1,8 @@
 // ===== TEST-MODUS – NUR für die Vorschau-Datei (werkzeuge/vorschau_bauen.php … test), NIE im echten Spiel =====
 // Kein Nebel, alle Basen gespäht; du und alle Mitspieler habt fast unbegrenzt Münzen, Gems, Rohstoffe, Splitter und
 // Truppen (wird alle 10 s wieder aufgefüllt) – damit man alles Neue gleich ausprobieren kann.
+// Events zum Ansehen: der Drache ist gleich da (3 Std.), die Barbaren-Invasion beginnt 1 Minute nach dem Laden (1 Std.).
+EV_TEST = { dr: Date.now() + 5000, inv: Date.now() + 60000 };
 (function () {
     'use strict';
     const VIEL = 1e13, ROH = ['h', 's', 'e'];
@@ -27,6 +29,6 @@
     }
     window.addEventListener('load', () => setTimeout(() => {
         nebelWeg(); auffuellen(); setInterval(auffuellen, 10000);
-        flashHint('TEST-MODUS: kein Nebel – du und alle Mitspieler habt fast unbegrenzt Münzen, Gems, Rohstoffe, Splitter und Truppen.', 7000);
+        flashHint('TEST-MODUS: kein Nebel – du und alle Mitspieler habt fast unbegrenzt Münzen, Gems, Rohstoffe, Splitter und Truppen. Der Drache ist da, die Invasion kommt in 1 Minute.', 8000);
     }, 4000));
 })();
