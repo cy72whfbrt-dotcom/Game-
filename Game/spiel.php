@@ -139,6 +139,7 @@ b,strong{font-weight:600}
 .mb-chip .icon{width:14px;height:14px;flex:none;color:var(--gold-200)} .mb-chip .icon.mb-gem{width:12px;height:12px;margin-left:-3px;color:var(--res-gem)}
 .mb-chip b{color:var(--tx-1);font-variant-numeric:tabular-nums} .mb-chip i{font-style:normal;color:var(--tx-3);font-variant-numeric:tabular-nums}
 .mb-chip.is-tour{border-color:rgba(176,120,255,.55);background:linear-gradient(90deg,rgba(110,55,190,.7),rgba(16,12,24,.85))} .mb-chip.is-tour .icon{color:#f2c75c} .mb-chip.is-tour i{color:#d9c6ff}
+.mb-chip.is-drache{border-color:rgba(255,140,70,.6);background:linear-gradient(90deg,rgba(170,50,20,.78),rgba(22,10,8,.88))} .mb-chip.is-drache .icon{color:#ffc46a} .mb-chip.is-drache i{color:#ffd9c0}
 .mb-chip.is-warn{border-color:rgba(225,72,60,.6);background:linear-gradient(90deg,rgba(150,30,30,.75),rgba(20,12,12,.88));color:#ffd9d3} .mb-chip.is-warn > .icon:first-child{color:#ffb3aa}
 .res{position:relative;flex:1 1 0;min-width:0;max-width:136px;height:var(--hud-h);display:flex;align-items:center;gap:6px;padding:0 9px 0 6px;
   background:var(--glass);border:1px solid var(--line-2);border-radius:var(--r-sm);box-shadow:var(--sh-1);
@@ -377,6 +378,13 @@ b,strong{font-weight:600}
 .barb-rank li em{width:16px;font-style:normal;font-weight:700;color:var(--gold-300);text-align:center} .barb-rank li:nth-child(-n+3) em{color:var(--gold-100)} .barb-rank li span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .barb-rank li b{color:var(--tx-1);font-variant-numeric:tabular-nums} .barb-rank li.me{border-color:var(--line-3);background:rgba(214,170,90,.1)}
 .barb-note{font:500 var(--fs-11)/1.35 var(--font-ui);color:var(--tx-3)}
+/* Ereignisse (Paket B) */
+#eventTabs.tabs{grid-template-columns:repeat(4,minmax(0,1fr))} .ev-body{display:flex;flex-direction:column;gap:8px;padding:10px 10px 16px}
+.ev-card .field-lines b{display:flex;align-items:center;justify-content:flex-end;gap:5px;flex-wrap:wrap} .ev-card .field-lines .icon{width:13px;height:13px;color:var(--gold-300)}
+.ev-card.is-tour{border-color:rgba(176,120,255,.4);background:rgba(160,92,235,.08)} .ev-card.is-warn{border-color:rgba(225,72,60,.55);background:rgba(150,30,30,.12)} .ev-card.is-drache{border-color:rgba(255,140,70,.55);background:rgba(170,60,20,.12)}
+.ev-card .barb-ct{flex-wrap:wrap;row-gap:2px} .ev-card .barb-ct > b{white-space:nowrap} .ev-card .barb-ct small{margin-left:auto;text-align:right} .ev-card .barb-ct small b{font-variant-numeric:tabular-nums;color:var(--tx-1)} .ev-rot{color:#ff8a7a} .ev-prizes3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.ev-plan b{display:flex;align-items:center;justify-content:flex-end;gap:5px} .ev-plan .icon{width:13px;height:13px;color:#c9a2ff}
+.barb-rank .who-link{background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:left}
 .barb-card{display:flex;flex-direction:column;gap:6px;padding:9px 10px;border-radius:var(--r-sm);background:rgba(255,255,255,.03);border:1px solid var(--line-1)}
 .barb-ct{display:flex;align-items:baseline;justify-content:space-between;gap:8px} .barb-ct b{display:inline-flex;align-items:center;gap:6px;font:700 var(--fs-13)/1.2 var(--font-ui);color:var(--tx-1)} .barb-ct .icon{width:15px;height:15px;color:var(--gold-300)} .barb-ct small{font:600 var(--fs-11)/1 var(--font-ui);color:var(--gold-200)}
 .logGear{margin-top:8px;padding-top:8px;border-top:1px solid var(--line-1);display:grid;gap:6px}
@@ -1430,6 +1438,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 <symbol id="i-question" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.2 9.2a2.9 2.9 0 1 1 4.2 2.6c-.9.5-1.4 1.1-1.4 2.1v.6"/><path d="M11 17.6a1 1 0 1 0 2 0a1 1 0 1 0 -2 0z" fill="currentColor" stroke="none"/></g></symbol>
 <symbol id="i-crown" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17.5 3 7.5l5 4 4-6.5 4 6.5 5-4-1 10z" fill="currentColor" stroke="none" opacity="0.18"/><path d="M4 17.5 3 7.5l5 4 4-6.5 4 6.5 5-4-1 10z"/><path d="M4.5 20.5h15"/></g></symbol>
 <symbol id="i-rank" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v5.5a4 4 0 0 1-8 0z" fill="currentColor" stroke="none" opacity="0.14"/><path d="M8 4h8v5.5a4 4 0 0 1-8 0z"/><path d="M8 6H5.2a3 3 0 0 0 3 3.6M16 6h2.8a3 3 0 0 1-3 3.6"/><path d="M12 13.5v3.5"/><path d="M8.5 20.5h7l-.8-3.5H9.3z"/></g></symbol>
+<symbol id="i-event" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5h16v13.5H4z" fill="currentColor" stroke="none" opacity="0.14"/><path d="M4 6.5h16v13.5H4z"/><path d="M4 10.5h16M8.5 4v4M15.5 4v4"/><path d="M12 12.6l1.1 2.2 2.4.3-1.8 1.6.5 2.4-2.2-1.2-2.2 1.2.5-2.4-1.8-1.6 2.4-.3z" fill="currentColor" stroke="none"/></g></symbol>
 <symbol id="i-flag" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21V3.5"/><path d="M6 4.5h12l-2.8 3.8L18 12H6" fill="currentColor" stroke="none" opacity="0.16"/><path d="M6 4.5h12l-2.8 3.8L18 12H6"/></g></symbol>
 <symbol id="i-goal" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5" fill="currentColor" fill-opacity=".16"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><path d="M12 12l6.5-6.5M16 5.5h2.5V8"/></g></symbol>
 <symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33a1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></g></symbol>
@@ -1485,7 +1494,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
   <button id="musicBtn" type="button" aria-label="Musik an/aus" aria-pressed="true"><svg class="icon"><use href="#i-sound"/></svg></button>
   <button id="markerBtn" type="button" aria-label="Wegmarke setzen"><svg class="icon"><use href="#i-flag"/></svg></button>
   <button id="armyBtn" type="button" aria-label="Armee aufstellen"><svg class="icon"><use href="#i-troops"/></svg></button>
-  <button id="eventBtn" type="button" aria-label="Ereignisse: Tagesboss und Barbaren-Lager"><svg class="icon"><use href="#i-attack"/></svg></button>
+  <button id="eventBtn" type="button" aria-label="Ereignisse: Turnier, Invasion, Drache, Tagesboss und Barbaren-Lager"><svg class="icon"><use href="#i-event"/></svg></button>
   <button id="settingsBtn" type="button" aria-label="Einstellungen"><svg class="icon"><use href="#i-gear"/></svg></button>
 </div>
 <div id="armySheet" class="marker-sheet field-sheet" hidden></div>
@@ -1636,6 +1645,8 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         <label class="set-zeile"><span>Angriff auf deine Basis</span><input type="checkbox" data-push-art="angriff"></label>
         <label class="set-zeile"><span>Späher unterwegs zu dir</span><input type="checkbox" data-push-art="spaeher"></label>
         <label class="set-zeile"><span>Basis verloren</span><input type="checkbox" data-push-art="verloren"></label>
+        <label class="set-zeile"><span>Barbaren-Invasion beginnt<small>10 Minuten vorher</small></span><input type="checkbox" data-push-art="invasion"></label>
+        <label class="set-zeile"><span>Der Drache ist erschienen<small>Sonntagabend</small></span><input type="checkbox" data-push-art="drache"></label>
       </div>
     </div>
     <div class="sect"><h4>Ton</h4></div>
@@ -1688,6 +1699,23 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
   </div>
   <div class="pbody" id="rankBody"></div>
   <footer class="pfoot lb-foot" id="rankFoot"></footer>
+</section>
+
+<!-- ============ EREIGNISSE (Knopf an der Karte): Turnier-Thema, Barbaren-Invasion, Drache, Tagesboss, Lager ============ -->
+<section id="eventPopup" class="panel panel--sheet" role="dialog" aria-labelledby="eventTitle">
+  <span class="sheet-grab" aria-hidden="true"></span>
+  <header class="phead">
+    <div class="emblem emblem--gold"><svg class="icon"><use href="#i-event"/></svg></div>
+    <div class="phead-text"><div class="overline">Termine &amp; Ranglisten</div><h3 id="eventTitle" class="ptitle">Ereignisse</h3></div>
+    <button id="eventCloseBtn" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button>
+  </header>
+  <div id="eventTabs" class="tabs" role="tablist">
+    <button class="tab active" type="button" role="tab" data-etab="alle"><svg class="icon"><use href="#i-event"/></svg><span>Übersicht</span></button>
+    <button class="tab" type="button" role="tab" data-etab="tour"><svg class="icon"><use href="#i-crown"/></svg><span>Turnier</span></button>
+    <button class="tab" type="button" role="tab" data-etab="inv"><svg class="icon"><use href="#i-defense"/></svg><span>Invasion</span></button>
+    <button class="tab" type="button" role="tab" data-etab="drache"><svg class="icon"><use href="#i-star"/></svg><span>Drache</span></button>
+  </div>
+  <div class="pbody ev-body" id="eventBody"></div>
 </section>
 
 <section id="goalsPopup" class="panel panel--sheet" role="dialog" aria-labelledby="goalsTitle">

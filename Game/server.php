@@ -232,7 +232,7 @@ function bot_namen() {
     return $n;
 }
 // Nachrichten, die der Weltrechner an andere schicken darf (Geschenke nur über admin.php)
-const WELTRECHNER_NACHRICHTEN = ['delta', 'bericht', 'startschild'];
+const WELTRECHNER_NACHRICHTEN = ['delta', 'bericht', 'startschild', 'evPreis'];   // evPreis: Preis aus Turnier/Invasion/Drache (Abholfach)
 
 function client_ip() { return (string)($_SERVER['REMOTE_ADDR'] ?? '?'); }
 // Kommt ein Formular / eine Anfrage wirklich von dieser Seite? (fremde Seiten dürfen hier nichts abschicken)
@@ -919,7 +919,7 @@ function push_endpoint_ok($e) {
     $h = strtolower((string)($u['host'] ?? ''));
     return (bool)preg_match('/^(fcm\.googleapis\.com|([a-z0-9-]+\.)*push\.apple\.com|([a-z0-9-]+\.)*push\.services\.mozilla\.com|([a-z0-9-]+\.)*notify\.windows\.com)$/', $h);
 }
-const PUSH_ARTEN = ['angriff', 'spaeher', 'verloren'];   // die Arten von Handy-Nachrichten (weltrechner/push.js)
+const PUSH_ARTEN = ['angriff', 'spaeher', 'verloren', 'invasion', 'drache'];   // die Arten von Handy-Nachrichten (weltrechner/push.js)
 function push_anfrage($ich, $d, $aktion) {
     $l = lager();
     $s = push_schluessel();

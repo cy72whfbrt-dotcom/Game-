@@ -89,6 +89,12 @@
         openWaterBarbMarches(v, d) { const t = tausch(d); for (const m of v || []) m.who = t(m.who); return v; },
         openWaterBarbWho(v, d) { return schluesselTausch(v, d); },
         openWaterDayBoss(v, d) { if (v) schluesselTausch(v.dmg, d); return v; },
+        openWaterEvents(v, d) {   // Events: Punkte der Invasion, Schaden und Angriffe beim Drachen
+            if (!v) return v;
+            if (v.inv) { schluesselTausch(v.inv.pts, d); schluesselTausch(v.inv.wehr, d); }
+            if (v.dr) { schluesselTausch(v.dr.dmg, d); schluesselTausch(v.dr.hits, d); }
+            return v;
+        },
         openWaterArmies(v, d) {
             if (!v) return v; const t = tausch(d);
             for (const a of v.armies || []) { if (d === 'c') { if (a.who === ICH) delete a.who; } else if (!a.who) a.who = ICH; }

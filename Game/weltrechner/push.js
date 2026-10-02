@@ -80,6 +80,12 @@ const BEOBACHTER = `(function () {
     for (const id in botOwnedIslands) { if (!mensch(id)) continue; neu.besitz[id] = [...botOwnedIslands[id]];
         const vorher = alt && alt.besitz[id]; if (!vorher) continue; const jetztDa = botOwnedIslands[id];
         for (const i of vorher) if (!jetztDa.has(i)) { const o = islandOwnerOf(i); raus.push({ an: id, art: 'verloren', von: o && o !== id ? name(o) : null, basis: titel(i) }); } }
+    // Events (an alle echten Spieler): 10 Minuten vor der Barbaren-Invasion, und wenn der Drache erscheint – je einmal
+    neu.ev = {}; const evAlt = alt && alt.ev || {};
+    for (const k in evAlt) if (evAlt[k] > jetzt - 864e5) neu.ev[k] = evAlt[k];
+    const ev = typeof evState !== 'undefined' && evState ? evState : {}, ip = ev.plan && ev.plan.inv, dr = ev.dr;
+    if (ip && ip.start > jetzt && ip.start - jetzt <= 10 * 60000 && !neu.ev['i' + ip.start]) { neu.ev['i' + ip.start] = ip.start; if (alt) for (const id in M) if (mensch(id)) raus.push({ an: id, art: 'invasion', ankunft: ip.start }); }
+    if (dr && dr.hp > 0 && !dr.paid && dr.start <= jetzt && dr.end > jetzt && !neu.ev['d' + dr.start]) { neu.ev['d' + dr.start] = dr.end; if (alt) for (const id in M) if (mensch(id)) raus.push({ an: id, art: 'drache', ankunft: dr.end, name: dr.name }); }
     window.__pushMerker = neu;
     const online = {}; for (const id in M) online[id] = !!M[id].online;
     return JSON.stringify({ raus, online });
@@ -105,7 +111,10 @@ function nachrichtBauen(liste, jetzt) {
     else if (verloren.length) teile.push(verloren.length + ' Basen verloren (' + verloren.slice(0, 3).map(v => v.basis).join(', ') + (verloren.length > 3 ? ' …' : '') + ').');
     if (spaeher.length === 1) teile.push('Ein Späher von ' + spaeher[0].von + ' ist unterwegs zu deiner Basis ' + spaeher[0].basis + '.');
     else if (spaeher.length) { const wer = [...new Set(spaeher.map(s => s.von))]; teile.push(spaeher.length + ' Späher sind unterwegs zu deinen Basen (' + wer.slice(0, 3).join(', ') + (wer.length > 3 ? ' …' : '') + ').'); }
-    const titel = angriffe.length ? 'Angriff auf deine Basis!' : verloren.length ? 'Basis verloren' : 'Späher unterwegs';
+    const invasion = liste.filter(e => e.art === 'invasion'), drache = liste.filter(e => e.art === 'drache');
+    if (invasion.length) teile.push('Barbaren-Invasion beginnt in ' + minuten(Math.min(...invasion.map(e => e.ankunft)) - jetzt) + ' – stärke deine Basen!');
+    if (drache.length) teile.push('Der Drache ist erschienen' + (drache[0].name ? ' (' + drache[0].name + ')' : '') + ' – greif ihn zusammen mit allen anderen an!');
+    const titel = angriffe.length ? 'Angriff auf deine Basis!' : verloren.length ? 'Basis verloren' : spaeher.length ? 'Späher unterwegs' : invasion.length ? 'Barbaren-Invasion' : 'Der Drache ist da';
     return { titel, text: teile.join(' ').slice(0, 400), tag: 'open-water' };
 }
 

@@ -295,8 +295,9 @@ function coinsPerTick(level) {
 function troopsPerTick(level) {
     return Math.round(BASE_TROOPS * Math.pow(PRODUCTION_GROWTH, Math.min(level, MAX_BASE_LEVEL) - 1));
 }
-function upgradeCost(level) {
-    return Math.round(UPGRADE_BASE_COST * Math.pow(UPGRADE_COST_GROWTH, level - 1));
+function upgradeCost(level) {                    // Wochenend-Thema „Bauherr“: 20 % günstiger
+    let r = 1; try { if (evThemaAktiv('bau')) r = .8; } catch (e) {}
+    return Math.round(UPGRADE_BASE_COST * Math.pow(UPGRADE_COST_GROWTH, level - 1) * r);
 }
 
 // The big islands themselves - just background land, drawn as one
@@ -3477,7 +3478,7 @@ function drawMap() {
   drawBaseAuras(vis, z, now);                                                                                          // level + title auras under the towers
   drawThronePlaza(z, now);                                                                                             // the Thronplatz around the Mega-Tempel
   drawResFields(now, wallNow);                                                                                          // gold mines and gem veins
-  drawBarb(now, wallNow);                                                                                               // Barbaren-Lager, the Tagesboss and the columns on their way
+  drawBarb(now, wallNow); drawEvents(now, wallNow);                                                                                               // Barbaren-Lager, the Tagesboss and the columns on their way
   drawArmies(now, wallNow);                                                                                             // your armies out in the open
   for (const isl of vis.slice().sort((a, b) => a.y - b.y)) drawBuilding(isl, ownerKeyOf(isl), z);                    // 7
   drawThroneFx(z, now);
@@ -5244,7 +5245,7 @@ function renderActiveMarches() {
     }
     const bm = barbMine();                            // Barbaren-Lager and Tagesboss: out and back like every march
     for (const m of bm) { const sec = Math.max(0, Math.ceil((m.resolveAt - Date.now()) / 1000)), c = m.k === 'c' && barbCampById(m.tid), L = m.L || (c && c.L), hd = m.hero && heroById(m.hero);
-        const tgt = m.k === 'b' ? (m.name || 'Tagesboss') : 'Barbaren-Lager' + (L ? ' · Stufe ' + L : '');
+        const tgt = m.k === 'b' ? (m.name || 'Tagesboss') : m.k === 'd' ? (m.name || 'Drache') : m.k === 'i' ? 'Barbaren-Armee' : 'Barbaren-Lager' + (L ? ' · Stufe ' + L : '');
         rows.push(m.back ? logRowHtml('retreat', 'recall', fmtNum(m.troops) + ' Truppen kehren zurück', 'von ' + tgt + ' nach ' + T(m.homeId), clock(sec))
             : logRowHtml('attack', m.k === 'b' ? 'crown' : 'attack', 'Angriff auf ' + tgt, 'von ' + T(m.homeId) + ' · ' + fmtNum(m.troops) + ' Truppen' + (hd ? ' · ' + hd.name : ''), clock(sec))); }
     const fast = speedableMarches();
@@ -5336,7 +5337,7 @@ function renderCombatLog() {
             const rew = boss ? (entry.gold ? '<div class="logGold">Beute: +' + fmtBig(entry.gold) + ' Münzen nach Schaden</div>' : '') + (entry.capped ? '<div class="logRetreat">Höchstens 5 % Leben pro Angriff.</div>' : '')
                 : (entry.gold ? '<div class="logGold">Beute: +' + fmtBig(entry.gold) + ' Münzen' + (entry.kGold ? ' (davon ' + fmtBig(entry.kGold) + ' Angriff: Gold)' : '') + '</div>' : '') +
                   (entry.crate ? '<div class="logGold">Kiste: ' + escapeHtml(entry.crate) + '</div>' : '') + (entry.sh ? '<div class="logGold">' + escapeHtml(entry.sh) + '</div>' : '') +
-                  (entry.n !== undefined ? '<div class="logRetreat">' + (entry.up ? 'Stufe ' + entry.open + ' freigeschaltet · ' : entry.open ? 'Freigeschaltet bis Stufe ' + entry.open + ' · ' : '') + entry.n + ' / ' + BARB_DAY + ' heute</div>' : '');
+                  (entry.n !== undefined ? '<div class="logRetreat">' + (entry.up ? 'Stufe ' + entry.open + ' freigeschaltet · ' : entry.open ? 'Freigeschaltet bis Stufe ' + entry.open + ' · ' : '') + entry.n + ' / ' + barbTagMax() + ' heute</div>' : '');
             const det = tr === undefined ? fieldHeroDet(entry) : '<details><summary>Kampfdetails</summary>' + (boss ? '' : logBalance(entry.atk, entry.def, icon('attack') + 'Du ' + fmtM(entry.atk), fmtM(entry.def) + ' Lager' + icon('defense'))) +
                 '<div class="logCompare">' + mySide + '<div class="logVsDivider">VS</div>' + foeSide + '</div>' + rew +
                 (entry.wounded ? '<div class="logRetreat logWounded">' + fmtNum(entry.wounded) + ' Verwundete gehen ins Lazarett – heile sie in der Stadt</div>' : '') +
@@ -5347,6 +5348,7 @@ function renderCombatLog() {
                 'Du (' + fmtM(entry.atk) + ') gegen ' + fmtM(entry.def) + ' Krieger' + (entry.loss ? ' · ' + fmtM(entry.loss) + ' gefallen' : '') + (entry.wounded ? ' · ' + fmtM(entry.wounded) + ' ins Lazarett' : '') + (entry.gold ? ' · +' + fmtM(entry.gold) + ' Gold' : '') +
                 (entry.crate ? ' · Kiste: ' + escapeHtml(entry.crate) : '') + (entry.sh ? ' · ' + escapeHtml(entry.sh) : '') + (entry.up ? ' · Stufe ' + entry.open + ' frei' : '') + (!entry.won && entry.left ? ' · noch ' + fmtM(entry.left) + ' im Lager' : '') + fieldHeroLine(entry), ago(entry), det);
         }
+        if (entry.type === 'ev') return logRowHtml(entry.gut ? 'win' : 'loss', entry.ic || 'attack', logBadge(entry.gut ? 'win' : 'loss', String(entry.badge || '')) + escapeHtml(entry.title || ''), escapeHtml(entry.txt || ''), ago(entry));   // Events (Invasion, Drache)
         if (entry.type === 'dbossWin') return logRowHtml('win', 'crown', logBadge('win', 'Boss gefallen') + escapeHtml(entry.name),
             'Platz ' + entry.rank + ' von ' + entry.of + ' · ' + fmtM(entry.dmg) + ' Schaden · +' + fmtM(entry.gems) + ' Gems' + (entry.crate ? ' · Kiste: ' + escapeHtml(entry.crate) : '') + (entry.sh ? ' · ' + escapeHtml(entry.sh) : ''), ago(entry));
         if (entry.type === 'army') {
@@ -5686,7 +5688,7 @@ function inboxList() { if (!inboxState) { try { inboxState = JSON.parse(store.ge
 function inboxSave() { store.set('openWaterInbox', JSON.stringify(inboxList())); }
 const INBOX_PILE = { fight: 1, bounty: 1 };   // these pile up in one entry each
 const inboxPiles = x => !!INBOX_PILE[x.src] && !(x.crate >= 0);   // a crate keeps its own entry (one entry holds one crate)
-const INBOX_SRC = { gift: { ic: 'gem', t: 'Geschenk' }, fight: { ic: 'attack', t: 'Kampfbeute' }, tour: { ic: 'crown', t: 'Wochenend-Turnier' }, boss: { ic: 'star', t: 'Tagesboss' }, wboss: { ic: 'star', t: 'Weltboss' }, bounty: { ic: 'losses', t: 'Kopfgeld' } };
+const INBOX_SRC = { gift: { ic: 'gem', t: 'Geschenk' }, fight: { ic: 'attack', t: 'Kampfbeute' }, tour: { ic: 'crown', t: 'Wochenend-Turnier' }, boss: { ic: 'star', t: 'Tagesboss' }, wboss: { ic: 'star', t: 'Weltboss' }, bounty: { ic: 'losses', t: 'Kopfgeld' }, inv: { ic: 'defense', t: 'Barbaren-Invasion' }, drache: { ic: 'star', t: 'Drache' } };
 function inboxAdd(o) {                              // o: { src, title?, gems, coins, sh (hero shards), crate (lowest rarity, -1 none) } - all fights' spoils pile up in one entry
     o = Object.assign({ gems: 0, coins: 0, sh: 0, crate: -1, tr: 0, n: 1 }, o); o.gems = Math.round(o.gems); o.coins = Math.round(o.coins); o.tr = Math.round(o.tr);
     if (!(o.gems > 0 || o.coins > 0 || o.sh > 0 || o.crate >= 0 || o.tr > 0)) return 0;
@@ -5976,7 +5978,8 @@ function throneAward(silent, at) {                    // at: when this award hap
     const ts = throneState; ts.week = ts.week || {};
     const got = {};
     const add = (who, n) => { if (!who) return; got[who] = (got[who] || 0) + n; };
-    add(rulerOwner(), THRONE_PTS_MEGA); for (const g of guardianTempleIds) add(islandOwnerOf(g), THRONE_PTS_GUARD);
+    const tb = evThemaAm(at || Date.now()).k === 'thron' && tourOn(at || Date.now()) ? 1.5 : 1;   // Kampf um die Mitte: Thron-Punkte +50 %
+    add(rulerOwner(), Math.round(THRONE_PTS_MEGA * tb)); for (const g of guardianTempleIds) add(islandOwnerOf(g), Math.round(THRONE_PTS_GUARD * tb));
     goalBump(rulerOwner(), 'throneMin', THRONE_TICK_MS / 60000);   // minutes on the throne (Erfolge)
     tourHold(at);                                                                 // Wochenend-Turnier
     bountyGrow();                                                                 // the Kopfgeld on the ruler grows
@@ -6012,7 +6015,7 @@ function throneVolley(times, silent) {                // times: several volleys 
 }
 function throneTick() {
     const now = Date.now(), ts = throneState; let dirty = false;
-    if (!rechnet()) { throneUhren(now, ts); return; }
+    if (!rechnet()) { throneUhren(now, ts); tourAnzeige(now); return; }
     const r = rulerOwner(); if ((ts.ruler || null) !== (r || null)) { ts.ruler = r || null; ts.rulerSince = now; ts.coTold = false; dirty = true; }
     bountyCheck(r); tourTick(now);                                                // Kopfgeld to whoever took the throne; the Turnier clock
     if (!ts.coTold && coalitionOn(now)) { ts.coTold = true; dirty = true;                  // everyone else turns on the throne
@@ -6094,7 +6097,7 @@ document.getElementById('throneShop').addEventListener('click', e => { if (e.tar
 // 30 a fight and on average no more than the throne: 10 a minute, so many fights can't bury holding the middle). When it ends the places are paid once
 // (also when you were away), the winner wears "Turniersieger" with a purple-gold ring for 7 days. The same for everyone.
 const TOUR_PTS_MEGA = 10, TOUR_PTS_GUARD = 3, TOUR_KILL_PER = 1000, TOUR_KILL_MAX = 30, TOUR_KILL_MIN = 10, TOUR_CHAMP_MS = 7 * 86400000, TOUR_TOP = 10;
-const TOUR_PRIZES = [{ to: 1, gems: 3000, sh: 60, t: '1.' }, { to: 3, gems: 1500, sh: 30, t: '2.–3.' }, { to: 10, gems: 600, sh: 12, t: '4.–10.' }, { to: Infinity, gems: 100, sh: 3, t: 'Alle anderen' }];
+const TOUR_PRIZES = [{ to: 1, gems: 1000, sh: 30, crate: 4, t: '1.' }, { to: 3, gems: 500, sh: 15, crate: 3, t: '2.–3.' }, { to: 10, gems: 200, sh: 6, crate: 2, t: '4.–10.' }, { to: Infinity, gems: 50, sh: 2, crate: -1, t: 'Alle anderen' }];   // (Paket B: maßvoller, Gold-Kiste nur Platz 1)
 const midZoneIds = new Set(islands.filter(i => { const lm = landmasses[i.landmassId]; return i.type === 'megaTemple' || i.guardian || i.type === 'gate' && (i.gateKind === 'throne' || i.gateKind === 'guardian') || !!lm && (lm.tier === 'throne' || lm.tier === 'guardian'); }).map(i => i.id));
 var tourState = (() => { try { return JSON.parse(store.get('openWaterTourney')) || null; } catch (e) { return null; } })() || {};
 tourState.pts = tourState.pts || {}; tourState.hist = tourState.hist || []; tourState.by = tourState.by || {}; tourState.kb = tourState.kb || {};   // by: who got what for what (thr / tmp / fig), kb: fight-point allowance
@@ -6117,12 +6120,13 @@ function tourRoll(now) {                              // a finished weekend pays
 }
 function tourAdd(who, n, at, kind) { if (!who || !(n > 0)) return; at = at || Date.now(); if (!tourOn(at)) return; tourRoll(at);
     tourState.pts[who] = (tourState.pts[who] || 0) + n; if (kind) { const b = tourState.by[who] = tourState.by[who] || {}; b[kind] = (b[kind] || 0) + n; } tourDirty = true; }
-function tourHold(at) { const tm = THRONE_TICK_MS / 60000;   // one Thron-Punkte tick: the throne and each Wächter-Tempel, per minute held
+function tourHold(at) { const tm = THRONE_TICK_MS / 60000; if (evThemaAm(at || Date.now()).k !== 'thron') return;   // nur am Wochenende „Kampf um die Mitte“   // one Thron-Punkte tick: the throne and each Wächter-Tempel, per minute held
     tourAdd(rulerOwner(), TOUR_PTS_MEGA * tm, at, 'thr'); for (const g of guardianTempleIds) tourAdd(islandOwnerOf(g), TOUR_PTS_GUARD * tm, at, 'tmp'); }
-function tourFight(who, kills) {                      // 1 per 1.000 beaten, at most 30 a fight; an allowance refills at 10 a minute (up to 30) - attacker and defender alike
-    if (!who || !(kills > 0) || !tourOn()) return; const now = Date.now(), k = tourState.kb[who] || [TOUR_KILL_MAX, now];
-    const left = Math.min(TOUR_KILL_MAX, k[0] + Math.max(0, now - k[1]) / 60000 * TOUR_KILL_MIN), n = Math.min(TOUR_KILL_MAX, kills / TOUR_KILL_PER, left);
-    tourState.kb[who] = [left - n, now]; tourAdd(who, n, now, 'fig'); }
+function tourFight(who, kills, kind) { tourDeckel(who, kills / TOUR_KILL_PER, kind || 'fig'); }   // 1 per 1.000 beaten - attacker and defender alike
+function tourDeckel(who, n, kind) {                   // at most 30 at once; an allowance refills at 10 a minute (up to 30) - the same for every Thema
+    if (!who || !(n > 0) || !tourOn() || (who !== 'player' && !botById[who])) return; const now = Date.now(), k = tourState.kb[who] || [TOUR_KILL_MAX, now];
+    const left = Math.min(TOUR_KILL_MAX, k[0] + Math.max(0, now - k[1]) / 60000 * TOUR_KILL_MIN), m = Math.min(TOUR_KILL_MAX, n, left);
+    if (!(m > 0)) return; tourState.kb[who] = [left - m, now]; tourAdd(who, m, now, kind); }
 function tourList() {                                 // [who, points] best first (memoised a few seconds)
     const now = Date.now(); if (tourRankMemo && now - tourRankMemo.at < 3000 && tourRankMemo.key === tourState.key) return tourRankMemo.list;
     const list = tourState.key === tourWin().key ? Object.entries(tourState.pts).filter(e => e[1] >= 1 && (e[0] === 'player' || botById[e[0]])).sort((a, b) => b[1] - a[1]) : [];
@@ -6134,8 +6138,8 @@ function tourPay() {                                  // places 1, 2-3, 4-10 and
     const list = Object.entries(ts.pts).filter(e => e[1] >= 1 && (e[0] === 'player' || botById[e[0]])).sort((a, b) => b[1] - a[1]);
     let me = null;
     list.forEach(([who, p], i) => { const pr = tourPrizeFor(i + 1);
-        if (who !== 'player') { botTourReward(who, pr.gems, pr.sh); return; }
-        inboxAdd({ src: 'tour', title: 'Wochenend-Turnier · Platz ' + (i + 1), gems: pr.gems, sh: pr.sh }); me = { place: i + 1, pts: Math.floor(p), gems: pr.gems, sh: pr.sh }; });   // the prize is sent to the Abholfach
+        if (who !== 'player') { if (botById[who].mensch) evPreis(who, 'tour', 'Wochenend-Turnier · Platz ' + (i + 1), pr); else { botTourReward(who, pr.gems, pr.sh); if (pr.crate >= 0) barbCrate(who, pr.crate); } return; }
+        inboxAdd({ src: 'tour', title: 'Wochenend-Turnier · Platz ' + (i + 1), gems: pr.gems, sh: pr.sh, crate: pr.crate }); me = { place: i + 1, pts: Math.floor(p), gems: pr.gems, sh: pr.sh }; });   // the prize is sent to the Abholfach
     if (list.length) { const w = list[0][0]; ts.champ = { who: w, until: ts.end + TOUR_CHAMP_MS };
         ts.hist.unshift({ key: ts.key, who: w, name: w === 'player' ? profileName.value || 'Du' : botById[w].name, pts: Math.floor(list[0][1]) }); ts.hist = ts.hist.slice(0, 6); ringVer++; }
     ts.last = { key: ts.key, top: list.slice(0, TOUR_TOP).map(e => [e[0], Math.floor(e[1])]), n: list.length, me, seen: !me };
@@ -6144,7 +6148,9 @@ function tourPay() {                                  // places 1, 2-3, 4-10 and
 }
 function tourChamp(now) { const c = tourState && tourState.champ; return c && (now || Date.now()) < c.until ? c.who : null; }
 function midFight(tid, aWho, aKills, dWho, dKills) {     // after every fight for a base: Turnier-Punkte in the middle
-    if (midZoneIds.has(tid) && tourOn()) { tourFight(aWho, aKills); tourFight(dWho, dKills); }   // (capped per fight and per minute: holding the throne must still count)
+    if (!tourOn()) return; const th = evThema().k;                                      // Krieger-Woche: überall · Kampf um die Mitte: nur in der Mitte
+    if (th === 'krieg') { tourFight(aWho, aKills, 'krieg'); tourFight(dWho, dKills, 'krieg'); }
+    else if (th === 'thron' && midZoneIds.has(tid)) { tourFight(aWho, aKills); tourFight(dWho, dKills); }   // (capped per fight and per minute: holding the throne must still count)
 }
 // ===== KOPFGELD AUF DEN HERRSCHER: while someone holds the throne a bounty grows (gems + coins, every 3 min with the Thron-Punkte).
 // Whoever takes the Mega-Tempel from him collects all of it.
@@ -6179,45 +6185,52 @@ let midBarHtml = '';
 function tourPlaceOf(who) { const i = tourList().findIndex(e => e[0] === who); return i < 0 ? 0 : i + 1; }
 function renderMidBar() {
     const now = Date.now(), w = tourWin(now), b = bountyOf(), last = tourState.last; let h = '';
-    if (w.on) { const pl = tourPlaceOf('player');
-        h += '<button type="button" class="mb-chip is-tour" data-mb="tour">' + icon('crown') + '<span>Turnier</span>' + (pl ? '<b>Platz ' + pl + '</b>' : '') + '<i data-mb-left></i></button>'; }   // the clock is set below: no rebuild every second
+    if (w.on) { const pl = tourPlaceOf('player'), th = evThemaAm(now);
+        h += '<button type="button" class="mb-chip is-tour" data-mb="tour">' + icon(th.ic) + '<span>Turnier · ' + th.name + '</span>' + (pl ? '<b>Platz ' + pl + '</b>' : '') + '<i data-mb-left></i></button>'; }   // the clock is set below: no rebuild every second
     else if (last && last.me && !last.seen) h += '<button type="button" class="mb-chip is-tour" data-mb="tour">' + icon('crown') + '<span>Turnier vorbei</span><b>Platz ' + last.me.place + '</b></button>';
     if (b && b.gems >= 5) h += '<button type="button" class="mb-chip' + (b.who === 'player' ? ' is-warn' : '') + '" data-mb="bounty">' + icon(b.who === 'player' ? 'losses' : 'coin') +
         '<span>' + (b.who === 'player' ? 'Kopfgeld auf dich' : 'Kopfgeld') + '</span><b>' + fmtNum(b.gems) + '</b>' + icon('gem', 'mb-gem') + '</button>';
+    h += evChipsHtml(now);                                                              // Invasion, Drache, Turnier-Ankündigung (Events)
     if (h !== midBarHtml) { midBarHtml = h; midBar.innerHTML = h; midBar.hidden = !h; document.body.classList.toggle('has-midbar', !!h); document.body.style.setProperty('--mb-h', midBar.children.length * 31 + 'px'); }   // the toast moves below the chips
     if (w.on) { const el = midBar.querySelector('[data-mb-left]'), t = fmtDHMS((w.end - now) / 1000); if (el && el.textContent !== t) el.textContent = t; }
+    for (const el of midBar.querySelectorAll('[data-ev-bis]')) setText(el, fmtDHMS(Math.max(0, +el.dataset.evBis - now) / 1000));
 }
 midBar.addEventListener('click', e => { const c = e.target.closest('[data-mb]'); if (!c) return;
     if (c.dataset.mb === 'tour') { openRankings('tour'); return; }
+    if (c.dataset.mb.startsWith('ev-')) { openEvents(c.dataset.mb.slice(3)); return; }
     const m = islandById[megaTempleId]; if (!m) return; closeAllPopups(); flyTo(m.x, m.y, { zoom: Math.max(mapState.zoom, 0.02) }); setTimeout(() => openIslandPopup(m), 650); });
 function tourTick(now) {                              // every second from throneTick: roll the weekend over, pay, refresh the clocks
     tourRoll(now); if (tourDirty) saveTour();
+    tourAnzeige(now);
+}
+function tourAnzeige(now) {                           // (auch bei Zuschauern) die Leiste und die Uhren
     renderMidBar();
     const w = tourWin(now); for (const el of document.querySelectorAll('[data-tour-left]')) el.textContent = fmtDHMS(((w.on ? w.end : w.start) - now) / 1000);
     if (isPanelOpen(rankPopup) && rankTab === 'tour' && now % 5000 < 1000) renderRankings();
 }
 function tourCardHtml() {                             // the head of the "Turnier" tab: state, your points, rules, prizes, last winners
-    const now = Date.now(), w = tourWin(now), me = tourState.key === w.key ? Math.floor(tourState.pts.player || 0) : 0, pl = tourPlaceOf('player'), ch = tourChamp(now), last = tourState.last;
-    const prizes = TOUR_PRIZES.map((p, i) => '<div class="tour-prize' + (i ? '' : ' is-1') + '"><b>' + p.t + '</b><span>' + icon('gem') + fmtNum(p.gems) + '</span><span>' + icon('star') + p.sh + '</span>' + (i ? '' : '<em>Titel + Ring</em>') + '</div>').join('');
+    const now = Date.now(), w = tourWin(now), me = tourState.key === w.key ? Math.floor(tourState.pts.player || 0) : 0, pl = tourPlaceOf('player'), ch = tourChamp(now), last = tourState.last, th = evThemaAm(now);
+    const prizes = TOUR_PRIZES.map((p, i) => '<div class="tour-prize' + (i ? '' : ' is-1') + '"><b>' + p.t + '</b><span>' + icon('gem') + fmtNum(p.gems) + '</span><span>' + icon('star') + p.sh + '</span>' + (p.crate >= 0 ? '<em>' + RARITY_DEFS[p.crate].label + '-Kiste</em>' : '') + (i ? '' : '<em>Titel + Ring</em>') + '</div>').join('');
+    const rules = th.k === 'thron' ? '<div class="tour-rules"><span>' + icon('crown') + '<span><b>+' + TOUR_PTS_MEGA + ' Punkte pro Minute</b> Thron halten</span></span><span>' + icon('temple') + '<span><b>+' + TOUR_PTS_GUARD + ' Punkte pro Minute</b> je Wächter-Tempel</span></span>' +
+            '<span>' + icon('attack') + '<span><b>+1 Punkt pro ' + fmtNum(TOUR_KILL_PER) + ' besiegte Truppen</b> in der Mitte und an ihren Toren – Angriff und Verteidigung zählen (höchstens ' + TOUR_KILL_MAX + ' pro Kampf, im Schnitt ' + TOUR_KILL_MIN + ' pro Minute)</span></span><span>' + icon('star') + '<span><b>Bonus:</b> ' + th.bonus + '</span></span></div>'
+        : '<div class="tour-rules"><span>' + icon(th.ic) + '<span><b>Punkte:</b> ' + th.pkt + (th.k === 'krieg' ? ' (1 Punkt pro ' + fmtNum(TOUR_KILL_PER) + ')' : '') + '</span></span><span>' + icon('hourglass') + '<span>Höchstens ' + TOUR_KILL_MAX + ' Punkte auf einmal, im Schnitt ' + TOUR_KILL_MIN + ' pro Minute</span></span><span>' + icon('star') + '<span><b>Bonus:</b> ' + th.bonus + '</span></span></div>';
     return '<div class="tour-card">' +
-        '<div class="tour-head"><span class="tour-badge">' + icon('crown') + '</span><div><b>Wochenend-Turnier um die Mitte</b><small>' + (w.on ? 'Läuft · endet in ' : 'Samstag und Sonntag · beginnt in ') + '<b data-tour-left>' + fmtDHMS(((w.on ? w.end : w.start) - now) / 1000) + '</b></small></div></div>' +
+        '<div class="tour-head"><span class="tour-badge">' + icon(th.ic) + '</span><div><b>Wochenend-Turnier · ' + th.name + '</b><small>' + (w.on ? 'Läuft · endet in ' : 'Samstag und Sonntag · beginnt in ') + '<b data-tour-left>' + fmtDHMS(((w.on ? w.end : w.start) - now) / 1000) + '</b></small></div></div>' +
         (w.on ? '<div class="tour-me"><span>Deine Punkte<b>' + fmtNum(me) + '</b></span><span>Dein Platz<b>' + (pl || '–') + '</b></span></div>' + tourByHtml(me) : '') +
         (!w.on && last && last.me ? '<div class="tour-me"><span>Letztes Turnier<b>Platz ' + last.me.place + '</b></span><span>Belohnung<b>' + fmtNum(last.me.gems) + ' Gems</b></span></div>' : '') +
-        '<div class="tour-rules"><span>' + icon('crown') + '<span><b>+' + TOUR_PTS_MEGA + ' Punkte pro Minute</b> Thron halten</span></span><span>' + icon('temple') + '<span><b>+' + TOUR_PTS_GUARD + ' Punkte pro Minute</b> je Wächter-Tempel</span></span>' +
-            '<span>' + icon('attack') + '<span><b>+1 Punkt pro ' + fmtNum(TOUR_KILL_PER) + ' besiegte Truppen</b> in der Mitte und an ihren Toren – Angriff und Verteidigung zählen (höchstens ' + TOUR_KILL_MAX + ' pro Kampf, im Schnitt ' + TOUR_KILL_MIN + ' pro Minute)</span></span></div>' +
-        '<div class="tour-prizes">' + prizes + '</div><small class="tour-note">Preise: Gems und Helden-Splitter ' + icon('star') + ' · der Sieger trägt 7 Tage den Titel „Turniersieger“ mit lila-goldenem Ring.</small>' +
+        rules + '<div class="tour-prizes">' + prizes + '</div><small class="tour-note">Jedes Wochenende ein anderes Thema. Preise: Gems, Helden-Splitter ' + icon('star') + ' und Kisten · der Sieger trägt 7 Tage den Titel „Turniersieger“ mit lila-goldenem Ring.</small>' +
         (tourState.hist.length ? '<div class="tour-hist">' + icon('star') + '<span>Letzter Sieger: ' + whoLink(tourState.hist[0].who === 'player' ? 'player' : tourState.hist[0].who, tourState.hist[0].who === 'player' ? profileName.value || 'Du' : tourState.hist[0].name) + ' · ' + fmtNum(tourState.hist[0].pts) + ' Punkte' +
             (ch ? ' · Titel noch ' + fmtDHMS((tourState.champ.until - now) / 1000) : '') + '</span></div>' : '') + '</div>';
 }
 function tourByHtml(me) {                            // your points by source: Thron / Tempel / Kämpfe (+ what came without a source: older points, a bonus)
-    const b = tourState.by.player || {}, c = [['crown', 'Thron', b.thr], ['temple', 'Tempel', b.tmp], ['attack', 'Kämpfe', b.fig]], rest = me - c.reduce((s, x) => s + Math.floor(x[2] || 0), 0);
+    const b = tourState.by.player || {}, th = evThema(), c = th.k === 'thron' ? [['crown', 'Thron', b.thr], ['temple', 'Tempel', b.tmp], ['attack', 'Kämpfe', b.fig]] : [[th.ic, th.name, b[th.k]]], rest = me - c.reduce((s, x) => s + Math.floor(x[2] || 0), 0);
     if (rest >= 1) c.push(['star', 'Sonstiges', rest]);
     return '<div class="tour-by">' + c.map(x => '<span>' + icon(x[0]) + x[1] + '<b>' + fmtNum(Math.floor(x[2] || 0)) + '</b></span>').join('') + '</div>'; }
 function midNotice(island) {                          // Kopfgeld and Turnier at a glance on the middle's bases
     const b = bountyOf(), w = tourOn(); let h = '';
     if (b && island.type === 'megaTemple') h += b.who === 'player' ? '<div class="notice notice--warn">' + icon('losses') + '<span><b>Kopfgeld auf dich: ' + fmtNum(b.gems) + ' Gems + ' + fmtCompact(b.coins) + ' Münzen.</b> Wer dir den Thron abnimmt, kassiert alles – je länger du herrschst, desto mehr kommen.</span></div>'
         : '<div class="notice notice--gold">' + icon('coin') + '<span><b>Kopfgeld auf ' + escapeHtml(botById[b.who].name) + ': ' + fmtNum(b.gems) + ' Gems + ' + fmtCompact(b.coins) + ' Münzen.</b> Nimm den Thron und kassiere alles.</span></div>';
-    if (w && midZoneIds.has(island.id)) h += '<div class="notice notice--tour">' + icon('crown') + '<span>Turnier läuft: ' + (island.type === 'megaTemple' ? 'der Thron bringt +' + TOUR_PTS_MEGA + ' Punkte pro Minute' : island.guardian ? 'dieser Tempel bringt +' + TOUR_PTS_GUARD + ' Punkte pro Minute' : 'Kämpfe hier bringen Punkte') + ', dazu +1 Punkt pro ' + fmtNum(TOUR_KILL_PER) + ' besiegte Truppen – auch beim Verteidigen (höchstens ' + TOUR_KILL_MAX + ' pro Kampf).</span></div>';
+    if (w && midZoneIds.has(island.id) && evThema().k === 'thron') h += '<div class="notice notice--tour">' + icon('crown') + '<span>Turnier läuft: ' + (island.type === 'megaTemple' ? 'der Thron bringt +' + TOUR_PTS_MEGA + ' Punkte pro Minute' : island.guardian ? 'dieser Tempel bringt +' + TOUR_PTS_GUARD + ' Punkte pro Minute' : 'Kämpfe hier bringen Punkte') + ', dazu +1 Punkt pro ' + fmtNum(TOUR_KILL_PER) + ' besiegte Truppen – auch beim Verteidigen (höchstens ' + TOUR_KILL_MAX + ' pro Kampf).</span></div>';
     return h;
 }
 
@@ -7063,7 +7076,7 @@ const BS_COL = { mine: ['#3d6fb3', '#b7d3f5'], bot: ['#a3352b', '#f2aa9f'], neut
 // A flash, a shockwave and sparks at the base when a fight the player is part of resolves,
 // plus "Sieg!" / "Verloren" floating up (screen space, drawn in drawMap).
 var battleFx = [];
-function sfx(name) { if (window.__sfx) window.__sfx(name); }       // sound effect (no-op until the sound engine is up)
+function sfx(name) { if (window.__sfx && !SYSTEM) window.__sfx(name); }       // sound effect (no-op until the sound engine is up; der Weltrechner hat keinen Ton)
 function spawnBattleFx(islandId, good, label, sub) {
     sfx(/Herrscher/.test(label) ? 'crown' : /^Weltereignis/.test(sub || '') ? 'event' : / gefallen$/.test(label) ? '' : /verlegt/.test(sub || '') ? 'move' : good ? 'victory' : 'defeat');
     const isl = typeof islandId === 'object' ? islandId : islandById[islandId]; if (!isl) return;   // a base, or a point on the map ({ x, y })
@@ -7233,7 +7246,7 @@ function spawnBoss() {
 }
 function endBoss(msg) {
     bossState = null;
-    nextBossAt = Date.now() + (240 + Math.random() * 120) * 60 * 1000;   // der nächste in 4–6 Std.
+    nextBossAt = Date.now() + (240 + Math.random() * 120) * 60 * 1000 * evBossTakt();   // der nächste in 4–6 Std. (Boss-Jagd: halb so lang)
     saveBoss(); requestRender();
     if (msg) flashHint(msg, 4000);
     if (isPanelOpen(popup)) renderPopup();
@@ -7282,7 +7295,7 @@ function loadWander() {
 }
 function saveWander() { store.set('openWaterWander', JSON.stringify(wander || null)); store.set('openWaterWanderNext', String(nextWanderAt)); }
 function endWander(msg) {
-    wander = null; nextWanderAt = Date.now() + (360 + Math.random() * 120) * 60 * 1000; saveWander(); requestRender();
+    wander = null; nextWanderAt = Date.now() + (360 + Math.random() * 120) * 60 * 1000 * evBossTakt(); saveWander(); requestRender();
     if (msg) flashHint(msg, 4500);
     if (isPanelOpen(popup)) renderPopup();
 }
@@ -8266,7 +8279,7 @@ document.getElementById('cityUpgradeBtn').addEventListener('click', () => {
     if (cityOpenId === '_keep') {                  // the capital itself: same price and rule as upgrading it on the map
         const level = islandLevels[playerIslandId] || 1; if (level >= MAX_BASE_LEVEL) return;
         const cost = upgradeCost(level); if (coins < cost) { flashHint('Nicht genug Münzen – benötigt ' + fmtCompact(cost) + '.', 2500); return; }
-        coins -= cost; islandLevels[playerIslandId] = level + 1; ausbauMerken(playerIslandId, level + 1); alsBefehl('ausbau', { insel: playerIslandId, stufe: level + 1 }); updateHud(); saveGame(); questProgress('upgrade', 1); sfx('upgrade');
+        coins -= cost; islandLevels[playerIslandId] = level + 1; ausbauMerken(playerIslandId, level + 1); if (!alsBefehl('ausbau', { insel: playerIslandId, stufe: level + 1 })) evPunkte('bau', 'player', 2 + level + 1); updateHud(); saveGame(); questProgress('upgrade', 1); sfx('upgrade');
         flashHint('Deine Burg ist jetzt Stufe ' + (level + 1) + '.', 2000); renderKeepSheet(); requestRender(); return;
     }
     if (cityOpenId) cityStartBuild(cityOpenId); });
@@ -9063,6 +9076,7 @@ function fieldArrive(m, now) {
         const baseId = own && own.has(m.homeId) ? m.homeId : m.who === 'player' ? rewardBaseId() : own && [...own][0];
         if (baseId !== undefined && baseId !== null) islandTroops[baseId] = (islandTroops[baseId] || 0) + m.troops;
         const load = Math.floor(m.load);
+        if (load > 0) evPunkte('sam', m.who, Math.max(1, 30 * load / f.cap));                              // Sammel-Rausch: ein volles Feld = 30 Punkte
         if (m.who === 'player') { if (f.kind === 'gold') coins += load; else gems += load; if (load) warStat(f.kind === 'gold' ? 'fieldCoins' : 'fieldGems', load); if (load) { flashHint('Sammler zurück: +' + fmtNum(load) + ' ' + FIELD_KINDS[f.kind].what + ' aus der ' + FIELD_KINDS[f.kind].name + '.', 3500); sfx(f.kind === 'gold' ? 'coin' : 'gem'); } updateHud(); saveGame(); saveProgression(); }
         else if (botCoins[m.who] !== undefined) { if (f.kind === 'gold') botCoins[m.who] += load; else loadBotState()[m.who].gems += load; }
         const bericht = { type: 'sammeln', fieldKind: f.kind, load, troops: m.troops, toId: baseId };   // Sammel-Bericht (auch ohne Beute: die Truppen sind zurück)
@@ -9087,6 +9101,7 @@ function fieldArrive(m, now) {
     const loserName = fieldWhoName(won ? o.who : m.who), winnerName = fieldWhoName(won ? m.who : o.who), oWho = o.who;
     if (won) st.occ = { who: m.who, troops: m.troops - fb.aLoss, homeId: m.homeId, hero: m.hero || null, since: now, got: 0 }; else o.troops -= fb.dLoss;
     for (const [w, n, hx] of [[m.who, fb.aLoss, aHx], [oWho, fb.dLoss, dHx]]) fieldHurt(w, n, hx);   // both sides' Lazarett (+ their hero)
+    if (evThemaAktiv('krieg')) { tourFight(m.who, fb.dLoss, 'krieg'); tourFight(oWho, fb.aLoss, 'krieg'); }
     const fg = fieldGold(m.who, oWho, fb, aHx, dHx);
     if (involved) {
         const youWon = (m.who === 'player') === won;
@@ -9097,12 +9112,12 @@ function fieldArrive(m, now) {
 }
 function fieldTick() {
     if (!rechnet()) return;
-    const now = Date.now(), dt = 1;
+    const now = Date.now(), dt = 1, sr = evThemaAktiv('sam') ? 1.5 : 1;   // Sammel-Rausch: 50 % schneller
     const due = fieldMarches.filter(m => m.resolveAt <= now);
     if (due.length) { fieldMarches = fieldMarches.filter(m => m.resolveAt > now); for (const m of due) fieldArrive(m, now); saveFields(); requestRender(); }
     for (const f of resFields) {
         const st = fieldState[f.id]; if (!st || !st.occ) continue;
-        const o = st.occ, gx = heroGatherFx(o), cap = fieldCapOf(f, o, gx), amt = Math.min(f.cap / f.dauer * dt * (1 + (gx ? gx.gSpd : 0) / 100), st.left, cap - o.got);   // festes Tempo (nicht mehr Truppen × Tempo) · Spürnase: schneller
+        const o = st.occ, gx = heroGatherFx(o), cap = fieldCapOf(f, o, gx), amt = Math.min(f.cap / f.dauer * dt * (1 + (gx ? gx.gSpd : 0) / 100) * sr, st.left, cap - o.got);   // festes Tempo (nicht mehr Truppen × Tempo) · Spürnase: schneller
         o.got += Math.max(0, amt); st.left -= Math.max(0, amt);
         if (o.got >= cap - 1e-9 || st.left <= 0) { fieldGoHome(f, st, now); requestRender(); }
     }
@@ -9193,7 +9208,7 @@ window.addEventListener('pagehide', () => saveBarb()); document.addEventListener
 const barbCampById = id => barbState.camps.find(c => c.id === id);
 function barbRec(who) { const r = barbWho[who] || (barbWho[who] = { b: 0, d: '', n: 0, h: 0 }), d = todayKey(); if (r.d !== d) { r.d = d; r.n = 0; r.h = 0; } return r; }   // b: best level beaten · n: camp wins today · h: boss hits today
 const barbOut = (who, k) => barbMarches.filter(m => m.who === who && !m.back && m.k === (k || 'c')).length;
-const barbLeft = who => Math.max(0, BARB_DAY - barbRec(who).n - barbOut(who));
+const barbLeft = who => Math.max(0, barbTagMax() - barbRec(who).n - barbOut(who));
 const barbOpenFor = (who, L) => L <= barbRec(who).b + 1;
 const barbPt = o => ({ id: 'barb' + (o.id || o.tid || 'b'), x: o.x, y: o.y, landmassId: o.lm, radius: ISLAND_RADIUS * .6 });
 const barbFa = who => (1 + fieldAtkPct(who) / 100) * titleMult(who, 'attack');
@@ -9236,13 +9251,17 @@ function dbossOnMap(now) { const b = dayBoss; return b && b.d === todayKey() && 
 function barbMine() { try { return barbMarches.filter(m => m.who === 'player'); } catch (e) { return []; } }   // your columns (for the Kampf list - may run before this part loads)
 const dbossKind = b => DBOSS_KINDS.find(K => K.k === b.k) || DBOSS_KINDS[0];
 const dbossRanks = b => Object.entries(b.dmg || {}).sort((x, y) => y[1] - x[1]);
-function barbSend(who, homeId, k, tid, troops, hero) {  // troops leave a base for a camp (k 'c') or the boss (k 'b') - a hero may lead them
-    const home = islandById[homeId], t = k === 'b' ? dbossEnsure() : barbCampById(tid); troops = Math.floor(troops); if (!home || !t || troops < 1) return false;
+function barbSend(who, homeId, k, tid, troops, hero) {  // troops leave a base for a camp (k 'c'), the boss (k 'b'), the Drache (k 'd') or a Barbaren-Armee of the Invasion (k 'i') - a hero may lead them
+    const home = islandById[homeId], dr = k === 'd' ? drAktiv() : null, ia = k === 'i' ? invArmee(tid) : null;
+    const t = k === 'b' ? dbossEnsure() : k === 'd' ? dr : k === 'i' ? (ia && invTreffpunkt(ia, homeId, who)) : barbCampById(tid); troops = Math.floor(troops); if (!home || !t || troops < 1) return false;
+    if (k === 'd' && (dr.hits[who] || 0) >= DR_HITS) return false;
+    if (k === 'i') { t.name = 'Barbaren-Armee'; t.lm = t.lm !== undefined ? t.lm : ia.lm; }
     if (hero && (!heroOwned(who, hero) || heroBusy(who, hero))) hero = null; const mx = heroMarchFx(who, hero), now = Date.now();
     islandTroops[homeId] = Math.max(0, (islandTroops[homeId] || 0) - troops);
-    barbMarches.push({ who, homeId, k, tid: k === 'b' ? null : tid, d: k === 'b' ? t.d : null, L: t.L, name: t.name, x: t.x, y: t.y, lm: t.lm, troops, hero: hero || null, startedAt: now,
+    barbMarches.push({ who, homeId, k, tid: k === 'b' || k === 'd' ? null : tid, d: k === 'b' ? t.d : k === 'd' ? t.start : null, L: t.L, name: t.name, x: Math.round(t.x), y: Math.round(t.y), lm: t.lm, troops, hero: hero || null, startedAt: now,
         resolveAt: now + travelDurationSeconds(home, barbPt(t), who === 'player' ? undefined : who) / (1 + (mx ? mx.spd : 0) / 100) * 1000, back: false });
     if (k === 'b') barbRec(who).h++;
+    if (k === 'd') { dr.hits[who] = (dr.hits[who] || 0) + 1; evDirty = true; }
     saveBarb(); if (who === 'player') { sfx('send'); updateHud(); saveGame(); } requestRender(); return true;
 }
 function barbHome(m, n, now) { if (n < 1) return; const home = islandById[m.homeId] || islandById[playerIslandId]; if (!home) return;   // the survivors walk home
@@ -9265,8 +9284,10 @@ function barbArrive(m, now) {
         if (isP) { updateHud(); saveGame(); } return;
     }
     if (m.k === 'b') return dbossHit(m, now);
+    if (m.k === 'i') return invTreffer(m, now);                                     // Events: Barbaren-Invasion, Drache
+    if (m.k === 'd') return drTreffer(m, now);
     const c = barbCampById(m.tid), rec = barbRec(who);
-    if (!c || rec.n >= BARB_DAY) { barbHome(m, m.troops, now); if (isP) flashHint(c ? 'Für heute genug Lager: ' + BARB_DAY + ' / ' + BARB_DAY + ' heute.' : 'Das Lager ist schon geräumt – deine Truppen kehren um.', 3500); return; }
+    if (!c || rec.n >= barbTagMax()) { barbHome(m, m.troops, now); if (isP) flashHint(c ? 'Für heute genug Lager: ' + barbTagMax() + ' / ' + barbTagMax() + ' heute.' : 'Das Lager ist schon geräumt – deine Truppen kehren um.', 3500); return; }
     const hx = heroFieldFx(who, m.hero, {}), before = c.t, fb = barbFight(who, m.troops, hx, c.t), wounded = fieldHurt(who, fb.loss, hx), best0 = rec.b;   // the leader: a full rage fires now, every fight fills it
     let gold = 0, item = null, sh = null, shN = 1 + Math.floor(c.L / 5), kGold = 0;
     if (fb.won) {
@@ -9276,11 +9297,12 @@ function barbArrive(m, now) {
         if (Math.random() < .15 + c.L * .01) sh = isP ? (inboxAdd({ src: 'fight', sh: shN }), { name: '' }) : heroGrantShards(who, shN);
         barbHome(m, m.troops - fb.loss, now);
     } else c.t = Math.max(1, Math.round(c.t - fb.kill));
+    if (evThemaAktiv('krieg')) tourFight(who, fb.kill, 'krieg');                     // Krieger-Woche
     if (!isP) return;
     const it = item && item.box !== undefined ? 'Kiste (mind. ' + RARITY_DEFS[item.box].label + ')' : '';
     addCombatLogEntry({ type: 'barb', L: c.L, won: fb.won, atk: fb.SA, def: before, left: fb.won ? 0 : c.t, kill: fb.kill, troops: m.troops, gef: fb.gef, shPct: fb.sh, loss: fb.loss, wounded, gold, kGold, crate: it, sh: sh ? shN + ' Helden-Splitter' : '',
         n: rec.n, open: Math.min(BARB_MAX_L, rec.b + 1), up: rec.b > best0 && rec.b < BARB_MAX_L, sourceId: m.homeId, attacker: 'Du', hA: heroTag(hx), hx: heroReportOf(hx) });
-    spawnBattleFx({ x: c.x, y: c.y }, fb.won, fb.won ? 'Lager besiegt' : 'Abgewehrt', fb.won ? 'Stufe ' + c.L + ' · ' + rec.n + ' / ' + BARB_DAY + ' heute' : '−' + fmtCompact(fb.loss) + ' Truppen');
+    spawnBattleFx({ x: c.x, y: c.y }, fb.won, fb.won ? 'Lager besiegt' : 'Abgewehrt', fb.won ? 'Stufe ' + c.L + ' · ' + rec.n + ' / ' + barbTagMax() + ' heute' : '−' + fmtCompact(fb.loss) + ' Truppen');
     flashHint(fb.won ? 'Barbaren-Lager Stufe ' + c.L + ' besiegt: +' + fmtCompact(gold) + ' Münzen' + (it ? ', Kiste: ' + it : '') + (sh ? ', ' + shN + ' Splitter' : '') + ' – abholen unter Ziele.' : 'Das Lager hat standgehalten – es hat jetzt noch ' + fmtCompact(c.t) + ' Krieger.', 4500);
     updateHud(); saveGame(); saveProgression(); barbSheetRefresh();
 }
@@ -9290,7 +9312,7 @@ function dbossHit(m, now) {                         // every attack takes life o
     const hx = heroFieldFx(who, m.hero, {}), h = hx || HX0, fa = (1 + (fieldAtkPct(who) + h.atk) / 100) * titleMult(who, 'attack');
     const dmg = Math.max(1, Math.min(b.hp, Math.round((m.troops + heroGefOf(h, m.troops)) * fa), Math.round(b.max * DBOSS_CAP)));
     const used = Math.min(m.troops, dmg / fa), loss = Math.min(m.troops, Math.round(used * .25 * (1 - Math.min(90, fieldShield(who) + h.loss) / 100))), wounded = fieldHurt(who, loss, hx);   // a quarter of those who struck
-    const hp0 = b.hp; b.hp -= dmg; b.dmg[who] = (b.dmg[who] || 0) + dmg;
+    const hp0 = b.hp; b.hp -= dmg; b.dmg[who] = (b.dmg[who] || 0) + dmg; evPunkte('boss', who, 30 * dmg / (b.max * DBOSS_CAP));   // Boss-Jagd
     const gold = payGold(who, dmg * .3 * (1 + h.gold / 100));
     barbHome(m, m.troops - loss, now);
     if (isP) {
@@ -9331,7 +9353,8 @@ setInterval(barbTick, 1000);
 const barbPathMem = new WeakMap(), barbSprites = {};
 function barbScreen(o) { const z = mapState.zoom; return { x: o.x * z + mapState.offsetX, y: o.y * z + mapState.offsetY }; }
 const barbK = () => Math.max(.6, Math.min(2.2, mapState.zoom / .012));
-function barbAt(sx, sy) {                           // → { kind: 'boss' } or { kind: 'camp', id } under a tap
+function barbAt(sx, sy) {                           // → { kind: 'boss' } or { kind: 'camp', id } under a tap (or the Drache / a Barbaren-Armee)
+    const ev = evAt(sx, sy); if (ev) return ev;
     const z = mapState.zoom, k = barbK(), b = dbossOnMap();
     if (b && z >= .0025 && isCellOpen(b.x, b.y)) { const s = barbScreen(b); if (Math.hypot(s.x - sx, s.y - sy - 10 * k) < Math.max(22, 26 * k)) return { kind: 'boss' }; }
     if (z < .004) return null;
@@ -9432,7 +9455,7 @@ function barbSource(pt, need, any) {                // your base for this march:
         const s = (n >= need ? 1e12 : n) - Math.hypot(isl.x - pt.x, isl.y - pt.y) / 1e3; if (s > bs) { bs = s; best = id; } }
     return best;
 }
-const barbShares = () => barbView && barbView.kind === 'boss' ? [['.1', '10 %'], ['.25', '25 %'], ['.5', '50 %'], ['1', 'Alle']] : [['fit', 'Passend'], ['.25', '25 %'], ['.5', '50 %'], ['1', 'Alle']];
+const barbShares = () => barbView && (barbView.kind === 'boss' || barbView.kind === 'drache') ? [['.1', '10 %'], ['.25', '25 %'], ['.5', '50 %'], ['1', 'Alle']] : [['fit', 'Passend'], ['.25', '25 %'], ['.5', '50 %'], ['1', 'Alle']];
 const barbShareNow = () => barbShares().some(x => x[0] === barbShare) ? barbShare : barbShares()[1][0];
 function barbShareOf(avail, need) { const sh = barbShareNow(); return Math.max(0, Math.min(avail, sh === 'fit' ? Math.ceil(need) : Math.floor(avail * +sh))); }
 function barbAttackHtml(avail, need, src, lbl) {    // share, hero and the button
@@ -9444,6 +9467,8 @@ function barbAttackHtml(avail, need, src, lbl) {    // share, hero and the butto
 }
 function barbSheetHtml() {
     const v = barbView, rec = barbRec('player'), head = (ic, t) => '<div class="marker-head"><b>' + icon(ic) + ' ' + t + '</b><button class="btn-x" type="button" data-bclose aria-label="Schließen">' + icon('close') + '</button></div>';
+    if (v.kind === 'inv') return invSheetHtml(head);                                 // Events
+    if (v.kind === 'drache') return drSheetHtml(head);
     const b = dbossEnsure(), mid = '<b data-bclock>' + fmtDHMS(msToMidnight() / 1000) + '</b>';
     if (v.kind === 'camp') {
         const c = barbCampById(v.id); if (!c) return head('attack', 'Barbaren-Lager') + '<div class="notice">' + icon('check') + '<span>Dieses Lager ist schon geräumt.</span></div>';
@@ -9451,10 +9476,10 @@ function barbSheetHtml() {
         return head('attack', 'Barbaren-Lager <span class="barb-lv" style="--bc:' + rd.color + '">Stufe ' + c.L + '</span>') +
             '<div class="field-lines"><span>Krieger</span><b>' + fmtNum(c.t) + (c.t < c.max ? ' <small>von ' + fmtCompact(c.max) + '</small>' : '') + '</b>' +
             '<span>Beute</span><b>' + fmtCompact(barbLootOf(c.L)) + ' Münzen</b><span>Mit Glück</span><b>Kiste · ' + (1 + Math.floor(c.L / 5)) + ' Splitter</b>' +
-            '<span>Heute</span><b>' + rec.n + ' / ' + BARB_DAY + ' heute</b>' +
+            '<span>Heute</span><b>' + rec.n + ' / ' + barbTagMax() + ' heute</b>' +
             '<span>Freigeschaltet</span><b>bis Stufe ' + Math.min(BARB_MAX_L, rec.b + 1) + '</b></div>' +
             (!open ? '<div class="notice">' + icon('lock') + '<span>Erst ein Lager der Stufe ' + (c.L - 1) + ' besiegen – dann ist Stufe ' + c.L + ' dran.</span></div>' :
-             left <= 0 ? '<div class="notice notice--gold">' + icon('hourglass') + '<span>Für heute genug: ' + BARB_DAY + ' / ' + BARB_DAY + ' heute. Neue Lager in ' + mid + '.</span></div>' :
+             left <= 0 ? '<div class="notice notice--gold">' + icon('hourglass') + '<span>Für heute genug: ' + barbTagMax() + ' / ' + barbTagMax() + ' heute. Neue Lager in ' + mid + '.</span></div>' :
              src === null ? '<div class="notice">' + icon('lock') + '<span>Keine deiner Basen mit Truppen kommt hierher.</span></div>' :
              barbAttackHtml(islandTroops[src] || 0, need, src, 'Angreifen'));
     }
@@ -9462,20 +9487,20 @@ function barbSheetHtml() {
     const row = (e, i) => '<li' + (e[0] === 'player' ? ' class="me"' : '') + '><em>' + (i + 1) + '</em><span>' + escapeHtml(fieldWhoName(e[0])) + '</span><b>' + fmtCompact(e[1]) + '</b></li>';
     const bossHtml = head('crown', 'Tagesboss · ' + K.name) +
         '<div class="barb-hp"><i style="width:' + (b.hp / b.max * 100).toFixed(1) + '%"></i><span>' + (dead ? 'Besiegt' : fmtCompact(b.hp) + ' / ' + fmtCompact(b.max) + ' Leben') + '</span></div>' +
-        '<div class="field-lines"><span>' + (dead ? 'Neuer Boss in' : 'Verschwindet in') + '</span>' + mid + '<span>Deine Angriffe</span><b>' + rec.h + ' / ' + DBOSS_HITS + ' heute</b>' +
+        '<div class="field-lines"><span>' + (dead ? 'Neuer Boss in' : 'Verschwindet in') + '</span>' + mid + '<span>Deine Angriffe</span><b>' + rec.h + ' / ' + dbossHitsMax() + ' heute</b>' +
         '<span>Dein Schaden</span><b>' + (mine >= 0 ? fmtCompact(rk[mine][1]) + ' · Platz ' + (mine + 1) : '–') + (barbOut('player', 'b') ? ' <small>· Angriff unterwegs</small>' : '') + '</b></div>' +
         (rk.length ? '<ol class="barb-rank">' + rk.slice(0, 5).map(row).join('') + (mine >= 5 ? row(rk[mine], mine) : '') + '</ol>' : '<div class="notice">' + icon('info') + '<span>Noch hat niemand angegriffen.</span></div>');
     const rules = '<div class="barb-note">Pro Angriff Münzen nach Schaden, ein Viertel der Kämpfer fällt, höchstens 5 % Leben pro Angriff. Fällt der Boss, gibt es für alle nach Rang Gems, Kisten und Splitter – Platz 1 bis 3 extra.</div>';
     if (v.kind === 'boss') {
         const src = barbSource(b, 1, true);
-        return bossHtml + (dead ? '' : rec.h >= DBOSS_HITS ? '<div class="notice notice--gold">' + icon('hourglass') + '<span>Heute keine Angriffe mehr – morgen wieder.</span></div>' :
+        return bossHtml + (dead ? '' : rec.h >= dbossHitsMax() ? '<div class="notice notice--gold">' + icon('hourglass') + '<span>Heute keine Angriffe mehr – morgen wieder.</span></div>' :
             src === null ? '<div class="notice">' + icon('lock') + '<span>Keine deiner Basen hat Truppen.</span></div>' : barbAttackHtml(islandTroops[src] || 0, (islandTroops[src] || 0) * .5, src, 'Angreifen')) + rules;
     }
     const near = barbNearest();                       // both at a glance
     return head('attack', 'Ereignisse') +
         '<div class="barb-card"><div class="barb-ct"><b>' + icon('crown') + ' ' + K.name + '</b><small>Tagesboss</small></div><div class="barb-hp"><i style="width:' + (b.hp / b.max * 100).toFixed(1) + '%"></i><span>' + (dead ? 'Besiegt' : fmtCompact(b.hp) + ' Leben') + '</span></div>' +
         (dbossOnMap() ? '<button class="btn btn--secondary btn--sm" type="button" data-bgoto="boss">' + icon('send') + '<span>Zum Boss</span></button>' : '<div class="field-lines"><span>Neuer Boss in</span>' + mid + '</div>') + '</div>' +
-        '<div class="barb-card"><div class="barb-ct"><b>' + icon('attack') + ' Barbaren-Lager</b><small>' + rec.n + ' / ' + BARB_DAY + ' heute</small></div>' +
+        '<div class="barb-card"><div class="barb-ct"><b>' + icon('attack') + ' Barbaren-Lager</b><small>' + rec.n + ' / ' + barbTagMax() + ' heute</small></div>' +
         '<div class="field-lines"><span>Freigeschaltet</span><b>bis Stufe ' + Math.min(BARB_MAX_L, rec.b + 1) + '</b><span>Neuer Tag in</span>' + mid + '</div>' +
         (near ? '<button class="btn btn--secondary btn--sm" type="button" data-bgoto="camp">' + icon('send') + '<span>Nächstes Lager · Stufe ' + near.L + '</span></button>' : '<div class="notice">' + icon('info') + '<span>Gerade kein passendes Lager in deiner Nähe.</span></div>') + '</div>';
 }
@@ -9496,14 +9521,458 @@ barbSheetEl.addEventListener('click', e => {
         if (!isCellOpen(t.x, t.y)) { flashHint('Der Tagesboss steht im Nebel – erforsche zuerst das Gebiet.', 3500); return; }
         flyTo(t.x, t.y, { zoom: Math.max(mapState.zoom, .02), screenY: viewH * .2 }); return openBarbSheet(go.dataset.bgoto === 'boss' ? { kind: 'boss' } : { kind: 'camp', id: t.id }); }
     if (!e.target.closest('[data-bgo]')) return;
-    if (barbView.kind === 'camp') { const c = barbCampById(barbView.id); if (!c || !barbOpenFor('player', c.L) || barbLeft('player') <= 0) return barbSheetRefresh();
+    if (barbView.kind === 'drache') { const D = drAktiv(); if (!D || (D.hits.player || 0) >= DR_HITS) return barbSheetRefresh(); const src = barbSource(D, 1, true); if (src === null) return;
+        const n = barbShareOf(islandTroops[src] || 0, (islandTroops[src] || 0) * .5); if (n < 1) return;
+        if (alsBefehl('lager', { home: src, k: 'd', tid: null, n, held: barbHero })) { islandTroops[src] = Math.max(0, (islandTroops[src] || 0) - n); D.hits.player = (D.hits.player || 0) + 1; } else barbSend('player', src, 'd', null, n, barbHero);
+        flashHint('Truppen unterwegs zum Drachen.', 2500); }
+    else if (barbView.kind === 'inv') { const a = invArmee(barbView.id); if (!a) return barbSheetRefresh(); const need = a.t * 1.15 / barbFa('player'), src = barbSource(invPos(a), need); if (src === null || !invTreffpunkt(a, src, 'player')) return barbSheetRefresh();
+        const n = barbShareOf(islandTroops[src] || 0, need); if (n < 1) return;
+        if (alsBefehl('lager', { home: src, k: 'i', tid: a.id, n, held: barbHero })) islandTroops[src] = Math.max(0, (islandTroops[src] || 0) - n); else barbSend('player', src, 'i', a.id, n, barbHero);
+        flashHint('Truppen unterwegs, um die Barbaren abzufangen.', 2500); }
+    else if (barbView.kind === 'camp') { const c = barbCampById(barbView.id); if (!c || !barbOpenFor('player', c.L) || barbLeft('player') <= 0) return barbSheetRefresh();
         const need = c.t * 1.15 / barbFa('player'), src = barbSource(c, need); if (src === null) return; const n = barbShareOf(islandTroops[src] || 0, need); if (n < 1) return;
         if (alsBefehl('lager', { home: src, k: 'c', tid: c.id, n, held: barbHero })) islandTroops[src] = Math.max(0, (islandTroops[src] || 0) - n); else barbSend('player', src, 'c', c.id, n, barbHero); flashHint('Truppen unterwegs zum Barbaren-Lager (Stufe ' + c.L + ').', 2500); }
-    else { const b = dbossEnsure(); if (b.hp <= 0 || barbRec('player').h >= DBOSS_HITS) return barbSheetRefresh(); const src = barbSource(b, 1, true); if (src === null) return;
+    else { const b = dbossEnsure(); if (b.hp <= 0 || barbRec('player').h >= dbossHitsMax()) return barbSheetRefresh(); const src = barbSource(b, 1, true); if (src === null) return;
         const n = barbShareOf(islandTroops[src] || 0, (islandTroops[src] || 0) * .5); if (n < 1) return; if (alsBefehl('lager', { home: src, k: 'b', tid: null, n, held: barbHero })) islandTroops[src] = Math.max(0, (islandTroops[src] || 0) - n); else barbSend('player', src, 'b', null, n, barbHero); flashHint('Truppen unterwegs zu ' + b.name + '.', 2500); }
     barbHero = null; closeBarbSheet();
 });
-document.getElementById('eventBtn').addEventListener('click', () => { closeIslandPopup(); if (fieldSheetId) closeFieldSheet(); barbView && barbView.kind === 'list' ? closeBarbSheet() : openBarbSheet({ kind: 'list' }); });
+// ===== EVENTS (Paket B): Wochenend-Themen, Barbaren-Invasion, Drache – alles rechnet der Weltrechner, Zuschauer sehen es =====
+// Zeitpläne (Ortszeit des Weltrechners): Turnier Sa+So (Thema wechselt jede Woche, Ankündigung ab Freitag),
+// Invasion alle 3 Tage 20:00–21:00, Drache sonntags 19:00–22:00. Welt-Schlüssel: openWaterEvents (evState).
+var EV_TEST = null;   // NUR für Tests in einer lokalen Kopie: { inv: Startzeit, dr: Startzeit } – im echten Spiel immer null
+// ---- Wochenend-Themen: bestimmen, wofür es Turnier-Punkte gibt, und einen kleinen Bonus fürs ganze Wochenende ----
+const EV_THEMEN = [
+    { k: 'thron', name: 'Kampf um die Mitte', ic: 'crown', pkt: 'Thron und Wächter-Tempel halten, Kämpfe in der Mitte', bonus: 'Thron-Punkte +50 %' },
+    { k: 'sam', name: 'Sammel-Rausch', ic: 'coin', pkt: 'Gesammeltes – ein volles Feld bringt 30', bonus: 'Sammeln 50 % schneller' },
+    { k: 'krieg', name: 'Krieger-Woche', ic: 'attack', pkt: 'besiegte Truppen – überall: Basen, Felder, Lager, Barbaren', bonus: '10 Barbaren-Lager mehr pro Tag' },
+    { k: 'boss', name: 'Boss-Jagd', ic: 'star', pkt: 'Schaden an Tagesboss und Drache (30 je voller Treffer)', bonus: 'Weltbosse doppelt so oft, 5 Tagesboss-Angriffe mehr' },
+    { k: 'bau', name: 'Bauherr', ic: 'upgrade', pkt: 'Aufwerten von Basen (2 + neue Stufe)', bonus: 'Ausbau 20 % günstiger' }
+];
+function evThemaAm(t) {                               // das Thema des laufenden (oder nächsten) Wochenendes – für alle gleich
+    const w = tourWin(t), s = new Date(w.start); s.setHours(12, 0, 0, 0);
+    const n = Math.floor(s.getTime() / (7 * 864e5)); return EV_THEMEN[((n % EV_THEMEN.length) + EV_THEMEN.length) % EV_THEMEN.length];
+}
+function evThema() { return evThemaAm(Date.now()); }
+function evThemaAktiv(k) { try { return tourOn() && evThema().k === k; } catch (e) { return false; } }   // (beim Laden evtl. noch nicht bereit)
+function evPunkte(kind, who, n) { if (evThemaAktiv(kind)) tourDeckel(who, n, kind); }
+function barbTagMax() { return BARB_DAY + (evThemaAktiv('krieg') ? 10 : 0); }
+function dbossHitsMax() { return DBOSS_HITS + (evThemaAktiv('boss') ? 5 : 0); }
+function evBossTakt() { return evThemaAktiv('boss') ? .5 : 1; }   // Boss-Jagd: Weltbosse kommen doppelt so oft
+
+// ---- gemeinsamer Zustand ----
+var evState = (() => { try { return JSON.parse(store.get('openWaterEvents')) || null; } catch (e) { return null; } })() || {};
+let evDirty = false, evSaveAt = 0;
+function saveEv() { evDirty = false; evSaveAt = Date.now(); store.set('openWaterEvents', JSON.stringify(evState)); }
+window.addEventListener('pagehide', () => { if (evDirty && rechnet()) saveEv(); });
+const evRang = o => Object.entries(o || {}).filter(e => e[1] > 0 && (e[0] === 'player' || botById[e[0]])).sort((a, b) => b[1] - a[1]);
+function evPreis(who, src, title, p) {                // ein Preis: deiner ins Abholfach, ein echter Mitspieler bekommt ihn als Nachricht (auch Kisten), Mitspieler direkt
+    const gems = Math.round(p.gems || 0), sh = Math.round(p.sh || 0), crate = p.crate >= 0 ? p.crate : -1;
+    if (who === 'player') { inboxAdd({ src, title, gems, sh, crate }); return; }
+    const bd = botById[who]; if (!bd) return;
+    if (bd.mensch && window.WELT) { WELT.nachricht(parseInt(who.slice(1), 10), { art: 'evPreis', src, title, gems, sh, crate }); return; }
+    const bs = loadBotState()[who]; if (bs) bs.gems = (bs.gems || 0) + gems; if (sh) heroGrantShards(who, sh); if (crate >= 0) barbCrate(who, crate);
+}
+function evBericht(who, e, hint) {                    // ein kurzer Eintrag im Kampflog (dir direkt, echten Mitspielern über den Weltrechner)
+    if (who === 'player') { addCombatLogEntry(e); if (hint) flashHint(hint, 4500); return; }
+    if (window.WELT && botById[who] && botById[who].mensch) WELT.bericht(who, e, hint);
+}
+function evPlanTag(now, ok, stunde, dauer) {          // der nächste Tag (ab heute), an dem ok(Datum) gilt, zur Stunde – solange er noch nicht vorbei ist
+    const d = new Date(now); d.setHours(0, 0, 0, 0);
+    for (let i = 0; i < 10; i++) { const t = new Date(d); t.setDate(d.getDate() + i); if (!ok(t)) continue; t.setHours(stunde, 0, 0, 0); const s = t.getTime(); if (s + dauer > now) return { start: s, end: s + dauer }; }
+    return { start: now + 864e5, end: now + 864e5 + dauer };
+}
+
+// ===== BARBAREN-INVASION: alle 3 Tage um 20 Uhr eine Stunde lang kommen Wellen von Barbaren-Armeen vom Rand ihrer Insel
+// und greifen die nächsten Basen an (echte Spieler und Mitspieler). Abwehren und Armeen schlagen bringt Punkte, danach
+// eine kleine Belohnung nach Punkten. Barbaren erobern nichts – wer verliert, verliert Truppen.
+const INV_TAGE = 3, INV_STUNDE = 20, INV_DAUER = 60 * 60000, INV_WELLEN = 6, INV_WELLE_MS = 9 * 60000, INV_PRO_WELLE = 12;
+const INV_PTS_WEHR = 15, INV_PTS_SIEG = 20;
+const INV_PREISE = [{ ab: 100, gems: 60, sh: 6, crate: 2, t: 'ab 100 Punkten' }, { ab: 40, gems: 30, sh: 3, crate: 1, t: 'ab 40 Punkten' }, { ab: 10, gems: 10, sh: 1, crate: -1, t: 'ab 10 Punkten' }];
+const evTagNr = t => Math.round(new Date(t.getFullYear(), t.getMonth(), t.getDate(), 12).getTime() / 864e5);
+function invPlan(now) {
+    now = now || Date.now();
+    if (EV_TEST && EV_TEST.inv) return { start: EV_TEST.inv, end: EV_TEST.inv + INV_DAUER };
+    return evPlanTag(now, t => evTagNr(t) % INV_TAGE === 0, INV_STUNDE, INV_DAUER);
+}
+function invAktiv(now) { const I = evState.inv; now = now || Date.now(); return I && !I.paid && now >= I.start && now < I.end + 5 * 60000 ? I : null; }
+const invArmee = id => { const I = invAktiv(); return I && (I.armies || []).find(a => a.id === id) || null; };
+function invPos(a, now) {                            // wo die Armee gerade ist: vom Rand gerade auf ihr Ziel zu
+    const t = islandById[a.tid], q = Math.max(0, Math.min(1, ((now || Date.now()) - a.at0) / Math.max(1, a.at1 - a.at0)));
+    return t ? { x: a.x0 + (t.x - a.x0) * q, y: a.y0 + (t.y - a.y0) * q, lm: a.lm, landmassId: a.lm } : { x: a.x0, y: a.y0, lm: a.lm, landmassId: a.lm };
+}
+function invTreffpunkt(a, homeId, who) {             // wo deine Truppen die Armee treffen (oder null: sie kämen zu spät)
+    const home = islandById[homeId]; if (!home || !a) return null; const now = Date.now();
+    let p = invPos(a, now);
+    for (let i = 0; i < 3; i++) { const t = travelDurationSeconds(home, barbPt(p), who === 'player' ? undefined : who) * 1000; p = invPos(a, now + t); p.at = now + t; }
+    return p.at < a.at1 - 3000 ? p : null;
+}
+function invStartPunkt(isl) {                        // am Rand ihrer Insel, auf der Seite weg von der Mitte der Karte
+    const lm = landmasses[isl.landmassId], L = Math.hypot(isl.x, isl.y) || 1; let ux = isl.x / L, uy = isl.y / L;
+    for (const dreh of [0, .7, -.7, 1.4, -1.4]) {
+        const vx = ux * Math.cos(dreh) - uy * Math.sin(dreh), vy = ux * Math.sin(dreh) + uy * Math.cos(dreh);
+        let last = 0; for (let s = ISLAND_RADIUS; s < lm.shapeMaxR * 2.2; s += ISLAND_RADIUS * .8) { if (aufLand(lm, isl.x + vx * s, isl.y + vy * s)) last = s; else if (last) break; }
+        if (last >= ISLAND_RADIUS * 4) return { x: isl.x + vx * last, y: isl.y + vy * last };
+    }
+    return { x: isl.x + ux * ISLAND_RADIUS * 8, y: isl.y + uy * ISLAND_RADIUS * 8 };   // kleine Insel: sie kommen übers Wasser
+}
+// Ein Friedensschild hält die Barbaren ab. Der Anfängerschutz nicht – aber Neulinge bekommen nur halb so starke Armeen
+// (meist ein Sieg mit Punkten, ein Kennenlernen statt eines Verlusts).
+function invGeschuetzt(o, now) { return o === 'player' ? shieldUntil() > now : ((loadBotState()[o] || {}).shieldUntil || 0) > now; }
+const invNeuling = (o, now) => (o === 'player' ? neulingBis() : botNeulingBis(o, loadBotState()[o] || {})) > now;
+function invZielOk(id, used, now) {
+    const isl = islandById[id], o = isl && islandOwnerOf(id);
+    return !!o && isl.type === 'tower' && !used.has(id) && !midZoneIds.has(id) && !invGeschuetzt(o, now) && landmasses[isl.landmassId].tier === 'outer';
+}
+function invZiele(I, now) {                          // jeder echte Spieler bekommt pro Welle eine Armee (seine äußerste Basis), dazu Mitspieler-Basen
+    const used = new Set(I.armies.map(a => a.tid)), out = [];
+    const menschen = BOT_DEFS.filter(b => b.mensch).map(b => b.id); if (ownedIslands.size) menschen.unshift('player');
+    for (const who of menschen) { let best = null, bs = -1;
+        for (const id of (who === 'player' ? ownedIslands : botOwnedIslands[who]) || []) { if (!invZielOk(id, used, now)) continue; const lm = landmasses[islandById[id].landmassId], s = lm.ring * 10 + Math.random() * 5; if (s > bs) { bs = s; best = id; } }
+        if (best !== null) { out.push(best); used.add(best); } }
+    const bots = BOT_DEFS.filter(b => !b.mensch && botOwnedIslands[b.id] && botOwnedIslands[b.id].size);
+    for (let n = 0, tries = 0; n < INV_PRO_WELLE && bots.length && tries < INV_PRO_WELLE * 15; tries++) {
+        const own = [...botOwnedIslands[bots[Math.floor(Math.random() * bots.length)].id]], id = own[Math.floor(Math.random() * own.length)];
+        if (invZielOk(id, used, now)) { out.push(id); used.add(id); n++; } }
+    return out;
+}
+function invWelle(I, now) {                          // eine Welle: jede Armee so stark wie ihr Ziel (spätere Wellen stärker), 5–7 Min. Marsch
+    const w = I.welle + 1; let mich = 0;
+    for (const tid of invZiele(I, now)) {
+        const isl = islandById[tid], s = invStartPunkt(isl), base = effectiveTroops(isl) + effectiveDefense(isl);
+        const t = niceRound(Math.max(5000, base * (.5 + .13 * w) * (.8 + Math.random() * .4) * (invNeuling(islandOwnerOf(tid), now) ? .5 : 1)));
+        I.armies.push({ id: 'i' + (I.n++), x0: Math.round(s.x), y0: Math.round(s.y), lm: isl.landmassId, tid, t, max: t, at0: now, at1: now + (5 + Math.random() * 2) * 60000, w });
+        if (islandOwnerOf(tid) === 'player') mich++;
+    }
+    evDirty = true; requestRender();
+    flashHint('Barbaren-Invasion: Welle ' + w + ' von ' + INV_WELLEN + ' rückt an!' + (mich ? ' Eine Armee marschiert auf deine Basis.' : ''), 4500);
+}
+function invPunkteDazu(I, who, n) { if (!who || !(n > 0) || (who !== 'player' && !botById[who])) return; I.pts[who] = (I.pts[who] || 0) + n; evDirty = true; }
+function invAnkunft(I, a, now) {                     // die Armee erreicht ihr Ziel: dieselbe Rechnung wie jeder Angriff (Truppen + Verteidigung)
+    const isl = islandById[a.tid], o = isl && islandOwnerOf(a.tid); if (!o || invGeschuetzt(o, now)) return;
+    const en = effectiveTroops(isl), def = effectiveDefense(isl), durch = a.t > en + def;
+    const verlust = Math.min(en, Math.round(durch ? en * .6 : a.t * .35)), wounded = verlust > 0 ? fieldHurt(o, verlust, null) : 0;
+    islandTroops[a.tid] = Math.max(0, (islandTroops[a.tid] || 0) - verlust);
+    if (!durch) { invPunkteDazu(I, o, INV_PTS_WEHR); I.wehr[o] = (I.wehr[o] || 0) + 1; if (evThemaAktiv('krieg')) tourFight(o, a.t, 'krieg'); }
+    const titel = islandTitle(isl);
+    evBericht(o, { type: 'ev', ic: 'defense', gut: !durch, badge: durch ? 'Überrannt' : 'Abgewehrt', title: 'Barbaren-Invasion · ' + titel,
+        txt: fmtCompact(a.t) + ' Barbaren gegen ' + fmtCompact(en + def) + ' · ' + fmtCompact(verlust) + ' Truppen verloren' + (wounded ? ' (' + fmtCompact(wounded) + ' ins Lazarett)' : '') + (durch ? '' : ' · +' + INV_PTS_WEHR + ' Punkte'), at: now },
+        durch ? 'Barbaren haben ' + titel + ' überrannt – ' + fmtCompact(verlust) + ' Truppen verloren.' : 'Barbaren-Welle bei ' + titel + ' abgewehrt: +' + INV_PTS_WEHR + ' Punkte.');
+    spawnBattleFx(a.tid, !durch, durch ? 'Überrannt' : 'Abgewehrt', 'Barbaren-Invasion');
+}
+function invTreffer(m, now) {                        // deine (oder ihre) Truppen treffen eine Barbaren-Armee draußen
+    const I = invAktiv(now), a = I && I.armies.find(x => x.id === m.tid), who = m.who, isP = who === 'player';
+    if (!a) { barbHome(m, m.troops, now); if (isP) flashHint('Die Barbaren-Armee ist schon weg – deine Truppen kehren um.', 3500); return; }
+    const hx = heroFieldFx(who, m.hero, {}), fb = barbFight(who, m.troops, hx, a.t), wounded = fieldHurt(who, fb.loss, hx);
+    const gold = payGold(who, fb.kill * .3 * (1 + (hx || HX0).gold / 100)), pts = fb.won ? INV_PTS_SIEG : Math.max(1, Math.round(INV_PTS_SIEG * fb.kill / a.max));
+    if (fb.won) I.armies = I.armies.filter(x => x !== a); else a.t = Math.max(1, Math.round(a.t - fb.kill));
+    invPunkteDazu(I, who, pts); if (evThemaAktiv('krieg')) tourFight(who, fb.kill, 'krieg'); goalBump(who, 'barb');
+    barbHome(m, m.troops - fb.loss, now); evDirty = true;
+    const ziel = islandById[a.tid], fuer = ziel && islandOwnerOf(ziel.id) !== who ? ' (auf ' + fieldWhoName(islandOwnerOf(ziel.id)) + ')' : '';
+    evBericht(who, { type: 'ev', ic: 'attack', gut: fb.won, badge: fb.won ? 'Besiegt' : 'Geschwächt', title: 'Barbaren-Armee' + fuer,
+        txt: fmtCompact(fb.SA) + ' gegen ' + fmtCompact(fb.won ? a.t : a.t + fb.kill) + ' Barbaren · ' + fmtCompact(fb.loss) + ' gefallen' + (wounded ? ' (' + fmtCompact(wounded) + ' ins Lazarett)' : '') + (gold ? ' · +' + fmtCompact(gold) + ' Gold' : '') + ' · +' + pts + ' Punkte', at: now },
+        fb.won ? 'Barbaren-Armee geschlagen: +' + pts + ' Punkte.' : 'Die Barbaren-Armee ist geschwächt (noch ' + fmtCompact(a.t) + ') – +' + pts + ' Punkte.');
+    if (isP) { spawnBattleFx({ x: m.x, y: m.y }, fb.won, fb.won ? 'Armee geschlagen' : 'Geschwächt', '+' + pts + ' Punkte'); updateHud(); saveGame(); }
+    if (barbView && barbView.kind === 'inv') barbSheetRefresh();
+}
+function invAuszahlen() {                            // nach der Invasion: Belohnung nach Punkten (klein)
+    const I = evState.inv; if (!I || I.paid) return; I.paid = true; I.armies = []; evDirty = true;
+    let n = 0;
+    for (const [who, p] of evRang(I.pts)) { const pr = INV_PREISE.find(x => p >= x.ab); if (!pr) continue; n++;
+        evPreis(who, 'inv', 'Barbaren-Invasion · ' + Math.floor(p) + ' Punkte', pr); }
+    if (n) flashHint('Die Barbaren-Invasion ist vorbei – ' + n + ' Verteidiger werden belohnt (Ziele → Belohnung).', 5000);
+    saveBotState(); requestRender();
+}
+function invTakt(now) {                              // (nur Weltrechner) Wellen losschicken, Ankünfte, Ende
+    const E = evState, p = invPlan(now); E.plan = E.plan || {};
+    if (!E.plan.inv || E.plan.inv.start !== p.start) { E.plan.inv = p; evDirty = true; }
+    let I = E.inv;
+    if (now >= p.start && now < p.end && (!I || I.start !== p.start)) {
+        if (I && !I.paid) invAuszahlen();
+        I = E.inv = { start: p.start, end: p.end, welle: 0, n: 0, armies: [], pts: {}, wehr: {}, paid: false }; evDirty = true;
+        flashHint('Die Barbaren-Invasion beginnt! ' + INV_WELLEN + ' Wellen in einer Stunde – verteidige deine Basen.', 6000);
+    }
+    if (!I || I.paid) return;
+    while (I.welle < INV_WELLEN && now < I.end && now >= I.start + I.welle * INV_WELLE_MS) {     // (eine verpasste Welle fällt aus)
+        if (now - (I.start + I.welle * INV_WELLE_MS) < INV_WELLE_MS) invWelle(I, now); I.welle++; evDirty = true; }
+    const da = I.armies.filter(a => a.at1 <= now);
+    if (da.length) { I.armies = I.armies.filter(a => a.at1 > now); for (const a of da) try { invAnkunft(I, a, now); } catch (e) { console.warn('Invasion:', e); } evDirty = true; saveGame(); requestRender(); }
+    if (now >= I.end && (!I.armies.length || now >= I.end + 5 * 60000)) invAuszahlen();
+}
+
+// ===== DER DRACHE: jeden Sonntag 19–22 Uhr erscheint über dem Thron ein riesiger Drache, den nur alle zusammen besiegen.
+// Jeder Angriff macht Schaden (wie beim Tagesboss, höchstens 2 % seines Lebens), 10 Angriffe pro Person.
+// Fällt er: Platz 1 goldene Kiste, Platz 2–10 lila Kiste, alle anderen etwas Kleines. Entkommt er: alle etwas Kleines.
+const DR_STUNDE = 19, DR_DAUER = 3 * 3600000, DR_HITS = 10, DR_CAP = .02, DR_NAME = 'Urdrache Vharak', DR_COL = '#d8452e';
+const DR_PREISE = [{ gems: 150, crate: 4, sh: 20, t: '1.' }, { gems: 60, crate: 3, sh: 8, t: '2.–10.' }, { gems: 15, crate: -1, sh: 2, t: 'Alle anderen' }];
+const drPreisVon = i => DR_PREISE[i < 1 ? 0 : i < 10 ? 1 : 2];
+function drPlan(now) {
+    now = now || Date.now();
+    if (EV_TEST && EV_TEST.dr) return { start: EV_TEST.dr, end: EV_TEST.dr + DR_DAUER };
+    return evPlanTag(now, t => t.getDay() === 0, DR_STUNDE, DR_DAUER);
+}
+function drAktiv(now) { const D = evState.dr; now = now || Date.now(); return D && !D.paid && D.hp > 0 && now >= D.start && now < D.end ? D : null; }
+function drOnMap(now) { const D = evState.dr; now = now || Date.now(); return D && now >= D.start && now < D.end && (D.hp > 0 || now - (D.fell || 0) < DBOSS_GONE) ? D : null; }
+function drNeu(p) {                                  // über dem Thron; Leben: etwa 75 % von dem, was alle mit ihren Angriffen schaffen können
+    const m = islandById[megaTempleId] || islands[0];
+    let pool = 0; for (const bot of BOT_DEFS) { let big = 0; for (const id of botOwnedIslands[bot.id] || []) big = Math.max(big, islandTroops[id] || 0); pool += big * .25 * DR_HITS * barbFa(bot.id); }
+    const hp = niceRound(Math.max(1e7, pool * .75));
+    return { start: p.start, end: p.end, x: Math.round(m.x), y: Math.round(m.y - ISLAND_RADIUS * 6), lm: m.landmassId, name: DR_NAME, hp, max: hp, dmg: {}, hits: {}, fell: 0, paid: false };
+}
+function drTreffer(m, now) {                         // wie beim Tagesboss: Schaden (höchstens 2 %), ein Drittel der Kämpfer fällt, Münzen nach Schaden
+    const D = evState.dr, who = m.who, isP = who === 'player';
+    if (!D || D.paid || D.hp <= 0 || D.start !== m.d || now >= D.end) { barbHome(m, m.troops, now); if (isP) flashHint('Der Drache ist nicht mehr da – deine Truppen kehren um.', 3500); return; }
+    const hx = heroFieldFx(who, m.hero, {}), h = hx || HX0, fa = (1 + (fieldAtkPct(who) + h.atk) / 100) * titleMult(who, 'attack');
+    const dmg = Math.max(1, Math.min(D.hp, Math.round((m.troops + heroGefOf(h, m.troops)) * fa), Math.round(D.max * DR_CAP)));
+    const used = Math.min(m.troops, dmg / fa), loss = Math.min(m.troops, Math.round(used * .33 * (1 - Math.min(90, fieldShield(who) + h.loss) / 100))), wounded = fieldHurt(who, loss, hx);
+    D.hp -= dmg; D.dmg[who] = (D.dmg[who] || 0) + dmg; evDirty = true;
+    const gold = payGold(who, dmg * .2 * (1 + h.gold / 100));
+    evPunkte('boss', who, 30 * dmg / (D.max * DR_CAP));
+    barbHome(m, m.troops - loss, now);
+    const rk = evRang(D.dmg), pl = rk.findIndex(e => e[0] === who) + 1;
+    evBericht(who, { type: 'ev', ic: 'star', gut: true, badge: 'Drache', title: D.name, txt: fmtCompact(dmg) + ' Schaden · noch ' + fmtCompact(Math.max(0, D.hp)) + ' Leben · Platz ' + pl + ' von ' + rk.length + ' · ' + fmtCompact(loss) + ' gefallen' + (wounded ? ' (' + fmtCompact(wounded) + ' ins Lazarett)' : '') + (gold ? ' · +' + fmtCompact(gold) + ' Gold' : ''), at: now },
+        'Treffer beim Drachen: ' + fmtCompact(dmg) + ' Schaden – Platz ' + pl + '.');
+    if (isP) { spawnBattleFx({ x: D.x, y: D.y }, true, 'Treffer', '−' + fmtCompact(dmg) + ' Leben'); updateHud(); saveGame(); }
+    if (D.hp <= 0) { D.hp = 0; D.fell = now; drAuszahlen(true); }
+    if (barbView && barbView.kind === 'drache') barbSheetRefresh();
+}
+function drAuszahlen(fell) {
+    const D = evState.dr; if (!D || D.paid) return; D.paid = true; evDirty = true;
+    const rk = evRang(D.dmg);
+    rk.forEach(([who], i) => { const p = fell ? drPreisVon(i) : DR_PREISE[2]; goalBump(who, 'dboss');
+        evPreis(who, 'drache', D.name + (fell ? ' · Platz ' + (i + 1) : ' entkommen'), p); });
+    flashHint(fell ? D.name + ' ist gefallen! ' + rk.length + ' Kämpfer werden nach Schaden belohnt.' : D.name + ' ist entkommen – alle Kämpfer bekommen eine kleine Belohnung.', 6000);
+    if (fell) spawnBattleFx({ x: D.x, y: D.y }, true, D.name + ' gefallen', rk.length + ' Kämpfer belohnt');
+    saveBotState(); requestRender();
+}
+function drTakt(now) {                               // (nur Weltrechner) erscheinen, entkommen
+    const E = evState, p = drPlan(now); E.plan = E.plan || {};
+    if (!E.plan.dr || E.plan.dr.start !== p.start) { E.plan.dr = p; evDirty = true; }
+    let D = E.dr;
+    if (now >= p.start && now < p.end && (!D || D.start !== p.start)) {
+        if (D && !D.paid) drAuszahlen(D.hp <= 0);
+        D = E.dr = drNeu(p); evDirty = true; requestRender();
+        flashHint('Der Drache ist erschienen! ' + D.name + ' kreist über dem Thron – nur alle zusammen können ihn besiegen.', 7000);
+    }
+    if (D && !D.paid && now >= D.end) drAuszahlen(D.hp <= 0);
+}
+
+// ---- jede Sekunde ----
+function evTick() {
+    const now = Date.now();
+    if (rechnet()) { try { invTakt(now); drTakt(now); } catch (e) { console.warn('Events:', e); } if (evDirty && now - evSaveAt > 2000) saveEv(); }
+    evAnzeige(now);
+}
+setInterval(evTick, 1000);
+function evPlanVon(k) { const p = evState.plan && evState.plan[k]; return p && p.end > Date.now() ? p : k === 'inv' ? invPlan() : drPlan(); }   // was der Weltrechner sagt (sonst selbst gerechnet)
+let evGesehen = null;
+function evHinweise() {                              // (Zuschauer) neue Welle, Drache erschienen → kurzer Hinweis (beim Weltrechner kommt er direkt)
+    const I = evState.inv, D = evState.dr, g = { w: I && !I.paid ? I.start + ':' + I.welle : '', d: D && D.hp > 0 && !D.paid ? D.start : 0 };
+    if (evGesehen && !rechnet()) {
+        if (g.w && g.w !== evGesehen.w && I.welle > 0) { const n = I.armies.filter(a => a.w === I.welle && islandOwnerOf(a.tid) === 'player').length;
+            flashHint('Barbaren-Invasion: Welle ' + I.welle + ' von ' + INV_WELLEN + ' rückt an!' + (n ? ' Eine Armee marschiert auf deine Basis – schick Verstärkung oder fang sie ab.' : ''), 5500); if (n) sfx('warn'); }
+        if (g.d && g.d !== evGesehen.d) { flashHint('Der Drache ist erschienen! ' + D.name + ' kreist über dem Thron – nur alle zusammen können ihn besiegen.', 6500); sfx('event'); }
+    }
+    evGesehen = g;
+}
+function evAnzeige(now) {                            // Uhren in Fenster und Leiste, offenes Fenster auffrischen
+    evHinweise();
+    for (const el of document.querySelectorAll('[data-ev-bis]')) setText(el, fmtDHMS(Math.max(0, +el.dataset.evBis - now) / 1000));
+    if (isPanelOpen(eventPopup) && now - evRenderAt > 2500) renderEvents();
+}
+
+// ---- die Karte: Barbaren-Armeen (wie Märsche: gestrichelte Linie + Marke) und der Drache ----
+function evAt(sx, sy) {                              // → { kind: 'drache' } | { kind: 'inv', id } unter einem Tippen
+    const z = mapState.zoom, D = drOnMap();
+    if (D && z >= .0015) { const s = barbScreen(D), kb = drK(); if (Math.hypot(s.x - sx, s.y - sy + 12 * kb) < Math.max(28, 52 * kb)) return { kind: 'drache' }; }
+    const I = invAktiv(); if (!I || z < .003) return null;
+    let best = null, bd = 20; for (const a of I.armies) { const p = invPos(a); if (!invSichtbar(a, p)) continue; const s = barbScreen(p), d = Math.hypot(s.x - sx, s.y - sy + 6); if (d < bd) { bd = d; best = a; } }
+    return best ? { kind: 'inv', id: best.id } : null;
+}
+const drK = () => Math.max(.45, Math.min(1.2, mapState.zoom / .025));   // so groß zeichnen (mit dem Zoom, nie riesig)
+const invSichtbar = (a, p) => isCellOpen(p.x, p.y) || islandOwnerOf(a.tid) === 'player';
+function drawEvents(now, wallNow) {
+    const z = mapState.zoom, I = invAktiv(wallNow);
+    if (I && z >= .0025) { setScreen(ctx);
+        for (const a of I.armies) {
+            const p = invPos(a, wallNow), t = islandById[a.tid]; if (!t || !invSichtbar(a, p)) continue;
+            const s = barbScreen(p), e = barbScreen(t); if (Math.max(s.x, e.x) < -30 || Math.min(s.x, e.x) > viewW + 30 || Math.max(s.y, e.y) < -30 || Math.min(s.y, e.y) > viewH + 30) continue;
+            const mine = islandOwnerOf(a.tid) === 'player', k = Math.max(.7, Math.min(1.6, z / .01));
+            ctx.save(); ctx.globalAlpha = .7; ctx.setLineDash([6, 6]); ctx.lineDashOffset = -(now / 45) % 24; ctx.lineWidth = mine ? 2.2 : 1.6; ctx.strokeStyle = mine ? '#ff5a4a' : '#c9423a';
+            ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(e.x, e.y); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1;
+            ctx.translate(s.x, s.y); ctx.scale(k, k);
+            ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(0, 9, 11, 3.5, 0, 0, 7); ctx.fill();
+            ctx.fillStyle = '#5a1712'; ctx.strokeStyle = '#140808'; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(-9, -8); ctx.lineTo(9, -8); ctx.lineTo(9, 2); ctx.quadraticCurveTo(0, 12, -9, 2); ctx.closePath(); ctx.fill(); ctx.stroke();   // Schild
+            ctx.fillStyle = '#e8d9b8'; ctx.beginPath(); ctx.arc(0, -2, 3.6, 0, 7); ctx.fill();                                                   // Schädel mit Hörnern
+            ctx.strokeStyle = '#e8d9b8'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(-3, -4); ctx.quadraticCurveTo(-7, -6, -6, -11); ctx.moveTo(3, -4); ctx.quadraticCurveTo(7, -6, 6, -11); ctx.stroke();
+            ctx.fillStyle = '#140808'; ctx.fillRect(-2, -3, 1.4, 1.4); ctx.fillRect(.6, -3, 1.4, 1.4);
+            const lbl = fmtCompact(a.t); ctx.font = '700 8px Inter, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            const tw = ctx.measureText(lbl).width + 8; rr(ctx, -tw / 2, 12, tw, 11, 5.5); ctx.fillStyle = 'rgba(20,8,8,.9)'; ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = mine ? '#ff5a4a' : '#8a2a22'; ctx.stroke();
+            ctx.fillStyle = '#ffe2d8'; ctx.fillText(lbl, 0, 17.8);
+            ctx.restore(); liveAnimation = true;
+        }
+    }
+    const D = drOnMap(wallNow); if (!D || z < .0015) return;
+    const s = barbScreen(D), kb = drK(); if (s.x < -200 || s.x > viewW + 200 || s.y < -200 || s.y > viewH + 200) return;
+    const dead = D.hp <= 0; setScreen(ctx);
+    if (!dead) { const R = 110 * kb, gr = ctx.createRadialGradient(s.x, s.y, 6, s.x, s.y, R); gr.addColorStop(0, 'rgba(255,120,60,.45)'); gr.addColorStop(1, 'rgba(255,80,40,0)'); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(s.x, s.y, R, 0, 7); ctx.fill(); }
+    ctx.save(); ctx.translate(s.x, s.y - (dead ? 0 : Math.sin(now / 700) * 4 * kb)); ctx.scale(kb, kb); if (dead) { ctx.globalAlpha = .45; ctx.filter = 'grayscale(1)'; }
+    drDraw(ctx, dead ? 0 : Math.sin(now / 260)); ctx.restore();
+    const bw = Math.max(90, 130 * kb), by = s.y + 40 * kb;                                    // Name und Leben
+    ctx.font = '800 12px Inter, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const label = dead ? D.name + ' · besiegt' : D.name, tw = ctx.measureText(label).width + 18;
+    rr(ctx, s.x - tw / 2, by, tw, 20, 10); ctx.fillStyle = 'rgba(24,8,6,.92)'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#f2c75c'; ctx.stroke();
+    ctx.fillStyle = '#ffe9c8'; ctx.fillText(label, s.x, by + 10.5);
+    if (!dead) { rr(ctx, s.x - bw / 2, by + 24, bw, 7, 3.5); ctx.fillStyle = 'rgba(10,8,10,.85)'; ctx.fill(); rr(ctx, s.x - bw / 2 + 1, by + 25, Math.max(2, (bw - 2) * D.hp / D.max), 5, 2.5); ctx.fillStyle = '#e0483a'; ctx.fill(); }
+    liveAnimation = true;
+}
+function drDraw(g, flap) {                           // der Drache: Flügel (schlagend), Körper, langer Hals, gehörnter Kopf, Schwanz, Feueratem
+    const col = DR_COL, dark = '#2a0c08', belly = '#f0b45a';
+    g.lineJoin = 'round'; g.lineCap = 'round';
+    g.fillStyle = 'rgba(0,0,0,.3)'; g.beginPath(); g.ellipse(0, 46, 52, 11, 0, 0, 7); g.fill();
+    g.strokeStyle = dark; g.lineWidth = 2.5;
+    const wy = -40 - flap * 16;
+    for (const s of [-1, 1]) {                       // Flügel: Haut zwischen den Fingern
+        g.fillStyle = '#9c2a1c'; g.beginPath(); g.moveTo(s * 8, -6); g.lineTo(s * 40, wy); g.lineTo(s * 78, wy + 10 + flap * 4); g.quadraticCurveTo(s * 62, wy + 26, s * 70, wy + 40); g.quadraticCurveTo(s * 50, wy + 38, s * 52, wy + 54); g.quadraticCurveTo(s * 34, 6, s * 10, 10); g.closePath(); g.fill(); g.stroke();
+        g.lineWidth = 1.5; g.beginPath(); g.moveTo(s * 40, wy); g.lineTo(s * 70, wy + 40); g.moveTo(s * 40, wy); g.lineTo(s * 52, wy + 54); g.stroke(); g.lineWidth = 2.5;
+    }
+    g.fillStyle = col; g.beginPath(); g.moveTo(-6, 30); g.quadraticCurveTo(-30, 46, -50, 38); g.quadraticCurveTo(-36, 44, -14, 22); g.closePath(); g.fill(); g.stroke();   // Schwanz
+    g.beginPath(); g.ellipse(0, 16, 22, 24, 0, 0, 7); g.fill(); g.stroke();                               // Körper
+    g.fillStyle = belly; g.beginPath(); g.ellipse(0, 20, 11, 17, 0, 0, 7); g.fill();
+    g.fillStyle = col; g.beginPath(); g.moveTo(-8, 0); g.quadraticCurveTo(-10, -26, 6, -40); g.lineTo(18, -32); g.quadraticCurveTo(6, -18, 9, 0); g.closePath(); g.fill(); g.stroke();   // Hals
+    g.beginPath(); g.moveTo(2, -44); g.quadraticCurveTo(16, -52, 32, -42); g.lineTo(30, -34); g.quadraticCurveTo(16, -32, 8, -30); g.closePath(); g.fill(); g.stroke();             // Kopf
+    g.fillStyle = '#f2e6c8'; for (const [x, y, x2, y2] of [[6, -46, -2, -60], [12, -48, 8, -62]]) { g.beginPath(); g.moveTo(x, y); g.lineTo(x2, y2); g.lineTo(x + 5, y + 1); g.closePath(); g.fill(); }   // Hörner
+    for (const [r, a] of [[6, .3], [2.6, 1]]) { g.globalAlpha *= a; g.fillStyle = '#ffd24a'; g.beginPath(); g.arc(18, -42, r, 0, 7); g.fill(); g.globalAlpha /= a; }   // glühendes Auge
+    if (flap > -.2) { const f = (flap + .2) / 1.2, gr = g.createLinearGradient(32, -38, 62, -30); gr.addColorStop(0, 'rgba(255,230,120,.95)'); gr.addColorStop(1, 'rgba(255,90,30,0)');   // Feueratem
+        g.fillStyle = gr; g.beginPath(); g.moveTo(31, -38); g.quadraticCurveTo(48, -44 - f * 6, 62 + f * 10, -34); g.quadraticCurveTo(48, -28 + f * 4, 31, -35); g.closePath(); g.fill(); }
+}
+
+// ---- das Blatt an der Karte (wie Lager/Tagesboss): eine Barbaren-Armee oder der Drache ----
+function invSheetHtml(head) {
+    const a = invArmee(barbView.id); if (!a) return head('attack', 'Barbaren-Armee') + '<div class="notice">' + icon('check') + '<span>Diese Armee ist nicht mehr da.</span></div>';
+    const t = islandById[a.tid], o = islandOwnerOf(a.tid), need = a.t * 1.15 / barbFa('player'), p = invPos(a), src = barbSource(p, need), tp = src !== null ? invTreffpunkt(a, src, 'player') : null;
+    return head('attack', 'Barbaren-Armee · Welle ' + a.w) +
+        '<div class="barb-hp"><i style="width:' + (a.t / a.max * 100).toFixed(1) + '%"></i><span>' + fmtCompact(a.t) + ' / ' + fmtCompact(a.max) + ' Barbaren</span></div>' +
+        '<div class="field-lines"><span>Ziel</span><b>' + escapeHtml(islandTitle(t)) + ' · ' + escapeHtml(fieldWhoName(o)) + '</b><span>Ankunft in</span><b data-ev-bis="' + a.at1 + '">' + fmtDHMS((a.at1 - Date.now()) / 1000) + '</b>' +
+        '<span>Für den Sieg</span><b>+' + INV_PTS_SIEG + ' Punkte</b></div>' +
+        (src === null ? '<div class="notice">' + icon('lock') + '<span>Keine deiner Basen mit Truppen kommt hierher.</span></div>'
+            : !tp ? '<div class="notice">' + icon('hourglass') + '<span>Zu weit weg – deine Truppen kämen zu spät. ' + (o === 'player' ? 'Schick lieber Verstärkung in deine Basis.' : '') + '</span></div>'
+            : barbAttackHtml(islandTroops[src] || 0, need, src, 'Abfangen')) +
+        '<div class="barb-note">Barbaren erobern nichts, aber wer sie nicht aufhält, verliert Truppen. Abwehren: +' + INV_PTS_WEHR + ' Punkte, eine Armee schlagen: +' + INV_PTS_SIEG + ' (auch für Nachbarn). Belohnung nach der Invasion nach Punkten.</div>';
+}
+function drSheetHtml(head) {
+    const D = drOnMap(); if (!D) return head('star', DR_NAME) + '<div class="notice">' + icon('info') + '<span>Der Drache ist nicht mehr da. Nächstes Mal: Sonntag ab ' + DR_STUNDE + ' Uhr.</span></div>';
+    const dead = D.hp <= 0, rk = evRang(D.dmg), mine = rk.findIndex(e => e[0] === 'player'), hits = (D.hits || {}).player || 0, src = barbSource(D, 1, true);
+    const row = (e, i) => '<li' + (e[0] === 'player' ? ' class="me"' : '') + '><em>' + (i + 1) + '</em><span>' + escapeHtml(fieldWhoName(e[0])) + '</span><b>' + fmtCompact(e[1]) + '</b></li>';
+    return head('star', 'Drache · ' + escapeHtml(D.name)) +
+        '<div class="barb-hp"><i style="width:' + (D.hp / D.max * 100).toFixed(1) + '%"></i><span>' + (dead ? 'Besiegt' : fmtCompact(D.hp) + ' / ' + fmtCompact(D.max) + ' Leben') + '</span></div>' +
+        '<div class="field-lines"><span>' + (dead ? 'Vorbei' : 'Fliegt weg in') + '</span><b' + (dead ? '>–' : ' data-ev-bis="' + D.end + '">' + fmtDHMS((D.end - Date.now()) / 1000)) + '</b><span>Deine Angriffe</span><b>' + hits + ' / ' + DR_HITS + '</b>' +
+        '<span>Dein Schaden</span><b>' + (mine >= 0 ? fmtCompact(rk[mine][1]) + ' · Platz ' + (mine + 1) : '–') + (barbOut('player', 'd') ? ' <small>· Angriff unterwegs</small>' : '') + '</b></div>' +
+        (rk.length ? '<ol class="barb-rank">' + rk.slice(0, 5).map(row).join('') + (mine >= 5 ? row(rk[mine], mine) : '') + '</ol>' : '') +
+        (dead ? '' : hits >= DR_HITS ? '<div class="notice notice--gold">' + icon('hourglass') + '<span>Du hast alle ' + DR_HITS + ' Angriffe gemacht – jetzt sind die anderen dran.</span></div>' :
+            src === null ? '<div class="notice">' + icon('lock') + '<span>Keine deiner Basen hat Truppen.</span></div>' : barbAttackHtml(islandTroops[src] || 0, (islandTroops[src] || 0) * .5, src, 'Angreifen')) +
+        '<div class="barb-note">Höchstens 2 % Leben pro Angriff, ein Drittel der Kämpfer fällt. Fällt er: Platz 1 goldene Kiste, Platz 2–10 lila Kiste, alle anderen Gems und Splitter. Entkommt er: alle etwas Kleines.</div>';
+}
+
+// ---- das Ereignis-Fenster (Knopf an der Karte): Termine, Uhren, Ranglisten ----
+const eventPopup = document.getElementById('eventPopup');
+let evTab = 'alle', evRenderAt = 0;
+const evUhr = (bis) => '<b data-ev-bis="' + bis + '">' + fmtDHMS(Math.max(0, bis - Date.now()) / 1000) + '</b>';
+const evWann = t => { const d = new Date(t); return ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'][d.getDay()] + ' ' + d.getDate() + '.' + (d.getMonth() + 1) + '. ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
+function evRangHtml(list, fmt, lim) {                // Top 10 (+ deine Zeile)
+    const mi = list.findIndex(e => e[0] === 'player');
+    const row = (e, i) => '<li' + (e[0] === 'player' ? ' class="me"' : '') + '><em>' + (i + 1) + '</em><span>' + whoLink(e[0], fieldWhoName(e[0])) + '</span><b>' + fmt(e[1]) + '</b></li>';
+    return list.length ? '<ol class="barb-rank">' + list.slice(0, lim || 10).map(row).join('') + (mi >= (lim || 10) ? row(list[mi], mi) : '') + '</ol>' : '';
+}
+function evKarte(ic, titel, sub, inhalt, cls) { return '<div class="barb-card ev-card' + (cls ? ' ' + cls : '') + '"><div class="barb-ct"><b>' + icon(ic) + ' ' + titel + '</b><small>' + sub + '</small></div>' + inhalt + '</div>'; }
+function evTourHtml(kurz) {
+    const now = Date.now(), w = tourWin(now), th = evThemaAm(now);
+    const kopf = (w.on ? 'Läuft · endet in ' : 'Beginnt in ') + evUhr(w.on ? w.end : w.start);
+    const inh = '<div class="field-lines"><span>Thema</span><b>' + icon(th.ic) + ' ' + th.name + '</b><span>Punkte für</span><b>' + th.pkt + '</b><span>Bonus</span><b>' + th.bonus + '</b>' +
+        (w.on ? '<span>Dein Platz</span><b>' + (tourPlaceOf('player') || '–') + ' · ' + fmtNum(Math.floor(tourState.pts.player || 0)) + ' Punkte</b>' : '<span>Termin</span><b>' + evWann(w.start) + '</b>') + '</div>';
+    if (kurz) return evKarte(th.ic, 'Wochenend-Turnier', kopf, inh + '<button class="btn btn--secondary btn--sm" type="button" data-ev-tab="tour">' + icon('rank') + '<span>Turnier ansehen</span></button>', 'is-tour');
+    const nxt = EV_THEMEN.map((x, i) => { const d = new Date(w.start); d.setDate(d.getDate() + 7 * i); return '<span>' + evWann(d.getTime()).slice(0, -6) + '</span><b>' + icon(evThemaAm(d.getTime() + 3600000).ic) + ' ' + evThemaAm(d.getTime() + 3600000).name + '</b>'; }).join('');
+    return tourCardHtml() + '<div class="lb-gap">' + (w.on ? 'Live · Top 10' : 'Nächste Wochenenden') + '</div>' +
+        (w.on ? evRangHtml(tourList(), v => fmtNum(Math.floor(v))) || '<div class="war-empty">Noch hat niemand Punkte.</div>' : '<div class="field-lines ev-plan">' + nxt + '</div>') +
+        '<button class="btn btn--secondary btn--sm" type="button" data-ev-rank>' + icon('rank') + '<span>Ganze Rangliste</span></button>';
+}
+function evInvHtml(kurz) {
+    const now = Date.now(), I = evState.inv, akt = invAktiv(now), p = evPlanVon('inv'), last = I && I.paid ? I : null;
+    const kopf = akt ? 'Läuft · Welle ' + Math.min(INV_WELLEN, akt.welle) + ' / ' + INV_WELLEN + ' · noch ' + evUhr(akt.end) : 'Nächste in ' + evUhr(p.start);
+    const pts = I ? I.pts || {} : {}, me = Math.floor(pts.player || 0), rk = evRang(pts), mine = I ? rk.findIndex(e => e[0] === 'player') + 1 : 0;
+    const meine = akt ? akt.armies.filter(a => islandOwnerOf(a.tid) === 'player') : [];
+    let inh = '<div class="field-lines"><span>Termin</span><b>' + evWann(akt ? akt.start : p.start) + ' – ' + evWann(akt ? akt.end : p.end).slice(-5) + '</b>' +
+        (akt ? '<span>Armeen unterwegs</span><b>' + akt.armies.length + (meine.length ? ' · <span class="ev-rot">' + meine.length + ' auf dich</span>' : '') + '</b>' : '') +
+        (I && (akt || last) ? '<span>' + (akt ? 'Deine Punkte' : 'Letztes Mal') + '</span><b>' + fmtNum(me) + (mine ? ' · Platz ' + mine : '') + '</b>' : '') + '</div>';
+    if (kurz) return evKarte('defense', 'Barbaren-Invasion', kopf, inh + (meine.length ? '<button class="btn btn--primary btn--sm" type="button" data-ev-go="inv">' + icon('send') + '<span>Zur Armee auf deine Basis</span></button>' : '') +
+        '<button class="btn btn--secondary btn--sm" type="button" data-ev-tab="inv">' + icon('rank') + '<span>Regeln &amp; Rangliste</span></button>', akt ? 'is-warn' : '');
+    const preise = INV_PREISE.map(x => '<div class="tour-prize"><b>' + x.t + '</b><span>' + icon('gem') + x.gems + '</span><span>' + icon('star') + x.sh + '</span>' + (x.crate >= 0 ? '<em>' + RARITY_DEFS[x.crate].label + '-Kiste</em>' : '') + '</div>').join('');
+    return evKarte('defense', 'Barbaren-Invasion', kopf, inh +
+        (meine.length ? '<button class="btn btn--primary btn--sm" type="button" data-ev-go="inv">' + icon('send') + '<span>Zur Armee auf deine Basis</span></button>' : ''), akt ? 'is-warn' : '') +
+        '<div class="tour-rules"><span>' + icon('hourglass') + '<span><b>Alle 3 Tage um ' + INV_STUNDE + ' Uhr, eine Stunde</b> – ' + INV_WELLEN + ' Wellen, je 5–7 Minuten Marsch vom Rand der Insel</span></span>' +
+        '<span>' + icon('defense') + '<span><b>+' + INV_PTS_WEHR + ' Punkte</b> für jede abgewehrte Armee an deiner Basis – schick vorher Verstärkung</span></span>' +
+        '<span>' + icon('attack') + '<span><b>+' + INV_PTS_SIEG + ' Punkte</b> für jede Armee, die du unterwegs schlägst – auch die auf deine Nachbarn (Teilschaden zählt anteilig)</span></span>' +
+        '<span>' + icon('losses') + '<span>Barbaren erobern nichts – aber wer sie nicht aufhält, verliert viele Truppen.</span></span></div>' +
+        '<div class="tour-prizes ev-prizes3">' + preise + '</div><div class="lb-gap">' + (akt ? 'Live · Top 10' : 'Letzte Invasion') + '</div>' +
+        (evRangHtml(rk, v => fmtNum(Math.floor(v)) + ' P.') || '<div class="war-empty">' + (akt ? 'Noch hat niemand Punkte.' : 'Noch keine Invasion gewesen.') + '</div>');
+}
+function evDrHtml(kurz) {
+    const now = Date.now(), D = evState.dr, akt = drAktiv(now), p = evPlanVon('dr'), rk = D ? evRang(D.dmg) : [], mine = rk.findIndex(e => e[0] === 'player') + 1;
+    const kopf = akt ? 'Da · fliegt weg in ' + evUhr(akt.end) : D && D.start === p.start && D.hp <= 0 && now < D.end ? 'Besiegt!' : 'Nächster in ' + evUhr(p.start);
+    let inh = (akt ? '<div class="barb-hp"><i style="width:' + (akt.hp / akt.max * 100).toFixed(1) + '%"></i><span>' + fmtCompact(akt.hp) + ' / ' + fmtCompact(akt.max) + ' Leben</span></div>' : '') +
+        '<div class="field-lines"><span>Termin</span><b>' + evWann(akt ? akt.start : p.start) + ' – ' + evWann(akt ? akt.end : p.end).slice(-5) + '</b>' +
+        (D && rk.length ? '<span>' + (akt ? 'Dein Schaden' : 'Letztes Mal') + '</span><b>' + (mine ? fmtCompact(rk[mine - 1][1]) + ' · Platz ' + mine : '–') + '</b>' : '') + '</div>';
+    const go = drOnMap() ? '<button class="btn btn--primary btn--sm" type="button" data-ev-go="drache">' + icon('send') + '<span>Zum Drachen</span></button>' : '';
+    if (kurz) return evKarte('star', 'Der Drache', kopf, inh + go + '<button class="btn btn--secondary btn--sm" type="button" data-ev-tab="drache">' + icon('rank') + '<span>Regeln &amp; Rangliste</span></button>', akt ? 'is-drache' : '');
+    const preise = DR_PREISE.map((x, i) => '<div class="tour-prize' + (i ? '' : ' is-1') + '"><b>' + x.t + '</b><span>' + icon('gem') + x.gems + '</span><span>' + icon('star') + x.sh + '</span>' + (x.crate >= 0 ? '<em>' + RARITY_DEFS[x.crate].label + '-Kiste</em>' : '') + '</div>').join('');
+    return evKarte('star', 'Der Drache', kopf, inh + go, akt ? 'is-drache' : '') +
+        '<div class="tour-rules"><span>' + icon('hourglass') + '<span><b>Jeden Sonntag ' + DR_STUNDE + '–' + (DR_STUNDE + DR_DAUER / 3600000) + ' Uhr</b> kreist ' + DR_NAME + ' über dem Thron – sehr viel Leben, nur alle zusammen schaffen ihn</span></span>' +
+        '<span>' + icon('attack') + '<span><b>' + DR_HITS + ' Angriffe</b> pro Person, höchstens 2 % seines Lebens pro Angriff, ein Drittel der Kämpfer fällt</span></span>' +
+        '<span>' + icon('crown') + '<span>Fällt er, gibt es Preise nach Schaden. Entkommt er, bekommen alle Kämpfer etwas Kleines.</span></span></div>' +
+        '<div class="tour-prizes ev-prizes3">' + preise + '</div><div class="lb-gap">' + (akt ? 'Live · Schaden' : 'Letzter Drache') + '</div>' +
+        (evRangHtml(rk, v => fmtCompact(v)) || '<div class="war-empty">' + (akt ? 'Noch hat niemand angegriffen.' : 'Noch kein Drache gewesen.') + '</div>');
+}
+function evAlleHtml() {
+    const b = dbossEnsure(), rec = barbRec('player'), near = barbNearest();
+    const boss = evKarte('crown', 'Tagesboss · ' + escapeHtml(b.name), b.hp <= 0 ? 'Besiegt · neuer in ' + evUhr(Date.now() + msToMidnight()) : rec.h + ' / ' + dbossHitsMax() + ' Angriffe heute',
+        '<div class="barb-hp"><i style="width:' + (b.hp / b.max * 100).toFixed(1) + '%"></i><span>' + (b.hp <= 0 ? 'Besiegt' : fmtCompact(b.hp) + ' Leben') + '</span></div>' +
+        (dbossOnMap() ? '<button class="btn btn--secondary btn--sm" type="button" data-ev-go="boss">' + icon('send') + '<span>Zum Tagesboss</span></button>' : ''));
+    const lager = evKarte('attack', 'Barbaren-Lager', rec.n + ' / ' + barbTagMax() + ' heute', '<div class="field-lines"><span>Freigeschaltet</span><b>bis Stufe ' + Math.min(BARB_MAX_L, rec.b + 1) + '</b><span>Neuer Tag in</span>' + evUhr(Date.now() + msToMidnight()) + '</div>' +
+        (near ? '<button class="btn btn--secondary btn--sm" type="button" data-ev-go="camp">' + icon('send') + '<span>Nächstes Lager · Stufe ' + near.L + '</span></button>' : ''));
+    return evTourHtml(true) + evInvHtml(true) + evDrHtml(true) + boss + lager;
+}
+function renderEvents() {
+    evRenderAt = Date.now();
+    for (const b of document.querySelectorAll('#eventTabs [data-etab]')) { const on = b.dataset.etab === evTab; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }
+    liveHtml(document.getElementById('eventBody'), evTab === 'tour' ? evTourHtml() : evTab === 'inv' ? evInvHtml() : evTab === 'drache' ? evDrHtml() : evAlleHtml());
+}
+function openEvents(tab) { closeAllPopups(); if (barbView) closeBarbSheet(); evTab = tab || 'alle'; renderEvents(); openPanel(eventPopup); document.getElementById('eventBody').scrollTop = 0; }
+document.getElementById('eventBtn').addEventListener('click', e => { e.stopPropagation(); closeIslandPopup(); if (fieldSheetId) closeFieldSheet(); isPanelOpen(eventPopup) ? closePanel(eventPopup) : openEvents(); });
+document.getElementById('eventCloseBtn').addEventListener('click', () => closePanel(eventPopup));
+document.getElementById('eventTabs').addEventListener('click', e => { const b = e.target.closest('[data-etab]'); if (!b) return; evTab = b.dataset.etab; renderEvents(); document.getElementById('eventBody').scrollTop = 0; });
+eventPopup.addEventListener('click', e => {
+    const tb = e.target.closest('[data-ev-tab]'); if (tb) { evTab = tb.dataset.evTab; renderEvents(); document.getElementById('eventBody').scrollTop = 0; return; }
+    if (e.target.closest('[data-ev-rank]')) { openRankings('tour'); return; }
+    const pr = e.target.closest('[data-profile]'); if (pr) { closePanel(eventPopup); openRulerProfile(pr.dataset.profile); return; }
+    const go = e.target.closest('[data-ev-go]'); if (!go) return; const k = go.dataset.evGo;
+    let t = null, v = null;
+    if (k === 'drache') { t = drOnMap(); v = { kind: 'drache' }; }
+    else if (k === 'boss') { t = dbossOnMap(); v = { kind: 'boss' }; if (t && !isCellOpen(t.x, t.y)) { flashHint('Der Tagesboss steht im Nebel – erforsche zuerst das Gebiet.', 3500); return; } }
+    else if (k === 'camp') { t = barbNearest(); v = t && { kind: 'camp', id: t.id }; }
+    else if (k === 'inv') { const I = invAktiv(), a = I && I.armies.filter(x => islandOwnerOf(x.tid) === 'player').sort((x, y) => x.at1 - y.at1)[0]; if (a) { t = invPos(a); v = { kind: 'inv', id: a.id }; } }
+    if (!t) { flashHint('Gerade nichts davon auf der Karte.', 2500); return renderEvents(); }
+    closePanel(eventPopup); flyTo(t.x, t.y, k === 'drache' ? { zoom: .015, screenY: viewH * .3 } : { zoom: Math.max(mapState.zoom, .02), screenY: viewH * .2 }); openBarbSheet(v);
+});
+// die Leiste unter dem HUD: Invasion bald/läuft, Drache bald/da, Turnier-Ankündigung am Freitag
+function evChipsHtml(now) {
+    let h = ''; const ip = evPlanVon('inv'), I = invAktiv(now), D = drAktiv(now), dp = evPlanVon('dr'), w = tourWin(now);
+    if (I) { const n = I.armies.filter(a => islandOwnerOf(a.tid) === 'player').length;
+        h += '<button type="button" class="mb-chip is-warn" data-mb="ev-inv">' + icon('defense') + '<span>Invasion · Welle ' + Math.min(INV_WELLEN, I.welle) + '/' + INV_WELLEN + '</span>' + (n ? '<b>' + n + ' auf dich</b>' : '<b>' + fmtNum(Math.floor(I.pts.player || 0)) + ' P.</b>') + '</button>'; }
+    else if (ip.start > now && ip.start - now <= 30 * 60000) h += '<button type="button" class="mb-chip is-warn" data-mb="ev-inv">' + icon('defense') + '<span>Barbaren-Invasion in</span><i data-ev-bis="' + ip.start + '"></i></button>';
+    if (D) h += '<button type="button" class="mb-chip is-drache" data-mb="ev-drache">' + icon('star') + '<span>Drache</span><b>' + Math.ceil(D.hp / D.max * 100) + ' %</b><i data-ev-bis="' + D.end + '"></i></button>';
+    else if (dp.start > now && dp.start - now <= 30 * 60000) h += '<button type="button" class="mb-chip is-drache" data-mb="ev-drache">' + icon('star') + '<span>Der Drache kommt in</span><i data-ev-bis="' + dp.start + '"></i></button>';
+    if (!w.on && w.start > now && w.start - now <= 864e5) { const th = evThemaAm(now); h += '<button type="button" class="mb-chip is-tour" data-mb="ev-tour">' + icon(th.ic) + '<span>Ab Samstag: ' + th.name + '</span><i data-ev-bis="' + w.start + '"></i></button>'; }
+    return h;
+}
 // ===== ARMEEN AUF DER KARTE: troops that stand out in the open instead of in a base. Gather them from several
 // bases at one spot, walk them anywhere and give orders: move, attack a base, take a field, join another army,
 // go home. Out there they have no walls and produce nothing - and bots that notice them may come for them.
@@ -9892,7 +10361,7 @@ function closeTopmostPanel() {           // scrim click + Escape
   if (closeCity()) return;
   if (isPanelOpen(chestItemPopup)) return chestItemCloseBtn.click();
   if (isPanelOpen(popup)) return closeBtn.click();
-  for (const [pid, closeId] of [['settingsPopup','settingsCloseBtn'],['rulerPopup','rulerCloseBtn'],['rankPopup','rankCloseBtn'],['profilePopup','profileCloseBtn'],['battleLogPopup','battleLogCloseBtn'],['goalsPopup','goalsCloseBtn'],['shopPopup','shopCloseBtn']])
+  for (const [pid, closeId] of [['settingsPopup','settingsCloseBtn'],['eventPopup','eventCloseBtn'],['rulerPopup','rulerCloseBtn'],['rankPopup','rankCloseBtn'],['profilePopup','profileCloseBtn'],['battleLogPopup','battleLogCloseBtn'],['goalsPopup','goalsCloseBtn'],['shopPopup','shopCloseBtn']])
     if (isPanelOpen(document.getElementById(pid))) return document.getElementById(closeId).click();
   if (multiAttackMode) return multiAttackCancelBtn.click();
 }
@@ -9915,6 +10384,7 @@ function closeAllPopups() {
     closePanel(shopPopup);
     closePanel(document.getElementById('rulerPopup'));
     closePanel(document.getElementById('rankPopup'));
+    closePanel(document.getElementById('eventPopup'));
     if (!document.getElementById('lookSheet').hidden) closeLookSheet();
     if (!document.getElementById('heroHall').hidden) closeHeroHall();
     if (!barbSheetEl.hidden) closeBarbSheet();
@@ -10438,7 +10908,7 @@ upgradeBtn.addEventListener('click', () => {
     coins -= cost;
     islandLevels[popupIslandId] = level + 1;
     ausbauMerken(popupIslandId, level + 1);
-    alsBefehl('ausbau', { insel: popupIslandId, stufe: level + 1 });
+    if (!alsBefehl('ausbau', { insel: popupIslandId, stufe: level + 1 })) evPunkte('bau', 'player', 2 + level + 1);   // (sonst zählt es der Weltrechner)
     updateHud();
     saveGame();
     flashHint(islandTitle(islandById[popupIslandId]) + ' ist jetzt Stufe ' + (level + 1) + '.', 1800);
@@ -11066,6 +11536,7 @@ if (window.WELT) {
         if (k.has('openWaterBarbMarches')) barbMarches = PJ('openWaterBarbMarches') || [];
         if (k.has('openWaterBarbWho')) barbWho = PJ('openWaterBarbWho') || {};
         if (k.has('openWaterDayBoss')) dayBoss = PJ('openWaterDayBoss');
+        if (k.has('openWaterEvents')) evState = PJ('openWaterEvents') || {};
         if (k.has('openWaterArmies')) { const a = PJ('openWaterArmies') || {}; armies = a.armies || []; armyJoins = a.joins || []; armyRaids = a.raids || []; }
         if (k.has('openWaterBotState')) { if (botSaveTimer) { clearTimeout(botSaveTimer); botSaveTimer = null; } botState = null; loadBotState(); }
         if (k.has('openWaterBotCoins')) { botCoins = PJ('openWaterBotCoins') || {}; for (const bot of BOT_DEFS) if (!botCoins[bot.id]) botCoins[bot.id] = 0; }
@@ -11083,7 +11554,7 @@ if (window.WELT) {
         try { saveThrone(); saveTour(); saveBounty(); } catch (e) {}
         try { if (titleState) store.set('openWaterTitles', JSON.stringify(titleState)); } catch (e) {}
         try { if (bossLoaded) saveBoss(); else if (wander !== undefined) saveWander(); } catch (e) {}
-        try { saveFields(); saveBarb(); saveArmies(); } catch (e) {}
+        try { saveFields(); saveBarb(); saveArmies(); if (evDirty) saveEv(); } catch (e) {}
         try { wacheRunde(); } catch (e) { console.warn('Schummel-Schutz:', e); }   // (unten) Konten der Spieler + wartende Befehle
     };
     // Weltrechner geworden / nicht mehr
@@ -11265,7 +11736,7 @@ if (window.WELT) {
         if (L >= MAX_BASE_LEVEL) return 'nein';
         if (b.stufe <= L) return 'nein';                                   // doppelt geschickt – nichts zu tun
         if (b.stufe > L + 1) { warnen(who, 'ausbau', 'Ausbau springt: ' + islandTitle(islandById[b.insel]) + ' von Stufe ' + L + ' auf ' + b.stufe + ' – erlaubt ist nur +1.', b.stufe - L); return 'nein'; }
-        const m = wacheSehen(who), kosten = upgradeCost(L);
+        const m = wacheSehen(who), kosten = upgradeCost(L) * (zahlOk(b.at) && Date.now() - b.at < 120000 && evThemaAm(b.at).k === 'bau' && tourOn(b.at) ? .8 : 1);   // (Bauherr: bezahlt hat er den Preis von da)
         if (wacheBezahlen(who, m, kosten)) return 'ok';
         return ende ? 'pleite' : 'warten';
     }
@@ -11314,7 +11785,7 @@ if (window.WELT) {
             while (l.length) {
                 const x = l[0], ende = now >= x.bis;
                 if (art === 'ausbau') { const r = ausbauPruefen(who, x.b, ende); if (r === 'warten') break;
-                    if (r === 'ok') { islandLevels[x.b.insel] = (islandLevels[x.b.insel] || 1) + 1; saveGame(); requestRender(); }
+                    if (r === 'ok') { islandLevels[x.b.insel] = (islandLevels[x.b.insel] || 1) + 1; evPunkte('bau', who, 2 + islandLevels[x.b.insel]); saveGame(); requestRender(); }
                     if (r === 'pleite') {                  // nach 60 s immer noch nicht bezahlbar: ablehnen – die weiteren Stufen dieser Basis auch
                         const L = islandLevels[x.b.insel] || 1, m2 = wacheSehen(who), weitere = l.filter((y, i) => i > 0 && y.b.insel === x.b.insel).length;
                         for (let i = l.length - 1; i > 0; i--) if (l[i].b.insel === x.b.insel) l.splice(i, 1);
@@ -11406,10 +11877,16 @@ if (window.WELT) {
         },
         feldHeim(who, b) { const f = resFields.find(x => x.id === b.feld), st = f && fieldInfo(f); if (st && st.occ && st.occ.who === who) { fieldGoHome(f, st, Date.now()); saveFields(); } },
         lager(who, b) {
-            if (!inselOk(b.home) || !gehoert(b.home, who) || (b.k !== 'c' && b.k !== 'b')) return;
+            if (!inselOk(b.home) || !gehoert(b.home, who) || !['c', 'b', 'i', 'd'].includes(b.k)) return;
+            if (b.k === 'i' || b.k === 'd') {                // Events: eine Barbaren-Armee abfangen / den Drachen angreifen
+                if (zuOft(wm(who), 'event', 40, 3600000)) { warnen(who, 'lager', 'Über 40 Event-Angriffe in einer Stunde – abgelehnt.'); return; }
+                if (b.k === 'i' && (!kennungOk(b.tid) || !invArmee(b.tid))) return;
+                if (b.k === 'd') { const D = drAktiv(); if (!D) return; if ((D.hits[who] || 0) >= DR_HITS) { warnen(who, 'lager', 'Mehr als ' + DR_HITS + ' Angriffe auf den Drachen – abgelehnt.'); return; } }
+                const n = truppenVon(b.home, b.n); if (n >= 1) barbSend(who, b.home, b.k, b.k === 'i' ? b.tid : null, n, heldOk(b.held)); return;
+            }
             // Tagesgrenzen wie auf dem Handy (Boss 10 Angriffe, Lager 20 pro Tag) – auch, was gerade unterwegs ist, zählt mit
             // (Boss: der Zähler steigt schon beim Losschicken; Lager: beim Sieg – darum zählen dort die unterwegs mit, wie barbLeft)
-            if (b.k === 'b' ? barbRec(who).h >= DBOSS_HITS : barbLeft(who) <= 0) { warnen(who, 'lager', 'Tagesgrenze für ' + (b.k === 'b' ? 'den Boss' : 'Lager') + ' überschritten – abgelehnt.'); return; }
+            if (b.k === 'b' ? barbRec(who).h >= dbossHitsMax() : barbLeft(who) <= 0) { warnen(who, 'lager', 'Tagesgrenze für ' + (b.k === 'b' ? 'den Boss' : 'Lager') + ' überschritten – abgelehnt.'); return; }
             if (b.k === 'c') { const c = barbCampById(b.tid); if (!c || !barbOpenFor(who, c.L)) return; }   // nur Lager, die schon freigespielt sind
             const n = truppenVon(b.home, b.n); if (n >= 1) barbSend(who, b.home, b.k, b.k === 'c' ? b.tid : null, n, heldOk(b.held));
         },
@@ -11506,6 +11983,12 @@ if (window.WELT) {
         if (e.hint) flashHint(e.hint, 5000);
         if (x.targetId !== undefined && islandById[x.targetId]) spawnBattleFx(x.targetId, x.type === 'attack' ? !!x.won : !x.won || !!x.capitalHolds, x.type === 'attack' ? (x.won ? 'Sieg' : 'Niederlage') : (x.won ? (x.capitalHolds ? 'Hauptstadt hält' : 'Basis verloren') : 'Verteidigt'), x.botName || x.defenderName || '');
         sfx(x.won === (x.type === 'attack') ? 'win' : 'warn');
+    });
+    WELT.beiNachricht.push(function (e) {             // Preis aus einem Event (Turnier, Invasion, Drache): ins Abholfach, auch Kisten
+        if (!e || e.art !== 'evPreis') return;
+        const z = (v, max) => typeof v === 'number' && Number.isFinite(v) && v > 0 ? Math.min(max, Math.round(v)) : 0;
+        const crate = Number.isInteger(e.crate) && e.crate >= 0 && e.crate <= 4 ? e.crate : -1, src = INBOX_SRC[e.src] ? e.src : 'tour', title = String(e.title || '').slice(0, 80);
+        if (inboxAdd({ src, title, gems: z(e.gems, 5000), sh: z(e.sh, 100), crate }) || crate >= 0 || e.sh > 0) { sfx('coin'); flashHint(title + ': dein Preis liegt unter Ziele → Belohnung.', 5000); }
     });
     WELT.beiNachricht.push(function (e) {             // Nebel freischalten (vom Admin): die ganze Karte ist aufgedeckt
         if (!e || e.art !== 'nebel') return;
