@@ -1460,10 +1460,13 @@ try {
     combatLog = [];
 }
 function addCombatLogEntry(entry) {
-    entry.at = Date.now();
+    // Zeit des Kampfes: ein Bericht vom Weltrechner bringt sie mit (kam er erst später an, z. B. nach der Nacht) – sonst jetzt
+    const jetzt = Date.now();
+    entry.at = Number.isFinite(entry.at) && entry.at > jetzt - 30 * 86400000 ? Math.min(entry.at, jetzt) : jetzt;
     entry.names = {};                                // names as they were then (a boss may camp there later)
     for (const k of ['targetId', 'sourceId', 'toId', 'fromId']) if (entry[k] !== undefined && islandById[entry[k]]) entry.names[entry[k]] = islandTitle(islandById[entry[k]]);
-    combatLog.unshift(entry);
+    let pos = 0; while (pos < combatLog.length && (combatLog[pos].at || 0) > entry.at) pos++;   // neueste zuerst, auch wenn Berichte spät ankommen
+    combatLog.splice(pos, 0, entry);
     if (combatLog.length > COMBAT_LOG_LIMIT) combatLog.length = COMBAT_LOG_LIMIT;
     store.set('openWaterCombatLog', JSON.stringify(combatLog));
     // an open battle log shows the new entry right away
@@ -6417,7 +6420,12 @@ let hiddenAt = 0, hiddenSnap = null;
 document.addEventListener('visibilitychange', () => {
     if (document.hidden) { hiddenAt = Date.now(); hiddenSnap = empireSnapshot(); saveLeave(); return; }
     if (hiddenAt && hiddenSnap && Date.now() - hiddenAt >= AWAY_MIN_MS) {              // the tab kept running: just show what happened since it was hidden
-        welcomeFrom = hiddenSnap; setTimeout(showWelcome, 600);
+        const snap = hiddenSnap;
+        if (window.WELT && !WELT.leiter && !SYSTEM) {   // Zuschauer: erst die Pulse/Berichte der Abwesenheit abwarten (höchstens 20 s)
+            const p0 = WELT.pulse || 0, los = Date.now();
+            const warten = () => { if (((WELT.pulse || 0) < p0 + 2 || WELT.nachrichtenOffen) && Date.now() - los < 20000) { setTimeout(warten, 500); return; } welcomeFrom = snap; showWelcome(); };
+            setTimeout(warten, 500);
+        } else { welcomeFrom = snap; setTimeout(showWelcome, 600); }
     }
     hiddenAt = 0; hiddenSnap = null;
 });
@@ -11356,6 +11364,7 @@ if (window.WELT) {
     WELT.bericht = function (an, eintrag, hint) {
         if (!an || !botById[an] || !botById[an].mensch) return;
         const e = Object.assign({}, eintrag);
+        if (!Number.isFinite(e.at)) e.at = Date.now();           // wann der Kampf war (der Weltrechner hat die Server-Uhr)
         for (const f of ['botId', 'defenderId']) if (e[f] !== undefined) e[f] = e[f] === null ? null : neutralId(e[f]);
         if (e.botName === undefined && e.botId) e.botName = (botById[lokalId(e.botId)] || {}).name;
         WELT.nachricht(parseInt(an.slice(1), 10), { art: 'bericht', eintrag: e, hint });

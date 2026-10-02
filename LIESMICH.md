@@ -521,6 +521,13 @@ geplante Verlegung, Handy-Reaktionszeit, Schummel-Merkliste), keine Münzen/Verw
 - Hinweise oben: bis 4 Zeilen statt 2 (lange Texte waren abgeschnitten). Namensfeld: dunkle Schrift auf Weiß.
   Angriffs-Warnungen: die Merkliste wird aufgeräumt.
 
+**Behoben (2.10. morgens, Alexander):**
+- Kampfberichte der Nacht standen alle mit der Uhrzeit, zu der man zurückkam („vor 3 s“). Jetzt bekommt jeder Bericht beim
+  Weltrechner die echte Kampfzeit mit (`WELT.bericht` → `at`), und das Kampflog wird nach Zeit sortiert.
+- Begrüßung „Du warst … weg“, wenn die App im Hintergrund lag (iPhone): wartet jetzt erst auf die Berichte der Nacht
+  (wie beim Neustart der App). Hinweis: Sie kommt erst nach der täglichen Belohnung („Abholen“ → „Weiter“). Ist das
+  Spiel auf einem anderen Gerät/Tab offen geblieben, gilt man als „nicht weg“.
+
 **Geprüft und sicher:** SQL-Injection (überall Platzhalter), Passwörter (bcrypt), Login-Cookie (HttpOnly, nur Hash in der
 DB), Admin (feste Nummer + Formular-Zeichen), keine Datei gibt Geheimnisse preis (config.php 0 Bytes, Weltrechner-Dateien
 404, Ordnerlisten 403), keine Daten anderer Spieler in Antworten, Push-Adressen gegen 16 Umgehungsversuche geprüft.
