@@ -1208,7 +1208,7 @@ const RARITY_DEFS = [
   { key: 'rot',   name: 'Rot',   label: 'Mythisch',     color: '#ee5046' }
 ];
 const ITEM_MAX_LEVEL = 20;
-const RARITY_DROP_WEIGHTS = [60, 25, 11, 4, 0, 0]; // grau..rot – Gold und Rot gibt es NICHT aus Kisten (2.10.), nur durch Zusammenlegen oder als Hauptpreis (Kiste „mind. Legendär“)
+const RARITY_DROP_WEIGHTS = [60, 25, 11, 4, 0, 0]; // grau..rot – Gold und Rot gibt es NICHT aus Kisten (2.10.), nur durch Zusammenlegen (seit 2.10. auch kein Preis mehr mit „mind. Legendär“)
 const CRATE_GEM_COST = 30;   // (2.10.: vorher 5 – Gold-Ausrüstung kam zu schnell)
 const COMBINE_COUNT = 3;
 const RARITY_PCT_PER_SCORE = 0.15;
@@ -6382,7 +6382,7 @@ document.getElementById('throneShop').addEventListener('click', e => { const b =
 // 30 a fight and on average no more than the throne: 10 a minute, so many fights can't bury holding the middle). When it ends the places are paid once
 // (also when you were away), the winner wears "Turniersieger" with a purple-gold ring for 7 days. The same for everyone.
 const TOUR_PTS_MEGA = 10, TOUR_PTS_GUARD = 3, TOUR_KILL_PER = 1000, TOUR_KILL_MAX = 30, TOUR_KILL_MIN = 10, TOUR_CHAMP_MS = 7 * 86400000, TOUR_TOP = 10;
-const TOUR_PRIZES = [{ to: 1, gems: 1000, sh: 30, crate: 4, t: '1.' }, { to: 3, gems: 500, sh: 15, crate: 3, t: '2.–3.' }, { to: 10, gems: 200, sh: 6, crate: 2, t: '4.–10.' }, { to: Infinity, gems: 50, sh: 2, crate: -1, t: 'Alle anderen' }];   // (Paket B: maßvoller, Gold-Kiste nur Platz 1)
+const TOUR_PRIZES = [{ to: 1, gems: 1000, sh: 30, crate: 3, t: '1.' }, { to: 3, gems: 500, sh: 15, crate: 3, t: '2.–3.' }, { to: 10, gems: 200, sh: 6, crate: 2, t: '4.–10.' }, { to: Infinity, gems: 50, sh: 2, crate: -1, t: 'Alle anderen' }];   // (Turnier ist raus; nie Legendär)
 const midZoneIds = new Set(islands.filter(i => { const lm = landmasses[i.landmassId]; return i.type === 'megaTemple' || i.guardian || i.type === 'gate' && (i.gateKind === 'throne' || i.gateKind === 'guardian') || !!lm && (lm.tier === 'throne' || lm.tier === 'guardian'); }).map(i => i.id));
 var tourState = (() => { try { return JSON.parse(store.get('openWaterTourney')) || null; } catch (e) { return null; } })() || {};
 tourState.pts = tourState.pts || {}; tourState.hist = tourState.hist || []; tourState.by = tourState.by || {}; tourState.kb = tourState.kb || {};   // by: who got what for what (thr / tmp / fig), kb: fight-point allowance
@@ -9811,7 +9811,7 @@ const barbTroopsOf = L => niceRound(2000 * Math.pow(2, L - 1));                 
 const barbLootOf = L => niceRound(barbTroopsOf(L) * .6 + 500 * L * L);                    // coins for a win (+ Angriff: Gold per warrior)
 const barbTier = L => L >= 21 ? 4 : L >= 15 ? 3 : L >= 8 ? 2 : 1;                         // badge colour like the gear rarities
 const DBOSS_KINDS = [{ k: 'kraken', name: 'Kraken Thalor', col: '#3fb0c4' }, { k: 'giant', name: 'Steinriese Gorm', col: '#b39b72' }, { k: 'dragon', name: 'Feuerdrache Ignar', col: '#ee6a34' }, { k: 'wraith', name: 'Nebelkönig Morvan', col: '#9d86ea' }];
-const DBOSS_PRIZE = [{ gems: 300, crate: 4, sh: 30 }, { gems: 200, crate: 3, sh: 20 }, { gems: 150, crate: 3, sh: 15 }, { gems: 80, crate: 2, sh: 10 }, { gems: 30, crate: -1, sh: 5 }];   // 1 · 2 · 3 · 4-10 · everyone else who hit it
+const DBOSS_PRIZE = [{ gems: 300, crate: 3, sh: 30 }, { gems: 200, crate: 3, sh: 20 }, { gems: 150, crate: 3, sh: 15 }, { gems: 80, crate: 2, sh: 10 }, { gems: 30, crate: -1, sh: 5 }];   // 1 · 2 · 3 · 4-10 · everyone else who hit it
 const dbossPrizeOf = i => DBOSS_PRIZE[i < 3 ? i : i < 10 ? 3 : 4];
 const barbLoad = (k, d) => { try { return JSON.parse(store.get(k)) || d; } catch (e) { return d; } };
 let barbState = barbLoad('openWaterBarb', { camps: [], n: 0, next: 0 }), barbMarches = barbLoad('openWaterBarbMarches', []), barbWho = barbLoad('openWaterBarbWho', {}), dayBoss = barbLoad('openWaterDayBoss', null), barbSaveAt = 0;

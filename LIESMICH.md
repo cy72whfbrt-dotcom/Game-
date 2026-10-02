@@ -1117,6 +1117,10 @@ Alles in spiel.js (Abschnitt „THE CITY, ISOMETRIC“), nur Aussehen – Gebäu
 - Boss-Jagd-Bonus heißt jetzt „Kriegsherr doppelt so oft“; Erfolge „Bezwinger“/„Bossjäger“ zählen den Kriegsherrn.
 - Nebenbei: das Beute-Fenster nach dem Kriegsherrn zeigte „mind. Legendär“, obwohl es eine epische Kiste ist – behoben.
 
+## 32. Nirgends mehr eine Legendär-Kiste als Preis (Alexander 2.10.) – NICHT hochgeladen
+- Tagesboss Platz 1 bekommt jetzt eine Kiste „mind. Episch“ statt „mind. Legendär“ (`DBOSS_PRIZE`), Rest wie vorher.
+- Auch der (abgeschaltete) Turnier-Preis steht auf Episch. Legendär und Mythisch gibt es nur noch durch Zusammenlegen (3 → 1).
+
 ## 30. VIP KOMPLETT RAUS (Alexander 2.10.: „VIP find ich totaler Müll“) – NICHT hochgeladen
 - Weg: VIP-Stufen, Spieltage zählen (`openWaterVip`), VIP-Tageskiste, „Neue VIP-Stufe“-Hinweis, VIP-Zeile im Profil,
   Bauzeit −2 %/Stufe (Stadt und Forschung bauen jetzt für alle gleich lang).
