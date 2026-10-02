@@ -4748,8 +4748,7 @@ function renderProfile(live) {                  // live = the per-second refresh
         '<div class="statRow"><span>' + icon('star') + 'Skillpunkte</span><b>' + fmtNum(skillPoints) + '</b></div>' +
         '<div class="statRow"><span>' + icon('gem') + 'Gems</span><b>' + fmtTile(Math.floor(gems)) + '</b></div>' +
         (activeCount > 0 ? '<div class="statRow"><span>' + icon('hourglass') + 'Unterwegs</span><b>' + fmtNum(activeCount) + '</b></div>' : '') +
-        '<div class="statRow"><span>' + icon('home') + 'Heimat</span><b>' + homeLabel + '</b></div>' +
-        '<div class="statRow"><span>' + icon('crown') + 'VIP ' + vipStufe() + '</span><b>' + vipText() + '</b></div>');
+        '<div class="statRow"><span>' + icon('home') + 'Heimat</span><b>' + homeLabel + '</b></div>');
     updateHudPlayer();
 }
 
@@ -5752,25 +5751,7 @@ battleLogCloseBtn.addEventListener('click', () => {
 
 // ===== AUFGABEN (daily quests) + TÄGLICHE BELOHNUNG =====
 
-// ===== VIP durch Spielen (Idee 39): jeder Tag, an dem du spielst, zählt. Kein Geld – nur Treue. =====
-// Vorteile: Bauzeit in der Stadt −2 % je Stufe, jeden Tag eine VIP-Kiste ins Abholfach (Münzen, ab VIP 5 auch
-// eine Ausrüstungskiste). Nur dein eigener Spielstand (nicht der Weltrechner).
-const VIP_TAGE = [0, 1, 3, 7, 14, 21, 30, 45, 60, 90, 120];   // so viele Spieltage braucht VIP 1 … 10
-var vipState = (() => { try { return JSON.parse(store.get('openWaterVip')) || null; } catch (e) { return null; } })() || { tage: 0, letzter: '', kiste: '' };
-function vipStufe() { let s = 0; for (let i = 1; i < VIP_TAGE.length; i++) if ((vipState.tage || 0) >= VIP_TAGE[i]) s = i; return s; }
-function vipText() { const s = vipStufe(); return s >= 10 ? 'höchste Stufe' : 'noch ' + (VIP_TAGE[s + 1] - vipState.tage) + (VIP_TAGE[s + 1] - vipState.tage === 1 ? ' Tag' : ' Tage') + ' bis VIP ' + (s + 1); }
-function vipTag() {                                  // einmal pro Tag: Spieltag zählen, VIP-Kiste ins Abholfach
-    if (typeof SYSTEM !== 'undefined' && SYSTEM) return;
-    const k = todayKey(); let neu = false;
-    if (vipState.letzter !== k) { const vor = vipStufe(); vipState.tage = (vipState.tage || 0) + 1; vipState.letzter = k; neu = vipStufe() > vor; }
-    if (vipState.kiste !== k && vipStufe() > 0) {
-        const s = vipStufe(), L = Math.max(playerLvl, 1);
-        inboxAdd({ src: 'vip', title: 'VIP-Tageskiste (VIP ' + s + ')', coins: niceRound(levelRewardCoins(L) * 0.08 * s), crate: s >= 5 ? 0 : -1 });   // (Münzen statt Truppen: Truppen-Geschenke prüft der Weltrechner, VIP kennt er nicht)
-        vipState.kiste = k;
-    }
-    store.set('openWaterVip', JSON.stringify(vipState));
-    if (neu) afterSplash(() => setTimeout(() => flashHint('Neue VIP-Stufe: VIP ' + vipStufe() + ' – Bauzeit −' + vipStufe() * 2 + ' %, größere Tageskiste.', 5000), 9000));
-}
+// (VIP ist seit 2.10. ganz raus – Alexander)
 function todayKey(d) {
     d = d || new Date();
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -5961,7 +5942,7 @@ function inboxList() { if (!inboxState) { try { inboxState = JSON.parse(store.ge
 function inboxSave() { store.set('openWaterInbox', JSON.stringify(inboxList())); }
 const INBOX_PILE = { fight: 1, bounty: 1 };   // these pile up in one entry each
 const inboxPiles = x => !!INBOX_PILE[x.src] && !(x.crate >= 0) && !(x.kiste >= 0) && !x.schild;   // a crate keeps its own entry (one entry holds one crate)
-const INBOX_SRC = { gift: { ic: 'gem', t: 'Geschenk' }, fight: { ic: 'attack', t: 'Kampfbeute' }, tour: { ic: 'crown', t: 'Wochenend-Turnier' }, woche: { ic: 'rank', t: 'Wochen-Event' }, boss: { ic: 'star', t: 'Tagesboss' }, wboss: { ic: 'star', t: 'Weltboss' }, bounty: { ic: 'losses', t: 'Kopfgeld' }, inv: { ic: 'defense', t: 'Barbaren-Invasion' }, drache: { ic: 'star', t: 'Drache' }, vip: { ic: 'crown', t: 'VIP-Tageskiste' }, haendler: { ic: 'coin', t: 'Händler' } };
+const INBOX_SRC = { gift: { ic: 'gem', t: 'Geschenk' }, fight: { ic: 'attack', t: 'Kampfbeute' }, tour: { ic: 'crown', t: 'Wochenend-Turnier' }, woche: { ic: 'rank', t: 'Wochen-Event' }, boss: { ic: 'star', t: 'Tagesboss' }, wboss: { ic: 'star', t: 'Weltboss' }, bounty: { ic: 'losses', t: 'Kopfgeld' }, inv: { ic: 'defense', t: 'Barbaren-Invasion' }, drache: { ic: 'star', t: 'Drache' }, vip: { ic: 'crown', t: 'Tageskiste' }, haendler: { ic: 'coin', t: 'Händler' } };
 function inboxAdd(o) {                              // o: { src, title?, gems, coins, sh (hero shards), crate (lowest rarity, -1 none) } - all fights' spoils pile up in one entry
     o = Object.assign({ gems: 0, coins: 0, sh: 0, crate: -1, tr: 0, n: 1 }, o); o.gems = Math.round(o.gems); o.coins = Math.round(o.coins); o.tr = Math.round(o.tr);
     if (!(o.gems > 0 || o.coins > 0 || o.sh > 0 || o.crate >= 0 || o.tr > 0 || o.kiste >= 0 || o.schild > 0)) return 0;   // (kiste: genau diese Seltenheit, schild: Friedensschild Std. – Händler)
@@ -6188,7 +6169,6 @@ function maybeShowDaily() {
     showDailyModal();
 }
 afterSplash(() => setTimeout(maybeShowDaily, 500));
-afterSplash(() => { vipTag(); setInterval(vipTag, 10 * 60000); });
 
 // ===== ANLEITUNG für neue Spieler (Idee 45): 6 kurze Schritte unten am Bildschirm, jeder hakt sich von selbst ab =====
 const ANLEITUNG = [
@@ -6219,7 +6199,7 @@ function anleitungZeigen() {
     setText(document.getElementById('anleitungText'), ANLEITUNG[anleitung.schritt][0]);
 }
 document.getElementById('anleitungWeg').addEventListener('click', () => { anleitung.schritt = ANLEITUNG.length; anleitungSpeichern(); document.getElementById('anleitung').hidden = true; flashHint('Anleitung übersprungen – Hilfe gibt es unter Profil → Einstellungen.', 3500); });
-afterSplash(() => setTimeout(() => { anleitungZeigen(); setInterval(anleitungZeigen, 1000); }, 1500));   // VIP: Spieltag zählen (auch wenn das Spiel über Mitternacht offen bleibt)
+afterSplash(() => setTimeout(() => { anleitungZeigen(); setInterval(anleitungZeigen, 1000); }, 1500));
 
 // Shop: buy gem crates, opens straight into a result readout.
 const shopBtn = document.getElementById('shopBtn');
@@ -7878,12 +7858,12 @@ function cityCost(id, level) {                    // coins to go from `level` to
     if (id === 'keep') return niceRound(2000 * Math.pow(1.85, level - 1));   // Burg-Stufe (dazu Rohstoffe: aufbau.js)
     return niceRound(500 * Math.pow(1.9, level));
 }
-function cityTimeRoh(id, level) {                 // build time for level -> level + 1 (before VIP) – auch der Weltrechner prüft damit (Hauptbuch)
+function cityTimeRoh(id, level) {                 // build time for level -> level + 1 – auch der Weltrechner prüft damit (Hauptbuch)
     // fast at first (20 s … 1,5 h up to level 12), then +20 % per level, never more than 7 days - like the big strategy games
     return id === 'keep' ? (AUF ? AUF.burgZeitRoh(level) : 60 * Math.pow(1.55, level - 1)) : Math.min(7 * 86400, level <= 12 ? 20 * Math.pow(1.6, level) : 20 * Math.pow(1.6, 12) * Math.pow(1.2, level - 12));   // die Burg: eigene, längere Zeiten
 }
-function cityTimeSec(id, level) {                 // VIP: −2 % je Stufe (höchstens −20 %)
-    return Math.round((1 - (typeof vipStufe === 'function' ? vipStufe() : 0) * 0.02) * cityTimeRoh(id, level));
+function cityTimeSec(id, level) {
+    return Math.round(cityTimeRoh(id, level));
 }
 function cityClampBuild(b, now) {                 // a build started under the old, far too long times ends by the new rule at the latest
     if (b && b.endsAt - (b.startedAt || now) > cityTimeSec(b.id, b.to - 1) * 1000) b.endsAt = Math.min(b.endsAt, (b.startedAt || now) + cityTimeSec(b.id, b.to - 1) * 1000);
@@ -10198,10 +10178,10 @@ barbSheetEl.addEventListener('click', e => {
     barbHero = null; barbHero2 = null; closeBarbSheet();
 });
 // ===== EVENTS (Paket B): Wochen-Event, Barbaren-Invasion, Drache – alles rechnet der Weltrechner, Zuschauer sehen es =====
-// Zeitpläne (Ortszeit des Weltrechners): Wochen-Event Mo–So mit wechselndem Thema (das Wochenend-Turnier um die Mitte ist seit
+// Zeitpläne (Ortszeit des Weltrechners): Wochen-Event Mo–Fr mit wechselndem Thema (Wochenende frei) (das Wochenend-Turnier um die Mitte ist seit
 // 2.10. ganz raus, Alexander), Invasion alle 3 Tage 20:00–21:00, Drache sonntags 19:00–22:00. Welt-Schlüssel: openWaterEvents (evState, Wochen-Event in evState.wo).
 var EV_TEST = null;   // NUR für Tests in einer lokalen Kopie: { inv: Startzeit, dr: Startzeit } – im echten Spiel immer null
-// ---- Themen: [0] war das Turnier um die Mitte (raus), die anderen 4 wechseln wöchentlich im Wochen-Event (Mo–So): wofür es Punkte gibt + ein Bonus ----
+// ---- Themen: [0] war das Turnier um die Mitte (raus), die anderen 4 wechseln wöchentlich im Wochen-Event (Mo–Fr): wofür es Punkte gibt + ein Bonus ----
 const EV_THEMEN = [
     { k: 'thron', name: 'Kampf um die Mitte', ic: 'crown', pkt: 'Thron und Wächter-Tempel halten, Kämpfe in der Mitte', bonus: 'Thron-Punkte +50 %' },
     { k: 'sam', name: 'Sammel-Rausch', ic: 'coin', pkt: 'Gesammeltes – ein volles Feld bringt 30', bonus: 'Sammeln 50 % schneller' },
@@ -10212,13 +10192,14 @@ const EV_THEMEN = [
 const EV_WOCHE = EV_THEMEN.slice(1);
 function evThemaAm(t) { return EV_THEMEN[0]; }        // das Wochenend-Turnier: immer „Kampf um die Mitte“
 function evThema() { return EV_THEMEN[0]; }
-// ---- WOCHEN-EVENT Mo 0:00 – So 23:59 (das Turnier um die Mitte ist raus): jede Woche eins der 4 Themen, eigene Punkte (wie beim Turnier gedeckelt), Rangliste und kleine Preise ----
+// ---- WOCHEN-EVENT Mo 0:00 – Fr 23:59, Wochenende frei (das Turnier um die Mitte ist raus): jede Woche eins der 4 Themen, eigene Punkte (wie beim Turnier gedeckelt), Rangliste und kleine Preise ----
 const WO_PRIZES = [{ to: 1, gems: 200, sh: 10, crate: 3, t: '1.' }, { to: 3, gems: 100, sh: 5, crate: 2, t: '2.–3.' }, { to: 10, gems: 40, sh: 2, crate: 1, t: '4.–10.' }, { to: Infinity, gems: 10, sh: 1, crate: -1, t: 'Alle anderen' }];
 let woWinMemo = null;
-function woWin(now) {                                 // diese Woche (Mo 0:00 – So 23:59): { on, start, end, key }
+function woWin(now) {                                 // diese oder (am Wochenende) nächste Woche, Mo 0:00 – Fr 23:59: { on, start, end, key }
     now = now || Date.now(); const m = woWinMemo; if (m && now >= m.from && now < m.to) return m.w;
     const d = new Date(now); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7));   // Montag dieser Woche
-    let start = d.getTime(), key = todayKey(d); d.setDate(d.getDate() + 7); let end = d.getTime();
+    let start = d.getTime(), key = todayKey(d); d.setDate(d.getDate() + 5); let end = d.getTime();
+    if (now >= end) { const n = new Date(start); n.setDate(n.getDate() + 7); start = n.getTime(); key = todayKey(n); n.setDate(n.getDate() + 5); end = n.getTime(); }   // Wochenende: frei
     const on = now >= start && now < end;
     woWinMemo = { w: { on, start, end, key }, from: on ? start : now, to: on ? end : start }; return woWinMemo.w;
 }
@@ -10587,7 +10568,7 @@ function evTourHtml() {
 }
 function woHtml() {                                   // das Wochen-Event: Thema, Uhr, dein Platz, Preise, Rangliste, die nächsten Wochen
     const now = Date.now(), w = woWin(now), th = woThemaAm(now), W = evState.wo || {}, live = w.on && W.key === w.key, rk = live ? evRang(W.pts) : [], mine = rk.findIndex(e => e[0] === 'player') + 1;
-    const kopf = (w.on ? 'Läuft · endet in ' : 'Montag bis Sonntag · beginnt in ') + evUhr(w.on ? w.end : w.start);
+    const kopf = (w.on ? 'Läuft · endet in ' : 'Montag bis Freitag · beginnt in ') + evUhr(w.on ? w.end : w.start);
     const preise = WO_PRIZES.map((p, i) => '<div class="tour-prize' + (i ? '' : ' is-1') + '"><b>' + p.t + '</b><span>' + icon('gem') + fmtNum(p.gems) + '</span><span>' + icon('star') + p.sh + '</span>' + (p.crate >= 0 ? '<em>' + RARITY_DEFS[p.crate].label + '-Kiste</em>' : '') + '</div>').join('');
     const plan = [1, 2, 3, 4].map(i => { const t = w.start + 7 * 864e5 * i + 3600000, x = woThemaAm(t); return '<span>' + evWann(t).slice(0, -6) + '</span><b>' + icon(x.ic) + ' ' + x.name + '</b>'; }).join('');
     const alt = !live && W.last && W.last.top ? W.last.top : null, liste = live ? rk : alt || [];
@@ -10596,7 +10577,7 @@ function woHtml() {                                   // das Wochen-Event: Thema
         '<div class="lb-gap">' + (live ? 'Live · Top 10' : alt ? 'Letzte Woche · Top 10' : 'Top 10') + '</div>' +
         (evRangHtml(liste, v => fmtNum(Math.floor(v)) + ' P.') || '<div class="war-empty">' + (w.on ? 'Noch hat niemand Punkte – sobald jemand Punkte holt, steht er hier.' : 'Am Montag geht es los.') + '</div>') +
         '<div class="lb-gap">Preise</div><div class="tour-prizes">' + preise + '</div>' +
-        '<div class="tour-rules"><span>' + icon('hourglass') + '<span>Höchstens ' + TOUR_KILL_MAX + ' Punkte auf einmal, im Schnitt ' + TOUR_KILL_MIN + ' pro Minute. Jede Woche (Mo–So) ein anderes Thema.</span></span></div>' +
+        '<div class="tour-rules"><span>' + icon('hourglass') + '<span>Höchstens ' + TOUR_KILL_MAX + ' Punkte auf einmal, im Schnitt ' + TOUR_KILL_MIN + ' pro Minute. Jede Woche (Mo–Fr) ein anderes Thema, am Wochenende ist frei.</span></span></div>' +
         '<div class="lb-gap">Nächste Wochen</div><div class="field-lines ev-plan">' + plan + '</div>';
 }
 function evInvHtml() {
@@ -12597,9 +12578,9 @@ if (window.WELT) {
     // Stufe, Forschung, Helden, Schild), kommt aus diesem Hauptbuch – nicht aus dem rohen Profil. Gespeichert in
     // botState[u<id>].hb (geht mit der Welt mit, Spieler bekommen es nie: server.php NUR_WELTRECHNER).
     // Sichere Quellen zählt der Weltrechner selbst (EP, Kampf-Beute, Preise, Splitter, Kisten aus Nachrichten, Admin-Geschenke).
-    // Was nur das Handy gibt (Tagesbelohnung, Aufgaben, Erfolge, Funde, Pass, VIP), kommt als Spielraum pro Tag dazu (HB_TAG).
+    // Was nur das Handy gibt (Tagesbelohnung, Aufgaben, Erfolge, Funde, Pass), kommt als Spielraum pro Tag dazu (HB_TAG).
     // Jede Neuerung im Profil wird nach festen Regeln angenommen – oder nicht:
-    //   Burg/Gebäude: +1 Stufe nach der anderen, frühestens nach der Bauzeit (VIP höchstens so hoch, wie er Tage dabei ist),
+    //   Burg/Gebäude: +1 Stufe nach der anderen, frühestens nach der Bauzeit,
     //     schneller nur mit Gems (1 je Minute); Kosten (Münzen, Holz, Stein, Eisen) aus Konto + Topf des Ausgegebenen
     //   Forschung: wie Gebäude, eine nach der anderen, Akademie/Burg/Vorgänger wie im Spiel
     //   Truppen-Stufe: nur mit Burg + Forschung, jede neue Stufe einmal Eisen
@@ -12614,7 +12595,7 @@ if (window.WELT) {
     const HB_SLOTS = Object.keys(EQUIPMENT_DEFS);
     const HB_TAG = {                                  // Spielraum pro Tag – je Quelle die Grenze aus dem Spiel
         g: 25 + 40 + 150 / 7,                         // Gems: Tagesbelohnung (höchstens 25), 3 Aufgaben + Bonus (40), Wochenkette (150 / 7 Tage)
-        k: 3 + 1 + 1 + 3 / 7 + 1 / 7,                 // Kisten: Tagesbelohnung (bis 3), Aufgaben-Bonus, VIP-Kiste, Wochenkette (3), epische Tageskiste
+        k: 3 + 1 + 3 / 7 + 1 / 7,                     // Kisten: Tagesbelohnung (bis 3), Aufgaben-Bonus, Wochenkette (3), epische Tageskiste
         kg: (3 * 27 + 27) / 7,                        // davon „mind. Episch“ (Wochenkette, Tag 7) als sicherer Kisten-Wert (Episch = 27)
         sh: HERO_SHARDS_DAY + HERO_SHARDS_CHAIN / 7   // Splitter: Aufgaben-Bonus, Wochenkette
     };
@@ -12652,7 +12633,6 @@ if (window.WELT) {
     const hbLvlPunkte = l => 2.5 * l * (l - 1);       // Stufe 1 → l kostet 5 + 10 + … Punkte
     const hbItemWert = z => (z[0] * ITEM_MAX_LEVEL + z[1]) * (1 + z[2] * STAR_PCT / 100);
     function hbKisteDazu(hb, minR) { hb.kN = nn(hb.kN) + 1; if (minR >= 3) hb.kG = nn(hb.kG) + kWert(minR); }
-    function hbVip(hb, now) { const tage = hb.t0 ? Math.floor((now - hb.t0) / TAG) + 1 : 999; let s = 0; for (let i = 1; i < VIP_TAGE.length; i++) if (tage >= VIP_TAGE[i]) s = i; return 1 - s * .02; }
     function hbNeu(who, now, p, frisch) {
         const hb = { v: HB_V, t0: frisch ? now : 0, st: {}, fo: {}, foT: frisch ? now : 0, tb: 1, gear: {}, kN: 0, kG: 0, hs: hbHeldenStart(), shB: 0,
             gA: 0, cA: 0, rA: { h: 0, s: 0, e: 0 }, gIn: 0, sternG: 0, fr: { g: 10, k: 1, kg: 0, sh: 0, schild: 0 }, frT: frisch ? now : 0, ach: 0, lvG: 1, pass: 0, passF: 0,
@@ -12715,7 +12695,7 @@ if (window.WELT) {
         const [L, T] = hb.st[id], B = hb.st.keep[0];
         if (L + 1 > hbMax(id)) return 'nein';
         if (id !== 'keep' && AUF) { if (!L && AUF.BAU_AB_BURG[id] > B) return 'nein'; if (L + 1 > (B >= AUF.BURG_MAX ? hbMax(id) : Math.min(hbMax(id), B))) return 'nein'; }
-        const need = cityTimeRoh(id, L) * hbVip(hb, now) * 1000, fehlt = need - (now - T) - 60000;
+        const need = cityTimeRoh(id, L) * 1000, fehlt = need - (now - T) - 60000;
         const g = fehlt > 0 ? Math.ceil(fehlt / 60000) * CITY_GEMS_PER_MIN : 0;
         const k = Object.assign({}, AUF ? AUF.stadtKosten(id, L) : { c: cityCost(id, L) }); if (g) k.g = g;
         if (!hbZahlen(who, hb, m, k)) return 'geld';
@@ -12727,7 +12707,7 @@ if (window.WELT) {
         if (L > d.max || (hb.st.academy || [0])[0] < AUF.foAkaFuer(d, L)) return 'nein';
         if (d.tier && hb.st.keep[0] < AUF.TIER_BURG[d.tier]) return 'nein';
         if (d.vor && !((hb.fo[d.vor] | 0) >= 1)) return 'nein';
-        const need = AUF.foZeitRoh(d, L) * hbVip(hb, now) * 1000, T = nn(hb.foT), fehlt = need - (now - T) - 60000;
+        const need = AUF.foZeitRoh(d, L) * 1000, T = nn(hb.foT), fehlt = need - (now - T) - 60000;
         const g = fehlt > 0 ? Math.ceil(fehlt / 60000) * CITY_GEMS_PER_MIN : 0;
         const k = Object.assign({}, AUF.foKosten(d, L)); if (g) k.g = g;
         if (!hbZahlen(who, hb, m, k)) return 'geld';

@@ -1101,5 +1101,13 @@ Alles in spiel.js (Abschnitt „THE CITY, ISOMETRIC“), nur Aussehen – Gebäu
 - Es gibt kein Wochenend-Turnier mehr (`tourWin` liefert immer „aus“: keine Turnier-Punkte, kein Hinweis, keine Ankündigung,
   kein Turniersieger, kein +50 % Thron-Punkte am Wochenende; Mitspieler verhalten sich am Wochenende wie unter der Woche).
 - **Die Mitte selbst bleibt** wie immer: angreifen, halten, Thron-Punkte alle 3 Min., Kopfgeld, Titel.
-- Das **Wochen-Event läuft jetzt die ganze Woche Mo 0:00 – So 23:59** (Sammel-Rausch → Krieger-Woche → Boss-Jagd → Bauherr),
-  Auszahlung Sonntag um Mitternacht. Der Reiter in Events heißt jetzt „Wochen-Event“ (Top 10 oben).
+- Das **Wochen-Event läuft Mo 0:00 – Fr 23:59** (Sammel-Rausch → Krieger-Woche → Boss-Jagd → Bauherr), Auszahlung
+  Freitag um Mitternacht. **Das Wochenende ist frei, da passiert nichts** (Alexander: „Wochenende bleibt frei“; kurz war es
+  Mo–So, das ist wieder zurück). Der Reiter in Events heißt „Wochen-Event“ (Top 10 oben).
+
+## 30. VIP KOMPLETT RAUS (Alexander 2.10.: „VIP find ich totaler Müll“) – NICHT hochgeladen
+- Weg: VIP-Stufen, Spieltage zählen (`openWaterVip`), VIP-Tageskiste, „Neue VIP-Stufe“-Hinweis, VIP-Zeile im Profil,
+  Bauzeit −2 %/Stufe (Stadt und Forschung bauen jetzt für alle gleich lang).
+- Hauptbuch (3B): `hbVip` weg (Bauzeit ohne Abzug), Kisten-Spielraum pro Tag eine weniger (`HB_TAG.k` = 3 + 1 + Wochenkette).
+- Alte VIP-Kisten, die noch im Abholfach liegen, kann man noch abholen (heißen jetzt „Tageskiste“).
+- Was in Abschnitt 21, 22 und 24 über VIP steht, gilt nicht mehr.

@@ -98,7 +98,7 @@ function burgKosten(L) {                                       // von Stufe L au
     const b = 1000 * Math.pow(1.72, L - 1);
     return { c: niceRound(2000 * Math.pow(1.85, L - 1)), h: niceRound(b), s: L >= 2 ? niceRound(b * .8) : 0, e: L >= 5 ? niceRound(b * .4) : 0 };
 }
-function burgZeitRoh(L) { return Math.min(7 * 86400, L <= 14 ? 60 * Math.pow(1.55, L - 1) : 60 * Math.pow(1.55, 13) * Math.pow(1.25, L - 14)); }   // 1 Min. … ~2 Tage (vor VIP)
+function burgZeitRoh(L) { return Math.min(7 * 86400, L <= 14 ? 60 * Math.pow(1.55, L - 1) : 60 * Math.pow(1.55, 13) * Math.pow(1.25, L - 14)); }   // 1 Min. … ~2 Tage
 const STADT_MIX = { lumber: { h: .3, s: .9, e: .2 }, quarry: { h: 1.1, s: .2, e: .2 }, mine: { h: 1, s: .9, e: 0 }, wall: { h: .5, s: 1.3, e: .3 }, forge: { h: .6, s: .6, e: 1 }, barracks: { h: .9, s: .6, e: .6 }, market: { h: 1.2, s: .6, e: .2 }, tower: { h: .8, s: 1, e: .4 } };
 function stadtKosten(id, L) {                                  // alles für ein Gebäude von Stufe L auf L + 1 (Burg: eigene Tabelle)
     if (id === 'keep') return burgKosten(L);
@@ -162,9 +162,8 @@ function foKosten(d, L) {                                      // Stufe L erfors
     const k = Math.pow(1.6, d.aka - 1) * (d.tier ? 30 : 1), g = Math.pow(1.8, L - 1);
     return { c: niceRound(3000 * k * g), h: niceRound(1500 * k * g), s: niceRound(1200 * k * g), e: niceRound(600 * k * g * (d.ast === 'm' ? 1.6 : 1)) };
 }
-function foZeitRoh(d, L) { return Math.min(7 * 86400, 300 * Math.pow(1.7, L - 1) * Math.pow(1.35, d.aka - 1) * (d.tier ? 8 : 1)); }   // 5 Min. … Tage (vor VIP)
-const vipFaktor = who => who === 'player' && typeof vipStufe === 'function' ? 1 - vipStufe() * .02 : 1;
-const foZeit = (who, d, L) => Math.round(foZeitRoh(d, L) * vipFaktor(who));
+function foZeitRoh(d, L) { return Math.min(7 * 86400, 300 * Math.pow(1.7, L - 1) * Math.pow(1.35, d.aka - 1) * (d.tier ? 8 : 1)); }   // 5 Min. … Tage
+const foZeit = (who, d, L) => Math.round(foZeitRoh(d, L));
 function foSperre(who, d) {                                    // warum diese Forschung gerade nicht geht (oder null)
     const c = stadtVon(who); if (!c) return 'kaputt';
     const L = foStufe(who, d.id) + 1, aka = c.levels.academy || 0;
