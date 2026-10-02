@@ -98,6 +98,7 @@ const BEOBACHTER = `(function () {
     const ev = typeof evState !== 'undefined' && evState ? evState : {}, ip = ev.plan && ev.plan.inv, dr = ev.dr;
     if (ip && ip.start > jetzt && ip.start - jetzt <= 10 * 60000 && !neu.ev['i' + ip.start]) { neu.ev['i' + ip.start] = ip.start; if (alt) for (const id in M) if (mensch(id)) raus.push({ an: id, art: 'invasion', ankunft: ip.start }); }
     if (dr && dr.hp > 0 && !dr.paid && dr.start <= jetzt && dr.end > jetzt && !neu.ev['d' + dr.start]) { neu.ev['d' + dr.start] = dr.end; if (alt) for (const id in M) if (mensch(id)) raus.push({ an: id, art: 'drache', ankunft: dr.end, name: dr.name }); }
+    for (const e of (window.__bundPush || []).splice(0)) if (mensch(e.an) && alt) raus.push(e);   // Bündnis (buendnis.js): „Hilfe!“ eines Mitglieds, Rally gegen dich
     window.__pushMerker = neu;
     const online = {}; for (const id in M) online[id] = !!M[id].online;
     return JSON.stringify({ raus, online });
@@ -131,7 +132,11 @@ function nachrichtBauen(liste, jetzt) {
     const invasion = liste.filter(e => e.art === 'invasion'), drache = liste.filter(e => e.art === 'drache');
     if (invasion.length) teile.push('Barbaren-Invasion beginnt in ' + minuten(Math.min(...invasion.map(e => e.ankunft)) - jetzt) + ' – stärke deine Basen!');
     if (drache.length) teile.push('Der Drache ist erschienen' + (drache[0].name ? ' (' + drache[0].name + ')' : '') + ' – greif ihn zusammen mit allen anderen an!');
-    const titel = angriffe.length ? 'Angriff auf deine Basis!' : verloren.length ? 'Basis verloren' : spaeher.length ? 'Späher unterwegs' : invasion.length ? 'Barbaren-Invasion' : drache.length ? 'Der Drache ist da' : boss.length ? 'Ein Boss ist erschienen' : schild.length ? 'Friedensschild' : 'Sammler zurück';
+    const hilfe = liste.filter(e => e.art === 'hilfe'), rally = liste.filter(e => e.art === 'rally');
+    if (rally.length) { const r = rally[0]; teile.push('Rally gegen deine Basis ' + r.basis + ': ' + r.von + ' sammelt Truppen' + (r.ankunft > jetzt ? ' (Start in ' + minuten(r.ankunft - jetzt) + ')' : '') + '.'); }
+    if (hilfe.length === 1) teile.push('Bündnis: ' + hilfe[0].von + ' ruft um Hilfe – ' + hilfe[0].basis + ' wird angegriffen.');
+    else if (hilfe.length) teile.push('Bündnis: ' + hilfe.length + '-mal Hilfe gerufen (' + [...new Set(hilfe.map(h => h.von))].slice(0, 3).join(', ') + ').');
+    const titel = angriffe.length ? 'Angriff auf deine Basis!' : verloren.length ? 'Basis verloren' : rally.length ? 'Rally gegen dich!' : hilfe.length ? 'Dein Bündnis braucht Hilfe' : spaeher.length ? 'Späher unterwegs' : invasion.length ? 'Barbaren-Invasion' : drache.length ? 'Der Drache ist da' : boss.length ? 'Ein Boss ist erschienen' : schild.length ? 'Friedensschild' : 'Sammler zurück';
     return { titel, text: teile.join(' ').slice(0, 400), tag: 'open-water' };
 }
 
@@ -187,7 +192,7 @@ function melder(holen, log) {
                 e.zeit = jetzt; (warte.get(uid) || warte.set(uid, []).get(uid)).push(e); }
             for (const [uid, liste] of warte) {
                 // online gekommen (sieht es im Spiel) oder alles veraltet → vergessen
-                const frisch = liste.filter(e => jetzt - e.zeit < ALT_MS && !(e.art !== 'verloren' && e.ankunft < jetzt));
+                const frisch = liste.filter(e => jetzt - e.zeit < ALT_MS && !(e.art !== 'verloren' && e.art !== 'hilfe' && e.ankunft < jetzt));
                 if (r.online['u' + uid] || !frisch.length) { warte.delete(uid); continue; }
                 warte.set(uid, frisch);
                 if (jetzt - Math.min(...frisch.map(e => e.zeit)) < SAMMELN_MS) continue;

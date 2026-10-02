@@ -139,7 +139,7 @@ function resolveBotAttack(attack) {
     if (!bot || !source || !target) return;
 
     const myTroops = Math.round((attack.rawTroops + (attack.attackBonus || 0)) * (attack.atkTitle !== undefined ? attack.atkTitle : titleMult(bot.id, 'attack')));
-    const targetOwner = islandOwnerOf(target.id);
+    const targetOwner = islandOwnerOf(target.id), rallyC0 = attack.rally ? botCoins[bot.id] || 0 : 0;   // (Rally: die Beute wird nachher anteilig verteilt)
     const originalEnemyTroops = effectiveTroops(target);
     const fullDefense = effectiveDefense(target), originalEnemyDefense = Math.round(fullDefense * (1 - heroDefCut(attack)));   // (a hero's Rammbock, Sturmflut, Mauerbrecher)
     const partsFor = () => targetOwner === 'player' ? { atkParts: attackParts(bot.id, attack.rawTroops, attack.attackBonus || 0, myTroops, attack.hero, attack), defParts: heroDefPart(defenseParts(target), attack, fullDefense) } : null;
@@ -160,7 +160,7 @@ function resolveBotAttack(attack) {
     const botSentLoss = won ? sentLossFor(attack.rawTroops, myTroops, originalEnemyDefense, red) : 0, survivors = won ? attack.rawTroops - botSentLoss : 0;   // same rule as yours   // the sword bonus fights along but doesn't stay
     const fled = won ? 0 : retreatSurvivorsPreview(attack);
     const atkFallen = attack.rawTroops - survivors - fled, atkWounded = botHospitalTake(bot.id, atkFallen, hosp);
-    const homeAgain = n => { if (n <= 0) return; const t0 = Date.now();                 // they walk home like yours (a fallen home: resolveSend sends them to another base)
+    const homeAgain = n => { if (n <= 0) return; if (attack.rally) { bundRallyHeim(attack, n, target.id); return; } const t0 = Date.now();                 // they walk home like yours (a fallen home: resolveSend sends them to another base) – eine Rally: jeder zu sich
         pendingSends.push({ fromId: target.id, toId: source.id, troops: n, startedAt: t0, resolveAt: t0 + retreatSecs(attack, target, source, bot.id) * 1000, senderBotId: bot.id, back: true }); };
     const plunder = won && targetOwner ? plunderOf(targetOwner, capitalHolds) : null;   // Lager: the winner carries off part of the coins above the loser's protection - yours too
     if (plunder) plunderMove(targetOwner, bot.id, plunder.loot);
@@ -173,7 +173,7 @@ function resolveBotAttack(attack) {
         // gets the base one level lower than it was, not reset to 1.
         const levelAfterCapture = Math.max(1, (islandLevels[target.id] || 1) - 1);
         if (targetOwner) { botNoteLoss(targetOwner, target.id); clearIslandOwner(target.id); }
-        islandTroops[target.id] = survivors;
+        islandTroops[target.id] = attack.rally ? bundRallyHeim(attack, survivors, target.id, true) : survivors;   // (Rally: die Truppen der anderen gehen heim)
         botOwnedIslands[bot.id].add(target.id); botStat(bot.id, 'caps'); if (targetOwner) botStat(bot.id, 'pvp'); if (target.type === 'temple' || target.type === 'megaTemple' || target.guardian) botStat(bot.id, 'temples');
         if (target.type === 'gate') { const sty = bot.style, r = Math.random();                  // how this player runs a gate
             setGateSettings(target.id, { toll: sty === 'templer' ? 1 : sty === 'builder' ? 0.5 : sty === 'raider' ? 0.25 : GATE_TOLLS[1 + Math.floor(r * 4)],
@@ -204,6 +204,7 @@ function resolveBotAttack(attack) {
     if (!won && counts) botNoteFail(bot.id, target.id);
     if (!won) botLearn(bot.id, target.id);                          // a lost fight tells them what's really there
     if (!won && targetOwner && targetOwner !== 'player') botStat(targetOwner, 'defs');
+    if (won && bossHere && typeof bundGeschenk === 'function') bundGeschenk(bot.id, 'boss');         // Boss besiegt: kleine Geschenke fürs ganze Bündnis
     if (won && bossHere) { botStat(bot.id, 'bosses'); if (bossHere.wander) botStat(bot.id, 'wanders'); heroGrantShards(bot.id, bossHere.wander ? HERO_SHARDS_WANDER : HERO_SHARDS_BOSS); }   // the same shards you get
     updateHud();
     if (bossHere && won) { spawnBattleFx(target.id, false, bossHere.name + ' gefallen', bot.name); (bossHere.wander ? endWander : endBoss)(bot.name + ' hat ' + bossHere.name + ' besiegt!'); }
@@ -268,6 +269,7 @@ function resolveBotAttack(attack) {
         renderActiveMarches();
         if (isPanelOpen(popup) && popupIslandId === target.id) renderPopup();
     }
+    if (attack.rally) bundRallyBeute(attack, (botCoins[bot.id] || 0) - rallyC0, won, target.id);
     saveGame();
 }
 
@@ -647,14 +649,15 @@ function botThink(bot) {
     const T = new Map(), sitM = new Map();                      // targetId → { target, d, sources: [{ id, have }] }
     const sitOf = (t, ow) => { let v = sitM.get(t.id); if (v === undefined) { v = botSituation(bot, st, t, ow, now); sitM.set(t.id, v); } return v; };   // (the same for every base looking at it)
     const okM = new Map(), okOf = t => { let v = okM.get(t.id); if (v === undefined) okM.set(t.id, v = !(owned.has(t.id) || isCapital(t.id) || busy.has(t.id)   // capitals can't be attacked
-        || (shOwn.has(islandOwnerOf(t.id)) && shieldCovers(t)))); return v; };                       // anyone's Friedensschild
+        || (shOwn.has(islandOwnerOf(t.id)) && shieldCovers(t)) || bundFreund(bot.id, islandOwnerOf(t.id)))); return v; };   // anyone's Friedensschild · nie ein Bündnis-Mitglied
     const pullM = new Map(), pullOf = t => { let v = pullM.get(t.id); if (v) return v;                // everything about a target that doesn't depend on where they look from (once per move, not per base)
         const ow = islandOwnerOf(t.id), grudge = botGrudgeOn(bot.id, ow);                          // revenge pulls them towards whoever hit them
         const k = (grudge ? 1 / (1 + grudge.n) : 1) * sitOf(t, ow) * (rally && rally.t === t.id ? .05 : 1)   // the planned big strike comes first
+            * (bundZiel === t.id ? .1 : 1)                                                          // ein Bündnis-Signal „Angriff auf …“
             * (t.id === megaTempleId && ruler !== bot.id ? (ruler ? .1 : .015) : 1)                // the throne pulls - an empty one most of all (the crown is free)
             * botMidPull(bot, t, ruler, now);                                                       // the Turnier on weekends, the Kopfgeld on the ruler
         pullM.set(t.id, v = { ow, grudge, k }); return v; };
-    const mem = loadBotState()[bot.id];
+    const mem = loadBotState()[bot.id], bundZiel = typeof bundZielVon === 'function' ? bundZielVon(bot.id) : null;
     if (mem.rally && (now > mem.rally.until || !owned.has(mem.rally.at) || owned.has(mem.rally.t) || isCapital(mem.rally.t))) mem.rally = null;
     const rally = mem.rally, sampled = botSampleSources(owned, st.sources), kennt = botKennt(bot.id);
     if (rally && !sampled.includes(rally.at)) sampled.push(rally.at);
@@ -682,7 +685,7 @@ function botThink(bot) {
         }
     }
     // now and then a look at the human's bases next door - from whichever of their own bases is nearest, not only the big armies
-    if (!shielded && ownedIslands.size && Math.random() < .6) {
+    if (!shielded && ownedIslands.size && !bundFreund(bot.id, 'player') && Math.random() < .6) {
         const cap = islandById[botCapitalOf(bot.id)] || islandById[[...owned][0]];
         const near = [...ownedIslands].filter(id => !isCapital(id) && !busy.has(id)).map(id => islandById[id]).sort((u, v) => Math.hypot(u.x - cap.x, u.y - cap.y) - Math.hypot(v.x - cap.x, v.y - cap.y)).slice(0, 12);
         for (const pt of near) {
@@ -977,8 +980,9 @@ function botCityMult(botId, id) { return 1 + botBld(botId, id) * .02; }
 
 function botMults(botId) {
     const b = loadBotState()[botId]; if (!b) return { troops: 1, coins: 1, armorPct: 0, defensePct: 0, attackPct: 0, shield: 0 };
-    return { troops: (1 + (b.skills.troops * SKILL_DEFS.troops.pct + botGearPct(b, 'weapon')) / 100) * titleMult(botId, 'troops') * botCityMult(botId, 'barracks'),
-             coins: (1 + botGearPct(b, 'boots') / 100) * titleMult(botId, 'coins') * botCityMult(botId, 'treasury'),
+    const bp = typeof bundProdMult === 'function' ? bundProdMult(botId) : 1;     // Tempel-Bonus des Bündnisses
+    return { troops: (1 + (b.skills.troops * SKILL_DEFS.troops.pct + botGearPct(b, 'weapon')) / 100) * titleMult(botId, 'troops') * botCityMult(botId, 'barracks') * bp,
+             coins: (1 + botGearPct(b, 'boots') / 100) * titleMult(botId, 'coins') * botCityMult(botId, 'treasury') * bp,
              armorPct: botGearPct(b, 'armor'),                                         // Rüstung: +% base defense, same rule as the player
              defensePct: b.skills.defense * SKILL_DEFS.defense.defPct,
              attackPct: b.skills.attack * SKILL_DEFS.attack.atkPct,
@@ -1124,7 +1128,7 @@ function botGather(bot) {
         for (const lmId of reachableLandmassIds[source.landmassId]) {
             if (!landmassesConnected(source.landmassId, lmId) || !kennt.has(lmId)) continue;   // (Nebel)
             for (const target of islandsByLandmass[lmId] || []) {
-                if (botOwnedIslands[bot.id].has(target.id) || isCapital(target.id) || baseShieldedFor(target.id, bot.id)) continue;
+                if (botOwnedIslands[bot.id].has(target.id) || isCapital(target.id) || baseShieldedFor(target.id, bot.id) || bundFreund(bot.id, islandOwnerOf(target.id))) continue;
                 if (!(target.type === 'gate' || target.type === 'temple' || target.type === 'megaTemple')) continue;
                 const need = (effectiveTroops(target) + effectiveDefense(target)) * st.margin / atk;
                 const helpers = owned.filter(id => id !== sourceId && islandById[id].landmassId === source.landmassId && (islandTroops[id] || 0) > BOT_MIN_GARRISON_TO_ATTACK);

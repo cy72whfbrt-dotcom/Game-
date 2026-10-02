@@ -38,6 +38,7 @@ Game/                  ← genau dieser Ordner liegt auf dem Server
   baukunst.js          3D-Bilder der Basen (braucht three.js aus dem Netz, sonst 2D)
   speichern.js         Speichern/Laden: hält den Stand im Arbeitsspeicher, schickt ihn an server.php
   welt.js              die EINE Welt: Umrechnen, andere Spieler, Weltrechner, Puls, Befehle, Nachrichten
+  buendnis.js          Bündnisse: Gründen, Beitreten, Signale, Rally, Geschenke, Tempel-Bonus, Gebiet (Abschnitt 18)
   server.php           alles auf dem Server: Datenbank, Login, Laden, Speichern, Welt, Sicherheit
   admin.php            nur für Admins (alexander): Wartung an/aus, Geschenke verschicken, Spielerliste
   app/                 Open Water als App auf dem Startbildschirm:
@@ -698,3 +699,57 @@ Spieler sehen es als Zuschauer. Zeiten = Uhr des Weltrechners. Neu im Spiel-Code
   Und: `sfx()` tut beim Weltrechner nichts mehr (jsdom hat keinen Ton – ein Kampf-Effekt warf dort einen Fehler).
 - **Test-Zeiten:** `var EV_TEST = null` in spiel.js. Nur in einer lokalen Kopie auf z. B. `{ inv: Date.now() + 240000,
   dr: Date.now() + 150000 }` setzen – im Git bleibt es `null` (echte Zeitpläne).
+## 18. Bündnisse (Paket A) – 2.10., lokal getestet, NOCH NICHT hochgeladen
+Alexanders Auswahl 23–27 + 5: Bündnisse wie in Rise of Kingdoms – für echte Spieler UND Mitspieler, gleiche Regeln.
+Neue Datei `Game/buendnis.js` (nach spiel.js geladen; der Weltrechner lädt sie mit, wachhund.php erlaubt das Lesen).
+- **Bündnis (23):** Name 3–20 lateinische Buchstaben/Ziffern, Kürzel 2–4 Buchstaben (auf der Karte „[ABC] Name“),
+  Farbe + Wappen-Zeichen, offen oder „nur auf Anfrage“. Höchstens 20 Mitglieder. Anführer + Mitglieder. Gründen kostet
+  30.000 Münzen (zieht der Weltrechner ab, kommt als „−Münzen“ beim Spieler an). Beitreten / Anfragen (Anführer sagt
+  Ja/Nein; ein Mitspieler als Anführer entscheidet nach Macht und Nähe), Verlassen, Entfernen, Anführer übergeben
+  (geht der Anführer, führt das stärkste Mitglied). **Mitglieder greifen sich nicht an:** Angriff, Armee, Feld – gesperrt
+  mit Hinweis; Mitspieler wählen Mitglieder nie als Ziel; kommt ein Angriff an, wenn das Ziel inzwischen einem Mitglied
+  gehört, gehen die Truppen heim. **Tore von Mitgliedern** sind für alle Mitglieder frei und offen (sonst könnte ein
+  Mitglied die anderen einsperren – angreifen dürfen sie das Tor ja nicht).
+- **Mitspieler** gründen selbst (etwa 1 Bündnis pro 12 Mitspieler, in verschiedenen Gegenden, mit ≥ 4 Basen und genug
+  Münzen), treten dem nächsten passenden bei (Nähe vor Macht, ähnlicher Spielstil hilft). Etwa jeder Fünfte bleibt allein.
+- **Signale statt Chat (24):** „Hilfe! X wird angegriffen“, „Angriff auf X!“, „Sammeln bei X“, „Verteidigt X!“, „Danke!“.
+  Senden: Basis antippen → Zeile „Bündnis“ im Inselfenster (oder „Danke!“ im Fenster). Höchstens 1 Signal pro 30 s.
+  Liste im Tab „Signale“, auf der Karte 10 Min. als Zeichen über der Basis. **Mitspieler antworten mit Taten:**
+  „Hilfe/Verteidigt“ → nahe Mitglieder schicken rechtzeitig Truppen (die werden Teil der Besatzung, nur an Basen, die
+  gerade angegriffen werden); „Angriff auf X“ → passende Mitglieder ziehen dorthin (im Mitspieler-Kopf `bundZielVon`);
+  „Sammeln“ → sie kommen zur Rally. Mitspieler rufen selbst um Hilfe, wenn eine lohnende Basis allein nicht hält
+  (höchstens alle 4 Min.), und bedanken sich manchmal für Hilfe. Spieler können über „Helfen“ selbst Truppen schicken.
+- **Rally (26):** Ziel antippen → „Rally“ → Sammelpunkt (eigene Basis), Wartezeit 1/3/5 Min., Truppen. Mitglieder
+  schicken über „Mitmachen“ Truppen (nur wer rechtzeitig ankommt; Mitspieler automatisch, wenn sinnvoll). Nach Ablauf
+  marschiert alles als EIN Angriff (normale Kampfregeln, Held/Boni des Starters). Überlebende gehen anteilig zu ihren
+  Basen zurück, Münz-Beute wird anteilig verteilt (EP, Lazarett und eine eroberte Basis bekommt der Starter). Karte:
+  Fahne am Sammelpunkt mit Countdown + Truppen, gestrichelt zum Ziel; eine Rally gegen dich/dein Bündnis rot.
+  Mitspieler starten Rallys auf große Ziele, die einer allein nicht schafft (Mega-Tempel, Tempel, starke Spieler – erst
+  spähen), höchstens 2 gleichzeitig pro Bündnis (Spieler: 3 pro Bündnis, 1 pro Spieler).
+- **Geschenke (27):** Boss besiegt oder große Kiste im Shop (ab 500 Gems) → alle anderen Mitglieder bekommen ein kleines
+  Bündnis-Geschenk ins Abholfach (5 % einer Stunden-Produktion an Münzen + Truppen, selten eine graue/grüne Kiste).
+  Höchstens 5 Geschenke pro Mitglied und Tag, Kisten-Geschenke höchstens 3 pro Geber und Tag. Der Weltrechner meldet
+  die Gutschrift dem Schummel-Schutz (sonst wäre das Abholen „verdächtig“). Neue Nachricht `bundGeschenk` (server.php
+  prüft: nur Münzen/Truppen/Kiste grau-grün, nie Gems oder Splitter).
+- **Tempel-Bonus (5):** Hält ein Mitglied einen Tempel, produzieren alle Mitglieder mehr Münzen und Truppen: +2 % je
+  Tempel (auch Wächter-Tempel), Mega-Tempel +5 %, höchstens +12 %. Im Tab „Übersicht“ sichtbar.
+- **Gebiet (25):** Basen eines Bündnisses färben die Karte zart in der Bündnisfarbe; Mitglieder marschieren 10 %
+  schneller zu Basen des Bündnisses und auf Inseln, auf denen das Bündnis ≥ 40 % der Basen hält. Namensschilder von
+  Mitgliedern deines Bündnisses sind grün.
+- **Fenster „Bündnis“:** Knopf an der Karte (`#bundBtn`, roter Punkt = neue Signale/Rallys), Tabs Übersicht, Signale,
+  Rally, Suchen (mit Gründen). Für das iPhone gebaut (Eingaben 16 px, kein Zoom).
+- **Handy-Nachrichten:** „Bündnis ruft um Hilfe“ und „Rally gegen dich“ (push.js, `PUSH_ARTEN` + Einstellungen).
+- **Technik:** Welt-Schlüssel `openWaterBuendnisse` (speichern.js `WELT`, welt.js `UMRECHNEN`). Befehl `bund` mit `op`
+  (gruenden, beitreten, anfrage, anfrageWeg, verlassen, rauswerfen, anfuehrer, offen, signal, rally, rallyDazu,
+  rallyAbbruch, hilfe, kiste) – server.php `BEFEHL_ARTEN`, der Weltrechner prüft alles (`bundOp`). Nachrichten
+  `bundInfo`/`bundGeschenk` (server.php `WELTRECHNER_NACHRICHTEN`). Rally-/Hilfe-Märsche sind normale Sende-Märsche mit
+  `rally`/`hilfe`, ein Rally-Angriff trägt `rally.an` (wer wie viel von wo).
+- **Getestet (lokal, Weltrechner + 2 Spieler, 150 Mitspieler):** 10 Bündnisse der Mitspieler nach wenigen Minuten,
+  Spieler gründet (30.000 Münzen weg), zweiter tritt bei, Anfrage an geschlossenes Bündnis (abgelehnt nach Macht/Nähe),
+  Anführer-Wechsel beim Verlassen, Angriff auf Mitglied gesperrt, Signal kommt beim anderen an, Mitspieler schicken
+  Hilfe und machen bei Rallys mit (bis 5 Basen pro Rally), Rally per Fenster gestartet + von 2. Basis mitgemacht →
+  EIN Angriff mit allen Truppen, Sieg, Bericht; Überlebende anteilig heim; Kiste gekauft → Bündnis-Geschenk beim
+  anderen Spieler im Abholfach und abgeholt (ohne Schummel-Warnung). Keine Fehler in der Konsole oder im Weltrechner.
+- **Offen:** Die Bündnis-Daten (Signale, Rallys) sieht technisch jeder Spieler (wie die übrige Welt) – im Spiel gezeigt
+  werden nur die eigenen (und Rallys gegen dich). Gebiet der Verbündeten wird nicht aus dem Nebel geholt.
+
