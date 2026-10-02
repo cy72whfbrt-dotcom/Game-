@@ -274,7 +274,7 @@ function rohDropMalen() {
     const d = document.getElementById('rohDrop'); if (!d) return;
     const ps = rohStunde('player');
     liveHtml(d, ROH.map(x => '<div class="roh-row">' + icon(ROH_DEF[x].icon, 'roh-' + x) + '<span>' + ROH_DEF[x].name + '</span><b>' + fmtNum(Math.floor(roh[x])) + '</b><small>+' + fmtCompact(Math.round(ps[x])) + '/Std.</small></div>').join('') +
-        '<small class="roh-hint">Deine Basen machen Rohstoffe (je nach Landschaft). Mehr aus Holzfällerei, Steinbruch und Eisenmine auf der Karte. Gebraucht für Burg, Gebäude, Forschung, Truppen-Stufen.</small>');
+        '<small class="roh-hint">Holzfäller, Steinbruch und Eisenmine in deiner Stadt machen Rohstoffe (je nach Landschaft der Hauptstadt). Mehr durch Sammeln auf Holz-, Stein- und Eisen-Feldern der Karte. Gebraucht für Burg, Gebäude, Forschung, Truppen-Stufen.</small>');
 }
 function rohUmschalten(an) { rohOffen = an === undefined ? !rohOffen : an; const d = document.getElementById('rohDrop'); if (!d) return; d.hidden = !rohOffen; document.getElementById('hudRoh').classList.toggle('on', rohOffen); if (rohOffen) rohDropMalen(); }
 
@@ -307,10 +307,7 @@ function renderKeep() {                                        // das Burg-Fenst
     liveHtml(document.getElementById('cityBExtra'),
         '<div class="keep-h">Jetzt</div><div class="auf-grid"><div><span>Marsch-Plätze</span><b>' + belegt + ' / ' + marschGrenze('player') + ' belegt</b></div><div><span>Gebäude</span><b>bis Stufe ' + stadtCap('player', 'wall') + '</b></div><div><span>Truppen</span><b>T' + T + ' · +' + Math.round((TIER_KRAFT[T] - 1) * 100) + ' %</b></div></div>' +
         (max ? '' : '<div class="keep-h">Burg-Stufe ' + (B + 1) + ' schaltet frei</div><ul class="auf-frei">' + freiText(B + 1).map(t => '<li>' + icon('check') + t + '</li>').join('') + '</ul>') +
-        '<small class="keep-note">Deine Hauptstadt hat nur diese EINE Stufe: auf der Karte steht sie auf Stufe ' + burgKarte(B) + ' (Burg 25 = Stufe 100). Die anderen Basen draußen wertest du sofort mit Münzen auf.</small>' +
-        '<div class="keep-h">Friedensschild</div><div class="keep-shields">' + [2, 8, 24].map(h => { const st = shieldStock(); return '<button type="button" class="btn btn--secondary btn--sm" data-shield-use="' + h + '"' + (st[h] ? '' : ' disabled') + '>' + icon('shield') + h + ' Std. · ' + st[h] + '×</button>'; }).join('') + '</div>' +
-        '<small class="keep-note">Schilde kaufst du im Shop, hier schaltest du sie ein. Greifst du selbst an, fällt der Schild.</small>' +
-        '<div class="keep-h">Aussehen</div><button type="button" class="crest-card keep-crest" data-look-open><img alt="" src="' + crestDataUrl(56) + '"><span class="crest-card-t"><b>' + escapeHtml(playerTitle()) + '</b><small>Wappen, Rahmen, Titel, Basis- und Marsch-Skins, Ringe</small></span><span class="crest-card-go">Öffnen' + icon('upgrade') + '</span></button>');
+        '<small class="keep-note">Deine Hauptstadt hat nur diese EINE Stufe: auf der Karte steht sie auf Stufe ' + burgKarte(B) + ' (Burg 25 = Stufe 100). Die anderen Basen draußen wertest du sofort mit Münzen auf. Friedensschilde: Shop → Schilde.</small>');
 }
 function effektText(id, lvl) {
     if (id === 'academy') return (lvl ? 'Forschung bis Akademie-Stufe ' + lvl + ' · Truppen laufen +' + lvl * 2 + ' % schneller.' : 'Baue die Akademie, um zu forschen.') + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: mehr Forschung, +' + (lvl + 1) * 2 + ' % Tempo.' : '');
@@ -348,15 +345,18 @@ function extraHtml(id, lvl) {
                 (t === T ? '<em class="fo-ok">' + icon('check') + '</em>' : '<button type="button" class="btn btn--' + (t > T ? 'primary' : 'secondary') + ' btn--sm" data-tier="' + t + '"' + (!ok || roh.e < kost ? ' disabled' : '') + '>' + (kost ? icon(ROH_DEF.e.icon) + fmtCompact(kost) : 'Umstellen') + '</button>') + '</div>';
         }).join('') + '</div><small class="keep-note">Jede neue Stufe kostet einmal Eisen. Zurückstellen ist frei. Laufende Märsche kämpfen mit der Stufe vom Losschicken.</small>';
     }
-    if (id === 'market' && lvl) {
-        const c = loadCity(), m = marktHeute(c), lim = marktLimit('player'), f = marktGebuehr(lvl), N = marktMenge;
-        return '<div class="seg" data-mk-n>' + [1000, 10000, 100000, 1000000].map(v => '<button type="button" data-mk-menge="' + v + '"' + (v === N ? ' class="on"' : '') + '>' + fmtCompact(v) + '</button>').join('') + '</div><div class="fo-list">' +
+    if (id === 'market' && lvl) return '<button type="button" class="btn btn--primary btn--sm" data-markt-shop>' + icon('shop') + '<span>Handeln: Shop → Markt</span></button>';
+    return '';
+}
+function marktHtml() {                                         // Shop → Markt: Rohstoffe gegen Münzen (die Stufe des Markt-Gebäudes bestimmt Gebühr und Limit)
+    const lvl = bauStufe('player', 'market');
+    if (!lvl) return '<div class="notice">' + icon('lock') + '<span>Baue zuerst den Markt in deiner Stadt (ab Burg-Stufe ' + BAU_AB_BURG.market + ').</span></div>';
+    const c = loadCity(), m = marktHeute(c), lim = marktLimit('player'), f = marktGebuehr(lvl), N = marktMenge;
+    return '<div class="seg" data-mk-n>' + [1000, 10000, 100000, 1000000].map(v => '<button type="button" data-mk-menge="' + v + '"' + (v === N ? ' class="on"' : '') + '>' + fmtCompact(v) + '</button>').join('') + '</div><div class="fo-list">' +
             ROH.map(x => '<div class="fo-row">' + icon(ROH_DEF[x].icon, 'roh-' + x) + '<span class="fo-t"><b>' + ROH_DEF[x].name + '</b><small>' + fmtNum(Math.floor(roh[x])) + ' im Lager</small></span>' +
                 '<button type="button" class="btn btn--secondary btn--sm" data-mk="v:' + x + '"' + (roh[x] < N || m.v + N * MARKT_WERT > lim ? ' disabled' : '') + '>+' + fmtCompact(Math.floor(N * MARKT_WERT * (1 - f))) + ' ' + icon('coin', 'icon--coin') + '</button>' +
                 '<button type="button" class="btn btn--primary btn--sm" data-mk="k:' + x + '"' + (coins < Math.ceil(N * MARKT_WERT * (1 + f)) || m.k + N * MARKT_WERT > lim ? ' disabled' : '') + '>−' + fmtCompact(Math.ceil(N * MARKT_WERT * (1 + f))) + ' ' + icon('coin', 'icon--coin') + '</button></div>').join('') +
-            '</div><small class="keep-note">Links verkaufen, rechts kaufen (' + fmtCompact(N) + ' Stück). 1 Rohstoff = ' + MARKT_WERT + ' Münzen, Gebühr ' + Math.round(f * 100) + ' %. Heute noch: verkaufen ' + fmtCompact(Math.max(0, lim - m.v)) + ', kaufen ' + fmtCompact(Math.max(0, lim - m.k)) + ' Münzen-Wert.</small>';
-    }
-    return '';
+            '</div><small class="keep-note">Links verkaufen, rechts kaufen (' + fmtCompact(N) + ' Stück). 1 Rohstoff = ' + MARKT_WERT + ' Münzen, Gebühr ' + Math.round(f * 100) + ' % (Markt Stufe ' + lvl + '). Heute noch: verkaufen ' + fmtCompact(Math.max(0, lim - m.v)) + ', kaufen ' + fmtCompact(Math.max(0, lim - m.k)) + ' Münzen-Wert.</small>';
 }
 // Klicks im Gebäude-Fenster (Akademie, Kaserne, Markt)
 document.getElementById('citySheet').addEventListener('click', e => {
@@ -364,9 +364,12 @@ document.getElementById('citySheet').addEventListener('click', e => {
     const f = e.target.closest('[data-fo]:not([disabled])'); if (f) { const why = foStart('player', f.dataset.fo); flashHint(why || 'Forschung gestartet: ' + FO_BY[f.dataset.fo].name + '.', 2800); if (!why) sfx('upgrade'); renderCitySheet(); return; }
     if (e.target.closest('[data-fo-gems]:not([disabled])')) { const c = loadCity(), g = foGems(c); if (!g || gems < g) return; gems -= g; saveGame(); updateHud(); foFertig('player', true); renderCitySheet(); return; }
     const t = e.target.closest('[data-tier]:not([disabled])'); if (t) { const why = tierSetzen('player', +t.dataset.tier); flashHint(why || 'Deine Truppen kämpfen jetzt als T' + t.dataset.tier + '.', 3000); updateHud(); renderCitySheet(); return; }
-    const mm = e.target.closest('[data-mk-menge]'); if (mm) { marktMenge = +mm.dataset.mkMenge; renderCitySheet(); return; }
-    const mk = e.target.closest('[data-mk]:not([disabled])'); if (mk) { const [art, x] = mk.dataset.mk.split(':'), why = marktTausch('player', art, x, marktMenge); if (why) flashHint(why, 3000); else sfx('coin'); renderCitySheet(); }
+    if (e.target.closest('[data-markt-shop]')) { closeCity(); openShop('markt'); }
 });
+{ const mp = document.getElementById('shopMarkt'); if (mp) mp.addEventListener('click', e => {   // Shop → Markt
+    const mm = e.target.closest('[data-mk-menge]'); if (mm) { marktMenge = +mm.dataset.mkMenge; renderShop(); return; }
+    const mk = e.target.closest('[data-mk]:not([disabled])'); if (mk) { const [art, x] = mk.dataset.mk.split(':'), why = marktTausch('player', art, x, marktMenge); if (why) flashHint(why, 3000); else sfx('coin'); renderShop(); }
+}); }
 if (!SYSTEM) {
     document.getElementById('hudRoh').addEventListener('click', () => rohUmschalten());
     document.getElementById('rohDrop').addEventListener('click', () => rohUmschalten(false));
@@ -490,7 +493,7 @@ AUF = {
     get roh() { return roh; }, rohVon, rohDazu, rohSpeichern, rohSauber, basisRoh, rohBuchen, rohStunde, rohRegion, kannZahlen, zahlen, kostenHtml,
     stadtVon, burgStufe, burgKosten, burgZeitRoh, stadtKosten, stadtCap,
     marschGrenze, marschBelegt, marschFrei, marschOk, marschVoll, frei: { an() { marschFreiPass++; }, aus() { marschFreiPass = Math.max(0, marschFreiPass - 1); } },
-    foStufe, foWert, foKosten, foStart, foFertig, foSperre, tierErlaubt, truppenStufe, tierSetzen, marktTausch, marktLimit,
+    foStufe, foWert, foKosten, foStart, foFertig, foSperre, tierErlaubt, truppenStufe, tierSetzen, marktTausch, marktLimit, marktHtml,
     burgKarte, hauptstadtStufen,
     kampf, ertrag, sammelTempo, traglast, marschTempo, spaeherTempo, lazarettPlus, nebelWeite, botschaftTempo, botschaftGeschenk, wachturm,
     spielerTakt, hud: hudRoh, renderKeep, effektText, extraHtml, angreiferInfo, spaeherMehr,

@@ -949,3 +949,25 @@ für beide Spieler. Keine Fehler in der Konsole oder im Weltrechner, keine Schum
 - Getestet (Vorschau): Burg 13 → Hauptstadt Stufe 51, Holz/Stein/Eisen wachsen, Aufwerten-Knopf an der Hauptstadt weg,
   alle drei Gebäude im Bild, keine Fehler.
 
+**Teil 2 – jedes Ding an genau EINEM Ort:**
+- **Unten (Dock) 6 Knöpfe:** Stadt · Bündnis · Kampf · Events · Shop · Profil. Das Dock zeigt, welches Fenster offen ist.
+- **Karte (rechts) nur noch Kartensachen:** Zoom +/−, Heimat, Wegmarke, Armee. Weg: Ton, Ereignisse, Bündnis, Zahnrad.
+- **Stadt:** Burg (= Hauptstadt-Stufe), alle Gebäude, Holz/Stein/Eisen, Forschung (Akademie), Truppen-Stufe (Kaserne),
+  Lazarett, Helden (Heldenhalle). Im Burg-Fenster gibt es keinen Schild und kein Aussehen mehr.
+- **Events** (früher „Ziele“ + Ereignis-Knopf an der Karte, jetzt EIN Fenster): oben Täglich · Belohnung (mit Abholfach) ·
+  Erfolge · Pass, unten Turnier · Invasion · Drache · Boss & Lager. Das Turnier mit der ganzen Rangliste steht NUR hier
+  (aus der Rangliste und dem Thron-Shop entfernt, die alte „Übersicht“ auch). Ein „!“ zeigt, welches Ereignis gerade läuft.
+- **Shop** (EIN Shop): Kisten (Ausrüstung + Helden) · Schilde (kaufen UND einschalten, nur hier) · Thron · Händler (der
+  Reiter erscheint nur, solange ein wandernder Händler da ist; Karren antippen oder Hinweis öffnet ihn) · Markt (Handeln
+  nur hier; das Markt-Gebäude in der Stadt hat einen Knopf dorthin). Das Gem-„+“ oben ist weg (Shop ist im Dock).
+- **Profil:** Spieler (mit der EINEN Aussehen-Karte: Wappen, Rahmen, Titel, Skins, Ringe) · Ausrüstung · Skills ·
+  Rangliste (Macht, Eroberungen, Titel, Thron-Punkte) · Einstellungen (Benachrichtigungen, Ton, Akku, Konto, Abmelden,
+  Hilfe „wo finde ich was?“). Die Thron-Punkte-Bestenliste im Thron-Shop ist weg (steht in der Rangliste).
+- **Hinweis-Leiste unter dem HUD:** nur noch EIN Hinweis, der dringendste (Invasion auf dich > Kopfgeld auf dich >
+  Drache/Invasion läuft > bald > Turnier > Händler > …).
+- Texte „unter Ziele“ heißen jetzt „unter Events“. Gelöscht: Fenster `settingsPopup`, `eventPopup`, `hdPopup`, Knöpfe
+  `musicBtn`, `eventBtn`, `settingsBtn`, `hudShopBtn`, `lookGo`. Neu: `openShop(tab)`, `AUF.marktHtml`, `tourRangHtml`.
+- Getestet (Vorschau, iPhone-Größe): alle 6 Dock-Knöpfe, alle 8 Events-Reiter mit Inhalt, Schild kaufen + einschalten im
+  Shop, Markt verkaufen im Shop, Händler-Reiter erscheint mit Händler, Ton in den Einstellungen, Rangliste ohne Turnier,
+  immer höchstens 1 Hinweis, Burg ohne Schild/Aussehen. Keine Fehler. Server- und Spiel-Tests grün.
+

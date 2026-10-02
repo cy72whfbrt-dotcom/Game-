@@ -331,7 +331,7 @@ function bundGeschenk(geber, grund) {
         const x = Math.random(), crate = x < .03 ? 1 : x < .12 ? 0 : -1;                       // selten eine graue oder grüne Ausrüstung
         if (botById[w] && botById[w].mensch) {
             if (WELT.wache) WELT.wache.gutschrift(w, c, tr);                                   // (damit der Schummel-Schutz das Abholen durchlässt)
-            WELT.nachricht(parseInt(w.slice(1), 10), { art: 'bundGeschenk', coins: c, tr, crate, hint: von + ' ' + warum + ' – ein Bündnis-Geschenk liegt für dich bereit (Ziele → Belohnung).' });
+            WELT.nachricht(parseInt(w.slice(1), 10), { art: 'bundGeschenk', coins: c, tr, crate, hint: von + ' ' + warum + ' – ein Bündnis-Geschenk liegt für dich bereit (Events → Belohnung).' });
         } else {
             botCoins[w] = (botCoins[w] || 0) + c; const cap = botCapitalOf(w); if (cap !== null && cap !== undefined) islandTroops[cap] = (islandTroops[cap] || 0) + tr;
             const st = loadBotState()[w]; if (crate >= 0 && st && st.spare) { const k = pickRandomSlot(); if (st.spare[k]) st.spare[k][crate]++; }
@@ -720,7 +720,8 @@ function bundSignalSenden(art, z) {
     sfx('send');
 }
 if (bundPopup) {
-    document.getElementById('bundBtn').addEventListener('click', e => { e.stopPropagation(); if (isPanelOpen(bundPopup)) return bundSchliessen(); bundOeffnen(bundIch() ? bundTab === 'suchen' ? 'info' : bundTab : 'suchen'); bundGesehen(); });
+    document.getElementById('bundBtn').addEventListener('click', e => { e.stopPropagation(); if (isPanelOpen(bundPopup)) return bundSchliessen();   // Dock-Knopf „Bündnis“
+        closeAllPopups(); bundOeffnen(bundIch() ? bundTab === 'suchen' ? 'info' : bundTab : 'suchen'); bundGesehen(); });
     document.getElementById('bundCloseBtn').addEventListener('click', bundSchliessen);
     bundPopup.addEventListener('click', e => {
         const tab = e.target.closest('[data-btab]'); if (tab) { bundTab = tab.dataset.btab; bundWahl = null; bundRender(true); bundPopup.querySelector('.pbody').scrollTop = 0; if (bundTab === 'sig') bundGesehen(); return; }
@@ -868,7 +869,7 @@ if (window.WELT) {
         if (!e || e.art !== 'bundGeschenk') return;
         const c = Math.max(0, Math.min(1e12, +e.coins || 0)), tr = Math.max(0, Math.min(1e12, +e.tr || 0)), crate = e.crate === 0 || e.crate === 1 ? e.crate : -1;
         inboxAdd({ src: 'gift', title: 'Bündnis-Geschenk', coins: c, tr, crate });
-        flashHint(typeof e.hint === 'string' ? e.hint.slice(0, 200) : 'Ein Bündnis-Geschenk liegt für dich bereit – Ziele → Belohnung.', 4500); if (typeof liveBald === 'function') liveBald();
+        flashHint(typeof e.hint === 'string' ? e.hint.slice(0, 200) : 'Ein Bündnis-Geschenk liegt für dich bereit – Events → Belohnung.', 4500); if (typeof liveBald === 'function') liveBald();
     });
     WELT.beiNachricht.push(function (e) { if (e && e.art === 'bundInfo' && typeof e.text === 'string') { flashHint(e.text.slice(0, 300), 4500); if (bundPopup && isPanelOpen(bundPopup)) bundRender(); } });
 }

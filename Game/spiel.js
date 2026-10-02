@@ -4659,8 +4659,8 @@ function renderLook() {                             // the profile header and it
     const fr = playerFrame();
     document.getElementById('pAvatarRing').dataset.frame = fr;
     document.getElementById('profileTitle').textContent = playerTitle() + (tourChamp() === 'player' ? ' · Turniersieger' : '');
-    const cur = document.getElementById('lookNow');
-    if (cur) cur.innerHTML = '<span class="frame-ring look-now-ring" data-frame="' + fr + '"></span><span class="look-now-t"><b>' + escapeHtml(playerTitle()) + '</b><small>Rahmen ' + (FRAMES.find(f => f.id === fr) || FRAMES[0]).name + ' · ' + BAUSTILE[loadBaustil().style] + ' · Marsch ' + marchSkinOf('player').name + '</small></span>';
+    const cur = document.getElementById('lookNow');     // die eine Aussehen-Karte im Profil (Wappen + was du trägst)
+    if (cur) cur.innerHTML = '<b>Aussehen · ' + escapeHtml(playerTitle()) + '</b><small>Wappen · Rahmen ' + (FRAMES.find(f => f.id === fr) || FRAMES[0]).name + ' · ' + BAUSTILE[loadBaustil().style] + ' · Marsch ' + marchSkinOf('player').name + '</small>';
     renderLookSheet();
 }
 function currentRank() {
@@ -4674,7 +4674,7 @@ function renderCrestCard() {
     const cv = document.getElementById('crestSmall'); if (!cv) return; const g = cv.getContext('2d');
     g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, 112, 112); drawCrest(g, 56, 57, 96);
 }
-document.getElementById('crestCard').addEventListener('click', () => openLookSheet('crest'));   // the crest is edited in the Aussehen sheet
+document.getElementById('crestCard').addEventListener('click', () => openLookSheet());   // Aussehen: nur von hier (Profil → Spieler)
 function renderCrestEditor() {
     renderCrestCard();
     const c = loadCrest(), el = document.getElementById('crestOpts'); if (!el || document.getElementById('crestPage').hidden) return;
@@ -5086,7 +5086,8 @@ function renderSkillGrid() {
 const profileTabs = {
     info: { btn: document.getElementById('tabBtnInfo'), panel: document.getElementById('tabInfo') },
     equip: { btn: document.getElementById('tabBtnEquip'), panel: document.getElementById('tabEquip') },
-    skills: { btn: document.getElementById('tabBtnSkills'), panel: document.getElementById('tabSkills') }
+    skills: { btn: document.getElementById('tabBtnSkills'), panel: document.getElementById('tabSkills') },
+    set: { btn: document.getElementById('tabBtnSet'), panel: document.getElementById('tabSet') }   // Einstellungen
 };
 function showProfileTab(name) {
     profilePopup.dataset.tab = name;
@@ -5098,10 +5099,13 @@ function showProfileTab(name) {
     }
     if (name === 'equip') { renderEquipGrid(); renderChestEquipment(); }
     if (name === 'skills') renderSkillGrid();
+    if (name === 'set') einstellungenZeigen(); else document.getElementById('setPwForm').hidden = true;
+    profilePopup.querySelector('.pbody').scrollTop = 0;
 }
 profileTabs.info.btn.addEventListener('click', () => showProfileTab('info'));
 profileTabs.equip.btn.addEventListener('click', () => showProfileTab('equip'));
 profileTabs.skills.btn.addEventListener('click', () => showProfileTab('skills'));
+profileTabs.set.btn.addEventListener('click', () => showProfileTab('set'));
 document.getElementById('tabBtnRank').addEventListener('click', () => openRankings());   // the Rangliste has its own sheet
 
 // ===== ERFOLGE: badges for what you've done, each with gems to collect (only gems - the look is bought, not earned) =====
@@ -5204,7 +5208,7 @@ function achCheck() {                                                        // 
     if (achLookSet && achLookSet.late) { delete achLookSet.late; if (achDone(ACHIEVEMENTS.find(a => a.id === 'city5')) && !achLookSet.includes('city5')) achLookSet.push('city5'); store.set('openWaterAchLook', JSON.stringify(achLookSet)); }
     const ready = achClaimable();
     if (achKnown === null) achKnown = new Set(ready.map(a => a.id));
-    for (const a of ready) if (!achKnown.has(a.id)) { achKnown.add(a.id); flashHint('Erfolg erreicht: ' + a.name + ' – hol dir ' + a.gems + ' Gems unter „Ziele“ ab.', 4500); sfx('crown'); }
+    for (const a of ready) if (!achKnown.has(a.id)) { achKnown.add(a.id); flashHint('Erfolg erreicht: ' + a.name + ' – hol dir ' + a.gems + ' Gems unter „Events“ ab.', 4500); sfx('crown'); }
     updateGoalsBadge(ready.length);
     if (isPanelOpen(goalsPopup) && goalsTab === 'ach') renderAchievements();
 }
@@ -5334,26 +5338,38 @@ let rankTab = 'power';
 const RANK_TABS = { power: { t: 'Macht', sub: 'Die Stärke des ganzen Reichs', unit: 'Macht' },
     caps: { t: 'Eroberungen', sub: 'Eroberte Basen insgesamt', unit: 'erobert' },
     titles: { t: 'Titel', sub: 'Wer die Mitte hält und wer einen Titel trägt', unit: 'Thron-P.' },
-    week: { t: 'Thron-Punkte', sub: 'Fürs Halten der Mitte · alle je verdienten', unit: 'Thron-P.' },
-    tour: { t: 'Wochenend-Turnier', sub: 'Nur am Wochenende · Preise für die Besten', unit: 'Punkte' } };
+    week: { t: 'Thron-Punkte', sub: 'Fürs Halten der Mitte · alle je verdienten', unit: 'Thron-P.' } };   // (das Turnier steht nur unter Events → Turnier)
 function conquestsOf(who) { return who === 'player' ? playerStats.captures || 0 : botConquests(who); }
 function rankPeople() {                                  // everyone once: name, frame, look title, level, bases
     const bs = loadBotState(), out = [{ who: 'player', name: profileName.value || 'Du', frame: playerFrame(), title: playerTitle(), lvl: playerLvl, bases: ownedIslands.size }];
     for (const bd of BOT_DEFS) { const lk = botLook(bd.id); out.push({ who: bd.id, name: bd.name, frame: lk.frame, title: lk.title, lvl: (bs[bd.id] || {}).lvl || 1, bases: whoBases(bd.id) }); }
     return out;
 }
-function rankRowHtml(e, pos, medals) {
+function rankRowHtml(e, pos, medals, unit) {
     const me = e.who === 'player', v = e.val;
     return '<div class="lb-row' + (medals && pos <= 3 ? ' is-' + pos : '') + (me ? ' isMe' : '') + '" data-profile="' + e.who + '" role="button" tabindex="0">' +
         '<span class="lb-pos">' + pos + '</span>' +
         '<span class="lb-crest" data-frame="' + e.frame + '"><span class="lb-crest-in"><img alt="" src="' + crestDataUrl(28, e.who) + '"></span><span class="lvl">' + e.lvl + '</span></span>' +
         '<span class="lb-name"><b><span>' + escapeHtml(e.name) + '</span>' + (me && profileName.value ? '<span class="tag tag--player">Du</span>' : '') + '</b><small>' + e.sub + '</small></span>' +
-        '<span class="lb-val"><b>' + (v >= 1e5 ? fmtCompact(v) : fmtNum(v)) + '</b><small>' + RANK_TABS[rankTab].unit + '</small></span></div>';
+        '<span class="lb-val"><b>' + (v >= 1e5 ? fmtCompact(v) : fmtNum(v)) + '</b><small>' + (unit || RANK_TABS[rankTab].unit) + '</small></span></div>';
+}
+function tourRangHtml() {                                // Events → Turnier: die Turnier-Rangliste (am Wochenende live, sonst das letzte Ergebnis)
+    const w = tourWin(), live = w.on && tourState.key === w.key, last = tourState.last, pts = {}, ch = tourChamp(), people = rankPeople();
+    if (live) for (const [who, n] of tourList()) pts[who] = Math.floor(n); else if (last) for (const [who, n] of last.top) pts[who] = n;
+    for (const e of people) { e.val = pts[e.who] || 0; e.sub = (e.who === ch ? '<span class="lb-t is-champ">Turniersieger</span> ' : '') + escapeHtml(e.title) + ' <i>· ' + fmtNum(e.bases) + (e.bases === 1 ? ' Basis' : ' Basen') + '</i>'; }
+    const alt = !live && last && last.me ? last.me : null; if (alt) people[0].val = alt.pts;   // dein Platz letztes Mal, auch außerhalb der Top 10
+    const list = people.filter(e => e.val > 0).sort((a, b) => b.val - a.val || b.lvl - a.lvl), myPos = alt ? alt.place : list.findIndex(e => e.who === 'player') + 1;
+    if (last && !live && !last.seen) { last.seen = true; tourDirty = true; }
+    return '<div class="lb-gap">' + (live ? 'Live · Top ' + TOUR_TOP : 'Letztes Turnier') + '</div>' +
+        (list.length ? list.slice(0, TOUR_TOP).map((e, i) => rankRowHtml(e, i + 1, true, 'Punkte')).join('')
+            : '<div class="war-empty">' + (live ? 'Noch hat niemand Punkte. Halte den Thron oder einen Wächter-Tempel, oder kämpfe in der Mitte.' : 'Am Samstag geht es los.') + '</div>') +
+        (myPos > 0 && myPos <= TOUR_TOP ? '' : rankRowHtml(people[0], myPos > 0 ? myPos : '–', false, 'Punkte'));
 }
 function renderRankings() {
     const tab = RANK_TABS[rankTab], people = rankPeople(), bs = loadBotState(), t = loadTitles(), ruler = rulerOwner() || null;
     const basesTxt = n => fmtNum(n) + (n === 1 ? ' Basis' : ' Basen');
-    let list, medals = true, empty = '', tourMe = null;
+    if (!RANK_TABS[rankTab]) rankTab = 'power';
+    let list, medals = true, empty = '';
     if (rankTab === 'power') { for (const e of people) { const pr = whoProfile(e.who); e.val = pr ? powerOf(pr) : 0; e.sub = escapeHtml(e.title) + ' <i>· ' + basesTxt(e.bases) + '</i>'; } list = people.slice(); }
     else if (rankTab === 'caps') { for (const e of people) { e.val = conquestsOf(e.who); e.sub = escapeHtml(e.title) + ' <i>· hält ' + basesTxt(e.bases) + '</i>'; } list = people.slice(); saveBotState(); }
     else if (rankTab === 'titles') {                      // the ruler first, then everyone wearing a title from the middle
@@ -5363,27 +5379,19 @@ function renderRankings() {
         const tr = e => e.who === ruler ? 0 : by[e.who] ? (by[e.who].good ? 1 : 2) : 3;
         list = people.filter(e => tr(e) < 3).sort((a, b) => tr(a) - tr(b) || b.val - a.val);
         empty = ruler ? '' : 'Niemand hält gerade die Mitte – erobere den Mega-Tempel, dann verteilst du die Titel.';
-    } else if (rankTab === 'tour') {                     // live during the weekend, before it the last result - top 10 only
-        const w = tourWin(), live = w.on && tourState.key === w.key, last = tourState.last, pts = {}, ch = tourChamp();
-        if (live) for (const [who, n] of tourList()) pts[who] = Math.floor(n); else if (last) for (const [who, n] of last.top) pts[who] = n;
-        for (const e of people) { e.val = pts[e.who] || 0; e.sub = (e.who === ch ? '<span class="lb-t is-champ">Turniersieger</span> ' : '') + escapeHtml(e.title) + ' <i>· ' + basesTxt(e.bases) + '</i>'; }
-        list = people.filter(e => e.val > 0);
-        if (!live && last && last.me) { tourMe = last.me; people[0].val = last.me.pts; }          // your place last time, even outside the top 10
-        empty = live ? 'Noch hat niemand Punkte. Halte den Thron oder einen Wächter-Tempel, oder kämpfe in der Mitte.' : 'Am Samstag geht es los.';
-        if (last && !live && !last.seen) { last.seen = true; tourDirty = true; }
     } else { for (const e of people) { e.val = throneEarnedOf(e.who, bs); e.sub = escapeHtml(e.title) + ' <i>· ' + basesTxt(e.bases) + '</i>'; } list = people.filter(e => e.val > 0);
         empty = 'Noch hat niemand Thron-Punkte geholt. Halte die Mitte oder einen Wächter-Tempel.'; }
     if (rankTab !== 'titles') list.sort((a, b) => b.val - a.val || b.lvl - a.lvl);
-    const lim = rankTab === 'tour' ? TOUR_TOP : RANK_TOP, top = list.slice(0, lim), mi = list.findIndex(e => e.who === 'player'), tw = tourWin();
+    const lim = RANK_TOP, top = list.slice(0, lim), mi = list.findIndex(e => e.who === 'player');
     document.getElementById('rankTitle').textContent = tab.t;
-    document.getElementById('rankSub').textContent = tab.sub;                     // one line what this list counts (the Turnier clock is in its card)
+    document.getElementById('rankSub').textContent = tab.sub;                     // one line what this list counts
     for (const b of document.querySelectorAll('#rankTabs [data-rtab]')) { const on = b.dataset.rtab === rankTab; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }
-    liveHtml(document.getElementById('rankBody'), (rankTab === 'tour' ? tourCardHtml() + '<div class="lb-gap">' + (tw.on ? 'Live · Top ' + TOUR_TOP : 'Letztes Turnier') + '</div>' : '') +
-        (rankTab === 'week' ? '<p class="mail-intro lb-intro">Thron-Punkte gibt es fürs Halten der Mitte: +' + THRONE_PTS_MEGA + ' alle 3 Min. für den Thron, +' + THRONE_PTS_GUARD + ' je Wächter-Tempel. Du gibst sie im Shop unter „Thron“ aus – hier zählt alles je Verdiente, ohne Neustart. Das Turnier am Wochenende zählt eigene Punkte.</p>' : '') +
+    liveHtml(document.getElementById('rankBody'),
+        (rankTab === 'week' ? '<p class="mail-intro lb-intro">Thron-Punkte gibt es fürs Halten der Mitte: +' + THRONE_PTS_MEGA + ' alle 3 Min. für den Thron, +' + THRONE_PTS_GUARD + ' je Wächter-Tempel. Du gibst sie im Shop unter „Thron“ aus – hier zählt alles je Verdiente, ohne Neustart. Das Turnier am Wochenende zählt eigene Punkte (Events → Turnier).</p>' : '') +
         (top.length ? top.map((e, i) => rankRowHtml(e, i + 1, medals)).join('') + (list.length > lim ? '<div class="lb-gap">Top ' + lim + ' von ' + fmtNum(list.length) + '</div>' : '')
-        : rankTab === 'tour' ? '<div class="war-empty">' + empty + '</div>' : '<div class="empty-state">' + icon(rankTab === 'titles' ? 'crown' : 'points') + '<b>Noch leer</b>' + empty + '</div>'));
+        : '<div class="empty-state">' + icon(rankTab === 'titles' ? 'crown' : 'points') + '<b>Noch leer</b>' + empty + '</div>'));
     const foot = document.getElementById('rankFoot');
-    const myPos = tourMe ? tourMe.place : mi + 1;
+    const myPos = mi + 1;
     liveHtml(foot, myPos > 0 && myPos <= lim ? '' : rankRowHtml(people[0], myPos > 0 ? myPos : '–', false));   // outside the top: your row waits down here
     foot.hidden = !foot.innerHTML;
 }
@@ -5888,7 +5896,7 @@ function questProgress(type, n) {
         if (t.progress >= t.target) finished = t;
     }
     saveQuests();
-    if (finished) flashHint('Aufgabe erledigt: ' + QUEST_DEFS[finished.type].text(finished.target) + ' – unter „Ziele“ abholen.', 3500);
+    if (finished) flashHint('Aufgabe erledigt: ' + QUEST_DEFS[finished.type].text(finished.target) + ' – unter „Events“ abholen.', 3500);
     if (finished && q.list.every(t => t.progress >= t.target)) chainLink();
     updateGoalsBadge();
     if (isPanelOpen(goalsPopup)) renderQuestPanel();
@@ -5933,7 +5941,7 @@ function claimQuestBonus() {
     flashHint('Bonus: ' + RARITY_DEFS[it.rarity].label + ' ' + EQUIPMENT_DEFS[it.slot].name + ' + ' + QUEST_BONUS.gems + ' Gems' + (shH ? ' + ' + HERO_SHARDS_DAY + ' Splitter ' + shH.name : ''), 3000);
     renderQuestPanel(); updateGoalsBadge();
 }
-function dailyGoalCount() {                                      // Ziele → Täglich: tasks, the bonus and the week chain
+function dailyGoalCount() {                                      // Events → Täglich: tasks, the bonus and the week chain
     const q = loadQuests();
     return q.list.filter(t => !t.claimed && t.progress >= t.target).length + (!q.bonusClaimed && q.list.every(t => t.claimed) ? 1 : 0) + (chainStreak() >= 7 ? 1 : 0);
 }
@@ -5981,6 +5989,7 @@ function updateGoalsBadge(nAch) {
     if (nAch === undefined) nAch = achReadyN; else achReadyN = nAch;   // (the Erfolge are counted by achCheck - not before everything has loaded)
     const nd = dailyGoalCount(), nr = (dailyClaimable() ? 1 : 0) + inboxList().length, np = passReadyAll().length, n = nd + nr + nAch + np, set = (el, v) => { setText(el, v); setShown(el, v > 0); };   // (only on a change: this runs every few seconds)
     set(document.getElementById('goalsBadge'), n); set(goalsPopup.querySelector('[data-gbadge="daily"]'), nd); set(goalsPopup.querySelector('[data-gbadge="reward"]'), nr); set(goalsPopup.querySelector('[data-gbadge="ach"]'), nAch); set(goalsPopup.querySelector('[data-gbadge="pass"]'), np);
+    const jetzt = evJetzt(); for (const k of ['tour', 'inv', 'drache']) setShown(goalsPopup.querySelector('[data-gbadge="' + k + '"]'), jetzt === k);   // „!“ am Ereignis, das gerade läuft
 }
 function renderQuestPanel() {
     const q = loadQuests();
@@ -6013,20 +6022,23 @@ function renderQuestPanel() {
         (q.bonusClaimed ? '<span class="quest-ok">Abgeholt</span>' : allClaimed ? '<button class="btn btn--primary btn--sm" type="button" data-bonus><span>Abholen</span></button>' : '') + '</div></div>';
     document.getElementById('questList').innerHTML = html;
 }
-// ---- Ziele: one sheet, four tabs - Täglich (tasks + week chain), Belohnung (the 7-day login chest), Erfolge and Pass ----
+// ---- Events: one sheet - oben die Aufgaben: Täglich (tasks + week chain), Belohnung (Abholfach + 7-day login chest), Erfolge, Pass;
+// unten die Ereignisse: Turnier, Invasion, Drache, Tagesboss + Barbaren-Lager (renderEvents) ----
+const EV_TABS = ['tour', 'inv', 'drache', 'boss'];
 function showGoalsTab(t) {
-    goalsTab = t;
+    if (t === 'alle') t = 'boss';
+    goalsTab = t; const ev = EV_TABS.includes(t);
     for (const b of goalsPopup.querySelectorAll('[data-gtab]')) { const on = b.dataset.gtab === t; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }
-    for (const pn of goalsPopup.querySelectorAll('[data-gpane]')) pn.hidden = pn.dataset.gpane !== t;
-    if (t === 'ach') renderAchievements(); else if (t === 'pass') renderPass(); else renderQuestPanel(); if (t === 'reward') renderInbox();
+    for (const pn of goalsPopup.querySelectorAll('[data-gpane]')) pn.hidden = pn.dataset.gpane !== (ev ? 'ev' : t);
+    if (ev) { evTab = t; renderEvents(); } else if (t === 'ach') renderAchievements(); else if (t === 'pass') renderPass(); else renderQuestPanel(); if (t === 'reward') renderInbox();
     goalsPopup.querySelector('.pbody').scrollTop = 0; if (t === 'pass') requestAnimationFrame(passScroll); updateGoalsBadge();
 }
 function renderGoalsSub() { const q = loadQuests(), nd = q.list.filter(t => t.claimed).length, na = ACHIEVEMENTS.filter(a => achClaimed[a.id]).length;
     liveHtml(document.getElementById('goalsSub'), '<span class="pill">' + icon('flag') + '<b>' + nd + ' / 3</b><small>heute</small></span><span class="pill">' + icon('star') + '<b>' + na + ' / ' + ACHIEVEMENTS.length + '</b><small>Erfolge</small></span>'); }
 function openGoals(tab) {
-    closeAllPopups(); renderGoalsSub();
+    closeAllPopups(); if (barbView) closeBarbSheet(); renderGoalsSub();
     const nd = dailyGoalCount(), na = achClaimable().length;
-    showGoalsTab(tab || (nd ? 'daily' : dailyClaimable() || inboxList().length ? 'reward' : na ? 'ach' : passReadyAll().length ? 'pass' : goalsTab)); openPanel(goalsPopup);
+    showGoalsTab(tab || (nd ? 'daily' : dailyClaimable() || inboxList().length ? 'reward' : na ? 'ach' : passReadyAll().length ? 'pass' : evJetzt() || goalsTab)); openPanel(goalsPopup);
 }
 document.getElementById('goalsBtn').addEventListener('click', () => { if (isPanelOpen(goalsPopup)) closePanel(goalsPopup); else openGoals(); });
 document.getElementById('goalsCloseBtn').addEventListener('click', () => closePanel(goalsPopup));
@@ -6070,7 +6082,7 @@ function passPrune() { const ps = passLoad(), c = passNo(Date.now()); let ch = 0
 function passBump(k, n) { try { const v = PASS_XP && PASS_XP[k]; if (v) passXp(v * (n || 1)); } catch (e) {} }
 function passXp(v) {
     const x = passOf(passNo(Date.now())), L0 = passLvl(x); x.xp = (x.xp || 0) + v; passSave(); const L1 = passLvl(x);
-    if (L1 > L0) { flashHint('Saison-Pass: Stufe ' + L1 + ' erreicht – hol dir die Belohnung unter „Ziele“.', 3500); updateGoalsBadge(); }
+    if (L1 > L0) { flashHint('Saison-Pass: Stufe ' + L1 + ' erreicht – hol dir die Belohnung unter „Events“.', 3500); updateGoalsBadge(); }
     if (isPanelOpen(goalsPopup) && goalsTab === 'pass') passRenderSoon();
 }
 function passGive(who, r) {                               // one reward to anyone (you or the others) - returns the text for the hint
@@ -6348,9 +6360,8 @@ function drawThroneShots(now) {                        // glowing shots on an ar
 }
 function renderThroneShop() {
     const el = document.getElementById('throneShop'); if (!el) return;
-    const ts = throneState, hd = rulerOwner(), sh = throneShooters(), inc = throneIncome('player'), bo = bountyOf(), tw = tourWin();
+    const ts = throneState, hd = rulerOwner(), sh = throneShooters(), inc = throneIncome('player'), bo = bountyOf();
     const hdName = hd === 'player' ? '<span class="me">Du</span>' : hd ? whoLink(hd, botById[hd].name) : 'niemand';
-    const week = throneEarnedList().slice(0, 5);
     liveHtml(el, '<div class="throne-status">' +
             '<div class="ts-row">' + icon('crown') + '<span>Die Mitte hält</span><b>' + hdName + '</b></div>' +
             '<div class="ts-row">' + icon('hourglass') + '<span>Nächste Thron-Punkte</span><b data-throne-pts>' + fmtClock((ts.nextPts - Date.now()) / 1000) + '</b></div>' +
@@ -6358,19 +6369,14 @@ function renderThroneShop() {
             '<div class="ts-row">' + icon('points') + '<span>Du bekommst</span><b>' + (inc ? '+' + inc + ' alle 3 Min.' : 'nichts – erobere die Mitte') + '</b></div>' +
             (bo ? '<div class="ts-row">' + icon(bo.who === 'player' ? 'losses' : 'gem') + '<span>' + (bo.who === 'player' ? 'Kopfgeld auf dich' : 'Kopfgeld') + '</span><b' + (bo.who === 'player' ? ' class="warn"' : '') + '>' + fmtNum(bo.gems) + ' Gems · ' + fmtCompact(bo.coins) + '</b></div>' : '') +
         '</div>' +
-        '<div class="throne-list"><div class="throne-row is-tour"><span class="tr-ic">' + icon('crown') + '</span><span class="tr-t"><b>Wochenend-Turnier</b><small>' + (tw.on ? 'Läuft · noch ' : 'Sa + So · in ') + '<span data-tour-left>' + fmtDHMS(((tw.on ? tw.end : tw.start) - Date.now()) / 1000) + '</span></small></span>' +
-            '<button type="button" class="btn btn--primary btn--sm" data-tour-open><b>Ansehen</b></button></div></div>' +
         '<p class="mail-intro">Wer den Mega-Tempel hält, bekommt alle 3 Min. ' + THRONE_PTS_MEGA + ' Thron-Punkte, jeder Wächter-Tempel bringt ' + THRONE_PTS_GUARD + '. Genauso oft feuern die Wächter-Tempel, die dem Herrscher nicht gehören, auf die Truppen im Mega-Tempel (je ' + THRONE_FIRE_PCT + ' %) – die Getroffenen kommen ins Lazarett, soweit Platz ist.</p>' +
         '<div class="sect"><h4>Eintauschen</h4></div><div class="throne-list">' +
         THRONE_OFFERS.filter(o => !o.once).map(o => { const done = o.once && throneOwned('player', o), n = throneAmount('player', o.id);   // looks are bought in the Aussehen sheet
             const sub = o.id === 'coins' ? fmtCompact(n) + ' – so viel, wie dein Reich in 1 Std. verdient' : o.id === 'troops' ? fmtCompact(n) + ' – eine Stunde deiner Ausbildung, in die Hauptstadt'
                 : o.id === 'gems' ? 'für Kisten, Helden und Sterne' : o.id === 'crate' ? 'ein zufälliges Teil, jede Seltenheit möglich' : o.id === 'royal' ? 'mindestens Lila' : done ? 'gehört dir' : o.ring ? 'Ring um alle deine Basen – nur hier' : 'gibt es nur hier';
             return '<div class="throne-row' + (o.once ? ' is-special' : '') + '"><span class="tr-ic">' + icon(o.icon, 'ico-' + o.icon) + '</span><span class="tr-t"><b>' + o.name + '</b><small>' + sub + '</small></span>' +
-                (done ? '<span class="chip">' + icon('check') + 'Gekauft</span>' : '<button type="button" class="btn btn--primary btn--sm" data-throne-buy="' + o.id + '"' + ((ts.pts || 0) < o.cost ? ' disabled' : '') + '>' + icon('crown') + '<b>' + fmtNum(o.cost) + '</b></button>') + '</div>'; }).join('') +
-            '<div class="throne-row is-special"><span class="tr-ic">' + icon('star', 'ico-crown') + '</span><span class="tr-t"><b>Aussehen</b><small>Rahmen, Titel, Ringe, Basis- und Marsch-Skins</small></span><button type="button" class="btn btn--primary btn--sm" data-look-open>Öffnen</button></div></div>' +
-        '<div class="sect"><h4>Die meisten Thron-Punkte</h4></div>' +
-        (week.length ? '<div class="throne-week">' + week.map(([who, n], i) => '<div' + (who === 'player' ? ' class="me"' : '') + '><i>' + (i + 1) + '</i><span>' + (who === 'player' ? 'Du' : whoLink(who, botById[who].name)) + '</span><b>' + fmtNum(n) + '</b></div>').join('') + '</div>'
-            : '<div class="war-empty">Noch hat niemand Thron-Punkte geholt.</div>'));
+                (done ? '<span class="chip">' + icon('check') + 'Gekauft</span>' : '<button type="button" class="btn btn--primary btn--sm" data-throne-buy="' + o.id + '"' + ((ts.pts || 0) < o.cost ? ' disabled' : '') + '>' + icon('crown') + '<b>' + fmtNum(o.cost) + '</b></button>') + '</div>'; }).join('') + '</div>' +
+            '<p class="mail-intro">Thron-Rahmen, Titel und Ringe für Thron-Punkte gibt es unter Profil → Aussehen, die Thron-Punkte-Rangliste unter Profil → Rangliste.</p>');
 }
 let shopTab = 'gems';
 function showShopTab(t) {
@@ -6381,7 +6387,7 @@ function showShopTab(t) {
     renderShop();
 }
 document.getElementById('shopTabs').addEventListener('click', e => { const b = e.target.closest('[data-stab]'); if (b) showShopTab(b.dataset.stab); });
-document.getElementById('throneShop').addEventListener('click', e => { if (e.target.closest('[data-tour-open]')) { openRankings('tour'); return; } const b = e.target.closest('[data-throne-buy]'); if (b && !b.disabled) throneBuy(b.dataset.throneBuy); });
+document.getElementById('throneShop').addEventListener('click', e => { const b = e.target.closest('[data-throne-buy]'); if (b && !b.disabled) throneBuy(b.dataset.throneBuy); });
 
 // ===== WOCHENEND-TURNIER UM DIE MITTE: Sa 0:00 bis So 23:59:59 (local time) everyone collects Turnier-Punkte - holding the throne (per minute),
 // a Wächter-Tempel (fewer) and troops beaten in fights in the middle and at its gates (per 1.000, attacking and defending alike - at most
@@ -6435,7 +6441,7 @@ function tourPay() {                                  // places 1, 2-3, 4-10 and
         ts.hist.unshift({ key: ts.key, who: w, name: w === 'player' ? profileName.value || 'Du' : botById[w].name, pts: Math.floor(list[0][1]) }); ts.hist = ts.hist.slice(0, 6); ringVer++; }
     ts.last = { key: ts.key, top: list.slice(0, TOUR_TOP).map(e => [e[0], Math.floor(e[1])]), n: list.length, me, seen: !me };
     saveTour(); saveBotState(); updateHud(); saveGame(); saveProgression(); requestRender();
-    if (me) afterSplash(() => setTimeout(() => flashHint('Turnier vorbei: Platz ' + me.place + ' – ' + fmtNum(me.gems) + ' Gems und ' + me.sh + ' Splitter liegen unter Ziele → Belohnung' + (me.place === 1 ? ', dazu der Titel „Turniersieger“!' : '.'), 7000), 2500));
+    if (me) afterSplash(() => setTimeout(() => flashHint('Turnier vorbei: Platz ' + me.place + ' – ' + fmtNum(me.gems) + ' Gems und ' + me.sh + ' Splitter liegen unter Events → Belohnung' + (me.place === 1 ? ', dazu der Titel „Turniersieger“!' : '.'), 7000), 2500));
 }
 function tourChamp(now) { const c = tourState && tourState.champ; return c && (now || Date.now()) < c.until ? c.who : null; }
 function midFight(tid, aWho, aKills, dWho, dKills) {     // after every fight for a base: Turnier-Punkte in the middle
@@ -6465,31 +6471,32 @@ function bountyCheck(r) {                             // a new ruler: whoever to
     bountyState = { ruler: r, gems: 0, coins: 0, since: Date.now() }; saveBounty();
     if (!was || !r || !(g || c) || (was !== 'player' && !botById[was]) || (r !== 'player' && !botById[r])) return;
     bountyPay(r, g, c);
-    const txt = r === 'player' ? 'Kopfgeld für den Sturz von ' + botById[was].name + ': ' + fmtNum(g) + ' Gems und ' + fmtCompact(c) + ' Münzen – abholen unter Ziele → Belohnung!'
+    const txt = r === 'player' ? 'Kopfgeld für den Sturz von ' + botById[was].name + ': ' + fmtNum(g) + ' Gems und ' + fmtCompact(c) + ' Münzen – abholen unter Events → Belohnung!'
         : was === 'player' ? botById[r].name + ' hat das Kopfgeld auf dich kassiert: ' + fmtNum(g) + ' Gems.' : g >= 100 ? botById[r].name + ' kassiert das Kopfgeld auf ' + botById[was].name + ': ' + fmtNum(g) + ' Gems.' : '';
     if (txt) afterSplash(() => setTimeout(() => flashHint(txt, 5000), 4500));
     if (r === 'player') sfx('coin');
 }
-// ---- what you see: a chip under the HUD (Turnier / Kopfgeld), a card in the Thron tab, notices at the middle, the "Turnier" tab in the Rangliste
+// ---- what you see: ONE chip under the HUD (the most urgent: Invasion, Drache, Turnier, Kopfgeld, Händler), a card in the Thron tab, notices at the middle, Events → Turnier
 const midBar = document.getElementById('midBar');
 let midBarHtml = '';
 function tourPlaceOf(who) { const i = tourList().findIndex(e => e[0] === who); return i < 0 ? 0 : i + 1; }
 function renderMidBar() {
-    const now = Date.now(), w = tourWin(now), b = bountyOf(), last = tourState.last; let h = '';
+    const now = Date.now(), w = tourWin(now), b = bountyOf(), last = tourState.last, chips = [];   // [Dringlichkeit, html] – gezeigt wird nur der dringendste
     if (w.on) { const pl = tourPlaceOf('player'), th = evThemaAm(now);
-        h += '<button type="button" class="mb-chip is-tour" data-mb="tour">' + icon(th.ic) + '<span>Turnier · ' + th.name + '</span>' + (pl ? '<b>Platz ' + pl + '</b>' : '') + '<i data-mb-left></i></button>'; }   // the clock is set below: no rebuild every second
-    else if (last && last.me && !last.seen) h += '<button type="button" class="mb-chip is-tour" data-mb="tour">' + icon('crown') + '<span>Turnier vorbei</span><b>Platz ' + last.me.place + '</b></button>';
-    if (b && b.gems >= 5) h += '<button type="button" class="mb-chip' + (b.who === 'player' ? ' is-warn' : '') + '" data-mb="bounty">' + icon(b.who === 'player' ? 'losses' : 'coin') +
-        '<span>' + (b.who === 'player' ? 'Kopfgeld auf dich' : 'Kopfgeld') + '</span><b>' + fmtNum(b.gems) + '</b>' + icon('gem', 'mb-gem') + '</button>';
-    h += evChipsHtml(now);                                                              // Invasion, Drache, Turnier-Ankündigung (Events)
-    if (typeof haendlerChip === 'function') h += haendlerChip(now);                     // Paket C: ein Händler ist da
+        chips.push([4, '<button type="button" class="mb-chip is-tour" data-mb="tour">' + icon(th.ic) + '<span>Turnier · ' + th.name + '</span>' + (pl ? '<b>Platz ' + pl + '</b>' : '') + '<i data-mb-left></i></button>']); }   // the clock is set below: no rebuild every second
+    else if (last && last.me && !last.seen) chips.push([5, '<button type="button" class="mb-chip is-tour" data-mb="tour">' + icon('crown') + '<span>Turnier vorbei</span><b>Platz ' + last.me.place + '</b></button>']);
+    if (b && b.gems >= 5) chips.push([b.who === 'player' ? 1 : 7, '<button type="button" class="mb-chip' + (b.who === 'player' ? ' is-warn' : '') + '" data-mb="bounty">' + icon(b.who === 'player' ? 'losses' : 'coin') +
+        '<span>' + (b.who === 'player' ? 'Kopfgeld auf dich' : 'Kopfgeld') + '</span><b>' + fmtNum(b.gems) + '</b>' + icon('gem', 'mb-gem') + '</button>']);
+    chips.push(...evChips(now));                                                        // Invasion, Drache, Turnier-Ankündigung (Events)
+    if (typeof haendlerChip === 'function') { const hc = haendlerChip(now); if (hc) chips.push([6, hc]); }   // Paket C: ein Händler ist da
+    const h = chips.length ? chips.sort((x, y) => x[0] - y[0])[0][1] : '';
     if (h !== midBarHtml) { midBarHtml = h; midBar.innerHTML = h; midBar.hidden = !h; document.body.classList.toggle('has-midbar', !!h); document.body.style.setProperty('--mb-h', midBar.children.length * 31 + 'px'); }   // the toast moves below the chips
     if (w.on) { const el = midBar.querySelector('[data-mb-left]'), t = fmtDHMS((w.end - now) / 1000); if (el && el.textContent !== t) el.textContent = t; }
     for (const el of midBar.querySelectorAll('[data-ev-bis]')) setText(el, fmtDHMS(Math.max(0, +el.dataset.evBis - now) / 1000));
 }
 midBar.addEventListener('click', e => { const c = e.target.closest('[data-mb]'); if (!c) return;
-    if (c.dataset.mb === 'tour') { openRankings('tour'); return; }
-    if (c.dataset.mb.startsWith('ev-')) { openEvents(c.dataset.mb.slice(3)); return; }
+    if (c.dataset.mb === 'tour') { openGoals('tour'); return; }
+    if (c.dataset.mb.startsWith('ev-')) { openGoals(c.dataset.mb.slice(3)); return; }
     const m = islandById[megaTempleId]; if (!m) return; closeAllPopups(); flyTo(m.x, m.y, { zoom: Math.max(mapState.zoom, 0.02) }); setTimeout(() => openIslandPopup(m), 650); });
 function tourTick(now) {                              // every second from throneTick: roll the weekend over, pay, refresh the clocks
     tourRoll(now); if (tourDirty) saveTour();
@@ -6498,7 +6505,7 @@ function tourTick(now) {                              // every second from thron
 function tourAnzeige(now) {                           // (auch bei Zuschauern) die Leiste und die Uhren
     renderMidBar();
     const w = tourWin(now); for (const el of document.querySelectorAll('[data-tour-left]')) el.textContent = fmtDHMS(((w.on ? w.end : w.start) - now) / 1000);
-    if (isPanelOpen(rankPopup) && rankTab === 'tour' && now % 5000 < 1000) renderRankings();
+    if (evOffen() && goalsTab === 'tour' && now % 5000 < 1000) renderEvents();
 }
 function tourCardHtml() {                             // the head of the "Turnier" tab: state, your points, rules, prizes, last winners
     const now = Date.now(), w = tourWin(now), me = tourState.key === w.key ? Math.floor(tourState.pts.player || 0) : 0, pl = tourPlaceOf('player'), ch = tourChamp(now), last = tourState.last, th = evThemaAm(now);
@@ -6570,14 +6577,21 @@ function shieldBlockText(ow) { const n = (botById[ow] || {}).name || 'Dieser Spi
     if (b && botNeulingBis(ow, b) > Date.now() && botNeulingBis(ow, b) >= (b.shieldUntil || 0)) return 'Anfängerschutz: ' + n + ' ist neu und noch ' + fmtHours(b.neuBis - Date.now()) + ' unangreifbar.';
     return 'Friedensschild: ' + n + ' ist noch ' + fmtHours(ownerShieldUntil(ow) - Date.now()) + ' unangreifbar.'; }
 function fmtHours(ms) { return fmtDHMS(ms / 1000); }
-function renderShieldState() { const el = document.getElementById('shieldState'); if (!el) return; const st = shieldStock(), sh = shieldUntil() > Date.now() ? shieldUntil() : 0;   // (die Restzeit zählt live)
-    liveHtml(el, (sh ? 'Aktiv – noch ' + uhrHtml(sh) + ' · ' : '') + 'Im Vorrat: ' + st[2] + '× 2 Std., ' + st[8] + '× 8 Std., ' + st[24] + '× 24 Std.'); }
-shopPopup.addEventListener('click', e => { const bt = e.target.closest('[data-shield]'); if (!bt) return;
+function renderShieldState() { const el = document.getElementById('shieldState'); if (!el) return; const st = shieldStock(), now = Date.now(), sh = shieldUntil() > now ? shieldUntil() : 0, neu = sh ? 0 : neulingBis();   // (die Restzeit zählt live)
+    liveHtml(el, icon('shield') + '<span>' + (sh ? 'Friedensschild aktiv – noch ' + uhrHtml(sh) : neu > now ? 'Anfängerschutz – noch ' + uhrHtml(neu) : 'Kein Schild aktiv.') + '</span>');
+    liveHtml(document.getElementById('shieldUse'), [2, 8, 24].map(h => '<button type="button" class="btn btn--' + (st[h] ? 'primary' : 'secondary') + '" data-shield-use="' + h + '"' + (st[h] ? '' : ' disabled') + '><span>' + h + ' Std.</span><span class="cost">' + st[h] + '× im Vorrat</span></button>').join('')); }
+shopPopup.addEventListener('click', e => {                 // Shop → Schilde: kaufen (in den Vorrat) und einschalten – beides nur hier
+    const su = e.target.closest('[data-shield-use]');
+    if (su) { const h = +su.dataset.shieldUse, stock = shieldStock(); if (!stock[h]) return;
+        stock[h]--; store.set('openWaterShieldStock', JSON.stringify(stock)); statBump('shields');
+        store.set('openWaterShield', String(Math.max(Date.now(), shieldUntil()) + h * 3600000)); shieldMemAt = 0;
+        flashHint('Friedensschild aktiv – noch ' + fmtHours(shieldUntil() - Date.now()), 3000); renderShop(); requestRender(); return; }
+    const bt = e.target.closest('[data-shield]'); if (!bt) return;
     const h = +bt.dataset.shield, cost = SHIELD_PRICES[h];
     if (gems < cost) { flashHint('Zu wenig Gems – der Schild kostet ' + cost + '.', 3000); return; }
     gems -= cost; const stock = shieldStock(); stock[h]++; store.set('openWaterShieldStock', JSON.stringify(stock));
     updateHud(); saveGame(); renderShop();
-    flashHint('Schild (' + h + ' Std.) liegt im Vorrat – einschalten in der Stadt: tippe deine Burg an.', 4000); });
+    flashHint('Schild (' + h + ' Std.) liegt im Vorrat – unten einschalten, wann du willst.', 3500); });
 function heroChestPool(minR) { return HEROES.filter(h => { const s = heroSt('player', h.id); return s && !(s.own && s.q >= HERO_MAXQ) && h.r >= minR; }); }
 function renderHeroChests() {                       // the odds per rarity follow your heroes: maxed ones drop out
     const pool = heroChestPool(1), tot = pool.reduce((a, h) => a + 5 - h.r, 0);
@@ -6602,21 +6616,24 @@ shopPopup.addEventListener('click', e => { const bt = e.target.closest('[data-hc
     res.hidden = false; res.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); });
 shopPopup.addEventListener('click', e => { if (e.target.closest('[data-hchest-hall]')) { closeAllPopups(); openHeroHall(); } });
 function renderShop() {
-    renderShieldState(); renderHeroChests();
+    const hdTab = document.querySelector('#shopTabs [data-stab="hd"]'), hdHier = typeof hdDa === 'function' && !!hdDa();   // der Reiter „Händler“ nur, wenn einer da ist
+    if (hdTab.hidden === hdHier) hdTab.hidden = !hdHier;
+    if (shopTab === 'hd' && !hdHier) { showShopTab('gems'); return; }
+    if (shopTab === 'shield') renderShieldState(); else if (shopTab === 'gems') renderHeroChests();
     const tc = document.getElementById('shopThroneCount'); setText(tc, fmtCompact(throneState.pts || 0)); tc.title = fmtNum(throneState.pts || 0) + ' Thron-Punkte';
     if (shopTab === 'throne') renderThroneShop();
+    if (shopTab === 'hd' && typeof hdRender === 'function') hdRender();
+    if (shopTab === 'markt' && AUF) liveHtml(document.getElementById('shopMarkt'), AUF.marktHtml());
     setText(shopGemCount, fmtCompact(Math.floor(gems)));
     shopGemCount.title = fmtNum(Math.floor(gems)) + ' Gems';
     shopOpenCrateBtn.disabled = gems < CRATE_GEM_COST;
 }
-
-shopBtn.addEventListener('click', () => {
-    if (isPanelOpen(shopPopup)) { shopCloseBtn.click(); return; }
+function openShop(tab) {                              // der EINE Shop (Dock); tab: gems | shield | throne | hd | markt
     closeAllPopups();
     shopCrateResult.style.display = 'none'; document.getElementById('shopHeroResult').hidden = true;   // no old chest results on a fresh visit
-    renderShop();
-    openPanel(shopPopup);
-});
+    openPanel(shopPopup); showShopTab(tab || shopTab);
+}
+shopBtn.addEventListener('click', () => { if (isPanelOpen(shopPopup)) shopCloseBtn.click(); else openShop(); });
 shopCloseBtn.addEventListener('click', () => {
     closePanel(shopPopup);
 });
@@ -7554,7 +7571,7 @@ function defeatBoss(boss) {
     inboxAdd({ src: 'wboss', title: boss.name + ' besiegt', gems: rewardGems, crate: BOSS_CRATE, sh: shN });   // eine epische (lila) Kiste, Gems und Splitter – ins Abholfach (Gold nur Platz 1 beim Tagesboss)
     saveProgression(); saveGame(); updateHud();
     if (boss.wander) endWander(null); else endBoss(null);
-    document.getElementById('rewardModalSub').textContent = boss.name + ' ist gefallen – die Beute liegt unter Ziele → Belohnung.';
+    document.getElementById('rewardModalSub').textContent = boss.name + ' ist gefallen – die Beute liegt unter Events → Belohnung.';
     const list = document.getElementById('rewardModalRewards'), rd = RARITY_DEFS[4];
     list.innerHTML = '<li style="border-color:' + rd.color + '66">' + icon('shop') + '<span>Kiste</span><b style="color:' + rd.color + '">mind. ' + rd.label + '</b></li>' +
         '<li>' + icon('gem', 'ico-gem') + '<span>Gems</span><b>+' + rewardGems + '</b></li><li>' + icon('star') + '<span>Helden-Splitter</span><b>+' + shN + '</b></li>';
@@ -8026,7 +8043,7 @@ function activeSkin() { const v = loadSkins(), d = SKIN_DEFS[v.active]; return d
 function shieldStock() { let v; try { v = JSON.parse(store.get('openWaterShieldStock')); } catch (e) {} return Object.assign({ 2: 0, 8: 0, 24: 0 }, v || {}); }
 function renderKeepSheet() {
     if (AUF) return AUF.renderKeep();                                                // Paket D: Burg-Stufe (aufbau.js)
-    const lvl = islandLevels[playerIslandId] || 1, max = lvl >= MAX_BASE_LEVEL, cost = max ? 0 : upgradeCost(lvl), stock = shieldStock();
+    const lvl = islandLevels[playerIslandId] || 1, max = lvl >= MAX_BASE_LEVEL, cost = max ? 0 : upgradeCost(lvl);
     // (läuft auch jede Sekunde aus liveTick: geschrieben wird nur, was sich ändert – die Schild-Restzeit zählt von selbst)
     const now = Date.now(), sh = shieldUntil() > now ? shieldUntil() : 0, neu = sh ? 0 : neulingBis();
     document.getElementById('citySheet').hidden = false;
@@ -8040,10 +8057,7 @@ function renderKeepSheet() {
     liveHtml(document.getElementById('cityBStats'), max ? '' : '<div><span>Aufwerten</span><b class="' + (coins < cost ? 'is-bad' : '') + '">' + icon('coin', 'icon--coin') + fmtCompact(cost) + '</b></div><div><span>Danach</span><b>Stufe ' + (lvl + 1) + '</b></div>');
     const up = document.getElementById('cityUpgradeBtn'); setBtnLabel(up, max ? 'Höchste Stufe' : 'Aufwerten auf ' + (lvl + 1)); up.disabled = max || coins < cost; up.title = ''; up.style.display = '';
     document.getElementById('citySpeedBtn').style.display = 'none';
-    liveHtml(document.getElementById('cityBExtra'),
-        '<div class="keep-h">Friedensschild</div><div class="keep-shields">' + [2, 8, 24].map(h => '<button type="button" class="btn btn--secondary btn--sm" data-shield-use="' + h + '"' + (stock[h] ? '' : ' disabled') + '>' + icon('shield') + h + ' Std. · ' + stock[h] + '×</button>').join('') + '</div>' +
-        '<small class="keep-note">Schilde kaufst du im Shop, hier schaltest du sie ein. Greifst du selbst an, fällt der Schild.</small>' +
-        '<div class="keep-h">Aussehen</div><button type="button" class="crest-card keep-crest" data-look-open><img alt="" src="' + crestDataUrl(56) + '"><span class="crest-card-t"><b>' + escapeHtml(playerTitle()) + '</b><small>Wappen, Rahmen, Titel, Basis- und Marsch-Skins, Ringe</small></span><span class="crest-card-go">Öffnen' + icon('upgrade') + '</span></button>');
+    liveHtml(document.getElementById('cityBExtra'), '<small class="keep-note">Friedensschilde: Shop → Schilde. Aussehen: Profil.</small>');
 }
 // ===== AUSSEHEN: every look in one place - Wappen, Rahmen, Titel, Basis-Skin (+ Ring), Marsch-Skin. Only to buy (Gems or Thron-Punkte) or a title from the middle =====
 var lkTab = 'frame';
@@ -8069,7 +8083,7 @@ function lkUse(kind, id) {                            // put on something you ow
 function lkBuy(kind, id) {                            // Gems or Thron-Punkte; bought = put on at once
     const d = lkDef(kind, id); if (!d) return;
     if (lkHas(kind, id)) { lkUse(kind, id); return; }
-    if (d.buy === 'pass') { flashHint('„' + d.name + '“ gibt es nur im Saison-Pass (Premium-Reihe) – unter „Ziele“.', 3000); return; }
+    if (d.buy === 'pass') { flashHint('„' + d.name + '“ gibt es nur im Saison-Pass (Premium-Reihe) – unter „Events“.', 3000); return; }
     const cost = d.tp || d.gems || 0;
     if (d.tp ? (throneState.pts || 0) < cost : gems < cost) { flashHint('Zu wenig ' + (d.tp ? 'Thron-Punkte' : 'Gems') + ' – „' + d.name + '“ kostet ' + fmtNum(cost) + '.', 2500); return; }
     if (d.tp) { throneState.pts -= cost; saveThrone(); } else gems -= cost;
@@ -8143,7 +8157,6 @@ document.getElementById('lookSheet').addEventListener('click', e => {
     const c = e.target.closest('[data-lk]'); if (!c) return; const [kind, id] = c.dataset.lk.split(':');
     lkHas(kind, id) ? lkUse(kind, id) : lkBuy(kind, id);
 });
-document.addEventListener('click', e => { if (e.target.closest('[data-look-open]')) openLookSheet(); });   // from the keep, the shop and the Thron-Shop
 setTimeout(lookMigrate, 0);                             // after the whole script: the old rank / Erfolg looks become owned
 function renderCitySheet() {                       // (läuft auch jede Sekunde aus liveTick: geschrieben wird nur, was sich ändert)
     if (cityOpenId === 'keep') cityOpenId = '_keep';
@@ -8599,11 +8612,6 @@ var forgeSlot = 'weapon';
 document.getElementById('citySheet').addEventListener('click', e => {
     const fs = e.target.closest('[data-forge-slot]'); if (fs) { forgeSlot = fs.dataset.forgeSlot; renderCitySheet(); return; }
     if (e.target.closest('[data-hero-open]')) { openHeroHall(); return; }
-    const su = e.target.closest('[data-shield-use]');
-    if (su) { const h = +su.dataset.shieldUse, stock = shieldStock(); if (!stock[h]) return;
-        stock[h]--; store.set('openWaterShieldStock', JSON.stringify(stock)); statBump('shields');
-        store.set('openWaterShield', String(Math.max(Date.now(), shieldUntil()) + h * 3600000)); shieldMemAt = 0;
-        flashHint('Friedensschild aktiv – noch ' + fmtHours(shieldUntil() - Date.now()), 3000); renderKeepSheet(); requestRender(); return; }
     const st = e.target.closest('[data-star]'), hl = e.target.closest('[data-heal]');
     if (st) { const item = inventory[st.dataset.star]; if (!item) return;
         const s0 = item.stars || 0, cost = starGemCost(s0);
@@ -8618,7 +8626,6 @@ document.getElementById('citySheet').addEventListener('click', e => {
 });
 document.getElementById('cityBtn').addEventListener('click', openCity);
 document.getElementById('cityNavBtn').addEventListener('click', openCity);
-document.getElementById('lookGo').addEventListener('click', () => openLookSheet());
 // Hauptstadt verlegen (teleport): pick one of your own bases, the capital status and its garrison move there.
 var teleportMode = false;
 const TELEPORT_GEMS = 50;
@@ -9757,7 +9764,7 @@ function barbArrive(m, now) {
     addCombatLogEntry({ type: 'barb', L: c.L, won: fb.won, atk: fb.SA, def: before, left: fb.won ? 0 : c.t, kill: fb.kill, troops: m.troops, gef: fb.gef, shPct: fb.sh, loss: fb.loss, wounded, gold, kGold, crate: it, sh: sh ? shN + ' Helden-Splitter' : '',
         n: rec.n, open: Math.min(BARB_MAX_L, rec.b + 1), up: rec.b > best0 && rec.b < BARB_MAX_L, sourceId: m.homeId, attacker: 'Du', hA: heroTag(hx), hx: heroReportOf(hx) });
     spawnBattleFx({ x: c.x, y: c.y }, fb.won, fb.won ? 'Lager besiegt' : 'Abgewehrt', fb.won ? 'Stufe ' + c.L + ' · ' + rec.n + ' / ' + barbTagMax() + ' heute' : '−' + fmtCompact(fb.loss) + ' Truppen');
-    flashHint(fb.won ? 'Barbaren-Lager Stufe ' + c.L + ' besiegt: +' + fmtCompact(gold) + ' Münzen' + (it ? ', Kiste: ' + it : '') + (sh ? ', ' + shN + ' Splitter' : '') + ' – abholen unter Ziele.' : 'Das Lager hat standgehalten – es hat jetzt noch ' + fmtCompact(c.t) + ' Krieger.', 4500);
+    flashHint(fb.won ? 'Barbaren-Lager Stufe ' + c.L + ' besiegt: +' + fmtCompact(gold) + ' Münzen' + (it ? ', Kiste: ' + it : '') + (sh ? ', ' + shN + ' Splitter' : '') + ' – abholen unter Events.' : 'Das Lager hat standgehalten – es hat jetzt noch ' + fmtCompact(c.t) + ' Krieger.', 4500);
     updateHud(); saveGame(); saveProgression(); barbSheetRefresh();
 }
 function dbossHit(m, now) {                         // every attack takes life off the boss (at most 5 %); a quarter of those who struck fall (Lazarett as usual), the rest come home
@@ -9784,7 +9791,7 @@ function dbossPayout(b) {                           // the boss falls: everyone 
     rk.forEach(([who], i) => { const p = dbossPrizeOf(i); goalBump(who, 'dboss');
         if (who === 'player') { inboxAdd({ src: 'boss', title: b.name + ' · Platz ' + (i + 1), gems: p.gems, crate: p.crate >= 0 ? p.crate : -1, sh: p.sh });   // the prize is sent to the Abholfach
             addCombatLogEntry({ type: 'dbossWin', name: b.name, rank: i + 1, of: rk.length, dmg: b.dmg.player || 0, gems: p.gems, crate: p.crate >= 0 ? 'Kiste (mind. ' + RARITY_DEFS[p.crate].label + ')' : '', sh: p.sh ? p.sh + ' Helden-Splitter' : '' });
-            flashHint(b.name + ' ist gefallen! Platz ' + (i + 1) + ': dein Preis liegt unter Ziele → Belohnung.', 5000); }
+            flashHint(b.name + ' ist gefallen! Platz ' + (i + 1) + ': dein Preis liegt unter Events → Belohnung.', 5000); }
         else if (botById[who]) { bs = bs || loadBotState(); if (bs[who]) bs[who].gems += p.gems; if (p.crate >= 0) barbCrate(who, p.crate); heroGrantShards(who, p.sh); } });
     if (bs) saveBotState();
     spawnBattleFx({ x: b.x, y: b.y }, true, b.name + ' gefallen', rk.length + ' Kämpfer belohnt');
@@ -10136,7 +10143,7 @@ function invAuszahlen() {                            // nach der Invasion: Beloh
     let n = 0;
     for (const [who, p] of evRang(I.pts)) { const pr = INV_PREISE.find(x => p >= x.ab); if (!pr) continue; n++;
         evPreis(who, 'inv', 'Barbaren-Invasion · ' + Math.floor(p) + ' Punkte', pr); }
-    if (n) flashHint('Die Barbaren-Invasion ist vorbei – ' + n + ' Verteidiger werden belohnt (Ziele → Belohnung).', 5000);
+    if (n) flashHint('Die Barbaren-Invasion ist vorbei – ' + n + ' Verteidiger werden belohnt (Events → Belohnung).', 5000);
     saveBotState(); requestRender();
 }
 function invTakt(now) {                              // (nur Weltrechner) Wellen losschicken, Ankünfte, Ende
@@ -10234,7 +10241,7 @@ function evHinweise() {                              // (Zuschauer) neue Welle, 
 function evAnzeige(now) {                            // Uhren in Fenster und Leiste, offenes Fenster auffrischen
     evHinweise();
     for (const el of document.querySelectorAll('[data-ev-bis]')) setText(el, fmtDHMS(Math.max(0, +el.dataset.evBis - now) / 1000));
-    if (isPanelOpen(eventPopup) && now - evRenderAt > 2500) renderEvents();
+    if (evOffen() && now - evRenderAt > 2500) renderEvents();
 }
 
 // ---- die Karte: Barbaren-Armeen (wie Märsche: gestrichelte Linie + Marke) und der Drache ----
@@ -10330,9 +10337,11 @@ function drSheetHtml(head) {
         '<div class="barb-note">Höchstens 2 % Leben pro Angriff, ein Drittel der Kämpfer fällt. Fällt er: Platz 1 goldene Kiste, Platz 2–10 lila Kiste, alle anderen Gems und Splitter. Entkommt er: alle etwas Kleines.</div>';
 }
 
-// ---- das Ereignis-Fenster (Knopf an der Karte): Termine, Uhren, Ranglisten ----
-const eventPopup = document.getElementById('eventPopup');
-let evTab = 'alle', evRenderAt = 0;
+// ---- die Ereignisse im Events-Fenster (Dock → Events, untere Reiter): Termine, Uhren, Ranglisten ----
+var evTab = 'boss', evRenderAt = 0;
+function evJetzt(now) {                              // was gerade läuft (für das „!“ am Reiter und den ersten Blick ins Fenster)
+    try { now = now || Date.now(); return invAktiv(now) ? 'inv' : drAktiv(now) ? 'drache' : tourWin(now).on ? 'tour' : null; } catch (e) { return null; }
+}
 const evUhr = (bis) => '<b data-ev-bis="' + bis + '">' + fmtDHMS(Math.max(0, bis - Date.now()) / 1000) + '</b>';
 const evWann = t => { const d = new Date(t); return ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'][d.getDay()] + ' ' + d.getDate() + '.' + (d.getMonth() + 1) + '. ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
 function evRangHtml(list, fmt, lim) {                // Top 10 (+ deine Zeile)
@@ -10341,18 +10350,12 @@ function evRangHtml(list, fmt, lim) {                // Top 10 (+ deine Zeile)
     return list.length ? '<ol class="barb-rank">' + list.slice(0, lim || 10).map(row).join('') + (mi >= (lim || 10) ? row(list[mi], mi) : '') + '</ol>' : '';
 }
 function evKarte(ic, titel, sub, inhalt, cls) { return '<div class="barb-card ev-card' + (cls ? ' ' + cls : '') + '"><div class="barb-ct"><b>' + icon(ic) + ' ' + titel + '</b><small>' + sub + '</small></div>' + inhalt + '</div>'; }
-function evTourHtml(kurz) {
-    const now = Date.now(), w = tourWin(now), th = evThemaAm(now);
-    const kopf = (w.on ? 'Läuft · endet in ' : 'Beginnt in ') + evUhr(w.on ? w.end : w.start);
-    const inh = '<div class="field-lines"><span>Thema</span><b>' + icon(th.ic) + ' ' + th.name + '</b><span>Punkte für</span><b>' + th.pkt + '</b><span>Bonus</span><b>' + th.bonus + '</b>' +
-        (w.on ? '<span>Dein Platz</span><b>' + (tourPlaceOf('player') || '–') + ' · ' + fmtNum(Math.floor(tourState.pts.player || 0)) + ' Punkte</b>' : '<span>Termin</span><b>' + evWann(w.start) + '</b>') + '</div>';
-    if (kurz) return evKarte(th.ic, 'Wochenend-Turnier', kopf, inh + '<button class="btn btn--secondary btn--sm" type="button" data-ev-tab="tour">' + icon('rank') + '<span>Turnier ansehen</span></button>', 'is-tour');
+function evTourHtml() {
+    const now = Date.now(), w = tourWin(now);
     const nxt = EV_THEMEN.map((x, i) => { const d = new Date(w.start); d.setDate(d.getDate() + 7 * i); return '<span>' + evWann(d.getTime()).slice(0, -6) + '</span><b>' + icon(evThemaAm(d.getTime() + 3600000).ic) + ' ' + evThemaAm(d.getTime() + 3600000).name + '</b>'; }).join('');
-    return tourCardHtml() + '<div class="lb-gap">' + (w.on ? 'Live · Top 10' : 'Nächste Wochenenden') + '</div>' +
-        (w.on ? evRangHtml(tourList(), v => fmtNum(Math.floor(v))) || '<div class="war-empty">Noch hat niemand Punkte.</div>' : '<div class="field-lines ev-plan">' + nxt + '</div>') +
-        '<button class="btn btn--secondary btn--sm" type="button" data-ev-rank>' + icon('rank') + '<span>Ganze Rangliste</span></button>';
+    return tourCardHtml() + (w.on ? '' : '<div class="lb-gap">Nächste Wochenenden</div><div class="field-lines ev-plan">' + nxt + '</div>') + tourRangHtml();   // die ganze Rangliste nur hier
 }
-function evInvHtml(kurz) {
+function evInvHtml() {
     const now = Date.now(), I = evState.inv, akt = invAktiv(now), p = evPlanVon('inv'), last = I && I.paid ? I : null;
     const kopf = akt ? 'Läuft · Welle ' + Math.min(INV_WELLEN, akt.welle) + ' / ' + INV_WELLEN + ' · noch ' + evUhr(akt.end) : 'Nächste in ' + evUhr(p.start);
     const pts = I ? I.pts || {} : {}, me = Math.floor(pts.player || 0), rk = evRang(pts), mine = I ? rk.findIndex(e => e[0] === 'player') + 1 : 0;
@@ -10360,8 +10363,6 @@ function evInvHtml(kurz) {
     let inh = '<div class="field-lines"><span>Termin</span><b>' + evWann(akt ? akt.start : p.start) + ' – ' + evWann(akt ? akt.end : p.end).slice(-5) + '</b>' +
         (akt ? '<span>Armeen unterwegs</span><b>' + akt.armies.length + (meine.length ? ' · <span class="ev-rot">' + meine.length + ' auf dich</span>' : '') + '</b>' : '') +
         (I && (akt || last) ? '<span>' + (akt ? 'Deine Punkte' : 'Letztes Mal') + '</span><b>' + fmtNum(me) + (mine ? ' · Platz ' + mine : '') + '</b>' : '') + '</div>';
-    if (kurz) return evKarte('defense', 'Barbaren-Invasion', kopf, inh + (meine.length ? '<button class="btn btn--primary btn--sm" type="button" data-ev-go="inv">' + icon('send') + '<span>Zur Armee auf deine Basis</span></button>' : '') +
-        '<button class="btn btn--secondary btn--sm" type="button" data-ev-tab="inv">' + icon('rank') + '<span>Regeln &amp; Rangliste</span></button>', akt ? 'is-warn' : '');
     const preise = INV_PREISE.map(x => '<div class="tour-prize"><b>' + x.t + '</b><span>' + icon('gem') + x.gems + '</span><span>' + icon('star') + x.sh + '</span>' + (x.crate >= 0 ? '<em>' + RARITY_DEFS[x.crate].label + '-Kiste</em>' : '') + '</div>').join('');
     return evKarte('defense', 'Barbaren-Invasion', kopf, inh +
         (meine.length ? '<button class="btn btn--primary btn--sm" type="button" data-ev-go="inv">' + icon('send') + '<span>Zur Armee auf deine Basis</span></button>' : ''), akt ? 'is-warn' : '') +
@@ -10372,14 +10373,13 @@ function evInvHtml(kurz) {
         '<div class="tour-prizes ev-prizes3">' + preise + '</div><div class="lb-gap">' + (akt ? 'Live · Top 10' : 'Letzte Invasion') + '</div>' +
         (evRangHtml(rk, v => fmtNum(Math.floor(v)) + ' P.') || '<div class="war-empty">' + (akt ? 'Noch hat niemand Punkte.' : 'Noch keine Invasion gewesen.') + '</div>');
 }
-function evDrHtml(kurz) {
+function evDrHtml() {
     const now = Date.now(), D = evState.dr, akt = drAktiv(now), p = evPlanVon('dr'), rk = D ? evRang(D.dmg) : [], mine = rk.findIndex(e => e[0] === 'player') + 1;
     const kopf = akt ? 'Da · fliegt weg in ' + evUhr(akt.end) : D && D.start === p.start && D.hp <= 0 && now < D.end ? 'Besiegt!' : 'Nächster in ' + evUhr(p.start);
     let inh = (akt ? '<div class="barb-hp"><i style="width:' + (akt.hp / akt.max * 100).toFixed(1) + '%"></i><span>' + fmtCompact(akt.hp) + ' / ' + fmtCompact(akt.max) + ' Leben</span></div>' : '') +
         '<div class="field-lines"><span>Termin</span><b>' + evWann(akt ? akt.start : p.start) + ' – ' + evWann(akt ? akt.end : p.end).slice(-5) + '</b>' +
         (D && rk.length ? '<span>' + (akt ? 'Dein Schaden' : 'Letztes Mal') + '</span><b>' + (mine ? fmtCompact(rk[mine - 1][1]) + ' · Platz ' + mine : '–') + '</b>' : '') + '</div>';
     const go = drOnMap() ? '<button class="btn btn--primary btn--sm" type="button" data-ev-go="drache">' + icon('send') + '<span>Zum Drachen</span></button>' : '';
-    if (kurz) return evKarte('star', 'Der Drache', kopf, inh + go + '<button class="btn btn--secondary btn--sm" type="button" data-ev-tab="drache">' + icon('rank') + '<span>Regeln &amp; Rangliste</span></button>', akt ? 'is-drache' : '');
     const preise = DR_PREISE.map((x, i) => '<div class="tour-prize' + (i ? '' : ' is-1') + '"><b>' + x.t + '</b><span>' + icon('gem') + x.gems + '</span><span>' + icon('star') + x.sh + '</span>' + (x.crate >= 0 ? '<em>' + RARITY_DEFS[x.crate].label + '-Kiste</em>' : '') + '</div>').join('');
     return evKarte('star', 'Der Drache', kopf, inh + go, akt ? 'is-drache' : '') +
         '<div class="tour-rules"><span>' + icon('hourglass') + '<span><b>Jeden Sonntag ' + DR_STUNDE + '–' + (DR_STUNDE + DR_DAUER / 3600000) + ' Uhr</b> kreist ' + DR_NAME + ' über dem Thron – sehr viel Leben, nur alle zusammen schaffen ihn</span></span>' +
@@ -10388,28 +10388,21 @@ function evDrHtml(kurz) {
         '<div class="tour-prizes ev-prizes3">' + preise + '</div><div class="lb-gap">' + (akt ? 'Live · Schaden' : 'Letzter Drache') + '</div>' +
         (evRangHtml(rk, v => fmtCompact(v)) || '<div class="war-empty">' + (akt ? 'Noch hat niemand angegriffen.' : 'Noch kein Drache gewesen.') + '</div>');
 }
-function evAlleHtml() {
+function evBossHtml() {                              // Reiter „Boss & Lager“: Tagesboss und Barbaren-Lager (jeden Tag neu)
     const b = dbossEnsure(), rec = barbRec('player'), near = barbNearest();
     const boss = evKarte('crown', 'Tagesboss · ' + escapeHtml(b.name), b.hp <= 0 ? 'Besiegt · neuer in ' + evUhr(Date.now() + msToMidnight()) : rec.h + ' / ' + dbossHitsMax() + ' Angriffe heute',
         '<div class="barb-hp"><i style="width:' + (b.hp / b.max * 100).toFixed(1) + '%"></i><span>' + (b.hp <= 0 ? 'Besiegt' : fmtCompact(b.hp) + ' Leben') + '</span></div>' +
         (dbossOnMap() ? '<button class="btn btn--secondary btn--sm" type="button" data-ev-go="boss">' + icon('send') + '<span>Zum Tagesboss</span></button>' : ''));
     const lager = evKarte('attack', 'Barbaren-Lager', rec.n + ' / ' + barbTagMax() + ' heute', '<div class="field-lines"><span>Freigeschaltet</span><b>bis Stufe ' + Math.min(BARB_MAX_L, rec.b + 1) + '</b><span>Neuer Tag in</span>' + evUhr(Date.now() + msToMidnight()) + '</div>' +
         (near ? '<button class="btn btn--secondary btn--sm" type="button" data-ev-go="camp">' + icon('send') + '<span>Nächstes Lager · Stufe ' + near.L + '</span></button>' : ''));
-    return evTourHtml(true) + evInvHtml(true) + evDrHtml(true) + boss + lager;
+    return boss + lager;
 }
+function evOffen() { return isPanelOpen(goalsPopup) && EV_TABS.includes(goalsTab); }
 function renderEvents() {
     evRenderAt = Date.now();
-    for (const b of document.querySelectorAll('#eventTabs [data-etab]')) { const on = b.dataset.etab === evTab; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }
-    liveHtml(document.getElementById('eventBody'), evTab === 'tour' ? evTourHtml() : evTab === 'inv' ? evInvHtml() : evTab === 'drache' ? evDrHtml() : evAlleHtml());
+    liveHtml(document.getElementById('eventBody'), evTab === 'tour' ? evTourHtml() : evTab === 'inv' ? evInvHtml() : evTab === 'drache' ? evDrHtml() : evBossHtml());
 }
-function openEvents(tab) { closeAllPopups(); if (barbView) closeBarbSheet(); evTab = tab || 'alle'; renderEvents(); openPanel(eventPopup); document.getElementById('eventBody').scrollTop = 0; }
-document.getElementById('eventBtn').addEventListener('click', e => { e.stopPropagation(); closeIslandPopup(); if (fieldSheetId) closeFieldSheet(); isPanelOpen(eventPopup) ? closePanel(eventPopup) : openEvents(); });
-document.getElementById('eventCloseBtn').addEventListener('click', () => closePanel(eventPopup));
-document.getElementById('eventTabs').addEventListener('click', e => { const b = e.target.closest('[data-etab]'); if (!b) return; evTab = b.dataset.etab; renderEvents(); document.getElementById('eventBody').scrollTop = 0; });
-eventPopup.addEventListener('click', e => {
-    const tb = e.target.closest('[data-ev-tab]'); if (tb) { evTab = tb.dataset.evTab; renderEvents(); document.getElementById('eventBody').scrollTop = 0; return; }
-    if (e.target.closest('[data-ev-rank]')) { openRankings('tour'); return; }
-    const pr = e.target.closest('[data-profile]'); if (pr) { closePanel(eventPopup); openRulerProfile(pr.dataset.profile); return; }
+document.getElementById('eventBody').addEventListener('click', e => {
     const go = e.target.closest('[data-ev-go]'); if (!go) return; const k = go.dataset.evGo;
     let t = null, v = null;
     if (k === 'drache') { t = drOnMap(); v = { kind: 'drache' }; }
@@ -10417,18 +10410,18 @@ eventPopup.addEventListener('click', e => {
     else if (k === 'camp') { t = barbNearest(); v = t && { kind: 'camp', id: t.id }; }
     else if (k === 'inv') { const I = invAktiv(), a = I && I.armies.filter(x => islandOwnerOf(x.tid) === 'player').sort((x, y) => x.at1 - y.at1)[0]; if (a) { t = invPos(a); v = { kind: 'inv', id: a.id }; } }
     if (!t) { flashHint('Gerade nichts davon auf der Karte.', 2500); return renderEvents(); }
-    closePanel(eventPopup); flyTo(t.x, t.y, k === 'drache' ? { zoom: .015, screenY: viewH * .3 } : { zoom: Math.max(mapState.zoom, .02), screenY: viewH * .2 }); openBarbSheet(v);
+    closePanel(goalsPopup); flyTo(t.x, t.y, k === 'drache' ? { zoom: .015, screenY: viewH * .3 } : { zoom: Math.max(mapState.zoom, .02), screenY: viewH * .2 }); openBarbSheet(v);
 });
-// die Leiste unter dem HUD: Invasion bald/läuft, Drache bald/da, Turnier-Ankündigung am Freitag
-function evChipsHtml(now) {
-    let h = ''; const ip = evPlanVon('inv'), I = invAktiv(now), D = drAktiv(now), dp = evPlanVon('dr'), w = tourWin(now);
+// der Hinweis unter dem HUD: Invasion bald/läuft, Drache bald/da, Turnier-Ankündigung am Freitag → [Dringlichkeit, html] (0 = am dringendsten)
+function evChips(now) {
+    const out = [], ip = evPlanVon('inv'), I = invAktiv(now), D = drAktiv(now), dp = evPlanVon('dr'), w = tourWin(now);
     if (I) { const n = I.armies.filter(a => islandOwnerOf(a.tid) === 'player').length;
-        h += '<button type="button" class="mb-chip is-warn" data-mb="ev-inv">' + icon('defense') + '<span>Invasion · Welle ' + Math.min(INV_WELLEN, I.welle) + '/' + INV_WELLEN + '</span>' + (n ? '<b>' + n + ' auf dich</b>' : '<b>' + fmtNum(Math.floor(I.pts.player || 0)) + ' P.</b>') + '</button>'; }
-    else if (ip.start > now && ip.start - now <= 30 * 60000) h += '<button type="button" class="mb-chip is-warn" data-mb="ev-inv">' + icon('defense') + '<span>Barbaren-Invasion in</span><i data-ev-bis="' + ip.start + '"></i></button>';
-    if (D) h += '<button type="button" class="mb-chip is-drache" data-mb="ev-drache">' + icon('star') + '<span>Drache</span><b>' + Math.ceil(D.hp / D.max * 100) + ' %</b><i data-ev-bis="' + D.end + '"></i></button>';
-    else if (dp.start > now && dp.start - now <= 30 * 60000) h += '<button type="button" class="mb-chip is-drache" data-mb="ev-drache">' + icon('star') + '<span>Der Drache kommt in</span><i data-ev-bis="' + dp.start + '"></i></button>';
-    if (!w.on && w.start > now && w.start - now <= 864e5) { const th = evThemaAm(now); h += '<button type="button" class="mb-chip is-tour" data-mb="ev-tour">' + icon(th.ic) + '<span>Ab Samstag: ' + th.name + '</span><i data-ev-bis="' + w.start + '"></i></button>'; }
-    return h;
+        out.push([n ? 0 : 2, '<button type="button" class="mb-chip is-warn" data-mb="ev-inv">' + icon('defense') + '<span>Invasion · Welle ' + Math.min(INV_WELLEN, I.welle) + '/' + INV_WELLEN + '</span>' + (n ? '<b>' + n + ' auf dich</b>' : '<b>' + fmtNum(Math.floor(I.pts.player || 0)) + ' P.</b>') + '</button>']); }
+    else if (ip.start > now && ip.start - now <= 30 * 60000) out.push([3, '<button type="button" class="mb-chip is-warn" data-mb="ev-inv">' + icon('defense') + '<span>Barbaren-Invasion in</span><i data-ev-bis="' + ip.start + '"></i></button>']);
+    if (D) out.push([2, '<button type="button" class="mb-chip is-drache" data-mb="ev-drache">' + icon('star') + '<span>Drache</span><b>' + Math.ceil(D.hp / D.max * 100) + ' %</b><i data-ev-bis="' + D.end + '"></i></button>']);
+    else if (dp.start > now && dp.start - now <= 30 * 60000) out.push([3, '<button type="button" class="mb-chip is-drache" data-mb="ev-drache">' + icon('star') + '<span>Der Drache kommt in</span><i data-ev-bis="' + dp.start + '"></i></button>']);
+    if (!w.on && w.start > now && w.start - now <= 864e5) { const th = evThemaAm(now); out.push([8, '<button type="button" class="mb-chip is-tour" data-mb="ev-tour">' + icon(th.ic) + '<span>Ab Samstag: ' + th.name + '</span><i data-ev-bis="' + w.start + '"></i></button>']); }
+    return out;
 }
 // ===== ARMEEN AUF DER KARTE: troops that stand out in the open instead of in a base. Gather them from several
 // bases at one spot, walk them anywhere and give orders: move, attack a base, take a field, join another army,
@@ -10798,9 +10791,9 @@ let previewShownAt = 0; // guards against a stray click landing on the
 // the keyboard handler uses this: map shortcuts only fire while focus is on the page or the canvas
 function isUiElement(target) {
   return !!(target && target.closest && target.closest(
-    '#islandPopup,#bundPopup,#hud,#cornerButtons,#profilePopup,#rulerPopup,#rankPopup,#battleLogPopup,#goalsPopup,#shopPopup,#chestItemPopup,#multiAttackBar,#mapControls,#uiScrim,#uiScrimTop'));
+    '#islandPopup,#bundPopup,#hud,#cornerButtons,#profilePopup,#rulerPopup,#rankPopup,#battleLogPopup,#goalsPopup,#shopPopup,#chestItemPopup,#multiAttackBar,#mapControls,#uiScrim,#uiScrimTop,#midBar'));
 }
-const PANEL_NAV = { profilePopup: 'profileBtn', battleLogPopup: 'battleLogBtn', goalsPopup: 'goalsBtn', shopPopup: 'shopBtn' };
+const PANEL_NAV = { bundPopup: 'bundBtn', profilePopup: 'profileBtn', battleLogPopup: 'battleLogBtn', goalsPopup: 'goalsBtn', shopPopup: 'shopBtn' };   // das Dock zeigt, welches Fenster offen ist
 function isPanelOpen(el) { return el.classList.contains('is-open'); }
 function openPanel(el) { el.style.removeProperty('display'); el.classList.add('is-open'); syncPanelState(); }
 function closePanel(el) { el.classList.remove('is-open'); syncPanelState(); }
@@ -10834,7 +10827,7 @@ function closeTopmostPanel() {           // scrim click + Escape
   if (closeCity()) return;
   if (isPanelOpen(chestItemPopup)) return chestItemCloseBtn.click();
   if (isPanelOpen(popup)) return closeBtn.click();
-  for (const [pid, closeId] of [['hdPopup','hdCloseBtn'],['bundPopup','bundCloseBtn'],['settingsPopup','settingsCloseBtn'],['eventPopup','eventCloseBtn'],['rulerPopup','rulerCloseBtn'],['rankPopup','rankCloseBtn'],['profilePopup','profileCloseBtn'],['battleLogPopup','battleLogCloseBtn'],['goalsPopup','goalsCloseBtn'],['shopPopup','shopCloseBtn']])
+  for (const [pid, closeId] of [['bundPopup','bundCloseBtn'],['rulerPopup','rulerCloseBtn'],['rankPopup','rankCloseBtn'],['profilePopup','profileCloseBtn'],['battleLogPopup','battleLogCloseBtn'],['goalsPopup','goalsCloseBtn'],['shopPopup','shopCloseBtn']])
     if (isPanelOpen(document.getElementById(pid))) return document.getElementById(closeId).click();
   if (multiAttackMode) return multiAttackCancelBtn.click();
 }
@@ -10845,7 +10838,7 @@ document.getElementById('uiScrimTop').addEventListener('click', closeTopmostPane
 // hidden panel keeps live state (e.g. an open attack preview) underneath.
 function closeAllPopups() {
     closePanel(popup);
-    { const hp = document.getElementById('hdPopup'); if (hp) closePanel(hp); }   // (Händler, haendler.js)
+    { const bp = document.getElementById('bundPopup'); if (bp && isPanelOpen(bp)) document.getElementById('bundCloseBtn').click(); }   // (Bündnis, buendnis.js)
     popupStats.dataset.preview = '';
     popupIslandId = null;
     popupView = 'menu';
@@ -10858,7 +10851,6 @@ function closeAllPopups() {
     closePanel(shopPopup);
     closePanel(document.getElementById('rulerPopup'));
     closePanel(document.getElementById('rankPopup'));
-    closePanel(document.getElementById('eventPopup'));
     if (!document.getElementById('lookSheet').hidden) closeLookSheet();
     if (!document.getElementById('heroHall').hidden) closeHeroHall();
     if (!barbSheetEl.hidden) closeBarbSheet();
@@ -11001,7 +10993,6 @@ document.getElementById('shopOdds').innerHTML = RARITY_DEFS.map((rd, i) => RARIT
     '<span class="chip chip--rar" data-r="' + rd.key + '">' + rd.label + ' ' + RARITY_DROP_WEIGHTS[i].toLocaleString('de-DE') + ' %</span>' : '').join('') +
     '<span class="chip chip--rar">' + RARITY_DEFS[4].label + ' + ' + RARITY_DEFS[5].label + ': nur durch Zusammenlegen</span>';
 // HUD shortcuts only ever open (the nav buttons toggle)
-document.getElementById('hudShopBtn').addEventListener('click', () => { if (!isPanelOpen(shopPopup)) shopBtn.click(); });
 document.getElementById('hudPlayer').addEventListener('click', () => { if (!isPanelOpen(profilePopup)) profileBtn.click(); });
 try {
     if (!store.get('openWaterTutorialSeen')) {
@@ -11844,27 +11835,22 @@ const Music = (() => {
         fade(.6, 2.5);
     }
     function stop() { if (!ac) return; fade(0, .6); clearInterval(timer); timer = null; if (mode === 'off') setTimeout(() => { if (!timer && ac && mode === 'off') ac.suspend(); }, 700); }
-    function toggle() {                                            // one button, three steps: music + effects → effects only → off
+    function toggle() {                                            // three steps: music + effects → effects only → off (Profil → Einstellungen → Ton)
         mode = mode === 'all' ? 'sfx' : mode === 'sfx' ? 'off' : 'all'; store.set('openWaterSound', mode);
-        on = mode === 'all'; on ? start() : stop(); paint();
+        on = mode === 'all'; on ? start() : stop();
         flashHint(mode === 'all' ? 'Musik und Effekte an' : mode === 'sfx' ? 'Nur Effekte – Musik aus' : 'Ton aus', 1800);
         if (mode !== 'off') { if (!ac) init(); if (ac.state === 'suspended') ac.resume(); }
     }
-    function paint() { const b = document.getElementById('musicBtn'); if (!b) return; b.setAttribute('aria-pressed', String(mode !== 'off')); b.dataset.mode = mode;
-        b.querySelector('use').setAttribute('href', mode === 'all' ? '#i-sound' : mode === 'sfx' ? '#i-sfx' : '#i-mute'); b.setAttribute('aria-label', mode === 'all' ? 'Ton: Musik und Effekte' : mode === 'sfx' ? 'Ton: nur Effekte' : 'Ton aus'); }
     document.addEventListener('visibilitychange', () => { if (!ac) return; if (document.hidden) { clearInterval(timer); timer = null; ac.suspend(); } else if (on) start(); else if (mode !== 'off') ac.resume(); });
-    const first = e => { window.removeEventListener('pointerdown', first, true); window.removeEventListener('keydown', first, true); if (!(e.target.closest && e.target.closest('#musicBtn'))) { start(); if (mode === 'sfx') { if (!ac) init(); ac.resume(); } } };
+    const first = e => { window.removeEventListener('pointerdown', first, true); window.removeEventListener('keydown', first, true); start(); if (mode === 'sfx') { if (!ac) init(); ac.resume(); } };
     window.addEventListener('pointerdown', first, true); window.addEventListener('keydown', first, true);
-    paint();
     function setMode(m) { if (!['all', 'sfx', 'off'].includes(m) || m === mode) return; mode = m === 'all' ? 'off' : m === 'sfx' ? 'all' : 'sfx'; toggle(); }   // (Einstellungen) – über toggle, damit alles gleich bleibt
     return { toggle, start, stop, setMode, get on() { return on; }, get mode() { return mode; } };
 })();
-document.getElementById('musicBtn').addEventListener('click', e => { e.stopPropagation(); Music.toggle(); einstellungenZeigen(); });
 
-// ===== EINSTELLUNGEN (Zahnrad an der Karte): Benachrichtigungen (benachrichtigung.js), Ton, Akku sparen, Konto, Hilfe =====
-const settingsPopup = document.getElementById('settingsPopup');
+// ===== EINSTELLUNGEN (Profil → Einstellungen): Benachrichtigungen (benachrichtigung.js), Ton, Akku sparen, Konto, Hilfe =====
 function einstellungenZeigen() {
-    if (!settingsPopup || !isPanelOpen(settingsPopup)) return;
+    if (!isPanelOpen(profilePopup) || profilePopup.dataset.tab !== 'set') return;
     for (const b of document.querySelectorAll('#setTon [data-ton]')) { const on = b.dataset.ton === Music.mode; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); }
     document.getElementById('setAkku').checked = akkuSparen;
     setText(document.getElementById('setName'), profileName.value || '–');
@@ -11872,16 +11858,13 @@ function einstellungenZeigen() {
     const sc = document.querySelector('script[src*="spiel.js"]'), v = sc && /[?&]v=(\d+)/.exec(sc.src);
     setText(document.getElementById('setVersion'), v ? new Date(+v[1] * 1000).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '–');
 }
-document.getElementById('settingsBtn').addEventListener('click', e => { e.stopPropagation(); openPanel(settingsPopup); einstellungenZeigen(); settingsPopup.querySelector('.pbody').scrollTop = 0; });
-document.getElementById('settingsCloseBtn').addEventListener('click', () => { closePanel(settingsPopup); document.getElementById('setPwForm').hidden = true; });
 document.getElementById('setTon').addEventListener('click', e => { const b = e.target.closest('[data-ton]'); if (!b) return; Music.setMode(b.dataset.ton); einstellungenZeigen(); });
 document.getElementById('setAkku').addEventListener('change', e => {
     akkuSparen = e.target.checked; store.set('openWaterAkku', akkuSparen ? '1' : '0'); onViewportResize();
     flashHint(akkuSparen ? 'Akku sparen: an' : 'Akku sparen: aus', 1500);
 });
-document.getElementById('setNameBtn').addEventListener('click', () => {   // der Name steht oben im Profil – dorthin
-    closePanel(settingsPopup); document.getElementById('profileBtn').click();
-    setTimeout(() => { profileName.focus(); profileName.select(); }, 350);
+document.getElementById('setNameBtn').addEventListener('click', () => {   // der Name steht oben im Profil
+    showProfileTab('info'); setTimeout(() => { profileName.focus(); profileName.select(); }, 50);
 });
 document.getElementById('setPwOffen').addEventListener('click', () => { const f = document.getElementById('setPwForm'); f.hidden = !f.hidden; if (!f.hidden) document.getElementById('setPwAlt').focus(); });
 document.getElementById('setPwForm').addEventListener('submit', async e => {
@@ -11896,7 +11879,7 @@ document.getElementById('setPwForm').addEventListener('submit', async e => {
         flashHint('Passwort geändert. Andere Geräte sind jetzt abgemeldet.', 4000);
     } catch (x) { flashHint('Das hat nicht geklappt – bitte nochmal.', 3000); }
 });
-document.addEventListener('click', e => { const bt = e.target.closest && e.target.closest('button'); if (bt && !bt.disabled && bt.id !== 'musicBtn') sfx('click'); }, true);   // a soft wooden click on every button
+document.addEventListener('click', e => { const bt = e.target.closest && e.target.closest('button'); if (bt && !bt.disabled) sfx('click'); }, true);   // a soft wooden click on every button
 
 (function finishSplash() {
     const sp = document.getElementById('splash');
@@ -11980,7 +11963,7 @@ function liveTick() {
         if (tab === 'skills') { const sig = skillPoints + JSON.stringify(skills); if (sig !== liveSkillSig) { liveSkillSig = sig; renderSkillGrid(); } }
     });
     if (isPanelOpen(shopPopup)) teil(renderShop);                                                         // Shop: Gems, Schild-Restzeit, Thron-Punkte
-    if (isPanelOpen(goalsPopup) && goalsTab === 'reward') teil(renderInbox);                              // Ziele → Belohnung
+    if (isPanelOpen(goalsPopup) && goalsTab === 'reward') teil(renderInbox);                              // Events → Belohnung
     if (isPanelOpen(rankPopup) && liveZuletzt - liveRangAt >= 5000) { liveRangAt = liveZuletzt; teil(renderRankings); }   // Rangliste: alle 5 s reicht
     teil(heroHallLive);                                                                                     // Helden
     if (offen('lookSheet')) teil(() => renderLookSheet(true));                                             // Aussehen: Gems / Thron-Punkte
@@ -12517,7 +12500,7 @@ if (window.WELT) {
         if (!e || e.art !== 'evPreis') return;
         const z = (v, max) => typeof v === 'number' && Number.isFinite(v) && v > 0 ? Math.min(max, Math.round(v)) : 0;
         const crate = Number.isInteger(e.crate) && e.crate >= 0 && e.crate <= 4 ? e.crate : -1, src = INBOX_SRC[e.src] ? e.src : 'tour', title = String(e.title || '').slice(0, 80);
-        if (inboxAdd({ src, title, gems: z(e.gems, 5000), sh: z(e.sh, 100), crate }) || crate >= 0 || e.sh > 0) { sfx('coin'); flashHint(title + ': dein Preis liegt unter Ziele → Belohnung.', 5000); }
+        if (inboxAdd({ src, title, gems: z(e.gems, 5000), sh: z(e.sh, 100), crate }) || crate >= 0 || e.sh > 0) { sfx('coin'); flashHint(title + ': dein Preis liegt unter Events → Belohnung.', 5000); }
     });
     WELT.beiNachricht.push(function (e) {             // Nebel freischalten (vom Admin): die ganze Karte ist aufgedeckt
         if (!e || e.art !== 'nebel') return;
@@ -12525,8 +12508,8 @@ if (window.WELT) {
     });
     WELT.beiNachricht.push(function (e) {             // Geschenk (vom Admin): liegt im Abholfach, wird normal abgeholt
         if (!e || e.art !== 'geschenk') return;
-        if (inboxAdd({ src: 'gift', title: 'Geschenk', gems: e.gems || 0, coins: e.coins || 0, sh: e.sh || 0, crate: e.crate >= 0 ? e.crate : -1, tr: e.tr || 0 })) flashHint('Ein Geschenk liegt für dich bereit – Ziele → Belohnung.', 4500);
-        else if (e.sh > 0 || e.crate >= 0 || e.tr > 0) flashHint('Ein Geschenk liegt für dich bereit – Ziele → Belohnung.', 4500);
+        if (inboxAdd({ src: 'gift', title: 'Geschenk', gems: e.gems || 0, coins: e.coins || 0, sh: e.sh || 0, crate: e.crate >= 0 ? e.crate : -1, tr: e.tr || 0 })) flashHint('Ein Geschenk liegt für dich bereit – Events → Belohnung.', 4500);
+        else if (e.sh > 0 || e.crate >= 0 || e.tr > 0) flashHint('Ein Geschenk liegt für dich bereit – Events → Belohnung.', 4500);
     });
     // Willkommen: einmal den Namen wählen
     if (!window.__OW || !__OW.nameGewaehlt) afterSplash(() => setTimeout(willkommenFenster, 400));

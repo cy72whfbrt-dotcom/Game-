@@ -90,7 +90,7 @@ function hdKaufen(who, k) {                           // (Weltrechner) bezahlen 
         const tr = k === 'truppen' ? Math.round(Math.max(1000, hourProduction(who).troops)) : 0;
         if (tr && WELT.wache) WELT.wache.gutschrift(who, 0, tr);                // (damit der Schummel-Schutz das Abholen durchlässt)
         WELT.nachricht(parseInt(who.slice(1), 10), { art: 'haendlerWare', title: titel, sh: k === 'sh' ? 3 : 0, kiste: k === 'kiste' ? 2 : -1, tr, schild: k === 'schild' ? 2 : 0,
-            text: k === 'sammeln' ? 'Sammel-Beschleuniger gekauft – 2 Std. sammelst du 30 % schneller.' : 'Gekauft: ' + w.name + ' – liegt unter Ziele → Belohnung.' });
+            text: k === 'sammeln' ? 'Sammel-Beschleuniger gekauft – 2 Std. sammelst du 30 % schneller.' : 'Gekauft: ' + w.name + ' – liegt unter Events → Belohnung.' });
     } else if (bd) {                                                             // Mitspieler: direkt
         const bs = loadBotState()[who];
         if (k === 'sh') heroGrantShards(who, 3);
@@ -128,7 +128,7 @@ if (window.WELT) {
         const kiste = e.kiste === 0 || e.kiste === 1 || e.kiste === 2 ? e.kiste : -1, schild = e.schild === 2 ? 2 : 0;
         if (z(e.sh, 10) || kiste >= 0 || z(e.tr, 1e13) || schild) inboxAdd({ src: 'haendler', title: String(e.title || 'Händler').slice(0, 80), sh: z(e.sh, 10), kiste, tr: z(e.tr, 1e13), schild });
         hdWarte.clear(); if (typeof e.text === 'string') flashHint(e.text.slice(0, 200), 4500);
-        if (isPanelOpen(hdPopup)) hdRender();
+        if (hdOffen()) hdRender();
     });
     const vorher = window.__weltLaden;
     window.__weltLaden = function (keys) {
@@ -136,8 +136,8 @@ if (window.WELT) {
         if (!keys.includes('openWaterHaendler')) return;
         const alt = hdState.h && hdState.h.id;
         try { hdState = JSON.parse(store.get('openWaterHaendler')) || {}; } catch (e) { hdState = {}; }
-        if (hdState.h && hdState.h.id !== alt && hdDa() && !SYSTEM) afterSplash(() => flashHint(hdState.h.name + ' ist mit seinem Karren da – nur kurz! (oben antippen)', 5000));
-        if (isPanelOpen(hdPopup)) hdRender();
+        if (hdState.h && hdState.h.id !== alt && hdDa() && !SYSTEM) afterSplash(() => flashHint(hdState.h.name + ' ist mit seinem Karren da – nur kurz! (Shop → Händler)', 5000));
+        if (hdOffen()) hdRender();
         requestRender();
     };
 }
@@ -172,11 +172,12 @@ function drawHaendler() {
 }
 function haendlerAt(sx, sy) { const h = hdDa(); if (!h) return null; const { x, y, s } = hdBild(h, mapState.zoom); return Math.hypot(sx - x, sy - (y - s * .1)) < Math.max(24, s * .75) ? h : null; }
 
-// ---- Fenster „Händler“ ----
-const hdPopup = document.getElementById('hdPopup'), hdBody = document.getElementById('hdLive'), hdWarte = new Map();   // hdWarte: eben gekauft (Ware → Zeit), bis die Welt es bestätigt
-function haendlerOeffnen() { if (!hdPopup) return; closeAllPopups(); openPanel(hdPopup); hdRender(); }
+// ---- Shop → Händler (der Reiter erscheint nur, solange ein Händler da ist) ----
+const hdBody = document.getElementById('hdLive'), hdWarte = new Map();   // hdWarte: eben gekauft (Ware → Zeit), bis die Welt es bestätigt
+function hdOffen() { return !!hdBody && typeof shopPopup !== 'undefined' && isPanelOpen(shopPopup) && shopTab === 'hd'; }
+function haendlerOeffnen() { if (!hdBody || SYSTEM) return; openShop('hd'); }
 function hdRender() {
-    if (!hdPopup || !isPanelOpen(hdPopup)) return;
+    if (!hdOffen()) return;
     const h = hdDa(), now = Date.now();
     setText(document.getElementById('hdTitle'), h ? h.name : 'Wandernder Händler');
     setText(document.getElementById('hdSub'), h ? 'zieht weiter in ' + fmtDHMS((h.end - now) / 1000) : '');
@@ -188,24 +189,22 @@ function hdRender() {
         return '<div class="inbox-row is-gold">' + icon(w.ic) + '<div><b>' + w.name + '</b><small>' + w.text + '</small></div>' + knopf + '</div>'; }).join('');
     const bo = hdState.boost && hdState.boost.player > now ? '<p class="hd-info">' + icon('hourglass') + 'Sammel-Beschleuniger aktiv: noch ' + fmtDHMS((hdState.boost.player - now) / 1000) + '</p>' : '';
     const log = (hdState.log || []).filter(x => x.at >= h.start).slice(0, 5).map(x => '<li>' + escapeHtml(hdWerName(x.w)) + ' · ' + (HD_WAREN[x.k] || {}).name + '</li>').join('');
-    liveHtml(hdBody, '<p class="hd-info">Jede Ware gibt es für dich einmal. Bezahlt wird mit Münzen, die Ware liegt danach unter Ziele → Belohnung.</p>' +
+    liveHtml(hdBody, '<p class="hd-info">Jede Ware gibt es für dich einmal. Bezahlt wird mit Münzen, die Ware liegt danach unter Events → Belohnung.</p>' +
         '<div class="inbox">' + rows + '</div>' + bo + (log ? '<div class="sect"><h4>Zuletzt gekauft</h4></div><ul class="hd-log">' + log + '</ul>' : '') +
         '<button class="btn btn--secondary btn--sm" type="button" data-hd-hin><span>Zum Karren</span></button>');
 }
-if (hdPopup) {
-    document.getElementById('hdCloseBtn').addEventListener('click', () => closePanel(hdPopup));
-    hdPopup.addEventListener('click', e => {
+if (hdBody) {
+    hdBody.addEventListener('click', e => {
         const kb = e.target.closest('[data-hd-kauf]'), hin = e.target.closest('[data-hd-hin]');
-        if (hin) { const h = hdDa(); closePanel(hdPopup); if (h) flyTo(h.x, h.y, { zoom: Math.max(mapState.zoom, .02) }); return; }
+        if (hin) { const h = hdDa(); closePanel(shopPopup); if (h) flyTo(h.x, h.y, { zoom: Math.max(mapState.zoom, .02) }); return; }
         if (!kb || kb.disabled) return;
         const k = kb.dataset.hdKauf, h = hdDa(); if (!h || !HD_WAREN[k] || hdGekauft('player', k)) return;
         const p = hdPreis('player', k); if (coins < p) { flashHint('Zu wenig Münzen – ' + HD_WAREN[k].name + ' kostet ' + fmtNum(p) + '.', 3000); return; }
         if (alsBefehl('haendler', { ware: k, id: h.id, preis: p })) { hdWarte.set(k, Date.now()); sfx('coin'); flashHint('Kauf geschickt: ' + HD_WAREN[k].name + ' …', 2500); hdRender(); return; }
         const why = hdKaufen('player', k); flashHint(why ? why + '.' : 'Gekauft: ' + HD_WAREN[k].name, 3000); hdSpeichern(); hdRender();   // (ohne Weltrechner: hier selbst)
     });
-    setInterval(() => { if (isPanelOpen(hdPopup)) hdRender(); }, 1000);
 }
-// Hinweis unter dem HUD (renderMidBar in spiel.js holt ihn): „Händler · 41 m 12 s“ – antippen fliegt zum Karren
+// Hinweis unter dem HUD (renderMidBar in spiel.js holt ihn, wenn nichts Dringenderes ansteht): „Händler da · 41 m 12 s“ – antippen öffnet Shop → Händler
 function haendlerChip(now) { const h = hdDa(now); return h && !SYSTEM ? '<button type="button" class="mb-chip is-hd" data-hd-chip>' + icon('coin') + '<span>Händler da</span><i data-ev-bis="' + Math.round(h.end) + '"></i></button>' : ''; }
 { const mb = document.getElementById('midBar'); if (mb) mb.addEventListener('click', e => { if (!e.target.closest('[data-hd-chip]')) return; const h = hdDa(); if (!h) return;
-    closeAllPopups(); flyTo(h.x, h.y, { zoom: Math.max(mapState.zoom, .02) }); setTimeout(haendlerOeffnen, 700); }); }
+    haendlerOeffnen(); }); }

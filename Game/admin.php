@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // sonst hält er das Abholen für gefälscht (Befehl unter Spieler 0, das kann nur admin.php)
                     if ($tr > 0 || $coins > 0) lager()->befehl_ablegen(0, json_encode(['art' => 'admin', 'was' => 'gutschrift', 'an' => $id, 'tr' => $tr, 'coins' => $coins]));
                 }
-                if ($ids) $meldung = 'Geschenk verschickt an ' . count($ids) . ' Spieler – es liegt im Abholfach (Ziele → Belohnung).';
+                if ($ids) $meldung = 'Geschenk verschickt an ' . count($ids) . ' Spieler – es liegt im Abholfach (Events → Belohnung).';
             }
         }
         // ===== Weltrechner =====
@@ -189,7 +189,7 @@ function zahl($n) { return $n === null ? '–' : number_format((float)$n, 0, ','
 
 <div class="karte">
   <h2>Geschenk verschicken</h2>
-  <p>Landet beim Spieler im Abholfach (Ziele → Belohnung) und muss dort ganz normal abgeholt werden.</p>
+  <p>Landet beim Spieler im Abholfach (Events → Belohnung) und muss dort ganz normal abgeholt werden.</p>
   <form method="post">
     <input type="hidden" name="zeichen" value="<?= h($zeichen) ?>">
     <input type="hidden" name="was" value="geschenk">
