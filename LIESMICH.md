@@ -1107,6 +1107,8 @@ Alles in spiel.js (Abschnitt „THE CITY, ISOMETRIC“), nur Aussehen – Gebäu
   jetzt „Mo 5. – Fr 9.10.“ statt nur „Mo 5.10.“ (Alexander dachte, Events sind nur montags).
 - **Vorschau (Test-Modus):** Drache kommt 5 s nach dem Laden (3 Std.), Barbaren-Invasion 1 Min. nach dem Laden (1 Std.) –
   damit man beides ansehen kann (`EV_TEST` in werkzeuge/vorschau_test.js, nur Vorschau, nie im echten Spiel).
+- **Drache gibt nichts Legendäres mehr** (Alexander 2.10.): Platz 1 Kiste „mind. Episch“, Platz 2–10 „mind. Selten“
+  (`DR_PREISE`). Aus Kisten kommt höchstens Episch – also aus dem Drachen nie Legendär.
 
 ## 30. VIP KOMPLETT RAUS (Alexander 2.10.: „VIP find ich totaler Müll“) – NICHT hochgeladen
 - Weg: VIP-Stufen, Spieltage zählen (`openWaterVip`), VIP-Tageskiste, „Neue VIP-Stufe“-Hinweis, VIP-Zeile im Profil,

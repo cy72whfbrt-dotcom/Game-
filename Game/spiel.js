@@ -10374,9 +10374,9 @@ function invTakt(now) {                              // (nur Weltrechner) Wellen
 
 // ===== DER DRACHE: jeden Sonntag 19–22 Uhr erscheint über dem Thron ein riesiger Drache, den nur alle zusammen besiegen.
 // Jeder Angriff macht Schaden (wie beim Tagesboss, höchstens 2 % seines Lebens), 10 Angriffe pro Person.
-// Fällt er: Platz 1 goldene Kiste, Platz 2–10 lila Kiste, alle anderen etwas Kleines. Entkommt er: alle etwas Kleines.
+// Fällt er: Platz 1 lila Kiste, Platz 2–10 blaue Kiste (nie Legendär – Alexander 2.10.), alle anderen etwas Kleines. Entkommt er: alle etwas Kleines.
 const DR_STUNDE = 19, DR_DAUER = 3 * 3600000, DR_HITS = 10, DR_CAP = .02, DR_NAME = 'Urdrache Vharak', DR_COL = '#d8452e';
-const DR_PREISE = [{ gems: 150, crate: 4, sh: 20, t: '1.' }, { gems: 60, crate: 3, sh: 8, t: '2.–10.' }, { gems: 15, crate: -1, sh: 2, t: 'Alle anderen' }];
+const DR_PREISE = [{ gems: 150, crate: 3, sh: 20, t: '1.' }, { gems: 60, crate: 2, sh: 8, t: '2.–10.' }, { gems: 15, crate: -1, sh: 2, t: 'Alle anderen' }];
 const drPreisVon = i => DR_PREISE[i < 1 ? 0 : i < 10 ? 1 : 2];
 function drPlan(now) {
     now = now || Date.now();
@@ -10543,7 +10543,7 @@ function drSheetHtml(head) {
         (rk.length ? '<ol class="barb-rank">' + rk.slice(0, 5).map(row).join('') + (mine >= 5 ? row(rk[mine], mine) : '') + '</ol>' : '') +
         (dead ? '' : hits >= DR_HITS ? '<div class="notice notice--gold">' + icon('hourglass') + '<span>Du hast alle ' + DR_HITS + ' Angriffe gemacht – jetzt sind die anderen dran.</span></div>' :
             src === null ? '<div class="notice">' + icon('lock') + '<span>Keine deiner Basen hat Truppen.</span></div>' : barbAttackHtml(islandTroops[src] || 0, (islandTroops[src] || 0) * .5, src, 'Angreifen')) +
-        '<div class="barb-note">Höchstens 2 % Leben pro Angriff, ein Drittel der Kämpfer fällt. Fällt er: Platz 1 goldene Kiste, Platz 2–10 lila Kiste, alle anderen Gems und Splitter. Entkommt er: alle etwas Kleines.</div>';
+        '<div class="barb-note">Höchstens 2 % Leben pro Angriff, ein Drittel der Kämpfer fällt. Fällt er: Platz 1 epische Kiste, Platz 2–10 seltene Kiste, alle anderen Gems und Splitter. Entkommt er: alle etwas Kleines.</div>';
 }
 
 // ---- die Ereignisse im Events-Fenster (Dock → Events, untere Reiter): Termine, Uhren, Ranglisten ----
