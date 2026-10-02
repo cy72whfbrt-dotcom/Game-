@@ -142,6 +142,7 @@ function profil_bereinigen($text) {
     $FO = ['w_prod' => 10, 'w_sam' => 10, 'w_last' => 10, 'm_atk' => 10, 'm_def' => 10, 'm_laz' => 10, 'm_t2' => 1, 'm_t3' => 1, 'm_t4' => 1, 'm_t5' => 1, 'x_tempo' => 10, 'x_spaeh' => 5, 'x_nebel' => 5];
     $fo = []; foreach ($FO as $k => $mx) if (isset($p['fo'][$k])) $fo[$k] = (int)$plus($p['fo'][$k], $mx);
     $res = []; foreach (['h', 's', 'e'] as $k) $res[$k] = $plus($p['res'][$k] ?? 0, 1e15);
+    // 3B: Gems kommen mit ins Profil – nur der Weltrechner sieht sie (spieler_liste) und hält sie gegen sein Hauptbuch
     $jetztMs = time() * 1000;
     $lk = is_array($p['look'] ?? null) ? $p['look'] : [];
     $cr = is_array($p['crest'] ?? null) ? $p['crest'] : null;
@@ -151,14 +152,14 @@ function profil_bereinigen($text) {
         'skills' => (object)$sk,
         'gear' => $gear,
         'city' => ['levels' => (object)$stadt],
-        'fo' => (object)$fo, 'tier' => (int)max(1, $plus($p['tier'] ?? 1, 5)), 'tierBez' => (int)max(1, $plus($p['tierBez'] ?? 1, 5)), 'res' => $res,
+        'fo' => (object)$fo, 'tier' => (int)max(1, $plus($p['tier'] ?? 1, 5)), 'tierBez' => (int)max(1, $plus($p['tierBez'] ?? 1, 5)), 'res' => is_array($p['res'] ?? null) ? $res : null,   // (fehlt: null – nicht 0, sonst sähe es nach „alles ausgegeben“ aus)
         'wounded' => $plus($p['wounded'] ?? 0, 1e13),
         'hs' => $hs,
         'shieldUntil' => min($plus($p['shieldUntil'] ?? 0, 1e15), $jetztMs + 8 * 86400000), 'neuBis' => min($plus($p['neuBis'] ?? 0, 1e15), $jetztMs + 48 * 3600000),   // längster Schild 8 Tage, Anfängerschutz 48 h
         'look' => ['ring' => $id($lk['ring'] ?? null), 'rings' => $liste($lk['rings'] ?? []), 'march' => $id($lk['march'] ?? null), 'marchs' => $liste($lk['marchs'] ?? []),
                    'frame' => $id($lk['frame'] ?? null), 'title' => $id($lk['title'] ?? null), 'throne' => !empty($lk['throne'])],
         'stats' => $karte($p['stats'] ?? [], function ($x) use ($plus) { return $plus($x, 1e15); }, 80),
-        'earned' => $plus($p['earned'] ?? 0, 1e12), 'coins' => $plus($p['coins'] ?? 0, 1e15),
+        'earned' => $plus($p['earned'] ?? 0, 1e12), 'coins' => $plus($p['coins'] ?? 0, 1e15), 'gems' => isset($p['gems']) ? $plus($p['gems'], 1e13) : null,
         'crest' => $cr ? array_map(function ($k) use ($cr, $zahl) { return (int)$zahl($cr[$k] ?? 0, 99); }, ['shape' => 'shape', 'div' => 'div', 'c1' => 'c1', 'c2' => 'c2', 'sym' => 'sym', 'ink' => 'ink']) : null,
         'baustil' => $bs ? ['style' => $id($bs['style'] ?? null) ?: 'klassisch', 'cap' => ($bs['cap'] ?? '') === 'wasser' ? 'wasser' : 'huegel'] : null,
     ], JSON_UNESCAPED_UNICODE);
@@ -177,7 +178,7 @@ function flicken_anwenden($obj, $p) {
 }
 // Befehle der Spieler an den Weltrechner: nur bekannte Arten, nur saubere Werte (keine Texte statt Zahlen, nichts
 // Unendliches, keine Riesenzahlen, nicht zu tief verschachtelt). Der Weltrechner prüft dann noch die Spielregeln.
-const BEFEHL_ARTEN = ['angriff', 'senden', 'zurueck', 'schneller', 'ausbau', 'hauptstadt', 'truppen', 'tor', 'titel', 'feld', 'feldHeim', 'lager', 'armee', 'beitreten', 'bund', 'haendler'];
+const BEFEHL_ARTEN = ['angriff', 'senden', 'zurueck', 'schneller', 'ausbau', 'hauptstadt', 'truppen', 'tor', 'titel', 'feld', 'feldHeim', 'lager', 'armee', 'beitreten', 'bund', 'haendler', 'spaehen'];   // spaehen (3B): Erkundungs-Späher – der Weltrechner deckt danach den Nebel auf
 const BEFEHL_MENGEN = ['n', 'stufe', 'anteil', 'tr'];   // müssen echte Zahlen ≥ 0 sein
 function befehl_ok($b) {
     if (!is_array($b) || !in_array($b['art'] ?? null, BEFEHL_ARTEN, true)) return false;
@@ -195,7 +196,7 @@ function befehl_ok($b) {
 // ===== Was Spieler NICHT bekommen (Datenlecks) =====
 // Gedanken der Mitspieler (wen sie als Nächstes angreifen, Pläne, wann sie „aufs Handy schauen“ …) und die Merkliste des
 // Schummel-Schutzes braucht nur der Weltrechner. Spieler bekommen diese Felder nie – weder im ganzen Teil noch in Flicken.
-const NUR_WELTRECHNER = ['grudge', 'annoy', 'vendetta', 'capWish', 'mood', 'kennt', 'fails', 'outAt', 'rally', 'plan', 'wache', 'dOffen', 'res'];   // res: Rohstoffe der anderen (Paket D)
+const NUR_WELTRECHNER = ['grudge', 'annoy', 'vendetta', 'capWish', 'mood', 'kennt', 'fails', 'outAt', 'rally', 'plan', 'wache', 'dOffen', 'res', 'hb'];   // res: Rohstoffe der anderen (Paket D) · hb: Hauptbuch (3B)
 function mitspieler_kuerzen($b, $jetztMs) {
     if (!is_object($b)) return $b;
     foreach (NUR_WELTRECHNER as $f) unset($b->{$f});
@@ -229,6 +230,40 @@ function welt_fuer_spieler($w) {
     if (isset($w['flicken'])) { $f = (array)$w['flicken']; foreach ($f as $k => $liste) $f[$k] = array_map(function ($t) use ($k) { return flicken_fuer_spieler($k, $t); }, (array)$liste); $w['flicken'] = (object)$f; }
     return $w;
 }
+// ===== Nebel auf dem Server (3B) =====
+// Truppenzahlen bekommt ein Spieler nur für Inseln, die er sehen darf: seine eigenen Basen und was der Weltrechner als
+// „gesehen“ für ihn ausgerechnet hat (Sichtweite seiner Basen – auch früherer – und Erkundungs-Späher, gleiche Regel wie
+// islandSeen im Spiel). Der Weltrechner schickt die Sicht als Bitfeld über die Insel-Nummern (base64) im Puls (`sicht`),
+// der Server legt sie in ow_spieler.sicht ab (sicht_v zählt jede Änderung). Ändert sich die Sicht, bekommt der Spieler
+// die gefilterten Teile beim nächsten Puls ganz (sonst fehlten ihm die Zahlen der neu sichtbaren Inseln).
+const NEBEL_TEILE = ['openWaterIslandTroops', 'openWaterNeutralTroopOverrides'];
+// $s = ['bits' => Bitfeld (Byte-Text) oder '', 'eigen' => [Insel-Nummer => true]]
+function nebel_sieht($s, $id) {
+    if (!is_numeric($id)) return false;
+    $id = (int)$id; if (isset($s['eigen'][$id])) return true;
+    $b = $s['bits']; $i = $id >> 3;
+    return $id >= 0 && $i < strlen($b) && ((ord($b[$i]) >> ($id & 7)) & 1) === 1;
+}
+// ganzer Teil (Objekt Insel → Zahl): nur sichtbare Inseln
+function nebel_teil($text, $s) {
+    $o = json_decode((string)$text, true); if (!is_array($o)) return $text;
+    $r = []; foreach ($o as $id => $v) if (nebel_sieht($s, $id)) $r[$id] = $v;
+    return json_encode((object)$r, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION);
+}
+// Flicken eines solchen Teils: neue/geänderte Werte nur für sichtbare Inseln (Wegfallen darf jeder wissen – er hatte sie ja)
+function nebel_flicken($text, $s) {
+    $p = json_decode((string)$text); if (!is_object($p)) return $text;
+    if (isset($p->s) && is_object($p->s)) { foreach ((array)$p->s as $id => $_) if (!nebel_sieht($s, $id)) unset($p->s->{$id}); }
+    unset($p->d);   // (diese Teile haben keine zweite Ebene)
+    return json_encode($p, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION);
+}
+// ein Welt-Stand (setzen/flicken) für einen Spieler mit Sicht $s filtern
+function nebel_welt($w, $s) {
+    if (isset($w['setzen'])) { $t = (array)$w['setzen']; foreach (NEBEL_TEILE as $k) if (isset($t[$k])) $t[$k] = nebel_teil($t[$k], $s); $w['setzen'] = (object)$t; }
+    if (isset($w['flicken'])) { $f = (array)$w['flicken']; foreach (NEBEL_TEILE as $k) if (isset($f[$k])) $f[$k] = array_map(function ($t) use ($s) { return nebel_flicken($t, $s); }, (array)$f[$k]); $w['flicken'] = (object)$f; }
+    return $w;
+}
+
 // Die Namen aller Mitspieler (fest in bots.js): id => Name – 60 feste und 90 aus der Namensliste (bot61 …)
 function bot_namen() {
     static $n = null; if ($n !== null) return $n;
@@ -296,6 +331,8 @@ function spielseite_vorbereiten() {
         lager()->welt_sperren();
         $leiter = false;
         $welt = welt_fuer_spieler(lager()->welt_seit(0));
+        $sicht = lager()->sicht_laden($ich['id']);
+        $welt = nebel_welt($welt, $sicht);   // 3B: Truppen nur, wo er hinsehen darf
         lager()->welt_entsperren();
         $spieler = lager()->spieler_liste(0);
         $neu = !$stand;
@@ -311,7 +348,7 @@ function spielseite_vorbereiten() {
     }
     $ow = json_encode([
         'stand' => (object)$stand, 'neu' => $neu, 'token' => $tok, 'name' => $ich['name'],
-        'uid' => (int)$ich['id'], 'leiter' => $leiter, 'welt' => $welt, 'spieler' => $spieler,
+        'uid' => (int)$ich['id'], 'leiter' => $leiter, 'welt' => $welt, 'spieler' => $spieler, 'sicht_v' => $sicht['v'],
         'nameGewaehlt' => !empty($ich['anzeigename']), 'admin' => ist_admin($ich),
     ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_INVALID_UTF8_SUBSTITUTE | JSON_PARTIAL_OUTPUT_ON_ERROR);
     if ($ow === false) { http_response_code(503); exit('Der Server hat gerade ein Problem. Bitte gleich nochmal versuchen.'); }
@@ -449,7 +486,8 @@ class MysqlLager {
         $neu = ['stufe' => 'INT NULL', 'muenzen' => 'DOUBLE NULL', 'gems' => 'DOUBLE NULL', 'anzahl_basen' => 'INT NULL', 'zuletzt_gespeichert' => 'DATETIME NULL', 'abschied' => "CHAR(32) NOT NULL DEFAULT ''",
                 'profil' => 'MEDIUMTEXT NULL', 'profil_zeit' => 'INT UNSIGNED NOT NULL DEFAULT 0', 'online_bis' => 'INT UNSIGNED NOT NULL DEFAULT 0',
                 'anzeigename' => 'VARCHAR(20) NULL', 'puls_minute' => 'INT UNSIGNED NOT NULL DEFAULT 0', 'puls_anzahl' => 'INT UNSIGNED NOT NULL DEFAULT 0',
-                'push_aus' => "VARCHAR(60) NOT NULL DEFAULT ''"];   // push_aus: Benachrichtigungs-Arten, die der Spieler ausgeschaltet hat (Einstellungen)
+                'push_aus' => "VARCHAR(60) NOT NULL DEFAULT ''",   // push_aus: Benachrichtigungs-Arten, die der Spieler ausgeschaltet hat (Einstellungen)
+                'sicht' => 'MEDIUMTEXT NULL', 'sicht_v' => 'INT UNSIGNED NOT NULL DEFAULT 0'];   // 3B: was er sehen darf (Bitfeld vom Weltrechner), Zähler
         foreach ($neu as $sp => $typ) if (!in_array($sp, $da, true)) $this->db->exec("ALTER TABLE ow_spieler ADD COLUMN $sp $typ");
         // Indizes (Aufräumen und Zählen ohne die ganze Tabelle zu lesen) und ein eindeutiger Anzeigename
         $idx = $this->db->query("SELECT CONCAT(TABLE_NAME, '.', INDEX_NAME) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME LIKE 'ow\\_%'")->fetchAll(PDO::FETCH_COLUMN);
@@ -800,6 +838,15 @@ class MysqlLager {
             $this->db->query('SELECT p.id, p.spieler_id, p.endpoint, p.p256dh, p.auth, s.push_aus FROM ow_push p LEFT JOIN ow_spieler s ON s.id = p.spieler_id ORDER BY p.id LIMIT 20000')->fetchAll());
     }
     function push_weg($ids) { $q = $this->db->prepare('DELETE FROM ow_push WHERE id = ?'); foreach ($ids as $id) $q->execute([(int)$id]); }
+    // Nebel (3B): Sicht eines Spielers – Bitfeld vom Weltrechner + seine eigenen Basen (aus der Welt) → für nebel_sieht
+    function sicht_laden($uid) {
+        $q = $this->db->prepare('SELECT sicht, sicht_v FROM ow_spieler WHERE id = ?'); $q->execute([$uid]); $z = $q->fetch() ?: ['sicht' => null, 'sicht_v' => 0];
+        $q = $this->db->prepare('SELECT basen FROM ow_bots WHERE spieler_id = 0 AND bot_id = ?'); $q->execute(['u' . (int)$uid]);
+        $eigen = []; foreach ((array)json_decode((string)$q->fetchColumn(), true) as $id) if (is_numeric($id)) $eigen[(int)$id] = true;
+        $bits = $z['sicht'] !== null ? (string)base64_decode((string)$z['sicht'], true) : '';
+        return ['bits' => $bits, 'eigen' => $eigen, 'v' => (int)$z['sicht_v']];
+    }
+    function sicht_setzen($uid, $b64) { $this->db->prepare('UPDATE ow_spieler SET sicht = ?, sicht_v = sicht_v + 1 WHERE id = ? AND (sicht IS NULL OR sicht <> ?)')->execute([$b64, $uid, $b64]); }   // (gleich geblieben: nichts)
     function profil_setzen($uid, $p) { $this->db->prepare('UPDATE ow_spieler SET profil = ?, profil_zeit = ? WHERE id = ?')->execute([$p, time(), $uid]); }
     function online($uid, $bis) { $this->db->prepare('UPDATE ow_spieler SET online_bis = ? WHERE id = ?')->execute([$bis, $uid]); }
     // Puls zählen (zugleich „online“ setzen) – gibt zurück, wie viele Pulse in dieser Minute schon kamen
@@ -814,7 +861,7 @@ class MysqlLager {
         $q->execute([(int)$seit]);
         return array_map(function ($z) use ($alles) {
             $p = $z['profil'] !== null ? json_decode($z['profil'], false, 12) : null;
-            if ($p && !$alles) { unset($p->coins, $p->wounded, $p->res); }   // Münzen, Verwundete und Rohstoffe anderer sieht nur der Weltrechner
+            if ($p && !$alles) { unset($p->coins, $p->wounded, $p->res, $p->gems); }   // Münzen, Verwundete, Rohstoffe und Gems anderer sieht nur der Weltrechner
             return ['id' => (int)$z['id'], 'name' => $z['name'], 'online' => (int)$z['online_bis'] > time(), 'profil_zeit' => (int)$z['profil_zeit'], 'profil' => $p]; }, $q->fetchAll());
     }
 
@@ -1048,6 +1095,8 @@ function welt_puls($ich, $d) {
         if (mt_rand(1, 500) === 1) $l->aufraeumen();
         foreach (array_slice((array)($d['ereignisse'] ?? []), 0, 500) as $e) if (isset($e['an'], $e['e']) && (int)$e['an'] > 0 && is_array($e['e']) && in_array($e['e']['art'] ?? '', WELTRECHNER_NACHRICHTEN, true) && ($e['e']['art'] !== 'bundGeschenk' || bund_geschenk_ok($e['e'])) && ($e['e']['art'] !== 'haendlerWare' || haendler_ware_ok($e['e'])) && sauber($e['e'])) {
             $j = json_encode($e['e'], JSON_UNESCAPED_UNICODE); if ($j !== false && strlen($j) < 200000) $l->ereignis_ablegen((int)$e['an'], $j); }
+        // 3B: neue Sicht einzelner Spieler (Bitfeld über die Insel-Nummern, base64)
+        foreach (array_slice((array)($d['sicht'] ?? []), 0, 2000, true) as $an => $b64) if ((int)$an > 0 && is_string($b64) && strlen($b64) < 40000 && preg_match('/^[A-Za-z0-9+\/]*={0,2}$/', $b64)) $l->sicht_setzen((int)$an, $b64);
     }
     $neu_leiter = false;
     if ($sys) {   // Weltrechner bleibt (oder übernimmt nach einem Neustart)
@@ -1058,6 +1107,17 @@ function welt_puls($ich, $d) {
     $seit = (int)($d['seit'] ?? 0);
     $antwort['welt'] = $bin_leiter ? $l->welt_seit($neu_leiter ? $seit : PHP_INT_MAX) : welt_fuer_spieler($l->welt_seit_flicken($seit));   // der Weltrechner hat schon alles; Spieler bekommen nur Änderungen
     if ($bin_leiter && !$neu_leiter) { $antwort['welt']['setzen'] = new stdClass; $antwort['welt']['loeschen'] = []; }
+    if (!$sys) {   // 3B: Nebel – Truppen nur für Inseln, die er sehen darf. Neue Sicht → diese Teile ganz (gefiltert) schicken
+        $sicht = $l->sicht_laden($uid);
+        if ((int)($d['sicht_v'] ?? -1) !== $sicht['v'] && $seit > 0) {
+            $ganz = $l->stand_laden(0, NEBEL_TEILE); $w = &$antwort['welt'];
+            $t = (array)$w['setzen']; $f = (array)($w['flicken'] ?? []);
+            foreach (NEBEL_TEILE as $k) if (isset($ganz[$k])) { $t[$k] = $ganz[$k]; unset($f[$k]); }
+            $w['setzen'] = (object)$t; $w['flicken'] = (object)$f; unset($w);
+        }
+        $antwort['welt'] = nebel_welt($antwort['welt'], $sicht);
+        $antwort['sicht_v'] = $sicht['v'];
+    }
     if ($bin_leiter) $antwort['befehle'] = $l->befehle_abholen();
     $l->welt_entsperren();
     $antwort['leiter'] = $bin_leiter;

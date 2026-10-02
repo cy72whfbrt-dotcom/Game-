@@ -45,7 +45,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     lager()->ereignis_ablegen($id, json_encode(['art' => 'geschenk', 'gems' => $gems, 'coins' => $coins, 'sh' => $sh, 'tr' => $tr, 'crate' => $crate]));
                     // Schummel-Schutz: dem Weltrechner sagen, dass dieser Spieler so viele Truppen/Münzen geschenkt bekommt –
                     // sonst hält er das Abholen für gefälscht (Befehl unter Spieler 0, das kann nur admin.php)
-                    if ($tr > 0 || $coins > 0) lager()->befehl_ablegen(0, json_encode(['art' => 'admin', 'was' => 'gutschrift', 'an' => $id, 'tr' => $tr, 'coins' => $coins]));
+                    // (3B: auch Gems, Splitter und Kiste – das Hauptbuch des Weltrechners zählt sie als sicher)
+                    lager()->befehl_ablegen(0, json_encode(['art' => 'admin', 'was' => 'gutschrift', 'an' => $id, 'tr' => $tr, 'coins' => $coins, 'gems' => $gems, 'sh' => $sh, 'crate' => $crate]));
                 }
                 if ($ids) $meldung = 'Geschenk verschickt an ' . count($ids) . ' Spieler – es liegt im Abholfach (Events → Belohnung).';
             }
@@ -64,6 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $an = (string)($_POST['an'] ?? ''); $ids = [];
             foreach (lager()->alle_spieler() as $sp) if ($an === 'alle' || (string)$sp['id'] === $an) $ids[] = (int)$sp['id'];
             foreach ($ids as $id) lager()->ereignis_ablegen($id, json_encode(['art' => 'nebel']));
+            if ($ids) lager()->befehl_ablegen(0, json_encode(['art' => 'admin', 'was' => 'nebel', 'an' => $an === 'alle' ? 'alle' : $ids[0]]));   // 3B: auch der Nebel auf dem Server
             if ($ids) $meldung = 'Nebel freigeschaltet für ' . count($ids) . ' Spieler – die ganze Karte ist aufgedeckt (beim nächsten Öffnen des Spiels, wenn er gerade nicht spielt).';
             else $fehler = 'Spieler nicht gefunden.';
         }
@@ -79,7 +81,8 @@ if (!is_array($auffaellig)) $auffaellig = [];
 $spielerName = [];
 foreach ($spieler as $sp) $spielerName[(int)$sp['id']] = $sp['anzeigename'] ?: $sp['name'];
 $AUFF_ART = ['truppen' => 'Truppen', 'ausbau' => 'Ausbau', 'muenzen' => 'Münzen', 'stufe' => 'Stufe', 'lazarett' => 'Lazarett', 'kaputt' => 'kaputter Befehl',
-             'schneller' => 'Beschleunigen', 'hauptstadt' => 'Hauptstadt', 'flut' => 'zu viele Befehle'];
+             'schneller' => 'Beschleunigen', 'hauptstadt' => 'Hauptstadt', 'flut' => 'zu viele Befehle',
+             'rohstoffe' => 'Rohstoffe', 'lager' => 'Lager/Boss', 'gems' => 'Gems', 'hauptbuch' => 'Hauptbuch (Stadt, Forschung, Ausrüstung, Helden, Schild)', 'spaehen' => 'Späher'];   // 3B
 function h($s) { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 $spielerOptionen = '';
 foreach ($spieler as $sp) $spielerOptionen .= '<option value="' . (int)$sp['id'] . '">' . h($sp['anzeigename'] ?: $sp['name']) . ($sp['anzeigename'] && $sp['anzeigename'] !== $sp['name'] ? ' (' . h($sp['name']) . ')' : '') . '</option>';

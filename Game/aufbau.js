@@ -489,6 +489,7 @@ function hauptstadtStufen() {
 setInterval(hauptstadtStufen, 3000);
 
 AUF = {
+    ROH_START, foZeitRoh, foAkaFuer,                           // (für das Hauptbuch 3B in spiel.js)
     ROH, ROH_DEF, BURG_MAX, BURG_DEF, BAU_AB_BURG, TIER_KRAFT, TIER_BURG, TIER_EISEN, FORSCHUNG, FO_BY, MARKT_WERT,
     get roh() { return roh; }, rohVon, rohDazu, rohSpeichern, rohSauber, basisRoh, rohBuchen, rohStunde, rohRegion, kannZahlen, zahlen, kostenHtml,
     stadtVon, burgStufe, burgKosten, burgZeitRoh, stadtKosten, stadtCap,
