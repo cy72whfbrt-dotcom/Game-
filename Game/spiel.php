@@ -434,8 +434,8 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
   -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);animation:toast-in var(--dur-2) var(--ease-out)}
 .toast::before{content:"";position:absolute;left:11px;top:50%;width:6px;height:6px;margin-top:-3px;transform:rotate(45deg);background:var(--gold-300);box-shadow:0 0 6px rgba(214,170,90,.6)}
 .toast:empty{display:none}
-.anleitung{position:fixed;z-index:var(--z-toast);left:50%;transform:translateX(-50%);bottom:calc(var(--dock-h,64px) + var(--safe-bd,0px) + 14px);
-  width:min(calc(100vw - 32px),420px);display:flex;align-items:center;gap:10px;padding:10px 8px 10px 12px;
+.anleitung{position:fixed;z-index:var(--z-toast);left:calc(var(--safe-l,0px) + 10px);right:calc(var(--safe-r,0px) + 58px);bottom:calc(var(--dock-h,64px) + var(--safe-bd,0px) + 14px);
+  max-width:420px;display:flex;align-items:center;gap:10px;padding:10px 8px 10px 12px;
   background:var(--glass);border:1px solid var(--gold-300);border-radius:var(--r-sm);box-shadow:var(--sh-2);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 .anleitung[hidden]{display:none}
 .anleitung-n{flex:0 0 auto;font:600 var(--fs-11)/1 var(--font-ui);color:var(--gold-100);letter-spacing:.06em;white-space:nowrap}
