@@ -1059,3 +1059,22 @@ Server: Filtern eines 100-KB-Truppenteils ~1 ms.
 - Nebel: Truppen in Märschen, Armeen, Sammlern und Rallys anderer stehen weiter im Paket (gezeichnet wird im Nebel nichts);
   Insel-Stufen auch. Unterwegs zeigt ein Erkundungs-Späher die Zahlen erst, wenn der Weltrechner ihn sieht (~1–2 s später).
 - Münzen-Spielraum wie 3A (pro Stunde etwas Gratis möglich). Weltrechner selbst bleibt die Vertrauensstelle.
+
+## 27. Stadt innen neu gestaltet (Alexander: „innen Base sieht scheiße aus“) – 2.10., NICHT hochgeladen
+Alles in spiel.js (Abschnitt „THE CITY, ISOMETRIC“), nur Aussehen – Gebäude, Stufen, Kosten und Regeln bleiben gleich.
+- **Neue Anordnung:** 12 Bauplätze im Raster um den runden Burgplatz (4 × 4, die Mitte ist die Burg), Straßen wie ein „#“,
+  vorn das Tor mit Hauptstraße und Laternen. Jeder Bauplatz ist gepflegter Rasen mit Randsteinen; an der Mauer ein Grünstreifen
+  mit Bäumen und Blumenbeeten, am Burgplatz Brunnen, Statuen, Bäume.
+- **Leere Bauplätze** sind keine gleichen Baustellen mehr: Grundmauern + das Gebäude ganz blass („so wird es aussehen“),
+  darüber ein goldenes „+“ (hier bauen) oder ein Schloss (braucht eine höhere Burg-Stufe).
+- **Landschaft draußen** je nach Gegend der Hauptstadt (Grün, Sand, Schnee/Eis, Sumpf, Vulkan): Bergkette hinten (Schnee-
+  gipfel; im Sand Tafelberge), Wald links und hinten (Tannen, Laubbäume, im Sand Palmen), Fluss rechts, Felder vorn, Mühle,
+  Bauernhof, Brunnen, Heuhaufen. Holzfäller im Wald, Steinbruch an den Bergen, Eisenmine am Felshügel.
+- **Burg** neu: zwei Stufen Sockel, Ringmauer mit Ecktürmen, Halle und Kapelle, Bergfried, Torhaus mit Fallgatter – wird alle
+  5 Burg-Stufen größer (goldene Dächer oben). **Dächer** aller Häuser mit Ziegel-Reihen. **Palisade** (Mauer Stufe 0) mit
+  dicken, spitzen Stämmen und Holztürmen.
+- **Namensschilder:** Stufe als Abzeichen links (Burg golden), Name rechts; ganz herausgezoomt nur noch die Stufe.
+  Herauszoomen geht nur so weit, wie Land gemalt ist.
+- Speicher: die Mauer-Bilder sind viel kleiner (nur noch so groß wie die Mauer), das Boden-Bild etwas kleiner.
+- Getestet (Vorschau, iPhone-Größe): neue Stadt, ausgebaute Stadt, ganz weit, ganz nah, Grün/Sand/Schnee; Antippen von Burg,
+  Gebäude und leerem Platz („Bauen“) klappt; Boden-Bild malt in ~50 ms; keine Fehler. Spiel- und Server-Tests grün.
