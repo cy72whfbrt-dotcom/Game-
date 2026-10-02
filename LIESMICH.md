@@ -452,7 +452,8 @@ Spieler bekommen eine Nachricht aufs Handy, auch wenn die App zu ist: „X greif
   sie in `weltrechner/vapid.php` ab (von außen 404, nur der Server darf lesen, nie im Git, hochladen.sh überschreibt sie
   nie). Alexander muss nichts tun (2.10.). Die Datei NIE löschen – sonst neue Schlüssel und alle müssen Push neu erlauben.
   (Stehen `vapid_public`/`vapid_private` in config.php, gelten die stattdessen.)
-- Offen: ob der Office-Server nach außen zu Apple/Google senden darf, zeigt erst der Live-Betrieb (Protokoll „Push:“).
+- **Live getestet 2.10.:** Alexanders iPhone eingetragen (web.push.apple.com), Test-Nachricht vom Server → Apple antwortet
+  201 (angenommen). Der Server darf also nach außen senden. Fehler stehen im Weltrechner-Log („Push:“).
 
 ## 14b. Schummel-Schutz: Weltrechner prüft jeden Befehl (3A) – gebaut 1.10.
 Münzen/Gems/Stufe rechnet noch das Handy (bis 3B). Darum prüft der Weltrechner jeden Befehl (spiel.js vor `BEFEHLE`):
