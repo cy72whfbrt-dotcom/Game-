@@ -1612,6 +1612,20 @@ function recallMarch(key) {                          // an attack or a send turn
         saveGame(); saveProgression(); renderActiveMarches(); requestRender(); return;
     }
 }
+// (Zuschauer) eben beschleunigte Märsche merken: bis der Weltrechner es übernommen hat, setzt die nächste Welt-Lieferung
+// sie nicht wieder auf die alte Zeit zurück (sonst springt der Marsch zurück und wieder vor)
+const wartendSchneller = new Map();                 // Marsch-Kennung → { resolveAt, startedAt, bis }
+function schnellerMerken(m) { if (window.WELT && !rechnet()) wartendSchneller.set(marchKeyOf(m), { resolveAt: m.resolveAt, startedAt: m.startedAt, bis: Date.now() + 10000 }); }
+function schnellerDrueber() {
+    if (!wartendSchneller.size) return;
+    const now = Date.now();
+    for (const [k, w] of wartendSchneller) {
+        const m = pendingAttacks.find(x => marchKeyOf(x) === k) || pendingSends.find(x => marchKeyOf(x) === k) || pendingRetreats.find(x => marchKeyOf(x) === k);
+        if (!m || now > w.bis || m.resolveAt <= w.resolveAt + 1500) { wartendSchneller.delete(k); continue; }   // der Weltrechner hat es (oder es ist vorbei)
+        m.resolveAt = w.resolveAt; m.startedAt = w.startedAt;
+    }
+}
+const schnellerZuletzt = new Map();                 // der Weltrechner nimmt pro Marsch höchstens alle 2 s ein Beschleunigen an
 function speedUpCost(m) { return Math.max(1, Math.ceil((m.resolveAt - Date.now()) / 60000)); }   // 1 gem per minute still to go
 function speedUpMarch(key) {                         // halves the time still to go; the column keeps its place on the road
     const now = Date.now();
@@ -1619,11 +1633,12 @@ function speedUpMarch(key) {                         // halves the time still to
         const m = list.find(x => marchKeyOf(x) === key); if (!m) continue;
         if (m.fightEndsAt) return;
         const rem = m.resolveAt - now; if (rem < 1500) return;
+        if (now - (schnellerZuletzt.get(key) || 0) < 2100) return;   // (zu schnell hintereinander: zählt beim Weltrechner nicht)
         const cost = speedUpCost(m); if (gems < cost) { flashHint('Zu wenig Gems – Beschleunigen kostet ' + cost + '.', 3000); return; }
-        gems -= cost;
+        gems -= cost; schnellerZuletzt.set(key, now);
         alsBefehl('schneller', { keys: [key] });
         const p = Math.max(0, Math.min(.99, (now - m.startedAt) / Math.max(1, m.resolveAt - m.startedAt)));
-        m.resolveAt = now + rem / 2; m.startedAt = m.resolveAt - (rem / 2) / (1 - p);
+        m.resolveAt = now + rem / 2; m.startedAt = m.resolveAt - (rem / 2) / (1 - p); schnellerMerken(m);
         flashHint('Beschleunigt – noch ' + fmtClock(Math.ceil(rem / 2000)) + '.', 2500);
         updateHud(); saveGame(); saveProgression(); renderActiveMarches(); requestRender(); return;
     }
@@ -1631,7 +1646,7 @@ function speedUpMarch(key) {                         // halves the time still to
 // "Alle schneller": halves the time left of every own column on the road at once (same price as one by one)
 function speedableMarches() {
     const now = Date.now();
-    return [...pendingAttacks.filter(a => !a.attackerBotId), ...pendingSends.filter(x => !x.senderBotId), ...pendingRetreats].filter(m => !m.fightEndsAt && m.resolveAt - now >= 1500);
+    return [...pendingAttacks.filter(a => !a.attackerBotId), ...pendingSends.filter(x => !x.senderBotId), ...pendingRetreats].filter(m => !m.fightEndsAt && m.resolveAt - now >= 1500 && now - (schnellerZuletzt.get(marchKeyOf(m)) || 0) >= 2100);
 }
 function speedUpAll() {
     const list = speedableMarches(); if (!list.length) return;
@@ -1640,7 +1655,7 @@ function speedUpAll() {
     gems -= cost; const now = Date.now();
     alsBefehl('schneller', { keys: list.map(marchKeyOf) });
     for (const m of list) { const rem = m.resolveAt - now, pr = Math.max(0, Math.min(.99, (now - m.startedAt) / Math.max(1, m.resolveAt - m.startedAt)));
-        m.resolveAt = now + rem / 2; m.startedAt = m.resolveAt - (rem / 2) / (1 - pr); }
+        m.resolveAt = now + rem / 2; m.startedAt = m.resolveAt - (rem / 2) / (1 - pr); schnellerMerken(m); schnellerZuletzt.set(marchKeyOf(m), now); }
     flashHint(list.length + (list.length === 1 ? ' Marsch' : ' Märsche') + ' beschleunigt – Restzeit halbiert.', 2500);
     updateHud(); saveGame(); saveProgression(); renderActiveMarches(); requestRender();
 }
@@ -10948,6 +10963,7 @@ if (window.WELT) {
         if (k.has('openWaterPendingAttacks')) pendingAttacks = PJ('openWaterPendingAttacks') || [];
         if (k.has('openWaterPendingSends')) pendingSends = PJ('openWaterPendingSends') || [];
         if (k.has('openWaterPendingRetreats')) pendingRetreats = PJ('openWaterPendingRetreats') || [];
+        if (k.has('openWaterPendingAttacks') || k.has('openWaterPendingSends') || k.has('openWaterPendingRetreats')) schnellerDrueber();
         if (k.has('openWaterTitles')) { titleState = PJ('openWaterTitles'); titleVer++; ringMemo = null; }
         if (k.has('openWaterThrone')) throneState = PJ('openWaterThrone') || { pts: 0 };
         if (k.has('openWaterTourney')) tourState = PJ('openWaterTourney') || {};

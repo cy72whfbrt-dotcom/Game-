@@ -264,7 +264,7 @@
     // 4) Puls: alle 2 s mit dem Server reden
     // ===================================================================================================
     const PULS_MS = 2000;
-    let pulsLaeuft = false, letztesProfil = '', profilAt = 0;
+    let pulsLaeuft = false, letztesProfil = '', profilAt = 0, pulsStart = 0, gleichNochmal = false;
     const basis = {};   // (Weltrechner) Stand der Mitspieler-Töpfe der anderen Menschen beim letzten Puls → Unterschiede = Nachrichten
 
     function topf(id) {
@@ -310,7 +310,7 @@
 
     async function puls() {
         if (pulsLaeuft || S.gestoppt) return;
-        pulsLaeuft = true;
+        pulsLaeuft = true; pulsStart = Date.now();
         const anfrage = { aktion: 'puls', token: S.token, seit: W.version, spieler_seit: W.spielerSeit };
         try {
             const jetzt = Date.now();
@@ -351,7 +351,10 @@
             if (anfrage.ereignisse) W.ereignisseRaus.unshift(...anfrage.ereignisse);
             if (anfrage.profil) letztesProfil = '';
             console.warn('Welt-Puls:', e);
-        } finally { pulsLaeuft = false; }
+        } finally {
+            pulsLaeuft = false;
+            if (gleichNochmal) { gleichNochmal = false; setTimeout(puls, 60); }   // (Weltrechner) Befehle ausgeführt: Ergebnis gleich speichern, nicht erst in 2 s
+        }
     }
 
     function antwortVerarbeiten(a, anfrage) {
@@ -396,6 +399,7 @@
         if (!W.leiter && warLeiter && window.__weltLeiterWechsel) window.__weltLeiterWechsel(false);
         if (W.leiter && W.version === 0 && W.neueWelt) { W.neueWelt = false; for (const k of S.WELT) if (k in S.daten) S.weltGeaendert.add(k); }   // ganz neue Welt: alles schicken
         // Befehle der anderen ausführen (nur Weltrechner)
+        if (W.leiter && (a.befehle || []).length) gleichNochmal = true;
         for (const b of a.befehle || []) if (window.__weltBefehl) try { window.__weltBefehl('u' + b.von, b.b); } catch (e) { console.warn('Befehl', b, e); }
         // Nachrichten an mich
         for (const e of a.ereignisse || []) for (const f of W.beiNachricht) try { f(e); } catch (x) { console.warn(x); }
@@ -405,7 +409,16 @@
     W.befehl = function (art, daten) {
         try { if (!SYSTEM && window.__owSofort) window.__owSofort(false); } catch (e) {}   // erst den eigenen Stand (bezahlte Münzen) sichern, dann der Befehl
         W.befehle.push(Object.assign({ art, at: Date.now() }, daten || {})); setTimeout(puls, 150);
+        if (!W.leiter) { setTimeout(puls, 1100); setTimeout(puls, 2000); }   // das Ergebnis vom Weltrechner bald abholen (nicht erst mit dem nächsten 2-s-Puls)
     };
 
-    W.start = function () { puls(); setInterval(puls, PULS_MS); document.addEventListener('visibilitychange', () => { if (!document.hidden) puls(); }); };
+    W.start = function () {
+        puls(); setInterval(puls, PULS_MS); document.addEventListener('visibilitychange', () => { if (!document.hidden) puls(); });
+        // (Weltrechner) alle 0,3 s kurz nachsehen, ob Befehle da sind – dann sofort rechnen, statt bis zum nächsten Puls zu warten
+        if (SYSTEM) setInterval(async () => {
+            if (pulsLaeuft || S.gestoppt || !W.leiter || Date.now() - pulsStart < 300) return;
+            try { const r = await fetch('server.php', { method: 'POST', headers: { 'X-Open-Water': '1', 'Content-Type': 'application/json' }, body: J({ aktion: 'befehle_da' }), credentials: 'same-origin', cache: 'no-store' });
+                if (r.ok && (await r.json()).da) puls(); } catch (e) {}
+        }, 300);
+    };
 })();

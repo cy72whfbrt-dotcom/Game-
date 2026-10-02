@@ -535,6 +535,14 @@ geplante Verlegung, Handy-Reaktionszeit, Schummel-Merkliste), keine Münzen/Verw
   sobald der Marsch ankommt, für eigene Angriffe und Angriffe auf einen. Ist der Kampf beim Weltrechner entschieden,
   spielt sie zu Ende, danach kommt das Ergebnis-Band.
 
+- Befehle (Angriff, Beschleunigen, Senden …) brauchten 4–7 s: Weltrechner wartete bis zu 2 s auf seinen Puls, speicherte
+  das Ergebnis erst 2 s später, das Handy holte es nochmal bis zu 2 s später. Jetzt: der Weltrechner fragt alle 0,3 s
+  kurz „Befehle da?“ (`befehle_da`, nur mit Weltrechner-Schlüssel, eine winzige Abfrage) und rechnet dann sofort; nach
+  ausgeführten Befehlen speichert er gleich (60 ms); das Handy holt nach einem Befehl nach 1,1 und 2 s extra ab.
+  Gemessen: Angriff nach 1 s auf der Karte, Beschleunigen nach 0,4–0,8 s bestätigt.
+- Beschleunigen sprang auf dem Handy kurz zurück (wie früher der Ausbau): jetzt gemerkt (`wartendSchneller`), bis der
+  Weltrechner es übernommen hat. Pro Marsch höchstens alle 2 s (das nimmt der Weltrechner auch nur an).
+
 **Geprüft und sicher:** SQL-Injection (überall Platzhalter), Passwörter (bcrypt), Login-Cookie (HttpOnly, nur Hash in der
 DB), Admin (feste Nummer + Formular-Zeichen), keine Datei gibt Geheimnisse preis (config.php 0 Bytes, Weltrechner-Dateien
 404, Ordnerlisten 403), keine Daten anderer Spieler in Antworten, Push-Adressen gegen 16 Umgehungsversuche geprüft.

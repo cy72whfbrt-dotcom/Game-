@@ -172,7 +172,7 @@ async function los() {
     // Vor jedem Puls: Zahlen prüfen. Kaputt → die Welt wird diesmal nicht geschrieben (der letzte gute Stand bleibt in der
     // Datenbank); dreimal hintereinander → beenden, der Neustart lädt den guten Stand.
     const geprueftHolen = w => async (url, opt) => {
-        const istPuls = String(url).includes('server.php') && opt && opt.body;
+        const istPuls = String(url).includes('server.php') && opt && opt.body && !(typeof opt.body === 'string' && opt.body.includes('"aktion":"befehle_da"'));   // (die kurze Nachfrage „Befehle da?“ ist kein Puls)
         if (istPuls) {
             let schlecht = '';
             try { schlecht = w.eval(PRUEFER); } catch (e) { schlecht = 'Prüfer konnte nicht prüfen: ' + e.message; }

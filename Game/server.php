@@ -740,6 +740,7 @@ class MysqlLager {
     }
     function befehl_ablegen($uid, $b) { $this->db->prepare('INSERT INTO ow_befehle (spieler_id, befehl) VALUES (?, ?)')->execute([$uid, $b]); }
     function offene_befehle($uid) { $q = $this->db->prepare('SELECT COUNT(*) FROM ow_befehle WHERE spieler_id = ?'); $q->execute([$uid]); return (int)$q->fetchColumn(); }
+    function befehle_da() { return (bool)$this->db->query('SELECT EXISTS(SELECT 1 FROM ow_befehle)')->fetchColumn(); }
     function befehle_abholen() {
         $this->db->exec('DELETE FROM ow_befehle WHERE erstellt < NOW() - INTERVAL 10 MINUTE');   // zu alt: die Lage hat sich geändert
         $r = $this->db->query('SELECT id, spieler_id, befehl FROM ow_befehle ORDER BY id LIMIT 500')->fetchAll();
@@ -827,6 +828,7 @@ function speichern_anfrage() {
 
         $aktion = (string)($d['aktion'] ?? '');
         if (strpos($aktion, 'push_') === 0) push_anfrage($ich, $d, $aktion);   // Handy-Benachrichtigungen (eigener Teil, siehe unten)
+        if (!empty($ich['system']) && $aktion === 'befehle_da') json_antwort(200, ['da' => lager()->befehle_da()]);   // (Weltrechner: liegen Befehle da? dann gleich ein Puls)
         if (!empty($ich['system']) && $aktion !== 'puls') json_antwort(200, ['ok' => true]);   // der Weltrechner hat keinen eigenen Spielstand
         if ($aktion === 'name') name_anfrage($ich, $d);
         if ($aktion === 'puls') { if (wartung()) json_antwort(503, ['fehler' => 'wartung']); welt_puls($ich, $d); }   // Wartung gilt für alle
