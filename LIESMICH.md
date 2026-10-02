@@ -327,10 +327,23 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
   sie SELBST aufleveln, das kostet Rohstoffe (Münzen u. a.) – wie ein eigenes Gebäude, nicht automatisch mit dem Level.
-- ⭐ **Gems kommen zu schnell:** Man kann sich innerhalb weniger Stunden Gold-Ausrüstung holen – sieht man bei den
-  Mitspielern. Gem-Quellen und Preise prüfen und bremsen (für Spieler UND Mitspieler gleich).
+- ✅ ~~Gems kommen zu schnell~~ – erledigt 2.10. (neue Saison, Abschnitt 16).
 - **Punkt 11 – Münz-Wirtschaft:** bei hohen Stufen fühlen sich Münzen nichts wert an.
 - **Punkt 6 – Bündnis-Signale statt Chat** (siehe Abschnitt 12).
+
+**Ideen-Sammlung 2.10. (Alexander hat ausgewählt – nichts davon gebaut, hochladen nur nach seinem Ja):**
+- *Bündnis (zusammen bauen):* 23 Bündnisse für Spieler + Bots (Name, Wappen) · 24 Bündnis-Signale ⭐ wichtig ·
+  26 Rally: mehrere greifen zusammen an (z. B. auf 3 Mann in der Mitte) · 27 Bündnis-Geschenke ·
+  5 Tempel/heilige Orte geben dem ganzen Bündnis Bonus · 25 Bündnis-Gebiet (vielleicht).
+- *Welt:* 1 größere Karte (neue Landschaften) · 3 Tag und Nacht · 7 wandernde Händler.
+- *Events:* 29 Wochenend-Events mit Themen · 30 Barbaren-Invasion · 31 Drachen-Event (viele zusammen).
+- *Aufbau (zusammen mit der Hauptbasis besprechen):* 8 Burg wie RoK-Rathaus (reden) · 9 neue Rohstoffe (Holz, Stein,
+  Eisen) · 10 neue Gebäude · 11 Forschung · 14 stärkere Truppen-Stufen (T1–T5) – aber NUR eine Truppenart (13 nein).
+- *Helden:* 19 mehr Helden · 20 zwei Helden pro Marsch.
+- *Sonst:* 39 VIP durch Spielen · 45 Anleitung für neue Spieler · 46 mehr Push-Nachrichten · 49 „3B“ (alles auf dem Server).
+- *Reden:* Basen/Hauptbasis, 8, 25, 17 (Spähbericht mit Held/Ausrüstung – heute nur Truppen + Verteidigung).
+- *Nicht:* 13 (mehrere Truppenarten), 21/22 (Talente/Helden-Ausrüstung, zu viel). 12 (Burg-Aussehen je Stufe) und
+  15 (Lazarett, der Rest stirbt) gibt es schon.
 
 ## 12. Ideen (gemerkt, noch nicht gebaut)
 - **Bündnis-Signale statt Chat (Alexander: „B finde ich gut“):** Kein freier Text. Feste Knöpfe: „Hilfe!“, „Greif
