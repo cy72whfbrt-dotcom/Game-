@@ -530,6 +530,11 @@ geplante Verlegung, Handy-Reaktionszeit, Schummel-Merkliste), keine Münzen/Verw
   Belohnung. Münzen/Truppen/Berichte der Nacht füllen sich live nach, solange sie offen ist (`welcomeLive`, 1 Minute).
   Gilt auch, wenn die App im Hintergrund lag. Ist das Spiel auf einem anderen Gerät/Tab offen geblieben, gilt man als „nicht weg“.
 
+- Keine Kampf-Animation auf dem Handy: Die Schlacht auf der Karte lief nur beim Weltrechner. Beim Spieler blieb der Marsch
+  bei „0:00“ stehen, bis das Ergebnis kam. Jetzt zeigt das Handy die Schlacht selbst (`zuschauerKampf` in spiel.js),
+  sobald der Marsch ankommt, für eigene Angriffe und Angriffe auf einen. Ist der Kampf beim Weltrechner entschieden,
+  spielt sie zu Ende, danach kommt das Ergebnis-Band.
+
 **Geprüft und sicher:** SQL-Injection (überall Platzhalter), Passwörter (bcrypt), Login-Cookie (HttpOnly, nur Hash in der
 DB), Admin (feste Nummer + Formular-Zeichen), keine Datei gibt Geheimnisse preis (config.php 0 Bytes, Weltrechner-Dateien
 404, Ordnerlisten 403), keine Daten anderer Spieler in Antworten, Push-Adressen gegen 16 Umgehungsversuche geprüft.

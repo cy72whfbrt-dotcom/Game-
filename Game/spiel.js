@@ -6727,6 +6727,26 @@ function finishMapBattle(attack, o) {               // the fight is decided: the
         b.t0 = t; b.anchor = now; b.slow = MB_SLOW; b.final = true; b.onEnd = o.onEnd; mbReplan(b, o, now); return; }
     if (Date.now() - attack.resolveAt < 8000) spawnMapBattle(o); else o.onEnd();
 }
+function kampfKey(a) { return a.id || (a.startedAt + '-' + a.sourceId + '-' + a.targetId); }   // dieselbe Kennung, die der Weltrechner dem Kampf gibt
+// (Zuschauer) Der Weltrechner entscheidet die Kämpfe – das Handy zeigt sie trotzdem als Schlacht auf der Karte (wie beim
+// Weltrechner selbst): sobald der Marsch ankommt, mit den Zahlen, die es sieht; ist der Kampf entschieden, spielt sie zu Ende.
+const zuschauerKampf = new Map();                    // Kampf-Kennung → { ende }
+setInterval(() => {
+    if (!window.WELT || SYSTEM || rechnet() || document.hidden) return;
+    const now = Date.now();
+    for (const a of pendingAttacks) {
+        if (a.resolveAt > now) continue;
+        const k = kampfKey(a), z = zuschauerKampf.get(k);
+        if (z) { if (!a.fightEndsAt) a.fightEndsAt = z.ende; continue; }   // (neue Welt-Daten: Kampf läuft noch – nicht als „0:00“ zeigen)
+        const mine = !a.attackerBotId, vsMe = a.attackerBotId && islandOwnerOf(a.targetId) === 'player';
+        const tgt = islandById[a.targetId], est = (mine || vsMe) && tgt ? fightEstimate(a) : null;
+        const ende = a.fightEndsAt && a.fightEndsAt > now ? a.fightEndsAt : now + (est ? fightDurationMs(est) : 4000);
+        zuschauerKampf.set(k, { ende }); if (!a.fightEndsAt) a.fightEndsAt = ende;
+        if (est && now - a.resolveAt < 15000) spawnMapBattle({ sourceId: a.sourceId, targetId: a.targetId, attackId: k, live: true, fightMs: ende - now, hero: a.hero || null,
+            atk: mine ? 'mine' : 'bot', def: mine ? (bossAt(tgt.id) ? 'boss' : islandOwnerOf(tgt.id) ? 'bot' : 'neutral') : 'mine', ...est });
+    }
+    for (const k of zuschauerKampf.keys()) if (!pendingAttacks.some(a => kampfKey(a) === k)) zuschauerKampf.delete(k);
+}, 250);
 function drawMapBattles(now) {                      // screen space
     if (!mapBattles.length) return;
     liveAnimation = true;
@@ -6734,7 +6754,10 @@ function drawMapBattles(now) {                      // screen space
     for (const b of mapBattles.slice()) {
         const rt = now - b.born, t = b.final ? mbT(b, now) : Math.min(MB_HOLD, mbT(b, now));   // choreography runs slowed down, motion cycles in real time
         if (t > MB_MS) { b.done = true; mapBattles.splice(mapBattles.indexOf(b), 1); if (b.onEnd) b.onEnd(); continue; }
-        if (!b.final && b.attackId && !pendingAttacks.some(a => a.id === b.attackId)) { mapBattles.splice(mapBattles.indexOf(b), 1); continue; }   // its attack was resolved without a finish (base changed hands mid-fight)
+        if (!b.final && b.attackId && !pendingAttacks.some(a => kampfKey(a) === b.attackId)) {
+            if (window.WELT && !rechnet()) { const n = performance.now(); b.t0 = Math.min(MB_HOLD, mbT(b, n)); b.anchor = n; b.slow = MB_SLOW; b.final = true; }   // Zuschauer: der Weltrechner hat entschieden → zu Ende spielen
+            else { mapBattles.splice(mapBattles.indexOf(b), 1); continue; }   // its attack was resolved without a finish (base changed hands mid-fight)
+        }
         const tx = b.x * z + mapState.offsetX, ty = b.y * z + mapState.offsetY;
         if (tx < -120 || ty < -120 || tx > viewW + 120 || ty > viewH + 120) continue;
         if (!near) {                                 // far out: a pulsing crossed-swords marker at the base
