@@ -610,3 +610,37 @@ Push bleiben. Der Weltrechner baut beim Start eine neue Welt (150 Mitspieler). L
   4 Ausrüstungsteile mit Seltenheit, Stufe und Sternen (`spaeherBlick`; im Kampflog unter „Spähbericht“).
 - Idee 5 (Tempel-Bonus fürs Bündnis) kommt mit den Bündnissen (Paket A).
 
+
+## 20. Helden (Paket E) – 2.10., lokal getestet (NOCH NICHT hochgeladen)
+- **19 Mehr Helden:** 6 neue Helden (jetzt 20), jeder mit kurzer Geschichte (`story`, in der Helden-Halle), eigenem Bild
+  (`HERO_LOOK`) und Fähigkeiten aus den vorhandenen Wirkungen. Freischalten über Splitter wie bisher, gleiche Start-Splitter.
+  - Wolfram (Legendär, Armeen): Kesselschlacht (Wut: Angriff gegen Armeen), weniger Verluste / Verteidigung / Tempo im Feld.
+  - Thora (Episch, Überfall): Überrumpeln (Wut: Verteidigung des Ziels zählt weniger), Tempo, später bemerkt, Rückzug.
+  - Eskil (Episch, Lazarett & Wut): Runenheilung (Wut: mehr ins Lazarett), weniger Verluste, Wut schneller, Flucht.
+  - Lene (Selten, Brücken): Fährmannslist (Wut: über eine Brücke Verteidigung −), Tempo, Maut, Rückzug.
+  - Bruno (Selten, Angriff): Bärenkraft (Wut: Angriff), Angriff gegen neutrale Basen, weniger Verluste, Gold.
+  - Pia (Gewöhnlich, Sammeln): Großer Fang (Wut: Gold), schneller sammeln, mehr Traglast, Sammler verteidigen.
+  Stärke: jeweils wie die vorhandenen Helden derselben Seltenheit (gleiche `HERO_TIER`-Werte), keine neue Wirkung.
+- **20 Zwei Helden pro Marsch:** Hauptheld + Zweitheld (`hero2` an Angriff, Feld-Marsch, Lager/Boss-Marsch, Armee).
+  Der Zweitheld gibt seine Werte (Angriff, Verteidigung, Tempo, Gefolge) und passiven Fähigkeiten zu 50 % (`HERO_ZWEIT`),
+  die Wut-Fähigkeit zündet nur beim Haupthelden, nur dessen Wut füllt sich. Passendes Paar: +10 % auf alle Heldenwerte
+  des Marsches (`HERO_PAIR_BONUS`). 6 Paare (`HERO_PAIRS`, jeder Held in höchstens einem): Kasimir & Wolfram „Die alte
+  Garde“, Ragna & Thora „Wind und Welle“, Yrsa & Eskil „Hüter der Runen“, Ida & Lene „Pfad und Furt“, Hagen & Bruno
+  „Raufbrüder“, Fenn & Pia „Fels und Meer“. Rechnung: `heroDuo` (spiel.js) hängt den Zweithelden an das `hx` des Marsches.
+  - Ein Held kann nur in einem Marsch sein (`heroBusy` prüft Haupt- und Zweitheld überall).
+  - Auswahl: Angriffs-Vorschau, Mehrfachangriff, Feld, Barbaren-Lager/Boss, Armee – erst den Haupthelden wählen, dann
+    erscheint „Zweitheld“; der passende Partner steht vorn und ist markiert („Paar +10 %“).
+  - Befehle: `angriff`, `feld`, `lager` haben jetzt `held2`; neu `armee` mit `op: 'held'` (Held einer Armee wechseln –
+    ging beim Zuschauer bisher gar nicht an den Weltrechner). Der Weltrechner prüft Besitz und „belegt“ (`heroZweitOk`,
+    `armySetHeroes`); ein falscher Zweitheld fällt einfach weg. Server: keine neue Befehls-Art, `befehl_ok` passt.
+  - Mitspieler wählen Paare genauso (`heroPickPair`: bester Hauptheld, dann der Zweitheld, der am meisten dazugibt –
+    ein Paar zählt dabei von selbst mehr; Sammler: `botGatherHeroes` nimmt den Partner).
+  - Kampfbericht: beide Helden mit Bild, der Zweitheld mit „Zweitheld · 50 %“, die Paar-Zeile; kurze Berichte „Hagen & Bruno“.
+- **Helden-Halle:** unten die Paare (beide Bilder, Name, Geschichte, „bereit“, wenn beide freigeschaltet); beim Helden
+  seine Geschichte und sein Paar mit Partner.
+- Nebenbei behoben: `armyCreate` für andere Spieler beim Weltrechner brach beim Ton ab (kein AudioContext) – jetzt ohne Ton.
+- Wirtschaft unverändert: keine neuen Splitter- oder Gem-Quellen (mehr Helden = die Splitter verteilen sich auf mehr).
+- Test (Port 8783, DB `owtest_he`): Zuschauer wählt Hagen + Bruno → Weltrechner führt Angriff mit beiden aus, Paar-Bonus
+  stimmt (Zweitheld halb, ×1,1), Bruno ist belegt; gefälschte Zweithelden (nicht im Besitz, belegt, doppelt) fallen weg;
+  Feld mit Pia + Fenn, Armee mit Otto + Greta (belegter Zweitheld abgelehnt); Bericht zeigt den Zweithelden; Mitspieler
+  ziehen mit Zweithelden los (Angriffe, Armeen, Lager, Felder). Keine Fehler in der Konsole.

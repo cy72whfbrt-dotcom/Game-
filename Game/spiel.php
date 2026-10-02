@@ -795,6 +795,13 @@ body.has-panel .mapctl{display:none}
 .hh-head{display:flex;align-items:center;gap:10px;padding:6px 0 10px;border-bottom:1px solid var(--line-2)}
 .hh-head h2{flex:1;margin:0;text-align:center;font:700 20px/1.1 var(--font-display);letter-spacing:.08em;color:var(--gold-100)}
 .hh-ghost{width:34px}
+.hh-pairs{padding:8px 0 4px;border-top:1px solid var(--line-2)} .hh-pairs h3{margin:6px 0;font:700 var(--fs-11)/1 var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--tx-3)}
+.hh-pair{display:flex;gap:10px;align-items:center;padding:8px;margin-top:6px;border:1px solid var(--line-1);border-radius:var(--r-sm);background:#0005} .hh-pair.is-on{border-color:var(--gold-300);background:rgba(228,200,134,.08)}
+.hh-pair-pics{display:flex;flex:none} .hh-pair-pics button{padding:0;border:0;background:none;cursor:pointer} .hh-pair-pics .hero-pic{display:block;width:44px;height:44px;border-radius:8px;border:1px solid var(--line-2)} .hh-pair-pics button+button{margin-left:-8px}
+.hh-pair-pics button.is-locked .hero-pic{filter:grayscale(1) brightness(.5)}
+.hh-pair-t{display:grid;gap:2px;min-width:0} .hh-pair-t b{font:700 var(--fs-13)/1.2 var(--font-ui);color:var(--gold-100)} .hh-pair-t small{font-size:11px;color:var(--tx-3)} .hh-pair-t em{font-style:italic;font-size:12px;color:var(--tx-2)}
+.hh-story{margin:0;font-style:italic;font-size:var(--fs-13);line-height:1.45;color:var(--tx-2)}
+.seg.hero-seg2{margin-top:6px} .hero-seg2-l{flex:1 1 100%;font-size:11px;color:var(--tx-3);padding:2px 2px 4px} .seg.hero-seg button.is-pair{box-shadow:inset 0 0 0 1px var(--gold-300)} .seg.hero-seg button.is-pair small{color:var(--gold-100)}
 .hh-count{padding:8px 0;font:500 var(--fs-12)/1.4 var(--font-ui);color:var(--tx-3);text-align:center}
 .hh-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px;padding:4px 0 8px}
 .hh-card{position:relative;aspect-ratio:3/4.3;border-radius:var(--r-lg);overflow:hidden;cursor:pointer;border:2px solid var(--rc);background:linear-gradient(170deg,var(--rc) 0%,#0b0c10 78%);padding:0;color:var(--tx-1);font:inherit;box-shadow:0 4px 10px #0008;transition:transform var(--dur-1) ease}
@@ -1507,6 +1514,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
   <div class="mabar-l"><svg class="icon"><use href="#i-multiattack"/></svg><span class="label" id="multiAttackLabel">0 Ziele ausgewählt</span></div>
   <div class="seg mabar-seg" id="multiAttackShare"><button type="button" data-f=".25">25 %</button><button type="button" data-f=".5">50 %</button><button type="button" data-f=".75">75 %</button><button type="button" data-f="1" class="on">Alle</button></div>
   <div class="seg mabar-seg hero-seg" id="multiAttackHero" hidden></div>
+  <div class="seg mabar-seg hero-seg hero-seg2" id="multiAttackHero2" hidden></div>
   <div class="row">
     <button id="multiAttackCancelBtn" class="btn btn--ghost btn--sm" type="button">Abbrechen</button>
     <button id="multiAttackConfirmBtn" class="btn btn--danger btn--sm" type="button"><svg class="icon"><use href="#i-attack"/></svg><span class="lbl">Angriffe starten</span></button>
