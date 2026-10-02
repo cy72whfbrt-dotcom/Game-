@@ -1110,6 +1110,13 @@ Alles in spiel.js (Abschnitt „THE CITY, ISOMETRIC“), nur Aussehen – Gebäu
 - **Drache gibt nichts Legendäres mehr** (Alexander 2.10.): Platz 1 Kiste „mind. Episch“, Platz 2–10 „mind. Selten“
   (`DR_PREISE`). Aus Kisten kommt höchstens Episch – also aus dem Drachen nie Legendär.
 
+## 31. Weltboss (Drachenturm / Piratenfestung) KOMPLETT RAUS (Alexander 2.10.) – NICHT hochgeladen
+- Es erscheint kein Boss mehr alle 4–6 Std. auf einer neutralen Basis. Ein alter aus dem Speicher wird beim nächsten
+  Puls gelöscht (`bossState` bleibt immer leer, `spawnBoss`/`BOSS_KINDS`/`nextBossAt` sind weg).
+- **Bleibt:** der Kriegsherr (Wanderboss), der Tagesboss, der Drache in der Mitte, die Barbaren-Invasion.
+- Boss-Jagd-Bonus heißt jetzt „Kriegsherr doppelt so oft“; Erfolge „Bezwinger“/„Bossjäger“ zählen den Kriegsherrn.
+- Nebenbei: das Beute-Fenster nach dem Kriegsherrn zeigte „mind. Legendär“, obwohl es eine epische Kiste ist – behoben.
+
 ## 30. VIP KOMPLETT RAUS (Alexander 2.10.: „VIP find ich totaler Müll“) – NICHT hochgeladen
 - Weg: VIP-Stufen, Spieltage zählen (`openWaterVip`), VIP-Tageskiste, „Neue VIP-Stufe“-Hinweis, VIP-Zeile im Profil,
   Bauzeit −2 %/Stufe (Stadt und Forschung bauen jetzt für alle gleich lang).

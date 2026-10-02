@@ -5157,8 +5157,8 @@ const ACHIEVEMENTS = [   // the old ids stay (claims are kept); the tiers of one
     { id: 'emma1',   name: 'Kräftemessen',     icon: 'attack',  desc: 'Erobere eine Basis eines anderen Spielers.', goal: 1,  k: 'pvp', gems: 100 },
     { id: 'emma10',  name: 'Gefürchtet',       icon: 'attack',  desc: 'Erobere 10 Basen von anderen Spielern.', goal: 10,   k: 'pvp', gems: 500 },
     { id: 'pvp50',   name: 'Schrecken der Meere', icon: 'attack', desc: 'Erobere 50 Basen von anderen Spielern.', goal: 50, k: 'pvp', gems: 1000 },
-    { id: 'boss1',   name: 'Bezwinger',        icon: 'attack',  desc: 'Besiege einen Boss oder den Wanderboss.', goal: 1,   k: 'bosses', gems: 250 },
-    { id: 'boss10',  name: 'Bossjäger',        icon: 'attack',  desc: 'Besiege 10 Bosse.',                      goal: 10,   k: 'bosses', gems: 500 },
+    { id: 'boss1',   name: 'Bezwinger',        icon: 'attack',  desc: 'Besiege den Kriegsherrn (Wanderboss).', goal: 1,   k: 'bosses', gems: 250 },
+    { id: 'boss10',  name: 'Bossjäger',        icon: 'attack',  desc: 'Besiege 10-mal den Kriegsherrn.',        goal: 10,   k: 'bosses', gems: 500 },
     { id: 'wander1', name: 'Wanderjäger',      icon: 'troops',  desc: 'Besiege den Wanderboss.',                goal: 1,    k: 'wanders', gems: 200 },
     { id: 'wander5', name: 'Fährtenleser',     icon: 'troops',  desc: 'Besiege den Wanderboss 5 Mal.',          goal: 5,    k: 'wanders', gems: 600 },
     { id: 'temple1', name: 'Tempelherr',       icon: 'temple',  desc: 'Erobere einen Tempel.',                  goal: 1,    k: 'temples', gems: 100 },
@@ -5942,7 +5942,7 @@ function inboxList() { if (!inboxState) { try { inboxState = JSON.parse(store.ge
 function inboxSave() { store.set('openWaterInbox', JSON.stringify(inboxList())); }
 const INBOX_PILE = { fight: 1, bounty: 1 };   // these pile up in one entry each
 const inboxPiles = x => !!INBOX_PILE[x.src] && !(x.crate >= 0) && !(x.kiste >= 0) && !x.schild;   // a crate keeps its own entry (one entry holds one crate)
-const INBOX_SRC = { gift: { ic: 'gem', t: 'Geschenk' }, fight: { ic: 'attack', t: 'Kampfbeute' }, tour: { ic: 'crown', t: 'Wochenend-Turnier' }, woche: { ic: 'rank', t: 'Wochen-Event' }, boss: { ic: 'star', t: 'Tagesboss' }, wboss: { ic: 'star', t: 'Weltboss' }, bounty: { ic: 'losses', t: 'Kopfgeld' }, inv: { ic: 'defense', t: 'Barbaren-Invasion' }, drache: { ic: 'star', t: 'Drache' }, vip: { ic: 'crown', t: 'Tageskiste' }, haendler: { ic: 'coin', t: 'Händler' } };
+const INBOX_SRC = { gift: { ic: 'gem', t: 'Geschenk' }, fight: { ic: 'attack', t: 'Kampfbeute' }, tour: { ic: 'crown', t: 'Wochenend-Turnier' }, woche: { ic: 'rank', t: 'Wochen-Event' }, boss: { ic: 'star', t: 'Tagesboss' }, wboss: { ic: 'star', t: 'Kriegsherr' }, bounty: { ic: 'losses', t: 'Kopfgeld' }, inv: { ic: 'defense', t: 'Barbaren-Invasion' }, drache: { ic: 'star', t: 'Drache' }, vip: { ic: 'crown', t: 'Tageskiste' }, haendler: { ic: 'coin', t: 'Händler' } };
 function inboxAdd(o) {                              // o: { src, title?, gems, coins, sh (hero shards), crate (lowest rarity, -1 none) } - all fights' spoils pile up in one entry
     o = Object.assign({ gems: 0, coins: 0, sh: 0, crate: -1, tr: 0, n: 1 }, o); o.gems = Math.round(o.gems); o.coins = Math.round(o.coins); o.tr = Math.round(o.tr);
     if (!(o.gems > 0 || o.coins > 0 || o.sh > 0 || o.crate >= 0 || o.tr > 0 || o.kiste >= 0 || o.schild > 0)) return 0;   // (kiste: genau diese Seltenheit, schild: Friedensschild Std. – Händler)
@@ -7500,17 +7500,15 @@ function drawBattleFx(now) {       // screen space (setScreen active)
 }
 
 // ===== BOSSES / WORLD EVENTS =====
-// Now and then a Drachenturm or a Piratenfestung takes over a neutral base near the player:
-// a huge garrison, a countdown, and a legendary crate for whoever breaks it. Bots leave it alone.
-var BOSS_KINDS = [{ kind: 'dragon', name: 'Drachenturm' }, { kind: 'pirate', name: 'Piratenfestung' }];
-var BOSS_DURATION_MS = 30 * 60 * 1000, BOSS_REWARD_GEMS = 20, BOSS_CRATE = 3;   // (2.10.: vorher 50 Gems + goldene Kiste, alle 20–35 Min.)
-var bossState = null, nextBossAt = 0, bossLoaded = false, bossRewardPending = false;
+// Der Weltboss (Drachenturm / Piratenfestung alle 4–6 Std. auf einer neutralen Basis) ist seit 2.10. ganz raus (Alexander).
+// bossState bleibt immer leer (ein alter aus dem Speicher wird gelöscht); bossAt() findet nur noch den Kriegsherrn (Wanderboss).
+var BOSS_REWARD_GEMS = 20, BOSS_CRATE = 3;
+var bossState = null, bossLoaded = false, bossRewardPending = false;
 function loadBoss() {
     if (bossLoaded) return; bossLoaded = true;
     try { bossState = JSON.parse(store.get('openWaterBoss')) || null; } catch (e) { bossState = null; }
-    nextBossAt = parseInt(store.get('openWaterBossNext'), 10) || (Date.now() + 2 * 60 * 1000);   // first one 2 min after the first start
 }
-function saveBoss() { store.set('openWaterBoss', JSON.stringify(bossState)); store.set('openWaterBossNext', String(nextBossAt)); if (wander !== undefined) saveWander(); }
+function saveBoss() { store.set('openWaterBoss', JSON.stringify(bossState)); if (wander !== undefined) saveWander(); }
 function bossAt(id) {
     loadBoss();
     if (bossState && bossState.islandId === id && bossState.endsAt > Date.now() && !islandOwnerOf(id)) return bossState;
@@ -7525,43 +7523,19 @@ function worldArmy() {
     armies.sort((a, b) => b - a);
     return armies[2] || 0;
 }
-function spawnBoss() {
-    const reach = new Set();
-    for (const id of ownedIslands) for (const lm of reachableLandmassIds[islandById[id].landmassId] || [])
-        if (landmassesConnected(islandById[id].landmassId, lm) && isExplored(lm)) reach.add(lm);
-    const home = islandById[rewardBaseId() ?? playerIslandId];
-    const busy = new Set(pendingAttacks.map(a => a.targetId));
-    const cand = [];
-    for (const lm of reach) if (landmasses[lm] && landmasses[lm].tier === 'outer') for (const isl of islandsByLandmass[lm] || [])
-        if (!islandOwnerOf(isl.id) && isl.type !== 'temple' && isl.type !== 'megaTemple' && isl.type !== 'gate' && !busy.has(isl.id)) cand.push(isl);
-    if (!cand.length || !home) return false;
-    cand.sort((a, b) => Math.hypot(a.x - home.x, a.y - home.y) - Math.hypot(b.x - home.x, b.y - home.y));
-    const isl = cand[Math.floor(Math.random() * Math.min(25, cand.length))];
-    const def = BOSS_KINDS[Math.floor(Math.random() * BOSS_KINDS.length)];
-    const troops = niceRound(Math.max(200000, worldArmy() * (1.2 + Math.random() * 0.8)));
-    bossState = { islandId: isl.id, kind: def.kind, name: def.name, troops, defense: niceRound(troops * 0.1), endsAt: Date.now() + BOSS_DURATION_MS };
-    scoutedIslands.add(isl.id);                           // its strength is public
-    saveBoss(); saveGame();
-    flashHint('Weltereignis: ' + def.name + ' erschienen! Besiegen = legendäre Kiste.', 6000);
-    spawnBattleFx(isl.id, false, def.name + '!', 'Weltereignis · 30:00');
-    requestRender();
-    return true;
-}
 function endBoss(msg) {
-    bossState = null;
-    nextBossAt = Date.now() + (240 + Math.random() * 120) * 60 * 1000 * evBossTakt();   // der nächste in 4–6 Std. (Boss-Jagd: halb so lang)
-    saveBoss(); requestRender();
+    bossState = null; saveBoss(); requestRender();
     if (msg) flashHint(msg, 4000);
     if (isPanelOpen(popup)) renderPopup();
 }
 function defeatBoss(boss) {
     statBump('bosses'); if (boss.wander) statBump('wanders');
     const rewardGems = boss.wander ? WANDER_REWARD_GEMS : BOSS_REWARD_GEMS, shN = boss.wander ? HERO_SHARDS_WANDER : HERO_SHARDS_BOSS;
-    inboxAdd({ src: 'wboss', title: boss.name + ' besiegt', gems: rewardGems, crate: BOSS_CRATE, sh: shN });   // eine epische (lila) Kiste, Gems und Splitter – ins Abholfach (Gold nur Platz 1 beim Tagesboss)
+    inboxAdd({ src: 'wboss', title: boss.name + ' besiegt', gems: rewardGems, crate: BOSS_CRATE, sh: shN });   // eine epische (lila) Kiste, Gems und Splitter – ins Abholfach
     saveProgression(); saveGame(); updateHud();
     if (boss.wander) endWander(null); else endBoss(null);
     document.getElementById('rewardModalSub').textContent = boss.name + ' ist gefallen – die Beute liegt unter Events → Belohnung.';
-    const list = document.getElementById('rewardModalRewards'), rd = RARITY_DEFS[4];
+    const list = document.getElementById('rewardModalRewards'), rd = RARITY_DEFS[BOSS_CRATE];
     list.innerHTML = '<li style="border-color:' + rd.color + '66">' + icon('shop') + '<span>Kiste</span><b style="color:' + rd.color + '">mind. ' + rd.label + '</b></li>' +
         '<li>' + icon('gem', 'ico-gem') + '<span>Gems</span><b>+' + rewardGems + '</b></li><li>' + icon('star') + '<span>Helden-Splitter</span><b>+' + shN + '</b></li>';
     [...list.children].forEach((li, i) => { li.style.animationDelay = (200 + i * 120) + 'ms'; });
@@ -7574,11 +7548,7 @@ function bossTick() {
     checkRuler();
     loadBoss();
     const now = Date.now();
-    if (bossState && rechnet() && (bossState.endsAt <= now || islandOwnerOf(bossState.islandId))) {
-        const name = bossState.name;
-        endBoss(islandOwnerOf(bossState.islandId) ? null : name + ' ist wieder verschwunden.');
-    }
-    if (!bossState && now >= nextBossAt && rechnet()) { if (!spawnBoss()) nextBossAt = now + 60000; saveBoss(); }
+    if (bossState && rechnet()) endBoss(null);           // ein alter Weltboss aus der Zeit davor: weg
     const el = document.querySelector('[data-boss-clock]'), pb = popupIslandId !== null && bossAt(popupIslandId);
     if (el && pb) el.textContent = fmtClock(((pb.wander ? pb.campUntil : pb.endsAt) - now) / 1000);
     if (bossState) requestRender();
@@ -10186,7 +10156,7 @@ const EV_THEMEN = [
     { k: 'thron', name: 'Kampf um die Mitte', ic: 'crown', pkt: 'Thron und Wächter-Tempel halten, Kämpfe in der Mitte', bonus: 'Thron-Punkte +50 %' },
     { k: 'sam', name: 'Sammel-Rausch', ic: 'coin', pkt: 'Gesammeltes – ein volles Feld bringt 30', bonus: 'Sammeln 50 % schneller' },
     { k: 'krieg', name: 'Krieger-Woche', ic: 'attack', pkt: 'besiegte Truppen – überall: Basen, Felder, Lager, Barbaren', bonus: '10 Barbaren-Lager mehr pro Tag' },
-    { k: 'boss', name: 'Boss-Jagd', ic: 'star', pkt: 'Schaden an Tagesboss und Drache (30 je voller Treffer)', bonus: 'Weltbosse doppelt so oft, 5 Tagesboss-Angriffe mehr' },
+    { k: 'boss', name: 'Boss-Jagd', ic: 'star', pkt: 'Schaden an Tagesboss und Drache (30 je voller Treffer)', bonus: 'Kriegsherr doppelt so oft, 5 Tagesboss-Angriffe mehr' },
     { k: 'bau', name: 'Bauherr', ic: 'upgrade', pkt: 'Aufwerten von Basen (2 + neue Stufe)', bonus: 'Ausbau 20 % günstiger' }
 ];
 const EV_WOCHE = EV_THEMEN.slice(1);
@@ -10230,7 +10200,7 @@ function woPay() {                                    // Platz 1, 2–3, 4–10 
 }
 function barbTagMax() { return BARB_DAY + (evThemaAktiv('krieg') ? 10 : 0); }
 function dbossHitsMax() { return DBOSS_HITS + (evThemaAktiv('boss') ? 5 : 0); }
-function evBossTakt() { return evThemaAktiv('boss') ? .5 : 1; }   // Boss-Jagd: Weltbosse kommen doppelt so oft
+function evBossTakt() { return evThemaAktiv('boss') ? .5 : 1; }   // Boss-Jagd: der Kriegsherr kommt doppelt so oft
 
 // ---- gemeinsamer Zustand ----
 var evState = (() => { try { return JSON.parse(store.get('openWaterEvents')) || null; } catch (e) { return null; } })() || {};
