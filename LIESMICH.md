@@ -640,8 +640,8 @@ alte Spielstände stürzen nicht ab: fehlende Felder werden vorbelegt (Burg 1, k
   Hinweis „Alle 2 Marsch-Plätze sind belegt …“), für jeden Mitspieler und beim Weltrechner für jeden Befehl (gefälschte
   Befehle am Handy vorbei werden abgelehnt). Mitspieler rechnen mit `AUF.marschFrei` (botThink, botFreeSlots, Sammeln).
 - **9 Rohstoffe Holz, Stein, Eisen** (`openWaterRes`, privat wie die Münzen; Start 3.000 / 2.000 / 500):
-  - Jede Basis macht nebenbei 2 je Takt × 1,15^(Stufe−1) (= ⅕ der Münzen) × Landschaft: Wiese Holz 1 / Stein 0,5 /
-    Eisen 0,25 · Wüste 0,3 / 1 / 0,5 · Schnee 0,45 / 0,6 / 1 – dazu je Region eine feste Laune 0,8–1,2, innere Regionen ×1,3.
+  - ~~Jede Basis macht nebenbei …~~ **geändert in Abschnitt 26:** Rohstoffe kommen jetzt aus Holzfäller, Steinbruch und
+    Eisenmine in der Stadt (Landschaft und Region der Hauptstadt zählen weiter mit).
   - **Neue Felder** (eigener Zufall, die Gold-/Gem-Felder bleiben genau, wo sie waren): Holzfällerei, Steinbruch, Eisenmine,
     je äußere Region 2 (ganz außen 3), passend zur Landschaft. Gleiche RoK-Regel wie Gold: feste Dauer (außen 1 Std. …
     innen 4 Std.), Vorrat 8.000 / 8.000 / 6.000 × Regions-Faktor, Traglast 2 / 2 / 1,5 je Truppe.
@@ -932,4 +932,20 @@ für beide Spieler. Keine Fehler in der Konsole oder im Weltrechner, keine Schum
   unbegrenzt Münzen, Gems, Rohstoffe, Splitter und Truppen (alle 10 s aufgefüllt). NIE ins echte Spiel – die Datei liegt
   nicht in Game/ und wird nicht hochgeladen.
 - Vorschau für Alexander: https://claude.ai/artifact/8pusjSdvm5Dj4Q9moYcbUD
+
+## 26. Neue Ordnung (Alexander: „nichts sortiert, alles doppelt, Hauptstadt zweimal aufwerten“) – 2.10., NICHT hochgeladen
+**Teil 1 – Hauptstadt nur EINE Stufe, Rohstoffe aus der Stadt:**
+- Die Hauptstadt hat nur noch die **Burg-Stufe**. Auf der Karte steht sie automatisch auf Burg × 4 (Burg 1 = Stufe 1,
+  Burg 13 = 51, Burg 25 = 100; `AUF.burgKarte`, `hauptstadtStufen` alle 3 s – für dich, alle Mitspieler und echte Spieler).
+  An der Hauptstadt auf der Karte gibt es keinen „Aufwerten“-Knopf mehr, nur „Stadt“ (→ Burg). Die anderen Basen draußen
+  wertest du weiter sofort mit Münzen auf (ohne Bauzeit). Ziehst du um, bekommt die alte Hauptstadt ihre alte Stufe
+  zurück (Welt-Schlüssel `openWaterHauptVor`). Mitspieler werten ihre Hauptstadt draußen nicht mehr auf.
+- **Neue Stadt-Gebäude vor der Mauer:** Holzfäller, Steinbruch, Eisenmine (je bis Stufe 25, Bauzeit + Bauarbeiter wie die
+  anderen). Pro Stunde: 150 (die Burg allein) + 600 × 1,42^(Stufe−1) × Landschaft der Hauptstadt (0,6–1,0) × Ertrag
+  (Forschung, Titel). Beispiel Holzfäller 5 auf Wiese: ~1.900 Holz/Std. Das Gebäude-Fenster zeigt „Jetzt … pro Stunde,
+  nächste Stufe …“. Die alten Basis-Rohstoffe gibt es nicht mehr (nur noch Stadt + Felder sammeln). Mitspieler bauen sie auch.
+- Anleitung angepasst (Schritt 4: Holzfäller bauen, Schritt 6: Belohnungen unter „Events“); in der Stadt erscheint sie nur
+  beim Holzfäller-Schritt und nie über einem offenen Gebäude-Fenster.
+- Getestet (Vorschau): Burg 13 → Hauptstadt Stufe 51, Holz/Stein/Eisen wachsen, Aufwerten-Knopf an der Hauptstadt weg,
+  alle drei Gebäude im Bild, keine Fehler.
 

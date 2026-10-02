@@ -117,7 +117,7 @@ function botCanCross(who, a, b, n, targetId) {   // can n troops of a bot really
     return !t.closed && (botCoins[who] || 0) >= t.cost;
 }
 
-const BOT_BUILDINGS = ['academy', 'forge', 'hospital', 'wall', 'barracks', 'treasury', 'watch', 'heroes', 'shrine', 'storage', 'tower', 'embassy', 'market'];   // the city buildings with an effect
+const BOT_BUILDINGS = ['academy', 'forge', 'hospital', 'wall', 'barracks', 'treasury', 'watch', 'heroes', 'shrine', 'storage', 'tower', 'embassy', 'market', 'lumber', 'quarry', 'mine'];   // the city buildings with an effect
 const BOT_MIN_AUSNAHME = ['storage', 'tower', 'embassy', 'market'];   // zählen nicht für „alle Gebäude Stufe …“ (Erfolge) – wie bei dir
 
 const BOT_SKILLS = ['troops', 'attack', 'defense', 'speed', 'attackGold', 'defenseGold'];
@@ -1098,7 +1098,7 @@ function botConsiderUpgrade(bot) {
     const cap = botCapitalOf(bot.id);
     const weight = id => { const isl = islandById[id]; return isl.type === 'megaTemple' ? .2 : isl.type === 'gate' || isl.guardian ? .4 : isl.type === 'temple' ? .5 : id === cap ? .6 : 1; };
     const cand = [];
-    for (const id of owned) { const lvl = islandLevels[id] || 1; if (lvl < MAX_BASE_LEVEL) cand.push({ id, cost: upgradeCost(lvl), sc: upgradeCost(lvl) * weight(id) }); }
+    for (const id of owned) { if (id === cap) continue; const lvl = islandLevels[id] || 1; if (lvl < MAX_BASE_LEVEL) cand.push({ id, cost: upgradeCost(lvl), sc: upgradeCost(lvl) * weight(id) }); }   // (die Hauptstadt wächst mit der Burg, nicht mit Münzen)
     cand.sort((x, y) => x.sc - y.sc);
     let budget = botCoins[bot.id] * st.spend, did = 0;
     for (const c of cand) {

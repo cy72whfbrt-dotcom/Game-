@@ -6172,12 +6172,12 @@ afterSplash(() => { vipTag(); setInterval(vipTag, 10 * 60000); });
 
 // ===== ANLEITUNG für neue Spieler (Idee 45): 6 kurze Schritte unten am Bildschirm, jeder hakt sich von selbst ab =====
 const ANLEITUNG = [
-    ['Tippe auf deine Burg – die blaue Basis mit der Krone.', () => (isPanelOpen(popup) && popupIslandId === playerIslandId) || !cityView.hidden],
-    ['Werte eine deiner Basen auf: Basis antippen → „Aufwerten“. Mehr Stufe = mehr Truppen und Münzen.', () => anleitungTat.upgrade],
+    ['Tippe auf deine Hauptstadt – die blaue Basis mit der Krone.', () => (isPanelOpen(popup) && popupIslandId === playerIslandId) || !cityView.hidden],
     ['Greif eine neutrale (graue) Basis in deiner Nähe an: antippen → „Angreifen“.', () => anleitungTat.attack],
-    ['Öffne die Stadt (unten links) und baue ein Gebäude.', () => { const c = loadCity(); return (c.builds || []).length > 0 || Object.entries(c.levels || {}).some(([k, v]) => k !== 'keep' && v > 0); }],   // (die Burg-Stufe 1 hat jeder)
-    ['Schick Truppen zum Sammeln: tippe eine Goldmine, Holzfällerei, einen Steinbruch oder eine Eisenmine auf der Karte an.', () => fieldMarches.some(m => m.who === 'player') || Object.values(fieldState || {}).some(st => st && st.occ && st.occ.who === 'player')],
-    ['Hol dir deine Belohnungen unter „Ziele“ (unten).', () => isPanelOpen(goalsPopup)]
+    ['Werte eine eroberte Basis auf: antippen → „Aufwerten“. (Deine Hauptstadt wächst mit der Burg in der Stadt.)', () => anleitungTat.upgrade],
+    ['Öffne die Stadt (unten links) und baue den Holzfäller – Holz brauchst du für deine Burg.', () => { const c = loadCity(); return (c.levels.lumber || 0) > 0 || (c.builds || []).some(b => b.id === 'lumber'); }],
+    ['Schick Truppen zum Sammeln: tippe auf der Karte ein Feld an (Goldmine, Holz, Stein, Eisen …).', () => fieldMarches.some(m => m.who === 'player') || Object.values(fieldState || {}).some(st => st && st.occ && st.occ.who === 'player')],
+    ['Hol dir deine Belohnungen unter „Events“ (unten).', () => isPanelOpen(goalsPopup)]
 ];
 const anleitungTat = {};
 var anleitung = (() => { try { return JSON.parse(store.get('openWaterAnleitung')) || null; } catch (e) { return null; } })();
@@ -6191,13 +6191,14 @@ function anleitungZeigen() {
     let weiter = false; try { weiter = ANLEITUNG[anleitung.schritt][1](); } catch (e) {}
     if (weiter) {
         anleitung.schritt++; anleitungSpeichern(); sfx('upgrade');
-        if (anleitung.schritt >= ANLEITUNG.length) { el.hidden = true; inboxAdd({ src: 'gift', title: 'Anleitung geschafft', gems: 10, crate: 0 }); flashHint('Geschafft! Unter „Ziele“ → Abholfach wartet eine kleine Belohnung. Viel Spaß!', 6000); return; }
+        if (anleitung.schritt >= ANLEITUNG.length) { el.hidden = true; inboxAdd({ src: 'gift', title: 'Anleitung geschafft', gems: 10, crate: 0 }); flashHint('Geschafft! Unter „Events“ → Abholfach wartet eine kleine Belohnung. Viel Spaß!', 6000); return; }
     }
-    el.hidden = false;
+    el.hidden = !document.getElementById('citySheet').hidden || (!cityView.hidden && anleitung.schritt !== 3);   // in der Stadt nur beim Holzfäller-Schritt, ein Gebäude-Fenster geht vor
+    if (el.hidden) return;
     setText(document.getElementById('anleitungSchritt'), 'Schritt ' + (anleitung.schritt + 1) + '/' + ANLEITUNG.length);
     setText(document.getElementById('anleitungText'), ANLEITUNG[anleitung.schritt][0]);
 }
-document.getElementById('anleitungWeg').addEventListener('click', () => { anleitung.schritt = ANLEITUNG.length; anleitungSpeichern(); document.getElementById('anleitung').hidden = true; flashHint('Anleitung übersprungen – Hilfe gibt es unter Einstellungen (Zahnrad).', 3500); });
+document.getElementById('anleitungWeg').addEventListener('click', () => { anleitung.schritt = ANLEITUNG.length; anleitungSpeichern(); document.getElementById('anleitung').hidden = true; flashHint('Anleitung übersprungen – Hilfe gibt es unter Profil → Einstellungen.', 3500); });
 afterSplash(() => setTimeout(() => { anleitungZeigen(); setInterval(anleitungZeigen, 1000); }, 1500));   // VIP: Spieltag zählen (auch wenn das Spiel über Mitternacht offen bleibt)
 
 // Shop: buy gem crates, opens straight into a result readout.
@@ -7798,7 +7799,14 @@ var CITY_BUILDINGS = [
     { id: 'embassy',  name: 'Botschaft',     icon: 'bund',
       desc: 'Für dein Bündnis: Hilfe und Rally-Truppen zu Mitgliedern laufen 3 % schneller je Stufe, Bündnis-Geschenke an dich sind 4 % größer je Stufe. Ab Burg-Stufe 5.' },
     { id: 'market',   name: 'Markt',         icon: 'market',
-      desc: 'Tausche Holz, Stein und Eisen gegen Münzen – oder kaufe Rohstoffe, die dir fehlen. Mit Gebühr (sinkt mit jeder Stufe) und Tageslimit. Ab Burg-Stufe 4.' }
+      desc: 'Tausche Holz, Stein und Eisen gegen Münzen – oder kaufe Rohstoffe, die dir fehlen. Mit Gebühr (sinkt mit jeder Stufe) und Tageslimit. Ab Burg-Stufe 4.' },
+    // Rohstoffe kommen aus der Stadt (Alexander 2.10.): je ein Gebäude vor der Mauer, dazu die Felder draußen zum Sammeln
+    { id: 'lumber',   name: 'Holzfäller',    icon: 'wood',
+      desc: 'Fällt Holz vor der Stadtmauer – jede Stunde, auch wenn du nicht spielst. Jede Stufe bringt mehr. Holz brauchst du für die Burg, Gebäude und Forschung.' },
+    { id: 'quarry',   name: 'Steinbruch',    icon: 'stone',
+      desc: 'Bricht Stein vor der Stadtmauer – jede Stunde, auch wenn du nicht spielst. Jede Stufe bringt mehr. Stein brauchst du vor allem für Burg, Mauer und Gebäude.' },
+    { id: 'mine',     name: 'Eisenmine',     icon: 'iron',
+      desc: 'Fördert Eisen vor der Stadtmauer – jede Stunde, auch wenn du nicht spielst. Jede Stufe bringt mehr. Eisen brauchst du für hohe Burg-Stufen, Forschung und Truppen-Stufen.' }
 ];
 // Lager: what a fallen base (or a beaten capital garrison) gives away - the same for everyone
 var PLUNDER_PCT = { base: .02, capital: .04 }, PLUNDER_CAP_H = .5;   // a share of the coins above the Lager, at most 30 min of the victim's income per fight
@@ -8548,7 +8556,7 @@ function hospitalTake(fallen, pct) {              // Lazarett: part of your fall
 }
 function starGemCost(stars) { return 20 * (stars + 1); }
 function cityEffectText(id, lvl) {
-    if (AUF && ['academy', 'tower', 'embassy', 'market'].includes(id)) return AUF.effektText(id, lvl);   // Paket D (aufbau.js)
+    if (AUF && ['academy', 'tower', 'embassy', 'market', 'lumber', 'quarry', 'mine'].includes(id)) return AUF.effektText(id, lvl);   // Paket D (aufbau.js), Rohstoff-Gebäude
     if (id === 'wall') return lvl ? 'Jetzt: +' + (lvl * 2) + ' % Verteidigung auf allen Basen.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: +' + ((lvl + 1) * 2) + ' %.' : '') : 'Baue die Mauer für mehr Verteidigung auf allen Basen.';
     if (id === 'academy') return 'Jetzt: Truppen laufen +' + (lvl * 2) + ' % schneller.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: +' + ((lvl + 1) * 2) + ' %.' : '');
     if (id === 'forge') return lvl ? 'Bis zu ' + Math.min(STAR_MAX, lvl) + (Math.min(STAR_MAX, lvl) === 1 ? ' Stern' : ' Sterne') + ' pro Ausrüstungsteil.' + (lvl < STAR_MAX ? ' Nächste Stufe: ' + (lvl + 1) + ' Sterne.' : '') : 'Baue die Schmiede, um Sterne zu setzen.';
@@ -8637,8 +8645,8 @@ function teleportCapital(toId) {
 document.getElementById('cityCloseBtn').addEventListener('click', closeCity);
 document.getElementById('citySheetClose').addEventListener('click', () => { cityOpenId = null; document.getElementById('citySheet').hidden = true; });
 document.getElementById('cityUpgradeBtn').addEventListener('click', () => {
-    if (cityOpenId === '_keep' && AUF) { cityStartBuild('keep'); return; }        // Paket D: die Burg-Stufe (Bauzeit, Münzen + Rohstoffe) – die Basis draußen bleibt sofort aufwertbar
-    if (cityOpenId === '_keep') {                  // the capital itself: same price and rule as upgrading it on the map
+    if (cityOpenId === '_keep' && AUF) { cityStartBuild('keep'); return; }        // die Burg-Stufe (Bauzeit, Münzen + Rohstoffe) ist die EINE Stufe der Hauptstadt
+    if (cityOpenId === '_keep' && false) {                  // the capital itself: same price and rule as upgrading it on the map
         const level = islandLevels[playerIslandId] || 1; if (level >= MAX_BASE_LEVEL) return;
         const cost = upgradeCost(level); if (coins < cost) { flashHint('Nicht genug Münzen – benötigt ' + fmtCompact(cost) + '.', 2500); return; }
         coins -= cost; islandLevels[playerIslandId] = level + 1; ausbauMerken(playerIslandId, level + 1); if (!alsBefehl('ausbau', { insel: playerIslandId, stufe: level + 1 })) evPunkte('bau', 'player', 2 + level + 1); updateHud(); saveGame(); questProgress('upgrade', 1); sfx('upgrade');
@@ -8660,7 +8668,8 @@ const CITY_LOTS = {                                                          // 
     academy: [222, 222], shrine: [320, 206], heroes: [418, 222],
     forge: [206, 320], barracks: [434, 320],
     hospital: [222, 418], treasury: [418, 418], watch: [236, 470], storage: [462, 236], wall: [320, 490],
-    market: [262, 368], embassy: [378, 270], tower: [378, 368]                 // Paket D
+    market: [262, 368], embassy: [378, 270], tower: [378, 368],                // Paket D
+    lumber: [92, 250], quarry: [180, 95], mine: [430, 545]                    // Rohstoffe: vor der Mauer (gleich im Bild)
 };
 const CITY_KEEP_AT = [320, 320];
 const cIso = (x, y) => [(x - y) * .866, (x + y) * .5];                    // world → screen units (before zoom)
@@ -8823,6 +8832,26 @@ const CITY_PAINT = {
         for (const [x, y] of [[-15, 14], [-11, 15]]) K.cyl(x, y, 2.2, 2, 6, '#d9c9a0', .4);                          // sacks
         if (t >= 2) { K.box(12, 19, -16, -6, 2, 11, wall, .7); cityGableY(K, 11, 20, -17, -5, 11, 5, roof); }
         if (t >= 3) { for (const [x, y] of [[4, 15], [8, 15]]) { K.box(x - 1.8, x + 1.8, y - 1.4, y + 1.4, 2, 5.2, '#7a5230', .4); K.box(x - 1.8, x + 1.8, y - 1.4, y + 1.4, 4.6, 5.4, '#e8c547', .3); } cityBanner(K, -12, 8.2, 12, '#6b4a8a'); }
+    },
+    lumber(K, t) {                                                          // Holzfäller: Hütte, Stämme, Sägebock, Bäume drumherum
+        K.box(-16, 0, -14, -2, 0, 9, '#9a7448', .7); cityGable(K, -17, 1, -15, -1, 9, 6, '#3f6b33'); cityDoor(K, -8, -2, 6); cityWindows(K, -14, -10, -2, 7, 1, false);
+        for (let i = 0; i < 2 + t; i++) for (let j = 0; j < 3 - (i % 2); j++) K.box(2 + j * 4.2 + (i % 2) * 2.1, 5.6 + j * 4.2 + (i % 2) * 2.1, 2, 16, i * 3, i * 3 + 3, j % 2 ? '#a0783f' : '#8a6634', .4);   // Stammstapel
+        K.box(-12, -2, 6, 8, 0, 4, '#6b4a2c', .4); K.box(-11, -10, 6, 8, 4, 6, '#6b4a2c', .3); K.box(-4, -3, 6, 8, 4, 6, '#6b4a2c', .3);   // Sägebock
+        for (const [x, y, h] of [[17, -14, 18], [12, -18, 14], [-19, 12, 16], [19, 15, 13]].slice(0, 2 + t)) { K.cyl(x, y, 1.1, 0, h * .45, '#5a3d24', .4); K.cone(x, y, 5, h * .35, h * .8, '#2f6a2a'); }
+    },
+    quarry(K, t) {                                                          // Steinbruch: grauer Fels, Quader, ein Holzkran
+        K.pyramid(-6, -6, 13, 0, 14 + t * 4, '#8f8a80'); K.pyramid(4, -12, 8, 0, 9 + t * 2, '#a39e93');
+        for (const [x, y] of [[8, 6], [13, 9], [10, 13], [3, 12]].slice(0, 2 + t)) K.box(x - 2.4, x + 2.4, y - 2.4, y + 2.4, 0, 4.2, '#bdb6a8', .5);
+        K.box(13, 14.2, -4, -2.8, 0, 22, '#6b4a2c', .4); K.box(5, 14.2, -3.9, -2.9, 20, 21.2, '#6b4a2c', .4);   // Kran
+        const [a, b] = K.P(6, -3.4, 20); K.poly([[a - .3, b], [a + .3, b], [a + .3, b + 10], [a - .3, b + 10]], '#3a2616', .2);
+        if (t >= 2) { K.box(-18, -10, 8, 16, 0, 6, '#9a7448', .5); cityGable(K, -19, -9, 7, 17, 6, 4, '#7a6a52'); }
+    },
+    mine(K, t) {                                                            // Eisenmine: dunkler Berg mit Stollen, Schienen und Lore
+        K.pyramid(-4, -6, 16, 0, 20 + t * 4, '#6e6a63'); K.pyramid(8, -14, 9, 0, 12 + t * 2, '#7d786f');
+        const [a, b] = K.P(-4, 8, 0); K.poly([[a - 5, b], [a + 5, b - 2.8], [a + 5, b - 11], [a, b - 14], [a - 5, b - 9]], '#1d1a17', .5);   // Stollen
+        K.box(-10, 2, 8.5, 9.5, 0, 12, '#6b4a2c', .4);
+        K.box(-6, -2, 9, 22, 0, .6, '#5a5550', .2); K.box(-5.6, -2.4, 15, 19, .6, 4.4, '#7a4a2a', .5); K.box(-5.4, -2.6, 15.2, 18.8, 4.4, 5.6, '#3b3b40', .3);   // Schienen, Lore mit Erz
+        if (t >= 2) { K.box(10, 18, 6, 14, 0, 7, '#9a7448', .5); cityGable(K, 9, 19, 5, 15, 7, 4, '#4a4a52'); cityWindows(K, 11, 17, 14, 5, 2, true); }
     },
     tower(K, t) {                                                           // Wachturm (Paket D): hoher Steinturm mit Feuerkorb und Wehrgang
         const h = 34 + t * 9;
@@ -11105,7 +11134,7 @@ function renderPopup() {
         liveHtml(upgradeCostLabel, level >= MAX_BASE_LEVEL ? 'Max. Stufe' : icon('coin', 'icon--coin') + fmtCompact(upgradeCost(level)));
         upgradeCostLabel.classList.toggle('is-bad', level < MAX_BASE_LEVEL && coins < upgradeCost(level));   // reichen die Münzen? (live: liveTick)
         popupActions.hidden = false;
-        upgradeBtn.style.display = 'inline-block';
+        upgradeBtn.style.display = island.id === playerIslandId ? 'none' : 'inline-block';   // die Hauptstadt wächst nur mit der Burg (Stadt → Burg)
         sendBtn.style.display = 'inline-block';
         sendBtn.disabled = troopsHere <= 0 || ownedIslands.size <= 1;
         multiAttackBtn.style.display = 'inline-block';
@@ -11357,6 +11386,7 @@ function ausbauDrueber() {
 // keeps levelling up as long as the coins last.
 upgradeBtn.addEventListener('click', () => {
     if (popupIslandId === null) return;
+    if (popupIslandId === playerIslandId) { closeIslandPopup(); openCity(); setTimeout(() => { cityOpenId = '_keep'; renderCitySheet(); }, 300); return; }   // Hauptstadt: nur über die Burg
     const level = islandLevels[popupIslandId] || 1;
     if (level >= MAX_BASE_LEVEL) { flashHint('Maximale Stufe ' + MAX_BASE_LEVEL + ' erreicht.', 2500); return; }
     const cost = upgradeCost(level);
@@ -12218,6 +12248,7 @@ if (window.WELT) {
     function ausbauPruefen(who, b, ende) {
         if (!inselOk(b.insel) || !Number.isInteger(b.stufe)) { warnen(who, 'kaputt', 'Ausbau mit kaputten Angaben (Basis ' + String(b.insel).slice(0, 20) + ', Stufe ' + String(b.stufe).slice(0, 20) + ').'); return 'nein'; }
         if (!gehoert(b.insel, who)) return 'nein';                         // gerade verloren – kommt vor, keine Warnung
+        if (b.insel === botCapitalOf(who)) return 'nein';                  // die Hauptstadt wächst nur mit der Burg (alte Handys schicken das evtl. noch)
         const L = islandLevels[b.insel] || 1;
         if (L >= MAX_BASE_LEVEL) return 'nein';
         if (b.stufe <= L) return 'nein';                                   // doppelt geschickt – nichts zu tun

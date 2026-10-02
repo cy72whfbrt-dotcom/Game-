@@ -15,7 +15,6 @@ const ROH_DEF = { h: { name: 'Holz', icon: 'wood', col: '#c08a4c' }, s: { name: 
 const ROH_START = { h: 3000, s: 2000, e: 500 };                 // so viel hat jeder am Anfang (auch alte Spielstände ohne Rohstoffe)
 const ROH_BIOM = { green: { h: 1, s: .5, e: .25 }, sand: { h: .3, s: 1, e: .5 }, snow: { h: .45, s: .6, e: 1 },   // Wiese: Holz · Wüste: Stein · Schnee/Gebirge: Eisen
     ice: { h: .2, s: .5, e: 1.3 }, volcano: { h: .15, s: 1.2, e: 1.1 }, swamp: { h: 1.3, s: .3, e: .3 } };   // (Paket C) Eis: viel Eisen · Vulkan: Stein + Eisen · Sumpf: viel Holz
-const ROH_PRO_TICK = 2;                                        // eine Basis Stufe 1 macht 2 je Takt (= 1/5 der Münzen), wächst wie die Münzen
 const rohLeer = () => ({ h: 0, s: 0, e: 0 });
 const rohSauber = (v, d) => { const r = rohLeer(); for (const k of ROH) { const x = v && +v[k]; r[k] = Number.isFinite(x) && x > 0 ? Math.min(1e15, x) : 0; } return v ? r : Object.assign(r, d); };
 let roh = (() => { try { const v = JSON.parse(store.get('openWaterRes')); if (v && typeof v === 'object') return rohSauber(v); } catch (e) {} return Object.assign(rohLeer(), ROH_START); })();
@@ -27,7 +26,6 @@ function rohRegion(lmId) {                                     // jede Region et
     const lm = landmasses[lmId] || {}, b = ROH_BIOM[lm.bio] || ROH_BIOM.green, f = .8 + .4 * mulberry32((lmId | 0) * 7717 + 3)(), inner = lm.tier && lm.tier !== 'outer' ? 1.3 : 1;
     v = rohRegionMem[lmId] = { h: b.h * f * inner, s: b.s * f * inner, e: b.e * f * inner }; return v;
 }
-const rohProTick = L => ROH_PRO_TICK * Math.pow(PRODUCTION_GROWTH, Math.min(L, MAX_BASE_LEVEL) - 1);
 function rohVon(who) {                                         // der Rohstoff-Topf: deiner (privat) oder der eines anderen (in der Welt, Mitspieler-Daten)
     if (who === 'player') return roh;
     const b = loadBotState()[who]; if (!b) return null;
@@ -39,12 +37,23 @@ function rohDazu(who, d, faktor) {                             // d: {h, s, e} (
     for (const k of ROH) { const x = +d[k] * (faktor || 1); if (Number.isFinite(x) && x) r[k] = Math.max(0, Math.min(1e15, (r[k] || 0) + x)); }
     if (who === 'player') { rohSpeichern(); hudRoh(); } else saveBotState();
 }
-// Produktion der Basen (aus produceTicks, für jede Basis und jeden Takt): gesammelt mit Nachkommastellen, gebucht als ganze Zahlen
+// Produktion: Rohstoffe kommen aus der STADT (Alexander 2.10.) – Holzfäller, Steinbruch, Eisenmine vor der Mauer, dazu ein
+// kleines Grundeinkommen der Burg. Die Landschaft der Hauptstadt färbt es etwas (Schnee: mehr Eisen …). Die Basen draußen
+// machen Münzen und Truppen, keine Rohstoffe mehr. (produceTicks ruft das für jede Basis – gezählt wird nur die Hauptstadt.)
+const ROH_GEB = { h: 'lumber', s: 'quarry', e: 'mine' };      // Rohstoff → Gebäude
+const ROH_GEB_STUNDE = 600, ROH_GEB_WACHS = 1.42, ROH_BURG_STUNDE = 150;   // Stufe 1: 600/Std. … Stufe 25: ~2,7 Mio./Std.; Burg allein: 150/Std. je Rohstoff
+const rohGebStunde = L => L > 0 ? ROH_GEB_STUNDE * Math.pow(ROH_GEB_WACHS, L - 1) : 0;
+function rohStunde(who) {                                      // was ein Reich in einer Stunde an Rohstoffen macht (Anzeige, Markt, Schummel-Schutz)
+    const out = rohLeer(), cap = who === 'player' ? playerIslandId : botCapitalOf(who), isl = islandById[cap]; if (!isl) return out;
+    const rg = rohRegion(isl.landmassId), e = ertrag(who);
+    for (const x of ROH) out[x] = (ROH_BURG_STUNDE + rohGebStunde(bauStufe(who, ROH_GEB[x]))) * (.6 + .4 * rg[x]) * e;
+    return out;
+}
 const rohCarry = {};
 function basisRoh(who, islandId, level, ticks) {
-    const isl = islandById[islandId]; if (!isl) return;
-    const c = rohCarry[who] || (rohCarry[who] = rohLeer()), f = rohProTick(level) * ertrag(who) * ticks, rg = rohRegion(isl.landmassId);
-    for (const k of ROH) c[k] += f * rg[k];
+    const cap = who === 'player' ? playerIslandId : botCapitalOf(who); if (islandId !== cap) return;
+    const c = rohCarry[who] || (rohCarry[who] = rohLeer()), ms = who === 'player' ? productionTickMs() : botTickMs(who), h = rohStunde(who);
+    for (const k of ROH) c[k] += h[k] * ms / 3600000 * ticks;
 }
 function rohBuchen(who) {
     const c = rohCarry[who]; if (!c) return; const d = rohLeer(); let any = false;
@@ -53,12 +62,6 @@ function rohBuchen(who) {
     const r = rohVon(who); if (!r) return;
     for (const k of ROH) r[k] = Math.min(1e15, (r[k] || 0) + d[k]);
     if (who === 'player') { rohSpeichern(); hudRoh(); }
-}
-function rohStunde(who) {                                      // was ein Reich in einer Stunde an Rohstoffen macht (Anzeige, Markt, Schummel-Schutz)
-    const own = who === 'player' ? ownedIslands : botOwnedIslands[who], out = rohLeer(); if (!own) return out;
-    const k = 3600000 / (who === 'player' ? productionTickMs() : botTickMs(who)), e = ertrag(who);
-    for (const id of own) { const isl = islandById[id]; if (!isl) continue; const p = rohProTick(islandLevels[id] || 1) * e * k, rg = rohRegion(isl.landmassId); for (const x of ROH) out[x] += p * rg[x]; }
-    return out;
 }
 // Kosten { c: Münzen, h, s, e }: reicht es? bezahlen
 const geldVon = who => who === 'player' ? coins : botCoins[who] || 0;
@@ -96,7 +99,7 @@ function burgKosten(L) {                                       // von Stufe L au
     return { c: niceRound(2000 * Math.pow(1.85, L - 1)), h: niceRound(b), s: L >= 2 ? niceRound(b * .8) : 0, e: L >= 5 ? niceRound(b * .4) : 0 };
 }
 function burgZeitRoh(L) { return Math.min(7 * 86400, L <= 14 ? 60 * Math.pow(1.55, L - 1) : 60 * Math.pow(1.55, 13) * Math.pow(1.25, L - 14)); }   // 1 Min. … ~2 Tage (vor VIP)
-const STADT_MIX = { wall: { h: .5, s: 1.3, e: .3 }, forge: { h: .6, s: .6, e: 1 }, barracks: { h: .9, s: .6, e: .6 }, market: { h: 1.2, s: .6, e: .2 }, tower: { h: .8, s: 1, e: .4 } };
+const STADT_MIX = { lumber: { h: .3, s: .9, e: .2 }, quarry: { h: 1.1, s: .2, e: .2 }, mine: { h: 1, s: .9, e: 0 }, wall: { h: .5, s: 1.3, e: .3 }, forge: { h: .6, s: .6, e: 1 }, barracks: { h: .9, s: .6, e: .6 }, market: { h: 1.2, s: .6, e: .2 }, tower: { h: .8, s: 1, e: .4 } };
 function stadtKosten(id, L) {                                  // alles für ein Gebäude von Stufe L auf L + 1 (Burg: eigene Tabelle)
     if (id === 'keep') return burgKosten(L);
     const m = STADT_MIX[id] || { h: 1, s: .7, e: .35 }, b = 300 * Math.pow(1.75, L);
@@ -304,7 +307,7 @@ function renderKeep() {                                        // das Burg-Fenst
     liveHtml(document.getElementById('cityBExtra'),
         '<div class="keep-h">Jetzt</div><div class="auf-grid"><div><span>Marsch-Plätze</span><b>' + belegt + ' / ' + marschGrenze('player') + ' belegt</b></div><div><span>Gebäude</span><b>bis Stufe ' + stadtCap('player', 'wall') + '</b></div><div><span>Truppen</span><b>T' + T + ' · +' + Math.round((TIER_KRAFT[T] - 1) * 100) + ' %</b></div></div>' +
         (max ? '' : '<div class="keep-h">Burg-Stufe ' + (B + 1) + ' schaltet frei</div><ul class="auf-frei">' + freiText(B + 1).map(t => '<li>' + icon('check') + t + '</li>').join('') + '</ul>') +
-        '<small class="keep-note">Die Basen draußen (auch deine Hauptstadt) wertest du weiter sofort auf der Karte auf – die Burg-Stufe ist davon getrennt und braucht Bauzeit.</small>' +
+        '<small class="keep-note">Deine Hauptstadt hat nur diese EINE Stufe: auf der Karte steht sie auf Stufe ' + burgKarte(B) + ' (Burg 25 = Stufe 100). Die anderen Basen draußen wertest du sofort mit Münzen auf.</small>' +
         '<div class="keep-h">Friedensschild</div><div class="keep-shields">' + [2, 8, 24].map(h => { const st = shieldStock(); return '<button type="button" class="btn btn--secondary btn--sm" data-shield-use="' + h + '"' + (st[h] ? '' : ' disabled') + '>' + icon('shield') + h + ' Std. · ' + st[h] + '×</button>'; }).join('') + '</div>' +
         '<small class="keep-note">Schilde kaufst du im Shop, hier schaltest du sie ein. Greifst du selbst an, fällt der Schild.</small>' +
         '<div class="keep-h">Aussehen</div><button type="button" class="crest-card keep-crest" data-look-open><img alt="" src="' + crestDataUrl(56) + '"><span class="crest-card-t"><b>' + escapeHtml(playerTitle()) + '</b><small>Wappen, Rahmen, Titel, Basis- und Marsch-Skins, Ringe</small></span><span class="crest-card-go">Öffnen' + icon('upgrade') + '</span></button>');
@@ -313,6 +316,9 @@ function effektText(id, lvl) {
     if (id === 'academy') return (lvl ? 'Forschung bis Akademie-Stufe ' + lvl + ' · Truppen laufen +' + lvl * 2 + ' % schneller.' : 'Baue die Akademie, um zu forschen.') + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: mehr Forschung, +' + (lvl + 1) * 2 + ' % Tempo.' : '');
     if (id === 'tower') return lvl ? 'Angriffe auf dich: ' + (lvl >= 10 ? 'genaue Stärke, Truppen-Stufe und Held' : 'ungefähre Stärke') + '. Spähberichte zeigen ' + (lvl >= 5 ? 'Burg, Truppen-Stufe und Forschung' : 'Burg und Truppen-Stufe') + '.' + (lvl < 5 ? ' Ab Stufe 5: Forschung im Spähbericht.' : lvl < 10 ? ' Ab Stufe 10: genaue Angreifer.' : '') : 'Baue den Wachturm: du siehst, wie stark Angreifer sind, und spähst genauer.';
     if (id === 'embassy') return lvl ? 'Hilfe und Rally zu Bündnis-Mitgliedern +' + lvl * 3 + ' % schneller · Bündnis-Geschenke +' + lvl * 4 + ' %.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: +' + (lvl + 1) * 3 + ' % / +' + (lvl + 1) * 4 + ' %.' : '') : 'Baue die Botschaft für schnellere Bündnis-Hilfe und größere Bündnis-Geschenke.';
+    const rx = { lumber: ['h', 'Holz'], quarry: ['s', 'Stein'], mine: ['e', 'Eisen'] }[id];
+    if (rx) { const k = rx[0], jetzt = rohStunde('player')[k], f = jetzt / Math.max(1, ROH_BURG_STUNDE + rohGebStunde(lvl));
+        return (lvl ? 'Jetzt: ' : 'Ohne Gebäude (nur die Burg): ') + fmtCompact(jetzt) + ' ' + rx[1] + ' pro Stunde.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: ' + fmtCompact((ROH_BURG_STUNDE + rohGebStunde(lvl + 1)) * f) + '.' : ''); }
     if (id === 'market') return lvl ? 'Gebühr ' + Math.round(marktGebuehr(lvl) * 100) + ' % · Tageslimit ' + fmtCompact(marktLimit('player')) + ' Münzen je Richtung.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: Gebühr ' + Math.round(marktGebuehr(lvl + 1) * 100) + ' %, höheres Limit.' : '') : 'Baue den Markt, um Rohstoffe gegen Münzen zu tauschen.';
     return '';
 }
@@ -450,12 +456,42 @@ function botVorspulen(bot, hours, now) {
 }
 
 // ---------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------
+// Die Hauptstadt hat EINE Stufe: die Burg (Alexander 2.10.). Auf der Karte folgt ihre Stufe der Burg (Burg 1 → 1 …
+// Burg 25 → 100), mit Münzen wird sie nicht mehr aufgewertet. Wer rechnet (Weltrechner / allein), stellt das für ALLE ein.
+// Zieht die Hauptstadt um, bekommt die alte Basis ihre eigene Stufe von vorher zurück (sonst gäbe es Gratis-Stufen).
+// ---------------------------------------------------------------------------------------------------------------
+const burgKarte = B => Math.round(1 + (Math.max(1, Math.min(BURG_MAX, B | 0 || 1)) - 1) * (MAX_BASE_LEVEL - 1) / (BURG_MAX - 1));
+const hauptVon = who => who === 'player' ? playerIslandId : botCapitalOf(who);
+var hauptVor = (() => { try { return JSON.parse(store.get('openWaterHauptVor')) || {}; } catch (e) { return {}; } })();   // je Herr: { id: Hauptstadt, vor: ihre eigene Stufe }
+function hauptstadtStufen() {
+    if (window.WELT && !rechnet()) {                           // Zuschauer: die eigene Burg gleich auf der Karte zeigen (der Weltrechner zieht nach)
+        const cap = playerIslandId, soll = burgKarte(burgStufe('player'));
+        if (islandById[cap] && (islandLevels[cap] || 1) < soll) { islandLevels[cap] = soll; ausbauMerken(cap, soll); requestRender(); }
+        return;
+    }
+    let neu = false;
+    const wer = (typeof SYSTEM !== 'undefined' && SYSTEM) ? [] : ['player']; for (const b of BOT_DEFS) wer.push(b.id);
+    for (const w of wer) {
+        const cap = hauptVon(w); if (cap === null || cap === undefined || !islandById[cap] || islandOwnerOf(cap) !== w) continue;
+        const h = hauptVor[w];
+        if (!h || h.id !== cap) {
+            if (h && islandById[h.id] && islandOwnerOf(h.id) === w && (islandLevels[h.id] || 1) > h.vor) islandLevels[h.id] = h.vor;
+            hauptVor[w] = { id: cap, vor: islandLevels[cap] || 1 }; neu = true;
+        }
+        const soll = burgKarte(burgStufe(w)); if ((islandLevels[cap] || 1) !== soll) { islandLevels[cap] = soll; neu = true; }
+    }
+    if (neu) { store.set('openWaterHauptVor', JSON.stringify(hauptVor)); saveGame(); requestRender(); }
+}
+setInterval(hauptstadtStufen, 3000);
+
 AUF = {
     ROH, ROH_DEF, BURG_MAX, BURG_DEF, BAU_AB_BURG, TIER_KRAFT, TIER_BURG, TIER_EISEN, FORSCHUNG, FO_BY, MARKT_WERT,
     get roh() { return roh; }, rohVon, rohDazu, rohSpeichern, rohSauber, basisRoh, rohBuchen, rohStunde, rohRegion, kannZahlen, zahlen, kostenHtml,
     stadtVon, burgStufe, burgKosten, burgZeitRoh, stadtKosten, stadtCap,
     marschGrenze, marschBelegt, marschFrei, marschOk, marschVoll, frei: { an() { marschFreiPass++; }, aus() { marschFreiPass = Math.max(0, marschFreiPass - 1); } },
     foStufe, foWert, foKosten, foStart, foFertig, foSperre, tierErlaubt, truppenStufe, tierSetzen, marktTausch, marktLimit,
+    burgKarte, hauptstadtStufen,
     kampf, ertrag, sammelTempo, traglast, marschTempo, spaeherTempo, lazarettPlus, nebelWeite, botschaftTempo, botschaftGeschenk, wachturm,
     spielerTakt, hud: hudRoh, renderKeep, effektText, extraHtml, angreiferInfo, spaeherMehr,
     botStadtFix, botForschung, botTruppenStufe, botMarkt, botBurgWert, botRohWunsch, botVorspulen
