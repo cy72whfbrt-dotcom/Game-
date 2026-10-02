@@ -5370,7 +5370,7 @@ function tourRangHtml() {                                // Events → Turnier: 
     if (last && !live && !last.seen) { last.seen = true; tourDirty = true; }
     return '<div class="lb-gap">' + (live ? 'Live · Top ' + TOUR_TOP : 'Letztes Turnier') + '</div>' +
         (list.length ? list.slice(0, TOUR_TOP).map((e, i) => rankRowHtml(e, i + 1, true, 'Punkte')).join('')
-            : '<div class="war-empty">' + (live ? 'Noch hat niemand Punkte. Halte den Thron oder einen Wächter-Tempel, oder kämpfe in der Mitte.' : 'Am Samstag geht es los.') + '</div>') +
+            : '<div class="war-empty">' + (live ? 'Noch hat niemand Punkte. Halte den Thron oder einen Wächter-Tempel, oder kämpfe in der Mitte.' : 'Am Samstag um 0:00 geht es los – dann siehst du hier live, wer wie viele Punkte hat.') + '</div>') +
         (myPos > 0 && myPos <= TOUR_TOP ? '' : rankRowHtml(people[0], myPos > 0 ? myPos : '–', false, 'Punkte'));
 }
 function renderRankings() {
@@ -6516,18 +6516,20 @@ function tourAnzeige(now) {                           // (auch bei Zuschauern) d
     const w = tourWin(now); for (const el of document.querySelectorAll('[data-tour-left]')) el.textContent = fmtDHMS(((w.on ? w.end : w.start) - now) / 1000);
     if (evOffen() && goalsTab === 'tour' && now % 5000 < 1000) renderEvents();
 }
-function tourCardHtml() {                             // the head of the "Turnier" tab: state, your points, rules, prizes, last winners
+function tourCardHtml(teil) {                        // teil: 'kopf' (Stand, dein Platz, letzter Sieger) | 'regeln' (Regeln, Preise) | sonst alles                             // the head of the "Turnier" tab: state, your points, rules, prizes, last winners
     const now = Date.now(), w = tourWin(now), me = tourState.key === w.key ? Math.floor(tourState.pts.player || 0) : 0, pl = tourPlaceOf('player'), ch = tourChamp(now), last = tourState.last, th = evThemaAm(now);
     const prizes = TOUR_PRIZES.map((p, i) => '<div class="tour-prize' + (i ? '' : ' is-1') + '"><b>' + p.t + '</b><span>' + icon('gem') + fmtNum(p.gems) + '</span><span>' + icon('star') + p.sh + '</span>' + (p.crate >= 0 ? '<em>' + RARITY_DEFS[p.crate].label + '-Kiste</em>' : '') + (i ? '' : '<em>Titel + Ring</em>') + '</div>').join('');
     const rules = '<div class="tour-rules"><span>' + icon('crown') + '<span><b>+' + TOUR_PTS_MEGA + ' Punkte pro Minute</b> Thron halten</span></span><span>' + icon('temple') + '<span><b>+' + TOUR_PTS_GUARD + ' Punkte pro Minute</b> je Wächter-Tempel</span></span>' +
             '<span>' + icon('attack') + '<span><b>+1 Punkt pro ' + fmtNum(TOUR_KILL_PER) + ' besiegte Truppen</b> in der Mitte und an ihren Toren – Angriff und Verteidigung zählen (höchstens ' + TOUR_KILL_MAX + ' pro Kampf, im Schnitt ' + TOUR_KILL_MIN + ' pro Minute)</span></span><span>' + icon('star') + '<span><b>Bonus:</b> ' + th.bonus + '</span></span></div>';
-    return '<div class="tour-card">' +
-        '<div class="tour-head"><span class="tour-badge">' + icon(th.ic) + '</span><div><b>Wochenend-Turnier · ' + th.name + '</b><small>' + (w.on ? 'Läuft · endet in ' : 'Samstag und Sonntag · beginnt in ') + '<b data-tour-left>' + fmtDHMS(((w.on ? w.end : w.start) - now) / 1000) + '</b></small></div></div>' +
+    const kopf = '<div class="tour-head"><span class="tour-badge">' + icon(th.ic) + '</span><div><b>Wochenend-Turnier · ' + th.name + '</b><small>' + (w.on ? 'Läuft · endet in ' : 'Samstag und Sonntag · beginnt in ') + '<b data-tour-left>' + fmtDHMS(((w.on ? w.end : w.start) - now) / 1000) + '</b></small></div></div>' +
         (w.on ? '<div class="tour-me"><span>Deine Punkte<b>' + fmtNum(me) + '</b></span><span>Dein Platz<b>' + (pl || '–') + '</b></span></div>' + tourByHtml(me) : '') +
-        (!w.on && last && last.me ? '<div class="tour-me"><span>Letztes Turnier<b>Platz ' + last.me.place + '</b></span><span>Belohnung<b>' + fmtNum(last.me.gems) + ' Gems</b></span></div>' : '') +
-        rules + '<div class="tour-prizes">' + prizes + '</div><small class="tour-note">Jedes Wochenende Kampf um die Mitte (Sa 0:00 – So 23:59). Preise: Gems, Helden-Splitter ' + icon('star') + ' und Kisten · der Sieger trägt 7 Tage den Titel „Turniersieger“ mit lila-goldenem Ring.</small>' +
-        (tourState.hist.length ? '<div class="tour-hist">' + icon('star') + '<span>Letzter Sieger: ' + whoLink(tourState.hist[0].who === 'player' ? 'player' : tourState.hist[0].who, tourState.hist[0].who === 'player' ? profileName.value || 'Du' : tourState.hist[0].name) + ' · ' + fmtNum(tourState.hist[0].pts) + ' Punkte' +
-            (ch ? ' · Titel noch ' + fmtDHMS((tourState.champ.until - now) / 1000) : '') + '</span></div>' : '') + '</div>';
+        (!w.on && last && last.me ? '<div class="tour-me"><span>Letztes Turnier<b>Platz ' + last.me.place + '</b></span><span>Belohnung<b>' + fmtNum(last.me.gems) + ' Gems</b></span></div>' : ''),
+        regel = rules + '<div class="tour-prizes">' + prizes + '</div><small class="tour-note">Jedes Wochenende Kampf um die Mitte (Sa 0:00 – So 23:59). Preise: Gems, Helden-Splitter ' + icon('star') + ' und Kisten · der Sieger trägt 7 Tage den Titel „Turniersieger“ mit lila-goldenem Ring.</small>',
+        sieger = (tourState.hist.length ? '<div class="tour-hist">' + icon('star') + '<span>Letzter Sieger: ' + whoLink(tourState.hist[0].who === 'player' ? 'player' : tourState.hist[0].who, tourState.hist[0].who === 'player' ? profileName.value || 'Du' : tourState.hist[0].name) + ' · ' + fmtNum(tourState.hist[0].pts) + ' Punkte' +
+            (ch ? ' · Titel noch ' + fmtDHMS((tourState.champ.until - now) / 1000) : '') + '</span></div>' : '');
+    if (teil === 'kopf') return '<div class="tour-card">' + kopf + sieger + '</div>';
+    if (teil === 'regeln') return '<div class="tour-card">' + regel + '</div>';
+    return '<div class="tour-card">' + kopf + regel + sieger + '</div>';
 }
 function tourByHtml(me) {                            // your points by source: Thron / Tempel / Kämpfe (+ what came without a source: older points, a bonus)
     const b = tourState.by.player || {}, c = [['crown', 'Thron', b.thr], ['temple', 'Tempel', b.tmp], ['attack', 'Kämpfe', b.fig]], rest = me - c.reduce((s, x) => s + Math.floor(x[2] || 0), 0);
@@ -10583,7 +10585,7 @@ var tourSicht = null;                                 // Events → Turnier: 'wo
 function evTourHtml() {
     const sicht = tourSicht || (tourOn() ? 'mitte' : 'woche');
     const seg = '<div class="seg ev-seg">' + [['woche', 'Wochen-Event (Mo–Fr)'], ['mitte', 'Mitte (Sa+So)']].map(([k, t]) => '<button type="button" data-tw="' + k + '"' + (k === sicht ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>';
-    return seg + (sicht === 'woche' ? woHtml() : tourCardHtml() + tourRangHtml());   // die ganze Rangliste nur hier
+    return seg + (sicht === 'woche' ? woHtml() : tourCardHtml('kopf') + tourRangHtml() + tourCardHtml('regeln'));   // die Top 10 gleich oben   // die ganze Rangliste nur hier
 }
 function woHtml() {                                   // das Wochen-Event: Thema, Uhr, dein Platz, Preise, Rangliste, die nächsten Wochen
     const now = Date.now(), w = woWin(now), th = woThemaAm(now), W = evState.wo || {}, live = w.on && W.key === w.key, rk = live ? evRang(W.pts) : [], mine = rk.findIndex(e => e[0] === 'player') + 1;
@@ -10593,9 +10595,10 @@ function woHtml() {                                   // das Wochen-Event: Thema
     const alt = !live && W.last && W.last.top ? W.last.top : null, liste = live ? rk : alt || [];
     return evKarte(th.ic, 'Wochen-Event · ' + th.name, kopf, '<div class="field-lines"><span>Punkte für</span><b>' + th.pkt + (th.k === 'krieg' ? ' (1 Punkt pro ' + fmtNum(TOUR_KILL_PER) + ')' : '') + '</b><span>Bonus</span><b>' + th.bonus + '</b>' +
             (live ? '<span>Dein Platz</span><b>' + (mine || '–') + ' · ' + fmtNum(Math.floor((W.pts || {}).player || 0)) + ' Punkte</b>' : '') + '</div>', 'is-tour') +
+        '<div class="lb-gap">' + (live ? 'Live · Top 10' : alt ? 'Letzte Woche · Top 10' : 'Top 10') + '</div>' +
+        (evRangHtml(liste, v => fmtNum(Math.floor(v)) + ' P.') || '<div class="war-empty">' + (w.on ? 'Noch hat niemand Punkte – sobald jemand Punkte holt, steht er hier.' : 'Am Montag geht es los.') + '</div>') +
+        '<div class="lb-gap">Preise</div><div class="tour-prizes">' + preise + '</div>' +
         '<div class="tour-rules"><span>' + icon('hourglass') + '<span>Höchstens ' + TOUR_KILL_MAX + ' Punkte auf einmal, im Schnitt ' + TOUR_KILL_MIN + ' pro Minute. Jede Woche ein anderes Thema – am Wochenende ist das Turnier um die Mitte.</span></span></div>' +
-        '<div class="tour-prizes">' + preise + '</div><div class="lb-gap">' + (live ? 'Live · Top 10' : alt ? 'Letzte Woche' : 'Rangliste') + '</div>' +
-        (evRangHtml(liste, v => fmtNum(Math.floor(v)) + ' P.') || '<div class="war-empty">' + (w.on ? 'Noch hat niemand Punkte.' : 'Am Montag geht es los.') + '</div>') +
         '<div class="lb-gap">Nächste Wochen</div><div class="field-lines ev-plan">' + plan + '</div>';
 }
 function evInvHtml() {

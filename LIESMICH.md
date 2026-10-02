@@ -1094,3 +1094,5 @@ Alles in spiel.js (Abschnitt „THE CITY, ISOMETRIC“), nur Aussehen – Gebäu
   `woWin`/`woThema`/`woDeckel`/`woRoll`/`woPay` in spiel.js; der Weltrechner zahlt am Freitag um Mitternacht aus.
 - Getestet: Wochenenden 3.10.–31.10. alle „Mitte“, Wochen wechseln die Themen, Punkte nur fürs laufende Thema (mit Deckel),
   Auszahlung ins Abholfach, Anzeige; mit Server + Weltrechner kommt das Wochen-Event beim Spieler an. Keine Fehler, Tests grün.
+- Nachtrag (Alexander: „man sieht die Top 10 nicht“): In Events → Turnier steht die **Top 10 jetzt gleich unter dem Kopf**
+  (wer wie viele Punkte hat, live; sonst das letzte Ergebnis), Regeln und Preise darunter – bei Wochen-Event und Mitte.
