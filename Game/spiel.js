@@ -1145,7 +1145,7 @@ const RARITY_DEFS = [
 ];
 const ITEM_MAX_LEVEL = 20;
 const RARITY_DROP_WEIGHTS = [60, 25, 10, 4, 0.9, 0.1]; // grau..rot
-const CRATE_GEM_COST = 5;
+const CRATE_GEM_COST = 15;   // (2.10.: vorher 5 – Gold-Ausrüstung kam zu schnell)
 const COMBINE_COUNT = 3;
 const RARITY_PCT_PER_SCORE = 0.15;
 const RARITY_FLAT_PER_SCORE = 0.3;
@@ -4505,7 +4505,8 @@ function renderProfile(live) {                  // live = the per-second refresh
         '<div class="statRow"><span>' + icon('star') + 'Skillpunkte</span><b>' + fmtNum(skillPoints) + '</b></div>' +
         '<div class="statRow"><span>' + icon('gem') + 'Gems</span><b>' + fmtTile(Math.floor(gems)) + '</b></div>' +
         (activeCount > 0 ? '<div class="statRow"><span>' + icon('hourglass') + 'Unterwegs</span><b>' + fmtNum(activeCount) + '</b></div>' : '') +
-        '<div class="statRow"><span>' + icon('home') + 'Heimat</span><b>' + homeLabel + '</b></div>');
+        '<div class="statRow"><span>' + icon('home') + 'Heimat</span><b>' + homeLabel + '</b></div>' +
+        '<div class="statRow"><span>' + icon('crown') + 'VIP ' + vipStufe() + '</span><b>' + vipText() + '</b></div>');
     updateHudPlayer();
 }
 
@@ -4950,6 +4951,7 @@ const ACHIEVEMENTS = [   // the old ids stay (claims are kept); the tiers of one
     { id: 'barb250', name: 'Lagerstürmer',     icon: 'attack',  desc: 'Besiege 250 Barbaren-Lager.',            goal: 250,  k: 'barb', gems: 500 },
     { id: 'dboss5',  name: 'Bossbrecher',      icon: 'crown',   desc: 'Kämpf bei 5 gefallenen Tagesbossen mit.', goal: 5,   k: 'dboss', gems: 300 },
 ];
+for (const a of ACHIEVEMENTS) a.gems = Math.max(5, Math.round(a.gems / 25) * 5);   // (2.10.) 5× weniger Gems – zusammen vorher ~18.000, das gab Gold-Ausrüstung in Stunden
 const achVal = a => GOAL_VAL[a.k]();
 const achDone = a => achVal(a) >= a.goal;
 function achClaimable() { return ACHIEVEMENTS.filter(a => !achClaimed[a.id] && achDone(a)); }
@@ -5496,6 +5498,25 @@ battleLogCloseBtn.addEventListener('click', () => {
 
 // ===== AUFGABEN (daily quests) + TÄGLICHE BELOHNUNG =====
 
+// ===== VIP durch Spielen (Idee 39): jeder Tag, an dem du spielst, zählt. Kein Geld – nur Treue. =====
+// Vorteile: Bauzeit in der Stadt −2 % je Stufe, jeden Tag eine VIP-Kiste ins Abholfach (Münzen, ab VIP 5 auch
+// eine Ausrüstungskiste). Nur dein eigener Spielstand (nicht der Weltrechner).
+const VIP_TAGE = [0, 1, 3, 7, 14, 21, 30, 45, 60, 90, 120];   // so viele Spieltage braucht VIP 1 … 10
+var vipState = (() => { try { return JSON.parse(store.get('openWaterVip')) || null; } catch (e) { return null; } })() || { tage: 0, letzter: '', kiste: '' };
+function vipStufe() { let s = 0; for (let i = 1; i < VIP_TAGE.length; i++) if ((vipState.tage || 0) >= VIP_TAGE[i]) s = i; return s; }
+function vipText() { const s = vipStufe(); return s >= 10 ? 'höchste Stufe' : 'noch ' + (VIP_TAGE[s + 1] - vipState.tage) + (VIP_TAGE[s + 1] - vipState.tage === 1 ? ' Tag' : ' Tage') + ' bis VIP ' + (s + 1); }
+function vipTag() {                                  // einmal pro Tag: Spieltag zählen, VIP-Kiste ins Abholfach
+    if (typeof SYSTEM !== 'undefined' && SYSTEM) return;
+    const k = todayKey(); let neu = false;
+    if (vipState.letzter !== k) { const vor = vipStufe(); vipState.tage = (vipState.tage || 0) + 1; vipState.letzter = k; neu = vipStufe() > vor; }
+    if (vipState.kiste !== k && vipStufe() > 0) {
+        const s = vipStufe(), L = Math.max(playerLvl, 1);
+        inboxAdd({ src: 'vip', title: 'VIP-Tageskiste (VIP ' + s + ')', coins: niceRound(levelRewardCoins(L) * 0.08 * s), crate: s >= 5 ? 0 : -1 });   // (Münzen statt Truppen: Truppen-Geschenke prüft der Weltrechner, VIP kennt er nicht)
+        vipState.kiste = k;
+    }
+    store.set('openWaterVip', JSON.stringify(vipState));
+    if (neu) afterSplash(() => setTimeout(() => flashHint('Neue VIP-Stufe: VIP ' + vipStufe() + ' – Bauzeit −' + vipStufe() * 2 + ' %, größere Tageskiste.', 5000), 9000));
+}
 function todayKey(d) {
     d = d || new Date();
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -5686,7 +5707,7 @@ function inboxList() { if (!inboxState) { try { inboxState = JSON.parse(store.ge
 function inboxSave() { store.set('openWaterInbox', JSON.stringify(inboxList())); }
 const INBOX_PILE = { fight: 1, bounty: 1 };   // these pile up in one entry each
 const inboxPiles = x => !!INBOX_PILE[x.src] && !(x.crate >= 0);   // a crate keeps its own entry (one entry holds one crate)
-const INBOX_SRC = { gift: { ic: 'gem', t: 'Geschenk' }, fight: { ic: 'attack', t: 'Kampfbeute' }, tour: { ic: 'crown', t: 'Wochenend-Turnier' }, boss: { ic: 'star', t: 'Tagesboss' }, wboss: { ic: 'star', t: 'Weltboss' }, bounty: { ic: 'losses', t: 'Kopfgeld' } };
+const INBOX_SRC = { gift: { ic: 'gem', t: 'Geschenk' }, fight: { ic: 'attack', t: 'Kampfbeute' }, tour: { ic: 'crown', t: 'Wochenend-Turnier' }, boss: { ic: 'star', t: 'Tagesboss' }, wboss: { ic: 'star', t: 'Weltboss' }, bounty: { ic: 'losses', t: 'Kopfgeld' }, vip: { ic: 'crown', t: 'VIP-Tageskiste' } };
 function inboxAdd(o) {                              // o: { src, title?, gems, coins, sh (hero shards), crate (lowest rarity, -1 none) } - all fights' spoils pile up in one entry
     o = Object.assign({ gems: 0, coins: 0, sh: 0, crate: -1, tr: 0, n: 1 }, o); o.gems = Math.round(o.gems); o.coins = Math.round(o.coins); o.tr = Math.round(o.tr);
     if (!(o.gems > 0 || o.coins > 0 || o.sh > 0 || o.crate >= 0 || o.tr > 0)) return 0;
@@ -5907,6 +5928,37 @@ function maybeShowDaily() {
     showDailyModal();
 }
 afterSplash(() => setTimeout(maybeShowDaily, 500));
+afterSplash(() => { vipTag(); setInterval(vipTag, 10 * 60000); });
+
+// ===== ANLEITUNG für neue Spieler (Idee 45): 6 kurze Schritte unten am Bildschirm, jeder hakt sich von selbst ab =====
+const ANLEITUNG = [
+    ['Tippe auf deine Burg – die blaue Basis mit der Krone.', () => (isPanelOpen(popup) && popupIslandId === playerIslandId) || !cityView.hidden],
+    ['Werte eine deiner Basen auf: Basis antippen → „Aufwerten“. Mehr Stufe = mehr Truppen und Münzen.', () => anleitungTat.upgrade],
+    ['Greif eine neutrale (graue) Basis in deiner Nähe an: antippen → „Angreifen“.', () => anleitungTat.attack],
+    ['Öffne die Stadt (unten links) und baue ein Gebäude.', () => { const c = loadCity(); return (c.builds || []).length > 0 || Object.values(c.levels || {}).some(v => v > 0); }],
+    ['Schick Truppen zum Sammeln: tippe eine Goldmine oder Edelsteinader auf der Karte an.', () => fieldMarches.some(m => m.who === 'player') || Object.values(fieldState || {}).some(st => st && st.occ && st.occ.who === 'player')],
+    ['Hol dir deine Belohnungen unter „Ziele“ (unten).', () => isPanelOpen(goalsPopup)]
+];
+const anleitungTat = {};
+var anleitung = (() => { try { return JSON.parse(store.get('openWaterAnleitung')) || null; } catch (e) { return null; } })();
+if (!anleitung) anleitung = { schritt: (window.__OW && window.__OW.neu) || playerLvl <= 2 ? 0 : ANLEITUNG.length };   // wer schon spielt, sieht sie nicht
+if (typeof questProgress === 'function') questProgress = (alt => function (t) { if (t === 'upgrade' || t === 'attack') anleitungTat[t] = true; return alt.apply(this, arguments); })(questProgress);
+function anleitungSpeichern() { store.set('openWaterAnleitung', JSON.stringify(anleitung)); }
+function anleitungZeigen() {
+    const el = document.getElementById('anleitung'); if (!el) return;
+    if (SYSTEM || anleitung.schritt >= ANLEITUNG.length) { el.hidden = true; return; }
+    if (document.getElementById('wkName') || ['welcomeModal', 'dailyModal', 'levelUpModal', 'rewardModal'].some(id => { const m = document.getElementById(id); return m && !m.hidden; })) { el.hidden = true; return; }   // erst Name/Begrüßung
+    let weiter = false; try { weiter = ANLEITUNG[anleitung.schritt][1](); } catch (e) {}
+    if (weiter) {
+        anleitung.schritt++; anleitungSpeichern(); sfx('upgrade');
+        if (anleitung.schritt >= ANLEITUNG.length) { el.hidden = true; inboxAdd({ src: 'gift', title: 'Anleitung geschafft', gems: 10, crate: 0 }); flashHint('Geschafft! Unter „Ziele“ → Abholfach wartet eine kleine Belohnung. Viel Spaß!', 6000); return; }
+    }
+    el.hidden = false;
+    setText(document.getElementById('anleitungSchritt'), 'Schritt ' + (anleitung.schritt + 1) + '/' + ANLEITUNG.length);
+    setText(document.getElementById('anleitungText'), ANLEITUNG[anleitung.schritt][0]);
+}
+document.getElementById('anleitungWeg').addEventListener('click', () => { anleitung.schritt = ANLEITUNG.length; anleitungSpeichern(); document.getElementById('anleitung').hidden = true; flashHint('Anleitung übersprungen – Hilfe gibt es unter Einstellungen (Zahnrad).', 3500); });
+afterSplash(() => setTimeout(() => { anleitungZeigen(); setInterval(anleitungZeigen, 1000); }, 1500));   // VIP: Spieltag zählen (auch wenn das Spiel über Mitternacht offen bleibt)
 
 // Shop: buy gem crates, opens straight into a result readout.
 const shopBtn = document.getElementById('shopBtn');
@@ -7526,7 +7578,8 @@ function cityCost(id, level) {                    // coins to go from `level` to
 }
 function cityTimeSec(id, level) {                 // build time for level -> level + 1
     // fast at first (20 s … 1,5 h up to level 12), then +20 % per level, never more than 7 days - like the big strategy games
-    return Math.round(Math.min(7 * 86400, level <= 12 ? 20 * Math.pow(1.6, level) : 20 * Math.pow(1.6, 12) * Math.pow(1.2, level - 12)));
+    // VIP: −2 % je Stufe (höchstens −20 %)
+    return Math.round((1 - (typeof vipStufe === 'function' ? vipStufe() : 0) * 0.02) * Math.min(7 * 86400, level <= 12 ? 20 * Math.pow(1.6, level) : 20 * Math.pow(1.6, 12) * Math.pow(1.2, level - 12)));
 }
 function cityClampBuild(b, now) {                 // a build started under the old, far too long times ends by the new rule at the latest
     if (b && b.endsAt - (b.startedAt || now) > cityTimeSec(b.id, b.to - 1) * 1000) b.endsAt = Math.min(b.endsAt, (b.startedAt || now) + cityTimeSec(b.id, b.to - 1) * 1000);

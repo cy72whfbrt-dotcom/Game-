@@ -610,3 +610,16 @@ Push bleiben. Der Weltrechner baut beim Start eine neue Welt (150 Mitspieler). L
   4 Ausrüstungsteile mit Seltenheit, Stufe und Sternen (`spaeherBlick`; im Kampflog unter „Spähbericht“).
 - Idee 5 (Tempel-Bonus fürs Bündnis) kommt mit den Bündnissen (Paket A).
 
+## 21. Paket F + Gem-Bremse (2.10., lokal getestet – NICHT hochgeladen)
+- **Gem-Bremse:** Erfolge geben 5× weniger Gems (vorher zusammen ~18.000 → Gold-Ausrüstung in Stunden, auch bei Bots),
+  eine Ausrüstungskiste kostet 15 statt 5 Gems. Gilt für Spieler und Mitspieler gleich.
+- **46 Mehr Handy-Nachrichten** (push.js `BEOBACHTER`/`nachrichtBauen`): Boss/Wanderboss erschienen, Sammler zurück
+  (mit Menge), Friedensschild läuft in der nächsten Stunde ab. Je Art in den Einstellungen abschaltbar
+  (`PUSH_ARTEN` in server.php). „Gebäude fertig“ geht nicht: die Stadt liegt nur im eigenen Spielstand.
+- **39 VIP durch Spielen:** jeder Spieltag zählt (VIP 1 nach 1 Tag … VIP 10 nach 120 Tagen, `VIP_TAGE`). Vorteile:
+  Stadt-Bauzeit −2 % je Stufe, jeden Tag eine VIP-Tageskiste ins Abholfach (Münzen, ab VIP 5 + Ausrüstungskiste).
+  Anzeige im Profil. Nur im eigenen Spielstand (`openWaterVip`).
+- **45 Anleitung für neue Spieler:** 6 Schritte unten am Bildschirm (Burg antippen, aufwerten, neutrale Basis angreifen,
+  Gebäude bauen, sammeln, Ziele öffnen), jeder hakt sich von selbst ab, „×“ überspringt. Am Ende 10 Gems + Kiste.
+  Nur für neue Spieler (`openWaterAnleitung`).
+

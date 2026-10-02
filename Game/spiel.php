@@ -426,6 +426,14 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
   -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);animation:toast-in var(--dur-2) var(--ease-out)}
 .toast::before{content:"";position:absolute;left:11px;top:50%;width:6px;height:6px;margin-top:-3px;transform:rotate(45deg);background:var(--gold-300);box-shadow:0 0 6px rgba(214,170,90,.6)}
 .toast:empty{display:none}
+.anleitung{position:fixed;z-index:var(--z-toast);left:50%;transform:translateX(-50%);bottom:calc(var(--dock-h,64px) + var(--safe-bd,0px) + 14px);
+  width:min(calc(100vw - 32px),420px);display:flex;align-items:center;gap:10px;padding:10px 8px 10px 12px;
+  background:var(--glass);border:1px solid var(--gold-300);border-radius:var(--r-sm);box-shadow:var(--sh-2);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.anleitung[hidden]{display:none}
+.anleitung-n{flex:0 0 auto;font:600 var(--fs-11)/1 var(--font-ui);color:var(--gold-100);letter-spacing:.06em;white-space:nowrap}
+.anleitung-t{flex:1 1 auto;font:500 var(--fs-13)/1.35 var(--font-ui);color:var(--tx-1)}
+.anleitung .btn-x{flex:0 0 auto}
+body.has-sheet .anleitung{display:none}
 body.has-midbar:not(.has-sheet) .toast{top:calc(var(--safe-t) + var(--hud-top-space) + var(--mb-h,0px))}
 @keyframes toast-in{from{opacity:0;translate:0 -6px}}
 /* a full sheet starts right under the HUD: the toast then floats over the HUD row instead of the sheet header */
@@ -1501,6 +1509,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 
 <!-- Toast: text-only, JS writes textContent. Empty = hidden. -->
 <div id="hint" class="toast" role="status" aria-live="polite"></div>
+<div id="anleitung" class="anleitung" role="status" hidden><span id="anleitungSchritt" class="anleitung-n"></span><span id="anleitungText" class="anleitung-t"></span><button id="anleitungWeg" class="btn-x" type="button" aria-label="Anleitung überspringen"><svg class="icon"><use href="#i-close"/></svg></button></div>
 
 <!-- Multi-attack floating bar (JS sets style.display='flex') -->
 <div id="multiAttackBar" class="mabar">
@@ -1636,6 +1645,9 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         <label class="set-zeile"><span>Angriff auf deine Basis</span><input type="checkbox" data-push-art="angriff"></label>
         <label class="set-zeile"><span>Späher unterwegs zu dir</span><input type="checkbox" data-push-art="spaeher"></label>
         <label class="set-zeile"><span>Basis verloren</span><input type="checkbox" data-push-art="verloren"></label>
+        <label class="set-zeile"><span>Boss erschienen</span><input type="checkbox" data-push-art="boss"></label>
+        <label class="set-zeile"><span>Sammler zurück</span><input type="checkbox" data-push-art="sammler"></label>
+        <label class="set-zeile"><span>Friedensschild läuft ab</span><input type="checkbox" data-push-art="schild"></label>
       </div>
     </div>
     <div class="sect"><h4>Ton</h4></div>

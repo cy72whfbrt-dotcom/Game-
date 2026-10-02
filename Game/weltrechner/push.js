@@ -66,7 +66,7 @@ const BEOBACHTER = `(function () {
     const mensch = id => typeof id === 'string' && /^u\\d+$/.test(id) && !!M[id];
     const name = id => (botById[id] || {}).name || 'Jemand';
     const titel = id => { try { return islandTitle(islandById[id]); } catch (e) { return 'eine Basis'; } };
-    const alt = window.__pushMerker, neu = { angriffe: {}, spaeher: {}, besitz: {} }, raus = [];
+    const alt = window.__pushMerker, neu = { angriffe: {}, spaeher: {}, besitz: {}, boss: [], sammler: {}, schild: {} }, raus = [];
     for (const a of pendingAttacks || []) {
         const o = islandOwnerOf(a.targetId); if (!mensch(o) || !a.attackerBotId || a.attackerBotId === o) continue;
         const k = a.attackerBotId + '>' + a.targetId + '@' + a.startedAt; neu.angriffe[k] = 1;
@@ -80,6 +80,18 @@ const BEOBACHTER = `(function () {
     for (const id in botOwnedIslands) { if (!mensch(id)) continue; neu.besitz[id] = [...botOwnedIslands[id]];
         const vorher = alt && alt.besitz[id]; if (!vorher) continue; const jetztDa = botOwnedIslands[id];
         for (const i of vorher) if (!jetztDa.has(i)) { const o = islandOwnerOf(i); raus.push({ an: id, art: 'verloren', von: o && o !== id ? name(o) : null, basis: titel(i) }); } }
+    // Boss / Wanderboss erschienen (an alle Menschen)
+    try { const b = typeof loadBoss === 'function' ? (loadBoss(), bossState) : null, w = typeof loadWander === 'function' ? loadWander() : null;
+        const bk = b && b.endsAt > jetzt ? 'b' + b.islandId + '@' + b.endsAt : null, wk = w && w.troops > 0 ? 'w' + w.endsAt : null;
+        neu.boss = [bk, wk].filter(Boolean);
+        if (alt && alt.boss) for (const [k, wer, wo] of [[bk, b && b.name, b && b.islandId], [wk, w && w.name, w && w.at]])
+            if (k && !alt.boss.includes(k)) for (const id in M) raus.push({ an: id, art: 'boss', von: wer || 'Ein Boss', basis: titel(wo) }); } catch (e) {}
+    // Sammler zurück (ein Rückmarsch vom Feld ist angekommen)
+    try { for (const m of fieldMarches || []) if (m.back && mensch(m.who)) neu.sammler[m.who + '@' + m.startedAt + '>' + m.fieldId] = [m.load || 0, ((fieldById || {})[m.fieldId] || {}).kind || 'gold'];
+        if (alt && alt.sammler) for (const k in alt.sammler) if (!neu.sammler[k] && alt.sammler[k][0] > 0) raus.push({ an: k.split('@')[0], art: 'sammler', menge: alt.sammler[k][0], was: alt.sammler[k][1] }); } catch (e) {}
+    // Friedensschild läuft in der nächsten Stunde ab
+    try { const bs = loadBotState(); for (const id in M) { const su = (bs[id] || {}).shieldUntil || 0; if (su > jetzt && su - jetzt <= 3600000) { const k = id + '@' + su; neu.schild[k] = 1;
+        if (alt && alt.schild && !alt.schild[k]) raus.push({ an: id, art: 'schild', bis: su }); } } } catch (e) {}
     window.__pushMerker = neu;
     const online = {}; for (const id in M) online[id] = !!M[id].online;
     return JSON.stringify({ raus, online });
@@ -105,7 +117,12 @@ function nachrichtBauen(liste, jetzt) {
     else if (verloren.length) teile.push(verloren.length + ' Basen verloren (' + verloren.slice(0, 3).map(v => v.basis).join(', ') + (verloren.length > 3 ? ' …' : '') + ').');
     if (spaeher.length === 1) teile.push('Ein Späher von ' + spaeher[0].von + ' ist unterwegs zu deiner Basis ' + spaeher[0].basis + '.');
     else if (spaeher.length) { const wer = [...new Set(spaeher.map(s => s.von))]; teile.push(spaeher.length + ' Späher sind unterwegs zu deinen Basen (' + wer.slice(0, 3).join(', ') + (wer.length > 3 ? ' …' : '') + ').'); }
-    const titel = angriffe.length ? 'Angriff auf deine Basis!' : verloren.length ? 'Basis verloren' : 'Späher unterwegs';
+    const boss = liste.filter(e => e.art === 'boss'), sammler = liste.filter(e => e.art === 'sammler'), schild = liste.filter(e => e.art === 'schild');
+    if (boss.length) teile.push(boss.map(b => b.von + ' ist erschienen (' + b.basis + ').').join(' '));
+    if (sammler.length) { const g = sammler.filter(x => x.was === 'gem').reduce((a, x) => a + x.menge, 0), c = sammler.filter(x => x.was !== 'gem').reduce((a, x) => a + x.menge, 0);
+        teile.push('Deine Sammler sind zurück: ' + [c ? '+' + Math.round(c).toLocaleString('de-DE') + ' Münzen' : '', g ? '+' + Math.round(g).toLocaleString('de-DE') + ' Gems' : ''].filter(Boolean).join(', ') + '.'); }
+    if (schild.length) teile.push('Dein Friedensschild läuft in ' + minuten(schild[0].bis - jetzt) + ' ab.');
+    const titel = angriffe.length ? 'Angriff auf deine Basis!' : verloren.length ? 'Basis verloren' : spaeher.length ? 'Späher unterwegs' : boss.length ? 'Ein Boss ist erschienen' : schild.length ? 'Friedensschild' : 'Sammler zurück';
     return { titel, text: teile.join(' ').slice(0, 400), tag: 'open-water' };
 }
 
