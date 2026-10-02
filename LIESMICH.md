@@ -341,6 +341,8 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
   Eisen) · 10 neue Gebäude · 11 Forschung · 14 stärkere Truppen-Stufen (T1–T5) – aber NUR eine Truppenart (13 nein).
 - *Helden:* 19 mehr Helden · 20 zwei Helden pro Marsch.
 - *Sonst:* 39 VIP durch Spielen · 45 Anleitung für neue Spieler · 46 mehr Push-Nachrichten · 49 „3B“ (alles auf dem Server).
+- *51 Einstellungen (Alexander 2.10.):* eigenes Fenster im Spiel (Zahnrad) – Benachrichtigungen an/aus (je Art), Ton und
+  Musik, Grafik/Akku sparen, Name, Passwort ändern, **Abmelden** (heute nur auf der Startseite), Hilfe/Anleitung, Version.
 - *Reden:* Basen/Hauptbasis, 8, 25, 17 (Spähbericht mit Held/Ausrüstung – heute nur Truppen + Verteidigung).
 - *Nicht:* 13 (mehrere Truppenarten), 21/22 (Talente/Helden-Ausrüstung, zu viel). 12 (Burg-Aussehen je Stufe) und
   15 (Lazarett, der Rest stirbt) gibt es schon.
