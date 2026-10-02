@@ -924,3 +924,12 @@ für beide Spieler. Keine Fehler in der Konsole oder im Weltrechner, keine Schum
 **Zum Zusammenführen** (kleine Stellen außerhalb der Karte): `fieldTick` (Sammel-Beschleuniger `hdSammeln`), Abholfach
 (`inboxAdd`/`inboxWhat`/`inboxClaim`, Quelle `haendler`), `renderMidBar` (Händler-Hinweis), `handleTap` (Karren),
 `closeAllPopups`/`closeTopmostPanel`, Stadt-Boden (Eis → Schnee).
+
+## 25. Vorschau-Datei zum Testen (2.10.)
+- `php werkzeuge/vorschau_bauen.php <Ordner> [artifact] [test]` baut das Spiel als Datei OHNE Server (allein im Browser,
+  die Welt rechnet das eigene Gerät, Speichern nur im Browser). `artifact` = für eine Claude-Vorschauseite,
+  `test` = Test-Modus (`werkzeuge/vorschau_test.js`): kein Nebel, alles gespäht, du und alle Mitspieler habt fast
+  unbegrenzt Münzen, Gems, Rohstoffe, Splitter und Truppen (alle 10 s aufgefüllt). NIE ins echte Spiel – die Datei liegt
+  nicht in Game/ und wird nicht hochgeladen.
+- Vorschau für Alexander: https://claude.ai/artifact/8pusjSdvm5Dj4Q9moYcbUD
+

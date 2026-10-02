@@ -11,6 +11,11 @@ $html = str_replace('<?= $kopf ?>', '', $html);
 $html = preg_replace_callback("/<\?= v\('([^']+)'\) \?>/", function ($m) use ($quelle) { return filemtime($quelle . '/' . $m[1]); }, $html);
 foreach (['welt.js', 'benachrichtigung.js'] as $weg) $html = preg_replace('#\s*<script[^>]*src="' . preg_quote($weg, '#') . '[^"]*"[^>]*></script>#', '', $html);   // brauchen den Server
 if (strpos($html, '<?') !== false) exit("Fehler: noch PHP in spiel.php\n");
+if (in_array('test', $argv, true)) {   // Test-Modus (kein Nebel, fast unbegrenzt alles) – nur für die Vorschau
+    copy(__DIR__ . '/vorschau_test.js', $ziel . '/testmodus.js');
+    $html = preg_replace('#(<script src="haendler\.js[^"]*"></script>)#', '$1' . "\n" . '    <script src="testmodus.js"></script>', $html, 1);
+    if (strpos($html, 'testmodus.js') === false) exit("Fehler: Test-Modus nicht eingebaut\n");
+}
 if (($argv[2] ?? '') === 'artifact') {   // als Claude-Artifact: ohne <html>/<head>/<body> (die setzt der Artifact-Rahmen), Titel ganz oben
     $html = preg_replace(['#<!DOCTYPE html>\s*#i', '#</?html[^>]*>\s*#i', '#</?head>\s*#i', '#<body[^>]*>\s*#i', '#</body>\s*#i', '#<link rel="(manifest|icon|apple-touch-icon)"[^>]*>\s*#'], '', $html);
     $html = "<title>Open Water</title>\n" . preg_replace('#<title>[^<]*</title>\s*#', '', $html);
