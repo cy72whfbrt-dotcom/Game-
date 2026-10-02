@@ -152,6 +152,12 @@ async function los() {
         const own = JSON.parse(t.openWaterBotOwnedIslands || '{}'), tr = JSON.parse(t.openWaterIslandTroops || '{}');
         let basen = 0, truppen = 0; for (const k in own) basen += (own[k] || []).length; for (const k in tr) truppen += +tr[k] || 0;
         grundlinie = { basen, truppen }; log('Welt in der Datenbank: ' + basen + ' Basen, ' + Math.round(truppen) + ' Truppen');
+        // Passt die Karte des Spiels (GRID_N in spiel.js) zur Welt in der Datenbank? Sonst würden alle Basen-Nummern falsch
+        // gelesen. Dann NICHT starten (zählt als Absturz → nach 5 Versuchen Wartung + Alarm): erst eine neue Welt
+        // (werkzeuge/welt_neustart.php). Eine Welt ohne Kennung (vor Paket C) hatte 15 × 15 Regionen.
+        const code = fs.readFileSync(path.join(GAME, 'spiel.js'), 'utf8').match(/const GRID_N = (\d+);/), spielN = code ? +code[1] : 0;
+        let weltN = 0; try { weltN = +(JSON.parse(t.openWaterKarte || 'null') || {}).n || 0; } catch (e) {}
+        if (basen > 0 && spielN && (weltN || 15) !== spielN) ende(5, 'Karte passt nicht zur Welt: Welt ' + (weltN || 15) + ' × ' + (weltN || 15) + ', Spiel ' + spielN + ' × ' + spielN + ' Regionen – erst die Welt neu starten (werkzeuge/welt_neustart.php)');
     } catch (e) { log('Warnung: Grundlinie nicht lesbar (' + e.message + ')'); }
 
     // Skripte des Spiels direkt von der Festplatte (gleicher Ordner) – fremde (3D) und baukunst.js braucht der Weltrechner nicht
@@ -160,7 +166,7 @@ async function los() {
             const u = new URL(url);
             if (!u.href.startsWith(URL_BASIS)) return Promise.resolve(Buffer.from(''));
             const datei = path.basename(u.pathname);
-            if (!/^(speichern|ladebildschirm|bots|welt|spiel|aufbau|buendnis)\.js$/.test(datei)) return Promise.resolve(Buffer.from(''));
+            if (!/^(speichern|ladebildschirm|bots|welt|spiel|aufbau|buendnis|haendler)\.js$/.test(datei)) return Promise.resolve(Buffer.from(''));
             return Promise.resolve(fs.readFileSync(path.join(GAME, datei)));
         }
     }

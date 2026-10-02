@@ -13,7 +13,8 @@
 const ROH = ['h', 's', 'e'];
 const ROH_DEF = { h: { name: 'Holz', icon: 'wood', col: '#c08a4c' }, s: { name: 'Stein', icon: 'stone', col: '#aab3bd' }, e: { name: 'Eisen', icon: 'iron', col: '#8fb6e0' } };
 const ROH_START = { h: 3000, s: 2000, e: 500 };                 // so viel hat jeder am Anfang (auch alte Spielstände ohne Rohstoffe)
-const ROH_BIOM = { green: { h: 1, s: .5, e: .25 }, sand: { h: .3, s: 1, e: .5 }, snow: { h: .45, s: .6, e: 1 } };   // Wiese: Holz · Wüste: Stein · Schnee/Gebirge: Eisen
+const ROH_BIOM = { green: { h: 1, s: .5, e: .25 }, sand: { h: .3, s: 1, e: .5 }, snow: { h: .45, s: .6, e: 1 },   // Wiese: Holz · Wüste: Stein · Schnee/Gebirge: Eisen
+    ice: { h: .2, s: .5, e: 1.3 }, volcano: { h: .15, s: 1.2, e: 1.1 }, swamp: { h: 1.3, s: .3, e: .3 } };   // (Paket C) Eis: viel Eisen · Vulkan: Stein + Eisen · Sumpf: viel Holz
 const ROH_PRO_TICK = 2;                                        // eine Basis Stufe 1 macht 2 je Takt (= 1/5 der Münzen), wächst wie die Münzen
 const rohLeer = () => ({ h: 0, s: 0, e: 0 });
 const rohSauber = (v, d) => { const r = rohLeer(); for (const k of ROH) { const x = v && +v[k]; r[k] = Number.isFinite(x) && x > 0 ? Math.min(1e15, x) : 0; } return v ? r : Object.assign(r, d); };

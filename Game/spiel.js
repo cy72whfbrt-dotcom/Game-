@@ -179,7 +179,7 @@ const TERRITORY_VIEW_ZOOM = 0.018;
 // attacking anything anywhere. Spacing found via a search against
 // the actual coastline generator for the tightest hex packing with
 // zero overlap.
-const GRID_N = 15;         // square world: 15 × 15 regions, the Thron-Insel in the middle, the 8 regions around it form the ring
+const GRID_N = 17;         // square world: 17 × 17 regions (Paket C, vorher 15 × 15 – Messwerte in LIESMICH 23), the Thron-Insel in the middle, the 8 regions around it form the ring
 const HEX_SPACING = 56120; // distance between orthogonally adjacent cell centres (tightest packing with zero overlap)
 const GRID_HALF = (GRID_N - 1) / 2;
 const RIVER_HALF = 1500;   // one big square continent: its 49 regions are split by narrow rivers (half width)
@@ -341,10 +341,18 @@ function generateRegionShape(q, r) {
 
 // Landscape: snow in the north, grassland in the middle band, desert in the south (the border steps a little per column);
 // the ring around the middle is stone, the regions right next to it stay green.
+// Paket C: dazu Eis ganz im Norden (oberste Reihe), zwei Vulkan-Gebiete nahe der Mitte (west und ost, je 5 Regionen)
+// und Sumpf in den Flussniederungen des grünen Mittelstreifens (außen, verstreut). Reine Optik – keine Spielwirkung.
+const VULKANE = [[-4, 0], [4, 1]];
 function regionBiome(q, r) {
     const ring = Math.max(Math.abs(q), Math.abs(r)); if (ring <= 2) return 'green';
+    if (ring <= 5 && VULKANE.some(([vq, vr]) => Math.abs(q - vq) + Math.abs(r - vr) <= 1)) return 'volcano';
     const h = Math.sin(q * 12.9898 + 78.233) * 43758.5453, wob = Math.round((h - Math.floor(h)) * 2 - 1), y = r + wob * .6;
-    return y <= -2.6 ? 'snow' : y >= 2.6 ? 'sand' : 'green';
+    if (y <= -GRID_HALF + .6) return 'ice';
+    if (y <= -2.6) return 'snow';
+    if (y >= 2.6) return 'sand';
+    const n = Math.sin(q * 39.346 + r * 11.135 + 4.17) * 24634.6345, nass = n - Math.floor(n);   // feuchte Niederung?
+    return ring >= 4 && Math.abs(y) < 2 && nass > .6 ? 'swamp' : 'green';
 }
 // Temples: the Mega-Tempel in the middle, a Wächter-Tempel in each of the 4 corners of the ring, and 24 normal temples on two
 // clean squares around the middle (ring 3: corners + side middles, ring 5: corners, side middles and two more per side).
@@ -537,7 +545,7 @@ const gateSpots = bridges.map(br => {
 // Start places: 4 per region on the outermost two rings (player and bot capitals go there, the rest stays empty land).
 const START_SLOT_OFFS = [[-.24, -.2], [.24, -.2], [-.24, .26], [.24, .26]];
 const startSlots = [];
-for (const lm of landmasses) if (lm.tier === 'outer' && lm.ring >= 6) for (const [sx, sy] of START_SLOT_OFFS) startSlots.push({ lm: lm.id, x: lm.x + sx * HEX_SPACING, y: lm.y + sy * HEX_SPACING });
+for (const lm of landmasses) if (lm.tier === 'outer' && lm.ring >= GRID_HALF - 1) for (const [sx, sy] of START_SLOT_OFFS) startSlots.push({ lm: lm.id, x: lm.x + sx * HEX_SPACING, y: lm.y + sy * HEX_SPACING });
 const BASE_SPACING = HEX_SPACING * .083;                   // one distance between neighbouring bases everywhere (about 95 per region)
 const segDistW = (px, py, ax, ay, bx, by) => { const dx = bx - ax, dy = by - ay, L = dx * dx + dy * dy || 1, t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / L)); return Math.hypot(px - ax - dx * t, py - ay - dy * t); };
 for (const lm of landmasses) {
@@ -606,11 +614,14 @@ for (const gsp of gateSpots) {
 }
 const islandById = {};
 for (const island of islands) islandById[island.id] = island;
+// Kennung der Karte in der Welt (Paket C): der Weltrechner startet nur, wenn sie zur Karte des Spiels passt (start.js)
+const KARTE_KENNUNG = JSON.stringify({ n: GRID_N, inseln: islands.length });
+if (SYSTEM && store.get('openWaterKarte') !== KARTE_KENNUNG) store.set('openWaterKarte', KARTE_KENNUNG);
 
 // The map was rebuilt (Thron-Insel + Wächter-Inseln): old base ids no longer match, so every
 // map-bound part of an old save is cleared once. Coins, gems, gear, skills and level stay,
 // and the player's whole army moves to the new home base.
-const WORLD_VERSION = '6';
+const WORLD_VERSION = '7';   // 7: Karte 17 × 17 (Paket C) – welt.js setzt dieselbe Zahl (WELT_VERSION)
 if (store.get('openWaterWorldVersion') !== WORLD_VERSION) {
     let carry = 0;
     try {
@@ -902,7 +913,7 @@ for (const bot of BOT_DEFS) if (!botCoins[bot.id]) botCoins[bot.id] = 0;
     if (late.length) {
         const taken = [...usedTowerIds].map(id => islandById[id]).filter(Boolean);
         for (const bot of BOT_DEFS) { let k = 0; for (const id of botOwnedIslands[bot.id]) { if (k++ % 25 === 0) taken.push(islandById[id]); } }   // a sample of every empire is enough
-        const pool = islands.filter(i => i.type === 'tower' && !usedTowerIds.has(i.id) && !islandOwnerOf(i.id) && landmasses[i.landmassId].tier === 'outer' && landmasses[i.landmassId].ring >= 5 && i.landmassId !== home.landmassId);
+        const pool = islands.filter(i => i.type === 'tower' && !usedTowerIds.has(i.id) && !islandOwnerOf(i.id) && landmasses[i.landmassId].tier === 'outer' && landmasses[i.landmassId].ring >= GRID_HALF - 2 && i.landmassId !== home.landmassId);
         const rnd = mulberry32(4242);
         for (const bot of late) {
             let best = null, bestD = -1;
@@ -2105,6 +2116,7 @@ const WORLD = (() => { let l = Infinity, t = Infinity, r = -Infinity, b = -Infin
   l = Math.min(l, -FRAME_HALF); t = Math.min(t, -FRAME_HALF); r = Math.max(r, FRAME_HALF); b = Math.max(b, FRAME_HALF);   // the map border fits too
   return { l, t, r, b, w: r - l, h: b - t, cx: (l + r) / 2, cy: (t + b) / 2, radius: Math.hypot(r - l, b - t) / 2 }; })();
 
+const DEKO_ART = { ice: 1, volcano: 1, swamp: 1 };   // Landschaften mit eigenem Hintergrund (Paket C, buildDeko)
 // Landmass paths: smoothed coast (quadratic curves through edge midpoints), world units
 for (const lm of landmasses) {
   const P = lm.shape, n = P.length, p = new Path2D();
@@ -2120,10 +2132,89 @@ for (const lm of landmasses) {
   else if (lm.stone) { g.addColorStop(0, '#8e908c'); g.addColorStop(.55, '#797b77'); g.addColorStop(1, '#646662'); }
   else if (lm.bio === 'snow') { g.addColorStop(0, '#eef2f5'); g.addColorStop(.55, '#dde4ea'); g.addColorStop(1, '#c6d0d9'); }
   else if (lm.bio === 'sand') { g.addColorStop(0, '#e2c98f'); g.addColorStop(.55, '#d4b77a'); g.addColorStop(1, '#c2a266'); }
+  else if (lm.bio === 'ice') { g.addColorStop(0, '#e9f4fb'); g.addColorStop(.55, '#d2e5f1'); g.addColorStop(1, '#b4d0e4'); }
+  else if (lm.bio === 'volcano') { g.addColorStop(0, '#77695f'); g.addColorStop(.55, '#5f544d'); g.addColorStop(1, '#4a413c'); }
+  else if (lm.bio === 'swamp') { g.addColorStop(0, '#62794a'); g.addColorStop(.55, '#526a3e'); g.addColorStop(1, '#435a34'); }
   else { g.addColorStop(0, '#62a44a'); g.addColorStop(.55, '#4d8a3b'); g.addColorStop(1, '#3d7231'); }
   lm.fill = g;
-  let forest = null;                                                             // built the first time this region is drawn (faster start)
+  let forest = null, deko = null;                                                // built the first time this region is drawn (faster start)
   Object.defineProperty(lm, 'forest', { get: () => forest || (forest = buildForest(lm)), configurable: true });
+  if (DEKO_ART[lm.bio] && !lm.stone) Object.defineProperty(lm, 'deko', { get: () => deko || (deko = buildDeko(lm)), configurable: true });
+}
+
+// Paket C – Hintergrund der neuen Landschaften (einmal pro Region gebaut, wie die Wälder; liegt in den Karten-Kacheln):
+// Eis: Eisblöcke und Spalten · Vulkan: Felsbrocken, Lava-Tümpel (+ ein Krater) · Sumpf: Tümpel, Schilf und niedrige Bäume.
+// lm.lava = [[x, y, r], …] merkt sich die Lava für das Leuchten in der Nacht.
+function dekoPlaetze(lm, n, seed, frei) {          // freie Plätze auf der Region (nicht an Basen, nicht an der Küste)
+  const rnd = mulberry32(lm.id * 7919 + seed), bases = islandsByLandmass[lm.id] || [], out = [];
+  for (let i = 0; i < n * 8 && out.length < n; i++) {
+    const a = rnd() * Math.PI * 2, d = Math.sqrt(rnd()) * lm.shapeMaxR, x = lm.x + Math.cos(a) * d, y = lm.y + Math.sin(a) * d;
+    if (bases.some(b => Math.abs(b.x - x) < frei + b.radius && Math.abs(b.y - y) < frei + b.radius + 600 && Math.hypot(b.x - x, b.y - y) < b.radius + frei)) continue;
+    if (!aufLand(lm, x, y) || !aufLand(lm, x + 900, y) || !aufLand(lm, x - 900, y) || !aufLand(lm, x, y + 900) || !aufLand(lm, x, y - 900)) continue;
+    out.push([x, y, rnd]);
+  }
+  return out;
+}
+function buildDeko(lm) {
+  const P = () => new Path2D(), d = { a: P(), b: P(), c: P(), s: P() };       // a dunkel, b mittel, c hell, s Linien
+  const blob = (p, x, y, rx, ry, rnd, k) => {      // unregelmäßiger Fleck (Tümpel, Lava, Block)
+    const n = k || 9; for (let i = 0; i <= n; i++) { const t = i / n * Math.PI * 2, f = .78 + rnd() * .3, px = x + Math.cos(t) * rx * f, py = y + Math.sin(t) * ry * f; i ? p.lineTo(px, py) : p.moveTo(px, py); } p.closePath(); };
+  if (lm.bio === 'ice') {
+    for (const [x, y, rnd] of dekoPlaetze(lm, 140, 11, 700)) {
+      const n = 2 + (rnd() * 4 | 0);
+      for (let k = 0; k < n; k++) { const bx = x + (rnd() - .5) * 1000, by = y + (rnd() - .5) * 650, s = 170 + rnd() * 230;
+        blob(d.a, bx, by + s * .25, s, s * .55, rnd, 5); blob(d.b, bx - s * .1, by, s * .8, s * .45, rnd, 5); blob(d.c, bx - s * .3, by - s * .12, s * .3, s * .16, rnd, 4); }
+      if (rnd() < .45) { let sx = x + 500, sy = y - 300; d.s.moveTo(sx, sy);           // eine Spalte im Eis
+        for (let k = 0; k < 5; k++) { sx += 250 + rnd() * 250; sy += (rnd() - .5) * 400; d.s.lineTo(sx, sy); } }
+    }
+  } else if (lm.bio === 'volcano') {
+    lm.lava = [];
+    d.lava = P(); d.lavaS = P();
+    const bases = islandsByLandmass[lm.id] || [], frei = (x, y, m) => aufLand(lm, x, y) && !bases.some(b => Math.abs(b.x - x) < m && Math.abs(b.y - y) < m && Math.hypot(b.x - x, b.y - y) < m);
+    const krater = dekoPlaetze(lm, 1, 3, 1500)[0];                                  // der Krater (wo zwischen den Basen Platz ist)
+    if (krater) { const [x, y, rnd] = krater; blob(d.a, x, y + 150, 1500, 1000, rnd, 14); blob(d.b, x, y, 1050, 700, rnd, 12);
+      blob(d.lava, x, y - 60, 640, 400, rnd, 12); lm.lava.push([x, y - 60, 900]); }
+    { const rnd = mulberry32(lm.id * 31 + 5);                                       // Lava-Adern: glühende Risse zwischen den Basen
+      for (let k = 0; k < 26; k++) { let x = lm.x + (rnd() - .5) * lm.shapeMaxR * 1.6, y = lm.y + (rnd() - .5) * lm.shapeMaxR * 1.6, a = rnd() * Math.PI * 2, offen = false, st = 0;
+        for (let j = 0; j < 9; j++) { const nx = x + Math.cos(a) * 420, ny = y + Math.sin(a) * 420; a += (rnd() - .5) * 1.1;
+          if (frei(nx, ny, 1150) && frei(x, y, 1150)) { if (!offen) { d.lavaS.moveTo(x, y); offen = true; } d.lavaS.lineTo(nx, ny); if (++st % 3 === 0) lm.lava.push([nx, ny, 420]); } else offen = false;
+          x = nx; y = ny; } } }
+    for (const [x, y, rnd] of dekoPlaetze(lm, 150, 13, 650)) {
+      const n = 2 + (rnd() * 4 | 0);
+      for (let k = 0; k < n; k++) { const bx = x + (rnd() - .5) * 900, by = y + (rnd() - .5) * 600, s = 120 + rnd() * 190;
+        blob(d.a, bx, by + s * .2, s, s * .7, rnd, 6); blob(d.b, bx - s * .15, by - s * .05, s * .62, s * .42, rnd, 5); blob(d.c, bx - s * .35, by - s * .2, s * .22, s * .14, rnd, 4); }
+      if (rnd() < .3) { const lx = x + (rnd() - .5) * 600, ly = y + 300, s = 180 + rnd() * 220; blob(d.lava, lx, ly, s, s * .55, rnd, 9); lm.lava.push([lx, ly, s * 1.6]); }
+    }
+  } else if (lm.bio === 'swamp') {
+    for (const [x, y, rnd] of dekoPlaetze(lm, 150, 17, 650)) {
+      if (rnd() < .6) { const s = 380 + rnd() * 520; blob(d.c, x, y, s, s * .55, rnd, 10); }     // Tümpel (dunkles Wasser, unten c)
+      const n = 5 + (rnd() * 9 | 0);
+      for (let k = 0; k < n; k++) { const rx = x + (rnd() - .5) * 1200, ry = y + (rnd() - .5) * 760, h = 150 + rnd() * 170;   // Schilf: Halme
+        for (let j = -1; j <= 1; j++) { d.s.moveTo(rx + j * 22, ry); d.s.lineTo(rx + j * 36 + (rnd() - .5) * 30, ry - h * (j ? .8 : 1)); } }
+      if (rnd() < .5) for (let k = 0; k < 3; k++) { const tx = x + (rnd() - .5) * 900, ty = y + (rnd() - .5) * 500, r = 90 + rnd() * 90;   // niedrige Sumpfbäume
+        d.a.moveTo(tx + r, ty); d.a.arc(tx, ty, r, 0, Math.PI * 2); d.b.moveTo(tx - .12 * r + .7 * r, ty - .18 * r); d.b.arc(tx - .12 * r, ty - .18 * r, .7 * r, 0, Math.PI * 2); }
+    }
+  }
+  return d;
+}
+const DEKO_FARBE = {                                // a, b, c, Linien (Breite in Welt-Einheiten)
+  ice:     ['#87a9c3', '#c3dcee', 'rgba(255,255,255,.9)', 'rgba(90,130,165,.6)', 70],
+  volcano: ['#2f2926', '#433b36', 'rgba(150,140,130,.4)', null, 0],
+  swamp:   ['#2f4826', '#3f5d31', '#24423f', 'rgba(170,185,95,.9)', 40]
+};
+function paintDeko(g, lm, a) {                     // im Kachel-Bild (Welt-Koordinaten): a = Sichtbarkeit (wie die Wälder); die Lava immer
+  if (!(a > 0) && lm.bio !== 'volcano') return;
+  const d = lm.deko, f = DEKO_FARBE[lm.bio]; g.globalAlpha = a;
+  if (a > 0) {
+  if (lm.bio === 'swamp') { g.fillStyle = f[2]; g.fill(d.c); g.strokeStyle = 'rgba(140,190,170,.35)'; g.lineWidth = 60; g.stroke(d.c); }   // Wasser zuerst
+  g.fillStyle = f[0]; g.fill(d.a); g.fillStyle = f[1]; g.fill(d.b);
+  if (lm.bio !== 'swamp') { g.fillStyle = f[2]; g.fill(d.c); }
+  if (f[3]) { g.strokeStyle = f[3]; g.lineWidth = f[4]; g.lineCap = 'round'; g.stroke(d.s); g.lineCap = 'butt'; }
+  }
+  g.globalAlpha = 1;
+  if (d.lavaS) { g.lineCap = 'round'; g.lineJoin = 'round'; g.strokeStyle = '#8f2a0c'; g.lineWidth = 150; g.stroke(d.lavaS); g.strokeStyle = '#f07a1c'; g.lineWidth = 60; g.stroke(d.lavaS); g.lineCap = 'butt'; }
+  if (d.lava) { g.fillStyle = '#d24812'; g.fill(d.lava); g.strokeStyle = 'rgba(40,16,8,.8)'; g.lineWidth = 50; g.stroke(d.lava); }
+  g.globalAlpha = 1;
 }
 
 
@@ -2385,8 +2476,9 @@ function paintBackground(T, clip, noTerritory) {  // T = tile {c, g, z, l, t}; c
   for (const lm of landmasses) {
     if (lm.bbox.r < view.l || lm.bbox.l > view.r || lm.bbox.b < view.t || lm.bbox.t > view.b) continue;
     g.fillStyle = lm.fill; g.fill(lm.path);
-    if (grassA > 0) { g.globalAlpha = grassA * (lm.stone ? .35 : lm.bio === 'snow' ? .12 : lm.bio === 'sand' ? .2 : 1); g.fillStyle = GRASS_PATTERN; g.fill(lm.path); g.globalAlpha = 1; }
-    if (forestA > 0) { g.globalAlpha = forestA;
+    if (grassA > 0) { g.globalAlpha = grassA * (lm.stone ? .35 : lm.bio === 'snow' || lm.bio === 'ice' ? .12 : lm.bio === 'sand' ? .2 : lm.bio === 'volcano' ? .3 : lm.bio === 'swamp' ? .8 : 1); g.fillStyle = GRASS_PATTERN; g.fill(lm.path); g.globalAlpha = 1; }
+    if (lm.deko) paintDeko(g, lm, Math.max(forestA, Math.min(1, Math.max(0, (zd - 0.007) / 0.008))));                                        // Paket C: Eis, Vulkan, Sumpf (statt Wald)
+    else if (forestA > 0) { g.globalAlpha = forestA;
       if (lm.bio === 'snow' && !lm.stone) { g.fillStyle = '#3f5a4c'; g.fill(lm.forest[0]); g.fillStyle = '#56735f'; g.fill(lm.forest[1]);   // snowy firs
         g.fillStyle = 'rgba(250,252,255,.7)'; g.fill(lm.forest[2]); }
       else if (lm.bio === 'sand' && !lm.stone) { g.fillStyle = '#9c7e4c'; g.fill(lm.forest[0]); g.fillStyle = '#b39360'; g.fill(lm.forest[1]);   // dunes and dry scrub
@@ -3519,6 +3611,69 @@ function visibleIslands(view) {
 }
 
 
+// ===== TAG UND NACHT (Paket C) – nur Optik, keine Spielwirkung =====
+// Die Karte folgt der Uhrzeit in Berlin – nach der Uhr des Servers (welt.js merkt sich den Unterschied zur Handy-Uhr:
+// WELT.uhrVersatz; geht das Handy falsch, zählt die Server-Uhr). Sonnenauf-/-untergang nach der Jahreszeit (grob für
+// Berlin). Am Tag nichts, abends Abendrot, nachts dunkler (eine Fläche, „multiplizieren“) mit Lichtern an Basen und
+// Burgen und leuchtender Lava; morgens Morgenrot. Billig: Werte nur alle 20 s neu, Leucht-Bilder fertig gemalt, kein
+// eigenes Neuzeichnen (die Karte malt in Ruhe ohnehin jede Sekunde), mit „Akku sparen“ weniger Lichter.
+const TN = { at: 0, v: null, fmt: null, glow: {} };
+function serverJetzt() { const v = window.WELT && WELT.uhrVersatz; return Date.now() + (Math.abs(v) > 90000 ? v : 0); }
+function berlinZeit(t) {                            // → { h: Stunde mit Bruchteil, doy: Tag im Jahr, utc: Stunden vor UTC }
+  const d = new Date(t);
+  try { const f = TN.fmt || (TN.fmt = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Berlin', hourCycle: 'h23', hour: 'numeric', minute: 'numeric', month: 'numeric', day: 'numeric' }));
+    const p = {}; for (const x of f.formatToParts(d)) p[x.type] = parseInt(x.value, 10);
+    const h = p.hour + p.minute / 60; return { h, doy: (p.month - 1) * 30.44 + p.day, utc: ((Math.round(h - d.getUTCHours() - d.getUTCMinutes() / 60) % 24) + 24) % 24 }; }
+  catch (e) { return { h: d.getHours() + d.getMinutes() / 60, doy: d.getMonth() * 30.44 + d.getDate(), utc: 1 }; }
+}
+function tagLicht() {                               // → { n: Nacht 0…1, r: Morgen-/Abendrot 0…1, farbe (zum Multiplizieren), licht: Lampen 0…1 }
+  const now = performance.now(), test = window.__testStunde;
+  if (TN.v && now - TN.at < 20000 && test === undefined) return TN.v;
+  const b = berlinZeit(serverJetzt()), h = typeof test === 'number' ? test : b.h;
+  const mittag = 12.2 + (b.utc === 2 ? 1 : 0), halb = (12.2 + 4.6 * Math.cos(2 * Math.PI * (b.doy - 172) / 365)) / 2;   // Sommer ~16,8 Std. Tag, Winter ~7,6
+  const nach = h < mittag ? mittag - halb - h : h - mittag - halb;                // Stunden nach Sonnenuntergang / vor Sonnenaufgang (< 0: Tag)
+  const s = x => x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x);
+  const n = s((nach + .25) / 1.5), r = Math.max(0, 1 - Math.abs(nach + .15) / 1.1) * (1 - n * .7);
+  const mix = (a, c, t) => a.map((v, i) => v + (c[i] - v) * t);
+  const col = mix(mix([255, 255, 255], [255, 192, 148], r), [72, 88, 148], n);
+  TN.v = { n, r, licht: s((nach + .1) / .8), farbe: 'rgb(' + col.map(Math.round).join(',') + ')' }; TN.at = now;
+  return TN.v;
+}
+function tnGlow(art) {                              // fertiges Leucht-Bild (warm: Fenster/Fackeln, lava: rot-orange)
+  if (TN.glow[art]) return TN.glow[art];
+  const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  if (art === 'lava') { gr.addColorStop(0, 'rgba(255,170,60,.95)'); gr.addColorStop(.35, 'rgba(240,80,20,.55)'); gr.addColorStop(1, 'rgba(200,30,0,0)'); }
+  else if (art === 'fackel') { gr.addColorStop(0, 'rgba(255,245,200,1)'); gr.addColorStop(.25, 'rgba(255,190,90,.8)'); gr.addColorStop(1, 'rgba(255,140,40,0)'); }
+  else { gr.addColorStop(0, 'rgba(255,214,140,.75)'); gr.addColorStop(.5, 'rgba(255,170,80,.28)'); gr.addColorStop(1, 'rgba(255,150,60,0)'); }
+  g.fillStyle = gr; g.fillRect(0, 0, 64, 64); return (TN.glow[art] = c);
+}
+function drawNacht(vis, z, view) {                  // nach den Gebäuden, vor den Namensschildern (die bleiben gut lesbar)
+  const L = tagLicht(); if (L.n < .02 && L.r < .02) return;
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = L.farbe; ctx.fillRect(0, 0, canvas.width, canvas.height);
+  if (L.licht > .03) {
+    setScreen(ctx); ctx.globalCompositeOperation = 'lighter';
+    let rest = akkuSparen ? 160 : 1400;                                           // höchstens so viele Lichter pro Bild
+    const lava = tnGlow('lava'), warm = tnGlow('warm'), fackel = tnGlow('fackel');
+    for (const lm of landmasses) {                                                // leuchtende Lava im Vulkan
+      if (lm.bio !== 'volcano' || lm.bbox.r < view.l || lm.bbox.l > view.r || lm.bbox.b < view.t || lm.bbox.t > view.b || !isExplored(lm.id)) continue;
+      if (!lm.lava) lm.deko;                                                      // (baut die Lava-Liste, falls die Region noch nie gemalt wurde)
+      for (const [x, y, r] of lm.lava || []) { if (rest-- <= 0) break; if (akkuSparen && r < 800 && z < .01) continue;
+        const R = Math.max(3, r * z * 2.2), sx = toSX(x), sy = toSY(y); if (sx < -R || sx > viewW + R || sy < -R || sy > viewH + R) continue;
+        ctx.globalAlpha = L.licht * .9; ctx.drawImage(lava, sx - R, sy - R, R * 2, R * 2); } }
+    for (const isl of vis) {                                                      // Fenster und Fackeln an Basen, Burgen und Tempeln
+      if (rest <= 0) break;
+      const ow = islandOwnerOf(isl.id); if (!ow && isl.type === 'tower') continue;                     // leere Basen bleiben dunkel
+      const size = 2 * isl.radius * z * 1.5 * (isl.type === 'tower' ? 1 : 1.3), x = toSX(isl.x), y = toSY(isl.y);
+      if (x < -size * 2 || x > viewW + size * 2 || y < -size * 2 || y > viewH + size * 2) continue;
+      rest--; ctx.globalAlpha = L.licht * (ow ? 1 : .6);
+      const R = Math.max(4, size * .75); ctx.drawImage(warm, x - R, y - size * .2 - R, R * 2, R * 2);
+      if (size >= 18 && !akkuSparen) { const f = Math.max(3, size * .16);                             // zwei Fackeln am Tor
+        for (const dx of [-.4, .4]) ctx.drawImage(fackel, x + dx * size - f, y + size * .08 - f, f * 2, f * 2); }
+    }
+  }
+  ctx.restore();
+}
 function drawMap() {
   const now = performance.now(), wallNow = Date.now();
   const z = mapState.zoom;                                                       // viewW/viewH are owned by sizeBackingStore() (§6)
@@ -3555,6 +3710,8 @@ function drawMap() {
   drawThroneFx(z, now);
   drawBaseSparks(vis, z, now);
   drawWander(now);                                                                                                     // the Kriegsherr and his host
+  drawNacht(vis, z, viewPad);                                                                                          // Paket C: Abendrot, Nacht, Lichter
+  if (typeof drawHaendler === 'function') drawHaendler();                                                              // Paket C: der Karren des wandernden Händlers (haendler.js)
   const plates = layoutBanners(vis, z, isPanelOpen(popup) ? popupIslandId : null);
   drawMarchTokens();                                                                                                   // 8 tokens (clear of the plates)
   paintBanners(plates);                                                                                                // 9 nameplates on top
@@ -5787,22 +5944,24 @@ function inboxList() { if (!inboxState) { try { inboxState = JSON.parse(store.ge
     return inboxState; }
 function inboxSave() { store.set('openWaterInbox', JSON.stringify(inboxList())); }
 const INBOX_PILE = { fight: 1, bounty: 1 };   // these pile up in one entry each
-const inboxPiles = x => !!INBOX_PILE[x.src] && !(x.crate >= 0);   // a crate keeps its own entry (one entry holds one crate)
-const INBOX_SRC = { gift: { ic: 'gem', t: 'Geschenk' }, fight: { ic: 'attack', t: 'Kampfbeute' }, tour: { ic: 'crown', t: 'Wochenend-Turnier' }, boss: { ic: 'star', t: 'Tagesboss' }, wboss: { ic: 'star', t: 'Weltboss' }, bounty: { ic: 'losses', t: 'Kopfgeld' }, inv: { ic: 'defense', t: 'Barbaren-Invasion' }, drache: { ic: 'star', t: 'Drache' }, vip: { ic: 'crown', t: 'VIP-Tageskiste' } };
+const inboxPiles = x => !!INBOX_PILE[x.src] && !(x.crate >= 0) && !(x.kiste >= 0) && !x.schild;   // a crate keeps its own entry (one entry holds one crate)
+const INBOX_SRC = { gift: { ic: 'gem', t: 'Geschenk' }, fight: { ic: 'attack', t: 'Kampfbeute' }, tour: { ic: 'crown', t: 'Wochenend-Turnier' }, boss: { ic: 'star', t: 'Tagesboss' }, wboss: { ic: 'star', t: 'Weltboss' }, bounty: { ic: 'losses', t: 'Kopfgeld' }, inv: { ic: 'defense', t: 'Barbaren-Invasion' }, drache: { ic: 'star', t: 'Drache' }, vip: { ic: 'crown', t: 'VIP-Tageskiste' }, haendler: { ic: 'coin', t: 'Händler' } };
 function inboxAdd(o) {                              // o: { src, title?, gems, coins, sh (hero shards), crate (lowest rarity, -1 none) } - all fights' spoils pile up in one entry
     o = Object.assign({ gems: 0, coins: 0, sh: 0, crate: -1, tr: 0, n: 1 }, o); o.gems = Math.round(o.gems); o.coins = Math.round(o.coins); o.tr = Math.round(o.tr);
-    if (!(o.gems > 0 || o.coins > 0 || o.sh > 0 || o.crate >= 0 || o.tr > 0)) return 0;
+    if (!(o.gems > 0 || o.coins > 0 || o.sh > 0 || o.crate >= 0 || o.tr > 0 || o.kiste >= 0 || o.schild > 0)) return 0;   // (kiste: genau diese Seltenheit, schild: Friedensschild Std. – Händler)
     const L = inboxList(), now = Date.now(), pile = inboxPiles(o) && L.find(x => x.src === o.src && inboxPiles(x));
     if (pile) { pile.coins = (pile.coins || 0) + o.coins; pile.gems = (pile.gems || 0) + o.gems; pile.sh = (pile.sh || 0) + (o.sh || 0); pile.n = (pile.n || 1) + 1; pile.at = now; } else L.unshift(Object.assign(o, { id: now.toString(36) + Math.floor(Math.random() * 1e6).toString(36), at: now }));   // (shards pile up too)
     inboxSave(); updateGoalsBadge(); if (isPanelOpen(goalsPopup) && goalsTab === 'reward') renderInbox(); return o.coins || o.gems;
 }
-function inboxWhat(x) { return [x.gems ? '+' + fmtNum(x.gems) + ' Gems' : '', x.coins ? '+' + fmtCompact(x.coins) + ' Münzen' : '', x.crate >= 0 ? 'Kiste (mind. ' + RARITY_DEFS[x.crate].label + ')' : '', x.sh ? x.sh + ' Helden-Splitter' : '', x.tr ? '+' + fmtCompact(x.tr) + ' Truppen' : ''].filter(Boolean).join(' · '); }
+function inboxWhat(x) { return [x.gems ? '+' + fmtNum(x.gems) + ' Gems' : '', x.coins ? '+' + fmtCompact(x.coins) + ' Münzen' : '', x.crate >= 0 ? 'Kiste (mind. ' + RARITY_DEFS[x.crate].label + ')' : '', x.sh ? x.sh + ' Helden-Splitter' : '', x.tr ? '+' + fmtCompact(x.tr) + ' Truppen' : '', x.kiste >= 0 ? 'Kiste (' + RARITY_DEFS[x.kiste].label + ')' : '', x.schild ? 'Friedensschild ' + x.schild + ' h' : ''].filter(Boolean).join(' · '); }
 function inboxClaim(id) {                           // into your coffers - returns what you got
     const L = inboxList(), i = L.findIndex(x => x.id === id); if (i < 0) return ''; const x = L.splice(i, 1)[0], got = [];
     if (x.gems) { gems += x.gems; got.push('+' + fmtNum(x.gems) + ' Gems'); } if (x.coins) { coins += x.coins; got.push('+' + fmtCompact(x.coins) + ' Münzen'); }
     if (x.crate >= 0) { const it = grantFreeCrate(x.crate); if (it && it.rarity !== undefined) got.push(EQUIPMENT_DEFS[it.slot].name + ' (' + RARITY_DEFS[it.rarity].label + ')'); }
+    if (x.kiste >= 0 && x.kiste <= 2) { const it = addInventoryItem(pickRandomSlot(), x.kiste, 1); if (it && it.rarity !== undefined) got.push(EQUIPMENT_DEFS[it.slot].name + ' (' + RARITY_DEFS[it.rarity].label + ')'); }
+    if (x.schild === 2) { const st = shieldStock(); st[2] = (st[2] || 0) + 1; store.set('openWaterShieldStock', JSON.stringify(st)); got.push('Friedensschild 2 h'); }
     if (x.sh) { const h = heroGrantShards('player', x.sh); if (h) got.push(x.sh + ' Splitter ' + h.name); else { gems += x.sh * 20; got.push('+' + x.sh * 20 + ' Gems (alle Helden voll)'); } }
-    if (x.tr) { const b = rewardBaseId(); if (b !== null) { eigeneTruppenDazu(b, x.tr, 'geschenk'); got.push('+' + fmtCompact(x.tr) + ' Truppen'); } else L.splice(i, 0, Object.assign({}, x, { gems: 0, coins: 0, sh: 0, crate: -1 })); }   // no base right now: only the troops stay in the inbox
+    if (x.tr) { const b = rewardBaseId(); if (b !== null) { eigeneTruppenDazu(b, x.tr, 'geschenk'); got.push('+' + fmtCompact(x.tr) + ' Truppen'); } else L.splice(i, 0, Object.assign({}, x, { gems: 0, coins: 0, sh: 0, crate: -1, kiste: -1, schild: 0 })); }   // no base right now: only the troops stay in the inbox
     inboxSave(); saveGame(); saveProgression(); updateHud(); return got.join(', ');
 }
 function renderInbox() {
@@ -6322,6 +6481,7 @@ function renderMidBar() {
     if (b && b.gems >= 5) h += '<button type="button" class="mb-chip' + (b.who === 'player' ? ' is-warn' : '') + '" data-mb="bounty">' + icon(b.who === 'player' ? 'losses' : 'coin') +
         '<span>' + (b.who === 'player' ? 'Kopfgeld auf dich' : 'Kopfgeld') + '</span><b>' + fmtNum(b.gems) + '</b>' + icon('gem', 'mb-gem') + '</button>';
     h += evChipsHtml(now);                                                              // Invasion, Drache, Turnier-Ankündigung (Events)
+    if (typeof haendlerChip === 'function') h += haendlerChip(now);                     // Paket C: ein Händler ist da
     if (h !== midBarHtml) { midBarHtml = h; midBar.innerHTML = h; midBar.hidden = !h; document.body.classList.toggle('has-midbar', !!h); document.body.style.setProperty('--mb-h', midBar.children.length * 31 + 'px'); }   // the toast moves below the chips
     if (w.on) { const el = midBar.querySelector('[data-mb-left]'), t = fmtDHMS((w.end - now) / 1000); if (el && el.textContent !== t) el.textContent = t; }
     for (const el of midBar.querySelectorAll('[data-ev-bis]')) setText(el, fmtDHMS(Math.max(0, +el.dataset.evBis - now) / 1000));
@@ -8724,7 +8884,7 @@ function cityPaintGround() {
     const grass = pat(21, '#5f9444', ['#6aa04c', '#56883d', '#74aa55', '#4e7f37'], 700), meadow = pat(22, '#4f8237', ['#5a8f40', '#46752f', '#62984a'], 500);
     const cob = pat(23, '#b8a88a', ['#c7b798', '#a39374', '#d1c3a4', '#948466'], 700), dirt = pat(24, '#9c8058', ['#a88b62', '#8e7350', '#b0946a'], 400);
     // outside the walls: nothing but the land of your region, as on the map (grass, sand or snow)
-    const bio = (landmasses[(islandById[playerIslandId] || {}).landmassId] || {}).bio || 'green';
+    const bio = ({ ice: 'snow' })[(landmasses[(islandById[playerIslandId] || {}).landmassId] || {}).bio] || (landmasses[(islandById[playerIslandId] || {}).landmassId] || {}).bio || 'green';   // (Eis-Land: Schnee-Boden in der Stadt)
     CITY_BG_COL = bio === 'snow' ? '#dde4ea' : bio === 'sand' ? '#d4b77a' : '#4f8237';
     const land = bio === 'snow' ? pat(25, '#dde4ea', ['#e6ebef', '#d2dae1', '#eef2f5'], 400) : bio === 'sand' ? pat(26, '#d4b77a', ['#dcc189', '#c9ab6e', '#e2c98f'], 500) : meadow;
     cityGroundPoly(g, cityRect(-60, -60, CW + 60, CW + 60), land);
@@ -9369,7 +9529,7 @@ function fieldTick() {
     if (due.length) { fieldMarches = fieldMarches.filter(m => m.resolveAt > now); for (const m of due) fieldArrive(m, now); saveFields(); requestRender(); }
     for (const f of resFields) {
         const st = fieldState[f.id]; if (!st || !st.occ) continue;
-        const o = st.occ, gx = heroGatherFx(o), cap = fieldCapOf(f, o, gx), amt = Math.min(f.cap / f.dauer * dt * (1 + (gx ? gx.gSpd : 0) / 100) * sr * (AUF ? AUF.sammelTempo(o.who) : 1), st.left, cap - o.got);   // (+ Forschung Sammeln)   // festes Tempo (nicht mehr Truppen × Tempo) · Spürnase: schneller
+        const o = st.occ, gx = heroGatherFx(o), cap = fieldCapOf(f, o, gx), amt = Math.min(f.cap / f.dauer * dt * (1 + (gx ? gx.gSpd : 0) / 100) * sr * (AUF ? AUF.sammelTempo(o.who) : 1) * (typeof hdSammeln === 'function' ? hdSammeln(o.who) : 1), st.left, cap - o.got);   // (+ Forschung Sammeln)   // festes Tempo (nicht mehr Truppen × Tempo) · Spürnase: schneller
         o.got += Math.max(0, amt); st.left -= Math.max(0, amt);
         if (o.got >= cap - 1e-9 || st.left <= 0) { fieldGoHome(f, st, now); requestRender(); }
     }
@@ -10645,7 +10805,7 @@ function closeTopmostPanel() {           // scrim click + Escape
   if (closeCity()) return;
   if (isPanelOpen(chestItemPopup)) return chestItemCloseBtn.click();
   if (isPanelOpen(popup)) return closeBtn.click();
-  for (const [pid, closeId] of [['bundPopup','bundCloseBtn'],['settingsPopup','settingsCloseBtn'],['eventPopup','eventCloseBtn'],['rulerPopup','rulerCloseBtn'],['rankPopup','rankCloseBtn'],['profilePopup','profileCloseBtn'],['battleLogPopup','battleLogCloseBtn'],['goalsPopup','goalsCloseBtn'],['shopPopup','shopCloseBtn']])
+  for (const [pid, closeId] of [['hdPopup','hdCloseBtn'],['bundPopup','bundCloseBtn'],['settingsPopup','settingsCloseBtn'],['eventPopup','eventCloseBtn'],['rulerPopup','rulerCloseBtn'],['rankPopup','rankCloseBtn'],['profilePopup','profileCloseBtn'],['battleLogPopup','battleLogCloseBtn'],['goalsPopup','goalsCloseBtn'],['shopPopup','shopCloseBtn']])
     if (isPanelOpen(document.getElementById(pid))) return document.getElementById(closeId).click();
   if (multiAttackMode) return multiAttackCancelBtn.click();
 }
@@ -10656,6 +10816,7 @@ document.getElementById('uiScrimTop').addEventListener('click', closeTopmostPane
 // hidden panel keeps live state (e.g. an open attack preview) underneath.
 function closeAllPopups() {
     closePanel(popup);
+    { const hp = document.getElementById('hdPopup'); if (hp) closePanel(hp); }   // (Händler, haendler.js)
     popupStats.dataset.preview = '';
     popupIslandId = null;
     popupView = 'menu';
@@ -11429,6 +11590,7 @@ function handleTap(screenX, screenY) {
     { const bb = !multiAttackMode && !pickIslandAtScreen(screenX, screenY) && barbAt(screenX, screenY); if (bb) { closeIslandPopup(); if (fieldSheetId) closeFieldSheet(); openBarbSheet(bb); return; } }
     if (barbView) closeBarbSheet();
     { const fd = !multiAttackMode && !pickIslandAtScreen(screenX, screenY) && fieldAt(screenX, screenY); if (fd) { closeIslandPopup(); openFieldSheet(fd); return; } }
+    if (!multiAttackMode && typeof haendlerAt === 'function' && haendlerAt(screenX, screenY)) { closeIslandPopup(); if (fieldSheetId) closeFieldSheet(); haendlerOeffnen(); return; }   // Paket C: Händler-Karren
     if (fieldSheetId) closeFieldSheet();
     if (fogPrompt) {
         const hit = fogPromptHit(screenX, screenY), fp = fogPrompt; fogPrompt = null; requestRender();

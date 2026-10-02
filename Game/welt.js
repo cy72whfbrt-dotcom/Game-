@@ -10,6 +10,7 @@
     'use strict';
     const OW = window.__OW || {}, S = window.__owSpeicher;
     const ICH = 'u' + OW.uid;
+    const WELT_VERSION = '7';                // wie WORLD_VERSION in spiel.js (7: Karte 17 × 17, Paket C)
     const SYSTEM = !!OW.system;              // der Weltrechner auf dem Server (weltrechner/start.js): hat keine eigenen Basen
     const P = s => { try { return s == null ? null : JSON.parse(s); } catch (e) { return null; } };
     const J = v => JSON.stringify(v);
@@ -111,6 +112,11 @@
             for (const r of v.r || []) { r.by = t(r.by); for (const j of r.j || []) j.w = t(j.w); }
             return v;
         },
+        openWaterHaendler(v, d) {            // wandernder Händler (haendler.js): wer was gekauft hat, wessen Sammel-Beschleuniger läuft
+            if (!v) return v; const t = tausch(d);
+            schluesselTausch(v.kauf, d); schluesselTausch(v.boost, d); for (const x of v.log || []) x.w = t(x.w);
+            return v;
+        },
         openWaterBotState(v, d) {
             const t = tausch(d);
             for (const id in v || {}) { const b = v[id]; if (!b) continue; schluesselTausch(b.grudge, d); schluesselTausch(b.annoy, d); if (b.vendetta) b.vendetta.who = t(b.vendetta.who); }
@@ -149,7 +155,7 @@
             for (const id in W.menschen) if (id !== ICH && W.menschen[id].profil) bc[id] = Math.max(0, Math.min(1e15, +W.menschen[id].profil.coins || 0));
             S.roh('openWaterBotCoins', J(bc)); geaendert.add('openWaterBotCoins');
         }
-        S.roh('openWaterWorldVersion', '6');
+        S.roh('openWaterWorldVersion', WELT_VERSION);
         return geaendert;
     }
 
@@ -266,7 +272,7 @@
         rueckzuegeZuClient(teile);
         weltZuClient(teile);
     } else {
-        S.roh('openWaterWorldVersion', '6');   // eine ganz neue Welt: das Spiel baut sie gleich, der Weltrechner schickt sie
+        S.roh('openWaterWorldVersion', WELT_VERSION);   // eine ganz neue Welt: das Spiel baut sie gleich, der Weltrechner schickt sie
         W.neueWelt = true;
     }
     delete OW.welt;
@@ -415,6 +421,7 @@
         }
         if (typeof w.version === 'number') W.version = fehlt ? 0 : w.version;
         if (w.welt_zeit) W.weltZeit = w.welt_zeit;
+        if (typeof a.zeit === 'number' && a.zeit > 0) W.uhrVersatz = a.zeit * 1000 - Date.now();   // Server-Uhr minus Handy-Uhr (Tag und Nacht)
         if (W.leiter && !warLeiter && window.__weltLeiterWechsel) window.__weltLeiterWechsel(true, a.neu_leiter, w.welt_zeit);
         if (!W.leiter && warLeiter && window.__weltLeiterWechsel) window.__weltLeiterWechsel(false);
         if (W.leiter && W.version === 0 && W.neueWelt) { W.neueWelt = false; for (const k of S.WELT) if (k in S.daten) S.weltGeaendert.add(k); }   // ganz neue Welt: alles schicken

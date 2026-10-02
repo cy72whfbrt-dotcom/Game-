@@ -75,7 +75,7 @@ function wr_starten() {
     // Ordner, keine anderen Programme starten. Der Schlüssel geht nur über die Umgebung (nie in einer Befehlszeile – ps).
     $G = dirname(WR_ORDNER);
     $lesen = [WR_ORDNER];
-    foreach (['speichern.js', 'ladebildschirm.js', 'bots.js', 'welt.js', 'spiel.js', 'aufbau.js', 'buendnis.js'] as $d) $lesen[] = $G . '/' . $d;
+    foreach (['speichern.js', 'ladebildschirm.js', 'bots.js', 'welt.js', 'spiel.js', 'aufbau.js', 'buendnis.js', 'haendler.js'] as $d) $lesen[] = $G . '/' . $d;
     $erlaubt = implode('', array_map(function ($p) { return ' --allow-fs-read=' . escapeshellarg($p); }, $lesen)) . ' --allow-fs-write=' . escapeshellarg(WR_ORDNER);
     // Kennt dieses Node den Sicherheitsmodus? (Node 22.13+: --permission, älter: --experimental-permission) – vorher kurz ausprobieren
     $rechte = '';

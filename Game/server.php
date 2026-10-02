@@ -177,7 +177,7 @@ function flicken_anwenden($obj, $p) {
 }
 // Befehle der Spieler an den Weltrechner: nur bekannte Arten, nur saubere Werte (keine Texte statt Zahlen, nichts
 // Unendliches, keine Riesenzahlen, nicht zu tief verschachtelt). Der Weltrechner prüft dann noch die Spielregeln.
-const BEFEHL_ARTEN = ['angriff', 'senden', 'zurueck', 'schneller', 'ausbau', 'hauptstadt', 'truppen', 'tor', 'titel', 'feld', 'feldHeim', 'lager', 'armee', 'beitreten', 'bund'];
+const BEFEHL_ARTEN = ['angriff', 'senden', 'zurueck', 'schneller', 'ausbau', 'hauptstadt', 'truppen', 'tor', 'titel', 'feld', 'feldHeim', 'lager', 'armee', 'beitreten', 'bund', 'haendler'];
 const BEFEHL_MENGEN = ['n', 'stufe', 'anteil', 'tr'];   // müssen echte Zahlen ≥ 0 sein
 function befehl_ok($b) {
     if (!is_array($b) || !in_array($b['art'] ?? null, BEFEHL_ARTEN, true)) return false;
@@ -238,7 +238,14 @@ function bot_namen() {
     return $n;
 }
 // Nachrichten, die der Weltrechner an andere schicken darf (Geschenke nur über admin.php – bis auf das kleine Bündnis-Geschenk)
-const WELTRECHNER_NACHRICHTEN = ['delta', 'bericht', 'startschild', 'evPreis', 'bundInfo', 'bundGeschenk'];   // evPreis: Preis aus Turnier/Invasion/Drache (Abholfach)
+const WELTRECHNER_NACHRICHTEN = ['delta', 'bericht', 'startschild', 'evPreis', 'bundInfo', 'bundGeschenk', 'haendlerWare'];   // evPreis: Preis aus Turnier/Invasion/Drache (Abholfach)
+// Ware vom wandernden Händler (haendler.js): höchstens 10 Splitter, eine Kiste bis blau, Truppen, ein 2-Std.-Schild – nie Gems, nie Münzen
+function haendler_ware_ok($e) {
+    foreach ($e as $k => $v) if (!in_array($k, ['art', 'title', 'sh', 'kiste', 'tr', 'schild', 'text'], true)) return false;
+    $zahl = function ($v, $max) { return (is_int($v) || is_float($v)) && is_finite($v) && $v >= 0 && $v <= $max; };
+    return $zahl($e['sh'] ?? 0, 10) && $zahl($e['tr'] ?? 0, 1e13) && in_array($e['kiste'] ?? -1, [-1, 0, 1, 2], true) && in_array($e['schild'] ?? 0, [0, 2], true)
+        && is_string($e['title'] ?? '') && strlen($e['title'] ?? '') <= 120 && is_string($e['text'] ?? '') && strlen($e['text'] ?? '') <= 300;
+}
 // Bündnis-Geschenk (buendnis.js): nur Münzen, Truppen und höchstens eine graue/grüne Kiste – nie Gems oder Splitter
 function bund_geschenk_ok($e) {
     foreach ($e as $k => $v) if (!in_array($k, ['art', 'coins', 'tr', 'crate', 'hint'], true)) return false;
@@ -931,7 +938,7 @@ function push_endpoint_ok($e) {
     $h = strtolower((string)($u['host'] ?? ''));
     return (bool)preg_match('/^(fcm\.googleapis\.com|([a-z0-9-]+\.)*push\.apple\.com|([a-z0-9-]+\.)*push\.services\.mozilla\.com|([a-z0-9-]+\.)*notify\.windows\.com)$/', $h);
 }
-const PUSH_ARTEN = ['angriff', 'spaeher', 'verloren', 'boss', 'sammler', 'schild', 'invasion', 'drache', 'hilfe', 'rally'];   // die Arten von Handy-Nachrichten (weltrechner/push.js)
+const PUSH_ARTEN = ['angriff', 'spaeher', 'verloren', 'boss', 'sammler', 'schild', 'invasion', 'drache', 'hilfe', 'rally', 'haendler'];   // die Arten von Handy-Nachrichten (weltrechner/push.js)
 function push_anfrage($ich, $d, $aktion) {
     $l = lager();
     $s = push_schluessel();
@@ -1039,7 +1046,7 @@ function welt_puls($ich, $d) {
         if ($setzen || $loeschen || $flicken) $l->welt_schreiben($setzen, $loeschen, (int)($w['welt_zeit'] ?? 0), $flicken, $voll);
         if ($voll) $antwort['welt_voll'] = $voll;   // diese Teile beim nächsten Mal ganz schicken
         if (mt_rand(1, 500) === 1) $l->aufraeumen();
-        foreach (array_slice((array)($d['ereignisse'] ?? []), 0, 500) as $e) if (isset($e['an'], $e['e']) && (int)$e['an'] > 0 && is_array($e['e']) && in_array($e['e']['art'] ?? '', WELTRECHNER_NACHRICHTEN, true) && ($e['e']['art'] !== 'bundGeschenk' || bund_geschenk_ok($e['e'])) && sauber($e['e'])) {
+        foreach (array_slice((array)($d['ereignisse'] ?? []), 0, 500) as $e) if (isset($e['an'], $e['e']) && (int)$e['an'] > 0 && is_array($e['e']) && in_array($e['e']['art'] ?? '', WELTRECHNER_NACHRICHTEN, true) && ($e['e']['art'] !== 'bundGeschenk' || bund_geschenk_ok($e['e'])) && ($e['e']['art'] !== 'haendlerWare' || haendler_ware_ok($e['e'])) && sauber($e['e'])) {
             $j = json_encode($e['e'], JSON_UNESCAPED_UNICODE); if ($j !== false && strlen($j) < 200000) $l->ereignis_ablegen((int)$e['an'], $j); }
     }
     $neu_leiter = false;
