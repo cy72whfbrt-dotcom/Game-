@@ -198,6 +198,7 @@
             name: d.openWaterPlayerName || OW.name, lvl: parseInt(d.openWaterLevel, 10) || 1,
             skills: P(d.openWaterSkills) || {}, gear, city: { levels: city.levels || {} }, wounded: city.wounded || 0,
             hs: P(d.openWaterHeroes2) || {}, shieldUntil: parseFloat(d.openWaterShield) || 0,
+            fo: city.fo || {}, tier: city.tier || 1, tierBez: city.tierBez || 1, res: P(d.openWaterRes) || null,   // Paket D: Forschung, Truppen-Stufe, Rohstoffe (Burg-Stufe steht in city.levels.keep)
             neuBis: typeof neulingBis === 'function' ? neulingBis() : 0,
             look: { ring: look.ring || null, rings: look.rings || [], march: look.march || null, marchs: look.marchs || [], frame: look.frame || null, title: look.title || null, throne: !!(look.bought && look.bought.throne) },
             stats: P(d.openWaterStats) || {}, earned: thr.earned || 0, coins: parseFloat(d.openWaterCoins) || 0,
@@ -215,7 +216,9 @@
         b.equip = { weapon: 0, armor: 0, shield: 0, boots: 0 };
         b.gear = Object.assign({ weapon: null, armor: null, shield: null, boots: null }, p.gear || {});
         if (!b.spare) { b.spare = {}; for (const k of ['weapon', 'armor', 'shield', 'boots']) b.spare[k] = [0, 0, 0, 0, 0, 0]; }
-        b.city = { levels: Object.assign({}, (b.city && b.city.levels) || {}, (p.city && p.city.levels) || {}), builds: [], builder2: false };
+        b.city = { levels: Object.assign({}, (b.city && b.city.levels) || {}, (p.city && p.city.levels) || {}), builds: [], builder2: false,
+            fo: Object.assign({}, p.fo || (alt && alt.city && alt.city.fo) || {}), tier: p.tier || (alt && alt.city && alt.city.tier) || 1, tierBez: p.tierBez || 1 };   // Paket D (aufbau.js prüft: Stufe nur so hoch, wie Burg und Forschung erlauben)
+        if (p.res && typeof p.res === 'object') { b.res = {}; for (const k of ['h', 's', 'e']) { const x = +p.res[k]; b.res[k] = Number.isFinite(x) && x > 0 ? Math.min(1e15, x) : 0; } }   // Rohstoffe (wie die Münzen: der Weltrechner rechnet von da weiter)
         b.wounded = p.wounded || 0;
         if (p.hs) b.hs = p.hs; else if (!b.hs) b.hs = {};
         // Schild und Anfängerschutz kommen vom Handy – darum mit Grenzen: Anfängerschutz kann nur kürzer werden (nie neu
@@ -284,7 +287,8 @@
     function topf(id) {
         const b = typeof botState !== 'undefined' && botState && botState[id];
         const sh = {}; if (b && b.hs) for (const h in b.hs) sh[h] = b.hs[h].sh || 0;
-        return { coins: (typeof botCoins !== 'undefined' && botCoins[id]) || 0, gems: b ? b.gems || 0 : 0, tp: b ? b.tp || 0 : 0, xp: b ? b.xpNeu || 0 : 0, wounded: b ? b.wounded || 0 : 0, sh, stats: b ? Object.assign({}, b.stats || {}) : {} };
+        const res = b && b.res ? { h: b.res.h || 0, s: b.res.s || 0, e: b.res.e || 0 } : { h: 0, s: 0, e: 0 };   // Paket D: Holz, Stein, Eisen
+        return { coins: (typeof botCoins !== 'undefined' && botCoins[id]) || 0, gems: b ? b.gems || 0 : 0, tp: b ? b.tp || 0 : 0, xp: b ? b.xpNeu || 0 : 0, wounded: b ? b.wounded || 0 : 0, sh, res, stats: b ? Object.assign({}, b.stats || {}) : {} };
     }
     // (Weltrechner) was hat sich bei den anderen Menschen getan? → Nachrichten
     function deltasSammeln() {
@@ -295,6 +299,7 @@
             const e = {};
             for (const k of ['coins', 'gems', 'tp', 'xp', 'wounded']) { const dd = jetzt[k] - alt[k]; if (Math.abs(dd) > 1e-9) e[k] = dd; }
             const sh = {}; for (const h in jetzt.sh) { const dd = jetzt.sh[h] - (alt.sh[h] || 0); if (dd) sh[h] = dd; } if (Object.keys(sh).length) e.sh = sh;
+            const rs = {}; for (const k of ['h', 's', 'e']) { const dd = Math.round(jetzt.res[k] - ((alt.res || {})[k] || 0)); if (dd) rs[k] = dd; } if (Object.keys(rs).length) e.res = rs;   // Rohstoffe
             const st = {}; for (const k in jetzt.stats) { const dd = (jetzt.stats[k] || 0) - (alt.stats[k] || 0); if (typeof dd === 'number' && dd > 0 && k !== 'tpEarned') st[k] = dd; } if (Object.keys(st).length) e.stats = st;
             if (botState[id] && botState[id].xpNeu) botState[id].xpNeu = 0;
             jetzt.xp = 0;
@@ -314,7 +319,7 @@
         if (!offen[id] && botState[id] && botState[id].dOffen && botState[id].dOffen.e) offen[id] = botState[id].dOffen;
         const o = offen[id] || (offen[id] = { seit: Date.now(), e: {} }), z = o.e;
         for (const k of ['coins', 'gems', 'tp', 'xp', 'wounded']) if (e[k]) z[k] = (z[k] || 0) + e[k];
-        for (const g of ['sh', 'stats']) if (e[g]) { const t = z[g] || (z[g] = {}); for (const k in e[g]) t[k] = (t[k] || 0) + e[g][k]; }
+        for (const g of ['sh', 'stats', 'res']) if (e[g]) { const t = z[g] || (z[g] = {}); for (const k in e[g]) t[k] = (t[k] || 0) + e[g][k]; }
         if (botState[id]) botState[id].dOffen = o;
     }
     function botById(id) { return typeof BOT_DEFS !== 'undefined' && BOT_DEFS.find(b => b.id === id); }
