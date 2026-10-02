@@ -772,7 +772,7 @@ try {
     scoutedIslands = new Set();
 }
 
-// ===== HELDEN: 14 heroes with a fixed rarity like the gear (1 grün · 2 blau · 3 lila · 4 gold). Shards unlock them, then
+// ===== HELDEN: 20 heroes with a fixed rarity like the gear (1 grün · 2 blau · 3 lila · 4 gold). Shards unlock them, then
 // quarter stars up to 5; 1 skill point per half star for 4 skills (1 active at full rage, 3 passive). Only in fights they lead.
 const HEROES = [
     { id: 'brunhild', name: 'Brunhild', title: 'Schildmaid des Nordens', role: 'Verteidigung', r: 4, icon: 'shield', color: '#8a4f2c', c2: '#3b2a4a', hair: '#c9a15a', g: 'shield', base: [4, 8, 0],
@@ -802,8 +802,40 @@ const HEROES = [
     { id: 'greta', name: 'Greta', title: 'Kräuterfrau', role: 'Lazarett', r: 1, icon: 'plus', color: '#8a4a5b', c2: '#3a2030', hair: '#c0c0a0', g: 'none', base: [0, 6, 0],
       sk: [['Kräutersud', '+{v} % der Gefallenen kommen ins Lazarett.', 'hosp'], ['Salben', '{v} % weniger Verluste.', 'loss'], ['Hausmittel', 'Verliert sie, fliehen {v} % mehr Truppen zurück.', 'flee'], ['Wegzehrung', 'Rückzüge sind {v} % schneller.', 'ret']] },
     { id: 'hagen', name: 'Hagen', title: 'Söldner', role: 'Angriff', r: 1, icon: 'weapon', color: '#5a5a5a', c2: '#2a2a2a', hair: '#3a3a3a', g: 'weapon', base: [8, 0, 2],
-      sk: [['Wucht', 'In diesem Kampf +{v} % Angriff.', 'atk'], ['Söldner', '+{v} % Angriff.', 'atk'], ['Raufbold', '+{v} % Angriff gegen neutrale Basen.', 'neutralAtk'], ['Hartgesotten', '{v} % weniger Verluste.', 'loss']] }
+      sk: [['Wucht', 'In diesem Kampf +{v} % Angriff.', 'atk'], ['Söldner', '+{v} % Angriff.', 'atk'], ['Raufbold', '+{v} % Angriff gegen neutrale Basen.', 'neutralAtk'], ['Hartgesotten', '{v} % weniger Verluste.', 'loss']] },
+    // Paket E: 6 neue Helden – jeder mit kurzer Geschichte (story) und einem Partner aus HERO_PAIRS
+    { id: 'wolfram', name: 'Wolfram', title: 'Eiserner Marschall', role: 'Armeen', r: 4, icon: 'troops', color: '#4a5560', c2: '#1e2228', hair: '#9a9a9a', g: 'weapon', base: [6, 6, 3],
+      story: 'Er führte einst das Heer von König Kasimir. Als der Thron fiel, blieb er als Einziger an der Seite seines Königs.',
+      sk: [['Kesselschlacht', 'Gegen Armeen im Feld: in diesem Kampf +{v} % Angriff.', 'fieldAtk'], ['Heerführer', '{v} % weniger Verluste im Feld.', 'fieldLoss'], ['Feldlager', '+{v} % Verteidigung seiner Armee im Feld.', 'fieldDef'], ['Gewaltmarsch', '+{v} % Marschtempo im Feld.', 'fieldSpd']] },
+    { id: 'thora', name: 'Thora', title: 'Sturmreiterin', role: 'Überfall', r: 3, icon: 'boots', color: '#3a6e8f', c2: '#1a2a3a', hair: '#e8c070', g: 'weapon', base: [6, 1, 6],
+      story: 'Zehn Jahre stand sie als Steuerfrau auf Ragnas Flaggschiff. Heute jagt sie ihre Reiter so schnell über das Land wie früher das Schiff durch den Sturm.',
+      sk: [['Überrumpeln', 'Die Verteidigung des Ziels zählt in diesem Angriff {v} % weniger.', 'defCut'], ['Sturmwind', '+{v} % Marschtempo.', 'spd'], ['Im Morgengrauen', 'Die anderen bemerken ihren Angriff {v} % später.', 'late'], ['Abdrehen', 'Rückzüge sind {v} % schneller.', 'ret']] },
+    { id: 'eskil', name: 'Eskil', title: 'Runenschmied', role: 'Lazarett & Wut', r: 3, icon: 'temple', color: '#5a4a7a', c2: '#221a30', hair: '#c8b8a0', g: 'shield', base: [2, 7, 0],
+      story: 'Er hat die alten Runen in die Mauern der Tempel gemeißelt. Yrsa sagt, ohne seine Zeichen wären die Steine längst gefallen.',
+      sk: [['Runenheilung', 'In diesem Kampf +{v} % der Gefallenen ins Lazarett.', 'hosp'], ['Schutzrune', '{v} % weniger Verluste.', 'loss'], ['Zornrune', 'Wut füllt sich um {v} % schneller.', 'rage'], ['Fluchtrune', 'Verliert er, fliehen {v} % mehr Truppen zurück.', 'flee']] },
+    { id: 'lene', name: 'Lene', title: 'Fährfrau', role: 'Brücken', r: 2, icon: 'send', color: '#2f6a7a', c2: '#18303a', hair: '#5a3a2a', g: 'none', base: [3, 3, 6],
+      story: 'Sie kennt jede Furt und jede Brücke zwischen den Inseln. Ida bringt die Truppen bis ans Ufer – Lene bringt sie hinüber.',
+      sk: [['Fährmannslist', 'Greift sie über eine Brücke an: Verteidigung des Ziels −{v} %.', 'bridgeDef'], ['Strömung', '+{v} % Marschtempo.', 'spd'], ['Fährgeld', '−{v} % Maut an fremden Toren.', 'toll'], ['Zurück ans Ufer', 'Rückzüge sind {v} % schneller.', 'ret']] },
+    { id: 'bruno', name: 'Bruno', title: 'Bärenringer', role: 'Angriff', r: 2, icon: 'weapon', color: '#6a4a2a', c2: '#2a1e14', hair: '#4a2a1a', g: 'weapon', base: [7, 3, 1],
+      story: 'Auf jedem Jahrmarkt rang er mit Bären, bis Hagen ihn zum Söldner machte. Seitdem prügeln sich die beiden durch jede Hafenkneipe – meistens Seite an Seite.',
+      sk: [['Bärenkraft', 'In diesem Kampf +{v} % Angriff.', 'atk'], ['Ringer', '+{v} % Angriff gegen neutrale Basen.', 'neutralAtk'], ['Dickes Fell', '{v} % weniger Verluste.', 'loss'], ['Zechpreller', '+{v} % Gold aus Kämpfen.', 'gold']] },
+    { id: 'pia', name: 'Pia', title: 'Perlentaucherin', role: 'Sammeln', r: 1, icon: 'coin', color: '#3a7a8a', c2: '#183038', hair: '#2a2a3a', g: 'none', base: [2, 2, 3],
+      story: 'Sie taucht nach Perlen, wo andere nur Wasser sehen. Mit Fenn teilt sie jeden Fund – er sucht im Fels, sie im Meer.',
+      sk: [['Großer Fang', 'Dieser Kampf bringt +{v} % Gold.', 'gold'], ['Flinke Hände', 'Ihre Sammler sind {v} % schneller.', 'gatherSpd'], ['Tiefe Taschen', '+{v} % Traglast ihrer Sammler.', 'carry'], ['Strandwache', 'Ihre Sammler verteidigen mit +{v} %.', 'gatherDef']] }
 ];
+// Paket E: zwei Helden pro Marsch. Der Zweitheld gibt seine Werte und passiven Fähigkeiten zu 50 % (die Wut-Fähigkeit zündet nur
+// beim Haupthelden), ein passendes Paar gibt +10 % auf alle Heldenwerte des Marsches. Jeder Held steht in höchstens einem Paar.
+const HERO_ZWEIT = .5, HERO_PAIR_BONUS = 10;
+const HERO_PAIRS = [
+    { a: 'kasimir', b: 'wolfram', name: 'Die alte Garde', story: 'König und Marschall: Der Thron fiel, die Treue blieb.' },
+    { a: 'ragna', b: 'thora', name: 'Wind und Welle', story: 'Die Seekönigin und ihre alte Steuerfrau lesen einander jeden Sturm vom Gesicht ab.' },
+    { a: 'yrsa', b: 'eskil', name: 'Hüter der Runen', story: 'Sie bewacht die Tempel, er hat ihre Mauern mit Runen geschützt.' },
+    { a: 'ida', b: 'lene', name: 'Pfad und Furt', story: 'Ida findet den Weg zum Ufer, Lene den Weg hinüber.' },
+    { a: 'hagen', b: 'bruno', name: 'Raufbrüder', story: 'Zwei Söldner, eine Kneipe, noch nie verloren.' },
+    { a: 'fenn', b: 'pia', name: 'Fels und Meer', story: 'Fenn sucht Gold im Fels, Pia Perlen im Meer – geteilt wird jeder Fund.' }
+];
+function heroPairOf(a, b) { return a && b ? HERO_PAIRS.find(p => (p.a === a && p.b === b) || (p.a === b && p.b === a)) || null : null; }
+function heroPartner(id) { const p = HERO_PAIRS.find(x => x.a === id || x.b === id); return p ? { pair: p, id: p.a === id ? p.b : p.a } : null; }
 // rarity rule: in the same role rarer is always stronger. a/p = active/passive value at skill level 5, st = the stat multiplier
 const HERO_TIER = { 1: { a: 15, p: 5, st: 1 }, 2: { a: 20, p: 8, st: 1.6 }, 3: { a: 30, p: 12, st: 2.4 }, 4: { a: 40, p: 15, st: 3.2 } };
 const HERO_UNLOCK = { 1: 10, 2: 20, 3: 40, 4: 80 }, HERO_START_SHARDS = { 1: 10, 2: 8, 3: 6, 4: 4 };   // shards to unlock · everyone's starter shards
@@ -985,7 +1017,9 @@ function defenseParts(island) {
     return out;
 }
 // what each side brought: level, title, the 4 equipped items, the hero who led (stars, rage, every bonus) and the city - kept with the report
-function heroReportOf(hx) { return hx && hx.id ? { id: hx.id, q: hx.q, fired: !!hx.fired, skill: hx.skill || null, lines: hx.lines || [], extra: (hx.extra || []).map(e => ({ id: e.id, q: e.q, fired: !!e.fired, skill: e.skill || null, lines: e.lines || [] })) } : null; }
+function heroReportOf(hx) { return hx && hx.id ? { id: hx.id, q: hx.q, fired: !!hx.fired, skill: hx.skill || null, lines: hx.lines || [], pair: hx.pair || null,
+    h2: hx.h2 ? { id: hx.h2.id, q: hx.h2.q, zweit: 1, lines: hx.h2.lines || [] } : null,
+    extra: (hx.extra || []).map(e => ({ id: e.id, q: e.q, fired: !!e.fired, zweit: e.zweit ? 1 : 0, skill: e.skill || null, lines: e.lines || [] })) } : null; }
 function fighterSnapshot(who, hx) {
     if (!who) return null;
     const slots = Object.keys(EQUIPMENT_DEFS);
@@ -1005,19 +1039,20 @@ function attackParts(who, raw, bonus, total, hero, a) {       // a = the attack:
     const skill = Math.min(bonus, snap ? a.skillBonus : who === 'player' ? attackFlatBonus(raw) : Math.round(raw * sl * SKILL_DEFS.attack.atkPct / 100));
     if (skill) out.push(['Skill Angriff', skill, 'Stufe ' + sl + ' · +' + sl * SKILL_DEFS.attack.atkPct + ' %']);
     const hx = a && a.hx, hd = hx && heroById(hx.id);             // the hero's Angriff and Gefolge (a fired skill included)
-    if (bonus - skill) out.push([hd ? 'Held ' + hd.name + ' ' + heroStarTxt(hx.q) : 'Helden', bonus - skill, hd ? 'Angriff +' + Math.round(hx.atk) + ' %' + (heroGefOf(hx, raw) ? ' · Gefolge +' + fmtCompact(heroGefOf(hx, raw)) : '') + (hx.fired ? ' · ' + hx.skill + ' gezündet' : '') : '']);
+    const h2n = hx && hx.id2 && heroById(hx.id2) ? ' & ' + heroById(hx.id2).name : '';   // der Zweitheld zählt mit
+    if (bonus - skill) out.push([hd ? 'Held ' + hd.name + ' ' + heroStarTxt(hx.q) + h2n : 'Helden', bonus - skill, hd ? 'Angriff +' + Math.round(hx.atk) + ' %' + (heroGefOf(hx, raw) ? ' · Gefolge +' + fmtCompact(heroGefOf(hx, raw)) : '') + (hx.fired ? ' · ' + hx.skill + ' gezündet' : '') : '']);
     const tv = total - raw - bonus, x = a && a.atkTitleKey !== undefined ? TITLES.find(q => q.key === a.atkTitleKey) : titleOf(who);   // the title it marched with
     if (tv) out.push(['Titel ' + (x ? x.name : ''), tv, 'Mega-Tempel · ' + (tv > 0 ? '+' : '−') + (x ? Math.round(Math.abs(x.v) * 100) : 25) + ' %']);
     return out;
 }
 function heroDefCut(a) { return a && a.hx ? Math.min(90, a.hx.def || 0) / 100 : 0; }    // Rammbock, Sturmflut, Mauerbrecher: the target's defense counts less
-function heroDefPart(parts, a, full) { const cut = Math.round(full * heroDefCut(a)), hd = cut && heroById(a.hx.id); if (hd) parts.push(['Held ' + hd.name, -cut, 'Verteidigung −' + Math.round(a.hx.def) + ' %']); return parts; }
+function heroDefPart(parts, a, full) { const cut = Math.round(full * heroDefCut(a)), hd = cut && heroById(a.hx.id); if (hd) parts.push(['Held ' + hd.name + (a.hx.id2 && heroById(a.hx.id2) ? ' & ' + heroById(a.hx.id2).name : ''), -cut, 'Verteidigung −' + Math.round(a.hx.def) + ' %']); return parts; }
 function attackFields(who, src, target, raw, hx) {      // everything an attack takes along at launch (skills, gear, title, hero) - for you and for everyone else
     const bot = who !== 'player', sk = bot ? Math.round(raw * botMults(who).attackPct / 100) : attackFlatBonus(raw);
     return { attackBonus: sk + (hx ? Math.round(raw * hx.atk / 100) + heroGefOf(hx, raw) : 0), skillBonus: sk, skillLvl: bot ? loadBotState()[who].skills.attack : skills.attack || 0,
         attackGoldRate: bot ? botGoldRate(who, 'attackGold') : (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate, rewardGoldRate: killGoldRate(who, hx),
         shieldLossReductionPct: Math.min(90, (bot ? botMults(who).shield : shieldLossReductionPct()) + (hx ? hx.loss : 0)), botShield: bot,
-        atkTitle: titleMult(who, 'attack'), atkTitleKey: (titleOf(who) || {}).key || null, hero: hx ? hx.id : null, hx: hx || null };
+        atkTitle: titleMult(who, 'attack'), atkTitleKey: (titleOf(who) || {}).key || null, hero: hx ? hx.id : null, hero2: hx && hx.id2 || null, hx: hx || null };
 }
 // Removes an island from whichever owner (player or a bot) it
 // currently belongs to, without touching its troops/level - used
@@ -1482,7 +1517,7 @@ function addCombatLogEntry(entry) {
 // (chosen via the attack preview's slider) instead of always
 // marching out with everything - bots never pass this, so their
 // attacks are unaffected and still commit their full garrison.
-function launchAttack(sourceId, targetId, attackerBotId, troopsOverride, heldWunsch) {
+function launchAttack(sourceId, targetId, attackerBotId, troopsOverride, heldWunsch, held2Wunsch) {
     const source = islandById[sourceId];
     const target = islandById[targetId];
     const available = islandTroops[sourceId] || 0;
@@ -1501,10 +1536,10 @@ function launchAttack(sourceId, targetId, attackerBotId, troopsOverride, heldWun
     }
     if (!attackerBotId && !rechnet()) {                           // Zuschauer: der Weltrechner schickt die Truppen los
         const vh = lastHop(source.landmassId, target.landmassId, 'player'); if (!mautVorab(vh[0], vh[1], rawTroops, target.id)) return false;
-        const vHeld = nextAttackHero && heroOwned('player', nextAttackHero) && !heroBusy('player', nextAttackHero) ? nextAttackHero : null;
-        WELT.befehl('angriff', { src: sourceId, ziel: targetId, n: rawTroops, held: vHeld });
+        const vHeld = nextAttackHero && heroOwned('player', nextAttackHero) && !heroBusy('player', nextAttackHero) ? nextAttackHero : null, vHeld2 = heroZweitOk('player', vHeld, nextAttackHero2);
+        WELT.befehl('angriff', { src: sourceId, ziel: targetId, n: rawTroops, held: vHeld, held2: vHeld2 });
         islandTroops[sourceId] = available - rawTroops;
-        { const t0 = Date.now(); vorlaeufigDazu('a', { sourceId, targetId, rawTroops, startedAt: t0, resolveAt: t0 + Math.max(3, travelDurationSeconds(source, target)) * 1000, attackerBotId: null, hero: vHeld }); }
+        { const t0 = Date.now(); vorlaeufigDazu('a', { sourceId, targetId, rawTroops, startedAt: t0, resolveAt: t0 + Math.max(3, travelDurationSeconds(source, target)) * 1000, attackerBotId: null, hero: vHeld, hero2: vHeld2 }); }
         updateHud(); flashHint('Angriff unterwegs zu ' + islandTitle(target) + '.');
         dropShield('Dein Friedensschild ist gefallen, weil du angreifst.'); questProgress('attack', 1); sfx('attack');
         return true;
@@ -1512,13 +1547,15 @@ function launchAttack(sourceId, targetId, attackerBotId, troopsOverride, heldWun
     const mensch = attackerBotId && botById[attackerBotId] && botById[attackerBotId].mensch;   // ein echter Spieler (Befehl): sein gewählter Held, sonst keiner
     if (attackerBotId && window.WELT) { const tw = islandOwnerOf(target.id); if (tw === 'player' || (botById[tw] && botById[tw].mensch)) { const ab = loadBotState()[attackerBotId]; if (ab && ab.neuBis) { ab.neuBis = 0; saveBotState(); } } }   // greift einen echten Spieler an: Anfängerschutz weg
     if (attackerBotId && window.WELT && botById[attackerBotId] && botById[attackerBotId].mensch) { const ab = loadBotState()[attackerBotId]; if (ab && ab.shieldUntil > Date.now()) { ab.schildAlt = ab.shieldUntil; ab.shieldUntil = 0; saveBotState(); } }   // ein echter Spieler greift an: sein Schild fällt (auch wenn sein Handy es nicht meldet)
-    const who = attackerBotId || 'player', hero = mensch ? (heldWunsch && heroOwned(attackerBotId, heldWunsch) && !heroBusy(attackerBotId, heldWunsch) ? heldWunsch : null)
-        : attackerBotId ? botPickHero(attackerBotId, source, target, rawTroops) : nextAttackHero && heroOwned('player', nextAttackHero) && !heroBusy('player', nextAttackHero) ? nextAttackHero : null;
-    const hop = lastHop(source.landmassId, target.landmassId, who), hp = hero && heroPeek(who, hero, source, target, rawTroops);
+    const who = attackerBotId || 'player', botPair = attackerBotId && !mensch ? botPickHero(attackerBotId, source, target, rawTroops, true) : null;   // ein Mitspieler wählt Haupt- und Zweitheld
+    const hero = mensch ? (heldWunsch && heroOwned(attackerBotId, heldWunsch) && !heroBusy(attackerBotId, heldWunsch) ? heldWunsch : null)
+        : attackerBotId ? botPair[0] : nextAttackHero && heroOwned('player', nextAttackHero) && !heroBusy('player', nextAttackHero) ? nextAttackHero : null;
+    const hero2 = heroZweitOk(who, hero, mensch ? held2Wunsch : attackerBotId ? botPair[1] : nextAttackHero2);   // Besitz und belegt geprüft (auch beim Weltrechner)
+    const hop = lastHop(source.landmassId, target.landmassId, who), hp = hero && heroPeek(who, hero, source, target, rawTroops, hero2);
     if (!payToll(hop[0], hop[1], rawTroops, who, target.id, hp ? hp.toll : 0)) return false;
 
     islandTroops[sourceId] = available - rawTroops; // only the sent troops march out, the rest stay to defend
-    const hx = hero ? heroLaunch(who, hero, source, target, rawTroops) : null;   // a full rage fires the hero's active skill in this fight
+    const hx = hero ? heroLaunch(who, hero, source, target, rawTroops, hero2) : null;   // a full rage fires the hero's active skill in this fight
     const durationSec = Math.max(3, travelDurationSeconds(source, target, attackerBotId) / (1 + (hx ? hx.spd : 0) / 100));
     const startedAt = Date.now();
     // Snapshot every skill/equipment-derived combat bonus NOW, at
@@ -4145,7 +4182,7 @@ setInterval(() => {
             if (fight) {
                 fight.rawTroops += a.rawTroops; fight.attackBonus = (fight.attackBonus || 0) + (a.attackBonus || 0);
                 if (fight.skillBonus !== undefined || a.skillBonus !== undefined) fight.skillBonus = (fight.skillBonus || 0) + (a.skillBonus !== undefined ? a.skillBonus : a.attackBonus || 0); fight.waves = (fight.waves || 1) + (a.waves || 1);
-                if (a.hx) { if (!fight.hx) { fight.hx = a.hx; fight.hero = a.hero; } else fight.hx = heroMergeHx(fight.hx, a.hx); }   // every hero in the fight keeps his effect and his rage
+                if (a.hx) { if (!fight.hx) { fight.hx = a.hx; fight.hero = a.hero; fight.hero2 = a.hero2 || null; } else fight.hx = heroMergeHx(fight.hx, a.hx); }   // every hero in the fight keeps his effect and his rage
                 fight.shieldLossReductionPct = Math.max(fight.shieldLossReductionPct || 0, a.shieldLossReductionPct || 0);
                 fight.rewardGoldRate = Math.max(fight.rewardGoldRate || 0, a.rewardGoldRate || 0);
                 fight.fightEndsAt = Math.max(fight.fightEndsAt, now + 2500);          // the fresh troops get to fight too
@@ -5248,7 +5285,7 @@ function renderActiveMarches() {
     for (const m of bm) { const sec = Math.max(0, Math.ceil((m.resolveAt - Date.now()) / 1000)), c = m.k === 'c' && barbCampById(m.tid), L = m.L || (c && c.L), hd = m.hero && heroById(m.hero);
         const tgt = m.k === 'b' ? (m.name || 'Tagesboss') : 'Barbaren-Lager' + (L ? ' · Stufe ' + L : '');
         rows.push(m.back ? logRowHtml('retreat', 'recall', fmtNum(m.troops) + ' Truppen kehren zurück', 'von ' + tgt + ' nach ' + T(m.homeId), clock(sec))
-            : logRowHtml('attack', m.k === 'b' ? 'crown' : 'attack', 'Angriff auf ' + tgt, 'von ' + T(m.homeId) + ' · ' + fmtNum(m.troops) + ' Truppen' + (hd ? ' · ' + hd.name : ''), clock(sec))); }
+            : logRowHtml('attack', m.k === 'b' ? 'crown' : 'attack', 'Angriff auf ' + tgt, 'von ' + T(m.homeId) + ' · ' + fmtNum(m.troops) + ' Truppen' + (hd ? ' · ' + hd.name + (m.hero2 && heroById(m.hero2) ? ' & ' + heroById(m.hero2).name : '') : ''), clock(sec))); }
     const fast = speedableMarches();
     if (fast.length > 1) rows.unshift('<div class="march-all"><span class="mact"><button type="button" data-mact="speedAll" title="Restzeit aller Märsche halbieren">' + icon('hourglass') + 'Alle schneller (' + fast.length + ') · <b>' + fmtNum(fast.reduce((a, m) => a + speedUpCost(m), 0)) + '</b>' + icon('gem') + '</button></span></div>');
     const amHtml = rows.length ? rows.join('') : '<div class="logEmpty">' + icon('hourglass') + 'Gerade nichts unterwegs.</div>';
@@ -5293,9 +5330,9 @@ function renderCombatLog() {
         const tiles = g.items.map((it, i) => { const d = EQUIPMENT_DEFS[it[0]], rd = RARITY_DEFS[it[1]];
             return '<span class="gslot"><span class="tile' + (rd ? '' : ' empty') + '"' + (rd ? ' data-r="' + rd.key + '"' : '') + ' title="' + d.name + (rd ? ' – ' + rd.label + ', Stufe ' + it[2] : ' – leer') + '">' + icon(d.icon) +
                 (rd ? '<span class="lvl">' + it[2] + '</span>' + (it[3] ? '<span class="stars">' + icon('star').repeat(it[3]) + '</span>' : '') : '') + '</span></span>'; }).join('');
-        const heroes = (g.hx ? [g.hx, ...(g.hx.extra || [])] : []).map(x => { const hd = heroById(x.id); if (!hd) return ''; const rd = RARITY_DEFS[hd.r];   // who led, his stars, whether the rage fired, every bonus
+        const heroes = (g.hx ? [g.hx, ...(g.hx.h2 ? [g.hx.h2] : []), ...(g.hx.extra || [])] : []).map(x => { const hd = heroById(x.id); if (!hd) return ''; const rd = RARITY_DEFS[hd.r];   // who led (Haupt- und Zweitheld), his stars, whether the rage fired, every bonus
                 return '<div class="logHero" style="--hc:' + rd.color + '"><span class="ghero">' + heroImg(hd.id) + '<span><b>' + hd.name + ' <small>' + heroStarTxt(x.q) + ' · ' + rd.label + '</small></b>' +
-                    '<small>' + (x.fired ? '<em class="logHeroFire">' + escapeHtml(x.skill || '') + ' gezündet</em>' : 'Aktive Fähigkeit nicht gezündet') + '</small></span></span>' +
+                    '<small>' + (x.zweit ? 'Zweitheld · Werte und passive Fähigkeiten zu ' + Math.round(HERO_ZWEIT * 100) + ' %' : x.fired ? '<em class="logHeroFire">' + escapeHtml(x.skill || '') + ' gezündet</em>' : 'Aktive Fähigkeit nicht gezündet') + '</small></span></span>' +
                     (x.lines || []).map(l => '<div class="logLine buff"><span>' + escapeHtml(l[0]) + '</span><span>' + escapeHtml(l[1]) + '</span></div>').join('') + '</div>'; }).join('') +
             (g.heroes || []).map(x => { const hd = heroById(x[0]); return hd ? '<span class="ghero" style="--hc:' + RARITY_DEFS[hd.r].color + '">' + heroImg(hd.id) + '<span><b>' + hd.name + '</b><small>Stufe ' + x[1] + '</small></span></span>' : ''; }).join('');   // (older reports)
         if (g.heroOnly) return '<div class="logGear"><div class="logGearHeroes">' + heroes + '</div></div>';
@@ -7943,15 +7980,16 @@ const HERO_FX_TXT = { atk: v => '+' + v + ' % Angriff', loss: v => '−' + v + '
     fdef: v => '+' + v + ' % Verteidigung', gSpd: v => '+' + v + ' % Sammeln', carry: v => '+' + v + ' % Traglast' };
 function heroGefOf(hx, n) { return hx ? Math.min(hx.gef || 0, Math.max(0, n)) : 0; }   // Gefolge: never more than the troops the hero leads (no 1-troop marches with a big following)
 const HX0 = { atk: 0, loss: 0, def: 0, hosp: 0, gold: 0, flee: 0, ret: 0, late: 0, spd: 0, toll: 0, fdef: 0, gSpd: 0, carry: 0, gef: 0 };
-function heroFx(who, id, ctx, fired, s) {           // → the hero's numbers for this fight or march, with a line for the report per value that counts
+function heroFx(who, id, ctx, fired, s, mul) {      // → the hero's numbers for this fight or march, with a line for the report per value that counts (mul: der Zweitheld zählt halb)
     const h = heroById(id); s = s || heroSt(who, id); if (!h || !s || !s.own) return null;
-    const st = heroStats(who, id, s), fx = Object.assign({ id, q: s.q, fired: !!fired, lines: [] }, HX0);
+    const st0 = heroStats(who, id, s), m = mul || 1, st = m === 1 ? st0 : { atk: Math.round(st0.atk * m), def: Math.round(st0.def * m), spd: Math.round(st0.spd * m), gef: Math.round(st0.gef * m) };
+    const fx = Object.assign({ id, q: s.q, fired: !!fired, lines: [] }, HX0);
     if (ctx.fight) { fx.atk += st.atk; fx.loss += st.def; fx.gef = st.gef;
         if (st.atk) fx.lines.push(['Angriff', '+' + st.atk + ' %']); if (st.def) fx.lines.push(['Verteidigung', '−' + st.def + ' % Verluste']); if (st.gef) fx.lines.push(['Gefolge', '+' + fmtNum(st.gef) + ' Truppen']); }
     if (ctx.march && st.spd) { fx.spd += st.spd; fx.lines.push(['Tempo', '+' + st.spd + ' %']); }
     h.sk.forEach((x, k) => { const lv = s.sk[k] || 0; if (!lv || (k === 0 && !fired)) return;
         const e = HERO_EFF[x[2]]; if (!e || !e[0] || !ctx[e[1]]) return;
-        const v = heroSkillVal(h, k, lv); fx[e[0]] += v; fx.lines.push([x[0] + (k ? '' : ' · Wut'), HERO_FX_TXT[e[0]](heroNum(v))]); });
+        const v = Math.round(heroSkillVal(h, k, lv) * m * 10) / 10; fx[e[0]] += v; fx.lines.push([x[0] + (k ? '' : ' · Wut'), HERO_FX_TXT[e[0]](heroNum(v))]); });
     if (fired) fx.skill = h.sk[0][0];
     fx.loss = Math.min(90, fx.loss); fx.def = Math.min(90, fx.def);
     return fx;
@@ -7963,41 +8001,57 @@ function heroBaseCtx(who, src, target, raw) {       // what kind of attack this 
         scouted: who === 'player' ? scoutedIslands.has(target.id) : !!(typeof botIntel === 'function' && botById[who] && botIntel(botById[who], target.id)) };
 }
 const heroWouldFire = s => s.sk[0] > 0 && s.rage >= 100;
-function heroPeek(who, id, src, target, raw) { const s = heroSt(who, id); return s && s.own ? heroFx(who, id, heroBaseCtx(who, src, target, raw), heroWouldFire(s), s) : null; }
-function heroLaunch(who, id, src, target, raw) {    // the hero marches off: a full rage fires the active skill in this fight
+function heroDuo(who, fx, id2, ctx) {               // + der Zweitheld: Werte und passive Fähigkeiten zu 50 % (keine Wut), ein passendes Paar +10 % auf alles
+    if (!fx || !id2 || id2 === fx.id) return fx;
+    const f2 = heroFx(who, id2, ctx, false, null, HERO_ZWEIT); if (!f2) return fx;
+    for (const k in HX0) fx[k] += f2[k];
+    const p = heroPairOf(fx.id, id2), b = 1 + HERO_PAIR_BONUS / 100;
+    if (p) for (const k in HX0) fx[k] = k === 'gef' ? Math.round(fx[k] * b) : Math.round(fx[k] * b * 10) / 10;
+    fx.loss = Math.min(90, fx.loss); fx.def = Math.min(90, fx.def);
+    fx.id2 = id2; fx.h2 = { id: id2, q: f2.q, lines: f2.lines };
+    if (p) { fx.pair = p.name; fx.lines.push(['Paar „' + p.name + '“', '+' + HERO_PAIR_BONUS + ' % auf alle Heldenwerte']); }
+    return fx;
+}
+function heroZweitOk(who, id, id2) { return id && id2 && id2 !== id && heroOwned(who, id2) && !heroBusy(who, id2) ? id2 : null; }   // der Zweitheld: nur mit Hauptheld, eigener, freier Held
+function heroPeek(who, id, src, target, raw, id2) { const s = heroSt(who, id); if (!s || !s.own) return null; const ctx = heroBaseCtx(who, src, target, raw); return heroDuo(who, heroFx(who, id, ctx, heroWouldFire(s), s), id2, ctx); }
+function heroLaunch(who, id, src, target, raw, id2) {   // the hero marches off: a full rage fires the active skill in this fight
     const s = heroSt(who, id); if (!s || !s.own) return null;
     const fired = heroWouldFire(s); if (fired) { s.rage = 0; heroSave(who); goalBump(who, 'heroFires'); }
-    return heroFx(who, id, heroBaseCtx(who, src, target, raw), fired, s);
+    const ctx = heroBaseCtx(who, src, target, raw); return heroDuo(who, heroFx(who, id, ctx, fired, s), id2, ctx);
 }
 function heroRageUp(who, id) { const h = heroById(id), s = heroSt(who, id); if (!h || !s || !s.own) return;
     const bl = h.sk.findIndex(x => x[2] === 'rage'), fast = bl >= 0 && s.sk[bl] ? heroSkillVal(h, bl, s.sk[bl]) : 0;
     s.rage = Math.min(100, (s.rage || 0) + HERO_RAGE * (1 + fast / 100)); heroSave(who); }
 function heroFought(who, hx) { if (!hx || !hx.id) return; heroRageUp(who, hx.id); for (const e of hx.extra || []) heroRageUp(who, e.id); }   // every fight a hero leads fills his rage
-function heroFieldFx(who, id, ctx) {                // a fight out in the open: fires (and refills) the rage right away
+function heroFieldFx(who, id, ctx, id2) {           // a fight out in the open: fires (and refills) the rage right away (nur beim Haupthelden)
     const s = id && heroSt(who, id); if (!s || !s.own) return null;
     const fired = heroWouldFire(s); if (fired) { s.rage = 0; goalBump(who, 'heroFires'); }
-    const fx = heroFx(who, id, Object.assign({ fight: 1, field: 1, vsArmy: 1 }, ctx, { fdefending: !!ctx.defending, gatherDef: !!(ctx.res && ctx.defending) }), fired, s);
+    const c = Object.assign({ fight: 1, field: 1, vsArmy: 1 }, ctx, { fdefending: !!ctx.defending, gatherDef: !!(ctx.res && ctx.defending) });
+    const fx = heroDuo(who, heroFx(who, id, c, fired, s), id2 && heroOwned(who, id2) ? id2 : null, c);
     heroRageUp(who, id); return fx;
 }
-function heroMarchFx(who, id, field) { return id && heroOwned(who, id) ? heroFx(who, id, { march: 1, fieldMarch: !!field }, false) : null; }   // walking only: Tempo and Maut
-function heroGatherFx(o) { return o && o.hero && heroOwned(o.who, o.hero) ? heroFx(o.who, o.hero, { gather: 1 }, false) : null; }
+function heroMarchFx(who, id, field, id2) { if (!id || !heroOwned(who, id)) return null; const c = { march: 1, fieldMarch: !!field }; return heroDuo(who, heroFx(who, id, c, false), id2 && heroOwned(who, id2) ? id2 : null, c); }   // walking only: Tempo and Maut
+function heroGatherFx(o) { return o && o.hero && heroOwned(o.who, o.hero) ? heroDuo(o.who, heroFx(o.who, o.hero, { gather: 1 }, false), o.hero2 && heroOwned(o.who, o.hero2) ? o.hero2 : null, { gather: 1 }) : null; }
 function heroMergeHx(f, a) { if (!a || !f) return f || a; if (f.id === a.id) return f;                                              // two waves with two heroes in one fight: both count
     return Object.assign({}, f, { def: Math.max(f.def, a.def), hosp: Math.max(f.hosp, a.hosp), flee: Math.max(f.flee, a.flee), ret: Math.max(f.ret, a.ret), gold: Math.max(f.gold, a.gold),
-        extra: [...(f.extra || []), { id: a.id, q: a.q, fired: a.fired, skill: a.skill, lines: a.lines }] }); }
-function heroOnField(who, id) { try { return fieldMarches.some(m => m.who === who && m.hero === id) || barbMarches.some(m => m.who === who && m.hero === id) || resFields.some(f => { const o = fieldState[f.id] && fieldState[f.id].occ; return !!o && o.who === who && o.hero === id; }); } catch (e) { return false; } }
-function heroBusy(who, id) {                        // one attack, army or field march per hero at a time
+        extra: [...(f.extra || []), { id: a.id, q: a.q, fired: a.fired, skill: a.skill, lines: a.lines }, ...(a.h2 ? [{ id: a.h2.id, q: a.h2.q, zweit: 1, lines: a.h2.lines }] : [])] }); }
+const heroIn = (hero, hero2, id) => hero === id || hero2 === id;
+function heroOnField(who, id) { try { return fieldMarches.some(m => m.who === who && heroIn(m.hero, m.hero2, id)) || barbMarches.some(m => m.who === who && heroIn(m.hero, m.hero2, id)) || resFields.some(f => { const o = fieldState[f.id] && fieldState[f.id].occ; return !!o && o.who === who && heroIn(o.hero, o.hero2, id); }); } catch (e) { return false; } }
+function heroBusy(who, id) {                        // one attack, army or field march per hero at a time (Haupt- oder Zweitheld)
     const mine = x => who === 'player' ? !x || x === 'player' : x === who;
-    return pendingAttacks.some(a => mine(a.attackerBotId) && (a.hero === id || (a.hx && (a.hx.extra || []).some(e => e.id === id))))
-        || (typeof armies !== 'undefined' && armies.some(x => mine(x.who) && x.hero === id)) || heroOnField(who, id);
+    return pendingAttacks.some(a => mine(a.attackerBotId) && (heroIn(a.hero, a.hero2, id) || (a.hx && (a.hx.id2 === id || (a.hx.extra || []).some(e => e.id === id)))))
+        || (typeof armies !== 'undefined' && armies.some(x => mine(x.who) && heroIn(x.hero, x.hero2, id))) || heroOnField(who, id);
 }
-function heroPickBest(who, src, target, raw) {      // the free hero that does the most in this attack (the others use it, and so can you)
-    let best = null, bs = 0; const def = target ? effectiveDefense(target) : 0;
-    for (const h of HEROES) { if (!heroOwned(who, h.id) || heroBusy(who, h.id)) continue;
-        const fx = target ? heroPeek(who, h.id, src, target, raw) : heroFx(who, h.id, { fight: 1, field: 1, vsArmy: 1, march: 1 }, false);
+function heroPickBest(who, src, target, raw, main) {   // the free hero that does the most in this attack (the others use it, and so can you) · main: der Zweitheld dazu
+    let best = null, bs = 0; const def = target ? effectiveDefense(target) : 0, ctx = target ? null : { fight: 1, field: 1, vsArmy: 1, march: 1 };
+    for (const h of HEROES) { if (!heroOwned(who, h.id) || heroBusy(who, h.id) || h.id === main) continue;
+        const fx = main ? (target ? heroPeek(who, main, src, target, raw, h.id) : heroDuo(who, heroFx(who, main, ctx, false), h.id, ctx))
+            : target ? heroPeek(who, h.id, src, target, raw) : heroFx(who, h.id, ctx, false);
         const sc = raw * (fx.atk / 100) + heroGefOf(fx, raw) + def * (fx.def + fx.loss) / 100 + raw * fx.spd / 400 + 1;
         if (sc > bs) { bs = sc; best = h.id; } }
     return best;
 }
+function heroPickPair(who, src, target, raw) { const a = heroPickBest(who, src, target, raw); return [a, a ? heroPickBest(who, src, target, raw, a) : null]; }   // Haupt- und Zweitheld (passende Paare zählen von selbst mehr)
 // shards, stars and points: the same steps for you and for everyone else
 function heroGrantShards(who, n, id, minR) {        // n shards for one hero (a random one: the commoner the likelier, maxed ones left out; minR: only this rarity or rarer)
     const pool = HEROES.filter(h => { const s = heroSt(who, h.id); return s && !(s.own && s.q >= HERO_MAXQ) && h.r >= (minR || 0); }); if (!pool.length) return null;
@@ -8008,8 +8062,8 @@ function heroDoUnlock(who, id) { const h = heroById(id), s = heroSt(who, id); if
 function heroDoStep(who, id) { const h = heroById(id), s = heroSt(who, id); if (!h || !s || !s.own || s.q >= HERO_MAXQ) return false; const c = heroStepCost(h, s.q); if (s.sh < c) return false; s.sh -= c; s.q++; heroSave(who); return true; }
 function heroDoSkill(who, id, k) { const s = heroSt(who, id); if (!s || !s.own || !heroFree(s) || s.sk[k] >= 5) return false; s.sk[k]++; heroSave(who); return true; }
 function heroCanDo(who, id) { const h = heroById(id), s = heroSt(who, id); if (!h || !s) return false; return s.own ? heroFree(s) > 0 || (s.q < HERO_MAXQ && s.sh >= heroStepCost(h, s.q)) : s.sh >= HERO_UNLOCK[h.r]; }
-function heroTag(hx) { if (!hx) return ''; const h = heroById(hx.id); return h ? h.name + ' ' + heroStarTxt(hx.q) + (hx.fired ? ' · ' + hx.skill + ' gezündet' : '') : ''; }   // one line for the short reports
-var previewHero = null, nextAttackHero = null;
+function heroTag(hx) { if (!hx) return ''; const h = heroById(hx.id), h2 = hx.id2 && heroById(hx.id2); return h ? h.name + ' ' + heroStarTxt(hx.q) + (h2 ? ' & ' + h2.name + (hx.pair ? ' (Paar)' : '') : '') + (hx.fired ? ' · ' + hx.skill + ' gezündet' : '') : ''; }   // one line for the short reports
+var previewHero = null, nextAttackHero = null, previewHero2 = null, nextAttackHero2 = null;
 // ---- the Heldenhalle screen: a grid of tall rarity cards → one hero with figure, stars, skills and values ----
 let hhCur = null;
 const hhStars = q => '<span class="hh-qstars">' + [0, 1, 2, 3, 4].map(k => '<i style="--f:' + (k < Math.floor(q / 4) ? 100 : k === Math.floor(q / 4) ? q % 4 * 25 : 0) + '%"></i>').join('') + '</span>';
@@ -8028,7 +8082,13 @@ const HERO_LOOK = {   // f woman · age 0-2 · sk skin · ey eyes · hs hair · 
     fenn:     { sk: '#e3b48b', ey: '#4a8a5a', hs: 'messy', bd: 'stub', hat: 'bandana', arm: 'vest', wp: 'pick', fr: 'nugget', mk: 'freckles' },
     otto:     { age: 1, fat: 1, sk: '#ecb793', ey: '#5a4a2a', hs: 'fringe', bd: 'walrus', hat: 'cap', arm: 'merchant', fr: 'coin' },
     greta:    { f: 1, age: 2, sk: '#e7c5a9', ey: '#6a8a4a', hs: 'bun', hat: 'scarf', arm: 'shawl', fr: 'herbs', gr: '#d8d8cc' },
-    hagen:    { sk: '#c58c6c', ey: '#5a4632', hs: 'bald', bd: 'full', arm: 'mail', wp: 'axe', mk: 'patch', br: 1 }
+    hagen:    { sk: '#c58c6c', ey: '#5a4632', hs: 'bald', bd: 'full', arm: 'mail', wp: 'axe', mk: 'patch', br: 1 },
+    wolfram:  { age: 2, sk: '#dcb090', ey: '#5a6a7a', hs: 'short', bd: 'full', hat: 'helm', arm: 'plate', wp: 'sword', mk: 'scar', br: 1 },
+    thora:    { f: 1, sk: '#e6be98', ey: '#3a7aa8', hs: 'braids', hat: 'band', arm: 'leather', wp: 'spear2', br: 1 },
+    eskil:    { age: 1, sk: '#e0b896', ey: '#7a5aa8', hs: 'long', bd: 'goatee', hat: 'hood', arm: 'robe', wp: 'hammer', fr: 'gem', mk: 'rune' },
+    lene:     { f: 1, sk: '#d8a47c', ey: '#2f8a8a', hs: 'bun', hat: 'scarf', arm: 'vest', wp: 'walk', mk: 'freckles' },
+    bruno:    { fat: 1, sk: '#d49a74', ey: '#4a3a2a', hs: 'messy', bd: 'walrus', hat: 'pelt', arm: 'fur', wp: 'axe' },
+    pia:      { f: 1, sk: '#a8704a', ey: '#2a7a9a', hs: 'pony', hat: 'bandana', arm: 'vest', fr: 'pearls' }
 };
 const heroPicCache = {};
 function heroPic(id) { return heroPicCache[id] || (heroPicCache[id] = 'data:image/svg+xml,' + encodeURIComponent(heroSvg(id))); }
@@ -8151,7 +8211,15 @@ function hhGrid() {
         '<div class="hh-cards">' + list.map(h => { const s = H[h.id], need = s.own ? heroStepCost(h, s.q) : HERO_UNLOCK[h.r], rd = RARITY_DEFS[h.r];
             return '<button type="button" class="hh-card' + (s.own ? '' : ' is-locked') + '" data-hh="' + h.id + '" style="--rc:' + rd.color + ';--c:' + h.color + '">' +
                 '<span class="hh-art">' + heroImg(h.id) + '</span>' + (heroCanDo('player', h.id) ? '<span class="hh-dot"></span>' : '') + (s.own ? '' : '<span class="hh-lk">Gesperrt</span>') +
-                '<span class="hh-foot"><b>' + h.name + '</b><small>' + h.role + '</small>' + (s.own ? hhStars(s.q) : '<span class="hh-frag"><i style="width:' + Math.min(100, Math.round(s.sh / need * 100)) + '%"></i></span><small>' + s.sh + ' / ' + need + '</small>') + '</span></button>'; }).join('') + '</div>';
+                '<span class="hh-foot"><b>' + h.name + '</b><small>' + h.role + '</small>' + (s.own ? hhStars(s.q) : '<span class="hh-frag"><i style="width:' + Math.min(100, Math.round(s.sh / need * 100)) + '%"></i></span><small>' + s.sh + ' / ' + need + '</small>') + '</span></button>'; }).join('') + '</div>' + hhPairs();
+}
+function hhPairs() {                                  // Paket E: die passenden Paare – zusammen in einem Marsch +10 % auf alle Heldenwerte
+    const H = loadHeroes();
+    return '<div class="hh-pairs"><h3>Paare</h3><p class="hh-hint">Ein Marsch kann zwei Helden haben: den Haupthelden und einen Zweithelden. Der Zweitheld gibt seine Werte und passiven Fähigkeiten zu ' + Math.round(HERO_ZWEIT * 100) +
+        ' %, die Wut-Fähigkeit zündet nur beim Haupthelden. Ziehen zwei Helden eines Paars zusammen los: +' + HERO_PAIR_BONUS + ' % auf alle Heldenwerte. Jeder Held kann nur in einem Marsch sein.</p>' +
+        HERO_PAIRS.map(p => { const both = H[p.a].own && H[p.b].own, A = heroById(p.a), B = heroById(p.b);
+            return '<div class="hh-pair' + (both ? ' is-on' : '') + '"><span class="hh-pair-pics"><button type="button" data-hh="' + p.a + '" class="' + (H[p.a].own ? '' : 'is-locked') + '">' + heroImg(p.a) + '</button><button type="button" data-hh="' + p.b + '" class="' + (H[p.b].own ? '' : 'is-locked') + '">' + heroImg(p.b) + '</button></span>' +
+                '<span class="hh-pair-t"><b>' + p.name + '</b><small>' + A.name + ' & ' + B.name + (both ? ' · bereit' : ' · noch nicht beide freigeschaltet') + '</small><em>' + p.story + '</em></span></div>'; }).join('') + '</div>';
 }
 function hhHero(id) {
     const h = heroById(id), s = heroSt('player', id), rd = RARITY_DEFS[h.r], st = heroStats('player', id), full = Math.floor(s.q / 4), part = s.q % 4, busy = s.own && heroBusy('player', id);
@@ -8169,7 +8237,7 @@ function hhHero(id) {
         '<div class="hh-hero" style="--glow:' + h.color + '88;--rc:' + rd.color + '">' +
             '<div class="hh-stage"><div class="hh-id"><span class="hh-gem">' + rd.label + '</span><span class="hh-nm">' + h.name + '</span><span class="hh-ttl">' + h.title + ' · ' + h.role + '</span>' + hhStars(s.q) + '</div>' +
                 '<div class="hh-floor"></div>' + heroImg(id, 'hh-portrait' + (s.own ? '' : ' is-locked')) + '</div>' +
-            '<div class="hh-panel">' +
+            '<div class="hh-panel">' + (h.story ? '<div class="hh-blk"><h3>Geschichte</h3><p class="hh-story">' + h.story + '</p></div>' : '') + hhPartnerBlk(id) +
                 '<div class="hh-blk hh-top"><div><h3>Macht</h3><b class="hh-pow">' + (s.own ? fmtNum(heroPower('player', id)) : 'Gesperrt') + '</b></div><div class="hh-role">' + (busy ? '<em>unterwegs</em>' : s.own ? 'bereit' : '') + '</div></div>' +
                 '<div class="hh-blk"><h3>Sterne</h3>' + hhStars(s.q) + stars + '</div>' +
                 (s.own ? '<div class="hh-blk"><h3>Wut</h3><div class="hh-qinfo"><span>' + (s.sk[0] ? (s.rage >= 100 ? 'Voll – ' + h.sk[0][0] + ' zündet im nächsten Kampf' : '+' + HERO_RAGE + ' % pro Kampf, den ' + h.name + ' führt') : 'Erst mit ' + h.sk[0][0] + ' auf Stufe 1') + '</span><b>' + Math.round(s.rage || 0) + ' %</b></div><div class="hh-bar hh-rage"><i style="width:' + Math.round(s.rage || 0) + '%"></i></div></div>' : '') +
@@ -8180,6 +8248,11 @@ function hhHero(id) {
             '</div></div>' +
         '<div class="hh-actions">' + (maxed ? '<button class="hh-go" type="button" disabled>5 Sterne erreicht</button>'
             : '<button class="hh-go" type="button" data-hh-up' + (s.sh >= need ? '' : ' disabled') + '><span class="hh-i">' + (s.own ? icon('star') : '+') + '</span>' + (s.own ? 'Aufwerten · ¼ Stern' + (s.q % 2 ? ' + 1 Fähigkeitspunkt' : '') : 'Freischalten') + '<small>' + s.sh + ' / ' + need + ' Splitter</small></button>') + '</div>';
+}
+function hhPartnerBlk(id) {                           // sein Paar: Partner, Bonus, gemeinsame Geschichte
+    const pp = heroPartner(id); if (!pp) return ''; const o = heroById(pp.id), own = heroOwned('player', pp.id);
+    return '<div class="hh-blk"><h3>Paar · ' + pp.pair.name + '</h3><div class="hh-pair' + (own && heroOwned('player', id) ? ' is-on' : '') + '"><span class="hh-pair-pics"><button type="button" data-hh="' + pp.id + '" class="' + (own ? '' : 'is-locked') + '">' + heroImg(pp.id) + '</button></span>' +
+        '<span class="hh-pair-t"><b>mit ' + o.name + '</b><small>' + o.title + (own ? '' : ' · gesperrt') + ' · zusammen +' + HERO_PAIR_BONUS + ' %</small><em>' + pp.pair.story + '</em></span></div></div>';
 }
 function renderHeroHall() { const el = document.getElementById('heroHall'); if (el.hidden) return; const top = el.scrollTop; if (liveHtml(el, hhCur ? hhHero(hhCur) : hhGrid())) el.scrollTop = top; }
 function heroHallLive() {                            // (liveTick) neue Splitter, Wut, Stufe, „unterwegs“: nur bei einer Änderung neu zeichnen
@@ -8211,6 +8284,13 @@ function heroSegHtml(attr, cur) {                   // the hero choice for an at
     const hs = HEROES.filter(h => heroOwned('player', h.id)).sort((a, b) => b.r - a.r || heroSt('player', b.id).q - heroSt('player', a.id).q); if (!hs.length) return '';
     return '<button type="button" ' + attr + '=""' + (!cur ? ' class="on"' : '') + '>Kein Held</button>' + hs.map(h => '<button type="button" ' + attr + '="' + h.id + '"' + (cur === h.id ? ' class="on"' : '') + (heroBusy('player', h.id) && cur !== h.id ? ' disabled' : '') +
         ' style="--hc:' + RARITY_DEFS[h.r].color + '">' + heroImg(h.id) + h.name + '<small>' + icon('star') + heroStarNum(heroSt('player', h.id).q) + '</small></button>').join('');
+}
+function heroSeg2Html(attr, main, cur) {            // der Zweitheld (Paket E): erst mit Hauptheld; der passende Partner steht vorn und ist markiert
+    if (!main) return '';
+    const hs = HEROES.filter(h => h.id !== main && heroOwned('player', h.id)).sort((a, b) => !!heroPairOf(main, b.id) - !!heroPairOf(main, a.id) || b.r - a.r || heroSt('player', b.id).q - heroSt('player', a.id).q); if (!hs.length) return '';
+    return '<span class="hero-seg2-l">Zweitheld · ' + Math.round(HERO_ZWEIT * 100) + ' % der passiven Fähigkeiten</span><button type="button" ' + attr + '=""' + (!cur ? ' class="on"' : '') + '>Keiner</button>' + hs.map(h => { const p = heroPairOf(main, h.id);
+        return '<button type="button" ' + attr + '="' + h.id + '" class="' + (cur === h.id ? 'on' : '') + (p ? ' is-pair' : '') + '"' + (heroBusy('player', h.id) && cur !== h.id ? ' disabled' : '') + (p ? ' title="Paar „' + p.name + '“: +' + HERO_PAIR_BONUS + ' %"' : '') +
+            ' style="--hc:' + RARITY_DEFS[h.r].color + '">' + heroImg(h.id) + h.name + '<small>' + (p ? 'Paar +' + HERO_PAIR_BONUS + ' %' : icon('star') + heroStarNum(heroSt('player', h.id).q)) + '</small></button>'; }).join('');
 }
 function heroChipHtml(id, q) { const h = heroById(id); if (!h) return ''; const rd = RARITY_DEFS[h.r];   // profile + report: a hero with rarity and stars
     return '<span class="ghero" style="--hc:' + rd.color + '">' + heroImg(id) + '<span><b>' + h.name + ' <small>' + h.title + '</small></b><small>' + heroStarTxt(q) + ' · ' + rd.label + '</small></span></span>'; }
@@ -9089,17 +9169,17 @@ const fieldLoadCap = (f, troops) => troops * FIELD_KINDS[f.kind].load;
 const fieldCapOf = (f, o, gx) => fieldLoadCap(f, o.troops) * (1 + ((gx === undefined ? heroGatherFx(o) : gx) || HX0).carry / 100);   // Packesel, Lastträger: they carry more
 function fieldHurt(who, n, hx) { return who === 'player' ? hospitalTake(n, hx ? Math.min(100, hospitalPct() + hx.hosp) : undefined) : botHospitalTake(who, n, hx ? Math.min(100, botHospitalPct(who) + hx.hosp) : undefined); }
 function fieldTravelSec(from, f, who) { return travelDurationSeconds(from, f, who === 'player' ? undefined : who); }
-function fieldSend(who, homeId, fieldId, troops, hero) {                  // troops leave a base for a field (gathering, or attacking whoever sits there) - a hero may lead them
+function fieldSend(who, homeId, fieldId, troops, hero, hero2) {          // troops leave a base for a field (gathering, or attacking whoever sits there) - a hero (and a Zweitheld) may lead them
     const home = islandById[homeId], f = fieldById[fieldId]; if (!home || !f || troops <= 0) return false;
-    if (hero && (!heroOwned(who, hero) || heroBusy(who, hero))) hero = null; const mx = heroMarchFx(who, hero);
+    if (hero && (!heroOwned(who, hero) || heroBusy(who, hero))) hero = null; hero2 = heroZweitOk(who, hero, hero2); const mx = heroMarchFx(who, hero, false, hero2);
     islandTroops[homeId] = Math.max(0, (islandTroops[homeId] || 0) - troops);
-    const now = Date.now(); fieldMarches.push({ who, homeId, fieldId, troops, hero: hero || null, startedAt: now, resolveAt: now + fieldTravelSec(home, f, who) / (1 + (mx ? mx.spd : 0) / 100) * 1000, back: false, load: 0 });
+    const now = Date.now(); fieldMarches.push({ who, homeId, fieldId, troops, hero: hero || null, hero2, startedAt: now, resolveAt: now + fieldTravelSec(home, f, who) / (1 + (mx ? mx.spd : 0) / 100) * 1000, back: false, load: 0 });
     saveFields(); if (who === 'player') { sfx('send'); updateHud(); saveGame(); } requestRender(); return true;
 }
 function fieldGoHome(f, st, now) {                                          // the gatherers pack up and walk home with what they have
     const o = st.occ; if (!o) return;
     const home = islandById[o.homeId] || islandById[playerIslandId];
-    fieldMarches.push({ who: o.who, homeId: o.homeId, fieldId: f.id, troops: o.troops, hero: o.hero || null, startedAt: now, resolveAt: now + fieldTravelSec(home, f, o.who) * 1000, back: true, load: o.got });
+    fieldMarches.push({ who: o.who, homeId: o.homeId, fieldId: f.id, troops: o.troops, hero: o.hero || null, hero2: o.hero2 || null, startedAt: now, resolveAt: now + fieldTravelSec(home, f, o.who) * 1000, back: true, load: o.got });
     st.occ = null; if (st.left <= 0) st.regenAt = now + FIELD_REGEN_MS;
 }
 function fieldArrive(m, now) {
@@ -9126,19 +9206,19 @@ function fieldArrive(m, now) {
     const o = st.occ;
     if (o && o.who !== m.who && ownerShielded(o.who, Math.min(now, m.resolveAt || now))) {                             // the gatherers there stand under a Friedensschild: back home
         const home = islandById[m.homeId] || islandById[playerIslandId];
-        fieldMarches.push({ who: m.who, homeId: m.homeId, fieldId: f.id, troops: m.troops, hero: m.hero || null, startedAt: now, resolveAt: now + fieldTravelSec(home, f, m.who) * 1000, back: true, load: 0 });
+        fieldMarches.push({ who: m.who, homeId: m.homeId, fieldId: f.id, troops: m.troops, hero: m.hero || null, hero2: m.hero2 || null, startedAt: now, resolveAt: now + fieldTravelSec(home, f, m.who) * 1000, back: true, load: 0 });
         if (m.who === 'player') flashHint('Friedensschild bei ' + fieldWhoName(o.who) + ' – deine Truppen kehren von der ' + FIELD_KINDS[f.kind].name + ' zurück.', 4000);
         return;
     }
-    if (!o || st.left <= 0 && !o) { st.occ = { who: m.who, troops: m.troops, homeId: m.homeId, hero: m.hero || null, since: now, got: 0 }; if (m.who === 'player') flashHint('Deine Truppen sammeln jetzt an der ' + FIELD_KINDS[f.kind].name + '.', 3000); return; }
-    if (o.who === m.who) { o.troops += m.troops; if (!o.hero) o.hero = m.hero || null; return; }   // more of your own join the gatherers (a second hero just goes along)
+    if (!o || st.left <= 0 && !o) { st.occ = { who: m.who, troops: m.troops, homeId: m.homeId, hero: m.hero || null, hero2: m.hero2 || null, since: now, got: 0 }; if (m.who === 'player') flashHint('Deine Truppen sammeln jetzt an der ' + FIELD_KINDS[f.kind].name + '.', 3000); return; }
+    if (o.who === m.who) { o.troops += m.troops; if (!o.hero) { o.hero = m.hero || null; o.hero2 = m.hero2 || null; } return; }   // more of your own join the gatherers (other heroes just go along)
     if (m.who !== 'player' && botById[m.who] && botKeepsShield(botById[m.who], now)) { const home = islandById[m.homeId] || islandById[playerIslandId];   // under their own shield: no fight, back home
-        fieldMarches.push({ who: m.who, homeId: m.homeId, fieldId: f.id, troops: m.troops, hero: m.hero || null, startedAt: now, resolveAt: now + fieldTravelSec(home, f, m.who) * 1000, back: true, load: 0 }); return; }
+        fieldMarches.push({ who: m.who, homeId: m.homeId, fieldId: f.id, troops: m.troops, hero: m.hero || null, hero2: m.hero2 || null, startedAt: now, resolveAt: now + fieldTravelSec(home, f, m.who) * 1000, back: true, load: 0 }); return; }
     if (m.who === 'player') dropShield('Dein Friedensschild ist gefallen, weil du angreifst.'); else botDropShield(m.who);   // a fight for the field is an attack
-    const aHx = heroFieldFx(m.who, m.hero, { res: 1 }), dHx = heroFieldFx(o.who, o.hero, { res: 1, defending: 1, gather: 1 });   // both leaders: Goldrausch, Lagerwache …
+    const aHx = heroFieldFx(m.who, m.hero, { res: 1 }, m.hero2), dHx = heroFieldFx(o.who, o.hero, { res: 1, defending: 1, gather: 1 }, o.hero2);   // both leaders: Goldrausch, Lagerwache …
     const fb = fieldBattle(m.who, m.troops, o.who, o.troops, aHx, dHx), won = fb.won, involved = m.who === 'player' || o.who === 'player';   // a fight for the field: army against army
     const loserName = fieldWhoName(won ? o.who : m.who), winnerName = fieldWhoName(won ? m.who : o.who), oWho = o.who;
-    if (won) st.occ = { who: m.who, troops: m.troops - fb.aLoss, homeId: m.homeId, hero: m.hero || null, since: now, got: 0 }; else o.troops -= fb.dLoss;
+    if (won) st.occ = { who: m.who, troops: m.troops - fb.aLoss, homeId: m.homeId, hero: m.hero || null, hero2: m.hero2 || null, since: now, got: 0 }; else o.troops -= fb.dLoss;
     for (const [w, n, hx] of [[m.who, fb.aLoss, aHx], [oWho, fb.dLoss, dHx]]) fieldHurt(w, n, hx);   // both sides' Lazarett (+ their hero)
     const fg = fieldGold(m.who, oWho, fb, aHx, dHx);
     if (involved) {
@@ -9199,23 +9279,24 @@ function drawResFields(now, wallNow) {
     }
 }
 // the field sheet: what it is, who's there, and send / call back
-let fieldSheetId = null, fieldShare = .5, fieldHero = null;
+let fieldSheetId = null, fieldShare = .5, fieldHero = null, fieldHero2 = null;
 function fieldSource(f) { let best = null, bd = Infinity; for (const id of ownedIslands) { const isl = islandById[id]; if ((islandTroops[id] || 0) < 1 || !canReach(isl.landmassId, f.landmassId)) continue;
     const d = Math.hypot(isl.x - f.x, isl.y - f.y); if (d < bd) { bd = d; best = id; } } return best; }
 function openFieldSheet(f) {
     fieldSheetId = f.id; const st = fieldInfo(f), K = FIELD_KINDS[f.kind], o = st.occ, src = fieldSource(f), mine = o && o.who === 'player';
     const avail = src !== null ? islandTroops[src] || 0 : 0, send = Math.floor(avail * fieldShare);
-    if (fieldHero && (!heroOwned('player', fieldHero) || heroBusy('player', fieldHero))) fieldHero = null;
+    if (fieldHero && (!heroOwned('player', fieldHero) || heroBusy('player', fieldHero))) fieldHero = null; fieldHero2 = heroZweitOk('player', fieldHero, fieldHero2);
     liveHtml(document.getElementById('fieldSheet'),                   // (live: liveTick – neu geschrieben nur bei einer Änderung, die Uhren zählen von selbst)
         '<div class="marker-head"><b>' + icon(K.icon) + ' ' + K.name + '</b><button class="btn-x" type="button" data-fclose aria-label="Schließen">' + icon('close') + '</button></div>' +
         '<div class="field-lines"><span>Vorrat</span><b>' + (st.left <= 0 ? 'erschöpft – wächst in ' + uhrHtml(st.regenAt, 'clock') + ' nach' : fmtNum(Math.floor(st.left)) + ' ' + K.what) + '</b>' +
-        '<span>Besetzt</span><b>' + (o ? fieldWhoName(o.who) + (o.hero && heroById(o.hero) ? ' mit ' + heroById(o.hero).name : '') + ' · ' + fmtCompact(o.troops) + ' Truppen · ' + fmtNum(Math.floor(o.got)) + ' gesammelt' : 'frei') + '</b>' +
+        '<span>Besetzt</span><b>' + (o ? fieldWhoName(o.who) + (o.hero && heroById(o.hero) ? ' mit ' + heroById(o.hero).name + (o.hero2 && heroById(o.hero2) ? ' & ' + heroById(o.hero2).name : '') : '') + ' · ' + fmtCompact(o.troops) + ' Truppen · ' + fmtNum(Math.floor(o.got)) + ' gesammelt' : 'frei') + '</b>' +
         '<span>Tragen</span><b>' + (K.load >= 1 ? fmtNum(K.load) + ' ' + K.what + ' pro Truppe' : '1 Gem pro ' + Math.round(1 / K.load) + ' Truppen') + '</b></div>' +
         (mine ? '<button class="btn btn--secondary btn--sm" type="button" data-frecall>' + icon('recall') + '<span>Mit Beute heimkehren</span></button>' :
          src === null ? '<div class="notice">' + icon('lock') + '<span>Keine deiner Basen mit Truppen kommt hierher.</span></div>' :
          o && ownerShielded(o.who) ? '<div class="notice notice--gold">' + icon('shield') + '<span>' + fieldWhoName(o.who) + ' steht unter einem Friedensschild (noch ' + uhrHtml(ownerShieldUntil(o.who)) + ') – die Sammler dort kann niemand angreifen.</span></div>' :
          '<div class="seg" data-fshare>' + ['.25', '.5', '.75', '1'].map(v => '<button type="button" data-f="' + v + '"' + (+v === fieldShare ? ' class="on"' : '') + '>' + (v === '1' ? 'Alle' : Math.round(v * 100) + ' %') + '</button>').join('') + '</div>' +
          (heroSegHtml('data-fhero', fieldHero) ? '<div class="seg hero-seg">' + heroSegHtml('data-fhero', fieldHero) + '</div>' : '') +
+         (heroSeg2Html('data-fhero2', fieldHero, fieldHero2) ? '<div class="seg hero-seg hero-seg2">' + heroSeg2Html('data-fhero2', fieldHero, fieldHero2) + '</div>' : '') +
          '<button class="btn btn--primary btn--sm" type="button" data-fsend>' + icon(o ? 'attack' : 'send') + '<span>' + (o ? 'Angreifen und übernehmen' : 'Sammeln') + ' · ' + fmtCompact(send) + ' von ' + islandTitle(islandById[src]) + '</span></button>'));
     document.getElementById('fieldSheet').hidden = false;
 }
@@ -9225,9 +9306,10 @@ document.getElementById('fieldSheet').addEventListener('click', e => {
     if (e.target.closest('[data-fclose]')) return closeFieldSheet();
     const sh = e.target.closest('[data-f]'); if (sh && e.target.closest('[data-fshare]')) { fieldShare = +sh.dataset.f; return openFieldSheet(f); }
     const fh = e.target.closest('[data-fhero]:not([disabled])'); if (fh) { fieldHero = fh.dataset.fhero || null; return openFieldSheet(f); }
+    const fh2 = e.target.closest('[data-fhero2]:not([disabled])'); if (fh2) { fieldHero2 = fh2.dataset.fhero2 || null; return openFieldSheet(f); }
     if (e.target.closest('[data-frecall]')) { const st = fieldInfo(f); if (st.occ && st.occ.who === 'player') { if (alsBefehl('feldHeim', { feld: f.id })) { flashHint('Deine Sammler kehren um.', 2500); return; } fieldGoHome(f, st, Date.now()); saveFields(); flashHint('Deine Sammler kehren mit der Beute heim.', 2500); } return closeFieldSheet(); }
     if (e.target.closest('[data-fsend]')) { const src = fieldSource(f); if (src === null) return; const n = Math.floor((islandTroops[src] || 0) * fieldShare);
-        if (n < 1) return; if (alsBefehl('feld', { home: src, feld: f.id, n, held: fieldHero })) islandTroops[src] = Math.max(0, (islandTroops[src] || 0) - n); else fieldSend('player', src, f.id, n, fieldHero); fieldHero = null; flashHint('Truppen unterwegs zur ' + FIELD_KINDS[f.kind].name + '.', 2500); closeFieldSheet(); }
+        if (n < 1) return; if (alsBefehl('feld', { home: src, feld: f.id, n, held: fieldHero, held2: fieldHero2 })) islandTroops[src] = Math.max(0, (islandTroops[src] || 0) - n); else fieldSend('player', src, f.id, n, fieldHero, fieldHero2); fieldHero = null; fieldHero2 = null; flashHint('Truppen unterwegs zur ' + FIELD_KINDS[f.kind].name + '.', 2500); closeFieldSheet(); }
 });
 // ===== BARBAREN-LAGER + TAGESBOSS: camps (Stufe 1-25) out on the land and one boss a day with a big pool of life for everyone.
 // A camp of level N only after N-1 (level 1 always), 20 camp wins a day (reset at midnight) - the same for you and every other player.
@@ -9289,17 +9371,17 @@ function dbossOnMap(now) { const b = dayBoss; return b && b.d === todayKey() && 
 function barbMine() { try { return barbMarches.filter(m => m.who === 'player'); } catch (e) { return []; } }   // your columns (for the Kampf list - may run before this part loads)
 const dbossKind = b => DBOSS_KINDS.find(K => K.k === b.k) || DBOSS_KINDS[0];
 const dbossRanks = b => Object.entries(b.dmg || {}).sort((x, y) => y[1] - x[1]);
-function barbSend(who, homeId, k, tid, troops, hero) {  // troops leave a base for a camp (k 'c') or the boss (k 'b') - a hero may lead them
+function barbSend(who, homeId, k, tid, troops, hero, hero2) {  // troops leave a base for a camp (k 'c') or the boss (k 'b') - a hero (and a Zweitheld) may lead them
     const home = islandById[homeId], t = k === 'b' ? dbossEnsure() : barbCampById(tid); troops = Math.floor(troops); if (!home || !t || troops < 1) return false;
-    if (hero && (!heroOwned(who, hero) || heroBusy(who, hero))) hero = null; const mx = heroMarchFx(who, hero), now = Date.now();
+    if (hero && (!heroOwned(who, hero) || heroBusy(who, hero))) hero = null; hero2 = heroZweitOk(who, hero, hero2); const mx = heroMarchFx(who, hero, false, hero2), now = Date.now();
     islandTroops[homeId] = Math.max(0, (islandTroops[homeId] || 0) - troops);
-    barbMarches.push({ who, homeId, k, tid: k === 'b' ? null : tid, d: k === 'b' ? t.d : null, L: t.L, name: t.name, x: t.x, y: t.y, lm: t.lm, troops, hero: hero || null, startedAt: now,
+    barbMarches.push({ who, homeId, k, tid: k === 'b' ? null : tid, d: k === 'b' ? t.d : null, L: t.L, name: t.name, x: t.x, y: t.y, lm: t.lm, troops, hero: hero || null, hero2, startedAt: now,
         resolveAt: now + travelDurationSeconds(home, barbPt(t), who === 'player' ? undefined : who) / (1 + (mx ? mx.spd : 0) / 100) * 1000, back: false });
     if (k === 'b') barbRec(who).h++;
     saveBarb(); if (who === 'player') { sfx('send'); updateHud(); saveGame(); } requestRender(); return true;
 }
 function barbHome(m, n, now) { if (n < 1) return; const home = islandById[m.homeId] || islandById[playerIslandId]; if (!home) return;   // the survivors walk home
-    barbMarches.push({ who: m.who, homeId: m.homeId, k: m.k, tid: m.tid, d: m.d, L: m.L, name: m.name, x: m.x, y: m.y, lm: m.lm, troops: Math.floor(n), hero: m.hero, startedAt: now, resolveAt: now + travelDurationSeconds(home, barbPt(m), m.who === 'player' ? undefined : m.who) * 1000, back: true }); }
+    barbMarches.push({ who: m.who, homeId: m.homeId, k: m.k, tid: m.tid, d: m.d, L: m.L, name: m.name, x: m.x, y: m.y, lm: m.lm, troops: Math.floor(n), hero: m.hero, hero2: m.hero2 || null, startedAt: now, resolveAt: now + travelDurationSeconds(home, barbPt(m), m.who === 'player' ? undefined : m.who) * 1000, back: true }); }
 function barbCrate(who, minR) {                     // a gear crate: yours into the inventory, theirs into their spares
     const r = Math.max(minR, pickRandomRarity());
     if (who === 'player') return grantFreeCrate(r);
@@ -9320,7 +9402,7 @@ function barbArrive(m, now) {
     if (m.k === 'b') return dbossHit(m, now);
     const c = barbCampById(m.tid), rec = barbRec(who);
     if (!c || rec.n >= BARB_DAY) { barbHome(m, m.troops, now); if (isP) flashHint(c ? 'Für heute genug Lager: ' + BARB_DAY + ' / ' + BARB_DAY + ' heute.' : 'Das Lager ist schon geräumt – deine Truppen kehren um.', 3500); return; }
-    const hx = heroFieldFx(who, m.hero, {}), before = c.t, fb = barbFight(who, m.troops, hx, c.t), wounded = fieldHurt(who, fb.loss, hx), best0 = rec.b;   // the leader: a full rage fires now, every fight fills it
+    const hx = heroFieldFx(who, m.hero, {}, m.hero2), before = c.t, fb = barbFight(who, m.troops, hx, c.t), wounded = fieldHurt(who, fb.loss, hx), best0 = rec.b;   // the leader: a full rage fires now, every fight fills it
     let gold = 0, item = null, sh = null, shN = 1 + Math.floor(c.L / 5), kGold = 0;
     if (fb.won) {
         barbState.camps = barbState.camps.filter(x => x !== c); rec.n++; rec.b = Math.max(rec.b, c.L); goalBump(who, 'barb');
@@ -9340,7 +9422,7 @@ function barbArrive(m, now) {
 function dbossHit(m, now) {                         // every attack takes life off the boss (at most 5 %); a quarter of those who struck fall (Lazarett as usual), the rest come home
     const b = dayBoss, who = m.who, isP = who === 'player';
     if (!b || b.d !== m.d || b.d !== todayKey() || b.hp <= 0) { barbHome(m, m.troops, now); if (isP) flashHint('Der Tagesboss ist schon gefallen – deine Truppen kehren um.', 3500); return; }
-    const hx = heroFieldFx(who, m.hero, {}), h = hx || HX0, fa = (1 + (fieldAtkPct(who) + h.atk) / 100) * titleMult(who, 'attack');
+    const hx = heroFieldFx(who, m.hero, {}, m.hero2), h = hx || HX0, fa = (1 + (fieldAtkPct(who) + h.atk) / 100) * titleMult(who, 'attack');
     const dmg = Math.max(1, Math.min(b.hp, Math.round((m.troops + heroGefOf(h, m.troops)) * fa), Math.round(b.max * DBOSS_CAP)));
     const used = Math.min(m.troops, dmg / fa), loss = Math.min(m.troops, Math.round(used * .25 * (1 - Math.min(90, fieldShield(who) + h.loss) / 100))), wounded = fieldHurt(who, loss, hx);   // a quarter of those who struck
     const hp0 = b.hp; b.hp -= dmg; b.dmg[who] = (b.dmg[who] || 0) + dmg;
@@ -9477,7 +9559,7 @@ function drawBarb(now, wallNow) {
     liveAnimation = true;
 }
 // the sheet: a camp, the boss, or both at a glance (map button)
-let barbView = null, barbShare = 'fit', barbHero = null;
+let barbView = null, barbShare = 'fit', barbHero = null, barbHero2 = null;
 const barbSheetEl = document.getElementById('barbSheet');
 function barbSource(pt, need, any) {                // your base for this march: the nearest one that has enough, else the one with the most
     let best = null, bs = -Infinity;
@@ -9490,9 +9572,10 @@ const barbShareNow = () => barbShares().some(x => x[0] === barbShare) ? barbShar
 function barbShareOf(avail, need) { const sh = barbShareNow(); return Math.max(0, Math.min(avail, sh === 'fit' ? Math.ceil(need) : Math.floor(avail * +sh))); }
 function barbAttackHtml(avail, need, src, lbl) {    // share, hero and the button
     const n = barbShareOf(avail, need);
-    if (barbHero && (!heroOwned('player', barbHero) || heroBusy('player', barbHero))) barbHero = null;
+    if (barbHero && (!heroOwned('player', barbHero) || heroBusy('player', barbHero))) barbHero = null; barbHero2 = heroZweitOk('player', barbHero, barbHero2);
     return '<div class="seg">' + barbShares().map(([v, t]) => '<button type="button" data-bs="' + v + '"' + (v === barbShareNow() ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>' +
         (heroSegHtml('data-bhero', barbHero) ? '<div class="seg hero-seg">' + heroSegHtml('data-bhero', barbHero) + '</div>' : '') +
+        (heroSeg2Html('data-bhero2', barbHero, barbHero2) ? '<div class="seg hero-seg hero-seg2">' + heroSeg2Html('data-bhero2', barbHero, barbHero2) + '</div>' : '') +
         '<button class="btn btn--primary btn--sm" type="button" data-bgo' + (n < 1 ? ' disabled' : '') + '>' + icon('attack') + '<span>' + lbl + ' · ' + fmtCompact(n) + ' von ' + islandTitle(islandById[src]) + '</span></button>';
 }
 function barbSheetHtml() {
@@ -9545,16 +9628,17 @@ barbSheetEl.addEventListener('click', e => {
     if (e.target.closest('[data-bclose]')) return closeBarbSheet();
     const sh = e.target.closest('[data-bs]'); if (sh) { barbShare = sh.dataset.bs; return barbSheetRefresh(); }
     const hh = e.target.closest('[data-bhero]:not([disabled])'); if (hh) { barbHero = hh.dataset.bhero || null; return barbSheetRefresh(); }
+    const hh2 = e.target.closest('[data-bhero2]:not([disabled])'); if (hh2) { barbHero2 = hh2.dataset.bhero2 || null; return barbSheetRefresh(); }
     const go = e.target.closest('[data-bgoto]'); if (go) { const t = go.dataset.bgoto === 'boss' ? dbossOnMap() : barbNearest(); if (!t) { if (go.dataset.bgoto !== 'boss') flashHint('Kein Lager in erforschtem Gebiet – schick zuerst Späher in den Nebel.', 3500); return barbSheetRefresh(); }
         if (!isCellOpen(t.x, t.y)) { flashHint('Der Tagesboss steht im Nebel – erforsche zuerst das Gebiet.', 3500); return; }
         flyTo(t.x, t.y, { zoom: Math.max(mapState.zoom, .02), screenY: viewH * .2 }); return openBarbSheet(go.dataset.bgoto === 'boss' ? { kind: 'boss' } : { kind: 'camp', id: t.id }); }
     if (!e.target.closest('[data-bgo]')) return;
     if (barbView.kind === 'camp') { const c = barbCampById(barbView.id); if (!c || !barbOpenFor('player', c.L) || barbLeft('player') <= 0) return barbSheetRefresh();
         const need = c.t * 1.15 / barbFa('player'), src = barbSource(c, need); if (src === null) return; const n = barbShareOf(islandTroops[src] || 0, need); if (n < 1) return;
-        if (alsBefehl('lager', { home: src, k: 'c', tid: c.id, n, held: barbHero })) islandTroops[src] = Math.max(0, (islandTroops[src] || 0) - n); else barbSend('player', src, 'c', c.id, n, barbHero); flashHint('Truppen unterwegs zum Barbaren-Lager (Stufe ' + c.L + ').', 2500); }
+        if (alsBefehl('lager', { home: src, k: 'c', tid: c.id, n, held: barbHero, held2: barbHero2 })) islandTroops[src] = Math.max(0, (islandTroops[src] || 0) - n); else barbSend('player', src, 'c', c.id, n, barbHero, barbHero2); flashHint('Truppen unterwegs zum Barbaren-Lager (Stufe ' + c.L + ').', 2500); }
     else { const b = dbossEnsure(); if (b.hp <= 0 || barbRec('player').h >= DBOSS_HITS) return barbSheetRefresh(); const src = barbSource(b, 1, true); if (src === null) return;
-        const n = barbShareOf(islandTroops[src] || 0, (islandTroops[src] || 0) * .5); if (n < 1) return; if (alsBefehl('lager', { home: src, k: 'b', tid: null, n, held: barbHero })) islandTroops[src] = Math.max(0, (islandTroops[src] || 0) - n); else barbSend('player', src, 'b', null, n, barbHero); flashHint('Truppen unterwegs zu ' + b.name + '.', 2500); }
-    barbHero = null; closeBarbSheet();
+        const n = barbShareOf(islandTroops[src] || 0, (islandTroops[src] || 0) * .5); if (n < 1) return; if (alsBefehl('lager', { home: src, k: 'b', tid: null, n, held: barbHero, held2: barbHero2 })) islandTroops[src] = Math.max(0, (islandTroops[src] || 0) - n); else barbSend('player', src, 'b', null, n, barbHero, barbHero2); flashHint('Truppen unterwegs zu ' + b.name + '.', 2500); }
+    barbHero = null; barbHero2 = null; closeBarbSheet();
 });
 document.getElementById('eventBtn').addEventListener('click', () => { closeIslandPopup(); if (fieldSheetId) closeFieldSheet(); barbView && barbView.kind === 'list' ? closeBarbSheet() : openBarbSheet({ kind: 'list' }); });
 // ===== ARMEEN AUF DER KARTE: troops that stand out in the open instead of in a base. Gather them from several
@@ -9604,7 +9688,7 @@ function armyCreate(pt, sources, share, fuer) {
     armies.push(a); let sent = 0;
     for (const id of sources) { const n = Math.floor((islandTroops[id] || 0) * share); if (armySendFrom(a, id, n)) sent += n; }
     if (!sent) { armies = armies.filter(x => x !== a); return null; }
-    sfx('send'); updateHud(); saveGame(); saveArmies(); requestRender();
+    if (!fuer) sfx('send'); updateHud(); saveGame(); saveArmies(); requestRender();   // (kein Ton beim Weltrechner: dort gibt es kein AudioContext – der Befehl brach sonst vor dem Speichern ab)
     flashHint('Armee wird aufgestellt: ' + fmtCompact(sent) + ' Truppen aus ' + sources.length + (sources.length === 1 ? ' Basis' : ' Basen') + ' sind unterwegs.', 3500);
     return a;
 }
@@ -9623,7 +9707,7 @@ function armyMove(a, t) {                                                    // 
     if (t.kind === 'base' && baseShieldedFor(t.id, who)) return 'shield';
     if (t.kind === 'army') { const b = armyById(t.id); if (b && armyWho(b) !== who && ownerShielded(armyWho(b))) return 'shield'; }
     if (!routeFor(a.lm, t.lm, who)) return 'route';
-    const mx = heroMarchFx(who, a.hero, true);                                  // its hero: Tempo, Pirsch, Maut
+    const mx = heroMarchFx(who, a.hero, true, a.hero2);                         // its heroes: Tempo, Pirsch, Maut
     if (a.lm !== t.lm) { const hop = lastHop(a.lm, t.lm, who); if (!payToll(hop[0], hop[1], a.troops, who, t.kind === 'base' ? t.id : undefined, mx ? mx.toll : 0)) return 'toll'; }
     const from = { x: a.x, y: a.y, landmassId: a.lm }, to = { x: t.x, y: t.y, landmassId: t.lm };
     a.mv = { path: marchPath(from, to), startedAt: now, resolveAt: now + Math.max(3, travelDurationSeconds(from, to, who === 'player' ? undefined : who) / (1 + (mx ? mx.spd : 0) / 100)) * 1000, to: t };
@@ -9654,7 +9738,7 @@ function fieldBattle(aWho, aTroops, dWho, dTroops, aHx, dHx) {   // every fight 
     return { won, SA: Math.round(SA), SD: Math.round(SD), aLoss: won ? winLoss : aTroops, dLoss: won ? dTroops : winLoss };
 }
 function armyClash(att, def) {                                              // army against army out in the open
-    const aHx = heroFieldFx(armyWho(att), att.hero, {}), dHx = heroFieldFx(armyWho(def), def.hero, { defending: 1 });   // both leaders (a full rage fires now)
+    const aHx = heroFieldFx(armyWho(att), att.hero, {}, att.hero2), dHx = heroFieldFx(armyWho(def), def.hero, { defending: 1 }, def.hero2);   // both leaders (a full rage fires now)
     const A = att.troops, D = def.troops, fb = fieldBattle(armyWho(att), A, armyWho(def), D, aHx, dHx), won = fb.won, winner = won ? att : def;
     att.troops -= fb.aLoss; def.troops -= fb.dLoss; armies = armies.filter(x => !((x === att || x === def) && x.troops < 1));
     const wA = fieldHurt(armyWho(att), fb.aLoss, aHx), wD = fieldHurt(armyWho(def), fb.dLoss, dHx), wLoser = won ? wD : wA, wWinner = won ? wA : wD;
@@ -9680,12 +9764,12 @@ function armyArrive(a, now) {
         else if (ownerShielded(armyWho(b), now)) { if (me) flashHint('Die Armee von ' + armyName(b) + ' steht unter einem Friedensschild – kein Kampf.', 3500); }
         else { const p = armyPos(b, now); if (Math.hypot(p.x - a.x, p.y - a.y) < ISLAND_RADIUS * 2) { if (me) dropShield('Dein Friedensschild ist gefallen, weil du angreifst.'); else botDropShield(who); armyClash(a, b); } else if (me) flashHint('Die Armee von ' + armyName(b) + ' ist weitergezogen.', 3000); }
         return; }
-    if (t.kind === 'field') { gone(); fieldArrive({ who, homeId: armyHome(a), fieldId: t.id, troops: a.troops, hero: a.hero || null, back: false }, now); saveFields(); return; }
+    if (t.kind === 'field') { gone(); fieldArrive({ who, homeId: armyHome(a), fieldId: t.id, troops: a.troops, hero: a.hero || null, hero2: a.hero2 || null, back: false }, now); saveFields(); return; }
     if (t.kind === 'base') {                                                  // storming a base: the fight runs exactly like a normal attack
         const src = armyHome(a); if (src === null || src === undefined) return;
         gone();
         if (me) { dropShield('Dein Friedensschild ist gefallen, weil du angreifst.'); questProgress('attack', 1); } else botDropShield(who);
-        const tg = islandById[t.id], hx = a.hero && heroOwned(who, a.hero) ? heroLaunch(who, a.hero, islandById[src], tg, a.troops) : null;   // the army's hero leads the storm
+        const tg = islandById[t.id], hx = a.hero && heroOwned(who, a.hero) ? heroLaunch(who, a.hero, islandById[src], tg, a.troops, a.hero2) : null;   // the army's heroes lead the storm
         pendingAttacks.push({ sourceId: src, targetId: t.id, rawTroops: a.troops, startedAt: now - 1000, resolveAt: now, attackerBotId: me ? null : who, fromArmy: true, ...attackFields(who, islandById[src], tg, a.troops, hx) });
         if (me) { saveGame(); saveProgression(); }
         renderActiveMarches();
@@ -9752,8 +9836,16 @@ function drawArmyCamps(now) {                                                 //
 // the army sheet: set one up (pick the bases), or give an existing one its orders
 function openArmySheet(s) { armySheet = s; if (s.mode === 'new' || s.mode === 'more') { const src = armySources(s.mode === 'new' ? s : armyPosXY(armyById(s.id))); armySel = new Set(src.slice(0, 1)); } renderArmySheet(); requestRender(); }
 function closeArmySheet() { document.getElementById('armySheet').hidden = true; armySheet = null; requestRender(); }
-function armyHeroSeg(a) {                        // which hero marches with this army (one army or attack per hero)
-    const seg = heroSegHtml('data-ahero', a.hero); return seg ? '<div class="seg hero-seg army-hero">' + seg + '</div>' : '';
+const armyHeldMerk = {};                         // Zuschauer: die gewählten Helden einer Armee, bis der Weltrechner sie bestätigt (sonst springt die Anzeige kurz zurück)
+function armyHeroes(a) { const m = armyHeldMerk[a.id]; return m && m.bis > Date.now() && ((a.hero || null) !== m.h1 || (a.hero2 || null) !== m.h2) ? m : { h1: a.hero || null, h2: a.hero2 || null }; }
+function armyHeroSeg(a) {                        // which heroes march with this army (one army or attack per hero) – Haupt- und Zweitheld
+    const ah = armyHeroes(a), seg = heroSegHtml('data-ahero', ah.h1), seg2 = heroSeg2Html('data-ahero2', ah.h1, ah.h2);
+    return seg ? '<div class="seg hero-seg army-hero">' + seg + '</div>' + (seg2 ? '<div class="seg hero-seg hero-seg2 army-hero">' + seg2 + '</div>' : '') : '';
+}
+function armySetHeroes(a, h1, h2) {             // → true, wenn gesetzt: nur eigene Helden, die frei sind oder schon in dieser Armee stehen (Spieler und Weltrechner)
+    const who = armyWho(a), frei = id => !id || (heroOwned(who, id) && (heroIn(a.hero, a.hero2, id) || !heroBusy(who, id)));
+    if (a.mv || !frei(h1) || !frei(h2)) return false;
+    a.hero = h1 || null; a.hero2 = h1 && h2 && h2 !== h1 ? h2 : null; return true;
 }
 function renderArmySheet() {
     const s = armySheet, el = document.getElementById('armySheet'); if (!s) return;
@@ -9805,7 +9897,12 @@ document.getElementById('armySheet').addEventListener('click', e => {
     if (!a) return;
     if (e.target.closest('[data-afoe]')) { const best = myArmies().filter(x => x.troops >= 1).sort((u, v) => v.troops - u.troops)[0]; if (best && armyOrder(best, { kind: 'army', id: a.id, ...armyPosXY(a) })) closeArmySheet(); return; }
     if (armyWho(a) !== 'player') return;
-    const hb = e.target.closest('[data-ahero]:not([disabled])'); if (hb) { if (a.mv) { flashHint('Die Armee ist unterwegs – den Helden wechselst du, wenn sie lagert.', 2500); return; } a.hero = hb.dataset.ahero || null; saveArmies(); flashHint(a.hero ? heroById(a.hero).name + ' führt jetzt diese Armee.' : 'Die Armee zieht ohne Helden.', 2200); return renderArmySheet(); }
+    const hb = e.target.closest('[data-ahero]:not([disabled])'), hb2 = !hb && e.target.closest('[data-ahero2]:not([disabled])');
+    if (hb || hb2) { if (a.mv) { flashHint('Die Armee ist unterwegs – den Helden wechselst du, wenn sie lagert.', 2500); return; }
+        const ah = armyHeroes(a), h1 = hb ? hb.dataset.ahero || null : ah.h1, h2 = hb ? (hb.dataset.ahero && hb.dataset.ahero !== ah.h2 ? ah.h2 : null) : hb2.dataset.ahero2 || null;
+        if (!armySetHeroes(a, h1, h2)) return;
+        if (!rechnet()) { WELT.befehl('armee', { op: 'held', id: a.id, held: a.hero, held2: a.hero2 }); armyHeldMerk[a.id] = { h1: a.hero, h2: a.hero2, bis: Date.now() + 15000 }; } saveArmies();   // Zuschauer: der Weltrechner setzt sie auch (und prüft)
+        flashHint(hb2 ? (a.hero2 ? heroById(a.hero2).name + ' zieht als Zweitheld mit' + (heroPairOf(a.hero, a.hero2) ? ' – Paar „' + heroPairOf(a.hero, a.hero2).name + '“, +' + HERO_PAIR_BONUS + ' %.' : '.') : 'Kein Zweitheld.') : a.hero ? heroById(a.hero).name + ' führt jetzt diese Armee.' : 'Die Armee zieht ohne Helden.', 2200); return renderArmySheet(); }
     if (e.target.closest('[data-amore]')) return openArmySheet({ mode: 'more', id: a.id });
     if (e.target.closest('[data-ahalt]')) { armyHalt(a, Date.now()); saveArmies(); flashHint('Die Armee hält an und lagert hier.', 2500); return renderArmySheet(); }
     if (e.target.closest('[data-ahome]')) { const h = armyHome(a); if (h === null || h === undefined) return; const b = islandById[h];
@@ -10020,7 +10117,7 @@ const RECALL_GEM_COST = 1;
 let multiAttackMode = false;
 let multiAttackSourceId = null;
 let multiAttackTargets = [], multiAttackShare = 1;       // share of the base's troops that goes, split over the targets
-let multiAttackHero = null;                               // a hero leads the first wave
+let multiAttackHero = null, multiAttackHero2 = null;                               // a hero leads the first wave
 
 function updateMultiAttackBar() {
     const n = multiAttackTargets.length, go = Math.floor((islandTroops[multiAttackSourceId] || 0) * multiAttackShare);
@@ -10029,13 +10126,15 @@ function updateMultiAttackBar() {
     const hb = document.getElementById('multiAttackHero');
     if (multiAttackHero && (!heroOwned('player', multiAttackHero) || heroBusy('player', multiAttackHero))) multiAttackHero = null;
     const seg = heroSegHtml('data-mhero', multiAttackHero); hb.hidden = !seg; liveHtml(hb, seg);
+    const hb2 = document.getElementById('multiAttackHero2'); multiAttackHero2 = heroZweitOk('player', multiAttackHero, multiAttackHero2);   // der Zweitheld
+    if (hb2) { const s2 = heroSeg2Html('data-mhero2', multiAttackHero, multiAttackHero2); hb2.hidden = !s2; liveHtml(hb2, s2); }
     multiAttackConfirmBtn.disabled = multiAttackTargets.length === 0;
 }
 
 function startMultiAttack(sourceId) {
     multiAttackMode = true;
     multiAttackSourceId = sourceId;
-    multiAttackTargets = []; multiAttackShare = 1; multiAttackHero = null;
+    multiAttackTargets = []; multiAttackShare = 1; multiAttackHero = null; multiAttackHero2 = null;
     multiAttackBar.style.display = 'flex';
     document.body.classList.add('is-multi');
     updateMultiAttackBar();
@@ -10053,6 +10152,7 @@ function cancelMultiAttack() {
 
 multiAttackCancelBtn.addEventListener('click', cancelMultiAttack);
 document.getElementById('multiAttackHero').addEventListener('click', e => { const bt = e.target.closest('button[data-mhero]:not([disabled])'); if (!bt) return; multiAttackHero = bt.dataset.mhero || null; updateMultiAttackBar(); });
+document.getElementById('multiAttackHero2').addEventListener('click', e => { const bt = e.target.closest('button[data-mhero2]:not([disabled])'); if (!bt) return; multiAttackHero2 = bt.dataset.mhero2 || null; updateMultiAttackBar(); });
 document.getElementById('multiAttackShare').addEventListener('click', e => {
     const bt = e.target.closest('button[data-f]'); if (!bt) return;
     multiAttackShare = parseFloat(bt.dataset.f); updateMultiAttackBar();
@@ -10078,10 +10178,10 @@ multiAttackConfirmBtn.addEventListener('click', () => {
     for (const targetId of targets) {
         let troopsForThis = perTarget;
         if (remainder > 0) { troopsForThis++; remainder--; }
-        nextAttackHero = ok === 0 ? multiAttackHero : null;                  // the hero leads the first wave that goes out
+        nextAttackHero = ok === 0 ? multiAttackHero : null; nextAttackHero2 = ok === 0 ? multiAttackHero2 : null;   // the heroes lead the first wave that goes out
         if (launchAttack(sourceId, targetId, null, troopsForThis)) ok++;
         else { failed.push(targetId); why.add(baseShieldedFor(targetId, 'player') ? 'Friedensschild' : isCapital(targetId) ? 'inzwischen eine Hauptstadt' : 'Tor oder Maut'); }
-        nextAttackHero = null;
+        nextAttackHero = null; nextAttackHero2 = null;
     }
     if (!ok) {                                                               // nothing went out: no gem spent, the selection stays so the player can fix it
         const only = failed.length === 1 && why.has('Friedensschild') ? shieldBlockText(islandOwnerOf(failed[0])) : null;
@@ -10323,7 +10423,7 @@ function renderAttackPreview(island, scouted) {
                 '<input type="range" id="attackTroopsSlider" class="slider" min="0" max="' + SLIDER_STEPS + '" value="' + troopsToSlider(previewAttackTroops || 0, maxTroops) + '"' + (maxTroops <= 0 ? ' disabled' : '') + ' aria-label="Truppen entsenden">' +
                 '<div class="seg" data-preview="quick"><button type="button" data-f=".25">25 %</button><button type="button" data-f=".5">50 %</button><button type="button" data-f=".75">75 %</button><button type="button" data-f="1">Alle</button></div></div>' +
             (heroSegHtml('data-hero', previewHero) ? '<div class="field"><div class="field-top"><span class="field-l">Held</span><span class="val" data-preview="herofx"></span></div><div class="seg hero-seg" data-preview="hero">' +
-                heroSegHtml('data-hero', previewHero) + '</div></div>' : '');
+                heroSegHtml('data-hero', previewHero) + '</div><div class="seg hero-seg hero-seg2" data-preview="hero2"></div></div>' : '');
         const slider = document.getElementById('attackTroopsSlider');
         slider.addEventListener('input', () => {
             const mx = sourceTroops();
@@ -10333,7 +10433,9 @@ function renderAttackPreview(island, scouted) {
         });
         bindTroopInput(document.getElementById('attackTroopsLabel'), sourceTroops, patchAttackPreview);
         const heroSeg = popupStats.querySelector('[data-preview="hero"]');
-        if (heroSeg) heroSeg.addEventListener('click', e => { const bt = e.target.closest('[data-hero]'); if (!bt || bt.disabled) return; previewHero = bt.dataset.hero || null; patchAttackPreview(); });
+        if (heroSeg) heroSeg.addEventListener('click', e => { const bt = e.target.closest('[data-hero]'); if (!bt || bt.disabled) return; previewHero = bt.dataset.hero || null; if (previewHero === previewHero2 || !previewHero) previewHero2 = null; patchAttackPreview(); });
+        const heroSeg2 = popupStats.querySelector('[data-preview="hero2"]');
+        if (heroSeg2) heroSeg2.addEventListener('click', e => { const bt = e.target.closest('[data-hero2]'); if (!bt || bt.disabled) return; previewHero2 = bt.dataset.hero2 || null; patchAttackPreview(); });
         popupStats.querySelector('[data-preview="quick"]').addEventListener('click', (e) => {
             const f = parseFloat(e.target.closest('button') && e.target.closest('button').dataset.f);
             if (!f || slider.disabled) return;
@@ -10433,12 +10535,15 @@ function patchAttackPreview() {
     const shown = Math.max(0, previewAttackTroops || 0);
     if (previewHero && (!heroOwned('player', previewHero) || heroBusy('player', previewHero))) previewHero = null;
     for (const b of popupStats.querySelectorAll('[data-hero]')) { const id = b.dataset.hero; b.disabled = !!id && heroBusy('player', id); b.classList.toggle('on', (id || null) === previewHero); }
-    const src0 = islandById[previewSourceId], px = previewHero && src0 ? heroPeek('player', previewHero, src0, island, shown) : null, hfx = popupStats.querySelector('[data-preview="herofx"]');   // what the hero does in THIS attack
-    if (hfx) hfx.textContent = !px ? '' : heroStarTxt(px.q) + (px.fired ? ' · ' + px.skill + ' zündet' : '') + ' · ' + px.lines.filter(l => l[0] !== 'Gefolge' && l[0] !== 'Tempo').map(l => l[1]).join(', ');
+    previewHero2 = heroZweitOk('player', previewHero, previewHero2); liveHtml(popupStats.querySelector('[data-preview="hero2"]'), heroSeg2Html('data-hero2', previewHero, previewHero2));   // der Zweitheld
+    const src0 = islandById[previewSourceId], px = previewHero && src0 ? heroPeek('player', previewHero, src0, island, shown, previewHero2) : null, hfx = popupStats.querySelector('[data-preview="herofx"]');   // what the hero does in THIS attack
+    const hfl = x => x.lines.filter(l => l[0] !== 'Gefolge' && l[0] !== 'Tempo' && l[0].indexOf('Paar') !== 0).map(l => l[1]).join(', ');
+    if (hfx) hfx.textContent = !px ? '' : heroStarTxt(px.q) + (px.fired ? ' · ' + px.skill + ' zündet' : '') + (px.pair ? ' · Paar +' + HERO_PAIR_BONUS + ' %' : px.h2 ? ' · + ' + heroById(px.h2.id).name : '') + ' · ' + hfl(px);
+    if (hfx) hfx.title = !px ? '' : hfl(px) + (px.h2 ? ' · ' + heroById(px.h2.id).name + ' (' + Math.round(HERO_ZWEIT * 100) + ' %): ' + hfl(px.h2) : '');   // alles einzeln beim Draufzeigen
     const swordBonus = attackFlatBonus(shown), heroTroops = px ? Math.round(shown * px.atk / 100) + heroGefOf(px, shown) : 0, atkBonus = swordBonus + heroTroops;
     const mine = Math.round((shown + atkBonus) * titleMult('player', 'attack'));        // same maths as resolveAttack
     const bEl = popupStats.querySelector('#previewAtkBonus'); if (bEl) bEl.textContent = fmtNum(swordBonus);
-    const hbEl = popupStats.querySelector('#previewHeroBonus'); if (hbEl) hbEl.textContent = heroTroops ? ' + ' + fmtNum(heroTroops) + ' ' + heroById(previewHero).name : '';
+    const hbEl = popupStats.querySelector('#previewHeroBonus'); if (hbEl) hbEl.textContent = heroTroops ? ' + ' + fmtNum(heroTroops) + ' ' + heroById(previewHero).name + (px && px.id2 ? ' & ' + heroById(px.id2).name : '') : '';
     const tv = mine - Math.round(shown + atkBonus), tx = titleOf('player'), tbEl = popupStats.querySelector('#previewTitleBonus');
     if (tbEl) tbEl.textContent = tv && tx ? (tv > 0 ? ' + ' : ' − ') + fmtNum(Math.abs(tv)) + ' Titel ' + tx.name : '';
     const src = islandById[previewSourceId], tEl = popupSub.querySelector('#previewToll'), mEl = popupSub.querySelector('#previewMarch');
@@ -10606,9 +10711,9 @@ attackBtn.addEventListener('click', () => {
         const picked = previewFraction !== null ? Math.round(available * previewFraction) : previewAttackTroops;
         const troopsToSend = Math.max(1, Math.min(picked || available, available));
 
-        nextAttackHero = previewHero;
+        nextAttackHero = previewHero; nextAttackHero2 = previewHero2;
         launchAttack(sourceId, targetId, null, troopsToSend);
-        nextAttackHero = null;
+        nextAttackHero = null; nextAttackHero2 = null;
         previewSourceId = null;
         closeIslandPopup();
         return;
@@ -11401,7 +11506,7 @@ if (window.WELT) {
         angriff(who, b) {
             if (!inselOk(b.src) || !inselOk(b.ziel) || !zahlOk(b.n)) { warnen(who, 'kaputt', 'Angriff mit kaputten Angaben – abgelehnt.'); return; }
             if (islandOwnerOf(b.ziel) === who) { warnen(who, 'kaputt', 'Angriff auf die eigene Basis – abgelehnt.'); return; }   // (brachte sonst Gratis-EP)
-            if (gehoert(b.src, who)) launchAttack(b.src, b.ziel, who, b.n, heldOk(b.held));
+            if (gehoert(b.src, who)) launchAttack(b.src, b.ziel, who, b.n, heldOk(b.held), heldOk(b.held2));
         },
         senden(who, b) {
             if (!inselOk(b.von) || !inselOk(b.nach) || !zahlOk(b.n)) { warnen(who, 'kaputt', 'Senden mit kaputten Angaben – abgelehnt.'); return; }
@@ -11455,7 +11560,7 @@ if (window.WELT) {
         feld(who, b) {
             const f = (typeof b.feld === 'number' || typeof b.feld === 'string') ? resFields.find(x => x.id === b.feld) : null;
             if (!f || !inselOk(b.home) || !gehoert(b.home, who)) return;
-            const n = truppenVon(b.home, b.n); if (n >= 1) fieldSend(who, b.home, b.feld, n, heldOk(b.held));
+            const n = truppenVon(b.home, b.n); if (n >= 1) fieldSend(who, b.home, b.feld, n, heldOk(b.held), heldOk(b.held2));
         },
         feldHeim(who, b) { const f = resFields.find(x => x.id === b.feld), st = f && fieldInfo(f); if (st && st.occ && st.occ.who === who) { fieldGoHome(f, st, Date.now()); saveFields(); } },
         lager(who, b) {
@@ -11464,7 +11569,7 @@ if (window.WELT) {
             // (Boss: der Zähler steigt schon beim Losschicken; Lager: beim Sieg – darum zählen dort die unterwegs mit, wie barbLeft)
             if (b.k === 'b' ? barbRec(who).h >= DBOSS_HITS : barbLeft(who) <= 0) { warnen(who, 'lager', 'Tagesgrenze für ' + (b.k === 'b' ? 'den Boss' : 'Lager') + ' überschritten – abgelehnt.'); return; }
             if (b.k === 'c') { const c = barbCampById(b.tid); if (!c || !barbOpenFor(who, c.L)) return; }   // nur Lager, die schon freigespielt sind
-            const n = truppenVon(b.home, b.n); if (n >= 1) barbSend(who, b.home, b.k, b.k === 'c' ? b.tid : null, n, heldOk(b.held));
+            const n = truppenVon(b.home, b.n); if (n >= 1) barbSend(who, b.home, b.k, b.k === 'c' ? b.tid : null, n, heldOk(b.held), heldOk(b.held2));
         },
         armee(who, b) {
             if (b.op === 'neu') {
@@ -11476,6 +11581,7 @@ if (window.WELT) {
             const a = kennungOk(b.id) ? armyById(b.id) : null; if (!a || armyWho(a) !== who) return;
             if (b.op === 'dazu' && inselOk(b.quelle) && gehoert(b.quelle, who)) { const n = truppenVon(b.quelle, b.n); if (n >= 1) armySendFrom(a, b.quelle, n); }
             if (b.op === 'ziehen') { const t = zielPruefen(b.ziel); if (t) armyMove(a, t); }
+            if (b.op === 'held') armySetHeroes(a, heldOk(b.held), heldOk(b.held2));   // Haupt- und Zweitheld: nur eigene, freie (armySetHeroes prüft)
             saveArmies(); requestRender();
         },
         beitreten(who, b) {                           // ein neuer Spieler braucht seinen Platz auf der Karte

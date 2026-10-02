@@ -924,10 +924,15 @@ function botHeal(bot) {                                   // heals everyone at o
     botCoins[bot.id] -= cost; islandTroops[cap] = (islandTroops[cap] || 0) + b.wounded; botStat(bot.id, 'healed', b.wounded); b.wounded = 0; saveBotState();
 }
 
-// ---- the bot's heroes: the same 14 as yours - the same shards, quarter stars, skill points and rage ----
+// ---- the bot's heroes: the same 20 as yours - the same shards, quarter stars, skill points and rage ----
 function botHeroFreshSet() { return heroFix(heroConvert(null, 0)); }
 
-function botPickHero(botId, src, target, raw) { return heroPickBest(botId, src, target, raw); }   // the free hero who does the most in this attack
+function botPickHero(botId, src, target, raw, paar) { return paar ? heroPickPair(botId, src, target, raw) : heroPickBest(botId, src, target, raw); }   // the free hero who does the most in this attack (paar: [Haupt-, Zweitheld], wie du)
+function botGatherHeroes(botId) {                         // Sammel-Helden (Fenn, Otto, Pia …): der erste freie, dazu sein Partner oder ein zweiter Sammler
+    const ok = h => heroOwned(botId, h.id) && !heroBusy(botId, h.id);
+    const list = HEROES.filter(h => ok(h) && h.sk.some((x, k) => k && (x[2] === 'carry' || x[2] === 'gatherSpd' || x[2] === 'gatherDef') && heroSt(botId, h.id).sk[k])); if (!list.length) return [null, null];
+    const p = heroPartner(list[0].id); return [list[0].id, p && ok(heroById(p.id)) ? p.id : list[1] ? list[1].id : null];
+}
 
 function botHeroAtk(botId) { let m = 0; for (const h of HEROES) if (heroOwned(botId, h.id) && !heroBusy(botId, h.id)) m = Math.max(m, heroStats(botId, h.id).atk); return m; }   // what the best free hero adds
 
@@ -1627,8 +1632,8 @@ function botGatherField(bot, freeOnly) {                 // freeOnly: under thei
         if (st.occ && (freeOnly || st.occ.who !== bot.id && ownerShielded(st.occ.who) || st.occ.troops * 1.3 > have)) continue;
         const d = Math.hypot(f.x - b.x, f.y - b.y) * (st.occ ? 2 : 1); if (d < bd) { bd = d; best = f; } }
     if (!best) return false;
-    const gh = HEROES.find(h => heroOwned(bot.id, h.id) && !heroBusy(bot.id, h.id) && h.sk.some((x, k) => k && (x[2] === 'carry' || x[2] === 'gatherSpd' || x[2] === 'gatherDef') && heroSt(bot.id, h.id).sk[k]));   // a gatherer hero (Fenn, Otto) if one is free
-    return fieldSend(bot.id, base, best.id, have, gh ? gh.id : null);
+    const gh = botGatherHeroes(bot.id);                                         // gatherer heroes (Fenn, Otto, Pia) if free – Haupt- und Zweitheld
+    return fieldSend(bot.id, base, best.id, have, gh[0], gh[1]);
 }
 
 // bots set up field armies too: when one base isn't enough for a target, they gather in front of it out in the open,
@@ -1652,7 +1657,8 @@ function botArmyRally(bot, target, need, srcList) {
     for (const id of strong) { if (pool >= need * 1.3 || helpers.length >= most) break;
         if (!botCanCross(bot.id, islandById[id].landmassId, pt.lm, Math.floor((islandTroops[id] || 0) * .9))) continue; helpers.push(id); pool += Math.floor((islandTroops[id] || 0) * .9); }
     if (pool < need * 1.1) return false;
-    const a = { id: 'b' + Date.now().toString(36) + Math.floor(Math.random() * 1e4), who: bot.id, hero: botPickHero(bot.id, null, null, need), x: pt.x, y: pt.y, lm: pt.lm, troops: 0, homeId: helpers[0], mv: null, t: target.id, until: Date.now() + (helpers.length > 6 ? 12 : 8) * 60000 };
+    const hp = botPickHero(bot.id, null, null, need, true);
+    const a = { id: 'b' + Date.now().toString(36) + Math.floor(Math.random() * 1e4), who: bot.id, hero: hp[0], hero2: hp[1], x: pt.x, y: pt.y, lm: pt.lm, troops: 0, homeId: helpers[0], mv: null, t: target.id, until: Date.now() + (helpers.length > 6 ? 12 : 8) * 60000 };
     armies.push(a); let sent = 0;
     for (const id of helpers) { const n = Math.floor((islandTroops[id] || 0) * .9); if (armySendFrom(a, id, n)) sent += n; }
     if (!sent) { armies = armies.filter(x => x !== a); return false; }
@@ -1787,7 +1793,7 @@ function armyRaidArrive(r, now) {
     if (a && ownerShielded('player', Math.min(now, r.resolveAt || now))) { back(); flashHint('Dein Friedensschild hat den Angriff von ' + bot.name + ' auf deine Armee abgewehrt.', 4000); return; }   // the shield covers field armies too
     const p = a && armyPos(a, now);
     if (!a || Math.hypot(p.x - r.tx, p.y - r.ty) > ISLAND_RADIUS * 2) { back(); if (a) flashHint('Deine Armee ist ' + bot.name + ' ausgewichen.', 3000); return; }
-    const dHx = heroFieldFx('player', a.hero, { defending: 1 });                     // your army's hero (Bollwerk, Zäh …) - a full rage fires now
+    const dHx = heroFieldFx('player', a.hero, { defending: 1 }, a.hero2);                    // your army's hero (Bollwerk, Zäh …) - a full rage fires now
     const def = a.troops, atk = r.troops, fb = fieldBattle(r.botId, atk, 'player', def, null, dHx), won = fb.won;
     const fg = fieldGold(r.botId, 'player', fb, null, dHx);
     goalBump(won ? r.botId : 'player', 'armyWins');
@@ -1828,7 +1834,7 @@ function botBarbHunt(bot) {                               // the strongest camp 
     for (const [, c] of cand.slice(0, 6)) if (reach.has(c.lm) || canReach(b.landmassId, c.lm, bot.id)) { pick = c; break; }   // the next ones first, further ones over the bridges
     if (!pick) return false;
     const n = Math.min(have, Math.ceil(pick.t * (1.3 + Math.random() * .4) / fa));
-    return barbSend(bot.id, base, 'c', pick.id, n, heroPickBest(bot.id, null, null, n));
+    const hp = heroPickPair(bot.id, null, null, n); return barbSend(bot.id, base, 'c', pick.id, n, hp[0], hp[1]);
 }
 function botDayBoss(bot) {                                // the daily boss: a few strikes a day with a share of their biggest free base
     const d = dbossEnsure(), due = Math.min(DBOSS_HITS, Math.ceil(DBOSS_HITS * (1 - msToMidnight() / 864e5)));   // spread over the day (strikes not made yet are caught up): the boss falls in the evening, not in the first hour
@@ -1836,5 +1842,5 @@ function botDayBoss(bot) {                                // the daily boss: a f
     const base = botBarbBase(bot); if (base === null) return false;
     if (d.lm !== undefined && !botKennt(bot.id).has(d.lm)) return false;      // der Boss steht im Nebel
     const n = Math.floor((islandTroops[base] || 0) * (.15 + Math.random() * .2)); if (n < 1000) return false;
-    return barbSend(bot.id, base, 'b', null, n, heroPickBest(bot.id, null, null, n));
+    const hp = heroPickPair(bot.id, null, null, n); return barbSend(bot.id, base, 'b', null, n, hp[0], hp[1]);
 }
