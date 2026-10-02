@@ -39,6 +39,7 @@ Game/                  ← genau dieser Ordner liegt auf dem Server
   speichern.js         Speichern/Laden: hält den Stand im Arbeitsspeicher, schickt ihn an server.php
   welt.js              die EINE Welt: Umrechnen, andere Spieler, Weltrechner, Puls, Befehle, Nachrichten
   buendnis.js          Bündnisse: Gründen, Beitreten, Signale, Rally, Geschenke, Tempel-Bonus, Gebiet (Abschnitt 18)
+  haendler.js          wandernder Händler: Karren auf der Karte, Angebot, Kauf über den Weltrechner (Abschnitt 23)
   server.php           alles auf dem Server: Datenbank, Login, Laden, Speichern, Welt, Sicherheit
   admin.php            nur für Admins (alexander): Wartung an/aus, Geschenke verschicken, Spielerliste
   app/                 Open Water als App auf dem Startbildschirm:
@@ -753,3 +754,79 @@ Neue Datei `Game/buendnis.js` (nach spiel.js geladen; der Weltrechner lädt sie 
 - **Offen:** Die Bündnis-Daten (Signale, Rallys) sieht technisch jeder Spieler (wie die übrige Welt) – im Spiel gezeigt
   werden nur die eigenen (und Rallys gegen dich). Gebiet der Verbündeten wird nicht aus dem Nebel geholt.
 
+
+## 23. Welt (Paket C) – größere Karte, neue Landschaften, Tag und Nacht, wandernde Händler (2.10., lokal getestet – NICHT hochgeladen)
+**Achtung beim Hochladen: braucht eine NEUE WELT** (Saison-Neustart mit `werkzeuge/welt_neustart.php`, Abschnitt 16), weil
+die Karte jetzt 17 × 17 Regionen hat und alle Basen-Nummern sich ändern. Schutz: Der Weltrechner (`start.js`) vergleicht
+vor dem Start die Karte des Spiels (`GRID_N`) mit der Kennung der Welt in der Datenbank (neuer Welt-Schlüssel
+**`openWaterKarte`** = `{ n: 17, inseln: 25024 }`; eine Welt ohne Kennung zählt als 15 × 15). Passt sie nicht → er startet
+NICHT („Karte passt nicht zur Welt …“ im Log, zählt als Absturz → nach 5 Versuchen Wartung + Alarm), die Welt bleibt
+unversehrt. Spieler sehen so lange „Verbindung wird wiederhergestellt …“ – getestet: alte 15er-Welt + neuer Code → keine
+Fehler in der Konsole; nach `welt_neustart.php` neue Welt, alter Spieler bekommt neuen Startplatz, keine Fehler.
+`WORLD_VERSION` (spiel.js) und `WELT_VERSION` (welt.js) sind jetzt beide '7' (müssen immer gleich sein, sonst würde jedes
+Handy beim Laden seine Welt-Teile wegwerfen). Für Spieler löst das nichts weiter aus: welt.js setzt die Zahl beim Laden
+selbst; nur ein Spiel ohne welt.js (gibt es nicht mehr) würde Karten-Teile eines alten Standes löschen.
+
+**1 Größere Karte (17 × 17 statt 15 × 15, `GRID_N` bleibt eine Konstante).** Vorher gemessen (lokal, frische Welt, 150
+Mitspieler, Handy 390 × 844):
+| | 15 × 15 | 17 × 17 |
+|---|---|---|
+| Basen (Inseln) | 19.489 | 25.024 |
+| Weltrechner-Speicher (5 Min., Spitze) | 220–252 MB (Heap ~90–116) | 230–271 MB (Heap ~100–130) |
+| Puls pro Spieler (gepackt, Ø / größter) | 17 / 23 KB | 16 / 28 KB |
+| Spielseite (gepackt) | 124 KB | 113–117 KB |
+Die Grenzen (Speicher < 450 MB, Puls < 120 KB) halten mit Abstand: live lag die 15er-Welt bei ~290 MB und ~66 KB Puls;
+die Karte selbst kostet nur ~+10–20 MB (feste Daten der Inseln), der Puls wächst mit dem Besitz, nicht mit der Kartengröße
+(geschätzt live ≤ ~310 MB und ≤ ~85 KB). Startplätze bleiben auf den beiden äußersten Ringen (`GRID_HALF - 1`), Nachzügler
+ab `GRID_HALF - 2`; Ring 7 und 8 sind leichte Randgebiete (Stärke ×1).
+**Neue Landschaften** (`regionBiome`, reine Optik): **Eis** in der obersten Reihe (hellblau, Eisblöcke und Spalten),
+**Vulkan/Asche** in zwei Gebieten nahe der Mitte (west um Region −4/0, ost um 4/1, je 5 Regionen: Asche-Boden, Felsbrocken,
+ein Krater, Lava-Tümpel und glühende Lava-Adern zwischen den Basen), **Sumpf** verstreut in den feuchten Niederungen des
+grünen Mittelstreifens (dunkles Oliv, Tümpel, Schilf, niedrige Bäume). Schnee, Wüste, Wiese, Stein wie bisher. Gezeichnet
+wie die Wälder: einmal pro Region gebaut (`buildDeko`, erst wenn sie zum ersten Mal zu sehen ist) und in den Karten-Kacheln
+gemalt (`paintDeko`) – kostet beim Zeichnen nichts extra. In der Stadt gilt Eis-Land als Schnee-Boden.
+
+**3 Tag und Nacht** (`tagLicht`, `drawNacht` in spiel.js; nur Optik): Uhrzeit Berlin nach der **Server-Uhr** (welt.js merkt
+sich `WELT.uhrVersatz` aus jedem Puls; geht ein Handy mehr als 1,5 Min. falsch, zählt der Server). Sonnenauf- und
+-untergang je nach Jahreszeit (grob für Berlin, Sommer ~16,8 Std. Tag, Winter ~7,6). Morgen-/Abendrot ~1 Std. um
+Sonnenauf-/-untergang, nachts dunkelblau abgedunkelt; dazu leuchten Fenster/Fackeln an allen Basen mit Besitzer, Tempeln
+und Toren und die Lava im Vulkan; der Händler-Karren hat eine Laterne. Namensschilder bleiben hell (liegen darüber).
+Billig: eine Fläche zum Abdunkeln, fertig gemalte Leucht-Bilder, Werte nur alle 20 s neu, kein eigenes Neuzeichnen;
+**Akku sparen**: höchstens 160 Lichter, keine Fackeln, nur die großen Lava-Lichter aus der Ferne.
+Gemessen (JS pro `drawMap`, Desktop / Prozessor 4× gedrosselt, Nebel weg): nah 0,3 → 0,45 ms, mittel (Zoom 0,02) 0,7 →
+0,7–0,9 ms (4×: 3,5 → 4,3 ms); `drawNacht` selbst ~0,06–0,2 ms. Bildrate beim Schieben (ohne Grafikkarte) Tag 27–28 /
+Nacht 26–32 Bilder/s – kein Unterschied. Nebenbei gefunden (NICHT von Paket C): ganz weit draußen (Zoom 0,006, Nebel
+weg) kostet ein Bild ~20 ms – fast alles in `drawBaseSparks` (Friedensschild-Kuppeln mit Farbverlauf je Basis, in einer
+frischen Welt haben viele Basen Schild). Vorschlag: als fertiges Bild malen.
+Test-Hilfe: `window.__testStunde = 23` (in der Konsole) stellt die Uhr der Karte um.
+
+**7 Wandernde Händler** (neue Datei `Game/haendler.js`, Welt-Schlüssel **`openWaterHaendler`** in speichern.js `WELT` und
+welt.js `UMRECHNEN`): Alle 2–4 Std. steht für 30–60 Min. ein Händler-Karren an einem freien Platz einer bewohnten Region
+(neue Welt: der erste nach 15–45 Min.). Ort, Zeit und Angebot bestimmt nur der Weltrechner. Auf der Karte: Karren mit
+gestreifter Plane und goldenem Kreis (auch im Nebel sichtbar), unter dem HUD der Hinweis „Händler da · 41 m“ (antippen →
+hinfliegen + Angebot). Karren antippen → Fenster „Wandernder Händler“ (`#hdPopup`): 3–4 von 5 Waren, jede **1× pro Spieler
+und Besuch**, nur für **Münzen** (nie Gems, keine Gold-Kiste):
+- 3 Helden-Splitter (2 Std.-Produktion) · Blaue Ausrüstungskiste, genau Selten (3 Std.) · Sammel-Beschleuniger: 2 Std.
+  30 % schneller sammeln, wirkt sofort in der Welt (1 Std.) · Friedensschild 2 Std. in den Schild-Vorrat (2 Std.) ·
+  Söldner: eine Stunde Truppen-Ausbildung (1,5 Std.).
+- Preis = Faktor × eigene Stunden-Produktion an Münzen, mindestens 10.000–30.000, die Stunde zählt höchstens 2 Mio.
+Kauf = Befehl **`haendler`** (`{ ware, id, preis }`, server.php `BEFEHL_ARTEN`). Der Weltrechner prüft: Händler da und
+richtiger Besuch, Ware im Angebot, noch nicht gekauft, Preis (darf höchstens 25 % über dem angezeigten liegen), Münzen über
+den Schummel-Schutz (`WELT.wache.kann`, wie beim Bündnis-Gründen; Münzen eben erst bekommen → bis zu 4 × 5 s nochmal
+versuchen), höchstens 12 Käufe pro Minute. Bezahlt → „−Münzen“ beim Spieler, Ware als Nachricht **`haendlerWare`** ins
+Abholfach (server.php `WELTRECHNER_NACHRICHTEN` + `haendler_ware_ok`: höchstens 10 Splitter, Kiste bis blau, Truppen, ein
+2-Std.-Schild – nie Gems/Münzen). Söldner-Truppen meldet er dem Schummel-Schutz als Gutschrift. Abholfach kennt dafür
+`kiste` (genau diese Seltenheit) und `schild` (Stunden). **Mitspieler kaufen auch** (gleiche Preise und Regeln, nur wer es
+sich mit Reserve leisten kann, im Schnitt ~15 Käufe pro Besuch); „Zuletzt gekauft“ im Fenster.
+**Handy-Nachricht** „Ein Händler ist da: <Name> (X … · Y …) – nur noch 40 Minuten.“ (push.js, Art `haendler`, in
+`PUSH_ARTEN` und den Einstellungen abschaltbar). Test-Zeit: `var HD_TEST = null` in haendler.js (nur in einer lokalen Kopie
+auf z. B. `Date.now() + 60000` setzen).
+Weltrechner lädt haendler.js mit (start.js-Liste, wachhund.php Leserecht, hochladen.sh, tests/welt_test.js).
+**Getestet** (Port 8785, DB `owtest_we`, Weltrechner + 2 Spieler, frische Welt): Händler erscheint, Hinweis + Karren,
+Antippen öffnet das Fenster, Kauf Splitter/Kiste/Beschleuniger/Schild/Söldner → Münzen weg, Ware im Abholfach, abgeholt
+(Splitter Hagen, Rüstung Selten, Schild im Vorrat, +18.000 Truppen, Sammeln ×1,3); gefälscht abgelehnt: zweiter Kauf
+derselben Ware, Preis 1, falscher Besuch, Ware „gems“; der andere Spieler sieht den Kauf; Mitspieler kaufen; Push-Text
+für beide Spieler. Keine Fehler in der Konsole oder im Weltrechner, keine Schummel-Warnungen.
+**Zum Zusammenführen** (kleine Stellen außerhalb der Karte): `fieldTick` (Sammel-Beschleuniger `hdSammeln`), Abholfach
+(`inboxAdd`/`inboxWhat`/`inboxClaim`, Quelle `haendler`), `renderMidBar` (Händler-Hinweis), `handleTap` (Karren),
+`closeAllPopups`/`closeTopmostPanel`, Stadt-Boden (Eis → Schnee).

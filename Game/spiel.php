@@ -1409,6 +1409,13 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .starbar .icon{width:13px;height:13px;color:#ffd76a}
 .starbar i{display:contents}
 .starbar i .icon{color:rgba(255,255,255,.18)}
+/* ===== HÄNDLER (haendler.js) ===== */
+.mb-chip.is-hd{border-color:rgba(242,199,92,.6);background:linear-gradient(90deg,rgba(120,80,20,.8),rgba(20,14,6,.88))} .mb-chip.is-hd .icon{color:#f2c75c} .mb-chip.is-hd i{color:#f6e2b0}
+.hd-live{display:grid;gap:8px} .hd-info{display:flex;align-items:center;gap:6px;margin:0;color:var(--tx-3);font-size:var(--fs-12);line-height:1.4} .hd-info .icon{width:14px;height:14px;flex:none;color:var(--gold-300)}
+.hd-ok{display:flex;align-items:center;gap:4px;color:#8fd18f;font:600 var(--fs-12)/1 var(--font-ui)} .hd-ok .icon{width:13px;height:13px}
+.hd-log{margin:0;padding-left:18px;color:var(--tx-2);font-size:var(--fs-12);line-height:1.5} .hd-live > .btn{justify-self:start}
+.hd-live .inbox-row .btn .icon{width:13px;height:13px;margin-right:3px;vertical-align:-2px;color:#8a5a12}
+
 /* ===== BÜNDNIS (buendnis.js) ===== */
 #bundPopup{height:var(--sheet-max)} #bundTabs.tabs{grid-template-columns:repeat(4,minmax(0,1fr))}
 .mapctl button{position:relative} #bundBadge{top:1px;right:1px;left:auto}
@@ -1679,6 +1686,17 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
   <div class="pbody" id="rulerBody"></div>
 </section>
 
+<!-- ============ HÄNDLER (Karren auf der Karte antippen, haendler.js) ============ -->
+<section id="hdPopup" class="panel panel--sheet" role="dialog" aria-labelledby="hdTitle">
+  <span class="sheet-grab" aria-hidden="true"></span>
+  <header class="phead">
+    <div class="emblem emblem--gold"><svg class="icon"><use href="#i-coin"/></svg></div>
+    <div class="phead-text"><div class="overline">Wandernder Händler</div><h3 id="hdTitle" class="ptitle">Händler</h3><div class="psub" id="hdSub"></div></div>
+    <button id="hdCloseBtn" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button>
+  </header>
+  <div class="pbody"><div id="hdLive" class="hd-live"></div></div>
+</section>
+
 <!-- ============ BÜNDNIS (Knopf an der Karte, buendnis.js) ============ -->
 <section id="bundPopup" class="panel panel--sheet" role="dialog" aria-labelledby="bundTitle">
   <span class="sheet-grab" aria-hidden="true"></span>
@@ -1722,6 +1740,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         <label class="set-zeile"><span>Der Drache ist erschienen<small>Sonntagabend</small></span><input type="checkbox" data-push-art="drache"></label>
         <label class="set-zeile"><span>Bündnis ruft um Hilfe</span><input type="checkbox" data-push-art="hilfe"></label>
         <label class="set-zeile"><span>Rally gegen dich</span><input type="checkbox" data-push-art="rally"></label>
+        <label class="set-zeile"><span>Ein Händler ist da<small>Wandernder Händler auf der Karte</small></span><input type="checkbox" data-push-art="haendler"></label>
       </div>
     </div>
     <div class="sect"><h4>Ton</h4></div>
@@ -2062,6 +2081,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
     <script src="welt.js?v=<?= v('welt.js') ?>"></script>
     <script src="spiel.js?v=<?= v('spiel.js') ?>"></script>
     <script src="buendnis.js?v=<?= v('buendnis.js') ?>"></script>
+    <script src="haendler.js?v=<?= v('haendler.js') ?>"></script>
     <script src="benachrichtigung.js?v=<?= v('benachrichtigung.js') ?>"></script>
 </body>
 </html>
