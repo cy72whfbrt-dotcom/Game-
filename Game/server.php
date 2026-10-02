@@ -862,12 +862,39 @@ function speichern_anfrage() {
 // ===== Handy-Benachrichtigungen (Web-Push) =====
 // Spieler (nur mit Login):  push_info → {an, schluessel}   push_an {abo:{endpoint, keys:{p256dh, auth}}}   push_ab {endpoint}
 // Weltrechner (nur mit X-Weltrechner-Schlüssel): push_abos → alle Abos + VAPID-Schlüssel   push_weg {ids} (abgelaufene Abos)
-// Gesendet wird vom Weltrechner (weltrechner/push.js). Ohne vapid_public/vapid_private in config.php ist Push aus.
+// Gesendet wird vom Weltrechner (weltrechner/push.js).
+// VAPID-Schlüssel: aus config.php (vapid_public/vapid_private), sonst erzeugt der Server sie EINMAL selbst und legt sie in
+// weltrechner/vapid.php ab (von außen 404, nie im Git, hochladen.sh überschreibt sie nie) – sie ändern sich also nie.
+function push_schluessel_ok($pub, $priv) { return preg_match('/^[A-Za-z0-9_-]{87}$/', (string)$pub) && preg_match('/^[A-Za-z0-9_-]{42,43}$/', (string)$priv); }
+function b64url($b) { return rtrim(strtr(base64_encode($b), '+/', '-_'), '='); }
 function push_schluessel() {
+    static $s = false;
+    if ($s !== false) return $s;
     $c = cfg();
-    $pub = (string)($c['vapid_public'] ?? ''); $priv = (string)($c['vapid_private'] ?? '');
-    if (!preg_match('/^[A-Za-z0-9_-]{87}$/', $pub) || !preg_match('/^[A-Za-z0-9_-]{42,43}$/', $priv)) return null;
-    return ['public' => $pub, 'private' => $priv];
+    if (push_schluessel_ok($c['vapid_public'] ?? '', $c['vapid_private'] ?? '')) return $s = ['public' => $c['vapid_public'], 'private' => $c['vapid_private']];
+    $f = __DIR__ . '/weltrechner/vapid.php';
+    $lesen = function () use ($f) {
+        $t = @file_get_contents($f); if ($t === false) return null;
+        $i = strpos($t, '?>'); $v = json_decode($i === false ? $t : substr($t, $i + 2), true);
+        return is_array($v) && push_schluessel_ok($v['public'] ?? '', $v['private'] ?? '') ? ['public' => $v['public'], 'private' => $v['private']] : null;
+    };
+    if ($v = $lesen()) return $s = $v;
+    if (!function_exists('openssl_pkey_new') || !is_dir(dirname($f))) return $s = null;
+    $h = @fopen(__DIR__ . '/weltrechner/vapid_sperre.php', 'c'); if (!$h || !flock($h, LOCK_EX)) return $s = null;   // nie zwei gleichzeitig erzeugen
+    try {
+        if ($v = $lesen()) return $s = $v;
+        if (is_file($f)) { error_log('Open Water Push: vapid.php kaputt – nicht überschrieben'); return $s = null; }   // nie still neue Schlüssel
+        $k = openssl_pkey_new(['curve_name' => 'prime256v1', 'private_key_type' => OPENSSL_KEYTYPE_EC]);
+        $d = $k ? openssl_pkey_get_details($k) : null;
+        if (!$d || empty($d['ec']['d']) || empty($d['ec']['x']) || empty($d['ec']['y'])) return $s = null;
+        $pad = function ($b) { return str_pad($b, 32, "\0", STR_PAD_LEFT); };
+        $v = ['public' => b64url("\x04" . $pad($d['ec']['x']) . $pad($d['ec']['y'])), 'private' => b64url($pad($d['ec']['d'])), 'erzeugt' => date('c')];
+        if (!push_schluessel_ok($v['public'], $v['private'])) return $s = null;
+        $alt = umask(077);
+        $ok = file_put_contents(__DIR__ . '/weltrechner/vapid_neu.php', "<?php http_response_code(404); exit; ?>\n" . json_encode($v)) !== false && rename(__DIR__ . '/weltrechner/vapid_neu.php', $f);
+        umask($alt);
+        return $s = $ok ? ['public' => $v['public'], 'private' => $v['private']] : null;
+    } finally { flock($h, LOCK_UN); fclose($h); }
 }
 function b64url_bytes($s) {   // Länge in Byte, wenn $s sauberes base64url ist – sonst -1
     if (!is_string($s) || !preg_match('/^[A-Za-z0-9_-]{1,200}$/', $s)) return -1;

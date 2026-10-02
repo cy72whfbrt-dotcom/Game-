@@ -448,10 +448,10 @@ Spieler bekommen eine Nachricht aufs Handy, auch wenn die App zu ist: „X greif
 - **So geht es:** `weltrechner/push.js` merkt Angriffe/Späher/verlorene Basen und schickt verschlüsselt (RFC 8291, ohne
   Zusatzpakete) an Apple/Google. Geräte in Tabelle `ow_push` (mehrere pro Spieler), abgelaufene werden gelöscht.
 - **Ausnahme (Alexander erlaubt): Service-Worker `Game/sw.js` nur für Push** – kein Zwischenspeicher, keine Spieldaten.
-- **Schlüssel (VAPID):** einmal erzeugen mit
-  `node -e "const c=require('crypto').createECDH('prime256v1');c.generateKeys();console.log('VAPID_PUBLIC='+c.getPublicKey('base64url'));console.log('VAPID_PRIVATE='+c.getPrivateKey('base64url'))"`
-  und als Umgebungsvariablen `VAPID_PUBLIC`/`VAPID_PRIVATE` in der Cloud-Umgebung „Unity“ eintragen (nie ins Git, nie
-  in den Chat). Ohne Schlüssel ist Push aus. Schlüssel nie ändern (sonst müssen alle neu erlauben).
+- **Schlüssel (VAPID):** erzeugt der Server beim ersten Bedarf EINMAL selbst (`push_schluessel` in server.php) und legt
+  sie in `weltrechner/vapid.php` ab (von außen 404, nur der Server darf lesen, nie im Git, hochladen.sh überschreibt sie
+  nie). Alexander muss nichts tun (2.10.). Die Datei NIE löschen – sonst neue Schlüssel und alle müssen Push neu erlauben.
+  (Stehen `vapid_public`/`vapid_private` in config.php, gelten die stattdessen.)
 - Offen: ob der Office-Server nach außen zu Apple/Google senden darf, zeigt erst der Live-Betrieb (Protokoll „Push:“).
 
 ## 14b. Schummel-Schutz: Weltrechner prüft jeden Befehl (3A) – gebaut 1.10.
