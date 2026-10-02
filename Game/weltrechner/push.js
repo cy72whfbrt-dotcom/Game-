@@ -80,6 +80,7 @@ const BEOBACHTER = `(function () {
     for (const id in botOwnedIslands) { if (!mensch(id)) continue; neu.besitz[id] = [...botOwnedIslands[id]];
         const vorher = alt && alt.besitz[id]; if (!vorher) continue; const jetztDa = botOwnedIslands[id];
         for (const i of vorher) if (!jetztDa.has(i)) { const o = islandOwnerOf(i); raus.push({ an: id, art: 'verloren', von: o && o !== id ? name(o) : null, basis: titel(i) }); } }
+    for (const e of (window.__bundPush || []).splice(0)) if (mensch(e.an) && alt) raus.push(e);   // Bündnis (buendnis.js): „Hilfe!“ eines Mitglieds, Rally gegen dich
     window.__pushMerker = neu;
     const online = {}; for (const id in M) online[id] = !!M[id].online;
     return JSON.stringify({ raus, online });
@@ -105,7 +106,11 @@ function nachrichtBauen(liste, jetzt) {
     else if (verloren.length) teile.push(verloren.length + ' Basen verloren (' + verloren.slice(0, 3).map(v => v.basis).join(', ') + (verloren.length > 3 ? ' …' : '') + ').');
     if (spaeher.length === 1) teile.push('Ein Späher von ' + spaeher[0].von + ' ist unterwegs zu deiner Basis ' + spaeher[0].basis + '.');
     else if (spaeher.length) { const wer = [...new Set(spaeher.map(s => s.von))]; teile.push(spaeher.length + ' Späher sind unterwegs zu deinen Basen (' + wer.slice(0, 3).join(', ') + (wer.length > 3 ? ' …' : '') + ').'); }
-    const titel = angriffe.length ? 'Angriff auf deine Basis!' : verloren.length ? 'Basis verloren' : 'Späher unterwegs';
+    const hilfe = liste.filter(e => e.art === 'hilfe'), rally = liste.filter(e => e.art === 'rally');
+    if (rally.length) { const r = rally[0]; teile.push('Rally gegen deine Basis ' + r.basis + ': ' + r.von + ' sammelt Truppen' + (r.ankunft > jetzt ? ' (Start in ' + minuten(r.ankunft - jetzt) + ')' : '') + '.'); }
+    if (hilfe.length === 1) teile.push('Bündnis: ' + hilfe[0].von + ' ruft um Hilfe – ' + hilfe[0].basis + ' wird angegriffen.');
+    else if (hilfe.length) teile.push('Bündnis: ' + hilfe.length + '-mal Hilfe gerufen (' + [...new Set(hilfe.map(h => h.von))].slice(0, 3).join(', ') + ').');
+    const titel = angriffe.length ? 'Angriff auf deine Basis!' : verloren.length ? 'Basis verloren' : rally.length ? 'Rally gegen dich!' : hilfe.length ? 'Dein Bündnis braucht Hilfe' : 'Späher unterwegs';
     return { titel, text: teile.join(' ').slice(0, 400), tag: 'open-water' };
 }
 
@@ -161,7 +166,7 @@ function melder(holen, log) {
                 e.zeit = jetzt; (warte.get(uid) || warte.set(uid, []).get(uid)).push(e); }
             for (const [uid, liste] of warte) {
                 // online gekommen (sieht es im Spiel) oder alles veraltet → vergessen
-                const frisch = liste.filter(e => jetzt - e.zeit < ALT_MS && !(e.art !== 'verloren' && e.ankunft < jetzt));
+                const frisch = liste.filter(e => jetzt - e.zeit < ALT_MS && !(e.art !== 'verloren' && e.art !== 'hilfe' && e.ankunft < jetzt));
                 if (r.online['u' + uid] || !frisch.length) { warte.delete(uid); continue; }
                 warte.set(uid, frisch);
                 if (jetzt - Math.min(...frisch.map(e => e.zeit)) < SAMMELN_MS) continue;

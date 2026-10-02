@@ -1386,6 +1386,40 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .starbar .icon{width:13px;height:13px;color:#ffd76a}
 .starbar i{display:contents}
 .starbar i .icon{color:rgba(255,255,255,.18)}
+/* ===== BÜNDNIS (buendnis.js) ===== */
+#bundPopup{height:var(--sheet-max)} #bundTabs.tabs{grid-template-columns:repeat(4,minmax(0,1fr))}
+.mapctl button{position:relative} #bundBadge{top:1px;right:1px;left:auto}
+.emblem.bd-em{background:var(--bf);color:#fff;border-color:rgba(255,255,255,.35)}
+#bundOben:empty{display:none} .bd-live{display:flex;flex-direction:column;gap:12px}
+.bd-wappen{width:30px;height:30px;flex:none;display:grid;place-items:center;border-radius:8px;background:var(--bf);color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.25),0 2px 4px rgba(0,0,0,.4)}
+.bd-wappen .icon{width:17px;height:17px} .bd-wappen--gross{width:46px;height:46px;border-radius:12px} .bd-wappen--gross .icon{width:26px;height:26px}
+.bd-kopf{display:flex;align-items:center;gap:12px} .bd-kopf b{display:block;font:600 var(--fs-15)/1.2 var(--font-display);color:var(--gold-100)}
+.bd-kopf small{display:block;margin-top:3px;font:500 var(--fs-11)/1.3 var(--font-ui);color:var(--tx-3)}
+.bd-liste{display:grid;gap:6px}
+.bd-zeile{display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-height:48px;padding:6px 8px;border:1px solid var(--line-1);border-radius:var(--r-sm);background:rgba(0,0,0,.22)}
+.bd-zeile.is-me{border-color:rgba(140,192,255,.45);background:linear-gradient(90deg,#284670,#161b24)}
+.bd-name{flex:1;min-width:120px;display:flex;flex-direction:column;gap:2px;font:600 var(--fs-13)/1.2 var(--font-ui);color:var(--tx-1)}
+.bd-name .who-link{align-self:flex-start;text-align:left;font:inherit} .bd-name small{font:500 var(--fs-11)/1.3 var(--font-ui);color:var(--tx-3)} .bd-name em{font-style:normal;color:var(--gold-200)}
+.bd-dot{width:8px;height:8px;border-radius:50%;background:#555;flex:none} .bd-dot.on{background:#4cd07d;box-shadow:0 0 6px #4cd07d}
+.bd-sic{width:30px;height:30px;flex:none;display:grid;place-items:center;border-radius:50%;background:var(--sf,#555);color:#fff} .bd-sic .icon{width:16px;height:16px}
+.bd-sig.is-neu{border-color:color-mix(in srgb,var(--sf) 60%,transparent)}
+.bd-rally .bd-sic{background:var(--gold-300);color:#1a1204} .bd-rally.is-feind{border-color:rgba(231,76,60,.45)} .bd-rally.is-feind .bd-sic{background:#e74c3c;color:#fff}
+.bd-knoepfe{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+.bd-log{display:grid;gap:2px} .bd-log div{display:flex;justify-content:space-between;gap:10px;padding:5px 2px;border-bottom:1px solid var(--line-1);font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-2)}
+.bd-log div:last-child{border-bottom:0} .bd-log small{flex:none;color:var(--tx-3)}
+.bd-form{display:grid;gap:10px;padding:10px;margin-bottom:12px;border:1px solid var(--line-2);border-radius:var(--r-lg);background:rgba(0,0,0,.22)}
+.bd-form input:not([type=checkbox]),.bd-form select{width:100%;height:40px;padding:0 10px;border:1px solid var(--line-2);border-radius:var(--r-xs);background:#12151b;color:var(--tx-1);font:600 16px/1 var(--font-ui);box-sizing:border-box}
+.bd-form input:focus,.bd-form select:focus{outline:none;border-color:var(--gold-300)} .bd-tag{text-transform:uppercase;letter-spacing:.15em}
+.bd-farben,.bd-zeichen{display:flex;flex-wrap:wrap;gap:6px}
+.bd-farben button{width:30px;height:30px;border-radius:50%;background:var(--bf);border:2px solid transparent} .bd-farben button.on{border-color:#fff;box-shadow:0 0 0 2px var(--gold-300)}
+.bd-zeichen button{width:38px;height:38px;display:grid;place-items:center;border-radius:8px;border:1px solid var(--line-2);color:var(--tx-2)} .bd-zeichen button.on{border-color:var(--gold-300);color:var(--gold-100);background:rgba(214,170,90,.16)}
+.bd-zeichen .icon{width:20px;height:20px}
+.bd-fehler{margin:0;min-height:16px;color:#ff9d8f;font:500 var(--fs-12)/1.3 var(--font-ui)} .bd-fehler:empty{display:none}
+.bd-feld{display:grid;gap:5px} .bd-feld > span{font:600 var(--fs-10)/1.3 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--tx-3)}
+.bd-info{margin:0;font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-2)}
+#popupBund:empty{display:none} #popupBund{display:flex;flex-direction:column;gap:8px}
+.bd-insel{display:flex;flex-wrap:wrap;align-items:center;gap:6px} .bd-insel .btn .icon{width:14px;height:14px}
+.bd-insel-l{display:inline-flex;align-items:center;gap:5px;margin-right:2px;font:600 var(--fs-10)/1 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--gold-200)} .bd-insel-l .icon{width:13px;height:13px}
     </style>
 </head>
 <body>
@@ -1433,6 +1467,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 <symbol id="i-flag" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21V3.5"/><path d="M6 4.5h12l-2.8 3.8L18 12H6" fill="currentColor" stroke="none" opacity="0.16"/><path d="M6 4.5h12l-2.8 3.8L18 12H6"/></g></symbol>
 <symbol id="i-goal" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5" fill="currentColor" fill-opacity=".16"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><path d="M12 12l6.5-6.5M16 5.5h2.5V8"/></g></symbol>
 <symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33a1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></g></symbol>
+<symbol id="i-bund" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3.6l5 1.7v3.9c0 3.2-2 5.5-5 6.6-3-1.1-5-3.4-5-6.6V5.3z" fill="currentColor" stroke="none" opacity="0.16"/><path d="M9 3.6l5 1.7v3.9c0 3.2-2 5.5-5 6.6-3-1.1-5-3.4-5-6.6V5.3z"/><path d="M16.2 7.4l3.8 1.3v3.9c0 3.2-2 5.5-5 6.6-1.8-.7-3.2-1.7-4-3.1"/></g></symbol>
 <symbol id="i-info" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 1 0 17 0a8.5 8.5 0 1 0 -17 0z"/><path d="M12 11v5.5"/><path d="M10.9 7.9a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0 -2.2 0z" fill="currentColor" stroke="none"/></g></symbol>
 </svg>
 
@@ -1486,6 +1521,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
   <button id="markerBtn" type="button" aria-label="Wegmarke setzen"><svg class="icon"><use href="#i-flag"/></svg></button>
   <button id="armyBtn" type="button" aria-label="Armee aufstellen"><svg class="icon"><use href="#i-troops"/></svg></button>
   <button id="eventBtn" type="button" aria-label="Ereignisse: Tagesboss und Barbaren-Lager"><svg class="icon"><use href="#i-attack"/></svg></button>
+  <button id="bundBtn" type="button" aria-label="Bündnis"><svg class="icon"><use href="#i-bund"/></svg><span id="bundBadge" class="badge" style="display:none">0</span></button>
   <button id="settingsBtn" type="button" aria-label="Einstellungen"><svg class="icon"><use href="#i-gear"/></svg></button>
 </div>
 <div id="armySheet" class="marker-sheet field-sheet" hidden></div>
@@ -1617,6 +1653,23 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
   <div class="pbody" id="rulerBody"></div>
 </section>
 
+<!-- ============ BÜNDNIS (Knopf an der Karte, buendnis.js) ============ -->
+<section id="bundPopup" class="panel panel--sheet" role="dialog" aria-labelledby="bundTitle">
+  <span class="sheet-grab" aria-hidden="true"></span>
+  <header class="phead">
+    <div id="bundEmblem" class="emblem emblem--gold"><svg class="icon"><use href="#i-bund"/></svg></div>
+    <div class="phead-text"><div class="overline">Bündnis</div><h3 id="bundTitle" class="ptitle">Bündnis</h3><div class="psub" id="bundSub"></div></div>
+    <button id="bundCloseBtn" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button>
+  </header>
+  <div id="bundTabs" class="tabs" role="tablist">
+    <button class="tab active" type="button" role="tab" data-btab="info"><svg class="icon"><use href="#i-bund"/></svg><span>Übersicht</span></button>
+    <button class="tab" type="button" role="tab" data-btab="sig"><svg class="icon"><use href="#i-flag"/></svg><span>Signale</span></button>
+    <button class="tab" type="button" role="tab" data-btab="rally"><svg class="icon"><use href="#i-troops"/></svg><span>Rally</span></button>
+    <button class="tab" type="button" role="tab" data-btab="suchen"><svg class="icon"><use href="#i-scout"/></svg><span>Suchen</span></button>
+  </div>
+  <div class="pbody"><div id="bundOben"></div><div id="bundLive" class="bd-live"></div></div>
+</section>
+
 <!-- ============ RANGLISTE ============ -->
 <!-- ============ EINSTELLUNGEN (Zahnrad an der Karte) ============ -->
 <section id="settingsPopup" class="panel panel--sheet" role="dialog" aria-labelledby="settingsTitle">
@@ -1636,6 +1689,8 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         <label class="set-zeile"><span>Angriff auf deine Basis</span><input type="checkbox" data-push-art="angriff"></label>
         <label class="set-zeile"><span>Späher unterwegs zu dir</span><input type="checkbox" data-push-art="spaeher"></label>
         <label class="set-zeile"><span>Basis verloren</span><input type="checkbox" data-push-art="verloren"></label>
+        <label class="set-zeile"><span>Bündnis ruft um Hilfe</span><input type="checkbox" data-push-art="hilfe"></label>
+        <label class="set-zeile"><span>Rally gegen dich</span><input type="checkbox" data-push-art="rally"></label>
       </div>
     </div>
     <div class="sect"><h4>Ton</h4></div>
@@ -1666,6 +1721,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
       <p><b>Felder</b> (Gold, Edelsteine) → Truppen sammeln dort, außen 1 Std., innen bis 4 Std.</p>
       <p><b>Stadt</b> → Gebäude geben Boni, das Lazarett rettet Verwundete.</p>
       <p><b>Mitte</b> → wer den Mega-Tempel hält, herrscht über die Welt.</p>
+      <p><b>Bündnis</b> (Schild-Knopf an der Karte) → zusammen mit anderen: Signale, Rally, Tempel-Bonus.</p>
     </div>
     <div class="sect"><h4>Info</h4></div>
     <div class="kv"><div><span>Version</span><b id="setVersion"></b></div></div>
@@ -1934,6 +1990,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
   </header>
   <div class="pbody">
     <div id="popupStats" class="popup-stats"></div>
+    <div id="popupBund"></div>
     <div id="popupActions" class="actgrid">
       <button id="teleportBtn" class="act act--city" type="button" style="display:none"><span class="act-ic act-ic--city"><svg class="icon"><use href="#i-send"/></svg></span><span class="act-t">Hauptstadt verlegen</span><span class="act-s">in einen eigenen Turm · 50 Gems</span></button>
       <button id="titleBtn" class="act act--city" type="button" style="display:none"><span class="act-ic act-ic--city"><svg class="icon"><use href="#i-temple"/></svg></span><span class="act-t">Titel</span><span class="act-s">Buffs und Strafen vergeben</span></button>
@@ -1956,6 +2013,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
     <script src="bots.js?v=<?= v('bots.js') ?>"></script>
     <script src="welt.js?v=<?= v('welt.js') ?>"></script>
     <script src="spiel.js?v=<?= v('spiel.js') ?>"></script>
+    <script src="buendnis.js?v=<?= v('buendnis.js') ?>"></script>
     <script src="benachrichtigung.js?v=<?= v('benachrichtigung.js') ?>"></script>
 </body>
 </html>

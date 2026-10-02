@@ -160,7 +160,7 @@ async function los() {
             const u = new URL(url);
             if (!u.href.startsWith(URL_BASIS)) return Promise.resolve(Buffer.from(''));
             const datei = path.basename(u.pathname);
-            if (!/^(speichern|ladebildschirm|bots|welt|spiel)\.js$/.test(datei)) return Promise.resolve(Buffer.from(''));
+            if (!/^(speichern|ladebildschirm|bots|welt|spiel|buendnis)\.js$/.test(datei)) return Promise.resolve(Buffer.from(''));
             return Promise.resolve(fs.readFileSync(path.join(GAME, datei)));
         }
     }

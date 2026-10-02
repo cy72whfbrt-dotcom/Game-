@@ -16,6 +16,12 @@ pruefe('Stufe als Text', befehl_ok(['art' => 'ausbau', 'insel' => 3, 'stufe' => 
 pruefe('zu tief verschachtelt', befehl_ok(['art' => 'armee', 'ziel' => ['a' => ['b' => ['c' => ['d' => ['e' => 1]]]]]]), false);
 pruefe('HTML im Text', befehl_ok(['art' => 'titel', 'key' => '<script>']), false);
 pruefe('zu langer Text', befehl_ok(['art' => 'titel', 'key' => str_repeat('x', 300)]), false);
+pruefe('Bündnis-Befehl', befehl_ok(['art' => 'bund', 'op' => 'gruenden', 'name' => 'Test Bund', 'tag' => 'TB', 'farbe' => 2, 'zeichen' => 1, 'offen' => true, 'at' => 1]), true);
+pruefe('Bündnis-Name mit HTML', befehl_ok(['art' => 'bund', 'op' => 'gruenden', 'name' => '<b>x</b>']), false);
+pruefe('Bündnis-Geschenk ok', bund_geschenk_ok(['art' => 'bundGeschenk', 'coins' => 2000, 'tr' => 500, 'crate' => 1, 'hint' => 'X hat einen Boss besiegt']), true);
+pruefe('Bündnis-Geschenk mit Gems', bund_geschenk_ok(['art' => 'bundGeschenk', 'coins' => 2000, 'gems' => 500]), false);
+pruefe('Bündnis-Geschenk Gold-Kiste', bund_geschenk_ok(['art' => 'bundGeschenk', 'coins' => 1, 'crate' => 4]), false);
+pruefe('Bündnis-Geschenk riesig', bund_geschenk_ok(['art' => 'bundGeschenk', 'coins' => 1e14]), false);
 pruefe('Armee mit Koordinaten (auch minus)', befehl_ok(['art' => 'armee', 'op' => 'neu', 'pt' => ['x' => -3500.5, 'y' => 1200, 'lm' => 4], 'quellen' => [1, 2]]), true);
 
 // --- Profil: Fantasiewerte werden auf echte Spielgrenzen gekappt

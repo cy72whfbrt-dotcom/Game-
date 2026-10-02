@@ -59,7 +59,7 @@ for x in $(ls_ordner /Game); do
 done
 
 # 5) Prüfen: Dateien unverändert angekommen?
-for f in ladebildschirm.js spiel.js bots.js welt.js baukunst.js speichern.js weltrechner/start.js weltrechner/push.js weltrechner/jsdom.js sw.js benachrichtigung.js app/manifest.webmanifest app/icon-512.png app/logo.svg; do
+for f in ladebildschirm.js spiel.js bots.js welt.js buendnis.js baukunst.js speichern.js weltrechner/start.js weltrechner/push.js weltrechner/jsdom.js sw.js benachrichtigung.js app/manifest.webmanifest app/icon-512.png app/logo.svg; do
   [ "$(sha1sum < Game/$f)" = "$(curl -sS "$U/$f" | sha1sum)" ] && echo "geprüft: $f" || { echo "FEHLER: $f anders"; exit 1; }
 done
 # 6) Wartung aus – alle können wieder spielen

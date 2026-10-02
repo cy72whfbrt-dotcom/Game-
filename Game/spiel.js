@@ -6,6 +6,8 @@ const SYSTEM = !!(window.__OW && window.__OW.system);
 function alsBefehl(art, daten) { if (rechnet()) return false; WELT.befehl(art, daten); return true; }
 const neutralId = id => (id === 'player' && window.WELT) ? WELT.ich : id;     // 'player' → u<meine id> (für Befehle/Nachrichten)
 const lokalId = id => (window.WELT && id === WELT.ich) ? 'player' : id;
+// Bündnisse (buendnis.js, wird nach spiel.js geladen): sind a und b im selben Bündnis? – Mitglieder greifen sich nicht an
+function bundFreund(a, b) { return typeof bundVerbuendet === 'function' && bundVerbuendet(a, b); }
 // Truppen, die dir geschenkt werden (Stufe, Thron-Shop, Lazarett, Funde, Admin): beim Zuschauer macht es der Weltrechner.
 // q = woher (stufe/thron/heil/fund/geschenk) – der Weltrechner prüft danach, wie viele es höchstens sein dürfen (Schummel-Schutz).
 function eigeneTruppenDazu(base, n, q, mehr) { if (base === null || base === undefined || !(n > 0)) return; islandTroops[base] = (islandTroops[base] || 0) + n; alsBefehl('truppen', Object.assign({ n, q }, mehr || {})); }
@@ -437,7 +439,7 @@ function routeFor(a, b, payer) {
         const cur = queue.shift();
         for (const nb of reachableLandmassIds[cur] || []) {
             if (nb === cur || prev[nb] !== undefined || !landmassesConnected(cur, nb)) continue;
-            const gate = gateOnRoute(cur, nb), free = !gate || islandOwnerOf(gate.id) === payer;
+            const gate = gateOnRoute(cur, nb), free = !gate || islandOwnerOf(gate.id) === payer || bundFreund(islandOwnerOf(gate.id), payer);   // (Tore des eigenen Bündnisses sind frei)
             if (nb === b) { const out = [b]; for (let x = cur; x !== -1; x = prev[x]) out.unshift(x); return out; }
             if (!free) continue;                    // a foreign gate ends the march there
             prev[nb] = cur; queue.push(nb);
@@ -453,7 +455,7 @@ function spaeherWeg(a, b, who) {
     const suche = streng => { const seen = new Set([a]), q = [a];
         while (q.length) { const cur = q.shift();
             for (const nb of reachableLandmassIds[cur] || []) { if (seen.has(nb) || !landmassesConnected(cur, nb)) continue;
-                if (streng) { const g = gateOnRoute(cur, nb); if (g && islandOwnerOf(g.id) !== who && gateSettings(g).closed) continue; }
+                if (streng) { const g = gateOnRoute(cur, nb); if (g && islandOwnerOf(g.id) !== who && !bundFreund(islandOwnerOf(g.id), who) && gateSettings(g).closed) continue; }
                 if (nb === b) return true; seen.add(nb); q.push(nb); } }
         return false; };
     return suche(true) || !suche(false);
@@ -472,7 +474,7 @@ function setGateSettings(gateId, patch) { const c = loadGateCfg(); c[gateId] = O
 const GATE_TOLLS = [0, 0.1, 0.25, 0.5, 1, 2], TOLL_MAX = 1e6;   // per troop, but never more than 1 Mio. per march
 function tollFor(fromLm, toLm, troops, payer, targetId, cut) {  // → { gate, cost, closed } (free for the gate's owner - and for an attack ON the gate itself); cut = a hero's −% Maut
     const gate = gateOnRoute(fromLm, toLm);
-    if (!gate || islandOwnerOf(gate.id) === payer || gate.id === targetId) return { gate, cost: 0 };
+    if (!gate || islandOwnerOf(gate.id) === payer || gate.id === targetId || bundFreund(islandOwnerOf(gate.id), payer)) return { gate, cost: 0 };   // Bündnis: Tore der Mitglieder sind für alle Mitglieder frei und offen
     const cfg = gateSettings(gate);
     if (!islandOwnerOf(gate.id) || cfg.closed) return { gate, cost: Infinity, closed: true };   // unowned gates are shut
     return { gate, cost: cfg.toll > 0 ? Math.round(Math.max(100, Math.min(TOLL_MAX, Math.round(Math.max(0, troops) * cfg.toll))) * (1 - Math.min(90, cut || 0) / 100)) : 0 };
@@ -1058,8 +1060,9 @@ function totalTroops() {
 }
 // The same multipliers runProductionTick uses (equipment/skills, ruler bonus, titles)
 function cityLevelSafe(id) { try { return loadCity().levels[id] || 0; } catch (e) { return 0; } }   // (the city isn't set up during the first boot steps)
-function playerCoinMult() { return coinProductionMultiplier() * (rulerOwner() === 'player' ? RULER_BONUS : 1) * titleMult('player', 'coins') * (1 + cityLevelSafe('treasury') * .02); }
-function playerTroopMult() { return troopProductionMultiplier() * (rulerOwner() === 'player' ? RULER_BONUS : 1) * titleMult('player', 'troops') * (1 + cityLevelSafe('barracks') * .02); }
+function playerCoinMult() { return coinProductionMultiplier() * (rulerOwner() === 'player' ? RULER_BONUS : 1) * titleMult('player', 'coins') * (1 + cityLevelSafe('treasury') * .02) * bundProdFaktor('player'); }
+function bundProdFaktor(who) { return typeof bundProdMult === 'function' ? bundProdMult(who) : 1; }   // Tempel-Bonus des Bündnisses
+function playerTroopMult() { return troopProductionMultiplier() * (rulerOwner() === 'player' ? RULER_BONUS : 1) * titleMult('player', 'troops') * (1 + cityLevelSafe('barracks') * .02) * bundProdFaktor('player'); }
 function totalTroopProductionPerTick() {
     let sum = 0; const m = playerTroopMult();
     for (const ownedId of ownedIslands) {
@@ -1425,9 +1428,10 @@ function scoutSecs(from, to, botId) { return travelDurationSeconds(from, to, bot
 function travelDurationSeconds(source, target, botId) {   // everyone gets their own speed skill + Akademie, never under 3 s
     const pts = source.landmassId === target.landmassId ? [source, target] : marchPath(source, target);
     let distance = 0; for (let i = 1; i < pts.length; i++) distance += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
-    if (botId) return Math.max(3, Math.min(MAX_ATTACK_SECONDS, Math.max(MIN_ATTACK_SECONDS, distance / BASE_ATTACK_SPEED)) / botMarchMult(botId));   // their speed skill + Akademie, like yours
+    const bt = typeof bundTempo === 'function' ? bundTempo(botId || 'player', target) : 1;      // Bündnis-Gebiet: 10 % schneller
+    if (botId) return Math.max(3, Math.min(MAX_ATTACK_SECONDS, Math.max(MIN_ATTACK_SECONDS, distance / BASE_ATTACK_SPEED)) / botMarchMult(botId) / bt);   // their speed skill + Akademie, like yours
     const base = Math.min(MAX_ATTACK_SECONDS, Math.max(MIN_ATTACK_SECONDS, distance / BASE_ATTACK_SPEED));   // clamp first, so the speed skill and the Akademie also shorten long marches
-    return Math.max(3, base / (attackSpeedMultiplier() * (1 + academyLevel() * 0.02)));
+    return Math.max(3, base / (attackSpeedMultiplier() * (1 + academyLevel() * 0.02)) / bt);
 }
 
 let pendingAttacks;
@@ -1491,6 +1495,7 @@ function launchAttack(sourceId, targetId, attackerBotId, troopsOverride, heldWun
         : available;
     if (!source || !target || rawTroops <= 0) return false;
     if (!attackerBotId && target.id === playerIslandId) return false;
+    { const ow = islandOwnerOf(target.id); if (bundFreund(attackerBotId || 'player', ow)) { if (!attackerBotId) flashHint((botById[ow] || {}).name + ' ist in deinem Bündnis – Mitglieder greifen sich nicht an.', 3500); return false; } }   // Bündnis: gesperrt
     if (!attackerBotId && !islandSeen(target)) { flashHint('Dieses Ziel liegt im Nebel – schick zuerst einen Späher.', 3000); return false; }   // nichts im Nebel angreifen
     if (!attackerBotId) { const tw = islandOwnerOf(target.id); if (tw && botById[tw] && botById[tw].mensch) neulingEnde('Dein Anfängerschutz ist vorbei – du hast einen echten Spieler angegriffen.'); }
     const tOwner = islandOwnerOf(target.id);
@@ -1602,6 +1607,7 @@ function recallMarch(key) {                          // an attack or a send turn
     if (!rechnet()) {                                 // Zuschauer: der Weltrechner lässt sie umkehren
         const m = pendingAttacks.find(x => marchKeyOf(x) === key) || pendingSends.find(x => marchKeyOf(x) === key);
         if (m && m.fightEndsAt) { flashHint('Die Truppen kämpfen schon – zu spät zum Zurückrufen.', 3000); return; }
+        if (m && m.rally) { flashHint('Eine Rally gehört allen, die mitmachen – sie kann nicht zurückgerufen werden.', 3500); return; }
         if (m && m.vorlaeufig) { flashHint('Einen Moment – der Marsch läuft gerade los.', 1500); return; }
         if (m) { WELT.befehl('zurueck', { key }); flashHint('Deine Truppen kehren um.', 3000); }
         return;
@@ -1693,6 +1699,7 @@ function marchButtons(m, canRecall) {
 function resolveSend(send) {
     const target = islandById[send.toId];
     if (!target) return;
+    if ((send.rally || send.hilfe) && typeof bundSendAnkunft === 'function' && bundSendAnkunft(send)) return;   // Bündnis: zur Rally oder als Hilfe zu einem Mitglied
     const sender = send.senderBotId || 'player';
     if (islandOwnerOf(send.toId) !== sender) {       // the base fell while they marched: they turn round instead of joining the enemy
         const home = islandOwnerOf(send.fromId) === sender ? send.fromId : sender === 'player' ? rewardBaseId() : [...(botOwnedIslands[sender] || [])][0];
@@ -2824,10 +2831,11 @@ function bannerModel(island) {
   const tName = island.type === 'megaTemple' ? 'Mega-Tempel' : island.guardian ? 'Wächter-Tempel' : 'Tempel';
   const boss = bossAt(island.id);
   if (boss) return { kind: 'bot', glyph: 'attack', name: boss.name, troops: fmtCompact(boss.troops), def: null, level, temple: false, p: 4.8 };
+  const tag = owner && typeof bundTagVon === 'function' ? bundTagVon(owner) : '', vorn = tag ? '[' + tag + '] ' : '';   // Bündnis-Kürzel vor dem Namen
   if (owner === 'player') return { kind: 'player', glyph: isTemple ? 'temple' : island.type === 'gate' ? 'lock' : island.id === playerIslandId ? 'castle' : 'crest:player:' + crestKey(),
-                                   name: island.id === playerIslandId ? 'Hauptstadt' : profileName.value || 'Du',
+                                   name: island.id === playerIslandId ? 'Hauptstadt' : vorn + (profileName.value || 'Du'),
                                    troops: fmtCompact(islandTroops[island.id] || 0), def: null, level, temple: isTemple, p: 4 };
-  if (owner) return { kind: 'bot', glyph: isTemple ? 'temple' : botCapitalOf(owner) === island.id ? 'castle' : 'crest:' + owner, name: botById[owner].name,
+  if (owner) return { kind: bundFreund('player', owner) ? 'ally' : 'bot', glyph: isTemple ? 'temple' : botCapitalOf(owner) === island.id ? 'castle' : 'crest:' + owner, name: vorn + botById[owner].name,
                       troops: scouted ? fmtCompact(islandTroops[island.id] || 0) : '?', def: null, level, temple: isTemple, p: 3 };
   if (island.type === 'gate') return { kind: 'neutral', glyph: 'lock', name: island.gateKind === 'throne' ? 'Thron-Tor' : island.gateKind === 'guardian' ? 'Wächter-Tor' : 'Grenztor',
            troops: scouted ? fmtCompact(island.neutralTroops) : '?', def: scouted ? fmtCompact(island.neutralDefense) : null, level, temple: false, p: 2.5 };
@@ -2841,7 +2849,8 @@ const TIER = { A: { H: 30, av: 32, fn: 11.5, fs: 10.5, pad: 8, lv: 15, max: 15 }
                C: { H: 20, av: 20, fn: 9,    fs: 8.5,  pad: 5, lv: 11, max: 8 } };
 const PLATE = { player: { top: '#2b5d9b', bot: '#183a66', line: 'rgba(140,192,255,.7)',  hi: '#8cc0ff' },
                 bot:    { top: '#8e2b24', bot: '#5a1814', line: 'rgba(255,141,130,.62)', hi: '#ff8d82' },
-                neutral:{ top: '#474a51', bot: '#2f3136', line: 'rgba(198,201,207,.42)', hi: '#c6c9cf' } };
+                neutral:{ top: '#474a51', bot: '#2f3136', line: 'rgba(198,201,207,.42)', hi: '#c6c9cf' },
+                ally:   { top: '#2c7a4b', bot: '#17472b', line: 'rgba(140,230,170,.62)', hi: '#8ce6aa' } };   // Bündnis-Mitglieder: grün
 const trunc = (s, n) => s.length <= n ? s : s.slice(0, n - 1) + '…';
 // ===== WAPPEN: the player's coat of arms (profile, HUD, own nameplates, battle banner) =====
 var CREST_COLORS = ['#2c4a70', '#8e2a24', '#2f5a2f', '#1d1d24', '#d4a93c', '#ece6d6', '#5b2c6f'];
@@ -3474,6 +3483,7 @@ function drawMap() {
   for (const r of pendingRetreats) drawMarchLine('retreat', islandById[r.fromId], islandById[r.toId], r.startedAt, r.resolveAt, wallNow, r.path, marchKeyOf(r));   // 6
   setScreen(ctx);
   drawBossOverlay(now);                                                                                                // world-event boss aura (under the tower)
+  if (typeof bundKarteUnten === 'function') bundKarteUnten(vis, z);                                                    // Bündnis-Gebiet: zart in der Bündnisfarbe
   drawBaseAuras(vis, z, now);                                                                                          // level + title auras under the towers
   drawThronePlaza(z, now);                                                                                             // the Thronplatz around the Mega-Tempel
   drawResFields(now, wallNow);                                                                                          // gold mines and gem veins
@@ -3497,6 +3507,7 @@ function drawMap() {
   drawMapBattles(now);                                                                                                 // fights playing out at the bases
   drawThroneShots(now);                                                                                                // the Wächter-Tempel firing on the throne
   drawMarkers();                                                                                                       // your own Wegmarken
+  if (typeof bundKarteOben === 'function') bundKarteOben(z, now);                                                      // Bündnis: Signale und Rally-Fahnen
   drawBattleFx(now);                                                                                                   // 13 battle flashes + "Sieg!"
   if (shake) { mapState.offsetX -= shake.x; mapState.offsetY -= shake.y; }
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -4122,10 +4133,17 @@ setInterval(() => {
         // A wave that comes after the fight is decided starts a fight of its own.
         for (const a of pendingAttacks.filter(x => x.resolveAt <= now && !x.fightEndsAt)) {
             const tow = islandOwnerOf(a.targetId), atkr = a.attackerBotId || 'player';
+            if (tow && tow !== atkr && bundFreund(atkr, tow)) {                     // inzwischen gehört das Ziel einem Bündnis-Mitglied: kein Kampf, die Truppen gehen heim
+                if (a.rally) bundRallyHeim(a, a.rawTroops, a.targetId);
+                else { const own = atkr === 'player' ? ownedIslands : botOwnedIslands[atkr], back = own && own.has(a.sourceId) ? a.sourceId : atkr === 'player' ? rewardBaseId() : botCapitalOf(atkr);
+                    if (back !== null && back !== undefined) islandTroops[back] = (islandTroops[back] || 0) + a.rawTroops; }
+                pendingAttacks.splice(pendingAttacks.indexOf(a), 1); renderActiveMarches(); continue;
+            }
             if (tow && tow !== atkr && shieldCovers(islandById[a.targetId]) && ownerShielded(tow, Math.min(now, a.resolveAt))) {                 // bounces off the Friedensschild (as it stood when the wave arrived) - the troops come back
                 const own = atkr === 'player' ? ownedIslands : botOwnedIslands[atkr];
                 const back = own && own.has(a.sourceId) ? a.sourceId : atkr === 'player' ? rewardBaseId() : botCapitalOf(atkr);
-                if (back !== null && back !== undefined) islandTroops[back] = (islandTroops[back] || 0) + a.rawTroops;
+                if (a.rally) bundRallyHeim(a, a.rawTroops, a.targetId);              // (eine Rally: jeder bekommt seinen Anteil zurück)
+                else if (back !== null && back !== undefined) islandTroops[back] = (islandTroops[back] || 0) + a.rawTroops;
                 pendingAttacks.splice(pendingAttacks.indexOf(a), 1);
                 if (tow === 'player') { flashHint('Dein Friedensschild hat den Angriff von ' + botById[a.attackerBotId].name + ' auf ' + islandTitle(islandById[a.targetId]) + ' abgewehrt.', 4000);
                     spawnBattleFx(a.targetId, true, 'Schild hält', botById[a.attackerBotId].name + ' prallt ab'); }
@@ -4135,13 +4153,13 @@ setInterval(() => {
                 renderActiveMarches(); continue;
             }
             if (islandOwnerOf(a.targetId) === (a.attackerBotId || 'player')) {   // the base is already ours (an earlier wave took it): they simply move in
-                islandTroops[a.targetId] = (islandTroops[a.targetId] || 0) + a.rawTroops;
+                islandTroops[a.targetId] = (islandTroops[a.targetId] || 0) + (a.rally ? bundRallyHeim(a, a.rawTroops, a.targetId, true) : a.rawTroops);   // (Rally: nur der Anteil des Starters zieht ein)
                 pendingAttacks.splice(pendingAttacks.indexOf(a), 1);
                 if (!a.attackerBotId) { flashHint(islandTitle(islandById[a.targetId]) + ' gehört schon dir – ' + fmtNum(a.rawTroops) + ' Truppen verstärken die Besatzung.', 4000); updateHud(); saveGame(); saveProgression(); }
                 continue;
             }
             if (atkr === 'player') dropShield('Dein Friedensschild ist gefallen – dein Angriff auf ' + islandTitle(islandById[a.targetId]) + ' ist angekommen.'); else botDropShield(atkr);   // a wave that fights is an attack
-            const fight = pendingAttacks.find(p => p !== a && p.fightEndsAt > now && p.targetId === a.targetId && (p.attackerBotId || null) === (a.attackerBotId || null));
+            const fight = !a.rally && pendingAttacks.find(p => p !== a && !p.rally && p.fightEndsAt > now && p.targetId === a.targetId && (p.attackerBotId || null) === (a.attackerBotId || null));
             if (fight) {
                 fight.rawTroops += a.rawTroops; fight.attackBonus = (fight.attackBonus || 0) + (a.attackBonus || 0);
                 if (fight.skillBonus !== undefined || a.skillBonus !== undefined) fight.skillBonus = (fight.skillBonus || 0) + (a.skillBonus !== undefined ? a.skillBonus : a.attackBonus || 0); fight.waves = (fight.waves || 1) + (a.waves || 1);
@@ -6282,6 +6300,7 @@ function renderHeroChests() {                       // the odds per rarity follo
         '<span class="cost cost--gem"><svg class="icon"><use href="#i-gem"/></svg><b>' + fmtNum(c.gems) + '</b></span></button>').join(''));
 }
 function heroChestOpen(who, c) {                    // the same chest for you and the others: n draws of c.sh shards
+    if (c.gems >= 500) { if (who === 'player') alsBefehl('bund', { op: 'kiste', c: c.id }); else if (typeof bundGeschenk === 'function') bundGeschenk(who, 'kiste'); }   // große Kiste: Geschenk fürs Bündnis
     const got = []; for (let i = 0; i < c.n; i++) { const h = heroGrantShards(who, c.sh, null, c.minR); if (h) got.push(h); } return got;
 }
 shopPopup.addEventListener('click', e => { const bt = e.target.closest('[data-hchest]'); if (!bt) return;
@@ -9071,7 +9090,7 @@ function fieldArrive(m, now) {
         return;
     }
     const o = st.occ;
-    if (o && o.who !== m.who && ownerShielded(o.who, Math.min(now, m.resolveAt || now))) {                             // the gatherers there stand under a Friedensschild: back home
+    if (o && o.who !== m.who && (ownerShielded(o.who, Math.min(now, m.resolveAt || now)) || bundFreund(o.who, m.who))) {   // (auch: dort sammelt ein Bündnis-Mitglied)                             // the gatherers there stand under a Friedensschild: back home
         const home = islandById[m.homeId] || islandById[playerIslandId];
         fieldMarches.push({ who: m.who, homeId: m.homeId, fieldId: f.id, troops: m.troops, hero: m.hero || null, startedAt: now, resolveAt: now + fieldTravelSec(home, f, m.who) * 1000, back: true, load: 0 });
         if (m.who === 'player') flashHint('Friedensschild bei ' + fieldWhoName(o.who) + ' – deine Truppen kehren von der ' + FIELD_KINDS[f.kind].name + ' zurück.', 4000);
@@ -9569,6 +9588,7 @@ function armyMove(a, t) {                                                    // 
     if (t.kind === 'base' && isCapital(t.id)) return 'capital';
     if (t.kind === 'base' && baseShieldedFor(t.id, who)) return 'shield';
     if (t.kind === 'army') { const b = armyById(t.id); if (b && armyWho(b) !== who && ownerShielded(armyWho(b))) return 'shield'; }
+    if (bundFreund(who, t.kind === 'base' ? islandOwnerOf(t.id) : t.kind === 'army' && armyById(t.id) ? armyWho(armyById(t.id)) : null)) return 'bund';   // Bündnis-Mitglieder greifen sich nicht an
     if (!routeFor(a.lm, t.lm, who)) return 'route';
     const mx = heroMarchFx(who, a.hero, true);                                  // its hero: Tempo, Pirsch, Maut
     if (a.lm !== t.lm) { const hop = lastHop(a.lm, t.lm, who); if (!payToll(hop[0], hop[1], a.troops, who, t.kind === 'base' ? t.id : undefined, mx ? mx.toll : 0)) return 'toll'; }
@@ -9583,6 +9603,7 @@ function armyOrder(a, t) {
     if (why === 'shield') flashHint(shieldBlockText(t.kind === 'army' ? armyWho(armyById(t.id)) : islandOwnerOf(t.id)), 4000);
     if (why === 'capital') flashHint('Das ist die Hauptstadt von ' + (botById[islandOwnerOf(t.id)] || {}).name + ' – Hauptstädte können nicht angegriffen werden.', 3500);
     if (why === 'route') flashHint(noRouteHint(a.lm, t.lm), 3500);
+    if (why === 'bund') flashHint('Das gehört einem Bündnis-Mitglied – Mitglieder greifen sich nicht an.', 3500);
     if (why) return false;
     const foe = t.kind === 'army' && armyById(t.id) && armyWho(armyById(t.id)) !== 'player';
     const what = t.kind === 'base' ? 'greift ' + islandTitle(islandById[t.id]) + ' an' : t.kind === 'home' ? 'zieht nach ' + islandTitle(islandById[t.id]) : t.kind === 'field' ? 'zieht zur ' + FIELD_KINDS[fieldById[t.id].kind].name
@@ -9624,7 +9645,7 @@ function armyArrive(a, now) {
         if (me) { flashHint('Armee ist in ' + islandTitle(islandById[t.id]) + ' eingezogen: +' + fmtCompact(a.troops) + ' Truppen.', 3000); updateHud(); saveGame(); } return; }
     if (t.kind === 'army') { const b = armyById(t.id); if (!b) return;
         if (armyWho(b) === who) { b.troops += a.troops; gone(); if (me) flashHint('Armeen vereint: jetzt ' + fmtCompact(b.troops) + ' Truppen.', 3000); }
-        else if (ownerShielded(armyWho(b), now)) { if (me) flashHint('Die Armee von ' + armyName(b) + ' steht unter einem Friedensschild – kein Kampf.', 3500); }
+        else if (ownerShielded(armyWho(b), now) || bundFreund(who, armyWho(b))) { if (me) flashHint('Die Armee von ' + armyName(b) + (bundFreund(who, armyWho(b)) ? ' gehört zu deinem Bündnis' : ' steht unter einem Friedensschild') + ' – kein Kampf.', 3500); }
         else { const p = armyPos(b, now); if (Math.hypot(p.x - a.x, p.y - a.y) < ISLAND_RADIUS * 2) { if (me) dropShield('Dein Friedensschild ist gefallen, weil du angreifst.'); else botDropShield(who); armyClash(a, b); } else if (me) flashHint('Die Armee von ' + armyName(b) + ' ist weitergezogen.', 3000); }
         return; }
     if (t.kind === 'field') { gone(); fieldArrive({ who, homeId: armyHome(a), fieldId: t.id, troops: a.troops, hero: a.hero || null, back: false }, now); saveFields(); return; }
@@ -9856,7 +9877,7 @@ let previewShownAt = 0; // guards against a stray click landing on the
 // the keyboard handler uses this: map shortcuts only fire while focus is on the page or the canvas
 function isUiElement(target) {
   return !!(target && target.closest && target.closest(
-    '#islandPopup,#hud,#cornerButtons,#profilePopup,#rulerPopup,#rankPopup,#battleLogPopup,#goalsPopup,#shopPopup,#chestItemPopup,#multiAttackBar,#mapControls,#uiScrim,#uiScrimTop'));
+    '#islandPopup,#bundPopup,#hud,#cornerButtons,#profilePopup,#rulerPopup,#rankPopup,#battleLogPopup,#goalsPopup,#shopPopup,#chestItemPopup,#multiAttackBar,#mapControls,#uiScrim,#uiScrimTop'));
 }
 const PANEL_NAV = { profilePopup: 'profileBtn', battleLogPopup: 'battleLogBtn', goalsPopup: 'goalsBtn', shopPopup: 'shopBtn' };
 function isPanelOpen(el) { return el.classList.contains('is-open'); }
@@ -9892,7 +9913,7 @@ function closeTopmostPanel() {           // scrim click + Escape
   if (closeCity()) return;
   if (isPanelOpen(chestItemPopup)) return chestItemCloseBtn.click();
   if (isPanelOpen(popup)) return closeBtn.click();
-  for (const [pid, closeId] of [['settingsPopup','settingsCloseBtn'],['rulerPopup','rulerCloseBtn'],['rankPopup','rankCloseBtn'],['profilePopup','profileCloseBtn'],['battleLogPopup','battleLogCloseBtn'],['goalsPopup','goalsCloseBtn'],['shopPopup','shopCloseBtn']])
+  for (const [pid, closeId] of [['bundPopup','bundCloseBtn'],['settingsPopup','settingsCloseBtn'],['rulerPopup','rulerCloseBtn'],['rankPopup','rankCloseBtn'],['profilePopup','profileCloseBtn'],['battleLogPopup','battleLogCloseBtn'],['goalsPopup','goalsCloseBtn'],['shopPopup','shopCloseBtn']])
     if (isPanelOpen(document.getElementById(pid))) return document.getElementById(closeId).click();
   if (multiAttackMode) return multiAttackCancelBtn.click();
 }
@@ -10230,6 +10251,7 @@ function renderPopup() {
         }
     }
     if (popupView !== 'preview' && popupView !== 'send' && popupView !== 'recall') liveHtml(popupSub, subH + sep + '<span class="num coord">' + coordText(island.x, island.y) + '</span>');
+    if (typeof bundInselfenster === 'function') bundInselfenster(island, popupView);               // Bündnis: Signale, Rally, Hilfe
     if (!isPanelOpen(popup)) {
         openPanel(popup);
         // camera framing (design-spec §6.6): after layout, so the sheet/popover size is known
@@ -11356,7 +11378,7 @@ if (window.WELT) {
         },
         zurueck(who, b) {                             // umkehren: wie bei dir, nur als "Marsch zurück" dieses Spielers
             if (!kennungOk(b.key)) return;
-            const m = marschVon(who, b.key); if (!m || m.fightEndsAt) return;
+            const m = marschVon(who, b.key); if (!m || m.fightEndsAt || m.rally) return;   // (eine Rally gehört allen, die mitmachen)
             const now = Date.now(), fromId = m.sourceId ?? m.fromId, toId = m.targetId ?? m.toId, troops = m.rawTroops ?? m.troops;
             (pendingAttacks.includes(m) ? pendingAttacks : pendingSends).splice((pendingAttacks.includes(m) ? pendingAttacks : pendingSends).indexOf(m), 1);
             const home = gehoert(fromId, who) ? fromId : botCapitalOf(who);
@@ -11473,6 +11495,12 @@ if (window.WELT) {
         f(who, b);
     };
     WELT.BEFEHLE = BEFEHLE;
+    // für buendnis.js: Münzen prüfen (ohne abzuziehen – das geht als Nachricht „−Münzen“), Gutschrift für Geschenke, Warnungen
+    WELT.wache = {
+        kann(who, kosten) { const m = wacheSehen(who), d = wd(who); if (Date.now() - m.c.vorT > WACHE_WARTEN_MS) m.c.vor = 0; return m.c.vor + m.c.u + spielraumFrei(who, m) + (d ? nn(d.gC) : 0) >= kosten; },
+        gutschrift(who, c, tr) { const d = wd(who); if (!d) return; d.gC = nn(d.gC) + nn(c); d.gTr = nn(d.gTr) + nn(tr); saveBotState(); },
+        warnen, zuOft: (who, art, max, ms) => zuOft(wm(who), art, max, ms)
+    };
 
     // Nachrichten vom Weltrechner an mich: Münzen, Gems, EP, Thron-Punkte, Lazarett, Splitter, Zahlen
     const STAT_NAMEN = { caps: 'captures', pvp: 'pvpWins', defs: 'defends', bosses: 'bosses', wanders: 'wanders', temples: 'temples', scouts: 'scouts', tolls: 'tolls', tollCoins: 'tollCoins', armyWins: 'armyWins', healed: 'healed', barb: 'barb', dboss: 'dboss' };
