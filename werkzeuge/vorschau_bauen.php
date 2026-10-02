@@ -11,6 +11,10 @@ $html = str_replace('<?= $kopf ?>', '', $html);
 $html = preg_replace_callback("/<\?= v\('([^']+)'\) \?>/", function ($m) use ($quelle) { return filemtime($quelle . '/' . $m[1]); }, $html);
 foreach (['welt.js', 'benachrichtigung.js'] as $weg) $html = preg_replace('#\s*<script[^>]*src="' . preg_quote($weg, '#') . '[^"]*"[^>]*></script>#', '', $html);   // brauchen den Server
 if (strpos($html, '<?') !== false) exit("Fehler: noch PHP in spiel.php\n");
+if (($argv[2] ?? '') === 'artifact') {   // als Claude-Artifact: ohne <html>/<head>/<body> (die setzt der Artifact-Rahmen), Titel ganz oben
+    $html = preg_replace(['#<!DOCTYPE html>\s*#i', '#</?html[^>]*>\s*#i', '#</?head>\s*#i', '#<body[^>]*>\s*#i', '#</body>\s*#i', '#<link rel="(manifest|icon|apple-touch-icon)"[^>]*>\s*#'], '', $html);
+    $html = "<title>Open Water</title>\n" . preg_replace('#<title>[^<]*</title>\s*#', '', $html);
+}
 file_put_contents($ziel . '/index.html', $html);
 foreach (['ladebildschirm.js', 'baukunst.js', 'bots.js', 'spiel.js', 'aufbau.js', 'buendnis.js', 'haendler.js'] as $f) copy($quelle . '/' . $f, $ziel . '/' . $f);
 @mkdir($ziel . '/app', 0755, true);
