@@ -1105,6 +1105,8 @@ Alles in spiel.js (Abschnitt „THE CITY, ISOMETRIC“), nur Aussehen – Gebäu
   Freitag um Mitternacht. **Das Wochenende ist frei, da passiert nichts** (Alexander: „Wochenende bleibt frei“; kurz war es
   Mo–So, das ist wieder zurück). Der Reiter in Events heißt „Wochen-Event“ (Top 10 oben). Unter „Nächste Wochen“ steht
   jetzt „Mo 5. – Fr 9.10.“ statt nur „Mo 5.10.“ (Alexander dachte, Events sind nur montags).
+- **Vorschau (Test-Modus):** Drache kommt 5 s nach dem Laden (3 Std.), Barbaren-Invasion 1 Min. nach dem Laden (1 Std.) –
+  damit man beides ansehen kann (`EV_TEST` in werkzeuge/vorschau_test.js, nur Vorschau, nie im echten Spiel).
 
 ## 30. VIP KOMPLETT RAUS (Alexander 2.10.: „VIP find ich totaler Müll“) – NICHT hochgeladen
 - Weg: VIP-Stufen, Spieltage zählen (`openWaterVip`), VIP-Tageskiste, „Neue VIP-Stufe“-Hinweis, VIP-Zeile im Profil,
