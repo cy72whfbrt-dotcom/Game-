@@ -150,7 +150,7 @@ function resolveBotAttack(attack) {
     const totalStrength = originalEnemyTroops + originalEnemyDefense;
     const won = myTroops > totalStrength;
     if (targetOwner && targetOwner !== 'player') botGrudge(targetOwner, bot.id, won ? 2 : 1);   // bots hold grudges against each other too
-    addBotXp(bot.id, won ? totalStrength : Math.min(originalEnemyTroops, myTroops));
+    addBotXp(bot.id, won ? totalStrength : Math.min(originalEnemyTroops, myTroops));   // (gedeckelt in addBotXp)
     heroFought(bot.id, attack.hx);                                   // the hero's rage fills, like yours
     const playerInvolved = targetOwner === 'player';
     const bossHere = bossAt(target.id);
@@ -858,7 +858,8 @@ function botSpendSkills(bot, b) {
     for (let guard = 0; b.sp > 0 && guard < 10000; guard++) {
         const spent = BOT_SKILLS.reduce((a, k) => a + (b.skills[k] || 0), 0);
         let k = order[spent % order.length];
-        if (SKILL_DEFS[k].max && b.skills[k] >= SKILL_DEFS[k].max) k = order.find(q => !(SKILL_DEFS[q].max && b.skills[q] >= SKILL_DEFS[q].max)) || 'troops';
+        if (SKILL_DEFS[k].max && b.skills[k] >= SKILL_DEFS[k].max) k = order.find(q => !(SKILL_DEFS[q].max && b.skills[q] >= SKILL_DEFS[q].max)) || BOT_SKILLS.find(q => !(SKILL_DEFS[q].max && b.skills[q] >= SKILL_DEFS[q].max));
+        if (!k) break;                                                                  // alles voll: Punkte bleiben übrig
         b.skills[k] = (b.skills[k] || 0) + 1; b.sp--;
     }
 }
@@ -995,6 +996,7 @@ function botBestRarity(botId) {
 
 function addBotXp(botId, amount) {
     const b = loadBotState()[botId]; if (!b) return;
+    amount = kampfEp(amount, b.lvl);                                                  // höchstens ¼ Stufe pro Kampf (wie bei dir)
     if (botById[botId] && botById[botId].mensch) { b.xpNeu = (b.xpNeu || 0) + amount; return; }   // echter Spieler: die EP gehen als Nachricht zu ihm
     b.xp += amount;
     while (b.xp >= xpNeededForLevel(b.lvl)) { b.xp -= xpNeededForLevel(b.lvl); b.lvl++; b.sp++; b.gems += 3; }
@@ -1548,7 +1550,7 @@ function botThroneShop(botId) {                       // the others spend their 
     const fm = botLookFav(botId).march;                   // a Marsch-Skin from the Thron-Shop the same way
     if (fm && fm.tp && !(b.marchs || []).includes(fm.id) && b.tp >= fm.tp * 1.2 && Math.random() < .5) { b.tp -= fm.tp; b.marchs = [...(b.marchs || []), fm.id]; b.march = fm.id; }
     for (let n = 0; n < 5; n++) { const r = Math.random();
-        const id = !b.throneLook && b.tp >= 3000 && r < .4 ? 'look' : r < .45 ? 'troops' : r < .7 ? 'coins' : r < .85 ? 'crate' : r < .95 ? 'gems' : 'royal';
+        const id = !b.throneLook && b.tp >= 3000 && r < .4 ? 'look' : r < .45 ? 'troops' : r < .7 ? 'coins' : r < .95 ? 'crate' : 'royal';   // (Gems gibt es im Thron-Shop nicht mehr)
         const o = THRONE_OFFERS.find(x => x.id === id); if (!(b.tp >= o.cost)) break; b.tp -= o.cost; throneGive(botId, id); }
 }
 

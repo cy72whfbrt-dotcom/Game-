@@ -557,3 +557,23 @@ jsdom (einzige Abhängigkeit): 0 bekannte Lücken (`npm audit`).
 - Spielregel-Frage an Alexander: Hauptstadt auf eine gerade angegriffene Basis verlegen erlauben? (heute ja – damit
   rettet man jede Basis).
 - Klein: Handy-Uhr falsch gestellt → Marschzeiten wirken verschoben (Handys stellen die Uhr meist selbst; nicht gebaut).
+
+## 16. Neue Saison 2.10. – Spiel langsamer wie RoK (Alexanders Wunsch), Welt neu gestartet
+Nach einem Tag hatten Spieler Stufe 100, Mrd. Truppen und Gold-Ausrüstung. Ursachen und Änderungen (spiel.js/bots.js):
+- **EP:** vorher so viele EP wie der Gegner Truppen hatte (ein Sieg = Stufe 1 → 65). Jetzt höchstens ¼ der aktuellen
+  Stufe pro Kampf (`kampfEp`, `KAMPF_EP_ANTEIL`), für Spieler, Bots und echte Mitspieler. Bis Stufe 100: mind. 400 Siege.
+- **Sammeln wie RoK:** ein Feld leert sich in fester Zeit (außen 1 Std. … innen 4 Std., `fieldDauerSec`), egal wie viele
+  Truppen; die Truppen bestimmen nur die Traglast. Gem-Felder 20 … 147 Gems (vorher bis 18.000 in unter 1 Min.).
+  Gold-Felder gleiche Größe wie vorher, aber auch feste Zeit. Nachwachsen nach 60 statt 20 Min.
+- **Bosse:** alle 4–6 Std. (vorher 20–35 Min.), 20 Gems + lila Kiste (vorher 50 + Gold). Wanderboss alle 6–8 Std. (vorher
+  45–60 Min.), 50 Gems + lila Kiste (vorher 150 + Gold). Gold-Kiste nur noch Platz 1 beim Tagesboss.
+- **Thron-Shop:** keine Gems mehr (vorher 100 Gems für 150 Punkte ≈ 22.000 Gems/Tag für den Herrscher).
+- **Skills:** jede Fähigkeit höchstens 50 Punkte (Tempo 10) – auch in der Server-Prüfung (`profil_bereinigen`).
+- Basen draußen aufwerten: bleibt sofort, ohne Bauzeit (Alexander).
+
+**Welt-Neustart:** `werkzeuge/welt_neustart.php` (liegt NICHT auf dem Server). Ablauf: Wartung an → warten, bis der
+Weltrechner beendet ist → Datei mit Zufallsnamen in Game/ legen → `?ja=NEUSTART` → Datei löschen → Wartung aus.
+Sichert vorher alles in `weltrechner/altwelt_<Datum>.php` (404 von außen), löscht Welt + alle Spielstände (Stufe, Münzen,
+Gems, Ausrüstung, Stadt), leert `spiel_token` (alte offene Fenster können nichts zurückschreiben). Konten, Namen, Logins,
+Push bleiben. Der Weltrechner baut beim Start eine neue Welt (150 Mitspieler). Lokal getestet 2.10.
+

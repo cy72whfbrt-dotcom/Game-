@@ -28,6 +28,7 @@ pruefe('Verwundete nie negativ', $p['wounded'], 0);
 pruefe('Schild höchstens 8 Tage', $p['shieldUntil'] <= time() * 1000 + 8 * 86400000, true);
 pruefe('Anfängerschutz höchstens 48 h', $p['neuBis'] <= time() * 1000 + 48 * 3600000, true);
 pruefe('Tempo-Skill höchstens 10', $p['skills']['speed'], 10);
+pruefe('Angriff-Skill höchstens 50', $p['skills']['attack'], 50);
 pruefe('unbekannter Skill weg', isset($p['skills']['erfunden']), false);
 pruefe('Skillpunkte höchstens Stufe+20', array_sum($p['skills']) <= 2020, true);
 pruefe('Seltenheit 0–5', $p['gear']['weapon']['r'], 5);

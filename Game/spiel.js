@@ -1114,11 +1114,11 @@ const EQUIPMENT_DEFS = {
 };
 const SKILL_DEFS = {
   speed:       { icon: 'hourglass', name: 'Geschwindigkeit',    desc: 'schnellere Produktion und Märsche', msPerLevel: 40, max: 10 },
-  troops:      { icon: 'troops',    name: 'Truppenherstellung', desc: 'Truppenproduktion', pct: 3 },
-  defense:     { icon: 'defense',   name: 'Verteidigung',       desc: 'jede Basis verteidigt mit mehr Truppen', defPct: 3 },
-  defenseGold: { icon: 'shield',    name: 'Verteidigung: Gold', desc: 'Gold pro getöteter Truppe', rate: 0.3 },
-  attack:      { icon: 'attack',    name: 'Angriff',            desc: 'mehr Truppen bei jedem Angriff', atkPct: 3 },
-  attackGold:  { icon: 'sell',      name: 'Angriff: Gold',      desc: 'Gold pro getöteter Truppe', rate: 0.3 }
+  troops:      { icon: 'troops',    name: 'Truppenherstellung', desc: 'Truppenproduktion', pct: 3, max: 50 },
+  defense:     { icon: 'defense',   name: 'Verteidigung',       desc: 'jede Basis verteidigt mit mehr Truppen', defPct: 3, max: 50 },
+  defenseGold: { icon: 'shield',    name: 'Verteidigung: Gold', desc: 'Gold pro getöteter Truppe', rate: 0.3, max: 50 },
+  attack:      { icon: 'attack',    name: 'Angriff',            desc: 'mehr Truppen bei jedem Angriff', atkPct: 3, max: 50 },
+  attackGold:  { icon: 'sell',      name: 'Angriff: Gold',      desc: 'Gold pro getöteter Truppe', rate: 0.3, max: 50 }
 };
 const EQUIPMENT_BASE_COST = 100;
 
@@ -1367,6 +1367,10 @@ function grantLevelRewards(from, to) {
     else t = 0;
     queueLevelUpModal(from, to, { coins: c, troops: t, gems: g, points: to - from });
 }
+// EP aus einem Kampf: höchstens ein Viertel der Stufe, auf der man gerade ist (Wirtschaft 2.10.). Vorher gab es so viele EP,
+// wie der Gegner Truppen hatte – ein Sieg über eine große Basis brachte Stufe 1 → 65 auf einmal.
+const KAMPF_EP_ANTEIL = 0.25;
+function kampfEp(roh, lvl) { return Math.max(0, Math.min(roh || 0, Math.ceil(xpNeededForLevel(Math.max(1, lvl || 1)) * KAMPF_EP_ANTEIL))); }
 function addXp(amount) {
     const before = playerLvl;
     playerXp += amount;
@@ -1901,7 +1905,7 @@ function resolveAttack(attack) {
     noteBattle(target.id, won ? originalEnemyTroops : attack.rawTroops - retreatSurvivors, won ? targetOwner : 'player');
     midFight(target.id, 'player', won ? originalEnemyTroops : defenderCasualties, targetOwner, won ? sentLoss : attack.rawTroops - retreatSurvivors);   // Turnier-Punkte
     if (targetOwner && targetOwner !== 'player') botMoodAdd(targetOwner, won ? -.25 : .1);
-    addXp(won ? totalStrength : defenderCasualties);
+    addXp(kampfEp(won ? totalStrength : defenderCasualties, playerLvl));
     heroFought('player', attack.hx);                                     // every fight the hero leads fills his rage
     scoutedIslands.add(target.id);
     const ribbon = () => spawnBattleFx(target.id, won, capitalHolds ? 'Geplündert' : won ? (bossHere ? 'Boss besiegt' : 'Sieg') : 'Niederlage', capitalHolds ? 'die Hauptstadt hält' : won ? islandTitle(target) + ' erobert' : '−' + fmtCompact(attack.rawTroops - retreatSurvivors) + ' Truppen');
@@ -5896,7 +5900,6 @@ const guardianTempleIds = islands.filter(i => i.guardian).map(i => i.id);
 const THRONE_OFFERS = [
     { id: 'coins',  name: 'Münzen',              icon: 'coin',   cost: 150 },
     { id: 'troops', name: 'Truppen',             icon: 'troops', cost: 200 },
-    { id: 'gems',   name: '100 Gems',            icon: 'gem',    cost: 150 },
     { id: 'crate',  name: 'Ausrüstungskiste',    icon: 'shop',   cost: 60 },
     { id: 'royal',  name: 'Königliche Kiste',    icon: 'shop',   cost: 400 },
     { id: 'look',   name: 'Titel „Thronhüter“ + Thron-Rahmen', icon: 'crown', cost: 3000, once: true },
@@ -7159,7 +7162,7 @@ function drawBattleFx(now) {       // screen space (setScreen active)
 // Now and then a Drachenturm or a Piratenfestung takes over a neutral base near the player:
 // a huge garrison, a countdown, and a legendary crate for whoever breaks it. Bots leave it alone.
 var BOSS_KINDS = [{ kind: 'dragon', name: 'Drachenturm' }, { kind: 'pirate', name: 'Piratenfestung' }];
-var BOSS_DURATION_MS = 30 * 60 * 1000, BOSS_REWARD_GEMS = 50;
+var BOSS_DURATION_MS = 30 * 60 * 1000, BOSS_REWARD_GEMS = 20, BOSS_CRATE = 3;   // (2.10.: vorher 50 Gems + goldene Kiste, alle 20–35 Min.)
 var bossState = null, nextBossAt = 0, bossLoaded = false, bossRewardPending = false;
 function loadBoss() {
     if (bossLoaded) return; bossLoaded = true;
@@ -7205,7 +7208,7 @@ function spawnBoss() {
 }
 function endBoss(msg) {
     bossState = null;
-    nextBossAt = Date.now() + (20 + Math.random() * 15) * 60 * 1000;   // next one in 20-35 min
+    nextBossAt = Date.now() + (240 + Math.random() * 120) * 60 * 1000;   // der nächste in 4–6 Std.
     saveBoss(); requestRender();
     if (msg) flashHint(msg, 4000);
     if (isPanelOpen(popup)) renderPopup();
@@ -7213,7 +7216,7 @@ function endBoss(msg) {
 function defeatBoss(boss) {
     statBump('bosses'); if (boss.wander) statBump('wanders');
     const rewardGems = boss.wander ? WANDER_REWARD_GEMS : BOSS_REWARD_GEMS, shN = boss.wander ? HERO_SHARDS_WANDER : HERO_SHARDS_BOSS;
-    inboxAdd({ src: 'wboss', title: boss.name + ' besiegt', gems: rewardGems, crate: 4, sh: shN });   // a legendary crate, gems and shards - sent to the Abholfach
+    inboxAdd({ src: 'wboss', title: boss.name + ' besiegt', gems: rewardGems, crate: BOSS_CRATE, sh: shN });   // eine epische (lila) Kiste, Gems und Splitter – ins Abholfach (Gold nur Platz 1 beim Tagesboss)
     saveProgression(); saveGame(); updateHud();
     if (boss.wander) endWander(null); else endBoss(null);
     document.getElementById('rewardModalSub').textContent = boss.name + ' ist gefallen – die Beute liegt unter Ziele → Belohnung.';
@@ -7244,7 +7247,7 @@ setInterval(bossTick, 1000);
 // ===== WANDERBOSS: a warlord marches across the map, storms bases (yours, the bots', neutral ones) and camps
 // for a while where he won. In his camp he can be attacked like a boss; every fight wears his army down.
 // Whoever breaks him gets a legendary crate and 150 gems. Every ~45-60 min, lives 25 min.
-var WANDER_REWARD_GEMS = 150, WANDER_NAMES = ['Kriegsherr Morgath', 'Die Schwarze Horde', 'Graf Vargoth', 'Der Eisenkönig'];
+var WANDER_REWARD_GEMS = 50, WANDER_NAMES = ['Kriegsherr Morgath', 'Die Schwarze Horde', 'Graf Vargoth', 'Der Eisenkönig'];
 var wander, nextWanderAt = 0;
 function loadWander() {
     if (wander !== undefined) return wander;
@@ -7254,7 +7257,7 @@ function loadWander() {
 }
 function saveWander() { store.set('openWaterWander', JSON.stringify(wander || null)); store.set('openWaterWanderNext', String(nextWanderAt)); }
 function endWander(msg) {
-    wander = null; nextWanderAt = Date.now() + (45 + Math.random() * 15) * 60 * 1000; saveWander(); requestRender();
+    wander = null; nextWanderAt = Date.now() + (360 + Math.random() * 120) * 60 * 1000; saveWander(); requestRender();
     if (msg) flashHint(msg, 4500);
     if (isPanelOpen(popup)) renderPopup();
 }
@@ -8973,10 +8976,14 @@ function canConnectHalos(a, b, corridorHalfWidth) {
 // ===== RESSOURCENFELDER: gold mines and gem veins out on the map. Send troops to gather, they come home with the
 // loot. Bots gather too - and whoever is sitting on a field can be driven off it by a stronger army.
 const FIELD_KINDS = {
-    gold: { name: 'Goldmine', what: 'Münzen', icon: 'coin', rate: .05, load: 10, base: 40000, col: '#e8c547' },
-    gem:  { name: 'Edelsteinader', what: 'Gems', icon: 'gem', rate: .0004, load: .02, base: 60, col: '#7fd0ff' }
+    gold: { name: 'Goldmine', what: 'Münzen', icon: 'coin', load: 10, base: 40000, col: '#e8c547' },
+    gem:  { name: 'Edelsteinader', what: 'Gems', icon: 'gem', load: .02, base: 20, col: '#7fd0ff' }
 };
-const FIELD_REGEN_MS = 20 * 60000;
+// Sammeln wie bei RoK (2.10.): ein Feld leert sich in fester Zeit – außen 1 Std., ganz innen 4 Std. –, egal wie viele Truppen.
+// Die Truppen bestimmen nur, wie viel sie tragen können. Gems: außen 20, innen ~150 (vorher bis 18.000 in unter einer Minute).
+const fieldCapFor = (kind, rm) => Math.round(kind === 'gem' ? FIELD_KINDS.gem.base * Math.pow(rm, .35) : FIELD_KINDS[kind].base * rm);
+const fieldDauerSec = rm => 3600 * (1 + 3 * Math.log(Math.max(1, rm)) / Math.log(300));
+const FIELD_REGEN_MS = 60 * 60000;
 const resFields = (() => {
     const out = [], r = mulberry32(7771);
     for (const lm of landmasses) {
@@ -8987,7 +8994,7 @@ const resFields = (() => {
             if (!aufLand(lm, x, y)) continue;
             if (near.some(i => Math.hypot(i.x - x, i.y - y) < ISLAND_RADIUS * 2.4) || out.some(f => Math.hypot(f.x - x, f.y - y) < ISLAND_RADIUS * 4)) continue;
             const kind = r() < .78 ? 'gold' : 'gem';
-            out.push({ id: 'f' + out.length, x, y, landmassId: lm.id, radius: ISLAND_RADIUS * .6, kind, cap: Math.round(FIELD_KINDS[kind].base * ringMult(lm)) }); k++;
+            out.push({ id: 'f' + out.length, x, y, landmassId: lm.id, radius: ISLAND_RADIUS * .6, kind, cap: fieldCapFor(kind, ringMult(lm)), dauer: fieldDauerSec(ringMult(lm)) }); k++;
         }
     }
     return out;
@@ -9070,7 +9077,7 @@ function fieldTick() {
     if (due.length) { fieldMarches = fieldMarches.filter(m => m.resolveAt > now); for (const m of due) fieldArrive(m, now); saveFields(); requestRender(); }
     for (const f of resFields) {
         const st = fieldState[f.id]; if (!st || !st.occ) continue;
-        const o = st.occ, gx = heroGatherFx(o), cap = fieldCapOf(f, o, gx), amt = Math.min(FIELD_KINDS[f.kind].rate * o.troops * dt * (1 + (gx ? gx.gSpd : 0) / 100), st.left, cap - o.got);   // Spürnase: faster
+        const o = st.occ, gx = heroGatherFx(o), cap = fieldCapOf(f, o, gx), amt = Math.min(f.cap / f.dauer * dt * (1 + (gx ? gx.gSpd : 0) / 100), st.left, cap - o.got);   // festes Tempo (nicht mehr Truppen × Tempo) · Spürnase: schneller
         o.got += Math.max(0, amt); st.left -= Math.max(0, amt);
         if (o.got >= cap - 1e-9 || st.left <= 0) { fieldGoHome(f, st, now); requestRender(); }
     }
@@ -10181,7 +10188,7 @@ function renderPopup() {
                 (island.type === 'gate' && !ownerBot ? '<div class="notice notice--gold">' + icon('lock') + '<span>Tor: Unbesetzt ist es verschlossen – erobere es, um über die Brücke zu kommen. Wer es besitzt, geht kostenlos durch und bestimmt die Maut für alle anderen.</span></div>' : '') +
                 (island.type === 'megaTemple' ? '<div class="notice">' + icon('rank') + '<span>' + (ownerBot ? escapeHtml(ownerBot.name) + ' verteilt die Titel (neu alle 15 Min.).' : 'Niemand verteilt gerade Titel.') + '</span><button type="button" class="btn btn--secondary btn--sm" data-view-titles>Titel ansehen</button></div>' : '') +
                 (isTemple ? '<div class="notice notice--gold">' + icon('temple') + '<span>' + (island.type === 'megaTemple' ? 'Thron der Meere: wer ihn hält, trägt die Krone – +25 % Münzen und Truppen im ganzen Reich und alle 3 Min. ' + THRONE_PTS_MEGA + ' Thron-Punkte. Die Wächter-Tempel feuern auf ihn – nächster Beschuss in <b data-throne-fire>' + fmtClock((throneState.nextFire - Date.now()) / 1000) + '</b>.' : island.guardian ? 'Wächter-Tempel: 3-facher Tempel-Bonus und alle 3 Min. ' + THRONE_PTS_GUARD + ' Thron-Punkte. Gehört er nicht dem Herrscher, feuert er alle 3 Min. auf den Thron.' : 'Tempel: gibt Produktion, Gems und Münzen, sobald erobert.') + '</span></div>' : '') +
-                (bossAt(island.id) ? '<div class="notice notice--gold">' + icon('shop') + '<span><b>Belohnung:</b> Legendäre Kiste + ' + (bossAt(island.id).wander ? WANDER_REWARD_GEMS : BOSS_REWARD_GEMS) + ' Gems · ' + (bossAt(island.id).wander ? 'zieht weiter in' : 'verschwindet in') + ' <b data-boss-clock>' + fmtClock(((bossAt(island.id).wander ? bossAt(island.id).campUntil : bossAt(island.id).endsAt) - Date.now()) / 1000) + '</b></span></div>' : '') +
+                (bossAt(island.id) ? '<div class="notice notice--gold">' + icon('shop') + '<span><b>Belohnung:</b> ' + RARITY_DEFS[BOSS_CRATE].label + ' Kiste + ' + (bossAt(island.id).wander ? WANDER_REWARD_GEMS : BOSS_REWARD_GEMS) + ' Gems · ' + (bossAt(island.id).wander ? 'zieht weiter in' : 'verschwindet in') + ' <b data-boss-clock>' + fmtClock(((bossAt(island.id).wander ? bossAt(island.id).campUntil : bossAt(island.id).endsAt) - Date.now()) / 1000) + '</b></span></div>' : '') +
                 (scoutEnRoute ? '<div class="notice notice--warn">' + icon('hourglass') + '<span>Späher bereits unterwegs …</span></div>' : '') +
                 (shieldOw ? '<div class="notice notice--gold">' + icon('shield') + '<span>Friedensschild – ' + escapeHtml(shieldOw.name) + ' ist noch ' + uhrHtml(ownerShieldUntil(shieldOw.id)) +
                     ' geschützt. Solange der Schild hält, kann niemand die Türme von ' + escapeHtml(shieldOw.name) + ' angreifen (Tore und Tempel schon) – Spähen geht.</span></div>' : ''));
