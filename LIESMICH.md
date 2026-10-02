@@ -576,4 +576,5 @@ Weltrechner beendet ist → Datei mit Zufallsnamen in Game/ legen → `?ja=NEUST
 Sichert vorher alles in `weltrechner/altwelt_<Datum>.php` (404 von außen), löscht Welt + alle Spielstände (Stufe, Münzen,
 Gems, Ausrüstung, Stadt), leert `spiel_token` (alte offene Fenster können nichts zurückschreiben). Konten, Namen, Logins,
 Push bleiben. Der Weltrechner baut beim Start eine neue Welt (150 Mitspieler). Lokal getestet 2.10.
-
+- **Bug 2.10.:** Mehrfachangriff auf 100 Ziele – nur ~30 kamen an. Der Server nimmt höchstens 30 Befehle pro Puls und
+  warf den Rest still weg. Jetzt schickt das Handy je 30 und gleich danach die nächsten 30 (welt.js). Test: 84/84 angenommen.

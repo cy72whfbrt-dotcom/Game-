@@ -315,7 +315,7 @@
         try {
             const jetzt = Date.now();
             if (!SYSTEM && jetzt - profilAt > 10000) { const pr = J(meinProfil()); if (pr !== letztesProfil) { anfrage.profil = pr; letztesProfil = pr; } profilAt = jetzt; }
-            if (W.befehle.length) anfrage.befehle = W.befehle.splice(0);
+            if (W.befehle.length) anfrage.befehle = W.befehle.splice(0, 30);   // der Server nimmt höchstens 30 pro Puls – der Rest gleich im nächsten
             let gesendetKs = null;
             if (W.leiter) {
                 if (typeof window.__weltVorPuls === 'function') window.__weltVorPuls();   // spiel.js: alles in die Daten schreiben
@@ -354,6 +354,7 @@
         } finally {
             pulsLaeuft = false;
             if (gleichNochmal) { gleichNochmal = false; setTimeout(puls, 60); }   // (Weltrechner) Befehle ausgeführt: Ergebnis gleich speichern, nicht erst in 2 s
+            else if (W.befehle.length && !S.gestoppt) setTimeout(puls, 150);   // noch Befehle übrig (z. B. Mehrfachangriff auf 100 Ziele): gleich weiter
         }
     }
 
