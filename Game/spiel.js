@@ -6389,16 +6389,9 @@ function weltNachholen(seit) {                    // (Weltrechner) die Zeit, in 
 }
 setTimeout(() => {                               // right after boot (everything exists): production for the time away
     if (window.WELT && !WELT.leiter && !SYSTEM && leaveAtBoot && Date.now() - leaveAtBoot.at >= AWAY_MIN_MS) {
-        // Zuschauer (die Welt rechnet der Server): was in der Abwesenheit passiert ist, kommt mit den ersten Pulsen
-        // (Münzen, Truppen, Berichte). Erst wenn alles da ist, die Begrüßung „Du warst … weg“ zeigen.
-        const c0 = leaveAtBoot.coins || 0, t0 = leaveAtBoot.troops || 0, tp0 = throneState.pts || 0, los = Date.now();
-        const warten = () => {
-            if ((WELT.pulse || 0) < 3 || (WELT.nachrichtenOffen && Date.now() - los < 30000)) { setTimeout(warten, 500); return; }
-            const dc = coins - c0, dt = empireSnapshot().troops - t0, dtp = (throneState.pts || 0) - tp0;
-            welcomeFrom = Object.assign({ produced: { coins: Math.max(0, dc), troops: Math.max(0, dt), capped: false, thronePts: Math.max(0, dtp), throneHit: null } }, leaveAtBoot);
-            afterSplash(() => setTimeout(showWelcome, 300));
-        };
-        setTimeout(warten, 500);
+        // Zuschauer (die Welt rechnet der Server): die Begrüßung kommt SOFORT nach dem Ladebild. Was in der Abwesenheit
+        // passiert ist (Münzen, Truppen, Berichte), kommt mit den ersten Pulsen – die Liste füllt sich dann live nach.
+        welcomeFrom = Object.assign({ live: { c0: leaveAtBoot.coins || 0, t0: leaveAtBoot.troops || 0, tp0: throneState.pts || 0 } }, leaveAtBoot);
     }
     else if (window.WELT) { if (WELT.leiter && WELT.weltZeit && Date.now() - WELT.weltZeit > 60000) weltNachholen(WELT.weltZeit); }
     else if (leaveAtBoot && Date.now() - leaveAtBoot.at > 60000) {
@@ -6416,16 +6409,13 @@ setTimeout(() => {                               // right after boot (everything
     saveLeave(); setInterval(saveLeave, 30000);
 }, 0);
 window.addEventListener('pagehide', saveLeave);
-let hiddenAt = 0, hiddenSnap = null;
+let hiddenAt = 0, hiddenSnap = null, hiddenTp = 0;
 document.addEventListener('visibilitychange', () => {
-    if (document.hidden) { hiddenAt = Date.now(); hiddenSnap = empireSnapshot(); saveLeave(); return; }
+    if (document.hidden) { hiddenAt = Date.now(); hiddenSnap = empireSnapshot(); hiddenTp = throneState.pts || 0; saveLeave(); return; }
     if (hiddenAt && hiddenSnap && Date.now() - hiddenAt >= AWAY_MIN_MS) {              // the tab kept running: just show what happened since it was hidden
         const snap = hiddenSnap;
-        if (window.WELT && !WELT.leiter && !SYSTEM) {   // Zuschauer: erst die Pulse/Berichte der Abwesenheit abwarten (höchstens 20 s)
-            const p0 = WELT.pulse || 0, los = Date.now();
-            const warten = () => { if (((WELT.pulse || 0) < p0 + 2 || WELT.nachrichtenOffen) && Date.now() - los < 20000) { setTimeout(warten, 500); return; } welcomeFrom = snap; showWelcome(); };
-            setTimeout(warten, 500);
-        } else { welcomeFrom = snap; setTimeout(showWelcome, 600); }
+        if (window.WELT && !WELT.leiter && !SYSTEM) snap.live = { c0: snap.coins || 0, t0: snap.troops || 0, tp0: hiddenTp };   // Zuschauer: Liste füllt sich mit den Pulsen nach
+        welcomeFrom = snap; setTimeout(showWelcome, 600);
     }
     hiddenAt = 0; hiddenSnap = null;
 });
@@ -6433,7 +6423,7 @@ function fmtAway(ms) { const m = Math.round(ms / 60000), d = Math.floor(m / 1440
     return d ? d + (d === 1 ? ' Tag' : ' Tage') + (hh ? ' ' + hh + ' Std.' : '') : hh ? hh + ' Std.' + (mm ? ' ' + mm + ' Min.' : '') : mm + ' Min.'; }
 function welcomeRows(from) {
     const rows = [], now = empireSnapshot(), log = combatLog.filter(e => e.at >= from.at);
-    const pr = from.produced;
+    const lv = from.live, pr = lv ? { coins: Math.max(0, coins - lv.c0), troops: Math.max(0, now.troops - lv.t0), capped: false, thronePts: Math.max(0, (throneState.pts || 0) - lv.tp0), throneHit: null } : from.produced;
     if (pr && (pr.coins > 0 || pr.troops > 0)) rows.push(['coin', 'Produktion' + (pr.capped ? ' (8 Std.)' : ''), '+' + fmtCompact(pr.coins) + ' · ' + fmtCompact(pr.troops) + ' Truppen']);
     if (pr && pr.thronePts > 0) rows.push(['crown', 'Am Thron', '+' + fmtNum(pr.thronePts) + ' Thron-Punkte']);
     if (pr && pr.throneHit) rows.push(['attack', 'Beschuss auf den Thron', fmtCompact(pr.throneHit.loss) + ' getroffen · ' + fmtCompact(pr.throneHit.w) + ' im Lazarett']);
@@ -6462,9 +6452,18 @@ function showWelcome() {
     document.getElementById('welcomeTitle').textContent = (profileName.value ? profileName.value + ', du' : 'Du') + ' warst ' + fmtAway(Date.now() - from.at) + ' weg';
     document.getElementById('welcomeSub').textContent = rulerOwner() === 'player' ? 'Herrscher der Meere · ' + ownedIslands.size + ' Basen' : 'Rang ' + currentRank() + ' · ' + ownedIslands.size + (ownedIslands.size === 1 ? ' Basis' : ' Basen');
     const ul = document.getElementById('welcomeList');
-    ul.innerHTML = welcomeRows(from).map(r => '<li>' + icon(r[0], r[0] === 'coin' ? 'ico-coin' : r[0] === 'troops' ? 'ico-troops' : '') + '<span>' + r[1] + '</span><b>' + r[2] + '</b></li>').join('');
+    ul.innerHTML = welcomeListHtml(from);
     [...ul.children].forEach((li, i) => { li.style.animationDelay = (150 + i * 110) + 'ms'; });
     document.getElementById('welcomeModal').hidden = false;
+    welcomeLive = from.live ? { from, bis: Date.now() + 60000 } : null;
+}
+function welcomeListHtml(from) { return welcomeRows(from).map(r => '<li>' + icon(r[0], r[0] === 'coin' ? 'ico-coin' : r[0] === 'troops' ? 'ico-troops' : '') + '<span>' + r[1] + '</span><b>' + r[2] + '</b></li>').join(''); }
+// (Zuschauer) offene Begrüßung: neue Berichte/Münzen der Abwesenheit kommen mit den Pulsen → Liste nachziehen (1 Minute lang)
+let welcomeLive = null;
+function welcomeNachziehen() {
+    if (!welcomeLive || document.getElementById('welcomeModal').hidden || Date.now() > welcomeLive.bis) { welcomeLive = null; return; }
+    const ul = document.getElementById('welcomeList'), h = welcomeListHtml(welcomeLive.from);
+    if (ul.dataset.h !== h) { ul.dataset.h = h; ul.innerHTML = h; for (const li of ul.children) li.style.animation = 'none'; }
 }
 function closeWelcome() { const m = document.getElementById('welcomeModal'); if (m.hidden) return false; m.hidden = true; return true; }
 document.getElementById('welcomeOkBtn').addEventListener('click', () => { closeWelcome(); maybeShowDaily(); });
@@ -10882,6 +10881,7 @@ function liveTick() {
     const teil = f => { try { f(); } catch (e) { if (!liveGemeldet) { liveGemeldet = true; console.warn('Live-Anzeige:', e); } } };
     if (!cityView.hidden && cityOpenId && offen('citySheet')) teil(renderCitySheet);                    // Burg / Gebäude: Schild, Kosten, Knopf
     if (isPanelOpen(popup) && popupIslandId !== null) teil(renderPopup);                                  // Inselfenster
+    if (welcomeLive) teil(welcomeNachziehen);                                                               // Begrüßung
     if (isPanelOpen(profilePopup)) teil(() => {                                                             // Profil
         renderProfile(true);
         const tab = profilePopup.dataset.tab;
