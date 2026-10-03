@@ -146,6 +146,7 @@ function resolveBotAttack(attack) {
     if (targetOwner && targetOwner !== bot.id && typeof bundFreund === 'function' && bundFreund(bot.id, targetOwner) && !attack.rally) {   // inzwischen ein Bündnis-Mitglied: kein Kampf, heim
         const back = botOwnedIslands[bot.id] && botOwnedIslands[bot.id].has(attack.sourceId) ? attack.sourceId : botCapitalOf(bot.id);
         if (back !== null && back !== undefined) islandTroops[back] = (islandTroops[back] || 0) + attack.rawTroops; saveGame(); return; }
+    const vk = targetOwner && typeof verstVorKampf === 'function' ? verstVorKampf(target.id) : null;   // Verstärkung (Botschaft) verteidigt mit
     const originalEnemyTroops = effectiveTroops(target);
     const fullDefense = effectiveDefense(target), originalEnemyDefense = Math.round(fullDefense * (1 - heroDefCut(attack)));   // (a hero's Rammbock, Sturmflut, Mauerbrecher)
     const partsFor = () => targetOwner === 'player' ? { atkParts: attackParts(bot.id, attack.rawTroops, attack.attackBonus || 0, myTroops, attack.hero, attack), defParts: heroDefPart(defenseParts(target), attack, fullDefense) } : null;
@@ -203,6 +204,9 @@ function resolveBotAttack(attack) {
             neutralTroopOverrides[target.id] = target.neutralTroops;
         }
     }
+    const vs = vk ? verstNachKampf(target.id, vk, won) : null;            // wieder trennen: jeder trägt seinen Anteil an den Verlusten
+    const defWegAlle = won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops), defWeg = vs ? vs.eigenWeg : defWegAlle;   // (Besitzer: nur seine)
+    const verstInfo = vs ? { verst: vs.helfer, eigen: vs.eigen } : {};
     noteBattle(target.id, won ? originalEnemyTroops : attack.rawTroops - fled, won ? targetOwner : bot.id);   // the neighbours saw it
     midFight(target.id, bot.id, won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops), targetOwner, won ? botSentLoss : attack.rawTroops - fled);   // Krieger-Woche points - like yours
     const counts = won || !attack.planId || attack.lastWave;                    // an early wave of a planned strike failing isn't a lesson yet
@@ -223,18 +227,21 @@ function resolveBotAttack(attack) {
         if (defGold > 0) inboxAdd({ src: 'fight', coins: defGold });   // (your defense's gold waits in the Abholfach)
     }
     if (playerInvolved && !won) statBump('defends');
-    if (playerInvolved) defWounded = hospitalTake(won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops));   // your fallen defenders
-    if (playerInvolved) { warStat(capitalHolds ? 'plundered' : won ? 'lost' : 'defends', 1, bot.name); warStat('fallen', (won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops)) - defWounded); warStat('kills', won ? botSentLoss : attack.rawTroops - fled); }
+    if (playerInvolved) defWounded = hospitalTake(defWeg);   // your fallen defenders (die der Verstärkung trägt ihr Besitzer)
+    if (playerInvolved) { warStat(capitalHolds ? 'plundered' : won ? 'lost' : 'defends', 1, bot.name); warStat('fallen', defWeg - defWounded); warStat('kills', won ? botSentLoss : attack.rawTroops - fled); }
     else if (targetOwner) {                                       // a bot defender: its Lazarett and its "Verteidigung: Gold", like yours
-        const dw = botHospitalTake(targetOwner, won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops));
+        const dw = botHospitalTake(targetOwner, defWeg);
         const dg = Math.round((won ? botSentLoss : attack.rawTroops - fled) * botGoldRate(targetOwner, 'defenseGold'));
         botCoins[targetOwner] = (botCoins[targetOwner] || 0) + dg;
         if (window.WELT && botById[targetOwner] && botById[targetOwner].mensch) WELT.bericht(targetOwner, {    // ein echter Spieler wurde angegriffen: sein Bericht
             type: 'botAttack', botName: bot.name, botId: bot.id, targetId: target.id, myTroops, atkRaw: attack.rawTroops, atkBonus: attack.attackBonus || 0, atkFallen, atkWounded, atkFled: fled,
             atkGear: fighterSnapshot(bot.id, attack.hx), defGear: fighterSnapshot(targetOwner), enemyTroops: originalEnemyTroops, enemyDefense: originalEnemyDefense, wounded: dw || 0,
-            fallen: won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops), won, capitalHolds, defGold: dg, plunder: plunder ? plunder.loot : 0, plunderSafe: plunder ? plunder.safe : 0 },
+            fallen: defWeg, won, capitalHolds, defGold: dg, plunder: plunder ? plunder.loot : 0, plunderSafe: plunder ? plunder.safe : 0, defName: (botById[targetOwner] || {}).name, ...verstInfo },
             capitalHolds ? bot.name + ' hat deine Hauptstadt geplündert – die Garnison ist gefallen, aber die Stadt hält.' : won ? bot.name + ' hat deine Basis ' + islandTitle(target) + ' erobert!' : 'Verteidigung erfolgreich – ' + bot.name + ' bei ' + islandTitle(target) + ' zurückgeschlagen.');
     }
+    if (vs) verstBerichte(vs, { type: 'botAttack', botName: bot.name, botId: bot.id, targetId: target.id, myTroops, atkRaw: attack.rawTroops, atkBonus: attack.attackBonus || 0, atkFallen, atkWounded, atkFled: fled,   // die Helfer: derselbe Bericht
+        atkGear: fighterSnapshot(bot.id, attack.hx), defGear: targetOwner ? fighterSnapshot(targetOwner) : null, enemyTroops: originalEnemyTroops, enemyDefense: originalEnemyDefense, fallen: defWeg, wounded: 0,
+        won, capitalHolds, defName: targetOwner === 'player' ? 'Du' : (botById[targetOwner] || {}).name, ...verstInfo });
     if (window.WELT && bot.mensch) WELT.bericht(bot.id, {                // ein echter Spieler hat angegriffen: sein Bericht
         type: 'attack', sourceId: source.id, targetId: target.id, myTroops: attack.rawTroops, myTroopsBuffed: myTroops, attackBuff: myTroops - attack.rawTroops, skillBuff: attack.attackBonus || 0, titleBuff: 0,
         lossReductionPct: red, heroLossPct: attack.hx ? attack.hx.loss : 0, lossSaved: 0, attackGoldRate: botKillRate, killGold: Math.round((won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops)) * botKillRate),
@@ -242,7 +249,7 @@ function resolveBotAttack(attack) {
         defenderCasualties: won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops), retreatSurvivors: fled,
         defenderName: targetOwner ? (targetOwner === 'player' ? (window.profileName && profileName.value) || 'Spieler' : botById[targetOwner].name) : null, defenderId: targetOwner || null,
         enemyWounded: 0, plunder: plunder ? plunder.loot : 0, plunderSafe: plunder ? plunder.safe : 0, atkGear: fighterSnapshot(bot.id, attack.hx), defGear: targetOwner ? fighterSnapshot(targetOwner) : null,
-        won, remaining: won ? survivors : 0 },
+        won, remaining: won ? survivors : 0, ...verstInfo },
         capitalHolds ? 'Hauptstadt von ' + (targetOwner === 'player' ? 'deinem Gegner' : (botById[targetOwner] || {}).name) + ' geplündert!' : won ? islandTitle(target) + ' erobert!' : 'Angriff auf ' + islandTitle(target) + ' gescheitert.');
     if (playerInvolved) {
         const ribbon = () => spawnBattleFx(target.id, !won || capitalHolds, capitalHolds ? 'Hauptstadt hält' : won ? 'Basis verloren' : 'Verteidigt', capitalHolds ? 'Garnison gefallen' : won ? 'von ' + bot.name : bot.name + ' abgewehrt');
@@ -264,10 +271,10 @@ function resolveBotAttack(attack) {
             enemyDefense: originalEnemyDefense,
             wounded: defWounded,
             armor: armorDefenseFor(target.id),
-            fallen: won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops),
+            fallen: defWeg,
             won,
             capitalHolds,
-            defGold, plunder: plunder ? plunder.loot : 0, plunderSafe: plunder ? plunder.safe : 0
+            defGold, plunder: plunder ? plunder.loot : 0, plunderSafe: plunder ? plunder.safe : 0, ...verstInfo
         });
         flashHint((capitalHolds
             ? bot.name + ' hat deine Hauptstadt geplündert – die Garnison ist gefallen, aber die Stadt hält.'

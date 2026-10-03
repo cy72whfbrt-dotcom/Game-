@@ -1425,3 +1425,23 @@ Getestet in der Vorschau (`bund_bot_test`, `bund_amt_test`): Entfernen, Wechseln
 - Damit nicht die meisten Mitspieler allein bleiben: sie gründen jetzt etwa ein Bündnis pro 6 Mitspieler (vorher pro 12).
 - Öffnen/Schließen der Mitspieler-Anführer angepasst: ab 4 von 5 nur noch auf Anfrage, bei höchstens 2 wieder offen.
 - Bündnisse, die schon mehr als 5 Mitglieder haben, verlieren niemanden – es kommt nur keiner mehr dazu, bis sie unter 5 sind.
+
+## 43. Verstärkung über die Botschaft (Alexander 3.10.) – NICHT hochgeladen
+Vorher: Hilfe-Truppen nur, wenn gerade ein Angriff lief – und dann gehörten sie sofort dem anderen (nicht zurückholbar, im
+Bericht nicht zu sehen). Jetzt (buendnis.js Abschnitt „Verstärkung“, Welt-Teil **`openWaterVerstaerkung`**):
+- **Schicken:** Basis eines Bündnis-Mitglieds antippen → „Verstärkung“ (jederzeit, nicht nur bei Angriff). Geht nur, wenn er
+  eine **Botschaft** hat (ab Burg-Stufe 5). Platz: Botschaft-Stufe × 10 % seiner eigenen Truppen (mind. Stufe × 20.000) für
+  alle Verstärkungen bei ihm zusammen; was nicht passt, marschiert gleich heim.
+- **Die Truppen bleiben deine.** In der Botschaft sieht er, wer ihn mit wie vielen Truppen verstärkt („Heimschicken“), und du,
+  wo deine stehen („Zurückholen“). Nicht mehr im selben Bündnis / Basis verloren → sie marschieren heim.
+- **Kampf:** die Verstärkung verteidigt mit (wie die Besatzung). Danach wird getrennt: **jeder verliert denselben Anteil**,
+  Verwundete gehen ins **eigene** Lazarett. Fällt die Basis, fallen alle Verteidiger. Gilt für Angriffe, Rallys, die
+  Barbaren-Invasion und Angriffe vom Handy (Vorschau).
+- **Ein großer Kampfbericht:** Verteidiger = du + jeder Helfer (Truppen, Gefallene, Verwundete, Held/Ausrüstung/Fähigkeiten),
+  dazu die Summe; Angreifer wie bisher. Die Helfer bekommen denselben Bericht („Verstärkung bei …“); der Angreifer sieht die
+  Helfer auch.
+- **Mitspieler** schicken Verstärkung, wenn ein Mitglied angegriffen wird und allein zu schwach ist (wie vorher die Hilfe), und
+  holen sie heim, wenn dort 30 Min. kein Angriff mehr lief.
+- **Server:** jeder Spieler bekommt nur seine eigenen Verstärkungen und die bei ihm (`marsch_welt`).
+- Getestet (Vorschau, `verst_kampf_test`): gescheiterter Angriff → Besitzer und Helfer verlieren gleich viel (je 4.000 von
+  8.000); Basis fällt → Verstärkung weg.

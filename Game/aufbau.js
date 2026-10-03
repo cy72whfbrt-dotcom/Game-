@@ -491,7 +491,7 @@ AUF = {
     burgStufe, burgZeitRoh, stadtKosten, stadtCap,
     marschFrei, marschOk, marschVoll, frei: { an() { marschFreiPass++; }, aus() { marschFreiPass = Math.max(0, marschFreiPass - 1); } },
     foStufe, foWert, foKosten, foFertig, truppenStufe, marktLimit, marktHtml,
-    kampf, ertrag, sammelTempo, traglast, marschTempo, spaeherTempo, lazarettPlus, nebelWeite, botschaftTempo, botschaftGeschenk,
+    kampf, ertrag, sammelTempo, traglast, marschTempo, spaeherTempo, lazarettPlus, nebelWeite, botschaftTempo, botschaftGeschenk, botschaftStufe: who => bauStufe(who, 'embassy'),
     spielerTakt, hud: hudRoh, renderKeep, effektText, extraHtml, angreiferInfo, spaeherMehr,
     botStadtFix, botForschung, botTruppenStufe, botMarkt, botBurgWert, botRohWunsch
 };

@@ -122,6 +122,7 @@
             for (const r of v.r || []) { r.by = t(r.by); for (const j of r.j || []) j.w = t(j.w); }
             return v;
         },
+        openWaterVerstaerkung(v, d) { if (v) { const t = tausch(d); for (const x of v.l || []) x.w = t(x.w); } return v; },   // Verstärkung (Botschaft): wessen Truppen
         openWaterHaendler(v, d) {            // wandernder Händler (haendler.js): wer was gekauft hat, wessen Sammel-Beschleuniger läuft
             if (!v) return v; const t = tausch(d);
             schluesselTausch(v.kauf, d); schluesselTausch(v.boost, d); for (const x of v.log || []) x.w = t(x.w);

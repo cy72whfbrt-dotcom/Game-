@@ -102,6 +102,15 @@ function logBalance(atk, def, atkLabel, defLabel, youDefend) {          // who w
     return '<div class="logBal' + (youDefend ? ' logBal--def' : '') + '"><div class="logBalBar" style="--a:' + pct + '%"><i></i></div><div class="logBalTxt"><span>' + atkLabel + '</span><span>' + defLabel + '</span></div></div>';
 }
 const fmtBig = fmtNum;   // huge sums read as "227,1 Trill.", not as 21 digits
+// Verstärkung (Botschaft) im Kampfbericht: wer mit wie vielen Truppen verteidigt hat – und was jeder verloren hat
+function verstZeilen(e, besitzer) {
+    if (!e || !Array.isArray(e.verst) || !e.verst.length) return '';
+    const n = x => fmtD(Math.max(0, x || 0));
+    return '<div class="logLine"><span>' + escapeHtml(besitzer) + '</span><span>' + n(e.eigen) + '</span></div>' +
+        e.verst.map(h => '<div class="logLine buff"><span>Verstärkung · ' + escapeHtml(h.name || '?') + '</span><span>' + n(h.n) + '</span></div>' +
+            ((h.fallen || h.wounded) ? '<div class="logCasualty"><span>· davon gefallen' + (h.wounded ? ' / verwundet' : '') + '</span><span>−' + n(h.fallen) + (h.wounded ? ' / ' + n(h.wounded) : '') + '</span></div>' : '') +
+            (h.gear ? '<details class="verst-det"><summary>' + escapeHtml(h.name || '?') + ': Held, Ausrüstung, Fähigkeiten</summary>' + gearHtml(h.gear) + '</details>' : '')).join('');
+}
 function plunderLine(e, mine) {                     // Lager: what changed hands when a base fell, and what the Lager kept safe
     if (!e.plunder && !e.plunderSafe) return '';
     const safe = e.plunderSafe ? fmtBig(e.plunderSafe) + ' geschützt durch Lager' : '';
@@ -1930,6 +1939,7 @@ function resolveAttack(attack) {
     const myTroops = Math.round((attack.rawTroops + atkBonus) * (attack.atkTitle !== undefined ? attack.atkTitle : titleMult('player', 'attack')) * (attack.atkKraft || 1));   // (Truppen-Stufe + Forschung vom Losschicken)
     const targetOwner = islandOwnerOf(target.id); // null | 'player' | a bot id
     if (targetOwner === 'player') { islandTroops[target.id] = (islandTroops[target.id] || 0) + attack.rawTroops; saveGame(); requestRender(); return; }   // inzwischen deine (ein anderer Angriff hat sie genommen): die Truppen bleiben dort
+    const vk = targetOwner && typeof verstVorKampf === 'function' ? verstVorKampf(target.id) : null;   // Verstärkung (Botschaft) verteidigt mit
     const originalEnemyTroops = effectiveTroops(target);
     const fullDefense = effectiveDefense(target), originalEnemyDefense = Math.round(fullDefense * (1 - heroDefCut(attack))), defParts = heroDefPart(defenseParts(target), attack, fullDefense);
     const atkParts = attackParts('player', attack.rawTroops, atkBonus, myTroops, attack.hero, attack), hosp = attack.hx ? Math.min(100, hospitalPct() + attack.hx.hosp) : undefined;
@@ -1951,7 +1961,6 @@ function resolveAttack(attack) {
 
     if (capitalHolds) {                                                     // the garrison falls, the base stays theirs - your survivors walk home
         islandTroops[target.id] = 0; defenderCasualties = originalEnemyTroops;
-        enemyWounded = botHospitalTake(targetOwner, originalEnemyTroops);
         woundedAdded = hospitalTake(sentLoss, hosp); warStat('fallen', sentLoss - woundedAdded); warStat('kills', originalEnemyTroops);
         killGold = Math.round(originalEnemyTroops * rewardRate); inboxAdd({ src: 'fight', coins: killGold }); retreatSurvivors = remaining;
         if (remaining > 0) { const t0 = Date.now(); pendingRetreats.push({ fromId: target.id, toId: source.id, troops: remaining, startedAt: t0, resolveAt: t0 + retreatSecs(attack, target, source) * 1000 }); }
@@ -1974,7 +1983,7 @@ function resolveAttack(attack) {
         revealAround(target.x, target.y, REVEAL_BASE * (AUF ? AUF.nebelWeite('player') : 1), true);   // (Forschung Kundschaft: weiter)
         killGold = Math.round(originalEnemyTroops * rewardRate); inboxAdd({ src: 'fight', coins: killGold });   // "Angriff: Gold": per enemy troop killed
         defenderCasualties = originalEnemyTroops;
-        if (targetOwner && targetOwner !== 'player') enemyWounded = botHospitalTake(targetOwner, originalEnemyTroops);   // the bot's Lazarett takes part of its fallen
+        // (das Lazarett des Verteidigers: unten, nach dem Trennen von seiner Verstärkung)
         if (target.type === 'temple' || target.type === 'megaTemple') {
             // Starts (or restarts) this temple's hold streak - see
             // templeHoldMultiplier(). Ready for a future PvP
@@ -1992,7 +2001,6 @@ function resolveAttack(attack) {
         defenderCasualties = Math.min(originalEnemyTroops, myTroops);
         if (targetOwner) {
             islandTroops[target.id] = Math.max(0, (islandTroops[target.id] || 0) - defenderCasualties);
-            if (targetOwner !== 'player') enemyWounded = botHospitalTake(targetOwner, defenderCasualties);
         } else if (bossHere) {
             bossHere.troops = Math.max(0, bossHere.troops - defenderCasualties);
             saveWander();
@@ -2018,6 +2026,9 @@ function resolveAttack(attack) {
             });
         }
     }
+    const vs = vk ? verstNachKampf(target.id, vk, won) : null, verstInfo = vs ? { verst: vs.helfer, eigen: vs.eigen } : {};   // jeder trägt seinen Anteil
+    const defWeg = vs ? vs.eigenWeg : defenderCasualties;
+    if (targetOwner && targetOwner !== 'player') enemyWounded = botHospitalTake(targetOwner, defWeg);   // the bot's Lazarett takes part of ITS fallen
     // XP for troops that died in the clash either way: a win kills
     // the whole enemy force, a loss costs your whole attack force
     noteBattle(target.id, won ? originalEnemyTroops : attack.rawTroops - retreatSurvivors, won ? targetOwner : 'player');
@@ -2061,13 +2072,16 @@ function resolveAttack(attack) {
         atkParts, defParts, enemyWounded, plunder: plunder ? plunder.loot : 0, plunderSafe: plunder ? plunder.safe : 0,
         atkGear: fighterSnapshot('player', attack.hx), defGear: targetOwner && targetOwner !== 'player' ? fighterSnapshot(targetOwner) : null,
         won,
-        remaining
+        remaining, ...verstInfo
     });
+    if (vs) verstBerichte(vs, { type: 'botAttack', botName: profileName.value || 'Spieler', botId: 'player', targetId: target.id, myTroops, atkRaw: attack.rawTroops, atkBonus,
+        atkGear: fighterSnapshot('player', attack.hx), defGear: fighterSnapshot(targetOwner), enemyTroops: originalEnemyTroops, enemyDefense: originalEnemyDefense, fallen: defWeg, wounded: 0,
+        won, capitalHolds, defName: (botById[targetOwner] || {}).name, ...verstInfo });
     if (window.WELT && targetOwner && botById[targetOwner] && botById[targetOwner].mensch) {   // du hast einen echten Spieler angegriffen: sein Bericht
         const meinName = profileName.value || 'Spieler';
         WELT.bericht(targetOwner, { type: 'botAttack', botName: meinName, botId: 'player', targetId: target.id, myTroops, atkRaw: attack.rawTroops, atkBonus: atkBonus,
             atkGear: fighterSnapshot('player', attack.hx), defGear: fighterSnapshot(targetOwner), enemyTroops: originalEnemyTroops, enemyDefense: originalEnemyDefense,
-            wounded: enemyWounded || 0, fallen: defenderCasualties, won, capitalHolds, defGold: 0, plunder: plunder ? plunder.loot : 0, plunderSafe: plunder ? plunder.safe : 0 },
+            wounded: enemyWounded || 0, fallen: defWeg, won, capitalHolds, defGold: 0, plunder: plunder ? plunder.loot : 0, plunderSafe: plunder ? plunder.safe : 0, ...verstInfo },
             capitalHolds ? meinName + ' hat deine Hauptstadt geplündert – die Garnison ist gefallen, aber die Stadt hält.' : won ? meinName + ' hat deine Basis ' + islandTitle(target) + ' erobert!' : 'Verteidigung erfolgreich – ' + meinName + ' bei ' + islandTitle(target) + ' zurückgeschlagen.');
     }
 
@@ -5281,7 +5295,7 @@ function powerOf(pr) {                           // Macht: troops, bases, gear, 
 }
 function lastFightWith(pr) {                     // what's between the two of you, from the battle log
     if (pr.who === 'player') return null;
-    const hit = combatLog.find(e => e.type === 'botAttack' && (e.botId === pr.who || e.botName === pr.name));
+    const hit = combatLog.find(e => e.type === 'botAttack' && e.rolle !== 'helfer' && (e.botId === pr.who || e.botName === pr.name));
     const mine = combatLog.find(e => e.type === 'attack' && (e.defenderId === pr.who || e.defenderName === pr.name));
     const ago = e => fmtAway(Date.now() - e.at);
     const parts = [];
@@ -5643,14 +5657,15 @@ function renderCombatLog() {
                     '</div>' +
                     '<div class="logVsDivider">VS</div>' +
                     '<div class="logSide">' +
-                        '<div class="logSideLabel">Verteidiger · Du</div>' +
-                        '<div class="logLine"><span>Truppen</span><span>' + fmtD(entry.enemyTroops) + '</span></div>' +
+                        '<div class="logSideLabel">Verteidiger · ' + (entry.rolle === 'helfer' ? escapeHtml(entry.defName || '?') + ' + Verstärkung' : entry.verst ? 'Du + Verstärkung' : 'Du') + '</div>' +
+                        '<div class="logLine"><span>Truppen' + (entry.verst ? ' (alle)' : '') + '</span><span>' + fmtD(entry.enemyTroops) + '</span></div>' +
+                        verstZeilen(entry, entry.rolle === 'helfer' ? (entry.defName || '?') : 'Deine') +
                         (entry.defParts ? partLines(entry.defParts, true)
                           : '<div class="logLine"><span>Verteidigung</span><span>' + fmtD(entry.enemyDefense) + '</span></div>' +
                             (entry.armor ? '<div class="logLine buff"><span>davon Rüstung</span><span>+' + fmtD(entry.armor) + '</span></div>' : '')) +
                         '<div class="logSum' + (entry.won ? '' : ' advantage') + '"><span>Gesamt</span><span>' + fmtD(defSum) + '</span></div>' +
-                        '<div class="logCasualty"><span>Gefallen</span><span>−' + fmtD(Math.max(0, fallen - (entry.wounded || 0))) + '</span></div>' +
-                        (entry.wounded ? '<div class="logCasualty wounded"><span>Verwundet</span><span>' + fmtD(entry.wounded) + '</span></div>' : '') +
+                        (entry.rolle === 'helfer' ? '' : '<div class="logCasualty"><span>' + (entry.verst ? 'Deine gefallen' : 'Gefallen') + '</span><span>−' + fmtD(Math.max(0, fallen - (entry.wounded || 0))) + '</span></div>' +
+                        (entry.wounded ? '<div class="logCasualty wounded"><span>' + (entry.verst ? 'Deine verwundet' : 'Verwundet') + '</span><span>' + fmtD(entry.wounded) + '</span></div>' : '')) +
                         gearHtml(entry.defGear) +
                     '</div>' +
                 '</div>' +
@@ -5660,6 +5675,9 @@ function renderCombatLog() {
                 (entry.defGold ? '<div class="logGold">Verteidigung: Gold +' + fmtBig(entry.defGold) + ' Münzen</div>' : '') +
                 plunderLine(entry, false) +
                 '</details>';
+            if (entry.rolle === 'helfer') { const mh = entry.meine || {};   // deine Verstärkung bei einem Bündnis-Mitglied hat mitverteidigt
+                return logRowHtml(entry.won ? 'loss' : 'win', 'defense', logBadge(entry.won ? 'loss' : 'win', 'Verstärkung') + T(entry.targetId),
+                    escapeHtml(entry.defName || '?') + ' gegen ' + escapeHtml(entry.botName) + ' · ' + (entry.won ? 'gefallen' : 'gehalten') + ' · deine ' + fmtM(mh.n || 0) + ': −' + fmtM((mh.fallen || 0) + (mh.wounded || 0)) + (mh.wounded ? ' (' + fmtM(mh.wounded) + ' ins Lazarett)' : '') + vs, ago(entry), bdet); }
             return entry.capitalHolds
                 ? logRowHtml('loss', 'bot', logBadge('loss', 'Geplündert') + T(entry.targetId), escapeHtml(entry.botName) + ' hat die Garnison geschlagen – die Stadt hält' + vs, ago(entry), bdet)
                 : entry.won
@@ -5692,7 +5710,8 @@ function renderCombatLog() {
                 '<div class="logVsDivider">VS</div>' +
                 '<div class="logSide">' +
                     '<div class="logSideLabel">Verteidiger' + (entry.defenderName ? ' · ' + whoLink(entry.defenderId || botIdByName[entry.defenderName], entry.defenderName) : '') + '</div>' +
-                    '<div class="logLine"><span>Truppen</span><span>' + fmtD(entry.enemyTroops) + '</span></div>' +
+                    '<div class="logLine"><span>Truppen' + (entry.verst ? ' (alle)' : '') + '</span><span>' + fmtD(entry.enemyTroops) + '</span></div>' +
+                    verstZeilen(entry, entry.defenderName || 'Besitzer') +
                     (entry.defParts ? partLines(entry.defParts, true)
                       : '<div class="logLine"><span>Verteidigung</span><span>' + fmtD(entry.enemyDefense) + '</span></div>' +
                         '<div class="logLine buff"><span>Verteidigung-Buff</span><span>+' + fmtD(entry.defenseBuff) + '</span></div>') +
@@ -6723,7 +6742,7 @@ function welcomeRows(from) {
     if (pr && (pr.coins > 0 || pr.troops > 0)) rows.push(['coin', 'Produktion' + (pr.capped ? ' (8 Std.)' : ''), '+' + fmtCompact(pr.coins) + ' · ' + fmtCompact(pr.troops) + ' Truppen']);
     if (pr && pr.thronePts > 0) rows.push(['crown', 'Am Thron', '+' + fmtNum(pr.thronePts) + ' Thron-Punkte']);
     if (pr && pr.throneHit) rows.push(['attack', 'Beschuss auf den Thron', fmtCompact(pr.throneHit.loss) + ' getroffen · ' + fmtCompact(pr.throneHit.w) + ' im Lazarett']);
-    const onYou = log.filter(e => e.type === 'botAttack'), lost = onYou.filter(e => e.won && !e.capitalHolds).length, held = onYou.filter(e => !e.won).length;
+    const onYou = log.filter(e => e.type === 'botAttack' && e.rolle !== 'helfer'), lost = onYou.filter(e => e.won && !e.capitalHolds).length, held = onYou.filter(e => !e.won).length;
     if (onYou.length) rows.push(['shield', (onYou.length === 1 ? 'Ein Angriff' : onYou.length + ' Angriffe') + ' auf dich', held + ' abgewehrt' + (lost ? ' · ' + lost + ' verloren' : '')]);
     const foes = {}; for (const e of onYou) foes[e.botName] = (foes[e.botName] || 0) + 1;
     const top = Object.entries(foes).sort((a, b) => b[1] - a[1])[0];
@@ -8406,6 +8425,7 @@ function cityExtraHtml(id, lvl) {
     if (AUF && ['academy', 'barracks', 'market'].includes(id)) return AUF.extraHtml(id, lvl);   // Forschung, Truppen-Stufe, Markt (aufbau.js)
     if (id === 'heroes') { const up = HEROES.filter(h => heroCanDo('player', h.id)).length;   // the way into the hero screen
         return '<button type="button" class="btn btn--primary btn--grow hh-open" data-hero-open>' + icon('profile') + '<span>Helden öffnen</span>' + (up ? '<em class="hh-badge">' + up + '</em>' : '') + '</button>'; }
+    if (id === 'embassy' && lvl && typeof verstHtml === 'function') return verstHtml();   // Botschaft: Verstärkung (buendnis.js)
     if (id === 'forge' && lvl) {                   // pick a slot, then any piece you own in it - equipped or in the chest
         const slots = Object.keys(EQUIPMENT_DEFS), cap = Math.min(STAR_MAX, lvl);
         const items = Object.values(inventory).filter(it => it.slot === forgeSlot)
@@ -10143,9 +10163,12 @@ function invWelle(I, now) {                          // eine Welle: jede Armee s
 function invPunkteDazu(I, who, n) { if (!who || !(n > 0) || (who !== 'player' && !botById[who])) return; I.pts[who] = (I.pts[who] || 0) + n; evDirty = true; }
 function invAnkunft(I, a, now) {                     // die Armee erreicht ihr Ziel: dieselbe Rechnung wie jeder Angriff (Truppen + Verteidigung)
     const isl = islandById[a.tid], o = isl && islandOwnerOf(a.tid); if (!o || invGeschuetzt(o, now)) return;
+    const vk = typeof verstVorKampf === 'function' ? verstVorKampf(a.tid) : null;   // Verstärkung (Botschaft) verteidigt mit
     const en = effectiveTroops(isl), def = effectiveDefense(isl), durch = a.t > en + def;
-    const verlust = Math.min(en, Math.round(durch ? en * .6 : a.t * .35)), wounded = verlust > 0 ? fieldHurt(o, verlust, null) : 0;
-    islandTroops[a.tid] = Math.max(0, (islandTroops[a.tid] || 0) - verlust);
+    const verlustAlle = Math.min(en, Math.round(durch ? en * .6 : a.t * .35));
+    islandTroops[a.tid] = Math.max(0, (islandTroops[a.tid] || 0) - verlustAlle);
+    const vs = vk ? verstNachKampf(a.tid, vk, false) : null, verlust = vs ? vs.eigenWeg : verlustAlle, wounded = verlust > 0 ? fieldHurt(o, verlust, null) : 0;   // (jeder seinen Anteil)
+    if (vs) for (const h of vs.helfer) if (h.fallen + h.wounded > 0) bundMelden(h.w, 'Barbaren-Invasion bei ' + islandTitle(isl) + ': deine Verstärkung verlor ' + fmtCompact(h.fallen + h.wounded) + (h.wounded ? ' (' + fmtCompact(h.wounded) + ' ins Lazarett)' : '') + '.');
     if (!durch) { invPunkteDazu(I, o, INV_PTS_WEHR); I.wehr[o] = (I.wehr[o] || 0) + 1; evPunkte('krieg', o, a.t / WO_KILL_PER); }
     const titel = islandTitle(isl);
     evBericht(o, { type: 'ev', ic: 'defense', gut: !durch, badge: durch ? 'Überrannt' : 'Abgewehrt', title: 'Barbaren-Invasion · ' + titel,
