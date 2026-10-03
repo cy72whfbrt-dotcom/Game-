@@ -114,10 +114,10 @@
             else for (const r of v.raids || []) if (!r.tOwner) r.tOwner = ICH;
             return v;
         },
-        openWaterBuendnisse(v, d) {          // Bündnisse (buendnis.js): Anführer, Mitglieder, Anfragen, Signale, Geschenke, Rallys
+        openWaterBuendnisse(v, d) {          // Bündnisse (buendnis.js): Anführer, Mitglieder, Anfragen, Einladungen, Signale, Geschenke, Rallys
             if (!v) return v; const t = tausch(d);
             for (const id in v.b || {}) { const a = v.b[id]; if (!a) continue; a.anf = t(a.anf); a.mit = (a.mit || []).map(t);
-                for (const q of a.anfragen || []) q.w = t(q.w); for (const s of a.sig || []) s.w = t(s.w);
+                for (const q of a.anfragen || []) q.w = t(q.w); for (const q of a.einl || []) q.w = t(q.w); for (const s of a.sig || []) s.w = t(s.w);
                 if (a.gesch) { schluesselTausch(a.gesch.n, d); schluesselTausch(a.gesch.k, d); } }
             for (const r of v.r || []) { r.by = t(r.by); for (const j of r.j || []) j.w = t(j.w); }
             return v;

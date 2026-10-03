@@ -5331,7 +5331,7 @@ function openRulerProfile(who) {
         '<div class="sect"><h4>Helden</h4></div><div class="rp-heroes">' + heroes + '</div>' +
         '<div class="sect"><h4>Skills</h4></div><div class="rp-grid">' + skillsHtml + '</div>' +
         '<div class="sect"><h4>Stadt</h4></div><div class="rp-blds">' + cityHtml + '</div>' +
-        '<div class="rp-actions"><button class="btn btn--secondary btn--sm" type="button" data-rp="map">' + icon('flag') + '<span>Zur Karte</span></button>' +
+        '<div class="rp-actions">' + (typeof bundProfilKnopf === 'function' ? bundProfilKnopf(who) : '') + '<button class="btn btn--secondary btn--sm" type="button" data-rp="map">' + icon('flag') + '<span>Zur Karte</span></button>' +
         '<button class="btn btn--primary btn--sm" type="button" data-rp="capital">' + icon('castle') + '<span>Hauptstadt</span></button></div>';
     openPanel(rulerPopup);
 }
@@ -5339,6 +5339,7 @@ document.getElementById('rulerCloseBtn').addEventListener('click', () => { close
     if (rulerBack !== null) { const y = rulerBack; rulerBack = null; openRankings(); document.getElementById('rankBody').scrollTop = y; } });
 document.getElementById('rulerBody').addEventListener('click', e => {
     const b = e.target.closest('[data-rp]'); if (!b || !rulerWho) return;
+    if (b.dataset.rp === 'einladen') { const w = rulerWho; b.disabled = true; bundBefehl('einladen', { w: neutralId(w) }, 'Einladung an ' + whoProfile(w).name + ' geschickt.'); return; }
     const who = rulerWho, own = who === 'player' ? ownedIslands : botOwnedIslands[who]; if (!own || !own.size) return;
     closePanel(rulerPopup); rulerWho = null; rulerBack = null;
     if (b.dataset.rp === 'capital') { const cap = who === 'player' ? playerIslandId : botCapitalOf(who), isl = islandById[cap]; if (!isl) return;

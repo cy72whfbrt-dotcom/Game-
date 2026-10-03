@@ -1541,3 +1541,20 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
   Wachhund-Runde (1 Min.) bis zum ersten Herzschlag – der Wachhund räumte ihn vor dem nächsten Start weg → nie fertig.
   **Fix (wachhund.php):** gibt es einen Weltrechner-Prozess, der jünger als 15 Min. ist, gilt er als „startet (noch ohne
   Herzschlag)“ – nicht wegräumen, keinen zweiten starten. Getestet: Wachhund-Fälle 9/9, „Neustart“ 10× → genau einer.
+
+## 48. Bündnis-Einladungen + Mitspieler ziehen näher ans Bündnis (Alexander 3.10.)
+- **Einladen – nur der Anführer:** im Profil eines Spielers (Name antippen: Rangliste, Basis, Kampfbericht) „Ins Bündnis
+  einladen“ – für jeden ohne Bündnis mit Basis, Mitspieler wie echte Spieler. Gilt 24 Std., höchstens 10 offene, geht auch bei
+  „nur auf Anfrage“; voll (5) → nein. Im Bündnis-Fenster sieht der Anführer „Eingeladen“ (zurückziehen).
+- **Eingeladen:** Nachricht + im Bündnis-Fenster „Einladungen“ mit Annehmen / Ablehnen (auch im Reiter „Suchen“), Punkt am
+  Bündnis-Knopf. Nimmt man an, sind alle anderen Einladungen und Anfragen weg.
+- **Mitspieler:** als Anführer laden sie ab und zu jemanden ohne Bündnis aus der Nähe ein (auch dich); eingeladen nehmen sie
+  nach etwas Bedenkzeit an, wenn sie nicht Einzelgänger sind und das Bündnis in der Nähe liegt.
+- **Näher ans Bündnis:** ein Mitspieler verlegt seine Hauptstadt (gleiche Regel wie bei dir: auf einen EIGENEN Turm,
+  50 Gems, nicht öfter als alle 45 Min.) auf den Turm, der seinen Bündnis-Mitgliedern am nächsten ist – nur wenn das deutlich
+  näher ist. Steht im Bündnis-Log.
+- Code: buendnis.js (`einl`, Ops `einladen`/`einladungAntwort`/`einladungWeg`, Runde f–h, Anzeige), spiel.js (Profil-Knopf),
+  welt.js (Kennungen in `einl` umrechnen).
+- Getestet (Vorschau, `einl_test`): einladen, doppelt, annehmen, nur Anführer, voll, voll beim Annehmen, abgelaufen, ablehnen,
+  Mitspieler lädt selbst ein, Hauptstadt näher (10/10); Verstärkung 5/5, Bündnis-Bots 3/3, Unit 16/65; Weltrechner lokal mit
+  neuem Code: läuft, 0 Fehler. Hochgeladen auf Alexanders „lade alles hoch, teste dann“ – Test mit echten Spielern danach.

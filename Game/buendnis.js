@@ -3,7 +3,7 @@
 // - Welt-Schlüssel openWaterBuendnisse: { b: { a<n>: Bündnis }, r: [Rallys], n: nächste Nummer } (welt.js rechnet die
 //   Kennungen um: u<id> ↔ 'player'). Ändern darf ihn NUR der Weltrechner: Spieler schicken Befehle WELT.befehl('bund', …),
 //   der Weltrechner prüft alles (bundOp). Mitspieler rufen bundOp direkt auf.
-// - Bündnis: { id, name, tag, farbe, zeichen, anf (Anführer), mit: [Mitglieder], offen, at, anfragen: [{ w, at }],
+// - Bündnis: { id, name, tag, farbe, zeichen, anf (Anführer), mit: [Mitglieder], offen, at, anfragen: [{ w, at }], einl: [{ w, at }] (Einladungen des Anführers, 24 Std.),
 //   sig: [{ id, w, art, z, at }], log: [{ at, t }], gesch: { tag, n: { wer: Anzahl }, k: { wer: Kisten } } }
 // - Rally: { id, aid, by, at (Sammelpunkt = Basis des Starters), t (Ziel), start, los, n0 (Truppen des Starters),
 //   j: [{ w, f (von Basis), n, s (Start des Marschs), da (angekommen) }] }
@@ -90,9 +90,11 @@ function bundRaus(a, w, grund) {                                 // w verlässt 
     bundLog(a, bundName(w) + (grund || ' hat das Bündnis verlassen.'));
 }
 function bundRein(a, w) {
-    for (const x in bund.b) { const b = bund.b[x]; b.anfragen = (b.anfragen || []).filter(q => q.w !== w); }
+    for (const x in bund.b) { const b = bund.b[x]; b.anfragen = (b.anfragen || []).filter(q => q.w !== w); b.einl = (b.einl || []).filter(q => q.w !== w); }
     a.mit.push(w); (a.dabei || (a.dabei = {}))[w] = Date.now(); bundLog(a, bundName(w) + ' ist beigetreten.');   // (dabei: seit wann – Mitspieler wechseln frühestens nach 12 Std.)
 }
+const BUND_EINL_MS = 24 * 3600000;                                // eine Einladung gilt 24 Std.
+function bundEinladungen(w) { const now = Date.now(); return Object.values(bund.b).filter(a => (a.einl || []).some(q => q.w === w && now - q.at < BUND_EINL_MS)); }   // wer lädt w gerade ein?
 function bundOp(who, b) {
     if (!b || typeof b !== 'object' || !botById[who]) return 'kaputt';
     const a = bundVon(who), now = Date.now(), op = b.op;
@@ -122,6 +124,16 @@ function bundOp(who, b) {
         z.anfragen.push({ w: who, at: now }); bundMelden(z.anf, bundName(who) + ' möchte deinem Bündnis beitreten.');
         return fertig('Anfrage an [' + z.tag + '] ' + z.name + ' geschickt.');
     }
+    if (op === 'einladungAntwort') {                              // Eingeladener: Ja / Nein (geht auch, wenn das Bündnis nur auf Anfrage offen ist)
+        const z = bund.b[kennung(b.aid)]; if (!z) return 'Dieses Bündnis gibt es nicht mehr';
+        const q = (z.einl || []).find(x => x.w === who && now - x.at < BUND_EINL_MS); if (!q) return 'Die Einladung gilt nicht mehr';
+        z.einl = z.einl.filter(x => x !== q);
+        if (b.ja !== true) { bundMelden(z.anf, bundName(who) + ' hat die Einladung nicht angenommen.'); return fertig(''); }
+        if (a) return 'Du bist schon in einem Bündnis';
+        if (z.mit.length >= BUND.MAX) return 'Das Bündnis ist voll (' + BUND.MAX + ' Mitglieder)';
+        bundRein(z, who); bundAlleMelden(z, bundName(who) + ' hat die Einladung angenommen und ist deinem Bündnis beigetreten.', who);
+        return fertig('Willkommen im Bündnis [' + z.tag + '] ' + z.name + '!');
+    }
     if (op === 'anfrageWeg') { for (const x in bund.b) bund.b[x].anfragen = (bund.b[x].anfragen || []).filter(q => q.w !== who); return fertig(''); }
     if (!a) return 'Du bist in keinem Bündnis';
     const chef = a.anf === who, ziel = kennung(b.w);
@@ -137,6 +149,20 @@ function bundOp(who, b) {
         } else bundMelden(ziel, '[' + a.tag + '] ' + a.name + ' hat deine Anfrage abgelehnt.');
         return fertig('');
     }
+    if (op === 'einladen') {                                      // nur der Anführer: jemanden ohne Bündnis einladen
+        if (!chef) return 'Nur der Anführer kann einladen';
+        if (!ziel || ziel === who || !botById[ziel]) return 'kaputt';
+        if (bundVon(ziel)) return bundName(ziel) + ' ist schon in einem Bündnis';
+        if (!bundBasen(ziel).size) return bundName(ziel) + ' hat keine Basis';
+        if (a.mit.length >= BUND.MAX) return 'Dein Bündnis ist voll (' + BUND.MAX + ' Mitglieder)';
+        a.einl = (a.einl || []).filter(x => now - x.at < BUND_EINL_MS);
+        if (a.einl.some(x => x.w === ziel)) return '';
+        if (a.einl.length >= 10) return 'Zu viele offene Einladungen (höchstens 10)';
+        a.einl.push({ w: ziel, at: now });
+        bundMelden(ziel, bundName(who) + ' lädt dich ins Bündnis [' + a.tag + '] ' + a.name + ' ein – im Bündnis-Fenster annehmen oder ablehnen (24 Std.).');
+        return fertig('Einladung an ' + bundName(ziel) + ' geschickt.');
+    }
+    if (op === 'einladungWeg') { if (!chef) return 'Nur der Anführer'; a.einl = (a.einl || []).filter(x => x.w !== ziel); return fertig(''); }
     if (op === 'rauswerfen') {
         if (!chef || !ziel || ziel === who || !a.mit.includes(ziel)) return 'Nur der Anführer kann Mitglieder entfernen';
         bundRaus(a, ziel, ' wurde aus dem Bündnis entfernt.'); bundMelden(ziel, 'Du wurdest aus dem Bündnis [' + a.tag + '] ' + a.name + ' entfernt.'); return fertig('');
@@ -551,6 +577,40 @@ function bundMitspielerRunde(now) {                              // alle 15 s: g
             const d = Math.hypot(c.x - mz.x, c.y - mz.y); if (d < FRAME_HALF * .5 && (!best || d < best.d)) best = { z, d }; }
         if (best && !bundOp(bot.id, { op: 'verlassen' })) { bundOp(bot.id, { op: 'beitreten', aid: best.z.id }); bundBotGetippt(bot, now); }
     }
+    // f) einladen (nur der Anführer, wie bei dir): ein Mitspieler als Anführer lädt ab und zu jemanden ohne Bündnis aus der Nähe
+    //    ein – Mitspieler wie echte Spieler
+    for (const id in bund.b) {
+        const a = bund.b[id], chef = botById[a.anf]; if (!chef || chef.mensch || !botOnline(chef, now) || a.mit.length >= BUND.MAX || Math.random() > .1) continue;
+        const m = bundMitte(a); if (!m) continue;
+        let best = null;
+        for (const w of BOT_DEFS.map(x => x.id).concat(['player'])) {
+            if (w === a.anf || bundVon(w) || !bundBasen(w).size || (a.einl || []).some(q => q.w === w)) continue;
+            if (botById[w] && !botById[w].mensch && bundEinzelgaenger(botById[w])) continue;
+            const c = islandById[bundCap(w)]; if (!c) continue; const d = Math.hypot(c.x - m.x, c.y - m.y); if (d > FRAME_HALF * .45) continue;
+            if (!best || d < best.d) best = { w, d }; }
+        if (best) bundOp(a.anf, { op: 'einladen', w: best.w });
+    }
+    // g) eingeladen: ein Mitspieler entscheidet wie beim Beitreten (nicht allein bleiben wollen, Nähe) – nach etwas Bedenkzeit
+    for (const bot of bots) {
+        if (bundVon(bot.id) || !botOnline(bot, now)) continue;
+        for (const a of bundEinladungen(bot.id)) { const q = a.einl.find(x => x.w === bot.id); if (!q || now - q.at < 30000) continue;
+            const c = islandById[botCapitalOf(bot.id)], m = bundMitte(a), nah = c && m && Math.hypot(c.x - m.x, c.y - m.y) < FRAME_HALF * .6;
+            const ja = !bundEinzelgaenger(bot) && nah && a.mit.length < BUND.MAX;
+            bundOp(bot.id, { op: 'einladungAntwort', aid: a.id, ja }); if (ja) { bundBotGetippt(bot, now); break; } }
+    }
+    // h) näher ans Bündnis: ein Mitspieler verlegt seine Hauptstadt (wie du: auf einen EIGENEN Turm, 50 Gems) auf den Turm,
+    //    der seinen Bündnis-Mitgliedern am nächsten ist – nur wenn das deutlich näher ist, und nicht öfter als sonst
+    for (const bot of bots.filter(b => bundVon(b.id) && botOnline(b, now) && Math.random() < .05).slice(0, 3)) {
+        const a = bundVon(bot.id), st = loadBotState()[bot.id]; if (!a || !st || (st.gems || 0) < TELEPORT_GEMS || now - (st.capMovedAt || 0) < BOT_CAP_COOLDOWN) continue;
+        const andere = a.mit.filter(w => w !== bot.id).map(w => islandById[bundCap(w)]).filter(Boolean); if (!andere.length) continue;
+        const mx = andere.reduce((s2, c) => s2 + c.x, 0) / andere.length, my = andere.reduce((s2, c) => s2 + c.y, 0) / andere.length;
+        const cap = islandById[botCapitalOf(bot.id)]; if (!cap) continue; const dJetzt = Math.hypot(cap.x - mx, cap.y - my);
+        let best = null;
+        for (const id of botOwnedIslands[bot.id]) { const t = islandById[id]; if (!t || t.type !== 'tower' || !botCapitalMoveOk(bot.id, id)) continue;
+            const d = Math.hypot(t.x - mx, t.y - my); if (!best || d < best.d) best = { id, d }; }
+        if (best && best.d < dJetzt * .6 && dJetzt - best.d > FRAME_HALF * .15 && botTeleportCapital(bot, best.id)) {
+            bundLog(a, bundName(bot.id) + ' hat die Hauptstadt näher ans Bündnis verlegt.'); bundSpeichern(); bundBotGetippt(bot, now); }
+    }
 }
 // Signale der Mitspieler: angegriffen und allein zu schwach → „Hilfe!“
 function bundMitspielerSignale(now) {
@@ -670,6 +730,7 @@ function bundTakt() {
     for (const r of bund.r.slice()) if (now >= r.los) bundRallyLos(r);
     for (const id in bund.b) { const a = bund.b[id], vor = (a.sig || []).length; a.sig = (a.sig || []).filter(s => now - s.at < 30 * 60000); if (a.sig.length !== vor) geaendert = true;
         const q = (a.anfragen || []).length; a.anfragen = (a.anfragen || []).filter(x => now - x.at < 24 * 3600000 && !bundVon(x.w)); if (a.anfragen.length !== q) geaendert = true;
+        const e = (a.einl || []).length; a.einl = (a.einl || []).filter(x => now - x.at < BUND_EINL_MS && !bundVon(x.w) && botById[x.w]); if (a.einl.length !== e) geaendert = true;
         if (!a.mit.length) { delete bund.b[id]; geaendert = true; } else if (!a.mit.includes(a.anf)) { a.anf = a.mit[0]; geaendert = true; } }
     if (geaendert) bundSpeichern();
     try {
@@ -706,7 +767,14 @@ function bundRender(neu) {
     liveHtml(bundBody, bundTab === 'info' ? (a ? bundInfoHtml(a) : bundOhneHtml()) : bundTab === 'sig' ? (a ? bundSigHtml(a) : bundOhneHtml())
         : bundTab === 'rally' ? (a ? bundRallyHtml(a) : bundOhneHtml()) : bundSuchenHtml(a));
 }
-function bundOhneHtml() { return '<div class="notice">' + icon('info') + '<span>Du bist in keinem Bündnis. Unter „Suchen“ kannst du einem beitreten oder selbst eines gründen.</span><button type="button" class="btn btn--secondary btn--sm" data-bact="tab" data-t="suchen">Suchen</button></div>'; }
+function bundEinladungenHtml() {                                  // an mich: Annehmen / Ablehnen
+    const L = bundEinladungen('player'); if (!L.length || bundIch()) return '';
+    return '<div class="sect"><h4>Einladungen</h4><span class="sect-aside">' + L.length + '</span></div><div class="bd-liste">' + L.map(x => { const q = x.einl.find(y => y.w === 'player');
+        return '<div class="bd-zeile">' + bundZeichenHtml(x) + '<span class="bd-name"><b>[' + escapeHtml(x.tag) + '] ' + escapeHtml(x.name) + '</b><small>' + x.mit.length + ' / ' + BUND.MAX + ' · Macht ' + fmtCompact(bundMacht(x)) + ' · von ' + escapeHtml(bundName(x.anf)) + ' · noch ' + uhrHtml(q.at + BUND_EINL_MS, 'clock') + '</small></span>' +
+            (x.mit.length >= BUND.MAX ? '<span class="chip">voll</span>' : '<button type="button" class="btn btn--primary btn--sm" data-bact="einlJa" data-aid="' + x.id + '">Annehmen</button>') +
+            '<button type="button" class="btn btn--ghost btn--sm" data-bact="einlNein" data-aid="' + x.id + '">Ablehnen</button></div>'; }).join('') + '</div>';
+}
+function bundOhneHtml() { return bundEinladungenHtml() + '<div class="notice">' + icon('info') + '<span>Du bist in keinem Bündnis. Unter „Suchen“ kannst du einem beitreten oder selbst eines gründen.</span><button type="button" class="btn btn--secondary btn--sm" data-bact="tab" data-t="suchen">Suchen</button></div>'; }
 function bundInfoHtml(a) {
     const chef = a.anf === 'player', bon = bundBonus(a), heute = a.gesch && a.gesch.tag === bundTagHeute() ? (a.gesch.n || {}).player || 0 : 0, now = Date.now();
     const mit = a.mit.slice().sort((x, y) => (y === a.anf) - (x === a.anf) || staerke(y) - staerke(x));
@@ -717,6 +785,9 @@ function bundInfoHtml(a) {
         '<div class="notice">' + icon('shop') + '<span>Bündnis-Geschenke heute: ' + heute + ' / ' + BUND.GESCHENKE_TAG + ' – wenn ein Mitglied einen Boss besiegt oder eine große Kiste kauft.</span></div>' +
         (chef && (a.anfragen || []).length ? '<div class="sect"><h4>Anfragen</h4></div><div class="bd-liste">' + a.anfragen.map(q => '<div class="bd-zeile"><span class="bd-name">' + whoLink(q.w, bundName(q.w)) + '<small>Macht ' + fmtCompact(staerke(q.w)) + ' · ' + bundBasenText(q.w) + '</small></span>' +
             '<button type="button" class="btn btn--primary btn--sm" data-bact="anfrage" data-w="' + q.w + '" data-ja="1">Ja</button><button type="button" class="btn btn--secondary btn--sm" data-bact="anfrage" data-w="' + q.w + '">Nein</button></div>').join('') + '</div>' : '') +
+        (chef && (a.einl || []).length ? '<div class="sect"><h4>Eingeladen</h4></div><div class="bd-liste">' + a.einl.map(q => '<div class="bd-zeile"><span class="bd-name">' + whoLink(q.w, bundName(q.w)) + '<small>Macht ' + fmtCompact(staerke(q.w)) + ' · noch ' + uhrHtml(q.at + BUND_EINL_MS, 'clock') + '</small></span>' +
+            '<button type="button" class="btn btn--ghost btn--sm" data-bact="einlWeg" data-w="' + q.w + '">Zurückziehen</button></div>').join('') + '</div>' : '') +
+        (chef && a.mit.length < BUND.MAX ? '<div class="notice">' + icon('info') + '<span>Jemanden einladen: tippe seinen Namen an (Rangliste, Basis, Kampfbericht) → „Ins Bündnis einladen“.</span></div>' : '') +
         '<div class="sect"><h4>Mitglieder</h4><span class="sect-aside">' + a.mit.length + ' / ' + BUND.MAX + '</span></div><div class="bd-liste">' + mit.map(w => {
             const on = w === 'player' || (botById[w] && botOnline(botById[w], now));
             return '<div class="bd-zeile' + (w === 'player' ? ' is-me' : '') + '"><i class="bd-dot' + (on ? ' on' : '') + '"></i><span class="bd-name">' + (w === 'player' ? '<b>' + escapeHtml(bundName(w)) + '</b>' : whoLink(w, bundName(w))) +
@@ -754,7 +825,7 @@ function bundRallyHtml(a) {
 }
 function bundSuchenHtml(a) {
     const alle = Object.values(bund.b).map(x => ({ x, m: bundMacht(x) })).sort((p, q) => q.m - p.m), angefragt = id => (bund.b[id].anfragen || []).some(q => q.w === 'player');
-    return (a ? '<div class="notice">' + icon('info') + '<span>Du bist in [' + escapeHtml(a.tag) + '] ' + escapeHtml(a.name) + '. Um zu wechseln, verlasse erst dein Bündnis.</span></div>' : '') +
+    return (a ? '<div class="notice">' + icon('info') + '<span>Du bist in [' + escapeHtml(a.tag) + '] ' + escapeHtml(a.name) + '. Um zu wechseln, verlasse erst dein Bündnis.</span></div>' : bundEinladungenHtml()) +
         '<div class="sect"><h4>Alle Bündnisse</h4><span class="sect-aside">' + alle.length + '</span></div><div class="bd-liste">' + (alle.length ? alle.map(({ x, m }) =>
             '<div class="bd-zeile">' + bundZeichenHtml(x) + '<span class="bd-name"><b>[' + escapeHtml(x.tag) + '] ' + escapeHtml(x.name) + '</b><small>' + x.mit.length + ' / ' + BUND.MAX + ' · Macht ' + fmtCompact(m) + ' · ' + (x.offen ? 'offen' : 'auf Anfrage') + ' · Anführer ' + escapeHtml(bundName(x.anf)) + '</small></span>' +
             (a ? '' : x.mit.length >= BUND.MAX ? '<span class="chip">voll</span>' : angefragt(x.id) ? '<button type="button" class="btn btn--ghost btn--sm" data-bact="anfrageWeg">Angefragt ✕</button>'
@@ -863,6 +934,9 @@ if (bundPopup) {
         }
         else if (act === 'beitreten') bundBefehl('beitreten', { aid: b.dataset.aid }, 'Einen Moment …');
         else if (act === 'anfrageWeg') bundBefehl('anfrageWeg', {}, 'Anfrage zurückgezogen.');
+        else if (act === 'einlJa') bundBefehl('einladungAntwort', { aid: b.dataset.aid, ja: true }, 'Einen Moment …');
+        else if (act === 'einlNein') bundBefehl('einladungAntwort', { aid: b.dataset.aid, ja: false }, 'Einladung abgelehnt.');
+        else if (act === 'einlWeg') bundBefehl('einladungWeg', { w }, 'Einladung zurückgezogen.');
         else if (act === 'anfrage') bundBefehl('anfrage', { w, ja: b.dataset.ja === '1' });
         else if (act === 'anfuehrer') { if (sicher('chef:' + b.dataset.w)) bundBefehl('anfuehrer', { w }, bundName(b.dataset.w) + ' führt jetzt das Bündnis.'); }
         else if (act === 'raus') { if (sicher('raus:' + b.dataset.w)) bundBefehl('rauswerfen', { w }, bundName(b.dataset.w) + ' wurde entfernt.'); }
@@ -885,7 +959,7 @@ let bundGesehenAt = Date.now();
 function bundGesehen() { bundGesehenAt = Date.now(); bundPunkt(); }
 function bundPunkt() {
     const p = document.getElementById('bundBadge'); if (!p) return; const a = bundIch();
-    const neu = a ? (a.sig || []).filter(s => s.at > bundGesehenAt && s.w !== 'player').length + bund.r.filter(r => r.aid === a.id && r.start > bundGesehenAt && r.by !== 'player').length : 0;
+    const neu = a ? (a.sig || []).filter(s => s.at > bundGesehenAt && s.w !== 'player').length + bund.r.filter(r => r.aid === a.id && r.start > bundGesehenAt && r.by !== 'player').length : bundEinladungen('player').length;
     p.style.display = neu ? '' : 'none'; p.textContent = neu > 9 ? '9+' : String(neu);
 }
 // Inselfenster: Bündnis-Knöpfe (Signal, Rally, Hilfe) und keine Angriffe auf Mitglieder
@@ -991,4 +1065,12 @@ if (window.WELT) {
         flashHint(typeof e.hint === 'string' ? e.hint.slice(0, 200) : 'Ein Bündnis-Geschenk liegt für dich bereit – Events → Belohnung.', 4500); if (typeof liveBald === 'function') liveBald();
     });
     WELT.beiNachricht.push(function (e) { if (e && e.art === 'bundInfo' && typeof e.text === 'string') { flashHint(e.text.slice(0, 300), 4500); if (bundPopup && isPanelOpen(bundPopup)) bundRender(); } });
+}
+
+// Profil eines Spielers (spiel.js openRulerProfile): als Anführer „Ins Bündnis einladen“
+function bundProfilKnopf(who) {
+    const a = bundIch(); if (SYSTEM || !a || a.anf !== 'player' || who === 'player' || !botById[who] || bundVon(who) || !bundBasen(who).size) return '';
+    if ((a.einl || []).some(q => q.w === who && Date.now() - q.at < BUND_EINL_MS)) return '<button class="btn btn--ghost btn--sm" type="button" disabled>' + icon('bund') + '<span>Eingeladen</span></button>';
+    if (a.mit.length >= BUND.MAX) return '';
+    return '<button class="btn btn--secondary btn--sm" type="button" data-rp="einladen">' + icon('bund') + '<span>Ins Bündnis einladen</span></button>';
 }
