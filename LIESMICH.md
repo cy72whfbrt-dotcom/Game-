@@ -1455,3 +1455,15 @@ Bericht nicht zu sehen). Jetzt (buendnis.js Abschnitt „Verstärkung“, Welt-T
   marschiert heim. Keine Skript-Fehler, keine PHP-Warnungen, keine Weltrechner-Fehler.
 - Dabei gesehen (gewollt, nichts geändert): eine nur eingetragene, nicht gebaute Botschaft lehnt das Hauptbuch ab; geschlossene
   Tore halten auch Verstärkung auf. Die alte Testwelt hat noch Bündnisse über 5 (vom alten Limit) – die neue Welt beim Upload nicht.
+
+## 44. Letzter Gesamtlauf 3.10. und Hochladen mit neuer Welt (Alexanders Ja: „lass alles laufen, prüfe alles, lade es dann hoch“)
+- **Alles grün (lokaler Server + Weltrechner):** Unit (16 Spiel / 64 Server), Absturz, Ausfall, Ausgang, Warte-Befehle,
+  Profil-Abbruch, genau einmal, Kette (Sicherung → Zurückspielen → Nachholen), Kisten-Beleg, Sterne/Marschgrößen (`rest_test`),
+  Armee-Daten, Admin/CSP, Spielertest `server_alles` (alle 17 Stadt-Fenster, Angriff, Erobern, Neuladen), Vorschau-Tests,
+  Bündnis mit Bots (5er-Limit, rauswerfen, wechseln, Amt, auf/zu), Verstärkung (Vorschau + Server). Keine PHP-Warnungen,
+  keine Weltrechner-Fehler, keine Alarme beim neuen Spieler. Auf dem Testserver schicken Bots selbst Verstärkung.
+- Zwischendurch gesehen: die Test-Datenbank war nach einer Pause des Containers aus → neu gestartet, alles neu gelaufen.
+  `rest_test` einmal zu kurz gewartet (direkt danach) → einzeln grün. Testskripte nachgezogen (alter Name `CITY_DEFS`,
+  5er-Limit, Gastgeber ohne verschlossenes Tor) – im Spiel nichts geändert.
+- **Hochladen:** `hochladen.sh` ohne „Wartung aus“ → `welt_neustart.php` (Zufallsname, POST ja=NEUSTART, löscht sich) →
+  Wartung aus. Konten, Passwörter, Namen bleiben; alle Spielstände neu.
