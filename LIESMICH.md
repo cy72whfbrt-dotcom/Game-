@@ -1335,3 +1335,45 @@ Admin ohne Fehler · Ausgang: Befehl erstellt, Puls blockiert, Absturz → nach 
 30 Min. alter bezahlter Befehl wird nachgeholt, alter Angriffs-Befehl verfällt · Zurückspielen: bezahlter Befehl danach läuft genau
 einmal nach, davor nicht, Hauptbuch angeglichen, danach kein falscher Alarm · Push bleibt auf diesem Gerät · welt_neustart
 abgelaufen → 404 und gelöscht · alle bisherigen Tests (Absturz, Spieler-Abbruch, genau einmal, Klick-Tests) wieder grün.
+
+## 39. Nachprüfung der Punkte 1–6 + Hosting (Alexander 3.10.) – NICHT hochgeladen
+**1. Bündnis-Kiste – war ein echter Exploit, behoben.** Ein gefälschtes Handy konnte den Befehl `bund kiste` ohne Kauf schicken →
+Geschenke (Münzen, Truppen, selten eine Kiste) für alle Bündnis-Mitglieder, 3× am Tag. Parallel/doppelt/Neuladen/verlorene
+Antwort waren dabei sicher (Befehle laufen nacheinander, Nummer, Zähler in der Welt, alles in einer Transaktion) – nur der
+Kauf selbst wurde nicht geprüft. Jetzt: das Geschenk gibt es erst, wenn das Hauptbuch im Profil eine echte Gem-Ausgabe sieht
+(mind. der halbe Preis – das Profil zeigt nur die Summe; z. B. ein gleichzeitiger Erfolg), höchstens 10 Min. vorher/nachher;
+jede Ausgabe zählt für EIN Geschenk; ein Befehl ohne Kauf wartet und verfällt (`hb.kaufG`, `hb.kisteOffen`, `WELT.kisteGekauft`).
+
+**2. Bauarbeiter – kein kostenloser oder doppelter Vorteil, nicht geändert.** Jede Stufe kostet im Hauptbuch ihre Münzen und
+Rohstoffe und frühestens ihre Bauzeit (sonst Gems), je Gebäude nacheinander, gespeichert mit der Welt. Ein gefälschtes Handy
+kann nur mehrere VERSCHIEDENE Gebäude gleichzeitig bauen (ehrlich 1–2) – voll bezahlt, nichts doppelt. Bleibt als bekannter Rest.
+
+**3. Stern-Gems – echter Fehler, behoben.** Ablauf vorher: Stern auf ein Teil in der Truhe (Gems weg) → Hauptbuch sah ihn nicht
+(nur angelegte Teile) → Verkauf (Gems zurück) → „Gems springen“ (falscher Alarm) und die Gems fehlten im Konto des Weltrechners
+(später z. B. Schild abgelehnt). Jetzt schickt das Profil `stW` (Gems in allen Sternen); ein Kauf wird aus den ausgegebenen
+Gems bezahlt und als Rücklage gemerkt, ein Verkauf gibt genau die zurück; Anlegen/Ablegen ändert nichts; nicht Bezahltes gibt
+beim Verkauf nichts. Nach Neustart steht alles im Hauptbuch (Welt), nach Zurückspielen wird es angeglichen.
+
+**4. Marschgrößen – Server filtert jetzt.** Vorher bekam jedes Handy alle Kolonnen mit Truppen, Held und Kampfwerten (die
+Oberfläche zeigte sie nur nicht). Jetzt (`MARSCH_TEILE`, `marsch_teil`, `marsch_welt`): fremde Angriffe, Senden, Rückzüge,
+Sammler und Lager-Märsche kommen mit 0 Truppen und ohne Held/Kampfwerte; Angriffe auf eigene Basen: Wachturm 1–9 gerundet
+(2 Stellen), ab 10 genau mit Held und Truppen-Stufe – genau wie die Anzeige (`angreiferInfo`). Wachturm-Stufe aus dem Hauptbuch
+(nicht vom Handy). Gilt beim Laden und bei jedem Puls; diese Teile gehen an Spieler immer ganz (keine Flicken). Der Weltrechner
+bekommt alles ungefiltert. Bündnis „Truppen schicken“ erkennt Angriffe weiter (Stärke ist am Handy jetzt unbekannt).
+Armeen im Feld und besetzte Felder zeigt das Spiel offen mit Zahl, wenn man sie sieht – unverändert (im Nebel stehen sie aber
+noch in den Daten; dafür müsste der Weltrechner die Sicht je Armee ausrechnen).
+
+**5. config.php / gemeinsames Hosting – Hosting-Risiko, nicht im Code lösbar.** Über das Web liefert config.php nichts (PHP
+gibt ein Array zurück, keine Ausgabe). ABER: alle Seiten unter demselben Webspace (z. B. andere Ordner unter /html/, die über
+den Office-Editor hochgeladen werden können – auch .php) laufen unter demselben System-Benutzer; ein fremdes PHP-Skript dort
+könnte config.php lesen (DB-Zugang, Weltrechner-Schlüssel). Ob open_basedir das je Ordner trennt, lässt sich ohne Zugriff auf
+den Server nicht prüfen. Echte Abhilfe nur beim Hosting: eigenes Konto/eigene (Sub-)Domain, oder der DB-Benutzer darf nur
+diese Datenbank. Nichts am Spielcode geändert.
+
+**Getestet (lokal, alles grün):** Unit-Tests · Marsch-Filter (Funktion: Wachturm 0/3/10, eigen/fremd, Flicken → ganz; im Handy
+beim Laden und nach Pulsen keine fremden Zahlen) · Sterne mit neuem Spieler (Admin-Gems → Kiste → Stern in der Truhe → Verkauf:
+Rücklage, kein Alarm) · Bündnis-Kiste (ohne Kauf wartet, echter Kauf gibt genau eins frei) · Absturz/Neustart/Zurückspielen
+(`absturz_test`) · langer Ausfall + Nachholen (`ausfall_test`) · Ausgang (`ausgang_test`) · Speichern/Laden/Abbruch
+(`profil_abbruch`, `genau_einmal`) · Login/Admin/CSP (`admin_csp`) · großer Klick-Test mit Server und Vorschau · keine
+PHP-Warnungen, keine Fehler im Weltrechner-Log, keine falschen Schummel-Alarme. Nebenbei: der lokale Test-Webserver fiel nach
+2 Std. aus (Zeitlimit) – der Weltrechner hat das ohne Schaden überstanden und lief danach normal weiter.
