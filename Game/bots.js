@@ -212,7 +212,7 @@ function resolveBotAttack(attack) {
     if (!won && targetOwner && targetOwner !== 'player') botStat(targetOwner, 'defs');
     if (won && bossHere && typeof bundGeschenk === 'function') bundGeschenk(bot.id, 'boss');         // Boss besiegt: kleine Geschenke fürs ganze Bündnis
     if (won && bossHere) { botStat(bot.id, 'bosses');                // der Preis wie bei dir: Gems, epische Kiste, Splitter
-        evPreis(bot.id, 'wboss', bossHere.name + ' besiegt', { gems: WANDER_REWARD_GEMS, crate: WANDER_CRATE, sh: HERO_SHARDS_WANDER });   // (ein echter Spieler: als Nachricht ins Abholfach)
+        evPreis(bot.id, 'wboss', bossHere.name + ' besiegt', { gems: WANDER_REWARD_GEMS, crate: WANDER_CRATE, sh: HERO_SHARDS_WANDER }, bossHere.endsAt || bossHere.name);   // (ein echter Spieler: als Nachricht ins Abholfach)
         if (bot.mensch) evBericht(bot.id, { type: 'ev', ic: 'star', gut: true, badge: 'Kriegsherr', title: bossHere.name + ' besiegt', txt: 'Die Beute liegt unter Events → Belohnung.', at: Date.now() }, bossHere.name + ' ist gefallen – die Beute liegt unter Events → Belohnung.'); }
     updateHud();
     if (bossHere && won) { spawnBattleFx(target.id, false, bossHere.name + ' gefallen', bot.name); endWander(bot.name + ' hat ' + bossHere.name + ' besiegt!'); }

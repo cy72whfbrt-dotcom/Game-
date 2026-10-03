@@ -1228,3 +1228,54 @@ Geschenke) · Hauptbuch zählt keine Bauarbeiter-Plätze · Stern-Gems beim Verk
 in Basen sind im Nebel) · die Spielseite liegt auf derselben Adresse wie andere Seiten des Office-Servers (Cookie nur per Pfad
 getrennt) · CSP mit 'unsafe-inline'.
 
+
+## 37. Nachrichten, Befehle, Admin, Sicherungen: genau einmal – auch bei Absturz, Neustart und Zurückspielen (Alexander 3.10.) – NICHT hochgeladen
+**Eine Nummern-Logik für alle** (Spieler, Admin, Weltrechner – keine zweite, keine Admin-Sonderlösung):
+- Befehle haben eine Nummer (`cid`), Nachrichten eine (`mid`); der Server legt dieselbe Nummer nie zweimal ab (eindeutiger
+  Schlüssel je Spieler). Eine Wiederholung behält ihre Nummer. Alte Einträge ohne Nummer gehen weiter (einmal, wie früher).
+- **Admin:** jedes Formular bekommt beim Anzeigen eine Zufallsnummer. Geschenk = Nachricht `mid=<nr>` + Gutschrift-Befehl
+  `cid=<nr>g<Spieler>` in EINER Transaktion; Bot-Geschenk `cid=<nr>b`; Nebel `mid/cid=<nr>(n)`. Doppelklick, Neuladen, nochmal
+  absenden → nichts doppelt. Ein Formular ohne Nummer (alte Seite) wird abgelehnt.
+- **Event-Preise** (Wochen-Event, Tagesboss, Invasion, Drache, Kriegsherr) bekommen eine FESTE Nummer aus Auszahlung + Spieler
+  (`W.nachricht(uid, e, schluessel)`): zahlt der Weltrechner nach Neustart/Zurückspielen dieselbe Auszahlung nochmal, kommt sie
+  beim Spieler trotzdem nur einmal an. Abgeholte Nachrichten bleiben dafür 3 Tage stehen (Sicherungen reichen 48 Std. zurück).
+- **Reihenfolge Weltrechner:** Befehl ausführen → Welt + Nachrichten + Sicht + „Befehl erledigt“ in EINER Transaktion speichern
+  (ganz oder gar nicht; ein Fehler = 500 = nichts gilt, alles kommt mit denselben Nummern nochmal) → erst dann ist der Befehl weg.
+  Fehlt beim Speichern ein Welt-Teil (Flicken passte nicht), wird noch nicht quittiert, bis der Teil ganz gespeichert ist.
+- **Reihenfolge Spieler:** Nachricht wirkt → Spielstand MIT der Liste „verbucht“ gespeichert → erst dann ist sie abgeholt.
+  Sicherungen tragen eine laufende Nummer (eine ältere überschreibt nie eine neuere) und werden nie mehr aufgeteilt; jede enthält
+  alles, was noch unterwegs ist. Spielstand + „verbucht“ in einer Transaktion. Unlesbare Nachrichten blockieren nichts.
+
+**Weltrechner – immer genau einer ist zuständig:**
+- Schreiben darf nur der Leiter (sein Zeichen). Übernehmen darf ein anderer nur, wenn die Leitung abgelaufen ist UND er den
+  NEUESTEN Stand hat (`seit` = Version). Ein alter Weltrechner (nach Absturz, Neustart, Zurückspielen) bekommt 409 und beendet sich –
+  nie überschreibt er eine neuere Welt. Kein zweiter Weltrechner als „Ersatz“ parallel.
+- Wachhund: kurzer Hänger (< 60 s Herzschlag) → nichts tun. Hart beenden wird geprüft (bis 2 s); lässt er sich nicht beenden,
+  startet KEIN zweiter. Nach dem Beenden steht das Ende im Herzschlag → Neustart sofort (vorher bis 60 s „herz frisch“). Ist der
+  Prozess wirklich weg (Speicher, hart beendet), startet er gleich neu; nur wenn `ps` nichts sehen darf, wird gewartet.
+- Handy-Benachrichtigungen: nach einem Neustart merkt sich der Weltrechner zuerst nur den Stand – keine doppelten.
+
+**Sicherungen / Zurückspielen:**
+- Nur ganze, lesbare Sicherungen (Welt-Teile als gültiges JSON, Karte + Truppen + Mitspieler dabei) werden angelegt oder
+  zurückgespielt; eine kaputte/leere Welt verdrängt keine gute Sicherung. Jede Sicherung trägt ihre Welt-Version.
+- Zurückspielen: Weltrechner wird erst sicher beendet (sonst nichts verändert) → der jetzige Stand wird selbst gesichert (lässt
+  sich also auch zurückspielen) → alles in einer Transaktion → neue, höhere Version, Leitung frei → Weltrechner neu.
+  Erledigte Befehle bleiben erledigt (laufen nie zweimal), offene warten weiter. Die Welt (mit Hauptbuch) geht zurück, die
+  Spielstände der Spieler nicht – Preise mit fester Nummer kommen deshalb nicht doppelt.
+
+**Aus der Abschluss-Prüfung behoben:** Schild, den die Welt fallen ließ, kostete im Hauptbuch Gems (Handy meldete ihn noch) ·
+Hauptstadt verlegen in eine angegriffene Basis: das Handy lehnt jetzt selbst ab (vorher 50 Gems weg) · Truppen zu einer
+laufenden Armee: Weg wird vom jetzigen Ort geprüft · Indizes für offene Befehle/Nachrichten.
+
+**Getestet (lokal, `absturz_test.js`, `profil_abbruch.js`, Admin doppelt):** fremder Weltrechner bei laufendem → 409 · nach
+Absturz alter Stand → 409 · Speicherfehler mitten im Puls → Welt, Quittung, Leitung unverändert, Wiederholung → alles genau
+einmal · Sicherung + Zurückspielen → Vorab-Sicherung, höhere Version, alter Weltrechner 409, erledigte Befehle bleiben erledigt ·
+kaputte Sicherung abgelehnt · gleiche Auszahlung nach Zurückspielen → einmal · Admin-Neustart sofort · Spieler: Gewinn kommt,
+Absturz vor dem Speichern → nach Neustart genau einmal; Speichern 3× Serverfehler → einmal; sofort neu laden → einmal; zweites
+Fenster → altes raus, neues hat den Gewinn · Admin-Geschenk 3× abgeschickt → 1 Nachricht, 1 Befehl, ausgeführt · alle
+Unit-Tests, Klick-Tests Vorschau + Server ohne Fehler.
+
+**Bekannt:** Spieler-Befehle, die über 10 Min. nicht ausgeführt wurden (Weltrechner so lange aus), verfallen absichtlich (die
+Lage hat sich geändert); was das Handy dafür schon bezahlt hat (z. B. Hauptstadt verlegen), ist dann weg · nach dem
+Zurückspielen fehlt der Welt, was seitdem passiert ist (so gewollt) – Gewinne, die Spieler seitdem schon verbucht haben, behalten
+sie · neues Passwort beendet die Handy-Nachrichten auch auf dem eigenen Gerät bis zum nächsten Laden.

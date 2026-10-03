@@ -389,8 +389,14 @@ function weltrechner_seite($sys) {
 
 // ===== MySQL =====
 class MysqlLager {
-    const TABELLEN_STAND = '2026-10-03b';   // (siehe Konstruktor)
+    const TABELLEN_STAND = '2026-10-03c';   // (siehe Konstruktor)
     private $db;
+    // Transaktionen (auch verschachtelt): was zusammengehört, gilt ganz oder gar nicht – stirbt PHP mittendrin, nimmt die Datenbank
+    // alles zurück (z. B. Welt + Nachrichten + Quittungen des Weltrechners, Spielstand + „verbucht“ eines Spielers)
+    private $tiefe = 0;
+    function tx_anfang() { if ($this->tiefe++ === 0) $this->db->beginTransaction(); }
+    function tx_ende() { if ($this->tiefe > 0 && --$this->tiefe === 0) $this->db->commit(); }
+    function tx_abbruch() { if ($this->tiefe > 0) { $this->tiefe = 0; if ($this->db->inTransaction()) $this->db->rollBack(); } }
     function __construct($c) {
         $this->db = new PDO('mysql:host=' . $c['db_host'] . ';dbname=' . $c['db_name'] . ';charset=utf8mb4', $c['db_user'], $c['db_pass'], [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, PDO::ATTR_TIMEOUT => 5,
@@ -525,7 +531,8 @@ class MysqlLager {
         foreach (['ow_bremse.seit' => 'ow_bremse ADD KEY seit (seit)', 'ow_sitzungen.ablauf' => 'ow_sitzungen ADD KEY ablauf (ablauf)',
                   'ow_befehle.spieler_id' => 'ow_befehle ADD KEY spieler_id (spieler_id)', 'ow_befehle.erstellt' => 'ow_befehle ADD KEY erstellt (erstellt)',
                   'ow_ereignisse.erstellt' => 'ow_ereignisse ADD KEY erstellt (erstellt)',
-                  'ow_befehle.spieler_cid' => 'ow_befehle ADD UNIQUE KEY spieler_cid (spieler_id, cid)', 'ow_ereignisse.spieler_mid' => 'ow_ereignisse ADD UNIQUE KEY spieler_mid (spieler_id, mid)', 'ow_spieler.anzeigename' => 'ow_spieler ADD UNIQUE KEY anzeigename (anzeigename)'] as $n => $sql)
+                  'ow_befehle.spieler_cid' => 'ow_befehle ADD UNIQUE KEY spieler_cid (spieler_id, cid)', 'ow_ereignisse.spieler_mid' => 'ow_ereignisse ADD UNIQUE KEY spieler_mid (spieler_id, mid)', 'ow_spieler.anzeigename' => 'ow_spieler ADD UNIQUE KEY anzeigename (anzeigename)',
+                  'ow_befehle.offen' => 'ow_befehle ADD KEY offen (fertig, id)', 'ow_ereignisse.spieler_offen' => 'ow_ereignisse ADD KEY spieler_offen (spieler_id, abgeholt, id)'] as $n => $sql)   // (Erledigtes bleibt eine Weile stehen: Offenes trotzdem schnell finden)
             if (!in_array($n, $idx, true)) { try { $this->db->exec('ALTER TABLE ' . $sql); } catch (PDOException $e) { error_log('Open Water Index ' . $n . ': ' . $e->getMessage()); } }
     }
     function sperren($uid) { if ((int)$this->db->query("SELECT GET_LOCK('ow_spieler_" . (int)$uid . "', 15)")->fetchColumn() !== 1) throw new RuntimeException('Spieler-Sperre nicht bekommen'); }
@@ -618,7 +625,7 @@ class MysqlLager {
         return is_array($v) ? $v : [];
     }
     function stand_schreiben($uid, $setzen, $loeschen) {
-        $this->db->beginTransaction();
+        $this->tx_anfang();
         $s = $this->db->prepare('INSERT INTO ow_spielstand (spieler_id, schluessel, wert) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE wert = VALUES(wert)');
         $d = $this->db->prepare('DELETE FROM ow_spielstand WHERE spieler_id = ? AND schluessel = ?');
         $da = null;
@@ -647,7 +654,7 @@ class MysqlLager {
         }
         if ($da !== null) $s->execute([$uid, '_bot_teile', json_encode((object)$da)]);
         $this->uebersicht($uid, $setzen);
-        $this->db->commit();
+        $this->tx_ende();
     }
     private function bots_leeren($uid, $sp) {
         $extra = $sp === 'basen' ? ', anzahl_basen = NULL' : ($sp === 'zustand' ? ', stufe = NULL' : '');
@@ -797,9 +804,11 @@ class MysqlLager {
         try {
             $sp = $this->db->query('SELECT schluessel, wert FROM ow_spielstand WHERE spieler_id = 0')->fetchAll();
             $bo = $this->db->query('SELECT bot_id, nr, stufe, muenzen, anzahl_basen, basen, zustand FROM ow_bots WHERE spieler_id = 0')->fetchAll();
+            $v = $this->db->query('SELECT version FROM ow_welt_info WHERE id = 1')->fetchColumn();   // welcher Welt-Stand das ist
         } finally { $this->welt_entsperren(); }
-        if (!$sp) return 0;
-        $gz = gzencode(json_encode(['spielstand' => $sp, 'bots' => $bo], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), 6);
+        if (!sicherung_gueltig(['spielstand' => $sp, 'bots' => $bo])) return 0;   // eine leere/kaputte Welt verdrängt nie eine gute Sicherung
+        $gz = gzencode(json_encode(['spielstand' => $sp, 'bots' => $bo, 'version' => (int)$v], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), 6);
+        if ($gz === false || !sicherung_gueltig(json_decode((string)gzdecode($gz), true))) return 0;   // (nur ganz lesbare Sicherungen)
         $this->db->prepare('INSERT INTO ow_sicherungen (groesse, daten) VALUES (?, ?)')->execute([strlen($gz), $gz]);
         $id = (int)$this->db->lastInsertId();
         $this->db->exec('DELETE FROM ow_sicherungen WHERE id <= ' . ($id - 48));   // die letzten 48 bleiben
@@ -808,11 +817,16 @@ class MysqlLager {
     function letzte_sicherung_zeit() { return (int)$this->db->query('SELECT UNIX_TIMESTAMP(MAX(erstellt)) FROM ow_sicherungen')->fetchColumn(); }
     function sicherungen_liste() { return $this->db->query('SELECT id, erstellt, groesse FROM ow_sicherungen ORDER BY id DESC')->fetchAll(); }
     // Eine Sicherung zurückspielen (der Weltrechner muss dafür aus sein). Alle Teile bekommen eine neue Version → alle laden neu.
+    // Vorher wird der jetzige Stand selbst gesichert (nichts geht still verloren – auch das Zurückspielen lässt sich zurückspielen).
+    // Bereits ausgeführte Befehle bleiben quittiert (sie laufen nie ein zweites Mal), nicht ausgeführte warten weiter;
+    // Auszahlungen, die der Weltrechner danach nochmal macht, haben feste Nummern und kommen nicht doppelt an.
     function sicherung_zurueck($id) {
         $q = $this->db->prepare('SELECT daten FROM ow_sicherungen WHERE id = ?'); $q->execute([(int)$id]);
         $d = json_decode((string)@gzdecode((string)$q->fetchColumn()), true);
-        if (!is_array($d) || empty($d['spielstand'])) return false;
+        if (!sicherung_gueltig($d)) return false;
+        if (!$this->sicherung_anlegen()) return false;   // ohne Sicherung des jetzigen Stands kein Zurückspielen
         $this->welt_sperren();
+        try {
         $this->db->beginTransaction();
         $this->db->exec('DELETE FROM ow_spielstand WHERE spieler_id = 0');
         $this->db->exec('DELETE FROM ow_bots WHERE spieler_id = 0');
@@ -827,6 +841,7 @@ class MysqlLager {
         foreach ($i['versionen'] as $k => $_) if (!isset($vs[$k])) $vs[$k] = $v;   // was es damals nicht gab: wird gelöscht
         $this->db->prepare('UPDATE ow_welt_info SET version = ?, versionen = ?, leiter_bis = 0, leiter_token = \'\' WHERE id = 1')->execute([$v, json_encode($vs)]);   // (auch das Zeichen: ein alter Weltrechner darf nicht mehr schreiben)
         $this->db->commit();
+        } catch (Throwable $e) { if ($this->db->inTransaction()) $this->db->rollBack(); $this->welt_entsperren(); throw $e; }   // ganz oder gar nicht
         $this->welt_entsperren();
         return true;
     }
@@ -837,9 +852,9 @@ class MysqlLager {
         foreach ($setzen as $k => $v) $g[$k] = strlen($v);
         return array_sum($g);
     }
-    function aufraeumen() {   // Erledigtes (nach einer Weile), alte Befehle (niemand hat gerechnet) und nie abgeholte Nachrichten
+    function aufraeumen() {   // (abgeholte Nachrichten bleiben 3 Tage: so lange erkennt der Server eine feste Nummer nach dem Zurückspielen wieder)   // Erledigtes (nach einer Weile), alte Befehle (niemand hat gerechnet) und nie abgeholte Nachrichten
         $this->db->exec('DELETE FROM ow_befehle WHERE (fertig = 1 AND erstellt < NOW() - INTERVAL 1 HOUR) OR erstellt < NOW() - INTERVAL 1 DAY');
-        $this->db->exec('DELETE FROM ow_ereignisse WHERE (abgeholt = 1 AND erstellt < NOW() - INTERVAL 1 DAY) OR erstellt < NOW() - INTERVAL 60 DAY');
+        $this->db->exec('DELETE FROM ow_ereignisse WHERE (abgeholt = 1 AND erstellt < NOW() - INTERVAL 3 DAY) OR erstellt < NOW() - INTERVAL 60 DAY');
     }
     // Befehle: das Handy gibt jedem eine Nummer (cid) – kommt er wegen einer Wiederholung nochmal, wird er nicht nochmal abgelegt.
     // Gelöscht wird erst, wenn der Weltrechner quittiert hat, dass die Wirkung in der gespeicherten Welt steht (befehle_quittieren).
@@ -863,8 +878,9 @@ class MysqlLager {
     function ereignisse_abholen($uid) {
         $q = $this->db->prepare('SELECT id, ereignis FROM ow_ereignisse WHERE spieler_id = ? AND abgeholt = 0 ORDER BY id LIMIT 200');
         $q->execute([$uid]);
-        $raus = [];
-        foreach ($q->fetchAll() as $z) { $e = json_decode($z['ereignis']); if (is_object($e)) { $e->_eid = (int)$z['id']; $raus[] = $e; } }
+        $raus = []; $kaputt = [];
+        foreach ($q->fetchAll() as $z) { $e = json_decode($z['ereignis']); if (is_object($e)) { $e->_eid = (int)$z['id']; $raus[] = $e; } else $kaputt[] = (int)$z['id']; }
+        if ($kaputt) $this->ereignisse_verbucht($uid, $kaputt);   // unlesbar (kann nie wirken): nicht ewig im Fenster der 200 stehen lassen
         return $raus;
     }
     function ereignisse_verbucht($uid, $ids) {
@@ -983,9 +999,13 @@ function speichern_anfrage() {
         if (lager()->anzahl_teile($ich['id'], array_keys($setzen)) > 150) json_antwort(400, ['fehler' => 'zu viele Teile']);
         if (lager()->groesse_nach($ich['id'], $setzen) > 40 * 1024 * 1024) json_antwort(413, ['fehler' => 'Spielstand zu groß']);   // höchstens 40 MB pro Konto
         $t2 = microtime(true);
-        if (!lager()->speicher_nr_ok($ich['id'], (int)($d['nr'] ?? 0))) { if (!empty($d['abschied'])) lager()->abschied_setzen($ich['id'], (string)$d['token']); json_antwort(200, ['ok' => true, 'alt' => true]); }   // eine neuere war schneller
-        lager()->stand_schreiben($ich['id'], $setzen, $loeschen);
-        if (isset($setzen['openWaterEreignisFertig'])) lager()->ereignisse_verbucht($ich['id'], json_decode($setzen['openWaterEreignisFertig'], true));   // diese Nachrichten stehen jetzt in seinem Spielstand
+        $L = lager(); $L->tx_anfang();   // Nummer + Spielstand + „verbucht“: ganz oder gar nicht
+        try {
+            if (!$L->speicher_nr_ok($ich['id'], (int)($d['nr'] ?? 0))) { $L->tx_ende(); if (!empty($d['abschied'])) $L->abschied_setzen($ich['id'], (string)$d['token']); json_antwort(200, ['ok' => true, 'alt' => true]); }   // eine neuere war schneller (sie enthält alles hiervon)
+            $L->stand_schreiben($ich['id'], $setzen, $loeschen);
+            if (isset($setzen['openWaterEreignisFertig'])) $L->ereignisse_verbucht($ich['id'], json_decode($setzen['openWaterEreignisFertig'], true));   // diese Nachrichten stehen jetzt in seinem Spielstand
+            $L->tx_ende();
+        } catch (Throwable $e) { $L->tx_abbruch(); throw $e; }
         header(sprintf('Server-Timing: lesen;dur=%d, warten;dur=%d, schreiben;dur=%d', ($t1 - $t0) * 1000, ($t2 - $t1) * 1000, (microtime(true) - $t2) * 1000));
         if (!empty($d['abschied'])) lager()->abschied_setzen($ich['id'], (string)$d['token']);   // Fenster wird geschlossen/neu geladen
         json_antwort(200, ['ok' => true]);
@@ -1120,6 +1140,14 @@ function name_anfrage($ich, $d) {
 // Antwort:  {leiter, version, welt:{setzen,loeschen}, befehle:[{von,b}] (nur Weltrechner), ereignisse:[…], spieler:[…]}
 // Weltrechner ist nur der Server-Weltrechner (weltrechner/start.js) – nie das Gerät eines Spielers.
 const LEITER_SEK = 12;
+// Eine Sicherung ist nur gültig, wenn sie ganz ist: Welt-Teile (Schlüssel + gültiges JSON) und Mitspieler vorhanden.
+function sicherung_gueltig($d) {
+    if (!is_array($d) || empty($d['spielstand']) || !is_array($d['spielstand']) || empty($d['bots']) || !is_array($d['bots'])) return false;
+    $keys = [];
+    foreach ($d['spielstand'] as $z) { if (!isset($z['schluessel'], $z['wert']) || !is_string($z['wert']) || json_decode($z['wert']) === null && $z['wert'] !== 'null') return false; $keys[$z['schluessel']] = 1; }
+    foreach ($d['bots'] as $z) if (!isset($z['bot_id']) || !array_key_exists('basen', $z) || !array_key_exists('zustand', $z)) return false;
+    return isset($keys['openWaterIslandTroops'], $keys['openWaterKarte']);   // die Karte und die Truppen gehören immer dazu
+}
 function welt_puls($ich, $d) {
     $l = lager();
     $uid = $ich['id'];
@@ -1141,10 +1169,16 @@ function welt_puls($ich, $d) {
     $l->welt_sperren();
     $i = $l->welt_info();
     // Rechnen darf nur der Weltrechner auf dem Server (uid 0, mit seinem Zeichen) – nie ein Spieler
-    $bin_leiter = $sys && (int)$i['leiter_id'] === 0 && hash_equals((string)$i['leiter_token'], $tok);
+    $bin_leiter = $sys && (int)$i['leiter_id'] === 0 && $tok !== '' && hash_equals((string)$i['leiter_token'], $tok);
     if ($sys && !$bin_leiter && (int)$i['leiter_id'] === 0 && (int)$i['leiter_bis'] >= $jetzt) { $l->welt_entsperren(); json_antwort(409, ['fehler' => 'ein anderer Weltrechner läuft']); }
+    // Übernehmen darf ein Weltrechner nur, wenn er den NEUESTEN Stand hat (seit dem Laden hat niemand geschrieben). Ein alter
+    // Weltrechner (nach Neustart, Zurückspielen, Welt-Neustart oder einem anderen, der inzwischen schrieb) hört so sicher auf –
+    // nie überschreibt er mit seinem alten Stand eine neuere Welt.
+    if ($sys && !$bin_leiter && (int)($d['seit'] ?? -1) !== (int)$i['version']) { $l->welt_entsperren(); json_antwort(409, ['fehler' => 'veralteter Stand']); }
     $antwort = [];
-    if ($bin_leiter && isset($d['welt'])) {   // nur der Weltrechner darf die Welt schreiben
+    $l->tx_anfang();   // Welt + Nachrichten + Sicht + Quittungen: ganz oder gar nicht
+    try {
+    if ($sys && isset($d['welt'])) {   // nur der Weltrechner darf die Welt schreiben (Leiter oder mit dem neuesten Stand – siehe oben)
         $w = $d['welt'];
         $setzen = [];
         foreach ((array)($w['setzen'] ?? []) as $k => $v) if (is_string($k) && preg_match('/^openWater[A-Za-z0-9_]{1,90}$/', $k) && is_string($v) && sauber_json($v)) $setzen[$k] = $v;
@@ -1155,14 +1189,17 @@ function welt_puls($ich, $d) {
         $voll = [];
         if ($setzen || $loeschen || $flicken) $l->welt_schreiben($setzen, $loeschen, (int)($w['welt_zeit'] ?? 0), $flicken, $voll);
         if ($voll) $antwort['welt_voll'] = $voll;   // diese Teile beim nächsten Mal ganz schicken
-        $l->befehle_quittieren($d['quittung'] ?? []);   // diese Befehle stehen jetzt mit ihrer Wirkung in der gespeicherten Welt
-        if (mt_rand(1, 500) === 1) $l->aufraeumen();
+        if ($voll) $antwort['quittung_offen'] = true;   // ein Teil fehlt noch: Befehle erst quittieren, wenn ihre Wirkung ganz gespeichert ist
+        else $l->befehle_quittieren($d['quittung'] ?? []);   // diese Befehle stehen jetzt mit ihrer Wirkung in der gespeicherten Welt
         foreach (array_slice((array)($d['ereignisse'] ?? []), 0, 2000) as $e) if (isset($e['an'], $e['e']) && (int)$e['an'] > 0 && is_array($e['e']) && in_array($e['e']['art'] ?? '', WELTRECHNER_NACHRICHTEN, true) && ($e['e']['art'] !== 'bundGeschenk' || bund_geschenk_ok($e['e'])) && ($e['e']['art'] !== 'haendlerWare' || haendler_ware_ok($e['e'])) && sauber($e['e'])) {
             $mid = is_string($e['mid'] ?? null) && preg_match('/^[A-Za-z0-9]{8,24}$/', $e['mid']) ? $e['mid'] : null;
             $j = json_encode($e['e'], JSON_UNESCAPED_UNICODE); if ($j !== false && strlen($j) < 200000) $l->ereignis_ablegen((int)$e['an'], $j, $mid); }
         // 3B: neue Sicht einzelner Spieler (Bitfeld über die Insel-Nummern, base64)
         foreach (array_slice((array)($d['sicht'] ?? []), 0, 2000, true) as $an => $b64) if ((int)$an > 0 && is_string($b64) && strlen($b64) < 40000 && preg_match('/^[A-Za-z0-9+\/]*={0,2}$/', $b64)) $l->sicht_setzen((int)$an, $b64);
     }
+    $l->tx_ende();
+    } catch (Throwable $e) { $l->tx_abbruch(); $l->welt_entsperren(); throw $e; }   // nichts davon gilt – der Weltrechner schickt alles nochmal (gleiche Nummern)
+    if ($sys && isset($d['welt']) && mt_rand(1, 500) === 1) $l->aufraeumen();
     $neu_leiter = false;
     if ($sys) {   // Weltrechner bleibt (oder übernimmt nach einem Neustart)
         $neu_leiter = !$bin_leiter;

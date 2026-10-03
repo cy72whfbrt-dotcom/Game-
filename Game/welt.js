@@ -334,7 +334,11 @@
         if (botState[id]) botState[id].dOffen = o;
     }
     function botById(id) { return typeof BOT_DEFS !== 'undefined' && BOT_DEFS.find(b => b.id === id); }
-    W.nachricht = function (uid, e) { if (('u' + uid) === ICH) { for (const f of W.beiNachricht) try { f(e); } catch (x) { console.warn(x); } } else W.ereignisseRaus.push({ an: uid, e }); };
+    // schl: ein fester Schlüssel (z. B. 'woche|<Woche>') → feste Nummer: zahlt der Weltrechner nach Neustart/Zurückspielen dieselbe
+    // Auszahlung nochmal, legt der Server sie kein zweites Mal ab (eindeutig je Spieler und Nummer)
+    W.nachricht = function (uid, e, schl) { if (('u' + uid) === ICH) { for (const f of W.beiNachricht) try { f(e); } catch (x) { console.warn(x); } } else W.ereignisseRaus.push(schl ? { an: uid, e, mid: festeNummer(schl + '|' + uid) } : { an: uid, e }); };
+    function festeNummer(t) { let a = 0x811c9dc5, b = 0x9e3779b9; for (let i = 0; i < t.length; i++) { const c = t.charCodeAt(i); a = Math.imul(a ^ c, 16777619) >>> 0; b = Math.imul(b ^ c, 2246822519) >>> 0; b = (b ^ (b >>> 13)) >>> 0; }
+        return 'F' + a.toString(36).padStart(7, '0') + b.toString(36).padStart(7, '0') + (t.length % 1296).toString(36).padStart(2, '0'); }   // (17 Zeichen aus dem Schlüssel)
 
     function neueNummer() { let t = ''; const z = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'; const r = new Uint32Array(16); (window.crypto || crypto).getRandomValues(r); for (const x of r) t += z[x % z.length]; return t; }   // für Befehle und Nachrichten (genau einmal)
     function packen(text) { try { if (window.fflate) return window.fflate.gzipSync(window.fflate.strToU8(text), { level: 6 }); } catch (e) {} return null; }
@@ -377,7 +381,7 @@
             if (!r.ok) throw new Error('HTTP ' + r.status);
             const a = await r.json();
             if (neuGesendet) Object.assign(gesendet, neuGesendet);   // der Server hat sie: ab jetzt nur noch Änderungen dazu
-            for (const id of anfrage.quittung || []) W.befehlFertig.delete(id);   // quittiert: kommt nicht mehr
+            if (!a.quittung_offen) for (const id of anfrage.quittung || []) W.befehlFertig.delete(id);   // quittiert: kommt nicht mehr (sonst beim nächsten Puls nochmal)
             for (const k of a.welt_voll || []) { delete gesendet[k]; S.weltGeaendert.add(k === 'openWaterBotOwnedIslands' ? 'openWaterOwnedIslands' : k); }   // Flicken passte nicht: nächstes Mal ganz
             antwortVerarbeiten(a, anfrage);
         } catch (e) {

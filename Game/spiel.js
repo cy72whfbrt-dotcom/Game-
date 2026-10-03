@@ -8455,6 +8455,7 @@ document.getElementById('teleportBtn').addEventListener('click', () => {
 function teleportCapital(toId) {
     const from = playerIslandId, to = islandById[toId];
     if (!to || !ownedIslands.has(toId) || toId === from || to.type !== 'tower' || gems < TELEPORT_GEMS) return false;   // a tower - never a gate, a temple or the throne
+    if (window.WELT && pendingAttacks.some(a => a.targetId === toId)) { flashHint('Dorthin geht es gerade nicht: ein Angriff läuft auf diese Basis.', 3000); return null; }   // (der Weltrechner lehnt es genauso ab – sonst wären die Gems weg)
     gems -= TELEPORT_GEMS;
     islandTroops[toId] = (islandTroops[toId] || 0) + (islandTroops[from] || 0); islandTroops[from] = 0;   // the garrison moves along
     playerIslandId = toId; store.set('openWaterPlayerIslandId', playerIslandId); statBump('teleports');
@@ -9798,7 +9799,7 @@ function dbossPayout(b) {                           // the boss falls: everyone 
             addCombatLogEntry({ type: 'dbossWin', name: b.name, rank: i + 1, of: rk.length, dmg: b.dmg.player || 0, gems: p.gems, crate: p.crate >= 0 ? 'Kiste (mind. ' + RARITY_DEFS[p.crate].label + ')' : '', sh: p.sh ? p.sh + ' Helden-Splitter' : '' });
             flashHint(b.name + ' ist gefallen! Platz ' + (i + 1) + ': dein Preis liegt unter Events → Belohnung.', 5000); }
         else if (botById[who] && botById[who].mensch) {   // ein echter Spieler: der ganze Preis als Nachricht (auch die Kiste), dazu ein Bericht
-            evPreis(who, 'boss', b.name + ' · Platz ' + (i + 1), p);
+            evPreis(who, 'boss', b.name + ' · Platz ' + (i + 1), p, b.d);
             evBericht(who, { type: 'dbossWin', name: b.name, rank: i + 1, of: rk.length, dmg: b.dmg[who] || 0, gems: p.gems, crate: p.crate >= 0 ? 'Kiste (mind. ' + RARITY_DEFS[p.crate].label + ')' : '', sh: p.sh ? p.sh + ' Helden-Splitter' : '' }, b.name + ' ist gefallen! Platz ' + (i + 1) + ': dein Preis liegt unter Events → Belohnung.'); }
         else if (botById[who]) { bs = bs || loadBotState(); if (bs[who]) bs[who].gems += p.gems; if (p.crate >= 0) barbCrate(who, p.crate); heroGrantShards(who, p.sh); } });
     if (bs) saveBotState();
@@ -10043,7 +10044,7 @@ function woDeckel(who, n, kind) {                     // höchstens 30 Punkte au
 function woPay() {                                    // Platz 1, 2–3, 4–10 und alle anderen mit Punkten – du, echte Spieler und Mitspieler gleich
     const W = woSt(), th = EV_WOCHE.find(x => x.k === W.k) || EV_WOCHE[0], list = evRang(W.pts).filter(e => e[1] >= 1);
     W.paid = true; let me = 0;
-    list.forEach(([who], i) => { evPreis(who, 'woche', 'Wochen-Event ' + th.name + ' · Platz ' + (i + 1), WO_PRIZES.find(p => i + 1 <= p.to)); if (who === 'player') me = i + 1; });
+    list.forEach(([who], i) => { evPreis(who, 'woche', 'Wochen-Event ' + th.name + ' · Platz ' + (i + 1), WO_PRIZES.find(p => i + 1 <= p.to), W.key); if (who === 'player') me = i + 1; });
     W.last = { key: W.key, k: W.k, top: list.slice(0, WO_TOP).map(e => [e[0], Math.floor(e[1])]), n: list.length };
     evDirty = true; saveBotState(); saveEv();
     if (me) afterSplash(() => setTimeout(() => flashHint('Wochen-Event vorbei: Platz ' + me + ' – dein Preis liegt unter Events → Belohnung.', 6000), 2500));
@@ -10058,11 +10059,11 @@ let evDirty = false, evSaveAt = 0;
 function saveEv() { evDirty = false; evSaveAt = Date.now(); store.set('openWaterEvents', JSON.stringify(evState)); }
 window.addEventListener('pagehide', () => { if (evDirty && rechnet()) saveEv(); });
 const evRang = o => Object.entries(o || {}).filter(e => e[1] > 0 && (e[0] === 'player' || botById[e[0]])).sort((a, b) => b[1] - a[1]);
-function evPreis(who, src, title, p) {                // ein Preis: deiner ins Abholfach, ein echter Mitspieler bekommt ihn als Nachricht (auch Kisten), Mitspieler direkt
+function evPreis(who, src, title, p, schl) {          // schl: fester Schlüssel der Auszahlung (Woche, Tag …) – kommt nie doppelt an; ein Preis: deiner ins Abholfach, ein echter Mitspieler bekommt ihn als Nachricht (auch Kisten), Mitspieler direkt
     const gems = Math.round(p.gems || 0), sh = Math.round(p.sh || 0), crate = p.crate >= 0 ? p.crate : -1;
     if (who === 'player') { inboxAdd({ src, title, gems, sh, crate }); return; }
     const bd = botById[who]; if (!bd) return;
-    if (bd.mensch && window.WELT) { WELT.nachricht(parseInt(who.slice(1), 10), { art: 'evPreis', src, title, gems, sh, crate }); return; }
+    if (bd.mensch && window.WELT) { WELT.nachricht(parseInt(who.slice(1), 10), { art: 'evPreis', src, title, gems, sh, crate }, schl != null ? src + '|' + schl : undefined); return; }
     const bs = loadBotState()[who]; if (bs) bs.gems = (bs.gems || 0) + gems; if (sh) heroGrantShards(who, sh); if (crate >= 0) barbCrate(who, crate);
 }
 function evBericht(who, e, hint) {                    // ein kurzer Eintrag im Kampflog (dir direkt, echten Mitspielern über den Weltrechner)
@@ -10171,7 +10172,7 @@ function invAuszahlen() {                            // nach der Invasion: Beloh
     const I = evState.inv; if (!I || I.paid) return; I.paid = true; I.armies = []; evDirty = true;
     let n = 0;
     for (const [who, p] of evRang(I.pts)) { const pr = INV_PREISE.find(x => p >= x.ab); if (!pr) continue; n++;
-        evPreis(who, 'inv', 'Barbaren-Invasion · ' + Math.floor(p) + ' Punkte', pr); }
+        evPreis(who, 'inv', 'Barbaren-Invasion · ' + Math.floor(p) + ' Punkte', pr, I.start); }
     if (n) flashHint('Die Barbaren-Invasion ist vorbei – ' + n + ' Verteidiger werden belohnt (Events → Belohnung).', 5000);
     saveBotState(); requestRender();
 }
@@ -10232,7 +10233,7 @@ function drAuszahlen(fell) {
     const D = evState.dr; if (!D || D.paid) return; D.paid = true; evDirty = true;
     const rk = evRang(D.dmg);
     rk.forEach(([who], i) => { const p = fell ? drPreisVon(i) : DR_PREISE[2]; goalBump(who, 'dboss');
-        evPreis(who, 'drache', D.name + (fell ? ' · Platz ' + (i + 1) : ' entkommen'), p); });
+        evPreis(who, 'drache', D.name + (fell ? ' · Platz ' + (i + 1) : ' entkommen'), p, D.start); });
     flashHint(fell ? D.name + ' ist gefallen! ' + rk.length + ' Kämpfer werden nach Schaden belohnt.' : D.name + ' ist entkommen – alle Kämpfer bekommen eine kleine Belohnung.', 6000);
     if (fell) spawnBattleFx({ x: D.x, y: D.y }, true, D.name + ' gefallen', rk.length + ' Kämpfer belohnt');
     saveBotState(); requestRender();
@@ -11637,7 +11638,7 @@ function handleTap(screenX, screenY) {
     if (teleportMode) {
         teleportMode = false; requestRender();
         const isl = pickIslandAtScreen(screenX, screenY);
-        if (isl && ownedIslands.has(isl.id) && isl.id !== playerIslandId && isl.type === 'tower') { if (!teleportCapital(isl.id)) flashHint('Verlegen geht gerade nicht (genug Gems? frei?).', 2500); }
+        if (isl && ownedIslands.has(isl.id) && isl.id !== playerIslandId && isl.type === 'tower') { if (teleportCapital(isl.id) === false) flashHint('Verlegen geht gerade nicht (genug Gems? frei?).', 2500); }
         else if (isl && ownedIslands.has(isl.id) && isl.id !== playerIslandId) flashHint('Die Hauptstadt kann nur in einen Turm ziehen – nicht in Tempel, Tore oder den Thron.', 3500);
         else flashHint('Verlegen abgebrochen.', 2000);
         return;
@@ -12568,7 +12569,7 @@ if (window.WELT) {
         return '';
     }
     // alle Neuerungen eines Profils gegen das Hauptbuch prüfen (und das Angenommene bezahlen)
-    function hbPruefen(who, hb, p, m, now) {
+    function hbPruefen(who, hb, p, m, now, schildAlt) {
         const mm = wm(who); mm.hbOffen = 0; mm.hbPrT = now;
         hbFreiDazu(who, hb, now);
         const pl = (p.city && p.city.levels) || {}, will = id => Math.min(hbMax(id), Math.floor(nn(pl[id])));
@@ -12598,7 +12599,7 @@ if (window.WELT) {
             else hbGut(hb, 'gear:' + s);
         }
         hbHeldenPruefen(who, hb, m, p, now);
-        hbSchildPruefen(who, hb, m, p, now);
+        hbSchildPruefen(who, hb, m, p, now, schildAlt);
     }
     // Helden: Splitter-Wert aller Helden höchstens so viel, wie er an Splittern bekommen haben kann (sicher + Spielraum + Heldenkisten)
     function hbHeldenPruefen(who, hb, m, p, now) {
@@ -12623,7 +12624,8 @@ if (window.WELT) {
         if (zu.length) hbWarte(who, hb, 'helden', now, 'Helden: ' + zu.join(', ') + ' – dafür reichen seine Splitter nicht (' + fz(wert(neu)) + ' verlangt, möglich ' + fz(nn(hb.shB)) + ').', wert(neu) - nn(hb.shB));
     }
     // Friedensschild: länger nur, wenn er ihn gekauft (Gems, 24 Std. = 300) oder geschenkt bekommen haben kann (Pass, Startschild)
-    function hbSchildPruefen(who, hb, m, p, now) {
+    function hbSchildPruefen(who, hb, m, p, now, schildAlt) {
+        if (schildAlt && nn(p.shieldUntil) <= schildAlt) { hbGut(hb, 'schild'); return; }   // sein Handy meldet noch den Schild, den die Welt fallen ließ: gilt nicht (welt.js), kostet nichts
         const S = Math.min(nn(p.shieldUntil), now + 8 * TAG);
         if (S <= nn(hb.schild) + 60000) { if (S < nn(hb.schild)) hb.schild = S; hbGut(hb, 'schild'); return; }   // (gefallen oder kürzer: gilt)
         const stunden = (S - Math.max(now, nn(hb.schild))) / 36e5, frei = Math.min(stunden, nn(hb.fr.schild)), g = Math.ceil((stunden - frei) * SHIELD_PRICES[24] / 24 - 1e-9);
@@ -12666,7 +12668,7 @@ if (window.WELT) {
         }
         b.hb = hb; if (alt && alt !== b) alt.hb = hb;
         const m = wacheSehen(who);
-        hbPruefen(who, hb, p, m, now);
+        hbPruefen(who, hb, p, m, now, b.schildAlt);
         hbSchreiben(who, hb, b, p, alt);
         if (m.init && m.gGeeicht && now - (m.hbMerkT || 0) > 60000) hbKontenMerken(hb, m, now);
         const d = b.wache; if (m.init && m.geeicht && d) d.u = Math.round(m.c.u);
@@ -12878,7 +12880,8 @@ if (window.WELT) {
                 if (q.length) armyCreate({ x: b.pt.x, y: b.pt.y, lm: b.pt.lm }, q, anteil, who); return;
             }
             const a = kennungOk(b.id) ? armyById(b.id) : null; if (!a || armyWho(a) !== who) return;
-            if (b.op === 'dazu' && inselOk(b.quelle) && gehoert(b.quelle, who) && wegOk(who, islandById[b.quelle].landmassId, a.lm)) { const n = truppenVon(b.quelle, b.n); if (n >= 1) armySendFrom(a, b.quelle, n); }
+            if (b.op === 'dazu' && inselOk(b.quelle) && gehoert(b.quelle, who) && wegOk(who, islandById[b.quelle].landmassId, armyPosXY(a).lm)) {   // (wo sie jetzt ist – unterwegs nicht mehr a.lm)
+                const n = truppenVon(b.quelle, b.n); if (n >= 1) armySendFrom(a, b.quelle, n); }
             if (b.op === 'ziehen') { const t = zielPruefen(b.ziel); if (t) armyMove(a, t); }
             if (b.op === 'held') armySetHeroes(a, heldOk(b.held), heldOk(b.held2));   // Haupt- und Zweitheld: nur eigene, freie (armySetHeroes prüft)
             saveArmies(); requestRender();

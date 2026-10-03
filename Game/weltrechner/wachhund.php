@@ -55,6 +55,7 @@ function wr_laeuft($pid) {
     $cmd = trim((string)@shell_exec('ps -o args= -p ' . $pid . ' 2>/dev/null'));
     return $cmd !== '' && strpos($cmd, 'start.js') !== false;
 }
+function wr_ps_geht() { return trim((string)@shell_exec('ps -o pid= -p ' . getmypid() . ' 2>/dev/null')) === (string)getmypid(); }   // zeigt ps hier Prozesse?
 function wr_node() {
     $c = cfg();
     if (!empty($c['node'])) return $c['node'];
@@ -92,9 +93,17 @@ function wr_starten() {
     wr_log('Weltrechner gestartet');
     return true;
 }
+// Gibt true zurück, wenn der Prozess sicher weg ist. Dann bekommt herz.php die Ende-Meldung (sonst wartete der nächste
+// Start bis zu 60 s auf „herz frisch“). Ist er nicht wegzubekommen: false – dann startet kein zweiter.
 function wr_beenden($pid, $grund) {
     $pid = (int)$pid;
-    if (wr_laeuft($pid)) { exec('kill -9 ' . $pid . ' 2>/dev/null'); wr_log('Weltrechner hart beendet (' . $grund . ')'); }
+    if (!wr_laeuft($pid)) return true;
+    exec('kill -9 ' . $pid . ' 2>/dev/null');
+    for ($i = 0; $i < 20 && wr_laeuft($pid); $i++) usleep(100000);
+    if (wr_laeuft($pid)) { wr_log('Weltrechner ließ sich NICHT beenden (' . $grund . ') – kein neuer Start'); return false; }
+    $h = wr_herz(); if ($h && (int)($h['pid'] ?? 0) === $pid) { $h['ende'] = 'hart beendet: ' . $grund; $h['code'] = 9; wr_schreiben('herz.php', $h); }
+    wr_log('Weltrechner hart beendet (' . $grund . ')');
+    return true;
 }
 
 // Die eigentliche Runde. $quelle: 'cron' | 'spieler' | 'admin'
@@ -112,7 +121,7 @@ function wachhund_runde($quelle = 'cron') {
         if ($laeuft && $h && empty($h['ende']) && $jetzt - (int)($h['zeit'] / 1000) <= WR_HERZ_ALT) { wr_schreiben('zustand.php', $z); return 'läuft'; }
         $letzterStart = (int)end($z['starts']);
         if ($laeuft) {   // läuft, aber kein Herzschlag mehr: hängt (Endlosschleife o. ä.)
-            wr_beenden($pid, 'hängt – letzter Herzschlag vor ' . ($jetzt - (int)($h['zeit'] / 1000)) . ' s');
+            if (!wr_beenden($pid, 'hängt – letzter Herzschlag vor ' . ($jetzt - (int)($h['zeit'] / 1000)) . ' s')) { wr_schreiben('zustand.php', $z); return 'hängt, lässt sich nicht beenden'; }
             $z['abstuerze'][] = $jetzt; $z['gezaehlt'] = $pid;
         } elseif ($h && $pid && (int)($z['gezaehlt'] ?? 0) !== $pid) {   // beendet: geplant (Wartung, Code 0) oder Absturz?
             $z['gezaehlt'] = $pid;
@@ -136,8 +145,9 @@ function wachhund_runde($quelle = 'cron') {
         if ($z['gesperrt']) { wr_schreiben('zustand.php', $z); return 'gesperrt'; }
         if (wartung()) { wr_schreiben('zustand.php', $z); return 'wartung'; }
         if ($jetzt - $letzterStart < 50) { wr_schreiben('zustand.php', $z); return 'gerade gestartet'; }   // höchstens ein Start pro Minute
-        // frischer Herzschlag ohne Ende-Meldung, aber kein Prozess gefunden (ps eingeschränkt?): lieber nicht – sonst liefen zwei
-        if ($h && empty($h['ende']) && $jetzt - (int)($h['zeit'] / 1000) <= WR_HERZ_ALT) { wr_schreiben('zustand.php', $z); return 'herz frisch'; }
+        // frischer Herzschlag ohne Ende-Meldung, aber kein Prozess gefunden: nur wenn ps hier nichts sieht (eingeschränkt) lieber
+        // nicht – sonst liefen zwei. Sieht ps Prozesse (sich selbst), ist er wirklich weg (Speicher, hart beendet): gleich neu.
+        if ($h && empty($h['ende']) && $jetzt - (int)($h['zeit'] / 1000) <= WR_HERZ_ALT && !wr_ps_geht()) { wr_schreiben('zustand.php', $z); return 'herz frisch'; }
         $z['starts'][] = $jetzt; $z['starts'] = array_slice($z['starts'], -30);
         wr_schreiben('zustand.php', $z);
         try { $i = lager()->welt_info(); if ((int)$i['leiter_id'] === 0) lager()->leiter_setzen(0, '', 0); } catch (Throwable $e) {}   // keiner läuft (Herzschlag alt oder beendet): der Platz ist frei
@@ -153,7 +163,7 @@ function wachhund_entsperren() {
 }
 // Admin: neu starten (jetzt gleich)
 function wachhund_neustart() {
-    $h = wr_herz(); if ($h) wr_beenden((int)($h['pid'] ?? 0), 'Neustart vom Admin');
+    $h = wr_herz(); if ($h && !wr_beenden((int)($h['pid'] ?? 0), 'Neustart vom Admin')) return 'lässt sich nicht beenden';
     $z = wr_zustand(); $z['starts'] = []; $z['gezaehlt'] = $h ? (int)($h['pid'] ?? 0) : 0; wr_schreiben('zustand.php', $z);
     return wachhund_runde('admin');
 }

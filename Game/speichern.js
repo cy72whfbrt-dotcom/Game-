@@ -114,24 +114,24 @@
     // Regelmäßig alle 3 s. Beim Schließen/Neuladen/Wegschieben sofort und im selben Moment (gzip ohne Warten, fflate),
     // mit "keepalive" - so kommt die Sicherung auch an, wenn die Seite gleich danach weg ist.
     var MAX_KEEPALIVE = 60000;           // Browser lassen beim Schließen nur ~64 KB pro Sicherung zu
-    var imFlug = new Set();              // Schlüssel der laufenden normalen Übertragung (wird beim Schließen mitgeschickt)
-    var speicherNr = 0;                  // laufende Nummer: der Server schreibt nie eine ältere Sicherung über eine neuere
+    // Reihenfolge und „ganz oder gar nicht“:
+    // - Jede Sicherung trägt eine laufende Nummer; der Server schreibt nie eine ältere über eine neuere.
+    // - Jede Sicherung enthält ALLE Schlüssel, die gerade noch unterwegs sind (imFlug) – eine neuere ist darum immer vollständiger
+    //   als jede ältere, und wenn der Server eine ältere verwirft, fehlt nichts.
+    // - Eine Sicherung wird nie aufgeteilt (vorher beim Schließen in zwei Pakete): so landen z. B. Münzen und „Nachricht verbucht“
+    //   (openWaterEreignisFertig) immer zusammen – oder beide nicht, dann kommt die Nachricht beim nächsten Laden wieder.
+    var imFlug = new Map();              // Schlüssel → wie viele laufende Übertragungen ihn enthalten
+    var speicherNr = 0;
     function paketText(keys, abschied, nr) {
         var setzen = {}, loeschen = [];
         keys.forEach(function (k) { if (k in daten) setzen[k] = daten[k]; else loeschen.push(k); });
-        var o = { token: OW.token, nr: nr || ++speicherNr, setzen: setzen, loeschen: loeschen };
+        var o = { token: OW.token, nr: nr, setzen: setzen, loeschen: loeschen };
         if (abschied) o.abschied = 1;   // letzte Sicherung dieses Fensters: die neue Seite darf jetzt laden
         return JSON.stringify(o);
     }
     function packen(text) {
         try { if (window.fflate) return window.fflate.gzipSync(window.fflate.strToU8(text), { level: 6 }); } catch (e) {}
         return null;
-    }
-    function schicke(keys, keepalive, abschied, nr) {
-        var text = paketText(keys, abschied, nr), gz = packen(text);
-        var kopf = { 'X-Open-Water': '1', 'Content-Type': 'application/octet-stream' };
-        if (gz) kopf['X-Gepackt'] = '1';
-        return fetch('server.php', { method: 'POST', headers: kopf, body: gz || text, credentials: 'same-origin', cache: 'no-store', keepalive: !!keepalive });
     }
     function antwort(r) {
         if (r.ok) { fehlerZahl = 0; verstecke(); return; }
@@ -143,41 +143,34 @@
         fehlerZahl++;
         if (fehlerZahl >= 2) zeige('Keine Verbindung zum Server – dein Spielstand wird gespeichert, sobald sie wieder da ist.');
     }
+    // eine Übertragung: alles Geänderte + alles noch Unterwegse, mit neuer Nummer
+    function uebertragen(keepaliveErlaubt, abschied) {
+        var set = new Set(geaendert); imFlug.forEach(function (_, k) { set.add(k); });
+        geaendert.clear();
+        var keys = Array.from(set), nr = ++speicherNr, text = paketText(keys, abschied, nr), gz = packen(text);
+        var keepalive = !!keepaliveErlaubt && (gz ? gz.length : text.length) <= MAX_KEEPALIVE;   // zu groß: normal (bricht der Browser ab, fehlt alles zusammen – und kommt wieder)
+        keys.forEach(function (k) { imFlug.set(k, (imFlug.get(k) || 0) + 1); });
+        var fertig = function () { keys.forEach(function (k) { var n = (imFlug.get(k) || 1) - 1; if (n > 0) imFlug.set(k, n); else imFlug.delete(k); }); };
+        var kopf = { 'X-Open-Water': '1', 'Content-Type': 'application/octet-stream' }; if (gz) kopf['X-Gepackt'] = '1';
+        var p;
+        try { p = fetch('server.php', { method: 'POST', headers: kopf, body: gz || text, credentials: 'same-origin', cache: 'no-store', keepalive: keepalive }); }
+        catch (e) { p = Promise.reject(e); }
+        return p.then(antwort).catch(function () { fehlgeschlagen(keys); }).then(fertig);
+    }
     function senden() {
         if (gestoppt || unterwegs || !geaendert.size) return unterwegs || Promise.resolve();
-        var keys = Array.from(geaendert);
-        geaendert.clear();
-        keys.forEach(function (k) { imFlug.add(k); });
-        unterwegs = Promise.resolve().then(function () { return schicke(keys, false); }).then(antwort)
-            .catch(function () { fehlgeschlagen(keys); })
-            .then(function () { imFlug.clear(); unterwegs = null; });
+        unterwegs = uebertragen(false, false).then(function () { unterwegs = null; });
         return unterwegs;
     }
-    // Sofort-Sicherung beim Verlassen: alles Offene plus die laufende Übertragung (die der Browser evtl. abbricht).
+    // Sofort-Sicherung beim Verlassen: alles Offene plus alles noch Unterwegse (das der Browser evtl. abbricht), mit keepalive.
     // abschied = Fenster wird geschlossen/neu geladen (nicht nur in den Hintergrund geschoben).
     var abschiedGesendet = false;
     function sofort(abschied) {
         if (gestoppt) return;
         try { if (window.__weltSpeicherJetzt) window.__weltSpeicherJetzt(); } catch (e) {}   // das Spiel speichert mit 1 s Verzögerung: erst das, dann der Abschied
-        var offen = new Set(geaendert);
-        imFlug.forEach(function (k) { offen.add(k); });
-        if (!offen.size && !(abschied && !abschiedGesendet)) return;
+        if (!geaendert.size && !imFlug.size && !(abschied && !abschiedGesendet)) return;
         if (abschied) abschiedGesendet = true;
-        geaendert.clear(); imFlug.clear();
-        // kleine Teile zuerst (Münzen, Stufen, Helden …), große (Welt, Mitspieler) danach - passt alles in eine, umso besser
-        var keys = Array.from(offen).sort(function (a, b) { return ((daten[a] || '').length) - ((daten[b] || '').length); });
-        var teil = keys, rest = [], nr = ++speicherNr;   // (beide Teile dieselbe Nummer: verschiedene Schlüssel, beide gelten)
-        var gz = packen(paketText(teil, false, nr));
-        while (gz && gz.length > MAX_KEEPALIVE && teil.length > 1) {
-            var n = Math.max(1, Math.floor(teil.length * 0.7));
-            rest = teil.slice(n).concat(rest); teil = teil.slice(0, n);
-            gz = packen(paketText(teil, false, nr));
-        }
-        if (!gz || gz.length > MAX_KEEPALIVE) { rest = keys; teil = []; }
-        var los = function (ks, ka, ab) { try { schicke(ks, ka, ab, nr).then(antwort).catch(function () { fehlgeschlagen(ks); }); } catch (e) { fehlgeschlagen(ks); } };
-        // der Abschied geht mit dem letzten Paket, damit die neue Seite erst lädt, wenn alles drin ist
-        if (teil.length || !rest.length) los(teil, true, abschied && !rest.length);
-        if (rest.length) los(rest, false, abschied);   // zu groß für "keepalive": normal hinterher
+        uebertragen(true, abschied);
     }
     window.addEventListener('pageshow', function (e) { if (e.persisted) abschiedGesendet = false; });
     if (!OW.system) {   // der Weltrechner auf dem Server hat keinen eigenen Spielstand (die Welt schickt welt.js)

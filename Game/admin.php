@@ -17,10 +17,16 @@ if (preg_match_all("/\\{ id: '(bot\\d+)',\\s*name: '([^']+)'/", (string)@file_ge
 // … und die 90 weiteren, die bots.js aus einer Namensliste erzeugt (bot61 …)
 if (preg_match("/\\/\\/ More players on the map[^\\n]*\\n\\[([^\\]]+)\\]\\.forEach/", (string)@file_get_contents(__DIR__ . '/bots.js'), $m) && preg_match_all("/'([^']+)'/", $m[1], $nm)) foreach ($nm[1] as $i => $n) $BOTS['bot' . (61 + $i)] = $n;
 $KISTEN = ['Gewöhnlich', 'Ungewöhnlich', 'Selten', 'Episch', 'Legendär', 'Mythisch'];
+// Jedes Formular trägt eine eigene Nummer (beim Anzeigen gewürfelt). Daraus werden die Nummern der Befehle (cid) und Nachrichten
+// (mid) – dieselbe Genau-einmal-Logik wie bei den Spielern: schickt man dasselbe Formular nochmal (Doppelklick, Neuladen),
+// bleiben die Nummern gleich und der Server legt nichts doppelt ab.
+$formNr = bin2hex(random_bytes(8));
+$nr = (string)($_POST['nr'] ?? '');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !herkunft_ok()) { http_response_code(403); exit('Ungültige Anfrage.'); }
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!hash_equals($zeichen, (string)($_POST['zeichen'] ?? ''))) { $fehler = 'Ungültiges Formular – Seite neu laden.'; }
+    elseif (!preg_match('/^[0-9a-f]{16}$/', $nr)) { $fehler = 'Formular ohne Nummer (alte Seite) – bitte neu laden.'; }
     else {
         $was = (string)($_POST['was'] ?? '');
         if ($was === 'wartung_an') { file_put_contents(WARTUNG_DATEI, 'Wartung seit ' . date('d.m.Y H:i') . "\n"); $meldung = 'Wartung ist AN – niemand kommt ins Spiel (auch du nicht), alle werden rausgeworfen.'; }
@@ -34,20 +40,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $an = (string)($_POST['an'] ?? '');
             if (!$gems && !$coins && !$sh && !$tr && $crate < 0) $fehler = 'Das Geschenk ist leer.';
             elseif ($an === 'bots' || isset($BOTS[$an])) {   // Bots: der Weltrechner gibt es ihnen direkt (sie sammeln es selbst ein)
-                lager()->befehl_ablegen(0, json_encode(['art' => 'admin', 'was' => 'geschenk_bot', 'bot' => $an === 'bots' ? 'alle' : $an, 'gems' => $gems, 'coins' => $coins, 'sh' => $sh, 'tr' => $tr, 'crate' => $crate]));
+                lager()->befehl_ablegen(0, json_encode(['art' => 'admin', 'was' => 'geschenk_bot', 'bot' => $an === 'bots' ? 'alle' : $an, 'gems' => $gems, 'coins' => $coins, 'sh' => $sh, 'tr' => $tr, 'crate' => $crate]), $nr . 'b');
                 $meldung = 'Geschenk verschickt an ' . ($an === 'bots' ? 'alle ' . count($BOTS) . ' Bots' : 'den Bot ' . $BOTS[$an]) . ' – kommt an, sobald jemand im Spiel ist.';
             }
             else {
                 $ids = [];
                 foreach (lager()->alle_spieler() as $sp) if ($an === 'alle' || (string)$sp['id'] === $an) $ids[] = (int)$sp['id'];
                 if (!$ids) $fehler = 'Spieler nicht gefunden.';
+                lager()->tx_anfang();   // Geschenk und Gutschrift gehören zusammen: ganz oder gar nicht
                 foreach ($ids as $id) {
-                    lager()->ereignis_ablegen($id, json_encode(['art' => 'geschenk', 'gems' => $gems, 'coins' => $coins, 'sh' => $sh, 'tr' => $tr, 'crate' => $crate]));
+                    lager()->ereignis_ablegen($id, json_encode(['art' => 'geschenk', 'gems' => $gems, 'coins' => $coins, 'sh' => $sh, 'tr' => $tr, 'crate' => $crate]), $nr);
                     // Schummel-Schutz: dem Weltrechner sagen, dass dieser Spieler so viele Truppen/Münzen geschenkt bekommt –
                     // sonst hält er das Abholen für gefälscht (Befehl unter Spieler 0, das kann nur admin.php)
                     // (3B: auch Gems, Splitter und Kiste – das Hauptbuch des Weltrechners zählt sie als sicher)
-                    lager()->befehl_ablegen(0, json_encode(['art' => 'admin', 'was' => 'gutschrift', 'an' => $id, 'tr' => $tr, 'coins' => $coins, 'gems' => $gems, 'sh' => $sh, 'crate' => $crate]));
+                    lager()->befehl_ablegen(0, json_encode(['art' => 'admin', 'was' => 'gutschrift', 'an' => $id, 'tr' => $tr, 'coins' => $coins, 'gems' => $gems, 'sh' => $sh, 'crate' => $crate]), $nr . 'g' . $id);
                 }
+                lager()->tx_ende();
                 if ($ids) $meldung = 'Geschenk verschickt an ' . count($ids) . ' Spieler – es liegt im Abholfach (Events → Belohnung).';
             }
         }
@@ -57,15 +65,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($was === 'wr_cron') $meldung = wachhund_cron_einrichten();
         if ($was === 'wr_sicherung') {
             $sid = (int)($_POST['sicherung'] ?? 0); $h = wr_herz();
-            if ($h) wr_beenden((int)($h['pid'] ?? 0), 'Sicherung wird zurückgespielt');
-            if (lager()->sicherung_zurueck($sid)) { wr_log('Sicherung ' . $sid . ' vom Admin zurückgespielt'); wachhund_neustart(); $meldung = 'Sicherung zurückgespielt – die Welt ist wieder auf dem Stand von damals. Der Weltrechner startet neu.'; }
+            if ($h && !wr_beenden((int)($h['pid'] ?? 0), 'Sicherung wird zurückgespielt')) $fehler = 'Der Weltrechner lässt sich nicht beenden – nichts verändert.';
+            elseif (lager()->sicherung_zurueck($sid)) { wr_log('Sicherung ' . $sid . ' vom Admin zurückgespielt'); wachhund_neustart(); $meldung = 'Sicherung zurückgespielt – die Welt ist wieder auf dem Stand von damals. Der Weltrechner startet neu.'; }
             else $fehler = 'Sicherung nicht gefunden oder kaputt – nichts verändert.';
         }
         if ($was === 'nebel') {
             $an = (string)($_POST['an'] ?? ''); $ids = [];
             foreach (lager()->alle_spieler() as $sp) if ($an === 'alle' || (string)$sp['id'] === $an) $ids[] = (int)$sp['id'];
-            foreach ($ids as $id) lager()->ereignis_ablegen($id, json_encode(['art' => 'nebel']));
-            if ($ids) lager()->befehl_ablegen(0, json_encode(['art' => 'admin', 'was' => 'nebel', 'an' => $an === 'alle' ? 'alle' : $ids[0]]));   // 3B: auch der Nebel auf dem Server
+            lager()->tx_anfang();
+            foreach ($ids as $id) lager()->ereignis_ablegen($id, json_encode(['art' => 'nebel']), $nr);
+            if ($ids) lager()->befehl_ablegen(0, json_encode(['art' => 'admin', 'was' => 'nebel', 'an' => $an === 'alle' ? 'alle' : $ids[0]]), $nr . 'n');   // 3B: auch der Nebel auf dem Server
+            lager()->tx_ende();
             if ($ids) $meldung = 'Nebel freigeschaltet für ' . count($ids) . ' Spieler – die ganze Karte ist aufgedeckt (beim nächsten Öffnen des Spiels, wenn er gerade nicht spielt).';
             else $fehler = 'Spieler nicht gefunden.';
         }
@@ -124,7 +134,7 @@ function zahl($n) { return $n === null ? '–' : number_format((float)$n, 0, ','
   <p><b><?= h($wrZ['grund'] ?? '') ?></b> (<?= h(date('d.m.Y H:i', (int)($wrZ['alarm']['zeit'] ?? time()))) ?>). Die Wartung ist automatisch an: niemand kommt rein, die Welt steht still, nichts geht verloren.</p>
   <p>Was tun: Fehler beheben lassen (das Protokoll unten zeigt den Grund) → „Sperre aufheben“ → „Wartung beenden“.</p>
   <pre style="white-space:pre-wrap;font-size:12px;max-height:240px;overflow:auto;background:#fff;padding:8px;border-radius:6px"><?= h($wrZ['alarm']['log'] ?? '') ?></pre>
-  <form method="post"><input type="hidden" name="zeichen" value="<?= h($zeichen) ?>"><button class="gruen" name="was" value="wr_entsperren">Sperre aufheben</button></form>
+  <form method="post"><input type="hidden" name="zeichen" value="<?= h($zeichen) ?>"><input type="hidden" name="nr" value="<?= h($formNr) ?>"><button class="gruen" name="was" value="wr_entsperren">Sperre aufheben</button></form>
 </div>
 <?php endif; ?>
 
@@ -145,7 +155,7 @@ function zahl($n) { return $n === null ? '–' : number_format((float)$n, 0, ','
   </table>
   <?php endif; ?>
   <form method="post" style="display:flex;gap:8px;flex-wrap:wrap">
-    <input type="hidden" name="zeichen" value="<?= h($zeichen) ?>">
+    <input type="hidden" name="zeichen" value="<?= h($zeichen) ?>"><input type="hidden" name="nr" value="<?= h($formNr) ?>">
     <button name="was" value="wr_neustart">Neu starten</button>
     <?php if (!$wrCron): ?><button name="was" value="wr_cron">Wachhund-Cronjob einrichten</button><?php endif; ?>
   </form>
@@ -153,7 +163,7 @@ function zahl($n) { return $n === null ? '–' : number_format((float)$n, 0, ','
     <pre style="white-space:pre-wrap;font-size:12px;max-height:300px;overflow:auto;background:#fff;padding:8px;border-radius:6px"><?= h(wr_log_ende(40)) ?></pre></details>
   <?php if ($wrSicherungen): ?>
   <form method="post" style="margin-top:10px" onsubmit="return confirm('Wirklich? Die Welt springt auf diesen Stand zurück. Alles danach ist weg.')">
-    <input type="hidden" name="zeichen" value="<?= h($zeichen) ?>"><input type="hidden" name="was" value="wr_sicherung">
+    <input type="hidden" name="zeichen" value="<?= h($zeichen) ?>"><input type="hidden" name="nr" value="<?= h($formNr) ?>"><input type="hidden" name="was" value="wr_sicherung">
     <label for="sicherung">Sicherung zurückspielen (jede Stunde eine, die letzten 48)</label>
     <select id="sicherung" name="sicherung"><?php foreach ($wrSicherungen as $sc): ?><option value="<?= (int)$sc['id'] ?>"><?= h(date('d.m.Y H:i', strtotime($sc['erstellt']))) ?> (<?= round($sc['groesse'] / 1024) ?> KB)</option><?php endforeach; ?></select>
     <button class="rot">Zurückspielen</button>
@@ -184,7 +194,7 @@ function zahl($n) { return $n === null ? '–' : number_format((float)$n, 0, ','
   <h2>Wartung (neue Version wird aufgespielt)</h2>
   <p class="status">Zurzeit: <b><?= wartung() ? 'AN – niemand kommt ins Spiel' : 'AUS – alle können spielen' ?></b></p>
   <form method="post">
-    <input type="hidden" name="zeichen" value="<?= h($zeichen) ?>">
+    <input type="hidden" name="zeichen" value="<?= h($zeichen) ?>"><input type="hidden" name="nr" value="<?= h($formNr) ?>">
     <?php if (wartung()): ?><button class="gruen" name="was" value="wartung_aus">Wartung beenden</button>
     <?php else: ?><button class="rot" name="was" value="wartung_an">Wartung starten</button><?php endif; ?>
   </form>
@@ -194,7 +204,7 @@ function zahl($n) { return $n === null ? '–' : number_format((float)$n, 0, ','
   <h2>Geschenk verschicken</h2>
   <p>Landet beim Spieler im Abholfach (Events → Belohnung) und muss dort ganz normal abgeholt werden.</p>
   <form method="post">
-    <input type="hidden" name="zeichen" value="<?= h($zeichen) ?>">
+    <input type="hidden" name="zeichen" value="<?= h($zeichen) ?>"><input type="hidden" name="nr" value="<?= h($formNr) ?>">
     <input type="hidden" name="was" value="geschenk">
     <label for="an">An</label>
     <select id="an" name="an">
@@ -216,7 +226,7 @@ function zahl($n) { return $n === null ? '–' : number_format((float)$n, 0, ','
   <h2>Nebel freischalten</h2>
   <p>Deckt für den Spieler die ganze Karte auf.</p>
   <form method="post">
-    <input type="hidden" name="zeichen" value="<?= h($zeichen) ?>">
+    <input type="hidden" name="zeichen" value="<?= h($zeichen) ?>"><input type="hidden" name="nr" value="<?= h($formNr) ?>">
     <input type="hidden" name="was" value="nebel">
     <label for="nebelAn">Für</label>
     <select id="nebelAn" name="an"><?= $spielerOptionen ?><option value="alle">— ALLE Spieler —</option></select>
