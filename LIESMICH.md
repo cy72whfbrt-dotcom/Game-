@@ -1505,6 +1505,11 @@ Notbremse (Wartung an, keine Neustarts). Verloren ging nichts (Stand bis 17:41 g
   jeder 20. Puls über 30 s, 6 Spieler online, Bots greifen ständig mit Riesen-Truppen an: 15 Min. stabil, 363–392 MB,
   längste Pause 3,9 s, kein Absturz, keine Skript-Fehler. (Künstlich 9.000 Angriffe gleichzeitig – im Spiel unmöglich,
   höchstens 8 Marsch-Plätze je Spieler: 550–590 MB, ohne Grenze gemessen Spitze 668 MB.)
+- **Stresstest 4 – alle greifen gleichzeitig an:** volle Karte, jeder der 150 Bots mit 8 Angriffen (1.200) ohne Schilde, die
+  innerhalb von 30 s ankommen, langsamer Start + langsame Pulse, 6 Spieler online: alle Kämpfe nach ~1 Min. entschieden,
+  Speicher höchstens 407 MB, längste Pause 3,6 s, 0 Abstürze, 1 Prozess, alle Handys bekamen die neuen Welt-Stände.
+  (Vorher verschwanden die eingeschleusten Angriffe – Fehler im Testaufbau: die Vorlage hatte `fightEndsAt` eines laufenden
+  Kampfes. Der Prüfer hat in einem Testlauf außerdem doppelt vergebene Basen aus meinem Testaufbau richtig abgefangen.)
 - **Zeitbomben entschärft:** Prüfer (start.js) blockierte jedes Speichern ab 1 Billiarde Truppen auf einer Basis bzw.
   1 Trillion Münzen → in einer alten Welt Neustart-Schleife + Notbremse. Jetzt nur noch kaputte Zahlen (keine Zahl,
   unendlich, negativ, über 1e30). Ebenso Spieler-Befehle (server.php `befehl_ok`, vorher ab 10 Billionen still abgelehnt)
