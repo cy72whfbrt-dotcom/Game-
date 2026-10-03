@@ -207,7 +207,7 @@ function resolveBotAttack(attack) {
     if (!won) botLearn(bot.id, target.id);                          // a lost fight tells them what's really there
     if (!won && targetOwner && targetOwner !== 'player') botStat(targetOwner, 'defs');
     if (won && bossHere && typeof bundGeschenk === 'function') bundGeschenk(bot.id, 'boss');         // Boss besiegt: kleine Geschenke fürs ganze Bündnis
-    if (won && bossHere) { botStat(bot.id, 'bosses'); botStat(bot.id, 'wanders'); heroGrantShards(bot.id, HERO_SHARDS_WANDER); }   // the same shards you get
+    if (won && bossHere) { botStat(bot.id, 'bosses'); heroGrantShards(bot.id, HERO_SHARDS_WANDER); }   // the same shards you get
     updateHud();
     if (bossHere && won) { spawnBattleFx(target.id, false, bossHere.name + ' gefallen', bot.name); endWander(bot.name + ' hat ' + bossHere.name + ' besiegt!'); }
 
@@ -1526,7 +1526,7 @@ function botBaustil(botId) {
 // Erfolge: the same list as yours (ACHIEVEMENTS), counted from their own numbers - each one collected once for its gems, one at a time like a person tapping
 const BOT_GOAL_VAL = {
     captures: (b, st) => st.caps, empire: (b, st, id) => (botOwnedIslands[id] || new Set()).size, defends: (b, st) => st.defs, pvp: (b, st) => st.pvp, bosses: (b, st) => st.bosses,
-    wanders: (b, st) => st.wanders, temples: (b, st) => st.temples, throne: (b, st) => st.ruled ? 1 : 0, throneMin: (b, st) => st.throneMin, throneEarned: (b, st) => st.tpEarned, scouts: (b, st) => st.scouts,
+    temples: (b, st) => st.temples, throne: (b, st) => st.ruled ? 1 : 0, throneMin: (b, st) => st.throneMin, throneEarned: (b, st) => st.tpEarned, scouts: (b, st) => st.scouts,
     cityMin: b => Math.min(...BOT_BUILDINGS.filter(k => !BOT_MIN_AUSNAHME.includes(k)).map(k => b.city.levels[k] || 0)),   // (the newer Lager doesn't count, like yours)
     baseTop: (b, st, id) => goalBaseTop(id), gates: (b, st, id) => goalGates(id), tolls: (b, st) => st.tolls, tollCoins: (b, st) => st.tollCoins,
     armyWins: (b, st) => st.armyWins, heroes: (b, st, id) => goalHeroes(id), heroStars: (b, st, id) => goalHeroStars(id), heroFires: (b, st) => st.heroFires,

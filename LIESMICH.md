@@ -1149,3 +1149,28 @@ Alles in spiel.js (Abschnitt „THE CITY, ISOMETRIC“), nur Aussehen – Gebäu
 - Hauptbuch (3B): `hbVip` weg (Bauzeit ohne Abzug), Kisten-Spielraum pro Tag eine weniger (`HB_TAG.k` = 3 + 1 + Wochenkette).
 - Alte VIP-Kisten, die noch im Abholfach liegen, kann man noch abholen (heißen jetzt „Tageskiste“).
 - Was in Abschnitt 21, 22 und 24 über VIP steht, gilt nicht mehr.
+
+## 35. Kompletter Code-Check + alter Code raus (Alexander 3.10.: „komplett Check, alter Code raus, prüfe den ganzen Code“) – NICHT hochgeladen
+Alle Dateien wurden durchgesehen (Server/PHP + Weltrechner, Spiel-Module, spiel.js + spiel.php), ~600 Zeilen alter Code raus.
+- **Raus:** das ganze Wochenend-Turnier (tourState, Preise, Turniersieger-Ring/-Titel, Rangliste, Karten-Hinweise, CSS,
+  Welt-Schlüssel `openWaterTourney`/`openWaterTourMein`, +50 % Thron-Punkte am Wochenende, Wochenend-Verhalten der
+  Mitspieler), der Weltboss (bossState, Overlay, `openWaterBoss(Next)`), VIP-Reste, Vorspulen (botsFastForward/botVorspulen),
+  unbenutzte Funktionen, Exporte (AUF), CSS-Klassen, tote Zweige (alte Burg-Ansicht, ffSummary …). Konstanten des Wochen-Events
+  heißen jetzt `WO_KILL_PER/MAX/MIN`, `WO_TOP`, Themen `EV_WOCHE`.
+- **Behobene Fehler:** zweiter Held bei Drache/Invasion wurde ignoriert · Sieg-Ton in Berichten spielte nie · Mehrfach-Angriff
+  prüfte den Weg falsch herum · Lazarett-Text endete bei Stufe 25 (geht bis 40) · Weltrechner sammelte Hinweise ohne Ende
+  (afterSplash) · Event-Uhren ließen die Fenster jede Sekunde neu zeichnen · Kriegsherr zählte doppelt (Erfolge + Pass;
+  die doppelten Erfolge „Wanderjäger/Fährtenleser“ sind raus) · Bündnis-Geschenke zählten den Tag in UTC · Bild-Speicher (baukunst)
+  zählte doppelt · Händler-Kauf-Notweg war kaputt (raus).
+- **Sicherheit/Server:** Münzen und Lazarett anderer echter Spieler gehen nicht mehr an alle (`muenzen_kuerzen`, `wounded` in
+  NUR_WELTRECHNER) · Tabellen werden nur einmal nach jedem Hochladen geprüft (`ow_welt_info.tabellen_v`), nicht mehr bei jedem
+  Puls · `sauber_json` war verdreht · Passwort-Länge überall in Zeichen · hochladen.sh bricht bei einem Upload-Fehler ab (Wartung
+  bleibt an) · welt_neustart.php löscht auch den alten Nebel (`sicht`) und die Sicherungen der alten Welt.
+- **Texte:** Abholfach, Hilfe, Events-Knopf (kein „Turnier“ mehr) · Schild-Händler „Shop → Schilde“ · Händler-Meldung ohne
+  „seinem“ · Ladebildschirm-Tipp „alle je verdienten Thron-Punkte“ · Forschung Ertrag „Münzen aus allen Basen und Rohstoffe aus
+  der Stadt“ · Titel „neu alle 3 Min.“ · „Herrscher der Meere“ überall · Pass „Kriegsherr besiegt“ · Push „Kriegsherr erschienen“.
+- **Getestet:** alle Tests, großer Klick-Test in der Vorschau und mit Server + Weltrechner (Welt-Neustart, neuer Spieler,
+  Neuladen) – keine Fehler, keine falschen Texte.
+- **Bewusst gelassen:** welt_neustart.php hat keinen Admin-Login (liegt nur Sekunden mit Zufallsnamen in der Wartung auf dem
+  Server); CSP mit 'unsafe-inline' (wegen window.__OW); einige alte Kommentare in baukunst.js.
+

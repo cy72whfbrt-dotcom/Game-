@@ -84,7 +84,6 @@ function kostenHtml(k, who) {                                  // Münzen + Rohs
 // 2) BURG-STUFE (1–25): getrennt von der Basis-Stufe draußen. Bauzeit, Münzen + Rohstoffe, Bauarbeiter wie die Gebäude
 // ---------------------------------------------------------------------------------------------------------------
 const BURG_MAX = 25;
-const BURG_DEF = { id: 'keep', name: 'Burg', icon: 'castle' };
 const BAU_AB_BURG = { tower: 3, market: 4, embassy: 5 };       // neue Gebäude: erst ab dieser Burg-Stufe
 const TIER_KRAFT = [1, 1, 1.1, 1.25, 1.45, 1.7];               // Truppen-Stufe T1 … T5: Kampfkraft (Angriff und Verteidigung)
 const TIER_BURG = [0, 1, 6, 11, 16, 21];                       // ab welcher Burg-Stufe

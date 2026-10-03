@@ -1004,7 +1004,7 @@ body.has-panel .mapctl{display:none}
 .offer-text h4{margin:0 0 4px;font:600 var(--fs-13)/1.2 var(--font-display);letter-spacing:.05em;color:var(--gold-100)}
 .offer-text p{margin:0;font:500 var(--fs-12)/1.4 var(--font-ui);color:var(--tx-3)}
 .odds{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
-.shield-opts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px} .shield-opts .btn{min-height:52px;flex-direction:column;justify-content:center;gap:4px;padding:6px 4px} .shield-state{color:var(--f-player-hi);font-weight:600}
+.shield-opts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px} .shield-opts .btn{min-height:52px;flex-direction:column;justify-content:center;gap:4px;padding:6px 4px}
 .odds .chip{height:20px;padding:0 6px;font-size:var(--fs-10)}
 .hchest-opts{grid-template-columns:1fr} .hchest-opts .btn{min-height:46px;flex-direction:row;justify-content:space-between;gap:8px;padding:6px 10px;text-align:left}
 .hchest-opts .btn .hc-t{display:grid;gap:2px} .hchest-opts .btn small{font:500 var(--fs-10)/1.2 var(--font-ui);color:var(--tx-3);letter-spacing:0;text-transform:none}
@@ -1673,7 +1673,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
           <label class="set-zeile"><span>Angriff auf deine Basis</span><input type="checkbox" data-push-art="angriff"></label>
           <label class="set-zeile"><span>Späher unterwegs zu dir</span><input type="checkbox" data-push-art="spaeher"></label>
           <label class="set-zeile"><span>Basis verloren</span><input type="checkbox" data-push-art="verloren"></label>
-          <label class="set-zeile"><span>Boss erschienen</span><input type="checkbox" data-push-art="boss"></label>
+          <label class="set-zeile"><span>Kriegsherr erschienen</span><input type="checkbox" data-push-art="boss"></label>
           <label class="set-zeile"><span>Sammler zurück</span><input type="checkbox" data-push-art="sammler"></label>
           <label class="set-zeile"><span>Friedensschild läuft ab</span><input type="checkbox" data-push-art="schild"></label>
           <label class="set-zeile"><span>Barbaren-Invasion beginnt<small>10 Minuten vorher</small></span><input type="checkbox" data-push-art="invasion"></label>
@@ -1893,7 +1893,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
   </div>
   <footer class="pfoot" id="shopFoot">
     <button id="shopToEquipBtn" class="btn btn--secondary" type="button"><svg class="icon"><use href="#i-shield"/></svg><span>Ausrüstung</span></button>
-    <button id="shopOpenCrateBtn" class="btn btn--primary btn--grow" type="button"><span class="lbl">Kiste öffnen</span><span class="cost cost--gem"><svg class="icon"><use href="#i-gem"/></svg><b data-const="CRATE_GEM_COST">5</b></span></button>
+    <button id="shopOpenCrateBtn" class="btn btn--primary btn--grow" type="button"><span class="lbl">Kiste öffnen</span><span class="cost cost--gem"><svg class="icon"><use href="#i-gem"/></svg><b data-const="CRATE_GEM_COST">30</b></span></button>
   </footer>
 </section>
 
