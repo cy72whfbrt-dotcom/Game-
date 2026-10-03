@@ -2,8 +2,8 @@
 // Geladen vor spiel.js. Hier stehen nur Tabellen und Funktionen: nichts davon läuft beim Laden
 // schon los (bis auf das Sortieren der Gruppen), alles andere ruft das Spiel später auf.
 // Kapitel: 1) Gruppen  2) Spieler  3) wie sie die Karte lesen  4) Angreifen, Spähen, Sammeln  5) Stand, Stadt, Helden,
-// Ausrüstung  6) Verteidigen, Schild, Hauptstadt  7) Titel, Takt  8) Aussehen, Thron-Shop, Vorspulen  9) Felder und Armeen
-// Der Spielstand der Mitspieler (wem welche Basis gehört, Münzen) wird mit deinem zusammen in index.html geladen.
+// Ausrüstung  6) Verteidigen, Schild, Hauptstadt  7) Titel, Takt  8) Aussehen, Thron-Shop  9) Felder und Armeen
+// Der Spielstand der Mitspieler (wem welche Basis gehört, Münzen) kommt als Teil der EINEN Welt vom Server (welt.js).
 var AUF = null;                                         // Paket D „Aufbau“ (aufbau.js, nach spiel.js geladen): Burg, Rohstoffe, Forschung, Truppen-Stufen, Marsch-Plätze
 
 // ==============================================================================================================
@@ -589,7 +589,7 @@ function scoutNotesFlush() {
 }
 
 function botHopeless(bot, target, st, atk) {        // known to be far too strong for all they have? (last report, or "zu stark" noted)
-    const ow = islandOwnerOf(target.id); if (!ow || bossAt(target.id)) return false;
+    const ow = islandOwnerOf(target.id); if (!ow) return false;
     const seen = botLastSeen(bot, target.id), rec = botTooStrongMem[bot.id] && botTooStrongMem[bot.id][target.id], lg = botTooStrongMem[bot.id] && botTooStrongMem[bot.id]['o:' + ow];
     if (seen === null && !rec && !lg) return false;
     const pool = botPoolFor(bot, target).s;
@@ -680,7 +680,7 @@ function botThink(bot) {
                 let d = Math.hypot(target.x - source.x, target.y - source.y) * pv.k;
                 const inward = landmasses[target.landmassId].ring < landmasses[source.landmassId].ring;
                 if (inward) d *= target.type === 'gate' ? .3 : .5;                              // everyone wants to get to the middle
-                else if (bossAt(target.id)) d *= 0.15;                                         // events: bosses and the Wanderboss are worth a big attack
+                else if (bossAt(target.id)) d *= 0.15;                                         // events: the Kriegsherr (Wanderboss) is worth a big attack
                 else if (target.type === 'gate' || target.type === 'temple' || target.guardian) d *= st.temple;
                 else if (tOwner) d *= st.enemy / (tOwner === 'player' ? 1 + (st.hunt || 0) : 1);   // raiders like hitting other players, the aggressive ones the player most
                 const e = T.get(target.id) || { target, d: Infinity, sources: [], grudge };
@@ -1100,7 +1100,7 @@ function botConsiderUpgrade(bot) {
     let budget = botCoins[bot.id] * st.spend, did = 0;
     for (const c of cand) {
         if (did >= 25 || c.cost > budget) break;
-        budget -= c.cost; botCoins[bot.id] -= c.cost; islandLevels[c.id] = (islandLevels[c.id] || 1) + 1; did++; evPunkte('bau', bot.id, 2 + islandLevels[c.id]);   // (Wochenend-Thema Bauherr)
+        budget -= c.cost; botCoins[bot.id] -= c.cost; islandLevels[c.id] = (islandLevels[c.id] || 1) + 1; did++; evPunkte('bau', bot.id, 2 + islandLevels[c.id]);   // (Wochen-Event Bauherr)
     }
     if (did) saveGame();
 }
@@ -1305,7 +1305,7 @@ function botCapLocal(botId, t) { const R = ISLAND_RADIUS * 25; let o = 0, f = 0;
 
 function botCapitalMoveOk(botId, toId, busy) {          // your rules + not into a fight that is already on its way
     const to = islandById[toId];
-    if (!to || !botOwnedIslands[botId].has(toId) || toId === botCapitalOf(botId) || to.type !== 'tower' || bossAt(toId) || landmasses[to.landmassId].ring === 0) return false;
+    if (!to || !botOwnedIslands[botId].has(toId) || toId === botCapitalOf(botId) || to.type !== 'tower' || landmasses[to.landmassId].ring === 0) return false;
     if (busy ? busy.has(toId) : pendingAttacks.some(a => a.targetId === toId)) return false;
     if (armies.some(a => armyWho(a) !== botId && (a.t === toId || (a.mv && a.mv.to.kind === 'base' && a.mv.to.id === toId)))) return false;
     return !(wander && wander.to === toId); }
@@ -1491,7 +1491,7 @@ function runBotTick() {
 }
 
 // ==============================================================================================================
-// 8) AUSSEHEN, STATISTIK, THRON-SHOP, VORSPULEN
+// 8) AUSSEHEN, STATISTIK, THRON-SHOP
 // ==============================================================================================================
 function botLook(botId) {
     const b = loadBotState()[botId]; if (!b) return { frame: FRAMES[0].id, title: 'Neuling' };
@@ -1559,7 +1559,7 @@ function botPassPay(botId, b) { const ps = b.ps, L = Math.min(PASS_LVLS, Math.fl
 
 function botStat(botId, k, n) { const b = loadBotState()[botId]; if (!b) return; b.stats = b.stats || {}; b.stats[k] = (b.stats[k] || 0) + (n || 1); saveBotState(); }
 
-// Kopfgeld: the prize land where yours do - gems, hero shards (one hero, like a boss), coins
+// Kopfgeld: the prize lands where yours does - gems and coins
 function botBountyReward(botId, gems, coins) { const b = loadBotState()[botId]; if (!b) return; b.gems = (b.gems || 0) + gems; botCoins[botId] = (botCoins[botId] || 0) + coins; botStat(botId, 'bounty', gems); }
 
 function botThroneShop(botId) {                       // the others spend their points the way a player would

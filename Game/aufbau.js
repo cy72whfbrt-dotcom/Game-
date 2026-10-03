@@ -140,7 +140,7 @@ function marschVoll(who) { who = who || 'player'; const n = marschGrenze(who), B
 // ---------------------------------------------------------------------------------------------------------------
 const FO_AESTE = { w: 'Wirtschaft', m: 'Militär', x: 'Erkundung' };
 const FORSCHUNG = [
-    { id: 'w_prod', ast: 'w', name: 'Ertrag', icon: 'coin', max: 10, aka: 1, pro: 3, txt: v => '+' + v + ' % Münzen und Rohstoffe aus allen Basen' },
+    { id: 'w_prod', ast: 'w', name: 'Ertrag', icon: 'coin', max: 10, aka: 1, pro: 3, txt: v => '+' + v + ' % Münzen aus allen Basen und Rohstoffe aus der Stadt' },
     { id: 'w_sam', ast: 'w', name: 'Sammeln', icon: 'hourglass', max: 10, aka: 2, pro: 5, txt: v => 'Sammler arbeiten ' + v + ' % schneller' },
     { id: 'w_last', ast: 'w', name: 'Traglast', icon: 'crate', max: 10, aka: 3, pro: 6, txt: v => 'Sammler tragen ' + v + ' % mehr' },
     { id: 'm_atk', ast: 'm', name: 'Angriff', icon: 'attack', max: 10, aka: 2, pro: 2, txt: v => '+' + v + ' % Kampfkraft beim Angreifen' },
@@ -448,14 +448,6 @@ function botRohWunsch(botId) {
     let best = null, bv = Infinity; for (const x of ROH) { const v = (r[x] + 1) / ((k[x] || 1) + 1); if (v < bv) { bv = v; best = x; } }
     return bv < 1.5 ? best : null;
 }
-// Schnell vorgespult (botsFastForward): Rohstoffe der Stunden, dann Burg, Forschung, Stufe wie im normalen Takt
-function botVorspulen(bot, hours, now) {
-    const b = loadBotState()[bot.id]; if (!b) return; botStadtFix(b);
-    const hp = rohStunde(bot.id); for (const x of ROH) b.res[x] = Math.min(1e15, (b.res[x] || 0) + hp[x] * hours);
-    for (let n = 0; n < 6; n++) { if (b.city.foRun) { b.city.foRun.endsAt = now; foFertig(bot.id); } botForschung(bot, now); }
-    if (b.city.foRun) b.city.foRun.endsAt = Math.min(b.city.foRun.endsAt, now + 60000);
-    botTruppenStufe(bot);
-}
 
 // ---------------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------
@@ -489,15 +481,14 @@ setInterval(hauptstadtStufen, 3000);
 
 AUF = {
     ROH_START, foZeitRoh, foAkaFuer,                           // (für das Hauptbuch 3B in spiel.js)
-    ROH, ROH_DEF, BURG_MAX, BURG_DEF, BAU_AB_BURG, TIER_KRAFT, TIER_BURG, TIER_EISEN, FORSCHUNG, FO_BY, MARKT_WERT,
-    get roh() { return roh; }, rohVon, rohDazu, rohSpeichern, rohSauber, basisRoh, rohBuchen, rohStunde, rohRegion, kannZahlen, zahlen, kostenHtml,
-    stadtVon, burgStufe, burgKosten, burgZeitRoh, stadtKosten, stadtCap,
-    marschGrenze, marschBelegt, marschFrei, marschOk, marschVoll, frei: { an() { marschFreiPass++; }, aus() { marschFreiPass = Math.max(0, marschFreiPass - 1); } },
-    foStufe, foWert, foKosten, foStart, foFertig, foSperre, tierErlaubt, truppenStufe, tierSetzen, marktTausch, marktLimit, marktHtml,
-    burgKarte, hauptstadtStufen,
-    kampf, ertrag, sammelTempo, traglast, marschTempo, spaeherTempo, lazarettPlus, nebelWeite, botschaftTempo, botschaftGeschenk, wachturm,
+    ROH_DEF, BURG_MAX, BAU_AB_BURG, TIER_BURG, TIER_EISEN, FORSCHUNG, MARKT_WERT,
+    rohVon, rohDazu, rohSpeichern, basisRoh, rohBuchen, rohStunde, kannZahlen, zahlen, kostenHtml,
+    burgStufe, burgZeitRoh, stadtKosten, stadtCap,
+    marschFrei, marschOk, marschVoll, frei: { an() { marschFreiPass++; }, aus() { marschFreiPass = Math.max(0, marschFreiPass - 1); } },
+    foStufe, foWert, foKosten, foFertig, truppenStufe, marktLimit, marktHtml,
+    kampf, ertrag, sammelTempo, traglast, marschTempo, spaeherTempo, lazarettPlus, nebelWeite, botschaftTempo, botschaftGeschenk,
     spielerTakt, hud: hudRoh, renderKeep, effektText, extraHtml, angreiferInfo, spaeherMehr,
-    botStadtFix, botForschung, botTruppenStufe, botMarkt, botBurgWert, botRohWunsch, botVorspulen
+    botStadtFix, botForschung, botTruppenStufe, botMarkt, botBurgWert, botRohWunsch
 };
 for (const id in (loadBotState() || {})) try { botStadtFix(botState[id]); } catch (e) {}
 hudRoh();

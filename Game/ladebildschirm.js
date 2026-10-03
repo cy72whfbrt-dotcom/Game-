@@ -1,6 +1,4 @@
 // ===== Ladebildschirm: Meer mit Burg, echte Tageszeit, Tipps mit Bildern (läuft vor dem Spiel) =====
-// Echtzeit: keine Test-Uhr mehr (früher openWaterTimeShift). __realNow bleibt für den Ladebildschirm.
-window.__realNow = function () { return Date.now(); };
 // ===== LOADING SCREEN: sea, an island with a castle, sky/sun/moon/stars by the real local time, rotating tips with pictures (runs before the game script) =====
 (function () {
     var cv = document.getElementById('splashCanvas');
@@ -19,7 +17,7 @@ window.__realNow = function () { return Date.now(); };
                 [18.6, '#2d4f8e', '#b8829a', '#f5b067', '#274a6a'], [20, '#1a2250', '#5c3b62', '#d0704a', '#1a2a44'], [21.5, '#070d24', '#161c3e', '#2c2a4a', '#081226'], [24, '#03060f', '#08112a', '#122039', '#050c18']];
     function localHour() {
         if (typeof window.__splashHour === 'number') return window.__splashHour;                         // (tests can pick an hour)
-        var d = new Date(window.__realNow ? window.__realNow() : Date.now());                            // the real clock, not the game's test clock
+        var d = new Date();
         return d.getHours() + d.getMinutes() / 60;
     }
     function skyAt(h) {
@@ -180,7 +178,7 @@ window.__realNow = function () { return Date.now(); };
         ['<rect x="8" y="20" width="32" height="20" rx="3" fill="currentColor" fill-opacity=".15"/><path d="M8 28h32M12 20q12-10 24 0"/><rect x="21" y="25" width="6" height="7" rx="1.5" fill="#e8c35a" stroke="#6b4a12" stroke-width="1.4"/><circle cx="39" cy="11" r="5" fill="#e8c35a" stroke="#6b4a12" stroke-width="1.5"/>', 'Das Lager schützt deine Münzen: fällt eine Basis, nimmt der Sieger nie, was im Lager liegt.'],
         ['<path d="M5 42h38"/><path d="M9 42V30h12v12M27 42V26h12v16" fill="currentColor" fill-opacity=".15"/><path d="M11 24l7-7"/><path d="M15 11l6 6-3 3-6-6z" fill="currentColor"/><path d="M29 20l7-7" stroke="#8fc6ff"/><path d="M33 7l6 6-3 3-6-6z" fill="#7fd0ff" stroke="#3a7aa0" stroke-width="1.4"/>', 'Ein zweiter Bauarbeiter kostet einmal Gems – danach wachsen zwei Gebäude gleichzeitig.'],
         ['<rect x="6" y="8" width="22" height="32" rx="3" fill="currentColor" fill-opacity=".12"/><path d="M11 17l2 2 4-4M11 27l2 2 4-4M20 17h4M20 27h4"/><path d="M32 18h11v5a5.5 5.5 0 0 1-11 0z" fill="#e8c35a" stroke="#6b4a12" stroke-width="1.4"/><path d="M37.5 29v6M33.5 38h8"/>', 'Unter „Events“ warten tägliche Aufgaben und Erfolge – dort holst du dir Gems und Heldensplitter ab.'],
-        ['<path d="M5 41h38"/><path d="M18 41V19h12v22z" fill="#e8c35a" fill-opacity=".35"/><path d="M6 41V27h12v14M30 41V31h12v10"/><path d="M24 5l1.8 3.6 4 .6-2.9 2.8.7 4-3.6-1.9-3.6 1.9.7-4-2.9-2.8 4-.6z" fill="currentColor"/>', 'Die Rangliste zählt Macht, Eroberungen und Titel aus der Mitte – dazu die Thron-Punkte der Woche.']];
+        ['<path d="M5 41h38"/><path d="M18 41V19h12v22z" fill="#e8c35a" fill-opacity=".35"/><path d="M6 41V27h12v14M30 41V31h12v10"/><path d="M24 5l1.8 3.6 4 .6-2.9 2.8.7 4-3.6-1.9-3.6 1.9.7-4-2.9-2.8 4-.6z" fill="currentColor"/>', 'Die Rangliste zählt Macht, Eroberungen und Titel aus der Mitte – dazu alle je verdienten Thron-Punkte.']];
     var card = document.getElementById('splashTipCard'), pic = document.getElementById('splashTipPic'), txt = document.getElementById('splashTip'), tipI = Math.floor(Math.random() * TIPS.length);
     function showTip(i) { if (!pic || !txt) return; pic.innerHTML = S + TIPS[i][0] + '</svg>'; txt.textContent = TIPS[i][1]; }
     showTip(tipI);

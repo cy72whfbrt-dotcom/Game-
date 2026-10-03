@@ -26,7 +26,7 @@ const HD_WAREN = {
     sh:      { name: '3 Helden-Splitter', text: 'Für einen zufälligen Helden.', ic: 'star', f: 2, min: 20000 },
     kiste:   { name: 'Blaue Ausrüstungskiste', text: 'Ein Ausrüstungsteil, genau Selten (blau).', ic: 'shop', f: 3, min: 30000 },
     sammeln: { name: 'Sammel-Beschleuniger', text: '2 Std. lang sammeln alle deine Sammler 30 % schneller (wirkt sofort).', ic: 'hourglass', f: 1, min: 10000 },
-    schild:  { name: 'Friedensschild 2 Std.', text: 'Kommt in deinen Schild-Vorrat (Burg → Friedensschild).', ic: 'shield', f: 2, min: 20000 },
+    schild:  { name: 'Friedensschild 2 Std.', text: 'Kommt in deinen Schild-Vorrat (Shop → Schilde).', ic: 'shield', f: 2, min: 20000 },
     truppen: { name: 'Söldner', text: 'So viele Truppen, wie dein Reich in einer Stunde ausbildet.', ic: 'troops', f: 1.5, min: 15000 }
 };
 var hdState = (() => { try { return JSON.parse(store.get('openWaterHaendler')) || null; } catch (e) { return null; } })() || {};
@@ -44,7 +44,7 @@ function hdOrt() {                                    // ein freier Platz in ein
         const isl = besetzt.length ? islandById[besetzt[Math.floor(Math.random() * besetzt.length)]] : islands[Math.floor(Math.random() * islands.length)];
         const lm = isl && landmasses[isl.landmassId]; if (!lm || lm.tier !== 'outer') continue;
         const p = dekoPlaetze(lm, 1, Math.floor(Math.random() * 1e6), 1500)[0];
-        if (p && !(typeof fieldAt === 'function' && resFields.some(f => Math.hypot(f.x - p[0], f.y - p[1]) < 2500))) return { x: Math.round(p[0]), y: Math.round(p[1]), lm: lm.id };
+        if (p && !(typeof resFields !== 'undefined' && resFields.some(f => Math.hypot(f.x - p[0], f.y - p[1]) < 2500))) return { x: Math.round(p[0]), y: Math.round(p[1]), lm: lm.id };
     }
     return null;
 }
@@ -136,7 +136,7 @@ if (window.WELT) {
         if (!keys.includes('openWaterHaendler')) return;
         const alt = hdState.h && hdState.h.id;
         try { hdState = JSON.parse(store.get('openWaterHaendler')) || {}; } catch (e) { hdState = {}; }
-        if (hdState.h && hdState.h.id !== alt && hdDa() && !SYSTEM) afterSplash(() => flashHint(hdState.h.name + ' ist mit seinem Karren da – nur kurz! (Shop → Händler)', 5000));
+        if (hdState.h && hdState.h.id !== alt && hdDa() && !SYSTEM) afterSplash(() => flashHint('Ein Händler ist da: ' + hdState.h.name + ' – nur kurz! (Shop → Händler)', 5000));
         if (hdOffen()) hdRender();
         requestRender();
     };
@@ -200,8 +200,7 @@ if (hdBody) {
         if (!kb || kb.disabled) return;
         const k = kb.dataset.hdKauf, h = hdDa(); if (!h || !HD_WAREN[k] || hdGekauft('player', k)) return;
         const p = hdPreis('player', k); if (coins < p) { flashHint('Zu wenig Münzen – ' + HD_WAREN[k].name + ' kostet ' + fmtNum(p) + '.', 3000); return; }
-        if (alsBefehl('haendler', { ware: k, id: h.id, preis: p })) { hdWarte.set(k, Date.now()); sfx('coin'); flashHint('Kauf geschickt: ' + HD_WAREN[k].name + ' …', 2500); hdRender(); return; }
-        const why = hdKaufen('player', k); flashHint(why ? why + '.' : 'Gekauft: ' + HD_WAREN[k].name, 3000); hdSpeichern(); hdRender();   // (ohne Weltrechner: hier selbst)
+        if (alsBefehl('haendler', { ware: k, id: h.id, preis: p })) { hdWarte.set(k, Date.now()); sfx('coin'); flashHint('Kauf geschickt: ' + HD_WAREN[k].name + ' …', 2500); hdRender(); }   // (der Weltrechner verkauft)
     });
 }
 // Hinweis unter dem HUD (renderMidBar in spiel.js holt ihn, wenn nichts Dringenderes ansteht): „Händler da · 41 m 12 s“ – antippen öffnet Shop → Händler

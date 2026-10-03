@@ -315,7 +315,7 @@ function bundRallyBeute(attack, gain, won, targetId) {
 // ==============================================================================================================
 // 4) GESCHENKE, TEMPEL-BONUS, GEBIET
 // ==============================================================================================================
-function bundTagHeute() { return new Date().toISOString().slice(0, 10); }
+function bundTagHeute() { return todayKey(); }   // (Ortszeit wie überall im Spiel)
 // Boss besiegt / große Kiste gekauft → alle ANDEREN Mitglieder bekommen ein kleines Geschenk (pro Tag gedeckelt)
 function bundGeschenk(geber, grund) {
     if (window.WELT && !rechnet()) return;
@@ -492,7 +492,7 @@ function bundMitspielerRally(now) {
     // a) mitmachen: wer rechtzeitig ankommt, schickt einen guten Teil einer großen Basis
     for (const r of bund.r) {
         const a = bund.b[r.aid]; if (!a || now > r.los - 4000) continue;
-        const at = islandById[r.at], ziel = islandById[r.t];
+        const at = islandById[r.at];
         for (const w of a.mit) {
             const bot = botById[w], key = r.id + ':' + w; if (!bot || bot.mensch || w === r.by || bundMem.rallyGemacht.has(key) || r.j.some(j => j.w === w) || !bundBotBereit(bot, now) || botFreeSlots(bot) <= 0) continue;
             const zielOw = islandOwnerOf(r.t); if (zielOw && (bundVerbuendet(w, zielOw) || zielOw === w)) continue;
@@ -505,7 +505,6 @@ function bundMitspielerRally(now) {
             if (!best || (bot.style === 'builder' && Math.random() < .5)) continue;
             if (!bundRallyDazu(a, w, { rid: r.id, von: best.id, n: best.n })) { bundBotGetippt(bot, now); bundSpeichern(); }
         }
-        void ziel;
     }
     if (bundMem.rallyGemacht.size > 5000) bundMem.rallyGemacht.clear();
     // b) starten: ein großes Ziel in Reichweite, das einer allein nicht schafft, das Bündnis zusammen aber schon
@@ -520,7 +519,7 @@ function bundMitspielerRally(now) {
         if (!bundRallyStart(a, starter.id, plan)) { bundSignal(a, starter.id, 'angriff', plan.ziel); bundBotGetippt(starter, now); bundSpeichern(); }
     }
 }
-function bundRallyPlan(a, bot, now) {                            // → { at, ziel, min, n } oder null
+function bundRallyPlan(a, bot, now) {                            // → { basis, ziel, min, n } oder null
     const own = [...botOwnedIslands[bot.id]], thr = botThreatened(bot.id);
     const quellen = own.filter(id => !thr.has(id) && id !== megaTempleId && (islandTroops[id] || 0) > 5000).sort((x, y) => (islandTroops[y] || 0) - (islandTroops[x] || 0)).slice(0, 3);
     if (!quellen.length) return null;
@@ -536,7 +535,7 @@ function bundRallyPlan(a, bot, now) {                            // → { at, zi
         for (const lm of reachableLandmassIds[A.landmassId] || []) {
             if (!kennt.has(lm) || !landmassesConnected(A.landmassId, lm)) continue;
             for (const t of islandsByLandmass[lm] || []) {
-                const ow = islandOwnerOf(t.id); if (!ow || bundZielOk(bot.id, t.id) || bossAt(t.id)) continue;
+                const ow = islandOwnerOf(t.id); if (!ow || bundZielOk(bot.id, t.id)) continue;
                 const it = botIntel(bot, t.id);
                 if (!it) { if (!gespaeht && !botScouting(bot, t.id) && (t.type !== 'tower' || (islandLevels[t.id] || 1) >= 5) && Math.random() < .2) { gespaeht = true; botLearn(bot.id, t.id, now + scoutSecs(A, t, bot.id) * 1000, A.landmassId); } continue; }   // erst spähen (einer pro Runde)
                 const s = it.s; if (s < allein * .9 || s > k * atk * .85) continue;                // allein zu schwer, gemeinsam machbar
@@ -597,7 +596,7 @@ function bundInfoHtml(a) {
     const mit = a.mit.slice().sort((x, y) => (y === a.anf) - (x === a.anf) || staerke(y) - staerke(x));
     return '<div class="bd-kopf">' + bundZeichenHtml(a, true) + '<div><b>[' + escapeHtml(a.tag) + '] ' + escapeHtml(a.name) + '</b><small>Macht ' + fmtCompact(bundMacht(a)) + ' · ' + (a.offen ? 'offen für alle' : 'nur auf Anfrage') + '</small></div></div>' +
         '<div class="stat-grid">' + statTile('Tempel-Bonus', 'temple', '+' + bon.pct + ' %', bon.pct ? 'is-good' : '') + statTile('Gebiet', 'send', '+10 % Tempo') + '</div>' +
-        '<div class="notice">' + icon('temple') + '<span>' + (bon.n.t || bon.n.m ? 'Dein Bündnis hält ' + (bon.n.t ? bon.n.t + (bon.n.t === 1 ? ' Tempel' : ' Tempel') : '') + (bon.n.t && bon.n.m ? ' und ' : '') + (bon.n.m ? 'den Mega-Tempel' : '') + ': alle Mitglieder produzieren +' + bon.pct + ' % Münzen und Truppen.'
+        '<div class="notice">' + icon('temple') + '<span>' + (bon.n.t || bon.n.m ? 'Dein Bündnis hält ' + (bon.n.t ? bon.n.t + ' Tempel' : '') + (bon.n.t && bon.n.m ? ' und ' : '') + (bon.n.m ? 'den Mega-Tempel' : '') + ': alle Mitglieder produzieren +' + bon.pct + ' % Münzen und Truppen.'
             : 'Hält ein Mitglied einen Tempel, produzieren alle Mitglieder mehr: +' + BUND.TEMPEL_PCT + ' % je Tempel, Mega-Tempel +' + BUND.MEGA_PCT + ' % (höchstens +' + BUND.BONUS_MAX + ' %).') + ' Im eigenen Gebiet marschiert ihr 10 % schneller.</span></div>' +
         '<div class="notice">' + icon('shop') + '<span>Bündnis-Geschenke heute: ' + heute + ' / ' + BUND.GESCHENKE_TAG + ' – wenn ein Mitglied einen Boss besiegt oder eine große Kiste kauft.</span></div>' +
         (chef && (a.anfragen || []).length ? '<div class="sect"><h4>Anfragen</h4></div><div class="bd-liste">' + a.anfragen.map(q => '<div class="bd-zeile"><span class="bd-name">' + whoLink(q.w, bundName(q.w)) + '<small>Macht ' + fmtCompact(staerke(q.w)) + ' · ' + bundBasenText(q.w) + '</small></span>' +

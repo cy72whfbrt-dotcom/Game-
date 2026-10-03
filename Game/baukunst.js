@@ -4211,7 +4211,9 @@ if (typeof THREE !== 'undefined') try {
   G.peek = function (id) { if (G.off) return null; for (const p of [512, 256, 128]) { const o = cache.get(id + '@' + p); if (o) return o; } return null; };   // a cached sprite of this model in any size, without queueing (the old look while the new one renders)
   G.now = function (id, c, px) {                                                  // render right away (previews)
     if (G.off) return null; const key = id + '@' + px; let s = cache.get(key); if (s) return s;
-    try { s = render(c, px); cache.set(key, s); pixels += px * px; return s; } catch (e) { console.warn('Baukunst', e); if (++G.fails >= 3) G.off = true; return null; }
+    try { s = render(c, px); want.delete(key); cache.set(key, s); pixels += s.px * s.px;
+      for (const [k, v] of cache) { if (pixels <= CAP_PX || k === key) break; cache.delete(k); pixels -= v.px * v.px; }   // wie pump: die ältesten raus
+      return s; } catch (e) { console.warn('Baukunst', e); if (++G.fails >= 3) G.off = true; return null; }
   };
   G.clear = () => { cache.clear(); want.clear(); pixels = 0; };
   G.stats = () => ({ sprites: cache.size, mb: Math.round(pixels * 4 / 1e5) / 10, queued: want.size, renders: G.renders, avgMs: G.renders ? Math.round(G.ms / G.renders) : 0 });
