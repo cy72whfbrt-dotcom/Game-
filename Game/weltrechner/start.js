@@ -124,7 +124,9 @@ const PRUEFER = `(function () {
     for (const k in islandTroops) truppen += islandTroops[k] || 0;
     const v = window.__prVorher;
     if (v && v.basen > 50 && basen < v.basen * .8) bad.push('Basen ' + v.basen + ' → ' + basen + ' (Welt verschwunden?)');
-    if (v && v.truppen > 1e6 && truppen < v.truppen * .2) bad.push('Truppen ' + Math.round(v.truppen) + ' → ' + Math.round(truppen) + ' (Welt verschwunden?)');
+    // (Truppen: nur wenn praktisch KEINE mehr da sind – weniger als eine pro Basis. Ein großer Kampf darf fast alle Truppen der
+    //  Welt kosten, wenn sie an einer Stelle standen: 3.10., junge Welt, 1 Billion → 0,3 Mrd. war echt und kein Datenverlust)
+    if (v && v.truppen > 1e6 && truppen < v.truppen * .2 && truppen < Math.max(1, basen)) bad.push('Truppen ' + Math.round(v.truppen) + ' → ' + Math.round(truppen) + ' (Welt verschwunden?)');
     if (!bad.length) window.__prVorher = { basen, truppen };
     return bad.join('; ');
 })()`;

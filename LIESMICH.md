@@ -1529,3 +1529,11 @@ Notbremse (Wartung an, keine Neustarts). Verloren ging nichts (Stand bis 17:41 g
   Speicher aufräumen, Admin „Längste Pause“).
 - Danach live geprüft: neue `wachhund.php`/`server.php`/`admin.php` angekommen; Weltrechner um 22:58 gestartet, läuft
   (Phase „läuft“, 285 MB, 276 Pulse ohne Fehler, längste Pause 4,8 s), keine Abstürze, keine Sperre, Sicherung stündlich.
+
+## 47. Live 3.10., 23:30: Prüfer-Schleife „Welt verschwunden?“ – Fix
+In der jungen Welt standen fast alle Truppen an einer Stelle (1 Billion von 1 Billion). Ein großer Kampf kostete sie – danach
+0,3 Mrd. in der ganzen Welt. Der Prüfer hielt „über 80 % aller Truppen weg“ für Datenverlust, schrieb nicht, Neustart; nach
+dem Neustart lief derselbe Kampf wieder → Schleife (Spieler: „Verbindung wird hergestellt“). Nichts verloren (letzter guter Stand
+in der Datenbank). **Fix (start.js):** Truppen-Alarm nur noch, wenn praktisch keine mehr da sind (weniger Truppen als Basen) –
+das wäre echter Datenverlust; der Basen-Alarm bleibt. Geprüft: 1 Bio → 0,3 Mrd. bei 1.699 Basen → kein Alarm; Truppen → 0 →
+Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
