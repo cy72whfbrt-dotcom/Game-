@@ -56,7 +56,7 @@ function bundUnterAngriff(id) {                                  // kommt gerade
     const ow = islandOwnerOf(id); if (!ow) return null; let str = 0, at = Infinity;
     for (const a of pendingAttacks) if (a.targetId === id && !a.fightEndsAt && (a.attackerBotId || 'player') !== ow && !bundVerbuendet(a.attackerBotId || 'player', ow)) { str += (a.rawTroops + (a.attackBonus || 0)) * (a.atkTitle || 1) * (a.atkKraft || 1); at = Math.min(at, a.resolveAt); }
     for (const x of armies) if (x.mv && x.mv.to && x.mv.to.kind === 'base' && x.mv.to.id === id) { const w = armyWho(x); if (w !== ow && !bundVerbuendet(w, ow)) { str += x.troops; at = Math.min(at, x.mv.resolveAt); } }
-    return str > 0 ? { str, at } : null;
+    return at < Infinity ? { str, at } : null;   // (am Handy ist die Stärke fremder Angriffe unbekannt – 0 – der Angriff zählt trotzdem)
 }
 
 // ==============================================================================================================
@@ -156,7 +156,8 @@ function bundOp(who, b) {
     }
     if (op === 'hilfe') return bundHilfe(who, b.von, b.nach, b.n) || fertig('');
     if (op === 'kiste') {                                          // im Shop eine große Kiste gekauft → Geschenk für die anderen (pro Tag gedeckelt)
-        if (!HERO_CHESTS.some(c => c.id === b.c && c.gems >= 500)) return 'kaputt';
+        const c = HERO_CHESTS.find(c => c.id === b.c && c.gems >= 500); if (!c) return 'kaputt';
+        if (botById[who] && botById[who].mensch && window.WELT && WELT.kisteGekauft) { WELT.kisteGekauft(who, c.gems); return ''; }   // echter Spieler: erst, wenn das Hauptbuch den Kauf sieht
         bundGeschenk(who, 'kiste'); return '';
     }
     return 'kaputt';

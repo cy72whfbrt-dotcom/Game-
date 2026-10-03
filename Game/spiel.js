@@ -12305,7 +12305,8 @@ if (window.WELT) {
             if (hb && p.gems != null) {                // (ein Profil ohne Gems – altes Handy – zählt hier nicht)
                 hbFreiDazu(who, hb, now);
                 const pg = nn(p.gems); let mg = kontoProfil(m.g, pg, P.g || 0, M.g || 0, now);
-                if (m.g.vor > 0) { hb.gA = nn(hb.gA) + m.g.vor; m.g.vor = 0; }
+                if (m.g.vor > 0) { hb.gA = nn(hb.gA) + m.g.vor; if (now - nn(hb.kaufT) > KISTE_FRIST) hb.kaufG = 0; hb.kaufG = Math.min(5000, nn(hb.kaufG) + m.g.vor); hb.kaufT = now; m.g.vor = 0; hbKisteFrei(who, hb, now); }
+                if (p.stW != null) hbSterne(who, hb, m, nn(p.stW));   // Sterne gekauft/verkauft (vor dem Prüfen der Gems: eine Rückgabe ist dann schon gedeckt)
                 if (mg > 0) {
                     const roh = mg;
                     for (const q of ['gIn', 'sternG']) { const x = Math.min(mg, nn(hb[q])); hb[q] = nn(hb[q]) - x; mg -= x; }
@@ -12550,6 +12551,17 @@ if (window.WELT) {
         hb.fo[d.id] = L; hb.foT = g ? now : Math.min(now, T + need);    // eine Forschung gleichzeitig: die nächste zählt ab da
         return 'ok';
     }
+    // Sterne (alle Teile, angelegt oder nicht – Profil stW = Gems in allen Sternen): ein Kauf wird aus den ausgegebenen Gems bezahlt
+    // und als Rücklage gemerkt (hb.sternRes); beim Verkaufen geht die Rücklage in hb.sternG – das deckt die zurückgegebenen Gems.
+    // Anlegen/Ablegen ändert stW nicht. Vorher sah das Hauptbuch nur Sterne angelegter Teile: Verkauf eines Teils aus der Truhe
+    // galt als „Gems springen“ (falscher Alarm, und die Gems fehlten beim Weltrechner).
+    function hbSterne(who, hb, m, T) {
+        if (!Number.isFinite(hb.stW)) { hb.stW = T; hb.sternRes = Math.min(T, nn(hb.sternG) + 1500); hb.sternG = 0; return; }   // erstes Mal: was es schon gibt, gilt (gekappt)
+        const d = T - hb.stW;
+        if (d > 0) { const x = Math.min(d, nn(hb.gA)); hb.gA = nn(hb.gA) - x; let rest = d - x; if (rest > 0 && hbZahlen(who, hb, m, { g: rest })) rest = 0;
+            hb.sternRes = nn(hb.sternRes) + d - rest; hb.stW += d - rest; }   // (nicht Bezahltes zählt nicht – wird es verkauft, gibt es nichts zurück)
+        else if (d < 0) { const y = Math.min(-d, nn(hb.sternRes)); hb.sternRes = nn(hb.sternRes) - y; hb.sternG = nn(hb.sternG) + y; hb.stW = T; }
+    }
     // ein neuer Gegenstand in Platz s (z = [Seltenheit, Stufe, Sterne]) → '' (angenommen) oder warum nicht
     function hbGearNeu(who, hb, m, s, z, forge) {
         if (z[2] > forge) return 'die Schmiede (Stufe ' + forge + ') erlaubt höchstens ' + forge + ' Sterne';
@@ -12561,6 +12573,7 @@ if (window.WELT) {
         if (n >= 20000) return 'unmöglich viele Kisten';
         const basis = A.filter(a => a[0] === z[0] && a[1] <= z[1]).reduce((x, a) => Math.max(x, a[2]), 0);   // (derselbe Gegenstand, nur höher)
         let sternG = 0; for (let i = basis; i < z[2]; i++) sternG += starGemCost(i);
+        if (Number.isFinite(hb.stW)) { if (10 * z[2] * (z[2] + 1) > hb.stW + 1e-6) return 'die Sterne sind nicht bezahlt'; sternG = 0; }   // (neues Handy: Sterne zahlt hbSterne – nicht doppelt)
         const freiK = Math.min(n, Math.floor(nn(hb.fr.k))), gems = (n - freiK) * CRATE_GEM_COST + sternG;
         if (gems > 0 && !hbZahlen(who, hb, m, { g: gems })) return n > freiK ? 'dafür hätte er ' + (N + n > 1 ? 'etwa ' + Math.round(N + n) : 'eine') + ' Kisten öffnen müssen, ' + fz(gems) + ' Gems fehlen' : 'die Sterne kosten ' + sternG + ' Gems';
         hb.fr.k = nn(hb.fr.k) - freiK; hb.kN = N + n; hb.sternG = nn(hb.sternG) + sternG;
@@ -12692,6 +12705,7 @@ if (window.WELT) {
         for (const h of HEROES) if (n.hs[h.id] && hbHeldWert(h.id, n.hs[h.id]) > hbHeldWert(h.id, hb.hs[h.id])) hb.hs[h.id] = n.hs[h.id];
         hb.shB = Math.max(nn(hb.shB), hbHeldenWert(hb.hs) - hbE0f());
         hb.schild = Math.max(nn(hb.schild), nn(n.schild));
+        if (p.stW != null && Number.isFinite(hb.stW)) { const T = nn(p.stW); if (T > hb.stW) hb.sternRes = nn(hb.sternRes) + T - hb.stW; hb.stW = T; hb.sternRes = Math.min(nn(hb.sternRes), T); }   // (Sterne seit der Sicherung: schon bezahlt)
     }
     {   const Z = SYSTEM && window.__OW ? +window.__OW.zurueck || 0 : 0;
         if (Z) { const bs = loadBotState(); let n = 0;
@@ -12970,6 +12984,24 @@ if (window.WELT) {
     };
     WELT.BEFEHLE = BEFEHLE;
     // für buendnis.js: Münzen prüfen (ohne abzuziehen – das geht als Nachricht „−Münzen“), Gutschrift für Geschenke, Warnungen
+    // Bündnis-Geschenk für eine große Kiste (buendnis.js op 'kiste'): nur, wenn sein Handy wirklich Gems dafür ausgegeben hat
+    // (gesehen in seinem Profil, höchstens 10 Min. vorher oder danach – Befehl und Profil kommen in beliebiger Reihenfolge).
+    // Ein Befehl ohne Kauf wartet und verfällt; jede Ausgabe zählt nur für EIN Geschenk.
+    const KISTE_FRIST = 600000;
+    function hbKisteFrei(who, hb, now) {
+        const L = (hb.kisteOffen || []).filter(k => now - k.t < KISTE_FRIST); let n = 0;
+        // (mind. die Hälfte des Preises: das Profil zeigt nur die Summe – kommen im selben Moment Gems dazu, z. B. ein Erfolg, sieht
+        //  das Hauptbuch weniger als den ganzen Preis. Ohne echte Ausgabe gibt es nie ein Geschenk.)
+        while (L.length && nn(hb.kaufG) >= L[0].g * .5) { hb.kaufG = Math.max(0, nn(hb.kaufG) - L[0].g); L.shift(); n++; }
+        hb.kisteOffen = L;
+        for (let i = 0; i < n; i++) if (typeof bundGeschenk === 'function') bundGeschenk(who, 'kiste');
+    }
+    WELT.kisteGekauft = function (who, g) {
+        const hb = hbDa(who); if (!hb || !(g > 0)) return;
+        const L = hb.kisteOffen || (hb.kisteOffen = []); L.push({ g, t: Date.now() }); if (L.length > 3) L.shift();
+        if (Date.now() - nn(hb.kaufT) > KISTE_FRIST) hb.kaufG = 0;
+        hbKisteFrei(who, hb, Date.now()); saveBotState();
+    };
     WELT.wache = {
         kann(who, kosten) { const m = wacheSehen(who), d = wd(who), hb = hbDa(who); vorAltern(who, m, Date.now()); return m.c.vor + m.c.u + (hb ? nn(hb.cA) : 0) + spielraumFrei(who, m) + (d ? nn(d.gC) : 0) >= kosten; },
         gutschrift(who, c, tr) { const d = wd(who); if (!d) return; d.gC = nn(d.gC) + nn(c); d.gTr = nn(d.gTr) + nn(tr); saveBotState(); },

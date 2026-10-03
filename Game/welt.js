@@ -203,10 +203,11 @@
         const d = S.daten, inv = P(d.openWaterInventory) || {}, eq = P(d.openWaterEquippedItems) || {}, city = P(d.openWaterCity) || {}, look = P(d.openWaterLook) || {};
         const gear = {};
         for (const slot of ['weapon', 'armor', 'shield', 'boots']) { const it = eq[slot] && inv[eq[slot]]; gear[slot] = it ? { r: it.rarity, lvl: it.level, st: it.stars || 0 } : null; }
+        let stW = 0; for (const k in inv) { const st = Math.max(0, Math.min(5, (inv[k] && inv[k].stars) | 0)); stW += 10 * st * (st + 1); }   // Gems in allen Sternen (angelegt oder nicht): je Stern 20·(n+1) wie starGemCost
         const thr = P(d.openWaterThrone) || {};
         return {
             name: d.openWaterPlayerName || OW.name, lvl: parseInt(d.openWaterLevel, 10) || 1,
-            skills: P(d.openWaterSkills) || {}, gear, city: { levels: city.levels || {} }, wounded: city.wounded || 0,
+            skills: P(d.openWaterSkills) || {}, gear, stW, city: { levels: city.levels || {} }, wounded: city.wounded || 0,
             hs: P(d.openWaterHeroes2) || {}, shieldUntil: parseFloat(d.openWaterShield) || 0,
             fo: city.fo || {}, tier: city.tier || 1, tierBez: city.tierBez || 1, res: P(d.openWaterRes) || null,   // Paket D: Forschung, Truppen-Stufe, Rohstoffe (Burg-Stufe steht in city.levels.keep)
             neuBis: typeof neulingBis === 'function' ? neulingBis() : 0,
