@@ -12261,6 +12261,7 @@ if (window.WELT) {
             m.w.u = p ? nn(p.wounded) : nn(b.wounded); if (Number.isFinite(d.w)) m.w.u = Math.min(m.w.u, d.w) + 1000;
             const gHb = !!(hb && Number.isFinite(hb.gU));   // 3B: Gems wie die Münzen (das Hauptbuch weiß es besser als das Profil)
             m.g.u = gHb ? hb.gU : p ? nn(p.gems) : 0; m.gGeeicht = gHb || !!(p && p.gems != null);
+            if (m.geeicht && p && nn(p.coins) < d.u) { m.c.vor = d.u - nn(p.coins); m.c.vorT = now; }   // während der Weltrechner weg war ausgegeben: wie ein normaler Rückgang (bezahlt wartende Befehle – nie doppelt)
             m.lvl = Number.isFinite(d.lm) && d.lm >= 1 ? d.lm : Math.max(1, Math.floor(nn(p ? p.lvl : b.lvl) || 1));
             m.xpRest = xpNeededForLevel(m.lvl) - 1;    // wie voll sein Balken ist, weiß niemand: voll (großzügig)
             m.lvlLog = [{ t: now, l: m.lvl }];
@@ -12272,6 +12273,7 @@ if (window.WELT) {
         if (p && p !== m.prof && !m.geeicht) {         // noch nie gesehen: das erste frische Profil gilt (das in der Datenbank kann
             m.prof = p; m.geeicht = true;              // älter sein als sein Spielstand) – ab hier wird gezählt
             m.c.u = nn(p.coins); m.w.u = nn(p.wounded); const gNeu = !m.gGeeicht && p.gems != null; if (gNeu) { m.g.u = nn(p.gems); m.gGeeicht = true; }
+            if (b.zEich) { m.eichT = nn((WELT.menschen[who] || {}).profilZeit); m.gEichT = m.eichT; delete b.zEich; }   // (nach dem Zurückspielen: Befehle von davor sind in diesem Profil schon bezahlt)
             for (const f of m.flug) { m.c.u += f.P.c || 0; m.w.u += f.P.w || 0; if (gNeu) m.g.u += f.P.g || 0; f.n++; }
             const pl = Math.max(1, Math.floor(nn(p.lvl) || 1)); if (pl > m.lvl) { m.lvl = pl; m.xpRest = xpNeededForLevel(pl) - 1; }
         }
@@ -12305,7 +12307,8 @@ if (window.WELT) {
             if (hb && p.gems != null) {                // (ein Profil ohne Gems – altes Handy – zählt hier nicht)
                 hbFreiDazu(who, hb, now);
                 const pg = nn(p.gems); let mg = kontoProfil(m.g, pg, P.g || 0, M.g || 0, now);
-                if (m.g.vor > 0) { hb.gA = nn(hb.gA) + m.g.vor; if (now - nn(hb.kaufT) > KISTE_FRIST) hb.kaufG = 0; hb.kaufG = Math.min(5000, nn(hb.kaufG) + m.g.vor); hb.kaufT = now; m.g.vor = 0; hbKisteFrei(who, hb, now); }
+                m.gAus = m.g.vor > 0 ? m.g.vor : 0;   // (Gems, die er in DIESEM Profil ausgegeben hat – Beleg für eine Heldenkiste)
+                if (m.g.vor > 0) { hb.gA = nn(hb.gA) + m.g.vor; m.g.vor = 0; }
                 if (p.stW != null) hbSterne(who, hb, m, nn(p.stW));   // Sterne gekauft/verkauft (vor dem Prüfen der Gems: eine Rückgabe ist dann schon gedeckt)
                 if (mg > 0) {
                     const roh = mg;
@@ -12345,6 +12348,7 @@ if (window.WELT) {
         if (b.stufe > L + 1) { warnen(who, 'ausbau', 'Ausbau springt: ' + islandTitle(islandById[b.insel]) + ' von Stufe ' + L + ' auf ' + b.stufe + ' – erlaubt ist nur +1.', b.stufe - L); return 'nein'; }
         const jetzt = Date.now(), damals = zahlOk(b.at) && b.at <= jetzt + 5000 && jetzt - b.at < 120000 && evThemaAktivAm(b.at, 'bau');   // (Bauherr: bezahlt hat er den Preis von da – nie aus der Zukunft)
         if (b._nach) return 'ok';                                          // nach dem Zurückspielen nachgeholt: bezahlt hat er damals schon
+        if (schonBezahlt(wacheSehen(who), b, false)) return 'ok';           // vor dem Eichen bezahlt (steckt schon im Konto)
         const m = wacheSehen(who), kosten = upgradeCostRoh(L) * (damals || evThemaAktiv('bau') ? .8 : 1);   // (der Rabatt nur EINMAL – vorher doppelt)
         if (wacheBezahlen(who, m, kosten)) return 'ok';
         return ende ? 'pleite' : 'warten';
@@ -12408,6 +12412,10 @@ if (window.WELT) {
     // Wartende Befehle (Ausbau, Truppen – bis 60 s, bis sein Profil die Zahlung zeigt) gelten erst als erledigt, wenn sie entschieden
     // sind (welt.js quittiert sie erst dann – stürzt der Weltrechner vorher ab, kommen sie wieder und laufen dann). Angenommene
     // bezahlte Befehle meldet er dem Server (nur die holt das Zurückspielen nach).
+    // Nach dem Zurückspielen wird sein Konto an einem neuen Profil geeicht – ein Befehl, den der Server VOR diesem Profil bekam, ist
+    // darin schon bezahlt: nicht nochmal abbuchen. (_t: Server-Zeit des Befehls, 1 s Spielraum; gilt nur nach dem Zurückspielen –
+    // sonst zählt wie immer der Rückgang im Profil)
+    const schonBezahlt = (m, b, gems) => { const T = gems ? nn(m.gEichT) : nn(m.eichT); return !!(T && zahlOk(b._t) && b._t + 1000 <= T); };
     function befehlFertig(x) { if (x && x.wartet && x.b && x.b._id && WELT.befehlErledigt) WELT.befehlErledigt(x.b._id); }
     function befehlBezahlt(b) { if (b && b._id && WELT.befehlBezahlt) WELT.befehlBezahlt(b._id); }
     // (vor jedem Puls) alle echten Spieler ansehen, Wartendes erledigen
@@ -12633,9 +12641,10 @@ if (window.WELT) {
         const gleich = (a, b) => !!a && !!b && a.every((v, i) => v === b[i]);
         const geaendert = HEROES.filter(h => neu[h.id] && !gleich(neu[h.id], hb.hs[h.id])); if (!geaendert.length) { hbGut(hb, 'helden'); return; }
         const wert = hs => hbHeldenWert(hs) - E0;
-        let bedarf = wert(neu) - nn(hb.shB);
+        let bedarf = wert(neu) - nn(hb.shB); const shVor = nn(hb.shB); let gBez = 0;
         if (bedarf > 0) { const aus = Math.min(bedarf, nn(hb.fr.sh)); hb.fr.sh = nn(hb.fr.sh) - aus; hb.shB = nn(hb.shB) + aus; bedarf -= aus;
-            if (bedarf > 0 && hbZahlen(who, hb, m, { g: Math.ceil(bedarf * HB_SH_GEMS) })) hb.shB += bedarf; }
+            if (bedarf > 0 && hbZahlen(who, hb, m, { g: Math.ceil(bedarf * HB_SH_GEMS) })) { hb.shB += bedarf; gBez = Math.ceil(bedarf * HB_SH_GEMS); } }
+        if (hb.shB > shVor) { const L = (hb.shKauf || []).filter(x => now - x.t < KISTE_FRIST); L.push({ sh: hb.shB - shVor, gd: nn(m.gAus), g: gBez, t: now }); m.gAus = 0; hb.shKauf = L.slice(-20); hbKisteFrei(who, hb, now); }   // Splitter + Gems aus DEMSELBEN Profil: Beleg für eine Heldenkiste
         if (wert(neu) <= nn(hb.shB) + 1e-6) { hb.hs = Object.assign({}, hb.hs, neu); hbGut(hb, 'helden'); return; }
         let jetzt = Object.assign({}, hb.hs);          // sonst Held für Held, die billigsten Änderungen zuerst
         const zu = [];
@@ -12716,7 +12725,7 @@ if (window.WELT) {
     {   const Z = SYSTEM && window.__OW ? +window.__OW.zurueck || 0 : 0;
         if (Z) { const bs = loadBotState(); let n = 0;
             for (const id in bs) { const b = bs[id]; if (!b || !b.mensch || nn(b.zT) >= Z) continue;
-                b.zT = Z; b.zProfil = 1; n++;
+                b.zT = Z; b.zProfil = 1; b.zEich = 1; n++;
                 if (b.wache) { delete b.wache.u; delete b.wache.w; delete b.wache.lm; }   // → am nächsten Profil neu eichen
                 if (b.hb) { delete b.hb.gU; delete b.hb.rU; } }
             if (n) { saveBotState(); console.log('Zurückgespielt: Hauptbuch von ' + n + ' Spielern wird an ihre Spielstände angeglichen'); } }
@@ -12778,6 +12787,15 @@ if (window.WELT) {
         const b64 = bitsZu(s);
         if (b64 !== z.gesendet) { z.gesendet = b64; WELT.sichtRaus[parseInt(who.slice(1), 10)] = b64; }
     }
+    // Fremde Armeen und besetzte Felder, die er sieht (ihr Feld ist bei ihm aufgedeckt – wie am Handy isCellOpen): nur für die
+    // schickt der Server Truppen und Helden (server.php marsch_welt). Geschickt wird nur, wenn sich die Liste ändert.
+    function armeeSichtRunde(who, hb) {
+        const z = nbZ(who, hb), I = nbIndex(), offen = (x, y) => !!hb.nbAlle || nbOffen(z, I, x, y), l = [];
+        for (const a of armies) { if (armyWho(a) === who) continue; const p = armyPos(a); if (p && offen(p.x, p.y)) l.push(String(a.id)); }
+        for (const f of resFields) { const st = fieldState[f.id]; if (st && st.occ && st.occ.who !== who && offen(f.x, f.y)) l.push(f.id); }
+        const t = JSON.stringify(l.sort());
+        if (t !== z.armGesendet) { z.armGesendet = t; WELT.armeeSichtRaus[parseInt(who.slice(1), 10)] = l; }
+    }
     // (jeden Puls) Nebel, Abgelehntes nochmal prüfen, jede Minute die Truppen-Summen für die Rangliste
     let hbErst = true;
     function hbRunde(now) {
@@ -12789,11 +12807,11 @@ if (window.WELT) {
         }
         for (const who in WELT.menschen) {
             const b = bs[who], hb = b && b.hb && b.hb.v === HB_V ? b.hb : null; if (!hb || !botById[who]) continue;
-            try { nebelRunde(who, hb, now); } catch (e) { console.warn('Nebel:', e); }
+            try { nebelRunde(who, hb, now); armeeSichtRunde(who, hb); } catch (e) { console.warn('Nebel:', e); }
             const mm = wm(who); if (mm.hbOffen && now - nn(mm.hbPrT) > 10000) { const p = profilVon(who); if (p) Object.assign(b, WELT.profilZuBot(p, b, who)); else mm.hbOffen = 0; }   // (Münzen/Gems kommen evtl. später)
         }
         if (now - hbTtT > 60000) {                     // Truppen-Summe je Herrscher (Spieler bekommen fremde Truppen nur, wo sie hinsehen dürfen)
-            if (Math.floor(now / 600000) !== Math.floor(hbTtT / 600000)) for (const who in nbMem) if (nbMem[who].gesendet) WELT.sichtRaus[parseInt(who.slice(1), 10)] = nbMem[who].gesendet;   // (alle 10 Min. die Sicht nochmal – falls ein Puls sie verloren hat; der Server ändert nur Neues)
+            if (Math.floor(now / 600000) !== Math.floor(hbTtT / 600000)) for (const who in nbMem) { if (nbMem[who].gesendet) WELT.sichtRaus[parseInt(who.slice(1), 10)] = nbMem[who].gesendet; nbMem[who].armGesendet = null; }   // (alle 10 Min. die Sicht nochmal – falls ein Puls sie verloren hat; der Server ändert nur Neues)
             hbTtT = now;
             for (const bd of BOT_DEFS) { const b = bs[bd.id]; if (!b) continue; let n = 0; for (const id of botOwnedIslands[bd.id] || []) n += islandTroops[id] || 0;
                 const r = n < 1000 ? Math.round(n) : Number(n.toPrecision(3)); if (b.tt !== r && Math.abs((b.tt || 0) - r) > r * .01) b.tt = r; }
@@ -12849,7 +12867,7 @@ if (window.WELT) {
             const now = Date.now(), keys = [...new Set(b.keys.filter(kennungOk))].slice(0, 200), ms = [];
             for (const key of keys) { const m = marschVon(who, key); if (!m || m.fightEndsAt || m.resolveAt - now < 1500) continue; ms.push(m); }
             const kosten = ms.reduce((a, m) => a + speedUpCost(m), 0), hb = hbDa(who);
-            if (hb && kosten > 0 && !b._nach && !hbZahlen(who, hb, wacheSehen(who), { g: kosten })) { warnen(who, 'gems', 'Beschleunigen für ' + kosten + ' Gems – so viele kann er nicht haben. Abgelehnt.', kosten); return; }
+            if (hb && kosten > 0 && !b._nach && !schonBezahlt(wacheSehen(who), b, true) && !hbZahlen(who, hb, wacheSehen(who), { g: kosten })) { warnen(who, 'gems', 'Beschleunigen für ' + kosten + ' Gems – so viele kann er nicht haben. Abgelehnt.', kosten); return; }
             for (const m of ms) { const rem = m.resolveAt - now;
                 const pr = Math.max(0, Math.min(.99, (now - m.startedAt) / Math.max(1, m.resolveAt - m.startedAt))); m.resolveAt = now + rem / 2; m.startedAt = m.resolveAt - (rem / 2) / (1 - pr); }
             saveProgression(); if (ms.length) befehlBezahlt(b);
@@ -12875,7 +12893,7 @@ if (window.WELT) {
             const to = islandById[b.insel], bs = loadBotState()[who]; if (!to || to.type !== 'tower' || !gehoert(b.insel, who) || !bs) return;
             if (zuOft(wm(who), 'hauptstadt', 20, 3600000)) { warnen(who, 'hauptstadt', 'Hauptstadt über 20-mal in einer Stunde verlegt – abgelehnt.'); return; }
             if (pendingAttacks.some(a => a.targetId === b.insel)) return;   // nicht in eine Basis, auf die gerade ein Angriff läuft (wie bei den Mitspielern)
-            const hb = hbDa(who); if (hb && !b._nach && !hbZahlen(who, hb, wacheSehen(who), { g: TELEPORT_GEMS })) { warnen(who, 'gems', 'Hauptstadt verlegen für ' + TELEPORT_GEMS + ' Gems – so viele kann er nicht haben. Abgelehnt.', TELEPORT_GEMS); return; }
+            const hb = hbDa(who); if (hb && !b._nach && !schonBezahlt(wacheSehen(who), b, true) && !hbZahlen(who, hb, wacheSehen(who), { g: TELEPORT_GEMS })) { warnen(who, 'gems', 'Hauptstadt verlegen für ' + TELEPORT_GEMS + ' Gems – so viele kann er nicht haben. Abgelehnt.', TELEPORT_GEMS); return; }
             const from = botCapitalOf(who); if (from !== null && from !== undefined && from !== b.insel) { islandTroops[b.insel] = (islandTroops[b.insel] || 0) + (islandTroops[from] || 0); islandTroops[from] = 0; }
             bs.capital = b.insel; capitalCache = null; saveBotState(); saveGame(); requestRender(); befehlBezahlt(b);
         },
@@ -12992,22 +13010,29 @@ if (window.WELT) {
     };
     WELT.BEFEHLE = BEFEHLE;
     // für buendnis.js: Münzen prüfen (ohne abzuziehen – das geht als Nachricht „−Münzen“), Gutschrift für Geschenke, Warnungen
-    // Bündnis-Geschenk für eine große Kiste (buendnis.js op 'kiste'): nur, wenn sein Handy wirklich Gems dafür ausgegeben hat
-    // (gesehen in seinem Profil, höchstens 10 Min. vorher oder danach – Befehl und Profil kommen in beliebiger Reihenfolge).
-    // Ein Befehl ohne Kauf wartet und verfällt; jede Ausgabe zählt nur für EIN Geschenk.
+    // Bündnis-Geschenk für eine große Kiste (buendnis.js op 'kiste'): nur für eine ECHTE Heldenkiste. Beleg = EIN Profil-Schritt, in
+    // dem mindestens so viele Helden-Splitter neu dazukamen (ohne bekannte Quelle – nur Heldenkisten machen aus Gems Splitter) UND
+    // mindestens so viele Gems weg sind, wie genau diese Kiste hat (Kauf am Handy: Gems weg und Splitter da im selben Augenblick).
+    // Jeder Beleg zählt nur einmal (Splitter und Gems werden verbraucht), höchstens 10 Min. vorher oder nachher; der Rest des
+    // Preises, den die Splitter nicht schon gekostet haben, wird im Hauptbuch abgebucht. Ein Schild oder anderer Gem-Kauf hat keine
+    // Splitter, Splitter ohne Gems (Aufgaben, Pass) haben keine Ausgabe – beides ist nie ein Beleg. Befehl und Profil kommen in
+    // beliebiger Reihenfolge – ein Befehl ohne Beleg wartet (und verfällt nach 10 Min.).
     const KISTE_FRIST = 600000;
     function hbKisteFrei(who, hb, now) {
-        const L = (hb.kisteOffen || []).filter(k => now - k.t < KISTE_FRIST); let n = 0;
-        // (mind. die Hälfte des Preises: das Profil zeigt nur die Summe – kommen im selben Moment Gems dazu, z. B. ein Erfolg, sieht
-        //  das Hauptbuch weniger als den ganzen Preis. Ohne echte Ausgabe gibt es nie ein Geschenk.)
-        while (L.length && nn(hb.kaufG) >= L[0].g * .5) { hb.kaufG = Math.max(0, nn(hb.kaufG) - L[0].g); L.shift(); n++; }
-        hb.kisteOffen = L;
+        const L = (hb.kisteOffen || []).filter(k => now - k.t < KISTE_FRIST), B = (hb.shKauf || []).filter(x => now - x.t < KISTE_FRIST);
+        let n = 0; const bleibt = [];
+        for (const k of L) {
+            const x = B.find(y => y.sh >= k.sh - 1e-6 && nn(y.gd) >= k.g - 1e-6); if (!x) { bleibt.push(k); continue; }   // kein passender Beleg (noch nicht)
+            const anteil = x.sh > 0 ? Math.min(1, k.sh / x.sh) : 0, gSchon = nn(x.g) * anteil, fehlt = Math.max(0, Math.round(k.g - gSchon));
+            if (fehlt > 0 && !hbZahlen(who, hb, wacheSehen(who), { g: fehlt })) { bleibt.push(k); continue; }
+            x.sh -= k.sh; x.gd = nn(x.gd) - k.g; x.g = nn(x.g) - gSchon; n++;
+        }
+        hb.kisteOffen = bleibt; hb.shKauf = B.filter(y => y.sh > 1e-6 && nn(y.gd) > 1e-6);
         for (let i = 0; i < n; i++) if (typeof bundGeschenk === 'function') bundGeschenk(who, 'kiste');
     }
-    WELT.kisteGekauft = function (who, g) {
-        const hb = hbDa(who); if (!hb || !(g > 0)) return;
-        const L = hb.kisteOffen || (hb.kisteOffen = []); L.push({ g, t: Date.now() }); if (L.length > 3) L.shift();
-        if (Date.now() - nn(hb.kaufT) > KISTE_FRIST) hb.kaufG = 0;
+    WELT.kisteGekauft = function (who, c) {
+        const hb = hbDa(who); if (!hb || !c || !(c.gems > 0)) return;
+        const L = hb.kisteOffen || (hb.kisteOffen = []); L.push({ g: c.gems, sh: c.sh * c.n, t: Date.now() }); if (L.length > 5) L.shift();
         hbKisteFrei(who, hb, Date.now()); saveBotState();
     };
     WELT.wache = {

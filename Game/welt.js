@@ -64,6 +64,7 @@
         ereignisFertig: (() => { try { const a = JSON.parse(S.daten.openWaterEreignisFertig || '[]'); return Array.isArray(a) ? a.filter(Number.isInteger).slice(-500) : []; } catch (e) { return []; } })(),   // (Spieler) die zuletzt verbuchten Nachrichten (stehen im eigenen Spielstand)
         ereignisseRaus: [],               // (Weltrechner) Nachrichten an andere Spieler
         sichtRaus: {},                    // (Weltrechner, 3B) neue Sicht je Spieler: uid → Bitfeld (base64) – nur für den Server
+        armeeSichtRaus: {},               // (Weltrechner) fremde Armeen/besetzte Felder, die er sieht: uid → [Kennungen] – nur für den Server
         sichtV: typeof OW.sicht_v === 'number' ? OW.sicht_v : -1,   // (Spieler, 3B) Stand der Sicht, die ich habe
         beiNachricht: [],                 // spiel.js hängt sich hier ein
         flickenBauen, flickenAnwenden,    // (auch für Tests)
@@ -268,7 +269,7 @@
             const id = 'u' + s.id, m = W.menschen[id] || (W.menschen[id] = { id, uid: s.id });
             m.name = s.name; m.online = s.online;
             if (typeof BOT_DEFS !== 'undefined') { const bd = BOT_DEFS.find(b => b.id === id); if (bd && bd.mensch) bd.name = s.name; }   // neuer Name sichtbar
-            if (s.profil) { m.profil = s.profil; m.profilNeu = true; }
+            if (s.profil) { m.profil = s.profil; m.profilNeu = true; m.profilZeit = s.profil_zeit || 0; }   // (profilZeit: wann der Server es bekam – Hauptbuch: was war da schon bezahlt?)
             if (s.profil_zeit > W.spielerSeit) W.spielerSeit = s.profil_zeit;
         }
     }
@@ -363,7 +364,8 @@
         let neuGesendet = null;
         const anfrage = { aktion: 'puls', token: S.token, seit: W.version, spieler_seit: W.spielerSeit };
         if (!SYSTEM) anfrage.sicht_v = W.sichtV;                              // 3B: welche Sicht (Nebel auf dem Server) ich schon habe
-        else if (Object.keys(W.sichtRaus).length) { anfrage.sicht = W.sichtRaus; W.sichtRaus = {}; }   // (Weltrechner) neue Sicht einzelner Spieler
+        else { if (Object.keys(W.sichtRaus).length) { anfrage.sicht = W.sichtRaus; W.sichtRaus = {}; }   // (Weltrechner) neue Sicht einzelner Spieler
+            if (Object.keys(W.armeeSichtRaus).length) { anfrage.armee_sicht = W.armeeSichtRaus; W.armeeSichtRaus = {}; } }
         try {
             const jetzt = Date.now();
             if (!SYSTEM && jetzt - profilAt > 10000) { const pr = J(meinProfil()); if (pr !== letztesProfil) { anfrage.profil = pr; letztesProfil = pr; } profilAt = jetzt; }
@@ -414,6 +416,7 @@
             if (anfrage.welt) for (const k of Object.keys(Object.assign({}, anfrage.welt.setzen, anfrage.welt.flicken))) S.weltGeaendert.add(k === 'openWaterBotOwnedIslands' ? 'openWaterOwnedIslands' : k);
             if (anfrage.ereignisse) W.ereignisseRaus.unshift(...anfrage.ereignisse);
             if (anfrage.sicht) W.sichtRaus = Object.assign(anfrage.sicht, W.sichtRaus);
+            if (anfrage.armee_sicht) W.armeeSichtRaus = Object.assign(anfrage.armee_sicht, W.armeeSichtRaus);
             if (anfrage.profil) letztesProfil = '';
             console.warn('Welt-Puls:', e);
         } finally {

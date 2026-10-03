@@ -274,24 +274,31 @@ function nebel_flicken($text, $s) {
 // Wachturm – und nur bei Angriffen auf SEINE Basen: ab Stufe 1 ungefähr (2 Stellen), ab Stufe 10 genau mit Held und Truppen-Stufe
 // (aufbau.js angreiferInfo). Darum schickt der Server fremde Zahlen gar nicht erst (sonst stünden sie im Handy, nur versteckt):
 // Truppen 0, Held und Kampfwerte weg. Eigene Kolonnen bleiben, wie sie sind. Diese Teile gehen an Spieler immer ganz (nie als
-// Flicken – die passten nicht zum gefilterten Stand im Handy). Armeen und besetzte Felder zeigt das Spiel offen (wenn nicht im
-// Nebel) – die bleiben.
-const MARSCH_TEILE = ['openWaterPendingAttacks', 'openWaterPendingSends', 'openWaterPendingRetreats', 'openWaterFieldMarches', 'openWaterBarbMarches'];
+// Flicken – die passten nicht zum gefilterten Stand im Handy). Armeen und besetzte Felder zeigt das Spiel mit Zahlen, wenn man sie
+// sieht – im Nebel nicht: Truppen und Helden nur für die, die der Weltrechner ihm als sichtbar meldet (ow_spieler.armee_sicht).
+const MARSCH_TEILE = ['openWaterPendingAttacks', 'openWaterPendingSends', 'openWaterPendingRetreats', 'openWaterFieldMarches', 'openWaterBarbMarches', 'openWaterArmies', 'openWaterFields'];
 function marsch_runden($n) { $n = (float)$n; if ($n < 1) return 0; $p = pow(10, max(0, floor(log10($n)) - 1)); return round($n / $p) * $p; }   // (wie angreiferInfo)
-function marsch_teil($k, $text, $ich, $eigen, $turm) {
-    $v = json_decode((string)$text, true); if (!is_array($v)) return $text;
-    foreach ($v as $i => $e) {
-        if (!is_array($e)) continue;
+function marsch_teil($k, $text, $ich, $eigen, $turm, $sieht = []) {
+    $v = json_decode((string)$text); if (!is_array($v) && !is_object($v)) return $text;   // (als Objekte: {} bleibt {})
+    $wer = function ($o, $f) { return isset($o->$f) && is_string($o->$f) ? $o->$f : ''; };
+    if ($k === 'openWaterArmies') {
+        foreach ((array)($v->armies ?? []) as $a) if (is_object($a) && $wer($a, 'who') !== $ich && !isset($sieht[(string)($a->id ?? '')])) { $a->troops = 0; $a->hero = null; $a->hero2 = null; }
+        foreach ((array)($v->joins ?? []) as $j) if (is_object($j) && $wer($j, 'who') !== $ich) $j->troops = 0;
+        foreach ((array)($v->raids ?? []) as $r) if (is_object($r) && $wer($r, 'tOwner') !== $ich) foreach (['troops', 'n', 'hero', 'hero2'] as $f) if (isset($r->$f)) $r->$f = is_numeric($r->$f) ? 0 : null;
+    } elseif ($k === 'openWaterFields') {
+        foreach ((array)$v as $fid => $st) if (is_object($st) && isset($st->occ) && is_object($st->occ) && $wer($st->occ, 'who') !== $ich && !isset($sieht[(string)$fid])) {
+            $st->occ->troops = 0; $st->occ->hero = null; $st->occ->hero2 = null; if (isset($st->occ->got)) $st->occ->got = 0; }
+    } elseif (is_array($v)) foreach ($v as $e) {
+        if (!is_object($e)) continue;
         if ($k === 'openWaterPendingAttacks') {
-            if (($e['attackerBotId'] ?? '') === $ich) continue;
-            $aufMich = isset($eigen[(int)($e['targetId'] ?? -1)]); $genau = $aufMich && $turm >= 10;
-            $e['rawTroops'] = $genau ? $e['rawTroops'] ?? 0 : ($aufMich && $turm >= 1 ? marsch_runden($e['rawTroops'] ?? 0) : 0);
-            foreach (['hx', 'attackBonus', 'skillBonus', 'skillLvl', 'attackGoldRate', 'rewardGoldRate', 'shieldLossReductionPct', 'atkTitle', 'atkTitleKey', 'atkKraft', 'atkFo', 'planId', 'lastWave', 'bernPct'] as $f) unset($e[$f]);
-            if (!$genau) unset($e['hero'], $e['hero2'], $e['atkTier']);
-        } elseif ($k === 'openWaterPendingSends') { if (($e['senderBotId'] ?? '') === $ich) continue; $e['troops'] = 0; }
-        elseif ($k === 'openWaterPendingRetreats') { if (($e['owner'] ?? '') === $ich) continue; $e['troops'] = 0; }
-        else { if (($e['who'] ?? '') === $ich) continue; $e['troops'] = 0; unset($e['hero'], $e['hero2'], $e['load']); }
-        $v[$i] = $e;
+            if ($wer($e, 'attackerBotId') === $ich) continue;
+            $aufMich = isset($eigen[(int)($e->targetId ?? -1)]); $genau = $aufMich && $turm >= 10;
+            $e->rawTroops = $genau ? ($e->rawTroops ?? 0) : ($aufMich && $turm >= 1 ? marsch_runden($e->rawTroops ?? 0) : 0);
+            foreach (['hx', 'attackBonus', 'skillBonus', 'skillLvl', 'attackGoldRate', 'rewardGoldRate', 'shieldLossReductionPct', 'atkTitle', 'atkTitleKey', 'atkKraft', 'atkFo', 'planId', 'lastWave', 'bernPct'] as $f) unset($e->$f);
+            if (!$genau) unset($e->hero, $e->hero2, $e->atkTier);
+        } elseif ($k === 'openWaterPendingSends') { if ($wer($e, 'senderBotId') !== $ich) $e->troops = 0; }
+        elseif ($k === 'openWaterPendingRetreats') { if ($wer($e, 'owner') !== $ich) $e->troops = 0; }
+        else { if ($wer($e, 'who') !== $ich) { $e->troops = 0; unset($e->hero, $e->hero2, $e->load); } }
     }
     return json_encode($v, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION);
 }
@@ -303,7 +310,7 @@ function marsch_welt($w, $uid, $s) {
     $fehlt = array_values(array_filter($da, function ($k) use ($t) { return !isset($t[$k]); }));
     if ($fehlt) foreach (lager()->stand_laden(0, $fehlt) as $k => $v) $t[$k] = $v;
     $turm = in_array('openWaterPendingAttacks', $da, true) ? lager()->turm_stufe($uid) : 0;
-    foreach ($da as $k) { unset($f[$k]); if (isset($t[$k]) && is_string($t[$k])) $t[$k] = marsch_teil($k, $t[$k], 'u' . (int)$uid, $s['eigen'], $turm); }
+    foreach ($da as $k) { unset($f[$k]); if (isset($t[$k]) && is_string($t[$k])) $t[$k] = marsch_teil($k, $t[$k], 'u' . (int)$uid, $s['eigen'], $turm, $s['armeen'] ?? []); }
     $w['setzen'] = (object)$t; if (isset($w['flicken'])) $w['flicken'] = (object)$f;
     return $w;
 }
@@ -433,7 +440,7 @@ function weltrechner_seite($sys) {
 
 // ===== MySQL =====
 class MysqlLager {
-    const TABELLEN_STAND = '2026-10-03g';   // (siehe Konstruktor)
+    const TABELLEN_STAND = '2026-10-03h';   // (siehe Konstruktor)
     private $db;
     // Transaktionen (auch verschachtelt): was zusammengehört, gilt ganz oder gar nicht – stirbt PHP mittendrin, nimmt die Datenbank
     // alles zurück (z. B. Welt + Nachrichten + Quittungen des Weltrechners, Spielstand + „verbucht“ eines Spielers)
@@ -560,7 +567,7 @@ class MysqlLager {
                 'profil' => 'MEDIUMTEXT NULL', 'profil_zeit' => 'INT UNSIGNED NOT NULL DEFAULT 0', 'online_bis' => 'INT UNSIGNED NOT NULL DEFAULT 0',
                 'anzeigename' => 'VARCHAR(20) NULL', 'puls_minute' => 'INT UNSIGNED NOT NULL DEFAULT 0', 'puls_anzahl' => 'INT UNSIGNED NOT NULL DEFAULT 0',
                 'push_aus' => "VARCHAR(60) NOT NULL DEFAULT ''",   // push_aus: Benachrichtigungs-Arten, die der Spieler ausgeschaltet hat (Einstellungen)
-                'sicht' => 'MEDIUMTEXT NULL', 'sicht_v' => 'INT UNSIGNED NOT NULL DEFAULT 0', 'speicher_nr' => 'BIGINT UNSIGNED NOT NULL DEFAULT 0'];   // 3B: was er sehen darf (Bitfeld vom Weltrechner), Zähler
+                'sicht' => 'MEDIUMTEXT NULL', 'sicht_v' => 'INT UNSIGNED NOT NULL DEFAULT 0', 'speicher_nr' => 'BIGINT UNSIGNED NOT NULL DEFAULT 0', 'armee_sicht' => 'MEDIUMTEXT NULL'];   // 3B: was er sehen darf (Bitfeld vom Weltrechner), Zähler
         foreach ($neu as $sp => $typ) if (!in_array($sp, $da, true)) $this->db->exec("ALTER TABLE ow_spieler ADD COLUMN $sp $typ");
         $t = $this->db->query("SELECT DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'ow_spieler' AND COLUMN_NAME = 'profil_zeit'")->fetchColumn();
         if ($t && strtolower($t) !== 'bigint') $this->db->exec("ALTER TABLE ow_spieler MODIFY profil_zeit BIGINT UNSIGNED NOT NULL DEFAULT 0");   // (Millisekunden)
@@ -938,9 +945,11 @@ class MysqlLager {
         // Admin-Befehle verfallen NIE so – war der Weltrechner länger aus, holt er sie nach (sonst wäre Bezahltes weg)
         $this->db->exec("DELETE FROM ow_befehle WHERE fertig = 0 AND spieler_id <> 0 AND erstellt < NOW() - INTERVAL 10 MINUTE AND (art IS NULL OR art NOT IN ('" . implode("','", BEFEHLE_BEZAHLT) . "'))");
         // _id: seine Nummer (der Weltrechner meldet damit „bezahlt angenommen“), _nach: nach dem Zurückspielen nachgeholt – schon bezahlt
-        return array_map(function ($z) { $b = json_decode($z['befehl']); if (is_object($b)) { $b->_id = (int)$z['id']; if ((int)$z['nach']) $b->_nach = 1; }
+        // _t: wann der Server ihn bekam (ms) – stammt das Profil, an dem der Weltrechner sein Konto geeicht hat, von danach, steckt
+        // die Zahlung schon darin (Hauptbuch: nicht nochmal abbuchen)
+        return array_map(function ($z) { $b = json_decode($z['befehl']); if (is_object($b)) { $b->_id = (int)$z['id']; $b->_t = (int)$z['t'] * 1000; if ((int)$z['nach']) $b->_nach = 1; }
                 return ['id' => (int)$z['id'], 'von' => (int)$z['spieler_id'], 'b' => $b]; },
-            $this->db->query('SELECT id, spieler_id, befehl, nach FROM ow_befehle WHERE fertig = 0 ORDER BY id LIMIT 500')->fetchAll());
+            $this->db->query('SELECT id, spieler_id, befehl, nach, UNIX_TIMESTAMP(erstellt) t FROM ow_befehle WHERE fertig = 0 ORDER BY id LIMIT 500')->fetchAll());
     }
     // Nachrichten: der Weltrechner gibt jeder eine Nummer (mid) – nach einer verlorenen Antwort schickt er sie nochmal, abgelegt
     // wird sie trotzdem nur einmal. Abgeholt ist sie erst, wenn der Spieler sie in seinem Spielstand verbucht hat
@@ -987,11 +996,12 @@ class MysqlLager {
     function push_weg($ids) { $q = $this->db->prepare('DELETE FROM ow_push WHERE id = ?'); foreach ($ids as $id) $q->execute([(int)$id]); }
     // Nebel (3B): Sicht eines Spielers – Bitfeld vom Weltrechner + seine eigenen Basen (aus der Welt) → für nebel_sieht
     function sicht_laden($uid) {
-        $q = $this->db->prepare('SELECT sicht, sicht_v FROM ow_spieler WHERE id = ?'); $q->execute([$uid]); $z = $q->fetch() ?: ['sicht' => null, 'sicht_v' => 0];
+        $q = $this->db->prepare('SELECT sicht, sicht_v, armee_sicht FROM ow_spieler WHERE id = ?'); $q->execute([$uid]); $z = $q->fetch() ?: ['sicht' => null, 'sicht_v' => 0, 'armee_sicht' => null];
         $q = $this->db->prepare('SELECT basen FROM ow_bots WHERE spieler_id = 0 AND bot_id = ?'); $q->execute(['u' . (int)$uid]);
         $eigen = []; foreach ((array)json_decode((string)$q->fetchColumn(), true) as $id) if (is_numeric($id)) $eigen[(int)$id] = true;
         $bits = $z['sicht'] !== null ? (string)base64_decode((string)$z['sicht'], true) : '';
-        return ['bits' => $bits, 'eigen' => $eigen, 'v' => (int)$z['sicht_v']];
+        $armeen = []; foreach ((array)json_decode((string)$z['armee_sicht'], true) as $id) if (is_string($id)) $armeen[$id] = true;   // fremde Armeen/Felder, die er sieht (Weltrechner)
+        return ['bits' => $bits, 'eigen' => $eigen, 'v' => (int)$z['sicht_v'], 'armeen' => $armeen];
     }
     // Wachturm-Stufe eines Spielers – aus dem Hauptbuch des Weltrechners (nicht aus seinem Profil: das schickt sein Handy)
     function turm_stufe($uid) {
@@ -1000,6 +1010,7 @@ class MysqlLager {
         $l = $b['hb']['st']['tower'][0] ?? ($b['city']['levels']['tower'] ?? 0);
         return is_numeric($l) ? max(0, (int)$l) : 0;
     }
+    function armee_sicht_setzen($uid, $json) { $this->db->prepare('UPDATE ow_spieler SET armee_sicht = ?, sicht_v = sicht_v + 1 WHERE id = ? AND (armee_sicht IS NULL OR armee_sicht <> ?)')->execute([$json, $uid, $json]); }   // (geändert: neue Sicht → Teile ganz)
     function sicht_setzen($uid, $b64) { $this->db->prepare('UPDATE ow_spieler SET sicht = ?, sicht_v = sicht_v + 1 WHERE id = ? AND (sicht IS NULL OR sicht <> ?)')->execute([$b64, $uid, $b64]); }   // (gleich geblieben: nichts)
     function profil_setzen($uid, $p) { $this->db->prepare('UPDATE ow_spieler SET profil = ?, profil_zeit = ? WHERE id = ?')->execute([$p, (int)round(microtime(true) * 1000), $uid]); }   // (ms: zwei Profile in derselben Sekunde gehen nicht verloren)
     // Puls zählen (zugleich „online“ setzen) – gibt zurück, wie viele Pulse in dieser Minute schon kamen
@@ -1280,6 +1291,8 @@ function welt_puls($ich, $d) {
         else { $l->befehle_quittieren($d['quittung'] ?? []); $l->befehle_bezahlt_ok($d['bezahlt_ok'] ?? []); }   // diese Befehle stehen jetzt mit ihrer Wirkung in der gespeicherten Welt (bezahlt_ok: bezahlte, die der Weltrechner angenommen hat)
         // 3B: neue Sicht einzelner Spieler (vor den Nachrichten: dieselbe Reihenfolge wie beim Speichern eines Spielers – ow_spieler, dann ow_ereignisse – sonst könnten sich beide gegenseitig sperren; Bitfeld über die Insel-Nummern, base64)
         foreach (array_slice((array)($d['sicht'] ?? []), 0, 2000, true) as $an => $b64) if ((int)$an > 0 && is_string($b64) && strlen($b64) < 40000 && preg_match('/^[A-Za-z0-9+\/]*={0,2}$/', $b64)) $l->sicht_setzen((int)$an, $b64);
+        foreach (array_slice((array)($d['armee_sicht'] ?? []), 0, 2000, true) as $an => $ids) if ((int)$an > 0 && is_array($ids) && count($ids) <= 5000) {
+            $ids = array_values(array_filter($ids, function ($x) { return is_string($x) && preg_match('/^[A-Za-z0-9_-]{1,40}$/', $x); })); $l->armee_sicht_setzen((int)$an, json_encode($ids)); }
         foreach (array_slice((array)($d['ereignisse'] ?? []), 0, 2000) as $e) if (isset($e['an'], $e['e']) && (int)$e['an'] > 0 && is_array($e['e']) && in_array($e['e']['art'] ?? '', WELTRECHNER_NACHRICHTEN, true) && ($e['e']['art'] !== 'bundGeschenk' || bund_geschenk_ok($e['e'])) && ($e['e']['art'] !== 'haendlerWare' || haendler_ware_ok($e['e'])) && sauber($e['e'])) {
             $mid = is_string($e['mid'] ?? null) && preg_match('/^[A-Za-z0-9]{8,24}$/', $e['mid']) ? $e['mid'] : null;
             $j = json_encode($e['e'], JSON_UNESCAPED_UNICODE); if ($j !== false && strlen($j) < 200000) $l->ereignis_ablegen((int)$e['an'], $j, $mid); }
@@ -1299,9 +1312,10 @@ function welt_puls($ich, $d) {
     if (!$sys) {   // 3B: Nebel – Truppen nur für Inseln, die er sehen darf. Neue Sicht → diese Teile ganz (gefiltert) schicken
         $sicht = $l->sicht_laden($uid);
         if ((int)($d['sicht_v'] ?? -1) !== $sicht['v'] && $seit > 0) {
-            $ganz = $l->stand_laden(0, NEBEL_TEILE); $w = &$antwort['welt'];
+            $sk = array_merge(NEBEL_TEILE, ['openWaterArmies', 'openWaterFields']);   // (auch Armeen/Felder: was er jetzt sieht, kommt mit Zahlen)
+            $ganz = $l->stand_laden(0, $sk); $w = &$antwort['welt'];
             $t = (array)$w['setzen']; $f = (array)($w['flicken'] ?? []);
-            foreach (NEBEL_TEILE as $k) if (isset($ganz[$k])) { $t[$k] = $ganz[$k]; unset($f[$k]); }
+            foreach ($sk as $k) if (isset($ganz[$k])) { $t[$k] = $ganz[$k]; unset($f[$k]); }
             $w['setzen'] = (object)$t; $w['flicken'] = (object)$f; unset($w);
         }
         $antwort['welt'] = nebel_welt($antwort['welt'], $sicht);

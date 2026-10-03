@@ -157,7 +157,7 @@ function bundOp(who, b) {
     if (op === 'hilfe') return bundHilfe(who, b.von, b.nach, b.n) || fertig('');
     if (op === 'kiste') {                                          // im Shop eine große Kiste gekauft → Geschenk für die anderen (pro Tag gedeckelt)
         const c = HERO_CHESTS.find(c => c.id === b.c && c.gems >= 500); if (!c) return 'kaputt';
-        if (botById[who] && botById[who].mensch && window.WELT && WELT.kisteGekauft) { WELT.kisteGekauft(who, c.gems); return ''; }   // echter Spieler: erst, wenn das Hauptbuch den Kauf sieht
+        if (botById[who] && botById[who].mensch && window.WELT && WELT.kisteGekauft) { WELT.kisteGekauft(who, c); return ''; }   // echter Spieler: erst, wenn das Hauptbuch den Kauf sieht
         bundGeschenk(who, 'kiste'); return '';
     }
     return 'kaputt';
