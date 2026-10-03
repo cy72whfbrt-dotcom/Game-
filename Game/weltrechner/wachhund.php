@@ -114,7 +114,13 @@ function wachhund_runde($quelle = 'cron') {
         $z = wr_zustand(); $h = wr_herz(); $jetzt = time();
         $z['geprueft'] = $jetzt;
         // jede Stunde eine Sicherung
-        try { if ($jetzt - lager()->letzte_sicherung_zeit() >= 3600 && lager()->sicherung_anlegen()) wr_log('Sicherung der Welt angelegt'); } catch (Throwable $e) { wr_log('Sicherung fehlgeschlagen: ' . $e->getMessage()); }
+        // (höchstens ein Versuch pro Stunde – auch wenn er scheitert, z. B. weil der jetzige Stand unvollständig ist: sonst jede Minute
+        //  die ganze Welt unter der Welt-Sperre lesen)
+        if ($jetzt - (int)($z['sicherungVersuch'] ?? 0) >= 3600) {
+            try { if ($jetzt - lager()->letzte_sicherung_zeit() >= 3600) { $z['sicherungVersuch'] = $jetzt; wr_schreiben('zustand.php', $z);
+                if (lager()->sicherung_anlegen()) wr_log('Sicherung der Welt angelegt'); else wr_log('Sicherung NICHT angelegt: der jetzige Stand ist unvollständig'); } }
+            catch (Throwable $e) { wr_log('Sicherung fehlgeschlagen: ' . $e->getMessage()); }
+        }
 
         $pid = $h ? (int)($h['pid'] ?? 0) : 0;
         $laeuft = $pid && wr_laeuft($pid);

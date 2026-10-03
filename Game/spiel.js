@@ -7035,7 +7035,7 @@ setInterval(() => {
         const k = kampfKey(a), z = zuschauerKampf.get(k);
         if (z) { if (!a.fightEndsAt) a.fightEndsAt = z.ende; continue; }   // (neue Welt-Daten: Kampf läuft noch – nicht als „0:00“ zeigen)
         const mine = !a.attackerBotId, vsMe = a.attackerBotId && islandOwnerOf(a.targetId) === 'player';
-        const tgt = islandById[a.targetId], est = (mine || vsMe) && tgt ? fightEstimate(a) : null;
+        const tgt = islandById[a.targetId], est = (mine || (vsMe && a.rawTroops > 0)) && tgt ? fightEstimate(a) : null;   // (fremde Stärke nur mit Wachturm – sonst keine Vorschau-Schlacht mit falschen Zahlen)
         const ende = a.fightEndsAt && a.fightEndsAt > now ? a.fightEndsAt : now + (est ? fightDurationMs(est) : 4000);
         zuschauerKampf.set(k, { ende }); if (!a.fightEndsAt) a.fightEndsAt = ende;
         if (est && now - a.resolveAt < 15000) spawnMapBattle({ sourceId: a.sourceId, targetId: a.targetId, attackId: k, live: true, fightMs: ende - now, hero: a.hero || null,
@@ -12344,6 +12344,7 @@ if (window.WELT) {
         if (b.stufe <= L) return 'nein';                                   // doppelt geschickt – nichts zu tun
         if (b.stufe > L + 1) { warnen(who, 'ausbau', 'Ausbau springt: ' + islandTitle(islandById[b.insel]) + ' von Stufe ' + L + ' auf ' + b.stufe + ' – erlaubt ist nur +1.', b.stufe - L); return 'nein'; }
         const jetzt = Date.now(), damals = zahlOk(b.at) && b.at <= jetzt + 5000 && jetzt - b.at < 120000 && evThemaAktivAm(b.at, 'bau');   // (Bauherr: bezahlt hat er den Preis von da – nie aus der Zukunft)
+        if (b._nach) return 'ok';                                          // nach dem Zurückspielen nachgeholt: bezahlt hat er damals schon
         const m = wacheSehen(who), kosten = upgradeCostRoh(L) * (damals || evThemaAktiv('bau') ? .8 : 1);   // (der Rabatt nur EINMAL – vorher doppelt)
         if (wacheBezahlen(who, m, kosten)) return 'ok';
         return ende ? 'pleite' : 'warten';
@@ -12393,17 +12394,22 @@ if (window.WELT) {
             while (l.length) {
                 const x = l[0], ende = now >= x.bis;
                 if (art === 'ausbau') { const r = ausbauPruefen(who, x.b, ende); if (r === 'warten') break;
-                    if (r === 'ok') { islandLevels[x.b.insel] = (islandLevels[x.b.insel] || 1) + 1; evPunkte('bau', who, 2 + islandLevels[x.b.insel]); saveGame(); requestRender(); }
+                    if (r === 'ok') { islandLevels[x.b.insel] = (islandLevels[x.b.insel] || 1) + 1; evPunkte('bau', who, 2 + islandLevels[x.b.insel]); saveGame(); requestRender(); befehlBezahlt(x.b); }
                     if (r === 'pleite') {                  // nach 60 s immer noch nicht bezahlbar: ablehnen – die weiteren Stufen dieser Basis auch
                         const L = islandLevels[x.b.insel] || 1, m2 = wacheSehen(who), weitere = l.filter((y, i) => i > 0 && y.b.insel === x.b.insel).length;
-                        for (let i = l.length - 1; i > 0; i--) if (l[i].b.insel === x.b.insel) l.splice(i, 1);
+                        for (let i = l.length - 1; i > 0; i--) if (l[i].b.insel === x.b.insel) befehlFertig(l.splice(i, 1)[0]);
                         warnen(who, 'ausbau', 'Ausbau ohne Münzen: ' + islandTitle(islandById[x.b.insel]) + ' auf Stufe ' + (L + 1) + ' kostet ' + fz(upgradeCost(L)) + ', er kann höchstens ' + fz(m2.c.u + m2.c.vor + spielraumFrei(who, m2)) + ' haben – abgelehnt' + (weitere ? ' (und ' + weitere + ' weitere Stufen dieser Basis)' : '') + '.', upgradeCost(L));
                     } }
-                else { const n = truppenPruefen(who, x.b, ende); if (n < 0) break; truppenGeben(who, n); }
-                l.shift();
+                else { const n = truppenPruefen(who, x.b, ende); if (n < 0) break; truppenGeben(who, n); if (n > 0) befehlBezahlt(x.b); }
+                befehlFertig(l.shift());
             }
         }
     }
+    // Wartende Befehle (Ausbau, Truppen – bis 60 s, bis sein Profil die Zahlung zeigt) gelten erst als erledigt, wenn sie entschieden
+    // sind (welt.js quittiert sie erst dann – stürzt der Weltrechner vorher ab, kommen sie wieder und laufen dann). Angenommene
+    // bezahlte Befehle meldet er dem Server (nur die holt das Zurückspielen nach).
+    function befehlFertig(x) { if (x && x.wartet && x.b && x.b._id && WELT.befehlErledigt) WELT.befehlErledigt(x.b._id); }
+    function befehlBezahlt(b) { if (b && b._id && WELT.befehlBezahlt) WELT.befehlBezahlt(b._id); }
     // (vor jedem Puls) alle echten Spieler ansehen, Wartendes erledigen
     function wacheRunde() {
         for (const id in WELT.menschen) { if (!botById[id] || !loadBotState()[id]) continue; wacheSehen(id); wacheAbarbeiten(id); }
@@ -12556,7 +12562,7 @@ if (window.WELT) {
     // Anlegen/Ablegen ändert stW nicht. Vorher sah das Hauptbuch nur Sterne angelegter Teile: Verkauf eines Teils aus der Truhe
     // galt als „Gems springen“ (falscher Alarm, und die Gems fehlten beim Weltrechner).
     function hbSterne(who, hb, m, T) {
-        if (!Number.isFinite(hb.stW)) { hb.stW = T; hb.sternRes = Math.min(T, nn(hb.sternG) + 1500); hb.sternG = 0; return; }   // erstes Mal: was es schon gibt, gilt (gekappt)
+        if (!Number.isFinite(hb.stW)) { hb.stW = T; hb.sternRes = Math.min(T, 20000); hb.sternG = 0; return; }   // erstes Mal: was es schon gibt, gilt (wie beim ersten Sehen des Hauptbuchs – gekappt)
         const d = T - hb.stW;
         if (d > 0) { const x = Math.min(d, nn(hb.gA)); hb.gA = nn(hb.gA) - x; let rest = d - x; if (rest > 0 && hbZahlen(who, hb, m, { g: rest })) rest = 0;
             hb.sternRes = nn(hb.sternRes) + d - rest; hb.stW += d - rest; }   // (nicht Bezahltes zählt nicht – wird es verkauft, gibt es nichts zurück)
@@ -12843,10 +12849,10 @@ if (window.WELT) {
             const now = Date.now(), keys = [...new Set(b.keys.filter(kennungOk))].slice(0, 200), ms = [];
             for (const key of keys) { const m = marschVon(who, key); if (!m || m.fightEndsAt || m.resolveAt - now < 1500) continue; ms.push(m); }
             const kosten = ms.reduce((a, m) => a + speedUpCost(m), 0), hb = hbDa(who);
-            if (hb && kosten > 0 && !hbZahlen(who, hb, wacheSehen(who), { g: kosten })) { warnen(who, 'gems', 'Beschleunigen für ' + kosten + ' Gems – so viele kann er nicht haben. Abgelehnt.', kosten); return; }
+            if (hb && kosten > 0 && !b._nach && !hbZahlen(who, hb, wacheSehen(who), { g: kosten })) { warnen(who, 'gems', 'Beschleunigen für ' + kosten + ' Gems – so viele kann er nicht haben. Abgelehnt.', kosten); return; }
             for (const m of ms) { const rem = m.resolveAt - now;
                 const pr = Math.max(0, Math.min(.99, (now - m.startedAt) / Math.max(1, m.resolveAt - m.startedAt))); m.resolveAt = now + rem / 2; m.startedAt = m.resolveAt - (rem / 2) / (1 - pr); }
-            saveProgression();
+            saveProgression(); if (ms.length) befehlBezahlt(b);
         },
         spaehen(who, b) {                             // 3B: Erkundungs-Späher – der Weltrechner deckt seinen Nebel (auf dem Server) mit auf
             const hb = hbDa(who); if (!hb || !inselOk(b.ziel)) return;
@@ -12861,19 +12867,21 @@ if (window.WELT) {
         ausbau(who, b) {                              // die Münzen zahlt er selbst – der Weltrechner prüft, ob er sie haben kann
             const m = wm(who);
             if (zuOft(m, 'ausbau', 60, 10000)) { warnen(who, 'ausbau', 'Ausbau über 60-mal in 10 s – der Rest verfällt.'); return; }
-            m.warte.ausbau.push({ b, bis: Date.now() + WACHE_WARTEN_MS }); wacheAbarbeiten(who);
+            const x = { b, bis: Date.now() + WACHE_WARTEN_MS }; m.warte.ausbau.push(x); wacheAbarbeiten(who);
+            if (m.warte.ausbau.includes(x)) { x.wartet = true; return 'wartet'; }   // (noch nicht entschieden: welt.js quittiert ihn noch nicht)
         },
         hauptstadt(who, b) {
             if (!inselOk(b.insel)) return;
             const to = islandById[b.insel], bs = loadBotState()[who]; if (!to || to.type !== 'tower' || !gehoert(b.insel, who) || !bs) return;
             if (zuOft(wm(who), 'hauptstadt', 20, 3600000)) { warnen(who, 'hauptstadt', 'Hauptstadt über 20-mal in einer Stunde verlegt – abgelehnt.'); return; }
             if (pendingAttacks.some(a => a.targetId === b.insel)) return;   // nicht in eine Basis, auf die gerade ein Angriff läuft (wie bei den Mitspielern)
-            const hb = hbDa(who); if (hb && !hbZahlen(who, hb, wacheSehen(who), { g: TELEPORT_GEMS })) { warnen(who, 'gems', 'Hauptstadt verlegen für ' + TELEPORT_GEMS + ' Gems – so viele kann er nicht haben. Abgelehnt.', TELEPORT_GEMS); return; }
+            const hb = hbDa(who); if (hb && !b._nach && !hbZahlen(who, hb, wacheSehen(who), { g: TELEPORT_GEMS })) { warnen(who, 'gems', 'Hauptstadt verlegen für ' + TELEPORT_GEMS + ' Gems – so viele kann er nicht haben. Abgelehnt.', TELEPORT_GEMS); return; }
             const from = botCapitalOf(who); if (from !== null && from !== undefined && from !== b.insel) { islandTroops[b.insel] = (islandTroops[b.insel] || 0) + (islandTroops[from] || 0); islandTroops[from] = 0; }
-            bs.capital = b.insel; capitalCache = null; saveBotState(); saveGame(); requestRender();
+            bs.capital = b.insel; capitalCache = null; saveBotState(); saveGame(); requestRender(); befehlBezahlt(b);
         },
         truppen(who, b) {                             // geschenkte Truppen (Stufe, Thron-Shop, Lazarett, Fund, Admin) → Hauptstadt
-            wm(who).warte.truppen.push({ b, bis: Date.now() + WACHE_WARTEN_MS }); wacheAbarbeiten(who);
+            const x = { b, bis: Date.now() + WACHE_WARTEN_MS }, l = wm(who).warte.truppen; l.push(x); wacheAbarbeiten(who);
+            if (l.includes(x)) { x.wartet = true; return 'wartet'; }
         },
         tor(who, b) {
             if (!inselOk(b.tor) || islandById[b.tor].type !== 'gate' || !gehoert(b.tor, who) || !b.patch || typeof b.patch !== 'object') return;
@@ -12980,7 +12988,7 @@ if (window.WELT) {
         if (!botById[who]) { WELT.menschEintragen(who); window.__weltNeuerMensch(who); }
         if (!botById[who]) return;
         if (zuOft(wm(who), 'alle', 600, 60000)) { warnen(who, 'flut', 'Über 600 Befehle in einer Minute – der Rest verfällt.'); return; }
-        f(who, b);
+        return f(who, b);                              // ('wartet': noch nicht entschieden – siehe befehlFertig)
     };
     WELT.BEFEHLE = BEFEHLE;
     // für buendnis.js: Münzen prüfen (ohne abzuziehen – das geht als Nachricht „−Münzen“), Gutschrift für Geschenke, Warnungen

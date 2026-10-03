@@ -58,6 +58,9 @@
         spielerSeit: 0,
         befehle: [],                      // warten auf den nächsten Puls
         befehlFertig: new Set(),          // (Weltrechner) ausgeführte Befehle (Nummern), noch nicht quittiert – mit dem nächsten Puls
+        befehlWartet: new Set(),          // (Weltrechner) angenommen, aber noch nicht entschieden (Ausbau/Truppen warten aufs Profil) – nicht quittieren, nicht nochmal ausführen
+        befehlOk: new Set(),              // (Weltrechner) bezahlte Befehle, die angenommen wurden (Server: ok – nur die holt ein Zurückspielen nach)
+        befehleSpaeter: [],               // (Spieler) vom Server nicht angenommen (z. B. Stau) – in ein paar Sekunden nochmal
         ereignisFertig: (() => { try { const a = JSON.parse(S.daten.openWaterEreignisFertig || '[]'); return Array.isArray(a) ? a.filter(Number.isInteger).slice(-500) : []; } catch (e) { return []; } })(),   // (Spieler) die zuletzt verbuchten Nachrichten (stehen im eigenen Spielstand)
         ereignisseRaus: [],               // (Weltrechner) Nachrichten an andere Spieler
         sichtRaus: {},                    // (Weltrechner, 3B) neue Sicht je Spieler: uid → Bitfeld (base64) – nur für den Server
@@ -364,6 +367,7 @@
         try {
             const jetzt = Date.now();
             if (!SYSTEM && jetzt - profilAt > 10000) { const pr = J(meinProfil()); if (pr !== letztesProfil) { anfrage.profil = pr; letztesProfil = pr; } profilAt = jetzt; }
+            if (W.befehleSpaeter.length && jetzt - (W.spaeterT || 0) > 5000) { W.spaeterT = jetzt; W.befehle.push(...W.befehleSpaeter.splice(0).filter(befehlFrisch)); }
             if (W.befehle.length) anfrage.befehle = W.befehle.splice(0, 30);   // der Server nimmt höchstens 30 pro Puls – der Rest gleich im nächsten
             let gesendetKs = null;
             if (W.leiter) {
@@ -383,6 +387,7 @@
                 if (ks.length) gesendetKs = ks;
                 if (W.ereignisseRaus.length) anfrage.ereignisse = W.ereignisseRaus.splice(0).map(x => { if (!x.mid) x.mid = neueNummer(); return x; });   // (eine Wiederholung behält ihre Nummer)
                 anfrage.quittung = Array.from(W.befehlFertig);               // diese Befehle stecken jetzt in der Welt, die ich schicke
+                if (W.befehlOk.size) anfrage.bezahlt_ok = Array.from(W.befehlOk);
             }
             neuGesendet = anfrage.neuGesendet; delete anfrage.neuGesendet;
             const text = J(anfrage), gz = packen(text);
@@ -392,8 +397,12 @@
             if (!r.ok) throw new Error('HTTP ' + r.status);
             const a = await r.json();
             if (neuGesendet) Object.assign(gesendet, neuGesendet);   // der Server hat sie: ab jetzt nur noch Änderungen dazu
-            if (anfrage.befehle && W.ausgang.length) { const da = new Set(anfrage.befehle.map(b => b.cid)); W.ausgang = W.ausgang.filter(b => !da.has(b.cid)); ausgangSichern(); }   // liegen jetzt beim Server
-            if (!a.quittung_offen) for (const id of anfrage.quittung || []) W.befehlFertig.delete(id);   // quittiert: kommt nicht mehr (sonst beim nächsten Puls nochmal)
+            if (anfrage.befehle) {                                   // nur, was der Server angenommen hat, ist aus dem Ausgang raus – der Rest kommt gleich nochmal
+                const da = new Set(Array.isArray(a.befehle_ok) ? a.befehle_ok : anfrage.befehle.map(b => b.cid));
+                if (W.ausgang.length) { W.ausgang = W.ausgang.filter(b => !da.has(b.cid)); ausgangSichern(); }
+                const nicht = anfrage.befehle.filter(b => b.cid && !da.has(b.cid) && befehlFrisch(b)); if (nicht.length) W.befehleSpaeter.push(...nicht);
+            }
+            if (!a.quittung_offen) { for (const id of anfrage.quittung || []) W.befehlFertig.delete(id); for (const id of anfrage.bezahlt_ok || []) W.befehlOk.delete(id); }   // quittiert: kommt nicht mehr (sonst beim nächsten Puls nochmal)
             for (const k of a.welt_voll || []) { delete gesendet[k]; S.weltGeaendert.add(k === 'openWaterBotOwnedIslands' ? 'openWaterOwnedIslands' : k); }   // Flicken passte nicht: nächstes Mal ganz
             antwortVerarbeiten(a, anfrage);
         } catch (e) {
@@ -461,9 +470,9 @@
         // Befehle der anderen ausführen (nur Weltrechner)
         if (W.leiter && (a.befehle || []).length) gleichNochmal = true;
         for (const b of a.befehle || []) {
-            if (b.id && W.befehlFertig.has(b.id)) continue;                      // schon ausgeführt (noch nicht quittiert) – nicht nochmal
-            if (window.__weltBefehl) try { window.__weltBefehl('u' + b.von, b.b); } catch (e) { console.warn('Befehl', b, e); }
-            if (b.id) W.befehlFertig.add(b.id);
+            if (b.id && (W.befehlFertig.has(b.id) || W.befehlWartet.has(b.id))) continue;   // schon ausgeführt (noch nicht quittiert) oder wartet – nicht nochmal
+            let r; if (window.__weltBefehl) try { r = window.__weltBefehl('u' + b.von, b.b); } catch (e) { console.warn('Befehl', b, e); }
+            if (b.id) { if (r === 'wartet') W.befehlWartet.add(b.id); else W.befehlFertig.add(b.id); }
         }
         // Nachrichten an mich – jede genau einmal: die Nummern der verbuchten stehen im eigenen Spielstand und gehen mit der
         // nächsten Sicherung (zusammen mit Münzen, Gems … aus denselben Nachrichten) zum Server, erst dann gelten sie als abgeholt
@@ -477,6 +486,8 @@
         if (neu) { if (window.__weltSpeicherJetzt) window.__weltSpeicherJetzt(); W.ereignisFertig = W.ereignisFertig.slice(-500); S.privat('openWaterEreignisFertig', J(W.ereignisFertig)); }
     }
 
+    W.befehlErledigt = id => { if (W.befehlWartet.delete(id)) W.befehlFertig.add(id); };   // (spiel.js: ein wartender Befehl ist entschieden)
+    W.befehlBezahlt = id => { W.befehlOk.add(id); };
     // Befehl an den Weltrechner (bin ich es selbst, führt spiel.js ihn direkt aus)
     W.befehl = function (art, daten) {
         const b = Object.assign({ art, at: Date.now(), cid: neueNummer() }, daten || {});
@@ -496,7 +507,7 @@
         if (SYSTEM) setInterval(async () => {
             if (pulsLaeuft || S.gestoppt || !W.leiter || Date.now() - pulsStart < 300) return;
             try { const r = await fetch('server.php', { method: 'POST', headers: { 'X-Open-Water': '1', 'Content-Type': 'application/json' }, body: J({ aktion: 'befehle_da' }), credentials: 'same-origin', cache: 'no-store' });
-                if (r.ok && (await r.json()).offen > W.befehlFertig.size) puls(); } catch (e) {}   // mehr offen, als ich schon ausgeführt habe
+                if (r.ok && (await r.json()).offen > W.befehlFertig.size + W.befehlWartet.size) puls(); } catch (e) {}   // mehr offen, als ich schon ausgeführt habe (oder warten lasse)
         }, 300);
     };
 })();

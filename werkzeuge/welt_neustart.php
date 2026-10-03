@@ -9,6 +9,8 @@ header('Content-Type: text/plain; charset=utf-8');
 require __DIR__ . '/server.php';
 // Bleibt die Datei aus Versehen liegen, darf sie nichts mehr tun: höchstens 15 Minuten nach dem Hochladen gültig, danach (und nach
 // getaner Arbeit) löscht sie sich selbst. Dazu: nur per POST, nur in der Wartung, nur wenn der Weltrechner steht.
+// (Die Zeit ist die Datei-Zeit beim Hochladen – der Office-Editor setzt „jetzt“. Ein Werkzeug, das die alte Zeit mitnimmt, löst
+//  sofort das Selbstlöschen aus: dann vorher `touch` oder neu hochladen.)
 if (time() - (int)filemtime(__FILE__) > 900) { @unlink(__FILE__); http_response_code(404); exit("abgelaufen – Datei gelöscht\n"); }
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST' || ($_POST['ja'] ?? '') !== 'NEUSTART') exit("nichts gemacht (POST mit ja=NEUSTART fehlt)\n");   // (nur POST: ein bloßes Aufrufen – z. B. eine Link-Vorschau – löscht nichts)
 if (!wartung()) exit("nichts gemacht: zuerst Wartung an\n");

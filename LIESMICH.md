@@ -1377,3 +1377,33 @@ Rücklage, kein Alarm) · Bündnis-Kiste (ohne Kauf wartet, echter Kauf gibt gen
 (`profil_abbruch`, `genau_einmal`) · Login/Admin/CSP (`admin_csp`) · großer Klick-Test mit Server und Vorschau · keine
 PHP-Warnungen, keine Fehler im Weltrechner-Log, keine falschen Schummel-Alarme. Nebenbei: der lokale Test-Webserver fiel nach
 2 Std. aus (Zeitlimit) – der Weltrechner hat das ohne Schaden überstanden und lief danach normal weiter.
+
+## 40. Unabhängiger Code-Durchlauf nach den Fixes (3.10.) – NICHT hochgeladen
+Ein eigener Prüfer hat nur die Änderungen seit Abschnitt 36 gelesen und gezielt nach neuen Fehlern gesucht. Ergebnis und was
+damit passiert ist:
+- **Zurückspielen ging nicht, wenn die jetzige Welt kaputt ist** (Vorab-Sicherung scheiterte → Abbruch) – genau dann braucht man
+  es. Jetzt: ohne Vorab-Sicherung weiter (wird geloggt).
+- **Bezahlte Befehle konnten bei einem Stau (200 offene) verloren gehen:** der Server nahm sie stumm nicht an, das Handy löschte
+  sie trotzdem aus dem Ausgang. Jetzt meldet der Server die angenommenen Nummern (`befehle_ok`); nur die gehen aus dem Ausgang,
+  der Rest kommt nach 5 s nochmal. Bezahlte zählen nicht zum Stau-Limit.
+- **Nachgeholte bezahlte Befehle wurden nach dem Zurückspielen nochmal berechnet** (Hauptbuch frisch geeicht → doppelt). Jetzt
+  meldet der Weltrechner, welche bezahlten Befehle er ANGENOMMEN hat (`bezahlt_ok` → Spalte `ok`); nur die werden nachgeholt
+  (`nach`), und zwar ohne nochmal zu zahlen (`_nach`; Ausbau, Hauptstadt, Beschleunigen – Truppen prüft er normal). `_id`/`_nach`
+  setzt nur der Server (vom Handy werden Felder mit `_` entfernt).
+- **Dabei gefunden (älter):** Ausbau und Truppen-Geschenke warten beim Weltrechner bis 60 s auf das Profil – sie galten aber sofort
+  als erledigt; ein Absturz in der Zeit verlor sie. Jetzt quittiert er sie erst, wenn sie entschieden sind (`'wartet'`,
+  `W.befehlWartet`); nach einem Absturz kommen sie wieder.
+- Stern-Gems: die Übernahme beim ersten Mal war auf 1.500 Gems gedeckelt (mehr Sterne → wieder falscher Alarm) → jetzt 20.000.
+- Angriff auf die eigene Basis: die Vorschau-Schlacht rechnete mit den (jetzt verborgenen) fremden Zahlen falsch → nur noch mit
+  Wachturm-Zahlen, sonst ohne Vorschau (das Ergebnis kommt wie immer vom Weltrechner).
+- Sicherung: höchstens ein Versuch pro Stunde (vorher bei unvollständigem Stand jede Minute die ganze Welt unter der Sperre).
+- Weltrechner-Puls schreibt die Sicht vor den Nachrichten (gleiche Reihenfolge wie beim Speichern eines Spielers – keine
+  gegenseitige Sperre).
+- welt_neustart.php: Hinweis zur Datei-Zeit (Editor setzt „jetzt“).
+**Bewusst so:** Abschieds-Sicherung über 60 KB (sehr selten; normal 2–5 KB) geht ohne keepalive – wird sie beim Schließen
+abgebrochen, fehlen höchstens die letzten 3 s, nie etwas halb · Bündnis-Kiste zählt jede echte Gem-Ausgabe (mind. halber Preis)
+– ohne echte Ausgabe gibt es nie ein Geschenk.
+**Getestet:** neuer Test `warte_test` (wartender Befehl + Absturz → genau einmal; Stau → bezahlter angenommen, normaler bleibt
+im Ausgang und kommt danach genau einmal) und alle bisherigen: Unit, `absturz_test`, `ausfall_test`, `ausgang_test`,
+`profil_abbruch`, `genau_einmal`, `rest_test`, `admin_csp`, großer Klick-Test Server + Vorschau – alles grün, keine PHP-Warnungen,
+keine Fehler im Weltrechner-Log, keine falschen Schummel-Alarme.
