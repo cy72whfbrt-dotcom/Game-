@@ -1174,3 +1174,57 @@ Alle Dateien wurden durchgesehen (Server/PHP + Weltrechner, Spiel-Module, spiel.
 - **Bewusst gelassen:** welt_neustart.php hat keinen Admin-Login (liegt nur Sekunden mit Zufallsnamen in der Wartung auf dem
   Server); CSP mit 'unsafe-inline' (wegen window.__OW); einige alte Kommentare in baukunst.js.
 
+## 36. Tiefen-Prüfung des ganzen Spiels (Alexander 3.10.: „extrem gründlich, lückenlos, systemübergreifend“) – NICHT hochgeladen
+9 Prüfer (Login/Konto, Netzwerk/Speichern, Weltrechner, Schummel-Schutz, Kampf, Wirtschaft, Events/KI/Bündnisse, Oberfläche,
+Zusammenspiel der Systeme) – rund 170 Funde, jeder am Code nachgeprüft, die echten behoben. Wichtigste Änderungen:
+
+**Genau einmal (Befehle und Nachrichten)** – vorher konnten Befehle doppelt laufen oder verloren gehen und Belohnungen doppelt
+ankommen oder verschwinden (verlorene Antwort, Neuladen, Weltrechner-Neustart):
+- Befehle tragen eine Nummer vom Handy (`cid`, eindeutig je Spieler – eine Wiederholung wird nicht neu abgelegt). Der Server
+  löscht sie nicht mehr beim Abholen: der Weltrechner quittiert die ausgeführten Nummern (`quittung`) erst zusammen mit der Welt,
+  in der ihre Wirkung steckt → `fertig`. Nach einem Absturz kommen nicht quittierte wieder (und laufen dann richtig).
+- Nachrichten an Spieler tragen eine Nummer vom Weltrechner (`mid`, eindeutig). Abgeholt sind sie erst, wenn der Spieler sie in
+  seinem Spielstand verbucht hat (`openWaterEreignisFertig`, mit Münzen/Gems derselben Sicherung) → `abgeholt`.
+- Sicherungen tragen eine laufende Nummer (`speicher_nr`): eine ältere überschreibt nie eine neuere.
+- `profil_zeit` in Millisekunden (zwei Profile in derselben Sekunde gingen verloren).
+- Serverfehler = 500 (wird wiederholt), 503 nur noch Wartung (vorher flog bei jedem Datenbank-Hänger jeder raus, und der
+  Weltrechner beendete sich „geplant“).
+- Tabellen werden nur geprüft, wenn sich `MysqlLager::TABELLEN_STAND` ändert (BEI JEDER TABELLEN-ÄNDERUNG HOCHZÄHLEN).
+- Weltrechner: Produktion fängt Fehler ab (blieb sonst für immer stehen), kein zweiter Weltrechner bei frischem Herzschlag,
+  keine Umleitungen (Schlüssel), deutsche Zeit (`TZ=Europe/Berlin`), Sicherungen in einem Stand, Zurückspielen sperrt den alten,
+  Gewinne während eines laufenden Pulses gehen nicht mehr verloren, Nachrichten des ersten Pulses gehen nicht verloren.
+
+**Schummel-Schutz:** gefälschte Verwundete (→ Gratis-Truppen) und gefälschte Thron-Punkte (→ Gratis-Truppen) zählen nicht mehr ·
+Wege, Brücken und fremde Tore prüft jetzt auch der Weltrechner (Angriff, Senden, Sammeln, Lager, Invasion, Armeen) · Hauptstadt
+verlegen kostet die 50 Gems auch im Hauptbuch und geht nicht in eine angegriffene Basis · Marsch-Gruppen nur vom selben Ort, 60 s
+ab dem ersten Marsch · ein beim Angreifen gefallener Schild kommt nicht gratis zurück · Bauherr-Rabatt nur einmal, nie „aus der
+Zukunft“ · keine Gem-Gutschrift für Offline-Tage · keine Bruchteil-Truppen · zurückkehrende Märsche nicht nochmal umkehren · kein
+Titel an sich selbst · Funde höchstens 12 in 10 Min.
+
+**Kämpfe/Events/KI:** Kisten vom Tagesboss und aus Barbaren-Lagern kommen bei echten Spielern an (gingen verloren) · Kriegsherr:
+echte Spieler bekommen Preis und Bericht · KI nimmt zum Neustart keinem Spieler (und keinem mit Schild) eine Basis · keine
+Straf-Titel als Lückenfüller für Spieler · auf dem Weltrechner keine Schein-Hauptstadt mehr (eine Basis war uneinnehmbar) · kein
+Kampf mehr gegen eine inzwischen eigene/verbündete Basis.
+
+**Wirtschaft:** Tagesaufgabe „Erobere …“, Thron-Minuten und Helden-Zünder zählen jetzt für echte Spieler · Händler-Waren sind im
+Hauptbuch bezahlt · übersprungene Truppen-Stufen kosten auf dem Handy wie im Hauptbuch · Saison-Pass/Thron-Münzen auf einmal
+sind erlaubt · Premium-Pass bringt nicht mehr Gems zurück als er kostet (Skin schon da: 150 statt 1000 Gems) · Schild höchstens
+8 Tage am Stück · Erfolgs-Gems sofort gesichert.
+
+**Login:** Bremsen zählen nur Fehlversuche (eine Schulklasse sperrt sich nicht mehr aus), IPv6 je /64, Namen ohne
+Doppelgänger-Schrift und nie „Spieler 12“, Neuladen gebremst (30/Min.), „Hier weiterspielen“ nur von der eigenen Seite, neues
+Passwort beendet Handy-Nachrichten an alte Geräte, Welt-Neustart nur per POST (`curl -d ja=NEUSTART …`).
+
+**Oberfläche:** Doppel-Tipp kostet nie doppelt Gems (Skill-Reset, 2. Bauarbeiter, Beschleunigen) · „Verlegen“ läuft nach 20 s
+ab · 3D-Verlust (iPhone im Hintergrund) schaltet auf die gezeichneten Bilder um · kleinerer Bild-Speicher · Anleitung-Uhr stoppt ·
+Anmelde-Formular nur einmal absenden.
+
+**Getestet:** alle Tests, Klick-Test Vorschau, Server + Weltrechner mit Welt-Neustart, dazu gezielt: Belohnung kommt an und sofort
+neu laden → genau einmal; dieselbe Nachricht zweimal → einmal; derselbe Befehl zweimal → einmal. Kein falscher Alarm.
+
+**Bekannt, bewusst (noch) nicht geändert:** Bündnis-Geschenk „große Kiste“ prüft den Kauf nicht (höchstens 3/Tag, kleine
+Geschenke) · Hauptbuch zählt keine Bauarbeiter-Plätze · Stern-Gems beim Verkaufen · Tagesboss zahlt nichts, wenn er überlebt
+(so gewollt?) · Gleichstand im Schaden: wer zuerst traf, ist vorn · Marschgrößen anderer sind in den Daten sichtbar (nur Truppen
+in Basen sind im Nebel) · die Spielseite liegt auf derselben Adresse wie andere Seiten des Office-Servers (Cookie nur per Pfad
+getrennt) · CSP mit 'unsafe-inline'.
+
