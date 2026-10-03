@@ -85,7 +85,7 @@ function wr_starten() {
     }
     if ($rechte === '') wr_log('WARNUNG: Node kennt den Sicherheitsmodus nicht – Weltrechner läuft ohne ihn (Node aktualisieren)');
     $cmd = 'exec ' . (trim((string)@shell_exec('command -v setsid')) !== '' ? 'setsid ' : '') . 'nohup nice -n 19 ' . escapeshellarg(wr_node()) . ' ' . $rechte . ' --max-old-space-size=450 start.js >> log.php 2>&1 < /dev/null';
-    $env = ['OW_URL' => $url, 'OW_SCHLUESSEL' => weltrechner_schluessel(), 'OW_SPEICHER_MB' => (string)WR_SPEICHER_MB, 'PATH' => (string)(getenv('PATH') ?: '/usr/local/bin:/usr/bin:/bin')];
+    $env = ['OW_URL' => $url, 'OW_SCHLUESSEL' => weltrechner_schluessel(), 'OW_SPEICHER_MB' => (string)WR_SPEICHER_MB, 'TZ' => 'Europe/Berlin', 'PATH' => (string)(getenv('PATH') ?: '/usr/local/bin:/usr/bin:/bin')];
     // ganz vom Aufrufer lösen (eigene Gruppe, keine offene Leitung) – sonst wartet PHP, bis der Weltrechner endet
     $p = proc_open('(' . $cmd . ') > /dev/null 2>&1 &', [0 => ['file', '/dev/null', 'r'], 1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']], $leit, WR_ORDNER, $env);
     if (is_resource($p)) proc_close($p);
@@ -136,9 +136,11 @@ function wachhund_runde($quelle = 'cron') {
         if ($z['gesperrt']) { wr_schreiben('zustand.php', $z); return 'gesperrt'; }
         if (wartung()) { wr_schreiben('zustand.php', $z); return 'wartung'; }
         if ($jetzt - $letzterStart < 50) { wr_schreiben('zustand.php', $z); return 'gerade gestartet'; }   // höchstens ein Start pro Minute
+        // frischer Herzschlag ohne Ende-Meldung, aber kein Prozess gefunden (ps eingeschränkt?): lieber nicht – sonst liefen zwei
+        if ($h && empty($h['ende']) && $jetzt - (int)($h['zeit'] / 1000) <= WR_HERZ_ALT) { wr_schreiben('zustand.php', $z); return 'herz frisch'; }
         $z['starts'][] = $jetzt; $z['starts'] = array_slice($z['starts'], -30);
         wr_schreiben('zustand.php', $z);
-        try { $i = lager()->welt_info(); if ((int)$i['leiter_id'] === 0) lager()->leiter_setzen(0, '', 0); } catch (Throwable $e) {}   // keiner läuft: der Platz ist frei
+        try { $i = lager()->welt_info(); if ((int)$i['leiter_id'] === 0) lager()->leiter_setzen(0, '', 0); } catch (Throwable $e) {}   // keiner läuft (Herzschlag alt oder beendet): der Platz ist frei
         wr_starten();
         return 'gestartet';
     } finally { flock($f, LOCK_UN); fclose($f); }
@@ -146,7 +148,7 @@ function wachhund_runde($quelle = 'cron') {
 
 // Admin: Sperre aufheben (die Wartung beendet Alexander selbst, wenn alles wieder gut ist)
 function wachhund_entsperren() {
-    $z = wr_zustand(); $z['gesperrt'] = false; $z['grund'] = ''; $z['abstuerze'] = []; $z['alarm'] = null; $z['starts'] = [];
+    $z = wr_zustand(); $z['gesperrt'] = false; $z['grund'] = ''; $z['abstuerze'] = []; $z['pruefer'] = []; $z['alarm'] = null; $z['starts'] = [];
     wr_schreiben('zustand.php', $z); wr_log('Sperre vom Admin aufgehoben');
 }
 // Admin: neu starten (jetzt gleich)

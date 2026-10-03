@@ -57,6 +57,8 @@
         menschen: {},                     // u<id> → { id, name, online, profil }
         spielerSeit: 0,
         befehle: [],                      // warten auf den nächsten Puls
+        befehlFertig: new Set(),          // (Weltrechner) ausgeführte Befehle (Nummern), noch nicht quittiert – mit dem nächsten Puls
+        ereignisFertig: (() => { try { const a = JSON.parse(S.daten.openWaterEreignisFertig || '[]'); return Array.isArray(a) ? a.filter(Number.isInteger).slice(-500) : []; } catch (e) { return []; } })(),   // (Spieler) die zuletzt verbuchten Nachrichten (stehen im eigenen Spielstand)
         ereignisseRaus: [],               // (Weltrechner) Nachrichten an andere Spieler
         sichtRaus: {},                    // (Weltrechner, 3B) neue Sicht je Spieler: uid → Bitfeld (base64) – nur für den Server
         sichtV: typeof OW.sicht_v === 'number' ? OW.sicht_v : -1,   // (Spieler, 3B) Stand der Sicht, die ich habe
@@ -237,7 +239,8 @@
         b.frames = lk.frame ? [lk.frame] : []; b.titles = lk.title ? [lk.title] : []; b.throneLook = lk.throne ? 1 : 0;
         b.lookFrame = lk.frame || null; b.lookTitle = lk.title || null;
         const st = p.stats || {};
-        b.stats = Object.assign({}, b.stats || {}, { caps: st.captures || 0, pvp: st.pvpWins || 0, defs: st.defends || 0, bosses: st.bosses || 0, tpEarned: p.earned || 0 });
+        b.stats = Object.assign({}, b.stats || {}, { caps: st.captures || 0, pvp: st.pvpWins || 0, defs: st.defends || 0, bosses: st.bosses || 0,
+            tpEarned: SYSTEM ? ((alt && alt.stats && alt.stats.tpEarned) || (b.stats && b.stats.tpEarned) || 0) : p.earned || 0 });   // (der Weltrechner zählt die Thron-Punkte selbst – nie, was das Handy behauptet)
         b.achLook = b.achLook || []; b.goals = b.goals || {};
         return b;
     }
@@ -297,10 +300,13 @@
     }
     // (Weltrechner) was hat sich bei den anderen Menschen getan? → Nachrichten
     function deltasSammeln() {
-        for (const id in W.menschen) {
-            if (id === ICH || !botById(id)) continue;
+        for (const id in W.menschen) deltaEinen(id);
+    }
+    function deltaEinen(id) {
+        {
+            if (id === ICH || !botById(id)) return;
             const jetzt = topf(id), alt = basis[id];
-            if (!alt) { basis[id] = jetzt; continue; }
+            if (!alt) { basis[id] = jetzt; return; }
             const e = {};
             for (const k of ['coins', 'gems', 'tp', 'xp', 'wounded']) { const dd = jetzt[k] - alt[k]; if (Math.abs(dd) > 1e-9) e[k] = dd; }
             const sh = {}; for (const h in jetzt.sh) { const dd = jetzt.sh[h] - (alt.sh[h] || 0); if (dd) sh[h] = dd; } if (Object.keys(sh).length) e.sh = sh;
@@ -330,11 +336,13 @@
     function botById(id) { return typeof BOT_DEFS !== 'undefined' && BOT_DEFS.find(b => b.id === id); }
     W.nachricht = function (uid, e) { if (('u' + uid) === ICH) { for (const f of W.beiNachricht) try { f(e); } catch (x) { console.warn(x); } } else W.ereignisseRaus.push({ an: uid, e }); };
 
+    function neueNummer() { let t = ''; const z = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'; const r = new Uint32Array(16); (window.crypto || crypto).getRandomValues(r); for (const x of r) t += z[x % z.length]; return t; }   // für Befehle und Nachrichten (genau einmal)
     function packen(text) { try { if (window.fflate) return window.fflate.gzipSync(window.fflate.strToU8(text), { level: 6 }); } catch (e) {} return null; }
 
     async function puls() {
         if (pulsLaeuft || S.gestoppt) return;
         pulsLaeuft = true; pulsStart = Date.now();
+        let neuGesendet = null;
         const anfrage = { aktion: 'puls', token: S.token, seit: W.version, spieler_seit: W.spielerSeit };
         if (!SYSTEM) anfrage.sicht_v = W.sichtV;                              // 3B: welche Sicht (Nebel auf dem Server) ich schon habe
         else if (Object.keys(W.sichtRaus).length) { anfrage.sicht = W.sichtRaus; W.sichtRaus = {}; }   // (Weltrechner) neue Sicht einzelner Spieler
@@ -344,8 +352,8 @@
             if (W.befehle.length) anfrage.befehle = W.befehle.splice(0, 30);   // der Server nimmt höchstens 30 pro Puls – der Rest gleich im nächsten
             let gesendetKs = null;
             if (W.leiter) {
-                if (typeof window.__weltVorPuls === 'function') window.__weltVorPuls();   // spiel.js: alles in die Daten schreiben
-                deltasSammeln();
+                deltasSammeln();                                                       // erst die Nachrichten (ändert dOffen) …
+                if (typeof window.__weltVorPuls === 'function') window.__weltVorPuls();   // … dann alles in die Daten schreiben (dOffen im selben Stand)
                 const ks = Array.from(S.weltGeaendert); S.weltGeaendert.clear();
                 anfrage.welt = { setzen: ks.length ? clientZuWelt(ks) : {}, loeschen: [], welt_zeit: jetzt };
                 // große Teile nur als Änderung, wenn das deutlich kleiner ist (Stand erst nach gutem Puls übernehmen)
@@ -358,21 +366,25 @@
                     if (f.length < anfrage.welt.setzen[k].length * .6) { (anfrage.welt.flicken || (anfrage.welt.flicken = {}))[k] = f; delete anfrage.welt.setzen[k]; }
                 }
                 if (ks.length) gesendetKs = ks;
-                if (W.ereignisseRaus.length) anfrage.ereignisse = W.ereignisseRaus.splice(0);
+                if (W.ereignisseRaus.length) anfrage.ereignisse = W.ereignisseRaus.splice(0).map(x => { if (!x.mid) x.mid = neueNummer(); return x; });   // (eine Wiederholung behält ihre Nummer)
+                anfrage.quittung = Array.from(W.befehlFertig);               // diese Befehle stecken jetzt in der Welt, die ich schicke
             }
-            const neuGesendet = anfrage.neuGesendet; delete anfrage.neuGesendet;
+            neuGesendet = anfrage.neuGesendet; delete anfrage.neuGesendet;
             const text = J(anfrage), gz = packen(text);
             const kopf = { 'X-Open-Water': '1', 'Content-Type': 'application/octet-stream' }; if (gz) kopf['X-Gepackt'] = '1';
             const r = await fetch('server.php', { method: 'POST', headers: kopf, body: gz || text, credentials: 'same-origin', cache: 'no-store' });
-            if (r.status === 409 || r.status === 401 || r.status === 503) { if (SYSTEM && window.__weltrechnerEnde) window.__weltrechnerEnde(r.status); else S.rauswurf(r.status); return; }
+            if (r.status === 409 || r.status === 401 || r.status === 503) {   /* 503 = nur Wartung; ein Serverfehler ist 500 und wird wiederholt */ if (SYSTEM && window.__weltrechnerEnde) window.__weltrechnerEnde(r.status); else S.rauswurf(r.status); return; }
             if (!r.ok) throw new Error('HTTP ' + r.status);
             const a = await r.json();
             if (neuGesendet) Object.assign(gesendet, neuGesendet);   // der Server hat sie: ab jetzt nur noch Änderungen dazu
+            for (const id of anfrage.quittung || []) W.befehlFertig.delete(id);   // quittiert: kommt nicht mehr
             for (const k of a.welt_voll || []) { delete gesendet[k]; S.weltGeaendert.add(k === 'openWaterBotOwnedIslands' ? 'openWaterOwnedIslands' : k); }   // Flicken passte nicht: nächstes Mal ganz
             antwortVerarbeiten(a, anfrage);
         } catch (e) {
-            // nichts verloren: Befehle/Welt-Teile/Nachrichten beim nächsten Mal nochmal
-            if (anfrage.befehle) W.befehle.unshift(...anfrage.befehle);
+            // nichts verloren: Befehle/Welt-Teile/Nachrichten beim nächsten Mal nochmal (mit derselben Nummer – der Server legt
+            // nichts doppelt ab). Ganz alte Befehle nicht mehr: die Lage hat sich geändert.
+            if (anfrage.befehle) W.befehle.unshift(...anfrage.befehle.filter(b => Date.now() - (b.at || 0) < 5 * 60000));
+            if (neuGesendet) for (const k in neuGesendet) delete gesendet[k];   // ob der Server sie hat, ist unklar: nächstes Mal ganz statt als Änderung
             if (anfrage.welt) for (const k of Object.keys(Object.assign({}, anfrage.welt.setzen, anfrage.welt.flicken))) S.weltGeaendert.add(k === 'openWaterBotOwnedIslands' ? 'openWaterOwnedIslands' : k);
             if (anfrage.ereignisse) W.ereignisseRaus.unshift(...anfrage.ereignisse);
             if (anfrage.sicht) W.sichtRaus = Object.assign(anfrage.sicht, W.sichtRaus);
@@ -395,6 +407,7 @@
             // neue Profile anderer Menschen: ihren Mitspieler-Datensatz und ihren Münz-Spiegel auffrischen
             for (const id in W.menschen) {
                 const m = W.menschen[id]; if (!m.profilNeu || id === ICH) continue; m.profilNeu = false;
+                if (W.leiter) deltaEinen(id);   // was seit dem Puls-Start dazukam (Beute, Ertrag …), erst als Nachricht verbuchen – sonst überschreibt es das Profil
                 if (typeof botState !== 'undefined' && botState && botState[id]) Object.assign(botState[id], profilZuBot(m.profil, botState[id], id));
                 if (typeof botCoins !== 'undefined' && m.profil) { let c = Math.max(0, Math.min(1e15, +m.profil.coins || 0)); if (SYSTEM && typeof W.kontoMuenzen === 'function') c = Math.min(c, W.kontoMuenzen(id)); botCoins[id] = c; }   // (3B: nie mehr, als sein Konto hergibt)
                 if (W.leiter) basis[id] = topf(id);
@@ -430,25 +443,40 @@
         if (W.leiter && W.version === 0 && W.neueWelt) { W.neueWelt = false; for (const k of S.WELT) if (k in S.daten) S.weltGeaendert.add(k); }   // ganz neue Welt: alles schicken
         // Befehle der anderen ausführen (nur Weltrechner)
         if (W.leiter && (a.befehle || []).length) gleichNochmal = true;
-        for (const b of a.befehle || []) if (window.__weltBefehl) try { window.__weltBefehl('u' + b.von, b.b); } catch (e) { console.warn('Befehl', b, e); }
-        // Nachrichten an mich
-        for (const e of a.ereignisse || []) for (const f of W.beiNachricht) try { f(e); } catch (x) { console.warn(x); }
+        for (const b of a.befehle || []) {
+            if (b.id && W.befehlFertig.has(b.id)) continue;                      // schon ausgeführt (noch nicht quittiert) – nicht nochmal
+            if (window.__weltBefehl) try { window.__weltBefehl('u' + b.von, b.b); } catch (e) { console.warn('Befehl', b, e); }
+            if (b.id) W.befehlFertig.add(b.id);
+        }
+        // Nachrichten an mich – jede genau einmal: die Nummern der verbuchten stehen im eigenen Spielstand und gehen mit der
+        // nächsten Sicherung (zusammen mit Münzen, Gems … aus denselben Nachrichten) zum Server, erst dann gelten sie als abgeholt
+        const fertig = new Set(W.ereignisFertig); let neu = false;
+        for (const e of a.ereignisse || []) {
+            const id = e && e._eid; if (id && fertig.has(id)) continue;
+            if (e) delete e._eid;
+            for (const f of W.beiNachricht) try { f(e); } catch (x) { console.warn(x); }
+            if (id) { fertig.add(id); W.ereignisFertig.push(id); neu = true; }
+        }
+        if (neu) { if (window.__weltSpeicherJetzt) window.__weltSpeicherJetzt(); W.ereignisFertig = W.ereignisFertig.slice(-500); S.privat('openWaterEreignisFertig', J(W.ereignisFertig)); }
     }
 
     // Befehl an den Weltrechner (bin ich es selbst, führt spiel.js ihn direkt aus)
     W.befehl = function (art, daten) {
         try { if (!SYSTEM && window.__owSofort) window.__owSofort(false); } catch (e) {}   // erst den eigenen Stand (bezahlte Münzen) sichern, dann der Befehl
-        W.befehle.push(Object.assign({ art, at: Date.now() }, daten || {})); setTimeout(puls, 150);
+        W.befehle.push(Object.assign({ art, at: Date.now(), cid: neueNummer() }, daten || {})); setTimeout(puls, 150);
         if (!W.leiter) { setTimeout(puls, 1100); setTimeout(puls, 2000); }   // das Ergebnis vom Weltrechner bald abholen (nicht erst mit dem nächsten 2-s-Puls)
     };
 
     W.start = function () {
+        // erst, wenn alle Skripte da sind (bündnis.js, haendler.js, aufbau.js hängen sich an die Nachrichten) – sonst gingen die
+        // Nachrichten des ersten Pulses verloren
+        if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', W.start, { once: true }); return; }
         puls(); setInterval(puls, PULS_MS); document.addEventListener('visibilitychange', () => { if (!document.hidden) puls(); });
         // (Weltrechner) alle 0,3 s kurz nachsehen, ob Befehle da sind – dann sofort rechnen, statt bis zum nächsten Puls zu warten
         if (SYSTEM) setInterval(async () => {
             if (pulsLaeuft || S.gestoppt || !W.leiter || Date.now() - pulsStart < 300) return;
             try { const r = await fetch('server.php', { method: 'POST', headers: { 'X-Open-Water': '1', 'Content-Type': 'application/json' }, body: J({ aktion: 'befehle_da' }), credentials: 'same-origin', cache: 'no-store' });
-                if (r.ok && (await r.json()).da) puls(); } catch (e) {}
+                if (r.ok && (await r.json()).offen > W.befehlFertig.size) puls(); } catch (e) {}   // mehr offen, als ich schon ausgeführt habe
         }, 300);
     };
 })();

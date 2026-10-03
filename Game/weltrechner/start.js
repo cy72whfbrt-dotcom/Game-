@@ -16,6 +16,7 @@
 //   - zu viele Fehler pro Minute → beenden
 //   - Wartung → sauber beenden (kein Absturz)
 'use strict';
+process.env.TZ = process.env.TZ || 'Europe/Berlin';   // Tage, Wochen-Event, Invasion, Drache: deutsche Zeit (wie bei den Spielern)
 const fs = require('fs'), path = require('path');
 
 const ORDNER = __dirname, GAME = path.join(__dirname, '..');
@@ -92,7 +93,7 @@ async function holen(url, opt) {
     let body = opt.body; if (body && typeof body !== 'string') body = Buffer.from(body.buffer ? new Uint8Array(body.buffer, body.byteOffset, body.byteLength) : body);
     const ziel = new URL(url, URL_BASIS + 'spiel.php').href;
     if (!ziel.startsWith(URL_BASIS)) throw new Error('fremde Adresse – der Schlüssel geht nur an den eigenen Server');
-    return fetch(ziel, { method: opt.method || 'GET', headers: kopf, body, signal: AbortSignal.timeout(30000) });
+    return fetch(ziel, { method: opt.method || 'GET', headers: kopf, body, redirect: 'error', signal: AbortSignal.timeout(30000) });   // (nie einer Umleitung folgen – der Schlüssel ginge mit)
 }
 
 // ===== Prüfer: sind die Zahlen der Welt in Ordnung? (läuft im Spiel, vor jedem Schreiben) =====

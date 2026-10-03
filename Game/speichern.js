@@ -115,10 +115,11 @@
     // mit "keepalive" - so kommt die Sicherung auch an, wenn die Seite gleich danach weg ist.
     var MAX_KEEPALIVE = 60000;           // Browser lassen beim Schließen nur ~64 KB pro Sicherung zu
     var imFlug = new Set();              // Schlüssel der laufenden normalen Übertragung (wird beim Schließen mitgeschickt)
-    function paketText(keys, abschied) {
+    var speicherNr = 0;                  // laufende Nummer: der Server schreibt nie eine ältere Sicherung über eine neuere
+    function paketText(keys, abschied, nr) {
         var setzen = {}, loeschen = [];
         keys.forEach(function (k) { if (k in daten) setzen[k] = daten[k]; else loeschen.push(k); });
-        var o = { token: OW.token, setzen: setzen, loeschen: loeschen };
+        var o = { token: OW.token, nr: nr || ++speicherNr, setzen: setzen, loeschen: loeschen };
         if (abschied) o.abschied = 1;   // letzte Sicherung dieses Fensters: die neue Seite darf jetzt laden
         return JSON.stringify(o);
     }
@@ -126,8 +127,8 @@
         try { if (window.fflate) return window.fflate.gzipSync(window.fflate.strToU8(text), { level: 6 }); } catch (e) {}
         return null;
     }
-    function schicke(keys, keepalive, abschied) {
-        var text = paketText(keys, abschied), gz = packen(text);
+    function schicke(keys, keepalive, abschied, nr) {
+        var text = paketText(keys, abschied, nr), gz = packen(text);
         var kopf = { 'X-Open-Water': '1', 'Content-Type': 'application/octet-stream' };
         if (gz) kopf['X-Gepackt'] = '1';
         return fetch('server.php', { method: 'POST', headers: kopf, body: gz || text, credentials: 'same-origin', cache: 'no-store', keepalive: !!keepalive });
@@ -157,6 +158,7 @@
     var abschiedGesendet = false;
     function sofort(abschied) {
         if (gestoppt) return;
+        try { if (window.__weltSpeicherJetzt) window.__weltSpeicherJetzt(); } catch (e) {}   // das Spiel speichert mit 1 s Verzögerung: erst das, dann der Abschied
         var offen = new Set(geaendert);
         imFlug.forEach(function (k) { offen.add(k); });
         if (!offen.size && !(abschied && !abschiedGesendet)) return;
@@ -164,15 +166,15 @@
         geaendert.clear(); imFlug.clear();
         // kleine Teile zuerst (Münzen, Stufen, Helden …), große (Welt, Mitspieler) danach - passt alles in eine, umso besser
         var keys = Array.from(offen).sort(function (a, b) { return ((daten[a] || '').length) - ((daten[b] || '').length); });
-        var teil = keys, rest = [];
-        var gz = packen(paketText(teil));
+        var teil = keys, rest = [], nr = ++speicherNr;   // (beide Teile dieselbe Nummer: verschiedene Schlüssel, beide gelten)
+        var gz = packen(paketText(teil, false, nr));
         while (gz && gz.length > MAX_KEEPALIVE && teil.length > 1) {
             var n = Math.max(1, Math.floor(teil.length * 0.7));
             rest = teil.slice(n).concat(rest); teil = teil.slice(0, n);
-            gz = packen(paketText(teil));
+            gz = packen(paketText(teil, false, nr));
         }
         if (!gz || gz.length > MAX_KEEPALIVE) { rest = keys; teil = []; }
-        var los = function (ks, ka, ab) { try { schicke(ks, ka, ab).then(antwort).catch(function () { fehlgeschlagen(ks); }); } catch (e) { fehlgeschlagen(ks); } };
+        var los = function (ks, ka, ab) { try { schicke(ks, ka, ab, nr).then(antwort).catch(function () { fehlgeschlagen(ks); }); } catch (e) { fehlgeschlagen(ks); } };
         // der Abschied geht mit dem letzten Paket, damit die neue Seite erst lädt, wenn alles drin ist
         if (teil.length || !rest.length) los(teil, true, abschied && !rest.length);
         if (rest.length) los(rest, false, abschied);   // zu groß für "keepalive": normal hinterher

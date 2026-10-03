@@ -1456,6 +1456,9 @@ var saveProgressionTimer = null;
 function saveProgression() { if (!saveProgressionTimer) saveProgressionTimer = setTimeout(saveProgressionNow, 1000); }
 window.addEventListener('pagehide', () => { if (saveProgressionTimer) saveProgressionNow(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden && saveProgressionTimer) saveProgressionNow(); });
+// Alles, was mit 1 s Verzögerung gespeichert würde, jetzt gleich in den Spielstand (vor dem Abschied beim Neuladen und
+// wenn Nachrichten verbucht werden – Münzen/Gems und „verbucht“ müssen zusammen beim Server ankommen)
+window.__weltSpeicherJetzt = function () { try { if (saveGameTimer) saveGameNow(); } catch (e) {} try { if (saveProgressionTimer) saveProgressionNow(); } catch (e) {} };
 function saveProgressionNow() {
     clearTimeout(saveProgressionTimer); saveProgressionTimer = null;
     store.set('openWaterInventory', JSON.stringify(inventory));
@@ -6585,19 +6588,21 @@ function runProductionTick() {
         nextProductionTickAt += productionTickMs();
         ticks++;
     }
-    if (ticks > 0 && rechnet()) {
-        produceTicks(ticks);
-        // Keep any currently-open popup/tab in sync with production -
-        // without this, an "afford it" button can stay stuck
-        // disabled after coins cross its threshold while the popup
-        // is already open.
-        if (isPanelOpen(popup)) renderPopup();
-        if (isPanelOpen(profilePopup)) {
-            renderProfile(true);
-            renderEquipGrid();
+    try {
+        if (ticks > 0 && rechnet()) {
+            produceTicks(ticks);
+            // Keep any currently-open popup/tab in sync with production -
+            // without this, an "afford it" button can stay stuck
+            // disabled after coins cross its threshold while the popup
+            // is already open.
+            if (isPanelOpen(popup)) renderPopup();
+            if (isPanelOpen(profilePopup)) {
+                renderProfile(true);
+                renderEquipGrid();
+            }
         }
-    }
-    setTimeout(runProductionTick, Math.max(50, nextProductionTickAt - Date.now()));
+    } catch (e) { console.warn('Produktion:', e); }
+    finally { setTimeout(runProductionTick, Math.max(50, nextProductionTickAt - Date.now())); }   // (ein Fehler darf die Produktion nie für immer anhalten)
 }
 function produceTicks(ticks) {                  // everyone's bases produce for `ticks` of your production ticks
     {

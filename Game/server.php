@@ -206,17 +206,17 @@ function mitspieler_kuerzen($b, $jetztMs) {
 function muenzen_kuerzen($o) { foreach ($o as $id => $v) if (preg_match('/^u\d+$/', (string)$id)) unset($o->{$id}); return $o; }
 // ganzer Welt-Teil für einen Spieler
 function weltteil_fuer_spieler($k, $text) {
-    if ($k === 'openWaterBotCoins' && is_string($text)) { $o = json_decode($text); return is_object($o) ? json_encode(muenzen_kuerzen($o), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION) : $text; }
+    if ($k === 'openWaterBotCoins' && is_string($text)) { $o = json_decode($text); return is_object($o) ? json_encode(muenzen_kuerzen($o), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION) : 'null'; }
     if ($k !== 'openWaterBotState' || !is_string($text)) return $text;
-    $o = json_decode($text); if (!is_object($o)) return $text;
+    $o = json_decode($text); if (!is_object($o)) return 'null';   // (kaputt: lieber gar nichts als ungefiltert)
     $j = microtime(true) * 1000; foreach ($o as $id => $b) $o->{$id} = mitspieler_kuerzen($b, $j);
     return json_encode($o, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION);
 }
 // Flicken für einen Spieler
 function flicken_fuer_spieler($k, $text) {
-    if ($k === 'openWaterBotCoins' && is_string($text)) { $p = json_decode($text); if (is_object($p) && isset($p->s) && is_object($p->s)) { muenzen_kuerzen($p->s); return json_encode($p, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION); } return $text; }
+    if ($k === 'openWaterBotCoins' && is_string($text)) { $p = json_decode($text); if (is_object($p) && isset($p->s) && is_object($p->s)) { muenzen_kuerzen($p->s); return json_encode($p, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION); } return is_object($p) ? $text : 'null'; }
     if ($k !== 'openWaterBotState' || !is_string($text)) return $text;
-    $p = json_decode($text); if (!is_object($p)) return $text;
+    $p = json_decode($text); if (!is_object($p)) return 'null';
     $j = microtime(true) * 1000;
     foreach ((array)($p->s ?? []) as $id => $b) $p->s->{$id} = mitspieler_kuerzen($b, $j);
     foreach ((array)($p->d ?? []) as $id => $sub) {
@@ -249,13 +249,13 @@ function nebel_sieht($s, $id) {
 }
 // ganzer Teil (Objekt Insel → Zahl): nur sichtbare Inseln
 function nebel_teil($text, $s) {
-    $o = json_decode((string)$text, true); if (!is_array($o)) return $text;
+    $o = json_decode((string)$text, true); if (!is_array($o)) return 'null';
     $r = []; foreach ($o as $id => $v) if (nebel_sieht($s, $id)) $r[$id] = $v;
     return json_encode((object)$r, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION);
 }
 // Flicken eines solchen Teils: neue/geänderte Werte nur für sichtbare Inseln (Wegfallen darf jeder wissen – er hatte sie ja)
 function nebel_flicken($text, $s) {
-    $p = json_decode((string)$text); if (!is_object($p)) return $text;
+    $p = json_decode((string)$text); if (!is_object($p)) return 'null';
     if (isset($p->s) && is_object($p->s)) { foreach ((array)$p->s as $id => $_) if (!nebel_sieht($s, $id)) unset($p->s->{$id}); }
     unset($p->d);   // (diese Teile haben keine zweite Ebene)
     return json_encode($p, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION);
@@ -380,13 +380,16 @@ function weltrechner_seite($sys) {
 
 // ===== MySQL =====
 class MysqlLager {
+    const TABELLEN_STAND = '2026-10-03b';   // (siehe Konstruktor)
     private $db;
     function __construct($c) {
         $this->db = new PDO('mysql:host=' . $c['db_host'] . ';dbname=' . $c['db_name'] . ';charset=utf8mb4', $c['db_user'], $c['db_pass'], [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, PDO::ATTR_TIMEOUT => 5,
         ]);
-        // Tabellen prüfen/anlegen nur einmal nach jedem Hochladen (vorher bei jeder Anfrage – auch bei jedem Puls)
-        $v = filemtime(__FILE__) . '-' . filesize(__FILE__);
+        // Tabellen prüfen/anlegen nur einmal je Tabellen-Stand (vorher bei jeder Anfrage – auch bei jedem Puls). Der Stand steht fest
+        // im Code (nicht das Datei-Datum: ein PHP-Zwischenspeicher könnte sonst mit altem Code den neuen Stand als erledigt eintragen).
+        // BEI JEDER ÄNDERUNG AN tabellen() HOCHZÄHLEN.
+        $v = self::TABELLEN_STAND;
         try { $da = $this->db->query('SELECT tabellen_v FROM ow_welt_info WHERE id = 1')->fetchColumn(); } catch (PDOException $e) { $da = null; }
         if ($da !== $v) { $this->tabellen(); $this->db->prepare('UPDATE ow_welt_info SET tabellen_v = ? WHERE id = 1')->execute([$v]); }
     }
@@ -495,13 +498,25 @@ class MysqlLager {
                 'profil' => 'MEDIUMTEXT NULL', 'profil_zeit' => 'INT UNSIGNED NOT NULL DEFAULT 0', 'online_bis' => 'INT UNSIGNED NOT NULL DEFAULT 0',
                 'anzeigename' => 'VARCHAR(20) NULL', 'puls_minute' => 'INT UNSIGNED NOT NULL DEFAULT 0', 'puls_anzahl' => 'INT UNSIGNED NOT NULL DEFAULT 0',
                 'push_aus' => "VARCHAR(60) NOT NULL DEFAULT ''",   // push_aus: Benachrichtigungs-Arten, die der Spieler ausgeschaltet hat (Einstellungen)
-                'sicht' => 'MEDIUMTEXT NULL', 'sicht_v' => 'INT UNSIGNED NOT NULL DEFAULT 0'];   // 3B: was er sehen darf (Bitfeld vom Weltrechner), Zähler
+                'sicht' => 'MEDIUMTEXT NULL', 'sicht_v' => 'INT UNSIGNED NOT NULL DEFAULT 0', 'speicher_nr' => 'BIGINT UNSIGNED NOT NULL DEFAULT 0'];   // 3B: was er sehen darf (Bitfeld vom Weltrechner), Zähler
         foreach ($neu as $sp => $typ) if (!in_array($sp, $da, true)) $this->db->exec("ALTER TABLE ow_spieler ADD COLUMN $sp $typ");
+        $t = $this->db->query("SELECT DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'ow_spieler' AND COLUMN_NAME = 'profil_zeit'")->fetchColumn();
+        if ($t && strtolower($t) !== 'bigint') $this->db->exec("ALTER TABLE ow_spieler MODIFY profil_zeit BIGINT UNSIGNED NOT NULL DEFAULT 0");   // (Millisekunden)
+        // Genau-einmal (3.10.): Befehle tragen eine Nummer vom Handy (cid), Nachrichten eine vom Weltrechner (mid) – doppelt
+        // Geschicktes wird nicht nochmal abgelegt. Erledigtes bleibt eine Weile markiert stehen (fertig/abgeholt), damit eine
+        // verspätete Wiederholung es nicht neu anlegt.
+        foreach (['ow_befehle' => ['cid' => 'VARCHAR(24) NULL', 'fertig' => 'TINYINT UNSIGNED NOT NULL DEFAULT 0'],
+                  'ow_ereignisse' => ['mid' => 'VARCHAR(24) NULL', 'abgeholt' => 'TINYINT UNSIGNED NOT NULL DEFAULT 0']] as $tab => $spalten) {
+            $q = $this->db->prepare("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?"); $q->execute([$tab]);
+            $hat = $q->fetchAll(PDO::FETCH_COLUMN);
+            foreach ($spalten as $sp => $typ) if (!in_array($sp, $hat, true)) $this->db->exec("ALTER TABLE $tab ADD COLUMN $sp $typ");
+        }
         // Indizes (Aufräumen und Zählen ohne die ganze Tabelle zu lesen) und ein eindeutiger Anzeigename
         $idx = $this->db->query("SELECT CONCAT(TABLE_NAME, '.', INDEX_NAME) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME LIKE 'ow\\_%'")->fetchAll(PDO::FETCH_COLUMN);
         foreach (['ow_bremse.seit' => 'ow_bremse ADD KEY seit (seit)', 'ow_sitzungen.ablauf' => 'ow_sitzungen ADD KEY ablauf (ablauf)',
                   'ow_befehle.spieler_id' => 'ow_befehle ADD KEY spieler_id (spieler_id)', 'ow_befehle.erstellt' => 'ow_befehle ADD KEY erstellt (erstellt)',
-                  'ow_ereignisse.erstellt' => 'ow_ereignisse ADD KEY erstellt (erstellt)', 'ow_spieler.anzeigename' => 'ow_spieler ADD UNIQUE KEY anzeigename (anzeigename)'] as $n => $sql)
+                  'ow_ereignisse.erstellt' => 'ow_ereignisse ADD KEY erstellt (erstellt)',
+                  'ow_befehle.spieler_cid' => 'ow_befehle ADD UNIQUE KEY spieler_cid (spieler_id, cid)', 'ow_ereignisse.spieler_mid' => 'ow_ereignisse ADD UNIQUE KEY spieler_mid (spieler_id, mid)', 'ow_spieler.anzeigename' => 'ow_spieler ADD UNIQUE KEY anzeigename (anzeigename)'] as $n => $sql)
             if (!in_array($n, $idx, true)) { try { $this->db->exec('ALTER TABLE ' . $sql); } catch (PDOException $e) { error_log('Open Water Index ' . $n . ': ' . $e->getMessage()); } }
     }
     function sperren($uid) { if ((int)$this->db->query("SELECT GET_LOCK('ow_spieler_" . (int)$uid . "', 15)")->fetchColumn() !== 1) throw new RuntimeException('Spieler-Sperre nicht bekommen'); }
@@ -545,7 +560,16 @@ class MysqlLager {
         $this->db->prepare('DELETE FROM ow_sitzungen WHERE token_hash = ?')->execute([$th]);
     }
     function spiel_token_setzen($uid, $tok) {
-        $this->db->prepare('UPDATE ow_spieler SET spiel_token = ? WHERE id = ?')->execute([$tok, $uid]);
+        $this->db->prepare('UPDATE ow_spieler SET spiel_token = ?, speicher_nr = 0 WHERE id = ?')->execute([$tok, $uid]);   // neue Seite: Sicherungs-Nummern fangen neu an
+    }
+    // Sicherungen eines Fensters tragen eine laufende Nummer: kommt eine ältere nach einer neueren an (zwei gleichzeitig unterwegs),
+    // wird sie nicht mehr geschrieben – sonst stünde ein alter Stand (z. B. Münzen) über dem neuen. → false = zu alt
+    function speicher_nr_ok($uid, $nr) {
+        if ($nr <= 0) return true;
+        $q = $this->db->prepare('SELECT speicher_nr FROM ow_spieler WHERE id = ?'); $q->execute([$uid]);
+        if ($nr < (int)$q->fetchColumn()) return false;
+        $this->db->prepare('UPDATE ow_spieler SET speicher_nr = ? WHERE id = ?')->execute([$nr, $uid]);
+        return true;
     }
     function spiel_token($uid) {
         $q = $this->db->prepare('SELECT spiel_token FROM ow_spieler WHERE id = ?');
@@ -759,8 +783,11 @@ class MysqlLager {
     }
     // ===== Sicherungen der Welt =====
     function sicherung_anlegen() {
-        $sp = $this->db->query('SELECT schluessel, wert FROM ow_spielstand WHERE spieler_id = 0')->fetchAll();
-        $bo = $this->db->query('SELECT bot_id, nr, stufe, muenzen, anzahl_basen, basen, zustand FROM ow_bots WHERE spieler_id = 0')->fetchAll();
+        $this->welt_sperren();   // kein Puls schreibt dazwischen: beide Tabellen aus demselben Stand
+        try {
+            $sp = $this->db->query('SELECT schluessel, wert FROM ow_spielstand WHERE spieler_id = 0')->fetchAll();
+            $bo = $this->db->query('SELECT bot_id, nr, stufe, muenzen, anzahl_basen, basen, zustand FROM ow_bots WHERE spieler_id = 0')->fetchAll();
+        } finally { $this->welt_entsperren(); }
         if (!$sp) return 0;
         $gz = gzencode(json_encode(['spielstand' => $sp, 'bots' => $bo], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), 6);
         $this->db->prepare('INSERT INTO ow_sicherungen (groesse, daten) VALUES (?, ?)')->execute([strlen($gz), $gz]);
@@ -788,7 +815,7 @@ class MysqlLager {
         foreach ($d['spielstand'] as $z) if ($z['schluessel'] !== '_bot_teile') $vs[$z['schluessel']] = $v;
         foreach (array_keys(self::BOT_TEILE) as $k) $vs[$k] = $v;
         foreach ($i['versionen'] as $k => $_) if (!isset($vs[$k])) $vs[$k] = $v;   // was es damals nicht gab: wird gelöscht
-        $this->db->prepare('UPDATE ow_welt_info SET version = ?, versionen = ?, leiter_bis = 0 WHERE id = 1')->execute([$v, json_encode($vs)]);
+        $this->db->prepare('UPDATE ow_welt_info SET version = ?, versionen = ?, leiter_bis = 0, leiter_token = \'\' WHERE id = 1')->execute([$v, json_encode($vs)]);   // (auch das Zeichen: ein alter Weltrechner darf nicht mehr schreiben)
         $this->db->commit();
         $this->welt_entsperren();
         return true;
@@ -800,26 +827,39 @@ class MysqlLager {
         foreach ($setzen as $k => $v) $g[$k] = strlen($v);
         return array_sum($g);
     }
-    function aufraeumen() {   // alte Befehle (niemand hat gerechnet) und nie abgeholte Nachrichten
-        $this->db->exec('DELETE FROM ow_befehle WHERE erstellt < NOW() - INTERVAL 1 DAY');
-        $this->db->exec('DELETE FROM ow_ereignisse WHERE erstellt < NOW() - INTERVAL 60 DAY');
+    function aufraeumen() {   // Erledigtes (nach einer Weile), alte Befehle (niemand hat gerechnet) und nie abgeholte Nachrichten
+        $this->db->exec('DELETE FROM ow_befehle WHERE (fertig = 1 AND erstellt < NOW() - INTERVAL 1 HOUR) OR erstellt < NOW() - INTERVAL 1 DAY');
+        $this->db->exec('DELETE FROM ow_ereignisse WHERE (abgeholt = 1 AND erstellt < NOW() - INTERVAL 1 DAY) OR erstellt < NOW() - INTERVAL 60 DAY');
     }
-    function befehl_ablegen($uid, $b) { $this->db->prepare('INSERT INTO ow_befehle (spieler_id, befehl) VALUES (?, ?)')->execute([$uid, $b]); }
-    function offene_befehle($uid) { $q = $this->db->prepare('SELECT COUNT(*) FROM ow_befehle WHERE spieler_id = ?'); $q->execute([$uid]); return (int)$q->fetchColumn(); }
-    function befehle_da() { return (bool)$this->db->query('SELECT EXISTS(SELECT 1 FROM ow_befehle)')->fetchColumn(); }
+    // Befehle: das Handy gibt jedem eine Nummer (cid) – kommt er wegen einer Wiederholung nochmal, wird er nicht nochmal abgelegt.
+    // Gelöscht wird erst, wenn der Weltrechner quittiert hat, dass die Wirkung in der gespeicherten Welt steht (befehle_quittieren).
+    function befehl_ablegen($uid, $b, $cid = null) { $this->db->prepare('INSERT IGNORE INTO ow_befehle (spieler_id, befehl, cid) VALUES (?, ?, ?)')->execute([$uid, $b, $cid]); }
+    function offene_befehle($uid) { $q = $this->db->prepare('SELECT COUNT(*) FROM ow_befehle WHERE spieler_id = ? AND fertig = 0'); $q->execute([$uid]); return (int)$q->fetchColumn(); }
+    function befehle_offen() { return (int)$this->db->query('SELECT COUNT(*) FROM ow_befehle WHERE fertig = 0')->fetchColumn(); }
+    function befehle_quittieren($ids) {   // genau diese Nummern (nicht „alles bis“: eine kleinere Nummer kann später eingetragen sein)
+        $ids = array_values(array_unique(array_filter(array_map('intval', array_slice((array)$ids, 0, 2000)), function ($x) { return $x > 0; })));
+        foreach (array_chunk($ids, 500) as $t) $this->db->prepare('UPDATE ow_befehle SET fertig = 1 WHERE fertig = 0 AND id IN (' . implode(',', array_fill(0, count($t), '?')) . ')')->execute($t);
+    }
     function befehle_abholen() {
-        $this->db->exec('DELETE FROM ow_befehle WHERE erstellt < NOW() - INTERVAL 10 MINUTE');   // zu alt: die Lage hat sich geändert
-        $r = $this->db->query('SELECT id, spieler_id, befehl FROM ow_befehle ORDER BY id LIMIT 500')->fetchAll();
-        if ($r) $this->db->prepare('DELETE FROM ow_befehle WHERE id <= ?')->execute([end($r)['id']]);
-        return array_map(function ($z) { return ['von' => (int)$z['spieler_id'], 'b' => json_decode($z['befehl'])]; }, $r);
+        $this->db->exec('DELETE FROM ow_befehle WHERE fertig = 0 AND spieler_id <> 0 AND erstellt < NOW() - INTERVAL 10 MINUTE');   // zu alt: die Lage hat sich geändert (Admin-Befehle bleiben)
+        return array_map(function ($z) { return ['id' => (int)$z['id'], 'von' => (int)$z['spieler_id'], 'b' => json_decode($z['befehl'])]; },
+            $this->db->query('SELECT id, spieler_id, befehl FROM ow_befehle WHERE fertig = 0 ORDER BY id LIMIT 500')->fetchAll());
     }
-    function ereignis_ablegen($uid, $e) { $this->db->prepare('INSERT INTO ow_ereignisse (spieler_id, ereignis) VALUES (?, ?)')->execute([$uid, $e]); }
+    // Nachrichten: der Weltrechner gibt jeder eine Nummer (mid) – nach einer verlorenen Antwort schickt er sie nochmal, abgelegt
+    // wird sie trotzdem nur einmal. Abgeholt ist sie erst, wenn der Spieler sie in seinem Spielstand verbucht hat
+    // (openWaterEreignisFertig: die Nummern der zuletzt verbuchten, siehe speichern_anfrage) – stirbt die Seite vorher, kommt
+    // sie beim nächsten Laden wieder.
+    function ereignis_ablegen($uid, $e, $mid = null) { $this->db->prepare('INSERT IGNORE INTO ow_ereignisse (spieler_id, ereignis, mid) VALUES (?, ?, ?)')->execute([$uid, $e, $mid]); }
     function ereignisse_abholen($uid) {
-        $q = $this->db->prepare('SELECT id, ereignis FROM ow_ereignisse WHERE spieler_id = ? ORDER BY id LIMIT 200');
+        $q = $this->db->prepare('SELECT id, ereignis FROM ow_ereignisse WHERE spieler_id = ? AND abgeholt = 0 ORDER BY id LIMIT 200');
         $q->execute([$uid]);
-        $r = $q->fetchAll();
-        if ($r) $this->db->prepare('DELETE FROM ow_ereignisse WHERE spieler_id = ? AND id <= ?')->execute([$uid, end($r)['id']]);
-        return array_map(function ($z) { return json_decode($z['ereignis']); }, $r);
+        $raus = [];
+        foreach ($q->fetchAll() as $z) { $e = json_decode($z['ereignis']); if (is_object($e)) { $e->_eid = (int)$z['id']; $raus[] = $e; } }
+        return $raus;
+    }
+    function ereignisse_verbucht($uid, $ids) {
+        $ids = array_values(array_unique(array_filter(array_map('intval', array_slice((array)$ids, -1000)), function ($x) { return $x > 0; })));
+        foreach (array_chunk($ids, 500) as $t) $this->db->prepare('UPDATE ow_ereignisse SET abgeholt = 1 WHERE spieler_id = ? AND abgeholt = 0 AND id IN (' . implode(',', array_fill(0, count($t), '?')) . ')')->execute(array_merge([$uid], $t));
     }
     // ===== Handy-Benachrichtigungen (Web-Push) =====
     // Ein Gerät gehört immer dem, der sich dort zuletzt angemeldet hat (gleiches Gerät, anderes Konto → wird umgeschrieben).
@@ -855,7 +895,7 @@ class MysqlLager {
         return ['bits' => $bits, 'eigen' => $eigen, 'v' => (int)$z['sicht_v']];
     }
     function sicht_setzen($uid, $b64) { $this->db->prepare('UPDATE ow_spieler SET sicht = ?, sicht_v = sicht_v + 1 WHERE id = ? AND (sicht IS NULL OR sicht <> ?)')->execute([$b64, $uid, $b64]); }   // (gleich geblieben: nichts)
-    function profil_setzen($uid, $p) { $this->db->prepare('UPDATE ow_spieler SET profil = ?, profil_zeit = ? WHERE id = ?')->execute([$p, time(), $uid]); }
+    function profil_setzen($uid, $p) { $this->db->prepare('UPDATE ow_spieler SET profil = ?, profil_zeit = ? WHERE id = ?')->execute([$p, (int)round(microtime(true) * 1000), $uid]); }   // (ms: zwei Profile in derselben Sekunde gehen nicht verloren)
     // Puls zählen (zugleich „online“ setzen) – gibt zurück, wie viele Pulse in dieser Minute schon kamen
     function puls_zaehlen($uid, $jetzt) {
         $m = intdiv($jetzt, 60);
@@ -908,7 +948,7 @@ function speichern_anfrage() {
 
         $aktion = (string)($d['aktion'] ?? '');
         if (strpos($aktion, 'push_') === 0) push_anfrage($ich, $d, $aktion);   // Handy-Benachrichtigungen (eigener Teil, siehe unten)
-        if (!empty($ich['system']) && $aktion === 'befehle_da') json_antwort(200, ['da' => lager()->befehle_da()]);   // (Weltrechner: liegen Befehle da? dann gleich ein Puls)
+        if (!empty($ich['system']) && $aktion === 'befehle_da') json_antwort(200, ['offen' => lager()->befehle_offen()]);   // (Weltrechner: liegen Befehle da? dann gleich ein Puls)
         if (!empty($ich['system']) && $aktion !== 'puls') json_antwort(200, ['ok' => true]);   // der Weltrechner hat keinen eigenen Spielstand
         if ($aktion === 'name') name_anfrage($ich, $d);
         if ($aktion === 'passwort') passwort_anfrage($ich, $d);
@@ -932,13 +972,15 @@ function speichern_anfrage() {
         if (lager()->anzahl_teile($ich['id'], array_keys($setzen)) > 150) json_antwort(400, ['fehler' => 'zu viele Teile']);
         if (lager()->groesse_nach($ich['id'], $setzen) > 40 * 1024 * 1024) json_antwort(413, ['fehler' => 'Spielstand zu groß']);   // höchstens 40 MB pro Konto
         $t2 = microtime(true);
+        if (!lager()->speicher_nr_ok($ich['id'], (int)($d['nr'] ?? 0))) { if (!empty($d['abschied'])) lager()->abschied_setzen($ich['id'], (string)$d['token']); json_antwort(200, ['ok' => true, 'alt' => true]); }   // eine neuere war schneller
         lager()->stand_schreiben($ich['id'], $setzen, $loeschen);
+        if (isset($setzen['openWaterEreignisFertig'])) lager()->ereignisse_verbucht($ich['id'], json_decode($setzen['openWaterEreignisFertig'], true));   // diese Nachrichten stehen jetzt in seinem Spielstand
         header(sprintf('Server-Timing: lesen;dur=%d, warten;dur=%d, schreiben;dur=%d', ($t1 - $t0) * 1000, ($t2 - $t1) * 1000, (microtime(true) - $t2) * 1000));
         if (!empty($d['abschied'])) lager()->abschied_setzen($ich['id'], (string)$d['token']);   // Fenster wird geschlossen/neu geladen
         json_antwort(200, ['ok' => true]);
     } catch (Throwable $e) {
         error_log('Open Water Speichern: ' . $e->getMessage());
-        json_antwort(503, ['fehler' => 'server']);
+        json_antwort(500, ['fehler' => 'server']);   // (503 heißt nur noch Wartung – ein kurzer Fehler wirft niemanden raus)
     }
 }
 
@@ -1080,7 +1122,9 @@ function welt_puls($ich, $d) {
     }
     if (!$sys && isset($d['profil']) && is_string($d['profil']) && strlen($d['profil']) < 400000 && ($pr = profil_bereinigen($d['profil'])) !== null && $pr !== false) $l->profil_setzen($uid, $pr);
     if (!$sys && !empty($d['befehle']) && $l->offene_befehle($uid) < 200)   // nie mehr als 200 wartende Befehle pro Spieler (kein Stau für alle)
-        foreach (array_slice((array)$d['befehle'], 0, 30) as $b) if (befehl_ok($b)) { $j = json_encode($b, JSON_UNESCAPED_UNICODE); if ($j !== false && strlen($j) < 8000) $l->befehl_ablegen($uid, $j); }
+        foreach (array_slice((array)$d['befehle'], 0, 30) as $b) if (befehl_ok($b)) {
+            $cid = is_string($b['cid'] ?? null) && preg_match('/^[A-Za-z0-9]{8,24}$/', $b['cid']) ? $b['cid'] : null;   // (ohne Nummer: altes Handy – wie früher)
+            $j = json_encode($b, JSON_UNESCAPED_UNICODE); if ($j !== false && strlen($j) < 8000) $l->befehl_ablegen($uid, $j, $cid); }
 
     $l->welt_sperren();
     $i = $l->welt_info();
@@ -1099,9 +1143,11 @@ function welt_puls($ich, $d) {
         $voll = [];
         if ($setzen || $loeschen || $flicken) $l->welt_schreiben($setzen, $loeschen, (int)($w['welt_zeit'] ?? 0), $flicken, $voll);
         if ($voll) $antwort['welt_voll'] = $voll;   // diese Teile beim nächsten Mal ganz schicken
+        $l->befehle_quittieren($d['quittung'] ?? []);   // diese Befehle stehen jetzt mit ihrer Wirkung in der gespeicherten Welt
         if (mt_rand(1, 500) === 1) $l->aufraeumen();
-        foreach (array_slice((array)($d['ereignisse'] ?? []), 0, 500) as $e) if (isset($e['an'], $e['e']) && (int)$e['an'] > 0 && is_array($e['e']) && in_array($e['e']['art'] ?? '', WELTRECHNER_NACHRICHTEN, true) && ($e['e']['art'] !== 'bundGeschenk' || bund_geschenk_ok($e['e'])) && ($e['e']['art'] !== 'haendlerWare' || haendler_ware_ok($e['e'])) && sauber($e['e'])) {
-            $j = json_encode($e['e'], JSON_UNESCAPED_UNICODE); if ($j !== false && strlen($j) < 200000) $l->ereignis_ablegen((int)$e['an'], $j); }
+        foreach (array_slice((array)($d['ereignisse'] ?? []), 0, 2000) as $e) if (isset($e['an'], $e['e']) && (int)$e['an'] > 0 && is_array($e['e']) && in_array($e['e']['art'] ?? '', WELTRECHNER_NACHRICHTEN, true) && ($e['e']['art'] !== 'bundGeschenk' || bund_geschenk_ok($e['e'])) && ($e['e']['art'] !== 'haendlerWare' || haendler_ware_ok($e['e'])) && sauber($e['e'])) {
+            $mid = is_string($e['mid'] ?? null) && preg_match('/^[A-Za-z0-9]{8,24}$/', $e['mid']) ? $e['mid'] : null;
+            $j = json_encode($e['e'], JSON_UNESCAPED_UNICODE); if ($j !== false && strlen($j) < 200000) $l->ereignis_ablegen((int)$e['an'], $j, $mid); }
         // 3B: neue Sicht einzelner Spieler (Bitfeld über die Insel-Nummern, base64)
         foreach (array_slice((array)($d['sicht'] ?? []), 0, 2000, true) as $an => $b64) if ((int)$an > 0 && is_string($b64) && strlen($b64) < 40000 && preg_match('/^[A-Za-z0-9+\/]*={0,2}$/', $b64)) $l->sicht_setzen((int)$an, $b64);
     }
@@ -1125,13 +1171,13 @@ function welt_puls($ich, $d) {
         $antwort['welt'] = nebel_welt($antwort['welt'], $sicht);
         $antwort['sicht_v'] = $sicht['v'];
     }
-    if ($bin_leiter) $antwort['befehle'] = $l->befehle_abholen();
+    if ($bin_leiter) $antwort['befehle'] = $l->befehle_abholen();   // alle noch nicht quittierten (schon Ausgeführte überspringt der Weltrechner)
     $l->welt_entsperren();
     $antwort['leiter'] = $bin_leiter;
     $antwort['rechner'] = $bin_leiter || ((int)$i['leiter_id'] === 0 && (int)$i['leiter_bis'] >= $jetzt);   // läuft der Weltrechner? (sonst: „Verbindung wird wiederhergestellt …“)
     $antwort['neu_leiter'] = $neu_leiter;
     $antwort['version'] = $antwort['welt']['version'];
-    $antwort['ereignisse'] = $l->ereignisse_abholen($uid);
+    $antwort['ereignisse'] = $sys ? [] : $l->ereignisse_abholen($uid);   // (schon verbuchte, noch nicht gesicherte überspringt das Handy)
     $antwort['spieler'] = $l->spieler_liste((int)($d['spieler_seit'] ?? 0), $sys);
     $antwort['zeit'] = $jetzt;
     welt_antwort($antwort);
