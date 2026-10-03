@@ -1558,3 +1558,7 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
 - Getestet (Vorschau, `einl_test`): einladen, doppelt, annehmen, nur Anführer, voll, voll beim Annehmen, abgelaufen, ablehnen,
   Mitspieler lädt selbst ein, Hauptstadt näher (10/10); Verstärkung 5/5, Bündnis-Bots 3/3, Unit 16/65; Weltrechner lokal mit
   neuem Code: läuft, 0 Fehler. Hochgeladen auf Alexanders „lade alles hoch, teste dann“ – Test mit echten Spielern danach.
+- **Hochgeladen 4.10., 00:05** (alles, inkl. Prüfer- und Wachhund-Fix). Live: Weltrechner läuft (Pulse ohne Fehler, Prüfer 0).
+  **Test mit echten Spielern (Server + Weltrechner, `einl_server_test`):** A gründet („nur auf Anfrage“), Profil von B zeigt
+  „Ins Bündnis einladen“ → Einladung in der Welt → Profil zeigt „Eingeladen“ → B sieht sie im Bündnis-Fenster (mit Punkt) →
+  Annehmen → B ist Mitglied, Einladung weg; C lehnt ab → draußen; B (kein Anführer) hat keinen Knopf; keine Skript-Fehler.
