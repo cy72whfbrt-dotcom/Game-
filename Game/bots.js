@@ -142,6 +142,10 @@ function resolveBotAttack(attack) {
 
     const myTroops = Math.round((attack.rawTroops + (attack.attackBonus || 0)) * (attack.atkTitle !== undefined ? attack.atkTitle : titleMult(bot.id, 'attack')) * (attack.atkKraft || 1));   // (Truppen-Stufe + Forschung vom Losschicken)
     const targetOwner = islandOwnerOf(target.id), rallyC0 = attack.rally ? botCoins[bot.id] || 0 : 0;   // (Rally: die Beute wird nachher anteilig verteilt)
+    if (targetOwner === bot.id && !attack.rally) { islandTroops[target.id] = (islandTroops[target.id] || 0) + attack.rawTroops; saveGame(); return; }   // inzwischen die eigene (ein anderer Angriff hat sie genommen): die Truppen bleiben dort
+    if (targetOwner && targetOwner !== bot.id && typeof bundFreund === 'function' && bundFreund(bot.id, targetOwner) && !attack.rally) {   // inzwischen ein Bündnis-Mitglied: kein Kampf, heim
+        const back = botOwnedIslands[bot.id] && botOwnedIslands[bot.id].has(attack.sourceId) ? attack.sourceId : botCapitalOf(bot.id);
+        if (back !== null && back !== undefined) islandTroops[back] = (islandTroops[back] || 0) + attack.rawTroops; saveGame(); return; }
     const originalEnemyTroops = effectiveTroops(target);
     const fullDefense = effectiveDefense(target), originalEnemyDefense = Math.round(fullDefense * (1 - heroDefCut(attack)));   // (a hero's Rammbock, Sturmflut, Mauerbrecher)
     const partsFor = () => targetOwner === 'player' ? { atkParts: attackParts(bot.id, attack.rawTroops, attack.attackBonus || 0, myTroops, attack.hero, attack), defParts: heroDefPart(defenseParts(target), attack, fullDefense) } : null;
@@ -207,7 +211,9 @@ function resolveBotAttack(attack) {
     if (!won) botLearn(bot.id, target.id);                          // a lost fight tells them what's really there
     if (!won && targetOwner && targetOwner !== 'player') botStat(targetOwner, 'defs');
     if (won && bossHere && typeof bundGeschenk === 'function') bundGeschenk(bot.id, 'boss');         // Boss besiegt: kleine Geschenke fürs ganze Bündnis
-    if (won && bossHere) { botStat(bot.id, 'bosses'); heroGrantShards(bot.id, HERO_SHARDS_WANDER); }   // the same shards you get
+    if (won && bossHere) { botStat(bot.id, 'bosses');                // der Preis wie bei dir: Gems, epische Kiste, Splitter
+        evPreis(bot.id, 'wboss', bossHere.name + ' besiegt', { gems: WANDER_REWARD_GEMS, crate: WANDER_CRATE, sh: HERO_SHARDS_WANDER });   // (ein echter Spieler: als Nachricht ins Abholfach)
+        if (bot.mensch) evBericht(bot.id, { type: 'ev', ic: 'star', gut: true, badge: 'Kriegsherr', title: bossHere.name + ' besiegt', txt: 'Die Beute liegt unter Events → Belohnung.', at: Date.now() }, bossHere.name + ' ist gefallen – die Beute liegt unter Events → Belohnung.'); }
     updateHud();
     if (bossHere && won) { spawnBattleFx(target.id, false, bossHere.name + ' gefallen', bot.name); endWander(bot.name + ' hat ' + bossHere.name + ' besiegt!'); }
 
@@ -1430,7 +1436,7 @@ function botRulerTitles(bot, now) {               // a bot on the throne hands o
     const calm = sc.filter(x => x.a < .5).sort((x, y) => x.a - y.a || y.n - x.n);                                    // the peaceful ones, the strong first (good to have as friends)
     const bad = TITLES.filter(x => !x.good), good = TITLES.filter(x => x.good), pick = [];
     t.by = {}; t.at = now;
-    const filler = calm.filter(x => x.w !== 'player').reverse();                                                    // not enough foes: the weakest of the rest - never you for nothing
+    const filler = calm.filter(x => x.w !== 'player' && !(botById[x.w] && botById[x.w].mensch)).reverse();          // not enough foes: the weakest of the rest - never a real player for nothing
     bad.forEach((x, i) => { const f = foes[i] || filler[i - foes.length]; if (f && !pick.includes(f.w)) { giveTitle(x.key, f.w); pick.push(f.w); } });
     const friends = calm.filter(x => !pick.includes(x.w));
     good.forEach((x, i) => { if (friends[i]) giveTitle(x.key, friends[i].w); });
@@ -1446,7 +1452,7 @@ function botRespawn(bot, now) {                   // knocked out: like a player 
     if (now - b.outAt < 600000 || !botOnline(bot, now)) return;
     const edge = i => i.type === 'tower' && landmasses[i.landmassId].tier === 'outer' && landmasses[i.landmassId].ring >= 3 && !bossAt(i.id);
     let free = islands.filter(i => edge(i) && !islandOwnerOf(i.id));
-    if (!free.length) { const big = BOT_DEFS.filter(x => x.id !== bot.id).sort((u, v) => botOwnedIslands[v.id].size - botOwnedIslands[u.id].size)[0];   // the map is full: a fresh start on the edge of the biggest empire
+    if (!free.length) { const big = BOT_DEFS.filter(x => x.id !== bot.id && !x.mensch && !(ownerShieldUntil(x.id) > now)).sort((u, v) => botOwnedIslands[v.id].size - botOwnedIslands[u.id].size)[0];   // the map is full: a fresh start on the edge of the biggest empire
         free = big && botOwnedIslands[big.id].size >= 40 ? [...botOwnedIslands[big.id]].map(id => islandById[id]).filter(i => edge(i) && !isCapital(i.id) && !pendingAttacks.some(a => a.targetId === i.id)) : []; }
     if (!free.length) return;
     const t = free[Math.floor(Math.random() * free.length)]; clearIslandOwner(t.id);

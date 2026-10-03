@@ -1927,6 +1927,7 @@ function resolveAttack(attack) {
 
     const myTroops = Math.round((attack.rawTroops + atkBonus) * (attack.atkTitle !== undefined ? attack.atkTitle : titleMult('player', 'attack')) * (attack.atkKraft || 1));   // (Truppen-Stufe + Forschung vom Losschicken)
     const targetOwner = islandOwnerOf(target.id); // null | 'player' | a bot id
+    if (targetOwner === 'player') { islandTroops[target.id] = (islandTroops[target.id] || 0) + attack.rawTroops; saveGame(); requestRender(); return; }   // inzwischen deine (ein anderer Angriff hat sie genommen): die Truppen bleiben dort
     const originalEnemyTroops = effectiveTroops(target);
     const fullDefense = effectiveDefense(target), originalEnemyDefense = Math.round(fullDefense * (1 - heroDefCut(attack))), defParts = heroDefPart(defenseParts(target), attack, fullDefense);
     const atkParts = attackParts('player', attack.rawTroops, atkBonus, myTroops, attack.hero, attack), hosp = attack.hx ? Math.min(100, hospitalPct() + attack.hx.hosp) : undefined;
@@ -4246,7 +4247,7 @@ window.addEventListener('pagehide', flushBotState);
 document.addEventListener('visibilitychange', () => { if (document.hidden) flushBotState(); });
 let capitalCache = null, capitalCacheAt = 0;                // the bots' capitals, looked up a few times a second instead of per base
 function isCapital(id) {
-    if (id === playerIslandId) return true;
+    if (id === playerIslandId && !SYSTEM && ownedIslands.has(id)) return true;   // (der Weltrechner hat keine eigene Hauptstadt – sein playerIslandId ist nur ein Platzhalter)
     const now = Date.now();
     if (!capitalCache || now - capitalCacheAt > 250) { const caps = new Set(); for (const bot of BOT_DEFS) { const c = botCapitalOf(bot.id); if (c !== null) caps.add(c); } capitalCache = caps; capitalCacheAt = now; }
     if (!capitalCache.has(id)) return false;
@@ -7525,6 +7526,12 @@ function wanderArrive(now) {                          // the storm: same maths a
         addCombatLogEntry({ type: 'botAttack', botName: name, targetId: tgt.id, myTroops: my, enemyTroops: en, enemyDefense: def, wounded, armor: armorDefenseFor(tgt.id), fallen, won, capitalHolds, defGold: wGold });
         flashHint((capitalHolds ? name + ' hat die Garnison deiner Hauptstadt geschlagen – die Stadt hält.' : won ? name + ' hat deine Basis ' + islandTitle(tgt) + ' zerstört!' : 'Verteidigt! ' + name + ' wurde bei ' + islandTitle(tgt) + ' zurückgeschlagen.') + (wounded ? ' ' + fmtCompact(wounded) + ' Verwundete ins Lazarett.' : ''), 5000);
     }
+    if (owner && owner !== 'player' && botById[owner] && botById[owner].mensch) {   // ein echter Spieler: der Bericht kommt bei ihm an (wie bei jedem Angriff)
+        const t = islandTitle(tgt);
+        evBericht(owner, { type: 'ev', ic: 'defense', gut: !won || capitalHolds, badge: capitalHolds ? 'Hält' : won ? 'Zerstört' : 'Verteidigt', title: wander.name + ' · ' + t,
+            txt: fmtCompact(my) + ' gegen ' + fmtCompact(en + def) + (won && !capitalHolds ? ' · die Basis ist zerstört' : capitalHolds ? ' · die Garnison ist gefallen, die Hauptstadt hält' : ' · abgewehrt'), at: now },
+            capitalHolds ? wander.name + ' hat die Garnison deiner Hauptstadt geschlagen – die Stadt hält.' : won ? wander.name + ' hat deine Basis ' + t + ' zerstört!' : 'Verteidigt! ' + wander.name + ' wurde bei ' + t + ' zurückgeschlagen.');
+    }
     if (wander.troops <= 0) return endWander(wander.name + ' ist zerschlagen.');
     updateHud(); saveGame(); saveWander(); requestRender();
 }
@@ -9721,6 +9728,7 @@ function barbHome(m, n, now) { if (n < 1) return; const home = islandById[m.home
 function barbCrate(who, minR) {                     // a gear crate: yours into the inventory, theirs into their spares
     const r = Math.max(minR, pickRandomRarity());
     if (who === 'player') return grantFreeCrate(r);
+    if (botById[who] && botById[who].mensch && window.WELT) { WELT.nachricht(parseInt(who.slice(1), 10), { art: 'evPreis', src: 'fight', title: 'Kiste aus dem Kampf', gems: 0, sh: 0, crate: minR }); return null; }   // ein echter Spieler: ins Abholfach (vorher ging sie verloren)
     const bs = loadBotState()[who], sp = bs && bs.spare && bs.spare[pickRandomSlot()]; if (sp) sp[r] = (sp[r] || 0) + 1; return null;
 }
 function barbFight(who, troops, hx, foes) {         // out in the open: (troops + Gefolge) × Angriff (+ hero) × title against the camp, your shield (+ hero) saves some
@@ -9783,6 +9791,9 @@ function dbossPayout(b) {                           // the boss falls: everyone 
         if (who === 'player') { inboxAdd({ src: 'boss', title: b.name + ' · Platz ' + (i + 1), gems: p.gems, crate: p.crate >= 0 ? p.crate : -1, sh: p.sh });   // the prize is sent to the Abholfach
             addCombatLogEntry({ type: 'dbossWin', name: b.name, rank: i + 1, of: rk.length, dmg: b.dmg.player || 0, gems: p.gems, crate: p.crate >= 0 ? 'Kiste (mind. ' + RARITY_DEFS[p.crate].label + ')' : '', sh: p.sh ? p.sh + ' Helden-Splitter' : '' });
             flashHint(b.name + ' ist gefallen! Platz ' + (i + 1) + ': dein Preis liegt unter Events → Belohnung.', 5000); }
+        else if (botById[who] && botById[who].mensch) {   // ein echter Spieler: der ganze Preis als Nachricht (auch die Kiste), dazu ein Bericht
+            evPreis(who, 'boss', b.name + ' · Platz ' + (i + 1), p);
+            evBericht(who, { type: 'dbossWin', name: b.name, rank: i + 1, of: rk.length, dmg: b.dmg[who] || 0, gems: p.gems, crate: p.crate >= 0 ? 'Kiste (mind. ' + RARITY_DEFS[p.crate].label + ')' : '', sh: p.sh ? p.sh + ' Helden-Splitter' : '' }, b.name + ' ist gefallen! Platz ' + (i + 1) + ': dein Preis liegt unter Events → Belohnung.'); }
         else if (botById[who]) { bs = bs || loadBotState(); if (bs[who]) bs[who].gems += p.gems; if (p.crate >= 0) barbCrate(who, p.crate); heroGrantShards(who, p.sh); } });
     if (bs) saveBotState();
     spawnBattleFx({ x: b.x, y: b.y }, true, b.name + ' gefallen', rk.length + ' Kämpfer belohnt');
@@ -12168,6 +12179,11 @@ if (window.WELT) {
             if (Number.isInteger(e.crate) && e.crate >= 0 && e.crate <= 5) hbKisteDazu(hb, e.crate);
         }
         if (e.art === 'startschild' && zahlOk(e.bis, 1e15)) hb.schild = Math.max(nn(hb.schild), e.bis);
+        if (e.art === 'haendlerWare') {                // beim Händler mit Münzen bezahlt: die Ware ist bezahlt (vorher verlangte das Hauptbuch sie nochmal in Gems)
+            if (zahlOk(e.sh, 1e3)) hb.shB += e.sh;
+            if (Number.isInteger(e.kiste) && e.kiste >= 0 && e.kiste <= 2) hbKisteDazu(hb, e.kiste);
+            if (e.schild === 2) hb.fr.schild = nn(hb.fr.schild) + 2;
+        }
         saveBotState();
     }
     if (Array.isArray(WELT.ereignisseRaus)) {        // (nur zuschauen – welt.js verschickt die Liste wie bisher)
@@ -12910,7 +12926,7 @@ if (window.WELT) {
     };
 
     // Nachrichten vom Weltrechner an mich: Münzen, Gems, EP, Thron-Punkte, Lazarett, Splitter, Zahlen
-    const STAT_NAMEN = { caps: 'captures', pvp: 'pvpWins', defs: 'defends', bosses: 'bosses', temples: 'temples', scouts: 'scouts', tolls: 'tolls', tollCoins: 'tollCoins', armyWins: 'armyWins', healed: 'healed', barb: 'barb', dboss: 'dboss' };
+    const STAT_NAMEN = { caps: 'captures', pvp: 'pvpWins', defs: 'defends', bosses: 'bosses', temples: 'temples', scouts: 'scouts', tolls: 'tolls', tollCoins: 'tollCoins', armyWins: 'armyWins', healed: 'healed', barb: 'barb', dboss: 'dboss', throneMin: 'throneMin', heroFires: 'heroFires' };   // (Thron-Minuten und Helden-Zünder zählt der Weltrechner – vorher kamen sie nie an)
     WELT.beiNachricht.push(function (e) {
         if (!e || e.art !== 'delta') return;
         if (e.coins) coins = Math.max(0, coins + e.coins);
@@ -12919,7 +12935,7 @@ if (window.WELT) {
         if (e.xp > 0) addXp(e.xp);
         if (e.wounded) { const c = loadCity(); c.wounded = Math.max(0, (c.wounded || 0) + e.wounded); saveCity(); }
         if (e.sh) { const hs = loadHeroes(); for (const h in e.sh) if (hs[h]) hs[h].sh = Math.max(0, (hs[h].sh || 0) + e.sh[h]); saveHeroes(); }
-        if (e.stats) for (const k in e.stats) if (STAT_NAMEN[k]) statBump(STAT_NAMEN[k], e.stats[k]);
+        if (e.stats) for (const k in e.stats) if (STAT_NAMEN[k] && Number.isFinite(e.stats[k]) && e.stats[k] > 0 && e.stats[k] <= 1e6) { statBump(STAT_NAMEN[k], e.stats[k]); if (k === 'caps') questProgress('capture', e.stats[k]); }   // (Tagesaufgabe „Erobere …“ auch für echte Spieler)
         if (e.res && AUF) AUF.rohDazu('player', e.res);                          // Holz, Stein, Eisen (Produktion, Sammeln)
         updateHud(); saveGame(); saveProgression();
     });
