@@ -126,8 +126,12 @@ function marschBelegt(who) {
 }
 function gruppeLaeuft(who, grp, src) {                         // gehört dieser Angriff zu einem gerade gestarteten Mehrfachangriff?
     if (!grp) return false; const now = Date.now();
-    return pendingAttacks.some(a => werIst(a.attackerBotId) === who && a.grp === grp && (src === undefined || a.sourceId === src) && now - a.startedAt < 60000)
-        || pendingSends.some(s => werIst(s.senderBotId) === who && s.grp === grp && now - s.startedAt < 60000);
+    // Angriff (src): nur zu Angriffen derselben Gruppe vom SELBEN Ort; Senden („Truppen sammeln“): nur zu Sendungen derselben Gruppe.
+    // Die 60 s zählen ab dem ERSTEN Marsch der Gruppe (sonst ließe sich das Fenster mit jedem neuen Marsch verlängern)
+    const liste = src !== undefined ? pendingAttacks.filter(a => werIst(a.attackerBotId) === who && a.grp === grp && a.sourceId === src)
+        : pendingSends.filter(s => werIst(s.senderBotId) === who && s.grp === grp && !s.back);
+    if (!liste.length) return false;
+    return now - Math.min(...liste.map(m => m.startedAt)) < 60000;
 }
 const marschFrei = who => Math.max(0, marschGrenze(who) - marschBelegt(who));
 function marschOk(who, grp, src) { return marschFreiPass > 0 || gruppeLaeuft(who, grp, src) || marschBelegt(who) < marschGrenze(who); }

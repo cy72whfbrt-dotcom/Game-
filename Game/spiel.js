@@ -298,9 +298,10 @@ function coinsPerTick(level) {
 function troopsPerTick(level) {
     return Math.round(BASE_TROOPS * Math.pow(PRODUCTION_GROWTH, Math.min(level, MAX_BASE_LEVEL) - 1));
 }
+function upgradeCostRoh(level) { return Math.round(UPGRADE_BASE_COST * Math.pow(UPGRADE_COST_GROWTH, level - 1)); }   // ohne Rabatt
 function upgradeCost(level) {                    // Wochen-Event „Bauherr“: 20 % günstiger
     let r = 1; try { if (evThemaAktiv('bau')) r = .8; } catch (e) {}
-    return Math.round(UPGRADE_BASE_COST * Math.pow(UPGRADE_COST_GROWTH, level - 1) * r);
+    return Math.round(upgradeCostRoh(level) * r);
 }
 
 // The big islands themselves - just background land, drawn as one
@@ -1591,7 +1592,7 @@ function launchAttack(sourceId, targetId, attackerBotId, troopsOverride, heldWun
     }
     const mensch = attackerBotId && botById[attackerBotId] && botById[attackerBotId].mensch;   // ein echter Spieler (Befehl): sein gewählter Held, sonst keiner
     if (attackerBotId && window.WELT) { const tw = islandOwnerOf(target.id); if (tw === 'player' || (botById[tw] && botById[tw].mensch)) { const ab = loadBotState()[attackerBotId]; if (ab && ab.neuBis) { ab.neuBis = 0; saveBotState(); } } }   // greift einen echten Spieler an: Anfängerschutz weg
-    if (attackerBotId && window.WELT && botById[attackerBotId] && botById[attackerBotId].mensch) { const ab = loadBotState()[attackerBotId]; if (ab && ab.shieldUntil > Date.now()) { ab.schildAlt = ab.shieldUntil; ab.shieldUntil = 0; saveBotState(); } }   // ein echter Spieler greift an: sein Schild fällt (auch wenn sein Handy es nicht meldet)
+    if (attackerBotId && window.WELT && botById[attackerBotId] && botById[attackerBotId].mensch) { const ab = loadBotState()[attackerBotId]; if (ab && ab.shieldUntil > Date.now()) { ab.schildAlt = ab.shieldUntil; ab.shieldUntil = 0; if (ab.hb) ab.hb.schild = Math.min(+ab.hb.schild || 0, Date.now()); saveBotState(); } }   // ein echter Spieler greift an: sein Schild fällt (auch wenn sein Handy es nicht meldet) – auch im Hauptbuch, sonst käme er mit dem nächsten Profil gratis zurück
     const who = attackerBotId || 'player', botPair = attackerBotId && !mensch ? botPickHero(attackerBotId, source, target, rawTroops, true) : null;   // ein Mitspieler wählt Haupt- und Zweitheld
     const hero = mensch ? (heldWunsch && heroOwned(attackerBotId, heldWunsch) && !heroBusy(attackerBotId, heldWunsch) ? heldWunsch : null)
         : attackerBotId ? botPair[0] : nextAttackHero && heroOwned('player', nextAttackHero) && !heroBusy('player', nextAttackHero) ? nextAttackHero : null;
@@ -12255,7 +12256,8 @@ if (window.WELT) {
             }
             // Verwundete (entstehen nur in Kämpfen, die der Weltrechner rechnet)
             const pw = nn(p.wounded), ew = m.w.u, wm2 = kontoProfil(m.w, pw, wP, wM, now);
-            if (wm2 > ew * 0.05 + 1000) { m.w.u = ew; warnen(who, 'lazarett', 'Verwundete springen: das Handy sagt ' + fz(pw) + ', möglich wären höchstens ' + fz(ew + wM) + '.', wm2); }
+            if (wm2 > 0) { m.w.u = ew;                  // mehr als möglich zählt NIE (vorher blieben bis 5 % je Profil stehen – das summierte sich)
+                if (wm2 > ew * 0.05 + 1000) warnen(who, 'lazarett', 'Verwundete springen: das Handy sagt ' + fz(pw) + ', möglich wären höchstens ' + fz(ew + wM) + '.', wm2); }
             // 3B Gems: weniger → ausgegeben (Topf hb.gA). Mehr als möglich → erst sicher Geschicktes aus dem Abholfach (hb.gIn), dann
             // Stern-Rückgabe beim Verkaufen (hb.sternG), dann der Spielraum (Tagesbelohnung, Aufgaben, Erfolge, Pass, Funde – hb.fr.g).
             // Der Rest ist auffällig und zählt nicht (das Konto bleibt beim Möglichen).
@@ -12299,7 +12301,8 @@ if (window.WELT) {
         if (L >= MAX_BASE_LEVEL) return 'nein';
         if (b.stufe <= L) return 'nein';                                   // doppelt geschickt – nichts zu tun
         if (b.stufe > L + 1) { warnen(who, 'ausbau', 'Ausbau springt: ' + islandTitle(islandById[b.insel]) + ' von Stufe ' + L + ' auf ' + b.stufe + ' – erlaubt ist nur +1.', b.stufe - L); return 'nein'; }
-        const m = wacheSehen(who), kosten = upgradeCost(L) * (zahlOk(b.at) && Date.now() - b.at < 120000 && evThemaAktivAm(b.at, 'bau') ? .8 : 1);   // (Bauherr: bezahlt hat er den Preis von da)
+        const jetzt = Date.now(), damals = zahlOk(b.at) && b.at <= jetzt + 5000 && jetzt - b.at < 120000 && evThemaAktivAm(b.at, 'bau');   // (Bauherr: bezahlt hat er den Preis von da – nie aus der Zukunft)
+        const m = wacheSehen(who), kosten = upgradeCostRoh(L) * (damals || evThemaAktiv('bau') ? .8 : 1);   // (der Rabatt nur EINMAL – vorher doppelt)
         if (wacheBezahlen(who, m, kosten)) return 'ok';
         return ende ? 'pleite' : 'warten';
     }
@@ -12330,7 +12333,7 @@ if (window.WELT) {
             if (n > erlaubt && !ende) return -1;
             let r = Math.min(n, erlaubt), x = Math.min(r, m.w.vor); m.w.vor -= x; r -= x; m.w.u = Math.max(0, m.w.u - r);
         } else if (q === 'fund') {                     // Fund auf der Karte: höchstens 3 liegen herum, alle 20–45 s ein neuer
-            if (zuOft(m, 'fund', 20, 600000)) { warnen(who, 'truppen', 'Zu viele Funde auf der Karte (über 20 in 10 Minuten) – abgelehnt.', b.n); return 0; }
+            if (zuOft(m, 'fund', 12, 600000)) { warnen(who, 'truppen', 'Zu viele Funde auf der Karte (über 12 in 10 Minuten) – abgelehnt.', b.n); return 0; }   // (echt: ~7 in 10 Min.)
             erlaubt = Math.max(100, niceRound(levelRewardTroops(Math.max(m.lvl, 2)) * 0.05)) * 1.05 + 10;
         } else {                                       // Admin-Geschenk: nur so viel, wie der Admin geschickt hat
             if (n > nn(d.gTr) + 0.5 && !ende) return -1;
@@ -12448,7 +12451,7 @@ if (window.WELT) {
         const dt = Math.min(HB_KAPPE_TAGE * TAG, now - nn(hb.frT)); if (dt < 300000) return; hb.frT = now;   // (in 5-Minuten-Schritten: das Hauptbuch ändert sich nicht bei jedem Profil)
         const f = hb.fr, on = !!(WELT.menschen[who] && WELT.menschen[who].online), t = dt / TAG;
         const dazu = (k, v, kappe) => { const vorher = nn(f[k]); f[k] = Math.max(vorher, Math.min(vorher + v, kappe)); };
-        dazu('g', HB_TAG.g * t + (on ? HB_ONLINE_STUNDE_G * dt / 36e5 : 0), HB_KAPPE_TAGE * (HB_TAG.g + 8 * HB_ONLINE_STUNDE_G));
+        dazu('g', HB_TAG.g * t + (on ? HB_ONLINE_STUNDE_G * Math.min(dt, 600000) / 36e5 : 0), HB_KAPPE_TAGE * (HB_TAG.g + 8 * HB_ONLINE_STUNDE_G));   // Karten-Funde nur für die Zeit, die er wirklich da war (online kommt alle 5 Min. ein Profil – nie die Tage dazwischen)
         dazu('k', HB_TAG.k * t, HB_KAPPE_TAGE * HB_TAG.k); dazu('kg', HB_TAG.kg * t, HB_KAPPE_TAGE * HB_TAG.kg); dazu('sh', HB_TAG.sh * t, HB_KAPPE_TAGE * HB_TAG.sh);
         const L = hbStufe(who), alter = hb.t0 ? (now - hb.t0) / TAG : 999;
         const ach = HB_ACH() * Math.min(1, alter / 30 + (L - 1) / 100);                   // Erfolge: nach und nach (30 Tage bzw. Stufe 100)
@@ -12725,23 +12728,29 @@ if (window.WELT) {
     }
     const heldOk = h => kennungOk(h) ? h : null;
     const truppenVon = (id, n) => zahlOk(n) ? Math.floor(Math.min(n, islandTroops[id] || 0)) : 0;   // nie mehr, als die Basis hat
+    // Wege wie auf dem Handy (dort prüft das Spiel sie in den Fenstern): Brücken, Pässe, fremde Tore – nie mehr nur „vertrauen“
+    const wegOk = (who, vonLm, nachLm) => vonLm === nachLm || canReach(vonLm, nachLm, who);
     const BEFEHLE = {
         angriff(who, b) {
-            if (!inselOk(b.src) || !inselOk(b.ziel) || !zahlOk(b.n)) { warnen(who, 'kaputt', 'Angriff mit kaputten Angaben – abgelehnt.'); return; }
+            if (!inselOk(b.src) || !inselOk(b.ziel) || !zahlOk(b.n) || b.n < 1) { warnen(who, 'kaputt', 'Angriff mit kaputten Angaben – abgelehnt.'); return; }
             if (islandOwnerOf(b.ziel) === who) { warnen(who, 'kaputt', 'Angriff auf die eigene Basis – abgelehnt.'); return; }   // (brachte sonst Gratis-EP)
             if (!gehoert(b.src, who)) return;
+            if (!wegOk(who, islandById[b.src].landmassId, islandById[b.ziel].landmassId)) { warnen(who, 'weg', 'Angriff ohne Weg dorthin (Brücke/Tor) – abgelehnt.'); return; }
+            b.n = Math.floor(b.n);
             naechsteGruppe = kennungOk(b.grp) ? b.grp : null;                // Mehrfachangriff = ein Marsch-Platz (nur vom selben Ort, nur kurz nacheinander)
             try { launchAttack(b.src, b.ziel, who, b.n, heldOk(b.held), heldOk(b.held2)); } finally { naechsteGruppe = null; }
         },
         senden(who, b) {
-            if (!inselOk(b.von) || !inselOk(b.nach) || !zahlOk(b.n)) { warnen(who, 'kaputt', 'Senden mit kaputten Angaben – abgelehnt.'); return; }
+            if (!inselOk(b.von) || !inselOk(b.nach) || !zahlOk(b.n) || b.n < 1) { warnen(who, 'kaputt', 'Senden mit kaputten Angaben – abgelehnt.'); return; }
             if (!gehoert(b.von, who) || !gehoert(b.nach, who)) return;
+            if (!wegOk(who, islandById[b.von].landmassId, islandById[b.nach].landmassId)) { warnen(who, 'weg', 'Senden ohne Weg dorthin (Brücke/Tor) – abgelehnt.'); return; }
+            b.n = Math.floor(b.n);
             naechsteGruppe = kennungOk(b.grp) ? b.grp : null;
             try { launchSend(b.von, b.nach, who, b.n); } finally { naechsteGruppe = null; }
         },
         zurueck(who, b) {                             // umkehren: wie bei dir, nur als "Marsch zurück" dieses Spielers
             if (!kennungOk(b.key)) return;
-            const m = marschVon(who, b.key); if (!m || m.fightEndsAt || m.rally) return;   // (eine Rally gehört allen, die mitmachen)
+            const m = marschVon(who, b.key); if (!m || m.fightEndsAt || m.rally || m.back) return;   // (eine Rally gehört allen, die mitmachen; wer schon heimgeht, kehrt nicht nochmal um)
             const now = Date.now(), fromId = m.sourceId ?? m.fromId, toId = m.targetId ?? m.toId, troops = m.rawTroops ?? m.troops;
             (pendingAttacks.includes(m) ? pendingAttacks : pendingSends).splice((pendingAttacks.includes(m) ? pendingAttacks : pendingSends).indexOf(m), 1);
             const home = gehoert(fromId, who) ? fromId : botCapitalOf(who);
@@ -12778,6 +12787,8 @@ if (window.WELT) {
             if (!inselOk(b.insel)) return;
             const to = islandById[b.insel], bs = loadBotState()[who]; if (!to || to.type !== 'tower' || !gehoert(b.insel, who) || !bs) return;
             if (zuOft(wm(who), 'hauptstadt', 20, 3600000)) { warnen(who, 'hauptstadt', 'Hauptstadt über 20-mal in einer Stunde verlegt – abgelehnt.'); return; }
+            if (pendingAttacks.some(a => a.targetId === b.insel)) return;   // nicht in eine Basis, auf die gerade ein Angriff läuft (wie bei den Mitspielern)
+            const hb = hbDa(who); if (hb && !hbZahlen(who, hb, wacheSehen(who), { g: TELEPORT_GEMS })) { warnen(who, 'gems', 'Hauptstadt verlegen für ' + TELEPORT_GEMS + ' Gems – so viele kann er nicht haben. Abgelehnt.', TELEPORT_GEMS); return; }
             const from = botCapitalOf(who); if (from !== null && from !== undefined && from !== b.insel) { islandTroops[b.insel] = (islandTroops[b.insel] || 0) + (islandTroops[from] || 0); islandTroops[from] = 0; }
             bs.capital = b.insel; capitalCache = null; saveBotState(); saveGame(); requestRender();
         },
@@ -12794,12 +12805,14 @@ if (window.WELT) {
         titel(who, b) {
             if (rulerOwner() !== who || !TITLES.some(x => x.key === b.key)) return;
             const wem = b.wem ? (kennungOk(b.wem) ? lokalId(b.wem) : null) : null;
-            if (b.wem && (!wem || !botById[wem])) return;
+            if (b.wem && (!wem || !botById[wem] || wem === who)) return;   // (sich selbst keinen Titel)
             giveTitle(b.key, wem);
         },
         feld(who, b) {
             const f = (typeof b.feld === 'number' || typeof b.feld === 'string') ? resFields.find(x => x.id === b.feld) : null;
             if (!f || !inselOk(b.home) || !gehoert(b.home, who)) return;
+            if (!wegOk(who, islandById[b.home].landmassId, f.landmassId)) { warnen(who, 'weg', 'Sammeln ohne Weg dorthin – abgelehnt.'); return; }
+            const st = fieldInfo(f); if (st.left <= 0 && !(st.occ && st.occ.who === who)) return;   // leer (wächst nach): nichts zu holen
             const n = truppenVon(b.home, b.n); if (n >= 1) fieldSend(who, b.home, b.feld, n, heldOk(b.held), heldOk(b.held2));
         },
         feldHeim(who, b) { const f = resFields.find(x => x.id === b.feld), st = f && fieldInfo(f); if (st && st.occ && st.occ.who === who) { fieldGoHome(f, st, Date.now()); saveFields(); } },
@@ -12808,24 +12821,26 @@ if (window.WELT) {
             if (b.k === 'i' || b.k === 'd') {                // Events: eine Barbaren-Armee abfangen / den Drachen angreifen
                 if (zuOft(wm(who), 'event', 40, 3600000)) { warnen(who, 'lager', 'Über 40 Event-Angriffe in einer Stunde – abgelehnt.'); return; }
                 if (b.k === 'i' && (!kennungOk(b.tid) || !invArmee(b.tid))) return;
+                if (b.k === 'i' && !wegOk(who, islandById[b.home].landmassId, invPos(invArmee(b.tid)).lm)) { warnen(who, 'weg', 'Abfangen ohne Weg dorthin – abgelehnt.'); return; }
                 if (b.k === 'd') { const D = drAktiv(); if (!D) return; if ((D.hits[who] || 0) >= DR_HITS) { warnen(who, 'lager', 'Mehr als ' + DR_HITS + ' Angriffe auf den Drachen – abgelehnt.'); return; } }
                 const n = truppenVon(b.home, b.n); if (n >= 1) barbSend(who, b.home, b.k, b.k === 'i' ? b.tid : null, n, heldOk(b.held), heldOk(b.held2)); return;
             }
             // Tagesgrenzen wie auf dem Handy (Boss 10 Angriffe, Lager 20 pro Tag) – auch, was gerade unterwegs ist, zählt mit
             // (Boss: der Zähler steigt schon beim Losschicken; Lager: beim Sieg – darum zählen dort die unterwegs mit, wie barbLeft)
             if (b.k === 'b' ? barbRec(who).h >= dbossHitsMax() : barbLeft(who) <= 0) { warnen(who, 'lager', 'Tagesgrenze für ' + (b.k === 'b' ? 'den Boss' : 'Lager') + ' überschritten – abgelehnt.'); return; }
-            if (b.k === 'c') { const c = barbCampById(b.tid); if (!c || !barbOpenFor(who, c.L)) return; }   // nur Lager, die schon freigespielt sind
+            if (b.k === 'c') { const c = barbCampById(b.tid); if (!c || !barbOpenFor(who, c.L)) return;   // nur Lager, die schon freigespielt sind
+                if (!wegOk(who, islandById[b.home].landmassId, c.lm)) { warnen(who, 'weg', 'Lager-Angriff ohne Weg dorthin – abgelehnt.'); return; } }
             const n = truppenVon(b.home, b.n); if (n >= 1) barbSend(who, b.home, b.k, b.k === 'c' ? b.tid : null, n, heldOk(b.held), heldOk(b.held2));
         },
         armee(who, b) {
             if (b.op === 'neu') {
                 if (!b.pt || !punktOk(b.pt) || !Array.isArray(b.quellen)) return;
-                const q = b.quellen.slice(0, 10).filter(id => inselOk(id) && gehoert(id, who));
+                const q = b.quellen.slice(0, 10).filter(id => inselOk(id) && gehoert(id, who) && wegOk(who, islandById[id].landmassId, b.pt.lm));
                 const anteil = zahlOk(b.anteil, 1) ? b.anteil : .5;
                 if (q.length) armyCreate({ x: b.pt.x, y: b.pt.y, lm: b.pt.lm }, q, anteil, who); return;
             }
             const a = kennungOk(b.id) ? armyById(b.id) : null; if (!a || armyWho(a) !== who) return;
-            if (b.op === 'dazu' && inselOk(b.quelle) && gehoert(b.quelle, who)) { const n = truppenVon(b.quelle, b.n); if (n >= 1) armySendFrom(a, b.quelle, n); }
+            if (b.op === 'dazu' && inselOk(b.quelle) && gehoert(b.quelle, who) && wegOk(who, islandById[b.quelle].landmassId, a.lm)) { const n = truppenVon(b.quelle, b.n); if (n >= 1) armySendFrom(a, b.quelle, n); }
             if (b.op === 'ziehen') { const t = zielPruefen(b.ziel); if (t) armyMove(a, t); }
             if (b.op === 'held') armySetHeroes(a, heldOk(b.held), heldOk(b.held2));   // Haupt- und Zweitheld: nur eigene, freie (armySetHeroes prüft)
             saveArmies(); requestRender();

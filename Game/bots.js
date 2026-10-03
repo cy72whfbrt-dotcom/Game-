@@ -1573,7 +1573,9 @@ function botThroneShop(botId) {                       // the others spend their 
         const o = THRONE_OFFERS.find(x => x.id === id); if (!(b.tp >= o.cost)) break; b.tp -= o.cost; throneGive(botId, id); }
 }
 
-function botDropShield(botId) { const b = loadBotState()[botId]; if (!b || !(b.shieldUntil > Date.now())) return; b.shieldUntil = 0; b.shieldWhy = null; saveBotState(); requestRender(); }
+function botDropShield(botId) { const b = loadBotState()[botId]; if (!b || !(b.shieldUntil > Date.now())) return;
+    if (b.mensch) { b.schildAlt = b.shieldUntil; if (b.hb) b.hb.schild = Math.min(+b.hb.schild || 0, Date.now()); }   // ein echter Spieler: der Schild kommt nicht mit seinem nächsten Profil zurück
+    b.shieldUntil = 0; b.shieldWhy = null; saveBotState(); requestRender(); }
 
 const botProdCarry = {};                         // per bot: time not yet made into a tick of its own, and fractions
 
