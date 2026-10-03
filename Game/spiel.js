@@ -5237,7 +5237,7 @@ function renderAchievements() {
 }
 function claimAch(a) {
     if (!a || achClaimed[a.id] || !achDone(a)) return 0;
-    achClaimed[a.id] = Date.now(); store.set('openWaterAch', JSON.stringify(achClaimed)); gems += a.gems; return a.gems;
+    achClaimed[a.id] = Date.now(); store.set('openWaterAch', JSON.stringify(achClaimed)); gems += a.gems; saveGameNow(); return a.gems;   // (die Gems gleich mit sichern – nicht erst mit der nächsten Sicherung)
 }
 document.getElementById('achList').addEventListener('click', e => {
     if (e.target.closest('[data-ach-all]')) { const l = achClaimable(), n = l.reduce((s, a) => s + claimAch(a), 0); if (!n) return;
@@ -6031,7 +6031,7 @@ setInterval(() => {                 // day rollover while the game stays open
 }, 60000);
 updateGoalsBadge();
 // ===== SAISON-PASS: 28 days on one calendar for everyone, 40 levels of 300 points, a free row and a premium row (Gems, never money). Points come from what you do anyway =====
-var PASS_EPOCH = Date.UTC(2026, 0, 5), PASS_LEN = 28 * 86400000, PASS_GRACE = 3 * 86400000, PASS_LVLS = 40, PASS_STEP = 300, PASS_PREMIUM = 1000, PASS_OWNED_GEMS = 1000;
+var PASS_EPOCH = Date.UTC(2026, 0, 5), PASS_LEN = 28 * 86400000, PASS_GRACE = 3 * 86400000, PASS_LVLS = 40, PASS_STEP = 300, PASS_PREMIUM = 1000, PASS_OWNED_GEMS = 150;   // (Skin schon da: 150 Gems – vorher 1000, dann brachte der Premium-Pass mehr Gems zurück, als er kostet)
 var PASS_XP = { quest: 40, questBonus: 80, captures: 20, pvpWins: 10, defends: 15, armyWins: 15, bosses: 60, temples: 25, throneMin: 2, upgrade: 4, pickup: 8, crate: 3, scouts: 3, heroFires: 2 };   // what each deed is worth
 var PASS_BOT_XP = { caps: 20, pvp: 10, defs: 15, armyWins: 15, bosses: 60, temples: 25, throneMin: 2, scouts: 3, heroFires: 2 };   // the same by the names in the others' stats (+ 200 a day with all tasks done)
 var PASS_HOW = [['goal', 'Tagesaufgabe abgeholt', 40], ['star', 'Alle drei Aufgaben (Bonus)', 80], ['flag', 'Basis erobert', 20], ['attack', 'Basis eines Spielers (zusätzlich)', '+10'], ['shield', 'Angriff abgewehrt', 15], ['troops', 'Armee siegt im Feld', 15],
@@ -6355,7 +6355,7 @@ function renderThroneShop() {
         '<div class="sect"><h4>Eintauschen</h4></div><div class="throne-list">' +
         THRONE_OFFERS.filter(o => !o.once).map(o => { const done = o.once && throneOwned('player', o), n = throneAmount('player', o.id);   // looks are bought in the Aussehen sheet
             const sub = o.id === 'coins' ? fmtCompact(n) + ' – so viel, wie dein Reich in 1 Std. verdient' : o.id === 'troops' ? fmtCompact(n) + ' – eine Stunde deiner Ausbildung, in die Hauptstadt'
-                : o.id === 'gems' ? 'für Kisten, Helden und Sterne' : o.id === 'crate' ? 'ein zufälliges Teil, jede Seltenheit möglich' : o.id === 'royal' ? 'mindestens Lila' : done ? 'gehört dir' : o.ring ? 'Ring um alle deine Basen – nur hier' : 'gibt es nur hier';
+                : o.id === 'gems' ? 'für Kisten, Helden und Sterne' : o.id === 'crate' ? 'ein zufälliges Teil (Grau bis Episch)' : o.id === 'royal' ? 'mindestens Lila' : done ? 'gehört dir' : o.ring ? 'Ring um alle deine Basen – nur hier' : 'gibt es nur hier';
             return '<div class="throne-row' + (o.once ? ' is-special' : '') + '"><span class="tr-ic">' + icon(o.icon, 'ico-' + o.icon) + '</span><span class="tr-t"><b>' + o.name + '</b><small>' + sub + '</small></span>' +
                 (done ? '<span class="chip">' + icon('check') + 'Gekauft</span>' : '<button type="button" class="btn btn--primary btn--sm" data-throne-buy="' + o.id + '"' + ((ts.pts || 0) < o.cost ? ' disabled' : '') + '>' + icon('crown') + '<b>' + fmtNum(o.cost) + '</b></button>') + '</div>'; }).join('') + '</div>' +
             '<p class="mail-intro">Thron-Rahmen, Titel und Ringe für Thron-Punkte gibt es unter Profil → Aussehen, die Thron-Punkte-Rangliste unter Profil → Rangliste.</p>');
@@ -6485,6 +6485,7 @@ function renderShieldState() { const el = document.getElementById('shieldState')
 shopPopup.addEventListener('click', e => {                 // Shop → Schilde: kaufen (in den Vorrat) und einschalten – beides nur hier
     const su = e.target.closest('[data-shield-use]');
     if (su) { const h = +su.dataset.shieldUse, stock = shieldStock(); if (!stock[h]) return;
+        if (Math.max(Date.now(), shieldUntil()) + h * 3600000 > Date.now() + 8 * 86400000) { flashHint('Mehr als 8 Tage Friedensschild am Stück gehen nicht – erst, wenn er kürzer ist.', 3500); return; }   // (die Welt zählt höchstens 8 Tage)
         stock[h]--; store.set('openWaterShieldStock', JSON.stringify(stock)); statBump('shields');
         store.set('openWaterShield', String(Math.max(Date.now(), shieldUntil()) + h * 3600000)); shieldMemAt = 0;
         flashHint('Friedensschild aktiv – noch ' + fmtHours(shieldUntil() - Date.now()), 3000); renderShop(); requestRender(); return; }
@@ -12147,6 +12148,19 @@ if (window.WELT) {
         const stunde = dauer >= 3600000 ? gemessen : Math.max(m.hp0, gemessen * 3600000 / Math.max(dauer, 600000));
         return 50000 + lv + 3 * Math.max(5000, stunde) + 3 * levelRewardCoins(L + 1);
     }
+    // Münzen, die auf einmal kommen dürfen: Saison-Pass (je Saison höchstens die Münz-Stufen beider Reihen) und Thron-Shop
+    // (so viele Käufe, wie seine Thron-Punkte hergeben – die zählt der Weltrechner selbst). Gemessen in Stunden Ertrag.
+    let passMuenzH = null;
+    function muenzGutscheine(who, mehr, d) {
+        if (!d || !(mehr > 0)) return 0;
+        if (passMuenzH === null) { passMuenzH = 0; for (let L = 1; L <= PASS_LVLS; L++) for (const pr of [false, true]) { const r = passRewardAt(L, pr); if (r.k === 'coins') passMuenzH += r.n || 1; } }
+        const h = Math.max(5000, nn(hourProduction(who).coins)) * 1.2, s = passNo(Date.now());   // (+20 %: sein Handy rechnet mit eigenen Boni)
+        if (d.pS !== s) { d.pS = s; d.pM = 0; }
+        const passRest = Math.max(0, passMuenzH - nn(d.pM)), thronRest = Math.max(0, Math.floor(throneEarnedOf(who) / 150) + 3 - nn(d.tC));
+        const use = Math.min(mehr, (passRest + thronRest) * h); if (!(use > 0)) return 0;
+        const ausPass = Math.min(use / h, passRest); d.pM = nn(d.pM) + ausPass; d.tC = nn(d.tC) + (use / h - ausPass); saveBotState();
+        return use;
+    }
     function spielraumFrei(who, m) {
         const now = Date.now(); while (m.sr.length && now - m.sr[0].t > 3600000) m.sr.shift();
         return Math.max(0, spielraumStunde(who, m) - m.sr.reduce((a, x) => a + x.n, 0));
@@ -12267,6 +12281,7 @@ if (window.WELT) {
                 const roh = mehr;
                 if (d.gC > 0) { const g = Math.min(d.gC, mehr); d.gC -= g; mehr -= g; saveBotState(); }
                 const nimm = Math.min(mehr, spielraumFrei(who, m)); if (nimm > 0) m.sr.push({ t: now, n: nimm }); mehr -= nimm;
+                if (mehr > 0) mehr -= muenzGutscheine(who, mehr, d);   // Saison-Pass und Thron-Shop zahlen Münzen auf einmal aus (z. B. „Alle abholen“)
                 m.c.u = pc - mehr;
                 if (mehr >= 1) warnen(who, 'muenzen', 'Münzen springen: +' + fz(roh) + ' mehr als erwartet, möglich wären höchstens +' + fz(roh - mehr) + '.', mehr);
             }
@@ -12971,7 +12986,7 @@ if (window.WELT) {
     });
     WELT.beiNachricht.push(function (e) {             // Geschenk (vom Admin): liegt im Abholfach, wird normal abgeholt
         if (!e || e.art !== 'geschenk') return;
-        if (inboxAdd({ src: 'gift', title: 'Geschenk', gems: e.gems || 0, coins: e.coins || 0, sh: e.sh || 0, crate: e.crate >= 0 ? e.crate : -1, tr: e.tr || 0 })) flashHint('Ein Geschenk liegt für dich bereit – Events → Belohnung.', 4500);
+        if (inboxAdd({ src: 'gift', title: 'Geschenk', gems: e.gems || 0, coins: e.coins || 0, sh: e.sh || 0, crate: Number.isInteger(e.crate) && e.crate >= 0 && e.crate <= 5 ? e.crate : -1, tr: e.tr || 0 })) flashHint('Ein Geschenk liegt für dich bereit – Events → Belohnung.', 4500);   // (Kiste nur 0–5: sonst bricht das Abholfach)
         else if (e.sh > 0 || e.crate >= 0 || e.tr > 0) flashHint('Ein Geschenk liegt für dich bereit – Events → Belohnung.', 4500);
     });
     // Willkommen: einmal den Namen wählen

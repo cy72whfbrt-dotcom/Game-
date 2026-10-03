@@ -250,7 +250,9 @@ function tierSetzen(who, T) {                                  // → '' oder wa
     const c = stadtVon(who); if (!c || !(T >= 1 && T <= 5)) return 'kaputt';
     if (T > tierErlaubt(who)) return 'T' + T + ' braucht die Forschung „Truppen-Stufe T' + T + '“ und Burg Stufe ' + TIER_BURG[T] + '.';
     const bez = c.tierBez || 1;
-    if (T > bez) { if (!zahlen(who, { e: TIER_EISEN[T] })) return 'Die Umstellung auf T' + T + ' kostet ' + fmtCompact(TIER_EISEN[T]) + ' Eisen.'; c.tierBez = T; }
+    if (T > bez) {                                             // jede neue Stufe einmal Eisen – auch die übersprungenen (wie das Hauptbuch auf dem Server rechnet)
+        let e = 0; for (let t = bez + 1; t <= T; t++) e += TIER_EISEN[t];
+        if (!zahlen(who, { e })) return 'Die Umstellung auf T' + T + ' kostet ' + fmtCompact(e) + ' Eisen' + (T > bez + 1 ? ' (alle Stufen bis dahin)' : '') + '.'; c.tierBez = T; }
     c.tier = T;
     if (who === 'player') { saveCity(); saveGame(); } else saveBotState();
     return '';
@@ -341,7 +343,7 @@ function extraHtml(id, lvl) {
     if (id === 'barracks') {
         const T = truppenStufe('player'), erl = tierErlaubt('player'), bez = loadCity().tierBez || 1;
         return '<div class="keep-h">Truppen-Stufe (eine Truppenart für dein ganzes Reich)</div><div class="fo-list">' + [1, 2, 3, 4, 5].map(t => {
-            const ok = t <= erl, kost = t > bez ? TIER_EISEN[t] : 0;
+            let kost = 0; for (let x = bez + 1; x <= t; x++) kost += TIER_EISEN[x]; const ok = t <= erl;   // (übersprungene Stufen zählen mit)
             return '<div class="fo-row' + (t === T ? ' is-run' : '') + '">' + icon('troops') + '<span class="fo-t"><b>T' + t + (t === T ? ' <em>aktiv</em>' : '') + '</b><small>' + (t === 1 ? 'Standard' : '+' + Math.round((TIER_KRAFT[t] - 1) * 100) + ' % Kampfkraft (Angriff und Verteidigung)') + '</small>' +
                 (t > 1 && !ok ? '<small class="fo-why">Braucht Forschung „Truppen-Stufe T' + t + '“ und Burg Stufe ' + TIER_BURG[t] + '.</small>' : '') + '</span>' +
                 (t === T ? '<em class="fo-ok">' + icon('check') + '</em>' : '<button type="button" class="btn btn--' + (t > T ? 'primary' : 'secondary') + ' btn--sm" data-tier="' + t + '"' + (!ok || roh.e < kost ? ' disabled' : '') + '>' + (kost ? icon(ROH_DEF.e.icon) + fmtCompact(kost) : 'Umstellen') + '</button>') + '</div>';
