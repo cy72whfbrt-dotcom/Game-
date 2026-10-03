@@ -1562,3 +1562,17 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
   **Test mit echten Spielern (Server + Weltrechner, `einl_server_test`):** A gründet („nur auf Anfrage“), Profil von B zeigt
   „Ins Bündnis einladen“ → Einladung in der Welt → Profil zeigt „Eingeladen“ → B sieht sie im Bündnis-Fenster (mit Punkt) →
   Annehmen → B ist Mitglied, Einladung weg; C lehnt ab → draußen; B (kein Anführer) hat keinen Knopf; keine Skript-Fehler.
+
+## 49. Emma & Co. kamen nicht vom Fleck + Einladen an der Basis und in „Suchen“ (4.10., Alexanders Meldung)
+- **Fehler:** Live hatten nach 3 Std. 44 von 150 Mitspielern (z. B. Emma) nur ihre erste Basis. Ursache (bots.js `botThink`):
+  neue freie Basen nehmen sie nur, wenn ihr Reich „gut ausgebaut“ ist (Durchschnitts-Stufe der Basen). Seit die Hauptstadt
+  ihre Stufe von der Burg bekommt (aufbau.js, Burg 1 = Stufe 1), galt ein Mitspieler mit nur der Hauptstadt und Burg 1 nie als
+  ausgebaut → schickte nur Späher (Emma: 63), griff nie an. Wer zufällig Ziele weiter innen oder bei anderen hatte, kam voran.
+  **Fix:** die Hauptstadt zählt beim „ausgebaut“ nicht mit (mit nur der Hauptstadt: darf die erste freie Basis nehmen).
+  Geprüft (Vorschau): Emma mit Burg 1 und nur der Hauptstadt → 8 Angriffe auf freie Türme.
+- **Einladen an der Basis:** Anführer tippt eine Basis/Hauptstadt von jemandem ohne Bündnis an → Knopf „Einladen“ (danach
+  „Eingeladen“). **„Suchen“:** für den Anführer oben die Liste „Ohne Bündnis – einladen“ (Mitspieler und echte Spieler, die
+  nächsten zuerst, 30 sichtbar) mit „Einladen“. Gemeinsame Prüfung `bundKannEinladen`/`bundEingeladen` (auch fürs Profil).
+- Getestet (Server + Weltrechner, `einl2_test`): Liste zeigt alle ohne Bündnis, Einladen über die Liste, Knopf an der
+  Hauptstadt, danach „Eingeladen“, keine Skript-Fehler. Vorschau: Einladungen 10/10, Verstärkung 5/5, Bündnis-Bots 3/3,
+  Amt 1/1; Unit 16/65.

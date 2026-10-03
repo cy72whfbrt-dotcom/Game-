@@ -736,8 +736,10 @@ function botThink(bot) {
     // grow like a person: build up what you have before grabbing more empty land. New neutral bases only while the
     // empire is built up well enough (more bases → higher average level needed), and only one or two per move.
     // Enemies, events, temples, gates and steps towards the middle are always worth it.
-    let lvSum = 0; for (const id of owned) lvSum += islandLevels[id] || 1;
-    const builtUp = lvSum / owned.size >= Math.min(14, 1 + owned.size / 25);
+    // (die Hauptstadt zählt nicht mit: ihre Stufe kommt von der Burg (aufbau.js) – sonst nähme ein Mitspieler mit Burg 1 und nur
+    //  der Hauptstadt nie eine erste freie Basis und schickte nur Späher, live 3.10.: 44 von 150 so festgesteckt)
+    let lvSum = 0, lvN = 0; for (const id of owned) if (!isCapital(id)) { lvSum += islandLevels[id] || 1; lvN++; }
+    const builtUp = !lvN || lvSum / lvN >= Math.min(14, 1 + owned.size / 25);
     let grabs = builtUp && now - (mem.lastGrabAt || 0) > 1500 ? 1 : 0;                  // at most one new base every 1.5 s, even for the fastest
     for (const [li, e] of list.entries()) {
         if (n >= launches || slots <= 0) break;

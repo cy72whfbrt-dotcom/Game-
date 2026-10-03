@@ -787,7 +787,7 @@ function bundInfoHtml(a) {
             '<button type="button" class="btn btn--primary btn--sm" data-bact="anfrage" data-w="' + q.w + '" data-ja="1">Ja</button><button type="button" class="btn btn--secondary btn--sm" data-bact="anfrage" data-w="' + q.w + '">Nein</button></div>').join('') + '</div>' : '') +
         (chef && (a.einl || []).length ? '<div class="sect"><h4>Eingeladen</h4></div><div class="bd-liste">' + a.einl.map(q => '<div class="bd-zeile"><span class="bd-name">' + whoLink(q.w, bundName(q.w)) + '<small>Macht ' + fmtCompact(staerke(q.w)) + ' · noch ' + uhrHtml(q.at + BUND_EINL_MS, 'clock') + '</small></span>' +
             '<button type="button" class="btn btn--ghost btn--sm" data-bact="einlWeg" data-w="' + q.w + '">Zurückziehen</button></div>').join('') + '</div>' : '') +
-        (chef && a.mit.length < BUND.MAX ? '<div class="notice">' + icon('info') + '<span>Jemanden einladen: tippe seinen Namen an (Rangliste, Basis, Kampfbericht) → „Ins Bündnis einladen“.</span></div>' : '') +
+        (chef && a.mit.length < BUND.MAX ? '<div class="notice">' + icon('info') + '<span>Jemanden einladen: unter „Suchen“ stehen alle ohne Bündnis – oder tippe seine Basis bzw. seinen Namen an → „Einladen“.</span></div>' : '') +
         '<div class="sect"><h4>Mitglieder</h4><span class="sect-aside">' + a.mit.length + ' / ' + BUND.MAX + '</span></div><div class="bd-liste">' + mit.map(w => {
             const on = w === 'player' || (botById[w] && botOnline(botById[w], now));
             return '<div class="bd-zeile' + (w === 'player' ? ' is-me' : '') + '"><i class="bd-dot' + (on ? ' on' : '') + '"></i><span class="bd-name">' + (w === 'player' ? '<b>' + escapeHtml(bundName(w)) + '</b>' : whoLink(w, bundName(w))) +
@@ -825,7 +825,7 @@ function bundRallyHtml(a) {
 }
 function bundSuchenHtml(a) {
     const alle = Object.values(bund.b).map(x => ({ x, m: bundMacht(x) })).sort((p, q) => q.m - p.m), angefragt = id => (bund.b[id].anfragen || []).some(q => q.w === 'player');
-    return (a ? '<div class="notice">' + icon('info') + '<span>Du bist in [' + escapeHtml(a.tag) + '] ' + escapeHtml(a.name) + '. Um zu wechseln, verlasse erst dein Bündnis.</span></div>' : bundEinladungenHtml()) +
+    return (a ? bundOhneListeHtml() + '<div class="notice">' + icon('info') + '<span>Du bist in [' + escapeHtml(a.tag) + '] ' + escapeHtml(a.name) + '. Um zu wechseln, verlasse erst dein Bündnis.</span></div>' : bundEinladungenHtml()) +
         '<div class="sect"><h4>Alle Bündnisse</h4><span class="sect-aside">' + alle.length + '</span></div><div class="bd-liste">' + (alle.length ? alle.map(({ x, m }) =>
             '<div class="bd-zeile">' + bundZeichenHtml(x) + '<span class="bd-name"><b>[' + escapeHtml(x.tag) + '] ' + escapeHtml(x.name) + '</b><small>' + x.mit.length + ' / ' + BUND.MAX + ' · Macht ' + fmtCompact(m) + ' · ' + (x.offen ? 'offen' : 'auf Anfrage') + ' · Anführer ' + escapeHtml(bundName(x.anf)) + '</small></span>' +
             (a ? '' : x.mit.length >= BUND.MAX ? '<span class="chip">voll</span>' : angefragt(x.id) ? '<button type="button" class="btn btn--ghost btn--sm" data-bact="anfrageWeg">Angefragt ✕</button>'
@@ -937,6 +937,7 @@ if (bundPopup) {
         else if (act === 'einlJa') bundBefehl('einladungAntwort', { aid: b.dataset.aid, ja: true }, 'Einen Moment …');
         else if (act === 'einlNein') bundBefehl('einladungAntwort', { aid: b.dataset.aid, ja: false }, 'Einladung abgelehnt.');
         else if (act === 'einlWeg') bundBefehl('einladungWeg', { w }, 'Einladung zurückgezogen.');
+        else if (act === 'einlAn') { if (bundKannEinladen(b.dataset.w) && !bundEingeladen(b.dataset.w)) { b.disabled = true; bundBefehl('einladen', { w }, 'Einladung an ' + bundName(b.dataset.w) + ' geschickt.'); } }
         else if (act === 'anfrage') bundBefehl('anfrage', { w, ja: b.dataset.ja === '1' });
         else if (act === 'anfuehrer') { if (sicher('chef:' + b.dataset.w)) bundBefehl('anfuehrer', { w }, bundName(b.dataset.w) + ' führt jetzt das Bündnis.'); }
         else if (act === 'raus') { if (sicher('raus:' + b.dataset.w)) bundBefehl('rauswerfen', { w }, bundName(b.dataset.w) + ' wurde entfernt.'); }
@@ -972,6 +973,7 @@ function bundInselfenster(island, view) {
     if (mein) { kn.push(['hilfe', 'shield', 'Hilfe!']); kn.push(['sammeln', 'flag', 'Sammeln']); }
     else if (ally) { kn.push(['verteidigen', 'defense', 'Verteidigt']); kn.push(['sammeln', 'flag', 'Sammeln']); if (verstStufe(islandOwnerOf(island.id))) kn.push(['hilfeWahl', 'send', 'Verstärkung']); }   // (nur mit Botschaft – die Truppen bleiben deine)
     else if (!bundZielOk('player', island.id) || ow && !isCapital(island.id)) { kn.push(['angriff', 'attack', 'Angriff!']); if (!bundZielOk('player', island.id)) kn.push(['rallyWahl', 'troops', 'Rally']); }
+    if (bundKannEinladen(ow)) kn.push(['einladen', 'bund', bundEingeladen(ow) ? 'Eingeladen' : 'Einladen']);   // Anführer: Herr dieser Basis ins Bündnis einladen
     liveHtml(box, (ally ? '<div class="notice notice--gold">' + icon('bund') + '<span>' + escapeHtml(bundName(ow)) + ' ist in deinem Bündnis – Mitglieder greifen sich nicht an.</span></div>' : '') +
         (kn.length ? '<div class="bd-insel"><span class="bd-insel-l">' + icon('bund') + 'Bündnis</span>' + kn.map(k => '<button type="button" class="btn btn--secondary btn--sm" data-bsig="' + k[0] + '">' + icon(k[1]) + '<span>' + k[2] + '</span></button>').join('') + '</div>' : ''));
 }
@@ -980,6 +982,7 @@ document.getElementById('popupBund') && document.getElementById('popupBund').add
     const id = popupIslandId, art = b.dataset.bsig;
     if (art === 'rallyWahl') { const why = bundZielOk('player', id); if (why) { flashHint(why + '.', 3000); return; } closeIslandPopup(); bundWahl = { mode: 'rally', t: id, min: 3, f: 1 }; bundOeffnen('rally'); return; }
     if (art === 'hilfeWahl') { closeIslandPopup(); bundWahl = { mode: 'hilfe', nach: id, f: .5 }; bundOeffnen('sig'); return; }
+    if (art === 'einladen') { const ow = islandOwnerOf(id); if (!bundKannEinladen(ow) || bundEingeladen(ow)) return; b.disabled = true; bundBefehl('einladen', { w: ow }, 'Einladung an ' + bundName(ow) + ' geschickt.'); return; }
     bundSignalSenden(art, id);
 });
 
@@ -1067,10 +1070,23 @@ if (window.WELT) {
     WELT.beiNachricht.push(function (e) { if (e && e.art === 'bundInfo' && typeof e.text === 'string') { flashHint(e.text.slice(0, 300), 4500); if (bundPopup && isPanelOpen(bundPopup)) bundRender(); } });
 }
 
+// Darf ich (Anführer, Platz frei) w einladen? Ist w schon eingeladen?
+function bundKannEinladen(w) { const a = bundIch(); return !SYSTEM && !!a && a.anf === 'player' && a.mit.length < BUND.MAX && !!w && w !== 'player' && !!botById[w] && !bundVon(w) && bundBasen(w).size > 0; }
+function bundEingeladen(w) { const a = bundIch(); return !!a && (a.einl || []).some(q => q.w === w && Date.now() - q.at < BUND_EINL_MS); }
+// Reiter „Suchen“ für den Anführer: alle ohne Bündnis (Mitspieler und echte Spieler), die nächsten zuerst
+function bundOhneListeHtml() {
+    const a = bundIch(); if (!a || a.anf !== 'player') return '';
+    if (a.mit.length >= BUND.MAX) return '<div class="notice">' + icon('info') + '<span>Dein Bündnis ist voll (' + BUND.MAX + ') – einladen geht erst wieder mit freiem Platz.</span></div>';
+    const c = islandById[playerIslandId], liste = BOT_DEFS.map(b => b.id).filter(w => bundKannEinladen(w))
+        .map(w => { const k = islandById[bundCap(w)]; return { w, d: c && k ? Math.hypot(k.x - c.x, k.y - c.y) : Infinity }; }).sort((x, y) => x.d - y.d);
+    return '<div class="sect"><h4>Ohne Bündnis – einladen</h4><span class="sect-aside">' + liste.length + '</span></div><div class="bd-liste">' + (liste.length ? liste.slice(0, 30).map(({ w }) =>
+        '<div class="bd-zeile"><span class="bd-name">' + whoLink(w, bundName(w)) + '<small>' + (botById[w].mensch ? 'Spieler · ' : '') + 'Macht ' + fmtCompact(staerke(w)) + ' · ' + bundBasenText(w) + '</small></span>' +
+        (bundEingeladen(w) ? '<span class="chip">eingeladen</span>' : '<button type="button" class="btn btn--primary btn--sm" data-bact="einlAn" data-w="' + w + '">Einladen</button>') + '</div>').join('')
+        : '<div class="inbox-empty">Gerade ist niemand ohne Bündnis.</div>') + '</div>' + (liste.length > 30 ? '<div class="inbox-empty">… und ' + (liste.length - 30) + ' weiter weg.</div>' : '');
+}
 // Profil eines Spielers (spiel.js openRulerProfile): als Anführer „Ins Bündnis einladen“
 function bundProfilKnopf(who) {
-    const a = bundIch(); if (SYSTEM || !a || a.anf !== 'player' || who === 'player' || !botById[who] || bundVon(who) || !bundBasen(who).size) return '';
-    if ((a.einl || []).some(q => q.w === who && Date.now() - q.at < BUND_EINL_MS)) return '<button class="btn btn--ghost btn--sm" type="button" disabled>' + icon('bund') + '<span>Eingeladen</span></button>';
-    if (a.mit.length >= BUND.MAX) return '';
+    if (!bundKannEinladen(who)) return '';
+    if (bundEingeladen(who)) return '<button class="btn btn--ghost btn--sm" type="button" disabled>' + icon('bund') + '<span>Eingeladen</span></button>';
     return '<button class="btn btn--secondary btn--sm" type="button" data-rp="einladen">' + icon('bund') + '<span>Ins Bündnis einladen</span></button>';
 }
