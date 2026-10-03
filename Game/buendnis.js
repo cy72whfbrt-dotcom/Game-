@@ -83,7 +83,7 @@ function bundZahlen(w, kosten) {                                 // Münzen abzi
     botCoins[w] -= kosten; return true;                          // (echte Spieler: geht als Nachricht „−Münzen“ an ihr Handy)
 }
 function bundRaus(a, w, grund) {                                 // w verlässt das Bündnis (oder wird rausgeworfen)
-    a.mit = a.mit.filter(x => x !== w);
+    a.mit = a.mit.filter(x => x !== w); if (a.dabei) delete a.dabei[w]; if (a.leer) delete a.leer[w];
     for (const r of bund.r.filter(r => r.aid === a.id && r.by === w)) bundRallyEnde(r, 'Der Starter ist nicht mehr im Bündnis');
     if (!a.mit.length) { delete bund.b[a.id]; return; }
     if (a.anf === w) { a.anf = a.mit.slice().sort((x, y) => staerke(y) - staerke(x))[0]; bundLog(a, bundName(a.anf) + ' führt jetzt das Bündnis.'); }
@@ -91,7 +91,7 @@ function bundRaus(a, w, grund) {                                 // w verlässt 
 }
 function bundRein(a, w) {
     for (const x in bund.b) { const b = bund.b[x]; b.anfragen = (b.anfragen || []).filter(q => q.w !== w); }
-    a.mit.push(w); bundLog(a, bundName(w) + ' ist beigetreten.');
+    a.mit.push(w); (a.dabei || (a.dabei = {}))[w] = Date.now(); bundLog(a, bundName(w) + ' ist beigetreten.');   // (dabei: seit wann – Mitspieler wechseln frühestens nach 12 Std.)
 }
 function bundOp(who, b) {
     if (!b || typeof b !== 'object' || !botById[who]) return 'kaputt';
@@ -435,6 +435,32 @@ function bundMitspielerRunde(now) {                              // alle 15 s: g
             const s = d / FRAME_HALF - stil * .15 - Math.min(.2, bundMacht(a) / Math.max(1, staerke(bot.id)) * .01) + a.mit.length * .01;
             if (!best || s < best.s) best = { s, a }; }
         if (best) { bundOp(bot.id, { op: 'beitreten', aid: best.a.id }); bundBotGetippt(bot, now); }
+    }
+    // d) Was echte Spieler als Anführer auch können – Mitspieler als Anführer tun es selten und nachvollziehbar (gleiche Befehle):
+    //    Mitglieder entfernen, die seit einem Tag keine Basis mehr haben · das Amt dem viel stärkeren Mitspieler übergeben ·
+    //    fast voll → nur noch auf Anfrage, wieder Platz → offen
+    for (const id in bund.b) {
+        const a = bund.b[id]; if (!a) continue;
+        const leer = a.leer || (a.leer = {});
+        for (const w of a.mit) { if (botOwnedIslands[w] && botOwnedIslands[w].size) delete leer[w]; else if (!leer[w]) leer[w] = now; }
+        const chef = botById[a.anf]; if (!chef || chef.mensch || !botOnline(chef, now)) continue;
+        const weg = a.mit.find(w => w !== a.anf && leer[w] && now - leer[w] > 24 * 3600000);
+        if (weg && Math.random() < .5) { bundOp(a.anf, { op: 'rauswerfen', w: weg }); continue; }
+        const st = a.mit.filter(w => w !== a.anf && botById[w] && !botById[w].mensch && botOwnedIslands[w] && botOwnedIslands[w].size).sort((x, y) => staerke(y) - staerke(x))[0];
+        if (st && staerke(a.anf) * 3 < staerke(st) && Math.random() < .05) { bundOp(a.anf, { op: 'anfuehrer', w: st }); continue; }
+        if (a.offen && a.mit.length >= BUND.MAX - 4 && Math.random() < .2) bundOp(a.anf, { op: 'offen', offen: false });
+        else if (!a.offen && a.mit.length <= BUND.MAX / 2 && Math.random() < .2) bundOp(a.anf, { op: 'offen', offen: true });
+    }
+    // e) wechseln (wie ein Spieler: austreten, dann beitreten): ein Mitspieler, dessen Hauptstadt inzwischen weit weg vom Bündnis liegt
+    //    (umgezogen, Gebiet verloren), geht zu einem offenen Bündnis mit Platz in seiner Nähe – frühestens 12 Std. nach dem Beitritt,
+    //    nie der Anführer
+    for (const bot of bots.filter(b => bundVon(b.id) && bundBotBereit(b, now) && Math.random() < .05).slice(0, 3)) {
+        const a = bundVon(bot.id); if (!a || a.anf === bot.id || now - ((a.dabei && a.dabei[bot.id]) || 0) < 12 * 3600000) continue;
+        const c = islandById[botCapitalOf(bot.id)], m = bundMitte(a); if (!c || !m || Math.hypot(c.x - m.x, c.y - m.y) < FRAME_HALF * .8) continue;
+        let best = null;
+        for (const x in bund.b) { const z = bund.b[x]; if (z === a || !z.offen || z.mit.length >= BUND.MAX) continue; const mz = bundMitte(z); if (!mz) continue;
+            const d = Math.hypot(c.x - mz.x, c.y - mz.y); if (d < FRAME_HALF * .5 && (!best || d < best.d)) best = { z, d }; }
+        if (best && !bundOp(bot.id, { op: 'verlassen' })) { bundOp(bot.id, { op: 'beitreten', aid: best.z.id }); bundBotGetippt(bot, now); }
     }
 }
 // Signale der Mitspieler: angegriffen und allein zu schwach → „Hilfe!“

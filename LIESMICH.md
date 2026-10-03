@@ -1407,3 +1407,15 @@ abgebrochen, fehlen höchstens die letzten 3 s, nie etwas halb · Bündnis-Kiste
 im Ausgang und kommt danach genau einmal) und alle bisherigen: Unit, `absturz_test`, `ausfall_test`, `ausgang_test`,
 `profil_abbruch`, `genau_einmal`, `rest_test`, `admin_csp`, großer Klick-Test Server + Vorschau – alles grün, keine PHP-Warnungen,
 keine Fehler im Weltrechner-Log, keine falschen Schummel-Alarme.
+
+## 41. Mitspieler können im Bündnis jetzt alles, was Spieler können (Alexander 3.10.) – NICHT hochgeladen
+Vorher: Mitspieler gründeten, traten bei, beantworteten Anfragen, riefen um Hilfe, schickten Truppen, machten Rallys und
+Geschenke – aber sie verließen nie ein Bündnis, entfernten niemanden, gaben die Führung nie ab und öffneten/schlossen nie.
+Jetzt (buendnis.js `bundMitspielerRunde`, mit denselben Befehlen wie ein Spieler – gleiche Prüfungen, gleiche Meldungen):
+- **Wechseln:** ein Mitglied, dessen Hauptstadt inzwischen weit weg vom Bündnis liegt (umgezogen, Gebiet verloren), tritt aus und
+  einem offenen Bündnis mit Platz in seiner Nähe bei – frühestens 12 Std. nach dem Beitritt (`a.dabei`), nie der Anführer.
+- **Entfernen:** ein Mitspieler-Anführer entfernt Mitglieder, die seit einem Tag keine Basis mehr haben (`a.leer`) – auch echte
+  Spieler (sie bekommen eine Nachricht, wie wenn ein Spieler-Anführer sie entfernt).
+- **Führung abgeben:** ist der Anführer viel schwächer (unter ⅓) als der stärkste Mitspieler im Bündnis, übergibt er (selten).
+- **Öffnen/Schließen:** fast voll (ab 16 von 20) → nur noch auf Anfrage; wieder Platz (höchstens 10) → offen.
+Getestet in der Vorschau (`bund_bot_test`, `bund_amt_test`): Entfernen, Wechseln, Schließen, Amt übergeben – ohne Fehler.
