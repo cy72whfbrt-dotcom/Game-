@@ -73,6 +73,7 @@ function wr_alle_pids() {
     }
     return $r;
 }
+function wr_alter($pid) { return (int)trim((string)@shell_exec('ps -o etimes= -p ' . (int)$pid . ' 2>/dev/null')); }   // Sekunden seit dem Start
 function wr_alle_beenden($grund) {   // vor jedem Start: nie zwei Weltrechner gleichzeitig (sie würden sich die CPU teilen und keiner käme durch)
     $p = wr_alle_pids(); if (!$p) return true;
     foreach ($p as $x) exec('kill -9 ' . (int)$x . ' 2>/dev/null');
@@ -186,6 +187,9 @@ function wachhund_runde($quelle = 'cron') {
         if (wartung()) { wr_schreiben('zustand.php', $z); return 'wartung'; }
         if ($jetzt - $letzterStart < 50) { wr_schreiben('zustand.php', $z); return 'gerade gestartet'; }   // höchstens ein Start pro Minute
         if ($jetzt < (int)($z['serverBis'] ?? 0)) { wr_schreiben('zustand.php', $z); return 'wartet auf den Server'; }   // (Server war zu langsam: Pause)
+        // Ein Weltrechner, der gerade erst gestartet wurde (auf einem überlasteten Server kann schon das Starten von Node dauern),
+        // ist nicht „weg“: nicht wegräumen und keinen zweiten starten – sonst wird auf einem langsamen Server nie einer fertig.
+        foreach (wr_alle_pids() as $x) { if (wr_alter($x) < WR_HERZ_ALT_START) { wr_schreiben('zustand.php', $z); return 'startet (noch ohne Herzschlag)'; } }
         // frischer Herzschlag ohne Ende-Meldung, aber kein Prozess gefunden: nur wenn ps hier nichts sieht (eingeschränkt) lieber
         // nicht – sonst liefen zwei. Sieht ps Prozesse (sich selbst), ist er wirklich weg (Speicher, hart beendet): gleich neu.
         if ($h && empty($h['ende']) && $jetzt - (int)($h['zeit'] / 1000) <= wr_herz_alt($h) && !wr_ps_geht()) { wr_schreiben('zustand.php', $z); return 'herz frisch'; }

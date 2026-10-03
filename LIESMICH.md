@@ -1537,3 +1537,7 @@ dem Neustart lief derselbe Kampf wieder → Schleife (Spieler: „Verbindung wir
 in der Datenbank). **Fix (start.js):** Truppen-Alarm nur noch, wenn praktisch keine mehr da sind (weniger Truppen als Basen) –
 das wäre echter Datenverlust; der Basen-Alarm bleibt. Geprüft: 1 Bio → 0,3 Mrd. bei 1.699 Basen → kein Alarm; Truppen → 0 →
 Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
+- **Nachtrag 23:45:** Auf dem überlasteten Server kam ein frisch gestarteter Weltrechner manchmal nicht vor der nächsten
+  Wachhund-Runde (1 Min.) bis zum ersten Herzschlag – der Wachhund räumte ihn vor dem nächsten Start weg → nie fertig.
+  **Fix (wachhund.php):** gibt es einen Weltrechner-Prozess, der jünger als 15 Min. ist, gilt er als „startet (noch ohne
+  Herzschlag)“ – nicht wegräumen, keinen zweiten starten. Getestet: Wachhund-Fälle 9/9, „Neustart“ 10× → genau einer.
