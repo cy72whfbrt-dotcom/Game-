@@ -46,8 +46,7 @@ function lager() {
 }
 
 // ===== Der Weltrechner auf dem Server (weltrechner/start.js) =====
-// Er meldet sich mit einem geheimen Schlüssel (Kopfzeile X-Weltrechner), nicht mit einem Login. Der Schlüssel wird aus dem
-// Datenbank-Passwort abgeleitet (steht nirgends sonst); wachhund.php gibt ihn beim Start mit. Nur er rechnet die Welt –
+// Er meldet sich mit einem geheimen Schlüssel (Kopfzeile X-Weltrechner), nicht mit einem Login; wachhund.php gibt ihn beim Start mit. Nur er rechnet die Welt –
 // niemals das Gerät eines Spielers (Regel von Alexander).
 // Eigener Zufalls-Schlüssel aus config.php (hochladen.sh erzeugt bei jedem Hochladen einen neuen). Nur lokal zum Testen
 // ohne ihn: aus dem DB-Passwort abgeleitet.
@@ -91,7 +90,7 @@ header('Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
 // Nur eigene Dateien + three.js (3D) + Google-Schriften; Daten gehen nur an den eigenen Server (kein Abfluss nach außen)
 header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
 
-// Admins (dürfen admin.php benutzen und auch während der Wartung spielen): feste Spieler-Nummern aus config.php
+// Admins (dürfen admin.php benutzen; während der Wartung kommen auch sie nicht ins Spiel): feste Spieler-Nummern aus config.php
 // ('admin_ids'), nicht Namen – einen Namen könnte sich sonst jemand anderes registrieren.
 function ist_admin($ich) {
     if (!$ich) return false;
@@ -110,7 +109,7 @@ function sauber($v, $tiefe = 0) {
     if (is_array($v) || is_object($v)) { foreach ($v as $k => $x) if ((is_string($k) && strpbrk($k, '<>') !== false) || !sauber($x, $tiefe + 1)) return false; }
     return true;
 }
-function sauber_json($text) { if (!is_string($text) || strpbrk($text, '<>') === false) return true; return false; }
+function sauber_json($text) { return is_string($text) && strpbrk($text, '<>') === false; }
 
 // Zu viele Versuche (Passwort raten, Massen-Anmeldungen): höchstens $max in $sek Sekunden pro Schlüssel
 function bremse($schluessel, $max, $sek) {
@@ -196,15 +195,18 @@ function befehl_ok($b) {
 // ===== Was Spieler NICHT bekommen (Datenlecks) =====
 // Gedanken der Mitspieler (wen sie als Nächstes angreifen, Pläne, wann sie „aufs Handy schauen“ …) und die Merkliste des
 // Schummel-Schutzes braucht nur der Weltrechner. Spieler bekommen diese Felder nie – weder im ganzen Teil noch in Flicken.
-const NUR_WELTRECHNER = ['grudge', 'annoy', 'vendetta', 'capWish', 'mood', 'kennt', 'fails', 'outAt', 'rally', 'plan', 'wache', 'dOffen', 'res', 'hb'];   // res: Rohstoffe der anderen (Paket D) · hb: Hauptbuch (3B)
+const NUR_WELTRECHNER = ['grudge', 'annoy', 'vendetta', 'capWish', 'mood', 'kennt', 'fails', 'outAt', 'rally', 'plan', 'wache', 'dOffen', 'res', 'hb', 'wounded'];   // res: Rohstoffe der anderen (Paket D) · hb: Hauptbuch (3B) · wounded: Lazarett
 function mitspieler_kuerzen($b, $jetztMs) {
     if (!is_object($b)) return $b;
     foreach (NUR_WELTRECHNER as $f) unset($b->{$f});
     if (isset($b->handy) && !(is_object($b->handy) && ($b->handy->bis ?? 0) > $jetztMs)) unset($b->handy);   // nur sichtbar, solange er wirklich online ist
     return $b;
 }
+// Münzen echter Spieler (u<id>) in openWaterBotCoins sieht nur der Weltrechner – wie in spieler_liste
+function muenzen_kuerzen($o) { foreach ($o as $id => $v) if (preg_match('/^u\d+$/', (string)$id)) unset($o->{$id}); return $o; }
 // ganzer Welt-Teil für einen Spieler
 function weltteil_fuer_spieler($k, $text) {
+    if ($k === 'openWaterBotCoins' && is_string($text)) { $o = json_decode($text); return is_object($o) ? json_encode(muenzen_kuerzen($o), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION) : $text; }
     if ($k !== 'openWaterBotState' || !is_string($text)) return $text;
     $o = json_decode($text); if (!is_object($o)) return $text;
     $j = microtime(true) * 1000; foreach ($o as $id => $b) $o->{$id} = mitspieler_kuerzen($b, $j);
@@ -212,6 +214,7 @@ function weltteil_fuer_spieler($k, $text) {
 }
 // Flicken für einen Spieler
 function flicken_fuer_spieler($k, $text) {
+    if ($k === 'openWaterBotCoins' && is_string($text)) { $p = json_decode($text); if (is_object($p) && isset($p->s) && is_object($p->s)) { muenzen_kuerzen($p->s); return json_encode($p, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION); } return $text; }
     if ($k !== 'openWaterBotState' || !is_string($text)) return $text;
     $p = json_decode($text); if (!is_object($p)) return $text;
     $j = microtime(true) * 1000;
@@ -316,7 +319,7 @@ function spielseite_vorbereiten() {
         if (!$ich) { header('Location: ./'); exit; }
         if (wartung()) { header('Location: ./'); exit; }   // Wartung: niemand kommt ins Spiel (auch kein Admin) – zurück zur Startseite
         // Gerade noch gespielt (Neuladen)? Dann auf den "Abschied" des alten Fensters warten (seine letzte Sicherung),
-        // höchstens 8 Sekunden - so lädt die neue Seite nie einen älteren Stand.
+        // höchstens 2 Sekunden - so lädt die neue Seite nie einen älteren Stand.
         $altTok = lager()->spiel_token($ich['id']);
         $uebernehmen = ($_GET['weiter'] ?? '') === '1';   // "Hier weiterspielen": sofort übernehmen (das andere Gerät fliegt raus)
         if (!$uebernehmen && $altTok !== '' && time() - lager()->zuletzt_gespeichert($ich['id']) < 60) {
@@ -382,7 +385,10 @@ class MysqlLager {
         $this->db = new PDO('mysql:host=' . $c['db_host'] . ';dbname=' . $c['db_name'] . ';charset=utf8mb4', $c['db_user'], $c['db_pass'], [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, PDO::ATTR_TIMEOUT => 5,
         ]);
-        $this->tabellen();
+        // Tabellen prüfen/anlegen nur einmal nach jedem Hochladen (vorher bei jeder Anfrage – auch bei jedem Puls)
+        $v = filemtime(__FILE__) . '-' . filesize(__FILE__);
+        try { $da = $this->db->query('SELECT tabellen_v FROM ow_welt_info WHERE id = 1')->fetchColumn(); } catch (PDOException $e) { $da = null; }
+        if ($da !== $v) { $this->tabellen(); $this->db->prepare('UPDATE ow_welt_info SET tabellen_v = ? WHERE id = 1')->execute([$v]); }
     }
     private function tabellen() {
         $this->db->exec("CREATE TABLE IF NOT EXISTS ow_spieler (
@@ -406,7 +412,7 @@ class MysqlLager {
             geaendert TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (spieler_id, schluessel)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin");
-        // Mitspieler: eine Zeile pro Mitspieler und Spieler (jeder Spieler hat seine eigene Welt mit eigenen Mitspielern)
+        // Mitspieler: eine Zeile pro Mitspieler und Spieler (spieler_id = 0: die EINE Welt)
         $this->db->exec("CREATE TABLE IF NOT EXISTS ow_bots (
             spieler_id INT UNSIGNED NOT NULL,
             bot_id VARCHAR(20) NOT NULL,
@@ -437,6 +443,8 @@ class MysqlLager {
             welt_zeit BIGINT UNSIGNED NOT NULL DEFAULT 0
         ) ENGINE=InnoDB DEFAULT CHARSET=ascii");
         $this->db->exec("INSERT IGNORE INTO ow_welt_info (id) VALUES (1)");
+        $wi = $this->db->query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'ow_welt_info'")->fetchAll(PDO::FETCH_COLUMN);
+        if (!in_array('tabellen_v', $wi, true)) $this->db->exec("ALTER TABLE ow_welt_info ADD COLUMN tabellen_v VARCHAR(40) NOT NULL DEFAULT ''");   // welcher Stand von server.php die Tabellen zuletzt geprüft hat
         // Befehle der Spieler an den Weltrechner (angreifen, senden, ausbauen …)
         $this->db->exec("CREATE TABLE IF NOT EXISTS ow_befehle (
             id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -848,7 +856,6 @@ class MysqlLager {
     }
     function sicht_setzen($uid, $b64) { $this->db->prepare('UPDATE ow_spieler SET sicht = ?, sicht_v = sicht_v + 1 WHERE id = ? AND (sicht IS NULL OR sicht <> ?)')->execute([$b64, $uid, $b64]); }   // (gleich geblieben: nichts)
     function profil_setzen($uid, $p) { $this->db->prepare('UPDATE ow_spieler SET profil = ?, profil_zeit = ? WHERE id = ?')->execute([$p, time(), $uid]); }
-    function online($uid, $bis) { $this->db->prepare('UPDATE ow_spieler SET online_bis = ? WHERE id = ?')->execute([$bis, $uid]); }
     // Puls zählen (zugleich „online“ setzen) – gibt zurück, wie viele Pulse in dieser Minute schon kamen
     function puls_zaehlen($uid, $jetzt) {
         $m = intdiv($jetzt, 60);
@@ -1031,7 +1038,7 @@ function passwort_anfrage($ich, $d) {
     if (!bremse('pw:' . $ich['id'], 5, 900)) json_antwort(200, ['ok' => false, 'grund' => 'Zu viele Versuche – bitte in 15 Minuten nochmal.']);
     $alt = (string)($d['alt'] ?? ''); $neu = (string)($d['neu'] ?? '');
     if (strlen($alt) > 200 || !password_verify($alt, $l->pw_hash_von($ich['id']))) json_antwort(200, ['ok' => false, 'grund' => 'Das alte Passwort stimmt nicht.']);
-    if (strlen($neu) < 10 || strlen($neu) > 72) json_antwort(200, ['ok' => false, 'grund' => 'Das neue Passwort braucht 10 bis 72 Zeichen.']);
+    if (mb_strlen($neu) < 10 || strlen($neu) > 72) json_antwort(200, ['ok' => false, 'grund' => 'Das neue Passwort braucht 10 bis 72 Zeichen.']);
     if ($neu === $alt) json_antwort(200, ['ok' => false, 'grund' => 'Das neue Passwort ist dasselbe wie das alte.']);
     $l->pw_setzen($ich['id'], password_hash($neu, PASSWORD_DEFAULT));
     $t = $_COOKIE[COOKIE_NAME] ?? '';
@@ -1057,7 +1064,7 @@ function name_anfrage($ich, $d) {
 // Anfrage:  {aktion:"puls", token, seit, spieler_seit, befehle:[…], profil?, welt?:{setzen,loeschen,welt_zeit}, ereignisse?:[{an, e}]}
 //           welt/ereignisse schickt nur der Weltrechner.
 // Antwort:  {leiter, version, welt:{setzen,loeschen}, befehle:[{von,b}] (nur Weltrechner), ereignisse:[…], spieler:[…]}
-// Der Weltrechner ist der Spieler, der gerade rechnet; meldet er sich 12 s nicht, übernimmt der nächste.
+// Weltrechner ist nur der Server-Weltrechner (weltrechner/start.js) – nie das Gerät eines Spielers.
 const LEITER_SEK = 12;
 function welt_puls($ich, $d) {
     $l = lager();

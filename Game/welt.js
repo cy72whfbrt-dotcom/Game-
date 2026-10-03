@@ -3,8 +3,8 @@
 // - Die Welt liegt auf dem Server in "neutraler" Form: jeder echte Spieler heißt dort u<id> (wie ein Mitspieler).
 //   Für dich wird u<deine id> in die Form umgerechnet, die das Spiel kennt ('player', fehlende Felder, ownedIslands …).
 // - Andere echte Spieler erscheinen als Einträge in BOT_DEFS (mensch: true) – ohne Computer-Gehirn.
-// - Genau EIN Spieler ist "Weltrechner": sein Spiel rechnet die Welt (Mitspieler, Märsche, Kämpfe …) und schickt sie
-//   alle 2 s an den Server. Alle anderen sind "Zuschauer" ihrer Welt: sie holen sie alle 2 s, ihre Befehle gehen an den
+// - Die Welt rechnet NUR der Weltrechner auf dem Server (weltrechner/start.js, Mitspieler, Märsche, Kämpfe …) und schickt
+//   sie alle 2 s an den Server. Jeder Spieler ist "Zuschauer": sie holen sie alle 2 s, ihre Befehle gehen an den
 //   Weltrechner, ihre Münzen/Gems/EP … kommen als Nachrichten zurück.
 (function () {
     'use strict';
@@ -62,7 +62,6 @@
         sichtV: typeof OW.sicht_v === 'number' ? OW.sicht_v : -1,   // (Spieler, 3B) Stand der Sicht, die ich habe
         beiNachricht: [],                 // spiel.js hängt sich hier ein
         flickenBauen, flickenAnwenden,    // (auch für Tests)
-        istMensch: id => !!(id && W.menschen[id]),
         name: id => (W.menschen[id] || {}).name
     };
 
@@ -204,7 +203,6 @@
             crest: P(d.openWaterCrest), baustil: P(d.openWaterBaustil)
         };
     }
-    W.meinProfil = meinProfil;
     // Mitspieler-Datensatz für einen echten Spieler: Kampfwerte aus seinem Profil, Welt-Felder (Hauptstadt, Groll …) bleiben.
     // 3B: Beim Weltrechner (id gegeben) hält W.klemmen (spiel.js, Hauptbuch) Stufe, Skills, Ausrüstung, Helden, Stadt,
     // Forschung und Truppen-Stufe gegen das, was er wirklich haben kann. Zuschauer übernehmen diese Werte aus der Welt
@@ -388,7 +386,7 @@
     }
 
     function antwortVerarbeiten(a, anfrage) {
-        W.pulse = (W.pulse || 0) + 1; W.nachrichtenOffen = (a.ereignisse || []).length >= 200;   // (spiel.js: Begrüßung erst, wenn alles da ist)
+        W.pulse = (W.pulse || 0) + 1;
         if (typeof a.sicht_v === 'number') W.sichtV = a.sicht_v;
         if (a.spieler) {
             const vorher = new Set(Object.keys(W.menschen));

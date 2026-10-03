@@ -1,6 +1,6 @@
 #!/bin/bash
 # hochladen.sh – lädt den Ordner Game/ auf office.hobbitonhill.de (…/klassenarbeit_GR4/Game/).
-# Während des Hochladens ist WARTUNG an (Datei wartung.txt): niemand außer den Admins kommt ins Spiel.
+# Während des Hochladens ist WARTUNG an (Datei wartung.txt): niemand kommt ins Spiel (auch kein Admin).
 # NUR nach Alexanders Ja benutzen (Regel in LIESMICH.md).
 # Zugangsdaten nur aus den Umgebungsvariablen: OFFICE_USER, OFFICE_PASS, DB_USER, DB_PASS (DB_HOST, DB_NAME optional).
 # config.php (Datenbank-Zugang) wird dabei aus den Variablen erzeugt – sie liegt nie im Git.
@@ -43,7 +43,8 @@ for f in $(cd Game && find . -type f | sed 's#^\./##' | sort); do
   [ "$f" = config.php ] && continue
   case "$f" in weltrechner/herz*.php|weltrechner/log*.php|weltrechner/zustand*.php|weltrechner/sperre.php|weltrechner/crontab*.php|weltrechner/schummel*.php|weltrechner/vapid*.php) continue;; esac   # entstehen nur auf dem Server
   dir=$(dirname "$f"); [ "$dir" = . ] && dir="" || { dir="/$dir"; ed /Game -F text= -F "file=${dir#/}" -F "button=new folder" -o /dev/null; }
-  ed "/Game$dir" -F "file=@Game/$f" -F "button=upload" -o /dev/null -w "$f %{http_code}\n"
+  code=$(ed "/Game$dir" -F "file=@Game/$f" -F "button=upload" -o /dev/null -w "%{http_code}" || echo 000); echo "$f $code"
+  case "$code" in 2*|3*) ;; *) echo "FEHLER beim Hochladen von $f ($code) – Wartung bleibt an"; exit 1;; esac   # (PHP-Dateien kann Schritt 5 nicht prüfen)
 done
 [ -f $T/config.php ] && ed /Game -F "file=@$T/config.php" -F "button=upload" -o /dev/null -w "config.php %{http_code}\n"
 

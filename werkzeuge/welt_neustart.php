@@ -32,10 +32,11 @@ echo "Sicherung: " . basename($datei) . " (" . round(filesize($datei) / 1048576,
 lager()->welt_sperren();
 $db->beginTransaction();
 $n = [];
-foreach (['ow_spielstand', 'ow_bots', 'ow_welt_flicken', 'ow_befehle', 'ow_ereignisse'] as $t) $n[$t] = $db->exec("DELETE FROM $t");
+foreach (['ow_spielstand', 'ow_bots', 'ow_welt_flicken', 'ow_befehle', 'ow_ereignisse', 'ow_sicherungen'] as $t)   // (Sicherungen der alten Welt passen nicht mehr – alles steht in altwelt_*.php)
+    $n[$t] = $db->exec("DELETE FROM $t");
 $db->exec("UPDATE ow_welt_info SET version = 0, versionen = NULL, welt_zeit = 0, leiter_id = 0, leiter_token = '', leiter_bis = 0 WHERE id = 1");
 // spiel_token leeren: ein noch offenes altes Fenster bekommt beim Speichern 409 und kann keinen alten Stand zurückschreiben
-$n['ow_spieler'] = $db->exec("UPDATE ow_spieler SET stufe = NULL, muenzen = NULL, gems = NULL, anzahl_basen = NULL, profil = NULL, profil_zeit = 0, spiel_token = ''");
+$n['ow_spieler'] = $db->exec("UPDATE ow_spieler SET stufe = NULL, muenzen = NULL, gems = NULL, anzahl_basen = NULL, profil = NULL, profil_zeit = 0, spiel_token = '', sicht = NULL, sicht_v = sicht_v + 1");   // sicht: der Nebel der alten Welt
 $db->commit();
 lager()->welt_entsperren();
 @unlink(__DIR__ . '/weltrechner/schummel.php');   // alte Auffälligkeiten gehören zur alten Welt

@@ -184,7 +184,6 @@
         window.addEventListener('pagehide', function () { sofort(true); });
         window.addEventListener('beforeunload', function () { sofort(true); });   // kommt beim Neuladen VOR dem Laden der neuen Seite
     }
-    window.__owSpeichern = senden;   // für Tests
     // für welt.js: direkter Zugriff (Welt-Teile setzen, ohne sie als "hier geändert" zu markieren)
     window.__owSpeicher = {
         WELT: WELT, istWelt: istWelt, daten: daten, weltGeaendert: weltGeaendert,

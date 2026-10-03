@@ -5,7 +5,7 @@
 //
 // Gestartet wird er von wachhund.php (Cronjob jede Minute) mit diesen Umgebungsvariablen:
 //   OW_URL        Adresse des Game-Ordners, z. B. https://office.hobbitonhill.de/html/725/klassenarbeit_GR4/Game/
-//   OW_SCHLUESSEL der geheime Schlüssel (aus dem Datenbank-Passwort abgeleitet, steht in keiner Datei)
+//   OW_SCHLUESSEL der geheime Schlüssel (wr_schluessel aus config.php, bei jedem Hochladen neu)
 //   OW_SPEICHER_MB höchstens so viel Speicher (Standard 600 – Vorgabe von Alexander)
 //
 // Schutzgeländer:

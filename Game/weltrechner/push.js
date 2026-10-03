@@ -7,7 +7,7 @@
 //   - Verschlüsseln der Nachricht nach RFC 8291 („aes128gcm“: ECDH P-256, HKDF-SHA-256, AES-128-GCM)
 //   - Ausweis des Absenders nach RFC 8292 („VAPID“: ein JWT, unterschrieben mit ES256)
 // Die Abos (Geräte der Spieler) und die VAPID-Schlüssel gibt server.php nur dem Weltrechner (Aktion push_abos, nur mit
-// dem Weltrechner-Schlüssel). Der private Schlüssel steht nur in config.php auf dem Server – nie im Git.
+// dem Weltrechner-Schlüssel). Der private Schlüssel steht nur auf dem Server (config.php oder weltrechner/vapid.php) – nie im Git.
 // Nicht nerven: höchstens 1 Benachrichtigung pro Minute und Spieler, gleiche Meldungen werden zusammengefasst, und nur,
 // wenn der Spieler gerade nicht online ist (im Spiel sieht er es ja selbst).
 'use strict';
@@ -80,12 +80,10 @@ const BEOBACHTER = `(function () {
     for (const id in botOwnedIslands) { if (!mensch(id)) continue; neu.besitz[id] = [...botOwnedIslands[id]];
         const vorher = alt && alt.besitz[id]; if (!vorher) continue; const jetztDa = botOwnedIslands[id];
         for (const i of vorher) if (!jetztDa.has(i)) { const o = islandOwnerOf(i); raus.push({ an: id, art: 'verloren', von: o && o !== id ? name(o) : null, basis: titel(i) }); } }
-    // Boss / Wanderboss erschienen (an alle Menschen)
-    try { const b = typeof loadBoss === 'function' ? (loadBoss(), bossState) : null, w = typeof loadWander === 'function' ? loadWander() : null;
-        const bk = b && b.endsAt > jetzt ? 'b' + b.islandId + '@' + b.endsAt : null, wk = w && w.troops > 0 ? 'w' + w.endsAt : null;
-        neu.boss = [bk, wk].filter(Boolean);
-        if (alt && alt.boss) for (const [k, wer, wo] of [[bk, b && b.name, b && b.islandId], [wk, w && w.name, w && w.at]])
-            if (k && !alt.boss.includes(k)) for (const id in M) raus.push({ an: id, art: 'boss', von: wer || 'Ein Boss', basis: titel(wo) }); } catch (e) {}
+    // der Kriegsherr (Wanderboss) ist erschienen (an alle Menschen)
+    try { const w = typeof loadWander === 'function' ? loadWander() : null, wk = w && w.troops > 0 ? 'w' + w.endsAt : null;
+        neu.boss = wk ? [wk] : [];
+        if (alt && alt.boss && wk && !alt.boss.includes(wk)) for (const id in M) raus.push({ an: id, art: 'boss', von: w.name || 'Der Kriegsherr', basis: titel(w.at) }); } catch (e) {}
     // Sammler zurück (ein Rückmarsch vom Feld ist angekommen)
     try { for (const m of fieldMarches || []) if (m.back && mensch(m.who)) neu.sammler[m.who + '@' + m.startedAt + '>' + m.fieldId] = [m.load || 0, ((fieldById || {})[m.fieldId] || {}).kind || 'gold'];
         if (alt && alt.sammler) for (const k in alt.sammler) if (!neu.sammler[k] && alt.sammler[k][0] > 0) raus.push({ an: k.split('@')[0], art: 'sammler', menge: alt.sammler[k][0], was: alt.sammler[k][1] }); } catch (e) {}
