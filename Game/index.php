@@ -15,16 +15,16 @@ try {
     $ich = aktueller_spieler();
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$ich) {
         $modus = ($_POST['modus'] ?? '') === 'neu' ? 'neu' : 'login';
-        $name = trim((string)($_POST['name'] ?? ''));
-        $pw = (string)($_POST['pw'] ?? '');
+        $name = is_string($_POST['name'] ?? null) ? trim($_POST['name']) : '';
+        $pw = is_string($_POST['pw'] ?? null) ? $_POST['pw'] : '';
         if ($modus === 'neu') {
-            if (!bremse('neu:' . client_ip(), 5, 3600)) $fehler = 'Zu viele neue Konten von hier – bitte später nochmal.';
-            elseif (!preg_match('/^[\p{Latin}\p{N} _.-]{3,20}$/u', $name)) $fehler = 'Name: 3 bis 20 Zeichen (Buchstaben, Zahlen, Leerzeichen, _ . -).';
+            if (!name_erlaubt($name)) $fehler = 'Name: 3 bis 20 Zeichen (Buchstaben, Zahlen, Leerzeichen, _ . -).';
             elseif (in_array(mb_strtolower($name, 'UTF-8'), array_map(function ($n) { return mb_strtolower($n, 'UTF-8'); }, bot_namen()), true)) $fehler = 'Diesen Namen gibt es schon.';
             elseif (mb_strlen($pw) < 10) $fehler = 'Das Passwort braucht mindestens 10 Zeichen.';
             elseif (strlen($pw) > 72) $fehler = 'Das Passwort darf höchstens 72 Zeichen haben.';
             elseif ($pw !== (string)($_POST['pw2'] ?? '')) $fehler = 'Die beiden Passwörter sind nicht gleich.';
             elseif (!lager()->name_frei(0, $name)) $fehler = 'Diesen Namen gibt es schon.';
+            elseif (!bremse('neu:' . client_ip(), 5, 3600)) $fehler = 'Zu viele neue Konten von hier – bitte später nochmal.';   // (nur gültige Versuche zählen – ein Tippfehler sperrt keine ganze Schulklasse)
             else {
                 $uid = lager()->spieler_anlegen($name, password_hash($pw, PASSWORD_DEFAULT));
                 if ($uid === null) $fehler = 'Diesen Namen gibt es schon.';
@@ -39,7 +39,7 @@ try {
             if (!bremse($sperre, 8, 900) || !bremse('loginkonto:' . $konto, 60, 900) || !bremse('loginip:' . client_ip(), 30, 900)) { sleep(1); $fehler = 'Zu viele Versuche – bitte in 15 Minuten nochmal.'; }
             else {
                 $hash = $u ? $u['pw_hash'] : '$2y$10$PxK0RyR6Ng9cebr4sv40xeBHhcwZlL4gVKoVfvcJFrVmDh4qaH.ma';   // gleich lange prüfen, ob es den Namen gibt oder nicht
-                if (password_verify($pw, $hash) && $u) { lager()->bremse_frei(hash('sha256', $sperre)); anmelden((int)$u['id']); header('Location: spiel.php'); exit; }
+                if (password_verify($pw, $hash) && $u) { lager()->bremse_frei(hash('sha256', $sperre)); bremse_zurueck('loginkonto:' . $konto); bremse_zurueck('loginip:' . client_ip()); anmelden((int)$u['id']); header('Location: spiel.php'); exit; }   // (gelungene Anmeldungen zählen nicht)
                 sleep(1);   // bremst Passwort-Raten
                 $fehler = 'Name oder Passwort stimmt nicht.';
             }
@@ -107,10 +107,10 @@ function h($s) { return htmlspecialchars($s, ENT_QUOTES, 'UTF-8'); }
     <a href="?m=neu" class="<?= $modus === 'neu' ? 'an' : '' ?>">Neu registrieren</a>
   </nav>
   <?php if ($fehler): ?><div class="fehler"><?= h($fehler) ?></div><?php endif; ?>
-  <form method="post" action="<?= $modus === 'neu' ? '?m=neu' : './' ?>">
+  <form method="post" action="<?= $modus === 'neu' ? '?m=neu' : './' ?>" onsubmit="var b=this.querySelector('button[type=submit]');if(b.disabled)return false;b.disabled=true;">
     <input type="hidden" name="modus" value="<?= $modus ?>">
     <label for="name">Name</label>
-    <input type="text" id="name" name="name" maxlength="20" autocomplete="username" required value="<?= h($_POST['name'] ?? '') ?>">
+    <input type="text" id="name" name="name" maxlength="20" autocomplete="username" required value="<?= h(is_string($_POST['name'] ?? null) ? $_POST['name'] : '') ?>">
     <label for="pw">Passwort</label>
     <input type="password" id="pw" name="pw" autocomplete="<?= $modus === 'neu' ? 'new-password' : 'current-password' ?>" required>
     <?php if ($modus === 'neu'): ?>

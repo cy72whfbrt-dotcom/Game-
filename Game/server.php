@@ -115,6 +115,10 @@ function sauber_json($text) { return is_string($text) && strpbrk($text, '<>') ==
 function bremse($schluessel, $max, $sek) {
     return lager()->bremse(hash('sha256', $schluessel), $max, $sek);
 }
+function bremse_zurueck($schluessel) { lager()->bremse_zurueck(hash('sha256', $schluessel)); }
+// Erlaubte Namen: Buchstaben (auch Umlaute, keine Doppelgänger-Schriften), Ziffern, Leerzeichen, _ . – und nie „Spieler 12“
+// (so heißt jeder ohne eigenen Namen – sonst könnte man sich als ein anderer ausgeben)
+function name_erlaubt($name) { return preg_match('/^[A-Za-z0-9ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿ _.-]{3,20}$/u', $name) && !preg_match('/^\s*spieler\s*\d+\s*$/iu', $name); }
 // Profil eines Spielers (sehen alle anderen): wird komplett neu aufgebaut – nur bekannte Felder, Zahlen als Zahlen,
 // Kennungen nur aus Buchstaben/Ziffern/_/- (nichts, was anderswo Code einschleusen könnte)
 function profil_bereinigen($text) {
@@ -291,7 +295,11 @@ function bund_geschenk_ok($e) {
     return $zahl($e['coins'] ?? 0, 1e12) && $zahl($e['tr'] ?? 0, 1e12) && in_array($e['crate'] ?? -1, [-1, 0, 1], true) && is_string($e['hint'] ?? '') && strlen($e['hint'] ?? '') <= 300;
 }
 
-function client_ip() { return (string)($_SERVER['REMOTE_ADDR'] ?? '?'); }
+function client_ip() {   // (IPv6: das ganze /64-Netz zählt als eine Adresse – sonst wechselt man einfach die Adresse)
+    $ip = (string)($_SERVER['REMOTE_ADDR'] ?? '?');
+    if (strpos($ip, ':') !== false && ($b = @inet_pton($ip)) !== false && strlen($b) === 16) return bin2hex(substr($b, 0, 8)) . '::/64';
+    return $ip;
+}
 // Kommt ein Formular / eine Anfrage wirklich von dieser Seite? (fremde Seiten dürfen hier nichts abschicken)
 function herkunft_ok() {
     if (($_SERVER['HTTP_SEC_FETCH_SITE'] ?? '') === 'cross-site') return false;
@@ -321,7 +329,8 @@ function spielseite_vorbereiten() {
         // Gerade noch gespielt (Neuladen)? Dann auf den "Abschied" des alten Fensters warten (seine letzte Sicherung),
         // höchstens 2 Sekunden - so lädt die neue Seite nie einen älteren Stand.
         $altTok = lager()->spiel_token($ich['id']);
-        $uebernehmen = ($_GET['weiter'] ?? '') === '1';   // "Hier weiterspielen": sofort übernehmen (das andere Gerät fliegt raus)
+        $uebernehmen = ($_GET['weiter'] ?? '') === '1' && in_array($_SERVER['HTTP_SEC_FETCH_SITE'] ?? 'same-origin', ['same-origin', 'none'], true);   // "Hier weiterspielen": sofort übernehmen (das andere Gerät fliegt raus) – nie von einer fremden Seite aus
+        if (!bremse('seite:' . $ich['id'], 30, 60)) { http_response_code(429); exit('Zu oft neu geladen – bitte kurz warten.'); }   // (jedes Laden ist teuer: ganze Welt)
         if (!$uebernehmen && $altTok !== '' && time() - lager()->zuletzt_gespeichert($ich['id']) < 60) {
             for ($i = 0; $i < 20 && lager()->abschied($ich['id']) !== $altTok; $i++) usleep(100000);
         }
@@ -686,6 +695,7 @@ class MysqlLager {
         return (int)$q->fetchColumn() <= $max;
     }
     function bremse_frei($k) { $this->db->prepare('DELETE FROM ow_bremse WHERE schluessel = ?')->execute([$k]); }
+    function bremse_zurueck($k) { $this->db->prepare('UPDATE ow_bremse SET anzahl = GREATEST(0, anzahl - 1) WHERE schluessel = ?')->execute([$k]); }   // ein gelungener Versuch zählt nicht
     // Anzeigename: frei, wenn ihn kein anderer Spieler als Login- oder Anzeigenamen hat
     function name_frei($uid, $name) {
         $q = $this->db->prepare('SELECT COUNT(*) FROM ow_spieler WHERE id <> ? AND (name = ? OR anzeigename = ?)');
@@ -885,6 +895,7 @@ class MysqlLager {
                 'aus' => $z['push_aus'] === '' || $z['push_aus'] === null ? [] : explode(',', $z['push_aus'])]; },
             $this->db->query('SELECT p.id, p.spieler_id, p.endpoint, p.p256dh, p.auth, s.push_aus FROM ow_push p LEFT JOIN ow_spieler s ON s.id = p.spieler_id ORDER BY p.id LIMIT 20000')->fetchAll());
     }
+    function push_alle_weg($uid) { $this->db->prepare('DELETE FROM ow_push WHERE spieler_id = ?')->execute([$uid]); }
     function push_weg($ids) { $q = $this->db->prepare('DELETE FROM ow_push WHERE id = ?'); foreach ($ids as $id) $q->execute([(int)$id]); }
     // Nebel (3B): Sicht eines Spielers – Bitfeld vom Weltrechner + seine eigenen Basen (aus der Welt) → für nebel_sieht
     function sicht_laden($uid) {
@@ -1083,6 +1094,7 @@ function passwort_anfrage($ich, $d) {
     if (mb_strlen($neu) < 10 || strlen($neu) > 72) json_antwort(200, ['ok' => false, 'grund' => 'Das neue Passwort braucht 10 bis 72 Zeichen.']);
     if ($neu === $alt) json_antwort(200, ['ok' => false, 'grund' => 'Das neue Passwort ist dasselbe wie das alte.']);
     $l->pw_setzen($ich['id'], password_hash($neu, PASSWORD_DEFAULT));
+    try { $l->push_alle_weg($ich['id']); } catch (Throwable $e) {}   // neues Passwort: Handy-Nachrichten an alte Geräte hören auf
     $t = $_COOKIE[COOKIE_NAME] ?? '';
     $l->andere_sitzungen_loeschen($ich['id'], is_string($t) ? hash('sha256', $t) : '');
     json_antwort(200, ['ok' => true]);
@@ -1094,7 +1106,7 @@ function name_anfrage($ich, $d) {
     if (!hash_equals($l->spiel_token($ich['id']), (string)($d['token'] ?? ''))) json_antwort(409, ['fehler' => 'anderswo geöffnet']);
     $name = trim(preg_replace('/\s+/u', ' ', (string)($d['name'] ?? '')));
     // nur lateinische Buchstaben (auch Umlaute) – keine Doppelgänger wie kyrillisches „а“ in „аlexander“
-    if (!preg_match('/^[\p{Latin}\p{N} _.-]{3,20}$/u', $name)) json_antwort(200, ['ok' => false, 'grund' => 'Der Name braucht 3 bis 20 Zeichen (Buchstaben, Zahlen, Leerzeichen, _ . -).']);
+    if (!name_erlaubt($name)) json_antwort(200, ['ok' => false, 'grund' => 'Der Name braucht 3 bis 20 Zeichen (Buchstaben, Zahlen, Leerzeichen, _ . -).']);
     if (!bremse('name:' . $ich['id'], 10, 3600)) json_antwort(200, ['ok' => false, 'grund' => 'Zu viele Versuche – bitte später nochmal.']);
     $klein = mb_strtolower($name, 'UTF-8');
     foreach (bot_namen() as $bn) if (mb_strtolower($bn, 'UTF-8') === $klein) json_antwort(200, ['ok' => false, 'grund' => 'Diesen Namen hat schon jemand.']);

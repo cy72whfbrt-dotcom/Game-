@@ -467,6 +467,7 @@ if (typeof THREE !== 'undefined') try {
   S.thumb = function (c, px, out) {
     if (!TR) {
       const cv = document.createElement('canvas'); TR = new T.WebGLRenderer({ canvas: cv, antialias: false, alpha: true, preserveDrawingBuffer: true });
+      cv.addEventListener('webglcontextlost', e => { e.preventDefault(); try { const G = window.OW && OW.game; if (G) { G.off = true; if (G.clear) G.clear(); if (typeof requestRender === "function") requestRender(); } } catch (x) {} });   // (iOS im Hintergrund: ab dann die gezeichneten Bilder statt leerer 3D-Bilder)
       TR.toneMapping = T.ACESFilmicToneMapping; TR.outputColorSpace = T.SRGBColorSpace; TR.shadowMap.enabled = true; TR.shadowMap.type = T.PCFSoftShadowMap; TR.setClearColor(0x000000, 0);
       tScene = new T.Scene(); tHemi = new T.HemisphereLight(SKY.tag.hemiS, SKY.tag.hemiG, 1.15); tScene.add(tHemi);
       tSun = new T.DirectionalLight(0xfff0d8, 3); tSun.position.set(18, 30, 14); tSun.castShadow = true; tSun.shadow.mapSize.set(1024, 1024); const s = tSun.shadow.camera; s.left = s.bottom = -16; s.right = s.top = 16; s.far = 80; tSun.shadow.bias = -.0005; tScene.add(tSun);
@@ -4217,6 +4218,6 @@ if (typeof THREE !== 'undefined') try {
   };
   G.clear = () => { cache.clear(); want.clear(); pixels = 0; };
   G.stats = () => ({ sprites: cache.size, mb: Math.round(pixels * 4 / 1e5) / 10, queued: want.size, renders: G.renders, avgMs: G.renders ? Math.round(G.ms / G.renders) : 0 });
-  try { const t = document.createElement('canvas'); if (!(t.getContext('webgl2') || t.getContext('webgl'))) G.off = true; } catch (e) { G.off = true; }   // no WebGL: the drawn sprites stay
+  try { const t = document.createElement('canvas'), gl = t.getContext('webgl2') || t.getContext('webgl'); if (!gl) G.off = true; else { const ext = gl.getExtension('WEBGL_lose_context'); if (ext) ext.loseContext(); } } catch (e) { G.off = true; }   // (nur prüfen – den Test-Zugang gleich wieder freigeben)   // no WebGL: the drawn sprites stay
 })();
 } catch (e) { console.warn('Baukunst aus', e); if (window.OW) window.OW.game = null; }

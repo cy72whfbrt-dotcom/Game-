@@ -1740,8 +1740,9 @@ function vorlaeufigDrueber() {
     }
 }
 function speedUpCost(m) { return Math.max(1, Math.ceil((m.resolveAt - Date.now()) / 60000)); }   // 1 gem per minute still to go
+let speedUpZuletzt = 0;                               // (ein Doppel-Tipp beschleunigt nicht zweimal)
 function speedUpMarch(key) {                         // halves the time still to go; the column keeps its place on the road
-    const now = Date.now();
+    const now = Date.now(); if (now - speedUpZuletzt < 600) return; speedUpZuletzt = now;
     for (const list of [pendingAttacks, pendingSends, pendingRetreats]) {
         const m = list.find(x => marchKeyOf(x) === key); if (!m) continue;
         if (m.fightEndsAt) return;
@@ -1762,6 +1763,7 @@ function speedableMarches() {
     return [...pendingAttacks.filter(a => !a.attackerBotId), ...pendingSends.filter(x => !x.senderBotId), ...pendingRetreats].filter(m => !m.fightEndsAt && !m.vorlaeufig && m.resolveAt - now >= 1500);
 }
 function speedUpAll() {
+    if (Date.now() - speedUpZuletzt < 600) return; speedUpZuletzt = Date.now();
     const list = speedableMarches(); if (!list.length) return;
     const cost = list.reduce((a, m) => a + speedUpCost(m), 0);
     if (gems < cost) { flashHint('Zu wenig Gems – alle beschleunigen kostet ' + fmtNum(cost) + '.', 3000); return; }
@@ -3125,7 +3127,7 @@ function bannerSprite(tierKey, m) {
   paintPlate(g, T, m, withDef);
   s = { c, w: W, h: H };
   BANNER_SPRITES.set(key, s);
-  if (BANNER_SPRITES.size > 1500) BANNER_SPRITES.delete(BANNER_SPRITES.keys().next().value);
+  while (BANNER_SPRITES.size > 400) BANNER_SPRITES.delete(BANNER_SPRITES.keys().next().value);   // (die Truppenzahl steckt im Schlüssel – 1500 hielten bis ~100 MB im Handy)
   return s;
 }
 const DOWN = { A: 'B', B: 'C', C: 'C' };
@@ -5021,11 +5023,12 @@ const skillDetail = document.getElementById('skillDetail');
 
 // Skills zurücksetzen: every spent point comes back to be placed anew - for gems, and only after a second tap
 const SKILL_RESET_GEMS = 500;
-let skillResetArmed = false, skillResetTimer = null;
+let skillResetArmed = false, skillResetTimer = null, skillResetAt = 0;
 function resetSkills() {
     const spent = Object.keys(SKILL_DEFS).reduce((a, k) => a + (skills[k] || 0), 0); if (!spent) return;
     if (gems < SKILL_RESET_GEMS) { flashHint('Zu wenig Gems: Zurücksetzen kostet ' + SKILL_RESET_GEMS + ' Gems.', 3000); return; }
-    if (!skillResetArmed) { skillResetArmed = true; clearTimeout(skillResetTimer); skillResetTimer = setTimeout(() => { skillResetArmed = false; renderSkillGrid(); }, 4000); renderSkillGrid(); return; }
+    if (skillResetArmed && Date.now() - skillResetAt < 450) return;   // ein Doppel-Tipp ist keine Bestätigung (500 Gems)
+    if (!skillResetArmed) { skillResetArmed = true; skillResetAt = Date.now(); clearTimeout(skillResetTimer); skillResetTimer = setTimeout(() => { skillResetArmed = false; renderSkillGrid(); }, 4000); renderSkillGrid(); return; }
     skillResetArmed = false; clearTimeout(skillResetTimer);
     gems -= SKILL_RESET_GEMS; skillPoints += spent; for (const k of Object.keys(SKILL_DEFS)) skills[k] = 0;
     saveProgression(); saveGame(); updateHud(); renderSkillGrid();
@@ -6177,9 +6180,10 @@ var anleitung = (() => { try { return JSON.parse(store.get('openWaterAnleitung')
 if (!anleitung) anleitung = { schritt: (window.__OW && window.__OW.neu) || playerLvl <= 2 ? 0 : ANLEITUNG.length };   // wer schon spielt, sieht sie nicht
 if (typeof questProgress === 'function') questProgress = (alt => function (t) { if (t === 'upgrade' || t === 'attack') anleitungTat[t] = true; return alt.apply(this, arguments); })(questProgress);
 function anleitungSpeichern() { store.set('openWaterAnleitung', JSON.stringify(anleitung)); }
+let anleitungUhr = 0;
 function anleitungZeigen() {
     const el = document.getElementById('anleitung'); if (!el) return;
-    if (SYSTEM || anleitung.schritt >= ANLEITUNG.length) { el.hidden = true; return; }
+    if (SYSTEM || anleitung.schritt >= ANLEITUNG.length) { el.hidden = true; if (anleitungUhr) { clearInterval(anleitungUhr); anleitungUhr = 0; } return; }   // fertig: nicht mehr jede Sekunde nachsehen
     if (document.getElementById('wkName') || ['welcomeModal', 'dailyModal', 'levelUpModal', 'rewardModal'].some(id => { const m = document.getElementById(id); return m && !m.hidden; })) { el.hidden = true; return; }   // erst Name/Begrüßung
     let weiter = false; try { weiter = ANLEITUNG[anleitung.schritt][1](); } catch (e) {}
     if (weiter) {
@@ -6196,7 +6200,7 @@ function anleitungZeigen() {
     el.style.visibility = fenster && fenster.top < 150 ? 'hidden' : '';                  // kein Platz über dem Fenster: lieber gar nicht als auf den Knöpfen   // ein Fenster ist offen: direkt darüber, damit seine Knöpfe frei bleiben
 }
 document.getElementById('anleitungWeg').addEventListener('click', () => { anleitung.schritt = ANLEITUNG.length; anleitungSpeichern(); document.getElementById('anleitung').hidden = true; flashHint('Anleitung übersprungen – Hilfe gibt es unter Profil → Einstellungen.', 3500); });
-afterSplash(() => setTimeout(() => { anleitungZeigen(); setInterval(anleitungZeigen, 1000); }, 1500));
+afterSplash(() => setTimeout(() => { anleitungZeigen(); if (anleitung.schritt < ANLEITUNG.length) anleitungUhr = setInterval(anleitungZeigen, 1000); }, 1500));
 
 // Shop: buy gem crates, opens straight into a result readout.
 const shopBtn = document.getElementById('shopBtn');
@@ -7840,6 +7844,7 @@ function cityBuyBuilder2() {
     const c = loadCity(); if (c.builder2) return;
     if (gems < CITY_BUILDER2_GEMS) { flashHint('Zu wenig Gems – der zweite Bauarbeiter kostet ' + CITY_BUILDER2_GEMS + ' Gems.', 2500); return; }
     if (cityB2Armed < Date.now()) { cityB2Armed = Date.now() + 4000; updateCityBuilder(); return; }
+    if (cityB2Armed - Date.now() > 3550) return;                  // ein Doppel-Tipp ist keine Bestätigung (500 Gems)
     gems -= CITY_BUILDER2_GEMS; c.builder2 = true; cityB2Armed = 0; saveCity(); saveGame(); updateHud(); sfx('upgrade');
     flashHint('Dein zweiter Bauarbeiter ist da – jetzt bauen zwei Gebäude gleichzeitig.', 3000);
     updateCityBuilder(); if (cityOpenId) renderCitySheet();
@@ -8439,12 +8444,12 @@ document.getElementById('citySheet').addEventListener('click', e => {
 document.getElementById('cityBtn').addEventListener('click', openCity);
 document.getElementById('cityNavBtn').addEventListener('click', openCity);
 // Hauptstadt verlegen (teleport): pick one of your own bases, the capital status and its garrison move there.
-var teleportMode = false;
+var teleportMode = false, teleportBis = 0;   // (bleibt nur 20 s scharf – danach kostet ein Tipp auf eine Basis keine Gems mehr aus Versehen)
 const TELEPORT_GEMS = 50;
 document.getElementById('teleportBtn').addEventListener('click', () => {
     if (gems < TELEPORT_GEMS) { flashHint('Zum Verlegen brauchst du ' + TELEPORT_GEMS + ' Gems.', 3000); return; }
     if (![...ownedIslands].some(id => id !== playerIslandId && islandById[id] && islandById[id].type === 'tower')) { flashHint('Du brauchst noch einen zweiten Turm, um die Hauptstadt zu verlegen – Tempel und Tore zählen nicht.', 3500); return; }
-    closeIslandPopup(); teleportMode = true; requestRender();
+    closeIslandPopup(); teleportMode = true; teleportBis = Date.now() + 20000; requestRender();
     flashHint('Tippe einen deiner Türme an – die Hauptstadt zieht dorthin (' + TELEPORT_GEMS + ' Gems). Woanders tippen bricht ab.', 5000);
 });
 function teleportCapital(toId) {
@@ -10871,6 +10876,7 @@ document.getElementById('uiScrimTop').addEventListener('click', closeTopmostPane
 // Panels are exclusive: opening one closes the others first, so no
 // hidden panel keeps live state (e.g. an open attack preview) underneath.
 function closeAllPopups() {
+    if (teleportMode) { teleportMode = false; requestRender(); }   // ein anderes Fenster: Verlegen ist abgebrochen
     closePanel(popup);
     { const bp = document.getElementById('bundPopup'); if (bp && isPanelOpen(bp)) document.getElementById('bundCloseBtn').click(); }   // (Bündnis, buendnis.js)
     popupStats.dataset.preview = '';
@@ -11627,6 +11633,7 @@ function fogPromptHit(sx, sy) {                   // → 'go' (the button), 'off
     return sx >= r.x - 6 && sx <= r.x + r.w + 6 && sy >= r.y - 6 && sy <= r.y + r.h + 6 ? 'go' : 'off';
 }
 function handleTap(screenX, screenY) {
+    if (teleportMode && Date.now() > teleportBis) { teleportMode = false; requestRender(); }
     if (teleportMode) {
         teleportMode = false; requestRender();
         const isl = pickIslandAtScreen(screenX, screenY);

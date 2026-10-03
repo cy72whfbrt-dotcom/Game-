@@ -1,13 +1,13 @@
 <?php
 // Welt-Neustart (neue Saison) – NUR mit Alexanders Ja.
 // So benutzen: Wartung an (wartung.txt), warten bis der Weltrechner beendet ist, diese Datei mit ZUFÄLLIGEM Namen in den
-// Game-Ordner legen, einmal mit ?ja=NEUSTART aufrufen, Datei sofort wieder löschen, Wartung aus.
+// Game-Ordner legen, einmal per POST mit ja=NEUSTART aufrufen (curl -d ja=NEUSTART …), Datei sofort wieder löschen, Wartung aus.
 // Gelöscht wird: die Welt (Basen, Bots, Märsche …) und ALLE Spielstände (Stufe, Münzen, Gems, Ausrüstung, Stadt).
 // Bleibt: Konten, Passwörter, Spielernamen, Logins, Push-Anmeldungen, die Sicherungen.
 // Vorher wird alles in weltrechner/altwelt_<Datum>.php gesichert (von außen 404).
 header('Content-Type: text/plain; charset=utf-8');
 require __DIR__ . '/server.php';
-if (($_GET['ja'] ?? '') !== 'NEUSTART') exit("nichts gemacht (ja=NEUSTART fehlt)\n");
+if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST' || ($_POST['ja'] ?? '') !== 'NEUSTART') exit("nichts gemacht (POST mit ja=NEUSTART fehlt)\n");   // (nur POST: ein bloßes Aufrufen – z. B. eine Link-Vorschau – löscht nichts)
 if (!wartung()) exit("nichts gemacht: zuerst Wartung an\n");
 $h = @file_get_contents(__DIR__ . '/weltrechner/herz.php');
 if ($h !== false && ($j = json_decode(substr($h, strpos($h, '?>') + 2), true)) && time() - ($j['zeit'] ?? 0) / 1000 < 30) exit("nichts gemacht: der Weltrechner läuft noch\n");
