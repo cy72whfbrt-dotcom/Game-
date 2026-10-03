@@ -791,7 +791,7 @@ Spieler sehen es als Zuschauer. Zeiten = Uhr des Weltrechners. Neu im Spiel-Code
 Alexanders Auswahl 23–27 + 5: Bündnisse wie in Rise of Kingdoms – für echte Spieler UND Mitspieler, gleiche Regeln.
 Neue Datei `Game/buendnis.js` (nach spiel.js geladen; der Weltrechner lädt sie mit, wachhund.php erlaubt das Lesen).
 - **Bündnis (23):** Name 3–20 lateinische Buchstaben/Ziffern, Kürzel 2–4 Buchstaben (auf der Karte „[ABC] Name“),
-  Farbe + Wappen-Zeichen, offen oder „nur auf Anfrage“. Höchstens 20 Mitglieder. Anführer + Mitglieder. Gründen kostet
+  Farbe + Wappen-Zeichen, offen oder „nur auf Anfrage“. Höchstens 20 Mitglieder (seit Abschnitt 42: 5). Anführer + Mitglieder. Gründen kostet
   30.000 Münzen (zieht der Weltrechner ab, kommt als „−Münzen“ beim Spieler an). Beitreten / Anfragen (Anführer sagt
   Ja/Nein; ein Mitspieler als Anführer entscheidet nach Macht und Nähe), Verlassen, Entfernen, Anführer übergeben
   (geht der Anführer, führt das stärkste Mitglied). **Mitglieder greifen sich nicht an:** Angriff, Armee, Feld – gesperrt
@@ -1419,3 +1419,9 @@ Jetzt (buendnis.js `bundMitspielerRunde`, mit denselben Befehlen wie ein Spieler
 - **Führung abgeben:** ist der Anführer viel schwächer (unter ⅓) als der stärkste Mitspieler im Bündnis, übergibt er (selten).
 - **Öffnen/Schließen:** fast voll (ab 16 von 20) → nur noch auf Anfrage; wieder Platz (höchstens 10) → offen.
 Getestet in der Vorschau (`bund_bot_test`, `bund_amt_test`): Entfernen, Wechseln, Schließen, Amt übergeben – ohne Fehler.
+
+## 42. Bündnis höchstens 5 Mitglieder (Alexander 3.10.: „5 maximal in einem Bündnis“) – NICHT hochgeladen
+- `BUND.MAX` 20 → **5** (Spieler und Mitspieler zusammen). Gilt beim Beitreten, bei Anfragen und überall in der Anzeige („3 / 5“).
+- Damit nicht die meisten Mitspieler allein bleiben: sie gründen jetzt etwa ein Bündnis pro 6 Mitspieler (vorher pro 12).
+- Öffnen/Schließen der Mitspieler-Anführer angepasst: ab 4 von 5 nur noch auf Anfrage, bei höchstens 2 wieder offen.
+- Bündnisse, die schon mehr als 5 Mitglieder haben, verlieren niemanden – es kommt nur keiner mehr dazu, bis sie unter 5 sind.

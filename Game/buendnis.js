@@ -14,7 +14,7 @@
 // 1) DATEN
 // ==============================================================================================================
 const BUND = {
-    MAX: 20, KOSTEN: 30000,                                   // höchstens 20 Mitglieder · Gründen kostet 30.000 Münzen
+    MAX: 5, KOSTEN: 30000,                                    // höchstens 5 Mitglieder (Spieler und Mitspieler zusammen – Alexander 3.10.) · Gründen kostet 30.000 Münzen
     SIG_MS: 10 * 60000, SIG_PAUSE: 30000, SIG_MAX: 30,        // Signale: 10 Min. auf der Karte, 1 pro 30 s und Spieler
     RALLY_MIN: [1, 3, 5], RALLY_PRO_BUND: 3,
     GESCHENKE_TAG: 5, KISTEN_TAG: 3,                          // pro Mitglied höchstens 5 Geschenke am Tag · pro Geber 3 Kisten-Geschenke
@@ -412,9 +412,9 @@ function bundMitspielerRunde(now) {                              // alle 15 s: g
         }
         if (botOwnedIslands[a.anf] && !botOwnedIslands[a.anf].size && a.mit.length > 1) { const neu = a.mit.filter(w => w !== a.anf).sort((x, y) => staerke(y) - staerke(x))[0]; a.anf = neu; bundLog(a, bundName(neu) + ' führt jetzt das Bündnis.'); bundSpeichern(); }
     }
-    // b) gründen: etwa ein Bündnis pro 12 Mitspieler, in verschiedenen Gegenden
+    // b) gründen: etwa ein Bündnis pro 6 Mitspieler (höchstens 5 Mitglieder – sonst blieben die meisten allein), in verschiedenen Gegenden
     const zahl = Object.values(bund.b).filter(a => botById[a.anf] && !botById[a.anf].mensch).length;
-    if (zahl < Math.ceil(bots.length / 12) && Math.random() < .5) {
+    if (zahl < Math.ceil(bots.length / 6) && Math.random() < .5) {
         const mitten = Object.values(bund.b).map(bundMitte).filter(Boolean);
         const kand = bots.filter(b => !bundVon(b.id) && !bundEinzelgaenger(b) && botOnline(b, now) && botOwnedIslands[b.id].size >= 4 && (botCoins[b.id] || 0) >= BUND.KOSTEN * 1.5 && b.style !== 'builder')
             .filter(b => { const c = islandById[botCapitalOf(b.id)]; return c && mitten.every(m => Math.hypot(c.x - m.x, c.y - m.y) > FRAME_HALF * .35); })
@@ -448,8 +448,8 @@ function bundMitspielerRunde(now) {                              // alle 15 s: g
         if (weg && Math.random() < .5) { bundOp(a.anf, { op: 'rauswerfen', w: weg }); continue; }
         const st = a.mit.filter(w => w !== a.anf && botById[w] && !botById[w].mensch && botOwnedIslands[w] && botOwnedIslands[w].size).sort((x, y) => staerke(y) - staerke(x))[0];
         if (st && staerke(a.anf) * 3 < staerke(st) && Math.random() < .05) { bundOp(a.anf, { op: 'anfuehrer', w: st }); continue; }
-        if (a.offen && a.mit.length >= BUND.MAX - 4 && Math.random() < .2) bundOp(a.anf, { op: 'offen', offen: false });
-        else if (!a.offen && a.mit.length <= BUND.MAX / 2 && Math.random() < .2) bundOp(a.anf, { op: 'offen', offen: true });
+        if (a.offen && a.mit.length >= BUND.MAX - 1 && Math.random() < .2) bundOp(a.anf, { op: 'offen', offen: false });
+        else if (!a.offen && a.mit.length <= Math.floor(BUND.MAX / 2) && Math.random() < .2) bundOp(a.anf, { op: 'offen', offen: true });
     }
     // e) wechseln (wie ein Spieler: austreten, dann beitreten): ein Mitspieler, dessen Hauptstadt inzwischen weit weg vom Bündnis liegt
     //    (umgezogen, Gebiet verloren), geht zu einem offenen Bündnis mit Platz in seiner Nähe – frühestens 12 Std. nach dem Beitritt,
