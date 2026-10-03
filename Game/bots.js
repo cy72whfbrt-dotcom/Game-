@@ -193,23 +193,23 @@ function resolveBotAttack(attack) {
             islandTroops[target.id] = Math.max(0, (islandTroops[target.id] || 0) - defenderCasualties);
         } else if (bossHere) {
             bossHere.troops = Math.max(0, bossHere.troops - defenderCasualties);
-            saveBoss();
+            saveWander();
         } else {
             target.neutralTroops = originalEnemyTroops - defenderCasualties;
             neutralTroopOverrides[target.id] = target.neutralTroops;
         }
     }
     noteBattle(target.id, won ? originalEnemyTroops : attack.rawTroops - fled, won ? targetOwner : bot.id);   // the neighbours saw it
-    midFight(target.id, bot.id, won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops), targetOwner, won ? botSentLoss : attack.rawTroops - fled);   // Turnier-Punkte - like yours
+    midFight(target.id, bot.id, won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops), targetOwner, won ? botSentLoss : attack.rawTroops - fled);   // Krieger-Woche points - like yours
     const counts = won || !attack.planId || attack.lastWave;                    // an early wave of a planned strike failing isn't a lesson yet
     if (counts) botMoodAdd(bot.id, won ? .15 : -.2); if (targetOwner && targetOwner !== 'player') botMoodAdd(targetOwner, won ? -.25 : .1);
     if (!won && counts) botNoteFail(bot.id, target.id);
     if (!won) botLearn(bot.id, target.id);                          // a lost fight tells them what's really there
     if (!won && targetOwner && targetOwner !== 'player') botStat(targetOwner, 'defs');
     if (won && bossHere && typeof bundGeschenk === 'function') bundGeschenk(bot.id, 'boss');         // Boss besiegt: kleine Geschenke fürs ganze Bündnis
-    if (won && bossHere) { botStat(bot.id, 'bosses'); if (bossHere.wander) botStat(bot.id, 'wanders'); heroGrantShards(bot.id, bossHere.wander ? HERO_SHARDS_WANDER : HERO_SHARDS_BOSS); }   // the same shards you get
+    if (won && bossHere) { botStat(bot.id, 'bosses'); botStat(bot.id, 'wanders'); heroGrantShards(bot.id, HERO_SHARDS_WANDER); }   // the same shards you get
     updateHud();
-    if (bossHere && won) { spawnBattleFx(target.id, false, bossHere.name + ' gefallen', bot.name); (bossHere.wander ? endWander : endBoss)(bot.name + ' hat ' + bossHere.name + ' besiegt!'); }
+    if (bossHere && won) { spawnBattleFx(target.id, false, bossHere.name + ' gefallen', bot.name); endWander(bot.name + ' hat ' + bossHere.name + ' besiegt!'); }
 
     let defWounded = 0, defGold = 0;
     if (playerInvolved) {                                          // "Verteidigung: Gold": every attacker your garrison kills pays out (also when the base falls)
@@ -358,9 +358,8 @@ function coalitionOn(now) {                                  // the throne held 
     const r = rulerOwner(); return r && throneState.rulerSince && now - throneState.rulerSince > 20 * 60000 ? r : null;
 }
 
-function botMidPull(bot, target, ruler, now) {             // weekends (Turnier) draw everyone to the middle and its gates; a fat Kopfgeld to the ruler's bases
+function botMidPull(bot, target, ruler, now) {             // a fat Kopfgeld draws everyone to the ruler's bases
     let m = 1;
-    if (midZoneIds.has(target.id) && tourOn(now)) m *= target.id === megaTempleId ? .5 : target.guardian ? .55 : .7;
     if (ruler && ruler !== bot.id && (target.id === megaTempleId || islandOwnerOf(target.id) === ruler)) { const g = bountyGems(); if (g > 0) m /= 1 + Math.min(2, g / 1000); }
     return m;
 }
@@ -660,7 +659,7 @@ function botThink(bot) {
         const k = (grudge ? 1 / (1 + grudge.n) : 1) * sitOf(t, ow) * (rally && rally.t === t.id ? .05 : 1)   // the planned big strike comes first
             * (bundZiel === t.id ? .1 : 1)                                                          // ein Bündnis-Signal „Angriff auf …“
             * (t.id === megaTempleId && ruler !== bot.id ? (ruler ? .1 : .015) : 1)                // the throne pulls - an empty one most of all (the crown is free)
-            * botMidPull(bot, t, ruler, now);                                                       // the Turnier on weekends, the Kopfgeld on the ruler
+            * botMidPull(bot, t, ruler, now);                                                       // the Kopfgeld on the ruler
         pullM.set(t.id, v = { ow, grudge, k }); return v; };
     const mem = loadBotState()[bot.id], bundZiel = typeof bundZielVon === 'function' ? bundZielVon(bot.id) : null;
     if (mem.rally && (now > mem.rally.until || !owned.has(mem.rally.at) || owned.has(mem.rally.t) || isCapital(mem.rally.t))) mem.rally = null;
@@ -940,7 +939,6 @@ function botHeal(bot) {                                   // heals everyone at o
 }
 
 // ---- the bot's heroes: the same 20 as yours - the same shards, quarter stars, skill points and rage ----
-function botHeroFreshSet() { return heroFix(heroConvert(null, 0)); }
 
 function botPickHero(botId, src, target, raw, paar) { return paar ? heroPickPair(botId, src, target, raw) : heroPickBest(botId, src, target, raw); }   // the free hero who does the most in this attack (paar: [Haupt-, Zweitheld], wie du)
 function botGatherHeroes(botId) {                         // Sammel-Helden (Fenn, Otto, Pia …): der erste freie, dazu sein Partner oder ein zweiter Sammler
@@ -1027,7 +1025,6 @@ function addBotXp(botId, amount, gegner, eigene) {
 
 // Online in sessions, like people: everyone has their own day (asleep for about 7 hours, now and then up at night)
 // and within the day comes and goes in 20-minute stretches at their own times - not all on the same clock.
-function botWeekend(now) { try { return tourOn(now); } catch (e) { return false; } }   // (not yet set up while the game boots)
 function botOnline(bot, now) {
     if (bot.mensch) return !!(window.WELT && WELT.menschen[bot.id] && WELT.menschen[bot.id].online);   // echte Spieler: wirklich online?
     const h = botState && botState[bot.id] && botState[bot.id].handy;              // nach einer Angriffs-Meldung kurz in die App geschaut (botHandy)
@@ -1036,10 +1033,10 @@ function botOnline(bot, now) {
 }
 function botOnlinePlan(bot, now) {                                                // ihr gewohnter Tag (ohne Handy-Meldung)
     const st = BOT_STYLES[bot.style]; if (st.act >= 1) return true;
-    const idn = parseInt(bot.id.slice(3), 10) || 0, hour = (now / 3600000 + (idn * 7.37) % 24) % 24, we = botWeekend(now);   // Turnier-Wochenende: they come more often (and stay up longer)
-    if (hour < 7) return mulberry32(Math.floor(now / 1200000) * 31 + idn * 977)() < (we ? .12 : .06);
+    const idn = parseInt(bot.id.slice(3), 10) || 0, hour = (now / 3600000 + (idn * 7.37) % 24) % 24;
+    if (hour < 7) return mulberry32(Math.floor(now / 1200000) * 31 + idn * 977)() < .06;
     const off = (idn * 104729) % 1200000, blk = Math.floor((now + off) / 1200000), r = mulberry32(blk * 131 + idn * 7919)();
-    return r < Math.min(.97, st.act * (we ? 1.45 : 1.15));
+    return r < Math.min(.97, st.act * 1.15);
 }
 
 // Ring-Skins: about a third of them like a ring round their bases - always the same favourite, bought with gems or Thron-Punkte like the player
@@ -1407,7 +1404,7 @@ function botHandy(bot, now, lage) {
     let r;
     if (c.hour < 7 || (c.hour >= 23 && u1 < .5)) {                                 // schläft (Handy leise): selten wach, sonst erst am Morgen
         r = u2 < .12 ? now + (3 + u3 * 37) * 60000 : now + ((c.hour < 7 ? 7 - c.hour : 31 - c.hour) * 60 + u3 * 75) * 60000;
-    } else if (u2 < (.32 - act * .2) * (botWeekend(now) ? .5 : 1)) r = now + (45 + u3 * 105) * 60000;   // auf der Arbeit / unterwegs: sieht es erst viel später
+    } else if (u2 < (.32 - act * .2)) r = now + (45 + u3 * 105) * 60000;   // auf der Arbeit / unterwegs: sieht es erst viel später
     else r = now + (2 + 28 * Math.pow(u3, 1.6)) * 60000;                          // meist ein paar Minuten
     if (h && h.bis > 0) r = Math.max(r, h.bis + 10 * 60000);                      // gerade erst weggelegt: nicht gleich wieder
     b.handy = { k: neu, n: now, r: Math.round(r), bis: 0 }; saveBotState();
@@ -1562,8 +1559,7 @@ function botPassPay(botId, b) { const ps = b.ps, L = Math.min(PASS_LVLS, Math.fl
 
 function botStat(botId, k, n) { const b = loadBotState()[botId]; if (!b) return; b.stats = b.stats || {}; b.stats[k] = (b.stats[k] || 0) + (n || 1); saveBotState(); }
 
-// Wochenend-Turnier and Kopfgeld: their prizes land where yours do - gems, hero shards (one hero, like a boss), coins
-function botTourReward(botId, gems, shards) { const b = loadBotState()[botId]; if (!b) return; b.gems = (b.gems || 0) + gems; heroGrantShards(botId, shards); botStat(botId, 'tourPrizes'); }
+// Kopfgeld: the prize land where yours do - gems, hero shards (one hero, like a boss), coins
 function botBountyReward(botId, gems, coins) { const b = loadBotState()[botId]; if (!b) return; b.gems = (b.gems || 0) + gems; botCoins[botId] = (botCoins[botId] || 0) + coins; botStat(botId, 'bounty', gems); }
 
 function botThroneShop(botId) {                       // the others spend their points the way a player would
@@ -1581,59 +1577,6 @@ function botDropShield(botId) { const b = loadBotState()[botId]; if (!b || !(b.s
 
 const botProdCarry = {};                         // per bot: time not yet made into a tick of its own, and fractions
 
-function botsFastForward(hours, toCenter) {        // toCenter: they push region by region towards the throne (gates, Wächter-Tempel)
-    const now = Date.now(), days = hours / 24, sum = { caps: 0, fights: 0 }, mega = islandById[megaTempleId];
-    const reach = botId => { const s = new Set(); for (const id of botOwnedIslands[botId]) { const l = islandById[id].landmassId; s.add(l);
-        for (const r of reachableLandmassIds[l] || []) if (landmassesConnected(l, r)) s.add(r); } return s; };
-    const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
-    const take = (botId, id) => { const isl = islandById[id]; clearIslandOwner(id); botOwnedIslands[botId].add(id);
-        islandLevels[id] = Math.max(1, (islandLevels[id] || isl.neutralLevel || 1) - 1); islandTroops[id] = Math.round((isl.neutralTroops || 1000) * .5); botStat(botId, 'caps'); sum.caps++; };
-    const power = botId => { let t = 0; for (const id of botOwnedIslands[botId]) t += islandTroops[id] || 0; return t * botAtkFactor(botById[botId], true); };
-    for (let day = 0; day < Math.ceil(days); day++) {      // day by day, so the empires grow region by region
-    const dd = Math.min(1, days - day);
-    const bots = BOT_DEFS.filter(b => botOwnedIslands[b.id] && botOwnedIslands[b.id].size).sort(() => Math.random() - .5);
-    for (const bot of bots) {                              // 1) spread out: the nearest free towers (and a border gate now and then) they can reach
-        const st = BOT_STYLES[bot.style], want = Math.round(dd * (3 + (st.act || .65) * 8) * (.7 + Math.random() * .6));   // about 8 a day, like an active player
-        const rs = reach(bot.id), home = islandById[botCapitalOf(bot.id)] || islandById[[...botOwnedIslands[bot.id]][0]], pw = power(bot.id);
-        const big = i => i.type === 'gate' && (i.gateKind === 'border' || toCenter) || toCenter && i.type === 'temple';   // gates, and on the way in the temples and Wächter-Tempel
-        const score = i => toCenter ? dist(i, mega) + dist(i, home) * .3 : dist(i, home);
-        const free = [...rs].flatMap(l => islandsByLandmass[l] || []).filter(i => (i.type === 'tower' || big(i)) && !islandOwnerOf(i.id) && !bossAt(i.id)
-            && (i.type === 'tower' || pw > (effectiveTroops(i) + effectiveDefense(i)) * 1.3)).sort((a, b) => score(a) - score(b));
-        for (const i of free.slice(0, want)) { take(bot.id, i.id); if (i.type === 'gate') setGateSettings(i.id, { toll: .25, closed: false }); }
-    }
-    for (const bot of bots) {                              // 2) rivals: now and then the stronger neighbour takes a base
-        const st = BOT_STYLES[bot.style], tries = Math.round(dd * (1 + (st.hunt || .5)) * Math.random() * 2);
-        for (let n = 0; n < tries; n++) {
-            const rs = reach(bot.id), home = islandById[botCapitalOf(bot.id)]; if (!home) break;
-            let best = null, bd = Infinity;
-            for (const l of rs) for (const i of islandsByLandmass[l] || []) { const o = islandOwnerOf(i.id); if (!o || o === 'player' || o === bot.id || i.type !== 'tower' || isCapital(i.id) || ownerShielded(o, now)) continue;
-                const d = dist(i, home); if (d < bd) { bd = d; best = i; } }
-            if (!best) break;
-            const foe = islandOwnerOf(best.id); sum.fights++; botGrudge(foe, bot.id, 2);
-            if (power(bot.id) > power(foe) * (.8 + Math.random() * .4)) { take(bot.id, best.id); sum.caps--; botStat(foe, 'lost'); botStat(bot.id, 'pvp'); }
-            else botStat(foe, 'defs');
-        }
-    }
-    }
-    for (const bot of BOT_DEFS.filter(b => botOwnedIslands[b.id] && botOwnedIslands[b.id].size)) {   // 3) produce, build, level up, gear up
-        const b = loadBotState()[bot.id], own = botOwnedIslands[bot.id]; if (!own.size) continue;
-        const hp = hourProduction(bot.id), troops = hp.troops * hours * .5, per = Math.round(troops / own.size);   // half of it went into fights
-        for (const id of own) islandTroops[id] = (islandTroops[id] || 0) + per;
-        botCoins[bot.id] = (botCoins[bot.id] || 0) + Math.round(hp.coins * hours);
-        const c = b.city; let busy = 0;
-        for (const x of c.builds) x.endsAt = now; botCityFinish(bot, now);
-        for (let n = 0; n < 200 && busy < hours * 3600000 * citySlots(c); n++) { botCityBuild(bot, now); if (!c.builds.length) break; for (const x of c.builds) { busy += x.endsAt - x.startedAt; x.endsAt = now; } botCityFinish(bot, now); }   // (two builders get twice as much done)
-        for (let n = 0; n < 8; n++) botConsiderUpgrade(bot);
-        addBotXp(bot.id, Math.round(hp.troops * hours * .25));
-        for (let d = 1; d <= Math.floor(hours / 24); d++) { heroGrantShards(bot.id, HERO_SHARDS_DAY); if (d % 7 === 0) heroGrantShards(bot.id, HERO_SHARDS_CHAIN); }   // the days away: their daily shards
-        b.gems += Math.round(hours * 15); b.wounded = 0;
-        for (let n = 0; n < 6; n++) botShop(bot);
-        if (AUF) AUF.botVorspulen(bot, hours, now);           // Rohstoffe, Forschung, Truppen-Stufe
-    }
-    capitalCache = null; saveBotState(); refreshTerritory(); saveGame(); requestRender();
-    sum.days = Math.round(days);
-    return sum;
-}
 
 // bots: an idle bot sends a share of a big base to a field near it - free ones first, or one it can win
 // ==============================================================================================================

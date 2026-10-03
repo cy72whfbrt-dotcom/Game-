@@ -131,7 +131,7 @@ b,strong{font-weight:600}
   display:flex;gap:6px;align-items:center;pointer-events:none}
 .hud > *{pointer-events:auto}
 .hud-me{display:none}
-/* the Turnier and Kopfgeld chips under the HUD */
+/* the chips under the HUD (Wochen-Event, Kopfgeld, Invasion, Drache, Händler) */
 .midbar{position:fixed;z-index:var(--z-hud);top:calc(var(--safe-t) + 14px + var(--hud-h));left:calc(var(--safe-l) + 10px);display:flex;flex-direction:column;align-items:flex-start;gap:5px;pointer-events:none}
 .midbar[hidden]{display:none} .midbar > *{pointer-events:auto}
 .mb-chip{display:flex;align-items:center;gap:6px;max-width:calc(100vw - 80px);height:26px;padding:0 10px 0 7px;border-radius:var(--r-pill);background:var(--glass);border:1px solid var(--line-2);box-shadow:var(--sh-1);
@@ -147,10 +147,7 @@ b,strong{font-weight:600}
 .res > .icon{width:18px;height:18px}
 .res b{font:600 var(--fs-13)/1 var(--font-ui);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .res--coin > .icon{color:var(--res-coin)} .res--gem > .icon{color:var(--res-gem)} .res--troop > .icon{color:var(--res-troop)}
-.res-add{position:relative;margin-left:auto;width:18px;height:18px;flex:none;display:grid;place-items:center;border-radius:var(--r-xs);color:var(--gold-200);background:rgba(214,170,90,.12);border:1px solid var(--line-2)}
-.res-add .icon{width:12px;height:12px}
 /* phone portrait: the dock already has Shop - the "+" would only squeeze the gem value into an ellipsis */
-@media (max-width:899px) and (min-height:501px){ .res-add{display:none} }
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){ .res,.nav,.mapctl,.toast,.mabar{background:var(--glass-strong)} }
 
 /* avatar ring (profile header + desktop HUD). --progress (0-100) is written by renderProfile */
@@ -204,7 +201,6 @@ b,strong{font-weight:600}
 .troop-in{width:9.5em;max-width:46vw;height:30px;padding:0 8px;border:1px solid var(--line-2);border-radius:var(--r-xs);background:#12151b;color:var(--tx-1);font:700 var(--fs-13)/1 var(--font-ui);text-align:right;font-variant-numeric:tabular-nums}
 .troop-in.is-bad{border-color:#e0685c;box-shadow:0 0 0 2px rgba(224,104,92,.25)} @media (pointer:coarse){ .troop-in{height:36px} }
 .troop-in:focus{outline:none;border-color:var(--gold-300);box-shadow:0 0 0 2px rgba(214,170,90,.25)}
-.look-now-ring{background:conic-gradient(from 200deg,var(--fr1),var(--fr2),var(--fr1),var(--fr2),var(--fr1));box-shadow:inset 0 0 0 6px #141a24}
 .look-title .icon{width:10px;height:10px}
 .look-titles{display:flex;flex-wrap:wrap;gap:6px}
 .look-title{display:inline-flex;align-items:center;gap:4px;min-height:34px;padding:6px 12px;border-radius:999px;border:1px solid var(--line-2);background:rgba(255,255,255,.03);color:var(--tx-1);font:600 var(--fs-12)/1 var(--font-ui)}
@@ -227,23 +223,6 @@ b,strong{font-weight:600}
 .throne-row .tr-t{flex:1;min-width:0} .throne-row .tr-t b{display:block;font:600 var(--fs-13)/1.2 var(--font-ui);color:var(--tx-1)}
 .throne-row .tr-t small{display:block;margin-top:2px;font:500 var(--fs-11)/1.3 var(--font-ui);color:var(--tx-3)}
 .throne-row .btn{flex:none;min-width:78px} .throne-row .btn .icon{color:#f2c75c}
-.throne-week{display:grid;gap:2px;font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-2)}
-.throne-week div{display:flex;gap:8px;padding:5px 2px;border-bottom:1px solid var(--line-1)} .throne-week div:last-child{border-bottom:0}
-/* Wochenend-Turnier + Kopfgeld: purple-gold like the Turniersieger ring */
-.throne-row.is-tour{border-color:rgba(176,120,255,.45);background:radial-gradient(100% 140% at 0% 50%,rgba(160,92,235,.18),transparent 70%),rgba(0,0,0,.22)} .throne-row.is-tour .tr-ic .icon{color:#f2c75c}
-.throne-row.is-tour small span{color:var(--tx-1);font-variant-numeric:tabular-nums}
-.notice.notice--tour{border-color:rgba(176,120,255,.45);background:rgba(160,92,235,.1);color:#e6d8ff} .notice--tour > .icon{color:#f2c75c}
-.lb-t.is-champ{border-color:rgba(190,140,255,.6);color:#f3e6ff;background:linear-gradient(90deg,rgba(140,70,220,.5),rgba(255,208,90,.2))}
-.tour-card{display:grid;gap:10px;padding:12px;margin-bottom:4px;border:1px solid rgba(176,120,255,.4);border-radius:var(--r-lg);background:radial-gradient(120% 100% at 0% 0%,rgba(160,92,235,.2),transparent 60%),rgba(0,0,0,.25)}
-.tour-head{display:flex;align-items:center;gap:10px} .tour-head > div{min-width:0}
-.tour-badge{width:40px;height:40px;flex:none;display:grid;place-items:center;border-radius:50%;background:conic-gradient(from 200deg,#a05ceb,#f2c75c,#a05ceb,#f2c75c,#a05ceb);box-shadow:0 0 12px rgba(160,92,235,.45)}
-.tour-badge .icon{width:20px;height:20px;padding:8px;box-sizing:content-box;border-radius:50%;background:#1a1224;color:#f2c75c}
-.tour-head b{display:block;font:600 var(--fs-13)/1.2 var(--font-display);letter-spacing:.03em;color:var(--gold-100)}
-.tour-head small{display:block;margin-top:3px;font:500 var(--fs-11)/1.3 var(--font-ui);color:var(--tx-3)} .tour-head small b{display:inline;font:600 var(--fs-11)/1 var(--font-ui);letter-spacing:0;color:var(--tx-1);font-variant-numeric:tabular-nums}
-.tour-me{display:grid;grid-template-columns:1fr 1fr;gap:6px} .tour-me span{display:flex;flex-direction:column;gap:3px;padding:7px 9px;border:1px solid var(--line-1);border-radius:var(--r-sm);background:rgba(0,0,0,.22);font:600 9.5px/1 var(--font-ui);letter-spacing:.08em;text-transform:uppercase;color:var(--tx-3)}
-.tour-me b{font:700 var(--fs-15)/1 var(--font-display);letter-spacing:0;text-transform:none;color:var(--gold-100);font-variant-numeric:tabular-nums}
-.tour-by{display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:6px} .tour-by span{display:flex;flex-direction:column;gap:3px;padding:6px 8px;border:1px solid var(--line-1);border-radius:var(--r-sm);background:rgba(0,0,0,.16);font:600 9px/1 var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--tx-3)}
-.tour-by .icon{width:12px;height:12px;color:#c9a2ff} .tour-by b{font:700 var(--fs-13)/1 var(--font-display);letter-spacing:0;text-transform:none;color:var(--tx-1);font-variant-numeric:tabular-nums}
 .tour-rules b{color:var(--tx-1);font-weight:700} .tour-rules span span{display:block} .tour-rules{display:grid;gap:5px} .tour-rules span{display:flex;align-items:center;gap:8px;font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-2)} .tour-rules .icon{width:15px;height:15px;flex:none;color:#c9a2ff}
 .tour-prizes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
 .tour-prize{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 3px;border:1px solid var(--line-1);border-radius:var(--r-sm);background:rgba(0,0,0,.22);text-align:center;min-width:0}
@@ -251,9 +230,6 @@ b,strong{font-weight:600}
 .tour-prize .icon{width:11px;height:11px;flex:none;color:var(--res-gem)} .tour-prize span + span .icon{color:#c9a2ff}
 .tour-prize em{font:700 9px/1.1 var(--font-ui);font-style:normal;letter-spacing:.06em;text-transform:uppercase;color:#e6d8ff}
 .tour-prize.is-1{border-color:rgba(242,199,92,.5);background:linear-gradient(180deg,rgba(160,92,235,.25),rgba(242,199,92,.08))}
-.tour-note{display:block;margin-top:-4px;font:500 var(--fs-11)/1.35 var(--font-ui);color:var(--tx-3)} .tour-note .icon{width:11px;height:11px;vertical-align:-1px;color:#c9a2ff}
-.tour-hist{display:flex;align-items:center;gap:8px;font:500 var(--fs-12)/1.35 var(--font-ui);color:var(--tx-2)} .tour-hist > .icon{width:15px;height:15px;flex:none;color:#f2c75c}
-.throne-week i{font-style:normal;width:18px;color:var(--tx-3)} .throne-week b{margin-left:auto;font-variant-numeric:tabular-nums} .throne-week .me{color:var(--f-player-hi)}
 .mail-tabs .tab .badge{position:absolute;top:4px;right:8px}
 .mail-pane[hidden]{display:none} .mail-pane{display:grid;gap:10px}
 .mail-intro{font:500 var(--fs-12)/1.4 var(--font-ui);color:var(--tx-3)}
@@ -381,7 +357,7 @@ b,strong{font-weight:600}
 .barb-rank li b{color:var(--tx-1);font-variant-numeric:tabular-nums} .barb-rank li.me{border-color:var(--line-3);background:rgba(214,170,90,.1)}
 .barb-note{font:500 var(--fs-11)/1.35 var(--font-ui);color:var(--tx-3)}
 /* Ereignisse (Paket B) */
-.ev-body{display:flex;flex-direction:column;gap:8px} .seg.ev-seg{grid-template-columns:1fr 1fr;margin:0 0 2px} .seg.ev-seg button{height:auto;min-height:36px;padding:6px 4px;font-size:var(--fs-12)}
+.ev-body{display:flex;flex-direction:column;gap:8px}
 .ev-card .field-lines b{display:flex;align-items:center;justify-content:flex-end;gap:5px;flex-wrap:wrap} .ev-card .field-lines .icon{width:13px;height:13px;color:var(--gold-300)}
 .ev-card.is-tour{border-color:rgba(176,120,255,.4);background:rgba(160,92,235,.08)} .ev-card.is-warn{border-color:rgba(225,72,60,.55);background:rgba(150,30,30,.12)} .ev-card.is-drache{border-color:rgba(255,140,70,.55);background:rgba(170,60,20,.12)}
 .ev-card .barb-ct{flex-wrap:wrap;row-gap:2px} .ev-card .barb-ct > b{white-space:nowrap} .ev-card .barb-ct small{margin-left:auto;text-align:right} .ev-card .barb-ct small b{font-variant-numeric:tabular-nums;color:var(--tx-1)} .ev-rot{color:#ff8a7a} .ev-prizes3{grid-template-columns:repeat(3,minmax(0,1fr))}
@@ -421,7 +397,6 @@ b,strong{font-weight:600}
   .btn-x::before{content:"";position:absolute;inset:-6px}
   .mapctl button::before{content:"";position:absolute;inset:0 -4px}
   .mapctl button:first-child::before{top:-4px} .mapctl button:last-child::before{bottom:-4px}
-  .res-add::before{content:"";position:absolute;inset:-12px}
 }
 body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/landscape re-enable below */
 
@@ -664,7 +639,6 @@ body.has-panel .mapctl{display:none}
 .sect-aside{order:6;display:inline-flex;align-items:center;gap:6px}
 /* Handy-Benachrichtigungen im Profil (benachrichtigung.js) */
 .push-karte{display:flex;flex-direction:column;gap:8px}
-.set-body{display:flex;flex-direction:column;gap:10px}
 .set-liste{display:flex;flex-direction:column}
 .set-liste[hidden],.set-pw[hidden]{display:none}
 .set-zeile{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:40px;border-bottom:1px solid var(--line-1);font:500 var(--fs-13)/1.25 var(--font-ui);color:var(--tx-1);cursor:pointer}
@@ -888,10 +862,6 @@ body.has-panel .mapctl{display:none}
 @media (max-width:760px){.hh-hero{grid-template-columns:1fr} .hh-panel{border-left:0;border-top:1px solid var(--line-2)} .hh-stage{position:relative;height:auto;min-height:330px} .hh-stage{min-height:360px} .hh-portrait{width:240px;bottom:14px}}
 .crest-card{display:grid;grid-template-columns:56px 1fr auto;gap:12px;align-items:center;width:100%;padding:10px 12px;margin:4px 0 8px;border:1px solid var(--line-2);border-radius:8px;background:rgba(255,255,255,.03);color:var(--tx-1);text-align:left;cursor:pointer}
 .crest-card:hover{border-color:var(--gold-300)} #crestSmall{width:56px;height:56px} .crest-card-t{display:grid;gap:2px} .crest-card-t small{color:var(--tx-2)}
-.look-now{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:1px solid var(--line-2);border-radius:10px;background:rgba(0,0,0,.22);text-align:left;color:inherit}
-.look-now-in{display:flex;align-items:center;gap:10px;flex:1;min-width:0} .look-now-ring{width:34px;height:34px;border-radius:50%;flex:none}
-.look-now-t b{display:block;font:600 var(--fs-13)/1.2 var(--font-ui);color:var(--tx-1)} .look-now-t small{display:block;margin-top:2px;font:500 var(--fs-11)/1.3 var(--font-ui);color:var(--tx-3)}
-.keep-crest{margin-bottom:4px} .keep-crest img{width:56px;height:56px;flex:none}
 .crest-card-go{display:inline-flex;align-items:center;gap:6px;font:600 var(--fs-12)/1 var(--font-ui);color:var(--gold-300)} .crest-card-go .icon{width:14px;height:14px}
 .crest-ed{display:grid;grid-template-columns:88px 1fr;gap:12px;align-items:start;margin-bottom:6px} #crestPreview{width:88px;height:88px}
 .crest-opts{display:grid;gap:6px} .crest-row{display:flex;align-items:center;gap:5px;flex-wrap:wrap} .crest-row>span{width:84px;font-size:var(--fs-12);color:var(--tx-2)}
@@ -1062,7 +1032,6 @@ body.has-panel .mapctl{display:none}
   .res{gap:4px;padding:0 5px 0 4px}
   .res b{font-size:var(--fs-12);letter-spacing:-.01em}
   .res > .icon{width:16px;height:16px}
-  .res-add{display:none}
   .btn{padding:0 10px;letter-spacing:.02em}
   .selbar .btn .icon{display:none}
   .pfoot > .btn--secondary:has(> .icon + span):not(.btn--grow) > .icon{display:none}   /* secondary footer buttons keep their label, drop the icon */
@@ -1107,7 +1076,6 @@ body.has-panel .mapctl{display:none}
   .hud{left:calc(var(--rail-w) + var(--safe-l) + 10px);right:auto;width:auto;max-width:calc(100vw - var(--rail-w) - 40px)}
   .midbar{left:calc(var(--rail-w) + var(--safe-l) + 10px)} body.has-panel .midbar{display:none}
   body.has-panel .hud{max-width:calc(100vw - var(--rail-w) - var(--safe-l) - min(380px,50vw) - var(--safe-r) - 36px)}
-  body.has-panel .res-add{display:none}   /* narrow map strip: the rail has Shop; the values keep their room */
   .res{flex:0 0 auto;max-width:none}   /* pills size to their value: no ellipsis on "999,9 Tsd." */
   .res b{min-width:max-content}
   .mapctl{bottom:calc(var(--safe-b) + 10px)}
@@ -1151,7 +1119,6 @@ body.has-panel .mapctl{display:none}
   .res + .res{border-left:1px solid var(--line-1)}
   .res b{font-size:var(--fs-15);min-width:6.2em}   /* room for "999,9 Tsd.": the frame never jumps when a value changes length */
   .res > .icon{width:20px;height:20px}
-  .res-add{margin-left:6px}
   .nav{left:auto;bottom:auto;top:14px;right:14px;height:auto;padding:4px;display:flex;gap:2px;background:var(--glass);border:1px solid var(--line-2);border-radius:var(--r-sm);box-shadow:var(--sh-2);
     -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
   .nav::before{display:none}
@@ -1230,7 +1197,7 @@ body.has-panel .mapctl{display:none}
 .lvlup .btn{width:100%}
 .xp-next{margin-top:4px;font:500 var(--fs-11)/1.3 var(--font-ui);color:var(--tx-3)}
 .xp-next b{color:var(--tx-2);font-weight:600}
-.ico-coin{color:var(--gold-300)} .ico-gem{color:#7fd3ff} .ico-troops{color:#e8e2d2} .ico-points{color:var(--gold-200)}
+.ico-coin{color:var(--gold-300)} .ico-gem{color:#7fd3ff} .ico-troops{color:#e8e2d2}
 @media (prefers-reduced-motion:reduce){.lvlup-card,.lvlup-card::before,.lvlup-rewards li{animation:none;opacity:1}}
 
 /* ---- daily reward + quests ---- */
@@ -1826,7 +1793,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 </section>
 
 <!-- ============ EVENTS (Dock): oben Aufgaben (Täglich, Belohnung + Abholfach, Erfolge, Pass), unten Ereignisse
-     (Turnier, Invasion, Drache, Tagesboss + Barbaren-Lager) – alles nur hier ============ -->
+     (Wochen-Event, Invasion, Drache, Tagesboss + Barbaren-Lager) – alles nur hier ============ -->
 <section id="goalsPopup" class="panel panel--sheet" role="dialog" aria-labelledby="goalsTitle">
   <span class="sheet-grab" aria-hidden="true"></span>
   <header class="phead">

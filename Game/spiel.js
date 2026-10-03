@@ -633,7 +633,7 @@ if (store.get('openWaterWorldVersion') !== WORLD_VERSION) {
     } catch (e) {}
     ['openWaterPlayerIslandId', 'openWaterOwnedIslands', 'openWaterIslandLevels', 'openWaterIslandTroops', 'openWaterBotOwnedIslands',
      'openWaterBotCoins', 'openWaterNeutralTroopOverrides', 'openWaterScoutedIslands', 'openWaterPendingAttacks', 'openWaterPendingSends',
-     'openWaterPendingScouts', 'openWaterPendingRetreats', 'openWaterTempleHoldSince', 'openWaterBoss', 'openWaterBossNext', 'openWaterExplored', 'openWaterFogCells', 'openWaterWorldStart', 'openWaterBotState', 'openWaterTitles', 'openWaterGateCfg', 'openWaterShield', 'openWaterShieldStock', 'openWaterWander', 'openWaterWanderNext'].forEach(k => store.remove(k));
+     'openWaterPendingScouts', 'openWaterPendingRetreats', 'openWaterTempleHoldSince', 'openWaterExplored', 'openWaterFogCells', 'openWaterWorldStart', 'openWaterBotState', 'openWaterTitles', 'openWaterGateCfg', 'openWaterShield', 'openWaterShieldStock', 'openWaterWander', 'openWaterWanderNext'].forEach(k => store.remove(k));
     if (carry > 0) store.set('openWaterCarryTroops', String(Math.round(carry)));
     store.set('openWaterWorldVersion', WORLD_VERSION);
 }
@@ -854,7 +854,7 @@ function heroPartner(id) { const p = HERO_PAIRS.find(x => x.a === id || x.b === 
 const HERO_TIER = { 1: { a: 15, p: 5, st: 1 }, 2: { a: 20, p: 8, st: 1.6 }, 3: { a: 30, p: 12, st: 2.4 }, 4: { a: 40, p: 15, st: 3.2 } };
 const HERO_UNLOCK = { 1: 10, 2: 20, 3: 40, 4: 80 }, HERO_START_SHARDS = { 1: 10, 2: 8, 3: 6, 4: 4 };   // shards to unlock · everyone's starter shards
 const HERO_MAXQ = 20, HERO_RAGE = 25, HERO_RESET_GEMS = 200, HERO_HALL_GEF = 3;
-const HERO_SHARDS_BOSS = 15, HERO_SHARDS_WANDER = 25, HERO_SHARDS_DAY = 5, HERO_SHARDS_CHAIN = 30;   // where shards come from (and the hero chests in the shop)
+const HERO_SHARDS_WANDER = 25, HERO_SHARDS_DAY = 5, HERO_SHARDS_CHAIN = 30;   // where shards come from (and the hero chests in the shop)
 const HERO_CHESTS = [{ id: 'hc1', name: 'Heldenkiste', gems: 150, sh: 6, n: 1, minR: 1, txt: '6 Splitter' }, { id: 'hc3', name: 'Große Kiste', gems: 500, sh: 8, n: 3, minR: 1, txt: '3 × 8 Splitter' },
     { id: 'hcE', name: 'Epische Kiste', gems: 1200, sh: 30, n: 1, minR: 3, txt: '30 Splitter · Episch+' }];   // gems per shard: 25 / 21 / 40 (only Episch or Legendär)                // 5 stars in quarters · rage per fight · reset price · +3 % Gefolge per hall level
 const botById = {};
@@ -1987,7 +1987,7 @@ function resolveAttack(attack) {
             if (targetOwner !== 'player') enemyWounded = botHospitalTake(targetOwner, defenderCasualties);
         } else if (bossHere) {
             bossHere.troops = Math.max(0, bossHere.troops - defenderCasualties);
-            saveBoss();
+            saveWander();
         } else {
             target.neutralTroops = originalEnemyTroops - defenderCasualties;
             neutralTroopOverrides[target.id] = target.neutralTroops;
@@ -2013,7 +2013,7 @@ function resolveAttack(attack) {
     // XP for troops that died in the clash either way: a win kills
     // the whole enemy force, a loss costs your whole attack force
     noteBattle(target.id, won ? originalEnemyTroops : attack.rawTroops - retreatSurvivors, won ? targetOwner : 'player');
-    midFight(target.id, 'player', won ? originalEnemyTroops : defenderCasualties, targetOwner, won ? sentLoss : attack.rawTroops - retreatSurvivors);   // Turnier-Punkte
+    midFight(target.id, 'player', won ? originalEnemyTroops : defenderCasualties, targetOwner, won ? sentLoss : attack.rawTroops - retreatSurvivors);   // Punkte für die Krieger-Woche
     if (targetOwner && targetOwner !== 'player') botMoodAdd(targetOwner, won ? -.25 : .1);
     addXp(kampfEp(won ? totalStrength : defenderCasualties, playerLvl, totalStrength, myTroops));
     heroFought('player', attack.hx);                                     // every fight the hero leads fills his rage
@@ -3344,11 +3344,9 @@ function ring(x, y, R, w, color, dash, offset) {
   ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI * 2); ctx.lineWidth = w; ctx.strokeStyle = color;
   ctx.setLineDash(dash || []); ctx.lineDashOffset = offset || 0; ctx.stroke(); ctx.setLineDash([]);
 }
-function ringBadge(x, y, b, st) {                  // the title's sign on top of the ring: a crown (good title, ruler), a cup (Turniersieger) or a skull (penalty)
+function ringBadge(x, y, b, st) {                  // the title's sign on top of the ring: a crown (good title, ruler) or a skull (penalty)
   ctx.beginPath(); ctx.arc(x, y, b + 1.5, 0, Math.PI * 2); ctx.fillStyle = 'rgba(10,8,4,.85)'; ctx.fill(); ctx.lineWidth = 1.6; ctx.strokeStyle = st.c0; ctx.stroke();
-  ctx.fillStyle = st.k === 'bad' ? '#f1e6dc' : st.k === 'champ' ? '#e2c7ff' : '#ffd25a';
-  if (st.k === 'champ') { const w = b * .55; ctx.beginPath(); ctx.moveTo(x - w, y - b * .55); ctx.lineTo(x + w, y - b * .55); ctx.quadraticCurveTo(x + w, y + b * .15, x, y + b * .2); ctx.quadraticCurveTo(x - w, y + b * .15, x - w, y - b * .55); ctx.fill();   // Turniersieger: a cup
-    ctx.fillRect(x - b * .1, y + b * .15, b * .2, b * .3); ctx.fillRect(x - b * .35, y + b * .42, b * .7, b * .16); return; }
+  ctx.fillStyle = st.k === 'bad' ? '#f1e6dc' : '#ffd25a';
   if (st.k === 'bad') { ctx.beginPath(); ctx.arc(x, y - b * .12, b * .55, 0, Math.PI * 2); ctx.fill(); ctx.fillRect(x - b * .32, y + b * .2, b * .64, b * .38);
     ctx.fillStyle = 'rgba(10,8,4,.95)'; ctx.beginPath(); ctx.arc(x - b * .22, y - b * .1, b * .14, 0, Math.PI * 2); ctx.arc(x + b * .22, y - b * .1, b * .14, 0, Math.PI * 2); ctx.fill(); }
   else { const w = b * .7, h = b * .55; ctx.beginPath(); ctx.moveTo(x - w, y + h * .6); ctx.lineTo(x - w, y - h * .5); ctx.lineTo(x - w * .45, y); ctx.lineTo(x, y - h); ctx.lineTo(x + w * .45, y); ctx.lineTo(x + w, y - h * .5); ctx.lineTo(x + w, y + h * .6); ctx.closePath(); ctx.fill(); }
@@ -3705,7 +3703,6 @@ function drawMap() {
   for (const s of botScoutsOnMap) drawMarchLine('enemyScout', islandById[s.sourceId], islandById[s.targetId], s.startedAt, s.resolveAt, wallNow);   // a bot's scout coming to look at you
   for (const r of pendingRetreats) drawMarchLine('retreat', islandById[r.fromId], islandById[r.toId], r.startedAt, r.resolveAt, wallNow, r.path, marchKeyOf(r));   // 6
   setScreen(ctx);
-  drawBossOverlay(now);                                                                                                // world-event boss aura (under the tower)
   if (typeof bundKarteUnten === 'function') bundKarteUnten(vis, z);                                                    // Bündnis-Gebiet: zart in der Bündnisfarbe
   drawBaseAuras(vis, z, now);                                                                                          // level + title auras under the towers
   drawThronePlaza(z, now);                                                                                             // the Thronplatz around the Mega-Tempel
@@ -4289,20 +4286,17 @@ function saveTitles() { titleVer++; store.set('openWaterTitles', JSON.stringify(
 // the ruler himself blood-red and gold), otherwise a bought Ring-Skin. The title ring wins. owner → ring style { k, name, c0, c1, n, spin, pulse, dash }
 const RING_TITLE = { ruler: { k: 'ruler', c0: 'rgba(235,60,50,.95)', c1: 'rgba(255,208,90,.7)', n: 24, spin: 1, pulse: 1, dash: 'rgba(255,214,110,.9)' },
                      good:  { k: 'good',  c0: 'rgba(255,208,90,.95)', c1: 'rgba(255,208,90,.5)', n: 24, pulse: 1 },
-                     bad:   { k: 'bad',   c0: 'rgba(225,48,48,.95)', c1: 'rgba(150,20,30,.6)', n: 16, pulse: 1 },
-                     champ: { k: 'champ', c0: 'rgba(160,92,235,.95)', c1: 'rgba(255,208,90,.75)', n: 20, spin: 1, pulse: 1, dash: 'rgba(255,214,110,.85)' } };   // Turniersieger, 7 days
+                     bad:   { k: 'bad',   c0: 'rgba(225,48,48,.95)', c1: 'rgba(150,20,30,.6)', n: 16, pulse: 1 } };
 var ringVer = 0;                                  // bumped whenever anyone buys or puts on a Ring-Skin
 function ringStatusByOwner() {
     const t = loadTitles(), ruler = rulerOwner() || null;          // (loadTitles first: a new ruler wipes the titles)
-    const ch = tourChamp();                                           // the Turniersieger's purple-gold ring, before a skin
-    if (ringMemo && ringMemo.ver === titleVer && ringMemo.rv === ringVer && ringMemo.ruler === ruler && ringMemo.ch === ch) return ringMemo.map;
+    if (ringMemo && ringMemo.ver === titleVer && ringMemo.rv === ringVer && ringMemo.ruler === ruler) return ringMemo.map;
     const map = new Map(), bs = loadBotState();
     const ps = ringSkinOf('player'); if (ps) map.set('player', ps);
     for (const id in bs) { const sk = ringSkinOf(id); if (sk) map.set(id, sk); }
-    if (ch) map.set(ch, RING_TITLE.champ);
     for (const x of TITLES) if (t.by[x.key]) map.set(t.by[x.key], x.good ? RING_TITLE.good : RING_TITLE.bad);
     if (ruler) map.set(ruler, RING_TITLE.ruler);
-    ringMemo = { ver: titleVer, rv: ringVer, ruler, ch, map }; return map;
+    ringMemo = { ver: titleVer, rv: ringVer, ruler, map }; return map;
 }
 function titleMult(who, kind) {
     const t = loadTitles(); let m = 1;
@@ -4664,7 +4658,7 @@ function marchSkinOf(who) { const id = who === 'player' ? look.march : who ? (lo
 function renderLook() {                             // the profile header and its "Aussehen" line; choosing happens in the Aussehen sheet
     const fr = playerFrame();
     document.getElementById('pAvatarRing').dataset.frame = fr;
-    document.getElementById('profileTitle').textContent = playerTitle() + (tourChamp() === 'player' ? ' · Turniersieger' : '');
+    document.getElementById('profileTitle').textContent = playerTitle();
     const cur = document.getElementById('lookNow');     // die eine Aussehen-Karte im Profil (Wappen + was du trägst)
     if (cur) cur.innerHTML = '<b>Aussehen · ' + escapeHtml(playerTitle()) + '</b><small>Wappen · Rahmen ' + (FRAMES.find(f => f.id === fr) || FRAMES[0]).name + ' · ' + BAUSTILE[loadBaustil().style] + ' · Marsch ' + marchSkinOf('player').name + '</small>';
     renderLookSheet();
@@ -5298,7 +5292,7 @@ function openRulerProfile(who) {
     document.getElementById('rulerLvl').textContent = pr.lvl;
     document.getElementById('rulerName').textContent = pr.name;
     document.getElementById('rulerOver').textContent = (who === 'player' ? 'Dein Profil' : 'Profil') + ' · Rang ' + RANK_TIERS[rankIndexFor(pr.bases)].name;
-    document.getElementById('rulerSub').innerHTML = '<span class="ptitle-tag" style="margin:0">' + escapeHtml(pr.title) + '</span>' + (tourChamp() === who ? ' <span class="lb-t is-champ">Turniersieger</span>' : '') + (who === 'player' ? '' : ' <span class="rp-online' + (pr.online ? ' on' : '') + '"><i></i>' + (pr.online ? 'online' : 'offline') + '</span>');
+    document.getElementById('rulerSub').innerHTML = '<span class="ptitle-tag" style="margin:0">' + escapeHtml(pr.title) + '</span>' + (who === 'player' ? '' : ' <span class="rp-online' + (pr.online ? ' on' : '') + '"><i></i>' + (pr.online ? 'online' : 'offline') + '</span>');
     const rd = r => RARITY_DEFS[r];
     const gear = pr.items.map(it => { const d = EQUIPMENT_DEFS[it[0]], r = rd(it[1]);
         return '<span class="gslot"><span class="tile' + (r ? '' : ' empty') + '"' + (r ? ' data-r="' + r.key + '"' : '') + ' title="' + d.name + (r ? ' – ' + r.label + ', Stufe ' + it[2] : ' – leer') + '">' + icon(d.icon) +
@@ -5338,14 +5332,14 @@ function whoLink(who, name) { return who ? '<button type="button" class="who-lin
 function escapeHtml(str) {                         // auch Anführungszeichen: sicher in Text UND in Attributen
     return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
-// ===== RANGLISTE: Macht, Eroberungen, Titel (aus der Mitte), Thron-Punkte (all ever earned) and the Wochenend-Turnier. Worked out once when opened or a tab
+// ===== RANGLISTE: Macht, Eroberungen, Titel (aus der Mitte), Thron-Punkte (all ever earned). Worked out once when opened or a tab
 // is picked - never per frame. Everyone is listed the same way; your row is blue and waits in the foot when you're outside the top.
 const rankPopup = document.getElementById('rankPopup'), RANK_TOP = 50;
 let rankTab = 'power';
 const RANK_TABS = { power: { t: 'Macht', sub: 'Die Stärke des ganzen Reichs', unit: 'Macht' },
     caps: { t: 'Eroberungen', sub: 'Eroberte Basen insgesamt', unit: 'erobert' },
     titles: { t: 'Titel', sub: 'Wer die Mitte hält und wer einen Titel trägt', unit: 'Thron-P.' },
-    week: { t: 'Thron-Punkte', sub: 'Fürs Halten der Mitte · alle je verdienten', unit: 'Thron-P.' } };   // (das Turnier steht nur unter Events → Turnier)
+    week: { t: 'Thron-Punkte', sub: 'Fürs Halten der Mitte · alle je verdienten', unit: 'Thron-P.' } };
 function conquestsOf(who) { return who === 'player' ? playerStats.captures || 0 : botConquests(who); }
 function rankPeople() {                                  // everyone once: name, frame, look title, level, bases
     const bs = loadBotState(), out = [{ who: 'player', name: profileName.value || 'Du', frame: playerFrame(), title: playerTitle(), lvl: playerLvl, bases: ownedIslands.size }];
@@ -5359,18 +5353,6 @@ function rankRowHtml(e, pos, medals, unit) {
         '<span class="lb-crest" data-frame="' + e.frame + '"><span class="lb-crest-in"><img alt="" src="' + crestDataUrl(28, e.who) + '"></span><span class="lvl">' + e.lvl + '</span></span>' +
         '<span class="lb-name"><b><span>' + escapeHtml(e.name) + '</span>' + (me && profileName.value ? '<span class="tag tag--player">Du</span>' : '') + '</b><small>' + e.sub + '</small></span>' +
         '<span class="lb-val"><b>' + (v >= 1e5 ? fmtCompact(v) : fmtNum(v)) + '</b><small>' + (unit || RANK_TABS[rankTab].unit) + '</small></span></div>';
-}
-function tourRangHtml() {                                // Events → Turnier: die Turnier-Rangliste (am Wochenende live, sonst das letzte Ergebnis)
-    const w = tourWin(), live = w.on && tourState.key === w.key, last = tourState.last, pts = {}, ch = tourChamp(), people = rankPeople();
-    if (live) for (const [who, n] of tourList()) pts[who] = Math.floor(n); else if (last) for (const [who, n] of last.top) pts[who] = n;
-    for (const e of people) { e.val = pts[e.who] || 0; e.sub = (e.who === ch ? '<span class="lb-t is-champ">Turniersieger</span> ' : '') + escapeHtml(e.title) + ' <i>· ' + fmtNum(e.bases) + (e.bases === 1 ? ' Basis' : ' Basen') + '</i>'; }
-    const alt = !live && last && last.me ? last.me : null; if (alt) people[0].val = alt.pts;   // dein Platz letztes Mal, auch außerhalb der Top 10
-    const list = people.filter(e => e.val > 0).sort((a, b) => b.val - a.val || b.lvl - a.lvl), myPos = alt ? alt.place : list.findIndex(e => e.who === 'player') + 1;
-    if (last && !live && !last.seen) { last.seen = true; tourDirty = true; }
-    return '<div class="lb-gap">' + (live ? 'Live · Top ' + TOUR_TOP : 'Letztes Turnier') + '</div>' +
-        (list.length ? list.slice(0, TOUR_TOP).map((e, i) => rankRowHtml(e, i + 1, true, 'Punkte')).join('')
-            : '<div class="war-empty">' + (live ? 'Noch hat niemand Punkte. Halte den Thron oder einen Wächter-Tempel, oder kämpfe in der Mitte.' : 'Am Samstag um 0:00 geht es los – dann siehst du hier live, wer wie viele Punkte hat.') + '</div>') +
-        (myPos > 0 && myPos <= TOUR_TOP ? '' : rankRowHtml(people[0], myPos > 0 ? myPos : '–', false, 'Punkte'));
 }
 function renderRankings() {
     const tab = RANK_TABS[rankTab], people = rankPeople(), bs = loadBotState(), t = loadTitles(), ruler = rulerOwner() || null;
@@ -5394,7 +5376,7 @@ function renderRankings() {
     document.getElementById('rankSub').textContent = tab.sub;                     // one line what this list counts
     for (const b of document.querySelectorAll('#rankTabs [data-rtab]')) { const on = b.dataset.rtab === rankTab; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }
     liveHtml(document.getElementById('rankBody'),
-        (rankTab === 'week' ? '<p class="mail-intro lb-intro">Thron-Punkte gibt es fürs Halten der Mitte: +' + THRONE_PTS_MEGA + ' alle 3 Min. für den Thron, +' + THRONE_PTS_GUARD + ' je Wächter-Tempel. Du gibst sie im Shop unter „Thron“ aus – hier zählt alles je Verdiente, ohne Neustart. Das Turnier am Wochenende zählt eigene Punkte (Events → Turnier).</p>' : '') +
+        (rankTab === 'week' ? '<p class="mail-intro lb-intro">Thron-Punkte gibt es fürs Halten der Mitte: +' + THRONE_PTS_MEGA + ' alle 3 Min. für den Thron, +' + THRONE_PTS_GUARD + ' je Wächter-Tempel. Du gibst sie im Shop unter „Thron“ aus – hier zählt alles je Verdiente, ohne Neustart.</p>' : '') +
         (top.length ? top.map((e, i) => rankRowHtml(e, i + 1, medals)).join('') + (list.length > lim ? '<div class="lb-gap">Top ' + lim + ' von ' + fmtNum(list.length) + '</div>' : '')
         : '<div class="empty-state">' + icon(rankTab === 'titles' ? 'crown' : 'points') + '<b>Noch leer</b>' + empty + '</div>'));
     const foot = document.getElementById('rankFoot');
@@ -5758,7 +5740,6 @@ function todayKey(d) {
 }
 function yesterdayKey() { const d = new Date(); d.setDate(d.getDate() - 1); return todayKey(d); }
 function msToMidnight() { const d = new Date(); const m = new Date(d); m.setHours(24, 0, 0, 0); return m - d; }
-function fmtHoursLeft(ms) { return fmtDHMS(ms / 1000); }
 
 // Grants one crate item (like the shop) - minRarity for the big day-7 chest.
 function grantFreeCrate(minRarity) {
@@ -5934,7 +5915,7 @@ function dailyGoalCount() {                                      // Events → T
     const q = loadQuests();
     return q.list.filter(t => !t.claimed && t.progress >= t.target).length + (!q.bonusClaimed && q.list.every(t => t.claimed) ? 1 : 0) + (chainStreak() >= 7 ? 1 : 0);
 }
-// ---- Abholfach: prizes and spoils are sent here and collected by hand (Turnier, Tagesboss, Kopfgeld, Weltboss, Kampfbeute) ----
+// ---- Abholfach: prizes and spoils are sent here and collected by hand (Wochen-Event, Invasion, Drache, Tagesboss, Kriegsherr, Kopfgeld, Kampfbeute) ----
 var inboxState = null;
 function inboxList() { if (!inboxState) { try { inboxState = JSON.parse(store.get('openWaterInbox')); } catch (e) { inboxState = null; } if (!Array.isArray(inboxState)) inboxState = [];
         const m = {}; inboxState = inboxState.filter(x => { const k = inboxPiles(x), p = k && m[x.src]; if (!p) { if (k) m[x.src] = x; return true; } p.gems = (p.gems || 0) + (x.gems || 0); p.coins = (p.coins || 0) + (x.coins || 0); p.sh = (p.sh || 0) + (x.sh || 0); p.n = (p.n || 1) + (x.n || 1); return false; }); }   // (older saves: many single entries become one)
@@ -5942,7 +5923,7 @@ function inboxList() { if (!inboxState) { try { inboxState = JSON.parse(store.ge
 function inboxSave() { store.set('openWaterInbox', JSON.stringify(inboxList())); }
 const INBOX_PILE = { fight: 1, bounty: 1 };   // these pile up in one entry each
 const inboxPiles = x => !!INBOX_PILE[x.src] && !(x.crate >= 0) && !(x.kiste >= 0) && !x.schild;   // a crate keeps its own entry (one entry holds one crate)
-const INBOX_SRC = { gift: { ic: 'gem', t: 'Geschenk' }, fight: { ic: 'attack', t: 'Kampfbeute' }, tour: { ic: 'crown', t: 'Wochenend-Turnier' }, woche: { ic: 'rank', t: 'Wochen-Event' }, boss: { ic: 'star', t: 'Tagesboss' }, wboss: { ic: 'star', t: 'Kriegsherr' }, bounty: { ic: 'losses', t: 'Kopfgeld' }, inv: { ic: 'defense', t: 'Barbaren-Invasion' }, drache: { ic: 'star', t: 'Drache' }, vip: { ic: 'crown', t: 'Tageskiste' }, haendler: { ic: 'coin', t: 'Händler' } };
+const INBOX_SRC = { gift: { ic: 'gem', t: 'Geschenk' }, fight: { ic: 'attack', t: 'Kampfbeute' }, woche: { ic: 'rank', t: 'Wochen-Event' }, boss: { ic: 'star', t: 'Tagesboss' }, wboss: { ic: 'star', t: 'Kriegsherr' }, bounty: { ic: 'losses', t: 'Kopfgeld' }, inv: { ic: 'defense', t: 'Barbaren-Invasion' }, drache: { ic: 'star', t: 'Drache' }, haendler: { ic: 'coin', t: 'Händler' } };
 function inboxAdd(o) {                              // o: { src, title?, gems, coins, sh (hero shards), crate (lowest rarity, -1 none) } - all fights' spoils pile up in one entry
     o = Object.assign({ gems: 0, coins: 0, sh: 0, crate: -1, tr: 0, n: 1 }, o); o.gems = Math.round(o.gems); o.coins = Math.round(o.coins); o.tr = Math.round(o.tr);
     if (!(o.gems > 0 || o.coins > 0 || o.sh > 0 || o.crate >= 0 || o.tr > 0 || o.kiste >= 0 || o.schild > 0)) return 0;   // (kiste: genau diese Seltenheit, schild: Friedensschild Std. – Händler)
@@ -6012,7 +5993,7 @@ function renderQuestPanel() {
     document.getElementById('questList').innerHTML = html;
 }
 // ---- Events: one sheet - oben die Aufgaben: Täglich (tasks + week chain), Belohnung (Abholfach + 7-day login chest), Erfolge, Pass;
-// unten die Ereignisse: Turnier, Invasion, Drache, Tagesboss + Barbaren-Lager (renderEvents) ----
+// unten die Ereignisse: Wochen-Event, Invasion, Drache, Tagesboss + Barbaren-Lager (renderEvents) ----
 const EV_TABS = ['tour', 'inv', 'drache', 'boss'];
 function showGoalsTab(t) {
     if (t === 'alle') t = 'boss';
@@ -6025,7 +6006,7 @@ function showGoalsTab(t) {
 function renderGoalsSub() { const q = loadQuests(), nd = q.list.filter(t => t.claimed).length, na = ACHIEVEMENTS.filter(a => achClaimed[a.id]).length;
     liveHtml(document.getElementById('goalsSub'), '<span class="pill">' + icon('flag') + '<b>' + nd + ' / 3</b><small>heute</small></span><span class="pill">' + icon('star') + '<b>' + na + ' / ' + ACHIEVEMENTS.length + '</b><small>Erfolge</small></span>'); }
 function openGoals(tab) {
-    closeAllPopups(); if (barbView) closeBarbSheet(); renderGoalsSub(); tourSicht = null;
+    closeAllPopups(); if (barbView) closeBarbSheet(); renderGoalsSub();
     const nd = dailyGoalCount(), na = achClaimable().length;
     showGoalsTab(tab || (nd ? 'daily' : dailyClaimable() || inboxList().length ? 'reward' : na ? 'ach' : passReadyAll().length ? 'pass' : evJetzt() || goalsTab)); openPanel(goalsPopup);
 }
@@ -6243,7 +6224,6 @@ var throneState = (() => { try { return JSON.parse(store.get('openWaterThrone'))
 function saveThrone() { store.set('openWaterThrone', JSON.stringify(throneState)); }
 function throneEarnedOf(who, bs) { const ts = throneState, w = (ts.week || {})[who] || 0;   // all Thron-Punkte ever earned (the ranking) - the larger of the tally and the old totals, so nobody loses any
     return Math.floor(Math.max(w, who === 'player' ? ts.earned || 0 : (((bs || loadBotState())[who] || {}).stats || {}).tpEarned || 0)); }
-function throneEarnedList(bs) { bs = bs || loadBotState(); return ['player', ...BOT_DEFS.map(b => b.id)].map(w => [w, throneEarnedOf(w, bs)]).filter(e => e[1] > 0).sort((a, b) => b[1] - a[1]); }
 function throneIncome(who) { return (rulerOwner() === who ? THRONE_PTS_MEGA : 0) + guardianTempleIds.filter(g => islandOwnerOf(g) === who).length * THRONE_PTS_GUARD; }
 function throneShooters() { const hd = rulerOwner(); return hd ? guardianTempleIds.filter(g => islandOwnerOf(g) !== hd) : []; }
 function hourProduction(who) {                       // what an empire makes in an hour (the coin and troop offers pay this much)
@@ -6281,10 +6261,8 @@ function throneAward(silent, at) {                    // at: when this award hap
     const ts = throneState; ts.week = ts.week || {};
     const got = {};
     const add = (who, n) => { if (!who) return; got[who] = (got[who] || 0) + n; };
-    const tb = tourOn(at || Date.now()) ? 1.5 : 1;                                // Turnier-Wochenende: Thron-Punkte +50 %
-    add(rulerOwner(), Math.round(THRONE_PTS_MEGA * tb)); for (const g of guardianTempleIds) add(islandOwnerOf(g), Math.round(THRONE_PTS_GUARD * tb));
+    add(rulerOwner(), THRONE_PTS_MEGA); for (const g of guardianTempleIds) add(islandOwnerOf(g), THRONE_PTS_GUARD);
     goalBump(rulerOwner(), 'throneMin', THRONE_TICK_MS / 60000);   // minutes on the throne (Erfolge)
-    tourHold(at);                                                                 // Wochenend-Turnier
     bountyGrow();                                                                 // the Kopfgeld on the ruler grows
     for (const [who, n] of Object.entries(got)) {
         if (who === 'player') { ts.pts = (ts.pts || 0) + n; ts.earned = (ts.earned || 0) + n; warStat('thronePts', n); }
@@ -6318,13 +6296,13 @@ function throneVolley(times, silent) {                // times: several volleys 
 }
 function throneTick() {
     const now = Date.now(), ts = throneState; let dirty = false;
-    if (!rechnet()) { throneUhren(now, ts); tourAnzeige(now); return; }
+    if (!rechnet()) { throneUhren(now, ts); midAnzeige(now); return; }
     const r = rulerOwner(); if ((ts.ruler || null) !== (r || null)) { ts.ruler = r || null; ts.rulerSince = now; ts.coTold = false; dirty = true; }
-    bountyCheck(r); tourTick(now);                                                // Kopfgeld to whoever took the throne; the Turnier clock
+    bountyCheck(r); midAnzeige(now);                                              // Kopfgeld to whoever took the throne; the chip under the HUD
     if (!ts.coTold && coalitionOn(now)) { ts.coTold = true; dirty = true;                  // everyone else turns on the throne
         flashHint(r === 'player' ? 'Du hältst den Thron schon lange – die anderen verbünden sich gegen dich. Rechne mit Angriffen von allen Seiten!'
             : 'Die anderen verbünden sich gegen ' + botById[r].name + ' – der Thron wird von allen Seiten angegriffen.', 6000); }
-    for (let n = 0; ts.nextPts <= now; n++) { ts.nextPts += THRONE_TICK_MS; dirty = true; if (n < 3) throneAward(); else if (n < 160) tourHold(ts.nextPts - THRONE_TICK_MS); }   // a throttled background tab catches up a little, not for hours - the Turnier minutes in full (up to 8 h, like offline)
+    for (let n = 0; ts.nextPts <= now; n++) { ts.nextPts += THRONE_TICK_MS; dirty = true; if (n < 3) throneAward(); }   // a throttled background tab catches up a little, not for hours
     for (let n = 0; ts.nextFire <= now; n++) { ts.nextFire += THRONE_FIRE_MS; dirty = true; if (n < 3) throneVolley(); }
     if (dirty) { saveThrone(); if (isPanelOpen(shopPopup)) renderShop(); }
     throneUhren(now, ts);
@@ -6389,66 +6367,12 @@ function showShopTab(t) {
 document.getElementById('shopTabs').addEventListener('click', e => { const b = e.target.closest('[data-stab]'); if (b) showShopTab(b.dataset.stab); });
 document.getElementById('throneShop').addEventListener('click', e => { const b = e.target.closest('[data-throne-buy]'); if (b && !b.disabled) throneBuy(b.dataset.throneBuy); });
 
-// ===== WOCHENEND-TURNIER UM DIE MITTE: Sa 0:00 bis So 23:59:59 (local time) everyone collects Turnier-Punkte - holding the throne (per minute),
-// a Wächter-Tempel (fewer) and troops beaten in fights in the middle and at its gates (per 1.000, attacking and defending alike - at most
-// 30 a fight and on average no more than the throne: 10 a minute, so many fights can't bury holding the middle). When it ends the places are paid once
-// (also when you were away), the winner wears "Turniersieger" with a purple-gold ring for 7 days. The same for everyone.
-const TOUR_PTS_MEGA = 10, TOUR_PTS_GUARD = 3, TOUR_KILL_PER = 1000, TOUR_KILL_MAX = 30, TOUR_KILL_MIN = 10, TOUR_CHAMP_MS = 7 * 86400000, TOUR_TOP = 10;
-const TOUR_PRIZES = [{ to: 1, gems: 1000, sh: 30, crate: 3, t: '1.' }, { to: 3, gems: 500, sh: 15, crate: 3, t: '2.–3.' }, { to: 10, gems: 200, sh: 6, crate: 2, t: '4.–10.' }, { to: Infinity, gems: 50, sh: 2, crate: -1, t: 'Alle anderen' }];   // (Turnier ist raus; nie Legendär)
+// ===== DIE MITTE: Thron, Wächter-Tempel und Tore
+// Punkte für Kämpfe gibt es nur noch im Wochen-Event (Krieger-Woche): 1 je 1.000 besiegte, höchstens 30 auf einmal, im Schnitt 10 pro Minute.
+const WO_KILL_PER = 1000, WO_KILL_MAX = 30, WO_KILL_MIN = 10, WO_TOP = 10;
 const midZoneIds = new Set(islands.filter(i => { const lm = landmasses[i.landmassId]; return i.type === 'megaTemple' || i.guardian || i.type === 'gate' && (i.gateKind === 'throne' || i.gateKind === 'guardian') || !!lm && (lm.tier === 'throne' || lm.tier === 'guardian'); }).map(i => i.id));
-var tourState = (() => { try { return JSON.parse(store.get('openWaterTourney')) || null; } catch (e) { return null; } })() || {};
-tourState.pts = tourState.pts || {}; tourState.hist = tourState.hist || []; tourState.by = tourState.by || {}; tourState.kb = tourState.kb || {};   // by: who got what for what (thr / tmp / fig), kb: fight-point allowance
-let tourDirty = false, tourWinMemo = null, tourRankMemo = null;
-function saveTour() { tourDirty = false; store.set('openWaterTourney', JSON.stringify(tourState)); }
-window.addEventListener('pagehide', () => { if (tourDirty) saveTour(); });   // (points are saved once a second - the last second too)
-const TOUR_AUS = { on: false, start: Infinity, end: Infinity, key: '' };   // Alexander 2.10.: das Wochenend-Turnier um die Mitte ist ganz raus (die Mitte selbst bleibt)
-function tourWin(now) { return TOUR_AUS; }
-function tourWinAlt(now) {                            // (alt, nicht mehr benutzt) this weekend or the next one
-    now = now || Date.now(); const m = tourWinMemo; if (m && now >= m.from && now < m.to) return m.w;
-    const d = new Date(now); d.setHours(0, 0, 0, 0); const wd = d.getDay(); d.setDate(d.getDate() + (wd === 6 ? 0 : wd === 0 ? -1 : 6 - wd));
-    const start = d.getTime(), key = todayKey(d); d.setDate(d.getDate() + 2); const full = d.getTime(), ts = tourState || {}, end = ts.testKey === key && ts.testEnd < full ? Math.max(start, ts.testEnd) : full, on = now >= start && now < end;   // (a test run may end it early)
-    if (!on && now >= start) { const n = new Date(start); n.setDate(n.getDate() + 7); const ns = n.getTime(), nk = todayKey(n); n.setDate(n.getDate() + 2);   // ended early (test): the next weekend is the one to wait for
-        tourWinMemo = { w: { on: false, start: ns, end: n.getTime(), key: nk }, from: now, to: full }; return tourWinMemo.w; }
-    tourWinMemo = { w: { on, start, end, key }, from: on ? start : now, to: on ? end : start }; return tourWinMemo.w;
-}
-function tourOn(now) { return tourWin(now).on; }
-function tourRoll(now) {                              // a finished weekend pays out once, a new one starts empty
-    const ts = tourState, w = tourWin(now);
-    if (ts.key && !ts.paid && now >= ts.end) tourPay();
-    if (w.on && ts.key !== w.key) { ts.key = w.key; ts.end = w.end; ts.pts = {}; ts.by = {}; ts.kb = {}; ts.paid = false; tourDirty = true; tourRankMemo = null; }
-}
-function tourAdd(who, n, at, kind) { if (!who || !(n > 0)) return; at = at || Date.now(); if (!tourOn(at)) return; tourRoll(at);
-    tourState.pts[who] = (tourState.pts[who] || 0) + n; if (kind) { const b = tourState.by[who] = tourState.by[who] || {}; b[kind] = (b[kind] || 0) + n; } tourDirty = true; }
-function tourHold(at) { const tm = THRONE_TICK_MS / 60000;   // (jedes Wochenende „Kampf um die Mitte“; tourAdd zählt nur am Wochenende)   // one Thron-Punkte tick: the throne and each Wächter-Tempel, per minute held
-    tourAdd(rulerOwner(), TOUR_PTS_MEGA * tm, at, 'thr'); for (const g of guardianTempleIds) tourAdd(islandOwnerOf(g), TOUR_PTS_GUARD * tm, at, 'tmp'); }
-function tourFight(who, kills, kind) { tourDeckel(who, kills / TOUR_KILL_PER, kind || 'fig'); }   // 1 per 1.000 beaten - attacker and defender alike
-function tourDeckel(who, n, kind) {                   // at most 30 at once; an allowance refills at 10 a minute (up to 30) - the same for every Thema
-    if (!who || !(n > 0) || !tourOn() || (who !== 'player' && !botById[who])) return; const now = Date.now(), k = tourState.kb[who] || [TOUR_KILL_MAX, now];
-    const left = Math.min(TOUR_KILL_MAX, k[0] + Math.max(0, now - k[1]) / 60000 * TOUR_KILL_MIN), m = Math.min(TOUR_KILL_MAX, n, left);
-    if (!(m > 0)) return; tourState.kb[who] = [left - m, now]; tourAdd(who, m, now, kind); }
-function tourList() {                                 // [who, points] best first (memoised a few seconds)
-    const now = Date.now(); if (tourRankMemo && now - tourRankMemo.at < 3000 && tourRankMemo.key === tourState.key) return tourRankMemo.list;
-    const list = tourState.key === tourWin().key ? Object.entries(tourState.pts).filter(e => e[1] >= 1 && (e[0] === 'player' || botById[e[0]])).sort((a, b) => b[1] - a[1]) : [];
-    tourRankMemo = { at: now, key: tourState.key, list }; return list;
-}
-function tourPrizeFor(place) { return TOUR_PRIZES.find(p => place <= p.to); }
-function tourPay() {                                  // places 1, 2-3, 4-10 and everyone else with points - you and the others alike
-    const ts = tourState; ts.paid = true; tourRankMemo = null;
-    const list = Object.entries(ts.pts).filter(e => e[1] >= 1 && (e[0] === 'player' || botById[e[0]])).sort((a, b) => b[1] - a[1]);
-    let me = null;
-    list.forEach(([who, p], i) => { const pr = tourPrizeFor(i + 1);
-        if (who !== 'player') { if (botById[who].mensch) evPreis(who, 'tour', 'Wochenend-Turnier · Platz ' + (i + 1), pr); else { botTourReward(who, pr.gems, pr.sh); if (pr.crate >= 0) barbCrate(who, pr.crate); } return; }
-        inboxAdd({ src: 'tour', title: 'Wochenend-Turnier · Platz ' + (i + 1), gems: pr.gems, sh: pr.sh, crate: pr.crate }); me = { place: i + 1, pts: Math.floor(p), gems: pr.gems, sh: pr.sh }; });   // the prize is sent to the Abholfach
-    if (list.length) { const w = list[0][0]; ts.champ = { who: w, until: ts.end + TOUR_CHAMP_MS };
-        ts.hist.unshift({ key: ts.key, who: w, name: w === 'player' ? profileName.value || 'Du' : botById[w].name, pts: Math.floor(list[0][1]) }); ts.hist = ts.hist.slice(0, 6); ringVer++; }
-    ts.last = { key: ts.key, top: list.slice(0, TOUR_TOP).map(e => [e[0], Math.floor(e[1])]), n: list.length, me, seen: !me };
-    saveTour(); saveBotState(); updateHud(); saveGame(); saveProgression(); requestRender();
-    if (me) afterSplash(() => setTimeout(() => flashHint('Turnier vorbei: Platz ' + me.place + ' – ' + fmtNum(me.gems) + ' Gems und ' + me.sh + ' Splitter liegen unter Events → Belohnung' + (me.place === 1 ? ', dazu der Titel „Turniersieger“!' : '.'), 7000), 2500));
-}
-function tourChamp(now) { const c = tourState && tourState.champ; return c && (now || Date.now()) < c.until ? c.who : null; }
-function midFight(tid, aWho, aKills, dWho, dKills) {     // after every fight for a base: Krieger-Woche überall, das Turnier (Sa+So) in der Mitte
-    evPunkte('krieg', aWho, aKills / TOUR_KILL_PER); evPunkte('krieg', dWho, dKills / TOUR_KILL_PER);
-    if (tourOn() && midZoneIds.has(tid)) { tourFight(aWho, aKills); tourFight(dWho, dKills); }   // (capped per fight and per minute: holding the throne must still count)
+function midFight(tid, aWho, aKills, dWho, dKills) {     // nach jedem Kampf um eine Basis: Punkte für die Krieger-Woche (überall)
+    evPunkte('krieg', aWho, aKills / WO_KILL_PER); evPunkte('krieg', dWho, dKills / WO_KILL_PER);
 }
 // ===== KOPFGELD AUF DEN HERRSCHER: while someone holds the throne a bounty grows (gems + coins, every 3 min with the Thron-Punkte).
 // Whoever takes the Mega-Tempel from him collects all of it.
@@ -6477,60 +6401,33 @@ function bountyCheck(r) {                             // a new ruler: whoever to
     if (txt) afterSplash(() => setTimeout(() => flashHint(txt, 5000), 4500));
     if (r === 'player') sfx('coin');
 }
-// ---- what you see: ONE chip under the HUD (the most urgent: Invasion, Drache, Turnier, Kopfgeld, Händler), a card in the Thron tab, notices at the middle, Events → Turnier
+// ---- what you see: ONE chip under the HUD (the most urgent: Invasion, Drache, Wochen-Event, Kopfgeld, Händler), a card in the Thron tab, the Kopfgeld on the Mega-Tempel
 const midBar = document.getElementById('midBar');
 let midBarHtml = '';
-function tourPlaceOf(who) { const i = tourList().findIndex(e => e[0] === who); return i < 0 ? 0 : i + 1; }
 function renderMidBar() {
-    const now = Date.now(), w = tourWin(now), b = bountyOf(), last = tourState.last, chips = [];   // [Dringlichkeit, html] – gezeigt wird nur der dringendste
+    const now = Date.now(), b = bountyOf(), chips = [];   // [Dringlichkeit, html] – gezeigt wird nur der dringendste
     if (woOn(now)) { const th = woThemaAm(now), W = evState.wo || {}, rk = W.key === woWin(now).key ? evRang(W.pts) : [], pl = rk.findIndex(e => e[0] === 'player') + 1;   // Wochen-Event (Mo–Fr)
         chips.push([9, '<button type="button" class="mb-chip is-tour" data-mb="woche">' + icon(th.ic) + '<span>Wochen-Event · ' + th.name + '</span>' + (pl ? '<b>Platz ' + pl + '</b>' : '') + '</button>']); }
     if (b && b.gems >= 5) chips.push([b.who === 'player' ? 1 : 7, '<button type="button" class="mb-chip' + (b.who === 'player' ? ' is-warn' : '') + '" data-mb="bounty">' + icon(b.who === 'player' ? 'losses' : 'coin') +
         '<span>' + (b.who === 'player' ? 'Kopfgeld auf dich' : 'Kopfgeld') + '</span><b>' + fmtNum(b.gems) + '</b>' + icon('gem', 'mb-gem') + '</button>']);
-    chips.push(...evChips(now));                                                        // Invasion, Drache, Turnier-Ankündigung (Events)
+    chips.push(...evChips(now));                                                        // Invasion, Drache (Events)
     if (typeof haendlerChip === 'function') { const hc = haendlerChip(now); if (hc) chips.push([6, hc]); }   // Paket C: ein Händler ist da
     const h = chips.length ? chips.sort((x, y) => x[0] - y[0])[0][1] : '';
     if (h !== midBarHtml) { midBarHtml = h; midBar.innerHTML = h; midBar.hidden = !h; document.body.classList.toggle('has-midbar', !!h); document.body.style.setProperty('--mb-h', midBar.children.length * 31 + 'px'); }   // the toast moves below the chips
-    if (w.on) { const el = midBar.querySelector('[data-mb-left]'), t = fmtDHMS((w.end - now) / 1000); if (el && el.textContent !== t) el.textContent = t; }
     for (const el of midBar.querySelectorAll('[data-ev-bis]')) setText(el, fmtDHMS(Math.max(0, +el.dataset.evBis - now) / 1000));
 }
 midBar.addEventListener('click', e => { const c = e.target.closest('[data-mb]'); if (!c) return;
-    if (c.dataset.mb === 'tour' || c.dataset.mb === 'woche') { openGoals('tour'); tourSicht = c.dataset.mb === 'woche' ? 'woche' : 'mitte'; renderEvents(); return; }
+    if (c.dataset.mb === 'woche') { openGoals('tour'); return; }
     if (c.dataset.mb.startsWith('ev-')) { openGoals(c.dataset.mb.slice(3)); return; }
     const m = islandById[megaTempleId]; if (!m) return; closeAllPopups(); flyTo(m.x, m.y, { zoom: Math.max(mapState.zoom, 0.02) }); setTimeout(() => openIslandPopup(m), 650); });
-function tourTick(now) {                              // every second from throneTick: roll the weekend over, pay, refresh the clocks
-    tourRoll(now); if (tourDirty) saveTour();
-    tourAnzeige(now);
-}
-function tourAnzeige(now) {                           // (auch bei Zuschauern) die Leiste und die Uhren
+function midAnzeige(now) {                            // jede Sekunde (auch bei Zuschauern): die Leiste unter dem HUD, das Wochen-Event im Events-Fenster
     renderMidBar();
-    const w = tourWin(now); for (const el of document.querySelectorAll('[data-tour-left]')) el.textContent = fmtDHMS(((w.on ? w.end : w.start) - now) / 1000);
     if (evOffen() && goalsTab === 'tour' && now % 5000 < 1000) renderEvents();
 }
-function tourCardHtml(teil) {                        // teil: 'kopf' (Stand, dein Platz, letzter Sieger) | 'regeln' (Regeln, Preise) | sonst alles                             // the head of the "Turnier" tab: state, your points, rules, prizes, last winners
-    const now = Date.now(), w = tourWin(now), me = tourState.key === w.key ? Math.floor(tourState.pts.player || 0) : 0, pl = tourPlaceOf('player'), ch = tourChamp(now), last = tourState.last, th = evThemaAm(now);
-    const prizes = TOUR_PRIZES.map((p, i) => '<div class="tour-prize' + (i ? '' : ' is-1') + '"><b>' + p.t + '</b><span>' + icon('gem') + fmtNum(p.gems) + '</span><span>' + icon('star') + p.sh + '</span>' + (p.crate >= 0 ? '<em>' + RARITY_DEFS[p.crate].label + '-Kiste</em>' : '') + (i ? '' : '<em>Titel + Ring</em>') + '</div>').join('');
-    const rules = '<div class="tour-rules"><span>' + icon('crown') + '<span><b>+' + TOUR_PTS_MEGA + ' Punkte pro Minute</b> Thron halten</span></span><span>' + icon('temple') + '<span><b>+' + TOUR_PTS_GUARD + ' Punkte pro Minute</b> je Wächter-Tempel</span></span>' +
-            '<span>' + icon('attack') + '<span><b>+1 Punkt pro ' + fmtNum(TOUR_KILL_PER) + ' besiegte Truppen</b> in der Mitte und an ihren Toren – Angriff und Verteidigung zählen (höchstens ' + TOUR_KILL_MAX + ' pro Kampf, im Schnitt ' + TOUR_KILL_MIN + ' pro Minute)</span></span><span>' + icon('star') + '<span><b>Bonus:</b> ' + th.bonus + '</span></span></div>';
-    const kopf = '<div class="tour-head"><span class="tour-badge">' + icon(th.ic) + '</span><div><b>Wochenend-Turnier · ' + th.name + '</b><small>' + (w.on ? 'Läuft · endet in ' : 'Samstag und Sonntag · beginnt in ') + '<b data-tour-left>' + fmtDHMS(((w.on ? w.end : w.start) - now) / 1000) + '</b></small></div></div>' +
-        (w.on ? '<div class="tour-me"><span>Deine Punkte<b>' + fmtNum(me) + '</b></span><span>Dein Platz<b>' + (pl || '–') + '</b></span></div>' + tourByHtml(me) : '') +
-        (!w.on && last && last.me ? '<div class="tour-me"><span>Letztes Turnier<b>Platz ' + last.me.place + '</b></span><span>Belohnung<b>' + fmtNum(last.me.gems) + ' Gems</b></span></div>' : ''),
-        regel = rules + '<div class="tour-prizes">' + prizes + '</div><small class="tour-note">Jedes Wochenende Kampf um die Mitte (Sa 0:00 – So 23:59). Preise: Gems, Helden-Splitter ' + icon('star') + ' und Kisten · der Sieger trägt 7 Tage den Titel „Turniersieger“ mit lila-goldenem Ring.</small>',
-        sieger = (tourState.hist.length ? '<div class="tour-hist">' + icon('star') + '<span>Letzter Sieger: ' + whoLink(tourState.hist[0].who === 'player' ? 'player' : tourState.hist[0].who, tourState.hist[0].who === 'player' ? profileName.value || 'Du' : tourState.hist[0].name) + ' · ' + fmtNum(tourState.hist[0].pts) + ' Punkte' +
-            (ch ? ' · Titel noch ' + fmtDHMS((tourState.champ.until - now) / 1000) : '') + '</span></div>' : '');
-    if (teil === 'kopf') return '<div class="tour-card">' + kopf + sieger + '</div>';
-    if (teil === 'regeln') return '<div class="tour-card">' + regel + '</div>';
-    return '<div class="tour-card">' + kopf + regel + sieger + '</div>';
-}
-function tourByHtml(me) {                            // your points by source: Thron / Tempel / Kämpfe (+ what came without a source: older points, a bonus)
-    const b = tourState.by.player || {}, c = [['crown', 'Thron', b.thr], ['temple', 'Tempel', b.tmp], ['attack', 'Kämpfe', b.fig]], rest = me - c.reduce((s, x) => s + Math.floor(x[2] || 0), 0);
-    if (rest >= 1) c.push(['star', 'Sonstiges', rest]);
-    return '<div class="tour-by">' + c.map(x => '<span>' + icon(x[0]) + x[1] + '<b>' + fmtNum(Math.floor(x[2] || 0)) + '</b></span>').join('') + '</div>'; }
-function midNotice(island) {                          // Kopfgeld and Turnier at a glance on the middle's bases
-    const b = bountyOf(), w = tourOn(); let h = '';
+function midNotice(island) {                          // das Kopfgeld auf dem Mega-Tempel
+    const b = bountyOf(); let h = '';
     if (b && island.type === 'megaTemple') h += b.who === 'player' ? '<div class="notice notice--warn">' + icon('losses') + '<span><b>Kopfgeld auf dich: ' + fmtNum(b.gems) + ' Gems + ' + fmtCompact(b.coins) + ' Münzen.</b> Wer dir den Thron abnimmt, kassiert alles – je länger du herrschst, desto mehr kommen.</span></div>'
         : '<div class="notice notice--gold">' + icon('coin') + '<span><b>Kopfgeld auf ' + escapeHtml(botById[b.who].name) + ': ' + fmtNum(b.gems) + ' Gems + ' + fmtCompact(b.coins) + ' Münzen.</b> Nimm den Thron und kassiere alles.</span></div>';
-    if (w && midZoneIds.has(island.id)) h += '<div class="notice notice--tour">' + icon('crown') + '<span>Turnier läuft: ' + (island.type === 'megaTemple' ? 'der Thron bringt +' + TOUR_PTS_MEGA + ' Punkte pro Minute' : island.guardian ? 'dieser Tempel bringt +' + TOUR_PTS_GUARD + ' Punkte pro Minute' : 'Kämpfe hier bringen Punkte') + ', dazu +1 Punkt pro ' + fmtNum(TOUR_KILL_PER) + ' besiegte Truppen – auch beim Verteidigen (höchstens ' + TOUR_KILL_MAX + ' pro Kampf).</span></div>';
     return h;
 }
 
@@ -7511,19 +7408,9 @@ function drawBattleFx(now) {       // screen space (setScreen active)
     if (battleFx.length) liveAnimation = true;
 }
 
-// ===== BOSSES / WORLD EVENTS =====
-// Der Weltboss (Drachenturm / Piratenfestung alle 4–6 Std. auf einer neutralen Basis) ist seit 2.10. ganz raus (Alexander).
-// bossState bleibt immer leer (ein alter aus dem Speicher wird gelöscht); bossAt() findet nur noch den Kriegsherrn (Wanderboss).
-var BOSS_REWARD_GEMS = 20, BOSS_CRATE = 3;
-var bossState = null, bossLoaded = false, bossRewardPending = false;
-function loadBoss() {
-    if (bossLoaded) return; bossLoaded = true;
-    try { bossState = JSON.parse(store.get('openWaterBoss')) || null; } catch (e) { bossState = null; }
-}
-function saveBoss() { store.set('openWaterBoss', JSON.stringify(bossState)); if (wander !== undefined) saveWander(); }
+// ===== BOSS AUF DER KARTE: nur noch der Kriegsherr (Wanderboss) in seinem Lager. (Der Weltboss Drachenturm/Piratenfestung ist seit 2.10. raus.)
+var WANDER_CRATE = 3, bossRewardPending = false;      // Kiste „mind. Episch“
 function bossAt(id) {
-    loadBoss();
-    if (bossState && bossState.islandId === id && bossState.endsAt > Date.now() && !islandOwnerOf(id)) return bossState;
     const w = loadWander();
     return w && w.at === id && w.to === null && w.troops > 0 && !islandOwnerOf(id) ? w : null;   // the Kriegsherr in his camp
 }
@@ -7535,19 +7422,14 @@ function worldArmy() {
     armies.sort((a, b) => b - a);
     return armies[2] || 0;
 }
-function endBoss(msg) {
-    bossState = null; saveBoss(); requestRender();
-    if (msg) flashHint(msg, 4000);
-    if (isPanelOpen(popup)) renderPopup();
-}
 function defeatBoss(boss) {
-    statBump('bosses'); if (boss.wander) statBump('wanders');
-    const rewardGems = boss.wander ? WANDER_REWARD_GEMS : BOSS_REWARD_GEMS, shN = boss.wander ? HERO_SHARDS_WANDER : HERO_SHARDS_BOSS;
-    inboxAdd({ src: 'wboss', title: boss.name + ' besiegt', gems: rewardGems, crate: BOSS_CRATE, sh: shN });   // eine epische (lila) Kiste, Gems und Splitter – ins Abholfach
+    statBump('bosses'); statBump('wanders');
+    const rewardGems = WANDER_REWARD_GEMS, shN = HERO_SHARDS_WANDER;
+    inboxAdd({ src: 'wboss', title: boss.name + ' besiegt', gems: rewardGems, crate: WANDER_CRATE, sh: shN });   // eine epische (lila) Kiste, Gems und Splitter – ins Abholfach
     saveProgression(); saveGame(); updateHud();
-    if (boss.wander) endWander(null); else endBoss(null);
+    endWander(null);
     document.getElementById('rewardModalSub').textContent = boss.name + ' ist gefallen – die Beute liegt unter Events → Belohnung.';
-    const list = document.getElementById('rewardModalRewards'), rd = RARITY_DEFS[BOSS_CRATE];
+    const list = document.getElementById('rewardModalRewards'), rd = RARITY_DEFS[WANDER_CRATE];
     list.innerHTML = '<li style="border-color:' + rd.color + '66">' + icon('shop') + '<span>Kiste</span><b style="color:' + rd.color + '">mind. ' + rd.label + '</b></li>' +
         '<li>' + icon('gem', 'ico-gem') + '<span>Gems</span><b>+' + rewardGems + '</b></li><li>' + icon('star') + '<span>Helden-Splitter</span><b>+' + shN + '</b></li>';
     [...list.children].forEach((li, i) => { li.style.animationDelay = (200 + i * 120) + 'ms'; });
@@ -7558,12 +7440,9 @@ document.getElementById('rewardModalBtn').addEventListener('click', () => { docu
 document.getElementById('rewardModal').addEventListener('click', e => { if (e.target.id === 'rewardModal') document.getElementById('rewardModal').hidden = true; });
 function bossTick() {
     checkRuler();
-    loadBoss();
     const now = Date.now();
-    if (bossState && rechnet()) endBoss(null);           // ein alter Weltboss aus der Zeit davor: weg
     const el = document.querySelector('[data-boss-clock]'), pb = popupIslandId !== null && bossAt(popupIslandId);
-    if (el && pb) el.textContent = fmtClock(((pb.wander ? pb.campUntil : pb.endsAt) - now) / 1000);
-    if (bossState) requestRender();
+    if (el && pb) el.textContent = fmtClock((pb.campUntil - now) / 1000);
 }
 setInterval(bossTick, 1000);
 
@@ -7727,37 +7606,6 @@ function checkRuler() {             // announces a change of ruler once
     else if (r && botById[r]) flashHint(botById[r].name + ' ist jetzt Herrscher der Meere!' + lost, lost ? 6000 : 4000);
     else if (lost) flashHint(lost.trim(), 5000);
     updateHudPlayer(); requestRender();
-}
-
-function drawBossOverlay(now) {    // screen space: pulsing aura, rotating rune ring, countdown chip
-    loadBoss();
-    const b = bossState; if (!b || b.endsAt <= Date.now()) return;
-    const isl = islandById[b.islandId], z = mapState.zoom; if (!isl || !islandSeen(isl)) return;   // unter dem Nebel: nichts zu sehen
-    const sx = isl.x * z + mapState.offsetX, sy = isl.y * z + mapState.offsetY, r = Math.max(22, isl.radius * z * 1.5);
-    if (sx < -r * 3 || sy < -r * 3 || sx > viewW + r * 3 || sy > viewH + r * 3) return;
-    const pulse = 0.5 + 0.5 * Math.sin(now / 380);
-    ctx.save();
-    const gr = ctx.createRadialGradient(sx, sy, r * 0.3, sx, sy, r * 2.2);
-    gr.addColorStop(0, 'rgba(255,70,40,' + (0.28 + 0.14 * pulse) + ')'); gr.addColorStop(1, 'rgba(255,70,40,0)');
-    ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(sx, sy, r * 2.2, 0, Math.PI * 2); ctx.fill();
-    ctx.translate(sx, sy);
-    ctx.rotate(now / 4000);
-    ctx.setLineDash([6, 5]); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(236,196,120,0.9)';
-    ctx.beginPath(); ctx.arc(0, 0, r * 1.25, 0, Math.PI * 2); ctx.stroke();
-    ctx.rotate(-now / 2000); ctx.setLineDash([2, 7]); ctx.strokeStyle = 'rgba(255,90,60,0.9)';
-    ctx.beginPath(); ctx.arc(0, 0, r * 1.45, 0, Math.PI * 2); ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.restore();
-    const label = fmtClock((b.endsAt - Date.now()) / 1000);
-    ctx.save();
-    ctx.font = '700 12px Inter, system-ui, sans-serif';
-    const w = ctx.measureText(label).width + 30, h = 20, cx = sx - w / 2, cy = sy - r * 1.45 - h - 8;
-    ctx.fillStyle = 'rgba(20,6,5,0.92)'; ctx.strokeStyle = 'rgba(255,110,80,0.9)'; ctx.lineWidth = 1.2;
-    ctx.beginPath(); ctx.roundRect ? ctx.roundRect(cx, cy, w, h, 4) : ctx.rect(cx, cy, w, h); ctx.fill(); ctx.stroke();
-    drawGlyph(ctx, 'hourglass', cx + 11, cy + h / 2, 12, '#ffb3a0');
-    ctx.fillStyle = '#ffe2d8'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(label, cx + 20, cy + h / 2 + 0.5);
-    ctx.restore();
-    liveAnimation = true;
 }
 
 // ===== CAPITAL / CITY (step 1: buildings can be built and upgraded, effects come later) =====
@@ -8108,8 +7956,8 @@ function renderLookSheet(live) {                     // live = jede Sekunde aus 
             '<div class="keep-h">Hauptstadt</div><div class="keep-shields lk-cap">' + [['huegel', 'Auf Sockel'], ['wasser', 'Wasserschloss']].map(([k, n]) => '<button type="button" class="btn btn--' + (bs.cap === k ? 'primary' : 'secondary') + ' btn--sm" data-lk-cap="' + k + '">' + n + '</button>').join('') + '</div>' +
             '<div class="keep-h">Farbe der Hauptstadt</div><div class="skin-grid lk-grid">' + Object.keys(SKIN_DEFS).map(k => lkCard('color', lkDef('color', k), '<canvas data-skin-prev="' + k + '" width="120" height="132"></canvas>', sk.own.includes(k), sk.active === k)).join('') + '</div>' +
             '<div class="keep-h">Ring um deine Basen</div>' + ringCardsHtml(RING_SKINS, true) +
-            '<div class="ring-legend"><span><i style="--c:#ffd05a"></i>Gold · guter Titel</span><span><i style="--c:#e13030"></i>Rot · Straf-Titel</span><span><i class="blood" style="--c:#eb3c32"></i>Blutrot-Gold · Herrscher</span><span><i style="--c:#a05ceb"></i>Lila-Gold · Turniersieger</span></div>' +
-            '<small class="keep-note">Ein Titel aus der Mitte geht vor, solange er gilt.' + ({ ruler: ' Du trägst gerade Blutrot-Gold.', good: ' Du trägst gerade Gold.', bad: ' Du trägst gerade Rot.', champ: ' Du trägst gerade Lila-Gold.' }[(ringStatusByOwner().get('player') || {}).k] || '') + '</small>'; }
+            '<div class="ring-legend"><span><i style="--c:#ffd05a"></i>Gold · guter Titel</span><span><i style="--c:#e13030"></i>Rot · Straf-Titel</span><span><i class="blood" style="--c:#eb3c32"></i>Blutrot-Gold · Herrscher</span></div>' +
+            '<small class="keep-note">Ein Titel aus der Mitte geht vor, solange er gilt.' + ({ ruler: ' Du trägst gerade Blutrot-Gold.', good: ' Du trägst gerade Gold.', bad: ' Du trägst gerade Rot.' }[(ringStatusByOwner().get('player') || {}).k] || '') + '</small>'; }
     else if (lkTab === 'march') { const cur = marchSkinOf('player').id;
         h = '<div class="skin-grid lk-grid lk-grid--m">' + MARCH_SKINS.map(m => lkCard('march', m, '<canvas data-march-prev="' + m.id + '" width="308" height="154"></canvas>', lkHas('march', m.id), m.id === cur)).join('') + '</div>' +
             '<small class="keep-note">So ziehen deine Truppen über die Karte: die Fahne mit deinem Wappen vorneweg, dahinter die Spur.</small>'; }
@@ -9714,7 +9562,7 @@ function fieldArrive(m, now) {
     const loserName = fieldWhoName(won ? o.who : m.who), winnerName = fieldWhoName(won ? m.who : o.who), oWho = o.who;
     if (won) st.occ = { who: m.who, troops: m.troops - fb.aLoss, homeId: m.homeId, hero: m.hero || null, hero2: m.hero2 || null, since: now, got: 0 }; else o.troops -= fb.dLoss;
     for (const [w, n, hx] of [[m.who, fb.aLoss, aHx], [oWho, fb.dLoss, dHx]]) fieldHurt(w, n, hx);   // both sides' Lazarett (+ their hero)
-    evPunkte('krieg', m.who, fb.dLoss / TOUR_KILL_PER); evPunkte('krieg', oWho, fb.aLoss / TOUR_KILL_PER);   // Krieger-Woche
+    evPunkte('krieg', m.who, fb.dLoss / WO_KILL_PER); evPunkte('krieg', oWho, fb.aLoss / WO_KILL_PER);   // Krieger-Woche
     const fg = fieldGold(m.who, oWho, fb, aHx, dHx);
     if (involved) {
         const youWon = (m.who === 'player') === won;
@@ -9923,7 +9771,7 @@ function barbArrive(m, now) {
         if (Math.random() < .15 + c.L * .01) sh = isP ? (inboxAdd({ src: 'fight', sh: shN }), { name: '' }) : heroGrantShards(who, shN);
         barbHome(m, m.troops - fb.loss, now);
     } else c.t = Math.max(1, Math.round(c.t - fb.kill));
-    evPunkte('krieg', who, fb.kill / TOUR_KILL_PER);                                // Krieger-Woche
+    evPunkte('krieg', who, fb.kill / WO_KILL_PER);                                // Krieger-Woche
     if (!isP) return;
     const it = item && item.box !== undefined ? 'Kiste (mind. ' + RARITY_DEFS[item.box].label + ')' : '';
     addCombatLogEntry({ type: 'barb', L: c.L, won: fb.won, atk: fb.SA, def: before, left: fb.won ? 0 : c.t, kill: fb.kill, troops: m.troops, gef: fb.gef, shPct: fb.sh, loss: fb.loss, wounded, gold, kGold, crate: it, sh: sh ? shN + ' Helden-Splitter' : '',
@@ -10160,21 +10008,17 @@ barbSheetEl.addEventListener('click', e => {
     barbHero = null; barbHero2 = null; closeBarbSheet();
 });
 // ===== EVENTS (Paket B): Wochen-Event, Barbaren-Invasion, Drache – alles rechnet der Weltrechner, Zuschauer sehen es =====
-// Zeitpläne (Ortszeit des Weltrechners): Wochen-Event Mo–Fr mit wechselndem Thema (Wochenende frei) (das Wochenend-Turnier um die Mitte ist seit
-// 2.10. ganz raus, Alexander), Invasion alle 3 Tage 20:00–21:00, Drache sonntags 19:00–22:00. Welt-Schlüssel: openWaterEvents (evState, Wochen-Event in evState.wo).
+// Zeitpläne (Ortszeit des Weltrechners): Wochen-Event Mo–Fr mit wechselndem Thema (Wochenende frei),
+// Invasion alle 3 Tage 20:00–21:00, Drache sonntags 19:00–22:00. Welt-Schlüssel: openWaterEvents (evState, Wochen-Event in evState.wo).
 var EV_TEST = null;   // NUR für Tests in einer lokalen Kopie: { inv: Startzeit, dr: Startzeit } – im echten Spiel immer null
-// ---- Themen: [0] war das Turnier um die Mitte (raus), die anderen 4 wechseln wöchentlich im Wochen-Event (Mo–Fr): wofür es Punkte gibt + ein Bonus ----
-const EV_THEMEN = [
-    { k: 'thron', name: 'Kampf um die Mitte', ic: 'crown', pkt: 'Thron und Wächter-Tempel halten, Kämpfe in der Mitte', bonus: 'Thron-Punkte +50 %' },
+// ---- die 4 Themen wechseln wöchentlich im Wochen-Event (Mo–Fr): wofür es Punkte gibt + ein Bonus ----
+const EV_WOCHE = [
     { k: 'sam', name: 'Sammel-Rausch', ic: 'coin', pkt: 'Gesammeltes – ein volles Feld bringt 30', bonus: 'Sammeln 50 % schneller' },
     { k: 'krieg', name: 'Krieger-Woche', ic: 'attack', pkt: 'besiegte Truppen – überall: Basen, Felder, Lager, Barbaren', bonus: '10 Barbaren-Lager mehr pro Tag' },
     { k: 'boss', name: 'Boss-Jagd', ic: 'star', pkt: 'Schaden an Tagesboss und Drache (30 je voller Treffer)', bonus: 'Kriegsherr doppelt so oft, 5 Tagesboss-Angriffe mehr' },
     { k: 'bau', name: 'Bauherr', ic: 'upgrade', pkt: 'Aufwerten von Basen (2 + neue Stufe)', bonus: 'Ausbau 20 % günstiger' }
 ];
-const EV_WOCHE = EV_THEMEN.slice(1);
-function evThemaAm(t) { return EV_THEMEN[0]; }        // das Wochenend-Turnier: immer „Kampf um die Mitte“
-function evThema() { return EV_THEMEN[0]; }
-// ---- WOCHEN-EVENT Mo 0:00 – Fr 23:59, Wochenende frei (das Turnier um die Mitte ist raus): jede Woche eins der 4 Themen, eigene Punkte (wie beim Turnier gedeckelt), Rangliste und kleine Preise ----
+// ---- WOCHEN-EVENT Mo 0:00 – Fr 23:59, Wochenende frei jede Woche eins der 4 Themen, eigene Punkte (gedeckelt), Rangliste und kleine Preise ----
 const WO_PRIZES = [{ to: 1, gems: 200, sh: 10, crate: 3, t: '1.' }, { to: 3, gems: 100, sh: 5, crate: 2, t: '2.–3.' }, { to: 10, gems: 40, sh: 2, crate: 1, t: '4.–10.' }, { to: Infinity, gems: 10, sh: 1, crate: -1, t: 'Alle anderen' }];
 let woWinMemo = null;
 function woWin(now) {                                 // diese oder (am Wochenende) nächste Woche, Mo 0:00 – Fr 23:59: { on, start, end, key }
@@ -10187,26 +10031,25 @@ function woWin(now) {                                 // diese oder (am Wochenen
 }
 function woOn(now) { return woWin(now).on; }
 function woThemaAm(t) { const w = woWin(t), d = new Date(w.start); d.setHours(12, 0, 0, 0); const n = Math.floor(d.getTime() / (7 * 864e5)); return EV_WOCHE[((n % EV_WOCHE.length) + EV_WOCHE.length) % EV_WOCHE.length]; }
-function woThema() { return woThemaAm(Date.now()); }
-function evThemaAktivAm(t, k) { try { return k === 'thron' ? tourOn(t) : woOn(t) && woThemaAm(t).k === k; } catch (e) { return false; } }   // (beim Laden evtl. noch nicht bereit)
+function evThemaAktivAm(t, k) { try { return woOn(t) && woThemaAm(t).k === k; } catch (e) { return false; } }   // (beim Laden evtl. noch nicht bereit)
 function evThemaAktiv(k) { return evThemaAktivAm(Date.now(), k); }
-function evPunkte(kind, who, n) { if (kind !== 'thron' && evThemaAktiv(kind)) woDeckel(who, n, kind); }
+function evPunkte(kind, who, n) { if (evThemaAktiv(kind)) woDeckel(who, n, kind); }
 function woSt() { return evState.wo || (evState.wo = { pts: {}, kb: {} }); }
 function woRoll(now) {                                // (nur wer rechnet) eine fertige Woche zahlt einmal aus, eine neue beginnt leer
     const W = woSt(), w = woWin(now);
     if (W.key && !W.paid && now >= W.end) woPay();
     if (w.on && W.key !== w.key) { Object.assign(W, { key: w.key, end: w.end, k: woThemaAm(now).k, pts: {}, kb: {}, paid: false }); evDirty = true; }
 }
-function woDeckel(who, n, kind) {                     // höchstens 30 Punkte auf einmal, im Schnitt 10 pro Minute – wie beim Turnier, für alle gleich
+function woDeckel(who, n, kind) {                     // höchstens 30 Punkte auf einmal, im Schnitt 10 pro Minute – für alle gleich
     if (!rechnet() || !who || !(n > 0) || (who !== 'player' && !botById[who])) return; const now = Date.now(); if (!woOn(now)) return; woRoll(now);
-    const W = woSt(), k = W.kb[who] || [TOUR_KILL_MAX, now], left = Math.min(TOUR_KILL_MAX, k[0] + Math.max(0, now - k[1]) / 60000 * TOUR_KILL_MIN), m = Math.min(TOUR_KILL_MAX, n, left);
+    const W = woSt(), k = W.kb[who] || [WO_KILL_MAX, now], left = Math.min(WO_KILL_MAX, k[0] + Math.max(0, now - k[1]) / 60000 * WO_KILL_MIN), m = Math.min(WO_KILL_MAX, n, left);
     if (!(m > 0)) return; W.kb[who] = [left - m, now]; W.pts[who] = (W.pts[who] || 0) + m; evDirty = true;
 }
 function woPay() {                                    // Platz 1, 2–3, 4–10 und alle anderen mit Punkten – du, echte Spieler und Mitspieler gleich
     const W = woSt(), th = EV_WOCHE.find(x => x.k === W.k) || EV_WOCHE[0], list = evRang(W.pts).filter(e => e[1] >= 1);
     W.paid = true; let me = 0;
     list.forEach(([who], i) => { evPreis(who, 'woche', 'Wochen-Event ' + th.name + ' · Platz ' + (i + 1), WO_PRIZES.find(p => i + 1 <= p.to)); if (who === 'player') me = i + 1; });
-    W.last = { key: W.key, k: W.k, top: list.slice(0, TOUR_TOP).map(e => [e[0], Math.floor(e[1])]), n: list.length };
+    W.last = { key: W.key, k: W.k, top: list.slice(0, WO_TOP).map(e => [e[0], Math.floor(e[1])]), n: list.length };
     evDirty = true; saveBotState(); saveEv();
     if (me) afterSplash(() => setTimeout(() => flashHint('Wochen-Event vorbei: Platz ' + me + ' – dein Preis liegt unter Events → Belohnung.', 6000), 2500));
 }
@@ -10307,7 +10150,7 @@ function invAnkunft(I, a, now) {                     // die Armee erreicht ihr Z
     const en = effectiveTroops(isl), def = effectiveDefense(isl), durch = a.t > en + def;
     const verlust = Math.min(en, Math.round(durch ? en * .6 : a.t * .35)), wounded = verlust > 0 ? fieldHurt(o, verlust, null) : 0;
     islandTroops[a.tid] = Math.max(0, (islandTroops[a.tid] || 0) - verlust);
-    if (!durch) { invPunkteDazu(I, o, INV_PTS_WEHR); I.wehr[o] = (I.wehr[o] || 0) + 1; evPunkte('krieg', o, a.t / TOUR_KILL_PER); }
+    if (!durch) { invPunkteDazu(I, o, INV_PTS_WEHR); I.wehr[o] = (I.wehr[o] || 0) + 1; evPunkte('krieg', o, a.t / WO_KILL_PER); }
     const titel = islandTitle(isl);
     evBericht(o, { type: 'ev', ic: 'defense', gut: !durch, badge: durch ? 'Überrannt' : 'Abgewehrt', title: 'Barbaren-Invasion · ' + titel,
         txt: fmtCompact(a.t) + ' Barbaren gegen ' + fmtCompact(en + def) + ' · ' + fmtCompact(verlust) + ' Truppen verloren' + (wounded ? ' (' + fmtCompact(wounded) + ' ins Lazarett)' : '') + (durch ? '' : ' · +' + INV_PTS_WEHR + ' Punkte'), at: now },
@@ -10320,7 +10163,7 @@ function invTreffer(m, now) {                        // deine (oder ihre) Truppe
     const hx = heroFieldFx(who, m.hero, {}), fb = barbFight(who, m.troops, hx, a.t), wounded = fieldHurt(who, fb.loss, hx);
     const gold = payGold(who, fb.kill * .3 * (1 + (hx || HX0).gold / 100)), pts = fb.won ? INV_PTS_SIEG : Math.max(1, Math.round(INV_PTS_SIEG * fb.kill / a.max));
     if (fb.won) I.armies = I.armies.filter(x => x !== a); else a.t = Math.max(1, Math.round(a.t - fb.kill));
-    invPunkteDazu(I, who, pts); evPunkte('krieg', who, fb.kill / TOUR_KILL_PER); goalBump(who, 'barb');
+    invPunkteDazu(I, who, pts); evPunkte('krieg', who, fb.kill / WO_KILL_PER); goalBump(who, 'barb');
     barbHome(m, m.troops - fb.loss, now); evDirty = true;
     const ziel = islandById[a.tid], fuer = ziel && islandOwnerOf(ziel.id) !== who ? ' (auf ' + fieldWhoName(islandOwnerOf(ziel.id)) + ')' : '';
     evBericht(who, { type: 'ev', ic: 'attack', gut: fb.won, badge: fb.won ? 'Besiegt' : 'Geschwächt', title: 'Barbaren-Armee' + fuer,
@@ -10541,25 +10384,19 @@ function evRangHtml(list, fmt, lim) {                // Top 10 (+ deine Zeile)
     return list.length ? '<ol class="barb-rank">' + list.slice(0, lim || 10).map(row).join('') + (mi >= (lim || 10) ? row(list[mi], mi) : '') + '</ol>' : '';
 }
 function evKarte(ic, titel, sub, inhalt, cls) { return '<div class="barb-card ev-card' + (cls ? ' ' + cls : '') + '"><div class="barb-ct"><b>' + icon(ic) + ' ' + titel + '</b><small>' + sub + '</small></div>' + inhalt + '</div>'; }
-var tourSicht = null;                                 // Events → Turnier: 'woche' (Mo–Fr) oder 'mitte' (Sa+So); null = was gerade läuft
-function evTourHtml() {
-    return woHtml();                                  // (das Turnier um die Mitte ist raus – nur noch das Wochen-Event)
-    const sicht = tourSicht || 'woche';
-    const seg = '<div class="seg ev-seg">' + [['woche', 'Wochen-Event (Mo–Fr)'], ['mitte', 'Mitte (Sa+So)']].map(([k, t]) => '<button type="button" data-tw="' + k + '"' + (k === sicht ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>';
-    return seg + (sicht === 'woche' ? woHtml() : tourCardHtml('kopf') + tourRangHtml() + tourCardHtml('regeln'));   // die Top 10 gleich oben   // die ganze Rangliste nur hier
-}
+function evTourHtml() { return woHtml(); }            // Events → Reiter „Wochen-Event“ (Schlüssel 'tour' von früher)
 function woHtml() {                                   // das Wochen-Event: Thema, Uhr, dein Platz, Preise, Rangliste, die nächsten Wochen
     const now = Date.now(), w = woWin(now), th = woThemaAm(now), W = evState.wo || {}, live = w.on && W.key === w.key, rk = live ? evRang(W.pts) : [], mine = rk.findIndex(e => e[0] === 'player') + 1;
     const kopf = (w.on ? 'Läuft · endet in ' : 'Montag bis Freitag · beginnt in ') + evUhr(w.on ? w.end : w.start);
     const preise = WO_PRIZES.map((p, i) => '<div class="tour-prize' + (i ? '' : ' is-1') + '"><b>' + p.t + '</b><span>' + icon('gem') + fmtNum(p.gems) + '</span><span>' + icon('star') + p.sh + '</span>' + (p.crate >= 0 ? '<em>' + RARITY_DEFS[p.crate].label + '-Kiste</em>' : '') + '</div>').join('');
     const plan = [1, 2, 3, 4].map(i => { const t = w.start + 7 * 864e5 * i + 3600000, x = woThemaAm(t), a = new Date(t), e = new Date(t + 4 * 864e5); return '<span>Mo ' + a.getDate() + '.' + (a.getMonth() === e.getMonth() ? '' : (a.getMonth() + 1) + '.') + ' – Fr ' + e.getDate() + '.' + (e.getMonth() + 1) + '.</span><b>' + icon(x.ic) + ' ' + x.name + '</b>'; }).join('');
     const alt = !live && W.last && W.last.top ? W.last.top : null, liste = live ? rk : alt || [];
-    return evKarte(th.ic, 'Wochen-Event · ' + th.name, kopf, '<div class="field-lines"><span>Punkte für</span><b>' + th.pkt + (th.k === 'krieg' ? ' (1 Punkt pro ' + fmtNum(TOUR_KILL_PER) + ')' : '') + '</b><span>Bonus</span><b>' + th.bonus + '</b>' +
+    return evKarte(th.ic, 'Wochen-Event · ' + th.name, kopf, '<div class="field-lines"><span>Punkte für</span><b>' + th.pkt + (th.k === 'krieg' ? ' (1 Punkt pro ' + fmtNum(WO_KILL_PER) + ')' : '') + '</b><span>Bonus</span><b>' + th.bonus + '</b>' +
             (live ? '<span>Dein Platz</span><b>' + (mine || '–') + ' · ' + fmtNum(Math.floor((W.pts || {}).player || 0)) + ' Punkte</b>' : '') + '</div>', 'is-tour') +
         '<div class="lb-gap">' + (live ? 'Live · Top 10' : alt ? 'Letzte Woche · Top 10' : 'Top 10') + '</div>' +
         (evRangHtml(liste, v => fmtNum(Math.floor(v)) + ' P.') || '<div class="war-empty">' + (w.on ? 'Noch hat niemand Punkte – sobald jemand Punkte holt, steht er hier.' : 'Am Montag geht es los.') + '</div>') +
         '<div class="lb-gap">Preise</div><div class="tour-prizes">' + preise + '</div>' +
-        '<div class="tour-rules"><span>' + icon('hourglass') + '<span>Höchstens ' + TOUR_KILL_MAX + ' Punkte auf einmal, im Schnitt ' + TOUR_KILL_MIN + ' pro Minute. Jede Woche (Mo–Fr) ein anderes Thema, am Wochenende ist frei.</span></span></div>' +
+        '<div class="tour-rules"><span>' + icon('hourglass') + '<span>Höchstens ' + WO_KILL_MAX + ' Punkte auf einmal, im Schnitt ' + WO_KILL_MIN + ' pro Minute. Jede Woche (Mo–Fr) ein anderes Thema, am Wochenende ist frei.</span></span></div>' +
         '<div class="lb-gap">Nächste Wochen</div><div class="field-lines ev-plan">' + plan + '</div>';
 }
 function evInvHtml() {
@@ -10610,7 +10447,6 @@ function renderEvents() {
     liveHtml(document.getElementById('eventBody'), evTab === 'tour' ? evTourHtml() : evTab === 'inv' ? evInvHtml() : evTab === 'drache' ? evDrHtml() : evBossHtml());
 }
 document.getElementById('eventBody').addEventListener('click', e => {
-    const tw = e.target.closest('[data-tw]'); if (tw) { tourSicht = tw.dataset.tw; renderEvents(); return; }
     const go = e.target.closest('[data-ev-go]'); if (!go) return; const k = go.dataset.evGo;
     let t = null, v = null;
     if (k === 'drache') { t = drOnMap(); v = { kind: 'drache' }; }
@@ -10620,9 +10456,9 @@ document.getElementById('eventBody').addEventListener('click', e => {
     if (!t) { flashHint('Gerade nichts davon auf der Karte.', 2500); return renderEvents(); }
     closePanel(goalsPopup); flyTo(t.x, t.y, k === 'drache' ? { zoom: .015, screenY: viewH * .3 } : { zoom: Math.max(mapState.zoom, .02), screenY: viewH * .2 }); openBarbSheet(v);
 });
-// der Hinweis unter dem HUD: Invasion bald/läuft, Drache bald/da, Turnier-Ankündigung am Freitag → [Dringlichkeit, html] (0 = am dringendsten)
+// der Hinweis unter dem HUD: Invasion bald/läuft, Drache bald/da → [Dringlichkeit, html] (0 = am dringendsten)
 function evChips(now) {
-    const out = [], ip = evPlanVon('inv'), I = invAktiv(now), D = drAktiv(now), dp = evPlanVon('dr'), w = tourWin(now);
+    const out = [], ip = evPlanVon('inv'), I = invAktiv(now), D = drAktiv(now), dp = evPlanVon('dr');
     if (I) { const n = I.armies.filter(a => islandOwnerOf(a.tid) === 'player').length;
         out.push([n ? 0 : 2, '<button type="button" class="mb-chip is-warn" data-mb="ev-inv">' + icon('defense') + '<span>Invasion · Welle ' + Math.min(INV_WELLEN, I.welle) + '/' + INV_WELLEN + '</span>' + (n ? '<b>' + n + ' auf dich</b>' : '<b>' + fmtNum(Math.floor(I.pts.player || 0)) + ' P.</b>') + '</button>']); }
     else if (ip.start > now && ip.start - now <= 30 * 60000) out.push([3, '<button type="button" class="mb-chip is-warn" data-mb="ev-inv">' + icon('defense') + '<span>Barbaren-Invasion in</span><i data-ev-bis="' + ip.start + '"></i></button>']);
@@ -11247,7 +11083,6 @@ function ringNotice(isl) {                         // whose ring is it: a title 
     const txt = st.k === 'ruler' ? (me ? 'Blutrot-goldener Ring: Du bist Herrscher der Meere – er bleibt, solange du den Mega-Tempel hältst.' : 'Blutrot-goldener Ring: ' + n + ' ist Herrscher der Meere.')
         : st.k === 'good' ? (me ? 'Goldring: Du trägst den Titel „' + t.name + '“ – solange du ihn behältst.' : 'Goldring: ' + n + ' trägt den Titel „' + t.name + '“ aus der Mitte.')
         : st.k === 'bad' ? (me ? 'Roter Ring: Du trägst den Straf-Titel „' + t.name + '“ – solange er gilt.' : 'Roter Ring: ' + n + ' trägt den Straf-Titel „' + t.name + '“.')
-        : st.k === 'champ' ? (me ? 'Lila-goldener Ring: Du bist Turniersieger – noch ' : 'Lila-goldener Ring: ' + n + ' ist Turniersieger – noch ') + uhrHtml(tourState.champ.until) + '.'
         : (me ? 'Ring „' + st.name + '“ – wechseln unter „Aussehen“.' : 'Ring „' + st.name + '“.');
     return '<div class="notice' + (st.k === 'bad' ? ' notice--warn' : st.k === 'skin' ? '' : ' notice--gold') + '">' + icon(st.k === 'ruler' ? 'crown' : st.k === 'bad' ? 'losses' : 'star') + '<span>' + txt + '</span></div>';
 }
@@ -11363,7 +11198,7 @@ function renderPopup() {
                 (island.type === 'gate' && !ownerBot ? '<div class="notice notice--gold">' + icon('lock') + '<span>Tor: Unbesetzt ist es verschlossen – erobere es, um über die Brücke zu kommen. Wer es besitzt, geht kostenlos durch und bestimmt die Maut für alle anderen.</span></div>' : '') +
                 (island.type === 'megaTemple' ? '<div class="notice">' + icon('rank') + '<span>' + (ownerBot ? escapeHtml(ownerBot.name) + ' verteilt die Titel (neu alle 15 Min.).' : 'Niemand verteilt gerade Titel.') + '</span><button type="button" class="btn btn--secondary btn--sm" data-view-titles>Titel ansehen</button></div>' : '') +
                 (isTemple ? '<div class="notice notice--gold">' + icon('temple') + '<span>' + (island.type === 'megaTemple' ? 'Thron der Meere: wer ihn hält, trägt die Krone – +25 % Münzen und Truppen im ganzen Reich und alle 3 Min. ' + THRONE_PTS_MEGA + ' Thron-Punkte. Die Wächter-Tempel feuern auf ihn – nächster Beschuss in <b data-throne-fire>' + fmtClock((throneState.nextFire - Date.now()) / 1000) + '</b>.' : island.guardian ? 'Wächter-Tempel: 3-facher Tempel-Bonus und alle 3 Min. ' + THRONE_PTS_GUARD + ' Thron-Punkte. Gehört er nicht dem Herrscher, feuert er alle 3 Min. auf den Thron.' : 'Tempel: gibt Produktion, Gems und Münzen, sobald erobert.') + '</span></div>' : '') +
-                (bossAt(island.id) ? '<div class="notice notice--gold">' + icon('shop') + '<span><b>Belohnung:</b> ' + RARITY_DEFS[BOSS_CRATE].label + ' Kiste + ' + (bossAt(island.id).wander ? WANDER_REWARD_GEMS : BOSS_REWARD_GEMS) + ' Gems · ' + (bossAt(island.id).wander ? 'zieht weiter in' : 'verschwindet in') + ' <b data-boss-clock>' + fmtClock(((bossAt(island.id).wander ? bossAt(island.id).campUntil : bossAt(island.id).endsAt) - Date.now()) / 1000) + '</b></span></div>' : '') +
+                (bossAt(island.id) ? '<div class="notice notice--gold">' + icon('shop') + '<span><b>Belohnung:</b> ' + RARITY_DEFS[WANDER_CRATE].label + ' Kiste + ' + WANDER_REWARD_GEMS + ' Gems · zieht weiter in <b data-boss-clock>' + fmtClock((bossAt(island.id).campUntil - Date.now()) / 1000) + '</b></span></div>' : '') +
                 (scoutEnRoute ? '<div class="notice notice--warn">' + icon('hourglass') + '<span>Späher bereits unterwegs …</span></div>' : '') +
                 (shieldOw ? '<div class="notice notice--gold">' + icon('shield') + '<span>Friedensschild – ' + escapeHtml(shieldOw.name) + ' ist noch ' + uhrHtml(ownerShieldUntil(shieldOw.id)) +
                     ' geschützt. Solange der Schild hält, kann niemand die Türme von ' + escapeHtml(shieldOw.name) + ' angreifen (Tore und Tempel schon) – Spähen geht.</span></div>' : ''));
@@ -12210,9 +12045,7 @@ if (window.WELT) {
         if (k.has('openWaterPendingAttacks') || k.has('openWaterPendingSends') || k.has('openWaterPendingRetreats')) { vorlaeufigDrueber(); schnellerDrueber(); }
         if (k.has('openWaterTitles')) { titleState = PJ('openWaterTitles'); titleVer++; ringMemo = null; }
         if (k.has('openWaterThrone')) throneState = PJ('openWaterThrone') || { pts: 0 };
-        if (k.has('openWaterTourney')) tourState = PJ('openWaterTourney') || {};
         if (k.has('openWaterBounty')) bountyState = PJ('openWaterBounty') || { ruler: null, gems: 0, coins: 0 };
-        if (k.has('openWaterBoss') || k.has('openWaterBossNext')) { bossLoaded = false; loadBoss(); }
         if (k.has('openWaterWander') || k.has('openWaterWanderNext')) { wander = undefined; loadWander(); }
         if (k.has('openWaterFields')) fieldState = PJ('openWaterFields') || {};
         if (k.has('openWaterFieldMarches')) fieldMarches = PJ('openWaterFieldMarches') || [];
@@ -12235,9 +12068,9 @@ if (window.WELT) {
         try { saveGameNow(); } catch (e) {}
         try { flushBotState(); } catch (e) {}
         try { saveProgressionNow(); } catch (e) {}
-        try { saveThrone(); saveTour(); saveBounty(); } catch (e) {}
+        try { saveThrone(); saveBounty(); } catch (e) {}
         try { if (titleState) store.set('openWaterTitles', JSON.stringify(titleState)); } catch (e) {}
-        try { if (bossLoaded) saveBoss(); else if (wander !== undefined) saveWander(); } catch (e) {}
+        try { if (wander !== undefined) saveWander(); } catch (e) {}
         try { saveFields(); saveBarb(); saveArmies(); if (evDirty) saveEv(); } catch (e) {}
         try { wacheRunde(); } catch (e) { console.warn('Schummel-Schutz:', e); }   // (unten) Konten der Spieler + wartende Befehle
     };
@@ -13118,7 +12951,7 @@ if (window.WELT) {
         if (x.targetId !== undefined && islandById[x.targetId]) spawnBattleFx(x.targetId, x.type === 'attack' ? !!x.won : !x.won || !!x.capitalHolds, x.type === 'attack' ? (x.won ? 'Sieg' : 'Niederlage') : (x.won ? (x.capitalHolds ? 'Hauptstadt hält' : 'Basis verloren') : 'Verteidigt'), x.botName || x.defenderName || '');
         sfx(x.won === (x.type === 'attack') ? 'win' : 'warn');
     });
-    WELT.beiNachricht.push(function (e) {             // Preis aus einem Event (Turnier, Invasion, Drache): ins Abholfach, auch Kisten
+    WELT.beiNachricht.push(function (e) {             // Preis aus einem Event (Wochen-Event, Invasion, Drache): ins Abholfach, auch Kisten
         if (!e || e.art !== 'evPreis') return;
         const z = (v, max) => typeof v === 'number' && Number.isFinite(v) && v > 0 ? Math.min(max, Math.round(v)) : 0;
         const crate = Number.isInteger(e.crate) && e.crate >= 0 && e.crate <= 4 ? e.crate : -1, src = INBOX_SRC[e.src] ? e.src : 'tour', title = String(e.title || '').slice(0, 80);

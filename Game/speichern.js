@@ -17,14 +17,14 @@
     // Teile der EINEN Welt (gemeinsam für alle) - die gehen NICHT in den eigenen Spielstand, sondern über welt.js an den Server
     var WELT = ['openWaterOwnedIslands', 'openWaterBotOwnedIslands', 'openWaterPlayerIslandId', 'openWaterIslandLevels', 'openWaterIslandTroops',
         'openWaterNeutralTroopOverrides', 'openWaterTempleHoldSince', 'openWaterWorldStart', 'openWaterGateCfg', 'openWaterPendingAttacks',
-        'openWaterPendingSends', 'openWaterPendingRetreats', 'openWaterTitles', 'openWaterThrone', 'openWaterTourney', 'openWaterBounty',
-        'openWaterBoss', 'openWaterBossNext', 'openWaterWander', 'openWaterWanderNext', 'openWaterFields', 'openWaterFieldMarches',
+        'openWaterPendingSends', 'openWaterPendingRetreats', 'openWaterTitles', 'openWaterThrone', 'openWaterBounty',
+        'openWaterWander', 'openWaterWanderNext', 'openWaterFields', 'openWaterFieldMarches',
         'openWaterBarb', 'openWaterBarbMarches', 'openWaterBarbWho', 'openWaterDayBoss', 'openWaterArmies', 'openWaterBotState',
         'openWaterBotCoins', 'openWaterWorldVersion', 'openWaterEvents', 'openWaterBuendnisse', 'openWaterHaendler', 'openWaterKarte', 'openWaterHauptVor'];
     var istWelt = Object.create(null);
     WELT.forEach(function (k) { istWelt[k] = true; });
     var weltGeaendert = new Set();      // Welt-Teile, die sich hier geändert haben (schickt welt.js, wenn wir Weltrechner sind)
-    var beimSetzen = null;              // welt.js hängt sich hier ein (Thron/Turnier: privaten Teil abspalten)
+    var beimSetzen = null;              // welt.js hängt sich hier ein (Thron: privaten Teil abspalten)
 
     function merke(k) {
         k = String(k);

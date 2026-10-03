@@ -78,14 +78,6 @@
         openWaterPendingSends(v, d) { for (const a of v || []) { if (d === 'c') { if (a.senderBotId === ICH) a.senderBotId = null; } else if (!a.senderBotId) a.senderBotId = ICH; } return v; },
         openWaterTitles(v, d) { if (!v) return v; const t = tausch(d); v.ruler = t(v.ruler); for (const k in v.by || {}) v.by[k] = t(v.by[k]); return v; },
         openWaterThrone(v, d) { if (!v) return v; v.ruler = tausch(d)(v.ruler); schluesselTausch(v.week, d); return v; },
-        openWaterTourney(v, d) {
-            if (!v) return v; const t = tausch(d);
-            schluesselTausch(v.pts, d); schluesselTausch(v.by, d); schluesselTausch(v.kb, d);
-            if (v.champ) v.champ.who = t(v.champ.who);
-            for (const h of v.hist || []) h.who = t(h.who);
-            if (v.last) for (const e of v.last.top || []) e[0] = t(e[0]);
-            return v;
-        },
         openWaterBounty(v, d) { if (v) v.ruler = tausch(d)(v.ruler); return v; },
         openWaterFields(v, d) { const t = tausch(d); for (const k in v || {}) if (v[k] && v[k].occ) v[k].occ.who = t(v[k].occ.who); return v; },
         openWaterFieldMarches(v, d) { const t = tausch(d); for (const m of v || []) m.who = t(m.who); return v; },
@@ -138,7 +130,6 @@
             let v = P(teile[k]);
             if (UMRECHNEN[k] && v) v = UMRECHNEN[k](v, 'c');
             if (k === 'openWaterThrone' && v) { const m = P(S.daten.openWaterThroneMein) || {}; v.pts = m.pts || 0; v.earned = m.earned || 0; }
-            if (k === 'openWaterTourney' && v && v.last) { const m = P(S.daten.openWaterTourMein) || {}; v.last.me = m.key === v.last.key ? m.me || null : null; v.last.seen = m.key === v.last.key ? !!m.seen : !v.last.me; }
             S.roh(k, v === null ? teile[k] : J(v)); geaendert.add(k);
         }
         if ('openWaterBotOwnedIslands' in teile) {
@@ -177,7 +168,6 @@
             else if (k === 'openWaterBotState') { v = UMRECHNEN.openWaterBotState(v || {}, 'w'); v[ICH] = profilZuBot(meinProfil(), v[ICH]); v[ICH].capital = parseInt(d.openWaterPlayerIslandId, 10); }
             else if (k === 'openWaterBotCoins') { v = v || {}; v[ICH] = parseFloat(d.openWaterCoins) || 0; }
             else if (k === 'openWaterThrone' && v) { delete v.pts; delete v.earned; v = UMRECHNEN[k](v, 'w'); }
-            else if (k === 'openWaterTourney' && v) { if (v.last) { delete v.last.me; delete v.last.seen; } v = UMRECHNEN[k](v, 'w'); }
             else if (k === 'openWaterPendingRetreats') {   // deine Rückzüge (die der anderen laufen als "Senden zurück")
                 v = (v || []).map(r => Object.assign({}, r, { owner: ICH }));
             }
@@ -289,10 +279,9 @@
     }
     delete OW.welt;
 
-    // Thron/Turnier: dein privater Teil (Thron-Punkte im Geldbeutel, dein Turnier-Ergebnis) wird abgespalten
+    // Thron: dein privater Teil (Thron-Punkte im Geldbeutel) wird abgespalten
     S.beimSetzen = function (k) {
         if (k === 'openWaterThrone') { const v = P(S.daten[k]); if (v) S.privat('openWaterThroneMein', J({ pts: v.pts || 0, earned: v.earned || 0 })); }
-        if (k === 'openWaterTourney') { const v = P(S.daten[k]); if (v && v.last) S.privat('openWaterTourMein', J({ key: v.last.key, me: v.last.me || null, seen: !!v.last.seen })); }
     };
 
     // ===================================================================================================
