@@ -1522,3 +1522,10 @@ Notbremse (Wartung an, keine Neustarts). Verloren ging nichts (Stand bis 17:41 g
   45 ms, 95 % unter 180 ms, höchstens 404 ms, 0 Fehler, 1.029 Befehle alle erledigt; Weltrechner höchstens 415 MB, längste
   Pause 3 s, keine PHP-Warnungen. (Lokaler Testserver – der echte Server war am 3.10. zeitweise viel langsamer; dafür ist
   der neue Wachhund da.)
+
+## 46. Hochgeladen 3.10., 22:57 (Alexanders Ja: „alles hochladen, so dass das Aktuellste online ist“)
+- `hochladen.sh` (Wartung an → alle Dateien → geprüft → Wartung aus), **ohne** neue Welt: Konten und die neue Welt vom 3.10.
+  bleiben. Online ist jetzt alles aus den Abschnitten 37–45 (Verstärkung, 5er-Bündnisse, Wachhund-Fix, keine Zahlen-Zeitbomben,
+  Speicher aufräumen, Admin „Längste Pause“).
+- Danach live geprüft: neue `wachhund.php`/`server.php`/`admin.php` angekommen; Weltrechner um 22:58 gestartet, läuft
+  (Phase „läuft“, 285 MB, 276 Pulse ohne Fehler, längste Pause 4,8 s), keine Abstürze, keine Sperre, Sicherung stündlich.
