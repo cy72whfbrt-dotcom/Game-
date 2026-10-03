@@ -44,7 +44,7 @@ let phase = 'start';   // 'start' (Welt holen und einlesen – darf bei großer 
 const stat = { pulseOk: 0, pulseFehler: 0, letzterPuls: 0, pulsMs: 0, fehlerMinute: [], prueferFehler: 0, prueferHintereinander: 0, befehle: 0 };
 function herzSchreiben(extra) {
     const m = process.memoryUsage();
-    const h = Object.assign({ zeit: Date.now(), pid: process.pid, gestartet: START, phase, speicherMb: Math.round(m.rss / 1048576), heapMb: Math.round(m.heapUsed / 1048576),
+    const h = Object.assign({ zeit: Date.now(), pid: process.pid, gestartet: START, phase, speicherMb: Math.round(m.rss / 1048576), heapMb: Math.round(m.heapUsed / 1048576), heapGesamtMb: Math.round(m.heapTotal / 1048576), externMb: Math.round(m.external / 1048576),
         grenzeMb: SPEICHER_MB, pulseOk: stat.pulseOk, pulseFehler: stat.pulseFehler, letzterPuls: stat.letzterPuls, pulsMs: stat.pulsMs,
         fehlerProMinute: stat.fehlerMinute.length, prueferFehler: stat.prueferFehler, befehle: stat.befehle, push: stat.push || null, pauseMaxMs: stat.pauseMax, pauseStundeMs: stat.pauseMaxStunde }, extra || {});
     const neu = path.join(ORDNER, 'herz_neu.php'); fs.writeFileSync(neu, SPERRE + JSON.stringify(h)); fs.renameSync(neu, HERZ);
@@ -58,7 +58,8 @@ setInterval(() => { const j = Date.now(), p = j - pauseLetzte - 1000; pauseLetzt
 setInterval(() => { stat.pauseMaxStunde = 0; }, 3600000).unref();
 herzSchreiben();   // gleich beim Start: der Wachhund sieht sofort „lebt, lädt noch“ (nicht erst nach 5 s)
 setInterval(() => {
-    const rss = process.memoryUsage().rss / 1048576;
+    let rss = process.memoryUsage().rss / 1048576;
+    if (rss > SPEICHER_MB * .8 && typeof global.gc === 'function') { global.gc(); rss = process.memoryUsage().rss / 1048576; stat.aufgeraeumt = (stat.aufgeraeumt || 0) + 1; }   // erst aufräumen (Node hält Müll lange fest)
     if (rss > SPEICHER_MB) ende(3, 'Speicher voll: ' + Math.round(rss) + ' MB (Grenze ' + SPEICHER_MB + ' MB)');
     const jetzt = Date.now(); stat.fehlerMinute = stat.fehlerMinute.filter(t => jetzt - t < 60000);
     if (stat.letzterPuls && jetzt - stat.letzterPuls > 120000) ende(7, 'seit 2 Minuten kein Puls beim Server angekommen');   // (Code 7: der Server antwortet nicht – zählt beim Wachhund nicht als Absturz)
@@ -108,14 +109,16 @@ async function holen(url, opt) {
 // ===== Prüfer: sind die Zahlen der Welt in Ordnung? (läuft im Spiel, vor jedem Schreiben) =====
 const PRUEFER = `(function () {
     const bad = [];
-    const zahl = (v, max) => typeof v === 'number' && isFinite(v) && v >= 0 && v <= max;
-    for (const k in islandTroops) if (!zahl(islandTroops[k], 1e15)) { bad.push('Truppen ' + k + ' = ' + islandTroops[k]); break; }
+    // Grenzen nur gegen KAPUTTE Zahlen (keine Zahl, unendlich, negativ, absurd) – nie gegen große ehrliche: Truppen und Münzen
+    // wachsen ohne Obergrenze im Spiel; mit „1 Billiarde“ als Grenze hätte eine alte Welt nach Tagen jedes Speichern blockiert
+    const zahl = (v, max) => typeof v === 'number' && isFinite(v) && v >= 0 && v <= max, RIESIG = 1e30;
+    for (const k in islandTroops) if (!zahl(islandTroops[k], RIESIG)) { bad.push('Truppen ' + k + ' = ' + islandTroops[k]); break; }
     for (const k in islandLevels) if (!zahl(islandLevels[k], 10000)) { bad.push('Stufe ' + k + ' = ' + islandLevels[k]); break; }
-    for (const k in botCoins) if (!zahl(botCoins[k], 1e18)) { bad.push('Münzen ' + k + ' = ' + botCoins[k]); break; }
+    for (const k in botCoins) if (!zahl(botCoins[k], RIESIG)) { bad.push('Münzen ' + k + ' = ' + botCoins[k]); break; }
     const wem = new Map();
     for (const w in botOwnedIslands) for (const id of botOwnedIslands[w] || []) { if (wem.has(id)) { bad.push('Basis ' + id + ' gehört zweien: ' + wem.get(id) + ' und ' + w); break; } wem.set(id, w); }
-    const bs = loadBotState(); for (const k in bs) { const b = bs[k]; if (!b) continue; if (!zahl(b.gems || 0, 1e12) || !zahl(b.lvl || 1, 100000)) { bad.push('Mitspieler ' + k + ' Gems/Stufe kaputt'); break; } }
-    for (const a of pendingAttacks || []) if (!zahl(a.rawTroops, 1e15)) { bad.push('Angriff mit Truppen ' + a.rawTroops); break; }
+    const bs = loadBotState(); for (const k in bs) { const b = bs[k]; if (!b) continue; if (!zahl(b.gems || 0, RIESIG) || !zahl(b.lvl || 1, 100000)) { bad.push('Mitspieler ' + k + ' Gems/Stufe kaputt'); break; } }
+    for (const a of pendingAttacks || []) if (!zahl(a.rawTroops, RIESIG)) { bad.push('Angriff mit Truppen ' + a.rawTroops); break; }
     // Die Welt kann nicht in 2 Sekunden verschwinden: viel weniger Basen oder fast alle Truppen weg → das ist ein Fehler, kein Krieg
     let basen = 0, truppen = 0; for (const w in botOwnedIslands) basen += (botOwnedIslands[w] || new Set()).size;
     for (const k in islandTroops) truppen += islandTroops[k] || 0;

@@ -11,7 +11,8 @@ pruefe('Angriff normal', befehl_ok(['art' => 'angriff', 'src' => 12, 'ziel' => 4
 pruefe('unbekannte Art', befehl_ok(['art' => 'nichtda']), false);
 pruefe('Zahl als Text', befehl_ok(['art' => 'angriff', 'src' => 1, 'ziel' => 2, 'n' => 'x']), false);
 pruefe('negative Menge', befehl_ok(['art' => 'truppen', 'n' => -5]), false);
-pruefe('Riesenmenge', befehl_ok(['art' => 'truppen', 'n' => 1e16]), false);
+pruefe('Riesenmenge (absurd)', befehl_ok(['art' => 'truppen', 'n' => 1e31]), false);
+pruefe('große ehrliche Menge (alte Welt) geht', befehl_ok(['art' => 'angriff', 'src' => 1, 'ziel' => 2, 'n' => 1e16]), true);
 pruefe('Stufe als Text', befehl_ok(['art' => 'ausbau', 'insel' => 3, 'stufe' => '7']), false);
 pruefe('zu tief verschachtelt', befehl_ok(['art' => 'armee', 'ziel' => ['a' => ['b' => ['c' => ['d' => ['e' => 1]]]]]]), false);
 pruefe('HTML im Text', befehl_ok(['art' => 'titel', 'key' => '<script>']), false);

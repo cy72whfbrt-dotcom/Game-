@@ -1501,3 +1501,14 @@ Notbremse (Wartung an, keine Neustarts). Verloren ging nichts (Stand bis 17:41 g
   beendet; 6× Server zu langsam → keine Notbremse, Pause 1/2/4/8/10/10 Min.; 5 echte Abstürze → Notbremse wie bisher);
   Spielseite 150 s langsam → wartet und läuft; 400 s → Code 8, kein Absturz, neuer Versuch; „Neustart“ 10× in 4 s + 2 übrige
   Prozesse → am Ende genau einer, läuft. Unit 16/64 grün.
+- **Stresstest (lokal, 3.10. abends):** alle 25.023 Basen besetzt (2 % über 1 Billiarde Truppen), langsamer Start (150 s),
+  jeder 20. Puls über 30 s, 6 Spieler online, Bots greifen ständig mit Riesen-Truppen an: 15 Min. stabil, 363–392 MB,
+  längste Pause 3,9 s, kein Absturz, keine Skript-Fehler. (Künstlich 9.000 Angriffe gleichzeitig – im Spiel unmöglich,
+  höchstens 8 Marsch-Plätze je Spieler: 550–590 MB, ohne Grenze gemessen Spitze 668 MB.)
+- **Zeitbomben entschärft:** Prüfer (start.js) blockierte jedes Speichern ab 1 Billiarde Truppen auf einer Basis bzw.
+  1 Trillion Münzen → in einer alten Welt Neustart-Schleife + Notbremse. Jetzt nur noch kaputte Zahlen (keine Zahl,
+  unendlich, negativ, über 1e30). Ebenso Spieler-Befehle (server.php `befehl_ok`, vorher ab 10 Billionen still abgelehnt)
+  und Bündnis-Mengen (`bundZahl`, vorher 1 Billiarde). Es gibt keine Obergrenze für Truppen (war nie eine Spielregel).
+- **Speicher:** Node mit `--expose-gc`; ab 80 % der Grenze räumt der Weltrechner erst auf und beendet sich nur, wenn es danach
+  noch über 600 MB sind. Heap bleibt 450 MB (380 war beim Einlesen einer Extrem-Welt zu wenig – getestet). Herzschlag zeigt
+  jetzt auch Heap belegt / extern.

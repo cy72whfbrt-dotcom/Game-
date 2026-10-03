@@ -190,11 +190,11 @@ const BEFEHLE_BEZAHLT = ['ausbau', 'hauptstadt', 'schneller', 'truppen'];   // h
 const BEFEHL_MENGEN = ['n', 'stufe', 'anteil', 'tr'];   // müssen echte Zahlen ≥ 0 sein
 function befehl_ok($b) {
     if (!is_array($b) || !in_array($b['art'] ?? null, BEFEHL_ARTEN, true)) return false;
-    foreach (BEFEHL_MENGEN as $f) if (array_key_exists($f, $b) && $b[$f] !== null && (!(is_int($b[$f]) || is_float($b[$f])) || !is_finite($b[$f]) || $b[$f] < 0 || $b[$f] > 1e13)) return false;
+    foreach (BEFEHL_MENGEN as $f) if (array_key_exists($f, $b) && $b[$f] !== null && (!(is_int($b[$f]) || is_float($b[$f])) || !is_finite($b[$f]) || $b[$f] < 0 || $b[$f] > 1e30)) return false;   // (nur gegen kaputte Zahlen – Truppen wachsen ohne Obergrenze)
     $gut = function ($v, $t) use (&$gut) {
         if ($t > 4) return false;
         if (is_string($v)) return strlen($v) <= 200 && strpbrk($v, '<>') === false;
-        if (is_int($v) || is_float($v)) return is_finite($v) && abs($v) <= 1e15;
+        if (is_int($v) || is_float($v)) return is_finite($v) && abs($v) <= 1e30;
         if (is_bool($v) || $v === null) return true;
         if (is_array($v)) { if (count($v) > 100) return false; foreach ($v as $k => $x) if (strlen((string)$k) > 40 || !$gut($x, $t + 1)) return false; return true; }
         return false;

@@ -67,7 +67,7 @@ function bundMelden(w, text) { if (window.WELT && /^u\d+$/.test(w) && botById[w]
 function bundAlleMelden(a, text, ausser) { for (const w of a.mit) if (w !== ausser) bundMelden(w, text); }
 function bundPush(w, daten) { if (/^u\d+$/.test(w || '')) (window.__bundPush || (window.__bundPush = [])).push(Object.assign({ an: w }, daten)); if (window.__bundPush && window.__bundPush.length > 200) window.__bundPush.splice(0, 100); }
 function bundGehoert(id, w) { return Number.isInteger(id) && !!islandById[id] && islandOwnerOf(id) === w; }
-function bundZahl(v) { return typeof v === 'number' && Number.isFinite(v) && v > 0 && v <= 1e15; }
+function bundZahl(v) { return typeof v === 'number' && Number.isFinite(v) && v > 0 && v <= 1e30; }   // (nur gegen kaputte Zahlen)
 function bundZielOk(w, t) {                                      // darf w diese Basis angreifen? '' = ja
     const isl = islandById[t]; if (!isl) return 'Ziel gibt es nicht';
     const ow = islandOwnerOf(t);

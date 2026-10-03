@@ -8,7 +8,7 @@
 //     verloren) und Alarm auf der Admin-Seite. Wartung und Sperre hebt nur Alexander auf (admin.php).
 //   - Wartung (Hochladen) → nicht starten; das zählt nie als Absturz
 //   - jede Stunde eine Sicherung der Welt (die letzten 48 bleiben)
-// Grenzen: höchstens 600 MB Speicher (start.js prüft selbst, Node bekommt 450 MB Heap), niedrigste Priorität (nice 19).
+// Grenzen: höchstens 600 MB Speicher (start.js prüft selbst, Node bekommt 450 MB Heap, räumt vor der Grenze erst auf), niedrigste Priorität (nice 19).
 // Alle Dateien hier heißen .php und beginnen mit einer Sperre – im Browser sieht man nie etwas davon.
 require_once __DIR__ . '/../server.php';
 
@@ -111,7 +111,7 @@ function wr_starten() {
         if ($probe === 'ja') { $rechte = $schalter . $erlaubt; break; }
     }
     if ($rechte === '') wr_log('WARNUNG: Node kennt den Sicherheitsmodus nicht – Weltrechner läuft ohne ihn (Node aktualisieren)');
-    $cmd = 'exec ' . (trim((string)@shell_exec('command -v setsid')) !== '' ? 'setsid ' : '') . 'nohup nice -n 19 ' . escapeshellarg(wr_node()) . ' ' . $rechte . ' --max-old-space-size=450 start.js >> log.php 2>&1 < /dev/null';
+    $cmd = 'exec ' . (trim((string)@shell_exec('command -v setsid')) !== '' ? 'setsid ' : '') . 'nohup nice -n 19 ' . escapeshellarg(wr_node()) . ' ' . $rechte . ' --expose-gc --max-old-space-size=450 start.js >> log.php 2>&1 < /dev/null';
     $env = ['OW_URL' => $url, 'OW_SCHLUESSEL' => weltrechner_schluessel(), 'OW_SPEICHER_MB' => (string)WR_SPEICHER_MB, 'TZ' => 'Europe/Berlin', 'PATH' => (string)(getenv('PATH') ?: '/usr/local/bin:/usr/bin:/bin')];
     // ganz vom Aufrufer lösen (eigene Gruppe, keine offene Leitung) – sonst wartet PHP, bis der Weltrechner endet
     $p = proc_open('(' . $cmd . ') > /dev/null 2>&1 &', [0 => ['file', '/dev/null', 'r'], 1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']], $leit, WR_ORDNER, $env);
