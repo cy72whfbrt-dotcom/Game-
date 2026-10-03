@@ -11913,7 +11913,9 @@ document.getElementById('setPwForm').addEventListener('submit', async e => {
     const alt = document.getElementById('setPwAlt'), neu = document.getElementById('setPwNeu');
     if (neu.value.length < 10 || neu.value.length > 72) { flashHint('Das neue Passwort braucht 10 bis 72 Zeichen.', 3000); return; }
     try {
-        const r = await fetch('server.php', { method: 'POST', headers: { 'X-Open-Water': '1', 'Content-Type': 'application/json' }, credentials: 'same-origin', cache: 'no-store', body: JSON.stringify({ aktion: 'passwort', alt: alt.value, neu: neu.value }) });
+        let geraet = '';                              // dieses Gerät behält seine Handy-Nachrichten (nur die anderen hören auf)
+        try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); const sub = reg && reg.pushManager && await reg.pushManager.getSubscription(); if (sub) geraet = sub.endpoint; } catch (x) {}
+        const r = await fetch('server.php', { method: 'POST', headers: { 'X-Open-Water': '1', 'Content-Type': 'application/json' }, credentials: 'same-origin', cache: 'no-store', body: JSON.stringify({ aktion: 'passwort', alt: alt.value, neu: neu.value, geraet }) });
         const a = await r.json();
         if (!a.ok) { flashHint(a.grund || 'Das hat nicht geklappt.', 3500); return; }
         alt.value = ''; neu.value = ''; document.getElementById('setPwForm').hidden = true;
@@ -12667,6 +12669,7 @@ if (window.WELT) {
             if (frisch) { b.wache = Object.assign({ lv: 0, tk: 0, gTr: 0, gC: 0 }, b.wache || {}, { u: 0, w: 0, lm: 1 }); hb.gU = 0; hb.rU = AUF ? Object.assign({}, AUF.ROH_START) : { h: 0, s: 0, e: 0 }; }
         }
         b.hb = hb; if (alt && alt !== b) alt.hb = hb;
+        if (b.zProfil && p && Object.keys(p).length) { hbAusProfil(who, hb, p, now); delete b.zProfil; if (alt) delete alt.zProfil; }   // (nach dem Zurückspielen, einmal)
         const m = wacheSehen(who);
         hbPruefen(who, hb, p, m, now, b.schildAlt);
         hbSchreiben(who, hb, b, p, alt);
@@ -12675,6 +12678,29 @@ if (window.WELT) {
         saveBotState();                                // (das Hauptbuch geht mit der Welt mit)
     }
     WELT.klemmen = hbKlemmen;
+    // Nach dem Zurückspielen einer Sicherung (server.php: ow_welt_info.zurueck) ist die Welt – mit dem Hauptbuch – wieder alt, die
+    // Spielstände der Spieler nicht (was sie seitdem verdient und gebaut haben, behalten sie). Damit beides zusammenpasst, gleicht der
+    // Weltrechner EINMAL je Spieler an: Münzen, Verwundete, Gems, Rohstoffe und Stufe werden am nächsten Profil neu geeicht; Stadt,
+    // Forschung, Truppen-Stufe, Ausrüstung, Helden und Schild aus dem Profil übernommen (gekappt wie beim ersten Sehen, nie weniger
+    // als das Hauptbuch schon hatte). Sonst hielte der Schummel-Schutz ehrlich Verdientes für gefälscht und die Welt nähme alte Werte.
+    function hbAusProfil(who, hb, p, now) {
+        const n = hbNeu(who, now, p, false);
+        for (const id of hbBauten()) if (n.st[id][0] > hb.st[id][0]) hb.st[id] = [n.st[id][0], now];
+        for (const k in n.fo) if (n.fo[k] > (hb.fo[k] | 0)) hb.fo[k] = n.fo[k];
+        if (n.tb > hb.tb) hb.tb = n.tb;
+        for (const s of HB_SLOTS) for (const z of n.gear[s]) { const A = hb.gear[s] || (hb.gear[s] = []); if (!A.some(a => a[0] === z[0] && a[1] >= z[1] && a[2] >= z[2])) A.push(z); }
+        for (const h of HEROES) if (n.hs[h.id] && hbHeldWert(h.id, n.hs[h.id]) > hbHeldWert(h.id, hb.hs[h.id])) hb.hs[h.id] = n.hs[h.id];
+        hb.shB = Math.max(nn(hb.shB), hbHeldenWert(hb.hs) - hbE0f());
+        hb.schild = Math.max(nn(hb.schild), nn(n.schild));
+    }
+    {   const Z = SYSTEM && window.__OW ? +window.__OW.zurueck || 0 : 0;
+        if (Z) { const bs = loadBotState(); let n = 0;
+            for (const id in bs) { const b = bs[id]; if (!b || !b.mensch || nn(b.zT) >= Z) continue;
+                b.zT = Z; b.zProfil = 1; n++;
+                if (b.wache) { delete b.wache.u; delete b.wache.w; delete b.wache.lm; }   // → am nächsten Profil neu eichen
+                if (b.hb) { delete b.hb.gU; delete b.hb.rU; } }
+            if (n) { saveBotState(); console.log('Zurückgespielt: Hauptbuch von ' + n + ' Spielern wird an ihre Spielstände angeglichen'); } }
+    }
     WELT.kontoMuenzen = who => { const m = wm(who); return m.init ? m.c.u + m.c.vor : Infinity; };
     WELT.hauptbuch = who => hbDa(who);                // (für Tests und die Admin-Ansicht)
 

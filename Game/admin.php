@@ -24,6 +24,37 @@ $formNr = bin2hex(random_bytes(8));
 $nr = (string)($_POST['nr'] ?? '');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !herkunft_ok()) { http_response_code(403); exit('Ungültige Anfrage.'); }
+
+// Freischalten mit dem Passwort (15 Minuten, nur diese Sitzung). Das Spiel liegt auf derselben Adresse wie andere Seiten des
+// Office-Servers: eine fremde Seite dort könnte sonst mit dem Login-Cookie des Admins diese Seite lesen und Formulare abschicken
+// (Herkunft und Zeichen helfen dagegen nicht – es ist dieselbe Adresse). Das Passwort kennt sie nicht.
+const ADMIN_FREI_SEK = 900;
+$sitzung = hash('sha256', (string)($_COOKIE[COOKIE_NAME] ?? ''));
+$freiFehler = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['was'] ?? '') === 'freischalten') {
+    $pw = (string)($_POST['pw'] ?? '');
+    if (!hash_equals($zeichen, (string)($_POST['zeichen'] ?? ''))) $freiFehler = 'Ungültiges Formular – Seite neu laden.';
+    elseif (!bremse('adminpw:' . $ich['id'], 5, 900)) { sleep(1); $freiFehler = 'Zu viele Versuche – bitte in 15 Minuten nochmal.'; }
+    elseif (strlen($pw) > 200 || !password_verify($pw, lager()->pw_hash_von($ich['id']))) { sleep(1); $freiFehler = 'Das Passwort stimmt nicht.'; }
+    else { bremse_zurueck('adminpw:' . $ich['id']); lager()->admin_freischalten($sitzung, time() + ADMIN_FREI_SEK); header('Location: admin.php'); exit; }
+}
+if (($_GET['sperren'] ?? '') === '1' && hash_equals($zeichen, (string)($_GET['z'] ?? ''))) { lager()->admin_freischalten($sitzung, 0); header('Location: ./'); exit; }
+$freiBis = lager()->admin_frei_bis($sitzung);
+if ($freiBis < time()) {   // gesperrt: nur das Passwort-Feld, sonst nichts (keine Daten, keine Aktion)
+    ?><!DOCTYPE html>
+<html lang="de"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Open Water – Admin</title>
+<style>body{margin:0;padding:16px;font-family:Georgia,serif;background:#0b2a4a;color:#2b2118}.karte{max-width:420px;margin:40px auto;background:#f6efe0;border:2px solid #d8c9a6;border-radius:12px;padding:18px}
+h1{margin:0 0 8px;color:#1d3b5c;font-size:22px}label{display:block;font-size:14px;margin:8px 0 3px}input{width:100%;box-sizing:border-box;padding:9px;font-size:15px;border:1px solid #d8c9a6;border-radius:7px}
+button{margin-top:12px;padding:11px 16px;font-size:16px;font-family:inherit;border:0;border-radius:8px;background:linear-gradient(#c9a227,#a8831a);font-weight:bold}.fehler{background:#f5d9d3;color:#a33a2a;padding:9px 12px;border-radius:8px;margin-bottom:10px}p{font-size:14px}</style></head>
+<body><div class="karte"><h1>Admin freischalten</h1>
+<?php if ($freiFehler): ?><div class="fehler"><?= h($freiFehler) ?></div><?php endif; ?>
+<p>Zur Sicherheit: dein Passwort, dann ist die Admin-Seite 15 Minuten offen (nur auf diesem Gerät).</p>
+<form method="post"><input type="hidden" name="zeichen" value="<?= h($zeichen) ?>"><input type="hidden" name="was" value="freischalten">
+<input type="text" name="name" value="<?= h($ich['login']) ?>" autocomplete="username" hidden>
+<label for="pw">Passwort</label><input type="password" id="pw" name="pw" autocomplete="current-password" required autofocus>
+<button type="submit">Freischalten</button></form><p><a href="./">Zurück</a></p></div></body></html>
+<?php exit;
+}
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!hash_equals($zeichen, (string)($_POST['zeichen'] ?? ''))) { $fehler = 'Ungültiges Formular – Seite neu laden.'; }
     elseif (!preg_match('/^[0-9a-f]{16}$/', $nr)) { $fehler = 'Formular ohne Nummer (alte Seite) – bitte neu laden.'; }
@@ -123,6 +154,7 @@ function zahl($n) { return $n === null ? '–' : number_format((float)$n, 0, ','
 <body>
 <div class="karte">
   <h1>Admin</h1>
+  <p style="font-size:13px;margin:0 0 6px">Freigeschaltet bis <?= h(date('H:i', $freiBis)) ?> · <a href="?sperren=1&amp;z=<?= h($zeichen) ?>">jetzt sperren</a></p>
   <p>Angemeldet als <b><?= h($ich['name']) ?></b> · <a href="spiel.php">ins Spiel</a></p>
   <?php if ($meldung): ?><div class="ok"><?= h($meldung) ?></div><?php endif; ?>
   <?php if ($fehler): ?><div class="fehler"><?= h($fehler) ?></div><?php endif; ?>
@@ -162,7 +194,7 @@ function zahl($n) { return $n === null ? '–' : number_format((float)$n, 0, ','
   <details style="margin-top:10px"><summary>Protokoll (letzte 40 Zeilen)</summary>
     <pre style="white-space:pre-wrap;font-size:12px;max-height:300px;overflow:auto;background:#fff;padding:8px;border-radius:6px"><?= h(wr_log_ende(40)) ?></pre></details>
   <?php if ($wrSicherungen): ?>
-  <form method="post" style="margin-top:10px" onsubmit="return confirm('Wirklich? Die Welt springt auf diesen Stand zurück. Alles danach ist weg.')">
+  <form method="post" style="margin-top:10px" data-frage="Wirklich? Die Welt springt auf diesen Stand zurück. Was seitdem in der Welt passiert ist, ist weg (die Spielstände der Spieler bleiben).">
     <input type="hidden" name="zeichen" value="<?= h($zeichen) ?>"><input type="hidden" name="nr" value="<?= h($formNr) ?>"><input type="hidden" name="was" value="wr_sicherung">
     <label for="sicherung">Sicherung zurückspielen (jede Stunde eine, die letzten 48)</label>
     <select id="sicherung" name="sicherung"><?php foreach ($wrSicherungen as $sc): ?><option value="<?= (int)$sc['id'] ?>"><?= h(date('d.m.Y H:i', strtotime($sc['erstellt']))) ?> (<?= round($sc['groesse'] / 1024) ?> KB)</option><?php endforeach; ?></select>
@@ -252,5 +284,8 @@ function zahl($n) { return $n === null ? '–' : number_format((float)$n, 0, ','
     <?php endforeach; ?>
   </table></div>
 </div>
+<script nonce="<?= h(csp_nonce()) ?>">   // (statt onsubmit=…: Inline-Handler erlaubt die CSP nicht mehr)
+document.querySelectorAll('form[data-frage]').forEach(function (f) { f.addEventListener('submit', function (e) { if (!confirm(f.getAttribute('data-frage'))) e.preventDefault(); }); });
+</script>
 </body>
 </html>

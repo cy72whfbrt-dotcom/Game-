@@ -1279,3 +1279,59 @@ Unit-Tests, Klick-Tests Vorschau + Server ohne Fehler.
 Lage hat sich geändert); was das Handy dafür schon bezahlt hat (z. B. Hauptstadt verlegen), ist dann weg · nach dem
 Zurückspielen fehlt der Welt, was seitdem passiert ist (so gewollt) – Gewinne, die Spieler seitdem schon verbucht haben, behalten
 sie · neues Passwort beendet die Handy-Nachrichten auch auf dem eigenen Gerät bis zum nächsten Laden.
+
+## 38. Die 10 offenen Punkte am Code geprüft (Alexander 3.10.) – NICHT hochgeladen
+Erst geprüft, ob es wirklich ein Problem ist und ob es so gewollt ist – nur dann geändert.
+
+**Geändert (echte Probleme):**
+- **Weltrechner lange aus (9):** Befehle, die das Handy schon bezahlt hat (`ausbau`, `hauptstadt`, `schneller`, `truppen` –
+  `BEFEHLE_BEZAHLT` / `BEZAHLT` in welt.js), verfallen nie mehr nach 10 Min. – der Weltrechner holt sie nach (Server: Spalte `art`;
+  unerledigt bis 7 Tage, erledigt 3 Tage stehen). Angriffe/Märsche usw. verfallen wie bisher (die Lage hat sich geändert).
+  Neu: **Ausgang am Handy** (`openWaterBefehlAus`): jeder Befehl steht in DERSELBEN Sicherung wie das Bezahlte, bis der Server
+  ihn hat. Absturz/Akku leer/Neuladen vor dem Senden → nach dem Laden geht er mit derselben Nummer raus (nie doppelt; bezahlte
+  bis 50 Min., andere 5 Min. – der Server kennt erledigte Nummern mind. 1 Std.).
+- **Zurückspielen (10):** Welt und Spieler passen danach zusammen:
+  - Bezahlte Befehle, deren Wirkung erst NACH der Sicherung gespeichert wurde (`fertig_v` > Version der Sicherung), laufen genau
+    einmal nach. Alles andere bleibt erledigt.
+  - Der Weltrechner gleicht das Hauptbuch EINMAL je Spieler an (`ow_welt_info.zurueck` → `__OW.zurueck`): Münzen, Verwundete,
+    Gems, Rohstoffe, Stufe neu geeicht am nächsten Profil; Stadt, Forschung, Truppen-Stufe, Ausrüstung, Helden, Schild aus dem
+    Profil (gekappt, nie weniger als vorher). Kein falscher Schummel-Alarm mehr nach dem Zurückspielen.
+  - Preise mit fester Nummer kommen nicht doppelt; nicht abgeholte Nachrichten bleiben und kommen an.
+- **Gemeinsame Adresse (7):** Cookie ist HttpOnly, SameSite=Lax, Pfad /Game/, Rahmen verboten – aber eine andere Seite auf
+  derselben Adresse kann trotzdem mit dem Cookie des Besuchers Anfragen schicken und Antworten lesen (dieselbe Herkunft; Pfad und
+  Herkunfts-Prüfung helfen da nicht). Darum: **Admin-Seite nur nach Passwort** (15 Min., nur diese Sitzung, „jetzt sperren“,
+  5 Versuche/15 Min.). Gesperrt zeigt sie keine Daten und nimmt keine Aktion an.
+- **CSP (8):** kein `'unsafe-inline'` mehr für Skripte: die zwei eigenen Inline-Skripte (`window.__OW`) bekommen eine Nonce,
+  die drei `onsubmit=` sind jetzt kleine Skripte mit Nonce, dazu `script-src-attr 'none'`. Eingeschleuste `<script>`/`onclick=`
+  liefen nicht mehr. (Styles behalten `'unsafe-inline'` – das Spiel setzt viele Styles direkt.)
+- **Passwort/Benachrichtigungen:** neues Passwort beendet Push nur auf den ANDEREN Geräten (wie die Sitzungen); dieses Gerät
+  schickt seine Adresse mit und behält sie (vorher war es bis zum Öffnen der Einstellungen stumm).
+- **welt_neustart.php:** braucht jetzt keinen Login, ist aber nur 15 Min. nach dem Hochladen gültig, löscht sich danach und nach
+  getaner Arbeit selbst (dazu wie bisher: nur POST, nur in der Wartung, nur wenn der Weltrechner steht). Vergessen = harmlos.
+
+**Geprüft, so gelassen:**
+- **Bündnis-Geschenk „große Kiste“ (1):** der Weltrechner prüft den Kauf NICHT – ein gefälschtes Handy kann den Befehl ohne Kauf
+  schicken. Die Grenze hält aber: 3 je Geber und Tag, 5 je Empfänger und Tag, Zähler in der Welt, Befehle laufen nacheinander
+  (kein paralleles Umgehen; Doppelklick = zwei echte Käufe). Ein Geschenk ist klein (5 % einer Stunden-Produktion, selten eine
+  graue/grüne Kiste). Eine genaue Prüfung bräuchte eine Kisten-Buchung im Hauptbuch (sonst doppelte Abbuchung) → Vorschlag.
+- **Bauarbeiter (2):** das Hauptbuch prüft jede Stufe mit Bauzeit + Kosten, aber je Gebäude einzeln – ein gefälschtes Handy
+  könnte mehrere Gebäude gleichzeitig bauen (ehrlich: 1–2). Kosten und Bauzeit je Stufe bleiben Pflicht. Eine Prüfung der Plätze
+  wäre ein Umbau mit Risiko für Fehlalarme bei ehrlichen Spielern (Offline-Bauten) → Vorschlag, nicht geändert.
+- **Stern-Gems (3):** Menge/Preis stimmen (genau die bezahlten Gems zurück), keine negativen Werte, Doppel-Verkauf unmöglich
+  (Teil ist danach weg). Lücke: Sterne auf einem NICHT angelegten Teil sieht das Hauptbuch nicht – wird es später (nach dem
+  nächsten Profil) verkauft, meldet der Schutz „Gems springen“ (falscher Alarm, Konto beim Weltrechner zu niedrig) → Vorschlag.
+- **Tagesboss (4):** „Fällt der Boss, gibt es für alle nach Rang …“ steht so im Spiel, pro Treffer gibt es Münzen – gewollt.
+- **Gleicher Schaden (5):** überall dieselbe stabile Sortierung (wer zuerst traf, bleibt vorn), ausgezahlt nur vom Weltrechner
+  mit fester Nummer – kein Ausnutzen, kein Widerspruch.
+- **Marschgrößen (6):** Truppen fremder Angriffe/Armeen/Märsche stehen in den Daten (nur Basen-Truppen sind im Nebel). Laut Spiel
+  sollen fremde Zahlen nur mit Wachturm sichtbar sein (ab 1 ungefähr, ab 10 genau) – mit einem gefälschten Handy sieht man sie
+  also früher. Ändern = Server müsste Märsche je Spieler filtern → Frage an Alexander.
+
+**Bleibt (Hosting):** andere Seiten/Skripte auf demselben Office-Server laufen unter demselben Benutzer – sie könnten
+config.php lesen. Echte Trennung nur mit eigener Adresse/eigenem Konto.
+
+**Getestet (lokal):** Admin gesperrt/falsches/richtiges Passwort/sperren · Admin-Geschenk 3× → einmal · CSP: Spiel, Login,
+Admin ohne Fehler · Ausgang: Befehl erstellt, Puls blockiert, Absturz → nach Neustart genau einmal beim Server und ausgeführt ·
+30 Min. alter bezahlter Befehl wird nachgeholt, alter Angriffs-Befehl verfällt · Zurückspielen: bezahlter Befehl danach läuft genau
+einmal nach, davor nicht, Hauptbuch angeglichen, danach kein falscher Alarm · Push bleibt auf diesem Gerät · welt_neustart
+abgelaufen → 404 und gelöscht · alle bisherigen Tests (Absturz, Spieler-Abbruch, genau einmal, Klick-Tests) wieder grün.

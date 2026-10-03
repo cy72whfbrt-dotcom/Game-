@@ -99,7 +99,7 @@ function h($s) { return htmlspecialchars($s, ENT_QUOTES, 'UTF-8'); }
   <form action="?aus=1" method="post"><button type="submit" class="leise">Abmelden</button></form>
 <?php elseif ($ich): ?>
   <p class="hallo">Angemeldet als <b><?= h($ich['name']) ?></b></p>
-  <form action="spiel.php" method="get" onsubmit="var k=this.querySelector('button');k.textContent='Lädt …';k.disabled=true"><button type="submit">Weiterspielen</button></form>
+  <form action="spiel.php" method="get" data-laedt><button type="submit">Weiterspielen</button></form>
   <form action="?aus=1" method="post"><button type="submit" class="leise">Abmelden</button></form>
 <?php else: ?>
   <nav class="reiter">
@@ -107,7 +107,7 @@ function h($s) { return htmlspecialchars($s, ENT_QUOTES, 'UTF-8'); }
     <a href="?m=neu" class="<?= $modus === 'neu' ? 'an' : '' ?>">Neu registrieren</a>
   </nav>
   <?php if ($fehler): ?><div class="fehler"><?= h($fehler) ?></div><?php endif; ?>
-  <form method="post" action="<?= $modus === 'neu' ? '?m=neu' : './' ?>" onsubmit="var b=this.querySelector('button[type=submit]');if(b.disabled)return false;b.disabled=true;">
+  <form method="post" action="<?= $modus === 'neu' ? '?m=neu' : './' ?>" data-einmal>
     <input type="hidden" name="modus" value="<?= $modus ?>">
     <label for="name">Name</label>
     <input type="text" id="name" name="name" maxlength="20" autocomplete="username" required value="<?= h(is_string($_POST['name'] ?? null) ? $_POST['name'] : '') ?>">
@@ -123,5 +123,9 @@ function h($s) { return htmlspecialchars($s, ENT_QUOTES, 'UTF-8'); }
   <p class="hinweis">Dein Spielstand wird auf dem Server gespeichert. Im Browser bleibt nur ein Login-Cookie (30 Tage).</p>
 <?php endif; ?>
 </main>
+<script nonce="<?= h(csp_nonce()) ?>">   // (statt onsubmit=…: Inline-Handler erlaubt die CSP nicht mehr)
+document.querySelectorAll('form[data-laedt]').forEach(function (f) { f.addEventListener('submit', function () { var k = f.querySelector('button'); k.textContent = 'Lädt …'; k.disabled = true; }); });
+document.querySelectorAll('form[data-einmal]').forEach(function (f) { f.addEventListener('submit', function (e) { var b = f.querySelector('button[type=submit]'); if (b.disabled) { e.preventDefault(); return; } b.disabled = true; }); });
+</script>
 </body>
 </html>

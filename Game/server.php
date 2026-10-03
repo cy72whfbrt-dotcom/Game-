@@ -88,7 +88,10 @@ header('Referrer-Policy: same-origin');
 header('Strict-Transport-Security: max-age=31536000');               // immer HTTPS, auch beim ersten Aufruf
 header('Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()');
 // Nur eigene Dateien + three.js (3D) + Google-Schriften; Daten gehen nur an den eigenen Server (kein Abfluss nach außen)
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
+// Skripte nur aus eigenen Dateien, three.js und den eigenen Inline-Skripten mit der Nonce dieser Seite (csp_nonce()) – ein
+// eingeschleustes <script> oder onclick=… liefe nicht ('unsafe-inline' gibt es nur noch für Styles)
+function csp_nonce() { static $n = null; if ($n === null) $n = base64_encode(random_bytes(16)); return $n; }
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-" . csp_nonce() . "' https://cdn.jsdelivr.net; script-src-attr 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
 
 // Admins (dürfen admin.php benutzen; während der Wartung kommen auch sie nicht ins Spiel): feste Spieler-Nummern aus config.php
 // ('admin_ids'), nicht Namen – einen Namen könnte sich sonst jemand anderes registrieren.
@@ -182,6 +185,7 @@ function flicken_anwenden($obj, $p) {
 // Befehle der Spieler an den Weltrechner: nur bekannte Arten, nur saubere Werte (keine Texte statt Zahlen, nichts
 // Unendliches, keine Riesenzahlen, nicht zu tief verschachtelt). Der Weltrechner prüft dann noch die Spielregeln.
 const BEFEHL_ARTEN = ['angriff', 'senden', 'zurueck', 'schneller', 'ausbau', 'hauptstadt', 'truppen', 'tor', 'titel', 'feld', 'feldHeim', 'lager', 'armee', 'beitreten', 'bund', 'haendler', 'spaehen'];   // spaehen (3B): Erkundungs-Späher – der Weltrechner deckt danach den Nebel auf
+const BEFEHLE_BEZAHLT = ['ausbau', 'hauptstadt', 'schneller', 'truppen'];   // hat das Handy schon bezahlt (wie BEZAHLT in welt.js)
 const BEFEHL_MENGEN = ['n', 'stufe', 'anteil', 'tr'];   // müssen echte Zahlen ≥ 0 sein
 function befehl_ok($b) {
     if (!is_array($b) || !in_array($b['art'] ?? null, BEFEHL_ARTEN, true)) return false;
@@ -364,7 +368,7 @@ function spielseite_vorbereiten() {
         'nameGewaehlt' => !empty($ich['anzeigename']), 'admin' => ist_admin($ich),
     ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_INVALID_UTF8_SUBSTITUTE | JSON_PARTIAL_OUTPUT_ON_ERROR);
     if ($ow === false) { http_response_code(503); exit('Der Server hat gerade ein Problem. Bitte gleich nochmal versuchen.'); }
-    return '<script>window.__OW = ' . $ow . ';</script>'
+    return '<script nonce="' . csp_nonce() . '">window.__OW = ' . $ow . ';</script>'
         . '<script src="speichern.js?v=' . filemtime(__DIR__ . '/speichern.js') . '"></script>';
 }
 // Die Spielseite für den Weltrechner: kein eigener Spielstand, keine Basis – nur die Welt und alle Spieler
@@ -380,16 +384,16 @@ function weltrechner_seite($sys) {
         lager()->welt_entsperren();
         $spieler = lager()->spieler_liste(0, true);
     } catch (Throwable $e) { http_response_code(503); exit('datenbank'); }
-    $ow = json_encode(['stand' => ['openWaterReset' => '1'], 'neu' => false, 'token' => $tok, 'name' => 'Weltrechner', 'uid' => 0, 'leiter' => true, 'system' => true,
+    $ow = json_encode(['stand' => ['openWaterReset' => '1'], 'neu' => false, 'token' => $tok, 'name' => 'Weltrechner', 'uid' => 0, 'leiter' => true, 'system' => true, 'zurueck' => (int)($wi['zurueck'] ?? 0),
         'welt' => $welt, 'spieler' => $spieler, 'nameGewaehlt' => true, 'admin' => false],
         JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_INVALID_UTF8_SUBSTITUTE | JSON_PARTIAL_OUTPUT_ON_ERROR);
-    return '<script>window.__OW = ' . $ow . ';</script>'
+    return '<script nonce="' . csp_nonce() . '">window.__OW = ' . $ow . ';</script>'
         . '<script src="speichern.js?v=' . filemtime(__DIR__ . '/speichern.js') . '"></script>';
 }
 
 // ===== MySQL =====
 class MysqlLager {
-    const TABELLEN_STAND = '2026-10-03c';   // (siehe Konstruktor)
+    const TABELLEN_STAND = '2026-10-03f';   // (siehe Konstruktor)
     private $db;
     // Transaktionen (auch verschachtelt): was zusammengehört, gilt ganz oder gar nicht – stirbt PHP mittendrin, nimmt die Datenbank
     // alles zurück (z. B. Welt + Nachrichten + Quittungen des Weltrechners, Spielstand + „verbucht“ eines Spielers)
@@ -462,7 +466,10 @@ class MysqlLager {
         ) ENGINE=InnoDB DEFAULT CHARSET=ascii");
         $this->db->exec("INSERT IGNORE INTO ow_welt_info (id) VALUES (1)");
         $wi = $this->db->query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'ow_welt_info'")->fetchAll(PDO::FETCH_COLUMN);
-        if (!in_array('tabellen_v', $wi, true)) $this->db->exec("ALTER TABLE ow_welt_info ADD COLUMN tabellen_v VARCHAR(40) NOT NULL DEFAULT ''");   // welcher Stand von server.php die Tabellen zuletzt geprüft hat
+        if (!in_array('tabellen_v', $wi, true)) $this->db->exec("ALTER TABLE ow_welt_info ADD COLUMN tabellen_v VARCHAR(40) NOT NULL DEFAULT ''");
+        $sz = $this->db->query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'ow_sitzungen'")->fetchAll(PDO::FETCH_COLUMN);
+        if (!in_array('admin_bis', $sz, true)) $this->db->exec("ALTER TABLE ow_sitzungen ADD COLUMN admin_bis INT UNSIGNED NOT NULL DEFAULT 0");   // Admin-Seite mit Passwort freigeschaltet bis (nur diese Sitzung)
+        if (!in_array('zurueck', $wi, true)) $this->db->exec("ALTER TABLE ow_welt_info ADD COLUMN zurueck BIGINT UNSIGNED NOT NULL DEFAULT 0");   // wann zuletzt eine Sicherung zurückgespielt wurde (ms) – der Weltrechner gleicht danach das Hauptbuch an   // welcher Stand von server.php die Tabellen zuletzt geprüft hat
         // Befehle der Spieler an den Weltrechner (angreifen, senden, ausbauen …)
         $this->db->exec("CREATE TABLE IF NOT EXISTS ow_befehle (
             id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -520,7 +527,8 @@ class MysqlLager {
         // Genau-einmal (3.10.): Befehle tragen eine Nummer vom Handy (cid), Nachrichten eine vom Weltrechner (mid) – doppelt
         // Geschicktes wird nicht nochmal abgelegt. Erledigtes bleibt eine Weile markiert stehen (fertig/abgeholt), damit eine
         // verspätete Wiederholung es nicht neu anlegt.
-        foreach (['ow_befehle' => ['cid' => 'VARCHAR(24) NULL', 'fertig' => 'TINYINT UNSIGNED NOT NULL DEFAULT 0'],
+        // art: welche Art (bezahlte verfallen nie unbemerkt), fertig_v: Welt-Version, mit der die Wirkung gespeichert wurde (Zurückspielen)
+        foreach (['ow_befehle' => ['cid' => 'VARCHAR(24) NULL', 'fertig' => 'TINYINT UNSIGNED NOT NULL DEFAULT 0', 'art' => 'VARCHAR(16) NULL', 'fertig_v' => 'BIGINT UNSIGNED NULL'],
                   'ow_ereignisse' => ['mid' => 'VARCHAR(24) NULL', 'abgeholt' => 'TINYINT UNSIGNED NOT NULL DEFAULT 0']] as $tab => $spalten) {
             $q = $this->db->prepare("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?"); $q->execute([$tab]);
             $hat = $q->fetchAll(PDO::FETCH_COLUMN);
@@ -572,6 +580,8 @@ class MysqlLager {
         $r = $q->fetch();
         return $r ? ['id' => (int)$r['id'], 'name' => $r['anzeigename'] ?: $r['name'], 'login' => $r['name'], 'anzeigename' => $r['anzeigename']] : null;
     }
+    function admin_frei_bis($th) { $q = $this->db->prepare('SELECT admin_bis FROM ow_sitzungen WHERE token_hash = ?'); $q->execute([$th]); return (int)$q->fetchColumn(); }
+    function admin_freischalten($th, $bis) { $this->db->prepare('UPDATE ow_sitzungen SET admin_bis = ? WHERE token_hash = ?')->execute([(int)$bis, $th]); }
     function sitzung_loeschen($th) {
         $this->db->prepare('DELETE FROM ow_sitzungen WHERE token_hash = ?')->execute([$th]);
     }
@@ -720,7 +730,7 @@ class MysqlLager {
     function welt_sperren() { if ((int)$this->db->query("SELECT GET_LOCK('ow_welt', 15)")->fetchColumn() !== 1) throw new RuntimeException('Welt-Sperre nicht bekommen'); }
     function welt_entsperren() { $this->db->query("SELECT RELEASE_LOCK('ow_welt')"); }
     function welt_info() {
-        $r = $this->db->query('SELECT version, versionen, leiter_id, leiter_token, leiter_bis, welt_zeit FROM ow_welt_info WHERE id = 1')->fetch();
+        $r = $this->db->query('SELECT version, versionen, leiter_id, leiter_token, leiter_bis, welt_zeit, zurueck FROM ow_welt_info WHERE id = 1')->fetch();
         $r['versionen'] = json_decode((string)$r['versionen'], true) ?: [];
         return $r;
     }
@@ -839,7 +849,11 @@ class MysqlLager {
         foreach ($d['spielstand'] as $z) if ($z['schluessel'] !== '_bot_teile') $vs[$z['schluessel']] = $v;
         foreach (array_keys(self::BOT_TEILE) as $k) $vs[$k] = $v;
         foreach ($i['versionen'] as $k => $_) if (!isset($vs[$k])) $vs[$k] = $v;   // was es damals nicht gab: wird gelöscht
-        $this->db->prepare('UPDATE ow_welt_info SET version = ?, versionen = ?, leiter_bis = 0, leiter_token = \'\' WHERE id = 1')->execute([$v, json_encode($vs)]);   // (auch das Zeichen: ein alter Weltrechner darf nicht mehr schreiben)
+        $this->db->prepare('UPDATE ow_welt_info SET version = ?, versionen = ?, leiter_bis = 0, leiter_token = \'\', zurueck = ? WHERE id = 1')->execute([$v, json_encode($vs), (int)round(microtime(true) * 1000)]);   // (auch das Zeichen: ein alter Weltrechner darf nicht mehr schreiben)
+        // Bezahlte Befehle, deren Wirkung erst NACH dieser Sicherung gespeichert wurde, fehlen jetzt in der Welt – das Handy hat sie
+        // aber bezahlt: noch einmal ausführen (genau einmal: in der zurückgespielten Welt steckt ihre Wirkung ja nicht).
+        // Alles andere (Angriffe, Märsche …) bleibt erledigt – die Welt ist eben wieder auf dem Stand von damals.
+        if (isset($d['version'])) $this->db->prepare("UPDATE ow_befehle SET fertig = 0, fertig_v = NULL WHERE fertig = 1 AND fertig_v > ? AND art IN ('" . implode("','", BEFEHLE_BEZAHLT) . "')")->execute([(int)$d['version']]);
         $this->db->commit();
         } catch (Throwable $e) { if ($this->db->inTransaction()) $this->db->rollBack(); $this->welt_entsperren(); throw $e; }   // ganz oder gar nicht
         $this->welt_entsperren();
@@ -852,21 +866,30 @@ class MysqlLager {
         foreach ($setzen as $k => $v) $g[$k] = strlen($v);
         return array_sum($g);
     }
-    function aufraeumen() {   // (abgeholte Nachrichten bleiben 3 Tage: so lange erkennt der Server eine feste Nummer nach dem Zurückspielen wieder)   // Erledigtes (nach einer Weile), alte Befehle (niemand hat gerechnet) und nie abgeholte Nachrichten
-        $this->db->exec('DELETE FROM ow_befehle WHERE (fertig = 1 AND erstellt < NOW() - INTERVAL 1 HOUR) OR erstellt < NOW() - INTERVAL 1 DAY');
+    // Erledigtes (nach einer Weile), alte Befehle (niemand hat gerechnet) und nie abgeholte Nachrichten. Bezahlte Befehle bleiben
+    // erledigt 3 Tage stehen (Zurückspielen holt sie nach, Sicherungen reichen 48 Std. zurück), unerledigt 7 Tage; abgeholte
+    // Nachrichten 3 Tage (so lange erkennt der Server eine feste Nummer nach dem Zurückspielen wieder)
+    function aufraeumen() {
+        $bez = "'" . implode("','", BEFEHLE_BEZAHLT) . "'";
+        $this->db->exec("DELETE FROM ow_befehle WHERE (art IS NULL OR art NOT IN ($bez)) AND ((fertig = 1 AND erstellt < NOW() - INTERVAL 1 HOUR) OR erstellt < NOW() - INTERVAL 1 DAY)");
+        $this->db->exec("DELETE FROM ow_befehle WHERE art IN ($bez) AND ((fertig = 1 AND erstellt < NOW() - INTERVAL 3 DAY) OR erstellt < NOW() - INTERVAL 7 DAY)");
         $this->db->exec('DELETE FROM ow_ereignisse WHERE (abgeholt = 1 AND erstellt < NOW() - INTERVAL 3 DAY) OR erstellt < NOW() - INTERVAL 60 DAY');
     }
     // Befehle: das Handy gibt jedem eine Nummer (cid) – kommt er wegen einer Wiederholung nochmal, wird er nicht nochmal abgelegt.
     // Gelöscht wird erst, wenn der Weltrechner quittiert hat, dass die Wirkung in der gespeicherten Welt steht (befehle_quittieren).
-    function befehl_ablegen($uid, $b, $cid = null) { $this->db->prepare('INSERT IGNORE INTO ow_befehle (spieler_id, befehl, cid) VALUES (?, ?, ?)')->execute([$uid, $b, $cid]); }
+    function befehl_ablegen($uid, $b, $cid = null) { $a = json_decode($b, true); $art = is_array($a) && is_string($a['art'] ?? null) ? substr($a['art'], 0, 16) : null;
+        $this->db->prepare('INSERT IGNORE INTO ow_befehle (spieler_id, befehl, cid, art) VALUES (?, ?, ?, ?)')->execute([$uid, $b, $cid, $art]); }
     function offene_befehle($uid) { $q = $this->db->prepare('SELECT COUNT(*) FROM ow_befehle WHERE spieler_id = ? AND fertig = 0'); $q->execute([$uid]); return (int)$q->fetchColumn(); }
     function befehle_offen() { return (int)$this->db->query('SELECT COUNT(*) FROM ow_befehle WHERE fertig = 0')->fetchColumn(); }
     function befehle_quittieren($ids) {   // genau diese Nummern (nicht „alles bis“: eine kleinere Nummer kann später eingetragen sein)
         $ids = array_values(array_unique(array_filter(array_map('intval', array_slice((array)$ids, 0, 2000)), function ($x) { return $x > 0; })));
-        foreach (array_chunk($ids, 500) as $t) $this->db->prepare('UPDATE ow_befehle SET fertig = 1 WHERE fertig = 0 AND id IN (' . implode(',', array_fill(0, count($t), '?')) . ')')->execute($t);
+        $v = (int)$this->db->query('SELECT version FROM ow_welt_info WHERE id = 1')->fetchColumn();   // (die Wirkung steckt in der Welt bis einschließlich dieser Version)
+        foreach (array_chunk($ids, 500) as $t) $this->db->prepare('UPDATE ow_befehle SET fertig = 1, fertig_v = ? WHERE fertig = 0 AND id IN (' . implode(',', array_fill(0, count($t), '?')) . ')')->execute(array_merge([$v], $t));
     }
     function befehle_abholen() {
-        $this->db->exec('DELETE FROM ow_befehle WHERE fertig = 0 AND spieler_id <> 0 AND erstellt < NOW() - INTERVAL 10 MINUTE');   // zu alt: die Lage hat sich geändert (Admin-Befehle bleiben)
+        // zu alt: die Lage hat sich geändert (Angriffe, Märsche …). Bezahlte (Ausbau, Hauptstadt, Beschleunigen, Truppen) und
+        // Admin-Befehle verfallen NIE so – war der Weltrechner länger aus, holt er sie nach (sonst wäre Bezahltes weg)
+        $this->db->exec("DELETE FROM ow_befehle WHERE fertig = 0 AND spieler_id <> 0 AND erstellt < NOW() - INTERVAL 10 MINUTE AND (art IS NULL OR art NOT IN ('" . implode("','", BEFEHLE_BEZAHLT) . "'))");
         return array_map(function ($z) { return ['id' => (int)$z['id'], 'von' => (int)$z['spieler_id'], 'b' => json_decode($z['befehl'])]; },
             $this->db->query('SELECT id, spieler_id, befehl FROM ow_befehle WHERE fertig = 0 ORDER BY id LIMIT 500')->fetchAll());
     }
@@ -911,7 +934,7 @@ class MysqlLager {
                 'aus' => $z['push_aus'] === '' || $z['push_aus'] === null ? [] : explode(',', $z['push_aus'])]; },
             $this->db->query('SELECT p.id, p.spieler_id, p.endpoint, p.p256dh, p.auth, s.push_aus FROM ow_push p LEFT JOIN ow_spieler s ON s.id = p.spieler_id ORDER BY p.id LIMIT 20000')->fetchAll());
     }
-    function push_alle_weg($uid) { $this->db->prepare('DELETE FROM ow_push WHERE spieler_id = ?')->execute([$uid]); }
+    function push_alle_weg($uid, $ausser = '') { $this->db->prepare('DELETE FROM ow_push WHERE spieler_id = ? AND endpoint_hash <> ?')->execute([$uid, $ausser === '' ? '' : hash('sha256', $ausser)]); }
     function push_weg($ids) { $q = $this->db->prepare('DELETE FROM ow_push WHERE id = ?'); foreach ($ids as $id) $q->execute([(int)$id]); }
     // Nebel (3B): Sicht eines Spielers – Bitfeld vom Weltrechner + seine eigenen Basen (aus der Welt) → für nebel_sieht
     function sicht_laden($uid) {
@@ -1114,7 +1137,9 @@ function passwort_anfrage($ich, $d) {
     if (mb_strlen($neu) < 10 || strlen($neu) > 72) json_antwort(200, ['ok' => false, 'grund' => 'Das neue Passwort braucht 10 bis 72 Zeichen.']);
     if ($neu === $alt) json_antwort(200, ['ok' => false, 'grund' => 'Das neue Passwort ist dasselbe wie das alte.']);
     $l->pw_setzen($ich['id'], password_hash($neu, PASSWORD_DEFAULT));
-    try { $l->push_alle_weg($ich['id']); } catch (Throwable $e) {}   // neues Passwort: Handy-Nachrichten an alte Geräte hören auf
+    // neues Passwort: Handy-Nachrichten an die ANDEREN Geräte hören auf (wie ihre Sitzungen) – dieses Gerät behält sie
+    $geraet = is_string($d['geraet'] ?? null) && strlen($d['geraet']) < 1000 ? $d['geraet'] : '';
+    try { $l->push_alle_weg($ich['id'], $geraet); } catch (Throwable $e) {}
     $t = $_COOKIE[COOKIE_NAME] ?? '';
     $l->andere_sitzungen_loeschen($ich['id'], is_string($t) ? hash('sha256', $t) : '');
     json_antwort(200, ['ok' => true]);

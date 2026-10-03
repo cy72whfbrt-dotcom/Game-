@@ -66,6 +66,16 @@
         flickenBauen, flickenAnwenden,    // (auch für Tests)
         name: id => (W.menschen[id] || {}).name
     };
+    // Ausgang (Spieler): jeder Befehl steht im eigenen Spielstand, bis der Server ihn angenommen hat – in DERSELBEN Sicherung
+    // wie das, was das Handy dafür bezahlt hat (Münzen, Gems). Absturz, Akku leer, Neuladen vor dem Senden: nach dem Laden geht er
+    // mit derselben Nummer nochmal raus (der Server legt ihn nie doppelt ab). Bezahlte Befehle bis 50 Min. (der Server behält
+    // erledigte Befehle 1 Std. – länger nie, sonst könnte ein schon erledigter neu angelegt werden), alle anderen 5 Min.
+    const BEZAHLT = ['ausbau', 'hauptstadt', 'schneller', 'truppen'];   // (wie BEFEHLE_BEZAHLT in server.php)
+    const befehlFrisch = b => Date.now() - (b.at || 0) < (BEZAHLT.includes(b.art) ? 50 : 5) * 60000;
+    W.ausgang = (() => { if (SYSTEM) return []; try { const a = JSON.parse(S.daten.openWaterBefehlAus || '[]');
+        return Array.isArray(a) ? a.filter(b => b && typeof b.cid === 'string' && typeof b.art === 'string' && befehlFrisch(b)).slice(-200) : []; } catch (e) { return []; } })();
+    W.befehle.push(...W.ausgang);
+    function ausgangSichern() { if (!SYSTEM) S.privat('openWaterBefehlAus', J(W.ausgang)); }
 
     // ===================================================================================================
     // 1) Umrechnen: neutral (alle Menschen als u<id>) ↔ für dich ('player')
@@ -381,13 +391,15 @@
             if (!r.ok) throw new Error('HTTP ' + r.status);
             const a = await r.json();
             if (neuGesendet) Object.assign(gesendet, neuGesendet);   // der Server hat sie: ab jetzt nur noch Änderungen dazu
+            if (anfrage.befehle && W.ausgang.length) { const da = new Set(anfrage.befehle.map(b => b.cid)); W.ausgang = W.ausgang.filter(b => !da.has(b.cid)); ausgangSichern(); }   // liegen jetzt beim Server
             if (!a.quittung_offen) for (const id of anfrage.quittung || []) W.befehlFertig.delete(id);   // quittiert: kommt nicht mehr (sonst beim nächsten Puls nochmal)
             for (const k of a.welt_voll || []) { delete gesendet[k]; S.weltGeaendert.add(k === 'openWaterBotOwnedIslands' ? 'openWaterOwnedIslands' : k); }   // Flicken passte nicht: nächstes Mal ganz
             antwortVerarbeiten(a, anfrage);
         } catch (e) {
             // nichts verloren: Befehle/Welt-Teile/Nachrichten beim nächsten Mal nochmal (mit derselben Nummer – der Server legt
-            // nichts doppelt ab). Ganz alte Befehle nicht mehr: die Lage hat sich geändert.
-            if (anfrage.befehle) W.befehle.unshift(...anfrage.befehle.filter(b => Date.now() - (b.at || 0) < 5 * 60000));
+            // nichts doppelt ab). Alte Befehle nicht mehr (bezahlte nach 50 Min., andere nach 5 Min.: die Lage hat sich geändert).
+            if (anfrage.befehle) W.befehle.unshift(...anfrage.befehle.filter(befehlFrisch));
+            if (W.ausgang.length && W.ausgang.some(b => !befehlFrisch(b))) { W.ausgang = W.ausgang.filter(befehlFrisch); ausgangSichern(); }
             if (neuGesendet) for (const k in neuGesendet) delete gesendet[k];   // ob der Server sie hat, ist unklar: nächstes Mal ganz statt als Änderung
             if (anfrage.welt) for (const k of Object.keys(Object.assign({}, anfrage.welt.setzen, anfrage.welt.flicken))) S.weltGeaendert.add(k === 'openWaterBotOwnedIslands' ? 'openWaterOwnedIslands' : k);
             if (anfrage.ereignisse) W.ereignisseRaus.unshift(...anfrage.ereignisse);
@@ -466,8 +478,11 @@
 
     // Befehl an den Weltrechner (bin ich es selbst, führt spiel.js ihn direkt aus)
     W.befehl = function (art, daten) {
-        try { if (!SYSTEM && window.__owSofort) window.__owSofort(false); } catch (e) {}   // erst den eigenen Stand (bezahlte Münzen) sichern, dann der Befehl
-        W.befehle.push(Object.assign({ art, at: Date.now(), cid: neueNummer() }, daten || {})); setTimeout(puls, 150);
+        const b = Object.assign({ art, at: Date.now(), cid: neueNummer() }, daten || {});
+        W.befehle.push(b);
+        if (!SYSTEM) { W.ausgang.push(b); if (W.ausgang.length > 200) W.ausgang.splice(0, W.ausgang.length - 200); ausgangSichern(); }
+        try { if (!SYSTEM && window.__owSofort) window.__owSofort(false); } catch (e) {}   // bezahlte Münzen/Gems + Befehl im Ausgang: eine Sicherung
+        setTimeout(puls, 150);
         if (!W.leiter) { setTimeout(puls, 1100); setTimeout(puls, 2000); }   // das Ergebnis vom Weltrechner bald abholen (nicht erst mit dem nächsten 2-s-Puls)
     };
 
