@@ -1591,7 +1591,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
   <button id="cityNavBtn" class="nav-btn" type="button" title="Stadt: Burg, Gebäude, Forschung, Helden, Rohstoffe"><svg class="icon"><use href="#i-castle"/></svg><span class="nav-l">Stadt</span></button>
   <button id="bundBtn" class="nav-btn" type="button" title="Bündnis"><svg class="icon"><use href="#i-bund"/></svg><span class="nav-l">Bündnis</span><span id="bundBadge" class="badge" style="display:none">0</span></button>
   <button id="battleLogBtn" class="nav-btn" type="button" title="Kampf: Märsche und Berichte"><svg class="icon"><use href="#i-battlelog"/></svg><span class="nav-l">Kampf</span><span id="battleLogBadge" class="badge" style="display:none">0</span></button>
-  <button id="goalsBtn" class="nav-btn" type="button" title="Events: Aufgaben, Belohnungen, Erfolge, Pass, Turnier, Invasion, Drache, Boss"><svg class="icon"><use href="#i-event"/></svg><span class="nav-l">Events</span><span id="goalsBadge" class="badge" style="display:none">0</span></button>
+  <button id="goalsBtn" class="nav-btn" type="button" title="Events: Aufgaben, Belohnungen, Erfolge, Pass, Wochen-Event, Invasion, Drache, Boss"><svg class="icon"><use href="#i-event"/></svg><span class="nav-l">Events</span><span id="goalsBadge" class="badge" style="display:none">0</span></button>
   <button id="shopBtn" class="nav-btn" type="button" title="Shop: Kisten, Schilde, Thron, Händler, Markt"><svg class="icon"><use href="#i-shop"/></svg><span class="nav-l">Shop</span></button>
   <button id="profileBtn" class="nav-btn" type="button" title="Profil: Spieler, Ausrüstung, Skills, Rangliste, Einstellungen"><svg class="icon"><use href="#i-profile"/></svg><span class="nav-l">Profil</span></button>
 </nav>
@@ -1742,7 +1742,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         <p><b>Stadt</b> → Burg (deine Hauptstadt-Stufe), Gebäude, Holz/Stein/Eisen, Forschung, Lazarett, Helden.</p>
         <p><b>Bündnis</b> → zusammen mit anderen: Signale, Rally, Hilfe, Tempel-Bonus.</p>
         <p><b>Kampf</b> → deine Märsche und alle Berichte.</p>
-        <p><b>Events</b> → Aufgaben, Belohnungen, Erfolge, Pass, Turnier, Invasion, Drache, Tagesboss und Lager.</p>
+        <p><b>Events</b> → Aufgaben, Belohnungen, Erfolge, Pass, Wochen-Event, Invasion, Drache, Tagesboss und Lager.</p>
         <p><b>Shop</b> → Kisten, Friedensschilde, Thron-Shop, Händler, Markt.</p>
         <p><b>Profil</b> → Spieler, Aussehen, Ausrüstung, Skills, Rangliste, Einstellungen.</p>
         <p><b>Karte</b> → Basis antippen: angreifen, Truppen senden, aufwerten. Felder: sammeln. Mitte: wer den Mega-Tempel hält, herrscht.</p>

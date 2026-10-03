@@ -1130,6 +1130,19 @@ Alles in spiel.js (Abschnitt „THE CITY, ISOMETRIC“), nur Aussehen – Gebäu
   - Schritt 3: eigene Basis offen → „Jetzt auf „Aufwerten“ tippen.“; Hauptstadt → „wächst über die Burg …“; noch keine
     eroberte Basis → „Warte, bis dein Angriff angekommen ist …“.
 
+## 34. Gesamttest 3.10. (Alexander: „teste alles noch mal, Texte und ob alles klappt“) – NICHT hochgeladen
+- **Vorschau (Handy-Größe):** alle 5 Dock-Fenster mit allen Reitern geöffnet, jeden Knopf darin einmal gedrückt,
+  alle 16 Stadt-Gebäude geöffnet, Holzfäller gebaut, Angriff → Eroberung → Aufwerten, Feld sammeln, Kiste,
+  Drache/Tagesboss/Lager/Invasion angegriffen bzw. angesehen, Anleitung. **Keine Fehler.**
+- **Mit Server + Weltrechner (lokal):** Welt-Neustart genau wie später (Wartung → welt_neustart.php → Wartung aus),
+  neuer Spieler, dieselben Klicks, dann Neuladen: Basis, Stufe 2, Holzfäller – alles noch da. Keine Fehler,
+  keine Auffälligkeiten beim Schummel-Schutz.
+- **Texte geprüft** (nach undefined/NaN/VIP/Turnier/Weltboss/Mo–So …). Korrigiert:
+  - Abholfach leer: „Preise aus Turnier …“ → „Preise aus Wochen-Event, Invasion, Drache und Tagesboss …“
+  - Hilfe + Events-Knopf: „Turnier“ → „Wochen-Event“
+- **Behoben:** die Anleitung lag bei Drache/Tagesboss/Lager/Feld noch auf dem „Angreifen“-Knopf – jetzt über jedem
+  Fenster (auch Karten-Fenster und Helden-Halle); ist darüber kein Platz, wird sie so lange ausgeblendet.
+
 ## 30. VIP KOMPLETT RAUS (Alexander 2.10.: „VIP find ich totaler Müll“) – NICHT hochgeladen
 - Weg: VIP-Stufen, Spieltage zählen (`openWaterVip`), VIP-Tageskiste, „Neue VIP-Stufe“-Hinweis, VIP-Zeile im Profil,
   Bauzeit −2 %/Stufe (Stadt und Forschung bauen jetzt für alle gleich lang).

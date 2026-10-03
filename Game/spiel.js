@@ -5967,7 +5967,7 @@ function renderInbox() {
     liveHtml(el, L.length ? L.map(x => { const d = INBOX_SRC[x.src] || INBOX_SRC.fight;
         return '<div class="inbox-row' + (x.src === 'fight' ? '' : ' is-gold') + '">' + icon(d.ic) + '<div><b>' + escapeHtml(x.title || d.t) + '</b><small>' + inboxWhat(x) + '</small><small>' + (x.n > 1 ? x.n + (x.src === 'fight' ? ' Kämpfe' : '×') + ' · zuletzt ' : '') + 'vor ' + uhrHtml(x.at, 'vor') + '</small></div>' +
             '<button class="btn btn--primary btn--sm" type="button" data-inbox="' + x.id + '"><span>Abholen</span></button></div>'; }).join('') + (L.length > 1 ? '<button class="btn btn--secondary btn--sm inbox-all" type="button" data-inbox-all><span>Alle abholen · ' + L.length + '</span></button>' : '')
-        : '<div class="inbox-empty">Gerade nichts zum Abholen. Preise aus Turnier und Tagesboss, das Kopfgeld und die Beute aus deinen Kämpfen landen hier.</div>');
+        : '<div class="inbox-empty">Gerade nichts zum Abholen. Preise aus Wochen-Event, Invasion, Drache und Tagesboss, das Kopfgeld und die Beute aus deinen Kämpfen landen hier.</div>');
 }
 goalsPopup.addEventListener('click', e => {
     const one = e.target.closest('[data-inbox]'), all = e.target.closest('[data-inbox-all]'); if (!one && !all) return;
@@ -6206,8 +6206,9 @@ function anleitungZeigen() {
     setText(document.getElementById('anleitungSchritt'), 'Schritt ' + (anleitung.schritt + 1) + '/' + ANLEITUNG.length);
     let txt = null; try { txt = ANLEITUNG[anleitung.schritt][2] && ANLEITUNG[anleitung.schritt][2](); } catch (e) {}
     setText(document.getElementById('anleitungText'), txt || ANLEITUNG[anleitung.schritt][0]);
-    const fenster = [...document.querySelectorAll('.panel.is-open')].map(f => f.getBoundingClientRect()).filter(r => r.height > 0).sort((x, y) => x.top - y.top)[0];
-    el.style.bottom = fenster ? Math.round(innerHeight - fenster.top + 10) + 'px' : '';   // ein Fenster ist offen: direkt darüber, damit seine Knöpfe frei bleiben
+    const fenster = [...document.querySelectorAll('.panel.is-open, .marker-sheet:not([hidden]), #heroHall:not([hidden])')].map(f => f.getBoundingClientRect()).filter(r => r.height > 0).sort((x, y) => x.top - y.top)[0];
+    el.style.bottom = fenster ? Math.round(innerHeight - fenster.top + 10) + 'px' : '';
+    el.style.visibility = fenster && fenster.top < 150 ? 'hidden' : '';                  // kein Platz über dem Fenster: lieber gar nicht als auf den Knöpfen   // ein Fenster ist offen: direkt darüber, damit seine Knöpfe frei bleiben
 }
 document.getElementById('anleitungWeg').addEventListener('click', () => { anleitung.schritt = ANLEITUNG.length; anleitungSpeichern(); document.getElementById('anleitung').hidden = true; flashHint('Anleitung übersprungen – Hilfe gibt es unter Profil → Einstellungen.', 3500); });
 afterSplash(() => setTimeout(() => { anleitungZeigen(); setInterval(anleitungZeigen, 1000); }, 1500));
