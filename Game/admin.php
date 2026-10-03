@@ -181,7 +181,7 @@ function zahl($n) { return $n === null ? '–' : number_format((float)$n, 0, ','
     <tr><td>Puls zum Server</td><td><?= (int)($wrH['pulsMs'] ?? 0) ?> ms · <?= zahl($wrH['pulseOk'] ?? 0) ?> gut, <?= zahl($wrH['pulseFehler'] ?? 0) ?> Fehler</td></tr>
     <tr><td>Befehle der Spieler</td><td><?= zahl($wrH['befehle'] ?? 0) ?></td></tr>
     <tr><td>Fehler (letzte Minute)</td><td><?= (int)($wrH['fehlerProMinute'] ?? 0) ?> · Prüfer hat <?= (int)($wrH['prueferFehler'] ?? 0) ?>× kaputte Zahlen verhindert</td></tr>
-    <tr><td>Abstürze (letzte 5 Min.)</td><td><?= count($wrZ['abstuerze'] ?? []) ?> von höchstens <?= WR_ABSTUERZE - 1 ?></td></tr>
+    <tr><td>Abstürze (letzte 5 Min.)</td><td><?= count(array_filter((array)($wrZ['abstuerze'] ?? []), function ($t) { return time() - (int)$t <= WR_FENSTER; })) ?> von höchstens <?= WR_ABSTUERZE - 1 ?></td></tr>
     <tr><td>Wachhund (Cronjob)</td><td><?= $wrCron ? '✅ jede Minute' : '❌ nicht eingerichtet – nur wenn Spieler online sind' ?></td></tr>
     <?php if (!empty($wrH['ende'])): ?><tr><td>Zuletzt beendet</td><td><?= h($wrH['ende']) ?></td></tr><?php endif; ?>
   </table>
