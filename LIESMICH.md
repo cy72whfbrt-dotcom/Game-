@@ -1121,6 +1121,15 @@ Alles in spiel.js (Abschnitt „THE CITY, ISOMETRIC“), nur Aussehen – Gebäu
 - Tagesboss Platz 1 bekommt jetzt eine Kiste „mind. Episch“ statt „mind. Legendär“ (`DBOSS_PRIZE`), Rest wie vorher.
 - Auch der (abgeschaltete) Turnier-Preis steht auf Episch. Legendär und Mythisch gibt es nur noch durch Zusammenlegen (3 → 1).
 
+## 33. Anleitung: nicht mehr über den Knöpfen, Text passt zum Fenster (Alexander 3.10.) – NICHT hochgeladen
+- Ist ein Fenster offen (z. B. eine Basis), steht der Hinweis jetzt **direkt über dem Fenster** – „Angreifen“/„Aufwerten“
+  bleiben frei (vorher lag er genau auf dem Knopf).
+- Der Text richtet sich nach dem offenen Fenster (dritter Eintrag in `ANLEITUNG`):
+  - Schritt 2: neutrale Basis offen → „Gut! Jetzt unten rechts auf „Angreifen“ tippen.“; andere Basis → „Das ist keine
+    neutrale Basis. Schließe das Fenster (×) …“. Grundtext: „tippe eine Basis mit dem Schild „Neutral“ an“ (statt „graue“).
+  - Schritt 3: eigene Basis offen → „Jetzt auf „Aufwerten“ tippen.“; Hauptstadt → „wächst über die Burg …“; noch keine
+    eroberte Basis → „Warte, bis dein Angriff angekommen ist …“.
+
 ## 30. VIP KOMPLETT RAUS (Alexander 2.10.: „VIP find ich totaler Müll“) – NICHT hochgeladen
 - Weg: VIP-Stufen, Spieltage zählen (`openWaterVip`), VIP-Tageskiste, „Neue VIP-Stufe“-Hinweis, VIP-Zeile im Profil,
   Bauzeit −2 %/Stufe (Stadt und Forschung bauen jetzt für alle gleich lang).

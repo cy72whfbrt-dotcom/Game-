@@ -6173,13 +6173,21 @@ afterSplash(() => setTimeout(maybeShowDaily, 500));
 // ===== ANLEITUNG für neue Spieler (Idee 45): 6 kurze Schritte unten am Bildschirm, jeder hakt sich von selbst ab =====
 const ANLEITUNG = [
     ['Tippe auf deine Hauptstadt – die blaue Basis mit der Krone.', () => (isPanelOpen(popup) && popupIslandId === playerIslandId) || !cityView.hidden],
-    ['Greif eine neutrale (graue) Basis in deiner Nähe an: antippen → „Angreifen“.', () => anleitungTat.attack],
-    ['Werte eine eroberte Basis auf: antippen → „Aufwerten“. (Deine Hauptstadt wächst mit der Burg in der Stadt.)', () => anleitungTat.upgrade],
+    ['Greif eine neutrale Basis in deiner Nähe an: tippe eine Basis mit dem Schild „Neutral“ an.', () => anleitungTat.attack, () => {
+        if (!anleitungInsel()) return null; const id = popupIslandId, o = islandOwnerOf(id);
+        return !o && !bossAt(id) && islandById[id].type !== 'megaTemple' ? 'Gut! Jetzt unten rechts auf „Angreifen“ tippen.' : 'Das ist keine neutrale Basis. Schließe das Fenster (×) und tippe eine Basis mit „Neutral“ an.'; }],
+    ['Werte eine eroberte Basis auf: tippe deine neue (blaue) Basis an.', () => anleitungTat.upgrade, () => {
+        const eigene = [...ownedIslands].some(id => id !== playerIslandId);
+        if (!anleitungInsel()) return eigene ? null : 'Warte, bis dein Angriff angekommen ist und die Basis dir gehört – dann tippe sie an.';
+        const id = popupIslandId;
+        return id === playerIslandId ? 'Die Hauptstadt wächst über die Burg in der Stadt. Schließe das Fenster (×) und tippe deine neue Basis an.'
+            : islandOwnerOf(id) === 'player' ? 'Gut! Jetzt auf „Aufwerten“ tippen.' : 'Das ist nicht deine Basis. Schließe das Fenster (×) und tippe deine eigene (blaue) Basis an.'; }],
     ['Öffne die Stadt (unten links) und baue den Holzfäller – Holz brauchst du für deine Burg.', () => { const c = loadCity(); return (c.levels.lumber || 0) > 0 || (c.builds || []).some(b => b.id === 'lumber'); }],
     ['Schick Truppen zum Sammeln: tippe auf der Karte ein Feld an (Goldmine, Holz, Stein, Eisen …).', () => fieldMarches.some(m => m.who === 'player') || Object.values(fieldState || {}).some(st => st && st.occ && st.occ.who === 'player')],
     ['Hol dir deine Belohnungen unter „Events“ (unten).', () => isPanelOpen(goalsPopup)]
 ];
 const anleitungTat = {};
+const anleitungInsel = () => isPanelOpen(popup) && popupIslandId !== null && popupIslandId !== undefined && islandById[popupIslandId];
 var anleitung = (() => { try { return JSON.parse(store.get('openWaterAnleitung')) || null; } catch (e) { return null; } })();
 if (!anleitung) anleitung = { schritt: (window.__OW && window.__OW.neu) || playerLvl <= 2 ? 0 : ANLEITUNG.length };   // wer schon spielt, sieht sie nicht
 if (typeof questProgress === 'function') questProgress = (alt => function (t) { if (t === 'upgrade' || t === 'attack') anleitungTat[t] = true; return alt.apply(this, arguments); })(questProgress);
@@ -6196,7 +6204,10 @@ function anleitungZeigen() {
     el.hidden = !document.getElementById('citySheet').hidden || (!cityView.hidden && anleitung.schritt !== 3);   // in der Stadt nur beim Holzfäller-Schritt, ein Gebäude-Fenster geht vor
     if (el.hidden) return;
     setText(document.getElementById('anleitungSchritt'), 'Schritt ' + (anleitung.schritt + 1) + '/' + ANLEITUNG.length);
-    setText(document.getElementById('anleitungText'), ANLEITUNG[anleitung.schritt][0]);
+    let txt = null; try { txt = ANLEITUNG[anleitung.schritt][2] && ANLEITUNG[anleitung.schritt][2](); } catch (e) {}
+    setText(document.getElementById('anleitungText'), txt || ANLEITUNG[anleitung.schritt][0]);
+    const fenster = [...document.querySelectorAll('.panel.is-open')].map(f => f.getBoundingClientRect()).filter(r => r.height > 0).sort((x, y) => x.top - y.top)[0];
+    el.style.bottom = fenster ? Math.round(innerHeight - fenster.top + 10) + 'px' : '';   // ein Fenster ist offen: direkt darüber, damit seine Knöpfe frei bleiben
 }
 document.getElementById('anleitungWeg').addEventListener('click', () => { anleitung.schritt = ANLEITUNG.length; anleitungSpeichern(); document.getElementById('anleitung').hidden = true; flashHint('Anleitung übersprungen – Hilfe gibt es unter Profil → Einstellungen.', 3500); });
 afterSplash(() => setTimeout(() => { anleitungZeigen(); setInterval(anleitungZeigen, 1000); }, 1500));
