@@ -1517,3 +1517,8 @@ Notbremse (Wartung an, keine Neustarts). Verloren ging nichts (Stand bis 17:41 g
 - **Speicher:** Node mit `--expose-gc`; ab 80 % der Grenze räumt der Weltrechner erst auf und beendet sich nur, wenn es danach
   noch über 600 MB sind. Heap bleibt 450 MB (380 war beim Einlesen einer Extrem-Welt zu wenig – getestet). Herzschlag zeigt
   jetzt auch Heap belegt / extern.
+- **100 echte Spieler gleichzeitig online** (schlanke Test-Handys mit genau dem Protokoll des Spiels: registrieren, Spielseite,
+  alle 2 s Puls, ab und zu ein Befehl) auf der vollen Karte mit allen Bots, 12 Min.: ~2.900 Pulse pro Minute, Antwort typisch
+  45 ms, 95 % unter 180 ms, höchstens 404 ms, 0 Fehler, 1.029 Befehle alle erledigt; Weltrechner höchstens 415 MB, längste
+  Pause 3 s, keine PHP-Warnungen. (Lokaler Testserver – der echte Server war am 3.10. zeitweise viel langsamer; dafür ist
+  der neue Wachhund da.)
