@@ -1443,5 +1443,15 @@ Bericht nicht zu sehen). Jetzt (buendnis.js Abschnitt „Verstärkung“, Welt-T
 - **Mitspieler** schicken Verstärkung, wenn ein Mitglied angegriffen wird und allein zu schwach ist (wie vorher die Hilfe), und
   holen sie heim, wenn dort 30 Min. kein Angriff mehr lief.
 - **Server:** jeder Spieler bekommt nur seine eigenen Verstärkungen und die bei ihm (`marsch_welt`).
-- Getestet (Vorschau, `verst_kampf_test`): gescheiterter Angriff → Besitzer und Helfer verlieren gleich viel (je 4.000 von
-  8.000); Basis fällt → Verstärkung weg.
+- **Verluste wie bei der Rally:** alle Truppen kämpfen zusammen (ein Kampf, eine Animation), jeder verliert nach seiner
+  Truppenzahl – wer wenig schickt, verliert wenig (nie mehr, als er geschickt hat).
+- **Fehler behoben (3.10.):** beim Ankommen wurde die Verstärkung nicht erkannt (`resolveSend` prüfte nur `rally`/`hilfe`,
+  nicht `verst`) → sie lief gleich wieder heim. Jetzt bleibt sie stationiert.
+- Getestet (Vorschau, `verst_kampf_test`): Ankunft → bleibt stationiert; gleich groß (10.000 + 10.000, 8.000 Verluste) → je
+  4.000; ungleich (9.000 + 1.000) → 7.200 / 800; Helfer mit Lazarett (50 %) → 2.000 seiner 4.000 nur verwundet, in seinem
+  Lazarett; Basis fällt → Verstärkung weg.
+- Getestet (Server + Weltrechner, `verst_server3_test`): echter Knopf „Verstärkung“ → marschiert → kommt an (500, gehört dem
+  Helfer) → Helfer sieht sie in der Botschaft → ein Spieler aus einem anderen Bündnis sieht sie nicht → zurückholen →
+  marschiert heim. Keine Skript-Fehler, keine PHP-Warnungen, keine Weltrechner-Fehler.
+- Dabei gesehen (gewollt, nichts geändert): eine nur eingetragene, nicht gebaute Botschaft lehnt das Hauptbuch ab; geschlossene
+  Tore halten auch Verstärkung auf. Die alte Testwelt hat noch Bündnisse über 5 (vom alten Limit) – die neue Welt beim Upload nicht.

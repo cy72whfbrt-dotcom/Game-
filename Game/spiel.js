@@ -1792,7 +1792,7 @@ function marchButtons(m, canRecall) {
 function resolveSend(send) {
     const target = islandById[send.toId];
     if (!target) return;
-    if ((send.rally || send.hilfe) && typeof bundSendAnkunft === 'function' && bundSendAnkunft(send)) return;   // Bündnis: zur Rally oder als Hilfe zu einem Mitglied
+    if ((send.rally || send.hilfe || send.verst) && typeof bundSendAnkunft === 'function' && bundSendAnkunft(send)) return;   // Bündnis: zur Rally oder als Hilfe zu einem Mitglied
     const sender = send.senderBotId || 'player';
     if (islandOwnerOf(send.toId) !== sender) {       // the base fell while they marched: they turn round instead of joining the enemy
         const home = islandOwnerOf(send.fromId) === sender ? send.fromId : sender === 'player' ? rewardBaseId() : [...(botOwnedIslands[sender] || [])][0];
