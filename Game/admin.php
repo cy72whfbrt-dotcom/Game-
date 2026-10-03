@@ -91,7 +91,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
         // ===== Weltrechner =====
-        if ($was === 'wr_neustart') { $r = wachhund_neustart(); $meldung = 'Weltrechner neu gestartet (' . $r . ').'; }
+        if ($was === 'wr_neustart') {   // mehrmals drücken startet nicht mehrmals (jeder Start fängt mit dem Laden wieder von vorn an)
+            $z0 = wr_zustand(); if (time() - (int)end($z0['starts']) < 60) $meldung = 'Der Weltrechner wurde gerade erst gestartet und lädt noch – bitte 1 Minute warten.';
+            else { $r = wachhund_neustart(); $meldung = 'Weltrechner neu gestartet (' . $r . ').'; } }
         if ($was === 'wr_entsperren') { wachhund_entsperren(); $meldung = 'Sperre aufgehoben. Wenn der Fehler behoben ist: Wartung beenden – dann startet der Weltrechner von selbst.'; }
         if ($was === 'wr_cron') $meldung = wachhund_cron_einrichten();
         if ($was === 'wr_sicherung') {
@@ -114,7 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 $spieler = lager()->alle_spieler();
 $wrH = wr_herz(); $wrZ = wr_zustand(); $wrCron = wachhund_cron_da();
-$wrLaeuft = $wrH && empty($wrH['ende']) && wr_laeuft($wrH['pid'] ?? 0) && time() - (int)(($wrH['zeit'] ?? 0) / 1000) <= WR_HERZ_ALT;
+$wrLaeuft = $wrH && empty($wrH['ende']) && wr_laeuft($wrH['pid'] ?? 0) && time() - (int)(($wrH['zeit'] ?? 0) / 1000) <= wr_herz_alt($wrH);
 $wrSicherungen = lager()->sicherungen_liste();
 // Auffälligkeiten (Schummel-Schutz des Weltrechners, weltrechner/schummel.php): wer, was, wann – mit Namen statt u-Nummer
 $auffaellig = (wr_lesen('schummel.php') ?: [])['liste'] ?? [];
@@ -172,10 +174,11 @@ function zahl($n) { return $n === null ? '–' : number_format((float)$n, 0, ','
 
 <div class="karte">
   <h2>Weltrechner (rechnet die Welt auf dem Server)</h2>
-  <p class="status">Zurzeit: <b><?= !empty($wrZ['gesperrt']) ? '⛔ gestoppt (Alarm)' : (wartung() ? '⏸ wartet (Wartung)' : ($wrLaeuft ? '✅ läuft' : '⏳ startet / nicht da')) ?></b></p>
+  <p class="status">Zurzeit: <b><?= !empty($wrZ['gesperrt']) ? '⛔ gestoppt (Alarm)' : (wartung() ? '⏸ wartet (Wartung)' : ($wrLaeuft ? ((($wrH['phase'] ?? '') === 'start') ? '⏳ startet (lädt die Welt)' : '✅ läuft') : (time() < (int)($wrZ['serverBis'] ?? 0) ? '🐢 Server zu langsam – neuer Versuch um ' . date('H:i', (int)$wrZ['serverBis']) : '⏳ startet / nicht da'))) ?></b></p>
   <?php if ($wrH): ?>
   <table>
     <tr><td>Speicher</td><td><b><?= (int)($wrH['speicherMb'] ?? 0) ?> MB</b> von höchstens <?= (int)($wrH['grenzeMb'] ?? 600) ?> MB</td></tr>
+    <tr><td>Längste Pause</td><td><b><?= round(($wrH['pauseStundeMs'] ?? 0) / 1000, 1) ?> s</b> diese Stunde · seit dem Start <?= round(($wrH['pauseMaxMs'] ?? 0) / 1000, 1) ?> s <small>(ab <?= WR_HERZ_ALT ?> s gilt er als hängend)</small></td></tr>
     <tr><td>Letzter Herzschlag</td><td>vor <?= max(0, time() - (int)(($wrH['zeit'] ?? 0) / 1000)) ?> s</td></tr>
     <tr><td>Läuft seit</td><td><?= h(date('d.m.Y H:i', (int)(($wrH['gestartet'] ?? 0) / 1000))) ?></td></tr>
     <tr><td>Puls zum Server</td><td><?= (int)($wrH['pulsMs'] ?? 0) ?> ms · <?= zahl($wrH['pulseOk'] ?? 0) ?> gut, <?= zahl($wrH['pulseFehler'] ?? 0) ?> Fehler</td></tr>

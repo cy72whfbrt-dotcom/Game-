@@ -1467,3 +1467,37 @@ Bericht nicht zu sehen). Jetzt (buendnis.js Abschnitt „Verstärkung“, Welt-T
   5er-Limit, Gastgeber ohne verschlossenes Tor) – im Spiel nichts geändert.
 - **Hochladen:** `hochladen.sh` ohne „Wartung aus“ → `welt_neustart.php` (Zufallsname, POST ja=NEUSTART, löscht sich) →
   Wartung aus. Konten, Passwörter, Namen bleiben; alle Spielstände neu.
+
+## 45. Notbremse am 3.10. (17:41) – Ursache und Fix: ein langer Start ist nie wieder ein „Absturz“
+**Was passiert ist (Server-Log, noch die Version vom 2.10.):** Der Server war den ganzen Tag zeitweise langsam („Welt-Puls:
+Zeitüberschreitung“ um 3, 5, 13, 13:54 Uhr). Um 17:41 kam 93 s kein Herzschlag → der Wachhund hat den Weltrechner beendet.
+Die Neustarts scheiterten: zweimal lieferte der Server die Spielseite (mit der ganzen, inzwischen riesigen Welt: 15.466 Basen,
+Billionen Truppen) nicht in 30 s („Start fehlgeschlagen: Zeitüberschreitung“), danach dauerte das Einlesen länger als 60 s –
+währenddessen kann Node keinen Herzschlag schreiben, der Wachhund hielt es für „hängt“ und beendete wieder. 5 in 5 Minuten →
+Notbremse (Wartung an, keine Neustarts). Verloren ging nichts (Stand bis 17:41 gespeichert, beim Upload in
+`altwelt_20261003_203758.php` gesichert). Alexander: neue Welt bleibt, alle fangen neu an, er entschädigt die Spieler.
+
+**Fix (start.js, wachhund.php, admin.php):**
+- Herzschlag mit **Phase**: `start` (Welt holen und einlesen) oder `läuft`. Der erste Herzschlag kommt sofort beim Start.
+- Ohne Herzschlag erlaubt: beim **Start 15 Min.** (`WR_HERZ_ALT_START`), im **Betrieb 3 Min.** (`WR_HERZ_ALT`, vorher 60 s –
+  eine große Welt speichern darf dauern). „Gestartet, aber nie ein Herzschlag“ erst nach 120 s (vorher 50 s).
+- Spielseite beim Start: **5 Min.** Zeit (vorher 30 s).
+- **Server zu langsam/weg ist kein Absturz:** Start-Zeitüberschreitung (Code 8) und „2 Min. kein Puls angekommen“ (Code 7)
+  zählen nie für die Notbremse. Der Wachhund wartet stattdessen 1, 2, 4, 8, dann höchstens 10 Min. und versucht es wieder –
+  sobald der Server wieder antwortet, läuft die Welt von selbst weiter. Admin-Seite zeigt „startet (lädt die Welt)“ bzw.
+  „Server zu langsam – neuer Versuch um …“.
+- Die Notbremse bleibt für echte Fehler im Programm (5 echte Abstürze in 5 Min.). Ein Hängen kann sie praktisch nicht mehr
+  auslösen (jedes Hängen braucht jetzt mind. 3 Min., 5 davon passen nicht in 5 Min.).
+- Bleibt als Grenze (Alexanders Vorgabe): 600 MB Speicher. Die alte Welt brauchte 274 MB.
+- **Zweiter Fehler (live 3.10., 20:58–21:09):** nach „Weiterspielen“ lief die neue Welt (20:58:12), dann „Neustart“ mehrmals
+  kurz hintereinander (21:07: zehnmal in 4 s). Jeder Start ist ein neuer Node-Prozess; der Wachhund kannte nur den mit
+  Herzschlag – die anderen liefen unbemerkt weiter, teilten sich die CPU, keiner kam mehr bis „Start“. **Fix:** vor jedem
+  Start werden ALLE Weltrechner-Prozesse dieses Spiels beendet (`wr_alle_pids`/`wr_alle_beenden`, erkannt am Schreibrecht auf
+  den Ordner bzw. Arbeitsordner); läuft einer, räumt der Wachhund übrige weg; der Admin-Knopf „Neustart“ wirkt höchstens einmal
+  pro Minute; der erste Herzschlag kommt sofort beim Start (vorher erst nach 5 s bzw. nach dem Laden von jsdom).
+- **Neu auf der Admin-Seite:** „Längste Pause“ (wie lange der Weltrechner am Stück beschäftigt war, diese Stunde / seit dem
+  Start); über 20 s am Stück steht im Log eine Warnung.
+- **Getestet (lokal):** Wachhund-Fälle (Start 5 Min. still → bleibt; 16 Min. → beendet; Betrieb 2 Min. → bleibt; 4 Min. →
+  beendet; 6× Server zu langsam → keine Notbremse, Pause 1/2/4/8/10/10 Min.; 5 echte Abstürze → Notbremse wie bisher);
+  Spielseite 150 s langsam → wartet und läuft; 400 s → Code 8, kein Absturz, neuer Versuch; „Neustart“ 10× in 4 s + 2 übrige
+  Prozesse → am Ende genau einer, läuft. Unit 16/64 grün.

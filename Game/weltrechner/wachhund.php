@@ -14,7 +14,9 @@ require_once __DIR__ . '/../server.php';
 
 const WR_ORDNER = __DIR__;
 const WR_SPERRE = "<?php http_response_code(404); exit; ?>\n";
-const WR_HERZ_ALT = 60;            // Sekunden ohne Herzschlag = hängt
+const WR_HERZ_ALT = 180;           // Sekunden ohne Herzschlag = hängt (im Betrieb; eine große Welt speichern darf dauern)
+const WR_HERZ_ALT_START = 900;     // … beim Start (Welt holen und einlesen): bei großer Welt und langsamem Server dauert das
+const WR_OHNE_HERZ = 120;          // gestartet, aber nach so vielen Sekunden noch kein einziger Herzschlag = Node startet gar nicht
 const WR_ABSTUERZE = 5;            // so viele Abstürze …
 const WR_FENSTER = 300;            // … in so vielen Sekunden → Wartung + Alarm
 const WR_SPEICHER_MB = 600;        // Vorgabe von Alexander
@@ -49,11 +51,34 @@ function wr_log_ende($n = 40) {
 }
 function wr_zustand() { return wr_lesen('zustand.php') ?: ['abstuerze' => [], 'gesperrt' => false, 'grund' => '', 'gezaehlt' => 0, 'starts' => []]; }
 function wr_herz() { return wr_lesen('herz.php'); }
+// Wie lange darf der Herzschlag fehlen? Beim Start (Welt einlesen) viel länger als im Betrieb.
+function wr_herz_alt($h) { return ($h['phase'] ?? '') === 'start' ? WR_HERZ_ALT_START : WR_HERZ_ALT; }
+// Codes, bei denen der SERVER nicht (schnell genug) antwortet – kein Fehler des Weltrechners: zählt nie als Absturz (keine Notbremse),
+// der Wachhund versucht es mit wachsender Pause wieder (1, 2, 4 … höchstens 10 Min.), bis der Server wieder antwortet
+const WR_SERVER_CODES = [7, 8];
 // Läuft dieser Prozess noch – und ist es wirklich der Weltrechner (keine wiederverwendete Nummer)?
 function wr_laeuft($pid) {
     $pid = (int)$pid; if ($pid <= 1) return false;
     $cmd = trim((string)@shell_exec('ps -o args= -p ' . $pid . ' 2>/dev/null'));
     return $cmd !== '' && strpos($cmd, 'start.js') !== false;
+}
+// ALLE Weltrechner-Prozesse dieses Spiels (auch die, die noch keinen Herzschlag geschrieben haben – z. B. nach vielen Starts
+// kurz hintereinander). Erkannt am Schreib-Recht auf genau diesen Ordner bzw. an start.js mit diesem Ordner als Arbeitsordner.
+function wr_alle_pids() {
+    $r = [];
+    foreach (explode("\n", (string)@shell_exec('ps -eo pid=,args= 2>/dev/null')) as $z) {
+        if (!preg_match('/^\s*(\d+)\s+(.*)$/', $z, $m) || strpos($m[2], 'start.js') === false || (int)$m[1] === getmypid()) continue;
+        $cwd = (string)@readlink('/proc/' . $m[1] . '/cwd');
+        if (strpos($m[2], WR_ORDNER) !== false || $cwd === WR_ORDNER) $r[] = (int)$m[1];
+    }
+    return $r;
+}
+function wr_alle_beenden($grund) {   // vor jedem Start: nie zwei Weltrechner gleichzeitig (sie würden sich die CPU teilen und keiner käme durch)
+    $p = wr_alle_pids(); if (!$p) return true;
+    foreach ($p as $x) exec('kill -9 ' . (int)$x . ' 2>/dev/null');
+    for ($i = 0; $i < 20 && wr_alle_pids(); $i++) usleep(100000);
+    wr_log(count($p) . ' alte(n) Weltrechner-Prozess(e) beendet (' . $grund . ')');
+    return !wr_alle_pids();
 }
 function wr_ps_geht() { return trim((string)@shell_exec('ps -o pid= -p ' . getmypid() . ' 2>/dev/null')) === (string)getmypid(); }   // zeigt ps hier Prozesse?
 function wr_node() {
@@ -70,6 +95,7 @@ function wr_url() {
 }
 function wr_starten() {
     $url = wr_url();
+    if (!wr_alle_beenden('vor dem Start')) { wr_log('kann nicht starten: ein alter Weltrechner lässt sich nicht beenden'); return false; }
     if ($url === '') { wr_log('kann nicht starten: Adresse des Spiels unbekannt (spiel_url in config.php)'); return false; }
     if (!is_file(WR_ORDNER . '/log.php')) file_put_contents(WR_ORDNER . '/log.php', WR_SPERRE);
     // Node im Sicherheitsmodus: lesen nur die Spiel-Skripte und den eigenen Ordner (NIE config.php), schreiben nur im eigenen
@@ -124,18 +150,26 @@ function wachhund_runde($quelle = 'cron') {
 
         $pid = $h ? (int)($h['pid'] ?? 0) : 0;
         $laeuft = $pid && wr_laeuft($pid);
-        if ($laeuft && $h && empty($h['ende']) && $jetzt - (int)($h['zeit'] / 1000) <= WR_HERZ_ALT) { wr_schreiben('zustand.php', $z); return 'läuft'; }
+        if ($laeuft && $h && empty($h['ende']) && $jetzt - (int)($h['zeit'] / 1000) <= wr_herz_alt($h)) {
+            if (($h['phase'] ?? '') !== 'start' && !empty($z['serverWeg'])) { $z['serverWeg'] = 0; $z['serverBis'] = 0; }   // läuft wieder: die Pause beim nächsten Mal wieder kurz
+            $fremd = array_values(array_diff(wr_alle_pids(), [$pid]));   // übrig gebliebene Weltrechner (ohne Herzschlag): weg damit
+            if ($fremd) { foreach ($fremd as $x) exec('kill -9 ' . (int)$x . ' 2>/dev/null'); wr_log(count($fremd) . ' übrige(n) Weltrechner-Prozess(e) beendet'); }
+            wr_schreiben('zustand.php', $z); return ($h['phase'] ?? '') === 'start' ? 'startet' : 'läuft'; }
         $letzterStart = (int)end($z['starts']);
         if ($laeuft) {   // läuft, aber kein Herzschlag mehr: hängt (Endlosschleife o. ä.)
             if (!wr_beenden($pid, 'hängt – letzter Herzschlag vor ' . ($jetzt - (int)($h['zeit'] / 1000)) . ' s')) { wr_schreiben('zustand.php', $z); return 'hängt, lässt sich nicht beenden'; }
             $z['abstuerze'][] = $jetzt; $z['gezaehlt'] = $pid;
         } elseif ($h && $pid && (int)($z['gezaehlt'] ?? 0) !== $pid) {   // beendet: geplant (Wartung, Code 0) oder Absturz?
             $z['gezaehlt'] = $pid;
-            if (isset($h['code']) && (int)$h['code'] === 6) { $z['pruefer'][] = $jetzt; wr_log('Prüfer-Neustart (zählt nicht als Absturz): ' . ($h['ende'] ?? '')); }   // kaputte Zahlen verhindert – kein Grund für die Notbremse
+            if (isset($h['code']) && in_array((int)$h['code'], WR_SERVER_CODES, true)) {   // Server langsam/weg: kein Absturz, später nochmal
+                $z['serverWeg'] = (int)($z['serverWeg'] ?? 0) + 1; $z['serverBis'] = $jetzt + min(600, 60 * (1 << min(4, $z['serverWeg'] - 1)));
+                wr_log('Server antwortet nicht schnell genug (zählt nicht als Absturz) – neuer Versuch in ' . round(($z['serverBis'] - $jetzt) / 60) . ' Min.: ' . ($h['ende'] ?? ''));
+            }
+            elseif (isset($h['code']) && (int)$h['code'] === 6) { $z['pruefer'][] = $jetzt; wr_log('Prüfer-Neustart (zählt nicht als Absturz): ' . ($h['ende'] ?? '')); }   // kaputte Zahlen verhindert – kein Grund für die Notbremse
             elseif (!isset($h['code']) || (int)$h['code'] !== 0) { $z['abstuerze'][] = $jetzt; wr_log('Absturz erkannt: ' . ($h['ende'] ?? 'ohne Meldung beendet (Speicher? hart beendet?)')); }
         }
         // gestartet, aber nie ein Herzschlag (z. B. Fehler gleich beim Laden) → auch ein Absturz
-        if (!$laeuft && $letzterStart && $jetzt - $letzterStart >= 50 && (!$h || (int)(($h['gestartet'] ?? 0) / 1000) < $letzterStart - 5) && (int)($z['ohneHerz'] ?? 0) !== $letzterStart) {
+        if (!$laeuft && $letzterStart && $jetzt - $letzterStart >= WR_OHNE_HERZ && (!$h || (int)(($h['gestartet'] ?? 0) / 1000) < $letzterStart - 5) && (int)($z['ohneHerz'] ?? 0) !== $letzterStart) {
             $z['ohneHerz'] = $letzterStart; $z['abstuerze'][] = $jetzt; wr_log('Absturz erkannt: gestartet, aber nie ein Herzschlag');
         }
         $z['abstuerze'] = array_values(array_filter($z['abstuerze'], function ($t) use ($jetzt) { return $jetzt - $t <= WR_FENSTER; }));
@@ -151,9 +185,10 @@ function wachhund_runde($quelle = 'cron') {
         if ($z['gesperrt']) { wr_schreiben('zustand.php', $z); return 'gesperrt'; }
         if (wartung()) { wr_schreiben('zustand.php', $z); return 'wartung'; }
         if ($jetzt - $letzterStart < 50) { wr_schreiben('zustand.php', $z); return 'gerade gestartet'; }   // höchstens ein Start pro Minute
+        if ($jetzt < (int)($z['serverBis'] ?? 0)) { wr_schreiben('zustand.php', $z); return 'wartet auf den Server'; }   // (Server war zu langsam: Pause)
         // frischer Herzschlag ohne Ende-Meldung, aber kein Prozess gefunden: nur wenn ps hier nichts sieht (eingeschränkt) lieber
         // nicht – sonst liefen zwei. Sieht ps Prozesse (sich selbst), ist er wirklich weg (Speicher, hart beendet): gleich neu.
-        if ($h && empty($h['ende']) && $jetzt - (int)($h['zeit'] / 1000) <= WR_HERZ_ALT && !wr_ps_geht()) { wr_schreiben('zustand.php', $z); return 'herz frisch'; }
+        if ($h && empty($h['ende']) && $jetzt - (int)($h['zeit'] / 1000) <= wr_herz_alt($h) && !wr_ps_geht()) { wr_schreiben('zustand.php', $z); return 'herz frisch'; }
         $z['starts'][] = $jetzt; $z['starts'] = array_slice($z['starts'], -30);
         wr_schreiben('zustand.php', $z);
         try { $i = lager()->welt_info(); if ((int)$i['leiter_id'] === 0) lager()->leiter_setzen(0, '', 0); } catch (Throwable $e) {}   // keiner läuft (Herzschlag alt oder beendet): der Platz ist frei

@@ -40,19 +40,28 @@ process.on('uncaughtException', e => ende(1, 'Fehler: ' + (e && e.stack || e)));
 process.on('unhandledRejection', e => log('Warnung (Promise):', e && e.message || e));
 
 // ===== Zahlen für Herzschlag und Admin-Seite =====
+let phase = 'start';   // 'start' (Welt holen und einlesen – darf bei großer Welt / langsamem Server lange dauern) | 'läuft'
 const stat = { pulseOk: 0, pulseFehler: 0, letzterPuls: 0, pulsMs: 0, fehlerMinute: [], prueferFehler: 0, prueferHintereinander: 0, befehle: 0 };
 function herzSchreiben(extra) {
     const m = process.memoryUsage();
-    const h = Object.assign({ zeit: Date.now(), pid: process.pid, gestartet: START, speicherMb: Math.round(m.rss / 1048576), heapMb: Math.round(m.heapUsed / 1048576),
+    const h = Object.assign({ zeit: Date.now(), pid: process.pid, gestartet: START, phase, speicherMb: Math.round(m.rss / 1048576), heapMb: Math.round(m.heapUsed / 1048576),
         grenzeMb: SPEICHER_MB, pulseOk: stat.pulseOk, pulseFehler: stat.pulseFehler, letzterPuls: stat.letzterPuls, pulsMs: stat.pulsMs,
-        fehlerProMinute: stat.fehlerMinute.length, prueferFehler: stat.prueferFehler, befehle: stat.befehle, push: stat.push || null }, extra || {});
+        fehlerProMinute: stat.fehlerMinute.length, prueferFehler: stat.prueferFehler, befehle: stat.befehle, push: stat.push || null, pauseMaxMs: stat.pauseMax, pauseStundeMs: stat.pauseMaxStunde }, extra || {});
     const neu = path.join(ORDNER, 'herz_neu.php'); fs.writeFileSync(neu, SPERRE + JSON.stringify(h)); fs.renameSync(neu, HERZ);
 }
+// Längste Pause (der Weltrechner war so lange am Stück beschäftigt – ab 3 Min. hält ihn der Wachhund für hängend):
+// jede Sekunde nachsehen, wie viel später als geplant wir drankommen. Steht im Herzschlag (Admin-Seite), lange Pausen im Log.
+let pauseLetzte = Date.now(); stat.pauseMax = 0; stat.pauseMaxStunde = 0;
+setInterval(() => { const j = Date.now(), p = j - pauseLetzte - 1000; pauseLetzte = j;
+    if (p > stat.pauseMax) stat.pauseMax = p; if (p > stat.pauseMaxStunde) stat.pauseMaxStunde = p;
+    if (p > 20000 && phase === 'läuft') log('Warnung: ' + Math.round(p / 1000) + ' s am Stück beschäftigt'); }, 1000).unref();
+setInterval(() => { stat.pauseMaxStunde = 0; }, 3600000).unref();
+herzSchreiben();   // gleich beim Start: der Wachhund sieht sofort „lebt, lädt noch“ (nicht erst nach 5 s)
 setInterval(() => {
     const rss = process.memoryUsage().rss / 1048576;
     if (rss > SPEICHER_MB) ende(3, 'Speicher voll: ' + Math.round(rss) + ' MB (Grenze ' + SPEICHER_MB + ' MB)');
     const jetzt = Date.now(); stat.fehlerMinute = stat.fehlerMinute.filter(t => jetzt - t < 60000);
-    if (stat.letzterPuls && jetzt - stat.letzterPuls > 120000) ende(7, 'seit 2 Minuten kein Puls beim Server angekommen');
+    if (stat.letzterPuls && jetzt - stat.letzterPuls > 120000) ende(7, 'seit 2 Minuten kein Puls beim Server angekommen');   // (Code 7: der Server antwortet nicht – zählt beim Wachhund nicht als Absturz)
     herzSchreiben();
 }, 5000).unref();
 // ===== Auffälligkeiten (Schummel-Schutz in spiel.js → WELT.warnungen) → schummel.php → Admin-Seite =====
@@ -86,14 +95,14 @@ function fehler(t) {
     if (stat.fehlerMinute.length > 120) ende(4, 'zu viele Fehler (über 120 in einer Minute)');
 }
 
-// ===== Mit dem Server reden: immer mit Schlüssel, nie länger als 30 s warten =====
+// ===== Mit dem Server reden: immer mit Schlüssel, nie länger als 30 s warten (die Spielseite beim Start: 5 Min.) =====
 async function holen(url, opt) {
     opt = Object.assign({}, opt || {});
     const kopf = Object.assign({}, opt.headers || {}); kopf['X-Weltrechner'] = SCHLUESSEL;
     let body = opt.body; if (body && typeof body !== 'string') body = Buffer.from(body.buffer ? new Uint8Array(body.buffer, body.byteOffset, body.byteLength) : body);
     const ziel = new URL(url, URL_BASIS + 'spiel.php').href;
     if (!ziel.startsWith(URL_BASIS)) throw new Error('fremde Adresse – der Schlüssel geht nur an den eigenen Server');
-    return fetch(ziel, { method: opt.method || 'GET', headers: kopf, body, redirect: 'error', signal: AbortSignal.timeout(30000) });   // (nie einer Umleitung folgen – der Schlüssel ginge mit)
+    return fetch(ziel, { method: opt.method || 'GET', headers: kopf, body, redirect: 'error', signal: AbortSignal.timeout(opt.zeit || 30000) });   // (nie einer Umleitung folgen – der Schlüssel ginge mit)
 }
 
 // ===== Prüfer: sind die Zahlen der Welt in Ordnung? (läuft im Spiel, vor jedem Schreiben) =====
@@ -140,11 +149,13 @@ function leinwand(canvas) {
 async function los() {
     const { JSDOM, ResourceLoader, VirtualConsole } = require('./jsdom.js');
     log('Start – Speichergrenze ' + SPEICHER_MB + ' MB, Server ' + URL_BASIS);
-    const r = await holen('spiel.php');
+    let r;
+    try { r = await holen('spiel.php', { zeit: 300000 }); }   // (die ganze Welt kommt mit – bei großer Welt und langsamem Server dauert das)
+    catch (e) { ende(8, 'Server zu langsam/nicht erreichbar beim Start: ' + (e && e.message || e)); }   // kein Absturz des Weltrechners: der Wachhund versucht es später nochmal
     if (r.status === 503) ende(0, 'Wartung – der Weltrechner wartet');
     if (r.status === 409) ende(0, 'es läuft schon ein Weltrechner');
     if (!r.ok) ende(5, 'Spielseite: HTTP ' + r.status);
-    const html = await r.text();
+    let html; try { html = await r.text(); } catch (e) { ende(8, 'Server zu langsam beim Start (Welt nicht ganz angekommen): ' + (e && e.message || e)); }
     if (!html.includes('"system":true')) ende(5, 'Spielseite ohne Weltrechner-Zugang (Schlüssel falsch?)');
     // Grundlinie für den Prüfer: so groß ist die Welt in der Datenbank (bevor das Spiel irgendetwas tut)
     let grundlinie = null;
@@ -248,7 +259,7 @@ async function los() {
     log('Welt geladen: ' + geladen + ' Basen in Besitz');
     log('Spiel läuft – ' + w.eval('BOT_DEFS.length') + ' Mitspieler, Welt-Version ' + w.WELT.version);
 
-    stat.letzterPuls = Date.now();
+    stat.letzterPuls = Date.now(); phase = 'läuft';
     herzSchreiben();
 
     // Handy-Benachrichtigungen (push.js): alle 5 s schauen, ob ein echter Spieler angegriffen wird, eine Basis verliert
