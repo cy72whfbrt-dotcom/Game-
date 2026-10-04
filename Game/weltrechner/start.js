@@ -82,7 +82,9 @@ function auffaelligSammeln(neu) {
         if (gleich) { gleich.anzahl++; gleich.letzte = w.zeit; gleich.text = text; gleich.wert = Math.max(gleich.wert || 0, w.wert || 0); }
         else auffaellig.push({ uid: w.uid, was: String(w.was).slice(0, 20), text, wert: w.wert || 0, erste: w.zeit, letzte: w.zeit, anzahl: 1 });
     }
-    auffaellig.sort((a, b) => b.letzte - a.letzte); auffaellig = auffaellig.slice(0, 200);
+    auffaellig.sort((a, b) => b.letzte - a.letzte);
+    const jeSpieler = {};   // höchstens 20 Einträge je Spieler – einer allein kann die Liste nicht fluten und andere verdrängen
+    auffaellig = auffaellig.filter(x => (jeSpieler[x.uid] = (jeSpieler[x.uid] || 0) + 1) <= 20).slice(0, 200);
     try { const neuD = path.join(ORDNER, 'schummel_neu.php'); fs.writeFileSync(neuD, SPERRE + JSON.stringify({ zeit: Date.now(), liste: auffaellig })); fs.renameSync(neuD, SCHUMMEL); }
     catch (e) { log('Warnung: schummel.php nicht schreibbar (' + e.message + ')'); }
 }

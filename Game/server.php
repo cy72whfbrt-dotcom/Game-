@@ -1266,10 +1266,10 @@ function welt_puls($ich, $d) {
     // wartende Befehle pro Spieler (kein Stau für alle) – bezahlte zählen nicht dazu und werden immer angenommen (sonst wäre
     // Bezahltes weg; sie sind durch die Kosten begrenzt).
     $befehle_ok = [];
-    if (!$sys && !empty($d['befehle'])) { $voll_b = $l->offene_befehle($uid) >= 200;
+    if (!$sys && !empty($d['befehle'])) { $offen_n = $l->offene_befehle($uid); $voll_b = $offen_n >= 200; $voll_alle = $offen_n >= 400;   // (auch bezahlte nicht ohne Ende – nicht angenommene schickt das Handy später nochmal, nichts geht verloren)
         foreach (array_slice((array)$d['befehle'], 0, 30) as $b) if (befehl_ok($b)) {
             foreach (array_keys($b) as $f) if (is_string($f) && $f !== '' && $f[0] === '_') unset($b[$f]);   // (_id, _nach … setzt nur der Server)
-            if ($voll_b && !in_array($b['art'], BEFEHLE_BEZAHLT, true)) continue;
+            if ($voll_alle || ($voll_b && !in_array($b['art'], BEFEHLE_BEZAHLT, true))) continue;
             $cid = is_string($b['cid'] ?? null) && preg_match('/^[A-Za-z0-9]{8,24}$/', $b['cid']) ? $b['cid'] : null;   // (ohne Nummer: altes Handy – wie früher)
             $j = json_encode($b, JSON_UNESCAPED_UNICODE); if ($j !== false && strlen($j) < 8000) { $l->befehl_ablegen($uid, $j, $cid); if ($cid !== null) $befehle_ok[] = $cid; } } }
 

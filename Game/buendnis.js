@@ -353,7 +353,7 @@ function bundHilfeBitte(a, who, b, now) {
     a.hilfe = (a.hilfe || []).filter(h => now < h.bis + 120000);
     if (a.hilfe.some(h => h.w === who && h.was === was && h.k === k && h.to === to)) return '';
     if (a.hilfe.length >= 60) return 'Gerade zu viele Hilfe-Bitten im Bündnis';
-    const bis = Math.min(now + 62 * 864e5, Number.isFinite(b.bis) && b.bis > now ? b.bis : now + hilfeDauer(was, k, to));
+    const bis = Math.min(now + 62 * 864e5, now + hilfeDauer(was, k, to));   // (so lange wie der ganze Bau – eine selbst gesetzte kurze Zeit ließ die Bitte verfallen und neu stellen: Hilfe ohne Ende)
     a.hilfe.push({ id: 'h' + (bund.n++), w: who, was, k, to, max: L, von: [], at: now, bis });
     return '';
 }

@@ -174,7 +174,7 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   auf die alte, kurze Bauzeit gekürzt – behoben (`cityClampBuild` lässt die Burg, solange aufbau.js fehlt); das Hauptbuch
   zog Baukosten in Münzen doppelt ab (`hbZahlen`: erst Vorschuss/Topf, dann Konto); erfundene Rohstoffe im Profil kommen
   nicht mehr in die Welt (beim Rohstoff-Sprung auf das Mögliche gedeckelt); ein neuer Friedensschild nach einem eigenen
-  Angriff gilt wieder (`schildAlt` wird gelöscht); Wochenkette verliert keinen Tag. Neuer Test burg_test.
+  Angriff gilt wieder (`schildAlt`); Wochenkette verliert keinen Tag. Neuer Test burg_test.
   Noch offen (nur mögliche Fehlalarme im Admin-Bereich, kein Spielfehler): Kisten aus dem Thron-Shop und Gems statt
   Splitter kennt das Hauptbuch noch nicht.
   4. Runde (Karte, Admin, Login, App/Push): Admin-Seite nach jeder Aktion neu geladen (Post/Redirect/Get) – „Erneut senden“
@@ -183,6 +183,13 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   wie bei Mitspielern, manchmal geschlossen); keine doppelten Push-Nachrichten beim Beschleunigen; Rally-Warnung per Push
   geht nicht verloren; Passwort ändern mit „wiederholen“ (Tippfehler sperrte sonst das Konto aus); Antippen einer Nachricht
   holt das Spiel nach vorne (nicht eine andere Seite).
+  5. Runde (Schummel-Schutz, Nachprüfung): Bündnis-Hilfe-Bitte gilt nur so lange wie der Bau (vorher fast endlos Hilfe
+  möglich); Server nimmt ab 400 offenen Befehlen je Spieler keine weiteren an (auch bezahlte); die Rohstoff-Deckelung aus
+  der 3. Runde wurde vom Welt-Sync wieder überschrieben – jetzt fest (`m.rDeckel` in `hbKlemmen`); Wache bezahlt in der
+  richtigen Reihenfolge (Vorschuss → Topf → Konto); Friedensschild-Prüfung mit Toleranz (`schildAlt`, ±60 s); die
+  Liste der Auffälligkeiten im Admin kann ein Spieler nicht mehr fluten (höchstens 20 Einträge je Spieler).
+  Noch offen (Schummel-Funde, brauchen Alexanders Entscheidung): Fund auf der Karte gibt Truppen auch offline, Heilen
+  ohne Münzen, Stufen-Belohnung über die Stufe aus dem Handy, Nachrichten-Spam.
   Noch offen: Login-Sperre je Konto (60 Fehlversuche von beliebigen Geräten sperren das Konto 15 Min. – ein Angreifer kann
   so jemanden aussperren); Push-Abo bleibt nach dem Abmelden auf dem Gerät.
   **Offen / Fragen an Alexander:** Rally – sollen Schild/Held des Anführers (weniger Verluste, Flucht) für ALLE Truppen gelten

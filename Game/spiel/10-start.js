@@ -1226,7 +1226,7 @@ if (window.WELT) {
             const stunde = m.rEin.reduce((a, x) => a + x[k], 0), raum = Math.max(0, 2000 + .25 * Math.max(stunde, (m.rHp0 || {})[k] || 0) + lim - m.rsr.reduce((a, x) => a + (x[k] || 0), 0));
             const nimm = Math.min(mehr, raum); if (nimm > 0) m.rsr.push({ t: now, [k]: nimm }); mehr -= nimm;
             if (mehr >= 1) { kk.u = pr - mehr; warnen(who, 'rohstoffe', AUF.ROH_DEF[k].name + ' springt: das Handy sagt ' + fz(pr) + ', möglich wären höchstens ' + fz(pr - mehr) + '.', mehr);
-                const bb = loadBotState()[who]; if (bb && bb.res && nn(bb.res[k]) > pr - mehr) bb.res[k] = pr - mehr; }   // (in der Welt nur, was möglich ist – sonst holt ein anderer die erfundenen Rohstoffe als Beute)
+                (m.rDeckel || (m.rDeckel = {}))[k] = pr - mehr; }   // (in der Welt nur, was möglich ist – hbKlemmen deckelt gleich – sonst holt ein anderer die erfundenen Rohstoffe als Beute)
         }
     }
     // Münzen, die er ausgegeben hat und die kein Befehl abgeholt hat (nach 60 s) → Topf hb.cA (bezahlt Bauen/Forschen im Hauptbuch)
@@ -1314,8 +1314,8 @@ if (window.WELT) {
         if (m.c.vor + m.c.u + topf + frei + gesch < kosten) return false;
         let r = kosten, x;
         x = Math.min(r, m.c.vor); m.c.vor -= x; r -= x;
+        x = Math.min(r, topf); if (x > 0) hb.cA = topf - x; r -= x;   // (erst, was er schon ausgegeben hat – dann sein Konto: sonst doppelt abgezogen)
         x = Math.min(r, m.c.u); m.c.u -= x; r -= x;
-        x = Math.min(r, topf); if (x > 0) hb.cA = topf - x; r -= x;
         x = Math.min(r, gesch); if (x > 0) { d.gC = Math.max(0, d.gC - x); saveBotState(); } r -= x;
         if (r > 0) m.sr.push({ t: now, n: r });
         return true;
@@ -1686,6 +1686,7 @@ if (window.WELT) {
         if (b.zProfil && p && Object.keys(p).length) { hbAusProfil(who, hb, p, now); delete b.zProfil; if (alt) delete alt.zProfil; }   // (nach dem Zurückspielen, einmal)
         const m = wacheSehen(who);
         hbPruefen(who, hb, p, m, now, b.schildAlt);
+        if (m.rDeckel) { if (b.res) for (const k in m.rDeckel) if (nn(b.res[k]) > m.rDeckel[k]) b.res[k] = m.rDeckel[k]; m.rDeckel = null; }   // Rohstoff-Sprung: die Welt bekommt nur das Mögliche
         hbSchreiben(who, hb, b, p, alt);
         if (m.init && m.gGeeicht && now - (m.hbMerkT || 0) > 60000) hbKontenMerken(hb, m, now);
         const d = b.wache; if (m.init && m.geeicht && d) d.u = Math.round(m.c.u);

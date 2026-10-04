@@ -250,8 +250,7 @@
         // Schild und Anfängerschutz kommen vom Handy – darum mit Grenzen: Anfängerschutz kann nur kürzer werden (nie neu
         // anfangen), höchstens 48 h; ein Schild, der beim Angreifen gefallen ist, gilt erst wieder, wenn ein neuer kommt
         const jetzt = Date.now(), ps = Math.min(+p.shieldUntil || 0, jetzt + 8 * 86400000);
-        if (alt && alt.schildAlt && ps <= jetzt) { delete alt.schildAlt; delete b.schildAlt; }   // das Handy hat den Fall übernommen: ein neuer Schild gilt wieder
-        b.shields = { 2: 0, 8: 0, 24: 0 }; b.shieldUntil = alt && alt.schildAlt && ps <= alt.schildAlt ? 0 : ps;
+        b.shields = { 2: 0, 8: 0, 24: 0 }; b.shieldUntil = alt && alt.schildAlt && Math.abs(ps - alt.schildAlt) < 60000 ? 0 : ps;   // nur genau der gefallene Schild bleibt aus – ein neu eingeschalteter gilt (auch kürzer)
         b.neuBis = Math.max(0, Math.min(+p.neuBis || 0, jetzt + 48 * 3600000, alt && alt.neuBis !== undefined ? +alt.neuBis || 0 : Infinity));
         const lk = p.look || {};
         b.ring = lk.ring || null; b.rings = lk.rings || []; b.march = lk.march || null; b.marchs = lk.marchs || [];
