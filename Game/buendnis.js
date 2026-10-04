@@ -958,17 +958,6 @@ function bundChatNeu() {                                          // (Handy) neu
     const neu = bundChatZeilen(a).filter(x => !vorher.has(x.id) && x.w !== 'player' && x.at > seit).pop();
     if (neu && !(isPanelOpen(bundPopup) && bundTab === 'sig') && Date.now() - (bundMem.hinweisAt || 0) > 20000) { bundMem.hinweisAt = Date.now(); flashHint('Bündnis · ' + bundName(neu.w) + ': ' + bundChatText(neu), 4500); }
 }
-function bundSigHtml(a) {
-    const now = Date.now(), liste = (a.sig || []).filter(s => now - s.at < 30 * 60000);
-    return '<div class="notice">' + icon('info') + '<span>Signale statt Chat: tippe eine Basis auf der Karte an → „Hilfe!“, „Angriff!“, „Sammeln“ oder „Verteidigt“. Mitspieler im Bündnis antworten mit Taten.</span></div>' +
-        '<div class="bd-knoepfe"><button type="button" class="btn btn--primary btn--sm" data-bact="signal" data-art="danke">' + icon('star') + '<span>Danke!</span></button></div>' +
-        '<div class="bd-liste">' + (liste.length ? liste.map(s => { const S = BUND_SIGNALE[s.art], mir = s.w === 'player', zl = s.z !== null && islandById[s.z];
-            const helfen = zl && (s.art === 'hilfe' || s.art === 'verteidigen') && islandOwnerOf(s.z) !== 'player' && bundUnterAngriff(s.z);
-            return '<div class="bd-zeile bd-sig' + (now - s.at < BUND.SIG_MS ? ' is-neu' : '') + '" style="--sf:' + S.farbe + '"><span class="bd-sic">' + icon(S.ic) + '</span><span class="bd-name"><b>' + escapeHtml(bundSigText(s)) + '</b><small>' + (mir ? 'Du' : escapeHtml(bundName(s.w))) + ' · vor ' + uhrHtml(s.at, 'vor') + '</small></span>' +
-                (zl ? '<button type="button" class="btn btn--secondary btn--sm" data-bact="zeigen" data-z="' + s.z + '">Zeigen</button>' : '') +
-                (helfen ? '<button type="button" class="btn btn--primary btn--sm" data-bact="hilfeWahl" data-z="' + s.z + '">Helfen</button>' : '') + '</div>'; }).join('')
-            : '<div class="inbox-empty">Noch keine Signale.</div>') + '</div>';
-}
 function bundRallyZeile(r, meins) {
     const now = Date.now(), ziel = islandById[r.t], mein = r.j.filter(j => j.w === 'player').reduce((s, j) => s + j.n, 0) + (r.by === 'player' ? r.n0 : 0);
     return '<div class="bd-zeile bd-rally' + (meins ? '' : ' is-feind') + '"><span class="bd-sic">' + icon(meins ? 'flag' : 'attack') + '</span><span class="bd-name"><b>' + (meins ? 'Rally auf ' : 'Gefahr: Rally auf ') + escapeHtml(islandTitle(ziel)) + '</b>' +
@@ -1105,7 +1094,6 @@ if (bundPopup) {
         else if (act === 'raus') { if (sicher('raus:' + b.dataset.w)) bundBefehl('rauswerfen', { w }, bundName(b.dataset.w) + ' wurde entfernt.'); }
         else if (act === 'offen') { const a = bundIch(); if (a) bundBefehl('offen', { offen: !a.offen }, a.offen ? 'Beitritt nur noch auf Anfrage.' : 'Dein Bündnis ist jetzt offen für alle.'); }
         else if (act === 'verlassen') { if (sicher('verlassen')) { bundBefehl('verlassen', {}, 'Du verlässt das Bündnis.'); } }
-        else if (act === 'signal') bundSignalSenden(b.dataset.art);
         else if (act === 'chat') { const k = b.dataset.k; if (!BUND_CHAT[k]) return;
             if (Date.now() - (bundMem.chatSend || 0) < BUND_CHAT_PAUSE) return; bundMem.chatSend = Date.now();
             bundBefehl('chat', { k, z: null }); sfx('send'); }

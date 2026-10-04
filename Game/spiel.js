@@ -1,3 +1,5 @@
+// ===== spiel.js – AUTOMATISCH ZUSAMMENGESETZT aus Game/spiel/*.js (werkzeuge/spiel_bauen.sh). NICHT hier ändern! =====
+// ===== Teil 01-grundlagen.js: Grundlagen: Konstanten, Inseln und Karte, Truppen, Werte, Helden-Daten, Herrscher der Meere =====
 // Rechnet dieses Spiel gerade die Welt (Weltrechner)? Ohne welt.js: immer.
 function rechnet() { return !window.WELT || WELT.leiter; }
 // Läuft hier der Weltrechner auf dem Server (weltrechner/start.js)? Dann: kein eigener Spieler, keine Basis, nichts zeichnen.
@@ -1205,7 +1207,7 @@ const SKILL_DEFS = {
 };
 const EQUIPMENT_BASE_COST = 100;
 
-
+// ===== Teil 02-maersche.js: Shop, Ausrüstung, Angriffe losschicken, Märsche (Zurückrufen, Beschleunigen), Ankunft beim Senden =====
 // ===== Shop: gem-bought crates, rarity items, combine, salvage =====
 // A second, separate equipment layer on top of the existing coin-
 // upgraded weapon/armor/shield/boots levels above - gem crates drop
@@ -2131,7 +2133,7 @@ const islandsByLandmass = {};
 for (const isl of islands) {
     (islandsByLandmass[isl.landmassId] = islandsByLandmass[isl.landmassId] || []).push(isl);
 }
-
+// ===== Teil 03-karte.js: Karte zeichnen, 3D-Gebäude, Baukunst-Bilder, Wappen, Thronplatz, Tag und Nacht, Kamera und Eingabe =====
 // ===== MAP RENDERER (verified in the running game; see spec §5) =====
 var viewW = innerWidth, viewH = innerHeight;           // CSS px; written ONLY by sizeBackingStore() (§6) so a resize still knows the old centre.
                                                       // `var` on purpose: sizeBackingStore() already runs at boot, before this block.
@@ -4293,6 +4295,7 @@ function fightEstimate(a) {                       // the fight as it stands righ
 function fightDurationMs(est) {                   // a skirmish is over in ~4 s, a clash of millions takes ~12 s
     return Math.round(Math.max(4000, Math.min(12000, 4000 + 1500 * Math.log10(Math.max(1, est.my + est.en) / 1000))));
 }
+// ===== Teil 04-kampf.js: Titel (Mega-Tempel), Bot-Takt, Ankunft der Angriffe und Kämpfe (kampfDazu, Warten), Kampf-Schätzung, Boni =====
 // ===== TITLES (Mega-Tempel) =====
 // Whoever holds the Mega-Tempel hands out titles: 4 buffs for friends, 4 penalties for rivals (±25 %).
 // A new holder starts with a clean slate. Bots that hold it hand them out too - you may get the Narr.
@@ -4621,6 +4624,7 @@ const RANK_TIERS = [
     { min: 120, name: 'Meister' },
     { min: 225, name: 'Legende' }
 ];
+// ===== Teil 05-profil.js: Titel & Rahmen, Profil, Truhe/Ausrüstung, Skills, Erfolge, Profil antippen, Rangliste, Märsche-Liste, Kampfbericht =====
 // ===== TITEL & RAHMEN: only to buy (Gems or Thron-Punkte) - what you had by rank or Erfolg before stays yours (lookMigrate) =====
 const FRAMES = [
     { id: 'bronze', name: 'Bronze', rank: 0, gems: 0 }, { id: 'silver', name: 'Silber', rank: 1, gems: 200 }, { id: 'gold', name: 'Gold', rank: 2, gems: 400 }, { id: 'platin', name: 'Platin', rank: 3, gems: 700 },
@@ -5807,7 +5811,7 @@ battleLogCloseBtn.addEventListener('click', () => {
     closePanel(battleLogPopup);
     clearInterval(battleLogRefreshTimer);
 });
-
+// ===== Teil 06-alltag.js: Aufgaben, Saison-Pass, Anleitung, Thron-Punkte, die Mitte, Kopfgeld, Friedensschild, Willkommen zurück, Nebel =====
 // ===== AUFGABEN (daily quests) + TÄGLICHE BELOHNUNG =====
 
 // (VIP ist seit 2.10. ganz raus – Alexander)
@@ -7046,7 +7050,7 @@ function drawPasses(view, now) {                   // a gatehouse on every gated
         ctx.fillStyle = '#f3e6c4'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(label, mx - w / 2 + 22, cy + .5);
     }
 }
-
+// ===== Teil 07-schlachten.js: Schlachten auf der Karte (auch Zuschauer-Anzeige), Kampf-Effekte, Kriegsherr (Wanderboss) =====
 // ===== BATTLES ON THE MAP =====
 // When a fight the player is part of resolves, it plays out at the base itself: the arriving column
 // forms up, the garrison steps out, they clash, soldiers fall in proportion to the real losses,
@@ -7725,7 +7729,7 @@ function checkRuler() {             // announces a change of ruler once
     else if (lost) flashHint(lost.trim(), 5000);
     updateHudPlayer(); requestRender();
 }
-
+// ===== Teil 08-stadt.js: Stadt und Gebäude, Burg, Aussehen, Helden, Stadtansicht, Stufenaufstieg =====
 // ===== CAPITAL / CITY (step 1: buildings can be built and upgraded, effects come later) =====
 var CITY_BUILDINGS = [
     { id: 'academy',  name: 'Akademie',      icon: 'flask',   x: 215, y: 430, roof: '#2f4f86', dome: true,
@@ -9407,7 +9411,7 @@ function closeLevelUpModal() {
 }
 document.getElementById('levelUpBtn').addEventListener('click', closeLevelUpModal);
 document.getElementById('levelUpModal').addEventListener('click', e => { if (e.target.id === 'levelUpModal') closeLevelUpModal(); });
-
+// ===== Teil 09-events.js: Funde, Ressourcenfelder, Barbaren-Lager + Tagesboss, Events, Invasion, Drache, Armeen, Wegmarken =====
 // ===== MAP PICKUPS (mini events, player only) =====
 // Every 20-45 s a coin pouch, gem or troop banner appears on land inside the current view; tapping collects it.
 const PICKUP_MAX = 3, PICKUP_LIFE_MS = 40000, PICKUP_HIT_PX = 30;
@@ -11137,7 +11141,7 @@ multiAttackConfirmBtn.addEventListener('click', () => {
     cancelMultiAttack();                                                     // (first: it resets the hint line)
     flashHint(failed.length ? ok + ' von ' + targets.length + ' Angriffen gestartet – ' + failed.length + ' kam' + (failed.length === 1 ? '' : 'en') + ' nicht durch (' + [...why].join(', ') + ').' : ok + ' Angriffe gleichzeitig gestartet.', 4000);
 });
-
+// ===== Teil 10-start.js: Fenster-Start, Ladebild, Musik, Einstellungen, Live-Anzeige, Verbindung zur Welt (Weltrechner-Befehle, Schummel-Schutz) =====
 // ===== UI boot (design-spec §4.4): constants into the markup, shop odds,
 // HUD shortcuts, first-launch toast, player plate =====
 for (const el of document.querySelectorAll('[data-const]'))

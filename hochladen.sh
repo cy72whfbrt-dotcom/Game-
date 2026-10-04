@@ -35,6 +35,7 @@ fi
 
 # 3) Ordner Game anlegen (falls weg), WARTUNG an (niemand kommt ins Spiel, Spielende werden mit "Wartung" rausgebeten),
 #    dann alle Dateien hochladen
+werkzeuge/spiel_bauen.sh || { echo "spiel.js lässt sich nicht zusammensetzen – nichts hochgeladen"; exit 1; }   # (bearbeitet wird in Game/spiel/*.js)
 ed "" -F text= -F file=Game -F "button=new folder" -o /dev/null
 # Vorher (Spiel läuft noch): welche Dateien sind anders als auf dem Server? Nur die kommen gleich während der Wartung hoch –
 # so ist die Wartung (und die Pause des Weltrechners) kurz. PHP-Dateien lassen sich nicht vergleichen (sie laufen): immer hoch.
@@ -43,6 +44,7 @@ AENDERN=""
 for f in $(cd Game && find . -type f | sed 's#^\./##' | sort); do
   [ "$f" = config.php ] && continue
   case "$f" in weltrechner/herz*.php|weltrechner/log*.php|weltrechner/zustand*.php|weltrechner/sperre.php|weltrechner/crontab*.php|weltrechner/schummel*.php|weltrechner/vapid*.php) continue;; esac
+  case "$f" in spiel/*) continue;; esac   # (die Teile von spiel.js – auf dem Server reicht das zusammengesetzte spiel.js)
   case "$f" in *.php) AENDERN="$AENDERN $f"; continue;; esac
   if [ -z "$ALLES" ] && [ "$(sha1sum < "Game/$f")" = "$(curl -sS "$U/$f" 2>/dev/null | sha1sum)" ]; then continue; fi
   AENDERN="$AENDERN $f"

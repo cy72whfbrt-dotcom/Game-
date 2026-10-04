@@ -1781,3 +1781,21 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
   „Rally?“ währenddessen → „Bin dabei“, kein zweiter Start), dazu chat 12/12, rally_schnell, boss, render, gemeinsam,
   Unit 67/67.
 - **Hochgeladen 4.10., 11:31 UTC** (33 s), Weltrechner läuft wieder.
+
+## 63. Sortier-Tag: spiel.js in 10 Teile, alter Code raus (Alexander 4.10.: „erst mal Code sortieren, dass alles schneller geht“)
+- **Bearbeitet wird jetzt in `Game/spiel/`** (10 Teile statt einer Datei mit 13.285 Zeilen):
+  01 Grundlagen · 02 Shop/Märsche · 03 Karte · 04 Kampf · 05 Profil/Kampfbericht · 06 Alltag (Aufgaben, Pass, Schild, Nebel) ·
+  07 Schlachten-Anzeige · 08 Stadt/Helden · 09 Events (Boss, Drache, Armeen) · 10 Start (Fenster, Einstellungen,
+  Weltrechner-Befehle). Jede Datei sagt in der ersten Zeile, was drin ist.
+- **`werkzeuge/spiel_bauen.sh`** setzt daraus `Game/spiel.js` zusammen – das Spiel lädt weiter EINE Datei. (Zehn Dateien
+  im Spiel gingen nicht: beim Laden werden Funktionen aufgerufen, die weiter hinten stehen – ausprobiert, das Spiel startete
+  nicht.) Das zusammengesetzte spiel.js ist Zeile für Zeile der alte Code (geprüft), nur mit Überschriften.
+  `vorschau_bauen.php` und `hochladen.sh` setzen vorher automatisch zusammen; die Teile selbst kommen nicht auf den Server.
+  `spiel_bauen.sh pruefen` meldet, wenn jemand spiel.js direkt geändert hat.
+- **`CLAUDE.md`** (neu): die wichtigsten Regeln und wo was steht – jede neue Sitzung und jeder Agent liest das automatisch.
+- **Alter Code raus:** Suche nach unbenutzten Funktionen in allen Dateien – nur noch eine gefunden (ein früherer
+  Aufräumtag hatte schon das meiste entfernt): die alte Signal-Anzeige im Bündnis (`bundSigHtml`, vom Chat ersetzt) und ihr
+  Klick. Keine alten Dateien im Projekt.
+- Getestet: alle 19 Vorschau-Tests (bis auf `zurueck_test`: bekannter Test-Effekt, Test-Bots haben keine echte
+  Spieler-Kennung), Spiel 16/16, Server 67/67, lokal mit Server + Weltrechner: senden, erobern, Bündnis-Chat 11/11,
+  Weltrechner ohne Fehler. **Noch nicht hochgeladen.**
