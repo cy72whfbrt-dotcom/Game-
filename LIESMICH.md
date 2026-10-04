@@ -1745,7 +1745,7 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
   eroberten Basis; dazu selbst, vsme_echt, vsme, reihe, gemeinsam, welle, welle_bund, render grün.
 - **Hochgeladen 4.10., 09:45 UTC – erstmals mit dem neuen hochladen.sh:** ganzes Hochladen 34 s (vorher mehrere Minuten), Weltrechner lief um 09:46 wieder.
 
-## 61. Prüfung Bots/Werte/Boss (Alexander 4.10.: „Boss-Event in der Mitte, keiner greift ihn an“) – NICHT hochgeladen
+## 61. Prüfung Bots/Werte/Boss/Gruppenangriff/Rally (Alexander 4.10.: „Boss-Event in der Mitte, keiner greift ihn an“)
 - **Tagesboss – keiner griff an (bestätigt, lokal: heute 1 Angreifer von 150 Bots):** Bots schlugen nur zu, wenn sie die
   Insel des Bosses „kannten“ (Nebel) – lokal kannte sie 1 von 150. Echte Spieler wurden ebenso abgewiesen („steht im
   Nebel“). Der Tagesboss ist für alle angekündigt (wie Drache und Kriegsherr, die schon ohne Nebel-Sperre sind).
@@ -1757,4 +1757,13 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
   7–8 Helden je Bot.
   Kleiner Fehler behoben: tauschte ein Bot ein Teil mit Sternen gegen ein besseres, waren die Gems der Sterne weg
   (bei dir gibt es sie beim Zerlegen zurück) – jetzt bekommt er sie auch.
-- Gruppenangriff/Rally: Prüfung läuft noch.
+- **Gruppenangriff/Rally (Prüf-Agent):** Mehrfachangriff und „Truppen sammeln“ zählen als EIN Marsch-Platz, Rally-Plätze
+  werden richtig übergeben und frei, Bots machen bei Rallys mit und starten selbst welche, Abbruch gibt alle Truppen zurück.
+  Zwei echte Fehler behoben:
+  - **Rally + „schneller“:** wer seinen Marsch zur Rally beschleunigte, wurde bei der Ankunft nicht erkannt (die Startzeit
+    ändert sich) – die Truppen gingen heim, die Rally lief ohne sie los. Jetzt mit fester Marsch-Kennung.
+    Test `rally_schnell_test`: alter Code 500k in der Rally (Mitmacher fehlt), neuer Code 800k.
+  - **Abgelehnter Befehl:** ging ein Angriff/Senden beim Weltrechner nicht los (Marsch-Plätze voll, Tor zu, Maut, Schild),
+    verschwand der Marsch auf dem Handy still. Jetzt kommt eine Meldung mit dem Grund.
+- Lokal mit Server + Weltrechner: nach dem Neustart griffen innerhalb weniger Minuten 29 Bots den Tagesboss an (vorher den
+  ganzen Tag 1). Alle Vorschau-Tests (16) + Unit 67/67 grün.

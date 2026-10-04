@@ -281,7 +281,7 @@ function bundSendAnkunft(send) {
     const who = send.senderBotId; if (!who) return false;
     if (send.rally) {
         const r = bund.r.find(x => x.id === send.rally);
-        const j = r && islandOwnerOf(r.at) === r.by && Date.now() < r.los + 3000 ? r.j.find(x => x.w === who && x.f === send.fromId && x.s === send.startedAt && !x.da) : null;
+        const j = r && islandOwnerOf(r.at) === r.by && Date.now() < r.los + 3000 ? r.j.find(x => x.w === who && x.f === send.fromId && !x.da && (x.k ? x.k === marchKeyOf(send) : x.s === send.startedAt)) : null;   // (k bleibt fest – „schneller“ ändert startedAt)
         if (j) { j.da = true; bundSpeichern(); return true; }
     } else if (send.verst) {                                     // Verstärkung kommt an: stationiert (bleibt seine), sonst heim
         const ow = islandOwnerOf(send.toId);
@@ -415,7 +415,7 @@ function bundRallyDazu(a, who, b) {
     if (Date.now() + eta > r.los - 1000) return 'Von dort kommen die Truppen nicht mehr rechtzeitig an';
     const k = pendingSends.length, why = bundMarsch(who, b.von, r.at, b.n, { rally: r.id }); if (why) return why;
     const m = pendingSends[pendingSends.length - 1]; if (pendingSends.length === k || !m) return 'kaputt';
-    r.j.push({ w: who, f: b.von, n: m.troops, s: m.startedAt, da: false });
+    r.j.push({ w: who, f: b.von, n: m.troops, s: m.startedAt, k: marchKeyOf(m), da: false });
     return '';
 }
 function bundRallyTruppen(r) { return r.n0 + r.j.reduce((s, j) => s + (j.da ? j.n : 0), 0); }
