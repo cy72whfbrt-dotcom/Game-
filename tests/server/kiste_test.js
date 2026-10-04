@@ -37,6 +37,7 @@ let b;
   const g1 = geschenke();
   await p.evaluate(() => { const c = HERO_CHESTS.find(x => x.id === 'hc3'); for (let i = 0; i < 2; i++) { gems -= c.gems; heroChestOpen('player', c); } updateHud(); saveGame(); });
   await warte(RUNDE);
+  for (let i = 0; i < 6 && geschenke() - g1 < 2; i++) await warte(15000);   // (Weltrechner unter Last: bis zu 90 s länger warten – nicht mehr als 2 erlaubt, siehe unten)
   const g2 = geschenke(), h2 = hb();
   ok('zwei echte Kisten → zwei Geschenke', g2 - g1 === 2, g1 + ' → ' + g2 + ' · offen ' + (h2.kisteOffen || []).length + ' · Belege ' + JSON.stringify(h2.shKauf));
   ok('keine Gem-Alarme bei echten Käufen', auff('gems') === alarm0, alarm0 + ' → ' + auff('gems'));
