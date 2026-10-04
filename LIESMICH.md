@@ -347,6 +347,16 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
   - **Aufleveln langsam:** nicht in 5 Tagen auf 25, sondern über lange Zeit und **mehrere Server-Resets**.
   - **Kosten:** Gold, Holz, Stein, Eisen – jede Stufe mehr – und jede Stufe **dauert Zeit**.
   - **Alles wird später neu designt** – Alexander daran erinnern.
+  - **Gebäude neu (Alexander 4.10.):** alles auf Deutsch.
+    - bleibt: **Burg**, **Schmiede**, **Heldenhalle**, **Markt**
+    - **Akademie → Labor:** dort wird **alles** geforscht.
+    - **Tempelschrein weg** → wird Forschung im Labor.
+    - **Späherturm weg** → wird Forschung im Labor.
+    - **Lager, Kaserne, Schatzkammer weg.**
+    - **Lazarett → Krankenhaus** („KH“).
+    - **Wachturm:** Alexander versteht ihn nicht – noch offen.
+    - **Botschaft:** wird wohl umgebaut – Ideen sammeln.
+    - Holzfäller, Steinbruch, Eisenmine, Mauer: noch nicht besprochen.
   - Heute (zum Vergleich): Plündern nimmt nur Münzen (Hauptstadt und Basis, je ein Anteil über dem Lager-Schutz,
     höchstens eine halbe Stunde Einkommen).
 - ⭐ **Sortier-Tag:** alle Dateien einmal sortieren, alter Code raus (Alexander 4.10.).
