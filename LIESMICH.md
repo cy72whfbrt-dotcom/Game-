@@ -162,6 +162,14 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   mit alter zustand.php; Wachturm-Rest raus (Stärke fremder Angriffe erst im Kampf). Texte an die neuen Regeln angepasst
   (Ladebildschirm, Hilfe, Rally, Labor, Spähbericht, Abholfach), Rally-Nachricht nennt Gold/Holz/Stein/Eisen.
   Toter Code raus: Signal-Knopf, `bernPct`, Beute-Kästchen oben (nur noch „Hauptstadt brennt“). Neuer Test helden_beute_test.
+  2. Runde (Anzeige, Mitspieler, Welt-Sync) + Gegenlesen aller Nacht-Änderungen: Kampfbericht rechnet mit den echten
+  Zahlen (vorher ab 10 Mio. falsch, aus dem abgekürzten Text gelesen), Gefallen/Verwundet je Spieler richtig, Besitzer ohne
+  Verluste der Helfer, Name antippen schließt die Kampfdetails-Seite; Weltrechner pulst nicht mehr ~16×/s bei wartenden
+  Befehlen; Handy wiederholt nach Fehlern nicht im 150-ms-Takt; ein Fehler in einem Kampf verschluckt die anderen nicht;
+  Angriff auf kaputtes Ziel geht heim; Mitspieler-Armee mit dauerhaft gesperrtem Heimweg löst sich auf; Merk-Listen
+  der Mitspieler werden gekürzt (Speicher); Friedensschild mit Server-Uhr. Eine Nebel-Sperre für Angriffe (Server) wieder
+  entfernt – sie hätte echte Angriffe abgelehnt (Handy kennt manchmal mehr Nebel als der Weltrechner, z. B. Tagesboss).
+  Tests: Server-Einheitstests für Armeen/Felder im Nebel und den Bündnis-Filter (80), Holz-Bau im Klick-Test geprüft.
   **Offen / Fragen an Alexander:** Rally – sollen Schild/Held des Anführers (weniger Verluste, Flucht) für ALLE Truppen gelten
   oder nur für seine? EP/Krieger-Punkte der Rally nur der Anführer oder nach Anteil? Server: Spiel auf eigene Subdomain
   (Sicherheit); Welt-Sperre beim Puls (bei vielen Spielern langsam); still verworfene Welt-Teile mit < oder >.
