@@ -1843,3 +1843,4 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
   Wieder anmachen: Tage ab Welt-Start eintragen (z. B. `{ guardian: .25, throne: 1 }`). „Bündnisse ziehen nach vorne“
   (Abschnitt 64) bleibt an.
 - Getestet: Spiel lädt, alle Brücken offen.
+- **Hochgeladen 4.10., 12:23 UTC**, Weltrechner läuft wieder.
