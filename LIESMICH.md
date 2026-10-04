@@ -54,8 +54,17 @@ Game/                  ← genau dieser Ordner liegt auf dem Server
     wachhund.php       Cronjob jede Minute: starten, Hänger beenden, Notbremse, Sicherungen, Cronjob einrichten
     herz.php, log.php, zustand.php …   entstehen nur auf dem Server (gesperrt, nie im Git)
   config.php           Datenbank-Zugang – NUR auf dem Server, nie im Git (wird von hochladen.sh erzeugt)
+  spiel/01-…10-*.js    die Teile von spiel.js (NUR hier ändern, dann werkzeuge/spiel_bauen.sh)
 LIESMICH.md            diese Datei
+CLAUDE.md              Kurz-Hinweise für Claude
 hochladen.sh           lädt Game/ auf den Server (ein Befehl)
+tests/                 Tests (liegen NIE auf dem Server)
+  alle_tests.sh        ALLE Tests ohne Server auf einmal (ca. 10 Min., am Ende „ALLES OK“)
+  welt_test.js, server_test.php   Einheitstests (Spiel / Server)
+  browser/             Browser-Tests in der Vorschau: Bündnis, Verstärkung, gemeinsamer Angriff, Rally 2 gegen 1,
+                       neue Kampf-Regel (jeder mit seinen Werten), Klick-Test aller Fenster
+werkzeuge/             spiel_bauen.sh (spiel.js zusammensetzen), vorschau_bauen.php (Vorschau ohne Server),
+                       vorschau_test*.js (Test-Modus), welt_neustart.php (neue Saison)
 ```
 **Server kaputt oder Editor abgestürzt?** Einfach `./hochladen.sh` – lädt alles neu hoch, erzeugt `config.php` aus den
 Umgebungsvariablen, entfernt fremde Reste aus `Game/` und prüft, dass alles heil angekommen ist.
@@ -129,6 +138,7 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   unten im Fenster (Angreifer nach Truppen-Anteil), „Kampfdetails“ öffnet eine eigene Seite, Spähbericht im gleichen Aufbau.
   Rally-Beute: auch Holz/Stein/Eisen werden jetzt nach Truppen geteilt (vorher nur Gold).
   Getestet: 2 gegen 1 Rally echt (Werte beider, Beute geteilt, Bericht), Verstärkung, gemeinsamer Angriff. Noch nicht hochgeladen.
+- **4.10. Aufräumen:** unbenutzte CSS-Reste raus, wichtige Tests ins Projekt (`tests/browser/`, Start mit `tests/alle_tests.sh`).
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.

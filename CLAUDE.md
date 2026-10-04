@@ -19,6 +19,8 @@ Alles Wichtige steht in `LIESMICH.md` – jede Änderung wird dort eingetragen.
 ## Testen
 - Vorschau ohne Server: `php werkzeuge/vorschau_bauen.php <ordner> test` (setzt `spiel.js` vorher zusammen).
 - Server-Tests: `php tests/server_test.php`.
+- **Alle Tests ohne Server auf einmal: `tests/alle_tests.sh`** (Einheitstests + Browser-Tests aus `tests/browser/`,
+  ca. 10 Min., am Ende „ALLES OK“). Neue Browser-Tests dort ablegen (Argument: Vorschau-Ordner).
 
 ## Regeln von Alexander
 - Code zuerst auf GitHub (Branch `claude/neues-projekt-8agldl`), **vor jedem Hochladen Alexander fragen**
