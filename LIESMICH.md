@@ -139,6 +139,11 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Rally-Beute: auch Holz/Stein/Eisen werden jetzt nach Truppen geteilt (vorher nur Gold).
   Getestet: 2 gegen 1 Rally echt (Werte beider, Beute geteilt, Bericht), Verstärkung, gemeinsamer Angriff.
   **Hochgeladen am 4.10. (Alexanders Ja), alle Tests grün.**
+- **4.10. Rally-Held + fehlende Berichte:** Wer eine Rally startet, wählt Haupt- und Zweitheld (Bündnis → Rally); die
+  Helden sind beim Sammeln belegt und führen den Angriff (zählen für die Truppen des Anführers). Echte Spieler bekommen
+  jetzt auch Berichte für Barbaren-Lager, Tagesboss, Feld- und Armee-Kämpfe; Verwundete des Besitzers stehen in allen
+  Berichten. Kampflog-Balken zeigt bei Rally/Verstärkung alle Namen. Neue Tests: rally_held_test, rally_menschen_test
+  (Rally mit zwei echten Spielern: Werte, Beute ¾/¼, beide Berichte).
 - **4.10. Aufräumen:** unbenutzte CSS-Reste raus, wichtige Tests ins Projekt (`tests/browser/`, Start mit `tests/alle_tests.sh`).
 
 ## 9. Fehlerliste (Alexander)

@@ -8524,7 +8524,8 @@ function heroOnField(who, id) { try { return fieldMarches.some(m => m.who === wh
 function heroBusy(who, id) {                        // one attack, army or field march per hero at a time (Haupt- oder Zweitheld)
     const mine = x => who === 'player' ? !x || x === 'player' : x === who;
     return pendingAttacks.some(a => mine(a.attackerBotId) && (heroIn(a.hero, a.hero2, id) || (a.hx && (a.hx.id2 === id || (a.hx.extra || []).some(e => e.id === id)))))
-        || (typeof armies !== 'undefined' && armies.some(x => mine(x.who) && heroIn(x.hero, x.hero2, id))) || heroOnField(who, id);
+        || (typeof armies !== 'undefined' && armies.some(x => mine(x.who) && heroIn(x.hero, x.hero2, id))) || heroOnField(who, id)
+        || (typeof bund !== 'undefined' && bund && Array.isArray(bund.r) && bund.r.some(r => !r.startet && mine(r.by) && heroIn(r.held, r.held2, id)));   // führt eine Rally, die noch sammelt
 }
 function heroPickBest(who, src, target, raw, main) {   // the free hero that does the most in this attack (the others use it, and so can you) · main: der Zweitheld dazu
     let best = null, bs = 0; const def = target ? effectiveDefense(target) : 0, ctx = target ? null : { fight: 1, field: 1, vsArmy: 1, march: 1 };
@@ -9903,14 +9904,21 @@ function fieldArrive(m, now) {
     const fb = fieldBattle(m.who, m.troops, o.who, o.troops, aHx, dHx), won = fb.won, involved = m.who === 'player' || o.who === 'player';   // a fight for the field: army against army
     const loserName = fieldWhoName(won ? o.who : m.who), winnerName = fieldWhoName(won ? m.who : o.who), oWho = o.who;
     if (won) st.occ = { who: m.who, troops: m.troops - fb.aLoss, homeId: m.homeId, hero: m.hero || null, hero2: m.hero2 || null, since: now, got: 0 }; else o.troops -= fb.dLoss;
-    for (const [w, n, hx] of [[m.who, fb.aLoss, aHx], [oWho, fb.dLoss, dHx]]) fieldHurt(w, n, hx);   // both sides' Krankenhaus (+ their hero)
+    const [wA, wD] = [[m.who, fb.aLoss, aHx], [oWho, fb.dLoss, dHx]].map(([w, n, hx]) => fieldHurt(w, n, hx) || 0);   // both sides' Krankenhaus (+ their hero)
     evPunkte('krieg', m.who, fb.dLoss / WO_KILL_PER); evPunkte('krieg', oWho, fb.aLoss / WO_KILL_PER);   // Krieger-Woche
     const fg = fieldGold(m.who, oWho, fb, aHx, dHx);
     if (involved) {
         const youWon = (m.who === 'player') === won;
-        addCombatLogEntry({ type: 'field', fieldKind: f.kind, won: youWon, attacker: fieldWhoName(m.who), defender: fieldWhoName(oWho), atk: fb.SA, def: fb.SD, gold: m.who === 'player' ? fg.a : fg.d, hA: heroTag(aHx), hD: heroTag(dHx), hx: heroReportOf(m.who === 'player' ? aHx : dHx) });
+        addCombatLogEntry(feldBericht(m.who === 'player'));
         flashHint(youWon ? 'Du hast ' + fArt(FIELD_KINDS[f.kind], 'akk') + ' gegen ' + loserName + ' gehalten/erobert.' : winnerName + ' hat dich von ' + fArt(FIELD_KINDS[f.kind], 'dat') + ' vertrieben.', 4000);
         sfx(youWon ? 'victory' : 'defeat');
+    }
+    for (const [w, istA] of [[m.who, true], [oWho, false]]) if (w !== 'player' && window.WELT && botById[w] && botById[w].mensch)   // echte Spieler (Weltrechner): ihr Bericht als Nachricht
+        evBericht(w, feldBericht(istA), (istA === won ? 'Feld gehalten/erobert: ' : 'Vom Feld vertrieben: ') + FIELD_KINDS[f.kind].name + '.');
+    function feldBericht(istA) {                     // aus Sicht des Angreifers (istA) oder des Sammlers: Du, Gegner, Verluste, Verwundete, Gold
+        return { type: 'field', fieldKind: f.kind, won: istA === won, attacker: istA ? 'Du' : fieldWhoName(m.who), defender: istA ? fieldWhoName(oWho) : 'Du', atk: fb.SA, def: fb.SD,
+            aTroops: m.troops, dTroops: o.troops + (won ? 0 : fb.dLoss), aLoss: fb.aLoss, dLoss: fb.dLoss, aWounded: wA, dWounded: wD,
+            gold: istA ? fg.a : fg.d, hA: heroTag(aHx), hD: heroTag(dHx), hx: heroReportOf(istA ? aHx : dHx), hxA: heroReportOf(aHx), hxD: heroReportOf(dHx) };
     }
 }
 function fieldTick() {
@@ -10133,15 +10141,18 @@ function barbArrive(m, now) {
     if (fb.won) {
         barbState.camps = barbState.camps.filter(x => x !== c); rec.n++; rec.b = Math.max(rec.b, c.L); goalBump(who, 'barb');
         kGold = Math.round(fb.kill * killGoldRate(who, hx)); gold = payGold(who, barbLootOf(c.L) + kGold);
-        if (Math.random() < .1 + c.L * .015) item = isP ? (inboxAdd({ src: 'fight', crate: Math.floor(c.L / 8) }), { box: Math.floor(c.L / 8) }) : barbCrate(who, Math.floor(c.L / 8));   // yours wait in the Abholfach
+        if (Math.random() < .1 + c.L * .015) item = isP ? (inboxAdd({ src: 'fight', crate: Math.floor(c.L / 8) }), { box: Math.floor(c.L / 8) }) : (barbCrate(who, Math.floor(c.L / 8)), { box: Math.floor(c.L / 8) });   // (für den Bericht)   // yours wait in the Abholfach
         if (Math.random() < .15 + c.L * .01) sh = isP ? (inboxAdd({ src: 'fight', sh: shN }), { name: '' }) : heroGrantShards(who, shN);
         barbHome(m, m.troops - fb.loss, now);
     } else c.t = Math.max(1, Math.round(c.t - fb.kill));
     evPunkte('krieg', who, fb.kill / WO_KILL_PER);                                // Krieger-Woche
-    if (!isP) return;
+    const mensch = !isP && window.WELT && botById[who] && botById[who].mensch;     // ein echter Spieler (Weltrechner): sein Bericht kommt als Nachricht
+    if (!isP && !mensch) return;
     const it = item && item.box !== undefined ? 'Kiste (mind. ' + RARITY_DEFS[item.box].label + ')' : '';
-    addCombatLogEntry({ type: 'barb', L: c.L, won: fb.won, atk: fb.SA, def: before, left: fb.won ? 0 : c.t, kill: fb.kill, troops: m.troops, gef: fb.gef, shPct: fb.sh, loss: fb.loss, wounded, gold, kGold, crate: it, sh: sh ? shN + ' Helden-Splitter' : '',
-        n: rec.n, open: Math.min(BARB_MAX_L, rec.b + 1), up: rec.b > best0 && rec.b < BARB_MAX_L, sourceId: m.homeId, attacker: 'Du', hA: heroTag(hx), hx: heroReportOf(hx) });
+    const barbE = { type: 'barb', L: c.L, won: fb.won, atk: fb.SA, def: before, left: fb.won ? 0 : c.t, kill: fb.kill, troops: m.troops, gef: fb.gef, shPct: fb.sh, loss: fb.loss, wounded, gold, kGold, crate: it, sh: sh ? shN + ' Helden-Splitter' : '',
+        n: rec.n, open: Math.min(BARB_MAX_L, rec.b + 1), up: rec.b > best0 && rec.b < BARB_MAX_L, sourceId: m.homeId, attacker: 'Du', hA: heroTag(hx), hx: heroReportOf(hx) };
+    if (mensch) { evBericht(who, barbE, fb.won ? 'Barbaren-Lager Stufe ' + c.L + ' besiegt: +' + fmtCompact(gold) + ' Münzen.' : 'Das Lager hat standgehalten – es hat jetzt noch ' + fmtCompact(c.t) + ' Krieger.'); return; }
+    addCombatLogEntry(barbE);
     spawnBattleFx({ x: c.x, y: c.y }, fb.won, fb.won ? 'Lager besiegt' : 'Abgewehrt', fb.won ? 'Stufe ' + c.L + ' · ' + rec.n + ' / ' + barbTagMax() + ' heute' : '−' + fmtCompact(fb.loss) + ' Truppen');
     flashHint(fb.won ? 'Barbaren-Lager Stufe ' + c.L + ' besiegt: +' + fmtCompact(gold) + ' Münzen' + (it ? ', Kiste: ' + it : '') + (sh ? ', ' + shN + ' Splitter' : '') + ' – abholen unter Events.' : 'Das Lager hat standgehalten – es hat jetzt noch ' + fmtCompact(c.t) + ' Krieger.', 4500);
     updateHud(); saveGame(); saveProgression(); barbSheetRefresh();
@@ -10161,6 +10172,11 @@ function dbossHit(m, now) {                         // every attack takes life o
             total: b.dmg.player, rank: rk.findIndex(e => e[0] === 'player') + 1, of: rk.length, hits: barbRec('player').h, sourceId: m.homeId, attacker: 'Du', hA: heroTag(hx), hx: heroReportOf(hx) });
         spawnBattleFx({ x: b.x, y: b.y }, true, 'Treffer', '−' + fmtCompact(dmg) + ' Leben');
         flashHint('Treffer bei ' + b.name + ': ' + fmtCompact(dmg) + ' Schaden, +' + fmtCompact(gold) + ' Münzen.', 3500); updateHud(); saveGame();
+    } else if (window.WELT && botById[who] && botById[who].mensch) {    // ein echter Spieler (Weltrechner): derselbe Bericht als Nachricht
+        const rk = dbossRanks(b), gef = heroGefOf(h, m.troops);
+        evBericht(who, { type: 'dboss', name: b.name, dmg, loss, wounded, gold, left: Math.max(0, b.hp), max: b.max, hp0, troops: m.troops, gef, atk: Math.round((m.troops + gef) * fa), capped: dmg >= Math.round(b.max * DBOSS_CAP),
+            total: b.dmg[who], rank: rk.findIndex(e => e[0] === who) + 1, of: rk.length, hits: barbRec(who).h, sourceId: m.homeId, attacker: 'Du', hA: heroTag(hx), hx: heroReportOf(hx) },
+            'Treffer bei ' + b.name + ': ' + fmtCompact(dmg) + ' Schaden, +' + fmtCompact(gold) + ' Münzen.');
     }
     if (b.hp <= 0) { b.hp = 0; b.fell = now; dbossPayout(b); }
     if (isP || barbView && barbView.kind !== 'camp') barbSheetRefresh();
@@ -10946,9 +10962,14 @@ function armyClash(att, def) {                                              // a
     const fg = fieldGold(armyWho(att), armyWho(def), fb, aHx, dHx);
     const mine = armyWho(att) === 'player' ? att : armyWho(def) === 'player' ? def : null;
     goalBump(armyWho(winner), 'armyWins');
+    for (const x of [att, def]) { const w = armyWho(x); if (w === 'player' || !window.WELT || !botById[w] || !botById[w].mensch) continue;   // echte Spieler (Weltrechner): ihr Bericht als Nachricht
+        const istA = x === att, sieg = x === winner;
+        evBericht(w, { type: 'army', won: sieg, attacker: istA ? 'Du' : armyName(att), defender: istA ? armyName(def) : 'Du', atk: fb.SA, def: fb.SD, aLoss: fb.aLoss, dLoss: fb.dLoss, aWounded: wA, dWounded: wD,
+            wounded: istA ? wA : wD, gold: istA ? fg.a : fg.d, hA: heroTag(aHx), hD: heroTag(dHx), hx: heroReportOf(istA ? aHx : dHx), hxA: heroReportOf(aHx), hxD: heroReportOf(dHx) },
+            sieg ? 'Deine Armee hat die Armee von ' + armyName(istA ? def : att) + ' geschlagen.' : 'Die Armee von ' + armyName(istA ? def : att) + ' hat deine Armee geschlagen.'); }
     if (!mine) return;
     const youWon = mine === winner, foe = mine === att ? def : att, w = youWon ? wWinner : wLoser;
-    addCombatLogEntry({ type: 'army', won: youWon, attacker: armyName(att), defender: armyName(def), atk: fb.SA, def: fb.SD, wounded: w, gold: mine === att ? fg.a : fg.d, hA: heroTag(aHx), hD: heroTag(dHx), hx: heroReportOf(mine === att ? aHx : dHx) });
+    addCombatLogEntry({ type: 'army', won: youWon, attacker: armyName(att), defender: armyName(def), atk: fb.SA, def: fb.SD, aLoss: fb.aLoss, dLoss: fb.dLoss, aWounded: wA, dWounded: wD, wounded: w, gold: mine === att ? fg.a : fg.d, hA: heroTag(aHx), hD: heroTag(dHx), hx: heroReportOf(mine === att ? aHx : dHx), hxA: heroReportOf(aHx), hxD: heroReportOf(dHx) });
     warStat(youWon ? 'armyWins' : 'armyLosses', 1, mine === def ? armyName(att) : null);
     flashHint(youWon ? 'Deine Armee hat die Armee von ' + armyName(foe) + ' geschlagen – ' + fmtCompact(winner.troops) + ' stehen noch.'
                      : 'Die Armee von ' + armyName(foe) + ' hat deine Armee geschlagen' + (w ? ', ' + fmtCompact(w) + ' ins Krankenhaus.' : '.'), 5000);

@@ -508,6 +508,8 @@ function bundRallyStart(a, who, b) {
     const n = Math.floor(Math.min(b.n, islandTroops[at] || 0)); if (n < 1) return 'Keine Truppen am Sammelpunkt';
     islandTroops[at] -= n;
     const now = Date.now(), r = { id: 'r' + (bund.n++), aid: a.id, by: who, at, t, start: now, los: now + min * 60000, n0: n, j: [] };
+    const held = typeof b.held === 'string' && heroOwned(who, b.held) && !heroBusy(who, b.held) ? b.held : null;   // der Held des Anführers führt die ganze Rally (Alexander 4.10.)
+    if (held) { r.held = held; const h2 = heroZweitOk(who, held, typeof b.held2 === 'string' ? b.held2 : null); if (h2) r.held2 = h2; }
     bund.r.push(r);
     bundLog(a, bundName(who) + ' sammelt zur Rally auf ' + islandTitle(islandById[t]) + '.'); bundChatDazu(a, who, 's_rally', t);
     const ow = islandOwnerOf(t); if (ow && ow !== who) bundPush(ow, { art: 'rally', von: bundName(who), basis: islandTitle(islandById[t]), ankunft: r.los });
@@ -553,7 +555,8 @@ function bundRallyLos(r) {
     const total = bundRallyTruppen(r);
     islandTroops[r.at] = (islandTroops[r.at] || 0) + total;
     if (AUF) AUF.frei.an();                                                     // (der gemeinsame Angriff war schon als Rally gezählt)
-    const k = pendingAttacks.length; let ok = false; try { ok = launchAttack(r.at, r.t, by, total); } finally { if (AUF) AUF.frei.aus(); }
+    r.startet = true;                                                           // (ihr Held ist ab jetzt im Angriff – nicht mehr „belegt durch die Rally“)
+    const k = pendingAttacks.length; let ok = false; try { ok = launchAttack(r.at, r.t, by, total, r.held || null, r.held2 || null); } finally { if (AUF) AUF.frei.aus(); }
     const atk = ok && pendingAttacks.length > k ? pendingAttacks[pendingAttacks.length - 1] : null;
     if (!atk || atk.attackerBotId !== by) { islandTroops[r.at] = Math.max(0, (islandTroops[r.at] || 0) - total); return bundRallyEnde(r, 'der Weg ist versperrt (Tor zu oder Maut zu teuer)'); }
     atk.rally = { id: r.id, by, an: [[by, r.at, r.n0]].concat(r.j.filter(j => j.da).map(j => [j.w, j.f, j.n])) };
@@ -1106,7 +1109,7 @@ function bundChatNeu() {                                          // (Handy) neu
 function bundRallyZeile(r, meins) {
     const now = Date.now(), ziel = islandById[r.t], mein = r.j.filter(j => j.w === 'player').reduce((s, j) => s + j.n, 0) + (r.by === 'player' ? r.n0 : 0);
     return '<div class="bd-zeile bd-rally' + (meins ? '' : ' is-feind') + '"><span class="bd-sic">' + icon(meins ? 'flag' : 'attack') + '</span><span class="bd-name"><b>' + (meins ? 'Rally auf ' : 'Gefahr: Rally auf ') + escapeHtml(islandTitle(ziel)) + '</b>' +
-        '<small>' + escapeHtml(bundName(r.by)) + ' · los in ' + uhrHtml(r.los, 'clock') + (meins ? ' · ' + fmtCompact(bundRallyTruppen(r)) + ' bereit' + (bundRallyUnterwegs(r) ? ' + ' + fmtCompact(bundRallyUnterwegs(r)) + ' unterwegs' : '') + ' · ' + (new Set([r.by].concat(r.j.map(j => j.w))).size) + ' dabei' + (mein ? ' · du: ' + fmtCompact(mein) : '') : '') + '</small></span>' +
+        '<small>' + escapeHtml(bundName(r.by)) + (meins && r.held && heroById(r.held) ? ' mit ' + heroById(r.held).name + (r.held2 && heroById(r.held2) ? ' & ' + heroById(r.held2).name : '') : '') + ' · los in ' + uhrHtml(r.los, 'clock') + (meins ? ' · ' + fmtCompact(bundRallyTruppen(r)) + ' bereit' + (bundRallyUnterwegs(r) ? ' + ' + fmtCompact(bundRallyUnterwegs(r)) + ' unterwegs' : '') + ' · ' + (new Set([r.by].concat(r.j.map(j => j.w))).size) + ' dabei' + (mein ? ' · du: ' + fmtCompact(mein) : '') : '') + '</small></span>' +
         '<button type="button" class="btn btn--secondary btn--sm" data-bact="zeigen" data-z="' + r.at + '">Zeigen</button>' +
         (meins && now < r.los - 2000 ? '<button type="button" class="btn btn--primary btn--sm" data-bact="dazuWahl" data-rid="' + r.id + '">Mitmachen</button>' : '') +
         (meins && (r.by === 'player' || bundIch().anf === 'player') ? '<button type="button" class="btn btn--ghost btn--sm" data-bact="abbruch" data-rid="' + r.id + '">' + bundSicherKnopf('abbruch:' + r.id, 'Abbrechen', 'Sicher?') + '</button>' : '') +
@@ -1164,6 +1167,7 @@ function bundWahlHtml() {
     const titel = w.mode === 'rally' ? 'Rally auf ' + islandTitle(ziel) : w.mode === 'dazu' ? 'Mitmachen: Rally auf ' + islandTitle(islandById[r.t]) : 'Verstärkung für ' + bundName(islandOwnerOf(ziel.id)) + ' · ' + islandTitle(ziel);
     return '<div class="bd-form bd-wahl"><div class="sect"><h4>' + escapeHtml(titel) + '</h4></div>' +
         (q.length ? '<label class="bd-feld"><span>' + (w.mode === 'rally' ? 'Sammelpunkt (deine Basis)' : 'Von Basis') + '</span><select id="bdVon">' + q.map(x => '<option value="' + x.id + '"' + (x.id === w.von ? ' selected' : '') + '>' + escapeHtml(islandTitle(islandById[x.id])) + ' · ' + fmtCompact(x.n) + ' · ' + fmtClock(x.eta / 1000) + '</option>').join('') + '</select></label>' +
+            (w.mode === 'rally' && heroSegHtml('data-rhero', w.held) ? '<div class="bd-feld"><span>Held (führt die ganze Rally)</span><div class="seg hero-seg" id="bdHeld">' + heroSegHtml('data-rhero', w.held) + '</div><div class="seg hero-seg hero-seg2" id="bdHeld2">' + heroSeg2Html('data-rhero2', w.held, w.held2) + '</div></div>' : '') +
             (w.mode === 'rally' ? '<div class="bd-feld"><span>Wartezeit</span><div class="seg" id="bdMin" style="grid-template-columns:repeat(3,1fr)">' + BUND.RALLY_MIN.map(m => '<button type="button" data-min="' + m + '" class="' + ((w.min || 3) === m ? 'on' : '') + '">' + m + ' Min.</button>').join('') + '</div></div>' : '') +
             '<div class="bd-feld"><span>Truppen</span><div class="seg" id="bdAnteil">' + [.25, .5, .75, 1].map(f => '<button type="button" data-f="' + f + '" class="' + ((w.f || 1) === f ? 'on' : '') + '">' + (f === 1 ? 'Alle' : f * 100 + ' %') + '</button>').join('') + '</div></div>' +
             '<p class="bd-info" id="bdInfo"></p><div class="bd-knoepfe"><button type="button" class="btn btn--secondary btn--sm" data-bact="wahlZu">Abbrechen</button><button type="button" class="btn btn--primary btn--sm" data-bact="wahlLos">' +
@@ -1184,7 +1188,8 @@ function bundWahlLos() {
     if (w.mode === 'hilfe') { const ow = islandOwnerOf(w.nach), frei = Math.floor(verstFrei(ow)); if (frei < 1) { flashHint('Die Botschaft von ' + bundName(ow) + ' ist voll.', 3000); return; } n = Math.min(n, frei); }
     if (w.mode === 'rally') {
         const why = bundZielOk('player', w.t); if (why) { flashHint(why + '.', 3000); return; }
-        bundBefehl('rally', { basis: w.von, ziel: w.t, min: w.min || 3, n }, 'Rally gestartet – dein Bündnis kann jetzt mitmachen.');
+        const held = w.held && heroOwned('player', w.held) && !heroBusy('player', w.held) ? w.held : null, held2 = heroZweitOk('player', held, w.held2);
+        bundBefehl('rally', { basis: w.von, ziel: w.t, min: w.min || 3, n, held, held2 }, 'Rally gestartet – dein Bündnis kann jetzt mitmachen.');
         islandTroops[w.von] = Math.max(0, (islandTroops[w.von] || 0) - n);
     } else {
         const nach = w.mode === 'dazu' ? (bund.r.find(r => r.id === w.rid) || {}).at : w.nach; if (nach === undefined) return;
@@ -1214,6 +1219,9 @@ if (bundPopup) {
         if (fb || zb) { const box = (fb || zb).parentElement; for (const x of box.children) x.classList.toggle('on', x === (fb || zb)); return; }
         const mb = e.target.closest('[data-min]'), fr = e.target.closest('#bdAnteil [data-f]');
         if (mb && bundWahl) { bundWahl.min = +mb.dataset.min; bundRender(true); return; }
+        const hb = e.target.closest('[data-rhero]'), hb2 = e.target.closest('[data-rhero2]');   // Held des Anführers (führt die ganze Rally)
+        if (hb && bundWahl && !hb.disabled) { bundWahl.held = hb.dataset.rhero || null; if (!bundWahl.held || bundWahl.held === bundWahl.held2) bundWahl.held2 = null; bundRender(true); return; }
+        if (hb2 && bundWahl && !hb2.disabled) { bundWahl.held2 = hb2.dataset.rhero2 || null; bundRender(true); return; }
         if (fr && bundWahl) { bundWahl.f = +fr.dataset.f; bundRender(true); return; }
         const b = e.target.closest('[data-bact]'); if (!b) return;
         const act = b.dataset.bact, w = b.dataset.w ? neutralId(b.dataset.w) : null, now = Date.now();
