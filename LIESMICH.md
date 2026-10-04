@@ -338,7 +338,8 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
     es gibt (Gold usw.)**, aber nur so viel, wie der Verteidiger hat; die Hauptstadt **brennt**. Gewinnt der Verteidiger,
     bekommt der Angreifer nichts. Rohstoffe holt man **nur** aus der Hauptstadt.
   - **Andere Basen (Türme):** kann man verlieren; der Angreifer bekommt dort **nur Gold**, sonst nichts.
-  - **Offen:** bis zu welcher Stufe die Hauptstadt geht („bis Lvl ? – das passen wir an“).
+  - **Hauptstadt-Stufe:** bleibt bis 25 (Alexander 4.10.).
+  - **Noch zu besprechen (Alexander 4.10.: „wir besprechen das jetzt alles“):** wie viel Rohstoffe der Angreifer bekommt, und ob das Brennen nur zu sehen ist oder auch etwas bewirkt.
   - Heute (zum Vergleich): Plündern nimmt nur Münzen (Hauptstadt und Basis, je ein Anteil über dem Lager-Schutz,
     höchstens eine halbe Stunde Einkommen).
 - ⭐ **Sortier-Tag:** alle Dateien einmal sortieren, alter Code raus (Alexander 4.10.).
