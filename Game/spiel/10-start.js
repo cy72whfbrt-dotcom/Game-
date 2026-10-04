@@ -161,7 +161,7 @@ function renderPopup() {
             attackBtn.disabled = (previewSourceId !== null ? (islandTroops[previewSourceId] || 0) : 0) <= 0;
             backBtn.style.display = 'inline-block';
         } else {
-            const scoutEnRoute = pendingScouts.some(s => s.targetId === island.id);
+            const scoutEnRoute = pendingScouts.some(s => !s.back && s.targetId === island.id);
             popupOverline.textContent = bossAt(island.id) ? 'Weltereignis · Boss' : ownerBot ? (isCapital(island.id) ? (brennt(island.id) ? 'Hauptstadt · brennt' : 'Feindliche Hauptstadt') : isTemple ? 'Feindlicher Tempel' : island.type === 'gate' ? 'Feindliches Tor' : 'Feindliche Basis') : (isTemple ? 'Tempel · unbesetzt' : island.type === 'gate' ? 'Tor · unbesetzt' : 'Neutrale Basis');
             liveHtml(popupStats, '<div class="stat-grid">' +
                 statTile('Truppen', 'troops', scouted ? fmtTile(effectiveTroops(island)) : UNK, scouted && ownerBot ? 'is-enemy' : '') +

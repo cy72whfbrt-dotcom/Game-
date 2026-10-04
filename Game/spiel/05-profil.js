@@ -908,7 +908,8 @@ function renderActiveMarches() {
     }
     for (const scout of pendingScouts) {
         const secondsLeft = Math.max(0, Math.ceil((scout.resolveAt - Date.now()) / 1000));
-        rows.push(logRowHtml('scout', 'scout', 'Späher → ' + T(scout.targetId), 'Ergebnis bei Ankunft', clock(secondsLeft), marchButtons(scout, true)));
+        rows.push(scout.back ? logRowHtml('retreat', 'scout', 'Späher kehrt zurück', 'nach ' + T(scout.targetId), clock(secondsLeft), marchButtons(scout, false))
+            : logRowHtml('scout', 'scout', 'Späher → ' + T(scout.targetId), 'Ergebnis bei Ankunft', clock(secondsLeft), marchButtons(scout, true)));
     }
     for (const retreat of pendingRetreats) {
         const secondsLeft = Math.max(0, Math.ceil((retreat.resolveAt - Date.now()) / 1000));

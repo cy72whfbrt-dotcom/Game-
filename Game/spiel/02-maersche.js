@@ -498,7 +498,8 @@ function pathSoFar(src, tgt, frac) {                // the stretch of the route 
 function recallMarch(key) {                          // an attack or a send turns round where it is and walks home
     const now = Date.now();
     const sc = pendingScouts.find(x => marchKeyOf(x) === key);                // ein Späher kehrt um (ohne Bericht)
-    if (sc) { pendingScouts = pendingScouts.filter(x => x !== sc); saveProgression(); renderActiveMarches(); requestRender(); flashHint('Dein Späher kehrt um.', 2500); return; }
+    if (sc) { if (sc.back) return; pendingScouts = pendingScouts.filter(x => x !== sc); spaeherHeim(sc, now - sc.startedAt);   // kehrt um: zurück so lange, wie er schon unterwegs war
+        saveProgression(); renderActiveMarches(); requestRender(); flashHint('Dein Späher kehrt um.', 2500); return; }
     if (!rechnet()) {                                 // Zuschauer: der Weltrechner lässt sie umkehren
         const m = pendingAttacks.find(x => marchKeyOf(x) === key) || pendingSends.find(x => marchKeyOf(x) === key);
         if (m && m.fightEndsAt) { flashHint('Die Truppen kämpfen schon – zu spät zum Zurückrufen.', 3000); return; }
@@ -711,9 +712,16 @@ function spaeherBlickHtml(s) {
         (s.sk ? zeile('Fähigkeiten', 'Angriff ' + s.sk.attack + ' · Vert. ' + s.sk.defense + ' · Truppen ' + s.sk.troops) : '') +
         (A.fo ? zeile('Forschung', 'Angriff ' + (A.fo.atk | 0) + ' · Vert. ' + (A.fo.def | 0) + ' · Krankenhaus ' + (A.fo.laz | 0)) : '') + gear + '</div></details>';
 }
+// Der Späher läuft hin UND zurück (Alexander 4.10.): am Ziel gibt es den Bericht, dann geht er denselben Weg heim
+function spaeherHeim(scout, ms) {
+    const now = Date.now(), dauer = Math.max(1000, ms);
+    pendingScouts.push({ sourceId: scout.targetId, targetId: scout.sourceId, startedAt: now, resolveAt: now + dauer, back: true });
+}
 function resolveScout(scout) {
+    if (scout.back) { saveProgression(); return; }                            // wieder zu Hause
     const target = islandById[scout.targetId];
     if (!target) return;
+    spaeherHeim(scout, scout.resolveAt - scout.startedAt);
     if (scout.explore) {
         revealAround(scout.ex ?? target.x, scout.ey ?? target.y, REVEAL_SCOUT, true);
         saveProgression();

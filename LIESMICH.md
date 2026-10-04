@@ -2015,3 +2015,6 @@ Alles aus der Merkliste 12a („Hauptstadt = das Wichtigste“) – **außer dem
   1 Gem je Minute – wie bei Märschen).
 - **In der Stadt** bleiben die obere Leiste (Münzen, Gems, Truppen, Rohstoffe) und die untere Knopf-Leiste – wie auf der Karte.
   Der Knopf „Stadt“ heißt dort „Karte“ und bringt dich zurück (wie in Rise of Kingdoms). Alle Fenster öffnen auch in der Stadt.
+- **Späher hin UND zurück (Alexander 4.10., wichtig):** am Ziel kommt der Bericht, dann läuft der Späher denselben Weg heim
+  („Späher kehrt zurück“ unter Kampf → Unterwegs, auch beschleunigbar). „Zurück“ unterwegs: er kehrt um und braucht heim so
+  lange, wie er schon unterwegs war. Getestet (`rueckweg_test`).
