@@ -1675,3 +1675,17 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
   bericht_gem, Verstärkung 5/5, Chat 12/12, Unit 65/65.
 - **Hochgeladen 4.10., 08:52** (Alexander: „müssen es hochladen“). Weltrechner hat mit dem neuen Code neu gestartet und läuft
   (Puls ok, 0 Fehler pro Minute).
+
+## 55. Kampf-Animation ohne Wachturm, Truppen „abgebrochen“, Admin-Truppen bis 1 Billiarde (Alexander 4.10., Bildschirmfotos)
+- **Kampf-Animation fehlte, wenn dich jemand angreift:** das Handy zeigte die Schlacht nur, wenn dein Wachturm die Stärke des
+  Angreifers kennt (sonst schickt der Server 0). Jetzt immer eine Schlacht – ohne Wachturm-Zahl steht beim Angreifer „?“, und
+  es werden keine erfundenen Verlust-Zahlen gezeigt; deine Besatzung steht daneben.
+- **Truppen schicken „wurde abgebrochen“:** fiel die Ziel-Basis, bevor die Truppen ankamen, buchte der Weltrechner sie bei
+  echten Spielern still nach Hause (wie bei Mitspielern) – auf dem Handy war der Marsch einfach weg. Jetzt: sichtbarer
+  Rückmarsch + Meldung („… ist gefallen, bevor deine Truppen ankamen – N Truppen kehren nach … zurück“).
+  Lokal mit Server + Weltrechner geprüft: 1 Bio. und 4 Bio. von der Hauptstadt zur eigenen Basis kommen an.
+- **Admin-Geschenk Truppen:** höchstens 1 Bio. pro Geschenk → jetzt bis 1 Billiarde (wie Münzen); der Weltrechner nimmt
+  Truppen-Geschenke bis 1 Billiarde an (vorher 10 Bio.).
+- Kleinigkeit: Wappen auf den Schlacht-Fahnen fragt die Spielerliste nur ab, wenn sie schon geladen ist.
+- Getestet: `vsme0_test` (Angriff ohne Wachturm → eine Schlacht mit „?“), `vsme_test`, `zurueck_test`, `send_server_test`,
+  `send4_server_test` (Admin 4 Bio. → abholen → senden → kommt an), alle Vorschau-Tests von 52–54 grün, Unit 65/65.

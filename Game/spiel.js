@@ -1810,6 +1810,9 @@ function resolveSend(send) {
                 pendingRetreats.push({ fromId: send.toId, toId: home, troops: send.troops, startedAt, resolveAt: startedAt + dur * 1000 });
                 flashHint(islandTitle(target) + ' ist schon gefallen – deine ' + fmtNum(send.troops) + ' Truppen kehren nach ' + islandTitle(islandById[home]) + ' zurück.', 5000);
                 renderActiveMarches();
+            } else if (botById[sender] && botById[sender].mensch && !send.back) {   // ein echter Spieler (Weltrechner): sichtbar zurück + Bescheid (vorher still heimgebucht – sah aus wie „abgebrochen“)
+                pendingSends.push({ fromId: send.toId, toId: home, troops: send.troops, startedAt, resolveAt: startedAt + dur * 1000, senderBotId: sender, back: true });
+                if (typeof bundMelden === 'function') bundMelden(sender, islandTitle(target) + ' ist gefallen, bevor deine Truppen ankamen – ' + fmtNum(send.troops) + ' Truppen kehren nach ' + islandTitle(islandById[home]) + ' zurück.');
             } else islandTroops[home] = (islandTroops[home] || 0) + send.troops;
         }
         saveGame(); saveProgression(); return;
@@ -3083,7 +3086,7 @@ function drawCrest(g, x, y, s, c) {
 const otherCrests = {};
 function crestFor(who) {
     if (!who || who === 'player') return loadCrest();
-    const pm = window.WELT && WELT.menschen[who]; if (pm && pm.profil && pm.profil.crest) return pm.profil.crest;   // echter Spieler: sein Wappen
+    const pm = window.WELT && WELT.menschen && WELT.menschen[who]; if (pm && pm.profil && pm.profil.crest) return pm.profil.crest;   // echter Spieler: sein Wappen
     if (otherCrests[who]) return otherCrests[who];
     const idn = parseInt(String(who).replace(/\D/g, ''), 10) || 7, r = mulberry32(idn * 6151 + 3);
     const c1 = Math.floor(r() * CREST_COLORS.length), metal1 = c1 === 4 || c1 === 5;
@@ -7118,14 +7121,17 @@ setInterval(() => {
             zuschauerKampf.set(k, { ende: zm.ende, mit: km }); if (!a.fightEndsAt) a.fightEndsAt = zm.ende;
             zm.dazu = (zm.dazu || 0) + a.rawTroops;
             const bt = mapBattles.find(x => x.attackId === km && !x.final), mine = !a.attackerBotId, vsMe = a.attackerBotId && islandOwnerOf(a.targetId) === 'player', tgt = islandById[a.targetId];
-            const est = tgt && (bt || mine || (vsMe && a.rawTroops > 0)) ? fightEstimate({ ...mit, rawTroops: mit.rawTroops + zm.dazu, attackBonus: undefined }) : null;
-            if (est && bt) mbReplan(bt, est, performance.now());
+            const sicht = mine || (vsMe && a.rawTroops > 0), geheim = !mine && vsMe && !sicht;   // (ohne Wachturm: Schlacht mit „?“)
+            const est = !tgt ? null : (bt && !bt.geheim) || sicht ? fightEstimate({ ...mit, rawTroops: mit.rawTroops + zm.dazu, attackBonus: undefined })
+                : geheim && !bt ? (n => ({ my: n, en: n, won: false, myLoss: n * .5, enLoss: n * .5, geheim: true }))(Math.max(1, effectiveTroops(tgt))) : null;
+            if (bt) { if (est && !bt.geheim) mbReplan(bt, est, performance.now()); }
             else if (est && now - a.resolveAt < 15000) spawnMapBattle({ sourceId: a.sourceId, targetId: a.targetId, attackId: km, live: true, fightMs: Math.max(1500, zm.ende - now), hero: a.hero || null,   // (du bist zu einem Kampf deines Bündnisses dazugekommen)
                 atk: mine ? 'mine' : 'bot', def: mine ? (bossAt(tgt.id) ? 'boss' : islandOwnerOf(tgt.id) ? 'bot' : 'neutral') : 'mine', ...est });
             continue;
         }
         const mine = !a.attackerBotId, vsMe = a.attackerBotId && islandOwnerOf(a.targetId) === 'player';
-        const tgt = islandById[a.targetId], est = (mine || (vsMe && a.rawTroops > 0)) && tgt ? fightEstimate(a) : null;   // (fremde Stärke nur mit Wachturm – sonst keine Vorschau-Schlacht mit falschen Zahlen)
+        const tgt = islandById[a.targetId], geheim = vsMe && !(a.rawTroops > 0);   // (fremde Stärke nur mit Wachturm – sonst Schlacht mit „?“ und ohne erfundene Zahlen)
+        const est = !tgt ? null : mine || (vsMe && a.rawTroops > 0) ? fightEstimate(a) : geheim ? (n => ({ my: n, en: n, won: false, myLoss: n * .5, enLoss: n * .5, geheim: true }))(Math.max(1, effectiveTroops(tgt))) : null;
         const ende = a.fightEndsAt && a.fightEndsAt > now ? a.fightEndsAt : now + (est ? fightDurationMs(est) : 4000);
         zuschauerKampf.set(k, { ende }); if (!a.fightEndsAt) a.fightEndsAt = ende;
         if (est && now - a.resolveAt < 15000) spawnMapBattle({ sourceId: a.sourceId, targetId: a.targetId, attackId: k, live: true, fightMs: ende - now, hero: a.hero || null,
@@ -7302,7 +7308,7 @@ function drawMapBattles(now) {                      // screen space
         {                                             // one strength bar above the fight: attacker | defender
             const cx = tx - ux * (aFront * .55), top = Math.min(ty - uy * ad, ty - uy * dFront * .4, ty) - s * 1.5 - 22;
             ctx.save(); ctx.globalAlpha = alphaP; ctx.font = '700 11px Inter, system-ui, sans-serif'; ctx.textBaseline = 'middle';
-            const la = fmtCompact(Math.round(va)), ld = fmtCompact(Math.round(vd)), W = Math.max(116, ctx.measureText(la + ld).width + 64), x0 = cx - W / 2;
+            const la = b.geheim ? '?' : fmtCompact(Math.round(va)), ld = fmtCompact(Math.round(b.geheim ? b.en : vd)), W = Math.max(116, ctx.measureText(la + ld).width + 64), x0 = cx - W / 2;
             rr(ctx, x0, top, W, 27, 6); ctx.fillStyle = 'rgba(10,12,16,.92)'; ctx.fill(); ctx.lineWidth = 1.2; ctx.strokeStyle = 'rgba(228,200,134,.7)'; ctx.stroke();
             ctx.fillStyle = cA[1]; ctx.textAlign = 'left'; ctx.fillText(la, x0 + 8, top + 10);
             ctx.fillStyle = cD[1]; ctx.textAlign = 'right'; ctx.fillText(ld, x0 + W - 8, top + 10);
@@ -7322,7 +7328,7 @@ function drawMapBattles(now) {                      // screen space
             for (let i = Math.max(0, i0 - 2); i <= i0; i++) {
                 const age = t - 900 - i * 450; if (age < 0 || age > 900) continue;
                 const r = mulberry32(i * 31 + b.targetId), a = 1 - age / 900, rise = age / 900 * 22;
-                for (const [atk, loss, col] of [[true, b.myLoss, cA[1]], [false, b.enLoss, cD[1]]]) {
+                for (const [atk, loss, col] of (b.geheim ? [] : [[true, b.myLoss, cA[1]], [false, b.enLoss, cD[1]]])) {   // (Stärke unbekannt: keine erfundenen Verlust-Zahlen)
                     if (loss <= 0) continue;
                     const chunk = loss / 5, d = atk ? aFront + gap : dFront * .6, o = (r() - .5) * 30 * k;
                     ctx.globalAlpha = a; ctx.fillStyle = '#0b0d12'; const txt = '−' + fmtCompact(Math.max(1, Math.round(chunk)));
@@ -12453,7 +12459,7 @@ if (window.WELT) {
     const TRUPPEN_QUELLEN = { stufe: 'Stufen-Belohnung', thron: 'Thron-Shop', heil: 'Lazarett', fund: 'Fund auf der Karte', geschenk: 'Admin-Geschenk' };
     function truppenPruefen(who, b, ende) {
         const q = b.q, name = TRUPPEN_QUELLEN[q] || 'unbekannte Quelle';
-        if (!zahlOk(b.n, 1e13)) { warnen(who, 'truppen', 'Truppen-Geschenk mit kaputter Zahl (' + String(b.n).slice(0, 30) + ') – abgelehnt.'); return 0; }
+        if (!zahlOk(b.n, 1e15)) { warnen(who, 'truppen', 'Truppen-Geschenk mit kaputter Zahl (' + String(b.n).slice(0, 30) + ') – abgelehnt.'); return 0; }
         if (!TRUPPEN_QUELLEN[q]) { warnen(who, 'truppen', 'Truppen-Geschenk ohne gültige Quelle: ' + fz(b.n) + ' Truppen – abgelehnt.', b.n); return 0; }
         const m = wacheSehen(who), d = wd(who), now = Date.now(); if (!d) return 0;
         let n = b.n, erlaubt;
