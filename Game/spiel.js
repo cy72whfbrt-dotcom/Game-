@@ -5870,8 +5870,7 @@ function renderCombatLog() {
 // ===== Kampfbericht im neuen Aufbau (Alexanders Design): jeder Spieler ein eigenes Fenster, alle Fenster gleich aufgebaut
 // (Truppen, Held, Grundverteidigung, Gesamt, Gefallen, Geflohen, Stufe, 2 Heldenplätze, Skills, Rohstoffe) – „Kampfdetails“ öffnet eine eigene Seite.
 const kampflogUmbauen = (function () {
-    const fmt = v => Math.round(v || 0).toLocaleString('de-DE');
-    const zahl = t => parseInt(String(t || '').replace(/[^\d]/g, ''), 10) || 0;
+    const fmt = v => Math.round(v || 0).toLocaleString('de-DE'), kurz = v => Math.abs(v || 0) >= 1e6 ? fmtCompact(v || 0) : fmtNum(v || 0);   // (Balken: wie renderCombatLog)
     const ic = n => '<svg class="icon" aria-hidden="true"><use href="#i-' + n + '"></use></svg>';
     const zl = (a, b, kl, src) => '<div class="logLine' + (kl || '') + '"><span>' + a + (src ? '<small class="logSrc">' + src + '</small>' : '') + '</span><span>' + b + '</span></div>';
     const el = h => { const t = document.createElement('template'); t.innerHTML = h.trim(); return t.content.firstChild; };
@@ -5891,7 +5890,7 @@ const kampflogUmbauen = (function () {
         const sum = box.querySelector(':scope > .logSum');
         if (!lines().some(l => textOf(l).startsWith('Grundverteidigung')) && sum) sum.insertAdjacentHTML('beforebegin', zl('Grundverteidigung', '0', ' kl-null', 'zählt nur beim Besitzer der Basis'));
         const cas = lines().filter(l => l.classList.contains('logCasualty'));
-        if (!cas.length && sum) sum.insertAdjacentHTML('afterend', '<div class="logCasualty"><span>Gefallen</span><span>0</span></div>');
+        if (!cas.length && sum) sum.insertAdjacentHTML('afterend', '<div class="logCasualty kl-null"><span>Gefallen</span><span>–</span></div>');   // (steht nicht im Bericht)
         if (!lines().some(l => textOf(l).startsWith('Geflohen'))) { const c = lines().filter(l => l.classList.contains('logCasualty')).pop(); (c || sum).insertAdjacentHTML('afterend', zl('Geflohen', '0')); }
         let gear = box.querySelector(':scope > .logGear');
         if (!gear) { box.insertAdjacentHTML('beforeend', leerGear('', angr)); gear = box.querySelector(':scope > .logGear'); }
@@ -5916,12 +5915,12 @@ const kampflogUmbauen = (function () {
     const rohTeil = (beute, anteil, vz) => ({ g: vz * Math.round(beute.g * anteil), h: vz * Math.round(beute.h * anteil), s: vz * Math.round(beute.s * anteil), e: vz * Math.round(beute.e * anteil) });
 
     // eine Seite (Angreifer oder Verteidiger) in Fenster je Spieler zerlegen
-    function seiteUmbauen(side, angr, liste, e, beute, schutz, sieg) {
+    function seiteUmbauen(side, angr, liste, e, beute, schutz, sieg, gesamt) {   // gesamt: die echte Summe dieser Seite (aus dem Bericht – nie aus dem Text, der ab 10 Mio. abgekürzt ist)
         const label = side.querySelector('.logSideLabel');
         const gruppe = el('<div class="kl-gruppe ' + (angr ? 'kl-a' : 'kl-v') + '"></div>');
         side.replaceWith(gruppe);
         const spieler = Array.isArray(liste) && liste.length ? liste : null;
-        const sumEl = side.querySelector(':scope > .logSum'), gesamt = sumEl ? zahl(sumEl.lastElementChild.textContent) : 0;
+        const sumEl = side.querySelector(':scope > .logSum');
         if (!spieler) {                                                     // nur ein Spieler auf dieser Seite
             const roh = angr ? (sieg ? beute : {}) : rohTeil(beute, 1, -1);
             gruppe.appendChild(normal(side, angr, roh, angr ? 0 : schutz));
@@ -5940,17 +5939,20 @@ const kampflogUmbauen = (function () {
         if (sumEl) sumEl.lastElementChild.textContent = fmt(gesamt - staerkeAndere);
         // die Boni-Zeilen galten dem ganzen Kampf: im Fenster des Anführers steht nur, was ER mitbringt
         side.querySelectorAll(':scope > .logLine.buff').forEach(l => l.remove());
-        const schon = [...side.querySelectorAll(':scope > .logLine')].filter(l => l !== tr).reduce((x, l) => x + zahl(l.lastElementChild.textContent), 0);   // (z. B. Grundverteidigung)
+        const schon = angr ? 0 : Array.isArray(e.defParts) && e.defParts.length ? e.defParts[0][1] || 0 : (e.enemyDefense || 0) - andere.reduce((x, p) => x + (p.plus || 0), 0);   // (Grundverteidigung bzw. Verteidigung steht schon als eigene Zeile da – ohne Bericht-Teile steckt darin auch das Plus der Helfer)
         const eig = gesamt - staerkeAndere - (erster.n || 0) - schon;
         if (eig && tr) tr.insertAdjacentHTML('afterend', zl('Eigene Werte', (eig > 0 ? '+' : '−') + fmt(Math.abs(eig)), ' buff', angr ? 'Held, Skill Angriff, Titel, Forschung' : 'Rüstung, Skill Verteidigung, Mauer, Titel, Forschung'));
-        if (angr && erster.fallen !== undefined) { const c = side.querySelector(':scope > .logCasualty'); if (c) c.lastElementChild.textContent = '−' + fmt(erster.fallen); }
+        if (angr && erster.fallen !== undefined) { const c = side.querySelector(':scope > .logCasualty:not(.wounded)'); if (c) c.lastElementChild.textContent = '−' + fmt(erster.fallen);
+            const w = side.querySelector(':scope > .logCasualty.wounded'); if (w) { if (erster.wounded) w.lastElementChild.textContent = fmt(erster.wounded); else w.remove(); } }   // (nur seine – nicht die der ganzen Rally)
+        if (!angr && e.type === 'attack') { const weg = andere.reduce((x, p) => x + (p.fallen || 0) + (p.wounded || 0), 0), c = side.querySelector(':scope > .logCasualty:not(.wounded)');   // Besitzer: ohne die Verluste der Helfer (die stehen in ihren Fenstern)
+            if (c) c.lastElementChild.textContent = '−' + fmt(Math.max(0, (e.defenderCasualties || 0) - (e.enemyWounded || 0) - weg)); }
         gruppe.appendChild(normal(side, angr, angr ? (sieg ? rohTeil(beute, (erster.n || 0) / Math.max(1, alleT), 1) : {}) : rohTeil(beute, 1, -1), angr ? 0 : schutz));
         // weitere Fenster: Rally-Mitglieder / Verstärkung
         for (const p of andere) {
             const b = el('<div class="logSide"><div class="logSideLabel">' + (angr ? 'Angreifer · ' : 'Verteidiger · ') + escapeHtml(p.name || '?') + ' <small style="text-transform:none;letter-spacing:0">(' + (angr ? 'Verbündeter' : 'Verstärkung') + ')</small></div>' +
                 zl('Truppen', fmt(p.n)) + (p.k !== undefined && p.k !== p.n ? zl('Eigene Werte', (p.k > p.n ? '+' : '−') + fmt(Math.abs(p.k - p.n)), ' buff', angr ? 'Held, Skill Angriff, Titel, Forschung' : 'Skill Verteidigung, Titel, Forschung') : '') +
                 '<div class="logSum' + (sumEl && sumEl.classList.contains('advantage') ? ' advantage' : '') + '"><span>Gesamt</span><span>' + fmt(p.k !== undefined ? p.k : p.n) + '</span></div>' +
-                '<div class="logCasualty"><span>Gefallen</span><span>−' + fmt(Math.max(0, (p.fallen || 0) - (p.wounded || 0))) + '</span></div>' +
+                '<div class="logCasualty"><span>Gefallen</span><span>−' + fmt(p.fallen || 0) + '</span></div>' +   // (fallen enthält die Verwundeten schon nicht)
                 (p.wounded ? '<div class="logCasualty wounded"><span>Verwundet</span><span>' + fmt(p.wounded) + '</span></div>' : '') + '</div>');
             const g = gearVon[p.name]; if (g) b.appendChild(g);
             gruppe.appendChild(normal(b, angr, angr && sieg ? rohTeil(beute, (p.n || 0) / Math.max(1, alleT), 1) : {}, 0));
@@ -5990,12 +5992,14 @@ const kampflogUmbauen = (function () {
                 const sides = [...cmp.querySelectorAll(':scope > .logSide')]; if (sides.length < 2) return;
                 const angrList = Array.isArray(e.angreifer) && e.angreifer.length > 1 ? e.angreifer : null;
                 const bal = row.querySelector('.logBalTxt'), namen = L => L.map(p => escapeHtml(p.name || '?')).join(' + ');   // Balken: alle Namen, nicht nur „Du“
-                if (bal && angrList) { const s0 = bal.firstElementChild, z = s0.innerHTML.match(/([\d.,]+(?:&nbsp;|\s)*(?:Mio\.|Mrd\.|Bio\.)?)\s*$/); if (z) s0.innerHTML = s0.innerHTML.replace(/<\/svg>[\s\S]*$/, '</svg>' + namen(angrList) + ' ' + z[1]); }
-                if (bal && Array.isArray(e.verst) && e.verst.length) { const s1 = bal.lastElementChild, z = s1.innerHTML.match(/^([\d.,]+(?:&nbsp;|\s)*(?:Mio\.|Mrd\.|Bio\.)?)/); if (z) s1.innerHTML = s1.innerHTML.replace(/^[\s\S]*?(<svg)/, z[1] + ' ' + escapeHtml(e.defenderName || e.defName || 'Du') + ' + ' + namen(e.verst) + '$1'); }
+                const atkG = e.type === 'attack' ? (e.myTroops || 0) + (e.attackBuff || 0) : e.myTroops || 0;
+                const defG = e.type === 'attack' ? (e.enemyTroops || 0) + (e.enemyDefense || 0) + (e.defenseBuff || 0) : (e.enemyTroops || 0) + (e.enemyDefense || 0);
+                if (bal && angrList) { const s0 = bal.firstElementChild, sv = s0.querySelector('svg'); s0.innerHTML = (sv ? sv.outerHTML : '') + namen(angrList) + ' ' + kurz(atkG); }
+                if (bal && Array.isArray(e.verst) && e.verst.length) { const s1 = bal.lastElementChild, sv = s1.querySelector('svg'); s1.innerHTML = kurz(defG) + ' ' + escapeHtml(e.defenderName || e.defName || 'Du') + ' + ' + namen(e.verst) + (sv ? sv.outerHTML : ''); }
                 const vertList = Array.isArray(e.verst) && e.verst.length ? e.verst : null;
                 const sieg = !!e.won;
-                seiteUmbauen(sides[0], true, angrList, e, beute, 0, sieg);
-                seiteUmbauen(sides[1], false, vertList, e, sieg ? beute : { g: 0, h: 0, s: 0, e: 0 }, e.plunderSafe || 0, sieg);
+                seiteUmbauen(sides[0], true, angrList, e, beute, 0, sieg, atkG);
+                seiteUmbauen(sides[1], false, vertList, e, sieg ? beute : { g: 0, h: 0, s: 0, e: 0 }, e.plunderSafe || 0, sieg, defG);
             } catch (err) { console.warn('Kampflog-Design', err); }
         });
     }
@@ -6013,7 +6017,7 @@ const kampflogUmbauen = (function () {
         seite.querySelector('#klArt').textContent = art || 'Kampfdetails';
         seite.hidden = false; seite.scrollTop = 0;
     }
-    seite.addEventListener('click', ev => { if (ev.target.closest('[data-klzu]')) { ev.preventDefault(); seite.hidden = true; } });
+    seite.addEventListener('click', ev => { if (ev.target.closest('[data-klzu]')) { ev.preventDefault(); seite.hidden = true; } else if (ev.target.closest('.who-link, [data-profile]')) seite.hidden = true; });   // (Name antippen: das Profil soll nicht unsichtbar dahinter aufgehen)
     combatLogListEl.addEventListener('click', ev => { const s = ev.target.closest('summary'); if (!s || !combatLogListEl.contains(s)) return;
         ev.preventDefault(); ev.stopPropagation(); oeffnen(s.closest('.logRow'), s.textContent.trim()); }, true);
     document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && !seite.hidden) seite.hidden = true; });
