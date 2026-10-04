@@ -339,7 +339,8 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
     bekommt der Angreifer nichts. Rohstoffe holt man **nur** aus der Hauptstadt.
   - **Andere Basen (Türme):** kann man verlieren; der Angreifer bekommt dort **nur Gold**, sonst nichts.
   - **Hauptstadt-Stufe:** bleibt bis 25 (Alexander 4.10.).
-  - **Noch zu besprechen (Alexander 4.10.: „wir besprechen das jetzt alles“):** wie viel Rohstoffe der Angreifer bekommt, und ob das Brennen nur zu sehen ist oder auch etwas bewirkt.
+  - **Entschieden (Alexander 4.10.):** Der Angreifer bekommt **immer nur einen Teil** von dem, was über dem
+    Burg-Schutz liegt (wie groß der Teil ist: Zahl noch festlegen). Das **Brennen ist nur zu sehen**, es bewirkt nichts.
 - ⭐⭐ **Hauptstadt = das Wichtigste im Spiel (Alexander 4.10., „erst mal merken“) – noch NICHT gebaut:**
   - **Server-Reset später:** die ganze Karte wird neu – **außer der Hauptstadt**. Sie behält Stufe, Gebäude,
     Ausrüstung und Helden.
