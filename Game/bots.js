@@ -1207,7 +1207,7 @@ function botDefend(bot) {
     const owned = botOwnedIslands[bot.id];
     if (!owned || owned.size === 0) return;
     const act = botActOf(bot.id), now = Date.now(); if (now < (act.defNext || 0)) return;      // (paced by its own timer - own columns on the road never block it)
-    const W = AUF ? AUF.wachturm(bot.id) : 0, notice = 1 + W * .2, threats = new Map(), covered = loadBotState()[bot.id].shieldUntil || 0, wt = Math.max(0, 1 - W * .075);   // Wachturm (Forschung): sieht Angriffe früher, auch „Spurlos“
+    const notice = 1, threats = new Map(), covered = loadBotState()[bot.id].shieldUntil || 0, wt = 1;
     const see = (id, startedAt, at, str, late) => {
         if (!owned.has(id) || isCapital(id) || (at < covered && shieldCovers(islandById[id]))) return;                                     // (it bounces off the shield anyway)
         if (now - startedAt < (3000 + (startedAt % 9000)) / notice + (at - startedAt) * (late || 0) * wt / 100) return;   // not seen yet (Spurlos: a hero's column is seen later)

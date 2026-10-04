@@ -145,7 +145,7 @@ function marschVoll(who) { who = who || 'player'; const n = marschGrenze(who), B
 
 // ---------------------------------------------------------------------------------------------------------------
 // 3) FORSCHUNG (Labor – im Gebäude 'academy'): drei Äste, lange Zeiten, eine Forschung gleichzeitig. Im Labor wird ALLES
-//    geforscht (Alexander 4.10.): auch Tempel-Bonus (früher Tempelschrein), Späher-Tempo (früher Späherturm) und Wachturm.
+//    geforscht (Alexander 4.10.): auch Tempel-Bonus (früher Tempelschrein) und Späher-Tempo (früher Späherturm).
 // ---------------------------------------------------------------------------------------------------------------
 const FO_AESTE = { w: 'Wirtschaft', m: 'Militär', x: 'Erkundung' };
 const FORSCHUNG = [
@@ -158,20 +158,9 @@ const FORSCHUNG = [
     { id: 'm_laz', ast: 'm', name: 'Krankenhaus', icon: 'plus', max: 10, aka: 4, pro: 2, txt: v => '+' + v + ' % der Gefallenen ins Krankenhaus' },
     { id: 'x_tempo', ast: 'x', name: 'Marschtempo', icon: 'send', max: 10, aka: 1, pro: 3, txt: v => 'Truppen laufen ' + v + ' % schneller' },
     { id: 'x_spaeh', ast: 'x', name: 'Späher', icon: 'scout', max: 10, aka: 3, pro: 10, txt: v => 'Späher ' + v + ' % schneller' },
-    { id: 'x_wacht', ast: 'x', name: 'Wachturm', icon: 'tower', max: 10, aka: 2, txt: v => WACHT_TXT(v) },
     { id: 'x_nebel', ast: 'x', name: 'Kundschaft', icon: 'flag', max: 5, aka: 6, pro: 15, txt: v => 'eroberte Basen decken ' + v + ' % mehr Nebel auf' + (v >= 45 ? ' (Mitspieler: auch die Nachbarn der Nachbarn)' : '') }
 ];
 const FO_BY = {}; for (const d of FORSCHUNG) FO_BY[d.id] = d;
-// Wachturm (Forschung): am Anfang siehst du wenig, je höher, desto mehr – bei Angriffen auf dich und in deinen Spähberichten
-const WACHT = { ca: 1, genau: 6, held: 8, mauer: 1, helden: 3, burg: 4, roh: 5, faeh: 7, forsch: 9, gear: 10 };
-function WACHT_TXT(v) {
-    const f = [];
-    if (v >= WACHT.ca) f.push(v >= WACHT.genau ? 'genaue Truppenzahl bei Angriffen auf dich' + (v >= WACHT.held ? ' mit Held' : '') : 'ungefähre Truppenzahl bei Angriffen auf dich');
-    const sp = []; if (v >= WACHT.mauer) sp.push('Mauer'); if (v >= WACHT.helden) sp.push('Helden'); if (v >= WACHT.burg) sp.push('Burg'); if (v >= WACHT.roh) sp.push('Rohstoffe');
-    if (v >= WACHT.faeh) sp.push('Fähigkeiten'); if (v >= WACHT.forsch) sp.push('Forschung'); if (v >= WACHT.gear) sp.push('Ausrüstung');
-    if (sp.length) f.push('Spähbericht zeigt ' + sp.join(', '));
-    return f.join(' · ') || 'noch nichts';
-}
 const foAkaFuer = (d, L) => d.aka + (L - 1) * 2;               // Stufe L braucht diese Labor-Stufe
 function foStufe(who, id) { const c = stadtVon(who), d = FO_BY[id]; if (!c || !d || !c.fo) return 0; return Math.max(0, Math.min(d.max, (c.fo[id] | 0) || 0)); }
 function foWert(who, id) { const d = FO_BY[id]; return d && d.pro ? foStufe(who, id) * d.pro : 0; }
@@ -229,7 +218,6 @@ const tempelPlus = who => foWert(who, 'w_tempel') / 100;       // (früher Tempe
 const bauStufe = (who, id) => { const c = stadtVon(who); return c && c.levels ? c.levels[id] || 0 : 0; };
 const botschaftTempo = who => 1 + bauStufe(who, 'embassy') * .03;   // Hilfe und Rally zu Bündnis-Mitgliedern
 const botschaftGeschenk = who => 1 + bauStufe(who, 'embassy') * .04;
-const wachturm = who => foStufe(who, 'x_wacht');               // (Forschung im Labor – früher ein Gebäude)
 
 // ---------------------------------------------------------------------------------------------------------------
 // 5) MARKT: Rohstoffe gegen Münzen (Gebühr, Tageslimit) – ein Rohstoff ist 5 Münzen wert
@@ -388,23 +376,12 @@ if (!SYSTEM) {
     document.getElementById('rohDrop').addEventListener('click', () => rohUmschalten(false));
 }
 
-// Wachturm (Forschung): was du über einen Angriff auf dich siehst
-const rundCa = n => { const p = Math.pow(10, Math.max(0, Math.floor(Math.log10(Math.max(1, n))) - 1)); return Math.round(n / p) * p; };
-function angreiferInfo(a) {
-    const L = wachturm('player'); if (L < WACHT.ca) return '';
-    const n = a.rawTroops || 0; if (!n) return '';
-    if (L < WACHT.genau) return ' · ca. ' + fmtCompact(rundCa(n)) + ' Truppen';
-    const h = L >= WACHT.held && a.hero && heroById(a.hero);
-    return ' · ' + fmtCompact(n) + ' Truppen' + (h ? ' · ' + h.name : '');
-}
-// Spähbericht: am Anfang wenig, mit dem Wachturm immer mehr (für dich und alle anderen gleich) → { L, burg, roh, fo }
-function spaeherMehr(spaeher, owner) {
-    const L = wachturm(spaeher), o = { L };
-    if (!owner) return o;
-    if (L >= WACHT.burg) o.burg = burgStufe(owner);
-    if (L >= WACHT.roh) { const r = owner === 'player' ? roh : (loadBotState()[owner] || {}).res, S = burgSchutz(owner), g = geldVon(owner);
-        o.roh = { schutz: S, c: Math.floor(g) }; if (r) for (const x of ROH) o.roh[x] = Math.floor(r[x] || 0); }
-    if (L >= WACHT.forsch) o.fo = { atk: foStufe(owner, 'm_atk'), def: foStufe(owner, 'm_def'), laz: foStufe(owner, 'm_laz') };
+// Spähbericht: der Späher sieht alles (Alexander 4.10.) – Burg, Rohstoffe (und wie viel davon zu holen ist), Forschung
+function spaeherMehr(owner) {
+    if (!owner) return null;
+    const r = owner === 'player' ? roh : (loadBotState()[owner] || {}).res, o = { burg: burgStufe(owner), roh: { schutz: burgSchutz(owner), c: Math.floor(geldVon(owner)) } };
+    if (r) for (const x of ROH) o.roh[x] = Math.floor(r[x] || 0);
+    o.fo = { atk: foStufe(owner, 'm_atk'), def: foStufe(owner, 'm_def'), laz: foStufe(owner, 'm_laz') };
     return o;
 }
 
@@ -412,11 +389,11 @@ function spaeherMehr(spaeher, owner) {
 // 9) MITSPIELER: Burg, Gebäude, Forschung, Truppen-Stufe, Markt – gleiche Regeln und Kosten, nie geschummelt
 // ---------------------------------------------------------------------------------------------------------------
 const BOT_FO_LIEBER = {
-    raider: ['m_atk', 'x_wacht', 'x_tempo', 'm_laz', 'w_prod', 'm_def', 'w_tempel', 'w_last', 'w_sam', 'x_spaeh', 'x_nebel'],
-    builder: ['w_prod', 'm_def', 'w_last', 'w_sam', 'x_wacht', 'm_atk', 'm_laz', 'w_tempel', 'x_tempo', 'x_spaeh', 'x_nebel'],
-    templer: ['w_tempel', 'm_atk', 'm_def', 'w_prod', 'x_wacht', 'm_laz', 'x_tempo', 'w_last', 'w_sam', 'x_nebel', 'x_spaeh'],
-    balanced: ['w_prod', 'm_atk', 'm_def', 'x_wacht', 'x_tempo', 'w_sam', 'm_laz', 'w_tempel', 'w_last', 'x_spaeh', 'x_nebel'],
-    veteran: ['m_atk', 'w_prod', 'm_def', 'x_wacht', 'x_tempo', 'm_laz', 'w_tempel', 'w_sam', 'w_last', 'x_nebel', 'x_spaeh']
+    raider: ['m_atk', 'x_tempo', 'm_laz', 'w_prod', 'm_def', 'w_tempel', 'w_last', 'w_sam', 'x_spaeh', 'x_nebel'],
+    builder: ['w_prod', 'm_def', 'w_last', 'w_sam', 'm_atk', 'm_laz', 'w_tempel', 'x_tempo', 'x_spaeh', 'x_nebel'],
+    templer: ['w_tempel', 'm_atk', 'm_def', 'w_prod', 'm_laz', 'x_tempo', 'w_last', 'w_sam', 'x_nebel', 'x_spaeh'],
+    balanced: ['w_prod', 'm_atk', 'm_def', 'x_tempo', 'w_sam', 'm_laz', 'w_tempel', 'w_last', 'x_spaeh', 'x_nebel'],
+    veteran: ['m_atk', 'w_prod', 'm_def', 'x_tempo', 'm_laz', 'w_tempel', 'w_sam', 'w_last', 'x_nebel', 'x_spaeh']
 };
 function botStadtFix(b) {                                      // fehlende Felder (alte Spielstände): Burg 1, keine Forschung, Start-Rohstoffe
     const c = b.city; if (!c) return;
@@ -492,13 +469,13 @@ setInterval(hauptstadtStufen, 3000);
 
 AUF = {
     ROH_START, foZeitRoh, foAkaFuer,                           // (für das Hauptbuch 3B in spiel.js)
-    ROH_DEF, BURG_MAX, BAU_AB_BURG, FORSCHUNG, MARKT_WERT, WACHT, rundCa,
+    ROH_DEF, BURG_MAX, BAU_AB_BURG, FORSCHUNG, MARKT_WERT,
     rohVon, rohDazu, rohSpeichern, basisRoh, rohBuchen, rohStunde, kannZahlen, zahlen, kostenHtml,
-    burgStufe, burgZeitRoh, stadtKosten, stadtCap, burgSchutz, burgSchutzStufe, wachturm,
+    burgStufe, burgZeitRoh, stadtKosten, stadtCap, burgSchutz, burgSchutzStufe,
     marschFrei, marschOk, marschVoll, frei: { an() { marschFreiPass++; }, aus() { marschFreiPass = Math.max(0, marschFreiPass - 1); } },
     foStufe, foWert, foKosten, foFertig, marktLimit, marktHtml,
     kampf, ertrag, sammelTempo, traglast, marschTempo, spaeherTempo, lazarettPlus, nebelWeite, tempelPlus, botschaftTempo, botschaftGeschenk, botschaftStufe: who => bauStufe(who, 'embassy'),
-    spielerTakt, hud: hudRoh, renderKeep, effektText, extraHtml, angreiferInfo, spaeherMehr,
+    spielerTakt, hud: hudRoh, renderKeep, effektText, extraHtml, spaeherMehr,
     botStadtFix, botForschung, botMarkt, botBurgWert, botRohWunsch
 };
 for (const id in (loadBotState() || {})) try { botStadtFix(botState[id]); } catch (e) {}

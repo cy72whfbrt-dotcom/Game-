@@ -56,7 +56,6 @@ function fmtCompact(n) {
     if (a >= v * .99995 || v === 1e15) return (a / v >= 1000 ? NF.format(Math.round(n / v)) : NF.format(Math.round(n / v * 10) / 10)) + ' ' + u;
 }
 const fmtTile = fmtNum;   // stat tiles: same rule as everywhere
-const spaehZahl = (n, fremd) => fremd && typeof AUF !== 'undefined' && AUF && AUF.wachturm('player') < AUF.WACHT.ca ? 'ca. ' + fmtNum(AUF.rundCa(n)) : fmtTile(n);   // gespähte fremde Basis: ohne Wachturm (Forschung) nur ungefähr
 function setBtnLabel(btn, text) { const l = btn.querySelector('.lbl') || btn; if (l.textContent !== text) l.textContent = text; }   // (nur bei einer Änderung: offene Fenster ziehen jede Sekunde nach)
 function fmtDHMS(sec) {                           // every longer time the same way: 3 T 4 h 5 m 6 s (units that are 0 at the front are left out)
     sec = Math.max(0, Math.ceil(sec));

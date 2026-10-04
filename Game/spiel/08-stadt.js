@@ -176,7 +176,7 @@ function cloudsRun(dur, c0, c1, then) {                                   // cov
 function cityShow() {
     loadCity();
     document.getElementById('cityName').textContent = (profileName.value || 'Deine') + (profileName.value ? 's Hauptstadt' : ' Hauptstadt');
-    cityView.hidden = false;
+    cityView.hidden = false; stadtLeiste(true);
     cityOpenId = null; cityRingZu(); document.getElementById('citySheet').hidden = true;
     updateCityBuilder();
     cancelAnimationFrame(cityRaf); cityRaf = requestAnimationFrame(cityFrame);
@@ -202,7 +202,7 @@ function closeCity() {
     cityBusy = true; cityOpenId = null; cityRingZu(); document.getElementById('citySheet').hidden = true;
     if (cityCam) cityCam.anim = { from: 1, to: .3, t0: performance.now(), dur: 520 };   // the town falls away …
     cloudsRun(480, 0, 1, () => {                                              // … into the clouds …
-        cityView.hidden = true; cancelAnimationFrame(cityRaf); cityLagenFrei();
+        cityView.hidden = true; stadtLeiste(false); cancelAnimationFrame(cityRaf); cityLagenFrei();
         const home = islandById[playerIslandId], back = cityMapReturn || { zoom: mapState.zoom, x: (viewW / 2 - mapState.offsetX) / mapState.zoom, y: (viewH / 2 - mapState.offsetY) / mapState.zoom };
         cityMapReturn = null;
         if (home) flyTo(home.x, home.y, { zoom: maxZoom, instant: true });
@@ -883,7 +883,13 @@ document.getElementById('citySheet').addEventListener('click', e => {
         saveGame(); updateHud(); flashHint(fmtNum(w) + ' Truppen geheilt – sie sind in deiner Hauptstadt.', 3000); renderCitySheet(); }
 });
 document.getElementById('cityBtn').addEventListener('click', openCity);
-document.getElementById('cityNavBtn').addEventListener('click', openCity);
+document.getElementById('cityNavBtn').addEventListener('click', () => { if (!cityView.hidden) { closeAllPopups(); closeCity(); } else openCity(); });   // in der Stadt: zurück zur Karte (wie in Rise of Kingdoms)
+// Auch in der Stadt bleiben die obere Leiste (Münzen, Gems, Truppen, Rohstoffe) und die untere Knopf-Leiste – überall gleich (Alexander 4.10.)
+function stadtLeiste(an) {
+    document.body.classList.toggle('in-stadt', an);
+    const b = document.getElementById('cityNavBtn'), l = b.querySelector('.nav-l'), u = b.querySelector('use');
+    if (l) l.textContent = an ? 'Karte' : 'Stadt'; if (u) u.setAttribute('href', an ? '#i-flag' : '#i-castle'); b.classList.toggle('active', an);
+}
 // Hauptstadt verlegen (teleport): pick one of your own bases, the capital status and its garrison move there.
 var teleportMode = false, teleportBis = 0;   // (bleibt nur 20 s scharf – danach kostet ein Tipp auf eine Basis keine Gems mehr aus Versehen)
 const TELEPORT_GEMS = 50;

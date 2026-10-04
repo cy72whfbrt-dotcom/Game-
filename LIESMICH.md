@@ -2005,3 +2005,13 @@ Alles aus der Merkliste 12a („Hauptstadt = das Wichtigste“) – **außer dem
   Stadt bleibt seine und brennt; Beute = genau 10 % über seinem Schutz (Holz ~100.000 von 1 Mio., Stein 50.000, Eisen 10.000,
   Gold ~200.000); Holz/Stein/Eisen sofort bei mir, Gold im Abholfach (Events → Belohnung), bei ihm abgezogen. Liegt alles
   unter dem Schutz, wird nichts geklaut (Sieg, aber 0 Beute).
+
+## 77. Wachturm ganz raus, Spähen zeigt alles, Späher beschleunigen/zurückrufen, Leisten auch in der Stadt (Alexander 4.10.)
+- **Wachturm-Forschung raus** (hatte keinen Sinn mehr): Spähen zeigt **sofort alles** – Herr, Schild, Mauer, Helden, Burg,
+  Rohstoffe (und wie viel zu holen ist), Fähigkeiten, Forschung, Ausrüstung. Angriffe auf dich: Zahlen wie vor dem Wachturm
+  erst, wenn der Kampf beginnt.
+- **Nach dem Spähen** oben nur noch „X gespäht – Bericht im Kampflog“ (keine Zahlen im Hinweis, die stehen im Kampflog).
+- **Späher:** im Kampf-Fenster unter „Unterwegs“ jetzt **„Zurück“** (kehrt um, ohne Bericht) und **„Schneller“** (Restzeit halbieren,
+  1 Gem je Minute – wie bei Märschen).
+- **In der Stadt** bleiben die obere Leiste (Münzen, Gems, Truppen, Rohstoffe) und die untere Knopf-Leiste – wie auf der Karte.
+  Der Knopf „Stadt“ heißt dort „Karte“ und bringt dich zurück (wie in Rise of Kingdoms). Alle Fenster öffnen auch in der Stadt.

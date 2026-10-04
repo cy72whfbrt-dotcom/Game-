@@ -890,7 +890,7 @@ function renderActiveMarches() {
             relevantAttackCount++;
             const bounces = !attack.fightEndsAt && shieldCovers(islandById[attack.targetId]) && ownerShielded('player', attack.resolveAt);   // the Friedensschild still stands when they arrive
             rows.push(logRowHtml(bounces ? 'win' : 'loss', bounces ? 'shield' : 'bot', escapeHtml(botById[attack.attackerBotId].name) + ' greift ' + T(attack.targetId) + ' an',
-                (bounces ? 'Dein Friedensschild hält – prallt ab' : 'Deine Basis wird angegriffen') + (AUF ? AUF.angreiferInfo(attack) : ''), clock(secondsLeft)));   // (Wachturm: wie stark)
+                (bounces ? 'Dein Friedensschild hält – prallt ab' : 'Deine Basis wird angegriffen'), clock(secondsLeft)));   // (Wachturm: wie stark)
         }
     }
     if (typeof bund !== 'undefined' && bund && Array.isArray(bund.r)) for (const r of bund.r) {   // eine Rally, die gerade gegen dich sammelt (losgelaufen steht sie oben als Angriff)
@@ -908,7 +908,7 @@ function renderActiveMarches() {
     }
     for (const scout of pendingScouts) {
         const secondsLeft = Math.max(0, Math.ceil((scout.resolveAt - Date.now()) / 1000));
-        rows.push(logRowHtml('scout', 'scout', 'Späher → ' + T(scout.targetId), 'Ergebnis bei Ankunft', clock(secondsLeft)));
+        rows.push(logRowHtml('scout', 'scout', 'Späher → ' + T(scout.targetId), 'Ergebnis bei Ankunft', clock(secondsLeft), marchButtons(scout, true)));
     }
     for (const retreat of pendingRetreats) {
         const secondsLeft = Math.max(0, Math.ceil((retreat.resolveAt - Date.now()) / 1000));
@@ -1046,7 +1046,7 @@ function renderCombatLog() {
         }
         if (entry.type === 'scout') {
             return logRowHtml('scout', 'scout', logBadge('scout', 'Gespäht') + T(entry.targetId),
-                (entry.ca ? 'ca. ' : '') + fmtM(entry.troops) + ' Truppen · ' + (entry.ca ? 'ca. ' : '') + fmtM(entry.defense) + ' Verteidigung' + (entry.spy ? ' · ' + escapeHtml(entry.spy.name) + ', Stufe ' + fmtNum(entry.spy.lvl) : ''), ago(entry), spaeherBlickHtml(entry.spy));
+                fmtM(entry.troops) + ' Truppen · ' + fmtM(entry.defense) + ' Verteidigung' + (entry.spy ? ' · ' + escapeHtml(entry.spy.name) + ', Stufe ' + fmtNum(entry.spy.lvl) : ''), ago(entry), spaeherBlickHtml(entry.spy));
         }
         if (entry.type === 'retreat') {
             return logRowHtml('retreat', 'recall', logBadge('retreat', 'Rückkehr') + T(entry.toId), fmtM(entry.troops) + ' geflohene Truppen zurück', ago(entry));

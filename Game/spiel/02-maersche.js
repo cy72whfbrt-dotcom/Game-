@@ -497,6 +497,8 @@ function pathSoFar(src, tgt, frac) {                // the stretch of the route 
 }
 function recallMarch(key) {                          // an attack or a send turns round where it is and walks home
     const now = Date.now();
+    const sc = pendingScouts.find(x => marchKeyOf(x) === key);                // ein Späher kehrt um (ohne Bericht)
+    if (sc) { pendingScouts = pendingScouts.filter(x => x !== sc); saveProgression(); renderActiveMarches(); requestRender(); flashHint('Dein Späher kehrt um.', 2500); return; }
     if (!rechnet()) {                                 // Zuschauer: der Weltrechner lässt sie umkehren
         const m = pendingAttacks.find(x => marchKeyOf(x) === key) || pendingSends.find(x => marchKeyOf(x) === key);
         if (m && m.fightEndsAt) { flashHint('Die Truppen kämpfen schon – zu spät zum Zurückrufen.', 3000); return; }
@@ -554,6 +556,11 @@ function speedUpCost(m) { return Math.max(1, Math.ceil((m.resolveAt - Date.now()
 let speedUpZuletzt = 0;                               // (ein Doppel-Tipp beschleunigt nicht zweimal)
 function speedUpMarch(key) {                         // halves the time still to go; the column keeps its place on the road
     const now = Date.now(); if (now - speedUpZuletzt < 600) return; speedUpZuletzt = now;
+    const sc = pendingScouts.find(x => marchKeyOf(x) === key);                // ein Späher (nur deiner – kein Befehl an den Weltrechner nötig)
+    if (sc) { const rem = sc.resolveAt - now; if (rem < 1500) return; const cost = speedUpCost(sc); if (gems < cost) { flashHint('Zu wenig Gems – Beschleunigen kostet ' + cost + '.', 3000); return; }
+        gems -= cost; const p = Math.max(0, Math.min(.99, (now - sc.startedAt) / Math.max(1, sc.resolveAt - sc.startedAt)));
+        sc.resolveAt = now + rem / 2; sc.startedAt = sc.resolveAt - (rem / 2) / (1 - p);
+        flashHint('Späher beschleunigt – noch ' + fmtClock(Math.ceil(rem / 2000)) + '.', 2500); updateHud(); saveGame(); saveProgression(); renderActiveMarches(); requestRender(); return; }
     for (const list of [pendingAttacks, pendingSends, pendingRetreats]) {
         const m = list.find(x => marchKeyOf(x) === key); if (!m) continue;
         if (m.fightEndsAt) return;
@@ -675,28 +682,25 @@ function launchScout(targetId, explore, at) {
     renderActiveMarches();
 }
 
-// Spähbericht: was der Späher über den Herrn der Basis herausfindet – je nach deinem Wachturm (Forschung im Labor, Alexander 4.10.:
-// „am Anfang sieht man weniger, wenn der weit oben ist, mehr“). Immer: Herr, Stufe, Titel, Schild. Dann nach und nach Mauer,
-// Helden, Burg, Rohstoffe (und wie viel davon zu holen ist), Fähigkeiten, Forschung, Ausrüstung (aufbau.js WACHT).
+// Spähbericht: was der Späher über den Herrn der Basis herausfindet – alles, sofort (Alexander 4.10.): Herr, Stufe, Titel,
+// Schild, Mauer, Helden, Burg, Rohstoffe (und wie viel davon zu holen ist), Fähigkeiten, Forschung, Ausrüstung
 function spaeherBlick(owner) {
     if (!owner || owner === 'player' || !botById[owner]) return null;
     const b = loadBotState()[owner]; if (!b) return null;
-    const W = AUF ? AUF.WACHT : {}, L = AUF ? AUF.wachturm('player') : 99, t = titleOf(owner), o = { name: botById[owner].name, lvl: b.lvl || 1, titel: t ? t.name : '', schild: !!ownerShielded(owner), L };
-    if (L >= W.mauer) o.wall = botBld(owner, 'wall') || 0;
-    if (L >= W.helden) o.held = Object.entries(b.hs || {}).filter(([id, h]) => h && h.own && heroById(id)).sort((x, y) => (y[1].q || 0) - (x[1].q || 0)).slice(0, 3).map(([id, h]) => [heroById(id).name, (h.q || 0) / 2]);
-    if (L >= W.faeh) o.sk = { attack: (b.skills || {}).attack || 0, defense: (b.skills || {}).defense || 0, troops: (b.skills || {}).troops || 0 };
-    if (L >= W.gear) { o.gear = {}; for (const k of Object.keys(EQUIPMENT_DEFS)) { const it = botItem(b, k); o.gear[k] = it ? [it.rarity, it.level, it.stars] : null; } }
-    o.auf = AUF ? AUF.spaeherMehr('player', owner) : null;                    // Burg, Rohstoffe, Forschung
+    const t = titleOf(owner), o = { name: botById[owner].name, lvl: b.lvl || 1, titel: t ? t.name : '', schild: !!ownerShielded(owner), wall: botBld(owner, 'wall') || 0 };
+    o.held = Object.entries(b.hs || {}).filter(([id, h]) => h && h.own && heroById(id)).sort((x, y) => (y[1].q || 0) - (x[1].q || 0)).slice(0, 3).map(([id, h]) => [heroById(id).name, (h.q || 0) / 2]);
+    o.sk = { attack: (b.skills || {}).attack || 0, defense: (b.skills || {}).defense || 0, troops: (b.skills || {}).troops || 0 };
+    o.gear = {}; for (const k of Object.keys(EQUIPMENT_DEFS)) { const it = botItem(b, k); o.gear[k] = it ? [it.rarity, it.level, it.stars] : null; }
+    o.auf = AUF ? AUF.spaeherMehr(owner) : null;                             // Burg, Rohstoffe, Forschung
     return o;
 }
 function spaeherBlickHtml(s) {
     if (!s) return '';
     const stern = n => n ? ' ' + '★'.repeat(Math.floor(n)) + (n % 1 ? '½' : '') : '', zeile = (a, b) => '<div class="logLine"><span>' + a + '</span><span>' + b + '</span></div>';
-    const A = s.auf || {}, R = A.roh, W = AUF ? AUF.WACHT : {}, L = s.L !== undefined ? s.L : 99;
+    const A = s.auf || {}, R = A.roh;
     const gear = s.gear ? Object.keys(EQUIPMENT_DEFS).map(k => { const g = s.gear[k]; return '<div class="logLine"><span>' + EQUIPMENT_DEFS[k].name + '</span><span' + (g ? ' style="color:' + RARITY_DEFS[g[0]].color + '"' : '') + '>' +
         (g ? RARITY_DEFS[g[0]].label + ' · St. ' + g[1] + (g[2] ? ' · ' + g[2] + '★' : '') : '—') + '</span></div>'; }).join('') : '';
     const beute = v => fmtCompact(v) + (R && v > R.schutz ? ' <small>(' + fmtCompact(Math.floor((v - R.schutz) * HAUPT_BEUTE)) + ' zu holen)</small>' : '');
-    const naechst = Object.entries({ mauer: 'Mauer', helden: 'Helden', burg: 'Burg', roh: 'Rohstoffe', faeh: 'Fähigkeiten', forsch: 'Forschung', gear: 'Ausrüstung' }).find(([k]) => L < W[k]);
     return '<details><summary>Spähbericht</summary><div class="logSide" style="margin-top:6px">' +
         zeile('Herr', escapeHtml(s.name) + ' · Stufe ' + fmtNum(s.lvl) + (s.titel ? ' · ' + escapeHtml(s.titel) : '')) +
         zeile('Friedensschild', s.schild ? 'aktiv' : 'keiner') +
@@ -705,8 +709,7 @@ function spaeherBlickHtml(s) {
         (A.burg ? zeile('Burg', 'Stufe ' + A.burg + (R ? ' · schützt ' + fmtCompact(R.schutz) + ' je Rohstoff' : '')) : '') +
         (R ? zeile('Gold', beute(R.c)) + (R.h !== undefined ? zeile('Holz', beute(R.h)) + zeile('Stein', beute(R.s)) + zeile('Eisen', beute(R.e)) : '') : '') +
         (s.sk ? zeile('Fähigkeiten', 'Angriff ' + s.sk.attack + ' · Vert. ' + s.sk.defense + ' · Truppen ' + s.sk.troops) : '') +
-        (A.fo ? zeile('Forschung', 'Angriff ' + (A.fo.atk | 0) + ' · Vert. ' + (A.fo.def | 0) + ' · Krankenhaus ' + (A.fo.laz | 0)) : '') + gear +
-        (naechst ? zeile('<small>Wachturm ' + L + '</small>', '<small>mehr sehen: Wachturm-Forschung im Labor (Stufe ' + W[naechst[0]] + ': ' + naechst[1] + ')</small>') : '') + '</div></details>';
+        (A.fo ? zeile('Forschung', 'Angriff ' + (A.fo.atk | 0) + ' · Vert. ' + (A.fo.def | 0) + ' · Krankenhaus ' + (A.fo.laz | 0)) : '') + gear + '</div></details>';
 }
 function resolveScout(scout) {
     const target = islandById[scout.targetId];
@@ -722,17 +725,15 @@ function resolveScout(scout) {
     // Same reasoning as resolveSend(): persist the now-shorter
     // pendingScouts array, or a reload replays this scout again.
     saveProgression();
-    const genau = !AUF || AUF.wachturm('player') >= AUF.WACHT.ca, ca = n => genau ? n : AUF.rundCa(n);   // ohne Wachturm nur ungefähr
     addCombatLogEntry({
         type: 'scout',
         sourceId: scout.sourceId,
         targetId: scout.targetId,
-        troops: ca(effectiveTroops(target)),
-        defense: ca(effectiveDefense(target)), ca: !genau,
+        troops: effectiveTroops(target),
+        defense: effectiveDefense(target),
         spy: spaeherBlick(islandOwnerOf(target.id))
     });
-    flashHint(islandTitle(target) + ' gespäht: ' + (genau ? '' : 'ca. ') + fmtNum(ca(effectiveTroops(target))) +
-        ' Truppen, ' + (genau ? '' : 'ca. ') + fmtNum(ca(effectiveDefense(target))) + ' Verteidigung.', 4000);
+    flashHint(islandTitle(target) + ' gespäht – Bericht im Kampflog.', 3000);   // (die Zahlen stehen im Kampflog, nicht im Hinweis)
 }
 
 function retreatPct(attack) { return Math.min(60, RETREAT_RECOVERY_PCT + (attack.hx ? attack.hx.flee : (attack.bernPct || 0) / 2)); }   // a hero (Standhaft, Leichtfuß …): more of a beaten army gets away
