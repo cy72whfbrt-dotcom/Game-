@@ -1780,3 +1780,4 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
 - Getestet: `chat_rally_test` (ohne Ziel „Wo?“; mit Ziel „Ja, ich starte die Rally!“ + Rally läuft wirklich auf das Ziel;
   „Rally?“ währenddessen → „Bin dabei“, kein zweiter Start), dazu chat 12/12, rally_schnell, boss, render, gemeinsam,
   Unit 67/67.
+- **Hochgeladen 4.10., 11:31 UTC** (33 s), Weltrechner läuft wieder.
