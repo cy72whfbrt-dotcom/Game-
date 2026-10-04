@@ -1991,3 +1991,6 @@ Alles aus der Merkliste 12a („Hauptstadt = das Wichtigste“) – **außer dem
 - **Test-Server (Vorschau, `php werkzeuge/vorschau_bauen.php <Ordner> artifact test`):** eigene frische Testwelt je
   Version, **nur EIN Mitspieler** (Kevin_93) in deiner Nähe (ohne Tore erreichbar), alles fast unbegrenzt (Münzen, Gems,
   Rohstoffe, Truppen, Splitter). `… test viele` = alle Mitspieler (für die automatischen Tests).
+- **Nachtrag (Alexander 4.10.):** Der Hinweis „Deine Hauptstadt hat nur diese EINE Stufe … Burg 25 = Stufe 100“ ist raus.
+  Auf der Karte (Namensschild) und im Basis-Fenster steht bei jeder Hauptstadt jetzt ihre **Burg-Stufe** (1–25), nicht
+  mehr die umgerechnete Stufe bis 100 (`anzeigeStufe` in 03-karte.js – intern rechnet die Basis wie bisher).

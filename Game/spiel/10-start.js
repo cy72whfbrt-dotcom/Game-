@@ -103,7 +103,7 @@ function renderPopup() {
     popupEmblem.querySelector('use').setAttribute('href', '#i-' + (isBoss ? 'attack' : isTemple ? 'temple' : isOwned ? 'profile' : ownerBot ? 'bot' : 'question'));
     if (owner && !isBoss) { popupEmblem.dataset.profile = owner; popupEmblem.setAttribute('role', 'button'); popupEmblem.title = 'Profil ansehen'; }   // das Viereck antippen → Profil (mit Bündnis)
     else { delete popupEmblem.dataset.profile; popupEmblem.removeAttribute('role'); popupEmblem.removeAttribute('title'); }
-    popupLevel.textContent = level;
+    popupLevel.textContent = anzeigeStufe(island.id);
     popupTitle.textContent = islandTitle(island);
     popupActions.hidden = true;
     document.getElementById('cityBtn').style.display = 'none';

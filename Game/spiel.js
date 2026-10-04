@@ -2691,6 +2691,8 @@ function strokeBox(g, x, y, w, h) { g.beginPath(); g.rect(x, y, w, h); g.stroke(
 function rr(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
 const BAND = { player: '#3f86d8', bot: '#c9423a', neutral: '#7c8088' };
 
+// Auf der Karte steht bei einer Hauptstadt ihre Burg-Stufe (1–25) – Alexander 4.10.: „nur das Level, das ich gerade bin“
+function anzeigeStufe(id) { const ow = islandOwnerOf(id); return ow && typeof AUF !== 'undefined' && AUF && (id === playerIslandId || isCapital(id)) ? AUF.burgStufe(ow) : islandLevels[id] || 1; }
 function baseLevelOf(isl) { return islandOwnerOf(isl.id) ? (islandLevels[isl.id] || 1) : (isl.neutralLevel || 1); }
 // ===== 3D (isometric) buildings: every building is drawn from the same angle, top + two sides visible =====
 // Sprite box as before: x −31…31, y −48…24, the ground centre of a building sits at y = ISO_OY.
@@ -3053,7 +3055,7 @@ function bkDraw(b, x, y) { if (!b) return false; ctx.drawImage(b.s.c, x - b.W / 
 
 function bannerModel(island) {
   const owner = islandOwnerOf(island.id), isTemple = island.type === 'temple' || island.type === 'megaTemple';
-  const scouted = scoutedIslands.has(island.id), level = islandLevels[island.id] || 1;
+  const scouted = scoutedIslands.has(island.id), level = anzeigeStufe(island.id);
   const tName = island.type === 'megaTemple' ? 'Mega-Tempel' : island.guardian ? 'Wächter-Tempel' : 'Tempel';
   const boss = bossAt(island.id);
   if (boss) return { kind: 'bot', glyph: 'attack', name: boss.name, troops: fmtCompact(boss.troops), def: null, level, temple: false, p: 4.8 };
@@ -11288,7 +11290,7 @@ function renderPopup() {
     popupEmblem.querySelector('use').setAttribute('href', '#i-' + (isBoss ? 'attack' : isTemple ? 'temple' : isOwned ? 'profile' : ownerBot ? 'bot' : 'question'));
     if (owner && !isBoss) { popupEmblem.dataset.profile = owner; popupEmblem.setAttribute('role', 'button'); popupEmblem.title = 'Profil ansehen'; }   // das Viereck antippen → Profil (mit Bündnis)
     else { delete popupEmblem.dataset.profile; popupEmblem.removeAttribute('role'); popupEmblem.removeAttribute('title'); }
-    popupLevel.textContent = level;
+    popupLevel.textContent = anzeigeStufe(island.id);
     popupTitle.textContent = islandTitle(island);
     popupActions.hidden = true;
     document.getElementById('cityBtn').style.display = 'none';

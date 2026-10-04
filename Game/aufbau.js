@@ -308,7 +308,7 @@ function renderKeep() {                                        // das Burg-Fenst
     liveHtml(document.getElementById('cityBExtra'),
         '<div class="keep-h">Jetzt</div><div class="auf-grid"><div><span>Marsch-Plätze</span><b>' + belegt + ' / ' + marschGrenze('player') + ' belegt</b></div><div><span>Gebäude</span><b>bis Stufe ' + stadtCap('player', 'wall') + '</b></div><div><span>Schutz</span><b>' + fmtCompact(burgSchutz('player')) + ' je Rohstoff</b></div></div>' +
         (max ? '' : '<div class="keep-h">Burg-Stufe ' + (B + 1) + ' schaltet frei</div><ul class="auf-frei">' + freiText(B + 1).map(t => '<li>' + icon('check') + t + '</li>').join('') + '</ul>') +
-        '<small class="keep-note">Deine Hauptstadt hat nur diese EINE Stufe: auf der Karte steht sie auf Stufe ' + burgKarte(B) + ' (Burg 25 = Stufe 100). Die anderen Basen draußen wertest du sofort mit Münzen auf. Die Hauptstadt kann angegriffen, aber nie erobert werden: gewinnt der Angreifer, nimmt er ' + Math.round(HAUPT_BEUTE * 100) + ' % von dem mit, was über dem Schutz liegt. Friedensschilde: Shop → Schilde.</small>');
+        '<small class="keep-note">Die Hauptstadt kann angegriffen, aber nie erobert werden: gewinnt der Angreifer, nimmt er ' + Math.round(HAUPT_BEUTE * 100) + ' % von dem mit, was über dem Schutz liegt. Friedensschilde: Shop → Schilde.</small>');
 }
 function effektText(id, lvl) {
     if (id === 'academy') return (lvl ? 'Forschung bis Labor-Stufe ' + lvl + ' · Truppen laufen +' + lvl * 2 + ' % schneller.' : 'Baue das Labor, um zu forschen.') + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: mehr Forschung, +' + (lvl + 1) * 2 + ' % Tempo.' : '');
