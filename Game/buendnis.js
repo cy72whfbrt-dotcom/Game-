@@ -671,7 +671,8 @@ function bundMitspielerRunde(now) {                              // alle 15 s: g
     for (const bot of bots.filter(b => bundVon(b.id) && botOnline(b, now) && Math.random() < .05).slice(0, 3)) {
         const a = bundVon(bot.id), st = loadBotState()[bot.id]; if (!a || !st || (st.gems || 0) < TELEPORT_GEMS || now - (st.capMovedAt || 0) < BOT_CAP_COOLDOWN) continue;
         const andere = a.mit.filter(w => w !== bot.id).map(w => islandById[bundCap(w)]).filter(Boolean); if (!andere.length) continue;
-        const mx = andere.reduce((s2, c) => s2 + c.x, 0) / andere.length, my = andere.reduce((s2, c) => s2 + c.y, 0) / andere.length;
+        const VOR = .3;                                                // (Alexander 4.10.: Bündnisse ziehen nach und nach in die Mitte – der Treffpunkt liegt ein Stück näher am Thron (0,0) als die Mitglieder)
+        const mx = andere.reduce((s2, c) => s2 + c.x, 0) / andere.length * (1 - VOR), my = andere.reduce((s2, c) => s2 + c.y, 0) / andere.length * (1 - VOR);
         const cap = islandById[botCapitalOf(bot.id)]; if (!cap) continue; const dJetzt = Math.hypot(cap.x - mx, cap.y - my);
         let best = null;
         for (const id of botOwnedIslands[bot.id]) { const t = islandById[id]; if (!t || t.type !== 'tower' || !botCapitalMoveOk(bot.id, id)) continue;

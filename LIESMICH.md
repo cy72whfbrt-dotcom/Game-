@@ -1799,3 +1799,14 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
 - Getestet: alle 19 Vorschau-Tests (bis auf `zurueck_test`: bekannter Test-Effekt, Test-Bots haben keine echte
   Spieler-Kennung), Spiel 16/16, Server 67/67, lokal mit Server + Weltrechner: senden, erobern, Bündnis-Chat 11/11,
   Weltrechner ohne Fehler. **Noch nicht hochgeladen.**
+
+## 64. Nach und nach in die Mitte (Alexander 4.10.: 1 „ja“, 2 „jetzt auch schon“ – „höchstens 1 Tag in der Mitte, davor paar Stunden“)
+- **Pass-Zeit an:** ab Welt-Start sind die Brücken zu den Wächter-Inseln 6 Std. zu, die zur Thron-Insel 1 Tag
+  (`PASS_OPEN_DAYS` in `spiel/01-grundlagen.js`; die Karte zeigt die Ketten mit Restzeit). Die jetzige Welt startete am
+  3.10. ~20:40 → Wächter offen, die Thron-Insel öffnet heute ~20:40.
+- **Bündnisse ziehen nach vorne:** Mitspieler in einem Bündnis wollen noch mehr zur Mitte (Ziele weiter innen zählen
+  stärker), und der Treffpunkt, zu dem sie ihre Hauptstadt verlegen, liegt jetzt ein Stück (30 %) näher am Thron als die
+  Mitglieder – so rückt ein Bündnis Schritt für Schritt nach innen. (Das bisherige „nach vorne verlegen“ der Mitspieler
+  bleibt wie es war.)
+- Getestet: `pass_test` (neue Welt: beides zu; nach 7 Std.: Wächter offen, Thron zu; nach 25 Std.: alles offen), dazu
+  chat_rally, boss, reihe, gemeinsam, selbst2, vsme_echt, render, laden grün; lokaler Weltrechner ohne Fehler.

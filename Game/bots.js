@@ -698,7 +698,7 @@ function botThink(bot) {
                 const pv = pullOf(target), grudge = pv.grudge, tOwner = pv.ow;
                 let d = Math.hypot(target.x - source.x, target.y - source.y) * pv.k;
                 const inward = landmasses[target.landmassId].ring < landmasses[source.landmassId].ring;
-                if (inward) d *= target.type === 'gate' ? .3 : .5;                              // everyone wants to get to the middle
+                if (inward) d *= (target.type === 'gate' ? .3 : .5) * (typeof bundVon === 'function' && bundVon(bot.id) ? .7 : 1);   // everyone wants to get to the middle – im Bündnis noch mehr (sie ziehen gemeinsam nach vorne)
                 else if (bossAt(target.id)) d *= 0.15;                                         // events: the Kriegsherr (Wanderboss) is worth a big attack
                 else if (target.type === 'gate' || target.type === 'temple' || target.guardian) d *= st.temple;
                 else if (tOwner) d *= st.enemy / (tOwner === 'player' ? 1 + (st.hunt || 0) : 1);   // raiders like hitting other players, the aggressive ones the player most
