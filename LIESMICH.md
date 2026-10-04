@@ -1590,3 +1590,22 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
 - Getestet: Vorschau `tausch_test` 6/6; Server + Weltrechner `tausch_server_test` (A volles Bündnis, B fragt über „Suchen“ an,
   A „Tauschen“ → Mitglied → „Sicher?“ → getauscht, 5 Mitglieder, B sieht sich im Bündnis, keine Skript-Fehler); Einladungen
   10/10, Bündnis-Bots 3/3, Amt 1/1, Unit 16/65.
+
+## 51. Bündnis-Chat mit festen Sätzen statt Signal-Knöpfen (Alexander 4.10.)
+- Reiter „Signale“ heißt jetzt **„Chat“**: Verlauf (eigene Zeilen rechts, Meldungen des Spiels gestrichelt in der Mitte) und
+  feste Sätze zum Antippen – **Fragen:** Wir greifen an? · Wo? · Wann? · Rally? · Brauche Hilfe! · Wer ist online? –
+  **Antworten:** Ja · Nein · Bin dabei · Jetzt! · Später · Bin unterwegs · Bin online · Danke! · Gut gemacht! Kein freier Text.
+- **Ort teilen:** Basis antippen → „Im Chat teilen“ → „X hat Turm #… geteilt“ mit **„Zeigen“** (sonst keine Knöpfe dahinter,
+  Alexander: besprochen wird im Chat) + Marke auf der Karte. An der eigenen Basis zusätzlich „Brauche Hilfe!“ (mit der Basis).
+  Die alten Knöpfe „Angriff!/Sammeln/Verteidigt“ im Inselfenster sind weg; Verstärkung, Rally, Einladen bleiben.
+- **Meldungen im Chat:** beigetreten / nicht mehr im Bündnis / Rally gestartet (mit „Zeigen“) / Hilferufe (auch der Mitspieler).
+- **Mitspieler antworten** nach ein paar Sekunden, und nur, was sie dann tun: „Wir greifen an?“ ohne geteiltes Ziel → „Wo?“;
+  nach dem Teilen → Ja/Bin dabei (dann greifen sie das Ziel an) oder Nein/Später; „Rally?“ → Ja/Nein (je nach freien
+  Marsch-Plätzen); „Wer ist online?“ → „Bin online“; „Wann?“ → „Jetzt!“; „Wo?“ → wer ein Ziel hat, teilt es; wer Hilfe schickt:
+  „Bin unterwegs“.
+- **Nur das eigene Bündnis liest mit:** eigener Welt-Teil `openWaterBundChat` ({ Bündnis: { mit, l } }); der Server
+  (`marsch_teil`) schickt jedem nur den Chat seines Bündnisses (auch beim Laden). Höchstens 80 Zeilen je Bündnis, eine Zeile
+  pro 1,5 s und Spieler; Punkt am Bündnis-Knopf für ungelesene Zeilen, kurzer Hinweis, wenn das Fenster zu ist.
+- Getestet: Vorschau `chat_test` 12/12; Server + Weltrechner `chat_server_test` (teilen am Turm, „Wir greifen an?“, B sieht
+  beides mit „Zeigen“ + Punkt, antwortet „Ja“, A sieht es; C bekommt den Chat nicht – auch nicht nach dem Neuladen; keine
+  Skript-Fehler). Einladungen 10/10, Tauschen 6/6, Verstärkung 5/5, Bündnis-Bots 3/3, Amt 1/1, Unit 16/65.

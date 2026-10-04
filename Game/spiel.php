@@ -1443,6 +1443,13 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .bd-dot{width:8px;height:8px;border-radius:50%;background:#555;flex:none} .bd-dot.on{background:#4cd07d;box-shadow:0 0 6px #4cd07d}
 .bd-sic{width:30px;height:30px;flex:none;display:grid;place-items:center;border-radius:50%;background:var(--sf,#555);color:#fff} .bd-sic .icon{width:16px;height:16px}
 .bd-sig.is-neu{border-color:color-mix(in srgb,var(--sf) 60%,transparent)}
+.bd-chat{display:flex;flex-direction:column;gap:6px;max-height:46vh;overflow-y:auto;padding:4px 2px;margin-bottom:10px}
+.bd-cz{align-self:flex-start;max-width:88%;padding:7px 10px;border:1px solid var(--line-1);border-radius:12px 12px 12px 4px;background:rgba(255,255,255,.04);line-height:1.35;overflow-wrap:anywhere}
+.bd-cz b{font-weight:700}.bd-cz small{display:block;opacity:.6;font-size:11px;margin-top:2px}.bd-cz .btn{margin-left:4px;vertical-align:middle}
+.bd-cz.is-me{align-self:flex-end;border-radius:12px 12px 4px 12px;background:linear-gradient(90deg,#284670,#1c2b44);border-color:rgba(140,192,255,.45)}
+.bd-cz.is-sys{align-self:center;max-width:96%;background:none;border-style:dashed;font-size:13px;opacity:.85;text-align:center}
+.bd-cz.is-hilfe{border-color:rgba(231,76,60,.65)}
+.bd-ck{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0}.bd-ck>span{width:100%;font-size:11px;letter-spacing:.06em;text-transform:uppercase;opacity:.7}
 .bd-rally .bd-sic{background:var(--gold-300);color:#1a1204} .bd-rally.is-feind{border-color:rgba(231,76,60,.45)} .bd-rally.is-feind .bd-sic{background:#e74c3c;color:#fff}
 .bd-knoepfe{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
 .bd-log{display:grid;gap:2px} .bd-log div{display:flex;justify-content:space-between;gap:10px;padding:5px 2px;border-bottom:1px solid var(--line-1);font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-2)}
@@ -1767,7 +1774,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
   </header>
   <div id="bundTabs" class="tabs" role="tablist">
     <button class="tab active" type="button" role="tab" data-btab="info"><svg class="icon"><use href="#i-bund"/></svg><span>Übersicht</span></button>
-    <button class="tab" type="button" role="tab" data-btab="sig"><svg class="icon"><use href="#i-flag"/></svg><span>Signale</span></button>
+    <button class="tab" type="button" role="tab" data-btab="sig"><svg class="icon"><use href="#i-flag"/></svg><span>Chat</span></button>
     <button class="tab" type="button" role="tab" data-btab="rally"><svg class="icon"><use href="#i-troops"/></svg><span>Rally</span></button>
     <button class="tab" type="button" role="tab" data-btab="suchen"><svg class="icon"><use href="#i-scout"/></svg><span>Suchen</span></button>
   </div>

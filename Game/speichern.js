@@ -20,7 +20,7 @@
         'openWaterPendingSends', 'openWaterPendingRetreats', 'openWaterTitles', 'openWaterThrone', 'openWaterBounty',
         'openWaterWander', 'openWaterWanderNext', 'openWaterFields', 'openWaterFieldMarches',
         'openWaterBarb', 'openWaterBarbMarches', 'openWaterBarbWho', 'openWaterDayBoss', 'openWaterArmies', 'openWaterBotState',
-        'openWaterBotCoins', 'openWaterWorldVersion', 'openWaterEvents', 'openWaterBuendnisse', 'openWaterHaendler', 'openWaterKarte', 'openWaterHauptVor', 'openWaterVerstaerkung'];
+        'openWaterBotCoins', 'openWaterWorldVersion', 'openWaterEvents', 'openWaterBuendnisse', 'openWaterHaendler', 'openWaterKarte', 'openWaterHauptVor', 'openWaterVerstaerkung', 'openWaterBundChat'];
     var istWelt = Object.create(null);
     WELT.forEach(function (k) { istWelt[k] = true; });
     var weltGeaendert = new Set();      // Welt-Teile, die sich hier geändert haben (schickt welt.js, wenn wir Weltrechner sind)

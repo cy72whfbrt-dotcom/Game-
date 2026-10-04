@@ -122,6 +122,7 @@
             for (const r of v.r || []) { r.by = t(r.by); for (const j of r.j || []) j.w = t(j.w); }
             return v;
         },
+        openWaterBundChat(v, d) { if (v) { const t = tausch(d); for (const id in v) { const c = v[id]; if (!c) continue; c.mit = (c.mit || []).map(t); for (const x of c.l || []) x.w = t(x.w); } } return v; },   // Bündnis-Chat: wer schreibt, wer liest
         openWaterVerstaerkung(v, d) { if (v) { const t = tausch(d); for (const x of v.l || []) x.w = t(x.w); } return v; },   // Verstärkung (Botschaft): wessen Truppen
         openWaterHaendler(v, d) {            // wandernder Händler (haendler.js): wer was gekauft hat, wessen Sammel-Beschleuniger läuft
             if (!v) return v; const t = tausch(d);

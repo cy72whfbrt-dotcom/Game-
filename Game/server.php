@@ -276,7 +276,7 @@ function nebel_flicken($text, $s) {
 // Truppen 0, Held und Kampfwerte weg. Eigene Kolonnen bleiben, wie sie sind. Diese Teile gehen an Spieler immer ganz (nie als
 // Flicken – die passten nicht zum gefilterten Stand im Handy). Armeen und besetzte Felder zeigt das Spiel mit Zahlen, wenn man sie
 // sieht – im Nebel nicht: Truppen und Helden nur für die, die der Weltrechner ihm als sichtbar meldet (ow_spieler.armee_sicht).
-const MARSCH_TEILE = ['openWaterPendingAttacks', 'openWaterPendingSends', 'openWaterPendingRetreats', 'openWaterFieldMarches', 'openWaterBarbMarches', 'openWaterArmies', 'openWaterFields', 'openWaterVerstaerkung'];   // (Verstärkung: nur seine eigene und die bei ihm)
+const MARSCH_TEILE = ['openWaterPendingAttacks', 'openWaterPendingSends', 'openWaterPendingRetreats', 'openWaterFieldMarches', 'openWaterBarbMarches', 'openWaterArmies', 'openWaterFields', 'openWaterVerstaerkung', 'openWaterBundChat'];   // (Bündnis-Chat: nur der des eigenen Bündnisses) (Verstärkung: nur seine eigene und die bei ihm)
 function marsch_runden($n) { $n = (float)$n; if ($n < 1) return 0; $p = pow(10, max(0, floor(log10($n)) - 1)); return round($n / $p) * $p; }   // (wie angreiferInfo)
 function marsch_teil($k, $text, $ich, $eigen, $turm, $sieht = []) {
     $v = json_decode((string)$text); if (!is_array($v) && !is_object($v)) return $text;   // (als Objekte: {} bleibt {})
@@ -285,6 +285,8 @@ function marsch_teil($k, $text, $ich, $eigen, $turm, $sieht = []) {
         foreach ((array)($v->armies ?? []) as $a) if (is_object($a) && $wer($a, 'who') !== $ich && !isset($sieht[(string)($a->id ?? '')])) { $a->troops = 0; $a->hero = null; $a->hero2 = null; }
         foreach ((array)($v->joins ?? []) as $j) if (is_object($j) && $wer($j, 'who') !== $ich) $j->troops = 0;
         foreach ((array)($v->raids ?? []) as $r) if (is_object($r) && $wer($r, 'tOwner') !== $ich) foreach (['troops', 'n', 'hero', 'hero2'] as $f) if (isset($r->$f)) $r->$f = is_numeric($r->$f) ? 0 : null;
+    } elseif ($k === 'openWaterBundChat') {                       // nur der Chat des eigenen Bündnisses – kein anderes Bündnis liest mit
+        foreach (array_keys((array)$v) as $aid) { $c = $v->$aid ?? null; if (!is_object($c) || !in_array($ich, (array)($c->mit ?? []), true)) unset($v->$aid); }
     } elseif ($k === 'openWaterVerstaerkung') {
         if (isset($v->l) && is_array($v->l)) $v->l = array_values(array_filter($v->l, function ($x) use ($wer, $ich, $eigen) { return is_object($x) && ($wer($x, 'w') === $ich || isset($eigen[(int)($x->t ?? -1)])); }));
     } elseif ($k === 'openWaterFields') {

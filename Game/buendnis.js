@@ -28,8 +28,33 @@ const BUND_SIGNALE = {
     angriff:     { name: 'Angriff!', ic: 'attack', farbe: '#e67e22', text: z => 'Angriff auf ' + z + '!' },
     sammeln:     { name: 'Sammeln', ic: 'flag', farbe: '#f1c40f', text: z => 'Sammeln bei ' + z },
     verteidigen: { name: 'Verteidigt', ic: 'defense', farbe: '#3498db', text: z => 'Verteidigt ' + z + '!' },
-    danke:       { name: 'Danke!', ic: 'star', farbe: '#2ecc71', text: () => 'Danke!' }
+    danke:       { name: 'Danke!', ic: 'star', farbe: '#2ecc71', text: () => 'Danke!' },
+    teilen:      { name: 'Geteilt', ic: 'flag', farbe: '#f1c40f', text: z => 'Geteilt: ' + z }
 };
+// Bündnis-Chat (Alexander 4.10.): nur feste Sätze (kein freier Text), dazu „Ort teilen“ und Meldungen des Spiels.
+// g: f = Frage, a = Antwort, o = Ort geteilt, s = Meldung des Spiels (kann man nicht selbst schicken)
+const BUND_CHAT = {
+    angriff: { g: 'f', t: 'Wir greifen an?' }, wo: { g: 'f', t: 'Wo?' }, wann: { g: 'f', t: 'Wann?' }, rally: { g: 'f', t: 'Rally?' },
+    hilfe: { g: 'f', t: 'Brauche Hilfe!' }, online: { g: 'f', t: 'Wer ist online?' },
+    ja: { g: 'a', t: 'Ja' }, nein: { g: 'a', t: 'Nein' }, dabei: { g: 'a', t: 'Bin dabei' }, jetzt: { g: 'a', t: 'Jetzt!' }, spaeter: { g: 'a', t: 'Später' },
+    unterwegs: { g: 'a', t: 'Bin unterwegs' }, binon: { g: 'a', t: 'Bin online' }, danke: { g: 'a', t: 'Danke!' }, gut: { g: 'a', t: 'Gut gemacht!' },
+    teilen: { g: 'o', t: 'hat einen Ort geteilt' },
+    s_rally: { g: 's', t: 'hat eine Rally gestartet' }, s_rein: { g: 's', t: 'ist dem Bündnis beigetreten' }, s_raus: { g: 's', t: 'ist nicht mehr im Bündnis' }
+};
+const BUND_CHAT_MAX = 80, BUND_CHAT_PAUSE = 1500;                // gemerkte Zeilen je Bündnis · höchstens eine Zeile pro 1,5 s und Spieler
+// Welt-Teil openWaterBundChat = { aid: { mit: [Mitglieder – der Server zeigt jedem nur den Chat seines Bündnisses], l: [{ id, w, k, z, at }] } }
+let bundChat = (() => { try { const v = JSON.parse(store.get('openWaterBundChat')); return v && typeof v === 'object' ? v : {}; } catch (e) { return {}; } })();
+function bundChatSpeichern() {
+    for (const id in bundChat) { const a = bund.b[id]; if (!a) delete bundChat[id]; else bundChat[id].mit = a.mit.slice(); }
+    store.set('openWaterBundChat', JSON.stringify(bundChat)); requestRender();
+}
+function bundChatDazu(a, w, k, z) {                               // eine Zeile in den Chat des Bündnisses a
+    if (!a || !BUND_CHAT[k]) return;
+    const c = bundChat[a.id] || (bundChat[a.id] = { mit: [], l: [] }); if (!Array.isArray(c.l)) c.l = [];
+    c.l.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), w, k, z: Number.isInteger(z) ? z : null, at: Date.now() });
+    if (c.l.length > BUND_CHAT_MAX) c.l.splice(0, c.l.length - BUND_CHAT_MAX);
+    bundChatSpeichern();
+}
 const BUND_NAME_RE = /^[A-Za-z0-9](?:[A-Za-z0-9]| (?! )){1,18}[A-Za-z0-9]$/, BUND_TAG_RE = /^[A-Z]{2,4}$/;
 let bund = { b: {}, r: [], n: 1 };
 let bundIdx = new Map();                                      // wer → Bündnis-Kennung
@@ -85,13 +110,14 @@ function bundZahlen(w, kosten) {                                 // Münzen abzi
 function bundRaus(a, w, grund) {                                 // w verlässt das Bündnis (oder wird rausgeworfen)
     a.mit = a.mit.filter(x => x !== w); if (a.dabei) delete a.dabei[w]; if (a.leer) delete a.leer[w];
     for (const r of bund.r.filter(r => r.aid === a.id && r.by === w)) bundRallyEnde(r, 'Der Starter ist nicht mehr im Bündnis');
-    if (!a.mit.length) { delete bund.b[a.id]; return; }
+    if (!a.mit.length) { delete bund.b[a.id]; bundChatSpeichern(); return; }
+    bundChatDazu(a, w, 's_raus');
     if (a.anf === w) { a.anf = a.mit.slice().sort((x, y) => staerke(y) - staerke(x))[0]; bundLog(a, bundName(a.anf) + ' führt jetzt das Bündnis.'); }
     bundLog(a, bundName(w) + (grund || ' hat das Bündnis verlassen.'));
 }
 function bundRein(a, w) {
     for (const x in bund.b) { const b = bund.b[x]; b.anfragen = (b.anfragen || []).filter(q => q.w !== w); b.einl = (b.einl || []).filter(q => q.w !== w); }
-    a.mit.push(w); (a.dabei || (a.dabei = {}))[w] = Date.now(); bundLog(a, bundName(w) + ' ist beigetreten.');   // (dabei: seit wann – Mitspieler wechseln frühestens nach 12 Std.)
+    a.mit.push(w); (a.dabei || (a.dabei = {}))[w] = Date.now(); bundLog(a, bundName(w) + ' ist beigetreten.'); bundChatDazu(a, w, 's_rein');   // (dabei: seit wann – Mitspieler wechseln frühestens nach 12 Std.)
 }
 const BUND_EINL_MS = 24 * 3600000;                                // eine Einladung gilt 24 Std.
 function bundEinladungen(w) { const now = Date.now(); return Object.values(bund.b).filter(a => (a.einl || []).some(q => q.w === w && now - q.at < BUND_EINL_MS)); }   // wer lädt w gerade ein?
@@ -177,6 +203,22 @@ function bundOp(who, b) {
     }
     if (op === 'offen') { if (!chef) return 'Nur der Anführer'; a.offen = b.offen === true; return fertig(''); }
     if (op === 'signal') return bundSignal(a, who, b.s, b.z) || fertig('');   // (s = Art des Signals – „art“ ist schon die Art des Befehls)
+    if (op === 'chat') {                                          // eine feste Zeile in den Bündnis-Chat
+        const k = typeof b.k === 'string' ? b.k : '', C = BUND_CHAT[k]; if (!C || C.g === 's') return 'kaputt';
+        if (now - (bundMem.chatAt[who] || 0) < BUND_CHAT_PAUSE) return ''; bundMem.chatAt[who] = now;
+        let z = Number.isInteger(b.z) && islandById[b.z] ? b.z : null;
+        if (k === 'teilen') {
+            if (z === null) return 'kaputt';
+            bundChatDazu(a, who, 'teilen', z);
+            a.sig = (a.sig || []).filter(x => now - x.at < 30 * 60000 && !(x.w === who && x.art === 'teilen')); a.sig.unshift({ id: 's' + (bund.n++), w: who, art: 'teilen', z, at: now });   // Marke auf der Karte (eine je Spieler)
+            if (a.sig.length > BUND.SIG_MAX) a.sig.length = BUND.SIG_MAX;
+        } else if (k === 'hilfe') {                                // Hilfe für eine eigene Basis (die angegriffene oder die Hauptstadt)
+            if (z === null || islandOwnerOf(z) !== who) { z = [...bundBasen(who)].find(id => bundUnterAngriff(id)); if (z === undefined) z = bundCap(who); }
+            if (bundSignal(a, who, 'hilfe', z)) bundChatDazu(a, who, 'hilfe', z);   // (das Signal schreibt die Zeile selbst – nur wenn es gerade nicht geht, die Zeile allein)
+        } else bundChatDazu(a, who, k, null);
+        bundChatAntworten(a, who, k);
+        return fertig('');
+    }
     if (op === 'rally') return bundRallyStart(a, who, b) || fertig('');
     if (op === 'rallyDazu') return bundRallyDazu(a, who, b) || fertig('');
     if (op === 'rallyAbbruch') {
@@ -212,7 +254,7 @@ function bundSignal(a, who, art, z) {
     }
     const s = { id: 's' + (bund.n++), w: who, art, z, at: now };
     a.sig.unshift(s); if (a.sig.length > BUND.SIG_MAX) a.sig.length = BUND.SIG_MAX;
-    if (art === 'hilfe') for (const w of a.mit) if (w !== who) bundPush(w, { art: 'hilfe', von: bundName(who), basis: islandTitle(islandById[z]) });
+    if (art === 'hilfe') { for (const w of a.mit) if (w !== who) bundPush(w, { art: 'hilfe', von: bundName(who), basis: islandTitle(islandById[z]) }); bundChatDazu(a, who, 'hilfe', z); }
     return '';
 }
 // Truppen zur Verstärkung an die Basis eines Mitglieds, die gerade angegriffen wird (sie gehören dann dort zur Besatzung)
@@ -353,7 +395,7 @@ function bundRallyStart(a, who, b) {
     islandTroops[at] -= n;
     const now = Date.now(), r = { id: 'r' + (bund.n++), aid: a.id, by: who, at, t, start: now, los: now + min * 60000, n0: n, j: [] };
     bund.r.push(r);
-    bundLog(a, bundName(who) + ' sammelt zur Rally auf ' + islandTitle(islandById[t]) + '.');
+    bundLog(a, bundName(who) + ' sammelt zur Rally auf ' + islandTitle(islandById[t]) + '.'); bundChatDazu(a, who, 's_rally', t);
     const ow = islandOwnerOf(t); if (ow && ow !== who) bundPush(ow, { art: 'rally', von: bundName(who), basis: islandTitle(islandById[t]), ankunft: r.los });
     if (ow && botById[ow] && botById[ow].mensch) bundMelden(ow, 'Achtung: ' + bundName(who) + ' sammelt Truppen für einen gemeinsamen Angriff auf ' + islandTitle(islandById[t]) + '!');
     for (const w of a.mit) if (w !== who && bundKommtHin(w, at, r.los)) bundMelden(w, bundName(who) + ' startet eine Rally auf ' + islandTitle(islandById[t]) + ' – mach mit (Bündnis → Rally).');   // (nur wer es rechtzeitig schafft)
@@ -496,7 +538,7 @@ function bundTempo(who, target) {
 const BUND_NAMEN = ['Sturmbund', 'Nordwacht', 'Eisenkrone', 'Seewoelfe', 'Drachenhort', 'Goldene Flotte', 'Schwarze Segel', 'Rote Rose', 'Bernsteinbund', 'Silberne Hand',
     'Wellenreiter', 'Graue Garde', 'Feuerkreis', 'Sternenwacht', 'Klippenbund', 'Tiefe See', 'Morgenrot', 'Wolfsrudel', 'Inselherren', 'Sturmflut', 'Kronenwacht', 'Nebelbund',
     'Donnerbucht', 'Salzkrieger', 'Leuchtturm', 'Ankerbund', 'Gezeiten', 'Brandungsrat', 'Kaperbund', 'Nordlicht Pakt'];
-const bundMem = { botNext: {}, sigGemacht: new Set(), rallyGemacht: new Set(), ziel: {}, hilfeSig: {}, runde: 0, rallyRunde: {}, rallySeh: 0, sigSeh: 0 };
+const bundMem = { chatAt: {}, chatQ: [], botNext: {}, sigGemacht: new Set(), rallyGemacht: new Set(), ziel: {}, hilfeSig: {}, runde: 0, rallyRunde: {}, rallySeh: 0, sigSeh: 0 };
 const bundWegMem = new Map();                                  // gibt es einen Weg (über eigene Tore)? – je Runde gemerkt
 function bundWeg(a, b, w, n) {                                 // Weg da, letztes Tor offen und die Maut bezahlbar? (wie botCanCross, aber je Runde gemerkt)
     if (a === b) return true; const k = a + '>' + b + ':' + w; let h = bundWegMem.get(k);
@@ -642,6 +684,36 @@ function bundMitspielerSignale(now) {
     }
     for (const k in bundMem.hilfeSig) if (now - bundMem.hilfeSig[k] > 10 * 60000) delete bundMem.hilfeSig[k];
 }
+// Mitspieler antworten im Chat – kurz danach, wie ein Mensch, und nur, was sie dann auch tun
+function bundChatAntworten(a, who, k) {
+    const now = Date.now(), on = a.mit.filter(w => w !== who && botById[w] && !botById[w].mensch && botOnline(botById[w], now));
+    const spaeter = (w, kk, z, tat) => bundMem.chatQ.push({ at: now + 3000 + Math.random() * 15000, aid: a.id, w, k: kk, z: z === undefined ? null : z, tat });
+    const c = bundChat[a.id], geteilt = c && c.l.slice().reverse().find(x => x.k === 'teilen' && now - x.at < 10 * 60000);
+    if (k === 'angriff') {
+        const z = geteilt ? geteilt.z : null;
+        if (z === null) { if (on[0]) spaeter(on[0], 'wo'); return; }   // noch kein Ziel geteilt: „Wo?“
+        for (const w of on.slice(0, 4)) { const ok = !bundZielOk(w, z) && botFreeSlots(botById[w]) > 0 && !(botById[w].style === 'builder' && Math.random() < .6);
+            spaeter(w, ok ? (Math.random() < .5 ? 'ja' : 'dabei') : (Math.random() < .5 ? 'nein' : 'spaeter'), null, ok ? { ziel: z } : null); }
+    } else if (k === 'rally') {
+        for (const w of on.slice(0, 4)) spaeter(w, botFreeSlots(botById[w]) > 0 ? (Math.random() < .5 ? 'ja' : 'dabei') : 'nein');
+    } else if (k === 'online') { for (const w of on.slice(0, 4)) spaeter(w, 'binon'); }
+    else if (k === 'wann') { if (on[0]) spaeter(on[0], Math.random() < .7 ? 'jetzt' : 'spaeter'); }
+    else if (k === 'wo') {                                         // ein Mitspieler mit einem Ziel teilt es
+        for (const w of on) { const zi = bundMem.ziel[w]; if (zi && now < zi.until) { spaeter(w, 'teilen', zi.t); break; } }
+    }
+}
+function bundChatTakt(now) {                                      // (Weltrechner) fällige Antworten der Mitspieler schreiben
+    if (!bundMem.chatQ.length) return;
+    const bleibt = [];
+    for (const q of bundMem.chatQ) {
+        if (now < q.at) { bleibt.push(q); continue; }
+        const a = bund.b[q.aid]; if (!a || !a.mit.includes(q.w)) continue;
+        if (q.k === 'teilen') { bundOp(q.w, { op: 'chat', k: 'teilen', z: q.z }); continue; }
+        bundChatDazu(a, q.w, q.k, q.z);
+        if (q.tat && q.tat.ziel !== undefined) bundMem.ziel[q.w] = { t: q.tat.ziel, until: now + 10 * 60000 };   // „Ja“ heißt: sie greifen das geteilte Ziel an
+    }
+    bundMem.chatQ = bleibt;
+}
 // Antworten mit Taten: Hilfe schicken, mit angreifen, zur Rally kommen
 function bundMitspielerAntworten(now) {
     for (const id in bund.b) {
@@ -663,7 +735,7 @@ function bundMitspielerAntworten(now) {
                         if (!best || n > best.n) best = { id: sid, n }; }
                     if (!best) continue;
                     const give = Math.min(best.n, Math.ceil(fehlt));
-                    if (!bundHilfe(w, best.id, s.z, give)) { fehlt -= give; bundBotGetippt(bot, now); }
+                    if (!bundHilfe(w, best.id, s.z, give)) { fehlt -= give; bundBotGetippt(bot, now); bundMem.chatQ.push({ at: now + 1500 + Math.random() * 4000, aid: a.id, w, k: 'unterwegs', z: null }); }
                 }
             } else if (s.art === 'angriff') {
                 for (const w of a.mit) { const bot = botById[w]; if (!bot || bot.mensch || w === s.w || bundMem.sigGemacht.has(s.id + ':' + w)) continue;
@@ -739,6 +811,7 @@ function bundTakt() {
     if (!window.WELT || !WELT.leiter) return;
     const now = Date.now(); let geaendert = false;
     for (const r of bund.r.slice()) if (now >= r.los) bundRallyLos(r);
+    try { bundChatTakt(now); } catch (e) { if (!bundTakt.chatGewarnt) { bundTakt.chatGewarnt = true; console.warn('Bündnis-Chat:', e); } }
     for (const id in bund.b) { const a = bund.b[id], vor = (a.sig || []).length; a.sig = (a.sig || []).filter(s => now - s.at < 30 * 60000); if (a.sig.length !== vor) geaendert = true;
         const q = (a.anfragen || []).length; a.anfragen = (a.anfragen || []).filter(x => now - x.at < 24 * 3600000 && !bundVon(x.w)); if (a.anfragen.length !== q) geaendert = true;
         const e = (a.einl || []).length; a.einl = (a.einl || []).filter(x => now - x.at < BUND_EINL_MS && !bundVon(x.w) && botById[x.w]); if (a.einl.length !== e) geaendert = true;
@@ -775,8 +848,10 @@ function bundRender(neu) {
     liveHtml(document.getElementById('bundSub'), a ? a.mit.length + ' / ' + BUND.MAX + ' Mitglieder · ' + (a.anf === 'player' ? 'du führst' : 'Anführer ' + escapeHtml(bundName(a.anf))) : 'Gemeinsam stärker');
     const em = document.getElementById('bundEmblem'); if (em) { em.style.setProperty('--bf', a ? BUND.FARBEN[a.farbe] : ''); em.classList.toggle('bd-em', !!a); const u = em.querySelector('use'); if (u) u.setAttribute('href', '#i-' + (a ? BUND.ZEICHEN[a.zeichen] || 'bund' : 'bund')); }
     if (neu || bundOben.dataset.fuer !== bundObenSchluessel()) bundObenZeichnen();
-    liveHtml(bundBody, bundTab === 'info' ? (a ? bundInfoHtml(a) : bundOhneHtml()) : bundTab === 'sig' ? (a ? bundSigHtml(a) : bundOhneHtml())
+    const ch0 = document.getElementById('bdChat'), unten = !ch0 || ch0.scrollHeight - ch0.scrollTop - ch0.clientHeight < 40, pos = ch0 ? ch0.scrollTop : 0;   // Chat: unten bleiben, wenn man unten war
+    liveHtml(bundBody, bundTab === 'info' ? (a ? bundInfoHtml(a) : bundOhneHtml()) : bundTab === 'sig' ? (a ? bundChatHtml(a) : bundOhneHtml())
         : bundTab === 'rally' ? (a ? bundRallyHtml(a) : bundOhneHtml()) : bundSuchenHtml(a));
+    const ch = document.getElementById('bdChat'); if (ch) ch.scrollTop = unten ? ch.scrollHeight : pos;
 }
 function bundEinladungenHtml() {                                  // an mich: Annehmen / Ablehnen
     const L = bundEinladungen('player'); if (!L.length || bundIch()) return '';
@@ -813,6 +888,35 @@ function bundInfoHtml(a) {
         '<button type="button" class="btn btn--ghost btn--sm" data-bact="verlassen">' + bundSicherKnopf('verlassen', 'Bündnis verlassen', 'Wirklich verlassen?') + '</button></div>';
 }
 function bundSigText(s) { const S = BUND_SIGNALE[s.art]; return S ? S.text(s.z !== null && islandById[s.z] ? islandTitle(islandById[s.z]) : '') : ''; }
+function bundChatText(x, du) {                                    // was eine Zeile sagt (ohne den Namen; du: die eigene Zeile – „Du hast …“)
+    const C = BUND_CHAT[x.k]; if (!C) return '';
+    const ort = x.z !== null && x.z !== undefined && islandById[x.z] ? islandTitle(islandById[x.z]) : '';
+    if (x.k === 'teilen') return (du ? 'hast ' : 'hat ') + (ort || 'einen Ort') + ' geteilt';
+    if (x.k === 's_rally') return (du ? 'hast' : 'hat') + ' eine Rally auf ' + (ort || 'ein Ziel') + ' gestartet';
+    if (x.k === 's_rein') return du ? 'bist dem Bündnis beigetreten' : C.t;
+    if (x.k === 's_raus') return du ? 'bist nicht mehr im Bündnis' : C.t;
+    if (x.k === 'hilfe' && ort) return 'Brauche Hilfe! (' + ort + ')';
+    return C.t;
+}
+function bundChatZeilen(a) { const c = bundChat[a.id]; return c && Array.isArray(c.l) ? c.l : []; }
+function bundChatHtml(a) {
+    const l = bundChatZeilen(a).slice(-50), now = Date.now();
+    const knopf = k => '<button type="button" class="btn btn--secondary btn--sm" data-bact="chat" data-k="' + k + '">' + escapeHtml(BUND_CHAT[k].t) + '</button>';
+    return '<div class="bd-chat" id="bdChat">' + (l.length ? l.map(x => { const mir = x.w === 'player', sys = BUND_CHAT[x.k] && BUND_CHAT[x.k].g === 's', ort = x.z !== null && x.z !== undefined && islandById[x.z];
+            return '<div class="bd-cz' + (mir ? ' is-me' : '') + (sys ? ' is-sys' : '') + (x.k === 'hilfe' ? ' is-hilfe' : '') + '"><b>' + (mir ? 'Du' : escapeHtml(bundName(x.w))) + (BUND_CHAT[x.k] && 'fa'.includes(BUND_CHAT[x.k].g) ? ':' : '') + '</b> <span>' + escapeHtml(bundChatText(x, mir)) + '</span>' +
+                (ort ? ' <button type="button" class="btn btn--ghost btn--sm" data-bact="zeigen" data-z="' + x.z + '">Zeigen</button>' : '') + '<small>' + uhrHtml(x.at, 'vor') + '</small></div>'; }).join('')
+            : '<div class="inbox-empty">Noch ist es ruhig. Frag dein Bündnis – oder tippe eine Basis an → „Im Chat teilen“.</div>') + '</div>' +
+        '<div class="bd-ck"><span>Fragen</span>' + ['angriff', 'wo', 'wann', 'rally', 'hilfe', 'online'].map(knopf).join('') + '</div>' +
+        '<div class="bd-ck"><span>Antworten</span>' + ['ja', 'nein', 'dabei', 'jetzt', 'spaeter', 'unterwegs', 'binon', 'danke', 'gut'].map(knopf).join('') + '</div>';
+}
+function bundChatNeu() {                                          // (Handy) neuer Chat vom Weltrechner: kurzer Hinweis, wenn das Fenster zu ist
+    let v = null; try { v = JSON.parse(store.get('openWaterBundChat')); } catch (e) {}
+    const alt = bundChat; bundChat = v && typeof v === 'object' ? v : {};
+    const a = bundIch(); if (!a || SYSTEM) return;
+    const vorher = new Set(((alt[a.id] && alt[a.id].l) || []).map(x => x.id)), seit = Date.now() - 20000;
+    const neu = bundChatZeilen(a).filter(x => !vorher.has(x.id) && x.w !== 'player' && x.at > seit).pop();
+    if (neu && !(isPanelOpen(bundPopup) && bundTab === 'sig') && Date.now() - (bundMem.hinweisAt || 0) > 20000) { bundMem.hinweisAt = Date.now(); flashHint('Bündnis · ' + bundName(neu.w) + ': ' + bundChatText(neu), 4500); }
+}
 function bundSigHtml(a) {
     const now = Date.now(), liste = (a.sig || []).filter(s => now - s.at < 30 * 60000);
     return '<div class="notice">' + icon('info') + '<span>Signale statt Chat: tippe eine Basis auf der Karte an → „Hilfe!“, „Angriff!“, „Sammeln“ oder „Verteidigt“. Mitspieler im Bündnis antworten mit Taten.</span></div>' +
@@ -928,7 +1032,7 @@ if (bundPopup) {
         closeAllPopups(); bundOeffnen(bundIch() ? bundTab === 'suchen' ? 'info' : bundTab : 'suchen'); bundGesehen(); });
     document.getElementById('bundCloseBtn').addEventListener('click', bundSchliessen);
     bundPopup.addEventListener('click', e => {
-        const tab = e.target.closest('[data-btab]'); if (tab) { bundTab = tab.dataset.btab; bundWahl = null; bundRender(true); bundPopup.querySelector('.pbody').scrollTop = 0; if (bundTab === 'sig') bundGesehen(); return; }
+        const tab = e.target.closest('[data-btab]'); if (tab) { bundTab = tab.dataset.btab; bundWahl = null; bundRender(true); bundPopup.querySelector('.pbody').scrollTop = 0; if (bundTab === 'sig') { bundGesehen(); const c = document.getElementById('bdChat'); if (c) c.scrollTop = c.scrollHeight; } return; }
         const fb = e.target.closest('[data-farbe]'), zb = e.target.closest('[data-zeichen]');
         if (fb || zb) { const box = (fb || zb).parentElement; for (const x of box.children) x.classList.toggle('on', x === (fb || zb)); return; }
         const mb = e.target.closest('[data-min]'), fr = e.target.closest('#bdAnteil [data-f]');
@@ -961,6 +1065,9 @@ if (bundPopup) {
         else if (act === 'offen') { const a = bundIch(); if (a) bundBefehl('offen', { offen: !a.offen }, a.offen ? 'Beitritt nur noch auf Anfrage.' : 'Dein Bündnis ist jetzt offen für alle.'); }
         else if (act === 'verlassen') { if (sicher('verlassen')) { bundBefehl('verlassen', {}, 'Du verlässt das Bündnis.'); } }
         else if (act === 'signal') bundSignalSenden(b.dataset.art);
+        else if (act === 'chat') { const k = b.dataset.k; if (!BUND_CHAT[k]) return;
+            if (Date.now() - (bundMem.chatSend || 0) < BUND_CHAT_PAUSE) return; bundMem.chatSend = Date.now();
+            bundBefehl('chat', { k, z: null }); sfx('send'); }
         else if (act === 'zeigen') { const isl = islandById[+b.dataset.z]; if (isl) { bundSchliessen(); flyTo(isl.x, isl.y); setTimeout(() => openIslandPopup(isl), 380); } }
         else if (act === 'hilfeWahl') { bundWahl = { mode: 'hilfe', nach: +b.dataset.z, f: .5 }; bundRender(true); bundPopup.querySelector('.pbody').scrollTop = 0; }
         else if (act === 'dazuWahl') { bundWahl = { mode: 'dazu', rid: b.dataset.rid, f: .5 }; bundRender(true); bundPopup.querySelector('.pbody').scrollTop = 0; }
@@ -977,7 +1084,7 @@ let bundGesehenAt = Date.now();
 function bundGesehen() { bundGesehenAt = Date.now(); bundPunkt(); }
 function bundPunkt() {
     const p = document.getElementById('bundBadge'); if (!p) return; const a = bundIch();
-    const neu = a ? (a.sig || []).filter(s => s.at > bundGesehenAt && s.w !== 'player').length + bund.r.filter(r => r.aid === a.id && r.start > bundGesehenAt && r.by !== 'player').length : bundEinladungen('player').length;
+    const neu = a ? bundChatZeilen(a).filter(x => x.at > bundGesehenAt && x.w !== 'player').length : bundEinladungen('player').length;
     p.style.display = neu ? '' : 'none'; p.textContent = neu > 9 ? '9+' : String(neu);
 }
 // Inselfenster: Bündnis-Knöpfe (Signal, Rally, Hilfe) und keine Angriffe auf Mitglieder
@@ -987,9 +1094,10 @@ function bundInselfenster(island, view) {
     if (view !== 'menu' || !a || SYSTEM) { liveHtml(box, ''); return; }
     const ally = ow && ow !== 'player' && bundVerbuendet('player', ow), mein = ow === 'player', kn = [];
     if (ally) { attackBtn.style.display = 'none'; multiAttackBtn.style.display = 'none'; popupOverline.textContent = 'Bündnis-Mitglied · [' + a.tag + ']'; }
-    if (mein) { kn.push(['hilfe', 'shield', 'Hilfe!']); kn.push(['sammeln', 'flag', 'Sammeln']); }
-    else if (ally) { kn.push(['verteidigen', 'defense', 'Verteidigt']); kn.push(['sammeln', 'flag', 'Sammeln']); if (verstStufe(islandOwnerOf(island.id))) kn.push(['hilfeWahl', 'send', 'Verstärkung']); }   // (nur mit Botschaft – die Truppen bleiben deine)
-    else if (!bundZielOk('player', island.id) || ow && !isCapital(island.id)) { kn.push(['angriff', 'attack', 'Angriff!']); if (!bundZielOk('player', island.id)) kn.push(['rallyWahl', 'troops', 'Rally']); }
+    kn.push(['teilen', 'flag', 'Im Chat teilen']);                                                   // im Bündnis-Chat besprechen
+    if (mein) kn.push(['hilfe', 'shield', 'Brauche Hilfe!']);
+    else if (ally) { if (verstStufe(islandOwnerOf(island.id))) kn.push(['hilfeWahl', 'send', 'Verstärkung']); }   // (nur mit Botschaft – die Truppen bleiben deine)
+    else if (!bundZielOk('player', island.id)) kn.push(['rallyWahl', 'troops', 'Rally']);
     if (bundKannEinladen(ow)) kn.push(['einladen', 'bund', bundEingeladen(ow) ? 'Eingeladen' : 'Einladen']);   // Anführer: Herr dieser Basis ins Bündnis einladen
     liveHtml(box, (ally ? '<div class="notice notice--gold">' + icon('bund') + '<span>' + escapeHtml(bundName(ow)) + ' ist in deinem Bündnis – Mitglieder greifen sich nicht an.</span></div>' : '') +
         (kn.length ? '<div class="bd-insel"><span class="bd-insel-l">' + icon('bund') + 'Bündnis</span>' + kn.map(k => '<button type="button" class="btn btn--secondary btn--sm" data-bsig="' + k[0] + '">' + icon(k[1]) + '<span>' + k[2] + '</span></button>').join('') + '</div>' : ''));
@@ -1000,6 +1108,8 @@ document.getElementById('popupBund') && document.getElementById('popupBund').add
     if (art === 'rallyWahl') { const why = bundZielOk('player', id); if (why) { flashHint(why + '.', 3000); return; } closeIslandPopup(); bundWahl = { mode: 'rally', t: id, min: 3, f: 1 }; bundOeffnen('rally'); return; }
     if (art === 'hilfeWahl') { closeIslandPopup(); bundWahl = { mode: 'hilfe', nach: id, f: .5 }; bundOeffnen('sig'); return; }
     if (art === 'einladen') { const ow = islandOwnerOf(id); if (!bundKannEinladen(ow) || bundEingeladen(ow)) return; b.disabled = true; bundBefehl('einladen', { w: ow }, 'Einladung an ' + bundName(ow) + ' geschickt.'); return; }
+    if (art === 'teilen' || art === 'hilfe') { if (Date.now() - (bundMem.chatSend || 0) < BUND_CHAT_PAUSE) return; bundMem.chatSend = Date.now();
+        bundBefehl('chat', { k: art, z: id }, art === 'teilen' ? 'Im Bündnis-Chat geteilt.' : 'Hilferuf im Bündnis-Chat.'); sfx('send'); b.disabled = true; return; }
     bundSignalSenden(art, id);
 });
 
@@ -1067,6 +1177,7 @@ if (window.WELT) {
     window.__weltLaden = function (keys) {
         if (vorher) vorher(keys);
         if (keys.includes('openWaterVerstaerkung')) { verst = verstLesen(); if (isPanelOpen(bundPopup)) bundRender(); }
+        if (keys.includes('openWaterBundChat')) { bundChatNeu(); if (!keys.includes('openWaterBuendnisse')) { bundPunkt(); if (isPanelOpen(bundPopup)) bundRender(); } }
         if (!keys.includes('openWaterBuendnisse')) return;
         const alt = bund; bundLaden();
         // neue Signale/Rallys im eigenen Bündnis: kurzer Hinweis (nicht die eigenen)
