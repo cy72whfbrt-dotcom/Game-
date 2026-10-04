@@ -1768,3 +1768,15 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
 - Lokal mit Server + Weltrechner: nach dem Neustart griffen innerhalb weniger Minuten 29 Bots den Tagesboss an (vorher den
   ganzen Tag 1). Alle Vorschau-Tests (16) + Unit 67/67 grün.
 - **Hochgeladen 4.10., 10:23 UTC** (37 s), Weltrechner läuft wieder.
+
+## 62. Chat: „Bin zu weit weg – machst du eine Rally?“ (Alexander 4.10.: „wenn sie sagt ja, dann macht sie auch eine“)
+- **Neue Frage:** „Bin zu weit weg – machst du eine Rally?“ – neue Antworten: „Ja, ich starte die Rally!“ und „Bin zu weit weg“.
+- **Mitspieler tun, was sie sagen:** ist ein Ziel geteilt, sucht sich ein Mitspieler, der es erreicht (Weg, Tor/Maut,
+  freier Marsch-Platz, eigene starke Basis), antwortet „Ja, ich starte die Rally!“ und startet sie wirklich (3 Min.
+  Sammelzeit, darunter erscheint „… hat eine Rally gestartet“ mit „Zeigen“). Die anderen sagen „Bin dabei“ und kommen
+  dazu. Kann keiner: „Bin zu weit weg“ bzw. „Nein“. Ohne geteiltes Ziel: „Wo?“.
+- **„Rally?“** wie gehabt, aber jetzt sinnvoll: läuft schon eine Rally → „Bin dabei“ (sie kommen dazu); läuft keine und ein
+  Ziel ist geteilt → einer startet sie (wie oben). Vorher sagten alle nur „Bin dabei“, ohne dass jemand eine startete.
+- Getestet: `chat_rally_test` (ohne Ziel „Wo?“; mit Ziel „Ja, ich starte die Rally!“ + Rally läuft wirklich auf das Ziel;
+  „Rally?“ währenddessen → „Bin dabei“, kein zweiter Start), dazu chat 12/12, rally_schnell, boss, render, gemeinsam,
+  Unit 67/67.

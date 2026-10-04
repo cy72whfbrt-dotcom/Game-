@@ -35,8 +35,10 @@ const BUND_SIGNALE = {
 // g: f = Frage, a = Antwort, o = Ort geteilt, s = Meldung des Spiels (kann man nicht selbst schicken)
 const BUND_CHAT = {
     angriff: { g: 'f', t: 'Wir greifen an?' }, wo: { g: 'f', t: 'Wo?' }, wann: { g: 'f', t: 'Wann?' }, rally: { g: 'f', t: 'Rally?' },
+    rallyBitte: { g: 'f', t: 'Bin zu weit weg – machst du eine Rally?' },
     hilfe: { g: 'f', t: 'Brauche Hilfe!' }, online: { g: 'f', t: 'Wer ist online?' },
     ja: { g: 'a', t: 'Ja' }, nein: { g: 'a', t: 'Nein' }, dabei: { g: 'a', t: 'Bin dabei' }, jetzt: { g: 'a', t: 'Jetzt!' }, spaeter: { g: 'a', t: 'Später' },
+    starte: { g: 'a', t: 'Ja, ich starte die Rally!' }, zuweit: { g: 'a', t: 'Bin zu weit weg' },
     unterwegs: { g: 'a', t: 'Bin unterwegs' }, binon: { g: 'a', t: 'Bin online' }, danke: { g: 'a', t: 'Danke!' }, gut: { g: 'a', t: 'Gut gemacht!' },
     teilen: { g: 'o', t: 'hat einen Ort geteilt' },
     s_rally: { g: 's', t: 'hat eine Rally gestartet' }, s_rein: { g: 's', t: 'ist dem Bündnis beigetreten' }, s_raus: { g: 's', t: 'ist nicht mehr im Bündnis' }
@@ -707,8 +709,19 @@ function bundChatAntworten(a, who, k) {
         if (z === null) { if (on[0]) spaeter(on[0], 'wo'); return; }   // noch kein Ziel geteilt: „Wo?“
         for (const w of on.slice(0, 4)) { const ok = !bundZielOk(w, z) && botFreeSlots(botById[w]) > 0 && !(botById[w].style === 'builder' && Math.random() < .6);
             spaeter(w, ok ? (Math.random() < .5 ? 'ja' : 'dabei') : (Math.random() < .5 ? 'nein' : 'spaeter'), null, ok ? { ziel: z } : null); }
-    } else if (k === 'rally') {
-        for (const w of on.slice(0, 4)) spaeter(w, botFreeSlots(botById[w]) > 0 ? (Math.random() < .5 ? 'ja' : 'dabei') : 'nein');
+    } else if (k === 'rally' || k === 'rallyBitte') {
+        // läuft schon eine Rally des Bündnisses: wer kann, kommt dazu (das Mitmachen selbst macht bundMitspielerRally)
+        const lauf = k === 'rally' && bund.r.some(r => r.aid === a.id && now < r.los - 5000);
+        if (lauf) { for (const w of on.slice(0, 4)) spaeter(w, botFreeSlots(botById[w]) > 0 ? 'dabei' : 'nein'); return; }
+        // sonst: einer startet sie auf das geteilte Ziel – wer es erreicht und Truppen hat. „Ja“ heißt: er startet sie wirklich.
+        const z = geteilt ? geteilt.z : null;
+        if (z === null) { if (on[0]) spaeter(on[0], 'wo'); return; }   // noch kein Ziel geteilt
+        let wer = null, plan = null;
+        for (const w of on) { if (bund.r.some(r => r.by === w) || botFreeSlots(botById[w]) <= 0 || bundZielOk(w, z)) continue;
+            const p = bundRallyFuer(w, z, now); if (p) { wer = w; plan = p; break; } }
+        if (!wer) { if (on[0]) spaeter(on[0], on.some(w => !bundZielOk(w, z)) ? 'zuweit' : 'nein'); return; }
+        spaeter(wer, 'starte', null, { rally: plan });
+        for (const w of on.filter(x => x !== wer).slice(0, 3)) if (botFreeSlots(botById[w]) > 0) spaeter(w, 'dabei');
     } else if (k === 'online') { for (const w of on.slice(0, 4)) spaeter(w, 'binon'); }
     else if (k === 'wann') { if (on[0]) spaeter(on[0], Math.random() < .7 ? 'jetzt' : 'spaeter'); }
     else if (k === 'wo') {                                         // ein Mitspieler mit einem Ziel teilt es
@@ -722,6 +735,12 @@ function bundChatTakt(now) {                                      // (Weltrechne
         if (now < q.at) { bleibt.push(q); continue; }
         const a = bund.b[q.aid]; if (!a || !a.mit.includes(q.w)) continue;
         if (q.k === 'teilen') { bundOp(q.w, { op: 'chat', k: 'teilen', z: q.z }); continue; }
+        if (q.tat && q.tat.rally) {                                   // „Ja, ich starte die Rally!“ – und er tut es (sonst sagt er, dass es nicht geht)
+            if (bund.r.some(r => r.by === q.w) || bundRallyFuer(q.w, q.tat.rally.ziel, now) === null) { bundChatDazu(a, q.w, 'nein'); continue; }   // (geht inzwischen nicht mehr)
+            bundChatDazu(a, q.w, 'starte');
+            if (bundRallyStart(a, q.w, q.tat.rally)) bundChatDazu(a, q.w, 'nein'); else bundSpeichern();   // (bundRallyStart schreibt „hat eine Rally gestartet“ dazu)
+            continue;
+        }
         bundChatDazu(a, q.w, q.k, q.z);
         if (q.tat && q.tat.ziel !== undefined) bundMem.ziel[q.w] = { t: q.tat.ziel, until: now + 10 * 60000 };   // „Ja“ heißt: sie greifen das geteilte Ziel an
     }
@@ -790,6 +809,15 @@ function bundMitspielerRally(now) {
         const plan = bundRallyPlan(a, starter, now); if (!plan) continue;
         if (!bundRallyStart(a, starter.id, plan)) { bundSignal(a, starter.id, 'angriff', plan.ziel); bundBotGetippt(starter, now); bundSpeichern(); }
     }
+}
+// Eine Rally auf ein bestimmtes Ziel (Chat: „machst du eine Rally?“): die stärkste freie Basis mit Weg dorthin → Plan oder null
+function bundRallyFuer(w, z, now) {
+    const T = islandById[z], thr = botThreatened(w); if (!T) return null; let best = null;
+    for (const id of botOwnedIslands[w] || []) { if (thr.has(id) || id === megaTempleId) continue;
+        const n = Math.floor((islandTroops[id] || 0) * .8), I = islandById[id]; if (n < 5000 || !I) continue;
+        if (!routeFor(I.landmassId, T.landmassId, w) || !bundWeg(I.landmassId, T.landmassId, w, n)) continue;
+        if (!best || n > best.n) best = { basis: id, ziel: z, min: 3, n }; }
+    return best;
 }
 function bundRallyPlan(a, bot, now) {                            // → { basis, ziel, min, n } oder null
     const own = [...botOwnedIslands[bot.id]], thr = botThreatened(bot.id);
