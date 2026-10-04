@@ -1732,3 +1732,14 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
   Wartung kommen nur diese hoch (PHP-Dateien immer, die lassen sich von außen nicht vergleichen) und nur diese werden
   geprüft. Meist sind das 1–3 JS-Dateien + 5 PHP-Dateien statt 25 Dateien mit 6 MB → die Pause wird deutlich kürzer.
   `ALLES=1 ./hochladen.sh` lädt wie früher alles hoch.
+
+## 60. Immer noch „ich greife mich selbst an“ (Alexander 4.10., Bildschirmfoto 75 Bio. gegen 25 Bio. an der eigenen Basis)
+- **Ursache (nur Anzeige):** das Handy schätzt, wann ein Kampf endet. Der Weltrechner verlängert den Kampf aber, wenn eine
+  weitere Welle dazukommt. War die Schätzung schon abgelaufen, hielt das Handy den Kampf für vorbei und malte für die
+  nächste eigene Welle eine NEUE Schlacht – gegen die Basis, die die erste Welle gerade erobert hatte.
+  Der Weltrechner rechnete richtig (die Welle ging in den Kampf bzw. zog ein).
+- **Fix:** ein Kampf gilt auf dem Handy als laufend, solange sein Angriff in der Welt steht (nicht nach der eigenen
+  Schätzung). Und bei eigenen Wellen wartet das Handy beim Ankommen 1,2 s auf den nächsten Welt-Stand – gehört die Basis
+  inzwischen dir, zieht die Welle nur ein (keine Schlacht).
+- Getestet: `selbst2_test` – alter Code: 2. Schlacht (genau der Fehler), neuer Code: 1 Schlacht, und keine Schlacht an der
+  eroberten Basis; dazu selbst, vsme_echt, vsme, reihe, gemeinsam, welle, welle_bund, render grün.

@@ -7121,11 +7121,14 @@ setInterval(() => {
         // Angriff auf dich: seine Stärke kommt mit dem Kampfbeginn vom Weltrechner (vorher nur mit Wachturm) – kurz darauf warten,
         // dann die Schlacht mit den echten Zahlen (nie mit erfundenen oder „?“ – Alexander 4.10.)
         if (vsMe && !(a.rawTroops > 0) && now - a.resolveAt < 15000) continue;
+        if (mine && now - a.resolveAt < 1200) continue;   // (eigene Welle: erst den nächsten Welt-Stand abwarten – gehört die Basis inzwischen dir, zieht sie nur ein)
         // Eine weitere Welle derselben Seite (derselbe Angreifer oder ein Bündnis-Mitglied) auf dasselbe Ziel: der Weltrechner
         // wirft sie in den laufenden Kampf – also keine zweite Schlacht, sondern EINE mit den zusammengelegten Truppen.
         const seite = x => x.attackerBotId || 'player', zk = p => zuschauerKampf.get(kampfKey(p));
-        const mit = pendingAttacks.find(p => p !== a && p.targetId === a.targetId && (seite(p) === seite(a) || bundFreund(seite(p), seite(a))) && zk(p) && !zk(p).mit && zk(p).ende > now);
-        if (!mit && pendingAttacks.some(p => p !== a && p.targetId === a.targetId && zk(p) && zk(p).ende > now)) continue;   // ein fremder Kampf läuft dort: diese Welle wartet (der Weltrechner auch)
+        // (Ein Kampf läuft, solange sein Angriff noch in der Welt steht – der Weltrechner verlängert ihn, wenn Wellen dazukommen;
+        //  die eigene Schätzung „ende“ des Handys zählt dafür nicht, sonst malte es eine zweite Schlacht – Alexander 4.10.)
+        const mit = pendingAttacks.find(p => p !== a && p.targetId === a.targetId && (seite(p) === seite(a) || bundFreund(seite(p), seite(a))) && zk(p) && !zk(p).mit);
+        if (!mit && pendingAttacks.some(p => p !== a && p.targetId === a.targetId && zk(p))) continue;   // ein fremder Kampf läuft dort: diese Welle wartet (der Weltrechner auch)
         if (mit) {
             const km = kampfKey(mit), zm = zuschauerKampf.get(km);
             zuschauerKampf.set(k, { ende: zm.ende, mit: km }); if (!a.fightEndsAt) a.fightEndsAt = zm.ende;
