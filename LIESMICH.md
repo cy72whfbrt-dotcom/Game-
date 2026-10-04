@@ -340,6 +340,13 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
   - **Andere Basen (Türme):** kann man verlieren; der Angreifer bekommt dort **nur Gold**, sonst nichts.
   - **Hauptstadt-Stufe:** bleibt bis 25 (Alexander 4.10.).
   - **Noch zu besprechen (Alexander 4.10.: „wir besprechen das jetzt alles“):** wie viel Rohstoffe der Angreifer bekommt, und ob das Brennen nur zu sehen ist oder auch etwas bewirkt.
+- ⭐⭐ **Hauptstadt = das Wichtigste im Spiel (Alexander 4.10., „erst mal merken“) – noch NICHT gebaut:**
+  - **Server-Reset später:** die ganze Karte wird neu – **außer der Hauptstadt**. Sie behält Stufe, Gebäude,
+    Ausrüstung und Helden.
+  - **Hauptstadt max. Stufe 25.** Die Basen draußen bleiben bis Stufe 100 wie jetzt – **daran nichts ändern**.
+  - **Aufleveln langsam:** nicht in 5 Tagen auf 25, sondern über lange Zeit und **mehrere Server-Resets**.
+  - **Kosten:** Gold, Holz, Stein, Eisen – jede Stufe mehr – und jede Stufe **dauert Zeit**.
+  - **Alles wird später neu designt** – Alexander daran erinnern.
   - Heute (zum Vergleich): Plündern nimmt nur Münzen (Hauptstadt und Basis, je ein Anteil über dem Lager-Schutz,
     höchstens eine halbe Stunde Einkommen).
 - ⭐ **Sortier-Tag:** alle Dateien einmal sortieren, alter Code raus (Alexander 4.10.).
