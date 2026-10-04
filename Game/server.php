@@ -289,7 +289,7 @@ function marsch_teil($k, $text, $ich, $eigen, $sieht = []) {
         $mein = null; foreach ((array)($v->b ?? []) as $aid => $a) if (is_object($a) && in_array($ich, (array)($a->mit ?? []), true)) $mein = (string)$aid;
         foreach ((array)($v->b ?? []) as $aid => $a) if (is_object($a) && (string)$aid !== $mein) unset($a->log, $a->sig);
         if (isset($v->r) && is_array($v->r)) foreach ($v->r as $r) if (is_object($r) && (string)($r->aid ?? '') !== $mein) {
-            $r->n0 = 0; if (isset($r->j) && is_array($r->j)) foreach ($r->j as $j) if (is_object($j)) $j->n = 0; }
+            $r->n0 = 0; unset($r->held, $r->held2); if (isset($r->j) && is_array($r->j)) foreach ($r->j as $j) if (is_object($j)) $j->n = 0; }
     } elseif ($k === 'openWaterVerstaerkung') {
         if (isset($v->l) && is_array($v->l)) $v->l = array_values(array_filter($v->l, function ($x) use ($wer, $ich, $eigen) { return is_object($x) && ($wer($x, 'w') === $ich || isset($eigen[(int)($x->t ?? -1)])); }));
     } elseif ($k === 'openWaterFields') {
@@ -305,7 +305,7 @@ function marsch_teil($k, $text, $ich, $eigen, $sieht = []) {
             }
             $kampf = !empty($e->fightEndsAt); $aufMich = isset($eigen[(int)($e->targetId ?? -1)]); $genau = $aufMich && $kampf;   // (kämpft er schon bei dir, siehst du seine Stärke – wie danach im Kampfbericht)
             $e->rawTroops = $genau ? ($e->rawTroops ?? 0) : 0;
-            foreach (['hx', 'attackBonus', 'skillBonus', 'skillLvl', 'attackGoldRate', 'rewardGoldRate', 'shieldLossReductionPct', 'atkTitle', 'atkTitleKey', 'atkKraft', 'atkFo', 'planId', 'lastWave'] as $f) unset($e->$f);
+            foreach (['hx', 'attackBonus', 'skillBonus', 'skillLvl', 'attackGoldRate', 'rewardGoldRate', 'shieldLossReductionPct', 'atkTitle', 'atkTitleKey', 'atkKraft', 'atkFo', 'planId', 'lastWave', 'heldBonus', 'heldVon'] as $f) unset($e->$f);
             if (!$genau) unset($e->hero, $e->hero2);
         } elseif ($k === 'openWaterPendingSends') { if ($wer($e, 'senderBotId') !== $ich) $e->troops = 0; }
         elseif ($k === 'openWaterPendingRetreats') { if ($wer($e, 'owner') !== $ich) $e->troops = 0; }
@@ -940,7 +940,7 @@ class MysqlLager {
     function befehl_ablegen($uid, $b, $cid = null) { $a = json_decode($b, true); $art = is_array($a) && is_string($a['art'] ?? null) ? substr($a['art'], 0, 16) : null;
         $this->db->prepare('INSERT IGNORE INTO ow_befehle (spieler_id, befehl, cid, art) VALUES (?, ?, ?, ?)')->execute([$uid, $b, $cid, $art]); }
     function offene_befehle($uid) { $q = $this->db->prepare('SELECT COUNT(*) FROM ow_befehle WHERE spieler_id = ? AND fertig = 0'); $q->execute([$uid]); return (int)$q->fetchColumn(); }
-    function befehle_offen() { return (int)$this->db->query('SELECT COUNT(*) FROM ow_befehle WHERE fertig = 0')->fetchColumn(); }
+    function befehle_offen() { return (int)$this->db->query('SELECT IFNULL(SUM(LEAST(c, 40)), 0) FROM (SELECT COUNT(*) c FROM ow_befehle WHERE fertig = 0 GROUP BY spieler_id) x')->fetchColumn(); }   // (je Spieler höchstens 40 – wie befehle_gerecht abholt)
     function befehle_quittieren($ids) {   // genau diese Nummern (nicht „alles bis“: eine kleinere Nummer kann später eingetragen sein)
         $ids = array_values(array_unique(array_filter(array_map('intval', array_slice((array)$ids, 0, 2000)), function ($x) { return $x > 0; })));
         $v = (int)$this->db->query('SELECT version FROM ow_welt_info WHERE id = 1')->fetchColumn();   // (die Wirkung steckt in der Welt bis einschließlich dieser Version)

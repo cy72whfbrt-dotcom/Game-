@@ -116,7 +116,7 @@ setInterval(() => {
                 renderActiveMarches(); continue;
             }
             if (islandOwnerOf(a.targetId) === (a.attackerBotId || 'player')) {   // the base is already ours (an earlier wave took it): they simply move in
-                islandTroops[a.targetId] = (islandTroops[a.targetId] || 0) + (a.rally ? bundRallyHeim(a, a.rawTroops, a.targetId, true) : a.rawTroops);   // (Rally: nur der Anteil des Starters zieht ein)
+                heroWutZurueck(atkr, a.hx); islandTroops[a.targetId] = (islandTroops[a.targetId] || 0) + (a.rally ? bundRallyHeim(a, a.rawTroops, a.targetId, true) : a.rawTroops);   // (Rally: nur der Anteil des Starters zieht ein)
                 pendingAttacks.splice(pendingAttacks.indexOf(a), 1);
                 if (!a.attackerBotId) { flashHint(islandTitle(islandById[a.targetId]) + ' gehört schon dir – ' + fmtNum(a.rawTroops) + ' Truppen verstärken die Besatzung.', 4000); updateHud(); saveGame(); saveProgression(); }
                 else if (botById[a.attackerBotId] && botById[a.attackerBotId].mensch && typeof bundMelden === 'function') bundMelden(a.attackerBotId, islandTitle(islandById[a.targetId]) + ' gehört schon dir – ' + fmtNum(a.rawTroops) + ' Truppen verstärken die Besatzung.');   // (echter Spieler: Bescheid statt Kampf)
@@ -146,7 +146,7 @@ setInterval(() => {
                 fight.rawTroops += a.rawTroops; fight.attackBonus = (fight.attackBonus || 0) + (a.attackBonus || 0);
                 if (fight.skillBonus !== undefined || a.skillBonus !== undefined) fight.skillBonus = (fight.skillBonus || 0) + (a.skillBonus !== undefined ? a.skillBonus : a.attackBonus || 0); fight.waves = (fight.waves || 1) + (a.waves || 1);
                 if (a.hx && anderer && !ohneHeld) heroFought(a.attackerBotId, a.hx);              // (ein Held eines Mitspielers führt nur seinen eigenen Kampf – er bekommt seine Wut)
-                else if (a.hx) { if (!fight.hx) { fight.hx = a.hx; fight.hero = a.hero; fight.hero2 = a.hero2 || null; } }   // höchstens Haupt- + Zweitheld: die Helden der ersten Welle führen den Kampf
+                else if (a.hx && !anderer && !ohneHeld) { if (!fight.hx) { fight.hx = a.hx; fight.hero = a.hero; fight.hero2 = a.hero2 || null; } }   // höchstens Haupt- + Zweitheld: die Helden der ersten Welle führen den Kampf
                 if (!anderer) { fight.shieldLossReductionPct = Math.max(fight.shieldLossReductionPct || 0, a.shieldLossReductionPct || 0);   // (sein eigener Schild/Gold-Bonus gilt nicht für die anderen)
                     fight.rewardGoldRate = Math.max(fight.rewardGoldRate || 0, a.rewardGoldRate || 0); }
                 fight.fightEndsAt = Math.max(fight.fightEndsAt, now + 2500);          // the fresh troops get to fight too
@@ -157,7 +157,7 @@ setInterval(() => {
                 if (!est) {                                         // (kaputtes/altes Ziel: nie ein Kampf – die Truppen gehen heim statt ewig zu warten)
                     const own = atkr === 'player' ? ownedIslands : botOwnedIslands[atkr], back = own && own.has(a.sourceId) ? a.sourceId : atkr === 'player' ? rewardBaseId() : botCapitalOf(atkr);
                     if (a.rally) bundRallyHeim(a, a.rawTroops, a.sourceId); else if (back !== null && back !== undefined) islandTroops[back] = (islandTroops[back] || 0) + a.rawTroops;
-                    pendingAttacks.splice(pendingAttacks.indexOf(a), 1); continue; }
+                    heroWutZurueck(atkr, a.hx); pendingAttacks.splice(pendingAttacks.indexOf(a), 1); continue; }
                 a.id = a.id || (a.startedAt + '-' + a.sourceId + '-' + a.targetId);
                 a.fightEndsAt = now + fightDurationMs(est);
                 const tgt = islandById[a.targetId], mine = !a.attackerBotId, vsMe = a.attackerBotId && islandOwnerOf(a.targetId) === 'player';

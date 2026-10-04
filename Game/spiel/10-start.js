@@ -1821,7 +1821,6 @@ if (window.WELT) {
             if (!inselOk(b.src) || !inselOk(b.ziel) || !zahlOk(b.n) || b.n < 1) { warnen(who, 'kaputt', 'Angriff mit kaputten Angaben – abgelehnt.'); return; }
             if (islandOwnerOf(b.ziel) === who) { warnen(who, 'kaputt', 'Angriff auf die eigene Basis – abgelehnt.'); return; }   // (brachte sonst Gratis-EP)
             if (!gehoert(b.src, who)) return;
-            { const hbA = hbDa(who); if (hbA && !nbKennt(who, hbA, islandById[b.ziel].landmassId)) { warnen(who, 'weg', 'Angriff in ein Gebiet, das er nicht kennen kann (Nebel) – abgelehnt.'); nichtLos(who, null, b.src, 'Angriff auf ' + islandTitle(islandById[b.ziel])); return; } }   // (wie beim Späher – auf dem Handy sperrt das der Nebel)
             if (!wegOk(who, islandById[b.src].landmassId, islandById[b.ziel].landmassId)) { warnen(who, 'weg', 'Angriff ohne Weg dorthin (Brücke/Tor) – abgelehnt.'); nichtLos(who, null, b.src, 'Angriff auf ' + islandTitle(islandById[b.ziel]), 'kein Weg – ein fremdes Tor liegt dazwischen'); return; }
             b.n = Math.floor(b.n);
             naechsteGruppe = kennungOk(b.grp) ? b.grp : null;                // Mehrfachangriff = ein Marsch-Platz (nur vom selben Ort, nur kurz nacheinander)

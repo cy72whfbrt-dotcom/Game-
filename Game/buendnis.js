@@ -111,8 +111,8 @@ function bundZahlen(w, kosten) {                                 // Münzen abzi
 function bundRaus(a, w, grund) {                                 // w verlässt das Bündnis (oder wird rausgeworfen)
     a.mit = a.mit.filter(x => x !== w); if (a.dabei) delete a.dabei[w]; if (a.leer) delete a.leer[w];
     for (const r of bund.r.filter(r => r.aid === a.id && r.by === w)) bundRallyEnde(r, 'Der Starter ist nicht mehr im Bündnis');
-    for (const r of bund.r.filter(r => r.aid === a.id && r.by !== w)) for (const j of r.j.filter(j => j.w === w && j.da)) {   // seine Truppen in fremden Rallys gehen heim
-        r.j = r.j.filter(x => x !== j); bundHeimschicken(w, r.at, j.f, j.n); }
+    for (const r of bund.r.filter(r => r.aid === a.id && r.by !== w)) for (const j of r.j.filter(j => j.w === w)) {   // seine Truppen in fremden Rallys gehen heim (die unterwegs kehren bei der Ankunft um)
+        r.j = r.j.filter(x => x !== j); if (j.da) bundHeimschicken(w, r.at, j.f, j.n); }
     if (!a.mit.length) { delete bund.b[a.id]; bundChatSpeichern(); return; }
     bundChatDazu(a, w, 's_raus');
     if (a.anf === w) { a.anf = a.mit.slice().sort((x, y) => staerke(y) - staerke(x))[0]; bundLog(a, bundName(a.anf) + ' führt jetzt das Bündnis.'); }
@@ -469,6 +469,8 @@ function verstNachKampf(id, k, gefallen) {
         x.v.n = x.n0 - f; restV += x.v.n;
         helfer.push({ w: x.v.w, name: bundName(x.v.w), n: x.n0, plus: x.plus, k: x.n0 + x.plus, fallen: f - wd, wounded: wd, gear: fighterSnapshot(x.v.w) });
     }
+    if (!gefallen && restV > rest) { let zuviel = restV - rest;            // (abgerundet: ohne eigene Besatzung bleibt den Helfern sonst mehr als übrig ist)
+        for (let i = k.L.length - 1; i >= 0 && zuviel > 0; i--) { const x = k.L[i], d = Math.min(zuviel, x.v.n); x.v.n -= d; helfer[i].fallen += d; zuviel -= d; restV -= d; } }
     if (!gefallen) islandTroops[id] = Math.max(0, rest - restV);   // die Besatzung behält ihren Anteil
     verst.l = verst.l.filter(v => v.n >= 1 && !(gefallen && v.t === id)); verstSpeichern();
     return { eigen: k.G, eigenWeg: gefallen ? k.G : Math.max(0, k.G - islandTroops[id]), helfer };
