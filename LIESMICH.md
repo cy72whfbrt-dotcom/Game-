@@ -177,6 +177,14 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Angriff gilt wieder (`schildAlt` wird gelöscht); Wochenkette verliert keinen Tag. Neuer Test burg_test.
   Noch offen (nur mögliche Fehlalarme im Admin-Bereich, kein Spielfehler): Kisten aus dem Thron-Shop und Gems statt
   Splitter kennt das Hauptbuch noch nicht.
+  4. Runde (Karte, Admin, Login, App/Push): Admin-Seite nach jeder Aktion neu geladen (Post/Redirect/Get) – „Erneut senden“
+  spielt keine Sicherung mehr ein zweites Mal zurück; Rückfragen bei Wartung starten, Neustart, Geschenk/Nebel an ALLE;
+  kaputte Sicherung lässt den Weltrechner nicht aus; echter Spieler erobert ein Tor → offen mit normaler Maut (vorher Zufall
+  wie bei Mitspielern, manchmal geschlossen); keine doppelten Push-Nachrichten beim Beschleunigen; Rally-Warnung per Push
+  geht nicht verloren; Passwort ändern mit „wiederholen“ (Tippfehler sperrte sonst das Konto aus); Antippen einer Nachricht
+  holt das Spiel nach vorne (nicht eine andere Seite).
+  Noch offen: Login-Sperre je Konto (60 Fehlversuche von beliebigen Geräten sperren das Konto 15 Min. – ein Angreifer kann
+  so jemanden aussperren); Push-Abo bleibt nach dem Abmelden auf dem Gerät.
   **Offen / Fragen an Alexander:** Rally – sollen Schild/Held des Anführers (weniger Verluste, Flucht) für ALLE Truppen gelten
   oder nur für seine? EP/Krieger-Punkte der Rally nur der Anführer oder nach Anteil? Server: Spiel auf eigene Subdomain
   (Sicherheit); Welt-Sperre beim Puls (bei vielen Spielern langsam); still verworfene Welt-Teile mit < oder >.
