@@ -1721,3 +1721,4 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
   (Abschnitt 56).
 - Getestet: Unit 67/67 (neu: unterwegs geheim, im Kampf echte Stärke), `vsme_echt_test` (erst keine Schlacht, mit
   Kampfbeginn 12 Mrd. gegen die Besatzung), dazu vsme, selbst, reihe, gemeinsam, welle, welle_bund, render grün.
+- **Hochgeladen 4.10., 09:38 UTC.** Weltrechner läuft wieder.
