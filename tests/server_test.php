@@ -106,6 +106,17 @@ pruefe('Angriff auf mich, kämpft schon: Held zu sehen', $m[1]['hero'] ?? null, 
 $m = json_decode(marsch_teil('openWaterPendingAttacks', $angr, 'u3', [9 => 1]), true);
 pruefe('Angriff auf andere: nie Zahlen', $m[0]['rawTroops'], 0);
 
+// --- Armeen und besetzte Felder: fremde nur mit Zahlen, wenn der Weltrechner sie als sichtbar meldet (sonst im Nebel)
+$arm = json_encode(['armies' => [['id' => 'x1', 'who' => 'bot7', 'troops' => 500, 'hero' => 'h1'], ['id' => 'x2', 'who' => 'bot7', 'troops' => 600, 'hero' => 'h2'], ['id' => 'x3', 'who' => 'u3', 'troops' => 700]], 'joins' => [], 'raids' => []]);
+$m = json_decode(marsch_teil('openWaterArmies', $arm, 'u3', [], ['x2' => true]), true);
+pruefe('fremde Armee im Nebel: keine Zahl, kein Held', [$m['armies'][0]['troops'], $m['armies'][0]['hero']], [0, null]);
+pruefe('fremde Armee gesehen: mit Zahl', $m['armies'][1]['troops'], 600);
+pruefe('eigene Armee: immer mit Zahl', $m['armies'][2]['troops'], 700);
+$fld = json_encode(['f1' => ['occ' => ['who' => 'bot7', 'troops' => 900, 'hero' => 'h1', 'got' => 50]], 'f2' => ['occ' => ['who' => 'bot7', 'troops' => 800]]]);
+$m = json_decode(marsch_teil('openWaterFields', $fld, 'u3', [], ['f2' => true]), true);
+pruefe('fremdes Feld im Nebel: keine Zahl', [$m['f1']['occ']['troops'], $m['f1']['occ']['hero'], $m['f1']['occ']['got']], [0, null, 0]);
+pruefe('fremdes Feld gesehen: mit Zahl', $m['f2']['occ']['troops'], 800);
+
 // --- Bündnisse: fremde Rallys ohne Truppenzahlen, fremde Logs weg; die eigenen bleiben ganz
 $bd = json_encode(['b' => ['a1' => ['mit' => ['u3', 'bot1'], 'log' => [['t' => 'meins']]], 'a2' => ['mit' => ['bot7'], 'log' => [['t' => '5 Mio. Truppen']]]],
     'r' => [['id' => 'r1', 'aid' => 'a1', 'n0' => 1000, 'j' => [['w' => 'bot1', 'n' => 50]]], ['id' => 'r2', 'aid' => 'a2', 't' => 5, 'n0' => 9000, 'j' => [['w' => 'bot7', 'n' => 70]]]], 'n' => 3]);

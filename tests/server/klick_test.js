@@ -51,7 +51,7 @@ let b;
   wo = 'stadt'; await zu(); await klick('#cityNavBtn'); await p.waitForTimeout(1500);
   out.stadt = await ev(async () => { const ids = ['_keep'].concat(CITY_BUILDINGS.map(b => b.id)); const r = []; for (const id of ids) { try { cityOpenId = id; if (id === '_keep') renderKeepSheet(); else renderCitySheet(); document.getElementById('citySheet').hidden = false; r.push(id + ':' + document.getElementById('citySheet').innerText.length); } catch (e) { r.push(id + ' FEHLER ' + e.message); } await new Promise(z => setTimeout(z, 60)); } return r; }).catch(e => 'FEHLER ' + e.message);
   await pruef('stadt'); await p.screenshot({ path: path.join(OUT, 'z_stadt.png') });
-  out.holzBau = await ev(async () => { cityOpenId = 'lumber'; renderCitySheet(); const up = document.getElementById('cityUpgradeBtn'); if (up.disabled) return 'aus: ' + up.textContent; up.click(); await new Promise(r => setTimeout(r, 600)); const c = loadCity(); return (c.builds || []).map(x => x.id).join(',') || 'kein Bau'; }).catch(e => 'FEHLER ' + e.message);
+  out.holzBau = await ev(async () => { cityOpenId = 'lumber'; renderCitySheet(); const up = document.getElementById('cityUpgradeBtn'); if (up.disabled) return 'aus: ' + up.textContent; const L0 = (loadCity().levels || {}).lumber || 0; up.click(); for (let i = 0; i < 40; i++) { await new Promise(r => setTimeout(r, 500)); const c = loadCity(); if ((c.builds || []).some(x => x.id === 'lumber') || ((c.levels || {}).lumber || 0) > L0) return 'lumber'; } return 'kein Bau (Stufe ' + L0 + ')'; }).catch(e => 'FEHLER ' + e.message);
   await ev(() => { document.getElementById('citySheet').hidden = true; document.getElementById('cityCloseBtn') && document.getElementById('cityCloseBtn').click(); });
   await p.waitForTimeout(800);
   // Angriff auf eine neutrale Basis
@@ -87,6 +87,7 @@ let b;
   await p.waitForTimeout(8000); await p.reload(); await p.waitForTimeout(15000); await zu();
   const nach = await ev(id => ({ basen: ownedIslands.size, ziel: islandOwnerOf(id), stufe: islandLevels[id], bau: (loadCity().builds || []).map(x => x.id).join(','), holz: (loadCity().levels || {}).lumber || 0, rechnet: rechnet() }), out.angriff.ziel);
   console.log('vor dem Neuladen', JSON.stringify(vor)); console.log('nach dem Neuladen', JSON.stringify(nach));
+  ok('Holz-Bau startet (auch als Zuschauer über den Weltrechner)', out.holzBau === 'lumber' || /^aus: /.test(out.holzBau), out.holzBau);
   ok('Basis erobert', out.erobert === true, JSON.stringify(out.angriff));
   ok('nach dem Neuladen alles noch da', nach.basen === vor.basen && nach.ziel === vor.ziel && nach.stufe === vor.stufe && nach.bau === vor.bau, JSON.stringify(vor) + ' → ' + JSON.stringify(nach));
   ok('Weltrechner rechnet, nicht das Handy', vor.rechnet === false && nach.rechnet === false);
