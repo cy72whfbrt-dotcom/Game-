@@ -1735,6 +1735,7 @@ function recallMarch(key) {                          // an attack or a send turn
         const fromId = m.sourceId ?? m.fromId, toId = m.targetId ?? m.toId, troops = m.rawTroops ?? m.troops;
         const src = islandById[fromId], tgt = islandById[toId];
         const frac = Math.max(0, Math.min(1, (now - m.startedAt) / Math.max(1, m.resolveAt - m.startedAt)));
+        if (kind === 'attack') heroWutZurueck('player', m.hx);   // (nicht gekämpft: die Wut bleibt)
         list.splice(list.indexOf(m), 1);
         const walked = Math.max(1000, (Math.min(now, m.resolveAt) - m.startedAt));   // (wer vor dem Ziel gewartet hat, läuft nur den Weg zurück)
         const home = ownedIslands.has(fromId) ? fromId : rewardBaseId();
@@ -4455,14 +4456,14 @@ setInterval(() => {
                 if (a.rally) bundRallyHeim(a, a.rawTroops, a.targetId);
                 else { const own = atkr === 'player' ? ownedIslands : botOwnedIslands[atkr], back = own && own.has(a.sourceId) ? a.sourceId : atkr === 'player' ? rewardBaseId() : botCapitalOf(atkr);
                     if (back !== null && back !== undefined) islandTroops[back] = (islandTroops[back] || 0) + a.rawTroops; }
-                pendingAttacks.splice(pendingAttacks.indexOf(a), 1); renderActiveMarches(); continue;
+                heroWutZurueck(atkr, a.hx); pendingAttacks.splice(pendingAttacks.indexOf(a), 1); renderActiveMarches(); continue;
             }
             if (tow && tow !== atkr && shieldCovers(islandById[a.targetId]) && ownerShielded(tow, gewartet ? now : Math.min(now, a.resolveAt))) {   // bounces off the Friedensschild (as it stood when the wave arrived – nach dem Warten: wie er JETZT steht) - the troops come back
                 const own = atkr === 'player' ? ownedIslands : botOwnedIslands[atkr];
                 const back = own && own.has(a.sourceId) ? a.sourceId : atkr === 'player' ? rewardBaseId() : botCapitalOf(atkr);
                 if (a.rally) bundRallyHeim(a, a.rawTroops, a.targetId);              // (eine Rally: jeder bekommt seinen Anteil zurück)
                 else if (back !== null && back !== undefined) islandTroops[back] = (islandTroops[back] || 0) + a.rawTroops;
-                pendingAttacks.splice(pendingAttacks.indexOf(a), 1);
+                heroWutZurueck(atkr, a.hx); pendingAttacks.splice(pendingAttacks.indexOf(a), 1);
                 if (tow === 'player') { flashHint('Dein Friedensschild hat den Angriff von ' + botById[a.attackerBotId].name + ' auf ' + islandTitle(islandById[a.targetId]) + ' abgewehrt.', 4000);
                     spawnBattleFx(a.targetId, true, 'Schild hält', botById[a.attackerBotId].name + ' prallt ab'); }
                 else if (atkr === 'player') { flashHint('Abgeprallt am Schild von ' + botById[tow].name + ' – ' +
@@ -4491,6 +4492,7 @@ setInterval(() => {
                 }
                 if (anderer || fight.rally || a.rally)
                     fight.rally.an.push(...(a.rally ? a.rally.an : [[a.attackerBotId, a.sourceId, a.rawTroops, anderer ? Math.round(a.attackBonus || 0) : undefined, anderer && a.hx ? a.hx : undefined]]));
+                if (!anderer && a.hx && fight.hx) heroWutZurueck(a.attackerBotId || 'player', a.hx);   // (seine Helden kämpfen nicht mit – die Wut bleibt)
                 if (!anderer && a.hx && fight.hx) a.attackBonus = Math.min(a.attackBonus || 0, a.skillBonus !== undefined ? a.skillBonus : 0);   // höchstens 2 Helden je Angreifer (Alexander 4.10.): die Helden einer weiteren eigenen Welle zählen nicht
                 fight.rawTroops += a.rawTroops; fight.attackBonus = (fight.attackBonus || 0) + (a.attackBonus || 0);
                 if (fight.skillBonus !== undefined || a.skillBonus !== undefined) fight.skillBonus = (fight.skillBonus || 0) + (a.skillBonus !== undefined ? a.skillBonus : a.attackBonus || 0); fight.waves = (fight.waves || 1) + (a.waves || 1);
@@ -6199,7 +6201,7 @@ function claimChain() {
     if (chainStreak() < 7) return;
     const items = []; for (let i = 0; i < CHAIN_REWARD.crates; i++) items.push(grantFreeCrate(CHAIN_REWARD.minRarity));
     gems += CHAIN_REWARD.gems; questChain.streak = 0; store.set('openWaterQuestChain', JSON.stringify(questChain));
-    const shH = heroGrantShards('player', HERO_SHARDS_CHAIN);
+    const shH = heroGrantShards('player', HERO_SHARDS_CHAIN); if (!shH) gems += HERO_SHARDS_CHAIN * 20;   // (alle Helden voll: Gems statt Splitter, wie im Abholfach)
     saveGame(); saveProgression(); updateHud(); sfx('crate');
     flashHint('Große Kiste: ' + items.map(it => RARITY_DEFS[it.rarity].label + ' ' + EQUIPMENT_DEFS[it.slot].name).join(', ') + ' + ' + CHAIN_REWARD.gems + ' Gems' + (shH ? ' + ' + HERO_SHARDS_CHAIN + ' Splitter ' + shH.name : ''), 5000);
     renderQuestPanel(); updateGoalsBadge();
@@ -6210,7 +6212,7 @@ function claimQuestBonus() {
     q.bonusClaimed = true; chainLink(); passBump('questBonus');
     const items = [];
     for (let i = 0; i < QUEST_BONUS.crates; i++) items.push(grantFreeCrate(0));
-    gems += QUEST_BONUS.gems; const shH = heroGrantShards('player', HERO_SHARDS_DAY);
+    gems += QUEST_BONUS.gems; const shH = heroGrantShards('player', HERO_SHARDS_DAY); if (!shH) gems += HERO_SHARDS_DAY * 20;   // (alle Helden voll)
     saveQuests(); saveGame(); saveProgression(); updateHud();
     const it = items[0];
     flashHint('Bonus: ' + RARITY_DEFS[it.rarity].label + ' ' + EQUIPMENT_DEFS[it.slot].name + ' + ' + QUEST_BONUS.gems + ' Gems' + (shH ? ' + ' + HERO_SHARDS_DAY + ' Splitter ' + shH.name : ''), 3000);
@@ -6365,7 +6367,7 @@ function passGive(who, r) {                               // one reward to anyon
     if (r.k === 'coins') { const c = Math.max(5000, Math.round(hourProduction(who).coins)) * n; if (b) botCoins[who] = (botCoins[who] || 0) + c; else coins += c; return '+' + fmtCompact(c) + ' Münzen'; }
     if (r.k === 'gems') { if (b) b.gems += n; else gems += n; return '+' + n + ' Gems'; }
     if (r.k === 'tp') { if (b) b.tp = (b.tp || 0) + n; else { throneState.pts = (throneState.pts || 0) + n; saveThrone(); } return '+' + n + ' Thron-Punkte'; }
-    if (r.k === 'shards') { const h = heroGrantShards(who, n); return h ? '+' + n + ' Splitter ' + h.name : ''; }
+    if (r.k === 'shards') { const h = heroGrantShards(who, n); if (h) return '+' + n + ' Splitter ' + h.name; if (b) b.gems += n * 20; else gems += n * 20; return '+' + n * 20 + ' Gems (alle Helden voll)'; }
     if (r.k === 'shield') { if (b) { b.shields = b.shields || {}; b.shields[n] = (b.shields[n] || 0) + 1; } else { const st = shieldStock(); st[n] = (st[n] || 0) + 1; store.set('openWaterShieldStock', JSON.stringify(st)); } return 'Friedensschild ' + n + ' h'; }
     if (r.k === 'crate' || r.k === 'royal') { const t = [];
         for (let i = 0; i < n; i++) { const rr = r.k === 'royal' ? Math.max(3, pickRandomRarity()) : pickRandomRarity(), slot = pickRandomSlot();
@@ -6402,8 +6404,8 @@ function passCellHtml(r, hp, got) {                            // icon + amount 
     if (k === 'crate') return row(icon('shop'), n + '×', n === 1 ? 'Kiste' : 'Kisten');
     if (k === 'royal') return row(icon('shop', 'ico-royal'), '1×', 'Königliche Kiste');
     const d = lkDef(k, r.id), own = !got && lkHas(k, r.id);
-    if (k === 'frame') return row('<span class="frame-ring pc-frame" data-frame="' + r.id + '"><img alt="" src="' + crestDataUrl(28) + '"></span>', d.name, own ? 'Schon da: 1.000 Gems' : 'Rahmen', 'is-look');
-    return row('<i class="pc-flag" style="--c:' + d.flag + ';--t:' + d.trail + '"></i>', d.name, own ? 'Schon da: 1.000 Gems' : 'Marsch-Skin', 'is-look');
+    if (k === 'frame') return row('<span class="frame-ring pc-frame" data-frame="' + r.id + '"><img alt="" src="' + crestDataUrl(28) + '"></span>', d.name, own ? 'Schon da: ' + fmtNum(PASS_OWNED_GEMS) + ' Gems' : 'Rahmen', 'is-look');
+    return row('<i class="pc-flag" style="--c:' + d.flag + ';--t:' + d.trail + '"></i>', d.name, own ? 'Schon da: ' + fmtNum(PASS_OWNED_GEMS) + ' Gems' : 'Marsch-Skin', 'is-look');
 }
 function passChip(who) { try { const x = who === 'player' ? passOf(passNo(Date.now())) : null, i = x ? { lvl: passLvl(x), prem: x.prem } : botPassInfo(who);   // the pass level in the profile
     return '<div class="rp-pass' + (i.prem ? ' is-prem' : '') + '">' + icon('crown') + '<span>Saison-Pass</span><b>Stufe ' + i.lvl + '</b>' + (i.prem ? '<em>Premium</em>' : '') + '</div>'; } catch (e) { return ''; } }
@@ -6742,7 +6744,8 @@ const SHIELD_PRICES = { 2: 40, 8: 120, 24: 300 };
 var shieldMemAt = 0, shieldMemV = 0;                                   // hot loops ask thousands of times - no storage read each time
 function shieldUntil() { const t = Date.now(); if (t - shieldMemAt > 500) { shieldMemV = parseInt(store.get('openWaterShield'), 10) || 0; shieldMemAt = t; } return shieldMemV; }
 function playerShielded() { return Date.now() < ownerShieldUntil('player'); }
-function dropShield(reason) { if (!playerShielded()) return; store.set('openWaterShield', '0'); shieldMemAt = 0; if (reason) flashHint(reason, 4000); requestRender(); }
+function dropShield(reason) { if (!(shieldUntil() > Date.now())) return;   // (nur der Friedensschild – der Anfängerschutz fällt hier nicht)
+    store.set('openWaterShield', '0'); shieldMemAt = 0; if (reason) flashHint(reason, 4000); requestRender(); }
 // Everyone's Friedensschild works the same: it covers ALL bases (and field armies, gatherers) of its owner, nobody can
 // attack them while it stands (scouting still works), and it falls the moment its owner attacks.
 function ownerShieldUntil(who) {
@@ -8497,6 +8500,9 @@ function heroLaunch(who, id, src, target, raw, id2) {   // the hero marches off:
     const fired = heroWouldFire(s); if (fired) { s.rage = 0; heroSave(who); goalBump(who, 'heroFires'); }
     const ctx = heroBaseCtx(who, src, target, raw); return heroDuo(who, heroFx(who, id, ctx, fired, s), id2, ctx);
 }
+function heroWutZurueck(who, hx) {                  // der Held hat nicht gekämpft (zurückgerufen, abgeprallt, 2. Welle ohne Helden): seine Wut kommt zurück
+    if (!hx || !hx.fired || !hx.id) return; const s = heroSt(who, hx.id); if (s && s.own) { s.rage = Math.max(s.rage || 0, 100); heroSave(who); }
+}
 function heroRageUp(who, id) { const h = heroById(id), s = heroSt(who, id); if (!h || !s || !s.own) return;
     const bl = h.sk.findIndex(x => x[2] === 'rage'), fast = bl >= 0 && s.sk[bl] ? heroSkillVal(h, bl, s.sk[bl]) : 0;
     s.rage = Math.min(100, (s.rage || 0) + HERO_RAGE * (1 + fast / 100)); heroSave(who); }
@@ -9854,7 +9860,7 @@ function fieldGoHome(f, st, now) {                                          // t
     const o = st.occ; if (!o) return;
     const home = islandById[o.homeId] || islandById[playerIslandId];
     fieldMarches.push({ who: o.who, homeId: o.homeId, fieldId: f.id, troops: o.troops, hero: o.hero || null, hero2: o.hero2 || null, startedAt: now, resolveAt: now + fieldTravelSec(home, f, o.who) * 1000, back: true, load: o.got });
-    st.occ = null; if (st.left <= 0) st.regenAt = now + FIELD_REGEN_MS;
+    st.occ = null; if (st.left <= 0 && !(st.regenAt > now)) st.regenAt = now + FIELD_REGEN_MS;   // (die Nachwachs-Uhr läuft weiter, nicht bei jedem Heimgehen von vorn)
 }
 function fieldArrive(m, now) {
     const f = fieldById[m.fieldId];
@@ -10079,7 +10085,7 @@ function marschUmkehren(m, now) {                     // ein Marsch zu Lager/Bos
     liste.splice(i, 1);
     const c = Object.assign({}, m, { startedAt: now, resolveAt: now + walked, back: true }); delete c.mid;
     if (istBarb) {
-        if (m.k === 'b') { const r = barbRec(m.who); r.h = Math.max(0, r.h - 1); }                          // der Angriff zählt nicht (kam nie an)
+        if (m.k === 'b' && m.d === todayKey()) { const r = barbRec(m.who); r.h = Math.max(0, r.h - 1); }   // der Angriff zählt nicht (kam nie an) – nur für heute
         if (m.k === 'd') { const dr = drAktiv(); if (dr && dr.hits[m.who]) { dr.hits[m.who]--; evDirty = true; } }
         if (hier) { c.x = Math.round(hier.x); c.y = Math.round(hier.y); if (lmH) c.lm = lmH.id; }
     } else { c.load = 0; if (hier) { c.vx = Math.round(hier.x); c.vy = Math.round(hier.y); c.vlm = lmH ? lmH.id : (ziel && ziel.landmassId); } }
@@ -13258,6 +13264,7 @@ if (window.WELT) {
             const m = marschVon(who, b.key); if (!m || m.fightEndsAt || m.rally || m.back) return;   // (eine Rally gehört allen, die mitmachen; wer schon heimgeht, kehrt nicht nochmal um)
             if (!pendingAttacks.includes(m) && !pendingSends.includes(m)) { marschUmkehren(m, Date.now()); requestRender(); return; }   // Lager, Boss, Drache, Invasion, Sammler
             const now = Date.now(), fromId = m.sourceId ?? m.fromId, toId = m.targetId ?? m.toId, troops = m.rawTroops ?? m.troops;
+            if (pendingAttacks.includes(m)) heroWutZurueck(who, m.hx);   // (nicht gekämpft: die Wut bleibt)
             (pendingAttacks.includes(m) ? pendingAttacks : pendingSends).splice((pendingAttacks.includes(m) ? pendingAttacks : pendingSends).indexOf(m), 1);
             const home = gehoert(fromId, who) ? fromId : botCapitalOf(who);
             pendingSends.push({ fromId: toId, toId: home, troops, startedAt: now, resolveAt: now + Math.max(1000, Math.min(now, m.resolveAt) - m.startedAt), senderBotId: who, back: true });

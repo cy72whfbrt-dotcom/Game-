@@ -518,6 +518,7 @@ function recallMarch(key) {                          // an attack or a send turn
         const fromId = m.sourceId ?? m.fromId, toId = m.targetId ?? m.toId, troops = m.rawTroops ?? m.troops;
         const src = islandById[fromId], tgt = islandById[toId];
         const frac = Math.max(0, Math.min(1, (now - m.startedAt) / Math.max(1, m.resolveAt - m.startedAt)));
+        if (kind === 'attack') heroWutZurueck('player', m.hx);   // (nicht gekämpft: die Wut bleibt)
         list.splice(list.indexOf(m), 1);
         const walked = Math.max(1000, (Math.min(now, m.resolveAt) - m.startedAt));   // (wer vor dem Ziel gewartet hat, läuft nur den Weg zurück)
         const home = ownedIslands.has(fromId) ? fromId : rewardBaseId();

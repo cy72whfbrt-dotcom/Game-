@@ -209,7 +209,7 @@ function fieldGoHome(f, st, now) {                                          // t
     const o = st.occ; if (!o) return;
     const home = islandById[o.homeId] || islandById[playerIslandId];
     fieldMarches.push({ who: o.who, homeId: o.homeId, fieldId: f.id, troops: o.troops, hero: o.hero || null, hero2: o.hero2 || null, startedAt: now, resolveAt: now + fieldTravelSec(home, f, o.who) * 1000, back: true, load: o.got });
-    st.occ = null; if (st.left <= 0) st.regenAt = now + FIELD_REGEN_MS;
+    st.occ = null; if (st.left <= 0 && !(st.regenAt > now)) st.regenAt = now + FIELD_REGEN_MS;   // (die Nachwachs-Uhr läuft weiter, nicht bei jedem Heimgehen von vorn)
 }
 function fieldArrive(m, now) {
     const f = fieldById[m.fieldId];
@@ -434,7 +434,7 @@ function marschUmkehren(m, now) {                     // ein Marsch zu Lager/Bos
     liste.splice(i, 1);
     const c = Object.assign({}, m, { startedAt: now, resolveAt: now + walked, back: true }); delete c.mid;
     if (istBarb) {
-        if (m.k === 'b') { const r = barbRec(m.who); r.h = Math.max(0, r.h - 1); }                          // der Angriff zählt nicht (kam nie an)
+        if (m.k === 'b' && m.d === todayKey()) { const r = barbRec(m.who); r.h = Math.max(0, r.h - 1); }   // der Angriff zählt nicht (kam nie an) – nur für heute
         if (m.k === 'd') { const dr = drAktiv(); if (dr && dr.hits[m.who]) { dr.hits[m.who]--; evDirty = true; } }
         if (hier) { c.x = Math.round(hier.x); c.y = Math.round(hier.y); if (lmH) c.lm = lmH.id; }
     } else { c.load = 0; if (hier) { c.vx = Math.round(hier.x); c.vy = Math.round(hier.y); c.vlm = lmH ? lmH.id : (ziel && ziel.landmassId); } }

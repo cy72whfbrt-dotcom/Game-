@@ -542,6 +542,9 @@ function heroLaunch(who, id, src, target, raw, id2) {   // the hero marches off:
     const fired = heroWouldFire(s); if (fired) { s.rage = 0; heroSave(who); goalBump(who, 'heroFires'); }
     const ctx = heroBaseCtx(who, src, target, raw); return heroDuo(who, heroFx(who, id, ctx, fired, s), id2, ctx);
 }
+function heroWutZurueck(who, hx) {                  // der Held hat nicht gekämpft (zurückgerufen, abgeprallt, 2. Welle ohne Helden): seine Wut kommt zurück
+    if (!hx || !hx.fired || !hx.id) return; const s = heroSt(who, hx.id); if (s && s.own) { s.rage = Math.max(s.rage || 0, 100); heroSave(who); }
+}
 function heroRageUp(who, id) { const h = heroById(id), s = heroSt(who, id); if (!h || !s || !s.own) return;
     const bl = h.sk.findIndex(x => x[2] === 'rage'), fast = bl >= 0 && s.sk[bl] ? heroSkillVal(h, bl, s.sk[bl]) : 0;
     s.rage = Math.min(100, (s.rage || 0) + HERO_RAGE * (1 + fast / 100)); heroSave(who); }

@@ -176,7 +176,8 @@ function foSperre(who, d) {                                    // warum diese Fo
     if (L > d.max) return 'Fertig erforscht.';
     if (aka < foAkaFuer(d, L)) return 'Braucht Labor Stufe ' + foAkaFuer(d, L) + '.';
     if (d.vor && foStufe(who, d.vor) < 1) return 'Braucht zuerst „' + FO_BY[d.vor].name + '“.';
-    if (c.foRun) return 'Das Labor forscht schon (' + (FO_BY[c.foRun.id] || {}).name + ').';
+    if (c.foRun && !FO_BY[c.foRun.id]) c.foRun = null;           // (alter Spielstand: diese Forschung gibt es nicht mehr – Wachturm, T2–T5)
+    if (c.foRun) return 'Das Labor forscht schon (' + FO_BY[c.foRun.id].name + ').';
     return null;
 }
 function foStart(who, id, now) {                               // → '' oder warum nicht
@@ -194,7 +195,7 @@ function foFertig(who, sofort) {                               // läuft eine Fo
     if (!c.fo) c.fo = {};
     if (FO_BY[r.id]) c.fo[r.id] = Math.max(c.fo[r.id] || 0, Math.min(FO_BY[r.id].max, r.to));
     c.foRun = null;
-    if (who === 'player') { saveCity(); flashHint('Forschung fertig: ' + FO_BY[r.id].name + (FO_BY[r.id].max > 1 ? ' Stufe ' + r.to : '') + '.', 3500); sfx('upgrade'); if (cityOpenId === 'academy') renderCitySheet(); }
+    if (who === 'player') { saveCity(); if (FO_BY[r.id]) flashHint('Forschung fertig: ' + FO_BY[r.id].name + (FO_BY[r.id].max > 1 ? ' Stufe ' + r.to : '') + '.', 3500); sfx('upgrade'); if (cityOpenId === 'academy') renderCitySheet(); }
     else saveBotState();
     return true;
 }

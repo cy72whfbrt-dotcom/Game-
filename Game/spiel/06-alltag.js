@@ -162,7 +162,7 @@ function claimChain() {
     if (chainStreak() < 7) return;
     const items = []; for (let i = 0; i < CHAIN_REWARD.crates; i++) items.push(grantFreeCrate(CHAIN_REWARD.minRarity));
     gems += CHAIN_REWARD.gems; questChain.streak = 0; store.set('openWaterQuestChain', JSON.stringify(questChain));
-    const shH = heroGrantShards('player', HERO_SHARDS_CHAIN);
+    const shH = heroGrantShards('player', HERO_SHARDS_CHAIN); if (!shH) gems += HERO_SHARDS_CHAIN * 20;   // (alle Helden voll: Gems statt Splitter, wie im Abholfach)
     saveGame(); saveProgression(); updateHud(); sfx('crate');
     flashHint('Große Kiste: ' + items.map(it => RARITY_DEFS[it.rarity].label + ' ' + EQUIPMENT_DEFS[it.slot].name).join(', ') + ' + ' + CHAIN_REWARD.gems + ' Gems' + (shH ? ' + ' + HERO_SHARDS_CHAIN + ' Splitter ' + shH.name : ''), 5000);
     renderQuestPanel(); updateGoalsBadge();
@@ -173,7 +173,7 @@ function claimQuestBonus() {
     q.bonusClaimed = true; chainLink(); passBump('questBonus');
     const items = [];
     for (let i = 0; i < QUEST_BONUS.crates; i++) items.push(grantFreeCrate(0));
-    gems += QUEST_BONUS.gems; const shH = heroGrantShards('player', HERO_SHARDS_DAY);
+    gems += QUEST_BONUS.gems; const shH = heroGrantShards('player', HERO_SHARDS_DAY); if (!shH) gems += HERO_SHARDS_DAY * 20;   // (alle Helden voll)
     saveQuests(); saveGame(); saveProgression(); updateHud();
     const it = items[0];
     flashHint('Bonus: ' + RARITY_DEFS[it.rarity].label + ' ' + EQUIPMENT_DEFS[it.slot].name + ' + ' + QUEST_BONUS.gems + ' Gems' + (shH ? ' + ' + HERO_SHARDS_DAY + ' Splitter ' + shH.name : ''), 3000);
@@ -328,7 +328,7 @@ function passGive(who, r) {                               // one reward to anyon
     if (r.k === 'coins') { const c = Math.max(5000, Math.round(hourProduction(who).coins)) * n; if (b) botCoins[who] = (botCoins[who] || 0) + c; else coins += c; return '+' + fmtCompact(c) + ' Münzen'; }
     if (r.k === 'gems') { if (b) b.gems += n; else gems += n; return '+' + n + ' Gems'; }
     if (r.k === 'tp') { if (b) b.tp = (b.tp || 0) + n; else { throneState.pts = (throneState.pts || 0) + n; saveThrone(); } return '+' + n + ' Thron-Punkte'; }
-    if (r.k === 'shards') { const h = heroGrantShards(who, n); return h ? '+' + n + ' Splitter ' + h.name : ''; }
+    if (r.k === 'shards') { const h = heroGrantShards(who, n); if (h) return '+' + n + ' Splitter ' + h.name; if (b) b.gems += n * 20; else gems += n * 20; return '+' + n * 20 + ' Gems (alle Helden voll)'; }
     if (r.k === 'shield') { if (b) { b.shields = b.shields || {}; b.shields[n] = (b.shields[n] || 0) + 1; } else { const st = shieldStock(); st[n] = (st[n] || 0) + 1; store.set('openWaterShieldStock', JSON.stringify(st)); } return 'Friedensschild ' + n + ' h'; }
     if (r.k === 'crate' || r.k === 'royal') { const t = [];
         for (let i = 0; i < n; i++) { const rr = r.k === 'royal' ? Math.max(3, pickRandomRarity()) : pickRandomRarity(), slot = pickRandomSlot();
@@ -365,8 +365,8 @@ function passCellHtml(r, hp, got) {                            // icon + amount 
     if (k === 'crate') return row(icon('shop'), n + '×', n === 1 ? 'Kiste' : 'Kisten');
     if (k === 'royal') return row(icon('shop', 'ico-royal'), '1×', 'Königliche Kiste');
     const d = lkDef(k, r.id), own = !got && lkHas(k, r.id);
-    if (k === 'frame') return row('<span class="frame-ring pc-frame" data-frame="' + r.id + '"><img alt="" src="' + crestDataUrl(28) + '"></span>', d.name, own ? 'Schon da: 1.000 Gems' : 'Rahmen', 'is-look');
-    return row('<i class="pc-flag" style="--c:' + d.flag + ';--t:' + d.trail + '"></i>', d.name, own ? 'Schon da: 1.000 Gems' : 'Marsch-Skin', 'is-look');
+    if (k === 'frame') return row('<span class="frame-ring pc-frame" data-frame="' + r.id + '"><img alt="" src="' + crestDataUrl(28) + '"></span>', d.name, own ? 'Schon da: ' + fmtNum(PASS_OWNED_GEMS) + ' Gems' : 'Rahmen', 'is-look');
+    return row('<i class="pc-flag" style="--c:' + d.flag + ';--t:' + d.trail + '"></i>', d.name, own ? 'Schon da: ' + fmtNum(PASS_OWNED_GEMS) + ' Gems' : 'Marsch-Skin', 'is-look');
 }
 function passChip(who) { try { const x = who === 'player' ? passOf(passNo(Date.now())) : null, i = x ? { lvl: passLvl(x), prem: x.prem } : botPassInfo(who);   // the pass level in the profile
     return '<div class="rp-pass' + (i.prem ? ' is-prem' : '') + '">' + icon('crown') + '<span>Saison-Pass</span><b>Stufe ' + i.lvl + '</b>' + (i.prem ? '<em>Premium</em>' : '') + '</div>'; } catch (e) { return ''; } }
@@ -705,7 +705,8 @@ const SHIELD_PRICES = { 2: 40, 8: 120, 24: 300 };
 var shieldMemAt = 0, shieldMemV = 0;                                   // hot loops ask thousands of times - no storage read each time
 function shieldUntil() { const t = Date.now(); if (t - shieldMemAt > 500) { shieldMemV = parseInt(store.get('openWaterShield'), 10) || 0; shieldMemAt = t; } return shieldMemV; }
 function playerShielded() { return Date.now() < ownerShieldUntil('player'); }
-function dropShield(reason) { if (!playerShielded()) return; store.set('openWaterShield', '0'); shieldMemAt = 0; if (reason) flashHint(reason, 4000); requestRender(); }
+function dropShield(reason) { if (!(shieldUntil() > Date.now())) return;   // (nur der Friedensschild – der Anfängerschutz fällt hier nicht)
+    store.set('openWaterShield', '0'); shieldMemAt = 0; if (reason) flashHint(reason, 4000); requestRender(); }
 // Everyone's Friedensschild works the same: it covers ALL bases (and field armies, gatherers) of its owner, nobody can
 // attack them while it stands (scouting still works), and it falls the moment its owner attacks.
 function ownerShieldUntil(who) {

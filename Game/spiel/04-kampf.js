@@ -100,14 +100,14 @@ setInterval(() => {
                 if (a.rally) bundRallyHeim(a, a.rawTroops, a.targetId);
                 else { const own = atkr === 'player' ? ownedIslands : botOwnedIslands[atkr], back = own && own.has(a.sourceId) ? a.sourceId : atkr === 'player' ? rewardBaseId() : botCapitalOf(atkr);
                     if (back !== null && back !== undefined) islandTroops[back] = (islandTroops[back] || 0) + a.rawTroops; }
-                pendingAttacks.splice(pendingAttacks.indexOf(a), 1); renderActiveMarches(); continue;
+                heroWutZurueck(atkr, a.hx); pendingAttacks.splice(pendingAttacks.indexOf(a), 1); renderActiveMarches(); continue;
             }
             if (tow && tow !== atkr && shieldCovers(islandById[a.targetId]) && ownerShielded(tow, gewartet ? now : Math.min(now, a.resolveAt))) {   // bounces off the Friedensschild (as it stood when the wave arrived – nach dem Warten: wie er JETZT steht) - the troops come back
                 const own = atkr === 'player' ? ownedIslands : botOwnedIslands[atkr];
                 const back = own && own.has(a.sourceId) ? a.sourceId : atkr === 'player' ? rewardBaseId() : botCapitalOf(atkr);
                 if (a.rally) bundRallyHeim(a, a.rawTroops, a.targetId);              // (eine Rally: jeder bekommt seinen Anteil zurück)
                 else if (back !== null && back !== undefined) islandTroops[back] = (islandTroops[back] || 0) + a.rawTroops;
-                pendingAttacks.splice(pendingAttacks.indexOf(a), 1);
+                heroWutZurueck(atkr, a.hx); pendingAttacks.splice(pendingAttacks.indexOf(a), 1);
                 if (tow === 'player') { flashHint('Dein Friedensschild hat den Angriff von ' + botById[a.attackerBotId].name + ' auf ' + islandTitle(islandById[a.targetId]) + ' abgewehrt.', 4000);
                     spawnBattleFx(a.targetId, true, 'Schild hält', botById[a.attackerBotId].name + ' prallt ab'); }
                 else if (atkr === 'player') { flashHint('Abgeprallt am Schild von ' + botById[tow].name + ' – ' +
@@ -136,6 +136,7 @@ setInterval(() => {
                 }
                 if (anderer || fight.rally || a.rally)
                     fight.rally.an.push(...(a.rally ? a.rally.an : [[a.attackerBotId, a.sourceId, a.rawTroops, anderer ? Math.round(a.attackBonus || 0) : undefined, anderer && a.hx ? a.hx : undefined]]));
+                if (!anderer && a.hx && fight.hx) heroWutZurueck(a.attackerBotId || 'player', a.hx);   // (seine Helden kämpfen nicht mit – die Wut bleibt)
                 if (!anderer && a.hx && fight.hx) a.attackBonus = Math.min(a.attackBonus || 0, a.skillBonus !== undefined ? a.skillBonus : 0);   // höchstens 2 Helden je Angreifer (Alexander 4.10.): die Helden einer weiteren eigenen Welle zählen nicht
                 fight.rawTroops += a.rawTroops; fight.attackBonus = (fight.attackBonus || 0) + (a.attackBonus || 0);
                 if (fight.skillBonus !== undefined || a.skillBonus !== undefined) fight.skillBonus = (fight.skillBonus || 0) + (a.skillBonus !== undefined ? a.skillBonus : a.attackBonus || 0); fight.waves = (fight.waves || 1) + (a.waves || 1);
