@@ -7916,7 +7916,7 @@ function cityShow() {
     loadCity();
     document.getElementById('cityName').textContent = (profileName.value || 'Deine') + (profileName.value ? 's Hauptstadt' : ' Hauptstadt');
     cityView.hidden = false;
-    cityOpenId = null; document.getElementById('citySheet').hidden = true;
+    cityOpenId = null; cityRingZu(); document.getElementById('citySheet').hidden = true;
     updateCityBuilder();
     cancelAnimationFrame(cityRaf); cityRaf = requestAnimationFrame(cityFrame);
 }
@@ -7938,7 +7938,7 @@ let cityPendingAnim = false;
 function closeCity() {
     if (cityView.hidden) return false;
     if (cityBusy) return true;
-    cityBusy = true; cityOpenId = null; document.getElementById('citySheet').hidden = true;
+    cityBusy = true; cityOpenId = null; cityRingZu(); document.getElementById('citySheet').hidden = true;
     if (cityCam) cityCam.anim = { from: 1, to: .3, t0: performance.now(), dur: 520 };   // the town falls away …
     cloudsRun(480, 0, 1, () => {                                              // … into the clouds …
         cityView.hidden = true; cancelAnimationFrame(cityRaf); cityLagenFrei();
@@ -7970,7 +7970,7 @@ function cityBuyBuilder2() {
 }
 document.getElementById('cityBuilder').addEventListener('click', e => {
     if (e.target.closest('[data-cb-buy]')) return cityBuyBuilder2();
-    const o = e.target.closest('[data-cb-open]'); if (o) { cityOpenId = o.dataset.cbOpen === 'keep' ? '_keep' : o.dataset.cbOpen; cityFocus(cityOpenId); renderCitySheet(); }   // opens that building's sheet (die Burg: ihr Fenster)
+    const o = e.target.closest('[data-cb-open]'); if (o) { cityOpenId = o.dataset.cbOpen === 'keep' ? '_keep' : o.dataset.cbOpen; cityPage = 'bau'; cityFocus(cityOpenId); renderCitySheet(); }   // opens that building's sheet (die Burg: ihr Fenster)
 });
 const cityBauId = id => id === '_keep' ? 'keep' : id;   // das Burg-Fenster heißt '_keep', ihr Ausbau 'keep'
 function renderCitySheetTimer() {
@@ -8094,39 +8094,107 @@ document.getElementById('lookSheet').addEventListener('click', e => {
     lkHas(kind, id) ? lkUse(kind, id) : lkBuy(kind, id);
 });
 setTimeout(lookMigrate, 0);                             // after the whole script: the old rank / Erfolg looks become owned
+// ===== Aussehen wie in den großen Aufbau-Spielen (Rise of Kingdoms, Alexander 4.10.): Gebäude antippen → runde Knöpfe
+// am Gebäude; das Fenster zeigt das Gebäude als Bild, die Voraussetzungen mit Haken/Kreuz und „hast / brauchst“.
+// Nur die Anzeige – Kosten, Zeiten und Regeln sind dieselben wie vorher. =====
+var cityPage = 'bau', cityRingId = null;
+function cityNutz(id, lvl) {                       // die eigene Seite eines Gebäudes (Forschen, Heilen …) → [Name, Zeichen] oder null
+    if (id === 'academy') return lvl || loadCity().foRun ? ['Forschen', 'flask'] : null;
+    if (id === 'heroes') return ['Helden', 'profile'];
+    if (!lvl) return null;
+    return { forge: ['Schmieden', 'weapon'], hospital: ['Heilen', 'plus'], market: ['Handeln', 'market'], embassy: ['Verstärkung', 'bund'], barracks: ['Truppen-Stufe', 'troops'] }[id] || null;
+}
+function cityBildSpr(id, lvl) {                    // dasselbe Bild wie in der Stadt
+    if (id === 'keep') return citySprite('keep', Math.min(4, Math.floor((lvl || 1) / 5)));
+    const t = cityTierOf(lvl);
+    if (id === 'wall') return citySprite('gatehouse', t);
+    return t ? citySprite(id, t, id === 'heroes' ? Math.ceil(HEROES.filter(h => heroOwned('player', h.id)).length / HEROES.length * 3) : '') : citySprite('ghost', 0, id);
+}
+function cityBildSetzen(id, lvl) {                 // das Gebäude-Bild oben links im Fenster (nur neu gemalt, wenn sich die Stufe ändert)
+    const el = document.getElementById('cityBIcon'), s = cityBildSpr(id, lvl), key = id + ':' + (id === 'keep' ? Math.floor((lvl || 1) / 5) : cityTierOf(lvl)) + ':' + s.c.width;
+    if (el.dataset.bild === key && el.firstChild && el.firstChild.tagName === 'CANVAS') return;
+    el.dataset.bild = key; el._lh = undefined;
+    const N = 192, cv = document.createElement('canvas'); cv.width = cv.height = N;
+    const g = cv.getContext('2d'), f = Math.min(N / s.c.width, N / s.c.height) * 1.08, w = s.c.width * f, h = s.c.height * f;
+    g.imageSmoothingQuality = 'high'; g.drawImage(s.c, (N - w) / 2, Math.min(N - h, (N - h) / 2 + N * .04), w, h);
+    el.replaceChildren(cv);
+}
+function anfZeile(ok, ic, txt, val) {              // eine Voraussetzung: Zeichen, Text, (hast / brauchst), Haken oder Kreuz
+    const [n, k] = Array.isArray(ic) ? ic : [ic];
+    return '<div class="anf' + (ok ? ' is-ok' : ' is-bad') + '">' + icon(n, k) + '<span>' + txt + '</span>' + (val ? '<b>' + val + '</b>' : '') + '<i>' + icon(ok ? 'check' : 'close') + '</i></div>';
+}
+function anfKosten(k) {                            // Münzen und Rohstoffe: hast / brauchst
+    if (!k) return ''; const r = AUF ? AUF.rohVon('player') || {} : {}, out = [];
+    if (k.c) out.push(anfZeile(coins >= k.c, ['coin', 'icon--coin'], 'Münzen', fmtCompact(Math.floor(coins)) + ' / ' + fmtCompact(k.c)));
+    if (AUF) for (const x of ['h', 's', 'e']) if (k[x]) out.push(anfZeile((r[x] || 0) >= k[x], [AUF.ROH_DEF[x].icon, 'roh-' + x], AUF.ROH_DEF[x].name, fmtCompact(Math.floor(r[x] || 0)) + ' / ' + fmtCompact(k[x])));
+    return out.join('');
+}
+function cityAnfHtml(id, lvl, k) {                 // Voraussetzungen für die nächste Stufe (Burg, Bauarbeiter, Münzen, Rohstoffe)
+    const c = loadCity(), rows = [];
+    if (AUF && id !== 'keep') { const B = AUF.burgStufe('player'), need = !lvl ? AUF.BAU_AB_BURG[id] || 0 : B >= AUF.BURG_MAX ? 0 : lvl + 1;
+        if (need > 1) rows.push(anfZeile(B >= need, 'castle', 'Burg Stufe ' + need)); }
+    const frei = c.builds.length < citySlots(c);
+    rows.push(anfZeile(frei, 'upgrade', frei ? 'Bauarbeiter frei' : 'Bauarbeiter beschäftigt (' + cityDef(c.builds[0].id).name + ')'));
+    return '<div class="anf-h">Voraussetzungen</div><div class="anf-list">' + rows.join('') + anfKosten(k) + '</div>';
+}
+function citySeite(id, lvl) {                      // Reiter oben (Aufwerten | Forschen …) und welche Teile das Fenster zeigt
+    const sh = document.getElementById('citySheet'), tabs = document.getElementById('cityTabs'), n = id === '_keep' ? null : cityNutz(id, lvl);
+    if (!n) cityPage = 'bau';
+    sh.classList.toggle('cs-nutz', !!n && cityPage === 'nutz'); sh.classList.toggle('cs-bau', !!n && cityPage === 'bau');
+    tabs.hidden = !n;
+    if (n) liveHtml(tabs, '<button type="button" data-cpage="bau"' + (cityPage === 'bau' ? ' class="on"' : '') + '>' + icon('upgrade') + 'Aufwerten</button><button type="button" data-cpage="nutz"' + (cityPage === 'nutz' ? ' class="on"' : '') + '>' + icon(n[1]) + n[0] + '</button>');
+}
+document.getElementById('cityTabs').addEventListener('click', e => { const b = e.target.closest('[data-cpage]'); if (b) { cityPage = b.dataset.cpage; renderCitySheet(); document.getElementById('citySheet').scrollTop = 0; } });
 function renderCitySheet() {                       // (läuft auch jede Sekunde aus liveTick: geschrieben wird nur, was sich ändert)
     if (cityOpenId === 'keep') cityOpenId = '_keep';
     const id = cityOpenId; if (!id) return;
-    if (id === '_keep') return renderKeepSheet();
-    const c = loadCity(), def = cityDef(id), lvl = c.levels[id];
+    cityRingZu();
+    if (id === '_keep') { citySeite(id, 0); return renderKeepSheet(); }
+    const c = loadCity(), def = cityDef(id), lvl = c.levels[id], max = lvl >= cityMaxLevel(id);
     document.getElementById('citySheet').hidden = false;
-    liveHtml(document.getElementById('cityBIcon'), icon(def.icon));
+    citySeite(id, lvl);
+    cityBildSetzen(id, lvl);
     setText(document.getElementById('cityBOver'), 'Gebäude');
     setText(document.getElementById('cityBName'), def.name);
-    setText(document.getElementById('cityBLevel'), lvl ? 'Stufe ' + lvl + ' / ' + cityMaxLevel(id) : 'Noch nicht gebaut');
+    setText(document.getElementById('cityBLevel'), max ? 'Stufe ' + lvl + ' · höchste Stufe' : lvl ? 'Stufe ' + lvl + ' → ' + (lvl + 1) : 'Noch nicht gebaut');
     setText(document.getElementById('cityBDesc'), def.desc);
     const note = document.getElementById('cityBNote'), up = document.getElementById('cityUpgradeBtn'), sp = document.getElementById('citySpeedBtn');
     const bld = cityBuildOf(c, id), building = !!bld, blocker = cityBlocker(id);
     let cls, nh;
     if (building) { cls = 'notice notice--gold';
         nh = icon('hourglass') + '<span style="flex:1">Ausbau auf Stufe ' + bld.to + ' · noch <b id="cityBNoteTime"></b><div class="city-progress" style="margin-top:6px"><i></i></div></span>'; }
-    else if (blocker && lvl < cityMaxLevel(id)) { cls = 'notice notice--warn'; nh = icon('lock') + '<span>' + blocker + '</span>'; }
-    else { cls = 'notice'; nh = icon('info') + '<span>' + cityEffectText(id, lvl) + '</span>'; }
+    else { cls = 'notice city-wirkung'; nh = icon('info') + '<span>' + cityEffectText(id, lvl) + '</span>'; }
     if (note.className !== cls) note.className = cls;
     liveHtml(note, nh);
-    const cost = lvl < cityMaxLevel(id) ? cityCost(id, lvl) : 0, kost = lvl < cityMaxLevel(id) && AUF ? AUF.stadtKosten(id, lvl) : null;
-    liveHtml(document.getElementById('cityBStats'), lvl < cityMaxLevel(id)
-        ? (kost ? '<div class="city-kosten"><span>Kosten</span><b>' + AUF.kostenHtml(kost) + '</b></div>' : '<div><span>Kosten</span><b class="' + (coins < cost ? 'is-bad' : '') + '">' + icon('coin', 'icon--coin') + fmtCompact(cost) + '</b></div>') +
-          '<div><span>Bauzeit</span><b>' + icon('hourglass') + fmtDuration(cityTimeSec(id, lvl)) + '</b></div>'
-        : '');
-    setBtnLabel(up, lvl >= cityMaxLevel(id) ? 'Höchste Stufe' : lvl ? 'Aufwerten auf ' + (lvl + 1) : 'Bauen');
-    up.disabled = !!blocker || (kost ? !AUF.kannZahlen('player', kost) : coins < cost);
+    const cost = !max ? cityCost(id, lvl) : 0, kost = !max ? (AUF ? AUF.stadtKosten(id, lvl) : { c: cost }) : null;
+    liveHtml(document.getElementById('cityBStats'), !max && !building ? cityAnfHtml(id, lvl, kost) : '');
+    setBtnLabel(up, max ? 'Höchste Stufe' : lvl ? 'Aufwerten' : 'Bauen');
+    setText(document.getElementById('cityUpTime'), max ? '' : fmtDuration(cityTimeSec(id, lvl)));
+    up.disabled = !!blocker || (AUF ? !AUF.kannZahlen('player', kost) : coins < cost);
     up.title = blocker || '';
     up.style.display = building ? 'none' : '';
     sp.style.display = building ? '' : 'none';
     if (building) renderCitySheetTimer();
     liveHtml(document.getElementById('cityBExtra'), cityExtraHtml(id, lvl));
 }
+// ---- die runden Knöpfe am angetippten Gebäude ----
+function cityRingAuf(id) {
+    const c = loadCity(), bid = cityBauId(id), lvl = bid === 'keep' ? c.levels.keep || 1 : c.levels[bid] || 0, n = id === '_keep' ? null : cityNutz(id, lvl), bau = cityBuildOf(c, bid);
+    const max = bid === 'keep' ? lvl >= (AUF ? AUF.BURG_MAX : 25) : lvl >= cityMaxLevel(bid);
+    const k = [];
+    k.push(['bau', bau ? 'gem' : 'upgrade', bau ? 'Beschleunigen' : max ? 'Info' : lvl ? 'Aufwerten' : 'Bauen']);
+    if (n) k.push(['nutz', n[1], n[0]]);
+    cityRingId = id; cityOpenId = null; document.getElementById('citySheet').hidden = true;
+    const el = document.getElementById('cityRing');
+    el.innerHTML = k.map(([p, ic, t], i) => { const o = i - (k.length - 1) / 2;                 // im Bogen unter dem Gebäude
+        return '<button type="button" class="cr-btn" data-cring="' + p + '" style="--x:' + Math.round(o * 92) + 'px;--y:' + Math.round(62 - o * o * 14) + 'px;--d:' + i * 40 + 'ms">' + icon(ic) + '<small>' + t + '</small></button>'; }).join('');
+    el.hidden = false; el.style.visibility = 'hidden';                         // (cityFrame setzt die Stelle)
+}
+function cityRingZu() { cityRingId = null; const el = document.getElementById('cityRing'); if (el && !el.hidden) el.hidden = true; }
+document.getElementById('cityRing').addEventListener('click', e => {
+    const b = e.target.closest('[data-cring]'); if (!b || !cityRingId) return;
+    cityPage = b.dataset.cring; cityOpenId = cityRingId; cityRingZu(); renderCitySheet(); document.getElementById('citySheet').scrollTop = 0;
+});
 // ===== HELDEN: shards → unlock → quarter stars → skill points. A hero only works in the fight he leads - for you and everyone else =====
 var heroState = null;                              // { id: { sh, q, own, sk: [4 levels], rage } } in openWaterHeroes2 (the old openWaterHeroes is only read to convert)
 function heroFresh(h) { return { sh: HERO_START_SHARDS[h.r], q: 0, own: false, sk: [0, 0, 0, 0], rage: 0 }; }
@@ -9152,8 +9220,8 @@ cityCanvas.addEventListener('click', e => {
     const r = cityCanvas.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
     const hits = cityHitRects.filter(h => x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h);
     const hit = hits.sort((a, b) => Math.hypot(a.cx - x, a.cy - y) - Math.hypot(b.cx - x, b.cy - y))[0];   // the building closest to the finger
-    cityOpenId = hit ? hit.id : null;
-    if (hit) { cityFocus(hit.id); renderCitySheet(); } else document.getElementById('citySheet').hidden = true;
+    if (hit && hit.id !== cityRingId) { cityFocus(hit.id); cityRingAuf(hit.id); }   // erst die runden Knöpfe am Gebäude (wie in Rise of Kingdoms)
+    else { cityRingZu(); cityOpenId = null; document.getElementById('citySheet').hidden = true; }
 });
 
 function cityLotOf(id) { return id === '_keep' ? CITY_KEEP_AT : CITY_LOTS[id]; }
@@ -9269,7 +9337,7 @@ function cityFrame(now) {
             continue;
         }
         const s = it.spr, k = Z / CITY_SPR_SCALE, dx = sx - s.w * Z, dy = sy - s.up * Z;
-        if (it.id && cityOpenId === it.id) {                                // selected: a golden ring on the ground
+        if (it.id && (cityOpenId === it.id || cityRingId === it.id)) {      // selected: a golden ring on the ground
             g.save(); g.strokeStyle = 'rgba(255,220,140,.95)'; g.lineWidth = 2; g.setLineDash([6, 4]); g.lineDashOffset = -now / 40;
             g.beginPath(); const r = (it.keep ? 40 : 26) * Z; g.ellipse(sx, sy, r * .866 * 1.4, r * .5 * 1.4, 0, 0, Math.PI * 2); g.stroke(); g.restore(); }
         citySprDraw(g, s, dx, dy, k, dpr2, zStill);                         // (the soft shadow underneath is part of cityUnten)
@@ -9302,6 +9370,8 @@ function cityFrame(now) {
         }
         const hw = (it.keep ? 40 : 30) * Z, top = sy - (it.keep ? 70 : it.id === 'watch' || it.id === 'tower' ? 58 : 38) * Z;
         cityHitRects.push({ id: it.id, x: sx - hw, y: top, w: hw * 2, h: sy + 14 * Z - top, cx: sx, cy: sy - (it.keep ? 30 : 16) * Z, depth: it.x + it.y });
+        if (it.id === cityRingId) { const el = document.getElementById('cityRing'), tf = 'translate(' + Math.round(sx) + 'px,' + Math.round(sy + (it.keep ? 4 : 0) * Z) + 'px)';   // die runden Knöpfe folgen dem Gebäude
+            if (el.style.transform !== tf) el.style.transform = tf; if (el.style.visibility) el.style.visibility = ''; }
         plates.push({ it, sx, sy, building, ghost: it.ghost });
     }
     if (still) { g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(LG.oben, 0, 0); g.setTransform(dpr2, 0, 0, dpr2, 0, 0); } else { g.imageSmoothingQuality = zStill ? 'high' : 'low'; cityOben(g, Z, ox, oy, walls); g.imageSmoothingQuality = 'high'; }

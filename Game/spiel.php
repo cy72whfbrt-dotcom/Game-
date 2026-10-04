@@ -1348,6 +1348,67 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .city-bfoot{display:flex;gap:8px}
 .city-progress{height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
 .city-progress i{display:block;height:100%;width:var(--p,0%);background:linear-gradient(90deg,var(--gold-500),var(--gold-200))}
+/* Stadt im Stil von Rise of Kingdoms (Alexander 4.10.): runde Knöpfe am Gebäude, Bild, Voraussetzungen, Forschungs-Baum */
+.city-ring{position:absolute;left:0;top:0;z-index:2;width:0;height:0;pointer-events:none}
+.city-ring[hidden]{display:none}
+.cr-btn{position:absolute;left:0;top:0;width:58px;height:58px;margin:-29px 0 0 -29px;transform:translate(var(--x),var(--y));pointer-events:auto;cursor:pointer;-webkit-tap-highlight-color:transparent;
+  display:grid;place-items:center;border-radius:50%;border:2px solid var(--gold-300);background:radial-gradient(circle at 50% 30%,#4a3a1c,#17120a 72%);
+  box-shadow:0 4px 12px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,236,190,.35);animation:cr-pop .28s var(--ease-out) both;animation-delay:var(--d,0ms)}
+.cr-btn .icon{width:26px;height:26px;color:var(--gold-100)}
+.cr-btn small{position:absolute;top:calc(100% + 3px);left:50%;transform:translateX(-50%);padding:2px 7px;border-radius:var(--r-pill);background:rgba(10,8,6,.86);border:1px solid var(--line-2);
+  font:700 10px/1.2 var(--font-ui);color:var(--gold-100);white-space:nowrap}
+.cr-btn:active{transform:translate(var(--x),var(--y)) scale(.92)}
+@keyframes cr-pop{from{opacity:0;transform:translate(0,0) scale(.4)}to{opacity:1;transform:translate(var(--x),var(--y)) scale(1)}}
+.city-bicon:has(canvas){width:88px;height:88px;border-radius:var(--r-md,12px);background:radial-gradient(circle at 50% 60%,#3b4a2c,#141a10 78%);overflow:hidden}
+.city-bicon canvas{width:100%;height:100%;display:block}
+.city-tabs{grid-template-columns:1fr 1fr;margin:0}
+.city-tabs button{height:34px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:var(--fs-12)}
+.city-tabs button .icon{width:15px;height:15px}
+.city-sheet.cs-nutz #cityBDesc,.city-sheet.cs-nutz #cityBNote,.city-sheet.cs-nutz #cityBStats,.city-sheet.cs-nutz .city-bfoot,.city-sheet.cs-bau #cityBExtra{display:none}
+.city-bstats:has(.anf-list){display:block}
+.city-bstats .anf-list{padding:0;border:0;background:none}
+.city-bstats > .anf-h{padding:0;border:0;background:none;display:block}
+.city-bstats .anf > span{display:block;margin:0;letter-spacing:0;text-transform:none;font:600 var(--fs-13)/1.25 var(--font-ui);color:var(--tx-1)}
+.city-bstats .anf > b{display:block;margin:0;font:700 var(--fs-13)/1.2 var(--font-ui)}
+.anf-h{margin:2px 0 6px;font:700 var(--fs-10,10px)/1.2 var(--font-ui);letter-spacing:.16em;text-transform:uppercase;color:var(--tx-3)}
+.anf-list{display:flex;flex-direction:column;gap:4px}
+.anf{display:grid;grid-template-columns:22px 1fr auto 22px;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--line-1);border-radius:var(--r-sm);background:rgba(0,0,0,.22)}
+.anf > .icon{width:18px;height:18px;color:var(--gold-200)}
+.anf > span{min-width:0;font:600 var(--fs-13)/1.25 var(--font-ui);color:var(--tx-1)}
+.anf > b{font:700 var(--fs-13)/1.2 var(--font-ui);color:var(--tx-1);font-variant-numeric:tabular-nums;white-space:nowrap}
+.anf > i{display:grid;place-items:center;width:20px;height:20px;border-radius:50%}
+.anf > i .icon{width:12px;height:12px}
+.anf.is-ok > i{background:#3f8f3a;color:#eaffe4} .anf.is-bad > i{background:#b2392b;color:#ffe6e1}
+.anf.is-bad > b{color:#ff8d7e} .anf.is-bad{border-color:rgba(255,120,100,.35)}
+.anf .icon.icon--coin,.anf > .icon[data-i="coin"]{color:#e8b64a}
+.city-uptime{display:inline-flex;align-items:center;margin-left:8px;padding:2px 7px;border-radius:var(--r-pill);background:rgba(0,0,0,.28);font:700 11px/1.2 var(--font-ui);letter-spacing:0;text-transform:none;font-variant-numeric:tabular-nums}
+.city-uptime:empty{display:none}
+.fo-baum{display:flex;gap:22px;overflow-x:auto;padding:4px 2px 10px;overscroll-behavior-x:contain;scrollbar-width:thin}
+.fo-spalte{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;flex:none}
+.fo-spalte + .fo-spalte::before{content:"";position:absolute;left:-22px;top:calc(50% + 9px);width:22px;height:2px;background:linear-gradient(90deg,var(--gold-500),var(--gold-300));opacity:.7}
+.fo-spalte.is-zu + .fo-spalte::before,.fo-spalte.is-zu::before{opacity:.25}
+.fo-aka{font:700 10px/1.2 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--tx-3);white-space:nowrap}
+.fo-node{width:98px;padding:8px 6px 6px;display:flex;flex-direction:column;align-items:center;gap:4px;border:1px solid var(--line-2);border-radius:var(--r-sm);
+  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(0,0,0,.25));color:var(--tx-1);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.fo-node b{font:700 11px/1.15 var(--font-ui);text-align:center;min-height:2.3em;display:flex;align-items:center}
+.fo-node small{font:700 10px/1 var(--font-ui);color:var(--gold-200);font-variant-numeric:tabular-nums}
+.fo-node-ic{display:grid;place-items:center;width:40px;height:40px;flex:none;border-radius:50%;border:1px solid var(--line-3);background:radial-gradient(circle at 50% 35%,#3a2c14,#16110a 75%)}
+.fo-node-ic .icon{width:22px;height:22px;color:var(--gold-100)}
+.fo-bar{display:block;width:100%;height:4px;border-radius:2px;background:rgba(255,255,255,.1);overflow:hidden}
+.fo-bar i{display:block;height:100%;width:var(--p,0%);background:linear-gradient(90deg,var(--gold-500),var(--gold-200))}
+.fo-node.is-lock{opacity:.5} .fo-node.is-lock .fo-node-ic .icon{color:var(--tx-3)}
+.fo-node.is-max{border-color:var(--gold-300)} .fo-node.is-max .fo-bar i{background:linear-gradient(90deg,#3f8f3a,#8fd38a)}
+.fo-node.is-run{border-color:var(--gold-200);animation:fo-puls 1.6s ease-in-out infinite}
+.fo-node.is-sel{border-color:var(--gold-100);box-shadow:0 0 0 2px rgba(240,223,176,.35),var(--glow-gold)}
+@keyframes fo-puls{50%{box-shadow:0 0 12px rgba(236,208,138,.55)}}
+.fo-go{margin-top:8px}
+.fo-detail{display:flex;flex-direction:column;gap:8px;margin-top:4px;padding:10px;border:1px solid var(--line-2);border-radius:var(--r-md,12px);background:rgba(0,0,0,.25)}
+.fo-dh{display:flex;align-items:center;gap:10px} .fo-dh b{display:block;font:700 var(--fs-15)/1.2 var(--font-display);color:var(--gold-100)} .fo-dh small{font:600 var(--fs-11)/1.3 var(--font-ui);color:var(--tx-3)}
+.fo-wirk{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.fo-wirk > div{padding:7px 9px;border:1px solid var(--line-1);border-radius:var(--r-sm);background:rgba(0,0,0,.2);min-width:0}
+.fo-wirk span{display:block;font:700 10px/1.2 var(--font-ui);letter-spacing:.12em;text-transform:uppercase;color:var(--tx-3)}
+.fo-wirk b{display:block;margin-top:3px;font:600 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-1)}
+.fo-wirk > div + div b{color:#9fd28a}
 
 
 .gate-ctl .btn{flex:none}
@@ -2001,6 +2062,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 <!-- ============ CAPITAL / CITY VIEW ============ -->
 <div id="cityView" class="city" hidden>
   <canvas id="cityCanvas" class="city-canvas" aria-label="Hauptstadt"></canvas>
+  <div id="cityRing" class="city-ring" hidden></div>
   <header class="city-head">
     <div class="city-title"><div class="overline">Hauptstadt</div><h2 id="cityName">Deine Stadt</h2></div>
     <div id="cityBuilder" class="city-builder"></div>
@@ -2012,12 +2074,13 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
       <div class="city-bmeta"><div id="cityBOver" class="overline">Gebäude</div><h3 id="cityBName">Burgfried</h3><div id="cityBLevel" class="city-blevel"></div></div>
       <button id="citySheetClose" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button>
     </div>
+    <div id="cityTabs" class="seg city-tabs" hidden></div>
     <p id="cityBDesc" class="city-bdesc"></p>
     <div id="cityBNote" class="notice"></div>
     <div id="cityBStats" class="city-bstats"></div>
     <div id="cityBExtra"></div>
     <div class="city-bfoot">
-      <button id="cityUpgradeBtn" class="btn btn--primary btn--grow" type="button"><svg class="icon"><use href="#i-upgrade"/></svg><span class="lbl">Aufwerten</span></button>
+      <button id="cityUpgradeBtn" class="btn btn--primary btn--grow" type="button"><svg class="icon"><use href="#i-upgrade"/></svg><span class="lbl">Aufwerten</span><small id="cityUpTime" class="city-uptime"></small></button>
       <button id="citySpeedBtn" class="btn btn--secondary btn--grow" type="button" style="display:none"><svg class="icon"><use href="#i-gem"/></svg><span class="lbl">Beschleunigen</span></button>
     </div>
   </section>

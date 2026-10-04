@@ -293,19 +293,19 @@ function renderKeep() {                                        // das Burg-Fenst
     const c = loadCity(), B = burgStufe('player'), max = B >= BURG_MAX, bau = cityBuildOf(c, 'keep'), k = max ? null : burgKosten(B);
     const now = Date.now(), sh = shieldUntil() > now ? shieldUntil() : 0, neu = sh ? 0 : neulingBis();
     document.getElementById('citySheet').hidden = false;
-    liveHtml(document.getElementById('cityBIcon'), icon('castle'));
+    cityBildSetzen('keep', B);
     setText(document.getElementById('cityBOver'), 'Deine Burg');
     setText(document.getElementById('cityBName'), 'Burg');
-    setText(document.getElementById('cityBLevel'), 'Burg-Stufe ' + B + ' / ' + BURG_MAX);
+    setText(document.getElementById('cityBLevel'), max ? 'Burg-Stufe ' + B + ' · höchste Stufe' : 'Burg-Stufe ' + B + ' → ' + (B + 1) + ' (von ' + BURG_MAX + ')');
     setText(document.getElementById('cityBDesc'), 'Das Herz deines Reiches – unabhängig von der Basis-Stufe draußen auf der Karte. Die Burg-Stufe bestimmt, wie hoch deine Gebäude gehen, wie viele Märsche gleichzeitig laufen und welche Truppen-Stufen möglich sind.');
     const note = document.getElementById('cityBNote'), blk = !bau && !max ? cityBlocker('keep') : null; let cls, nh;
     if (bau) { cls = 'notice notice--gold'; nh = icon('hourglass') + '<span style="flex:1">Ausbau auf Burg-Stufe ' + bau.to + ' · noch <b id="cityBNoteTime"></b><div class="city-progress" style="margin-top:6px"><i></i></div></span>'; }
-    else if (blk) { cls = 'notice notice--warn'; nh = icon('lock') + '<span>' + blk + '</span>'; }
-    else { cls = 'notice'; nh = icon('shield') + '<span>' + (sh ? 'Friedensschild aktiv – noch ' + uhrHtml(sh) : neu > now ? 'Anfängerschutz – noch ' + uhrHtml(neu) : 'Kein Friedensschild aktiv.') + '</span>'; }
+    else { cls = 'notice city-wirkung'; nh = icon('shield') + '<span>' + (sh ? 'Friedensschild aktiv – noch ' + uhrHtml(sh) : neu > now ? 'Anfängerschutz – noch ' + uhrHtml(neu) : 'Kein Friedensschild aktiv.') + '</span>'; }
     if (note.className !== cls) note.className = cls; liveHtml(note, nh);
-    liveHtml(document.getElementById('cityBStats'), max ? '' : '<div class="city-kosten"><span>Kosten</span><b>' + kostenHtml(k) + '</b></div><div><span>Bauzeit</span><b>' + icon('hourglass') + fmtDuration(cityTimeSec('keep', B)) + '</b></div>');
+    liveHtml(document.getElementById('cityBStats'), max || bau ? '' : cityAnfHtml('keep', B, k));
     const up = document.getElementById('cityUpgradeBtn'), sp = document.getElementById('citySpeedBtn');
-    setBtnLabel(up, max ? 'Höchste Stufe' : 'Burg aufwerten auf ' + (B + 1)); up.disabled = max || !!blk || !!bau || !kannZahlen('player', k); up.title = blk || ''; up.style.display = bau ? 'none' : '';
+    setBtnLabel(up, max ? 'Höchste Stufe' : 'Burg aufwerten'); setText(document.getElementById('cityUpTime'), max ? '' : fmtDuration(cityTimeSec('keep', B)));
+    up.disabled = max || !!blk || !!bau || !kannZahlen('player', k); up.title = blk || ''; up.style.display = bau ? 'none' : '';
     sp.style.display = bau ? '' : 'none'; if (bau) renderCitySheetTimer();
     const belegt = marschBelegt('player'), T = truppenStufe('player');
     liveHtml(document.getElementById('cityBExtra'),
@@ -324,13 +324,35 @@ function effektText(id, lvl) {
     return '';
 }
 let foAst = 'w', marktMenge = 1000;
-function foZeile(d) {
+// Forschung als Baum (wie in Rise of Kingdoms): Spalten nach der nötigen Akademie-Stufe, jede Forschung ein Feld mit
+// Stufen-Balken; antippen zeigt unten alles dazu (Wirkung jetzt → nächste Stufe, Voraussetzungen, hast / brauchst, Forschen)
+let foSel = null;
+const foBedingt = (who, d, L) => { const c = stadtVon(who); return !!c && (c.levels.academy || 0) >= foAkaFuer(d, L) && !(d.tier && burgStufe(who) < TIER_BURG[d.tier]) && !(d.vor && foStufe(who, d.vor) < 1); };
+function foBaum(aka) {
+    const liste = FORSCHUNG.filter(f => f.ast === foAst), c = loadCity(), spalten = [...new Set(liste.map(d => d.aka))].sort((a, b) => a - b);
+    if (!liste.some(d => d.id === foSel)) foSel = (liste.find(d => foStufe('player', d.id) < d.max && foBedingt('player', d, foStufe('player', d.id) + 1)) || liste[0]).id;
+    const knoten = d => { const L = foStufe('player', d.id), max = L >= d.max, lauf = c.foRun && c.foRun.id === d.id, zu = !max && !foBedingt('player', d, L + 1);
+        return '<button type="button" class="fo-node' + (max ? ' is-max' : '') + (lauf ? ' is-run' : '') + (zu ? ' is-lock' : '') + (d.id === foSel ? ' is-sel' : '') + '" data-fo-sel="' + d.id + '">' +
+            '<span class="fo-node-ic">' + icon(zu ? 'lock' : d.icon) + '</span><b>' + d.name + '</b><span class="fo-bar"><i style="--p:' + Math.round(L / d.max * 100) + '%"></i></span><small>' + L + ' / ' + d.max + '</small></button>'; };
+    return '<div class="fo-baum">' + spalten.map(a => '<div class="fo-spalte' + (aka >= a ? '' : ' is-zu') + '"><span class="fo-aka">Akademie ' + a + '</span>' + liste.filter(d => d.aka === a).map(knoten).join('') + '</div>').join('') + '</div>' + foDetail(FO_BY[foSel]);
+}
+function foDetail(d) {
+    if (!d) return '';
     const L = foStufe('player', d.id), max = L >= d.max, c = loadCity(), lauf = c.foRun && c.foRun.id === d.id, why = max ? null : foSperre('player', d), k = max ? null : foKosten(d, L + 1);
-    const jetzt = d.pro ? (L ? d.txt(L * d.pro) : 'noch nichts') : (L ? 'erforscht' : d.txt());
-    return '<div class="fo-row' + (max ? ' is-max' : '') + (lauf ? ' is-run' : '') + '">' + icon(d.icon) + '<span class="fo-t"><b>' + d.name + (d.max > 1 ? ' <em>' + L + '/' + d.max + '</em>' : '') + '</b><small>' + jetzt + (max || !d.pro ? '' : ' → ' + d.txt((L + 1) * d.pro)) + '</small>' +
-        (max ? '' : '<small class="fo-k">' + kostenHtml(k) + '<span class="kost">' + icon('hourglass') + fmtDuration(foZeit('player', d, L + 1)) + '</span></small>') + '</span>' +
-        (max ? '<em class="fo-ok">' + icon('check') + '</em>' : lauf ? '<em>läuft</em>' : '<button type="button" class="btn btn--primary btn--sm" data-fo="' + d.id + '"' + (why || !kannZahlen('player', k) ? ' disabled' : '') + ' title="' + (why || '') + '">Forschen</button>') +
-        (why && !max && !lauf && !c.foRun ? '<small class="fo-why">' + why + '</small>' : '') + '</div>';
+    const jetzt = d.pro ? (L ? d.txt(L * d.pro) : 'noch nichts') : (L ? 'erforscht' : 'noch nicht erforscht'), naechst = max ? '' : d.pro ? d.txt((L + 1) * d.pro) : d.txt();
+    let anf = '';
+    if (!max) {
+        const need = foAkaFuer(d, L + 1); anf += anfZeile((c.levels.academy || 0) >= need, 'flask', 'Akademie Stufe ' + need);
+        if (d.tier) anf += anfZeile(burgStufe('player') >= TIER_BURG[d.tier], 'castle', 'Burg Stufe ' + TIER_BURG[d.tier]);
+        if (d.vor) anf += anfZeile(foStufe('player', d.vor) >= 1, FO_BY[d.vor].icon, FO_BY[d.vor].name);
+        if (!lauf) anf += anfZeile(!c.foRun, 'hourglass', c.foRun ? 'Akademie forscht schon (' + (FO_BY[c.foRun.id] || {}).name + ')' : 'Akademie frei');
+        anf += anfKosten(k);
+    }
+    return '<div class="fo-detail"><div class="fo-dh"><span class="fo-node-ic">' + icon(d.icon) + '</span><span><b>' + d.name + '</b><small>' + FO_AESTE[d.ast] + ' · Stufe ' + L + ' / ' + d.max + '</small></span></div>' +
+        '<div class="fo-wirk"><div><span>Jetzt</span><b>' + jetzt + '</b></div>' + (max ? '' : '<div><span>Nächste Stufe</span><b>' + naechst + '</b></div>') + '</div>' +
+        (max ? '<div class="anf is-ok">' + icon('check') + '<span>Fertig erforscht</span></div>' : lauf ? '' :
+            '<div class="anf-h">Voraussetzungen</div><div class="anf-list">' + anf + '</div>') + '</div>' +
+        (max || lauf ? '' : '<button type="button" class="btn btn--primary btn--grow fo-go" data-fo="' + d.id + '"' + (why || !kannZahlen('player', k) ? ' disabled' : '') + ' title="' + (why || '') + '">' + icon('flask') + '<span class="lbl">Forschen</span><small class="city-uptime">' + fmtDuration(foZeit('player', d, L + 1)) + '</small></button>');   // (eigenes Teil: zählen die Münzen hoch, bleibt der Knopf unter dem Finger stehen)
 }
 function extraHtml(id, lvl) {
     if (id === 'academy') {
@@ -338,7 +360,7 @@ function extraHtml(id, lvl) {
         const lauf = d ? '<div class="notice notice--gold fo-lauf">' + icon('hourglass') + '<span style="flex:1"><b>' + d.name + (d.max > 1 ? ' Stufe ' + r.to : '') + '</b> · noch ' + uhrHtml(r.endsAt) + '<div class="city-progress" style="margin-top:6px"><i style="--p:' + Math.min(100, (Date.now() - r.startedAt) / Math.max(1, r.endsAt - r.startedAt) * 100).toFixed(1) + '%"></i></div></span><button type="button" class="btn btn--secondary btn--sm" data-fo-gems' + (gems < foGems(c) ? ' disabled' : '') + '>Fertig · ' + foGems(c) + ' Gems</button></div>' : '';
         if (!lvl) return lauf;
         return lauf + '<div class="seg fo-tabs">' + Object.keys(FO_AESTE).map(a => '<button type="button" data-fo-ast="' + a + '"' + (a === foAst ? ' class="on"' : '') + '>' + FO_AESTE[a] + '</button>').join('') + '</div>' +
-            '<div class="fo-list">' + FORSCHUNG.filter(f => f.ast === foAst).map(foZeile).join('') + '</div><small class="keep-note">Eine Forschung gleichzeitig. Die Akademie-Stufe bestimmt, wie weit du forschen kannst.</small>';
+            foBaum(lvl) + '<small class="keep-note">Eine Forschung gleichzeitig. Die Akademie-Stufe bestimmt, wie weit du forschen kannst.</small>';
     }
     if (id === 'barracks') {
         const T = truppenStufe('player'), erl = tierErlaubt('player'), bez = loadCity().tierBez || 1;
@@ -365,6 +387,7 @@ function marktHtml() {                                         // Shop → Markt
 // Klicks im Gebäude-Fenster (Akademie, Kaserne, Markt)
 document.getElementById('citySheet').addEventListener('click', e => {
     const a = e.target.closest('[data-fo-ast]'); if (a) { foAst = a.dataset.foAst; renderCitySheet(); return; }
+    const fs = e.target.closest('[data-fo-sel]'); if (fs) { foSel = fs.dataset.foSel; renderCitySheet(); return; }
     const f = e.target.closest('[data-fo]:not([disabled])'); if (f) { const why = foStart('player', f.dataset.fo); flashHint(why || 'Forschung gestartet: ' + FO_BY[f.dataset.fo].name + '.', 2800); if (!why) sfx('upgrade'); renderCitySheet(); return; }
     if (e.target.closest('[data-fo-gems]:not([disabled])')) { const c = loadCity(), g = foGems(c); if (!g || gems < g) return; gems -= g; saveGame(); updateHud(); foFertig('player', true); renderCitySheet(); return; }
     const t = e.target.closest('[data-tier]:not([disabled])'); if (t) { const why = tierSetzen('player', +t.dataset.tier); flashHint(why || 'Deine Truppen kämpfen jetzt als T' + t.dataset.tier + '.', 3000); updateHud(); renderCitySheet(); return; }

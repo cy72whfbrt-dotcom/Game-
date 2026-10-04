@@ -1945,3 +1945,19 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
   von Bündnis-Mitgliedern werden jetzt auch gezeichnet (als Rückmarsch). Fremde Märsche bleiben im Nebel.
 - Getestet: `rally_rueck_test` (Linie zur Rally + Rückweg nach Hause sichtbar), laden grün.
 - **Hochgeladen 4.10., 13:06 UTC**, Weltrechner läuft wieder.
+
+## 74. Stadt-Fenster im Stil von Rise of Kingdoms (Alexander 4.10.: „nachbauen, nix Neues hinzufügen“)
+Nur das Aussehen – Kosten, Zeiten und Regeln sind genau wie vorher.
+- **Gebäude antippen:** zuerst runde Knöpfe im Bogen unter dem Gebäude (wie in RoK): „Aufwerten“ (bzw. „Bauen“,
+  „Beschleunigen“ während des Baus, „Info“ auf der höchsten Stufe) und – wenn das Gebäude eine eigene Seite hat –
+  „Forschen“ (Akademie), „Schmieden“, „Heilen“, „Helden“, „Handeln“, „Verstärkung“, „Truppen-Stufe“. Nochmal tippen
+  oder daneben tippen schließt sie. (`cityRingAuf`, `#cityRing`, die Knöpfe folgen dem Gebäude beim Verschieben.)
+- **Fenster:** oben das Gebäude als Bild (dasselbe wie in der Stadt), „Stufe 6 → 7“, zwei Reiter (Aufwerten | eigene Seite).
+  Aufwerten: Wirkung, dann **Voraussetzungen** als Liste mit grünem Haken / rotem Kreuz – Burg-Stufe, Bauarbeiter frei,
+  Münzen, Holz, Stein, Eisen jeweils **„hast / brauchst“** – unten der Knopf mit der Bauzeit. Burg genauso.
+- **Forschung als Baum:** Spalten nach der nötigen Akademie-Stufe, jede Forschung ein Feld mit Zeichen, Name und
+  Stufen-Balken (gesperrt = Schloss, läuft = leuchtet). Antippen zeigt darunter: Jetzt → Nächste Stufe, Voraussetzungen
+  (Akademie-Stufe, Vorgänger, Akademie frei, Münzen/Rohstoffe hast/brauchst) und „Forschen“ mit der Zeit.
+- Dateien: `spiel/08-stadt.js` (Ring, Fenster), `aufbau.js` (Burg-Fenster, Forschungs-Baum), `spiel.php` (Aussehen).
+- Getestet (Vorschau, iPhone-Größe): Antippen → Ring → Forschen → Feld wählen → Forschen startet; Aufwerten startet;
+  Ring zeigt „Beschleunigen“; nochmal tippen schließt; keine Skript-Fehler; 67 Server-Tests grün. **Noch nicht hochgeladen.**
