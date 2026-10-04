@@ -986,11 +986,13 @@ function bundRallyZeile(r, meins) {
         '<small>' + escapeHtml(bundName(r.by)) + ' · los in ' + uhrHtml(r.los, 'clock') + (meins ? ' · ' + fmtCompact(bundRallyTruppen(r)) + ' bereit' + (bundRallyUnterwegs(r) ? ' + ' + fmtCompact(bundRallyUnterwegs(r)) + ' unterwegs' : '') + ' · ' + (new Set([r.by].concat(r.j.map(j => j.w))).size) + ' dabei' + (mein ? ' · du: ' + fmtCompact(mein) : '') : '') + '</small></span>' +
         '<button type="button" class="btn btn--secondary btn--sm" data-bact="zeigen" data-z="' + r.at + '">Zeigen</button>' +
         (meins && now < r.los - 2000 ? '<button type="button" class="btn btn--primary btn--sm" data-bact="dazuWahl" data-rid="' + r.id + '">Mitmachen</button>' : '') +
-        (meins && (r.by === 'player' || bundIch().anf === 'player') ? '<button type="button" class="btn btn--ghost btn--sm" data-bact="abbruch" data-rid="' + r.id + '">' + bundSicherKnopf('abbruch:' + r.id, 'Abbrechen', 'Sicher?') + '</button>' : '') + '</div>';
+        (meins && (r.by === 'player' || bundIch().anf === 'player') ? '<button type="button" class="btn btn--ghost btn--sm" data-bact="abbruch" data-rid="' + r.id + '">' + bundSicherKnopf('abbruch:' + r.id, 'Abbrechen', 'Sicher?') + '</button>' : '') +
+        (meins && r.j.length ? '<div class="bd-rally-mit">' + r.j.map(j => { const m = !j.da && pendingSends.find(x => x.rally === r.id && (x.senderBotId || 'player') === j.w && !x.back);   // wer mitmacht: angekommen oder unterwegs (mit Ankunft)
+            return '<small>' + escapeHtml(bundName(j.w)) + ' · ' + fmtCompact(j.n) + ' · ' + (j.da ? '✓ da' : m ? 'unterwegs, da in ' + uhrHtml(m.resolveAt, 'clock') + (m.resolveAt > r.los ? ' (folgt zum Ziel)' : '') : 'unterwegs') + '</small>'; }).join('') + '</div>' : '') + '</div>';
 }
 function bundRallyHtml(a) {
     const meine = bund.r.filter(r => r.aid === a.id), gegen = bund.r.filter(r => r.aid !== a.id && bundVerbuendet('player', islandOwnerOf(r.t)) || r.aid !== a.id && islandOwnerOf(r.t) === 'player');
-    return '<div class="notice">' + icon('info') + '<span>Rally: ein Mitglied sammelt Truppen an seiner Basis, die anderen schicken ihre dazu. Nach Ablauf (1, 3 oder 5 Min.) marschiert alles als EIN Angriff los. Beute und Überlebende gehen anteilig zurück. Starten: feindliches Ziel antippen → „Rally“.</span></div>' +
+    return '<div class="notice">' + icon('info') + '<span>Rally: ein Mitglied sammelt Truppen an seiner Basis, die anderen schicken ihre dazu (Tore egal – nur wer startet, braucht den Weg zum Ziel). Nach Ablauf (1, 3 oder 5 Min.) marschiert alles als EIN Angriff los; wer später ankommt, zieht direkt zum Ziel nach. Beute und Überlebende gehen anteilig zurück. Starten: feindliches Ziel antippen → „Rally“.</span></div>' +
         '<div class="bd-liste">' + (meine.length ? meine.map(r => bundRallyZeile(r, true)).join('') : '<div class="inbox-empty">Gerade läuft keine Rally.</div>') + '</div>' +
         (gegen.length ? '<div class="sect"><h4>Gegen euch</h4></div><div class="bd-liste">' + gegen.map(r => bundRallyZeile(r, false)).join('') + '</div>' : '');
 }

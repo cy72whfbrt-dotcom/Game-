@@ -1455,6 +1455,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .bd-cz.is-hilfe{border-color:rgba(231,76,60,.65)}
 .bd-ck{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0}.bd-ck>span{width:100%;font-size:11px;letter-spacing:.06em;text-transform:uppercase;opacity:.7}
 .bd-rally .bd-sic{background:var(--gold-300);color:#1a1204} .bd-rally.is-feind{border-color:rgba(231,76,60,.45)} .bd-rally.is-feind .bd-sic{background:#e74c3c;color:#fff}
+.bd-rally-mit{flex-basis:100%;display:flex;flex-direction:column;gap:2px;padding:4px 0 0 44px}.bd-rally-mit small{font:500 var(--fs-12)/1.35 var(--font-ui);color:var(--tx-2);font-variant-numeric:tabular-nums}
 .bd-knoepfe{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
 .bd-log{display:grid;gap:2px} .bd-log div{display:flex;justify-content:space-between;gap:10px;padding:5px 2px;border-bottom:1px solid var(--line-1);font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-2)}
 .bd-log div:last-child{border-bottom:0} .bd-log small{flex:none;color:var(--tx-3)}

@@ -1867,3 +1867,13 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
 - Getestet: `tore_rally_test` („Starte du …“, dann tritt der Mitspieler bei, obwohl alle Tore auf seinem Weg zu sind),
   dazu rally_chat, nachzuegler, chat_rally, rally_schnell, chat, laden grün.
 - **Hochgeladen 4.10., 12:39 UTC**, Weltrechner läuft wieder.
+
+## 70. Rally: man sieht, wer kommt (Alexander 4.10.: „sehe nicht, dass sie beitreten, keine Linie zu mir“)
+- **Karte:** Märsche von Bündnis-Mitgliedern, die zu DEINER Basis kommen (Rally, Hilfe, Verstärkung), werden jetzt als
+  Linie mit ihren Truppen gezeichnet (vorher wurden fremde Märsche gar nicht gezeichnet). Alle anderen fremden Märsche
+  bleiben im Nebel wie bisher.
+- **Rally-Fenster:** unter der Rally steht jeder, der mitmacht: Name · Truppen · „✓ da“ oder „unterwegs, da in 3:12“
+  (kommt er nach dem Start: „folgt zum Ziel“). Der Erklärtext sagt jetzt auch: Tore egal beim Beitreten, Nachzügler ziehen
+  direkt zum Ziel.
+- Getestet: `rally_sicht_test` (Mitspieler tritt deiner Rally bei → Linie auf der Karte, Name + „unterwegs, da in …“ im
+  Rally-Fenster), dazu tore_rally, rally_chat, nachzuegler, chat, laden, render grün.
