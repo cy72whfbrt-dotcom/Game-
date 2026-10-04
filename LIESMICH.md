@@ -137,7 +137,8 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Werte, Grundverteidigung, Gesamt, Gefallen, Geflohen, Stufe, 2 Heldenplätze, Skills, Rohstoffe), Gold/Holz/Stein/Eisen
   unten im Fenster (Angreifer nach Truppen-Anteil), „Kampfdetails“ öffnet eine eigene Seite, Spähbericht im gleichen Aufbau.
   Rally-Beute: auch Holz/Stein/Eisen werden jetzt nach Truppen geteilt (vorher nur Gold).
-  Getestet: 2 gegen 1 Rally echt (Werte beider, Beute geteilt, Bericht), Verstärkung, gemeinsamer Angriff. Noch nicht hochgeladen.
+  Getestet: 2 gegen 1 Rally echt (Werte beider, Beute geteilt, Bericht), Verstärkung, gemeinsamer Angriff.
+  **Hochgeladen am 4.10. (Alexanders Ja), alle Tests grün.**
 - **4.10. Aufräumen:** unbenutzte CSS-Reste raus, wichtige Tests ins Projekt (`tests/browser/`, Start mit `tests/alle_tests.sh`).
 
 ## 9. Fehlerliste (Alexander)
