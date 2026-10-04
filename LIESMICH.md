@@ -1855,3 +1855,4 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
   1 Gem pro Minute, bis zu 4-mal, nur wenn sie genug Gems haben). Sonst folgen sie nach dem Start direkt zum Ziel.
 - Getestet: `rally_chat_test` (kein Weg → „Kein Weg dorthin“; zu spät → beschleunigt mit Gems und ist zum Start da;
   „Bin unterwegs“; Knöpfe da), dazu nachzuegler, chat_rally, rally_schnell, chat, laden grün.
+- **Hochgeladen 4.10., 12:31 UTC**, Weltrechner läuft wieder.
