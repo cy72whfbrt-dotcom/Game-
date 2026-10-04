@@ -1856,3 +1856,13 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
 - Getestet: `rally_chat_test` (kein Weg → „Kein Weg dorthin“; zu spät → beschleunigt mit Gems und ist zum Start da;
   „Bin unterwegs“; Knöpfe da), dazu nachzuegler, chat_rally, rally_schnell, chat, laden grün.
 - **Hochgeladen 4.10., 12:31 UTC**, Weltrechner läuft wieder.
+
+## 69. Rally: Tore sind beim Beitreten egal (Alexander 4.10.: „sobald ich eine Rally mache, kann jeder beitreten – nur ich brauche das Tor“)
+- **Beitreten:** Truppen zum Sammelpunkt einer Rally brauchen keinen Weg über Tore und zahlen keine Maut (`bundMarsch` mit
+  `rally`). Im Beitreten-Fenster stehen alle eigenen Basen mit Truppen; Mitspieler treten ebenso bei.
+- **Starten:** wie bisher – wer die Rally startet, braucht den Weg vom Sammelpunkt zum Ziel (Tore offen/eigene/Bündnis).
+- **Chat „Rally?“/„Machst du eine Rally?“:** kann keiner der Mitspieler das Ziel erreichen, du aber schon, sagen sie
+  **„Starte du die Rally – ich trete bei!“** (neu, auch als Knopf) bzw. „Bin dabei“ – und treten dann wirklich bei.
+  Erreichst auch du es nicht: „Kein Weg dorthin – ein Tor ist zu“.
+- Getestet: `tore_rally_test` („Starte du …“, dann tritt der Mitspieler bei, obwohl alle Tore auf seinem Weg zu sind),
+  dazu rally_chat, nachzuegler, chat_rally, rally_schnell, chat, laden grün.

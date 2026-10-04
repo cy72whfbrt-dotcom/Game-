@@ -38,7 +38,7 @@ const BUND_CHAT = {
     rallyBitte: { g: 'f', t: 'Bin zu weit weg – machst du eine Rally?' },
     hilfe: { g: 'f', t: 'Brauche Hilfe!' }, online: { g: 'f', t: 'Wer ist online?' },
     ja: { g: 'a', t: 'Ja' }, nein: { g: 'a', t: 'Nein' }, dabei: { g: 'a', t: 'Bin dabei' }, jetzt: { g: 'a', t: 'Jetzt!' }, spaeter: { g: 'a', t: 'Später' },
-    starte: { g: 'a', t: 'Ja, ich starte die Rally!' }, zuweit: { g: 'a', t: 'Bin zu weit weg' }, keinweg: { g: 'a', t: 'Kein Weg dorthin – ein Tor ist zu' },
+    starte: { g: 'a', t: 'Ja, ich starte die Rally!' }, machdu: { g: 'a', t: 'Starte du die Rally – ich trete bei!' }, zuweit: { g: 'a', t: 'Bin zu weit weg' }, keinweg: { g: 'a', t: 'Kein Weg dorthin – ein Tor ist zu' },
     unterwegs: { g: 'a', t: 'Bin unterwegs' }, binon: { g: 'a', t: 'Bin online' }, danke: { g: 'a', t: 'Danke!' }, gut: { g: 'a', t: 'Gut gemacht!' },
     teilen: { g: 'o', t: 'hat einen Ort geteilt' },
     s_rally: { g: 's', t: 'hat eine Rally gestartet' }, s_rein: { g: 's', t: 'ist dem Bündnis beigetreten' }, s_raus: { g: 's', t: 'ist nicht mehr im Bündnis' }
@@ -271,8 +271,9 @@ function bundMarsch(who, von, nach, n, extra) {                  // ein Marsch z
     const src = islandById[von], dst = islandById[nach];
     n = Math.floor(Math.min(n, islandTroops[von] || 0)); if (n < 1) return 'Keine Truppen dort';
     if (AUF && !AUF.marschOk(who)) return AUF.marschVoll(who);                // Marsch-Plätze der Burg (Paket D) – gilt für alle
-    if (!routeFor(src.landmassId, dst.landmassId, who)) return 'Kein Weg dorthin (Tor zu?)';
-    const hop = lastHop(src.landmassId, dst.landmassId, who); if (!payToll(hop[0], hop[1], n, who)) return 'Das Tor ist zu oder die Maut zu teuer';
+    const rally = !!(extra && extra.rally);                         // (Rally beitreten: Tore sind egal – Alexander 4.10.: „nur wer sie startet, braucht den Weg zum Ziel“)
+    if (!rally && !routeFor(src.landmassId, dst.landmassId, who)) return 'Kein Weg dorthin (Tor zu?)';
+    if (!rally) { const hop = lastHop(src.landmassId, dst.landmassId, who); if (!payToll(hop[0], hop[1], n, who)) return 'Das Tor ist zu oder die Maut zu teuer'; }
     islandTroops[von] -= n;
     const t0 = Date.now(), m = Object.assign({ fromId: von, toId: nach, troops: n, startedAt: t0, resolveAt: t0 + travelDurationSeconds(src, dst, who) / (AUF ? AUF.botschaftTempo(who) : 1) * 1000, senderBotId: who }, extra || {});   // Botschaft: schneller
     pendingSends.push(m); saveGame(); saveProgression();
@@ -728,8 +729,11 @@ function bundChatAntworten(a, who, k) {
         let wer = null, plan = null;
         for (const w of on) { if (bund.r.some(r => r.by === w) || botFreeSlots(botById[w]) <= 0 || bundZielOk(w, z)) continue;
             const p = bundRallyFuer(w, z, now); if (p) { wer = w; plan = p; break; } }
-        if (!wer) { if (on[0]) { const T = islandById[z], weg = w => [...(botOwnedIslands[w] || [])].some(id => islandById[id] && routeFor(islandById[id].landmassId, T.landmassId, w));
-            spaeter(on[0], on.some(w => !bundZielOk(w, z) && weg(w)) ? 'nein' : 'keinweg'); } return; }   // (ehrlich: kein Weg = ein Tor ist zu; sonst zu wenig Truppen)
+        if (!wer) {                                                    // keiner von ihnen kommt ans Ziel (Tor zu) – beitreten geht aber immer: „Starte du“, wenn du hinkommst
+            const T = islandById[z], weg = w => [...(w === 'player' ? ownedIslands : botOwnedIslands[w] || [])].some(id => islandById[id] && routeFor(islandById[id].landmassId, T.landmassId, w));
+            if (weg(who) && !bundZielOk(who, z)) { for (const w of on.slice(0, 4)) if (botFreeSlots(botById[w]) > 0) spaeter(w, w === on[0] ? 'machdu' : 'dabei'); }
+            else if (on[0]) spaeter(on[0], 'keinweg');
+            return; }
         spaeter(wer, 'starte', null, { rally: plan });
         for (const w of on.filter(x => x !== wer).slice(0, 3)) if (botFreeSlots(botById[w]) > 0) spaeter(w, 'dabei');
     } else if (k === 'online') { for (const w of on.slice(0, 4)) spaeter(w, 'binon'); }
@@ -799,13 +803,13 @@ function bundMitspielerRally(now) {
             const zielOw = islandOwnerOf(r.t); if (zielOw && (bundVerbuendet(w, zielOw) || zielOw === w)) continue;
             const thr = botThreatened(w); let best = null;
             for (const sid of botOwnedIslands[w]) { if (thr.has(sid) || sid === megaTempleId || sid === r.at) continue; const n = Math.floor((islandTroops[sid] || 0) * (botStyle(bot).commit || .7) * .8); if (n < 1000) continue;
-                const src = islandById[sid]; if (!bundWeg(src.landmassId, at.landmassId, w, n)) continue;
+                const src = islandById[sid];                                // (Tore egal beim Beitreten)
                 if (!best || n > best.n) best = { id: sid, n }; }
             bundMem.rallyGemacht.add(key);
             // (Rally eines echten Spielers: die Mitspieler sagen im Chat, ob sie kommen – vorher kam einfach keiner, ohne ein Wort)
             const sagen = k2 => { if (botById[r.by] && botById[r.by].mensch && (bundMem.rallySagt[r.id] = (bundMem.rallySagt[r.id] || 0) + 1) <= 4)
                 bundMem.chatQ.push({ at: now + 2000 + Math.random() * 6000, aid: a.id, w, k: k2, z: null }); };
-            if (!best) { if ([...botOwnedIslands[w]].some(id => (islandTroops[id] || 0) >= 1000)) sagen('keinweg'); continue; }   // (Truppen da, aber kein Weg zum Sammelpunkt: ein Tor ist zu)
+            if (!best) continue;                                            // (keine Basis mit genug Truppen)
             if (bot.style === 'builder' && Math.random() < .5) { sagen('nein'); continue; }
             const k0 = pendingSends.length;
             if (!bundRallyDazu(a, w, { rid: r.id, von: best.id, n: best.n })) { bundBotGetippt(bot, now); bundSpeichern(); sagen('unterwegs');
@@ -1017,10 +1021,10 @@ function bundObenZeichnen() {
     bundOben.innerHTML = '';
 }
 // Auswahl: Rally starten (Ziel t) · bei einer Rally mitmachen (rid) · Hilfe senden (nach)
-function bundQuellen(ziel, frist) {                              // eigene Basen, die ziel erreichen (frist: rechtzeitig bis dahin)
+function bundQuellen(ziel, frist, toreEgal) {                     // eigene Basen, die ziel erreichen (frist: rechtzeitig bis dahin; toreEgal: Rally beitreten)
     const out = [], now = Date.now();
     for (const id of ownedIslands) { if (id === ziel.id) continue; const n = islandTroops[id] || 0; if (n < 1) continue; const s = islandById[id];
-        if (!routeFor(s.landmassId, ziel.landmassId, 'player')) continue;
+        if (!toreEgal && !routeFor(s.landmassId, ziel.landmassId, 'player')) continue;
         const eta = travelDurationSeconds(s, ziel) * 1000; if (frist && now + eta > frist - 1000) continue;
         out.push({ id, n, eta }); }
     return out.sort((x, y) => y.n - x.n).slice(0, 40);
@@ -1030,7 +1034,7 @@ function bundWahlHtml() {
     if (!ziel) { bundWahl = null; return ''; }
     const r = w.mode === 'dazu' ? bund.r.find(x => x.id === w.rid) : null;
     const q = w.mode === 'rally' ? [...ownedIslands].filter(id => (islandTroops[id] || 0) >= 1 && id !== ziel.id && routeFor(islandById[id].landmassId, ziel.landmassId, 'player')).map(id => ({ id, n: islandTroops[id] || 0, eta: travelDurationSeconds(islandById[id], ziel) * 1000 })).sort((x, y) => y.n - x.n).slice(0, 40)
-        : bundQuellen(ziel);   // (Rally: jederzeit – wer zu spät kommt, folgt direkt zum Ziel)   // (Verstärkung: jederzeit – sie bleibt dort, bis du sie zurückholst)
+        : bundQuellen(ziel, undefined, w.mode === 'dazu');   // (Rally beitreten: jederzeit und Tore egal – wer zu spät kommt, folgt direkt zum Ziel)   // (Verstärkung: jederzeit – sie bleibt dort, bis du sie zurückholst)
     if (w.von === undefined || !q.some(x => x.id === w.von)) w.von = q.length ? q[0].id : null;
     const titel = w.mode === 'rally' ? 'Rally auf ' + islandTitle(ziel) : w.mode === 'dazu' ? 'Mitmachen: Rally auf ' + islandTitle(islandById[r.t]) : 'Verstärkung für ' + bundName(islandOwnerOf(ziel.id)) + ' · ' + islandTitle(ziel);
     return '<div class="bd-form bd-wahl"><div class="sect"><h4>' + escapeHtml(titel) + '</h4></div>' +
