@@ -355,7 +355,8 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
     - **Lager, Kaserne, Schatzkammer weg** – ihr Bonus auch (nicht ins Labor).
     - **T1–T5 komplett raus** („Tot!!“): keine Truppen-Stufen mehr, auch keine Forschung dafür.
     - **Burg schützt die Rohstoffe** (statt Lager): Gold, Holz, Stein, Eisen. Was **über dem Schutz** liegt,
-      kann ein Angreifer erbeuten (passt zu „Beute neu“ oben). Wie viel die Burg je Stufe schützt: noch besprechen.
+      kann ein Angreifer erbeuten (passt zu „Beute neu“ oben). Der **Schutz wächst mit jeder Burg-Stufe**
+      (Alexander 4.10.); genaue Zahlen noch festlegen.
     - **Lazarett → Krankenhaus** („KH“).
     - **Wachturm weg** → wird Forschung im Labor (zeigt Stärke von Angriffen auf dich, bessere Spähberichte).
       Alexander: „machen wir noch mal besser“ – später neu ausdenken.
