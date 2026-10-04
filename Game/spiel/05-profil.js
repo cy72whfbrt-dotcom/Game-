@@ -1166,7 +1166,161 @@ function renderCombatLog() {
     [...combatLogListEl.children].forEach((row, i) => { const e = combatLog[i]; if (!e) return; row.dataset.key = combatLogKey(e);
         const isl = islandById[e.targetId ?? e.toId], lt = row.querySelector(':scope > .lt'); if (!isl || !lt) return;   // wo war das? Koordinaten + „Zeigen“ auf der Karte
         lt.insertAdjacentHTML('beforeend', '<small class="logOrt">' + coordText(isl.x, isl.y) + ' <button type="button" class="btn btn--ghost btn--sm" data-logzeigen="' + isl.id + '">Zeigen</button></small>'); });
+    try { kampflogUmbauen(); } catch (err) { console.warn('Kampfbericht', err); }   // neuer Aufbau: ein Fenster je Spieler
 }
+
+// ===== Kampfbericht im neuen Aufbau (Alexanders Design): jeder Spieler ein eigenes Fenster, alle Fenster gleich aufgebaut
+// (Truppen, Held, Grundverteidigung, Gesamt, Gefallen, Geflohen, Stufe, 2 Heldenplätze, Skills, Rohstoffe) – „Kampfdetails“ öffnet eine eigene Seite.
+const kampflogUmbauen = (function () {
+    const fmt = v => Math.round(v || 0).toLocaleString('de-DE');
+    const zahl = t => parseInt(String(t || '').replace(/[^\d]/g, ''), 10) || 0;
+    const ic = n => '<svg class="icon" aria-hidden="true"><use href="#i-' + n + '"></use></svg>';
+    const zl = (a, b, kl, src) => '<div class="logLine' + (kl || '') + '"><span>' + a + (src ? '<small class="logSrc">' + src + '</small>' : '') + '</span><span>' + b + '</span></div>';
+    const el = h => { const t = document.createElement('template'); t.innerHTML = h.trim(); return t.content.firstChild; };
+    const leerHeld = (n, t) => '<div class="logHero kl-keinheld"><span class="ghero"><span class="kl-leer">?</span><span><b>' + n + '</b><small>' + t + '</small></span></span></div>';
+    const leerGear = (stufe, angr) => '<div class="logGear"><div class="logGearHead">' + (stufe || 'Stufe –') + '</div><div class="logGearItems">' +
+        [['weapon', 'Waffe'], ['armor', 'Rüstung'], ['shield', 'Schild'], ['boots', 'Stiefel']].map(([i, n]) => '<span class="gslot"><span class="tile empty" title="' + n + ' – leer">' + ic(i) + '</span></span>').join('') +
+        '</div><div class="logGearMeta">Skill Angriff – · Verteidigung –</div></div>';
+    const textOf = n => (n && n.firstElementChild ? n.firstElementChild.textContent : '').trim();
+
+    // ein Fenster auf den immer gleichen Aufbau bringen
+    function normal(box, angr, roh, schutz) {
+        const lines = () => [...box.querySelectorAll(':scope > .logLine, :scope > .logSum, :scope > .logCasualty')];
+        const truppen = lines().find(l => textOf(l).startsWith('Truppen'));
+        if (truppen) truppen.firstElementChild.firstChild.textContent = 'Truppen';
+        const mitHeld = !!box.querySelector('.logGear .logHero:not(.kl-keinheld)');
+        if (!lines().some(l => textOf(l).startsWith('Held'))) (truppen || box.firstElementChild).insertAdjacentHTML('afterend', mitHeld ? zl('Held', 'dabei', '', 'steckt in „Eigene Werte“') : zl('Held', '+0', '', angr ? 'ohne Held' : 'zählt beim Verteidigen nicht'));
+        const sum = box.querySelector(':scope > .logSum');
+        if (!lines().some(l => textOf(l).startsWith('Grundverteidigung')) && sum) sum.insertAdjacentHTML('beforebegin', zl('Grundverteidigung', '0', ' kl-null', 'zählt nur beim Besitzer der Basis'));
+        const cas = lines().filter(l => l.classList.contains('logCasualty'));
+        if (!cas.length && sum) sum.insertAdjacentHTML('afterend', '<div class="logCasualty"><span>Gefallen</span><span>0</span></div>');
+        if (!lines().some(l => textOf(l).startsWith('Geflohen'))) { const c = lines().filter(l => l.classList.contains('logCasualty')).pop(); (c || sum).insertAdjacentHTML('afterend', zl('Geflohen', '0')); }
+        let gear = box.querySelector(':scope > .logGear');
+        if (!gear) { box.insertAdjacentHTML('beforeend', leerGear('', angr)); gear = box.querySelector(':scope > .logGear'); }
+        let hs = gear.querySelector('.logGearHeroes');
+        if (!hs) { hs = el('<div class="logGearHeroes"></div>'); const meta = gear.querySelector('.logGearMeta'); meta ? gear.insertBefore(hs, meta) : gear.appendChild(hs); }
+        const helden = hs.querySelectorAll('.logHero');
+        if (helden.length === 0) hs.insertAdjacentHTML('beforeend', leerHeld('Kein Hauptheld', angr ? 'Ohne Held losgeschickt' : 'Beim Verteidigen einer Basis zählt kein Held'));
+        if (hs.querySelectorAll('.logHero').length === 1) hs.insertAdjacentHTML('beforeend', leerHeld('Kein Zweitheld', 'Zweitheld · Werte und passive Fähigkeiten zu 50 %'));
+        hs.querySelectorAll('.logHero').forEach(h => {                       // jeder Heldenplatz: dieselben 7 Zeilen
+            const L = [...h.querySelectorAll(':scope > .logLine')].map(l => { const r = [textOf(l), l.lastElementChild.textContent.trim()]; l.remove(); return r; });
+            const fest = ['Angriff', 'Verteidigung', 'Gefolge', 'Tempo'], rest = L.filter(l => !fest.includes(l[0]));
+            while (rest.length < 3) rest.push(['Fähigkeit', '–']);
+            h.insertAdjacentHTML('beforeend', [...fest.map(n => L.find(l => l[0] === n) || [n, '–']), ...rest.slice(0, 3)].map(([a, b]) => zl(a, b, b === '–' ? ' kl-null' : ' buff')).join(''));
+        });
+        box.querySelectorAll(':scope > .kl-rss').forEach(x => x.remove());
+        box.insertAdjacentHTML('beforeend', '<div class="kl-rss"><div class="logGearHead">Rohstoffe</div>' +
+            [['g', 'Gold'], ['h', 'Holz'], ['s', 'Stein'], ['e', 'Eisen']].map(([k, n]) => { const v = roh[k] || 0;
+                return zl(n, (v > 0 ? '+' : v < 0 ? '−' : '') + fmt(Math.abs(v)), v > 0 ? ' buff' : v < 0 ? ' buff malus' : ''); }).join('') +
+            (schutz ? zl('<small class="logSrc">Burg schützt ' + fmt(schutz) + ' je Rohstoff</small>', '') : '') + '</div>');
+        return box;
+    }
+    const rohTeil = (beute, anteil, vz) => ({ g: vz * Math.round(beute.g * anteil), h: vz * Math.round(beute.h * anteil), s: vz * Math.round(beute.s * anteil), e: vz * Math.round(beute.e * anteil) });
+
+    // eine Seite (Angreifer oder Verteidiger) in Fenster je Spieler zerlegen
+    function seiteUmbauen(side, angr, liste, e, beute, schutz, sieg) {
+        const label = side.querySelector('.logSideLabel');
+        const gruppe = el('<div class="kl-gruppe ' + (angr ? 'kl-a' : 'kl-v') + '"></div>');
+        side.replaceWith(gruppe);
+        const spieler = Array.isArray(liste) && liste.length ? liste : null;
+        const sumEl = side.querySelector(':scope > .logSum'), gesamt = sumEl ? zahl(sumEl.lastElementChild.textContent) : 0;
+        if (!spieler) {                                                     // nur ein Spieler auf dieser Seite
+            const roh = angr ? (sieg ? beute : {}) : rohTeil(beute, 1, -1);
+            gruppe.appendChild(normal(side, angr, roh, angr ? 0 : schutz));
+            return;
+        }
+        // Zeilen der einzelnen Spieler (angreiferZeilen / verstZeilen) einsammeln und aus dem Fenster nehmen
+        const gearVon = {}; side.querySelectorAll(':scope > details.verst-det').forEach(d => { const n = d.querySelector('summary').textContent.split(':')[0].trim(); gearVon[n] = d.querySelector('.logGear'); d.remove(); });
+        const namen = new Set(spieler.map(p => p.name));
+        [...side.querySelectorAll(':scope > .logLine, :scope > .logCasualty')].forEach(l => { const t = textOf(l);
+            if (t.startsWith('· davon') || t.startsWith('Verstärkung ·') || namen.has(t) || (!angr && (t === 'Deine' || t === (e.defName || '') || t === (e.defenderName || '') || t === 'Besitzer'))) l.remove(); });
+        const andere = spieler.slice(angr ? 1 : 0), erster = angr ? spieler[0] : { name: label.textContent.replace(/^Verteidiger · /, '').replace(/ \+ .*$/, ''), n: e.eigen };
+        const summeAndere = andere.reduce((s, p) => s + (p.n || 0), 0), alleT = summeAndere + (erster.n || 0), staerkeAndere = andere.reduce((s, p) => s + (p.k !== undefined ? p.k : p.n || 0), 0);
+        // Fenster 1: Anführer / Besitzer (behält Held, Boni, Ausrüstung)
+        label.innerHTML = (angr ? 'Angreifer · ' : 'Verteidiger · ') + escapeHtml(erster.name || '?') + ' <small style="text-transform:none;letter-spacing:0">(' + (angr ? 'Anführer' : 'Besitzer') + ')</small>';
+        const tr = [...side.querySelectorAll(':scope > .logLine')].find(l => textOf(l).startsWith('Truppen')); if (tr) tr.lastElementChild.textContent = fmt(erster.n);
+        if (sumEl) sumEl.lastElementChild.textContent = fmt(gesamt - staerkeAndere);
+        // die Boni-Zeilen galten dem ganzen Kampf: im Fenster des Anführers steht nur, was ER mitbringt
+        side.querySelectorAll(':scope > .logLine.buff').forEach(l => l.remove());
+        const schon = [...side.querySelectorAll(':scope > .logLine')].filter(l => l !== tr).reduce((x, l) => x + zahl(l.lastElementChild.textContent), 0);   // (z. B. Grundverteidigung)
+        const eig = gesamt - staerkeAndere - (erster.n || 0) - schon;
+        if (eig && tr) tr.insertAdjacentHTML('afterend', zl('Eigene Werte', (eig > 0 ? '+' : '−') + fmt(Math.abs(eig)), ' buff', angr ? 'Held, Skill Angriff, Titel, Forschung' : 'Rüstung, Skill Verteidigung, Mauer, Titel, Forschung'));
+        if (angr && erster.fallen !== undefined) { const c = side.querySelector(':scope > .logCasualty'); if (c) c.lastElementChild.textContent = '−' + fmt(erster.fallen); }
+        gruppe.appendChild(normal(side, angr, angr ? (sieg ? rohTeil(beute, (erster.n || 0) / Math.max(1, alleT), 1) : {}) : rohTeil(beute, 1, -1), angr ? 0 : schutz));
+        // weitere Fenster: Rally-Mitglieder / Verstärkung
+        for (const p of andere) {
+            const b = el('<div class="logSide"><div class="logSideLabel">' + (angr ? 'Angreifer · ' : 'Verteidiger · ') + escapeHtml(p.name || '?') + ' <small style="text-transform:none;letter-spacing:0">(' + (angr ? 'Verbündeter' : 'Verstärkung') + ')</small></div>' +
+                zl('Truppen', fmt(p.n)) + (p.k !== undefined && p.k !== p.n ? zl('Eigene Werte', (p.k > p.n ? '+' : '−') + fmt(Math.abs(p.k - p.n)), ' buff', angr ? 'Held, Skill Angriff, Titel, Forschung' : 'Skill Verteidigung, Titel, Forschung') : '') +
+                '<div class="logSum' + (sumEl && sumEl.classList.contains('advantage') ? ' advantage' : '') + '"><span>Gesamt</span><span>' + fmt(p.k !== undefined ? p.k : p.n) + '</span></div>' +
+                '<div class="logCasualty"><span>Gefallen</span><span>−' + fmt(Math.max(0, (p.fallen || 0) - (p.wounded || 0))) + '</span></div>' +
+                (p.wounded ? '<div class="logCasualty wounded"><span>Verwundet</span><span>' + fmt(p.wounded) + '</span></div>' : '') + '</div>');
+            const g = gearVon[p.name]; if (g) b.appendChild(g);
+            gruppe.appendChild(normal(b, angr, angr && sieg ? rohTeil(beute, (p.n || 0) / Math.max(1, alleT), 1) : {}, 0));
+        }
+    }
+
+    function spaeh(row, e) {
+        const d = row.querySelector('details'); if (!d) return;
+        const L = {}; d.querySelectorAll('.logLine').forEach(l => { L[textOf(l)] = l.lastElementChild; });
+        const v = k => L[k] ? L[k].textContent.trim() : '–';
+        const roh = [['Gold'], ['Holz'], ['Stein'], ['Eisen']].map(([n]) => { const c = L[n]; if (!c) return zl(n, '–', ' kl-null');
+            const sm = c.querySelector('small'), haupt = c.cloneNode(true); if (haupt.querySelector('small')) haupt.querySelector('small').remove();
+            return zl(n, haupt.textContent.trim(), ' buff', sm ? sm.textContent.replace(/[()]/g, '') : ''); }).join('');
+        const name = (e.spy && e.spy.name) || v('Herr').split(' · ')[0];
+        const box = el('<div class="logSide"><div class="logSideLabel">Gespäht · ' + escapeHtml(name) + '</div>' +
+            zl('Truppen', fmt(e.troops)) + zl('Held', '+0', '', 'zählt beim Verteidigen nicht') + zl('Grundverteidigung', fmt(e.defense)) +
+            '<div class="logSum"><span>Gesamt</span><span>' + fmt((e.troops || 0) + (e.defense || 0)) + '</span></div>' + '<div class="logCasualty kl-null"><span>Gefallen</span><span>–</span></div>' + zl('Geflohen', '–', ' kl-null') +
+            leerGear('Stufe ' + fmt(e.spy && e.spy.lvl), false) + '</div>');
+        normal(box, false, {}, 0);
+        box.querySelector('.kl-rss').remove();
+        const kh = box.querySelector('.kl-keinheld small'); if (kh && L['Helden']) kh.textContent = 'Zuhause: ' + v('Helden') + ' – zählen beim Verteidigen nicht';
+        const meta = box.querySelector('.logGearMeta'); if (meta) meta.textContent = 'Fähigkeiten ' + v('Fähigkeiten');
+        box.insertAdjacentHTML('beforeend', '<div class="kl-rss"><div class="logGearHead">Basis</div>' + zl('Friedensschild', v('Friedensschild')) + zl('Mauer', v('Mauer')) + zl('Burg', v('Burg')) + zl('Forschung', v('Forschung')) + '</div>' +
+            '<div class="kl-rss"><div class="logGearHead">Rohstoffe</div>' + roh + '</div>');
+        const sum = d.querySelector('summary').outerHTML;
+        d.innerHTML = sum; const cmp = el('<div class="logCompare"><div class="kl-gruppe kl-v"></div></div>'); cmp.firstChild.appendChild(box); d.appendChild(cmp);
+    }
+
+    function umbauen() {
+        const rows = [...combatLogListEl.children];
+        rows.forEach((row, i) => { const e = combatLog[i]; if (!e) return;
+            try {
+                if (e.type === 'scout') return spaeh(row, e);
+                if (e.type !== 'attack' && e.type !== 'botAttack') return;
+                const cmp = row.querySelector('.logCompare'); if (!cmp) return;
+                row.querySelectorAll('.lchip').forEach(c => { const u = c.querySelector('use'); if (u && /#i-(coin|wood|stone|iron|lock)$/.test(u.getAttribute('href') || '') && !/Kills/.test(c.textContent)) c.remove(); });
+                const r = e.plunderRoh || {}, beute = { g: e.plunder || 0, h: r.h || 0, s: r.s || 0, e: r.e || 0 };
+                const sides = [...cmp.querySelectorAll(':scope > .logSide')]; if (sides.length < 2) return;
+                const angrList = Array.isArray(e.angreifer) && e.angreifer.length > 1 ? e.angreifer : null;
+                const vertList = Array.isArray(e.verst) && e.verst.length ? e.verst : null;
+                const sieg = e.type === 'attack' ? !!e.won : !!e.won;
+                seiteUmbauen(sides[0], true, angrList, e, beute, 0, sieg);
+                seiteUmbauen(sides[1], false, vertList, e, sieg ? beute : { g: 0, h: 0, s: 0, e: 0 }, e.plunderSafe || 0, sieg);
+            } catch (err) { console.warn('Kampflog-Design', err); }
+        });
+    }
+
+    // „Kampfdetails“ öffnet eine eigene Seite
+    const seite = el('<div class="kl-seite" hidden><div class="kl-kopf"><div class="emblem emblem--gold">' + ic('battlelog') + '</div><div class="kl-txt"><div class="overline" id="klArt">Kampfdetails</div><h3 id="klTitel">Bericht</h3></div>' +
+        '<button class="btn-x" type="button" aria-label="Zurück" data-klzu>' + ic('close') + '</button></div>' +
+        '<div style="max-width:560px;margin:0 auto"><button type="button" class="btn btn--ghost btn--sm kl-zurueck" data-klzu>' + ic('back') + 'Zurück zum Kampflog</button></div><div class="logList" id="klInhalt"></div></div>');
+    document.body.appendChild(seite);
+    function oeffnen(row, art) {
+        const k = row.cloneNode(true), d = k.querySelector('details'); if (d) d.open = true;
+        const inh = seite.querySelector('#klInhalt'); inh.innerHTML = ''; inh.appendChild(k);
+        const b = row.querySelector('.lt b'), t = b ? b.cloneNode(true) : null; if (t && t.querySelector('.lbadge')) t.querySelector('.lbadge').remove();
+        seite.querySelector('#klTitel').textContent = t ? t.textContent.trim() : 'Bericht';
+        seite.querySelector('#klArt').textContent = art || 'Kampfdetails';
+        seite.hidden = false; seite.scrollTop = 0;
+    }
+    seite.addEventListener('click', ev => { if (ev.target.closest('[data-klzu]')) { ev.preventDefault(); seite.hidden = true; } });
+    combatLogListEl.addEventListener('click', ev => { const s = ev.target.closest('summary'); if (!s || !combatLogListEl.contains(s)) return;
+        ev.preventDefault(); ev.stopPropagation(); oeffnen(s.closest('.logRow'), s.textContent.trim()); }, true);
+    document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && !seite.hidden) seite.hidden = true; });
+    if (typeof battleLogCloseBtn !== 'undefined') battleLogCloseBtn.addEventListener('click', () => { seite.hidden = true; });
+
+    return umbauen;
+})();
 combatLogListEl.addEventListener('click', e => {
     const b = e.target.closest('[data-logzeigen]'); if (!b) return;
     e.preventDefault(); e.stopPropagation();

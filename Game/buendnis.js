@@ -417,6 +417,7 @@ document.getElementById('citySheet').addEventListener('click', e => {
 // Welt-Teil openWaterVerstaerkung = { n, l: [{ id, w: Helfer, t: Basis, n: Truppen, von: seine Basis, at }] }.
 // Platz: Botschaft-Stufe × 10 % seiner eigenen Truppen (mind. Stufe × 20.000) – für alle Verstärkungen bei ihm zusammen.
 let verst = verstLesen();
+var verstDefPlus = {};   // (nur während eines Kampfs) Basis → was die Helfer mit ihren eigenen Werten mehr/weniger verteidigen
 function verstLesen() { let v = null; try { v = JSON.parse(store.get('openWaterVerstaerkung')); } catch (e) {} return v && Array.isArray(v.l) ? v : { n: 0, l: [] }; }
 function verstSpeichern() { store.set('openWaterVerstaerkung', JSON.stringify(verst)); requestRender(); }
 function verstStufe(w) { return AUF && AUF.botschaftStufe ? AUF.botschaftStufe(w) : 0; }
@@ -444,9 +445,19 @@ function verstPruefen() {
 function verstVorKampf(id) {
     const L = verst.l.filter(v => v.t === id); if (!L.length) return null;
     const G = islandTroops[id] || 0, V = L.reduce((s, v) => s + v.n, 0);
-    islandTroops[id] = G + V; return { G, V, L: L.map(v => ({ v, n0: v.n })) };
+    islandTroops[id] = G + V;
+    const ow = islandOwnerOf(id);                                  // jeder Helfer verteidigt seine Truppen mit SEINEN Werten (Skill, Titel, Forschung)
+    verstDefPlus[id] = ow ? L.reduce((s, v) => s + verstWert(v.w, v.n) - verstWert(ow, v.n), 0) : 0;
+    return { G, V, L: L.map(v => ({ v, n0: v.n, plus: Math.round(verstWert(v.w, v.n)) })) };
+}
+// was n Truppen von w in einer Basis an Verteidigung mitbringen (Skill Verteidigung, Titel, Forschung; Mauer gehört zur Basis)
+function verstWert(w, n) {
+    const s = w === 'player' ? (skills.defense || 0) * SKILL_DEFS.defense.defPct / 100 : (botMults(w).defensePct || 0) / 100;
+    const kk = AUF ? AUF.kampf(w, 'd') : 1;
+    return n * s * titleMult(w, 'defense') * kk + n * (kk - 1);
 }
 function verstNachKampf(id, k, gefallen) {
+    delete verstDefPlus[id];
     if (!k) return null;
     const tot = k.G + k.V, rest = gefallen ? 0 : Math.max(0, Math.min(tot, islandTroops[id] || 0)), weg = tot - rest, helfer = [];
     let restV = 0;
@@ -454,7 +465,7 @@ function verstNachKampf(id, k, gefallen) {
         const f = Math.min(x.n0, Math.round(weg * x.n0 / Math.max(1, tot)));
         const wd = f > 0 ? (x.v.w === 'player' ? hospitalTake(f) : botHospitalTake(x.v.w, f)) || 0 : 0;   // seine Verwundeten in sein Krankenhaus
         x.v.n = x.n0 - f; restV += x.v.n;
-        helfer.push({ w: x.v.w, name: bundName(x.v.w), n: x.n0, fallen: f - wd, wounded: wd, gear: fighterSnapshot(x.v.w) });
+        helfer.push({ w: x.v.w, name: bundName(x.v.w), n: x.n0, plus: x.plus, k: x.n0 + x.plus, fallen: f - wd, wounded: wd, gear: fighterSnapshot(x.v.w) });
     }
     if (!gefallen) islandTroops[id] = Math.max(0, rest - restV);   // die Besatzung behält ihren Anteil
     verst.l = verst.l.filter(v => v.n >= 1 && !(gefallen && v.t === id)); verstSpeichern();
@@ -546,11 +557,22 @@ function bundRallyLos(r) {
     const atk = ok && pendingAttacks.length > k ? pendingAttacks[pendingAttacks.length - 1] : null;
     if (!atk || atk.attackerBotId !== by) { islandTroops[r.at] = Math.max(0, (islandTroops[r.at] || 0) - total); return bundRallyEnde(r, 'der Weg ist versperrt (Tor zu oder Maut zu teuer)'); }
     atk.rally = { id: r.id, by, an: [[by, r.at, r.n0]].concat(r.j.filter(j => j.da).map(j => [j.w, j.f, j.n])) };
+    rallyWerte(atk, by, r.n0, r.j.filter(j => j.da));
     bundMem.rallyWeg[r.id] = { t: r.t, at: r.at, by, bis: Date.now() + 60 * 60000 };   // (für Nachzügler: sie folgen direkt zum Ziel)
     bund.r = bund.r.filter(x => x !== r);
     const a = bund.b[r.aid], txt = 'Rally auf ' + islandTitle(islandById[r.t]) + ' marschiert los: ' + fmtCompact(total) + ' Truppen von ' + atk.rally.an.length + (atk.rally.an.length === 1 ? ' Basis.' : ' Basen.');
     if (a) bundLog(a, txt); for (const w of new Set(atk.rally.an.map(x => x[0]))) bundMelden(w, txt);
     saveGame(); saveProgression(); bundSpeichern();
+}
+// Rally: jeder zählt mit SEINEN Werten für SEINE Truppen (Skill Angriff, Titel, Forschung) – der Held des Anführers für dessen Truppen.
+// (Stärke = (Truppen + Bonus) × Titel × Forschung des Anführers; die anderen werden darauf umgerechnet)
+function rallyWerte(atk, by, n0, mit) {
+    const st = w => titleMult(w, 'attack') * (AUF ? AUF.kampf(w, 'a') : 1), stBy = st(by) || 1;
+    const sk = (w, n) => w === 'player' ? attackFlatBonus(n) : Math.round(n * (botMults(w).attackPct || 0) / 100);
+    let skill = sk(by, n0), bonus = skill + (atk.hx ? Math.round(n0 * atk.hx.atk / 100) + heroGefOf(atk.hx, n0) : 0);
+    for (const j of mit) { const b = sk(j.w, j.n), p = (j.n + b) * st(j.w) / stBy - j.n; skill += b; bonus += p;
+        const x = atk.rally.an.find(q => q[0] === j.w && q[2] === j.n && q[3] === undefined); if (x) x[3] = Math.round(p); }   // (für den Kampfbericht: was er mitbringt)
+    atk.attackBonus = Math.round(bonus); atk.skillBonus = skill;
 }
 // (Kampf) Überlebende einer Rally gehen anteilig zu ihren Basen zurück. ohneStarter: dessen Anteil wird zurückgegeben (bleibt vor Ort)
 function bundRallyHeim(attack, n, vonId, ohneStarter) {
@@ -567,12 +589,15 @@ function bundRallyHeim(attack, n, vonId, ohneStarter) {
 // seine Verwundeten gehen in SEIN Krankenhaus. Gibt die Angreifer-Liste für den Kampfbericht zurück.
 function kampfAnteile(attack, fallen, hosp) {
     const an = attack.rally.an, by = attack.rally.by, sum = an.reduce((s, x) => s + x[2], 0) || 1, m = new Map();
-    for (const x of an) { if (!m.has(x[0])) m.set(x[0], { w: x[0], n: 0 }); m.get(x[0]).n += x[2]; }
+    for (const x of an) { if (!m.has(x[0])) m.set(x[0], { w: x[0], n: 0, plus: 0, eig: 0 }); const q = m.get(x[0]); q.n += x[2]; if (x[3] !== undefined) { q.plus += x[3]; q.eig = 1; } if (x[4]) q.hx = x[4]; }
+    const stA = (attack.atkTitle !== undefined ? attack.atkTitle : titleMult(by, 'attack')) * (attack.atkKraft || 1), ganz = Math.round((attack.rawTroops + (attack.attackBonus || 0)) * stA);
+    let andere = 0; for (const q of m.values()) if (q.w !== by && q.eig) { q.k = Math.round((q.n + q.plus) * stA); andere += q.k; }
+    if (m.has(by)) { const q = m.get(by); q.k = ganz - andere; }                  // (Stärke je Spieler: der Anführer bekommt den Rest – die Summe passt genau)
     const L = [...m.values()]; let rest = Math.max(0, Math.floor(fallen));
     L.forEach((x, i) => {
         const f = i === L.length - 1 ? rest : Math.min(rest, Math.round(fallen * x.n / sum)); rest -= f;
         const wd = f > 0 ? (x.w === 'player' ? hospitalTake(f) : botHospitalTake(x.w, f, x.w === by ? hosp : undefined)) || 0 : 0;
-        Object.assign(x, { name: bundName(x.w), fallen: f - wd, wounded: wd, gear: fighterSnapshot(x.w, x.w === by ? attack.hx : undefined) });
+        Object.assign(x, { name: bundName(x.w), fallen: f - wd, wounded: wd, gear: fighterSnapshot(x.w, x.w === by ? attack.hx : x.hx) }); delete x.eig; delete x.hx;
     });
     return L;
 }

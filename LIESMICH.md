@@ -120,6 +120,14 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
 - **1.10. Aufräumen (Alexanders Wunsch „alles weg, was nicht zum Spiel gehört“):** `Main_game_folder_` auf dem Server
   gelöscht, 27 alte Claude-Sitzungen archiviert. Alte GitHub-Branches kann Claude nicht löschen (GitHub sperrt das, 403)
   → Alexander löscht sie selbst (siehe Abschnitt 11). Neue feste Regeln in Abschnitt 0.
+- **4.10. Neue Kampf-Regel + Kampfbericht neu (Alexander: „Alle zählen“):** Bei Rally und gemeinsamem Angriff zählt
+  jeder mit SEINEN Werten für SEINE Truppen (Skill Angriff, Titel, Forschung; Held des Anführers für dessen Truppen –
+  `rallyWerte` in buendnis.js; dazukommende Verbündete brachten ihre Werte schon mit). Verstärkung verteidigt mit den
+  Werten des Helfers (Skill Verteidigung, Titel, Forschung; Mauer bleibt die der Basis – `verstWert`/`verstDefPlus`).
+  Kampfbericht (05-profil.js `kampflogUmbauen`): ein Fenster je Spieler, alle gleich aufgebaut (Truppen, Held, Eigene
+  Werte, Grundverteidigung, Gesamt, Gefallen, Geflohen, Stufe, 2 Heldenplätze, Skills, Rohstoffe), Gold/Holz/Stein/Eisen
+  unten im Fenster (Angreifer nach Truppen-Anteil), „Kampfdetails“ öffnet eine eigene Seite, Spähbericht im gleichen Aufbau.
+  Getestet: Rally, Verstärkung, gemeinsamer Angriff, Kampfbericht (Handy). Noch nicht hochgeladen.
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.

@@ -1047,7 +1047,8 @@ function effectiveDefense(island) {
     const def = (owner === 'player' ? (defenseForLevel(level) + garrison * (skills.defense || 0) * SKILL_DEFS.defense.defPct / 100) * (1 + wallDefensePct() / 100)
                                     : (baseDefenseForLevel(level) * (1 + (botMults(owner).armorPct || 0) / 100) + garrison * (botMults(owner).defensePct || 0) / 100) * (1 + botBld(owner, 'wall') * 2 / 100)) * titleMult(owner, 'defense');
     const kk = AUF ? AUF.kampf(owner, 'd') : 1;       // Truppen-Stufe + Forschung (Paket D): Besatzung UND Verteidigung zählen × Kampfkraft – das Mehr steckt hier
-    return Math.round(def * kk + garrison * (kk - 1));
+    const vp = typeof verstDefPlus !== 'undefined' && verstDefPlus[island.id] || 0;   // Verstärkung: jeder Helfer mit seinen eigenen Werten
+    return Math.max(0, Math.round(def * kk + garrison * (kk - 1) + vp));
 }
 // Where every point of a fight comes from - for the battle report, line by line with its source.
 function defenseParts(island) {
@@ -1066,6 +1067,8 @@ function defenseParts(island) {
     const kk = AUF ? AUF.kampf(owner, 'd') : 1;
     if (kk !== 1) { const vor = out.reduce((a, q) => a + q[1], 0);
         out.push(['Forschung Verteidigung', Math.round((vor + g) * (kk - 1)), '+' + Math.round((kk - 1) * 100) + ' % auf Besatzung und Verteidigung']); }
+    const vp = typeof verstDefPlus !== 'undefined' && Math.round(verstDefPlus[island.id] || 0);
+    if (vp) out.push(['Verstärkung: eigene Werte', vp, 'jeder Helfer mit seinem Skill, Titel und seiner Forschung']);
     out[0][1] += effectiveDefense(island) - out.reduce((a, q) => a + q[1], 0);        // rounding goes to the base line
     return out;
 }

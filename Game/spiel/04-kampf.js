@@ -129,12 +129,13 @@ setInterval(() => {
                 if (anderer || fight.rally || a.rally) {          // ein gemeinsamer Kampf: wer mit wie vielen Truppen dabei ist (Verluste, Heimweg, Beute, Bericht)
                     if (!fight.rally) fight.rally = { id: 'z' + fight.id, by: fight.attackerBotId, an: [[fight.attackerBotId, fight.sourceId, fight.rawTroops]], zus: 1 };
                     else fight.rally.zus = 1;
-                    fight.rally.an.push(...(a.rally ? a.rally.an : [[a.attackerBotId, a.sourceId, a.rawTroops]]));
                 }
                 if (anderer) {                                     // seine Stärke zählt, wie er sie mitbringt (seine Stufe, Forschung, Titel)
                     const st = x => (x.atkTitle !== undefined ? x.atkTitle : titleMult(x.attackerBotId, 'attack')) * (x.atkKraft || 1);
                     a.attackBonus = (a.rawTroops + (a.attackBonus || 0)) * st(a) / st(fight) - a.rawTroops;
                 }
+                if (anderer || fight.rally || a.rally)
+                    fight.rally.an.push(...(a.rally ? a.rally.an : [[a.attackerBotId, a.sourceId, a.rawTroops, anderer ? Math.round(a.attackBonus || 0) : undefined, anderer && a.hx ? a.hx : undefined]]));
                 fight.rawTroops += a.rawTroops; fight.attackBonus = (fight.attackBonus || 0) + (a.attackBonus || 0);
                 if (fight.skillBonus !== undefined || a.skillBonus !== undefined) fight.skillBonus = (fight.skillBonus || 0) + (a.skillBonus !== undefined ? a.skillBonus : a.attackBonus || 0); fight.waves = (fight.waves || 1) + (a.waves || 1);
                 if (a.hx && anderer) heroFought(a.attackerBotId, a.hx);              // (ein Held eines Mitspielers führt nur seinen eigenen Kampf – er bekommt seine Wut)

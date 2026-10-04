@@ -941,6 +941,36 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
 .logRow summary{list-style:none;cursor:pointer;font:600 var(--fs-10)/1 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--gold-300);padding:4px 0}
 .logRow summary::-webkit-details-marker{display:none}
 .logCompare{display:grid;grid-template-columns:1fr 20px 1fr;gap:6px;margin-top:6px}
+/* Kampfbericht neuer Aufbau (Fenster je Spieler, eigene Seite) */
+#combatLogList .logRow summary{cursor:pointer}
+#combatLogList .logRow summary::after,#combatLogList .logRow details[open] summary::after{transform:rotate(-45deg) translate(-1px,0)!important}
+#combatLogList .logRow details > :not(summary){display:none!important}
+.kl-seite{position:fixed;inset:0;z-index:2147483000;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--ink-1);padding:calc(env(safe-area-inset-top,0px) + 10px) 12px calc(env(safe-area-inset-bottom,0px) + 24px)}
+.kl-seite[hidden]{display:none!important}
+.kl-seite .kl-kopf{display:flex;align-items:center;gap:10px;max-width:560px;margin:0 auto 10px}
+.kl-seite .kl-kopf .kl-txt{flex:1;min-width:0}
+.kl-seite .kl-kopf .overline{font:600 10px/1.2 var(--font-ui);letter-spacing:.16em;text-transform:uppercase;color:var(--tx-3)}
+.kl-seite .kl-kopf h3{margin:2px 0 0;font:600 18px/1.2 var(--font-display);color:var(--gold-100)}
+.kl-seite .kl-zurueck{display:inline-flex;align-items:center;gap:6px;cursor:pointer;margin:0 auto 10px}
+.kl-seite .kl-zurueck .icon{width:16px;height:16px}
+.kl-seite .logList{max-width:560px;margin:0 auto}
+.kl-seite .logRow details > summary{display:none!important}
+.kl-seite .logRow details{margin-top:10px}
+.kl-seite .logRow .logOrt button{display:none}
+.kl-seite .logCompare{grid-template-columns:minmax(0,1fr)!important;gap:4px}
+.kl-seite .logVsDivider{display:flex;align-items:center;gap:8px}
+.kl-seite .logVsDivider::before,.kl-seite .logVsDivider::after{content:"";flex:1;height:1px;background:var(--line-1)}
+.kl-leer{width:48px;height:48px;flex:0 0 48px;display:grid;place-items:center;border-radius:8px;border:1.5px dashed var(--line-2);color:var(--tx-3);font:600 18px var(--font-display)}
+.kl-keinheld b{color:var(--tx-2)}
+.kl-rss{border-top:1px solid var(--line-1);margin-top:8px;padding-top:6px}
+.kl-gruppe{display:flex;flex-direction:column;gap:6px;min-width:0}
+.logList .kl-gruppe.kl-a .logSide .logSideLabel{color:#ff9f8f}
+.logList .kl-gruppe.kl-v .logSide .logSideLabel{color:#9fc4ff}
+.kl-null span{color:var(--tx-3)}
+.logHero .ghero > span > small{display:block;min-height:2.7em}
+.logBalTxt{gap:10px}
+.logBalTxt span{min-width:0;white-space:normal!important;overflow:visible!important;text-overflow:clip!important}
+.logBalTxt span:last-child{text-align:right;justify-content:flex-end}
 .logSide{padding:6px 8px;border-radius:var(--r-xs);background:var(--well);border:1px solid var(--line-1)}
 .logSideLabel{font:600 var(--fs-10)/1.2 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--tx-3);margin-bottom:4px}
 .logLine,.logSum,.logCasualty{display:flex;justify-content:space-between;gap:6px;font:500 var(--fs-11)/1.6 var(--font-ui);color:var(--tx-2);font-variant-numeric:tabular-nums}
