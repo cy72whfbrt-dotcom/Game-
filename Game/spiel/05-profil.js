@@ -1292,6 +1292,9 @@ const kampflogUmbauen = (function () {
                 const r = e.plunderRoh || {}, beute = { g: e.plunder || 0, h: r.h || 0, s: r.s || 0, e: r.e || 0 };
                 const sides = [...cmp.querySelectorAll(':scope > .logSide')]; if (sides.length < 2) return;
                 const angrList = Array.isArray(e.angreifer) && e.angreifer.length > 1 ? e.angreifer : null;
+                const bal = row.querySelector('.logBalTxt'), namen = L => L.map(p => escapeHtml(p.name || '?')).join(' + ');   // Balken: alle Namen, nicht nur „Du“
+                if (bal && angrList) { const s0 = bal.firstElementChild, z = s0.innerHTML.match(/([\d.,]+(?:&nbsp;|\s)*(?:Mio\.|Mrd\.|Bio\.)?)\s*$/); if (z) s0.innerHTML = s0.innerHTML.replace(/<\/svg>[\s\S]*$/, '</svg>' + namen(angrList) + ' ' + z[1]); }
+                if (bal && Array.isArray(e.verst) && e.verst.length) { const s1 = bal.lastElementChild, z = s1.innerHTML.match(/^([\d.,]+(?:&nbsp;|\s)*(?:Mio\.|Mrd\.|Bio\.)?)/); if (z) s1.innerHTML = s1.innerHTML.replace(/^[\s\S]*?(<svg)/, z[1] + ' ' + escapeHtml(e.defenderName || e.defName || 'Du') + ' + ' + namen(e.verst) + '$1'); }
                 const vertList = Array.isArray(e.verst) && e.verst.length ? e.verst : null;
                 const sieg = e.type === 'attack' ? !!e.won : !!e.won;
                 seiteUmbauen(sides[0], true, angrList, e, beute, 0, sieg);

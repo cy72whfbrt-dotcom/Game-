@@ -11,7 +11,7 @@ T=$(mktemp -d); V="$T/test"; N="$T/normal"
 php werkzeuge/vorschau_bauen.php "$V" test viele >/dev/null || exit 1      # Test-Modus: alle Mitspieler, fast unbegrenzt alles
 php werkzeuge/vorschau_bauen.php "$N" >/dev/null || exit 1                 # normal: echte Zahlen (für Kampf-Rechnungen)
 for t in bund_bot_test bund_amt_test verst_kampf_test gemeinsam_test; do lauf "$t" node "tests/browser/$t.js" "$V"; done
-for t in regel_test rally21_test; do lauf "$t" node "tests/browser/$t.js" "$N"; done
+for t in regel_test rally21_test rally_menschen_test; do lauf "$t" node "tests/browser/$t.js" "$N"; done
 for t in alles_test teil2_test; do lauf "$t" node "tests/browser/$t.js" "$V" "$T"; done
 grep -E "^FEHLER|nicht bestanden" "$LOG" && FEHLER=1
 grep -E "^Fehler: " "$LOG" | grep -v "Fehler: keine" && FEHLER=1
