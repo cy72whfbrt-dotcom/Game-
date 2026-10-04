@@ -1,5 +1,5 @@
 // ===== aufbau.js – Paket D „Aufbau“ (wie Rise of Kingdoms): Burg-Stufe, Rohstoffe, neue Gebäude, Forschung,
-// Truppen-Stufen T1–T5 und Marsch-Plätze =====
+// Marsch-Plätze =====
 // Läuft nach spiel.js und vor buendnis.js (auch beim Weltrechner). spiel.js, bots.js, welt.js und buendnis.js rufen alles
 // über AUF auf (bots.js: `var AUF = null` – solange diese Datei noch nicht geladen ist, gelten die alten Werte).
 // Gleiche Regeln für alle: du ('player'), die Mitspieler (bot…) und andere echte Spieler (u<id>, ihre Stadt kommt aus
@@ -84,21 +84,26 @@ function kostenHtml(k, who) {                                  // Münzen + Rohs
 // 2) BURG-STUFE (1–25): getrennt von der Basis-Stufe draußen. Bauzeit, Münzen + Rohstoffe, Bauarbeiter wie die Gebäude
 // ---------------------------------------------------------------------------------------------------------------
 const BURG_MAX = 25;
-const BAU_AB_BURG = { tower: 3, market: 4, embassy: 5 };       // neue Gebäude: erst ab dieser Burg-Stufe
-const TIER_KRAFT = [1, 1, 1.1, 1.25, 1.45, 1.7];               // Truppen-Stufe T1 … T5: Kampfkraft (Angriff und Verteidigung)
-const TIER_BURG = [0, 1, 6, 11, 16, 21];                       // ab welcher Burg-Stufe
-const TIER_EISEN = [0, 0, 20000, 250000, 3e6, 3e7];            // einmal Eisen für jede neue Stufe
+const BAU_AB_BURG = { market: 4, embassy: 5 };                 // neue Gebäude: erst ab dieser Burg-Stufe
+// (Truppen-Stufen T1–T5 gibt es nicht mehr – Alexander 4.10.: „alles raus“)
 function stadtVon(who) {
     if (who === 'player') return loadCity();
     const b = loadBotState()[who]; return b && b.city || null;
 }
 function burgStufe(who) { const c = stadtVon(who); return Math.max(1, Math.min(BURG_MAX, (c && c.levels && c.levels.keep) | 0 || 1)); }
+// Die Burg ist die Hauptstadt (Alexander 4.10.): langsam – nicht in 5 Tagen auf 25, sondern über viele Server-Resets.
+// Jede Stufe kostet Gold, Holz, Stein und Eisen (die ersten mittelmäßig, später viel mehr) und dauert 1 Tag (Stufe 1 → 2)
+// bis 60 Tage (Stufe 24 → 25) – zusammen rund ein Jahr. Mit Gems geht es schneller (wie jeder Bau).
 function burgKosten(L) {                                       // von Stufe L auf L + 1
-    const b = 1000 * Math.pow(1.72, L - 1);
-    return { c: niceRound(2000 * Math.pow(1.85, L - 1)), h: niceRound(b), s: L >= 2 ? niceRound(b * .8) : 0, e: L >= 5 ? niceRound(b * .4) : 0 };
+    const b = 5000 * Math.pow(1.6, L - 1) * (L > 10 ? Math.pow(1.25, L - 10) : 1);   // Stufe 1: 5.000 · 10: 340.000 · 24: 5,6 Mrd.
+    return { c: niceRound(b * 2), h: niceRound(b), s: niceRound(b * .8), e: niceRound(b * .5) };
 }
-function burgZeitRoh(L) { return Math.min(7 * 86400, L <= 14 ? 60 * Math.pow(1.55, L - 1) : 60 * Math.pow(1.55, 13) * Math.pow(1.25, L - 14)); }   // 1 Min. … ~2 Tage
-const STADT_MIX = { lumber: { h: .3, s: .9, e: .2 }, quarry: { h: 1.1, s: .2, e: .2 }, mine: { h: 1, s: .9, e: 0 }, wall: { h: .5, s: 1.3, e: .3 }, forge: { h: .6, s: .6, e: 1 }, barracks: { h: .9, s: .6, e: .6 }, market: { h: 1.2, s: .6, e: .2 }, tower: { h: .8, s: 1, e: .4 } };
+function burgZeitRoh(L) { return 86400 * Math.pow(60, (Math.max(1, Math.min(BURG_MAX - 1, L)) - 1) / (BURG_MAX - 2)); }   // 1 Tag … 60 Tage
+// Burg-Schutz (statt Lager): so viel von jedem Rohstoff (Gold, Holz, Stein, Eisen) kann kein Angreifer holen.
+// Stufe 1: 10.000 · Stufe 10: 1 Mio. · Stufe 25: 100 Mio. (dazwischen gleichmäßig steigend)
+function burgSchutzStufe(B) { B = Math.max(1, Math.min(BURG_MAX, B | 0 || 1)); return Math.round(B <= 10 ? 1e4 * Math.pow(100, (B - 1) / 9) : 1e6 * Math.pow(100, (B - 10) / 15)); }
+const burgSchutz = who => burgSchutzStufe(burgStufe(who));
+const STADT_MIX = { lumber: { h: .3, s: .9, e: .2 }, quarry: { h: 1.1, s: .2, e: .2 }, mine: { h: 1, s: .9, e: 0 }, wall: { h: .5, s: 1.3, e: .3 }, forge: { h: .6, s: .6, e: 1 }, market: { h: 1.2, s: .6, e: .2 } };
 function stadtKosten(id, L) {                                  // alles für ein Gebäude von Stufe L auf L + 1 (Burg: eigene Tabelle)
     if (id === 'keep') return burgKosten(L);
     const m = STADT_MIX[id] || { h: 1, s: .7, e: .35 }, b = 300 * Math.pow(1.75, L);
@@ -139,42 +144,50 @@ function marschVoll(who) { who = who || 'player'; const n = marschGrenze(who), B
     return 'Alle ' + n + ' Marsch-Plätze sind belegt – warte, bis ein Marsch ankommt' + (nx ? ' (Burg Stufe ' + nx + ': ' + (n + 1) + ' Plätze).' : '.'); }
 
 // ---------------------------------------------------------------------------------------------------------------
-// 3) FORSCHUNG (Akademie): drei Äste, lange Zeiten, eine Forschung gleichzeitig
+// 3) FORSCHUNG (Labor – im Gebäude 'academy'): drei Äste, lange Zeiten, eine Forschung gleichzeitig. Im Labor wird ALLES
+//    geforscht (Alexander 4.10.): auch Tempel-Bonus (früher Tempelschrein), Späher-Tempo (früher Späherturm) und Wachturm.
 // ---------------------------------------------------------------------------------------------------------------
 const FO_AESTE = { w: 'Wirtschaft', m: 'Militär', x: 'Erkundung' };
 const FORSCHUNG = [
     { id: 'w_prod', ast: 'w', name: 'Ertrag', icon: 'coin', max: 10, aka: 1, pro: 3, txt: v => '+' + v + ' % Münzen aus allen Basen und Rohstoffe aus der Stadt' },
     { id: 'w_sam', ast: 'w', name: 'Sammeln', icon: 'hourglass', max: 10, aka: 2, pro: 5, txt: v => 'Sammler arbeiten ' + v + ' % schneller' },
     { id: 'w_last', ast: 'w', name: 'Traglast', icon: 'crate', max: 10, aka: 3, pro: 6, txt: v => 'Sammler tragen ' + v + ' % mehr' },
+    { id: 'w_tempel', ast: 'w', name: 'Tempel', icon: 'temple', max: 10, aka: 4, pro: 10, txt: v => '+' + v + ' % Bonus aus allen deinen Tempeln (Münzen, Truppen, Gems)' },
     { id: 'm_atk', ast: 'm', name: 'Angriff', icon: 'attack', max: 10, aka: 2, pro: 2, txt: v => '+' + v + ' % Kampfkraft beim Angreifen' },
     { id: 'm_def', ast: 'm', name: 'Verteidigung', icon: 'defense', max: 10, aka: 2, pro: 2, txt: v => '+' + v + ' % Kampfkraft beim Verteidigen' },
-    { id: 'm_laz', ast: 'm', name: 'Lazarett', icon: 'plus', max: 10, aka: 4, pro: 2, txt: v => '+' + v + ' % der Gefallenen ins Lazarett' },
-    { id: 'm_t2', ast: 'm', name: 'Truppen-Stufe T2', icon: 'troops', max: 1, aka: 5, tier: 2, vor: 'm_atk', txt: () => 'schaltet T2 frei (+10 % Kampfkraft)' },
-    { id: 'm_t3', ast: 'm', name: 'Truppen-Stufe T3', icon: 'troops', max: 1, aka: 10, tier: 3, vor: 'm_t2', txt: () => 'schaltet T3 frei (+25 % Kampfkraft)' },
-    { id: 'm_t4', ast: 'm', name: 'Truppen-Stufe T4', icon: 'troops', max: 1, aka: 15, tier: 4, vor: 'm_t3', txt: () => 'schaltet T4 frei (+45 % Kampfkraft)' },
-    { id: 'm_t5', ast: 'm', name: 'Truppen-Stufe T5', icon: 'troops', max: 1, aka: 20, tier: 5, vor: 'm_t4', txt: () => 'schaltet T5 frei (+70 % Kampfkraft)' },
+    { id: 'm_laz', ast: 'm', name: 'Krankenhaus', icon: 'plus', max: 10, aka: 4, pro: 2, txt: v => '+' + v + ' % der Gefallenen ins Krankenhaus' },
     { id: 'x_tempo', ast: 'x', name: 'Marschtempo', icon: 'send', max: 10, aka: 1, pro: 3, txt: v => 'Truppen laufen ' + v + ' % schneller' },
-    { id: 'x_spaeh', ast: 'x', name: 'Späher', icon: 'scout', max: 5, aka: 3, pro: 10, txt: v => 'Späher ' + v + ' % schneller' },
+    { id: 'x_spaeh', ast: 'x', name: 'Späher', icon: 'scout', max: 10, aka: 3, pro: 10, txt: v => 'Späher ' + v + ' % schneller' },
+    { id: 'x_wacht', ast: 'x', name: 'Wachturm', icon: 'tower', max: 10, aka: 2, txt: v => WACHT_TXT(v) },
     { id: 'x_nebel', ast: 'x', name: 'Kundschaft', icon: 'flag', max: 5, aka: 6, pro: 15, txt: v => 'eroberte Basen decken ' + v + ' % mehr Nebel auf' + (v >= 45 ? ' (Mitspieler: auch die Nachbarn der Nachbarn)' : '') }
 ];
 const FO_BY = {}; for (const d of FORSCHUNG) FO_BY[d.id] = d;
-const foAkaFuer = (d, L) => d.aka + (L - 1) * 2;               // Stufe L braucht diese Akademie-Stufe
+// Wachturm (Forschung): am Anfang siehst du wenig, je höher, desto mehr – bei Angriffen auf dich und in deinen Spähberichten
+const WACHT = { ca: 1, genau: 6, held: 8, mauer: 1, helden: 3, burg: 4, roh: 5, faeh: 7, forsch: 9, gear: 10 };
+function WACHT_TXT(v) {
+    const f = [];
+    if (v >= WACHT.ca) f.push(v >= WACHT.genau ? 'genaue Truppenzahl bei Angriffen auf dich' + (v >= WACHT.held ? ' mit Held' : '') : 'ungefähre Truppenzahl bei Angriffen auf dich');
+    const sp = []; if (v >= WACHT.mauer) sp.push('Mauer'); if (v >= WACHT.helden) sp.push('Helden'); if (v >= WACHT.burg) sp.push('Burg'); if (v >= WACHT.roh) sp.push('Rohstoffe');
+    if (v >= WACHT.faeh) sp.push('Fähigkeiten'); if (v >= WACHT.forsch) sp.push('Forschung'); if (v >= WACHT.gear) sp.push('Ausrüstung');
+    if (sp.length) f.push('Spähbericht zeigt ' + sp.join(', '));
+    return f.join(' · ') || 'noch nichts';
+}
+const foAkaFuer = (d, L) => d.aka + (L - 1) * 2;               // Stufe L braucht diese Labor-Stufe
 function foStufe(who, id) { const c = stadtVon(who), d = FO_BY[id]; if (!c || !d || !c.fo) return 0; return Math.max(0, Math.min(d.max, (c.fo[id] | 0) || 0)); }
 function foWert(who, id) { const d = FO_BY[id]; return d && d.pro ? foStufe(who, id) * d.pro : 0; }
 function foKosten(d, L) {                                      // Stufe L erforschen
-    const k = Math.pow(1.6, d.aka - 1) * (d.tier ? 30 : 1), g = Math.pow(1.8, L - 1);
+    const k = Math.pow(1.6, d.aka - 1), g = Math.pow(1.8, L - 1);
     return { c: niceRound(3000 * k * g), h: niceRound(1500 * k * g), s: niceRound(1200 * k * g), e: niceRound(600 * k * g * (d.ast === 'm' ? 1.6 : 1)) };
 }
-function foZeitRoh(d, L) { return Math.min(7 * 86400, 300 * Math.pow(1.7, L - 1) * Math.pow(1.35, d.aka - 1) * (d.tier ? 8 : 1)); }   // 5 Min. … Tage
+function foZeitRoh(d, L) { return Math.min(7 * 86400, 300 * Math.pow(1.7, L - 1) * Math.pow(1.35, d.aka - 1)); }   // 5 Min. … Tage
 const foZeit = (who, d, L) => Math.round(foZeitRoh(d, L));
 function foSperre(who, d) {                                    // warum diese Forschung gerade nicht geht (oder null)
     const c = stadtVon(who); if (!c) return 'kaputt';
     const L = foStufe(who, d.id) + 1, aka = c.levels.academy || 0;
     if (L > d.max) return 'Fertig erforscht.';
-    if (aka < foAkaFuer(d, L)) return 'Braucht Akademie Stufe ' + foAkaFuer(d, L) + '.';
-    if (d.tier && burgStufe(who) < TIER_BURG[d.tier]) return 'Braucht Burg Stufe ' + TIER_BURG[d.tier] + '.';
+    if (aka < foAkaFuer(d, L)) return 'Braucht Labor Stufe ' + foAkaFuer(d, L) + '.';
     if (d.vor && foStufe(who, d.vor) < 1) return 'Braucht zuerst „' + FO_BY[d.vor].name + '“.';
-    if (c.foRun) return 'Die Akademie forscht schon (' + (FO_BY[c.foRun.id] || {}).name + ').';
+    if (c.foRun) return 'Das Labor forscht schon (' + (FO_BY[c.foRun.id] || {}).name + ').';
     return null;
 }
 function foStart(who, id, now) {                               // → '' oder warum nicht
@@ -201,11 +214,9 @@ const foGems = c => c && c.foRun ? Math.max(1, Math.ceil((c.foRun.endsAt - Date.
 // ---------------------------------------------------------------------------------------------------------------
 // 4) WIRKUNGEN – gleiche Rechnung für alle (Spieler, Mitspieler, andere echte Spieler)
 // ---------------------------------------------------------------------------------------------------------------
-function tierErlaubt(who) { const B = burgStufe(who); let t = 1; for (let T = 2; T <= 5; T++) if (foStufe(who, 'm_t' + T) >= 1 && B >= TIER_BURG[T]) t = T; else break; return t; }
-function truppenStufe(who) { const c = stadtVon(who); return Math.max(1, Math.min((c && c.tier) | 0 || 1, tierErlaubt(who))); }   // (ein Profil mit zu hoher Stufe zählt nur bis zur erlaubten)
-function kampf(who, art) {                                     // Kampfkraft-Faktor: Truppen-Stufe × Forschung Angriff/Verteidigung
+function kampf(who, art) {                                     // Kampfkraft-Faktor: Forschung Angriff/Verteidigung
     if (!who) return 1;
-    try { return TIER_KRAFT[truppenStufe(who)] * (1 + foWert(who, art === 'd' ? 'm_def' : 'm_atk') / 100); } catch (e) { return 1; }
+    try { return 1 + foWert(who, art === 'd' ? 'm_def' : 'm_atk') / 100; } catch (e) { return 1; }
 }
 const ertrag = who => 1 + foWert(who, 'w_prod') / 100;         // Münzen und Rohstoffe der Basen
 const sammelTempo = who => 1 + foWert(who, 'w_sam') / 100;
@@ -214,10 +225,11 @@ const marschTempo = who => 1 + foWert(who, 'x_tempo') / 100;
 const spaeherTempo = who => 1 + foWert(who, 'x_spaeh') / 100;
 const lazarettPlus = who => foWert(who, 'm_laz');
 const nebelWeite = who => 1 + foWert(who, 'x_nebel') / 100;
+const tempelPlus = who => foWert(who, 'w_tempel') / 100;       // (früher Tempelschrein)
 const bauStufe = (who, id) => { const c = stadtVon(who); return c && c.levels ? c.levels[id] || 0 : 0; };
 const botschaftTempo = who => 1 + bauStufe(who, 'embassy') * .03;   // Hilfe und Rally zu Bündnis-Mitgliedern
 const botschaftGeschenk = who => 1 + bauStufe(who, 'embassy') * .04;
-const wachturm = who => bauStufe(who, 'tower');
+const wachturm = who => foStufe(who, 'x_wacht');               // (Forschung im Labor – früher ein Gebäude)
 
 // ---------------------------------------------------------------------------------------------------------------
 // 5) MARKT: Rohstoffe gegen Münzen (Gebühr, Tageslimit) – ein Rohstoff ist 5 Münzen wert
@@ -244,27 +256,12 @@ function marktTausch(who, art, x, n) {                         // art 'k' = kauf
 }
 
 // ---------------------------------------------------------------------------------------------------------------
-// 6) TRUPPEN-STUFE wählen (eine Truppenart für das ganze Reich)
-// ---------------------------------------------------------------------------------------------------------------
-function tierSetzen(who, T) {                                  // → '' oder warum nicht
-    const c = stadtVon(who); if (!c || !(T >= 1 && T <= 5)) return 'kaputt';
-    if (T > tierErlaubt(who)) return 'T' + T + ' braucht die Forschung „Truppen-Stufe T' + T + '“ und Burg Stufe ' + TIER_BURG[T] + '.';
-    const bez = c.tierBez || 1;
-    if (T > bez) {                                             // jede neue Stufe einmal Eisen – auch die übersprungenen (wie das Hauptbuch auf dem Server rechnet)
-        let e = 0; for (let t = bez + 1; t <= T; t++) e += TIER_EISEN[t];
-        if (!zahlen(who, { e })) return 'Die Umstellung auf T' + T + ' kostet ' + fmtCompact(e) + ' Eisen' + (T > bez + 1 ? ' (alle Stufen bis dahin)' : '') + '.'; c.tierBez = T; }
-    c.tier = T;
-    if (who === 'player') { saveCity(); saveGame(); } else saveBotState();
-    return '';
-}
-
-// ---------------------------------------------------------------------------------------------------------------
 // 7) DEIN TAKT (jede Sekunde aus cityTick): Forschung fertig?
 // ---------------------------------------------------------------------------------------------------------------
 function spielerTakt() { try { foFertig('player'); } catch (e) {} }
 
 // ---------------------------------------------------------------------------------------------------------------
-// 8) ANZEIGE: HUD, Burg-Fenster, Gebäude (Akademie, Kaserne, Markt, Wachturm, Botschaft)
+// 8) ANZEIGE: HUD, Burg-Fenster, Gebäude (Labor, Markt, Botschaft)
 // ---------------------------------------------------------------------------------------------------------------
 let rohOffen = false;
 function hudRoh() {
@@ -278,14 +275,14 @@ function rohDropMalen() {
     const d = document.getElementById('rohDrop'); if (!d) return;
     const ps = rohStunde('player');
     liveHtml(d, ROH.map(x => '<div class="roh-row">' + icon(ROH_DEF[x].icon, 'roh-' + x) + '<span>' + ROH_DEF[x].name + '</span><b>' + fmtNum(Math.floor(roh[x])) + '</b><small>+' + fmtCompact(Math.round(ps[x])) + '/Std.</small></div>').join('') +
-        '<small class="roh-hint">Holzfäller, Steinbruch und Eisenmine in deiner Stadt machen Rohstoffe (je nach Landschaft der Hauptstadt). Mehr durch Sammeln auf Holz-, Stein- und Eisen-Feldern der Karte. Gebraucht für Burg, Gebäude, Forschung, Truppen-Stufen.</small>');
+        '<small class="roh-hint">Holzfäller, Steinbruch und Eisenmine in deiner Stadt machen Rohstoffe (je nach Landschaft der Hauptstadt). Mehr durch Sammeln auf Holz-, Stein- und Eisen-Feldern der Karte. Gebraucht für Burg, Gebäude und Forschung. Die Burg schützt ' + fmtCompact(burgSchutz('player')) + ' von jedem Rohstoff vor Angreifern.</small>');
 }
 function rohUmschalten(an) { rohOffen = an === undefined ? !rohOffen : an; const d = document.getElementById('rohDrop'); if (!d) return; d.hidden = !rohOffen; document.getElementById('hudRoh').classList.toggle('on', rohOffen); if (rohOffen) rohDropMalen(); }
 
 function freiText(B) {                                         // was die Burg-Stufe B freischaltet
     const out = ['Gebäude bis Stufe ' + (B >= BURG_MAX ? 'zum Höchstwert' : B)];
     const m = 2 + Math.floor((B - 1) / 6); if (B === 1 || (B - 1) % 6 === 0) out.push(m + ' Marsch-Plätze');
-    for (let T = 2; T <= 5; T++) if (TIER_BURG[T] === B) out.push('Truppen-Stufe T' + T + ' (mit Forschung)');
+    out.push('Schutz: ' + fmtCompact(burgSchutzStufe(B)) + ' von jedem Rohstoff');
     for (const id in BAU_AB_BURG) if (BAU_AB_BURG[id] === B) out.push('neues Gebäude: ' + cityDef(id).name);
     return out;
 }
@@ -297,9 +294,9 @@ function renderKeep() {                                        // das Burg-Fenst
     setText(document.getElementById('cityBOver'), 'Deine Burg');
     setText(document.getElementById('cityBName'), 'Burg');
     setText(document.getElementById('cityBLevel'), max ? 'Burg-Stufe ' + B + ' · höchste Stufe' : 'Burg-Stufe ' + B + ' → ' + (B + 1) + ' (von ' + BURG_MAX + ')');
-    setText(document.getElementById('cityBDesc'), 'Das Herz deines Reiches – unabhängig von der Basis-Stufe draußen auf der Karte. Die Burg-Stufe bestimmt, wie hoch deine Gebäude gehen, wie viele Märsche gleichzeitig laufen und welche Truppen-Stufen möglich sind.');
+    setText(document.getElementById('cityBDesc'), 'Das Herz deines Reiches – unabhängig von der Basis-Stufe draußen auf der Karte. Die Burg-Stufe bestimmt, wie hoch deine Gebäude gehen, wie viele Märsche gleichzeitig laufen und wie viel Gold, Holz, Stein und Eisen vor Angreifern sicher ist. Jede Stufe dauert lange (1 bis 60 Tage).');
     const note = document.getElementById('cityBNote'), blk = !bau && !max ? cityBlocker('keep') : null; let cls, nh;
-    if (bau) { cls = 'notice notice--gold'; nh = icon('hourglass') + '<span style="flex:1">Ausbau auf Burg-Stufe ' + bau.to + ' · noch <b id="cityBNoteTime"></b><div class="city-progress" style="margin-top:6px"><i></i></div></span>'; }
+    if (bau) { cls = 'notice notice--gold'; nh = icon('hourglass') + '<span style="flex:1">Ausbau auf Burg-Stufe ' + bau.to + ' · noch <b id="cityBNoteTime"></b><div class="city-progress" style="margin-top:6px"><i></i></div>' + (typeof bundHilfeKnopf === 'function' ? bundHilfeKnopf('bau', 'keep', bau.to, bau.endsAt) : '') + '</span>'; }
     else { cls = 'notice city-wirkung'; nh = icon('shield') + '<span>' + (sh ? 'Friedensschild aktiv – noch ' + uhrHtml(sh) : neu > now ? 'Anfängerschutz – noch ' + uhrHtml(neu) : 'Kein Friedensschild aktiv.') + '</span>'; }
     if (note.className !== cls) note.className = cls; liveHtml(note, nh);
     liveHtml(document.getElementById('cityBStats'), max || bau ? '' : cityAnfHtml('keep', B, k));
@@ -307,16 +304,16 @@ function renderKeep() {                                        // das Burg-Fenst
     setBtnLabel(up, max ? 'Höchste Stufe' : 'Burg aufwerten'); setText(document.getElementById('cityUpTime'), max ? '' : fmtDuration(cityTimeSec('keep', B)));
     up.disabled = max || !!blk || !!bau || !kannZahlen('player', k); up.title = blk || ''; up.style.display = bau ? 'none' : '';
     sp.style.display = bau ? '' : 'none'; if (bau) renderCitySheetTimer();
-    const belegt = marschBelegt('player'), T = truppenStufe('player');
+    const belegt = marschBelegt('player');
     liveHtml(document.getElementById('cityBExtra'),
-        '<div class="keep-h">Jetzt</div><div class="auf-grid"><div><span>Marsch-Plätze</span><b>' + belegt + ' / ' + marschGrenze('player') + ' belegt</b></div><div><span>Gebäude</span><b>bis Stufe ' + stadtCap('player', 'wall') + '</b></div><div><span>Truppen</span><b>T' + T + ' · +' + Math.round((TIER_KRAFT[T] - 1) * 100) + ' %</b></div></div>' +
+        '<div class="keep-h">Jetzt</div><div class="auf-grid"><div><span>Marsch-Plätze</span><b>' + belegt + ' / ' + marschGrenze('player') + ' belegt</b></div><div><span>Gebäude</span><b>bis Stufe ' + stadtCap('player', 'wall') + '</b></div><div><span>Schutz</span><b>' + fmtCompact(burgSchutz('player')) + ' je Rohstoff</b></div></div>' +
         (max ? '' : '<div class="keep-h">Burg-Stufe ' + (B + 1) + ' schaltet frei</div><ul class="auf-frei">' + freiText(B + 1).map(t => '<li>' + icon('check') + t + '</li>').join('') + '</ul>') +
-        '<small class="keep-note">Deine Hauptstadt hat nur diese EINE Stufe: auf der Karte steht sie auf Stufe ' + burgKarte(B) + ' (Burg 25 = Stufe 100). Die anderen Basen draußen wertest du sofort mit Münzen auf. Friedensschilde: Shop → Schilde.</small>');
+        '<small class="keep-note">Deine Hauptstadt hat nur diese EINE Stufe: auf der Karte steht sie auf Stufe ' + burgKarte(B) + ' (Burg 25 = Stufe 100). Die anderen Basen draußen wertest du sofort mit Münzen auf. Die Hauptstadt kann angegriffen, aber nie erobert werden: gewinnt der Angreifer, nimmt er ' + Math.round(HAUPT_BEUTE * 100) + ' % von dem mit, was über dem Schutz liegt. Friedensschilde: Shop → Schilde.</small>');
 }
 function effektText(id, lvl) {
-    if (id === 'academy') return (lvl ? 'Forschung bis Akademie-Stufe ' + lvl + ' · Truppen laufen +' + lvl * 2 + ' % schneller.' : 'Baue die Akademie, um zu forschen.') + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: mehr Forschung, +' + (lvl + 1) * 2 + ' % Tempo.' : '');
-    if (id === 'tower') return lvl ? 'Angriffe auf dich: ' + (lvl >= 10 ? 'genaue Stärke, Truppen-Stufe und Held' : 'ungefähre Stärke') + '. Spähberichte zeigen ' + (lvl >= 5 ? 'Burg, Truppen-Stufe und Forschung' : 'Burg und Truppen-Stufe') + '.' + (lvl < 5 ? ' Ab Stufe 5: Forschung im Spähbericht.' : lvl < 10 ? ' Ab Stufe 10: genaue Angreifer.' : '') : 'Baue den Wachturm: du siehst, wie stark Angreifer sind, und spähst genauer.';
-    if (id === 'embassy') return lvl ? 'Hilfe und Rally zu Bündnis-Mitgliedern +' + lvl * 3 + ' % schneller · Bündnis-Geschenke +' + lvl * 4 + ' %.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: +' + (lvl + 1) * 3 + ' % / +' + (lvl + 1) * 4 + ' %.' : '') : 'Baue die Botschaft für schnellere Bündnis-Hilfe und größere Bündnis-Geschenke.';
+    if (id === 'academy') return (lvl ? 'Forschung bis Labor-Stufe ' + lvl + ' · Truppen laufen +' + lvl * 2 + ' % schneller.' : 'Baue das Labor, um zu forschen.') + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: mehr Forschung, +' + (lvl + 1) * 2 + ' % Tempo.' : '');
+    if (id === 'embassy') { const t = L => 'Verstärkung bei dir bis ' + fmtCompact(typeof verstPlatzStufe === 'function' ? verstPlatzStufe('player', L) : 0) + ' · Rally bis ' + fmtCompact(typeof rallyPlatzStufe === 'function' ? rallyPlatzStufe('player', L) : 0) + ' Truppen dazu · ' + L + ' Bündnis-Hilfen je Bau/Forschung · Hilfe und Rally zu Mitgliedern +' + L * 3 + ' % schneller · Geschenke +' + L * 4 + ' %';
+        return (lvl ? 'Jetzt: ' + t(lvl) + '.' : 'Baue die Botschaft: Verstärkung von Bündnis-Mitgliedern, größere Rallys und Bündnis-Hilfe.') + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: ' + t(lvl + 1) + '.' : ''); }
     const rx = { lumber: ['h', 'Holz'], quarry: ['s', 'Stein'], mine: ['e', 'Eisen'] }[id];
     if (rx) { const k = rx[0], jetzt = rohStunde('player')[k], f = jetzt / Math.max(1, ROH_BURG_STUNDE + rohGebStunde(lvl));
         return (lvl ? 'Jetzt: ' : 'Ohne Gebäude (nur die Burg): ') + fmtCompact(jetzt) + ' ' + rx[1] + ' pro Stunde.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: ' + fmtCompact((ROH_BURG_STUNDE + rohGebStunde(lvl + 1)) * f) + '.' : ''); }
@@ -324,17 +321,17 @@ function effektText(id, lvl) {
     return '';
 }
 let foAst = 'w', marktMenge = 1000;
-// Forschung als Baum (wie in Rise of Kingdoms): Spalten nach der nötigen Akademie-Stufe, jede Forschung ein Feld mit
+// Forschung als Baum (wie in Rise of Kingdoms): Spalten nach der nötigen Labor-Stufe, jede Forschung ein Feld mit
 // Stufen-Balken; antippen zeigt unten alles dazu (Wirkung jetzt → nächste Stufe, Voraussetzungen, hast / brauchst, Forschen)
 let foSel = null;
-const foBedingt = (who, d, L) => { const c = stadtVon(who); return !!c && (c.levels.academy || 0) >= foAkaFuer(d, L) && !(d.tier && burgStufe(who) < TIER_BURG[d.tier]) && !(d.vor && foStufe(who, d.vor) < 1); };
+const foBedingt = (who, d, L) => { const c = stadtVon(who); return !!c && (c.levels.academy || 0) >= foAkaFuer(d, L) && !(d.vor && foStufe(who, d.vor) < 1); };
 function foBaum(aka) {
     const liste = FORSCHUNG.filter(f => f.ast === foAst), c = loadCity(), spalten = [...new Set(liste.map(d => d.aka))].sort((a, b) => a - b);
     if (!liste.some(d => d.id === foSel)) foSel = (liste.find(d => foStufe('player', d.id) < d.max && foBedingt('player', d, foStufe('player', d.id) + 1)) || liste[0]).id;
     const knoten = d => { const L = foStufe('player', d.id), max = L >= d.max, lauf = c.foRun && c.foRun.id === d.id, zu = !max && !foBedingt('player', d, L + 1);
         return '<button type="button" class="fo-node' + (max ? ' is-max' : '') + (lauf ? ' is-run' : '') + (zu ? ' is-lock' : '') + (d.id === foSel ? ' is-sel' : '') + '" data-fo-sel="' + d.id + '">' +
             '<span class="fo-node-ic">' + icon(zu ? 'lock' : d.icon) + '</span><b>' + d.name + '</b><span class="fo-bar"><i style="--p:' + Math.round(L / d.max * 100) + '%"></i></span><small>' + L + ' / ' + d.max + '</small></button>'; };
-    return '<div class="fo-baum">' + spalten.map(a => '<div class="fo-spalte' + (aka >= a ? '' : ' is-zu') + '"><span class="fo-aka">Akademie ' + a + '</span>' + liste.filter(d => d.aka === a).map(knoten).join('') + '</div>').join('') + '</div>' + foDetail(FO_BY[foSel]);
+    return '<div class="fo-baum">' + spalten.map(a => '<div class="fo-spalte' + (aka >= a ? '' : ' is-zu') + '"><span class="fo-aka">Labor ' + a + '</span>' + liste.filter(d => d.aka === a).map(knoten).join('') + '</div>').join('') + '</div>' + foDetail(FO_BY[foSel]);
 }
 function foDetail(d) {
     if (!d) return '';
@@ -342,10 +339,9 @@ function foDetail(d) {
     const jetzt = d.pro ? (L ? d.txt(L * d.pro) : 'noch nichts') : (L ? 'erforscht' : 'noch nicht erforscht'), naechst = max ? '' : d.pro ? d.txt((L + 1) * d.pro) : d.txt();
     let anf = '';
     if (!max) {
-        const need = foAkaFuer(d, L + 1); anf += anfZeile((c.levels.academy || 0) >= need, 'flask', 'Akademie Stufe ' + need);
-        if (d.tier) anf += anfZeile(burgStufe('player') >= TIER_BURG[d.tier], 'castle', 'Burg Stufe ' + TIER_BURG[d.tier]);
+        const need = foAkaFuer(d, L + 1); anf += anfZeile((c.levels.academy || 0) >= need, 'flask', 'Labor Stufe ' + need);
         if (d.vor) anf += anfZeile(foStufe('player', d.vor) >= 1, FO_BY[d.vor].icon, FO_BY[d.vor].name);
-        if (!lauf) anf += anfZeile(!c.foRun, 'hourglass', c.foRun ? 'Akademie forscht schon (' + (FO_BY[c.foRun.id] || {}).name + ')' : 'Akademie frei');
+        if (!lauf) anf += anfZeile(!c.foRun, 'hourglass', c.foRun ? 'Labor forscht schon (' + (FO_BY[c.foRun.id] || {}).name + ')' : 'Labor frei');
         anf += anfKosten(k);
     }
     return '<div class="fo-detail"><div class="fo-dh"><span class="fo-node-ic">' + icon(d.icon) + '</span><span><b>' + d.name + '</b><small>' + FO_AESTE[d.ast] + ' · Stufe ' + L + ' / ' + d.max + '</small></span></div>' +
@@ -357,19 +353,10 @@ function foDetail(d) {
 function extraHtml(id, lvl) {
     if (id === 'academy') {
         const c = loadCity(), r = c.foRun, d = r && FO_BY[r.id];
-        const lauf = d ? '<div class="notice notice--gold fo-lauf">' + icon('hourglass') + '<span style="flex:1"><b>' + d.name + (d.max > 1 ? ' Stufe ' + r.to : '') + '</b> · noch ' + uhrHtml(r.endsAt) + '<div class="city-progress" style="margin-top:6px"><i style="--p:' + Math.min(100, (Date.now() - r.startedAt) / Math.max(1, r.endsAt - r.startedAt) * 100).toFixed(1) + '%"></i></div></span><button type="button" class="btn btn--secondary btn--sm" data-fo-gems' + (gems < foGems(c) ? ' disabled' : '') + '>Fertig · ' + foGems(c) + ' Gems</button></div>' : '';
+        const lauf = d ? '<div class="notice notice--gold fo-lauf">' + icon('hourglass') + '<span style="flex:1"><b>' + d.name + (d.max > 1 ? ' Stufe ' + r.to : '') + '</b> · noch ' + uhrHtml(r.endsAt) + '<div class="city-progress" style="margin-top:6px"><i style="--p:' + Math.min(100, (Date.now() - r.startedAt) / Math.max(1, r.endsAt - r.startedAt) * 100).toFixed(1) + '%"></i></div>' + (typeof bundHilfeKnopf === 'function' ? bundHilfeKnopf('fo', r.id, r.to, r.endsAt) : '') + '</span><button type="button" class="btn btn--secondary btn--sm" data-fo-gems' + (gems < foGems(c) ? ' disabled' : '') + '>Fertig · ' + foGems(c) + ' Gems</button></div>' : '';
         if (!lvl) return lauf;
         return lauf + '<div class="seg fo-tabs">' + Object.keys(FO_AESTE).map(a => '<button type="button" data-fo-ast="' + a + '"' + (a === foAst ? ' class="on"' : '') + '>' + FO_AESTE[a] + '</button>').join('') + '</div>' +
-            foBaum(lvl) + '<small class="keep-note">Eine Forschung gleichzeitig. Die Akademie-Stufe bestimmt, wie weit du forschen kannst.</small>';
-    }
-    if (id === 'barracks') {
-        const T = truppenStufe('player'), erl = tierErlaubt('player'), bez = loadCity().tierBez || 1;
-        return '<div class="keep-h">Truppen-Stufe (eine Truppenart für dein ganzes Reich)</div><div class="fo-list">' + [1, 2, 3, 4, 5].map(t => {
-            let kost = 0; for (let x = bez + 1; x <= t; x++) kost += TIER_EISEN[x]; const ok = t <= erl;   // (übersprungene Stufen zählen mit)
-            return '<div class="fo-row' + (t === T ? ' is-run' : '') + '">' + icon('troops') + '<span class="fo-t"><b>T' + t + (t === T ? ' <em>aktiv</em>' : '') + '</b><small>' + (t === 1 ? 'Standard' : '+' + Math.round((TIER_KRAFT[t] - 1) * 100) + ' % Kampfkraft (Angriff und Verteidigung)') + '</small>' +
-                (t > 1 && !ok ? '<small class="fo-why">Braucht Forschung „Truppen-Stufe T' + t + '“ und Burg Stufe ' + TIER_BURG[t] + '.</small>' : '') + '</span>' +
-                (t === T ? '<em class="fo-ok">' + icon('check') + '</em>' : '<button type="button" class="btn btn--' + (t > T ? 'primary' : 'secondary') + ' btn--sm" data-tier="' + t + '"' + (!ok || roh.e < kost ? ' disabled' : '') + '>' + (kost ? icon(ROH_DEF.e.icon) + fmtCompact(kost) : 'Umstellen') + '</button>') + '</div>';
-        }).join('') + '</div><small class="keep-note">Jede neue Stufe kostet einmal Eisen. Zurückstellen ist frei. Laufende Märsche kämpfen mit der Stufe vom Losschicken.</small>';
+            foBaum(lvl) + '<small class="keep-note">Eine Forschung gleichzeitig. Die Labor-Stufe bestimmt, wie weit du forschen kannst.</small>';
     }
     if (id === 'market' && lvl) return '<button type="button" class="btn btn--primary btn--sm" data-markt-shop>' + icon('shop') + '<span>Handeln: Shop → Markt</span></button>';
     return '';
@@ -379,18 +366,17 @@ function marktHtml() {                                         // Shop → Markt
     if (!lvl) return '<div class="notice">' + icon('lock') + '<span>Baue zuerst den Markt in deiner Stadt (ab Burg-Stufe ' + BAU_AB_BURG.market + ').</span></div>';
     const c = loadCity(), m = marktHeute(c), lim = marktLimit('player'), f = marktGebuehr(lvl), N = marktMenge;
     return '<div class="seg" data-mk-n>' + [1000, 10000, 100000, 1000000].map(v => '<button type="button" data-mk-menge="' + v + '"' + (v === N ? ' class="on"' : '') + '>' + fmtCompact(v) + '</button>').join('') + '</div><div class="fo-list">' +
-            ROH.map(x => '<div class="fo-row">' + icon(ROH_DEF[x].icon, 'roh-' + x) + '<span class="fo-t"><b>' + ROH_DEF[x].name + '</b><small>' + fmtNum(Math.floor(roh[x])) + ' im Lager</small></span>' +
+            ROH.map(x => '<div class="fo-row">' + icon(ROH_DEF[x].icon, 'roh-' + x) + '<span class="fo-t"><b>' + ROH_DEF[x].name + '</b><small>' + fmtNum(Math.floor(roh[x])) + ' vorhanden</small></span>' +
                 '<button type="button" class="btn btn--secondary btn--sm" data-mk="v:' + x + '"' + (roh[x] < N || m.v + N * MARKT_WERT > lim ? ' disabled' : '') + '>+' + fmtCompact(Math.floor(N * MARKT_WERT * (1 - f))) + ' ' + icon('coin', 'icon--coin') + '</button>' +
                 '<button type="button" class="btn btn--primary btn--sm" data-mk="k:' + x + '"' + (coins < Math.ceil(N * MARKT_WERT * (1 + f)) || m.k + N * MARKT_WERT > lim ? ' disabled' : '') + '>−' + fmtCompact(Math.ceil(N * MARKT_WERT * (1 + f))) + ' ' + icon('coin', 'icon--coin') + '</button></div>').join('') +
             '</div><small class="keep-note">Links verkaufen, rechts kaufen (' + fmtCompact(N) + ' Stück). 1 Rohstoff = ' + MARKT_WERT + ' Münzen, Gebühr ' + Math.round(f * 100) + ' % (Markt Stufe ' + lvl + '). Heute noch: verkaufen ' + fmtCompact(Math.max(0, lim - m.v)) + ', kaufen ' + fmtCompact(Math.max(0, lim - m.k)) + ' Münzen-Wert.</small>';
 }
-// Klicks im Gebäude-Fenster (Akademie, Kaserne, Markt)
+// Klicks im Gebäude-Fenster (Labor, Markt)
 document.getElementById('citySheet').addEventListener('click', e => {
     const a = e.target.closest('[data-fo-ast]'); if (a) { foAst = a.dataset.foAst; renderCitySheet(); return; }
     const fs = e.target.closest('[data-fo-sel]'); if (fs) { foSel = fs.dataset.foSel; renderCitySheet(); return; }
     const f = e.target.closest('[data-fo]:not([disabled])'); if (f) { const why = foStart('player', f.dataset.fo); flashHint(why || 'Forschung gestartet: ' + FO_BY[f.dataset.fo].name + '.', 2800); if (!why) sfx('upgrade'); renderCitySheet(); return; }
     if (e.target.closest('[data-fo-gems]:not([disabled])')) { const c = loadCity(), g = foGems(c); if (!g || gems < g) return; gems -= g; saveGame(); updateHud(); foFertig('player', true); renderCitySheet(); return; }
-    const t = e.target.closest('[data-tier]:not([disabled])'); if (t) { const why = tierSetzen('player', +t.dataset.tier); flashHint(why || 'Deine Truppen kämpfen jetzt als T' + t.dataset.tier + '.', 3000); updateHud(); renderCitySheet(); return; }
     if (e.target.closest('[data-markt-shop]')) { closeCity(); openShop('markt'); }
 });
 { const mp = document.getElementById('shopMarkt'); if (mp) mp.addEventListener('click', e => {   // Shop → Markt
@@ -402,19 +388,23 @@ if (!SYSTEM) {
     document.getElementById('rohDrop').addEventListener('click', () => rohUmschalten(false));
 }
 
-// Wachturm: was du über einen Angriff auf dich siehst
+// Wachturm (Forschung): was du über einen Angriff auf dich siehst
+const rundCa = n => { const p = Math.pow(10, Math.max(0, Math.floor(Math.log10(Math.max(1, n))) - 1)); return Math.round(n / p) * p; };
 function angreiferInfo(a) {
-    const L = wachturm('player'); if (!L) return '';
+    const L = wachturm('player'); if (L < WACHT.ca) return '';
     const n = a.rawTroops || 0; if (!n) return '';
-    if (L < 10) { const p = Math.pow(10, Math.max(0, Math.floor(Math.log10(n)) - 1)); return ' · ca. ' + fmtCompact(Math.round(n / p) * p) + ' Truppen'; }
-    const h = a.hero && heroById(a.hero);
-    return ' · ' + fmtCompact(n) + ' Truppen' + (a.atkTier > 1 ? ' T' + a.atkTier : '') + (h ? ' · ' + h.name : '');
+    if (L < WACHT.genau) return ' · ca. ' + fmtCompact(rundCa(n)) + ' Truppen';
+    const h = L >= WACHT.held && a.hero && heroById(a.hero);
+    return ' · ' + fmtCompact(n) + ' Truppen' + (h ? ' · ' + h.name : '');
 }
-// Spähbericht: mehr mit Wachturm (für dich und alle anderen gleich)
+// Spähbericht: am Anfang wenig, mit dem Wachturm immer mehr (für dich und alle anderen gleich) → { L, burg, roh, fo }
 function spaeherMehr(spaeher, owner) {
-    const L = wachturm(spaeher); if (!L || !owner) return null;
-    const o = { burg: burgStufe(owner), tier: truppenStufe(owner) };
-    if (L >= 5) o.fo = { atk: foStufe(owner, 'm_atk'), def: foStufe(owner, 'm_def'), laz: foStufe(owner, 'm_laz') };
+    const L = wachturm(spaeher), o = { L };
+    if (!owner) return o;
+    if (L >= WACHT.burg) o.burg = burgStufe(owner);
+    if (L >= WACHT.roh) { const r = owner === 'player' ? roh : (loadBotState()[owner] || {}).res, S = burgSchutz(owner), g = geldVon(owner);
+        o.roh = { schutz: S, c: Math.floor(g) }; if (r) for (const x of ROH) o.roh[x] = Math.floor(r[x] || 0); }
+    if (L >= WACHT.forsch) o.fo = { atk: foStufe(owner, 'm_atk'), def: foStufe(owner, 'm_def'), laz: foStufe(owner, 'm_laz') };
     return o;
 }
 
@@ -422,17 +412,17 @@ function spaeherMehr(spaeher, owner) {
 // 9) MITSPIELER: Burg, Gebäude, Forschung, Truppen-Stufe, Markt – gleiche Regeln und Kosten, nie geschummelt
 // ---------------------------------------------------------------------------------------------------------------
 const BOT_FO_LIEBER = {
-    raider: ['m_atk', 'm_t2', 'm_t3', 'x_tempo', 'm_t4', 'm_laz', 'm_t5', 'w_prod', 'm_def', 'w_last', 'w_sam', 'x_spaeh', 'x_nebel'],
-    builder: ['w_prod', 'm_def', 'w_last', 'w_sam', 'm_atk', 'm_t2', 'm_laz', 'm_t3', 'x_tempo', 'm_t4', 'm_t5', 'x_spaeh', 'x_nebel'],
-    templer: ['m_atk', 'm_def', 'm_t2', 'w_prod', 'm_t3', 'm_laz', 'm_t4', 'x_tempo', 'm_t5', 'w_last', 'w_sam', 'x_nebel', 'x_spaeh'],
-    balanced: ['w_prod', 'm_atk', 'm_def', 'm_t2', 'x_tempo', 'w_sam', 'm_t3', 'm_laz', 'w_last', 'm_t4', 'm_t5', 'x_spaeh', 'x_nebel'],
-    veteran: ['m_atk', 'w_prod', 'm_t2', 'm_def', 'm_t3', 'x_tempo', 'm_t4', 'm_laz', 'm_t5', 'w_sam', 'w_last', 'x_nebel', 'x_spaeh']
+    raider: ['m_atk', 'x_wacht', 'x_tempo', 'm_laz', 'w_prod', 'm_def', 'w_tempel', 'w_last', 'w_sam', 'x_spaeh', 'x_nebel'],
+    builder: ['w_prod', 'm_def', 'w_last', 'w_sam', 'x_wacht', 'm_atk', 'm_laz', 'w_tempel', 'x_tempo', 'x_spaeh', 'x_nebel'],
+    templer: ['w_tempel', 'm_atk', 'm_def', 'w_prod', 'x_wacht', 'm_laz', 'x_tempo', 'w_last', 'w_sam', 'x_nebel', 'x_spaeh'],
+    balanced: ['w_prod', 'm_atk', 'm_def', 'x_wacht', 'x_tempo', 'w_sam', 'm_laz', 'w_tempel', 'w_last', 'x_spaeh', 'x_nebel'],
+    veteran: ['m_atk', 'w_prod', 'm_def', 'x_wacht', 'x_tempo', 'm_laz', 'w_tempel', 'w_sam', 'w_last', 'x_nebel', 'x_spaeh']
 };
-function botStadtFix(b) {                                      // fehlende Felder (alte Spielstände): Burg 1, keine Forschung, T1, Start-Rohstoffe
+function botStadtFix(b) {                                      // fehlende Felder (alte Spielstände): Burg 1, keine Forschung, Start-Rohstoffe
     const c = b.city; if (!c) return;
     if (!(c.levels.keep >= 1)) c.levels.keep = 1;
     if (!c.fo || typeof c.fo !== 'object') c.fo = {};
-    if (!(c.tier >= 1)) c.tier = 1;
+    delete c.tier; delete c.tierBez;                           // (Truppen-Stufen gibt es nicht mehr)
     if (c.foRun && !FO_BY[c.foRun.id]) c.foRun = null;
     if (!b.res || typeof b.res !== 'object') b.res = Object.assign(rohLeer(), ROH_START);
 }
@@ -448,13 +438,6 @@ function botForschung(bot, now) {                              // fertig? sonst:
         if (!kannZahlen(bot.id, k)) { botMarkt(bot, k); continue; }
         foStart(bot.id, id, now); return;
     }
-}
-function botTruppenStufe(bot) {                                // eine höhere Stufe, sobald erlaubt und das Eisen da ist (mit Polster)
-    const b = loadBotState()[bot.id]; if (!b || !b.city) return;
-    const T = truppenStufe(bot.id), erl = tierErlaubt(bot.id); if (erl <= T) return;
-    const N = T + 1, kost = N > (b.city.tierBez || 1) ? TIER_EISEN[N] : 0;
-    if ((b.res.e || 0) >= kost * 1.2) tierSetzen(bot.id, N);
-    else if (Math.random() < .3) botMarkt(bot, { e: kost * 1.2 });
 }
 function botMarkt(bot, k) {                                    // fehlt ein Rohstoff, kauft er ihn auf dem Markt – nur mit Münzen, die er übrig hat, im Tageslimit
     const b = loadBotState()[bot.id]; if (!b || !bauStufe(bot.id, 'market') || !k) return;
@@ -509,14 +492,14 @@ setInterval(hauptstadtStufen, 3000);
 
 AUF = {
     ROH_START, foZeitRoh, foAkaFuer,                           // (für das Hauptbuch 3B in spiel.js)
-    ROH_DEF, BURG_MAX, BAU_AB_BURG, TIER_BURG, TIER_EISEN, FORSCHUNG, MARKT_WERT,
+    ROH_DEF, BURG_MAX, BAU_AB_BURG, FORSCHUNG, MARKT_WERT, WACHT, rundCa,
     rohVon, rohDazu, rohSpeichern, basisRoh, rohBuchen, rohStunde, kannZahlen, zahlen, kostenHtml,
-    burgStufe, burgZeitRoh, stadtKosten, stadtCap,
+    burgStufe, burgZeitRoh, stadtKosten, stadtCap, burgSchutz, burgSchutzStufe, wachturm,
     marschFrei, marschOk, marschVoll, frei: { an() { marschFreiPass++; }, aus() { marschFreiPass = Math.max(0, marschFreiPass - 1); } },
-    foStufe, foWert, foKosten, foFertig, truppenStufe, marktLimit, marktHtml,
-    kampf, ertrag, sammelTempo, traglast, marschTempo, spaeherTempo, lazarettPlus, nebelWeite, botschaftTempo, botschaftGeschenk, botschaftStufe: who => bauStufe(who, 'embassy'),
+    foStufe, foWert, foKosten, foFertig, marktLimit, marktHtml,
+    kampf, ertrag, sammelTempo, traglast, marschTempo, spaeherTempo, lazarettPlus, nebelWeite, tempelPlus, botschaftTempo, botschaftGeschenk, botschaftStufe: who => bauStufe(who, 'embassy'),
     spielerTakt, hud: hudRoh, renderKeep, effektText, extraHtml, angreiferInfo, spaeherMehr,
-    botStadtFix, botForschung, botTruppenStufe, botMarkt, botBurgWert, botRohWunsch
+    botStadtFix, botForschung, botMarkt, botBurgWert, botRohWunsch
 };
 for (const id in (loadBotState() || {})) try { botStadtFix(botState[id]); } catch (e) {}
 hudRoh();

@@ -10,7 +10,7 @@ const neutralId = id => (id === 'player' && window.WELT) ? WELT.ich : id;     //
 const lokalId = id => (window.WELT && id === WELT.ich) ? 'player' : id;
 // Bündnisse (buendnis.js, wird nach spiel.js geladen): sind a und b im selben Bündnis? – Mitglieder greifen sich nicht an
 function bundFreund(a, b) { return typeof bundVerbuendet === 'function' && bundVerbuendet(a, b); }
-// Truppen, die dir geschenkt werden (Stufe, Thron-Shop, Lazarett, Funde, Admin): beim Zuschauer macht es der Weltrechner.
+// Truppen, die dir geschenkt werden (Stufe, Thron-Shop, Krankenhaus, Funde, Admin): beim Zuschauer macht es der Weltrechner.
 // q = woher (stufe/thron/heil/fund/geschenk) – der Weltrechner prüft danach, wie viele es höchstens sein dürfen (Schummel-Schutz).
 function eigeneTruppenDazu(base, n, q, mehr) { if (base === null || base === undefined || !(n > 0)) return; islandTroops[base] = (islandTroops[base] || 0) + n; alsBefehl('truppen', Object.assign({ n, q }, mehr || {})); }
 // iPhone Home-Bildschirm-App: iOS macht die Seite um die Statusleiste zu kurz (unten bleibt ein schwarzer Streifen).
@@ -57,6 +57,7 @@ function fmtCompact(n) {
     if (a >= v * .99995 || v === 1e15) return (a / v >= 1000 ? NF.format(Math.round(n / v)) : NF.format(Math.round(n / v * 10) / 10)) + ' ' + u;
 }
 const fmtTile = fmtNum;   // stat tiles: same rule as everywhere
+const spaehZahl = (n, fremd) => fremd && typeof AUF !== 'undefined' && AUF && AUF.wachturm('player') < AUF.WACHT.ca ? 'ca. ' + fmtNum(AUF.rundCa(n)) : fmtTile(n);   // gespähte fremde Basis: ohne Wachturm (Forschung) nur ungefähr
 function setBtnLabel(btn, text) { const l = btn.querySelector('.lbl') || btn; if (l.textContent !== text) l.textContent = text; }   // (nur bei einer Änderung: offene Fenster ziehen jede Sekunde nach)
 function fmtDHMS(sec) {                           // every longer time the same way: 3 T 4 h 5 m 6 s (units that are 0 at the front are left out)
     sec = Math.max(0, Math.ceil(sec));
@@ -121,10 +122,11 @@ function angreiferZeilen(e, gearHtml) {
         ((h.fallen || h.wounded) ? '<div class="logCasualty"><span>· davon gefallen' + (h.wounded ? ' / verwundet' : '') + '</span><span>−' + n(h.fallen) + (h.wounded ? ' / ' + n(h.wounded) : '') + '</span></div>' : '') +
         (h.gear && gearHtml ? '<details class="verst-det"><summary>' + escapeHtml(h.name || '?') + ': Held, Ausrüstung, Fähigkeiten</summary>' + gearHtml(h.gear) + '</details>' : '')).join('');
 }
-function plunderLine(e, mine) {                     // Lager: what changed hands when a base fell, and what the Lager kept safe
-    if (!e.plunder && !e.plunderSafe) return '';
-    const safe = e.plunderSafe ? fmtBig(e.plunderSafe) + ' geschützt durch Lager' : '';
-    return '<div class="logGold' + (mine ? '' : ' logPlunder') + '">' + (e.plunder ? (mine ? 'Beute: +' : 'Geplündert: −') + fmtBig(e.plunder) + ' Münzen' + (safe ? ' · ' + safe : '') : (mine ? 'Keine Beute – ' : 'Keine Münzen verloren – ') + safe) + '</div>';
+function plunderLine(e, mine) {                     // Beute: was den Besitzer wechselte (Turm: Gold, Hauptstadt: auch Holz, Stein, Eisen) und was die Burg schützte
+    const r = e.plunderRoh || {}, teile = [e.plunder ? fmtBig(e.plunder) + ' Gold' : '', r.h ? fmtBig(r.h) + ' Holz' : '', r.s ? fmtBig(r.s) + ' Stein' : '', r.e ? fmtBig(r.e) + ' Eisen' : ''].filter(Boolean);
+    if (!teile.length && !e.plunderSafe) return '';
+    const safe = e.plunderSafe ? fmtBig(e.plunderSafe) + ' je Rohstoff geschützt durch die Burg' : '';
+    return '<div class="logGold' + (mine ? '' : ' logPlunder') + '">' + (e.capitalHolds ? '<b>' + (mine ? 'Die Hauptstadt brennt' : 'Deine Hauptstadt brennt') + '</b> · ' : '') + (teile.length ? (mine ? 'Beute: +' : 'Geplündert: −') + teile.join(', ') + (safe ? ' · ' + safe : '') : (mine ? 'Keine Beute – ' : 'Nichts verloren – ') + safe) + '</div>';
 }
 function logRowHtml(kind, iconName, title, meta, trailing, extra) {
   return '<div class="logRow ' + kind + '"><span class="li">' + icon(iconName) + '</span><span class="lt"><b>' + title + '</b>' +
@@ -824,8 +826,8 @@ const HEROES = [
       sk: [['Heilige Mauer', 'Greift sie einen Tempel an: {v} % weniger Verluste.', 'templeLoss'], ['Tempelgold', '+{v} % Gold aus Kämpfen um Tempel.', 'templeGold'], ['Pilgerin', '+{v} % Angriff gegen Tempel.', 'templeAtk'], ['Segen', '+{v} % Verwundete statt Gefallene bei Tempelkämpfen.', 'templeHosp']] },
     { id: 'ida', name: 'Ida', title: 'Pfadfinderin', role: 'Tempo', r: 2, icon: 'boots', color: '#2f7a6a', c2: '#1f3a2f', hair: '#7a3a1a', g: 'weapon', base: [2, 2, 8],
       sk: [['Eilmarsch', 'Ihre Armee marschiert {v} % schneller.', 'spd'], ['Kartenkunde', '+{v} % Marschtempo.', 'spd'], ['Leichtfuß', 'Verliert sie, fliehen {v} % mehr Truppen zurück.', 'flee'], ['Rückweg', 'Rückzüge sind {v} % schneller.', 'ret']] },
-    { id: 'bernhard', name: 'Bernhard', title: 'Feldscher', role: 'Lazarett', r: 2, icon: 'plus', color: '#3d6b9b', c2: '#2a2a3a', hair: '#555', g: 'shield', base: [0, 6, 0],
-      sk: [['Feldlazarett', '+{v} % der Gefallenen kommen ins Lazarett.', 'hosp'], ['Wundarzt', '{v} % weniger Verluste.', 'loss'], ['Sanitäter', 'Verliert er, fliehen {v} % mehr Truppen zurück.', 'flee'], ['Feldküche', 'Rückzüge sind {v} % schneller.', 'ret']] },
+    { id: 'bernhard', name: 'Bernhard', title: 'Feldscher', role: 'Krankenhaus', r: 2, icon: 'plus', color: '#3d6b9b', c2: '#2a2a3a', hair: '#555', g: 'shield', base: [0, 6, 0],
+      sk: [['Feldlazarett', '+{v} % der Gefallenen kommen ins Krankenhaus.', 'hosp'], ['Wundarzt', '{v} % weniger Verluste.', 'loss'], ['Sanitäter', 'Verliert er, fliehen {v} % mehr Truppen zurück.', 'flee'], ['Feldküche', 'Rückzüge sind {v} % schneller.', 'ret']] },
     { id: 'mira', name: 'Mira', title: 'Späherin', role: 'Späher', r: 2, icon: 'scout', color: '#6b7a2f', c2: '#2f3a1f', hair: '#1a1a1a', g: 'weapon', base: [2, 3, 4],
       sk: [['Adlerauge', '+{v} % Angriff gegen eine Basis, die du vorher ausgespäht hast.', 'scoutAtk'], ['Leise Sohlen', '+{v} % Marschtempo.', 'spd'], ['Spurlos', 'Die anderen bemerken ihren Angriff {v} % später.', 'late'], ['Fährtenleserin', '+{v} % Angriff gegen Armeen im Feld.', 'fieldAtk']] },
     { id: 'nora', name: 'Nora', title: 'Jägerin', role: 'Feldkampf', r: 2, icon: 'troops', color: '#4a5a8a', c2: '#20283a', hair: '#6a2a2a', g: 'weapon', base: [6, 2, 4],
@@ -834,8 +836,8 @@ const HEROES = [
       sk: [['Goldrausch', 'Im Kampf um ein Feld: +{v} % Angriff.', 'resAtk'], ['Spürnase', 'Seine Sammler sind {v} % schneller.', 'gatherSpd'], ['Packesel', '+{v} % Traglast seiner Sammler.', 'carry'], ['Lagerwache', 'Seine Sammler verteidigen mit +{v} %.', 'gatherDef']] },
     { id: 'otto', name: 'Otto', title: 'Händler', role: 'Gold', r: 1, icon: 'sell', color: '#8a7a2e', c2: '#3a2f1f', hair: '#8a6a3a', g: 'none', base: [3, 2, 0],
       sk: [['Beutezug', 'Dieser Kampf bringt +{v} % Gold.', 'gold'], ['Feilschen', '+{v} % Gold aus Kämpfen.', 'gold'], ['Lastträger', '+{v} % Traglast seiner Sammler.', 'carry'], ['Sparsam', '−{v} % Maut an fremden Toren.', 'toll']] },
-    { id: 'greta', name: 'Greta', title: 'Kräuterfrau', role: 'Lazarett', r: 1, icon: 'plus', color: '#8a4a5b', c2: '#3a2030', hair: '#c0c0a0', g: 'none', base: [0, 6, 0],
-      sk: [['Kräutersud', '+{v} % der Gefallenen kommen ins Lazarett.', 'hosp'], ['Salben', '{v} % weniger Verluste.', 'loss'], ['Hausmittel', 'Verliert sie, fliehen {v} % mehr Truppen zurück.', 'flee'], ['Wegzehrung', 'Rückzüge sind {v} % schneller.', 'ret']] },
+    { id: 'greta', name: 'Greta', title: 'Kräuterfrau', role: 'Krankenhaus', r: 1, icon: 'plus', color: '#8a4a5b', c2: '#3a2030', hair: '#c0c0a0', g: 'none', base: [0, 6, 0],
+      sk: [['Kräutersud', '+{v} % der Gefallenen kommen ins Krankenhaus.', 'hosp'], ['Salben', '{v} % weniger Verluste.', 'loss'], ['Hausmittel', 'Verliert sie, fliehen {v} % mehr Truppen zurück.', 'flee'], ['Wegzehrung', 'Rückzüge sind {v} % schneller.', 'ret']] },
     { id: 'hagen', name: 'Hagen', title: 'Söldner', role: 'Angriff', r: 1, icon: 'weapon', color: '#5a5a5a', c2: '#2a2a2a', hair: '#3a3a3a', g: 'weapon', base: [8, 0, 2],
       sk: [['Wucht', 'In diesem Kampf +{v} % Angriff.', 'atk'], ['Söldner', '+{v} % Angriff.', 'atk'], ['Raufbold', '+{v} % Angriff gegen neutrale Basen.', 'neutralAtk'], ['Hartgesotten', '{v} % weniger Verluste.', 'loss']] },
     // Paket E: 6 neue Helden – jeder mit kurzer Geschichte (story) und einem Partner aus HERO_PAIRS
@@ -845,9 +847,9 @@ const HEROES = [
     { id: 'thora', name: 'Thora', title: 'Sturmreiterin', role: 'Überfall', r: 3, icon: 'boots', color: '#3a6e8f', c2: '#1a2a3a', hair: '#e8c070', g: 'weapon', base: [6, 1, 6],
       story: 'Zehn Jahre stand sie als Steuerfrau auf Ragnas Flaggschiff. Heute jagt sie ihre Reiter so schnell über das Land wie früher das Schiff durch den Sturm.',
       sk: [['Überrumpeln', 'Die Verteidigung des Ziels zählt in diesem Angriff {v} % weniger.', 'defCut'], ['Sturmwind', '+{v} % Marschtempo.', 'spd'], ['Im Morgengrauen', 'Die anderen bemerken ihren Angriff {v} % später.', 'late'], ['Abdrehen', 'Rückzüge sind {v} % schneller.', 'ret']] },
-    { id: 'eskil', name: 'Eskil', title: 'Runenschmied', role: 'Lazarett & Wut', r: 3, icon: 'temple', color: '#5a4a7a', c2: '#221a30', hair: '#c8b8a0', g: 'shield', base: [2, 7, 0],
+    { id: 'eskil', name: 'Eskil', title: 'Runenschmied', role: 'Krankenhaus & Wut', r: 3, icon: 'temple', color: '#5a4a7a', c2: '#221a30', hair: '#c8b8a0', g: 'shield', base: [2, 7, 0],
       story: 'Er hat die alten Runen in die Mauern der Tempel gemeißelt. Yrsa sagt, ohne seine Zeichen wären die Steine längst gefallen.',
-      sk: [['Runenheilung', 'In diesem Kampf +{v} % der Gefallenen ins Lazarett.', 'hosp'], ['Schutzrune', '{v} % weniger Verluste.', 'loss'], ['Zornrune', 'Wut füllt sich um {v} % schneller.', 'rage'], ['Fluchtrune', 'Verliert er, fliehen {v} % mehr Truppen zurück.', 'flee']] },
+      sk: [['Runenheilung', 'In diesem Kampf +{v} % der Gefallenen ins Krankenhaus.', 'hosp'], ['Schutzrune', '{v} % weniger Verluste.', 'loss'], ['Zornrune', 'Wut füllt sich um {v} % schneller.', 'rage'], ['Fluchtrune', 'Verliert er, fliehen {v} % mehr Truppen zurück.', 'flee']] },
     { id: 'lene', name: 'Lene', title: 'Fährfrau', role: 'Brücken', r: 2, icon: 'send', color: '#2f6a7a', c2: '#18303a', hair: '#5a3a2a', g: 'none', base: [3, 3, 6],
       story: 'Sie kennt jede Furt und jede Brücke zwischen den Inseln. Ida bringt die Truppen bis ans Ufer – Lene bringt sie hinüber.',
       sk: [['Fährmannslist', 'Greift sie über eine Brücke an: Verteidigung des Ziels −{v} %.', 'bridgeDef'], ['Strömung', '+{v} % Marschtempo.', 'spd'], ['Fährgeld', '−{v} % Maut an fremden Toren.', 'toll'], ['Zurück ans Ufer', 'Rückzüge sind {v} % schneller.', 'ret']] },
@@ -1056,8 +1058,8 @@ function defenseParts(island) {
     if (wallPct) out.push(['Mauer', Math.round(sub * wallPct / 100), 'Stadt · +' + wallPct + ' %']);
     const x = titleOf(owner); if (x && x.kind === 'defense') out.push(['Titel ' + x.name, Math.round(sub * (1 + wallPct / 100) * x.v), 'Mega-Tempel · ' + (x.v > 0 ? '+' : '−') + Math.round(Math.abs(x.v) * 100) + ' %']);
     const kk = AUF ? AUF.kampf(owner, 'd') : 1;
-    if (kk !== 1) { const T = AUF.truppenStufe(owner), fo = AUF.foWert(owner, 'm_def'), vor = out.reduce((a, q) => a + q[1], 0);
-        out.push(['Truppen-Stufe T' + T + (fo ? ' · Forschung' : ''), Math.round((vor + g) * (kk - 1)), '+' + Math.round((kk - 1) * 100) + ' % auf Besatzung und Verteidigung']); }
+    if (kk !== 1) { const vor = out.reduce((a, q) => a + q[1], 0);
+        out.push(['Forschung Verteidigung', Math.round((vor + g) * (kk - 1)), '+' + Math.round((kk - 1) * 100) + ' % auf Besatzung und Verteidigung']); }
     out[0][1] += effectiveDefense(island) - out.reduce((a, q) => a + q[1], 0);        // rounding goes to the base line
     return out;
 }
@@ -1086,10 +1088,10 @@ function attackParts(who, raw, bonus, total, hero, a) {       // a = the attack:
     const hx = a && a.hx, hd = hx && heroById(hx.id);             // the hero's Angriff and Gefolge (a fired skill included)
     const h2n = hx && hx.id2 && heroById(hx.id2) ? ' & ' + heroById(hx.id2).name : '';   // der Zweitheld zählt mit
     if (bonus - skill) out.push([hd ? 'Held ' + hd.name + ' ' + heroStarTxt(hx.q) + h2n : 'Helden', bonus - skill, hd ? 'Angriff +' + Math.round(hx.atk) + ' %' + (heroGefOf(hx, raw) ? ' · Gefolge +' + fmtCompact(heroGefOf(hx, raw)) : '') + (hx.fired ? ' · ' + hx.skill + ' gezündet' : '') : '']);
-    const kr = a && a.atkKraft ? a.atkKraft : 1, kv = kr !== 1 ? Math.round(total - total / kr) : 0;   // Truppen-Stufe + Forschung (Paket D)
+    const kr = a && a.atkKraft ? a.atkKraft : 1, kv = kr !== 1 ? Math.round(total - total / kr) : 0;   // Forschung Angriff (Paket D)
     const tv = total - raw - bonus - kv, x = a && a.atkTitleKey !== undefined ? TITLES.find(q => q.key === a.atkTitleKey) : titleOf(who);   // the title it marched with
     if (tv) out.push(['Titel ' + (x ? x.name : ''), tv, 'Mega-Tempel · ' + (tv > 0 ? '+' : '−') + (x ? Math.round(Math.abs(x.v) * 100) : 25) + ' %']);
-    if (kv) out.push(['Truppen-Stufe T' + (a.atkTier || 1) + (a.atkFo ? ' · Forschung' : ''), kv, '+' + Math.round((kr - 1) * 100) + ' % Kampfkraft']);
+    if (kv) out.push(['Forschung Angriff', kv, '+' + Math.round((kr - 1) * 100) + ' % Kampfkraft']);
     return out;
 }
 function heroDefCut(a) { return a && a.hx ? Math.min(90, a.hx.def || 0) / 100 : 0; }    // Rammbock, Sturmflut, Mauerbrecher: the target's defense counts less
@@ -1100,7 +1102,7 @@ function attackFields(who, src, target, raw, hx) {      // everything an attack 
         attackGoldRate: bot ? botGoldRate(who, 'attackGold') : (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate, rewardGoldRate: killGoldRate(who, hx),
         shieldLossReductionPct: Math.min(90, (bot ? botMults(who).shield : shieldLossReductionPct()) + (hx ? hx.loss : 0)), botShield: bot,
         atkTitle: titleMult(who, 'attack'), atkTitleKey: (titleOf(who) || {}).key || null, hero: hx ? hx.id : null, hero2: hx && hx.id2 || null, hx: hx || null,
-        atkKraft: AUF ? AUF.kampf(who, 'a') : 1, atkTier: AUF ? AUF.truppenStufe(who) : 1, atkFo: AUF ? AUF.foWert(who, 'm_atk') : 0 };   // Truppen-Stufe + Forschung Angriff (Paket D)
+        atkKraft: AUF ? AUF.kampf(who, 'a') : 1, atkFo: AUF ? AUF.foWert(who, 'm_atk') : 0 };   // Forschung Angriff (Paket D)
 }
 // Removes an island from whichever owner (player or a bot) it
 // currently belongs to, without touching its troops/level - used
@@ -1141,9 +1143,9 @@ function totalTroops() {
 }
 // The same multipliers runProductionTick uses (equipment/skills, ruler bonus, titles)
 function cityLevelSafe(id) { try { return loadCity().levels[id] || 0; } catch (e) { return 0; } }   // (the city isn't set up during the first boot steps)
-function playerCoinMult() { return coinProductionMultiplier() * (rulerOwner() === 'player' ? RULER_BONUS : 1) * titleMult('player', 'coins') * (1 + cityLevelSafe('treasury') * .02) * bundProdFaktor('player') * (AUF ? AUF.ertrag('player') : 1); }
+function playerCoinMult() { return coinProductionMultiplier() * (rulerOwner() === 'player' ? RULER_BONUS : 1) * titleMult('player', 'coins') * bundProdFaktor('player') * (AUF ? AUF.ertrag('player') : 1); }
 function bundProdFaktor(who) { return typeof bundProdMult === 'function' ? bundProdMult(who) : 1; }   // Tempel-Bonus des Bündnisses
-function playerTroopMult() { return troopProductionMultiplier() * (rulerOwner() === 'player' ? RULER_BONUS : 1) * titleMult('player', 'troops') * (1 + cityLevelSafe('barracks') * .02) * bundProdFaktor('player'); }
+function playerTroopMult() { return troopProductionMultiplier() * (rulerOwner() === 'player' ? RULER_BONUS : 1) * titleMult('player', 'troops') * bundProdFaktor('player'); }
 function totalTroopProductionPerTick() {
     let sum = 0; const m = playerTroopMult();
     for (const ownedId of ownedIslands) {
@@ -1153,7 +1155,7 @@ function totalTroopProductionPerTick() {
     }
     return sum;
 }
-function shrineMult(who) { return 1 + (who === 'player' ? cityLevelSafe('shrine') : botBld(who, 'shrine')) * .05; }   // Tempelschrein: +5 % temple bonus per level
+function shrineMult(who) { return 1 + (AUF ? AUF.tempelPlus(who) : 0); }   // Forschung „Tempel“ im Labor (früher der Tempelschrein)
 function totalCoinProductionPerTick() {
     let sum = 0; const m = playerCoinMult();
     for (const ownedId of ownedIslands) {
@@ -1514,7 +1516,7 @@ const RETREAT_RECOVERY_PCT = 20;
 function attackSpeedMultiplier() {
     return 1 + Math.min(skills.speed || 0, SKILL_DEFS.speed.max) * 0.05;
 }
-function scoutSecs(from, to, botId) { return travelDurationSeconds(from, to, botId) / (1 + (botId ? botBld(botId, 'watch') : cityLevelSafe('watch')) * .04) / (AUF ? AUF.spaeherTempo(botId || 'player') : 1); }   // (+ Forschung Späher)   // a scout's walk, Späherturm included - the same for everyone
+function scoutSecs(from, to, botId) { return travelDurationSeconds(from, to, botId) / (AUF ? AUF.spaeherTempo(botId || 'player') : 1); }   // (+ Forschung Späher)   // a scout's walk, Späherturm included - the same for everyone
 function travelDurationSeconds(source, target, botId) {   // everyone gets their own speed skill + Akademie, never under 3 s
     const pts = source.landmassId === target.landmassId ? [source, target] : marchPath(source, target);
     let distance = 0; for (let i = 1; i < pts.length; i++) distance += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
@@ -1593,10 +1595,7 @@ function launchAttack(sourceId, targetId, attackerBotId, troopsOverride, heldWun
     if (!attackerBotId) { const tw = islandOwnerOf(target.id); if (tw && botById[tw] && botById[tw].mensch) neulingEnde('Dein Anfängerschutz ist vorbei – du hast einen echten Spieler angegriffen.'); }
     const tOwner = islandOwnerOf(target.id);
     if (tOwner && tOwner !== (attackerBotId || 'player') && target.type === 'tower' && ownerShielded(tOwner)) { if (!attackerBotId) flashHint(shieldBlockText(tOwner), 4000); return false; }   // the Friedensschild
-    if (isCapital(target.id)) {                                   // nobody's capital can be attacked
-        if (!attackerBotId) flashHint('Das ist die Hauptstadt von ' + (botById[islandOwnerOf(target.id)] || {}).name + ' – Hauptstädte können nicht angegriffen werden.', 3500);
-        return false;
-    }
+    // (Hauptstädte kann man angreifen – Alexander 4.10. –, aber nie erobern: siehe resolveAttack / capitalHolds)
     const grp = naechsteGruppe;
     if (!attackerBotId && !canReach(source.landmassId, target.landmassId, 'player')) {   // (wie beim Weltrechner)
         flashHint('Kein Weg nach ' + islandTitle(target) + ' – ein fremdes Tor liegt dazwischen. Erobere zuerst das Tor.', 5000); return false; }
@@ -1887,29 +1886,38 @@ function launchScout(targetId, explore, at) {
     renderActiveMarches();
 }
 
-// Spähbericht: was der Späher über den Herrn der Basis herausfindet – Stufe, Helden, Ausrüstung, Fähigkeiten, Mauer,
-// Titel, Friedensschild (so, wie es gerade ist; nur bei Mitspielern – neutrale Basen haben keinen Herrn)
+// Spähbericht: was der Späher über den Herrn der Basis herausfindet – je nach deinem Wachturm (Forschung im Labor, Alexander 4.10.:
+// „am Anfang sieht man weniger, wenn der weit oben ist, mehr“). Immer: Herr, Stufe, Titel, Schild. Dann nach und nach Mauer,
+// Helden, Burg, Rohstoffe (und wie viel davon zu holen ist), Fähigkeiten, Forschung, Ausrüstung (aufbau.js WACHT).
 function spaeherBlick(owner) {
     if (!owner || owner === 'player' || !botById[owner]) return null;
     const b = loadBotState()[owner]; if (!b) return null;
-    const gear = {}; for (const k of Object.keys(EQUIPMENT_DEFS)) { const it = botItem(b, k); gear[k] = it ? [it.rarity, it.level, it.stars] : null; }
-    const held = Object.entries(b.hs || {}).filter(([id, h]) => h && h.own && heroById(id)).sort((x, y) => (y[1].q || 0) - (x[1].q || 0)).slice(0, 3).map(([id, h]) => [heroById(id).name, (h.q || 0) / 2]);
-    const t = titleOf(owner);
-    return { name: botById[owner].name, lvl: b.lvl || 1, sk: { attack: (b.skills || {}).attack || 0, defense: (b.skills || {}).defense || 0, troops: (b.skills || {}).troops || 0 },
-        gear, held, wall: botBld(owner, 'wall') || 0, titel: t ? t.name : '', schild: !!ownerShielded(owner), auf: AUF ? AUF.spaeherMehr('player', owner) : null };   // (Wachturm: Burg, Truppen-Stufe, Forschung)
+    const W = AUF ? AUF.WACHT : {}, L = AUF ? AUF.wachturm('player') : 99, t = titleOf(owner), o = { name: botById[owner].name, lvl: b.lvl || 1, titel: t ? t.name : '', schild: !!ownerShielded(owner), L };
+    if (L >= W.mauer) o.wall = botBld(owner, 'wall') || 0;
+    if (L >= W.helden) o.held = Object.entries(b.hs || {}).filter(([id, h]) => h && h.own && heroById(id)).sort((x, y) => (y[1].q || 0) - (x[1].q || 0)).slice(0, 3).map(([id, h]) => [heroById(id).name, (h.q || 0) / 2]);
+    if (L >= W.faeh) o.sk = { attack: (b.skills || {}).attack || 0, defense: (b.skills || {}).defense || 0, troops: (b.skills || {}).troops || 0 };
+    if (L >= W.gear) { o.gear = {}; for (const k of Object.keys(EQUIPMENT_DEFS)) { const it = botItem(b, k); o.gear[k] = it ? [it.rarity, it.level, it.stars] : null; } }
+    o.auf = AUF ? AUF.spaeherMehr('player', owner) : null;                    // Burg, Rohstoffe, Forschung
+    return o;
 }
 function spaeherBlickHtml(s) {
     if (!s) return '';
-    const stern = n => n ? ' ' + '★'.repeat(Math.floor(n)) + (n % 1 ? '½' : '') : '';
-    const gear = Object.keys(EQUIPMENT_DEFS).map(k => { const g = s.gear[k]; return '<div class="logLine"><span>' + EQUIPMENT_DEFS[k].name + '</span><span' + (g ? ' style="color:' + RARITY_DEFS[g[0]].color + '"' : '') + '>' +
-        (g ? RARITY_DEFS[g[0]].label + ' · St. ' + g[1] + (g[2] ? ' · ' + g[2] + '★' : '') : '—') + '</span></div>'; }).join('');
+    const stern = n => n ? ' ' + '★'.repeat(Math.floor(n)) + (n % 1 ? '½' : '') : '', zeile = (a, b) => '<div class="logLine"><span>' + a + '</span><span>' + b + '</span></div>';
+    const A = s.auf || {}, R = A.roh, W = AUF ? AUF.WACHT : {}, L = s.L !== undefined ? s.L : 99;
+    const gear = s.gear ? Object.keys(EQUIPMENT_DEFS).map(k => { const g = s.gear[k]; return '<div class="logLine"><span>' + EQUIPMENT_DEFS[k].name + '</span><span' + (g ? ' style="color:' + RARITY_DEFS[g[0]].color + '"' : '') + '>' +
+        (g ? RARITY_DEFS[g[0]].label + ' · St. ' + g[1] + (g[2] ? ' · ' + g[2] + '★' : '') : '—') + '</span></div>'; }).join('') : '';
+    const beute = v => fmtCompact(v) + (R && v > R.schutz ? ' <small>(' + fmtCompact(Math.floor((v - R.schutz) * HAUPT_BEUTE)) + ' zu holen)</small>' : '');
+    const naechst = Object.entries({ mauer: 'Mauer', helden: 'Helden', burg: 'Burg', roh: 'Rohstoffe', faeh: 'Fähigkeiten', forsch: 'Forschung', gear: 'Ausrüstung' }).find(([k]) => L < W[k]);
     return '<details><summary>Spähbericht</summary><div class="logSide" style="margin-top:6px">' +
-        '<div class="logLine"><span>Herr</span><span>' + escapeHtml(s.name) + ' · Stufe ' + fmtNum(s.lvl) + (s.titel ? ' · ' + escapeHtml(s.titel) : '') + '</span></div>' +
-        '<div class="logLine"><span>Friedensschild</span><span>' + (s.schild ? 'aktiv' : 'keiner') + '</span></div>' +
-        '<div class="logLine"><span>Helden</span><span>' + (s.held.length ? s.held.map(h => escapeHtml(h[0]) + stern(h[1])).join(', ') : 'keine') + '</span></div>' +
-        '<div class="logLine"><span>Fähigkeiten</span><span>Angriff ' + s.sk.attack + ' · Vert. ' + s.sk.defense + ' · Truppen ' + s.sk.troops + '</span></div>' +
-        '<div class="logLine"><span>Mauer</span><span>Stufe ' + s.wall + '</span></div>' +
-        (s.auf ? '<div class="logLine"><span>Burg</span><span>Stufe ' + (s.auf.burg | 0) + ' · Truppen T' + (s.auf.tier | 0) + '</span></div>' + (s.auf.fo ? '<div class="logLine"><span>Forschung</span><span>Angriff ' + (s.auf.fo.atk | 0) + ' · Vert. ' + (s.auf.fo.def | 0) + ' · Lazarett ' + (s.auf.fo.laz | 0) + '</span></div>' : '') : '') + gear + '</div></details>';
+        zeile('Herr', escapeHtml(s.name) + ' · Stufe ' + fmtNum(s.lvl) + (s.titel ? ' · ' + escapeHtml(s.titel) : '')) +
+        zeile('Friedensschild', s.schild ? 'aktiv' : 'keiner') +
+        (s.wall !== undefined ? zeile('Mauer', 'Stufe ' + s.wall) : '') +
+        (s.held ? zeile('Helden', s.held.length ? s.held.map(h => escapeHtml(h[0]) + stern(h[1])).join(', ') : 'keine') : '') +
+        (A.burg ? zeile('Burg', 'Stufe ' + A.burg + (R ? ' · schützt ' + fmtCompact(R.schutz) + ' je Rohstoff' : '')) : '') +
+        (R ? zeile('Gold', beute(R.c)) + (R.h !== undefined ? zeile('Holz', beute(R.h)) + zeile('Stein', beute(R.s)) + zeile('Eisen', beute(R.e)) : '') : '') +
+        (s.sk ? zeile('Fähigkeiten', 'Angriff ' + s.sk.attack + ' · Vert. ' + s.sk.defense + ' · Truppen ' + s.sk.troops) : '') +
+        (A.fo ? zeile('Forschung', 'Angriff ' + (A.fo.atk | 0) + ' · Vert. ' + (A.fo.def | 0) + ' · Krankenhaus ' + (A.fo.laz | 0)) : '') + gear +
+        (naechst ? zeile('<small>Wachturm ' + L + '</small>', '<small>mehr sehen: Wachturm-Forschung im Labor (Stufe ' + W[naechst[0]] + ': ' + naechst[1] + ')</small>') : '') + '</div></details>';
 }
 function resolveScout(scout) {
     const target = islandById[scout.targetId];
@@ -1925,16 +1933,17 @@ function resolveScout(scout) {
     // Same reasoning as resolveSend(): persist the now-shorter
     // pendingScouts array, or a reload replays this scout again.
     saveProgression();
+    const genau = !AUF || AUF.wachturm('player') >= AUF.WACHT.ca, ca = n => genau ? n : AUF.rundCa(n);   // ohne Wachturm nur ungefähr
     addCombatLogEntry({
         type: 'scout',
         sourceId: scout.sourceId,
         targetId: scout.targetId,
-        troops: effectiveTroops(target),
-        defense: effectiveDefense(target),
+        troops: ca(effectiveTroops(target)),
+        defense: ca(effectiveDefense(target)), ca: !genau,
         spy: spaeherBlick(islandOwnerOf(target.id))
     });
-    flashHint(islandTitle(target) + ' gespäht: ' + fmtNum(effectiveTroops(target)) +
-        ' Truppen, ' + fmtNum(effectiveDefense(target)) + ' Verteidigung.', 4000);
+    flashHint(islandTitle(target) + ' gespäht: ' + (genau ? '' : 'ca. ') + fmtNum(ca(effectiveTroops(target))) +
+        ' Truppen, ' + (genau ? '' : 'ca. ') + fmtNum(ca(effectiveDefense(target))) + ' Verteidigung.', 4000);
 }
 
 function retreatPct(attack) { return Math.min(60, RETREAT_RECOVERY_PCT + (attack.hx ? attack.hx.flee : (attack.bernPct || 0) / 2)); }   // a hero (Standhaft, Leichtfuß …): more of a beaten army gets away
@@ -1963,7 +1972,7 @@ function resolveAttack(attack) {
     const totalStrength = originalEnemyTroops + originalEnemyDefense;
     const won = myTroops > totalStrength;
     const bossHere = bossAt(target.id);
-    const capitalHolds = won && targetOwner && targetOwner !== 'player' && isCapital(target.id);   // moved its capital here while you marched: it can't fall, only its garrison
+    const capitalHolds = won && targetOwner && targetOwner !== 'player' && isCapital(target.id);   // a capital never falls: only its garrison - and it burns
     if (targetOwner && targetOwner !== 'player') botGrudge(targetOwner, 'player', won ? 2 : 1);   // the bot remembers this
     const losses = Math.round(originalEnemyDefense * (1 - lossReductionPct / 100));
     const sentLoss = won ? Math.min(attack.rawTroops, Math.round(losses * attack.rawTroops / Math.max(1, myTroops))) : 0;   // the losses are shared between sent and bonus troops
@@ -1973,8 +1982,9 @@ function resolveAttack(attack) {
     if (targetOwner && targetOwner !== 'player')                    // the defending bot's "Verteidigung: Gold": every attacker its garrison really kills pays out
         botCoins[targetOwner] = (botCoins[targetOwner] || 0) + Math.round((won ? sentLoss : attack.rawTroops - retreatSurvivorsPreview(attack)) * botGoldRate(targetOwner, 'defenseGold'));
     let retreatSurvivors = 0, woundedAdded = 0;
-    const plunder = won && targetOwner && targetOwner !== 'player' ? plunderOf(targetOwner, capitalHolds) : null;   // Lager: you carry off part of his coins above his protection
-    if (plunder) { plunderMove(targetOwner, null, plunder.loot); inboxAdd({ src: 'fight', coins: plunder.loot }); }   // (the spoils wait in the Abholfach)
+    const plunder = won && targetOwner && targetOwner !== 'player' ? plunderOf(targetOwner, capitalHolds) : null;   // Beute: ein kleiner Teil über seinem Burg-Schutz (Turm: nur Gold, Hauptstadt: alles)
+    if (plunder) { plunderMove(targetOwner, null, plunder.loot, plunder.roh); inboxAdd({ src: 'fight', coins: plunder.loot }); if (plunder.roh && AUF) AUF.rohDazu('player', plunder.roh); }   // (das Gold wartet im Abholfach)
+    if (capitalHolds) brandSetzen(target.id);                               // die Hauptstadt brennt (nur zu sehen)
 
     if (capitalHolds) {                                                     // the garrison falls, the base stays theirs - your survivors walk home
         islandTroops[target.id] = 0; defenderCasualties = originalEnemyTroops;
@@ -2000,7 +2010,7 @@ function resolveAttack(attack) {
         revealAround(target.x, target.y, REVEAL_BASE * (AUF ? AUF.nebelWeite('player') : 1), true);   // (Forschung Kundschaft: weiter)
         killGold = Math.round(originalEnemyTroops * rewardRate); inboxAdd({ src: 'fight', coins: killGold });   // "Angriff: Gold": per enemy troop killed
         defenderCasualties = originalEnemyTroops;
-        // (das Lazarett des Verteidigers: unten, nach dem Trennen von seiner Verstärkung)
+        // (das Krankenhaus des Verteidigers: unten, nach dem Trennen von seiner Verstärkung)
         if (target.type === 'temple' || target.type === 'megaTemple') {
             // Starts (or restarts) this temple's hold streak - see
             // templeHoldMultiplier(). Ready for a future PvP
@@ -2029,7 +2039,7 @@ function resolveAttack(attack) {
         warStat('attacksLost'); warStat('kills', defenderCasualties);
         killGold = Math.round(defenderCasualties * rewardRate); inboxAdd({ src: 'fight', coins: killGold });
         retreatSurvivors = retreatSurvivorsPreview(attack);
-        woundedAdded = hospitalTake(attack.rawTroops - retreatSurvivors, hosp);   // Lazarett (+ a hero's Feldlazarett): part of the fallen are only wounded
+        woundedAdded = hospitalTake(attack.rawTroops - retreatSurvivors, hosp);   // Krankenhaus (+ a hero's Feldlazarett): part of the fallen are only wounded
         warStat('fallen', attack.rawTroops - retreatSurvivors - woundedAdded);
         if (retreatSurvivors > 0) {
             const durationSec = retreatSecs(attack, target, source);
@@ -2045,7 +2055,7 @@ function resolveAttack(attack) {
     }
     const vs = vk ? verstNachKampf(target.id, vk, won) : null, verstInfo = vs ? { verst: vs.helfer, eigen: vs.eigen } : {};   // jeder trägt seinen Anteil
     const defWeg = vs ? vs.eigenWeg : defenderCasualties;
-    if (targetOwner && targetOwner !== 'player') enemyWounded = botHospitalTake(targetOwner, defWeg);   // the bot's Lazarett takes part of ITS fallen
+    if (targetOwner && targetOwner !== 'player') enemyWounded = botHospitalTake(targetOwner, defWeg);   // the bot's Krankenhaus takes part of ITS fallen
     // XP for troops that died in the clash either way: a win kills
     // the whole enemy force, a loss costs your whole attack force
     noteBattle(target.id, won ? originalEnemyTroops : attack.rawTroops - retreatSurvivors, won ? targetOwner : 'player');
@@ -2078,7 +2088,7 @@ function resolveAttack(attack) {
         lossReductionPct, heroLossPct: attack.hx ? attack.hx.loss : 0,
         lossSaved: won ? Math.max(0, Math.round((originalEnemyDefense - losses) * attack.rawTroops / Math.max(1, myTroops))) : 0,
         attackGoldRate: attack.attackGoldRate !== undefined ? attack.attackGoldRate : (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate, killGold,
-        attackerCasualties: won ? Math.max(0, sentLoss - woundedAdded) : Math.max(0, attack.rawTroops - retreatSurvivors - woundedAdded),   // really dead: not the ones who fled or lie in the Lazarett
+        attackerCasualties: won ? Math.max(0, sentLoss - woundedAdded) : Math.max(0, attack.rawTroops - retreatSurvivors - woundedAdded),   // really dead: not the ones who fled or lie in the Krankenhaus
         wounded: woundedAdded,
         enemyTroops: originalEnemyTroops,
         enemyDefense: originalEnemyDefense,
@@ -2086,7 +2096,7 @@ function resolveAttack(attack) {
         defenderCasualties,
         retreatSurvivors,
         defenderName: targetOwner ? botById[targetOwner].name : null, defenderId: targetOwner && targetOwner !== 'player' ? targetOwner : null,
-        atkParts, defParts, enemyWounded, plunder: plunder ? plunder.loot : 0, plunderSafe: plunder ? plunder.safe : 0,
+        atkParts, defParts, enemyWounded, plunder: plunder ? plunder.loot : 0, plunderSafe: plunder ? plunder.safe : 0, plunderRoh: plunder && plunder.roh || null, capitalHolds,
         atkGear: fighterSnapshot('player', attack.hx), defGear: targetOwner && targetOwner !== 'player' ? fighterSnapshot(targetOwner) : null,
         won,
         remaining, ...verstInfo
@@ -2098,13 +2108,13 @@ function resolveAttack(attack) {
         const meinName = profileName.value || 'Spieler';
         WELT.bericht(targetOwner, { type: 'botAttack', botName: meinName, botId: 'player', targetId: target.id, myTroops, atkRaw: attack.rawTroops, atkBonus: atkBonus,
             atkGear: fighterSnapshot('player', attack.hx), defGear: fighterSnapshot(targetOwner), enemyTroops: originalEnemyTroops, enemyDefense: originalEnemyDefense,
-            wounded: enemyWounded || 0, fallen: defWeg, won, capitalHolds, defGold: 0, plunder: plunder ? plunder.loot : 0, plunderSafe: plunder ? plunder.safe : 0, ...verstInfo },
-            capitalHolds ? meinName + ' hat deine Hauptstadt geplündert – die Garnison ist gefallen, aber die Stadt hält.' : won ? meinName + ' hat deine Basis ' + islandTitle(target) + ' erobert!' : 'Verteidigung erfolgreich – ' + meinName + ' bei ' + islandTitle(target) + ' zurückgeschlagen.');
+            wounded: enemyWounded || 0, fallen: defWeg, won, capitalHolds, defGold: 0, plunder: plunder ? plunder.loot : 0, plunderSafe: plunder ? plunder.safe : 0, plunderRoh: plunder && plunder.roh || null, ...verstInfo },
+            capitalHolds ? meinName + ' hat deine Hauptstadt geplündert (' + (beuteText(plunder) || 'nichts über dem Schutz') + ') – die Garnison ist gefallen, die Stadt brennt, aber sie hält.' : won ? meinName + ' hat deine Basis ' + islandTitle(target) + ' erobert!' : 'Verteidigung erfolgreich – ' + meinName + ' bei ' + islandTitle(target) + ' zurückgeschlagen.');
     }
 
-    flashHint(capitalHolds ? 'Die Hauptstadt von ' + botById[targetOwner].name + ' hält – ihre Garnison ist gefallen, ' + fmtCompact(remaining) + ' Truppen kehren zurück.' : (won
-        ? 'Sieg bei ' + islandTitle(target) + (targetOwner ? ' gegen ' + botById[targetOwner].name : '') + '! ' + fmtCompact(remaining) + ' übrig' + (woundedAdded ? ', ' + fmtCompact(woundedAdded) + ' ins Lazarett.' : '.')
-        : 'Niederlage bei ' + islandTitle(target) + ' – ' + fmtCompact(retreatSurvivors) + ' fliehen' + (woundedAdded ? ', ' + fmtCompact(woundedAdded) + ' ins Lazarett.' : '.')) + (plunder && plunder.loot ? ' Beute: ' + fmtCompact(plunder.loot) + ' Münzen.' : ''), 6000);
+    flashHint(capitalHolds ? 'Die Hauptstadt von ' + botById[targetOwner].name + ' brennt – ihre Garnison ist gefallen, ' + fmtCompact(remaining) + ' Truppen kehren mit der Beute zurück' + (beuteText(plunder) ? ': ' + beuteText(plunder) + '.' : '.') : (won
+        ? 'Sieg bei ' + islandTitle(target) + (targetOwner ? ' gegen ' + botById[targetOwner].name : '') + '! ' + fmtCompact(remaining) + ' übrig' + (woundedAdded ? ', ' + fmtCompact(woundedAdded) + ' ins Krankenhaus.' : '.')
+        : 'Niederlage bei ' + islandTitle(target) + ' – ' + fmtCompact(retreatSurvivors) + ' fliehen' + (woundedAdded ? ', ' + fmtCompact(woundedAdded) + ' ins Krankenhaus.' : '.')) + (plunder && plunder.loot && !capitalHolds ? ' Beute: ' + fmtCompact(plunder.loot) + ' Münzen.' : ''), 6000);
 }
 
 function resolveRetreat(retreat) {
@@ -2978,6 +2988,23 @@ function drawBuilding(island, ownerKey, z) {                                   /
   ctx.globalAlpha = Math.min(1, (size - 12) / 5);
   if (!bkDraw(bkSprite(island, ownerKey, false, z), x, y + ISO_OY * u)) ctx.drawImage(sp.c, x - 31 * u - 1 / dpr, y - 48 * u - 1 / dpr, sp.c.width / dpr * k, sp.c.height / dpr * k);
   ctx.globalAlpha = 1;
+  if (cap && brennt(island.id)) drawBrand(x, y - 14 * u, u);                  // eine geplünderte Hauptstadt brennt (nur zu sehen)
+}
+function drawBrand(x, y, u) {                                                  // Flammen auf den Dächern und Rauch, der aufsteigt
+  const t = performance.now();
+  ctx.save();
+  for (let i = 0; i < 5; i++) {                                                 // Rauch
+    const p = ((t / 2600) + i / 5) % 1, sx = x + Math.sin(i * 2.1 + p * 3) * 8 * u + p * 10 * u, sy = y - 16 * u - p * 46 * u, r = (5 + p * 14) * u;
+    ctx.fillStyle = 'rgba(40,36,34,' + (.42 * (1 - p)) + ')'; ctx.beginPath(); ctx.arc(sx, sy, r, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalCompositeOperation = 'lighter';
+  for (const [dx, dy, s] of [[-12, 2, 1], [9, -4, 1.15], [0, -12, .9], [15, 6, .8], [-5, 8, .75]]) {   // Flammen
+    const f = .75 + .25 * Math.sin(t / 90 + dx * 1.7) * Math.sin(t / 133 + dy), fx = x + dx * u, fy = y + dy * u, h = 13 * s * f * u;
+    const gr = ctx.createRadialGradient(fx, fy - h * .3, 0, fx, fy - h * .3, h);
+    gr.addColorStop(0, 'rgba(255,240,170,.95)'); gr.addColorStop(.35, 'rgba(255,150,40,.75)'); gr.addColorStop(1, 'rgba(200,40,10,0)');
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.ellipse(fx, fy - h * .35, h * .5, h, 0, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore(); liveAnimation = true;
 }
 
 // ===== BAUKUNST: the bases in 3D (baukunst.js), each model rendered once into a sprite (OW.game, lazy + cached) =====
@@ -5188,7 +5215,7 @@ function warStat(k, n, foe) {
 function statBump(k, n) { playerStats[k] = (playerStats[k] || 0) + (n || 1); store.set('openWaterStats', JSON.stringify(playerStats)); achCheckSoon(); passBump(k, n); }
 function goalBump(who, k, n) { if (!who) return; if (who === 'player') { try { statBump(k, n); } catch (e) {} } else if (botById[who]) botStat(who, k, n); }   // a counter for the Erfolge - yours or anyone else's
 const achStat = k => playerStats[k] || 0;
-const cityMinLevel = () => { const c = loadCity(); return Math.min(...CITY_BUILDINGS.filter(b => !['storage', 'tower', 'embassy', 'market'].includes(b.id)).map(b => c.levels[b.id] || 0)); };   // (the newer Lager doesn't count: nothing earned is lost)
+const cityMinLevel = () => { const c = loadCity(); return Math.min(...CITY_BUILDINGS.filter(b => !['embassy', 'market'].includes(b.id)).map(b => c.levels[b.id] || 0)); };   // (the newer Lager doesn't count: nothing earned is lost)
 const pvpWins = () => achStat('pvpWins') + achStat('emmaWins');   // (old saves counted only one player in emmaWins, frozen now - the two never overlap; ids stay so claims are kept)
 // the same numbers for everyone (the other players' side: botGoalVal in botlogik.js)
 const whoIslands = who => who === 'player' ? ownedIslands : botOwnedIslands[who] || new Set();
@@ -5244,8 +5271,8 @@ const ACHIEVEMENTS = [   // the old ids stay (claims are kept); the tiers of one
     { id: 'star5',   name: 'Sternenheld',      icon: 'star',    desc: 'Bring einen Helden auf 5 Sterne.',       goal: 5,    k: 'heroStars', gems: 600 },
     { id: 'fire10',  name: 'Kampfrausch',      icon: 'level',   desc: 'Lass Helden 10 Mal ihre Fähigkeit zünden.', goal: 10, k: 'heroFires', gems: 80 },
     { id: 'fire100', name: 'Heldensturm',      icon: 'level',   desc: 'Lass Helden 100 Mal ihre Fähigkeit zünden.', goal: 100, k: 'heroFires', gems: 400 },
-    { id: 'heal10k', name: 'Feldscher',        icon: 'plus',    desc: 'Heil 10.000 Verwundete im Lazarett.',    goal: 10000, k: 'healed', gems: 60 },
-    { id: 'heal1m',  name: 'Heiler der Meere', icon: 'plus',    desc: 'Heil 1.000.000 Verwundete im Lazarett.', goal: 1000000, k: 'healed', gems: 500 },
+    { id: 'heal10k', name: 'Feldscher',        icon: 'plus',    desc: 'Heil 10.000 Verwundete im Krankenhaus.',    goal: 10000, k: 'healed', gems: 60 },
+    { id: 'heal1m',  name: 'Heiler der Meere', icon: 'plus',    desc: 'Heil 1.000.000 Verwundete im Krankenhaus.', goal: 1000000, k: 'healed', gems: 500 },
     { id: 'shield1', name: 'Schutzschild',     icon: 'shield',  desc: 'Setz einen Friedensschild ein.',         goal: 1,    k: 'shields', gems: 20 },
     { id: 'shield10', name: 'Vorsichtig',      icon: 'shield',  desc: 'Setz 10 Friedensschilde ein.',           goal: 10,   k: 'shields', gems: 150 },
     { id: 'tele1',   name: 'Umzug',            icon: 'home',    desc: 'Verlege deine Hauptstadt.',              goal: 1,    k: 'teleports', gems: 30 },
@@ -5607,7 +5634,7 @@ function renderCombatLog() {
         if (g.heroOnly) return '<div class="logGear"><div class="logGearHeroes">' + heroes + '</div></div>';
         return '<div class="logGear"><div class="logGearHead">Stufe ' + g.lvl + (g.title ? ' · Titel ' + escapeHtml(g.title) : '') + '</div>' +
             '<div class="logGearItems">' + tiles + '</div>' + (heroes ? '<div class="logGearHeroes">' + heroes + '</div>' : '') +
-            '<div class="logGearMeta">Skill Angriff ' + g.skills[0] + ' · Verteidigung ' + g.skills[1] + '<br>Mauer ' + g.city[0] + ' · Lazarett ' + g.city[1] + ' · Heldenhalle ' + g.city[2] + '</div></div>'; };
+            '<div class="logGearMeta">Skill Angriff ' + g.skills[0] + ' · Verteidigung ' + g.skills[1] + '<br>Mauer ' + g.city[0] + ' · Krankenhaus ' + g.city[1] + ' · Heldenhalle ' + g.city[2] + '</div></div>'; };
     const fieldHeroLine = e => [[e.attacker, e.hA], [e.defender, e.hD]].map(([n, t]) => t ? ' · ' + (n === 'Du' ? 'dein Held ' : escapeHtml(n) + ' mit ') + escapeHtml(t) : '').join('');   // who led out in the open
     const fieldHeroDet = e => e.hx ? '<details><summary>Dein Held</summary>' + gearHtml({ items: [], lvl: playerLvl, hx: e.hx, skills: [], city: [], heroOnly: 1 }) + '</details>' : undefined;
     const partLines = (parts, first) => (parts || []).map((q, i) => '<div class="logLine' + (first && !i ? '' : q[1] < 0 ? ' buff malus' : ' buff') + '"><span>' + escapeHtml(q[0]) + (q[2] ? '<small class="logSrc">' + escapeHtml(q[2]) + '</small>' : '') + '</span><span>' + (first && !i ? '' : q[1] < 0 ? '−' : '+') + fmtD(Math.abs(q[1])) + '</span></div>').join('');   // each bonus with where it comes from
@@ -5647,12 +5674,12 @@ function renderCombatLog() {
                   (entry.n !== undefined ? '<div class="logRetreat">' + (entry.up ? 'Stufe ' + entry.open + ' freigeschaltet · ' : entry.open ? 'Freigeschaltet bis Stufe ' + entry.open + ' · ' : '') + entry.n + ' / ' + barbTagMax() + ' heute</div>' : '');
             const det = tr === undefined ? fieldHeroDet(entry) : '<details><summary>Kampfdetails</summary>' + (boss ? '' : logBalance(entry.atk, entry.def, icon('attack') + 'Du ' + fmtM(entry.atk), fmtM(entry.def) + ' Lager' + icon('defense'))) +
                 '<div class="logCompare">' + mySide + '<div class="logVsDivider">VS</div>' + foeSide + '</div>' + rew +
-                (entry.wounded ? '<div class="logRetreat logWounded">' + fmtNum(entry.wounded) + ' Verwundete gehen ins Lazarett – heile sie in der Stadt</div>' : '') +
+                (entry.wounded ? '<div class="logRetreat logWounded">' + fmtNum(entry.wounded) + ' Verwundete gehen ins Krankenhaus – heile sie in der Stadt</div>' : '') +
                 (entry.hx ? gearHtml({ items: [], lvl: playerLvl, hx: entry.hx, skills: [], city: [], heroOnly: 1 }) : '') + '</details>';
             if (boss) return logRowHtml('win', 'crown', logBadge('win', 'Tagesboss') + escapeHtml(entry.name),
-                fmtM(entry.dmg) + ' Schaden · noch ' + fmtM(entry.left) + ' Leben' + (entry.rank ? ' · Platz ' + entry.rank : '') + (entry.loss ? ' · ' + fmtM(entry.loss) + ' gefallen' : '') + (entry.wounded ? ' · ' + fmtM(entry.wounded) + ' ins Lazarett' : '') + (entry.gold ? ' · +' + fmtM(entry.gold) + ' Gold' : '') + fieldHeroLine(entry), ago(entry), det);
+                fmtM(entry.dmg) + ' Schaden · noch ' + fmtM(entry.left) + ' Leben' + (entry.rank ? ' · Platz ' + entry.rank : '') + (entry.loss ? ' · ' + fmtM(entry.loss) + ' gefallen' : '') + (entry.wounded ? ' · ' + fmtM(entry.wounded) + ' ins Krankenhaus' : '') + (entry.gold ? ' · +' + fmtM(entry.gold) + ' Gold' : '') + fieldHeroLine(entry), ago(entry), det);
             return logRowHtml(entry.won ? 'win' : 'loss', 'attack', logBadge(entry.won ? 'win' : 'loss', entry.won ? 'Besiegt' : 'Abgewehrt') + 'Barbaren · Stufe ' + entry.L,
-                'Du (' + fmtM(entry.atk) + ') gegen ' + fmtM(entry.def) + ' Krieger' + (entry.loss ? ' · ' + fmtM(entry.loss) + ' gefallen' : '') + (entry.wounded ? ' · ' + fmtM(entry.wounded) + ' ins Lazarett' : '') + (entry.gold ? ' · +' + fmtM(entry.gold) + ' Gold' : '') +
+                'Du (' + fmtM(entry.atk) + ') gegen ' + fmtM(entry.def) + ' Krieger' + (entry.loss ? ' · ' + fmtM(entry.loss) + ' gefallen' : '') + (entry.wounded ? ' · ' + fmtM(entry.wounded) + ' ins Krankenhaus' : '') + (entry.gold ? ' · +' + fmtM(entry.gold) + ' Gold' : '') +
                 (entry.crate ? ' · Kiste: ' + escapeHtml(entry.crate) : '') + (entry.sh ? ' · ' + escapeHtml(entry.sh) : '') + (entry.up ? ' · Stufe ' + entry.open + ' frei' : '') + (!entry.won && entry.left ? ' · noch ' + fmtM(entry.left) + ' im Lager' : '') + fieldHeroLine(entry), ago(entry), det);
         }
         if (entry.type === 'ev') return logRowHtml(entry.gut ? 'win' : 'loss', entry.ic || 'attack', logBadge(entry.gut ? 'win' : 'loss', String(entry.badge || '')) + escapeHtml(entry.title || ''), escapeHtml(entry.txt || ''), ago(entry));   // Events (Invasion, Drache)
@@ -5661,7 +5688,7 @@ function renderCombatLog() {
         if (entry.type === 'army') {
             const side = (n, own) => n === 'Du' ? (own ? 'Deine Armee' : 'deine Armee') : (own ? 'Die Armee von ' : 'die Armee von ') + escapeHtml(n);
             return logRowHtml(entry.won ? 'win' : 'loss', 'troops', logBadge(entry.won ? 'win' : 'loss', entry.won ? 'Armee siegt' : 'Armee geschlagen') + 'Kampf im Feld',
-                side(entry.attacker, true) + ' (' + fmtM(entry.atk) + ') gegen ' + side(entry.defender, false) + ' (' + fmtM(entry.def) + ')' + (entry.wounded ? ' · ' + fmtM(entry.wounded) + ' ins Lazarett' : '') + (entry.gold ? ' · +' + fmtM(entry.gold) + ' Gold' : '') + fieldHeroLine(entry), ago(entry), fieldHeroDet(entry));
+                side(entry.attacker, true) + ' (' + fmtM(entry.atk) + ') gegen ' + side(entry.defender, false) + ' (' + fmtM(entry.def) + ')' + (entry.wounded ? ' · ' + fmtM(entry.wounded) + ' ins Krankenhaus' : '') + (entry.gold ? ' · +' + fmtM(entry.gold) + ' Gold' : '') + fieldHeroLine(entry), ago(entry), fieldHeroDet(entry));
         }
         if (entry.type === 'volley') {
             const dead = entry.hit - entry.wounded;
@@ -5673,16 +5700,16 @@ function renderCombatLog() {
                 '</div><div class="logVsDivider">VS</div><div class="logSide"><div class="logSideLabel">Du · Thron</div>' +
                 (entry.n === 1 ? '<div class="logLine"><span>Truppen vorher</span><span>' + fmtD(entry.before) + '</span></div>' : '') +
                 '<div class="logLine"><span>Getroffen</span><span>' + fmtD(entry.hit) + '</span></div>' +
-                '<div class="logCasualty wounded"><span>Ins Lazarett</span><span>' + fmtD(entry.wounded) + '</span></div>' +
+                '<div class="logCasualty wounded"><span>Ins Krankenhaus</span><span>' + fmtD(entry.wounded) + '</span></div>' +
                 (dead > 0 ? '<div class="logCasualty"><span>Gefallen (kein Platz)</span><span>−' + fmtD(dead) + '</span></div>' : '') +
                 '<div class="logSum"><span>Noch im Thron</span><span>' + fmtD(entry.left) + '</span></div>' +
-                '</div></div><div class="logRetreat">Erobere die Wächter-Tempel, dann schweigen sie. Verwundete heilst du im Lazarett in deiner Stadt.</div></details>';
+                '</div></div><div class="logRetreat">Erobere die Wächter-Tempel, dann schweigen sie. Verwundete heilst du im Krankenhaus in deiner Stadt.</div></details>';
             return logRowHtml('loss', 'attack', logBadge('loss', 'Beschuss') + T(entry.targetId),
-                (entry.shotBy || []).length + ' Wächter-Tempel · ' + fmtM(entry.hit) + ' getroffen · ' + fmtM(entry.wounded) + ' ins Lazarett' + (entry.n > 1 ? ' · ' + entry.n + ' Salven' : ''), ago(entry), vdet);
+                (entry.shotBy || []).length + ' Wächter-Tempel · ' + fmtM(entry.hit) + ' getroffen · ' + fmtM(entry.wounded) + ' ins Krankenhaus' + (entry.n > 1 ? ' · ' + entry.n + ' Salven' : ''), ago(entry), vdet);
         }
         if (entry.type === 'scout') {
             return logRowHtml('scout', 'scout', logBadge('scout', 'Gespäht') + T(entry.targetId),
-                fmtM(entry.troops) + ' Truppen · ' + fmtM(entry.defense) + ' Verteidigung' + (entry.spy ? ' · ' + escapeHtml(entry.spy.name) + ', Stufe ' + fmtNum(entry.spy.lvl) : ''), ago(entry), spaeherBlickHtml(entry.spy));
+                (entry.ca ? 'ca. ' : '') + fmtM(entry.troops) + ' Truppen · ' + (entry.ca ? 'ca. ' : '') + fmtM(entry.defense) + ' Verteidigung' + (entry.spy ? ' · ' + escapeHtml(entry.spy.name) + ', Stufe ' + fmtNum(entry.spy.lvl) : ''), ago(entry), spaeherBlickHtml(entry.spy));
         }
         if (entry.type === 'retreat') {
             return logRowHtml('retreat', 'recall', logBadge('retreat', 'Rückkehr') + T(entry.toId), fmtM(entry.troops) + ' geflohene Truppen zurück', ago(entry));
@@ -5721,15 +5748,15 @@ function renderCombatLog() {
                         gearHtml(entry.defGear) +
                     '</div>' +
                 '</div>' +
-                (entry.wounded ? '<div class="logRetreat logWounded">' + fmtNum(entry.wounded) + ' Verwundete gehen ins Lazarett – heile sie in der Stadt</div>' : '') +
-                (entry.atkWounded ? '<div class="logRetreat logWounded">' + escapeHtml(entry.botName) + ' bringt ' + fmtNum(entry.atkWounded) + ' Verwundete ins Lazarett</div>' : '') +
+                (entry.wounded ? '<div class="logRetreat logWounded">' + fmtNum(entry.wounded) + ' Verwundete gehen ins Krankenhaus – heile sie in der Stadt</div>' : '') +
+                (entry.atkWounded ? '<div class="logRetreat logWounded">' + escapeHtml(entry.botName) + ' bringt ' + fmtNum(entry.atkWounded) + ' Verwundete ins Krankenhaus</div>' : '') +
                 (entry.atkFled ? '<div class="logRetreat">' + fmtNum(entry.atkFled) + ' Truppen von ' + escapeHtml(entry.botName) + ' fliehen zurück</div>' : '') +
                 (entry.defGold ? '<div class="logGold">Verteidigung: Gold +' + fmtBig(entry.defGold) + ' Münzen</div>' : '') +
                 plunderLine(entry, false) +
                 '</details>';
             if (entry.rolle === 'helfer') { const mh = entry.meine || {};   // deine Verstärkung bei einem Bündnis-Mitglied hat mitverteidigt
                 return logRowHtml(entry.won ? 'loss' : 'win', 'defense', logBadge(entry.won ? 'loss' : 'win', 'Verstärkung') + T(entry.targetId),
-                    escapeHtml(entry.defName || '?') + ' gegen ' + escapeHtml(entry.botName) + ' · ' + (entry.won ? 'gefallen' : 'gehalten') + ' · deine ' + fmtM(mh.n || 0) + ': −' + fmtM((mh.fallen || 0) + (mh.wounded || 0)) + (mh.wounded ? ' (' + fmtM(mh.wounded) + ' ins Lazarett)' : '') + vs, ago(entry), bdet); }
+                    escapeHtml(entry.defName || '?') + ' gegen ' + escapeHtml(entry.botName) + ' · ' + (entry.won ? 'gefallen' : 'gehalten') + ' · deine ' + fmtM(mh.n || 0) + ': −' + fmtM((mh.fallen || 0) + (mh.wounded || 0)) + (mh.wounded ? ' (' + fmtM(mh.wounded) + ' ins Krankenhaus)' : '') + vs, ago(entry), bdet); }
             const wer = escapeHtml(entry.botName) + (angreiferZeilen(entry, gearHtml) ? ' (gemeinsam, ' + entry.angreifer.length + ' Angreifer)' : '');
             return entry.capitalHolds
                 ? logRowHtml('loss', 'bot', logBadge('loss', 'Geplündert') + T(entry.targetId), wer + ' hat die Garnison geschlagen – die Stadt hält' + vs, ago(entry), bdet)
@@ -5777,8 +5804,8 @@ function renderCombatLog() {
             '</div>' +
             (entry.killGold ? '<div class="logGold">Angriff: Gold +' + fmtBig(entry.killGold) + ' Münzen für getötete Truppen</div>' : entry.killGold === undefined && entry.attackGoldRate ? '<div class="logGold">Angriff: Gold +' + fmt1(entry.attackGoldRate) + ' pro getöteter Truppe</div>' : '') +
             (!entry.won && entry.retreatSurvivors ? '<div class="logRetreat">' + fmtNum(entry.retreatSurvivors) + ' Truppen konnten fliehen und kehren zurück</div>' : '') +
-            (entry.wounded ? '<div class="logRetreat logWounded">' + fmtNum(entry.wounded) + ' Verwundete gehen ins Lazarett – heile sie in der Stadt</div>' : '') +
-            (entry.enemyWounded ? '<div class="logRetreat logWounded">' + escapeHtml(entry.defenderName || 'Der Gegner') + ' bringt ' + fmtNum(entry.enemyWounded) + ' Verwundete ins Lazarett</div>' : '') +
+            (entry.wounded ? '<div class="logRetreat logWounded">' + fmtNum(entry.wounded) + ' Verwundete gehen ins Krankenhaus – heile sie in der Stadt</div>' : '') +
+            (entry.enemyWounded ? '<div class="logRetreat logWounded">' + escapeHtml(entry.defenderName || 'Der Gegner') + ' bringt ' + fmtNum(entry.enemyWounded) + ' Verwundete ins Krankenhaus</div>' : '') +
             plunderLine(entry, true) +
             '</details>';
         return logRowHtml(entry.won ? 'win' : 'loss', entry.won ? 'level' : 'losses',
@@ -6374,14 +6401,14 @@ function throneVolley(times, silent) {                // times: several volleys 
     if (loss <= 0) return null;
     islandTroops[megaTempleId] = g0 - loss;
     let w = 0;
-    if (holder === 'player') { w = hospitalTake(loss, 100); warStat('fallen', loss - w);   // everyone hit is carried to the Lazarett, as far as there is room
+    if (holder === 'player') { w = hospitalTake(loss, 100); warStat('fallen', loss - w);   // everyone hit is carried to the Krankenhaus, as far as there is room
         if (!silent) setTimeout(() => spawnBattleFx(megaTempleId, false, 'Beschuss', '−' + fmtCompact(loss) + ' Truppen'), 1100);
         const prev = combatLog[0], shotBy = shooters.map(g => { const o = islandOwnerOf(g); return o && o !== 'player' ? botById[o].name : 'unbesetzt'; });
         if (prev && prev.type === 'volley' && Date.now() - prev.at < 30 * 60000) {          // one report for a run of volleys, not one every few minutes
             Object.assign(prev, { n: prev.n + times, hit: prev.hit + loss, wounded: prev.wounded + w, left: g0 - loss, shotBy, at: Date.now() });
             store.set('openWaterCombatLog', JSON.stringify(combatLog)); refreshOpenCombatLog();
         } else addCombatLogEntry({ type: 'volley', targetId: megaTempleId, n: times, before: g0, hit: loss, wounded: w, left: g0 - loss, shotBy });
-        if (!silent) flashHint(shooters.length + (shooters.length === 1 ? ' Wächter-Tempel feuert' : ' Wächter-Tempel feuern') + ' auf den Thron: ' + fmtCompact(loss) + ' Truppen getroffen' + (w ? ', ' + fmtCompact(w) + ' davon ins Lazarett.' : ' – kein Platz im Lazarett.') + ' Erobere die Wächter-Tempel, dann schweigen sie.', 4500); }
+        if (!silent) flashHint(shooters.length + (shooters.length === 1 ? ' Wächter-Tempel feuert' : ' Wächter-Tempel feuern') + ' auf den Thron: ' + fmtCompact(loss) + ' Truppen getroffen' + (w ? ', ' + fmtCompact(w) + ' davon ins Krankenhaus.' : ' – kein Platz im Krankenhaus.') + ' Erobere die Wächter-Tempel, dann schweigen sie.', 4500); }
     else botHospitalTake(holder, loss, 100);
     saveGame();
     return { loss, w };
@@ -6439,7 +6466,7 @@ function renderThroneShop() {
             '<div class="ts-row">' + icon('points') + '<span>Du bekommst</span><b>' + (inc ? '+' + inc + ' alle 3 Min.' : 'nichts – erobere die Mitte') + '</b></div>' +
             (bo ? '<div class="ts-row">' + icon(bo.who === 'player' ? 'losses' : 'gem') + '<span>' + (bo.who === 'player' ? 'Kopfgeld auf dich' : 'Kopfgeld') + '</span><b' + (bo.who === 'player' ? ' class="warn"' : '') + '>' + fmtNum(bo.gems) + ' Gems · ' + fmtCompact(bo.coins) + '</b></div>' : '') +
         '</div>' +
-        '<p class="mail-intro">Wer den Mega-Tempel hält, bekommt alle 3 Min. ' + THRONE_PTS_MEGA + ' Thron-Punkte, jeder Wächter-Tempel bringt ' + THRONE_PTS_GUARD + '. Genauso oft feuern die Wächter-Tempel, die dem Herrscher nicht gehören, auf die Truppen im Mega-Tempel (je ' + THRONE_FIRE_PCT + ' %) – die Getroffenen kommen ins Lazarett, soweit Platz ist.</p>' +
+        '<p class="mail-intro">Wer den Mega-Tempel hält, bekommt alle 3 Min. ' + THRONE_PTS_MEGA + ' Thron-Punkte, jeder Wächter-Tempel bringt ' + THRONE_PTS_GUARD + '. Genauso oft feuern die Wächter-Tempel, die dem Herrscher nicht gehören, auf die Truppen im Mega-Tempel (je ' + THRONE_FIRE_PCT + ' %) – die Getroffenen kommen ins Krankenhaus, soweit Platz ist.</p>' +
         '<div class="sect"><h4>Eintauschen</h4></div><div class="throne-list">' +
         THRONE_OFFERS.filter(o => !o.once).map(o => { const done = o.once && throneOwned('player', o), n = throneAmount('player', o.id);   // looks are bought in the Aussehen sheet
             const sub = o.id === 'coins' ? fmtCompact(n) + ' – so viel, wie dein Reich in 1 Std. verdient' : o.id === 'troops' ? fmtCompact(n) + ' – eine Stunde deiner Ausbildung, in die Hauptstadt'
@@ -6806,7 +6833,7 @@ function welcomeRows(from) {
     const lv = from.live, pr = lv ? { coins: Math.max(0, coins - lv.c0), troops: Math.max(0, now.troops - lv.t0), capped: false, thronePts: Math.max(0, (throneState.pts || 0) - lv.tp0), throneHit: null } : from.produced;
     if (pr && (pr.coins > 0 || pr.troops > 0)) rows.push(['coin', 'Produktion' + (pr.capped ? ' (8 Std.)' : ''), '+' + fmtCompact(pr.coins) + ' · ' + fmtCompact(pr.troops) + ' Truppen']);
     if (pr && pr.thronePts > 0) rows.push(['crown', 'Am Thron', '+' + fmtNum(pr.thronePts) + ' Thron-Punkte']);
-    if (pr && pr.throneHit) rows.push(['attack', 'Beschuss auf den Thron', fmtCompact(pr.throneHit.loss) + ' getroffen · ' + fmtCompact(pr.throneHit.w) + ' im Lazarett']);
+    if (pr && pr.throneHit) rows.push(['attack', 'Beschuss auf den Thron', fmtCompact(pr.throneHit.loss) + ' getroffen · ' + fmtCompact(pr.throneHit.w) + ' im Krankenhaus']);
     const onYou = log.filter(e => e.type === 'botAttack' && e.rolle !== 'helfer'), lost = onYou.filter(e => e.won && !e.capitalHolds).length, held = onYou.filter(e => !e.won).length;
     if (onYou.length) rows.push(['shield', (onYou.length === 1 ? 'Ein Angriff' : onYou.length + ' Angriffe') + ' auf dich', held + ' abgewehrt' + (lost ? ' · ' + lost + ' verloren' : '')]);
     const foes = {}; for (const e of onYou) foes[e.botName] = (foes[e.botName] || 0) + 1;
@@ -6819,7 +6846,7 @@ function welcomeRows(from) {
     const built = Object.keys(now.city).filter(k => (now.city[k] || 0) > ((from.city || {})[k] || 0));
     if (built.length) rows.push(['upgrade', 'Fertig gebaut', built.map(k => cityDef(k).name + ' ' + now.city[k]).join(', ')]);
     if (now.bases !== from.bases) rows.push(['castle', 'Basen', from.bases + ' → ' + now.bases]);
-    if (now.wounded > (from.wounded || 0)) rows.push(['losses', 'Im Lazarett', fmtCompact(now.wounded) + ' Verwundete']);
+    if (now.wounded > (from.wounded || 0)) rows.push(['losses', 'Im Krankenhaus', fmtCompact(now.wounded) + ' Verwundete']);
     if (!rows.length) rows.push(['check', 'Alles ruhig', 'Niemand hat dich angegriffen']);
     return rows;
 }
@@ -7623,7 +7650,7 @@ function wanderArrive(now) {                          // the storm: same maths a
     if (shieldCovers(islandById[wander.to]) && ownerShielded(owner, Math.min(now, wander.arriveAt || now))) { Object.assign(wander, { at: from, to: null, campUntil: now + 20000 }); saveWander(); return; }
     const capitalHolds = won && isCapital(tgt.id);          // capitals are never razed: only the garrison falls and he pulls back
     if (capitalHolds) {
-        islandTroops[tgt.id] = 0;
+        islandTroops[tgt.id] = 0; brandSetzen(tgt.id);          // (die Hauptstadt brennt – nur zu sehen)
         wander.troops = Math.max(1, Math.round(my - def * .6 - en * .3));
         Object.assign(wander, { at: from, to: null, campUntil: now + 45000 });
     } else if (won) {
@@ -7648,7 +7675,7 @@ function wanderArrive(now) {                          // the storm: same maths a
         spawnMapBattle({ sourceId: from, targetId: tgt.id, atk: 'boss', def: 'mine', my, myLoss: my - wander.troops, en, enLoss: fallen, won,
             onEnd: () => spawnBattleFx(tgt.id, !won || capitalHolds, capitalHolds ? 'Hauptstadt hält' : won ? 'Basis verloren' : 'Verteidigt', capitalHolds ? 'Garnison gefallen' : won ? 'von ' + name : name + ' abgewehrt') });
         addCombatLogEntry({ type: 'botAttack', botName: name, targetId: tgt.id, myTroops: my, enemyTroops: en, enemyDefense: def, wounded, armor: armorDefenseFor(tgt.id), fallen, won, capitalHolds, defGold: wGold });
-        flashHint((capitalHolds ? name + ' hat die Garnison deiner Hauptstadt geschlagen – die Stadt hält.' : won ? name + ' hat deine Basis ' + islandTitle(tgt) + ' zerstört!' : 'Verteidigt! ' + name + ' wurde bei ' + islandTitle(tgt) + ' zurückgeschlagen.') + (wounded ? ' ' + fmtCompact(wounded) + ' Verwundete ins Lazarett.' : ''), 5000);
+        flashHint((capitalHolds ? name + ' hat die Garnison deiner Hauptstadt geschlagen – die Stadt hält.' : won ? name + ' hat deine Basis ' + islandTitle(tgt) + ' zerstört!' : 'Verteidigt! ' + name + ' wurde bei ' + islandTitle(tgt) + ' zurückgeschlagen.') + (wounded ? ' ' + fmtCompact(wounded) + ' Verwundete ins Krankenhaus.' : ''), 5000);
     }
     if (owner && owner !== 'player' && botById[owner] && botById[owner].mensch) {   // ein echter Spieler: der Bericht kommt bei ihm an (wie bei jedem Angriff)
         const t = islandTitle(tgt);
@@ -7742,54 +7769,56 @@ function checkRuler() {             // announces a change of ruler once
 // ===== Teil 08-stadt.js: Stadt und Gebäude, Burg, Aussehen, Helden, Stadtansicht, Stufenaufstieg =====
 // ===== CAPITAL / CITY (step 1: buildings can be built and upgraded, effects come later) =====
 var CITY_BUILDINGS = [
-    { id: 'academy',  name: 'Akademie',      icon: 'flask',   x: 215, y: 430, roof: '#2f4f86', dome: true,
-      desc: 'Hier wird geforscht: Wirtschaft, Militär und Erkundung (eine Forschung gleichzeitig). Jede Stufe erlaubt weitere Forschung und lässt deine Truppen 2 % schneller laufen.' },
+    { id: 'academy',  name: 'Labor',         icon: 'flask',   x: 215, y: 430, roof: '#2f4f86', dome: true,
+      desc: 'Hier wird alles geforscht: Wirtschaft (auch Tempel), Militär und Erkundung (auch Späher und Wachturm) – eine Forschung gleichzeitig, jede kostet Rohstoffe und Zeit. Jede Stufe erlaubt weitere Forschung und lässt deine Truppen 2 % schneller laufen.' },
     { id: 'forge',    name: 'Schmiede',      icon: 'weapon',  x: 785, y: 430, roof: '#4a4a52', chimney: true,
       desc: 'Wähle oben die Art und dann ein Ausrüstungsteil aus deinem Besitz, um es mit Sternen zu verbessern: jeder Stern +20 % Wirkung des Teils. Jede Stufe erlaubt einen Stern mehr.' },
-    { id: 'hospital', name: 'Lazarett',      icon: 'plus',    x: 215, y: 670, roof: '#e8e2d2', cross: true,
+    { id: 'hospital', name: 'Krankenhaus',   icon: 'plus',    x: 215, y: 670, roof: '#e8e2d2', cross: true,
       desc: 'Von deinen Gefallenen (Angriff oder Verteidigung) kommen Verwundete hierher statt zu sterben (5 % pro Stufe, bis 60 %). Heile sie gegen Münzen – sie gehen in die Hauptstadt.' },
-    { id: 'shrine',   name: 'Tempelschrein', icon: 'temple',  x: 785, y: 670, roof: '#c9a54e', dome: true, desc: 'Verstärkt den Bonus aller deiner Tempel: Münzen, Truppen und Gems.' },
     { id: 'wall',     name: 'Mauer',         icon: 'defense', x: 715, y: 815, roof: '#6b6456', gate: true,
       desc: 'Stärkt die Verteidigung aller deiner Basen: +2 % pro Stufe (Stufe 25: +50 %). Beispiel: 10 Mio. Verteidigung und Mauer Stufe 5 ergeben 11 Mio.' },
-    { id: 'barracks', name: 'Kaserne',       icon: 'troops',
-      desc: 'Bildet Truppen aus: +2 % Truppenproduktion in allen deinen Basen pro Stufe (Stufe 25: +50 %).' },
-    { id: 'treasury', name: 'Schatzkammer',  icon: 'coin',  
-      desc: 'Verwaltet das Gold des Reiches: +2 % Münzproduktion in allen deinen Basen pro Stufe (Stufe 25: +50 %).' },
-    { id: 'watch',    name: 'Späherturm',    icon: 'scout', 
-      desc: 'Bildet Späher aus: deine Späher sind pro Stufe 4 % schneller unterwegs (Stufe 25: doppelt so schnell).' },
     { id: 'heroes',   name: 'Heldenhalle',   icon: 'profile', x: 285, y: 815, roof: '#7a2e2a',
       desc: 'Hier leben deine Helden: mit Splittern freischalten, Sterne aufwerten, Fähigkeiten wählen. Ein Held führt einen Angriff oder eine Armee. Jede Stufe gibt allen Helden +' + HERO_HALL_GEF + ' % Gefolge.' },
-    { id: 'storage',  name: 'Lager',         icon: 'lock',
-      desc: 'Schützt deine Münzen: fällt eine deiner Basen oder die Garnison der Hauptstadt, nimmt der Sieger einen Teil deiner Münzen mit – aber nie, was im Lager liegt. Jede Stufe schützt mehr.' },
-    // Paket D (aufbau.js): erst ab einer Burg-Stufe zu bauen
-    { id: 'tower',    name: 'Wachturm',      icon: 'tower',
-      desc: 'Hält Ausschau: zeigt dir, wie stark Angriffe auf deine Basen sind (ab Stufe 10 genau, mit Truppen-Stufe und Held), und deine Spähberichte verraten mehr (Burg, Truppen-Stufe, ab Stufe 5 die Forschung). Ab Burg-Stufe 3.' },
     { id: 'embassy',  name: 'Botschaft',     icon: 'bund',
-      desc: 'Für dein Bündnis: Hilfe und Rally-Truppen zu Mitgliedern laufen 3 % schneller je Stufe, Bündnis-Geschenke an dich sind 4 % größer je Stufe. Ab Burg-Stufe 5.' },
+      desc: 'Das Bündnis-Gebäude: je Stufe mehr Platz für Verstärkung von Mitgliedern, größere Rallys (mehr Truppen dürfen beitreten) und mehr Bündnis-Hilfen (Mitglieder tippen „Helfen“ – dein Bau oder deine Forschung geht schneller). Dazu laufen Hilfe und Rally-Truppen schneller, Geschenke sind größer. Ab Burg-Stufe 5.' },
     { id: 'market',   name: 'Markt',         icon: 'market',
       desc: 'Tausche Holz, Stein und Eisen gegen Münzen – oder kaufe Rohstoffe, die dir fehlen. Mit Gebühr (sinkt mit jeder Stufe) und Tageslimit. Ab Burg-Stufe 4.' },
-    // Rohstoffe kommen aus der Stadt (Alexander 2.10.): je ein Gebäude vor der Mauer, dazu die Felder draußen zum Sammeln
+    // Rohstoffe kommen aus der Stadt (Alexander 2.10.): je ein Gebäude in der Stadt (seit 4.10. innerhalb der Mauer), dazu die Felder draußen zum Sammeln
     { id: 'lumber',   name: 'Holzfäller',    icon: 'wood',
-      desc: 'Fällt Holz vor der Stadtmauer – jede Stunde, auch wenn du nicht spielst. Jede Stufe bringt mehr. Holz brauchst du für die Burg, Gebäude und Forschung.' },
+      desc: 'Fällt Holz in deiner Stadt – jede Stunde, auch wenn du nicht spielst. Jede Stufe bringt mehr. Holz brauchst du für die Burg, Gebäude und Forschung.' },
     { id: 'quarry',   name: 'Steinbruch',    icon: 'stone',
-      desc: 'Bricht Stein vor der Stadtmauer – jede Stunde, auch wenn du nicht spielst. Jede Stufe bringt mehr. Stein brauchst du vor allem für Burg, Mauer und Gebäude.' },
+      desc: 'Bricht Stein in deiner Stadt – jede Stunde, auch wenn du nicht spielst. Jede Stufe bringt mehr. Stein brauchst du vor allem für Burg, Mauer und Gebäude.' },
     { id: 'mine',     name: 'Eisenmine',     icon: 'iron',
-      desc: 'Fördert Eisen vor der Stadtmauer – jede Stunde, auch wenn du nicht spielst. Jede Stufe bringt mehr. Eisen brauchst du für hohe Burg-Stufen, Forschung und Truppen-Stufen.' }
+      desc: 'Fördert Eisen in deiner Stadt – jede Stunde, auch wenn du nicht spielst. Jede Stufe bringt mehr. Eisen brauchst du für die Burg, Gebäude und Forschung.' }
 ];
-// Lager: what a fallen base (or a beaten capital garrison) gives away - the same for everyone
-var PLUNDER_PCT = { base: .02, capital: .04 }, PLUNDER_CAP_H = .5;   // a share of the coins above the Lager, at most 30 min of the victim's income per fight
-function storageSafe(lvl) { return lvl ? niceRound(10000 * Math.pow(1.65, lvl - 1)) : 0; }   // coins no attacker can take: 10 Tsd. at 1, ~900 Tsd. at 10, ~1,7 Mrd. at 25 (a share of a full coffer, not all of it - plunder stays worth it)
-function plunderOf(who, capital) {                  // { loot, safe }: the share of the coins above the Lager's protection
-    const have = Math.max(0, who === 'player' ? coins : botCoins[who] || 0), safe = storageSafe(who === 'player' ? cityLevelSafe('storage') : botBld(who, 'storage'));
+// Beute (Alexander 4.10.) – gleich für alle. Die Burg schützt von jedem Rohstoff (Gold, Holz, Stein, Eisen) einen Teil.
+// Fällt eine Basis (Turm): der Sieger bekommt NUR Gold (ein kleiner Teil über dem Schutz). Die Hauptstadt fällt nie: gewinnt der
+// Angreifer, bekommt er von JEDEM Rohstoff einen kleinen Teil über dem Schutz (HAUPT_BEUTE) und die Hauptstadt brennt (nur zu
+// sehen). Gewinnt der Verteidiger, bekommt der Angreifer nichts. Rohstoffe gibt es nur aus der Hauptstadt.
+var PLUNDER_PCT = { base: .02 }, PLUNDER_CAP_H = .5;   // Turm: 2 % des Golds über dem Schutz, höchstens 30 Min. seiner Einnahmen je Kampf
+const HAUPT_BEUTE = .1;                              // Hauptstadt: 10 % von jedem Rohstoff über dem Schutz – klein, damit man oft angreifen muss
+const schutzVon = who => AUF ? AUF.burgSchutz(who) : 0;
+function plunderOf(who, capital) {                  // { loot (Gold), roh: {h, s, e} (nur Hauptstadt), safe }
+    const have = Math.max(0, who === 'player' ? coins : botCoins[who] || 0), safe = schutzVon(who);
+    if (capital) { const r = AUF ? AUF.rohVon(who) : null, roh = { h: 0, s: 0, e: 0 };
+        if (r) for (const x of ['h', 's', 'e']) roh[x] = Math.floor(Math.max(0, (r[x] || 0) - safe) * HAUPT_BEUTE);
+        return { loot: Math.floor(Math.max(0, have - safe) * HAUPT_BEUTE), roh, safe: Math.min(have, safe) }; }
     const cap = Math.max(1e6, hourProduction(who).coins * PLUNDER_CAP_H);   // at most half an hour of the victim's income per fight - a big coffer isn't drained base by base
-    return { loot: Math.floor(Math.min(cap, Math.max(0, have - safe) * PLUNDER_PCT[capital ? 'capital' : 'base'])), safe: Math.min(have, safe) };
+    return { loot: Math.floor(Math.min(cap, Math.max(0, have - safe) * PLUNDER_PCT.base)), safe: Math.min(have, safe) };
 }
-function plunderMove(from, to, loot) {              // the coins change hands (the player's or anyone's coffers)
-    if (!(loot > 0)) return; if (from === 'player') coins -= loot; else botCoins[from] = Math.max(0, (botCoins[from] || 0) - loot);
-    if (to === 'player') coins += loot; else if (to) botCoins[to] = (botCoins[to] || 0) + loot;
+function plunderMove(from, to, loot, roh) {         // Gold (und bei der Hauptstadt Holz, Stein, Eisen) wechselt den Besitzer
+    if (loot > 0) { if (from === 'player') coins -= loot; else botCoins[from] = Math.max(0, (botCoins[from] || 0) - loot);
+        if (to === 'player') coins += loot; else if (to) botCoins[to] = (botCoins[to] || 0) + loot; }
+    if (roh && AUF && (roh.h || roh.s || roh.e)) { AUF.rohDazu(from, { h: -roh.h, s: -roh.s, e: -roh.e }); if (to) AUF.rohDazu(to, roh); }
 }
+const beuteText = p => p ? [p.loot ? fmtCompact(p.loot) + ' Gold' : '', ...(p.roh ? [['h', 'Holz'], ['s', 'Stein'], ['e', 'Eisen']].filter(([x]) => p.roh[x] > 0).map(([x, n]) => fmtCompact(p.roh[x]) + ' ' + n) : [])].filter(Boolean).join(', ') : '';
+// die Hauptstadt brennt nach einem verlorenen Kampf (nur zu sehen) – Welt-Teil openWaterBrand: { Basis: brennt bis }
+const BRAND_MS = 30 * 60000;
+var brand = (() => { try { const v = JSON.parse(store.get('openWaterBrand')); return v && typeof v === 'object' ? v : {}; } catch (e) { return {}; } })();
+function brandSetzen(id) { const now = Date.now(); for (const k in brand) if (brand[k] < now) delete brand[k]; brand[id] = now + BRAND_MS; store.set('openWaterBrand', JSON.stringify(brand)); requestRender(); }
+const brennt = id => (brand[id] || 0) > Date.now();
 var CITY_MAX_LEVEL = 25, CITY_GEMS_PER_MIN = 1;
-function cityMaxLevel(id) { return id === 'forge' ? STAR_MAX : id === 'hospital' || id === 'storage' ? 40 : CITY_MAX_LEVEL; }   // (die Burg: 25, siehe aufbau.js)   // the Schmiede stops at the star maximum, the Lazarett and the Lager go on to 40 (room for huge armies and coffers)
+function cityMaxLevel(id) { return id === 'forge' ? STAR_MAX : id === 'hospital' ? 40 : CITY_MAX_LEVEL; }   // (die Burg: 25, siehe aufbau.js)   // the Schmiede stops at the star maximum, the Krankenhaus goes on to 40 (room for huge armies)
 var cityState = null;
 function loadCity() {
     if (cityState) return cityState;
@@ -7797,7 +7826,7 @@ function loadCity() {
     if (!cityState || !cityState.levels) cityState = { levels: {}, builds: [] };
     for (const b of CITY_BUILDINGS) if (typeof cityState.levels[b.id] !== 'number') cityState.levels[b.id] = 0;
     if (!(cityState.levels.keep >= 1)) cityState.levels.keep = 1;                                  // Paket D: Burg-Stufe (alte Spielstände: 1)
-    if (!cityState.fo || typeof cityState.fo !== 'object') cityState.fo = {}; if (!(cityState.tier >= 1)) cityState.tier = 1;   // Forschung, Truppen-Stufe
+    if (!cityState.fo || typeof cityState.fo !== 'object') cityState.fo = {}; delete cityState.tier; delete cityState.tierBez;   // Forschung (Truppen-Stufen gibt es nicht mehr)
     cityBuildsFix(cityState);
     if (typeof cityState.wounded !== 'number') cityState.wounded = 0;
     cityState.levels.forge = Math.min(cityState.levels.forge, cityMaxLevel('forge'));   // the Schmiede ends at the star maximum
@@ -8102,7 +8131,7 @@ function cityNutz(id, lvl) {                       // die eigene Seite eines Geb
     if (id === 'academy') return lvl || loadCity().foRun ? ['Forschen', 'flask'] : null;
     if (id === 'heroes') return ['Helden', 'profile'];
     if (!lvl) return null;
-    return { forge: ['Schmieden', 'weapon'], hospital: ['Heilen', 'plus'], market: ['Handeln', 'market'], embassy: ['Verstärkung', 'bund'], barracks: ['Truppen-Stufe', 'troops'] }[id] || null;
+    return { forge: ['Schmieden', 'weapon'], hospital: ['Heilen', 'plus'], market: ['Handeln', 'market'], embassy: ['Verstärkung', 'bund'] }[id] || null;
 }
 function cityBildSpr(id, lvl) {                    // dasselbe Bild wie in der Stadt
     if (id === 'keep') return citySprite('keep', Math.min(4, Math.floor((lvl || 1) / 5)));
@@ -8162,7 +8191,7 @@ function renderCitySheet() {                       // (läuft auch jede Sekunde 
     const bld = cityBuildOf(c, id), building = !!bld, blocker = cityBlocker(id);
     let cls, nh;
     if (building) { cls = 'notice notice--gold';
-        nh = icon('hourglass') + '<span style="flex:1">Ausbau auf Stufe ' + bld.to + ' · noch <b id="cityBNoteTime"></b><div class="city-progress" style="margin-top:6px"><i></i></div></span>'; }
+        nh = icon('hourglass') + '<span style="flex:1">Ausbau auf Stufe ' + bld.to + ' · noch <b id="cityBNoteTime"></b><div class="city-progress" style="margin-top:6px"><i></i></div>' + (typeof bundHilfeKnopf === 'function' ? bundHilfeKnopf('bau', id, bld.to, bld.endsAt) : '') + '</span>'; }
     else { cls = 'notice city-wirkung'; nh = icon('info') + '<span>' + cityEffectText(id, lvl) + '</span>'; }
     if (note.className !== cls) note.className = cls;
     liveHtml(note, nh);
@@ -8239,7 +8268,7 @@ const HERO_EFF = { atk: ['atk', 'fight'], loss: ['loss', 'fight'], hosp: ['hosp'
     strongAtk: ['atk', 'strong'], midAtk: ['atk', 'mid'], midLoss: ['loss', 'mid'], guardAtk: ['atk', 'guard'], rulerAtk: ['atk', 'ruler'], templeLoss: ['loss', 'temple'], templeGold: ['gold', 'temple'],
     templeAtk: ['atk', 'temple'], templeHosp: ['hosp', 'temple'], scoutAtk: ['atk', 'scouted'], neutralAtk: ['atk', 'neutral'], fieldAtk: ['atk', 'vsArmy'], fieldGold: ['gold', 'field'],
     fieldLoss: ['loss', 'field'], fieldDef: ['fdef', 'fdefending'], resAtk: ['atk', 'res'], gatherDef: ['fdef', 'gatherDef'], gatherSpd: ['gSpd', 'gather'], carry: ['carry', 'gather'], rage: [null, 'never'] };
-const HERO_FX_TXT = { atk: v => '+' + v + ' % Angriff', loss: v => '−' + v + ' % Verluste', def: v => 'Verteidigung −' + v + ' %', hosp: v => '+' + v + ' % ins Lazarett', gold: v => '+' + v + ' % Gold',
+const HERO_FX_TXT = { atk: v => '+' + v + ' % Angriff', loss: v => '−' + v + ' % Verluste', def: v => 'Verteidigung −' + v + ' %', hosp: v => '+' + v + ' % ins Krankenhaus', gold: v => '+' + v + ' % Gold',
     flee: v => '+' + v + ' % fliehen', ret: v => 'Rückzug +' + v + ' % Tempo', late: v => v + ' % später bemerkt', spd: v => '+' + v + ' % Tempo', toll: v => '−' + v + ' % Maut',
     fdef: v => '+' + v + ' % Verteidigung', gSpd: v => '+' + v + ' % Sammeln', carry: v => '+' + v + ' % Traglast' };
 function heroGefOf(hx, n) { return hx ? Math.min(hx.gef || 0, Math.max(0, n)) : 0; }   // Gefolge: never more than the troops the hero leads (no 1-troop marches with a big following)
@@ -8562,10 +8591,10 @@ function heroChipHtml(id, q) { const h = heroById(id); if (!h) return ''; const 
 function academyLevel() { return loadCity().levels.academy || 0; }
 function forgeLevel() { return loadCity().levels.forge || 0; }
 function hospitalLevel() { return loadCity().levels.hospital || 0; }
-function hospitalPct() { return Math.min(60, hospitalLevel() * 5) + (AUF ? AUF.lazarettPlus('player') : 0); }   // (+ Forschung Lazarett)
+function hospitalPct() { return Math.min(60, hospitalLevel() * 5) + (AUF ? AUF.lazarettPlus('player') : 0); }   // (+ Forschung Krankenhaus)
 function hospitalCapacity() { const l = hospitalLevel(); return l ? Math.round(1e6 * Math.pow(1.6, l - 1)) : 0; }
 const HEAL_COIN_PER_TROOP = 0.1;
-function hospitalTake(fallen, pct) {              // Lazarett: part of your fallen (attack won or lost, or defending) are only wounded → how many
+function hospitalTake(fallen, pct) {              // Krankenhaus: part of your fallen (attack won or lost, or defending) are only wounded → how many
     if (!hospitalLevel() || fallen <= 0) return 0;
     const c = loadCity(), room = Math.max(0, hospitalCapacity() - c.wounded), w = Math.min(room, Math.floor(fallen * (pct ?? hospitalPct()) / 100));
     if (w > 0) { c.wounded += w; saveCity(); }
@@ -8573,24 +8602,16 @@ function hospitalTake(fallen, pct) {              // Lazarett: part of your fall
 }
 function starGemCost(stars) { return 20 * (stars + 1); }
 function cityEffectText(id, lvl) {
-    if (AUF && ['academy', 'tower', 'embassy', 'market', 'lumber', 'quarry', 'mine'].includes(id)) return AUF.effektText(id, lvl);   // Paket D (aufbau.js), Rohstoff-Gebäude
+    if (AUF && ['academy', 'embassy', 'market', 'lumber', 'quarry', 'mine'].includes(id)) return AUF.effektText(id, lvl);   // Paket D (aufbau.js), Rohstoff-Gebäude
     if (id === 'wall') return lvl ? 'Jetzt: +' + (lvl * 2) + ' % Verteidigung auf allen Basen.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: +' + ((lvl + 1) * 2) + ' %.' : '') : 'Baue die Mauer für mehr Verteidigung auf allen Basen.';
     if (id === 'academy') return 'Jetzt: Truppen laufen +' + (lvl * 2) + ' % schneller.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: +' + ((lvl + 1) * 2) + ' %.' : '');
     if (id === 'forge') return lvl ? 'Bis zu ' + Math.min(STAR_MAX, lvl) + (Math.min(STAR_MAX, lvl) === 1 ? ' Stern' : ' Sterne') + ' pro Ausrüstungsteil.' + (lvl < STAR_MAX ? ' Nächste Stufe: ' + (lvl + 1) + ' Sterne.' : '') : 'Baue die Schmiede, um Sterne zu setzen.';
     if (id === 'heroes') { const n = HEROES.filter(h => heroOwned('player', h.id)).length; return (lvl ? 'Jetzt: +' + lvl * HERO_HALL_GEF + ' % Gefolge für alle Helden.' : 'Noch kein Bonus aufs Gefolge.') + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: +' + (lvl + 1) * HERO_HALL_GEF + ' %.' : '') + ' ' + n + ' von ' + HEROES.length + ' Helden freigeschaltet.'; }
-    const nx = (per, what) => (lvl ? 'Jetzt: +' + lvl * per + ' % ' + what + '.' : 'Noch keine Wirkung.') + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: +' + (lvl + 1) * per + ' %.' : '');
-    if (id === 'barracks') return nx(2, 'Truppenproduktion auf allen Basen');
-    if (id === 'treasury') return nx(2, 'Münzproduktion auf allen Basen');
-    if (id === 'watch') return nx(4, 'schnellere Späher');
-    if (id === 'shrine') return nx(5, 'Bonus aus allen deinen Tempeln (Münzen, Truppen, Gems)');
-    if (id === 'storage') { const safe = storageSafe(lvl), pl = Math.round(PLUNDER_PCT.base * 100) + ' % pro gefallener Basis, ' + Math.round(PLUNDER_PCT.capital * 100) + ' % bei der Hauptstadt (höchstens ' + Math.round(PLUNDER_CAP_H * 60) + ' Min. deiner Einnahmen pro Kampf)';
-        return (lvl ? 'Geschützt: ' + fmtCompact(safe) + ' Münzen' + (coins <= safe ? ' – gerade alles sicher.' : ' – darüber verlierst du ' + pl + '.') : 'Noch nichts geschützt: fällt eine Basis, verlierst du ' + pl + ' deiner Münzen.') +
-            (lvl < cityMaxLevel(id) ? ' Nächste Stufe schützt ' + fmtCompact(storageSafe(lvl + 1)) + (/\.$/.test(fmtCompact(storageSafe(lvl + 1))) ? '' : '.') : ''); }
-    if (id === 'hospital') return lvl ? hospitalPct() + ' % der Gefallenen kommen ins Lazarett · Platz für ' + fmtCompact(hospitalCapacity()) + (lvl < cityMaxLevel('hospital') ? ' · Nächste Stufe: ' + Math.min(60, (lvl + 1) * 5) + ' %, Platz für ' + fmtCompact(Math.round(1e6 * Math.pow(1.6, lvl))) : '') : 'Baue das Lazarett, um Verwundete zu retten.';
+    if (id === 'hospital') return lvl ? hospitalPct() + ' % der Gefallenen kommen ins Krankenhaus · Platz für ' + fmtCompact(hospitalCapacity()) + (lvl < cityMaxLevel('hospital') ? ' · Nächste Stufe: ' + Math.min(60, (lvl + 1) * 5) + ' %, Platz für ' + fmtCompact(Math.round(1e6 * Math.pow(1.6, lvl))) : '') : 'Baue das Krankenhaus, um Verwundete zu retten.';
     return '';
 }
 function cityExtraHtml(id, lvl) {
-    if (AUF && ['academy', 'barracks', 'market'].includes(id)) return AUF.extraHtml(id, lvl);   // Forschung, Truppen-Stufe, Markt (aufbau.js)
+    if (AUF && ['academy', 'market'].includes(id)) return AUF.extraHtml(id, lvl);   // Forschung, Markt (aufbau.js)
     if (id === 'heroes') { const up = HEROES.filter(h => heroCanDo('player', h.id)).length;   // the way into the hero screen
         return '<button type="button" class="btn btn--primary btn--grow hh-open" data-hero-open>' + icon('profile') + '<span>Helden öffnen</span>' + (up ? '<em class="hh-badge">' + up + '</em>' : '') + '</button>'; }
     if (id === 'embassy' && lvl && typeof verstHtml === 'function') return verstHtml();   // Botschaft: Verstärkung (buendnis.js)
@@ -8675,14 +8696,13 @@ const CITY_WALL = { a: 150, b: 490 };                                       // t
 // Straßen dazwischen wie ein „#“, vorn das Tor mit der Hauptstraße. Draußen: Wald (Holzfäller), Berge (Steinbruch),
 // ein Hügel (Eisenmine), Felder, ein Fluss und die Mühle.
 const CITY_LOTS = {                                                          // building lots (ground centre, world units)
-    shrine: [206, 206], academy: [282, 206], heroes: [358, 206], storage: [434, 206],
-    forge: [206, 282], barracks: [434, 282],
-    embassy: [206, 358], tower: [434, 358],
-    watch: [206, 434], hospital: [282, 434], market: [358, 434], treasury: [434, 434],
-    wall: [320, 490],
-    lumber: [84, 262], quarry: [198, 80], mine: [456, 562]                    // Rohstoffe: vor der Mauer (gleich im Bild)
+    lumber: [206, 206], academy: [282, 206], heroes: [358, 206], quarry: [434, 206],
+    forge: [206, 282],
+    embassy: [206, 358],
+    hospital: [282, 434], market: [358, 434], mine: [434, 434],
+    wall: [320, 490]                                                         // Rohstoffe: in der Base (Alexander 4.10.)
 };
-const CITY_DRAUSSEN = new Set(['lumber', 'quarry', 'mine']);
+const CITY_DRAUSSEN = new Set();
 const CITY_KEEP_AT = [320, 320];
 const cIso = (x, y) => [(x - y) * .866, (x + y) * .5];                    // world → screen units (before zoom)
 let cityCam = null, cityPointers = new Map(), cityGesture = null, CITY_GROUND = null, CITY_WALLS = null, CITY_SPRITES = new Map();
@@ -8807,14 +8827,6 @@ const CITY_PAINT = {
         if (t >= 2) { K.pyramid(-15, 15, 5, 2, 8, '#e8e2d2'); K.box(-18, -8, -19, -12, 2, 9, '#f3eee2', .7); cityGable(K, -19, -7, -20, -11, 9, 5, '#b33a2e'); }
         if (t >= 3) { for (const [x, y] of [[4, 17], [9, 17]]) { const [a, b] = K.P(x, y, 2); K.poly([[a - 2, b], [a, b - 1], [a + 2, b], [a, b + 1]], '#6aa84f', .3); } cityBanner(K, 12, 10.2, 12, '#c0392b'); }
     },
-    shrine(K, t) {
-        K.box(-20, 20, -20, 20, 0, 2, '#d9d0bb', .7); K.box(-16, 16, -16, 16, 2, 4, '#e3dac6', .7);
-        const n = t >= 2 ? 8 : 6;
-        for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2; K.cyl(Math.cos(a) * 11, Math.sin(a) * 11, 1.4, 4, 18, '#f3ecdc', .5, true); }
-        K.cyl(0, 0, 13, 18, 20, '#e8dfca', .7);
-        if (t >= 3) K.dome(0, 0, 12, 20, 12, '#d9b454'); else K.cone(0, 0, 14, 20, 11, '#c9a54e');
-        const [a, b] = K.P(0, 0, 8); K.poly([[a - 2.5, b], [a, b - 4], [a + 2.5, b], [a, b + 3]], '#ffd98a', .4);          // the flame
-    },
     heroes(K, t) {
         cityPlinth(K, 21, 2);
         K.box(-17, 15, -12, 8, 2, 16, '#efe6d2', .8); cityGable(K, -18, 16, -13, 9, 16, 12, '#7a2e2a'); cityWindows(K, -14, 12, 8, 13, 5, true);
@@ -8822,22 +8834,6 @@ const CITY_PAINT = {
         const on = Math.ceil(HEROES.filter(h => heroOwned('player', h.id)).length / HEROES.length * 3);   // a lit statue for every third of the heroes
         [0, 1, 2].forEach(i => { const x = -10 + i * 10; K.box(x - 2, x + 2, 13, 17, 2, 5, '#8a7f68', .5); K.cyl(x, 15, 1.4, 5, 10, i < on ? '#d9b454' : '#9a927f', .4); });
         cityBanner(K, -15, 8.2, 14, '#7a2e2a'); cityBanner(K, 13, 8.2, 14, '#7a2e2a'); if (t >= 3) cityBanner(K, -1, 2.2, 26, '#e4c886');
-    },
-    barracks(K, t) {
-        K.poly([K.P(-21, -21, 0), K.P(21, -21, 0), K.P(21, 21, 0), K.P(-21, 21, 0)], '#b39d74', .6);                        // drill yard
-        for (let i = -21; i <= 21; i += 6) K.box(i - .5, i + .5, 20.5, 21.5, 0, 3, '#6b4a2c', .3);
-        K.box(-19, 9, -19, -9, 0, 11, '#d8cbb0', .8); cityGable(K, -20, 10, -20, -8, 11, 7, '#8a3a2a'); cityWindows(K, -16, 6, -9, 8, 4, false);
-        if (t >= 2) { K.box(-19, -9, -5, 17, 0, 10, '#d8cbb0', .8); cityGableY(K, -20, -8, -6, 18, 10, 6, '#8a3a2a'); cityWindowsR(K, -9, -3, 15, 7, 4); }
-        for (const [x, y] of [[4, 8], [10, 4], [14, 12]]) { K.box(x - .4, x + .4, y - .4, y + .4, 0, 5, '#6b4a2c', .3); K.box(x - 1.6, x + 1.6, y - .4, y + .4, 3.6, 4.4, '#6b4a2c', .3); }   // training dummies
-        if (t >= 3) { K.box(15, 20, -20, -15, 0, 22, '#9d9585', .7); K.pyramid(17.5, -17.5, 3.5, 22, 7, '#8a3a2a'); }
-    },
-    treasury(K, t) {
-        cityPlinth(K, 21, 3, '#9d9585');
-        K.box(-14, 14, -12, 12, 3, 16, '#d8d1c1', .9); K.merlons(-14, 14, -12, 12, 16, '#d8d1c1', 5);
-        cityDoor(K, 0, 12, 9);
-        if (t >= 2) { K.cyl(0, 0, 8, 16, 20, '#e8dfca', .7); K.dome(0, 0, 8.5, 20, 10, '#d9b454'); } else K.pyramid(0, 0, 12, 16, 8, '#6d8a4a');
-        for (const [x, y, n] of [[16, 14, 3], [-16, 16, 2], [16, -6, t >= 3 ? 3 : 1]]) for (let i = 0; i < n; i++) K.cyl(x, y, 2.2, 3 + i * 1.3, 4.3 + i * 1.3, '#e8c547', .4);
-        if (t >= 3) for (const x of [-10, 10]) K.cyl(x, 13, 1.3, 3, 15, '#f3ecdc', .5, true);
     },
     gatehouse(K, t) {                                                       // the gate in the front wall = the Mauer building
         if (!t) { K.box(-14, -8, -4, 4, 0, 14, '#8a6440', .6); K.box(8, 14, -4, 4, 0, 14, '#8a6440', .6); K.box(-14, 14, -4, 4, 14, 17, '#6b4a2c', .6);
@@ -8848,17 +8844,6 @@ const CITY_PAINT = {
         K.poly([[a - 5, b - 9], [a + 5, b - 14.5], [a + 5, b - 12], [a - 5, b - 6.5]], 'rgba(60,54,44,.8)', .4);                                   // portcullis bar
         for (const x of [-15, 15]) { K.cyl(x, 0, 7, 0, h + 6, s, .8); K.cone(x, 0, 8.5, h + 6, 10 + t * 2, roof); const [fa, fb] = K.P(x, 0, h + 16 + t * 2); K.flag(fa, fb, BAND.player, true); }
         if (t >= 2) { cityBanner(K, -6, 6.2, h - 3, '#2b5d9b'); cityBanner(K, 6, 6.2, h - 3, '#2b5d9b'); }
-    },
-    storage(K, t) {                                                         // the Lager: a timber barn with crates and sacks, stone and gold-bound chests later
-        cityPlinth(K, 19, 2, '#8e8676');
-        const wall = t >= 3 ? '#d8d1c1' : '#b98d5a', roof = t >= 2 ? '#6b4a8a' : '#7a5230';
-        K.box(-14, 10, -12, 8, 2, 13, wall, .8); cityGable(K, -15, 11, -13, 9, 13, 8, roof);
-        const [dx, dy] = K.P(-2, 8, 2); K.poly([[dx - 5, dy + 2.9], [dx + 5, dy - 2.9], [dx + 5, dy - 11.5], [dx - 5, dy - 5.7]], '#4a3018', .6);   // the big barn door
-        K.poly([[dx - 5, dy + 2.9], [dx + 5, dy - 11.5]], null, .5); K.poly([[dx + 5, dy - 2.9], [dx - 5, dy - 5.7]], null, .5);
-        for (const [x, y, z] of [[14, 12, 2], [18, 12, 2], [14, 16, 2], [16, 14, 6]]) K.box(x - 2, x + 2, y - 2, y + 2, z, z + 4, '#a0783f', .4);   // crates
-        for (const [x, y] of [[-15, 14], [-11, 15]]) K.cyl(x, y, 2.2, 2, 6, '#d9c9a0', .4);                          // sacks
-        if (t >= 2) { K.box(12, 19, -16, -6, 2, 11, wall, .7); cityGableY(K, 11, 20, -17, -5, 11, 5, roof); }
-        if (t >= 3) { for (const [x, y] of [[4, 15], [8, 15]]) { K.box(x - 1.8, x + 1.8, y - 1.4, y + 1.4, 2, 5.2, '#7a5230', .4); K.box(x - 1.8, x + 1.8, y - 1.4, y + 1.4, 4.6, 5.4, '#e8c547', .3); } cityBanner(K, -12, 8.2, 12, '#6b4a8a'); }
     },
     lumber(K, t) {                                                          // Holzfäller: Hütte, Stämme, Sägebock, Bäume drumherum
         K.box(-16, 0, -14, -2, 0, 9, '#9a7448', .7); cityGable(K, -17, 1, -15, -1, 9, 6, '#3f6b33'); cityDoor(K, -8, -2, 6); cityWindows(K, -14, -10, -2, 7, 1, false);
@@ -8880,16 +8865,6 @@ const CITY_PAINT = {
         K.box(-6, -2, 9, 22, 0, .6, '#5a5550', .2); K.box(-5.6, -2.4, 15, 19, .6, 4.4, '#7a4a2a', .5); K.box(-5.4, -2.6, 15.2, 18.8, 4.4, 5.6, '#3b3b40', .3);   // Schienen, Lore mit Erz
         if (t >= 2) { K.box(10, 18, 6, 14, 0, 7, '#9a7448', .5); cityGable(K, 9, 19, 5, 15, 7, 4, '#4a4a52'); cityWindows(K, 11, 17, 14, 5, 2, true); }
     },
-    tower(K, t) {                                                           // Wachturm (Paket D): hoher Steinturm mit Feuerkorb und Wehrgang
-        const h = 34 + t * 9;
-        K.box(-11, 11, -11, 11, 0, 2, '#9d9585', .7);
-        K.cyl(0, 0, 7, 2, h, '#bdb3a0', .8); cityWindowsR(K, 6, -2, 2, h - 8, 1); cityWindows(K, -2, 2, 6, h - 14, 1, true);
-        K.cyl(0, 0, 9, h, h + 3, '#a89f8c', .7); K.merlons(-8, 8, -8, 8, h + 3, '#a89f8c', 4);
-        if (t >= 2) { K.box(-3, 3, -3, 3, h + 3, h + 9, '#6b4a2c', .5); const [a, b] = K.P(0, 0, h + 11); K.poly([[a - 3, b], [a, b - 6], [a + 3, b], [a, b + 2]], '#ffb347', .4); }
-        else K.cone(0, 0, 9, h + 3, 9, '#7a2e2a');
-        if (t >= 3) { K.cyl(-12, 10, 3, 2, 18, '#bdb3a0', .6); K.cone(-12, 10, 4, 18, 6, '#7a2e2a'); }
-        const [fa, fb] = K.P(0, 0, h + (t >= 2 ? 14 : 12)); K.flag(fa, fb, BAND.player, true);
-    },
     embassy(K, t) {                                                         // Botschaft: helles Haus mit Säulen und vielen Fahnen (das Bündnis)
         cityPlinth(K, 21, 2, '#b8b0a0');
         K.box(-15, 13, -10, 10, 2, 14, '#f1ead8', .8); cityGable(K, -16, 14, -11, 11, 14, 8, '#2e6b5a'); cityWindows(K, -12, 10, 10, 11, 4, false);
@@ -8908,14 +8883,6 @@ const CITY_PAINT = {
         for (const [x, y] of [[16, 16], [18, 12], [-16, 16]]) K.cyl(x, y, 1.8, 0, 4, '#8a6440', .4);
         if (t >= 3) { K.box(-2, 4, 14, 19, 0, 4, '#9c7e4c', .4); cityBanner(K, -10, -3.8, 9, '#b5651d'); }
     },
-    watch(K, t) {
-        const h = 30 + t * 8;
-        K.box(-9, 9, -9, 9, 0, 2, '#9d9585', .7);
-        K.box(-5, 5, -5, 5, 2, h, '#cfc6b3', .8); cityWindowsR(K, 5, -3, 3, h - 6, 1); cityWindows(K, -3, 3, 5, h - 6, 1, true);
-        if (t >= 2) { K.box(-7, 7, -7, 7, h, h + 2, '#cfc6b3', .7); K.merlons(-7, 7, -7, 7, h + 2, '#cfc6b3', 4); }
-        const top = h + (t >= 2 ? 2 : 0); K.pyramid(0, 0, 6.5, top, 10, '#2f5e9a');
-        const [a, b] = K.P(0, 0, top + 10); K.flag(a, b, BAND.player, true);
-    },
 };
 function g2Cross(poly, x, y) { poly([[x - 1.2, y - 4], [x + 1.2, y - 4], [x + 1.2, y - 1.2], [x + 4, y - 1.2], [x + 4, y + 1.2], [x + 1.2, y + 1.2], [x + 1.2, y + 4], [x - 1.2, y + 4], [x - 1.2, y + 1.2], [x - 4, y + 1.2], [x - 4, y - 1.2], [x - 1.2, y - 1.2]], '#c0392b', .4); }
 
@@ -8924,7 +8891,7 @@ const CITY_SPR_SCALE = 5;
 function citySprite(kind, tier, extraKey) {
     const key = kind + ':' + tier + ':' + (extraKey || '');
     let s = CITY_SPRITES.get(key); if (s) return s;
-    const art = kind === 'ghost' ? extraKey : kind, w = 64, up = art === 'keep' ? 90 : art === 'watch' || art === 'tower' ? 80 : 52, down = art === 'keep' ? 42 : 26;   // screen-unit box around the ground anchor
+    const art = kind === 'ghost' ? extraKey : kind, w = 64, up = art === 'keep' ? 90 : 52, down = art === 'keep' ? 42 : 26;   // screen-unit box around the ground anchor
     const c = document.createElement('canvas'); c.width = w * 2 * CITY_SPR_SCALE; c.height = (up + down) * CITY_SPR_SCALE;
     const g = c.getContext('2d'), K = cityPainter(g, CITY_SPR_SCALE, w * CITY_SPR_SCALE, up * CITY_SPR_SCALE);
     if (kind === 'ghost') cityGhost(g, K, extraKey, c, w * CITY_SPR_SCALE, up * CITY_SPR_SCALE); else (CITY_PAINT[kind] || CITY_PAINT.plot)(K, tier);
@@ -9062,14 +9029,12 @@ function cityPaintGround() {
     // 4) Wege draußen: die Hauptstraße vom Tor nach Süden, Pfade zu Holzfäller, Steinbruch und Eisenmine
     cityStrip(g, [[320, 492], [320, 600], [306, 700], [300, 780]], 22, 'rgba(92,78,56,.85)'); cityStrip(g, [[320, 492], [320, 600], [306, 700], [300, 780]], 17, dirt);
     cityStrip(g, [[320, 492], [320, 540]], 17, cob);
-    for (const p of [[[320, 586], [380, 572], [432, 566]], [[146, 318], [112, 298], [96, 280]], [[318, 146], [262, 104], [222, 92]]]) { cityStrip(g, p, 10, 'rgba(92,78,56,.6)'); cityStrip(g, p, 7, dirt); }
-    for (const [x, y, r] of [[84, 262, 40], [198, 80, 40], [456, 562, 34]]) { const pts = []; for (let i = 0; i < 18; i++) { const a = i / 18 * Math.PI * 2; pts.push([x + Math.cos(a) * r * (.85 + R() * .25), y + Math.sin(a) * r * (.85 + R() * .25)]); } cityGroundPoly(g, pts, dirt); }
     // 5) Berge hinten, Wald links, hinten rechts, jenseits des Flusses und hinter den Feldern – in Tiefen-Reihenfolge gemalt
     const dinge = [];
     for (const [x, y, r, h] of [[110, 6, 62, 92], [232, -34, 58, 80], [36, 92, 54, 72], [-36, 178, 50, 62], [334, -62, 52, 70], [-96, 292, 46, 54], [432, -104, 50, 62], [-130, 410, 40, 44]])
         for (const [dx, dy, k] of [[0, 0, 1], [-r * .55, r * .25, .62], [r * .4, -r * .45, .7]]) dinge.push({ d: x + dx + y + dy, f: () => cityMountain(g, K, x + dx, y + dy, r * k, h * k * (.85 + R() * .3), pal, R) });
     for (const [x, y, r, h] of [[166, 24, 30, 34], [60, 160, 26, 26], [-60, 262, 24, 24], [300, 10, 26, 28]]) dinge.push({ d: x + y, f: () => cityMountain(g, K, x, y, r, h, pal, R) });   // Hügel davor
-    const frei = (x, y) => { for (const [cx, cy, r] of [[84, 262, 52], [198, 80, 52], [456, 562, 44], [96, 280, 26], [112, 298, 20], [262, 104, 20]]) if (Math.hypot(x - cx, y - cy) < r) return false;
+    const frei = (x, y) => {
         return !(x > 120 && x < 520 && y > 120 && y < 520) && !(x > 160 && x < 430 && y > 500 && y < 712) && !(x > 480 && y > 470 && x + y < 1110) && !(x > 548 && x < 668 && y < 470) && !(x > 610 && x < 740 && y > 420 && y < 640); };
     for (let i = 0, n = Math.round(420 * pal.wald); i < n; i++) {
         const x = -170 + R() * 980, y = -170 + R() * 980;
@@ -9163,7 +9128,7 @@ function cityPaintWalls(lvl) {
     return CITY_WALLS = { key, back: back.c, front: front.c, S, B: WB };
 }
 
-// ---- people: villagers on the streets, soldiers drilling at the barracks ----
+// ---- people: villagers on the streets ----
 const CITY_PATHS = [
     [[CC, 600], [CC, 494], [CC, 380]], [[244, 244], [396, 244], [396, 396], [244, 396], [244, 244]],
     [[244, 178], [244, 462]], [[396, 462], [396, 178]], [[178, 244], [462, 244]], [[462, 396], [178, 396]], [[CC, 172], [CC, 260]], [[172, CC], [260, CC]]
@@ -9302,8 +9267,6 @@ function cityFrame(now) {
     if (!cityFolk) cityMakeFolk();
     const dt = Math.min(.1, (now - (cityFrame.last || now)) / 1000); cityFrame.last = now;
     for (const f of cityFolk) { f.t += f.v * dt * (f.cart ? .5 : 1); const [x, y] = cityPathPoint(f.p, f.t); items.push({ x, y, folk: f }); }
-    if (c.levels.barracks) for (let i = 0; i < 9; i++) { const [bx, by] = CITY_LOTS.barracks, step = Math.sin(now / 900) * 5;
-        items.push({ x: bx + 2 + (i % 3) * 5 + step, y: by + 4 + Math.floor(i / 3) * 5, soldier: true }); }
     items.sort((p, q) => (p.x + p.y) - (q.x + q.y));
     // Boden, hintere Mauer und die weichen Schatten der Häuser ändern sich nur mit der Kamera. Steht sie still, liegen sie
     // fertig in einem Bild (CITY_LAGEN, wird einmal gemalt) – das spart pro Bild das teure Verkleinern der großen Boden- und
@@ -9357,7 +9320,6 @@ function cityFrame(now) {
                 g.fillStyle = 'rgba(255,' + Math.round(200 - t * 120) + ',60,' + (1 - t) + ')'; g.fillRect(ax + Math.cos(an) * t * 12 * Z, ay + Math.sin(an) * t * 10 * Z + t * t * 8 * Z, Math.max(1, Z * .6), Math.max(1, Z * .6)); } }
         if (it.deco === 'fountain') { const [fx, fy] = toS(it.x, it.y, 10); g.strokeStyle = 'rgba(190,230,250,.8)'; g.lineWidth = Math.max(1, Z * .5);
             for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2 + now / 2000, r = 6 * Z; g.beginPath(); g.moveTo(fx, fy); g.quadraticCurveTo(fx + Math.cos(a) * r * .6, fy - 3 * Z, fx + Math.cos(a) * r, fy + Math.sin(a) * r * .5 + 7 * Z); g.stroke(); } }
-        if (it.id === 'shrine' && it.lvl) { const [fx, fy] = toS(it.x, it.y, 10); g.fillStyle = 'rgba(255,210,110,' + (.18 + .1 * Math.sin(now / 350)) + ')'; g.beginPath(); g.arc(fx, fy, 9 * Z, 0, 7); g.fill(); }
         if (!it.id) continue;
         const building = !!cityBuildOf(c, it.id === '_keep' ? 'keep' : it.id);
         if (building) {                                                      // scaffolding + a bouncing hammer
@@ -9368,7 +9330,7 @@ function cityFrame(now) {
             const [hx, hy] = toS(it.x, it.y, 34); drawGlyph(g, 'upgrade', hx, hy - Math.abs(Math.sin(now / 180)) * 8, Math.max(16, 9 * Z), '#ffd98a');
             liveAnimation = true;
         }
-        const hw = (it.keep ? 40 : 30) * Z, top = sy - (it.keep ? 70 : it.id === 'watch' || it.id === 'tower' ? 58 : 38) * Z;
+        const hw = (it.keep ? 40 : 30) * Z, top = sy - (it.keep ? 70 : 38) * Z;
         cityHitRects.push({ id: it.id, x: sx - hw, y: top, w: hw * 2, h: sy + 14 * Z - top, cx: sx, cy: sy - (it.keep ? 30 : 16) * Z, depth: it.x + it.y });
         if (it.id === cityRingId) { const el = document.getElementById('cityRing'), tf = 'translate(' + Math.round(sx) + 'px,' + Math.round(sy + (it.keep ? 4 : 0) * Z) + 'px)';   // die runden Knöpfe folgen dem Gebäude
             if (el.style.transform !== tf) el.style.transform = tf; if (el.style.visibility) el.style.visibility = ''; }
@@ -9743,7 +9705,7 @@ function fieldArrive(m, now) {
     const fb = fieldBattle(m.who, m.troops, o.who, o.troops, aHx, dHx), won = fb.won, involved = m.who === 'player' || o.who === 'player';   // a fight for the field: army against army
     const loserName = fieldWhoName(won ? o.who : m.who), winnerName = fieldWhoName(won ? m.who : o.who), oWho = o.who;
     if (won) st.occ = { who: m.who, troops: m.troops - fb.aLoss, homeId: m.homeId, hero: m.hero || null, hero2: m.hero2 || null, since: now, got: 0 }; else o.troops -= fb.dLoss;
-    for (const [w, n, hx] of [[m.who, fb.aLoss, aHx], [oWho, fb.dLoss, dHx]]) fieldHurt(w, n, hx);   // both sides' Lazarett (+ their hero)
+    for (const [w, n, hx] of [[m.who, fb.aLoss, aHx], [oWho, fb.dLoss, dHx]]) fieldHurt(w, n, hx);   // both sides' Krankenhaus (+ their hero)
     evPunkte('krieg', m.who, fb.dLoss / WO_KILL_PER); evPunkte('krieg', oWho, fb.aLoss / WO_KILL_PER);   // Krieger-Woche
     const fg = fieldGold(m.who, oWho, fb, aHx, dHx);
     if (involved) {
@@ -9966,7 +9928,7 @@ function barbArrive(m, now) {
     flashHint(fb.won ? 'Barbaren-Lager Stufe ' + c.L + ' besiegt: +' + fmtCompact(gold) + ' Münzen' + (it ? ', Kiste: ' + it : '') + (sh ? ', ' + shN + ' Splitter' : '') + ' – abholen unter Events.' : 'Das Lager hat standgehalten – es hat jetzt noch ' + fmtCompact(c.t) + ' Krieger.', 4500);
     updateHud(); saveGame(); saveProgression(); barbSheetRefresh();
 }
-function dbossHit(m, now) {                         // every attack takes life off the boss (at most 5 %); a quarter of those who struck fall (Lazarett as usual), the rest come home
+function dbossHit(m, now) {                         // every attack takes life off the boss (at most 5 %); a quarter of those who struck fall (Krankenhaus as usual), the rest come home
     const b = dayBoss, who = m.who, isP = who === 'player';
     if (!b || b.d !== m.d || b.d !== todayKey() || b.hp <= 0) { barbHome(m, m.troops, now); if (isP) flashHint('Der Tagesboss ist schon gefallen – deine Truppen kehren um.', 3500); return; }
     const hx = heroFieldFx(who, m.hero, {}, m.hero2), h = hx || HX0, fa = (1 + (fieldAtkPct(who) + h.atk) / 100) * titleMult(who, 'attack') * (AUF ? AUF.kampf(who, 'a') : 1);
@@ -10341,11 +10303,11 @@ function invAnkunft(I, a, now) {                     // die Armee erreicht ihr Z
     const verlustAlle = Math.min(en, Math.round(durch ? en * .6 : a.t * .35));
     islandTroops[a.tid] = Math.max(0, (islandTroops[a.tid] || 0) - verlustAlle);
     const vs = vk ? verstNachKampf(a.tid, vk, false) : null, verlust = vs ? vs.eigenWeg : verlustAlle, wounded = verlust > 0 ? fieldHurt(o, verlust, null) : 0;   // (jeder seinen Anteil)
-    if (vs) for (const h of vs.helfer) if (h.fallen + h.wounded > 0) bundMelden(h.w, 'Barbaren-Invasion bei ' + islandTitle(isl) + ': deine Verstärkung verlor ' + fmtCompact(h.fallen + h.wounded) + (h.wounded ? ' (' + fmtCompact(h.wounded) + ' ins Lazarett)' : '') + '.');
+    if (vs) for (const h of vs.helfer) if (h.fallen + h.wounded > 0) bundMelden(h.w, 'Barbaren-Invasion bei ' + islandTitle(isl) + ': deine Verstärkung verlor ' + fmtCompact(h.fallen + h.wounded) + (h.wounded ? ' (' + fmtCompact(h.wounded) + ' ins Krankenhaus)' : '') + '.');
     if (!durch) { invPunkteDazu(I, o, INV_PTS_WEHR); I.wehr[o] = (I.wehr[o] || 0) + 1; evPunkte('krieg', o, a.t / WO_KILL_PER); }
     const titel = islandTitle(isl);
     evBericht(o, { type: 'ev', ic: 'defense', gut: !durch, badge: durch ? 'Überrannt' : 'Abgewehrt', title: 'Barbaren-Invasion · ' + titel,
-        txt: fmtCompact(a.t) + ' Barbaren gegen ' + fmtCompact(en + def) + ' · ' + fmtCompact(verlust) + ' Truppen verloren' + (wounded ? ' (' + fmtCompact(wounded) + ' ins Lazarett)' : '') + (durch ? '' : ' · +' + INV_PTS_WEHR + ' Punkte'), at: now },
+        txt: fmtCompact(a.t) + ' Barbaren gegen ' + fmtCompact(en + def) + ' · ' + fmtCompact(verlust) + ' Truppen verloren' + (wounded ? ' (' + fmtCompact(wounded) + ' ins Krankenhaus)' : '') + (durch ? '' : ' · +' + INV_PTS_WEHR + ' Punkte'), at: now },
         durch ? 'Barbaren haben ' + titel + ' überrannt – ' + fmtCompact(verlust) + ' Truppen verloren.' : 'Barbaren-Welle bei ' + titel + ' abgewehrt: +' + INV_PTS_WEHR + ' Punkte.');
     spawnBattleFx(a.tid, !durch, durch ? 'Überrannt' : 'Abgewehrt', 'Barbaren-Invasion');
 }
@@ -10359,7 +10321,7 @@ function invTreffer(m, now) {                        // deine (oder ihre) Truppe
     barbHome(m, m.troops - fb.loss, now); evDirty = true;
     const ziel = islandById[a.tid], fuer = ziel && islandOwnerOf(ziel.id) !== who ? ' (auf ' + fieldWhoName(islandOwnerOf(ziel.id)) + ')' : '';
     evBericht(who, { type: 'ev', ic: 'attack', gut: fb.won, badge: fb.won ? 'Besiegt' : 'Geschwächt', title: 'Barbaren-Armee' + fuer,
-        txt: fmtCompact(fb.SA) + ' gegen ' + fmtCompact(fb.won ? a.t : a.t + fb.kill) + ' Barbaren · ' + fmtCompact(fb.loss) + ' gefallen' + (wounded ? ' (' + fmtCompact(wounded) + ' ins Lazarett)' : '') + (gold ? ' · +' + fmtCompact(gold) + ' Gold' : '') + ' · +' + pts + ' Punkte', at: now },
+        txt: fmtCompact(fb.SA) + ' gegen ' + fmtCompact(fb.won ? a.t : a.t + fb.kill) + ' Barbaren · ' + fmtCompact(fb.loss) + ' gefallen' + (wounded ? ' (' + fmtCompact(wounded) + ' ins Krankenhaus)' : '') + (gold ? ' · +' + fmtCompact(gold) + ' Gold' : '') + ' · +' + pts + ' Punkte', at: now },
         fb.won ? 'Barbaren-Armee geschlagen: +' + pts + ' Punkte.' : 'Die Barbaren-Armee ist geschwächt (noch ' + fmtCompact(a.t) + ') – +' + pts + ' Punkte.');
     if (isP) { spawnBattleFx({ x: m.x, y: m.y }, fb.won, fb.won ? 'Armee geschlagen' : 'Geschwächt', '+' + pts + ' Punkte'); updateHud(); saveGame(); }
     if (barbView && barbView.kind === 'inv') barbSheetRefresh();
@@ -10419,7 +10381,7 @@ function drTreffer(m, now) {                         // wie beim Tagesboss: Scha
     evPunkte('boss', who, 30 * dmg / (D.max * DR_CAP));
     barbHome(m, m.troops - loss, now);
     const rk = evRang(D.dmg), pl = rk.findIndex(e => e[0] === who) + 1;
-    evBericht(who, { type: 'ev', ic: 'star', gut: true, badge: 'Drache', title: D.name, txt: fmtCompact(dmg) + ' Schaden · noch ' + fmtCompact(Math.max(0, D.hp)) + ' Leben · Platz ' + pl + ' von ' + rk.length + ' · ' + fmtCompact(loss) + ' gefallen' + (wounded ? ' (' + fmtCompact(wounded) + ' ins Lazarett)' : '') + (gold ? ' · +' + fmtCompact(gold) + ' Gold' : ''), at: now },
+    evBericht(who, { type: 'ev', ic: 'star', gut: true, badge: 'Drache', title: D.name, txt: fmtCompact(dmg) + ' Schaden · noch ' + fmtCompact(Math.max(0, D.hp)) + ' Leben · Platz ' + pl + ' von ' + rk.length + ' · ' + fmtCompact(loss) + ' gefallen' + (wounded ? ' (' + fmtCompact(wounded) + ' ins Krankenhaus)' : '') + (gold ? ' · +' + fmtCompact(gold) + ' Gold' : ''), at: now },
         'Treffer beim Drachen: ' + fmtCompact(dmg) + ' Schaden – Platz ' + pl + '.');
     if (isP) { spawnBattleFx({ x: D.x, y: D.y }, true, 'Treffer', '−' + fmtCompact(dmg) + ' Leben'); updateHud(); saveGame(); }
     if (D.hp <= 0) { D.hp = 0; D.fell = now; drAuszahlen(true); }
@@ -10738,7 +10700,7 @@ function armyOrder(a, t) {
     if (a.troops < 1) { flashHint('Die Armee hat noch keine Truppen – warte, bis die ersten angekommen sind.', 3000); return false; }
     const why = !rechnet() ? (WELT.befehl('armee', { op: 'ziehen', id: a.id, ziel: t }), '') : armyMove(a, t);
     if (why === 'shield') flashHint(shieldBlockText(t.kind === 'army' ? armyWho(armyById(t.id)) : islandOwnerOf(t.id)), 4000);
-    if (why === 'capital') flashHint('Das ist die Hauptstadt von ' + (botById[islandOwnerOf(t.id)] || {}).name + ' – Hauptstädte können nicht angegriffen werden.', 3500);
+    if (why === 'capital') flashHint('Das ist die Hauptstadt von ' + (botById[islandOwnerOf(t.id)] || {}).name + ' – eine Hauptstadt greifst du von einer Basis aus an (Angreifen), nicht mit einer Armee.', 4000);
     if (why === 'route') flashHint(noRouteHint(a.lm, t.lm), 3500);
     if (why === 'bund') flashHint('Das gehört einem Bündnis-Mitglied – Mitglieder greifen sich nicht an.', 3500);
     if (why) return false;
@@ -10771,7 +10733,7 @@ function armyClash(att, def) {                                              // a
     addCombatLogEntry({ type: 'army', won: youWon, attacker: armyName(att), defender: armyName(def), atk: fb.SA, def: fb.SD, wounded: w, gold: mine === att ? fg.a : fg.d, hA: heroTag(aHx), hD: heroTag(dHx), hx: heroReportOf(mine === att ? aHx : dHx) });
     warStat(youWon ? 'armyWins' : 'armyLosses', 1, mine === def ? armyName(att) : null);
     flashHint(youWon ? 'Deine Armee hat die Armee von ' + armyName(foe) + ' geschlagen – ' + fmtCompact(winner.troops) + ' stehen noch.'
-                     : 'Die Armee von ' + armyName(foe) + ' hat deine Armee geschlagen' + (w ? ', ' + fmtCompact(w) + ' ins Lazarett.' : '.'), 5000);
+                     : 'Die Armee von ' + armyName(foe) + ' hat deine Armee geschlagen' + (w ? ', ' + fmtCompact(w) + ' ins Krankenhaus.' : '.'), 5000);
     if (youWon && mine === def) statBump('defends');
     sfx(youWon ? 'victory' : 'defeat'); updateHud(); saveGame();
 }
@@ -11351,7 +11313,7 @@ function renderPopup() {
         subH = '<span class="dot dot--player"></span>' + whoLink('player', profileName.value || 'Du') +
             (island.id === playerIslandId ? sep + 'Heimat' : '');
 
-        popupOverline.textContent = island.id === playerIslandId ? 'Deine Hauptstadt · unangreifbar' : isTemple ? 'Dein Tempel' : island.type === 'gate' ? 'Dein Tor · Maut für dich' : 'Deine Basis';
+        popupOverline.textContent = island.id === playerIslandId ? 'Deine Hauptstadt' + (brennt(island.id) ? ' · brennt' : '') : isTemple ? 'Dein Tempel' : island.type === 'gate' ? 'Dein Tor · Maut für dich' : 'Deine Basis';
         if (island.id === playerIslandId) { document.getElementById('cityBtn').style.display = 'inline-block'; document.getElementById('teleportBtn').style.display = 'inline-block'; }
         liveHtml(popupStats, '<div class="stat-grid">' +
             statTile('Truppen hier', 'troops', fmtTile(troopsHere)) +
@@ -11385,11 +11347,12 @@ function renderPopup() {
             backBtn.style.display = 'inline-block';
         } else {
             const scoutEnRoute = pendingScouts.some(s => s.targetId === island.id);
-            popupOverline.textContent = bossAt(island.id) ? 'Weltereignis · Boss' : ownerBot ? (isCapital(island.id) ? 'Hauptstadt · unangreifbar' : isTemple ? 'Feindlicher Tempel' : island.type === 'gate' ? 'Feindliches Tor' : 'Feindliche Basis') : (isTemple ? 'Tempel · unbesetzt' : island.type === 'gate' ? 'Tor · unbesetzt' : 'Neutrale Basis');
+            popupOverline.textContent = bossAt(island.id) ? 'Weltereignis · Boss' : ownerBot ? (isCapital(island.id) ? (brennt(island.id) ? 'Hauptstadt · brennt' : 'Feindliche Hauptstadt') : isTemple ? 'Feindlicher Tempel' : island.type === 'gate' ? 'Feindliches Tor' : 'Feindliche Basis') : (isTemple ? 'Tempel · unbesetzt' : island.type === 'gate' ? 'Tor · unbesetzt' : 'Neutrale Basis');
             liveHtml(popupStats, '<div class="stat-grid">' +
-                statTile('Truppen', 'troops', scouted ? fmtTile(effectiveTroops(island)) : UNK, scouted && ownerBot ? 'is-enemy' : '') +
-                statTile('Verteidigung', 'defense', scouted ? fmtTile(effectiveDefense(island)) : UNK) + '</div>' +
+                statTile('Truppen', 'troops', scouted ? spaehZahl(effectiveTroops(island), ownerBot) : UNK, scouted && ownerBot ? 'is-enemy' : '') +
+                statTile('Verteidigung', 'defense', scouted ? spaehZahl(effectiveDefense(island), ownerBot) : UNK) + '</div>' +
                 (scouted ? '' : '<div class="notice">' + icon('scout') + '<span>Stärke unbekannt. Spähen deckt Truppen und Verteidigung auf.</span></div>') + midNotice(island) + ringNotice(island) +
+                (isCapital(island.id) ? '<div class="notice notice--gold">' + icon('castle') + '<span>Hauptstadt: kann angegriffen, aber nie erobert werden. Gewinnst du, fällt die Garnison und du nimmst ' + Math.round(HAUPT_BEUTE * 100) + ' % von Gold, Holz, Stein und Eisen über dem Burg-Schutz mit – die Stadt brennt.' + (brennt(island.id) ? ' Sie brennt gerade.' : '') + '</span></div>' : '') +
                 (island.type === 'gate' && !ownerBot ? '<div class="notice notice--gold">' + icon('lock') + '<span>Tor: Unbesetzt ist es verschlossen – erobere es, um über die Brücke zu kommen. Wer es besitzt, geht kostenlos durch und bestimmt die Maut für alle anderen.</span></div>' : '') +
                 (island.type === 'megaTemple' ? '<div class="notice">' + icon('rank') + '<span>' + (ownerBot ? escapeHtml(ownerBot.name) + ' verteilt die Titel (neu alle 3 Min.).' : 'Niemand verteilt gerade Titel.') + '</span><button type="button" class="btn btn--secondary btn--sm" data-view-titles>Titel ansehen</button></div>' : '') +
                 (isTemple ? '<div class="notice notice--gold">' + icon('temple') + '<span>' + (island.type === 'megaTemple' ? 'Thron der Meere: wer ihn hält, trägt die Krone – +25 % Münzen und Truppen im ganzen Reich und alle 3 Min. ' + THRONE_PTS_MEGA + ' Thron-Punkte. Die Wächter-Tempel feuern auf ihn – nächster Beschuss in <b data-throne-fire>' + fmtClock((throneState.nextFire - Date.now()) / 1000) + '</b>.' : island.guardian ? 'Wächter-Tempel: 3-facher Tempel-Bonus und alle 3 Min. ' + THRONE_PTS_GUARD + ' Thron-Punkte. Gehört er nicht dem Herrscher, feuert er alle 3 Min. auf den Thron.' : 'Tempel: gibt Produktion, Gems und Münzen, sobald erobert.') + '</span></div>' : '') +
@@ -11397,10 +11360,10 @@ function renderPopup() {
                 (scoutEnRoute ? '<div class="notice notice--warn">' + icon('hourglass') + '<span>Späher bereits unterwegs …</span></div>' : '') +
                 (shieldOw ? '<div class="notice notice--gold">' + icon('shield') + '<span>Friedensschild – ' + escapeHtml(shieldOw.name) + ' ist noch ' + uhrHtml(ownerShieldUntil(shieldOw.id)) +
                     ' geschützt. Solange der Schild hält, kann niemand die Türme von ' + escapeHtml(shieldOw.name) + ' angreifen (Tore und Tempel schon) – Spähen geht.</span></div>' : ''));
-            if (shieldOw && !isCapital(island.id)) popupOverline.textContent = 'Friedensschild · unangreifbar';
+            if (shieldOw) popupOverline.textContent = 'Friedensschild · unangreifbar';
             setBtnLabel(attackBtn, shieldOw ? 'Schild aktiv' : 'Angreifen');
             attackBtn.disabled = !!shieldOw;
-            attackBtn.style.display = isCapital(island.id) ? 'none' : 'inline-block';   // capitals can't be attacked
+            attackBtn.style.display = 'inline-block';   // (auch Hauptstädte – sie fallen nur nie)
             scoutBtn.style.display = 'inline-block';
             // Scouting is always allowed, even on an already-scouted
             // island (re-scout to refresh) - only block a second
@@ -11569,12 +11532,12 @@ function patchAttackPreview() {
     if (hfx) hfx.textContent = !px ? '' : heroStarTxt(px.q) + (px.fired ? ' · ' + px.skill + ' zündet' : '') + (px.pair ? ' · Paar +' + HERO_PAIR_BONUS + ' %' : px.h2 ? ' · + ' + heroById(px.h2.id).name : '') + ' · ' + hfl(px);
     if (hfx) hfx.title = !px ? '' : hfl(px) + (px.h2 ? ' · ' + heroById(px.h2.id).name + ' (' + Math.round(HERO_ZWEIT * 100) + ' %): ' + hfl(px.h2) : '');   // alles einzeln beim Draufzeigen
     const swordBonus = attackFlatBonus(shown), heroTroops = px ? Math.round(shown * px.atk / 100) + heroGefOf(px, shown) : 0, atkBonus = swordBonus + heroTroops;
-    const mine = Math.round((shown + atkBonus) * titleMult('player', 'attack') * (AUF ? AUF.kampf('player', 'a') : 1));        // same maths as resolveAttack (+ Truppen-Stufe, Forschung)
+    const mine = Math.round((shown + atkBonus) * titleMult('player', 'attack') * (AUF ? AUF.kampf('player', 'a') : 1));        // same maths as resolveAttack (+ Forschung)
     const bEl = popupStats.querySelector('#previewAtkBonus'); if (bEl) bEl.textContent = fmtNum(swordBonus);
     const hbEl = popupStats.querySelector('#previewHeroBonus'); if (hbEl) hbEl.textContent = heroTroops ? ' + ' + fmtNum(heroTroops) + ' ' + heroById(previewHero).name + (px && px.id2 ? ' & ' + heroById(px.id2).name : '') : '';
-    const mitTitel = Math.round((shown + atkBonus) * titleMult('player', 'attack')), kv = mine - mitTitel;   // Paket D: Truppen-Stufe + Forschung getrennt zeigen
+    const mitTitel = Math.round((shown + atkBonus) * titleMult('player', 'attack')), kv = mine - mitTitel;   // Paket D: Forschung getrennt zeigen
     const tv = mitTitel - Math.round(shown + atkBonus), tx = titleOf('player'), tbEl = popupStats.querySelector('#previewTitleBonus');
-    if (tbEl) tbEl.textContent = (tv && tx ? (tv > 0 ? ' + ' : ' − ') + fmtNum(Math.abs(tv)) + ' Titel ' + tx.name : '') + (kv ? ' + ' + fmtNum(kv) + ' T' + AUF.truppenStufe('player') + (AUF.foWert('player', 'm_atk') ? '/Forschung' : '') : '');
+    if (tbEl) tbEl.textContent = (tv && tx ? (tv > 0 ? ' + ' : ' − ') + fmtNum(Math.abs(tv)) + ' Titel ' + tx.name : '') + (kv ? ' + ' + fmtNum(kv) + ' Forschung' : '');
     const src = islandById[previewSourceId], tEl = popupSub.querySelector('#previewToll'), mEl = popupSub.querySelector('#previewMarch');
     if (mEl && src) mEl.textContent = fmtClock(travelDurationSeconds(src, island) / (1 + (px ? px.spd : 0) / 100));   // the hero's Tempo
     if (tEl && src) { const hop = lastHop(src.landmassId, island.landmassId, 'player'), t = tollFor(hop[0], hop[1], shown, 'player', island.id, px ? px.toll : 0);
@@ -12300,7 +12263,7 @@ if (window.WELT) {
     // Münzen, Gems und Stufe eines Spielers rechnet noch sein eigenes Handy. Ein Schummler könnte also Befehle fälschen
     // („gib mir Truppen“, „Basis auf Stufe 99“), ohne zu bezahlen. Darum prüft der Weltrechner hier jeden Befehl:
     //   - Zahlen nur endlich und größer 0, mit Obergrenze; Kennungen nur Buchstaben/Ziffern; nur eigene Basen
-    //   - Truppen-Geschenke nur so viel, wie die Quelle wirklich hergibt (Stufe, Thron-Shop, Lazarett, Fund, Admin-Geschenk)
+    //   - Truppen-Geschenke nur so viel, wie die Quelle wirklich hergibt (Stufe, Thron-Shop, Krankenhaus, Fund, Admin-Geschenk)
     //   - Ausbau nur genau +1 Stufe und nur, wenn er die Münzen haben kann (eigenes „Konto“, siehe wacheSehen)
     //   - zu viele Befehle in kurzer Zeit → der Rest verfällt
     // Echte Spieler werden nie blockiert: passt etwas (noch) nicht, wartet der Befehl bis zu 60 s auf das nächste Profil
@@ -12556,7 +12519,7 @@ if (window.WELT) {
         return ende ? 'pleite' : 'warten';
     }
     // Truppen-Geschenk prüfen → wie viele er bekommt (0 = nichts), oder -1 = warten (z. B. Stufe/Profil noch nicht da)
-    const TRUPPEN_QUELLEN = { stufe: 'Stufen-Belohnung', thron: 'Thron-Shop', heil: 'Lazarett', fund: 'Fund auf der Karte', geschenk: 'Admin-Geschenk' };
+    const TRUPPEN_QUELLEN = { stufe: 'Stufen-Belohnung', thron: 'Thron-Shop', heil: 'Krankenhaus', fund: 'Fund auf der Karte', geschenk: 'Admin-Geschenk' };
     function truppenPruefen(who, b, ende) {
         const q = b.q, name = TRUPPEN_QUELLEN[q] || 'unbekannte Quelle';
         if (!zahlOk(b.n)) { warnen(who, 'truppen', 'Truppen-Geschenk mit kaputter Zahl (' + String(b.n).slice(0, 30) + ') – abgelehnt.'); return 0; }
@@ -12576,7 +12539,7 @@ if (window.WELT) {
             if (d.tk + 1 > kaeufe) { if (!ende) return -1; warnen(who, 'truppen', 'Thron-Shop: ' + (d.tk + 1) + '. Truppen-Kauf, mit seinen Thron-Punkten gehen höchstens ' + kaeufe + ' – abgelehnt.', b.n); return 0; }
             d.tk++; saveBotState();
             erlaubt = 3 * Math.max(1000, hourProduction(who).troops) + 1000;   // ×3: sein Handy rechnet die Produktion mit eigenen Boni etwas anders
-        } else if (q === 'heil') {                     // Lazarett: höchstens so viele, wie verwundet sind
+        } else if (q === 'heil') {                     // Krankenhaus: höchstens so viele, wie verwundet sind
             if (now - m.w.vorT > WACHE_WARTEN_MS) m.w.vor = 0;
             erlaubt = (m.w.vor + m.w.u) * 1.02 + 10;
             if (n > erlaubt && !ende) return -1;
@@ -12635,8 +12598,7 @@ if (window.WELT) {
     // Jede Neuerung im Profil wird nach festen Regeln angenommen – oder nicht:
     //   Burg/Gebäude: +1 Stufe nach der anderen, frühestens nach der Bauzeit,
     //     schneller nur mit Gems (1 je Minute); Kosten (Münzen, Holz, Stein, Eisen) aus Konto + Topf des Ausgegebenen
-    //   Forschung: wie Gebäude, eine nach der anderen, Akademie/Burg/Vorgänger wie im Spiel
-    //   Truppen-Stufe: nur mit Burg + Forschung, jede neue Stufe einmal Eisen
+    //   Forschung: wie Gebäude, eine nach der anderen, Labor/Vorgänger wie im Spiel
     //   Ausrüstung: Seltenheit/Stufe nur so hoch, wie er (statistisch) Kisten geöffnet haben kann; Sterne bis zur Schmiede-Stufe,
     //     jeder Stern kostet Gems
     //   Helden: Freischalten + Sterne kosten Splitter – nie mehr, als er bekommen haben kann
@@ -12645,6 +12607,13 @@ if (window.WELT) {
     // gibt es eine Auffälligkeit (warnen → Admin-Seite). So bekommen echte Spieler keine Fehlalarme, wenn Gems/Münzen erst
     // einen Puls später im Konto stehen.
     const HB_V = 1, HB_WARTEN_MS = 120000, TAG = 864e5;
+    // Burg neu (4.10.: 1–60 Tage, teurer): eine Woche lang gelten für die Burg auch noch die alten (kürzeren, billigeren) Werte –
+    // wer beim Hochladen gerade nach den alten Regeln baute, bekommt sonst einen falschen Alarm
+    const BURG_ALT_BIS = Date.UTC(2026, 9, 14);
+    const burgZeitAlt = L => Math.min(7 * 86400, L <= 14 ? 60 * Math.pow(1.55, L - 1) : 60 * Math.pow(1.55, 13) * Math.pow(1.25, L - 14));
+    function burgKostenAlt(L) { const b = 1000 * Math.pow(1.72, L - 1), n = AUF ? AUF.stadtKosten('keep', L) : {};
+        const a = { c: niceRound(2000 * Math.pow(1.85, L - 1)), h: niceRound(b), s: L >= 2 ? niceRound(b * .8) : 0, e: L >= 5 ? niceRound(b * .4) : 0 };
+        for (const x of ['c', 'h', 's', 'e']) a[x] = Math.min(a[x], n[x] === undefined ? a[x] : n[x]); return a; }
     const HB_SLOTS = Object.keys(EQUIPMENT_DEFS);
     const HB_TAG = {                                  // Spielraum pro Tag – je Quelle die Grenze aus dem Spiel
         g: 25 + 40 + 150 / 7,                         // Gems: Tagesbelohnung (höchstens 25), 3 Aufgaben + Bonus (40), Wochenkette (150 / 7 Tage)
@@ -12696,7 +12665,6 @@ if (window.WELT) {
             const pl = (p.city && p.city.levels) || {};
             for (const id of hbBauten()) hb.st[id][0] = Math.max(id === 'keep' ? 1 : 0, Math.min(hbMax(id), Math.floor(nn(pl[id]))));
             if (AUF) for (const d of AUF.FORSCHUNG) { const v = Math.min(d.max, Math.floor(nn((p.fo || {})[d.id]))); if (v > 0) hb.fo[d.id] = v; }
-            hb.tb = Math.max(1, Math.min(5, Math.floor(nn(p.tierBez)) || 1));
             for (const s of HB_SLOTS) { const g = p.gear && p.gear[s]; if (g) hb.gear[s] = [[Math.min(5, g.r | 0), Math.max(1, Math.min(ITEM_MAX_LEVEL, g.lvl | 0)), Math.min(STAR_MAX, g.st | 0)]]; }
             if (p.hs && typeof p.hs === 'object') { for (const h of HEROES) if (p.hs[h.id]) hb.hs[h.id] = hbHeldZeile(p.hs[h.id]); hb.shB = Math.max(0, hbHeldenWert(hb.hs) - hbE0f()); }
             hb.schild = nn(p.shieldUntil);
@@ -12748,23 +12716,25 @@ if (window.WELT) {
         const [L, T] = hb.st[id], B = hb.st.keep[0];
         if (L + 1 > hbMax(id)) return 'nein';
         if (id !== 'keep' && AUF) { if (!L && AUF.BAU_AB_BURG[id] > B) return 'nein'; if (L + 1 > (B >= AUF.BURG_MAX ? hbMax(id) : Math.min(hbMax(id), B))) return 'nein'; }
-        const need = cityTimeRoh(id, L) * 1000, fehlt = need - (now - T) - 60000;
+        const alt = id === 'keep' && now < BURG_ALT_BIS, zeit = alt ? Math.min(cityTimeRoh(id, L), burgZeitAlt(L)) : cityTimeRoh(id, L);   // (Übergang: eine Burg, die noch nach den alten Regeln gebaut wurde)
+        const hk = 'bau:' + id + ':' + (L + 1), hilfe = Math.min(nn((hb.hilfe || {})[hk]), zeit * 1000), need = zeit * 1000 - hilfe, fehlt = need - (now - T) - 60000;   // (Bündnis-Hilfe macht den Bau kürzer)
         const g = fehlt > 0 ? Math.ceil(fehlt / 60000) * CITY_GEMS_PER_MIN : 0;
-        const k = Object.assign({}, AUF ? AUF.stadtKosten(id, L) : { c: cityCost(id, L) }); if (g) k.g = g;
+        const k = Object.assign({}, alt ? burgKostenAlt(L) : AUF ? AUF.stadtKosten(id, L) : { c: cityCost(id, L) }); if (g) k.g = g;
         if (!hbZahlen(who, hb, m, k)) return 'geld';
         hb.st[id] = [L + 1, g ? now : Math.min(now, T + need)];       // (fertig spätestens jetzt – die nächste Stufe zählt ab da)
+        if (hb.hilfe) delete hb.hilfe[hk];
         return 'ok';
     }
     function hbFoSchritt(who, hb, m, d, now) {
         const L = (hb.fo[d.id] | 0) + 1;
         if (L > d.max || (hb.st.academy || [0])[0] < AUF.foAkaFuer(d, L)) return 'nein';
-        if (d.tier && hb.st.keep[0] < AUF.TIER_BURG[d.tier]) return 'nein';
         if (d.vor && !((hb.fo[d.vor] | 0) >= 1)) return 'nein';
-        const need = AUF.foZeitRoh(d, L) * 1000, T = nn(hb.foT), fehlt = need - (now - T) - 60000;
+        const hk = 'fo:' + d.id + ':' + L, need = AUF.foZeitRoh(d, L) * 1000 - Math.min(nn((hb.hilfe || {})[hk]), AUF.foZeitRoh(d, L) * 1000), T = nn(hb.foT), fehlt = need - (now - T) - 60000;   // (Bündnis-Hilfe macht die Forschung kürzer)
         const g = fehlt > 0 ? Math.ceil(fehlt / 60000) * CITY_GEMS_PER_MIN : 0;
         const k = Object.assign({}, AUF.foKosten(d, L)); if (g) k.g = g;
         if (!hbZahlen(who, hb, m, k)) return 'geld';
         hb.fo[d.id] = L; hb.foT = g ? now : Math.min(now, T + need);    // eine Forschung gleichzeitig: die nächste zählt ab da
+        if (hb.hilfe) delete hb.hilfe[hk];
         return 'ok';
     }
     // Sterne (alle Teile, angelegt oder nicht – Profil stW = Gems in allen Sternen): ein Kauf wird aus den ausgegebenen Gems bezahlt
@@ -12813,12 +12783,7 @@ if (window.WELT) {
             for (let runde = 0, weiter = true; weiter && runde < 80; runde++) { weiter = false;
                 for (const d of offen().sort((a, b) => AUF.foKosten(a, (hb.fo[a.id] | 0) + 1).c - AUF.foKosten(b, (hb.fo[b.id] | 0) + 1).c)) if (hbFoSchritt(who, hb, m, d, now) === 'ok') { weiter = true; break; } }
             for (const d of AUF.FORSCHUNG) { const w = Math.min(d.max, Math.floor(nn(pf[d.id]))); if (w <= (hb.fo[d.id] | 0)) { hbGut(hb, 'fo:' + d.id); continue; }
-                hbWarte(who, hb, 'fo:' + d.id, now, 'Forschung ' + d.name + ': das Handy sagt Stufe ' + w + ', möglich ist ' + (hb.fo[d.id] | 0) + ' (Zeit, Kosten, Akademie oder Burg passen nicht).', w - (hb.fo[d.id] | 0)); }
-            const ptb = Math.max(1, Math.min(5, Math.floor(nn(p.tierBez)) || 1));
-            while (hb.tb < ptb) { const T = hb.tb + 1;      // Truppen-Stufe: Burg + Forschung, einmal Eisen
-                if (hb.st.keep[0] < AUF.TIER_BURG[T] || !((hb.fo['m_t' + T] | 0) >= 1) || !hbZahlen(who, hb, m, { e: AUF.TIER_EISEN[T] })) break;
-                hb.tb = T; }
-            if (hb.tb < ptb) hbWarte(who, hb, 'tier', now, 'Truppen-Stufe: das Handy sagt T' + ptb + ', möglich ist T' + hb.tb + ' (Burg, Forschung oder Eisen fehlen).', ptb - hb.tb); else hbGut(hb, 'tier');
+                hbWarte(who, hb, 'fo:' + d.id, now, 'Forschung ' + d.name + ': das Handy sagt Stufe ' + w + ', möglich ist ' + (hb.fo[d.id] | 0) + ' (Zeit, Kosten oder Labor passen nicht).', w - (hb.fo[d.id] | 0)); }
         }
         const forge = Math.min(STAR_MAX, (hb.st.forge || [0])[0]);
         for (const s of HB_SLOTS) {                    // Ausrüstung
@@ -12876,7 +12841,7 @@ if (window.WELT) {
         const pl = (p.city && p.city.levels) || {}, lv = {};
         for (const id of hbBauten()) lv[id] = Math.max(0, Math.min(Math.floor(nn(pl[id])), hb.st[id][0])); if (!(lv.keep >= 1)) lv.keep = 1;
         const fo = {}; if (AUF) for (const d of AUF.FORSCHUNG) { const v = Math.min(Math.floor(nn((p.fo || {})[d.id])), hb.fo[d.id] | 0); if (v > 0) fo[d.id] = v; }
-        b.city = Object.assign({}, b.city, { levels: lv, fo, tier: Math.max(1, Math.min(Math.floor(nn(p.tier)) || 1, hb.tb)), tierBez: hb.tb });
+        b.city = Object.assign({}, b.city, { levels: lv, fo }); delete b.city.tier; delete b.city.tierBez;
         b.gear = {};
         for (const s of HB_SLOTS) { const g = p.gear && p.gear[s], A = hb.gear[s] || [];
             if (g && A.some(a => a[0] === (g.r | 0) && a[1] >= (g.lvl | 0) && a[2] >= (g.st | 0))) b.gear[s] = { r: g.r | 0, lvl: Math.max(1, g.lvl | 0), st: g.st | 0 };
@@ -13103,7 +13068,7 @@ if (window.WELT) {
             const from = botCapitalOf(who); if (from !== null && from !== undefined && from !== b.insel) { islandTroops[b.insel] = (islandTroops[b.insel] || 0) + (islandTroops[from] || 0); islandTroops[from] = 0; }
             bs.capital = b.insel; capitalCache = null; saveBotState(); saveGame(); requestRender(); befehlBezahlt(b);
         },
-        truppen(who, b) {                             // geschenkte Truppen (Stufe, Thron-Shop, Lazarett, Fund, Admin) → Hauptstadt
+        truppen(who, b) {                             // geschenkte Truppen (Stufe, Thron-Shop, Krankenhaus, Fund, Admin) → Hauptstadt
             const x = { b, bis: Date.now() + WACHE_WARTEN_MS }, l = wm(who).warte.truppen; l.push(x); wacheAbarbeiten(who);
             if (l.includes(x)) { x.wartet = true; return 'wartet'; }
         },
@@ -13244,10 +13209,12 @@ if (window.WELT) {
     WELT.wache = {
         kann(who, kosten) { const m = wacheSehen(who), d = wd(who), hb = hbDa(who); vorAltern(who, m, Date.now()); return m.c.vor + m.c.u + (hb ? nn(hb.cA) : 0) + spielraumFrei(who, m) + (d ? nn(d.gC) : 0) >= kosten; },
         gutschrift(who, c, tr) { const d = wd(who); if (!d) return; d.gC = nn(d.gC) + nn(c); d.gTr = nn(d.gTr) + nn(tr); saveBotState(); },
+        hilfe(who, key, ms) { const hb = hbDa(who); if (!hb || !(ms > 0)) return; const H = hb.hilfe || (hb.hilfe = {}); H[key] = nn(H[key]) + ms;   // Bündnis-Hilfe: so viel schneller darf dieser Bau / diese Forschung fertig sein
+            const ks = Object.keys(H); if (ks.length > 40) delete H[ks[0]]; saveBotState(); },
         warnen, zuOft: (who, art, max, ms) => zuOft(wm(who), art, max, ms)
     };
 
-    // Nachrichten vom Weltrechner an mich: Münzen, Gems, EP, Thron-Punkte, Lazarett, Splitter, Zahlen
+    // Nachrichten vom Weltrechner an mich: Münzen, Gems, EP, Thron-Punkte, Krankenhaus, Splitter, Zahlen
     const STAT_NAMEN = { caps: 'captures', pvp: 'pvpWins', defs: 'defends', bosses: 'bosses', temples: 'temples', scouts: 'scouts', tolls: 'tolls', tollCoins: 'tollCoins', armyWins: 'armyWins', healed: 'healed', barb: 'barb', dboss: 'dboss', throneMin: 'throneMin', heroFires: 'heroFires' };   // (Thron-Minuten und Helden-Zünder zählt der Weltrechner – vorher kamen sie nie an)
     WELT.beiNachricht.push(function (e) {
         if (!e || e.art !== 'delta') return;

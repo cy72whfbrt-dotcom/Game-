@@ -141,11 +141,11 @@ function profil_bereinigen($text) {
         return ['sh' => (int)$plus($h['sh'] ?? 0, 1e6), 'q' => (int)$plus($h['q'] ?? 0, 20), 'own' => !empty($h['own']), 'sk' => $sk, 'rage' => $plus($h['rage'] ?? 0, 1000)]; }, 40);   // HERO_MAXQ 20
     $sk = []; foreach (['troops', 'attack', 'defense', 'speed', 'attackGold', 'defenseGold'] as $k) $sk[$k] = (int)$plus($p['skills'][$k] ?? 0, $k === 'speed' ? 10 : 50);
     if (array_sum($sk) > $lvl + 20) { $f = ($lvl + 20) / array_sum($sk); foreach ($sk as $k => $v) $sk[$k] = (int)floor($v * $f); }   // 1 Skillpunkt pro Stufe
-    $STADT = ['academy' => 25, 'forge' => 5, 'hospital' => 40, 'shrine' => 25, 'wall' => 25, 'barracks' => 25, 'treasury' => 25, 'watch' => 25, 'heroes' => 25, 'storage' => 40,
-              'keep' => 25, 'tower' => 25, 'embassy' => 25, 'market' => 25];   // cityMaxLevel · Paket D: Burg-Stufe (keep), Wachturm, Botschaft, Markt
+    $STADT = ['academy' => 25, 'forge' => 5, 'hospital' => 40, 'wall' => 25, 'heroes' => 25,
+              'keep' => 25, 'embassy' => 25, 'market' => 25];   // cityMaxLevel · Burg-Stufe (keep), Labor (academy), Krankenhaus (hospital), Botschaft, Markt
     $stadt = []; foreach ($STADT as $k => $mx) if (isset($p['city']['levels'][$k])) $stadt[$k] = (int)$plus($p['city']['levels'][$k], $mx);
-    // Paket D: Forschung (feste Liste, Höchststufen wie FORSCHUNG in aufbau.js), Truppen-Stufe 1–5, Rohstoffe wie Münzen
-    $FO = ['w_prod' => 10, 'w_sam' => 10, 'w_last' => 10, 'm_atk' => 10, 'm_def' => 10, 'm_laz' => 10, 'm_t2' => 1, 'm_t3' => 1, 'm_t4' => 1, 'm_t5' => 1, 'x_tempo' => 10, 'x_spaeh' => 5, 'x_nebel' => 5];
+    // Paket D: Forschung im Labor (feste Liste, Höchststufen wie FORSCHUNG in aufbau.js), Rohstoffe wie Münzen
+    $FO = ['w_prod' => 10, 'w_sam' => 10, 'w_last' => 10, 'w_tempel' => 10, 'm_atk' => 10, 'm_def' => 10, 'm_laz' => 10, 'x_tempo' => 10, 'x_spaeh' => 10, 'x_wacht' => 10, 'x_nebel' => 5];
     $fo = []; foreach ($FO as $k => $mx) if (isset($p['fo'][$k])) $fo[$k] = (int)$plus($p['fo'][$k], $mx);
     $res = []; foreach (['h', 's', 'e'] as $k) $res[$k] = $plus($p['res'][$k] ?? 0, 1e15);
     // 3B: Gems kommen mit ins Profil – nur der Weltrechner sieht sie (spieler_liste) und hält sie gegen sein Hauptbuch
@@ -158,7 +158,7 @@ function profil_bereinigen($text) {
         'skills' => (object)$sk,
         'gear' => $gear,
         'city' => ['levels' => (object)$stadt],
-        'fo' => (object)$fo, 'tier' => (int)max(1, $plus($p['tier'] ?? 1, 5)), 'tierBez' => (int)max(1, $plus($p['tierBez'] ?? 1, 5)), 'res' => is_array($p['res'] ?? null) ? $res : null,   // (fehlt: null – nicht 0, sonst sähe es nach „alles ausgegeben“ aus)
+        'fo' => (object)$fo, 'res' => is_array($p['res'] ?? null) ? $res : null,   // (fehlt: null – nicht 0, sonst sähe es nach „alles ausgegeben“ aus)
         'wounded' => $plus($p['wounded'] ?? 0, 1e30),
         'hs' => $hs,
         'shieldUntil' => min($plus($p['shieldUntil'] ?? 0, 1e15), $jetztMs + 8 * 86400000), 'neuBis' => min($plus($p['neuBis'] ?? 0, 1e15), $jetztMs + 48 * 3600000),   // längster Schild 8 Tage, Anfängerschutz 48 h
@@ -271,8 +271,8 @@ function nebel_flicken($text, $s) {
 }
 // ===== Marschgrößen (3.10.) =====
 // Wie stark fremde Kolonnen sind (Angriffe, Senden, Rückzüge, Sammler, Lager-Märsche), sieht ein Spieler laut Spiel nur über den
-// Wachturm – und nur bei Angriffen auf SEINE Basen: ab Stufe 1 ungefähr (2 Stellen), ab Stufe 10 genau mit Held und Truppen-Stufe
-// (aufbau.js angreiferInfo). Darum schickt der Server fremde Zahlen gar nicht erst (sonst stünden sie im Handy, nur versteckt):
+// Wachturm (Forschung im Labor) – und nur bei Angriffen auf SEINE Basen: ab Stufe 1 ungefähr (2 Stellen), ab Stufe 6 genau,
+// ab Stufe 8 mit Held (aufbau.js WACHT, angreiferInfo). Darum schickt der Server fremde Zahlen gar nicht erst (sonst stünden sie im Handy, nur versteckt):
 // Truppen 0, Held und Kampfwerte weg. Eigene Kolonnen bleiben, wie sie sind. Diese Teile gehen an Spieler immer ganz (nie als
 // Flicken – die passten nicht zum gefilterten Stand im Handy). Armeen und besetzte Felder zeigt das Spiel mit Zahlen, wenn man sie
 // sieht – im Nebel nicht: Truppen und Helden nur für die, die der Weltrechner ihm als sichtbar meldet (ow_spieler.armee_sicht).
@@ -300,10 +300,11 @@ function marsch_teil($k, $text, $ich, $eigen, $turm, $sieht = []) {
                 $dabei = false; foreach ($e->rally->an as $x) if (is_array($x) && ($x[0] ?? '') === $ich) $dabei = true;
                 if (!$dabei) foreach ($e->rally->an as $i => $x) if (is_array($x)) $e->rally->an[$i][2] = 0;
             }
-            $aufMich = isset($eigen[(int)($e->targetId ?? -1)]); $genau = $aufMich && ($turm >= 10 || !empty($e->fightEndsAt));   // (kämpft er schon bei dir, siehst du seine Stärke – wie danach im Kampfbericht)
+            $kampf = !empty($e->fightEndsAt); $aufMich = isset($eigen[(int)($e->targetId ?? -1)]); $genau = $aufMich && ($turm >= 6 || $kampf);   // (kämpft er schon bei dir, siehst du seine Stärke – wie danach im Kampfbericht)
             $e->rawTroops = $genau ? ($e->rawTroops ?? 0) : ($aufMich && $turm >= 1 ? marsch_runden($e->rawTroops ?? 0) : 0);
             foreach (['hx', 'attackBonus', 'skillBonus', 'skillLvl', 'attackGoldRate', 'rewardGoldRate', 'shieldLossReductionPct', 'atkTitle', 'atkTitleKey', 'atkKraft', 'atkFo', 'planId', 'lastWave', 'bernPct'] as $f) unset($e->$f);
-            if (!$genau) unset($e->hero, $e->hero2, $e->atkTier);
+            if (!$aufMich || !($turm >= 8 || $kampf)) unset($e->hero, $e->hero2);
+            unset($e->atkTier);
         } elseif ($k === 'openWaterPendingSends') { if ($wer($e, 'senderBotId') !== $ich) $e->troops = 0; }
         elseif ($k === 'openWaterPendingRetreats') { if ($wer($e, 'owner') !== $ich) $e->troops = 0; }
         else { if ($wer($e, 'who') !== $ich) { $e->troops = 0; unset($e->hero, $e->hero2, $e->load); } }
@@ -1011,11 +1012,11 @@ class MysqlLager {
         $armeen = []; foreach ((array)json_decode((string)$z['armee_sicht'], true) as $id) if (is_string($id)) $armeen[$id] = true;   // fremde Armeen/Felder, die er sieht (Weltrechner)
         return ['bits' => $bits, 'eigen' => $eigen, 'v' => (int)$z['sicht_v'], 'armeen' => $armeen];
     }
-    // Wachturm-Stufe eines Spielers – aus dem Hauptbuch des Weltrechners (nicht aus seinem Profil: das schickt sein Handy)
+    // Wachturm-Stufe eines Spielers (Forschung im Labor) – aus dem Hauptbuch des Weltrechners (nicht aus seinem Profil: das schickt sein Handy)
     function turm_stufe($uid) {
         $q = $this->db->prepare('SELECT zustand FROM ow_bots WHERE spieler_id = 0 AND bot_id = ?'); $q->execute(['u' . (int)$uid]);
         $b = json_decode((string)$q->fetchColumn(), true); if (!is_array($b)) return 0;
-        $l = $b['hb']['st']['tower'][0] ?? ($b['city']['levels']['tower'] ?? 0);
+        $l = $b['hb']['fo']['x_wacht'] ?? ($b['city']['fo']['x_wacht'] ?? 0);
         return is_numeric($l) ? max(0, (int)$l) : 0;
     }
     function armee_sicht_setzen($uid, $json) { $this->db->prepare('UPDATE ow_spieler SET armee_sicht = ?, sicht_v = sicht_v + 1 WHERE id = ? AND (armee_sicht IS NULL OR armee_sicht <> ?)')->execute([$json, $uid, $json]); }   // (geändert: neue Sicht → Teile ganz)

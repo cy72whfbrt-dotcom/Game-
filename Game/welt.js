@@ -118,6 +118,7 @@
             if (!v) return v; const t = tausch(d);
             for (const id in v.b || {}) { const a = v.b[id]; if (!a) continue; a.anf = t(a.anf); a.mit = (a.mit || []).map(t);
                 for (const q of a.anfragen || []) q.w = t(q.w); for (const q of a.einl || []) q.w = t(q.w); for (const s of a.sig || []) s.w = t(s.w);
+                for (const h of a.hilfe || []) { h.w = t(h.w); h.von = (h.von || []).map(t); }   // Bündnis-Hilfe (Botschaft)
                 if (a.gesch) { schluesselTausch(a.gesch.n, d); schluesselTausch(a.gesch.k, d); } }
             for (const r of v.r || []) { r.by = t(r.by); for (const j of r.j || []) j.w = t(j.w); }
             return v;
@@ -215,7 +216,7 @@
             name: d.openWaterPlayerName || OW.name, lvl: parseInt(d.openWaterLevel, 10) || 1,
             skills: P(d.openWaterSkills) || {}, gear, stW, city: { levels: city.levels || {} }, wounded: city.wounded || 0,
             hs: P(d.openWaterHeroes2) || {}, shieldUntil: parseFloat(d.openWaterShield) || 0,
-            fo: city.fo || {}, tier: city.tier || 1, tierBez: city.tierBez || 1, res: P(d.openWaterRes) || null,   // Paket D: Forschung, Truppen-Stufe, Rohstoffe (Burg-Stufe steht in city.levels.keep)
+            fo: city.fo || {}, res: P(d.openWaterRes) || null,   // Paket D: Forschung, Rohstoffe (Burg-Stufe steht in city.levels.keep)
             neuBis: typeof neulingBis === 'function' ? neulingBis() : 0,
             look: { ring: look.ring || null, rings: look.rings || [], march: look.march || null, marchs: look.marchs || [], frame: look.frame || null, title: look.title || null, throne: !!(look.bought && look.bought.throne) },
             stats: P(d.openWaterStats) || {}, earned: thr.earned || 0, coins: parseFloat(d.openWaterCoins) || 0, gems: parseFloat(d.openWaterGems) || 0,   // (Gems sieht nur der Weltrechner – 3B: Hauptbuch)
@@ -242,7 +243,7 @@
         b.gear = Object.assign({ weapon: null, armor: null, shield: null, boots: null }, p.gear || {});
         if (!b.spare) { b.spare = {}; for (const k of ['weapon', 'armor', 'shield', 'boots']) b.spare[k] = [0, 0, 0, 0, 0, 0]; }
         b.city = { levels: Object.assign({}, (b.city && b.city.levels) || {}, (p.city && p.city.levels) || {}), builds: [], builder2: false,
-            fo: Object.assign({}, p.fo || (alt && alt.city && alt.city.fo) || {}), tier: p.tier || (alt && alt.city && alt.city.tier) || 1, tierBez: p.tierBez || 1 };   // Paket D (aufbau.js prüft: Stufe nur so hoch, wie Burg und Forschung erlauben)
+            fo: Object.assign({}, p.fo || (alt && alt.city && alt.city.fo) || {}) };   // Paket D (das Hauptbuch prüft: Stufe nur so hoch, wie Burg und Labor erlauben)
         if (p.res && typeof p.res === 'object') { b.res = {}; for (const k of ['h', 's', 'e']) { const x = +p.res[k]; b.res[k] = Number.isFinite(x) && x > 0 ? Math.min(1e15, x) : 0; } }   // Rohstoffe (wie die Münzen: der Weltrechner rechnet von da weiter)
         b.wounded = p.wounded || 0;
         if (p.hs) b.hs = p.hs; else if (!b.hs) b.hs = {};

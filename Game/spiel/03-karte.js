@@ -839,6 +839,23 @@ function drawBuilding(island, ownerKey, z) {                                   /
   ctx.globalAlpha = Math.min(1, (size - 12) / 5);
   if (!bkDraw(bkSprite(island, ownerKey, false, z), x, y + ISO_OY * u)) ctx.drawImage(sp.c, x - 31 * u - 1 / dpr, y - 48 * u - 1 / dpr, sp.c.width / dpr * k, sp.c.height / dpr * k);
   ctx.globalAlpha = 1;
+  if (cap && brennt(island.id)) drawBrand(x, y - 14 * u, u);                  // eine geplünderte Hauptstadt brennt (nur zu sehen)
+}
+function drawBrand(x, y, u) {                                                  // Flammen auf den Dächern und Rauch, der aufsteigt
+  const t = performance.now();
+  ctx.save();
+  for (let i = 0; i < 5; i++) {                                                 // Rauch
+    const p = ((t / 2600) + i / 5) % 1, sx = x + Math.sin(i * 2.1 + p * 3) * 8 * u + p * 10 * u, sy = y - 16 * u - p * 46 * u, r = (5 + p * 14) * u;
+    ctx.fillStyle = 'rgba(40,36,34,' + (.42 * (1 - p)) + ')'; ctx.beginPath(); ctx.arc(sx, sy, r, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalCompositeOperation = 'lighter';
+  for (const [dx, dy, s] of [[-12, 2, 1], [9, -4, 1.15], [0, -12, .9], [15, 6, .8], [-5, 8, .75]]) {   // Flammen
+    const f = .75 + .25 * Math.sin(t / 90 + dx * 1.7) * Math.sin(t / 133 + dy), fx = x + dx * u, fy = y + dy * u, h = 13 * s * f * u;
+    const gr = ctx.createRadialGradient(fx, fy - h * .3, 0, fx, fy - h * .3, h);
+    gr.addColorStop(0, 'rgba(255,240,170,.95)'); gr.addColorStop(.35, 'rgba(255,150,40,.75)'); gr.addColorStop(1, 'rgba(200,40,10,0)');
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.ellipse(fx, fy - h * .35, h * .5, h, 0, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore(); liveAnimation = true;
 }
 
 // ===== BAUKUNST: the bases in 3D (baukunst.js), each model rendered once into a sprite (OW.game, lazy + cached) =====

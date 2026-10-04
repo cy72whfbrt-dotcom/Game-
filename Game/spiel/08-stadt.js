@@ -1,54 +1,56 @@
 // ===== Teil 08-stadt.js: Stadt und Gebäude, Burg, Aussehen, Helden, Stadtansicht, Stufenaufstieg =====
 // ===== CAPITAL / CITY (step 1: buildings can be built and upgraded, effects come later) =====
 var CITY_BUILDINGS = [
-    { id: 'academy',  name: 'Akademie',      icon: 'flask',   x: 215, y: 430, roof: '#2f4f86', dome: true,
-      desc: 'Hier wird geforscht: Wirtschaft, Militär und Erkundung (eine Forschung gleichzeitig). Jede Stufe erlaubt weitere Forschung und lässt deine Truppen 2 % schneller laufen.' },
+    { id: 'academy',  name: 'Labor',         icon: 'flask',   x: 215, y: 430, roof: '#2f4f86', dome: true,
+      desc: 'Hier wird alles geforscht: Wirtschaft (auch Tempel), Militär und Erkundung (auch Späher und Wachturm) – eine Forschung gleichzeitig, jede kostet Rohstoffe und Zeit. Jede Stufe erlaubt weitere Forschung und lässt deine Truppen 2 % schneller laufen.' },
     { id: 'forge',    name: 'Schmiede',      icon: 'weapon',  x: 785, y: 430, roof: '#4a4a52', chimney: true,
       desc: 'Wähle oben die Art und dann ein Ausrüstungsteil aus deinem Besitz, um es mit Sternen zu verbessern: jeder Stern +20 % Wirkung des Teils. Jede Stufe erlaubt einen Stern mehr.' },
-    { id: 'hospital', name: 'Lazarett',      icon: 'plus',    x: 215, y: 670, roof: '#e8e2d2', cross: true,
+    { id: 'hospital', name: 'Krankenhaus',   icon: 'plus',    x: 215, y: 670, roof: '#e8e2d2', cross: true,
       desc: 'Von deinen Gefallenen (Angriff oder Verteidigung) kommen Verwundete hierher statt zu sterben (5 % pro Stufe, bis 60 %). Heile sie gegen Münzen – sie gehen in die Hauptstadt.' },
-    { id: 'shrine',   name: 'Tempelschrein', icon: 'temple',  x: 785, y: 670, roof: '#c9a54e', dome: true, desc: 'Verstärkt den Bonus aller deiner Tempel: Münzen, Truppen und Gems.' },
     { id: 'wall',     name: 'Mauer',         icon: 'defense', x: 715, y: 815, roof: '#6b6456', gate: true,
       desc: 'Stärkt die Verteidigung aller deiner Basen: +2 % pro Stufe (Stufe 25: +50 %). Beispiel: 10 Mio. Verteidigung und Mauer Stufe 5 ergeben 11 Mio.' },
-    { id: 'barracks', name: 'Kaserne',       icon: 'troops',
-      desc: 'Bildet Truppen aus: +2 % Truppenproduktion in allen deinen Basen pro Stufe (Stufe 25: +50 %).' },
-    { id: 'treasury', name: 'Schatzkammer',  icon: 'coin',  
-      desc: 'Verwaltet das Gold des Reiches: +2 % Münzproduktion in allen deinen Basen pro Stufe (Stufe 25: +50 %).' },
-    { id: 'watch',    name: 'Späherturm',    icon: 'scout', 
-      desc: 'Bildet Späher aus: deine Späher sind pro Stufe 4 % schneller unterwegs (Stufe 25: doppelt so schnell).' },
     { id: 'heroes',   name: 'Heldenhalle',   icon: 'profile', x: 285, y: 815, roof: '#7a2e2a',
       desc: 'Hier leben deine Helden: mit Splittern freischalten, Sterne aufwerten, Fähigkeiten wählen. Ein Held führt einen Angriff oder eine Armee. Jede Stufe gibt allen Helden +' + HERO_HALL_GEF + ' % Gefolge.' },
-    { id: 'storage',  name: 'Lager',         icon: 'lock',
-      desc: 'Schützt deine Münzen: fällt eine deiner Basen oder die Garnison der Hauptstadt, nimmt der Sieger einen Teil deiner Münzen mit – aber nie, was im Lager liegt. Jede Stufe schützt mehr.' },
-    // Paket D (aufbau.js): erst ab einer Burg-Stufe zu bauen
-    { id: 'tower',    name: 'Wachturm',      icon: 'tower',
-      desc: 'Hält Ausschau: zeigt dir, wie stark Angriffe auf deine Basen sind (ab Stufe 10 genau, mit Truppen-Stufe und Held), und deine Spähberichte verraten mehr (Burg, Truppen-Stufe, ab Stufe 5 die Forschung). Ab Burg-Stufe 3.' },
     { id: 'embassy',  name: 'Botschaft',     icon: 'bund',
-      desc: 'Für dein Bündnis: Hilfe und Rally-Truppen zu Mitgliedern laufen 3 % schneller je Stufe, Bündnis-Geschenke an dich sind 4 % größer je Stufe. Ab Burg-Stufe 5.' },
+      desc: 'Das Bündnis-Gebäude: je Stufe mehr Platz für Verstärkung von Mitgliedern, größere Rallys (mehr Truppen dürfen beitreten) und mehr Bündnis-Hilfen (Mitglieder tippen „Helfen“ – dein Bau oder deine Forschung geht schneller). Dazu laufen Hilfe und Rally-Truppen schneller, Geschenke sind größer. Ab Burg-Stufe 5.' },
     { id: 'market',   name: 'Markt',         icon: 'market',
       desc: 'Tausche Holz, Stein und Eisen gegen Münzen – oder kaufe Rohstoffe, die dir fehlen. Mit Gebühr (sinkt mit jeder Stufe) und Tageslimit. Ab Burg-Stufe 4.' },
-    // Rohstoffe kommen aus der Stadt (Alexander 2.10.): je ein Gebäude vor der Mauer, dazu die Felder draußen zum Sammeln
+    // Rohstoffe kommen aus der Stadt (Alexander 2.10.): je ein Gebäude in der Stadt (seit 4.10. innerhalb der Mauer), dazu die Felder draußen zum Sammeln
     { id: 'lumber',   name: 'Holzfäller',    icon: 'wood',
-      desc: 'Fällt Holz vor der Stadtmauer – jede Stunde, auch wenn du nicht spielst. Jede Stufe bringt mehr. Holz brauchst du für die Burg, Gebäude und Forschung.' },
+      desc: 'Fällt Holz in deiner Stadt – jede Stunde, auch wenn du nicht spielst. Jede Stufe bringt mehr. Holz brauchst du für die Burg, Gebäude und Forschung.' },
     { id: 'quarry',   name: 'Steinbruch',    icon: 'stone',
-      desc: 'Bricht Stein vor der Stadtmauer – jede Stunde, auch wenn du nicht spielst. Jede Stufe bringt mehr. Stein brauchst du vor allem für Burg, Mauer und Gebäude.' },
+      desc: 'Bricht Stein in deiner Stadt – jede Stunde, auch wenn du nicht spielst. Jede Stufe bringt mehr. Stein brauchst du vor allem für Burg, Mauer und Gebäude.' },
     { id: 'mine',     name: 'Eisenmine',     icon: 'iron',
-      desc: 'Fördert Eisen vor der Stadtmauer – jede Stunde, auch wenn du nicht spielst. Jede Stufe bringt mehr. Eisen brauchst du für hohe Burg-Stufen, Forschung und Truppen-Stufen.' }
+      desc: 'Fördert Eisen in deiner Stadt – jede Stunde, auch wenn du nicht spielst. Jede Stufe bringt mehr. Eisen brauchst du für die Burg, Gebäude und Forschung.' }
 ];
-// Lager: what a fallen base (or a beaten capital garrison) gives away - the same for everyone
-var PLUNDER_PCT = { base: .02, capital: .04 }, PLUNDER_CAP_H = .5;   // a share of the coins above the Lager, at most 30 min of the victim's income per fight
-function storageSafe(lvl) { return lvl ? niceRound(10000 * Math.pow(1.65, lvl - 1)) : 0; }   // coins no attacker can take: 10 Tsd. at 1, ~900 Tsd. at 10, ~1,7 Mrd. at 25 (a share of a full coffer, not all of it - plunder stays worth it)
-function plunderOf(who, capital) {                  // { loot, safe }: the share of the coins above the Lager's protection
-    const have = Math.max(0, who === 'player' ? coins : botCoins[who] || 0), safe = storageSafe(who === 'player' ? cityLevelSafe('storage') : botBld(who, 'storage'));
+// Beute (Alexander 4.10.) – gleich für alle. Die Burg schützt von jedem Rohstoff (Gold, Holz, Stein, Eisen) einen Teil.
+// Fällt eine Basis (Turm): der Sieger bekommt NUR Gold (ein kleiner Teil über dem Schutz). Die Hauptstadt fällt nie: gewinnt der
+// Angreifer, bekommt er von JEDEM Rohstoff einen kleinen Teil über dem Schutz (HAUPT_BEUTE) und die Hauptstadt brennt (nur zu
+// sehen). Gewinnt der Verteidiger, bekommt der Angreifer nichts. Rohstoffe gibt es nur aus der Hauptstadt.
+var PLUNDER_PCT = { base: .02 }, PLUNDER_CAP_H = .5;   // Turm: 2 % des Golds über dem Schutz, höchstens 30 Min. seiner Einnahmen je Kampf
+const HAUPT_BEUTE = .1;                              // Hauptstadt: 10 % von jedem Rohstoff über dem Schutz – klein, damit man oft angreifen muss
+const schutzVon = who => AUF ? AUF.burgSchutz(who) : 0;
+function plunderOf(who, capital) {                  // { loot (Gold), roh: {h, s, e} (nur Hauptstadt), safe }
+    const have = Math.max(0, who === 'player' ? coins : botCoins[who] || 0), safe = schutzVon(who);
+    if (capital) { const r = AUF ? AUF.rohVon(who) : null, roh = { h: 0, s: 0, e: 0 };
+        if (r) for (const x of ['h', 's', 'e']) roh[x] = Math.floor(Math.max(0, (r[x] || 0) - safe) * HAUPT_BEUTE);
+        return { loot: Math.floor(Math.max(0, have - safe) * HAUPT_BEUTE), roh, safe: Math.min(have, safe) }; }
     const cap = Math.max(1e6, hourProduction(who).coins * PLUNDER_CAP_H);   // at most half an hour of the victim's income per fight - a big coffer isn't drained base by base
-    return { loot: Math.floor(Math.min(cap, Math.max(0, have - safe) * PLUNDER_PCT[capital ? 'capital' : 'base'])), safe: Math.min(have, safe) };
+    return { loot: Math.floor(Math.min(cap, Math.max(0, have - safe) * PLUNDER_PCT.base)), safe: Math.min(have, safe) };
 }
-function plunderMove(from, to, loot) {              // the coins change hands (the player's or anyone's coffers)
-    if (!(loot > 0)) return; if (from === 'player') coins -= loot; else botCoins[from] = Math.max(0, (botCoins[from] || 0) - loot);
-    if (to === 'player') coins += loot; else if (to) botCoins[to] = (botCoins[to] || 0) + loot;
+function plunderMove(from, to, loot, roh) {         // Gold (und bei der Hauptstadt Holz, Stein, Eisen) wechselt den Besitzer
+    if (loot > 0) { if (from === 'player') coins -= loot; else botCoins[from] = Math.max(0, (botCoins[from] || 0) - loot);
+        if (to === 'player') coins += loot; else if (to) botCoins[to] = (botCoins[to] || 0) + loot; }
+    if (roh && AUF && (roh.h || roh.s || roh.e)) { AUF.rohDazu(from, { h: -roh.h, s: -roh.s, e: -roh.e }); if (to) AUF.rohDazu(to, roh); }
 }
+const beuteText = p => p ? [p.loot ? fmtCompact(p.loot) + ' Gold' : '', ...(p.roh ? [['h', 'Holz'], ['s', 'Stein'], ['e', 'Eisen']].filter(([x]) => p.roh[x] > 0).map(([x, n]) => fmtCompact(p.roh[x]) + ' ' + n) : [])].filter(Boolean).join(', ') : '';
+// die Hauptstadt brennt nach einem verlorenen Kampf (nur zu sehen) – Welt-Teil openWaterBrand: { Basis: brennt bis }
+const BRAND_MS = 30 * 60000;
+var brand = (() => { try { const v = JSON.parse(store.get('openWaterBrand')); return v && typeof v === 'object' ? v : {}; } catch (e) { return {}; } })();
+function brandSetzen(id) { const now = Date.now(); for (const k in brand) if (brand[k] < now) delete brand[k]; brand[id] = now + BRAND_MS; store.set('openWaterBrand', JSON.stringify(brand)); requestRender(); }
+const brennt = id => (brand[id] || 0) > Date.now();
 var CITY_MAX_LEVEL = 25, CITY_GEMS_PER_MIN = 1;
-function cityMaxLevel(id) { return id === 'forge' ? STAR_MAX : id === 'hospital' || id === 'storage' ? 40 : CITY_MAX_LEVEL; }   // (die Burg: 25, siehe aufbau.js)   // the Schmiede stops at the star maximum, the Lazarett and the Lager go on to 40 (room for huge armies and coffers)
+function cityMaxLevel(id) { return id === 'forge' ? STAR_MAX : id === 'hospital' ? 40 : CITY_MAX_LEVEL; }   // (die Burg: 25, siehe aufbau.js)   // the Schmiede stops at the star maximum, the Krankenhaus goes on to 40 (room for huge armies)
 var cityState = null;
 function loadCity() {
     if (cityState) return cityState;
@@ -56,7 +58,7 @@ function loadCity() {
     if (!cityState || !cityState.levels) cityState = { levels: {}, builds: [] };
     for (const b of CITY_BUILDINGS) if (typeof cityState.levels[b.id] !== 'number') cityState.levels[b.id] = 0;
     if (!(cityState.levels.keep >= 1)) cityState.levels.keep = 1;                                  // Paket D: Burg-Stufe (alte Spielstände: 1)
-    if (!cityState.fo || typeof cityState.fo !== 'object') cityState.fo = {}; if (!(cityState.tier >= 1)) cityState.tier = 1;   // Forschung, Truppen-Stufe
+    if (!cityState.fo || typeof cityState.fo !== 'object') cityState.fo = {}; delete cityState.tier; delete cityState.tierBez;   // Forschung (Truppen-Stufen gibt es nicht mehr)
     cityBuildsFix(cityState);
     if (typeof cityState.wounded !== 'number') cityState.wounded = 0;
     cityState.levels.forge = Math.min(cityState.levels.forge, cityMaxLevel('forge'));   // the Schmiede ends at the star maximum
@@ -361,7 +363,7 @@ function cityNutz(id, lvl) {                       // die eigene Seite eines Geb
     if (id === 'academy') return lvl || loadCity().foRun ? ['Forschen', 'flask'] : null;
     if (id === 'heroes') return ['Helden', 'profile'];
     if (!lvl) return null;
-    return { forge: ['Schmieden', 'weapon'], hospital: ['Heilen', 'plus'], market: ['Handeln', 'market'], embassy: ['Verstärkung', 'bund'], barracks: ['Truppen-Stufe', 'troops'] }[id] || null;
+    return { forge: ['Schmieden', 'weapon'], hospital: ['Heilen', 'plus'], market: ['Handeln', 'market'], embassy: ['Verstärkung', 'bund'] }[id] || null;
 }
 function cityBildSpr(id, lvl) {                    // dasselbe Bild wie in der Stadt
     if (id === 'keep') return citySprite('keep', Math.min(4, Math.floor((lvl || 1) / 5)));
@@ -421,7 +423,7 @@ function renderCitySheet() {                       // (läuft auch jede Sekunde 
     const bld = cityBuildOf(c, id), building = !!bld, blocker = cityBlocker(id);
     let cls, nh;
     if (building) { cls = 'notice notice--gold';
-        nh = icon('hourglass') + '<span style="flex:1">Ausbau auf Stufe ' + bld.to + ' · noch <b id="cityBNoteTime"></b><div class="city-progress" style="margin-top:6px"><i></i></div></span>'; }
+        nh = icon('hourglass') + '<span style="flex:1">Ausbau auf Stufe ' + bld.to + ' · noch <b id="cityBNoteTime"></b><div class="city-progress" style="margin-top:6px"><i></i></div>' + (typeof bundHilfeKnopf === 'function' ? bundHilfeKnopf('bau', id, bld.to, bld.endsAt) : '') + '</span>'; }
     else { cls = 'notice city-wirkung'; nh = icon('info') + '<span>' + cityEffectText(id, lvl) + '</span>'; }
     if (note.className !== cls) note.className = cls;
     liveHtml(note, nh);
@@ -498,7 +500,7 @@ const HERO_EFF = { atk: ['atk', 'fight'], loss: ['loss', 'fight'], hosp: ['hosp'
     strongAtk: ['atk', 'strong'], midAtk: ['atk', 'mid'], midLoss: ['loss', 'mid'], guardAtk: ['atk', 'guard'], rulerAtk: ['atk', 'ruler'], templeLoss: ['loss', 'temple'], templeGold: ['gold', 'temple'],
     templeAtk: ['atk', 'temple'], templeHosp: ['hosp', 'temple'], scoutAtk: ['atk', 'scouted'], neutralAtk: ['atk', 'neutral'], fieldAtk: ['atk', 'vsArmy'], fieldGold: ['gold', 'field'],
     fieldLoss: ['loss', 'field'], fieldDef: ['fdef', 'fdefending'], resAtk: ['atk', 'res'], gatherDef: ['fdef', 'gatherDef'], gatherSpd: ['gSpd', 'gather'], carry: ['carry', 'gather'], rage: [null, 'never'] };
-const HERO_FX_TXT = { atk: v => '+' + v + ' % Angriff', loss: v => '−' + v + ' % Verluste', def: v => 'Verteidigung −' + v + ' %', hosp: v => '+' + v + ' % ins Lazarett', gold: v => '+' + v + ' % Gold',
+const HERO_FX_TXT = { atk: v => '+' + v + ' % Angriff', loss: v => '−' + v + ' % Verluste', def: v => 'Verteidigung −' + v + ' %', hosp: v => '+' + v + ' % ins Krankenhaus', gold: v => '+' + v + ' % Gold',
     flee: v => '+' + v + ' % fliehen', ret: v => 'Rückzug +' + v + ' % Tempo', late: v => v + ' % später bemerkt', spd: v => '+' + v + ' % Tempo', toll: v => '−' + v + ' % Maut',
     fdef: v => '+' + v + ' % Verteidigung', gSpd: v => '+' + v + ' % Sammeln', carry: v => '+' + v + ' % Traglast' };
 function heroGefOf(hx, n) { return hx ? Math.min(hx.gef || 0, Math.max(0, n)) : 0; }   // Gefolge: never more than the troops the hero leads (no 1-troop marches with a big following)
@@ -821,10 +823,10 @@ function heroChipHtml(id, q) { const h = heroById(id); if (!h) return ''; const 
 function academyLevel() { return loadCity().levels.academy || 0; }
 function forgeLevel() { return loadCity().levels.forge || 0; }
 function hospitalLevel() { return loadCity().levels.hospital || 0; }
-function hospitalPct() { return Math.min(60, hospitalLevel() * 5) + (AUF ? AUF.lazarettPlus('player') : 0); }   // (+ Forschung Lazarett)
+function hospitalPct() { return Math.min(60, hospitalLevel() * 5) + (AUF ? AUF.lazarettPlus('player') : 0); }   // (+ Forschung Krankenhaus)
 function hospitalCapacity() { const l = hospitalLevel(); return l ? Math.round(1e6 * Math.pow(1.6, l - 1)) : 0; }
 const HEAL_COIN_PER_TROOP = 0.1;
-function hospitalTake(fallen, pct) {              // Lazarett: part of your fallen (attack won or lost, or defending) are only wounded → how many
+function hospitalTake(fallen, pct) {              // Krankenhaus: part of your fallen (attack won or lost, or defending) are only wounded → how many
     if (!hospitalLevel() || fallen <= 0) return 0;
     const c = loadCity(), room = Math.max(0, hospitalCapacity() - c.wounded), w = Math.min(room, Math.floor(fallen * (pct ?? hospitalPct()) / 100));
     if (w > 0) { c.wounded += w; saveCity(); }
@@ -832,24 +834,16 @@ function hospitalTake(fallen, pct) {              // Lazarett: part of your fall
 }
 function starGemCost(stars) { return 20 * (stars + 1); }
 function cityEffectText(id, lvl) {
-    if (AUF && ['academy', 'tower', 'embassy', 'market', 'lumber', 'quarry', 'mine'].includes(id)) return AUF.effektText(id, lvl);   // Paket D (aufbau.js), Rohstoff-Gebäude
+    if (AUF && ['academy', 'embassy', 'market', 'lumber', 'quarry', 'mine'].includes(id)) return AUF.effektText(id, lvl);   // Paket D (aufbau.js), Rohstoff-Gebäude
     if (id === 'wall') return lvl ? 'Jetzt: +' + (lvl * 2) + ' % Verteidigung auf allen Basen.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: +' + ((lvl + 1) * 2) + ' %.' : '') : 'Baue die Mauer für mehr Verteidigung auf allen Basen.';
     if (id === 'academy') return 'Jetzt: Truppen laufen +' + (lvl * 2) + ' % schneller.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: +' + ((lvl + 1) * 2) + ' %.' : '');
     if (id === 'forge') return lvl ? 'Bis zu ' + Math.min(STAR_MAX, lvl) + (Math.min(STAR_MAX, lvl) === 1 ? ' Stern' : ' Sterne') + ' pro Ausrüstungsteil.' + (lvl < STAR_MAX ? ' Nächste Stufe: ' + (lvl + 1) + ' Sterne.' : '') : 'Baue die Schmiede, um Sterne zu setzen.';
     if (id === 'heroes') { const n = HEROES.filter(h => heroOwned('player', h.id)).length; return (lvl ? 'Jetzt: +' + lvl * HERO_HALL_GEF + ' % Gefolge für alle Helden.' : 'Noch kein Bonus aufs Gefolge.') + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: +' + (lvl + 1) * HERO_HALL_GEF + ' %.' : '') + ' ' + n + ' von ' + HEROES.length + ' Helden freigeschaltet.'; }
-    const nx = (per, what) => (lvl ? 'Jetzt: +' + lvl * per + ' % ' + what + '.' : 'Noch keine Wirkung.') + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: +' + (lvl + 1) * per + ' %.' : '');
-    if (id === 'barracks') return nx(2, 'Truppenproduktion auf allen Basen');
-    if (id === 'treasury') return nx(2, 'Münzproduktion auf allen Basen');
-    if (id === 'watch') return nx(4, 'schnellere Späher');
-    if (id === 'shrine') return nx(5, 'Bonus aus allen deinen Tempeln (Münzen, Truppen, Gems)');
-    if (id === 'storage') { const safe = storageSafe(lvl), pl = Math.round(PLUNDER_PCT.base * 100) + ' % pro gefallener Basis, ' + Math.round(PLUNDER_PCT.capital * 100) + ' % bei der Hauptstadt (höchstens ' + Math.round(PLUNDER_CAP_H * 60) + ' Min. deiner Einnahmen pro Kampf)';
-        return (lvl ? 'Geschützt: ' + fmtCompact(safe) + ' Münzen' + (coins <= safe ? ' – gerade alles sicher.' : ' – darüber verlierst du ' + pl + '.') : 'Noch nichts geschützt: fällt eine Basis, verlierst du ' + pl + ' deiner Münzen.') +
-            (lvl < cityMaxLevel(id) ? ' Nächste Stufe schützt ' + fmtCompact(storageSafe(lvl + 1)) + (/\.$/.test(fmtCompact(storageSafe(lvl + 1))) ? '' : '.') : ''); }
-    if (id === 'hospital') return lvl ? hospitalPct() + ' % der Gefallenen kommen ins Lazarett · Platz für ' + fmtCompact(hospitalCapacity()) + (lvl < cityMaxLevel('hospital') ? ' · Nächste Stufe: ' + Math.min(60, (lvl + 1) * 5) + ' %, Platz für ' + fmtCompact(Math.round(1e6 * Math.pow(1.6, lvl))) : '') : 'Baue das Lazarett, um Verwundete zu retten.';
+    if (id === 'hospital') return lvl ? hospitalPct() + ' % der Gefallenen kommen ins Krankenhaus · Platz für ' + fmtCompact(hospitalCapacity()) + (lvl < cityMaxLevel('hospital') ? ' · Nächste Stufe: ' + Math.min(60, (lvl + 1) * 5) + ' %, Platz für ' + fmtCompact(Math.round(1e6 * Math.pow(1.6, lvl))) : '') : 'Baue das Krankenhaus, um Verwundete zu retten.';
     return '';
 }
 function cityExtraHtml(id, lvl) {
-    if (AUF && ['academy', 'barracks', 'market'].includes(id)) return AUF.extraHtml(id, lvl);   // Forschung, Truppen-Stufe, Markt (aufbau.js)
+    if (AUF && ['academy', 'market'].includes(id)) return AUF.extraHtml(id, lvl);   // Forschung, Markt (aufbau.js)
     if (id === 'heroes') { const up = HEROES.filter(h => heroCanDo('player', h.id)).length;   // the way into the hero screen
         return '<button type="button" class="btn btn--primary btn--grow hh-open" data-hero-open>' + icon('profile') + '<span>Helden öffnen</span>' + (up ? '<em class="hh-badge">' + up + '</em>' : '') + '</button>'; }
     if (id === 'embassy' && lvl && typeof verstHtml === 'function') return verstHtml();   // Botschaft: Verstärkung (buendnis.js)
@@ -934,14 +928,13 @@ const CITY_WALL = { a: 150, b: 490 };                                       // t
 // Straßen dazwischen wie ein „#“, vorn das Tor mit der Hauptstraße. Draußen: Wald (Holzfäller), Berge (Steinbruch),
 // ein Hügel (Eisenmine), Felder, ein Fluss und die Mühle.
 const CITY_LOTS = {                                                          // building lots (ground centre, world units)
-    shrine: [206, 206], academy: [282, 206], heroes: [358, 206], storage: [434, 206],
-    forge: [206, 282], barracks: [434, 282],
-    embassy: [206, 358], tower: [434, 358],
-    watch: [206, 434], hospital: [282, 434], market: [358, 434], treasury: [434, 434],
-    wall: [320, 490],
-    lumber: [84, 262], quarry: [198, 80], mine: [456, 562]                    // Rohstoffe: vor der Mauer (gleich im Bild)
+    lumber: [206, 206], academy: [282, 206], heroes: [358, 206], quarry: [434, 206],
+    forge: [206, 282],
+    embassy: [206, 358],
+    hospital: [282, 434], market: [358, 434], mine: [434, 434],
+    wall: [320, 490]                                                         // Rohstoffe: in der Base (Alexander 4.10.)
 };
-const CITY_DRAUSSEN = new Set(['lumber', 'quarry', 'mine']);
+const CITY_DRAUSSEN = new Set();
 const CITY_KEEP_AT = [320, 320];
 const cIso = (x, y) => [(x - y) * .866, (x + y) * .5];                    // world → screen units (before zoom)
 let cityCam = null, cityPointers = new Map(), cityGesture = null, CITY_GROUND = null, CITY_WALLS = null, CITY_SPRITES = new Map();
@@ -1066,14 +1059,6 @@ const CITY_PAINT = {
         if (t >= 2) { K.pyramid(-15, 15, 5, 2, 8, '#e8e2d2'); K.box(-18, -8, -19, -12, 2, 9, '#f3eee2', .7); cityGable(K, -19, -7, -20, -11, 9, 5, '#b33a2e'); }
         if (t >= 3) { for (const [x, y] of [[4, 17], [9, 17]]) { const [a, b] = K.P(x, y, 2); K.poly([[a - 2, b], [a, b - 1], [a + 2, b], [a, b + 1]], '#6aa84f', .3); } cityBanner(K, 12, 10.2, 12, '#c0392b'); }
     },
-    shrine(K, t) {
-        K.box(-20, 20, -20, 20, 0, 2, '#d9d0bb', .7); K.box(-16, 16, -16, 16, 2, 4, '#e3dac6', .7);
-        const n = t >= 2 ? 8 : 6;
-        for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2; K.cyl(Math.cos(a) * 11, Math.sin(a) * 11, 1.4, 4, 18, '#f3ecdc', .5, true); }
-        K.cyl(0, 0, 13, 18, 20, '#e8dfca', .7);
-        if (t >= 3) K.dome(0, 0, 12, 20, 12, '#d9b454'); else K.cone(0, 0, 14, 20, 11, '#c9a54e');
-        const [a, b] = K.P(0, 0, 8); K.poly([[a - 2.5, b], [a, b - 4], [a + 2.5, b], [a, b + 3]], '#ffd98a', .4);          // the flame
-    },
     heroes(K, t) {
         cityPlinth(K, 21, 2);
         K.box(-17, 15, -12, 8, 2, 16, '#efe6d2', .8); cityGable(K, -18, 16, -13, 9, 16, 12, '#7a2e2a'); cityWindows(K, -14, 12, 8, 13, 5, true);
@@ -1081,22 +1066,6 @@ const CITY_PAINT = {
         const on = Math.ceil(HEROES.filter(h => heroOwned('player', h.id)).length / HEROES.length * 3);   // a lit statue for every third of the heroes
         [0, 1, 2].forEach(i => { const x = -10 + i * 10; K.box(x - 2, x + 2, 13, 17, 2, 5, '#8a7f68', .5); K.cyl(x, 15, 1.4, 5, 10, i < on ? '#d9b454' : '#9a927f', .4); });
         cityBanner(K, -15, 8.2, 14, '#7a2e2a'); cityBanner(K, 13, 8.2, 14, '#7a2e2a'); if (t >= 3) cityBanner(K, -1, 2.2, 26, '#e4c886');
-    },
-    barracks(K, t) {
-        K.poly([K.P(-21, -21, 0), K.P(21, -21, 0), K.P(21, 21, 0), K.P(-21, 21, 0)], '#b39d74', .6);                        // drill yard
-        for (let i = -21; i <= 21; i += 6) K.box(i - .5, i + .5, 20.5, 21.5, 0, 3, '#6b4a2c', .3);
-        K.box(-19, 9, -19, -9, 0, 11, '#d8cbb0', .8); cityGable(K, -20, 10, -20, -8, 11, 7, '#8a3a2a'); cityWindows(K, -16, 6, -9, 8, 4, false);
-        if (t >= 2) { K.box(-19, -9, -5, 17, 0, 10, '#d8cbb0', .8); cityGableY(K, -20, -8, -6, 18, 10, 6, '#8a3a2a'); cityWindowsR(K, -9, -3, 15, 7, 4); }
-        for (const [x, y] of [[4, 8], [10, 4], [14, 12]]) { K.box(x - .4, x + .4, y - .4, y + .4, 0, 5, '#6b4a2c', .3); K.box(x - 1.6, x + 1.6, y - .4, y + .4, 3.6, 4.4, '#6b4a2c', .3); }   // training dummies
-        if (t >= 3) { K.box(15, 20, -20, -15, 0, 22, '#9d9585', .7); K.pyramid(17.5, -17.5, 3.5, 22, 7, '#8a3a2a'); }
-    },
-    treasury(K, t) {
-        cityPlinth(K, 21, 3, '#9d9585');
-        K.box(-14, 14, -12, 12, 3, 16, '#d8d1c1', .9); K.merlons(-14, 14, -12, 12, 16, '#d8d1c1', 5);
-        cityDoor(K, 0, 12, 9);
-        if (t >= 2) { K.cyl(0, 0, 8, 16, 20, '#e8dfca', .7); K.dome(0, 0, 8.5, 20, 10, '#d9b454'); } else K.pyramid(0, 0, 12, 16, 8, '#6d8a4a');
-        for (const [x, y, n] of [[16, 14, 3], [-16, 16, 2], [16, -6, t >= 3 ? 3 : 1]]) for (let i = 0; i < n; i++) K.cyl(x, y, 2.2, 3 + i * 1.3, 4.3 + i * 1.3, '#e8c547', .4);
-        if (t >= 3) for (const x of [-10, 10]) K.cyl(x, 13, 1.3, 3, 15, '#f3ecdc', .5, true);
     },
     gatehouse(K, t) {                                                       // the gate in the front wall = the Mauer building
         if (!t) { K.box(-14, -8, -4, 4, 0, 14, '#8a6440', .6); K.box(8, 14, -4, 4, 0, 14, '#8a6440', .6); K.box(-14, 14, -4, 4, 14, 17, '#6b4a2c', .6);
@@ -1107,17 +1076,6 @@ const CITY_PAINT = {
         K.poly([[a - 5, b - 9], [a + 5, b - 14.5], [a + 5, b - 12], [a - 5, b - 6.5]], 'rgba(60,54,44,.8)', .4);                                   // portcullis bar
         for (const x of [-15, 15]) { K.cyl(x, 0, 7, 0, h + 6, s, .8); K.cone(x, 0, 8.5, h + 6, 10 + t * 2, roof); const [fa, fb] = K.P(x, 0, h + 16 + t * 2); K.flag(fa, fb, BAND.player, true); }
         if (t >= 2) { cityBanner(K, -6, 6.2, h - 3, '#2b5d9b'); cityBanner(K, 6, 6.2, h - 3, '#2b5d9b'); }
-    },
-    storage(K, t) {                                                         // the Lager: a timber barn with crates and sacks, stone and gold-bound chests later
-        cityPlinth(K, 19, 2, '#8e8676');
-        const wall = t >= 3 ? '#d8d1c1' : '#b98d5a', roof = t >= 2 ? '#6b4a8a' : '#7a5230';
-        K.box(-14, 10, -12, 8, 2, 13, wall, .8); cityGable(K, -15, 11, -13, 9, 13, 8, roof);
-        const [dx, dy] = K.P(-2, 8, 2); K.poly([[dx - 5, dy + 2.9], [dx + 5, dy - 2.9], [dx + 5, dy - 11.5], [dx - 5, dy - 5.7]], '#4a3018', .6);   // the big barn door
-        K.poly([[dx - 5, dy + 2.9], [dx + 5, dy - 11.5]], null, .5); K.poly([[dx + 5, dy - 2.9], [dx - 5, dy - 5.7]], null, .5);
-        for (const [x, y, z] of [[14, 12, 2], [18, 12, 2], [14, 16, 2], [16, 14, 6]]) K.box(x - 2, x + 2, y - 2, y + 2, z, z + 4, '#a0783f', .4);   // crates
-        for (const [x, y] of [[-15, 14], [-11, 15]]) K.cyl(x, y, 2.2, 2, 6, '#d9c9a0', .4);                          // sacks
-        if (t >= 2) { K.box(12, 19, -16, -6, 2, 11, wall, .7); cityGableY(K, 11, 20, -17, -5, 11, 5, roof); }
-        if (t >= 3) { for (const [x, y] of [[4, 15], [8, 15]]) { K.box(x - 1.8, x + 1.8, y - 1.4, y + 1.4, 2, 5.2, '#7a5230', .4); K.box(x - 1.8, x + 1.8, y - 1.4, y + 1.4, 4.6, 5.4, '#e8c547', .3); } cityBanner(K, -12, 8.2, 12, '#6b4a8a'); }
     },
     lumber(K, t) {                                                          // Holzfäller: Hütte, Stämme, Sägebock, Bäume drumherum
         K.box(-16, 0, -14, -2, 0, 9, '#9a7448', .7); cityGable(K, -17, 1, -15, -1, 9, 6, '#3f6b33'); cityDoor(K, -8, -2, 6); cityWindows(K, -14, -10, -2, 7, 1, false);
@@ -1139,16 +1097,6 @@ const CITY_PAINT = {
         K.box(-6, -2, 9, 22, 0, .6, '#5a5550', .2); K.box(-5.6, -2.4, 15, 19, .6, 4.4, '#7a4a2a', .5); K.box(-5.4, -2.6, 15.2, 18.8, 4.4, 5.6, '#3b3b40', .3);   // Schienen, Lore mit Erz
         if (t >= 2) { K.box(10, 18, 6, 14, 0, 7, '#9a7448', .5); cityGable(K, 9, 19, 5, 15, 7, 4, '#4a4a52'); cityWindows(K, 11, 17, 14, 5, 2, true); }
     },
-    tower(K, t) {                                                           // Wachturm (Paket D): hoher Steinturm mit Feuerkorb und Wehrgang
-        const h = 34 + t * 9;
-        K.box(-11, 11, -11, 11, 0, 2, '#9d9585', .7);
-        K.cyl(0, 0, 7, 2, h, '#bdb3a0', .8); cityWindowsR(K, 6, -2, 2, h - 8, 1); cityWindows(K, -2, 2, 6, h - 14, 1, true);
-        K.cyl(0, 0, 9, h, h + 3, '#a89f8c', .7); K.merlons(-8, 8, -8, 8, h + 3, '#a89f8c', 4);
-        if (t >= 2) { K.box(-3, 3, -3, 3, h + 3, h + 9, '#6b4a2c', .5); const [a, b] = K.P(0, 0, h + 11); K.poly([[a - 3, b], [a, b - 6], [a + 3, b], [a, b + 2]], '#ffb347', .4); }
-        else K.cone(0, 0, 9, h + 3, 9, '#7a2e2a');
-        if (t >= 3) { K.cyl(-12, 10, 3, 2, 18, '#bdb3a0', .6); K.cone(-12, 10, 4, 18, 6, '#7a2e2a'); }
-        const [fa, fb] = K.P(0, 0, h + (t >= 2 ? 14 : 12)); K.flag(fa, fb, BAND.player, true);
-    },
     embassy(K, t) {                                                         // Botschaft: helles Haus mit Säulen und vielen Fahnen (das Bündnis)
         cityPlinth(K, 21, 2, '#b8b0a0');
         K.box(-15, 13, -10, 10, 2, 14, '#f1ead8', .8); cityGable(K, -16, 14, -11, 11, 14, 8, '#2e6b5a'); cityWindows(K, -12, 10, 10, 11, 4, false);
@@ -1167,14 +1115,6 @@ const CITY_PAINT = {
         for (const [x, y] of [[16, 16], [18, 12], [-16, 16]]) K.cyl(x, y, 1.8, 0, 4, '#8a6440', .4);
         if (t >= 3) { K.box(-2, 4, 14, 19, 0, 4, '#9c7e4c', .4); cityBanner(K, -10, -3.8, 9, '#b5651d'); }
     },
-    watch(K, t) {
-        const h = 30 + t * 8;
-        K.box(-9, 9, -9, 9, 0, 2, '#9d9585', .7);
-        K.box(-5, 5, -5, 5, 2, h, '#cfc6b3', .8); cityWindowsR(K, 5, -3, 3, h - 6, 1); cityWindows(K, -3, 3, 5, h - 6, 1, true);
-        if (t >= 2) { K.box(-7, 7, -7, 7, h, h + 2, '#cfc6b3', .7); K.merlons(-7, 7, -7, 7, h + 2, '#cfc6b3', 4); }
-        const top = h + (t >= 2 ? 2 : 0); K.pyramid(0, 0, 6.5, top, 10, '#2f5e9a');
-        const [a, b] = K.P(0, 0, top + 10); K.flag(a, b, BAND.player, true);
-    },
 };
 function g2Cross(poly, x, y) { poly([[x - 1.2, y - 4], [x + 1.2, y - 4], [x + 1.2, y - 1.2], [x + 4, y - 1.2], [x + 4, y + 1.2], [x + 1.2, y + 1.2], [x + 1.2, y + 4], [x - 1.2, y + 4], [x - 1.2, y + 1.2], [x - 4, y + 1.2], [x - 4, y - 1.2], [x - 1.2, y - 1.2]], '#c0392b', .4); }
 
@@ -1183,7 +1123,7 @@ const CITY_SPR_SCALE = 5;
 function citySprite(kind, tier, extraKey) {
     const key = kind + ':' + tier + ':' + (extraKey || '');
     let s = CITY_SPRITES.get(key); if (s) return s;
-    const art = kind === 'ghost' ? extraKey : kind, w = 64, up = art === 'keep' ? 90 : art === 'watch' || art === 'tower' ? 80 : 52, down = art === 'keep' ? 42 : 26;   // screen-unit box around the ground anchor
+    const art = kind === 'ghost' ? extraKey : kind, w = 64, up = art === 'keep' ? 90 : 52, down = art === 'keep' ? 42 : 26;   // screen-unit box around the ground anchor
     const c = document.createElement('canvas'); c.width = w * 2 * CITY_SPR_SCALE; c.height = (up + down) * CITY_SPR_SCALE;
     const g = c.getContext('2d'), K = cityPainter(g, CITY_SPR_SCALE, w * CITY_SPR_SCALE, up * CITY_SPR_SCALE);
     if (kind === 'ghost') cityGhost(g, K, extraKey, c, w * CITY_SPR_SCALE, up * CITY_SPR_SCALE); else (CITY_PAINT[kind] || CITY_PAINT.plot)(K, tier);
@@ -1321,14 +1261,12 @@ function cityPaintGround() {
     // 4) Wege draußen: die Hauptstraße vom Tor nach Süden, Pfade zu Holzfäller, Steinbruch und Eisenmine
     cityStrip(g, [[320, 492], [320, 600], [306, 700], [300, 780]], 22, 'rgba(92,78,56,.85)'); cityStrip(g, [[320, 492], [320, 600], [306, 700], [300, 780]], 17, dirt);
     cityStrip(g, [[320, 492], [320, 540]], 17, cob);
-    for (const p of [[[320, 586], [380, 572], [432, 566]], [[146, 318], [112, 298], [96, 280]], [[318, 146], [262, 104], [222, 92]]]) { cityStrip(g, p, 10, 'rgba(92,78,56,.6)'); cityStrip(g, p, 7, dirt); }
-    for (const [x, y, r] of [[84, 262, 40], [198, 80, 40], [456, 562, 34]]) { const pts = []; for (let i = 0; i < 18; i++) { const a = i / 18 * Math.PI * 2; pts.push([x + Math.cos(a) * r * (.85 + R() * .25), y + Math.sin(a) * r * (.85 + R() * .25)]); } cityGroundPoly(g, pts, dirt); }
     // 5) Berge hinten, Wald links, hinten rechts, jenseits des Flusses und hinter den Feldern – in Tiefen-Reihenfolge gemalt
     const dinge = [];
     for (const [x, y, r, h] of [[110, 6, 62, 92], [232, -34, 58, 80], [36, 92, 54, 72], [-36, 178, 50, 62], [334, -62, 52, 70], [-96, 292, 46, 54], [432, -104, 50, 62], [-130, 410, 40, 44]])
         for (const [dx, dy, k] of [[0, 0, 1], [-r * .55, r * .25, .62], [r * .4, -r * .45, .7]]) dinge.push({ d: x + dx + y + dy, f: () => cityMountain(g, K, x + dx, y + dy, r * k, h * k * (.85 + R() * .3), pal, R) });
     for (const [x, y, r, h] of [[166, 24, 30, 34], [60, 160, 26, 26], [-60, 262, 24, 24], [300, 10, 26, 28]]) dinge.push({ d: x + y, f: () => cityMountain(g, K, x, y, r, h, pal, R) });   // Hügel davor
-    const frei = (x, y) => { for (const [cx, cy, r] of [[84, 262, 52], [198, 80, 52], [456, 562, 44], [96, 280, 26], [112, 298, 20], [262, 104, 20]]) if (Math.hypot(x - cx, y - cy) < r) return false;
+    const frei = (x, y) => {
         return !(x > 120 && x < 520 && y > 120 && y < 520) && !(x > 160 && x < 430 && y > 500 && y < 712) && !(x > 480 && y > 470 && x + y < 1110) && !(x > 548 && x < 668 && y < 470) && !(x > 610 && x < 740 && y > 420 && y < 640); };
     for (let i = 0, n = Math.round(420 * pal.wald); i < n; i++) {
         const x = -170 + R() * 980, y = -170 + R() * 980;
@@ -1422,7 +1360,7 @@ function cityPaintWalls(lvl) {
     return CITY_WALLS = { key, back: back.c, front: front.c, S, B: WB };
 }
 
-// ---- people: villagers on the streets, soldiers drilling at the barracks ----
+// ---- people: villagers on the streets ----
 const CITY_PATHS = [
     [[CC, 600], [CC, 494], [CC, 380]], [[244, 244], [396, 244], [396, 396], [244, 396], [244, 244]],
     [[244, 178], [244, 462]], [[396, 462], [396, 178]], [[178, 244], [462, 244]], [[462, 396], [178, 396]], [[CC, 172], [CC, 260]], [[172, CC], [260, CC]]
@@ -1561,8 +1499,6 @@ function cityFrame(now) {
     if (!cityFolk) cityMakeFolk();
     const dt = Math.min(.1, (now - (cityFrame.last || now)) / 1000); cityFrame.last = now;
     for (const f of cityFolk) { f.t += f.v * dt * (f.cart ? .5 : 1); const [x, y] = cityPathPoint(f.p, f.t); items.push({ x, y, folk: f }); }
-    if (c.levels.barracks) for (let i = 0; i < 9; i++) { const [bx, by] = CITY_LOTS.barracks, step = Math.sin(now / 900) * 5;
-        items.push({ x: bx + 2 + (i % 3) * 5 + step, y: by + 4 + Math.floor(i / 3) * 5, soldier: true }); }
     items.sort((p, q) => (p.x + p.y) - (q.x + q.y));
     // Boden, hintere Mauer und die weichen Schatten der Häuser ändern sich nur mit der Kamera. Steht sie still, liegen sie
     // fertig in einem Bild (CITY_LAGEN, wird einmal gemalt) – das spart pro Bild das teure Verkleinern der großen Boden- und
@@ -1616,7 +1552,6 @@ function cityFrame(now) {
                 g.fillStyle = 'rgba(255,' + Math.round(200 - t * 120) + ',60,' + (1 - t) + ')'; g.fillRect(ax + Math.cos(an) * t * 12 * Z, ay + Math.sin(an) * t * 10 * Z + t * t * 8 * Z, Math.max(1, Z * .6), Math.max(1, Z * .6)); } }
         if (it.deco === 'fountain') { const [fx, fy] = toS(it.x, it.y, 10); g.strokeStyle = 'rgba(190,230,250,.8)'; g.lineWidth = Math.max(1, Z * .5);
             for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2 + now / 2000, r = 6 * Z; g.beginPath(); g.moveTo(fx, fy); g.quadraticCurveTo(fx + Math.cos(a) * r * .6, fy - 3 * Z, fx + Math.cos(a) * r, fy + Math.sin(a) * r * .5 + 7 * Z); g.stroke(); } }
-        if (it.id === 'shrine' && it.lvl) { const [fx, fy] = toS(it.x, it.y, 10); g.fillStyle = 'rgba(255,210,110,' + (.18 + .1 * Math.sin(now / 350)) + ')'; g.beginPath(); g.arc(fx, fy, 9 * Z, 0, 7); g.fill(); }
         if (!it.id) continue;
         const building = !!cityBuildOf(c, it.id === '_keep' ? 'keep' : it.id);
         if (building) {                                                      // scaffolding + a bouncing hammer
@@ -1627,7 +1562,7 @@ function cityFrame(now) {
             const [hx, hy] = toS(it.x, it.y, 34); drawGlyph(g, 'upgrade', hx, hy - Math.abs(Math.sin(now / 180)) * 8, Math.max(16, 9 * Z), '#ffd98a');
             liveAnimation = true;
         }
-        const hw = (it.keep ? 40 : 30) * Z, top = sy - (it.keep ? 70 : it.id === 'watch' || it.id === 'tower' ? 58 : 38) * Z;
+        const hw = (it.keep ? 40 : 30) * Z, top = sy - (it.keep ? 70 : 38) * Z;
         cityHitRects.push({ id: it.id, x: sx - hw, y: top, w: hw * 2, h: sy + 14 * Z - top, cx: sx, cy: sy - (it.keep ? 30 : 16) * Z, depth: it.x + it.y });
         if (it.id === cityRingId) { const el = document.getElementById('cityRing'), tf = 'translate(' + Math.round(sx) + 'px,' + Math.round(sy + (it.keep ? 4 : 0) * Z) + 'px)';   // die runden Knöpfe folgen dem Gebäude
             if (el.style.transform !== tf) el.style.transform = tf; if (el.style.visibility) el.style.visibility = ''; }

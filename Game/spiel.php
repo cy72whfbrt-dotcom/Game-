@@ -1402,6 +1402,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .fo-node.is-sel{border-color:var(--gold-100);box-shadow:0 0 0 2px rgba(240,223,176,.35),var(--glow-gold)}
 @keyframes fo-puls{50%{box-shadow:0 0 12px rgba(236,208,138,.55)}}
 .fo-go{margin-top:8px}
+.bd-hilfe-btn{margin-top:8px} .bd-hilfe-st{display:flex;align-items:center;gap:6px;margin-top:6px;font:600 var(--fs-11)/1.3 var(--font-ui);color:var(--gold-100)} .bd-hilfe-st .icon,.bd-hilfe-btn .icon{width:14px;height:14px}
 .fo-detail{display:flex;flex-direction:column;gap:8px;margin-top:4px;padding:10px;border:1px solid var(--line-2);border-radius:var(--r-md,12px);background:rgba(0,0,0,.25)}
 .fo-dh{display:flex;align-items:center;gap:10px} .fo-dh b{display:block;font:700 var(--fs-15)/1.2 var(--font-display);color:var(--gold-100)} .fo-dh small{font:600 var(--fs-11)/1.3 var(--font-ui);color:var(--tx-3)}
 .fo-wirk{display:grid;grid-template-columns:1fr 1fr;gap:6px}
@@ -1779,7 +1780,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
       <form action="index.php?aus=1" method="post" class="set-ab"><button class="btn btn--secondary btn--sm" type="submit">Abmelden</button></form>
       <div class="sect"><h4>Hilfe – wo finde ich was?</h4></div>
       <div class="set-hilfe">
-        <p><b>Stadt</b> → Burg (deine Hauptstadt-Stufe), Gebäude, Holz/Stein/Eisen, Forschung, Lazarett, Helden.</p>
+        <p><b>Stadt</b> → Burg (deine Hauptstadt-Stufe), Gebäude, Holz/Stein/Eisen, Forschung, Krankenhaus, Helden.</p>
         <p><b>Bündnis</b> → zusammen mit anderen: Signale, Rally, Hilfe, Tempel-Bonus.</p>
         <p><b>Kampf</b> → deine Märsche und alle Berichte.</p>
         <p><b>Events</b> → Aufgaben, Belohnungen, Erfolge, Pass, Wochen-Event, Invasion, Drache, Tagesboss und Lager.</p>

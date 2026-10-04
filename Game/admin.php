@@ -123,7 +123,7 @@ $auffaellig = (wr_lesen('schummel.php') ?: [])['liste'] ?? [];
 if (!is_array($auffaellig)) $auffaellig = [];
 $spielerName = [];
 foreach ($spieler as $sp) $spielerName[(int)$sp['id']] = $sp['anzeigename'] ?: $sp['name'];
-$AUFF_ART = ['truppen' => 'Truppen', 'ausbau' => 'Ausbau', 'muenzen' => 'Münzen', 'stufe' => 'Stufe', 'lazarett' => 'Lazarett', 'kaputt' => 'kaputter Befehl',
+$AUFF_ART = ['truppen' => 'Truppen', 'ausbau' => 'Ausbau', 'muenzen' => 'Münzen', 'stufe' => 'Stufe', 'lazarett' => 'Krankenhaus', 'kaputt' => 'kaputter Befehl',
              'schneller' => 'Beschleunigen', 'hauptstadt' => 'Hauptstadt', 'flut' => 'zu viele Befehle',
              'rohstoffe' => 'Rohstoffe', 'lager' => 'Lager/Boss', 'gems' => 'Gems', 'hauptbuch' => 'Hauptbuch (Stadt, Forschung, Ausrüstung, Helden, Schild)', 'spaehen' => 'Späher'];   // 3B
 function h($s) { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }

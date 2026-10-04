@@ -128,7 +128,7 @@ function renderPopup() {
         subH = '<span class="dot dot--player"></span>' + whoLink('player', profileName.value || 'Du') +
             (island.id === playerIslandId ? sep + 'Heimat' : '');
 
-        popupOverline.textContent = island.id === playerIslandId ? 'Deine Hauptstadt · unangreifbar' : isTemple ? 'Dein Tempel' : island.type === 'gate' ? 'Dein Tor · Maut für dich' : 'Deine Basis';
+        popupOverline.textContent = island.id === playerIslandId ? 'Deine Hauptstadt' + (brennt(island.id) ? ' · brennt' : '') : isTemple ? 'Dein Tempel' : island.type === 'gate' ? 'Dein Tor · Maut für dich' : 'Deine Basis';
         if (island.id === playerIslandId) { document.getElementById('cityBtn').style.display = 'inline-block'; document.getElementById('teleportBtn').style.display = 'inline-block'; }
         liveHtml(popupStats, '<div class="stat-grid">' +
             statTile('Truppen hier', 'troops', fmtTile(troopsHere)) +
@@ -162,11 +162,12 @@ function renderPopup() {
             backBtn.style.display = 'inline-block';
         } else {
             const scoutEnRoute = pendingScouts.some(s => s.targetId === island.id);
-            popupOverline.textContent = bossAt(island.id) ? 'Weltereignis · Boss' : ownerBot ? (isCapital(island.id) ? 'Hauptstadt · unangreifbar' : isTemple ? 'Feindlicher Tempel' : island.type === 'gate' ? 'Feindliches Tor' : 'Feindliche Basis') : (isTemple ? 'Tempel · unbesetzt' : island.type === 'gate' ? 'Tor · unbesetzt' : 'Neutrale Basis');
+            popupOverline.textContent = bossAt(island.id) ? 'Weltereignis · Boss' : ownerBot ? (isCapital(island.id) ? (brennt(island.id) ? 'Hauptstadt · brennt' : 'Feindliche Hauptstadt') : isTemple ? 'Feindlicher Tempel' : island.type === 'gate' ? 'Feindliches Tor' : 'Feindliche Basis') : (isTemple ? 'Tempel · unbesetzt' : island.type === 'gate' ? 'Tor · unbesetzt' : 'Neutrale Basis');
             liveHtml(popupStats, '<div class="stat-grid">' +
-                statTile('Truppen', 'troops', scouted ? fmtTile(effectiveTroops(island)) : UNK, scouted && ownerBot ? 'is-enemy' : '') +
-                statTile('Verteidigung', 'defense', scouted ? fmtTile(effectiveDefense(island)) : UNK) + '</div>' +
+                statTile('Truppen', 'troops', scouted ? spaehZahl(effectiveTroops(island), ownerBot) : UNK, scouted && ownerBot ? 'is-enemy' : '') +
+                statTile('Verteidigung', 'defense', scouted ? spaehZahl(effectiveDefense(island), ownerBot) : UNK) + '</div>' +
                 (scouted ? '' : '<div class="notice">' + icon('scout') + '<span>Stärke unbekannt. Spähen deckt Truppen und Verteidigung auf.</span></div>') + midNotice(island) + ringNotice(island) +
+                (isCapital(island.id) ? '<div class="notice notice--gold">' + icon('castle') + '<span>Hauptstadt: kann angegriffen, aber nie erobert werden. Gewinnst du, fällt die Garnison und du nimmst ' + Math.round(HAUPT_BEUTE * 100) + ' % von Gold, Holz, Stein und Eisen über dem Burg-Schutz mit – die Stadt brennt.' + (brennt(island.id) ? ' Sie brennt gerade.' : '') + '</span></div>' : '') +
                 (island.type === 'gate' && !ownerBot ? '<div class="notice notice--gold">' + icon('lock') + '<span>Tor: Unbesetzt ist es verschlossen – erobere es, um über die Brücke zu kommen. Wer es besitzt, geht kostenlos durch und bestimmt die Maut für alle anderen.</span></div>' : '') +
                 (island.type === 'megaTemple' ? '<div class="notice">' + icon('rank') + '<span>' + (ownerBot ? escapeHtml(ownerBot.name) + ' verteilt die Titel (neu alle 3 Min.).' : 'Niemand verteilt gerade Titel.') + '</span><button type="button" class="btn btn--secondary btn--sm" data-view-titles>Titel ansehen</button></div>' : '') +
                 (isTemple ? '<div class="notice notice--gold">' + icon('temple') + '<span>' + (island.type === 'megaTemple' ? 'Thron der Meere: wer ihn hält, trägt die Krone – +25 % Münzen und Truppen im ganzen Reich und alle 3 Min. ' + THRONE_PTS_MEGA + ' Thron-Punkte. Die Wächter-Tempel feuern auf ihn – nächster Beschuss in <b data-throne-fire>' + fmtClock((throneState.nextFire - Date.now()) / 1000) + '</b>.' : island.guardian ? 'Wächter-Tempel: 3-facher Tempel-Bonus und alle 3 Min. ' + THRONE_PTS_GUARD + ' Thron-Punkte. Gehört er nicht dem Herrscher, feuert er alle 3 Min. auf den Thron.' : 'Tempel: gibt Produktion, Gems und Münzen, sobald erobert.') + '</span></div>' : '') +
@@ -174,10 +175,10 @@ function renderPopup() {
                 (scoutEnRoute ? '<div class="notice notice--warn">' + icon('hourglass') + '<span>Späher bereits unterwegs …</span></div>' : '') +
                 (shieldOw ? '<div class="notice notice--gold">' + icon('shield') + '<span>Friedensschild – ' + escapeHtml(shieldOw.name) + ' ist noch ' + uhrHtml(ownerShieldUntil(shieldOw.id)) +
                     ' geschützt. Solange der Schild hält, kann niemand die Türme von ' + escapeHtml(shieldOw.name) + ' angreifen (Tore und Tempel schon) – Spähen geht.</span></div>' : ''));
-            if (shieldOw && !isCapital(island.id)) popupOverline.textContent = 'Friedensschild · unangreifbar';
+            if (shieldOw) popupOverline.textContent = 'Friedensschild · unangreifbar';
             setBtnLabel(attackBtn, shieldOw ? 'Schild aktiv' : 'Angreifen');
             attackBtn.disabled = !!shieldOw;
-            attackBtn.style.display = isCapital(island.id) ? 'none' : 'inline-block';   // capitals can't be attacked
+            attackBtn.style.display = 'inline-block';   // (auch Hauptstädte – sie fallen nur nie)
             scoutBtn.style.display = 'inline-block';
             // Scouting is always allowed, even on an already-scouted
             // island (re-scout to refresh) - only block a second
@@ -346,12 +347,12 @@ function patchAttackPreview() {
     if (hfx) hfx.textContent = !px ? '' : heroStarTxt(px.q) + (px.fired ? ' · ' + px.skill + ' zündet' : '') + (px.pair ? ' · Paar +' + HERO_PAIR_BONUS + ' %' : px.h2 ? ' · + ' + heroById(px.h2.id).name : '') + ' · ' + hfl(px);
     if (hfx) hfx.title = !px ? '' : hfl(px) + (px.h2 ? ' · ' + heroById(px.h2.id).name + ' (' + Math.round(HERO_ZWEIT * 100) + ' %): ' + hfl(px.h2) : '');   // alles einzeln beim Draufzeigen
     const swordBonus = attackFlatBonus(shown), heroTroops = px ? Math.round(shown * px.atk / 100) + heroGefOf(px, shown) : 0, atkBonus = swordBonus + heroTroops;
-    const mine = Math.round((shown + atkBonus) * titleMult('player', 'attack') * (AUF ? AUF.kampf('player', 'a') : 1));        // same maths as resolveAttack (+ Truppen-Stufe, Forschung)
+    const mine = Math.round((shown + atkBonus) * titleMult('player', 'attack') * (AUF ? AUF.kampf('player', 'a') : 1));        // same maths as resolveAttack (+ Forschung)
     const bEl = popupStats.querySelector('#previewAtkBonus'); if (bEl) bEl.textContent = fmtNum(swordBonus);
     const hbEl = popupStats.querySelector('#previewHeroBonus'); if (hbEl) hbEl.textContent = heroTroops ? ' + ' + fmtNum(heroTroops) + ' ' + heroById(previewHero).name + (px && px.id2 ? ' & ' + heroById(px.id2).name : '') : '';
-    const mitTitel = Math.round((shown + atkBonus) * titleMult('player', 'attack')), kv = mine - mitTitel;   // Paket D: Truppen-Stufe + Forschung getrennt zeigen
+    const mitTitel = Math.round((shown + atkBonus) * titleMult('player', 'attack')), kv = mine - mitTitel;   // Paket D: Forschung getrennt zeigen
     const tv = mitTitel - Math.round(shown + atkBonus), tx = titleOf('player'), tbEl = popupStats.querySelector('#previewTitleBonus');
-    if (tbEl) tbEl.textContent = (tv && tx ? (tv > 0 ? ' + ' : ' − ') + fmtNum(Math.abs(tv)) + ' Titel ' + tx.name : '') + (kv ? ' + ' + fmtNum(kv) + ' T' + AUF.truppenStufe('player') + (AUF.foWert('player', 'm_atk') ? '/Forschung' : '') : '');
+    if (tbEl) tbEl.textContent = (tv && tx ? (tv > 0 ? ' + ' : ' − ') + fmtNum(Math.abs(tv)) + ' Titel ' + tx.name : '') + (kv ? ' + ' + fmtNum(kv) + ' Forschung' : '');
     const src = islandById[previewSourceId], tEl = popupSub.querySelector('#previewToll'), mEl = popupSub.querySelector('#previewMarch');
     if (mEl && src) mEl.textContent = fmtClock(travelDurationSeconds(src, island) / (1 + (px ? px.spd : 0) / 100));   // the hero's Tempo
     if (tEl && src) { const hop = lastHop(src.landmassId, island.landmassId, 'player'), t = tollFor(hop[0], hop[1], shown, 'player', island.id, px ? px.toll : 0);
@@ -1077,7 +1078,7 @@ if (window.WELT) {
     // Münzen, Gems und Stufe eines Spielers rechnet noch sein eigenes Handy. Ein Schummler könnte also Befehle fälschen
     // („gib mir Truppen“, „Basis auf Stufe 99“), ohne zu bezahlen. Darum prüft der Weltrechner hier jeden Befehl:
     //   - Zahlen nur endlich und größer 0, mit Obergrenze; Kennungen nur Buchstaben/Ziffern; nur eigene Basen
-    //   - Truppen-Geschenke nur so viel, wie die Quelle wirklich hergibt (Stufe, Thron-Shop, Lazarett, Fund, Admin-Geschenk)
+    //   - Truppen-Geschenke nur so viel, wie die Quelle wirklich hergibt (Stufe, Thron-Shop, Krankenhaus, Fund, Admin-Geschenk)
     //   - Ausbau nur genau +1 Stufe und nur, wenn er die Münzen haben kann (eigenes „Konto“, siehe wacheSehen)
     //   - zu viele Befehle in kurzer Zeit → der Rest verfällt
     // Echte Spieler werden nie blockiert: passt etwas (noch) nicht, wartet der Befehl bis zu 60 s auf das nächste Profil
@@ -1333,7 +1334,7 @@ if (window.WELT) {
         return ende ? 'pleite' : 'warten';
     }
     // Truppen-Geschenk prüfen → wie viele er bekommt (0 = nichts), oder -1 = warten (z. B. Stufe/Profil noch nicht da)
-    const TRUPPEN_QUELLEN = { stufe: 'Stufen-Belohnung', thron: 'Thron-Shop', heil: 'Lazarett', fund: 'Fund auf der Karte', geschenk: 'Admin-Geschenk' };
+    const TRUPPEN_QUELLEN = { stufe: 'Stufen-Belohnung', thron: 'Thron-Shop', heil: 'Krankenhaus', fund: 'Fund auf der Karte', geschenk: 'Admin-Geschenk' };
     function truppenPruefen(who, b, ende) {
         const q = b.q, name = TRUPPEN_QUELLEN[q] || 'unbekannte Quelle';
         if (!zahlOk(b.n)) { warnen(who, 'truppen', 'Truppen-Geschenk mit kaputter Zahl (' + String(b.n).slice(0, 30) + ') – abgelehnt.'); return 0; }
@@ -1353,7 +1354,7 @@ if (window.WELT) {
             if (d.tk + 1 > kaeufe) { if (!ende) return -1; warnen(who, 'truppen', 'Thron-Shop: ' + (d.tk + 1) + '. Truppen-Kauf, mit seinen Thron-Punkten gehen höchstens ' + kaeufe + ' – abgelehnt.', b.n); return 0; }
             d.tk++; saveBotState();
             erlaubt = 3 * Math.max(1000, hourProduction(who).troops) + 1000;   // ×3: sein Handy rechnet die Produktion mit eigenen Boni etwas anders
-        } else if (q === 'heil') {                     // Lazarett: höchstens so viele, wie verwundet sind
+        } else if (q === 'heil') {                     // Krankenhaus: höchstens so viele, wie verwundet sind
             if (now - m.w.vorT > WACHE_WARTEN_MS) m.w.vor = 0;
             erlaubt = (m.w.vor + m.w.u) * 1.02 + 10;
             if (n > erlaubt && !ende) return -1;
@@ -1412,8 +1413,7 @@ if (window.WELT) {
     // Jede Neuerung im Profil wird nach festen Regeln angenommen – oder nicht:
     //   Burg/Gebäude: +1 Stufe nach der anderen, frühestens nach der Bauzeit,
     //     schneller nur mit Gems (1 je Minute); Kosten (Münzen, Holz, Stein, Eisen) aus Konto + Topf des Ausgegebenen
-    //   Forschung: wie Gebäude, eine nach der anderen, Akademie/Burg/Vorgänger wie im Spiel
-    //   Truppen-Stufe: nur mit Burg + Forschung, jede neue Stufe einmal Eisen
+    //   Forschung: wie Gebäude, eine nach der anderen, Labor/Vorgänger wie im Spiel
     //   Ausrüstung: Seltenheit/Stufe nur so hoch, wie er (statistisch) Kisten geöffnet haben kann; Sterne bis zur Schmiede-Stufe,
     //     jeder Stern kostet Gems
     //   Helden: Freischalten + Sterne kosten Splitter – nie mehr, als er bekommen haben kann
@@ -1422,6 +1422,13 @@ if (window.WELT) {
     // gibt es eine Auffälligkeit (warnen → Admin-Seite). So bekommen echte Spieler keine Fehlalarme, wenn Gems/Münzen erst
     // einen Puls später im Konto stehen.
     const HB_V = 1, HB_WARTEN_MS = 120000, TAG = 864e5;
+    // Burg neu (4.10.: 1–60 Tage, teurer): eine Woche lang gelten für die Burg auch noch die alten (kürzeren, billigeren) Werte –
+    // wer beim Hochladen gerade nach den alten Regeln baute, bekommt sonst einen falschen Alarm
+    const BURG_ALT_BIS = Date.UTC(2026, 9, 14);
+    const burgZeitAlt = L => Math.min(7 * 86400, L <= 14 ? 60 * Math.pow(1.55, L - 1) : 60 * Math.pow(1.55, 13) * Math.pow(1.25, L - 14));
+    function burgKostenAlt(L) { const b = 1000 * Math.pow(1.72, L - 1), n = AUF ? AUF.stadtKosten('keep', L) : {};
+        const a = { c: niceRound(2000 * Math.pow(1.85, L - 1)), h: niceRound(b), s: L >= 2 ? niceRound(b * .8) : 0, e: L >= 5 ? niceRound(b * .4) : 0 };
+        for (const x of ['c', 'h', 's', 'e']) a[x] = Math.min(a[x], n[x] === undefined ? a[x] : n[x]); return a; }
     const HB_SLOTS = Object.keys(EQUIPMENT_DEFS);
     const HB_TAG = {                                  // Spielraum pro Tag – je Quelle die Grenze aus dem Spiel
         g: 25 + 40 + 150 / 7,                         // Gems: Tagesbelohnung (höchstens 25), 3 Aufgaben + Bonus (40), Wochenkette (150 / 7 Tage)
@@ -1473,7 +1480,6 @@ if (window.WELT) {
             const pl = (p.city && p.city.levels) || {};
             for (const id of hbBauten()) hb.st[id][0] = Math.max(id === 'keep' ? 1 : 0, Math.min(hbMax(id), Math.floor(nn(pl[id]))));
             if (AUF) for (const d of AUF.FORSCHUNG) { const v = Math.min(d.max, Math.floor(nn((p.fo || {})[d.id]))); if (v > 0) hb.fo[d.id] = v; }
-            hb.tb = Math.max(1, Math.min(5, Math.floor(nn(p.tierBez)) || 1));
             for (const s of HB_SLOTS) { const g = p.gear && p.gear[s]; if (g) hb.gear[s] = [[Math.min(5, g.r | 0), Math.max(1, Math.min(ITEM_MAX_LEVEL, g.lvl | 0)), Math.min(STAR_MAX, g.st | 0)]]; }
             if (p.hs && typeof p.hs === 'object') { for (const h of HEROES) if (p.hs[h.id]) hb.hs[h.id] = hbHeldZeile(p.hs[h.id]); hb.shB = Math.max(0, hbHeldenWert(hb.hs) - hbE0f()); }
             hb.schild = nn(p.shieldUntil);
@@ -1525,23 +1531,25 @@ if (window.WELT) {
         const [L, T] = hb.st[id], B = hb.st.keep[0];
         if (L + 1 > hbMax(id)) return 'nein';
         if (id !== 'keep' && AUF) { if (!L && AUF.BAU_AB_BURG[id] > B) return 'nein'; if (L + 1 > (B >= AUF.BURG_MAX ? hbMax(id) : Math.min(hbMax(id), B))) return 'nein'; }
-        const need = cityTimeRoh(id, L) * 1000, fehlt = need - (now - T) - 60000;
+        const alt = id === 'keep' && now < BURG_ALT_BIS, zeit = alt ? Math.min(cityTimeRoh(id, L), burgZeitAlt(L)) : cityTimeRoh(id, L);   // (Übergang: eine Burg, die noch nach den alten Regeln gebaut wurde)
+        const hk = 'bau:' + id + ':' + (L + 1), hilfe = Math.min(nn((hb.hilfe || {})[hk]), zeit * 1000), need = zeit * 1000 - hilfe, fehlt = need - (now - T) - 60000;   // (Bündnis-Hilfe macht den Bau kürzer)
         const g = fehlt > 0 ? Math.ceil(fehlt / 60000) * CITY_GEMS_PER_MIN : 0;
-        const k = Object.assign({}, AUF ? AUF.stadtKosten(id, L) : { c: cityCost(id, L) }); if (g) k.g = g;
+        const k = Object.assign({}, alt ? burgKostenAlt(L) : AUF ? AUF.stadtKosten(id, L) : { c: cityCost(id, L) }); if (g) k.g = g;
         if (!hbZahlen(who, hb, m, k)) return 'geld';
         hb.st[id] = [L + 1, g ? now : Math.min(now, T + need)];       // (fertig spätestens jetzt – die nächste Stufe zählt ab da)
+        if (hb.hilfe) delete hb.hilfe[hk];
         return 'ok';
     }
     function hbFoSchritt(who, hb, m, d, now) {
         const L = (hb.fo[d.id] | 0) + 1;
         if (L > d.max || (hb.st.academy || [0])[0] < AUF.foAkaFuer(d, L)) return 'nein';
-        if (d.tier && hb.st.keep[0] < AUF.TIER_BURG[d.tier]) return 'nein';
         if (d.vor && !((hb.fo[d.vor] | 0) >= 1)) return 'nein';
-        const need = AUF.foZeitRoh(d, L) * 1000, T = nn(hb.foT), fehlt = need - (now - T) - 60000;
+        const hk = 'fo:' + d.id + ':' + L, need = AUF.foZeitRoh(d, L) * 1000 - Math.min(nn((hb.hilfe || {})[hk]), AUF.foZeitRoh(d, L) * 1000), T = nn(hb.foT), fehlt = need - (now - T) - 60000;   // (Bündnis-Hilfe macht die Forschung kürzer)
         const g = fehlt > 0 ? Math.ceil(fehlt / 60000) * CITY_GEMS_PER_MIN : 0;
         const k = Object.assign({}, AUF.foKosten(d, L)); if (g) k.g = g;
         if (!hbZahlen(who, hb, m, k)) return 'geld';
         hb.fo[d.id] = L; hb.foT = g ? now : Math.min(now, T + need);    // eine Forschung gleichzeitig: die nächste zählt ab da
+        if (hb.hilfe) delete hb.hilfe[hk];
         return 'ok';
     }
     // Sterne (alle Teile, angelegt oder nicht – Profil stW = Gems in allen Sternen): ein Kauf wird aus den ausgegebenen Gems bezahlt
@@ -1590,12 +1598,7 @@ if (window.WELT) {
             for (let runde = 0, weiter = true; weiter && runde < 80; runde++) { weiter = false;
                 for (const d of offen().sort((a, b) => AUF.foKosten(a, (hb.fo[a.id] | 0) + 1).c - AUF.foKosten(b, (hb.fo[b.id] | 0) + 1).c)) if (hbFoSchritt(who, hb, m, d, now) === 'ok') { weiter = true; break; } }
             for (const d of AUF.FORSCHUNG) { const w = Math.min(d.max, Math.floor(nn(pf[d.id]))); if (w <= (hb.fo[d.id] | 0)) { hbGut(hb, 'fo:' + d.id); continue; }
-                hbWarte(who, hb, 'fo:' + d.id, now, 'Forschung ' + d.name + ': das Handy sagt Stufe ' + w + ', möglich ist ' + (hb.fo[d.id] | 0) + ' (Zeit, Kosten, Akademie oder Burg passen nicht).', w - (hb.fo[d.id] | 0)); }
-            const ptb = Math.max(1, Math.min(5, Math.floor(nn(p.tierBez)) || 1));
-            while (hb.tb < ptb) { const T = hb.tb + 1;      // Truppen-Stufe: Burg + Forschung, einmal Eisen
-                if (hb.st.keep[0] < AUF.TIER_BURG[T] || !((hb.fo['m_t' + T] | 0) >= 1) || !hbZahlen(who, hb, m, { e: AUF.TIER_EISEN[T] })) break;
-                hb.tb = T; }
-            if (hb.tb < ptb) hbWarte(who, hb, 'tier', now, 'Truppen-Stufe: das Handy sagt T' + ptb + ', möglich ist T' + hb.tb + ' (Burg, Forschung oder Eisen fehlen).', ptb - hb.tb); else hbGut(hb, 'tier');
+                hbWarte(who, hb, 'fo:' + d.id, now, 'Forschung ' + d.name + ': das Handy sagt Stufe ' + w + ', möglich ist ' + (hb.fo[d.id] | 0) + ' (Zeit, Kosten oder Labor passen nicht).', w - (hb.fo[d.id] | 0)); }
         }
         const forge = Math.min(STAR_MAX, (hb.st.forge || [0])[0]);
         for (const s of HB_SLOTS) {                    // Ausrüstung
@@ -1653,7 +1656,7 @@ if (window.WELT) {
         const pl = (p.city && p.city.levels) || {}, lv = {};
         for (const id of hbBauten()) lv[id] = Math.max(0, Math.min(Math.floor(nn(pl[id])), hb.st[id][0])); if (!(lv.keep >= 1)) lv.keep = 1;
         const fo = {}; if (AUF) for (const d of AUF.FORSCHUNG) { const v = Math.min(Math.floor(nn((p.fo || {})[d.id])), hb.fo[d.id] | 0); if (v > 0) fo[d.id] = v; }
-        b.city = Object.assign({}, b.city, { levels: lv, fo, tier: Math.max(1, Math.min(Math.floor(nn(p.tier)) || 1, hb.tb)), tierBez: hb.tb });
+        b.city = Object.assign({}, b.city, { levels: lv, fo }); delete b.city.tier; delete b.city.tierBez;
         b.gear = {};
         for (const s of HB_SLOTS) { const g = p.gear && p.gear[s], A = hb.gear[s] || [];
             if (g && A.some(a => a[0] === (g.r | 0) && a[1] >= (g.lvl | 0) && a[2] >= (g.st | 0))) b.gear[s] = { r: g.r | 0, lvl: Math.max(1, g.lvl | 0), st: g.st | 0 };
@@ -1880,7 +1883,7 @@ if (window.WELT) {
             const from = botCapitalOf(who); if (from !== null && from !== undefined && from !== b.insel) { islandTroops[b.insel] = (islandTroops[b.insel] || 0) + (islandTroops[from] || 0); islandTroops[from] = 0; }
             bs.capital = b.insel; capitalCache = null; saveBotState(); saveGame(); requestRender(); befehlBezahlt(b);
         },
-        truppen(who, b) {                             // geschenkte Truppen (Stufe, Thron-Shop, Lazarett, Fund, Admin) → Hauptstadt
+        truppen(who, b) {                             // geschenkte Truppen (Stufe, Thron-Shop, Krankenhaus, Fund, Admin) → Hauptstadt
             const x = { b, bis: Date.now() + WACHE_WARTEN_MS }, l = wm(who).warte.truppen; l.push(x); wacheAbarbeiten(who);
             if (l.includes(x)) { x.wartet = true; return 'wartet'; }
         },
@@ -2021,10 +2024,12 @@ if (window.WELT) {
     WELT.wache = {
         kann(who, kosten) { const m = wacheSehen(who), d = wd(who), hb = hbDa(who); vorAltern(who, m, Date.now()); return m.c.vor + m.c.u + (hb ? nn(hb.cA) : 0) + spielraumFrei(who, m) + (d ? nn(d.gC) : 0) >= kosten; },
         gutschrift(who, c, tr) { const d = wd(who); if (!d) return; d.gC = nn(d.gC) + nn(c); d.gTr = nn(d.gTr) + nn(tr); saveBotState(); },
+        hilfe(who, key, ms) { const hb = hbDa(who); if (!hb || !(ms > 0)) return; const H = hb.hilfe || (hb.hilfe = {}); H[key] = nn(H[key]) + ms;   // Bündnis-Hilfe: so viel schneller darf dieser Bau / diese Forschung fertig sein
+            const ks = Object.keys(H); if (ks.length > 40) delete H[ks[0]]; saveBotState(); },
         warnen, zuOft: (who, art, max, ms) => zuOft(wm(who), art, max, ms)
     };
 
-    // Nachrichten vom Weltrechner an mich: Münzen, Gems, EP, Thron-Punkte, Lazarett, Splitter, Zahlen
+    // Nachrichten vom Weltrechner an mich: Münzen, Gems, EP, Thron-Punkte, Krankenhaus, Splitter, Zahlen
     const STAT_NAMEN = { caps: 'captures', pvp: 'pvpWins', defs: 'defends', bosses: 'bosses', temples: 'temples', scouts: 'scouts', tolls: 'tolls', tollCoins: 'tollCoins', armyWins: 'armyWins', healed: 'healed', barb: 'barb', dboss: 'dboss', throneMin: 'throneMin', heroFires: 'heroFires' };   // (Thron-Minuten und Helden-Zünder zählt der Weltrechner – vorher kamen sie nie an)
     WELT.beiNachricht.push(function (e) {
         if (!e || e.art !== 'delta') return;

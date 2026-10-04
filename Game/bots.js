@@ -107,6 +107,7 @@ const BOT_DEFS = [
     for (const b of order) { if (!BOT_GROUPS[b.style] || cnt(b.style) > BOT_GROUPS[b.style].n) {
         const want = Object.keys(BOT_GROUPS).find(g => cnt(g) < BOT_GROUPS[g].n); if (want) b.style = want; } }
 })();
+if (typeof window !== 'undefined' && window.TEST_EIN_BOT) BOT_DEFS.splice(1);   // (nur die Test-Vorschau: ein einziger Mitspieler auf der ganzen Karte)
 
 // ==============================================================================================================
 //    Wege: kommen Truppen durch (Tor, Maut)?
@@ -117,8 +118,8 @@ function botCanCross(who, a, b, n, targetId) {   // can n troops of a bot really
     return !t.closed && (botCoins[who] || 0) >= t.cost;
 }
 
-const BOT_BUILDINGS = ['academy', 'forge', 'hospital', 'wall', 'barracks', 'treasury', 'watch', 'heroes', 'shrine', 'storage', 'tower', 'embassy', 'market', 'lumber', 'quarry', 'mine'];   // the city buildings with an effect
-const BOT_MIN_AUSNAHME = ['storage', 'tower', 'embassy', 'market'];   // zählen nicht für „alle Gebäude Stufe …“ (Erfolge) – wie bei dir
+const BOT_BUILDINGS = ['academy', 'forge', 'hospital', 'wall', 'heroes', 'embassy', 'market', 'lumber', 'quarry', 'mine'];   // the city buildings with an effect
+const BOT_MIN_AUSNAHME = ['embassy', 'market'];   // zählen nicht für „alle Gebäude Stufe …“ (Erfolge) – wie bei dir
 
 const BOT_SKILLS = ['troops', 'attack', 'defense', 'speed', 'attackGold', 'defenseGold'];
 
@@ -127,7 +128,7 @@ const BOT_SKILLS = ['troops', 'attack', 'defense', 'speed', 'attackGold', 'defen
 // whoever owned it before, including the player); a bot attack
 // that loses damages the defender the same way a player's failed
 // attack does - same rules as yours: shield (+ the hero) on a win,
-// 20 % flee on a loss (+ the hero), Lazarett, kill gold. Only logged/announced to the player when
+// 20 % flee on a loss (+ the hero), Krankenhaus, kill gold. Only logged/announced to the player when
 // the player's own territory is the one being fought over - bot-
 // vs-bot and bot-vs-neutral fights resolve silently so the log
 // doesn't fill up with battles that have nothing to do with you.
@@ -168,12 +169,13 @@ function resolveBotAttack(attack) {
     const botSentLoss = won ? sentLossFor(attack.rawTroops, myTroops, originalEnemyDefense, red) : 0, survivors = won ? attack.rawTroops - botSentLoss : 0;   // same rule as yours   // the sword bonus fights along but doesn't stay
     const fled = won ? 0 : retreatSurvivorsPreview(attack);
     const atkFallen = attack.rawTroops - survivors - fled;
-    const angreifer = attack.rally ? kampfAnteile(attack, atkFallen, hosp) : null, atkWounded = angreifer ? angreifer.reduce((s, x) => s + x.wounded, 0) : botHospitalTake(bot.id, atkFallen, hosp);   // (gemeinsam: jeder trägt seinen Anteil, Verwundete in sein Lazarett)
+    const angreifer = attack.rally ? kampfAnteile(attack, atkFallen, hosp) : null, atkWounded = angreifer ? angreifer.reduce((s, x) => s + x.wounded, 0) : botHospitalTake(bot.id, atkFallen, hosp);   // (gemeinsam: jeder trägt seinen Anteil, Verwundete in sein Krankenhaus)
     const atkInfo = angreifer ? { angreifer } : {};
     const homeAgain = n => { if (n <= 0) return; if (attack.rally) { bundRallyHeim(attack, n, target.id); return; } const t0 = Date.now();                 // they walk home like yours (a fallen home: resolveSend sends them to another base) – eine Rally: jeder zu sich
         pendingSends.push({ fromId: target.id, toId: source.id, troops: n, startedAt: t0, resolveAt: t0 + retreatSecs(attack, target, source, bot.id) * 1000, senderBotId: bot.id, back: true }); };
-    const plunder = won && targetOwner ? plunderOf(targetOwner, capitalHolds) : null;   // Lager: the winner carries off part of the coins above the loser's protection - yours too
-    if (plunder) plunderMove(targetOwner, bot.id, plunder.loot);
+    const plunder = won && targetOwner ? plunderOf(targetOwner, capitalHolds) : null;   // Beute: ein kleiner Teil über dem Burg-Schutz des Verlierers (Turm: Gold, Hauptstadt: alles) - auch deins
+    if (plunder) plunderMove(targetOwner, bot.id, plunder.loot, plunder.roh);
+    if (capitalHolds) brandSetzen(target.id);                                 // die Hauptstadt brennt (nur zu sehen)
     if (capitalHolds) {
         islandTroops[target.id] = 0;
         botCoins[bot.id] += Math.round(originalEnemyTroops * botKillRate);   // "Angriff: Gold" for the garrison, like any other win
@@ -232,15 +234,15 @@ function resolveBotAttack(attack) {
     if (playerInvolved && !won) statBump('defends');
     if (playerInvolved) defWounded = hospitalTake(defWeg);   // your fallen defenders (die der Verstärkung trägt ihr Besitzer)
     if (playerInvolved) { warStat(capitalHolds ? 'plundered' : won ? 'lost' : 'defends', 1, bot.name); warStat('fallen', defWeg - defWounded); warStat('kills', won ? botSentLoss : attack.rawTroops - fled); }
-    else if (targetOwner) {                                       // a bot defender: its Lazarett and its "Verteidigung: Gold", like yours
+    else if (targetOwner) {                                       // a bot defender: its Krankenhaus and its "Verteidigung: Gold", like yours
         const dw = botHospitalTake(targetOwner, defWeg);
         const dg = Math.round((won ? botSentLoss : attack.rawTroops - fled) * botGoldRate(targetOwner, 'defenseGold'));
         botCoins[targetOwner] = (botCoins[targetOwner] || 0) + dg;
         if (window.WELT && botById[targetOwner] && botById[targetOwner].mensch) WELT.bericht(targetOwner, {    // ein echter Spieler wurde angegriffen: sein Bericht
             type: 'botAttack', botName: bot.name, botId: bot.id, targetId: target.id, myTroops, atkRaw: attack.rawTroops, atkBonus: attack.attackBonus || 0, atkFallen, atkWounded, atkFled: fled,
             atkGear: fighterSnapshot(bot.id, attack.hx), defGear: fighterSnapshot(targetOwner), enemyTroops: originalEnemyTroops, enemyDefense: originalEnemyDefense, wounded: dw || 0,
-            fallen: defWeg, won, capitalHolds, defGold: dg, plunder: plunder ? plunder.loot : 0, plunderSafe: plunder ? plunder.safe : 0, defName: (botById[targetOwner] || {}).name, ...verstInfo, ...atkInfo },
-            capitalHolds ? bot.name + ' hat deine Hauptstadt geplündert – die Garnison ist gefallen, aber die Stadt hält.' : won ? bot.name + ' hat deine Basis ' + islandTitle(target) + ' erobert!' : 'Verteidigung erfolgreich – ' + bot.name + ' bei ' + islandTitle(target) + ' zurückgeschlagen.');
+            fallen: defWeg, won, capitalHolds, defGold: dg, plunder: plunder ? plunder.loot : 0, plunderSafe: plunder ? plunder.safe : 0, plunderRoh: plunder && plunder.roh || null, defName: (botById[targetOwner] || {}).name, ...verstInfo, ...atkInfo },
+            capitalHolds ? bot.name + ' hat deine Hauptstadt geplündert (' + (beuteText(plunder) || 'nichts über dem Schutz') + ') – die Garnison ist gefallen, die Stadt brennt, aber sie hält.' : won ? bot.name + ' hat deine Basis ' + islandTitle(target) + ' erobert!' : 'Verteidigung erfolgreich – ' + bot.name + ' bei ' + islandTitle(target) + ' zurückgeschlagen.');
     }
     if (vs) verstBerichte(vs, { type: 'botAttack', botName: bot.name, botId: bot.id, targetId: target.id, myTroops, atkRaw: attack.rawTroops, atkBonus: attack.attackBonus || 0, atkFallen, atkWounded, atkFled: fled,   // die Helfer: derselbe Bericht
         atkGear: fighterSnapshot(bot.id, attack.hx), defGear: targetOwner ? fighterSnapshot(targetOwner) : null, enemyTroops: originalEnemyTroops, enemyDefense: originalEnemyDefense, fallen: defWeg, wounded: 0,
@@ -251,7 +253,7 @@ function resolveBotAttack(attack) {
         attackerCasualties: Math.max(0, atkFallen - (atkWounded || 0)), wounded: atkWounded || 0, enemyTroops: originalEnemyTroops, enemyDefense: originalEnemyDefense, defenseBuff: 0,
         defenderCasualties: won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops), retreatSurvivors: fled,
         defenderName: targetOwner ? (targetOwner === 'player' ? (window.profileName && profileName.value) || 'Spieler' : botById[targetOwner].name) : null, defenderId: targetOwner || null,
-        enemyWounded: 0, plunder: plunder ? plunder.loot : 0, plunderSafe: plunder ? plunder.safe : 0, atkGear: fighterSnapshot(bot.id, attack.hx), defGear: targetOwner ? fighterSnapshot(targetOwner) : null,
+        enemyWounded: 0, plunder: plunder ? plunder.loot : 0, plunderSafe: plunder ? plunder.safe : 0, plunderRoh: plunder && plunder.roh || null, atkGear: fighterSnapshot(bot.id, attack.hx), defGear: targetOwner ? fighterSnapshot(targetOwner) : null,
         won, remaining: won ? survivors : 0, ...verstInfo, ...atkInfo };
     const atkText = capitalHolds ? 'Hauptstadt von ' + (targetOwner === 'player' ? 'deinem Gegner' : (botById[targetOwner] || {}).name) + ' geplündert!' : won ? islandTitle(target) + ' erobert!' : 'Angriff auf ' + islandTitle(target) + ' gescheitert.';
     if (window.WELT) for (const w of angreifer ? angreifer.map(x => x.w) : [bot.id]) if (botById[w] && botById[w].mensch)
@@ -280,13 +282,13 @@ function resolveBotAttack(attack) {
             fallen: defWeg,
             won,
             capitalHolds,
-            defGold, plunder: plunder ? plunder.loot : 0, plunderSafe: plunder ? plunder.safe : 0, ...verstInfo, ...atkInfo
+            defGold, plunder: plunder ? plunder.loot : 0, plunderSafe: plunder ? plunder.safe : 0, plunderRoh: plunder && plunder.roh || null, ...verstInfo, ...atkInfo
         });
         flashHint((capitalHolds
-            ? bot.name + ' hat deine Hauptstadt geplündert – die Garnison ist gefallen, aber die Stadt hält.'
+            ? bot.name + ' hat deine Hauptstadt geplündert (' + (beuteText(plunder) || 'nichts über dem Schutz') + ') – die Garnison ist gefallen, die Stadt brennt, aber sie hält.'
             : won
             ? bot.name + ' hat deine Basis ' + islandTitle(target) + ' erobert!'
-            : 'Verteidigung erfolgreich – ' + bot.name + ' bei ' + islandTitle(target) + ' zurückgeschlagen.') + (defWounded ? ' ' + fmtCompact(defWounded) + ' Verwundete ins Lazarett.' : '') + (plunder && plunder.loot ? ' −' + fmtCompact(plunder.loot) + ' Münzen geplündert.' : ''), 5000);
+            : 'Verteidigung erfolgreich – ' + bot.name + ' bei ' + islandTitle(target) + ' zurückgeschlagen.') + (defWounded ? ' ' + fmtCompact(defWounded) + ' Verwundete ins Krankenhaus.' : '') + (plunder && plunder.loot && !capitalHolds ? ' −' + fmtCompact(plunder.loot) + ' Münzen geplündert.' : ''), 5000);
         renderActiveMarches();
         if (isPanelOpen(popup) && popupIslandId === target.id) renderPopup();
     }
@@ -556,7 +558,7 @@ function botFreeSlots(bot) { if (AUF && AUF.marschFrei(bot.id) <= 0) return 0; r
 function botPlanStep(bot) {                                 // gives the next order of the current plan → true when a tap was used
     const act = botActOf(bot.id), p = act.plan, own = botOwnedIslands[bot.id];
     if (!p || Date.now() > p.until || !p.steps.length) { act.plan = null; return false; }
-    if (p.kind === 'send' ? !own.has(p.t) : own.has(p.t) || isCapital(p.t) || baseShieldedFor(p.t, bot.id)) { act.plan = null; return false; }   // the goal changed meanwhile (taken, a capital now, or under a shield)
+    if (p.kind === 'send' ? !own.has(p.t) : own.has(p.t) || (isCapital(p.t) && brennt(p.t)) || baseShieldedFor(p.t, bot.id)) { act.plan = null; return false; }   // the goal changed meanwhile (taken, just plundered, or under a shield)
     if (botFreeSlots(bot) <= 0) return false;                  // every march slot busy: keep the step for a later move
     const st = p.steps.shift(); if (!p.steps.length) act.plan = null;
     if (!own.has(st.from) || (p.kind === 'attack' && botThreatened(bot.id).has(st.from))) return false;
@@ -671,14 +673,15 @@ function botThink(bot) {
     // 1) look around: every reachable target near the bot's bigger armies, with how much the bot could throw at it
     const T = new Map(), sitM = new Map();                      // targetId → { target, d, sources: [{ id, have }] }
     const sitOf = (t, ow) => { let v = sitM.get(t.id); if (v === undefined) { v = botSituation(bot, st, t, ow, now); sitM.set(t.id, v); } return v; };   // (the same for every base looking at it)
-    const okM = new Map(), okOf = t => { let v = okM.get(t.id); if (v === undefined) okM.set(t.id, v = !(owned.has(t.id) || isCapital(t.id) || busy.has(t.id)   // capitals can't be attacked
+    const okM = new Map(), okOf = t => { let v = okM.get(t.id); if (v === undefined) okM.set(t.id, v = !(owned.has(t.id) || (isCapital(t.id) && brennt(t.id)) || busy.has(t.id)   // eine brennende Hauptstadt gerade nicht (eben geplündert)
         || (shOwn.has(islandOwnerOf(t.id)) && shieldCovers(t)) || bundFreund(bot.id, islandOwnerOf(t.id)))); return v; };   // anyone's Friedensschild · nie ein Bündnis-Mitglied
     const pullM = new Map(), pullOf = t => { let v = pullM.get(t.id); if (v) return v;                // everything about a target that doesn't depend on where they look from (once per move, not per base)
         const ow = islandOwnerOf(t.id), grudge = botGrudgeOn(bot.id, ow);                          // revenge pulls them towards whoever hit them
         const k = (grudge ? 1 / (1 + grudge.n) : 1) * sitOf(t, ow) * (rally && rally.t === t.id ? .05 : 1)   // the planned big strike comes first
             * (bundZiel === t.id ? .1 : 1)                                                          // ein Bündnis-Signal „Angriff auf …“
             * (t.id === megaTempleId && ruler !== bot.id ? (ruler ? .1 : .015) : 1)                // the throne pulls - an empty one most of all (the crown is free)
-            * botMidPull(bot, t, ruler, now);                                                       // the Kopfgeld on the ruler
+            * botMidPull(bot, t, ruler, now)                                                        // the Kopfgeld on the ruler
+            * (isCapital(t.id) ? 1.6 : 1);                                                          // eine Hauptstadt fällt nie – nur Beute: weniger reizvoll als ein Turm
         pullM.set(t.id, v = { ow, grudge, k }); return v; };
     const mem = loadBotState()[bot.id], bundZiel = typeof bundZielVon === 'function' ? bundZielVon(bot.id) : null;
     if (mem.rally && (now > mem.rally.until || !owned.has(mem.rally.at) || owned.has(mem.rally.t) || isCapital(mem.rally.t))) mem.rally = null;
@@ -693,7 +696,7 @@ function botThink(bot) {
             if (!landmassesConnected(source.landmassId, lmId) || !kennt.has(lmId)) continue;   // nur was sie erforscht haben (Nebel)
             const toll = tollFor(source.landmassId, lmId, have, bot.id).cost, canPass = !toll || (botCoins[bot.id] || 0) >= toll;
             for (const target of islandsByLandmass[lmId] || []) {
-                if (!okOf(target)) continue;                                                   // theirs, a capital, already on it, or under a shield
+                if (!okOf(target)) continue;                                                   // theirs, a burning capital, already on it, or under a shield
                 if (!canPass && !(target.type === 'gate' && gateOnRoute(source.landmassId, lmId) === target)) continue;
                 const pv = pullOf(target), grudge = pv.grudge, tOwner = pv.ow;
                 let d = Math.hypot(target.x - source.x, target.y - source.y) * pv.k;
@@ -831,7 +834,7 @@ function botThink(bot) {
 }
 
 // Bots play by exactly the player's rules: XP and levels (1 skill point per level into the same 6 skills), a city
-// with the same 9 buildings they build themselves (same coins, same build times, one builder), a Lazarett with
+// with the same 9 buildings they build themselves (same coins, same build times, one builder), a Krankenhaus with
 // room for a limited number of wounded that they heal for coins, the same 14 heroes (shards, stars, skills, one per attack),
 // gear from crates (combine 3 → 1, salvage for points, level up, stars in the Schmiede) and bases upgraded
 // as far as their coins allow. Nothing is derived from their level any more.
@@ -911,11 +914,11 @@ function botCityFinish(bot, now) {                        // a build is done whe
 }
 
 const BOT_BUILD_PREF = {                                  // what each kind of player builds first (lower = sooner)
-    raider:   { barracks: 1, academy: 1.1, heroes: 1.2, forge: 1.4, hospital: 1.4, wall: 1.7, treasury: 1.5, watch: 1.9, shrine: 2.2, storage: 2, tower: 2.2, embassy: 2, market: 1.8 },
-    builder:  { treasury: 1, wall: 1, barracks: 1.1, hospital: 1.2, forge: 1.5, heroes: 1.5, academy: 1.3, watch: 1.9, shrine: 1.6, storage: 1.1, tower: 1.5, embassy: 1.8, market: 1.2 },
-    templer:  { heroes: 1, barracks: 1.1, wall: 1.2, treasury: 1.2, hospital: 1.3, forge: 1.3, academy: 1.3, watch: 1.7, shrine: 0.9, storage: 1.5, tower: 1.8, embassy: 1.4, market: 1.7 },
-    balanced: { barracks: 1, treasury: 1, wall: 1.1, heroes: 1.2, hospital: 1.2, forge: 1.3, academy: 1.2, watch: 1.6, shrine: 1.5, storage: 1.4, tower: 1.7, embassy: 1.7, market: 1.5 },
-    veteran:  { barracks: 1, academy: 1, heroes: 1.1, forge: 1.3, hospital: 1.3, treasury: 1.4, wall: 1.8, watch: 1.8, shrine: 2.2, storage: 1.6, tower: 1.6, embassy: 1.9, market: 1.5 }
+    raider:   { academy: 1.1, heroes: 1.2, forge: 1.4, hospital: 1.4, wall: 1.7, embassy: 2, market: 1.8 },
+    builder:  { wall: 1, hospital: 1.2, forge: 1.5, heroes: 1.5, academy: 1.3, embassy: 1.8, market: 1.2 },
+    templer:  { heroes: 1, wall: 1.2, hospital: 1.3, forge: 1.3, academy: 1.3, embassy: 1.4, market: 1.7 },
+    balanced: { wall: 1.1, heroes: 1.2, hospital: 1.2, forge: 1.3, academy: 1.2, embassy: 1.7, market: 1.5 },
+    veteran:  { academy: 1, heroes: 1.1, forge: 1.3, hospital: 1.3, wall: 1.8, embassy: 1.9, market: 1.5 }
 };
 
 function botCityBuild(bot, now) {                         // one builder (two once bought): start the next building if the coins are there
@@ -940,8 +943,8 @@ function botCityBuild(bot, now) {                         // one builder (two on
     c.builds.push({ id: best, to: lv + 1, startedAt: now, endsAt: now + cityTimeSec(best, lv) * 1000 }); saveBotState();
 }
 
-// ---- the bot's Lazarett ----
-function botHospitalPct(botId) { return Math.min(60, 5 * botBld(botId, 'hospital')) + (AUF ? AUF.lazarettPlus(botId) : 0); }   // (+ Forschung Lazarett)
+// ---- the bot's Krankenhaus ----
+function botHospitalPct(botId) { return Math.min(60, 5 * botBld(botId, 'hospital')) + (AUF ? AUF.lazarettPlus(botId) : 0); }   // (+ Forschung Krankenhaus)
 
 function botHospitalCapacity(botId) { const l = botBld(botId, 'hospital'); return l ? Math.round(1e6 * Math.pow(1.6, l - 1)) : 0; }
 
@@ -952,7 +955,7 @@ function botHospitalTake(botId, fallen, pct) {
     return w;
 }
 
-function botHeal(bot) {                                   // heals everyone at once for coins, like your Lazarett - when it can afford it
+function botHeal(bot) {                                   // heals everyone at once for coins, like your Krankenhaus - when it can afford it
     const b = loadBotState()[bot.id]; if (!(b.wounded > 0)) return;
     const cost = Math.ceil(b.wounded * HEAL_COIN_PER_TROOP), cap = botCapitalOf(bot.id);
     if (cap === null || cap === undefined || (botCoins[bot.id] || 0) < cost * 2) return;
@@ -1005,13 +1008,11 @@ function botItem(b, slot) { const g = b.gear && b.gear[slot]; return g ? { rarit
 
 function botGearPct(b, slot) { const g = b.gear && b.gear[slot]; return g ? itemScore({ rarity: g.r, level: g.lvl }) * RARITY_PCT_PER_SCORE * (1 + (g.st || 0) * STAR_PCT / 100) : 0; }
 
-function botCityMult(botId, id) { return 1 + botBld(botId, id) * .02; }
-
 function botMults(botId) {
     const b = loadBotState()[botId]; if (!b) return { troops: 1, coins: 1, armorPct: 0, defensePct: 0, attackPct: 0, shield: 0 };
     const bp = typeof bundProdMult === 'function' ? bundProdMult(botId) : 1;     // Tempel-Bonus des Bündnisses
-    return { troops: (1 + (b.skills.troops * SKILL_DEFS.troops.pct + botGearPct(b, 'weapon')) / 100) * titleMult(botId, 'troops') * botCityMult(botId, 'barracks') * bp,
-             coins: (1 + botGearPct(b, 'boots') / 100) * titleMult(botId, 'coins') * botCityMult(botId, 'treasury') * bp * (AUF ? AUF.ertrag(botId) : 1),   // (+ Forschung Ertrag)
+    return { troops: (1 + (b.skills.troops * SKILL_DEFS.troops.pct + botGearPct(b, 'weapon')) / 100) * titleMult(botId, 'troops') * bp,
+             coins: (1 + botGearPct(b, 'boots') / 100) * titleMult(botId, 'coins') * bp * (AUF ? AUF.ertrag(botId) : 1),   // (+ Forschung Ertrag)
              armorPct: botGearPct(b, 'armor'),                                         // Rüstung: +% base defense, same rule as the player
              defensePct: b.skills.defense * SKILL_DEFS.defense.defPct,
              attackPct: b.skills.attack * SKILL_DEFS.attack.atkPct,
@@ -1206,7 +1207,7 @@ function botDefend(bot) {
     const owned = botOwnedIslands[bot.id];
     if (!owned || owned.size === 0) return;
     const act = botActOf(bot.id), now = Date.now(); if (now < (act.defNext || 0)) return;      // (paced by its own timer - own columns on the road never block it)
-    const notice = 1 + botBld(bot.id, 'watch') * .05 + botBld(bot.id, 'tower') * .08, threats = new Map(), covered = loadBotState()[bot.id].shieldUntil || 0, wt = Math.max(0, 1 - botBld(bot.id, 'tower') * .03);   // Wachturm: sieht Angriffe früher, auch „Spurlos“
+    const W = AUF ? AUF.wachturm(bot.id) : 0, notice = 1 + W * .2, threats = new Map(), covered = loadBotState()[bot.id].shieldUntil || 0, wt = Math.max(0, 1 - W * .075);   // Wachturm (Forschung): sieht Angriffe früher, auch „Spurlos“
     const see = (id, startedAt, at, str, late) => {
         if (!owned.has(id) || isCapital(id) || (at < covered && shieldCovers(islandById[id]))) return;                                     // (it bounces off the shield anyway)
         if (now - startedAt < (3000 + (startedAt % 9000)) / notice + (at - startedAt) * (late || 0) * wt / 100) return;   // not seen yet (Spurlos: a hero's column is seen later)
@@ -1363,7 +1364,7 @@ function botCapitalNotice(bot, fromId, toId) {          // only news if it happe
     const near = isl => { for (const l of reachableLandmassIds[isl.landmassId] || [isl.landmassId]) for (const i of islandsByLandmass[l] || [])
         if (ownedIslands.has(i.id) && Math.hypot(i.x - isl.x, i.y - isl.y) < ISLAND_RADIUS * 40) return true; return false; };
     const to = islandById[toId], nt = near(to), nf = near(islandById[fromId]);
-    if (nt) flashHint(bot.name + ' hat die Hauptstadt nach Turm #' + (toId + 1) + ' verlegt – nah bei dir, unangreifbar.', 5500);
+    if (nt) flashHint(bot.name + ' hat die Hauptstadt nach Turm #' + (toId + 1) + ' verlegt – nah bei dir.', 5500);
     else if (nf) flashHint(bot.name + ' hat die Hauptstadt verlegt – Turm #' + (fromId + 1) + ' ist keine Hauptstadt mehr.', 5000);
     if ((nt || nf) && islandSeen(to)) spawnBattleFx(toId, false, 'Hauptstadt', 'hierher verlegt');
     if (isPanelOpen(popup) && (popupIslandId === fromId || popupIslandId === toId)) renderPopup(); }
@@ -1502,7 +1503,7 @@ function runBotTick() {
             botHeal(bot);
             if (Math.random() < .2) botClaimGoals(bot);
             botCityBuild(bot, now);
-            if (AUF) { AUF.botForschung(bot, now); if (Math.random() < .2) AUF.botTruppenStufe(bot); }   // Akademie, Truppen-Stufe (aufbau.js)
+            if (AUF) AUF.botForschung(bot, now);   // Labor (aufbau.js)
             botConsiderUpgrade(bot);
             botRulerTitles(bot, now);
             if (Math.random() < .3) botShop(bot);
@@ -1784,7 +1785,7 @@ function armyRaidArrive(r, now) {
     const fg = fieldGold(r.botId, 'player', fb, null, dHx);
     goalBump(won ? r.botId : 'player', 'armyWins');
     if (won) { armies = armies.filter(x => x !== a); r.troops -= fb.aLoss; botHospitalTake(r.botId, fb.aLoss); back(); const w = fieldHurt('player', def, dHx);
-        flashHint(bot.name + ' hat deine Armee im Feld geschlagen (' + fmtCompact(def) + ' Truppen)' + (w ? ', ' + fmtCompact(w) + ' ins Lazarett.' : '.'), 5000); }
+        flashHint(bot.name + ' hat deine Armee im Feld geschlagen (' + fmtCompact(def) + ' Truppen)' + (w ? ', ' + fmtCompact(w) + ' ins Krankenhaus.' : '.'), 5000); }
     else { botHospitalTake(r.botId, atk); fieldHurt('player', fb.dLoss, dHx); a.troops -= fb.dLoss; if (a.troops < 1) armies = armies.filter(x => x !== a); r.troops = 0; statBump('defends'); flashHint('Deine Armee hat den Angriff von ' + bot.name + ' abgewehrt – ' + fmtCompact(a.troops) + ' stehen noch.', 4500); }
     addCombatLogEntry({ type: 'army', won: !won, attacker: bot.name, defender: 'Du', atk: fb.SA, def: fb.SD, gold: fg.d, hD: heroTag(dHx), hx: heroReportOf(dHx) });
     warStat(won ? 'armyLosses' : 'armyWins', 1, bot.name);

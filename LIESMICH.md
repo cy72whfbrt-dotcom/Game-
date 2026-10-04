@@ -1961,3 +1961,33 @@ Nur das Aussehen – Kosten, Zeiten und Regeln sind genau wie vorher.
 - Dateien: `spiel/08-stadt.js` (Ring, Fenster), `aufbau.js` (Burg-Fenster, Forschungs-Baum), `spiel.php` (Aussehen).
 - Getestet (Vorschau, iPhone-Größe): Antippen → Ring → Forschen → Feld wählen → Forschen startet; Aufwerten startet;
   Ring zeigt „Beschleunigen“; nochmal tippen schließt; keine Skript-Fehler; 67 Server-Tests grün. **Noch nicht hochgeladen.**
+
+## 75. Der große Hauptstadt-Umbau (Alexander 4.10.: „bau bitte alles, was wir besprochen haben“)
+Alles aus der Merkliste 12a („Hauptstadt = das Wichtigste“) – **außer dem Server-Reset** (kommt später, extra).
+- **Gebäude:** Akademie heißt jetzt **Labor**, Lazarett heißt **Krankenhaus** (überall im Spiel). **Raus:** Kaserne,
+  Schatzkammer, Lager, Tempelschrein, Späherturm, Wachturm – und ihr Bonus. Bleiben: Burg, Labor, Schmiede, Heldenhalle,
+  Markt, Krankenhaus, Botschaft, Mauer (da, wo sie ist), Holzfäller, Steinbruch, Eisenmine – die drei jetzt **in der Base**.
+- **T1–T5 komplett raus:** keine Truppen-Stufen, keine Forschung dafür, nichts mehr im Kampf, Profil, Hauptbuch, Server.
+- **Labor (alles wird geforscht, kostet Rohstoffe und Zeit, Stufen wie bisher):** neu **Tempel** (+10 % Tempel-Bonus je
+  Stufe, statt Tempelschrein), **Späher** jetzt bis Stufe 10 (statt Späherturm), **Wachturm** (Stufe 1–10, statt Gebäude).
+- **Burg (Hauptstadt, max. 25):** jede Stufe kostet Gold, Holz, Stein, Eisen (Stufe 1: 10.000 Gold … Stufe 24: 11 Mrd.)
+  und dauert **1 Tag bis 60 Tage** – zusammen **rund 1 Jahr** bis 25. Mit Gems schneller wie jeder Bau.
+  Übergang: eine Woche (bis 14.10.) nimmt das Hauptbuch für die Burg auch noch die alten Zeiten/Kosten (kein falscher Alarm).
+- **Burg-Schutz (statt Lager):** von jedem Rohstoff (Gold, Holz, Stein, Eisen) ist so viel sicher:
+  Stufe 1: 10.000 · 10: 1 Mio. · 25: 100 Mio. (dazwischen gleichmäßig).
+- **Hauptstadt angreifen:** geht jetzt (Knopf „Angreifen“, auch Mitspieler tun es – nicht, solange sie brennt). Sie fällt
+  **nie**: gewinnt der Angreifer, fällt die Garnison, er bekommt **10 % von jedem Rohstoff über dem Schutz** (`HAUPT_BEUTE`),
+  die Stadt **brennt 30 Min. (nur zu sehen: Flammen und Rauch auf der Karte)**. Gewinnt der Verteidiger: nichts.
+  **Türme:** wer sie erobert, bekommt nur Gold (2 % über dem Schutz, wie vorher ohne Lager). Armeen greifen Hauptstädte nicht an.
+  Neuer Welt-Teil `openWaterBrand` (welche Hauptstadt brennt bis wann).
+- **Spähbericht nach Wachturm-Forschung** (`WACHT` in aufbau.js): 0 = Truppen nur ungefähr; 1 = genau + Mauer, Angriffe auf
+  dich ungefähr; 3 Helden; 4 Burg; 5 Rohstoffe (und wie viel zu holen ist); 6 Angriffe auf dich genau; 7 Fähigkeiten;
+  8 Angriffe mit Held; 9 Forschung; 10 Ausrüstung. Der Server schickt fremde Angriffs-Zahlen genauso (Stufe 1/6/8).
+- **Botschaft = Bündnis-Gebäude:** (1) Platz für **Verstärkung** (wie bisher), (2) **Rally-Größe**: so viele Truppen dürfen
+  der Rally beitreten ((Stufe + 1) × 10 % der eigenen Truppen, mind. 20.000), (3) **Bündnis-Hilfe**: während eines Baus
+  oder einer Forschung „Bündnis um Hilfe bitten“; jedes Mitglied tippt einmal „Helfen“ (Bündnis-Fenster, auch „Allen
+  helfen“), jede Hilfe = 1 % der Zeit kürzer (mind. 1 Min.), so viele Hilfen wie die Botschaft-Stufe. Mitspieler bitten und
+  helfen selbst. Das Hauptbuch rechnet die Hilfe mit (`WELT.wache.hilfe`), sonst gäbe es einen falschen Alarm.
+- **Test-Server (Vorschau, `php werkzeuge/vorschau_bauen.php <Ordner> artifact test`):** eigene frische Testwelt je
+  Version, **nur EIN Mitspieler** (Kevin_93) in deiner Nähe (ohne Tore erreichbar), alles fast unbegrenzt (Münzen, Gems,
+  Rohstoffe, Truppen, Splitter). `… test viele` = alle Mitspieler (für die automatischen Tests).

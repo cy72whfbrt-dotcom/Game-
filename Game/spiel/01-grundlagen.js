@@ -9,7 +9,7 @@ const neutralId = id => (id === 'player' && window.WELT) ? WELT.ich : id;     //
 const lokalId = id => (window.WELT && id === WELT.ich) ? 'player' : id;
 // Bündnisse (buendnis.js, wird nach spiel.js geladen): sind a und b im selben Bündnis? – Mitglieder greifen sich nicht an
 function bundFreund(a, b) { return typeof bundVerbuendet === 'function' && bundVerbuendet(a, b); }
-// Truppen, die dir geschenkt werden (Stufe, Thron-Shop, Lazarett, Funde, Admin): beim Zuschauer macht es der Weltrechner.
+// Truppen, die dir geschenkt werden (Stufe, Thron-Shop, Krankenhaus, Funde, Admin): beim Zuschauer macht es der Weltrechner.
 // q = woher (stufe/thron/heil/fund/geschenk) – der Weltrechner prüft danach, wie viele es höchstens sein dürfen (Schummel-Schutz).
 function eigeneTruppenDazu(base, n, q, mehr) { if (base === null || base === undefined || !(n > 0)) return; islandTroops[base] = (islandTroops[base] || 0) + n; alsBefehl('truppen', Object.assign({ n, q }, mehr || {})); }
 // iPhone Home-Bildschirm-App: iOS macht die Seite um die Statusleiste zu kurz (unten bleibt ein schwarzer Streifen).
@@ -56,6 +56,7 @@ function fmtCompact(n) {
     if (a >= v * .99995 || v === 1e15) return (a / v >= 1000 ? NF.format(Math.round(n / v)) : NF.format(Math.round(n / v * 10) / 10)) + ' ' + u;
 }
 const fmtTile = fmtNum;   // stat tiles: same rule as everywhere
+const spaehZahl = (n, fremd) => fremd && typeof AUF !== 'undefined' && AUF && AUF.wachturm('player') < AUF.WACHT.ca ? 'ca. ' + fmtNum(AUF.rundCa(n)) : fmtTile(n);   // gespähte fremde Basis: ohne Wachturm (Forschung) nur ungefähr
 function setBtnLabel(btn, text) { const l = btn.querySelector('.lbl') || btn; if (l.textContent !== text) l.textContent = text; }   // (nur bei einer Änderung: offene Fenster ziehen jede Sekunde nach)
 function fmtDHMS(sec) {                           // every longer time the same way: 3 T 4 h 5 m 6 s (units that are 0 at the front are left out)
     sec = Math.max(0, Math.ceil(sec));
@@ -120,10 +121,11 @@ function angreiferZeilen(e, gearHtml) {
         ((h.fallen || h.wounded) ? '<div class="logCasualty"><span>· davon gefallen' + (h.wounded ? ' / verwundet' : '') + '</span><span>−' + n(h.fallen) + (h.wounded ? ' / ' + n(h.wounded) : '') + '</span></div>' : '') +
         (h.gear && gearHtml ? '<details class="verst-det"><summary>' + escapeHtml(h.name || '?') + ': Held, Ausrüstung, Fähigkeiten</summary>' + gearHtml(h.gear) + '</details>' : '')).join('');
 }
-function plunderLine(e, mine) {                     // Lager: what changed hands when a base fell, and what the Lager kept safe
-    if (!e.plunder && !e.plunderSafe) return '';
-    const safe = e.plunderSafe ? fmtBig(e.plunderSafe) + ' geschützt durch Lager' : '';
-    return '<div class="logGold' + (mine ? '' : ' logPlunder') + '">' + (e.plunder ? (mine ? 'Beute: +' : 'Geplündert: −') + fmtBig(e.plunder) + ' Münzen' + (safe ? ' · ' + safe : '') : (mine ? 'Keine Beute – ' : 'Keine Münzen verloren – ') + safe) + '</div>';
+function plunderLine(e, mine) {                     // Beute: was den Besitzer wechselte (Turm: Gold, Hauptstadt: auch Holz, Stein, Eisen) und was die Burg schützte
+    const r = e.plunderRoh || {}, teile = [e.plunder ? fmtBig(e.plunder) + ' Gold' : '', r.h ? fmtBig(r.h) + ' Holz' : '', r.s ? fmtBig(r.s) + ' Stein' : '', r.e ? fmtBig(r.e) + ' Eisen' : ''].filter(Boolean);
+    if (!teile.length && !e.plunderSafe) return '';
+    const safe = e.plunderSafe ? fmtBig(e.plunderSafe) + ' je Rohstoff geschützt durch die Burg' : '';
+    return '<div class="logGold' + (mine ? '' : ' logPlunder') + '">' + (e.capitalHolds ? '<b>' + (mine ? 'Die Hauptstadt brennt' : 'Deine Hauptstadt brennt') + '</b> · ' : '') + (teile.length ? (mine ? 'Beute: +' : 'Geplündert: −') + teile.join(', ') + (safe ? ' · ' + safe : '') : (mine ? 'Keine Beute – ' : 'Nichts verloren – ') + safe) + '</div>';
 }
 function logRowHtml(kind, iconName, title, meta, trailing, extra) {
   return '<div class="logRow ' + kind + '"><span class="li">' + icon(iconName) + '</span><span class="lt"><b>' + title + '</b>' +
@@ -823,8 +825,8 @@ const HEROES = [
       sk: [['Heilige Mauer', 'Greift sie einen Tempel an: {v} % weniger Verluste.', 'templeLoss'], ['Tempelgold', '+{v} % Gold aus Kämpfen um Tempel.', 'templeGold'], ['Pilgerin', '+{v} % Angriff gegen Tempel.', 'templeAtk'], ['Segen', '+{v} % Verwundete statt Gefallene bei Tempelkämpfen.', 'templeHosp']] },
     { id: 'ida', name: 'Ida', title: 'Pfadfinderin', role: 'Tempo', r: 2, icon: 'boots', color: '#2f7a6a', c2: '#1f3a2f', hair: '#7a3a1a', g: 'weapon', base: [2, 2, 8],
       sk: [['Eilmarsch', 'Ihre Armee marschiert {v} % schneller.', 'spd'], ['Kartenkunde', '+{v} % Marschtempo.', 'spd'], ['Leichtfuß', 'Verliert sie, fliehen {v} % mehr Truppen zurück.', 'flee'], ['Rückweg', 'Rückzüge sind {v} % schneller.', 'ret']] },
-    { id: 'bernhard', name: 'Bernhard', title: 'Feldscher', role: 'Lazarett', r: 2, icon: 'plus', color: '#3d6b9b', c2: '#2a2a3a', hair: '#555', g: 'shield', base: [0, 6, 0],
-      sk: [['Feldlazarett', '+{v} % der Gefallenen kommen ins Lazarett.', 'hosp'], ['Wundarzt', '{v} % weniger Verluste.', 'loss'], ['Sanitäter', 'Verliert er, fliehen {v} % mehr Truppen zurück.', 'flee'], ['Feldküche', 'Rückzüge sind {v} % schneller.', 'ret']] },
+    { id: 'bernhard', name: 'Bernhard', title: 'Feldscher', role: 'Krankenhaus', r: 2, icon: 'plus', color: '#3d6b9b', c2: '#2a2a3a', hair: '#555', g: 'shield', base: [0, 6, 0],
+      sk: [['Feldlazarett', '+{v} % der Gefallenen kommen ins Krankenhaus.', 'hosp'], ['Wundarzt', '{v} % weniger Verluste.', 'loss'], ['Sanitäter', 'Verliert er, fliehen {v} % mehr Truppen zurück.', 'flee'], ['Feldküche', 'Rückzüge sind {v} % schneller.', 'ret']] },
     { id: 'mira', name: 'Mira', title: 'Späherin', role: 'Späher', r: 2, icon: 'scout', color: '#6b7a2f', c2: '#2f3a1f', hair: '#1a1a1a', g: 'weapon', base: [2, 3, 4],
       sk: [['Adlerauge', '+{v} % Angriff gegen eine Basis, die du vorher ausgespäht hast.', 'scoutAtk'], ['Leise Sohlen', '+{v} % Marschtempo.', 'spd'], ['Spurlos', 'Die anderen bemerken ihren Angriff {v} % später.', 'late'], ['Fährtenleserin', '+{v} % Angriff gegen Armeen im Feld.', 'fieldAtk']] },
     { id: 'nora', name: 'Nora', title: 'Jägerin', role: 'Feldkampf', r: 2, icon: 'troops', color: '#4a5a8a', c2: '#20283a', hair: '#6a2a2a', g: 'weapon', base: [6, 2, 4],
@@ -833,8 +835,8 @@ const HEROES = [
       sk: [['Goldrausch', 'Im Kampf um ein Feld: +{v} % Angriff.', 'resAtk'], ['Spürnase', 'Seine Sammler sind {v} % schneller.', 'gatherSpd'], ['Packesel', '+{v} % Traglast seiner Sammler.', 'carry'], ['Lagerwache', 'Seine Sammler verteidigen mit +{v} %.', 'gatherDef']] },
     { id: 'otto', name: 'Otto', title: 'Händler', role: 'Gold', r: 1, icon: 'sell', color: '#8a7a2e', c2: '#3a2f1f', hair: '#8a6a3a', g: 'none', base: [3, 2, 0],
       sk: [['Beutezug', 'Dieser Kampf bringt +{v} % Gold.', 'gold'], ['Feilschen', '+{v} % Gold aus Kämpfen.', 'gold'], ['Lastträger', '+{v} % Traglast seiner Sammler.', 'carry'], ['Sparsam', '−{v} % Maut an fremden Toren.', 'toll']] },
-    { id: 'greta', name: 'Greta', title: 'Kräuterfrau', role: 'Lazarett', r: 1, icon: 'plus', color: '#8a4a5b', c2: '#3a2030', hair: '#c0c0a0', g: 'none', base: [0, 6, 0],
-      sk: [['Kräutersud', '+{v} % der Gefallenen kommen ins Lazarett.', 'hosp'], ['Salben', '{v} % weniger Verluste.', 'loss'], ['Hausmittel', 'Verliert sie, fliehen {v} % mehr Truppen zurück.', 'flee'], ['Wegzehrung', 'Rückzüge sind {v} % schneller.', 'ret']] },
+    { id: 'greta', name: 'Greta', title: 'Kräuterfrau', role: 'Krankenhaus', r: 1, icon: 'plus', color: '#8a4a5b', c2: '#3a2030', hair: '#c0c0a0', g: 'none', base: [0, 6, 0],
+      sk: [['Kräutersud', '+{v} % der Gefallenen kommen ins Krankenhaus.', 'hosp'], ['Salben', '{v} % weniger Verluste.', 'loss'], ['Hausmittel', 'Verliert sie, fliehen {v} % mehr Truppen zurück.', 'flee'], ['Wegzehrung', 'Rückzüge sind {v} % schneller.', 'ret']] },
     { id: 'hagen', name: 'Hagen', title: 'Söldner', role: 'Angriff', r: 1, icon: 'weapon', color: '#5a5a5a', c2: '#2a2a2a', hair: '#3a3a3a', g: 'weapon', base: [8, 0, 2],
       sk: [['Wucht', 'In diesem Kampf +{v} % Angriff.', 'atk'], ['Söldner', '+{v} % Angriff.', 'atk'], ['Raufbold', '+{v} % Angriff gegen neutrale Basen.', 'neutralAtk'], ['Hartgesotten', '{v} % weniger Verluste.', 'loss']] },
     // Paket E: 6 neue Helden – jeder mit kurzer Geschichte (story) und einem Partner aus HERO_PAIRS
@@ -844,9 +846,9 @@ const HEROES = [
     { id: 'thora', name: 'Thora', title: 'Sturmreiterin', role: 'Überfall', r: 3, icon: 'boots', color: '#3a6e8f', c2: '#1a2a3a', hair: '#e8c070', g: 'weapon', base: [6, 1, 6],
       story: 'Zehn Jahre stand sie als Steuerfrau auf Ragnas Flaggschiff. Heute jagt sie ihre Reiter so schnell über das Land wie früher das Schiff durch den Sturm.',
       sk: [['Überrumpeln', 'Die Verteidigung des Ziels zählt in diesem Angriff {v} % weniger.', 'defCut'], ['Sturmwind', '+{v} % Marschtempo.', 'spd'], ['Im Morgengrauen', 'Die anderen bemerken ihren Angriff {v} % später.', 'late'], ['Abdrehen', 'Rückzüge sind {v} % schneller.', 'ret']] },
-    { id: 'eskil', name: 'Eskil', title: 'Runenschmied', role: 'Lazarett & Wut', r: 3, icon: 'temple', color: '#5a4a7a', c2: '#221a30', hair: '#c8b8a0', g: 'shield', base: [2, 7, 0],
+    { id: 'eskil', name: 'Eskil', title: 'Runenschmied', role: 'Krankenhaus & Wut', r: 3, icon: 'temple', color: '#5a4a7a', c2: '#221a30', hair: '#c8b8a0', g: 'shield', base: [2, 7, 0],
       story: 'Er hat die alten Runen in die Mauern der Tempel gemeißelt. Yrsa sagt, ohne seine Zeichen wären die Steine längst gefallen.',
-      sk: [['Runenheilung', 'In diesem Kampf +{v} % der Gefallenen ins Lazarett.', 'hosp'], ['Schutzrune', '{v} % weniger Verluste.', 'loss'], ['Zornrune', 'Wut füllt sich um {v} % schneller.', 'rage'], ['Fluchtrune', 'Verliert er, fliehen {v} % mehr Truppen zurück.', 'flee']] },
+      sk: [['Runenheilung', 'In diesem Kampf +{v} % der Gefallenen ins Krankenhaus.', 'hosp'], ['Schutzrune', '{v} % weniger Verluste.', 'loss'], ['Zornrune', 'Wut füllt sich um {v} % schneller.', 'rage'], ['Fluchtrune', 'Verliert er, fliehen {v} % mehr Truppen zurück.', 'flee']] },
     { id: 'lene', name: 'Lene', title: 'Fährfrau', role: 'Brücken', r: 2, icon: 'send', color: '#2f6a7a', c2: '#18303a', hair: '#5a3a2a', g: 'none', base: [3, 3, 6],
       story: 'Sie kennt jede Furt und jede Brücke zwischen den Inseln. Ida bringt die Truppen bis ans Ufer – Lene bringt sie hinüber.',
       sk: [['Fährmannslist', 'Greift sie über eine Brücke an: Verteidigung des Ziels −{v} %.', 'bridgeDef'], ['Strömung', '+{v} % Marschtempo.', 'spd'], ['Fährgeld', '−{v} % Maut an fremden Toren.', 'toll'], ['Zurück ans Ufer', 'Rückzüge sind {v} % schneller.', 'ret']] },
@@ -1055,8 +1057,8 @@ function defenseParts(island) {
     if (wallPct) out.push(['Mauer', Math.round(sub * wallPct / 100), 'Stadt · +' + wallPct + ' %']);
     const x = titleOf(owner); if (x && x.kind === 'defense') out.push(['Titel ' + x.name, Math.round(sub * (1 + wallPct / 100) * x.v), 'Mega-Tempel · ' + (x.v > 0 ? '+' : '−') + Math.round(Math.abs(x.v) * 100) + ' %']);
     const kk = AUF ? AUF.kampf(owner, 'd') : 1;
-    if (kk !== 1) { const T = AUF.truppenStufe(owner), fo = AUF.foWert(owner, 'm_def'), vor = out.reduce((a, q) => a + q[1], 0);
-        out.push(['Truppen-Stufe T' + T + (fo ? ' · Forschung' : ''), Math.round((vor + g) * (kk - 1)), '+' + Math.round((kk - 1) * 100) + ' % auf Besatzung und Verteidigung']); }
+    if (kk !== 1) { const vor = out.reduce((a, q) => a + q[1], 0);
+        out.push(['Forschung Verteidigung', Math.round((vor + g) * (kk - 1)), '+' + Math.round((kk - 1) * 100) + ' % auf Besatzung und Verteidigung']); }
     out[0][1] += effectiveDefense(island) - out.reduce((a, q) => a + q[1], 0);        // rounding goes to the base line
     return out;
 }
@@ -1085,10 +1087,10 @@ function attackParts(who, raw, bonus, total, hero, a) {       // a = the attack:
     const hx = a && a.hx, hd = hx && heroById(hx.id);             // the hero's Angriff and Gefolge (a fired skill included)
     const h2n = hx && hx.id2 && heroById(hx.id2) ? ' & ' + heroById(hx.id2).name : '';   // der Zweitheld zählt mit
     if (bonus - skill) out.push([hd ? 'Held ' + hd.name + ' ' + heroStarTxt(hx.q) + h2n : 'Helden', bonus - skill, hd ? 'Angriff +' + Math.round(hx.atk) + ' %' + (heroGefOf(hx, raw) ? ' · Gefolge +' + fmtCompact(heroGefOf(hx, raw)) : '') + (hx.fired ? ' · ' + hx.skill + ' gezündet' : '') : '']);
-    const kr = a && a.atkKraft ? a.atkKraft : 1, kv = kr !== 1 ? Math.round(total - total / kr) : 0;   // Truppen-Stufe + Forschung (Paket D)
+    const kr = a && a.atkKraft ? a.atkKraft : 1, kv = kr !== 1 ? Math.round(total - total / kr) : 0;   // Forschung Angriff (Paket D)
     const tv = total - raw - bonus - kv, x = a && a.atkTitleKey !== undefined ? TITLES.find(q => q.key === a.atkTitleKey) : titleOf(who);   // the title it marched with
     if (tv) out.push(['Titel ' + (x ? x.name : ''), tv, 'Mega-Tempel · ' + (tv > 0 ? '+' : '−') + (x ? Math.round(Math.abs(x.v) * 100) : 25) + ' %']);
-    if (kv) out.push(['Truppen-Stufe T' + (a.atkTier || 1) + (a.atkFo ? ' · Forschung' : ''), kv, '+' + Math.round((kr - 1) * 100) + ' % Kampfkraft']);
+    if (kv) out.push(['Forschung Angriff', kv, '+' + Math.round((kr - 1) * 100) + ' % Kampfkraft']);
     return out;
 }
 function heroDefCut(a) { return a && a.hx ? Math.min(90, a.hx.def || 0) / 100 : 0; }    // Rammbock, Sturmflut, Mauerbrecher: the target's defense counts less
@@ -1099,7 +1101,7 @@ function attackFields(who, src, target, raw, hx) {      // everything an attack 
         attackGoldRate: bot ? botGoldRate(who, 'attackGold') : (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate, rewardGoldRate: killGoldRate(who, hx),
         shieldLossReductionPct: Math.min(90, (bot ? botMults(who).shield : shieldLossReductionPct()) + (hx ? hx.loss : 0)), botShield: bot,
         atkTitle: titleMult(who, 'attack'), atkTitleKey: (titleOf(who) || {}).key || null, hero: hx ? hx.id : null, hero2: hx && hx.id2 || null, hx: hx || null,
-        atkKraft: AUF ? AUF.kampf(who, 'a') : 1, atkTier: AUF ? AUF.truppenStufe(who) : 1, atkFo: AUF ? AUF.foWert(who, 'm_atk') : 0 };   // Truppen-Stufe + Forschung Angriff (Paket D)
+        atkKraft: AUF ? AUF.kampf(who, 'a') : 1, atkFo: AUF ? AUF.foWert(who, 'm_atk') : 0 };   // Forschung Angriff (Paket D)
 }
 // Removes an island from whichever owner (player or a bot) it
 // currently belongs to, without touching its troops/level - used
@@ -1140,9 +1142,9 @@ function totalTroops() {
 }
 // The same multipliers runProductionTick uses (equipment/skills, ruler bonus, titles)
 function cityLevelSafe(id) { try { return loadCity().levels[id] || 0; } catch (e) { return 0; } }   // (the city isn't set up during the first boot steps)
-function playerCoinMult() { return coinProductionMultiplier() * (rulerOwner() === 'player' ? RULER_BONUS : 1) * titleMult('player', 'coins') * (1 + cityLevelSafe('treasury') * .02) * bundProdFaktor('player') * (AUF ? AUF.ertrag('player') : 1); }
+function playerCoinMult() { return coinProductionMultiplier() * (rulerOwner() === 'player' ? RULER_BONUS : 1) * titleMult('player', 'coins') * bundProdFaktor('player') * (AUF ? AUF.ertrag('player') : 1); }
 function bundProdFaktor(who) { return typeof bundProdMult === 'function' ? bundProdMult(who) : 1; }   // Tempel-Bonus des Bündnisses
-function playerTroopMult() { return troopProductionMultiplier() * (rulerOwner() === 'player' ? RULER_BONUS : 1) * titleMult('player', 'troops') * (1 + cityLevelSafe('barracks') * .02) * bundProdFaktor('player'); }
+function playerTroopMult() { return troopProductionMultiplier() * (rulerOwner() === 'player' ? RULER_BONUS : 1) * titleMult('player', 'troops') * bundProdFaktor('player'); }
 function totalTroopProductionPerTick() {
     let sum = 0; const m = playerTroopMult();
     for (const ownedId of ownedIslands) {
@@ -1152,7 +1154,7 @@ function totalTroopProductionPerTick() {
     }
     return sum;
 }
-function shrineMult(who) { return 1 + (who === 'player' ? cityLevelSafe('shrine') : botBld(who, 'shrine')) * .05; }   // Tempelschrein: +5 % temple bonus per level
+function shrineMult(who) { return 1 + (AUF ? AUF.tempelPlus(who) : 0); }   // Forschung „Tempel“ im Labor (früher der Tempelschrein)
 function totalCoinProductionPerTick() {
     let sum = 0; const m = playerCoinMult();
     for (const ownedId of ownedIslands) {

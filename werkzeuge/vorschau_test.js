@@ -24,11 +24,24 @@ EV_TEST = { dr: Date.now() + 5000, inv: Date.now() + 60000 };
             saveBotState(); saveGame(); saveProgression(); updateHud();
         } catch (e) { console.warn('Test-Modus:', e); }
     }
+    function botNahHolen() {                                       // (Test-Welt mit EINEM Mitspieler) er wohnt in deiner Gegend, damit du ihn ohne Tore erreichst
+        try {
+            if (!window.TEST_EIN_BOT || BOT_DEFS.length !== 1) return;
+            const id = BOT_DEFS[0].id, cap = botCapitalOf(id), mein = islandById[playerIslandId]; if (!mein) return;
+            if (cap !== null && islandById[cap] && canReach(mein.landmassId, islandById[cap].landmassId, 'player')) return;
+            const frei = islands.filter(i => i.type === 'tower' && !islandOwnerOf(i.id) && i.id !== playerIslandId && canReach(mein.landmassId, i.landmassId, 'player'))
+                .sort((a, b) => Math.abs(Math.hypot(a.x - mein.x, a.y - mein.y) - 2500) - Math.abs(Math.hypot(b.x - mein.x, b.y - mein.y) - 2500))[0];
+            if (!frei) return;
+            for (const x of [...botOwnedIslands[id]]) botOwnedIslands[id].delete(x);
+            botOwnedIslands[id].add(frei.id); loadBotState()[id].capital = frei.id; islandTroops[frei.id] = 1e11;
+            saveBotState(); saveGame(); saveProgression(); requestRender();
+        } catch (e) { console.warn('Test-Modus:', e); }
+    }
     function nebelWeg() {
         try { revealAround(0, 0, FRAME_HALF * 1.5, false); for (const i of islands) scoutedIslands.add(i.id); saveProgression(); requestRender(); } catch (e) { console.warn('Test-Modus:', e); }
     }
     window.addEventListener('load', () => setTimeout(() => {
-        nebelWeg(); auffuellen(); setInterval(auffuellen, 10000);
-        flashHint('TEST-MODUS: kein Nebel – du und alle Mitspieler habt fast unbegrenzt Münzen, Gems, Rohstoffe, Splitter und Truppen. Der Drache ist da, die Invasion kommt in 1 Minute.', 8000);
+        botNahHolen(); nebelWeg(); auffuellen(); setInterval(auffuellen, 10000);
+        flashHint('TEST-MODUS: nur EIN Mitspieler (' + BOT_DEFS.map(b => b.name).join(', ') + ') in deiner Nähe, kein Nebel – du und er habt fast unbegrenzt Münzen, Gems, Rohstoffe, Splitter und Truppen.', 8000);
     }, 4000));
 })();

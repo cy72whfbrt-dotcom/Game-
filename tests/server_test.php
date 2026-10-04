@@ -101,6 +101,15 @@ $angr = json_encode([['attackerBotId' => 'bot7', 'targetId' => 5, 'rawTroops' =>
 $m = json_decode(marsch_teil('openWaterPendingAttacks', $angr, 'u3', [5 => 1], 0), true);
 pruefe('Angriff auf mich, unterwegs, ohne Wachturm: Stärke geheim', $m[0]['rawTroops'], 0);
 pruefe('Angriff auf mich, kämpft schon: echte Stärke', $m[1]['rawTroops'], 123456789);
+// Wachturm ist jetzt Forschung im Labor (4.10.): ab 1 ungefähr, ab 6 genau, ab 8 mit Held
+$m = json_decode(marsch_teil('openWaterPendingAttacks', $angr, 'u3', [5 => 1], 1), true);
+pruefe('Wachturm 1: ungefähr', (int)$m[0]['rawTroops'], 120000000); pruefe('Wachturm 1: kein Held', isset($m[0]['hero']), false);
+$m = json_decode(marsch_teil('openWaterPendingAttacks', $angr, 'u3', [5 => 1], 6), true);
+pruefe('Wachturm 6: genau', $m[0]['rawTroops'], 123456789); pruefe('Wachturm 6: noch kein Held', isset($m[0]['hero']), false);
+$m = json_decode(marsch_teil('openWaterPendingAttacks', $angr, 'u3', [5 => 1], 8), true);
+pruefe('Wachturm 8: mit Held', $m[0]['hero'] ?? null, 'h1');
+$m = json_decode(marsch_teil('openWaterPendingAttacks', $angr, 'u3', [9 => 1], 10), true);
+pruefe('Angriff auf andere: nie Zahlen', $m[0]['rawTroops'], 0);
 
 echo ($fehler ? "$fehler von $n Tests FEHLGESCHLAGEN\n" : "Alle $n Server-Tests bestanden.\n");
 exit($fehler ? 1 : 0);

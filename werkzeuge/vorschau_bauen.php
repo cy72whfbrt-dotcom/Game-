@@ -16,6 +16,12 @@ if (in_array('test', $argv, true)) {   // Test-Modus (kein Nebel, fast unbegrenz
     copy(__DIR__ . '/vorschau_test.js', $ziel . '/testmodus.js');
     $html = preg_replace('#(<script src="haendler\.js[^"]*"></script>)#', '$1' . "\n" . '    <script src="testmodus.js"></script>', $html, 1);
     if (strpos($html, 'testmodus.js') === false) exit("Fehler: Test-Modus nicht eingebaut\n");
+    // vorher (vor bots.js): eine eigene, frische Testwelt je Version – mit nur EINEM Mitspieler (… test viele: alle Mitspieler, für Tests)
+    if (!in_array('viele', $argv, true)) {
+    file_put_contents($ziel . '/testvorher.js', str_replace('TESTWELT_VERSION', date('Y-m-d H:i:s'), file_get_contents(__DIR__ . '/vorschau_test_vorher.js')));
+    $html = preg_replace('#(<script src="bots\.js[^"]*"></script>)#', '<script src="testvorher.js"></script>' . "\n" . '    $1', $html, 1);
+    if (strpos($html, 'testvorher.js') === false) exit("Fehler: Test-Welt nicht eingebaut\n");
+    }
 }
 if (($argv[2] ?? '') === 'artifact') {   // als Claude-Artifact: ohne <html>/<head>/<body> (die setzt der Artifact-Rahmen), Titel ganz oben
     $html = preg_replace(['#<!DOCTYPE html>\s*#i', '#</?html[^>]*>\s*#i', '#</?head>\s*#i', '#<body[^>]*>\s*#i', '#</body>\s*#i', '#<link rel="(manifest|icon|apple-touch-icon)"[^>]*>\s*#'], '', $html);

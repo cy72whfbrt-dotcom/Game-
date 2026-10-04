@@ -100,7 +100,6 @@ function bundZielOk(w, t) {                                      // darf w diese
     const ow = islandOwnerOf(t);
     if (ow === w) return 'Das Ziel gehört dir schon';
     if (bundVerbuendet(w, ow)) return 'Das Ziel gehört einem Bündnis-Mitglied';
-    if (isCapital(t)) return 'Hauptstädte können nicht angegriffen werden';
     if (baseShieldedFor(t, w)) return 'Das Ziel steht unter einem Friedensschild';
     return '';
 }
@@ -229,6 +228,9 @@ function bundOp(who, b) {
         bundRallyEnde(r, bundName(who) + ' hat die Rally abgebrochen'); return fertig('');
     }
     if (op === 'hilfe') return bundHilfe(who, b.von, b.nach, b.n) || fertig('');
+    if (op === 'hilfeBitte') return bundHilfeBitte(a, who, b, now) || fertig('');
+    if (op === 'helfen') { let n = 0; for (const id of b.alle ? (a.hilfe || []).map(h => h.id) : [kennung(b.hid)]) if (bundHelfen(a, who, id, now)) n++;
+        return n ? fertig('') : b.alle ? '' : 'Da kannst du gerade nicht helfen'; }
     if (op === 'verstZurueck') {                                   // Verstärkung heim: der Helfer holt sie, oder der Gastgeber schickt sie
         const v = verst.l.find(x => x.id === kennung(b.vid)); if (!v) return '';
         const gast = islandOwnerOf(v.t); if (v.w !== who && gast !== who) return 'Nicht deine Verstärkung';
@@ -325,15 +327,106 @@ function bundHeimschicken(w, vonId, zuId, n) {
     pendingSends.push({ fromId: vonId, toId: to, troops: Math.floor(n), startedAt: now, resolveAt: now + Math.max(1, dur) * 1000, senderBotId: w, back: true });
 }
 
+// Bündnis-Hilfe (Botschaft, Alexander 4.10.): wer baut oder forscht, bittet sein Bündnis um Hilfe. Jedes Mitglied kann einmal
+// „Helfen“ tippen – jede Hilfe macht den Bau/die Forschung 1 % der ganzen Zeit kürzer (mindestens 1 Minute). Wie oft geholfen
+// werden kann, bestimmt die Botschaft (Stufe = Anzahl Hilfen). Liste a.hilfe = [{ id, w, was: 'bau'|'fo', k, to, max, von: [...], at, bis }].
+// Bei Mitspielern verkürzt der Weltrechner den Bau gleich; bei echten Spielern macht es ihr Handy (hilfeAnwenden) und der
+// Weltrechner merkt es sich fürs Hauptbuch (WELT.wache.hilfe), sonst sähe der schnellere Bau nach Schummeln aus.
+const HILFE_PCT = .01, HILFE_MIN_MS = 60000;
+function hilfeDauer(was, k, to) {                                // ganze Dauer (ms) dieses Baus / dieser Forschung
+    if (!Number.isInteger(to) || to < 1) return 0;
+    if (was === 'bau') return k === 'keep' || CITY_BUILDINGS.some(d => d.id === k) ? cityTimeRoh(k, to - 1) * 1000 : 0;
+    const d = AUF && AUF.FORSCHUNG.find(f => f.id === k); return d ? AUF.foZeitRoh(d, to) * 1000 : 0;
+}
+const hilfeSchritt = (was, k, to) => Math.max(HILFE_MIN_MS, hilfeDauer(was, k, to) * HILFE_PCT);
+function hilfeJob(w, was, k, to) {                               // der laufende Bau / die laufende Forschung (Spieler oder Mitspieler)
+    const c = w === 'player' ? loadCity() : ((loadBotState()[w] || {}).city || null); if (!c) return null;
+    if (was === 'bau') return (c.builds || []).find(x => x.id === k && x.to === to) || null;
+    return c.foRun && c.foRun.id === k && c.foRun.to === to ? c.foRun : null;
+}
+function hilfeName(h) { return h.was === 'fo' ? 'Forschung ' + ((AUF && AUF.FORSCHUNG.find(f => f.id === h.k)) || {}).name : (cityDef(h.k) || {}).name + ' Stufe ' + h.to; }
+function bundHilfeBitte(a, who, b, now) {
+    const was = b.was === 'fo' || b.was === 'bau' ? b.was : null, k = typeof b.k === 'string' && /^[a-z_]{1,20}$/.test(b.k) ? b.k : null, to = b.to;
+    if (!was || !k || !hilfeDauer(was, k, to)) return 'kaputt';
+    const L = AUF ? AUF.botschaftStufe(who) : 0; if (!L) return 'Baue zuerst die Botschaft – ihre Stufe bestimmt, wie oft dir dein Bündnis helfen kann';
+    a.hilfe = (a.hilfe || []).filter(h => now < h.bis + 120000);
+    if (a.hilfe.some(h => h.w === who && h.was === was && h.k === k && h.to === to)) return '';
+    if (a.hilfe.length >= 60) return 'Gerade zu viele Hilfe-Bitten im Bündnis';
+    const bis = Math.min(now + 62 * 864e5, Number.isFinite(b.bis) && b.bis > now ? b.bis : now + hilfeDauer(was, k, to));
+    a.hilfe.push({ id: 'h' + (bund.n++), w: who, was, k, to, max: L, von: [], at: now, bis });
+    return '';
+}
+function bundHelfen(a, who, hid, now) {                          // → true, wenn geholfen
+    const h = (a.hilfe || []).find(x => x.id === hid);
+    if (!h || h.w === who || h.von.includes(who) || h.von.length >= h.max || now > h.bis || !a.mit.includes(h.w)) return false;
+    h.von.push(who);
+    const ms = hilfeSchritt(h.was, h.k, h.to), mensch = botById[h.w] && botById[h.w].mensch;
+    if (h.w !== 'player' && !mensch) { const j = hilfeJob(h.w, h.was, h.k, h.to); if (j) { j.endsAt = Math.max(now, j.endsAt - ms); saveBotState(); } }   // Mitspieler: gleich kürzer
+    else if (mensch && window.WELT && WELT.wache && WELT.wache.hilfe) WELT.wache.hilfe(h.w, h.was + ':' + h.k + ':' + h.to, ms);   // echter Spieler: sein Handy macht es kürzer, das Hauptbuch weiß es
+    return true;
+}
+// (Handy) die Hilfen der anderen an meinen Bau / meine Forschung anrechnen – jede Hilfe genau einmal
+function hilfeAnwenden() {
+    if (SYSTEM) return; const a = bundIch(); if (!a || !Array.isArray(a.hilfe)) return;
+    const c = loadCity(), an = c.hilfeAn || (c.hilfeAn = {}), now = Date.now(); let neu = 0, wer = '';
+    for (const h of a.hilfe) { if (h.w !== 'player') continue; const n = h.von.length - (an[h.id] || 0); if (n <= 0) continue;
+        const j = hilfeJob('player', h.was, h.k, h.to); if (j) { j.endsAt = Math.max(now, j.endsAt - n * hilfeSchritt(h.was, h.k, h.to)); neu += n; wer = bundName(h.von[h.von.length - 1]); }
+        an[h.id] = h.von.length; }
+    for (const id in an) if (!a.hilfe.some(h => h.id === id)) delete an[id];
+    if (neu) { saveCity(); flashHint(wer + (neu > 1 ? ' und andere haben' : ' hat') + ' dir geholfen – dein Bau / deine Forschung geht schneller.', 3000); if (cityOpenId) renderCitySheet(); }
+}
+setInterval(() => { try { hilfeAnwenden(); } catch (e) {} }, 2000);
+function hilfeMeine(was, k, to) { const a = bundIch(); return a ? (a.hilfe || []).find(h => h.w === 'player' && h.was === was && h.k === k && h.to === to) || null : null; }
+function bundHilfeKnopf(was, k, to, bis) {                       // im Gebäude-/Labor-Fenster während des Baus: um Hilfe bitten oder sehen, wie viele geholfen haben
+    if (!window.WELT || !bundIch()) return '';
+    const h = hilfeMeine(was, k, to), L = AUF ? AUF.botschaftStufe('player') : 0;
+    if (h) return '<small class="bd-hilfe-st">' + icon('bund') + 'Bündnis-Hilfe: ' + h.von.length + ' / ' + h.max + '</small>';
+    if (!L) return '<small class="bd-hilfe-st">' + icon('bund') + 'Mit einer Botschaft kann dir dein Bündnis hier helfen.</small>';
+    return '<button type="button" class="btn btn--secondary btn--sm bd-hilfe-btn" data-bhilfe="' + was + ':' + k + ':' + to + ':' + Math.round(bis) + '">' + icon('bund') + '<span>Bündnis um Hilfe bitten</span></button>';
+}
+function bundHilfeHtml(a) {                                       // Bündnis-Fenster: wem du gerade helfen kannst
+    const now = Date.now(), L = (a.hilfe || []).filter(h => now < h.bis), offen = L.filter(h => h.w !== 'player' && !h.von.includes('player') && h.von.length < h.max), meine = L.filter(h => h.w === 'player');
+    if (!offen.length && !meine.length) return '';
+    return '<div class="sect"><h4>Bündnis-Hilfe</h4><span class="sect-aside">' + offen.length + '</span></div><div class="bd-liste">' +
+        offen.map(h => '<div class="bd-zeile"><span class="bd-name"><b>' + escapeHtml(bundName(h.w)) + '</b><small>' + escapeHtml(hilfeName(h)) + ' · ' + h.von.length + ' / ' + h.max + '</small></span>' +
+            '<button type="button" class="btn btn--primary btn--sm" data-bact="helfen" data-hid="' + h.id + '">Helfen</button></div>').join('') +
+        meine.map(h => '<div class="bd-zeile is-me"><span class="bd-name"><b>Du</b><small>' + escapeHtml(hilfeName(h)) + ' · ' + h.von.length + ' / ' + h.max + ' Hilfen</small></span></div>').join('') + '</div>' +
+        (offen.length > 1 ? '<div class="bd-knoepfe"><button type="button" class="btn btn--primary btn--sm" data-bact="alleHelfen">Allen helfen</button></div>' : '');
+}
+// (Weltrechner) Mitspieler bitten um Hilfe bei langen Bauten und helfen den anderen
+function bundHilfeTakt(now) {
+    for (const id in bund.b) { const a = bund.b[id], vor = (a.hilfe || []).length; let neu = false;
+        a.hilfe = (a.hilfe || []).filter(h => now < h.bis + 120000 && a.mit.includes(h.w)); if (a.hilfe.length !== vor) neu = true;
+        for (const w of a.mit) { const bot = botById[w]; if (!bot || bot.mensch || !botOnline(bot, now) || !(AUF && AUF.botschaftStufe(w))) continue;
+            const c = (loadBotState()[w] || {}).city; if (!c) continue;
+            const jobs = (c.builds || []).map(x => ['bau', x]).concat(c.foRun ? [['fo', c.foRun]] : []);
+            for (const [was, j] of jobs) if (j.endsAt - now > 10 * 60000 && !a.hilfe.some(h => h.w === w && h.was === was && h.k === j.id && h.to === j.to) && !bundHilfeBitte(a, w, { was, k: j.id, to: j.to, bis: j.endsAt }, now)) neu = true; }
+        for (const h of a.hilfe) for (const w of a.mit) { const bot = botById[w];
+            if (!bot || bot.mensch || w === h.w || h.von.includes(w) || !botOnline(bot, now) || Math.random() > .25) continue;
+            if (bundHelfen(a, w, h.id, now)) neu = true; }
+        if (neu) bundSpeichern(); }
+}
+document.getElementById('citySheet').addEventListener('click', e => {
+    const b = e.target.closest('[data-bhilfe]'); if (!b) return;
+    const [was, k, to, bis] = b.dataset.bhilfe.split(':'); b.disabled = true;
+    bundBefehl('hilfeBitte', { was, k, to: +to, bis: +bis }, 'Dein Bündnis wurde um Hilfe gebeten.');
+});
+
 // Verstärkung (Botschaft): Truppen eines Mitglieds stehen bei einem anderen – sie bleiben SEINE (zurückholen jederzeit). Im Kampf
-// verteidigen sie mit; Tote und Verwundete werden anteilig geteilt (jeder seine, Verwundete ins eigene Lazarett).
+// verteidigen sie mit; Tote und Verwundete werden anteilig geteilt (jeder seine, Verwundete ins eigene Krankenhaus).
 // Welt-Teil openWaterVerstaerkung = { n, l: [{ id, w: Helfer, t: Basis, n: Truppen, von: seine Basis, at }] }.
 // Platz: Botschaft-Stufe × 10 % seiner eigenen Truppen (mind. Stufe × 20.000) – für alle Verstärkungen bei ihm zusammen.
 let verst = verstLesen();
 function verstLesen() { let v = null; try { v = JSON.parse(store.get('openWaterVerstaerkung')); } catch (e) {} return v && Array.isArray(v.l) ? v : { n: 0, l: [] }; }
 function verstSpeichern() { store.set('openWaterVerstaerkung', JSON.stringify(verst)); requestRender(); }
 function verstStufe(w) { return AUF && AUF.botschaftStufe ? AUF.botschaftStufe(w) : 0; }
-function verstPlatz(w) { const L = verstStufe(w); if (!L) return 0; let eigen = 0; for (const id of bundBasen(w)) eigen += islandTroops[id] || 0; return L * Math.max(20000, eigen * .1); }
+function eigeneTruppen(w) { let eigen = 0; for (const id of bundBasen(w)) eigen += islandTroops[id] || 0; return eigen; }
+function verstPlatzStufe(w, L) { return L ? L * Math.max(20000, eigeneTruppen(w) * .1) : 0; }
+function verstPlatz(w) { return verstPlatzStufe(w, verstStufe(w)); }
+// Rally-Größe (Botschaft, Alexander 4.10.): so viele Truppen dürfen einer Rally beitreten – die Botschaft des Starters zählt
+function rallyPlatzStufe(w, L) { return (L + 1) * Math.max(20000, eigeneTruppen(w) * .1); }
+function rallyPlatz(w) { return rallyPlatzStufe(w, verstStufe(w)); }
+const rallyFrei = r => Math.max(0, Math.floor(rallyPlatz(r.by) - r.j.reduce((s, j) => s + j.n, 0)));
 function verstBelegt(w) { return verst.l.reduce((s, v) => s + (islandOwnerOf(v.t) === w ? v.n : 0), 0); }
 function verstFrei(w) { return Math.max(0, verstPlatz(w) - verstBelegt(w)); }
 function verstHeim(v, text) {                                    // eine Verstärkung marschiert heim (zu ihrer Basis, sonst zur Hauptstadt)
@@ -359,7 +452,7 @@ function verstNachKampf(id, k, gefallen) {
     let restV = 0;
     for (const x of k.L) {
         const f = Math.min(x.n0, Math.round(weg * x.n0 / Math.max(1, tot)));
-        const wd = f > 0 ? (x.v.w === 'player' ? hospitalTake(f) : botHospitalTake(x.v.w, f)) || 0 : 0;   // seine Verwundeten in sein Lazarett
+        const wd = f > 0 ? (x.v.w === 'player' ? hospitalTake(f) : botHospitalTake(x.v.w, f)) || 0 : 0;   // seine Verwundeten in sein Krankenhaus
         x.v.n = x.n0 - f; restV += x.v.n;
         helfer.push({ w: x.v.w, name: bundName(x.v.w), n: x.n0, fallen: f - wd, wounded: wd, gear: fighterSnapshot(x.v.w) });
     }
@@ -371,7 +464,7 @@ function verstNachKampf(id, k, gefallen) {
 function verstBerichte(vs, basis) {
     if (!vs || !window.WELT) return;
     for (const h of vs.helfer) if (botById[h.w] && botById[h.w].mensch) WELT.bericht(h.w, Object.assign({}, basis, { rolle: 'helfer', meine: h }),
-        'Deine Verstärkung in ' + islandTitle(islandById[basis.targetId]) + ': ' + fmtCompact(h.fallen + h.wounded) + ' verloren' + (h.wounded ? ' (' + fmtCompact(h.wounded) + ' ins Lazarett)' : '') + '.');
+        'Deine Verstärkung in ' + islandTitle(islandById[basis.targetId]) + ': ' + fmtCompact(h.fallen + h.wounded) + ' verloren' + (h.wounded ? ' (' + fmtCompact(h.wounded) + ' ins Krankenhaus)' : '') + '.');
 }
 
 // Die Botschaft (Stadt): wer dich verstärkt – und wo deine Truppen stehen. Zurückholen/heimschicken mit einem Tipp.
@@ -421,6 +514,8 @@ function bundRallyDazu(a, who, b) {
     const r = bund.r.find(x => x.id === b.rid && x.aid === a.id); if (!r) return 'Diese Rally gibt es nicht mehr';
     if (!bundGehoert(b.von, who) || b.von === r.at || !bundZahl(b.n)) return 'kaputt';
     if (r.j.length >= 60) return 'Die Rally ist voll';
+    const frei = rallyFrei(r); if (frei < 1) return 'Die Rally ist voll – mehr Platz gibt die Botschaft von ' + bundName(r.by);
+    b = Object.assign({}, b, { n: Math.min(b.n, frei) });             // (nur so viele, wie noch Platz ist)
     // (Beitreten geht immer – Alexander 4.10.: „nur wer sie eröffnet, muss nah genug dran sein“. Wer nach dem Start ankommt,
     //  marschiert vom Sammelpunkt direkt zum Ziel weiter und kämpft mit – siehe bundSendAnkunft)
     const k = pendingSends.length, why = bundMarsch(who, b.von, r.at, b.n, { rally: r.id }); if (why) return why;
@@ -469,7 +564,7 @@ function bundRallyHeim(attack, n, vonId, ohneStarter) {
     return bleibt;
 }
 // (Kampf) Gemeinsamer Angriff (Rally oder mehrere Bündnis-Angriffe auf dasselbe Ziel): jeder verliert nach seiner Truppenzahl,
-// seine Verwundeten gehen in SEIN Lazarett. Gibt die Angreifer-Liste für den Kampfbericht zurück.
+// seine Verwundeten gehen in SEIN Krankenhaus. Gibt die Angreifer-Liste für den Kampfbericht zurück.
 function kampfAnteile(attack, fallen, hosp) {
     const an = attack.rally.an, by = attack.rally.by, sum = an.reduce((s, x) => s + x[2], 0) || 1, m = new Map();
     for (const x of an) { if (!m.has(x[0])) m.set(x[0], { w: x[0], n: 0 }); m.get(x[0]).n += x[2]; }
@@ -884,7 +979,7 @@ function bundTakt() {
         bundWegMem.clear();
         if (now - bundMem.sigSeh > 2500) { bundMem.sigSeh = now; bundMitspielerSignale(now); bundMitspielerAntworten(now); }
         if (now - bundMem.rallySeh > 4000) { bundMem.rallySeh = now; bundMitspielerRally(now); }
-        if (now - bundMem.runde > 15000) { bundMem.runde = now; bundMitspielerRunde(now); }
+        if (now - bundMem.runde > 15000) { bundMem.runde = now; bundMitspielerRunde(now); bundHilfeTakt(now); }
     } catch (e) { if (!bundTakt.gewarnt) { bundTakt.gewarnt = true; console.warn('Bündnisse:', e); } }
 }
 setInterval(bundTakt, 1000);
@@ -931,6 +1026,7 @@ function bundInfoHtml(a) {
         '<div class="stat-grid">' + statTile('Tempel-Bonus', 'temple', '+' + bon.pct + ' %', bon.pct ? 'is-good' : '') + statTile('Gebiet', 'send', '+10 % Tempo') + '</div>' +
         '<div class="notice">' + icon('temple') + '<span>' + (bon.n.t || bon.n.m ? 'Dein Bündnis hält ' + (bon.n.t ? bon.n.t + ' Tempel' : '') + (bon.n.t && bon.n.m ? ' und ' : '') + (bon.n.m ? 'den Mega-Tempel' : '') + ': alle Mitglieder produzieren +' + bon.pct + ' % Münzen und Truppen.'
             : 'Hält ein Mitglied einen Tempel, produzieren alle Mitglieder mehr: +' + BUND.TEMPEL_PCT + ' % je Tempel, Mega-Tempel +' + BUND.MEGA_PCT + ' % (höchstens +' + BUND.BONUS_MAX + ' %).') + ' Im eigenen Gebiet marschiert ihr 10 % schneller.</span></div>' +
+        bundHilfeHtml(a) +
         '<div class="notice">' + icon('shop') + '<span>Bündnis-Geschenke heute: ' + heute + ' / ' + BUND.GESCHENKE_TAG + ' – wenn ein Mitglied einen Boss besiegt oder eine große Kiste kauft.</span></div>' +
         (chef && (a.anfragen || []).length ? '<div class="sect"><h4>Anfragen</h4></div><div class="bd-liste">' + a.anfragen.map(q => '<div class="bd-zeile"><span class="bd-name">' + whoLink(q.w, bundName(q.w)) + '<small>Macht ' + fmtCompact(staerke(q.w)) + ' · ' + bundBasenText(q.w) + '</small></span>' +
             (a.mit.length >= BUND.MAX ? '<button type="button" class="btn btn--primary btn--sm" data-bact="tauschWahl" data-w="' + q.w + '">Tauschen</button>' : '<button type="button" class="btn btn--primary btn--sm" data-bact="anfrage" data-w="' + q.w + '" data-ja="1">Ja</button>') +
@@ -1127,6 +1223,8 @@ if (bundPopup) {
         else if (act === 'abbruch') { if (sicher('abbruch:' + b.dataset.rid)) bundBefehl('rallyAbbruch', { rid: b.dataset.rid }, 'Rally wird abgebrochen.'); }
         else if (act === 'wahlZu') { bundWahl = null; bundRender(true); }
         else if (act === 'wahlLos') bundWahlLos();
+        else if (act === 'helfen') { b.disabled = true; bundBefehl('helfen', { hid: b.dataset.hid }, 'Geholfen!'); sfx('coin'); }
+        else if (act === 'alleHelfen') { b.disabled = true; bundBefehl('helfen', { alle: true }, 'Allen geholfen!'); sfx('coin'); }
     });
     bundPopup.addEventListener('change', e => { if (e.target.id === 'bdVon' && bundWahl) { bundWahl.von = +e.target.value; bundWahlRechnen(); } });
     bundPopup.addEventListener('input', e => { if (e.target.id === 'bdTag') { const v = e.target.value.toUpperCase().replace(/[^A-Z]/g, ''); if (v !== e.target.value) e.target.value = v; } });
@@ -1230,6 +1328,7 @@ if (window.WELT) {
     window.__weltLaden = function (keys) {
         if (vorher) vorher(keys);
         if (keys.includes('openWaterVerstaerkung')) { verst = verstLesen(); if (isPanelOpen(bundPopup)) bundRender(); }
+        if (keys.includes('openWaterBrand')) { try { brand = JSON.parse(store.get('openWaterBrand')) || {}; } catch (e) { brand = {}; } requestRender(); }   // (eine Hauptstadt brennt)
         if (keys.includes('openWaterBundChat')) { bundChatNeu(); if (!keys.includes('openWaterBuendnisse')) { bundPunkt(); if (isPanelOpen(bundPopup)) bundRender(); } }
         if (!keys.includes('openWaterBuendnisse')) return;
         const alt = bund; bundLaden();
