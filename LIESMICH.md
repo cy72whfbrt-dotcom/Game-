@@ -170,6 +170,13 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   der Mitspieler werden gekürzt (Speicher); Friedensschild mit Server-Uhr. Eine Nebel-Sperre für Angriffe (Server) wieder
   entfernt – sie hätte echte Angriffe abgelehnt (Handy kennt manchmal mehr Nebel als der Weltrechner, z. B. Tagesboss).
   Tests: Server-Einheitstests für Armeen/Felder im Nebel und den Bündnis-Filter (80), Holz-Bau im Klick-Test geprüft.
+  3. Runde (Aufbau, Händler, Aufgaben, Hauptbuch): ein laufender Burg-Bau wurde beim Laden (Handy UND Weltrechner-Neustart)
+  auf die alte, kurze Bauzeit gekürzt – behoben (`cityClampBuild` lässt die Burg, solange aufbau.js fehlt); das Hauptbuch
+  zog Baukosten in Münzen doppelt ab (`hbZahlen`: erst Vorschuss/Topf, dann Konto); erfundene Rohstoffe im Profil kommen
+  nicht mehr in die Welt (beim Rohstoff-Sprung auf das Mögliche gedeckelt); ein neuer Friedensschild nach einem eigenen
+  Angriff gilt wieder (`schildAlt` wird gelöscht); Wochenkette verliert keinen Tag. Neuer Test burg_test.
+  Noch offen (nur mögliche Fehlalarme im Admin-Bereich, kein Spielfehler): Kisten aus dem Thron-Shop und Gems statt
+  Splitter kennt das Hauptbuch noch nicht.
   **Offen / Fragen an Alexander:** Rally – sollen Schild/Held des Anführers (weniger Verluste, Flucht) für ALLE Truppen gelten
   oder nur für seine? EP/Krieger-Punkte der Rally nur der Anführer oder nach Anteil? Server: Spiel auf eigene Subdomain
   (Sicherheit); Welt-Sperre beim Puls (bei vielen Spielern langsam); still verworfene Welt-Teile mit < oder >.
