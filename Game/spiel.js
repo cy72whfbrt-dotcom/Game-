@@ -128,12 +128,8 @@ function logChips(list) {                          // [[Symbol, Text, gut|schlec
     return l.length ? '<div class="lchips">' + l.map(([ic, t, k]) => '<span class="lchip' + (k ? ' lchip--' + k : '') + '">' + icon(ic) + '<span>' + t + '</span></span>').join('') + '</div>' : '';
 }
 const verlustChips = (gefallen, verwundet) => [gefallen > 0 && ['losses', '−' + chipN(gefallen) + ' gefallen', 'schlecht'], verwundet > 0 && ['plus', chipN(verwundet) + ' verwundet', 'warn']];
-function beuteChips(e, mine) {                      // was den Besitzer wechselte – Gold geht ins Abholfach, Holz/Stein/Eisen gleich ins Lager
-    const r = e.plunderRoh || {}, v = mine ? '+' : '−', k = mine ? 'gut' : 'schlecht', was = e.plunder > 0 || r.h > 0 || r.s > 0 || r.e > 0;
-    return [e.capitalHolds && ['castle', mine ? 'Hauptstadt brennt' : 'Deine Hauptstadt brennt', k],
-        e.plunder > 0 && ['coin', v + chipN(e.plunder) + ' Gold' + (mine ? ' (Abholfach)' : ''), k], r.h > 0 && ['wood', v + chipN(r.h) + ' Holz', k],
-        r.s > 0 && ['stone', v + chipN(r.s) + ' Stein', k], r.e > 0 && ['iron', v + chipN(r.e) + ' Eisen', k],
-        e.plunderSafe > 0 && ['lock', (was ? '' : (mine ? 'Keine Beute · ' : 'Nichts verloren · ')) + 'Burg schützt ' + chipN(e.plunderSafe) + ' je Rohstoff', '']];
+function beuteChips(e, mine) {                      // oben auf der Karte nur „Hauptstadt brennt“ – Gold, Holz, Stein, Eisen stehen unten in jedem Fenster (Alexander 4.10.)
+    return [e.capitalHolds && ['castle', mine ? 'Hauptstadt brennt' : 'Deine Hauptstadt brennt', mine ? 'gut' : 'schlecht']];
 }
 function logRowHtml(kind, iconName, title, meta, trailing, extra) {
   return '<div class="logRow ' + kind + '"><span class="li">' + icon(iconName) + '</span><span class="lt"><b>' + title + '</b>' +
@@ -1926,7 +1922,7 @@ function spaeherBlickHtml(s) {
     const A = s.auf || {}, R = A.roh;
     const gear = s.gear ? Object.keys(EQUIPMENT_DEFS).map(k => { const g = s.gear[k]; return '<div class="logLine"><span>' + EQUIPMENT_DEFS[k].name + '</span><span' + (g ? ' style="color:' + RARITY_DEFS[g[0]].color + '"' : '') + '>' +
         (g ? RARITY_DEFS[g[0]].label + ' · St. ' + g[1] + (g[2] ? ' · ' + g[2] + '★' : '') : '—') + '</span></div>'; }).join('') : '';
-    const beute = v => fmtCompact(v) + (R && v > R.schutz ? ' <small>(' + fmtCompact(Math.floor((v - R.schutz) * HAUPT_BEUTE)) + ' zu holen)</small>' : '');
+    const beute = v => fmtCompact(v) + (R && v > R.schutz ? ' <small>(' + fmtCompact(Math.floor((v - R.schutz) * HAUPT_BEUTE)) + ' zu holen an der Hauptstadt)</small>' : '');
     return '<details><summary>Spähbericht</summary><div class="logSide" style="margin-top:6px">' +
         zeile('Herr', escapeHtml(s.name) + ' · Stufe ' + fmtNum(s.lvl) + (s.titel ? ' · ' + escapeHtml(s.titel) : '')) +
         zeile('Friedensschild', s.schild ? 'aktiv' : 'keiner') +
@@ -1969,7 +1965,7 @@ function resolveScout(scout) {
     flashHint(islandTitle(target) + ' gespäht – Bericht im Kampflog.', 3000);   // (die Zahlen stehen im Kampflog, nicht im Hinweis)
 }
 
-function retreatPct(attack) { return Math.min(60, RETREAT_RECOVERY_PCT + (attack.hx ? attack.hx.flee : (attack.bernPct || 0) / 2)); }   // a hero (Standhaft, Leichtfuß …): more of a beaten army gets away
+function retreatPct(attack) { return Math.min(60, RETREAT_RECOVERY_PCT + (attack.hx ? attack.hx.flee : 0)); }   // a hero (Standhaft, Leichtfuß …): more of a beaten army gets away
 function retreatSecs(attack, from, to, botId) { return travelDurationSeconds(from, to, botId) / (1 + (attack.hx ? attack.hx.ret : 0) / 100); }   // Rückweg, Feldküche: faster home
 function retreatSurvivorsPreview(attack) { return Math.floor(attack.rawTroops * retreatPct(attack) / 100); }
 function resolveAttack(attack) {
@@ -5820,7 +5816,7 @@ function renderCombatLog() {
                     '<div class="logSum' + (atkTotal >= defTotal ? ' advantage' : '') + '"><span>Gesamt</span><span>' + fmtD(atkTotal) + '</span></div>' +
                     '<div class="logCasualty"><span>Gefallen</span><span>−' + fmtD(entry.attackerCasualties || 0) + '</span></div>' +
                     (entry.wounded ? '<div class="logCasualty wounded"><span>Verwundet</span><span>' + fmtD(entry.wounded) + '</span></div>' : '') +
-                    (entry.lossSaved ? (() => { const bern = Math.min(entry.heroLossPct || entry.bernPct || 0, entry.lossReductionPct), sh = entry.lossReductionPct - bern, sBern = Math.round(entry.lossSaved * bern / Math.max(1, entry.lossReductionPct));
+                    (entry.lossSaved ? (() => { const bern = Math.min(entry.heroLossPct || 0, entry.lossReductionPct), sh = entry.lossReductionPct - bern, sBern = Math.round(entry.lossSaved * bern / Math.max(1, entry.lossReductionPct));
                         return (sh > 0 ? '<div class="logLine buff"><span>Schild −' + Math.round(sh) + ' %</span><span>+' + fmtD(entry.lossSaved - sBern) + '</span></div>' : '') +
                             (bern > 0 ? '<div class="logLine buff"><span>Held −' + Math.round(bern) + ' % Verluste</span><span>+' + fmtD(sBern) + '</span></div>' : ''); })() : '') +
                     gearHtml(entry.atkGear) +
@@ -5978,7 +5974,6 @@ const kampflogUmbauen = (function () {
                 if (e.type === 'scout') return spaeh(row, e);
                 if (e.type !== 'attack' && e.type !== 'botAttack') return;
                 const cmp = row.querySelector('.logCompare'); if (!cmp) return;
-                row.querySelectorAll('.lchip').forEach(c => { const u = c.querySelector('use'); if (u && /#i-(coin|wood|stone|iron|lock)$/.test(u.getAttribute('href') || '') && !/Kills/.test(c.textContent)) c.remove(); });
                 const r = e.plunderRoh || {}, beute = { g: e.plunder || 0, h: r.h || 0, s: r.s || 0, e: r.e || 0 };
                 const sides = [...cmp.querySelectorAll(':scope > .logSide')]; if (sides.length < 2) return;
                 const angrList = Array.isArray(e.angreifer) && e.angreifer.length > 1 ? e.angreifer : null;
@@ -5986,7 +5981,7 @@ const kampflogUmbauen = (function () {
                 if (bal && angrList) { const s0 = bal.firstElementChild, z = s0.innerHTML.match(/([\d.,]+(?:&nbsp;|\s)*(?:Mio\.|Mrd\.|Bio\.)?)\s*$/); if (z) s0.innerHTML = s0.innerHTML.replace(/<\/svg>[\s\S]*$/, '</svg>' + namen(angrList) + ' ' + z[1]); }
                 if (bal && Array.isArray(e.verst) && e.verst.length) { const s1 = bal.lastElementChild, z = s1.innerHTML.match(/^([\d.,]+(?:&nbsp;|\s)*(?:Mio\.|Mrd\.|Bio\.)?)/); if (z) s1.innerHTML = s1.innerHTML.replace(/^[\s\S]*?(<svg)/, z[1] + ' ' + escapeHtml(e.defenderName || e.defName || 'Du') + ' + ' + namen(e.verst) + '$1'); }
                 const vertList = Array.isArray(e.verst) && e.verst.length ? e.verst : null;
-                const sieg = e.type === 'attack' ? !!e.won : !!e.won;
+                const sieg = !!e.won;
                 seiteUmbauen(sides[0], true, angrList, e, beute, 0, sieg);
                 seiteUmbauen(sides[1], false, vertList, e, sieg ? beute : { g: 0, h: 0, s: 0, e: 0 }, e.plunderSafe || 0, sieg);
             } catch (err) { console.warn('Kampflog-Design', err); }
@@ -6258,7 +6253,7 @@ function renderInbox() {
     liveHtml(el, L.length ? L.map(x => { const d = INBOX_SRC[x.src] || INBOX_SRC.fight;
         return '<div class="inbox-row' + (x.src === 'fight' ? '' : ' is-gold') + '">' + icon(d.ic) + '<div><b>' + escapeHtml(x.title || d.t) + '</b><small>' + inboxWhat(x) + '</small><small>' + (x.n > 1 ? x.n + (x.src === 'fight' ? ' Kämpfe' : '×') + ' · zuletzt ' : '') + 'vor ' + uhrHtml(x.at, 'vor') + '</small></div>' +
             '<button class="btn btn--primary btn--sm" type="button" data-inbox="' + x.id + '"><span>Abholen</span></button></div>'; }).join('') + (L.length > 1 ? '<button class="btn btn--secondary btn--sm inbox-all" type="button" data-inbox-all><span>Alle abholen · ' + L.length + '</span></button>' : '')
-        : '<div class="inbox-empty">Gerade nichts zum Abholen. Preise aus Wochen-Event, Invasion, Drache und Tagesboss, das Kopfgeld und die Beute aus deinen Kämpfen landen hier.</div>');
+        : '<div class="inbox-empty">Gerade nichts zum Abholen. Preise aus Wochen-Event, Invasion, Drache und Tagesboss, das Kopfgeld und das Gold aus deinen Kämpfen landen hier.</div>');
 }
 goalsPopup.addEventListener('click', e => {
     const one = e.target.closest('[data-inbox]'), all = e.target.closest('[data-inbox-all]'); if (!one && !all) return;
@@ -7962,7 +7957,7 @@ function checkRuler() {             // announces a change of ruler once
 // ===== CAPITAL / CITY (step 1: buildings can be built and upgraded, effects come later) =====
 var CITY_BUILDINGS = [
     { id: 'academy',  name: 'Labor',         icon: 'flask',   x: 215, y: 430, roof: '#2f4f86', dome: true,
-      desc: 'Hier wird alles geforscht: Wirtschaft (auch Tempel), Militär und Erkundung (auch Späher und Wachturm) – eine Forschung gleichzeitig, jede kostet Rohstoffe und Zeit. Jede Stufe erlaubt weitere Forschung und lässt deine Truppen 2 % schneller laufen.' },
+      desc: 'Hier wird alles geforscht: Wirtschaft (auch Tempel), Militär und Erkundung (auch Späher) – eine Forschung gleichzeitig, jede kostet Rohstoffe und Zeit. Jede Stufe erlaubt weitere Forschung und lässt deine Truppen 2 % schneller laufen.' },
     { id: 'forge',    name: 'Schmiede',      icon: 'weapon',  x: 785, y: 430, roof: '#4a4a52', chimney: true,
       desc: 'Wähle oben die Art und dann ein Ausrüstungsteil aus deinem Besitz, um es mit Sternen zu verbessern: jeder Stern +20 % Wirkung des Teils. Jede Stufe erlaubt einen Stern mehr.' },
     { id: 'hospital', name: 'Krankenhaus',   icon: 'plus',    x: 215, y: 670, roof: '#e8e2d2', cross: true,
@@ -7994,7 +7989,7 @@ function plunderOf(who, capital) {                  // { loot (Gold), roh: {h, s
     if (capital) { const r = AUF ? AUF.rohVon(who) : null, roh = { h: 0, s: 0, e: 0 };
         if (r) for (const x of ['h', 's', 'e']) roh[x] = Math.floor(Math.max(0, (r[x] || 0) - safe) * HAUPT_BEUTE);
         return { loot: Math.floor(Math.max(0, have - safe) * HAUPT_BEUTE), roh, safe }; }   // (safe: der Burg-Schutz je Rohstoff – so steht er im Bericht)
-    return { loot: 0, safe: Math.min(have, safe) };   // Beute (Gold, Holz, Stein, Eisen) gibt es NUR an der Hauptstadt (Alexander 4.10.)
+    return { loot: 0, safe: 0 };   // Beute (Gold, Holz, Stein, Eisen) gibt es NUR an der Hauptstadt (Alexander 4.10.)
 }
 function plunderMove(from, to, loot, roh) {         // Gold (und bei der Hauptstadt Holz, Stein, Eisen) wechselt den Besitzer
     if (loot > 0) { if (from === 'player') coins -= loot; else botCoins[from] = Math.max(0, (botCoins[from] || 0) - loot);

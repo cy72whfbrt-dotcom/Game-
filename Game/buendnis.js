@@ -203,7 +203,6 @@ function bundOp(who, b) {
         a.anf = ziel; bundLog(a, bundName(ziel) + ' führt jetzt das Bündnis.'); bundMelden(ziel, 'Du führst jetzt das Bündnis [' + a.tag + '] ' + a.name + '.'); return fertig('');
     }
     if (op === 'offen') { if (!chef) return 'Nur der Anführer'; a.offen = b.offen === true; return fertig(''); }
-    if (op === 'signal') return bundSignal(a, who, b.s, b.z) || fertig('');   // (s = Art des Signals – „art“ ist schon die Art des Befehls)
     if (op === 'chat') {                                          // eine feste Zeile in den Bündnis-Chat
         const k = typeof b.k === 'string' ? b.k : '', C = BUND_CHAT[k]; if (!C || C.g === 's') return 'kaputt';
         if (now - (bundMem.chatAt[who] || 0) < BUND_CHAT_PAUSE) return ''; bundMem.chatAt[who] = now;
@@ -604,16 +603,18 @@ function kampfAnteile(attack, fallen, hosp) {
     });
     return L;
 }
-// (Kampf) Beute (Münzen) der Rally anteilig verteilen und allen Beteiligten Bescheid geben
+// (Kampf) Beute (Gold, Holz, Stein, Eisen) der Rally nach Truppen verteilen und allen Beteiligten Bescheid geben
 function bundRallyBeute(attack, gain, won, targetId, roh) {   // roh: Holz/Stein/Eisen aus der Beute – auch nach Truppen geteilt
     const an = attack.rally.an, by = attack.rally.by, sum = an.reduce((s, x) => s + x[2], 0) || 1, ziel = islandTitle(islandById[targetId]);
     const anteile = {}; for (const x of an) anteile[x[0]] = (anteile[x[0]] || 0) + x[2];
     for (const w in anteile) {
         const teil = gain > 0 && w !== by ? Math.floor(gain * anteile[w] / sum) : 0;
         if (teil > 0) { botCoins[by] = Math.max(0, (botCoins[by] || 0) - teil); botCoins[w] = (botCoins[w] || 0) + teil; }
-        if (roh && AUF && w !== by) { const t = { h: Math.floor((roh.h || 0) * anteile[w] / sum), s: Math.floor((roh.s || 0) * anteile[w] / sum), e: Math.floor((roh.e || 0) * anteile[w] / sum) };
+        let t = null;
+        if (roh && AUF && w !== by) { t = { h: Math.floor((roh.h || 0) * anteile[w] / sum), s: Math.floor((roh.s || 0) * anteile[w] / sum), e: Math.floor((roh.e || 0) * anteile[w] / sum) };
             if (t.h || t.s || t.e) { AUF.rohDazu(by, { h: -t.h, s: -t.s, e: -t.e }); AUF.rohDazu(w, t); } }
-        if (w !== by && !attack.rally.zus) bundMelden(w, 'Rally auf ' + ziel + ': ' + (won ? 'Sieg!' : 'gescheitert.') + ' Deine überlebenden Truppen kehren heim' + (teil > 0 ? ', +' + fmtCompact(teil) + ' Münzen Beute.' : '.'));
+        const anteil = beuteText({ loot: teil, roh: t });                  // (Gold, Holz, Stein, Eisen – wie viel er bekommen hat)
+        if (w !== by && !attack.rally.zus) bundMelden(w, 'Rally auf ' + ziel + ': ' + (won ? 'Sieg!' : 'gescheitert.') + ' Deine überlebenden Truppen kehren heim' + (anteil ? '. Dein Anteil: ' + anteil + '.' : '.'));
     }
     const a = bundVon(by); if (a) { bundLog(a, (attack.rally.zus ? 'Gemeinsamer Angriff auf ' : 'Rally auf ') + ziel + ': ' + (won ? 'Sieg' : 'gescheitert') + '.'); bundSpeichern(); }
 }
@@ -1118,7 +1119,7 @@ function bundRallyZeile(r, meins) {
 }
 function bundRallyHtml(a) {
     const meine = bund.r.filter(r => r.aid === a.id), gegen = bund.r.filter(r => r.aid !== a.id && bundVerbuendet('player', islandOwnerOf(r.t)) || r.aid !== a.id && islandOwnerOf(r.t) === 'player');
-    return '<div class="notice">' + icon('info') + '<span>Rally: ein Mitglied sammelt Truppen an seiner Basis, die anderen schicken ihre dazu (Tore egal – nur wer startet, braucht den Weg zum Ziel). Nach Ablauf (1, 3 oder 5 Min.) marschiert alles als EIN Angriff los; wer später ankommt, zieht direkt zum Ziel nach. Beute und Überlebende gehen anteilig zurück. Starten: feindliches Ziel antippen → „Rally“.</span></div>' +
+    return '<div class="notice">' + icon('info') + '<span>Rally: ein Mitglied sammelt Truppen an seiner Basis, die anderen schicken ihre dazu (Tore egal – nur wer startet, braucht den Weg zum Ziel). Nach Ablauf (1, 3 oder 5 Min.) marschiert alles als EIN Angriff los; wer später ankommt, zieht direkt zum Ziel nach. Jeder kämpft mit seinen eigenen Werten, der Anführer nimmt Haupt- und Zweitheld mit. Beute (Gold, Holz, Stein, Eisen – nur an der Hauptstadt) und Überlebende gehen nach Truppen zurück. Starten: feindliches Ziel antippen → „Rally“.</span></div>' +
         '<div class="bd-liste">' + (meine.length ? meine.map(r => bundRallyZeile(r, true)).join('') : '<div class="inbox-empty">Gerade läuft keine Rally.</div>') + '</div>' +
         (gegen.length ? '<div class="sect"><h4>Gegen euch</h4></div><div class="bd-liste">' + gegen.map(r => bundRallyZeile(r, false)).join('') + '</div>' : '');
 }
@@ -1167,7 +1168,7 @@ function bundWahlHtml() {
     const titel = w.mode === 'rally' ? 'Rally auf ' + islandTitle(ziel) : w.mode === 'dazu' ? 'Mitmachen: Rally auf ' + islandTitle(islandById[r.t]) : 'Verstärkung für ' + bundName(islandOwnerOf(ziel.id)) + ' · ' + islandTitle(ziel);
     return '<div class="bd-form bd-wahl"><div class="sect"><h4>' + escapeHtml(titel) + '</h4></div>' +
         (q.length ? '<label class="bd-feld"><span>' + (w.mode === 'rally' ? 'Sammelpunkt (deine Basis)' : 'Von Basis') + '</span><select id="bdVon">' + q.map(x => '<option value="' + x.id + '"' + (x.id === w.von ? ' selected' : '') + '>' + escapeHtml(islandTitle(islandById[x.id])) + ' · ' + fmtCompact(x.n) + ' · ' + fmtClock(x.eta / 1000) + '</option>').join('') + '</select></label>' +
-            (w.mode === 'rally' && heroSegHtml('data-rhero', w.held) ? '<div class="bd-feld"><span>Held (führt die ganze Rally)</span><div class="seg hero-seg" id="bdHeld">' + heroSegHtml('data-rhero', w.held) + '</div><div class="seg hero-seg hero-seg2" id="bdHeld2">' + heroSeg2Html('data-rhero2', w.held, w.held2) + '</div></div>' : '') +
+            (w.mode === 'rally' && heroSegHtml('data-rhero', w.held) ? '<div class="bd-feld"><span>Haupt- und Zweitheld (zählen für deine Truppen)</span><div class="seg hero-seg" id="bdHeld">' + heroSegHtml('data-rhero', w.held) + '</div><div class="seg hero-seg hero-seg2" id="bdHeld2">' + heroSeg2Html('data-rhero2', w.held, w.held2) + '</div></div>' : '') +
             (w.mode === 'rally' ? '<div class="bd-feld"><span>Wartezeit</span><div class="seg" id="bdMin" style="grid-template-columns:repeat(3,1fr)">' + BUND.RALLY_MIN.map(m => '<button type="button" data-min="' + m + '" class="' + ((w.min || 3) === m ? 'on' : '') + '">' + m + ' Min.</button>').join('') + '</div></div>' : '') +
             '<div class="bd-feld"><span>Truppen</span><div class="seg" id="bdAnteil">' + [.25, .5, .75, 1].map(f => '<button type="button" data-f="' + f + '" class="' + ((w.f || 1) === f ? 'on' : '') + '">' + (f === 1 ? 'Alle' : f * 100 + ' %') + '</button>').join('') + '</div></div>' +
             '<p class="bd-info" id="bdInfo"></p><div class="bd-knoepfe"><button type="button" class="btn btn--secondary btn--sm" data-bact="wahlZu">Abbrechen</button><button type="button" class="btn btn--primary btn--sm" data-bact="wahlLos">' +
@@ -1200,14 +1201,6 @@ function bundWahlLos() {
         sfx('send');
     }
     bundWahl = null; updateHud(); bundRender(true);
-}
-function bundSignalSenden(art, z) {
-    const a = bundIch(); if (!a) { flashHint('Du bist in keinem Bündnis.', 2500); return; }
-    const mein = (a.sig || []).find(s => s.w === 'player'); if (mein && Date.now() - mein.at < BUND.SIG_PAUSE) { flashHint('Warte kurz – höchstens ein Signal alle 30 Sekunden.', 2500); return; }
-    if (Date.now() - (bundSignalSenden.zuletzt || 0) < BUND.SIG_PAUSE) { flashHint('Warte kurz – höchstens ein Signal alle 30 Sekunden.', 2500); return; }
-    bundSignalSenden.zuletzt = Date.now();
-    bundBefehl('signal', { s: art, z: z === undefined ? null : z }, 'Signal gesendet: ' + BUND_SIGNALE[art].text(z !== undefined && z !== null ? islandTitle(islandById[z]) : ''));
-    sfx('send');
 }
 if (bundPopup) {
     document.getElementById('bundBtn').addEventListener('click', e => { e.stopPropagation(); if (isPanelOpen(bundPopup)) return bundSchliessen();   // Dock-Knopf „Bündnis“
@@ -1295,8 +1288,7 @@ document.getElementById('popupBund') && document.getElementById('popupBund').add
     if (art === 'hilfeWahl') { closeIslandPopup(); bundWahl = { mode: 'hilfe', nach: id, f: .5 }; bundOeffnen('sig'); return; }
     if (art === 'einladen') { const ow = islandOwnerOf(id); if (!bundKannEinladen(ow) || bundEingeladen(ow)) return; b.disabled = true; bundBefehl('einladen', { w: ow }, 'Einladung an ' + bundName(ow) + ' geschickt.'); return; }
     if (art === 'teilen' || art === 'hilfe') { if (Date.now() - (bundMem.chatSend || 0) < BUND_CHAT_PAUSE) return; bundMem.chatSend = Date.now();
-        bundBefehl('chat', { k: art, z: id }, art === 'teilen' ? 'Im Bündnis-Chat geteilt.' : 'Hilferuf im Bündnis-Chat.'); sfx('send'); b.disabled = true; return; }
-    bundSignalSenden(art, id);
+        bundBefehl('chat', { k: art, z: id }, art === 'teilen' ? 'Im Bündnis-Chat geteilt.' : 'Hilferuf im Bündnis-Chat.'); sfx('send'); b.disabled = true; }
 });
 
 // ==============================================================================================================

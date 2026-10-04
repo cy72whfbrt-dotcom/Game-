@@ -96,19 +96,14 @@ $_SERVER['HTTP_ORIGIN'] = 'https://boese.example'; pruefe('fremde Seite', herkun
 $_SERVER['HTTP_ORIGIN'] = 'https://office.hobbitonhill.de.boese.example'; pruefe('Täusch-Adresse', herkunft_ok(), false);
 unset($_SERVER['HTTP_ORIGIN']); $_SERVER['HTTP_SEC_FETCH_SITE'] = 'cross-site'; pruefe('Browser meldet fremd', herkunft_ok(), false);
 
-// --- Märsche: fremde Stärke auf meine Basis nur mit Wachturm – oder sobald er dort kämpft (wie danach im Kampfbericht)
+// --- Märsche: fremde Stärke auf meine Basis erst, wenn er dort kämpft (wie danach im Kampfbericht; Wachturm seit 4.10. raus)
 $angr = json_encode([['attackerBotId' => 'bot7', 'targetId' => 5, 'rawTroops' => 123456789, 'hero' => 'h1'], ['attackerBotId' => 'bot7', 'targetId' => 5, 'rawTroops' => 123456789, 'fightEndsAt' => 99, 'hero' => 'h1']]);
-$m = json_decode(marsch_teil('openWaterPendingAttacks', $angr, 'u3', [5 => 1], 0), true);
-pruefe('Angriff auf mich, unterwegs, ohne Wachturm: Stärke geheim', $m[0]['rawTroops'], 0);
+$m = json_decode(marsch_teil('openWaterPendingAttacks', $angr, 'u3', [5 => 1]), true);
+pruefe('Angriff auf mich, unterwegs: Stärke geheim', $m[0]['rawTroops'], 0);
+pruefe('Angriff auf mich, unterwegs: kein Held', isset($m[0]['hero']), false);
 pruefe('Angriff auf mich, kämpft schon: echte Stärke', $m[1]['rawTroops'], 123456789);
-// Wachturm ist jetzt Forschung im Labor (4.10.): ab 1 ungefähr, ab 6 genau, ab 8 mit Held
-$m = json_decode(marsch_teil('openWaterPendingAttacks', $angr, 'u3', [5 => 1], 1), true);
-pruefe('Wachturm 1: ungefähr', (int)$m[0]['rawTroops'], 120000000); pruefe('Wachturm 1: kein Held', isset($m[0]['hero']), false);
-$m = json_decode(marsch_teil('openWaterPendingAttacks', $angr, 'u3', [5 => 1], 6), true);
-pruefe('Wachturm 6: genau', $m[0]['rawTroops'], 123456789); pruefe('Wachturm 6: noch kein Held', isset($m[0]['hero']), false);
-$m = json_decode(marsch_teil('openWaterPendingAttacks', $angr, 'u3', [5 => 1], 8), true);
-pruefe('Wachturm 8: mit Held', $m[0]['hero'] ?? null, 'h1');
-$m = json_decode(marsch_teil('openWaterPendingAttacks', $angr, 'u3', [9 => 1], 10), true);
+pruefe('Angriff auf mich, kämpft schon: Held zu sehen', $m[1]['hero'] ?? null, 'h1');
+$m = json_decode(marsch_teil('openWaterPendingAttacks', $angr, 'u3', [9 => 1]), true);
 pruefe('Angriff auf andere: nie Zahlen', $m[0]['rawTroops'], 0);
 
 echo ($fehler ? "$fehler von $n Tests FEHLGESCHLAGEN\n" : "Alle $n Server-Tests bestanden.\n");

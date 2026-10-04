@@ -127,12 +127,8 @@ function logChips(list) {                          // [[Symbol, Text, gut|schlec
     return l.length ? '<div class="lchips">' + l.map(([ic, t, k]) => '<span class="lchip' + (k ? ' lchip--' + k : '') + '">' + icon(ic) + '<span>' + t + '</span></span>').join('') + '</div>' : '';
 }
 const verlustChips = (gefallen, verwundet) => [gefallen > 0 && ['losses', '−' + chipN(gefallen) + ' gefallen', 'schlecht'], verwundet > 0 && ['plus', chipN(verwundet) + ' verwundet', 'warn']];
-function beuteChips(e, mine) {                      // was den Besitzer wechselte – Gold geht ins Abholfach, Holz/Stein/Eisen gleich ins Lager
-    const r = e.plunderRoh || {}, v = mine ? '+' : '−', k = mine ? 'gut' : 'schlecht', was = e.plunder > 0 || r.h > 0 || r.s > 0 || r.e > 0;
-    return [e.capitalHolds && ['castle', mine ? 'Hauptstadt brennt' : 'Deine Hauptstadt brennt', k],
-        e.plunder > 0 && ['coin', v + chipN(e.plunder) + ' Gold' + (mine ? ' (Abholfach)' : ''), k], r.h > 0 && ['wood', v + chipN(r.h) + ' Holz', k],
-        r.s > 0 && ['stone', v + chipN(r.s) + ' Stein', k], r.e > 0 && ['iron', v + chipN(r.e) + ' Eisen', k],
-        e.plunderSafe > 0 && ['lock', (was ? '' : (mine ? 'Keine Beute · ' : 'Nichts verloren · ')) + 'Burg schützt ' + chipN(e.plunderSafe) + ' je Rohstoff', '']];
+function beuteChips(e, mine) {                      // oben auf der Karte nur „Hauptstadt brennt“ – Gold, Holz, Stein, Eisen stehen unten in jedem Fenster (Alexander 4.10.)
+    return [e.capitalHolds && ['castle', mine ? 'Hauptstadt brennt' : 'Deine Hauptstadt brennt', mine ? 'gut' : 'schlecht']];
 }
 function logRowHtml(kind, iconName, title, meta, trailing, extra) {
   return '<div class="logRow ' + kind + '"><span class="li">' + icon(iconName) + '</span><span class="lt"><b>' + title + '</b>' +

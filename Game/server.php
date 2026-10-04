@@ -270,15 +270,13 @@ function nebel_flicken($text, $s) {
     return json_encode($p, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION);
 }
 // ===== Marschgrößen (3.10.) =====
-// Wie stark fremde Kolonnen sind (Angriffe, Senden, Rückzüge, Sammler, Lager-Märsche), sieht ein Spieler laut Spiel nur über den
-// Wachturm (Forschung im Labor) – und nur bei Angriffen auf SEINE Basen: ab Stufe 1 ungefähr (2 Stellen), ab Stufe 6 genau,
-// ab Stufe 8 mit Held (aufbau.js WACHT, angreiferInfo). Darum schickt der Server fremde Zahlen gar nicht erst (sonst stünden sie im Handy, nur versteckt):
+// Wie stark fremde Kolonnen sind (Angriffe, Senden, Rückzüge, Sammler, Lager-Märsche), sieht ein Spieler erst, wenn ein Angriff auf
+// SEINE Basis kämpft (wie danach im Kampfbericht; Wachturm ist seit 4.10. raus). Darum schickt der Server fremde Zahlen gar nicht erst (sonst stünden sie im Handy, nur versteckt):
 // Truppen 0, Held und Kampfwerte weg. Eigene Kolonnen bleiben, wie sie sind. Diese Teile gehen an Spieler immer ganz (nie als
 // Flicken – die passten nicht zum gefilterten Stand im Handy). Armeen und besetzte Felder zeigt das Spiel mit Zahlen, wenn man sie
 // sieht – im Nebel nicht: Truppen und Helden nur für die, die der Weltrechner ihm als sichtbar meldet (ow_spieler.armee_sicht).
 const MARSCH_TEILE = ['openWaterPendingAttacks', 'openWaterPendingSends', 'openWaterPendingRetreats', 'openWaterFieldMarches', 'openWaterBarbMarches', 'openWaterArmies', 'openWaterFields', 'openWaterVerstaerkung', 'openWaterBundChat'];   // (Bündnis-Chat: nur der des eigenen Bündnisses) (Verstärkung: nur seine eigene und die bei ihm)
-function marsch_runden($n) { $n = (float)$n; if ($n < 1) return 0; $p = pow(10, max(0, floor(log10($n)) - 1)); return round($n / $p) * $p; }   // (wie angreiferInfo)
-function marsch_teil($k, $text, $ich, $eigen, $turm, $sieht = []) {
+function marsch_teil($k, $text, $ich, $eigen, $sieht = []) {
     $v = json_decode((string)$text); if (!is_array($v) && !is_object($v)) return $text;   // (als Objekte: {} bleibt {})
     $wer = function ($o, $f) { return isset($o->$f) && is_string($o->$f) ? $o->$f : ''; };
     if ($k === 'openWaterArmies') {
@@ -300,11 +298,10 @@ function marsch_teil($k, $text, $ich, $eigen, $turm, $sieht = []) {
                 $dabei = false; foreach ($e->rally->an as $x) if (is_array($x) && ($x[0] ?? '') === $ich) $dabei = true;
                 if (!$dabei) foreach ($e->rally->an as $i => $x) if (is_array($x)) $e->rally->an[$i][2] = 0;
             }
-            $kampf = !empty($e->fightEndsAt); $aufMich = isset($eigen[(int)($e->targetId ?? -1)]); $genau = $aufMich && ($turm >= 6 || $kampf);   // (kämpft er schon bei dir, siehst du seine Stärke – wie danach im Kampfbericht)
-            $e->rawTroops = $genau ? ($e->rawTroops ?? 0) : ($aufMich && $turm >= 1 ? marsch_runden($e->rawTroops ?? 0) : 0);
-            foreach (['hx', 'attackBonus', 'skillBonus', 'skillLvl', 'attackGoldRate', 'rewardGoldRate', 'shieldLossReductionPct', 'atkTitle', 'atkTitleKey', 'atkKraft', 'atkFo', 'planId', 'lastWave', 'bernPct'] as $f) unset($e->$f);
-            if (!$aufMich || !($turm >= 8 || $kampf)) unset($e->hero, $e->hero2);
-            unset($e->atkTier);
+            $kampf = !empty($e->fightEndsAt); $aufMich = isset($eigen[(int)($e->targetId ?? -1)]); $genau = $aufMich && $kampf;   // (kämpft er schon bei dir, siehst du seine Stärke – wie danach im Kampfbericht)
+            $e->rawTroops = $genau ? ($e->rawTroops ?? 0) : 0;
+            foreach (['hx', 'attackBonus', 'skillBonus', 'skillLvl', 'attackGoldRate', 'rewardGoldRate', 'shieldLossReductionPct', 'atkTitle', 'atkTitleKey', 'atkKraft', 'atkFo', 'planId', 'lastWave'] as $f) unset($e->$f);
+            if (!$genau) unset($e->hero, $e->hero2);
         } elseif ($k === 'openWaterPendingSends') { if ($wer($e, 'senderBotId') !== $ich) $e->troops = 0; }
         elseif ($k === 'openWaterPendingRetreats') { if ($wer($e, 'owner') !== $ich) $e->troops = 0; }
         else { if ($wer($e, 'who') !== $ich) { $e->troops = 0; unset($e->hero, $e->hero2, $e->load); } }
@@ -318,8 +315,7 @@ function marsch_welt($w, $uid, $s) {
     if (!$da) return $w;
     $fehlt = array_values(array_filter($da, function ($k) use ($t) { return !isset($t[$k]); }));
     if ($fehlt) foreach (lager()->stand_laden(0, $fehlt) as $k => $v) $t[$k] = $v;
-    $turm = in_array('openWaterPendingAttacks', $da, true) ? lager()->turm_stufe($uid) : 0;
-    foreach ($da as $k) { unset($f[$k]); if (isset($t[$k]) && is_string($t[$k])) $t[$k] = marsch_teil($k, $t[$k], 'u' . (int)$uid, $s['eigen'], $turm, $s['armeen'] ?? []); }
+    foreach ($da as $k) { unset($f[$k]); if (isset($t[$k]) && is_string($t[$k])) $t[$k] = marsch_teil($k, $t[$k], 'u' . (int)$uid, $s['eigen'], $s['armeen'] ?? []); }
     $w['setzen'] = (object)$t; if (isset($w['flicken'])) $w['flicken'] = (object)$f;
     return $w;
 }
@@ -404,7 +400,7 @@ function spielseite_vorbereiten() {
         $welt = welt_fuer_spieler(lager()->welt_seit(0));
         $sicht = lager()->sicht_laden($ich['id']);
         $welt = nebel_welt($welt, $sicht);   // 3B: Truppen nur, wo er hinsehen darf
-        $welt = marsch_welt($welt, $ich['id'], $sicht);   // fremde Kolonnen ohne Zahlen (nur Wachturm)
+        $welt = marsch_welt($welt, $ich['id'], $sicht);   // fremde Kolonnen ohne Zahlen (erst im Kampf)
         lager()->welt_entsperren();
         $spieler = lager()->spieler_liste(0);
         $neu = !$stand;
@@ -1012,13 +1008,6 @@ class MysqlLager {
         $armeen = []; foreach ((array)json_decode((string)$z['armee_sicht'], true) as $id) if (is_string($id)) $armeen[$id] = true;   // fremde Armeen/Felder, die er sieht (Weltrechner)
         return ['bits' => $bits, 'eigen' => $eigen, 'v' => (int)$z['sicht_v'], 'armeen' => $armeen];
     }
-    // Wachturm-Stufe eines Spielers (Forschung im Labor) – aus dem Hauptbuch des Weltrechners (nicht aus seinem Profil: das schickt sein Handy)
-    function turm_stufe($uid) {
-        $q = $this->db->prepare('SELECT zustand FROM ow_bots WHERE spieler_id = 0 AND bot_id = ?'); $q->execute(['u' . (int)$uid]);
-        $b = json_decode((string)$q->fetchColumn(), true); if (!is_array($b)) return 0;
-        $l = $b['hb']['fo']['x_wacht'] ?? ($b['city']['fo']['x_wacht'] ?? 0);
-        return is_numeric($l) ? max(0, (int)$l) : 0;
-    }
     function armee_sicht_setzen($uid, $json) { $this->db->prepare('UPDATE ow_spieler SET armee_sicht = ?, sicht_v = sicht_v + 1 WHERE id = ? AND (armee_sicht IS NULL OR armee_sicht <> ?)')->execute([$json, $uid, $json]); }   // (geändert: neue Sicht → Teile ganz)
     function sicht_setzen($uid, $b64) { $this->db->prepare('UPDATE ow_spieler SET sicht = ?, sicht_v = sicht_v + 1 WHERE id = ? AND (sicht IS NULL OR sicht <> ?)')->execute([$b64, $uid, $b64]); }   // (gleich geblieben: nichts)
     function profil_setzen($uid, $p) { $this->db->prepare('UPDATE ow_spieler SET profil = ?, profil_zeit = ? WHERE id = ?')->execute([$p, (int)round(microtime(true) * 1000), $uid]); }   // (ms: zwei Profile in derselben Sekunde gehen nicht verloren)
@@ -1328,7 +1317,7 @@ function welt_puls($ich, $d) {
             $w['setzen'] = (object)$t; $w['flicken'] = (object)$f; unset($w);
         }
         $antwort['welt'] = nebel_welt($antwort['welt'], $sicht);
-        $antwort['welt'] = marsch_welt($antwort['welt'], $uid, $sicht);   // fremde Kolonnen ohne Zahlen (nur Wachturm)
+        $antwort['welt'] = marsch_welt($antwort['welt'], $uid, $sicht);   // fremde Kolonnen ohne Zahlen (erst im Kampf)
         $antwort['sicht_v'] = $sicht['v'];
     }
     if ($bin_leiter) $antwort['befehle'] = $l->befehle_abholen();   // alle noch nicht quittierten (schon Ausgeführte überspringt der Weltrechner)

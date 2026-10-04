@@ -1823,7 +1823,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
       <div class="sect"><h4>Hilfe – wo finde ich was?</h4></div>
       <div class="set-hilfe">
         <p><b>Stadt</b> → Burg (deine Hauptstadt-Stufe), Gebäude, Holz/Stein/Eisen, Forschung, Krankenhaus, Helden.</p>
-        <p><b>Bündnis</b> → zusammen mit anderen: Signale, Rally, Hilfe, Tempel-Bonus.</p>
+        <p><b>Bündnis</b> → zusammen mit anderen: Chat, Rally, Verstärkung, Bündnis-Hilfe, Tempel-Bonus.</p>
         <p><b>Kampf</b> → deine Märsche und alle Berichte.</p>
         <p><b>Events</b> → Aufgaben, Belohnungen, Erfolge, Pass, Wochen-Event, Invasion, Drache, Tagesboss und Lager.</p>
         <p><b>Shop</b> → Kisten, Friedensschilde, Thron-Shop, Händler, Markt.</p>

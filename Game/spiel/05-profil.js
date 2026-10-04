@@ -1130,7 +1130,7 @@ function renderCombatLog() {
                     '<div class="logSum' + (atkTotal >= defTotal ? ' advantage' : '') + '"><span>Gesamt</span><span>' + fmtD(atkTotal) + '</span></div>' +
                     '<div class="logCasualty"><span>Gefallen</span><span>−' + fmtD(entry.attackerCasualties || 0) + '</span></div>' +
                     (entry.wounded ? '<div class="logCasualty wounded"><span>Verwundet</span><span>' + fmtD(entry.wounded) + '</span></div>' : '') +
-                    (entry.lossSaved ? (() => { const bern = Math.min(entry.heroLossPct || entry.bernPct || 0, entry.lossReductionPct), sh = entry.lossReductionPct - bern, sBern = Math.round(entry.lossSaved * bern / Math.max(1, entry.lossReductionPct));
+                    (entry.lossSaved ? (() => { const bern = Math.min(entry.heroLossPct || 0, entry.lossReductionPct), sh = entry.lossReductionPct - bern, sBern = Math.round(entry.lossSaved * bern / Math.max(1, entry.lossReductionPct));
                         return (sh > 0 ? '<div class="logLine buff"><span>Schild −' + Math.round(sh) + ' %</span><span>+' + fmtD(entry.lossSaved - sBern) + '</span></div>' : '') +
                             (bern > 0 ? '<div class="logLine buff"><span>Held −' + Math.round(bern) + ' % Verluste</span><span>+' + fmtD(sBern) + '</span></div>' : ''); })() : '') +
                     gearHtml(entry.atkGear) +
@@ -1288,7 +1288,6 @@ const kampflogUmbauen = (function () {
                 if (e.type === 'scout') return spaeh(row, e);
                 if (e.type !== 'attack' && e.type !== 'botAttack') return;
                 const cmp = row.querySelector('.logCompare'); if (!cmp) return;
-                row.querySelectorAll('.lchip').forEach(c => { const u = c.querySelector('use'); if (u && /#i-(coin|wood|stone|iron|lock)$/.test(u.getAttribute('href') || '') && !/Kills/.test(c.textContent)) c.remove(); });
                 const r = e.plunderRoh || {}, beute = { g: e.plunder || 0, h: r.h || 0, s: r.s || 0, e: r.e || 0 };
                 const sides = [...cmp.querySelectorAll(':scope > .logSide')]; if (sides.length < 2) return;
                 const angrList = Array.isArray(e.angreifer) && e.angreifer.length > 1 ? e.angreifer : null;
@@ -1296,7 +1295,7 @@ const kampflogUmbauen = (function () {
                 if (bal && angrList) { const s0 = bal.firstElementChild, z = s0.innerHTML.match(/([\d.,]+(?:&nbsp;|\s)*(?:Mio\.|Mrd\.|Bio\.)?)\s*$/); if (z) s0.innerHTML = s0.innerHTML.replace(/<\/svg>[\s\S]*$/, '</svg>' + namen(angrList) + ' ' + z[1]); }
                 if (bal && Array.isArray(e.verst) && e.verst.length) { const s1 = bal.lastElementChild, z = s1.innerHTML.match(/^([\d.,]+(?:&nbsp;|\s)*(?:Mio\.|Mrd\.|Bio\.)?)/); if (z) s1.innerHTML = s1.innerHTML.replace(/^[\s\S]*?(<svg)/, z[1] + ' ' + escapeHtml(e.defenderName || e.defName || 'Du') + ' + ' + namen(e.verst) + '$1'); }
                 const vertList = Array.isArray(e.verst) && e.verst.length ? e.verst : null;
-                const sieg = e.type === 'attack' ? !!e.won : !!e.won;
+                const sieg = !!e.won;
                 seiteUmbauen(sides[0], true, angrList, e, beute, 0, sieg);
                 seiteUmbauen(sides[1], false, vertList, e, sieg ? beute : { g: 0, h: 0, s: 0, e: 0 }, e.plunderSafe || 0, sieg);
             } catch (err) { console.warn('Kampflog-Design', err); }
