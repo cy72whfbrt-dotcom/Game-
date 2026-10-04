@@ -1811,3 +1811,14 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
 - Getestet: `pass_test` (neue Welt: beides zu; nach 7 Std.: Wächter offen, Thron zu; nach 25 Std.: alles offen), dazu
   chat_rally, boss, reihe, gemeinsam, selbst2, vsme_echt, render, laden grün; lokaler Weltrechner ohne Fehler.
 - **Hochgeladen 4.10., 12:05 UTC** (38 s, mit Sortier-Tag Abschnitt 63), Weltrechner läuft wieder.
+
+## 65. Chat-Knöpfe fehlten, Rally: „keiner kommt“ (Alexander 4.10., Bildschirmfoto)
+- **Neue Sätze fehlten als Knöpfe (mein Fehler aus 62):** die Knöpfe standen als feste Liste im Code – „Bin zu weit weg –
+  machst du eine Rally?“, „Ja, ich starte die Rally!“ und „Bin zu weit weg“ kamen dort nicht vor. Jetzt werden die Knöpfe
+  aus der Liste aller Sätze (`BUND_CHAT`) gebaut – ein neuer Satz ist automatisch auch ein Knopf.
+- **Rally eines echten Spielers – keiner kam, keiner sagte etwas:** Mitspieler machen nur mit, wenn ihre Truppen vor dem
+  Start beim Sammelpunkt sind (Sammelzeit höchstens 5 Min.). Wer in der Mitte sammelt, ist für die meisten zu weit weg.
+  Jetzt sagen sie es im Chat: „Bin unterwegs“ (kommt), „Bin zu weit weg“ (schafft es nicht rechtzeitig) oder „Nein“
+  (höchstens 4 Antworten je Rally). Die Regel selbst (rechtzeitig da sein) ist unverändert.
+- Getestet: `rally_chat_test` (ferner Mitspieler „Bin zu weit weg“, naher „Bin unterwegs“ und kommt, neue Knöpfe da),
+  chat, chat_rally, rally_schnell, laden grün.

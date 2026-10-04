@@ -553,7 +553,7 @@ function bundTempo(who, target) {
 const BUND_NAMEN = ['Sturmbund', 'Nordwacht', 'Eisenkrone', 'Seewoelfe', 'Drachenhort', 'Goldene Flotte', 'Schwarze Segel', 'Rote Rose', 'Bernsteinbund', 'Silberne Hand',
     'Wellenreiter', 'Graue Garde', 'Feuerkreis', 'Sternenwacht', 'Klippenbund', 'Tiefe See', 'Morgenrot', 'Wolfsrudel', 'Inselherren', 'Sturmflut', 'Kronenwacht', 'Nebelbund',
     'Donnerbucht', 'Salzkrieger', 'Leuchtturm', 'Ankerbund', 'Gezeiten', 'Brandungsrat', 'Kaperbund', 'Nordlicht Pakt'];
-const bundMem = { chatAt: {}, chatQ: [], botNext: {}, sigGemacht: new Set(), rallyGemacht: new Set(), ziel: {}, hilfeSig: {}, runde: 0, rallyRunde: {}, rallySeh: 0, sigSeh: 0 };
+const bundMem = { chatAt: {}, chatQ: [], botNext: {}, sigGemacht: new Set(), rallyGemacht: new Set(), rallySagt: {}, ziel: {}, hilfeSig: {}, runde: 0, rallyRunde: {}, rallySeh: 0, sigSeh: 0 };
 const bundWegMem = new Map();                                  // gibt es einen Weg (über eigene Tore)? – je Runde gemerkt
 function bundWeg(a, b, w, n) {                                 // Weg da, letztes Tor offen und die Maut bezahlbar? (wie botCanCross, aber je Runde gemerkt)
     if (a === b) return true; const k = a + '>' + b + ':' + w; let h = bundWegMem.get(k);
@@ -794,11 +794,15 @@ function bundMitspielerRally(now) {
                 if (now + travelDurationSeconds(src, at, w) * 1000 > r.los - 2000) continue;
                 if (!best || n > best.n) best = { id: sid, n }; }
             bundMem.rallyGemacht.add(key);
-            if (!best || (bot.style === 'builder' && Math.random() < .5)) continue;
-            if (!bundRallyDazu(a, w, { rid: r.id, von: best.id, n: best.n })) { bundBotGetippt(bot, now); bundSpeichern(); }
+            // (Rally eines echten Spielers: die Mitspieler sagen im Chat, ob sie kommen – vorher kam einfach keiner, ohne ein Wort)
+            const sagen = k2 => { if (botById[r.by] && botById[r.by].mensch && (bundMem.rallySagt[r.id] = (bundMem.rallySagt[r.id] || 0) + 1) <= 4)
+                bundMem.chatQ.push({ at: now + 2000 + Math.random() * 6000, aid: a.id, w, k: k2, z: null }); };
+            if (!best) { if ([...botOwnedIslands[w]].some(id => (islandTroops[id] || 0) >= 1000)) sagen('zuweit'); continue; }   // (zu weit weg: schafft es nicht vor dem Start)
+            if (bot.style === 'builder' && Math.random() < .5) { sagen('nein'); continue; }
+            if (!bundRallyDazu(a, w, { rid: r.id, von: best.id, n: best.n })) { bundBotGetippt(bot, now); bundSpeichern(); sagen('unterwegs'); }
         }
     }
-    if (bundMem.rallyGemacht.size > 5000) bundMem.rallyGemacht.clear();
+    if (bundMem.rallyGemacht.size > 5000) { bundMem.rallyGemacht.clear(); bundMem.rallySagt = {}; }
     // b) starten: ein großes Ziel in Reichweite, das einer allein nicht schafft, das Bündnis zusammen aber schon
     for (const id in bund.b) {
         const a = bund.b[id]; if (a.mit.length < 2 || now < (bundMem.rallyRunde[id] || 0)) continue;
@@ -948,8 +952,8 @@ function bundChatHtml(a) {
             return '<div class="bd-cz' + (mir ? ' is-me' : '') + (sys ? ' is-sys' : '') + (x.k === 'hilfe' ? ' is-hilfe' : '') + '"><b>' + (mir ? 'Du' : escapeHtml(bundName(x.w))) + (BUND_CHAT[x.k] && 'fa'.includes(BUND_CHAT[x.k].g) ? ':' : '') + '</b> <span>' + escapeHtml(bundChatText(x, mir)) + '</span>' +
                 (ort ? ' <button type="button" class="btn btn--ghost btn--sm" data-bact="zeigen" data-z="' + x.z + '">Zeigen</button>' : '') + '<small>' + uhrHtml(x.at, 'vor') + '</small></div>'; }).join('')
             : '<div class="inbox-empty">Noch ist es ruhig. Frag dein Bündnis – oder tippe eine Basis an → „Im Chat teilen“.</div>') + '</div>' +
-        '<div class="bd-ck"><span>Fragen</span>' + ['angriff', 'wo', 'wann', 'rally', 'hilfe', 'online'].map(knopf).join('') + '</div>' +
-        '<div class="bd-ck"><span>Antworten</span>' + ['ja', 'nein', 'dabei', 'jetzt', 'spaeter', 'unterwegs', 'binon', 'danke', 'gut'].map(knopf).join('') + '</div>';
+        '<div class="bd-ck"><span>Fragen</span>' + Object.keys(BUND_CHAT).filter(k => BUND_CHAT[k].g === 'f').map(knopf).join('') + '</div>' +   // (alle festen Sätze aus BUND_CHAT – kein zweites Verzeichnis)
+        '<div class="bd-ck"><span>Antworten</span>' + Object.keys(BUND_CHAT).filter(k => BUND_CHAT[k].g === 'a').map(knopf).join('') + '</div>';
 }
 function bundChatNeu() {                                          // (Handy) neuer Chat vom Weltrechner: kurzer Hinweis, wenn das Fenster zu ist
     let v = null; try { v = JSON.parse(store.get('openWaterBundChat')); } catch (e) {}
