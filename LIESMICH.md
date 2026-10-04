@@ -354,8 +354,12 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
     - **Späherturm weg** → wird Forschung im Labor.
     - **Lager, Kaserne, Schatzkammer weg.**
     - **Lazarett → Krankenhaus** („KH“).
-    - **Wachturm:** Alexander versteht ihn nicht – noch offen.
-    - **Botschaft:** wird wohl umgebaut – Ideen sammeln.
+    - **Wachturm weg** → wird Forschung im Labor (zeigt Stärke von Angriffen auf dich, bessere Spähberichte).
+      Alexander: „machen wir noch mal besser“ – später neu ausdenken.
+    - **Botschaft = Bündnis-Gebäude**, jede Stufe gibt mehr von allen drei:
+      1. **Verstärkung:** wie viele Truppen Bündnis-Freunde bei dir stationieren dürfen.
+      2. **Rally-Größe:** wie viele Truppen deiner Rally beitreten dürfen.
+      3. **Bündnis-Hilfe:** Freunde drücken „Hilfe“, dein Bau / deine Forschung geht schneller.
     - Holzfäller, Steinbruch, Eisenmine, Mauer: noch nicht besprochen.
   - Heute (zum Vergleich): Plündern nimmt nur Münzen (Hauptstadt und Basis, je ein Anteil über dem Lager-Schutz,
     höchstens eine halbe Stunde Einkommen).
