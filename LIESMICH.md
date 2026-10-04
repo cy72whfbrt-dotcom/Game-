@@ -154,6 +154,9 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Wellen mit Helden in denselben Kampf, führen nur die Helden der ersten Welle (vorher zählten alle, z. B. 4 –
   `heroMergeHx` entfernt); auch alte Berichte zeigen nur Haupt- und Zweitheld.
 - **4.10. Aufräumen:** unbenutzte CSS-Reste raus, wichtige Tests ins Projekt (`tests/browser/`, Start mit `tests/alle_tests.sh`).
+- **4.10. Server-Tests ins Projekt:** `tests/server/` + `tests/server_tests.sh <arbeitsordner>` (lokaler PHP-Server,
+  MariaDB, Weltrechner): Absturz/Zurückspielen, Admin, Nebel, Bündnis-Kiste, Verstärkung, Klick-Test – alle grün.
+  Passwörter der Test-Konten nur in `<arbeitsordner>/zugang.env` bzw. Umgebungsvariablen (nie im Git).
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.

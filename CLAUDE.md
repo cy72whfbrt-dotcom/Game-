@@ -21,6 +21,10 @@ Alles Wichtige steht in `LIESMICH.md` – jede Änderung wird dort eingetragen.
 - Server-Tests: `php tests/server_test.php`.
 - **Alle Tests ohne Server auf einmal: `tests/alle_tests.sh`** (Einheitstests + Browser-Tests aus `tests/browser/`,
   ca. 10 Min., am Ende „ALLES OK“). Neue Browser-Tests dort ablegen (Argument: Vorschau-Ordner).
+- **Tests mit lokalem Server: `tests/server_tests.sh <arbeitsordner>`** (Tests aus `tests/server/`, ca. 30 Min.).
+  Braucht MariaDB + `php -S 127.0.0.1:8770 -t www` im Arbeitsordner; dort `www/…/Game/config.php` (Test-DB) und
+  `zugang.env` mit `OW_ADMIN_NAME`, `OW_ADMIN_PW`, `OW_TEST_PW` (nie ins Git). Kopiert `Game/`, startet den
+  Weltrechner neu, am Ende „ALLES OK“. Einzelne Tests: Namen dahinter schreiben. Mehr im Kopf des Skripts.
 
 ## Regeln von Alexander
 - Code zuerst auf GitHub (Branch `claude/neues-projekt-8agldl`), **vor jedem Hochladen Alexander fragen**
