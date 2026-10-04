@@ -1067,9 +1067,9 @@ if (window.WELT) {
     };
     // (Weltrechner) Befehle der anderen Spieler ausführen
     const gehoert = (id, who) => islandOwnerOf(id) === who;
-    function nichtLos(who, grp, src, was) {          // ein Befehl ging nicht los: dem Spieler sagen, warum (Marsch-Plätze, sonst Weg/Maut/Schild)
+    function nichtLos(who, grp, src, was, grund) {   // ein Befehl ging nicht los: dem Spieler sagen, warum (Marsch-Plätze, sonst Weg/Maut/Schild)
         if (typeof bundMelden !== 'function') return;
-        bundMelden(who, was + ' ist nicht losgegangen – ' + (AUF && !AUF.marschOk(who, grp, src) ? AUF.marschVoll(who) : 'kein Weg frei (Tor zu, Maut zu teuer, Friedensschild oder zu wenig Truppen). Deine Truppen bleiben, wo sie sind.'));
+        bundMelden(who, was + ' ist nicht losgegangen – ' + (grund ? grund + '. Deine Truppen bleiben, wo sie sind.' : AUF && !AUF.marschOk(who, grp, src) ? AUF.marschVoll(who) : 'kein Weg frei (Tor zu, Maut zu teuer, Friedensschild oder zu wenig Truppen). Deine Truppen bleiben, wo sie sind.'));
     }
     const marschVon = (who, key) => pendingAttacks.find(x => x.attackerBotId === who && marchKeyOf(x) === key) || pendingSends.find(x => x.senderBotId === who && marchKeyOf(x) === key);
 
@@ -1818,7 +1818,7 @@ if (window.WELT) {
             if (!inselOk(b.src) || !inselOk(b.ziel) || !zahlOk(b.n) || b.n < 1) { warnen(who, 'kaputt', 'Angriff mit kaputten Angaben – abgelehnt.'); return; }
             if (islandOwnerOf(b.ziel) === who) { warnen(who, 'kaputt', 'Angriff auf die eigene Basis – abgelehnt.'); return; }   // (brachte sonst Gratis-EP)
             if (!gehoert(b.src, who)) return;
-            if (!wegOk(who, islandById[b.src].landmassId, islandById[b.ziel].landmassId)) { warnen(who, 'weg', 'Angriff ohne Weg dorthin (Brücke/Tor) – abgelehnt.'); return; }
+            if (!wegOk(who, islandById[b.src].landmassId, islandById[b.ziel].landmassId)) { warnen(who, 'weg', 'Angriff ohne Weg dorthin (Brücke/Tor) – abgelehnt.'); nichtLos(who, null, b.src, 'Angriff auf ' + islandTitle(islandById[b.ziel]), 'kein Weg – ein fremdes Tor liegt dazwischen'); return; }
             b.n = Math.floor(b.n);
             naechsteGruppe = kennungOk(b.grp) ? b.grp : null;                // Mehrfachangriff = ein Marsch-Platz (nur vom selben Ort, nur kurz nacheinander)
             const grpA = naechsteGruppe; let okA = false;
@@ -1828,7 +1828,7 @@ if (window.WELT) {
         senden(who, b) {
             if (!inselOk(b.von) || !inselOk(b.nach) || !zahlOk(b.n) || b.n < 1) { warnen(who, 'kaputt', 'Senden mit kaputten Angaben – abgelehnt.'); return; }
             if (!gehoert(b.von, who) || !gehoert(b.nach, who)) return;
-            if (!wegOk(who, islandById[b.von].landmassId, islandById[b.nach].landmassId)) { warnen(who, 'weg', 'Senden ohne Weg dorthin (Brücke/Tor) – abgelehnt.'); return; }
+            if (!wegOk(who, islandById[b.von].landmassId, islandById[b.nach].landmassId)) { warnen(who, 'weg', 'Senden ohne Weg dorthin (Brücke/Tor) – abgelehnt.'); nichtLos(who, null, undefined, 'Truppen nach ' + islandTitle(islandById[b.nach]), 'kein Weg – ein fremdes Tor liegt dazwischen'); return; }
             b.n = Math.floor(b.n);
             naechsteGruppe = kennungOk(b.grp) ? b.grp : null;
             const grpS = naechsteGruppe, kS = pendingSends.length;

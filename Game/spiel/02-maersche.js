@@ -389,6 +389,8 @@ function launchAttack(sourceId, targetId, attackerBotId, troopsOverride, heldWun
         return false;
     }
     const grp = naechsteGruppe;
+    if (!attackerBotId && !canReach(source.landmassId, target.landmassId, 'player')) {   // (wie beim Weltrechner)
+        flashHint('Kein Weg nach ' + islandTitle(target) + ' – ein fremdes Tor liegt dazwischen. Erobere zuerst das Tor.', 5000); return false; }
     if (!marschPlatz(attackerBotId || 'player', grp, sourceId)) return false;   // alle Marsch-Plätze belegt (Burg-Stufe)
     if (!attackerBotId && !rechnet()) {                           // Zuschauer: der Weltrechner schickt die Truppen los
         const vh = lastHop(source.landmassId, target.landmassId, 'player'); if (!mautVorab(vh[0], vh[1], rawTroops, target.id)) return false;
@@ -450,6 +452,8 @@ function launchSend(fromId, toId, senderBotId, amount) {       // amount: how ma
     const rawTroops = amount > 0 ? Math.min(Math.round(amount), available) : available;
     if (!source || !target || rawTroops <= 0) return;
     const grp = naechsteGruppe;
+    if (!senderBotId && !canReach(source.landmassId, target.landmassId, 'player')) {   // (wie beim Weltrechner: ein fremdes Tor dazwischen – vorher schickte das Handy los, der Weltrechner lehnte still ab)
+        flashHint('Kein Weg nach ' + islandTitle(target) + ' – ein fremdes Tor liegt dazwischen. Erobere das Tor (oder eins deines Bündnisses), dann geht es.', 5000); return; }
     if (!marschPlatz(senderBotId || 'player', grp)) return;          // Marsch-Plätze (Paket D)
     if (!senderBotId && !rechnet()) {                             // Zuschauer: der Weltrechner schickt sie los
         const vh = lastHop(source.landmassId, target.landmassId, 'player'); if (!mautVorab(vh[0], vh[1], rawTroops)) return;

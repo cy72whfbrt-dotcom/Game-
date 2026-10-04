@@ -1878,3 +1878,15 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
 - Getestet: `rally_sicht_test` (Mitspieler tritt deiner Rally bei → Linie auf der Karte, Name + „unterwegs, da in …“ im
   Rally-Fenster), dazu tore_rally, rally_chat, nachzuegler, chat, laden, render grün.
 - **Hochgeladen 4.10., 12:47 UTC**, Weltrechner läuft wieder.
+
+## 71. „Kann mir schon wieder keine Truppen senden“ (Alexander 4.10.) – die echte Ursache
+- **Gefunden im Server-Protokoll (Schummel-Liste des Weltrechners):** 5× heute „Senden ohne Weg dorthin (Brücke/Tor) –
+  abgelehnt“ bei Alexander (auch die „abgebrochenen“ Sendungen vom Vormittag, Abschnitt 55). Zwischen den Basen liegt ein
+  Tor, das weder ihm noch seinem Bündnis gehört – da kommt man nach den Regeln nicht durch (Tor erst erobern).
+- **Der Fehler:** das Handy prüfte den Weg vor dem Senden/Angreifen nicht; es schickte los, der Weltrechner lehnte still
+  ab, der Marsch verschwand.
+- **Jetzt:** das Handy prüft vorher mit derselben Regel wie der Weltrechner und sagt: „Kein Weg nach … – ein fremdes Tor
+  liegt dazwischen. Erobere das Tor (oder eins deines Bündnisses), dann geht es.“ Lehnt der Weltrechner trotzdem ab, kommt
+  eine Meldung („… ist nicht losgegangen – kein Weg …“).
+- Getestet: `weg_test` (fremdes Tor dazwischen → nicht losgeschickt + Meldung; mit Weg → geht los), dazu selbst, reihe,
+  gemeinsam, welle, vsme_echt, render, rally_sicht, laden grün.
