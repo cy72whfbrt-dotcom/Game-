@@ -457,6 +457,19 @@ function bundRallyHeim(attack, n, vonId, ohneStarter) {
     });
     return bleibt;
 }
+// (Kampf) Gemeinsamer Angriff (Rally oder mehrere Bündnis-Angriffe auf dasselbe Ziel): jeder verliert nach seiner Truppenzahl,
+// seine Verwundeten gehen in SEIN Lazarett. Gibt die Angreifer-Liste für den Kampfbericht zurück.
+function kampfAnteile(attack, fallen, hosp) {
+    const an = attack.rally.an, by = attack.rally.by, sum = an.reduce((s, x) => s + x[2], 0) || 1, m = new Map();
+    for (const x of an) { if (!m.has(x[0])) m.set(x[0], { w: x[0], n: 0 }); m.get(x[0]).n += x[2]; }
+    const L = [...m.values()]; let rest = Math.max(0, Math.floor(fallen));
+    L.forEach((x, i) => {
+        const f = i === L.length - 1 ? rest : Math.min(rest, Math.round(fallen * x.n / sum)); rest -= f;
+        const wd = f > 0 ? (x.w === 'player' ? hospitalTake(f) : botHospitalTake(x.w, f, x.w === by ? hosp : undefined)) || 0 : 0;
+        Object.assign(x, { name: bundName(x.w), fallen: f - wd, wounded: wd, gear: fighterSnapshot(x.w, x.w === by ? attack.hx : undefined) });
+    });
+    return L;
+}
 // (Kampf) Beute (Münzen) der Rally anteilig verteilen und allen Beteiligten Bescheid geben
 function bundRallyBeute(attack, gain, won, targetId) {
     const an = attack.rally.an, by = attack.rally.by, sum = an.reduce((s, x) => s + x[2], 0) || 1, ziel = islandTitle(islandById[targetId]);
@@ -464,9 +477,9 @@ function bundRallyBeute(attack, gain, won, targetId) {
     for (const w in anteile) {
         const teil = gain > 0 && w !== by ? Math.floor(gain * anteile[w] / sum) : 0;
         if (teil > 0) { botCoins[by] = Math.max(0, (botCoins[by] || 0) - teil); botCoins[w] = (botCoins[w] || 0) + teil; }
-        if (w !== by) bundMelden(w, 'Rally auf ' + ziel + ': ' + (won ? 'Sieg!' : 'gescheitert.') + ' Deine überlebenden Truppen kehren heim' + (teil > 0 ? ', +' + fmtCompact(teil) + ' Münzen Beute.' : '.'));
+        if (w !== by && !attack.rally.zus) bundMelden(w, 'Rally auf ' + ziel + ': ' + (won ? 'Sieg!' : 'gescheitert.') + ' Deine überlebenden Truppen kehren heim' + (teil > 0 ? ', +' + fmtCompact(teil) + ' Münzen Beute.' : '.'));
     }
-    const a = bundVon(by); if (a) { bundLog(a, 'Rally auf ' + ziel + ': ' + (won ? 'Sieg' : 'gescheitert') + '.'); bundSpeichern(); }
+    const a = bundVon(by); if (a) { bundLog(a, (attack.rally.zus ? 'Gemeinsamer Angriff auf ' : 'Rally auf ') + ziel + ': ' + (won ? 'Sieg' : 'gescheitert') + '.'); bundSpeichern(); }
 }
 
 // ==============================================================================================================

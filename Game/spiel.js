@@ -105,11 +105,19 @@ const fmtBig = fmtNum;   // huge sums read as "227,1 Trill.", not as 21 digits
 // Verstärkung (Botschaft) im Kampfbericht: wer mit wie vielen Truppen verteidigt hat – und was jeder verloren hat
 function verstZeilen(e, besitzer) {
     if (!e || !Array.isArray(e.verst) || !e.verst.length) return '';
-    const n = x => fmtD(Math.max(0, x || 0));
+    const n = x => fmtNum(Math.max(0, x || 0));
     return '<div class="logLine"><span>' + escapeHtml(besitzer) + '</span><span>' + n(e.eigen) + '</span></div>' +
         e.verst.map(h => '<div class="logLine buff"><span>Verstärkung · ' + escapeHtml(h.name || '?') + '</span><span>' + n(h.n) + '</span></div>' +
             ((h.fallen || h.wounded) ? '<div class="logCasualty"><span>· davon gefallen' + (h.wounded ? ' / verwundet' : '') + '</span><span>−' + n(h.fallen) + (h.wounded ? ' / ' + n(h.wounded) : '') + '</span></div>' : '') +
             (h.gear ? '<details class="verst-det"><summary>' + escapeHtml(h.name || '?') + ': Held, Ausrüstung, Fähigkeiten</summary>' + gearHtml(h.gear) + '</details>' : '')).join('');
+}
+// Gemeinsamer Angriff im Kampfbericht: jeder Angreifer mit seinen Truppen – und was er verloren hat
+function angreiferZeilen(e) {
+    if (!e || !Array.isArray(e.angreifer) || e.angreifer.length < 2) return '';
+    const n = x => fmtNum(Math.max(0, x || 0));
+    return e.angreifer.map(h => '<div class="logLine buff"><span>' + escapeHtml(h.name || '?') + '</span><span>' + n(h.n) + '</span></div>' +
+        ((h.fallen || h.wounded) ? '<div class="logCasualty"><span>· davon gefallen' + (h.wounded ? ' / verwundet' : '') + '</span><span>−' + n(h.fallen) + (h.wounded ? ' / ' + n(h.wounded) : '') + '</span></div>' : '') +
+        (h.gear ? '<details class="verst-det"><summary>' + escapeHtml(h.name || '?') + ': Held, Ausrüstung, Fähigkeiten</summary>' + gearHtml(h.gear) + '</details>' : '')).join('');
 }
 function plunderLine(e, mine) {                     // Lager: what changed hands when a base fell, and what the Lager kept safe
     if (!e.plunder && !e.plunderSafe) return '';
@@ -4400,11 +4408,22 @@ setInterval(() => {
                 continue;
             }
             if (atkr === 'player') dropShield('Dein Friedensschild ist gefallen – dein Angriff auf ' + islandTitle(islandById[a.targetId]) + ' ist angekommen.'); else botDropShield(atkr);   // a wave that fights is an attack
-            const fight = !a.rally && pendingAttacks.find(p => p !== a && !p.rally && p.fightEndsAt > now && p.targetId === a.targetId && (p.attackerBotId || null) === (a.attackerBotId || null));
+            const fight = kampfDazu(a, now);
             if (fight) {
+                const anderer = fight.attackerBotId !== a.attackerBotId;
+                if (anderer || fight.rally || a.rally) {          // ein gemeinsamer Kampf: wer mit wie vielen Truppen dabei ist (Verluste, Heimweg, Beute, Bericht)
+                    if (!fight.rally) fight.rally = { id: 'z' + fight.id, by: fight.attackerBotId, an: [[fight.attackerBotId, fight.sourceId, fight.rawTroops]], zus: 1 };
+                    else fight.rally.zus = 1;
+                    fight.rally.an.push(...(a.rally ? a.rally.an : [[a.attackerBotId, a.sourceId, a.rawTroops]]));
+                }
+                if (anderer) {                                     // seine Stärke zählt, wie er sie mitbringt (seine Stufe, Forschung, Titel)
+                    const st = x => (x.atkTitle !== undefined ? x.atkTitle : titleMult(x.attackerBotId, 'attack')) * (x.atkKraft || 1);
+                    a.attackBonus = (a.rawTroops + (a.attackBonus || 0)) * st(a) / st(fight) - a.rawTroops;
+                }
                 fight.rawTroops += a.rawTroops; fight.attackBonus = (fight.attackBonus || 0) + (a.attackBonus || 0);
                 if (fight.skillBonus !== undefined || a.skillBonus !== undefined) fight.skillBonus = (fight.skillBonus || 0) + (a.skillBonus !== undefined ? a.skillBonus : a.attackBonus || 0); fight.waves = (fight.waves || 1) + (a.waves || 1);
-                if (a.hx) { if (!fight.hx) { fight.hx = a.hx; fight.hero = a.hero; fight.hero2 = a.hero2 || null; } else fight.hx = heroMergeHx(fight.hx, a.hx); }   // every hero in the fight keeps his effect and his rage
+                if (a.hx && anderer) heroFought(a.attackerBotId, a.hx);              // (ein Held eines Mitspielers führt nur seinen eigenen Kampf – er bekommt seine Wut)
+                else if (a.hx) { if (!fight.hx) { fight.hx = a.hx; fight.hero = a.hero; fight.hero2 = a.hero2 || null; } else fight.hx = heroMergeHx(fight.hx, a.hx); }   // every hero in the fight keeps his effect and his rage
                 fight.shieldLossReductionPct = Math.max(fight.shieldLossReductionPct || 0, a.shieldLossReductionPct || 0);
                 fight.rewardGoldRate = Math.max(fight.rewardGoldRate || 0, a.rewardGoldRate || 0);
                 fight.fightEndsAt = Math.max(fight.fightEndsAt, now + 2500);          // the fresh troops get to fight too
@@ -5645,7 +5664,8 @@ function renderCombatLog() {
                 logBalance(entry.myTroops, defSum, icon('attack') + escapeHtml(entry.botName) + ' ' + fmtM(entry.myTroops), fmtM(defSum) + ' Du' + icon('defense'), true) +
                 '<div class="logCompare">' +
                     '<div class="logSide">' +
-                        '<div class="logSideLabel">Angreifer · ' + whoLink(entry.botId || botIdByName[entry.botName], entry.botName) + '</div>' +
+                        '<div class="logSideLabel">Angreifer · ' + whoLink(entry.botId || botIdByName[entry.botName], entry.botName) + (angreiferZeilen(entry) ? ' + ' + (entry.angreifer.length - 1) : '') + '</div>' +
+                        angreiferZeilen(entry) +
                         (entry.atkParts ? '<div class="logLine"><span>Truppen</span><span>' + fmtD(entry.atkRaw) + '</span></div>' + partLines(entry.atkParts) :
                          entry.atkRaw !== undefined ? '<div class="logLine"><span>Truppen</span><span>' + fmtD(entry.atkRaw) + '</span></div>' +
                             (entry.atkBonus ? '<div class="logLine buff"><span>Angriff-Bonus</span><span>+' + fmtD(entry.atkBonus) + '</span></div>' : '') +
@@ -5679,11 +5699,12 @@ function renderCombatLog() {
             if (entry.rolle === 'helfer') { const mh = entry.meine || {};   // deine Verstärkung bei einem Bündnis-Mitglied hat mitverteidigt
                 return logRowHtml(entry.won ? 'loss' : 'win', 'defense', logBadge(entry.won ? 'loss' : 'win', 'Verstärkung') + T(entry.targetId),
                     escapeHtml(entry.defName || '?') + ' gegen ' + escapeHtml(entry.botName) + ' · ' + (entry.won ? 'gefallen' : 'gehalten') + ' · deine ' + fmtM(mh.n || 0) + ': −' + fmtM((mh.fallen || 0) + (mh.wounded || 0)) + (mh.wounded ? ' (' + fmtM(mh.wounded) + ' ins Lazarett)' : '') + vs, ago(entry), bdet); }
+            const wer = escapeHtml(entry.botName) + (angreiferZeilen(entry) ? ' (gemeinsam, ' + entry.angreifer.length + ' Angreifer)' : '');
             return entry.capitalHolds
-                ? logRowHtml('loss', 'bot', logBadge('loss', 'Geplündert') + T(entry.targetId), escapeHtml(entry.botName) + ' hat die Garnison geschlagen – die Stadt hält' + vs, ago(entry), bdet)
+                ? logRowHtml('loss', 'bot', logBadge('loss', 'Geplündert') + T(entry.targetId), wer + ' hat die Garnison geschlagen – die Stadt hält' + vs, ago(entry), bdet)
                 : entry.won
-                ? logRowHtml('loss', 'bot', logBadge('loss', 'Verloren') + T(entry.targetId), escapeHtml(entry.botName) + ' hat die Basis erobert' + vs, ago(entry), bdet)
-                : logRowHtml('win', 'shield', logBadge('win', 'Verteidigt') + T(entry.targetId), escapeHtml(entry.botName) + ' zurückgeschlagen' + vs, ago(entry), bdet);
+                ? logRowHtml('loss', 'bot', logBadge('loss', 'Verloren') + T(entry.targetId), wer + ' hat die Basis erobert' + vs, ago(entry), bdet)
+                : logRowHtml('win', 'shield', logBadge('win', 'Verteidigt') + T(entry.targetId), wer + ' zurückgeschlagen' + vs, ago(entry), bdet);
         }
         // Everything each side brings to the fight, added up line by
         // line into a "Gesamt" sum, side by side - so the two final
@@ -5695,8 +5716,9 @@ function renderCombatLog() {
             logBalance(atkTotal, defTotal, icon('attack') + 'Du ' + fmtM(atkTotal), fmtM(defTotal) + ' ' + escapeHtml(entry.defenderName || 'Abwehr') + icon('defense')) +
             '<div class="logCompare">' +
                 '<div class="logSide">' +
-                    '<div class="logSideLabel">Angreifer</div>' +
-                    '<div class="logLine"><span>Truppen</span><span>' + fmtD(entry.myTroops) + '</span></div>' +
+                    '<div class="logSideLabel">Angreifer' + (angreiferZeilen(entry) ? ' · gemeinsam' : '') + '</div>' +
+                    angreiferZeilen(entry) +
+                    '<div class="logLine"><span>Truppen' + (angreiferZeilen(entry) ? ' (alle)' : '') + '</span><span>' + fmtD(entry.myTroops) + '</span></div>' +
                     (entry.atkParts ? partLines(entry.atkParts)
                         : '<div class="logLine buff"><span>Angriff-Skill</span><span>+' + fmtD(entry.skillBuff) + '</span></div>' +
                           (entry.titleBuff ? '<div class="logLine buff"><span>Titel</span><span>' + (entry.titleBuff > 0 ? '+' : '−') + fmtD(Math.abs(entry.titleBuff)) + '</span></div>' : '')) +
@@ -5730,6 +5752,8 @@ function renderCombatLog() {
             '</details>';
         return logRowHtml(entry.won ? 'win' : 'loss', entry.won ? 'level' : 'losses',
             logBadge(entry.won ? 'win' : 'loss', entry.won ? 'Sieg' : 'Niederlage') + T(entry.targetId),
+            (entry.rolle === 'mit' ? 'mit ' + escapeHtml(entry.fuehrer || '?') + ' · deine ' + fmtM((entry.meine || {}).n || 0) + ': −' + fmtM(((entry.meine || {}).fallen || 0) + ((entry.meine || {}).wounded || 0)) + ' · '
+                : angreiferZeilen(entry) ? entry.angreifer.length + ' Angreifer · ' : '') +
             'von ' + T(entry.sourceId) + (entry.won
                 ? ' · ' + fmtM(entry.remaining) + ' übrig'
                 : (entry.retreatSurvivors ? ' · ' + fmtM(entry.retreatSurvivors) + ' geflohen' : '')),
@@ -7043,6 +7067,13 @@ function finishMapBattle(attack, o) {               // the fight is decided: the
         b.t0 = t; b.anchor = now; b.slow = MB_SLOW; b.final = true; b.onEnd = o.onEnd; mbReplan(b, o, now); return; }
     if (Date.now() - attack.resolveAt < 8000) spawnMapBattle(o); else o.onEnd();
 }
+// Läuft auf dem Ziel schon ein Kampf, in den die ankommende Welle a mit hineingeht? Dieselbe Seite: derselbe Angreifer oder
+// ein Bündnis-Mitglied (dann EIN gemeinsamer Kampf, wie eine Rally). (Vorschau: deine eigenen Wellen wie bisher.)
+function kampfDazu(a, now) {
+    return pendingAttacks.find(p => p !== a && p.fightEndsAt > now && p.targetId === a.targetId && (p.attackerBotId && a.attackerBotId
+        ? p.attackerBotId === a.attackerBotId || bundFreund(p.attackerBotId, a.attackerBotId)
+        : !p.attackerBotId && !a.attackerBotId && !p.rally && !a.rally));
+}
 function kampfKey(a) { return a.id || (a.startedAt + '-' + a.sourceId + '-' + a.targetId); }   // dieselbe Kennung, die der Weltrechner dem Kampf gibt
 // (Zuschauer) Der Weltrechner entscheidet die Kämpfe – das Handy zeigt sie trotzdem als Schlacht auf der Karte (wie beim
 // Weltrechner selbst): sobald der Marsch ankommt, mit den Zahlen, die es sieht; ist der Kampf entschieden, spielt sie zu Ende.
@@ -7054,17 +7085,19 @@ setInterval(() => {
         if (a.resolveAt > now) continue;
         const k = kampfKey(a), z = zuschauerKampf.get(k);
         if (z) { if (!a.fightEndsAt) a.fightEndsAt = z.ende; continue; }   // (neue Welt-Daten: Kampf läuft noch – nicht als „0:00“ zeigen)
-        // Eine zweite Welle desselben Angreifers auf dasselbe Ziel: der Weltrechner wirft sie in den laufenden Kampf –
-        // also keine zweite Schlacht zeigen, sondern die laufende mit den zusammengelegten Truppen weiterspielen.
-        const mit = !a.rally && pendingAttacks.find(p => p !== a && !p.rally && p.targetId === a.targetId && (p.attackerBotId || null) === (a.attackerBotId || null) &&
-            zuschauerKampf.has(kampfKey(p)) && !zuschauerKampf.get(kampfKey(p)).mit && zuschauerKampf.get(kampfKey(p)).ende > now);
+        // Eine weitere Welle derselben Seite (derselbe Angreifer oder ein Bündnis-Mitglied) auf dasselbe Ziel: der Weltrechner
+        // wirft sie in den laufenden Kampf – also keine zweite Schlacht, sondern EINE mit den zusammengelegten Truppen.
+        const seite = x => x.attackerBotId || 'player', zk = p => zuschauerKampf.get(kampfKey(p));
+        const mit = pendingAttacks.find(p => p !== a && p.targetId === a.targetId && (seite(p) === seite(a) || bundFreund(seite(p), seite(a))) && zk(p) && !zk(p).mit && zk(p).ende > now);
         if (mit) {
             const km = kampfKey(mit), zm = zuschauerKampf.get(km);
             zuschauerKampf.set(k, { ende: zm.ende, mit: km }); if (!a.fightEndsAt) a.fightEndsAt = zm.ende;
-            const bt = mapBattles.find(x => x.attackId === km && !x.final);
             zm.dazu = (zm.dazu || 0) + a.rawTroops;
-            const est = bt && fightEstimate({ ...mit, rawTroops: mit.rawTroops + zm.dazu, attackBonus: undefined });
-            if (est) mbReplan(bt, est, performance.now());
+            const bt = mapBattles.find(x => x.attackId === km && !x.final), mine = !a.attackerBotId, vsMe = a.attackerBotId && islandOwnerOf(a.targetId) === 'player', tgt = islandById[a.targetId];
+            const est = tgt && (bt || mine || (vsMe && a.rawTroops > 0)) ? fightEstimate({ ...mit, rawTroops: mit.rawTroops + zm.dazu, attackBonus: undefined }) : null;
+            if (est && bt) mbReplan(bt, est, performance.now());
+            else if (est && now - a.resolveAt < 15000) spawnMapBattle({ sourceId: a.sourceId, targetId: a.targetId, attackId: km, live: true, fightMs: Math.max(1500, zm.ende - now), hero: a.hero || null,   // (du bist zu einem Kampf deines Bündnisses dazugekommen)
+                atk: mine ? 'mine' : 'bot', def: mine ? (bossAt(tgt.id) ? 'boss' : islandOwnerOf(tgt.id) ? 'bot' : 'neutral') : 'mine', ...est });
             continue;
         }
         const mine = !a.attackerBotId, vsMe = a.attackerBotId && islandOwnerOf(a.targetId) === 'player';

@@ -1610,11 +1610,27 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
   beides mit „Zeigen“ + Punkt, antwortet „Ja“, A sieht es; C bekommt den Chat nicht – auch nicht nach dem Neuladen; keine
   Skript-Fehler). Einladungen 10/10, Tauschen 6/6, Verstärkung 5/5, Bündnis-Bots 3/3, Amt 1/1, Unit 16/65.
 
-## 52. Angriffe sahen doppelt aus (Alexander 4.10., Bildschirmfoto)
-- **Was war:** Zwei Wellen desselben Angreifers auf dasselbe Ziel. Der Weltrechner legt die zweite Welle in den laufenden
-  Kampf (ein Kampf, eine Rechnung, schon immer so). Das Handy hat aber für jede ankommende Welle eine eigene Schlacht
-  gezeigt – zwei Balken, Verluste doppelt. Es wurde nichts doppelt abgezogen, nur doppelt angezeigt.
-- **Fix (spiel.js, Zuschauer-Anzeige):** Kommt eine Welle an, während dieselbe Seite das Ziel schon angreift, gibt es keine
-  zweite Schlacht: die laufende rechnet mit den zusammengelegten Truppen weiter (wie beim Weltrechner).
-- Getestet: Vorschau `welle_test` – alter Code 2 Schlachten (je 6 Mrd), neuer Code 1 Schlacht (12 Mrd); keine Skript-Fehler.
-  Noch nicht hochgeladen.
+## 52. Ein Ziel, ein Kampf: eigene Wellen + Bündnis-Angriffe werden EIN großer Kampf (Alexander 4.10., Bildschirmfotos)
+- **Was war:** Zwei Wellen desselben Angreifers auf dasselbe Ziel legte der Weltrechner schon immer in den laufenden Kampf –
+  das Handy zeigte aber für jede Welle eine eigene Schlacht (zwei Balken, Verluste doppelt angezeigt, nicht doppelt
+  abgezogen). Angriffe von Bündnis-Mitgliedern auf dasselbe Ziel waren getrennte Kämpfe.
+- **Jetzt (Alexander: „greife ich Emma an, 1. + 2. Angriff werden einer; greifen Bots mit an, ist das ein großer Angriff“):**
+  - Kommt eine Welle an, während auf dem Ziel schon ein Kampf läuft – vom selben Angreifer **oder einem Bündnis-Mitglied** –,
+    geht sie in diesen Kampf (`kampfDazu` in spiel.js). Fremde (nicht im Bündnis) kämpfen weiter getrennt.
+  - Jeder bringt seine eigene Stärke mit (Stufe/Forschung/Titel werden umgerechnet). Ein Held führt nur seinen eigenen
+    Angriff (bekommt seine Wut), wirkt aber nicht für die anderen.
+  - Wie bei der Rally: der Erste ist Anführer und erobert; die Überlebenden der anderen gehen anteilig heim, die Beute wird
+    nach Truppen geteilt. **Verluste nach Truppenzahl, Verwundete in das EIGENE Lazarett** (`kampfAnteile` in buendnis.js –
+    gilt jetzt auch für die Rally; vorher bekam der Rally-Starter alle Verwundeten).
+  - **Kampfbericht:** Angreifer = jeder mit seinen Truppen, Gefallenen/Verwundeten, Held/Ausrüstung; jeder echte Spieler,
+    der dabei war, bekommt den Bericht („mit X · deine …“). Der Verteidiger sieht alle Angreifer („gemeinsam, 3 Angreifer“).
+  - **Handy:** eine Schlacht auf der Karte, die Zahlen wachsen, wenn eine Welle dazukommt (auch wenn du zu einem Kampf
+    deines Bündnisses dazustößt).
+  - **Server:** die Truppenzahlen eines gemeinsamen Angriffs sieht nur, wer dabei ist (`marsch_teil`).
+- **Nebenbei behoben:** die Verstärkungs-Zeilen im Kampfbericht (Abschnitt 43) riefen eine nicht vorhandene Funktion auf –
+  ein Bericht mit Verstärkung hätte die Kampfliste abstürzen lassen.
+- Getestet (Vorschau): `welle_test` (alter Code 2 Schlachten, neu 1 mit 12 Mrd), `welle_bund_test` (deine Welle + Bündnis-
+  Mitglied → 1 Schlacht, 12 Mrd), `gemeinsam_test` (A zwei Wellen + B im Bündnis → ein Kampf, C fremd getrennt; A erobert,
+  B geht mit seinem Anteil heim; Bericht zeigt beide), `anteil_test` (9.000 + 1.000, 5.000 Verluste → 4.500 / 500, Verwundete
+  im jeweils eigenen Lazarett), `bericht_gem_test` (Anführer, Mitkämpfer und Verteidiger bekommen den Bericht mit beiden
+  Angreifern). Dazu wieder grün: Verstärkung 5/5, Chat 12/12, Chat mit Server + Weltrechner 11/11, Unit 65/65.

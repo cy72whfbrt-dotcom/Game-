@@ -166,7 +166,9 @@ function resolveBotAttack(attack) {
     const capitalHolds = won && isCapital(target.id);
     const botSentLoss = won ? sentLossFor(attack.rawTroops, myTroops, originalEnemyDefense, red) : 0, survivors = won ? attack.rawTroops - botSentLoss : 0;   // same rule as yours   // the sword bonus fights along but doesn't stay
     const fled = won ? 0 : retreatSurvivorsPreview(attack);
-    const atkFallen = attack.rawTroops - survivors - fled, atkWounded = botHospitalTake(bot.id, atkFallen, hosp);
+    const atkFallen = attack.rawTroops - survivors - fled;
+    const angreifer = attack.rally ? kampfAnteile(attack, atkFallen, hosp) : null, atkWounded = angreifer ? angreifer.reduce((s, x) => s + x.wounded, 0) : botHospitalTake(bot.id, atkFallen, hosp);   // (gemeinsam: jeder trägt seinen Anteil, Verwundete in sein Lazarett)
+    const atkInfo = angreifer ? { angreifer } : {};
     const homeAgain = n => { if (n <= 0) return; if (attack.rally) { bundRallyHeim(attack, n, target.id); return; } const t0 = Date.now();                 // they walk home like yours (a fallen home: resolveSend sends them to another base) – eine Rally: jeder zu sich
         pendingSends.push({ fromId: target.id, toId: source.id, troops: n, startedAt: t0, resolveAt: t0 + retreatSecs(attack, target, source, bot.id) * 1000, senderBotId: bot.id, back: true }); };
     const plunder = won && targetOwner ? plunderOf(targetOwner, capitalHolds) : null;   // Lager: the winner carries off part of the coins above the loser's protection - yours too
@@ -236,21 +238,24 @@ function resolveBotAttack(attack) {
         if (window.WELT && botById[targetOwner] && botById[targetOwner].mensch) WELT.bericht(targetOwner, {    // ein echter Spieler wurde angegriffen: sein Bericht
             type: 'botAttack', botName: bot.name, botId: bot.id, targetId: target.id, myTroops, atkRaw: attack.rawTroops, atkBonus: attack.attackBonus || 0, atkFallen, atkWounded, atkFled: fled,
             atkGear: fighterSnapshot(bot.id, attack.hx), defGear: fighterSnapshot(targetOwner), enemyTroops: originalEnemyTroops, enemyDefense: originalEnemyDefense, wounded: dw || 0,
-            fallen: defWeg, won, capitalHolds, defGold: dg, plunder: plunder ? plunder.loot : 0, plunderSafe: plunder ? plunder.safe : 0, defName: (botById[targetOwner] || {}).name, ...verstInfo },
+            fallen: defWeg, won, capitalHolds, defGold: dg, plunder: plunder ? plunder.loot : 0, plunderSafe: plunder ? plunder.safe : 0, defName: (botById[targetOwner] || {}).name, ...verstInfo, ...atkInfo },
             capitalHolds ? bot.name + ' hat deine Hauptstadt geplündert – die Garnison ist gefallen, aber die Stadt hält.' : won ? bot.name + ' hat deine Basis ' + islandTitle(target) + ' erobert!' : 'Verteidigung erfolgreich – ' + bot.name + ' bei ' + islandTitle(target) + ' zurückgeschlagen.');
     }
     if (vs) verstBerichte(vs, { type: 'botAttack', botName: bot.name, botId: bot.id, targetId: target.id, myTroops, atkRaw: attack.rawTroops, atkBonus: attack.attackBonus || 0, atkFallen, atkWounded, atkFled: fled,   // die Helfer: derselbe Bericht
         atkGear: fighterSnapshot(bot.id, attack.hx), defGear: targetOwner ? fighterSnapshot(targetOwner) : null, enemyTroops: originalEnemyTroops, enemyDefense: originalEnemyDefense, fallen: defWeg, wounded: 0,
-        won, capitalHolds, defName: targetOwner === 'player' ? 'Du' : (botById[targetOwner] || {}).name, ...verstInfo });
-    if (window.WELT && bot.mensch) WELT.bericht(bot.id, {                // ein echter Spieler hat angegriffen: sein Bericht
+        won, capitalHolds, defName: targetOwner === 'player' ? 'Du' : (botById[targetOwner] || {}).name, ...verstInfo, ...atkInfo });
+    const atkBericht = {                                              // ein echter Spieler hat angegriffen: sein Bericht (gemeinsam: jeder Mensch, der dabei war)
         type: 'attack', sourceId: source.id, targetId: target.id, myTroops: attack.rawTroops, myTroopsBuffed: myTroops, attackBuff: myTroops - attack.rawTroops, skillBuff: attack.attackBonus || 0, titleBuff: 0,
         lossReductionPct: red, heroLossPct: attack.hx ? attack.hx.loss : 0, lossSaved: 0, attackGoldRate: botKillRate, killGold: Math.round((won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops)) * botKillRate),
         attackerCasualties: Math.max(0, atkFallen - (atkWounded || 0)), wounded: atkWounded || 0, enemyTroops: originalEnemyTroops, enemyDefense: originalEnemyDefense, defenseBuff: 0,
         defenderCasualties: won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops), retreatSurvivors: fled,
         defenderName: targetOwner ? (targetOwner === 'player' ? (window.profileName && profileName.value) || 'Spieler' : botById[targetOwner].name) : null, defenderId: targetOwner || null,
         enemyWounded: 0, plunder: plunder ? plunder.loot : 0, plunderSafe: plunder ? plunder.safe : 0, atkGear: fighterSnapshot(bot.id, attack.hx), defGear: targetOwner ? fighterSnapshot(targetOwner) : null,
-        won, remaining: won ? survivors : 0, ...verstInfo },
-        capitalHolds ? 'Hauptstadt von ' + (targetOwner === 'player' ? 'deinem Gegner' : (botById[targetOwner] || {}).name) + ' geplündert!' : won ? islandTitle(target) + ' erobert!' : 'Angriff auf ' + islandTitle(target) + ' gescheitert.');
+        won, remaining: won ? survivors : 0, ...verstInfo, ...atkInfo };
+    const atkText = capitalHolds ? 'Hauptstadt von ' + (targetOwner === 'player' ? 'deinem Gegner' : (botById[targetOwner] || {}).name) + ' geplündert!' : won ? islandTitle(target) + ' erobert!' : 'Angriff auf ' + islandTitle(target) + ' gescheitert.';
+    if (window.WELT) for (const w of angreifer ? angreifer.map(x => x.w) : [bot.id]) if (botById[w] && botById[w].mensch)
+        WELT.bericht(w, w === bot.id ? atkBericht : Object.assign({}, atkBericht, { rolle: 'mit', fuehrer: bot.name, meine: angreifer.find(x => x.w === w), sourceId: (attack.rally.an.find(x => x[0] === w) || [])[1] ?? source.id }),
+            w === bot.id ? atkText : 'Gemeinsamer Angriff mit ' + bot.name + ': ' + atkText);
     if (playerInvolved) {
         const ribbon = () => spawnBattleFx(target.id, !won || capitalHolds, capitalHolds ? 'Hauptstadt hält' : won ? 'Basis verloren' : 'Verteidigt', capitalHolds ? 'Garnison gefallen' : won ? 'von ' + bot.name : bot.name + ' abgewehrt');
         finishMapBattle(attack, { sourceId: source.id, targetId: target.id, atk: 'bot', def: 'mine', hero: attack.hero || null, my: myTroops, myLoss: myTroops - (won ? survivors : fled),
@@ -274,7 +279,7 @@ function resolveBotAttack(attack) {
             fallen: defWeg,
             won,
             capitalHolds,
-            defGold, plunder: plunder ? plunder.loot : 0, plunderSafe: plunder ? plunder.safe : 0, ...verstInfo
+            defGold, plunder: plunder ? plunder.loot : 0, plunderSafe: plunder ? plunder.safe : 0, ...verstInfo, ...atkInfo
         });
         flashHint((capitalHolds
             ? bot.name + ' hat deine Hauptstadt geplündert – die Garnison ist gefallen, aber die Stadt hält.'

@@ -296,6 +296,10 @@ function marsch_teil($k, $text, $ich, $eigen, $turm, $sieht = []) {
         if (!is_object($e)) continue;
         if ($k === 'openWaterPendingAttacks') {
             if ($wer($e, 'attackerBotId') === $ich) continue;
+            if (isset($e->rally) && is_object($e->rally) && isset($e->rally->an) && is_array($e->rally->an)) {   // gemeinsamer Angriff: die Zahlen sieht nur, wer dabei ist
+                $dabei = false; foreach ($e->rally->an as $x) if (is_array($x) && ($x[0] ?? '') === $ich) $dabei = true;
+                if (!$dabei) foreach ($e->rally->an as $i => $x) if (is_array($x)) $e->rally->an[$i][2] = 0;
+            }
             $aufMich = isset($eigen[(int)($e->targetId ?? -1)]); $genau = $aufMich && $turm >= 10;
             $e->rawTroops = $genau ? ($e->rawTroops ?? 0) : ($aufMich && $turm >= 1 ? marsch_runden($e->rawTroops ?? 0) : 0);
             foreach (['hx', 'attackBonus', 'skillBonus', 'skillLvl', 'attackGoldRate', 'rewardGoldRate', 'shieldLossReductionPct', 'atkTitle', 'atkTitleKey', 'atkKraft', 'atkFo', 'planId', 'lastWave', 'bernPct'] as $f) unset($e->$f);
