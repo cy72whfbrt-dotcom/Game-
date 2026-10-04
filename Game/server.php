@@ -159,7 +159,7 @@ function profil_bereinigen($text) {
         'gear' => $gear,
         'city' => ['levels' => (object)$stadt],
         'fo' => (object)$fo, 'tier' => (int)max(1, $plus($p['tier'] ?? 1, 5)), 'tierBez' => (int)max(1, $plus($p['tierBez'] ?? 1, 5)), 'res' => is_array($p['res'] ?? null) ? $res : null,   // (fehlt: null – nicht 0, sonst sähe es nach „alles ausgegeben“ aus)
-        'wounded' => $plus($p['wounded'] ?? 0, 1e13),
+        'wounded' => $plus($p['wounded'] ?? 0, 1e30),
         'hs' => $hs,
         'shieldUntil' => min($plus($p['shieldUntil'] ?? 0, 1e15), $jetztMs + 8 * 86400000), 'neuBis' => min($plus($p['neuBis'] ?? 0, 1e15), $jetztMs + 48 * 3600000),   // längster Schild 8 Tage, Anfängerschutz 48 h
         'look' => ['ring' => $id($lk['ring'] ?? null), 'rings' => $liste($lk['rings'] ?? []), 'march' => $id($lk['march'] ?? null), 'marchs' => $liste($lk['marchs'] ?? []),
@@ -343,7 +343,7 @@ const WELTRECHNER_NACHRICHTEN = ['delta', 'bericht', 'startschild', 'evPreis', '
 function haendler_ware_ok($e) {
     foreach ($e as $k => $v) if (!in_array($k, ['art', 'title', 'sh', 'kiste', 'tr', 'schild', 'text'], true)) return false;
     $zahl = function ($v, $max) { return (is_int($v) || is_float($v)) && is_finite($v) && $v >= 0 && $v <= $max; };
-    return $zahl($e['sh'] ?? 0, 10) && $zahl($e['tr'] ?? 0, 1e13) && in_array($e['kiste'] ?? -1, [-1, 0, 1, 2], true) && in_array($e['schild'] ?? 0, [0, 2], true)
+    return $zahl($e['sh'] ?? 0, 10) && $zahl($e['tr'] ?? 0, 1e30) && in_array($e['kiste'] ?? -1, [-1, 0, 1, 2], true) && in_array($e['schild'] ?? 0, [0, 2], true)
         && is_string($e['title'] ?? '') && strlen($e['title'] ?? '') <= 120 && is_string($e['text'] ?? '') && strlen($e['text'] ?? '') <= 300;
 }
 // Bündnis-Geschenk (buendnis.js): nur Münzen, Truppen und höchstens eine graue/grüne Kiste – nie Gems oder Splitter

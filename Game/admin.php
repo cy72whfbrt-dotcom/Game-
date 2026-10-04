@@ -66,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $gems = max(0, min(1000000, (int)($_POST['gems'] ?? 0)));
             $coins = max(0, min(1e15, (float)($_POST['coins'] ?? 0)));
             $sh = max(0, min(10000, (int)($_POST['sh'] ?? 0)));
-            $tr = max(0, min(1e15, floor((float)($_POST['tr'] ?? 0))));   // (bis 1 Billiarde, wie Münzen – Alexander 4.10.)
+            $tr = max(0, min(1e30, floor((float)($_POST['tr'] ?? 0))));   // (keine echte Grenze – Alexander 4.10.: nach langem Spielen gibt es sehr viele Truppen; 1e30 wie Server/Prüfer)
             $crate = (int)($_POST['crate'] ?? -1); if ($crate < -1 || $crate > 5) $crate = -1;
             $an = (string)($_POST['an'] ?? '');
             if (!$gems && !$coins && !$sh && !$tr && $crate < 0) $fehler = 'Das Geschenk ist leer.';

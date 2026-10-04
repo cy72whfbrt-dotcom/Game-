@@ -12210,7 +12210,7 @@ if (window.WELT) {
     // (das Handy schickt es alle 10 s). Was abgelehnt/gekappt wird oder auffällig springt, landet in WELT.warnungen →
     // weltrechner/start.js schreibt es in weltrechner/schummel.php → admin.php zeigt es unter „Auffälligkeiten“.
     WELT.warnungen = WELT.warnungen || [];
-    const WACHE_WARTEN_MS = 60000, WACHE_MAX = 1e15;
+    const WACHE_WARTEN_MS = 60000, WACHE_MAX = 1e30;   // (wie der Server/Prüfer: Truppen dürfen nach langem Spielen riesig werden – Alexander 4.10.; vorher 1e15 = Angriffe/Senden über 1 Billiarde wurden still abgelehnt)
     const zahlOk = (v, max) => typeof v === 'number' && Number.isFinite(v) && v > 0 && v <= (max || WACHE_MAX);
     const inselOk = v => Number.isInteger(v) && !!islandById[v];
     const kennungOk = v => typeof v === 'string' && /^[A-Za-z0-9_.:-]{1,80}$/.test(v);
@@ -12462,7 +12462,7 @@ if (window.WELT) {
     const TRUPPEN_QUELLEN = { stufe: 'Stufen-Belohnung', thron: 'Thron-Shop', heil: 'Lazarett', fund: 'Fund auf der Karte', geschenk: 'Admin-Geschenk' };
     function truppenPruefen(who, b, ende) {
         const q = b.q, name = TRUPPEN_QUELLEN[q] || 'unbekannte Quelle';
-        if (!zahlOk(b.n, 1e15)) { warnen(who, 'truppen', 'Truppen-Geschenk mit kaputter Zahl (' + String(b.n).slice(0, 30) + ') – abgelehnt.'); return 0; }
+        if (!zahlOk(b.n)) { warnen(who, 'truppen', 'Truppen-Geschenk mit kaputter Zahl (' + String(b.n).slice(0, 30) + ') – abgelehnt.'); return 0; }
         if (!TRUPPEN_QUELLEN[q]) { warnen(who, 'truppen', 'Truppen-Geschenk ohne gültige Quelle: ' + fz(b.n) + ' Truppen – abgelehnt.', b.n); return 0; }
         const m = wacheSehen(who), d = wd(who), now = Date.now(); if (!d) return 0;
         let n = b.n, erlaubt;

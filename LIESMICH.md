@@ -1700,3 +1700,13 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
 - Getestet: `selbst_test` (Weltrechner: 1. Welle erobert, 2. Welle zieht ein, genau 1 Kampf; Handy: keine Schlacht gegen die
   eigene Basis), dazu reihe, gemeinsam, welle, welle_bund, vsme, vsme0, render grün.
 - **Hochgeladen 4.10., 09:21 UTC.** Weltrechner läuft wieder.
+
+## 57. Keine Truppen-Grenze mehr (Alexander 4.10.: „würde da kein Limit setzen, nach langem Spielen sehr viele Truppen“)
+- **Zeitbombe gefunden:** der Weltrechner nahm Angriffe und Sendungen nur bis 1 Billiarde Truppen an (`WACHE_MAX` 1e15) –
+  darüber „kaputte Angaben – abgelehnt“, auf dem Handy wäre der Marsch einfach verschwunden. Jetzt 1e30, wie Server
+  (`befehl_ok`) und Prüfer (`RIESIG`) – praktisch keine Grenze, schützt nur noch vor kaputten Zahlen (unendlich, NaN).
+- Ebenso 1e30: Admin-Geschenk Truppen, Truppen-Geschenke im Weltrechner, Verwundete im Profil, Truppen vom Händler.
+- **Noch offen (nicht geändert):** Münzen und Rohstoffe sind im Profil auf 1 Billiarde gedeckelt (Test „Münzen gedeckelt“).
+  Bei Bedarf genauso anheben.
+- Getestet: `send2bd_server_test` (Server + Weltrechner: Admin 2 Billiarden → abholen → senden → kommen an:
+  2.000.000.000.048.722 in der Basis), Unit 65/65.
