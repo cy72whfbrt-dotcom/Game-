@@ -1722,3 +1722,13 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
 - Getestet: Unit 67/67 (neu: unterwegs geheim, im Kampf echte Stärke), `vsme_echt_test` (erst keine Schlacht, mit
   Kampfbeginn 12 Mrd. gegen die Besatzung), dazu vsme, selbst, reihe, gemeinsam, welle, welle_bund, render grün.
 - **Hochgeladen 4.10., 09:38 UTC.** Weltrechner läuft wieder.
+
+## 59. Hochladen mit kurzer Pause (Alexander 4.10.: „immer wenn du was hochlädst, kommt der Herzschlag nicht“)
+- **Warum:** beim Hochladen ist die ganze Zeit Wartung an – der Weltrechner beendet sich („ENDE (0): Wartung“) und startet
+  erst wieder, wenn die Wartung aus ist (nächste Wachhund-Minute). Bisher wurden **alle** Dateien hochgeladen und danach
+  geprüft, auch die unveränderte 6-MB-Datei `jsdom.js` – heute bis zu 4½ Minuten ohne Herzschlag. Nichts geht dabei
+  verloren (die Welt steht still), aber es sieht aus wie ein Absturz.
+- **Jetzt (`hochladen.sh`):** VOR der Wartung (Spiel läuft noch) wird verglichen, welche Dateien sich geändert haben. In der
+  Wartung kommen nur diese hoch (PHP-Dateien immer, die lassen sich von außen nicht vergleichen) und nur diese werden
+  geprüft. Meist sind das 1–3 JS-Dateien + 5 PHP-Dateien statt 25 Dateien mit 6 MB → die Pause wird deutlich kürzer.
+  `ALLES=1 ./hochladen.sh` lädt wie früher alles hoch.

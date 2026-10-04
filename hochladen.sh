@@ -36,10 +36,22 @@ fi
 # 3) Ordner Game anlegen (falls weg), WARTUNG an (niemand kommt ins Spiel, Spielende werden mit "Wartung" rausgebeten),
 #    dann alle Dateien hochladen
 ed "" -F text= -F file=Game -F "button=new folder" -o /dev/null
+# Vorher (Spiel läuft noch): welche Dateien sind anders als auf dem Server? Nur die kommen gleich während der Wartung hoch –
+# so ist die Wartung (und die Pause des Weltrechners) kurz. PHP-Dateien lassen sich nicht vergleichen (sie laufen): immer hoch.
+# ALLES=1 ./hochladen.sh lädt wie früher alles hoch.
+AENDERN=""
+for f in $(cd Game && find . -type f | sed 's#^\./##' | sort); do
+  [ "$f" = config.php ] && continue
+  case "$f" in weltrechner/herz*.php|weltrechner/log*.php|weltrechner/zustand*.php|weltrechner/sperre.php|weltrechner/crontab*.php|weltrechner/schummel*.php|weltrechner/vapid*.php) continue;; esac
+  case "$f" in *.php) AENDERN="$AENDERN $f"; continue;; esac
+  if [ -z "$ALLES" ] && [ "$(sha1sum < "Game/$f")" = "$(curl -sS "$U/$f" 2>/dev/null | sha1sum)" ]; then continue; fi
+  AENDERN="$AENDERN $f"
+done
+echo "Neu hochzuladen:$AENDERN"
 echo "Wartung seit $(date '+%d.%m.%Y %H:%M') (hochladen.sh)" > $T/wartung.txt
 ed /Game -F "file=@$T/wartung.txt" -F "button=upload" -o /dev/null -w "Wartung an: %{http_code}\n"
 sleep 10  # die laufenden Spiele merken es beim nächsten Puls (alle 2 s) und sichern noch
-for f in $(cd Game && find . -type f | sed 's#^\./##' | sort); do
+for f in $AENDERN; do
   [ "$f" = config.php ] && continue
   case "$f" in weltrechner/herz*.php|weltrechner/log*.php|weltrechner/zustand*.php|weltrechner/sperre.php|weltrechner/crontab*.php|weltrechner/schummel*.php|weltrechner/vapid*.php) continue;; esac   # entstehen nur auf dem Server
   dir=$(dirname "$f"); [ "$dir" = . ] && dir="" || { dir="/$dir"; ed /Game -F text= -F "file=${dir#/}" -F "button=new folder" -o /dev/null; }
@@ -60,7 +72,8 @@ for x in $(ls_ordner /Game); do
 done
 
 # 5) Prüfen: Dateien unverändert angekommen?
-for f in ladebildschirm.js spiel.js bots.js welt.js aufbau.js buendnis.js haendler.js baukunst.js speichern.js weltrechner/start.js weltrechner/push.js weltrechner/jsdom.js sw.js benachrichtigung.js app/manifest.webmanifest app/icon-512.png app/logo.svg; do
+for f in ladebildschirm.js spiel.js bots.js welt.js aufbau.js buendnis.js haendler.js baukunst.js speichern.js weltrechner/start.js weltrechner/push.js weltrechner/jsdom.js sw.js benachrichtigung.js app/manifest.webmanifest app/icon-512.png app/logo.svg ; do
+  case " $AENDERN " in *" $f "*) ;; *) continue;; esac   # (nur was eben hochkam)
   [ "$(sha1sum < Game/$f)" = "$(curl -sS "$U/$f" | sha1sum)" ] && echo "geprüft: $f" || { echo "FEHLER: $f anders"; exit 1; }
 done
 # 6) Wartung aus – alle können wieder spielen
