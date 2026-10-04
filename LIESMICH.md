@@ -1577,3 +1577,16 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
   Hauptstadt, danach „Eingeladen“, keine Skript-Fehler. Vorschau: Einladungen 10/10, Verstärkung 5/5, Bündnis-Bots 3/3,
   Amt 1/1; Unit 16/65.
 - **Hochgeladen 4.10., 08:47** (ohne neue Welt). Live: Weltrechner läuft (10.660 Basen, Pulse ohne Fehler, Prüfer 0, ~300 MB).
+
+## 50. Volle Bündnisse: Bewerben trotzdem – der Anführer kann tauschen (Alexander 4.10.)
+- **Bewerben:** bei vollen Bündnissen steht in „Suchen“ „Anfragen“ (Hinweis „voll – der Anführer kann tauschen“) statt „voll“;
+  die Anfrage geht an den Anführer (auch bei offenen, vollen Bündnissen).
+- **Anführer:** bei vollem Bündnis heißt der Knopf an der Anfrage „Tauschen“ → Liste der Mitglieder (schwächste zuerst, mit
+  Macht) → „Entfernen“ → „Sicher?“ → das Mitglied geht (Nachricht), der Bewerber kommt. „Ja“ ohne Auswahl geht bei voll nicht
+  (Anfrage bleibt), sich selbst kann der Anführer nicht entfernen.
+- **Mitspieler als Anführer:** tauschen nur, wenn der Bewerber mehr als 1,5-mal so stark ist wie ihr schwächstes
+  Mitspieler-Mitglied – und entfernen dafür **nie einen echten Spieler**. Mitspieler ohne Bündnis fragen bei vollen nur an,
+  wenn sie mehr als 1,5-mal so stark sind wie dessen schwächstes Mitglied.
+- Getestet: Vorschau `tausch_test` 6/6; Server + Weltrechner `tausch_server_test` (A volles Bündnis, B fragt über „Suchen“ an,
+  A „Tauschen“ → Mitglied → „Sicher?“ → getauscht, 5 Mitglieder, B sieht sich im Bündnis, keine Skript-Fehler); Einladungen
+  10/10, Bündnis-Bots 3/3, Amt 1/1, Unit 16/65.

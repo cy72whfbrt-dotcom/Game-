@@ -117,12 +117,12 @@ function bundOp(who, b) {
     if (op === 'beitreten') {
         const z = bund.b[kennung(b.aid)]; if (!z) return 'Dieses Bündnis gibt es nicht mehr';
         if (a) return 'Du bist schon in einem Bündnis';
-        if (z.mit.length >= BUND.MAX) return 'Das Bündnis ist voll (' + BUND.MAX + ' Mitglieder)';
-        if (z.offen) { bundRein(z, who); bundAlleMelden(z, bundName(who) + ' ist deinem Bündnis beigetreten.', who); return fertig('Willkommen im Bündnis [' + z.tag + '] ' + z.name + '!'); }
+        const voll = z.mit.length >= BUND.MAX;                   // voll: trotzdem anfragen – der Anführer kann tauschen
+        if (z.offen && !voll) { bundRein(z, who); bundAlleMelden(z, bundName(who) + ' ist deinem Bündnis beigetreten.', who); return fertig('Willkommen im Bündnis [' + z.tag + '] ' + z.name + '!'); }
         z.anfragen = (z.anfragen || []).filter(q => q.w !== who && now - q.at < 24 * 3600000);
         if (z.anfragen.length >= 30) return 'Zu viele Anfragen – versuch es später';
-        z.anfragen.push({ w: who, at: now }); bundMelden(z.anf, bundName(who) + ' möchte deinem Bündnis beitreten.');
-        return fertig('Anfrage an [' + z.tag + '] ' + z.name + ' geschickt.');
+        z.anfragen.push({ w: who, at: now }); bundMelden(z.anf, bundName(who) + ' möchte deinem Bündnis beitreten' + (voll ? ' (es ist voll – du kannst tauschen).' : '.'));
+        return fertig('Anfrage an [' + z.tag + '] ' + z.name + ' geschickt' + (voll ? ' – das Bündnis ist voll, der Anführer kann tauschen.' : '.'));
     }
     if (op === 'einladungAntwort') {                              // Eingeladener: Ja / Nein (geht auch, wenn das Bündnis nur auf Anfrage offen ist)
         const z = bund.b[kennung(b.aid)]; if (!z) return 'Dieses Bündnis gibt es nicht mehr';
@@ -144,7 +144,11 @@ function bundOp(who, b) {
         a.anfragen = a.anfragen.filter(x => x !== q);
         if (b.ja === true) {
             if (bundVon(ziel)) return fertig('');
-            if (a.mit.length >= BUND.MAX) { bundMelden(ziel, '[' + a.tag + '] ' + a.name + ' ist voll.'); return fertig('Das Bündnis ist voll (' + BUND.MAX + ' Mitglieder).'); }
+            if (a.mit.length >= BUND.MAX) {                              // voll: tauschen – ein Mitglied geht, der Bewerber kommt
+                const raus = kennung(b.raus);
+                if (!raus || raus === who || !a.mit.includes(raus)) { a.anfragen.push(q); return 'Das Bündnis ist voll – wähle ein Mitglied zum Tauschen'; }
+                bundRaus(a, raus, ' wurde entfernt (Platz für ' + bundName(ziel) + ').'); bundMelden(raus, 'Du wurdest aus dem Bündnis [' + a.tag + '] ' + a.name + ' entfernt – Platz für ein stärkeres Mitglied.');
+            }
             bundRein(a, ziel); bundMelden(ziel, 'Du bist jetzt im Bündnis [' + a.tag + '] ' + a.name + '!');
         } else bundMelden(ziel, '[' + a.tag + '] ' + a.name + ' hat deine Anfrage abgelehnt.');
         return fertig('');
@@ -517,7 +521,13 @@ function bundMitspielerRunde(now) {                              // alle 15 s: g
         for (const q of (a.anfragen || []).slice()) {
             if (now - q.at < 20000) continue;
             const m = bundMitte(a), c = islandById[bundCap(q.w)], nah = m && c ? Math.hypot(c.x - m.x, c.y - m.y) < FRAME_HALF * .45 : false;
-            const schnitt = bundMacht(a) / Math.max(1, a.mit.length), ja = a.mit.length < BUND.MAX && !bundVon(q.w) && (staerke(q.w) >= schnitt * .25 || nah);
+            const schnitt = bundMacht(a) / Math.max(1, a.mit.length);
+            if (a.mit.length >= BUND.MAX) {                                  // voll: tauschen nur gegen das schwächste Mitspieler-Mitglied, wenn der Bewerber viel stärker ist
+                const schwach = a.mit.filter(w => w !== a.anf && botById[w] && !botById[w].mensch).sort((x, y) => staerke(x) - staerke(y))[0];
+                const tausch = schwach && !bundVon(q.w) && staerke(q.w) > staerke(schwach) * 1.5;
+                bundOp(a.anf, tausch ? { op: 'anfrage', w: q.w, ja: true, raus: schwach } : { op: 'anfrage', w: q.w, ja: false }); continue;
+            }
+            const ja = !bundVon(q.w) && (staerke(q.w) >= schnitt * .25 || nah);
             bundOp(a.anf, { op: 'anfrage', w: q.w, ja });
         }
         if (botOwnedIslands[a.anf] && !botOwnedIslands[a.anf].size && a.mit.length > 1) { const neu = a.mit.filter(w => w !== a.anf).sort((x, y) => staerke(y) - staerke(x))[0]; a.anf = neu; bundLog(a, bundName(neu) + ' führt jetzt das Bündnis.'); bundSpeichern(); }
@@ -539,7 +549,8 @@ function bundMitspielerRunde(now) {                              // alle 15 s: g
     for (const bot of ohne) {
         const c = islandById[botCapitalOf(bot.id)]; if (!c) continue;
         let best = null;
-        for (const id in bund.b) { const a = bund.b[id]; if (a.mit.length >= BUND.MAX || (a.anfragen || []).some(q => q.w === bot.id)) continue;
+        for (const id in bund.b) { const a = bund.b[id]; if ((a.anfragen || []).some(q => q.w === bot.id)) continue;
+            if (a.mit.length >= BUND.MAX && !(staerke(bot.id) > Math.min(...a.mit.filter(w => w !== a.anf).map(staerke)) * 1.5)) continue;   // voll: nur wenn sie viel stärker sind als das schwächste Mitglied
             const m = bundMitte(a); if (!m) continue; const d = Math.hypot(c.x - m.x, c.y - m.y); if (d > FRAME_HALF * .6) continue;
             const stil = a.mit.filter(w => botById[w] && botById[w].style === bot.style).length / a.mit.length;
             const s = d / FRAME_HALF - stil * .15 - Math.min(.2, bundMacht(a) / Math.max(1, staerke(bot.id)) * .01) + a.mit.length * .01;
@@ -746,7 +757,7 @@ setInterval(bundTakt, 1000);
 // 6) FENSTER „Bündnis“ (Zuschauer)
 // ==============================================================================================================
 const bundPopup = document.getElementById('bundPopup'), bundBody = document.getElementById('bundLive'), bundOben = document.getElementById('bundOben');
-let bundTab = 'info', bundWahl = null, bundSicher = {};        // bundWahl: offene Auswahl (Rally starten / mitmachen / Hilfe senden)
+let bundTab = 'info', bundWahl = null, bundSicher = {}, bundTauschFuer = null;   // bundTauschFuer: Bewerber, für den der Anführer gerade jemanden zum Tauschen wählt        // bundWahl: offene Auswahl (Rally starten / mitmachen / Hilfe senden)
 function bundBefehl(op, d, hint) {
     if (!window.WELT || SYSTEM) return false;
     WELT.befehl('bund', Object.assign({ op }, d || {})); if (hint) flashHint(hint, 2500); return true;
@@ -784,7 +795,11 @@ function bundInfoHtml(a) {
             : 'Hält ein Mitglied einen Tempel, produzieren alle Mitglieder mehr: +' + BUND.TEMPEL_PCT + ' % je Tempel, Mega-Tempel +' + BUND.MEGA_PCT + ' % (höchstens +' + BUND.BONUS_MAX + ' %).') + ' Im eigenen Gebiet marschiert ihr 10 % schneller.</span></div>' +
         '<div class="notice">' + icon('shop') + '<span>Bündnis-Geschenke heute: ' + heute + ' / ' + BUND.GESCHENKE_TAG + ' – wenn ein Mitglied einen Boss besiegt oder eine große Kiste kauft.</span></div>' +
         (chef && (a.anfragen || []).length ? '<div class="sect"><h4>Anfragen</h4></div><div class="bd-liste">' + a.anfragen.map(q => '<div class="bd-zeile"><span class="bd-name">' + whoLink(q.w, bundName(q.w)) + '<small>Macht ' + fmtCompact(staerke(q.w)) + ' · ' + bundBasenText(q.w) + '</small></span>' +
-            '<button type="button" class="btn btn--primary btn--sm" data-bact="anfrage" data-w="' + q.w + '" data-ja="1">Ja</button><button type="button" class="btn btn--secondary btn--sm" data-bact="anfrage" data-w="' + q.w + '">Nein</button></div>').join('') + '</div>' : '') +
+            (a.mit.length >= BUND.MAX ? '<button type="button" class="btn btn--primary btn--sm" data-bact="tauschWahl" data-w="' + q.w + '">Tauschen</button>' : '<button type="button" class="btn btn--primary btn--sm" data-bact="anfrage" data-w="' + q.w + '" data-ja="1">Ja</button>') +
+            '<button type="button" class="btn btn--secondary btn--sm" data-bact="anfrage" data-w="' + q.w + '">Nein</button></div>' +
+            (bundTauschFuer === q.w && a.mit.length >= BUND.MAX ? '<div class="notice">' + icon('info') + '<span>Wer geht für ' + escapeHtml(bundName(q.w)) + ' (Macht ' + fmtCompact(staerke(q.w)) + ')?</span></div>' +
+                a.mit.filter(w => w !== 'player').sort((x, y) => staerke(x) - staerke(y)).map(w => '<div class="bd-zeile"><span class="bd-name">' + escapeHtml(bundName(w)) + '<small>Macht ' + fmtCompact(staerke(w)) + ' · ' + bundBasenText(w) + '</small></span>' +
+                    '<button type="button" class="btn btn--ghost btn--sm" data-bact="tausch" data-w="' + q.w + '" data-raus="' + w + '">' + bundSicherKnopf('tausch:' + w, 'Entfernen', 'Sicher?') + '</button></div>').join('') : '')).join('') + '</div>' : '') +
         (chef && (a.einl || []).length ? '<div class="sect"><h4>Eingeladen</h4></div><div class="bd-liste">' + a.einl.map(q => '<div class="bd-zeile"><span class="bd-name">' + whoLink(q.w, bundName(q.w)) + '<small>Macht ' + fmtCompact(staerke(q.w)) + ' · noch ' + uhrHtml(q.at + BUND_EINL_MS, 'clock') + '</small></span>' +
             '<button type="button" class="btn btn--ghost btn--sm" data-bact="einlWeg" data-w="' + q.w + '">Zurückziehen</button></div>').join('') + '</div>' : '') +
         (chef && a.mit.length < BUND.MAX ? '<div class="notice">' + icon('info') + '<span>Jemanden einladen: unter „Suchen“ stehen alle ohne Bündnis – oder tippe seine Basis bzw. seinen Namen an → „Einladen“.</span></div>' : '') +
@@ -827,9 +842,9 @@ function bundSuchenHtml(a) {
     const alle = Object.values(bund.b).map(x => ({ x, m: bundMacht(x) })).sort((p, q) => q.m - p.m), angefragt = id => (bund.b[id].anfragen || []).some(q => q.w === 'player');
     return (a ? bundOhneListeHtml() + '<div class="notice">' + icon('info') + '<span>Du bist in [' + escapeHtml(a.tag) + '] ' + escapeHtml(a.name) + '. Um zu wechseln, verlasse erst dein Bündnis.</span></div>' : bundEinladungenHtml()) +
         '<div class="sect"><h4>Alle Bündnisse</h4><span class="sect-aside">' + alle.length + '</span></div><div class="bd-liste">' + (alle.length ? alle.map(({ x, m }) =>
-            '<div class="bd-zeile">' + bundZeichenHtml(x) + '<span class="bd-name"><b>[' + escapeHtml(x.tag) + '] ' + escapeHtml(x.name) + '</b><small>' + x.mit.length + ' / ' + BUND.MAX + ' · Macht ' + fmtCompact(m) + ' · ' + (x.offen ? 'offen' : 'auf Anfrage') + ' · Anführer ' + escapeHtml(bundName(x.anf)) + '</small></span>' +
-            (a ? '' : x.mit.length >= BUND.MAX ? '<span class="chip">voll</span>' : angefragt(x.id) ? '<button type="button" class="btn btn--ghost btn--sm" data-bact="anfrageWeg">Angefragt ✕</button>'
-                : '<button type="button" class="btn btn--primary btn--sm" data-bact="beitreten" data-aid="' + x.id + '">' + (x.offen ? 'Beitreten' : 'Anfragen') + '</button>') + '</div>').join('')
+            '<div class="bd-zeile">' + bundZeichenHtml(x) + '<span class="bd-name"><b>[' + escapeHtml(x.tag) + '] ' + escapeHtml(x.name) + '</b><small>' + x.mit.length + ' / ' + BUND.MAX + ' · Macht ' + fmtCompact(m) + ' · ' + (x.mit.length >= BUND.MAX ? 'voll – der Anführer kann tauschen' : x.offen ? 'offen' : 'auf Anfrage') + ' · Anführer ' + escapeHtml(bundName(x.anf)) + '</small></span>' +
+            (a ? '' : angefragt(x.id) ? '<button type="button" class="btn btn--ghost btn--sm" data-bact="anfrageWeg">Angefragt ✕</button>'
+                : '<button type="button" class="btn btn--primary btn--sm" data-bact="beitreten" data-aid="' + x.id + '">' + (x.offen && x.mit.length < BUND.MAX ? 'Beitreten' : 'Anfragen') + '</button>') + '</div>').join('')
             : '<div class="inbox-empty">Noch gibt es keine Bündnisse.</div>') + '</div>';
 }
 // oben im Fenster: was sich nicht jede Sekunde ändern darf (Eingaben, Auswahl)
@@ -938,7 +953,9 @@ if (bundPopup) {
         else if (act === 'einlNein') bundBefehl('einladungAntwort', { aid: b.dataset.aid, ja: false }, 'Einladung abgelehnt.');
         else if (act === 'einlWeg') bundBefehl('einladungWeg', { w }, 'Einladung zurückgezogen.');
         else if (act === 'einlAn') { if (bundKannEinladen(b.dataset.w) && !bundEingeladen(b.dataset.w)) { b.disabled = true; bundBefehl('einladen', { w }, 'Einladung an ' + bundName(b.dataset.w) + ' geschickt.'); } }
-        else if (act === 'anfrage') bundBefehl('anfrage', { w, ja: b.dataset.ja === '1' });
+        else if (act === 'anfrage') { bundTauschFuer = null; bundBefehl('anfrage', { w, ja: b.dataset.ja === '1' }); }
+        else if (act === 'tauschWahl') { bundTauschFuer = bundTauschFuer === b.dataset.w ? null : b.dataset.w; bundRender(true); }
+        else if (act === 'tausch') { if (sicher('tausch:' + b.dataset.raus)) { bundTauschFuer = null; bundBefehl('anfrage', { w, ja: true, raus: neutralId(b.dataset.raus) }, bundName(b.dataset.raus) + ' geht, ' + bundName(b.dataset.w) + ' kommt.'); } }
         else if (act === 'anfuehrer') { if (sicher('chef:' + b.dataset.w)) bundBefehl('anfuehrer', { w }, bundName(b.dataset.w) + ' führt jetzt das Bündnis.'); }
         else if (act === 'raus') { if (sicher('raus:' + b.dataset.w)) bundBefehl('rauswerfen', { w }, bundName(b.dataset.w) + ' wurde entfernt.'); }
         else if (act === 'offen') { const a = bundIch(); if (a) bundBefehl('offen', { offen: !a.offen }, a.offen ? 'Beitritt nur noch auf Anfrage.' : 'Dein Bündnis ist jetzt offen für alle.'); }
