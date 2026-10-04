@@ -1699,3 +1699,4 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
   Bescheid: „… gehört schon dir – N Truppen verstärken die Besatzung.“
 - Getestet: `selbst_test` (Weltrechner: 1. Welle erobert, 2. Welle zieht ein, genau 1 Kampf; Handy: keine Schlacht gegen die
   eigene Basis), dazu reihe, gemeinsam, welle, welle_bund, vsme, vsme0, render grün.
+- **Hochgeladen 4.10., 09:21 UTC.** Weltrechner läuft wieder.
