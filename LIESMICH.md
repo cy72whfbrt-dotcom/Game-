@@ -1690,3 +1690,12 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
 - Getestet: `vsme0_test` (Angriff ohne Wachturm → eine Schlacht mit „?“), `vsme_test`, `zurueck_test`, `send_server_test`,
   `send4_server_test` (Admin 4 Bio. → abholen → senden → kommt an), alle Vorschau-Tests von 52–54 grün, Unit 65/65.
 - **Hochgeladen 4.10., 09:13.** Weltrechner läuft wieder (Puls ok, 0 Fehler pro Minute).
+
+## 56. „Ich kann mich selber angreifen“ (Alexander 4.10., Bildschirmfoto)
+- **Was war:** die erste Welle erobert eine Basis, die zweite kommt später an. Der Weltrechner hat richtig gerechnet (die
+  zweite Welle zieht ein, kein Kampf) – aber das Handy zeigte beim Ankommen eine Schlacht gegen die eigene Besatzung
+  (21,6 Mrd. gegen deine 67 Mrd., mit Verlust-Zahlen). Nur Anzeige, es ging nichts verloren.
+- **Fix:** gehört das Ziel schon dir (oder deinem Bündnis), zeigt das Handy keine Schlacht. Der Weltrechner sagt dir jetzt
+  Bescheid: „… gehört schon dir – N Truppen verstärken die Besatzung.“
+- Getestet: `selbst_test` (Weltrechner: 1. Welle erobert, 2. Welle zieht ein, genau 1 Kampf; Handy: keine Schlacht gegen die
+  eigene Basis), dazu reihe, gemeinsam, welle, welle_bund, vsme, vsme0, render grün.

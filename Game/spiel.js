@@ -4413,6 +4413,7 @@ setInterval(() => {
                 islandTroops[a.targetId] = (islandTroops[a.targetId] || 0) + (a.rally ? bundRallyHeim(a, a.rawTroops, a.targetId, true) : a.rawTroops);   // (Rally: nur der Anteil des Starters zieht ein)
                 pendingAttacks.splice(pendingAttacks.indexOf(a), 1);
                 if (!a.attackerBotId) { flashHint(islandTitle(islandById[a.targetId]) + ' gehört schon dir – ' + fmtNum(a.rawTroops) + ' Truppen verstärken die Besatzung.', 4000); updateHud(); saveGame(); saveProgression(); }
+                else if (botById[a.attackerBotId] && botById[a.attackerBotId].mensch && typeof bundMelden === 'function') bundMelden(a.attackerBotId, islandTitle(islandById[a.targetId]) + ' gehört schon dir – ' + fmtNum(a.rawTroops) + ' Truppen verstärken die Besatzung.');   // (echter Spieler: Bescheid statt Kampf)
                 continue;
             }
             if (atkr === 'player') dropShield('Dein Friedensschild ist gefallen – dein Angriff auf ' + islandTitle(islandById[a.targetId]) + ' ist angekommen.'); else botDropShield(atkr);   // a wave that fights is an attack
@@ -7109,6 +7110,8 @@ setInterval(() => {
     for (const a of pendingAttacks) {
         if (a.resolveAt > now) continue;
         if (a.wartet) continue;                       // (der Weltrechner lässt sie warten: dort läuft noch ein anderer Kampf)
+        { const wer = a.attackerBotId || 'player', ow = islandOwnerOf(a.targetId);   // die Basis gehört schon ihm (eine frühere Welle hat sie genommen) oder seinem Bündnis:
+          if (ow && (ow === wer || bundFreund(wer, ow))) continue; }                    // kein Kampf – die Truppen ziehen ein bzw. gehen heim (wie beim Weltrechner)
         const k = kampfKey(a), z = zuschauerKampf.get(k);
         if (z) { if (!a.fightEndsAt) a.fightEndsAt = z.ende; continue; }   // (neue Welt-Daten: Kampf läuft noch – nicht als „0:00“ zeigen)
         // Eine weitere Welle derselben Seite (derselbe Angreifer oder ein Bündnis-Mitglied) auf dasselbe Ziel: der Weltrechner
