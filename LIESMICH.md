@@ -149,6 +149,22 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   jetzt auch Berichte für Barbaren-Lager, Tagesboss, Feld- und Armee-Kämpfe; Verwundete des Besitzers stehen in allen
   Berichten. Kampflog-Balken zeigt bei Rally/Verstärkung alle Namen. Neue Tests: rally_held_test, rally_menschen_test
   (Rally mit zwei echten Spielern: Werte, Beute ¾/¼, beide Berichte).
+- **4./5.10. Nachtarbeit (Alexander: „verbessere alles“) – 4 Prüf-Agenten, alle Funde nachgeprüft, NICHT hochgeladen:**
+  Kampf: höchstens 2 Helden je Angreifer auch bei Verbündeten (`fight.heldVon`, `heldBonus` beim Losschicken), gestrichene
+  Helden geben auch keinen Verlust-/Gold-Bonus; Verstärkung: Mauer der Basis zählt auch für den Skill der Helfer
+  (`verstWert(w, n, mauer)`), keine Truppen durch Rundung; Rally ohne Anführer geht heim; wer das Bündnis verlässt, dessen
+  Rally-Truppen gehen heim; Nachzügler-Prüfung ohne 3-s-Grenze. Stadt/Helden: alte Labor-Forschung (Wachturm, T2–T5)
+  blockiert nicht mehr; Wut kommt zurück bei Zurückrufen/Abprallen/2. Welle (`heroWutZurueck`); leeres Feld wächst nach;
+  Anfängerschutz zeigt keine „Schild gefallen“-Meldung; Pass-Text (150 Gems); Splitter → Gems, wenn alle Helden voll;
+  Boss-Zähler nach Mitternacht. Server: Befehle gerecht je Spieler abgeholt (40 je Runde, `befehle_gerecht`); fremde
+  Rally-Truppen und fremde Bündnis-Logs geheim (`openWaterBuendnisse` gefiltert); Angriff in unbekannte Gebiete vom
+  Weltrechner abgelehnt; Welt-Teile im Spielstand eines Spielers ignoriert; Bauherr-Rabatt nur mit Server-Zeit; Wachhund
+  mit alter zustand.php; Wachturm-Rest raus (Stärke fremder Angriffe erst im Kampf). Texte an die neuen Regeln angepasst
+  (Ladebildschirm, Hilfe, Rally, Labor, Spähbericht, Abholfach), Rally-Nachricht nennt Gold/Holz/Stein/Eisen.
+  Toter Code raus: Signal-Knopf, `bernPct`, Beute-Kästchen oben (nur noch „Hauptstadt brennt“). Neuer Test helden_beute_test.
+  **Offen / Fragen an Alexander:** Rally – sollen Schild/Held des Anführers (weniger Verluste, Flucht) für ALLE Truppen gelten
+  oder nur für seine? EP/Krieger-Punkte der Rally nur der Anführer oder nach Anteil? Server: Spiel auf eigene Subdomain
+  (Sicherheit); Welt-Sperre beim Puls (bei vielen Spielern langsam); still verworfene Welt-Teile mit < oder >.
 - **4.10. abends – Fehler-Fix live (Alexander):** (1) Beute (Gold, Holz, Stein, Eisen) gibt es NUR an der Hauptstadt –
   bei anderen Basen 0 (vorher 2 % Gold, `plunderOf`). (2) Höchstens 2 Helden je Angreifer: schickt einer mehrere eigene
   Wellen mit Helden in denselben Kampf, führen nur die Helden der ersten Welle (vorher zählten alle, z. B. 4 –
