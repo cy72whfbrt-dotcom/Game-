@@ -1866,3 +1866,4 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
   Erreichst auch du es nicht: „Kein Weg dorthin – ein Tor ist zu“.
 - Getestet: `tore_rally_test` („Starte du …“, dann tritt der Mitspieler bei, obwohl alle Tore auf seinem Weg zu sind),
   dazu rally_chat, nachzuegler, chat_rally, rally_schnell, chat, laden grün.
+- **Hochgeladen 4.10., 12:39 UTC**, Weltrechner läuft wieder.
