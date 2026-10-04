@@ -1837,3 +1837,9 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
 - Getestet: `nachzuegler_test` (beitreten trotz zu später Ankunft; nach dem Start folgt der Nachzügler mit 300k direkt zum
   Ziel), dazu rally_chat, chat_rally, rally_schnell, chat, gemeinsam, laden grün.
 - **Hochgeladen 4.10., 12:22 UTC**, Weltrechner läuft wieder.
+
+## 67. Pass-Timer wieder aus (Alexander 4.10.: „Tor-Pass-Timer kommt auch raus“)
+- `PASS_OPEN_DAYS` zurück auf 0 – alle Brücken (Wächter-Inseln, Thron-Insel) sind sofort offen, keine Ketten mehr.
+  Wieder anmachen: Tage ab Welt-Start eintragen (z. B. `{ guardian: .25, throne: 1 }`). „Bündnisse ziehen nach vorne“
+  (Abschnitt 64) bleibt an.
+- Getestet: Spiel lädt, alle Brücken offen.
