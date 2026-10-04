@@ -1576,3 +1576,4 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
 - Getestet (Server + Weltrechner, `einl2_test`): Liste zeigt alle ohne Bündnis, Einladen über die Liste, Knopf an der
   Hauptstadt, danach „Eingeladen“, keine Skript-Fehler. Vorschau: Einladungen 10/10, Verstärkung 5/5, Bündnis-Bots 3/3,
   Amt 1/1; Unit 16/65.
+- **Hochgeladen 4.10., 08:47** (ohne neue Welt). Live: Weltrechner läuft (10.660 Basen, Pulse ohne Fehler, Prüfer 0, ~300 MB).
