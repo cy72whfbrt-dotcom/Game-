@@ -1743,3 +1743,4 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
   inzwischen dir, zieht die Welle nur ein (keine Schlacht).
 - Getestet: `selbst2_test` – alter Code: 2. Schlacht (genau der Fehler), neuer Code: 1 Schlacht, und keine Schlacht an der
   eroberten Basis; dazu selbst, vsme_echt, vsme, reihe, gemeinsam, welle, welle_bund, render grün.
+- **Hochgeladen 4.10., 09:45 UTC – erstmals mit dem neuen hochladen.sh:** ganzes Hochladen 34 s (vorher mehrere Minuten), Weltrechner lief um 09:46 wieder.
