@@ -1900,3 +1900,4 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
   sein (sichere Ersatzwerte). Der Weltrechner hat alle Werte – für ihn ändert sich nichts.
 - Getestet: `nan_test` – alter Code NaN (genau der Fehler), neuer Code richtige Zahlen; dazu vsme_echt, vsme, selbst2,
   reihe, gemeinsam, welle, laden grün.
+- **Hochgeladen 4.10., 13:02 UTC**, Weltrechner läuft wieder.
