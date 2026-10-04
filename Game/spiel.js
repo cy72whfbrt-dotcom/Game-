@@ -4296,8 +4296,11 @@ function fightEstimate(a) {                       // the fight as it stands righ
     const target = islandById[a.targetId]; if (!target) return null;
     const who = a.attackerBotId || 'player', bonus = a.attackBonus !== undefined ? a.attackBonus : attackFlatBonus(a.rawTroops);
     const my = Math.round((a.rawTroops + (bonus || 0)) * (a.atkTitle !== undefined ? a.atkTitle : titleMult(who, 'attack')) * (a.atkKraft || 1)), en = effectiveTroops(target), def = Math.round(effectiveDefense(target) * (1 - heroDefCut(a))), won = my > en + def;
-    const red = a.attackerBotId ? (a.botShield ? a.shieldLossReductionPct : botMults(a.attackerBotId).shield) : (a.shieldLossReductionPct !== undefined ? a.shieldLossReductionPct : shieldLossReductionPct());
-    return { my, en, won, myLoss: my - (won ? a.rawTroops - sentLossFor(a.rawTroops, my, def, red) : retreatSurvivorsPreview(a)), enLoss: won ? en : Math.min(en, my) };   // the counter ends at the troops really left
+    const red0 = a.attackerBotId ? (a.botShield ? a.shieldLossReductionPct : botMults(a.attackerBotId).shield) : (a.shieldLossReductionPct !== undefined ? a.shieldLossReductionPct : shieldLossReductionPct());
+    const red = Number.isFinite(red0) ? red0 : 0;   // (fremder Angriff: der Server streicht den Schild-Wert – dann ohne Schild schätzen, nie NaN)
+    const e = { my, en, won, myLoss: my - (won ? a.rawTroops - sentLossFor(a.rawTroops, my, def, red) : retreatSurvivorsPreview(a)), enLoss: won ? en : Math.min(en, my) };   // the counter ends at the troops really left
+    for (const k of ['my', 'en', 'myLoss', 'enLoss']) if (!Number.isFinite(e[k])) e[k] = k === 'myLoss' ? (e.won ? 0 : e.my || 0) : k === 'enLoss' ? (e.won ? e.en || 0 : 0) : 0;   // (fehlt ein Wert: sichere Zahl statt NaN)
+    return e;
 }
 function fightDurationMs(est) {                   // a skirmish is over in ~4 s, a clash of millions takes ~12 s
     return Math.round(Math.max(4000, Math.min(12000, 4000 + 1500 * Math.log10(Math.max(1, est.my + est.en) / 1000))));

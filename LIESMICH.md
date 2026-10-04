@@ -1891,3 +1891,12 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
 - Getestet: `weg_test` (fremdes Tor dazwischen → nicht losgeschickt + Meldung; mit Weg → geht los), dazu selbst, reihe,
   gemeinsam, welle, vsme_echt, render, rally_sicht, laden grün.
 - **Hochgeladen 4.10., 12:55 UTC**, Weltrechner läuft wieder.
+
+## 72. „NaN Brd.“ in der Schlacht (Alexander 4.10., Bildschirmfoto: [WEL] greift an, Held Sigrun)
+- **Ursache (mein Fehler aus 58):** seit dem Kampfbeginn die echte Stärke des Angreifers mitkommt, schätzt das Handy die
+  Verluste selbst. Der Server streicht bei fremden Angriffen den Schild-Wert (`shieldLossReductionPct`), lässt aber das
+  Merkmal `botShield` stehen → die Schätzung rechnete mit „nichts“ → NaN („NaN Brd.“ über der Schlacht).
+- **Fix (`fightEstimate`):** fehlt der Schild-Wert, wird ohne Schild geschätzt; und keine Zahl der Schätzung kann mehr NaN
+  sein (sichere Ersatzwerte). Der Weltrechner hat alle Werte – für ihn ändert sich nichts.
+- Getestet: `nan_test` – alter Code NaN (genau der Fehler), neuer Code richtige Zahlen; dazu vsme_echt, vsme, selbst2,
+  reihe, gemeinsam, welle, laden grün.
