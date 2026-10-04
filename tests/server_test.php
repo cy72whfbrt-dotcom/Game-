@@ -106,5 +106,15 @@ pruefe('Angriff auf mich, kämpft schon: Held zu sehen', $m[1]['hero'] ?? null, 
 $m = json_decode(marsch_teil('openWaterPendingAttacks', $angr, 'u3', [9 => 1]), true);
 pruefe('Angriff auf andere: nie Zahlen', $m[0]['rawTroops'], 0);
 
+// --- Bündnisse: fremde Rallys ohne Truppenzahlen, fremde Logs weg; die eigenen bleiben ganz
+$bd = json_encode(['b' => ['a1' => ['mit' => ['u3', 'bot1'], 'log' => [['t' => 'meins']]], 'a2' => ['mit' => ['bot7'], 'log' => [['t' => '5 Mio. Truppen']]]],
+    'r' => [['id' => 'r1', 'aid' => 'a1', 'n0' => 1000, 'j' => [['w' => 'bot1', 'n' => 50]]], ['id' => 'r2', 'aid' => 'a2', 't' => 5, 'n0' => 9000, 'j' => [['w' => 'bot7', 'n' => 70]]]], 'n' => 3]);
+$m = json_decode(marsch_teil('openWaterBuendnisse', $bd, 'u3', []), true);
+pruefe('eigene Rally: Truppen bleiben', $m['r'][0]['n0'], 1000);
+pruefe('fremde Rally: Truppen geheim', [$m['r'][1]['n0'], $m['r'][1]['j'][0]['n']], [0, 0]);
+pruefe('fremde Rally: Ziel bleibt (Warnung)', $m['r'][1]['t'], 5);
+pruefe('fremdes Bündnis: Log weg', isset($m['b']['a2']['log']), false);
+pruefe('eigenes Bündnis: Log bleibt', $m['b']['a1']['log'][0]['t'], 'meins');
+
 echo ($fehler ? "$fehler von $n Tests FEHLGESCHLAGEN\n" : "Alle $n Server-Tests bestanden.\n");
 exit($fehler ? 1 : 0);

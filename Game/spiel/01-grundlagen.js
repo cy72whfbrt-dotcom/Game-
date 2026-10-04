@@ -1103,7 +1103,8 @@ function heroDefCut(a) { return a && a.hx ? Math.min(90, a.hx.def || 0) / 100 : 
 function heroDefPart(parts, a, full) { const cut = Math.round(full * heroDefCut(a)), hd = cut && heroById(a.hx.id); if (hd) parts.push(['Held ' + hd.name + (a.hx.id2 && heroById(a.hx.id2) ? ' & ' + heroById(a.hx.id2).name : ''), -cut, 'Verteidigung −' + Math.round(a.hx.def) + ' %']); return parts; }
 function attackFields(who, src, target, raw, hx) {      // everything an attack takes along at launch (skills, gear, title, hero) - for you and for everyone else
     const bot = who !== 'player', sk = bot ? Math.round(raw * botMults(who).attackPct / 100) : attackFlatBonus(raw);
-    return { attackBonus: sk + (hx ? Math.round(raw * hx.atk / 100) + heroGefOf(hx, raw) : 0), skillBonus: sk, skillLvl: bot ? loadBotState()[who].skills.attack : skills.attack || 0,
+    const hb = hx ? Math.round(raw * hx.atk / 100) + heroGefOf(hx, raw) : 0;   // (der Helden-Anteil – fällt weg, wenn der Angreifer im Kampf schon 2 Helden hat)
+    return { attackBonus: sk + hb, heldBonus: hb, skillBonus: sk, skillLvl: bot ? loadBotState()[who].skills.attack : skills.attack || 0,
         attackGoldRate: bot ? botGoldRate(who, 'attackGold') : (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate, rewardGoldRate: killGoldRate(who, hx),
         shieldLossReductionPct: Math.min(90, (bot ? botMults(who).shield : shieldLossReductionPct()) + (hx ? hx.loss : 0)), botShield: bot,
         atkTitle: titleMult(who, 'attack'), atkTitleKey: (titleOf(who) || {}).key || null, hero: hx ? hx.id : null, hero2: hx && hx.id2 || null, hx: hx || null,

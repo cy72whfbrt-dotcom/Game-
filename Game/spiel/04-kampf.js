@@ -130,17 +130,22 @@ setInterval(() => {
                     if (!fight.rally) fight.rally = { id: 'z' + fight.id, by: fight.attackerBotId, an: [[fight.attackerBotId, fight.sourceId, fight.rawTroops]], zus: 1 };
                     else fight.rally.zus = 1;
                 }
+                const wer = a.attackerBotId || 'player';               // höchstens 2 Helden je Angreifer (Alexander 4.10.): hat er schon Helden im Kampf, zählen die dieser Welle nicht
+                if (!fight.heldVon) fight.heldVon = fight.hx ? { [fight.attackerBotId || 'player']: 1 } : {};
+                let ohneHeld = false;
+                if (a.hx && fight.heldVon[wer]) { ohneHeld = true; heroWutZurueck(wer, a.hx);   // (seine Helden kämpfen nicht mit – die Wut bleibt)
+                    a.attackBonus = Math.max(0, (a.attackBonus || 0) - (a.heldBonus !== undefined ? a.heldBonus : (a.attackBonus || 0) - (a.skillBonus || 0)));
+                    a.shieldLossReductionPct = Math.max(0, (a.shieldLossReductionPct || 0) - (a.hx.loss || 0)); a.rewardGoldRate = killGoldRate(wer); }
+                else if (a.hx) fight.heldVon[wer] = 1;
                 if (anderer) {                                     // seine Stärke zählt, wie er sie mitbringt (seine Stufe, Forschung, Titel)
                     const st = x => (x.atkTitle !== undefined ? x.atkTitle : titleMult(x.attackerBotId, 'attack')) * (x.atkKraft || 1);
                     a.attackBonus = (a.rawTroops + (a.attackBonus || 0)) * st(a) / st(fight) - a.rawTroops;
                 }
                 if (anderer || fight.rally || a.rally)
-                    fight.rally.an.push(...(a.rally ? a.rally.an : [[a.attackerBotId, a.sourceId, a.rawTroops, anderer ? Math.round(a.attackBonus || 0) : undefined, anderer && a.hx ? a.hx : undefined]]));
-                if (!anderer && a.hx && fight.hx) heroWutZurueck(a.attackerBotId || 'player', a.hx);   // (seine Helden kämpfen nicht mit – die Wut bleibt)
-                if (!anderer && a.hx && fight.hx) a.attackBonus = Math.min(a.attackBonus || 0, a.skillBonus !== undefined ? a.skillBonus : 0);   // höchstens 2 Helden je Angreifer (Alexander 4.10.): die Helden einer weiteren eigenen Welle zählen nicht
+                    fight.rally.an.push(...(a.rally ? a.rally.an : [[a.attackerBotId, a.sourceId, a.rawTroops, anderer ? Math.round(a.attackBonus || 0) : undefined, anderer && a.hx && !ohneHeld ? a.hx : undefined]]));
                 fight.rawTroops += a.rawTroops; fight.attackBonus = (fight.attackBonus || 0) + (a.attackBonus || 0);
                 if (fight.skillBonus !== undefined || a.skillBonus !== undefined) fight.skillBonus = (fight.skillBonus || 0) + (a.skillBonus !== undefined ? a.skillBonus : a.attackBonus || 0); fight.waves = (fight.waves || 1) + (a.waves || 1);
-                if (a.hx && anderer) heroFought(a.attackerBotId, a.hx);              // (ein Held eines Mitspielers führt nur seinen eigenen Kampf – er bekommt seine Wut)
+                if (a.hx && anderer && !ohneHeld) heroFought(a.attackerBotId, a.hx);              // (ein Held eines Mitspielers führt nur seinen eigenen Kampf – er bekommt seine Wut)
                 else if (a.hx) { if (!fight.hx) { fight.hx = a.hx; fight.hero = a.hero; fight.hero2 = a.hero2 || null; } }   // höchstens Haupt- + Zweitheld: die Helden der ersten Welle führen den Kampf
                 if (!anderer) { fight.shieldLossReductionPct = Math.max(fight.shieldLossReductionPct || 0, a.shieldLossReductionPct || 0);   // (sein eigener Schild/Gold-Bonus gilt nicht für die anderen)
                     fight.rewardGoldRate = Math.max(fight.rewardGoldRate || 0, a.rewardGoldRate || 0); }

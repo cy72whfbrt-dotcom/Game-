@@ -139,7 +139,7 @@ function resolveBotAttack(attack) {
     const bot = botById[attack.attackerBotId];
     const source = islandById[attack.sourceId];
     const target = islandById[attack.targetId];
-    if (!bot || !source || !target) return;
+    if (!bot || !source || !target) { if (attack.rally && typeof bundRallyHeim === 'function') bundRallyHeim(attack, attack.rawTroops, attack.targetId); return; }   // (Rally ohne Anführer: alle gehen mit ihrem Anteil heim)
 
     const myTroops = Math.round((attack.rawTroops + (attack.attackBonus || 0)) * (attack.atkTitle !== undefined ? attack.atkTitle : titleMult(bot.id, 'attack')) * (attack.atkKraft || 1));   // (Truppen-Stufe + Forschung vom Losschicken)
     const targetOwner = islandOwnerOf(target.id), rallyC0 = attack.rally ? botCoins[bot.id] || 0 : 0;   // (Rally: die Beute wird nachher anteilig verteilt)

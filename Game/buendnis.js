@@ -111,6 +111,8 @@ function bundZahlen(w, kosten) {                                 // Münzen abzi
 function bundRaus(a, w, grund) {                                 // w verlässt das Bündnis (oder wird rausgeworfen)
     a.mit = a.mit.filter(x => x !== w); if (a.dabei) delete a.dabei[w]; if (a.leer) delete a.leer[w];
     for (const r of bund.r.filter(r => r.aid === a.id && r.by === w)) bundRallyEnde(r, 'Der Starter ist nicht mehr im Bündnis');
+    for (const r of bund.r.filter(r => r.aid === a.id && r.by !== w)) for (const j of r.j.filter(j => j.w === w && j.da)) {   // seine Truppen in fremden Rallys gehen heim
+        r.j = r.j.filter(x => x !== j); bundHeimschicken(w, r.at, j.f, j.n); }
     if (!a.mit.length) { delete bund.b[a.id]; bundChatSpeichern(); return; }
     bundChatDazu(a, w, 's_raus');
     if (a.anf === w) { a.anf = a.mit.slice().sort((x, y) => staerke(y) - staerke(x))[0]; bundLog(a, bundName(a.anf) + ' führt jetzt das Bündnis.'); }
@@ -285,7 +287,7 @@ function bundSendAnkunft(send) {
     const who = send.senderBotId; if (!who) return false;
     if (send.rally) {
         const r = bund.r.find(x => x.id === send.rally);
-        const j = r && islandOwnerOf(r.at) === r.by && Date.now() < r.los + 3000 ? r.j.find(x => x.w === who && x.f === send.fromId && !x.da && (x.k ? x.k === marchKeyOf(send) : x.s === send.startedAt)) : null;   // (k bleibt fest – „schneller“ ändert startedAt)
+        const j = r && islandOwnerOf(r.at) === r.by && bund.r.includes(r) ? r.j.find(x => x.w === who && x.f === send.fromId && !x.da && (x.k ? x.k === marchKeyOf(send) : x.s === send.startedAt)) : null;   // (k bleibt fest – „schneller“ ändert startedAt)
         if (j) { j.da = true; bundSpeichern(); return true; }
         const L = bundMem.rallyWeg[send.rally];                     // Nachzügler: die Rally ist schon los → vom Sammelpunkt direkt zum Ziel, mitkämpfen
         if (!r && L && Date.now() < L.bis && send.toId === L.at && !bundZielOk(who, L.t) && (islandOwnerOf(L.at) === who || bundVerbuendet(islandOwnerOf(L.at), who))) {
@@ -446,14 +448,15 @@ function verstVorKampf(id) {
     const G = islandTroops[id] || 0, V = L.reduce((s, v) => s + v.n, 0);
     islandTroops[id] = G + V;
     const ow = islandOwnerOf(id);                                  // jeder Helfer verteidigt seine Truppen mit SEINEN Werten (Skill, Titel, Forschung)
-    verstDefPlus[id] = ow ? L.reduce((s, v) => s + verstWert(v.w, v.n) - verstWert(ow, v.n), 0) : 0;
-    return { G, V, L: L.map(v => ({ v, n0: v.n, plus: Math.round(verstWert(v.w, v.n)) })) };
+    const mauer = ow === 'player' ? wallDefensePct() : ow ? botBld(ow, 'wall') * 2 : 0;   // (die Mauer gehört zur Basis – sie verstärkt auch den Skill der Helfer)
+    verstDefPlus[id] = ow ? L.reduce((s, v) => s + verstWert(v.w, v.n, mauer) - verstWert(ow, v.n, mauer), 0) : 0;
+    return { G, V, L: L.map(v => ({ v, n0: v.n, plus: Math.round(verstWert(v.w, v.n, mauer)) })) };
 }
 // was n Truppen von w in einer Basis an Verteidigung mitbringen (Skill Verteidigung, Titel, Forschung; Mauer gehört zur Basis)
-function verstWert(w, n) {
+function verstWert(w, n, mauer) {
     const s = w === 'player' ? (skills.defense || 0) * SKILL_DEFS.defense.defPct / 100 : (botMults(w).defensePct || 0) / 100;
     const kk = AUF ? AUF.kampf(w, 'd') : 1;
-    return n * s * titleMult(w, 'defense') * kk + n * (kk - 1);
+    return n * s * (1 + (mauer || 0) / 100) * titleMult(w, 'defense') * kk + n * (kk - 1);
 }
 function verstNachKampf(id, k, gefallen) {
     delete verstDefPlus[id];
@@ -461,7 +464,7 @@ function verstNachKampf(id, k, gefallen) {
     const tot = k.G + k.V, rest = gefallen ? 0 : Math.max(0, Math.min(tot, islandTroops[id] || 0)), weg = tot - rest, helfer = [];
     let restV = 0;
     for (const x of k.L) {
-        const f = Math.min(x.n0, Math.round(weg * x.n0 / Math.max(1, tot)));
+        const f = Math.min(x.n0, Math.floor(weg * x.n0 / Math.max(1, tot)));   // (abrunden: zusammen nie mehr als gefallen)
         const wd = f > 0 ? (x.v.w === 'player' ? hospitalTake(f) : botHospitalTake(x.v.w, f)) || 0 : 0;   // seine Verwundeten in sein Krankenhaus
         x.v.n = x.n0 - f; restV += x.v.n;
         helfer.push({ w: x.v.w, name: bundName(x.v.w), n: x.n0, plus: x.plus, k: x.n0 + x.plus, fallen: f - wd, wounded: wd, gear: fighterSnapshot(x.v.w) });
@@ -560,6 +563,7 @@ function bundRallyLos(r) {
     if (!atk || atk.attackerBotId !== by) { islandTroops[r.at] = Math.max(0, (islandTroops[r.at] || 0) - total); return bundRallyEnde(r, 'der Weg ist versperrt (Tor zu oder Maut zu teuer)'); }
     atk.rally = { id: r.id, by, an: [[by, r.at, r.n0]].concat(r.j.filter(j => j.da).map(j => [j.w, j.f, j.n])) };
     rallyWerte(atk, by, r.n0, r.j.filter(j => j.da));
+    for (const k in bundMem.rallyWeg) if (bundMem.rallyWeg[k].bis < Date.now()) delete bundMem.rallyWeg[k];   // (abgelaufene weg – sonst wächst die Liste ewig)
     bundMem.rallyWeg[r.id] = { t: r.t, at: r.at, by, bis: Date.now() + 60 * 60000 };   // (für Nachzügler: sie folgen direkt zum Ziel)
     bund.r = bund.r.filter(x => x !== r);
     const a = bund.b[r.aid], txt = 'Rally auf ' + islandTitle(islandById[r.t]) + ' marschiert los: ' + fmtCompact(total) + ' Truppen von ' + atk.rally.an.length + (atk.rally.an.length === 1 ? ' Basis.' : ' Basen.');
@@ -571,7 +575,8 @@ function bundRallyLos(r) {
 function rallyWerte(atk, by, n0, mit) {
     const st = w => titleMult(w, 'attack') * (AUF ? AUF.kampf(w, 'a') : 1), stBy = st(by) || 1;
     const sk = (w, n) => w === 'player' ? attackFlatBonus(n) : Math.round(n * (botMults(w).attackPct || 0) / 100);
-    let skill = sk(by, n0), bonus = skill + (atk.hx ? Math.round(n0 * atk.hx.atk / 100) + heroGefOf(atk.hx, n0) : 0);
+    const hb = atk.hx ? Math.round(n0 * atk.hx.atk / 100) + heroGefOf(atk.hx, n0) : 0; atk.heldBonus = hb;
+    let skill = sk(by, n0), bonus = skill + hb;
     for (const j of mit) { const b = sk(j.w, j.n), p = (j.n + b) * st(j.w) / stBy - j.n; skill += b; bonus += p;
         const x = atk.rally.an.find(q => q[0] === j.w && q[2] === j.n && q[3] === undefined); if (x) x[3] = Math.round(p); }   // (für den Kampfbericht: was er mitbringt)
     atk.attackBonus = Math.round(bonus); atk.skillBonus = skill;

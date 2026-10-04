@@ -156,7 +156,7 @@ function wachhund_runde($quelle = 'cron') {
             $fremd = array_values(array_diff(wr_alle_pids(), [$pid]));   // übrig gebliebene Weltrechner (ohne Herzschlag): weg damit
             if ($fremd) { foreach ($fremd as $x) exec('kill -9 ' . (int)$x . ' 2>/dev/null'); wr_log(count($fremd) . ' übrige(n) Weltrechner-Prozess(e) beendet'); }
             wr_schreiben('zustand.php', $z); return ($h['phase'] ?? '') === 'start' ? 'startet' : 'läuft'; }
-        $letzterStart = (int)end($z['starts']);
+        $starts = (array)($z['starts'] ?? []); $letzterStart = $starts ? (int)end($starts) : 0;   // (alte zustand.php ohne „starts“)
         if ($laeuft) {   // läuft, aber kein Herzschlag mehr: hängt (Endlosschleife o. ä.)
             if (!wr_beenden($pid, 'hängt – letzter Herzschlag vor ' . ($jetzt - (int)($h['zeit'] / 1000)) . ' s')) { wr_schreiben('zustand.php', $z); return 'hängt, lässt sich nicht beenden'; }
             $z['abstuerze'][] = $jetzt; $z['gezaehlt'] = $pid;

@@ -275,7 +275,7 @@ function nebel_flicken($text, $s) {
 // Truppen 0, Held und Kampfwerte weg. Eigene Kolonnen bleiben, wie sie sind. Diese Teile gehen an Spieler immer ganz (nie als
 // Flicken – die passten nicht zum gefilterten Stand im Handy). Armeen und besetzte Felder zeigt das Spiel mit Zahlen, wenn man sie
 // sieht – im Nebel nicht: Truppen und Helden nur für die, die der Weltrechner ihm als sichtbar meldet (ow_spieler.armee_sicht).
-const MARSCH_TEILE = ['openWaterPendingAttacks', 'openWaterPendingSends', 'openWaterPendingRetreats', 'openWaterFieldMarches', 'openWaterBarbMarches', 'openWaterArmies', 'openWaterFields', 'openWaterVerstaerkung', 'openWaterBundChat'];   // (Bündnis-Chat: nur der des eigenen Bündnisses) (Verstärkung: nur seine eigene und die bei ihm)
+const MARSCH_TEILE = ['openWaterPendingAttacks', 'openWaterPendingSends', 'openWaterPendingRetreats', 'openWaterFieldMarches', 'openWaterBarbMarches', 'openWaterArmies', 'openWaterFields', 'openWaterVerstaerkung', 'openWaterBundChat', 'openWaterBuendnisse'];   // (Bündnisse: fremde Rallys ohne Truppenzahlen, fremde Logs weg)   // (Bündnis-Chat: nur der des eigenen Bündnisses) (Verstärkung: nur seine eigene und die bei ihm)
 function marsch_teil($k, $text, $ich, $eigen, $sieht = []) {
     $v = json_decode((string)$text); if (!is_array($v) && !is_object($v)) return $text;   // (als Objekte: {} bleibt {})
     $wer = function ($o, $f) { return isset($o->$f) && is_string($o->$f) ? $o->$f : ''; };
@@ -285,6 +285,11 @@ function marsch_teil($k, $text, $ich, $eigen, $sieht = []) {
         foreach ((array)($v->raids ?? []) as $r) if (is_object($r) && $wer($r, 'tOwner') !== $ich) foreach (['troops', 'n', 'hero', 'hero2'] as $f) if (isset($r->$f)) $r->$f = is_numeric($r->$f) ? 0 : null;
     } elseif ($k === 'openWaterBundChat') {                       // nur der Chat des eigenen Bündnisses – kein anderes Bündnis liest mit
         foreach (array_keys((array)$v) as $aid) { $c = $v->$aid ?? null; if (!is_object($c) || !in_array($ich, (array)($c->mit ?? []), true)) unset($v->$aid); }
+    } elseif ($k === 'openWaterBuendnisse') {                    // Rallys anderer Bündnisse: wohin und wann ja (Warnung „Gefahr“), wie viele Truppen nie
+        $mein = null; foreach ((array)($v->b ?? []) as $aid => $a) if (is_object($a) && in_array($ich, (array)($a->mit ?? []), true)) $mein = (string)$aid;
+        foreach ((array)($v->b ?? []) as $aid => $a) if (is_object($a) && (string)$aid !== $mein) unset($a->log, $a->sig);
+        if (isset($v->r) && is_array($v->r)) foreach ($v->r as $r) if (is_object($r) && (string)($r->aid ?? '') !== $mein) {
+            $r->n0 = 0; if (isset($r->j) && is_array($r->j)) foreach ($r->j as $j) if (is_object($j)) $j->n = 0; }
     } elseif ($k === 'openWaterVerstaerkung') {
         if (isset($v->l) && is_array($v->l)) $v->l = array_values(array_filter($v->l, function ($x) use ($wer, $ich, $eigen) { return is_object($x) && ($wer($x, 'w') === $ich || isset($eigen[(int)($x->t ?? -1)])); }));
     } elseif ($k === 'openWaterFields') {
@@ -296,7 +301,7 @@ function marsch_teil($k, $text, $ich, $eigen, $sieht = []) {
             if ($wer($e, 'attackerBotId') === $ich) continue;
             if (isset($e->rally) && is_object($e->rally) && isset($e->rally->an) && is_array($e->rally->an)) {   // gemeinsamer Angriff: die Zahlen sieht nur, wer dabei ist
                 $dabei = false; foreach ($e->rally->an as $x) if (is_array($x) && ($x[0] ?? '') === $ich) $dabei = true;
-                if (!$dabei) foreach ($e->rally->an as $i => $x) if (is_array($x)) $e->rally->an[$i][2] = 0;
+                if (!$dabei) foreach ($e->rally->an as $i => $x) if (is_array($x)) { $e->rally->an[$i][2] = 0; unset($e->rally->an[$i][3], $e->rally->an[$i][4]); }
             }
             $kampf = !empty($e->fightEndsAt); $aufMich = isset($eigen[(int)($e->targetId ?? -1)]); $genau = $aufMich && $kampf;   // (kämpft er schon bei dir, siehst du seine Stärke – wie danach im Kampfbericht)
             $e->rawTroops = $genau ? ($e->rawTroops ?? 0) : 0;
@@ -954,7 +959,12 @@ class MysqlLager {
         // die Zahlung schon darin (Hauptbuch: nicht nochmal abbuchen)
         return array_map(function ($z) { $b = json_decode($z['befehl']); if (is_object($b)) { $b->_id = (int)$z['id']; $b->_t = (int)$z['t'] * 1000; if ((int)$z['nach']) $b->_nach = 1; }
                 return ['id' => (int)$z['id'], 'von' => (int)$z['spieler_id'], 'b' => $b]; },
-            $this->db->query('SELECT id, spieler_id, befehl, nach, UNIX_TIMESTAMP(erstellt) t FROM ow_befehle WHERE fertig = 0 ORDER BY id LIMIT 500')->fetchAll());
+            $this->befehle_gerecht());
+    }
+    // gerecht: höchstens 40 je Spieler pro Abholen – einer, der hunderte schickt (die beim Weltrechner warten), verstopft nie die der anderen
+    function befehle_gerecht() {
+        try { return $this->db->query('SELECT id, spieler_id, befehl, nach, t FROM (SELECT id, spieler_id, befehl, nach, UNIX_TIMESTAMP(erstellt) t, ROW_NUMBER() OVER (PARTITION BY spieler_id ORDER BY id) nr FROM ow_befehle WHERE fertig = 0) x WHERE nr <= 40 ORDER BY id LIMIT 500')->fetchAll(); }
+        catch (Throwable $e) { return $this->db->query('SELECT id, spieler_id, befehl, nach, UNIX_TIMESTAMP(erstellt) t FROM ow_befehle WHERE fertig = 0 ORDER BY id LIMIT 500')->fetchAll(); }   // (alte Datenbank ohne ROW_NUMBER)
     }
     // Nachrichten: der Weltrechner gibt jeder eine Nummer (mid) – nach einer verlorenen Antwort schickt er sie nochmal, abgelegt
     // wird sie trotzdem nur einmal. Abgeholt ist sie erst, wenn der Spieler sie in seinem Spielstand verbucht hat
@@ -1075,6 +1085,7 @@ function speichern_anfrage() {
         $setzen = [];
         foreach ((array)($d['setzen'] ?? []) as $k => $v) {
             if (!is_string($k) || !preg_match('/^openWater[A-Za-z0-9_]{1,90}$/', $k) || !is_string($v)) json_antwort(400, ['fehler' => 'ungültig']);
+            if (in_array($k, ['openWaterBotState', 'openWaterBotCoins', 'openWaterBotOwnedIslands'], true)) continue;   // Welt-Teile schickt ein Handy nie (speichern.js) – sonst tausende Zeilen in ow_bots je Speichern
             $setzen[$k] = $v;
         }
         $loeschen = [];

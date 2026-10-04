@@ -92,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         // ===== Weltrechner =====
         if ($was === 'wr_neustart') {   // mehrmals drücken startet nicht mehrmals (jeder Start fängt mit dem Laden wieder von vorn an)
-            $z0 = wr_zustand(); if (time() - (int)end($z0['starts']) < 60) $meldung = 'Der Weltrechner wurde gerade erst gestartet und lädt noch – bitte 1 Minute warten.';
+            $z0 = wr_zustand(); $st0 = (array)($z0['starts'] ?? []); if ($st0 && time() - (int)end($st0) < 60) $meldung = 'Der Weltrechner wurde gerade erst gestartet und lädt noch – bitte 1 Minute warten.';
             else { $r = wachhund_neustart(); $meldung = 'Weltrechner neu gestartet (' . $r . ').'; } }
         if ($was === 'wr_entsperren') { wachhund_entsperren(); $meldung = 'Sperre aufgehoben. Wenn der Fehler behoben ist: Wartung beenden – dann startet der Weltrechner von selbst.'; }
         if ($was === 'wr_cron') $meldung = wachhund_cron_einrichten();

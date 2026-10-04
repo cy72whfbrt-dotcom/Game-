@@ -1104,7 +1104,8 @@ function heroDefCut(a) { return a && a.hx ? Math.min(90, a.hx.def || 0) / 100 : 
 function heroDefPart(parts, a, full) { const cut = Math.round(full * heroDefCut(a)), hd = cut && heroById(a.hx.id); if (hd) parts.push(['Held ' + hd.name + (a.hx.id2 && heroById(a.hx.id2) ? ' & ' + heroById(a.hx.id2).name : ''), -cut, 'Verteidigung −' + Math.round(a.hx.def) + ' %']); return parts; }
 function attackFields(who, src, target, raw, hx) {      // everything an attack takes along at launch (skills, gear, title, hero) - for you and for everyone else
     const bot = who !== 'player', sk = bot ? Math.round(raw * botMults(who).attackPct / 100) : attackFlatBonus(raw);
-    return { attackBonus: sk + (hx ? Math.round(raw * hx.atk / 100) + heroGefOf(hx, raw) : 0), skillBonus: sk, skillLvl: bot ? loadBotState()[who].skills.attack : skills.attack || 0,
+    const hb = hx ? Math.round(raw * hx.atk / 100) + heroGefOf(hx, raw) : 0;   // (der Helden-Anteil – fällt weg, wenn der Angreifer im Kampf schon 2 Helden hat)
+    return { attackBonus: sk + hb, heldBonus: hb, skillBonus: sk, skillLvl: bot ? loadBotState()[who].skills.attack : skills.attack || 0,
         attackGoldRate: bot ? botGoldRate(who, 'attackGold') : (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate, rewardGoldRate: killGoldRate(who, hx),
         shieldLossReductionPct: Math.min(90, (bot ? botMults(who).shield : shieldLossReductionPct()) + (hx ? hx.loss : 0)), botShield: bot,
         atkTitle: titleMult(who, 'attack'), atkTitleKey: (titleOf(who) || {}).key || null, hero: hx ? hx.id : null, hero2: hx && hx.id2 || null, hx: hx || null,
@@ -4486,17 +4487,22 @@ setInterval(() => {
                     if (!fight.rally) fight.rally = { id: 'z' + fight.id, by: fight.attackerBotId, an: [[fight.attackerBotId, fight.sourceId, fight.rawTroops]], zus: 1 };
                     else fight.rally.zus = 1;
                 }
+                const wer = a.attackerBotId || 'player';               // höchstens 2 Helden je Angreifer (Alexander 4.10.): hat er schon Helden im Kampf, zählen die dieser Welle nicht
+                if (!fight.heldVon) fight.heldVon = fight.hx ? { [fight.attackerBotId || 'player']: 1 } : {};
+                let ohneHeld = false;
+                if (a.hx && fight.heldVon[wer]) { ohneHeld = true; heroWutZurueck(wer, a.hx);   // (seine Helden kämpfen nicht mit – die Wut bleibt)
+                    a.attackBonus = Math.max(0, (a.attackBonus || 0) - (a.heldBonus !== undefined ? a.heldBonus : (a.attackBonus || 0) - (a.skillBonus || 0)));
+                    a.shieldLossReductionPct = Math.max(0, (a.shieldLossReductionPct || 0) - (a.hx.loss || 0)); a.rewardGoldRate = killGoldRate(wer); }
+                else if (a.hx) fight.heldVon[wer] = 1;
                 if (anderer) {                                     // seine Stärke zählt, wie er sie mitbringt (seine Stufe, Forschung, Titel)
                     const st = x => (x.atkTitle !== undefined ? x.atkTitle : titleMult(x.attackerBotId, 'attack')) * (x.atkKraft || 1);
                     a.attackBonus = (a.rawTroops + (a.attackBonus || 0)) * st(a) / st(fight) - a.rawTroops;
                 }
                 if (anderer || fight.rally || a.rally)
-                    fight.rally.an.push(...(a.rally ? a.rally.an : [[a.attackerBotId, a.sourceId, a.rawTroops, anderer ? Math.round(a.attackBonus || 0) : undefined, anderer && a.hx ? a.hx : undefined]]));
-                if (!anderer && a.hx && fight.hx) heroWutZurueck(a.attackerBotId || 'player', a.hx);   // (seine Helden kämpfen nicht mit – die Wut bleibt)
-                if (!anderer && a.hx && fight.hx) a.attackBonus = Math.min(a.attackBonus || 0, a.skillBonus !== undefined ? a.skillBonus : 0);   // höchstens 2 Helden je Angreifer (Alexander 4.10.): die Helden einer weiteren eigenen Welle zählen nicht
+                    fight.rally.an.push(...(a.rally ? a.rally.an : [[a.attackerBotId, a.sourceId, a.rawTroops, anderer ? Math.round(a.attackBonus || 0) : undefined, anderer && a.hx && !ohneHeld ? a.hx : undefined]]));
                 fight.rawTroops += a.rawTroops; fight.attackBonus = (fight.attackBonus || 0) + (a.attackBonus || 0);
                 if (fight.skillBonus !== undefined || a.skillBonus !== undefined) fight.skillBonus = (fight.skillBonus || 0) + (a.skillBonus !== undefined ? a.skillBonus : a.attackBonus || 0); fight.waves = (fight.waves || 1) + (a.waves || 1);
-                if (a.hx && anderer) heroFought(a.attackerBotId, a.hx);              // (ein Held eines Mitspielers führt nur seinen eigenen Kampf – er bekommt seine Wut)
+                if (a.hx && anderer && !ohneHeld) heroFought(a.attackerBotId, a.hx);              // (ein Held eines Mitspielers führt nur seinen eigenen Kampf – er bekommt seine Wut)
                 else if (a.hx) { if (!fight.hx) { fight.hx = a.hx; fight.hero = a.hero; fight.hero2 = a.hero2 || null; } }   // höchstens Haupt- + Zweitheld: die Helden der ersten Welle führen den Kampf
                 if (!anderer) { fight.shieldLossReductionPct = Math.max(fight.shieldLossReductionPct || 0, a.shieldLossReductionPct || 0);   // (sein eigener Schild/Gold-Bonus gilt nicht für die anderen)
                     fight.rewardGoldRate = Math.max(fight.rewardGoldRate || 0, a.rewardGoldRate || 0); }
@@ -12747,7 +12753,7 @@ if (window.WELT) {
         if (L >= MAX_BASE_LEVEL) return 'nein';
         if (b.stufe <= L) return 'nein';                                   // doppelt geschickt – nichts zu tun
         if (b.stufe > L + 1) { warnen(who, 'ausbau', 'Ausbau springt: ' + islandTitle(islandById[b.insel]) + ' von Stufe ' + L + ' auf ' + b.stufe + ' – erlaubt ist nur +1.', b.stufe - L); return 'nein'; }
-        const jetzt = Date.now(), damals = zahlOk(b.at) && b.at <= jetzt + 5000 && jetzt - b.at < 120000 && evThemaAktivAm(b.at, 'bau');   // (Bauherr: bezahlt hat er den Preis von da – nie aus der Zukunft)
+        const jetzt = Date.now(), damals = zahlOk(b.at) && b.at <= jetzt + 5000 && jetzt - b.at < 120000 && (!zahlOk(b._t) || Math.abs(b._t - b.at) < 30000) && evThemaAktivAm(b.at, 'bau');   // (_t: wann der Server ihn bekam – das Handy kann die Zeit nicht weit zurückdrehen)   // (Bauherr: bezahlt hat er den Preis von da – nie aus der Zukunft)
         if (b._nach) return 'ok';                                          // nach dem Zurückspielen nachgeholt: bezahlt hat er damals schon
         if (schonBezahlt(wacheSehen(who), b, false)) return 'ok';           // vor dem Eichen bezahlt (steckt schon im Konto)
         const m = wacheSehen(who), kosten = upgradeCostRoh(L) * (damals || evThemaAktiv('bau') ? .8 : 1);   // (der Rabatt nur EINMAL – vorher doppelt)
@@ -13242,6 +13248,7 @@ if (window.WELT) {
             if (!inselOk(b.src) || !inselOk(b.ziel) || !zahlOk(b.n) || b.n < 1) { warnen(who, 'kaputt', 'Angriff mit kaputten Angaben – abgelehnt.'); return; }
             if (islandOwnerOf(b.ziel) === who) { warnen(who, 'kaputt', 'Angriff auf die eigene Basis – abgelehnt.'); return; }   // (brachte sonst Gratis-EP)
             if (!gehoert(b.src, who)) return;
+            { const hbA = hbDa(who); if (hbA && !nbKennt(who, hbA, islandById[b.ziel].landmassId)) { warnen(who, 'weg', 'Angriff in ein Gebiet, das er nicht kennen kann (Nebel) – abgelehnt.'); nichtLos(who, null, b.src, 'Angriff auf ' + islandTitle(islandById[b.ziel])); return; } }   // (wie beim Späher – auf dem Handy sperrt das der Nebel)
             if (!wegOk(who, islandById[b.src].landmassId, islandById[b.ziel].landmassId)) { warnen(who, 'weg', 'Angriff ohne Weg dorthin (Brücke/Tor) – abgelehnt.'); nichtLos(who, null, b.src, 'Angriff auf ' + islandTitle(islandById[b.ziel]), 'kein Weg – ein fremdes Tor liegt dazwischen'); return; }
             b.n = Math.floor(b.n);
             naechsteGruppe = kennungOk(b.grp) ? b.grp : null;                // Mehrfachangriff = ein Marsch-Platz (nur vom selben Ort, nur kurz nacheinander)
