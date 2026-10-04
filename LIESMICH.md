@@ -1877,3 +1877,4 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
   direkt zum Ziel.
 - Getestet: `rally_sicht_test` (Mitspieler tritt deiner Rally bei → Linie auf der Karte, Name + „unterwegs, da in …“ im
   Rally-Fenster), dazu tore_rally, rally_chat, nachzuegler, chat, laden, render grün.
+- **Hochgeladen 4.10., 12:47 UTC**, Weltrechner läuft wieder.
