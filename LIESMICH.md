@@ -127,7 +127,8 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Kampfbericht (05-profil.js `kampflogUmbauen`): ein Fenster je Spieler, alle gleich aufgebaut (Truppen, Held, Eigene
   Werte, Grundverteidigung, Gesamt, Gefallen, Geflohen, Stufe, 2 Heldenplätze, Skills, Rohstoffe), Gold/Holz/Stein/Eisen
   unten im Fenster (Angreifer nach Truppen-Anteil), „Kampfdetails“ öffnet eine eigene Seite, Spähbericht im gleichen Aufbau.
-  Getestet: Rally, Verstärkung, gemeinsamer Angriff, Kampfbericht (Handy). Noch nicht hochgeladen.
+  Rally-Beute: auch Holz/Stein/Eisen werden jetzt nach Truppen geteilt (vorher nur Gold).
+  Getestet: 2 gegen 1 Rally echt (Werte beider, Beute geteilt, Bericht), Verstärkung, gemeinsamer Angriff. Noch nicht hochgeladen.
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.

@@ -602,12 +602,14 @@ function kampfAnteile(attack, fallen, hosp) {
     return L;
 }
 // (Kampf) Beute (Münzen) der Rally anteilig verteilen und allen Beteiligten Bescheid geben
-function bundRallyBeute(attack, gain, won, targetId) {
+function bundRallyBeute(attack, gain, won, targetId, roh) {   // roh: Holz/Stein/Eisen aus der Beute – auch nach Truppen geteilt
     const an = attack.rally.an, by = attack.rally.by, sum = an.reduce((s, x) => s + x[2], 0) || 1, ziel = islandTitle(islandById[targetId]);
     const anteile = {}; for (const x of an) anteile[x[0]] = (anteile[x[0]] || 0) + x[2];
     for (const w in anteile) {
         const teil = gain > 0 && w !== by ? Math.floor(gain * anteile[w] / sum) : 0;
         if (teil > 0) { botCoins[by] = Math.max(0, (botCoins[by] || 0) - teil); botCoins[w] = (botCoins[w] || 0) + teil; }
+        if (roh && AUF && w !== by) { const t = { h: Math.floor((roh.h || 0) * anteile[w] / sum), s: Math.floor((roh.s || 0) * anteile[w] / sum), e: Math.floor((roh.e || 0) * anteile[w] / sum) };
+            if (t.h || t.s || t.e) { AUF.rohDazu(by, { h: -t.h, s: -t.s, e: -t.e }); AUF.rohDazu(w, t); } }
         if (w !== by && !attack.rally.zus) bundMelden(w, 'Rally auf ' + ziel + ': ' + (won ? 'Sieg!' : 'gescheitert.') + ' Deine überlebenden Truppen kehren heim' + (teil > 0 ? ', +' + fmtCompact(teil) + ' Münzen Beute.' : '.'));
     }
     const a = bundVon(by); if (a) { bundLog(a, (attack.rally.zus ? 'Gemeinsamer Angriff auf ' : 'Rally auf ') + ziel + ': ' + (won ? 'Sieg' : 'gescheitert') + '.'); bundSpeichern(); }

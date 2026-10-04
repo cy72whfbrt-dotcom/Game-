@@ -292,7 +292,7 @@ function resolveBotAttack(attack) {
         renderActiveMarches();
         if (isPanelOpen(popup) && popupIslandId === target.id) renderPopup();
     }
-    if (attack.rally) bundRallyBeute(attack, (botCoins[bot.id] || 0) - rallyC0, won, target.id);
+    if (attack.rally) bundRallyBeute(attack, (botCoins[bot.id] || 0) - rallyC0, won, target.id, plunder && plunder.roh);
     saveGame();
 }
 
