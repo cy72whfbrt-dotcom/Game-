@@ -1816,6 +1816,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
       <form id="setPwForm" class="set-pw" hidden autocomplete="on">
         <input id="setPwAlt" type="password" autocomplete="current-password" placeholder="Altes Passwort" maxlength="200">
         <input id="setPwNeu" type="password" autocomplete="new-password" placeholder="Neues Passwort (10–72 Zeichen)" maxlength="72">
+        <input id="setPwNeu2" type="password" autocomplete="new-password" placeholder="Neues Passwort wiederholen" maxlength="72">
         <button class="btn btn--primary btn--sm" type="submit">Speichern</button>
         <small>Danach bist du auf allen anderen Geräten abgemeldet.</small>
       </form>

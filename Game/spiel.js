@@ -512,7 +512,7 @@ function tollFor(fromLm, toLm, troops, payer, targetId, cut) {  // → { gate, c
     if (!gate || islandOwnerOf(gate.id) === payer || gate.id === targetId || bundFreund(islandOwnerOf(gate.id), payer)) return { gate, cost: 0 };   // Bündnis: Tore der Mitglieder sind für alle Mitglieder frei und offen
     const cfg = gateSettings(gate);
     if (!islandOwnerOf(gate.id) || cfg.closed) return { gate, cost: Infinity, closed: true };   // unowned gates are shut
-    return { gate, cost: cfg.toll > 0 ? Math.round(Math.max(100, Math.min(TOLL_MAX, Math.round(Math.max(0, troops) * cfg.toll))) * (1 - Math.min(90, cut || 0) / 100)) : 0 };
+    return { gate, cost: cfg.toll > 0 ? Math.round(Math.max(100, Math.min(TOLL_MAX, Math.round(Math.max(0, troops) * cfg.toll))) * (1 - Math.min(90, cut || 0) / 100)) : 0 };   // (ganze Münzen – auch mit Helden-Rabatt)
 }
 function payToll(fromLm, toLm, troops, payer, targetId, cut) { // payer: 'player' | bot id → false when it can't pay
     const { gate, cost, closed } = tollFor(fromLm, toLm, troops, payer, targetId, cut);
@@ -12322,17 +12322,19 @@ document.getElementById('setNameBtn').addEventListener('click', () => {   // der
 document.getElementById('setPwOffen').addEventListener('click', () => { const f = document.getElementById('setPwForm'); f.hidden = !f.hidden; if (!f.hidden) document.getElementById('setPwAlt').focus(); });
 document.getElementById('setPwForm').addEventListener('submit', async e => {
     e.preventDefault();
-    const alt = document.getElementById('setPwAlt'), neu = document.getElementById('setPwNeu');
+    const alt = document.getElementById('setPwAlt'), neu = document.getElementById('setPwNeu'), neu2 = document.getElementById('setPwNeu2'), knopf = e.target.querySelector('button[type=submit]');
     if (neu.value.length < 10 || neu.value.length > 72) { flashHint('Das neue Passwort braucht 10 bis 72 Zeichen.', 3000); return; }
+    if (neu.value !== neu2.value) { flashHint('Die beiden neuen Passwörter sind nicht gleich.', 3000); return; }   // (ein Tippfehler – und das Konto wäre weg)
+    if (knopf.disabled) return; knopf.disabled = true;
     try {
         let geraet = '';                              // dieses Gerät behält seine Handy-Nachrichten (nur die anderen hören auf)
         try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); const sub = reg && reg.pushManager && await reg.pushManager.getSubscription(); if (sub) geraet = sub.endpoint; } catch (x) {}
         const r = await fetch('server.php', { method: 'POST', headers: { 'X-Open-Water': '1', 'Content-Type': 'application/json' }, credentials: 'same-origin', cache: 'no-store', body: JSON.stringify({ aktion: 'passwort', alt: alt.value, neu: neu.value, geraet }) });
         const a = await r.json();
         if (!a.ok) { flashHint(a.grund || 'Das hat nicht geklappt.', 3500); return; }
-        alt.value = ''; neu.value = ''; document.getElementById('setPwForm').hidden = true;
+        alt.value = ''; neu.value = ''; neu2.value = ''; document.getElementById('setPwForm').hidden = true;
         flashHint('Passwort geändert. Andere Geräte sind jetzt abgemeldet.', 4000);
-    } catch (x) { flashHint('Das hat nicht geklappt – bitte nochmal.', 3000); }
+    } catch (x) { flashHint('Das hat nicht geklappt – bitte nochmal.', 3000); } finally { knopf.disabled = false; }
 });
 document.addEventListener('click', e => { const bt = e.target.closest && e.target.closest('button'); if (bt && !bt.disabled) sfx('click'); }, true);   // a soft wooden click on every button
 

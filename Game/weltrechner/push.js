@@ -69,13 +69,13 @@ const BEOBACHTER = `(function () {
     const alt = window.__pushMerker, neu = { angriffe: {}, spaeher: {}, besitz: {}, boss: [], sammler: {}, schild: {} }, raus = [];
     for (const a of pendingAttacks || []) {
         const o = islandOwnerOf(a.targetId); if (!mensch(o) || !a.attackerBotId || a.attackerBotId === o) continue;
-        const k = a.attackerBotId + '>' + a.targetId + '@' + a.startedAt; neu.angriffe[k] = 1;
+        const k = a.attackerBotId + '>' + a.targetId + '@' + a.sourceId + ':' + a.rawTroops; neu.angriffe[k] = 1;   // (nicht startedAt: Beschleunigen ändert es – sonst kommt die Meldung nochmal)
         if (alt && !alt.angriffe[k]) raus.push({ an: o, art: 'angriff', von: name(a.attackerBotId), basis: titel(a.targetId), ankunft: a.resolveAt });
     }
     for (const b in botIntelMem) { const mem = botIntelMem[b]; if (!mem) continue;
         for (const t in mem) { const it = mem[t]; if (!it || !it.pending || !(it.ready > jetzt)) continue;
             const o = islandOwnerOf(+t); if (!mensch(o) || o === b) continue;
-            const k = b + '>' + t + '@' + it.ready; neu.spaeher[k] = 1;
+            const k = b + '>' + t; neu.spaeher[k] = 1;   // (ohne ready: Beschleunigen ändert es)
             if (alt && !alt.spaeher[k]) raus.push({ an: o, art: 'spaeher', von: name(b), basis: titel(+t), ankunft: it.ready }); } }
     for (const id in botOwnedIslands) { if (!mensch(id)) continue; neu.besitz[id] = [...botOwnedIslands[id]];
         const vorher = alt && alt.besitz[id]; if (!vorher) continue; const jetztDa = botOwnedIslands[id];
@@ -195,7 +195,7 @@ function melder(holen, log) {
                 e.zeit = jetzt; (warte.get(uid) || warte.set(uid, []).get(uid)).push(e); }
             for (const [uid, liste] of warte) {
                 // online gekommen (sieht es im Spiel) oder alles veraltet → vergessen
-                const frisch = liste.filter(e => jetzt - e.zeit < ALT_MS && !(e.art !== 'verloren' && e.art !== 'hilfe' && e.ankunft < jetzt));
+                const frisch = liste.filter(e => jetzt - e.zeit < ALT_MS && !(e.art !== 'verloren' && e.art !== 'hilfe' && e.art !== 'rally' && e.ankunft < jetzt));
                 if (r.online['u' + uid] || !frisch.length) { warte.delete(uid); continue; }
                 warte.set(uid, frisch);
                 if (jetzt - Math.min(...frisch.map(e => e.zeit)) < SAMMELN_MS) continue;

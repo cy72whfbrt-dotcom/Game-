@@ -189,7 +189,8 @@ function resolveBotAttack(attack) {
         if (targetOwner) { botNoteLoss(targetOwner, target.id); clearIslandOwner(target.id); }
         islandTroops[target.id] = attack.rally ? bundRallyHeim(attack, survivors, target.id, true) : survivors;   // (Rally: die Truppen der anderen gehen heim)
         botOwnedIslands[bot.id].add(target.id); botStat(bot.id, 'caps'); if (targetOwner) botStat(bot.id, 'pvp'); if (target.type === 'temple' || target.type === 'megaTemple' || target.guardian) botStat(bot.id, 'temples');
-        if (target.type === 'gate') { const sty = bot.style, r = Math.random();                  // how this player runs a gate
+        if (target.type === 'gate' && bot.mensch) setGateSettings(target.id, { toll: target.toll, closed: false });   // ein echter Spieler: wie bei dir (offen, normale Maut – er stellt es selbst ein)
+        else if (target.type === 'gate') { const sty = bot.style, r = Math.random();                  // how this player runs a gate
             setGateSettings(target.id, { toll: sty === 'templer' ? 1 : sty === 'builder' ? 0.5 : sty === 'raider' ? 0.25 : GATE_TOLLS[1 + Math.floor(r * 4)],
                                          closed: sty === 'raider' ? r < .5 : sty === 'templer' ? r < .3 : r < .1 }); }
         islandLevels[target.id] = levelAfterCapture;

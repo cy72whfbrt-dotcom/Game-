@@ -24,7 +24,7 @@ self.addEventListener('push', e => {
 self.addEventListener('notificationclick', e => {
     e.notification.close();
     e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(fenster => {
-        for (const f of fenster) if ('focus' in f) return f.focus();
+        for (const f of fenster) if ('focus' in f && /spiel\.php/.test(f.url || '')) return f.focus();   // (nur das Spiel – unter derselben Adresse liegen auch andere Seiten)
         return self.clients.openWindow('spiel.php');
     }));
 });

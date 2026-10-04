@@ -100,7 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $sid = (int)($_POST['sicherung'] ?? 0); $h = wr_herz();
             if ($h && !wr_beenden((int)($h['pid'] ?? 0), 'Sicherung wird zurückgespielt')) $fehler = 'Der Weltrechner lässt sich nicht beenden – nichts verändert.';
             elseif (lager()->sicherung_zurueck($sid)) { wr_log('Sicherung ' . $sid . ' vom Admin zurückgespielt'); wachhund_neustart(); $meldung = 'Sicherung zurückgespielt – die Welt ist wieder auf dem Stand von damals. Der Weltrechner startet neu.'; }
-            else $fehler = 'Sicherung nicht gefunden oder kaputt – nichts verändert.';
+            else { $fehler = 'Sicherung nicht gefunden oder kaputt – nichts verändert.'; if ($h) wachhund_neustart(); }   // (der Weltrechner war schon beendet – gleich wieder starten)
         }
         if ($was === 'nebel') {
             $an = (string)($_POST['an'] ?? ''); $ids = [];
@@ -114,6 +114,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
+// Nach jeder Aktion neu laden lassen (Post/Redirect/Get): ein Neuladen der Seite führt die Aktion nie ein zweites Mal aus
+// (sonst spielt z. B. „Erneut senden“ eine Sicherung nochmal zurück)
+if ($_SERVER['REQUEST_METHOD'] === 'POST') { header('Location: ' . basename($_SERVER['SCRIPT_NAME']) . '?' . http_build_query(['m' => $meldung, 'f' => $fehler]), true, 303); exit; }
+if (isset($_GET['m'])) $meldung = mb_substr((string)$_GET['m'], 0, 400); if (isset($_GET['f'])) $fehler = mb_substr((string)$_GET['f'], 0, 400);
 $spieler = lager()->alle_spieler();
 $wrH = wr_herz(); $wrZ = wr_zustand(); $wrCron = wachhund_cron_da();
 $wrLaeuft = $wrH && empty($wrH['ende']) && wr_laeuft($wrH['pid'] ?? 0) && time() - (int)(($wrH['zeit'] ?? 0) / 1000) <= wr_herz_alt($wrH);
@@ -191,7 +195,7 @@ function zahl($n) { return $n === null ? '–' : number_format((float)$n, 0, ','
   <?php endif; ?>
   <form method="post" style="display:flex;gap:8px;flex-wrap:wrap">
     <input type="hidden" name="zeichen" value="<?= h($zeichen) ?>"><input type="hidden" name="nr" value="<?= h($formNr) ?>">
-    <button name="was" value="wr_neustart">Neu starten</button>
+    <button name="was" value="wr_neustart" data-frage="Weltrechner wirklich neu starten? Er lädt dann etwa 1 Minute.">Neu starten</button>
     <?php if (!$wrCron): ?><button name="was" value="wr_cron">Wachhund-Cronjob einrichten</button><?php endif; ?>
   </form>
   <details style="margin-top:10px"><summary>Protokoll (letzte 40 Zeilen)</summary>
@@ -231,14 +235,14 @@ function zahl($n) { return $n === null ? '–' : number_format((float)$n, 0, ','
   <form method="post">
     <input type="hidden" name="zeichen" value="<?= h($zeichen) ?>"><input type="hidden" name="nr" value="<?= h($formNr) ?>">
     <?php if (wartung()): ?><button class="gruen" name="was" value="wartung_aus">Wartung beenden</button>
-    <?php else: ?><button class="rot" name="was" value="wartung_an">Wartung starten</button><?php endif; ?>
+    <?php else: ?><button class="rot" name="was" value="wartung_an" data-frage="Wartung wirklich starten? Alle Spieler werden aus dem Spiel geworfen.">Wartung starten</button><?php endif; ?>
   </form>
 </div>
 
 <div class="karte">
   <h2>Geschenk verschicken</h2>
   <p>Landet beim Spieler im Abholfach (Events → Belohnung) und muss dort ganz normal abgeholt werden.</p>
-  <form method="post">
+  <form method="post" data-frage-alle="Das Geschenk wirklich an ALLE schicken?">
     <input type="hidden" name="zeichen" value="<?= h($zeichen) ?>"><input type="hidden" name="nr" value="<?= h($formNr) ?>">
     <input type="hidden" name="was" value="geschenk">
     <label for="an">An</label>
@@ -260,7 +264,7 @@ function zahl($n) { return $n === null ? '–' : number_format((float)$n, 0, ','
 <div class="karte">
   <h2>Nebel freischalten</h2>
   <p>Deckt für den Spieler die ganze Karte auf.</p>
-  <form method="post">
+  <form method="post" data-frage-alle="Den Nebel wirklich für ALLE aufdecken?">
     <input type="hidden" name="zeichen" value="<?= h($zeichen) ?>"><input type="hidden" name="nr" value="<?= h($formNr) ?>">
     <input type="hidden" name="was" value="nebel">
     <label for="nebelAn">Für</label>
@@ -289,6 +293,8 @@ function zahl($n) { return $n === null ? '–' : number_format((float)$n, 0, ','
 </div>
 <script nonce="<?= h(csp_nonce()) ?>">   // (statt onsubmit=…: Inline-Handler erlaubt die CSP nicht mehr)
 document.querySelectorAll('form[data-frage]').forEach(function (f) { f.addEventListener('submit', function (e) { if (!confirm(f.getAttribute('data-frage'))) e.preventDefault(); }); });
+document.querySelectorAll('button[data-frage]').forEach(function (k) { k.addEventListener('click', function (e) { if (!confirm(k.getAttribute('data-frage'))) e.preventDefault(); }); });
+document.querySelectorAll('form[data-frage-alle]').forEach(function (f) { f.addEventListener('submit', function (e) { var an = f.querySelector('[name=an]'); if (an && an.value === 'alle' && !confirm(f.getAttribute('data-frage-alle'))) e.preventDefault(); }); });
 </script>
 </body>
 </html>
