@@ -4495,10 +4495,11 @@ setInterval(() => {
                 }
                 if (anderer || fight.rally || a.rally)
                     fight.rally.an.push(...(a.rally ? a.rally.an : [[a.attackerBotId, a.sourceId, a.rawTroops, anderer ? Math.round(a.attackBonus || 0) : undefined, anderer && a.hx ? a.hx : undefined]]));
+                if (!anderer && a.hx && fight.hx) a.attackBonus = Math.min(a.attackBonus || 0, a.skillBonus !== undefined ? a.skillBonus : 0);   // höchstens 2 Helden je Angreifer (Alexander 4.10.): die Helden einer weiteren eigenen Welle zählen nicht
                 fight.rawTroops += a.rawTroops; fight.attackBonus = (fight.attackBonus || 0) + (a.attackBonus || 0);
                 if (fight.skillBonus !== undefined || a.skillBonus !== undefined) fight.skillBonus = (fight.skillBonus || 0) + (a.skillBonus !== undefined ? a.skillBonus : a.attackBonus || 0); fight.waves = (fight.waves || 1) + (a.waves || 1);
                 if (a.hx && anderer) heroFought(a.attackerBotId, a.hx);              // (ein Held eines Mitspielers führt nur seinen eigenen Kampf – er bekommt seine Wut)
-                else if (a.hx) { if (!fight.hx) { fight.hx = a.hx; fight.hero = a.hero; fight.hero2 = a.hero2 || null; } else fight.hx = heroMergeHx(fight.hx, a.hx); }   // every hero in the fight keeps his effect and his rage
+                else if (a.hx) { if (!fight.hx) { fight.hx = a.hx; fight.hero = a.hero; fight.hero2 = a.hero2 || null; } }   // höchstens Haupt- + Zweitheld: die Helden der ersten Welle führen den Kampf
                 if (!anderer) { fight.shieldLossReductionPct = Math.max(fight.shieldLossReductionPct || 0, a.shieldLossReductionPct || 0);   // (sein eigener Schild/Gold-Bonus gilt nicht für die anderen)
                     fight.rewardGoldRate = Math.max(fight.rewardGoldRate || 0, a.rewardGoldRate || 0); }
                 fight.fightEndsAt = Math.max(fight.fightEndsAt, now + 2500);          // the fresh troops get to fight too
@@ -5658,7 +5659,7 @@ function renderCombatLog() {
         const tiles = g.items.map((it, i) => { const d = EQUIPMENT_DEFS[it[0]], rd = RARITY_DEFS[it[1]];
             return '<span class="gslot"><span class="tile' + (rd ? '' : ' empty') + '"' + (rd ? ' data-r="' + rd.key + '"' : '') + ' title="' + d.name + (rd ? ' – ' + rd.label + ', Stufe ' + it[2] : ' – leer') + '">' + icon(d.icon) +
                 (rd ? '<span class="lvl">' + it[2] + '</span>' + (it[3] ? '<span class="stars">' + icon('star').repeat(it[3]) + '</span>' : '') : '') + '</span></span>'; }).join('');
-        const heroes = (g.hx ? [g.hx, ...(g.hx.h2 ? [g.hx.h2] : []), ...(g.hx.extra || [])] : []).map(x => { const hd = heroById(x.id); if (!hd) return ''; const rd = RARITY_DEFS[hd.r];   // who led (Haupt- und Zweitheld), his stars, whether the rage fired, every bonus
+        const heroes = (g.hx ? [g.hx, ...(g.hx.h2 ? [g.hx.h2] : [])] : []).map(x => { const hd = heroById(x.id); if (!hd) return ''; const rd = RARITY_DEFS[hd.r];   // who led (Haupt- und Zweitheld), his stars, whether the rage fired, every bonus
                 return '<div class="logHero" style="--hc:' + rd.color + '"><span class="ghero">' + heroImg(hd.id) + '<span><b>' + hd.name + ' <small>' + heroStarTxt(x.q) + ' · ' + rd.label + '</small></b>' +
                     '<small>' + (x.zweit ? 'Zweitheld · Werte und passive Fähigkeiten zu ' + Math.round(HERO_ZWEIT * 100) + ' %' : x.fired ? '<em class="logHeroFire">' + escapeHtml(x.skill || '') + ' gezündet</em>' : 'Aktive Fähigkeit nicht gezündet') + '</small></span></span>' +
                     (x.lines || []).map(l => '<div class="logLine buff"><span>' + escapeHtml(l[0]) + '</span><span>' + escapeHtml(l[1]) + '</span></div>').join('') + '</div>'; }).join('') +
@@ -7986,7 +7987,6 @@ var CITY_BUILDINGS = [
 // Fällt eine Basis (Turm): der Sieger bekommt NUR Gold (ein kleiner Teil über dem Schutz). Die Hauptstadt fällt nie: gewinnt der
 // Angreifer, bekommt er von JEDEM Rohstoff einen kleinen Teil über dem Schutz (HAUPT_BEUTE) und die Hauptstadt brennt (nur zu
 // sehen). Gewinnt der Verteidiger, bekommt der Angreifer nichts. Rohstoffe gibt es nur aus der Hauptstadt.
-var PLUNDER_PCT = { base: .02 }, PLUNDER_CAP_H = .5;   // Turm: 2 % des Golds über dem Schutz, höchstens 30 Min. seiner Einnahmen je Kampf
 const HAUPT_BEUTE = .1;                              // Hauptstadt: 10 % von jedem Rohstoff über dem Schutz – klein, damit man oft angreifen muss
 const schutzVon = who => AUF ? AUF.burgSchutz(who) : 0;
 function plunderOf(who, capital) {                  // { loot (Gold), roh: {h, s, e} (nur Hauptstadt), safe }
@@ -7994,8 +7994,7 @@ function plunderOf(who, capital) {                  // { loot (Gold), roh: {h, s
     if (capital) { const r = AUF ? AUF.rohVon(who) : null, roh = { h: 0, s: 0, e: 0 };
         if (r) for (const x of ['h', 's', 'e']) roh[x] = Math.floor(Math.max(0, (r[x] || 0) - safe) * HAUPT_BEUTE);
         return { loot: Math.floor(Math.max(0, have - safe) * HAUPT_BEUTE), roh, safe }; }   // (safe: der Burg-Schutz je Rohstoff – so steht er im Bericht)
-    const cap = Math.max(1e6, hourProduction(who).coins * PLUNDER_CAP_H);   // at most half an hour of the victim's income per fight - a big coffer isn't drained base by base
-    return { loot: Math.floor(Math.min(cap, Math.max(0, have - safe) * PLUNDER_PCT.base)), safe: Math.min(have, safe) };
+    return { loot: 0, safe: Math.min(have, safe) };   // Beute (Gold, Holz, Stein, Eisen) gibt es NUR an der Hauptstadt (Alexander 4.10.)
 }
 function plunderMove(from, to, loot, roh) {         // Gold (und bei der Hauptstadt Holz, Stein, Eisen) wechselt den Besitzer
     if (loot > 0) { if (from === 'player') coins -= loot; else botCoins[from] = Math.max(0, (botCoins[from] || 0) - loot);
@@ -8516,11 +8515,8 @@ function heroFieldFx(who, id, ctx, id2) {           // a fight out in the open: 
 }
 function heroMarchFx(who, id, field, id2) { if (!id || !heroOwned(who, id)) return null; const c = { march: 1, fieldMarch: !!field }; return heroDuo(who, heroFx(who, id, c, false), id2 && heroOwned(who, id2) ? id2 : null, c); }   // walking only: Tempo and Maut
 function heroGatherFx(o) { return o && o.hero && heroOwned(o.who, o.hero) ? heroDuo(o.who, heroFx(o.who, o.hero, { gather: 1 }, false), o.hero2 && heroOwned(o.who, o.hero2) ? o.hero2 : null, { gather: 1 }) : null; }
-function heroMergeHx(f, a) { if (!a || !f) return f || a; if (f.id === a.id) return f;                                              // two waves with two heroes in one fight: both count
-    return Object.assign({}, f, { def: Math.max(f.def, a.def), hosp: Math.max(f.hosp, a.hosp), flee: Math.max(f.flee, a.flee), ret: Math.max(f.ret, a.ret), gold: Math.max(f.gold, a.gold),
-        extra: [...(f.extra || []), { id: a.id, q: a.q, fired: a.fired, skill: a.skill, lines: a.lines }, ...(a.h2 ? [{ id: a.h2.id, q: a.h2.q, zweit: 1, lines: a.h2.lines }] : [])] }); }
-const heroIn = (hero, hero2, id) => hero === id || hero2 === id;
 function heroOnField(who, id) { try { return fieldMarches.some(m => m.who === who && heroIn(m.hero, m.hero2, id)) || barbMarches.some(m => m.who === who && heroIn(m.hero, m.hero2, id)) || resFields.some(f => { const o = fieldState[f.id] && fieldState[f.id].occ; return !!o && o.who === who && heroIn(o.hero, o.hero2, id); }); } catch (e) { return false; } }
+const heroIn = (hero, hero2, id) => hero === id || hero2 === id;
 function heroBusy(who, id) {                        // one attack, army or field march per hero at a time (Haupt- oder Zweitheld)
     const mine = x => who === 'player' ? !x || x === 'player' : x === who;
     return pendingAttacks.some(a => mine(a.attackerBotId) && (heroIn(a.hero, a.hero2, id) || (a.hx && (a.hx.id2 === id || (a.hx.extra || []).some(e => e.id === id)))))

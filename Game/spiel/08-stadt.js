@@ -27,7 +27,6 @@ var CITY_BUILDINGS = [
 // Fällt eine Basis (Turm): der Sieger bekommt NUR Gold (ein kleiner Teil über dem Schutz). Die Hauptstadt fällt nie: gewinnt der
 // Angreifer, bekommt er von JEDEM Rohstoff einen kleinen Teil über dem Schutz (HAUPT_BEUTE) und die Hauptstadt brennt (nur zu
 // sehen). Gewinnt der Verteidiger, bekommt der Angreifer nichts. Rohstoffe gibt es nur aus der Hauptstadt.
-var PLUNDER_PCT = { base: .02 }, PLUNDER_CAP_H = .5;   // Turm: 2 % des Golds über dem Schutz, höchstens 30 Min. seiner Einnahmen je Kampf
 const HAUPT_BEUTE = .1;                              // Hauptstadt: 10 % von jedem Rohstoff über dem Schutz – klein, damit man oft angreifen muss
 const schutzVon = who => AUF ? AUF.burgSchutz(who) : 0;
 function plunderOf(who, capital) {                  // { loot (Gold), roh: {h, s, e} (nur Hauptstadt), safe }
@@ -35,8 +34,7 @@ function plunderOf(who, capital) {                  // { loot (Gold), roh: {h, s
     if (capital) { const r = AUF ? AUF.rohVon(who) : null, roh = { h: 0, s: 0, e: 0 };
         if (r) for (const x of ['h', 's', 'e']) roh[x] = Math.floor(Math.max(0, (r[x] || 0) - safe) * HAUPT_BEUTE);
         return { loot: Math.floor(Math.max(0, have - safe) * HAUPT_BEUTE), roh, safe }; }   // (safe: der Burg-Schutz je Rohstoff – so steht er im Bericht)
-    const cap = Math.max(1e6, hourProduction(who).coins * PLUNDER_CAP_H);   // at most half an hour of the victim's income per fight - a big coffer isn't drained base by base
-    return { loot: Math.floor(Math.min(cap, Math.max(0, have - safe) * PLUNDER_PCT.base)), safe: Math.min(have, safe) };
+    return { loot: 0, safe: Math.min(have, safe) };   // Beute (Gold, Holz, Stein, Eisen) gibt es NUR an der Hauptstadt (Alexander 4.10.)
 }
 function plunderMove(from, to, loot, roh) {         // Gold (und bei der Hauptstadt Holz, Stein, Eisen) wechselt den Besitzer
     if (loot > 0) { if (from === 'player') coins -= loot; else botCoins[from] = Math.max(0, (botCoins[from] || 0) - loot);
@@ -557,11 +555,8 @@ function heroFieldFx(who, id, ctx, id2) {           // a fight out in the open: 
 }
 function heroMarchFx(who, id, field, id2) { if (!id || !heroOwned(who, id)) return null; const c = { march: 1, fieldMarch: !!field }; return heroDuo(who, heroFx(who, id, c, false), id2 && heroOwned(who, id2) ? id2 : null, c); }   // walking only: Tempo and Maut
 function heroGatherFx(o) { return o && o.hero && heroOwned(o.who, o.hero) ? heroDuo(o.who, heroFx(o.who, o.hero, { gather: 1 }, false), o.hero2 && heroOwned(o.who, o.hero2) ? o.hero2 : null, { gather: 1 }) : null; }
-function heroMergeHx(f, a) { if (!a || !f) return f || a; if (f.id === a.id) return f;                                              // two waves with two heroes in one fight: both count
-    return Object.assign({}, f, { def: Math.max(f.def, a.def), hosp: Math.max(f.hosp, a.hosp), flee: Math.max(f.flee, a.flee), ret: Math.max(f.ret, a.ret), gold: Math.max(f.gold, a.gold),
-        extra: [...(f.extra || []), { id: a.id, q: a.q, fired: a.fired, skill: a.skill, lines: a.lines }, ...(a.h2 ? [{ id: a.h2.id, q: a.h2.q, zweit: 1, lines: a.h2.lines }] : [])] }); }
-const heroIn = (hero, hero2, id) => hero === id || hero2 === id;
 function heroOnField(who, id) { try { return fieldMarches.some(m => m.who === who && heroIn(m.hero, m.hero2, id)) || barbMarches.some(m => m.who === who && heroIn(m.hero, m.hero2, id)) || resFields.some(f => { const o = fieldState[f.id] && fieldState[f.id].occ; return !!o && o.who === who && heroIn(o.hero, o.hero2, id); }); } catch (e) { return false; } }
+const heroIn = (hero, hero2, id) => hero === id || hero2 === id;
 function heroBusy(who, id) {                        // one attack, army or field march per hero at a time (Haupt- oder Zweitheld)
     const mine = x => who === 'player' ? !x || x === 'player' : x === who;
     return pendingAttacks.some(a => mine(a.attackerBotId) && (heroIn(a.hero, a.hero2, id) || (a.hx && (a.hx.id2 === id || (a.hx.extra || []).some(e => e.id === id)))))

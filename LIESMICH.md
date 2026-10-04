@@ -63,6 +63,11 @@ tests/                 Tests (liegen NIE auf dem Server)
   welt_test.js, server_test.php   Einheitstests (Spiel / Server)
   browser/             Browser-Tests in der Vorschau: Bündnis, Verstärkung, gemeinsamer Angriff, Rally 2 gegen 1,
                        neue Kampf-Regel (jeder mit seinen Werten), Klick-Test aller Fenster
+  server_tests.sh      Tests mit LOKALEM Server (MariaDB + php -S + Weltrechner, ca. 30 Min.):
+                       tests/server_tests.sh <arbeitsordner> – kopiert Game/ dorthin, startet den Weltrechner neu,
+                       am Ende „ALLES OK“. Zugang der Test-Konten in <arbeitsordner>/zugang.env (nie im Git)
+  server/              die Server-Tests: Absturz/Zurückspielen, Admin, Nebel bei Armeen, Bündnis-Kiste,
+                       Verstärkung, Klick-Test neuer Spieler (+ geschenk.sh: Admin-Geschenk für Tests)
 werkzeuge/             spiel_bauen.sh (spiel.js zusammensetzen), vorschau_bauen.php (Vorschau ohne Server),
                        vorschau_test*.js (Test-Modus), welt_neustart.php (neue Saison)
 ```
@@ -144,6 +149,10 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   jetzt auch Berichte für Barbaren-Lager, Tagesboss, Feld- und Armee-Kämpfe; Verwundete des Besitzers stehen in allen
   Berichten. Kampflog-Balken zeigt bei Rally/Verstärkung alle Namen. Neue Tests: rally_held_test, rally_menschen_test
   (Rally mit zwei echten Spielern: Werte, Beute ¾/¼, beide Berichte).
+- **4.10. abends – Fehler-Fix live (Alexander):** (1) Beute (Gold, Holz, Stein, Eisen) gibt es NUR an der Hauptstadt –
+  bei anderen Basen 0 (vorher 2 % Gold, `plunderOf`). (2) Höchstens 2 Helden je Angreifer: schickt einer mehrere eigene
+  Wellen mit Helden in denselben Kampf, führen nur die Helden der ersten Welle (vorher zählten alle, z. B. 4 –
+  `heroMergeHx` entfernt); auch alte Berichte zeigen nur Haupt- und Zweitheld.
 - **4.10. Aufräumen:** unbenutzte CSS-Reste raus, wichtige Tests ins Projekt (`tests/browser/`, Start mit `tests/alle_tests.sh`).
 
 ## 9. Fehlerliste (Alexander)
