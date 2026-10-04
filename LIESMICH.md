@@ -360,7 +360,8 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
       1. **Verstärkung:** wie viele Truppen Bündnis-Freunde bei dir stationieren dürfen.
       2. **Rally-Größe:** wie viele Truppen deiner Rally beitreten dürfen.
       3. **Bündnis-Hilfe:** Freunde drücken „Hilfe“, dein Bau / deine Forschung geht schneller.
-    - Holzfäller, Steinbruch, Eisenmine, Mauer: noch nicht besprochen.
+    - **Holzfäller, Steinbruch, Eisenmine bleiben** – kommen aber mit **in die Base** (nicht mehr vor der Mauer).
+    - **Mauer bleibt**, genau da, wo sie jetzt ist.
   - Heute (zum Vergleich): Plündern nimmt nur Münzen (Hauptstadt und Basis, je ein Anteil über dem Lager-Schutz,
     höchstens eine halbe Stunde Einkommen).
 - ⭐ **Sortier-Tag:** alle Dateien einmal sortieren, alter Code raus (Alexander 4.10.).
