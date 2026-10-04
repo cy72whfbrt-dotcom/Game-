@@ -121,11 +121,19 @@ function angreiferZeilen(e, gearHtml) {
         ((h.fallen || h.wounded) ? '<div class="logCasualty"><span>· davon gefallen' + (h.wounded ? ' / verwundet' : '') + '</span><span>−' + n(h.fallen) + (h.wounded ? ' / ' + n(h.wounded) : '') + '</span></div>' : '') +
         (h.gear && gearHtml ? '<details class="verst-det"><summary>' + escapeHtml(h.name || '?') + ': Held, Ausrüstung, Fähigkeiten</summary>' + gearHtml(h.gear) + '</details>' : '')).join('');
 }
-function plunderLine(e, mine) {                     // Beute: was den Besitzer wechselte (Turm: Gold, Hauptstadt: auch Holz, Stein, Eisen) und was die Burg schützte
-    const r = e.plunderRoh || {}, teile = [e.plunder ? fmtBig(e.plunder) + ' Gold' : '', r.h ? fmtBig(r.h) + ' Holz' : '', r.s ? fmtBig(r.s) + ' Stein' : '', r.e ? fmtBig(r.e) + ' Eisen' : ''].filter(Boolean);
-    if (!teile.length && !e.plunderSafe) return '';
-    const safe = e.plunderSafe ? fmtBig(e.plunderSafe) + ' je Rohstoff geschützt durch die Burg' : '';
-    return '<div class="logGold' + (mine ? '' : ' logPlunder') + '">' + (e.capitalHolds ? '<b>' + (mine ? 'Die Hauptstadt brennt' : 'Deine Hauptstadt brennt') + '</b> · ' : '') + (teile.length ? (mine ? 'Beute: +' : 'Geplündert: −') + teile.join(', ') + (safe ? ' · ' + safe : '') : (mine ? 'Keine Beute – ' : 'Nichts verloren – ') + safe) + '</div>';
+// Kampfbericht: jede Karte gleich – Titel, bei Kämpfen der Kräfte-Balken, dann kleine Zahlen-Kästchen (Verluste, Beute), dann „Kampfdetails“
+const chipN = v => { v = Math.max(0, Math.round(v || 0)); return v >= 1e6 ? fmtCompact(v) : fmtNum(v); };
+function logChips(list) {                          // [[Symbol, Text, gut|schlecht|warn], …] – leere fallen weg
+    const l = (list || []).filter(c => c && c[1]);
+    return l.length ? '<div class="lchips">' + l.map(([ic, t, k]) => '<span class="lchip' + (k ? ' lchip--' + k : '') + '">' + icon(ic) + '<span>' + t + '</span></span>').join('') + '</div>' : '';
+}
+const verlustChips = (gefallen, verwundet) => [gefallen > 0 && ['losses', '−' + chipN(gefallen) + ' gefallen', 'schlecht'], verwundet > 0 && ['plus', chipN(verwundet) + ' verwundet', 'warn']];
+function beuteChips(e, mine) {                      // was den Besitzer wechselte – Gold geht ins Abholfach, Holz/Stein/Eisen gleich ins Lager
+    const r = e.plunderRoh || {}, v = mine ? '+' : '−', k = mine ? 'gut' : 'schlecht', was = e.plunder > 0 || r.h > 0 || r.s > 0 || r.e > 0;
+    return [e.capitalHolds && ['castle', mine ? 'Hauptstadt brennt' : 'Deine Hauptstadt brennt', k],
+        e.plunder > 0 && ['coin', v + chipN(e.plunder) + ' Gold' + (mine ? ' (Abholfach)' : ''), k], r.h > 0 && ['wood', v + chipN(r.h) + ' Holz', k],
+        r.s > 0 && ['stone', v + chipN(r.s) + ' Stein', k], r.e > 0 && ['iron', v + chipN(r.e) + ' Eisen', k],
+        e.plunderSafe > 0 && ['lock', (was ? '' : (mine ? 'Keine Beute · ' : 'Nichts verloren · ')) + 'Burg schützt ' + chipN(e.plunderSafe) + ' je Rohstoff', '']];
 }
 function logRowHtml(kind, iconName, title, meta, trailing, extra) {
   return '<div class="logRow ' + kind + '"><span class="li">' + icon(iconName) + '</span><span class="lt"><b>' + title + '</b>' +
@@ -1695,7 +1703,7 @@ function launchSend(fromId, toId, senderBotId, amount) {       // amount: how ma
 }
 
 // ===== MARCH ORDERS: recall a column on the way, or speed it up with gems =====
-const marchKeyOf = m => m.mid || (m.mid = (m.startedAt || 0) + '-' + (m.sourceId ?? m.fromId) + '-' + (m.targetId ?? m.toId));   // fixed once, so speeding up keeps it
+const marchKeyOf = m => m.mid || (m.mid = (m.startedAt || 0) + '-' + (m.sourceId ?? m.fromId ?? m.homeId) + '-' + (m.targetId ?? m.toId ?? m.fieldId ?? m.tid ?? m.k));   // (auch Lager/Boss/Drache und Sammler)   // fixed once, so speeding up keeps it
 function pathSoFar(src, tgt, frac) {                // the stretch of the route already walked, from the start to where the column is now
     const pts = marchPath(src, tgt); let total = 0;
     for (let i = 1; i < pts.length; i++) total += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
@@ -1710,6 +1718,10 @@ function recallMarch(key) {                          // an attack or a send turn
     const sc = pendingScouts.find(x => marchKeyOf(x) === key);                // ein Späher kehrt um (ohne Bericht)
     if (sc) { if (sc.back) return; pendingScouts = pendingScouts.filter(x => x !== sc); spaeherHeim(sc, now - sc.startedAt);   // kehrt um: zurück so lange, wie er schon unterwegs war
         saveProgression(); renderActiveMarches(); requestRender(); flashHint('Dein Späher kehrt um.', 2500); return; }
+    const fm = feldBarbMarsch('player', key);                                  // Lager, Boss, Drache, Invasion, Sammler
+    if (fm) { if (fm.back) return;
+        if (!alsBefehl('zurueck', { key })) { marschUmkehren(fm, now); updateHud(); saveGame(); }
+        renderActiveMarches(); requestRender(); flashHint('Deine Truppen kehren um.', 3000); return; }
     if (!rechnet()) {                                 // Zuschauer: der Weltrechner lässt sie umkehren
         const m = pendingAttacks.find(x => marchKeyOf(x) === key) || pendingSends.find(x => marchKeyOf(x) === key);
         if (m && m.fightEndsAt) { flashHint('Die Truppen kämpfen schon – zu spät zum Zurückrufen.', 3000); return; }
@@ -1740,7 +1752,7 @@ function schnellerDrueber() {
     if (!wartendSchneller.size) return;
     const now = Date.now();
     for (const [k, w] of wartendSchneller) {
-        const m = pendingAttacks.find(x => marchKeyOf(x) === k) || pendingSends.find(x => marchKeyOf(x) === k) || pendingRetreats.find(x => marchKeyOf(x) === k);
+        const m = pendingAttacks.find(x => marchKeyOf(x) === k) || pendingSends.find(x => marchKeyOf(x) === k) || pendingRetreats.find(x => marchKeyOf(x) === k) || feldBarbMarsch('player', k);
         if (!m || now > w.bis || m.resolveAt <= w.resolveAt + 1500) { wartendSchneller.delete(k); continue; }   // der Weltrechner hat es (oder es ist vorbei)
         m.resolveAt = w.resolveAt; m.startedAt = w.startedAt;
     }
@@ -1772,7 +1784,7 @@ function speedUpMarch(key) {                         // halves the time still to
         gems -= cost; const p = Math.max(0, Math.min(.99, (now - sc.startedAt) / Math.max(1, sc.resolveAt - sc.startedAt)));
         sc.resolveAt = now + rem / 2; sc.startedAt = sc.resolveAt - (rem / 2) / (1 - p);
         flashHint('Späher beschleunigt – noch ' + fmtClock(Math.ceil(rem / 2000)) + '.', 2500); updateHud(); saveGame(); saveProgression(); renderActiveMarches(); requestRender(); return; }
-    for (const list of [pendingAttacks, pendingSends, pendingRetreats]) {
+    for (const list of [pendingAttacks, pendingSends, pendingRetreats, eigeneFeldBarb()]) {
         const m = list.find(x => marchKeyOf(x) === key); if (!m) continue;
         if (m.fightEndsAt) return;
         if (m.vorlaeufig) { flashHint('Einen Moment – der Marsch läuft gerade los.', 1500); return; }
@@ -1783,13 +1795,13 @@ function speedUpMarch(key) {                         // halves the time still to
         const p = Math.max(0, Math.min(.99, (now - m.startedAt) / Math.max(1, m.resolveAt - m.startedAt)));
         m.resolveAt = now + rem / 2; m.startedAt = m.resolveAt - (rem / 2) / (1 - p); schnellerMerken(m);
         flashHint('Beschleunigt – noch ' + fmtClock(Math.ceil(rem / 2000)) + '.', 2500);
-        updateHud(); saveGame(); saveProgression(); renderActiveMarches(); requestRender(); return;
+        feldBarbSpeichern(); updateHud(); saveGame(); saveProgression(); renderActiveMarches(); requestRender(); return;
     }
 }
 // "Alle schneller": halves the time left of every own column on the road at once (same price as one by one)
 function speedableMarches() {
     const now = Date.now();
-    return [...pendingAttacks.filter(a => !a.attackerBotId), ...pendingSends.filter(x => !x.senderBotId), ...pendingRetreats].filter(m => !m.fightEndsAt && !m.vorlaeufig && m.resolveAt - now >= 1500);
+    return [...pendingAttacks.filter(a => !a.attackerBotId), ...pendingSends.filter(x => !x.senderBotId), ...pendingRetreats, ...eigeneFeldBarb()].filter(m => !m.fightEndsAt && !m.vorlaeufig && m.resolveAt - now >= 1500);
 }
 function speedUpAll() {
     if (Date.now() - speedUpZuletzt < 600) return; speedUpZuletzt = Date.now();
@@ -1801,7 +1813,7 @@ function speedUpAll() {
     for (const m of list) { const rem = m.resolveAt - now, pr = Math.max(0, Math.min(.99, (now - m.startedAt) / Math.max(1, m.resolveAt - m.startedAt)));
         m.resolveAt = now + rem / 2; m.startedAt = m.resolveAt - (rem / 2) / (1 - pr); schnellerMerken(m); }
     flashHint(list.length + (list.length === 1 ? ' Marsch' : ' Märsche') + ' beschleunigt – Restzeit halbiert.', 2500);
-    updateHud(); saveGame(); saveProgression(); renderActiveMarches(); requestRender();
+    feldBarbSpeichern(); updateHud(); saveGame(); saveProgression(); renderActiveMarches(); requestRender();
 }
 function marchButtons(m, canRecall) {
     const k = marchKeyOf(m);
@@ -3515,7 +3527,7 @@ function drawMarchLine(type, source, target, startedAt, resolveAt, now, pathOver
   const seg = []; let tot = 0; for (let i = 0; i < pts.length - 1; i++) { const l = Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].y - pts[i].y); seg.push(l); tot += l; }
   // placed in drawMarchTokens(), after the nameplates, so the token can start past the source's own plate
   const own = type !== 'incoming' && type !== 'enemyScout'; if (who === undefined) who = own ? 'player' : null;
-  marchTokens.push({ pts, seg, tot, progress, r: source.radius * mapState.zoom, srcId: source.id, key: type + source.id + '>' + target.id + '@' + resolveAt, col, glyph: glyphName, own, mk: mk || null, recall: type !== 'retreat', secs: Math.max(0, Math.ceil((resolveAt - now) / 1000)),
+  marchTokens.push({ pts, seg, tot, progress, r: (source.radius || 0) * mapState.zoom, srcId: source.id, key: type + source.id + '>' + target.id + '@' + resolveAt, col, glyph: glyphName, own, mk: mk || null, recall: type !== 'retreat', secs: Math.max(0, Math.ceil((resolveAt - now) / 1000)),
                     who, sk: who && glyphName !== 'scout' ? marchSkinOf(who) : null });
 }
 function marchPointAt(m, d) {                   // screen point at path distance d
@@ -5577,7 +5589,8 @@ function renderActiveMarches() {
         if (send.senderBotId) continue; // a bot reinforcing itself isn't the player's business
         relevantSendCount++;
         const secondsLeft = Math.max(0, Math.ceil((send.resolveAt - Date.now()) / 1000));
-        rows.push(logRowHtml('send', 'send', 'Verstärkung → ' + T(send.toId), 'von ' + T(send.fromId), clock(secondsLeft), marchButtons(send, true)));
+        rows.push(send.back ? logRowHtml('retreat', 'recall', fmtNum(send.troops) + ' Truppen kehren zurück', 'nach ' + T(send.toId), clock(secondsLeft), marchButtons(send, false))   // (dein Rückweg vom Weltrechner)
+            : logRowHtml('send', 'send', 'Verstärkung → ' + T(send.toId), 'von ' + T(send.fromId), clock(secondsLeft), marchButtons(send, true)));
     }
     for (const scout of pendingScouts) {
         const secondsLeft = Math.max(0, Math.ceil((scout.resolveAt - Date.now()) / 1000));
@@ -5591,15 +5604,19 @@ function renderActiveMarches() {
     const bm = barbMine();                            // Barbaren-Lager and Tagesboss: out and back like every march
     for (const m of bm) { const sec = Math.max(0, Math.ceil((m.resolveAt - Date.now()) / 1000)), c = m.k === 'c' && barbCampById(m.tid), L = m.L || (c && c.L), hd = m.hero && heroById(m.hero);
         const tgt = m.k === 'b' ? (m.name || 'Tagesboss') : m.k === 'd' ? (m.name || 'Drache') : m.k === 'i' ? 'Barbaren-Armee' : 'Barbaren-Lager' + (L ? ' · Stufe ' + L : '');
-        rows.push(m.back ? logRowHtml('retreat', 'recall', fmtNum(m.troops) + ' Truppen kehren zurück', 'von ' + tgt + ' nach ' + T(m.homeId), clock(sec))
-            : logRowHtml('attack', m.k === 'b' ? 'crown' : 'attack', 'Angriff auf ' + tgt, 'von ' + T(m.homeId) + ' · ' + fmtNum(m.troops) + ' Truppen' + (hd ? ' · ' + hd.name + (m.hero2 && heroById(m.hero2) ? ' & ' + heroById(m.hero2).name : '') : ''), clock(sec))); }
+        rows.push(m.back ? logRowHtml('retreat', 'recall', fmtNum(m.troops) + ' Truppen kehren zurück', 'von ' + tgt + ' nach ' + T(m.homeId), clock(sec), marchButtons(m, false))
+            : logRowHtml('attack', m.k === 'b' ? 'crown' : 'attack', 'Angriff auf ' + tgt, 'von ' + T(m.homeId) + ' · ' + fmtNum(m.troops) + ' Truppen' + (hd ? ' · ' + hd.name + (m.hero2 && heroById(m.hero2) ? ' & ' + heroById(m.hero2).name : '') : ''), clock(sec), marchButtons(m, true))); }
+    const fm = (typeof fieldMarches !== 'undefined' ? fieldMarches : []).filter(m => m.who === 'player');   // Sammler: hin und zurück
+    for (const m of fm) { const sec = Math.max(0, Math.ceil((m.resolveAt - Date.now()) / 1000)), f = fieldById[m.fieldId], K = f && FIELD_KINDS[f.kind], was = K ? K.name : 'Feld';
+        rows.push(m.back ? logRowHtml('retreat', 'recall', 'Sammler kehren zurück', fmtNum(m.troops) + ' Truppen' + (m.load >= 1 ? ' · +' + fmtNum(Math.floor(m.load)) + ' ' + K.what : '') + ' · nach ' + T(m.homeId), clock(sec), marchButtons(m, false))
+            : logRowHtml('send', 'send', 'Sammeln → ' + was, 'von ' + T(m.homeId) + ' · ' + fmtNum(m.troops) + ' Truppen', clock(sec), marchButtons(m, true))); }
     const fast = speedableMarches();
     if (fast.length > 1) rows.unshift('<div class="march-all"><span class="mact"><button type="button" data-mact="speedAll" title="Restzeit aller Märsche halbieren">' + icon('hourglass') + 'Alle schneller (' + fast.length + ') · <b>' + fmtNum(fast.reduce((a, m) => a + speedUpCost(m), 0)) + '</b>' + icon('gem') + '</button></span></div>');
     const amHtml = rows.length ? rows.join('') : '<div class="logEmpty">' + icon('hourglass') + 'Gerade nichts unterwegs.</div>';
     if (amHtml !== activeMarchesEl._html) { activeMarchesEl._html = amHtml; activeMarchesEl.innerHTML = amHtml; }   // many fights resolve per second: rebuild only on change (keeps the buttons tappable)
     battleLogPopup.classList.toggle('has-entries', rows.length > 0 || combatLog.length > 0);
 
-    const total = relevantAttackCount + relevantSendCount + pendingScouts.length + pendingRetreats.length + bm.length;
+    const total = relevantAttackCount + relevantSendCount + pendingScouts.length + pendingRetreats.length + bm.length + fm.length;
     setText(battleLogBadge, total);
     setShown(battleLogBadge, total > 0);
 }
@@ -5648,20 +5665,23 @@ function renderCombatLog() {
             '<div class="logGearMeta">Skill Angriff ' + g.skills[0] + ' · Verteidigung ' + g.skills[1] + '<br>Mauer ' + g.city[0] + ' · Krankenhaus ' + g.city[1] + ' · Heldenhalle ' + g.city[2] + '</div></div>'; };
     const fieldHeroLine = e => [[e.attacker, e.hA], [e.defender, e.hD]].map(([n, t]) => t ? ' · ' + (n === 'Du' ? 'dein Held ' : escapeHtml(n) + ' mit ') + escapeHtml(t) : '').join('');   // who led out in the open
     const fieldHeroDet = e => e.hx ? '<details><summary>Dein Held</summary>' + gearHtml({ items: [], lvl: playerLvl, hx: e.hx, skills: [], city: [], heroOnly: 1 }) + '</details>' : undefined;
+    const karte = (e, kind, ic, badge, title, sub, bar, chips, det) => logRowHtml(kind, ic, logBadge(badge[0], badge[1]) + title, sub, ago(e), (bar || '') + logChips(chips) + (det || ''));   // jede Karte gleich aufgebaut
     const partLines = (parts, first) => (parts || []).map((q, i) => '<div class="logLine' + (first && !i ? '' : q[1] < 0 ? ' buff malus' : ' buff') + '"><span>' + escapeHtml(q[0]) + (q[2] ? '<small class="logSrc">' + escapeHtml(q[2]) + '</small>' : '') + '</span><span>' + (first && !i ? '' : q[1] < 0 ? '−' : '+') + fmtD(Math.abs(q[1])) + '</span></div>').join('');   // each bonus with where it comes from
     combatLogListEl.innerHTML = combatLog.map(entry => { try { return (entry => {   // (jeder Bericht für sich: ein kaputter blockiert nie die ganze Liste)
         T = id => (entry.names && entry.names[id]) || islandTitle(islandById[id]);
         if (entry.type === 'send') {
-            return logRowHtml('send', 'send', logBadge('send', 'Verstärkung') + T(entry.toId), fmtM(entry.troops) + ' Truppen verlegt', ago(entry));
+            return karte(entry, 'send', 'send', ['send', 'Verstärkung'], T(entry.toId), '', '', [['troops', chipN(entry.troops) + ' Truppen angekommen']]);
         }
         if (entry.type === 'sammeln') {                          // Sammler sind vom Feld zurück
             const K = FIELD_KINDS[entry.fieldKind] || FIELD_KINDS.gold;
-            return logRowHtml('win', K.icon, logBadge('win', 'Sammler zurück') + K.name, '+' + fmtM(entry.load || 0) + ' ' + escapeHtml(K.what) + ' · ' + fmtM(entry.troops || 0) + ' Truppen zurück' + (entry.toId !== undefined && entry.toId !== null ? ' in ' + T(entry.toId) : ''), ago(entry));
+            return karte(entry, 'win', K.icon, ['win', 'Sammler zurück'], K.name, entry.toId !== undefined && entry.toId !== null ? 'zurück in ' + T(entry.toId) : '', '',
+                [[K.icon, '+' + chipN(entry.load) + ' ' + escapeHtml(K.what), entry.load > 0 ? 'gut' : ''], ['troops', chipN(entry.troops) + ' Truppen zurück']]);
         }
         if (entry.type === 'field') {
             const K = FIELD_KINDS[entry.fieldKind] || FIELD_KINDS.gold;
-            return logRowHtml(entry.won ? 'win' : 'loss', K.icon, logBadge(entry.won ? 'win' : 'loss', entry.won ? 'Feld gehalten' : 'Feld verloren') + K.name,
-                escapeHtml(entry.attacker) + ' (' + fmtM(entry.atk) + ') gegen ' + escapeHtml(entry.defender) + ' (' + fmtM(entry.def) + ')' + (entry.gold ? ' · +' + fmtM(entry.gold) + ' Gold' : '') + fieldHeroLine(entry), ago(entry), fieldHeroDet(entry));
+            return karte(entry, entry.won ? 'win' : 'loss', K.icon, [entry.won ? 'win' : 'loss', entry.won ? 'Feld gehalten' : 'Feld verloren'], K.name, fieldHeroLine(entry).replace(/^ · /, ''),
+                logBalance(entry.atk, entry.def, icon('attack') + escapeHtml(entry.attacker) + ' ' + fmtM(entry.atk), fmtM(entry.def) + ' ' + escapeHtml(entry.defender) + icon('defense'), entry.attacker !== 'Du'),
+                [entry.gold > 0 && ['coin', '+' + chipN(entry.gold) + ' Gold', 'gut']], fieldHeroDet(entry));
         }
         if (entry.type === 'barb' || entry.type === 'dboss') {    // out in the open against a camp or the boss: your side vs. theirs, losses, rewards
             const boss = entry.type === 'dboss', tr = entry.troops, gef = entry.gef || 0, bon = tr !== undefined ? entry.atk - tr - gef : 0;
@@ -5683,23 +5703,26 @@ function renderCombatLog() {
                 : (entry.gold ? '<div class="logGold">Beute: +' + fmtBig(entry.gold) + ' Münzen' + (entry.kGold ? ' (davon ' + fmtBig(entry.kGold) + ' Angriff: Gold)' : '') + '</div>' : '') +
                   (entry.crate ? '<div class="logGold">Kiste: ' + escapeHtml(entry.crate) + '</div>' : '') + (entry.sh ? '<div class="logGold">' + escapeHtml(entry.sh) + '</div>' : '') +
                   (entry.n !== undefined ? '<div class="logRetreat">' + (entry.up ? 'Stufe ' + entry.open + ' freigeschaltet · ' : entry.open ? 'Freigeschaltet bis Stufe ' + entry.open + ' · ' : '') + entry.n + ' / ' + barbTagMax() + ' heute</div>' : '');
-            const det = tr === undefined ? fieldHeroDet(entry) : '<details><summary>Kampfdetails</summary>' + (boss ? '' : logBalance(entry.atk, entry.def, icon('attack') + 'Du ' + fmtM(entry.atk), fmtM(entry.def) + ' Lager' + icon('defense'))) +
+            const det = tr === undefined ? fieldHeroDet(entry) : '<details><summary>Kampfdetails</summary>' +
                 '<div class="logCompare">' + mySide + '<div class="logVsDivider">VS</div>' + foeSide + '</div>' + rew +
                 (entry.wounded ? '<div class="logRetreat logWounded">' + fmtNum(entry.wounded) + ' Verwundete gehen ins Krankenhaus – heile sie in der Stadt</div>' : '') +
                 (entry.hx ? gearHtml({ items: [], lvl: playerLvl, hx: entry.hx, skills: [], city: [], heroOnly: 1 }) : '') + '</details>';
-            if (boss) return logRowHtml('win', 'crown', logBadge('win', 'Tagesboss') + escapeHtml(entry.name),
-                fmtM(entry.dmg) + ' Schaden · noch ' + fmtM(entry.left) + ' Leben' + (entry.rank ? ' · Platz ' + entry.rank : '') + (entry.loss ? ' · ' + fmtM(entry.loss) + ' gefallen' : '') + (entry.wounded ? ' · ' + fmtM(entry.wounded) + ' ins Krankenhaus' : '') + (entry.gold ? ' · +' + fmtM(entry.gold) + ' Gold' : '') + fieldHeroLine(entry), ago(entry), det);
-            return logRowHtml(entry.won ? 'win' : 'loss', 'attack', logBadge(entry.won ? 'win' : 'loss', entry.won ? 'Besiegt' : 'Abgewehrt') + 'Barbaren · Stufe ' + entry.L,
-                'Du (' + fmtM(entry.atk) + ') gegen ' + fmtM(entry.def) + ' Krieger' + (entry.loss ? ' · ' + fmtM(entry.loss) + ' gefallen' : '') + (entry.wounded ? ' · ' + fmtM(entry.wounded) + ' ins Krankenhaus' : '') + (entry.gold ? ' · +' + fmtM(entry.gold) + ' Gold' : '') +
-                (entry.crate ? ' · Kiste: ' + escapeHtml(entry.crate) : '') + (entry.sh ? ' · ' + escapeHtml(entry.sh) : '') + (entry.up ? ' · Stufe ' + entry.open + ' frei' : '') + (!entry.won && entry.left ? ' · noch ' + fmtM(entry.left) + ' im Lager' : '') + fieldHeroLine(entry), ago(entry), det);
+            const von = (entry.sourceId !== undefined ? 'von ' + T(entry.sourceId) : '') + fieldHeroLine(entry), verl = verlustChips((entry.loss || 0) - (entry.wounded || 0), entry.wounded);
+            const extra = [entry.gold > 0 && ['coin', '+' + chipN(entry.gold) + ' Gold', 'gut'], entry.crate && ['crate', escapeHtml(entry.crate), 'gut'], entry.sh && ['star', escapeHtml(entry.sh), 'gut']];
+            if (boss) return karte(entry, 'win', 'crown', ['win', 'Tagesboss'], escapeHtml(entry.name), von.replace(/^ · /, ''), '',
+                [['attack', chipN(entry.dmg) + ' Schaden', 'gut'], ['crown', 'noch ' + chipN(entry.left) + ' Leben'], entry.rank && ['rank', 'Platz ' + entry.rank + ' von ' + entry.of], ...verl, ...extra], det);
+            return karte(entry, entry.won ? 'win' : 'loss', 'attack', [entry.won ? 'win' : 'loss', entry.won ? 'Besiegt' : 'Abgewehrt'], 'Barbaren-Lager · Stufe ' + entry.L, von.replace(/^ · /, ''),
+                tr === undefined ? '' : logBalance(entry.atk, entry.def, icon('attack') + 'Du ' + fmtM(entry.atk), fmtM(entry.def) + ' Lager' + icon('defense')),
+                [...verl, ...extra, entry.up && ['check', 'Stufe ' + entry.open + ' frei', 'gut'], !entry.won && entry.left && ['troops', 'noch ' + chipN(entry.left) + ' im Lager']], det);
         }
-        if (entry.type === 'ev') return logRowHtml(entry.gut ? 'win' : 'loss', entry.ic || 'attack', logBadge(entry.gut ? 'win' : 'loss', String(entry.badge || '')) + escapeHtml(entry.title || ''), escapeHtml(entry.txt || ''), ago(entry));   // Events (Invasion, Drache)
-        if (entry.type === 'dbossWin') return logRowHtml('win', 'crown', logBadge('win', 'Boss gefallen') + escapeHtml(entry.name),
-            'Platz ' + entry.rank + ' von ' + entry.of + ' · ' + fmtM(entry.dmg) + ' Schaden · +' + fmtM(entry.gems) + ' Gems' + (entry.crate ? ' · Kiste: ' + escapeHtml(entry.crate) : '') + (entry.sh ? ' · ' + escapeHtml(entry.sh) : ''), ago(entry));
+        if (entry.type === 'ev') return karte(entry, entry.gut ? 'win' : 'loss', entry.ic || 'attack', [entry.gut ? 'win' : 'loss', escapeHtml(String(entry.badge || ''))], escapeHtml(entry.title || ''), escapeHtml(entry.txt || ''));   // Events (Invasion, Drache)
+        if (entry.type === 'dbossWin') return karte(entry, 'win', 'crown', ['win', 'Boss gefallen'], escapeHtml(entry.name), 'Preis liegt im Abholfach', '',
+            [['rank', 'Platz ' + entry.rank + ' von ' + entry.of], ['attack', chipN(entry.dmg) + ' Schaden'], entry.gems > 0 && ['gem', '+' + chipN(entry.gems) + ' Gems', 'gut'], entry.crate && ['crate', escapeHtml(entry.crate), 'gut'], entry.sh && ['star', escapeHtml(entry.sh), 'gut']]);
         if (entry.type === 'army') {
             const side = (n, own) => n === 'Du' ? (own ? 'Deine Armee' : 'deine Armee') : (own ? 'Die Armee von ' : 'die Armee von ') + escapeHtml(n);
-            return logRowHtml(entry.won ? 'win' : 'loss', 'troops', logBadge(entry.won ? 'win' : 'loss', entry.won ? 'Armee siegt' : 'Armee geschlagen') + 'Kampf im Feld',
-                side(entry.attacker, true) + ' (' + fmtM(entry.atk) + ') gegen ' + side(entry.defender, false) + ' (' + fmtM(entry.def) + ')' + (entry.wounded ? ' · ' + fmtM(entry.wounded) + ' ins Krankenhaus' : '') + (entry.gold ? ' · +' + fmtM(entry.gold) + ' Gold' : '') + fieldHeroLine(entry), ago(entry), fieldHeroDet(entry));
+            return karte(entry, entry.won ? 'win' : 'loss', 'troops', [entry.won ? 'win' : 'loss', entry.won ? 'Armee siegt' : 'Armee geschlagen'], 'Kampf im Feld', side(entry.attacker, true) + ' gegen ' + side(entry.defender, false) + fieldHeroLine(entry),
+                logBalance(entry.atk, entry.def, icon('attack') + fmtM(entry.atk), fmtM(entry.def) + icon('defense'), entry.attacker !== 'Du'),
+                [...verlustChips(0, entry.wounded), entry.gold > 0 && ['coin', '+' + chipN(entry.gold) + ' Gold', 'gut']], fieldHeroDet(entry));
         }
         if (entry.type === 'volley') {
             const dead = entry.hit - entry.wounded;
@@ -5715,22 +5738,20 @@ function renderCombatLog() {
                 (dead > 0 ? '<div class="logCasualty"><span>Gefallen (kein Platz)</span><span>−' + fmtD(dead) + '</span></div>' : '') +
                 '<div class="logSum"><span>Noch im Thron</span><span>' + fmtD(entry.left) + '</span></div>' +
                 '</div></div><div class="logRetreat">Erobere die Wächter-Tempel, dann schweigen sie. Verwundete heilst du im Krankenhaus in deiner Stadt.</div></details>';
-            return logRowHtml('loss', 'attack', logBadge('loss', 'Beschuss') + T(entry.targetId),
-                (entry.shotBy || []).length + ' Wächter-Tempel · ' + fmtM(entry.hit) + ' getroffen · ' + fmtM(entry.wounded) + ' ins Krankenhaus' + (entry.n > 1 ? ' · ' + entry.n + ' Salven' : ''), ago(entry), vdet);
+            return karte(entry, 'loss', 'attack', ['loss', 'Beschuss'], T(entry.targetId), (entry.shotBy || []).length + ' Wächter-Tempel' + (entry.n > 1 ? ' · ' + entry.n + ' Salven' : ''), '',
+                [['attack', chipN(entry.hit) + ' getroffen', 'schlecht'], ...verlustChips(dead, entry.wounded)], vdet);
         }
         if (entry.type === 'scout') {
-            return logRowHtml('scout', 'scout', logBadge('scout', 'Gespäht') + T(entry.targetId),
-                fmtM(entry.troops) + ' Truppen · ' + fmtM(entry.defense) + ' Verteidigung' + (entry.spy ? ' · ' + escapeHtml(entry.spy.name) + ', Stufe ' + fmtNum(entry.spy.lvl) : ''), ago(entry), spaeherBlickHtml(entry.spy));
+            return karte(entry, 'scout', 'scout', ['scout', 'Gespäht'], T(entry.targetId), entry.spy ? escapeHtml(entry.spy.name) + ' · Stufe ' + fmtNum(entry.spy.lvl) : '', '',
+                [['troops', chipN(entry.troops) + ' Truppen'], ['defense', chipN(entry.defense) + ' Verteidigung']], spaeherBlickHtml(entry.spy));
         }
         if (entry.type === 'retreat') {
-            return logRowHtml('retreat', 'recall', logBadge('retreat', 'Rückkehr') + T(entry.toId), fmtM(entry.troops) + ' geflohene Truppen zurück', ago(entry));
+            return karte(entry, 'retreat', 'recall', ['retreat', 'Zurück'], T(entry.toId), '', '', [['troops', chipN(entry.troops) + ' Truppen wieder daheim']]);
         }
         if (entry.type === 'botAttack') {
-            const vs = ' (' + fmtM(entry.myTroops) + ' vs ' + fmtM(entry.enemyTroops + entry.enemyDefense) + ')';
             const fallen = entry.fallen;
             const defSum = entry.enemyTroops + entry.enemyDefense;
             const bdet = '<details><summary>Kampfdetails</summary>' +
-                logBalance(entry.myTroops, defSum, icon('attack') + escapeHtml(entry.botName) + ' ' + fmtM(entry.myTroops), fmtM(defSum) + ' Du' + icon('defense'), true) +
                 '<div class="logCompare">' +
                     '<div class="logSide">' +
                         '<div class="logSideLabel">Angreifer · ' + whoLink(entry.botId || botIdByName[entry.botName], entry.botName) + (angreiferZeilen(entry, gearHtml) ? ' + ' + (entry.angreifer.length - 1) : '') + '</div>' +
@@ -5763,17 +5784,18 @@ function renderCombatLog() {
                 (entry.atkWounded ? '<div class="logRetreat logWounded">' + escapeHtml(entry.botName) + ' bringt ' + fmtNum(entry.atkWounded) + ' Verwundete ins Krankenhaus</div>' : '') +
                 (entry.atkFled ? '<div class="logRetreat">' + fmtNum(entry.atkFled) + ' Truppen von ' + escapeHtml(entry.botName) + ' fliehen zurück</div>' : '') +
                 (entry.defGold ? '<div class="logGold">Verteidigung: Gold +' + fmtBig(entry.defGold) + ' Münzen</div>' : '') +
-                plunderLine(entry, false) +
                 '</details>';
+            const bbar = logBalance(entry.myTroops, defSum, icon('attack') + escapeHtml(entry.botName) + ' ' + fmtM(entry.myTroops), fmtM(defSum) + ' ' + (entry.rolle === 'helfer' ? escapeHtml(entry.defName || '?') : 'Du') + icon('defense'), true);
             if (entry.rolle === 'helfer') { const mh = entry.meine || {};   // deine Verstärkung bei einem Bündnis-Mitglied hat mitverteidigt
-                return logRowHtml(entry.won ? 'loss' : 'win', 'defense', logBadge(entry.won ? 'loss' : 'win', 'Verstärkung') + T(entry.targetId),
-                    escapeHtml(entry.defName || '?') + ' gegen ' + escapeHtml(entry.botName) + ' · ' + (entry.won ? 'gefallen' : 'gehalten') + ' · deine ' + fmtM(mh.n || 0) + ': −' + fmtM((mh.fallen || 0) + (mh.wounded || 0)) + (mh.wounded ? ' (' + fmtM(mh.wounded) + ' ins Krankenhaus)' : '') + vs, ago(entry), bdet); }
+                return karte(entry, entry.won ? 'loss' : 'win', 'defense', [entry.won ? 'loss' : 'win', 'Verstärkung'], T(entry.targetId), escapeHtml(entry.defName || '?') + ' gegen ' + escapeHtml(entry.botName) + ' · ' + (entry.won ? 'gefallen' : 'gehalten'), bbar,
+                    [['troops', 'deine ' + chipN(mh.n) + ' Truppen'], ...verlustChips(mh.fallen, mh.wounded)], bdet); }
             const wer = escapeHtml(entry.botName) + (angreiferZeilen(entry, gearHtml) ? ' (gemeinsam, ' + entry.angreifer.length + ' Angreifer)' : '');
+            const bchips = [...verlustChips(Math.max(0, fallen - (entry.wounded || 0)), entry.wounded), ...beuteChips(entry, false), entry.defGold > 0 && ['coin', '+' + chipN(entry.defGold) + ' Gold', 'gut']];
             return entry.capitalHolds
-                ? logRowHtml('loss', 'bot', logBadge('loss', 'Geplündert') + T(entry.targetId), wer + ' hat die Garnison geschlagen – die Stadt hält' + vs, ago(entry), bdet)
+                ? karte(entry, 'loss', 'bot', ['loss', 'Geplündert'], T(entry.targetId), wer + ' hat die Garnison geschlagen – die Stadt hält', bbar, bchips, bdet)
                 : entry.won
-                ? logRowHtml('loss', 'bot', logBadge('loss', 'Verloren') + T(entry.targetId), wer + ' hat die Basis erobert' + vs, ago(entry), bdet)
-                : logRowHtml('win', 'shield', logBadge('win', 'Verteidigt') + T(entry.targetId), wer + ' zurückgeschlagen' + vs, ago(entry), bdet);
+                ? karte(entry, 'loss', 'bot', ['loss', 'Verloren'], T(entry.targetId), wer + ' hat die Basis erobert', bbar, bchips, bdet)
+                : karte(entry, 'win', 'shield', ['win', 'Verteidigt'], T(entry.targetId), wer + ' zurückgeschlagen', bbar, bchips, bdet);
         }
         // Everything each side brings to the fight, added up line by
         // line into a "Gesamt" sum, side by side - so the two final
@@ -5782,7 +5804,6 @@ function renderCombatLog() {
         const atkTotal = entry.myTroops + entry.attackBuff;
         const defTotal = entry.enemyTroops + entry.enemyDefense + entry.defenseBuff;
         const details = '<details><summary>Kampfdetails</summary>' +
-            logBalance(atkTotal, defTotal, icon('attack') + 'Du ' + fmtM(atkTotal), fmtM(defTotal) + ' ' + escapeHtml(entry.defenderName || 'Abwehr') + icon('defense')) +
             '<div class="logCompare">' +
                 '<div class="logSide">' +
                     '<div class="logSideLabel">Angreifer' + (angreiferZeilen(entry, gearHtml) ? ' · gemeinsam' : '') + '</div>' +
@@ -5817,16 +5838,14 @@ function renderCombatLog() {
             (!entry.won && entry.retreatSurvivors ? '<div class="logRetreat">' + fmtNum(entry.retreatSurvivors) + ' Truppen konnten fliehen und kehren zurück</div>' : '') +
             (entry.wounded ? '<div class="logRetreat logWounded">' + fmtNum(entry.wounded) + ' Verwundete gehen ins Krankenhaus – heile sie in der Stadt</div>' : '') +
             (entry.enemyWounded ? '<div class="logRetreat logWounded">' + escapeHtml(entry.defenderName || 'Der Gegner') + ' bringt ' + fmtNum(entry.enemyWounded) + ' Verwundete ins Krankenhaus</div>' : '') +
-            plunderLine(entry, true) +
             '</details>';
-        return logRowHtml(entry.won ? 'win' : 'loss', entry.won ? 'level' : 'losses',
-            logBadge(entry.won ? 'win' : 'loss', entry.won ? 'Sieg' : 'Niederlage') + T(entry.targetId),
-            (entry.rolle === 'mit' ? 'mit ' + escapeHtml(entry.fuehrer || '?') + ' · deine ' + fmtM((entry.meine || {}).n || 0) + ': −' + fmtM(((entry.meine || {}).fallen || 0) + ((entry.meine || {}).wounded || 0)) + ' · '
-                : angreiferZeilen(entry, gearHtml) ? entry.angreifer.length + ' Angreifer · ' : '') +
-            'von ' + T(entry.sourceId) + (entry.won
-                ? ' · ' + fmtM(entry.remaining) + ' übrig'
-                : (entry.retreatSurvivors ? ' · ' + fmtM(entry.retreatSurvivors) + ' geflohen' : '')),
-            ago(entry), details);
+        const meine = entry.meine || {};
+        return karte(entry, entry.won ? 'win' : 'loss', entry.won ? 'level' : 'losses', [entry.won ? 'win' : 'loss', entry.capitalHolds ? 'Geplündert' : entry.won ? 'Sieg' : 'Niederlage'], T(entry.targetId),
+            (entry.rolle === 'mit' ? 'Rally mit ' + escapeHtml(entry.fuehrer || '?') + ' · ' : angreiferZeilen(entry, gearHtml) ? entry.angreifer.length + ' Angreifer · ' : '') + 'von ' + T(entry.sourceId),
+            logBalance(atkTotal, defTotal, icon('attack') + 'Du ' + fmtM(atkTotal), fmtM(defTotal) + ' ' + escapeHtml(entry.defenderName || 'Abwehr') + icon('defense')),
+            [...(entry.rolle === 'mit' ? verlustChips(meine.fallen, meine.wounded) : verlustChips(entry.attackerCasualties, entry.wounded)),
+                entry.won ? ['troops', chipN(entry.remaining) + ' übrig'] : entry.retreatSurvivors > 0 && ['recall', chipN(entry.retreatSurvivors) + ' fliehen heim'],
+                ...beuteChips(entry, true), entry.killGold > 0 && ['coin', '+' + chipN(entry.killGold) + ' Gold für Kills', 'gut']], details);
     })(entry); } catch (err) { console.warn('Kampfbericht', err); return logRowHtml('loss', 'info', 'Kampfbericht', 'Dieser Bericht kann nicht angezeigt werden.', ''); }
     }).join('');
     [...combatLogListEl.children].forEach((row, i) => { const e = combatLog[i]; if (!e) return; row.dataset.key = combatLogKey(e);
@@ -7813,7 +7832,7 @@ function plunderOf(who, capital) {                  // { loot (Gold), roh: {h, s
     const have = Math.max(0, who === 'player' ? coins : botCoins[who] || 0), safe = schutzVon(who);
     if (capital) { const r = AUF ? AUF.rohVon(who) : null, roh = { h: 0, s: 0, e: 0 };
         if (r) for (const x of ['h', 's', 'e']) roh[x] = Math.floor(Math.max(0, (r[x] || 0) - safe) * HAUPT_BEUTE);
-        return { loot: Math.floor(Math.max(0, have - safe) * HAUPT_BEUTE), roh, safe: Math.min(have, safe) }; }
+        return { loot: Math.floor(Math.max(0, have - safe) * HAUPT_BEUTE), roh, safe }; }   // (safe: der Burg-Schutz je Rohstoff – so steht er im Bericht)
     const cap = Math.max(1e6, hourProduction(who).coins * PLUNDER_CAP_H);   // at most half an hour of the victim's income per fight - a big coffer isn't drained base by base
     return { loot: Math.floor(Math.min(cap, Math.max(0, have - safe) * PLUNDER_PCT.base)), safe: Math.min(have, safe) };
 }
@@ -9752,7 +9771,7 @@ function fieldAt(sx, sy) { const z = mapState.zoom; if (z < .004) return null; r
 function drawResFields(now, wallNow) {
     const z = mapState.zoom; if (z < .004) return;
     for (const m of fieldMarches) if (m.who === 'player') { const f = fieldById[m.fieldId], home = islandById[m.homeId]; if (!f || !home) continue;
-        m.back ? drawMarchLine('send', f, home, m.startedAt, m.resolveAt, wallNow) : drawMarchLine('attack', home, f, m.startedAt, m.resolveAt, wallNow); }
+        m.back ? drawMarchLine('send', m.vx !== undefined ? { x: m.vx, y: m.vy, landmassId: m.vlm ?? f.landmassId } : f, home, m.startedAt, m.resolveAt, wallNow) : drawMarchLine('attack', home, f, m.startedAt, m.resolveAt, wallNow); }
     setScreen(ctx);
     const k = Math.max(.6, Math.min(2.2, z / .012));
     for (const f of resFields) {
@@ -9886,6 +9905,26 @@ let dbossOffen = '';                                // (Tagesboss: einmal am Tag
 function dbossOnMap(now) { const b = dayBoss, da = b && b.d === todayKey() && (b.hp > 0 || (now || Date.now()) - (b.fell || 0) < DBOSS_GONE) ? b : null;
     if (da && !SYSTEM && dbossOffen !== da.d + ':' + da.x) { dbossOffen = da.d + ':' + da.x; try { revealAround(da.x, da.y, 3400, true); } catch (e) {} }
     return da; }   // today's boss while it stands (and a little after)   // today's boss while it stands (and a little after)
+// Zurückrufen und Beschleunigen auch hier (wie Angriff/Senden): hin = Zurück + Schneller, heim = nur Schneller
+function eigeneFeldBarb(who) { try { const w = who || 'player'; return barbMarches.filter(m => m.who === w).concat(fieldMarches.filter(m => m.who === w)); } catch (e) { return []; } }
+const feldBarbMarsch = (who, key) => eigeneFeldBarb(who).find(m => marchKeyOf(m) === key);
+function feldBarbSpeichern() { try { saveBarb(); saveFields(); } catch (e) {} }
+function marschUmkehren(m, now) {                     // ein Marsch zu Lager/Boss/Drache/Armee/Feld kehrt um, wo er gerade ist – zurück so lange, wie er schon lief
+    if (m.back) return false;
+    const istBarb = barbMarches.includes(m), liste = istBarb ? barbMarches : fieldMarches, i = liste.indexOf(m); if (i < 0) return false;
+    const home = islandById[m.homeId], ziel = istBarb ? barbPt(m) : fieldById[m.fieldId];
+    const frac = Math.max(0, Math.min(1, (now - m.startedAt) / Math.max(1, m.resolveAt - m.startedAt))), walked = Math.max(1000, Math.min(now, m.resolveAt) - m.startedAt);
+    let hier = null; try { if (home && ziel) { const p = pathSoFar(home, ziel, frac); hier = p[p.length - 1]; } } catch (e) {}
+    const lmH = hier && typeof landmassAtWorld === 'function' ? landmassAtWorld(hier.x, hier.y) : null;
+    liste.splice(i, 1);
+    const c = Object.assign({}, m, { startedAt: now, resolveAt: now + walked, back: true }); delete c.mid;
+    if (istBarb) {
+        if (m.k === 'b') { const r = barbRec(m.who); r.h = Math.max(0, r.h - 1); }                          // der Angriff zählt nicht (kam nie an)
+        if (m.k === 'd') { const dr = drAktiv(); if (dr && dr.hits[m.who]) { dr.hits[m.who]--; evDirty = true; } }
+        if (hier) { c.x = Math.round(hier.x); c.y = Math.round(hier.y); if (lmH) c.lm = lmH.id; }
+    } else { c.load = 0; if (hier) { c.vx = Math.round(hier.x); c.vy = Math.round(hier.y); c.vlm = lmH ? lmH.id : (ziel && ziel.landmassId); } }
+    liste.push(c); feldBarbSpeichern(); return true;
+}
 function barbMine() { try { return barbMarches.filter(m => m.who === 'player'); } catch (e) { return []; } }   // your columns (for the Kampf list - may run before this part loads)
 const dbossKind = b => DBOSS_KINDS.find(K => K.k === b.k) || DBOSS_KINDS[0];
 const dbossRanks = b => Object.entries(b.dmg || {}).sort((x, y) => y[1] - x[1]);
@@ -12221,7 +12260,6 @@ if (window.WELT) {
         if (k.has('openWaterPendingAttacks')) pendingAttacks = PJ('openWaterPendingAttacks') || [];
         if (k.has('openWaterPendingSends')) pendingSends = PJ('openWaterPendingSends') || [];
         if (k.has('openWaterPendingRetreats')) pendingRetreats = PJ('openWaterPendingRetreats') || [];
-        if (k.has('openWaterPendingAttacks') || k.has('openWaterPendingSends') || k.has('openWaterPendingRetreats')) { vorlaeufigDrueber(); schnellerDrueber(); }
         if (k.has('openWaterTitles')) { titleState = PJ('openWaterTitles'); titleVer++; ringMemo = null; }
         if (k.has('openWaterThrone')) throneState = PJ('openWaterThrone') || { pts: 0 };
         if (k.has('openWaterBounty')) bountyState = PJ('openWaterBounty') || { ruler: null, gems: 0, coins: 0 };
@@ -12230,6 +12268,7 @@ if (window.WELT) {
         if (k.has('openWaterFieldMarches')) fieldMarches = PJ('openWaterFieldMarches') || [];
         if (k.has('openWaterBarb')) barbState = PJ('openWaterBarb') || { camps: [], n: 0, next: 0 };
         if (k.has('openWaterBarbMarches')) barbMarches = PJ('openWaterBarbMarches') || [];
+        if (k.has('openWaterPendingAttacks') || k.has('openWaterPendingSends') || k.has('openWaterPendingRetreats') || k.has('openWaterBarbMarches') || k.has('openWaterFieldMarches')) { vorlaeufigDrueber(); schnellerDrueber(); }
         if (k.has('openWaterBarbWho')) barbWho = PJ('openWaterBarbWho') || {};
         if (k.has('openWaterDayBoss')) dayBoss = PJ('openWaterDayBoss');
         if (k.has('openWaterEvents')) evState = PJ('openWaterEvents') || {};
@@ -12275,7 +12314,7 @@ if (window.WELT) {
         if (typeof bundMelden !== 'function') return;
         bundMelden(who, was + ' ist nicht losgegangen – ' + (grund ? grund + '. Deine Truppen bleiben, wo sie sind.' : AUF && !AUF.marschOk(who, grp, src) ? AUF.marschVoll(who) : 'kein Weg frei (Tor zu, Maut zu teuer, Friedensschild oder zu wenig Truppen). Deine Truppen bleiben, wo sie sind.'));
     }
-    const marschVon = (who, key) => pendingAttacks.find(x => x.attackerBotId === who && marchKeyOf(x) === key) || pendingSends.find(x => x.senderBotId === who && marchKeyOf(x) === key);
+    const marschVon = (who, key) => pendingAttacks.find(x => x.attackerBotId === who && marchKeyOf(x) === key) || pendingSends.find(x => x.senderBotId === who && marchKeyOf(x) === key) || feldBarbMarsch(who, key);
 
     // ===== Schummel-Schutz (nur beim Weltrechner) =====
     // Münzen, Gems und Stufe eines Spielers rechnet noch sein eigenes Handy. Ein Schummler könnte also Befehle fälschen
@@ -13044,6 +13083,7 @@ if (window.WELT) {
         zurueck(who, b) {                             // umkehren: wie bei dir, nur als "Marsch zurück" dieses Spielers
             if (!kennungOk(b.key)) return;
             const m = marschVon(who, b.key); if (!m || m.fightEndsAt || m.rally || m.back) return;   // (eine Rally gehört allen, die mitmachen; wer schon heimgeht, kehrt nicht nochmal um)
+            if (!pendingAttacks.includes(m) && !pendingSends.includes(m)) { marschUmkehren(m, Date.now()); requestRender(); return; }   // Lager, Boss, Drache, Invasion, Sammler
             const now = Date.now(), fromId = m.sourceId ?? m.fromId, toId = m.targetId ?? m.toId, troops = m.rawTroops ?? m.troops;
             (pendingAttacks.includes(m) ? pendingAttacks : pendingSends).splice((pendingAttacks.includes(m) ? pendingAttacks : pendingSends).indexOf(m), 1);
             const home = gehoert(fromId, who) ? fromId : botCapitalOf(who);
@@ -13059,7 +13099,7 @@ if (window.WELT) {
             if (hb && kosten > 0 && !b._nach && !schonBezahlt(wacheSehen(who), b, true) && !hbZahlen(who, hb, wacheSehen(who), { g: kosten })) { warnen(who, 'gems', 'Beschleunigen für ' + kosten + ' Gems – so viele kann er nicht haben. Abgelehnt.', kosten); return; }
             for (const m of ms) { const rem = m.resolveAt - now;
                 const pr = Math.max(0, Math.min(.99, (now - m.startedAt) / Math.max(1, m.resolveAt - m.startedAt))); m.resolveAt = now + rem / 2; m.startedAt = m.resolveAt - (rem / 2) / (1 - pr); }
-            saveProgression(); if (ms.length) befehlBezahlt(b);
+            saveProgression(); feldBarbSpeichern(); if (ms.length) befehlBezahlt(b);
         },
         spaehen(who, b) {                             // 3B: Erkundungs-Späher – der Weltrechner deckt seinen Nebel (auf dem Server) mit auf
             const hb = hbDa(who); if (!hb || !inselOk(b.ziel)) return;

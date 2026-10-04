@@ -279,7 +279,7 @@ function fieldAt(sx, sy) { const z = mapState.zoom; if (z < .004) return null; r
 function drawResFields(now, wallNow) {
     const z = mapState.zoom; if (z < .004) return;
     for (const m of fieldMarches) if (m.who === 'player') { const f = fieldById[m.fieldId], home = islandById[m.homeId]; if (!f || !home) continue;
-        m.back ? drawMarchLine('send', f, home, m.startedAt, m.resolveAt, wallNow) : drawMarchLine('attack', home, f, m.startedAt, m.resolveAt, wallNow); }
+        m.back ? drawMarchLine('send', m.vx !== undefined ? { x: m.vx, y: m.vy, landmassId: m.vlm ?? f.landmassId } : f, home, m.startedAt, m.resolveAt, wallNow) : drawMarchLine('attack', home, f, m.startedAt, m.resolveAt, wallNow); }
     setScreen(ctx);
     const k = Math.max(.6, Math.min(2.2, z / .012));
     for (const f of resFields) {
@@ -413,6 +413,26 @@ let dbossOffen = '';                                // (Tagesboss: einmal am Tag
 function dbossOnMap(now) { const b = dayBoss, da = b && b.d === todayKey() && (b.hp > 0 || (now || Date.now()) - (b.fell || 0) < DBOSS_GONE) ? b : null;
     if (da && !SYSTEM && dbossOffen !== da.d + ':' + da.x) { dbossOffen = da.d + ':' + da.x; try { revealAround(da.x, da.y, 3400, true); } catch (e) {} }
     return da; }   // today's boss while it stands (and a little after)   // today's boss while it stands (and a little after)
+// Zurückrufen und Beschleunigen auch hier (wie Angriff/Senden): hin = Zurück + Schneller, heim = nur Schneller
+function eigeneFeldBarb(who) { try { const w = who || 'player'; return barbMarches.filter(m => m.who === w).concat(fieldMarches.filter(m => m.who === w)); } catch (e) { return []; } }
+const feldBarbMarsch = (who, key) => eigeneFeldBarb(who).find(m => marchKeyOf(m) === key);
+function feldBarbSpeichern() { try { saveBarb(); saveFields(); } catch (e) {} }
+function marschUmkehren(m, now) {                     // ein Marsch zu Lager/Boss/Drache/Armee/Feld kehrt um, wo er gerade ist – zurück so lange, wie er schon lief
+    if (m.back) return false;
+    const istBarb = barbMarches.includes(m), liste = istBarb ? barbMarches : fieldMarches, i = liste.indexOf(m); if (i < 0) return false;
+    const home = islandById[m.homeId], ziel = istBarb ? barbPt(m) : fieldById[m.fieldId];
+    const frac = Math.max(0, Math.min(1, (now - m.startedAt) / Math.max(1, m.resolveAt - m.startedAt))), walked = Math.max(1000, Math.min(now, m.resolveAt) - m.startedAt);
+    let hier = null; try { if (home && ziel) { const p = pathSoFar(home, ziel, frac); hier = p[p.length - 1]; } } catch (e) {}
+    const lmH = hier && typeof landmassAtWorld === 'function' ? landmassAtWorld(hier.x, hier.y) : null;
+    liste.splice(i, 1);
+    const c = Object.assign({}, m, { startedAt: now, resolveAt: now + walked, back: true }); delete c.mid;
+    if (istBarb) {
+        if (m.k === 'b') { const r = barbRec(m.who); r.h = Math.max(0, r.h - 1); }                          // der Angriff zählt nicht (kam nie an)
+        if (m.k === 'd') { const dr = drAktiv(); if (dr && dr.hits[m.who]) { dr.hits[m.who]--; evDirty = true; } }
+        if (hier) { c.x = Math.round(hier.x); c.y = Math.round(hier.y); if (lmH) c.lm = lmH.id; }
+    } else { c.load = 0; if (hier) { c.vx = Math.round(hier.x); c.vy = Math.round(hier.y); c.vlm = lmH ? lmH.id : (ziel && ziel.landmassId); } }
+    liste.push(c); feldBarbSpeichern(); return true;
+}
 function barbMine() { try { return barbMarches.filter(m => m.who === 'player'); } catch (e) { return []; } }   // your columns (for the Kampf list - may run before this part loads)
 const dbossKind = b => DBOSS_KINDS.find(K => K.k === b.k) || DBOSS_KINDS[0];
 const dbossRanks = b => Object.entries(b.dmg || {}).sort((x, y) => y[1] - x[1]);

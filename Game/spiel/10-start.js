@@ -1018,7 +1018,6 @@ if (window.WELT) {
         if (k.has('openWaterPendingAttacks')) pendingAttacks = PJ('openWaterPendingAttacks') || [];
         if (k.has('openWaterPendingSends')) pendingSends = PJ('openWaterPendingSends') || [];
         if (k.has('openWaterPendingRetreats')) pendingRetreats = PJ('openWaterPendingRetreats') || [];
-        if (k.has('openWaterPendingAttacks') || k.has('openWaterPendingSends') || k.has('openWaterPendingRetreats')) { vorlaeufigDrueber(); schnellerDrueber(); }
         if (k.has('openWaterTitles')) { titleState = PJ('openWaterTitles'); titleVer++; ringMemo = null; }
         if (k.has('openWaterThrone')) throneState = PJ('openWaterThrone') || { pts: 0 };
         if (k.has('openWaterBounty')) bountyState = PJ('openWaterBounty') || { ruler: null, gems: 0, coins: 0 };
@@ -1027,6 +1026,7 @@ if (window.WELT) {
         if (k.has('openWaterFieldMarches')) fieldMarches = PJ('openWaterFieldMarches') || [];
         if (k.has('openWaterBarb')) barbState = PJ('openWaterBarb') || { camps: [], n: 0, next: 0 };
         if (k.has('openWaterBarbMarches')) barbMarches = PJ('openWaterBarbMarches') || [];
+        if (k.has('openWaterPendingAttacks') || k.has('openWaterPendingSends') || k.has('openWaterPendingRetreats') || k.has('openWaterBarbMarches') || k.has('openWaterFieldMarches')) { vorlaeufigDrueber(); schnellerDrueber(); }
         if (k.has('openWaterBarbWho')) barbWho = PJ('openWaterBarbWho') || {};
         if (k.has('openWaterDayBoss')) dayBoss = PJ('openWaterDayBoss');
         if (k.has('openWaterEvents')) evState = PJ('openWaterEvents') || {};
@@ -1072,7 +1072,7 @@ if (window.WELT) {
         if (typeof bundMelden !== 'function') return;
         bundMelden(who, was + ' ist nicht losgegangen – ' + (grund ? grund + '. Deine Truppen bleiben, wo sie sind.' : AUF && !AUF.marschOk(who, grp, src) ? AUF.marschVoll(who) : 'kein Weg frei (Tor zu, Maut zu teuer, Friedensschild oder zu wenig Truppen). Deine Truppen bleiben, wo sie sind.'));
     }
-    const marschVon = (who, key) => pendingAttacks.find(x => x.attackerBotId === who && marchKeyOf(x) === key) || pendingSends.find(x => x.senderBotId === who && marchKeyOf(x) === key);
+    const marschVon = (who, key) => pendingAttacks.find(x => x.attackerBotId === who && marchKeyOf(x) === key) || pendingSends.find(x => x.senderBotId === who && marchKeyOf(x) === key) || feldBarbMarsch(who, key);
 
     // ===== Schummel-Schutz (nur beim Weltrechner) =====
     // Münzen, Gems und Stufe eines Spielers rechnet noch sein eigenes Handy. Ein Schummler könnte also Befehle fälschen
@@ -1841,6 +1841,7 @@ if (window.WELT) {
         zurueck(who, b) {                             // umkehren: wie bei dir, nur als "Marsch zurück" dieses Spielers
             if (!kennungOk(b.key)) return;
             const m = marschVon(who, b.key); if (!m || m.fightEndsAt || m.rally || m.back) return;   // (eine Rally gehört allen, die mitmachen; wer schon heimgeht, kehrt nicht nochmal um)
+            if (!pendingAttacks.includes(m) && !pendingSends.includes(m)) { marschUmkehren(m, Date.now()); requestRender(); return; }   // Lager, Boss, Drache, Invasion, Sammler
             const now = Date.now(), fromId = m.sourceId ?? m.fromId, toId = m.targetId ?? m.toId, troops = m.rawTroops ?? m.troops;
             (pendingAttacks.includes(m) ? pendingAttacks : pendingSends).splice((pendingAttacks.includes(m) ? pendingAttacks : pendingSends).indexOf(m), 1);
             const home = gehoert(fromId, who) ? fromId : botCapitalOf(who);
@@ -1856,7 +1857,7 @@ if (window.WELT) {
             if (hb && kosten > 0 && !b._nach && !schonBezahlt(wacheSehen(who), b, true) && !hbZahlen(who, hb, wacheSehen(who), { g: kosten })) { warnen(who, 'gems', 'Beschleunigen für ' + kosten + ' Gems – so viele kann er nicht haben. Abgelehnt.', kosten); return; }
             for (const m of ms) { const rem = m.resolveAt - now;
                 const pr = Math.max(0, Math.min(.99, (now - m.startedAt) / Math.max(1, m.resolveAt - m.startedAt))); m.resolveAt = now + rem / 2; m.startedAt = m.resolveAt - (rem / 2) / (1 - pr); }
-            saveProgression(); if (ms.length) befehlBezahlt(b);
+            saveProgression(); feldBarbSpeichern(); if (ms.length) befehlBezahlt(b);
         },
         spaehen(who, b) {                             // 3B: Erkundungs-Späher – der Weltrechner deckt seinen Nebel (auf dem Server) mit auf
             const hb = hbDa(who); if (!hb || !inselOk(b.ziel)) return;

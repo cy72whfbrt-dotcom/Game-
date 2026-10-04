@@ -120,11 +120,19 @@ function angreiferZeilen(e, gearHtml) {
         ((h.fallen || h.wounded) ? '<div class="logCasualty"><span>· davon gefallen' + (h.wounded ? ' / verwundet' : '') + '</span><span>−' + n(h.fallen) + (h.wounded ? ' / ' + n(h.wounded) : '') + '</span></div>' : '') +
         (h.gear && gearHtml ? '<details class="verst-det"><summary>' + escapeHtml(h.name || '?') + ': Held, Ausrüstung, Fähigkeiten</summary>' + gearHtml(h.gear) + '</details>' : '')).join('');
 }
-function plunderLine(e, mine) {                     // Beute: was den Besitzer wechselte (Turm: Gold, Hauptstadt: auch Holz, Stein, Eisen) und was die Burg schützte
-    const r = e.plunderRoh || {}, teile = [e.plunder ? fmtBig(e.plunder) + ' Gold' : '', r.h ? fmtBig(r.h) + ' Holz' : '', r.s ? fmtBig(r.s) + ' Stein' : '', r.e ? fmtBig(r.e) + ' Eisen' : ''].filter(Boolean);
-    if (!teile.length && !e.plunderSafe) return '';
-    const safe = e.plunderSafe ? fmtBig(e.plunderSafe) + ' je Rohstoff geschützt durch die Burg' : '';
-    return '<div class="logGold' + (mine ? '' : ' logPlunder') + '">' + (e.capitalHolds ? '<b>' + (mine ? 'Die Hauptstadt brennt' : 'Deine Hauptstadt brennt') + '</b> · ' : '') + (teile.length ? (mine ? 'Beute: +' : 'Geplündert: −') + teile.join(', ') + (safe ? ' · ' + safe : '') : (mine ? 'Keine Beute – ' : 'Nichts verloren – ') + safe) + '</div>';
+// Kampfbericht: jede Karte gleich – Titel, bei Kämpfen der Kräfte-Balken, dann kleine Zahlen-Kästchen (Verluste, Beute), dann „Kampfdetails“
+const chipN = v => { v = Math.max(0, Math.round(v || 0)); return v >= 1e6 ? fmtCompact(v) : fmtNum(v); };
+function logChips(list) {                          // [[Symbol, Text, gut|schlecht|warn], …] – leere fallen weg
+    const l = (list || []).filter(c => c && c[1]);
+    return l.length ? '<div class="lchips">' + l.map(([ic, t, k]) => '<span class="lchip' + (k ? ' lchip--' + k : '') + '">' + icon(ic) + '<span>' + t + '</span></span>').join('') + '</div>' : '';
+}
+const verlustChips = (gefallen, verwundet) => [gefallen > 0 && ['losses', '−' + chipN(gefallen) + ' gefallen', 'schlecht'], verwundet > 0 && ['plus', chipN(verwundet) + ' verwundet', 'warn']];
+function beuteChips(e, mine) {                      // was den Besitzer wechselte – Gold geht ins Abholfach, Holz/Stein/Eisen gleich ins Lager
+    const r = e.plunderRoh || {}, v = mine ? '+' : '−', k = mine ? 'gut' : 'schlecht', was = e.plunder > 0 || r.h > 0 || r.s > 0 || r.e > 0;
+    return [e.capitalHolds && ['castle', mine ? 'Hauptstadt brennt' : 'Deine Hauptstadt brennt', k],
+        e.plunder > 0 && ['coin', v + chipN(e.plunder) + ' Gold' + (mine ? ' (Abholfach)' : ''), k], r.h > 0 && ['wood', v + chipN(r.h) + ' Holz', k],
+        r.s > 0 && ['stone', v + chipN(r.s) + ' Stein', k], r.e > 0 && ['iron', v + chipN(r.e) + ' Eisen', k],
+        e.plunderSafe > 0 && ['lock', (was ? '' : (mine ? 'Keine Beute · ' : 'Nichts verloren · ')) + 'Burg schützt ' + chipN(e.plunderSafe) + ' je Rohstoff', '']];
 }
 function logRowHtml(kind, iconName, title, meta, trailing, extra) {
   return '<div class="logRow ' + kind + '"><span class="li">' + icon(iconName) + '</span><span class="lt"><b>' + title + '</b>' +

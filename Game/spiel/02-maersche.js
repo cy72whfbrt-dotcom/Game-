@@ -485,7 +485,7 @@ function launchSend(fromId, toId, senderBotId, amount) {       // amount: how ma
 }
 
 // ===== MARCH ORDERS: recall a column on the way, or speed it up with gems =====
-const marchKeyOf = m => m.mid || (m.mid = (m.startedAt || 0) + '-' + (m.sourceId ?? m.fromId) + '-' + (m.targetId ?? m.toId));   // fixed once, so speeding up keeps it
+const marchKeyOf = m => m.mid || (m.mid = (m.startedAt || 0) + '-' + (m.sourceId ?? m.fromId ?? m.homeId) + '-' + (m.targetId ?? m.toId ?? m.fieldId ?? m.tid ?? m.k));   // (auch Lager/Boss/Drache und Sammler)   // fixed once, so speeding up keeps it
 function pathSoFar(src, tgt, frac) {                // the stretch of the route already walked, from the start to where the column is now
     const pts = marchPath(src, tgt); let total = 0;
     for (let i = 1; i < pts.length; i++) total += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
@@ -500,6 +500,10 @@ function recallMarch(key) {                          // an attack or a send turn
     const sc = pendingScouts.find(x => marchKeyOf(x) === key);                // ein Späher kehrt um (ohne Bericht)
     if (sc) { if (sc.back) return; pendingScouts = pendingScouts.filter(x => x !== sc); spaeherHeim(sc, now - sc.startedAt);   // kehrt um: zurück so lange, wie er schon unterwegs war
         saveProgression(); renderActiveMarches(); requestRender(); flashHint('Dein Späher kehrt um.', 2500); return; }
+    const fm = feldBarbMarsch('player', key);                                  // Lager, Boss, Drache, Invasion, Sammler
+    if (fm) { if (fm.back) return;
+        if (!alsBefehl('zurueck', { key })) { marschUmkehren(fm, now); updateHud(); saveGame(); }
+        renderActiveMarches(); requestRender(); flashHint('Deine Truppen kehren um.', 3000); return; }
     if (!rechnet()) {                                 // Zuschauer: der Weltrechner lässt sie umkehren
         const m = pendingAttacks.find(x => marchKeyOf(x) === key) || pendingSends.find(x => marchKeyOf(x) === key);
         if (m && m.fightEndsAt) { flashHint('Die Truppen kämpfen schon – zu spät zum Zurückrufen.', 3000); return; }
@@ -530,7 +534,7 @@ function schnellerDrueber() {
     if (!wartendSchneller.size) return;
     const now = Date.now();
     for (const [k, w] of wartendSchneller) {
-        const m = pendingAttacks.find(x => marchKeyOf(x) === k) || pendingSends.find(x => marchKeyOf(x) === k) || pendingRetreats.find(x => marchKeyOf(x) === k);
+        const m = pendingAttacks.find(x => marchKeyOf(x) === k) || pendingSends.find(x => marchKeyOf(x) === k) || pendingRetreats.find(x => marchKeyOf(x) === k) || feldBarbMarsch('player', k);
         if (!m || now > w.bis || m.resolveAt <= w.resolveAt + 1500) { wartendSchneller.delete(k); continue; }   // der Weltrechner hat es (oder es ist vorbei)
         m.resolveAt = w.resolveAt; m.startedAt = w.startedAt;
     }
@@ -562,7 +566,7 @@ function speedUpMarch(key) {                         // halves the time still to
         gems -= cost; const p = Math.max(0, Math.min(.99, (now - sc.startedAt) / Math.max(1, sc.resolveAt - sc.startedAt)));
         sc.resolveAt = now + rem / 2; sc.startedAt = sc.resolveAt - (rem / 2) / (1 - p);
         flashHint('Späher beschleunigt – noch ' + fmtClock(Math.ceil(rem / 2000)) + '.', 2500); updateHud(); saveGame(); saveProgression(); renderActiveMarches(); requestRender(); return; }
-    for (const list of [pendingAttacks, pendingSends, pendingRetreats]) {
+    for (const list of [pendingAttacks, pendingSends, pendingRetreats, eigeneFeldBarb()]) {
         const m = list.find(x => marchKeyOf(x) === key); if (!m) continue;
         if (m.fightEndsAt) return;
         if (m.vorlaeufig) { flashHint('Einen Moment – der Marsch läuft gerade los.', 1500); return; }
@@ -573,13 +577,13 @@ function speedUpMarch(key) {                         // halves the time still to
         const p = Math.max(0, Math.min(.99, (now - m.startedAt) / Math.max(1, m.resolveAt - m.startedAt)));
         m.resolveAt = now + rem / 2; m.startedAt = m.resolveAt - (rem / 2) / (1 - p); schnellerMerken(m);
         flashHint('Beschleunigt – noch ' + fmtClock(Math.ceil(rem / 2000)) + '.', 2500);
-        updateHud(); saveGame(); saveProgression(); renderActiveMarches(); requestRender(); return;
+        feldBarbSpeichern(); updateHud(); saveGame(); saveProgression(); renderActiveMarches(); requestRender(); return;
     }
 }
 // "Alle schneller": halves the time left of every own column on the road at once (same price as one by one)
 function speedableMarches() {
     const now = Date.now();
-    return [...pendingAttacks.filter(a => !a.attackerBotId), ...pendingSends.filter(x => !x.senderBotId), ...pendingRetreats].filter(m => !m.fightEndsAt && !m.vorlaeufig && m.resolveAt - now >= 1500);
+    return [...pendingAttacks.filter(a => !a.attackerBotId), ...pendingSends.filter(x => !x.senderBotId), ...pendingRetreats, ...eigeneFeldBarb()].filter(m => !m.fightEndsAt && !m.vorlaeufig && m.resolveAt - now >= 1500);
 }
 function speedUpAll() {
     if (Date.now() - speedUpZuletzt < 600) return; speedUpZuletzt = Date.now();
@@ -591,7 +595,7 @@ function speedUpAll() {
     for (const m of list) { const rem = m.resolveAt - now, pr = Math.max(0, Math.min(.99, (now - m.startedAt) / Math.max(1, m.resolveAt - m.startedAt)));
         m.resolveAt = now + rem / 2; m.startedAt = m.resolveAt - (rem / 2) / (1 - pr); schnellerMerken(m); }
     flashHint(list.length + (list.length === 1 ? ' Marsch' : ' Märsche') + ' beschleunigt – Restzeit halbiert.', 2500);
-    updateHud(); saveGame(); saveProgression(); renderActiveMarches(); requestRender();
+    feldBarbSpeichern(); updateHud(); saveGame(); saveProgression(); renderActiveMarches(); requestRender();
 }
 function marchButtons(m, canRecall) {
     const k = marchKeyOf(m);

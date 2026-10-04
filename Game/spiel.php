@@ -778,7 +778,7 @@ body.has-panel .mapctl{display:none}
 .logRow .lt b{display:block;font:600 var(--fs-13)/1.25 var(--font-ui);color:var(--tx-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .logRow .lt small{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;margin-top:2px;font:500 var(--fs-11)/1.25 var(--font-ui);color:var(--tx-3);white-space:normal;overflow:hidden;overflow-wrap:anywhere}
 .logRow .lt small.logOrt{display:flex;align-items:center;gap:8px;-webkit-line-clamp:unset;font-variant-numeric:tabular-nums}
-.logRow .lt small.logOrt .btn{min-height:24px;padding:0 10px}
+.logRow .lt small.logOrt .btn{min-height:22px;padding:0 8px;font-size:10px}
 #popupEmblem[data-profile]{cursor:pointer}
 .rp-bund{display:block;margin-top:4px;font:600 var(--fs-12)/1.2 var(--font-ui);color:var(--tx-2)}
 .logRow .lv{font:600 var(--fs-12)/1 var(--font-ui);color:var(--tx-2);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
@@ -930,6 +930,14 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
 .logList .logSide:first-child .logSideLabel{color:#ff9f8f} .logList .logSide:last-child .logSideLabel{color:#9fc4ff}
 .logRow.win{--lc:#8fcf7a} .logRow.loss{--lc:var(--blood-300)} .logRow.send{--lc:var(--f-player-hi)} .logRow.scout{--lc:var(--gold-300)} .logRow.retreat{--lc:var(--ember-300)} .logRow.attack{--lc:var(--f-enemy-hi)}
 .logRow details{grid-column:1 / -1;margin-top:6px}
+.logRow > .logBal{grid-column:1 / -1;margin:6px 0 0}
+.lchips{grid-column:1 / -1;display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.lchip{display:inline-flex;align-items:center;gap:4px;min-height:22px;padding:2px 8px;border-radius:6px;border:1px solid var(--line-1);background:rgba(255,255,255,.04);
+  font:600 var(--fs-11)/1.2 var(--font-ui);color:var(--tx-2);font-variant-numeric:tabular-nums}
+.lchip .icon{width:12px;height:12px;flex:none;opacity:.9}
+.lchip--gut{color:#a6dc8f;border-color:rgba(143,207,122,.35);background:rgba(143,207,122,.08)}
+.lchip--schlecht{color:#f0a196;border-color:rgba(214,92,76,.35);background:rgba(214,92,76,.08)}
+.lchip--warn{color:#f1c27a;border-color:rgba(232,170,80,.35);background:rgba(232,170,80,.08)}
 .logRow summary{list-style:none;cursor:pointer;font:600 var(--fs-10)/1 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--gold-300);padding:4px 0}
 .logRow summary::-webkit-details-marker{display:none}
 .logCompare{display:grid;grid-template-columns:1fr 20px 1fr;gap:6px;margin-top:6px}

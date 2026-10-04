@@ -34,7 +34,7 @@ function plunderOf(who, capital) {                  // { loot (Gold), roh: {h, s
     const have = Math.max(0, who === 'player' ? coins : botCoins[who] || 0), safe = schutzVon(who);
     if (capital) { const r = AUF ? AUF.rohVon(who) : null, roh = { h: 0, s: 0, e: 0 };
         if (r) for (const x of ['h', 's', 'e']) roh[x] = Math.floor(Math.max(0, (r[x] || 0) - safe) * HAUPT_BEUTE);
-        return { loot: Math.floor(Math.max(0, have - safe) * HAUPT_BEUTE), roh, safe: Math.min(have, safe) }; }
+        return { loot: Math.floor(Math.max(0, have - safe) * HAUPT_BEUTE), roh, safe }; }   // (safe: der Burg-Schutz je Rohstoff – so steht er im Bericht)
     const cap = Math.max(1e6, hourProduction(who).coins * PLUNDER_CAP_H);   // at most half an hour of the victim's income per fight - a big coffer isn't drained base by base
     return { loot: Math.floor(Math.min(cap, Math.max(0, have - safe) * PLUNDER_PCT.base)), safe: Math.min(have, safe) };
 }

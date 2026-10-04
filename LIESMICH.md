@@ -2020,3 +2020,21 @@ Alles aus der Merkliste 12a („Hauptstadt = das Wichtigste“) – **außer dem
   lange, wie er schon unterwegs war. Getestet (`rueckweg_test`).
 - **Hochgeladen 4.10., 14:41 UTC** (Abschnitte 74–77 + Späher-Rückweg). Weltrechner läuft wieder (14:42, 152 Mitspieler),
   keine Fehler, keine neuen Alarme.
+
+## 78. Alle Märsche: hin „Zurück“ + „Schneller“, heim „Schneller“ – und ein einheitlicher Kampfbericht (Alexander 4.10.)
+- **Jeder Marsch wie der Späher** (Kampf → Unterwegs): auf dem **Hinweg** „Zurück“ (kehrt um, wo er gerade ist, und braucht heim
+  so lange, wie er schon lief) und „Schneller“ (Restzeit halbieren, 1 Gem je Minute); auf dem **Heimweg** nur „Schneller“.
+  Neu dabei: **Barbaren-Lager, Tagesboss, Drache, Barbaren-Armee (Invasion)** und **Sammeln** (Felder) – die standen vorher ohne
+  Knöpfe da, Sammler fehlten ganz in der Liste. „Alle schneller“ nimmt sie mit.
+  Dein Rückweg nach dem Zurückrufen eines Angriffs (vom Weltrechner) steht jetzt als „Truppen kehren zurück“ (nur Schneller) –
+  vorher stand er fälschlich als „Verstärkung →“ mit „Zurück“-Knopf.
+  Ein zurückgerufener Boss-/Drachen-Angriff zählt nicht als Angriff (kam ja nie an).
+  Technik: `marschUmkehren`, `eigeneFeldBarb`, `feldBarbMarsch` (09-events.js); Weltrechner-Befehle `zurueck`/`schneller`
+  kennen jetzt auch diese Märsche. Getestet lokal (`marsch_alle_test`) und über Server + Weltrechner (`marsch_server_test`).
+- **Kampfbericht – jede Karte gleich aufgebaut:** Abzeichen + Ort · darunter wer/woher · der **Kräfte-Balken** (bei jedem Kampf
+  gleich, nicht mehr nur in den Details) · dann kleine **Zahlen-Kästchen**: rot = gefallen/verloren, gelb = verwundet,
+  grün = Beute/Gewinn (Gold mit „Abholfach“, Holz, Stein, Eisen, Kiste, Splitter …), dazu „Hauptstadt brennt“ und
+  „Burg schützt … je Rohstoff“ · ganz unten „Kampfdetails“. So sieht man bei jedem Bericht sofort: **Habe ich Rohstoffe
+  bekommen?** Gilt für Angriff, Verteidigung, Verstärkung, Rally, Barbaren, Boss, Feld, Armee, Beschuss, Spähen, Sammeln, Rückkehr.
+- **Fehler behoben:** Im Hauptstadt-Bericht stand beim Burg-Schutz der kleinere Wert von Gold und Schutz (z. B. „7.120“) – jetzt
+  der echte Schutz je Rohstoff (z. B. 10.000 bei Burg 1).
