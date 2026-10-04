@@ -1673,3 +1673,5 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
   den neuen Besitzer A – genau 2 Kämpfe), `render_test` (echte Berichte eines gemeinsamen Angriffs: Kampflog öffnet ohne
   Fehler – vorher genau der Absturz), `ort_test`, `popup_shot`, dazu wieder grün: gemeinsam, welle, welle_bund, anteil,
   bericht_gem, Verstärkung 5/5, Chat 12/12, Unit 65/65.
+- **Hochgeladen 4.10., 08:52** (Alexander: „müssen es hochladen“). Weltrechner hat mit dem neuen Code neu gestartet und läuft
+  (Puls ok, 0 Fehler pro Minute).
