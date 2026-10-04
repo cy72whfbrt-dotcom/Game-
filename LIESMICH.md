@@ -1767,3 +1767,4 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
     verschwand der Marsch auf dem Handy still. Jetzt kommt eine Meldung mit dem Grund.
 - Lokal mit Server + Weltrechner: nach dem Neustart griffen innerhalb weniger Minuten 29 Bots den Tagesboss an (vorher den
   ganzen Tag 1). Alle Vorschau-Tests (16) + Unit 67/67 grün.
+- **Hochgeladen 4.10., 10:23 UTC** (37 s), Weltrechner läuft wieder.
