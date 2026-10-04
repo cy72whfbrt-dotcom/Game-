@@ -307,7 +307,7 @@
     // 4) Puls: alle 2 s mit dem Server reden
     // ===================================================================================================
     const PULS_MS = 2000;
-    let pulsLaeuft = false, letztesProfil = '', profilAt = 0, pulsStart = 0, gleichNochmal = false;
+    let pulsLaeuft = false, letztesProfil = '', profilAt = 0, pulsStart = 0, gleichNochmal = false, pulsFehler = false;
     const basis = {};   // (Weltrechner) Stand der Mitspieler-Töpfe der anderen Menschen beim letzten Puls → Unterschiede = Nachrichten
 
     function topf(id) {
@@ -363,7 +363,7 @@
 
     async function puls() {
         if (pulsLaeuft || S.gestoppt) return;
-        pulsLaeuft = true; pulsStart = Date.now();
+        pulsLaeuft = true; pulsStart = Date.now(); pulsFehler = false;
         let neuGesendet = null;
         const anfrage = { aktion: 'puls', token: S.token, seit: W.version, spieler_seit: W.spielerSeit };
         if (!SYSTEM) anfrage.sicht_v = W.sichtV;                              // 3B: welche Sicht (Nebel auf dem Server) ich schon habe
@@ -421,11 +421,11 @@
             if (anfrage.sicht) W.sichtRaus = Object.assign(anfrage.sicht, W.sichtRaus);
             if (anfrage.armee_sicht) W.armeeSichtRaus = Object.assign(anfrage.armee_sicht, W.armeeSichtRaus);
             if (anfrage.profil) letztesProfil = '';
-            console.warn('Welt-Puls:', e);
+            console.warn('Welt-Puls:', e); pulsFehler = true;
         } finally {
             pulsLaeuft = false;
             if (gleichNochmal) { gleichNochmal = false; setTimeout(puls, 60); }   // (Weltrechner) Befehle ausgeführt: Ergebnis gleich speichern, nicht erst in 2 s
-            else if (W.befehle.length && !S.gestoppt) setTimeout(puls, 150);   // noch Befehle übrig (z. B. Mehrfachangriff auf 100 Ziele): gleich weiter
+            else if (W.befehle.length && !S.gestoppt && !pulsFehler) setTimeout(puls, 150);   // noch Befehle übrig (z. B. Mehrfachangriff auf 100 Ziele): gleich weiter – nach einem Fehler nicht (sonst ~7 Anfragen/s im Funkloch)
         }
     }
 
@@ -474,9 +474,9 @@
         if (!W.leiter && warLeiter && window.__weltLeiterWechsel) window.__weltLeiterWechsel(false);
         if (W.leiter && W.version === 0 && W.neueWelt) { W.neueWelt = false; for (const k of S.WELT) if (k in S.daten) S.weltGeaendert.add(k); }   // ganz neue Welt: alles schicken
         // Befehle der anderen ausführen (nur Weltrechner)
-        if (W.leiter && (a.befehle || []).length) gleichNochmal = true;
         for (const b of a.befehle || []) {
             if (b.id && (W.befehlFertig.has(b.id) || W.befehlWartet.has(b.id))) continue;   // schon ausgeführt (noch nicht quittiert) oder wartet – nicht nochmal
+            if (W.leiter) gleichNochmal = true;                      // (nur wenn wirklich ein neuer Befehl ausgeführt wird – wartende lösten sonst ~16 Pulse/s aus)
             let r; if (window.__weltBefehl) try { r = window.__weltBefehl('u' + b.von, b.b); } catch (e) { console.warn('Befehl', b, e); }
             if (b.id) { if (r === 'wartet') W.befehlWartet.add(b.id); else W.befehlFertig.add(b.id); }
         }

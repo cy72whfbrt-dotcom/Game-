@@ -153,7 +153,11 @@ setInterval(() => {
                 pendingAttacks.splice(pendingAttacks.indexOf(a), 1);
                 if (!a.attackerBotId) flashHint('Verstärkung ist im Kampf um ' + islandTitle(islandById[a.targetId]) + ' eingetroffen: +' + fmtNum(a.rawTroops) + ' Truppen, jetzt ' + fmtNum(fight.rawTroops) + '.', 4000);
             } else {
-                const est = fightEstimate(a); if (!est) continue;
+                const est = fightEstimate(a);
+                if (!est) {                                         // (kaputtes/altes Ziel: nie ein Kampf – die Truppen gehen heim statt ewig zu warten)
+                    const own = atkr === 'player' ? ownedIslands : botOwnedIslands[atkr], back = own && own.has(a.sourceId) ? a.sourceId : atkr === 'player' ? rewardBaseId() : botCapitalOf(atkr);
+                    if (a.rally) bundRallyHeim(a, a.rawTroops, a.sourceId); else if (back !== null && back !== undefined) islandTroops[back] = (islandTroops[back] || 0) + a.rawTroops;
+                    pendingAttacks.splice(pendingAttacks.indexOf(a), 1); continue; }
                 a.id = a.id || (a.startedAt + '-' + a.sourceId + '-' + a.targetId);
                 a.fightEndsAt = now + fightDurationMs(est);
                 const tgt = islandById[a.targetId], mine = !a.attackerBotId, vsMe = a.attackerBotId && islandOwnerOf(a.targetId) === 'player';
@@ -173,17 +177,17 @@ setInterval(() => {
         if (dueAttacks.length > 0) {
             pendingAttacks = pendingAttacks.filter(a => !dueAttacks.includes(a));
             for (const a of dueAttacks) a.resolveAt = now;      // the result plays out on the map right away
-            for (const attack of dueAttacks) {
+            for (const attack of dueAttacks) try {              // (ein Fehler in einem Kampf darf die anderen nicht verschlucken)
                 if (attack.attackerBotId) resolveBotAttack(attack);
                 else resolveAttack(attack);
-            }
+            } catch (e) { console.warn('FEHLER Kampf', attack.id, e); }
         }
     }
     if (pendingSends.length > 0 && rechnet()) {
         const dueSends = pendingSends.filter(s => s.resolveAt <= now);
         if (dueSends.length > 0) {
             pendingSends = pendingSends.filter(s => s.resolveAt > now);
-            for (const send of dueSends) resolveSend(send);
+            for (const send of dueSends) try { resolveSend(send); } catch (e) { console.warn('FEHLER Senden', e); }
         }
     }
     for (const sc of pendingScouts) {                                        // explorers clear a lane as they walk
@@ -198,14 +202,14 @@ setInterval(() => {
         const dueScouts = pendingScouts.filter(s => s.resolveAt <= now);
         if (dueScouts.length > 0) {
             pendingScouts = pendingScouts.filter(s => s.resolveAt > now);
-            for (const scout of dueScouts) resolveScout(scout);
+            for (const scout of dueScouts) try { resolveScout(scout); } catch (e) { console.warn('FEHLER Späher', e); }
         }
     }
     if (pendingRetreats.length > 0 && rechnet()) {
         const dueRetreats = pendingRetreats.filter(r => r.resolveAt <= now);
         if (dueRetreats.length > 0) {
             pendingRetreats = pendingRetreats.filter(r => r.resolveAt > now);
-            for (const retreat of dueRetreats) resolveRetreat(retreat);
+            for (const retreat of dueRetreats) try { resolveRetreat(retreat); } catch (e) { console.warn('FEHLER Rückzug', e); }
         }
     }
     if (!isPanelOpen(battleLogPopup)) renderActiveMarches();

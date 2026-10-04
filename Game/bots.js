@@ -409,7 +409,7 @@ function botStrategic(bot, target) {
 
 // Everything that could get there: every base with a route (the capital too - nobody can attack it anyway) and the
 // field armies standing around. A person counts the whole empire before calling a target hopeless.
-const botPoolMem = {};
+const botPoolMem = { __n: 0 };
 
 function botPoolFor(bot, target) {
     const key = bot.id + ':' + target.landmassId, now = Date.now(), c = botPoolMem[key];
@@ -426,6 +426,7 @@ function botPoolFor(bot, target) {
     }
     for (const a of armies) if (a.who === bot.id && reach(a.lm, a.troops)) s += a.troops + armyJoins.reduce((n, j) => n + (j.armyId === a.id ? j.troops : 0), 0);   // (troops still on the way to it too)
     src.sort((u, v) => v.have - u.have);
+    if (++botPoolMem.__n % 500 === 0) for (const k in botPoolMem) if (k !== '__n' && now - botPoolMem[k].at > 60000) delete botPoolMem[k];   // (alte weg – der Weltrechner läuft tagelang, Grenze 600 MB)
     return (botPoolMem[key] = { s, src, at: now });
 }
 
@@ -445,7 +446,8 @@ function botTooStrong(bot, targetId, pool) {
     return !!r && Date.now() < r.until && pool < r.pool * 1.3 && !(baseFought[targetId] > r.until - 15 * 60000);   // (a fight there since: look again)
 }
 
-function botNoteTooStrong(bot, targetId, pool) { (botTooStrongMem[bot.id] || (botTooStrongMem[bot.id] = {}))[targetId] = { until: Date.now() + 15 * 60000, pool }; }
+function botNoteTooStrong(bot, targetId, pool) { const m = botTooStrongMem[bot.id] || (botTooStrongMem[bot.id] = {}), now = Date.now(); m[targetId] = { until: now + 15 * 60000, pool };
+    if (Object.keys(m).length > 300) for (const k in m) if (!(m[k].until > now)) delete m[k]; }   // (abgelaufene weg – sonst wächst die Liste ewig)
 
 function botLastSeen(bot, targetId) { const it = botIntelMem[bot.id] && botIntelMem[bot.id][targetId]; return it && !it.pending && Date.now() - it.ready < 20 * 60000 && !(baseFought[targetId] > it.ready) ? it.s : null; }   // a recent report still tells roughly how strong it was; after 20 min or a fight there, look again
 
@@ -1726,7 +1728,9 @@ function botArmyStep(bot) {                                                   //
         if (a.mv || armyJoins.some(j => j.armyId === a.id) || armies.some(x => x.who === bot.id && x.mv && x.mv.to.kind === 'army' && x.mv.to.id === a.id)) continue;   // another of its armies is on the way to join: wait for it
         const t = islandById[a.t];
         const goHome = () => { const h = armyHome(a); if (h === null || h === undefined) { armies = armies.filter(x => x !== a); return false; } const b = islandById[h];
-            return !armyMove(a, { kind: 'home', id: h, x: b.x, y: b.y, lm: b.landmassId }); };
+            if (!armyMove(a, { kind: 'home', id: h, x: b.x, y: b.y, lm: b.landmassId })) return true;
+            if (now > (a.until || 0) + 10 * 60000) { islandTroops[h] = (islandTroops[h] || 0) + Math.max(0, a.troops || 0); armies = armies.filter(x => x !== a); return true; }   // Heimweg dauerhaft zu (Tor fremd, Maut zu teuer): die Truppen kommen trotzdem heim, statt ewig einen Marsch-Platz zu belegen
+            return false; };
         if (!t || botOwnedIslands[bot.id].has(t.id) || isCapital(t.id) || now > a.until || a.troops < BOT_MIN_GARRISON_TO_ATTACK || baseShieldedFor(t.id, bot.id) || botKeepsShield(bot, now)) return goHome();
         const boss = bossAt(t.id), it = boss ? { s: boss.troops + boss.defense } : botIntel(bot, t.id);
         if (!it) {                                                                   // no report yet: scout it from here first
