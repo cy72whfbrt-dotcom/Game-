@@ -1689,3 +1689,4 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
 - Kleinigkeit: Wappen auf den Schlacht-Fahnen fragt die Spielerliste nur ab, wenn sie schon geladen ist.
 - Getestet: `vsme0_test` (Angriff ohne Wachturm → eine Schlacht mit „?“), `vsme_test`, `zurueck_test`, `send_server_test`,
   `send4_server_test` (Admin 4 Bio. → abholen → senden → kommt an), alle Vorschau-Tests von 52–54 grün, Unit 65/65.
+- **Hochgeladen 4.10., 09:13.** Weltrechner läuft wieder (Puls ok, 0 Fehler pro Minute).
