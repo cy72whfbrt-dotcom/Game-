@@ -1823,3 +1823,16 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
 - Getestet: `rally_chat_test` (ferner Mitspieler „Bin zu weit weg“, naher „Bin unterwegs“ und kommt, neue Knöpfe da),
   chat, chat_rally, rally_schnell, laden grün.
 - **Hochgeladen 4.10., 12:17 UTC** (33 s), Weltrechner läuft wieder.
+
+## 66. Rally: beitreten geht immer (Alexander 4.10.: „Rally kann man immer beitreten – nur der, der sie eröffnet, muss nah genug dran sein“)
+- **Vorher:** beitreten nur, wenn die Truppen VOR dem Start am Sammelpunkt sind (sonst „kommen nicht mehr rechtzeitig an“);
+  wer zu spät kam, ging wieder heim. Weit entfernte Bündnis-Mitglieder konnten nie mitmachen.
+- **Jetzt:** jeder kann beitreten (Weg zum Sammelpunkt reicht). Wer nach dem Start ankommt, marschiert vom Sammelpunkt
+  **direkt zum Ziel weiter** und kämpft mit („Die Rally ist schon los – deine N Truppen ziehen direkt weiter zum Ziel“);
+  läuft der Kampf noch, geht er in denselben Kampf (gemeinsamer Kampf, Abschnitt 52). Im Beitreten-Fenster stehen alle
+  Basen mit Weg, die Einladung zur Rally bekommen alle Mitglieder.
+- Mitspieler treten ebenso bei – nur nicht auf Märsche über 30 Min. zum Sammelpunkt (sie sagen dann „Bin zu weit weg“).
+- Wer die Rally startet: braucht wie bisher einen Weg vom Sammelpunkt zum Ziel (eine feste Entfernungs-Grenze gibt es
+  nicht – sag Bescheid, wenn eine her soll).
+- Getestet: `nachzuegler_test` (beitreten trotz zu später Ankunft; nach dem Start folgt der Nachzügler mit 300k direkt zum
+  Ziel), dazu rally_chat, chat_rally, rally_schnell, chat, gemeinsam, laden grün.
