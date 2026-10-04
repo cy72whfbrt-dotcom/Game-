@@ -1634,3 +1634,8 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
   B geht mit seinem Anteil heim; Bericht zeigt beide), `anteil_test` (9.000 + 1.000, 5.000 Verluste → 4.500 / 500, Verwundete
   im jeweils eigenen Lazarett), `bericht_gem_test` (Anführer, Mitkämpfer und Verteidiger bekommen den Bericht mit beiden
   Angreifern). Dazu wieder grün: Verstärkung 5/5, Chat 12/12, Chat mit Server + Weltrechner 11/11, Unit 65/65.
+
+## 53. Hochgeladen 4.10., 08:27 (Alexanders Ja: „Kannst alles hochladen“)
+- `hochladen.sh` (Wartung an → alle Dateien → geprüft → Wartung aus), ohne neue Welt. Online sind jetzt auch die Abschnitte
+  50 (Tauschen bei vollen Bündnissen), 51 (Bündnis-Chat) und 52 (ein Ziel, ein Kampf).
+- Weltrechner hat mit dem neuen Code neu gestartet und läuft wieder (Puls ok, 0 Fehler pro Minute, Prüfer 0).
