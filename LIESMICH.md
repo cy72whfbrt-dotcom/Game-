@@ -1744,3 +1744,17 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
 - Getestet: `selbst2_test` – alter Code: 2. Schlacht (genau der Fehler), neuer Code: 1 Schlacht, und keine Schlacht an der
   eroberten Basis; dazu selbst, vsme_echt, vsme, reihe, gemeinsam, welle, welle_bund, render grün.
 - **Hochgeladen 4.10., 09:45 UTC – erstmals mit dem neuen hochladen.sh:** ganzes Hochladen 34 s (vorher mehrere Minuten), Weltrechner lief um 09:46 wieder.
+
+## 61. Prüfung Bots/Werte/Boss (Alexander 4.10.: „Boss-Event in der Mitte, keiner greift ihn an“) – NICHT hochgeladen
+- **Tagesboss – keiner griff an (bestätigt, lokal: heute 1 Angreifer von 150 Bots):** Bots schlugen nur zu, wenn sie die
+  Insel des Bosses „kannten“ (Nebel) – lokal kannte sie 1 von 150. Echte Spieler wurden ebenso abgewiesen („steht im
+  Nebel“). Der Tagesboss ist für alle angekündigt (wie Drache und Kriegsherr, die schon ohne Nebel-Sperre sind).
+  Fix: Bots ohne Nebel-Sperre (Märsche zum Boss gehen übers Land, ohne Tore); auf dem Handy wird sein Platz einmal am Tag
+  aufgedeckt. Test `boss_test`: jetzt schicken 146 von 150 Bots Truppen, der Platz ist für den Spieler offen.
+- **Bot-Werte (Prüf-Agent über den ganzen Code):** Skills, Ausrüstung, Helden (Haupt + Zweitheld), Titel, Truppen-Stufe,
+  Forschung, Mauer, Lazarett, Lager zählen bei Bots und echten Spielern genau wie bei dir – im Angriff und in der
+  Verteidigung. Bots steigen auf (Skills, Stadt, Forschung, Helden, Ausrüstung). Lokale Welt: Stufe bis 62, Burg bis 13,
+  7–8 Helden je Bot.
+  Kleiner Fehler behoben: tauschte ein Bot ein Teil mit Sternen gegen ein besseres, waren die Gems der Sterne weg
+  (bei dir gibt es sie beim Zerlegen zurück) – jetzt bekommt er sie auch.
+- Gruppenangriff/Rally: Prüfung läuft noch.

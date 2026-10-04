@@ -1095,7 +1095,7 @@ function botShop(bot) {                                  // gems and points spen
         const worn = b.gear[k];
         const pctOf = (r, lvl, st) => itemScore({ rarity: r, level: lvl }) * RARITY_PCT_PER_SCORE * (1 + (st || 0) * STAR_PCT / 100);
         if (top >= 0 && (!worn || (top > worn.r && pctOf(top, 1, 0) > pctOf(worn.r, worn.lvl, worn.st)))) {   // really better: wear it, the old one is salvaged for points
-            if (worn) b.pts += itemScore({ rarity: worn.r, level: worn.lvl });
+            if (worn) { b.pts += itemScore({ rarity: worn.r, level: worn.lvl }); b.gems = (b.gems || 0) + starRefund({ stars: worn.st || 0 }); }   // (die Gems der Sterne zurück – wie bei dir beim Zerlegen)
             b.gear[k] = { r: top, lvl: 1, st: 0 }; c[top]--;
         }
         const w = b.gear[k]; if (w) for (let r = 0; r < Math.max(0, w.r - 1); r++) if (c[r] > 0) { b.pts += c[r] * itemScore({ rarity: r, level: 1 }); c[r] = 0; }   // far below: salvage
@@ -1855,7 +1855,7 @@ function botDayBoss(bot) {                                // the daily boss: a f
     const d = dbossEnsure(), due = Math.min(dbossHitsMax(), Math.ceil(dbossHitsMax() * (1 - msToMidnight() / 864e5)));   // spread over the day (strikes not made yet are caught up): the boss falls in the evening, not in the first hour
     if (!d || d.hp <= 0 || barbRec(bot.id).h >= due || barbOut(bot.id, 'b') || Math.random() < .5) return false;
     const base = botBarbBase(bot); if (base === null) return false;
-    if (d.lm !== undefined && !botKennt(bot.id).has(d.lm)) return false;      // der Boss steht im Nebel
+    // (kein Nebel-Tor mehr: der Tagesboss ist für alle angekündigt, wie Drache und Kriegsherr – vorher griff nur an, wer seine Insel kannte: 1 von 150)
     const n = Math.floor((islandTroops[base] || 0) * (.15 + Math.random() * .2)); if (n < 1000) return false;
     const hp = heroPickPair(bot.id, null, null, n); return barbSend(bot.id, base, 'b', null, n, hp[0], hp[1]);
 }
