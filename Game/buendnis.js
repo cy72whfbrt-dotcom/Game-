@@ -38,7 +38,7 @@ const BUND_CHAT = {
     rallyBitte: { g: 'f', t: 'Bin zu weit weg – machst du eine Rally?' },
     hilfe: { g: 'f', t: 'Brauche Hilfe!' }, online: { g: 'f', t: 'Wer ist online?' },
     ja: { g: 'a', t: 'Ja' }, nein: { g: 'a', t: 'Nein' }, dabei: { g: 'a', t: 'Bin dabei' }, jetzt: { g: 'a', t: 'Jetzt!' }, spaeter: { g: 'a', t: 'Später' },
-    starte: { g: 'a', t: 'Ja, ich starte die Rally!' }, zuweit: { g: 'a', t: 'Bin zu weit weg' },
+    starte: { g: 'a', t: 'Ja, ich starte die Rally!' }, zuweit: { g: 'a', t: 'Bin zu weit weg' }, keinweg: { g: 'a', t: 'Kein Weg dorthin – ein Tor ist zu' },
     unterwegs: { g: 'a', t: 'Bin unterwegs' }, binon: { g: 'a', t: 'Bin online' }, danke: { g: 'a', t: 'Danke!' }, gut: { g: 'a', t: 'Gut gemacht!' },
     teilen: { g: 'o', t: 'hat einen Ort geteilt' },
     s_rally: { g: 's', t: 'hat eine Rally gestartet' }, s_rein: { g: 's', t: 'ist dem Bündnis beigetreten' }, s_raus: { g: 's', t: 'ist nicht mehr im Bündnis' }
@@ -728,7 +728,8 @@ function bundChatAntworten(a, who, k) {
         let wer = null, plan = null;
         for (const w of on) { if (bund.r.some(r => r.by === w) || botFreeSlots(botById[w]) <= 0 || bundZielOk(w, z)) continue;
             const p = bundRallyFuer(w, z, now); if (p) { wer = w; plan = p; break; } }
-        if (!wer) { if (on[0]) spaeter(on[0], on.some(w => !bundZielOk(w, z)) ? 'zuweit' : 'nein'); return; }
+        if (!wer) { if (on[0]) { const T = islandById[z], weg = w => [...(botOwnedIslands[w] || [])].some(id => islandById[id] && routeFor(islandById[id].landmassId, T.landmassId, w));
+            spaeter(on[0], on.some(w => !bundZielOk(w, z) && weg(w)) ? 'nein' : 'keinweg'); } return; }   // (ehrlich: kein Weg = ein Tor ist zu; sonst zu wenig Truppen)
         spaeter(wer, 'starte', null, { rally: plan });
         for (const w of on.filter(x => x !== wer).slice(0, 3)) if (botFreeSlots(botById[w]) > 0) spaeter(w, 'dabei');
     } else if (k === 'online') { for (const w of on.slice(0, 4)) spaeter(w, 'binon'); }
@@ -799,15 +800,19 @@ function bundMitspielerRally(now) {
             const thr = botThreatened(w); let best = null;
             for (const sid of botOwnedIslands[w]) { if (thr.has(sid) || sid === megaTempleId || sid === r.at) continue; const n = Math.floor((islandTroops[sid] || 0) * (botStyle(bot).commit || .7) * .8); if (n < 1000) continue;
                 const src = islandById[sid]; if (!bundWeg(src.landmassId, at.landmassId, w, n)) continue;
-                if (travelDurationSeconds(src, at, w) > 30 * 60) continue;   // (beitreten geht immer – Mitspieler nur nicht auf stundenlange Märsche)
                 if (!best || n > best.n) best = { id: sid, n }; }
             bundMem.rallyGemacht.add(key);
             // (Rally eines echten Spielers: die Mitspieler sagen im Chat, ob sie kommen – vorher kam einfach keiner, ohne ein Wort)
             const sagen = k2 => { if (botById[r.by] && botById[r.by].mensch && (bundMem.rallySagt[r.id] = (bundMem.rallySagt[r.id] || 0) + 1) <= 4)
                 bundMem.chatQ.push({ at: now + 2000 + Math.random() * 6000, aid: a.id, w, k: k2, z: null }); };
-            if (!best) { if ([...botOwnedIslands[w]].some(id => (islandTroops[id] || 0) >= 1000)) sagen('zuweit'); continue; }   // (zu weit weg: schafft es nicht vor dem Start)
+            if (!best) { if ([...botOwnedIslands[w]].some(id => (islandTroops[id] || 0) >= 1000)) sagen('keinweg'); continue; }   // (Truppen da, aber kein Weg zum Sammelpunkt: ein Tor ist zu)
             if (bot.style === 'builder' && Math.random() < .5) { sagen('nein'); continue; }
-            if (!bundRallyDazu(a, w, { rid: r.id, von: best.id, n: best.n })) { bundBotGetippt(bot, now); bundSpeichern(); sagen('unterwegs'); }
+            const k0 = pendingSends.length;
+            if (!bundRallyDazu(a, w, { rid: r.id, von: best.id, n: best.n })) { bundBotGetippt(bot, now); bundSpeichern(); sagen('unterwegs');
+                const m = pendingSends.length > k0 ? pendingSends[pendingSends.length - 1] : null, st = loadBotState()[w];   // zu spät für den Start? mit Gems beschleunigen (wie du: halbiert die Zeit, 1 Gem pro Minute)
+                for (let i = 0; m && st && i < 4 && m.resolveAt > r.los - 2000; i++) { const c = speedUpCost(m); if ((st.gems || 0) < c * 2) break;
+                    st.gems -= c; const rem = m.resolveAt - now, pr = Math.max(0, Math.min(.99, (now - m.startedAt) / Math.max(1, m.resolveAt - m.startedAt))); m.resolveAt = now + rem / 2; m.startedAt = m.resolveAt - (rem / 2) / (1 - pr); }
+                if (m && st) saveBotState(); }
         }
     }
     if (bundMem.rallyGemacht.size > 5000) { bundMem.rallyGemacht.clear(); bundMem.rallySagt = {}; }

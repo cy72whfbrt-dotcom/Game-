@@ -1844,3 +1844,14 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
   (Abschnitt 64) bleibt an.
 - Getestet: Spiel lädt, alle Brücken offen.
 - **Hochgeladen 4.10., 12:23 UTC**, Weltrechner läuft wieder.
+
+## 68. Rally: Mitspieler beschleunigen, ehrliche Antwort statt „Bin zu weit weg“ (Alexander 4.10.: „sie schaffen das doch, können doch ihre Truppen beschleunigen“)
+- **Warum „zu weit weg“:** bei „Rally?“ ohne laufende Rally suchte ein Mitspieler eine eigene Basis mit Weg zum Ziel – der
+  Grund war fast immer ein **Tor auf dem Weg** (unbesetzt = zu, oder ein fremdes Tor geschlossen/zu teure Maut), nicht die
+  Zeit. Jetzt sagen sie es ehrlich: neue Antwort **„Kein Weg dorthin – ein Tor ist zu“** (auch als Knopf). Haben sie einen
+  Weg, aber zu wenig Truppen: „Nein“. (Tore eines Bündnis-Mitglieds sind für alle Mitglieder frei – wie bisher.)
+- **Beitreten ohne Zeitgrenze:** die 30-Minuten-Grenze für Mitspieler ist raus (beitreten geht immer, Abschnitt 66).
+- **Beschleunigen:** kämen ihre Truppen erst nach dem Start an, beschleunigen sie mit Gems – wie du (halbiert die Restzeit,
+  1 Gem pro Minute, bis zu 4-mal, nur wenn sie genug Gems haben). Sonst folgen sie nach dem Start direkt zum Ziel.
+- Getestet: `rally_chat_test` (kein Weg → „Kein Weg dorthin“; zu spät → beschleunigt mit Gems und ist zum Start da;
+  „Bin unterwegs“; Knöpfe da), dazu nachzuegler, chat_rally, rally_schnell, chat, laden grün.
