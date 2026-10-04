@@ -1223,7 +1223,8 @@ if (window.WELT) {
             if (mehr <= 0) continue;
             const stunde = m.rEin.reduce((a, x) => a + x[k], 0), raum = Math.max(0, 2000 + .25 * Math.max(stunde, (m.rHp0 || {})[k] || 0) + lim - m.rsr.reduce((a, x) => a + (x[k] || 0), 0));
             const nimm = Math.min(mehr, raum); if (nimm > 0) m.rsr.push({ t: now, [k]: nimm }); mehr -= nimm;
-            if (mehr >= 1) { kk.u = pr - mehr; warnen(who, 'rohstoffe', AUF.ROH_DEF[k].name + ' springt: das Handy sagt ' + fz(pr) + ', möglich wären höchstens ' + fz(pr - mehr) + '.', mehr); }
+            if (mehr >= 1) { kk.u = pr - mehr; warnen(who, 'rohstoffe', AUF.ROH_DEF[k].name + ' springt: das Handy sagt ' + fz(pr) + ', möglich wären höchstens ' + fz(pr - mehr) + '.', mehr);
+                const bb = loadBotState()[who]; if (bb && bb.res && nn(bb.res[k]) > pr - mehr) bb.res[k] = pr - mehr; }   // (in der Welt nur, was möglich ist – sonst holt ein anderer die erfundenen Rohstoffe als Beute)
         }
     }
     // Münzen, die er ausgegeben hat und die kein Befehl abgeholt hat (nach 60 s) → Topf hb.cA (bezahlt Bauen/Forschen im Hauptbuch)
@@ -1514,7 +1515,8 @@ if (window.WELT) {
         if (ks.some(k => hbVorrat(who, hb, m, k) < kosten[k] - 1e-6)) return false;
         for (const k of ks) {
             let r = kosten[k], x;
-            if (k === 'c') { wacheBezahlen(who, m, r); continue; }
+            if (k === 'c') { vorAltern(who, m, Date.now());   // wie bei Gems: zuerst, was er dafür schon ausgegeben hat (Vorschuss, dann Topf) – nie zweimal vom Konto
+                x = Math.min(r, m.c.vor); m.c.vor -= x; r -= x; x = Math.min(r, nn(hb.cA)); hb.cA = nn(hb.cA) - x; r -= x; if (r > 0) wacheBezahlen(who, m, r); continue; }
             if (k === 'g') { for (const q of ['gA', 'gIn']) { x = Math.min(r, nn(hb[q])); hb[q] = nn(hb[q]) - x; r -= x; } x = Math.min(r, m.g.u); m.g.u -= x; r -= x; hb.fr.g = Math.max(0, nn(hb.fr.g) - r); continue; }
             x = Math.min(r, nn(hb.rA[k])); hb.rA[k] = nn(hb.rA[k]) - x; r -= x; if (m.rk) m.rk[k].u = Math.max(0, m.rk[k].u - r);
         }

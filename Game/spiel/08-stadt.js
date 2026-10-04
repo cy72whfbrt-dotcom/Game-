@@ -87,6 +87,7 @@ function cityTimeSec(id, level) {
     return Math.round(cityTimeRoh(id, level));
 }
 function cityClampBuild(b, now) {                 // a build started under the old, far too long times ends by the new rule at the latest
+    if (b && b.id === 'keep' && !AUF) return;        // (beim Laden fehlt aufbau.js noch: die Burg hat dort ihre lange Bauzeit 1–60 Tage – nicht auf die alte kürzen)
     if (b && b.endsAt - (b.startedAt || now) > cityTimeSec(b.id, b.to - 1) * 1000) b.endsAt = Math.min(b.endsAt, (b.startedAt || now) + cityTimeSec(b.id, b.to - 1) * 1000);
 }
 function fmtDuration(sec) {
