@@ -341,7 +341,7 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
   - **Hauptstadt-Stufe:** bleibt bis 25 (Alexander 4.10.).
   - **Entschieden (Alexander 4.10.):** Der Angreifer bekommt **immer nur einen Teil** von dem, was über dem
     Burg-Schutz liegt – **ein kleiner Teil**, damit man **oft angreifen** muss
-    (Vorschlag 10 %, noch bestätigen). Das **Brennen ist nur zu sehen**, es bewirkt nichts.
+    (**10 %**, Alexander: „passt so“). Das **Brennen ist nur zu sehen**, es bewirkt nichts.
 - ⭐⭐ **Hauptstadt = das Wichtigste im Spiel (Alexander 4.10., „erst mal merken“) – noch NICHT gebaut:**
   - **Server-Reset später:** die ganze Karte wird neu – **außer der Hauptstadt**. Sie behält Stufe, Gebäude,
     Ausrüstung und Helden.
@@ -349,14 +349,17 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
   - **Aufleveln langsam:** nicht in 5 Tagen auf 25, sondern über lange Zeit und **mehrere Server-Resets**.
   - **Kosten:** Gold, Holz, Stein, Eisen – jede Stufe mehr – und jede Stufe **dauert Zeit**.
     Erste Stufen **mittelmäßig**, später viel mehr, damit man lange farmen oder angreifen muss.
-  - **Bauzeit je Stufe:** mehrere Tage – von **1 Tag (niedrige Stufen) bis 60 Tage (hohe Stufen)**.
+  - **Bauzeit je Stufe:** mehrere Tage – von **1 Tag (niedrige Stufen) bis 60 Tage (hohe Stufen)**, zusammen rund
+    **1 Jahr bis Burg 25** („passt so“). Mit **Gems** kann man es **schneller machen**.
   - **Burg-Schutz (Vorschlag, Alexander war einverstanden):** Stufe 1: 10.000 · Stufe 10: 1 Mio. ·
     Stufe 25: 100 Mio. je Rohstoff (dazwischen gleichmäßig steigend).
   - **Alles wird später neu designt** – Alexander daran erinnern.
   - **Gebäude neu (Alexander 4.10.):** alles auf Deutsch.
     - bleibt: **Burg**, **Schmiede**, **Heldenhalle**, **Markt**
     - **Akademie → Labor:** dort wird **alles** geforscht. Forschen kostet **Rohstoffe (Gold, Holz, Stein, Eisen)
-      und Zeit** (Alexander 4.10.).
+      und Zeit** (Alexander 4.10.). Das **Labor hat Stufen** – man kann nicht alles auf einmal forschen.
+      Forschungen: die bisherigen (Ertrag, Sammeln, Traglast, Angriff, Verteidigung, Lazarett, Marschtempo, Späher,
+      Kundschaft) + neu Tempel-Bonus, Späher-Tempo, Wachturm – „passt so“.
     - **Tempelschrein weg** → wird Forschung im Labor.
     - **Späherturm weg** → wird Forschung im Labor.
     - **Lager, Kaserne, Schatzkammer weg** – ihr Bonus auch (nicht ins Labor).
