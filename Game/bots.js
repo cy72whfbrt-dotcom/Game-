@@ -142,8 +142,9 @@ function resolveBotAttack(attack) {
 
     const myTroops = Math.round((attack.rawTroops + (attack.attackBonus || 0)) * (attack.atkTitle !== undefined ? attack.atkTitle : titleMult(bot.id, 'attack')) * (attack.atkKraft || 1));   // (Truppen-Stufe + Forschung vom Losschicken)
     const targetOwner = islandOwnerOf(target.id), rallyC0 = attack.rally ? botCoins[bot.id] || 0 : 0;   // (Rally: die Beute wird nachher anteilig verteilt)
-    if (targetOwner === bot.id && !attack.rally) { islandTroops[target.id] = (islandTroops[target.id] || 0) + attack.rawTroops; saveGame(); return; }   // inzwischen die eigene (ein anderer Angriff hat sie genommen): die Truppen bleiben dort
-    if (targetOwner && targetOwner !== bot.id && typeof bundFreund === 'function' && bundFreund(bot.id, targetOwner) && !attack.rally) {   // inzwischen ein Bündnis-Mitglied: kein Kampf, heim
+    if (targetOwner === bot.id) { islandTroops[target.id] = (islandTroops[target.id] || 0) + (attack.rally ? bundRallyHeim(attack, attack.rawTroops, target.id, true) : attack.rawTroops); saveGame(); return; }   // (gemeinsam: nur sein Anteil zieht ein, die anderen gehen heim)   // inzwischen die eigene (ein anderer Angriff hat sie genommen): die Truppen bleiben dort
+    if (targetOwner && targetOwner !== bot.id && typeof bundFreund === 'function' && bundFreund(bot.id, targetOwner)) {   // inzwischen ein Bündnis-Mitglied: kein Kampf, heim
+        if (attack.rally) { bundRallyHeim(attack, attack.rawTroops, target.id); saveGame(); return; }   // (gemeinsam: jeder zu sich)
         const back = botOwnedIslands[bot.id] && botOwnedIslands[bot.id].has(attack.sourceId) ? attack.sourceId : botCapitalOf(bot.id);
         if (back !== null && back !== undefined) islandTroops[back] = (islandTroops[back] || 0) + attack.rawTroops; saveGame(); return; }
     const vk = targetOwner && typeof verstVorKampf === 'function' ? verstVorKampf(target.id) : null;   // Verstärkung (Botschaft) verteidigt mit

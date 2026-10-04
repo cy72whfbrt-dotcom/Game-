@@ -777,6 +777,10 @@ body.has-panel .mapctl{display:none}
 .logRow .lt{min-width:0}
 .logRow .lt b{display:block;font:600 var(--fs-13)/1.25 var(--font-ui);color:var(--tx-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .logRow .lt small{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;margin-top:2px;font:500 var(--fs-11)/1.25 var(--font-ui);color:var(--tx-3);white-space:normal;overflow:hidden;overflow-wrap:anywhere}
+.logRow .lt small.logOrt{display:flex;align-items:center;gap:8px;-webkit-line-clamp:unset;font-variant-numeric:tabular-nums}
+.logRow .lt small.logOrt .btn{min-height:24px;padding:0 10px}
+#popupEmblem[data-profile]{cursor:pointer}
+.rp-bund{display:block;margin-top:4px;font:600 var(--fs-12)/1.2 var(--font-ui);color:var(--tx-2)}
 .logRow .lv{font:600 var(--fs-12)/1 var(--font-ui);color:var(--tx-2);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
 .seg.hero-seg{display:flex;flex-wrap:wrap} .seg.hero-seg button{flex:1 1 28%;display:inline-flex;align-items:center;justify-content:center;gap:4px;padding:0 6px;border-left:3px solid var(--hc,var(--line-1))} .seg.hero-seg button small{color:var(--gold-200);font-size:10px} .seg.hero-seg button:disabled{opacity:.4} .seg.hero-seg .hero-pic{width:22px;height:22px;flex:none;border-radius:5px;border:1px solid var(--hc)} .seg.hero-seg button small{white-space:nowrap}
 .logHero{padding:6px 0;border-top:1px solid var(--line-1)} .logHeroFire{font-style:normal;color:var(--gold-200);font-weight:700}

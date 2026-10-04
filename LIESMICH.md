@@ -333,6 +333,15 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
 - ✅ ~~Gems kommen zu schnell~~ – erledigt 2.10. (neue Saison, Abschnitt 16).
 - **Punkt 11 – Münz-Wirtschaft:** bei hohen Stufen fühlen sich Münzen nichts wert an.
 - **Punkt 6 – Bündnis-Signale statt Chat** (siehe Abschnitt 12).
+- ⭐ **Beute neu (Alexander 4.10., „merke Liste, lass es uns so machen“) – noch NICHT gebaut:**
+  - **Hauptstadt:** kann man angreifen, aber nie verlieren. Gewinnt der Angreifer, bekommt er **Rohstoffe – jede Art, die
+    es gibt (Gold usw.)**, aber nur so viel, wie der Verteidiger hat; die Hauptstadt **brennt**. Gewinnt der Verteidiger,
+    bekommt der Angreifer nichts. Rohstoffe holt man **nur** aus der Hauptstadt.
+  - **Andere Basen (Türme):** kann man verlieren; der Angreifer bekommt dort **nur Gold**, sonst nichts.
+  - **Offen:** bis zu welcher Stufe die Hauptstadt geht („bis Lvl ? – das passen wir an“).
+  - Heute (zum Vergleich): Plündern nimmt nur Münzen (Hauptstadt und Basis, je ein Anteil über dem Lager-Schutz,
+    höchstens eine halbe Stunde Einkommen).
+- ⭐ **Sortier-Tag:** alle Dateien einmal sortieren, alter Code raus (Alexander 4.10.).
 
 **Ideen-Sammlung 2.10. (Alexander hat ausgewählt – nichts davon gebaut, hochladen nur nach seinem Ja):**
 - *Bündnis (zusammen bauen):* 23 Bündnisse für Spieler + Bots (Name, Wappen) · 24 Bündnis-Signale ⭐ wichtig ·
@@ -1639,3 +1648,28 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
 - `hochladen.sh` (Wartung an → alle Dateien → geprüft → Wartung aus), ohne neue Welt. Online sind jetzt auch die Abschnitte
   50 (Tauschen bei vollen Bündnissen), 51 (Bündnis-Chat) und 52 (ein Ziel, ein Kampf).
 - Weltrechner hat mit dem neuen Code neu gestartet und läuft wieder (Puls ok, 0 Fehler pro Minute, Prüfer 0).
+
+## 54. Kampf-Reihenfolge, Kampflog-Absturz, Ort im Bericht, Profil übers Viereck (Alexander 4.10.)
+- **Kampflog ging nicht auf (live gemeldet):** ein Bericht mit gemeinsamem Angriff (Abschnitt 52) oder mit Verstärkung
+  rief `gearHtml` außerhalb von `renderCombatLog` auf → Fehler → das ganze Kampf-Fenster öffnete nicht. Behoben (die
+  Funktion wird mitgegeben), und **jeder Bericht wird jetzt einzeln abgesichert**: ein kaputter Bericht zeigt nur
+  „Dieser Bericht kann nicht angezeigt werden“, die Liste geht immer auf.
+- **Fremde warten (Alexander: „2 vs 2 vs X – X muss warten, bis die 2 vs 2 zu Ende gekämpft haben“):** läuft auf einem Ziel
+  ein Kampf, kommen nur der Angreifer selbst und sein Bündnis dazu (Verteidiger-Verstärkung wie bisher). Jeder andere
+  wartet vor dem Ziel („wartet: dort läuft noch ein anderer Kampf“) und kämpft danach gegen den, dem die Basis DANN gehört
+  (z. B. gegen dich, wenn du sie gerade erobert hast). Seine Verbündeten des Gewinners gehen vorher heim (Abschnitt 52).
+  Nach dem Warten zählt der Friedensschild, wie er jetzt steht; Zurückrufen zählt nur den Weg, nicht die Wartezeit.
+- **Geprüft (Prüf-Agent über den ganzen Kampf-Code) und behoben:** eine Welle, die genau in der Sekunde ankam, in der ein
+  Kampf endete, sah ihn nicht – ein gemeinsamer Angriff hätte danach gegen die eigene Seite kämpfen können (jetzt zählt
+  ein Kampf bis zur Entscheidung als laufend, und ein gemeinsamer Angriff auf eine eigene/verbündete Basis geht heim bzw.
+  zieht ein). Schild-Bonus und Gold-Rate eines Mitkämpfers gelten nicht mehr für alle. Keine doppelte Entscheidung
+  gefunden (entschiedene Kämpfe werden vorher aus der Liste genommen).
+- **Rally gegen dich steht im Kampf-Fenster:** „Rally gegen Turm … – X sammelt einen Angriff – los in 4:59“ (vorher nur die
+  Meldung, im Kampf-Fenster nichts). Zählt auch im roten Punkt.
+- **Ort im Kampfbericht:** jede Zeile zeigt „X … · Y …“ und **„Zeigen“** (springt auf der Karte hin und öffnet die Basis).
+- **Profil:** das Viereck links im Inselfenster antippen → Profil des Besitzers; im Profil steht jetzt sein Bündnis
+  („[TAG] Name“ oder „kein Bündnis“).
+- Getestet (Vorschau): `reihe_test` (A 2 Wellen + B Bündnis + C fremd gleichzeitig: A+B ein Kampf, C wartet, dann C gegen
+  den neuen Besitzer A – genau 2 Kämpfe), `render_test` (echte Berichte eines gemeinsamen Angriffs: Kampflog öffnet ohne
+  Fehler – vorher genau der Absturz), `ort_test`, `popup_shot`, dazu wieder grün: gemeinsam, welle, welle_bund, anteil,
+  bericht_gem, Verstärkung 5/5, Chat 12/12, Unit 65/65.

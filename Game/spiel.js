@@ -103,21 +103,21 @@ function logBalance(atk, def, atkLabel, defLabel, youDefend) {          // who w
 }
 const fmtBig = fmtNum;   // huge sums read as "227,1 Trill.", not as 21 digits
 // Verstärkung (Botschaft) im Kampfbericht: wer mit wie vielen Truppen verteidigt hat – und was jeder verloren hat
-function verstZeilen(e, besitzer) {
+function verstZeilen(e, besitzer, gearHtml) {   // (gearHtml: kommt aus renderCombatLog)
     if (!e || !Array.isArray(e.verst) || !e.verst.length) return '';
     const n = x => fmtNum(Math.max(0, x || 0));
     return '<div class="logLine"><span>' + escapeHtml(besitzer) + '</span><span>' + n(e.eigen) + '</span></div>' +
         e.verst.map(h => '<div class="logLine buff"><span>Verstärkung · ' + escapeHtml(h.name || '?') + '</span><span>' + n(h.n) + '</span></div>' +
             ((h.fallen || h.wounded) ? '<div class="logCasualty"><span>· davon gefallen' + (h.wounded ? ' / verwundet' : '') + '</span><span>−' + n(h.fallen) + (h.wounded ? ' / ' + n(h.wounded) : '') + '</span></div>' : '') +
-            (h.gear ? '<details class="verst-det"><summary>' + escapeHtml(h.name || '?') + ': Held, Ausrüstung, Fähigkeiten</summary>' + gearHtml(h.gear) + '</details>' : '')).join('');
+            (h.gear && gearHtml ? '<details class="verst-det"><summary>' + escapeHtml(h.name || '?') + ': Held, Ausrüstung, Fähigkeiten</summary>' + gearHtml(h.gear) + '</details>' : '')).join('');
 }
 // Gemeinsamer Angriff im Kampfbericht: jeder Angreifer mit seinen Truppen – und was er verloren hat
-function angreiferZeilen(e) {
+function angreiferZeilen(e, gearHtml) {
     if (!e || !Array.isArray(e.angreifer) || e.angreifer.length < 2) return '';
     const n = x => fmtNum(Math.max(0, x || 0));
     return e.angreifer.map(h => '<div class="logLine buff"><span>' + escapeHtml(h.name || '?') + '</span><span>' + n(h.n) + '</span></div>' +
         ((h.fallen || h.wounded) ? '<div class="logCasualty"><span>· davon gefallen' + (h.wounded ? ' / verwundet' : '') + '</span><span>−' + n(h.fallen) + (h.wounded ? ' / ' + n(h.wounded) : '') + '</span></div>' : '') +
-        (h.gear ? '<details class="verst-det"><summary>' + escapeHtml(h.name || '?') + ': Held, Ausrüstung, Fähigkeiten</summary>' + gearHtml(h.gear) + '</details>' : '')).join('');
+        (h.gear && gearHtml ? '<details class="verst-det"><summary>' + escapeHtml(h.name || '?') + ': Held, Ausrüstung, Fähigkeiten</summary>' + gearHtml(h.gear) + '</details>' : '')).join('');
 }
 function plunderLine(e, mine) {                     // Lager: what changed hands when a base fell, and what the Lager kept safe
     if (!e.plunder && !e.plunderSafe) return '';
@@ -1718,7 +1718,7 @@ function recallMarch(key) {                          // an attack or a send turn
         const src = islandById[fromId], tgt = islandById[toId];
         const frac = Math.max(0, Math.min(1, (now - m.startedAt) / Math.max(1, m.resolveAt - m.startedAt)));
         list.splice(list.indexOf(m), 1);
-        const walked = Math.max(1000, (now - m.startedAt));
+        const walked = Math.max(1000, (Math.min(now, m.resolveAt) - m.startedAt));   // (wer vor dem Ziel gewartet hat, läuft nur den Weg zurück)
         const home = ownedIslands.has(fromId) ? fromId : rewardBaseId();
         pendingRetreats.push({ fromId: toId, toId: home, troops, startedAt: now, resolveAt: now + walked, path: home === fromId ? pathSoFar(src, tgt, frac).reverse() : null });
         flashHint(fmtNum(troops) + ' Truppen kehren um – zurück in ' + fmtClock(Math.ceil(walked / 1000)) + '.', 3500);
@@ -4381,14 +4381,19 @@ setInterval(() => {
         // so do the defender's reinforcements (they land in the garrison) - one battle, everything counted.
         // A wave that comes after the fight is decided starts a fight of its own.
         for (const a of pendingAttacks.filter(x => x.resolveAt <= now && !x.fightEndsAt)) {
-            const tow = islandOwnerOf(a.targetId), atkr = a.attackerBotId || 'player';
+            // Läuft dort schon ein Kampf, mit dem diese Welle nichts zu tun hat (anderer Angreifer, nicht im Bündnis): sie wartet,
+            // bis er entschieden ist – dann kämpft sie gegen den, dem die Basis DANN gehört (Alexander 4.10.).
+            // (Ein Kampf, der genau jetzt endet, wird erst unten entschieden – er zählt noch als laufend.)
+            const tow = islandOwnerOf(a.targetId), atkr = a.attackerBotId || 'player', gewartet = !!a.wartet;
+            if (tow !== atkr && !(tow && bundFreund(atkr, tow)) && !kampfDazu(a, now) && pendingAttacks.some(p => p !== a && p.fightEndsAt && p.targetId === a.targetId)) { a.wartet = 1; continue; }
+            delete a.wartet;
             if (tow && tow !== atkr && bundFreund(atkr, tow)) {                     // inzwischen gehört das Ziel einem Bündnis-Mitglied: kein Kampf, die Truppen gehen heim
                 if (a.rally) bundRallyHeim(a, a.rawTroops, a.targetId);
                 else { const own = atkr === 'player' ? ownedIslands : botOwnedIslands[atkr], back = own && own.has(a.sourceId) ? a.sourceId : atkr === 'player' ? rewardBaseId() : botCapitalOf(atkr);
                     if (back !== null && back !== undefined) islandTroops[back] = (islandTroops[back] || 0) + a.rawTroops; }
                 pendingAttacks.splice(pendingAttacks.indexOf(a), 1); renderActiveMarches(); continue;
             }
-            if (tow && tow !== atkr && shieldCovers(islandById[a.targetId]) && ownerShielded(tow, Math.min(now, a.resolveAt))) {                 // bounces off the Friedensschild (as it stood when the wave arrived) - the troops come back
+            if (tow && tow !== atkr && shieldCovers(islandById[a.targetId]) && ownerShielded(tow, gewartet ? now : Math.min(now, a.resolveAt))) {   // bounces off the Friedensschild (as it stood when the wave arrived – nach dem Warten: wie er JETZT steht) - the troops come back
                 const own = atkr === 'player' ? ownedIslands : botOwnedIslands[atkr];
                 const back = own && own.has(a.sourceId) ? a.sourceId : atkr === 'player' ? rewardBaseId() : botCapitalOf(atkr);
                 if (a.rally) bundRallyHeim(a, a.rawTroops, a.targetId);              // (eine Rally: jeder bekommt seinen Anteil zurück)
@@ -4424,8 +4429,8 @@ setInterval(() => {
                 if (fight.skillBonus !== undefined || a.skillBonus !== undefined) fight.skillBonus = (fight.skillBonus || 0) + (a.skillBonus !== undefined ? a.skillBonus : a.attackBonus || 0); fight.waves = (fight.waves || 1) + (a.waves || 1);
                 if (a.hx && anderer) heroFought(a.attackerBotId, a.hx);              // (ein Held eines Mitspielers führt nur seinen eigenen Kampf – er bekommt seine Wut)
                 else if (a.hx) { if (!fight.hx) { fight.hx = a.hx; fight.hero = a.hero; fight.hero2 = a.hero2 || null; } else fight.hx = heroMergeHx(fight.hx, a.hx); }   // every hero in the fight keeps his effect and his rage
-                fight.shieldLossReductionPct = Math.max(fight.shieldLossReductionPct || 0, a.shieldLossReductionPct || 0);
-                fight.rewardGoldRate = Math.max(fight.rewardGoldRate || 0, a.rewardGoldRate || 0);
+                if (!anderer) { fight.shieldLossReductionPct = Math.max(fight.shieldLossReductionPct || 0, a.shieldLossReductionPct || 0);   // (sein eigener Schild/Gold-Bonus gilt nicht für die anderen)
+                    fight.rewardGoldRate = Math.max(fight.rewardGoldRate || 0, a.rewardGoldRate || 0); }
                 fight.fightEndsAt = Math.max(fight.fightEndsAt, now + 2500);          // the fresh troops get to fight too
                 pendingAttacks.splice(pendingAttacks.indexOf(a), 1);
                 if (!a.attackerBotId) flashHint('Verstärkung ist im Kampf um ' + islandTitle(islandById[a.targetId]) + ' eingetroffen: +' + fmtNum(a.rawTroops) + ' Truppen, jetzt ' + fmtNum(fight.rawTroops) + '.', 4000);
@@ -5332,7 +5337,8 @@ function openRulerProfile(who) {
     document.getElementById('rulerLvl').textContent = pr.lvl;
     document.getElementById('rulerName').textContent = pr.name;
     document.getElementById('rulerOver').textContent = (who === 'player' ? 'Dein Profil' : 'Profil') + ' · Rang ' + RANK_TIERS[rankIndexFor(pr.bases)].name;
-    document.getElementById('rulerSub').innerHTML = '<span class="ptitle-tag" style="margin:0">' + escapeHtml(pr.title) + '</span>' + (who === 'player' ? '' : ' <span class="rp-online' + (pr.online ? ' on' : '') + '"><i></i>' + (pr.online ? 'online' : 'offline') + '</span>');
+    document.getElementById('rulerSub').innerHTML = '<span class="ptitle-tag" style="margin:0">' + escapeHtml(pr.title) + '</span>' + (who === 'player' ? '' : ' <span class="rp-online' + (pr.online ? ' on' : '') + '"><i></i>' + (pr.online ? 'online' : 'offline') + '</span>') +
+        (() => { const a = typeof bundVon === 'function' && bundVon(who); return '<span class="rp-bund">' + (a ? '[' + escapeHtml(a.tag) + '] ' + escapeHtml(a.name) : 'kein Bündnis') + '</span>'; })();   // sein Bündnis
     const rd = r => RARITY_DEFS[r];
     const gear = pr.items.map(it => { const d = EQUIPMENT_DEFS[it[0]], r = rd(it[1]);
         return '<span class="gslot"><span class="tile' + (r ? '' : ' empty') + '"' + (r ? ' data-r="' + r.key + '"' : '') + ' title="' + d.name + (r ? ' – ' + r.label + ', Stufe ' + it[2] : ' – leer') + '">' + icon(d.icon) +
@@ -5473,6 +5479,7 @@ function playerRelevantAttackCount() {
     for (const attack of pendingAttacks) {
         if (!attack.attackerBotId || islandOwnerOf(attack.targetId) === 'player') count++;
     }
+    if (typeof bund !== 'undefined' && bund && Array.isArray(bund.r)) for (const r of bund.r) if (islandOwnerOf(r.t) === 'player' && !bundFreund('player', r.by)) count++;   // (eine Rally sammelt gegen dich)
     return count;
 }
 // A bot reinforcing its own territory is never the player's send.
@@ -5492,7 +5499,7 @@ function renderActiveMarches() {
         if (!attack.attackerBotId) {
             relevantAttackCount++;
             rows.push(logRowHtml('attack', 'attack', (attack.fightEndsAt ? 'Kampf um ' : 'Angriff auf ') + T(attack.targetId),
-                'von ' + T(attack.sourceId) + (attack.rawTroops ? ' · ' + fmtNum(attack.rawTroops) + ' Truppen' : '') + (!attack.fightEndsAt && baseShieldedFor(attack.targetId, 'player', attack.resolveAt) ? ' · Friedensschild – prallt ab' : ''), clock(secondsLeft), attack.fightEndsAt ? '' : marchButtons(attack, true)));
+                'von ' + T(attack.sourceId) + (attack.rawTroops ? ' · ' + fmtNum(attack.rawTroops) + ' Truppen' : '') + (attack.wartet ? ' · wartet: dort läuft noch ein anderer Kampf' : '') + (!attack.fightEndsAt && baseShieldedFor(attack.targetId, 'player', attack.resolveAt) ? ' · Friedensschild – prallt ab' : ''), clock(secondsLeft), attack.fightEndsAt ? '' : marchButtons(attack, true)));
         } else if (islandOwnerOf(attack.targetId) === 'player') {
             // A bot marching on the player's own territory is worth
             // a warning - a bot attacking a neutral or another bot
@@ -5503,6 +5510,12 @@ function renderActiveMarches() {
             rows.push(logRowHtml(bounces ? 'win' : 'loss', bounces ? 'shield' : 'bot', escapeHtml(botById[attack.attackerBotId].name) + ' greift ' + T(attack.targetId) + ' an',
                 (bounces ? 'Dein Friedensschild hält – prallt ab' : 'Deine Basis wird angegriffen') + (AUF ? AUF.angreiferInfo(attack) : ''), clock(secondsLeft)));   // (Wachturm: wie stark)
         }
+    }
+    if (typeof bund !== 'undefined' && bund && Array.isArray(bund.r)) for (const r of bund.r) {   // eine Rally, die gerade gegen dich sammelt (losgelaufen steht sie oben als Angriff)
+        if (islandOwnerOf(r.t) !== 'player' || bundFreund('player', r.by)) continue;
+        relevantAttackCount++;
+        rows.push(logRowHtml('loss', 'bot', 'Rally gegen ' + T(r.t),
+            escapeHtml(bundName(r.by)) + ' sammelt einen Angriff – los in', clock(Math.max(0, Math.ceil((r.los - Date.now()) / 1000)))));
     }
     let relevantSendCount = 0;
     for (const send of pendingSends) {
@@ -5580,7 +5593,7 @@ function renderCombatLog() {
     const fieldHeroLine = e => [[e.attacker, e.hA], [e.defender, e.hD]].map(([n, t]) => t ? ' · ' + (n === 'Du' ? 'dein Held ' : escapeHtml(n) + ' mit ') + escapeHtml(t) : '').join('');   // who led out in the open
     const fieldHeroDet = e => e.hx ? '<details><summary>Dein Held</summary>' + gearHtml({ items: [], lvl: playerLvl, hx: e.hx, skills: [], city: [], heroOnly: 1 }) + '</details>' : undefined;
     const partLines = (parts, first) => (parts || []).map((q, i) => '<div class="logLine' + (first && !i ? '' : q[1] < 0 ? ' buff malus' : ' buff') + '"><span>' + escapeHtml(q[0]) + (q[2] ? '<small class="logSrc">' + escapeHtml(q[2]) + '</small>' : '') + '</span><span>' + (first && !i ? '' : q[1] < 0 ? '−' : '+') + fmtD(Math.abs(q[1])) + '</span></div>').join('');   // each bonus with where it comes from
-    combatLogListEl.innerHTML = combatLog.map(entry => {
+    combatLogListEl.innerHTML = combatLog.map(entry => { try { return (entry => {   // (jeder Bericht für sich: ein kaputter blockiert nie die ganze Liste)
         T = id => (entry.names && entry.names[id]) || islandTitle(islandById[id]);
         if (entry.type === 'send') {
             return logRowHtml('send', 'send', logBadge('send', 'Verstärkung') + T(entry.toId), fmtM(entry.troops) + ' Truppen verlegt', ago(entry));
@@ -5664,8 +5677,8 @@ function renderCombatLog() {
                 logBalance(entry.myTroops, defSum, icon('attack') + escapeHtml(entry.botName) + ' ' + fmtM(entry.myTroops), fmtM(defSum) + ' Du' + icon('defense'), true) +
                 '<div class="logCompare">' +
                     '<div class="logSide">' +
-                        '<div class="logSideLabel">Angreifer · ' + whoLink(entry.botId || botIdByName[entry.botName], entry.botName) + (angreiferZeilen(entry) ? ' + ' + (entry.angreifer.length - 1) : '') + '</div>' +
-                        angreiferZeilen(entry) +
+                        '<div class="logSideLabel">Angreifer · ' + whoLink(entry.botId || botIdByName[entry.botName], entry.botName) + (angreiferZeilen(entry, gearHtml) ? ' + ' + (entry.angreifer.length - 1) : '') + '</div>' +
+                        angreiferZeilen(entry, gearHtml) +
                         (entry.atkParts ? '<div class="logLine"><span>Truppen</span><span>' + fmtD(entry.atkRaw) + '</span></div>' + partLines(entry.atkParts) :
                          entry.atkRaw !== undefined ? '<div class="logLine"><span>Truppen</span><span>' + fmtD(entry.atkRaw) + '</span></div>' +
                             (entry.atkBonus ? '<div class="logLine buff"><span>Angriff-Bonus</span><span>+' + fmtD(entry.atkBonus) + '</span></div>' : '') +
@@ -5680,7 +5693,7 @@ function renderCombatLog() {
                     '<div class="logSide">' +
                         '<div class="logSideLabel">Verteidiger · ' + (entry.rolle === 'helfer' ? escapeHtml(entry.defName || '?') + ' + Verstärkung' : entry.verst ? 'Du + Verstärkung' : 'Du') + '</div>' +
                         '<div class="logLine"><span>Truppen' + (entry.verst ? ' (alle)' : '') + '</span><span>' + fmtD(entry.enemyTroops) + '</span></div>' +
-                        verstZeilen(entry, entry.rolle === 'helfer' ? (entry.defName || '?') : 'Deine') +
+                        verstZeilen(entry, entry.rolle === 'helfer' ? (entry.defName || '?') : 'Deine', gearHtml) +
                         (entry.defParts ? partLines(entry.defParts, true)
                           : '<div class="logLine"><span>Verteidigung</span><span>' + fmtD(entry.enemyDefense) + '</span></div>' +
                             (entry.armor ? '<div class="logLine buff"><span>davon Rüstung</span><span>+' + fmtD(entry.armor) + '</span></div>' : '')) +
@@ -5699,7 +5712,7 @@ function renderCombatLog() {
             if (entry.rolle === 'helfer') { const mh = entry.meine || {};   // deine Verstärkung bei einem Bündnis-Mitglied hat mitverteidigt
                 return logRowHtml(entry.won ? 'loss' : 'win', 'defense', logBadge(entry.won ? 'loss' : 'win', 'Verstärkung') + T(entry.targetId),
                     escapeHtml(entry.defName || '?') + ' gegen ' + escapeHtml(entry.botName) + ' · ' + (entry.won ? 'gefallen' : 'gehalten') + ' · deine ' + fmtM(mh.n || 0) + ': −' + fmtM((mh.fallen || 0) + (mh.wounded || 0)) + (mh.wounded ? ' (' + fmtM(mh.wounded) + ' ins Lazarett)' : '') + vs, ago(entry), bdet); }
-            const wer = escapeHtml(entry.botName) + (angreiferZeilen(entry) ? ' (gemeinsam, ' + entry.angreifer.length + ' Angreifer)' : '');
+            const wer = escapeHtml(entry.botName) + (angreiferZeilen(entry, gearHtml) ? ' (gemeinsam, ' + entry.angreifer.length + ' Angreifer)' : '');
             return entry.capitalHolds
                 ? logRowHtml('loss', 'bot', logBadge('loss', 'Geplündert') + T(entry.targetId), wer + ' hat die Garnison geschlagen – die Stadt hält' + vs, ago(entry), bdet)
                 : entry.won
@@ -5716,9 +5729,9 @@ function renderCombatLog() {
             logBalance(atkTotal, defTotal, icon('attack') + 'Du ' + fmtM(atkTotal), fmtM(defTotal) + ' ' + escapeHtml(entry.defenderName || 'Abwehr') + icon('defense')) +
             '<div class="logCompare">' +
                 '<div class="logSide">' +
-                    '<div class="logSideLabel">Angreifer' + (angreiferZeilen(entry) ? ' · gemeinsam' : '') + '</div>' +
-                    angreiferZeilen(entry) +
-                    '<div class="logLine"><span>Truppen' + (angreiferZeilen(entry) ? ' (alle)' : '') + '</span><span>' + fmtD(entry.myTroops) + '</span></div>' +
+                    '<div class="logSideLabel">Angreifer' + (angreiferZeilen(entry, gearHtml) ? ' · gemeinsam' : '') + '</div>' +
+                    angreiferZeilen(entry, gearHtml) +
+                    '<div class="logLine"><span>Truppen' + (angreiferZeilen(entry, gearHtml) ? ' (alle)' : '') + '</span><span>' + fmtD(entry.myTroops) + '</span></div>' +
                     (entry.atkParts ? partLines(entry.atkParts)
                         : '<div class="logLine buff"><span>Angriff-Skill</span><span>+' + fmtD(entry.skillBuff) + '</span></div>' +
                           (entry.titleBuff ? '<div class="logLine buff"><span>Titel</span><span>' + (entry.titleBuff > 0 ? '+' : '−') + fmtD(Math.abs(entry.titleBuff)) + '</span></div>' : '')) +
@@ -5734,7 +5747,7 @@ function renderCombatLog() {
                 '<div class="logSide">' +
                     '<div class="logSideLabel">Verteidiger' + (entry.defenderName ? ' · ' + whoLink(entry.defenderId || botIdByName[entry.defenderName], entry.defenderName) : '') + '</div>' +
                     '<div class="logLine"><span>Truppen' + (entry.verst ? ' (alle)' : '') + '</span><span>' + fmtD(entry.enemyTroops) + '</span></div>' +
-                    verstZeilen(entry, entry.defenderName || 'Besitzer') +
+                    verstZeilen(entry, entry.defenderName || 'Besitzer', gearHtml) +
                     (entry.defParts ? partLines(entry.defParts, true)
                       : '<div class="logLine"><span>Verteidigung</span><span>' + fmtD(entry.enemyDefense) + '</span></div>' +
                         '<div class="logLine buff"><span>Verteidigung-Buff</span><span>+' + fmtD(entry.defenseBuff) + '</span></div>') +
@@ -5753,14 +5766,23 @@ function renderCombatLog() {
         return logRowHtml(entry.won ? 'win' : 'loss', entry.won ? 'level' : 'losses',
             logBadge(entry.won ? 'win' : 'loss', entry.won ? 'Sieg' : 'Niederlage') + T(entry.targetId),
             (entry.rolle === 'mit' ? 'mit ' + escapeHtml(entry.fuehrer || '?') + ' · deine ' + fmtM((entry.meine || {}).n || 0) + ': −' + fmtM(((entry.meine || {}).fallen || 0) + ((entry.meine || {}).wounded || 0)) + ' · '
-                : angreiferZeilen(entry) ? entry.angreifer.length + ' Angreifer · ' : '') +
+                : angreiferZeilen(entry, gearHtml) ? entry.angreifer.length + ' Angreifer · ' : '') +
             'von ' + T(entry.sourceId) + (entry.won
                 ? ' · ' + fmtM(entry.remaining) + ' übrig'
                 : (entry.retreatSurvivors ? ' · ' + fmtM(entry.retreatSurvivors) + ' geflohen' : '')),
             ago(entry), details);
+    })(entry); } catch (err) { console.warn('Kampfbericht', err); return logRowHtml('loss', 'info', 'Kampfbericht', 'Dieser Bericht kann nicht angezeigt werden.', ''); }
     }).join('');
-    [...combatLogListEl.children].forEach((row, i) => { if (combatLog[i]) row.dataset.key = combatLogKey(combatLog[i]); });
+    [...combatLogListEl.children].forEach((row, i) => { const e = combatLog[i]; if (!e) return; row.dataset.key = combatLogKey(e);
+        const isl = islandById[e.targetId ?? e.toId], lt = row.querySelector(':scope > .lt'); if (!isl || !lt) return;   // wo war das? Koordinaten + „Zeigen“ auf der Karte
+        lt.insertAdjacentHTML('beforeend', '<small class="logOrt">' + coordText(isl.x, isl.y) + ' <button type="button" class="btn btn--ghost btn--sm" data-logzeigen="' + isl.id + '">Zeigen</button></small>'); });
 }
+combatLogListEl.addEventListener('click', e => {
+    const b = e.target.closest('[data-logzeigen]'); if (!b) return;
+    e.preventDefault(); e.stopPropagation();
+    const isl = islandById[+b.dataset.logzeigen]; if (!isl) return;
+    battleLogCloseBtn.click(); flyTo(isl.x, isl.y); setTimeout(() => openIslandPopup(isl), 380);
+});
 
 battleLogBtn.addEventListener('click', () => {
     if (isPanelOpen(battleLogPopup)) { battleLogCloseBtn.click(); return; }
@@ -7070,7 +7092,7 @@ function finishMapBattle(attack, o) {               // the fight is decided: the
 // Läuft auf dem Ziel schon ein Kampf, in den die ankommende Welle a mit hineingeht? Dieselbe Seite: derselbe Angreifer oder
 // ein Bündnis-Mitglied (dann EIN gemeinsamer Kampf, wie eine Rally). (Vorschau: deine eigenen Wellen wie bisher.)
 function kampfDazu(a, now) {
-    return pendingAttacks.find(p => p !== a && p.fightEndsAt > now && p.targetId === a.targetId && (p.attackerBotId && a.attackerBotId
+    return pendingAttacks.find(p => p !== a && p.fightEndsAt && p.targetId === a.targetId && (p.attackerBotId && a.attackerBotId
         ? p.attackerBotId === a.attackerBotId || bundFreund(p.attackerBotId, a.attackerBotId)
         : !p.attackerBotId && !a.attackerBotId && !p.rally && !a.rally));
 }
@@ -7083,12 +7105,14 @@ setInterval(() => {
     const now = Date.now();
     for (const a of pendingAttacks) {
         if (a.resolveAt > now) continue;
+        if (a.wartet) continue;                       // (der Weltrechner lässt sie warten: dort läuft noch ein anderer Kampf)
         const k = kampfKey(a), z = zuschauerKampf.get(k);
         if (z) { if (!a.fightEndsAt) a.fightEndsAt = z.ende; continue; }   // (neue Welt-Daten: Kampf läuft noch – nicht als „0:00“ zeigen)
         // Eine weitere Welle derselben Seite (derselbe Angreifer oder ein Bündnis-Mitglied) auf dasselbe Ziel: der Weltrechner
         // wirft sie in den laufenden Kampf – also keine zweite Schlacht, sondern EINE mit den zusammengelegten Truppen.
         const seite = x => x.attackerBotId || 'player', zk = p => zuschauerKampf.get(kampfKey(p));
         const mit = pendingAttacks.find(p => p !== a && p.targetId === a.targetId && (seite(p) === seite(a) || bundFreund(seite(p), seite(a))) && zk(p) && !zk(p).mit && zk(p).ende > now);
+        if (!mit && pendingAttacks.some(p => p !== a && p.targetId === a.targetId && zk(p) && zk(p).ende > now)) continue;   // ein fremder Kampf läuft dort: diese Welle wartet (der Weltrechner auch)
         if (mit) {
             const km = kampfKey(mit), zm = zuschauerKampf.get(km);
             zuschauerKampf.set(k, { ende: zm.ende, mit: km }); if (!a.fightEndsAt) a.fightEndsAt = zm.ende;
@@ -11198,6 +11222,8 @@ function renderPopup() {
     let subH = '';                                   // (Kopfzeile und Werte: jede Sekunde neu gerechnet aus liveTick, geschrieben nur bei einer Änderung)
     popupEmblem.className = 'emblem emblem--' + (isBoss ? 'enemy' : kind);
     popupEmblem.querySelector('use').setAttribute('href', '#i-' + (isBoss ? 'attack' : isTemple ? 'temple' : isOwned ? 'profile' : ownerBot ? 'bot' : 'question'));
+    if (owner && !isBoss) { popupEmblem.dataset.profile = owner; popupEmblem.setAttribute('role', 'button'); popupEmblem.title = 'Profil ansehen'; }   // das Viereck antippen → Profil (mit Bündnis)
+    else { delete popupEmblem.dataset.profile; popupEmblem.removeAttribute('role'); popupEmblem.removeAttribute('title'); }
     popupLevel.textContent = level;
     popupTitle.textContent = islandTitle(island);
     popupActions.hidden = true;
@@ -12928,7 +12954,7 @@ if (window.WELT) {
             const now = Date.now(), fromId = m.sourceId ?? m.fromId, toId = m.targetId ?? m.toId, troops = m.rawTroops ?? m.troops;
             (pendingAttacks.includes(m) ? pendingAttacks : pendingSends).splice((pendingAttacks.includes(m) ? pendingAttacks : pendingSends).indexOf(m), 1);
             const home = gehoert(fromId, who) ? fromId : botCapitalOf(who);
-            pendingSends.push({ fromId: toId, toId: home, troops, startedAt: now, resolveAt: now + Math.max(1000, now - m.startedAt), senderBotId: who, back: true });
+            pendingSends.push({ fromId: toId, toId: home, troops, startedAt: now, resolveAt: now + Math.max(1000, Math.min(now, m.resolveAt) - m.startedAt), senderBotId: who, back: true });
             saveGame(); saveProgression(); requestRender();
         },
         schneller(who, b) {                           // die Gems zahlt er auf seinem Handy – 3B: das Hauptbuch zieht sie ab (kann er sie haben?)
