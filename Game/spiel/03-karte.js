@@ -1599,8 +1599,8 @@ function drawMap() {
     drawMarchLine(a.attackerBotId ? 'incoming' : 'attack', islandById[a.sourceId], islandById[a.targetId], a.startedAt, a.resolveAt, wallNow, null, a.attackerBotId ? null : marchKeyOf(a), a.attackerBotId || 'player'); }
   for (const s of pendingSends) {
     if (s.senderBotId) {                                                     // fremde Märsche: nur Bündnis-Mitglieder, die zu DIR kommen (Rally, Hilfe, Verstärkung) – sonst Nebel wie bisher
-      if (s.back || !bundFreund(s.senderBotId, 'player') || islandOwnerOf(s.toId) !== 'player') continue;
-      drawMarchLine('send', islandById[s.fromId], islandById[s.toId], s.startedAt, s.resolveAt, wallNow, null, null, s.senderBotId); continue; }
+      if (!bundFreund(s.senderBotId, 'player') || (!s.back && islandOwnerOf(s.toId) !== 'player')) continue;   // (auch ihre Rückwege nach Hause – z. B. nach einer gemeinsamen Rally)
+      drawMarchLine(s.back ? 'retreat' : 'send', islandById[s.fromId], islandById[s.toId], s.startedAt, s.resolveAt, wallNow, null, null, s.senderBotId); continue; }
     drawMarchLine('send', islandById[s.fromId], islandById[s.toId], s.startedAt, s.resolveAt, wallNow, null, marchKeyOf(s)); }
   for (const s of pendingScouts) drawMarchLine('scout', islandById[s.sourceId], islandById[s.targetId], s.startedAt, s.resolveAt, wallNow);
   for (const s of botScoutsOnMap) drawMarchLine('enemyScout', islandById[s.sourceId], islandById[s.targetId], s.startedAt, s.resolveAt, wallNow);   // a bot's scout coming to look at you

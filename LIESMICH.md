@@ -1901,3 +1901,9 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
 - Getestet: `nan_test` – alter Code NaN (genau der Fehler), neuer Code richtige Zahlen; dazu vsme_echt, vsme, selbst2,
   reihe, gemeinsam, welle, laden grün.
 - **Hochgeladen 4.10., 13:02 UTC**, Weltrechner läuft wieder.
+
+## 73. Rückwege der Bündnis-Mitglieder auf der Karte (Alexander 4.10.: „ja, Rückwege auch zeigen“)
+- Nach einer gemeinsamen Rally (oder sonst) laufen die Überlebenden der Mitglieder zu ihrer Basis zurück (Anteil nach
+  Truppen; die Basis, von der sie kamen, sonst ihre Hauptstadt; Verwundete sind schon in ihrem Lazarett). Diese Rückwege
+  von Bündnis-Mitgliedern werden jetzt auch gezeichnet (als Rückmarsch). Fremde Märsche bleiben im Nebel.
+- Getestet: `rally_rueck_test` (Linie zur Rally + Rückweg nach Hause sichtbar), laden grün.
