@@ -355,7 +355,8 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
   - **Alles wird später neu designt** – Alexander daran erinnern.
   - **Gebäude neu (Alexander 4.10.):** alles auf Deutsch.
     - bleibt: **Burg**, **Schmiede**, **Heldenhalle**, **Markt**
-    - **Akademie → Labor:** dort wird **alles** geforscht.
+    - **Akademie → Labor:** dort wird **alles** geforscht. Forschen kostet **Rohstoffe (Gold, Holz, Stein, Eisen)
+      und Zeit** (Alexander 4.10.).
     - **Tempelschrein weg** → wird Forschung im Labor.
     - **Späherturm weg** → wird Forschung im Labor.
     - **Lager, Kaserne, Schatzkammer weg** – ihr Bonus auch (nicht ins Labor).
