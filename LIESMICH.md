@@ -340,13 +340,18 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
   - **Andere Basen (Türme):** kann man verlieren; der Angreifer bekommt dort **nur Gold**, sonst nichts.
   - **Hauptstadt-Stufe:** bleibt bis 25 (Alexander 4.10.).
   - **Entschieden (Alexander 4.10.):** Der Angreifer bekommt **immer nur einen Teil** von dem, was über dem
-    Burg-Schutz liegt (wie groß der Teil ist: Zahl noch festlegen). Das **Brennen ist nur zu sehen**, es bewirkt nichts.
+    Burg-Schutz liegt – **ein kleiner Teil**, damit man **oft angreifen** muss
+    (Vorschlag 10 %, noch bestätigen). Das **Brennen ist nur zu sehen**, es bewirkt nichts.
 - ⭐⭐ **Hauptstadt = das Wichtigste im Spiel (Alexander 4.10., „erst mal merken“) – noch NICHT gebaut:**
   - **Server-Reset später:** die ganze Karte wird neu – **außer der Hauptstadt**. Sie behält Stufe, Gebäude,
     Ausrüstung und Helden.
   - **Hauptstadt max. Stufe 25.** Die Basen draußen bleiben bis Stufe 100 wie jetzt – **daran nichts ändern**.
   - **Aufleveln langsam:** nicht in 5 Tagen auf 25, sondern über lange Zeit und **mehrere Server-Resets**.
   - **Kosten:** Gold, Holz, Stein, Eisen – jede Stufe mehr – und jede Stufe **dauert Zeit**.
+    Erste Stufen **mittelmäßig**, später viel mehr, damit man lange farmen oder angreifen muss.
+  - **Bauzeit je Stufe:** mehrere Tage – von **1 Tag (niedrige Stufen) bis 60 Tage (hohe Stufen)**.
+  - **Burg-Schutz (Vorschlag, Alexander war einverstanden):** Stufe 1: 10.000 · Stufe 10: 1 Mio. ·
+    Stufe 25: 100 Mio. je Rohstoff (dazwischen gleichmäßig steigend).
   - **Alles wird später neu designt** – Alexander daran erinnern.
   - **Gebäude neu (Alexander 4.10.):** alles auf Deutsch.
     - bleibt: **Burg**, **Schmiede**, **Heldenhalle**, **Markt**
