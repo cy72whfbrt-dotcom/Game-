@@ -352,7 +352,10 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
     - **Akademie → Labor:** dort wird **alles** geforscht.
     - **Tempelschrein weg** → wird Forschung im Labor.
     - **Späherturm weg** → wird Forschung im Labor.
-    - **Lager, Kaserne, Schatzkammer weg.**
+    - **Lager, Kaserne, Schatzkammer weg** – ihr Bonus auch (nicht ins Labor).
+    - **T1–T5 komplett raus** („Tot!!“): keine Truppen-Stufen mehr, auch keine Forschung dafür.
+    - **Burg schützt die Rohstoffe** (statt Lager): Gold, Holz, Stein, Eisen. Was **über dem Schutz** liegt,
+      kann ein Angreifer erbeuten (passt zu „Beute neu“ oben). Wie viel die Burg je Stufe schützt: noch besprechen.
     - **Lazarett → Krankenhaus** („KH“).
     - **Wachturm weg** → wird Forschung im Labor (zeigt Stärke von Angriffen auf dich, bessere Spähberichte).
       Alexander: „machen wir noch mal besser“ – später neu ausdenken.
