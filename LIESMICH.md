@@ -2018,3 +2018,5 @@ Alles aus der Merkliste 12a („Hauptstadt = das Wichtigste“) – **außer dem
 - **Späher hin UND zurück (Alexander 4.10., wichtig):** am Ziel kommt der Bericht, dann läuft der Späher denselben Weg heim
   („Späher kehrt zurück“ unter Kampf → Unterwegs, auch beschleunigbar). „Zurück“ unterwegs: er kehrt um und braucht heim so
   lange, wie er schon unterwegs war. Getestet (`rueckweg_test`).
+- **Hochgeladen 4.10., 14:41 UTC** (Abschnitte 74–77 + Späher-Rückweg). Weltrechner läuft wieder (14:42, 152 Mitspieler),
+  keine Fehler, keine neuen Alarme.
