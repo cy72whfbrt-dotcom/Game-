@@ -1710,3 +1710,4 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
   Bei Bedarf genauso anheben.
 - Getestet: `send2bd_server_test` (Server + Weltrechner: Admin 2 Billiarden → abholen → senden → kommen an:
   2.000.000.000.048.722 in der Basis), Unit 65/65.
+- **Hochgeladen 4.10., 09:29 UTC.** Weltrechner läuft wieder.
