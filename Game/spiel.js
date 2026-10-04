@@ -7054,6 +7054,19 @@ setInterval(() => {
         if (a.resolveAt > now) continue;
         const k = kampfKey(a), z = zuschauerKampf.get(k);
         if (z) { if (!a.fightEndsAt) a.fightEndsAt = z.ende; continue; }   // (neue Welt-Daten: Kampf läuft noch – nicht als „0:00“ zeigen)
+        // Eine zweite Welle desselben Angreifers auf dasselbe Ziel: der Weltrechner wirft sie in den laufenden Kampf –
+        // also keine zweite Schlacht zeigen, sondern die laufende mit den zusammengelegten Truppen weiterspielen.
+        const mit = !a.rally && pendingAttacks.find(p => p !== a && !p.rally && p.targetId === a.targetId && (p.attackerBotId || null) === (a.attackerBotId || null) &&
+            zuschauerKampf.has(kampfKey(p)) && !zuschauerKampf.get(kampfKey(p)).mit && zuschauerKampf.get(kampfKey(p)).ende > now);
+        if (mit) {
+            const km = kampfKey(mit), zm = zuschauerKampf.get(km);
+            zuschauerKampf.set(k, { ende: zm.ende, mit: km }); if (!a.fightEndsAt) a.fightEndsAt = zm.ende;
+            const bt = mapBattles.find(x => x.attackId === km && !x.final);
+            zm.dazu = (zm.dazu || 0) + a.rawTroops;
+            const est = bt && fightEstimate({ ...mit, rawTroops: mit.rawTroops + zm.dazu, attackBonus: undefined });
+            if (est) mbReplan(bt, est, performance.now());
+            continue;
+        }
         const mine = !a.attackerBotId, vsMe = a.attackerBotId && islandOwnerOf(a.targetId) === 'player';
         const tgt = islandById[a.targetId], est = (mine || (vsMe && a.rawTroops > 0)) && tgt ? fightEstimate(a) : null;   // (fremde Stärke nur mit Wachturm – sonst keine Vorschau-Schlacht mit falschen Zahlen)
         const ende = a.fightEndsAt && a.fightEndsAt > now ? a.fightEndsAt : now + (est ? fightDurationMs(est) : 4000);

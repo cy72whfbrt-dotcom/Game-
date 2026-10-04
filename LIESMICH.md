@@ -1609,3 +1609,12 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
 - Getestet: Vorschau `chat_test` 12/12; Server + Weltrechner `chat_server_test` (teilen am Turm, „Wir greifen an?“, B sieht
   beides mit „Zeigen“ + Punkt, antwortet „Ja“, A sieht es; C bekommt den Chat nicht – auch nicht nach dem Neuladen; keine
   Skript-Fehler). Einladungen 10/10, Tauschen 6/6, Verstärkung 5/5, Bündnis-Bots 3/3, Amt 1/1, Unit 16/65.
+
+## 52. Angriffe sahen doppelt aus (Alexander 4.10., Bildschirmfoto)
+- **Was war:** Zwei Wellen desselben Angreifers auf dasselbe Ziel. Der Weltrechner legt die zweite Welle in den laufenden
+  Kampf (ein Kampf, eine Rechnung, schon immer so). Das Handy hat aber für jede ankommende Welle eine eigene Schlacht
+  gezeigt – zwei Balken, Verluste doppelt. Es wurde nichts doppelt abgezogen, nur doppelt angezeigt.
+- **Fix (spiel.js, Zuschauer-Anzeige):** Kommt eine Welle an, während dieselbe Seite das Ziel schon angreift, gibt es keine
+  zweite Schlacht: die laufende rechnet mit den zusammengelegten Truppen weiter (wie beim Weltrechner).
+- Getestet: Vorschau `welle_test` – alter Code 2 Schlachten (je 6 Mrd), neuer Code 1 Schlacht (12 Mrd); keine Skript-Fehler.
+  Noch nicht hochgeladen.
