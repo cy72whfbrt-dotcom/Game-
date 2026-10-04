@@ -1822,3 +1822,4 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
   (höchstens 4 Antworten je Rally). Die Regel selbst (rechtzeitig da sein) ist unverändert.
 - Getestet: `rally_chat_test` (ferner Mitspieler „Bin zu weit weg“, naher „Bin unterwegs“ und kommt, neue Knöpfe da),
   chat, chat_rally, rally_schnell, laden grün.
+- **Hochgeladen 4.10., 12:17 UTC** (33 s), Weltrechner läuft wieder.
