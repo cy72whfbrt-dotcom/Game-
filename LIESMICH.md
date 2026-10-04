@@ -1994,3 +1994,14 @@ Alles aus der Merkliste 12a („Hauptstadt = das Wichtigste“) – **außer dem
 - **Nachtrag (Alexander 4.10.):** Der Hinweis „Deine Hauptstadt hat nur diese EINE Stufe … Burg 25 = Stufe 100“ ist raus.
   Auf der Karte (Namensschild) und im Basis-Fenster steht bei jeder Hauptstadt jetzt ihre **Burg-Stufe** (1–25), nicht
   mehr die umgerechnete Stufe bis 100 (`anzeigeStufe` in 03-karte.js – intern rechnet die Basis wie bisher).
+
+## 76. Alle Fenster gleich, weniger Text (Alexander 4.10.: „übersichtlicher, nicht so viele Texte … soll immer gleich aussehen, wie Rise of Kingdoms“)
+- **Ein Fenster-Aussehen für alles:** Helden und Aussehen haben jetzt denselben Kopf wie alle anderen Fenster (Zeichen links,
+  Überzeile, Titel, ×) und denselben goldenen Rahmen und Hintergrund. Das Stadt-Fenster hat auch den Rahmen. Alle Fenster
+  aus der unteren Leiste (Bündnis, Kampf, Events, Shop, Profil) sind **gleich hoch** – kein Springen mehr.
+- **Weniger Text:** Gebäude-Beschreibung nur noch auf Tipp (ⓘ oben im Stadt-Fenster); Burg-Hinweis kurz („Fällt nie · Sieger
+  nimmt 10 % über dem Schutz“); Labor-Hinweis weg; Botschaft nur noch Zahlen; Hauptstadt-Hinweis im Basis-Fenster eine Zeile.
+- **Getestet („2 Basen nebeneinander, Gegner und ich“, `klau_test`):** Angriff auf seine Hauptstadt → Garnison fällt, die
+  Stadt bleibt seine und brennt; Beute = genau 10 % über seinem Schutz (Holz ~100.000 von 1 Mio., Stein 50.000, Eisen 10.000,
+  Gold ~200.000); Holz/Stein/Eisen sofort bei mir, Gold im Abholfach (Events → Belohnung), bei ihm abgezogen. Liegt alles
+  unter dem Schutz, wird nichts geklaut (Sieg, aber 0 Beute).

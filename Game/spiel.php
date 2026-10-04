@@ -788,8 +788,15 @@ body.has-panel .mapctl{display:none}
 .hh{position:fixed;inset:0;z-index:58;overflow-y:auto;overscroll-behavior:contain;background:var(--noise),radial-gradient(circle at 50% 0,#1d1a14,#07080b 70%);color:var(--tx-1);padding:calc(var(--safe-t) + 8px) 12px calc(var(--safe-b) + 16px);animation:fade-in var(--dur-2) var(--ease-out)}
 .hh[hidden]{display:none}
 .hh > *{max-width:980px;margin-left:auto;margin-right:auto}
-.hh-head{display:flex;align-items:center;gap:10px;padding:6px 0 10px;border-bottom:1px solid var(--line-2)}
-.hh-head h2{flex:1;margin:0;text-align:center;font:700 20px/1.1 var(--font-display);letter-spacing:.08em;color:var(--gold-100)}
+.hh-head{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:6px 2px 12px;border-bottom:1px solid var(--line-1)}
+.hh-head h2{margin:3px 0 2px;font:600 var(--fs-17)/1.15 var(--font-display);letter-spacing:var(--track-display);color:var(--gold-100);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Alle Fenster gleich (Alexander 4.10., wie in Rise of Kingdoms): derselbe Rahmen, Kopf (Zeichen · Überzeile · Titel · ×), Hintergrund, Höhe */
+.hh{background:var(--noise),var(--panel-bg)}
+.hh::before,.city-sheet::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:3;border:20px solid transparent;border-image:var(--frame) 20 / 20px stretch}
+.city-sheet::before{position:absolute}
+.panel--sheet{height:var(--sheet-max)}
+.city-bdesc{display:none} .city-sheet.zeig-info .city-bdesc{display:block}
+.city-info-btn.on{color:var(--gold-100);border-color:var(--line-3)}
 .hh-ghost{width:34px}
 .hh-pairs{padding:8px 0 4px;border-top:1px solid var(--line-2)} .hh-pairs h3{margin:6px 0;font:700 var(--fs-11)/1 var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--tx-3)}
 .hh-pair{display:flex;gap:10px;align-items:center;padding:8px;margin-top:6px;border:1px solid var(--line-1);border-radius:var(--r-sm);background:#0005} .hh-pair.is-on{border-color:var(--gold-300);background:rgba(228,200,134,.08)}
@@ -2073,6 +2080,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
     <div class="city-sheet-head">
       <div id="cityBIcon" class="city-bicon"></div>
       <div class="city-bmeta"><div id="cityBOver" class="overline">Gebäude</div><h3 id="cityBName">Burgfried</h3><div id="cityBLevel" class="city-blevel"></div></div>
+      <button id="cityInfoBtn" class="btn-x city-info-btn" type="button" aria-label="Info"><svg class="icon"><use href="#i-info"/></svg></button>
       <button id="citySheetClose" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button>
     </div>
     <div id="cityTabs" class="seg city-tabs" hidden></div>
@@ -2090,7 +2098,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 <!-- ============ HELDENHALLE: the heroes ============ -->
 <section id="heroHall" class="hh" role="dialog" aria-label="Helden" hidden></section>
 <section id="lookSheet" class="hh lk" role="dialog" aria-label="Aussehen" hidden>
-  <div class="hh-head"><span class="hh-ghost"></span><h2>Aussehen</h2><button class="btn-x" type="button" data-lk-close aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button></div>
+  <div class="hh-head"><div class="emblem emblem--gold"><svg class="icon"><use href="#i-flag"/></svg></div><div class="phead-text"><div class="overline">Profil</div><h2>Aussehen</h2></div><button class="btn-x" type="button" data-lk-close aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button></div>
   <div id="lkTop" class="lk-top"></div>
   <div id="lkTabs" class="tabs lk-tabs" role="tablist">
     <button class="tab" type="button" role="tab" data-lk-tab="crest"><svg class="icon"><use href="#i-flag"/></svg><span>Wappen</span></button>

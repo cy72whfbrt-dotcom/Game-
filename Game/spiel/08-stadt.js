@@ -731,7 +731,7 @@ function heroSvg(id) {
 }
 function hhGrid() {
     const H = loadHeroes(), list = HEROES.slice().sort((a, b) => (H[b.id].own - H[a.id].own) || b.r - a.r || H[b.id].q - H[a.id].q);
-    return '<div class="hh-head"><span class="hh-ghost"></span><h2>Helden</h2><button class="btn-x" type="button" data-hh-close aria-label="Schließen">' + icon('close') + '</button></div>' +
+    return '<div class="hh-head"><div class="emblem emblem--gold">' + icon('profile') + '</div><div class="phead-text"><div class="overline">Heldenhalle</div><h2>Helden</h2></div><button class="btn-x" type="button" data-hh-close aria-label="Schließen">' + icon('close') + '</button></div>' +
         '<div class="hh-count">' + HEROES.filter(h => H[h.id].own).length + ' / ' + HEROES.length + ' freigeschaltet · Splitter gibt es von Bossen, für Aufgaben und als Heldenkisten im Shop</div>' +
         '<div class="hh-cards">' + list.map(h => { const s = H[h.id], need = s.own ? heroStepCost(h, s.q) : HERO_UNLOCK[h.r], rd = RARITY_DEFS[h.r];
             return '<button type="button" class="hh-card' + (s.own ? '' : ' is-locked') + '" data-hh="' + h.id + '" style="--rc:' + rd.color + ';--c:' + h.color + '">' +
@@ -909,6 +909,7 @@ function teleportCapital(toId) {
     return true;
 }
 document.getElementById('cityCloseBtn').addEventListener('click', closeCity);
+document.getElementById('cityInfoBtn').addEventListener('click', e => { const s = document.getElementById('citySheet'); s.classList.toggle('zeig-info'); e.currentTarget.classList.toggle('on', s.classList.contains('zeig-info')); });   // Beschreibung nur auf Tipp (weniger Text)
 document.getElementById('citySheetClose').addEventListener('click', () => { cityOpenId = null; document.getElementById('citySheet').hidden = true; });
 document.getElementById('cityUpgradeBtn').addEventListener('click', () => {
     if (cityOpenId === '_keep' && AUF) { cityStartBuild('keep'); return; }        // die Burg-Stufe (Bauzeit, Münzen + Rohstoffe) ist die EINE Stufe der Hauptstadt

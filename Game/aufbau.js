@@ -308,12 +308,12 @@ function renderKeep() {                                        // das Burg-Fenst
     liveHtml(document.getElementById('cityBExtra'),
         '<div class="keep-h">Jetzt</div><div class="auf-grid"><div><span>Marsch-Plätze</span><b>' + belegt + ' / ' + marschGrenze('player') + ' belegt</b></div><div><span>Gebäude</span><b>bis Stufe ' + stadtCap('player', 'wall') + '</b></div><div><span>Schutz</span><b>' + fmtCompact(burgSchutz('player')) + ' je Rohstoff</b></div></div>' +
         (max ? '' : '<div class="keep-h">Burg-Stufe ' + (B + 1) + ' schaltet frei</div><ul class="auf-frei">' + freiText(B + 1).map(t => '<li>' + icon('check') + t + '</li>').join('') + '</ul>') +
-        '<small class="keep-note">Die Hauptstadt kann angegriffen, aber nie erobert werden: gewinnt der Angreifer, nimmt er ' + Math.round(HAUPT_BEUTE * 100) + ' % von dem mit, was über dem Schutz liegt. Friedensschilde: Shop → Schilde.</small>');
+        '<small class="keep-note">Fällt nie · Sieger nimmt ' + Math.round(HAUPT_BEUTE * 100) + ' % über dem Schutz</small>');
 }
 function effektText(id, lvl) {
     if (id === 'academy') return (lvl ? 'Forschung bis Labor-Stufe ' + lvl + ' · Truppen laufen +' + lvl * 2 + ' % schneller.' : 'Baue das Labor, um zu forschen.') + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: mehr Forschung, +' + (lvl + 1) * 2 + ' % Tempo.' : '');
-    if (id === 'embassy') { const t = L => 'Verstärkung bei dir bis ' + fmtCompact(typeof verstPlatzStufe === 'function' ? verstPlatzStufe('player', L) : 0) + ' · Rally bis ' + fmtCompact(typeof rallyPlatzStufe === 'function' ? rallyPlatzStufe('player', L) : 0) + ' Truppen dazu · ' + L + ' Bündnis-Hilfen je Bau/Forschung · Hilfe und Rally zu Mitgliedern +' + L * 3 + ' % schneller · Geschenke +' + L * 4 + ' %';
-        return (lvl ? 'Jetzt: ' + t(lvl) + '.' : 'Baue die Botschaft: Verstärkung von Bündnis-Mitgliedern, größere Rallys und Bündnis-Hilfe.') + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: ' + t(lvl + 1) + '.' : ''); }
+    if (id === 'embassy') { const t = L => 'Verstärkung ' + fmtCompact(typeof verstPlatzStufe === 'function' ? verstPlatzStufe('player', L) : 0) + ' · Rally +' + fmtCompact(typeof rallyPlatzStufe === 'function' ? rallyPlatzStufe('player', L) : 0) + ' · ' + L + ' Hilfen';
+        return (lvl ? t(lvl) : 'Verstärkung, Rally, Bündnis-Hilfe') + (lvl < CITY_MAX_LEVEL ? ' → ' + t(lvl + 1) : ''); }
     const rx = { lumber: ['h', 'Holz'], quarry: ['s', 'Stein'], mine: ['e', 'Eisen'] }[id];
     if (rx) { const k = rx[0], jetzt = rohStunde('player')[k], f = jetzt / Math.max(1, ROH_BURG_STUNDE + rohGebStunde(lvl));
         return (lvl ? 'Jetzt: ' : 'Ohne Gebäude (nur die Burg): ') + fmtCompact(jetzt) + ' ' + rx[1] + ' pro Stunde.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: ' + fmtCompact((ROH_BURG_STUNDE + rohGebStunde(lvl + 1)) * f) + '.' : ''); }
@@ -356,7 +356,7 @@ function extraHtml(id, lvl) {
         const lauf = d ? '<div class="notice notice--gold fo-lauf">' + icon('hourglass') + '<span style="flex:1"><b>' + d.name + (d.max > 1 ? ' Stufe ' + r.to : '') + '</b> · noch ' + uhrHtml(r.endsAt) + '<div class="city-progress" style="margin-top:6px"><i style="--p:' + Math.min(100, (Date.now() - r.startedAt) / Math.max(1, r.endsAt - r.startedAt) * 100).toFixed(1) + '%"></i></div>' + (typeof bundHilfeKnopf === 'function' ? bundHilfeKnopf('fo', r.id, r.to, r.endsAt) : '') + '</span><button type="button" class="btn btn--secondary btn--sm" data-fo-gems' + (gems < foGems(c) ? ' disabled' : '') + '>Fertig · ' + foGems(c) + ' Gems</button></div>' : '';
         if (!lvl) return lauf;
         return lauf + '<div class="seg fo-tabs">' + Object.keys(FO_AESTE).map(a => '<button type="button" data-fo-ast="' + a + '"' + (a === foAst ? ' class="on"' : '') + '>' + FO_AESTE[a] + '</button>').join('') + '</div>' +
-            foBaum(lvl) + '<small class="keep-note">Eine Forschung gleichzeitig. Die Labor-Stufe bestimmt, wie weit du forschen kannst.</small>';
+            foBaum(lvl);
     }
     if (id === 'market' && lvl) return '<button type="button" class="btn btn--primary btn--sm" data-markt-shop>' + icon('shop') + '<span>Handeln: Shop → Markt</span></button>';
     return '';
