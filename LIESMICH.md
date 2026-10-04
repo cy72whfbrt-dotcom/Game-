@@ -1711,3 +1711,13 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
 - Getestet: `send2bd_server_test` (Server + Weltrechner: Admin 2 Billiarden → abholen → senden → kommen an:
   2.000.000.000.048.722 in der Basis), Unit 65/65.
 - **Hochgeladen 4.10., 09:29 UTC.** Weltrechner läuft wieder.
+
+## 58. Kein „?“ mehr: echte Zahlen, sobald er bei dir kämpft (Alexander 4.10.: „das mit dem ? finde ich doof“)
+- **Server (`marsch_teil`):** greift jemand deine Basis an und der Kampf läuft schon (`fightEndsAt`), bekommst du seine
+  echte Stärke (wie danach im Kampfbericht). Solange er nur marschiert, bleibt sie ohne Wachturm geheim (wie bisher).
+- **Handy:** wartet beim Ankommen kurz auf diese Zahlen und zeigt dann die Schlacht mit echten Zahlen; kommt eine Welle
+  dazu, zieht die Schlacht nach. Das „?“ aus Abschnitt 55 ist wieder raus.
+- Bestätigt (Alexander): eigene Truppen, die nach der Eroberung ankommen, werden der Basis gutgeschrieben – kein neuer Kampf
+  (Abschnitt 56).
+- Getestet: Unit 67/67 (neu: unterwegs geheim, im Kampf echte Stärke), `vsme_echt_test` (erst keine Schlacht, mit
+  Kampfbeginn 12 Mrd. gegen die Besatzung), dazu vsme, selbst, reihe, gemeinsam, welle, welle_bund, render grün.

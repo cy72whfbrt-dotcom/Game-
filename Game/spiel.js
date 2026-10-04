@@ -7113,7 +7113,14 @@ setInterval(() => {
         { const wer = a.attackerBotId || 'player', ow = islandOwnerOf(a.targetId);   // die Basis gehört schon ihm (eine frühere Welle hat sie genommen) oder seinem Bündnis:
           if (ow && (ow === wer || bundFreund(wer, ow))) continue; }                    // kein Kampf – die Truppen ziehen ein bzw. gehen heim (wie beim Weltrechner)
         const k = kampfKey(a), z = zuschauerKampf.get(k);
-        if (z) { if (!a.fightEndsAt) a.fightEndsAt = z.ende; continue; }   // (neue Welt-Daten: Kampf läuft noch – nicht als „0:00“ zeigen)
+        if (z) { if (!a.fightEndsAt) a.fightEndsAt = z.ende;                      // (neue Welt-Daten: Kampf läuft noch – nicht als „0:00“ zeigen)
+            if (!z.mit && a.rawTroops > 0 && a.rawTroops !== z.n) { z.n = a.rawTroops;   // die Zahlen haben sich geändert (eine Welle kam dazu): die Schlacht zieht nach
+                const bt = mapBattles.find(x => x.attackId === k && !x.final), est = bt && fightEstimate(a); if (est) mbReplan(bt, est, performance.now()); }
+            continue; }
+        const mine = !a.attackerBotId, vsMe = a.attackerBotId && islandOwnerOf(a.targetId) === 'player', tgt = islandById[a.targetId];
+        // Angriff auf dich: seine Stärke kommt mit dem Kampfbeginn vom Weltrechner (vorher nur mit Wachturm) – kurz darauf warten,
+        // dann die Schlacht mit den echten Zahlen (nie mit erfundenen oder „?“ – Alexander 4.10.)
+        if (vsMe && !(a.rawTroops > 0) && now - a.resolveAt < 15000) continue;
         // Eine weitere Welle derselben Seite (derselbe Angreifer oder ein Bündnis-Mitglied) auf dasselbe Ziel: der Weltrechner
         // wirft sie in den laufenden Kampf – also keine zweite Schlacht, sondern EINE mit den zusammengelegten Truppen.
         const seite = x => x.attackerBotId || 'player', zk = p => zuschauerKampf.get(kampfKey(p));
@@ -7123,21 +7130,17 @@ setInterval(() => {
             const km = kampfKey(mit), zm = zuschauerKampf.get(km);
             zuschauerKampf.set(k, { ende: zm.ende, mit: km }); if (!a.fightEndsAt) a.fightEndsAt = zm.ende;
             zm.dazu = (zm.dazu || 0) + a.rawTroops;
-            const bt = mapBattles.find(x => x.attackId === km && !x.final), mine = !a.attackerBotId, vsMe = a.attackerBotId && islandOwnerOf(a.targetId) === 'player', tgt = islandById[a.targetId];
-            const sicht = mine || (vsMe && a.rawTroops > 0), geheim = !mine && vsMe && !sicht;   // (ohne Wachturm: Schlacht mit „?“)
-            const est = !tgt ? null : (bt && !bt.geheim) || sicht ? fightEstimate({ ...mit, rawTroops: mit.rawTroops + zm.dazu, attackBonus: undefined })
-                : geheim && !bt ? (n => ({ my: n, en: n, won: false, myLoss: n * .5, enLoss: n * .5, geheim: true }))(Math.max(1, effectiveTroops(tgt))) : null;
-            if (bt) { if (est && !bt.geheim) mbReplan(bt, est, performance.now()); }
+            const bt = mapBattles.find(x => x.attackId === km && !x.final), sicht = mine || (vsMe && a.rawTroops > 0);
+            const est = tgt && (bt || sicht) ? fightEstimate({ ...mit, rawTroops: mit.rawTroops + zm.dazu, attackBonus: undefined }) : null;
+            if (bt) { if (est) mbReplan(bt, est, performance.now()); }
             else if (est && now - a.resolveAt < 15000) spawnMapBattle({ sourceId: a.sourceId, targetId: a.targetId, attackId: km, live: true, fightMs: Math.max(1500, zm.ende - now), hero: a.hero || null,   // (du bist zu einem Kampf deines Bündnisses dazugekommen)
                 atk: mine ? 'mine' : 'bot', def: mine ? (bossAt(tgt.id) ? 'boss' : islandOwnerOf(tgt.id) ? 'bot' : 'neutral') : 'mine', ...est });
             continue;
         }
-        const mine = !a.attackerBotId, vsMe = a.attackerBotId && islandOwnerOf(a.targetId) === 'player';
-        const tgt = islandById[a.targetId], geheim = vsMe && !(a.rawTroops > 0);   // (fremde Stärke nur mit Wachturm – sonst Schlacht mit „?“ und ohne erfundene Zahlen)
-        const est = !tgt ? null : mine || (vsMe && a.rawTroops > 0) ? fightEstimate(a) : geheim ? (n => ({ my: n, en: n, won: false, myLoss: n * .5, enLoss: n * .5, geheim: true }))(Math.max(1, effectiveTroops(tgt))) : null;
+        const est = (mine || (vsMe && a.rawTroops > 0)) && tgt ? fightEstimate(a) : null;
         const ende = a.fightEndsAt && a.fightEndsAt > now ? a.fightEndsAt : now + (est ? fightDurationMs(est) : 4000);
-        zuschauerKampf.set(k, { ende }); if (!a.fightEndsAt) a.fightEndsAt = ende;
-        if (est && now - a.resolveAt < 15000) spawnMapBattle({ sourceId: a.sourceId, targetId: a.targetId, attackId: k, live: true, fightMs: ende - now, hero: a.hero || null,
+        zuschauerKampf.set(k, { ende, n: a.rawTroops }); if (!a.fightEndsAt) a.fightEndsAt = ende;
+        if (est && now - a.resolveAt < 20000) spawnMapBattle({ sourceId: a.sourceId, targetId: a.targetId, attackId: k, live: true, fightMs: Math.max(1500, ende - now), hero: a.hero || null,
             atk: mine ? 'mine' : 'bot', def: mine ? (bossAt(tgt.id) ? 'boss' : islandOwnerOf(tgt.id) ? 'bot' : 'neutral') : 'mine', ...est });
     }
     for (const k of zuschauerKampf.keys()) if (!pendingAttacks.some(a => kampfKey(a) === k)) zuschauerKampf.delete(k);
@@ -7311,7 +7314,7 @@ function drawMapBattles(now) {                      // screen space
         {                                             // one strength bar above the fight: attacker | defender
             const cx = tx - ux * (aFront * .55), top = Math.min(ty - uy * ad, ty - uy * dFront * .4, ty) - s * 1.5 - 22;
             ctx.save(); ctx.globalAlpha = alphaP; ctx.font = '700 11px Inter, system-ui, sans-serif'; ctx.textBaseline = 'middle';
-            const la = b.geheim ? '?' : fmtCompact(Math.round(va)), ld = fmtCompact(Math.round(b.geheim ? b.en : vd)), W = Math.max(116, ctx.measureText(la + ld).width + 64), x0 = cx - W / 2;
+            const la = fmtCompact(Math.round(va)), ld = fmtCompact(Math.round(vd)), W = Math.max(116, ctx.measureText(la + ld).width + 64), x0 = cx - W / 2;
             rr(ctx, x0, top, W, 27, 6); ctx.fillStyle = 'rgba(10,12,16,.92)'; ctx.fill(); ctx.lineWidth = 1.2; ctx.strokeStyle = 'rgba(228,200,134,.7)'; ctx.stroke();
             ctx.fillStyle = cA[1]; ctx.textAlign = 'left'; ctx.fillText(la, x0 + 8, top + 10);
             ctx.fillStyle = cD[1]; ctx.textAlign = 'right'; ctx.fillText(ld, x0 + W - 8, top + 10);
@@ -7331,7 +7334,7 @@ function drawMapBattles(now) {                      // screen space
             for (let i = Math.max(0, i0 - 2); i <= i0; i++) {
                 const age = t - 900 - i * 450; if (age < 0 || age > 900) continue;
                 const r = mulberry32(i * 31 + b.targetId), a = 1 - age / 900, rise = age / 900 * 22;
-                for (const [atk, loss, col] of (b.geheim ? [] : [[true, b.myLoss, cA[1]], [false, b.enLoss, cD[1]]])) {   // (Stärke unbekannt: keine erfundenen Verlust-Zahlen)
+                for (const [atk, loss, col] of [[true, b.myLoss, cA[1]], [false, b.enLoss, cD[1]]]) {
                     if (loss <= 0) continue;
                     const chunk = loss / 5, d = atk ? aFront + gap : dFront * .6, o = (r() - .5) * 30 * k;
                     ctx.globalAlpha = a; ctx.fillStyle = '#0b0d12'; const txt = '−' + fmtCompact(Math.max(1, Math.round(chunk)));

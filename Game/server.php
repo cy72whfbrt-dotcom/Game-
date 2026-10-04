@@ -300,7 +300,7 @@ function marsch_teil($k, $text, $ich, $eigen, $turm, $sieht = []) {
                 $dabei = false; foreach ($e->rally->an as $x) if (is_array($x) && ($x[0] ?? '') === $ich) $dabei = true;
                 if (!$dabei) foreach ($e->rally->an as $i => $x) if (is_array($x)) $e->rally->an[$i][2] = 0;
             }
-            $aufMich = isset($eigen[(int)($e->targetId ?? -1)]); $genau = $aufMich && $turm >= 10;
+            $aufMich = isset($eigen[(int)($e->targetId ?? -1)]); $genau = $aufMich && ($turm >= 10 || !empty($e->fightEndsAt));   // (kämpft er schon bei dir, siehst du seine Stärke – wie danach im Kampfbericht)
             $e->rawTroops = $genau ? ($e->rawTroops ?? 0) : ($aufMich && $turm >= 1 ? marsch_runden($e->rawTroops ?? 0) : 0);
             foreach (['hx', 'attackBonus', 'skillBonus', 'skillLvl', 'attackGoldRate', 'rewardGoldRate', 'shieldLossReductionPct', 'atkTitle', 'atkTitleKey', 'atkKraft', 'atkFo', 'planId', 'lastWave', 'bernPct'] as $f) unset($e->$f);
             if (!$genau) unset($e->hero, $e->hero2, $e->atkTier);

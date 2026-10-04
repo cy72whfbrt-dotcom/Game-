@@ -96,5 +96,11 @@ $_SERVER['HTTP_ORIGIN'] = 'https://boese.example'; pruefe('fremde Seite', herkun
 $_SERVER['HTTP_ORIGIN'] = 'https://office.hobbitonhill.de.boese.example'; pruefe('Täusch-Adresse', herkunft_ok(), false);
 unset($_SERVER['HTTP_ORIGIN']); $_SERVER['HTTP_SEC_FETCH_SITE'] = 'cross-site'; pruefe('Browser meldet fremd', herkunft_ok(), false);
 
+// --- Märsche: fremde Stärke auf meine Basis nur mit Wachturm – oder sobald er dort kämpft (wie danach im Kampfbericht)
+$angr = json_encode([['attackerBotId' => 'bot7', 'targetId' => 5, 'rawTroops' => 123456789, 'hero' => 'h1'], ['attackerBotId' => 'bot7', 'targetId' => 5, 'rawTroops' => 123456789, 'fightEndsAt' => 99, 'hero' => 'h1']]);
+$m = json_decode(marsch_teil('openWaterPendingAttacks', $angr, 'u3', [5 => 1], 0), true);
+pruefe('Angriff auf mich, unterwegs, ohne Wachturm: Stärke geheim', $m[0]['rawTroops'], 0);
+pruefe('Angriff auf mich, kämpft schon: echte Stärke', $m[1]['rawTroops'], 123456789);
+
 echo ($fehler ? "$fehler von $n Tests FEHLGESCHLAGEN\n" : "Alle $n Server-Tests bestanden.\n");
 exit($fehler ? 1 : 0);
