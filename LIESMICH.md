@@ -1907,3 +1907,4 @@ Alarm; Basen 1.699 → 100 → Alarm. Unit 16/65 grün.
   Truppen; die Basis, von der sie kamen, sonst ihre Hauptstadt; Verwundete sind schon in ihrem Lazarett). Diese Rückwege
   von Bündnis-Mitgliedern werden jetzt auch gezeichnet (als Rückmarsch). Fremde Märsche bleiben im Nebel.
 - Getestet: `rally_rueck_test` (Linie zur Rally + Rückweg nach Hause sichtbar), laden grün.
+- **Hochgeladen 4.10., 13:06 UTC**, Weltrechner läuft wieder.
