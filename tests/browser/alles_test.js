@@ -3,13 +3,13 @@ const { chromium, devices } = require('playwright');
 const http = require('http'), fs = require('fs'), path = require('path');
 const D = process.argv[2], OUT = process.argv[3] || '.';
 const SCHLECHT = /undefined|NaN|\bnull\b|\[object|Infinity|Invalid Date|\bVIP\b|Turnier|Drachenturm|Piratenfestung|Weltboss|Mo–So|Montag bis Sonntag/;
-const srv = http.createServer((q, r) => { const f = path.join(D, decodeURIComponent(q.url.split('?')[0]).replace(/\/$/, '/index.html')); fs.readFile(f, (e, d) => { if (e) { r.writeHead(404); r.end(); return; } r.writeHead(200, { 'Content-Type': f.endsWith('.html') ? 'text/html; charset=utf-8' : 'text/javascript' }); r.end(d); }); }).listen(8793, async () => {
+const srv = http.createServer((q, r) => { const f = path.join(D, decodeURIComponent(q.url.split('?')[0]).replace(/\/$/, '/index.html')); fs.readFile(f, (e, d) => { if (e) { r.writeHead(404); r.end(); return; } r.writeHead(200, { 'Content-Type': f.endsWith('.html') ? 'text/html; charset=utf-8' : 'text/javascript' }); r.end(d); }); }).listen(0, '127.0.0.1', async () => {
   const b = await chromium.launch({ args: ['--proxy-server=http://127.0.0.1:9', '--proxy-bypass-list=127.0.0.1;localhost'] });
   const p = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); const fehler = [], texte = [];
   let wo = 'start';
   p.on('pageerror', e => fehler.push(wo + ': ' + e.message));
   p.on('console', m => { if (m.type() === 'error' && !/PROXY|Failed to load resource/.test(m.text())) fehler.push(wo + ' konsole: ' + m.text().slice(0, 150)); });
-  await p.goto('http://127.0.0.1:8793/'); await p.waitForTimeout(9000);
+  await p.goto('http://127.0.0.1:' + srv.address().port + '/'); await p.waitForTimeout(9000);
   const ev = (f, a) => p.evaluate(f, a);
   const zu = () => ev(() => { for (const id of ['welcomeModal', 'dailyModal', 'levelUpModal', 'rewardModal', 'titleModal']) { const m = document.getElementById(id); if (m) m.hidden = true; } try { if (!document.getElementById('heroHall').hidden) closeHeroHall(); } catch (e) {} document.querySelectorAll('.marker-sheet:not([hidden])').forEach(x => x.hidden = true); });
   const klick = s => ev(s => document.querySelector(s).click(), s);

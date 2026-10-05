@@ -1,9 +1,10 @@
 // Gemeinsamer Kampf: A (2 Wellen) + B (Bündnis) auf dasselbe Ziel → EIN Kampf, jeder verliert seinen Anteil, Bericht listet alle
 const { chromium, devices } = require('playwright'); const http = require('http'), fs = require('fs'), path = require('path');
-const D = process.argv[2]; const srv = http.createServer((q, r) => { const f = path.join(D, decodeURIComponent(q.url.split('?')[0]).replace(/\/$/, '/index.html')); fs.readFile(f, (e, d) => { if (e) { r.writeHead(404); r.end(); return; } r.writeHead(200, { 'Content-Type': f.endsWith('.html') ? 'text/html' : 'text/javascript' }); r.end(d); }); }).listen(8805);
+const D = process.argv[2]; const srv = http.createServer((q, r) => { const f = path.join(D, decodeURIComponent(q.url.split('?')[0]).replace(/\/$/, '/index.html')); fs.readFile(f, (e, d) => { if (e) { r.writeHead(404); r.end(); return; } r.writeHead(200, { 'Content-Type': f.endsWith('.html') ? 'text/html' : 'text/javascript' }); r.end(d); }); }).listen(0, '127.0.0.1');
 (async () => {
   const b = await chromium.launch({ args: ['--proxy-server=http://127.0.0.1:9', '--proxy-bypass-list=127.0.0.1;localhost'] });
-  const p = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); const fe = []; p.on('pageerror', e => fe.push(e.message)); await p.goto('http://127.0.0.1:8805/'); await p.waitForTimeout(9000);
+  const p = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); const fe = []; p.on('pageerror', e => fe.push(e.message)); await p.goto('http://127.0.0.1:' + srv.address().port + '/'); await p.waitForTimeout(9000);
+  await p.waitForFunction(() => typeof BOT_DEFS !== 'undefined' && typeof AUF !== 'undefined' && typeof islands !== 'undefined' && islands.length && islandById[playerIslandId], null, { timeout: 60000, polling: 500 }).catch(() => {});   // (unter Last länger warten, bis das Spiel steht)
   const info = await p.evaluate(() => {
     const bots = BOT_DEFS.filter(x => !x.mensch && botOwnedIslands[x.id] && botOwnedIslands[x.id].size && islandById[botCapitalOf(x.id)]);
     for (const x of bots) if (bundVon(x.id)) bundOp(x.id, { op: 'verlassen' });
@@ -19,9 +20,10 @@ const D = process.argv[2]; const srv = http.createServer((q, r) => { const f = p
     const ok = [sendNow(ca, A.id, 2000000), sendNow(ca, A.id, 2000000), sendNow(cb, B.id, 4000000), sendNow(cc, C.id, 1000000)];
     return { ok, ids: window.__ids };
   });
-  await p.waitForTimeout(1500);
+  // (statt fester Zeiten: auf den Zustand warten – bis zu 3× so lang wie früher, danach prüft ok() wie immer)
+  await p.waitForFunction(() => pendingAttacks.some(a => a.targetId === __ids.z && a.rally && a.rally.an.length === 2), null, { timeout: 4500, polling: 100 }).catch(() => {});
   const mitte = await p.evaluate(() => { const z = __ids.z; return pendingAttacks.filter(a => a.targetId === z).map(a => ({ who: a.attackerBotId, n: a.rawTroops, an: a.rally && a.rally.an.map(x => x[0] + ':' + x[2]), kampf: !!a.fightEndsAt })); });
-  await p.waitForTimeout(35000);
+  await p.waitForFunction(() => !pendingAttacks.some(a => a.targetId === __ids.z) && pendingSends.some(s => s.fromId === __ids.z), null, { timeout: 105000, polling: 500 }).catch(() => {});
   const end = await p.evaluate(() => { const { A, B, z } = __ids;
     const heim = pendingSends.filter(s => s.fromId === z).map(s => s.senderBotId + ':' + s.troops);
     return { besitzer: islandOwnerOf(z), offen: pendingAttacks.filter(a => a.targetId === z).length, heim, verwA: (loadBotState()[A] || {}).wounded, verwB: (loadBotState()[B] || {}).wounded, w0: __w0 }; });

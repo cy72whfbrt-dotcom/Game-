@@ -44,6 +44,6 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   const seite = await p.evaluate(() => { const x = document.querySelector('.kl-seite'); return x && !x.hidden ? { fenster: [...x.querySelectorAll('.logSideLabel')].map(l => l.textContent), gesamt: [...x.querySelectorAll('.logSum')].map(l => l.lastElementChild.textContent), w: document.documentElement.scrollWidth } : null; });
   ok(seite && seite.fenster.length >= 4, 'Kampflog: eigene Seite, ein Fenster je Spieler', seite);
   const h = await p.evaluate(() => document.querySelector('.kl-seite').scrollHeight); await p.setViewportSize({ width: 390, height: Math.min(h, 14000) }); await p.waitForTimeout(300);
-  await p.screenshot({ path: require('os').tmpdir() + '/regel_seite.png' });
+  await p.screenshot({ path: (process.argv[3] || require('os').tmpdir()) + '/regel_seite.png' });
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();
 })();

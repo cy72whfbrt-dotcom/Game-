@@ -123,7 +123,9 @@ const nah = (x, y, d) => Math.abs(x - y) <= (d === undefined ? 1 : d);
     Object.assign(out, { raw: att.rawTroops, bonus: att.attackBonus, skill: att.skillBonus, heim: T.heim.map(x => x.n) });
     // ein Kampf bricht mit einem Fehler ab: Verstärkung wieder getrennt, Rally-Truppen gehen heim
     T.heim.length = 0; bundOp(T.E, { op: 'beitreten', aid: bundVon(T.A).id });
-    const ziel = T.ziel; islandTroops[ziel] = 1000; verst.l = verst.l.filter(x => x.t !== ziel); verst.l.push({ id: 'vjt2', w: T.H, t: ziel, n: 400000, von: botCapitalOf(T.H), at: Date.now() });
+    const ziel = T.ziel, lange = Date.now() + 1e9; for (const d of BOT_DEFS) botNextAt[d.id] = lange;   // (beim Messen keine Züge der Mitspieler – unter Last dauert es länger)
+    for (let i = pendingAttacks.length - 1; i >= 0; i--) if (pendingAttacks[i].targetId === ziel) pendingAttacks.splice(i, 1);
+    islandTroops[ziel] = 1000; verst.l = verst.l.filter(x => x.t !== ziel); verst.l.push({ id: 'vjt2', w: T.H, t: ziel, n: 400000, von: botCapitalOf(T.H), at: Date.now() });
     const et = effectiveTroops; effectiveTroops = t => { if (t && t.id === ziel) { effectiveTroops = et; throw new Error('Testfehler'); } return et(t); };
     const now = Date.now(); T.fehl = true;                                // (das Aufräumen läuft nach dem Kampf – auch mitschreiben)
     pendingAttacks.push({ id: 'fehl1', sourceId: botCapitalOf(T.A), targetId: ziel, rawTroops: 4e6, attackBonus: 0, startedAt: now - 9000, resolveAt: now - 5000, fightEndsAt: now - 10, attackerBotId: T.A,
@@ -132,8 +134,8 @@ const nah = (x, y, d) => Math.abs(x - y) <= (d === undefined ? 1 : d);
   ok(nah(r.cut, 0.1 * 3 / 5 + 0.3 * 2 / 5, 1e-9) && nah(r.cutAllein, 0.1, 1e-9), '7) Rammbock: jeder Held nach Stärke-Anteil seines Spielers (18 %)', r);
   ok(r.part.length === 1 && r.part[0][1] === -Math.round(1e6 * 0.12), '7) Bericht-Zeile auch ohne Held des Anführers', r.part);
   ok(r.raw === 3e6 && r.bonus === 200000 && r.skill === 150000 && r.heim[0] === 1e6, '10) rallyAussortieren zieht ihren echten Skill-Anteil ab (an[6])', r);
-  await p.waitForTimeout(2500);
-  const f = await p.evaluate(() => { const T = __t, v = verst.l.find(x => x.id === 'vjt2'); T.fehl = false;
+  await p.waitForFunction(() => !pendingAttacks.some(a => a.id === 'fehl1'), null, { timeout: 7500, polling: 100 }).catch(() => {});   // (bis der Kampf aufgeräumt ist)
+  const f =await p.evaluate(() => { const T = __t, v = verst.l.find(x => x.id === 'vjt2'); T.fehl = false;
     return { offen: pendingAttacks.some(a => a.id === 'fehl1'), verst: v && v.n, besatzung: islandTroops[T.ziel], plus: verstDefPlus[T.ziel], heim: T.heim.map(x => [x.w === T.A ? 'Alex' : x.w === T.E ? 'Emma' : x.w, x.n]) }; });
   ok(!f.offen && f.verst === 400000 && f.besatzung >= 1000 && f.besatzung < 5000 && f.plus === undefined, '1) Fehler im Kampf: Verstärkung wieder getrennt (nicht doppelt in der Besatzung), kein verstDefPlus', f);
   ok(f.heim.some(x => x[0] === 'Alex' && x[1] === 3e6) && f.heim.some(x => x[0] === 'Emma' && x[1] === 1e6), '1) Fehler im Kampf: die Rally-Truppen gehen heim', f.heim);

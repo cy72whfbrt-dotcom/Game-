@@ -7,6 +7,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   const b = await chromium.launch({ args: ['--proxy-server=http://127.0.0.1:9'] });
   const p = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); const fe = []; p.on('pageerror', e => fe.push(e.message));
   await p.goto('file://' + require('path').resolve(process.argv[2]) + '/index.html'); await p.waitForTimeout(9000);
+  await p.waitForFunction(() => typeof BOT_DEFS !== 'undefined' && typeof AUF !== 'undefined' && typeof islands !== 'undefined' && islands.length && islandById[playerIslandId], null, { timeout: 60000, polling: 500 }).catch(() => {});   // (unter Last länger warten, bis das Spiel steht)
   // 1) vorher: ein großes Reich (2 Basen, Bündnis, Stufe 20, Münzen) mit Stadt, Forschung, Helden, Ausrüstung, Gems, Rohstoffen
   const v = await p.evaluate(() => { for (const id of ['welcomeModal', 'dailyModal']) { const m = document.getElementById(id); if (m) m.hidden = true; }
     const c = loadCity(); c.levels.keep = 7; c.levels.academy = 3; c.levels.forge = 2; c.fo = { w_prod: 2, m_atk: 1 }; c.wounded = 5000; saveCity();
@@ -29,7 +30,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     return { vor, X, bund: !!bundVon(X), ich: bundVon('player') ? 1 : 0, nr: saison.nr };
   });
   ok(v.nr === 1 && v.bund && v.ich, 'Saison 1 läuft, Bündnis gegründet (du bist dabei)', { nr: v.nr, bund: v.bund, ich: v.ich });
-  await p.waitForTimeout(6500);
+  await p.waitForFunction(() => saison.bald === 1 && /Neue Saison in/.test(document.getElementById('midBar').innerText), null, { timeout: 19500, polling: 250 }).catch(() => {});
   const cd = await p.evaluate(() => { const chip = document.getElementById('midBar').innerText; openGoals('boss'); const ev = document.getElementById('eventBody').innerText; closePanel(goalsPopup);
     return { chip, ev: ev.slice(0, 200), bald: saison.bald }; });
   ok(/Neue Saison in/.test(cd.chip) && /\d+ T \d+ h/.test(cd.chip), 'Countdown oben unter dem HUD (letzte 3 Tage)', cd.chip);
@@ -39,8 +40,10 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   await p.addInitScript(() => document.addEventListener('DOMContentLoaded', () => { try { const L = k => localStorage.getItem(k);
     window.__nach = { coins: L('openWaterCoins'), lvl: L('openWaterLevel'), sp: L('openWaterSkillPoints'), skills: L('openWaterSkills'), own: L('openWaterOwnedIslands'), troops: L('openWaterIslandTroops'), bund: L('openWaterBuendnisse'),
       botOwn: L('openWaterBotOwnedIslands'), botState: L('openWaterBotState'), schutz: L('openWaterNeulingBis'), at: Date.now(), botCoins: L('openWaterBotCoins'), log: L('openWaterCombatLog'), fog: L('openWaterFogCells') }; } catch (e) {} }));
+  const resVor = await p.evaluate(X => Object.assign({}, loadBotState()[X].res), v.X);   // (er produziert weiter – unter Last mehr: Stand direkt vor dem Neustart)
   await Promise.all([p.waitForNavigation({ timeout: 30000 }), p.evaluate(() => saisonJetzt())]);
   await p.waitForTimeout(9000);
+  await p.waitForFunction(() => window.__nach && typeof saison !== 'undefined' && saison && saison.nr === 2 && typeof inboxList === 'function' && inboxList().some(x => x.src === 'saison'), null, { timeout: 27000, polling: 500 }).catch(() => {});
   const n = await p.evaluate(V => { const N = window.__nach, J = s => JSON.parse(s || 'null');
     const own = J(N.own) || [], tr = J(N.troops) || {}, bo = J(N.botOwn) || {}, bc = J(N.botCoins) || {}, bx = (J(N.botState) || {})[V.X] || {}, c = loadCity(), cap = playerIslandId, isl = islandById[cap];
     const anderer = BOT_DEFS.filter(x => (bo[x.id] || []).length > 1).length, ohne = Object.values(bo).filter(l => l.length === 1).length;
@@ -70,7 +73,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   const B = n.bot;
   ok(B.lvl === 1 && B.skills === 0 && B.coins < 1e5 && B.basen === 1, 'Mitspieler: Stufe 1, keine Fähigkeiten, Start-Gold, nur die Hauptstadt', B);
   ok(B.truppen >= 100000 && B.truppen < 2e5, 'Mitspieler: Start-Truppen wie ein neuer Spieler', B.truppen);
-  ok(B.keep && B.city && B.fo && B.gear && B.hs && B.res.h === 4444 && B.res.s === 3333 && B.res.e === 2222, 'Mitspieler: Stadt, Forschung, Ausrüstung, Helden, Rohstoffe bleiben', B);
+  ok(B.keep && B.city && B.fo && B.gear && B.hs && B.res.h === resVor.h && B.res.s === resVor.s && B.res.e === resVor.e && resVor.h >= 4444 && resVor.s >= 3333 && resVor.e >= 2222, 'Mitspieler: Stadt, Forschung, Ausrüstung, Helden, Rohstoffe bleiben', B);
   ok(B.gems === 999 + 2000 && (B.titel || []).includes('s1p2') && B.look === 'Saison 1 · Platz 2', 'Mitspieler Platz 2: 2.000 Gems + Titel „Saison 1 · Platz 2“', { gems: B.gems, titel: B.titel, look: B.look });
   ok(n.anderer === 0 && n.ohne >= 100, 'alle Reiche auf eine Hauptstadt zurückgesetzt', { mehr: n.anderer, eine: n.ohne });
   ok(!/Neue Saison in/.test(n.chip), 'Countdown oben erst wieder in den letzten 3 Tagen', n.chip);
