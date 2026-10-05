@@ -733,7 +733,7 @@ function botNeulingBis(who, b) {
     if (!window.WELT || !b) return 0;
     if (b.neuBis === undefined && !b.mensch) b.neuBis = worldStartAt() + NEULING_MS;   // Mitspieler der laufenden Welt: ab Weltstart
     const t = b.neuBis || 0; if (t <= Date.now()) return 0;
-    if (!b.mensch && staerke(who) >= NEULING_MACHT) { b.neuBis = 0; saveBotState(); return 0; }   // (echte Spieler melden das selbst)
+    if (staerke(who) >= NEULING_MACHT) { b.neuBis = 0; saveBotState(); return 0; }   // (auch bei echten Spielern – nicht dem Handy überlassen)
     return t;
 }
 function neulingEnde(grund) { if (neulingBis() <= Date.now()) return; store.set('openWaterNeulingBis', '0'); if (grund) flashHint(grund, 4500); requestRender(); }

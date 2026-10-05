@@ -214,7 +214,7 @@
         const thr = P(d.openWaterThrone) || {};
         return {
             name: d.openWaterPlayerName || OW.name, lvl: parseInt(d.openWaterLevel, 10) || 1,
-            skills: P(d.openWaterSkills) || {}, gear, stW, city: { levels: city.levels || {} }, wounded: city.wounded || 0,
+            skills: P(d.openWaterSkills) || {}, gear, stW, city: { levels: city.levels || {}, bau: (city.builds || []).map(b => b && b.id).filter(Boolean).slice(0, 2), b2: !!city.builder2, foLauf: city.foRun ? city.foRun.id : null }, wounded: city.wounded || 0,
             hs: P(d.openWaterHeroes2) || {}, shieldUntil: parseFloat(d.openWaterShield) || 0,
             fo: city.fo || {}, res: P(d.openWaterRes) || null,   // Paket D: Forschung, Rohstoffe (Burg-Stufe steht in city.levels.keep)
             neuBis: typeof neulingBis === 'function' ? neulingBis() : 0,

@@ -4480,6 +4480,7 @@ setInterval(() => {
                 continue;
             }
             if (atkr === 'player') dropShield('Dein Friedensschild ist gefallen – dein Angriff auf ' + islandTitle(islandById[a.targetId]) + ' ist angekommen.'); else botDropShield(atkr);   // a wave that fights is an attack
+            if (a.rally) for (const w of new Set(a.rally.an.map(x => x[0]))) if (w && w !== 'player' && w !== atkr) { botDropShield(w); botNeulingWeg(w, islandOwnerOf(a.targetId)); }   // (wer in der Rally mitkämpft, greift auch an)
             const fight = kampfDazu(a, now);
             if (fight) {
                 const anderer = fight.attackerBotId !== a.attackerBotId;
@@ -6794,7 +6795,7 @@ function botNeulingBis(who, b) {
     if (!window.WELT || !b) return 0;
     if (b.neuBis === undefined && !b.mensch) b.neuBis = worldStartAt() + NEULING_MS;   // Mitspieler der laufenden Welt: ab Weltstart
     const t = b.neuBis || 0; if (t <= Date.now()) return 0;
-    if (!b.mensch && staerke(who) >= NEULING_MACHT) { b.neuBis = 0; saveBotState(); return 0; }   // (echte Spieler melden das selbst)
+    if (staerke(who) >= NEULING_MACHT) { b.neuBis = 0; saveBotState(); return 0; }   // (auch bei echten Spielern – nicht dem Handy überlassen)
     return t;
 }
 function neulingEnde(grund) { if (neulingBis() <= Date.now()) return; store.set('openWaterNeulingBis', '0'); if (grund) flashHint(grund, 4500); requestRender(); }
@@ -9920,7 +9921,7 @@ function fieldArrive(m, now) {
     if (o.who === m.who) { o.troops += m.troops; if (!o.hero) { o.hero = m.hero || null; o.hero2 = m.hero2 || null; } return; }   // more of your own join the gatherers (other heroes just go along)
     if (m.who !== 'player' && botById[m.who] && botKeepsShield(botById[m.who], now)) { const home = islandById[m.homeId] || islandById[playerIslandId];   // under their own shield: no fight, back home
         fieldMarches.push({ who: m.who, homeId: m.homeId, fieldId: f.id, troops: m.troops, hero: m.hero || null, hero2: m.hero2 || null, startedAt: now, resolveAt: now + fieldTravelSec(home, f, m.who) * 1000, back: true, load: 0 }); return; }
-    if (m.who === 'player') dropShield('Dein Friedensschild ist gefallen, weil du angreifst.'); else botDropShield(m.who);   // a fight for the field is an attack
+    if (m.who === 'player') dropShield('Dein Friedensschild ist gefallen, weil du angreifst.'); else { botDropShield(m.who); botNeulingWeg(m.who, o.who); }   // a fight for the field is an attack
     const aHx = heroFieldFx(m.who, m.hero, { res: 1 }, m.hero2), dHx = heroFieldFx(o.who, o.hero, { res: 1, defending: 1, gather: 1 }, o.hero2);   // both leaders: Goldrausch, Lagerwache …
     const fb = fieldBattle(m.who, m.troops, o.who, o.troops, aHx, dHx), won = fb.won, involved = m.who === 'player' || o.who === 'player';   // a fight for the field: army against army
     const loserName = fieldWhoName(won ? o.who : m.who), winnerName = fieldWhoName(won ? m.who : o.who), oWho = o.who;
@@ -11005,13 +11006,13 @@ function armyArrive(a, now) {
     if (t.kind === 'army') { const b = armyById(t.id); if (!b) return;
         if (armyWho(b) === who) { b.troops += a.troops; gone(); if (me) flashHint('Armeen vereint: jetzt ' + fmtCompact(b.troops) + ' Truppen.', 3000); }
         else if (ownerShielded(armyWho(b), now) || bundFreund(who, armyWho(b))) { if (me) flashHint('Die Armee von ' + armyName(b) + (bundFreund(who, armyWho(b)) ? ' gehört zu deinem Bündnis' : ' steht unter einem Friedensschild') + ' – kein Kampf.', 3500); }
-        else { const p = armyPos(b, now); if (Math.hypot(p.x - a.x, p.y - a.y) < ISLAND_RADIUS * 2) { if (me) dropShield('Dein Friedensschild ist gefallen, weil du angreifst.'); else botDropShield(who); armyClash(a, b); } else if (me) flashHint('Die Armee von ' + armyName(b) + ' ist weitergezogen.', 3000); }
+        else { const p = armyPos(b, now); if (Math.hypot(p.x - a.x, p.y - a.y) < ISLAND_RADIUS * 2) { if (me) dropShield('Dein Friedensschild ist gefallen, weil du angreifst.'); else { botDropShield(who); botNeulingWeg(who, armyWho(b)); } armyClash(a, b); } else if (me) flashHint('Die Armee von ' + armyName(b) + ' ist weitergezogen.', 3000); }
         return; }
     if (t.kind === 'field') { gone(); fieldArrive({ who, homeId: armyHome(a), fieldId: t.id, troops: a.troops, hero: a.hero || null, hero2: a.hero2 || null, back: false }, now); saveFields(); return; }
     if (t.kind === 'base') {                                                  // storming a base: the fight runs exactly like a normal attack
         const src = armyHome(a); if (src === null || src === undefined) return;
         gone();
-        if (me) { dropShield('Dein Friedensschild ist gefallen, weil du angreifst.'); questProgress('attack', 1); } else botDropShield(who);
+        if (me) { dropShield('Dein Friedensschild ist gefallen, weil du angreifst.'); questProgress('attack', 1); } else { botDropShield(who); botNeulingWeg(who, islandOwnerOf(t.id)); }
         const tg = islandById[t.id], hx = a.hero && heroOwned(who, a.hero) ? heroLaunch(who, a.hero, islandById[src], tg, a.troops, a.hero2) : null;   // the army's heroes lead the storm
         pendingAttacks.push({ sourceId: src, targetId: t.id, rawTroops: a.troops, startedAt: now - 1000, resolveAt: now, attackerBotId: me ? null : who, fromArmy: true, ...attackFields(who, islandById[src], tg, a.troops, hx) });
         if (me) { saveGame(); saveProgression(); }
@@ -12663,13 +12664,17 @@ if (window.WELT) {
         if (!m.rk) { m.rk = {}; for (const k of ROHK) { m.rk[k] = konto(); m.rk[k].u = nn(p.res[k]); } return; }   // zum ersten Mal (und das Hauptbuch weiß noch nichts): geeicht
         while (m.rEin.length && now - m.rEin[0].t > 3600000) m.rEin.shift();
         while (m.rsr.length && now - m.rsr[0].t > 3600000) m.rsr.shift();
-        let lim = 0; try { lim = AUF ? AUF.marktLimit(who) / AUF.MARKT_WERT : 0; } catch (e) {}
+        let lim = 0, preis = 0; try { lim = AUF ? AUF.marktLimit(who) / AUF.MARKT_WERT : 0; preis = lim ? AUF.MARKT_WERT * (1 + AUF.marktGebuehr(AUF.marktStufe(who))) : 0; } catch (e) {}
+        const d = wd(who), heute = todayKey(); if (d && (!d.rm || d.rm.t !== heute)) d.rm = { t: heute, n: 0 };   // Markt-Käufe heute (alle drei Rohstoffe zusammen, wie am Handy – überlebt Neustarts)
         for (const k of ROHK) {
             const pr = nn(p.res[k]), kk = m.rk[k]; let mehr = kontoProfil(kk, pr, P[k] || 0, M[k] || 0, now);
             if (kk.vor > 0) { if (hb) hb.rA[k] = nn(hb.rA[k]) + kk.vor; kk.vor = 0; }      // ausgegeben → Topf
             if (mehr <= 0) continue;
-            const stunde = m.rEin.reduce((a, x) => a + x[k], 0), raum = Math.max(0, 2000 + .25 * Math.max(stunde, (m.rHp0 || {})[k] || 0) + lim - m.rsr.reduce((a, x) => a + (x[k] || 0), 0));
+            const stunde = m.rEin.reduce((a, x) => a + x[k], 0), raum = Math.max(0, 2000 + .25 * Math.max(stunde, (m.rHp0 || {})[k] || 0) - m.rsr.reduce((a, x) => a + (x[k] || 0), 0));
             const nimm = Math.min(mehr, raum); if (nimm > 0) m.rsr.push({ t: now, [k]: nimm }); mehr -= nimm;
+            if (mehr > 0 && d && hb && lim > d.rm.n) {     // Markt-Kauf: höchstens das Tageslimit – und die Münzen dafür werden abgebucht (vorher: jede Stunde neu und gratis)
+                const markt = Math.min(mehr, Math.floor(lim - d.rm.n));
+                if (markt > 0 && hbZahlen(who, hb, m, { c: Math.ceil(markt * preis) })) { d.rm.n += markt; mehr -= markt; saveBotState(); } }
             if (mehr >= 1) { kk.u = pr - mehr; warnen(who, 'rohstoffe', AUF.ROH_DEF[k].name + ' springt: das Handy sagt ' + fz(pr) + ', möglich wären höchstens ' + fz(pr - mehr) + '.', mehr);
                 (m.rDeckel || (m.rDeckel = {}))[k] = pr - mehr; }   // (in der Welt nur, was möglich ist – hbKlemmen deckelt gleich – sonst holt ein anderer die erfundenen Rohstoffe als Beute)
         }
@@ -12945,7 +12950,9 @@ if (window.WELT) {
         const dt = Math.min(HB_KAPPE_TAGE * TAG, now - nn(hb.frT)); if (dt < 300000) return; hb.frT = now;   // (in 5-Minuten-Schritten: das Hauptbuch ändert sich nicht bei jedem Profil)
         const f = hb.fr, on = !!(WELT.menschen[who] && WELT.menschen[who].online), t = dt / TAG;
         const dazu = (k, v, kappe) => { const vorher = nn(f[k]); f[k] = Math.max(vorher, Math.min(vorher + v, kappe)); };
-        dazu('g', HB_TAG.g * t + (on ? HB_ONLINE_STUNDE_G * Math.min(dt, 600000) / 36e5 : 0), HB_KAPPE_TAGE * (HB_TAG.g + 8 * HB_ONLINE_STUNDE_G));   // Karten-Funde nur für die Zeit, die er wirklich da war (online kommt alle 5 Min. ein Profil – nie die Tage dazwischen)
+        const heute = todayKey(); if (!hb.gOn || hb.gOn.t !== heute) hb.gOn = { t: heute, n: 0 };   // Karten-Funde höchstens ~7 Std. am Tag (wie die Truppen-Funde: 300 am Tag – gegen ein Skript rund um die Uhr)
+        const onG = on ? Math.max(0, Math.min(HB_ONLINE_STUNDE_G * Math.min(dt, 600000) / 36e5, 7 * HB_ONLINE_STUNDE_G - hb.gOn.n)) : 0; hb.gOn.n += onG;
+        dazu('g', HB_TAG.g * t + onG, HB_KAPPE_TAGE * (HB_TAG.g + 8 * HB_ONLINE_STUNDE_G));   // Karten-Funde nur für die Zeit, die er wirklich da war (online kommt alle 5 Min. ein Profil – nie die Tage dazwischen)
         dazu('k', HB_TAG.k * t, HB_KAPPE_TAGE * HB_TAG.k); dazu('kg', HB_TAG.kg * t, HB_KAPPE_TAGE * HB_TAG.kg); dazu('sh', HB_TAG.sh * t, HB_KAPPE_TAGE * HB_TAG.sh);
         const L = hbStufe(who), alter = hb.t0 ? (now - hb.t0) / TAG : 999;
         const ach = HB_ACH() * Math.min(1, alter / 30 + (L - 1) / 100);                   // Erfolge: nach und nach (30 Tage bzw. Stufe 100)
@@ -12986,11 +12993,15 @@ if (window.WELT) {
         if (L + 1 > hbMax(id)) return 'nein';
         if (id !== 'keep' && AUF) { if (!L && AUF.BAU_AB_BURG[id] > B) return 'nein'; if (L + 1 > (B >= AUF.BURG_MAX ? hbMax(id) : Math.min(hbMax(id), B))) return 'nein'; }
         const alt = id === 'keep' && now < BURG_ALT_BIS, zeit = alt ? Math.min(cityTimeRoh(id, L), burgZeitAlt(L)) : cityTimeRoh(id, L);   // (Übergang: eine Burg, die noch nach den alten Regeln gebaut wurde)
-        const hk = 'bau:' + id + ':' + (L + 1), hilfe = Math.min(nn((hb.hilfe || {})[hk]), zeit * 1000), need = zeit * 1000 - hilfe, fehlt = need - (now - T) - 60000;   // (Bündnis-Hilfe macht den Bau kürzer)
+        // Bauzeit zählt erst ab Baubeginn: nie vor dem letzten Profil, das dieses Gebäude ohne Bau zeigte (hb.ruhe), und nie vor dem Ende
+        // des letzten Baus dieses Bauarbeiters (hb.bu – 1 bzw. 2 Bauarbeiter). Vorher zählte Leerlauf mit (10 Tage still = 10 Tage Bauzeit gratis).
+        const pl = (hb.b2 ? 2 : 1), bu = hb.bu || (hb.bu = [0, 0]), i = pl > 1 && bu[1] < bu[0] ? 1 : 0, start = Math.max(T, nn((hb.ruhe || {})[id]), nn(bu[i]));
+        const hk = 'bau:' + id + ':' + (L + 1), hilfe = Math.min(nn((hb.hilfe || {})[hk]), zeit * 1000), need = zeit * 1000 - hilfe, fehlt = need - (now - start) - 60000;   // (Bündnis-Hilfe macht den Bau kürzer)
         const g = fehlt > 0 ? Math.ceil(fehlt / 60000) * CITY_GEMS_PER_MIN : 0;
         const k = Object.assign({}, alt ? burgKostenAlt(L) : AUF ? AUF.stadtKosten(id, L) : { c: cityCost(id, L) }); if (g) k.g = g;
         if (!hbZahlen(who, hb, m, k)) return 'geld';
-        hb.st[id] = [L + 1, g ? now : Math.min(now, T + need)];       // (fertig spätestens jetzt – die nächste Stufe zählt ab da)
+        hb.st[id] = [L + 1, g ? now : Math.min(now, start + need)];   // (fertig spätestens jetzt – die nächste Stufe zählt ab da)
+        bu[i] = hb.st[id][1];                                          // (dieser Bauarbeiter ist ab da wieder frei)
         if (hb.hilfe) delete hb.hilfe[hk];
         return 'ok';
     }
@@ -12998,7 +13009,7 @@ if (window.WELT) {
         const L = (hb.fo[d.id] | 0) + 1;
         if (L > d.max || (hb.st.academy || [0])[0] < AUF.foAkaFuer(d, L)) return 'nein';
         if (d.vor && !((hb.fo[d.vor] | 0) >= 1)) return 'nein';
-        const hk = 'fo:' + d.id + ':' + L, need = AUF.foZeitRoh(d, L) * 1000 - Math.min(nn((hb.hilfe || {})[hk]), AUF.foZeitRoh(d, L) * 1000), T = nn(hb.foT), fehlt = need - (now - T) - 60000;   // (Bündnis-Hilfe macht die Forschung kürzer)
+        const hk = 'fo:' + d.id + ':' + L, need = AUF.foZeitRoh(d, L) * 1000 - Math.min(nn((hb.hilfe || {})[hk]), AUF.foZeitRoh(d, L) * 1000), T = Math.max(nn(hb.foT), nn(hb.foRuhe)), fehlt = need - (now - T) - 60000;   // (Bündnis-Hilfe macht die Forschung kürzer · nie vor dem letzten Profil mit freiem Labor)
         const g = fehlt > 0 ? Math.ceil(fehlt / 60000) * CITY_GEMS_PER_MIN : 0;
         const k = Object.assign({}, AUF.foKosten(d, L)); if (g) k.g = g;
         if (!hbZahlen(who, hb, m, k)) return 'geld';
@@ -13045,6 +13056,12 @@ if (window.WELT) {
         const pl = (p.city && p.city.levels) || {}, will = id => Math.min(hbMax(id), Math.floor(nn(pl[id])));
         for (let runde = 0, weiter = true; weiter && runde < 80; runde++) { weiter = false;
             for (const id of hbBauten()) if (will(id) > hb.st[id][0] && hbStadtSchritt(who, hb, m, id, now) === 'ok') weiter = true; }
+        if (p.city && Array.isArray(p.city.bau)) {                    // (neue Handys schicken mit, was gerade gebaut wird)
+            if (p.city.b2) hb.b2 = 1;
+            const lauf = p.city.bau.slice(0, hb.b2 ? 2 : 1), ruhe = hb.ruhe || (hb.ruhe = {});
+            for (const id of hbBauten()) if (!lauf.includes(id) && will(id) <= hb.st[id][0]) ruhe[id] = now;   // frei und nichts offen: ein neuer Bau beginnt frühestens jetzt
+            if (!p.city.foLauf && AUF && AUF.FORSCHUNG.every(d => Math.min(d.max, Math.floor(nn((p.fo || {})[d.id]))) <= (hb.fo[d.id] | 0))) hb.foRuhe = now;
+        }
         for (const id of hbBauten()) { if (will(id) <= hb.st[id][0]) { hbGut(hb, 'stadt:' + id); continue; }
             hbWarte(who, hb, 'stadt:' + id, now, (cityDef(id) || {}).name + ': das Handy sagt Stufe ' + will(id) + ', möglich ist Stufe ' + hb.st[id][0] + ' (Bauzeit, Kosten oder Burg-Stufe passen nicht).', will(id) - hb.st[id][0]); }
         if (AUF) {                                     // Forschung: die billigste zuerst, so lange etwas weitergeht

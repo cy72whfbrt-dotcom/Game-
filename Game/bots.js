@@ -1607,6 +1607,9 @@ function botThroneShop(botId) {                       // the others spend their 
         const o = THRONE_OFFERS.find(x => x.id === id); if (!(b.tp >= o.cost)) break; b.tp -= o.cost; throneGive(botId, id); }
 }
 
+function botNeulingWeg(botId, gegner) {         // greift einen echten Spieler an (Basis, Armee, Feld, Rally): sein Anfängerschutz ist vorbei
+    if (!window.WELT || !botId || botId === 'player' || !(gegner === 'player' || (gegner && botById[gegner] && botById[gegner].mensch))) return;
+    const b = loadBotState()[botId]; if (b && b.neuBis) { b.neuBis = 0; saveBotState(); } }
 function botDropShield(botId) { const b = loadBotState()[botId]; if (!b || !(b.shieldUntil > Date.now())) return;
     if (b.mensch) { b.schildAlt = b.shieldUntil; if (b.hb) b.hb.schild = Math.min(+b.hb.schild || 0, Date.now()); }   // ein echter Spieler: der Schild kommt nicht mit seinem nächsten Profil zurück
     b.shieldUntil = 0; b.shieldWhy = null; saveBotState(); requestRender(); }

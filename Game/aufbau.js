@@ -474,7 +474,7 @@ AUF = {
     rohVon, rohDazu, rohSpeichern, basisRoh, rohBuchen, rohStunde, kannZahlen, zahlen, kostenHtml,
     burgStufe, burgZeitRoh, stadtKosten, stadtCap, burgSchutz, burgSchutzStufe,
     marschFrei, marschOk, marschVoll, gruppeLaeuft, frei: { an() { marschFreiPass++; }, aus() { marschFreiPass = Math.max(0, marschFreiPass - 1); } },
-    foStufe, foWert, foKosten, foFertig, marktLimit, marktHtml,
+    foStufe, foWert, foKosten, foFertig, marktLimit, marktHtml, marktGebuehr, marktStufe: who => bauStufe(who, 'market'),
     kampf, ertrag, sammelTempo, traglast, marschTempo, spaeherTempo, lazarettPlus, nebelWeite, tempelPlus, botschaftTempo, botschaftGeschenk, botschaftStufe: who => bauStufe(who, 'embassy'),
     spielerTakt, hud: hudRoh, renderKeep, effektText, extraHtml, spaeherMehr,
     botStadtFix, botForschung, botMarkt, botBurgWert, botRohWunsch

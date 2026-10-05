@@ -123,6 +123,7 @@ setInterval(() => {
                 continue;
             }
             if (atkr === 'player') dropShield('Dein Friedensschild ist gefallen – dein Angriff auf ' + islandTitle(islandById[a.targetId]) + ' ist angekommen.'); else botDropShield(atkr);   // a wave that fights is an attack
+            if (a.rally) for (const w of new Set(a.rally.an.map(x => x[0]))) if (w && w !== 'player' && w !== atkr) { botDropShield(w); botNeulingWeg(w, islandOwnerOf(a.targetId)); }   // (wer in der Rally mitkämpft, greift auch an)
             const fight = kampfDazu(a, now);
             if (fight) {
                 const anderer = fight.attackerBotId !== a.attackerBotId;

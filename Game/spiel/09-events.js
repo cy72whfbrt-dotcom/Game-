@@ -245,7 +245,7 @@ function fieldArrive(m, now) {
     if (o.who === m.who) { o.troops += m.troops; if (!o.hero) { o.hero = m.hero || null; o.hero2 = m.hero2 || null; } return; }   // more of your own join the gatherers (other heroes just go along)
     if (m.who !== 'player' && botById[m.who] && botKeepsShield(botById[m.who], now)) { const home = islandById[m.homeId] || islandById[playerIslandId];   // under their own shield: no fight, back home
         fieldMarches.push({ who: m.who, homeId: m.homeId, fieldId: f.id, troops: m.troops, hero: m.hero || null, hero2: m.hero2 || null, startedAt: now, resolveAt: now + fieldTravelSec(home, f, m.who) * 1000, back: true, load: 0 }); return; }
-    if (m.who === 'player') dropShield('Dein Friedensschild ist gefallen, weil du angreifst.'); else botDropShield(m.who);   // a fight for the field is an attack
+    if (m.who === 'player') dropShield('Dein Friedensschild ist gefallen, weil du angreifst.'); else { botDropShield(m.who); botNeulingWeg(m.who, o.who); }   // a fight for the field is an attack
     const aHx = heroFieldFx(m.who, m.hero, { res: 1 }, m.hero2), dHx = heroFieldFx(o.who, o.hero, { res: 1, defending: 1, gather: 1 }, o.hero2);   // both leaders: Goldrausch, Lagerwache …
     const fb = fieldBattle(m.who, m.troops, o.who, o.troops, aHx, dHx), won = fb.won, involved = m.who === 'player' || o.who === 'player';   // a fight for the field: army against army
     const loserName = fieldWhoName(won ? o.who : m.who), winnerName = fieldWhoName(won ? m.who : o.who), oWho = o.who;
@@ -1330,13 +1330,13 @@ function armyArrive(a, now) {
     if (t.kind === 'army') { const b = armyById(t.id); if (!b) return;
         if (armyWho(b) === who) { b.troops += a.troops; gone(); if (me) flashHint('Armeen vereint: jetzt ' + fmtCompact(b.troops) + ' Truppen.', 3000); }
         else if (ownerShielded(armyWho(b), now) || bundFreund(who, armyWho(b))) { if (me) flashHint('Die Armee von ' + armyName(b) + (bundFreund(who, armyWho(b)) ? ' gehört zu deinem Bündnis' : ' steht unter einem Friedensschild') + ' – kein Kampf.', 3500); }
-        else { const p = armyPos(b, now); if (Math.hypot(p.x - a.x, p.y - a.y) < ISLAND_RADIUS * 2) { if (me) dropShield('Dein Friedensschild ist gefallen, weil du angreifst.'); else botDropShield(who); armyClash(a, b); } else if (me) flashHint('Die Armee von ' + armyName(b) + ' ist weitergezogen.', 3000); }
+        else { const p = armyPos(b, now); if (Math.hypot(p.x - a.x, p.y - a.y) < ISLAND_RADIUS * 2) { if (me) dropShield('Dein Friedensschild ist gefallen, weil du angreifst.'); else { botDropShield(who); botNeulingWeg(who, armyWho(b)); } armyClash(a, b); } else if (me) flashHint('Die Armee von ' + armyName(b) + ' ist weitergezogen.', 3000); }
         return; }
     if (t.kind === 'field') { gone(); fieldArrive({ who, homeId: armyHome(a), fieldId: t.id, troops: a.troops, hero: a.hero || null, hero2: a.hero2 || null, back: false }, now); saveFields(); return; }
     if (t.kind === 'base') {                                                  // storming a base: the fight runs exactly like a normal attack
         const src = armyHome(a); if (src === null || src === undefined) return;
         gone();
-        if (me) { dropShield('Dein Friedensschild ist gefallen, weil du angreifst.'); questProgress('attack', 1); } else botDropShield(who);
+        if (me) { dropShield('Dein Friedensschild ist gefallen, weil du angreifst.'); questProgress('attack', 1); } else { botDropShield(who); botNeulingWeg(who, islandOwnerOf(t.id)); }
         const tg = islandById[t.id], hx = a.hero && heroOwned(who, a.hero) ? heroLaunch(who, a.hero, islandById[src], tg, a.troops, a.hero2) : null;   // the army's heroes lead the storm
         pendingAttacks.push({ sourceId: src, targetId: t.id, rawTroops: a.troops, startedAt: now - 1000, resolveAt: now, attackerBotId: me ? null : who, fromArmy: true, ...attackFields(who, islandById[src], tg, a.troops, hx) });
         if (me) { saveGame(); saveProgression(); }

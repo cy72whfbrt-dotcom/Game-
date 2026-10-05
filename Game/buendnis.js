@@ -91,6 +91,7 @@ function bundUnterAngriff(id) {                                  // kommt gerade
 //    → '' (gut) oder ein kurzer Grund, warum nicht. Echte Spieler bekommen den Grund als Nachricht.
 // ==============================================================================================================
 function bundMelden(w, text) { if (window.WELT && /^u\d+$/.test(w) && botById[w] && botById[w].mensch) WELT.nachricht(parseInt(w.slice(1), 10), { art: 'bundInfo', text: String(text).slice(0, 300) }); }
+const bundAustritt = new Map();                                  // echter Spieler → wann er zuletzt ein Bündnis verlassen hat
 const bundMeldeZeit = new Map();                                 // gegen Spam (Rally an/ab, Einladung an/weg …): dieselbe Meldung an dieselbe Person höchstens alle 10 Min.
 function bundEinmal(key) { const now = Date.now(), t = bundMeldeZeit.get(key); if (t && now - t < 600000) return false;
     bundMeldeZeit.set(key, now); if (bundMeldeZeit.size > 5000) for (const [k, v] of bundMeldeZeit) if (now - v >= 600000) bundMeldeZeit.delete(k); return true; }
@@ -149,6 +150,7 @@ function bundOp(who, b) {
     if (op === 'beitreten') {
         const z = bund.b[kennung(b.aid)]; if (!z) return 'Dieses Bündnis gibt es nicht mehr';
         if (a) return 'Du bist schon in einem Bündnis';
+        const raus = bundAustritt.get(who); if (raus && now - raus < 3600000) return 'Du hast gerade ein Bündnis verlassen – neu beitreten kannst du in ' + Math.ceil((3600000 - (now - raus)) / 60000) + ' Min.';   // (gegen Spam: beitreten/verlassen im Wechsel)
         const voll = z.mit.length >= BUND.MAX;                   // voll: trotzdem anfragen – der Anführer kann tauschen
         if (z.offen && !voll) { bundRein(z, who); bundAlleMelden(z, bundName(who) + ' ist deinem Bündnis beigetreten.', who); return fertig('Willkommen im Bündnis [' + z.tag + '] ' + z.name + '!'); }
         z.anfragen = (z.anfragen || []).filter(q => q.w !== who && now - q.at < 24 * 3600000);
@@ -169,7 +171,7 @@ function bundOp(who, b) {
     if (op === 'anfrageWeg') { for (const x in bund.b) bund.b[x].anfragen = (bund.b[x].anfragen || []).filter(q => q.w !== who); return fertig(''); }
     if (!a) return 'Du bist in keinem Bündnis';
     const chef = a.anf === who, ziel = kennung(b.w);
-    if (op === 'verlassen') { bundRaus(a, who); return fertig('Du hast das Bündnis verlassen.'); }
+    if (op === 'verlassen') { bundRaus(a, who); if (botById[who] && botById[who].mensch) bundAustritt.set(who, now); return fertig('Du hast das Bündnis verlassen.'); }   // (echte Spieler: 1 Std. kein neuer Beitritt)
     if (op === 'anfrage') {                                      // Anführer: Ja / Nein
         if (!chef) return 'Nur der Anführer entscheidet';
         const q = (a.anfragen || []).find(x => x.w === ziel); if (!q) return '';
@@ -354,7 +356,10 @@ function bundHilfeBitte(a, who, b, now) {
     if (!was || !k || !hilfeDauer(was, k, to)) return 'kaputt';
     const L = AUF ? AUF.botschaftStufe(who) : 0; if (!L) return 'Baue zuerst die Botschaft – ihre Stufe bestimmt, wie oft dir dein Bündnis helfen kann';
     a.hilfe = (a.hilfe || []).filter(h => now < h.bis + 120000);
-    if (a.hilfe.some(h => h.w === who && h.was === was && h.k === k && h.to === to)) return '';
+    const hb = botById[who] && botById[who].mensch && (loadBotState()[who] || {}).hb;   // echter Spieler: nur für die NÄCHSTE Stufe (laut Hauptbuch des Weltrechners) – keine Hilfe auf Vorrat
+    if (hb && hb.st && hb.fo) { const naechste = was === 'bau' ? (hb.st[k] ? hb.st[k][0] + 1 : 0) : (hb.fo[k] | 0) + 1; if (to !== naechste) return '';
+        a.hilfe = a.hilfe.filter(h => !(h.w === who && h.was === was && h.to <= (was === 'bau' ? (hb.st[h.k] || [0])[0] : hb.fo[h.k] | 0))); }   // (schon fertige Bitten weg)
+    if (a.hilfe.some(h => h.w === who && h.was === was && (was === 'fo' || h.k === k))) return '';   // je Gebäude bzw. Forschung nur eine offene Bitte
     if (a.hilfe.length >= 60) return 'Gerade zu viele Hilfe-Bitten im Bündnis';
     const bis = Math.min(now + 62 * 864e5, now + hilfeDauer(was, k, to));   // (so lange wie der ganze Bau – eine selbst gesetzte kurze Zeit ließ die Bitte verfallen und neu stellen: Hilfe ohne Ende)
     a.hilfe.push({ id: 'h' + (bund.n++), w: who, was, k, to, max: L, von: [], at: now, bis });
@@ -569,6 +574,7 @@ function bundRallyLos(r) {
     if (!atk || atk.attackerBotId !== by) { islandTroops[r.at] = Math.max(0, (islandTroops[r.at] || 0) - total); return bundRallyEnde(r, 'der Weg ist versperrt (Tor zu oder Maut zu teuer)'); }
     atk.rally = { id: r.id, by, an: [[by, r.at, r.n0]].concat(r.j.filter(j => j.da).map(j => [j.w, j.f, j.n])) };
     rallyWerte(atk, by, r.n0, r.j.filter(j => j.da));
+    for (const j of r.j) if (j.da) { botDropShield(j.w); botNeulingWeg(j.w, islandOwnerOf(r.t)); }   // (alle, die mitmachen, greifen an: Friedensschild und Anfängerschutz fallen)
     for (const k in bundMem.rallyWeg) if (bundMem.rallyWeg[k].bis < Date.now()) delete bundMem.rallyWeg[k];   // (abgelaufene weg – sonst wächst die Liste ewig)
     bundMem.rallyWeg[r.id] = { t: r.t, at: r.at, by, bis: Date.now() + 60 * 60000 };   // (für Nachzügler: sie folgen direkt zum Ziel)
     bund.r = bund.r.filter(x => x !== r);

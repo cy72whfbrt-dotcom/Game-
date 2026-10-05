@@ -162,7 +162,8 @@ function profil_bereinigen($text) {
         'lvl' => $lvl,
         'skills' => (object)$sk,
         'gear' => $gear,
-        'city' => ['levels' => (object)$stadt],
+        'city' => ['levels' => (object)$stadt, 'bau' => array_values(array_filter(array_slice((array)($p['city']['bau'] ?? []), 0, 2), function ($x) use ($STADT) { return is_string($x) && isset($STADT[$x]); })),
+                   'b2' => !empty($p['city']['b2']), 'foLauf' => isset($p['city']['foLauf']) && is_string($p['city']['foLauf']) && isset($FO[$p['city']['foLauf']]) ? $p['city']['foLauf'] : null],   // (was gerade gebaut/geforscht wird – Bauzeit-Prüfung im Hauptbuch)
         'fo' => (object)$fo, 'res' => is_array($p['res'] ?? null) ? $res : null,   // (fehlt: null – nicht 0, sonst sähe es nach „alles ausgegeben“ aus)
         'wounded' => $plus($p['wounded'] ?? 0, 1e30),
         'hs' => $hs,
