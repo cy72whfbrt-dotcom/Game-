@@ -744,6 +744,15 @@ Alles für heute Nacht kommt hier rein. Erst besprechen (Fragen an Alexander), d
    Burg-Stufe) · N5 ja (Stadt-Bau/Forschung geben Pass-Punkte + zählen für Aufgaben) · N6 ja (neue Forschungen ab
    Labor 23) · N7 nein (Saison-Preise nur Top 10) · N8 nein (kein Bau-Beschleuniger beim Händler) · N9 ja (Saison-Start
    sicher 18 Uhr deutscher Zeit) · N10 B (Schummel-Verdacht: nur Nachricht an Alexander, kein Bremsen) · N11 nein.
+   **Teil 1 entschieden – JA:** Hochladen wiederholt + prüft · Spielerkonten in die Sicherung · Neustart-Dauer messen ·
+   Ertrag „pro Stunde“ · tägliche Belohnung erst nach der Anleitung · Anleitung wiederholbar + Schritt 6 erst nach
+   Abholen · Hauptstadt-Fenster erklärt + nächster Knopf leuchtet · Knöpfe ohne Text nur **in der Anleitung** erklären ·
+   schneller laden · Benachrichtigung, wenn ein echter Spieler dich ausspäht · Warnung + Auto-Hilfe bei Rally gegen
+   das Bündnis · Mitspieler: „Später“ → „Jetzt!“, „Danke!“/„Gut gemacht!“ · Hauptstadt-Erfolge · Push „Bau/Forschung
+   fertig“ · Kisten-Aufgabe zählt Gratis-Kisten · Ranglisten-Reiter „Hauptstadt“.
+   **NEIN:** Push bei Stillstand nachts · Admin-Ampel · „Leicht“ bei neutralen Basen · Fenster „Erste Basis erobert“ ·
+   Zeile „Nächstes Ziel“ · Karte heller · „Warum verloren?“ im Kampfbericht · Pass umbenennen (bleibt „Saison-Pass“).
+   **Noch offen:** 15 (Anleitung im Browser?), 19 (Verstärkung-Meldung), 27 (Ranglisten je Saison), 29 (Erfolge prüfen).
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
