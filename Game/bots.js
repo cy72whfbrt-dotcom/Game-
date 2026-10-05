@@ -1541,14 +1541,15 @@ function runBotTick() {
 // ==============================================================================================================
 function botLook(botId) {
     const b = loadBotState()[botId]; if (!b) return { frame: FRAMES[0].id, title: 'Neuling' };
-    if (b.mensch) { const t = TITLES_P.find(x => x.id === b.lookTitle); return { frame: b.throneLook ? 'throne' : b.lookFrame || FRAMES[0].id, title: t ? t.name : 'Neuling' }; }   // echter Spieler: sein Aussehen
+    if (b.mensch) { const t = titelDef(b.lookTitle); return { frame: b.throneLook ? 'throne' : b.lookFrame || FRAMES[0].id, title: t ? t.name : 'Neuling' }; }   // echter Spieler: sein Aussehen
     if (!b.lookMig) { const own = botOwnedIslands[botId], r = Math.max(b.bestRank || 0, rankIndexFor(own ? own.size : 0)), st = b.stats || {}, cityMin = Math.min(...BOT_BUILDINGS.filter(k => !BOT_MIN_AUSNAHME.includes(k)).map(k => b.city.levels[k] || 0));   // once: what they had by rank and deeds stays theirs - from now on looks are only bought (as for the player)
         const ach = { cap100: (st.caps || 0) >= 100, cap1000: (st.caps || 0) >= 1000, def25: (st.defs || 0) >= 25, boss1: (st.bosses || 0) >= 1, emma10: (st.pvp || 0) >= 10, city5: cityMin >= 5, throne: !!st.ruled };
         b.frames = [...new Set([...(b.frames || []), ...FRAMES.filter(f => !f.buy && (f.rank || 0) <= r).map(f => f.id)])];
         b.titles = [...new Set([...(b.titles || []), ...TITLES_P.filter(t => !t.buy && (t.ach ? ach[t.ach] || (b.achLook || []).includes(t.ach) : (t.rank || 0) <= r)).map(t => t.id)])]; b.lookMig = 1; saveBotState(); }
     const earned = TITLES_P.filter(t => t.buy ? !!b.throneLook : t.gems === 0 || b.titles.includes(t.id));
     const idn = parseInt(botId.slice(3), 10) || 0, pick = earned[earned.length - 1 - Math.floor(mulberry32(idn * 31 + earned.length)() * Math.min(3, earned.length))];   // one of their three best - everyone has a favourite
-    return { frame: b.throneLook ? 'throne' : (b.frames || []).includes('saison') ? 'saison' : [...FRAMES].reverse().find(f => !f.buy && (f.gems === 0 || b.frames.includes(f.id))).id, title: pick ? pick.name : 'Neuling' };
+    const st = saisonTitelBest(b.titles);                                                // ein Saison-Titel (Welt-Saison, für immer) – den tragen sie
+    return { frame: b.throneLook ? 'throne' : (b.frames || []).includes('saison') ? 'saison' : [...FRAMES].reverse().find(f => !f.buy && (f.gems === 0 || b.frames.includes(f.id))).id, title: st ? st.name : pick ? pick.name : 'Neuling' };
 }
 // Looks are only bought: everyone has a favourite frame, title and (6 in 10) a Marsch-Skin, bought once they can spare it - like the player in the Aussehen sheet
 function botLookFav(botId) { const r = mulberry32((parseInt(botId.slice(3), 10) || 0) * 389 + 71), gf = FRAMES.filter(f => f.gems), gt = TITLES_P.filter(t => t.gems), ms = MARCH_SKINS.filter(m => m.gems || m.tp);

@@ -222,6 +222,7 @@
             fo: city.fo || {}, res: P(d.openWaterRes) || null,   // Paket D: Forschung, Rohstoffe (Burg-Stufe steht in city.levels.keep)
             neuBis: typeof neulingBis === 'function' ? neulingBis() : 0,
             look: { ring: look.ring || null, rings: look.rings || [], march: look.march || null, marchs: look.marchs || [], frame: look.frame || null, title: look.title || null, throne: !!(look.bought && look.bought.throne) },
+            saison: parseInt(d.openWaterSaisonMein, 10) || 1,   // Welt-Saison dieses Spielstands (ein Profil von vor dem Reset zählt nicht)
             stats: P(d.openWaterStats) || {}, earned: thr.earned || 0, coins: parseFloat(d.openWaterCoins) || 0, gems: parseFloat(d.openWaterGems) || 0,   // (Gems sieht nur der Weltrechner – 3B: Hauptbuch)
             crest: P(d.openWaterCrest), baustil: P(d.openWaterBaustil)
         };
@@ -270,12 +271,15 @@
     // ===================================================================================================
     // 3) Beim Laden: Welt einsetzen, andere Spieler als Mitspieler eintragen
     // ===================================================================================================
+    // Welt-Saison (09-events.js): ein Profil aus einer älteren Saison (sein Handy hat den Reset noch nicht übernommen) zählt nicht
+    function saisonNr() { const t = S.daten.openWaterSaison || (OW.welt && OW.welt.setzen && OW.welt.setzen.openWaterSaison); const v = P(t); return v && v.nr > 0 ? v.nr : 1; }
     function menschenAktualisieren(liste) {
+        const nr = saisonNr();
         for (const s of liste || []) {
             const id = 'u' + s.id, m = W.menschen[id] || (W.menschen[id] = { id, uid: s.id });
             m.name = s.name; m.online = s.online;
             if (typeof BOT_DEFS !== 'undefined') { const bd = BOT_DEFS.find(b => b.id === id); if (bd && bd.mensch) bd.name = s.name; }   // neuer Name sichtbar
-            if (s.profil) { m.profil = s.profil; m.profilNeu = true; m.profilZeit = s.profil_zeit || 0; }   // (profilZeit: wann der Server es bekam – Hauptbuch: was war da schon bezahlt?)
+            if (s.profil && (+s.profil.saison || 1) >= nr) { m.profil = s.profil; m.profilNeu = true; m.profilZeit = s.profil_zeit || 0; }   // (profilZeit: wann der Server es bekam – Hauptbuch: was war da schon bezahlt?)
             if (s.profil_zeit > W.spielerSeit) W.spielerSeit = s.profil_zeit;
         }
     }
@@ -355,6 +359,15 @@
         if (botState[id]) botState[id].dOffen = o;
     }
     function botById(id) { return typeof BOT_DEFS !== 'undefined' && BOT_DEFS.find(b => b.id === id); }
+    // (Weltrechner, neue Welt-Saison) alles, was ihm die Welt noch schuldet, jetzt als Nachricht – vor der Nachricht „saison“
+    W.deltaJetzt = function (id) {
+        if (!W.menschen[id] || !botById(id)) return;
+        deltaEinen(id);
+        const o = offen[id] || (botState[id] && botState[id].dOffen && botState[id].dOffen.e ? botState[id].dOffen : null);
+        delete offen[id]; if (botState[id]) delete botState[id].dOffen;
+        if (o && o.e && Object.keys(o.e).length) W.ereignisseRaus.push({ an: parseInt(id.slice(1), 10), e: Object.assign({ art: 'delta' }, o.e) });
+    };
+    W.deltaBasis = function (id) { if (botById(id)) basis[id] = topf(id); };   // (nach dem Reset: Münzen 0 ist keine Nachricht „−Münzen“)
     // schl: ein fester Schlüssel (z. B. 'woche|<Woche>') → feste Nummer: zahlt der Weltrechner nach Neustart/Zurückspielen dieselbe
     // Auszahlung nochmal, legt der Server sie kein zweites Mal ab (eindeutig je Spieler und Nummer)
     W.nachricht = function (uid, e, schl) { if (('u' + uid) === ICH) { for (const f of W.beiNachricht) try { f(e); } catch (x) { console.warn(x); } } else W.ereignisseRaus.push(schl ? { an: uid, e, mid: festeNummer(schl + '|' + uid) } : { an: uid, e }); };
@@ -365,13 +378,14 @@
     function packen(text) { try { if (window.fflate) return window.fflate.gzipSync(window.fflate.strToU8(text), { level: SYSTEM ? 1 : 6 }); } catch (e) {} return null; }   // (Weltrechner: Stufe 1 – viel weniger Rechenzeit, die Leitung zum Server ist lokal)
 
     async function puls() {
-        if (pulsLaeuft || S.gestoppt) return;
+        if (pulsLaeuft || S.gestoppt || W.saisonHalt) return;
         pulsLaeuft = true; pulsStart = Date.now(); pulsFehler = false;
         let neuGesendet = null;
         const anfrage = { aktion: 'puls', token: S.token, seit: W.version, spieler_seit: W.spielerSeit };
         if (!SYSTEM) anfrage.sicht_v = W.sichtV;                              // 3B: welche Sicht (Nebel auf dem Server) ich schon habe
         else { if (Object.keys(W.sichtRaus).length) { anfrage.sicht = W.sichtRaus; W.sichtRaus = {}; }   // (Weltrechner) neue Sicht einzelner Spieler
-            if (Object.keys(W.armeeSichtRaus).length) { anfrage.armee_sicht = W.armeeSichtRaus; W.armeeSichtRaus = {}; } }
+            if (Object.keys(W.armeeSichtRaus).length) { anfrage.armee_sicht = W.armeeSichtRaus; W.armeeSichtRaus = {}; }
+            if (W.sicherungBitte) anfrage.sicherung = 1; }   // (Welt-Saison: vor dem Reset eine Sicherung der Welt beim Server)
         try {
             const jetzt = Date.now();
             if (!SYSTEM && jetzt - profilAt > 10000) { const pr = J(meinProfil()); if (pr !== letztesProfil) { anfrage.profil = pr; letztesProfil = pr; } profilAt = jetzt; }
@@ -413,6 +427,7 @@
             }
             if (!a.quittung_offen) { for (const id of anfrage.quittung || []) W.befehlFertig.delete(id); for (const id of anfrage.bezahlt_ok || []) W.befehlOk.delete(id); }   // quittiert: kommt nicht mehr (sonst beim nächsten Puls nochmal)
             for (const k of a.welt_voll || []) { delete gesendet[k]; S.weltGeaendert.add(k === 'openWaterBotOwnedIslands' ? 'openWaterOwnedIslands' : k); }   // Flicken passte nicht: nächstes Mal ganz
+            if (anfrage.sicherung && typeof a.sicherung === 'number') { W.sicherungBitte = null; if (a.sicherung > 0) W.sicherungId = a.sicherung; }   // (0: nicht geklappt – spiel.js fragt später nochmal)
             antwortVerarbeiten(a, anfrage);
             if (anfrage.profil && a && a.profil_ok === false) letztesProfil = '';   // (vom Server abgelehnt – zu schnell: beim nächsten Mal nochmal schicken)
         } catch (e) {
@@ -488,12 +503,15 @@
         }
         // Nachrichten an mich – jede genau einmal: die Nummern der verbuchten stehen im eigenen Spielstand und gehen mit der
         // nächsten Sicherung (zusammen mit Münzen, Gems … aus denselben Nachrichten) zum Server, erst dann gelten sie als abgeholt
+        // Welt-Saison: nach der Nachricht „saison“ nichts mehr verbuchen – die Seite lädt gleich neu und übernimmt den Reset; was danach
+        // kam (Ertrag der neuen Saison), kommt beim nächsten Laden nochmal (noch nicht verbucht)
         const fertig = new Set(W.ereignisFertig); let neu = false;
-        for (const e of a.ereignisse || []) {
+        for (const e of W.saisonHalt ? [] : a.ereignisse || []) {
             const id = e && e._eid; if (id && fertig.has(id)) continue;
             if (e) delete e._eid;
             for (const f of W.beiNachricht) try { f(e); } catch (x) { console.warn(x); }
             if (id) { fertig.add(id); W.ereignisFertig.push(id); neu = true; }
+            if (e && e.art === 'saison' && W.saisonHalt) break;
         }
         if (neu) { if (window.__weltSpeicherJetzt) window.__weltSpeicherJetzt(); W.ereignisFertig = W.ereignisFertig.slice(-500); S.privat('openWaterEreignisFertig', J(W.ereignisFertig)); }
     }

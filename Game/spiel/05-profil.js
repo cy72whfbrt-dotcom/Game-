@@ -14,6 +14,12 @@ const TITLES_P = [                                  // rank / ach: only for the 
     { id: 'emma', name: 'Gefürchtet', ach: 'emma10', gems: 600 }, { id: 'slayer', name: 'Bezwinger', ach: 'boss1', gems: 600 }, { id: 'builder', name: 'Baumeister', ach: 'city5', gems: 500 },
     { id: 'king', name: 'Herrscher der Meere', ach: 'throne', tp: 2500 }, { id: 'keeper', name: 'Thronhüter', buy: 'throne', tp: 3000 }
 ];
+// Saison-Titel (Ende einer Welt-Saison, die besten 10 – für immer, nie zu kaufen): Kennung s<Saison>p<Platz>
+function saisonTitel(id) { const m = /^s(\d{1,4})p(\d{1,2})$/.exec(String(id || '')); if (!m) return null; const n = +m[1], pl = +m[2];
+    return { id: m[0], name: pl === 1 ? 'Champion Saison ' + n : 'Saison ' + n + ' · Platz ' + pl, saison: n, platz: pl }; }
+const titelDef = id => TITLES_P.find(t => t.id === id) || saisonTitel(id);
+const saisonTitelBest = l => (l || []).map(saisonTitel).filter(Boolean).sort((a, b) => a.platz - b.platz || b.saison - a.saison)[0] || null;
+function saisonTitelGeben(id) { if (!saisonTitel(id)) return; look.titles = [...new Set([...(look.titles || []), id])]; look.title = id; saveLook(); try { renderLook(); } catch (e) {} }   // (gleich angelegt)
 // Marsch-Skins: how your columns look on the map - flag colour (with your crest on it) and a trail behind them
 const MARCH_SKINS = [
     { id: 'standard', name: 'Standard', gems: 0, flag: '#e9dfc6' },
@@ -81,7 +87,7 @@ function lookMigrate() {                            // once: everything unlocked
 function saveLook() { store.set('openWaterLook', JSON.stringify(look)); }
 const lookOwns = (k, x) => x.gems === 0 || (look[k] || []).includes(x.id) || !!(x.buy && look.bought && look.bought[x.buy]) || (!look.lookMig && lookOldUnlocked(x));   // k: 'frames' | 'titles'
 function playerFrame() { const f = FRAMES.find(q => q.id === look.frame); return f && lookOwns('frames', f) ? f.id : [...FRAMES].reverse().find(q => !q.buy && lookOwns('frames', q)).id; }
-function playerTitle() { const t = TITLES_P.find(q => q.id === look.title); return t && lookOwns('titles', t) ? t.name : 'Neuling'; }
+function playerTitle() { const t = titelDef(look.title); return t && lookOwns('titles', t) ? t.name : 'Neuling'; }
 function marchSkinOf(who) { const id = who === 'player' ? look.march : who ? (loadBotState()[who] || {}).march : ''; return MARCH_SKINS.find(m => m.id === id) || MARCH_SKINS[0]; }
 function renderLook() {                             // the profile header and its "Aussehen" line; choosing happens in the Aussehen sheet
     const fr = playerFrame();

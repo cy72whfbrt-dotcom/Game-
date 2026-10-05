@@ -39,6 +39,31 @@ if (!SYSTEM && store.get('openWaterReset') !== RESET_VERSION) {   // (nie beim W
     try { for (const k of Object.keys(localStorage)) if (k.startsWith('openWater')) localStorage.removeItem(k); } catch (e) {}
     store.set('openWaterReset', RESET_VERSION);
 }
+// WELT-SAISON (Server-Reset alle 8 Wochen, Alexander 5.10.) – der eigene Spielstand übernimmt den Reset beim Laden, bevor das
+// Spiel irgendetwas liest. openWaterSaisonMein = die Saison, in der dieser Spielstand ist (geht im Profil mit – ein Profil von
+// vor dem Reset zählt beim Weltrechner nicht). openWaterSaisonNeu setzt die Nachricht „saison“ (09-events.js), danach lädt die
+// Seite neu. Bleibt: Stadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Gems, Holz/Stein/Eisen, Gekauftes, Abholfach.
+// Weg: Stufe (→ 1, damit alle Fähigkeitspunkte), Münzen (→ 0 wie ein neuer Spieler), Verwundete, Kampfberichte, Nebel, Späher,
+// alte Befehle. (Basen, Truppen, Bündnis, Märsche stehen in der Welt – die setzt der Weltrechner zurück.)
+var saisonNeuGeladen = 0;                            // (09-events.js: Hinweis nach dem Neuladen)
+if (!SYSTEM) {
+    let mein = parseInt(store.get('openWaterSaisonMein'), 10) || 0;
+    const neu = parseInt(store.get('openWaterSaisonNeu'), 10) || 0;
+    if (!mein) {                                     // ganz neu: die laufende Saison · ein Spielstand von vor der Saison-Regel: Saison 1
+        let w = 1; try { w = Math.max(1, (JSON.parse(store.get('openWaterSaison')) || {}).nr | 0); } catch (e) {}
+        mein = store.get('openWaterLevel') === null && store.get('openWaterCity') === null ? w : 1;
+        store.set('openWaterSaisonMein', String(mein));
+    }
+    if (neu > mein) {
+        store.set('openWaterLevel', '1'); store.set('openWaterXp', '0'); store.set('openWaterSkills', '{}'); store.set('openWaterSkillPoints', '0');
+        store.set('openWaterCoins', '0');
+        for (const k of ['openWaterCombatLog', 'openWaterFogCells', 'openWaterExplored', 'openWaterScoutedIslands', 'openWaterPendingScouts', 'openWaterCarryTroops', 'openWaterBefehlAus']) store.remove(k);
+        try { const c = JSON.parse(store.get('openWaterCity')); if (c && typeof c === 'object') { c.wounded = 0; store.set('openWaterCity', JSON.stringify(c)); } } catch (e) {}
+        if (window.WELT) { WELT.befehle.length = 0; WELT.ausgang = []; }   // (welt.js hat die alten Befehle schon gelesen – sie gehören zur alten Welt)
+        store.set('openWaterSaisonMein', String(neu)); saisonNeuGeladen = neu;
+    }
+    if (store.get('openWaterSaisonNeu') !== null) store.remove('openWaterSaisonNeu');
+}
 const canvas = document.getElementById('mapCanvas');
 const ctx = canvas.getContext('2d');
 
@@ -675,6 +700,7 @@ try {
 } catch (e) {
     neutralTroopOverrides = {};
 }
+for (const isl of islands) isl.nt0 = isl.neutralTroops;   // (die erzeugte Besatzung – eine neue Welt-Saison stellt sie wieder her)
 for (const idStr of Object.keys(neutralTroopOverrides)) {
     const isl = islandById[idStr];
     if (isl) isl.neutralTroops = neutralTroopOverrides[idStr];
@@ -4756,6 +4782,12 @@ const TITLES_P = [                                  // rank / ach: only for the 
     { id: 'emma', name: 'Gefürchtet', ach: 'emma10', gems: 600 }, { id: 'slayer', name: 'Bezwinger', ach: 'boss1', gems: 600 }, { id: 'builder', name: 'Baumeister', ach: 'city5', gems: 500 },
     { id: 'king', name: 'Herrscher der Meere', ach: 'throne', tp: 2500 }, { id: 'keeper', name: 'Thronhüter', buy: 'throne', tp: 3000 }
 ];
+// Saison-Titel (Ende einer Welt-Saison, die besten 10 – für immer, nie zu kaufen): Kennung s<Saison>p<Platz>
+function saisonTitel(id) { const m = /^s(\d{1,4})p(\d{1,2})$/.exec(String(id || '')); if (!m) return null; const n = +m[1], pl = +m[2];
+    return { id: m[0], name: pl === 1 ? 'Champion Saison ' + n : 'Saison ' + n + ' · Platz ' + pl, saison: n, platz: pl }; }
+const titelDef = id => TITLES_P.find(t => t.id === id) || saisonTitel(id);
+const saisonTitelBest = l => (l || []).map(saisonTitel).filter(Boolean).sort((a, b) => a.platz - b.platz || b.saison - a.saison)[0] || null;
+function saisonTitelGeben(id) { if (!saisonTitel(id)) return; look.titles = [...new Set([...(look.titles || []), id])]; look.title = id; saveLook(); try { renderLook(); } catch (e) {} }   // (gleich angelegt)
 // Marsch-Skins: how your columns look on the map - flag colour (with your crest on it) and a trail behind them
 const MARCH_SKINS = [
     { id: 'standard', name: 'Standard', gems: 0, flag: '#e9dfc6' },
@@ -4823,7 +4855,7 @@ function lookMigrate() {                            // once: everything unlocked
 function saveLook() { store.set('openWaterLook', JSON.stringify(look)); }
 const lookOwns = (k, x) => x.gems === 0 || (look[k] || []).includes(x.id) || !!(x.buy && look.bought && look.bought[x.buy]) || (!look.lookMig && lookOldUnlocked(x));   // k: 'frames' | 'titles'
 function playerFrame() { const f = FRAMES.find(q => q.id === look.frame); return f && lookOwns('frames', f) ? f.id : [...FRAMES].reverse().find(q => !q.buy && lookOwns('frames', q)).id; }
-function playerTitle() { const t = TITLES_P.find(q => q.id === look.title); return t && lookOwns('titles', t) ? t.name : 'Neuling'; }
+function playerTitle() { const t = titelDef(look.title); return t && lookOwns('titles', t) ? t.name : 'Neuling'; }
 function marchSkinOf(who) { const id = who === 'player' ? look.march : who ? (loadBotState()[who] || {}).march : ''; return MARCH_SKINS.find(m => m.id === id) || MARCH_SKINS[0]; }
 function renderLook() {                             // the profile header and its "Aussehen" line; choosing happens in the Aussehen sheet
     const fr = playerFrame();
@@ -6292,7 +6324,7 @@ function inboxList() { if (!inboxState) { try { inboxState = JSON.parse(store.ge
 function inboxSave() { store.set('openWaterInbox', JSON.stringify(inboxList())); }
 const INBOX_PILE = { fight: 1, bounty: 1 };   // these pile up in one entry each
 const inboxPiles = x => !!INBOX_PILE[x.src] && !(x.crate >= 0) && !(x.kiste >= 0) && !x.schild;   // a crate keeps its own entry (one entry holds one crate)
-const INBOX_SRC = { gift: { ic: 'gem', t: 'Geschenk' }, fight: { ic: 'attack', t: 'Kampfbeute' }, woche: { ic: 'rank', t: 'Wochen-Event' }, boss: { ic: 'star', t: 'Tagesboss' }, wboss: { ic: 'star', t: 'Kriegsherr' }, bounty: { ic: 'losses', t: 'Kopfgeld' }, inv: { ic: 'defense', t: 'Barbaren-Invasion' }, drache: { ic: 'star', t: 'Drache' }, haendler: { ic: 'coin', t: 'Händler' } };
+const INBOX_SRC = { gift: { ic: 'gem', t: 'Geschenk' }, fight: { ic: 'attack', t: 'Kampfbeute' }, woche: { ic: 'rank', t: 'Wochen-Event' }, boss: { ic: 'star', t: 'Tagesboss' }, wboss: { ic: 'star', t: 'Kriegsherr' }, bounty: { ic: 'losses', t: 'Kopfgeld' }, inv: { ic: 'defense', t: 'Barbaren-Invasion' }, drache: { ic: 'star', t: 'Drache' }, haendler: { ic: 'coin', t: 'Händler' }, saison: { ic: 'crown', t: 'Welt-Saison' } };
 function inboxAdd(o) {                              // o: { src, title?, gems, coins, sh (hero shards), crate (lowest rarity, -1 none) } - all fights' spoils pile up in one entry
     o = Object.assign({ gems: 0, coins: 0, sh: 0, crate: -1, tr: 0, n: 1 }, o); o.gems = Math.round(o.gems); o.coins = Math.round(o.coins); o.tr = Math.round(o.tr);
     if (!(o.gems > 0 || o.coins > 0 || o.sh > 0 || o.crate >= 0 || o.tr > 0 || o.kiste >= 0 || o.schild > 0)) return 0;   // (kiste: genau diese Seltenheit, schild: Friedensschild Std. – Händler)
@@ -8285,7 +8317,7 @@ function lkCard(kind, d, prev, has, on, label) {     // one look: preview, name,
         '<small>' + (on ? icon('check') + 'Angelegt' : has ? 'Anlegen' : lkPrice(d)) + '</small></button>';
 }
 function lkDef(kind, id) {
-    if (kind === 'frame') return FRAMES.find(f => f.id === id); if (kind === 'title') return TITLES_P.find(t => t.id === id); if (kind === 'march') return MARCH_SKINS.find(m => m.id === id);
+    if (kind === 'frame') return FRAMES.find(f => f.id === id); if (kind === 'title') return titelDef(id); if (kind === 'march') return MARCH_SKINS.find(m => m.id === id);
     if (kind === 'style') return BAUSTILE[id] ? Object.assign({ id, name: BAUSTILE[id] }, BAUSTIL_PRICE[id]) : null;
     if (kind === 'color') { const d = SKIN_DEFS[id]; return d ? { id, name: d.name, gems: d.cost } : null; } return null;
 }
@@ -8342,7 +8374,7 @@ function renderLookSheet(live) {                     // live = jede Sekunde aus 
     else if (lkTab === 'frame') { const fr = playerFrame(), img = '<img alt="" src="' + crestDataUrl(36) + '">';
         h = '<div class="skin-grid lk-grid">' + FRAMES.map(f => lkCard('frame', f, '<span class="frame-ring lk-frame" data-frame="' + f.id + '">' + img + '</span>', lkHas('frame', f.id), f.id === fr)).join('') + '</div>' +
             '<small class="keep-note">Dein Rahmen um Wappen und Profil – so sehen dich alle in der Rangliste. Der Thron-Rahmen kommt mit dem Titel „Thronhüter“.</small>'; }
-    else if (lkTab === 'title') { const cur = playerTitle(), mt = titleOf('player'), rl = rulerOwner() === 'player', own = TITLES_P.filter(t => lkHas('title', t.id)), buy = TITLES_P.filter(t => !lkHas('title', t.id));
+    else if (lkTab === 'title') { const cur = playerTitle(), mt = titleOf('player'), rl = rulerOwner() === 'player', own = [...TITLES_P, ...(look.titles || []).map(saisonTitel).filter(Boolean)].filter(t => lkHas('title', t.id)), buy = TITLES_P.filter(t => !lkHas('title', t.id));
         h = '<div class="keep-h">Titel aus der Mitte</div><div class="lk-mid' + (rl ? ' is-ruler' : mt ? (mt.good ? ' is-good' : ' is-bad') : '') + '">' + icon('crown') + '<span><b>' + (rl ? 'Herrscher der Meere' : mt ? mt.name : 'Gerade keiner') + '</b><small>' +
                 (rl ? 'Solange du den Mega-Tempel hältst · Ring Blutrot-Gold' : mt ? mt.desc + ' · gilt bis zum nächsten Herrscher' : 'Titel aus der Mitte vergibt der Herrscher – sie kommen und gehen.') + '</small></span></div>' +
             '<div class="keep-h">Deine Titel</div><div class="look-titles">' + own.map(t => '<button type="button" class="look-title' + (t.name === cur ? ' on' : '') + '" data-lk="title:' + t.id + '">' + (t.name === cur ? icon('check') : '') + t.name + '</button>').join('') + '</div>' +
@@ -10513,11 +10545,12 @@ function saveEv() { evDirty = false; evSaveAt = Date.now(); store.set('openWater
 window.addEventListener('pagehide', () => { if (evDirty && rechnet()) saveEv(); });
 const evRang = o => Object.entries(o || {}).filter(e => e[1] > 0 && (e[0] === 'player' || botById[e[0]])).sort((a, b) => b[1] - a[1]);
 function evPreis(who, src, title, p, schl) {          // schl: fester Schlüssel der Auszahlung (Woche, Tag …) – kommt nie doppelt an; ein Preis: deiner ins Abholfach, ein echter Mitspieler bekommt ihn als Nachricht (auch Kisten), Mitspieler direkt
-    const gems = Math.round(p.gems || 0), sh = Math.round(p.sh || 0), crate = p.crate >= 0 ? p.crate : -1;
-    if (who === 'player') { inboxAdd({ src, title, gems, sh, crate }); return; }
+    const gems = Math.round(p.gems || 0), sh = Math.round(p.sh || 0), crate = p.crate >= 0 ? p.crate : -1, titel = saisonTitel(p.titel) ? p.titel : null;   // titel: Saison-Titel (für immer)
+    if (who === 'player') { inboxAdd({ src, title, gems, sh, crate }); if (titel) saisonTitelGeben(titel); return; }
     const bd = botById[who]; if (!bd) return;
-    if (bd.mensch && window.WELT) { WELT.nachricht(parseInt(who.slice(1), 10), { art: 'evPreis', src, title, gems, sh, crate }, schl != null ? src + '|' + schl : undefined); return; }
+    if (bd.mensch && window.WELT) { WELT.nachricht(parseInt(who.slice(1), 10), Object.assign({ art: 'evPreis', src, title, gems, sh, crate }, titel ? { titel } : {}), schl != null ? src + '|' + schl : undefined); return; }
     const bs = loadBotState()[who]; if (bs) bs.gems = (bs.gems || 0) + gems; if (sh) heroGrantShards(who, sh); if (crate >= 0) barbCrate(who, crate);
+    if (bs && titel) { bs.titles = [...new Set([...(bs.titles || []), titel])]; saveBotState(); }
 }
 function evBericht(who, e, hint) {                    // ein kurzer Eintrag im Kampflog (dir direkt, echten Mitspielern über den Weltrechner)
     if (who === 'player') { addCombatLogEntry(e); if (hint) flashHint(hint, 4500); return; }
@@ -10900,7 +10933,7 @@ function evBossHtml() {                              // Reiter „Boss & Lager�
 function evOffen() { return isPanelOpen(goalsPopup) && EV_TABS.includes(goalsTab); }
 function renderEvents() {
     evRenderAt = Date.now();
-    liveHtml(document.getElementById('eventBody'), evTab === 'tour' ? evTourHtml() : evTab === 'inv' ? evInvHtml() : evTab === 'drache' ? evDrHtml() : evBossHtml());
+    liveHtml(document.getElementById('eventBody'), saisonKarte() + (evTab === 'tour' ? evTourHtml() : evTab === 'inv' ? evInvHtml() : evTab === 'drache' ? evDrHtml() : evBossHtml()));   // (oben immer die Welt-Saison mit Countdown)
 }
 document.getElementById('eventBody').addEventListener('click', e => {
     const go = e.target.closest('[data-ev-go]'); if (!go) return; const k = go.dataset.evGo;
@@ -10920,6 +10953,7 @@ function evChips(now) {
     else if (ip.start > now && ip.start - now <= 30 * 60000) out.push([3, '<button type="button" class="mb-chip is-warn" data-mb="ev-inv">' + icon('defense') + '<span>Barbaren-Invasion in</span><i data-ev-bis="' + ip.start + '"></i></button>']);
     if (D) out.push([2, '<button type="button" class="mb-chip is-drache" data-mb="ev-drache">' + icon('star') + '<span>Drache</span><b>' + Math.ceil(D.hp / D.max * 100) + ' %</b><i data-ev-bis="' + D.end + '"></i></button>']);
     else if (dp.start > now && dp.start - now <= 30 * 60000) out.push([3, '<button type="button" class="mb-chip is-drache" data-mb="ev-drache">' + icon('star') + '<span>Der Drache kommt in</span><i data-ev-bis="' + dp.start + '"></i></button>']);
+    const sz = saisonChip(now); if (sz) out.push(sz);                                  // die letzten 3 Tage einer Welt-Saison: Countdown
    
     return out;
 }
@@ -11490,6 +11524,136 @@ multiAttackConfirmBtn.addEventListener('click', () => {
     cancelMultiAttack();                                                     // (first: it resets the hint line)
     flashHint(failed.length ? ok + ' von ' + targets.length + ' Angriffen gestartet – ' + failed.length + ' kam' + (failed.length === 1 ? '' : 'en') + ' nicht durch (' + [...why].join(', ') + ').' : ok + ' Angriffe gleichzeitig gestartet.', 4000);
 });
+
+// ===== WELT-SAISON: Server-Reset alle 8 Wochen (Alexander 5.10.) =====
+// Welt-Teil openWaterSaison = { nr, start, ende, bald (Ankündigung verschickt), jetzt (Admin-Knopf), last: { nr, top: [[wer, Macht]] } }.
+// Wer rechnet (der Weltrechner – in der Vorschau das eigene Gerät), beginnt zum Termin die neue Saison: Sonntag 18 Uhr (vor dem
+// Drachen um 19 Uhr), 8 Wochen nach dem Start. Vorher immer eine Sicherung der Welt beim Server (welt.js sicherungBitte → server.php).
+// 3 Tage vorher eine Nachricht an alle echten Spieler, im Spiel ein Countdown (Leiste unter dem HUD, Events-Fenster).
+// Ende: die besten 10 nach Macht (wie die Rangliste) bekommen Gems ins Abholfach und einen Saison-Titel für immer.
+// Bleibt: die ganze Hauptstadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Gems, Holz/Stein/Eisen, alles Gekaufte.
+// Weg: alle Basen, alle Truppen (Start mit PLAYER_START_TROOPS wie ein neuer Spieler), Münzen (0 wie ein neuer Spieler), Stufe (→ 1,
+// damit alle Fähigkeitspunkte), Bündnisse, Märsche, Rallys, Verstärkungen, Armeen, Felder, Nebel, Kampfberichte. Die Hauptstadt zieht
+// auf einen freien Zufallsplatz am Rand (wie der Startplatz eines neuen Spielers). Mitspieler genau wie echte Spieler.
+// Der eigene Spielstand eines echten Spielers übernimmt den Reset über die Nachricht „saison“ (unten) → Neuladen → 01-grundlagen.js.
+const SAISON_WOCHEN = 8, SAISON_STUNDE = 18, SAISON_BALD_MS = 3 * 864e5;
+const SAISON_PREISE = [3000, 2000, 1500, 500, 500, 500, 500, 500, 500, 500];   // Gems für Platz 1–10 (Vorschlag, LIESMICH)
+var saison = null, saisonSichT = 0;
+function saisonLaden() { try { saison = JSON.parse(store.get('openWaterSaison')) || null; } catch (e) { saison = null; } if (saison && !(saison.nr > 0 && saison.ende > 0)) saison = null; return saison; }
+function saisonSpeichern() { store.set('openWaterSaison', JSON.stringify(saison)); }
+saisonLaden();
+function saisonEnde(ab) {                             // der Sonntag 18 Uhr, 8 Wochen nach ab (Sommer-/Winterzeit: bis 2 Std. Spielraum)
+    const ziel = ab + SAISON_WOCHEN * 7 * 864e5, d = new Date(ziel); d.setHours(SAISON_STUNDE, 0, 0, 0);
+    for (let i = 0; i < 8 && (d.getDay() !== 0 || d.getTime() < ziel - 2 * 3600000); i++) { d.setDate(d.getDate() + 1); d.setHours(SAISON_STUNDE, 0, 0, 0); }
+    return d.getTime();
+}
+function saisonJetzt() {                              // Admin-Knopf: die neue Saison gleich beginnen (mit Sicherung vorher)
+    if (!saison) saisonTakt(); if (!saison) return;
+    saison.jetzt = Date.now(); saisonSpeichern(); console.warn('Welt-Saison ' + saison.nr + ': Neustart vom Admin angefordert');
+    saisonTakt();
+}
+function saisonTakt() {                               // (nur wer rechnet) Termin anlegen, ankündigen, zum Termin: Sicherung → neue Saison
+    if (!rechnet()) return;
+    const now = Date.now();
+    if (!saison) { saison = { nr: 1, start: now, ende: saisonEnde(now) }; saisonSpeichern(); return; }
+    if (!saison.bald && now >= saison.ende - SAISON_BALD_MS && now < saison.ende) { saison.bald = 1; saisonSpeichern(); saisonAnkuendigen(); }
+    if (now < saison.ende && !saison.jetzt) return;
+    if (window.WELT) {                                 // erst die Sicherung beim Server – ohne sie keine neue Saison
+        if (!WELT.sicherungId) { if (!WELT.sicherungBitte && now - saisonSichT > 60000) { saisonSichT = now; WELT.sicherungBitte = 'saison ' + saison.nr; console.warn('Welt-Saison ' + saison.nr + ' endet – Sicherung der Welt angefragt'); } return; }
+        console.warn('Welt-Saison ' + saison.nr + ': Sicherung ' + WELT.sicherungId + ' angelegt – die neue Saison beginnt'); WELT.sicherungId = 0;
+    }
+    saisonNeu(now);
+}
+setInterval(saisonTakt, 5000);
+const saisonBaldText = ende => 'In 3 Tagen beginnt eine neue Welt-Saison (' + evWann(ende) + ' Uhr). Deine Hauptstadt mit Burg, Gebäuden, Forschung, Helden, Ausrüstung, Gems und Rohstoffen bleibt – Basen, Truppen, Münzen, Stufe und Bündnisse fangen neu an. Die besten 10 bekommen Gems und einen Titel für immer.';
+function saisonAnkuendigen() {
+    if (window.WELT) { for (const id in WELT.menschen) { const uid = parseInt(id.slice(1), 10); if (uid > 0) WELT.nachricht(uid, { art: 'saisonBald', nr: saison.nr, ende: saison.ende }, 'saisonBald|' + saison.nr); } }
+    else afterSplash(() => flashHint(saisonBaldText(saison.ende), 9000));
+}
+function saisonTop() {                                // die besten 10 nach Macht (wie die Rangliste) → [[wer, Macht]]
+    const l = [], bs = loadBotState();
+    for (const w of (SYSTEM || window.WELT ? [] : ['player']).concat(BOT_DEFS.map(b => b.id).filter(id => bs[id]))) { let v = 0; try { v = powerOf(whoProfile(w)); } catch (e) { v = 0; } if (v > 0) l.push([w, v]); }
+    return l.sort((a, b) => b[1] - a[1]).slice(0, SAISON_PREISE.length);
+}
+function saisonNeu(now) {
+    const alt = saison.nr, nr = alt + 1, top = saisonTop();
+    console.warn('Welt-Saison ' + alt + ' zu Ende – Saison ' + nr + ' beginnt (Top 10: ' + top.map(([w]) => (botById[w] || {}).name || w).join(', ') + ')');
+    // 1) Preise: Gems ins Abholfach (Mitspieler direkt) und der Saison-Titel – feste Nummer je Saison (nie doppelt)
+    top.forEach(([w], i) => evPreis(w, 'saison', 'Welt-Saison ' + alt + ' · Platz ' + (i + 1), { gems: SAISON_PREISE[i], titel: 's' + alt + 'p' + (i + 1) }, alt));
+    // 2) echte Spieler: was die Welt ihnen noch schuldet, geht jetzt raus (vor der Nachricht „saison“ – sein Handy verbucht es noch in der alten Saison)
+    const menschen = window.WELT ? Object.keys(WELT.menschen).filter(id => id !== WELT.ich && parseInt(id.slice(1), 10) > 0) : [];
+    for (const id of menschen) try { WELT.deltaJetzt(id); } catch (e) { console.warn('Saison:', e); }
+    // 3) die Welt neu
+    saisonWelt(now);
+    // 4) echte Spieler: Konto beim Weltrechner zurücksetzen, die Nachricht „saison“ (sein Handy übernimmt den Reset und lädt neu)
+    for (const id of menschen) { try { WELT.saisonKonto(id); } catch (e) { console.warn('Saison:', e); } WELT.nachricht(parseInt(id.slice(1), 10), { art: 'saison', nr, alt }, 'saison|' + nr); try { WELT.deltaBasis(id); } catch (e) {} }
+    saison = { nr, start: now, ende: saisonEnde(now), last: { nr: alt, top: top.map(([w, v]) => [neutralId(w), Math.round(v)]) } }; saisonSpeichern();
+    window.__prVorher = null;                          // (Prüfer im Weltrechner: die Welt ist gewollt so viel kleiner – neue Grundlinie)
+    if (!window.WELT && !SYSTEM) {                     // (Vorschau, allein) dein Spielstand übernimmt den Reset beim Neuladen wie am Handy
+        store.set('openWaterSaisonNeu', String(nr)); try { saveGameNow(); saveProgressionNow(); flushBotState(); } catch (e) {}
+        flashHint('Eine neue Welt-Saison beginnt – das Spiel lädt neu …', 4000); setTimeout(() => location.reload(), 600);
+    }
+}
+function saisonWelt(now) {                            // alles Weltliche zurück, die Hauptstädte auf neue Plätze
+    const bs = loadBotState(), wer = (SYSTEM || window.WELT ? [] : ['player']).concat(BOT_DEFS.map(b => b.id).filter(id => bs[id]));
+    const hatte = wer.filter(w => (w === 'player' ? ownedIslands : botOwnedIslands[w] || new Set()).size > 0);   // wer gerade Basen hat, bekommt eine Hauptstadt (die anderen wie bisher: Neustart der Mitspieler)
+    // Märsche, Späher, Armeen, Felder, Barbaren-Märsche, Verstärkungen, Rallys, Bündnisse – mit allen Truppen darin
+    pendingAttacks = []; pendingSends = []; pendingRetreats = []; pendingScouts = [];
+    fieldState = {}; fieldMarches = []; barbMarches = []; armies = []; armyJoins = []; armyRaids = [];
+    if (evState.inv && Array.isArray(evState.inv.armies)) evState.inv.armies = [];
+    if (typeof bundSaisonNeu === 'function') bundSaisonNeu();
+    // die Karte: jede Basis wieder neutral, mit ihrer erzeugten Besatzung und Stufe
+    ownedIslands.clear(); for (const w in botOwnedIslands) botOwnedIslands[w].clear();
+    islandLevels = {}; for (const isl of islands) if (isl.neutralLevel > 1) islandLevels[isl.id] = isl.neutralLevel;
+    islandTroops = {}; neutralTroopOverrides = {}; for (const isl of islands) if (isl.nt0 !== undefined) isl.neutralTroops = isl.nt0;
+    templeHoldSince = {}; scoutedIslands.clear(); gateCfg = {}; store.set('openWaterGateCfg', '{}');
+    titleState = { ruler: null, by: {} }; saveTitles(); bountyState = { ruler: null, gems: 0, coins: 0, since: now }; saveBounty();
+    hauptVor = {}; store.set('openWaterHauptVor', '{}'); brand = {}; store.set('openWaterBrand', '{}'); store.set('openWaterWorldStart', String(now));
+    for (const o of [battleHeat, baseFought, ownerLoss, botTooStrongMem, botIntelMem, botAct, botKenntMem, botKenntBasen, botEvacuated, botLossMem, botLmShareMem]) for (const k of Object.keys(o)) delete o[k];   // was die Mitspieler über die alte Karte wussten
+    // Hauptstädte: je ein freier Turm am äußeren Rand, auf der Landmasse mit den wenigsten Nachbarn (wie freierStartplatz), zufällig
+    const frei = islands.filter(i => i.type === 'tower' && landmasses[i.landmassId].tier === 'outer' && !bossAt(i.id)), proLm = {}, belegt = new Set();
+    for (let i = hatte.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [hatte[i], hatte[j]] = [hatte[j], hatte[i]]; }
+    for (const w of hatte) {
+        const offen = frei.filter(i => !belegt.has(i.id)); if (!offen.length) break;
+        let min = Infinity; for (const i of offen) min = Math.min(min, proLm[i.landmassId] || 0);
+        const beste = offen.filter(i => (proLm[i.landmassId] || 0) === min), start = beste.filter(i => i.startSlot), l = start.length ? start : beste, z = l[Math.floor(Math.random() * l.length)];
+        belegt.add(z.id); proLm[z.landmassId] = (proLm[z.landmassId] || 0) + 1;
+        islandLevels[z.id] = 1; islandTroops[z.id] = PLAYER_START_TROOPS;   // (die Stufe der Hauptstadt folgt gleich wieder der Burg – aufbau.js)
+        if (w === 'player') { ownedIslands.add(z.id); playerIslandId = z.id; store.set('openWaterPlayerIslandId', String(z.id)); }
+        else { botOwnedIslands[w].add(z.id); bs[w].capital = z.id; bs[w].capMovedAt = now; }
+    }
+    // Spieler und Mitspieler: Stufe 1, keine Fähigkeitspunkte, keine Münzen, keine Verwundeten, keine alten Pläne
+    for (const w of wer) { if (w === 'player') continue; const b = bs[w];
+        b.lvl = 1; b.xp = 0; b.sp = 0; b.xpNeu = 0; for (const k in b.skills || {}) b.skills[k] = 0; b.wounded = 0; b.tt = 0; botCoins[w] = 0;
+        b.rally = null; b.capWish = null; b.outAt = 0; b.vendetta = null; b.grudge = {}; b.annoy = {}; b.fails = {}; delete b.kennt; delete b.plan; }
+    capitalCache = null; ownVer++;
+    saveGameNow(); flushBotState(); saveProgressionNow(); saveFields(); saveBarb(); saveArmies(); saveEv();
+    requestRender();
+}
+// ---- was man sieht: der Countdown (Leiste unter dem HUD in den letzten 3 Tagen, Karte oben im Events-Fenster) ----
+function saisonChip(now) {
+    const S = saison; if (!S || now >= S.ende || S.ende - now > SAISON_BALD_MS) return null;
+    return [1, '<button type="button" class="mb-chip is-warn" data-mb="ev-boss">' + icon('crown') + '<span>Neue Saison in</span><i data-ev-bis="' + S.ende + '"></i></button>'];
+}
+function saisonKarte() {
+    const S = saison; if (!S) return '';
+    const now = Date.now(), bald = S.ende - now <= SAISON_BALD_MS;
+    const preise = 'Platz 1: ' + fmtNum(SAISON_PREISE[0]) + ' · 2: ' + fmtNum(SAISON_PREISE[1]) + ' · 3: ' + fmtNum(SAISON_PREISE[2]) + ' · 4–10: ' + fmtNum(SAISON_PREISE[3]) + ' Gems + Saison-Titel für immer';
+    const last = S.last && S.last.top && S.last.top.length ? '<div class="lb-gap">Saison ' + S.last.nr + ' · Top 10</div>' + evRangHtml(S.last.top.map(([w, v]) => [lokalId(w), v]), v => fmtCompact(v)) : '';
+    return evKarte('crown', 'Welt-Saison ' + S.nr, now < S.ende ? 'Neue Saison in ' + evUhr(S.ende) : 'Die neue Saison beginnt gleich …',
+        '<div class="field-lines"><span>Neustart</span><b>' + evWann(S.ende) + ' Uhr</b><span>Bleibt</span><b>Hauptstadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Gems, Holz/Stein/Eisen, Gekauftes</b>' +
+        '<span>Neu</span><b>Basen, Truppen, Münzen, Stufe, Bündnisse – die Hauptstadt zieht an einen neuen Platz am Rand</b><span>Preise</span><b>Die besten 10 nach Macht: ' + preise + '</b></div>', bald ? 'is-warn' : '') + last;
+}
+// ---- (Handy) Nachrichten vom Weltrechner: Ankündigung, neue Saison ----
+if (window.WELT && !SYSTEM) {
+    WELT.beiNachricht.push(function (e) { if (e && e.art === 'saisonBald' && e.ende > Date.now()) afterSplash(() => setTimeout(() => flashHint(saisonBaldText(e.ende), 9000), 2500)); });
+    WELT.beiNachricht.push(function (e) {
+        if (!e || e.art !== 'saison' || !(e.nr > 0) || e.nr <= (parseInt(store.get('openWaterSaisonMein'), 10) || 1)) return;   // (schon übernommen)
+        WELT.saisonHalt = true; store.set('openWaterSaisonNeu', String(e.nr));                // → nach dem Neuladen übernimmt 01-grundlagen.js den Reset
+        flashHint('Eine neue Welt-Saison beginnt – das Spiel lädt neu …', 4000); setTimeout(() => location.reload(), 1500);
+    });
+}
+if (saisonNeuGeladen) afterSplash(() => setTimeout(() => flashHint('Welt-Saison ' + saisonNeuGeladen + ' hat begonnen! Deine Hauptstadt steht an einem neuen Platz am Rand – Burg, Gebäude, Forschung, Helden, Ausrüstung, Gems und Rohstoffe sind geblieben.', 9000), 1500));
 // ===== Teil 10-start.js: Fenster-Start, Ladebild, Musik, Einstellungen, Live-Anzeige, Verbindung zur Welt (Weltrechner-Befehle, Schummel-Schutz) =====
 // ===== UI boot (design-spec §4.4): constants into the markup, shop odds,
 // HUD shortcuts, first-launch toast, player plate =====
@@ -12506,7 +12670,8 @@ if (window.WELT) {
         }
         if (k.has('openWaterIslandLevels')) { islandLevels = PJ('openWaterIslandLevels') || {}; for (const isl of islands) if (isl.neutralLevel > 1 && islandLevels[isl.id] === undefined) islandLevels[isl.id] = isl.neutralLevel; ausbauDrueber(); }
         if (k.has('openWaterIslandTroops')) islandTroops = PJ('openWaterIslandTroops') || {};
-        if (k.has('openWaterNeutralTroopOverrides')) { neutralTroopOverrides = PJ('openWaterNeutralTroopOverrides') || {}; for (const id in neutralTroopOverrides) if (islandById[id]) islandById[id].neutralTroops = neutralTroopOverrides[id]; }
+        if (k.has('openWaterNeutralTroopOverrides')) { neutralTroopOverrides = PJ('openWaterNeutralTroopOverrides') || {}; for (const isl of islands) if (!(isl.id in neutralTroopOverrides) && isl.nt0 !== undefined) isl.neutralTroops = isl.nt0;   // (neue Welt-Saison: wieder die erzeugte Besatzung)
+            for (const id in neutralTroopOverrides) if (islandById[id]) islandById[id].neutralTroops = neutralTroopOverrides[id]; }
         if (k.has('openWaterTempleHoldSince')) templeHoldSince = PJ('openWaterTempleHoldSince') || {};
         if (k.has('openWaterGateCfg')) gateCfg = null;
         if (k.has('openWaterPendingAttacks')) pendingAttacks = PJ('openWaterPendingAttacks') || [];
@@ -12524,6 +12689,7 @@ if (window.WELT) {
         if (k.has('openWaterBarbWho')) barbWho = PJ('openWaterBarbWho') || {};
         if (k.has('openWaterDayBoss')) dayBoss = PJ('openWaterDayBoss');
         if (k.has('openWaterEvents')) evState = PJ('openWaterEvents') || {};
+        if (k.has('openWaterSaison')) saisonLaden();                       // Welt-Saison: Termin, Countdown
         if (k.has('openWaterArmies')) { const a = PJ('openWaterArmies') || {}; armies = a.armies || []; armyJoins = a.joins || []; armyRaids = a.raids || []; }
         if (k.has('openWaterBotState')) { if (botSaveTimer) { clearTimeout(botSaveTimer); botSaveTimer = null; } botState = null; loadBotState(); }
         if (k.has('openWaterBotCoins')) { botCoins = PJ('openWaterBotCoins') || {}; for (const bot of BOT_DEFS) if (!botCoins[bot.id]) botCoins[bot.id] = 0; }
@@ -13295,6 +13461,21 @@ if (window.WELT) {
     }
     WELT.kontoMuenzen = who => { const m = wacheSehen(who); return m.init ? m.c.u + m.c.vor : 0; };   // (noch nie gesehen: jetzt ansehen – nie ungeprüft das Profil; ohne Mitspieler-Datensatz hat er keine Münzen in der Welt)
     WELT.hauptbuch = who => hbDa(who);                // (für Tests und die Admin-Ansicht)
+    // Neue Welt-Saison (09-events.js saisonNeu): sein Konto passend zurücksetzen – Stufe 1 (EP neu, Stufen-Truppen/-Gems wieder ab
+    // Stufe 1, Fähigkeiten 0 ohne Rücksetz-Gems), Münzen 0, keine Verwundeten, Nebel neu. Bleibt: Stadt, Forschung, Ausrüstung,
+    // Helden, Schild, Gems und Rohstoffe (Konten, Topf des Ausgegebenen – ein laufender Bau ist schon bezahlt). Sein altes Profil
+    // zählt nicht mehr (welt.js: erst das Profil der neuen Saison) – so gibt es keine Fehlalarme, wenn sein Handy später kommt.
+    WELT.saisonKonto = function (who) {
+        const b = loadBotState()[who]; if (!b) return;
+        const m = wacheMem[who], hb = hbDa(who), d = wd(who);
+        if (m) { for (const art in m.warte) for (const x of m.warte[art]) befehlFertig(x);   // (wartende Befehle der alten Welt: erledigt)
+            if (m.init && hb) { if (m.gGeeicht) hb.gU = Math.round(m.g.u); if (m.rk) hb.rU = { h: Math.round(m.rk.h.u), s: Math.round(m.rk.s.u), e: Math.round(m.rk.e.u) }; } }
+        delete wacheMem[who]; delete nbMem[who];      // (beim nächsten Ansehen neu – aus den Werten unten)
+        if (d) { d.u = 0; d.w = 0; d.lm = 1; d.lv = 1; delete d.fl; }
+        if (hb) { hb.sk = {}; hb.lvG = 1; hb.nb = ''; hb.sp = []; delete hb.nbAlle; hb.w = {}; }
+        const x = WELT.menschen[who]; if (x) { x.profil = null; x.profilNeu = false; }
+        saveBotState();
+    };
 
     // ===== Nebel auf dem Server (3B) =====
     // Der Weltrechner führt für jeden echten Spieler die aufgedeckten Nebel-Felder (wie openWaterFogCells auf seinem Handy):
@@ -13580,6 +13761,7 @@ if (window.WELT) {
             for (const who in WELT.menschen) { if (b.an !== 'alle' && who !== 'u' + parseInt(b.an, 10)) continue; const hb = hbDa(who); if (!hb) continue; hb.nbAlle = 1; if (nbMem[who]) nbMem[who].dirty = true; }
             saveBotState(); return;
         }
+        if (b.was === 'saison') { saisonJetzt(); return; }   // Admin-Knopf „Neue Saison jetzt“ (mit Rückfrage): erst die Sicherung, dann der Reset (09-events.js)
         if (b.was !== 'geschenk_bot') return;
         const bs = loadBotState(), ziele = BOT_DEFS.filter(d => !d.mensch && (b.bot === 'alle' || d.id === b.bot));
         for (const d of ziele) { const st = bs[d.id]; if (!st) continue;
@@ -13594,6 +13776,7 @@ if (window.WELT) {
     window.__weltBefehl = function (who, b) {
         if (who === 'u0') return adminBefehl(b);
         if (!b || typeof b !== 'object' || !Object.prototype.hasOwnProperty.call(BEFEHLE, b.art)) return;
+        if (saison && saison.nr > 1 && ((zahlOk(b._t) && b._t < saison.start) || (zahlOk(b.at) && b.at < saison.start - 600000))) return;   // ein Befehl aus der alten Welt-Saison (vor dem Reset gekommen oder gegeben) – gilt nicht mehr
         const f = BEFEHLE[b.art];
         if (!botById[who]) { WELT.menschEintragen(who); window.__weltNeuerMensch(who); }
         if (!botById[who]) return;
@@ -13673,7 +13856,8 @@ if (window.WELT) {
         if (!e || e.art !== 'evPreis') return;
         const z = (v, max) => typeof v === 'number' && Number.isFinite(v) && v > 0 ? Math.min(max, Math.round(v)) : 0;
         const crate = Number.isInteger(e.crate) && e.crate >= 0 && e.crate <= 4 ? e.crate : -1, src = INBOX_SRC[e.src] ? e.src : 'woche', title = String(e.title || '').slice(0, 80);
-        if (inboxAdd({ src, title, gems: z(e.gems, 5000), sh: z(e.sh, 100), crate }) || crate >= 0 || e.sh > 0) { sfx('coin'); flashHint(title + ': dein Preis liegt unter Events → Belohnung.', 5000); }
+        if (saisonTitel(e.titel)) saisonTitelGeben(e.titel);   // Saison-Titel (Ende einer Welt-Saison): gehört dir für immer, gleich angelegt
+        if (inboxAdd({ src, title, gems: z(e.gems, 5000), sh: z(e.sh, 100), crate }) || crate >= 0 || e.sh > 0) { sfx('coin'); flashHint(title + ': dein Preis liegt unter Events → Belohnung.' + (saisonTitel(e.titel) ? ' Neuer Titel: „' + saisonTitel(e.titel).name + '“.' : ''), 6000); }
     });
     WELT.beiNachricht.push(function (e) {             // Nebel freischalten (vom Admin): die ganze Karte ist aufgedeckt
         if (!e || e.art !== 'nebel') return;

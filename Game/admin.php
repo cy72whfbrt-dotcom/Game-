@@ -90,6 +90,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($ids) $meldung = 'Geschenk verschickt an ' . count($ids) . ' Spieler – es liegt im Abholfach (Events → Belohnung).';
             }
         }
+        // ===== Welt-Saison: jetzt neu beginnen (sonst automatisch alle 8 Wochen am Sonntag 18 Uhr). Der Weltrechner legt vorher eine
+        // Sicherung an (ohne sie keinen Reset) und verteilt die Preise der alten Saison (09-events.js saisonJetzt)
+        if ($was === 'saison') {
+            lager()->befehl_ablegen(0, json_encode(['art' => 'admin', 'was' => 'saison']), $nr . 's');
+            $meldung = 'Neue Welt-Saison angefordert – der Weltrechner legt zuerst eine Sicherung an, dann beginnt die neue Saison (in etwa 1 Minute). Alle Spieler laden dann neu.';
+        }
         // ===== Weltrechner =====
         if ($was === 'wr_neustart') {   // mehrmals drücken startet nicht mehrmals (jeder Start fängt mit dem Laden wieder von vorn an)
             $z0 = wr_zustand(); $st0 = (array)($z0['starts'] ?? []); if ($st0 && time() - (int)end($st0) < 60) $meldung = 'Der Weltrechner wurde gerade erst gestartet und lädt noch – bitte 1 Minute warten.';
@@ -122,6 +128,7 @@ $spieler = lager()->alle_spieler();
 $wrH = wr_herz(); $wrZ = wr_zustand(); $wrCron = wachhund_cron_da();
 $wrLaeuft = $wrH && empty($wrH['ende']) && wr_laeuft($wrH['pid'] ?? 0) && time() - (int)(($wrH['zeit'] ?? 0) / 1000) <= wr_herz_alt($wrH);
 $wrSicherungen = lager()->sicherungen_liste();
+$saison = json_decode((string)(lager()->stand_laden(0, ['openWaterSaison'])['openWaterSaison'] ?? ''), true);   // Welt-Saison: Nummer, Start, Termin (09-events.js)
 // Auffälligkeiten (Schummel-Schutz des Weltrechners, weltrechner/schummel.php): wer, was, wann – mit Namen statt u-Nummer
 $auffaellig = (wr_lesen('schummel.php') ?: [])['liste'] ?? [];
 if (!is_array($auffaellig)) $auffaellig = [];
@@ -208,6 +215,19 @@ function zahl($n) { return $n === null ? '–' : number_format((float)$n, 0, ','
     <button class="rot">Zurückspielen</button>
   </form>
   <?php endif; ?>
+</div>
+
+<div class="karte">
+  <h2>Welt-Saison (Server-Reset alle 8 Wochen)</h2>
+  <?php if (is_array($saison) && !empty($saison['nr'])): ?>
+  <p class="status">Zurzeit: <b>Saison <?= (int)$saison['nr'] ?></b> seit <?= h(date('d.m.Y H:i', (int)(($saison['start'] ?? 0) / 1000))) ?> · nächste am <b><?= h(date('d.m.Y H:i', (int)(($saison['ende'] ?? 0) / 1000))) ?></b><?= !empty($saison['jetzt']) ? ' · <b>Neustart angefordert</b>' : '' ?></p>
+  <?php else: ?><p class="status">Noch keine Saison eingetragen – der Weltrechner legt sie beim nächsten Lauf an (Saison 1, Termin in 8 Wochen).</p><?php endif; ?>
+  <p>Bleibt: die Hauptstadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Gems, Holz/Stein/Eisen, Gekauftes. Neu: alle anderen Basen,
+     Truppen, Münzen, Stufe, Bündnisse, Karte. Die besten 10 bekommen Gems und einen Saison-Titel. Vorher legt der Weltrechner immer eine Sicherung an.</p>
+  <form method="post">
+    <input type="hidden" name="zeichen" value="<?= h($zeichen) ?>"><input type="hidden" name="nr" value="<?= h($formNr) ?>">
+    <button class="rot" name="was" value="saison" data-frage="Wirklich JETZT eine neue Welt-Saison beginnen? Alle Basen, Truppen, Münzen, Stufen und Bündnisse aller Spieler und Mitspieler fangen neu an (die Hauptstadt mit Burg, Gebäuden, Forschung, Helden, Ausrüstung, Gems und Rohstoffen bleibt). Vorher wird eine Sicherung angelegt.">Neue Saison jetzt beginnen</button>
+  </form>
 </div>
 
 <div class="karte">

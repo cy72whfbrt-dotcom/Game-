@@ -233,6 +233,46 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   freier Speicher). HOCHGELADEN 5.10. nachmittags (Alexanders Ja; Tests grün – kiste_test nur unter Last rot, allein grün).
 - **5.10., 7:20 Uhr – HOCHGELADEN (Alexanders Ja):** alles vom 5.10. (Rally jeder für sich, Kampf-Fehler, Schummel-Schutz,
   Login, Push, nice 10). Tests vorher: beide Reihen grün. Weltrechner danach in 11 s gestartet (vorher 3–4 Min.), läuft.
+- **5.10. abends – Welt-Saison (Server-Reset alle 8 Wochen) GEBAUT, lokal getestet, NICHT hochgeladen** (Alexanders Entscheidung
+  vom 5.10., Abschnitt 12a). Welt-Teil `openWaterSaison` = `{ nr, start, ende, bald, jetzt, last: { nr, top } }`.
+  - **Wann:** Termin = Start + 8 Wochen, immer **Sonntag 18 Uhr** (vor dem Drachen um 19 Uhr). Saison 1 legt der Weltrechner beim
+    ersten Lauf an (Termin 8 Wochen danach). **Admin-Knopf** „Neue Saison jetzt beginnen“ (Karte „Welt-Saison“, mit Rückfrage
+    `data-frage`) → Befehl `admin/saison` an den Weltrechner. **Vorher immer eine Sicherung:** der Weltrechner schickt im Puls
+    `sicherung: 1`, server.php legt `sicherung_anlegen()` an (vor dem Schreiben der Welt) und meldet die Nummer zurück – erst dann
+    der Reset (sonst neuer Versuch nach 1 Min.). Die Sicherung steht wie die stündlichen in der Liste (die letzten 48).
+  - **3 Tage vorher:** Nachricht `saisonBald` an alle echten Spieler (Hinweis im Spiel), dazu Countdown: Leiste unter dem HUD
+    („Neue Saison in …“, nur die letzten 3 Tage) und immer oben im Events-Fenster (Karte „Welt-Saison N“ mit Termin, was bleibt,
+    Preisen und der Top 10 der letzten Saison).
+  - **Ende:** die besten 10 nach Macht (wie die Rangliste, `powerOf`) bekommen Gems ins Abholfach (Mitspieler direkt) und einen
+    **Saison-Titel für immer** (Kennung `s<Saison>p<Platz>`: „Champion Saison N“ bzw. „Saison N · Platz X“, gleich angelegt,
+    steht unter Aussehen → Titel; Mitspieler tragen ihn). **Gems = Vorschlag: Platz 1: 3.000, 2: 2.000, 3: 1.500, 4–10: 500**
+    (`SAISON_PREISE` in 09-events.js) – Alexander fragen.
+  - **Bleibt:** Hauptstadt (Burg, alle Gebäude, Forschung), Helden mit Fähigkeiten, Ausrüstung, Gems, Holz/Stein/Eisen, alles
+    Gekaufte (Skins, Marsch-Aussehen, Titel, Rahmen), Abholfach, Aufgaben/Erfolge/Pass, Thron-Punkte.
+  - **Weg/neu:** alle anderen Basen (die ganze Karte wieder neutral mit ihrer erzeugten Besatzung), alle Truppen (Start 100.000
+    wie ein neuer Spieler, in der Hauptstadt), Gold (0 wie ein neuer Spieler), Stufe 1 + alle Fähigkeitspunkte, Verwundete,
+    Bündnisse (aufgelöst), Märsche, Späher, Rallys, Verstärkungen, Armeen, Felder, Barbaren-Märsche, Tempel-Titel, Kopfgeld, Tor-
+    Einstellungen, Nebel, Kampfberichte. Die Hauptstadt zieht auf einen **freien Zufallsplatz am äußeren Rand** (wenigste Nachbarn
+    je Landmasse wie beim Startplatz); ihre Stufe auf der Karte folgt wie immer der Burg. Mitspieler genau wie echte Spieler.
+    Wer bei der Wende keine Basis hat (z. B. rausgeworfen), bekommt keine (wie bisher: Mitspieler starten selbst neu).
+  - **So kommt der Reset aufs Handy:** der Weltrechner schickt erst alles, was die Welt dem Spieler noch schuldet (`deltaJetzt`),
+    dann die Preise, dann die Nachricht `saison` (feste Nummer, genau einmal). Das Handy verbucht bis dahin, merkt
+    `openWaterSaisonNeu`, hält an (`WELT.saisonHalt`) und lädt neu; beim Laden setzt 01-grundlagen.js den eigenen Spielstand
+    zurück (Stufe, EP, Fähigkeiten, Münzen, Verwundete, Kampflog, Nebel, Späher, alte Befehle) – Offline-Spieler beim nächsten
+    Einloggen genauso. `openWaterSaisonMein` geht im Profil mit (`saison`); ein Profil aus einer älteren Saison zählt beim
+    Weltrechner nicht (welt.js), Befehle aus der alten Saison auch nicht.
+  - **Hauptbuch/Schummel-Schutz** (`WELT.saisonKonto`, 10-start.js): Stufe 1 (EP-Stufe `d.lm`, Stufen-Truppen `d.lv`, Stufen-Gems
+    `hb.lvG`), Fähigkeiten ohne Rücksetz-Gems (`hb.sk`), Münzen- und Verwundeten-Konto 0, Server-Nebel neu, wartende Befehle
+    erledigt; Gems-/Rohstoff-Konten und der Topf des Ausgegebenen bleiben (ein laufender Bau ist schon bezahlt). Prüfer im
+    Weltrechner: neue Grundlinie (`__prVorher`), sonst hielte er die viel kleinere Welt für „verschwunden“.
+  - **Vorschau:** der Reset läuft dort genauso (das Gerät rechnet), danach lädt die Seite neu.
+  - Getestet: neuer Browser-Test `saison_test` (Countdown, Ankündigung, Reset: alles oben Genannte für dich und einen Mitspieler,
+    Preise + Titel Platz 1/2, alle 150 Reiche auf eine Hauptstadt), `welt_test` (Termin immer Sonntag 18 Uhr über Sommer-/Winterzeit,
+    Profil-Saison), `server_test` (Profil-Saison, Nachrichten). `tests/alle_tests.sh`: ALLES OK. Server-Tests mit echtem
+    Weltrechner (Sicherung, Nachricht ans Handy, Hauptbuch) noch NICHT gelaufen (lokaler Server war belegt).
+  - **Offen (Alexander fragen):** Gems-Preise (Vorschlag oben); sollen alle nach dem Reset 48 Std. Anfängerschutz bekommen wie ein
+    neuer Spieler (jetzt: nein – nichts erfunden)? Zurückspielen einer Sicherung nach dem Reset setzt nur die Welt zurück, nicht die
+    schon zurückgesetzten Handys.
 - **5.10. Tests schneller (Alexander):** `tests/alle_tests.sh` lässt bis zu 4 Browser-Tests gleichzeitig laufen (vorher
   nacheinander, ~10 Min.), Schnelltest mit Namen (`tests/alle_tests.sh rally`); `tests/komplett.sh <arbeitsordner>` startet
   beide Reihen gleichzeitig (~30 statt ~40 Min.).
@@ -470,7 +510,7 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
     Hauptstadt: neuer Zufallsplatz am Rand. Bündnisse werden aufgelöst (neu gründen). Mitspieler 1:1 wie echte Spieler.
     3 Tage vorher Nachricht an alle + Countdown im Spiel. Ende der Saison: die besten 10 der Rangliste bekommen Gems und einen
     Saison-Titel, den man für immer behält. Start automatisch zum Termin + Knopf im Admin (mit Rückfrage), vorher immer eine
-    Sicherung. Noch NICHT gebaut.
+    Sicherung. **GEBAUT 5.10. abends (lokal getestet, nicht hochgeladen) – siehe Verlauf (Abschnitt 8, „Welt-Saison“).**
   - **Hauptstadt max. Stufe 25.** Die Basen draußen bleiben bis Stufe 100 wie jetzt – **daran nichts ändern**.
   - **Aufleveln langsam:** nicht in 5 Tagen auf 25, sondern über lange Zeit und **mehrere Server-Resets**.
   - **Kosten:** Gold, Holz, Stein, Eisen – jede Stufe mehr – und jede Stufe **dauert Zeit**.
