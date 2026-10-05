@@ -300,6 +300,13 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
        der Server hat sie gelöscht), übernimmt das Handy den Reset trotzdem (Neuladen, Anfängerschutz ab Saison-Start). Alte
        Münz-Nachrichten sind dann schon in der alten Saison verbucht; der Schummel-Schutz (Hauptbuch) bleibt maßgeblich.
     Getestet: `saison_test` (angehalten → kein Reset von selbst, erst der Knopf; Rückfall ohne Nachricht), `server_test`.
+- **5.10. Verstärkung an Bündnis-Mitglieder ging am Handy nicht (Fehler):** Seit „fremde Werte erst nach dem Spähen“ kennt das
+    Handy von anderen nur die Burg-Stufe – `verstStufe` war dort 0: kein Knopf „Verstärkung“ und „Die Botschaft von … ist voll“.
+    Jetzt prüft das Handy fremde Botschaften nicht selbst (`verstUnbekannt`/`verstMoeglich` in buendnis/01: Knopf ab Burg-Stufe 5),
+    der Weltrechner prüft Stufe und Platz und schickt höchstens so viele, wie passen. Der Hinweis nach dem Senden sagt dann
+    „Verstärkung geschickt – passt nicht alles in die Botschaft, bleibt der Rest daheim“ (`bundWahlLos`). Lehnt der Weltrechner ab
+    („noch keine Botschaft“ / „voll“), kommt das als Bündnis-Meldung (`bundMelden` → `bundInfo`) am Handy an.
+    Getestet: `verst_kampf_test` (Handy-Fall), `verst_test` (Server).
 - **5.10. Tests schneller (Alexander):** `tests/alle_tests.sh` lässt bis zu 4 Browser-Tests gleichzeitig laufen (vorher
   nacheinander, ~10 Min.), Schnelltest mit Namen (`tests/alle_tests.sh rally`); `tests/komplett.sh <arbeitsordner>` startet
   beide Reihen gleichzeitig (jetzt ca. 15–20 Min.: Server-Tests laufen in 3 Gruppen gleichzeitig, Gruppe 2/3 mit eigener DB `<testdb>_gN`, Port 8771/8772, eigenem Weltrechner).

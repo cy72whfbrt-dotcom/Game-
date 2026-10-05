@@ -181,7 +181,8 @@ function bundWahlLos() {
         const nach = w.mode === 'dazu' ? (bund.r.find(r => r.id === w.rid) || {}).at : w.nach; if (nach === undefined) return;
         const vh = lastHop(von.landmassId, islandById[nach].landmassId, 'player'); if (!mautVorab(vh[0], vh[1], n)) return;
         const held = w.mode === 'dazu' && w.held && heroOwned('player', w.held) && !heroBusy('player', w.held) ? w.held : null, held2 = heroZweitOk('player', held, w.held2);   // (Rally-Mitglied: seine Helden für seine Truppen)
-        bundBefehl(w.mode === 'dazu' ? 'rallyDazu' : 'hilfe', w.mode === 'dazu' ? { rid: w.rid, von: w.von, n, held, held2 } : { von: w.von, nach, n },w.mode === 'dazu' ? 'Truppen unterwegs zur Rally.' : 'Verstärkung unterwegs – sie bleibt deine.');
+        bundBefehl(w.mode === 'dazu' ? 'rallyDazu' : 'hilfe', w.mode === 'dazu' ? { rid: w.rid, von: w.von, n, held, held2 } : { von: w.von, nach, n }, w.mode === 'dazu' ? 'Truppen unterwegs zur Rally.' :
+            verstUnbekannt(islandOwnerOf(nach)) ? 'Verstärkung geschickt – passt nicht alles in die Botschaft, bleibt der Rest daheim.' : 'Verstärkung unterwegs – sie bleibt deine.');   // (fremde Botschaft: nur der Weltrechner kennt den Platz)
         islandTroops[w.von] = Math.max(0, (islandTroops[w.von] || 0) - n);
         const t0 = Date.now(); vorlaeufigDazu('s', { fromId: w.von, toId: nach, troops: n, startedAt: t0, resolveAt: t0 + travelDurationSeconds(von, islandById[nach]) * 1000, senderBotId: null });
         sfx('send');

@@ -40,6 +40,7 @@ const rein = name => G.rein(b, name, { fehler });
   ok('Handy kennt die fremde Botschaft nicht, bietet Verstärkung trotzdem an', await h.evaluate(w => verstUnbekannt(w) && verstMoeglich(w), wahl.wirt));
   ok('H ist im Bündnis', await h.evaluate(a => { const x = bundVon('player'); return !!x && x.id === a; }, wahl.aid));
   const r = await h.evaluate(z => { islandTroops[playerIslandId] = Math.max(islandTroops[playerIslandId] || 0, 0); const n = islandTroops[playerIslandId] || 0; bundWahl = { mode: 'hilfe', nach: z, f: Math.min(1, 500 / Math.max(1, n)), von: playerIslandId }; const aus0 = WELT.ausgang.length; const hint = []; const fh = window.flashHint; window.flashHint = t => { hint.push(t); return fh && fh(t); }; bundWahlLos(); window.flashHint = fh; return 'Truppen ' + n + ' · frei ' + Math.floor(verstFrei(islandOwnerOf(z))) + ' · Befehl ' + (WELT.ausgang.length > aus0) + ' · ' + hint.join(' / '); }, wahl.ziel);
+  ok('Hinweis neutral (Handy kennt den Platz nicht)', /Verstärkung geschickt/.test(r), r);
   await warte(12000);
   const m = (welt('openWaterPendingSends') || []).find(x => x.senderBotId === 'u' + HID && x.verst);
   ok('Verstärkung marschiert (Welt)', !!m, m ? Math.round((m.resolveAt - Date.now()) / 1000) + ' s · ' + m.troops + ' Truppen' : 'Antwort: ' + r);

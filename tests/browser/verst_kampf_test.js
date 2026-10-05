@@ -43,6 +43,12 @@ const srv = http.createServer((q, r) => { const f = path.join(D, decodeURICompon
       islandTroops[T2] = 500; verst.l = [{ id: 'vB', w: H.id, t: T2, n: 500, von: [...botOwnedIslands[H.id]][0], at: Date.now() }];
       kampfAufraeumen({ targetId: T2, _vk: verstVorKampf(T2), _vkOwner: islandOwnerOf(T2) }); const vb = verst.l.find(v => v.id === 'vB');
       out.abbruchGehalten = { garnison: islandTroops[T2], helfer: vb ? vb.n : 0 }; }
+    // 4) Handy (fremde Botschaft unbekannt): schickt alle gewählten Truppen, Hinweis ohne „unterwegs“-Versprechen (Weltrechner kürzt)
+    { const T4 = [...botOwnedIslands[B.id]][0], fg = window.fremdGeheim, bb = window.bundBefehl, fh = window.flashHint, bef = [], hint = [];
+      window.fremdGeheim = () => true; window.bundBefehl = (op, d, h) => { bef.push({ op, n: d.n }); if (h) hint.push(h); return true; }; window.flashHint = t => hint.push(t);
+      islandTroops[playerIslandId] = 800; bundWahl = { mode: 'hilfe', nach: T4, f: 1, von: playerIslandId };
+      let unbekannt = false; try { unbekannt = verstUnbekannt(B.id); bundWahlLos(); } finally { window.fremdGeheim = fg; window.bundBefehl = bb; window.flashHint = fh; }
+      out.handy = { unbekannt, befehl: bef, hint: hint.join(' / ') }; }
     return out;
   });
   console.log(JSON.stringify(r, null, 1));
@@ -54,5 +60,6 @@ const srv = http.createServer((q, r) => { const f = path.join(D, decodeURICompon
   console.log(((r.erobert.neuerBesitzer === r.erobert.angreifer || (r.erobert.hauptstadt && r.erobert.garnison === 0)) && r.erobert.verstUebrig === 0 ? 'OK   ' : 'FEHLER ') + 'erobert: Verstärkung gefallen');
   console.log((r.abbruch.garnison === 3000 && r.abbruch.verstUebrig === 0 && r.abbruch.vk ? 'OK   ' : 'FEHLER ') + 'Abbruch nach Eroberung: Angreifer bleiben, Verstärkung gefallen – ' + JSON.stringify(r.abbruch));
   console.log((r.abbruchGehalten.garnison === 500 && r.abbruchGehalten.helfer === 500 ? 'OK   ' : 'FEHLER ') + 'Abbruch ohne Eroberung: Besatzung und Verstärkung wieder getrennt – ' + JSON.stringify(r.abbruchGehalten));
+  console.log((r.handy.unbekannt && r.handy.befehl.length === 1 && r.handy.befehl[0].n === 800 && /Verstärkung geschickt/.test(r.handy.hint) && !/unterwegs/.test(r.handy.hint) ? 'OK   ' : 'FEHLER ') + 'Handy: fremde Botschaft – alle Truppen als Befehl, neutraler Hinweis – ' + JSON.stringify(r.handy));
   console.log('Fehler:', fehler.length ? fehler : 'keine'); await b.close(); srv.close();
 })();
