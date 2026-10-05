@@ -260,7 +260,7 @@ function armyBotWatch(now) {
             if (!bot || !base || islandOwnerOf(base.id) !== bot.id || !botOnline(bot, now) || ownerShielded(bot.id, now) || bundFreund(bot.id, w)) continue;
             const n = Math.floor((islandTroops[base.id] || 0) * .6); if (n < a.troops * 1.3) continue;
             const to = { x: a.x, y: a.y, landmassId: a.lm };
-            islandTroops[base.id] -= n; armyRaids.push({ botId: bot.id, baseId: base.id, armyId: a.id, who: w, troops: n, tx: a.x, ty: a.y, lm: a.lm, startedAt: now, resolveAt: now + travelDurationSeconds(base, to, bot.id) * 1000 });
+            islandTroops[base.id] -= n; armyRaids.push({ botId: bot.id, baseId: base.id, armyId: a.id, ...(w !== 'player' ? { tOwner: w } : {}), troops: n, tx: a.x, ty: a.y, lm: a.lm, startedAt: now, resolveAt: now + travelDurationSeconds(base, to, bot.id) * 1000 });
             if (w === 'player') { flashHint(bot.name + ' greift deine Armee im Feld an!', 4000); sfx('warn'); requestRender(); } continue; }
         if (Math.random() > .25) continue;
         let best = null, bd = Infinity;
@@ -273,7 +273,7 @@ function armyBotWatch(now) {
 
 function armyRaidArrive(r, now) {
     const a = armyById(r.armyId), bot = botById[r.botId], back = () => { if (botOwnedIslands[r.botId] && botOwnedIslands[r.botId].has(r.baseId)) islandTroops[r.baseId] = (islandTroops[r.baseId] || 0) + r.troops; };
-    const w = a ? armyWho(a) : r.who || 'player', me = w === 'player', hint = (t, ms) => { if (me) flashHint(t, ms); };   // der Eigentümer der Armee: du oder ein echter Spieler
+    const w = a ? armyWho(a) : r.tOwner || 'player', me = w === 'player', hint = (t, ms) => { if (me) flashHint(t, ms); };   // der Eigentümer der Armee: du oder ein echter Spieler
     if (a && ownerShielded(w, Math.min(now, r.resolveAt || now))) { back(); hint('Dein Friedensschild hat den Angriff von ' + bot.name + ' auf deine Armee abgewehrt.', 4000); return; }   // the shield covers field armies too
     const p = a && armyPos(a, now);
     if (!a || Math.hypot(p.x - r.tx, p.y - r.ty) > ISLAND_RADIUS * 2) { back(); if (a) hint('Deine Armee ist ' + bot.name + ' ausgewichen.', 3000); return; }

@@ -400,7 +400,7 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   einmal pro Minute (`outNext`). Armee-Befehle: eine heimgeschickte Armee beendete die Schleife für alle anderen (`botArmyStep`).
   Verteidigen: Hilfe/Abzug gilt nur, wenn der Marsch wirklich losging, sonst der nächste Helfer (`botDefend`). Schild: eigene
   Angriffe kehren um und laufen heim wie deine (nicht mehr sofort zu Hause, `botUseShield`). Hauptstadt eines Mitspielers ist
-  immer ein Turm, nie Tor/Tempel (`botCapitalOf`). Test `tests/browser/mitspieler_feld_test.js`.
+  immer ein Turm, nie Tor/Tempel (`botCapitalOf`, `isCapital`); ohne Turm kehren Truppen trotzdem zu einer eigenen Basis heim. Die Karte zeichnet nur Angriffe auf deine eigenen Feld-Armeen (`drawArmies`), Angriffe auf Armeen echter Spieler tragen `tOwner` (sieht nur der Eigentümer). Test `tests/browser/mitspieler_feld_test.js`.
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.

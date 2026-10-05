@@ -346,7 +346,7 @@ function botCapitalOf(botId) {                  // each bot's main base: its str
     if (b.capital === undefined || b.capital === null || !own.has(b.capital) || islandById[b.capital].type !== 'tower') {   // die Hauptstadt ist immer ein Turm – nie ein Tor oder Tempel (wie bei dir)
         let best = null; for (const id of own) { const isl = islandById[id]; if (isl.type !== 'tower') continue;
             if (best === null || (islandLevels[id] || 1) > (islandLevels[best] || 1)) best = id; }
-        if (best === null) return null;                                     // gar kein Turm: keine Hauptstadt
+        if (best === null) return [...own][0];                              // gar kein Turm: heim zu irgendeiner eigenen Basis (Truppen gehen nie verloren) – als Hauptstadt zählt sie nicht (isCapital)
         b.capital = best; saveBotState(); capitalCache = null;
     }
     return b.capital;

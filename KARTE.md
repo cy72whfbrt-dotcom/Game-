@@ -105,9 +105,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `armyCreate` → Game/spiel/09d-armeen-wegmarken.js:40
 - `armyFeldZiel` → Game/bots/06-aussehen-felder-barbaren.js:252
 - `armyHalt` → Game/spiel/09d-armeen-wegmarken.js:22
-- `armyHandleTap` → Game/spiel/09d-armeen-wegmarken.js:282
-- `armyHeroes` → Game/spiel/09d-armeen-wegmarken.js:206
-- `armyHeroSeg` → Game/spiel/09d-armeen-wegmarken.js:207
+- `armyHandleTap` → Game/spiel/09d-armeen-wegmarken.js:283
+- `armyHeroes` → Game/spiel/09d-armeen-wegmarken.js:207
+- `armyHeroSeg` → Game/spiel/09d-armeen-wegmarken.js:208
 - `armyHome` → Game/spiel/09d-armeen-wegmarken.js:28
 - `armyMove` → Game/spiel/09d-armeen-wegmarken.js:62
 - `armyName` → Game/spiel/09d-armeen-wegmarken.js:26
@@ -117,7 +117,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `armyPosXY` → Game/spiel/09d-armeen-wegmarken.js:61
 - `armyRaidArrive` → Game/bots/06-aussehen-felder-barbaren.js:274
 - `armySendFrom` → Game/spiel/09d-armeen-wegmarken.js:33
-- `armySetHeroes` → Game/spiel/09d-armeen-wegmarken.js:211
+- `armySetHeroes` → Game/spiel/09d-armeen-wegmarken.js:212
 - `armySources` → Game/spiel/09d-armeen-wegmarken.js:29
 - `armyTargetAt` → Game/spiel/09d-armeen-wegmarken.js:54
 - `armyTick` → Game/spiel/09d-armeen-wegmarken.js:144
@@ -696,7 +696,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `clock` → Game/spiel/05d-maersche-kampfbericht.js:43
 - `clock` → Game/spiel/06c-thron-mitte.js:107
 - `closeAllPopups` → Game/spiel/09e-inselfenster.js:75
-- `closeArmySheet` → Game/spiel/09d-armeen-wegmarken.js:204
+- `closeArmySheet` → Game/spiel/09d-armeen-wegmarken.js:205
 - `closeBarbSheet` → Game/spiel/09b-lager-tagesboss.js:352
 - `closeCity` → Game/spiel/08a-stadt-bauen.js:198
 - `closeDailyModal` → Game/spiel/06a-aufgaben.js:81
@@ -705,7 +705,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `closeIslandPopup` → Game/spiel/09e-inselfenster.js:110
 - `closeLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:316
 - `closeLookSheet` → Game/spiel/08b-burg-aussehen.js:104
-- `closeMarkerSheet` → Game/spiel/09d-armeen-wegmarken.js:308
+- `closeMarkerSheet` → Game/spiel/09d-armeen-wegmarken.js:309
 - `closePanel` → Game/spiel/09e-inselfenster.js:35
 - `closeTopmostPanel` → Game/spiel/09e-inselfenster.js:50
 - `closeWelcome` → Game/spiel/06d-schild-produktion.js:324
@@ -784,7 +784,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drAuszahlen` → Game/spiel/09c-events-drache.js:237
 - `draw` → Game/ladebildschirm.js:84
 - `drawArmies` → Game/spiel/09d-armeen-wegmarken.js:161
-- `drawArmyCamps` → Game/spiel/09d-armeen-wegmarken.js:171
+- `drawArmyCamps` → Game/spiel/09d-armeen-wegmarken.js:172
 - `drawBackground` → Game/spiel/03a-karte-hintergrund.js:423
 - `drawBarb` → Game/spiel/09b-lager-tagesboss.js:244
 - `drawBaseAuras` → Game/spiel/03c-wappen-thronplatz.js:257
@@ -806,7 +806,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drawMarchColumn` → Game/spiel/03d-maersche-tagnacht.js:24
 - `drawMarchLine` → Game/spiel/03c-wappen-thronplatz.js:413
 - `drawMarchTokens` → Game/spiel/03d-maersche-tagnacht.js:41
-- `drawMarkers` → Game/spiel/09d-armeen-wegmarken.js:325
+- `drawMarkers` → Game/spiel/09d-armeen-wegmarken.js:326
 - `drawn` → Game/spiel/03a-karte-hintergrund.js:457
 - `drawNacht` → Game/spiel/03d-maersche-tagnacht.js:206
 - `drawPasses` → Game/spiel/06e-nebel-zeichnen.js:165
@@ -1160,7 +1160,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `hdState` → Game/haendler.js:32
 - `hdTakt` → Game/haendler.js:51
 - `hdWerName` → Game/haendler.js:38
-- `head` → Game/spiel/09d-armeen-wegmarken.js:219
+- `head` → Game/spiel/09d-armeen-wegmarken.js:220
 - `heatAt` → Game/bots/02-kampf-karte.js:258
 - `HEDGE` → Game/baukunst/07-hafen-palast.js:413
 - `heldOk` → Game/spiel/10d-welt-weltrechner.js:969
@@ -1416,8 +1416,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `marchSkinOf` → Game/spiel/05a-aussehen-profil.js:91
 - `marchTapAt` → Game/spiel/03d-maersche-tagnacht.js:91
 - `marchTrail` → Game/spiel/03d-maersche-tagnacht.js:13
-- `markerAt` → Game/spiel/09d-armeen-wegmarken.js:298
-- `markers` → Game/spiel/09d-armeen-wegmarken.js:295
+- `markerAt` → Game/spiel/09d-armeen-wegmarken.js:299
+- `markers` → Game/spiel/09d-armeen-wegmarken.js:296
 - `marktGebuehr` → Game/aufbau.js:227
 - `marktHeute` → Game/aufbau.js:233
 - `marktHtml` → Game/aufbau.js:353
@@ -1587,7 +1587,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `one` → Game/baukunst/04-vielfalt-stile.js:525
 - `onPointerEnd` → Game/spiel/03e-kamera-eingabe.js:316
 - `onViewportResize` → Game/spiel/03e-kamera-eingabe.js:405
-- `openArmySheet` → Game/spiel/09d-armeen-wegmarken.js:203
+- `openArmySheet` → Game/spiel/09d-armeen-wegmarken.js:204
 - `openBarbSheet` → Game/spiel/09b-lager-tagesboss.js:351
 - `openChestItemPopup` → Game/spiel/05b-truhe-skills.js:176
 - `openCity` → Game/spiel/08a-stadt-bauen.js:183
@@ -1597,7 +1597,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `openHeroHall` → Game/spiel/08c-helden.js:334
 - `openIslandPopup` → Game/spiel/09e-inselfenster.js:102
 - `openLookSheet` → Game/spiel/08b-burg-aussehen.js:103
-- `openMarkerSheet` → Game/spiel/09d-armeen-wegmarken.js:299
+- `openMarkerSheet` → Game/spiel/09d-armeen-wegmarken.js:300
 - `openPanel` → Game/spiel/09e-inselfenster.js:34
 - `openRankings` → Game/spiel/05c-erfolge-rangliste.js:284
 - `openRulerProfile` → Game/spiel/05c-erfolge-rangliste.js:178
@@ -1808,7 +1808,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `render` → Game/baukunst/08-himmelsfeste-bilder.js:375
 - `renderAchievements` → Game/spiel/05c-erfolge-rangliste.js:106
 - `renderActiveMarches` → Game/spiel/05d-maersche-kampfbericht.js:40
-- `renderArmySheet` → Game/spiel/09d-armeen-wegmarken.js:216
+- `renderArmySheet` → Game/spiel/09d-armeen-wegmarken.js:217
 - `renderAttackPreview` → Game/spiel/10a-inselfenster-vorschau.js:203
 - `renderChestEquipment` → Game/spiel/05b-truhe-skills.js:44
 - `renderChestItemPopup` → Game/spiel/05b-truhe-skills.js:183
@@ -1957,7 +1957,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `saveHeroes` → Game/spiel/08c-helden.js:20
 - `saveLeave` → Game/spiel/06d-schild-produktion.js:237
 - `saveLook` → Game/spiel/05a-aussehen-profil.js:87
-- `saveMarkers` → Game/spiel/09d-armeen-wegmarken.js:297
+- `saveMarkers` → Game/spiel/09d-armeen-wegmarken.js:298
 - `saveProgression` → Game/spiel/02a-shop-stufen.js:267
 - `saveProgressionNow` → Game/spiel/02a-shop-stufen.js:273
 - `saveQuests` → Game/spiel/06a-aufgaben.js:127
@@ -1975,7 +1975,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `scoutNotesFlush` → Game/bots/03-angreifen.js:83
 - `scoutSecs` → Game/spiel/02b-maersche.js:17
 - `screen` → Game/spiel/03a-karte-hintergrund.js:372
-- `screenToWorld` → Game/spiel/09d-armeen-wegmarken.js:340
+- `screenToWorld` → Game/spiel/09d-armeen-wegmarken.js:341
 - `sectorGeo` → Game/baukunst/08-himmelsfeste-bilder.js:48
 - `see` → Game/bots/05-verteidigen-takt.js:20
 - `seed` → Game/spiel/01c-basen-spielstand.js:53
@@ -1988,10 +1988,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `server` → Game/benachrichtigung.js:19
 - `server` → Game/weltrechner/push.js:153
 - `serverJetzt` → Game/spiel/03d-maersche-tagnacht.js:177
-- `setArmyPlace` → Game/spiel/09d-armeen-wegmarken.js:279
+- `setArmyPlace` → Game/spiel/09d-armeen-wegmarken.js:280
 - `setBtnLabel` → Game/spiel/01a-grundlagen.js:102
 - `setGateSettings` → Game/spiel/01b-weltkarte.js:313
-- `setMarkerMode` → Game/spiel/09d-armeen-wegmarken.js:309
+- `setMarkerMode` → Game/spiel/09d-armeen-wegmarken.js:310
 - `setMode` → Game/spiel/10c-start-einstellungen.js:139
 - `setScreen` → Game/spiel/03a-karte-hintergrund.js:5
 - `setShown` → Game/spiel/01e-nebel-kampfwerte-hud.js:222
@@ -4403,24 +4403,24 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `armyTick` :144
 - `armyAt` :159 — drawing: a camp is a little block of soldiers under your banner; a marching arm…
 - `drawArmies` :161
-- `drawArmyCamps` :171 — after the nameplates: an army out there must never hide under one
-- `openArmySheet` :203 — the army sheet: set one up (pick the bases), or give an existing one its orders
-- `closeArmySheet` :204
-- `armyHeroes` :206
-- `armyHeroSeg` :207 — which heroes march with this army (one army or attack per hero) – Haupt- und Zw…
-- `armySetHeroes` :211 — → true, wenn gesetzt: nur eigene Helden, die frei sind oder schon in dieser Arm…
-- `renderArmySheet` :216
-- `head` :219
-- `setArmyPlace` :279
-- `armyHandleTap` :282 — → true when the tap belonged to the armies
-- `markers` :295
-- `saveMarkers` :297
-- `markerAt` :298
-- `openMarkerSheet` :299
-- `closeMarkerSheet` :308
-- `setMarkerMode` :309
-- `drawMarkers` :325 — a pin with a flag and the text beside it
-- `screenToWorld` :340
+- `drawArmyCamps` :172 — after the nameplates: an army out there must never hide under one
+- `openArmySheet` :204 — the army sheet: set one up (pick the bases), or give an existing one its orders
+- `closeArmySheet` :205
+- `armyHeroes` :207
+- `armyHeroSeg` :208 — which heroes march with this army (one army or attack per hero) – Haupt- und Zw…
+- `armySetHeroes` :212 — → true, wenn gesetzt: nur eigene Helden, die frei sind oder schon in dieser Arm…
+- `renderArmySheet` :217
+- `head` :220
+- `setArmyPlace` :280
+- `armyHandleTap` :283 — → true when the tap belonged to the armies
+- `markers` :296
+- `saveMarkers` :298
+- `markerAt` :299
+- `openMarkerSheet` :300
+- `closeMarkerSheet` :309
+- `setMarkerMode` :310
+- `drawMarkers` :326 — a pin with a flag and the text beside it
+- `screenToWorld` :341
 
 ### Game/spiel/09e-inselfenster.js — Fenster öffnen und schließen, Insel-Fenster, Mehrfach-Angriff
 - `isUiElement` :28 — the keyboard handler uses this: map shortcuts only fire while focus is on the p…

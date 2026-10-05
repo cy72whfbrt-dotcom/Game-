@@ -28,14 +28,14 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const echt = X.mensch; X.mensch = true;
     const onl = window.botOnline, zuf = Math.random; window.botOnline = () => true; Math.random = () => 0;
     const berichte = [], hints = []; const fh = window.flashHint; window.flashHint = t => hints.push(t);
-    const out = {};
+    const out = { X: X.id };
     const neueArmee = (who, id) => { const a = { id, x: yb.x + ISLAND_RADIUS * 3, y: yb.y, lm: yb.landmassId, troops: 1000, homeId: null, mv: null }; if (who) a.who = who; armies = armies.filter(q => q.id !== id); armies.push(a); return a; };
     try {
       const now = Date.now();
       let a = neueArmee(X.id, 'atestX');
       armyBotWatch(now); out.entdeckt = !!(a.seen && a.seen.bot);
       armyBotWatch(now + 16000); const raid = armyRaids.find(q => q.armyId === a.id);
-      out.raid = !!raid; out.raidWer = raid && raid.who; out.hintsAnDich = hints.length;
+      out.raid = !!raid; out.raidWer = raid && raid.tOwner; out.hintsAnDich = hints.length;   // (tOwner: welt.js gibt den Angriff nur dem Eigentümer aufs Handy)
       // Bündnis: dieselbe Armee, X und der Entdecker im selben Bündnis → keiner greift an
       armyRaids = armyRaids.filter(q => q !== raid); if (raid) islandTroops[raid.baseId] += raid.troops;
       const Z = botById[raid ? raid.botId : Y.id]; botCoins[X.id] = 1e9;
@@ -53,7 +53,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       a = neueArmee(X.id, 'atestX'); a.troops = 20000;
       loadBotState()[X.id].city.levels.hospital = 10; loadBotState()[X.id].wounded = 0;   // (Platz im Krankenhaus)
       const log0 = combatLog.length, wund0 = loadBotState()[X.id].wounded || 0, def0 = playerStats.defends || 0;
-      const r2 = { botId: Y.id, baseId: yb.id, armyId: a.id, who: X.id, troops: 500000, tx: a.x, ty: a.y, lm: a.lm, startedAt: now - 1000, resolveAt: now };
+      const r2 = { botId: Y.id, baseId: yb.id, armyId: a.id, tOwner: X.id, troops: 500000, tx: a.x, ty: a.y, lm: a.lm, startedAt: now - 1000, resolveAt: now };
       window.WELT = new Proxy({ leiter: true, menschen: {}, bericht(w, e, h) { berichte.push({ w, e, h }); } }, { get: (o, k) => k in o ? o[k] : () => {} });   // (Weltrechner: Berichte an echte Spieler)
       armyRaidArrive(r2, now); delete window.WELT;
       out.armeeWeg = !armyById(a.id); out.bericht = berichte.map(q => [q.w, q.e.type, q.e.won, q.h]);
@@ -61,16 +61,28 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       out.wunden = (loadBotState()[X.id].wounded || 0) - wund0;
       // deine eigene Armee: wie bisher (Hinweis an dich)
       hints.length = 0; const d = neueArmee(null, 'atestDu'); armyBotWatch(now); armyBotWatch(now + 16000);
-      out.deinRaid = armyRaids.some(q => q.armyId === d.id && q.who === 'player'); out.deineHints = hints.slice();
+      out.deinRaid = armyRaids.some(q => q.armyId === d.id && !q.tOwner); out.deineHints = hints.slice();
+      // Karte: nur Angriffe auf deine Armeen werden als „incoming“ gezeichnet
+      const fx = neueArmee(X.id, 'atestFremd'), rd = armyRaids.find(q => q.armyId === d.id);
+      armyRaids.push({ botId: Y.id, baseId: yb.id, armyId: fx.id, tOwner: X.id, troops: 1, tx: fx.x, ty: fx.y, lm: fx.lm, startedAt: now, resolveAt: now + 60000 });
+      const linien = [], dml = window.drawMarchLine, z0 = mapState.zoom; window.drawMarchLine = (k, f, t) => linien.push([k, t.id]); mapState.zoom = .02;
+      try { drawArmies(now, now); } finally { window.drawMarchLine = dml; mapState.zoom = z0; }
+      out.linien = linien.filter(l => l[0] === 'incoming' && l[1] === 'army').length; out.deinRaidDa = !!rd;
+      armyRaids = armyRaids.filter(q => q.armyId !== fx.id); armies = armies.filter(q => q.id !== fx.id);
       armyRaids = armyRaids.filter(q => q.armyId !== d.id); armies = armies.filter(q => q.id !== d.id);
     } finally { window.botOnline = onl; Math.random = zuf; window.flashHint = fh; delete window.WELT; X.mensch = echt; }
     // Hauptstadt: nie ein Tor oder Tempel
     const s = loadBotState()[Y.id], tor = islands.find(i => i.type !== 'tower' && !islandOwnerOf(i.id) && !bossAt(i.id));
     if (tor) { botOwnedIslands[Y.id].add(tor.id); s.capital = tor.id; capitalCache = null; out.capTurm = islandById[botCapitalOf(Y.id)].type === 'tower'; out.torKeinCap = !isCapital(tor.id); botOwnedIslands[Y.id].delete(tor.id); capitalCache = null; }
+    // gar kein Turm mehr (nur ein Tor): Truppen finden trotzdem heim, das Tor zählt aber nicht als Hauptstadt
+    const W = BOT_DEFS.find(q => !q.mensch && q.id !== Y.id && botOwnedIslands[q.id].size > 0), alt = [...botOwnedIslands[W.id]], tor2 = islands.find(i => i.type !== 'tower' && !islandOwnerOf(i.id) && !bossAt(i.id));
+    if (tor2) { botOwnedIslands[W.id].clear(); botOwnedIslands[W.id].add(tor2.id); capitalCache = null;
+      out.heim = botCapitalOf(W.id) === tor2.id; out.heimKeinCap = !isCapital(tor2.id);
+      botOwnedIslands[W.id].clear(); for (const id of alt) botOwnedIslands[W.id].add(id); capitalCache = null; }
     return out;
   });
   ok(r.entdeckt, 'Mitspieler entdeckt die Feld-Armee eines echten Spielers', r);
-  ok(r.raid && r.raidWer !== 'player', 'und greift sie an (Eigentümer gemerkt)', r.raidWer);
+  ok(r.raid && r.raidWer === r.X, 'und greift sie an (Eigentümer gemerkt)', r.raidWer);
   ok(r.hintsAnDich === 0, 'kein Hinweis an dich für fremde Armeen', r.hintsAnDich);
   ok(r.freunde && !r.bundRaid, 'Bündnis-Mitglieder greifen die Armee nicht an');
   ok(!r.schildRaid, 'Friedensschild des echten Spielers schützt seine Armee');
@@ -78,6 +90,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(r.deinLog === 0 && r.deineDefends === 0 && r.hints2 === 0, 'nichts davon landet bei dir (Kampflog, Statistik, Hinweis)', [r.deinLog, r.deineDefends, r.hints2]);
   ok(r.wunden > 0, 'seine Verwundeten kommen in sein Krankenhaus', r.wunden);
   ok(r.deinRaid && r.deineHints.some(t => /entdeckt|greift deine Armee/.test(t)), 'deine Armee: wie bisher angegriffen, mit Hinweis', r.deineHints);
+  ok(r.deinRaidDa && r.linien === 1, 'Karte: nur der Angriff auf deine Armee wird als „incoming“ gezeichnet (nicht der auf fremde)', r.linien);
+  ok(r.heim === true && r.heimKeinCap === true, 'ohne Turm: Truppen kehren zur eigenen Basis heim, die zählt aber nicht als Hauptstadt', [r.heim, r.heimKeinCap]);
   ok(r.capTurm !== false && r.torKeinCap !== false, 'Hauptstadt eines Mitspielers ist immer ein Turm (nie ein Tor/Tempel)', [r.capTurm, r.torKeinCap]);
 
   // 2) Neustart: ausgeschieden (mit/ohne outAt) → kein geschenkter Turm; neu dazugekommen → Startplatz
