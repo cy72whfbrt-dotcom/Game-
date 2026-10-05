@@ -461,9 +461,11 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
   - **Server-Reset – entschieden (Alexander 5.10.):** alle **8 Wochen**. **Bleibt:** die komplette Hauptstadt (Burg, alle
     Gebäude, Forschung im Labor), Helden (mit ihren Fähigkeiten), Ausrüstung, Gems, Holz/Stein/Eisen. **Weg:** alle anderen
     Basen, alle Truppen, das Gold (Start mit der Menge eines neuen Spielers), Spielerstufe zurück auf 1 (damit auch alle
-    Fähigkeitspunkte). Truppen: Start wie ein neuer Spieler. Noch offen: Platz der Hauptstadt, Bündnisse, Mitspieler,
-    Ankündigung, Belohnung, Start (Vorschläge: Zufallsplatz am Rand · bleiben · wie echte Spieler · 3 Tage vorher + Countdown ·
-    Top 10 Gems + Titel · automatisch + Admin-Knopf, vorher Sicherung). Noch NICHT gebaut.
+    Fähigkeitspunkte). Truppen: Start wie ein neuer Spieler. Gekaufte Skins, Marsch-Aussehen, Titel und Rahmen bleiben.
+    Hauptstadt: neuer Zufallsplatz am Rand. Bündnisse werden aufgelöst (neu gründen). Mitspieler 1:1 wie echte Spieler.
+    3 Tage vorher Nachricht an alle + Countdown im Spiel. Ende der Saison: die besten 10 der Rangliste bekommen Gems und einen
+    Saison-Titel, den man für immer behält. Start automatisch zum Termin + Knopf im Admin (mit Rückfrage), vorher immer eine
+    Sicherung. Noch NICHT gebaut.
   - **Hauptstadt max. Stufe 25.** Die Basen draußen bleiben bis Stufe 100 wie jetzt – **daran nichts ändern**.
   - **Aufleveln langsam:** nicht in 5 Tagen auf 25, sondern über lange Zeit und **mehrere Server-Resets**.
   - **Kosten:** Gold, Holz, Stein, Eisen – jede Stufe mehr – und jede Stufe **dauert Zeit**.
