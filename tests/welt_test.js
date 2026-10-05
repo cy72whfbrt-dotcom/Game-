@@ -56,16 +56,18 @@ pruefe('Flicken auf fehlenden Eintrag wird erkannt', flickenAnwenden({ a: 1 }, {
     pruefe('Hauptbuch: … außer sein Profil zeigt sie gerade voll', H.hbSplitterGems(hb, { hs: { a: { own: true, q: 20 } } }, 100) === 100);
 }
 
-// 4) Welt-Saison (09f-saison.js): der Termin ist immer ein Sonntag 18 Uhr, 8 Wochen nach dem Start (auch über Sommer-/Winterzeit)
+// 4) Welt-Saison (09f-saison.js): der Termin ist immer ein Sonntag 18 Uhr deutscher Zeit, 8 Wochen nach dem Start (auch über
+//    Sommer-/Winterzeit, egal in welcher Zeitzone der Server läuft)
 {
-    const s9 = fs.readFileSync(path.join(G, 'spiel', '09f-saison.js'), 'utf8'), i = s9.indexOf('function saisonEnde'), j = s9.indexOf('function saisonJetzt', i);
+    const s9 = fs.readFileSync(path.join(G, 'spiel', '09f-saison.js'), 'utf8'), i = s9.indexOf('const BERLIN'), j = s9.indexOf('function saisonJetzt', i);
     const saisonEnde = new Function('SAISON_WOCHEN', 'SAISON_STUNDE', s9.slice(i, j) + '; return saisonEnde;')(8, 18);
     let gut = true;
-    for (const ab of ['2026-10-06T10:00:00', '2026-10-04T18:00:03', '2026-02-01T18:00:00', '2026-08-02T18:00:00', '2026-12-31T23:59:00']) {
+    const B = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+    for (const ab of ['2026-10-06T10:00:00Z', '2026-10-04T16:00:03Z', '2026-02-01T17:00:00Z', '2026-08-02T16:00:00Z', '2026-12-31T23:59:00Z', '2027-03-28T16:30:00Z']) {
         const t = new Date(ab).getTime(), e = new Date(saisonEnde(t)), tage = (e - t) / 864e5;
-        if (e.getDay() !== 0 || e.getHours() !== 18 || e.getMinutes() !== 0 || tage < 55.9 || tage > 63) { gut = false; console.log('  Saison ab', ab, '→', e.toString()); }
+        if (B.format(e) !== 'So., 18:00' || tage < 55.9 || tage > 63) { gut = false; console.log('  Saison ab', ab, '→', e.toISOString(), B.format(e)); }
     }
-    pruefe('Welt-Saison: Termin Sonntag 18 Uhr, 8 Wochen nach dem Start', gut);
+    pruefe('Welt-Saison: Termin Sonntag 18 Uhr deutscher Zeit, 8 Wochen nach dem Start', gut);
     const w = fs.readFileSync(path.join(G, 'welt.js'), 'utf8');
     pruefe('Welt-Saison: welt.js nimmt nur Profile der laufenden Saison', /\(\+s\.profil\.saison \|\| 1\) >= nr/.test(w) && /saison: parseInt\(d\.openWaterSaisonMein/.test(w));
 }
