@@ -29,7 +29,7 @@ lauf() { local n=$1 l=$2 i w=0; shift 2
   done; }
 php werkzeuge/vorschau_bauen.php "$V" test viele >/dev/null || fertig 1 "FEHLER: Vorschau (test) nicht gebaut"   # Test-Modus: alle Mitspieler, fast unbegrenzt alles
 php werkzeuge/vorschau_bauen.php "$N" >/dev/null || fertig 1 "FEHLER: Vorschau (normal) nicht gebaut"            # normal: echte Zahlen (für Kampf-Rechnungen)
-for x in "welt_test.js|node tests/welt_test.js" "server_test.php|php tests/server_test.php"; do lauf "${x%%|*}" "$T/${x%%|*}.log" timeout 900 ${x#*|} & done   # (erst nach dem Zusammensetzen von spiel.js)
+for x in "welt_test.js|node tests/welt_test.js" "server_test.php|php tests/server_test.php" "karte_test.js|node tests/karte_test.js"; do lauf "${x%%|*}" "$T/${x%%|*}.log" timeout 900 ${x#*|} & done   # (erst nach dem Zusammensetzen von spiel.js)
 # Test | Vorschau (alles_test/teil2_test bekommen den Arbeitsordner für ihre Bilder dazu – jeder seinen eigenen)
 LISTE="bund_bot_test|$V bund_amt_test|$V verst_kampf_test|$V gemeinsam_test|$V regel_test|$N rally21_test|$N rally_menschen_test|$N rally_jeder_test|$N
 rally_held_test|$N rally_schild_test|$N helden_beute_test|$N burg_test|$N saison_test|$N alles_test|$V teil2_test|$V fremd_test|$V"
@@ -39,7 +39,7 @@ for t in $WAHL; do n=${t%%|*}; v=${t#*|}; mkdir -p "$T/a_$n"
   lauf "$n" "$T/$n.log" timeout 900 node "tests/browser/$n.js" "$v" "$T/a_$n" &
 done
 wait
-for x in welt_test.js server_test.php; do echo "== $x"; filter < "$T/$x.log"; done
+for x in welt_test.js server_test.php karte_test.js; do echo "== $x"; filter < "$T/$x.log"; done
 for t in $WAHL; do n=${t%%|*}; echo "== $n"; filter < "$T/$n.log"; done
 cat "$T"/*.log > "$T/alle"
 grep -E "^FEHLER|nicht bestanden" "$T/alle" && FEHLER=1

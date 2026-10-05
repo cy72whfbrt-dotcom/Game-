@@ -33,9 +33,9 @@ A="${1:?Aufruf: tests/server_tests.sh <arbeitsordner> [test …]}"; A=$(cd "$A" 
 
 # Tabelle BETROFFEN: Datei-Muster (wie bei case, Pfad ab Projekt-Ordner) → Server-Tests, die davon abhängen
 BETROFFEN=(
-  "Game/server.php|Game/speichern.js                          → klick_test admin_test absturz_test schummel_test"
+  "Game/server.php|Game/server/*|Game/speichern.js            → klick_test admin_test absturz_test schummel_test"
   "Game/admin.php|Game/index.php                              → admin_test absturz_test"
-  "Game/spiel.php|Game/ladebildschirm.js|Game/aufbau.js|Game/baukunst.js|Game/haendler.js|Game/sw.js|Game/app/* → klick_test"
+  "Game/spiel.php|Game/spielseite/*|Game/ladebildschirm.js|Game/aufbau.js|Game/baukunst.js|Game/baukunst/*|Game/haendler.js|Game/sw.js|Game/app/* → klick_test"
   "Game/welt.js                                               → klick_test verst_test armee_test schummel_test"
   "Game/weltrechner/*                                         → absturz_test schummel_test verst_test kiste_test armee_test"
   "Game/buendnis/*|Game/buendnis.js                           → verst_test kiste_test klick_test"

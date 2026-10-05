@@ -3,7 +3,7 @@
 // Es läuft dann wie früher allein im Browser: die Welt mit den Mitspielern rechnet das eigene Gerät, gespeichert wird nur
 // in diesem Browser. Kein Login, keine Datenbank, keine Handy-Nachrichten. Nur zum Ansehen neuer Sachen – nie hochladen.
 $quelle = dirname(__DIR__) . '/Game';
-passthru(escapeshellarg(__DIR__ . '/spiel_bauen.sh'), $rc); if ($rc) exit("Fehler: spiel.js/bots.js/buendnis.js lassen sich nicht zusammensetzen\n");   // (aus Game/spiel/, Game/bots/, Game/buendnis/)
+passthru(escapeshellarg(__DIR__ . '/spiel_bauen.sh'), $rc); if ($rc) exit("Fehler: spiel.js/bots.js/buendnis.js/baukunst.js/spiel.php/server.php lassen sich nicht zusammensetzen\n");   // (aus Game/spiel/, bots/, buendnis/, baukunst/, spielseite/, server/)
 $ziel = $argv[1] ?? (dirname(__DIR__) . '/vorschau');
 @mkdir($ziel, 0755, true);
 $html = file_get_contents($quelle . '/spiel.php');

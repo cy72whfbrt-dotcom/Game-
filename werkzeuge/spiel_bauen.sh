@@ -7,7 +7,7 @@
 # stehen – das geht nur in EINER Datei. So bekommt das Spiel genau denselben Code wie vor dem Aufteilen (4.10./5.10.).
 # Jeder Teil beginnt mit EINER Kopfzeile „// Teil <name>: <was drin ist>“ – sie kommt nicht in die zusammengesetzte Datei
 # (auch bei PHP: der erste Teil fängt danach mit „<?php“ an).
-#   werkzeuge/spiel_bauen.sh          → zusammensetzen
+#   werkzeuge/spiel_bauen.sh          → zusammensetzen, danach KARTE.md neu (werkzeuge/karte.sh)
 #   werkzeuge/spiel_bauen.sh pruefen  → nur prüfen, ob die Dateien zu den Teilen passen (Fehler, wenn nicht)
 set -e
 export LC_ALL=C   # feste Reihenfolge der Teile (01a vor 01b vor 02 …), egal welche Sprache eingestellt ist
@@ -42,4 +42,5 @@ for z in "${ZIELE[@]}"; do
     IFS='|' read -r ordner ziel kopf <<< "$z"
     baue "$ordner" "$ziel" "$kopf" || fehler=1
 done
+[ "$fehler" = 1 ] || [ "$MODUS" = pruefen ] || werkzeuge/karte.sh || fehler=1
 exit $fehler

@@ -73,7 +73,8 @@ tests/                 Tests (liegen NIE auf dem Server)
 werkzeuge/             spiel_bauen.sh (spiel.js, bots.js, buendnis.js, baukunst.js, spiel.php, server.php zusammensetzen),
                        vorschau_bauen.php (Vorschau ohne Server),
                        vorschau_test*.js (Test-Modus), welt_neustart.php (neue Saison), vor_commit.sh (Prüfung vor dem
-                       Commit), server_starten.sh (MariaDB + lokaler PHP-Server 8770 für die Server-Tests)
+                       Commit), server_starten.sh (MariaDB + lokaler PHP-Server 8770 für die Server-Tests),
+                       karte.sh (+ karte.js: erzeugt KARTE.md)
 ```
 **Server kaputt oder Editor abgestürzt?** Einfach `./hochladen.sh` – lädt alles neu hoch, erzeugt `config.php` aus den
 Umgebungsvariablen, entfernt fremde Reste aus `Game/` und prüft, dass alles heil angekommen ist.
@@ -346,6 +347,12 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
 - **4.10. Server-Tests ins Projekt:** `tests/server/` + `tests/server_tests.sh <arbeitsordner>` (lokaler PHP-Server,
   MariaDB, Weltrechner): Absturz/Zurückspielen, Admin, Nebel, Bündnis-Kiste, Verstärkung, Klick-Test – alle grün.
   Passwörter der Test-Konten nur in `<arbeitsordner>/zugang.env` bzw. Umgebungsvariablen (nie im Git).
+- **5.10. Code-Karte:** `werkzeuge/karte.sh` erzeugt `KARTE.md` (Index Funktionsname → Datei:Zeile, je Datei/Teil die
+  Funktionen mit Kommentar, Server-Aktionen als `Aktion 'puls'`). Alle Teil-Ordner in `Game/` werden selbst erkannt.
+  Läuft automatisch am Ende von `spiel_bauen.sh` (KARTE.md mit committen). Agenten suchen zuerst dort (`grep -n "name" KARTE.md`).
+  Zusammengesetzte Dateien (spiel.js … server.php, Liste aus der Tabelle ZIELE in `spiel_bauen.sh`) stehen nur als Teile drin
+  (z. B. `marsch_welt` → `Game/server/03-…php`). `werkzeuge/vor_commit.sh` meldet „KARTE.md veraltet“, Test `tests/karte_test.js`
+  (läuft in `tests/alle_tests.sh` mit). Server-Tests `betroffen`: auch `Game/server/*`, `Game/spielseite/*`, `Game/baukunst/*`.
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
