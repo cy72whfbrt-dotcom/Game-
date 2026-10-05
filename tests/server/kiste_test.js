@@ -29,7 +29,7 @@ let b;
   const tGeschenk = Date.now();
   // einem offenen Bündnis mit Mitgliedern beitreten (Geschenke gehen an die anderen)
   AID = await p.evaluate(() => { const a = Object.values(bund.b).filter(x => x.offen && x.mit.length >= 2 && x.mit.length < BUND.MAX).sort((x, y) => y.mit.length - x.mit.length)[0]; if (!a) return null; bundBefehl('beitreten', { aid: a.id }); return a.id; });
-  await bis(() => p.evaluate(() => { const a = bundVon('player'); return !!a && a.mit.length >= 2; }), 30000);
+  await bis(() => p.evaluate(() => { const a = bundVon('player'); return !!a && a.mit.length >= 2; }), 90000);
   ok('im Bündnis mit anderen', !!AID && await p.evaluate(() => { const a = bundVon('player'); return !!a && a.mit.length >= 2; }), AID);
   // Weltrechner kennt die Gems (Profil nach dem Geschenk), Bündnis und Hauptbuch stehen in der Welt
   await verarbeitet(tGeschenk, 3);

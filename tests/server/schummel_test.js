@@ -16,7 +16,7 @@ let b;
   const p = await G.rein(b, NAME, { neu: true, fehler });
   await G.willkommen(p, 'Schummeltest');
   UID = G.spielerId(NAME);
-  await warte(RUNDE);
+  await warte(RUNDE); await G.bis(() => ((zustand().res || {}).h || 0) > 0, 120000);   // (bis der Weltrechner den neuen Spieler kennt – unter Last dauert das länger)
   const z0 = zustand(), c0 = muenzen(), h0 = (z0.res || {}).h || 0, lv0 = (z0.city && z0.city.levels) || {};
   ok('ehrlicher Start: keine Schummel-Hinweise', !G.schummelListe().some(x => x.uid === UID), JSON.stringify(G.schummelListe().filter(x => x.uid === UID)));
   // 1) Münzen erfinden: +100 Mio. auf dem Handy
