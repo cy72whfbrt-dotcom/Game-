@@ -317,6 +317,9 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
        mehr Truppen, zählt wie immer das (80 % bzw. 75 % davon). Danach normal.
     6. **Tagesboss entkommt** (um Mitternacht nicht gefallen, `dbossEntkommen` in 09b): alle, die getroffen haben, bekommen
        etwas Kleines wie beim Drachen (15 Gems, 2 Splitter) – einmal, Schlüssel `boss|<Tag>` (derselbe wie der Preis beim Fallen).
+    7. **Lager-Fortschritt neu** (Alexander, Frage 7 = A): `saisonWelt` setzt für alle die beste besiegte Lager-Stufe auf 0
+       (wieder ab Stufe 1) und räumt die alten Lager; neue entstehen sofort. Die Zähler von heute (Lager-Siege, Boss-Angriffe)
+       bleiben. `openWaterBarbWho` ist Welt-Stand – das Handy hat keinen eigenen Lager-Stand, es bekommt ihn vom Weltrechner.
     Getestet: `saison_anfang_test` (neu).
 - **5.10. Verstärkung an Bündnis-Mitglieder ging am Handy nicht (Fehler):** Seit „fremde Werte erst nach dem Spähen“ kennt das
     Handy von anderen nur die Burg-Stufe – `verstStufe` war dort 0: kein Knopf „Verstärkung“ und „Die Botschaft von … ist voll“.

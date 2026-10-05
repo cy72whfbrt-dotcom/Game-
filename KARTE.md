@@ -1919,15 +1919,15 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `S.scoped` → Game/baukunst/02-buehne-grundbasis.js:101
 - `S.thumb` → Game/baukunst/02-buehne-grundbasis.js:107
 - `saison_anhalten` → Game/server/07-welt-puls.php:21
-- `saisonAnfang` → Game/spiel/09f-saison.js:116
+- `saisonAnfang` → Game/spiel/09f-saison.js:119
 - `saisonAnkuendigen` → Game/spiel/09f-saison.js:46
 - `saisonBaldText` → Game/spiel/09f-saison.js:45
-- `saisonChip` → Game/spiel/09f-saison.js:117
+- `saisonChip` → Game/spiel/09f-saison.js:120
 - `saisonEnde` → Game/spiel/09f-saison.js:21
 - `saisonJetzt` → Game/spiel/09f-saison.js:26
-- `saisonKarte` → Game/spiel/09f-saison.js:121
+- `saisonKarte` → Game/spiel/09f-saison.js:124
 - `saisonLaden` → Game/spiel/09f-saison.js:18
-- `saisonNachholen` → Game/spiel/09f-saison.js:144
+- `saisonNachholen` → Game/spiel/09f-saison.js:147
 - `saisonNeu` → Game/spiel/09f-saison.js:55
 - `saisonNr` → Game/welt.js:275
 - `saisonSpeichern` → Game/spiel/09f-saison.js:19
@@ -1937,7 +1937,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `saisonTitelGeben` → Game/spiel/05a-aussehen-profil.js:22
 - `saisonTop` → Game/spiel/09f-saison.js:50
 - `saisonWelt` → Game/spiel/09f-saison.js:75
-- `saisonWeltZurueck` → Game/spiel/09f-saison.js:156
+- `saisonWeltZurueck` → Game/spiel/09f-saison.js:159
 - `salvageItem` → Game/spiel/02a-shop-stufen.js:142
 - `salvageItems` → Game/spiel/02a-shop-stufen.js:155
 - `sammelTempo` → Game/aufbau.js:212
@@ -4447,11 +4447,11 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `saisonTop` :50 — die besten 10 nach Macht (wie die Rangliste) → [[wer, Macht]]
 - `saisonNeu` :55
 - `saisonWelt` :75 — alles Weltliche zurück, die Hauptstädte auf neue Plätze
-- `saisonAnfang` :116 — ---- was man sieht: der Countdown (Leiste unter dem HUD in den letzten 3 Tagen,…
-- `saisonChip` :117
-- `saisonKarte` :121
-- `saisonNachholen` :144 — (Handy) Rückfall: die Welt ist in einer neueren Saison als dein Spielstand, abe…
-- `saisonWeltZurueck` :156 — (Handy) die Welt ist wieder in einer älteren Saison als dein Spielstand (Sicher…
+- `saisonAnfang` :119 — ---- was man sieht: der Countdown (Leiste unter dem HUD in den letzten 3 Tagen,…
+- `saisonChip` :120
+- `saisonKarte` :124
+- `saisonNachholen` :147 — (Handy) Rückfall: die Welt ist in einer neueren Saison als dein Spielstand, abe…
+- `saisonWeltZurueck` :159 — (Handy) die Welt ist wieder in einer älteren Saison als dein Spielstand (Sicher…
 
 ### Game/spiel/10a-inselfenster-vorschau.js — Fenster-Start, Insel-Fenster: Inhalt, Angriffs- und Sende-Vorschau, Truppen-Reg…
 - `islandTitle` :23 — Renders whichever screen (menu or the upgrade preview) is currently active - ne…

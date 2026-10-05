@@ -80,6 +80,9 @@ function saisonWelt(now) {                            // alles Weltliche zurück
     fieldState = {}; fieldMarches = []; barbMarches = []; armies = []; armyJoins = []; armyRaids = [];
     if (evState.inv && Array.isArray(evState.inv.armies)) evState.inv.armies = [];
     if (typeof bundSaisonNeu === 'function') bundSaisonNeu();
+    // Barbaren-Lager: der Fortschritt fängt für alle wieder bei Stufe 1 an (Alexander 5.10.), die alten Lager weg – neue entstehen gleich
+    // (die Zähler von heute bleiben; barbWho ist Welt-Stand – das Handy bekommt ihn vom Weltrechner)
+    for (const w in barbWho) barbWho[w].b = 0; barbState.camps = []; barbState.next = 0;
     // die Karte: jede Basis wieder neutral, mit ihrer erzeugten Besatzung und Stufe
     ownedIslands.clear(); for (const w in botOwnedIslands) botOwnedIslands[w].clear();
     islandLevels = {}; for (const isl of islands) if (isl.neutralLevel > 1) islandLevels[isl.id] = isl.neutralLevel;
