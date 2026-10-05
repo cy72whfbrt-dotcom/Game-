@@ -17,11 +17,14 @@ export OW_FORTSCHRITT="$A/FORTSCHRITT"
 echo "Fortschritt: $A/FORTSCHRITT · Ergebnis am Ende in $A/FERTIG"
 fertig() { echo "$1 $2" > "$A/FERTIG"; echo "$2"; echo "Ergebnis: $A/FERTIG"; exit "$1"; }
 werkzeuge/spiel_bauen.sh >/dev/null || fertig 1 "FEHLER: spiel.js lässt sich nicht zusammensetzen"   # einmal vorher – danach ändert sich nichts mehr
+# alte Marke GRUPPEN_LAUFEN weg – aber nur, wenn kein anderer Server-Lauf in $A die Sperre hält (sonst gehört sie ihm)
+( flock -n 9 && rm -f "$A/GRUPPEN_LAUFEN" ) 9>>"$A/.server.lock"
 T=$(mktemp -d); T0=$SECONDS
 tests/server_tests.sh "$A" > "$T/mit.log" 2>&1 8>&- & P2=$!   # (8>&-: Kinder erben die Sperre nicht)
-# warten, bis alle Server-Gruppen laufen (server_tests.sh legt GRUPPEN_LAUFEN an) – oder sie schon vorbei ist
-until [ -f "$A/GRUPPEN_LAUFEN" ] || ! kill -0 $P2 2>/dev/null || [ $((SECONDS - T0)) -gt 600 ]; do sleep 2; done
-[ -f "$A/GRUPPEN_LAUFEN" ] && sleep 30
+# warten, bis alle Server-Gruppen UNSERES Laufs laufen (Sperre bei P2 laut .server.lock.info + GRUPPEN_LAUFEN) – oder er vorbei ist
+gruppen_laufen() { grep -q "^pid $P2 " "$A/.server.lock.info" 2>/dev/null && [ -f "$A/GRUPPEN_LAUFEN" ]; }
+until gruppen_laufen || ! kill -0 $P2 2>/dev/null || [ $((SECONDS - T0)) -gt 600 ]; do sleep 2; done
+gruppen_laufen && sleep 30
 OW_SLOTS=2 nice -n 10 tests/alle_tests.sh > "$T/ohne.log" 2>&1 8>&- & P1=$!
 wait $P1; R1=$?; wait $P2; R2=$?
 { echo "===== MIT SERVER"; cat "$T/mit.log"; echo "===== OHNE SERVER"; cat "$T/ohne.log"; } | tee "$A/komplett.log"; rm -rf "$T"

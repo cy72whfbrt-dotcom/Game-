@@ -416,6 +416,10 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   `# vor_commit: ok`). Neu **`werkzeuge/nach_hochladen.sh [zeitpunkt]`** (nach jedem Hochladen, nur lesend, Zugang über
   `OFFICE_USER`/`OFFICE_PASS`): Weltrechner neu gestartet und lebt, keine neuen FEHLER im Log, Speicher < 600 MB,
   pulseFehler/fehlerProMinute 0, Startseite 200 → „LIVE OK“ oder Fehlerliste.
+- **5.10. `komplett.sh`: Browser-Reihe startete zu früh (Fund Endprüfer, nur Werkzeug):** eine liegengebliebene alte
+  `GRUPPEN_LAUFEN` im Arbeitsordner galt als „Server-Gruppen laufen“ (`server_tests.sh` löscht sie erst nach dem Holen der
+  Sperre). Jetzt löscht `komplett.sh` sie vor dem Start, aber nur wenn kein anderer Lauf `.server.lock` hält, und wartet,
+  bis `.server.lock.info` den EIGENEN Server-Lauf (`pid <P2>`) nennt UND `GRUPPEN_LAUFEN` da ist.
 - **4.10. Aufräumen:** unbenutzte CSS-Reste raus, wichtige Tests ins Projekt (`tests/browser/`, Start mit `tests/alle_tests.sh`).
 - **4.10. Server-Tests ins Projekt:** `tests/server/` + `tests/server_tests.sh <arbeitsordner>` (lokaler PHP-Server,
   MariaDB, Weltrechner): Absturz/Zurückspielen, Admin, Nebel, Bündnis-Kiste, Verstärkung, Klick-Test – alle grün.
