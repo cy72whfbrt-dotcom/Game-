@@ -579,7 +579,7 @@ body.has-panel .mapctl{display:none}
   font:600 var(--fs-11)/1 var(--font-ui);color:var(--tx-2);white-space:nowrap}
 .chip .icon{width:13px;height:13px}
 .chip--scouted{color:var(--gold-200);border-color:var(--line-2);height:18px;padding:0 6px;font-size:var(--fs-10);letter-spacing:.06em;text-transform:uppercase}
-.chip--rar{height:auto;min-height:24px;max-width:100%;white-space:normal;line-height:1.25;padding-block:3px;--rc:var(--r-grau);color:color-mix(in srgb,var(--rc) 55%,#fff);border-color:color-mix(in srgb,var(--rc) 55%,transparent);background:color-mix(in srgb,var(--rc) 12%,transparent)}
+.chip--rar{height:auto;min-height:24px;max-width:100%;white-space:normal;line-height:1.4;padding-block:5px;--rc:var(--r-grau);color:color-mix(in srgb,var(--rc) 55%,#fff);border-color:color-mix(in srgb,var(--rc) 55%,transparent);background:color-mix(in srgb,var(--rc) 12%,transparent)}
 .pill{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 8px;border-radius:var(--r-pill);border:1px solid var(--line-2);background:rgba(0,0,0,.25);
   font:600 var(--fs-12)/1 var(--font-ui);color:var(--tx-1);font-variant-numeric:tabular-nums;white-space:nowrap}
 .pill small{font:500 var(--fs-11)/1 var(--font-ui);color:var(--tx-3)}

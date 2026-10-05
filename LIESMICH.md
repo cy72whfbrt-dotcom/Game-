@@ -217,6 +217,12 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Handy-Nachrichten dieses Geräts aus (Server: `ow_push.sitzung`, Handy: Abo + sw.js weg). Neuer Test rally_schild_test.
   Fund auf der Karte: „nur online“ hilft nicht (ein Befehl kommt immer über den Puls – wer schickt, ist online); darum
   zusätzlich höchstens 300 Truppen-Funde am Tag (Alexanders Ja; ~7 Std. ohne Pause, gemerkt in der Welt `wache.fund`).
+- **5.10. Stadt/Helden/Gems (Alexander #5, #6, Spieltest Handy):** Alle Gems-Käufe ab 500 (Rahmen, Titel, Ringe, Marsch-Skins,
+  Heldenkisten, Bau beschleunigen) und Helden-Fähigkeiten zurücksetzen erst nach „Wirklich? N Gems“ (zweiter Tipp nach >450 ms,
+  binnen 4 s; `gemsWirklich`). Übrige Splitter eines Helden mit 5 Sternen kann man im Helden-Fenster 1:1 in Splitter für einen
+  anderen Helden tauschen (`heroDoSwap`, keine Gems). Krankenhaus „Nächste Stufe“ zählt die Forschung mit. Bauzeiten kompakt
+  („1 T“ statt „1 T 0 h 0 m 0 s“). Rohstoff-Liste oben geht bei jedem Tipp woanders zu. Heldenhalle ungebaut: keine Reiter. Handy:
+  Stadt-Namen bleiben im Bild, Profil-Reiter und Kisten-Zeile ganz. Test `tests/browser/handy_stadt_test.js`.
 - **5.10. mittags (Alexanders Ja zu allem):** Kampf: Treffen zwei Bündnis-Angriffe zusammen, zeigt der Bericht bei jedem
   seine eigene Stärke und seinen Helden; Gold für getötete Gegner bekommt jeder selbst (für den Teil, den seine Truppen töten,
   mit seinem Gold-Satz – Alexander: „A“), nur die Hauptstadt-Beute wird nach Truppen geteilt; ein Held im gemeinsamen Kampf
