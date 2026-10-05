@@ -97,6 +97,16 @@ if (window.WELT) {
         bundMelden(who, was + ' ist nicht losgegangen – ' + (grund ? grund + '. Deine Truppen bleiben, wo sie sind.' : AUF && !AUF.marschOk(who, grp, src) ? AUF.marschVoll(who) : 'kein Weg frei (Tor zu, Maut zu teuer, Friedensschild oder zu wenig Truppen). Deine Truppen bleiben, wo sie sind.'));
     }
     const marschVon = (who, key) => pendingAttacks.find(x => x.attackerBotId === who && marchKeyOf(x) === key) || pendingSends.find(x => x.senderBotId === who && marchKeyOf(x) === key) || feldBarbMarsch(who, key);
+    // Sein Späher (Kennung vom Handy) wie ein Marsch: hb.sb [Ziel, an, Kennung, los] (Bericht), hb.sp [Heim, x, y, los, an, Weg, Kennung] (Erkundung).
+    // setz(): die neue Zeit zurückschreiben (Schneller), weg(): umkehren – er bringt keinen Bericht und deckt nichts mehr auf (Zurück)
+    function spaeherVon(who, key) {
+        const hb = hbDa(who); if (!hb) return null;
+        const sb = (hb.sb || []).find(x => x[2] === key), l = sb ? 'sb' : 'sp', e = sb || (hb.sp || []).find(x => x[6] === key); if (!e) return null;
+        const an = sb ? 1 : 4;
+        return { startedAt: nn(e[3]) || Date.now(), resolveAt: e[an],
+            setz() { e[an] = Math.round(this.resolveAt); e[3] = Math.round(this.startedAt); saveBotState(); },
+            weg() { hb[l] = hb[l].filter(x => x !== e); saveBotState(); } };
+    }
 
     // ===== Schummel-Schutz (nur beim Weltrechner) =====
     // Münzen, Gems und Stufe eines Spielers rechnet noch sein eigenes Handy. Ein Schummler könnte also Befehle fälschen
@@ -1013,7 +1023,8 @@ if (window.WELT) {
         },
         zurueck(who, b) {                             // umkehren: wie bei dir, nur als "Marsch zurück" dieses Spielers
             if (!kennungOk(b.key)) return;
-            const m = marschVon(who, b.key); if (!m || m.fightEndsAt || m.rally || m.back) return;   // (eine Rally gehört allen, die mitmachen; wer schon heimgeht, kehrt nicht nochmal um)
+            const m = marschVon(who, b.key); if (!m) { const sp = spaeherVon(who, b.key); if (sp) sp.weg(); return; }   // (sein Späher kehrt um)
+            if (m.fightEndsAt || m.rally || m.back) return;   // (eine Rally gehört allen, die mitmachen; wer schon heimgeht, kehrt nicht nochmal um)
             if (!pendingAttacks.includes(m) && !pendingSends.includes(m)) { marschUmkehren(m, Date.now()); requestRender(); return; }   // Lager, Boss, Drache, Invasion, Sammler
             const now = Date.now(), fromId = m.sourceId ?? m.fromId, toId = m.targetId ?? m.toId, troops = m.rawTroops ?? m.troops;
             if (pendingAttacks.includes(m)) heroWutZurueck(who, m.hx);   // (nicht gekämpft: die Wut bleibt)
@@ -1026,11 +1037,11 @@ if (window.WELT) {
             if (!Array.isArray(b.keys)) return;
             if (zuOft(wm(who), 'schneller', 60, 60000)) { warnen(who, 'schneller', 'Beschleunigen über 60-mal pro Minute – der Rest verfällt.'); return; }
             const now = Date.now(), keys = [...new Set(b.keys.filter(kennungOk))].slice(0, 200), ms = [];
-            for (const key of keys) { const m = marschVon(who, key); if (!m || m.fightEndsAt || m.resolveAt - now < 1500) continue; ms.push(m); }
+            for (const key of keys) { const m = marschVon(who, key) || spaeherVon(who, key); if (!m || m.fightEndsAt || m.resolveAt - now < 1500) continue; ms.push(m); }   // (auch seine Späher)
             const kosten = ms.reduce((a, m) => a + speedUpCost(m), 0), hb = hbDa(who);
             if (hb && kosten > 0 && !b._nach && !schonBezahlt(wacheSehen(who), b, true) && !hbZahlen(who, hb, wacheSehen(who), { g: kosten })) { warnen(who, 'gems', 'Beschleunigen für ' + kosten + ' Gems – so viele kann er nicht haben. Abgelehnt.', kosten); return; }
             for (const m of ms) { const rem = m.resolveAt - now;
-                const pr = Math.max(0, Math.min(.99, (now - m.startedAt) / Math.max(1, m.resolveAt - m.startedAt))); m.resolveAt = now + rem / 2; m.startedAt = m.resolveAt - (rem / 2) / (1 - pr); }
+                const pr = Math.max(0, Math.min(.99, (now - m.startedAt) / Math.max(1, m.resolveAt - m.startedAt))); m.resolveAt = now + rem / 2; m.startedAt = m.resolveAt - (rem / 2) / (1 - pr); if (m.setz) m.setz(); }
             saveProgression(); feldBarbSpeichern(); if (ms.length) befehlBezahlt(b);
         },
         spaehen(who, b) {                             // 3B: Erkundungs-Späher – der Weltrechner deckt seinen Nebel (auf dem Server) mit auf
@@ -1043,13 +1054,13 @@ if (window.WELT) {
                 let h = null, hd = Infinity; for (const id of botOwnedIslands[who] || []) { const i = islandById[id]; if (!i) continue; const d = Math.hypot(i.x - t.x, i.y - t.y); if (d < hd) { hd = d; h = i; } }
                 if (!h || !spaeherWeg(h.landmassId, t.landmassId, who)) return nein();
                 if (!nbKennt(who, hb, t.landmassId)) { warnen(who, 'spaehen', 'Späher zu einer Basis, die er nicht kennen kann – abgelehnt.'); return nein(); }
-                const now = Date.now(); hb.sb = (hb.sb || []).slice(-20); hb.sb.push([t.id, now + scoutSecs(h, t, who) * 1000]); saveBotState(); return;
+                const now = Date.now(); hb.sb = (hb.sb || []).slice(-20); hb.sb.push([t.id, now + scoutSecs(h, t, who) * 1000, kennungOk(b.key) ? b.key : 0, now]); saveBotState(); return;   // (Kennung: Zurück/Schneller vom Handy)
             }
             if (!punktOk(pt)) { warnen(who, 'kaputt', 'Späher mit kaputtem Ziel – abgelehnt.'); return; }
             let home = null, bd = Infinity; for (const id of botOwnedIslands[who] || []) { const i = islandById[id]; if (!i) continue; const d = Math.hypot(i.x - t.x, i.y - t.y); if (d < bd) { bd = d; home = i; } }
             if (!home || !spaeherWeg(home.landmassId, t.landmassId, who)) return;                 // (wie auf dem Handy: von der nächsten eigenen Basis, nicht durch zu Tore)
             if (!nbKennt(who, hb, t.landmassId)) { warnen(who, 'spaehen', 'Späher in ein Gebiet, das er nicht kennen kann – abgelehnt.'); return; }
-            const now = Date.now(); hb.sp = (hb.sp || []).slice(-40); hb.sp.push([home.id, Math.round(pt.x), Math.round(pt.y), now, now + scoutSecs(home, t, who) * 1000, 0]); saveBotState();
+            const now = Date.now(); hb.sp = (hb.sp || []).slice(-40); hb.sp.push([home.id, Math.round(pt.x), Math.round(pt.y), now, now + scoutSecs(home, t, who) * 1000, 0, kennungOk(b.key) ? b.key : 0]); saveBotState();
         },
         ausbau(who, b) {                              // die Münzen zahlt er selbst – der Weltrechner prüft, ob er sie haben kann
             const m = wm(who);

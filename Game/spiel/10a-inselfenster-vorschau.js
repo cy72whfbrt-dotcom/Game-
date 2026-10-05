@@ -215,7 +215,11 @@ function renderAttackPreview(island, scouted) {
         icon('hourglass') + '<span><span class="xs-hide">Marsch ca. </span><span class="num" id="previewMarch">' + fmtClock(travelDurationSeconds(source, island)) + '</span></span>';
     if (popupStats.dataset.preview !== key || !document.getElementById('attackTroopsSlider')) {
         popupStats.dataset.preview = key;
+        const quellen = angriffQuellen(island).slice(0, 40); if (!quellen.includes(previewSourceId)) quellen.unshift(previewSourceId);   // (die gewählte steht immer drin)
         popupStats.innerHTML =
+            '<label class="field from-field"><span class="field-l">Von Basis</span><select id="attackFromSel" class="from-sel" aria-label="Von Basis">' +
+                quellen.map(id => '<option value="' + id + '"' + (id === previewSourceId ? ' selected' : '') + '>' + escapeHtml(islandTitle(islandById[id])) + ' · ' + fmtCompact(islandTroops[id] || 0) +
+                    ' · ' + fmtClock(travelDurationSeconds(islandById[id], island)) + (scouted && angriffReicht(id, island) ? ' · reicht' : '') + '</option>').join('') + '</select></label>' +
             '<div class="versus">' +
                 '<div class="force force--me"><span class="stat-l">' + icon('troops') + 'Angriff</span><b id="previewMyTroops"></b><small>' +
                     (atkPct > 0 ? '<span id="previewRawTroops"></span> + <span id="previewAtkBonus"></span> Schwert (+' + fmtNum(atkPct) + ' %)<span id="previewHeroBonus"></span><span id="previewTitleBonus"></span>' : 'aus ' + islandTitle(source) + '<span id="previewHeroBonus"></span><span id="previewTitleBonus"></span>') + '</small></div>' +
@@ -230,6 +234,10 @@ function renderAttackPreview(island, scouted) {
                 '<div class="seg" data-preview="quick"><button type="button" data-f=".25">25 %</button><button type="button" data-f=".5">50 %</button><button type="button" data-f=".75">75 %</button><button type="button" data-f="1">Alle</button></div></div>' +
             (heroSegHtml('data-hero', previewHero) ? '<div class="field"><div class="field-top"><span class="field-l">Held</span><span class="val" data-preview="herofx"></span></div><div class="seg hero-seg" data-preview="hero">' +
                 heroSegHtml('data-hero', previewHero) + '</div><div class="seg hero-seg hero-seg2" data-preview="hero2"></div></div>' : '');
+        document.getElementById('attackFromSel').addEventListener('change', e => {   // andere Startbasis gewählt
+            const id = +e.target.value; if (!ownedIslands.has(id)) return;
+            previewSourceId = id; previewFraction = 1; previewAttackTroops = null; renderPopup();
+        });
         const slider = document.getElementById('attackTroopsSlider');
         slider.addEventListener('input', () => {
             const mx = sourceTroops();

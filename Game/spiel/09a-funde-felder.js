@@ -286,7 +286,7 @@ function fieldAt(sx, sy) { const z = mapState.zoom; if (z < .004) return null; r
 function drawResFields(now, wallNow) {
     const z = mapState.zoom; if (z < .004) return;
     for (const m of fieldMarches) if (m.who === 'player') { const f = fieldById[m.fieldId], home = islandById[m.homeId]; if (!f || !home) continue;
-        m.back ? drawMarchLine('send', m.vx !== undefined ? { x: m.vx, y: m.vy, landmassId: m.vlm ?? f.landmassId } : f, home, m.startedAt, m.resolveAt, wallNow) : drawMarchLine('attack', home, f, m.startedAt, m.resolveAt, wallNow); }
+        m.back ? drawMarchLine('send', m.vx !== undefined ? { x: m.vx, y: m.vy, landmassId: m.vlm ?? f.landmassId } : f, home, m.startedAt, m.resolveAt, wallNow, null, marchKeyOf(m)) : drawMarchLine('attack', home, f, m.startedAt, m.resolveAt, wallNow, null, marchKeyOf(m)); }   // (antippen: Knöpfe wie jeder Marsch)
     setScreen(ctx);
     const k = Math.max(.6, Math.min(2.2, z / .012));
     for (const f of resFields) {

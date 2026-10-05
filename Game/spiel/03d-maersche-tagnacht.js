@@ -66,7 +66,7 @@ const CHIP_SLOTS = [0, -20, 20, -40, 40, -60, 60].flatMap(dy => [[1, dy], [-1, d
           [0, -20, 20, -40, 40].flatMap(dy => [[2, dy], [-2, dy]]), [0, -20, 20, -40, 40].flatMap(dy => [[3, dy], [-3, dy]]));
 let chipDigit = null;                             // the widest digit: chips reserve the width of their widest label
 let chipSlotOf = new Map();                       // cluster key → slot used last frame (a chip only moves when that slot gets blocked)
-// Tap your own marching column: two small buttons pop up beside it - Zurück and Schneller (gems).
+// Tap your own marching column (Späher, Lager, Sammler too): small buttons pop up beside it - on the way Zurück + Schneller (gems), heim nur Schneller.
 var selMarch = null, marchBtnRects = [];
 function drawMarchButtons() {
   marchBtnRects = [];
@@ -74,9 +74,9 @@ function drawMarchButtons() {
   const m = marchTokens.find(t => t.mk === selMarch);
   if (!m || m.x === undefined) { selMarch = null; return; }
   setScreen(ctx);
-  const list = [pendingAttacks, pendingSends, pendingRetreats].find(l => l.some(x => marchKeyOf(x) === selMarch)), mm = list && list.find(x => marchKeyOf(x) === selMarch);
+  const list = [pendingAttacks, pendingSends, pendingRetreats, pendingScouts, eigeneFeldBarb()].find(l => l.some(x => marchKeyOf(x) === selMarch)), mm = list && list.find(x => marchKeyOf(x) === selMarch);
   if (!mm) { selMarch = null; return; }
-  const btns = (m.recall ? [{ act: 'recall', glyph: 'recall', label: 'Zurück' }] : []).concat([{ act: 'speed', glyph: 'hourglass', label: (gemsArmed('marsch:' + selMarch) ? 'Wirklich? ' : 'Schneller · ') + speedUpCost(mm) }]);
+  const btns = (list !== pendingRetreats && !mm.back ? [{ act: 'recall', glyph: 'recall', label: 'Zurück' }] : []).concat([{ act: 'speed', glyph: 'hourglass', label: (gemsArmed('marsch:' + selMarch) ? 'Wirklich? ' : 'Schneller · ') + speedUpCost(mm) }]);
   ctx.font = '700 12px Inter, system-ui, sans-serif';
   const ws = btns.map(b => ctx.measureText(b.label).width + 34 + (b.act === 'speed' ? 14 : 0)), total = ws.reduce((a, b) => a + b, 0) + 8 * (btns.length - 1);
   let x = Math.max(8, Math.min(viewW - total - 8, m.x - total / 2)); const y = Math.max(8, m.y - 74);
@@ -254,7 +254,7 @@ function drawMap() {
       if (!bundFreund(s.senderBotId, 'player') || (!s.back && islandOwnerOf(s.toId) !== 'player')) continue;   // (auch ihre Rückwege nach Hause – z. B. nach einer gemeinsamen Rally)
       drawMarchLine(s.back ? 'retreat' : 'send', islandById[s.fromId], islandById[s.toId], s.startedAt, s.resolveAt, wallNow, null, null, s.senderBotId); continue; }
     drawMarchLine('send', islandById[s.fromId], islandById[s.toId], s.startedAt, s.resolveAt, wallNow, null, marchKeyOf(s)); }
-  for (const s of pendingScouts) drawMarchLine('scout', islandById[s.sourceId], islandById[s.targetId], s.startedAt, s.resolveAt, wallNow);
+  for (const s of pendingScouts) drawMarchLine('scout', islandById[s.sourceId], islandById[s.targetId], s.startedAt, s.resolveAt, wallNow, null, marchKeyOf(s));   // (antippen: Zurück/Schneller wie jeder Marsch)
   for (const s of botScoutsOnMap) drawMarchLine('enemyScout', islandById[s.sourceId], islandById[s.targetId], s.startedAt, s.resolveAt, wallNow);   // a bot's scout coming to look at you
   for (const r of pendingRetreats) drawMarchLine('retreat', islandById[r.fromId], islandById[r.toId], r.startedAt, r.resolveAt, wallNow, r.path, marchKeyOf(r));   // 6
   setScreen(ctx);
