@@ -1223,6 +1223,7 @@ if (window.WELT) {
     const ROHK = ['h', 's', 'e'];
     function rohWacheProfil(who, m, p, P, M, now) {
         if (!p || !p.res || typeof p.res !== 'object') return;
+        m.rDeckel = null; m.rDeckelP = p;              // (die Grenze gilt für genau dieses Profil – auch wenn es nochmal angewendet wird)
         const hb = hbDa(who);
         if (!m.rk) { m.rk = {}; for (const k of ROHK) { m.rk[k] = konto(); m.rk[k].u = nn(p.res[k]); } return; }   // zum ersten Mal (und das Hauptbuch weiß noch nichts): geeicht
         while (m.rEin.length && now - m.rEin[0].t > 3600000) m.rEin.shift();
@@ -1723,7 +1724,7 @@ if (window.WELT) {
         if (b.zProfil && p && Object.keys(p).length) { hbAusProfil(who, hb, p, now); delete b.zProfil; if (alt) delete alt.zProfil; }   // (nach dem Zurückspielen, einmal)
         const m = wacheSehen(who);
         hbPruefen(who, hb, p, m, now, b.schildAlt);
-        if (m.rDeckel) { if (b.res) for (const k in m.rDeckel) if (nn(b.res[k]) > m.rDeckel[k]) b.res[k] = m.rDeckel[k]; m.rDeckel = null; }   // Rohstoff-Sprung: die Welt bekommt nur das Mögliche
+        if (m.rDeckel && m.rDeckelP === p && b.res) for (const k in m.rDeckel) if (nn(b.res[k]) > m.rDeckel[k]) b.res[k] = m.rDeckel[k];   // Rohstoff-Sprung: die Welt bekommt nur das Mögliche – auch wenn dasselbe Profil nach 10 s nochmal angewendet wird (wartet etwas im Hauptbuch; vorher kam das erfundene Holz dann doch in die Welt und schaukelte sich hoch)
         hbSchreiben(who, hb, b, p, alt);
         if (m.init && m.gGeeicht && now - (m.hbMerkT || 0) > 60000) hbKontenMerken(hb, m, now);
         const d = b.wache; if (m.init && m.geeicht && d) d.u = Math.round(m.c.u);

@@ -14,7 +14,7 @@
 #   armee_test    Nebel: fremde Armeen/Felder im Nebel ohne Zahlen
 #   kiste_test    Bündnis-Kiste: Geschenk nur bei echter Heldenkiste
 #   verst_test    Verstärkung über Server + Weltrechner (hin, sichtbar nur fürs Bündnis, zurück)
-#   schummel_test verändertes Handy: Münzen/Holz erfinden, Fähigkeiten ohne Gems, Gebäude ohne Bauzeit – nichts davon in der Welt
+#   schummel_test verändertes Handy: Münzen/Holz erfinden, Gebäude ohne Bauzeit – nichts davon in der Welt
 #   klick_test    neuer Spieler: alle Fenster/Knöpfe, Angriff, Bau, neu laden, keine Schummel-Hinweise
 # Einzelne Tests: tests/server_tests.sh <arbeitsordner> kiste_test armee_test
 cd "$(dirname "$0")/.." || exit 1
