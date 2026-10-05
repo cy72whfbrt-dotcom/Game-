@@ -217,10 +217,10 @@
         const gear = {};
         for (const slot of ['weapon', 'armor', 'shield', 'boots']) { const it = eq[slot] && inv[eq[slot]]; gear[slot] = it ? { r: it.rarity, lvl: it.level, st: it.stars || 0 } : null; }
         let stW = 0; for (const k in inv) { const st = Math.max(0, Math.min(5, (inv[k] && inv[k].stars) | 0)); stW += 10 * st * (st + 1); }   // Gems in allen Sternen (angelegt oder nicht): je Stern 20·(n+1) wie starGemCost
-        const thr = P(d.openWaterThrone) || {};
+        const thr = P(d.openWaterThrone) || {}, bl = (city.builds || []).filter(b => b && b.id).slice(0, 2);
         return {
             name: d.openWaterPlayerName || OW.name, lvl: parseInt(d.openWaterLevel, 10) || 1,
-            skills: P(d.openWaterSkills) || {}, gear, stW, city: { levels: city.levels || {}, bau: (city.builds || []).map(b => b && b.id).filter(Boolean).slice(0, 2), b2: !!city.builder2, foLauf: city.foRun ? city.foRun.id : null }, wounded: city.wounded || 0,
+            skills: P(d.openWaterSkills) || {}, gear, stW, city: { levels: city.levels || {}, bau: bl.map(b => b.id), bauBis: bl.map(b => +b.endsAt || 0), b2: !!city.builder2, foLauf: city.foRun ? city.foRun.id : null, foBis: city.foRun ? +city.foRun.endsAt || 0 : 0 }, wounded: city.wounded || 0,   // (bauBis/foBis: Push „Bau fertig“ / „Forschung fertig“, wenn das Handy zu ist)
             hs: P(d.openWaterHeroes2) || {}, shieldUntil: parseFloat(d.openWaterShield) || 0,
             fo: city.fo || {}, res: P(d.openWaterRes) || null,   // Paket D: Forschung, Rohstoffe (Burg-Stufe steht in city.levels.keep)
             neuBis: typeof neulingBis === 'function' ? neulingBis() : 0,
