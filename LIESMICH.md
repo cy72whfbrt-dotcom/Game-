@@ -499,6 +499,12 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   zahlen die Maut neu verteilt und marschieren. Kann der Anführer selbst nicht zahlen, fällt die Rally wie bisher ganz aus
   (`bundRallyLos`, buendnis/02; wirft dabei etwas, geht die Rally nicht los und alle Truppen genau einmal heim). Test
   `rally_maut_test` (Fall 2, 2b, 6; der Test schaltet die Mitspieler-Runde ab – sonst trat Z zufällig dem Test-Bündnis bei).
+- **5./6.10. Nacht – Wirtschaft 2 (Paket econ2, 11b A2), NICHT hochgeladen:** Kosten und Gegner × `WIRTSCHAFT_KOSTEN` (1/1800,
+  Ertrag macht Paket econ1 × 1/3600 → alles etwa 2× langsamer): Basis-Aufwerten, Burg/Gebäude/Forschung (aufbau.js), Burg-Schutz,
+  Grundverteidigung, neutrale Basen/Tempel/Tore (Thron-Tore mind. 150.000 + 50.000), Barbaren, Drache/Tagesboss/Kriegsherr/
+  Invasion-Untergrenzen, Krankenhaus-Platz, Händler, Markt, Bündnis, Maut, Stufen-Belohnungen, Funde; EP je Krieger × 1.800.
+  Ausrüstungskiste 150 Edelsteine. Neue Forschungen Burg-Schutz+, Krankenhaus II, Marschtempo II (Labor 23–25). Test
+  `forschung_kosten_test` (neu), `server_test.php` (Profil kennt die neuen Forschungen).
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
@@ -723,7 +729,7 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
 **A. Wirtschaft „pro Stunde“ (wie Million Lords, eigene Werte erlaubt)**
 - Ertrag **3.600× langsamer**: was heute pro Sekunde kommt, kommt pro Stunde – Truppen **und** Gold.
 - Kosten/Gegner im gleichen Verhältnis kleiner (Burg, Forschung, neutrale Basen, Barbaren, Drache, Tagesboss …),
-  aber es darf **nie zu einfach** werden (lange spielen). **Ausnahme:** Start bleibt **100.000 Truppen** (neue Spieler
+  aber es darf **nie zu einfach** werden (lange spielen). → **gebaut (nicht hochgeladen)**, Einzelheiten und Tabelle unten (A2). **Ausnahme:** Start bleibt **100.000 Truppen** (neue Spieler
   und nach dem Reset), Gold-Start wie bisher (0).
 - Mitspieler **immer** genau wie echte Spieler.
 - Umstellung mit einem **Saison-Ende gleich beim Hochladen** (ohne 3-Tage-Countdown, als Test): Hauptstadt komplett
@@ -731,11 +737,49 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
 - Anzeige überall **pro Stunde** (Profil, Basis, Tempel) – Profil zeigt die Produktion aller Basen zusammen, nicht den
   Bestand. **Prüfen:** was im Profil steht, kommt genau so an (nicht mehr, nicht weniger), Tick-Länge
   (`productionTickMs`, Fähigkeit „Geschwindigkeit“) richtig eingerechnet.
-- Edelstein-Preise bleiben, **außer Kisten: 150 Edelsteine** (statt 30).
+- Edelstein-Preise bleiben, **außer Kisten: 150 Edelsteine** (statt 30). → **gebaut (nicht hochgeladen)**: geändert hat sich
+  nur die Ausrüstungskiste im Shop (`CRATE_GEM_COST` 30 → 150, auch der Knopf und „Eine Kiste kostet …“; Mitspieler zahlen
+  genauso). Heldenkisten (150/500/1.200), Thron-Shop-Kisten (Thron-Punkte) und die Händler-Kiste (Münzen) bleiben.
 - **Auch die Hauptstadt** (Alexander): ihre Produktion (Truppen, Gold, Holz/Stein/Eisen aus Holzfäller, Steinbruch,
   Eisenmine) und die Kosten in der Stadt (Burg, Gebäude, Labor) passend mit umstellen – Beispiel 2 Türme je 100/Std.
   → Profil 200/Std.; Macht = Bestand (Truppen + Verteidigung der Basen + Ausrüstung/Helden/Fähigkeiten/Stadt), nicht die Produktion.
 - Genaue Zahlen liefert der Sucher „Wirtschaft“; vor dem Bauen hier eintragen.
+
+**A2. Kosten und Gegner kleiner (Paket econ2) – gebaut, NICHT hochgeladen**
+- Ein Faktor für alles: `WIRTSCHAFT_KOSTEN = 1/1800` (spiel/01a), Hilfsfunktion `wirtK(n, min)` (spiel/01b: ganze Zahl, nie
+  unter 1). Der Ertrag ist 3.600× kleiner, Kosten und Gegner nur 1.800× → **alles etwa 2× langsamer als vorher**.
+- Kleiner (÷ 1.800): Basis aufwerten, Burg/Gebäude/Labor (Münzen, Holz, Stein, Eisen), Burg-Schutz (Stufe 1: 6 · 10: 556 ·
+  25: 55.556), Grundverteidigung jeder Basis, neutrale Basen/Tempel/Tore, Barbaren-Lager (Truppen + Beute), Krankenhaus-Platz,
+  Untergrenzen von Drache (1e7), Tagesboss (5e7), Kriegsherr (1e6), Invasion (5.000), Maut (mind. 100, höchstens 1 Mio.),
+  Bündnis gründen (17 Münzen), Mindestwerte von Thron-Shop, Pass, Kopfgeld, Bündnis-Geschenk, Funde, Verstärkungs-/Rally-Platz,
+  Stufen-Belohnungen (Stufe 30: 1.100 Truppen, 250 Münzen), Krieger-Woche (1 Punkt je 0,56 Besiegte), Truppen-Grenzen der
+  Mitspieler (Sammeln, Drache, Tagesboss, Bündnis-Hilfe/Rally). Händler-Preise und Markt-Limit: Faktor × Stunden-Produktion ×
+  2 (Kosten ÷ Ertrag), Mindestwert/Grenze ÷ 1.800. Markt-Mengen 10/100/1.000/10.000.
+- EP: ein besiegter Krieger zählt wie vorher 1.800 – Stufen kommen so schnell wie vorher (je Kampf höchstens ¼ Stufe).
+- Bleiben: Start 100.000 Truppen und 0 Gold; Bauzeiten (Burg 1–60 Tage); alle Edelstein-Preise außer der Kiste; die
+  Saison-Anfangs-Untergrenzen von Drache (1 Mio.) und Tagesboss (2 Mio.) – sie sind aus den Start-Truppen gerechnet, die bleiben.
+- **Nie zu einfach – Thron-Tore:** ÷ 1.800 hätten sie 28.000 + 5.600 – ein neuer Spieler nähme den Thron mit seinen Start-Truppen
+  am ersten Tag. Darum mindestens **150.000 Truppen + 50.000 Verteidigung** (`THRON_TOR_MIN`, spiel/01c). Alles andere ÷ 1.800.
+- **Neue Forschungen ab Labor 23** (C, gebaut): Burg-Schutz+ (+10/20/30 % Schutz, Wirtschaft), Krankenhaus II (+5/10/15 % ins
+  Krankenhaus, braucht Krankenhaus), Marschtempo II (+3/6/9 % Tempo, braucht Marschtempo) – Stufe 1–3 bei Labor 23/24/25
+  (`schritt: 1`), wirken über `AUF.burgSchutz/lazarettPlus/marschTempo` überall (du, Mitspieler, Weltrechner); Server-Profil
+  kennt sie (server/02), Mitspieler forschen sie zuletzt.
+- Spielbarkeit nachgerechnet (Stunden Produktion; Reiche: Anfang 10 Basen St. 5 + Hauptstadt, Mitte 30 × St. 30, spät 60 × St. 60;
+  Holz/Stein/Eisen aus den Stadt-Gebäuden der Burg-Stufe):
+
+  | Ziel | vorher | jetzt | Faktor |
+  |---|---|---|---|
+  | Erste Basis (Rand) **ohne** Start-Truppen, nur Hauptstadt St. 1 | 22 s | 12 Min. | 33× (Mindestwert 1 Krieger) – mit Start-Truppen: sofort, wie vorher |
+  | Basis Ring 2 (Ø 33.000 → 18), Reich „Anfang“ | 6 Min. | 11 Min. | 2× |
+  | Burg 5 (Kosten; Bauzeit 5 Tage bleibt) | 25 Std. | 48 Std. | 2× |
+  | Burg 10 (Kosten; Bauzeit 20 Tage bleibt) | 55 Std. | 112 Std. | 2× |
+  | Burg 25 (Kosten; Bauzeit 363 Tage bleibt) | 5.870 Std. | 11.815 Std. | 2× (Holz/Stein/Eisen bremsen mehr als die Bauzeit) |
+  | Forschung Angriff Stufe 5 (Reich „Mitte“) | 3,8 Std. | 7,3 Std. | 2× |
+  | Drache (Untergrenze 1e7 → 5.556), je Spieler von 4, Reich „Mitte“ | 5 Min. | 10 Min. | 2× (meist zählt das Leben aus der Stärke aller) |
+  | Tagesboss (Untergrenze 5e7 → 27.778), ein Spieler allein | 1,6 Std. | 3,2 Std. | 2× |
+  | Basis aufwerten 60 → 61 (eine Basis) | 1,2 Std. | 2,3 Std. | 2× |
+  | Basis aufwerten 1 → 2 (eine Basis) | 12 s | 6 Min. | 30× (mindestens 1 Münze) |
+  | Thron-Tor, Reich „Mitte“ | 1,9 Std. | 23 Std. | 12× (Absicht: nie mit der Start-Armee) |
 
 **B. Alexanders 3 Fehler** (Einzelheiten Abschnitt 11)
 1. Späher: hin Zurück + Schneller, heim Schneller; Zurück = sofort umkehren, kein Bericht; ab 500 Edelsteine „Wirklich?“.
@@ -752,7 +796,7 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
   entscheiden selbst.
 - Thron-Punkte (alle 3 Min.): Halter weiter **30**, **jeder** mit Verstärkung im Thron **15**.
 - Stadt-Bau und Forschung geben Pass-Punkte und zählen für Aufgaben (z. B. „Starte eine Forschung“).
-- Neue Forschungen ab Labor 23: **Krankenhaus II, Burg-Schutz+, Marschtempo II**.
+- Neue Forschungen ab Labor 23: **Krankenhaus II, Burg-Schutz+, Marschtempo II**. → **gebaut (nicht hochgeladen)**, siehe A2.
 - Neue Saison startet sicher **sonntags 18 Uhr deutscher Zeit**.
 - Schummel-Verdacht: nur Nachricht an Alexander, kein automatisches Bremsen.
 - **Nein:** Belohnung je Burg-Stufe · Saison-Preise für Platz 11–50 · Bau-Beschleuniger beim Händler · Dienst von außen.

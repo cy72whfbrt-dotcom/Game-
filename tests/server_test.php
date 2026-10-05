@@ -46,6 +46,8 @@ pruefe('Schmiede höchstens 5', $p['city']['levels']['forge'], 5);
 pruefe('unbekanntes Gebäude weg', isset($p['city']['levels']['gibtsnicht']), false);
 pruefe('Held: Stufe höchstens 20', $p['hs']['h1']['q'], 20);
 pruefe('Held: Fähigkeit höchstens 5', $p['hs']['h1']['sk'][0], 5);
+$p = json_decode(profil_bereinigen(json_encode(['lvl' => 50, 'fo' => ['m_laz2' => 9, 'x_tempo2' => 2, 'w_schutz' => 3, 'gibtsnicht' => 4]])), true);
+pruefe('Forschung ab Labor 23 bleibt im Profil (höchstens 3)', [$p['fo']['m_laz2'], $p['fo']['x_tempo2'], $p['fo']['w_schutz'], isset($p['fo']['gibtsnicht'])], [3, 2, 3, false]);
 pruefe('Kaputtes Profil', profil_bereinigen('kein json'), null);
 
 // --- Flicken: hin und zurück, leere {} bleiben {}
