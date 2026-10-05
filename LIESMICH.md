@@ -770,6 +770,11 @@ Alles für heute Nacht kommt hier rein. Erst besprechen (Fragen an Alexander), d
    Marschzeiten werden dadurch länger. **Entschieden:** W1 Karte sieht aus wie jetzt, nur mit Struktur (Berge/Felsen
    eingefügt) · W2 **einige** Hindernisse (Wege etwas länger, Basen dahinter etwas geschützter) · W3 kommt mit dem
    **übernächsten** Saison-Reset (nicht heute Nacht) – vorher bauen + testen.
+8. **Weitere Antworten (Alexander):** Q3 Bündnis im Profil – ja wie beschrieben · Q4 Layout **gleich umbauen** (kein
+   Vorschlag vorher) · Q5 **das ganze Design**: übersichtlich, verständlich, **weniger hin- und hertippen** ·
+   N3 Thron-Punkte (heute alle 3 Min. 30 für den Halter): Halter bekommt weiter **30**, **jeder**, der dort Verstärkung
+   stehen hat, bekommt **15** · Q9 neue Forschungen ab Labor 23: Krankenhaus II, Burg-Schutz+, Marschtempo II ·
+   Q2 Edelstein-Preise: manche Dinge (z. B. Kisten) etwas teurer – genaue Zahl offen. Q1 (Startwerte) und Q7 (Rückzug) offen.
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
