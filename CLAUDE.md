@@ -35,7 +35,7 @@ Alles Wichtige steht in `LIESMICH.md` – jede Änderung wird dort eingetragen.
   klärt Fragen, verteilt an die Firma, prüft alle 5 Min. (Wecker), treibt langsame Agenten an – arbeitet selbst kaum:
   auch Zusammenführen, Sortieren und Hochladen-Vorbereitung machen Agenten.
   Rollen in `.claude/agents/`: **sucher** (findet Fehler/Lücken, nur lesen) · **programmierer** (baut eine Aufgabe in
-  zugewiesenen Dateien + Test). Nur ZWEI Prüfungen: **schnellpruefer** (nach jeder Aufgabe, ~5–10 Min.: Diff + Schnelltests)
+  zugewiesenen Dateien + Test) · **disponent** (bei jeder 5-Min.-Runde: welche wartende Aufgabe kann jetzt schon laufen?). Nur ZWEI Prüfungen: **schnellpruefer** (nach jeder Aufgabe, ~5–10 Min.: Diff + Schnelltests)
   und **endpruefer** (einmal vor dem Hochladen, gründlich: alle Änderungen + `tests/komplett.sh`). Schnell UND genau.
   So viele parallel wie sinnvoll: je Agent eine Aufgabe, getrennte Dateien (sonst eigene Kopie: Worktree).
 - **Immer arbeiten, nie warten:** ist ein Agent fertig, bekommt sofort der nächste eine Aufgabe; nichts Offenes bleibt
