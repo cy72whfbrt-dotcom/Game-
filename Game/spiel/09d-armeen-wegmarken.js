@@ -162,7 +162,8 @@ function drawArmies(now, wallNow) {
     const z = mapState.zoom; if (z < .004 || !(armies.length || armyRaids.length)) return;
     for (const j of armyJoins) { const a = j.armyId && armyById(j.armyId), home = islandById[j.homeId]; if (!a || !home || armyWho(a) !== 'player') continue; const p = armyPos(a, wallNow);
         drawMarchLine('send', home, { x: p.x, y: p.y, landmassId: p.landmassId, radius: 0, id: 'army' }, j.startedAt, j.resolveAt, wallNow); }
-    for (const r of armyRaids) { const b = islandById[r.baseId]; if (b) drawMarchLine('incoming', b, { x: r.tx, y: r.ty, landmassId: r.lm, radius: 0, id: 'army' }, r.startedAt, r.resolveAt, wallNow); }
+    for (const r of armyRaids) { const b = islandById[r.baseId], ra = armyById(r.armyId); if (!ra || armyWho(ra) !== 'player') continue;   // nur Angriffe auf deine Armeen (die anderer Spieler gehen dich nichts an)
+        if (b) drawMarchLine('incoming', b, { x: r.tx, y: r.ty, landmassId: r.lm, radius: 0, id: 'army' }, r.startedAt, r.resolveAt, wallNow); }
     for (const a of armies) if (a.mv && armyWho(a) !== 'player') { liveAnimation = true; const t = a.mv.to, tb = armyById(t.id);   // a bot army: you see where it goes only when it comes for you
         if ((t.kind === 'base' && islandOwnerOf(t.id) === 'player') || (t.kind === 'army' && tb && armyWho(tb) === 'player')) drawMarchLine('incoming', { x: a.mv.path[0].x, y: a.mv.path[0].y, radius: 0, id: 'army' + a.id }, { x: t.x, y: t.y, id: t.id }, a.mv.startedAt, a.mv.resolveAt, wallNow, a.mv.path, null, armyWho(a)); }
     for (const a of armies) if (a.mv && armyWho(a) === 'player') { const p = a.mv.path, t = a.mv.to;

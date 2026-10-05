@@ -443,6 +443,15 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   `rally.an`). Wer ohne Rally bzw. als Anführer einer zweiten Rally dazukommt, bringt seinen Skill-Anteil `x[6]` mit
   (`rallyAussortieren` zieht sonst zu viel/zu wenig ab). Offen: im Vorschau-Kampf des Spielers (`resolveAttack`, 02c) gehen
   zusammengelegte Wellen weiter zur ersten Basis. Test `tests/browser/gemeinsam_heim_test.js`.
+- **5.10. Mitspieler (Alexander #1/#2: alle gleich):** Mitspieler greifen jetzt auch die Feld-Armeen echter Spieler an (vorher
+  nur deine) – Friedensschild und Bündnis schützen wie bei dir, der Kampfbericht geht als Nachricht an den Eigentümer, seine
+  Verwundeten in sein Krankenhaus (`armyBotWatch`/`armyRaidArrive`, bots/06). Startverteilung (01d) nur auf dem Weltrechner und
+  nur für Mitspieler, die noch nie Basen hatten: Ausgeschiedene bekamen nach einem Neustart (und auf Handys) sofort einen Turm
+  geschenkt – jetzt kommen sie wie vorgesehen über `botRespawn` zurück (10 Min., Schild). `botRespawn` sucht bei vollem Rand nur
+  einmal pro Minute (`outNext`). Armee-Befehle: eine heimgeschickte Armee beendete die Schleife für alle anderen (`botArmyStep`).
+  Verteidigen: Hilfe/Abzug gilt nur, wenn der Marsch wirklich losging, sonst der nächste Helfer (`botDefend`). Schild: eigene
+  Angriffe kehren um und laufen heim wie deine (nicht mehr sofort zu Hause, `botUseShield`). Hauptstadt eines Mitspielers ist
+  immer ein Turm, nie Tor/Tempel (`botCapitalOf`, `isCapital`); ohne Turm kehren Truppen trotzdem zu einer eigenen Basis heim. Die Karte zeichnet nur Angriffe auf deine eigenen Feld-Armeen (`drawArmies`), Angriffe auf Armeen echter Spieler tragen `tOwner` (sieht nur der Eigentümer). Test `tests/browser/mitspieler_feld_test.js`.
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.

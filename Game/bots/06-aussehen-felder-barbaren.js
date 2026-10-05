@@ -219,28 +219,28 @@ function botArmyStep(bot) {                                                   //
             if (!armyMove(a, { kind: 'home', id: h, x: b.x, y: b.y, lm: b.landmassId })) return true;
             if (now > (a.until || 0) + 10 * 60000) { islandTroops[h] = (islandTroops[h] || 0) + Math.max(0, a.troops || 0); armies = armies.filter(x => x !== a); return true; }   // Heimweg dauerhaft zu (Tor fremd, Maut zu teuer): die Truppen kommen trotzdem heim, statt ewig einen Marsch-Platz zu belegen
             return false; };
-        if (!t || botOwnedIslands[bot.id].has(t.id) || isCapital(t.id) || now > a.until || a.troops < BOT_MIN_GARRISON_TO_ATTACK || baseShieldedFor(t.id, bot.id) || botKeepsShield(bot, now)) return goHome();
+        if (!t || botOwnedIslands[bot.id].has(t.id) || isCapital(t.id) || now > a.until || a.troops < BOT_MIN_GARRISON_TO_ATTACK || baseShieldedFor(t.id, bot.id) || botKeepsShield(bot, now)) { if (goHome()) return true; continue; }
         const boss = bossAt(t.id), it = boss ? { s: boss.troops + boss.defense } : botIntel(bot, t.id);
         if (!it) {                                                                   // no report yet: scout it from here first
             if (botScouting(bot, t.id)) continue;
             const ready = now + scoutSecs({ x: a.x, y: a.y, landmassId: a.lm }, t, bot.id) * 1000;
-            if (botLearn(bot.id, t.id, ready, a.lm) === false) return goHome();   // Tor zu: die Armee kommt da nicht hin
+            if (botLearn(bot.id, t.id, ready, a.lm) === false) { if (goHome()) return true; continue; }   // Tor zu: die Armee kommt da nicht hin
             if (islandOwnerOf(t.id) === 'player') { const h = armyHome(a); if (h !== null && h !== undefined) botScoutVisible(bot, h, t.id, now, ready); }
             return true;
         }
         const st = botStyle(bot), margin = islandOwnerOf(t.id) === 'player' ? Math.max(1.25, st.margin) : st.margin, atk = (1 + (botMults(bot.id).attackPct + (a.hero && heroOwned(bot.id, a.hero) ? heroStats(bot.id, a.hero).atk : 0)) / 100) * titleMult(bot.id, 'attack') * (AUF ? AUF.kampf(bot.id, 'a') : 1);   // with the army's own hero (+ Truppen-Stufe, Forschung)
         if (a.troops * atk < it.s * margin * (boss ? .35 : 1)) {                     // too strong: a person doesn't just stand there
             if (botArmyRethink(bot, a, atk, it.s * margin, now)) return true;
-            if (now > a.until - 3 * 60000) return goHome(); continue;                 // nothing to do about it: give up and go home
+            if (now > a.until - 3 * 60000 && goHome()) return true; continue;                 // nothing to do about it: give up and go home
         }
         const canMarch = () => a.lm === t.landmassId || botCanCross(bot.id, a.lm, t.landmassId, a.troops, t.id);
         if (islandOwnerOf(t.id) === 'player' && it.ready && now - it.ready > 2 * 60000 && !botScouting(bot, t.id) && canMarch()) {   // one more look right before the strike
             const ready = now + scoutSecs({ x: a.x, y: a.y, landmassId: a.lm }, t, bot.id) * 1000;
-            if (botLearn(bot.id, t.id, ready, a.lm) === false) return goHome();
+            if (botLearn(bot.id, t.id, ready, a.lm) === false) { if (goHome()) return true; continue; }
             const h = armyHome(a); if (h !== null && h !== undefined) botScoutVisible(bot, h, t.id, now, ready);
             return true;
         }
-        if (armyMove(a, { kind: 'base', id: t.id, x: t.x, y: t.y, lm: t.landmassId })) { if (now > a.until - 3 * 60000) return goHome(); continue; }   // blocked (gate): give up in time
+        if (armyMove(a, { kind: 'base', id: t.id, x: t.x, y: t.y, lm: t.landmassId })) { if (now > a.until - 3 * 60000 && goHome()) return true; continue; }   // blocked (gate): give up in time
         if (islandOwnerOf(t.id) === 'player') { flashHint('Die Armee von ' + bot.name + ' marschiert auf ' + islandTitle(t) + '!', 4500); sfx('warn'); botRevengeLaunched(bot, t.id); }
         return true;
     }
@@ -248,40 +248,46 @@ function botArmyStep(bot) {                                                   //
 }
 
 // bots: a bot whose base lies near a camped army notices it, waits a moment, and attacks if it clearly has more
+// (deine Armee und die echter Spieler auf dem Weltrechner – für alle gleich: Friedensschild und Bündnis schützen sie)
+const armyFeldZiel = w => w === 'player' || !!(botById[w] && botById[w].mensch);
 function armyBotWatch(now) {
-    if (playerShielded()) return;
     for (const a of armies) {
-        if (armyWho(a) !== 'player' || a.mv || a.troops < 1 || armyRaids.some(r => r.armyId === a.id)) continue;
+        const w = armyWho(a);
+        if (!armyFeldZiel(w) || a.mv || a.troops < 1 || armyRaids.some(r => r.armyId === a.id) || ownerShielded(w, now)) continue;
         if (a.seen) { const bot = botById[a.seen.bot], base = islandById[a.seen.base];
             if (now < a.seen.at + 15000) continue;
             a.seen = null;
-            if (!bot || !base || islandOwnerOf(base.id) !== bot.id || !botOnline(bot, now) || ownerShielded(bot.id, now)) continue;
+            if (!bot || !base || islandOwnerOf(base.id) !== bot.id || !botOnline(bot, now) || ownerShielded(bot.id, now) || bundFreund(bot.id, w)) continue;
             const n = Math.floor((islandTroops[base.id] || 0) * .6); if (n < a.troops * 1.3) continue;
             const to = { x: a.x, y: a.y, landmassId: a.lm };
-            islandTroops[base.id] -= n; armyRaids.push({ botId: bot.id, baseId: base.id, armyId: a.id, troops: n, tx: a.x, ty: a.y, lm: a.lm, startedAt: now, resolveAt: now + travelDurationSeconds(base, to, bot.id) * 1000 });
-            flashHint(bot.name + ' greift deine Armee im Feld an!', 4000); sfx('warn'); requestRender(); continue; }
+            islandTroops[base.id] -= n; armyRaids.push({ botId: bot.id, baseId: base.id, armyId: a.id, ...(w !== 'player' ? { tOwner: w } : {}), troops: n, tx: a.x, ty: a.y, lm: a.lm, startedAt: now, resolveAt: now + travelDurationSeconds(base, to, bot.id) * 1000 });
+            if (w === 'player') { flashHint(bot.name + ' greift deine Armee im Feld an!', 4000); sfx('warn'); requestRender(); } continue; }
         if (Math.random() > .25) continue;
         let best = null, bd = Infinity;
-        for (const bid in botOwnedIslands) { const own = botOwnedIslands[bid], bot = botById[bid]; if (!own || !bot || bot.mensch || !botOnline(bot, now) || ownerShielded(bid, now)) continue;
+        for (const bid in botOwnedIslands) { const own = botOwnedIslands[bid], bot = botById[bid]; if (!own || !bot || bot.mensch || bid === w || !botOnline(bot, now) || ownerShielded(bid, now) || bundFreund(bid, w)) continue;
             for (const id of own) { const b = islandById[id], d = Math.hypot(b.x - a.x, b.y - a.y); if (d > ISLAND_RADIUS * 14 || d >= bd) continue;
                 if ((islandTroops[id] || 0) * .6 < a.troops * 1.3 || !routeFor(b.landmassId, a.lm, bot.id)) continue; bd = d; best = { bot: bot.id, base: id }; } }
-        if (best) { a.seen = { ...best, at: now }; flashHint(botById[best.bot].name + ' hat deine Armee entdeckt.', 3500); }
+        if (best) { a.seen = { ...best, at: now }; if (w === 'player') flashHint(botById[best.bot].name + ' hat deine Armee entdeckt.', 3500); }
     }
 }
 
 function armyRaidArrive(r, now) {
     const a = armyById(r.armyId), bot = botById[r.botId], back = () => { if (botOwnedIslands[r.botId] && botOwnedIslands[r.botId].has(r.baseId)) islandTroops[r.baseId] = (islandTroops[r.baseId] || 0) + r.troops; };
-    if (a && ownerShielded('player', Math.min(now, r.resolveAt || now))) { back(); flashHint('Dein Friedensschild hat den Angriff von ' + bot.name + ' auf deine Armee abgewehrt.', 4000); return; }   // the shield covers field armies too
+    const w = a ? armyWho(a) : r.tOwner || 'player', me = w === 'player', hint = (t, ms) => { if (me) flashHint(t, ms); };   // der Eigentümer der Armee: du oder ein echter Spieler
+    if (a && ownerShielded(w, Math.min(now, r.resolveAt || now))) { back(); hint('Dein Friedensschild hat den Angriff von ' + bot.name + ' auf deine Armee abgewehrt.', 4000); return; }   // the shield covers field armies too
     const p = a && armyPos(a, now);
-    if (!a || Math.hypot(p.x - r.tx, p.y - r.ty) > ISLAND_RADIUS * 2) { back(); if (a) flashHint('Deine Armee ist ' + bot.name + ' ausgewichen.', 3000); return; }
-    const dHx = heroFieldFx('player', a.hero, { defending: 1 }, a.hero2);                    // your army's hero (Bollwerk, Zäh …) - a full rage fires now
-    const def = a.troops, atk = r.troops, fb = fieldBattle(r.botId, atk, 'player', def, null, dHx), won = fb.won;
-    const fg = fieldGold(r.botId, 'player', fb, null, dHx);
-    goalBump(won ? r.botId : 'player', 'armyWins');
-    if (won) { armies = armies.filter(x => x !== a); r.troops -= fb.aLoss; botHospitalTake(r.botId, fb.aLoss); back(); const w = fieldHurt('player', def, dHx);
-        flashHint(bot.name + ' hat deine Armee im Feld geschlagen (' + fmtCompact(def) + ' Truppen)' + (w ? ', ' + fmtCompact(w) + ' ins Krankenhaus.' : '.'), 5000); }
-    else { botHospitalTake(r.botId, atk); fieldHurt('player', fb.dLoss, dHx); a.troops -= fb.dLoss; if (a.troops < 1) armies = armies.filter(x => x !== a); r.troops = 0; statBump('defends'); flashHint('Deine Armee hat den Angriff von ' + bot.name + ' abgewehrt – ' + fmtCompact(a.troops) + ' stehen noch.', 4500); }
-    addCombatLogEntry({ type: 'army', won: !won, attacker: bot.name, defender: 'Du', atk: fb.SA, def: fb.SD, gold: fg.d, hD: heroTag(dHx), hx: heroReportOf(dHx) });
+    if (!a || Math.hypot(p.x - r.tx, p.y - r.ty) > ISLAND_RADIUS * 2) { back(); if (a) hint('Deine Armee ist ' + bot.name + ' ausgewichen.', 3000); return; }
+    const dHx = heroFieldFx(w, a.hero, { defending: 1 }, a.hero2);                           // the army's hero (Bollwerk, Zäh …) - a full rage fires now
+    const def = a.troops, atk = r.troops, fb = fieldBattle(r.botId, atk, w, def, null, dHx), won = fb.won;
+    const fg = fieldGold(r.botId, w, fb, null, dHx);
+    goalBump(won ? r.botId : w, 'armyWins');
+    let text;
+    if (won) { armies = armies.filter(x => x !== a); r.troops -= fb.aLoss; botHospitalTake(r.botId, fb.aLoss); back(); const k = fieldHurt(w, def, dHx);
+        text = bot.name + ' hat deine Armee im Feld geschlagen (' + fmtCompact(def) + ' Truppen)' + (k ? ', ' + fmtCompact(k) + ' ins Krankenhaus.' : '.'); }
+    else { botHospitalTake(r.botId, atk); fieldHurt(w, fb.dLoss, dHx); a.troops -= fb.dLoss; if (a.troops < 1) armies = armies.filter(x => x !== a); r.troops = 0; goalBump(w, 'defends');
+        text = 'Deine Armee hat den Angriff von ' + bot.name + ' abgewehrt – ' + fmtCompact(Math.max(0, a.troops)) + ' stehen noch.'; }
+    evBericht(w, { type: 'army', won: !won, attacker: bot.name, defender: 'Du', atk: fb.SA, def: fb.SD, gold: fg.d, hD: heroTag(dHx), hx: heroReportOf(dHx) }, text);   // dir direkt, echten Spielern als Nachricht
+    if (!me) return;
     warStat(won ? 'armyLosses' : 'armyWins', 1, bot.name);
     sfx(won ? 'defeat' : 'victory'); updateHud(); saveGame();
 }

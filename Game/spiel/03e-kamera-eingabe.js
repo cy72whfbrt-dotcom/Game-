@@ -508,7 +508,7 @@ function isCapital(id) {
     if (id === playerIslandId && !SYSTEM && ownedIslands.has(id)) return true;   // (der Weltrechner hat keine eigene Hauptstadt – sein playerIslandId ist nur ein Platzhalter)
     const now = Date.now();
     if (!capitalCache || now - capitalCacheAt > 250) { const caps = new Set(); for (const bot of BOT_DEFS) { const c = botCapitalOf(bot.id); if (c !== null) caps.add(c); } capitalCache = caps; capitalCacheAt = now; }
-    if (!capitalCache.has(id)) return false;
+    if (!capitalCache.has(id) || islandById[id].type !== 'tower') return false;          // Hauptstadt ist immer ein Turm (ohne Turm kehren die Truppen nur dorthin heim)
     const o = islandOwnerOf(id); return !!o && o !== 'player' && botCapitalOf(o) === id;     // still that bot's capital right now
 }
 

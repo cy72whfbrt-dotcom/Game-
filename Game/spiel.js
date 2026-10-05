@@ -938,9 +938,9 @@ class BotBaseSet extends Set {
     delete(id) { if (botOwnerIndex.get(id) === this.owner) botOwnerIndex.delete(id); const r = super.delete(id); if (r) ownVer++; return r; }
     clear() { for (const id of this) if (botOwnerIndex.get(id) === this.owner) botOwnerIndex.delete(id); if (this.size) ownVer++; super.clear(); }
 }
-let botOwnedIslands;
+let botOwnedIslands, botBesitzRoh = null;                              // botBesitzRoh: der gespeicherte Besitz (null = ganz frische Welt)
 try {
-    const raw = JSON.parse(store.get('openWaterBotOwnedIslands'));
+    const raw = botBesitzRoh = JSON.parse(store.get('openWaterBotOwnedIslands'));
     botOwnedIslands = {};
     for (const bot of BOT_DEFS) botOwnedIslands[bot.id] = new BotBaseSet(bot.id, raw && raw[bot.id] || []);
 } catch (e) {
@@ -961,7 +961,9 @@ for (const bot of BOT_DEFS) if (!botCoins[bot.id]) botCoins[bot.id] = 0;
 // landmass. Runs per-bot (not just on a fully fresh game) so a bot
 // added to BOT_DEFS later, on top of an existing save where the
 // earlier bots already have territory, still gets seeded in.
-{
+// Nur der Weltrechner verteilt (Handys bekommen den Besitz von ihm), und nur an Mitspieler, die noch nie
+// eine Basis hatten: wer ausgeschieden ist, kommt über botRespawn zurück (Wartezeit, Schild …), auch nach einem Neustart.
+if (rechnet()) {
     // every bot starts on one of the start places round the edge, spread out, never on the player's
     const usedTowerIds = new Set([playerIslandId]);
     for (const bot of BOT_DEFS) for (const id of botOwnedIslands[bot.id]) usedTowerIds.add(id);
@@ -969,8 +971,10 @@ for (const bot of BOT_DEFS) if (!botCoins[bot.id]) botCoins[bot.id] = 0;
     const home = islandById[playerIslandId], slots = islands.filter(i => i.startSlot && !usedTowerIds.has(i.id) && i.landmassId !== home.landmassId)
         .sort((u, v) => Math.atan2(u.y, u.x) - Math.atan2(v.y, v.x));
     const stepB = Math.max(1, slots.length / BOT_DEFS.length);
+    let stand = {}; try { stand = JSON.parse(store.get('openWaterBotState')) || {}; } catch (e) {}
+    const raus = bot => !!((botBesitzRoh && Array.isArray(botBesitzRoh[bot.id])) || (stand[bot.id] && stand[bot.id].outAt));   // hatte schon Basen (ausgeschieden)
     BOT_DEFS.forEach((bot, i) => {
-        if (bot.mensch || botOwnedIslands[bot.id].size > 0) return;      // echte Spieler bekommen ihren Platz vom Weltrechner
+        if (bot.mensch || botOwnedIslands[bot.id].size > 0 || raus(bot)) return;      // echte Spieler bekommen ihren Platz vom Weltrechner
         const tower = slots[Math.floor(i * stepB) % slots.length];
         if (!tower || usedTowerIds.has(tower.id)) return;
         botOwnedIslands[bot.id].add(tower.id);
@@ -979,7 +983,7 @@ for (const bot of BOT_DEFS) if (!botCoins[bot.id]) botCoins[bot.id] = 0;
         usedTowerIds.add(tower.id);
     });
     // more players than start places: the rest start on a free outer base, as far as possible from everyone else
-    const late = BOT_DEFS.filter(bot => !bot.mensch && botOwnedIslands[bot.id].size === 0);
+    const late = BOT_DEFS.filter(bot => !bot.mensch && botOwnedIslands[bot.id].size === 0 && !raus(bot));
     if (late.length) {
         const taken = [...usedTowerIds].map(id => islandById[id]).filter(Boolean);
         for (const bot of BOT_DEFS) { let k = 0; for (const id of botOwnedIslands[bot.id]) { if (k++ % 25 === 0) taken.push(islandById[id]); } }   // a sample of every empire is enough
@@ -4461,7 +4465,7 @@ function isCapital(id) {
     if (id === playerIslandId && !SYSTEM && ownedIslands.has(id)) return true;   // (der Weltrechner hat keine eigene Hauptstadt – sein playerIslandId ist nur ein Platzhalter)
     const now = Date.now();
     if (!capitalCache || now - capitalCacheAt > 250) { const caps = new Set(); for (const bot of BOT_DEFS) { const c = botCapitalOf(bot.id); if (c !== null) caps.add(c); } capitalCache = caps; capitalCacheAt = now; }
-    if (!capitalCache.has(id)) return false;
+    if (!capitalCache.has(id) || islandById[id].type !== 'tower') return false;          // Hauptstadt ist immer ein Turm (ohne Turm kehren die Truppen nur dorthin heim)
     const o = islandOwnerOf(id); return !!o && o !== 'player' && botCapitalOf(o) === id;     // still that bot's capital right now
 }
 
@@ -11283,7 +11287,8 @@ function drawArmies(now, wallNow) {
     const z = mapState.zoom; if (z < .004 || !(armies.length || armyRaids.length)) return;
     for (const j of armyJoins) { const a = j.armyId && armyById(j.armyId), home = islandById[j.homeId]; if (!a || !home || armyWho(a) !== 'player') continue; const p = armyPos(a, wallNow);
         drawMarchLine('send', home, { x: p.x, y: p.y, landmassId: p.landmassId, radius: 0, id: 'army' }, j.startedAt, j.resolveAt, wallNow); }
-    for (const r of armyRaids) { const b = islandById[r.baseId]; if (b) drawMarchLine('incoming', b, { x: r.tx, y: r.ty, landmassId: r.lm, radius: 0, id: 'army' }, r.startedAt, r.resolveAt, wallNow); }
+    for (const r of armyRaids) { const b = islandById[r.baseId], ra = armyById(r.armyId); if (!ra || armyWho(ra) !== 'player') continue;   // nur Angriffe auf deine Armeen (die anderer Spieler gehen dich nichts an)
+        if (b) drawMarchLine('incoming', b, { x: r.tx, y: r.ty, landmassId: r.lm, radius: 0, id: 'army' }, r.startedAt, r.resolveAt, wallNow); }
     for (const a of armies) if (a.mv && armyWho(a) !== 'player') { liveAnimation = true; const t = a.mv.to, tb = armyById(t.id);   // a bot army: you see where it goes only when it comes for you
         if ((t.kind === 'base' && islandOwnerOf(t.id) === 'player') || (t.kind === 'army' && tb && armyWho(tb) === 'player')) drawMarchLine('incoming', { x: a.mv.path[0].x, y: a.mv.path[0].y, radius: 0, id: 'army' + a.id }, { x: t.x, y: t.y, id: t.id }, a.mv.startedAt, a.mv.resolveAt, wallNow, a.mv.path, null, armyWho(a)); }
     for (const a of armies) if (a.mv && armyWho(a) === 'player') { const p = a.mv.path, t = a.mv.to;

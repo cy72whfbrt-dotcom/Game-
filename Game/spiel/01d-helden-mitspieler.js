@@ -81,9 +81,9 @@ class BotBaseSet extends Set {
     delete(id) { if (botOwnerIndex.get(id) === this.owner) botOwnerIndex.delete(id); const r = super.delete(id); if (r) ownVer++; return r; }
     clear() { for (const id of this) if (botOwnerIndex.get(id) === this.owner) botOwnerIndex.delete(id); if (this.size) ownVer++; super.clear(); }
 }
-let botOwnedIslands;
+let botOwnedIslands, botBesitzRoh = null;                              // botBesitzRoh: der gespeicherte Besitz (null = ganz frische Welt)
 try {
-    const raw = JSON.parse(store.get('openWaterBotOwnedIslands'));
+    const raw = botBesitzRoh = JSON.parse(store.get('openWaterBotOwnedIslands'));
     botOwnedIslands = {};
     for (const bot of BOT_DEFS) botOwnedIslands[bot.id] = new BotBaseSet(bot.id, raw && raw[bot.id] || []);
 } catch (e) {
@@ -104,7 +104,9 @@ for (const bot of BOT_DEFS) if (!botCoins[bot.id]) botCoins[bot.id] = 0;
 // landmass. Runs per-bot (not just on a fully fresh game) so a bot
 // added to BOT_DEFS later, on top of an existing save where the
 // earlier bots already have territory, still gets seeded in.
-{
+// Nur der Weltrechner verteilt (Handys bekommen den Besitz von ihm), und nur an Mitspieler, die noch nie
+// eine Basis hatten: wer ausgeschieden ist, kommt über botRespawn zurück (Wartezeit, Schild …), auch nach einem Neustart.
+if (rechnet()) {
     // every bot starts on one of the start places round the edge, spread out, never on the player's
     const usedTowerIds = new Set([playerIslandId]);
     for (const bot of BOT_DEFS) for (const id of botOwnedIslands[bot.id]) usedTowerIds.add(id);
@@ -112,8 +114,10 @@ for (const bot of BOT_DEFS) if (!botCoins[bot.id]) botCoins[bot.id] = 0;
     const home = islandById[playerIslandId], slots = islands.filter(i => i.startSlot && !usedTowerIds.has(i.id) && i.landmassId !== home.landmassId)
         .sort((u, v) => Math.atan2(u.y, u.x) - Math.atan2(v.y, v.x));
     const stepB = Math.max(1, slots.length / BOT_DEFS.length);
+    let stand = {}; try { stand = JSON.parse(store.get('openWaterBotState')) || {}; } catch (e) {}
+    const raus = bot => !!((botBesitzRoh && Array.isArray(botBesitzRoh[bot.id])) || (stand[bot.id] && stand[bot.id].outAt));   // hatte schon Basen (ausgeschieden)
     BOT_DEFS.forEach((bot, i) => {
-        if (bot.mensch || botOwnedIslands[bot.id].size > 0) return;      // echte Spieler bekommen ihren Platz vom Weltrechner
+        if (bot.mensch || botOwnedIslands[bot.id].size > 0 || raus(bot)) return;      // echte Spieler bekommen ihren Platz vom Weltrechner
         const tower = slots[Math.floor(i * stepB) % slots.length];
         if (!tower || usedTowerIds.has(tower.id)) return;
         botOwnedIslands[bot.id].add(tower.id);
@@ -122,7 +126,7 @@ for (const bot of BOT_DEFS) if (!botCoins[bot.id]) botCoins[bot.id] = 0;
         usedTowerIds.add(tower.id);
     });
     // more players than start places: the rest start on a free outer base, as far as possible from everyone else
-    const late = BOT_DEFS.filter(bot => !bot.mensch && botOwnedIslands[bot.id].size === 0);
+    const late = BOT_DEFS.filter(bot => !bot.mensch && botOwnedIslands[bot.id].size === 0 && !raus(bot));
     if (late.length) {
         const taken = [...usedTowerIds].map(id => islandById[id]).filter(Boolean);
         for (const bot of BOT_DEFS) { let k = 0; for (const id of botOwnedIslands[bot.id]) { if (k++ % 25 === 0) taken.push(islandById[id]); } }   // a sample of every empire is enough
