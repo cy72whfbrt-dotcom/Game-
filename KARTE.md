@@ -608,7 +608,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `CITY_PAINT.quarry` → Game/spiel/08e-stadtbild-haeuser.js:168
 - `cityAnfHtml` → Game/spiel/08b-burg-aussehen.js:149
 - `cityBanner` → Game/spiel/08e-stadtbild-haeuser.js:81
-- `cityBauId` → Game/spiel/08a-stadt-bauen.js:237
+- `cityBauId` → Game/spiel/08a-stadt-bauen.js:238
 - `cityBildSetzen` → Game/spiel/08b-burg-aussehen.js:130
 - `cityBildSpr` → Game/spiel/08b-burg-aussehen.js:124
 - `cityBio` → Game/spiel/08e-stadtbild-haeuser.js:244
@@ -616,15 +616,16 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `cityBuildOf` → Game/spiel/08a-stadt-bauen.js:74
 - `cityBuildsFix` → Game/spiel/08a-stadt-bauen.js:65
 - `cityBushAt` → Game/spiel/08e-stadtbild-haeuser.js:274
-- `cityBuyBuilder2` → Game/spiel/08a-stadt-bauen.js:224
+- `cityBuyBuilder2` → Game/spiel/08a-stadt-bauen.js:225
 - `cityClampBuild` → Game/spiel/08a-stadt-bauen.js:89
 - `cityClampCam` → Game/spiel/08f-stadtbild-bild.js:24
 - `cityCost` → Game/spiel/08a-stadt-bauen.js:78
 - `cityDeco` → Game/spiel/08e-stadtbild-haeuser.js:389
 - `cityDef` → Game/spiel/08a-stadt-bauen.js:77
 - `cityDoor` → Game/spiel/08e-stadtbild-haeuser.js:80
+- `cityEffectRoh` → Game/spiel/08d-gebaeude-wirkung.js:17
 - `cityEffectText` → Game/spiel/08d-gebaeude-wirkung.js:16
-- `cityExtraHtml` → Game/spiel/08d-gebaeude-wirkung.js:25
+- `cityExtraHtml` → Game/spiel/08d-gebaeude-wirkung.js:26
 - `cityFinishBuild` → Game/spiel/08a-stadt-bauen.js:122
 - `cityFitZoom` → Game/spiel/08f-stadtbild-bild.js:23
 - `cityFocus` → Game/spiel/08f-stadtbild-bild.js:64
@@ -1822,7 +1823,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderChestEquipment` → Game/spiel/05b-truhe-skills.js:44
 - `renderChestItemPopup` → Game/spiel/05b-truhe-skills.js:183
 - `renderCitySheet` → Game/spiel/08b-burg-aussehen.js:165
-- `renderCitySheetTimer` → Game/spiel/08a-stadt-bauen.js:238
+- `renderCitySheetTimer` → Game/spiel/08a-stadt-bauen.js:239
 - `renderCombatLog` → Game/spiel/05d-maersche-kampfbericht.js:123
 - `renderCrestCard` → Game/spiel/05a-aussehen-profil.js:108
 - `renderCrestEditor` → Game/spiel/05a-aussehen-profil.js:113
@@ -2088,8 +2089,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `SPRAY` → Game/baukunst/07-hafen-palast.js:419
 - `squarePlate` → Game/baukunst/02-buehne-grundbasis.js:155
 - `stadtCap` → Game/aufbau.js:112
+- `stadtKopf` → Game/spiel/08d-gebaeude-wirkung.js:75
 - `stadtKosten` → Game/aufbau.js:107
-- `stadtLeiste` → Game/spiel/08d-gebaeude-wirkung.js:68
+- `stadtLeiste` → Game/spiel/08d-gebaeude-wirkung.js:69
 - `stadtVon` → Game/aufbau.js:89
 - `staerke` → Game/spiel/06d-schild-produktion.js:21
 - `stand` → Game/baukunst/05-umland.js:196
@@ -2127,7 +2129,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `tapped` → Game/bots/05-verteidigen-takt.js:29
 - `tausch` → Game/welt.js:89
 - `teil` → Game/spiel/10c-start-einstellungen.js:251
-- `teleportCapital` → Game/spiel/08d-gebaeude-wirkung.js:82
+- `teleportCapital` → Game/spiel/08d-gebaeude-wirkung.js:90
 - `tempelPlus` → Game/aufbau.js:218
 - `temple` → Game/spiel/03b-gebaeude-3d.js:224
 - `templeBaseMult` → Game/spiel/01b-weltkarte.js:44
@@ -4066,9 +4068,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `openCity` :185
 - `closeCity` :200
 - `updateCityBuilder` :216
-- `cityBuyBuilder2` :224
-- `cityBauId` :237 — das Burg-Fenster heißt '_keep', ihr Ausbau 'keep'
-- `renderCitySheetTimer` :238
+- `cityBuyBuilder2` :225
+- `cityBauId` :238 — das Burg-Fenster heißt '_keep', ihr Ausbau 'keep'
+- `renderCitySheetTimer` :239
 
 ### Game/spiel/08b-burg-aussehen.js — Burg (Ausbau, Skin, Friedensschild) und Fenster Aussehen
 - `loadSkins` :10
@@ -4170,9 +4172,11 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `hospitalTake` :9 — Krankenhaus: part of your fallen (attack won or lost, or defending) are only wo…
 - `starGemCost` :15
 - `cityEffectText` :16
-- `cityExtraHtml` :25
-- `stadtLeiste` :68 — Auch in der Stadt bleiben die obere Leiste (Münzen, Gems, Truppen, Rohstoffe) u…
-- `teleportCapital` :82
+- `cityEffectRoh` :17
+- `cityExtraHtml` :26
+- `stadtLeiste` :69 — Auch in der Stadt bleiben die obere Leiste (Münzen, Gems, Truppen, Rohstoffe) u…
+- `stadtKopf` :75 — Unterkante der Bauarbeiter-Zeile → der Hinweis (Handy) liegt darunter
+- `teleportCapital` :90
 
 ### Game/spiel/08e-stadtbild-haeuser.js — Stadtansicht (isometrisch): Häuser und Gebäude zeichnen
 - `cIso` :21 — world → screen units (before zoom)

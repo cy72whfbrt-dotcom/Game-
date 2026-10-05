@@ -22,7 +22,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       document.getElementById('hudRoh').click(); await warte(200); const auf = !document.getElementById('rohDrop').hidden;
       document.getElementById('shopBtn').click(); await warte(400); o.roh = { auf, zuNachFenster: document.getElementById('rohDrop').hidden };
       const rar = document.querySelector('#shopPopup .chip--rar'), box = rar && rar.parentElement.getBoundingClientRect(), rr = rar && rar.getBoundingClientRect();
-      o.rar = rar ? { drin: rr.right <= box.right + 1 && rr.right <= innerWidth, ganz: ganz(rar) } : null;
+      o.rar = rar ? { drin: rr.right <= box.right + 1 && rr.right <= innerWidth, ganz: ganz(rar), oben: parseFloat(getComputedStyle(rar).paddingTop) >= 3, hoch: rr.height >= rar.scrollHeight - 1 } : null;
       // 2) Rahmen für 1000 Gems: erster Tipp fragt, Doppel-Tipp zählt nicht, zweiter Tipp nach >450 ms kauft
       closeAllPopups(); openLookSheet('frame'); await warte(300);
       const btn = document.querySelector('[data-lk="frame:diamond"]'), g0 = gems;
@@ -75,7 +75,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     ok(!r.fehler, art + ': Szenen laufen', r.fehler);
     if (r.fehler) { await ctx.close(); continue; }
     ok(r.roh.auf && r.roh.zuNachFenster, art + ': Rohstoff-Liste geht beim Öffnen eines Fensters zu', r.roh);
-    ok(r.rar && r.rar.drin, art + ': Kisten-Zeile „Legendär + Mythisch …“ ragt nicht heraus', r.rar);
+    ok(r.rar && r.rar.drin && r.rar.oben && r.rar.hoch, art + ': Kisten-Zeile „Legendär + Mythisch …“ ragt nicht heraus (Innenabstand oben/unten)', r.rar);
     ok(r.lk.frage && r.lk.nachDoppel.gems && !r.lk.nachDoppel.gehoert && r.lk.gekauft, art + ': Rahmen 1.000 Gems erst nach „Wirklich?“ (Doppel-Tipp zählt nicht)', r.lk);
     ok(r.lkKlein, art + ': Rahmen 200 Gems ohne Nachfrage');
     ok(r.reset.frage && r.reset.rsNicht && r.reset.zurueck, art + ': Helden-Zurücksetzen erst nach „Wirklich?“', r.reset);
@@ -101,11 +101,19 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       const reiter = cityNutz('heroes', 0) === null && !!cityNutz('heroes', 1);
       openCity(); await warte(1200); cityOpenId = 'heroes'; cityPage = 'bau'; renderCitySheet(); await warte(300);
       const tabsZu = document.getElementById('cityTabs').hidden;
-      return { kurz, krank, reiter, tabsZu };
+      const prozent = ['heroes', 'wall', 'academy', 'hospital'].map(id => cityEffectText(id, 2)).every(t => !/\d %/.test(t) && /\d\u00a0%/.test(t));   // „+3 %“ bricht nie um
+      cityOpenId = null; document.getElementById('citySheet').hidden = true; updateCityBuilder();
+      flashHint('Der Drache ist erschienen! Urdrache Vharak kreist über dem Thron – nur alle zusammen können ihn besiegen.', 5000, true); await warte(400);
+      const hb = document.getElementById('hint').getBoundingClientRect(), kb = document.getElementById('cityBuilder').getBoundingClientRect();
+      const hinweis = { frei: hb.top >= kb.bottom + 4, hint: Math.round(hb.top), knoepfe: Math.round(kb.bottom) };
+      flashHint('', 1); cityOpenId = 'heroes'; renderCitySheet(); await warte(200);
+      return { kurz, krank, reiter, tabsZu, prozent, hinweis };
     });
     ok(c.kurz.join('|') === '1 T|1 T 1 m|1 T 1 h 1 m 1 s|0 s', art + ': Bauzeit kompakt ohne Nullen', c.kurz);
-    ok(/Nächste Stufe: 25 %/.test(c.krank), art + ': Krankenhaus „Nächste Stufe“ mit Forschung (15 + 10 %)', c.krank);
+    ok(/Nächste Stufe: 25\u00a0%/.test(c.krank), art + ': Krankenhaus „Nächste Stufe“ mit Forschung (15 + 10 %)', c.krank);
     ok(c.reiter && c.tabsZu, art + ': Heldenhalle ungebaut ohne Reiter', c);
+    ok(c.prozent, art + ': Gebäude-Wirkung „+3 %“ mit festem Leerzeichen (kein Umbruch vor „%“)');
+    ok(c.hinweis.frei, art + ': Stadt: Hinweis liegt unter den Bauarbeiter-Knöpfen (nie darüber)', c.hinweis);
     await bild('heldenhalle');
     await p.evaluate(async () => { cityOpenId = '_keep'; cityPage = 'bau'; renderCitySheet(); await new Promise(f => setTimeout(f, 400)); });
     await bild('burg');

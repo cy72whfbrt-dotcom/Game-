@@ -337,6 +337,11 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
     „Verstärkung geschickt – passt nicht alles in die Botschaft, bleibt der Rest daheim“ (`bundWahlLos`). Lehnt der Weltrechner ab
     („noch keine Botschaft“ / „voll“), kommt das als Bündnis-Meldung (`bundMelden` → `bundInfo`) am Handy an.
     Getestet: `verst_kampf_test` (Handy-Fall), `verst_test` (Server).
+- **5.10. Handy-Kleinkram (Spieltest) + saison_test:** Gebäude-Wirkung mit festem Leerzeichen vor „%“ („Nächste Stufe: +3 %“
+  bricht nicht mehr um, `cityEffectText`). Stadt am Handy: der Hinweis-Kasten (z. B. „Der Drache ist erschienen!“) liegt immer unter
+  der Bauarbeiter-Zeile (`--stadt-kopf`, auch wenn sie zweizeilig ist). Shop: Kisten-Zeile „Legendär + Mythisch …“ mit Innenabstand.
+  `saison_test` war nur in der Test-Vorschau („test viele“) rot: der Test-Modus füllt alle 10 s Gems, Münzen, Truppen und Gefolge
+  wieder auf – kein Fehler im Spiel; der Test meldet jetzt „falsche Vorschau“ (alle_tests.sh baut ihn mit der normalen, dort grün).
 - **5.10. Tests schneller (Alexander):** `tests/alle_tests.sh` lässt bis zu 4 Browser-Tests gleichzeitig laufen (vorher
   nacheinander, ~10 Min.), Schnelltest mit Namen (`tests/alle_tests.sh rally`); `tests/komplett.sh <arbeitsordner>` startet
   beide Reihen gleichzeitig (jetzt ca. 15–20 Min.: Server-Tests laufen in 3 Gruppen gleichzeitig, Gruppe 2/3 mit eigener DB `<testdb>_gN`, Port 8771/8772, eigenem Weltrechner).

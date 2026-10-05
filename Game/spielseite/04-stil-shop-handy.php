@@ -36,6 +36,7 @@
 .odds{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
 .shield-opts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px} .shield-opts .btn{min-height:52px;flex-direction:column;justify-content:center;gap:4px;padding:6px 4px}
 .odds .chip{height:20px;padding:0 6px;font-size:var(--fs-10)}
+.odds .chip--rar{height:auto;min-height:20px;padding:4px 6px;line-height:1.3}   /* zweizeilig (Handy): Innenabstand oben/unten, nicht am Rand */
 .hchest-opts{grid-template-columns:1fr} .hchest-opts .btn{min-height:46px;flex-direction:row;justify-content:space-between;gap:8px;padding:6px 10px;text-align:left}
 .hchest-opts .btn .hc-t{display:grid;gap:2px} .hchest-opts .btn small{font:500 var(--fs-10)/1.2 var(--font-ui);color:var(--tx-3);letter-spacing:0;text-transform:none}
 .hchest-res{display:grid;gap:6px;padding:10px 12px;border-radius:var(--r-sm);background:var(--well);border:1px solid var(--line-3)} .hchest-h{font:600 var(--fs-13)/1.2 var(--font-display);color:var(--gold-100)}

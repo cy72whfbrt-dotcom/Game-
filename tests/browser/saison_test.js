@@ -3,6 +3,9 @@
 // Start-Truppen, Start-Gold, keine anderen Basen, keine Bündnisse; die besten 10 bekommen Gems + Saison-Titel. Für dich und Mitspieler gleich.
 const { chromium, devices } = require('playwright');
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x) : ''));
+// Nur in der NORMALEN Vorschau (alle_tests.sh: $N): der Test-Modus füllt alle 10 s Gems, Münzen, Truppen und Helden-Gefolge auf –
+// dann stimmen Start-Werte, Helden und Preise nie (kein Fehler im Spiel)
+if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testmodus.js'))) { console.log('FEHLER falsche Vorschau: saison_test braucht die normale Vorschau (php werkzeuge/vorschau_bauen.php <ordner>, ohne „test“)'); process.exit(1); }
 (async () => {
   const b = await chromium.launch({ args: ['--proxy-server=http://127.0.0.1:9'] });
   const p = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); const fe = []; p.on('pageerror', e => fe.push(e.message));

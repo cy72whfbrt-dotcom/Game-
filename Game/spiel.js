@@ -8410,6 +8410,7 @@ function updateCityBuilder() {
         if (i === 0 || c.builder2) return '<span class="cb-slot">' + icon('check') + '<span>' + (c.builder2 ? (i + 1) + '. Bauarbeiter frei' : 'Bauarbeiter frei') + '</span></span>';
         return '<button type="button" class="cb-slot cb-buy' + (cityB2Armed > now ? ' is-armed' : '') + '" data-cb-buy>' + icon('plus') + '<span>' + (cityB2Armed > now ? 'Wirklich kaufen?' : '2. Bauarbeiter') + '</span><b>' + icon('gem') + CITY_BUILDER2_GEMS + '</b></button>';
     }).join(''));
+    stadtKopf();   // (zwei Zeilen Bauarbeiter: der Hinweis rückt mit)
 }
 function cityBuyBuilder2() {
     const c = loadCity(); if (c.builder2) return;
@@ -9044,7 +9045,8 @@ function hospitalTake(fallen, pct) {              // Krankenhaus: part of your f
     return w;
 }
 function starGemCost(stars) { return 20 * (stars + 1); }
-function cityEffectText(id, lvl) {
+function cityEffectText(id, lvl) { return cityEffectRoh(id, lvl).replace(/(\d) %/g, '$1\u00a0%'); }   // (Handy: „+3 %“ nie umbrechen)
+function cityEffectRoh(id, lvl) {
     if (AUF && ['academy', 'embassy', 'market', 'lumber', 'quarry', 'mine'].includes(id)) return AUF.effektText(id, lvl);   // Paket D (aufbau.js), Rohstoff-Gebäude
     if (id === 'wall') return lvl ? 'Jetzt: +' + (lvl * 2) + ' % Verteidigung auf allen Basen.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: +' + ((lvl + 1) * 2) + ' %.' : '') : 'Baue die Mauer für mehr Verteidigung auf allen Basen.';
     if (id === 'academy') return 'Jetzt: Truppen laufen +' + (lvl * 2) + ' % schneller.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: +' + ((lvl + 1) * 2) + ' %.' : '');
@@ -9098,9 +9100,16 @@ document.getElementById('cityNavBtn').addEventListener('click', () => { if (!cit
 // Auch in der Stadt bleiben die obere Leiste (Münzen, Gems, Truppen, Rohstoffe) und die untere Knopf-Leiste – überall gleich (Alexander 4.10.)
 function stadtLeiste(an) {
     document.body.classList.toggle('in-stadt', an);
+    stadtKopf();
     const b = document.getElementById('cityNavBtn'), l = b.querySelector('.nav-l'), u = b.querySelector('use');
     if (l) l.textContent = an ? 'Karte' : 'Stadt'; if (u) u.setAttribute('href', an ? '#i-flag' : '#i-castle'); b.classList.toggle('active', an);
 }
+function stadtKopf() {                          // Unterkante der Bauarbeiter-Zeile → der Hinweis (Handy) liegt darunter
+    if (!document.body.classList.contains('in-stadt')) return;
+    const u = Math.round(document.querySelector('.city-head').getBoundingClientRect().bottom);
+    if (u > 0 && u !== stadtKopfU) { stadtKopfU = u; document.body.style.setProperty('--stadt-kopf', u + 'px'); }
+}
+var stadtKopfU = 0;
 // Hauptstadt verlegen (teleport): pick one of your own bases, the capital status and its garrison move there.
 var teleportMode = false, teleportBis = 0;   // (bleibt nur 20 s scharf – danach kostet ein Tipp auf eine Basis keine Gems mehr aus Versehen)
 const TELEPORT_GEMS = 50;
