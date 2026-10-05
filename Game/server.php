@@ -171,6 +171,7 @@ function profil_bereinigen($text) {
         'look' => ['ring' => $id($lk['ring'] ?? null), 'rings' => $liste($lk['rings'] ?? []), 'march' => $id($lk['march'] ?? null), 'marchs' => $liste($lk['marchs'] ?? []),
                    'frame' => $id($lk['frame'] ?? null), 'title' => $id($lk['title'] ?? null), 'throne' => !empty($lk['throne'])],
         'stats' => $karte($p['stats'] ?? [], function ($x) use ($plus) { return $plus($x, 1e15); }, 80),
+        'saison' => (int)max(1, $plus($p['saison'] ?? 1, 1e6)),   // Welt-Saison seines Spielstands (ein älteres Profil zählt beim Weltrechner nicht)
         'earned' => $plus($p['earned'] ?? 0, 1e12), 'coins' => $plus($p['coins'] ?? 0, 1e15), 'gems' => isset($p['gems']) ? $plus($p['gems'], 1e13) : null,
         'stW' => isset($p['stW']) ? $plus($p['stW'], 1e9) : null,   // Gems in allen Sternen (Hauptbuch: Rückgabe beim Verkaufen)
         'crest' => $cr ? array_map(function ($k) use ($cr, $zahl) { return (int)$zahl($cr[$k] ?? 0, 99); }, ['shape' => 'shape', 'div' => 'div', 'c1' => 'c1', 'c2' => 'c2', 'sym' => 'sym', 'ink' => 'ink']) : null,
@@ -384,7 +385,7 @@ function bot_namen() {
     return $n;
 }
 // Nachrichten, die der Weltrechner an andere schicken darf (Geschenke nur über admin.php – bis auf das kleine Bündnis-Geschenk)
-const WELTRECHNER_NACHRICHTEN = ['delta', 'bericht', 'startschild', 'evPreis', 'bundInfo', 'bundGeschenk', 'haendlerWare', 'spaeh'];   // evPreis: Preis aus Wochen-Event/Invasion/Drache (Abholfach) · spaeh: Spähbericht (6.10.)
+const WELTRECHNER_NACHRICHTEN = ['delta', 'bericht', 'startschild', 'evPreis', 'bundInfo', 'bundGeschenk', 'haendlerWare', 'spaeh', 'saison', 'saisonBald'];   // evPreis: Preis aus Wochen-Event/Invasion/Drache/Welt-Saison (Abholfach) · spaeh: Spähbericht (6.10.) · saison/saisonBald: neue Welt-Saison (Reset) und ihre Ankündigung
 // Ware vom wandernden Händler (haendler.js): höchstens 10 Splitter, eine Kiste bis blau, Truppen, ein 2-Std.-Schild – nie Gems, nie Münzen
 function haendler_ware_ok($e) {
     foreach ($e as $k => $v) if (!in_array($k, ['art', 'title', 'sh', 'kiste', 'tr', 'schild', 'text'], true)) return false;
@@ -1400,6 +1401,9 @@ function welt_puls($ich, $d) {
     // nie überschreibt er mit seinem alten Stand eine neuere Welt.
     if ($sys && !$bin_leiter && (int)($d['seit'] ?? -1) !== (int)$i['version']) { $l->welt_entsperren(); json_antwort(409, ['fehler' => 'veralteter Stand']); }
     $antwort = [];
+    // Welt-Saison: vor dem Reset immer eine Sicherung der Welt, wie sie jetzt in der Datenbank steht (der Weltrechner fragt danach und
+    // setzt die Welt erst zurück, wenn hier eine Nummer > 0 zurückkommt; 0 = nicht geklappt, er fragt später nochmal)
+    if ($sys && !empty($d['sicherung'])) { try { $antwort['sicherung'] = (int)$l->sicherung_anlegen(); } catch (Throwable $e) { error_log('Open Water: Saison-Sicherung: ' . $e->getMessage()); $antwort['sicherung'] = 0; } }
     $l->tx_anfang();   // Welt + Nachrichten + Sicht + Quittungen: ganz oder gar nicht
     try {
     if ($sys && isset($d['welt'])) {   // nur der Weltrechner darf die Welt schreiben (Leiter oder mit dem neuesten Stand – siehe oben)

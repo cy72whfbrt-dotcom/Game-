@@ -1423,6 +1423,16 @@ function bundKarteOben(z, now) {
     ctx.restore();
 }
 
+// Neue Welt-Saison (09-events.js saisonWelt): alle Bündnisse aufgelöst (neu gründen), Rallys, Chat und Verstärkungen weg
+function bundSaisonNeu() {
+    bund = { b: {}, r: [], n: bund.n || 1 }; bundSpeichern();
+    bundChat = {}; store.set('openWaterBundChat', '{}');
+    verst = { n: verst.n || 0, l: [] }; verstSpeichern();
+    bundAustritt.clear(); bundWegMem.clear();
+    for (const k of ['chatAt', 'botNext', 'rallySagt', 'rallyWeg', 'ziel', 'hilfeSig', 'rallyRunde']) bundMem[k] = {};
+    bundMem.chatQ = []; bundMem.sigGemacht.clear(); bundMem.rallyGemacht.clear();
+}
+
 // ==============================================================================================================
 // 8) VERBINDUNG ZUR WELT
 // ==============================================================================================================

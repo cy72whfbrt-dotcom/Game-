@@ -41,6 +41,31 @@ if (!SYSTEM && store.get('openWaterReset') !== RESET_VERSION) {   // (nie beim W
     try { for (const k of Object.keys(localStorage)) if (k.startsWith('openWater')) localStorage.removeItem(k); } catch (e) {}
     store.set('openWaterReset', RESET_VERSION);
 }
+// WELT-SAISON (Server-Reset alle 8 Wochen, Alexander 5.10.) – der eigene Spielstand übernimmt den Reset beim Laden, bevor das
+// Spiel irgendetwas liest. openWaterSaisonMein = die Saison, in der dieser Spielstand ist (geht im Profil mit – ein Profil von
+// vor dem Reset zählt beim Weltrechner nicht). openWaterSaisonNeu setzt die Nachricht „saison“ (09-events.js), danach lädt die
+// Seite neu. Bleibt: Stadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Gems, Holz/Stein/Eisen, Gekauftes, Abholfach.
+// Weg: Stufe (→ 1, damit alle Fähigkeitspunkte), Münzen (→ 0 wie ein neuer Spieler), Verwundete, Kampfberichte, Nebel, Späher,
+// alte Befehle. (Basen, Truppen, Bündnis, Märsche stehen in der Welt – die setzt der Weltrechner zurück.)
+var saisonNeuGeladen = 0;                            // (09-events.js: Hinweis nach dem Neuladen)
+if (!SYSTEM) {
+    let mein = parseInt(store.get('openWaterSaisonMein'), 10) || 0;
+    const neu = parseInt(store.get('openWaterSaisonNeu'), 10) || 0;
+    if (!mein) {                                     // ganz neu: die laufende Saison · ein Spielstand von vor der Saison-Regel: Saison 1
+        let w = 1; try { w = Math.max(1, (JSON.parse(store.get('openWaterSaison')) || {}).nr | 0); } catch (e) {}
+        mein = store.get('openWaterLevel') === null && store.get('openWaterCity') === null ? w : 1;
+        store.set('openWaterSaisonMein', String(mein));
+    }
+    if (neu > mein) {
+        store.set('openWaterLevel', '1'); store.set('openWaterXp', '0'); store.set('openWaterSkills', '{}'); store.set('openWaterSkillPoints', '0');
+        store.set('openWaterCoins', '0');
+        for (const k of ['openWaterCombatLog', 'openWaterFogCells', 'openWaterExplored', 'openWaterScoutedIslands', 'openWaterPendingScouts', 'openWaterCarryTroops', 'openWaterBefehlAus']) store.remove(k);
+        try { const c = JSON.parse(store.get('openWaterCity')); if (c && typeof c === 'object') { c.wounded = 0; store.set('openWaterCity', JSON.stringify(c)); } } catch (e) {}
+        if (window.WELT) { WELT.befehle.length = 0; WELT.ausgang = []; }   // (welt.js hat die alten Befehle schon gelesen – sie gehören zur alten Welt)
+        store.set('openWaterSaisonMein', String(neu)); saisonNeuGeladen = neu;
+    }
+    if (store.get('openWaterSaisonNeu') !== null) store.remove('openWaterSaisonNeu');
+}
 const canvas = document.getElementById('mapCanvas');
 const ctx = canvas.getContext('2d');
 
@@ -677,6 +702,7 @@ try {
 } catch (e) {
     neutralTroopOverrides = {};
 }
+for (const isl of islands) isl.nt0 = isl.neutralTroops;   // (die erzeugte Besatzung – eine neue Welt-Saison stellt sie wieder her)
 for (const idStr of Object.keys(neutralTroopOverrides)) {
     const isl = islandById[idStr];
     if (isl) isl.neutralTroops = neutralTroopOverrides[idStr];
