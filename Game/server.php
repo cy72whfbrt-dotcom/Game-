@@ -92,7 +92,7 @@ header('Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
 // Skripte nur aus eigenen Dateien, three.js und den eigenen Inline-Skripten mit der Nonce dieser Seite (csp_nonce()) – ein
 // eingeschleustes <script> oder onclick=… liefe nicht ('unsafe-inline' gibt es nur noch für Styles)
 function csp_nonce() { static $n = null; if ($n === null) $n = base64_encode(random_bytes(16)); return $n; }
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-" . csp_nonce() . "' https://cdn.jsdelivr.net; script-src-attr 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-" . csp_nonce() . "' https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js; script-src-attr 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
 
 // Admins (dürfen admin.php benutzen; während der Wartung kommen auch sie nicht ins Spiel): feste Spieler-Nummern aus config.php
 // ('admin_ids'), nicht Namen – einen Namen könnte sich sonst jemand anderes registrieren.
@@ -917,6 +917,7 @@ class MysqlLager {
     // wenn alle Änderungen seit $seit noch gemerkt sind – sonst der ganze Teil.
     function welt_seit_flicken($seit) {
         $i = $this->welt_info();
+        if ($seit > (int)$i['version']) $seit = 0;   // Stand aus einer „Zukunft“ (nach welt_neustart: Version wieder klein) – sonst kämen nur einmal geschriebene Teile nie mehr
         $neu = []; foreach ($i['versionen'] as $k => $v) if ($v > $seit) $neu[] = $k;
         $flicken = []; $ganz = $neu;
         if ($seit > 0 && $neu && $seit >= (int)$i['version'] - 590) {
@@ -1008,12 +1009,12 @@ class MysqlLager {
         return array_sum($g);
     }
     // Erledigtes (nach einer Weile), alte Befehle (niemand hat gerechnet) und nie abgeholte Nachrichten. Bezahlte Befehle bleiben
-    // erledigt 3 Tage stehen (Zurückspielen holt sie nach, Sicherungen reichen 48 Std. zurück), unerledigt 7 Tage; abgeholte
+    // erledigt 14 Tage stehen (Zurückspielen holt sie nach – auch die Saison-Sicherung, die 2 Wochen bleibt), unerledigt 7 Tage; abgeholte
     // Nachrichten 3 Tage (so lange erkennt der Server eine feste Nummer nach dem Zurückspielen wieder)
     function aufraeumen() {
         $bez = "'" . implode("','", BEFEHLE_BEZAHLT) . "'";
         $this->db->exec("DELETE FROM ow_befehle WHERE (art IS NULL OR art NOT IN ($bez)) AND ((fertig = 1 AND erstellt < NOW() - INTERVAL 1 HOUR) OR erstellt < NOW() - INTERVAL 1 DAY)");
-        $this->db->exec("DELETE FROM ow_befehle WHERE art IN ($bez) AND ((fertig = 1 AND erstellt < NOW() - INTERVAL 3 DAY) OR erstellt < NOW() - INTERVAL 7 DAY)");
+        $this->db->exec("DELETE FROM ow_befehle WHERE art IN ($bez) AND ((fertig = 1 AND erstellt < NOW() - INTERVAL 14 DAY) OR erstellt < NOW() - INTERVAL 7 DAY)");
         $this->db->exec('DELETE FROM ow_ereignisse WHERE (abgeholt = 1 AND erstellt < NOW() - INTERVAL 3 DAY) OR erstellt < NOW() - INTERVAL 60 DAY');
     }
     // Befehle: das Handy gibt jedem eine Nummer (cid) – kommt er wegen einer Wiederholung nochmal, wird er nicht nochmal abgelegt.
@@ -1111,10 +1112,15 @@ class MysqlLager {
         $this->db->prepare('UPDATE ow_spieler SET online_bis = ?, puls_anzahl = IF(puls_minute = ?, puls_anzahl + 1, 1), puls_minute = ? WHERE id = ?')->execute([$jetzt + 20, $m, $m, $uid]);
         $q = $this->db->prepare('SELECT puls_anzahl FROM ow_spieler WHERE id = ?'); $q->execute([$uid]); return (int)$q->fetchColumn();
     }
-    // Alle echten Spieler (für die Karte), Profile nur wenn neuer als $seit
-    function spieler_liste($seit, $alles = false) {   // $alles: Weltrechner (sieht Münzen und Verwundete der anderen)
-        $q = $this->db->prepare('SELECT id, COALESCE(anzeigename, CONCAT(\'Spieler \', id)) name, online_bis, profil_zeit, IF(profil_zeit > ?, profil, NULL) profil FROM ow_spieler');
-        $q->execute([(int)$seit]);
+    // Alle echten Spieler (für die Karte), Profile nur wenn neuer als $seit – mit 5 s Überlappung: profil_zeit steht schon vor dem
+    // Speichern fest, ein Profil kann also nach einem neueren sichtbar werden (doppelte übernimmt welt.js nicht ein zweites Mal).
+    // $ganz = false: nur, wer gerade online ist, eben offline ging (30 s) oder ein neues Profil hat – die ganze Liste holt das Handy alle ~10 s
+    const SPIELER_UEBERLAPPUNG = 5000;
+    function spieler_liste($seit, $alles = false, $ganz = true) {   // $alles: Weltrechner (sieht Münzen und Verwundete der anderen)
+        $ab = (int)$seit > 0 ? (int)$seit - self::SPIELER_UEBERLAPPUNG : 0;
+        $q = $this->db->prepare('SELECT id, COALESCE(anzeigename, CONCAT(\'Spieler \', id)) name, online_bis, profil_zeit, IF(profil_zeit > ?, profil, NULL) profil FROM ow_spieler'
+            . ($ganz ? '' : ' WHERE online_bis > ? OR profil_zeit > ?'));
+        $q->execute($ganz ? [$ab] : [$ab, time() - 30, $ab]);
         return array_map(function ($z) use ($alles) {
             $p = $z['profil'] !== null ? json_decode($z['profil'], false, 12) : null;
             if ($p && !$alles) $p = profil_oeffentlich($p);   // Münzen, Verwundete, Rohstoffe, Gems, Helden, Ausrüstung, Fähigkeiten, Stadt anderer sieht nur der Weltrechner
@@ -1352,10 +1358,9 @@ function welt_puls($ich, $d) {
     if (!$sys && !hash_equals($l->spiel_token($uid), $tok)) json_antwort(409, ['fehler' => 'anderswo geöffnet']);
     $jetzt = time();
     if (!$sys && $l->puls_zaehlen($uid, $jetzt) > 150) json_antwort(429, ['fehler' => 'zu schnell']);   // normal: 30 pro Minute (+ einer pro Befehl)
-    // Zur Sicherheit (falls der Cronjob fehlt): ist ein Spieler da und der Weltrechner schlägt nicht mehr, schaut der Wachhund nach
-    if (!$sys && $jetzt - (int)@filemtime(__DIR__ . '/weltrechner/herz.php') > 60 && $jetzt - (int)@filemtime(__DIR__ . '/weltrechner/zustand.php') > 30 && is_file(__DIR__ . '/weltrechner/wachhund.php')) {
-        try { require_once __DIR__ . '/weltrechner/wachhund.php'; wachhund_runde('spieler'); } catch (Throwable $e) { error_log('Open Water Wachhund: ' . $e->getMessage()); }
-    }
+    // Zur Sicherheit (falls der Cronjob fehlt): ist ein Spieler da und der Weltrechner schlägt nicht mehr, schaut der Wachhund nach –
+    // erst NACH der Antwort (ein Neustart dauert Sekunden, der Spieler soll nicht darauf warten; siehe welt_antwort)
+    $wachhund = !$sys && $jetzt - (int)@filemtime(__DIR__ . '/weltrechner/herz.php') > 60 && $jetzt - (int)@filemtime(__DIR__ . '/weltrechner/zustand.php') > 30 && is_file(__DIR__ . '/weltrechner/wachhund.php');
     if (!$sys && isset($d['profil']) && is_string($d['profil']) && strlen($d['profil']) < 400000 && ($pr = profil_bereinigen($d['profil'])) !== null && $pr !== false) $profil_ok = $l->profil_setzen($uid, $pr);
     // Angenommene Befehle meldet der Server zurück (befehle_ok) – nur die nimmt das Handy aus seinem Ausgang. Nie mehr als 200
     // wartende Befehle pro Spieler (kein Stau für alle) – bezahlte zählen nicht dazu und werden immer angenommen (sonst wäre
@@ -1372,6 +1377,7 @@ function welt_puls($ich, $d) {
         $seit = (int)($d['seit'] ?? 0);
         [$i, $welt, $sicht, $ganz, $sk, $mv] = $l->fest_lesen(function () use ($l, $d, $uid, $seit) {
             $i = $l->welt_info();
+            if ($seit > (int)$i['version']) $seit = 0;   // Stand aus einer „Zukunft“ (Welt-Neustart, Version wieder klein): alles neu
             $welt = $l->welt_seit_flicken($seit);   // (Version und Teile aus demselben Stand)
             $sicht = $l->sicht_laden($uid);
             $sk = array_merge(NEBEL_TEILE, ['openWaterArmies', 'openWaterFields']);   // (auch Armeen/Felder: was er jetzt sieht, kommt mit Zahlen)
@@ -1395,11 +1401,13 @@ function welt_puls($ich, $d) {
         $antwort['neu_leiter'] = false;
         $antwort['version'] = $antwort['welt']['version'];
         $antwort['ereignisse'] = $l->ereignisse_abholen($uid);   // (schon verbuchte, noch nicht gesicherte überspringt das Handy)
-        $antwort['spieler'] = $l->spieler_liste((int)($d['spieler_seit'] ?? 0), false);
+        // die ganze Liste (Namen, online) nur, wenn das Handy darum bittet (alle ~10 s) – sonst nur, wer sich gerade geändert hat
+        // (altes Handy ohne spieler_alle: immer ganz)
+        $antwort['spieler'] = $l->spieler_liste((int)($d['spieler_seit'] ?? 0), false, !array_key_exists('spieler_alle', $d) || !empty($d['spieler_alle']));
         if (!empty($d['befehle'])) $antwort['befehle_ok'] = $befehle_ok;
         if (isset($profil_ok)) $antwort['profil_ok'] = $profil_ok;   // (false: zu schnell – das Handy schickt es beim nächsten Mal nochmal)
         $antwort['zeit'] = $jetzt;
-        welt_antwort($antwort);
+        welt_antwort($antwort, $wachhund ? 'puls_wachhund' : null);
     }
     // ab hier nur der Weltrechner (er allein schreibt die Welt – unter der Welt-Sperre)
     $l->welt_sperren();
@@ -1463,13 +1471,23 @@ function welt_puls($ich, $d) {
     $antwort['zeit'] = $jetzt;
     welt_antwort($antwort);
 }
-// Antwort gepackt, wenn der Browser das kann (Welt-Teile sind groß)
-function welt_antwort($a) {
+function puls_wachhund() {
+    try { require_once __DIR__ . '/weltrechner/wachhund.php'; wachhund_runde('spieler'); } catch (Throwable $e) { error_log('Open Water Wachhund: ' . $e->getMessage()); }
+}
+// Antwort als JSON – kaputtes UTF-8 (z. B. in einem alten Namen) wird ersetzt statt die ganze Antwort zu verlieren. false: geht nicht
+function welt_antwort_text($a) { return json_encode($a, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE); }
+// Antwort gepackt, wenn der Browser das kann (Welt-Teile sind groß). $danach: läuft erst, wenn die Antwort beim Spieler ist
+// (kann der Server die Anfrage nicht vorher abschließen: wie früher davor)
+function welt_antwort($a, $danach = null) {
+    $j = welt_antwort_text($a);
+    if ($j === false) { error_log('Open Water: Puls-Antwort nicht als JSON: ' . json_last_error_msg()); json_antwort(500, ['fehler' => 'Serverfehler']); }
+    $ende = function_exists('fastcgi_finish_request') ? 'fastcgi_finish_request' : (function_exists('litespeed_finish_request') ? 'litespeed_finish_request' : null);
+    if ($danach && !$ende) { $danach(); $danach = null; }
     header('Content-Type: application/json; charset=utf-8');
     header('Cache-Control: no-store');
-    $j = json_encode($a, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     if (strpos($_SERVER['HTTP_ACCEPT_ENCODING'] ?? '', 'gzip') !== false && strlen($j) > 2000) { header('Content-Encoding: gzip'); $j = gzencode($j, 5); }
     echo $j;
+    if ($danach) { $ende(); $danach(); }
     exit;
 }
 

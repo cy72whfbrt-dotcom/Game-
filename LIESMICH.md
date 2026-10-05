@@ -400,6 +400,16 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Lehnt der Weltrechner einen Späher zu einer fremden Basis ab, schickt er `{art:'spaeh', fehl:1}` → Eintrag „Kein Bericht“;
   ohne Antwort nach 10 Min. dasselbe (`spaehAbgelaufen`, 02c – alte, ewig wartende Einträge auch). Test
   `tests/browser/spaeh_verst_test.js`.
+- **5.10. Server-Paket (p5):** Nach einem Welt-Neustart (Version wieder klein) bekam ein schlafender Tab (seit=50000) die nur
+  einmal geschriebenen Teile nie mehr – jetzt gilt ein Stand aus der „Zukunft“ als 0 (`welt_seit_flicken`, Puls vor `$ganz`).
+  CSP: fremde Skripte nur genau `three@0.160.0/build/three.min.js` (nicht ganz jsdelivr). Spieler-Liste: Profile mit 5 s
+  Überlappung (profil_zeit steht vor dem Speichern fest – eins konnte verloren gehen), welt.js übernimmt ein schon bekanntes
+  nicht nochmal; die ganze Liste (Namen, online) holt das Handy nur alle 10 s (`spieler_alle`), sonst kommen nur Spieler, die
+  online sind, eben gingen oder ein neues Profil haben (altes Handy ohne `spieler_alle`: immer ganz). Wachhund im Spieler-Puls
+  erst NACH der Antwort (`fastcgi_finish_request`/`litespeed_finish_request`; gibt es keins: wie früher davor). Puls-Antwort
+  mit `JSON_INVALID_UTF8_SUBSTITUTE`, geht es gar nicht: Log + 500 (`welt_antwort_text`). Alexander (#13, Schulklassen):
+  30 neue Konten pro Stunde und 100 Fehlversuche in 15 Min. je Adresse (index.php). Alexander (#14): erledigte bezahlte Befehle
+  bleiben 14 Tage (`aufraeumen`) – die Saison-Sicherung (2 Wochen) holt sie beim Zurückspielen nach. Tests: server_test.php.
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.

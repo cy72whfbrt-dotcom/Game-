@@ -180,5 +180,48 @@ pruefe('Leitung gilt 45 s', LEITER_SEK, 45);
 $wp = file_get_contents(__DIR__ . '/../Game/server/07-welt-puls.php');
 pruefe('Leitung ab Ende der Anfrage (time(), nicht $jetzt)', [strpos($wp, 'leiter_setzen(0, $tok, time() + LEITER_SEK)') !== false, strpos($wp, '$jetzt + LEITER_SEK') !== false], [true, false]);
 pruefe('Wachhund erkennt einen Absturz am Herzschlag, nicht an der Leitung', LEITER_SEK < 180 && strpos(file_get_contents(__DIR__ . '/../Game/weltrechner/wachhund.php'), 'const WR_HERZ_ALT = 180;') !== false, true);
+// --- Datenbank-Teile ohne Datenbank: eine nachgemachte (merkt sich SQL und Werte)
+class TestDb { public $sql = []; public $werte = []; public $zeilen = [];
+    function prepare($q) { $this->sql[] = $q; return $this; } function exec($q) { $this->sql[] = $q; return 0; } function query($q) { $this->sql[] = $q; return $this; }
+    function execute($w = []) { $this->werte[] = $w; return true; } function fetchAll() { return $this->zeilen; } }
+class TestLager extends MysqlLager { public $info; function __construct() {}
+    function welt_info() { return $this->info; }
+    function stand_laden($uid, $nur = null) { $r = []; foreach ((array)$nur as $k) $r[$k] = '{"k":"' . $k . '"}'; return $r; } }
+function test_lager() { $t = new TestLager; $db = new TestDb; $p = new ReflectionProperty(MysqlLager::class, 'db'); $p->setAccessible(true); $p->setValue($t, $db); return [$t, $db]; }
+// Welt-Neustart (Version wieder klein): ein schlafender Tab mit seit=50000 bekommt trotzdem alle Teile
+[$tl, $db] = test_lager(); $tl->info = ['version' => 3, 'versionen' => ['openWaterKarte' => 1, 'openWaterIslandTroops' => 3], 'welt_zeit' => 0];
+$w = $tl->welt_seit_flicken(50000);
+pruefe('Stand aus der Zukunft: alle Teile ganz', array_keys((array)$w['setzen']), ['openWaterKarte', 'openWaterIslandTroops']);
+pruefe('Stand aus der Zukunft: keine Flicken, nichts aus der Datenbank', [(array)$w['flicken'], $db->sql], [[], []]);
+pruefe('Puls prüft den Stand vor $ganz', strpos($wp, "if (\$seit > (int)\$i['version']) \$seit = 0;") < strpos($wp, '$ganz = (int)'), true);
+// Spieler-Liste: Profile mit 5 s Überlappung; ohne „ganz“ nur, wer online ist/eben ging oder ein neues Profil hat
+[$tl, $db] = test_lager(); $db->zeilen = [['id' => 7, 'name' => 'Anna', 'online_bis' => 0, 'profil_zeit' => 99000, 'profil' => null]];
+$sl = $tl->spieler_liste(100000);
+pruefe('Spieler-Liste: Überlappung 5 s', $db->werte[0], [95000]);
+pruefe('Spieler-Liste ganz: ohne Bedingung', strpos($db->sql[0], 'WHERE'), false);
+pruefe('Spieler-Liste: Eintrag', [$sl[0]['id'], $sl[0]['name'], $sl[0]['online'], $sl[0]['profil_zeit']], [7, 'Anna', false, 99000]);
+[$tl, $db] = test_lager(); $tl->spieler_liste(0, false, false);
+pruefe('Spieler-Liste nur Änderungen', [strpos($db->sql[0], 'WHERE online_bis > ? OR profil_zeit > ?') !== false, $db->werte[0][0], $db->werte[0][2], abs($db->werte[0][1] - (time() - 30)) <= 2], [true, 0, 0, true]);
+$wj = file_get_contents(__DIR__ . '/../Game/welt.js');
+pruefe('welt.js: doppeltes Profil nicht nochmal', strpos($wj, '!(m.profil && (s.profil_zeit || 0) <= (m.profilZeit || 0))') !== false, true);
+pruefe('welt.js: ganze Spieler-Liste alle 10 s', strpos($wj, 'pulsStart - spielerAlleAt > 10000') !== false, true);
+// Aufräumen: erledigte bezahlte Befehle bleiben 14 Tage (Saison-Sicherung bleibt 2 Wochen und holt sie beim Zurückspielen nach)
+[$tl, $db] = test_lager(); $tl->aufraeumen();
+pruefe('bezahlte Befehle 14 Tage', [strpos($db->sql[1], 'art IN') !== false, strpos($db->sql[1], 'fertig = 1 AND erstellt < NOW() - INTERVAL 14 DAY') !== false], [true, true]);
+pruefe('Saison-Sicherung nicht länger als die Befehle', SAISON_SICHERUNG_SEK <= 14 * 86400, true);
+// Puls-Antwort: kaputtes UTF-8 wird ersetzt (nicht die ganze Antwort weg); was gar nicht geht: false (→ 500 + Log)
+pruefe('Antwort mit kaputtem UTF-8', welt_antwort_text(['name' => "Anna\xff"]), "{\"name\":\"Anna\u{FFFD}\"}");
+pruefe('Antwort, die nicht geht', welt_antwort_text(['x' => NAN]), false);
+pruefe('Antwort: false → 500', strpos($wp, "json_antwort(500,") !== false, true);
+// Wachhund im Puls erst nach der Antwort (wenn der Server die Anfrage vorher abschließen kann)
+pruefe('Wachhund nach der Antwort', [strpos($wp, "welt_antwort(\$antwort, \$wachhund ? 'puls_wachhund' : null)") !== false, strpos($wp, 'fastcgi_finish_request') !== false], [true, true]);
+// Login-Grenzen pro Adresse (Schulklassen, Alexander 5.10.): 30 neue Konten pro Stunde, 100 Fehlversuche in 15 Min.
+$ix = file_get_contents(__DIR__ . '/../Game/index.php');
+pruefe('Grenze neue Konten', strpos($ix, "bremse('neu:' . client_ip(), 30, 3600)") !== false, true);
+pruefe('Grenze Fehlversuche je Adresse', strpos($ix, "bremse('loginip:' . client_ip(), 100, 900)") !== false, true);
+// CSP: fremde Skripte nur genau three.js (nicht ganz jsdelivr) – und genau die Datei, die die Spielseite einbindet
+$sh = file_get_contents(__DIR__ . '/../Game/server/02-sicherheit-datenlecks.php');
+pruefe('CSP nur three.js', [strpos($sh, "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js; script-src-attr") !== false, strpos($sh, 'https://cdn.jsdelivr.net;') !== false], [true, false]);
+pruefe('Spielseite bindet genau diese Datei ein', strpos(file_get_contents(__DIR__ . '/../Game/spielseite/08-dialoge-stadt-skripte.php'), 'src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"') !== false, true);
 echo ($fehler ? "$fehler von $n Tests FEHLGESCHLAGEN\n" : "Alle $n Server-Tests bestanden.\n");
 exit($fehler ? 1 : 0);

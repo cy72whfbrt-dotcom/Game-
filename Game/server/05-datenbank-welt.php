@@ -79,6 +79,7 @@
     // wenn alle Änderungen seit $seit noch gemerkt sind – sonst der ganze Teil.
     function welt_seit_flicken($seit) {
         $i = $this->welt_info();
+        if ($seit > (int)$i['version']) $seit = 0;   // Stand aus einer „Zukunft“ (nach welt_neustart: Version wieder klein) – sonst kämen nur einmal geschriebene Teile nie mehr
         $neu = []; foreach ($i['versionen'] as $k => $v) if ($v > $seit) $neu[] = $k;
         $flicken = []; $ganz = $neu;
         if ($seit > 0 && $neu && $seit >= (int)$i['version'] - 590) {
@@ -170,12 +171,12 @@
         return array_sum($g);
     }
     // Erledigtes (nach einer Weile), alte Befehle (niemand hat gerechnet) und nie abgeholte Nachrichten. Bezahlte Befehle bleiben
-    // erledigt 3 Tage stehen (Zurückspielen holt sie nach, Sicherungen reichen 48 Std. zurück), unerledigt 7 Tage; abgeholte
+    // erledigt 14 Tage stehen (Zurückspielen holt sie nach – auch die Saison-Sicherung, die 2 Wochen bleibt), unerledigt 7 Tage; abgeholte
     // Nachrichten 3 Tage (so lange erkennt der Server eine feste Nummer nach dem Zurückspielen wieder)
     function aufraeumen() {
         $bez = "'" . implode("','", BEFEHLE_BEZAHLT) . "'";
         $this->db->exec("DELETE FROM ow_befehle WHERE (art IS NULL OR art NOT IN ($bez)) AND ((fertig = 1 AND erstellt < NOW() - INTERVAL 1 HOUR) OR erstellt < NOW() - INTERVAL 1 DAY)");
-        $this->db->exec("DELETE FROM ow_befehle WHERE art IN ($bez) AND ((fertig = 1 AND erstellt < NOW() - INTERVAL 3 DAY) OR erstellt < NOW() - INTERVAL 7 DAY)");
+        $this->db->exec("DELETE FROM ow_befehle WHERE art IN ($bez) AND ((fertig = 1 AND erstellt < NOW() - INTERVAL 14 DAY) OR erstellt < NOW() - INTERVAL 7 DAY)");
         $this->db->exec('DELETE FROM ow_ereignisse WHERE (abgeholt = 1 AND erstellt < NOW() - INTERVAL 3 DAY) OR erstellt < NOW() - INTERVAL 60 DAY');
     }
     // Befehle: das Handy gibt jedem eine Nummer (cid) – kommt er wegen einer Wiederholung nochmal, wird er nicht nochmal abgelegt.
@@ -273,10 +274,15 @@
         $this->db->prepare('UPDATE ow_spieler SET online_bis = ?, puls_anzahl = IF(puls_minute = ?, puls_anzahl + 1, 1), puls_minute = ? WHERE id = ?')->execute([$jetzt + 20, $m, $m, $uid]);
         $q = $this->db->prepare('SELECT puls_anzahl FROM ow_spieler WHERE id = ?'); $q->execute([$uid]); return (int)$q->fetchColumn();
     }
-    // Alle echten Spieler (für die Karte), Profile nur wenn neuer als $seit
-    function spieler_liste($seit, $alles = false) {   // $alles: Weltrechner (sieht Münzen und Verwundete der anderen)
-        $q = $this->db->prepare('SELECT id, COALESCE(anzeigename, CONCAT(\'Spieler \', id)) name, online_bis, profil_zeit, IF(profil_zeit > ?, profil, NULL) profil FROM ow_spieler');
-        $q->execute([(int)$seit]);
+    // Alle echten Spieler (für die Karte), Profile nur wenn neuer als $seit – mit 5 s Überlappung: profil_zeit steht schon vor dem
+    // Speichern fest, ein Profil kann also nach einem neueren sichtbar werden (doppelte übernimmt welt.js nicht ein zweites Mal).
+    // $ganz = false: nur, wer gerade online ist, eben offline ging (30 s) oder ein neues Profil hat – die ganze Liste holt das Handy alle ~10 s
+    const SPIELER_UEBERLAPPUNG = 5000;
+    function spieler_liste($seit, $alles = false, $ganz = true) {   // $alles: Weltrechner (sieht Münzen und Verwundete der anderen)
+        $ab = (int)$seit > 0 ? (int)$seit - self::SPIELER_UEBERLAPPUNG : 0;
+        $q = $this->db->prepare('SELECT id, COALESCE(anzeigename, CONCAT(\'Spieler \', id)) name, online_bis, profil_zeit, IF(profil_zeit > ?, profil, NULL) profil FROM ow_spieler'
+            . ($ganz ? '' : ' WHERE online_bis > ? OR profil_zeit > ?'));
+        $q->execute($ganz ? [$ab] : [$ab, time() - 30, $ab]);
         return array_map(function ($z) use ($alles) {
             $p = $z['profil'] !== null ? json_decode($z['profil'], false, 12) : null;
             if ($p && !$alles) $p = profil_oeffentlich($p);   // Münzen, Verwundete, Rohstoffe, Gems, Helden, Ausrüstung, Fähigkeiten, Stadt anderer sieht nur der Weltrechner

@@ -32,10 +32,9 @@ function welt_puls($ich, $d) {
     if (!$sys && !hash_equals($l->spiel_token($uid), $tok)) json_antwort(409, ['fehler' => 'anderswo geöffnet']);
     $jetzt = time();
     if (!$sys && $l->puls_zaehlen($uid, $jetzt) > 150) json_antwort(429, ['fehler' => 'zu schnell']);   // normal: 30 pro Minute (+ einer pro Befehl)
-    // Zur Sicherheit (falls der Cronjob fehlt): ist ein Spieler da und der Weltrechner schlägt nicht mehr, schaut der Wachhund nach
-    if (!$sys && $jetzt - (int)@filemtime(__DIR__ . '/weltrechner/herz.php') > 60 && $jetzt - (int)@filemtime(__DIR__ . '/weltrechner/zustand.php') > 30 && is_file(__DIR__ . '/weltrechner/wachhund.php')) {
-        try { require_once __DIR__ . '/weltrechner/wachhund.php'; wachhund_runde('spieler'); } catch (Throwable $e) { error_log('Open Water Wachhund: ' . $e->getMessage()); }
-    }
+    // Zur Sicherheit (falls der Cronjob fehlt): ist ein Spieler da und der Weltrechner schlägt nicht mehr, schaut der Wachhund nach –
+    // erst NACH der Antwort (ein Neustart dauert Sekunden, der Spieler soll nicht darauf warten; siehe welt_antwort)
+    $wachhund = !$sys && $jetzt - (int)@filemtime(__DIR__ . '/weltrechner/herz.php') > 60 && $jetzt - (int)@filemtime(__DIR__ . '/weltrechner/zustand.php') > 30 && is_file(__DIR__ . '/weltrechner/wachhund.php');
     if (!$sys && isset($d['profil']) && is_string($d['profil']) && strlen($d['profil']) < 400000 && ($pr = profil_bereinigen($d['profil'])) !== null && $pr !== false) $profil_ok = $l->profil_setzen($uid, $pr);
     // Angenommene Befehle meldet der Server zurück (befehle_ok) – nur die nimmt das Handy aus seinem Ausgang. Nie mehr als 200
     // wartende Befehle pro Spieler (kein Stau für alle) – bezahlte zählen nicht dazu und werden immer angenommen (sonst wäre
@@ -52,6 +51,7 @@ function welt_puls($ich, $d) {
         $seit = (int)($d['seit'] ?? 0);
         [$i, $welt, $sicht, $ganz, $sk, $mv] = $l->fest_lesen(function () use ($l, $d, $uid, $seit) {
             $i = $l->welt_info();
+            if ($seit > (int)$i['version']) $seit = 0;   // Stand aus einer „Zukunft“ (Welt-Neustart, Version wieder klein): alles neu
             $welt = $l->welt_seit_flicken($seit);   // (Version und Teile aus demselben Stand)
             $sicht = $l->sicht_laden($uid);
             $sk = array_merge(NEBEL_TEILE, ['openWaterArmies', 'openWaterFields']);   // (auch Armeen/Felder: was er jetzt sieht, kommt mit Zahlen)
@@ -75,11 +75,13 @@ function welt_puls($ich, $d) {
         $antwort['neu_leiter'] = false;
         $antwort['version'] = $antwort['welt']['version'];
         $antwort['ereignisse'] = $l->ereignisse_abholen($uid);   // (schon verbuchte, noch nicht gesicherte überspringt das Handy)
-        $antwort['spieler'] = $l->spieler_liste((int)($d['spieler_seit'] ?? 0), false);
+        // die ganze Liste (Namen, online) nur, wenn das Handy darum bittet (alle ~10 s) – sonst nur, wer sich gerade geändert hat
+        // (altes Handy ohne spieler_alle: immer ganz)
+        $antwort['spieler'] = $l->spieler_liste((int)($d['spieler_seit'] ?? 0), false, !array_key_exists('spieler_alle', $d) || !empty($d['spieler_alle']));
         if (!empty($d['befehle'])) $antwort['befehle_ok'] = $befehle_ok;
         if (isset($profil_ok)) $antwort['profil_ok'] = $profil_ok;   // (false: zu schnell – das Handy schickt es beim nächsten Mal nochmal)
         $antwort['zeit'] = $jetzt;
-        welt_antwort($antwort);
+        welt_antwort($antwort, $wachhund ? 'puls_wachhund' : null);
     }
     // ab hier nur der Weltrechner (er allein schreibt die Welt – unter der Welt-Sperre)
     $l->welt_sperren();
@@ -143,13 +145,23 @@ function welt_puls($ich, $d) {
     $antwort['zeit'] = $jetzt;
     welt_antwort($antwort);
 }
-// Antwort gepackt, wenn der Browser das kann (Welt-Teile sind groß)
-function welt_antwort($a) {
+function puls_wachhund() {
+    try { require_once __DIR__ . '/weltrechner/wachhund.php'; wachhund_runde('spieler'); } catch (Throwable $e) { error_log('Open Water Wachhund: ' . $e->getMessage()); }
+}
+// Antwort als JSON – kaputtes UTF-8 (z. B. in einem alten Namen) wird ersetzt statt die ganze Antwort zu verlieren. false: geht nicht
+function welt_antwort_text($a) { return json_encode($a, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE); }
+// Antwort gepackt, wenn der Browser das kann (Welt-Teile sind groß). $danach: läuft erst, wenn die Antwort beim Spieler ist
+// (kann der Server die Anfrage nicht vorher abschließen: wie früher davor)
+function welt_antwort($a, $danach = null) {
+    $j = welt_antwort_text($a);
+    if ($j === false) { error_log('Open Water: Puls-Antwort nicht als JSON: ' . json_last_error_msg()); json_antwort(500, ['fehler' => 'Serverfehler']); }
+    $ende = function_exists('fastcgi_finish_request') ? 'fastcgi_finish_request' : (function_exists('litespeed_finish_request') ? 'litespeed_finish_request' : null);
+    if ($danach && !$ende) { $danach(); $danach = null; }
     header('Content-Type: application/json; charset=utf-8');
     header('Cache-Control: no-store');
-    $j = json_encode($a, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     if (strpos($_SERVER['HTTP_ACCEPT_ENCODING'] ?? '', 'gzip') !== false && strlen($j) > 2000) { header('Content-Encoding: gzip'); $j = gzencode($j, 5); }
     echo $j;
+    if ($danach) { $ende(); $danach(); }
     exit;
 }
 

@@ -279,9 +279,10 @@
             const id = 'u' + s.id, m = W.menschen[id] || (W.menschen[id] = { id, uid: s.id });
             m.name = s.name; m.online = s.online;
             if (typeof BOT_DEFS !== 'undefined') { const bd = BOT_DEFS.find(b => b.id === id); if (bd && bd.mensch) bd.name = s.name; }   // neuer Name sichtbar
-            if (s.profil && (+s.profil.saison || 1) >= nr) { m.profil = s.profil; m.profilNeu = true; m.profilZeit = s.profil_zeit || 0; }   // (profilZeit: wann der Server es bekam – Hauptbuch: was war da schon bezahlt?)
+            if (s.profil && (+s.profil.saison || 1) >= nr && !(m.profil && (s.profil_zeit || 0) <= (m.profilZeit || 0))) { m.profil = s.profil; m.profilNeu = true; m.profilZeit = s.profil_zeit || 0; }   // (profilZeit: wann der Server es bekam – Hauptbuch: was war da schon bezahlt?)
             if (s.profil_zeit > W.spielerSeit) W.spielerSeit = s.profil_zeit;
         }
+        // (der Server schickt Profile mit 5 s Überlappung – ein schon übernommenes kommt also nochmal: dann nicht nochmal einsetzen)
     }
     menschenAktualisieren(OW.spieler);
     // alle anderen echten Spieler, die schon Basen haben (oder jemals hatten), als Mitspieler-Einträge
@@ -314,7 +315,7 @@
     // 4) Puls: alle 2 s mit dem Server reden
     // ===================================================================================================
     const PULS_MS = 2000;
-    let pulsLaeuft = false, letztesProfil = '', profilAt = 0, pulsStart = 0, gleichNochmal = false, pulsFehler = false;
+    let pulsLaeuft = false, letztesProfil = '', profilAt = 0, pulsStart = 0, gleichNochmal = false, pulsFehler = false, spielerAlleAt = 0;
     const basis = {};   // (Weltrechner) Stand der Mitspieler-Töpfe der anderen Menschen beim letzten Puls → Unterschiede = Nachrichten
 
     function topf(id) {
@@ -382,7 +383,8 @@
         pulsLaeuft = true; pulsStart = Date.now(); pulsFehler = false;
         let neuGesendet = null;
         const anfrage = { aktion: 'puls', token: S.token, seit: W.version, spieler_seit: W.spielerSeit };
-        if (!SYSTEM) anfrage.sicht_v = W.sichtV;                              // 3B: welche Sicht (Nebel auf dem Server) ich schon habe
+        if (!SYSTEM) { anfrage.sicht_v = W.sichtV;                            // 3B: welche Sicht (Nebel auf dem Server) ich schon habe
+            const alle = pulsStart - spielerAlleAt > 10000; anfrage.spieler_alle = alle ? 1 : 0; if (alle) spielerAlleAt = pulsStart; }   // ganze Spieler-Liste (Namen, online) nur alle 10 s, sonst nur Änderungen
         else { if (Object.keys(W.sichtRaus).length) { anfrage.sicht = W.sichtRaus; W.sichtRaus = {}; }   // (Weltrechner) neue Sicht einzelner Spieler
             if (Object.keys(W.armeeSichtRaus).length) { anfrage.armee_sicht = W.armeeSichtRaus; W.armeeSichtRaus = {}; }
             if (W.sicherungBitte) anfrage.sicherung = 1; }   // (Welt-Saison: vor dem Reset eine Sicherung der Welt beim Server)
