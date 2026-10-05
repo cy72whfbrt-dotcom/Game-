@@ -102,6 +102,20 @@ function renderActiveMarches() {
     setShown(battleLogBadge, total > 0);
 }
 
+// Stufe, Titel, die 4 Ausrüstungsteile, Helden, Fähigkeiten und Stadt einer Seite (Kampfbericht und Spähbericht)
+function kampfGearHtml(g) { if (!g) return '';
+    const tiles = g.items.map((it, i) => { const d = EQUIPMENT_DEFS[it[0]], rd = RARITY_DEFS[it[1]];
+        return '<span class="gslot"><span class="tile' + (rd ? '' : ' empty') + '"' + (rd ? ' data-r="' + rd.key + '"' : '') + ' title="' + d.name + (rd ? ' – ' + rd.label + ', Stufe ' + it[2] : ' – leer') + '">' + icon(d.icon) +
+            (rd ? '<span class="lvl">' + it[2] + '</span>' + (it[3] ? '<span class="stars">' + icon('star').repeat(it[3]) + '</span>' : '') : '') + '</span></span>'; }).join('');
+    const heroes = (g.hx ? [g.hx, ...(g.hx.h2 ? [g.hx.h2] : [])] : []).map(x => { const hd = heroById(x.id); if (!hd) return ''; const rd = RARITY_DEFS[hd.r];   // who led (Haupt- und Zweitheld), his stars, whether the rage fired, every bonus
+            return '<div class="logHero" style="--hc:' + rd.color + '"><span class="ghero">' + heroImg(hd.id) + '<span><b>' + hd.name + ' <small>' + heroStarTxt(x.q) + ' · ' + rd.label + '</small></b>' +
+                '<small>' + (x.zweit ? 'Zweitheld · Werte und passive Fähigkeiten zu ' + Math.round(HERO_ZWEIT * 100) + ' %' : x.fired ? '<em class="logHeroFire">' + escapeHtml(x.skill || '') + ' gezündet</em>' : 'Aktive Fähigkeit nicht gezündet') + '</small></span></span>' +
+                (x.lines || []).map(l => '<div class="logLine buff"><span>' + escapeHtml(l[0]) + '</span><span>' + escapeHtml(l[1]) + '</span></div>').join('') + '</div>'; }).join('') +
+        (g.heroes || []).map(x => { const hd = heroById(x[0]); return hd ? '<span class="ghero" style="--hc:' + RARITY_DEFS[hd.r].color + '">' + heroImg(hd.id) + '<span><b>' + hd.name + '</b><small>Stufe ' + x[1] + '</small></span></span>' : ''; }).join('');   // (older reports)
+    if (g.heroOnly) return '<div class="logGear"><div class="logGearHeroes">' + heroes + '</div></div>';
+    return '<div class="logGear"><div class="logGearHead">Spieler-Stufe ' + g.lvl + (g.title ? ' · Titel ' + escapeHtml(g.title) : '') + '</div>' +
+        '<div class="logGearItems">' + tiles + '</div>' + (heroes ? '<div class="logGearHeroes">' + heroes + '</div>' : '') +
+        '<div class="logGearMeta">Fähigkeit Angriff ' + g.skills[0] + ' · Verteidigung ' + g.skills[1] + '<br>Mauer ' + g.city[0] + ' · Krankenhaus ' + g.city[1] + ' · Heldenhalle ' + g.city[2] + '</div></div>'; }
 const combatLogKey = e => e.at + '|' + e.type + '|' + (e.targetId ?? e.toId);
 // Re-renders the list while the panel is open: opened "Kampfdetails" stay open and the
 // rows the player is reading stay where they are when a new row is added on top.
@@ -131,19 +145,7 @@ function renderCombatLog() {
     const fmt1 = v => (v || 0).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     const fmtM = v => Math.abs(v || 0) >= 1e6 ? fmtCompact(v || 0) : fmtNum(v || 0);   // meta lines: "987,7 Mio."
     const fmtD = v => fmtNum(v || 0);   // detail cards
-    const gearHtml = g => { if (!g) return '';
-        const tiles = g.items.map((it, i) => { const d = EQUIPMENT_DEFS[it[0]], rd = RARITY_DEFS[it[1]];
-            return '<span class="gslot"><span class="tile' + (rd ? '' : ' empty') + '"' + (rd ? ' data-r="' + rd.key + '"' : '') + ' title="' + d.name + (rd ? ' – ' + rd.label + ', Stufe ' + it[2] : ' – leer') + '">' + icon(d.icon) +
-                (rd ? '<span class="lvl">' + it[2] + '</span>' + (it[3] ? '<span class="stars">' + icon('star').repeat(it[3]) + '</span>' : '') : '') + '</span></span>'; }).join('');
-        const heroes = (g.hx ? [g.hx, ...(g.hx.h2 ? [g.hx.h2] : [])] : []).map(x => { const hd = heroById(x.id); if (!hd) return ''; const rd = RARITY_DEFS[hd.r];   // who led (Haupt- und Zweitheld), his stars, whether the rage fired, every bonus
-                return '<div class="logHero" style="--hc:' + rd.color + '"><span class="ghero">' + heroImg(hd.id) + '<span><b>' + hd.name + ' <small>' + heroStarTxt(x.q) + ' · ' + rd.label + '</small></b>' +
-                    '<small>' + (x.zweit ? 'Zweitheld · Werte und passive Fähigkeiten zu ' + Math.round(HERO_ZWEIT * 100) + ' %' : x.fired ? '<em class="logHeroFire">' + escapeHtml(x.skill || '') + ' gezündet</em>' : 'Aktive Fähigkeit nicht gezündet') + '</small></span></span>' +
-                    (x.lines || []).map(l => '<div class="logLine buff"><span>' + escapeHtml(l[0]) + '</span><span>' + escapeHtml(l[1]) + '</span></div>').join('') + '</div>'; }).join('') +
-            (g.heroes || []).map(x => { const hd = heroById(x[0]); return hd ? '<span class="ghero" style="--hc:' + RARITY_DEFS[hd.r].color + '">' + heroImg(hd.id) + '<span><b>' + hd.name + '</b><small>Stufe ' + x[1] + '</small></span></span>' : ''; }).join('');   // (older reports)
-        if (g.heroOnly) return '<div class="logGear"><div class="logGearHeroes">' + heroes + '</div></div>';
-        return '<div class="logGear"><div class="logGearHead">Stufe ' + g.lvl + (g.title ? ' · Titel ' + escapeHtml(g.title) : '') + '</div>' +
-            '<div class="logGearItems">' + tiles + '</div>' + (heroes ? '<div class="logGearHeroes">' + heroes + '</div>' : '') +
-            '<div class="logGearMeta">Fähigkeit Angriff ' + g.skills[0] + ' · Verteidigung ' + g.skills[1] + '<br>Mauer ' + g.city[0] + ' · Krankenhaus ' + g.city[1] + ' · Heldenhalle ' + g.city[2] + '</div></div>'; };
+    const gearHtml = kampfGearHtml;
     const fieldHeroLine = e => [[e.attacker, e.hA], [e.defender, e.hD]].map(([n, t]) => t ? ' · ' + (n === 'Du' ? 'dein Held ' : escapeHtml(n) + ' mit ') + escapeHtml(t) : '').join('');   // who led out in the open
     const fieldHeroDet = e => e.hx ? '<details><summary>Dein Held</summary>' + gearHtml({ items: [], lvl: playerLvl, hx: e.hx, skills: [], city: [], heroOnly: 1 }) + '</details>' : undefined;
     const karte = (e, kind, ic, badge, title, sub, bar, chips, det) => logRowHtml(kind, ic, logBadge(badge[0], badge[1]) + title, sub, ago(e), (bar || '') + logChips(chips) + (det || ''));   // jede Karte gleich aufgebaut
@@ -224,9 +226,13 @@ function renderCombatLog() {
         }
         if (entry.type === 'scout') {
             if (entry.fehl) return karte(entry, 'scout', 'scout', ['scout', 'Kein Bericht'], T(entry.targetId), '', '', [['info', 'Der Späher hat keinen Bericht gebracht']]);   // (der Weltrechner hat ihn abgelehnt oder nach 10 Min. nichts geschickt)
-            return karte(entry, 'scout', 'scout', ['scout', 'Gespäht'], T(entry.targetId), entry.spy ? escapeHtml(entry.spy.name) + ' · Stufe ' + fmtNum(entry.spy.lvl) : '', '',
-                [['troops', chipN(entry.troops) + ' Truppen'], ...(entry.verst > 0 ? [['troops', chipN(entry.verst) + ' Verstärkung']] : []), ['defense', chipN(entry.defense) + ' Verteidigung']], spaeherBlickHtml(entry.spy));
+            const alt = Date.now() - (entry.at || 0) >= SPAEH_ALT_MS;   // Alter des Berichts: ab 30 Min. gelb
+            return karte(entry, 'scout', 'scout', ['scout', 'Gespäht'], T(entry.targetId), entry.spy ? escapeHtml(entry.spy.name) + ' · Spieler-Stufe ' + fmtNum(entry.spy.lvl) + (entry.spy.bl ? ' · Basis Stufe ' + fmtNum(entry.spy.bl) : '') : '', '',
+                [['troops', chipN(entry.troops) + ' Truppen'], ...(entry.verst > 0 ? [['troops', chipN(entry.verst) + ' Verstärkung']] : []), ['defense', chipN(entry.defense) + ' Verteidigung'],
+                    !entry.wartet && ['hourglass', 'gespäht ' + ago(entry) + (alt ? ' · neu spähen?' : ''), alt ? 'warn' : '']], spaeherBlickHtml(entry.spy));
         }
+        if (entry.type === 'ausgespaeht') return karte(entry, 'loss', 'scout', ['loss', 'Ausgespäht'], T(entry.targetId),   // jemand hat deine Basis ausgespäht
+            whoLink(entry.botId || botIdByName[entry.botName], entry.botName || 'Jemand') + ' hat deine Basis ausgespäht – rechne mit einem Angriff.', '', []);
         if (entry.type === 'retreat') {
             return karte(entry, 'retreat', 'recall', ['retreat', 'Zurück'], T(entry.toId), '', '', [['troops', chipN(entry.troops) + ' Truppen wieder daheim']]);
         }
@@ -345,7 +351,7 @@ const kampflogUmbauen = (function () {
     const zl = (a, b, kl, src) => '<div class="logLine' + (kl || '') + '"><span>' + a + (src ? '<small class="logSrc">' + src + '</small>' : '') + '</span><span>' + b + '</span></div>';
     const el = h => { const t = document.createElement('template'); t.innerHTML = h.trim(); return t.content.firstChild; };
     const leerHeld = (n, t) => '<div class="logHero kl-keinheld"><span class="ghero"><span class="kl-leer">?</span><span><b>' + n + '</b><small>' + t + '</small></span></span></div>';
-    const leerGear = (stufe, angr) => '<div class="logGear"><div class="logGearHead">' + (stufe || 'Stufe –') + '</div><div class="logGearItems">' +
+    const leerGear = (stufe, angr) => '<div class="logGear"><div class="logGearHead">' + (stufe || 'Spieler-Stufe –') + '</div><div class="logGearItems">' +
         [['weapon', 'Waffe'], ['armor', 'Rüstung'], ['shield', 'Schild'], ['boots', 'Stiefel']].map(([i, n]) => '<span class="gslot"><span class="tile empty" title="' + n + ' – leer">' + ic(i) + '</span></span>').join('') +
         '</div><div class="logGearMeta">Fähigkeit Angriff – · Verteidigung –</div></div>';
     const textOf = n => (n && n.firstElementChild ? n.firstElementChild.textContent : '').trim();
@@ -432,6 +438,7 @@ const kampflogUmbauen = (function () {
         }
     }
 
+    // Spähbericht im selben Aufbau wie ein Verteidiger im Kampfbericht: Verteidigung Teil für Teil, Ausrüstung, Helden, Basis, Rohstoffe
     function spaeh(row, e) {
         const d = row.querySelector('details'); if (!d) return;
         const L = {}; d.querySelectorAll('.logLine').forEach(l => { L[textOf(l)] = l.lastElementChild; });
@@ -439,16 +446,25 @@ const kampflogUmbauen = (function () {
         const roh = [['Gold'], ['Holz'], ['Stein'], ['Eisen']].map(([n]) => { const c = L[n]; if (!c) return zl(n, '–', ' kl-null');
             const sm = c.querySelector('small'), haupt = c.cloneNode(true); if (haupt.querySelector('small')) haupt.querySelector('small').remove();
             return zl(n, haupt.textContent.trim(), ' buff', sm ? sm.textContent.replace(/[()]/g, '') : ''); }).join('');
-        const name = (e.spy && e.spy.name) || v('Herr').split(' · ')[0];
+        const s = e.spy, name = (s && s.name) || v('Herr').split(' · ')[0], alt = Date.now() - (e.at || 0) >= SPAEH_ALT_MS;
+        const teile = s && Array.isArray(s.teile) && s.teile.length ? s.teile : null;   // (ältere Berichte: nur die Summe)
+        const vert = teile ? teile.map((q, i) => zl(escapeHtml(q[0]), (i ? (q[1] < 0 ? '−' : '+') : '') + fmt(Math.abs(q[1])), i ? (q[1] < 0 ? ' buff malus' : ' buff') : '', escapeHtml(q[2] || ''))).join('')
+            : zl('Grundverteidigung', fmt(e.defense), '', s ? 'gesamt – älterer Bericht ohne Aufteilung, neu spähen' : 'gesamt');
+        const items = s && s.gear ? Object.keys(EQUIPMENT_DEFS).map(k => { const g = s.gear[k]; return g ? [k, g[0], g[1], g[2] || 0] : [k, -1, 0, 0]; }) : null;   // leerer Platz = nichts angelegt
+        const gear = items ? kampfGearHtml({ lvl: fmt(s.lvl), title: s.titel, items, skills: [], city: [] }) : leerGear(s ? 'Spieler-Stufe ' + fmt(s.lvl) : 'Ohne Herrn', false);
         const box = el('<div class="logSide"><div class="logSideLabel">Gespäht · ' + escapeHtml(name) + '</div>' +
-            zl('Truppen', fmt(e.troops)) + (Number.isFinite(e.verst) ? zl('Verstärkung', fmt(e.verst), '', 'Bündnis-Truppen in der Basis – verteidigen mit') : '') + zl('Held', '+0', '', 'zählt beim Verteidigen nicht') + zl('Grundverteidigung', fmt(e.defense)) +
+            zl('Gespäht', timeAgoLabel(e.at || 0) + (alt ? ' – neu spähen?' : ''), alt ? ' kl-alt' : '') +
+            zl('Truppen', fmt(e.troops)) + (Number.isFinite(e.verst) ? zl('Verstärkung', fmt(e.verst), '', 'Bündnis-Truppen in der Basis – verteidigen mit') : '') + zl('Held', '+0', '', 'zählt beim Verteidigen nicht') + vert +
             '<div class="logSum"><span>Gesamt</span><span>' + fmt((e.troops || 0) + (e.verst || 0) + (e.defense || 0)) + '</span></div>' + '<div class="logCasualty kl-null"><span>Gefallen</span><span>–</span></div>' + zl('Geflohen', '–', ' kl-null') +
-            leerGear('Stufe ' + fmt(e.spy && e.spy.lvl), false) + '</div>');
+            gear + '</div>');
         normal(box, false, {}, 0);
         box.querySelector('.kl-rss').remove();
         const kh = box.querySelector('.kl-keinheld small'); if (kh && L['Helden']) kh.textContent = 'Zuhause: ' + v('Helden') + ' – zählen beim Verteidigen nicht';
-        const meta = box.querySelector('.logGearMeta'); if (meta) meta.textContent = 'Fähigkeiten ' + v('Fähigkeiten');
-        box.insertAdjacentHTML('beforeend', '<div class="kl-rss"><div class="logGearHead">Basis</div>' + zl('Friedensschild', v('Friedensschild')) + zl('Mauer', v('Mauer')) + zl('Burg', v('Burg')) + zl('Forschung', v('Forschung')) + '</div>' +
+        const meta = box.querySelector('.logGearMeta');
+        if (meta) meta.textContent = s && s.sk ? 'Fähigkeiten Angriff ' + s.sk.attack + ' · Vert. ' + s.sk.defense + ' · Truppen ' + s.sk.troops
+            : s ? 'Ausrüstung und Fähigkeiten unbekannt (älterer Bericht) – neu spähen' : 'Neutrale Basis: keine Ausrüstung, keine Helden';
+        if (!items) box.querySelectorAll('.logGear .tile.empty').forEach(t => { t.title = t.title.replace('leer', 'unbekannt'); });
+        box.insertAdjacentHTML('beforeend', '<div class="kl-rss"><div class="logGearHead">Basis</div>' + zl('Basis-Stufe', s && s.bl ? 'Stufe ' + fmt(s.bl) : '–') + zl('Friedensschild', v('Friedensschild')) + zl('Mauer', v('Mauer')) + zl('Burg', v('Burg')) + zl('Forschung', v('Forschung')) + zl('Helden zu Hause', v('Helden')) + '</div>' +
             '<div class="kl-rss"><div class="logGearHead">Rohstoffe</div>' + roh + '</div>');
         const sum = d.querySelector('summary').outerHTML;
         d.innerHTML = sum; const cmp = el('<div class="logCompare"><div class="kl-gruppe kl-v"></div></div>'); cmp.firstChild.appendChild(box); d.appendChild(cmp);

@@ -166,7 +166,8 @@ function renderPopup() {
             liveHtml(popupStats, '<div class="stat-grid">' +
                 statTile('Truppen', 'troops', scouted ? fmtTile(effectiveTroops(island)) : UNK, scouted && ownerBot ? 'is-enemy' : '') +
                 statTile('Verteidigung', 'defense', scouted ? fmtTile(effectiveDefense(island)) : UNK) + '</div>' +
-                (scouted ? '' : '<div class="notice">' + icon('scout') + '<span>Stärke unbekannt. Spähen deckt Truppen und Verteidigung auf.</span></div>') + midNotice(island) + ringNotice(island) +
+                (scouted ? (spaehAlterText(island.id) ? '<div class="notice' + (Date.now() - spaehVom(island.id) >= SPAEH_ALT_MS ? ' notice--warn' : '') + '">' + icon('scout') + '<span>' + spaehAlterText(island.id) + '</span></div>' : '')   // wie alt ist der Bericht?
+                    : '<div class="notice">' + icon('scout') + '<span>Stärke unbekannt. Spähen deckt Truppen und Verteidigung auf.</span></div>') + midNotice(island) + ringNotice(island) +
                 (isCapital(island.id) ? '<div class="notice notice--gold">' + icon('castle') + '<span>Fällt nie · Sieg = ' + Math.round(HAUPT_BEUTE * 100) + ' % Beute über dem Schutz' + (brennt(island.id) ? ' · brennt gerade' : '') + '</span></div>' : '') +
                 (island.type === 'gate' && !ownerBot ? '<div class="notice notice--gold">' + icon('lock') + '<span>Tor: Unbesetzt ist es verschlossen – erobere es, um über die Brücke zu kommen. Wer es besitzt, geht kostenlos durch und bestimmt die Maut für alle anderen.</span></div>' : '') +
                 (island.type === 'megaTemple' ? '<div class="notice">' + icon('rank') + '<span>' + (ownerBot ? escapeHtml(ownerBot.name) + ' verteilt die Titel (neu alle 3 Min.).' : 'Niemand verteilt gerade Titel.') + '</span><button type="button" class="btn btn--secondary btn--sm" data-view-titles>Titel ansehen</button></div>' : '') +
@@ -223,7 +224,8 @@ function renderAttackPreview(island, scouted) {
                 '<div class="force force--foe"><span class="stat-l">Abwehr' + icon('defense') + '</span><b data-foe="total">?</b><small data-foe="sub">nicht gespäht</small></div>' +
             '</div>' +
             (scouted
-                ? '<div><div class="balance" data-preview="balance"><i></i><b></b></div><div class="balance-note"><span>Kräfteverhältnis</span><span data-preview="verdict"></span></div></div>'
+                ? '<div><div class="balance" data-preview="balance"><i></i><b></b></div><div class="balance-note"><span>Kräfteverhältnis</span><span data-preview="verdict"></span></div></div>' +
+                  '<div class="notice" data-preview="alter" hidden></div>'
                 : '<div class="notice">' + icon('scout') + '<span>Abwehr unbekannt: ohne Spähen ist der Ausgang ungewiss.</span></div>') +
             '<div class="field"><div class="field-top"><span class="field-l"><span class="sm-hide">Truppen </span>entsenden</span><span class="val"><input id="attackTroopsLabel" class="troop-in" inputmode="decimal" autocomplete="off" enterkeyhint="done" aria-label="Anzahl Truppen"> / <span data-preview="max"></span></span></div>' +
                 '<input type="range" id="attackTroopsSlider" class="slider" min="0" max="' + SLIDER_STEPS + '" value="' + troopsToSlider(previewAttackTroops || 0, maxTroops) + '"' + (maxTroops <= 0 ? ' disabled' : '') + ' aria-label="Truppen entsenden">' +
@@ -367,6 +369,9 @@ function patchAttackPreview() {
         b.classList.toggle('on', maxTroops > 0 && (previewFraction !== null
             ? previewFraction === parseFloat(b.dataset.f)
             : Math.max(1, Math.round(maxTroops * parseFloat(b.dataset.f))) === shown));
+    const alEl = popupStats.querySelector('[data-preview="alter"]');
+    if (alEl) { const t = spaehAlterText(island.id); alEl.hidden = !t; alEl.classList.toggle('notice--warn', !!t && Date.now() - spaehVom(island.id) >= SPAEH_ALT_MS);   // Alter des Spähberichts, ab 30 Min. gelb
+        if (alEl.textContent !== t) alEl.innerHTML = icon('scout') + '<span>' + t + '</span>'; }
     if (scouted) {                                      // fog of war: enemy numbers and the ratio exist only when scouted
         const enemyTroops = effectiveTroops(island), enemyDefense = Math.round(effectiveDefense(island) * (1 - (px ? Math.min(90, px.def) : 0) / 100)), total = enemyTroops + enemyDefense;   // (Rammbock & Co. cut it)
         popupStats.querySelector('[data-foe="total"]').textContent = fmtNum(total);

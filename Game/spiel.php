@@ -977,6 +977,7 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
 .logList .kl-gruppe.kl-a .logSide .logSideLabel{color:#ff9f8f}
 .logList .kl-gruppe.kl-v .logSide .logSideLabel{color:#9fc4ff}
 .kl-null span{color:var(--tx-3)}
+.kl-alt span:last-child{color:#f1c27a}   /* Spähbericht älter als 30 Min. */
 .logHero .ghero > span > small{display:block;min-height:2.7em}
 .logBalTxt{gap:10px}
 .logBalTxt span{min-width:0;white-space:normal!important;overflow:visible!important;text-overflow:clip!important}
@@ -1799,7 +1800,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         <button id="pushKnopf" class="btn btn--secondary btn--sm" type="button" hidden></button>
         <div id="pushArten" class="set-liste" hidden>
           <label class="set-zeile"><span>Angriff auf deine Basis</span><input type="checkbox" data-push-art="angriff"></label>
-          <label class="set-zeile"><span>Späher unterwegs zu dir</span><input type="checkbox" data-push-art="spaeher"></label>
+          <label class="set-zeile"><span>Späher bei dir<small>unterwegs zu dir und „hat deine Basis ausgespäht“</small></span><input type="checkbox" data-push-art="spaeher"></label>
           <label class="set-zeile"><span>Basis verloren</span><input type="checkbox" data-push-art="verloren"></label>
           <label class="set-zeile"><span>Kriegsherr erschienen</span><input type="checkbox" data-push-art="boss"></label>
           <label class="set-zeile"><span>Sammler zurück</span><input type="checkbox" data-push-art="sammler"></label>

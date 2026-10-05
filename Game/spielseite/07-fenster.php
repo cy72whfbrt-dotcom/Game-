@@ -69,7 +69,7 @@
         <button id="pushKnopf" class="btn btn--secondary btn--sm" type="button" hidden></button>
         <div id="pushArten" class="set-liste" hidden>
           <label class="set-zeile"><span>Angriff auf deine Basis</span><input type="checkbox" data-push-art="angriff"></label>
-          <label class="set-zeile"><span>Späher unterwegs zu dir</span><input type="checkbox" data-push-art="spaeher"></label>
+          <label class="set-zeile"><span>Späher bei dir<small>unterwegs zu dir und „hat deine Basis ausgespäht“</small></span><input type="checkbox" data-push-art="spaeher"></label>
           <label class="set-zeile"><span>Basis verloren</span><input type="checkbox" data-push-art="verloren"></label>
           <label class="set-zeile"><span>Kriegsherr erschienen</span><input type="checkbox" data-push-art="boss"></label>
           <label class="set-zeile"><span>Sammler zurück</span><input type="checkbox" data-push-art="sammler"></label>

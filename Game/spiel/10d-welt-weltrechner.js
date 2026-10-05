@@ -903,14 +903,14 @@ if (window.WELT) {
         if (b64 !== z.gesendet) { z.gesendet = b64; WELT.sichtRaus[parseInt(who.slice(1), 10)] = b64; }
     }
     // Späher an einer fremden Basis angekommen: der Bericht so, wie er gerade ist (Truppen, Verteidigung, Blick auf den Herrn) –
-    // das Handy hat diese Werte nicht (server.php FREMD_OEFFENTLICH)
+    // das Handy hat diese Werte nicht (server.php FREMD_OEFFENTLICH). Ein echter Spieler als Herr erfährt, dass er ausgespäht wurde.
     function spaehRunde(who, hb, now) {
         if (!hb.sb || !hb.sb.some(sc => now >= sc[1])) return;
         hb.sb = hb.sb.filter(sc => {
             if (now < sc[1]) return true;
             const t = islandById[sc[0]], ow = t && islandOwnerOf(t.id);
             const r = { art: 'spaeh', ziel: sc[0] };
-            if (t) { r.troops = effectiveTroops(t); r.defense = effectiveDefense(t); r.verst = verst.l.reduce((s, v) => s + (v.t === t.id ? v.n : 0), 0); r.spy = ow && ow !== who ? spaeherBlick(ow) : null; }   // (verst: Verstärkung – eigene Zeile im Bericht)
+            if (t) { r.troops = effectiveTroops(t); r.defense = effectiveDefense(t); r.verst = verst.l.reduce((s, v) => s + (v.t === t.id ? v.n : 0), 0); r.spy = ow && ow !== who ? spaeherBlick(ow, t) : null; if (ow && ow !== who) ausgespaeht(ow, who, t.id); }   // (verst: Verstärkung – eigene Zeile im Bericht)
             WELT.nachricht(parseInt(who.slice(1), 10), r); return false;
         });
         if (!hb.sb.length) delete hb.sb;
@@ -1245,6 +1245,7 @@ if (window.WELT) {
         if (x.defenderId === 'player') x.defenderId = null;
         addCombatLogEntry(x);
         if (e.hint) flashHint(e.hint, 5000);
+        if (x.type === 'ausgespaeht') { sfx('warn'); return; }   // (kein Kampf: nur die Nachricht)
         if (x.targetId !== undefined && islandById[x.targetId]) spawnBattleFx(x.targetId, x.type === 'attack' ? !!x.won : !x.won || !!x.capitalHolds, x.type === 'attack' ? (x.won ? 'Sieg' : 'Niederlage') : (x.won ? (x.capitalHolds ? 'Hauptstadt hält' : 'Basis verloren') : 'Verteidigt'), x.botName || x.defenderName || '');
         sfx(x.won === (x.type === 'attack') ? 'victory' : 'warn');
     });
