@@ -719,6 +719,14 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
   2,63 Mio. Truppen/h, 14,3 Mio. Gold/h; Stufe 110: 8,53 Mio./h, 28,4 Mio./h) – große Wirtschafts-Umstellung, Sucher
   rechnet die Folgen aus, dann Fragen an Alexander.
 
+## 11b. GUTE-NACHT-MERKLISTE (Alexander 5.10. abends) – wird gemeinsam besprochen, dann über Nacht gebaut
+Alles für heute Nacht kommt hier rein. Erst besprechen (Fragen an Alexander), dann bauen. Hochladen nur nach Alexanders Ja.
+1. **Truppen/Wirtschaft „pro Stunde“ wie Million Lords** – Ertrag deutlich langsamer (Alexander: „geht alles etwas
+   langsamer, finde ich schön“; an Million-Lords-Werte müssen wir uns nicht halten). Sucher rechnet die Folgen aus;
+   Fragen dazu laufen. *(in Besprechung)*
+2. Alexanders 3 Fehler (Abschnitt 11): Späher-Knöpfe, Angriff von der nächsten Basis, Spähbericht ohne Ausrüstung.
+3. Ideen-Liste Teil 1 (32 Punkte) und Teil 2 (N1–N11) – Punkt für Punkt besprechen.
+
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
   sie SELBST aufleveln, das kostet Rohstoffe (Münzen u. a.) – wie ein eigenes Gebäude, nicht automatisch mit dem Level.
