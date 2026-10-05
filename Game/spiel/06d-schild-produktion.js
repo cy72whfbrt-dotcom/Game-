@@ -150,8 +150,9 @@ shopToEquipBtn.addEventListener('click', () => {
 // correctly.
 let nextProductionTickAt = Date.now() + productionTickMs();
 const prodCarry = { coins: 0, troops: {} };      // fractions left over each tick, so small % bonuses aren't rounded away
+const prodGanz = x => Math.floor(x + 1e-6);          // (94 × 1/3600 × 3600 ist 93,999… – Rechenfehler der Kommazahlen kosten nie eine ganze Truppe/Münze)
 function truppenMitRest(carry, id, n) {          // n Truppen (auch ein Bruchteil) zur Basis id – der Rest wartet im carry auf den nächsten Tick
-    const tc = (carry[id] || 0) + n, tw = Math.floor(tc); carry[id] = tc - tw; if (tw) islandTroops[id] = (islandTroops[id] || 0) + tw;
+    const tc = (carry[id] || 0) + n, tw = prodGanz(tc); carry[id] = tc - tw; if (tw) islandTroops[id] = (islandTroops[id] || 0) + tw;
 }
 function runProductionTick() {
     const now = Date.now();
@@ -193,7 +194,7 @@ function produceTicks(ticks) {                  // everyone's bases produce for 
                 truppenMitRest(prodCarry.troops, rewardBaseId() ?? ownedId, TEMPLE_TROOP_BONUS_PER_TICK * mult * ticks);   // bonus troops go to the capital
             }
         }
-        const cw = Math.floor(prodCarry.coins); coins += cw; prodCarry.coins -= cw;
+        const cw = prodGanz(prodCarry.coins); coins += cw; prodCarry.coins -= cw;
         if (AUF && !SYSTEM) AUF.rohBuchen('player');
         // Bots produce by the same rules: base rates × their own gear, skills, city, title and throne - on their own
         // clock (their "Geschwindigkeit" skill, not yours), with fractions carried over so small bonuses count.
@@ -217,7 +218,7 @@ function produceTicks(ticks) {                  // everyone's bases produce for 
                     b.gems += TEMPLE_GEMS_PER_TICK * mult * bt;
                 }
             }
-            const cw = Math.floor(bc.coins); botCoins[bot.id] = (botCoins[bot.id] || 0) + cw; bc.coins -= cw;
+            const cw = prodGanz(bc.coins); botCoins[bot.id] = (botCoins[bot.id] || 0) + cw; bc.coins -= cw;
             if (AUF) AUF.rohBuchen(bot.id);
         }
         saveBotState();

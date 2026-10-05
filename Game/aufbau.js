@@ -57,7 +57,7 @@ function basisRoh(who, islandId, level, ticks) {
 }
 function rohBuchen(who) {
     const c = rohCarry[who]; if (!c) return; const d = rohLeer(); let any = false;
-    for (const k of ROH) { const w = Math.floor(c[k]); if (w > 0) { d[k] = w; c[k] -= w; any = true; } }
+    for (const k of ROH) { const w = Math.floor(c[k] + 1e-6); if (w > 0) { d[k] = w; c[k] -= w; any = true; } }   // (Kommazahl-Rechenfehler kosten nie eine Einheit)
     if (!any) return;
     const r = rohVon(who); if (!r) return;
     for (const k of ROH) r[k] = Math.min(1e15, (r[k] || 0) + d[k]);
