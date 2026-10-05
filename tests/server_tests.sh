@@ -32,11 +32,18 @@
 # OW_FORTSCHRITT=<datei>: je Test eine Zeile (Gruppe, Test, Start, Ergebnis) – setzt tests/komplett.sh.
 # Einzelne Tests (nacheinander, nur Gruppe 1): tests/server_tests.sh <arbeitsordner> kiste_test armee_test
 # Nur betroffene Tests: tests/server_tests.sh <arbeitsordner> betroffen [<git-bereich>]
-#   schaut git diff --name-only <git-bereich> an (Standard origin/claude/neues-projekt-8agldl...HEAD, dazu Änderungen ohne
-#   Commit) und wählt die Tests nach der Tabelle BETROFFEN unten (in den üblichen Gruppen). OW_TROCKEN=1: nur anzeigen.
+#   schaut git diff --name-only <git-bereich> an (Standard $(git merge-base origin/claude/neues-projekt-8agldl HEAD)..HEAD,
+#   dazu Änderungen ohne Commit) und wählt die Tests nach der Tabelle BETROFFEN unten (in den üblichen Gruppen).
+#   Ausgabe „N Dateien → Tests …“. OW_TROCKEN=1: nur anzeigen.
+# Läuft schon ein Lauf im selben Arbeitsordner (Sperre <arbeitsordner>/.server.lock, wer sie hält steht in
+#   .server.lock.info), WARTET das Skript bis zu OW_WARTEN_MIN Minuten (Standard 60) und meldet jede Minute „wartet auf
+#   Lauf von …“. OW_NICHT_WARTEN=1: sofort abbrechen wie früher. Mit der Sperre räumt es zuerst Reste abgebrochener Läufe
+#   ab: PHP-Server der Gruppen (Port 8771/8772 … nur mit Arbeitsordner gruppeN dieses Ordners), Weltrechner unter gruppeN,
+#   Datenbanken <testdb>_gN (werden danach wieder frisch angelegt).
 cd "$(dirname "$0")/.." || exit 1
 G=$(pwd)
 . werkzeuge/fortschritt.sh
+AUFRUF="$0 $*"
 A="${1:?Aufruf: tests/server_tests.sh <arbeitsordner> [test …]}"; A=$(cd "$A" && pwd) || exit 1; shift
 
 # Tabelle BETROFFEN: Datei-Muster (wie bei case, Pfad ab Projekt-Ordner) → Server-Tests, die davon abhängen
@@ -57,7 +64,8 @@ BETROFFEN=(
   "tests/server/geschenk.sh                                   → kiste_test verst_test klick_test"
 )
 if [ "$1" = betroffen ]; then
-  BEREICH="${2:-origin/claude/neues-projekt-8agldl...HEAD}"
+  if [ -n "$2" ]; then BEREICH="$2"
+  else B0=$(git merge-base origin/claude/neues-projekt-8agldl HEAD) || { echo "FEHLER: git merge-base geht nicht"; exit 1; }; BEREICH="${B0:0:9}..HEAD"; fi
   DATEIEN=$(git diff --name-only "$BEREICH") || { echo "FEHLER: git diff $BEREICH geht nicht"; exit 1; }
   DATEIEN=$(printf '%s\n%s\n' "$DATEIEN" "$(git diff --name-only HEAD)" | sort -u)
   WAHL=" "
@@ -73,7 +81,7 @@ if [ "$1" = betroffen ]; then
   done
   set --
   for t in klick_test verst_test absturz_test armee_test kiste_test admin_test schummel_test; do [[ "$WAHL" == *" $t "* ]] && set -- "$@" "$t"; done
-  echo "== geänderte Dateien ($BEREICH): $(echo $DATEIEN | wc -w) · betroffene Server-Tests: ${*:-keine}"
+  echo "== $(echo $DATEIEN | wc -w) Dateien ($BEREICH + ohne Commit) → Tests ${*:-keine}"
   [ $# = 0 ] && { echo "keine betroffenen Server-Tests"; exit 0; }
   BETR_AUSWAHL="$*"; set --
 fi
@@ -101,7 +109,25 @@ if [ -n "$OW_TROCKEN" ]; then
   for i in "${!GRUPPEN[@]}"; do echo "Gruppe $((i + 1)): ${GRUPPEN[i]}${GRUPPEN_SEK[i]:+ (≈ $((GRUPPEN_SEK[i] / 60)):$(printf %02d $((GRUPPEN_SEK[i] % 60))) Min.)}"; done
   exit 0
 fi
-exec 9>"$A/.server.lock"; flock -n 9 || { echo "FEHLER: läuft schon in $A"; exit 1; }   # nie zwei Läufe im selben Arbeitsordner
+# Nie zwei Läufe im selben Arbeitsordner: Sperre holen (sonst warten, außer OW_NICHT_WARTEN=1); wer sie hält: .server.lock.info
+exec 9>"$A/.server.lock"
+if ! flock -n 9; then
+  [ -n "$OW_NICHT_WARTEN" ] && { echo "FEHLER: läuft schon in $A ($(cat "$A/.server.lock.info" 2>/dev/null))"; exit 1; }
+  MAXMIN="${OW_WARTEN_MIN:-60}"
+  for m in $(seq 1 "$MAXMIN"); do
+    echo "$(date -u +%H:%M) wartet auf Lauf von $(cat "$A/.server.lock.info" 2>/dev/null || echo "?") ($m/$MAXMIN Min.)"
+    flock -w 60 9 && break
+    [ "$m" = "$MAXMIN" ] && { echo "FEHLER: nach $MAXMIN Min. läuft immer noch ein Lauf in $A"; exit 1; }
+  done
+fi
+SERVER_PIDS=""; GRUPPEN_GAME=""
+aufraeumen() {   # am Ende: PHP-Server + Weltrechner der Gruppen 2/3 dieses Laufs, Info zur Sperre
+  [ -n "$SERVER_PIDS" ] && kill $SERVER_PIDS 2>/dev/null
+  for w in $GRUPPEN_GAME; do pkill -9 -f -- "$w/weltrechner" 2>/dev/null; done
+  rm -f "$A/.server.lock.info"
+}
+trap aufraeumen EXIT
+echo "pid $$ · Start $(date -u '+%d.%m. %H:%M') UTC · $AUFRUF" > "$A/.server.lock.info"
 rm -f "$A/GRUPPEN_LAUFEN"
 PORT="${OW_TEST_PORT:-8770}"
 PFAD="html/725/klassenarbeit_GR4/Game"
@@ -114,6 +140,17 @@ cfgwert() { php -r 'echo (require $argv[1])[$argv[2]] ?? "";' "$1/config.php" "$
 db() { MYSQL_PWD=$(cfgwert "$1" db_pass) mysql -h "$(cfgwert "$1" db_host)" -u "$(cfgwert "$1" db_user)" "$(cfgwert "$1" db_name)" -N -e "$2"; }
 db "$GAME1" "SELECT 1" >/dev/null || { echo "FEHLER: Datenbank nicht erreichbar (service mariadb start?)"; exit 1; }
 werkzeuge/spiel_bauen.sh >/dev/null || exit 1
+# Reste abgebrochener Läufe (wir halten die Sperre, also gehört nichts davon einem laufenden Lauf dieses Ordners):
+# PHP-Server nur, wenn sein Arbeitsordner <A>/gruppeN ist (andere Kopien nutzen dieselben Ports), Weltrechner, Datenbank _gN
+for GA in "$A"/gruppe[0-9]*; do
+  [ -d "$GA" ] || continue
+  for p in $(pgrep -f -- "php -S 127.0.0.1:"); do
+    [ "$(readlink "/proc/$p/cwd" 2>/dev/null)" = "$GA" ] && kill "$p" 2>/dev/null && echo "== Rest aufgeräumt: PHP-Server $p ($GA)"
+  done
+  pkill -9 -f -- "$GA/www/$PFAD/weltrechner" 2>/dev/null && echo "== Rest aufgeräumt: Weltrechner in $GA"
+  DBN="$(cfgwert "$GAME1" db_name)_g${GA##*/gruppe}"
+  [ -n "$(mysql -N -e "SHOW DATABASES LIKE '$DBN'" 2>/dev/null)" ] && mysql -e "DROP DATABASE \`$DBN\`" 2>/dev/null && echo "== Rest aufgeräumt: Datenbank $DBN"
+done
 
 # Eine Gruppe: Spiel-Ordner auffrischen, Weltrechner neu starten, Tests nacheinander, PHP-/Weltrechner-Log prüfen.
 # reihe <name> <spiel-ordner> <php-log> <port> <tests…>. Ausgabe je Test „ZEIT <test> <sek>“ bzw. „ROT <test>“,
@@ -150,12 +187,6 @@ reihe() {
 }
 
 # Gruppe 2, 3 …: eigener Ordner, eigene Datenbank (frische Kopie), eigener PHP-Server
-SERVER_PIDS=""; GRUPPEN_GAME=""
-aufraeumen() {
-  [ -n "$SERVER_PIDS" ] && kill $SERVER_PIDS 2>/dev/null
-  for w in $GRUPPEN_GAME; do pkill -9 -f -- "$w/weltrechner" 2>/dev/null; done
-}
-trap aufraeumen EXIT
 gruppe_db() {   # $1 = Nummer → Datenbank <testdb>_gN frisch als Kopie der Test-Datenbank (ohne alte Sicherungen)
   local DB0 DBN U h; DB0=$(cfgwert "$GAME1" db_name); DBN="${DB0}_g$1"; U=$(cfgwert "$GAME1" db_user)
   mysql -e "DROP DATABASE IF EXISTS \`$DBN\`; CREATE DATABASE \`$DBN\`" || { echo "FEHLER: Datenbank $DBN nicht anlegbar (mysql als Admin nötig)"; return 1; }

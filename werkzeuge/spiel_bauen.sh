@@ -9,9 +9,11 @@
 # (auch bei PHP: der erste Teil fängt danach mit „<?php“ an).
 #   werkzeuge/spiel_bauen.sh          → zusammensetzen, danach KARTE.md neu (werkzeuge/karte.sh)
 #   werkzeuge/spiel_bauen.sh pruefen  → nur prüfen, ob die Dateien zu den Teilen passen (Fehler, wenn nicht)
+# Richtet außerdem einmal werkzeuge/git_einrichten.sh ein (KARTE.md bei Merges: eigene Fassung, wird hier neu erzeugt).
 set -e
 export LC_ALL=C   # feste Reihenfolge der Teile (01a vor 01b vor 02 …), egal welche Sprache eingestellt ist
 cd "$(dirname "$0")/.."
+werkzeuge/git_einrichten.sh
 # Tabelle ZIELE: Ordner der Teile | Zieldatei | erste Zeile (leer: keine). Endung der Teile = Endung der Zieldatei.
 ZIELE=(
   "Game/spiel|Game/spiel.js|// ===== spiel.js – AUTOMATISCH ZUSAMMENGESETZT aus Game/spiel/*.js (werkzeuge/spiel_bauen.sh). NICHT hier ändern! ====="

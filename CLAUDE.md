@@ -57,7 +57,15 @@ Alles Wichtige steht in `LIESMICH.md` – jede Änderung wird dort eingetragen.
   Einzelne Tests: Namen dahinter schreiben (nacheinander, nur 8770). Mehr im Kopf des Skripts.
   Nur passende Tests zu den Änderungen: `tests/server_tests.sh <arbeitsordner> betroffen [<git-bereich>]` (Tabelle im
   Skript; `OW_TROCKEN=1` zeigt nur die Auswahl). Server startet bei Bedarf selbst (`werkzeuge/server_starten.sh`).
-- **Vor jedem Commit: `werkzeuge/vor_commit.sh`** (Leerzeichen-Fehler, Konfliktmarker, `spiel_bauen.sh pruefen`).
+  Ohne Bereich nimmt `betroffen` alles seit `git merge-base origin/claude/neues-projekt-8agldl HEAD` (Ausgabe „N Dateien → Tests …“).
+  Läuft im selben Arbeitsordner schon ein Lauf, wartet das Skript (bis 60 Min., `OW_WARTEN_MIN`; jede Minute „wartet auf Lauf
+  von …“ aus `.server.lock.info`; `OW_NICHT_WARTEN=1` bricht ab) und räumt danach Reste abgebrochener Läufe (Gruppen-Server,
+  Weltrechner, DB `_gN`) selbst ab.
+- **Vor jedem Commit: `werkzeuge/vor_commit.sh`** (Leerzeichen-Fehler, Konfliktmarker, `spiel_bauen.sh pruefen`, `bash -n`
+  auf geänderte *.sh).
+- `KARTE.md` hat in `.gitattributes` `merge=ours` (kein Merge-Konflikt, wird beim Bauen neu erzeugt); den Treiber setzt
+  `werkzeuge/git_einrichten.sh` (rufen `spiel_bauen.sh` und `vor_commit.sh` selbst auf).
+- Statuszeile der Firma: `werkzeuge/status.sh <kurzname> <schritt> <text>` (Ordner `OW_FIRMA`, Standard der Firmen-Ordner).
 
 ## Arbeitsweise (Alexander 5.10.: „schneller, effizient, richtig“)
 - Erst EINMAL alles sammeln (mehrere Agenten gleichzeitig suchen, je ein Bereich), daraus EINE Liste; offene Fragen auf
