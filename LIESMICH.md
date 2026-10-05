@@ -674,8 +674,11 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
 - *Nicht:* 13 (mehrere Truppenarten), 21/22 (Talente/Helden-Ausrüstung, zu viel). 12 (Burg-Aussehen je Stufe) und
   15 (Lazarett, der Rest stirbt) gibt es schon.
 - **Subdomain/eigene Domain (Alexander 5.10.):** erledigt – bleibt bei der jetzigen Adresse (kleiner Spielerkreis, eigene Domain lohnt nicht).
-- **Prüfen (Endprüfer 5.10.):** startet der Weltrechner kurz nach dem Beitritt eines neuen Spielers neu, eicht er sich am
-  Profil neu (`wacheSehen`/`hbKlemmen`, `Game/spiel/10d-welt-weltrechner.js`) – seltenes Zeitfenster für Schummeln.
+- ✅ **Erledigt (5.10.):** startete der Weltrechner kurz nach dem Beitritt eines neuen Spielers neu (die gespeicherte Welt
+  kannte ihn noch nicht), eichte sich das Hauptbuch am – evtl. gefälschten – Profil. Jetzt merkt `welt.js` solche Einträge
+  (`hbRoh`), und `hbKlemmen` fängt bei ihnen an wie bei einem neuen Spieler (Startwerte, nie das Profil; nach dem
+  Zurückspielen einer Sicherung wird wie bisher angeglichen). Alte Spieler (in der Welt gespeichert) ändert das nicht.
+  Test: `tests/server/schummel_test.js` Teil 5 (Neustart, Eintrag weg, gefälschtes Profil → nichts davon in der Welt).
 
 ## 12. Ideen (gemerkt, noch nicht gebaut)
 - **Bündnis-Signale statt Chat (Alexander: „B finde ich gut“):** Kein freier Text. Feste Knöpfe: „Hilfe!“, „Greif
