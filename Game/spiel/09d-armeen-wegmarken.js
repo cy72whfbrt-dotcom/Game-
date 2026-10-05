@@ -235,11 +235,11 @@ function renderArmySheet() {
               : '<div class="notice">' + icon('lock') + '<span>Keine deiner Basen mit Truppen kommt hierher.</span></div>'));
     } else {
         const now = Date.now(), inc = armyJoins.filter(j => j.armyId === a.id).reduce((n, j) => n + j.troops, 0), raid = armyRaids.find(r => r.armyId === a.id);
-        const t = a.mv && a.mv.to, st = a.mv ? (t.kind === 'base' ? 'Angriff auf ' + islandTitle(islandById[t.id]) : t.kind === 'home' ? 'Heimweg' : t.kind === 'field' ? 'zur ' + FIELD_KINDS[fieldById[t.id].kind].name : 'marschiert') + ' · ' + uhrHtml(a.mv.resolveAt, 'clock') : 'lagert';
+        const t = a.mv && a.mv.to, st = a.mv ? (t.kind === 'base' ? 'Angriff auf ' + islandTitle(islandById[t.id]) : t.kind === 'home' ? 'Heimweg' : t.kind === 'field' ? 'zur ' + FIELD_KINDS[fieldById[t.id].kind].name : 'marschiert') + ' · ' + uhrHtml(a.mv.resolveAt, 'marsch') : 'lagert';
         liveHtml(el, head('Armee im Feld') +
             '<div class="field-lines"><span>Truppen</span><b>' + fmtTile(Math.floor(a.troops)) + (inc ? ' <em class="army-inc">+' + fmtCompact(inc) + ' unterwegs</em>' : '') + '</b><span>Status</span><b>' + st + '</b>' +
             '<span>Heimat</span><b>' + (armyHome(a) !== null && armyHome(a) !== undefined ? islandTitle(islandById[armyHome(a)]) : '–') + '</b></div>' +
-            (raid ? '<div class="notice notice--warn">' + icon('attack') + '<span>' + botById[raid.botId].name + ' greift an (' + fmtCompact(raid.troops) + ') · ' + uhrHtml(raid.resolveAt, 'clock') + '</span></div>' : '') +
+            (raid ? '<div class="notice notice--warn">' + icon('attack') + '<span>' + botById[raid.botId].name + ' greift an (' + fmtCompact(raid.troops) + ') · ' + uhrHtml(raid.resolveAt, 'marsch') + '</span></div>' : '') +
             '<div class="army-hint">Im Feld gibt es keine Mauer und keine Produktion.</div>' + armyHeroSeg(a) +
             '<div class="army-btns"><button class="btn btn--primary btn--sm" type="button" data-aorder>' + icon('attack') + '<span>Befehl geben</span></button>' +
             '<button class="btn btn--secondary btn--sm" type="button" data-amore>' + icon('plus') + '<span>Verstärken</span></button>' +

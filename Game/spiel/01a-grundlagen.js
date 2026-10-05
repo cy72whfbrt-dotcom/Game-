@@ -106,6 +106,7 @@ function fmtDHMS(sec) {                           // every longer time the same 
     return d ? d + ' T ' + h + ' h ' + m + ' m ' + s2 + ' s' : h ? h + ' h ' + m + ' m ' + s2 + ' s' : m ? m + ' m ' + s2 + ' s' : s2 + ' s';
 }
 function fmtClock(sec) { sec = Math.max(0, Math.ceil(sec)); return sec >= 3600 ? fmtDHMS(sec) : Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'); }
+function marschUhr(sec) { return Math.ceil(sec) > 0 ? fmtClock(sec) : 'wird ausgewertet …'; }   // Marsch am Ziel: der Weltrechner wertet ihn gleich aus (bei Last ein paar Sekunden) – keine stehende 0:00
 // ===== LIVE-ANZEIGE (Bausteine): offene Fenster werden jede Sekunde neu gerechnet (liveTick, unten), aber nur das
 // geschrieben, was sich wirklich geändert hat – kein Flackern, Knöpfe bleiben antippbar, Scroll-Position und Eingaben bleiben.
 // Laufende Uhren (uhrHtml) zählen dabei nicht als Änderung: die stellt liveUhren() jede Sekunde selbst weiter.
@@ -124,8 +125,8 @@ function liveHtml(el, h) {                          // → true, wenn neu geschr
     }
     el.innerHTML = h; el._lh = k; el._lhErst = el.firstChild; return true;
 }
-function uhrText(bis, art) { const s = (bis - Date.now()) / 1000; return art === 'clock' ? fmtClock(s) : art === 'vor' ? fmtDHMS(Math.max(1, -s)) : fmtDHMS(s); }
-function uhrHtml(bis, art) {                        // eine Restzeit, die von selbst herunterzählt (bis = Zeitpunkt in ms; art 'clock' = 4:05, 'vor' = seitdem vergangen, sonst 3 h 4 m 5 s)
+function uhrText(bis, art) { const s = (bis - Date.now()) / 1000; return art === 'clock' ? fmtClock(s) : art === 'marsch' ? marschUhr(s) : art === 'vor' ? fmtDHMS(Math.max(1, -s)) : fmtDHMS(s); }
+function uhrHtml(bis, art) {                        // eine Restzeit, die von selbst herunterzählt (bis = Zeitpunkt in ms; art 'clock' = 4:05, 'marsch' = 4:05 bis „wird ausgewertet …“, 'vor' = seitdem vergangen, sonst 3 h 4 m 5 s)
     bis = Math.round(bis); return '<span data-uhr="' + bis + '"' + (art ? ' data-uhr-art="' + art + '"' : '') + '>' + uhrText(bis, art) + '</span>';
 }
 function liveUhren(root) {                          // → true, wenn eine Uhr gerade abgelaufen ist (dann muss das Fenster gleich umstellen)

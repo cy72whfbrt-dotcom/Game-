@@ -106,6 +106,7 @@ function fmtDHMS(sec) {                           // every longer time the same 
     return d ? d + ' T ' + h + ' h ' + m + ' m ' + s2 + ' s' : h ? h + ' h ' + m + ' m ' + s2 + ' s' : m ? m + ' m ' + s2 + ' s' : s2 + ' s';
 }
 function fmtClock(sec) { sec = Math.max(0, Math.ceil(sec)); return sec >= 3600 ? fmtDHMS(sec) : Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'); }
+function marschUhr(sec) { return Math.ceil(sec) > 0 ? fmtClock(sec) : 'wird ausgewertet …'; }   // Marsch am Ziel: der Weltrechner wertet ihn gleich aus (bei Last ein paar Sekunden) – keine stehende 0:00
 // ===== LIVE-ANZEIGE (Bausteine): offene Fenster werden jede Sekunde neu gerechnet (liveTick, unten), aber nur das
 // geschrieben, was sich wirklich geändert hat – kein Flackern, Knöpfe bleiben antippbar, Scroll-Position und Eingaben bleiben.
 // Laufende Uhren (uhrHtml) zählen dabei nicht als Änderung: die stellt liveUhren() jede Sekunde selbst weiter.
@@ -124,8 +125,8 @@ function liveHtml(el, h) {                          // → true, wenn neu geschr
     }
     el.innerHTML = h; el._lh = k; el._lhErst = el.firstChild; return true;
 }
-function uhrText(bis, art) { const s = (bis - Date.now()) / 1000; return art === 'clock' ? fmtClock(s) : art === 'vor' ? fmtDHMS(Math.max(1, -s)) : fmtDHMS(s); }
-function uhrHtml(bis, art) {                        // eine Restzeit, die von selbst herunterzählt (bis = Zeitpunkt in ms; art 'clock' = 4:05, 'vor' = seitdem vergangen, sonst 3 h 4 m 5 s)
+function uhrText(bis, art) { const s = (bis - Date.now()) / 1000; return art === 'clock' ? fmtClock(s) : art === 'marsch' ? marschUhr(s) : art === 'vor' ? fmtDHMS(Math.max(1, -s)) : fmtDHMS(s); }
+function uhrHtml(bis, art) {                        // eine Restzeit, die von selbst herunterzählt (bis = Zeitpunkt in ms; art 'clock' = 4:05, 'marsch' = 4:05 bis „wird ausgewertet …“, 'vor' = seitdem vergangen, sonst 3 h 4 m 5 s)
     bis = Math.round(bis); return '<span data-uhr="' + bis + '"' + (art ? ' data-uhr-art="' + art + '"' : '') + '>' + uhrText(bis, art) + '</span>';
 }
 function liveUhren(root) {                          // → true, wenn eine Uhr gerade abgelaufen ist (dann muss das Fenster gleich umstellen)
@@ -3750,7 +3751,7 @@ function drawMarchChips() {                       // after the nameplates: one c
   if (!clusters.length) return;
   ctx.font = '600 10.5px Inter, system-ui, sans-serif'; ctx.textBaseline = 'alphabetic';
   if (!chipDigit) chipDigit = [...'0123456789'].reduce((w, d) => ctx.measureText(d).width > ctx.measureText(w).width ? d : w, '0');
-  const label = c => fmtClock(c.secs) + (c.n > 1 ? '  ×' + c.n : '');
+  const label = c => marschUhr(c.secs) + (c.n > 1 ? '  ×' + c.n : '');
   const tokens = marchTokens.map(m => ({ x: m.x - 8.5, y: m.y - 8.5, w: 17, h: 17 }));
   const towers = towerRects.map(t => ({ x: t.x + t.w * .2, y: t.y + t.h * .1, w: t.w * .6, h: t.h * .8 }));
   const screen = { x: 0, y: 0, w: viewW, h: viewH }, placed = [];
@@ -5705,7 +5706,7 @@ function playerRelevantSendCount() {
 function renderActiveMarches() {
     const rows = [];
     const T = id => islandTitle(islandById[id]);
-    const clock = sec => '<span class="num">' + fmtClock(sec) + '</span>';
+    const clock = sec => '<span class="num">' + marschUhr(sec) + '</span>';
     let relevantAttackCount = 0;
     for (const attack of pendingAttacks) {
         const secondsLeft = Math.max(0, Math.ceil(((attack.fightEndsAt || attack.resolveAt) - Date.now()) / 1000));
@@ -5728,7 +5729,7 @@ function renderActiveMarches() {
         if (islandOwnerOf(r.t) !== 'player' || bundFreund('player', r.by)) continue;
         relevantAttackCount++;
         rows.push(logRowHtml('loss', 'bot', 'Rally gegen ' + T(r.t),
-            escapeHtml(bundName(r.by)) + ' sammelt einen Angriff – los in', clock(Math.max(0, Math.ceil((r.los - Date.now()) / 1000)))));
+            escapeHtml(bundName(r.by)) + ' sammelt einen Angriff – los in', '<span class="num">' + fmtClock(Math.max(0, Math.ceil((r.los - Date.now()) / 1000))) + '</span>'));
     }
     let relevantSendCount = 0;
     for (const send of pendingSends) {
@@ -11247,11 +11248,11 @@ function renderArmySheet() {
               : '<div class="notice">' + icon('lock') + '<span>Keine deiner Basen mit Truppen kommt hierher.</span></div>'));
     } else {
         const now = Date.now(), inc = armyJoins.filter(j => j.armyId === a.id).reduce((n, j) => n + j.troops, 0), raid = armyRaids.find(r => r.armyId === a.id);
-        const t = a.mv && a.mv.to, st = a.mv ? (t.kind === 'base' ? 'Angriff auf ' + islandTitle(islandById[t.id]) : t.kind === 'home' ? 'Heimweg' : t.kind === 'field' ? 'zur ' + FIELD_KINDS[fieldById[t.id].kind].name : 'marschiert') + ' · ' + uhrHtml(a.mv.resolveAt, 'clock') : 'lagert';
+        const t = a.mv && a.mv.to, st = a.mv ? (t.kind === 'base' ? 'Angriff auf ' + islandTitle(islandById[t.id]) : t.kind === 'home' ? 'Heimweg' : t.kind === 'field' ? 'zur ' + FIELD_KINDS[fieldById[t.id].kind].name : 'marschiert') + ' · ' + uhrHtml(a.mv.resolveAt, 'marsch') : 'lagert';
         liveHtml(el, head('Armee im Feld') +
             '<div class="field-lines"><span>Truppen</span><b>' + fmtTile(Math.floor(a.troops)) + (inc ? ' <em class="army-inc">+' + fmtCompact(inc) + ' unterwegs</em>' : '') + '</b><span>Status</span><b>' + st + '</b>' +
             '<span>Heimat</span><b>' + (armyHome(a) !== null && armyHome(a) !== undefined ? islandTitle(islandById[armyHome(a)]) : '–') + '</b></div>' +
-            (raid ? '<div class="notice notice--warn">' + icon('attack') + '<span>' + botById[raid.botId].name + ' greift an (' + fmtCompact(raid.troops) + ') · ' + uhrHtml(raid.resolveAt, 'clock') + '</span></div>' : '') +
+            (raid ? '<div class="notice notice--warn">' + icon('attack') + '<span>' + botById[raid.botId].name + ' greift an (' + fmtCompact(raid.troops) + ') · ' + uhrHtml(raid.resolveAt, 'marsch') + '</span></div>' : '') +
             '<div class="army-hint">Im Feld gibt es keine Mauer und keine Produktion.</div>' + armyHeroSeg(a) +
             '<div class="army-btns"><button class="btn btn--primary btn--sm" type="button" data-aorder>' + icon('attack') + '<span>Befehl geben</span></button>' +
             '<button class="btn btn--secondary btn--sm" type="button" data-amore>' + icon('plus') + '<span>Verstärken</span></button>' +
@@ -12736,6 +12737,24 @@ setInterval(liveTick, 1000);
 // ===================================================================================================================
 // ===== DIE EINE WELT: Verbindung zu welt.js =====
 // ===================================================================================================================
+// Läuft der Weltrechner auf dem Server gerade nicht (Neustart nach einem Hänger)? Dann wartet die Welt – das zeigen wir
+// allen, statt dass Befehle scheinbar nichts tun. Kommt er zurück, geht es von selbst weiter. Erst nach 20 s ohne ihn: bei
+// Last beim Hoster dauert ein Puls des Weltrechners 15–30 s – das ist kein Hänger.
+let rechnerWeg = null, rechnerWegUhr = null;
+const RECHNER_WEG_MS = 20000;
+function rechnerStatus(laeuft) {   // (welt.js meldet jede Änderung von „rechner“)
+    if (SYSTEM) return;
+    if (laeuft) { clearTimeout(rechnerWegUhr); rechnerWegUhr = null; if (rechnerWeg) { rechnerWeg.remove(); rechnerWeg = null; } return; }
+    if (rechnerWeg || rechnerWegUhr) return;
+    rechnerWegUhr = setTimeout(function () {
+        rechnerWegUhr = null;
+        rechnerWeg = document.createElement('div');
+        rechnerWeg.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(5,6,8,.72);font-family:Georgia,serif';
+        rechnerWeg.innerHTML = '<div style="max-width:340px;background:#f6efe0;color:#2b2118;border:2px solid #c9a227;border-radius:14px;padding:20px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.6)">' +
+            '<h2 style="margin:0 0 6px;color:#1d3b5c;font-size:21px">Verbindung wird wiederhergestellt …</h2><p style="margin:0;font-size:15px">Die Welt ist gleich wieder da. Es geht nichts verloren.</p></div>';
+        document.body.appendChild(rechnerWeg);
+    }, RECHNER_WEG_MS);
+}
 if (window.WELT) {
     const PJ = k => { try { return JSON.parse(store.get(k)); } catch (e) { return null; } };
     // (Zuschauer) neue Welt-Teile vom Server → in die laufenden Spiel-Variablen übernehmen
@@ -14024,19 +14043,7 @@ if (window.WELT) {
         clearIslandOwner(playerIslandId); ownedIslands.add(playerIslandId); islandLevels[playerIslandId] = 1; islandTroops[playerIslandId] = PLAYER_START_TROOPS;
         store.set('openWaterShield', String(Date.now() + 3600000)); shieldMemAt = 0; saveGame();
     }
-    // Läuft der Weltrechner auf dem Server gerade nicht (Neustart nach einem Hänger)? Dann wartet die Welt – das zeigen wir
-    // allen, statt dass Befehle scheinbar nichts tun. Kommt er zurück, geht es von selbst weiter.
-    let rechnerWeg = null;
-    window.__weltRechnerStatus = function (laeuft) {
-        if (SYSTEM) return;
-        if (!laeuft && !rechnerWeg) {
-            rechnerWeg = document.createElement('div');
-            rechnerWeg.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(5,6,8,.72);font-family:Georgia,serif';
-            rechnerWeg.innerHTML = '<div style="max-width:340px;background:#f6efe0;color:#2b2118;border:2px solid #c9a227;border-radius:14px;padding:20px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.6)">' +
-                '<h2 style="margin:0 0 6px;color:#1d3b5c;font-size:21px">Verbindung wird wiederhergestellt …</h2><p style="margin:0;font-size:15px">Die Welt ist gleich wieder da. Es geht nichts verloren.</p></div>';
-            document.body.appendChild(rechnerWeg);
-        } else if (laeuft && rechnerWeg) { rechnerWeg.remove(); rechnerWeg = null; }
-    };
+    window.__weltRechnerStatus = rechnerStatus;
     WELT.start();
 }
 // Neue Welt-Daten (Puls) oder Münzen/Gems vom Weltrechner: offene Fenster gleich nachziehen (höchstens 1× pro Sekunde)

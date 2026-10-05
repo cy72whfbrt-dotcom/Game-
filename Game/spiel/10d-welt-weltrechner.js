@@ -2,6 +2,24 @@
 // ===================================================================================================================
 // ===== DIE EINE WELT: Verbindung zu welt.js =====
 // ===================================================================================================================
+// Läuft der Weltrechner auf dem Server gerade nicht (Neustart nach einem Hänger)? Dann wartet die Welt – das zeigen wir
+// allen, statt dass Befehle scheinbar nichts tun. Kommt er zurück, geht es von selbst weiter. Erst nach 20 s ohne ihn: bei
+// Last beim Hoster dauert ein Puls des Weltrechners 15–30 s – das ist kein Hänger.
+let rechnerWeg = null, rechnerWegUhr = null;
+const RECHNER_WEG_MS = 20000;
+function rechnerStatus(laeuft) {   // (welt.js meldet jede Änderung von „rechner“)
+    if (SYSTEM) return;
+    if (laeuft) { clearTimeout(rechnerWegUhr); rechnerWegUhr = null; if (rechnerWeg) { rechnerWeg.remove(); rechnerWeg = null; } return; }
+    if (rechnerWeg || rechnerWegUhr) return;
+    rechnerWegUhr = setTimeout(function () {
+        rechnerWegUhr = null;
+        rechnerWeg = document.createElement('div');
+        rechnerWeg.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(5,6,8,.72);font-family:Georgia,serif';
+        rechnerWeg.innerHTML = '<div style="max-width:340px;background:#f6efe0;color:#2b2118;border:2px solid #c9a227;border-radius:14px;padding:20px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.6)">' +
+            '<h2 style="margin:0 0 6px;color:#1d3b5c;font-size:21px">Verbindung wird wiederhergestellt …</h2><p style="margin:0;font-size:15px">Die Welt ist gleich wieder da. Es geht nichts verloren.</p></div>';
+        document.body.appendChild(rechnerWeg);
+    }, RECHNER_WEG_MS);
+}
 if (window.WELT) {
     const PJ = k => { try { return JSON.parse(store.get(k)); } catch (e) { return null; } };
     // (Zuschauer) neue Welt-Teile vom Server → in die laufenden Spiel-Variablen übernehmen
@@ -1290,19 +1308,7 @@ if (window.WELT) {
         clearIslandOwner(playerIslandId); ownedIslands.add(playerIslandId); islandLevels[playerIslandId] = 1; islandTroops[playerIslandId] = PLAYER_START_TROOPS;
         store.set('openWaterShield', String(Date.now() + 3600000)); shieldMemAt = 0; saveGame();
     }
-    // Läuft der Weltrechner auf dem Server gerade nicht (Neustart nach einem Hänger)? Dann wartet die Welt – das zeigen wir
-    // allen, statt dass Befehle scheinbar nichts tun. Kommt er zurück, geht es von selbst weiter.
-    let rechnerWeg = null;
-    window.__weltRechnerStatus = function (laeuft) {
-        if (SYSTEM) return;
-        if (!laeuft && !rechnerWeg) {
-            rechnerWeg = document.createElement('div');
-            rechnerWeg.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(5,6,8,.72);font-family:Georgia,serif';
-            rechnerWeg.innerHTML = '<div style="max-width:340px;background:#f6efe0;color:#2b2118;border:2px solid #c9a227;border-radius:14px;padding:20px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.6)">' +
-                '<h2 style="margin:0 0 6px;color:#1d3b5c;font-size:21px">Verbindung wird wiederhergestellt …</h2><p style="margin:0;font-size:15px">Die Welt ist gleich wieder da. Es geht nichts verloren.</p></div>';
-            document.body.appendChild(rechnerWeg);
-        } else if (laeuft && rechnerWeg) { rechnerWeg.remove(); rechnerWeg = null; }
-    };
+    window.__weltRechnerStatus = rechnerStatus;
     WELT.start();
 }
 // Neue Welt-Daten (Puls) oder Münzen/Gems vom Weltrechner: offene Fenster gleich nachziehen (höchstens 1× pro Sekunde)

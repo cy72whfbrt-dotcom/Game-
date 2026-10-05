@@ -40,7 +40,7 @@ function playerRelevantSendCount() {
 function renderActiveMarches() {
     const rows = [];
     const T = id => islandTitle(islandById[id]);
-    const clock = sec => '<span class="num">' + fmtClock(sec) + '</span>';
+    const clock = sec => '<span class="num">' + marschUhr(sec) + '</span>';
     let relevantAttackCount = 0;
     for (const attack of pendingAttacks) {
         const secondsLeft = Math.max(0, Math.ceil(((attack.fightEndsAt || attack.resolveAt) - Date.now()) / 1000));
@@ -63,7 +63,7 @@ function renderActiveMarches() {
         if (islandOwnerOf(r.t) !== 'player' || bundFreund('player', r.by)) continue;
         relevantAttackCount++;
         rows.push(logRowHtml('loss', 'bot', 'Rally gegen ' + T(r.t),
-            escapeHtml(bundName(r.by)) + ' sammelt einen Angriff – los in', clock(Math.max(0, Math.ceil((r.los - Date.now()) / 1000)))));
+            escapeHtml(bundName(r.by)) + ' sammelt einen Angriff – los in', '<span class="num">' + fmtClock(Math.max(0, Math.ceil((r.los - Date.now()) / 1000))) + '</span>'));
     }
     let relevantSendCount = 0;
     for (const send of pendingSends) {
