@@ -741,8 +741,9 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
 1. Späher: hin Zurück + Schneller, heim Schneller; Zurück = sofort umkehren, kein Bericht; ab 500 Edelsteine „Wirklich?“.
 2. Startbasis eines Angriffs: automatisch die nächste Basis mit **genug** Truppen (keine hat genug → nächste mit den
    meisten), **vorausgewählt**, im Angriffsfenster änderbar.
-3. Spähbericht: zeigt die Ausrüstung richtig; Einzelheiten weiter nach Wachturm-Stufe, Fehlendes **deutlich
-   gekennzeichnet** („Wachturm-Stufe X nötig“ statt leerer Plätze); Verteidigung aufgeschlüsselt wie im Kampfbericht;
+3. Spähbericht: zeigt **immer alles richtig** – Ausrüstung, Helden, Verteidigung aufgeschlüsselt wie im Kampfbericht
+   (den Wachturm gibt es seit dem Hauptstadt-Umbau nicht mehr – keine Stufen-Sperre; was wirklich unbekannt ist, deutlich
+   kennzeichnen statt leerer Plätze);
    Alter des Berichts („gespäht vor 2 Std.“, ab 30 Min. gelb); Spieler-Stufe und Basis-Stufe eindeutig beschriften.
 
 **C. Neue Regeln (Teil 2)**
@@ -780,6 +781,10 @@ beim Scrollen abgeschnitten; Namen auf der Karte immer abgeschnitten („[WEL] C
 Fenster nehmen den halben Bildschirm. Farben/Stil bleiben (das Design an sich gefällt).
 **Freie Hand (Alexander):** überall prüfen – Spiel, Fenster, Knöpfe, **auch Login/Startseite** – und verbessern, wo
 nötig; Knöpfe usw. frei gestalten. Pflicht: **wirklich übersichtlich, sortiert, nicht hin und her tippen müssen.**
+
+**I. Dazu (Claudes Vorschläge, Alexander ja):** Weltrechner robuster bei Hoster-Last (seltener nachfragen, geduldiger,
+nicht gleich neu starten) · Sortier-Tag zu Ende bringen (alten, ungenutzten Code raus – kleiner, lädt schneller).
+Offen: Wachturm als Labor-Forschung zurück (warnt je Stufe genauer vor Angriffen)?
 
 **H. Ganz zum Schluss:** wenn alles fertig ist, **alles komplett testen** (`tests/komplett.sh` + Spieltester auf Handy
 und Desktop über alle Fenster) – erst danach Alexander wegen Hochladen fragen.
