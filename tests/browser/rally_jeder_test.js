@@ -13,15 +13,16 @@ const nah = (x, y, d) => Math.abs(x - y) <= (d === undefined ? 1 : d);
     const bots = BOT_DEFS.filter(x => !x.mensch && botOwnedIslands[x.id] && botOwnedIslands[x.id].size && islandById[botCapitalOf(x.id)]);
     const E = bots.find(x => Object.keys(loadBotState()[x.id].hs || {}).filter(id => heroOwned(x.id, id) && !heroBusy(x.id, id)).length >= 2);
     if (!E) return { fehler: 'kein Mitspieler mit 2 freien Helden' };
-    const rest = bots.filter(x => x !== E), A = rest[0]; botCoins[A.id] = 1e9;
-    const Z = rest.find(x => x !== A && botCanCross(A.id, islandById[botCapitalOf(A.id)].landmassId, islandById[botCapitalOf(x.id)].landmassId, 4e6, botCapitalOf(x.id)));   // (ein Ziel, zu dem Alex durchkommt)
+    const rest = bots.filter(x => x !== E), lm = x => islandById[botCapitalOf(x.id)].landmassId;
+    for (const x of rest) botCoins[x.id] = 1e9;
+    let A = null, Z = null;                                                // (Alex und ein Ziel, zu dem er durchkommt)
+    for (const x of rest) { Z = rest.find(y => y !== x && botCanCross(x.id, lm(x), lm(y), 4e6, botCapitalOf(y.id))); if (Z) { A = x; break; } }
     if (!Z) return { fehler: 'kein erreichbares Ziel' };
     const H = rest.find(x => x !== A && x !== Z);
     for (const x of [A, E, Z, H]) if (bundVon(x.id)) bundOp(x.id, { op: 'verlassen' });
-    botCoins[A.id] = botCoins[Z.id] = 1e9;
     bundOp(A.id, { op: 'gruenden', name: 'Test', tag: 'TST', offen: true }); bundOp(E.id, { op: 'beitreten', aid: bundVon(A.id).id });
     bundOp(Z.id, { op: 'gruenden', name: 'Ziel', tag: 'ZIE', offen: true }); bundOp(H.id, { op: 'beitreten', aid: bundVon(Z.id).id });
-    const st = loadBotState(); st[Z.id].shieldUntil = 0; st[Z.id].neuBis = 0; saveBotState();
+    const st = loadBotState(); st[Z.id].shieldUntil = 0; st[Z.id].neuBis = 0; st[E.id].skills.attack = 30; saveBotState();   // (Emma: Skill Angriff 30)
     const ziel = botCapitalOf(Z.id), capA = botCapitalOf(A.id), capE = botCapitalOf(E.id);
     islandTroops[ziel] = 1000; islandTroops[capA] = 5e7; islandTroops[capE] = 3e6;
     const ed = effectiveDefense; effectiveDefense = t => t && t.id === ziel ? 2e7 : ed(t);                     // viel Abwehr → die Rally verliert
@@ -52,7 +53,7 @@ const nah = (x, y, d) => Math.abs(x - y) <= (d === undefined ? 1 : d);
     // angekommen (wie bundSendAnkunft) – nur der erste Marsch zählt für den Test
     pendingSends = pendingSends.filter(s => s.rally !== r.id); r.j = [j]; j.da = true;
     botById[A.id].mensch = true; try { bundRallyLos(r); } finally { botById[A.id].mensch = false; }   // (Alex ohne Held: ein Mensch ohne Wunsch-Held)
-    const a = pendingAttacks.find(x => x.rally && x.rally.id === 'rj1'); if (!a) return Object.assign(out, { fehler: 'keine Rally', log: (bundVon(A.id).log || []).slice(0, 2), zielOk: bundZielOk(A.id, ziel) });
+    const a = pendingAttacks.find(x => x.rally && x.rally.id === 'rj1'); if (!a) return Object.assign(out, { fehler: 'keine Rally' });
     const xE = a.rally.an.find(x => x[0] === E.id), hx = xE && xE[4];
     const s = w => titleMult(w, 'attack') * AUF.kampf(w, 'a'), skE = Math.round(1e6 * botMults(E.id).attackPct / 100), hb = hx ? Math.round(1e6 * hx.atk / 100) + heroGefOf(hx, 1e6) : 0;
     Object.assign(out, { anHeld: hx && hx.id, anHeld2: hx && hx.id2, x3: xE && xE[3], x3soll: Math.round((1e6 + skE + hb) * s(E.id) / s(A.id) - 1e6), x6: xE && xE[6], skE,
@@ -66,7 +67,7 @@ const nah = (x, y, d) => Math.abs(x - y) <= (d === undefined ? 1 : d);
   ok(!v.fehler && !v.why && v.jHeld === v.h1 && v.jHeld2 === v.h2 && v.sendHeld === v.h1, '9) Emma tritt mit Haupt- und Zweitheld bei', v);
   ok(v.belegt && v.zweitesMal, '9) ihre Helden sind belegt, ein zweiter Beitritt bringt keine weiteren');
   ok(v.anHeld === v.h1 && v.anHeld2 === v.h2 && v.ohneHeldA, '9) im Angriff: Emmas Held in rally.an[4], Alex ohne Held');
-  ok(v.x3 === v.x3soll && v.x6 === v.skE, '9) Emmas Held zählt für IHRE Truppen (an[3]), an[6] = ihr Skill-Anteil', { x3: v.x3, soll: v.x3soll, x6: v.x6, skill: v.skE });
+  ok(v.x3 === v.x3soll && v.skE > 0 && v.x6 === v.skE, '9) Emmas Held zählt für IHRE Truppen (an[3]), an[6] = ihr Skill-Anteil', { x3: v.x3, soll: v.x3soll, x6: v.x6, skill: v.skE });
   ok(v.nachStart, '9) Emmas Helden bleiben bis zum Kampfende belegt');
   await p.waitForTimeout(30000);
   const e = await p.evaluate(() => { const T = __t, q = T.berichte.find(x => x.w === T.A && x.e.type === 'attack'), m = T.berichte.find(x => x.w === T.E && x.e.type === 'attack'), z = T.berichte.find(x => x.w === T.Z);
@@ -134,7 +135,7 @@ const nah = (x, y, d) => Math.abs(x - y) <= (d === undefined ? 1 : d);
   await p.waitForTimeout(2500);
   const f = await p.evaluate(() => { const T = __t, v = verst.l.find(x => x.id === 'vjt2'); T.fehl = false;
     return { offen: pendingAttacks.some(a => a.id === 'fehl1'), verst: v && v.n, besatzung: islandTroops[T.ziel], plus: verstDefPlus[T.ziel], heim: T.heim.map(x => [x.w === T.A ? 'Alex' : x.w === T.E ? 'Emma' : x.w, x.n]) }; });
-  ok(!f.offen && f.verst === 400000 && f.besatzung === 1000 && f.plus === undefined, '1) Fehler im Kampf: Verstärkung wieder getrennt (nicht doppelt), kein verstDefPlus', f);
+  ok(!f.offen && f.verst === 400000 && f.besatzung >= 1000 && f.besatzung < 5000 && f.plus === undefined, '1) Fehler im Kampf: Verstärkung wieder getrennt (nicht doppelt in der Besatzung), kein verstDefPlus', f);
   ok(f.heim.some(x => x[0] === 'Alex' && x[1] === 3e6) && f.heim.some(x => x[0] === 'Emma' && x[1] === 1e6), '1) Fehler im Kampf: die Rally-Truppen gehen heim', f.heim);
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();
 })();

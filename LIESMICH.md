@@ -2164,3 +2164,27 @@ Alles aus der Merkliste 12a („Hauptstadt = das Wichtigste“) – **außer dem
   bekommen?** Gilt für Angriff, Verteidigung, Verstärkung, Rally, Barbaren, Boss, Feld, Armee, Beschuss, Spähen, Sammeln, Rückkehr.
 - **Fehler behoben:** Im Hauptstadt-Bericht stand beim Burg-Schutz der kleinere Wert von Gold und Schutz (z. B. „7.120“) – jetzt
   der echte Schutz je Rohstoff (z. B. 10.000 bei Burg 1).
+
+## 79. Gemeinsame Kämpfe: jeder für sich – auch Helden der Rally-Mitglieder (Alexander 5.10., verbindlich)
+Regel: Jeder bringt höchstens 2 Helden mit (auch Rally-Mitglieder), seine Truppen und seine Werte – alles zählt NUR für seine
+Truppen. Belohnungen nach Anteil. Neu dazu (vorher galt vieles nur für den Anführer):
+- **Rally-Mitglieder mit Helden:** im Beitreten-Fenster jetzt auch „Haupt- und Zweitheld (zählen für deine Truppen)“
+  (`bundRallyDazu` nimmt `held`/`held2` an; Mitspieler wählen ihre Helden selbst). Belegt vom Beitritt bis zum Kampfende
+  (`heroBusy`: sammelnde Rally `r.j`, Marsch zur Rally, laufender Kampf). Wer schon Helden in der Rally hat, bringt keine weiteren.
+  `rallyWerte` startet seine Helden (`heroLaunch`, Wut wie beim Anführer) und rechnet den Bonus auf SEINE Truppen.
+- **Flucht** (verloren) je Spieler mit SEINEM Helden (`rallyFlucht`), genau seine Geflohenen gehen heim; **Rückweg-Bonus**
+  seines Helden auf seinem Heimweg (`bundHeimschicken(…, ret)`).
+- **Krankenhaus** je Spieler: sein Krankenhaus + sein Held (`kampfAnteile`).
+- **Rammbock/Sturmflut/Mauerbrecher:** jeder Held nur nach dem Stärke-Anteil seines Spielers (`heroDefCut`).
+  Marsch-Tempo und Maut der Rally bleiben beim Anführer (ein Heer).
+- **Wochen-Event-Punkte** (Krieger-Woche) nach Anteil an alle Angreifer und auf der Verteidiger-Seite an Besitzer + Verstärkung
+  (`midFight`, auch Barbaren-Invasion). **Verteidigungs-Gold:** jeder Helfer seinen Anteil mit seinem Satz, der Besitzer nur seinen.
+- **Erfahrung** nach Anteil an alle Angreifer (vorher nur der Anführer).
+- **Kampfbericht:** jeder sieht oben seine eigenen Zahlen (gefallen, verwundet, übrig bzw. geflohen); im Kampflog steht
+  „Geflohen“ in jedem Fenster richtig. Die Summe der Fenster passt weiter genau zum Balken.
+- **Fehler im Kampf:** bricht ein Kampf mit einem Fehler ab, wird die Verstärkung wieder getrennt (vorher doppelt in der Besatzung,
+  `verstDefPlus` hing) und die Rally-Truppen gehen heim (vorher weg) – `kampfAufraeumen` (04-kampf.js).
+- `rallyAussortieren` zieht den echten Skill-Anteil ab. Neue Felder in `rally.an`: **[6] Skill-Anteil, [7] Helden-Anteil**
+  (server.php versteckt bei fremden Rallys bisher nur [3]–[5] – [6]/[7] dort noch nachtragen).
+- Getestet: neuer `rally_jeder_test` (Helden der Mitglieder, Flucht, Krankenhaus, Rückweg, Punkte, Gold, EP, Kampflog, Rammbock,
+  Aufräumen nach Fehler) + alle Tests ohne Server.
