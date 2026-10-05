@@ -763,6 +763,11 @@ Alles für heute Nacht kommt hier rein. Erst besprechen (Fragen an Alexander), d
    Beispiele (Bilder 5.10. 21:20): Beim Scrollen im Angriffsfenster wird die Angriff/Abwehr-Karte oben abgeschnitten;
    Namen auf der Karte immer abgeschnitten („[WEL] C…“, „94 ✕ ?“); Kopfgeld-Pille liegt auf der Karte; Fenster nehmen
    den halben Bildschirm; „Stufe 107“ (Spieler) neben Basis-Stufe 94 verwirrt. Erst Vorschlag zeigen, dann bauen.
+   Vorbild für den Aufbau: **Million Lords** (Bild 21:22): Spieler-Bild oben links, Werte klein darunter, runde Knöpfe
+   in einer Leiste unten, kleine Namensfahnen an den Basen, Marschwege als gestrichelte Linien.
+7. **Neu (Alexander): lebendige Welt** – Felsen/Berge (Hindernisse) auf der Karte; Märsche müssen **drumherum laufen**
+   (gestrichelter Weg wie bei Million Lords), wenn ein Hindernis zwischen Spieler und Ziel liegt. Neue Regel –
+   Marschzeiten werden dadurch länger. Erst Fragen klären.
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
