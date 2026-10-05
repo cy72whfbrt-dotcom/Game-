@@ -66,7 +66,7 @@ Alles Wichtige steht in `LIESMICH.md` – jede Änderung wird dort eingetragen.
   klärt Fragen, verteilt an die Firma, prüft alle 5 Min. (Wecker), treibt langsame Agenten an.
   **Grenze:** Claude macht selbst nur Kleinkram unter 2 Min. (ein Satz in Regeln/LIESMICH, Live-Seite). Spiel-Code, Tests,
   Skripte, Zusammenführen und Prüfen machen immer Agenten. Hochladen macht Claude nur nach Alexanders Ja, danach immer
-  `werkzeuge/nach_hochladen.sh` (sobald vorhanden).
+  `werkzeuge/nach_hochladen.sh`.
   Rollen in `.claude/agents/`: **sucher** (findet Fehler/Lücken, nur lesen) · **programmierer** (baut eine Aufgabe in
   zugewiesenen Dateien + Test) · **schnellpruefer** (nach jeder Aufgabe, ~5–10 Min.: Diff + Schnelltests) ·
   **endpruefer** (einmal vor dem Hochladen, gründlich: alle Änderungen + `tests/komplett.sh`) · **aufpasser** (inkl.
