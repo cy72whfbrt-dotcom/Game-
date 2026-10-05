@@ -37,7 +37,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       plunder: berichte[0] && berichte[0].e.plunder, roh: berichte[0] && berichte[0].e.plunderRoh, won: berichte[0] && berichte[0].e.won }; });
   console.log(JSON.stringify(e));
   ok(e.berichte.length === 2 && e.berichte.some(q => q.an === 'Alex') && e.berichte.some(q => q.an === 'Emma' && q.rolle === 'mit'), 'beide bekommen einen Kampfbericht', e.berichte);
-  const nah = (x, y) => Math.abs(x - y) <= Math.max(3000, y * 0.002);
+  const nah = (x, y) => Math.abs(x - y) <= Math.max(3000, y * 0.005);   // (Alex ist nebenbei ein Mitspieler und gibt in den 30 s etwas aus)
   ok(e.won && nah(e.E.gold, e.plunder / 4) && nah(e.A.gold, e.plunder * 3 / 4), 'Gold: Alex ¾, Emma ¼', { Alex: e.A.gold, Emma: e.E.gold, ges: e.plunder });
   ok(e.won && ['h', 's', 'e'].every(k => nah(e.E[k], e.roh[k] / 4) && nah(e.A[k], e.roh[k] * 3 / 4)), 'Holz, Stein, Eisen: Alex ¾, Emma ¼', { Alex: e.A, Emma: e.E, ges: e.roh });
   // jeden Bericht so anzeigen, wie der Spieler ihn auf dem Handy sieht

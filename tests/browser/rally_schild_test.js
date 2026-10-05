@@ -13,8 +13,9 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const [A, E, Z] = bots; botCoins[A.id] = 1e9;
     bundOp(A.id, { op: 'gruenden', name: 'Test', tag: 'TST', offen: true }); bundOp(E.id, { op: 'beitreten', aid: bundVon(A.id).id });
     const bm = botMults; botMults = w => { const m = Object.assign({}, bm(w)); if (w === A.id) m.shield = 0; if (w === E.id) m.shield = 80; return m; };   // (Alex: kein Schild, Emma: 80 %)
+    const bgr = botGoldRate; botGoldRate = (w, k) => k === 'attackGold' && (w === A.id || w === E.id) ? (w === A.id ? 1 : 2) : bgr(w, k);   // (Gold je Kill: Alex 1, Emma 2)
     const ziel = botCapitalOf(Z.id); islandTroops[ziel] = 1000;
-    const ed = effectiveDefense; effectiveDefense = t => t && t.id === ziel ? 2e6 : ed(t);                    // viel Abwehr → Verluste
+    const ed = effectiveDefense; effectiveDefense = t => t && t.id === ziel ? 2e6 : ed(t); const et = effectiveTroops; effectiveTroops = t => t && t.id === ziel ? 1000 : et(t);                    // viel Abwehr → Verluste
     const preise = [], ba = bossAt; bossAt = id => id === ziel ? { name: 'Testboss', troops: 0, endsAt: 4711 } : ba(id);   // (ein Boss am Ziel)
     const ep = evPreis; evPreis = (w, src, title, pr) => { preise.push({ w, src, crate: pr.crate, gems: pr.gems, sh: pr.sh }); };
     endWander = () => {}; spawnBattleFx = () => {};
@@ -44,5 +45,16 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(e.won && Math.abs(e.vE - sollE) <= 2 && e.vE < e.vA / 3 * 0.5, 'Emma verliert nach IHREM Schild (80 % weniger)', { verlust: e.vE, soll: sollE });
   ok(e.heimE === 1e6 - e.vE, 'Emmas Überlebende gehen genau zu ihr heim', { heim: e.heimE, soll: 1e6 - e.vE });
   ok(e.preise.filter(x => x.src === 'wboss').length === 2 && ['Alex', 'Emma'].every(w => e.preise.some(x => x.an === w && x.crate >= 0 && x.gems > 0)), 'Boss: Alex UND Emma bekommen Kiste + Gems', e.preise);
+  // Kill-Gold: jeder für den Teil, den SEINE Truppen töten (mit seinem Satz) – Bericht = Auszahlung
+  const g = await p.evaluate(() => { const { A, E, berichte } = __t, q = berichte.find(x => x.w === A && x.e.type === 'attack'), m = berichte.find(x => x.w === E && x.e.type === 'attack');
+    const L = q.e.angreifer; return { alex: (L.find(x => x.w === A) || {}).gold, emma: (L.find(x => x.w === E) || {}).gold, berichtAlex: q.e.killGold, berichtEmma: m && m.e.killGold, kA: (L.find(x => x.w === A) || {}).k, kE: (L.find(x => x.w === E) || {}).k, tote: q.e.enemyTroops }; });
+  const sollEg = Math.round(g.tote * g.kE / (g.kA + g.kE) * 2), sollAl = Math.round(g.tote * g.kA / (g.kA + g.kE) * 1);
+  ok(g.emma > 0 && Math.abs(g.emma - sollEg) <= 1 && Math.abs(g.alex - sollAl) <= 1 && g.berichtEmma === g.emma && g.berichtAlex === g.alex, 'Kill-Gold je Spieler – Bericht passt zur Auszahlung', g);
+  // Bündnis verlassen nach dem Losmarsch: kämpft nicht mit, Truppen gehen heim
+  const r = await p.evaluate(() => { const { A, E } = __t; __t.heim.length = 0;
+    const att = { rawTroops: 4e6, attackBonus: 500000, rally: { by: A, an: [[A, botCapitalOf(A), 3e6], [E, botCapitalOf(E), 1e6, 300000]] } };
+    bundOp(E, { op: 'verlassen' }); rallyAussortieren(att, botCapitalOf(A));
+    return { raw: att.rawTroops, bonus: att.attackBonus, an: att.rally.an.length, heim: __t.heim.map(x => x.n) }; });
+  ok(r.raw === 3e6 && r.bonus === 200000 && r.an === 1 && r.heim[0] === 1e6, 'Emma verlässt das Bündnis nach dem Losmarsch: ihre Truppen gehen heim', r);
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();
 })();

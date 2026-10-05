@@ -559,7 +559,7 @@ function bundRallyLos(r) {
     const by = r.by;
     if (islandOwnerOf(r.at) !== by) return bundRallyEnde(r, 'der Sammelpunkt ist gefallen');
     if (bundZielOk(by, r.t)) { const ow = islandOwnerOf(r.t);                // (Grund für alle Mitglieder verständlich)
-        return bundRallyEnde(r, ow === by || bundVerbuendet(ow, by) ? 'das Ziel gehört inzwischen dem Bündnis' : isCapital(r.t) ? 'das Ziel ist jetzt eine Hauptstadt' : 'das Ziel steht unter einem Friedensschild'); }
+        return bundRallyEnde(r, ow === by || bundVerbuendet(ow, by) ? 'das Ziel gehört inzwischen dem Bündnis' : 'das Ziel steht unter einem Friedensschild'); }
     const total = bundRallyTruppen(r);
     islandTroops[r.at] = (islandTroops[r.at] || 0) + total;
     if (AUF) AUF.frei.an();                                                     // (der gemeinsame Angriff war schon als Rally gezählt)
@@ -598,6 +598,18 @@ function rallyVerluste(attack, def, my, red) {
     attack.rally.rest = an.map((x, i) => x[2] - e[i]);
     return { summe: e.reduce((s, v) => s + v, 0), e };
 }
+// (Kampf, vor dem Kampf) Wer nicht mehr im Bündnis des Anführers ist (verlassen nach dem Losmarsch, gewechselt), kämpft nicht mit:
+// seine Truppen gehen vom Ziel heim, seine Stärke zählt nicht mehr.
+function rallyAussortieren(attack, zielId) {
+    const by = attack.rally.by, raus = attack.rally.an.filter(x => x[0] !== by && !bundFreund(by, x[0]));
+    for (const x of raus) {
+        attack.rawTroops = Math.max(0, attack.rawTroops - x[2]); attack.attackBonus = (attack.attackBonus || 0) - (x[3] || 0);
+        if (attack.skillBonus !== undefined) attack.skillBonus = Math.max(0, attack.skillBonus - (x[3] || 0));
+        if (x[2] > 0) bundHeimschicken(x[0], zielId, x[1], x[2]);
+        bundMelden(x[0], 'Du bist nicht mehr im Bündnis von ' + bundName(by) + ' – deine Truppen aus dem gemeinsamen Angriff kehren heim.');
+    }
+    if (raus.length) attack.rally.an = attack.rally.an.filter(x => !raus.includes(x));
+}
 // (Kampf) Überlebende einer Rally gehen anteilig zu ihren Basen zurück. ohneStarter: dessen Anteil wird zurückgegeben (bleibt vor Ort)
 function bundRallyHeim(attack, n, vonId, ohneStarter) {
     const an = attack.rally && attack.rally.an || [], sum = an.reduce((s, x) => s + x[2], 0); let rest = Math.floor(n), bleibt = 0;
@@ -623,7 +635,7 @@ function kampfAnteile(attack, fallen, hosp, rv) {   // rv: Verluste je Eintrag (
     L.forEach((x, i) => {
         const f = rv ? fw[x.w] || 0 : i === L.length - 1 ? rest : Math.min(rest, Math.round(fallen * x.n / sum)); rest -= f;
         const wd = f > 0 ? (x.w === 'player' ? hospitalTake(f) : botHospitalTake(x.w, f, x.w === by ? hosp : undefined)) || 0 : 0;
-        Object.assign(x, { name: bundName(x.w), fallen: f - wd, wounded: wd, gear: fighterSnapshot(x.w, x.w === by ? attack.hx : x.hx) }); delete x.eig; delete x.hx;
+        Object.assign(x, { name: bundName(x.w), fallen: f - wd, wounded: wd, gear: fighterSnapshot(x.w, x.w === by ? attack.hx : x.hx) }); if (x.w !== by) x.rate = killGoldRate(x.w, x.hx); delete x.eig; delete x.hx;   // (rate: sein Gold je Kill – braucht resolveBotAttack)
     });
     return L;
 }

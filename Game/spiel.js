@@ -4494,11 +4494,18 @@ setInterval(() => {
                     a.attackBonus = Math.max(0, (a.attackBonus || 0) - (a.heldBonus !== undefined ? a.heldBonus : (a.attackBonus || 0) - (a.skillBonus || 0)));
                     a.shieldLossReductionPct = Math.max(0, (a.shieldLossReductionPct || 0) - (a.hx.loss || 0)); a.rewardGoldRate = killGoldRate(wer); }
                 else if (a.hx) fight.heldVon[wer] = 1;
+                let umf = 1;                                       // (Stärke in die Einheiten des Kampf-Besitzers umrechnen)
                 if (anderer) {                                     // seine Stärke zählt, wie er sie mitbringt (seine Stufe, Forschung, Titel)
                     const st = x => (x.atkTitle !== undefined ? x.atkTitle : titleMult(x.attackerBotId, 'attack')) * (x.atkKraft || 1);
-                    a.attackBonus = (a.rawTroops + (a.attackBonus || 0)) * st(a) / st(fight) - a.rawTroops;
+                    umf = st(a) / st(fight); a.attackBonus = (a.rawTroops + (a.attackBonus || 0)) * umf - a.rawTroops;
                 }
-                if (a.rally && anderer) for (const x of a.rally.an) if (x[0] === a.rally.by && x[5] == null) x[5] = a.shieldLossReductionPct;   // (sein Schild + Held gilt nur für seine Truppen)
+                if (a.rally && anderer) {                          // eine ganze Rally kommt dazu: für den Bericht jeder mit SEINER Stärke, seinem Helden, seinem Schild
+                    let mit = 0, erster = true;
+                    for (const x of a.rally.an) if (x[0] !== a.rally.by && x[3] != null) { x[3] = Math.round((x[2] + x[3]) * umf - x[2]); mit += x[3]; }
+                    for (const x of a.rally.an) if (x[0] === a.rally.by) {
+                        x[3] = erster ? Math.round((a.attackBonus || 0) - mit) : 0; if (erster && a.hx && !ohneHeld) x[4] = a.hx; erster = false;
+                        if (x[5] == null) x[5] = a.shieldLossReductionPct; }   // (sein Schild + Held gilt nur für seine Truppen)
+                }
                 if (anderer || fight.rally || a.rally)
                     fight.rally.an.push(...(a.rally ? a.rally.an : [[a.attackerBotId, a.sourceId, a.rawTroops, anderer ? Math.round(a.attackBonus || 0) : undefined, anderer && a.hx && !ohneHeld ? a.hx : undefined, anderer ? a.shieldLossReductionPct : undefined]]));
                 fight.rawTroops += a.rawTroops; fight.attackBonus = (fight.attackBonus || 0) + (a.attackBonus || 0);
@@ -8538,7 +8545,8 @@ function heroBusy(who, id) {                        // one attack, army or field
     const mine = x => who === 'player' ? !x || x === 'player' : x === who;
     return pendingAttacks.some(a => mine(a.attackerBotId) && (heroIn(a.hero, a.hero2, id) || (a.hx && (a.hx.id2 === id || (a.hx.extra || []).some(e => e.id === id)))))
         || (typeof armies !== 'undefined' && armies.some(x => mine(x.who) && heroIn(x.hero, x.hero2, id))) || heroOnField(who, id)
-        || (typeof bund !== 'undefined' && bund && Array.isArray(bund.r) && bund.r.some(r => !r.startet && mine(r.by) && heroIn(r.held, r.held2, id)));   // führt eine Rally, die noch sammelt
+        || (typeof bund !== 'undefined' && bund && Array.isArray(bund.r) && bund.r.some(r => !r.startet && mine(r.by) && heroIn(r.held, r.held2, id)))   // führt eine Rally, die noch sammelt
+        || pendingAttacks.some(a => a.rally && Array.isArray(a.rally.an) && a.rally.an.some(x => x && x[4] && mine(x[0]) && (x[4].id === id || x[4].id2 === id || (x[4].extra || []).some(e => e.id === id))));   // kämpft noch in einem gemeinsamen Kampf mit
 }
 function heroPickBest(who, src, target, raw, main) {   // the free hero that does the most in this attack (the others use it, and so can you) · main: der Zweitheld dazu
     let best = null, bs = 0; const def = target ? effectiveDefense(target) : 0, ctx = target ? null : { fight: 1, field: 1, vsArmy: 1, march: 1 };

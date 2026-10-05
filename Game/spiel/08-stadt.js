@@ -565,7 +565,8 @@ function heroBusy(who, id) {                        // one attack, army or field
     const mine = x => who === 'player' ? !x || x === 'player' : x === who;
     return pendingAttacks.some(a => mine(a.attackerBotId) && (heroIn(a.hero, a.hero2, id) || (a.hx && (a.hx.id2 === id || (a.hx.extra || []).some(e => e.id === id)))))
         || (typeof armies !== 'undefined' && armies.some(x => mine(x.who) && heroIn(x.hero, x.hero2, id))) || heroOnField(who, id)
-        || (typeof bund !== 'undefined' && bund && Array.isArray(bund.r) && bund.r.some(r => !r.startet && mine(r.by) && heroIn(r.held, r.held2, id)));   // führt eine Rally, die noch sammelt
+        || (typeof bund !== 'undefined' && bund && Array.isArray(bund.r) && bund.r.some(r => !r.startet && mine(r.by) && heroIn(r.held, r.held2, id)))   // führt eine Rally, die noch sammelt
+        || pendingAttacks.some(a => a.rally && Array.isArray(a.rally.an) && a.rally.an.some(x => x && x[4] && mine(x[0]) && (x[4].id === id || x[4].id2 === id || (x[4].extra || []).some(e => e.id === id))));   // kämpft noch in einem gemeinsamen Kampf mit
 }
 function heroPickBest(who, src, target, raw, main) {   // the free hero that does the most in this attack (the others use it, and so can you) · main: der Zweitheld dazu
     let best = null, bs = 0; const def = target ? effectiveDefense(target) : 0, ctx = target ? null : { fight: 1, field: 1, vsArmy: 1, march: 1 };

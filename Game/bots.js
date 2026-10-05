@@ -141,8 +141,9 @@ function resolveBotAttack(attack) {
     const target = islandById[attack.targetId];
     if (!bot || !source || !target) { if (attack.rally && typeof bundRallyHeim === 'function') bundRallyHeim(attack, attack.rawTroops, attack.targetId); return; }   // (Rally ohne Anführer: alle gehen mit ihrem Anteil heim)
 
+    if (attack.rally && typeof rallyAussortieren === 'function') rallyAussortieren(attack, target.id);   // (wer das Bündnis verlassen hat, kämpft nicht mit)
     const myTroops = Math.round((attack.rawTroops + (attack.attackBonus || 0)) * (attack.atkTitle !== undefined ? attack.atkTitle : titleMult(bot.id, 'attack')) * (attack.atkKraft || 1));   // (Truppen-Stufe + Forschung vom Losschicken)
-    const targetOwner = islandOwnerOf(target.id), rallyC0 = attack.rally ? botCoins[bot.id] || 0 : 0;   // (Rally: die Beute wird nachher anteilig verteilt)
+    const targetOwner = islandOwnerOf(target.id);
     if (targetOwner === bot.id) { islandTroops[target.id] = (islandTroops[target.id] || 0) + (attack.rally ? bundRallyHeim(attack, attack.rawTroops, target.id, true) : attack.rawTroops); saveGame(); return; }   // (gemeinsam: nur sein Anteil zieht ein, die anderen gehen heim)   // inzwischen die eigene (ein anderer Angriff hat sie genommen): die Truppen bleiben dort
     if (targetOwner && targetOwner !== bot.id && typeof bundFreund === 'function' && bundFreund(bot.id, targetOwner)) {   // inzwischen ein Bündnis-Mitglied: kein Kampf, heim
         if (attack.rally) { bundRallyHeim(attack, attack.rawTroops, target.id); saveGame(); return; }   // (gemeinsam: jeder zu sich)
@@ -174,6 +175,10 @@ function resolveBotAttack(attack) {
     const atkFallen = attack.rawTroops - survivors - fled;
     const angreifer = attack.rally ? kampfAnteile(attack, atkFallen, hosp, rv) : null, atkWounded = angreifer ? angreifer.reduce((s, x) => s + x.wounded, 0) : botHospitalTake(bot.id, atkFallen, hosp);   // (gemeinsam: jeder trägt seinen Anteil, Verwundete in sein Krankenhaus)
     const atkInfo = angreifer ? { angreifer } : {};
+    const killPay = n => {                                            // "Angriff: Gold" je getötetem Gegner – gemeinsam: jeder für den Teil, den SEINE Truppen töten, mit SEINEM Satz (Alexander 5.10.)
+        if (!angreifer) { botCoins[bot.id] += Math.round(n * botKillRate); return; }
+        const sk = angreifer.reduce((s, q) => s + (q.k !== undefined ? q.k : q.n), 0) || 1;
+        for (const q of angreifer) { q.gold = payGold(q.w, n * (q.k !== undefined ? q.k : q.n) / sk * (q.w === bot.id ? botKillRate : q.rate || 0)); delete q.rate; } };
     const homeAgain = n => { if (n <= 0) return; if (attack.rally) { bundRallyHeim(attack, n, target.id); return; } const t0 = Date.now();                 // they walk home like yours (a fallen home: resolveSend sends them to another base) – eine Rally: jeder zu sich
         pendingSends.push({ fromId: target.id, toId: source.id, troops: n, startedAt: t0, resolveAt: t0 + retreatSecs(attack, target, source, bot.id) * 1000, senderBotId: bot.id, back: true }); };
     const plunder = won && targetOwner ? plunderOf(targetOwner, capitalHolds) : null;   // Beute: ein kleiner Teil über dem Burg-Schutz des Verlierers (Turm: Gold, Hauptstadt: alles) - auch deins
@@ -181,7 +186,7 @@ function resolveBotAttack(attack) {
     if (capitalHolds) brandSetzen(target.id);                                 // die Hauptstadt brennt (nur zu sehen)
     if (capitalHolds) {
         islandTroops[target.id] = 0;
-        botCoins[bot.id] += Math.round(originalEnemyTroops * botKillRate);   // "Angriff: Gold" for the garrison, like any other win
+        killPay(originalEnemyTroops);                               // "Angriff: Gold" for the garrison, like any other win
         homeAgain(survivors);                                       // the raiders who are left march home with the loot
     } else if (won) {
         // Same rule as the player's own captures: the new owner
@@ -195,14 +200,14 @@ function resolveBotAttack(attack) {
             setGateSettings(target.id, { toll: sty === 'templer' ? 1 : sty === 'builder' ? 0.5 : sty === 'raider' ? 0.25 : GATE_TOLLS[1 + Math.floor(r * 4)],
                                          closed: sty === 'raider' ? r < .5 : sty === 'templer' ? r < .3 : r < .1 }); }
         islandLevels[target.id] = levelAfterCapture;
-        botCoins[bot.id] += Math.round(originalEnemyTroops * botKillRate);   // "Angriff: Gold" (+ the hero's Gold): per enemy troop killed
+        killPay(originalEnemyTroops);                               // "Angriff: Gold" (+ the hero's Gold): per enemy troop killed
         if (target.type === 'temple' || target.type === 'megaTemple') {
             templeHoldSince[target.id] = Date.now();
         }
     } else {
         homeAgain(fled);
         const defenderCasualties = Math.min(originalEnemyTroops, myTroops);
-        botCoins[bot.id] += Math.round(defenderCasualties * botKillRate);
+        killPay(defenderCasualties);
         if (targetOwner) {
             islandTroops[target.id] = Math.max(0, (islandTroops[target.id] || 0) - defenderCasualties);
         } else if (bossHere) {
@@ -254,7 +259,7 @@ function resolveBotAttack(attack) {
         won, capitalHolds, defName: targetOwner === 'player' ? ((window.profileName && profileName.value) || 'Spieler') : (botById[targetOwner] || {}).name, ...(parts || {}), ...verstInfo, ...atkInfo });
     const atkBericht = {                                              // ein echter Spieler hat angegriffen: sein Bericht (gemeinsam: jeder Mensch, der dabei war)
         type: 'attack', sourceId: source.id, targetId: target.id, myTroops: attack.rawTroops, myTroopsBuffed: myTroops, attackBuff: myTroops - attack.rawTroops, skillBuff: attack.attackBonus || 0, titleBuff: 0,
-        lossReductionPct: red, heroLossPct: attack.hx ? attack.hx.loss : 0, lossSaved: 0, attackGoldRate: botKillRate, killGold: Math.round((won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops)) * botKillRate),
+        lossReductionPct: red, heroLossPct: attack.hx ? attack.hx.loss : 0, lossSaved: 0, attackGoldRate: botKillRate, killGold: angreifer ? (angreifer.find(q => q.w === bot.id) || {}).gold || 0 : Math.round((won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops)) * botKillRate),
         attackerCasualties: Math.max(0, atkFallen - (atkWounded || 0)), wounded: atkWounded || 0, enemyTroops: originalEnemyTroops, enemyDefense: originalEnemyDefense, defenseBuff: 0,
         defenderCasualties: won ? originalEnemyTroops : Math.min(originalEnemyTroops, myTroops), retreatSurvivors: fled,
         defenderName: targetOwner ? (targetOwner === 'player' ? (window.profileName && profileName.value) || 'Spieler' : botById[targetOwner].name) : null, defenderId: targetOwner || null,
@@ -262,7 +267,7 @@ function resolveBotAttack(attack) {
         won, remaining: won ? survivors : 0, ...verstInfo, ...atkInfo };
     const atkText = capitalHolds ? 'Hauptstadt von ' + (targetOwner === 'player' ? 'deinem Gegner' : (botById[targetOwner] || {}).name) + ' geplündert!' : won ? islandTitle(target) + ' erobert!' : 'Angriff auf ' + islandTitle(target) + ' gescheitert.';
     if (window.WELT) for (const w of angreifer ? angreifer.map(x => x.w) : [bot.id]) if (botById[w] && botById[w].mensch)
-        WELT.bericht(w, w === bot.id ? atkBericht : Object.assign({}, atkBericht, { rolle: 'mit', fuehrer: bot.name, meine: angreifer.find(x => x.w === w), sourceId: (attack.rally.an.find(x => x[0] === w) || [])[1] ?? source.id }),
+        WELT.bericht(w, w === bot.id ? atkBericht : Object.assign({}, atkBericht, { rolle: 'mit', fuehrer: bot.name, meine: angreifer.find(x => x.w === w), killGold: (angreifer.find(x => x.w === w) || {}).gold || 0, sourceId: (attack.rally.an.find(x => x[0] === w) || [])[1] ?? source.id }),
             w === bot.id ? atkText : 'Gemeinsamer Angriff mit ' + bot.name + ': ' + atkText);
     if (playerInvolved) {
         const ribbon = () => spawnBattleFx(target.id, !won || capitalHolds, capitalHolds ? 'Hauptstadt hält' : won ? 'Basis verloren' : 'Verteidigt', capitalHolds ? 'Garnison gefallen' : won ? 'von ' + bot.name : bot.name + ' abgewehrt');
@@ -297,7 +302,7 @@ function resolveBotAttack(attack) {
         renderActiveMarches();
         if (isPanelOpen(popup) && popupIslandId === target.id) renderPopup();
     }
-    if (attack.rally) bundRallyBeute(attack, (botCoins[bot.id] || 0) - rallyC0, won, target.id, plunder && plunder.roh);
+    if (attack.rally) bundRallyBeute(attack, plunder ? plunder.loot || 0 : 0, won, target.id, plunder && plunder.roh);   // (nur die Beute wird geteilt – das Kill-Gold hat jeder schon selbst)
     saveGame();
 }
 
