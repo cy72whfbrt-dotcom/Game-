@@ -4,9 +4,10 @@ Spiel von Alexander (Browser-Strategiespiel, Deutsch). Antworten an Alexander: k
 Alles Wichtige steht in `LIESMICH.md` – jede Änderung wird dort eingetragen.
 
 ## Code
-- `Game/spiel.js`, `Game/bots.js` und `Game/buendnis.js` werden **automatisch zusammengesetzt** aus `Game/spiel/`,
-  `Game/bots/` und `Game/buendnis/`. **Nur in den Teilen ändern**, danach `werkzeuge/spiel_bauen.sh` (setzt alle drei neu
-  zusammen). `werkzeuge/spiel_bauen.sh pruefen` meldet einen Fehler, wenn eine Datei nicht zu ihren Teilen passt.
+- `Game/spiel.js`, `Game/bots.js`, `Game/buendnis.js`, `Game/baukunst.js`, `Game/spiel.php` und `Game/server.php` werden
+  **automatisch zusammengesetzt** aus `Game/spiel/`, `Game/bots/`, `Game/buendnis/`, `Game/baukunst/`, `Game/spielseite/`
+  und `Game/server/`. **Nur in den Teilen ändern**, danach `werkzeuge/spiel_bauen.sh` (setzt alle neu zusammen).
+  `werkzeuge/spiel_bauen.sh pruefen` meldet einen Fehler, wenn eine Datei nicht zu ihren Teilen passt.
   Jeder Teil beginnt mit EINER Kopfzeile `// Teil <name>: …` (kommt nicht in die zusammengesetzte Datei).
   (Eine Datei im Spiel, weil der Code beim Laden Funktionen aufruft, die weiter hinten stehen.)
 - Teile von spiel.js (41): 01a grundlagen · 01b weltkarte · 01c basen-spielstand · 01d helden-mitspieler ·
@@ -20,6 +21,13 @@ Alles Wichtige steht in `LIESMICH.md` – jede Änderung wird dort eingetragen.
   10d welt-weltrechner (Weltrechner-Befehle, Hauptbuch/Schummel-Schutz).
   bots.js (Mitspieler), Teile in bots/ (6): 01 spieler · 02 kampf-karte · 03 angreifen · 04 stand-stadt · 05 verteidigen-takt · 06 aussehen-felder-barbaren.
   buendnis.js (Bündnis, Rally, Chat, Verstärkung), Teile in buendnis/ (4): 01 daten-regeln (bundOp) · 02 rally-geschenke · 03 mitspieler · 04 fenster-karte-welt.
+  baukunst.js (Basen in 3D), Teile in baukunst/ (8): 01 werkzeugkasten · 02 buehne-grundbasis · 03 wahrzeichen-feuer ·
+  04 vielfalt-stile · 05 umland · 06 turmhof-festung · 07 hafen-palast · 08 himmelsfeste-bilder.
+  spiel.php (Spielseite), Teile in spielseite/ (8, *.php): 01 kopf-grundwerte · 02 stil-hud-fenster · 03 stil-bausteine ·
+  04 stil-shop-handy · 05 stil-ladebild-stadt · 06 symbole-karte · 07 fenster · 08 dialoge-stadt-skripte.
+  server.php, Teile in server/ (7, *.php): 01 grundlagen-login · 02 sicherheit-datenlecks · 03 nebel-maersche-seite ·
+  04 datenbank-spieler · 05 datenbank-welt (MysqlLager) · 06 speichern-push-konto · 07 welt-puls.
+  Auch die PHP-Teile beginnen mit „// Teil …“ (fällt beim Zusammensetzen weg). Neue Ziele: Tabelle ZIELE in spiel_bauen.sh.
 - Weitere Dateien: `aufbau.js` (Stadt-Stufen, Marsch-Plätze), `welt.js` (Verbindung Server), `server.php`,
   `weltrechner/` (Node-Weltrechner + Wachhund).
 - Der Weltrechner (`rechnet()` true) ist der einzige, der die Welt schreibt; Handys sind Zuschauer.

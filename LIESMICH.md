@@ -56,6 +56,7 @@ Game/                  ← genau dieser Ordner liegt auf dem Server
   config.php           Datenbank-Zugang – NUR auf dem Server, nie im Git (wird von hochladen.sh erzeugt)
   spiel/01a-…10d-*.js  die 41 Teile von spiel.js (NUR hier ändern, dann werkzeuge/spiel_bauen.sh)
   bots/, buendnis/     die Teile von bots.js (6) und buendnis.js (4) – genauso: NUR dort ändern, dann spiel_bauen.sh
+  baukunst/, spielseite/, server/   die Teile von baukunst.js (8), spiel.php (8) und server.php (7) – genauso
 LIESMICH.md            diese Datei
 CLAUDE.md              Kurz-Hinweise für Claude
 hochladen.sh           lädt Game/ auf den Server (ein Befehl)
@@ -69,7 +70,8 @@ tests/                 Tests (liegen NIE auf dem Server)
                        am Ende „ALLES OK“. Zugang der Test-Konten in <arbeitsordner>/zugang.env (nie im Git)
   server/              die Server-Tests: Absturz/Zurückspielen, Admin, Nebel bei Armeen, Bündnis-Kiste,
                        Verstärkung, Klick-Test neuer Spieler (+ geschenk.sh: Admin-Geschenk für Tests)
-werkzeuge/             spiel_bauen.sh (spiel.js, bots.js, buendnis.js zusammensetzen), vorschau_bauen.php (Vorschau ohne Server),
+werkzeuge/             spiel_bauen.sh (spiel.js, bots.js, buendnis.js, baukunst.js, spiel.php, server.php zusammensetzen),
+                       vorschau_bauen.php (Vorschau ohne Server),
                        vorschau_test*.js (Test-Modus), welt_neustart.php (neue Saison), vor_commit.sh (Prüfung vor dem
                        Commit), server_starten.sh (MariaDB + lokaler PHP-Server 8770 für die Server-Tests)
 ```
@@ -2319,3 +2321,11 @@ Truppen. Belohnungen nach Anteil. Neu dazu (vorher galt vieles nur für den Anf�
   `10d-welt-weltrechner.js` und `09f-saison.js`.
 - Dazu toter Code raus (keine Wirkung): `window.__splashTips` (ladebildschirm.js), `gesendetKs` (welt.js),
   `__owSpeicher.stoppe/.istWelt` (speichern.js), `grabs--` (bots.js).
+- **Auch `baukunst.js`, `spiel.php` und `server.php` in Teilen** (gleiches Verfahren): `Game/baukunst/` (8: Werkzeugkasten,
+  Bühne + Grundbasis, Wahrzeichen + Feuer, Vielfalt + Stile, Umland, Turmhof + Festung, Hafen + Palast, Himmelsfeste +
+  Kartenbilder), `Game/spielseite/` (8 Teile von spiel.php: Kopf, vier Stil-Teile, Symbole + Karte, Fenster, Dialoge +
+  Skripte), `Game/server/` (7: Grundlagen + Login, Sicherheit, Nebel + Märsche + Spielseite, Datenbank Spieler, Datenbank
+  Welt, Speichern + Push + Konto, Welt-Puls). Auch bei PHP beginnt jeder Teil mit „// Teil …“ (wird weggelassen, der
+  erste Teil fängt danach mit `<?php` an). `spiel_bauen.sh` hat dafür eine Tabelle ZIELE (Ordner ↔ Datei) und prüft
+  `.js` mit `node --check`, `.php` mit `php -l`. Ergebnis Byte für Byte gleich; die Pfade der fertigen Dateien bleiben
+  (index.php, admin.php, wachhund.php, Tests binden weiter `Game/server.php` ein). `hochladen.sh` überspringt die Ordner.
