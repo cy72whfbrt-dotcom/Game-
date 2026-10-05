@@ -774,7 +774,10 @@ Alles für heute Nacht kommt hier rein. Erst besprechen (Fragen an Alexander), d
    Vorschlag vorher) · Q5 **das ganze Design**: übersichtlich, verständlich, **weniger hin- und hertippen** ·
    N3 Thron-Punkte (heute alle 3 Min. 30 für den Halter): Halter bekommt weiter **30**, **jeder**, der dort Verstärkung
    stehen hat, bekommt **15** · Q9 neue Forschungen ab Labor 23: Krankenhaus II, Burg-Schutz+, Marschtempo II ·
-   Q2 Edelstein-Preise: manche Dinge (z. B. Kisten) etwas teurer – genaue Zahl offen. Q1 (Startwerte) und Q7 (Rückzug) offen.
+   Q2 **Kisten 150 Edelsteine** (statt 30), sonst Edelstein-Preise gleich · Q1 Start **100.000 Truppen** für neue
+   Spieler und nach dem Reset (bleibt so) · Profil zeigt die **Produktion pro Stunde** aller Basen zusammen (nicht den
+   Bestand) – produzieren alle Basen zusammen 100.000/Std., steht dort genau 100.000 · Q7 Rückzug: Mitspieler kehren
+   automatisch um, echte Spieler bekommen eine Nachricht und entscheiden selbst.
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
