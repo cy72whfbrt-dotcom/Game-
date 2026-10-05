@@ -220,7 +220,7 @@ function zahl($n) { return $n === null ? '–' : number_format((float)$n, 0, ','
 <div class="karte">
   <h2>Welt-Saison (Server-Reset alle 8 Wochen)</h2>
   <?php if (is_array($saison) && !empty($saison['nr'])): ?>
-  <p class="status">Zurzeit: <b>Saison <?= (int)$saison['nr'] ?></b> seit <?= h(date('d.m.Y H:i', (int)(($saison['start'] ?? 0) / 1000))) ?> · nächste am <b><?= h(date('d.m.Y H:i', (int)(($saison['ende'] ?? 0) / 1000))) ?></b><?= !empty($saison['jetzt']) ? ' · <b>Neustart angefordert</b>' : '' ?></p>
+  <p class="status">Zurzeit: <b>Saison <?= (int)$saison['nr'] ?></b> seit <?= h(date('d.m.Y H:i', (int)(($saison['start'] ?? 0) / 1000))) ?> · nächste am <b><?= h(date('d.m.Y H:i', (int)(($saison['ende'] ?? 0) / 1000))) ?></b><?= !empty($saison['jetzt']) ? ' · <b>Neustart angefordert</b>' : (!empty($saison['halt']) ? ' · <b>Reset angehalten (Sicherung zurückgespielt)</b> – er beginnt erst mit dem Knopf unten' : '') ?></p>
   <?php else: ?><p class="status">Noch keine Saison eingetragen – der Weltrechner legt sie beim nächsten Lauf an (Saison 1, Termin in 8 Wochen).</p><?php endif; ?>
   <p>Bleibt: die Hauptstadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Gems, Holz/Stein/Eisen, Gekauftes. Neu: alle anderen Basen,
      Truppen, Münzen, Stufe, Bündnisse, Karte. Die besten 10 bekommen Gems und einen Saison-Titel. Vorher legt der Weltrechner immer eine Sicherung an.</p>

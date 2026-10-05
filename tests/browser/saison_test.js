@@ -36,7 +36,13 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(/Neue Saison in/.test(cd.chip) && /\d+ T \d+ h/.test(cd.chip), 'Countdown oben unter dem HUD (letzte 3 Tage)', cd.chip);
   ok(/Welt-Saison 1/.test(cd.ev) && /Neue Saison in/.test(cd.ev) && /Bleibt/.test(cd.ev), 'Countdown im Events-Fenster', cd.ev);
   ok(cd.bald === 1, 'Ankündigung 3 Tage vorher verschickt', cd.bald);
-  // 2) die neue Saison (wie der Admin-Knopf) – die Seite lädt neu und übernimmt den Reset
+  // 1b) Sicherung mit fälligem Reset zurückgespielt (server.php saison_anhalten: halt) – kein neuer Reset, bis der Admin-Knopf kommt
+  const h = await p.evaluate(async () => { const alt = saison.ende; saison.ende = Date.now() - 1000; saison.halt = { seit: Date.now(), grund: 'sicherung' }; saisonSpeichern();
+    saisonTakt(); await new Promise(r => setTimeout(r, 6000)); saisonTakt();
+    openGoals('boss'); const ev = document.getElementById('eventBody').innerText; closePanel(goalsPopup);
+    const r = { nr: saison.nr, halt: !!saison.halt, bitte: !!localStorage.getItem('openWaterSaisonNeu'), ev: /Termin folgt/.test(ev) }; saison.ende = alt; saisonSpeichern(); return r; });
+  ok(h.nr === 1 && h.halt && !h.bitte && h.ev, 'Sicherung zurückgespielt (Termin vorbei): Reset angehalten – keine neue Saison von selbst', h);
+  // 2) die neue Saison (wie der Admin-Knopf, auch aus dem angehaltenen Zustand) – die Seite lädt neu und übernimmt den Reset
   await p.addInitScript(() => document.addEventListener('DOMContentLoaded', () => { try { const L = k => localStorage.getItem(k);
     window.__nach = { coins: L('openWaterCoins'), lvl: L('openWaterLevel'), sp: L('openWaterSkillPoints'), skills: L('openWaterSkills'), own: L('openWaterOwnedIslands'), troops: L('openWaterIslandTroops'), bund: L('openWaterBuendnisse'),
       botOwn: L('openWaterBotOwnedIslands'), botState: L('openWaterBotState'), schutz: L('openWaterNeulingBis'), at: Date.now(), botCoins: L('openWaterBotCoins'), log: L('openWaterCombatLog'), fog: L('openWaterFogCells') }; } catch (e) {} }));
@@ -52,7 +58,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       truppen: tr[cap], bund: Object.keys((J(N.bund) || {}).b || {}).length, log: N.log, fog: (J(N.fog) || []).filter(k => k === V.fogAlt || k === V.fogZweite).length, weit: Math.hypot(isl.x - islandById[V.cap0].x, isl.y - islandById[V.cap0].y) > 2 * REVEAL_BASE,
       keep: c.levels.keep, aca: c.levels.academy, forge: c.levels.forge, fo: c.fo, wounded: c.wounded, gems, roh: AUF.rohVon('player'),
       inv: localStorage.getItem('openWaterInventory') === V.inv, eq: localStorage.getItem('openWaterEquippedItems') === V.eq, hel: localStorage.getItem('openWaterHeroes2') === V.hel,
-      preis: inbox && inbox.gems, titel: look.titles, traegt: playerTitle(), saison: { nr: saison.nr, ende: saison.ende - Date.now(), top: saison.last && saison.last.top.length, erster: saison.last && saison.last.top[0][0] },
+      preis: inbox && inbox.gems, titel: look.titles, traegt: playerTitle(), saison: { nr: saison.nr, halt: saison.halt, ende: saison.ende - Date.now(), top: saison.last && saison.last.top.length, erster: saison.last && saison.last.top[0][0] },
       bot: { lvl: bx.lvl, skills: Object.values(bx.skills).reduce((a, x) => a + x, 0), coins: bc[V.X], basen: (bo[V.X] || []).length, keep: bx.city.levels.keep === V.bot.city.keep, city: JSON.stringify(bx.city.levels) === JSON.stringify(V.bot.city),
         fo: JSON.stringify(bx.city.fo) === JSON.stringify(V.bot.fo), gear: JSON.stringify(bx.gear) === JSON.stringify(V.bot.gear), gems: bx.gems, res: bx.res, titel: bx.titles, look: botLook(V.X).title,
         hs: Object.entries(bx.hs).every(([k, x]) => V.bot.hs[k] && V.bot.hs[k][0] === x.own && V.bot.hs[k][1] === x.q), truppen: tr[bx.capital] },
@@ -69,7 +75,9 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(n.inv && n.eq && n.hel, 'Ausrüstung und Helden bleiben', { inv: n.inv, eq: n.eq, hel: n.hel });
   ok(n.gems >= 12345 && n.roh.h >= 77777 && n.roh.s >= 66666 && n.roh.e >= 55555, 'Gems und Holz/Stein/Eisen bleiben', { gems: n.gems, roh: n.roh });
   ok(n.preis === 3000 && (n.titel || []).includes('s1p1') && n.traegt === 'Champion Saison 1', 'Platz 1: 3.000 Gems im Abholfach + Titel „Champion Saison 1“ (angelegt)', { preis: n.preis, titel: n.titel, traegt: n.traegt });
+  ok(!n.saison.halt, 'Admin-Knopf: die angehaltene Saison beginnt neu (nicht mehr angehalten)', n.saison);
   ok(n.saison.nr === 2 && n.saison.top === 10 && n.saison.erster === 'player' && n.saison.ende > 55 * 864e5, 'Saison 2 läuft, nächste in 8 Wochen, Top 10 gemerkt', n.saison);
+  ok(/'saison\|' \+ nr \+ '\|' \+ now/.test(await p.evaluate(() => saisonNeu.toString())), 'Nachricht „saison“: Nummer je Reset eindeutig (mit Zeitpunkt)');
   const B = n.bot;
   ok(B.lvl === 1 && B.skills === 0 && B.coins < 1e5 && B.basen === 1, 'Mitspieler: Stufe 1, keine Fähigkeiten, Start-Gold, nur die Hauptstadt', B);
   ok(B.truppen >= 100000 && B.truppen < 2e5, 'Mitspieler: Start-Truppen wie ein neuer Spieler', B.truppen);
@@ -90,5 +98,16 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     botById[Y].mensch = true; by.lookTitle = 's1p1'; const falsch = botLook(Y).title;
     evPreis(Y, 'saison', 'Test', { gems: 0, titel: 's1p1' }, 'test'); const echt = botLook(Y).title; botById[Y].mensch = false; return { falsch, echt, liste: by.sTitel }; });
   ok(f.falsch === 'Neuling' && f.echt === 'Champion Saison 1' && f.liste.includes('s1p1'), 'Saison-Titel nur, wenn die Welt ihn vergeben hat (nicht aus dem Profil)', f);
+  // 3) Handy ohne Nachricht „saison“ (über 60 Tage offline / nicht abgelegt): nach dem ersten Puls übernimmt es den Reset trotzdem
+  const r3 = await p.evaluate(() => { const s = JSON.parse(localStorage.getItem('openWaterSaison')); localStorage.setItem('openWaterSaison', JSON.stringify({ nr: 2, start: Date.now() - 36e5, ende: Date.now() + 50 * 864e5, last: s.last })); saisonLaden();
+    window.onbeforeunload = null; const W0 = window.WELT; window.WELT = { pulse: 0, nachrichtenVoll: false };
+    const vorPuls = saisonNachholen(), a = localStorage.getItem('openWaterSaisonNeu'); WELT.pulse = 1; WELT.nachrichtenVoll = true; const voll = saisonNachholen(), b2 = localStorage.getItem('openWaterSaisonNeu');
+    WELT.nachrichtenVoll = false; const jetzt = saisonNachholen(); window.WELT = W0;
+    return { vorPuls, a, voll, b2, jetzt, neu: localStorage.getItem('openWaterSaisonNeu'), schutz: (+localStorage.getItem('openWaterSaisonSchutz') - Date.now()) / 36e5 }; });
+  ok(r3.vorPuls === false && r3.a === null && r3.voll === false && r3.b2 === null, 'Rückfall erst nach dem ersten Puls (und wenn keine Nachrichten mehr warten)', r3);
+  ok(r3.jetzt === true && r3.neu === '2' && r3.schutz > 46 && r3.schutz <= 47, 'Rückfall: Saison der Welt neuer, keine Nachricht – Reset wird übernommen (Anfängerschutz ab dem Reset)', r3);
+  await p.waitForNavigation({ timeout: 30000 }).catch(() => {}); await p.waitForTimeout(500);
+  const z3 = await p.evaluate(() => ({ lvl: window.__nach.lvl, coins: window.__nach.coins, mein: localStorage.getItem('openWaterSaisonMein') }));
+  ok(z3.lvl === '1' && z3.coins === '0' && z3.mein === '2', 'Rückfall: nach dem Neuladen Stufe 1, 0 Münzen, Saison 2', z3);
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();
 })();
