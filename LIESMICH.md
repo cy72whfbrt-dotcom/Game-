@@ -224,8 +224,8 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Rally-Teilnehmern; Bündnis-Hilfe nur für die nächste Stufe, je Gebäude/Forschung eine offene Bitte; nach dem Verlassen
   1 Std. kein neuer Beitritt. Tote Meldungen „Münzen geplündert“ raus. Test rally_schild_test erweitert.
   Später (Alexander): fremde Helden/Ausrüstung erst nach dem Spähen zeigen (braucht Macht vom Server für die Rangliste).
-  Live 5.10. 3:02 und 5:51–5:57 Uhr: Weltrechner 20–40 s am Stück beschäftigt (einmal Neustart durch den Wachhund) – Ursache
-  noch offen, Spiel lief danach normal.
+  Live 5.10. 3:02 und 5:51–5:57 Uhr (und seit Tagen in Schüben): Weltrechner 20–40 s am Stück nicht drangekommen (einmal Neustart
+  durch den Wachhund). Verdacht: niedrigste Priorität `nice 19` auf dem geteilten Office-Server – jetzt `nice 10` (wachhund.php).
 - **4.10. Aufräumen:** unbenutzte CSS-Reste raus, wichtige Tests ins Projekt (`tests/browser/`, Start mit `tests/alle_tests.sh`).
 - **4.10. Server-Tests ins Projekt:** `tests/server/` + `tests/server_tests.sh <arbeitsordner>` (lokaler PHP-Server,
   MariaDB, Weltrechner): Absturz/Zurückspielen, Admin, Nebel, Bündnis-Kiste, Verstärkung, Klick-Test – alle grün.
@@ -546,7 +546,7 @@ Alle Spieler sind Zuschauer: sie zeigen an und schicken Befehle (wie bisher die 
   nie die Welt zurücksetzen).
 
 **Schutzgeländer (alle lokal getestet):**
-1. Speicher: über 600 MB → Programm beendet sich, Wachhund startet neu. Node-Heap 450 MB. Niedrigste Priorität (nice 19).
+1. Speicher: über 600 MB → Programm beendet sich, Wachhund startet neu. Node-Heap 450 MB. Priorität nice 10 (bis 5.10. nice 19 – bei Last 20–40 s Hänger).
 2. Herzschlag alle 5 s (`weltrechner/herz.php`). Wachhund (`weltrechner/wachhund.php`, Cronjob jede Minute +
    zur Sicherheit bei jedem Spieler-Puls, wenn der Herzschlag älter als 60 s ist): hängt → hart beenden, neu starten.
    Test: eingefroren → nach 68 s beendet und neu gestartet. ✔
