@@ -758,6 +758,11 @@ Alles für heute Nacht kommt hier rein. Erst besprechen (Fragen an Alexander), d
    bleiben „für immer“.
 5. **Neu (Alexander):** Bündnis direkt im Profil sehen und öffnen – im Profil (eigenes und das anderer Spieler) steht
    das Bündnis (Name, Wappen); antippen öffnet sofort das Bündnis-Fenster, ohne Umweg über den Reiter „Bündnis“.
+6. **Neu (Alexander, Rückmeldung von Spielern):** Das Design an sich ist schön, aber **Aufbau/Layout** (HUD oben,
+   Fenster wie „Angriff vorbereiten“ und „Feindliche Basis“, Karte) könnte schöner sein – gilt **überall**.
+   Beispiele (Bilder 5.10. 21:20): Beim Scrollen im Angriffsfenster wird die Angriff/Abwehr-Karte oben abgeschnitten;
+   Namen auf der Karte immer abgeschnitten („[WEL] C…“, „94 ✕ ?“); Kopfgeld-Pille liegt auf der Karte; Fenster nehmen
+   den halben Bildschirm; „Stufe 107“ (Spieler) neben Basis-Stufe 94 verwirrt. Erst Vorschlag zeigen, dann bauen.
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
