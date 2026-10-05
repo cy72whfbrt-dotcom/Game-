@@ -183,7 +183,7 @@ function renderPopup() {
             // Scouting is always allowed, even on an already-scouted
             // island (re-scout to refresh) - only block a second
             // scout while one is already en route to this target.
-            setBtnLabel(scoutBtn, scouted ? (matchMedia('(max-width:359px)').matches ? 'Erneut' : 'Erneut spähen') : 'Spähen');
+            setBtnLabel(scoutBtn, scouted ? (matchMedia('(max-width:359px)').matches ? 'Erneut' : 'Neu spähen') : 'Spähen');
             scoutBtn.disabled = scoutEnRoute;
         }
     }

@@ -45,7 +45,7 @@ setInterval(saisonTakt, 5000);
 const saisonBaldText = ende => 'In 3 Tagen beginnt eine neue Welt-Saison (' + evWann(ende) + ' Uhr). Deine Hauptstadt mit Burg, Gebäuden, Forschung, Helden, Ausrüstung, Gems und Rohstoffen bleibt – Basen, Truppen, Münzen, Stufe und Bündnisse fangen neu an. Die besten 10 bekommen Gems und einen Titel für immer.';
 function saisonAnkuendigen() {
     if (window.WELT) { for (const id in WELT.menschen) { const uid = parseInt(id.slice(1), 10); if (uid > 0) WELT.nachricht(uid, { art: 'saisonBald', nr: saison.nr, ende: saison.ende }, 'saisonBald|' + saison.nr); } }
-    else afterSplash(() => flashHint(saisonBaldText(saison.ende), 9000));
+    else afterSplash(() => flashHint(saisonBaldText(saison.ende), 12000, true));
 }
 function saisonTop() {                                // die besten 10 nach Macht (wie die Rangliste) → [[wer, Macht]]
     const l = [], bs = loadBotState();
@@ -125,7 +125,7 @@ function saisonKarte() {
 }
 // ---- (Handy) Nachrichten vom Weltrechner: Ankündigung, neue Saison ----
 if (window.WELT && !SYSTEM) {
-    WELT.beiNachricht.push(function (e) { if (e && e.art === 'saisonBald' && e.ende > Date.now()) afterSplash(() => setTimeout(() => flashHint(saisonBaldText(e.ende), 9000), 2500)); });
+    WELT.beiNachricht.push(function (e) { if (e && e.art === 'saisonBald' && e.ende > Date.now()) afterSplash(() => setTimeout(() => flashHint(saisonBaldText(e.ende), 12000, true), 2500)); });
     WELT.beiNachricht.push(function (e) {
         if (!e || e.art !== 'saison' || !(e.nr > 0) || e.nr <= (parseInt(store.get('openWaterSaisonMein'), 10) || 1)) return;   // (schon übernommen)
         WELT.saisonHalt = true; store.set('openWaterSaisonNeu', String(e.nr));                // → nach dem Neuladen übernimmt 01a-grundlagen.js den Reset

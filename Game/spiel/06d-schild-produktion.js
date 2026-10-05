@@ -346,8 +346,9 @@ var splashQueue, splashFinished;   // no initialisers: afterSplash() already run
 function afterSplash(fn) { if (splashFinished || SYSTEM) { if (!SYSTEM) fn(); return; }   // (Weltrechner: kein Ladebildschirm – Hinweise braucht er nicht)
      else (splashQueue || (splashQueue = [])).push(fn); }
 function splashDone() { splashFinished = true; const q = splashQueue || []; splashQueue = []; q.forEach(f => { try { f(); } catch (e) {} }); }
-function flashHint(text, ms) {
+function flashHint(text, ms, lang) {                // lang: langer Hinweis – ganz lesbar (kein „…“), am Handy nicht über einem offenen Fenster
     clearTimeout(hintResetTimer);
+    hintEl.classList.toggle('toast--lang', !!lang);
     hintEl.textContent = text;
     if (ms) hintResetTimer = setTimeout(() => { hintEl.textContent = defaultHint; }, ms);
 }
