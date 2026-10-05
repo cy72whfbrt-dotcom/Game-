@@ -673,23 +673,31 @@ class MysqlLager {
     // $nur: nur diese Teile laden (Liste von Schlüsseln) - sonst alles
     function stand_laden($uid, $nur = null) {
         if ($nur !== null && !$nur) return [];
-        $q = $this->db->prepare('SELECT schluessel, wert FROM ow_spielstand WHERE spieler_id = ?');
-        $q->execute([$uid]);
+        // nur die gefragten Teile aus der Datenbank holen (vorher: immer alle, gefiltert erst hier – bei der Welt viele MB je Puls)
+        if ($nur === null) { $q = $this->db->prepare('SELECT schluessel, wert FROM ow_spielstand WHERE spieler_id = ?'); $q->execute([$uid]); }
+        else {
+            $nur = array_values(array_unique(array_map('strval', $nur)));
+            $q = $this->db->prepare('SELECT schluessel, wert FROM ow_spielstand WHERE spieler_id = ? AND schluessel IN (' . implode(',', array_fill(0, count($nur), '?')) . ')');
+            $q->execute(array_merge([$uid], $nur));
+        }
         $r = [];
         foreach ($q as $z) if ($nur === null || in_array($z['schluessel'], $nur, true)) $r[$z['schluessel']] = $z['wert'];
         if ($nur !== null && !array_intersect(array_keys(self::BOT_TEILE), $nur)) return $r;
-        // Mitspieler wieder zusammensetzen (nur wenn der Teil nicht als Ganzes in ow_spielstand liegt)
-        $q = $this->db->prepare('SELECT bot_id, muenzen, basen, zustand FROM ow_bots WHERE spieler_id = ? ORDER BY nr, bot_id');
+        unset($r['_bot_teile']);
+        // Mitspieler wieder zusammensetzen (nur wenn der Teil nicht als Ganzes in ow_spielstand liegt) – nur die nötigen Spalten
+        $da = $this->bot_teile_da($uid);
+        $sp = [];
+        foreach (self::BOT_TEILE as $k => $s) if (!isset($r[$k]) && !empty($da[$s]) && ($nur === null || in_array($k, $nur, true))) $sp[$k] = $s;
+        if (!$sp) return $r;
+        $q = $this->db->prepare('SELECT bot_id, ' . implode(', ', $sp) . ' FROM ow_bots WHERE spieler_id = ? ORDER BY nr, bot_id');
         $q->execute([$uid]);
         $teile = ['zustand' => [], 'muenzen' => [], 'basen' => []];
         foreach ($q as $z) {
-            if ($z['zustand'] !== null) $teile['zustand'][] = json_encode((string)$z['bot_id']) . ':' . $z['zustand'];
-            if ($z['muenzen'] !== null) $teile['muenzen'][] = json_encode((string)$z['bot_id']) . ':' . json_encode((float)$z['muenzen'] == floor((float)$z['muenzen']) && abs((float)$z['muenzen']) < 9e15 ? (int)$z['muenzen'] : (float)$z['muenzen']);
-            if ($z['basen'] !== null) $teile['basen'][] = json_encode((string)$z['bot_id']) . ':' . $z['basen'];
+            if (isset($z['zustand'])) $teile['zustand'][] = json_encode((string)$z['bot_id']) . ':' . $z['zustand'];
+            if (isset($z['muenzen'])) $teile['muenzen'][] = json_encode((string)$z['bot_id']) . ':' . json_encode((float)$z['muenzen'] == floor((float)$z['muenzen']) && abs((float)$z['muenzen']) < 9e15 ? (int)$z['muenzen'] : (float)$z['muenzen']);
+            if (isset($z['basen'])) $teile['basen'][] = json_encode((string)$z['bot_id']) . ':' . $z['basen'];
         }
-        unset($r['_bot_teile']);
-        $da = $this->bot_teile_da($uid);
-        foreach (self::BOT_TEILE as $k => $sp) if (!isset($r[$k]) && !empty($da[$sp]) && ($nur === null || in_array($k, $nur, true))) $r[$k] = '{' . implode(',', $teile[$sp]) . '}';
+        foreach ($sp as $k => $s) $r[$k] = '{' . implode(',', $teile[$s]) . '}';
         return $r;
     }
     // Welche Mitspieler-Teile gibt es (auch leere Objekte "{}")? Merker in ow_spielstand.
@@ -833,8 +841,14 @@ class MysqlLager {
         if ($v % 50 === 0) $this->db->prepare('DELETE FROM ow_welt_flicken WHERE version < ?')->execute([$v - 600]);
         if (isset($setzen['openWaterBotOwnedIslands']) || isset($basenNeu)) {   // Übersicht: Basen jedes echten Spielers in ow_spieler
             $b = isset($basenNeu) ? json_decode(json_encode($basenNeu), true) : (json_decode($setzen['openWaterBotOwnedIslands'], true) ?: []);
+            $soll = []; foreach ($b as $wer => $liste) if (preg_match('/^u(\d+)$/', $wer, $m)) $soll[(int)$m[1]] = is_array($liste) ? count($liste) : 0;
+            // nur, wo sich die Zahl geändert hat (vorher: jede Zeile bei jedem Puls – hielt die Transaktion lang und sperrte die
+            // Zeilen der Spieler, die gerade speichern)
+            $ist = [];
+            foreach (array_chunk(array_keys($soll), 500) as $t) { $q = $this->db->prepare('SELECT id, anzahl_basen FROM ow_spieler WHERE id IN (' . implode(',', array_fill(0, count($t), '?')) . ')'); $q->execute($t);
+                foreach ($q as $z) $ist[(int)$z['id']] = $z['anzahl_basen'] === null ? null : (int)$z['anzahl_basen']; }
             $q = $this->db->prepare('UPDATE ow_spieler SET anzahl_basen = ? WHERE id = ?');
-            foreach ($b as $wer => $liste) if (preg_match('/^u(\d+)$/', $wer, $m)) $q->execute([is_array($liste) ? count($liste) : 0, (int)$m[1]]);
+            foreach ($soll as $id => $n) if (array_key_exists($id, $ist) && $ist[$id] !== $n) $q->execute([$n, $id]);
         }
         $this->db->prepare('UPDATE ow_welt_info SET version = ?, versionen = ?, welt_zeit = GREATEST(welt_zeit, ?) WHERE id = 1')->execute([$v, json_encode($vs), (int)$welt_zeit]);
         return $v;
