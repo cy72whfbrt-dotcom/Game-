@@ -727,7 +727,9 @@ Alles für heute Nacht kommt hier rein. Erst besprechen (Fragen an Alexander), d
    **Entschieden:** F1 Umstellung mit einem **Saison-Ende** (Reset) – dabei gleich sehen, ob Hauptstadt usw. bleibt.
    F2 **3.600× langsamer** (was heute pro Sekunde kommt, kommt pro Stunde). F3 Kosten/Gegner im gleichen Verhältnis
    verkleinern – **aber nicht zu einfach** (lange spielen). F4 Mitspieler **immer** genau wie echte Spieler. F5 Truppen
-   **und** Gold. Offen: „Kosten zurücksetzen wie Fähigkeiten, Helden bleiben“ genauer klären.
+   **und** Gold. F6 Es darf **nie zu einfach** werden (lange spielen). F7 Saison-Ende wie geplant: Hauptstadt komplett
+   (Burg, Gebäude, Labor-Forschung), Helden, Ausrüstung bleiben; Fähigkeiten zurück. F8 Saison-Ende **gleich beim
+   Hochladen**, ohne 3-Tage-Countdown (Test).
 4. **Prüfen (Alexander):** Die Produktion im Profil muss genau die Summe der Basen sein – z. B. 2 Basen, Profil sagt
    10 Mio. → es kommen genau 10 Mio., nicht mehr und nicht weniger.
 2. Alexanders 3 Fehler (Abschnitt 11): Späher-Knöpfe, Angriff von der nächsten Basis, Spähbericht ohne Ausrüstung.
