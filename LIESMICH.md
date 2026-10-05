@@ -499,6 +499,24 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   zahlen die Maut neu verteilt und marschieren. Kann der Anführer selbst nicht zahlen, fällt die Rally wie bisher ganz aus
   (`bundRallyLos`, buendnis/02; wirft dabei etwas, geht die Rally nicht los und alle Truppen genau einmal heim). Test
   `rally_maut_test` (Fall 2, 2b, 6; der Test schaltet die Mitspieler-Runde ab – sonst trat Z zufällig dem Test-Bündnis bei).
+- **5./6.10. Nacht – Langzeit (11b C/D/E, gebaut, NICHT hochgeladen):** **Erfolge Hauptstadt** (`05c` ACHIEVEMENTS, gleich
+  für Mitspieler `BOT_GOAL_VAL`): Burg 5/10/15/20/25 (30/80/160/300/600 Edelsteine), Labor 10/50 Stufen und „alles erforscht“
+  (Ziel wächst mit neuen Forschungen, `AUF.foGesamt`), beim Sieg über den Drachen dabei 1/5, Preis bei einer Barbaren-Invasion 1/10,
+  Saison unter den besten 10 1/3 (Saison-Titel). **Nachgerechnet:** live hatte eine Basis 2 Tage nach der neuen Welt schon
+  Stufe 93 – „Basis Stufe 100“ bleibt auch bei halb so schneller Wirtschaft in einer Saison machbar (bleibt als hohes Ziel);
+  „Großreich“ 150 → **100 Basen gleichzeitig** (Basen gehen mit jeder Saison weg); Zähler über alle Saisons (1.000 Eroberungen,
+  Thron 10 Std., 10.000 Thron-Punkte, alle Helden, 5 Sterne, Burg 25 ≈ 1 Jahr, alles erforscht) bleiben als Langzeit-Ziele.
+  **Push „Bau fertig“ / „Forschung fertig“** (neue Arten `bau`, `forschung`, in den Einstellungen abschaltbar): das Profil
+  schickt `city.bauBis`/`foBis` mit, der Weltrechner (`weltrechner/push.js`) meldet je Bau einmal, wenn das Handy zu ist.
+  **Aufgaben:** „Öffne 3 Kisten“ zählt jede Kiste (Shop, Helden-Kiste, Abholfach, Pass, Thron-Shop, Belohnungen); neu „Starte
+  einen Bau in der Stadt“ und „Starte eine Forschung im Labor“ – nur an Tagen, an denen es geht (Labor/Bauarbeiter vor Mitternacht
+  frei). **Saison-Pass:** Bau oder Forschung gestartet je 15 Punkte (Mitspieler genauso). **Bauherr** zählt auch fertige
+  Stadt-Gebäude (2 + neue Stufe; echte Spieler über das Hauptbuch). **Rangliste** neuer Reiter „Hauptstadt“ (Burg-Stufe, bei
+  Gleichstand Forschung – von anderen nur die Summe `foP`, die der Weltrechner ausrechnet; die Forschung selbst bleibt geheim).
+  **Bündnis im Profil** (eigenes und fremdes): Wappen + Name, antippen öffnet gleich das Bündnis-Fenster (eigenes: Info, fremdes:
+  „Suchen“ mit seiner Zeile). **Fehler mitbehoben:** das Profil echter Spieler verlor Holzfäller, Steinbruch und Eisenmine
+  (fehlten in `profil_bereinigen`) – der Weltrechner rechnete ihre Rohstoffe zu klein. Tests: `erfolg_test`, `rang_profil_test`,
+  `aufgabe_test`, `welt_test` (Push), `server_test` (Profil, Push-Arten, foP).
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
@@ -751,7 +769,7 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
 - Bündnis-Signal **„Rückzug!“**: Mitspieler kehren automatisch um, echte Spieler bekommen eine Nachricht und
   entscheiden selbst.
 - Thron-Punkte (alle 3 Min.): Halter weiter **30**, **jeder** mit Verstärkung im Thron **15**.
-- Stadt-Bau und Forschung geben Pass-Punkte und zählen für Aufgaben (z. B. „Starte eine Forschung“).
+- Stadt-Bau und Forschung geben Pass-Punkte und zählen für Aufgaben (z. B. „Starte eine Forschung“) – **gebaut (nicht hochgeladen)**, Verlauf 5./6.10. Langzeit.
 - Neue Forschungen ab Labor 23: **Krankenhaus II, Burg-Schutz+, Marschtempo II**.
 - Neue Saison startet sicher **sonntags 18 Uhr deutscher Zeit**.
 - Schummel-Verdacht: nur Nachricht an Alexander, kein automatisches Bremsen.
@@ -767,11 +785,11 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
   das Bündnis · Meldung, wenn ein Verbündeter seine Verstärkung heimholt, und beim Antippen der eigenen Basis sehen, wer
   dort verstärkt · Mitspieler: auf „Später“ folgt „Jetzt!“, sie schreiben „Danke!“/„Gut gemacht!“.
 - Langzeit: Hauptstadt-Erfolge · Push „Bau fertig“/„Forschung fertig“ · Aufgabe „Öffne 3 Kisten“ zählt auch
-  Gratis-Kisten · Ranglisten-Reiter „Hauptstadt“ · unerreichbare Erfolge senken, ein paar sehr hohe bleiben.
+  Gratis-Kisten · Ranglisten-Reiter „Hauptstadt“ · unerreichbare Erfolge senken, ein paar sehr hohe bleiben – **gebaut (nicht hochgeladen)**, Verlauf 5./6.10. Langzeit.
 - **Nein:** Push bei Stillstand · Admin-Ampel · „Leicht“ bei neutralen Basen · Fenster „Erste Basis erobert“ ·
   Zeile „Nächstes Ziel“ · Karte heller · „Warum verloren?“ · Pass umbenennen · Ranglisten nur je Saison.
 
-**E. Bündnis im Profil:** im eigenen und fremden Profil steht das Bündnis (Name, Wappen); antippen öffnet es sofort.
+**E. Bündnis im Profil:** im eigenen und fremden Profil steht das Bündnis (Name, Wappen); antippen öffnet es sofort. – **gebaut (nicht hochgeladen)**.
 
 **F. Ganzes Design übersichtlicher** (Rückmeldung von Spielern; **gleich umbauen**, kein Vorschlag vorher):
 verständlich, übersichtlich, **weniger hin- und hertippen** – HUD, Leiste, alle Fenster, Karte. Vorbild für den Aufbau
