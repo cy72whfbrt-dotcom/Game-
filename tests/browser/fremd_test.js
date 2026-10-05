@@ -44,7 +44,7 @@ const php = (code, ein) => execFileSync('php', ['-r', "$_SERVER['SCRIPT_FILENAME
     window.WELT = new Proxy(W, { get: (o, k) => k in o ? o[k] : () => [] });
     if (botSaveTimer) { clearTimeout(botSaveTimer); botSaveTimer = null; }
     store.set('openWaterBotState', gek); botState = null; loadBotState(); for (const k in staerkeMem) delete staerkeMem[k];
-    store.set('openWaterBotCoins', gekC); botCoins = JSON.parse(gekC) || {}; for (const bot of BOT_DEFS) if (!botCoins[bot.id]) botCoins[bot.id] = 0;   // (wie 10-start)
+    store.set('openWaterBotCoins', gekC); botCoins = JSON.parse(gekC) || {}; for (const bot of BOT_DEFS) if (!botCoins[bot.id]) botCoins[bot.id] = 0;   // (wie 10c-start-einstellungen)
     islandTroops[V.isl] = 5000;   // (bis hier lief die Welt weiter: dieselbe Besatzung wie beim Messen oben)
     return { geheim: fremdGeheim(), herr: islandOwnerOf(V.isl) === V.bot };
   }, [gek, gekC, vor]);
