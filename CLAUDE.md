@@ -88,6 +88,11 @@ Alles Wichtige steht in `LIESMICH.md` – jede Änderung wird dort eingetragen.
 - Spieltester schon auf dem ersten fertigen Branch einer Oberflächen-Aufgabe laufen lassen (parallel), nicht erst vor dem Endprüfer.
   Bei Netz/Server-Änderungen prüft ein Sucher Fristen/Zeitgrenzen gegen langsame Antworten (Hoster-Last).
 - Programmierer/Schnellprüfer: Server-Tests nur `betroffen` statt der ganzen Reihe; vor dem Commit `werkzeuge/vor_commit.sh`.
+  Bereich für `betroffen`: `$(git merge-base origin/claude/neues-projekt-8agldl HEAD)..HEAD` (nie `origin/..HEAD`).
+- Fertig erst melden, wenn alle eigenen Hintergrund-Läufe zu Ende sind (FERTIG gelesen); letzte Statuszeile `… | fertig | <Ergebnis>` ist Pflicht (auch Schnellprüfer).
+- Fix für einen roten Test: erst rot VOR dem Fix zeigen und die Ursache in einem Satz nennen; braucht es Anlauf 2, sucht ein Sucher die Ursache.
+  Prüfliste: jeder Kauf ab 500 Edelsteinen hat „Wirklich?“ (`gemsWirklich`); Truppen/Münzen/Edelsteine nie doppelt oder weg.
+- Spieltester baut die Vorschau normal (`php werkzeuge/vorschau_bauen.php <ordner>`), „test“ nur wenn ausdrücklich verlangt.
 - Maschine hat 4 Kerne: nie mehrere volle Testreihen gleichzeitig (nur Endprüfer/Zusammenführen); Programmierer testen nur
   ihre betroffenen Tests. Zusammenführen: zuerst Branch + Commit prüfen (`git log -1 <branch>`).
 - Fragen an Alexander: immer mit Beispiel aus dem Spiel, Folge für den Spieler in einem Satz, Auswahl A/B mit Empfehlung.
