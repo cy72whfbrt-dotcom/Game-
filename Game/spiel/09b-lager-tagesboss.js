@@ -44,15 +44,25 @@ function barbSpawn() {                              // a third near you, 40 % ne
 }
 function dbossEnsure() {                            // today's boss: the kind turns every day, the place is the same for everyone today
     const d = todayKey(); if (dayBoss && dayBoss.d === d) return dayBoss;
+    if (dayBoss && dayBoss.hp > 0 && rechnet()) dbossEntkommen(dayBoss);                  // gestern nicht gefallen: alle, die getroffen haben, bekommen etwas Kleines
     const now = new Date(), n = Math.round(new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12).getTime() / 864e5), K = DBOSS_KINDS[n % DBOSS_KINDS.length], r = mulberry32(n * 7919 + 13);
     const lms = BARB_LMS.filter(l => l.ring <= 3); let p = null, lm = null;
     for (let t = 0; t < 20 && !p; t++) { lm = lms[Math.floor(r() * lms.length)]; p = barbSpot(lm, r, 3.5); }
     if (!p) p = { x: lm.x, y: lm.y };
     let pool = 0; for (const bot of BOT_DEFS) { let big = 0; for (const id of botOwnedIslands[bot.id] || []) big = Math.max(big, islandTroops[id] || 0); pool += big * .25 * DBOSS_HITS * barbFa(bot.id); }
-    const hp = niceRound(Math.max(5e7, pool * .8)), had = !!dayBoss;                        // life: about 80 % of what everyone's strikes (× their Angriff) can take in a day - it falls in the evening
+    const hp = niceRound(Math.max(saisonAnfang() ? DBOSS_MIN_ANFANG : 5e7, pool * .8)), had = !!dayBoss;   // life: about 80 % of what everyone's strikes (× their Angriff) can take in a day - it falls in the evening
     dayBoss = { d, k: K.k, name: K.name, x: Math.round(p.x), y: Math.round(p.y), lm: lm.id, hp, max: hp, dmg: {}, fell: 0 };
     saveBarb(); if (had) flashHint('Neuer Tagesboss: ' + K.name + ' ist erschienen!', 5000);
     return dayBoss;
+}
+// Neue Welt-Saison (09f saisonAnfang): in den ersten 3 Tagen haben alle nur Start-Truppen – die Untergrenze so, dass 8 Spieler mit je
+// 10 Angriffen aus einem Viertel ihrer Start-Truppen ihn schaffen (sonst 5e7: über 1000 Angriffe mit 50.000)
+const DBOSS_MIN_ANFANG = 8 * DBOSS_HITS * PLAYER_START_TROOPS * .25;
+function dbossEntkommen(b) {                        // (nur wer rechnet) der Boss ist nicht gefallen: wie beim Drachen alle, die getroffen haben, etwas Kleines –
+    const rk = dbossRanks(b); if (!rk.length) return;   //   fester Schlüssel je Tag (derselbe wie der Preis beim Fallen: nie beides, nie doppelt)
+    for (const [who] of rk) evPreis(who, 'boss', b.name + ' entkommen', DR_PREISE[2], b.d);
+    if (b.dmg.player) flashHint(b.name + ' ist entkommen – alle, die getroffen haben, bekommen eine kleine Belohnung unter Events.', 6000);
+    saveBotState();
 }
 const DBOSS_GONE = 5 * 60000;                          // a fallen boss leaves the map 5 min after it fell
 let dbossOffen = '';                                // (Tagesboss: einmal am Tag seinen Platz aufdecken – er ist für alle angekündigt, wie Drache und Kriegsherr)
@@ -335,7 +345,7 @@ function barbSheetHtml() {
         '<div class="field-lines"><span>' + (dead ? 'Neuer Boss in' : 'Verschwindet in') + '</span>' + mid + '<span>Deine Angriffe</span><b>' + rec.h + ' / ' + dbossHitsMax() + ' heute</b>' +
         '<span>Dein Schaden</span><b>' + (mine >= 0 ? fmtCompact(rk[mine][1]) + ' · Platz ' + (mine + 1) : '–') + (barbOut('player', 'b') ? ' <small>· Angriff unterwegs</small>' : '') + '</b></div>' +
         (rk.length ? '<ol class="barb-rank">' + rk.slice(0, 5).map(row).join('') + (mine >= 5 ? row(rk[mine], mine) : '') + '</ol>' : '<div class="notice">' + icon('info') + '<span>Noch hat niemand angegriffen.</span></div>');
-    const rules = '<div class="barb-note">Pro Angriff Münzen nach Schaden, ein Viertel der Kämpfer fällt, höchstens 5 % Leben pro Angriff. Fällt der Boss, gibt es für alle nach Rang Gems, Kisten und Splitter – Platz 1 bis 3 extra.</div>';
+    const rules = '<div class="barb-note">Pro Angriff Münzen nach Schaden, ein Viertel der Kämpfer fällt, höchstens 5 % Leben pro Angriff. Fällt der Boss, gibt es für alle nach Rang Gems, Kisten und Splitter – Platz 1 bis 3 extra. Entkommt er, bekommen alle, die getroffen haben, etwas Kleines.</div>';
     if (v.kind === 'boss') {
         const src = barbSource(b, 1, true);
         return bossHtml + (dead ? '' : rec.h >= dbossHitsMax() ? '<div class="notice notice--gold">' + icon('hourglass') + '<span>Heute keine Angriffe mehr – morgen wieder.</span></div>' :
