@@ -14,6 +14,7 @@
 #   armee_test    Nebel: fremde Armeen/Felder im Nebel ohne Zahlen
 #   kiste_test    Bündnis-Kiste: Geschenk nur bei echter Heldenkiste
 #   verst_test    Verstärkung über Server + Weltrechner (hin, sichtbar nur fürs Bündnis, zurück)
+#   schummel_test verändertes Handy: Münzen/Holz erfinden, Fähigkeiten ohne Gems, Gebäude ohne Bauzeit – nichts davon in der Welt
 #   klick_test    neuer Spieler: alle Fenster/Knöpfe, Angriff, Bau, neu laden, keine Schummel-Hinweise
 # Einzelne Tests: tests/server_tests.sh <arbeitsordner> kiste_test armee_test
 cd "$(dirname "$0")/.." || exit 1
@@ -30,7 +31,7 @@ db() { MYSQL_PWD=$(php -r 'echo (require $argv[1])["db_pass"];' "$OW_TEST_GAME/c
   -u "$(php -r 'echo (require $argv[1])["db_user"];' "$OW_TEST_GAME/config.php")" "$(php -r 'echo (require $argv[1])["db_name"];' "$OW_TEST_GAME/config.php")" -N -e "$1"; }
 db "SELECT 1" >/dev/null || { echo "FEHLER: Datenbank nicht erreichbar (service mariadb start?)"; exit 1; }
 
-TESTS="${*:-absturz_test admin_test armee_test kiste_test verst_test klick_test}"
+TESTS="${*:-absturz_test admin_test armee_test kiste_test verst_test schummel_test klick_test}"
 werkzeuge/spiel_bauen.sh >/dev/null || exit 1
 rsync -a --exclude config.php --exclude 'weltrechner/herz*.php' --exclude 'weltrechner/log*.php' --exclude 'weltrechner/zustand*.php' \
   --exclude 'weltrechner/sperre.php' --exclude 'weltrechner/schummel*.php' --exclude 'weltrechner/vapid*.php' --exclude 'weltrechner/crontab*' \
