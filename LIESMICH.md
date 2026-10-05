@@ -784,7 +784,7 @@ nötig; Knöpfe usw. frei gestalten. Pflicht: **wirklich übersichtlich, sortier
 
 **I. Dazu (Claudes Vorschläge, Alexander ja):** Weltrechner robuster bei Hoster-Last (seltener nachfragen, geduldiger,
 nicht gleich neu starten) · Sortier-Tag zu Ende bringen (alten, ungenutzten Code raus – kleiner, lädt schneller).
-Offen: Wachturm als Labor-Forschung zurück (warnt je Stufe genauer vor Angriffen)?
+**Nein:** Wachturm kommt nicht zurück (Alexander).
 
 **H. Ganz zum Schluss:** wenn alles fertig ist, **alles komplett testen** (`tests/komplett.sh` + Spieltester auf Handy
 und Desktop über alle Fenster) – erst danach Alexander wegen Hochladen fragen.
