@@ -715,6 +715,9 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
 - **Anzeige (Alexander 5.10., „wie bei Million Lords“):** Ertrag überall **pro Stunde** statt „/ Tick“ bzw. „/ s“ (Profil
   „Truppen / Tick“, „Münzen / Tick“, Basis-Fenster, Tempel). Richtig umrechnen: ein Tick ist `productionTickMs()` (mit
   Fähigkeit „Geschwindigkeit“ bis 0,4 s). Beispiel: +44 Mio./Tick → +158 Mrd. pro Stunde. Nur Anzeige, Ertrag unverändert.
+  **Nachtrag (Alexander):** gemeint ist der ERTRAG selbst „wie Million Lords pro Stunde“ (dort Stadt Stufe 100:
+  2,63 Mio. Truppen/h, 14,3 Mio. Gold/h; Stufe 110: 8,53 Mio./h, 28,4 Mio./h) – große Wirtschafts-Umstellung, Sucher
+  rechnet die Folgen aus, dann Fragen an Alexander.
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
