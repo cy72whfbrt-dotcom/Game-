@@ -585,9 +585,9 @@ function bundRallyLos(r) {
     if (AUF) AUF.frei.an();                                                     // (der gemeinsame Angriff war schon als Rally gezählt)
     r.startet = true;                                                           // (ihr Held ist ab jetzt im Angriff – nicht mehr „belegt durch die Rally“)
     mautZahler = rallyMaut(r, maut);                                            // (jeder zahlt die Maut für SEINE Truppen – Alexander #11)
-    const k = pendingAttacks.length; let ok = false, kaputt = false;
-    try { ok = launchAttack(r.at, r.t, by, total, r.held || null, r.held2 || null); } catch (e) { kaputt = true; console.warn('Rally:', e); } finally { mautZahler = null; if (AUF) AUF.frei.aus(); }
-    const atk = ok && pendingAttacks.length > k ? pendingAttacks[pendingAttacks.length - 1] : null;
+    const k = pendingAttacks.length; let kaputt = false;
+    try { launchAttack(r.at, r.t, by, total, r.held || null, r.held2 || null); } catch (e) { kaputt = true; console.warn('Rally:', e); } finally { mautZahler = null; if (AUF) AUF.frei.aus(); }
+    const atk = pendingAttacks.length > k ? pendingAttacks[pendingAttacks.length - 1] : null;   // (auch wenn danach etwas warf: steht er drin, marschiert er – Maut ist bezahlt)
     if (!atk || atk.attackerBotId !== by) { islandTroops[r.at] = Math.min(islandTroops[r.at] || 0, vorher);   // (noch nicht los: die Truppen wieder heim, auch nach einem Fehler)
         return bundRallyEnde(r, kaputt ? 'ein Fehler beim Losmarsch' : maut.fehlt ? bundName(maut.fehlt) + ' hat nicht genug Münzen für seine Maut' : 'der Weg ist versperrt (Tor zu oder Maut zu teuer)'); }
     atk.rally = { id: r.id, by, an: [[by, r.at, r.n0]].concat(r.j.filter(j => j.da).map(j => [j.w, j.f, j.n])) };

@@ -463,6 +463,10 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Verteidigen: Hilfe/Abzug gilt nur, wenn der Marsch wirklich losging, sonst der nächste Helfer (`botDefend`). Schild: eigene
   Angriffe kehren um und laufen heim wie deine (nicht mehr sofort zu Hause, `botUseShield`). Hauptstadt eines Mitspielers ist
   immer ein Turm, nie Tor/Tempel (`botCapitalOf`, `isCapital`); ohne Turm kehren Truppen trotzdem zu einer eigenen Basis heim. Die Karte zeichnet nur Angriffe auf deine eigenen Feld-Armeen (`drawArmies`), Angriffe auf Armeen echter Spieler tragen `tOwner` (sieht nur der Eigentümer). Test `tests/browser/mitspieler_feld_test.js`.
+- **5.10. Rally-Losmarsch (Fund Endprüfer):** Warf `launchAttack` erst NACHDEM der Angriff eingetragen war (z. B. beim Speichern
+  oder Zeichnen), galt die Rally als nicht gestartet und schickte alle Truppen heim, obwohl der Angriff schon marschierte –
+  Truppen doppelt. Jetzt zählt der eingetragene Angriff als gestartet (Maut nur einmal bezahlt, `bundRallyLos`, buendnis/02).
+  Test `rally_maut_test` (Fall 5).
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.

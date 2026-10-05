@@ -38,6 +38,14 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const t4 = islandTroops[aCap] || 0;
     try { rally('rm4', 3000, 1000); bundTakt(); bundTakt(); } finally { window.WELT = w0; launchAttack = la; console.warn = cw; bundZielOk = zo; ownerShielded = os; }
     out.m4 = { atk: atk('rm4'), drin: bund.r.some(x => x.id === 'rm4'), alexDa: (islandTroops[aCap] || 0) - t4, heim: heim.slice(), warn: warn.slice() };
+    // 5) Fehler NACH dem Eintragen in launchAttack (z. B. beim Zeichnen): der Angriff marschiert – nichts heim, Maut einmal
+    console.warn = (...x) => warn.push(String(x[0])); warn.length = 0; heim.length = 0; window.WELT = { leiter: true }; bundZielOk = () => ''; ownerShielded = () => false;
+    launchAttack = (...x) => { la(...x); throw new Error('Test'); }; const mp = marschPlatz; marschPlatz = () => true;   // (Marsch-Plätze: rm1/rm3 laufen noch)
+    const t5 = islandTroops[aCap] || 0, g5 = geld();
+    try { rally('rm5', 3000, 1000); bundTakt(); bundTakt(); } finally { window.WELT = w0; launchAttack = la; marschPlatz = mp; console.warn = cw; bundZielOk = zo; ownerShielded = os; }
+    const a5 = pendingAttacks.find(x => x.rally && x.rally.id === 'rm5'), g5n = geld();
+    out.m5 = { atk: atk('rm5'), drin: bund.r.some(x => x.id === 'rm5'), alexDa: (islandTroops[aCap] || 0) - t5, heim: heim.slice(), warn: warn.slice(),
+      n: a5 && a5.troops, rally: !!(a5 && a5.rally.an), zahltA: g5.A - g5n.A, zahltE: g5.E - g5n.E };
     return out; });
   ok(v.m1.atk === 1 && !v.m1.drin && v.m1.tor.n === 4000, 'Rally geht los, Maut für alle 4000 Truppen', v.m1);
   ok(v.m1.g.A === 1e6 - 3000 && v.m1.g.E === 1e6 - 1000 && v.m1.g.Z === 4000, 'Jeder zahlt seinen Anteil der Maut (3000 / 1000), der Tor-Besitzer bekommt alles', v.m1.g);
@@ -45,5 +53,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(v.m2.alexDa === 3000 && v.m2.heim.length === 1 && v.m2.heim[0].n === 1000, 'Alle Truppen gehen heim', v.m2);
   ok(v.m3.atk === 1 && !v.m3.drin && v.m3.alexDa === 0 && v.m3.warn.length === 1, 'Fehler nach dem Losmarsch: EIN Angriff, Rally nicht mehr da, keine doppelten Truppen', v.m3);
   ok(v.m4.atk === 0 && !v.m4.drin && v.m4.alexDa === 3000 && v.m4.heim.length === 1 && v.m4.heim[0].n === 1000 && v.m4.warn.length === 1, 'Fehler vor dem Start: Rally weg, Truppen genau einmal zurück', v.m4);
+  ok(v.m5.atk === 1 && !v.m5.drin && v.m5.alexDa === 0 && v.m5.heim.length === 0 && v.m5.rally && v.m5.warn.length === 1, 'Fehler nach dem Eintragen: Angriff marschiert, Rally weg, keine Truppen doppelt heim', v.m5);
+  ok(v.m5.zahltA === 3000 && v.m5.zahltE === 1000, 'Dabei Maut genau einmal bezahlt', v.m5);
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();
 })();
