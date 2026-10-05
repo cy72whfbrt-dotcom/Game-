@@ -74,7 +74,8 @@ werkzeuge/             spiel_bauen.sh (spiel.js, bots.js, buendnis.js, baukunst.
                        vorschau_bauen.php (Vorschau ohne Server),
                        vorschau_test*.js (Test-Modus), welt_neustart.php (neue Saison), vor_commit.sh (Prüfung vor dem
                        Commit), server_starten.sh (MariaDB + lokaler PHP-Server 8770 für die Server-Tests),
-                       karte.sh (+ karte.js: erzeugt KARTE.md)
+                       karte.sh (+ karte.js: erzeugt KARTE.md), fortschritt.sh (FORTSCHRITT-Zeilen der Testreihen),
+                       nach_hochladen.sh (prüft nach dem Hochladen den Live-Server, nur lesend)
 ```
 **Server kaputt oder Editor abgestürzt?** Einfach `./hochladen.sh` – lädt alles neu hoch, erzeugt `config.php` aus den
 Umgebungsvariablen, entfernt fremde Reste aus `Game/` und prüft, dass alles heil angekommen ist.
@@ -343,6 +344,17 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   `tests/server_tests.sh <arbeitsordner> betroffen [<git-bereich>]` lässt nur die Server-Tests laufen, die zu den geänderten
   Dateien passen (Tabelle `BETROFFEN` im Skript, Standard-Bereich `origin/claude/neues-projekt-8agldl...HEAD` + Änderungen
   ohne Commit; `OW_TROCKEN=1` zeigt nur die Auswahl).
+- **5.10. Testreihen ohne Handarbeit (nur Tests/Werkzeuge, kein Spiel-Code):** letzter `komplett.sh`-Lauf dauerte 40 Min.
+  mit Fehlalarmen unter Last. Jetzt: `tests/komplett.sh` startet zuerst die Server-Reihe, die Browser-Reihe erst wenn alle
+  Server-Gruppen laufen (+30 s) und nur mit `OW_SLOTS=2 nice -n 10`. Schreibt `<arbeitsordner>/FORTSCHRITT` (je Test: Gruppe |
+  Test | Start | Ergebnis), `komplett.log` und `FERTIG` (wie bei `alle_tests.sh`). `alle_tests.sh` und `server_tests.sh`
+  wiederholen rote Tests am Ende EINMAL allein: grün → zählt als OK, aber „rot → grün bei Wiederholung (Last?)“ (auch in
+  FERTIG); wieder rot → FEHLER. `server_tests.sh` schreibt die Dauer jedes grünen Tests in `tests/zeiten.txt` (im Git) und
+  verteilt die Gruppen danach (längster zuerst in die kürzeste Gruppe); `OW_TROCKEN=1` zeigt die Gruppen.
+  `werkzeuge/vor_commit.sh` meldet `pkill`/`killall`/`pgrep … | xargs kill` in `tests/` ohne Pfad oder Prozessgruppe (Ausnahme:
+  `# vor_commit: ok`). Neu **`werkzeuge/nach_hochladen.sh [zeitpunkt]`** (nach jedem Hochladen, nur lesend, Zugang über
+  `OFFICE_USER`/`OFFICE_PASS`): Weltrechner neu gestartet und lebt, keine neuen FEHLER im Log, Speicher < 600 MB,
+  pulseFehler/fehlerProMinute 0, Startseite 200 → „LIVE OK“ oder Fehlerliste.
 - **4.10. Aufräumen:** unbenutzte CSS-Reste raus, wichtige Tests ins Projekt (`tests/browser/`, Start mit `tests/alle_tests.sh`).
 - **4.10. Server-Tests ins Projekt:** `tests/server/` + `tests/server_tests.sh <arbeitsordner>` (lokaler PHP-Server,
   MariaDB, Weltrechner): Absturz/Zurückspielen, Admin, Nebel, Bündnis-Kiste, Verstärkung, Klick-Test – alle grün.

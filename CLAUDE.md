@@ -46,7 +46,9 @@ Alles Wichtige steht in `LIESMICH.md` – jede Änderung wird dort eingetragen.
   Grenze für die ganze Maschine: höchstens 4 Test-Prozesse über ALLE Läufe (Slots `/tmp/ow_slot1…4` per `flock`,
   `OW_SLOTS` ändert die Zahl) – weitere warten. Ergebnis steht am Ende in `<arbeitsordner>/FERTIG` (Pfad wird am
   Anfang ausgegeben): dort nachsehen statt zu warten.
-- **Beide Reihen gleichzeitig: `tests/komplett.sh <arbeitsordner>`** (ca. 15–20 Min.) – vor jedem Hochladen.
+- **Beide Reihen gleichzeitig: `tests/komplett.sh <arbeitsordner>`** (ca. 15–20 Min.) – vor jedem Hochladen. Im
+  Arbeitsordner: `FORTSCHRITT` (je Test eine Zeile), am Ende `FERTIG`. Rote Tests werden einmal allein wiederholt
+  („rot → grün bei Wiederholung (Last?)“ zählt als OK, wieder rot = FEHLER).
 - **Tests mit lokalem Server: `tests/server_tests.sh <arbeitsordner>`** (Tests aus `tests/server/` in 3 Gruppen
   gleichzeitig, ca. 15 statt 30 Min.). Braucht MariaDB + `php -S 127.0.0.1:8770 -t www` im Arbeitsordner; dort
   `www/…/Game/config.php` (Test-DB) und `zugang.env` mit `OW_ADMIN_NAME`, `OW_ADMIN_PW`, `OW_TEST_PW` (nie ins Git).
@@ -80,7 +82,8 @@ Alles Wichtige steht in `LIESMICH.md` – jede Änderung wird dort eingetragen.
 
 ## Regeln von Alexander
 - Code zuerst auf GitHub (Branch `claude/neues-projekt-8agldl`), **vor jedem Hochladen Alexander fragen**
-  (`./hochladen.sh`, nur nach seinem Ja).
+  (`./hochladen.sh`, nur nach seinem Ja). Nach jedem Hochladen: `werkzeuge/nach_hochladen.sh` (Live-Server, nur lesend →
+  „LIVE OK“ oder Fehlerliste).
 - Keine neuen Spielregeln erfinden – echte Fehler beheben. Bots heißen nie „Bot“/„KI“.
 - Keine Passwörter in Dateien oder Commits (nur Umgebungsvariablen).
 - Nichts im Browser speichern außer dem Login-Cookie. Weltrechner höchstens 600 MB Speicher.
