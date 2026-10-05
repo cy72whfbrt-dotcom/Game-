@@ -71,7 +71,8 @@ tests/                 Tests (liegen NIE auf dem Server)
                        Verstärkung, Klick-Test neuer Spieler (+ geschenk.sh: Admin-Geschenk für Tests)
 werkzeuge/             spiel_bauen.sh (spiel.js, bots.js, buendnis.js zusammensetzen), vorschau_bauen.php (Vorschau ohne Server),
                        vorschau_test*.js (Test-Modus), welt_neustart.php (neue Saison), vor_commit.sh (Prüfung vor dem
-                       Commit), server_starten.sh (MariaDB + lokaler PHP-Server 8770 für die Server-Tests)
+                       Commit), server_starten.sh (MariaDB + lokaler PHP-Server 8770 für die Server-Tests),
+                       karte.sh (+ karte.js: erzeugt KARTE.md)
 ```
 **Server kaputt oder Editor abgestürzt?** Einfach `./hochladen.sh` – lädt alles neu hoch, erzeugt `config.php` aus den
 Umgebungsvariablen, entfernt fremde Reste aus `Game/` und prüft, dass alles heil angekommen ist.
@@ -344,6 +345,9 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
 - **4.10. Server-Tests ins Projekt:** `tests/server/` + `tests/server_tests.sh <arbeitsordner>` (lokaler PHP-Server,
   MariaDB, Weltrechner): Absturz/Zurückspielen, Admin, Nebel, Bündnis-Kiste, Verstärkung, Klick-Test – alle grün.
   Passwörter der Test-Konten nur in `<arbeitsordner>/zugang.env` bzw. Umgebungsvariablen (nie im Git).
+- **5.10. Code-Karte:** `werkzeuge/karte.sh` erzeugt `KARTE.md` (Index Funktionsname → Datei:Zeile, je Datei/Teil die
+  Funktionen mit Kommentar, Server-Aktionen als `Aktion 'puls'`). Alle Teil-Ordner in `Game/` werden selbst erkannt.
+  Nach `spiel_bauen.sh` laufen lassen und mit committen. Agenten suchen zuerst dort (`grep -n "name" KARTE.md`).
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.

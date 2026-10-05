@@ -4,6 +4,8 @@ Spiel von Alexander (Browser-Strategiespiel, Deutsch). Antworten an Alexander: k
 Alles Wichtige steht in `LIESMICH.md` – jede Änderung wird dort eingetragen.
 
 ## Code
+- **Erst in `KARTE.md` suchen** (`grep -n "bundHilfe" KARTE.md` → Datei:Zeile, auch Teile und Server-Aktionen).
+  Neu erzeugen mit `werkzeuge/karte.sh` nach `werkzeuge/spiel_bauen.sh`.
 - `Game/spiel.js`, `Game/bots.js` und `Game/buendnis.js` werden **automatisch zusammengesetzt** aus `Game/spiel/`,
   `Game/bots/` und `Game/buendnis/`. **Nur in den Teilen ändern**, danach `werkzeuge/spiel_bauen.sh` (setzt alle drei neu
   zusammen). `werkzeuge/spiel_bauen.sh pruefen` meldet einen Fehler, wenn eine Datei nicht zu ihren Teilen passt.
