@@ -342,7 +342,7 @@ function foDetail(d) {
 function extraHtml(id, lvl) {
     if (id === 'academy') {
         const c = loadCity(), r = c.foRun, d = r && FO_BY[r.id];
-        const lauf = d ? '<div class="notice notice--gold fo-lauf">' + icon('hourglass') + '<span style="flex:1"><b>' + d.name + (d.max > 1 ? ' Stufe ' + r.to : '') + '</b> · noch ' + uhrHtml(r.endsAt) + '<div class="city-progress" style="margin-top:6px"><i style="--p:' + Math.min(100, (Date.now() - r.startedAt) / Math.max(1, r.endsAt - r.startedAt) * 100).toFixed(1) + '%"></i></div>' + (typeof bundHilfeKnopf === 'function' ? bundHilfeKnopf('fo', r.id, r.to, r.endsAt) : '') + '</span><button type="button" class="btn btn--secondary btn--sm" data-fo-gems' + (gems < foGems(c) ? ' disabled' : '') + '>Fertig · ' + foGems(c) + ' Gems</button></div>' : '';
+        const lauf = d ? '<div class="notice notice--gold fo-lauf">' + icon('hourglass') + '<span style="flex:1"><b>' + d.name + (d.max > 1 ? ' Stufe ' + r.to : '') + '</b> · noch ' + uhrHtml(r.endsAt) + '<div class="city-progress" style="margin-top:6px"><i style="--p:' + Math.min(100, (Date.now() - r.startedAt) / Math.max(1, r.endsAt - r.startedAt) * 100).toFixed(1) + '%"></i></div>' + (typeof bundHilfeKnopf === 'function' ? bundHilfeKnopf('fo', r.id, r.to, r.endsAt) : '') + '</span><button type="button" class="btn btn--secondary btn--sm" data-fo-gems' + (gems < foGems(c) ? ' disabled' : '') + '>' + (gemsArmed('fo:' + r.id) ? 'Wirklich? ' + icon('gem') + foGems(c) : 'Fertig · ' + foGems(c) + ' Gems') + '</button></div>' : '';
         if (!lvl) return lauf;
         return lauf + '<div class="seg fo-tabs">' + Object.keys(FO_AESTE).map(a => '<button type="button" data-fo-ast="' + a + '"' + (a === foAst ? ' class="on"' : '') + '>' + FO_AESTE[a] + '</button>').join('') + '</div>' +
             foBaum(lvl);
@@ -365,7 +365,8 @@ document.getElementById('citySheet').addEventListener('click', e => {
     const a = e.target.closest('[data-fo-ast]'); if (a) { foAst = a.dataset.foAst; renderCitySheet(); return; }
     const fs = e.target.closest('[data-fo-sel]'); if (fs) { foSel = fs.dataset.foSel; renderCitySheet(); return; }
     const f = e.target.closest('[data-fo]:not([disabled])'); if (f) { const why = foStart('player', f.dataset.fo); flashHint(why || 'Forschung gestartet: ' + FO_BY[f.dataset.fo].name + '.', 2800); if (!why) sfx('upgrade'); renderCitySheet(); return; }
-    if (e.target.closest('[data-fo-gems]:not([disabled])')) { const c = loadCity(), g = foGems(c); if (!g || gems < g) return; gems -= g; saveGame(); updateHud(); foFertig('player', true); renderCitySheet(); return; }
+    const fg = e.target.closest('[data-fo-gems]:not([disabled])');
+    if (fg) { const c = loadCity(), g = foGems(c); if (!g || gems < g || !c.foRun || !gemsWirklich('fo:' + c.foRun.id, g, fg)) return; gems -= g; saveGame(); updateHud(); foFertig('player', true); renderCitySheet(); return; }
     if (e.target.closest('[data-markt-shop]')) { closeCity(); openShop('markt'); }
 });
 { const mp = document.getElementById('shopMarkt'); if (mp) mp.addEventListener('click', e => {   // Shop → Markt

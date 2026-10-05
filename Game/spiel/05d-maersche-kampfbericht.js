@@ -7,7 +7,7 @@ const battleLogPopup = document.getElementById('battleLogPopup');
 const battleLogCloseBtn = document.getElementById('battleLogCloseBtn');
 const activeMarchesEl = document.getElementById('activeMarches');
 activeMarchesEl.addEventListener('click', e => { const bt = e.target.closest('[data-mact]'); if (!bt) return;
-    e.stopPropagation(); if (bt.dataset.mact === 'recall') recallMarch(bt.dataset.k); else if (bt.dataset.mact === 'speedAll') speedUpAll(); else speedUpMarch(bt.dataset.k); });
+    e.stopPropagation(); if (bt.dataset.mact === 'recall') recallMarch(bt.dataset.k); else if (bt.dataset.mact === 'speedAll') speedUpAll(bt); else speedUpMarch(bt.dataset.k, bt); });
 const combatLogListEl = document.getElementById('combatLogList');
 let battleLogRefreshTimer = null;
 
@@ -92,7 +92,7 @@ function renderActiveMarches() {
         rows.push(m.back ? logRowHtml('retreat', 'recall', 'Sammler kehren zurück', fmtNum(m.troops) + ' Truppen' + (m.load >= 1 ? ' · +' + fmtNum(Math.floor(m.load)) + ' ' + K.what : '') + ' · nach ' + T(m.homeId), clock(sec), marchButtons(m, false))
             : logRowHtml('send', 'send', 'Sammeln → ' + was, 'von ' + T(m.homeId) + ' · ' + fmtNum(m.troops) + ' Truppen', clock(sec), marchButtons(m, true))); }
     const fast = speedableMarches();
-    if (fast.length > 1) rows.unshift('<div class="march-all"><span class="mact"><button type="button" data-mact="speedAll" title="Restzeit aller Märsche halbieren">' + icon('hourglass') + 'Alle schneller (' + fast.length + ') · <b>' + fmtNum(fast.reduce((a, m) => a + speedUpCost(m), 0)) + '</b>' + icon('gem') + '</button></span></div>');
+    if (fast.length > 1) rows.unshift('<div class="march-all"><span class="mact"><button type="button" data-mact="speedAll"' + (gemsArmed('marschAlle') ? ' class="is-armed"' : '') + ' title="Restzeit aller Märsche halbieren">' + (gemsArmed('marschAlle') ? 'Wirklich? ' + icon('gem') + fmtNum(fast.reduce((a, m) => a + speedUpCost(m), 0)) : icon('hourglass') + 'Alle schneller (' + fast.length + ') · <b>' + fmtNum(fast.reduce((a, m) => a + speedUpCost(m), 0)) + '</b>' + icon('gem')) + '</button></span></div>');
     const amHtml = rows.length ? rows.join('') : '<div class="logEmpty">' + icon('hourglass') + 'Gerade nichts unterwegs.</div>';
     if (amHtml !== activeMarchesEl._html) { activeMarchesEl._html = amHtml; activeMarchesEl.innerHTML = amHtml; }   // many fights resolve per second: rebuild only on change (keeps the buttons tappable)
     battleLogPopup.classList.toggle('has-entries', rows.length > 0 || combatLog.length > 0);

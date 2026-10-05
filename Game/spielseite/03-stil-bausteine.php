@@ -61,7 +61,7 @@
   font:600 var(--fs-11)/1 var(--font-ui);color:var(--tx-2);white-space:nowrap}
 .chip .icon{width:13px;height:13px}
 .chip--scouted{color:var(--gold-200);border-color:var(--line-2);height:18px;padding:0 6px;font-size:var(--fs-10);letter-spacing:.06em;text-transform:uppercase}
-.chip--rar{--rc:var(--r-grau);color:color-mix(in srgb,var(--rc) 55%,#fff);border-color:color-mix(in srgb,var(--rc) 55%,transparent);background:color-mix(in srgb,var(--rc) 12%,transparent)}
+.chip--rar{height:auto;min-height:24px;max-width:100%;white-space:normal;line-height:1.4;padding-block:5px;--rc:var(--r-grau);color:color-mix(in srgb,var(--rc) 55%,#fff);border-color:color-mix(in srgb,var(--rc) 55%,transparent);background:color-mix(in srgb,var(--rc) 12%,transparent)}
 .pill{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 8px;border-radius:var(--r-pill);border:1px solid var(--line-2);background:rgba(0,0,0,.25);
   font:600 var(--fs-12)/1 var(--font-ui);color:var(--tx-1);font-variant-numeric:tabular-nums;white-space:nowrap}
 .pill small{font:500 var(--fs-11)/1 var(--font-ui);color:var(--tx-3)}
@@ -159,7 +159,7 @@
 .tab.active::after{content:"";position:absolute;left:14%;right:14%;bottom:-1px;height:2px;background:linear-gradient(90deg,transparent,var(--gold-300) 20%,var(--gold-300) 80%,transparent)}
 .tab.active::before{content:"";position:absolute;left:50%;bottom:-4px;width:6px;height:6px;margin-left:-3px;transform:rotate(45deg);background:var(--gold-200);box-shadow:0 0 6px rgba(228,200,134,.8)}
 .tab + .tab{box-shadow:-1px 0 0 var(--line-1)}
-@container tabs (max-width:420px){ .tab{flex-direction:column;gap:5px;height:50px;font-size:10.5px} .tab .icon{width:16px;height:16px} }
+@container tabs (max-width:420px){ .tab{flex-direction:column;gap:5px;height:50px;font-size:10.5px;letter-spacing:0;padding:0 2px} .tab .icon{width:16px;height:16px} }
 .profileTabPanel{display:none;flex-direction:column;gap:12px}
 .profileTabPanel.active{display:flex}
 
@@ -348,6 +348,12 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
 .hh-plus:active{transform:translateY(1px)} .hh-plus:disabled{filter:grayscale(1);opacity:.35;box-shadow:none;cursor:default}
 .hh-hint{margin:8px 0 0;font-size:11.5px;line-height:1.45;color:var(--tx-3)}
 .hh-reset{margin-top:8px;width:100%;font:700 var(--fs-12)/1 var(--font-ui);color:var(--tx-1);background:var(--ink-4);border:1px solid var(--line-2);border-radius:var(--r-lg);padding:9px;cursor:pointer} .hh-reset:disabled{opacity:.4;cursor:default}
+/* Gems-Käufe ab 500: „Wirklich? N Gems“ (gemsWirklich) */
+.is-armed:is(.hh-reset,.lk-card,.ring-card,[data-hchest],#citySpeedBtn){border-color:#f2a066;box-shadow:0 0 0 1px #f2a066 inset;background-color:rgba(222,115,56,.16)}
+.is-armed:is(.lk-card,.ring-card) small{color:#f3e6c4}
+.hh-swap{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:8px;font-size:var(--fs-12);color:var(--tx-3)} .hh-swap label{display:flex;flex-wrap:wrap;align-items:center;gap:6px;flex:1 1 180px}
+.hh-swap select{font:600 var(--fs-12)/1.2 var(--font-ui);color:var(--tx-1);background:var(--ink-4);border:1px solid var(--line-2);border-radius:var(--r-md,8px);padding:6px 8px;max-width:100%}
+.hh-swap-go{font:700 var(--fs-12)/1 var(--font-ui);color:var(--tx-1);background:var(--ink-4);border:1px solid var(--gold-300);border-radius:var(--r-lg);padding:9px 12px;cursor:pointer}
 .hh-vals{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .hh-vals div{display:flex;justify-content:space-between;gap:8px;background:#0006;border-radius:var(--r-sm);padding:6px 8px;font-size:12.5px;white-space:nowrap} .hh-vals span{color:var(--tx-3)}
 .hh-actions{position:sticky;bottom:0;padding:10px 0 0;background:linear-gradient(0deg,#07080b 60%,transparent)}

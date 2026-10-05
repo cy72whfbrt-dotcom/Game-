@@ -1840,10 +1840,11 @@ function vorlaeufigDrueber() {
 }
 function speedUpCost(m) { return Math.max(1, Math.ceil((m.resolveAt - Date.now()) / 60000)); }   // 1 gem per minute still to go
 let speedUpZuletzt = 0;                               // (ein Doppel-Tipp beschleunigt nicht zweimal)
-function speedUpMarch(key) {                         // halves the time still to go; the column keeps its place on the road
+function speedUpMarch(key, btn) {                    // halves the time still to go; the column keeps its place on the road
     const now = Date.now(); if (now - speedUpZuletzt < 600) return; speedUpZuletzt = now;
     const sc = pendingScouts.find(x => marchKeyOf(x) === key);                // ein Späher (nur deiner – kein Befehl an den Weltrechner nötig)
     if (sc) { const rem = sc.resolveAt - now; if (rem < 1500) return; const cost = speedUpCost(sc); if (gems < cost) { flashHint('Zu wenig Gems – Beschleunigen kostet ' + cost + '.', 3000); return; }
+        if (!gemsWirklich('marsch:' + key, cost, btn)) return;
         gems -= cost; const p = Math.max(0, Math.min(.99, (now - sc.startedAt) / Math.max(1, sc.resolveAt - sc.startedAt)));
         sc.resolveAt = now + rem / 2; sc.startedAt = sc.resolveAt - (rem / 2) / (1 - p);
         flashHint('Späher beschleunigt – noch ' + fmtClock(Math.ceil(rem / 2000)) + '.', 2500); updateHud(); saveGame(); saveProgression(); renderActiveMarches(); requestRender(); return; }
@@ -1853,6 +1854,7 @@ function speedUpMarch(key) {                         // halves the time still to
         if (m.vorlaeufig) { flashHint('Einen Moment – der Marsch läuft gerade los.', 1500); return; }
         const rem = m.resolveAt - now; if (rem < 1500) return;
         const cost = speedUpCost(m); if (gems < cost) { flashHint('Zu wenig Gems – Beschleunigen kostet ' + cost + '.', 3000); return; }
+        if (!gemsWirklich('marsch:' + key, cost, btn)) return;
         gems -= cost;
         alsBefehl('schneller', { keys: [key] });
         const p = Math.max(0, Math.min(.99, (now - m.startedAt) / Math.max(1, m.resolveAt - m.startedAt)));
@@ -1866,11 +1868,12 @@ function speedableMarches() {
     const now = Date.now();
     return [...pendingAttacks.filter(a => !a.attackerBotId), ...pendingSends.filter(x => !x.senderBotId), ...pendingRetreats, ...eigeneFeldBarb()].filter(m => !m.fightEndsAt && !m.vorlaeufig && m.resolveAt - now >= 1500);
 }
-function speedUpAll() {
+function speedUpAll(btn) {
     if (Date.now() - speedUpZuletzt < 600) return; speedUpZuletzt = Date.now();
     const list = speedableMarches(); if (!list.length) return;
     const cost = list.reduce((a, m) => a + speedUpCost(m), 0);
     if (gems < cost) { flashHint('Zu wenig Gems – alle beschleunigen kostet ' + fmtNum(cost) + '.', 3000); return; }
+    if (!gemsWirklich('marschAlle', cost, btn)) return;
     gems -= cost; const now = Date.now();
     alsBefehl('schneller', { keys: list.map(marchKeyOf) });
     for (const m of list) { const rem = m.resolveAt - now, pr = Math.max(0, Math.min(.99, (now - m.startedAt) / Math.max(1, m.resolveAt - m.startedAt)));
@@ -1881,7 +1884,8 @@ function speedUpAll() {
 function marchButtons(m, canRecall) {
     const k = marchKeyOf(m);
     return '<span class="mact">' + (canRecall ? '<button type="button" data-mact="recall" data-k="' + k + '" title="Zurückrufen">' + icon('recall') + 'Zurück</button>' : '') +
-        '<button type="button" data-mact="speed" data-k="' + k + '" title="Restzeit halbieren">' + icon('hourglass') + 'Schneller · <b>' + speedUpCost(m) + '</b>' + icon('gem') + '</button></span>';
+        (gemsArmed('marsch:' + k) ? '<button type="button" class="is-armed" data-mact="speed" data-k="' + k + '" title="Restzeit halbieren">Wirklich? ' + icon('gem') + fmtNum(speedUpCost(m))   // Nachfrage ab 500 Gems übersteht das Neuzeichnen
+            : '<button type="button" data-mact="speed" data-k="' + k + '" title="Restzeit halbieren">' + icon('hourglass') + 'Schneller · <b>' + speedUpCost(m) + '</b>' + icon('gem')) + '</button></span>';
 }
 
 function resolveSend(send) {
@@ -3734,7 +3738,7 @@ function drawMarchButtons() {
   setScreen(ctx);
   const list = [pendingAttacks, pendingSends, pendingRetreats].find(l => l.some(x => marchKeyOf(x) === selMarch)), mm = list && list.find(x => marchKeyOf(x) === selMarch);
   if (!mm) { selMarch = null; return; }
-  const btns = (m.recall ? [{ act: 'recall', glyph: 'recall', label: 'Zurück' }] : []).concat([{ act: 'speed', glyph: 'hourglass', label: 'Schneller · ' + speedUpCost(mm) }]);
+  const btns = (m.recall ? [{ act: 'recall', glyph: 'recall', label: 'Zurück' }] : []).concat([{ act: 'speed', glyph: 'hourglass', label: (gemsArmed('marsch:' + selMarch) ? 'Wirklich? ' : 'Schneller · ') + speedUpCost(mm) }]);
   ctx.font = '700 12px Inter, system-ui, sans-serif';
   const ws = btns.map(b => ctx.measureText(b.label).width + 34 + (b.act === 'speed' ? 14 : 0)), total = ws.reduce((a, b) => a + b, 0) + 8 * (btns.length - 1);
   let x = Math.max(8, Math.min(viewW - total - 8, m.x - total / 2)); const y = Math.max(8, m.y - 74);
@@ -4930,6 +4934,7 @@ document.addEventListener('click', e => {
     else if (ringSkinsOf('player').includes(id)) { if (inShop) return; look.ring = id; store.set('openWaterLook', JSON.stringify(look)); ringVer++; requestRender(); flashHint('Ring „' + r.name + '“ angelegt' + (titleOf('player') || rulerOwner() === 'player' ? ' – solange du einen Titel trägst, siehst du den Titel-Ring.' : '.'), 3000); }
     else if (r.tp) { throneBuy('ring_' + id); if (!ringSkinsOf('player').includes(id)) return; }
     else { if (gems < r.gems) { flashHint('Zu wenig Gems – Ring „' + r.name + '“ kostet ' + fmtNum(r.gems) + '.', 2500); return; }
+        if (!gemsWirklich('ring:' + id, r.gems, b)) return;
         gems -= r.gems; ringGive('player', id); updateHud(); saveGame(); sfx('coin'); flashHint('Ring „' + r.name + '“ gekauft und angelegt.', 2500); }
     if (isPanelOpen(shopPopup)) renderShop();
     if (cityOpenId === '_keep') renderKeepSheet();
@@ -5321,6 +5326,23 @@ function resetSkills() {
     gems -= SKILL_RESET_GEMS; skillPoints += spent; for (const k of Object.keys(SKILL_DEFS)) skills[k] = 0;
     saveProgression(); saveGame(); updateHud(); renderSkillGrid();
     flashHint('Skills zurückgesetzt: ' + fmtNum(spent) + ' Skillpunkte sind wieder frei.', 3500);
+}
+// Gems-Käufe ab 500 (und Helden-Zurücksetzen): erst „Wirklich? N Gems“, erst der zweite Tipp (nach >450 ms, binnen 4 s) zahlt – wie resetSkills
+const GEMS_WIRKLICH = 500;
+let gemsArm = null;
+function gemsWirklich(key, cost, btn, immer) {      // → true: jetzt zahlen
+    if (!immer && cost < GEMS_WIRKLICH) return true;
+    const now = Date.now();
+    if (gemsArm && gemsArm.key === key && now - gemsArm.at < 4000) { if (now - gemsArm.at < 450) return false; gemsArmAus(); return true; }   // ein Doppel-Tipp ist keine Bestätigung
+    gemsArmAus(); const t = btn && (btn.querySelector('.lbl') || btn.querySelector('small') || btn);
+    gemsArm = { key, at: now, t, html: t ? t.innerHTML : '', btn, timer: setTimeout(gemsArmAus, 4000) };
+    if (t) { btn.classList.add('is-armed'); t.innerHTML = 'Wirklich? ' + icon('gem') + fmtNum(cost); }
+    return false;
+}
+function gemsArmed(key) { return !!gemsArm && gemsArm.key === key; }
+function gemsArmAus() {
+    if (!gemsArm) return; const a = gemsArm; gemsArm = null; clearTimeout(a.timer);
+    if (a.t && a.t.isConnected) { a.btn.classList.remove('is-armed'); a.t.innerHTML = a.html; }
 }
 function renderSkillGrid() {
     const spentPts = Object.keys(SKILL_DEFS).reduce((a, k) => a + (skills[k] || 0), 0);
@@ -5714,7 +5736,7 @@ const battleLogPopup = document.getElementById('battleLogPopup');
 const battleLogCloseBtn = document.getElementById('battleLogCloseBtn');
 const activeMarchesEl = document.getElementById('activeMarches');
 activeMarchesEl.addEventListener('click', e => { const bt = e.target.closest('[data-mact]'); if (!bt) return;
-    e.stopPropagation(); if (bt.dataset.mact === 'recall') recallMarch(bt.dataset.k); else if (bt.dataset.mact === 'speedAll') speedUpAll(); else speedUpMarch(bt.dataset.k); });
+    e.stopPropagation(); if (bt.dataset.mact === 'recall') recallMarch(bt.dataset.k); else if (bt.dataset.mact === 'speedAll') speedUpAll(bt); else speedUpMarch(bt.dataset.k, bt); });
 const combatLogListEl = document.getElementById('combatLogList');
 let battleLogRefreshTimer = null;
 
@@ -5799,7 +5821,7 @@ function renderActiveMarches() {
         rows.push(m.back ? logRowHtml('retreat', 'recall', 'Sammler kehren zurück', fmtNum(m.troops) + ' Truppen' + (m.load >= 1 ? ' · +' + fmtNum(Math.floor(m.load)) + ' ' + K.what : '') + ' · nach ' + T(m.homeId), clock(sec), marchButtons(m, false))
             : logRowHtml('send', 'send', 'Sammeln → ' + was, 'von ' + T(m.homeId) + ' · ' + fmtNum(m.troops) + ' Truppen', clock(sec), marchButtons(m, true))); }
     const fast = speedableMarches();
-    if (fast.length > 1) rows.unshift('<div class="march-all"><span class="mact"><button type="button" data-mact="speedAll" title="Restzeit aller Märsche halbieren">' + icon('hourglass') + 'Alle schneller (' + fast.length + ') · <b>' + fmtNum(fast.reduce((a, m) => a + speedUpCost(m), 0)) + '</b>' + icon('gem') + '</button></span></div>');
+    if (fast.length > 1) rows.unshift('<div class="march-all"><span class="mact"><button type="button" data-mact="speedAll"' + (gemsArmed('marschAlle') ? ' class="is-armed"' : '') + ' title="Restzeit aller Märsche halbieren">' + (gemsArmed('marschAlle') ? 'Wirklich? ' + icon('gem') + fmtNum(fast.reduce((a, m) => a + speedUpCost(m), 0)) : icon('hourglass') + 'Alle schneller (' + fast.length + ') · <b>' + fmtNum(fast.reduce((a, m) => a + speedUpCost(m), 0)) + '</b>' + icon('gem')) + '</button></span></div>');
     const amHtml = rows.length ? rows.join('') : '<div class="logEmpty">' + icon('hourglass') + 'Gerade nichts unterwegs.</div>';
     if (amHtml !== activeMarchesEl._html) { activeMarchesEl._html = amHtml; activeMarchesEl.innerHTML = amHtml; }   // many fights resolve per second: rebuild only on change (keeps the buttons tappable)
     battleLogPopup.classList.toggle('has-entries', rows.length > 0 || combatLog.length > 0);
@@ -7011,6 +7033,7 @@ shopPopup.addEventListener('click', e => { const bt = e.target.closest('[data-hc
     const c = HERO_CHESTS.find(x => x.id === bt.dataset.hchest); if (!c) return;
     if (gems < c.gems) { flashHint('Zu wenig Gems – die ' + c.name + ' kostet ' + fmtNum(c.gems) + '.', 3000); return; }
     if (!heroChestPool(c.minR).length) { flashHint('Alle passenden Helden haben schon 5 Sterne.', 3000); return; }
+    if (!gemsWirklich('kiste:' + c.id, c.gems, bt)) return;
     gems -= c.gems; const got = heroChestOpen('player', c); updateHud(); saveGame(); renderShop();
     const res = document.getElementById('shopHeroResult');
     res.innerHTML = '<b class="hchest-h">' + c.name + '</b>' + got.map(h => { const s = heroSt('player', h.id), need = s.own ? (s.q >= HERO_MAXQ ? 0 : heroStepCost(h, s.q)) : HERO_UNLOCK[h.r], rd = RARITY_DEFS[h.r];
@@ -8169,7 +8192,7 @@ var CITY_BUILDINGS = [
     { id: 'forge',    name: 'Schmiede',      icon: 'weapon',  x: 785, y: 430, roof: '#4a4a52', chimney: true,
       desc: 'Wähle oben die Art und dann ein Ausrüstungsteil aus deinem Besitz, um es mit Sternen zu verbessern: jeder Stern +20 % Wirkung des Teils. Jede Stufe erlaubt einen Stern mehr.' },
     { id: 'hospital', name: 'Krankenhaus',   icon: 'plus',    x: 215, y: 670, roof: '#e8e2d2', cross: true,
-      desc: 'Von deinen Gefallenen (Angriff oder Verteidigung) kommen Verwundete hierher statt zu sterben (5 % pro Stufe, bis 60 %). Heile sie gegen Münzen – sie gehen in die Hauptstadt.' },
+      desc: 'Von deinen Gefallenen (Angriff oder Verteidigung) kommen Verwundete hierher statt zu sterben (5 % pro Stufe, bis 60 % – mit Forschung mehr). Heile sie gegen Münzen – sie gehen in die Hauptstadt.' },
     { id: 'wall',     name: 'Mauer',         icon: 'defense', x: 715, y: 815, roof: '#6b6456', gate: true,
       desc: 'Stärkt die Verteidigung aller deiner Basen: +2 % pro Stufe (Stufe 25: +50 %). Beispiel: 10 Mio. Verteidigung und Mauer Stufe 5 ergeben 11 Mio.' },
     { id: 'heroes',   name: 'Heldenhalle',   icon: 'profile', x: 285, y: 815, roof: '#7a2e2a',
@@ -8253,8 +8276,10 @@ function cityClampBuild(b, now) {                 // a build started under the o
     if (b && b.id === 'keep' && !AUF) return;        // (beim Laden fehlt aufbau.js noch: die Burg hat dort ihre lange Bauzeit 1–60 Tage – nicht auf die alte kürzen)
     if (b && b.endsAt - (b.startedAt || now) > cityTimeSec(b.id, b.to - 1) * 1000) b.endsAt = Math.min(b.endsAt, (b.startedAt || now) + cityTimeSec(b.id, b.to - 1) * 1000);
 }
-function fmtDuration(sec) {
-    return fmtDHMS(sec);
+function fmtDuration(sec) {                       // Bauzeiten kurz: Einheiten, die 0 sind, fallen weg (1 T statt 1 T 0 h 0 m 0 s)
+    sec = Math.max(0, Math.ceil(sec));
+    const t = [[Math.floor(sec / 86400), 'T'], [Math.floor(sec % 86400 / 3600), 'h'], [Math.floor(sec % 3600 / 60), 'm'], [sec % 60, 's']].filter(x => x[0]);
+    return t.length ? t.map(x => x[0] + ' ' + x[1]).join(' ') : '0 s';
 }
 function cityBlocker(id) {                        // why this building can't be upgraded right now (or null)
     const c = loadCity(), lvl = id === 'keep' ? c.levels.keep || 1 : c.levels[id];
@@ -8403,9 +8428,12 @@ function renderCitySheetTimer() {
     const tot = b.endsAt - b.startedAt, done = Date.now() - b.startedAt;
     el.style.setProperty('--p', Math.min(100, done / tot * 100) + '%');
     document.querySelector('#cityBNoteTime').textContent = fmtDuration((b.endsAt - Date.now()) / 1000);
-    setBtnLabel(document.getElementById('citySpeedBtn'), 'Fertig für ' + citySpeedCost(b.id) + ' Gems');
+    setBtnLabel(document.getElementById('citySpeedBtn'), (gemsArmed('speed:' + cityBauId(cityOpenId)) ? 'Wirklich? ' : 'Fertig für ') + citySpeedCost(b.id) + ' Gems');
     document.getElementById('citySpeedBtn').disabled = gems < citySpeedCost(b.id);
 }
+// Rohstoff-Liste oben (aufbau.js): ein Tipp woanders hin (z. B. ein Fenster öffnen) schließt sie – sie bleibt nicht über dem Fenster stehen
+document.addEventListener('click', e => { const d = document.getElementById('rohDrop');
+    if (d && !d.hidden && typeof rohUmschalten === 'function' && !e.target.closest('#hudRoh, #rohDrop')) rohUmschalten(false); }, true);
 // ===== DEINE BURG (tap the castle in the city): upgrade it, pick a skin, switch on a Friedensschild =====
 var SKIN_DEFS = {
     standard: { id: 'standard', name: 'Standard', cost: 0, stone: null, roof: null },
@@ -8439,12 +8467,13 @@ function lkUse(kind, id) {                            // put on something you ow
     else if (kind === 'color') { const sk = loadSkins(); sk.active = id; store.set('openWaterSkins', JSON.stringify(sk)); BUILDING_SPRITES.clear(); }
     renderLook(); if (cityOpenId === '_keep') renderKeepSheet(); requestRender();
 }
-function lkBuy(kind, id) {                            // Gems or Thron-Punkte; bought = put on at once
+function lkBuy(kind, id, btn) {                       // Gems or Thron-Punkte; bought = put on at once
     const d = lkDef(kind, id); if (!d) return;
     if (lkHas(kind, id)) { lkUse(kind, id); return; }
     if (d.buy === 'pass') { flashHint('„' + d.name + '“ gibt es nur im Saison-Pass (Premium-Reihe) – unter „Events“.', 3000); return; }
     const cost = d.tp || d.gems || 0;
     if (d.tp ? (throneState.pts || 0) < cost : gems < cost) { flashHint('Zu wenig ' + (d.tp ? 'Thron-Punkte' : 'Gems') + ' – „' + d.name + '“ kostet ' + fmtNum(cost) + '.', 2500); return; }
+    if (!d.tp && !gemsWirklich('lk:' + kind + ':' + id, cost, btn)) return;
     if (d.tp) { throneState.pts -= cost; saveThrone(); } else gems -= cost;
     if (d.buy === 'throne') throneGive('player', 'look');                   // Thronhüter + Thron-Rahmen come together
     else if (kind === 'frame' || kind === 'title' || kind === 'march') { const k = kind + 's'; look[k] = [...new Set([...(look[k] || []), id])]; saveLook(); }
@@ -8514,7 +8543,7 @@ document.getElementById('lookSheet').addEventListener('click', e => {
     const t = e.target.closest('[data-lk-tab]'); if (t) { lkTab = t.dataset.lkTab; renderLookSheet(); return; }
     const cp = e.target.closest('[data-lk-cap]'); if (cp) { const v = loadBaustil(); v.cap = cp.dataset.lkCap; store.set('openWaterBaustil', JSON.stringify(v)); renderLookSheet(); requestRender(); return; }
     const c = e.target.closest('[data-lk]'); if (!c) return; const [kind, id] = c.dataset.lk.split(':');
-    lkHas(kind, id) ? lkUse(kind, id) : lkBuy(kind, id);
+    lkHas(kind, id) ? lkUse(kind, id) : lkBuy(kind, id, c);
 });
 setTimeout(lookMigrate, 0);                             // after the whole script: the old rank / Erfolg looks become owned
 // ===== Aussehen wie in den großen Aufbau-Spielen (Rise of Kingdoms, Alexander 4.10.): Gebäude antippen → runde Knöpfe
@@ -8523,7 +8552,7 @@ setTimeout(lookMigrate, 0);                             // after the whole scrip
 var cityPage = 'bau', cityRingId = null;
 function cityNutz(id, lvl) {                       // die eigene Seite eines Gebäudes (Forschen, Heilen …) → [Name, Zeichen] oder null
     if (id === 'academy') return lvl || loadCity().foRun ? ['Forschen', 'flask'] : null;
-    if (id === 'heroes') return ['Helden', 'profile'];
+    if (id === 'heroes') return lvl ? ['Helden', 'profile'] : null;   // erst gebaut: vorher keine Reiter (nur „Bauen“)
     if (!lvl) return null;
     return { forge: ['Schmieden', 'weapon'], hospital: ['Heilen', 'plus'], market: ['Handeln', 'market'], embassy: ['Verstärkung', 'bund'] }[id] || null;
 }
@@ -8750,6 +8779,11 @@ function heroGrantShards(who, n, id, minR) {        // n shards for one hero (a 
 }
 function heroDoUnlock(who, id) { const h = heroById(id), s = heroSt(who, id); if (!h || !s || s.own || s.sh < HERO_UNLOCK[h.r]) return false; s.sh -= HERO_UNLOCK[h.r]; s.own = true; s.q = 0; heroSave(who); return true; }
 function heroDoStep(who, id) { const h = heroById(id), s = heroSt(who, id); if (!h || !s || !s.own || s.q >= HERO_MAXQ) return false; const c = heroStepCost(h, s.q); if (s.sh < c) return false; s.sh -= c; s.q++; heroSave(who); return true; }
+function heroDoSwap(who, from, to, n) {              // übrige Splitter eines Helden mit 5 Sternen → Splitter für einen anderen (1:1, nicht für einen mit 5 Sternen)
+    const a = heroSt(who, from), b = heroSt(who, to); n = Math.floor(n);
+    if (!a || !b || from === to || !a.own || a.q < HERO_MAXQ || (b.own && b.q >= HERO_MAXQ) || !(n > 0) || n > a.sh) return false;
+    a.sh -= n; b.sh += n; heroSave(who); return true;
+}
 function heroDoSkill(who, id, k) { const s = heroSt(who, id); if (!s || !s.own || !heroFree(s) || s.sk[k] >= 5) return false; s.sk[k]++; heroSave(who); return true; }
 function heroCanDo(who, id) { const h = heroById(id), s = heroSt(who, id); if (!h || !s) return false; return s.own ? heroFree(s) > 0 || (s.q < HERO_MAXQ && s.sh >= heroStepCost(h, s.q)) : s.sh >= HERO_UNLOCK[h.r]; }
 function heroTag(hx) { if (!hx) return ''; const h = heroById(hx.id), h2 = hx.id2 && heroById(hx.id2); return h ? h.name + ' ' + heroStarTxt(hx.q) + (h2 ? ' & ' + h2.name + (hx.pair ? ' (Paar)' : '') : '') + (hx.fired ? ' · ' + hx.skill + ' gezündet' : '') : ''; }   // one line for the short reports
@@ -8915,7 +8949,7 @@ function hhHero(id) {
     const h = heroById(id), s = heroSt('player', id), rd = RARITY_DEFS[h.r], st = heroStats('player', id), full = Math.floor(s.q / 4), part = s.q % 4, busy = s.own && heroBusy('player', id);
     const need = s.own ? heroStepCost(h, s.q) : HERO_UNLOCK[h.r], maxed = s.own && s.q >= HERO_MAXQ, free = heroFree(s);
     const stars = s.own ? '<div class="hh-steps">' + ['¼', '½', '¾', icon('star')].map((t, k) => '<span' + (k < part ? ' class="on"' : '') + '>' + t + '</span>').join('') + '</div>' +
-            (maxed ? '<div class="hh-qinfo"><span>5 Sterne – ganz oben</span><b>' + s.sh + ' Splitter übrig</b></div>' : '<div class="hh-qinfo"><span>Nächstes Viertel · Stern ' + (full + 1) + '</span><b>' + s.sh + ' / ' + need + '</b></div><div class="hh-bar"><i style="width:' + Math.min(100, Math.round(s.sh / need * 100)) + '%"></i></div>')
+            (maxed ? '<div class="hh-qinfo"><span>5 Sterne – ganz oben</span><b>' + s.sh + ' Splitter übrig</b></div>' + hhSwapHtml(id, s) : '<div class="hh-qinfo"><span>Nächstes Viertel · Stern ' + (full + 1) + '</span><b>' + s.sh + ' / ' + need + '</b></div><div class="hh-bar"><i style="width:' + Math.min(100, Math.round(s.sh / need * 100)) + '%"></i></div>')
         : '<div class="hh-qinfo"><span>Freischalten</span><b>' + s.sh + ' / ' + need + '</b></div><div class="hh-bar"><i style="width:' + Math.min(100, Math.round(s.sh / need * 100)) + '%"></i></div><div class="hh-qinfo"><span>Startet danach mit 0 Sternen.</span></div>';
     const skills = h.sk.map((x, k) => { const lv = s.sk[k], max = heroSkillVal(h, k, 5);
         return '<div class="hh-sk' + (s.own ? '' : ' is-locked') + '"><span class="hh-hx' + (k ? '' : ' act') + '" style="--sc:' + h.color + '">' + x[0][0] + '</span><div class="hh-skt"><b>' + x[0] + '</b><small>' + (k ? 'Passiv' : 'Aktiv · bei voller Wut') + ' · Stufe ' + lv + '/5</small>' +
@@ -8932,12 +8966,17 @@ function hhHero(id) {
                 '<div class="hh-blk"><h3>Sterne</h3>' + hhStars(s.q) + stars + '</div>' +
                 (s.own ? '<div class="hh-blk"><h3>Wut</h3><div class="hh-qinfo"><span>' + (s.sk[0] ? (s.rage >= 100 ? 'Voll – ' + h.sk[0][0] + ' zündet im nächsten Kampf' : '+' + HERO_RAGE + ' % pro Kampf, den ' + h.name + ' führt') : 'Erst mit ' + h.sk[0][0] + ' auf Stufe 1') + '</span><b>' + Math.round(s.rage || 0) + ' %</b></div><div class="hh-bar hh-rage"><i style="width:' + Math.round(s.rage || 0) + '%"></i></div></div>' : '') +
                 '<div class="hh-blk"><div class="hh-skh"><h3>Fähigkeiten</h3>' + (s.own ? '<span class="hh-pts">' + free + (free === 1 ? ' Punkt' : ' Punkte') + ' frei</span>' : '<span class="hh-pts off">nach dem Freischalten</span>') + '</div><div class="hh-sklist">' + skills + '</div>' +
-                    (s.own ? '<p class="hh-hint">Jeder halbe Stern gibt 1 Punkt – bei 5 Sternen 10. Das reicht für 2 Fähigkeiten auf Stufe 5. Bisher ' + heroPoints(s) + ' von 10.</p><button type="button" class="hh-reset" data-hh-reset' + (spent ? '' : ' disabled') + '>Fähigkeiten zurücksetzen · ' + HERO_RESET_GEMS + ' Gems</button>' : '') + '</div>' +
+                    (s.own ? '<p class="hh-hint">Jeder halbe Stern gibt 1 Punkt – bei 5 Sternen 10. Das reicht für 2 Fähigkeiten auf Stufe 5. Bisher ' + heroPoints(s) + ' von 10.</p><button type="button" class="hh-reset" data-hh-reset' + (spent ? '' : ' disabled') + '>' + (gemsArmed('hhreset:' + id) ? 'Wirklich? ' + icon('gem') + HERO_RESET_GEMS : 'Fähigkeiten zurücksetzen · ' + HERO_RESET_GEMS + ' Gems') + '</button>' : '') + '</div>' +
                 '<div class="hh-blk"><h3>Werte · wenn ' + h.name + ' mitkämpft</h3><div class="hh-vals"><div><span>Angriff</span><b>+' + st.atk + ' %</b></div><div><span>Verteidigung</span><b>+' + st.def + ' %</b></div><div><span>Tempo</span><b>+' + st.spd + ' %</b></div><div><span>Gefolge</span><b>+' + fmtCompact(st.gef) + '</b></div></div>' +
                     '<p class="hh-hint">Verteidigung: weniger eigene Verluste. Gefolge: so viele Truppen kämpfen zusätzlich mit (höchstens so viele, wie der Held anführt) – wächst mit Sternen, deiner Stufe und der Heldenhalle.</p></div>' +
             '</div></div>' +
         '<div class="hh-actions">' + (maxed ? '<button class="hh-go" type="button" disabled>5 Sterne erreicht</button>'
             : '<button class="hh-go" type="button" data-hh-up' + (s.sh >= need ? '' : ' disabled') + '><span class="hh-i">' + (s.own ? icon('star') : '+') + '</span>' + (s.own ? 'Aufwerten · ¼ Stern' + (s.q % 2 ? ' + 1 Fähigkeitspunkt' : '') : 'Freischalten') + '<small>' + s.sh + ' / ' + need + ' Splitter</small></button>') + '</div>';
+}
+function hhSwapHtml(id, s) {                          // übrige Splitter umtauschen: Ziel wählen, alle auf einmal (1:1)
+    const ziele = HEROES.filter(x => { const t = heroSt('player', x.id); return x.id !== id && t && !(t.own && t.q >= HERO_MAXQ); }); if (!s.sh || !ziele.length) return '';
+    return '<div class="hh-swap"><label>Umtauschen in Splitter für <select data-hh-swap-to>' + ziele.map(x => '<option value="' + x.id + '">' + x.name + '</option>').join('') + '</select></label>' +
+        '<button type="button" class="hh-swap-go" data-hh-swap>' + s.sh + ' Splitter tauschen (1:1)</button></div>';
 }
 function hhPartnerBlk(id) {                           // sein Paar: Partner, Bonus, gemeinsame Geschichte
     const pp = heroPartner(id); if (!pp) return ''; const o = heroById(pp.id), own = heroOwned('player', pp.id);
@@ -8962,7 +9001,10 @@ document.getElementById('heroHall').addEventListener('click', e => {
     if (sk) { if (heroDoSkill('player', hhCur, +sk.dataset.hhSk)) { sfx('upgrade'); flashHint(h.sk[+sk.dataset.hhSk][0] + ' ist jetzt auf Stufe ' + s.sk[+sk.dataset.hhSk] + '.', 2000); } return renderHeroHall(); }
     if (e.target.closest('[data-hh-reset]:not([disabled])')) {
         if (gems < HERO_RESET_GEMS) { flashHint('Zu wenig Gems – Zurücksetzen kostet ' + HERO_RESET_GEMS + '.', 2500); return; }
+        if (!gemsWirklich('hhreset:' + hhCur, HERO_RESET_GEMS, e.target.closest('[data-hh-reset]'), true)) return;
         gems -= HERO_RESET_GEMS; s.sk = [0, 0, 0, 0]; saveHeroes(); updateHud(); saveGame(); flashHint('Fähigkeiten von ' + h.name + ' zurückgesetzt – ' + heroPoints(s) + ' Punkte frei.', 2500); return renderHeroHall(); }
+    if (e.target.closest('[data-hh-swap]')) { const sel = el.querySelector('[data-hh-swap-to]'), n = s.sh, to = sel && heroById(sel.value);
+        if (to && heroDoSwap('player', hhCur, to.id, n)) { sfx('upgrade'); saveGame(); flashHint(n + ' Splitter von ' + h.name + ' sind jetzt Splitter für ' + to.name + '.', 3000); } return renderHeroHall(); }
     if (e.target.closest('[data-hh-up]:not([disabled])')) {
         const was = s.own;
         if (was ? heroDoStep('player', hhCur) : heroDoUnlock('player', hhCur)) { sfx('upgrade');
@@ -9004,7 +9046,7 @@ function cityEffectText(id, lvl) {
     if (id === 'academy') return 'Jetzt: Truppen laufen +' + (lvl * 2) + ' % schneller.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: +' + ((lvl + 1) * 2) + ' %.' : '');
     if (id === 'forge') return lvl ? 'Bis zu ' + Math.min(STAR_MAX, lvl) + (Math.min(STAR_MAX, lvl) === 1 ? ' Stern' : ' Sterne') + ' pro Ausrüstungsteil.' + (lvl < STAR_MAX ? ' Nächste Stufe: ' + (lvl + 1) + ' Sterne.' : '') : 'Baue die Schmiede, um Sterne zu setzen.';
     if (id === 'heroes') { const n = HEROES.filter(h => heroOwned('player', h.id)).length; return (lvl ? 'Jetzt: +' + lvl * HERO_HALL_GEF + ' % Gefolge für alle Helden.' : 'Noch kein Bonus aufs Gefolge.') + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: +' + (lvl + 1) * HERO_HALL_GEF + ' %.' : '') + ' ' + n + ' von ' + HEROES.length + ' Helden freigeschaltet.'; }
-    if (id === 'hospital') return lvl ? hospitalPct() + ' % der Gefallenen kommen ins Krankenhaus · Platz für ' + fmtCompact(hospitalCapacity()) + (lvl < cityMaxLevel('hospital') ? ' · Nächste Stufe: ' + Math.min(60, (lvl + 1) * 5) + ' %, Platz für ' + fmtCompact(Math.round(1e6 * Math.pow(1.6, lvl))) : '') : 'Baue das Krankenhaus, um Verwundete zu retten.';
+    if (id === 'hospital') return lvl ? hospitalPct() + ' % der Gefallenen kommen ins Krankenhaus · Platz für ' + fmtCompact(hospitalCapacity()) + (lvl < cityMaxLevel('hospital') ? ' · Nächste Stufe: ' + (Math.min(60, (lvl + 1) * 5) + (AUF ? AUF.lazarettPlus('player') : 0)) + ' %, Platz für ' + fmtCompact(Math.round(1e6 * Math.pow(1.6, lvl))) : '') : 'Baue das Krankenhaus, um Verwundete zu retten.';
     return '';
 }
 function cityExtraHtml(id, lvl) {
@@ -9085,8 +9127,9 @@ document.getElementById('citySheetClose').addEventListener('click', () => { city
 document.getElementById('cityUpgradeBtn').addEventListener('click', () => {
     if (cityOpenId === '_keep' && AUF) { cityStartBuild('keep'); return; }        // die Burg-Stufe (Bauzeit, Münzen + Rohstoffe) ist die EINE Stufe der Hauptstadt
     if (cityOpenId) cityStartBuild(cityOpenId); });
-document.getElementById('citySpeedBtn').addEventListener('click', () => {
+document.getElementById('citySpeedBtn').addEventListener('click', e => {
     const id = cityBauId(cityOpenId), cost = citySpeedCost(id); if (!cost || gems < cost) return;
+    if (!gemsWirklich('speed:' + id, cost, e.currentTarget)) return;
     gems -= cost; saveGame(); updateHud(); cityFinishBuild(true, id);
 });
 // ===== THE CITY, ISOMETRIC =====
@@ -9790,14 +9833,14 @@ function cityFrame(now) {
             g.fillStyle = it.keep ? '#c98f22' : '#2f6fb8'; g.strokeStyle = 'rgba(255,236,190,.9)'; g.lineWidth = 1.2; g.beginPath(); g.arc(bx, by, r2, 0, 7); g.fill(); g.stroke(); g.fillStyle = '#fff'; g.fillText(String(it.lvl), bx, by + .5); continue; }
         const wnd = it.id === 'hospital' ? c.wounded : 0, name = it.name + (wnd ? ' · ' + fmtCompact(wnd) + ' verw.' : ''), lv = it.lvl ? String(it.lvl) : '';
         const fs = Math.max(9.5, Math.min(12.5, 4.6 * Z)), h2 = fs + 7; g.font = '700 ' + fs + 'px Inter, system-ui, sans-serif';
-        const tw = g.measureText(name).width, lw = lv ? Math.max(h2 + 2, g.measureText(lv).width + 12) : 0, W2 = tw + 16 + (lv ? lw - 4 : 0), x0 = sx - W2 / 2, py = sy + (it.keep ? 12 : 7) * Z;
+        const tw = g.measureText(name).width, lw = lv ? Math.max(h2 + 2, g.measureText(lv).width + 12) : 0, W2 = tw + 16 + (lv ? lw - 4 : 0), x0 = Math.max(6, Math.min(W - 6 - W2, sx - W2 / 2)), py = sy + (it.keep ? 12 : it.gate ? 2 : 7) * Z;   // am Rand: ganz im Bild
         g.fillStyle = ghost ? 'rgba(18,16,12,.58)' : 'rgba(18,16,12,.84)'; g.strokeStyle = building ? '#ffd98a' : ghost ? 'rgba(228,200,134,.35)' : 'rgba(228,200,134,.7)'; g.lineWidth = 1;
         rund(x0, py, W2, h2, h2 / 2); g.fill(); g.stroke();
         g.textAlign = 'center'; g.textBaseline = 'middle';
         if (lv) { const lg2 = g.createLinearGradient(0, py, 0, py + h2); lg2.addColorStop(0, it.keep ? '#e7b84a' : '#4f8ad0'); lg2.addColorStop(1, it.keep ? '#9a6a16' : '#2a5794');   // die Stufe als Abzeichen
             g.fillStyle = lg2; g.strokeStyle = 'rgba(255,236,190,.85)'; rund(x0, py, lw, h2, h2 / 2); g.fill(); g.stroke();
             g.fillStyle = '#fff'; g.fillText(lv, x0 + lw / 2, py + h2 / 2 + .5); }
-        g.fillStyle = ghost ? '#d6cab0' : '#f6ead0'; g.fillText(name, lv ? x0 + lw + (W2 - lw) / 2 - 2 : sx, py + h2 / 2 + .5);
+        g.fillStyle = ghost ? '#d6cab0' : '#f6ead0'; g.fillText(name, lv ? x0 + lw + (W2 - lw) / 2 - 2 : x0 + W2 / 2, py + h2 / 2 + .5);
         const fs8 = h2 - 7;
         if (building) { const b2 = cityBuildOf(c, it.id === '_keep' ? 'keep' : it.id), tl = fmtClock((b2.endsAt - Date.now()) / 1000); g.font = '700 ' + (fs8 - 1) + 'px Inter, system-ui, sans-serif';
             const w2 = g.measureText(tl).width + 26, yy = py + h2 + 3; g.fillStyle = 'rgba(20,6,5,.92)'; g.strokeStyle = 'rgba(255,110,80,.9)';
