@@ -42,7 +42,7 @@ EINHEIT="welt_test.js server_test.php karte_test.js"
 for x in $EINHEIT; do test1 Einheit "$x" ${BEFEHL[$x]} & done   # (erst nach dem Zusammensetzen von spiel.js)
 # Test | Vorschau (alles_test/teil2_test bekommen den Arbeitsordner für ihre Bilder dazu – jeder seinen eigenen)
 LISTE="bund_bot_test|$V bund_amt_test|$V verst_kampf_test|$V gemeinsam_test|$V regel_test|$N rally21_test|$N rally_menschen_test|$N rally_jeder_test|$N
-rally_held_test|$N rally_schild_test|$N rally_name_test|$N helden_beute_test|$N burg_test|$N haenger_test|$N haenger_holen_test|$N saison_test|$N alles_test|$V teil2_test|$V fremd_test|$V handy_texte_test|$V"
+rally_held_test|$N rally_schild_test|$N rally_name_test|$N helden_beute_test|$N burg_test|$N haenger_test|$N haenger_holen_test|$N saison_test|$N saison_anfang_test|$N alles_test|$V teil2_test|$V fremd_test|$V handy_texte_test|$V"
 WAHL=""; for t in $LISTE; do n=${t%%|*}; if [ $# = 0 ]; then WAHL="$WAHL $t"; else for p in "$@"; do [[ $n == $p* ]] && WAHL="$WAHL $t"; done; fi; done
 for t in $WAHL; do n=${t%%|*}; v=${t#*|}; mkdir -p "$T/a_$n"; BEFEHL[$n]="node tests/browser/$n.js $v $T/a_$n"; fortschritt Browser "$n" wartet; done
 for t in $WAHL; do n=${t%%|*}

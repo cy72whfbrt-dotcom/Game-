@@ -305,6 +305,19 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
        der Server hat sie gelöscht), übernimmt das Handy den Reset trotzdem (Neuladen, Anfängerschutz ab Saison-Start). Alte
        Münz-Nachrichten sind dann schon in der alten Saison verbucht; der Schummel-Schutz (Hauptbuch) bleibt maßgeblich.
     Getestet: `saison_test` (angehalten → kein Reset von selbst, erst der Knopf; Rückfall ohne Nachricht), `server_test`.
+- **5.10. Welt-Saison: Feinheiten (Sucher-Funde + Alexander #9):**
+    1. **Anfängerschutz für alle echten Spieler:** `saisonWelt` (09f) gibt nach dem Reset allen echten Spielern 48 Std. Schutz
+       (`neuBis`), nicht nur denen, die beim Reset Basen hatten; die Nachricht „saison“ schickt ihn mit.
+    2. **Ankündigung nach echter Restzeit** (`saisonBaldText`: „In 1 Tag“, „In 2 Tagen“ …) statt fest „In 3 Tagen“ (die Nachricht
+       wird oft später gelesen). 3. **Angehalten:** in der Karte „Welt-Saison“ steht bei „Neustart“ „vom Admin“ statt des alten Datums.
+    4. **„Saison-Pass N“** statt „Saison N“ im Pass (06b `renderPass`) – keine Verwechslung mit der Welt-Saison.
+    5. **Tagesboss und Drache am Saisonanfang** (`saisonAnfang`, erste 3 Tage nach `saison.start`, ab Saison 2): alle haben nur
+       Start-Truppen (100.000), darum kleinere Untergrenze fürs Leben – Tagesboss 2 Mio. statt 50 Mio. (8 Spieler × 10 Angriffe × ein
+       Viertel der Start-Truppen, `DBOSS_MIN_ANFANG`), Drache 1 Mio. statt 10 Mio. (4 Spieler, `DR_MIN_ANFANG`); haben alle zusammen
+       mehr Truppen, zählt wie immer das (80 % bzw. 75 % davon). Danach normal.
+    6. **Tagesboss entkommt** (um Mitternacht nicht gefallen, `dbossEntkommen` in 09b): alle, die getroffen haben, bekommen
+       etwas Kleines wie beim Drachen (15 Gems, 2 Splitter) – einmal, Schlüssel `boss|<Tag>` (derselbe wie der Preis beim Fallen).
+    Getestet: `saison_anfang_test` (neu).
 - **5.10. Verstärkung an Bündnis-Mitglieder ging am Handy nicht (Fehler):** Seit „fremde Werte erst nach dem Spähen“ kennt das
     Handy von anderen nur die Burg-Stufe – `verstStufe` war dort 0: kein Knopf „Verstärkung“ und „Die Botschaft von … ist voll“.
     Jetzt prüft das Handy fremde Botschaften nicht selbst (`verstUnbekannt`/`verstMoeglich` in buendnis/01: Knopf ab Burg-Stufe 5),
