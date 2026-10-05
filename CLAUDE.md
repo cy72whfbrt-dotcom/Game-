@@ -38,6 +38,9 @@ Alles Wichtige steht in `LIESMICH.md` – jede Änderung wird dort eingetragen.
   zugewiesenen Dateien + Test). Nur ZWEI Prüfungen: **schnellpruefer** (nach jeder Aufgabe, ~5–10 Min.: Diff + Schnelltests)
   und **endpruefer** (einmal vor dem Hochladen, gründlich: alle Änderungen + `tests/komplett.sh`). Schnell UND genau.
   So viele parallel wie sinnvoll: je Agent eine Aufgabe, getrennte Dateien (sonst eigene Kopie: Worktree).
+- **Immer arbeiten, nie warten:** ist ein Agent fertig, bekommt sofort der nächste eine Aufgabe; nichts Offenes bleibt
+  unvergeben. Nach 30 Min. ohne Ergebnis Zwischenstand holen und antreiben. Live-Seite (Artifact „Agenten-Firma“,
+  claude.ai/artifact/UDzcMoamcZSv1qugqKXymm) bei jeder Vergabe/jedem Abschluss aktualisieren (Regelwerk steht dort).
 - Einmal am Ende komplett testen (`tests/komplett.sh`), dann Alexander wegen Hochladen fragen.
 
 ## Regeln von Alexander
