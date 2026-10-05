@@ -32,12 +32,13 @@ function lkUse(kind, id) {                            // put on something you ow
     else if (kind === 'color') { const sk = loadSkins(); sk.active = id; store.set('openWaterSkins', JSON.stringify(sk)); BUILDING_SPRITES.clear(); }
     renderLook(); if (cityOpenId === '_keep') renderKeepSheet(); requestRender();
 }
-function lkBuy(kind, id) {                            // Gems or Thron-Punkte; bought = put on at once
+function lkBuy(kind, id, btn) {                       // Gems or Thron-Punkte; bought = put on at once
     const d = lkDef(kind, id); if (!d) return;
     if (lkHas(kind, id)) { lkUse(kind, id); return; }
     if (d.buy === 'pass') { flashHint('„' + d.name + '“ gibt es nur im Saison-Pass (Premium-Reihe) – unter „Events“.', 3000); return; }
     const cost = d.tp || d.gems || 0;
     if (d.tp ? (throneState.pts || 0) < cost : gems < cost) { flashHint('Zu wenig ' + (d.tp ? 'Thron-Punkte' : 'Gems') + ' – „' + d.name + '“ kostet ' + fmtNum(cost) + '.', 2500); return; }
+    if (!d.tp && !gemsWirklich('lk:' + kind + ':' + id, cost, btn)) return;
     if (d.tp) { throneState.pts -= cost; saveThrone(); } else gems -= cost;
     if (d.buy === 'throne') throneGive('player', 'look');                   // Thronhüter + Thron-Rahmen come together
     else if (kind === 'frame' || kind === 'title' || kind === 'march') { const k = kind + 's'; look[k] = [...new Set([...(look[k] || []), id])]; saveLook(); }
@@ -107,7 +108,7 @@ document.getElementById('lookSheet').addEventListener('click', e => {
     const t = e.target.closest('[data-lk-tab]'); if (t) { lkTab = t.dataset.lkTab; renderLookSheet(); return; }
     const cp = e.target.closest('[data-lk-cap]'); if (cp) { const v = loadBaustil(); v.cap = cp.dataset.lkCap; store.set('openWaterBaustil', JSON.stringify(v)); renderLookSheet(); requestRender(); return; }
     const c = e.target.closest('[data-lk]'); if (!c) return; const [kind, id] = c.dataset.lk.split(':');
-    lkHas(kind, id) ? lkUse(kind, id) : lkBuy(kind, id);
+    lkHas(kind, id) ? lkUse(kind, id) : lkBuy(kind, id, c);
 });
 setTimeout(lookMigrate, 0);                             // after the whole script: the old rank / Erfolg looks become owned
 // ===== Aussehen wie in den großen Aufbau-Spielen (Rise of Kingdoms, Alexander 4.10.): Gebäude antippen → runde Knöpfe
@@ -116,7 +117,7 @@ setTimeout(lookMigrate, 0);                             // after the whole scrip
 var cityPage = 'bau', cityRingId = null;
 function cityNutz(id, lvl) {                       // die eigene Seite eines Gebäudes (Forschen, Heilen …) → [Name, Zeichen] oder null
     if (id === 'academy') return lvl || loadCity().foRun ? ['Forschen', 'flask'] : null;
-    if (id === 'heroes') return ['Helden', 'profile'];
+    if (id === 'heroes') return lvl ? ['Helden', 'profile'] : null;   // erst gebaut: vorher keine Reiter (nur „Bauen“)
     if (!lvl) return null;
     return { forge: ['Schmieden', 'weapon'], hospital: ['Heilen', 'plus'], market: ['Handeln', 'market'], embassy: ['Verstärkung', 'bund'] }[id] || null;
 }

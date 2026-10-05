@@ -81,7 +81,7 @@
 .look-titles{display:flex;flex-wrap:wrap;gap:6px}
 .look-title{display:inline-flex;align-items:center;gap:4px;min-height:34px;padding:6px 12px;border-radius:999px;border:1px solid var(--line-2);background:rgba(255,255,255,.03);color:var(--tx-1);font:600 var(--fs-12)/1 var(--font-ui)}
 .look-title.on{border-color:var(--gold-300);background:rgba(214,170,90,.16);color:var(--gold-100)} .look-title:disabled{opacity:.4}
-.pfoot[hidden]{display:none} #goalsTabs.tabs{grid-template-columns:repeat(4,minmax(0,1fr))} #profileTabs.tabs{grid-template-columns:repeat(5,minmax(0,1fr))} #shopTabs.tabs{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr)}
+.pfoot[hidden]{display:none} #goalsTabs.tabs{grid-template-columns:repeat(4,minmax(0,1fr))} #profileTabs.tabs{grid-template-columns:repeat(5,minmax(min-content,1fr))} #shopTabs.tabs{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr)}
 #goalsTabs .tab:nth-child(n+5){border-top:1px solid var(--line-1)} #goalsTabs .tab:nth-child(5){box-shadow:none}   /* Events: oben Aufgaben, unten Ereignisse */
 #goalsTabs .tab:nth-child(-n+4).active::before{display:none}
 .pill--throne .icon{color:#f2c75c} .psub .pill + .pill{margin-left:6px}

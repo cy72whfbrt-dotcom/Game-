@@ -94,7 +94,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .city-bicon .icon{width:26px;height:26px;color:var(--gold-100)}
 .city-bmeta{flex:1;min-width:0}
 .city-bmeta h3{margin:2px 0;font:700 var(--fs-18,18px)/1.1 var(--font-display);color:var(--gold-100)}
-.city-blevel{font:600 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-2)}
+.city-blevel{font:600 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-2);text-wrap:balance}
 .city-bdesc{margin:0;font:500 var(--fs-13)/1.45 var(--font-ui);color:var(--tx-2)}
 .city-bstats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .city-bstats > div{padding:8px 10px;border:1px solid var(--line-1);border-radius:var(--r-sm);background:rgba(0,0,0,.22)}

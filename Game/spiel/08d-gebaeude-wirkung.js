@@ -19,7 +19,7 @@ function cityEffectText(id, lvl) {
     if (id === 'academy') return 'Jetzt: Truppen laufen +' + (lvl * 2) + ' % schneller.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: +' + ((lvl + 1) * 2) + ' %.' : '');
     if (id === 'forge') return lvl ? 'Bis zu ' + Math.min(STAR_MAX, lvl) + (Math.min(STAR_MAX, lvl) === 1 ? ' Stern' : ' Sterne') + ' pro Ausrüstungsteil.' + (lvl < STAR_MAX ? ' Nächste Stufe: ' + (lvl + 1) + ' Sterne.' : '') : 'Baue die Schmiede, um Sterne zu setzen.';
     if (id === 'heroes') { const n = HEROES.filter(h => heroOwned('player', h.id)).length; return (lvl ? 'Jetzt: +' + lvl * HERO_HALL_GEF + ' % Gefolge für alle Helden.' : 'Noch kein Bonus aufs Gefolge.') + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: +' + (lvl + 1) * HERO_HALL_GEF + ' %.' : '') + ' ' + n + ' von ' + HEROES.length + ' Helden freigeschaltet.'; }
-    if (id === 'hospital') return lvl ? hospitalPct() + ' % der Gefallenen kommen ins Krankenhaus · Platz für ' + fmtCompact(hospitalCapacity()) + (lvl < cityMaxLevel('hospital') ? ' · Nächste Stufe: ' + Math.min(60, (lvl + 1) * 5) + ' %, Platz für ' + fmtCompact(Math.round(1e6 * Math.pow(1.6, lvl))) : '') : 'Baue das Krankenhaus, um Verwundete zu retten.';
+    if (id === 'hospital') return lvl ? hospitalPct() + ' % der Gefallenen kommen ins Krankenhaus · Platz für ' + fmtCompact(hospitalCapacity()) + (lvl < cityMaxLevel('hospital') ? ' · Nächste Stufe: ' + (Math.min(60, (lvl + 1) * 5) + (AUF ? AUF.lazarettPlus('player') : 0)) + ' %, Platz für ' + fmtCompact(Math.round(1e6 * Math.pow(1.6, lvl))) : '') : 'Baue das Krankenhaus, um Verwundete zu retten.';
     return '';
 }
 function cityExtraHtml(id, lvl) {
@@ -100,7 +100,8 @@ document.getElementById('citySheetClose').addEventListener('click', () => { city
 document.getElementById('cityUpgradeBtn').addEventListener('click', () => {
     if (cityOpenId === '_keep' && AUF) { cityStartBuild('keep'); return; }        // die Burg-Stufe (Bauzeit, Münzen + Rohstoffe) ist die EINE Stufe der Hauptstadt
     if (cityOpenId) cityStartBuild(cityOpenId); });
-document.getElementById('citySpeedBtn').addEventListener('click', () => {
+document.getElementById('citySpeedBtn').addEventListener('click', e => {
     const id = cityBauId(cityOpenId), cost = citySpeedCost(id); if (!cost || gems < cost) return;
+    if (!gemsWirklich('speed:' + id, cost, e.currentTarget)) return;
     gems -= cost; saveGame(); updateHud(); cityFinishBuild(true, id);
 });

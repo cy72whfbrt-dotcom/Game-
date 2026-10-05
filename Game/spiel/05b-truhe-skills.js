@@ -279,6 +279,23 @@ function resetSkills() {
     saveProgression(); saveGame(); updateHud(); renderSkillGrid();
     flashHint('Skills zurückgesetzt: ' + fmtNum(spent) + ' Skillpunkte sind wieder frei.', 3500);
 }
+// Gems-Käufe ab 500 (und Helden-Zurücksetzen): erst „Wirklich? N Gems“, erst der zweite Tipp (nach >450 ms, binnen 4 s) zahlt – wie resetSkills
+const GEMS_WIRKLICH = 500;
+let gemsArm = null;
+function gemsWirklich(key, cost, btn, immer) {      // → true: jetzt zahlen
+    if (!immer && cost < GEMS_WIRKLICH) return true;
+    const now = Date.now();
+    if (gemsArm && gemsArm.key === key && now - gemsArm.at < 4000) { if (now - gemsArm.at < 450) return false; gemsArmAus(); return true; }   // ein Doppel-Tipp ist keine Bestätigung
+    gemsArmAus(); const t = btn && (btn.querySelector('.lbl') || btn.querySelector('small') || btn);
+    gemsArm = { key, at: now, t, html: t ? t.innerHTML : '', btn, timer: setTimeout(gemsArmAus, 4000) };
+    if (t) { btn.classList.add('is-armed'); t.innerHTML = 'Wirklich? ' + icon('gem') + fmtNum(cost); }
+    return false;
+}
+function gemsArmed(key) { return !!gemsArm && gemsArm.key === key; }
+function gemsArmAus() {
+    if (!gemsArm) return; const a = gemsArm; gemsArm = null; clearTimeout(a.timer);
+    if (a.t && a.t.isConnected) { a.btn.classList.remove('is-armed'); a.t.innerHTML = a.html; }
+}
 function renderSkillGrid() {
     const spentPts = Object.keys(SKILL_DEFS).reduce((a, k) => a + (skills[k] || 0), 0);
     skillPointsLine.innerHTML = icon('star') + '<span>Verfügbare Skillpunkte</span><b>' + fmtNum(skillPoints) + '</b>' +

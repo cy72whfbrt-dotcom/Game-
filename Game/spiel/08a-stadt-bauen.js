@@ -6,7 +6,7 @@ var CITY_BUILDINGS = [
     { id: 'forge',    name: 'Schmiede',      icon: 'weapon',  x: 785, y: 430, roof: '#4a4a52', chimney: true,
       desc: 'Wähle oben die Art und dann ein Ausrüstungsteil aus deinem Besitz, um es mit Sternen zu verbessern: jeder Stern +20 % Wirkung des Teils. Jede Stufe erlaubt einen Stern mehr.' },
     { id: 'hospital', name: 'Krankenhaus',   icon: 'plus',    x: 215, y: 670, roof: '#e8e2d2', cross: true,
-      desc: 'Von deinen Gefallenen (Angriff oder Verteidigung) kommen Verwundete hierher statt zu sterben (5 % pro Stufe, bis 60 %). Heile sie gegen Münzen – sie gehen in die Hauptstadt.' },
+      desc: 'Von deinen Gefallenen (Angriff oder Verteidigung) kommen Verwundete hierher statt zu sterben (5 % pro Stufe, bis 60 % – mit Forschung mehr). Heile sie gegen Münzen – sie gehen in die Hauptstadt.' },
     { id: 'wall',     name: 'Mauer',         icon: 'defense', x: 715, y: 815, roof: '#6b6456', gate: true,
       desc: 'Stärkt die Verteidigung aller deiner Basen: +2 % pro Stufe (Stufe 25: +50 %). Beispiel: 10 Mio. Verteidigung und Mauer Stufe 5 ergeben 11 Mio.' },
     { id: 'heroes',   name: 'Heldenhalle',   icon: 'profile', x: 285, y: 815, roof: '#7a2e2a',
@@ -90,8 +90,10 @@ function cityClampBuild(b, now) {                 // a build started under the o
     if (b && b.id === 'keep' && !AUF) return;        // (beim Laden fehlt aufbau.js noch: die Burg hat dort ihre lange Bauzeit 1–60 Tage – nicht auf die alte kürzen)
     if (b && b.endsAt - (b.startedAt || now) > cityTimeSec(b.id, b.to - 1) * 1000) b.endsAt = Math.min(b.endsAt, (b.startedAt || now) + cityTimeSec(b.id, b.to - 1) * 1000);
 }
-function fmtDuration(sec) {
-    return fmtDHMS(sec);
+function fmtDuration(sec) {                       // Bauzeiten kurz: Einheiten, die 0 sind, fallen weg (1 T statt 1 T 0 h 0 m 0 s)
+    sec = Math.max(0, Math.ceil(sec));
+    const t = [[Math.floor(sec / 86400), 'T'], [Math.floor(sec % 86400 / 3600), 'h'], [Math.floor(sec % 3600 / 60), 'm'], [sec % 60, 's']].filter(x => x[0]);
+    return t.length ? t.map(x => x[0] + ' ' + x[1]).join(' ') : '0 s';
 }
 function cityBlocker(id) {                        // why this building can't be upgraded right now (or null)
     const c = loadCity(), lvl = id === 'keep' ? c.levels.keep || 1 : c.levels[id];
@@ -240,6 +242,9 @@ function renderCitySheetTimer() {
     const tot = b.endsAt - b.startedAt, done = Date.now() - b.startedAt;
     el.style.setProperty('--p', Math.min(100, done / tot * 100) + '%');
     document.querySelector('#cityBNoteTime').textContent = fmtDuration((b.endsAt - Date.now()) / 1000);
-    setBtnLabel(document.getElementById('citySpeedBtn'), 'Fertig für ' + citySpeedCost(b.id) + ' Gems');
+    setBtnLabel(document.getElementById('citySpeedBtn'), (gemsArmed('speed:' + cityBauId(cityOpenId)) ? 'Wirklich? ' : 'Fertig für ') + citySpeedCost(b.id) + ' Gems');
     document.getElementById('citySpeedBtn').disabled = gems < citySpeedCost(b.id);
 }
+// Rohstoff-Liste oben (aufbau.js): ein Tipp woanders hin (z. B. ein Fenster öffnen) schließt sie – sie bleibt nicht über dem Fenster stehen
+document.addEventListener('click', e => { const d = document.getElementById('rohDrop');
+    if (d && !d.hidden && typeof rohUmschalten === 'function' && !e.target.closest('#hudRoh, #rohDrop')) rohUmschalten(false); }, true);

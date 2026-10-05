@@ -257,14 +257,14 @@ function cityFrame(now) {
             g.fillStyle = it.keep ? '#c98f22' : '#2f6fb8'; g.strokeStyle = 'rgba(255,236,190,.9)'; g.lineWidth = 1.2; g.beginPath(); g.arc(bx, by, r2, 0, 7); g.fill(); g.stroke(); g.fillStyle = '#fff'; g.fillText(String(it.lvl), bx, by + .5); continue; }
         const wnd = it.id === 'hospital' ? c.wounded : 0, name = it.name + (wnd ? ' · ' + fmtCompact(wnd) + ' verw.' : ''), lv = it.lvl ? String(it.lvl) : '';
         const fs = Math.max(9.5, Math.min(12.5, 4.6 * Z)), h2 = fs + 7; g.font = '700 ' + fs + 'px Inter, system-ui, sans-serif';
-        const tw = g.measureText(name).width, lw = lv ? Math.max(h2 + 2, g.measureText(lv).width + 12) : 0, W2 = tw + 16 + (lv ? lw - 4 : 0), x0 = sx - W2 / 2, py = sy + (it.keep ? 12 : 7) * Z;
+        const tw = g.measureText(name).width, lw = lv ? Math.max(h2 + 2, g.measureText(lv).width + 12) : 0, W2 = tw + 16 + (lv ? lw - 4 : 0), x0 = Math.max(6, Math.min(W - 6 - W2, sx - W2 / 2)), py = sy + (it.keep ? 12 : it.gate ? 2 : 7) * Z;   // am Rand: ganz im Bild
         g.fillStyle = ghost ? 'rgba(18,16,12,.58)' : 'rgba(18,16,12,.84)'; g.strokeStyle = building ? '#ffd98a' : ghost ? 'rgba(228,200,134,.35)' : 'rgba(228,200,134,.7)'; g.lineWidth = 1;
         rund(x0, py, W2, h2, h2 / 2); g.fill(); g.stroke();
         g.textAlign = 'center'; g.textBaseline = 'middle';
         if (lv) { const lg2 = g.createLinearGradient(0, py, 0, py + h2); lg2.addColorStop(0, it.keep ? '#e7b84a' : '#4f8ad0'); lg2.addColorStop(1, it.keep ? '#9a6a16' : '#2a5794');   // die Stufe als Abzeichen
             g.fillStyle = lg2; g.strokeStyle = 'rgba(255,236,190,.85)'; rund(x0, py, lw, h2, h2 / 2); g.fill(); g.stroke();
             g.fillStyle = '#fff'; g.fillText(lv, x0 + lw / 2, py + h2 / 2 + .5); }
-        g.fillStyle = ghost ? '#d6cab0' : '#f6ead0'; g.fillText(name, lv ? x0 + lw + (W2 - lw) / 2 - 2 : sx, py + h2 / 2 + .5);
+        g.fillStyle = ghost ? '#d6cab0' : '#f6ead0'; g.fillText(name, lv ? x0 + lw + (W2 - lw) / 2 - 2 : x0 + W2 / 2, py + h2 / 2 + .5);
         const fs8 = h2 - 7;
         if (building) { const b2 = cityBuildOf(c, it.id === '_keep' ? 'keep' : it.id), tl = fmtClock((b2.endsAt - Date.now()) / 1000); g.font = '700 ' + (fs8 - 1) + 'px Inter, system-ui, sans-serif';
             const w2 = g.measureText(tl).width + 26, yy = py + h2 + 3; g.fillStyle = 'rgba(20,6,5,.92)'; g.strokeStyle = 'rgba(255,110,80,.9)';
