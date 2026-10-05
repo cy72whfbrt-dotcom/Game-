@@ -4,15 +4,24 @@ Spiel von Alexander (Browser-Strategiespiel, Deutsch). Antworten an Alexander: k
 Alles Wichtige steht in `LIESMICH.md` – jede Änderung wird dort eingetragen.
 
 ## Code
-- `Game/spiel.js` wird **automatisch zusammengesetzt** aus `Game/spiel/01-…js` bis `10-…js`.
-  **Nur in `Game/spiel/` ändern**, danach `werkzeuge/spiel_bauen.sh` (setzt `spiel.js` neu zusammen).
-  `werkzeuge/spiel_bauen.sh pruefen` meldet einen Fehler, wenn `spiel.js` nicht zu den Teilen passt.
+- `Game/spiel.js`, `Game/bots.js` und `Game/buendnis.js` werden **automatisch zusammengesetzt** aus `Game/spiel/`,
+  `Game/bots/` und `Game/buendnis/`. **Nur in den Teilen ändern**, danach `werkzeuge/spiel_bauen.sh` (setzt alle drei neu
+  zusammen). `werkzeuge/spiel_bauen.sh pruefen` meldet einen Fehler, wenn eine Datei nicht zu ihren Teilen passt.
+  Jeder Teil beginnt mit EINER Kopfzeile `// Teil <name>: …` (kommt nicht in die zusammengesetzte Datei).
   (Eine Datei im Spiel, weil der Code beim Laden Funktionen aufruft, die weiter hinten stehen.)
-- Teile: 01 Grundlagen · 02 Shop/Märsche · 03 Karte · 04 Kampf (Ankunft, kampfDazu) · 05 Profil/Kampfbericht ·
-  06 Alltag (Aufgaben, Pass, Schild, Nebel) · 07 Schlachten-Anzeige · 08 Stadt/Helden · 09 Events (Boss, Drache, Armeen) ·
-  10 Start (UI, Einstellungen, Weltrechner-Befehle, Schummel-Schutz).
-- Weitere Dateien: `bots.js` (Mitspieler), `buendnis.js` (Bündnis, Rally, Chat, Verstärkung), `aufbau.js` (Stadt-Stufen,
-  Marsch-Plätze), `welt.js` (Verbindung Server), `server.php`, `weltrechner/` (Node-Weltrechner + Wachhund).
+- Teile von spiel.js (41): 01a grundlagen · 01b weltkarte · 01c basen-spielstand · 01d helden-mitspieler ·
+  01e nebel-kampfwerte-hud · 02a shop-stufen · 02b maersche · 02c spaeher-ankunft (resolveAttack) · 03a karte-hintergrund ·
+  03b gebaeude-3d · 03c wappen-thronplatz · 03d maersche-tagnacht · 03e kamera-eingabe · 04 kampf (Ankunft, kampfDazu) ·
+  05a aussehen-profil · 05b truhe-skills · 05c erfolge-rangliste · 05d maersche-kampfbericht · 06a aufgaben ·
+  06b pass-anleitung · 06c thron-mitte · 06d schild-produktion · 06e nebel-zeichnen · 07a schlachten · 07b kriegsherr ·
+  08a stadt-bauen · 08b burg-aussehen · 08c helden · 08d gebaeude-wirkung · 08e stadtbild-haeuser · 08f stadtbild-bild ·
+  09a funde-felder · 09b lager-tagesboss · 09c events-drache · 09d armeen-wegmarken · 09e inselfenster · 09f saison ·
+  10a inselfenster-vorschau · 10b inselfenster-knoepfe · 10c start-einstellungen ·
+  10d welt-weltrechner (Weltrechner-Befehle, Hauptbuch/Schummel-Schutz).
+  bots.js (Mitspieler), Teile in bots/ (6): 01 spieler · 02 kampf-karte · 03 angreifen · 04 stand-stadt · 05 verteidigen-takt · 06 aussehen-felder-barbaren.
+  buendnis.js (Bündnis, Rally, Chat, Verstärkung), Teile in buendnis/ (4): 01 daten-regeln (bundOp) · 02 rally-geschenke · 03 mitspieler · 04 fenster-karte-welt.
+- Weitere Dateien: `aufbau.js` (Stadt-Stufen, Marsch-Plätze), `welt.js` (Verbindung Server), `server.php`,
+  `weltrechner/` (Node-Weltrechner + Wachhund).
 - Der Weltrechner (`rechnet()` true) ist der einzige, der die Welt schreibt; Handys sind Zuschauer.
   Echte Spieler sind dort Bots `u<id>` mit `mensch`.
 

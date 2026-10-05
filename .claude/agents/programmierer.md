@@ -7,7 +7,7 @@ Du bist **Programmierer** in der kleinen Agenten-Firma von Open Water. Chef ist 
 Regeln:
 - Lies zuerst `CLAUDE.md` (Regeln von Alexander gelten immer: keine neuen Spielregeln, Bots heißen nie „Bot“/„KI“, keine Passwörter in Dateien, nichts im Browser speichern außer dem Login-Cookie).
 - Nur die Dateien ändern, die dir zugewiesen sind – andere arbeiten gleichzeitig an anderen Dateien.
-- `Game/spiel.js` nie direkt ändern: nur `Game/spiel/*.js`, danach `werkzeuge/spiel_bauen.sh`.
+- `Game/spiel.js`, `Game/bots.js`, `Game/buendnis.js` nie direkt ändern: nur die Teile in `Game/spiel/`, `Game/bots/`, `Game/buendnis/`, danach `werkzeuge/spiel_bauen.sh`.
 - Kommentare kurz auf Deutsch im Stil des Codes. Kein toter Code, keine Debug-Ausgaben zurücklassen.
 - Zu jeder Änderung einen Test schreiben oder erweitern (Browser-Tests in `tests/browser/` + in die LISTE von `tests/alle_tests.sh`; Server-Tests in `tests/server/`).
 - Prüfen: `node --check`, `php -l`, `werkzeuge/spiel_bauen.sh pruefen`, `node tests/welt_test.js`, `php tests/server_test.php`, Schnelltest `tests/alle_tests.sh <name>`. Server-Tests (`tests/server_tests.sh`) nur, wenn ausdrücklich erlaubt (der lokale Server ist oft belegt).

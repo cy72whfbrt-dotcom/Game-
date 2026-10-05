@@ -1,3 +1,4 @@
+// Teil 04-kampf.js: Titel (Mega-Tempel), Takt der Mitspieler, Ankunft und Kämpfe (kampfDazu, Warten), Kampf-Schätzung, Boni
 // ===== Teil 04-kampf.js: Titel (Mega-Tempel), Bot-Takt, Ankunft der Angriffe und Kämpfe (kampfDazu, Warten), Kampf-Schätzung, Boni =====
 // ===== TITLES (Mega-Tempel) =====
 // Whoever holds the Mega-Tempel hands out titles: 4 buffs for friends, 4 penalties for rivals (±25 %).

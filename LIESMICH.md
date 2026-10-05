@@ -34,11 +34,11 @@ Game/                  ← genau dieser Ordner liegt auf dem Server
   spiel.php            Spielseite: Aufbau (HTML) + Aussehen (CSS)
   ladebildschirm.js    Ladebildschirm (Meer, Burg, Tageszeit, Tipps)
   spiel.js             das ganze Spiel
-  bots.js              alles über die Mitspieler (Denken, Angriffe, Stadt, Helden …)
+  bots.js              alles über die Mitspieler (Denken, Angriffe, Stadt, Helden …) – zusammengesetzt aus bots/
   baukunst.js          3D-Bilder der Basen (braucht three.js aus dem Netz, sonst 2D)
   speichern.js         Speichern/Laden: hält den Stand im Arbeitsspeicher, schickt ihn an server.php
   welt.js              die EINE Welt: Umrechnen, andere Spieler, Weltrechner, Puls, Befehle, Nachrichten
-  buendnis.js          Bündnisse: Gründen, Beitreten, Signale, Rally, Geschenke, Tempel-Bonus, Gebiet (Abschnitt 18)
+  buendnis.js          Bündnisse: Gründen, Beitreten, Signale, Rally, Geschenke, Tempel-Bonus, Gebiet (Abschnitt 18) – zusammengesetzt aus buendnis/
   aufbau.js            Aufbau: Burg-Stufe, Holz/Stein/Eisen, Forschung, Truppen-Stufen, Markt, Marsch-Plätze (Abschnitt 22)
   haendler.js          wandernder Händler: Karren auf der Karte, Angebot, Kauf über den Weltrechner (Abschnitt 23)
   server.php           alles auf dem Server: Datenbank, Login, Laden, Speichern, Welt, Sicherheit
@@ -54,7 +54,8 @@ Game/                  ← genau dieser Ordner liegt auf dem Server
     wachhund.php       Cronjob jede Minute: starten, Hänger beenden, Notbremse, Sicherungen, Cronjob einrichten
     herz.php, log.php, zustand.php …   entstehen nur auf dem Server (gesperrt, nie im Git)
   config.php           Datenbank-Zugang – NUR auf dem Server, nie im Git (wird von hochladen.sh erzeugt)
-  spiel/01-…10-*.js    die Teile von spiel.js (NUR hier ändern, dann werkzeuge/spiel_bauen.sh)
+  spiel/01a-…10d-*.js  die 41 Teile von spiel.js (NUR hier ändern, dann werkzeuge/spiel_bauen.sh)
+  bots/, buendnis/     die Teile von bots.js (6) und buendnis.js (4) – genauso: NUR dort ändern, dann spiel_bauen.sh
 LIESMICH.md            diese Datei
 CLAUDE.md              Kurz-Hinweise für Claude
 hochladen.sh           lädt Game/ auf den Server (ein Befehl)
@@ -68,7 +69,7 @@ tests/                 Tests (liegen NIE auf dem Server)
                        am Ende „ALLES OK“. Zugang der Test-Konten in <arbeitsordner>/zugang.env (nie im Git)
   server/              die Server-Tests: Absturz/Zurückspielen, Admin, Nebel bei Armeen, Bündnis-Kiste,
                        Verstärkung, Klick-Test neuer Spieler (+ geschenk.sh: Admin-Geschenk für Tests)
-werkzeuge/             spiel_bauen.sh (spiel.js zusammensetzen), vorschau_bauen.php (Vorschau ohne Server),
+werkzeuge/             spiel_bauen.sh (spiel.js, bots.js, buendnis.js zusammensetzen), vorschau_bauen.php (Vorschau ohne Server),
                        vorschau_test*.js (Test-Modus), welt_neustart.php (neue Saison)
 ```
 **Server kaputt oder Editor abgestürzt?** Einfach `./hochladen.sh` – lädt alles neu hoch, erzeugt `config.php` aus den
@@ -2266,3 +2267,17 @@ Truppen. Belohnungen nach Anteil. Neu dazu (vorher galt vieles nur für den Anf�
 - **Aufräumen nach Eroberung:** `attack._vkOwner` merkt den Besitzer vor dem Kampf; `kampfAufraeumen` erkennt eine schon
   eroberte Insel (Verstärkung gefallen, die überlebenden Angreifer bleiben, kein Verteidiger-Rest).
 - Getestet: `welt_test` (thK), `server_test` (marsch_fehlt/marsch_welt), `verst_kampf_test` (Abbruch mit/ohne Eroberung).
+
+## 80. Sortier-Tag 2: kleinere Teile, auch bots.js und buendnis.js (Alexander 5.10.: „schneller, effizient, richtig“)
+- **`Game/spiel/`: 41 Teile statt 10** (je ca. 150–550 Zeilen, ein Thema pro Datei), z. B. `01b-weltkarte.js`,
+  `02c-spaeher-ankunft.js`, `08c-helden.js`, `09f-saison.js`, `10d-welt-weltrechner.js`. Die Nummer vorne bleibt der alte
+  Bereich (01 Grundlagen … 10 Start), der Buchstabe die Reihenfolge darin. Liste in `CLAUDE.md`.
+- **`bots.js` und `buendnis.js` genauso:** Teile in `Game/bots/` (6) und `Game/buendnis/` (4), `werkzeuge/spiel_bauen.sh`
+  setzt alle drei Dateien zusammen und prüft sie (`pruefen`), immer in fester Reihenfolge (`LC_ALL=C`).
+- **Jeder Teil beginnt mit einer Kopfzeile** „// Teil <name>: was drin ist“ – sie kommt nicht in die zusammengesetzte Datei.
+- Das Spiel bekommt Byte für Byte denselben Code wie vorher (geprüft: spiel.js, bots.js, buendnis.js unverändert); danach
+  nur Kommentare mit alten Dateinamen angepasst (welt.js, buendnis.js, admin.php, Teile von spiel.js).
+- `hochladen.sh` lädt die Teil-Ordner nicht hoch (nur die zusammengesetzten Dateien); `tests/welt_test.js` liest jetzt
+  `10d-welt-weltrechner.js` und `09f-saison.js`.
+- Dazu toter Code raus (keine Wirkung): `window.__splashTips` (ladebildschirm.js), `gesendetKs` (welt.js),
+  `__owSpeicher.stoppe/.istWelt` (speichern.js), `grabs--` (bots.js).

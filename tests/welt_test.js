@@ -30,9 +30,9 @@ pruefe('Flicken hin und zurück (' + gut + ' von 2000)', gut === 2000);
 pruefe('leere {} bleiben {}', (() => { const a = { x: {} }, b = { x: {}, y: {} }, c = JSON.parse(J(a)); flickenAnwenden(c, flickenBauen(a, b)); return J(c) === '{"x":{},"y":{}}'; })());
 pruefe('Flicken auf fehlenden Eintrag wird erkannt', flickenAnwenden({ a: 1 }, { d: { z: { s: { x: 1 } } } }) === false);
 
-// 3) Hauptbuch (10-start.js): keine Fehlalarme für Thron-Shop-Kisten, Splitter → Gems (alle Helden voll), Wochenketten-/Pass-Kisten (fr.kg)
+// 3) Hauptbuch (10d-welt-weltrechner.js): keine Fehlalarme für Thron-Shop-Kisten, Splitter → Gems (alle Helden voll), Wochenketten-/Pass-Kisten (fr.kg)
 {
-    const s10 = fs.readFileSync(path.join(G, 'spiel', '10-start.js'), 'utf8'), stueck = (a, b) => { const i = s10.indexOf(a), j = s10.indexOf(b, i); if (i < 0 || j < 0) throw new Error('nicht gefunden: ' + a); return s10.slice(i, j); };
+    const s10 = fs.readFileSync(path.join(G, 'spiel', '10d-welt-weltrechner.js'), 'utf8'), stueck = (a, b) => { const i = s10.indexOf(a), j = s10.indexOf(b, i); if (i < 0 || j < 0) throw new Error('nicht gefunden: ' + a); return s10.slice(i, j); };
     const code = stueck('    const kWert', '    function hbKisteDazu') + stueck('    const hbThronPreis', '    function hbFreiDazu') + stueck('    function hbGearNeu', '    // alle Neuerungen eines Profils');
     const nn = v => (typeof v === 'number' && Number.isFinite(v) ? v : 0), WERT = { a: 0 };
     const H = new Function('nn', 'HEROES', 'HERO_MAXQ', 'hbHeldZeile', 'hbHeldenWert', 'hbE0f', 'HB_SLOTS', 'starGemCost', 'CRATE_GEM_COST', 'hbZahlen', 'fz', 'THRONE_OFFERS', 'STAR_PCT', 'ITEM_MAX_LEVEL',
@@ -56,9 +56,9 @@ pruefe('Flicken auf fehlenden Eintrag wird erkannt', flickenAnwenden({ a: 1 }, {
     pruefe('Hauptbuch: … außer sein Profil zeigt sie gerade voll', H.hbSplitterGems(hb, { hs: { a: { own: true, q: 20 } } }, 100) === 100);
 }
 
-// 4) Welt-Saison (09-events.js): der Termin ist immer ein Sonntag 18 Uhr, 8 Wochen nach dem Start (auch über Sommer-/Winterzeit)
+// 4) Welt-Saison (09f-saison.js): der Termin ist immer ein Sonntag 18 Uhr, 8 Wochen nach dem Start (auch über Sommer-/Winterzeit)
 {
-    const s9 = fs.readFileSync(path.join(G, 'spiel', '09-events.js'), 'utf8'), i = s9.indexOf('function saisonEnde'), j = s9.indexOf('function saisonJetzt', i);
+    const s9 = fs.readFileSync(path.join(G, 'spiel', '09f-saison.js'), 'utf8'), i = s9.indexOf('function saisonEnde'), j = s9.indexOf('function saisonJetzt', i);
     const saisonEnde = new Function('SAISON_WOCHEN', 'SAISON_STUNDE', s9.slice(i, j) + '; return saisonEnde;')(8, 18);
     let gut = true;
     for (const ab of ['2026-10-06T10:00:00', '2026-10-04T18:00:03', '2026-02-01T18:00:00', '2026-08-02T18:00:00', '2026-12-31T23:59:00']) {
