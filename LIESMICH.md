@@ -675,8 +675,8 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
   15 (Lazarett, der Rest stirbt) gibt es schon.
 - **Subdomain/eigene Domain (Alexander 5.10.):** erledigt – bleibt bei der jetzigen Adresse (kleiner Spielerkreis, eigene Domain lohnt nicht).
 - ✅ **Erledigt (5.10.):** startete der Weltrechner kurz nach dem Beitritt eines neuen Spielers neu (die gespeicherte Welt
-  kannte ihn noch nicht), eichte sich das Hauptbuch am – evtl. gefälschten – Profil. Jetzt merkt `welt.js` solche Einträge
-  (`hbRoh`), und `hbKlemmen` fängt bei ihnen an wie bei einem neuen Spieler (Startwerte, nie das Profil; nach dem
+  kannte ihn noch nicht), eichte sich das Hauptbuch am – evtl. gefälschten – Profil. Jetzt zählt ein Eintrag, den die Welt nicht
+  gespeichert hatte (leer aus `loadBotState` oder roh aus dem Profil – `welt.js` `hbRoh`), als neu: `hbKlemmen` fängt an wie bei einem neuen Spieler (Startwerte, nie das Profil; nach dem
   Zurückspielen einer Sicherung wird wie bisher angeglichen). Alte Spieler (in der Welt gespeichert) ändert das nicht.
   Test: `tests/server/schummel_test.js` Teil 5 (Neustart, Eintrag weg, gefälschtes Profil → nichts davon in der Welt).
 
