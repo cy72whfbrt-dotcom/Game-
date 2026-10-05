@@ -1,4 +1,4 @@
-// Stadt, Helden und Gems-Käufe (Spieltest 5.10.): Gems ab 500 und Helden-Zurücksetzen erst nach „Wirklich?“ (zweiter Tipp nach
+// Stadt, Helden und Gems-Käufe (Spieltest 5.10.): Gems ab 500 (auch Beschleunigen, Forschung) und Helden-Zurücksetzen erst nach „Wirklich?“ (zweiter Tipp nach
 // >450 ms, binnen 4 s), übrige Splitter eines Helden mit 5 Sternen 1:1 umtauschen, Bauzeit kompakt („1 T“), Krankenhaus „Nächste
 // Stufe“ mit Forschung, Heldenhalle ungebaut ohne Reiter. Handy + Desktop: Rohstoff-Liste geht beim Öffnen eines Fensters zu, Profil-
 // Reiter und Kisten-Zeile ganz. Bilder (Stadt, Burg, Shop, Profil, Helden) in den Arbeitsordner (process.argv[3]), wenn angegeben.
@@ -46,6 +46,30 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       o.swap = { vorherNein: !vorher, a: heroSt('player', a).sh, dazu: heroSt('player', z).sh - z0 === a0 && a0 > 0, gems: gems === g3, zielOhneMax: ![...sel.options].some(x => x.value === a) };
       await (async () => { const s = heroSt('player', a); s.sh = 5; saveHeroes(); renderHeroHall(); await warte(200); })();
       o.helden = document.getElementById('heroHall').scrollHeight > 0;
+      closeHeroHall();
+      // 4) Späher beschleunigen (1 Gem/Min.): 600 Gems erst nach „Wirklich?“ – die Nachfrage übersteht das Neuzeichnen der Liste; 100 Gems sofort
+      const echt3 = Date.now; let V = echt3.call(Date) + 5000; Date.now = () => V;
+      const ziel = islands.find(i => i.id !== playerIslandId).id, gross = { sourceId: playerIslandId, targetId: ziel, startedAt: V - 1000, resolveAt: V + 600 * 60000 - 1 },
+        klein = { sourceId: playerIslandId, targetId: ziel, startedAt: V - 2000, resolveAt: V + 100 * 60000 - 1 };
+      pendingScouts.push(gross, klein); renderActiveMarches();
+      const sp = m => activeMarchesEl.querySelector('[data-mact="speed"][data-k="' + marchKeyOf(m) + '"]'), g4 = gems, r0 = gross.resolveAt;
+      sp(gross).click(); const mFrage = sp(gross).textContent, mNicht = gems === g4 && gross.resolveAt === r0;
+      renderActiveMarches(); const mNeu = sp(gross).textContent;          // neu gezeichnet: der Knopf fragt weiter
+      V += 700; sp(gross).click(); const mBezahlt = g4 - gems === 600 && gross.resolveAt < r0;
+      V += 700; const g5 = gems; sp(klein).click(); const mKlein = g5 - gems === 100;
+      Date.now = echt3; pendingScouts.splice(pendingScouts.indexOf(gross), 1); pendingScouts.splice(pendingScouts.indexOf(klein), 1); renderActiveMarches();
+      o.marsch = { frage: /Wirklich\?/.test(mFrage) && /600/.test(mFrage), mNicht, neu: /Wirklich\?/.test(mNeu), mBezahlt, mKlein };
+      // 5) Forschung mit Gems fertig: 600 Gems erst nach „Wirklich?“, 100 Gems sofort
+      const fid = Object.keys(FO_BY)[0], C = loadCity(), sheet = document.getElementById('citySheet'), knopf = document.createElement('button');
+      knopf.type = 'button'; knopf.dataset.foGems = ''; knopf.textContent = 'Fertig'; sheet.appendChild(knopf);
+      let W = echt3.call(Date) + 5000; Date.now = () => W;
+      C.foRun = { id: fid, to: 1, startedAt: W - 1000, endsAt: W + 600 * 60000 - 1 }; saveCity();
+      const g6 = gems; knopf.click(); const fFrage = knopf.textContent, fNicht = gems === g6 && !!loadCity().foRun;
+      W += 700; knopf.click(); const fBezahlt = g6 - gems === 600 && !loadCity().foRun;
+      const C2 = loadCity(); C2.foRun = { id: fid, to: 1, startedAt: W - 1000, endsAt: W + 100 * 60000 - 1 }; saveCity();
+      W += 700; const g7 = gems; knopf.click(); const fKlein = g7 - gems === 100 && !loadCity().foRun;
+      Date.now = echt3; knopf.remove();
+      o.forschung = { frage: /Wirklich\?/.test(fFrage), fNicht, fBezahlt, fKlein };
       return o;
     }).catch(e => ({ fehler: e.message }));
     ok(!r.fehler, art + ': Szenen laufen', r.fehler);
@@ -56,6 +80,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     ok(r.lkKlein, art + ': Rahmen 200 Gems ohne Nachfrage');
     ok(r.reset.frage && r.reset.rsNicht && r.reset.zurueck, art + ': Helden-Zurücksetzen erst nach „Wirklich?“', r.reset);
     ok(r.swap.vorherNein && r.swap.a === 0 && r.swap.dazu && r.swap.gems && r.swap.zielOhneMax, art + ': übrige Splitter 1:1 umgetauscht (nur vom 5-Sterne-Helden, keine Gems)', r.swap);
+    ok(r.marsch.frage && r.marsch.mNicht && r.marsch.neu && r.marsch.mBezahlt && r.marsch.mKlein, art + ': Späher beschleunigen 600 Gems erst nach „Wirklich?“ (bleibt beim Neuzeichnen), 100 Gems sofort', r.marsch);
+    ok(r.forschung.frage && r.forschung.fNicht && r.forschung.fBezahlt && r.forschung.fKlein, art + ': Forschung mit Gems 600 erst nach „Wirklich?“, 100 sofort', r.forschung);
     await bild('helden');
     const s = await p.evaluate(async () => {
       const warte = ms => new Promise(f => setTimeout(f, ms)), ganz = e => !!e && e.scrollWidth <= e.clientWidth + 1;

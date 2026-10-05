@@ -1839,10 +1839,11 @@ function vorlaeufigDrueber() {
 }
 function speedUpCost(m) { return Math.max(1, Math.ceil((m.resolveAt - Date.now()) / 60000)); }   // 1 gem per minute still to go
 let speedUpZuletzt = 0;                               // (ein Doppel-Tipp beschleunigt nicht zweimal)
-function speedUpMarch(key) {                         // halves the time still to go; the column keeps its place on the road
+function speedUpMarch(key, btn) {                    // halves the time still to go; the column keeps its place on the road
     const now = Date.now(); if (now - speedUpZuletzt < 600) return; speedUpZuletzt = now;
     const sc = pendingScouts.find(x => marchKeyOf(x) === key);                // ein Späher (nur deiner – kein Befehl an den Weltrechner nötig)
     if (sc) { const rem = sc.resolveAt - now; if (rem < 1500) return; const cost = speedUpCost(sc); if (gems < cost) { flashHint('Zu wenig Gems – Beschleunigen kostet ' + cost + '.', 3000); return; }
+        if (!gemsWirklich('marsch:' + key, cost, btn)) return;
         gems -= cost; const p = Math.max(0, Math.min(.99, (now - sc.startedAt) / Math.max(1, sc.resolveAt - sc.startedAt)));
         sc.resolveAt = now + rem / 2; sc.startedAt = sc.resolveAt - (rem / 2) / (1 - p);
         flashHint('Späher beschleunigt – noch ' + fmtClock(Math.ceil(rem / 2000)) + '.', 2500); updateHud(); saveGame(); saveProgression(); renderActiveMarches(); requestRender(); return; }
@@ -1852,6 +1853,7 @@ function speedUpMarch(key) {                         // halves the time still to
         if (m.vorlaeufig) { flashHint('Einen Moment – der Marsch läuft gerade los.', 1500); return; }
         const rem = m.resolveAt - now; if (rem < 1500) return;
         const cost = speedUpCost(m); if (gems < cost) { flashHint('Zu wenig Gems – Beschleunigen kostet ' + cost + '.', 3000); return; }
+        if (!gemsWirklich('marsch:' + key, cost, btn)) return;
         gems -= cost;
         alsBefehl('schneller', { keys: [key] });
         const p = Math.max(0, Math.min(.99, (now - m.startedAt) / Math.max(1, m.resolveAt - m.startedAt)));
@@ -1865,11 +1867,12 @@ function speedableMarches() {
     const now = Date.now();
     return [...pendingAttacks.filter(a => !a.attackerBotId), ...pendingSends.filter(x => !x.senderBotId), ...pendingRetreats, ...eigeneFeldBarb()].filter(m => !m.fightEndsAt && !m.vorlaeufig && m.resolveAt - now >= 1500);
 }
-function speedUpAll() {
+function speedUpAll(btn) {
     if (Date.now() - speedUpZuletzt < 600) return; speedUpZuletzt = Date.now();
     const list = speedableMarches(); if (!list.length) return;
     const cost = list.reduce((a, m) => a + speedUpCost(m), 0);
     if (gems < cost) { flashHint('Zu wenig Gems – alle beschleunigen kostet ' + fmtNum(cost) + '.', 3000); return; }
+    if (!gemsWirklich('marschAlle', cost, btn)) return;
     gems -= cost; const now = Date.now();
     alsBefehl('schneller', { keys: list.map(marchKeyOf) });
     for (const m of list) { const rem = m.resolveAt - now, pr = Math.max(0, Math.min(.99, (now - m.startedAt) / Math.max(1, m.resolveAt - m.startedAt)));
@@ -1880,7 +1883,8 @@ function speedUpAll() {
 function marchButtons(m, canRecall) {
     const k = marchKeyOf(m);
     return '<span class="mact">' + (canRecall ? '<button type="button" data-mact="recall" data-k="' + k + '" title="Zurückrufen">' + icon('recall') + 'Zurück</button>' : '') +
-        '<button type="button" data-mact="speed" data-k="' + k + '" title="Restzeit halbieren">' + icon('hourglass') + 'Schneller · <b>' + speedUpCost(m) + '</b>' + icon('gem') + '</button></span>';
+        (gemsArmed('marsch:' + k) ? '<button type="button" class="is-armed" data-mact="speed" data-k="' + k + '" title="Restzeit halbieren">Wirklich? ' + icon('gem') + fmtNum(speedUpCost(m))   // Nachfrage ab 500 Gems übersteht das Neuzeichnen
+            : '<button type="button" data-mact="speed" data-k="' + k + '" title="Restzeit halbieren">' + icon('hourglass') + 'Schneller · <b>' + speedUpCost(m) + '</b>' + icon('gem')) + '</button></span>';
 }
 
 function resolveSend(send) {
@@ -3714,7 +3718,7 @@ function drawMarchButtons() {
   setScreen(ctx);
   const list = [pendingAttacks, pendingSends, pendingRetreats].find(l => l.some(x => marchKeyOf(x) === selMarch)), mm = list && list.find(x => marchKeyOf(x) === selMarch);
   if (!mm) { selMarch = null; return; }
-  const btns = (m.recall ? [{ act: 'recall', glyph: 'recall', label: 'Zurück' }] : []).concat([{ act: 'speed', glyph: 'hourglass', label: 'Schneller · ' + speedUpCost(mm) }]);
+  const btns = (m.recall ? [{ act: 'recall', glyph: 'recall', label: 'Zurück' }] : []).concat([{ act: 'speed', glyph: 'hourglass', label: (gemsArmed('marsch:' + selMarch) ? 'Wirklich? ' : 'Schneller · ') + speedUpCost(mm) }]);
   ctx.font = '700 12px Inter, system-ui, sans-serif';
   const ws = btns.map(b => ctx.measureText(b.label).width + 34 + (b.act === 'speed' ? 14 : 0)), total = ws.reduce((a, b) => a + b, 0) + 8 * (btns.length - 1);
   let x = Math.max(8, Math.min(viewW - total - 8, m.x - total / 2)); const y = Math.max(8, m.y - 74);
@@ -5691,7 +5695,7 @@ const battleLogPopup = document.getElementById('battleLogPopup');
 const battleLogCloseBtn = document.getElementById('battleLogCloseBtn');
 const activeMarchesEl = document.getElementById('activeMarches');
 activeMarchesEl.addEventListener('click', e => { const bt = e.target.closest('[data-mact]'); if (!bt) return;
-    e.stopPropagation(); if (bt.dataset.mact === 'recall') recallMarch(bt.dataset.k); else if (bt.dataset.mact === 'speedAll') speedUpAll(); else speedUpMarch(bt.dataset.k); });
+    e.stopPropagation(); if (bt.dataset.mact === 'recall') recallMarch(bt.dataset.k); else if (bt.dataset.mact === 'speedAll') speedUpAll(bt); else speedUpMarch(bt.dataset.k, bt); });
 const combatLogListEl = document.getElementById('combatLogList');
 let battleLogRefreshTimer = null;
 
@@ -5776,7 +5780,7 @@ function renderActiveMarches() {
         rows.push(m.back ? logRowHtml('retreat', 'recall', 'Sammler kehren zurück', fmtNum(m.troops) + ' Truppen' + (m.load >= 1 ? ' · +' + fmtNum(Math.floor(m.load)) + ' ' + K.what : '') + ' · nach ' + T(m.homeId), clock(sec), marchButtons(m, false))
             : logRowHtml('send', 'send', 'Sammeln → ' + was, 'von ' + T(m.homeId) + ' · ' + fmtNum(m.troops) + ' Truppen', clock(sec), marchButtons(m, true))); }
     const fast = speedableMarches();
-    if (fast.length > 1) rows.unshift('<div class="march-all"><span class="mact"><button type="button" data-mact="speedAll" title="Restzeit aller Märsche halbieren">' + icon('hourglass') + 'Alle schneller (' + fast.length + ') · <b>' + fmtNum(fast.reduce((a, m) => a + speedUpCost(m), 0)) + '</b>' + icon('gem') + '</button></span></div>');
+    if (fast.length > 1) rows.unshift('<div class="march-all"><span class="mact"><button type="button" data-mact="speedAll"' + (gemsArmed('marschAlle') ? ' class="is-armed"' : '') + ' title="Restzeit aller Märsche halbieren">' + (gemsArmed('marschAlle') ? 'Wirklich? ' + icon('gem') + fmtNum(fast.reduce((a, m) => a + speedUpCost(m), 0)) : icon('hourglass') + 'Alle schneller (' + fast.length + ') · <b>' + fmtNum(fast.reduce((a, m) => a + speedUpCost(m), 0)) + '</b>' + icon('gem')) + '</button></span></div>');
     const amHtml = rows.length ? rows.join('') : '<div class="logEmpty">' + icon('hourglass') + 'Gerade nichts unterwegs.</div>';
     if (amHtml !== activeMarchesEl._html) { activeMarchesEl._html = amHtml; activeMarchesEl.innerHTML = amHtml; }   // many fights resolve per second: rebuild only on change (keeps the buttons tappable)
     battleLogPopup.classList.toggle('has-entries', rows.length > 0 || combatLog.length > 0);

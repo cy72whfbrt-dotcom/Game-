@@ -291,7 +291,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `botBestRarity` → Game/bots/04-stand-stadt.js:199
 - `botBld` → Game/bots/04-stand-stadt.js:76
 - `botBountyReward` → Game/bots/06-aussehen-felder-barbaren.js:74
-- `botBurgWert` → Game/aufbau.js:429
+- `botBurgWert` → Game/aufbau.js:430
 - `botById` → Game/welt.js:361
 - `botCanCross` → Game/bots/01-spieler.js:116
 - `botCapitalMoveOk` → Game/bots/05-verteidigen-takt.js:137
@@ -311,7 +311,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `botDrache` → Game/bots/06-aussehen-felder-barbaren.js:341
 - `botDropShield` → Game/bots/06-aussehen-felder-barbaren.js:90
 - `botFails` → Game/bots/02-kampf-karte.js:270
-- `botForschung` → Game/aufbau.js:407
+- `botForschung` → Game/aufbau.js:408
 - `botFreeSlots` → Game/bots/03-angreifen.js:38
 - `botGather` → Game/bots/04-stand-stadt.js:318
 - `botGatherField` → Game/bots/06-aussehen-felder-barbaren.js:101
@@ -345,7 +345,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `botLoyal` → Game/bots/02-kampf-karte.js:352
 - `botMarchMult` → Game/bots/04-stand-stadt.js:197
 - `botMarginFor` → Game/bots/02-kampf-karte.js:382
-- `botMarkt` → Game/aufbau.js:420
+- `botMarkt` → Game/aufbau.js:421
 - `botMidPull` → Game/bots/02-kampf-karte.js:282
 - `botMigrateV2` → Game/bots/04-stand-stadt.js:34
 - `botMood` → Game/bots/03-angreifen.js:17
@@ -371,7 +371,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `botRevengeLaunched` → Game/bots/02-kampf-karte.js:234
 - `botRingFav` → Game/bots/04-stand-stadt.js:232
 - `botRings` → Game/bots/04-stand-stadt.js:233
-- `botRohWunsch` → Game/aufbau.js:435
+- `botRohWunsch` → Game/aufbau.js:436
 - `botRulerTitles` → Game/bots/05-verteidigen-takt.js:252
 - `botSampleSources` → Game/bots/04-stand-stadt.js:354
 - `botschaftGeschenk` → Game/aufbau.js:221
@@ -387,7 +387,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `botSituation` → Game/bots/02-kampf-karte.js:362
 - `botSortGroups` → Game/bots/01-spieler.js:104
 - `botSpendSkills` → Game/bots/04-stand-stadt.js:57
-- `botStadtFix` → Game/aufbau.js:399
+- `botStadtFix` → Game/aufbau.js:400
 - `botStat` → Game/bots/06-aussehen-felder-barbaren.js:71
 - `botStrategic` → Game/bots/02-kampf-karte.js:293
 - `botStyle` → Game/bots/03-angreifen.js:21
@@ -563,7 +563,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundZielOk` → Game/buendnis/01-daten-regeln.js:107
 - `bundZielVon` → Game/buendnis/03-mitspieler.js:15
 - `burg` → Game/baukunst/02-buehne-grundbasis.js:282
-- `burgKarte` → Game/aufbau.js:447
+- `burgKarte` → Game/aufbau.js:448
 - `burgKosten` → Game/aufbau.js:97
 - `burgKostenAlt` → Game/spiel/10d-welt-weltrechner.js:489
 - `burgSchutz` → Game/aufbau.js:105
@@ -1103,9 +1103,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `HATCH_PX` → Game/spiel/03a-karte-hintergrund.js:235
 - `hatchPatterns` → Game/spiel/03a-karte-hintergrund.js:240
 - `hatchTile` → Game/spiel/03a-karte-hintergrund.js:236
-- `hauptstadtStufen` → Game/aufbau.js:450
-- `hauptVon` → Game/aufbau.js:448
-- `hauptVor` → Game/aufbau.js:449
+- `hauptstadtStufen` → Game/aufbau.js:451
+- `hauptVon` → Game/aufbau.js:449
+- `hauptVor` → Game/aufbau.js:450
 - `HB_ACH` → Game/spiel/10d-welt-weltrechner.js:507
 - `hbAusProfil` → Game/spiel/10d-welt-weltrechner.js:808
 - `hbBauten` → Game/spiel/10d-welt-weltrechner.js:504
@@ -1412,7 +1412,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `makeTileKeyboard` → Game/spiel/05b-truhe-skills.js:34
 - `mapBattleShake` → Game/spiel/07a-schlachten.js:304
 - `mapFocusPoint` → Game/spiel/03e-kamera-eingabe.js:441
-- `marchButtons` → Game/spiel/02b-maersche.js:310
+- `marchButtons` → Game/spiel/02b-maersche.js:313
 - `marchFlag` → Game/spiel/03d-maersche-tagnacht.js:4
 - `marchKeyOf` → Game/spiel/02b-maersche.js:197
 - `marchPath` → Game/spiel/03c-wappen-thronplatz.js:400
@@ -1856,7 +1856,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `resolveBotAttack` → Game/bots/02-kampf-karte.js:14
 - `resolveRetreat` → Game/spiel/02c-spaeher-ankunft.js:319
 - `resolveScout` → Game/spiel/02c-spaeher-ankunft.js:111
-- `resolveSend` → Game/spiel/02b-maersche.js:316
+- `resolveSend` → Game/spiel/02b-maersche.js:320
 - `restyleMerlons` → Game/baukunst/04-vielfalt-stile.js:354
 - `retex` → Game/baukunst/04-vielfalt-stile.js:595
 - `retreatPct` → Game/spiel/02c-spaeher-ankunft.js:142
@@ -2052,7 +2052,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `spaeherBlick` → Game/spiel/02c-spaeher-ankunft.js:49
 - `spaeherBlickHtml` → Game/spiel/02c-spaeher-ankunft.js:89
 - `spaeherHeim` → Game/spiel/02c-spaeher-ankunft.js:107
-- `spaeherMehr` → Game/aufbau.js:381
+- `spaeherMehr` → Game/aufbau.js:382
 - `spaeherTempo` → Game/aufbau.js:215
 - `spaeherWeg` → Game/spiel/01b-weltkarte.js:293
 - `spaehRunde` → Game/spiel/10d-welt-weltrechner.js:901
@@ -2061,8 +2061,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `spawnBattleFx` → Game/spiel/07a-schlachten.js:356
 - `spawnMapBattle` → Game/spiel/07a-schlachten.js:24
 - `spawnWander` → Game/spiel/07b-kriegsherr.js:57
-- `speedableMarches` → Game/spiel/02b-maersche.js:294
-- `speedUpAll` → Game/spiel/02b-maersche.js:298
+- `speedableMarches` → Game/spiel/02b-maersche.js:296
+- `speedUpAll` → Game/spiel/02b-maersche.js:300
 - `speedUpCost` → Game/spiel/02b-maersche.js:270
 - `speedUpMarch` → Game/spiel/02b-maersche.js:272
 - `speichern_anfrage` → Game/server/06-speichern-push-konto.php:6
@@ -3457,10 +3457,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `vorlaeufigDrueber` :259
 - `speedUpCost` :270
 - `speedUpMarch` :272 — halves the time still to go; the column keeps its place on the road
-- `speedableMarches` :294 — "Alle schneller": halves the time left of every own column on the road at once …
-- `speedUpAll` :298
-- `marchButtons` :310
-- `resolveSend` :316
+- `speedableMarches` :296 — "Alle schneller": halves the time left of every own column on the road at once …
+- `speedUpAll` :300
+- `marchButtons` :313
+- `resolveSend` :320
 
 ### Game/spiel/02c-spaeher-ankunft.js — Späher und Späherbericht, Ankunft der Angriffe (resolveAttack), Rückzug
 - `nearestOwnedIslandTo` :8 — "Spähen": no troops needed, but a scout still takes time to reach the target - …
@@ -4773,16 +4773,16 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `foDetail` :325
 - `extraHtml` :342
 - `marktHtml` :353 — Shop → Markt: Rohstoffe gegen Münzen (die Stufe des Markt-Gebäudes bestimmt Geb…
-- `spaeherMehr` :381 — Spähbericht: der Späher sieht alles (Alexander 4.10.) – Burg, Rohstoffe (und wi…
-- `botStadtFix` :399 — fehlende Felder (alte Spielstände): Burg 1, keine Forschung, Start-Rohstoffe
-- `botForschung` :407 — fertig? sonst: die nächste, die zum Spielstil passt und bezahlbar ist (behält R…
-- `botMarkt` :420 — fehlt ein Rohstoff, kauft er ihn auf dem Markt – nur mit Münzen, die er übrig h…
-- `botBurgWert` :429 — wie dringend die Burg ist (kleiner = eher): sobald ein Gebäude anstößt
-- `botRohWunsch` :435 — Sammeln: welcher Rohstoff fehlt am meisten? (für die Wahl des Feldes)
-- `burgKarte` :447 — -------------------------------------------------------------------------------…
-- `hauptVon` :448
-- `hauptVor` :449 — je Herr: { id: Hauptstadt, vor: ihre eigene Stufe }
-- `hauptstadtStufen` :450
+- `spaeherMehr` :382 — Spähbericht: der Späher sieht alles (Alexander 4.10.) – Burg, Rohstoffe (und wi…
+- `botStadtFix` :400 — fehlende Felder (alte Spielstände): Burg 1, keine Forschung, Start-Rohstoffe
+- `botForschung` :408 — fertig? sonst: die nächste, die zum Spielstil passt und bezahlbar ist (behält R…
+- `botMarkt` :421 — fehlt ein Rohstoff, kauft er ihn auf dem Markt – nur mit Münzen, die er übrig h…
+- `botBurgWert` :430 — wie dringend die Burg ist (kleiner = eher): sobald ein Gebäude anstößt
+- `botRohWunsch` :436 — Sammeln: welcher Rohstoff fehlt am meisten? (für die Wahl des Feldes)
+- `burgKarte` :448 — -------------------------------------------------------------------------------…
+- `hauptVon` :449
+- `hauptVor` :450 — je Herr: { id: Hauptstadt, vor: ihre eigene Stufe }
+- `hauptstadtStufen` :451
 
 ### Game/benachrichtigung.js — benachrichtigung.js – „Benachrichtigungen erlauben“ im Profil (Web-Push aufs Ha…
 - `hinweis` :17

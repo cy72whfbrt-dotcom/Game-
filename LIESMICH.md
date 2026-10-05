@@ -223,6 +223,9 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   anderen Helden tauschen (`heroDoSwap`, keine Gems). Krankenhaus „Nächste Stufe“ zählt die Forschung mit. Bauzeiten kompakt
   („1 T“ statt „1 T 0 h 0 m 0 s“). Rohstoff-Liste oben geht bei jedem Tipp woanders zu. Heldenhalle ungebaut: keine Reiter. Handy:
   Stadt-Namen bleiben im Bild, Profil-Reiter und Kisten-Zeile ganz. Test `tests/browser/handy_stadt_test.js`.
+  Nachtrag 5.10. (Alexander: Nachfrage bei JEDEM Kauf ab 500 Gems): auch Märsche/Späher beschleunigen (einzeln und „Alle
+  schneller“, Liste und Knöpfe auf der Karte) und Forschung mit Gems fertig fragen ab 500 erst „Wirklich?“; der Knopf zeigt die
+  Nachfrage auch nach dem Neuzeichnen (Marsch-Liste jede Sekunde, `gemsArmed`). Schmiede-Stern kostet höchstens 100 Gems → nie.
 - **5.10. mittags (Alexanders Ja zu allem):** Kampf: Treffen zwei Bündnis-Angriffe zusammen, zeigt der Bericht bei jedem
   seine eigene Stärke und seinen Helden; Gold für getötete Gegner bekommt jeder selbst (für den Teil, den seine Truppen töten,
   mit seinem Gold-Satz – Alexander: „A“), nur die Hauptstadt-Beute wird nach Truppen geteilt; ein Held im gemeinsamen Kampf
