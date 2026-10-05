@@ -41,14 +41,16 @@ process.on('unhandledRejection', e => log('Warnung (Promise):', e && e.message |
 
 // ===== Zahlen für Herzschlag und Admin-Seite =====
 let phase = 'start';   // 'start' (Welt holen und einlesen – darf bei großer Welt / langsamem Server lange dauern) | 'läuft'
-const stat = { pulseOk: 0, pulseFehler: 0, letzterPuls: 0, pulsMs: 0, fehlerMinute: [], prueferFehler: 0, prueferHintereinander: 0, befehle: 0 };
+const stat = { pulseOk: 0, pulseFehler: 0, letzterPuls: 0, pulsMs: 0, fehlerMinute: [], prueferFehler: 0, prueferHintereinander: 0, };
 function herzSchreiben(extra) {
     const m = process.memoryUsage();
     const h = Object.assign({ zeit: Date.now(), pid: process.pid, gestartet: START, phase, speicherMb: Math.round(m.rss / 1048576), heapMb: Math.round(m.heapUsed / 1048576), heapGesamtMb: Math.round(m.heapTotal / 1048576), externMb: Math.round(m.external / 1048576),
         grenzeMb: SPEICHER_MB, pulseOk: stat.pulseOk, pulseFehler: stat.pulseFehler, letzterPuls: stat.letzterPuls, pulsMs: stat.pulsMs,
-        fehlerProMinute: stat.fehlerMinute.length, prueferFehler: stat.prueferFehler, befehle: stat.befehle, push: stat.push || null, pauseMaxMs: stat.pauseMax, pauseStundeMs: stat.pauseMaxStunde }, extra || {});
+        fehlerProMinute: stat.fehlerMinute.length, prueferFehler: stat.prueferFehler, befehle: befehleGezaehlt(), gcLang: stat.gcLang || 0, push: stat.push || null, pauseMaxMs: stat.pauseMax, pauseStundeMs: stat.pauseMaxStunde }, extra || {});
     const neu = path.join(ORDNER, 'herz_neu.php'); fs.writeFileSync(neu, SPERRE + JSON.stringify(h)); fs.renameSync(neu, HERZ);
 }
+// Befehle zählt welt.js beim Lesen der Antwort (vorher hier ein zweites Mal die ganze Antwort gelesen – je Puls)
+function befehleGezaehlt() { try { const n = spielFenster && spielFenster.WELT && spielFenster.WELT.befehleGezaehlt; return typeof n === 'number' ? n : 0; } catch (e) { return 0; } }
 // Längste Pause (der Weltrechner war so lange am Stück beschäftigt – ab 3 Min. hält ihn der Wachhund für hängend):
 // jede Sekunde nachsehen, wie viel später als geplant wir drankommen. Steht im Herzschlag (Admin-Seite), lange Pausen im Log.
 // Bei einer langen Pause steht im Log, WARUM: hat er selbst gerechnet (CPU ≈ Pause) oder kam er nicht dran (CPU ≈ 0 – der
@@ -60,10 +62,16 @@ setInterval(() => { const j = Date.now(), p = j - pauseLetzte - 1000, cpu = proc
             wie = ' (selbst gerechnet ' + Math.round(rechen / 1000) + ' s von ' + Math.round((p + 1000) / 1000) + ' s · Server-Last ' + last + ' · frei ' + Math.round(os.freemem() / 1048576) + ' von ' + Math.round(os.totalmem() / 1048576) + ' MB · eigener Speicher ' + Math.round(process.memoryUsage().rss / 1048576) + ' MB)'; } catch (e) {}
         log('Warnung: ' + Math.round(p / 1000) + ' s am Stück beschäftigt' + wie); } }, 1000).unref();
 setInterval(() => { stat.pauseMaxStunde = 0; }, 3600000).unref();
+// Lange Speicher-Aufräumpausen (GC, über 0,5 s) ins Log – auch sie halten den Weltrechner an
+try { const { PerformanceObserver } = require('perf_hooks');
+    new PerformanceObserver(l => { for (const e of l.getEntries()) if (e.duration > 500) { stat.gcLang = (stat.gcLang || 0) + 1; log('Warnung: Aufräumen (GC) dauerte ' + Math.round(e.duration) + ' ms'); } }).observe({ entryTypes: ['gc'] }); }
+catch (e) { log('Warnung: GC-Messung geht nicht (' + e.message + ')'); }
 herzSchreiben();   // gleich beim Start: der Wachhund sieht sofort „lebt, lädt noch“ (nicht erst nach 5 s)
+let gcZuletzt = 0;
 setInterval(() => {
     let rss = process.memoryUsage().rss / 1048576;
-    if (rss > SPEICHER_MB * .8 && typeof global.gc === 'function') { global.gc(); rss = process.memoryUsage().rss / 1048576; stat.aufgeraeumt = (stat.aufgeraeumt || 0) + 1; }   // erst aufräumen (Node hält Müll lange fest)
+    // erst aufräumen (Node hält Müll lange fest) – höchstens jede Minute (ein volles Aufräumen kann Sekunden dauern), außer kurz vor dem Beenden
+    if (rss > SPEICHER_MB * .8 && typeof global.gc === 'function' && (Date.now() - gcZuletzt >= 60000 || rss > SPEICHER_MB)) { gcZuletzt = Date.now(); global.gc(); rss = process.memoryUsage().rss / 1048576; stat.aufgeraeumt = (stat.aufgeraeumt || 0) + 1; }
     if (rss > SPEICHER_MB) ende(3, 'Speicher voll: ' + Math.round(rss) + ' MB (Grenze ' + SPEICHER_MB + ' MB)');
     const jetzt = Date.now(); stat.fehlerMinute = stat.fehlerMinute.filter(t => jetzt - t < 60000);
     if (stat.letzterPuls && jetzt - stat.letzterPuls > 120000) ende(7, 'seit 2 Minuten kein Puls beim Server angekommen');   // (Code 7: der Server antwortet nicht – zählt beim Wachhund nicht als Absturz)
@@ -219,9 +227,6 @@ async function los() {
             if (istPuls) {
                 if (antwort.ok) { stat.pulseOk++; stat.letzterPuls = Date.now(); stat.pulsMs = Date.now() - t0; }
                 else stat.pulseFehler++;
-                if (antwort.ok) {   // Befehle zählen, ohne die Antwort zu verbrauchen
-                    const kopie = antwort.clone(); kopie.json().then(a => { stat.befehle += (a.befehle || []).length; }).catch(() => {});
-                }
             }
             return antwort;
         } catch (e) { if (istPuls) stat.pulseFehler++; throw e; }

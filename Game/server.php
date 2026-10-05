@@ -407,13 +407,11 @@ function spielseite_vorbereiten() {
         lager()->spiel_token_setzen($ich['id'], $tok);
         $stand = lager()->stand_laden($ich['id']);
         // die EINE Welt: ganzer Stand und alle Spieler. Rechnen tut sie nur der Weltrechner auf dem Server – nie ein Spieler.
-        lager()->welt_sperren();
         $leiter = false;
-        $welt = welt_fuer_spieler(lager()->welt_seit(0));
-        $sicht = lager()->sicht_laden($ich['id']);
+        [$welt, $sicht] = lager()->fest_lesen(function () use ($ich) { return [lager()->welt_seit(0), lager()->sicht_laden($ich['id'])]; });   // (ohne Welt-Sperre, aus einem festen Stand – wie beim Puls)
+        $welt = welt_fuer_spieler($welt);
         $welt = nebel_welt($welt, $sicht);   // 3B: Truppen nur, wo er hinsehen darf
         $welt = marsch_welt($welt, $ich['id'], $sicht);   // fremde Kolonnen ohne Zahlen (erst im Kampf)
-        lager()->welt_entsperren();
         $spieler = lager()->spieler_liste(0);
         $neu = !$stand;
         if ($neu) {   // neuer Spieler: Start bei Null, Spielername = Login-Name - sofort in die Datenbank
@@ -803,6 +801,19 @@ class MysqlLager {
     // ===== Welt =====
     function welt_sperren() { if ((int)$this->db->query("SELECT GET_LOCK('ow_welt', 15)")->fetchColumn() !== 1) throw new RuntimeException('Welt-Sperre nicht bekommen'); }
     function welt_entsperren() { $this->db->query("SELECT RELEASE_LOCK('ow_welt')"); }
+    // Lesen aus einem festen Stand – OHNE die Welt-Sperre (die braucht nur, wer schreibt: der Weltrechner, Zurückspielen).
+    // Alles, was $f liest, stammt aus demselben Augenblick: der Weltrechner schreibt Welt, Version und Flicken immer in EINER
+    // Transaktion (Zurückspielen und Welt-Neustart auch) – man sieht also nie einen halben Stand. In $f nichts schreiben.
+    function fest_lesen(callable $f) {
+        if ($this->tiefe > 0 || $this->db->inTransaction()) return $f();   // (schon in einer Transaktion)
+        $this->db->exec('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');   // (nur für die nächste Transaktion)
+        try { $this->db->exec('START TRANSACTION WITH CONSISTENT SNAPSHOT, READ ONLY'); }
+        catch (PDOException $e) { $this->db->exec('START TRANSACTION WITH CONSISTENT SNAPSHOT'); }   // (alte Datenbank ohne READ ONLY)
+        try { $r = $f(); }
+        catch (Throwable $e) { try { $this->db->exec('ROLLBACK'); } catch (Throwable $x) {} throw $e; }
+        $this->db->exec('COMMIT');
+        return $r;
+    }
     function welt_info() {
         $r = $this->db->query('SELECT version, versionen, leiter_id, leiter_token, leiter_bis, welt_zeit, zurueck FROM ow_welt_info WHERE id = 1')->fetch();
         $r['versionen'] = json_decode((string)$r['versionen'], true) ?: [];
@@ -889,19 +900,26 @@ class MysqlLager {
         return count($da);
     }
     // ===== Sicherungen der Welt =====
+    public $sicherung_info = null;   // (für das Log des Wachhunds: Dauer, Größe)
     function sicherung_anlegen() {
-        $this->welt_sperren();   // kein Puls schreibt dazwischen: beide Tabellen aus demselben Stand
-        try {
-            $sp = $this->db->query('SELECT schluessel, wert FROM ow_spielstand WHERE spieler_id = 0')->fetchAll();
-            $bo = $this->db->query('SELECT bot_id, nr, stufe, muenzen, anzahl_basen, basen, zustand FROM ow_bots WHERE spieler_id = 0')->fetchAll();
-            $v = $this->db->query('SELECT version FROM ow_welt_info WHERE id = 1')->fetchColumn();   // welcher Welt-Stand das ist
-        } finally { $this->welt_entsperren(); }
+        $t0 = microtime(true);
+        // beide Tabellen aus demselben Stand (fester Stand statt Welt-Sperre: der Weltrechner muss nicht warten)
+        [$sp, $bo, $v] = $this->fest_lesen(function () {
+            return [$this->db->query('SELECT schluessel, wert FROM ow_spielstand WHERE spieler_id = 0')->fetchAll(),
+                $this->db->query('SELECT bot_id, nr, stufe, muenzen, anzahl_basen, basen, zustand FROM ow_bots WHERE spieler_id = 0')->fetchAll(),
+                $this->db->query('SELECT version FROM ow_welt_info WHERE id = 1')->fetchColumn()];   // welcher Welt-Stand das ist
+        });
         if (!sicherung_gueltig(['spielstand' => $sp, 'bots' => $bo])) return 0;   // eine leere/kaputte Welt verdrängt nie eine gute Sicherung
-        $gz = gzencode(json_encode(['spielstand' => $sp, 'bots' => $bo, 'version' => (int)$v], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), 6);
+        $j = json_encode(['spielstand' => $sp, 'bots' => $bo, 'version' => (int)$v], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        unset($sp, $bo);   // (Speicher früh freigeben)
+        if ($j === false) return 0;
+        $roh = strlen($j);
+        $gz = gzencode($j, 3); unset($j);   // (Stufe 3: kaum größer als 6, aber viel weniger Rechenzeit auf dem geteilten Server)
         if ($gz === false || gzdecode($gz) === false) return 0;   // (nur ganz lesbare Sicherungen)
         $this->db->prepare('INSERT INTO ow_sicherungen (groesse, daten) VALUES (?, ?)')->execute([strlen($gz), $gz]);
         $id = (int)$this->db->lastInsertId();
         $this->db->exec('DELETE FROM ow_sicherungen WHERE id <= ' . ($id - 48));   // die letzten 48 bleiben
+        $this->sicherung_info = ['ms' => (int)round((microtime(true) - $t0) * 1000), 'roh' => $roh, 'gz' => strlen($gz)];
         return $id;
     }
     function letzte_sicherung_zeit() { return (int)$this->db->query('SELECT UNIX_TIMESTAMP(MAX(erstellt)) FROM ow_sicherungen')->fetchColumn(); }
@@ -1299,6 +1317,38 @@ function welt_puls($ich, $d) {
             $cid = is_string($b['cid'] ?? null) && preg_match('/^[A-Za-z0-9]{8,24}$/', $b['cid']) ? $b['cid'] : null;   // (ohne Nummer: altes Handy – wie früher)
             $j = json_encode($b, JSON_UNESCAPED_UNICODE); if ($j !== false && strlen($j) < 8000) { $l->befehl_ablegen($uid, $j, $cid); if ($cid !== null) $befehle_ok[] = $cid; } } }
 
+    if (!$sys) {   // Spieler: nur lesen – OHNE die Welt-Sperre, aus einem festen Stand (der Weltrechner muss nie auf sie warten)
+        $seit = (int)($d['seit'] ?? 0);
+        [$i, $welt, $sicht, $ganz, $sk] = $l->fest_lesen(function () use ($l, $d, $uid, $seit) {
+            $i = $l->welt_info();
+            $welt = $l->welt_seit_flicken($seit);   // (Version und Teile aus demselben Stand)
+            $sicht = $l->sicht_laden($uid);
+            $sk = array_merge(NEBEL_TEILE, ['openWaterArmies', 'openWaterFields']);   // (auch Armeen/Felder: was er jetzt sieht, kommt mit Zahlen)
+            $ganz = (int)($d['sicht_v'] ?? -1) !== $sicht['v'] && $seit > 0 ? $l->stand_laden(0, $sk) : null;   // 3B: neue Sicht → diese Teile ganz (gefiltert) schicken
+            return [$i, $welt, $sicht, $ganz, $sk];
+        });
+        // filtern erst danach (ohne festen Stand, ohne Sperre)
+        $antwort = ['welt' => welt_fuer_spieler($welt)]; unset($welt);   // Spieler bekommen nur Änderungen
+        if ($ganz !== null) {
+            $w = &$antwort['welt'];
+            $t = (array)$w['setzen']; $f = (array)($w['flicken'] ?? []);
+            foreach ($sk as $k) if (isset($ganz[$k])) { $t[$k] = $ganz[$k]; unset($f[$k]); }
+            $w['setzen'] = (object)$t; $w['flicken'] = (object)$f; unset($w, $ganz);
+        }
+        $antwort['welt'] = nebel_welt($antwort['welt'], $sicht);   // 3B: Nebel – Truppen nur für Inseln, die er sehen darf
+        $antwort['welt'] = marsch_welt($antwort['welt'], $uid, $sicht);   // fremde Kolonnen ohne Zahlen (erst im Kampf)
+        $antwort['sicht_v'] = $sicht['v'];
+        $antwort['leiter'] = false;
+        $antwort['rechner'] = (int)$i['leiter_id'] === 0 && (int)$i['leiter_bis'] >= $jetzt;   // läuft der Weltrechner? (sonst: „Verbindung wird wiederhergestellt …“)
+        $antwort['neu_leiter'] = false;
+        $antwort['version'] = $antwort['welt']['version'];
+        $antwort['ereignisse'] = $l->ereignisse_abholen($uid);   // (schon verbuchte, noch nicht gesicherte überspringt das Handy)
+        $antwort['spieler'] = $l->spieler_liste((int)($d['spieler_seit'] ?? 0), false);
+        if (!empty($d['befehle'])) $antwort['befehle_ok'] = $befehle_ok;
+        $antwort['zeit'] = $jetzt;
+        welt_antwort($antwort);
+    }
+    // ab hier nur der Weltrechner (er allein schreibt die Welt – unter der Welt-Sperre)
     $l->welt_sperren();
     $i = $l->welt_info();
     // Rechnen darf nur der Weltrechner auf dem Server (uid 0, mit seinem Zeichen) – nie ein Spieler
@@ -1334,7 +1384,6 @@ function welt_puls($ich, $d) {
     }
     $l->tx_ende();
     } catch (Throwable $e) { $l->tx_abbruch(); $l->welt_entsperren(); throw $e; }   // nichts davon gilt – der Weltrechner schickt alles nochmal (gleiche Nummern)
-    if ($sys && isset($d['welt']) && mt_rand(1, 500) === 1) $l->aufraeumen();
     $neu_leiter = false;
     if ($sys) {   // Weltrechner bleibt (oder übernimmt nach einem Neustart)
         $neu_leiter = !$bin_leiter;
@@ -1342,23 +1391,11 @@ function welt_puls($ich, $d) {
         $bin_leiter = true;
     }
     $seit = (int)($d['seit'] ?? 0);
-    $antwort['welt'] = $bin_leiter ? $l->welt_seit($neu_leiter ? $seit : PHP_INT_MAX) : welt_fuer_spieler($l->welt_seit_flicken($seit));   // der Weltrechner hat schon alles; Spieler bekommen nur Änderungen
-    if ($bin_leiter && !$neu_leiter) { $antwort['welt']['setzen'] = new stdClass; $antwort['welt']['loeschen'] = []; }
-    if (!$sys) {   // 3B: Nebel – Truppen nur für Inseln, die er sehen darf. Neue Sicht → diese Teile ganz (gefiltert) schicken
-        $sicht = $l->sicht_laden($uid);
-        if ((int)($d['sicht_v'] ?? -1) !== $sicht['v'] && $seit > 0) {
-            $sk = array_merge(NEBEL_TEILE, ['openWaterArmies', 'openWaterFields']);   // (auch Armeen/Felder: was er jetzt sieht, kommt mit Zahlen)
-            $ganz = $l->stand_laden(0, $sk); $w = &$antwort['welt'];
-            $t = (array)$w['setzen']; $f = (array)($w['flicken'] ?? []);
-            foreach ($sk as $k) if (isset($ganz[$k])) { $t[$k] = $ganz[$k]; unset($f[$k]); }
-            $w['setzen'] = (object)$t; $w['flicken'] = (object)$f; unset($w);
-        }
-        $antwort['welt'] = nebel_welt($antwort['welt'], $sicht);
-        $antwort['welt'] = marsch_welt($antwort['welt'], $uid, $sicht);   // fremde Kolonnen ohne Zahlen (erst im Kampf)
-        $antwort['sicht_v'] = $sicht['v'];
-    }
-    if ($bin_leiter) $antwort['befehle'] = $l->befehle_abholen();   // alle noch nicht quittierten (schon Ausgeführte überspringt der Weltrechner)
+    $antwort['welt'] = $l->welt_seit($neu_leiter ? $seit : PHP_INT_MAX);   // der Weltrechner hat schon alles
+    if (!$neu_leiter) { $antwort['welt']['setzen'] = new stdClass; $antwort['welt']['loeschen'] = []; }
+    $antwort['befehle'] = $l->befehle_abholen();   // alle noch nicht quittierten (schon Ausgeführte überspringt der Weltrechner)
     $l->welt_entsperren();
+    if (isset($d['welt']) && mt_rand(1, 500) === 1) $l->aufraeumen();   // (nach dem Entsperren: hält niemanden auf)
     $antwort['leiter'] = $bin_leiter;
     $antwort['rechner'] = $bin_leiter || ((int)$i['leiter_id'] === 0 && (int)$i['leiter_bis'] >= $jetzt);   // läuft der Weltrechner? (sonst: „Verbindung wird wiederhergestellt …“)
     $antwort['neu_leiter'] = $neu_leiter;

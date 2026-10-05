@@ -1117,6 +1117,7 @@ function renderCombatLog() {
         // numbers sit right next to each other and it's obvious at a
         // glance who had the advantage (that side's sum is green).
         const atkTotal = entry.myTroops + entry.attackBuff;
+        const ich = entry.meine && entry.meine.fallen !== undefined && (entry.rolle === 'mit' || Array.isArray(entry.angreifer)) ? entry.meine : null;   // gemeinsam: deine eigenen Zahlen (geflohen, übrig, verwundet, gefallen)
         const defTotal = entry.enemyTroops + entry.enemyDefense + entry.defenseBuff;
         const details = '<details><summary>Kampfdetails</summary>' +
             '<div class="logCompare">' +
@@ -1150,16 +1151,16 @@ function renderCombatLog() {
                 '</div>' +
             '</div>' +
             (entry.killGold ? '<div class="logGold">Angriff: Gold +' + fmtBig(entry.killGold) + ' Münzen für getötete Truppen</div>' : entry.killGold === undefined && entry.attackGoldRate ? '<div class="logGold">Angriff: Gold +' + fmt1(entry.attackGoldRate) + ' pro getöteter Truppe</div>' : '') +
-            (!entry.won && entry.retreatSurvivors ? '<div class="logRetreat">' + fmtNum(entry.retreatSurvivors) + ' Truppen konnten fliehen und kehren zurück</div>' : '') +
-            (entry.wounded ? '<div class="logRetreat logWounded">' + fmtNum(entry.wounded) + ' Verwundete gehen ins Krankenhaus – heile sie in der Stadt</div>' : '') +
+            (!entry.won && (ich ? ich.fled : entry.retreatSurvivors) ? '<div class="logRetreat">' + fmtNum(ich ? ich.fled : entry.retreatSurvivors) + (ich ? ' deiner' : '') + ' Truppen konnten fliehen und kehren zurück</div>' : '') +
+            ((ich ? ich.wounded : entry.wounded) ? '<div class="logRetreat logWounded">' + fmtNum(ich ? ich.wounded : entry.wounded) + (ich ? ' deiner' : '') + ' Verwundete gehen ins Krankenhaus – heile sie in der Stadt</div>' : '') +
             (entry.enemyWounded ? '<div class="logRetreat logWounded">' + escapeHtml(entry.defenderName || 'Der Gegner') + ' bringt ' + fmtNum(entry.enemyWounded) + ' Verwundete ins Krankenhaus</div>' : '') +
             '</details>';
-        const meine = entry.meine || {};
+        const meine = entry.meine || {}, ichUeb = ich && ich.rest !== undefined;   // (ältere Berichte: ohne rest/fled → die Zahlen des ganzen Kampfs)
         return karte(entry, entry.won ? 'win' : 'loss', entry.won ? 'level' : 'losses', [entry.won ? 'win' : 'loss', entry.capitalHolds ? 'Geplündert' : entry.won ? 'Sieg' : 'Niederlage'], T(entry.targetId),
             (entry.rolle === 'mit' ? 'Rally mit ' + escapeHtml(entry.fuehrer || '?') + ' · ' : angreiferZeilen(entry, gearHtml) ? entry.angreifer.length + ' Angreifer · ' : '') + 'von ' + T(entry.sourceId),
             logBalance(atkTotal, defTotal, icon('attack') + 'Du ' + fmtM(atkTotal), fmtM(defTotal) + ' ' + escapeHtml(entry.defenderName || 'Abwehr') + icon('defense')),
-            [...(entry.rolle === 'mit' ? verlustChips(meine.fallen, meine.wounded) : verlustChips(entry.attackerCasualties, entry.wounded)),
-                entry.won ? ['troops', chipN(entry.remaining) + ' übrig'] : entry.retreatSurvivors > 0 && ['recall', chipN(entry.retreatSurvivors) + ' fliehen heim'],
+            [...(entry.rolle === 'mit' || ich ? verlustChips(meine.fallen, meine.wounded) : verlustChips(entry.attackerCasualties, entry.wounded)),
+                entry.won ? ['troops', chipN(ichUeb ? ich.rest : entry.remaining) + ' übrig'] : (ichUeb ? ich.fled : entry.retreatSurvivors) > 0 && ['recall', chipN(ichUeb ? ich.fled : entry.retreatSurvivors) + ' fliehen heim'],
                 ...beuteChips(entry, true), entry.killGold > 0 && ['coin', '+' + chipN(entry.killGold) + ' Gold für Kills', 'gut']], details);
     })(entry); } catch (err) { console.warn('Kampfbericht', err); return logRowHtml('loss', 'info', 'Kampfbericht', 'Dieser Bericht kann nicht angezeigt werden.', ''); }
     }).join('');
@@ -1183,7 +1184,7 @@ const kampflogUmbauen = (function () {
     const textOf = n => (n && n.firstElementChild ? n.firstElementChild.textContent : '').trim();
 
     // ein Fenster auf den immer gleichen Aufbau bringen
-    function normal(box, angr, roh, schutz) {
+    function normal(box, angr, roh, schutz, flucht) {                    // flucht: die Geflohenen DIESES Spielers (sonst 0)
         const lines = () => [...box.querySelectorAll(':scope > .logLine, :scope > .logSum, :scope > .logCasualty')];
         const truppen = lines().find(l => textOf(l).startsWith('Truppen'));
         if (truppen) truppen.firstElementChild.firstChild.textContent = 'Truppen';
@@ -1193,7 +1194,9 @@ const kampflogUmbauen = (function () {
         if (!lines().some(l => textOf(l).startsWith('Grundverteidigung')) && sum) sum.insertAdjacentHTML('beforebegin', zl('Grundverteidigung', '0', ' kl-null', 'zählt nur beim Besitzer der Basis'));
         const cas = lines().filter(l => l.classList.contains('logCasualty'));
         if (!cas.length && sum) sum.insertAdjacentHTML('afterend', '<div class="logCasualty kl-null"><span>Gefallen</span><span>–</span></div>');   // (steht nicht im Bericht)
-        if (!lines().some(l => textOf(l).startsWith('Geflohen'))) { const c = lines().filter(l => l.classList.contains('logCasualty')).pop(); (c || sum).insertAdjacentHTML('afterend', zl('Geflohen', '0')); }
+        const gefl = lines().find(l => textOf(l).startsWith('Geflohen'));
+        if (!gefl) { const c = lines().filter(l => l.classList.contains('logCasualty')).pop(); (c || sum).insertAdjacentHTML('afterend', zl('Geflohen', fmt(flucht || 0))); }
+        else if (flucht !== undefined) gefl.lastElementChild.textContent = fmt(flucht);   // (nur seine – nicht die der ganzen Rally)
         let gear = box.querySelector(':scope > .logGear');
         if (!gear) { box.insertAdjacentHTML('beforeend', leerGear('', angr)); gear = box.querySelector(':scope > .logGear'); }
         let hs = gear.querySelector('.logGearHeroes');
@@ -1223,9 +1226,10 @@ const kampflogUmbauen = (function () {
         side.replaceWith(gruppe);
         const spieler = Array.isArray(liste) && liste.length ? liste : null;
         const sumEl = side.querySelector(':scope > .logSum');
+        const fluchtAlle = !angr || sieg ? 0 : e.type === 'attack' ? e.retreatSurvivors || 0 : e.atkFled || 0;   // (Geflohene des Angreifers – verloren)
         if (!spieler) {                                                     // nur ein Spieler auf dieser Seite
             const roh = angr ? (sieg ? beute : {}) : rohTeil(beute, 1, -1);
-            gruppe.appendChild(normal(side, angr, roh, angr ? 0 : schutz));
+            gruppe.appendChild(normal(side, angr, roh, angr ? 0 : schutz, fluchtAlle));
             return;
         }
         // Zeilen der einzelnen Spieler (angreiferZeilen / verstZeilen) einsammeln und aus dem Fenster nehmen
@@ -1248,7 +1252,7 @@ const kampflogUmbauen = (function () {
             const w = side.querySelector(':scope > .logCasualty.wounded'); if (w) { if (erster.wounded) w.lastElementChild.textContent = fmt(erster.wounded); else w.remove(); } }   // (nur seine – nicht die der ganzen Rally)
         if (!angr && e.type === 'attack') { const weg = andere.reduce((x, p) => x + (p.fallen || 0) + (p.wounded || 0), 0), c = side.querySelector(':scope > .logCasualty:not(.wounded)');   // Besitzer: ohne die Verluste der Helfer (die stehen in ihren Fenstern)
             if (c) c.lastElementChild.textContent = '−' + fmt(Math.max(0, (e.defenderCasualties || 0) - (e.enemyWounded || 0) - weg)); }
-        gruppe.appendChild(normal(side, angr, angr ? (sieg ? rohTeil(beute, (erster.n || 0) / Math.max(1, alleT), 1) : {}) : rohTeil(beute, 1, -1), angr ? 0 : schutz));
+        gruppe.appendChild(normal(side, angr, angr ? (sieg ? rohTeil(beute, (erster.n || 0) / Math.max(1, alleT), 1) : {}) : rohTeil(beute, 1, -1), angr ? 0 : schutz, angr ? (erster.fled !== undefined ? erster.fled : fluchtAlle) : 0));
         // weitere Fenster: Rally-Mitglieder / Verstärkung
         for (const p of andere) {
             const b = el('<div class="logSide"><div class="logSideLabel">' + (angr ? 'Angreifer · ' : 'Verteidiger · ') + escapeHtml(p.name || '?') + ' <small style="text-transform:none;letter-spacing:0">(' + (angr ? 'Verbündeter' : 'Verstärkung') + ')</small></div>' +
@@ -1257,7 +1261,7 @@ const kampflogUmbauen = (function () {
                 '<div class="logCasualty"><span>Gefallen</span><span>−' + fmt(p.fallen || 0) + '</span></div>' +   // (fallen enthält die Verwundeten schon nicht)
                 (p.wounded ? '<div class="logCasualty wounded"><span>Verwundet</span><span>' + fmt(p.wounded) + '</span></div>' : '') + '</div>');
             const g = gearVon[p.name]; if (g) b.appendChild(g);
-            gruppe.appendChild(normal(b, angr, angr && sieg ? rohTeil(beute, (p.n || 0) / Math.max(1, alleT), 1) : {}, 0));
+            gruppe.appendChild(normal(b, angr, angr && sieg ? rohTeil(beute, (p.n || 0) / Math.max(1, alleT), 1) : {}, 0, angr ? p.fled || 0 : 0));
         }
     }
 

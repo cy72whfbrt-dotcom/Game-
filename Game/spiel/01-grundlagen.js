@@ -1099,8 +1099,24 @@ function attackParts(who, raw, bonus, total, hero, a) {       // a = the attack:
     if (kv) out.push(['Forschung Angriff', kv, '+' + Math.round((kr - 1) * 100) + ' % Kampfkraft']);
     return out;
 }
-function heroDefCut(a) { return a && a.hx ? Math.min(90, a.hx.def || 0) / 100 : 0; }    // Rammbock, Sturmflut, Mauerbrecher: the target's defense counts less
-function heroDefPart(parts, a, full) { const cut = Math.round(full * heroDefCut(a)), hd = cut && heroById(a.hx.id); if (hd) parts.push(['Held ' + hd.name + (a.hx.id2 && heroById(a.hx.id2) ? ' & ' + heroById(a.hx.id2).name : ''), -cut, 'Verteidigung −' + Math.round(a.hx.def) + ' %']); return parts; }
+// Rammbock, Sturmflut, Mauerbrecher: the target's defense counts less. Gemeinsam (Rally): jeder Held nur nach dem Stärke-Anteil
+// SEINES Spielers (Anführer-Held × sein Anteil + Mitglieds-Helden × deren Anteil – Alexander: jeder Held zählt nur für seine Truppen)
+function heroDefCut(a) {
+    const c = h => h ? Math.min(90, h.def || 0) / 100 : 0;
+    if (!a || !a.rally || !Array.isArray(a.rally.an) || !a.rally.an.some(x => x && x[0] !== a.rally.by)) return c(a && a.hx);
+    const ganz = (a.rawTroops || 0) + (a.attackBonus || 0); if (!(ganz > 0)) return c(a.hx);
+    const by = a.rally.by, k = {}, hx = {}; let andere = 0;
+    for (const x of a.rally.an) if (x && x[0] !== by && x[3] != null) { const s = Math.max(0, x[2] + x[3]); k[x[0]] = (k[x[0]] || 0) + s; andere += s; if (x[4] && !hx[x[0]]) hx[x[0]] = x[4]; }
+    let cut = c(a.hx) * Math.max(0, ganz - andere) / ganz;
+    for (const w in k) cut += c(hx[w]) * k[w] / ganz;
+    return Math.min(.9, cut);
+}
+function heroDefPart(parts, a, full) {
+    const cut = Math.round(full * heroDefCut(a)); if (!cut) return parts;
+    const hd = a.hx && heroById(a.hx.id), mit = a.rally && Array.isArray(a.rally.an) && a.rally.an.some(x => x && x[0] !== a.rally.by && x[4]);
+    parts.push([hd ? 'Held ' + hd.name + (a.hx.id2 && heroById(a.hx.id2) ? ' & ' + heroById(a.hx.id2).name : '') + (mit ? ' + Helden der Verbündeten' : '') : 'Helden der Verbündeten', -cut,
+        'Verteidigung −' + Math.round(heroDefCut(a) * 100) + ' %' + (mit ? ' (je Held nach Anteil seines Spielers)' : '')]); return parts;
+}
 function attackFields(who, src, target, raw, hx) {      // everything an attack takes along at launch (skills, gear, title, hero) - for you and for everyone else
     const bot = who !== 'player', sk = bot ? Math.round(raw * botMults(who).attackPct / 100) : attackFlatBonus(raw);
     const hb = hx ? Math.round(raw * hx.atk / 100) + heroGefOf(hx, raw) : 0;   // (der Helden-Anteil – fällt weg, wenn der Angreifer im Kampf schon 2 Helden hat)

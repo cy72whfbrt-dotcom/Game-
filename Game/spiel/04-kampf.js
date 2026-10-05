@@ -132,7 +132,12 @@ setInterval(() => {
                     else fight.rally.zus = 1;
                 }
                 const wer = a.attackerBotId || 'player';               // höchstens 2 Helden je Angreifer (Alexander 4.10.): hat er schon Helden im Kampf, zählen die dieser Welle nicht
-                if (!fight.heldVon) fight.heldVon = fight.hx ? { [fight.attackerBotId || 'player']: 1 } : {};
+                if (!fight.heldVon) { fight.heldVon = fight.hx ? { [fight.attackerBotId || 'player']: 1 } : {};
+                    if (fight.rally) for (const x of fight.rally.an) if (x && x[4]) fight.heldVon[x[0]] = 1; }   // (auch die Helden der Rally-Mitglieder)
+                if (a.rally && anderer) for (const x of a.rally.an) if (x[0] !== a.rally.by && x[4]) {   // ein Mitglied der neuen Rally hat schon Helden im Kampf: seine zählen nicht
+                    if (fight.heldVon[x[0]]) { heroWutZurueck(x[0], x[4]); const h = x[7] || 0; x[3] = (x[3] || 0) - h; a.attackBonus = (a.attackBonus || 0) - h;
+                        x[5] = Math.max(0, (x[5] || 0) - (x[4].loss || 0)); x[4] = null; x[7] = 0; }
+                    else fight.heldVon[x[0]] = 1; }
                 let ohneHeld = false;
                 if (a.hx && fight.heldVon[wer]) { ohneHeld = true; heroWutZurueck(wer, a.hx);   // (seine Helden kämpfen nicht mit – die Wut bleibt)
                     a.attackBonus = Math.max(0, (a.attackBonus || 0) - (a.heldBonus !== undefined ? a.heldBonus : (a.attackBonus || 0) - (a.skillBonus || 0)));
@@ -154,8 +159,8 @@ setInterval(() => {
                     fight.rally.an.push(...(a.rally ? a.rally.an : [[a.attackerBotId, a.sourceId, a.rawTroops, anderer ? Math.round(a.attackBonus || 0) : undefined, anderer && a.hx && !ohneHeld ? a.hx : undefined, anderer ? a.shieldLossReductionPct : undefined]]));
                 fight.rawTroops += a.rawTroops; fight.attackBonus = (fight.attackBonus || 0) + (a.attackBonus || 0);
                 if (fight.skillBonus !== undefined || a.skillBonus !== undefined) fight.skillBonus = (fight.skillBonus || 0) + (a.skillBonus !== undefined ? a.skillBonus : a.attackBonus || 0); fight.waves = (fight.waves || 1) + (a.waves || 1);
-                if (a.hx && anderer && !ohneHeld) heroFought(a.attackerBotId, a.hx);              // (ein Held eines Mitspielers führt nur seinen eigenen Kampf – er bekommt seine Wut)
-                else if (a.hx && !anderer && !ohneHeld) { if (!fight.hx) { fight.hx = a.hx; fight.hero = a.hero; fight.hero2 = a.hero2 || null; } }   // höchstens Haupt- + Zweitheld: die Helden der ersten Welle führen den Kampf
+                // (ein Held eines Mitspielers führt nur seinen eigenen Teil – seine Wut füllt sich am Kampfende, siehe resolveBotAttack: rally.an[4])
+                if (a.hx && !anderer && !ohneHeld) { if (!fight.hx) { fight.hx = a.hx; fight.hero = a.hero; fight.hero2 = a.hero2 || null; } }   // höchstens Haupt- + Zweitheld: die Helden der ersten Welle führen den Kampf
                 if (!anderer) { fight.shieldLossReductionPct = Math.max(fight.shieldLossReductionPct || 0, a.shieldLossReductionPct || 0);   // (sein eigener Schild/Gold-Bonus gilt nicht für die anderen)
                     fight.rewardGoldRate = Math.max(fight.rewardGoldRate || 0, a.rewardGoldRate || 0); }
                 fight.fightEndsAt = Math.max(fight.fightEndsAt, now + 2500);          // the fresh troops get to fight too
@@ -189,7 +194,7 @@ setInterval(() => {
             for (const attack of dueAttacks) try {              // (ein Fehler in einem Kampf darf die anderen nicht verschlucken)
                 if (attack.attackerBotId) resolveBotAttack(attack);
                 else resolveAttack(attack);
-            } catch (e) { console.warn('FEHLER Kampf', attack.id, e); }
+            } catch (e) { console.warn('FEHLER Kampf', attack.id, e); kampfAufraeumen(attack); }
         }
     }
     if (pendingSends.length > 0 && rechnet()) {
@@ -224,6 +229,15 @@ setInterval(() => {
     if (!isPanelOpen(battleLogPopup)) renderActiveMarches();
     updateHudPlayer();
 }, 1000);
+
+// Ein Kampf ist mit einem Fehler abgebrochen: die Verstärkung wieder trennen (sonst doppelt in der Besatzung und verstDefPlus
+// hängt), die Truppen einer Rally gehen heim (sonst wären sie weg). attack._vk / _heim setzt der Kampf selbst.
+function kampfAufraeumen(a) {
+    try { if (a._vk && typeof verstNachKampf === 'function') verstNachKampf(a.targetId, a._vk, false); } catch (e) { console.warn('FEHLER Aufräumen', e); }
+    delete a._vk;
+    try { if (a.rally && !a._heim && typeof bundRallyHeim === 'function') bundRallyHeim(a, a.rawTroops, a.targetId); } catch (e) { console.warn('FEHLER Aufräumen', e); }
+    try { saveGame(); saveProgression(); } catch (e) {}
+}
 
 // Combined bonus percentage from the item worn in a slot + a matching
 // skill (skillKey may be null when no skill covers that stat)

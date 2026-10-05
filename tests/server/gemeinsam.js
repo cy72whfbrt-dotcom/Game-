@@ -25,6 +25,24 @@ const esc = s => String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 const php = code => execFileSync('php', ['-r', '$_SERVER["SCRIPT_FILENAME"]="x"; chdir(' + JSON.stringify(W + '/weltrechner') + '); require "wachhund.php"; ' + code]).toString().trim();
 
 const warte = ms => new Promise(r => setTimeout(r, ms));
+// Auf ein Ereignis warten statt eine feste Zeit: bis f() etwas Wahres liefert (darf async sein), höchstens maxMs.
+// Gibt das Ergebnis zurück – oder false, wenn die Zeit um ist (der Test prüft danach selbst und meldet den Fehler).
+async function bis(f, maxMs, schrittMs) {
+  const ende = Date.now() + maxMs;
+  for (;;) {
+    let v = false; try { v = await f(); } catch (e) { v = false; }
+    if (v) return v;
+    if (Date.now() >= ende) return false;
+    await warte(schrittMs || 500);
+  }
+}
+// Herzschlag des Weltrechners (weltrechner/herz.php, alle 5 s neu): pid, pulseOk …
+function herz() { try { const t = fs.readFileSync(W + '/weltrechner/herz.php', 'utf8'); return JSON.parse(t.slice(t.indexOf('{'))); } catch (e) { return null; } }
+// N gelungene Weltrechner-Pulse abwarten (höchstens maxMs). Startet er dazwischen neu, zählen die Pulse des neuen.
+async function pulse(n, maxMs) {
+  const h0 = herz(); let pid = h0 && h0.pid, basis = h0 ? h0.pulseOk || 0 : 0;
+  return bis(() => { const h = herz(); if (!h) return false; if (h.pid !== pid) { pid = h.pid; basis = 0; } return (h.pulseOk || 0) - basis >= n; }, maxMs || 120000);
+}
 
 // Ergebnisse: Zeilen „OK   …“ / „FEHLER …“, am Ende „Alles OK“ oder „FEHLER gefunden“
 const erg = [];
@@ -70,4 +88,4 @@ function schummelListe() {
   try { const t = fs.readFileSync(W + '/weltrechner/schummel.php', 'utf8'); return JSON.parse(t.slice(t.indexOf('{'))).liste || []; } catch (e) { return []; }
 }
 
-module.exports = { W, B, PW, sql, sqlRoh, esc, php, warte, erg, ok, ende, browser, NUR_UMGEBUNG, rein, willkommen, spielerId, geschenk, schummelListe };
+module.exports = { W, B, PW, sql, sqlRoh, esc, php, warte, bis, herz, pulse, erg, ok, ende, browser, NUR_UMGEBUNG, rein, willkommen, spielerId, geschenk, schummelListe };

@@ -749,7 +749,7 @@ function resolveScout(scout) {
     flashHint(islandTitle(target) + ' gespäht – Bericht im Kampflog.', 3000);   // (die Zahlen stehen im Kampflog, nicht im Hinweis)
 }
 
-function retreatPct(attack) { return Math.min(60, RETREAT_RECOVERY_PCT + (attack.hx ? attack.hx.flee : 0)); }   // a hero (Standhaft, Leichtfuß …): more of a beaten army gets away
+function retreatPct(attack) { return Math.min(60, RETREAT_RECOVERY_PCT + (attack.hx ? attack.hx.flee || 0 : 0)); }   // a hero (Standhaft, Leichtfuß …): more of a beaten army gets away (gemeinsam: rallyFlucht, jeder mit seinem)
 function retreatSecs(attack, from, to, botId) { return travelDurationSeconds(from, to, botId) / (1 + (attack.hx ? attack.hx.ret : 0) / 100); }   // Rückweg, Feldküche: faster home
 function retreatSurvivorsPreview(attack) { return Math.floor(attack.rawTroops * retreatPct(attack) / 100); }
 function resolveAttack(attack) {
@@ -769,6 +769,7 @@ function resolveAttack(attack) {
     const targetOwner = islandOwnerOf(target.id); // null | 'player' | a bot id
     if (targetOwner === 'player') { islandTroops[target.id] = (islandTroops[target.id] || 0) + attack.rawTroops; saveGame(); requestRender(); return; }   // inzwischen deine (ein anderer Angriff hat sie genommen): die Truppen bleiben dort
     const vk = targetOwner && typeof verstVorKampf === 'function' ? verstVorKampf(target.id) : null;   // Verstärkung (Botschaft) verteidigt mit
+    attack._vk = vk;                                                  // (bricht der Kampf mit einem Fehler ab: kampfAufraeumen trennt sie wieder)
     const originalEnemyTroops = effectiveTroops(target);
     const fullDefense = effectiveDefense(target), originalEnemyDefense = Math.round(fullDefense * (1 - heroDefCut(attack))), defParts = heroDefPart(defenseParts(target), attack, fullDefense);
     const atkParts = attackParts('player', attack.rawTroops, atkBonus, myTroops, attack.hero, attack), hosp = attack.hx ? Math.min(100, hospitalPct() + attack.hx.hosp) : undefined;
@@ -782,8 +783,10 @@ function resolveAttack(attack) {
     const remaining = won ? Math.max(0, attack.rawTroops - sentLoss) : 0;
 
     let defenderCasualties, enemyWounded = 0, killGold = 0;
-    if (targetOwner && targetOwner !== 'player')                    // the defending bot's "Verteidigung: Gold": every attacker its garrison really kills pays out
-        botCoins[targetOwner] = (botCoins[targetOwner] || 0) + Math.round((won ? sentLoss : attack.rawTroops - retreatSurvivorsPreview(attack)) * botGoldRate(targetOwner, 'defenseGold'));
+    const dTeile = typeof verstAnteile === 'function' ? verstAnteile(vk, targetOwner, originalEnemyTroops + fullDefense) : null;   // Verteidiger: Besitzer + Helfer nach Anteil
+    const dTeil = w => { const t = dTeile && dTeile.find(x => x[0] === w); return t ? t[1] : 1; }, atkWeg = won ? sentLoss : attack.rawTroops - retreatSurvivorsPreview(attack);
+    if (targetOwner && targetOwner !== 'player')                    // the defending bot's "Verteidigung: Gold": every attacker its garrison really kills pays out (nur sein Anteil – die Helfer: unten)
+        botCoins[targetOwner] = (botCoins[targetOwner] || 0) + Math.round(atkWeg * dTeil(targetOwner) * botGoldRate(targetOwner, 'defenseGold'));
     let retreatSurvivors = 0, woundedAdded = 0;
     const plunder = won && targetOwner && targetOwner !== 'player' ? plunderOf(targetOwner, capitalHolds) : null;   // Beute: ein kleiner Teil über seinem Burg-Schutz (nur an der Hauptstadt – Turm: nichts; Hauptstadt: alles)
     if (plunder) { plunderMove(targetOwner, null, plunder.loot, plunder.roh); inboxAdd({ src: 'fight', coins: plunder.loot }); if (plunder.roh && AUF) AUF.rohDazu('player', plunder.roh); }   // (das Gold wartet im Abholfach)
@@ -856,13 +859,15 @@ function resolveAttack(attack) {
             });
         }
     }
-    const vs = vk ? verstNachKampf(target.id, vk, won) : null, verstInfo = vs ? { verst: vs.helfer, eigen: vs.eigen } : {};   // jeder trägt seinen Anteil
+    const vs = vk ? verstNachKampf(target.id, vk, won) : null; delete attack._vk;   // jeder trägt seinen Anteil
+    if (vs) for (const h of vs.helfer) h.gold = payGold(h.w, atkWeg * dTeil(h.w) * defGoldRate(h.w));   // "Verteidigung: Gold" der Helfer: ihr Anteil mit IHREM Satz
+    const verstInfo = vs ? { verst: vs.helfer, eigen: vs.eigen } : {};
     const defWeg = vs ? vs.eigenWeg : defenderCasualties;
     if (targetOwner && targetOwner !== 'player') enemyWounded = botHospitalTake(targetOwner, defWeg);   // the bot's Krankenhaus takes part of ITS fallen
     // XP for troops that died in the clash either way: a win kills
     // the whole enemy force, a loss costs your whole attack force
     noteBattle(target.id, won ? originalEnemyTroops : attack.rawTroops - retreatSurvivors, won ? targetOwner : 'player');
-    midFight(target.id, 'player', won ? originalEnemyTroops : defenderCasualties, targetOwner, won ? sentLoss : attack.rawTroops - retreatSurvivors);   // Punkte für die Krieger-Woche
+    midFight(target.id, 'player', won ? originalEnemyTroops : defenderCasualties, targetOwner, won ? sentLoss : attack.rawTroops - retreatSurvivors, null, dTeile);   // Punkte für die Krieger-Woche (Verteidiger: nach Anteil)
     if (targetOwner && targetOwner !== 'player') botMoodAdd(targetOwner, won ? -.25 : .1);
     addXp(kampfEp(won ? totalStrength : defenderCasualties, playerLvl, totalStrength, myTroops));
     heroFought('player', attack.hx);                                     // every fight the hero leads fills his rage

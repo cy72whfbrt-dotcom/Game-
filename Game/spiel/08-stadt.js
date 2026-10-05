@@ -565,7 +565,8 @@ function heroBusy(who, id) {                        // one attack, army or field
     const mine = x => who === 'player' ? !x || x === 'player' : x === who;
     return pendingAttacks.some(a => mine(a.attackerBotId) && (heroIn(a.hero, a.hero2, id) || (a.hx && (a.hx.id2 === id || (a.hx.extra || []).some(e => e.id === id)))))
         || (typeof armies !== 'undefined' && armies.some(x => mine(x.who) && heroIn(x.hero, x.hero2, id))) || heroOnField(who, id)
-        || (typeof bund !== 'undefined' && bund && Array.isArray(bund.r) && bund.r.some(r => !r.startet && mine(r.by) && heroIn(r.held, r.held2, id)))   // führt eine Rally, die noch sammelt
+        || (typeof bund !== 'undefined' && bund && Array.isArray(bund.r) && bund.r.some(r => !r.startet && (mine(r.by) && heroIn(r.held, r.held2, id) || Array.isArray(r.j) && r.j.some(j => j && mine(j.w) && heroIn(j.held, j.held2, id)))))   // führt eine Rally, die noch sammelt – oder ist als Mitglied dabei
+        || pendingSends.some(s => s.rally && mine(s.senderBotId) && heroIn(s.held, s.held2, id))   // unterwegs zu einer Rally (auch als Nachzügler)
         || pendingAttacks.some(a => a.rally && Array.isArray(a.rally.an) && a.rally.an.some(x => x && x[4] && mine(x[0]) && (x[4].id === id || x[4].id2 === id || (x[4].extra || []).some(e => e.id === id))));   // kämpft noch in einem gemeinsamen Kampf mit
 }
 function heroPickBest(who, src, target, raw, main) {   // the free hero that does the most in this attack (the others use it, and so can you) · main: der Zweitheld dazu

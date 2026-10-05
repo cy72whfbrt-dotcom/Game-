@@ -1100,8 +1100,24 @@ function attackParts(who, raw, bonus, total, hero, a) {       // a = the attack:
     if (kv) out.push(['Forschung Angriff', kv, '+' + Math.round((kr - 1) * 100) + ' % Kampfkraft']);
     return out;
 }
-function heroDefCut(a) { return a && a.hx ? Math.min(90, a.hx.def || 0) / 100 : 0; }    // Rammbock, Sturmflut, Mauerbrecher: the target's defense counts less
-function heroDefPart(parts, a, full) { const cut = Math.round(full * heroDefCut(a)), hd = cut && heroById(a.hx.id); if (hd) parts.push(['Held ' + hd.name + (a.hx.id2 && heroById(a.hx.id2) ? ' & ' + heroById(a.hx.id2).name : ''), -cut, 'Verteidigung −' + Math.round(a.hx.def) + ' %']); return parts; }
+// Rammbock, Sturmflut, Mauerbrecher: the target's defense counts less. Gemeinsam (Rally): jeder Held nur nach dem Stärke-Anteil
+// SEINES Spielers (Anführer-Held × sein Anteil + Mitglieds-Helden × deren Anteil – Alexander: jeder Held zählt nur für seine Truppen)
+function heroDefCut(a) {
+    const c = h => h ? Math.min(90, h.def || 0) / 100 : 0;
+    if (!a || !a.rally || !Array.isArray(a.rally.an) || !a.rally.an.some(x => x && x[0] !== a.rally.by)) return c(a && a.hx);
+    const ganz = (a.rawTroops || 0) + (a.attackBonus || 0); if (!(ganz > 0)) return c(a.hx);
+    const by = a.rally.by, k = {}, hx = {}; let andere = 0;
+    for (const x of a.rally.an) if (x && x[0] !== by && x[3] != null) { const s = Math.max(0, x[2] + x[3]); k[x[0]] = (k[x[0]] || 0) + s; andere += s; if (x[4] && !hx[x[0]]) hx[x[0]] = x[4]; }
+    let cut = c(a.hx) * Math.max(0, ganz - andere) / ganz;
+    for (const w in k) cut += c(hx[w]) * k[w] / ganz;
+    return Math.min(.9, cut);
+}
+function heroDefPart(parts, a, full) {
+    const cut = Math.round(full * heroDefCut(a)); if (!cut) return parts;
+    const hd = a.hx && heroById(a.hx.id), mit = a.rally && Array.isArray(a.rally.an) && a.rally.an.some(x => x && x[0] !== a.rally.by && x[4]);
+    parts.push([hd ? 'Held ' + hd.name + (a.hx.id2 && heroById(a.hx.id2) ? ' & ' + heroById(a.hx.id2).name : '') + (mit ? ' + Helden der Verbündeten' : '') : 'Helden der Verbündeten', -cut,
+        'Verteidigung −' + Math.round(heroDefCut(a) * 100) + ' %' + (mit ? ' (je Held nach Anteil seines Spielers)' : '')]); return parts;
+}
 function attackFields(who, src, target, raw, hx) {      // everything an attack takes along at launch (skills, gear, title, hero) - for you and for everyone else
     const bot = who !== 'player', sk = bot ? Math.round(raw * botMults(who).attackPct / 100) : attackFlatBonus(raw);
     const hb = hx ? Math.round(raw * hx.atk / 100) + heroGefOf(hx, raw) : 0;   // (der Helden-Anteil – fällt weg, wenn der Angreifer im Kampf schon 2 Helden hat)
@@ -1967,7 +1983,7 @@ function resolveScout(scout) {
     flashHint(islandTitle(target) + ' gespäht – Bericht im Kampflog.', 3000);   // (die Zahlen stehen im Kampflog, nicht im Hinweis)
 }
 
-function retreatPct(attack) { return Math.min(60, RETREAT_RECOVERY_PCT + (attack.hx ? attack.hx.flee : 0)); }   // a hero (Standhaft, Leichtfuß …): more of a beaten army gets away
+function retreatPct(attack) { return Math.min(60, RETREAT_RECOVERY_PCT + (attack.hx ? attack.hx.flee || 0 : 0)); }   // a hero (Standhaft, Leichtfuß …): more of a beaten army gets away (gemeinsam: rallyFlucht, jeder mit seinem)
 function retreatSecs(attack, from, to, botId) { return travelDurationSeconds(from, to, botId) / (1 + (attack.hx ? attack.hx.ret : 0) / 100); }   // Rückweg, Feldküche: faster home
 function retreatSurvivorsPreview(attack) { return Math.floor(attack.rawTroops * retreatPct(attack) / 100); }
 function resolveAttack(attack) {
@@ -1987,6 +2003,7 @@ function resolveAttack(attack) {
     const targetOwner = islandOwnerOf(target.id); // null | 'player' | a bot id
     if (targetOwner === 'player') { islandTroops[target.id] = (islandTroops[target.id] || 0) + attack.rawTroops; saveGame(); requestRender(); return; }   // inzwischen deine (ein anderer Angriff hat sie genommen): die Truppen bleiben dort
     const vk = targetOwner && typeof verstVorKampf === 'function' ? verstVorKampf(target.id) : null;   // Verstärkung (Botschaft) verteidigt mit
+    attack._vk = vk;                                                  // (bricht der Kampf mit einem Fehler ab: kampfAufraeumen trennt sie wieder)
     const originalEnemyTroops = effectiveTroops(target);
     const fullDefense = effectiveDefense(target), originalEnemyDefense = Math.round(fullDefense * (1 - heroDefCut(attack))), defParts = heroDefPart(defenseParts(target), attack, fullDefense);
     const atkParts = attackParts('player', attack.rawTroops, atkBonus, myTroops, attack.hero, attack), hosp = attack.hx ? Math.min(100, hospitalPct() + attack.hx.hosp) : undefined;
@@ -2000,8 +2017,10 @@ function resolveAttack(attack) {
     const remaining = won ? Math.max(0, attack.rawTroops - sentLoss) : 0;
 
     let defenderCasualties, enemyWounded = 0, killGold = 0;
-    if (targetOwner && targetOwner !== 'player')                    // the defending bot's "Verteidigung: Gold": every attacker its garrison really kills pays out
-        botCoins[targetOwner] = (botCoins[targetOwner] || 0) + Math.round((won ? sentLoss : attack.rawTroops - retreatSurvivorsPreview(attack)) * botGoldRate(targetOwner, 'defenseGold'));
+    const dTeile = typeof verstAnteile === 'function' ? verstAnteile(vk, targetOwner, originalEnemyTroops + fullDefense) : null;   // Verteidiger: Besitzer + Helfer nach Anteil
+    const dTeil = w => { const t = dTeile && dTeile.find(x => x[0] === w); return t ? t[1] : 1; }, atkWeg = won ? sentLoss : attack.rawTroops - retreatSurvivorsPreview(attack);
+    if (targetOwner && targetOwner !== 'player')                    // the defending bot's "Verteidigung: Gold": every attacker its garrison really kills pays out (nur sein Anteil – die Helfer: unten)
+        botCoins[targetOwner] = (botCoins[targetOwner] || 0) + Math.round(atkWeg * dTeil(targetOwner) * botGoldRate(targetOwner, 'defenseGold'));
     let retreatSurvivors = 0, woundedAdded = 0;
     const plunder = won && targetOwner && targetOwner !== 'player' ? plunderOf(targetOwner, capitalHolds) : null;   // Beute: ein kleiner Teil über seinem Burg-Schutz (nur an der Hauptstadt – Turm: nichts; Hauptstadt: alles)
     if (plunder) { plunderMove(targetOwner, null, plunder.loot, plunder.roh); inboxAdd({ src: 'fight', coins: plunder.loot }); if (plunder.roh && AUF) AUF.rohDazu('player', plunder.roh); }   // (das Gold wartet im Abholfach)
@@ -2074,13 +2093,15 @@ function resolveAttack(attack) {
             });
         }
     }
-    const vs = vk ? verstNachKampf(target.id, vk, won) : null, verstInfo = vs ? { verst: vs.helfer, eigen: vs.eigen } : {};   // jeder trägt seinen Anteil
+    const vs = vk ? verstNachKampf(target.id, vk, won) : null; delete attack._vk;   // jeder trägt seinen Anteil
+    if (vs) for (const h of vs.helfer) h.gold = payGold(h.w, atkWeg * dTeil(h.w) * defGoldRate(h.w));   // "Verteidigung: Gold" der Helfer: ihr Anteil mit IHREM Satz
+    const verstInfo = vs ? { verst: vs.helfer, eigen: vs.eigen } : {};
     const defWeg = vs ? vs.eigenWeg : defenderCasualties;
     if (targetOwner && targetOwner !== 'player') enemyWounded = botHospitalTake(targetOwner, defWeg);   // the bot's Krankenhaus takes part of ITS fallen
     // XP for troops that died in the clash either way: a win kills
     // the whole enemy force, a loss costs your whole attack force
     noteBattle(target.id, won ? originalEnemyTroops : attack.rawTroops - retreatSurvivors, won ? targetOwner : 'player');
-    midFight(target.id, 'player', won ? originalEnemyTroops : defenderCasualties, targetOwner, won ? sentLoss : attack.rawTroops - retreatSurvivors);   // Punkte für die Krieger-Woche
+    midFight(target.id, 'player', won ? originalEnemyTroops : defenderCasualties, targetOwner, won ? sentLoss : attack.rawTroops - retreatSurvivors, null, dTeile);   // Punkte für die Krieger-Woche (Verteidiger: nach Anteil)
     if (targetOwner && targetOwner !== 'player') botMoodAdd(targetOwner, won ? -.25 : .1);
     addXp(kampfEp(won ? totalStrength : defenderCasualties, playerLvl, totalStrength, myTroops));
     heroFought('player', attack.hx);                                     // every fight the hero leads fills his rage
@@ -4489,7 +4510,12 @@ setInterval(() => {
                     else fight.rally.zus = 1;
                 }
                 const wer = a.attackerBotId || 'player';               // höchstens 2 Helden je Angreifer (Alexander 4.10.): hat er schon Helden im Kampf, zählen die dieser Welle nicht
-                if (!fight.heldVon) fight.heldVon = fight.hx ? { [fight.attackerBotId || 'player']: 1 } : {};
+                if (!fight.heldVon) { fight.heldVon = fight.hx ? { [fight.attackerBotId || 'player']: 1 } : {};
+                    if (fight.rally) for (const x of fight.rally.an) if (x && x[4]) fight.heldVon[x[0]] = 1; }   // (auch die Helden der Rally-Mitglieder)
+                if (a.rally && anderer) for (const x of a.rally.an) if (x[0] !== a.rally.by && x[4]) {   // ein Mitglied der neuen Rally hat schon Helden im Kampf: seine zählen nicht
+                    if (fight.heldVon[x[0]]) { heroWutZurueck(x[0], x[4]); const h = x[7] || 0; x[3] = (x[3] || 0) - h; a.attackBonus = (a.attackBonus || 0) - h;
+                        x[5] = Math.max(0, (x[5] || 0) - (x[4].loss || 0)); x[4] = null; x[7] = 0; }
+                    else fight.heldVon[x[0]] = 1; }
                 let ohneHeld = false;
                 if (a.hx && fight.heldVon[wer]) { ohneHeld = true; heroWutZurueck(wer, a.hx);   // (seine Helden kämpfen nicht mit – die Wut bleibt)
                     a.attackBonus = Math.max(0, (a.attackBonus || 0) - (a.heldBonus !== undefined ? a.heldBonus : (a.attackBonus || 0) - (a.skillBonus || 0)));
@@ -4511,8 +4537,8 @@ setInterval(() => {
                     fight.rally.an.push(...(a.rally ? a.rally.an : [[a.attackerBotId, a.sourceId, a.rawTroops, anderer ? Math.round(a.attackBonus || 0) : undefined, anderer && a.hx && !ohneHeld ? a.hx : undefined, anderer ? a.shieldLossReductionPct : undefined]]));
                 fight.rawTroops += a.rawTroops; fight.attackBonus = (fight.attackBonus || 0) + (a.attackBonus || 0);
                 if (fight.skillBonus !== undefined || a.skillBonus !== undefined) fight.skillBonus = (fight.skillBonus || 0) + (a.skillBonus !== undefined ? a.skillBonus : a.attackBonus || 0); fight.waves = (fight.waves || 1) + (a.waves || 1);
-                if (a.hx && anderer && !ohneHeld) heroFought(a.attackerBotId, a.hx);              // (ein Held eines Mitspielers führt nur seinen eigenen Kampf – er bekommt seine Wut)
-                else if (a.hx && !anderer && !ohneHeld) { if (!fight.hx) { fight.hx = a.hx; fight.hero = a.hero; fight.hero2 = a.hero2 || null; } }   // höchstens Haupt- + Zweitheld: die Helden der ersten Welle führen den Kampf
+                // (ein Held eines Mitspielers führt nur seinen eigenen Teil – seine Wut füllt sich am Kampfende, siehe resolveBotAttack: rally.an[4])
+                if (a.hx && !anderer && !ohneHeld) { if (!fight.hx) { fight.hx = a.hx; fight.hero = a.hero; fight.hero2 = a.hero2 || null; } }   // höchstens Haupt- + Zweitheld: die Helden der ersten Welle führen den Kampf
                 if (!anderer) { fight.shieldLossReductionPct = Math.max(fight.shieldLossReductionPct || 0, a.shieldLossReductionPct || 0);   // (sein eigener Schild/Gold-Bonus gilt nicht für die anderen)
                     fight.rewardGoldRate = Math.max(fight.rewardGoldRate || 0, a.rewardGoldRate || 0); }
                 fight.fightEndsAt = Math.max(fight.fightEndsAt, now + 2500);          // the fresh troops get to fight too
@@ -4546,7 +4572,7 @@ setInterval(() => {
             for (const attack of dueAttacks) try {              // (ein Fehler in einem Kampf darf die anderen nicht verschlucken)
                 if (attack.attackerBotId) resolveBotAttack(attack);
                 else resolveAttack(attack);
-            } catch (e) { console.warn('FEHLER Kampf', attack.id, e); }
+            } catch (e) { console.warn('FEHLER Kampf', attack.id, e); kampfAufraeumen(attack); }
         }
     }
     if (pendingSends.length > 0 && rechnet()) {
@@ -4581,6 +4607,15 @@ setInterval(() => {
     if (!isPanelOpen(battleLogPopup)) renderActiveMarches();
     updateHudPlayer();
 }, 1000);
+
+// Ein Kampf ist mit einem Fehler abgebrochen: die Verstärkung wieder trennen (sonst doppelt in der Besatzung und verstDefPlus
+// hängt), die Truppen einer Rally gehen heim (sonst wären sie weg). attack._vk / _heim setzt der Kampf selbst.
+function kampfAufraeumen(a) {
+    try { if (a._vk && typeof verstNachKampf === 'function') verstNachKampf(a.targetId, a._vk, false); } catch (e) { console.warn('FEHLER Aufräumen', e); }
+    delete a._vk;
+    try { if (a.rally && !a._heim && typeof bundRallyHeim === 'function') bundRallyHeim(a, a.rawTroops, a.targetId); } catch (e) { console.warn('FEHLER Aufräumen', e); }
+    try { saveGame(); saveProgression(); } catch (e) {}
+}
 
 // Combined bonus percentage from the item worn in a slot + a matching
 // skill (skillKey may be null when no skill covers that stat)
@@ -5824,6 +5859,7 @@ function renderCombatLog() {
         // numbers sit right next to each other and it's obvious at a
         // glance who had the advantage (that side's sum is green).
         const atkTotal = entry.myTroops + entry.attackBuff;
+        const ich = entry.meine && entry.meine.fallen !== undefined && (entry.rolle === 'mit' || Array.isArray(entry.angreifer)) ? entry.meine : null;   // gemeinsam: deine eigenen Zahlen (geflohen, übrig, verwundet, gefallen)
         const defTotal = entry.enemyTroops + entry.enemyDefense + entry.defenseBuff;
         const details = '<details><summary>Kampfdetails</summary>' +
             '<div class="logCompare">' +
@@ -5857,16 +5893,16 @@ function renderCombatLog() {
                 '</div>' +
             '</div>' +
             (entry.killGold ? '<div class="logGold">Angriff: Gold +' + fmtBig(entry.killGold) + ' Münzen für getötete Truppen</div>' : entry.killGold === undefined && entry.attackGoldRate ? '<div class="logGold">Angriff: Gold +' + fmt1(entry.attackGoldRate) + ' pro getöteter Truppe</div>' : '') +
-            (!entry.won && entry.retreatSurvivors ? '<div class="logRetreat">' + fmtNum(entry.retreatSurvivors) + ' Truppen konnten fliehen und kehren zurück</div>' : '') +
-            (entry.wounded ? '<div class="logRetreat logWounded">' + fmtNum(entry.wounded) + ' Verwundete gehen ins Krankenhaus – heile sie in der Stadt</div>' : '') +
+            (!entry.won && (ich ? ich.fled : entry.retreatSurvivors) ? '<div class="logRetreat">' + fmtNum(ich ? ich.fled : entry.retreatSurvivors) + (ich ? ' deiner' : '') + ' Truppen konnten fliehen und kehren zurück</div>' : '') +
+            ((ich ? ich.wounded : entry.wounded) ? '<div class="logRetreat logWounded">' + fmtNum(ich ? ich.wounded : entry.wounded) + (ich ? ' deiner' : '') + ' Verwundete gehen ins Krankenhaus – heile sie in der Stadt</div>' : '') +
             (entry.enemyWounded ? '<div class="logRetreat logWounded">' + escapeHtml(entry.defenderName || 'Der Gegner') + ' bringt ' + fmtNum(entry.enemyWounded) + ' Verwundete ins Krankenhaus</div>' : '') +
             '</details>';
-        const meine = entry.meine || {};
+        const meine = entry.meine || {}, ichUeb = ich && ich.rest !== undefined;   // (ältere Berichte: ohne rest/fled → die Zahlen des ganzen Kampfs)
         return karte(entry, entry.won ? 'win' : 'loss', entry.won ? 'level' : 'losses', [entry.won ? 'win' : 'loss', entry.capitalHolds ? 'Geplündert' : entry.won ? 'Sieg' : 'Niederlage'], T(entry.targetId),
             (entry.rolle === 'mit' ? 'Rally mit ' + escapeHtml(entry.fuehrer || '?') + ' · ' : angreiferZeilen(entry, gearHtml) ? entry.angreifer.length + ' Angreifer · ' : '') + 'von ' + T(entry.sourceId),
             logBalance(atkTotal, defTotal, icon('attack') + 'Du ' + fmtM(atkTotal), fmtM(defTotal) + ' ' + escapeHtml(entry.defenderName || 'Abwehr') + icon('defense')),
-            [...(entry.rolle === 'mit' ? verlustChips(meine.fallen, meine.wounded) : verlustChips(entry.attackerCasualties, entry.wounded)),
-                entry.won ? ['troops', chipN(entry.remaining) + ' übrig'] : entry.retreatSurvivors > 0 && ['recall', chipN(entry.retreatSurvivors) + ' fliehen heim'],
+            [...(entry.rolle === 'mit' || ich ? verlustChips(meine.fallen, meine.wounded) : verlustChips(entry.attackerCasualties, entry.wounded)),
+                entry.won ? ['troops', chipN(ichUeb ? ich.rest : entry.remaining) + ' übrig'] : (ichUeb ? ich.fled : entry.retreatSurvivors) > 0 && ['recall', chipN(ichUeb ? ich.fled : entry.retreatSurvivors) + ' fliehen heim'],
                 ...beuteChips(entry, true), entry.killGold > 0 && ['coin', '+' + chipN(entry.killGold) + ' Gold für Kills', 'gut']], details);
     })(entry); } catch (err) { console.warn('Kampfbericht', err); return logRowHtml('loss', 'info', 'Kampfbericht', 'Dieser Bericht kann nicht angezeigt werden.', ''); }
     }).join('');
@@ -5890,7 +5926,7 @@ const kampflogUmbauen = (function () {
     const textOf = n => (n && n.firstElementChild ? n.firstElementChild.textContent : '').trim();
 
     // ein Fenster auf den immer gleichen Aufbau bringen
-    function normal(box, angr, roh, schutz) {
+    function normal(box, angr, roh, schutz, flucht) {                    // flucht: die Geflohenen DIESES Spielers (sonst 0)
         const lines = () => [...box.querySelectorAll(':scope > .logLine, :scope > .logSum, :scope > .logCasualty')];
         const truppen = lines().find(l => textOf(l).startsWith('Truppen'));
         if (truppen) truppen.firstElementChild.firstChild.textContent = 'Truppen';
@@ -5900,7 +5936,9 @@ const kampflogUmbauen = (function () {
         if (!lines().some(l => textOf(l).startsWith('Grundverteidigung')) && sum) sum.insertAdjacentHTML('beforebegin', zl('Grundverteidigung', '0', ' kl-null', 'zählt nur beim Besitzer der Basis'));
         const cas = lines().filter(l => l.classList.contains('logCasualty'));
         if (!cas.length && sum) sum.insertAdjacentHTML('afterend', '<div class="logCasualty kl-null"><span>Gefallen</span><span>–</span></div>');   // (steht nicht im Bericht)
-        if (!lines().some(l => textOf(l).startsWith('Geflohen'))) { const c = lines().filter(l => l.classList.contains('logCasualty')).pop(); (c || sum).insertAdjacentHTML('afterend', zl('Geflohen', '0')); }
+        const gefl = lines().find(l => textOf(l).startsWith('Geflohen'));
+        if (!gefl) { const c = lines().filter(l => l.classList.contains('logCasualty')).pop(); (c || sum).insertAdjacentHTML('afterend', zl('Geflohen', fmt(flucht || 0))); }
+        else if (flucht !== undefined) gefl.lastElementChild.textContent = fmt(flucht);   // (nur seine – nicht die der ganzen Rally)
         let gear = box.querySelector(':scope > .logGear');
         if (!gear) { box.insertAdjacentHTML('beforeend', leerGear('', angr)); gear = box.querySelector(':scope > .logGear'); }
         let hs = gear.querySelector('.logGearHeroes');
@@ -5930,9 +5968,10 @@ const kampflogUmbauen = (function () {
         side.replaceWith(gruppe);
         const spieler = Array.isArray(liste) && liste.length ? liste : null;
         const sumEl = side.querySelector(':scope > .logSum');
+        const fluchtAlle = !angr || sieg ? 0 : e.type === 'attack' ? e.retreatSurvivors || 0 : e.atkFled || 0;   // (Geflohene des Angreifers – verloren)
         if (!spieler) {                                                     // nur ein Spieler auf dieser Seite
             const roh = angr ? (sieg ? beute : {}) : rohTeil(beute, 1, -1);
-            gruppe.appendChild(normal(side, angr, roh, angr ? 0 : schutz));
+            gruppe.appendChild(normal(side, angr, roh, angr ? 0 : schutz, fluchtAlle));
             return;
         }
         // Zeilen der einzelnen Spieler (angreiferZeilen / verstZeilen) einsammeln und aus dem Fenster nehmen
@@ -5955,7 +5994,7 @@ const kampflogUmbauen = (function () {
             const w = side.querySelector(':scope > .logCasualty.wounded'); if (w) { if (erster.wounded) w.lastElementChild.textContent = fmt(erster.wounded); else w.remove(); } }   // (nur seine – nicht die der ganzen Rally)
         if (!angr && e.type === 'attack') { const weg = andere.reduce((x, p) => x + (p.fallen || 0) + (p.wounded || 0), 0), c = side.querySelector(':scope > .logCasualty:not(.wounded)');   // Besitzer: ohne die Verluste der Helfer (die stehen in ihren Fenstern)
             if (c) c.lastElementChild.textContent = '−' + fmt(Math.max(0, (e.defenderCasualties || 0) - (e.enemyWounded || 0) - weg)); }
-        gruppe.appendChild(normal(side, angr, angr ? (sieg ? rohTeil(beute, (erster.n || 0) / Math.max(1, alleT), 1) : {}) : rohTeil(beute, 1, -1), angr ? 0 : schutz));
+        gruppe.appendChild(normal(side, angr, angr ? (sieg ? rohTeil(beute, (erster.n || 0) / Math.max(1, alleT), 1) : {}) : rohTeil(beute, 1, -1), angr ? 0 : schutz, angr ? (erster.fled !== undefined ? erster.fled : fluchtAlle) : 0));
         // weitere Fenster: Rally-Mitglieder / Verstärkung
         for (const p of andere) {
             const b = el('<div class="logSide"><div class="logSideLabel">' + (angr ? 'Angreifer · ' : 'Verteidiger · ') + escapeHtml(p.name || '?') + ' <small style="text-transform:none;letter-spacing:0">(' + (angr ? 'Verbündeter' : 'Verstärkung') + ')</small></div>' +
@@ -5964,7 +6003,7 @@ const kampflogUmbauen = (function () {
                 '<div class="logCasualty"><span>Gefallen</span><span>−' + fmt(p.fallen || 0) + '</span></div>' +   // (fallen enthält die Verwundeten schon nicht)
                 (p.wounded ? '<div class="logCasualty wounded"><span>Verwundet</span><span>' + fmt(p.wounded) + '</span></div>' : '') + '</div>');
             const g = gearVon[p.name]; if (g) b.appendChild(g);
-            gruppe.appendChild(normal(b, angr, angr && sieg ? rohTeil(beute, (p.n || 0) / Math.max(1, alleT), 1) : {}, 0));
+            gruppe.appendChild(normal(b, angr, angr && sieg ? rohTeil(beute, (p.n || 0) / Math.max(1, alleT), 1) : {}, 0, angr ? p.fled || 0 : 0));
         }
     }
 
@@ -6702,8 +6741,10 @@ document.getElementById('throneShop').addEventListener('click', e => { const b =
 // Punkte für Kämpfe gibt es nur noch im Wochen-Event (Krieger-Woche): 1 je 1.000 besiegte, höchstens 30 auf einmal, im Schnitt 10 pro Minute.
 const WO_KILL_PER = 1000, WO_KILL_MAX = 30, WO_KILL_MIN = 10, WO_TOP = 10;
 const midZoneIds = new Set(islands.filter(i => { const lm = landmasses[i.landmassId]; return i.type === 'megaTemple' || i.guardian || i.type === 'gate' && (i.gateKind === 'throne' || i.gateKind === 'guardian') || !!lm && (lm.tier === 'throne' || lm.tier === 'guardian'); }).map(i => i.id));
-function midFight(tid, aWho, aKills, dWho, dKills) {     // nach jedem Kampf um eine Basis: Punkte für die Krieger-Woche (überall)
-    evPunkte('krieg', aWho, aKills / WO_KILL_PER); evPunkte('krieg', dWho, dKills / WO_KILL_PER);
+function midFight(tid, aWho, aKills, dWho, dKills, aTeile, dTeile) {     // nach jedem Kampf um eine Basis: Punkte für die Krieger-Woche (überall)
+    // gemeinsam (Rally, Verstärkung): jeder nach seinem Anteil – aTeile/dTeile = [[wer, Anteil 0…1], …] (kampfTeile, verstAnteile)
+    const geben = (wer, n, teile) => { if (Array.isArray(teile) && teile.length) { for (const [w, f] of teile) if (f > 0) evPunkte('krieg', w, n * f / WO_KILL_PER); } else evPunkte('krieg', wer, n / WO_KILL_PER); };
+    geben(aWho, aKills, aTeile); geben(dWho, dKills, dTeile);
 }
 // ===== KOPFGELD AUF DEN HERRSCHER: while someone holds the throne a bounty grows (gems + coins, every 3 min with the Thron-Punkte).
 // Whoever takes the Mega-Tempel from him collects all of it.
@@ -8546,7 +8587,8 @@ function heroBusy(who, id) {                        // one attack, army or field
     const mine = x => who === 'player' ? !x || x === 'player' : x === who;
     return pendingAttacks.some(a => mine(a.attackerBotId) && (heroIn(a.hero, a.hero2, id) || (a.hx && (a.hx.id2 === id || (a.hx.extra || []).some(e => e.id === id)))))
         || (typeof armies !== 'undefined' && armies.some(x => mine(x.who) && heroIn(x.hero, x.hero2, id))) || heroOnField(who, id)
-        || (typeof bund !== 'undefined' && bund && Array.isArray(bund.r) && bund.r.some(r => !r.startet && mine(r.by) && heroIn(r.held, r.held2, id)))   // führt eine Rally, die noch sammelt
+        || (typeof bund !== 'undefined' && bund && Array.isArray(bund.r) && bund.r.some(r => !r.startet && (mine(r.by) && heroIn(r.held, r.held2, id) || Array.isArray(r.j) && r.j.some(j => j && mine(j.w) && heroIn(j.held, j.held2, id)))))   // führt eine Rally, die noch sammelt – oder ist als Mitglied dabei
+        || pendingSends.some(s => s.rally && mine(s.senderBotId) && heroIn(s.held, s.held2, id))   // unterwegs zu einer Rally (auch als Nachzügler)
         || pendingAttacks.some(a => a.rally && Array.isArray(a.rally.an) && a.rally.an.some(x => x && x[4] && mine(x[0]) && (x[4].id === id || x[4].id2 === id || (x[4].extra || []).some(e => e.id === id))));   // kämpft noch in einem gemeinsamen Kampf mit
 }
 function heroPickBest(who, src, target, raw, main) {   // the free hero that does the most in this attack (the others use it, and so can you) · main: der Zweitheld dazu
@@ -10555,12 +10597,16 @@ function invPunkteDazu(I, who, n) { if (!who || !(n > 0) || (who !== 'player' &&
 function invAnkunft(I, a, now) {                     // die Armee erreicht ihr Ziel: dieselbe Rechnung wie jeder Angriff (Truppen + Verteidigung)
     const isl = islandById[a.tid], o = isl && islandOwnerOf(a.tid); if (!o || invGeschuetzt(o, now)) return;
     const vk = typeof verstVorKampf === 'function' ? verstVorKampf(a.tid) : null;   // Verstärkung (Botschaft) verteidigt mit
-    const en = effectiveTroops(isl), def = effectiveDefense(isl), durch = a.t > en + def;
-    const verlustAlle = Math.min(en, Math.round(durch ? en * .6 : a.t * .35));
-    islandTroops[a.tid] = Math.max(0, (islandTroops[a.tid] || 0) - verlustAlle);
-    const vs = vk ? verstNachKampf(a.tid, vk, false) : null, verlust = vs ? vs.eigenWeg : verlustAlle, wounded = verlust > 0 ? fieldHurt(o, verlust, null) : 0;   // (jeder seinen Anteil)
+    let en = 0, def = 0, durch = false, verlustAlle = 0, vs = null;
+    try {                                                                  // (ein Fehler dazwischen: die Verstärkung wird trotzdem wieder getrennt)
+        en = effectiveTroops(isl); def = effectiveDefense(isl); durch = a.t > en + def;
+        verlustAlle = Math.min(en, Math.round(durch ? en * .6 : a.t * .35));
+        islandTroops[a.tid] = Math.max(0, (islandTroops[a.tid] || 0) - verlustAlle);
+    } finally { vs = vk ? verstNachKampf(a.tid, vk, false) : null; }
+    const verlust = vs ? vs.eigenWeg : verlustAlle, wounded = verlust > 0 ? fieldHurt(o, verlust, null) : 0;   // (jeder seinen Anteil)
     if (vs) for (const h of vs.helfer) if (h.fallen + h.wounded > 0) bundMelden(h.w, 'Barbaren-Invasion bei ' + islandTitle(isl) + ': deine Verstärkung verlor ' + fmtCompact(h.fallen + h.wounded) + (h.wounded ? ' (' + fmtCompact(h.wounded) + ' ins Krankenhaus)' : '') + '.');
-    if (!durch) { invPunkteDazu(I, o, INV_PTS_WEHR); I.wehr[o] = (I.wehr[o] || 0) + 1; evPunkte('krieg', o, a.t / WO_KILL_PER); }
+    if (!durch) { invPunkteDazu(I, o, INV_PTS_WEHR); I.wehr[o] = (I.wehr[o] || 0) + 1;
+        for (const [w, f] of (typeof verstAnteile === 'function' && verstAnteile(vk, o, en + def)) || [[o, 1]]) if (f > 0) evPunkte('krieg', w, a.t * f / WO_KILL_PER); }   // (Wochen-Punkte: Besitzer + Helfer nach Anteil)
     const titel = islandTitle(isl);
     evBericht(o, { type: 'ev', ic: 'defense', gut: !durch, badge: durch ? 'Überrannt' : 'Abgewehrt', title: 'Barbaren-Invasion · ' + titel,
         txt: fmtCompact(a.t) + ' Barbaren gegen ' + fmtCompact(en + def) + ' · ' + fmtCompact(verlust) + ' Truppen verloren' + (wounded ? ' (' + fmtCompact(wounded) + ' ins Krankenhaus)' : '') + (durch ? '' : ' · +' + INV_PTS_WEHR + ' Punkte'), at: now },
@@ -13269,6 +13315,16 @@ if (window.WELT) {
     }
     // (jeden Puls) Nebel, Abgelehntes nochmal prüfen, jede Minute die Truppen-Summen für die Rangliste
     let hbErst = true;
+    // dasselbe (alte) Profil nochmal anwenden – nur fürs Hauptbuch. Was die Welt seitdem gerechnet hat (Rohstoffe, Verwundete,
+    // Erfolge, Helden-Splitter: Ertrag, Beute, Kämpfe), bleibt: vorher sprang es auf die Profil-Werte zurück, und welt.js schickte
+    // den Unterschied als Nachricht (Beute kam zurück – unbegrenzt Rohstoffe über Plündern; ehrlicher Ertrag ging verloren)
+    function hbNochmal(who, b, p) {
+        const welt = { res: b.res, wounded: b.wounded, stats: b.stats }, sh = {};
+        if (b.hs) for (const h in b.hs) if (b.hs[h] && b.hs[h].sh !== undefined) sh[h] = b.hs[h].sh;
+        for (const k in welt) if (welt[k] === undefined) delete welt[k];
+        Object.assign(b, WELT.profilZuBot(p, b, who), welt);
+        if (b.hs) for (const h in sh) if (b.hs[h]) b.hs[h].sh = sh[h];
+    }
     function hbRunde(now) {
         if (!AUF) return;                              // (der allererste Puls kommt, bevor aufbau.js geladen ist)
         const bs = loadBotState();
@@ -13279,7 +13335,7 @@ if (window.WELT) {
         for (const who in WELT.menschen) {
             const b = bs[who], hb = b && b.hb && b.hb.v === HB_V ? b.hb : null; if (!hb || !botById[who]) continue;
             try { nebelRunde(who, hb, now); armeeSichtRunde(who, hb); } catch (e) { console.warn('Nebel:', e); }
-            const mm = wm(who); if (mm.hbOffen && now - nn(mm.hbPrT) > 10000) { const p = profilVon(who); if (p) Object.assign(b, WELT.profilZuBot(p, b, who)); else mm.hbOffen = 0; }   // (Münzen/Gems kommen evtl. später)
+            const mm = wm(who); if (mm.hbOffen && now - nn(mm.hbPrT) > 10000) { const p = profilVon(who); if (p) hbNochmal(who, b, p); else mm.hbOffen = 0; }   // (Münzen/Gems kommen evtl. später)
         }
         if (now - hbTtT > 60000) {                     // Truppen-Summe je Herrscher (Spieler bekommen fremde Truppen nur, wo sie hinsehen dürfen)
             if (Math.floor(now / 600000) !== Math.floor(hbTtT / 600000)) for (const who in nbMem) { if (nbMem[who].gesendet) WELT.sichtRaus[parseInt(who.slice(1), 10)] = nbMem[who].gesendet; nbMem[who].armGesendet = null; }   // (alle 10 Min. die Sicht nochmal – falls ein Puls sie verloren hat; der Server ändert nur Neues)

@@ -7,7 +7,7 @@
 //   - 5 Abstürze in 5 Minuten → keine Neustarts mehr, WARTUNG an (niemand kommt rein, die Welt steht still, nichts geht
 //     verloren) und Alarm auf der Admin-Seite. Wartung und Sperre hebt nur Alexander auf (admin.php).
 //   - Wartung (Hochladen) → nicht starten; das zählt nie als Absturz
-//   - jede Stunde eine Sicherung der Welt (die letzten 48 bleiben)
+//   - jede Stunde eine Sicherung der Welt (die letzten 48 bleiben; nur im Cronjob, am Ende der Runde)
 // Grenzen: höchstens 600 MB Speicher (start.js prüft selbst, Node bekommt 450 MB Heap, räumt vor der Grenze erst auf), mittlere Priorität (nice 10 – mit nice 19 kam er bei Last auf dem Office-Server 20–40 s nicht dran, 5.10.).
 // Alle Dateien hier heißen .php und beginnen mit einer Sperre – im Browser sieht man nie etwas davon.
 require_once __DIR__ . '/../server.php';
@@ -140,15 +140,6 @@ function wachhund_runde($quelle = 'cron') {
     try {
         $z = wr_zustand(); $h = wr_herz(); $jetzt = time();
         $z['geprueft'] = $jetzt;
-        // jede Stunde eine Sicherung
-        // (höchstens ein Versuch pro Stunde – auch wenn er scheitert, z. B. weil der jetzige Stand unvollständig ist: sonst jede Minute
-        //  die ganze Welt unter der Welt-Sperre lesen)
-        if ($jetzt - (int)($z['sicherungVersuch'] ?? 0) >= 3600) {
-            try { if ($jetzt - lager()->letzte_sicherung_zeit() >= 3600) { $z['sicherungVersuch'] = $jetzt; wr_schreiben('zustand.php', $z);
-                if (lager()->sicherung_anlegen()) wr_log('Sicherung der Welt angelegt'); else wr_log('Sicherung NICHT angelegt: der jetzige Stand ist unvollständig'); } }
-            catch (Throwable $e) { wr_log('Sicherung fehlgeschlagen: ' . $e->getMessage()); }
-        }
-
         $pid = $h ? (int)($h['pid'] ?? 0) : 0;
         $laeuft = $pid && wr_laeuft($pid);
         if ($laeuft && $h && empty($h['ende']) && $jetzt - (int)($h['zeit'] / 1000) <= wr_herz_alt($h)) {
@@ -198,7 +189,24 @@ function wachhund_runde($quelle = 'cron') {
         try { $i = lager()->welt_info(); if ((int)$i['leiter_id'] === 0) lager()->leiter_setzen(0, '', 0); } catch (Throwable $e) {}   // keiner läuft (Herzschlag alt oder beendet): der Platz ist frei
         wr_starten();
         return 'gestartet';
-    } finally { flock($f, LOCK_UN); fclose($f); }
+    } finally {
+        if ($quelle === 'cron') wr_sicherung();   // erst am Ende der Runde (Neustart geht vor) und nie im Puls eines Spielers
+        flock($f, LOCK_UN); fclose($f);
+    }
+}
+// Jede Stunde eine Sicherung der Welt (nur im Cronjob). Höchstens ein Versuch pro Stunde – auch wenn er scheitert, z. B. weil
+// der jetzige Stand unvollständig ist: sonst jede Minute die ganze Welt lesen. Mit niedriger Priorität (der Weltrechner geht vor).
+function wr_sicherung() {
+    try {
+        $z = wr_zustand(); $jetzt = time();
+        if ($jetzt - (int)($z['sicherungVersuch'] ?? 0) < 3600 || $jetzt - lager()->letzte_sicherung_zeit() < 3600) return;
+        $z['sicherungVersuch'] = $jetzt; wr_schreiben('zustand.php', $z);
+        if (function_exists('proc_nice')) @proc_nice(10);   // (dieser Prozess endet gleich danach)
+        $t0 = microtime(true);
+        if (lager()->sicherung_anlegen()) { $si = lager()->sicherung_info ?: [];
+            wr_log('Sicherung der Welt angelegt (' . round((microtime(true) - $t0), 1) . ' s, ' . round(($si['roh'] ?? 0) / 1048576, 1) . ' MB → gepackt ' . round(($si['gz'] ?? 0) / 1048576, 1) . ' MB)'); }
+        else wr_log('Sicherung NICHT angelegt: der jetzige Stand ist unvollständig (' . round((microtime(true) - $t0), 1) . ' s)');
+    } catch (Throwable $e) { wr_log('Sicherung fehlgeschlagen: ' . $e->getMessage()); }
 }
 
 // Admin: Sperre aufheben (die Wartung beendet Alexander selbst, wenn alles wieder gut ist)

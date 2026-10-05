@@ -46,7 +46,8 @@
         return true;
     }
     const gesendet = {};   // (Weltrechner) Stand jedes Teils, wie ihn der Server zuletzt sicher bekommen hat
-    const neutral = {};    // (Spieler) die Welt-Teile in neutraler Form – auf sie werden die Flicken gesetzt
+    const neutral = {};    // (Spieler) die Welt-Teile in neutraler Form – auf sie werden die Flicken gesetzt (der Weltrechner bekommt
+                           //  nie Flicken: er behält diese zweite Kopie der ganzen Welt nicht – viel Speicher)
 
     const W = window.WELT = {
         ich: ICH, uid: OW.uid, system: SYSTEM,
@@ -172,7 +173,8 @@
     }
 
     // Client → neutral: nur der Weltrechner. schluessel: geänderte Client-Schlüssel
-    function clientZuWelt(schluessel) {
+    // objekte (wenn gegeben): bekommt je Teil das Objekt, aus dem der Text entstand (spart das erneute Lesen des Textes je Puls)
+    function clientZuWelt(schluessel, objekte) {
         const raus = {}, d = S.daten;
         const ks = new Set(schluessel);
         if (ks.has('openWaterOwnedIslands')) ks.add('openWaterBotOwnedIslands');
@@ -191,6 +193,7 @@
             }
             else if (UMRECHNEN[k] && v) v = UMRECHNEN[k](v, 'w');
             raus[k] = v === null ? d[k] : J(v);
+            if (objekte && istObjekt(v)) { for (const kk in v) if (v[kk] === undefined) delete v[kk]; objekte[k] = v; }   // (wie der Text: ohne undefined)
         }
         return raus;
     }
@@ -288,7 +291,7 @@
     for (const id in W.menschen) menschEintragen(id);
     for (const k of S.WELT) S.roh(k, null);   // Welt-Teile aus einem alten eigenen Spielstand zählen nicht – es gibt nur die EINE Welt
     if (OW.welt && OW.welt.version > 0) {
-        for (const k in OW.welt.setzen) { const v = P(OW.welt.setzen[k]); if (istObjekt(v)) neutral[k] = v; }
+        if (!SYSTEM) for (const k in OW.welt.setzen) { const v = P(OW.welt.setzen[k]); if (istObjekt(v)) neutral[k] = v; }
         const teile = Object.assign({}, OW.welt.setzen);
         rueckzuegeZuClient(teile);
         weltZuClient(teile);
@@ -359,7 +362,7 @@
         return 'F' + a.toString(36).padStart(7, '0') + b.toString(36).padStart(7, '0') + (t.length % 1296).toString(36).padStart(2, '0'); }   // (17 Zeichen aus dem Schlüssel)
 
     function neueNummer() { let t = ''; const z = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'; const r = new Uint32Array(16); (window.crypto || crypto).getRandomValues(r); for (const x of r) t += z[x % z.length]; return t; }   // für Befehle und Nachrichten (genau einmal)
-    function packen(text) { try { if (window.fflate) return window.fflate.gzipSync(window.fflate.strToU8(text), { level: 6 }); } catch (e) {} return null; }
+    function packen(text) { try { if (window.fflate) return window.fflate.gzipSync(window.fflate.strToU8(text), { level: SYSTEM ? 1 : 6 }); } catch (e) {} return null; }   // (Weltrechner: Stufe 1 – viel weniger Rechenzeit, die Leitung zum Server ist lokal)
 
     async function puls() {
         if (pulsLaeuft || S.gestoppt) return;
@@ -379,11 +382,12 @@
                 deltasSammeln();                                                       // erst die Nachrichten (ändert dOffen) …
                 if (typeof window.__weltVorPuls === 'function') window.__weltVorPuls();   // … dann alles in die Daten schreiben (dOffen im selben Stand)
                 const ks = Array.from(S.weltGeaendert); S.weltGeaendert.clear();
-                anfrage.welt = { setzen: ks.length ? clientZuWelt(ks) : {}, loeschen: [], welt_zeit: jetzt };
+                const objekte = {};
+                anfrage.welt = { setzen: ks.length ? clientZuWelt(ks, objekte) : {}, loeschen: [], welt_zeit: jetzt };
                 // große Teile nur als Änderung, wenn das deutlich kleiner ist (Stand erst nach gutem Puls übernehmen)
                 anfrage.neuGesendet = {};
                 for (const k in anfrage.welt.setzen) {
-                    const neu = P(anfrage.welt.setzen[k]); if (!istObjekt(neu)) { delete gesendet[k]; continue; }
+                    const neu = objekte[k]; if (!istObjekt(neu)) { delete gesendet[k]; continue; }
                     anfrage.neuGesendet[k] = neu;
                     if (!gesendet[k] || anfrage.welt.setzen[k].length < 3000) continue;
                     const f = J(flickenBauen(gesendet[k], neu));
@@ -431,6 +435,7 @@
 
     function antwortVerarbeiten(a, anfrage) {
         W.pulse = (W.pulse || 0) + 1;
+        if (SYSTEM) W.befehleGezaehlt = (W.befehleGezaehlt || 0) + (a.befehle || []).length;   // (für den Herzschlag, start.js)
         if (typeof a.sicht_v === 'number') W.sichtV = a.sicht_v;
         if (a.spieler) {
             const vorher = new Set(Object.keys(W.menschen));
@@ -451,7 +456,7 @@
         if (W.rechner !== rechnerVorher && window.__weltRechnerStatus) window.__weltRechnerStatus(W.rechner);
         // Welt übernehmen (Zuschauer, oder gerade eben Weltrechner geworden)
         const w = a.welt || {};
-        for (const k in w.setzen || {}) { const v = P(w.setzen[k]); if (istObjekt(v)) neutral[k] = v; else delete neutral[k]; }
+        if (!SYSTEM) for (const k in w.setzen || {}) { const v = P(w.setzen[k]); if (istObjekt(v)) neutral[k] = v; else delete neutral[k]; }
         for (const k of w.loeschen || []) delete neutral[k];
         let fehlt = false;
         for (const k in w.flicken || {}) {   // nur Änderungen: auf den eigenen Stand setzen, dann wie ein ganzer Teil weiter
@@ -509,11 +514,12 @@
         // Nachrichten des ersten Pulses verloren
         if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', W.start, { once: true }); return; }
         puls(); setInterval(puls, PULS_MS); document.addEventListener('visibilitychange', () => { if (!document.hidden) puls(); });
-        // (Weltrechner) alle 0,3 s kurz nachsehen, ob Befehle da sind – dann sofort rechnen, statt bis zum nächsten Puls zu warten
+        // (Weltrechner) jede Sekunde kurz nachsehen, ob Befehle da sind – dann sofort rechnen, statt bis zum nächsten Puls zu warten
+        // (vorher alle 0,3 s: auf dem geteilten Server zu viele Anfragen; ein Befehl kommt so höchstens ~0,7 s später an)
         if (SYSTEM) setInterval(async () => {
             if (pulsLaeuft || S.gestoppt || !W.leiter || Date.now() - pulsStart < 300) return;
             try { const r = await fetch('server.php', { method: 'POST', headers: { 'X-Open-Water': '1', 'Content-Type': 'application/json' }, body: J({ aktion: 'befehle_da' }), credentials: 'same-origin', cache: 'no-store' });
                 if (r.ok && (await r.json()).offen > W.befehlFertig.size + W.befehlWartet.size) puls(); } catch (e) {}   // mehr offen, als ich schon ausgeführt habe (oder warten lasse)
-        }, 300);
+        }, 1000);
     };
 })();

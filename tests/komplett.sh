@@ -6,7 +6,8 @@ cd "$(dirname "$0")/.." || exit 1
 A="${1:?Aufruf: tests/komplett.sh <arbeitsordner>}"
 werkzeuge/spiel_bauen.sh >/dev/null || exit 1          # einmal vorher – danach ändert sich spiel.js nicht mehr
 T=$(mktemp -d)
-tests/alle_tests.sh > "$T/ohne.log" 2>&1 & P1=$!
+# (Browser-Reihe mit niedrigerer Priorität: sonst verhungert die Server-Reihe – Weltrechner, PHP, Datenbank – und ihre Tests scheitern an der Zeit)
+nice -n 10 tests/alle_tests.sh > "$T/ohne.log" 2>&1 & P1=$!
 tests/server_tests.sh "$A" > "$T/mit.log" 2>&1 & P2=$!
 wait $P1; R1=$?; wait $P2; R2=$?
 echo "===== OHNE SERVER"; cat "$T/ohne.log"; echo "===== MIT SERVER"; cat "$T/mit.log"; rm -rf "$T"

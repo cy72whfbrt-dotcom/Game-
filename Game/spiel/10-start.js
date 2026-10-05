@@ -1595,11 +1595,11 @@ if (window.WELT) {
     // ein neuer Gegenstand in Platz s (z = [Seltenheit, Stufe, Sterne]) → '' (angenommen) oder warum nicht
     function hbGearNeu(who, hb, m, s, z, forge) {
         if (z[2] > forge) return 'die Schmiede (Stufe ' + forge + ') erlaubt höchstens ' + forge + ' Sterne';
-        const A = hb.gear[s], N = nn(hb.kN), wert = kWert(z[0]);
+        const A = hb.gear[s], N = nn(hb.kN), wert = kWert(z[0]), kG = nn(hb.kG) + nn(hb.fr.kg);   // sichere „mind. Episch“-Kisten: geschickte (kG) und aus Wochenkette/Pass/Thron-Shop (fr.kg – vorher nie benutzt)
         const gesamt = HB_SLOTS.reduce((a, x) => a + Math.max(x === s ? wert : 0, ...(hb.gear[x] || []).map(b => kWert(b[0])), 0), 0);   // bester Kisten-Wert je Platz, zusammen
         const punkte = HB_SLOTS.reduce((a, x) => { const l = (hb.gear[x] || []).reduce((y, b) => Math.max(y, b[1]), x === s ? z[1] : 1); return a + hbLvlPunkte(l); }, 0);
         let n = 0; const mehr = () => n < 10 ? 1 : Math.ceil(n * .1);
-        while (n < 20000 && (wert > hbKistenGrenze(N + n) + nn(hb.kG) || gesamt > hbKistenGesamt(N + n) + nn(hb.kG) || punkte > hbPunkteGrenze(N + n))) n += mehr();
+        while (n < 20000 && (wert > hbKistenGrenze(N + n) + kG || gesamt > hbKistenGesamt(N + n) + kG || punkte > hbPunkteGrenze(N + n))) n += mehr();
         if (n >= 20000) return 'unmöglich viele Kisten';
         const basis = A.filter(a => a[0] === z[0] && a[1] <= z[1]).reduce((x, a) => Math.max(x, a[2]), 0);   // (derselbe Gegenstand, nur höher)
         let sternG = 0; for (let i = basis; i < z[2]; i++) sternG += starGemCost(i);
@@ -1607,7 +1607,7 @@ if (window.WELT) {
         const freiK = Math.min(n, Math.floor(nn(hb.fr.k))), gems = (n - freiK) * CRATE_GEM_COST + sternG;
         if (gems > 0 && !hbZahlen(who, hb, m, { g: gems })) return n > freiK ? 'dafür hätte er ' + (N + n > 1 ? 'etwa ' + Math.round(N + n) : 'eine') + ' Kisten öffnen müssen, ' + fz(gems) + ' Gems fehlen' : 'die Sterne kosten ' + sternG + ' Gems';
         hb.fr.k = nn(hb.fr.k) - freiK; hb.kN = N + n; hb.sternG = nn(hb.sternG) + sternG;
-        const ueber = Math.max(wert - hbKistenGrenze(hb.kN), gesamt - hbKistenGesamt(hb.kN)); if (ueber > 0) hb.kG = Math.max(0, nn(hb.kG) - ueber);   // die sichere Kiste ist verbraucht
+        const ueber = Math.max(wert - hbKistenGrenze(hb.kN), gesamt - hbKistenGesamt(hb.kN)); if (ueber > 0) { const x = Math.min(ueber, Math.max(0, nn(hb.fr.kg))); hb.fr.kg = nn(hb.fr.kg) - x; hb.kG = Math.max(0, nn(hb.kG) - (ueber - x)); }   // die sichere Kiste ist verbraucht (zuerst aus fr.kg)
         A.push(z);
         for (let i = A.length - 1; i >= 0; i--) if (A.some((b, j) => j !== i && b[0] === A[i][0] && b[1] >= A[i][1] && b[2] >= A[i][2] && (b[1] > A[i][1] || b[2] > A[i][2] || j < i))) A.splice(i, 1);
         A.sort((a, b) => hbItemWert(b) - hbItemWert(a)); if (A.length > 4) A.length = 4;
@@ -1823,6 +1823,16 @@ if (window.WELT) {
     }
     // (jeden Puls) Nebel, Abgelehntes nochmal prüfen, jede Minute die Truppen-Summen für die Rangliste
     let hbErst = true;
+    // dasselbe (alte) Profil nochmal anwenden – nur fürs Hauptbuch. Was die Welt seitdem gerechnet hat (Rohstoffe, Verwundete,
+    // Erfolge, Helden-Splitter: Ertrag, Beute, Kämpfe), bleibt: vorher sprang es auf die Profil-Werte zurück, und welt.js schickte
+    // den Unterschied als Nachricht (Beute kam zurück – unbegrenzt Rohstoffe über Plündern; ehrlicher Ertrag ging verloren)
+    function hbNochmal(who, b, p) {
+        const welt = { res: b.res, wounded: b.wounded, stats: b.stats }, dazu = {}, hb = b.hb;
+        for (const k in welt) if (welt[k] === undefined) delete welt[k];
+        if (b.hs && hb && hb.hs) for (const h in b.hs) { const z = hb.hs[h]; if (b.hs[h] && z) dazu[h] = nn(b.hs[h].sh) - nn(z[2]); }   // Splitter, die die Welt seitdem gab
+        Object.assign(b, WELT.profilZuBot(p, b, who), welt);
+        if (b.hs) for (const h in dazu) if (b.hs[h] && dazu[h]) b.hs[h].sh = Math.max(0, nn(b.hs[h].sh) + dazu[h]);   // (auf das, was das Hauptbuch jetzt sagt)
+    }
     function hbRunde(now) {
         if (!AUF) return;                              // (der allererste Puls kommt, bevor aufbau.js geladen ist)
         const bs = loadBotState();
@@ -1833,7 +1843,7 @@ if (window.WELT) {
         for (const who in WELT.menschen) {
             const b = bs[who], hb = b && b.hb && b.hb.v === HB_V ? b.hb : null; if (!hb || !botById[who]) continue;
             try { nebelRunde(who, hb, now); armeeSichtRunde(who, hb); } catch (e) { console.warn('Nebel:', e); }
-            const mm = wm(who); if (mm.hbOffen && now - nn(mm.hbPrT) > 10000) { const p = profilVon(who); if (p) Object.assign(b, WELT.profilZuBot(p, b, who)); else mm.hbOffen = 0; }   // (Münzen/Gems kommen evtl. später)
+            const mm = wm(who); if (mm.hbOffen && now - nn(mm.hbPrT) > 10000) { const p = profilVon(who); if (p) hbNochmal(who, b, p); else mm.hbOffen = 0; }   // (Münzen/Gems kommen evtl. später)
         }
         if (now - hbTtT > 60000) {                     // Truppen-Summe je Herrscher (Spieler bekommen fremde Truppen nur, wo sie hinsehen dürfen)
             if (Math.floor(now / 600000) !== Math.floor(hbTtT / 600000)) for (const who in nbMem) { if (nbMem[who].gesendet) WELT.sichtRaus[parseInt(who.slice(1), 10)] = nbMem[who].gesendet; nbMem[who].armGesendet = null; }   // (alle 10 Min. die Sicht nochmal – falls ein Puls sie verloren hat; der Server ändert nur Neues)

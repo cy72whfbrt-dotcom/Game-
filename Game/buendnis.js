@@ -297,7 +297,7 @@ function bundSendAnkunft(send) {
         const L = bundMem.rallyWeg[send.rally];                     // Nachzügler: die Rally ist schon los → vom Sammelpunkt direkt zum Ziel, mitkämpfen
         if (!r && L && Date.now() < L.bis && send.toId === L.at && !bundZielOk(who, L.t) && (islandOwnerOf(L.at) === who || bundVerbuendet(islandOwnerOf(L.at), who))) {
             islandTroops[L.at] = (islandTroops[L.at] || 0) + send.troops; const k = pendingAttacks.length; let ok = false;
-            if (AUF) AUF.frei.an(); try { ok = launchAttack(L.at, L.t, who, send.troops); } finally { if (AUF) AUF.frei.aus(); }
+            if (AUF) AUF.frei.an(); try { ok = launchAttack(L.at, L.t, who, send.troops, send.held || null, send.held2 || null); } finally { if (AUF) AUF.frei.aus(); }   // (seine Helden kommen mit)
             if (ok && pendingAttacks.length > k) { bundMelden(who, 'Die Rally auf ' + islandTitle(islandById[L.t]) + ' ist schon los – deine ' + fmtCompact(send.troops) + ' Truppen ziehen direkt weiter zum Ziel.'); saveGame(); saveProgression(); return true; }
             islandTroops[L.at] = Math.max(0, (islandTroops[L.at] || 0) - send.troops);
         }
@@ -325,11 +325,11 @@ function bundSendAnkunft(send) {
     bundHeimschicken(who, send.toId, send.fromId, send.troops);   // Rally schon weg / Basis nicht mehr im Bündnis: zurück
     saveGame(); saveProgression(); return true;
 }
-function bundHeimschicken(w, vonId, zuId, n) {
+function bundHeimschicken(w, vonId, zuId, n, ret) {              // ret: Rückweg-Bonus SEINES Helden (+ % Tempo, wie retreatSecs)
     if (!(n >= 1)) return;
     const own = bundBasen(w), to = own.has(zuId) ? zuId : bundCap(w);
     if (to === null || to === undefined || !islandById[to]) return;
-    const now = Date.now(), dur = travelDurationSeconds(islandById[vonId] || islandById[to], islandById[to], w === 'player' ? undefined : w);
+    const now = Date.now(), dur = travelDurationSeconds(islandById[vonId] || islandById[to], islandById[to], w === 'player' ? undefined : w) / (1 + (ret || 0) / 100);
     pendingSends.push({ fromId: vonId, toId: to, troops: Math.floor(n), startedAt: now, resolveAt: now + Math.max(1, dur) * 1000, senderBotId: w, back: true });
 }
 
@@ -544,9 +544,16 @@ function bundRallyDazu(a, who, b) {
     b = Object.assign({}, b, { n: Math.min(b.n, frei) });             // (nur so viele, wie noch Platz ist)
     // (Beitreten geht immer – Alexander 4.10.: „nur wer sie eröffnet, muss nah genug dran sein“. Wer nach dem Start ankommt,
     //  marschiert vom Sammelpunkt direkt zum Ziel weiter und kämpft mit – siehe bundSendAnkunft)
-    const k = pendingSends.length, why = bundMarsch(who, b.von, r.at, b.n, { rally: r.id }); if (why) return why;
+    // Seine Helden (Alexander 4.10.: jeder bringt höchstens 2 mit – Haupt- und Zweitheld, zählen nur für SEINE Truppen).
+    // Wer schon mit Helden in dieser Rally ist (oder sie führt), bringt keine weiteren. Belegt bis zum Kampfende (heroBusy).
+    const schon = who === r.by || r.j.some(j => j.w === who && (j.held || j.held2));
+    const held = !schon && typeof b.held === 'string' && heroOwned(who, b.held) && !heroBusy(who, b.held) ? b.held : null;
+    const held2 = heroZweitOk(who, held, typeof b.held2 === 'string' ? b.held2 : null);
+    const extra = { rally: r.id }; if (held) extra.held = held; if (held2) extra.held2 = held2;
+    const k = pendingSends.length, why = bundMarsch(who, b.von, r.at, b.n, extra); if (why) return why;
     const m = pendingSends[pendingSends.length - 1]; if (pendingSends.length === k || !m) return 'kaputt';
-    r.j.push({ w: who, f: b.von, n: m.troops, s: m.startedAt, k: marchKeyOf(m), da: false });
+    const j = { w: who, f: b.von, n: m.troops, s: m.startedAt, k: marchKeyOf(m), da: false }; if (held) j.held = held; if (held2) j.held2 = held2;
+    r.j.push(j);
     return '';
 }
 function bundRallyTruppen(r) { return r.n0 + r.j.reduce((s, j) => s + (j.da ? j.n : 0), 0); }
@@ -582,15 +589,23 @@ function bundRallyLos(r) {
     if (a) bundLog(a, txt); for (const w of new Set(atk.rally.an.map(x => x[0]))) bundMelden(w, txt);
     saveGame(); saveProgression(); bundSpeichern();
 }
-// Rally: jeder zählt mit SEINEN Werten für SEINE Truppen (Skill Angriff, Titel, Forschung) – der Held des Anführers für dessen Truppen.
+// Rally: jeder zählt mit SEINEN Werten für SEINE Truppen (Skill Angriff, Titel, Forschung, seine Helden) – der Held des Anführers für dessen Truppen.
 // (Stärke = (Truppen + Bonus) × Titel × Forschung des Anführers; die anderen werden darauf umgerechnet)
+// Eintrag rally.an: [0] wer · [1] seine Basis · [2] Truppen · [3] Bonus (in Einheiten des Anführers) · [4] sein Held (hx) · [5] sein Schild (+ Held)
+//                   [6] sein Skill-Anteil (für rallyAussortieren) · [7] der Helden-Anteil in [3] (fällt weg, wenn er im Kampf schon Helden hat)
 function rallyWerte(atk, by, n0, mit) {
     const st = w => titleMult(w, 'attack') * (AUF ? AUF.kampf(w, 'a') : 1), stBy = st(by) || 1;
     const sk = (w, n) => w === 'player' ? attackFlatBonus(n) : Math.round(n * (botMults(w).attackPct || 0) / 100);
     const hb = atk.hx ? Math.round(n0 * atk.hx.atk / 100) + heroGefOf(atk.hx, n0) : 0; atk.heldBonus = hb;
+    const src = islandById[atk.sourceId], tgt = islandById[atk.targetId], mitHeld = new Set();
     let skill = sk(by, n0), bonus = skill + hb;
-    for (const j of mit) { const b = sk(j.w, j.n), p = (j.n + b) * st(j.w) / stBy - j.n; skill += b; bonus += p;
-        const x = atk.rally.an.find(q => q[0] === j.w && q[2] === j.n && q[3] === undefined); if (x) { x[3] = Math.round(p); x[5] = rallySchild(j.w); } }   // (für den Kampfbericht: was er mitbringt · [5]: sein Schild)
+    for (const j of mit) {
+        const hx = j.held && j.w !== by && !mitHeld.has(j.w) && src && tgt ? heroLaunch(j.w, j.held, src, tgt, j.n, j.held2 || null) : null;   // seine Helden (volle Wut: die aktive Fähigkeit zündet – wie beim Anführer)
+        if (hx) mitHeld.add(j.w);
+        const b = sk(j.w, j.n), h = hx ? Math.round(j.n * hx.atk / 100) + heroGefOf(hx, j.n) : 0, p = (j.n + b + h) * st(j.w) / stBy - j.n; skill += b; bonus += p;
+        const x = atk.rally.an.find(q => q[0] === j.w && q[2] === j.n && q[3] === undefined);
+        if (x) { x[3] = Math.round(p); x[5] = Math.min(90, rallySchild(j.w) + (hx ? hx.loss || 0 : 0)); x[6] = b; if (hx) { x[4] = hx; x[7] = Math.round(h * st(j.w) / stBy); } }   // (für den Kampfbericht: was er mitbringt)
+    }
     atk.attackBonus = Math.round(bonus); atk.skillBonus = skill;
 }
 // Schild (Ausrüstung) eines Mitglieds: weniger Verluste für SEINE Truppen (Alexander 5.10.: jeder für sich, wie Helden und Stärke)
@@ -610,27 +625,48 @@ function rallyAussortieren(attack, zielId) {
     const by = attack.rally.by, raus = attack.rally.an.filter(x => x[0] !== by && !bundFreund(by, x[0]));
     for (const x of raus) {
         attack.rawTroops = Math.max(0, attack.rawTroops - x[2]); attack.attackBonus = (attack.attackBonus || 0) - (x[3] || 0);
-        if (attack.skillBonus !== undefined) attack.skillBonus = Math.max(0, attack.skillBonus - (x[3] || 0));
+        if (attack.skillBonus !== undefined) attack.skillBonus = Math.max(0, attack.skillBonus - (x[6] != null ? x[6] : x[3] || 0));   // (sein echter Skill-Anteil)
+        if (x[4]) heroWutZurueck(x[0], x[4]);                                   // (seine Helden kämpfen nicht – die Wut bleibt)
         if (x[2] > 0) bundHeimschicken(x[0], zielId, x[1], x[2]);
         bundMelden(x[0], 'Du bist nicht mehr im Bündnis von ' + bundName(by) + ' – deine Truppen aus dem gemeinsamen Angriff kehren heim.');
     }
     if (raus.length) attack.rally.an = attack.rally.an.filter(x => !raus.includes(x));
 }
+// Der Held eines Spielers in einem gemeinsamen Kampf (Anführer: der Held des Angriffs, sonst seiner aus rally.an)
+function rallyHx(attack, w) { if (w === attack.rally.by) return attack.hx || null; const x = attack.rally.an.find(q => q[0] === w && q[4]); return x ? x[4] : null; }
+// (Kampf, verloren) Wer flieht: jeder Spieler mit SEINEM Helden (Standhaft, Leichtfuß …). Merkt sich die Geflohenen je Eintrag
+// (rally.rest) – bundRallyHeim schickt dann genau die heim. → { flucht: alle Geflohenen, e: Verluste je Eintrag }
+function rallyFlucht(attack) {
+    const an = attack.rally.an, f = an.map(x => Math.max(0, Math.min(x[2], Math.floor(x[2] * retreatPct({ hx: rallyHx(attack, x[0]) }) / 100))));
+    attack.rally.rest = f;
+    return { flucht: f.reduce((s, v) => s + v, 0), e: an.map((x, i) => x[2] - f[i]) };
+}
 // (Kampf) Überlebende einer Rally gehen anteilig zu ihren Basen zurück. ohneStarter: dessen Anteil wird zurückgegeben (bleibt vor Ort)
 function bundRallyHeim(attack, n, vonId, ohneStarter) {
     const an = attack.rally && attack.rally.an || [], sum = an.reduce((s, x) => s + x[2], 0); let rest = Math.floor(n), bleibt = 0;
+    attack._heim = 1;                                                       // (verteilt – bricht der Kampf danach ab, gehen sie nicht nochmal heim)
+    if (attack.rally && !attack._kampf) for (const x of an) if (x[4] && x[0] !== attack.rally.by) heroWutZurueck(x[0], x[4]);   // (kein Kampf: die Wut der Mitglieds-Helden kommt zurück)
     if (!sum || rest < 1) return 0;
-    const je = attack.rally.rest && attack.rally.rest.length === an.length && attack.rally.rest.reduce((s, v) => s + v, 0) === rest ? attack.rally.rest : null;   // (gewonnen: genau seine Überlebenden)
+    const je = attack.rally.rest && attack.rally.rest.length === an.length && attack.rally.rest.reduce((s, v) => s + v, 0) === rest ? attack.rally.rest : null;   // (genau seine Überlebenden bzw. Geflohenen)
     an.forEach((x, i) => {
         const share = je ? je[i] : i === an.length - 1 ? rest : Math.min(rest, Math.floor(n * x[2] / sum)); rest -= share; if (share < 1) return;
         if (ohneStarter && x[0] === attack.rally.by) { bleibt += share; return; }
-        bundHeimschicken(x[0], vonId, x[1], share);
+        bundHeimschicken(x[0], vonId, x[1], share, (rallyHx(attack, x[0]) || {}).ret || 0);   // (Rückweg: sein Held)
     });
     return bleibt;
 }
-// (Kampf) Gemeinsamer Angriff (Rally oder mehrere Bündnis-Angriffe auf dasselbe Ziel): jeder verliert nach seiner Truppenzahl,
-// seine Verwundeten gehen in SEIN Krankenhaus. Gibt die Angreifer-Liste für den Kampfbericht zurück.
-function kampfAnteile(attack, fallen, hosp, rv) {   // rv: Verluste je Eintrag (rallyVerluste, gewonnen) – sonst nach Truppen
+// Anteile an einem gemeinsamen Kampf nach Stärke (für Wochen-Punkte und Erfahrung) → [[wer, Anteil 0…1], …]
+function kampfTeile(L) { const k = q => Math.max(0, q.k !== undefined ? q.k : q.n || 0), s = L.reduce((t, q) => t + k(q), 0) || 1; return L.map(q => [q.w, k(q) / s]); }
+// Anteile der Verteidiger: Besitzer + jeder Helfer (Verstärkung) nach seiner Stärke (Truppen + seine Werte); gesamt = Truppen + Verteidigung
+function verstAnteile(vk, owner, gesamt) {
+    if (!owner) return null; if (!vk || !vk.L.length) return [[owner, 1]];
+    const h = vk.L.map(x => [x.v.w, Math.max(0, x.n0 + (x.plus || 0))]), sh = h.reduce((s, x) => s + x[1], 0), g = Math.max(gesamt || 0, sh) || 1;
+    return [[owner, Math.max(0, g - sh) / g]].concat(h.map(x => [x[0], x[1] / g]));
+}
+// (Kampf) Gemeinsamer Angriff (Rally oder mehrere Bündnis-Angriffe auf dasselbe Ziel): jeder verliert nach SEINEN Verlusten (rv),
+// seine Verwundeten gehen in SEIN Krankenhaus (mit SEINEM Helden). Gibt die Angreifer-Liste für den Kampfbericht zurück
+// (je Spieler: fallen, wounded, fled = geflohen, rest = übrig).
+function kampfAnteile(attack, fallen, hosp, rv, won) {   // rv: Verluste je Eintrag (rallyVerluste / rallyFlucht) – sonst nach Truppen
     const an = attack.rally.an, by = attack.rally.by, sum = an.reduce((s, x) => s + x[2], 0) || 1, m = new Map();
     for (const x of an) { if (!m.has(x[0])) m.set(x[0], { w: x[0], n: 0, plus: 0, eig: 0 }); const q = m.get(x[0]); q.n += x[2]; if (x[3] !== undefined) { q.plus += x[3]; q.eig = 1; } if (x[4]) q.hx = x[4]; }
     const stA = (attack.atkTitle !== undefined ? attack.atkTitle : titleMult(by, 'attack')) * (attack.atkKraft || 1), ganz = Math.round((attack.rawTroops + (attack.attackBonus || 0)) * stA);
@@ -640,8 +676,11 @@ function kampfAnteile(attack, fallen, hosp, rv) {   // rv: Verluste je Eintrag (
     const fw = {}; if (rv) an.forEach((x, i) => { fw[x[0]] = (fw[x[0]] || 0) + rv.e[i]; });
     L.forEach((x, i) => {
         const f = rv ? fw[x.w] || 0 : i === L.length - 1 ? rest : Math.min(rest, Math.round(fallen * x.n / sum)); rest -= f;
-        const wd = f > 0 ? (x.w === 'player' ? hospitalTake(f) : botHospitalTake(x.w, f, x.w === by ? hosp : undefined)) || 0 : 0;
-        Object.assign(x, { name: bundName(x.w), fallen: f - wd, wounded: wd, gear: fighterSnapshot(x.w, x.w === by ? attack.hx : x.hx) }); if (x.w !== by) x.rate = killGoldRate(x.w, x.hx); delete x.eig; delete x.hx;   // (rate: sein Gold je Kill – braucht resolveBotAttack)
+        const hx = x.w === by ? attack.hx : x.hx;                           // Krankenhaus: SEINES, mit SEINEM Helden (Feldlazarett)
+        const pct = x.w === by ? hosp : hx ? Math.min(100, (x.w === 'player' ? hospitalPct() : botHospitalPct(x.w)) + (hx.hosp || 0)) : undefined;
+        const wd = f > 0 ? (x.w === 'player' ? hospitalTake(f, pct) : botHospitalTake(x.w, f, pct)) || 0 : 0;
+        const ueb = Math.max(0, x.n - f);                                    // (gewonnen: übrig · verloren: geflohen)
+        Object.assign(x, { name: bundName(x.w), fallen: f - wd, wounded: wd, fled: won ? 0 : ueb, rest: won ? ueb : 0, gear: fighterSnapshot(x.w, hx) }); if (x.w !== by) x.rate = killGoldRate(x.w, x.hx); delete x.eig; delete x.hx;   // (rate: sein Gold je Kill – braucht resolveBotAttack)
     });
     return L;
 }
@@ -980,7 +1019,8 @@ function bundMitspielerRally(now) {
             if (!best) continue;                                            // (keine Basis mit genug Truppen)
             if (bot.style === 'builder' && Math.random() < .5) { sagen('nein'); continue; }
             const k0 = pendingSends.length;
-            if (!bundRallyDazu(a, w, { rid: r.id, von: best.id, n: best.n })) { bundBotGetippt(bot, now); bundSpeichern(); sagen('unterwegs');
+            const hp = botPickHero(w, islandById[best.id], islandById[r.t], best.n, true);   // (seine Helden kommen mit – wie bei jedem seiner Angriffe)
+            if (!bundRallyDazu(a, w, { rid: r.id, von: best.id, n: best.n, held: hp[0], held2: hp[1] })) { bundBotGetippt(bot, now); bundSpeichern(); sagen('unterwegs');
                 const m = pendingSends.length > k0 ? pendingSends[pendingSends.length - 1] : null, st = loadBotState()[w];   // zu spät für den Start? mit Gems beschleunigen (wie du: halbiert die Zeit, 1 Gem pro Minute)
                 for (let i = 0; m && st && i < 4 && m.resolveAt > r.los - 2000; i++) { const c = speedUpCost(m); if ((st.gems || 0) < c * 2) break;
                     st.gems -= c; const rem = m.resolveAt - now, pr = Math.max(0, Math.min(.99, (now - m.startedAt) / Math.max(1, m.resolveAt - m.startedAt))); m.resolveAt = now + rem / 2; m.startedAt = m.resolveAt - (rem / 2) / (1 - pr); }
@@ -1210,7 +1250,7 @@ function bundWahlHtml() {
     const titel = w.mode === 'rally' ? 'Rally auf ' + islandTitle(ziel) : w.mode === 'dazu' ? 'Mitmachen: Rally auf ' + islandTitle(islandById[r.t]) : 'Verstärkung für ' + bundName(islandOwnerOf(ziel.id)) + ' · ' + islandTitle(ziel);
     return '<div class="bd-form bd-wahl"><div class="sect"><h4>' + escapeHtml(titel) + '</h4></div>' +
         (q.length ? '<label class="bd-feld"><span>' + (w.mode === 'rally' ? 'Sammelpunkt (deine Basis)' : 'Von Basis') + '</span><select id="bdVon">' + q.map(x => '<option value="' + x.id + '"' + (x.id === w.von ? ' selected' : '') + '>' + escapeHtml(islandTitle(islandById[x.id])) + ' · ' + fmtCompact(x.n) + ' · ' + fmtClock(x.eta / 1000) + '</option>').join('') + '</select></label>' +
-            (w.mode === 'rally' && heroSegHtml('data-rhero', w.held) ? '<div class="bd-feld"><span>Haupt- und Zweitheld (zählen für deine Truppen)</span><div class="seg hero-seg" id="bdHeld">' + heroSegHtml('data-rhero', w.held) + '</div><div class="seg hero-seg hero-seg2" id="bdHeld2">' + heroSeg2Html('data-rhero2', w.held, w.held2) + '</div></div>' : '') +
+            ((w.mode === 'rally' || (w.mode === 'dazu' && r && r.by !== 'player' && !r.j.some(j => j.w === 'player' && (j.held || j.held2)))) && heroSegHtml('data-rhero', w.held) ?'<div class="bd-feld"><span>Haupt- und Zweitheld (zählen für deine Truppen)</span><div class="seg hero-seg" id="bdHeld">' + heroSegHtml('data-rhero', w.held) + '</div><div class="seg hero-seg hero-seg2" id="bdHeld2">' + heroSeg2Html('data-rhero2', w.held, w.held2) + '</div></div>' : '') +
             (w.mode === 'rally' ? '<div class="bd-feld"><span>Wartezeit</span><div class="seg" id="bdMin" style="grid-template-columns:repeat(3,1fr)">' + BUND.RALLY_MIN.map(m => '<button type="button" data-min="' + m + '" class="' + ((w.min || 3) === m ? 'on' : '') + '">' + m + ' Min.</button>').join('') + '</div></div>' : '') +
             '<div class="bd-feld"><span>Truppen</span><div class="seg" id="bdAnteil">' + [.25, .5, .75, 1].map(f => '<button type="button" data-f="' + f + '" class="' + ((w.f || 1) === f ? 'on' : '') + '">' + (f === 1 ? 'Alle' : f * 100 + ' %') + '</button>').join('') + '</div></div>' +
             '<p class="bd-info" id="bdInfo"></p><div class="bd-knoepfe"><button type="button" class="btn btn--secondary btn--sm" data-bact="wahlZu">Abbrechen</button><button type="button" class="btn btn--primary btn--sm" data-bact="wahlLos">' +
@@ -1237,7 +1277,8 @@ function bundWahlLos() {
     } else {
         const nach = w.mode === 'dazu' ? (bund.r.find(r => r.id === w.rid) || {}).at : w.nach; if (nach === undefined) return;
         const vh = lastHop(von.landmassId, islandById[nach].landmassId, 'player'); if (!mautVorab(vh[0], vh[1], n)) return;
-        bundBefehl(w.mode === 'dazu' ? 'rallyDazu' : 'hilfe', w.mode === 'dazu' ? { rid: w.rid, von: w.von, n } : { von: w.von, nach, n }, w.mode === 'dazu' ? 'Truppen unterwegs zur Rally.' : 'Verstärkung unterwegs – sie bleibt deine.');
+        const held = w.mode === 'dazu' && w.held && heroOwned('player', w.held) && !heroBusy('player', w.held) ? w.held : null, held2 = heroZweitOk('player', held, w.held2);   // (Rally-Mitglied: seine Helden für seine Truppen)
+        bundBefehl(w.mode === 'dazu' ? 'rallyDazu' : 'hilfe', w.mode === 'dazu' ? { rid: w.rid, von: w.von, n, held, held2 } : { von: w.von, nach, n },w.mode === 'dazu' ? 'Truppen unterwegs zur Rally.' : 'Verstärkung unterwegs – sie bleibt deine.');
         islandTroops[w.von] = Math.max(0, (islandTroops[w.von] || 0) - n);
         const t0 = Date.now(); vorlaeufigDazu('s', { fromId: w.von, toId: nach, troops: n, startedAt: t0, resolveAt: t0 + travelDurationSeconds(von, islandById[nach]) * 1000, senderBotId: null });
         sfx('send');
