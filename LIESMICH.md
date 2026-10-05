@@ -251,7 +251,8 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   sie vor dem eigenen Späher ankommt). Gespähte Abwehr (Insel-Fenster, Angriffs-Vorschau) rechnet mit den Werten aus dem
   neuesten Spähbericht (`spaehWerte`), ungespäht bleibt „Abwehr unbekannt“. Profil anderer: statt Ausrüstung/Helden/Skills/Stadt
   nur die Burg + Hinweis aufs Spähen. Neuer Browser-Test `fremd_test` (kürzt mit dem echten Filter aus server.php),
-  Server-Einheitstests ergänzt. (Münzen der Mitspieler in `openWaterBotCoins` sind noch sichtbar – nur die echter Spieler nicht.)
+  Server-Einheitstests ergänzt. Nachtrag (Alexanders Entscheidung): auch die **Münzen der Mitspieler** in `openWaterBotCoins` sieht nur noch der Weltrechner
+  (`muenzen_kuerzen` leert den Teil für Spieler; das Handy rechnet fehlende als 0, Beute steht im Spähbericht). Stufe bleibt sichtbar.
 - **4.10. Aufräumen:** unbenutzte CSS-Reste raus, wichtige Tests ins Projekt (`tests/browser/`, Start mit `tests/alle_tests.sh`).
 - **4.10. Server-Tests ins Projekt:** `tests/server/` + `tests/server_tests.sh <arbeitsordner>` (lokaler PHP-Server,
   MariaDB, Weltrechner): Absturz/Zurückspielen, Admin, Nebel, Bündnis-Kiste, Verstärkung, Klick-Test – alle grün.

@@ -1,7 +1,7 @@
 // Fremde Werte nur nach dem Spähen (6.10.): das Handy bekommt von anderen nur, was server.php (FREMD_OEFFENTLICH) durchlässt –
 // hier echt mit dem Filter aus server.php gekürzt. Dann als Zuschauer (WELT, nicht Weltrechner): Rangliste, Profil, Insel-Fenster,
 // Angriffs-Vorschau, Bündnis-Fenster ohne Fehler; Macht kommt vom Weltrechner (macht); Späher → Befehl, Bericht vom Weltrechner
-// füllt den Kampflog und die Abwehr in der Vorschau stimmt wieder.
+// füllt den Kampflog und die Abwehr in der Vorschau stimmt wieder. Münzen anderer (auch Mitspieler) kommen nie an.
 const { chromium, devices } = require('playwright');
 const { execFileSync } = require('child_process'), path = require('path');
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x).slice(0, 300) : ''));
@@ -23,23 +23,27 @@ const php = (code, ein) => execFileSync('php', ['-r', "$_SERVER['SCRIPT_FILENAME
     const isl = [...botOwnedIslands[bot.id]].find(id => islandById[id].type === 'tower' && !bossAt(id));
     islandTroops[isl] = 5000; staerkeMem[bot.id] = null;
     for (const d of BOT_DEFS) bs[d.id].macht = Math.round(powerOf(whoProfile(d.id)));   // (wie der Weltrechner jede Minute)
-    return { bot: bot.id, isl, def: effectiveDefense(islandById[isl]), troops: effectiveTroops(islandById[isl]), spy: spaeherBlick(bot.id), macht: bs[bot.id].macht, state: JSON.stringify(bs) };
+    botCoins[bot.id] = 123456;
+    return { bot: bot.id, isl, def: effectiveDefense(islandById[isl]), troops: effectiveTroops(islandById[isl]), spy: spaeherBlick(bot.id), macht: bs[bot.id].macht, state: JSON.stringify(bs), coins: JSON.stringify(botCoins) };
   });
   // gekürzt mit dem echten Filter aus server.php (wie für Spieler u999)
   const gek = php("echo weltteil_fuer_spieler('openWaterBotState', stream_get_contents(STDIN), 'u999');", vor.state);
   const g = JSON.parse(gek)[vor.bot];
   ok(!g.hs && !g.gear && !g.skills && !g.spare && !g.gems && !g.shields && !g.ps, 'Filter: Helden, Ausrüstung, Skills, Gems, Schilde, Pass weg', Object.keys(g));
+  const gekC = php("echo weltteil_fuer_spieler('openWaterBotCoins', stream_get_contents(STDIN), 'u999');", vor.coins);
+  ok(gekC === '{}', 'Filter: Münzen aller anderen (auch Mitspieler) weg', gekC.slice(0, 80));
   ok(JSON.stringify(g.city) === '{"levels":{"keep":4}}' && g.macht === vor.macht && g.lvl >= 1, 'Filter: Burg-Stufe, Macht, Stufe bleiben', { city: g.city, macht: g.macht });
   // jetzt Zuschauer: WELT da, rechnet nicht; der gekürzte Stand
-  const r1 = await ev(gek => {
+  const r1 = await ev(([gek, gekC]) => {
     window.__befehle = [];
     const W = { leiter: false, ich: 'u999', menschen: {}, beiNachricht: [], ereignisseRaus: [], sichtRaus: {}, armeeSichtRaus: {}, sichtV: -1,
       befehl(art, d) { window.__befehle.push(Object.assign({ art }, d)); }, nachricht() {}, bericht() {} };
     window.WELT = new Proxy(W, { get: (o, k) => k in o ? o[k] : () => [] });
     if (botSaveTimer) { clearTimeout(botSaveTimer); botSaveTimer = null; }
     store.set('openWaterBotState', gek); botState = null; loadBotState(); for (const k in staerkeMem) delete staerkeMem[k];
+    store.set('openWaterBotCoins', gekC); botCoins = JSON.parse(gekC) || {}; for (const bot of BOT_DEFS) if (!botCoins[bot.id]) botCoins[bot.id] = 0;   // (wie 10-start)
     return { geheim: fremdGeheim() };
-  }, gek);
+  }, [gek, gekC]);
   ok(r1.geheim, 'Zuschauer-Modus aktiv');
   const r2 = await ev(v => {
     const out = {}, txt = [];

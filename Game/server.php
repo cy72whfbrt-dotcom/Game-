@@ -244,8 +244,9 @@ function profil_oeffentlich($p) {
     if (isset($p->stats->captures)) $r->stats = (object)['captures' => $p->stats->captures];
     return $r;
 }
-// Münzen echter Spieler (u<id>) in openWaterBotCoins sieht nur der Weltrechner – wie in spieler_liste
-function muenzen_kuerzen($o) { foreach ($o as $id => $v) if (preg_match('/^u\d+$/', (string)$id)) unset($o->{$id}); return $o; }
+// Münzen anderer in openWaterBotCoins (Mitspieler und echte Spieler) sieht nur der Weltrechner – wie in spieler_liste
+// (Beute steht im Spähbericht; das Handy rechnet fehlende als 0)
+function muenzen_kuerzen($o) { foreach (array_keys((array)$o) as $id) unset($o->{$id}); return $o; }
 // ganzer Welt-Teil für einen Spieler ($ich: 'u<id>' – sein eigener Eintrag bleibt ganz; null: alle sind fremd)
 function weltteil_fuer_spieler($k, $text, $ich = null) {
     if ($k === 'openWaterBotCoins' && is_string($text)) { $o = json_decode($text); return is_object($o) ? json_encode(muenzen_kuerzen($o), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION) : 'null'; }

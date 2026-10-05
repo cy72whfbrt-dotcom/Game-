@@ -85,6 +85,12 @@ $p = profil_oeffentlich(json_decode(profil_bereinigen(json_encode(['lvl' => 9, '
 pruefe('Profil anderer: nur Öffentliches', [isset($p->skills), isset($p->gear), isset($p->hs), isset($p->fo), isset($p->coins), json_encode($p->city), json_encode($p->stats), $p->lvl, $p->look->ring], [false, false, false, false, false, '{"levels":{"keep":3}}', '{"captures":4}', 9, 'jade']);
 
 pruefe('Spähbericht darf vom Weltrechner kommen', in_array('spaeh', WELTRECHNER_NACHRICHTEN, true), true);
+// Münzen anderer (Mitspieler wie echte Spieler) sieht nur der Weltrechner
+pruefe('Münzen ganz verborgen', weltteil_fuer_spieler('openWaterBotCoins', '{"bot1":500,"u3":900}', 'u3'), '{}');
+$f = json_decode(flicken_fuer_spieler('openWaterBotCoins', '{"s":{"bot1":500,"u4":7}}', 'u3'), true);
+pruefe('Münzen-Flicken verborgen', $f['s'] ?? null, []);
+$b = json_decode(weltteil_fuer_spieler('openWaterBotState', '{"bot1":{"lvl":7}}', 'u3'), true);
+pruefe('Stufe der Mitspieler bleibt', $b['bot1']['lvl'], 7);
 
 // --- 3B: Hauptbuch und Gems nie beim Spieler, Nebel auf dem Server
 $b = json_decode(weltteil_fuer_spieler('openWaterBotState', '{"u3":{"lvl":5,"hb":{"st":{"keep":[3,0]}},"hbK":1}}'), true);
