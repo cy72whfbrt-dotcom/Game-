@@ -6498,7 +6498,7 @@ function passRewardAt(L, prem) {                          // what level L gives 
 var passState = null, passArm = 0, passTimer = null;
 function passLoad() { if (!passState) { try { passState = JSON.parse(store.get('openWaterPass')); } catch (e) {} if (!passState || typeof passState !== 'object' || !passState.s) passState = { s: {} }; } return passState; }
 function passSave() { store.set('openWaterPass', JSON.stringify(passLoad())); }
-function passNo(t) { return Math.floor((t - PASS_EPOCH) / PASS_LEN) + 1; }             // Saison N, the same for everyone
+function passNo(t) { return Math.floor((t - PASS_EPOCH) / PASS_LEN) + 1; }             // Saison-Pass N, the same for everyone
 function passEndOf(n) { return PASS_EPOCH + n * PASS_LEN; }
 function passOf(n) { const ps = passLoad(); return ps.s[n] || (ps.s[n] = { xp: 0, prem: false, f: [], p: [] }); }
 function passLvl(x) { return x ? Math.min(PASS_LVLS, Math.floor((x.xp || 0) / PASS_STEP)) : 0; }
@@ -6570,12 +6570,12 @@ function renderPass() {
     passPrune(); const n = passNo(Date.now()), x = passOf(n), L = passLvl(x), xp = x.xp || 0, max = L >= PASS_LVLS, into = max ? PASS_STEP : xp - L * PASS_STEP, hp = hourProduction('player');
     const ready = passReady(n), old = passReady(n - 1), arm = Date.now() - passArm < 4000;
     let h = '<div class="pass-hero' + (x.prem ? ' is-prem' : '') + '"><div class="pass-top"><span class="pass-lvl"><small>Stufe</small><b>' + L + '</b></span>' +
-        '<span class="pass-ht"><b>Saison ' + n + '</b><small>Endet in <span id="passLeft"></span></small></span>' + (x.prem ? '<span class="pass-tag">' + icon('crown') + 'Premium</span>' : '') + '</div>' +
+        '<span class="pass-ht"><b>Saison-Pass ' + n + '</b><small>Endet in <span id="passLeft"></span></small></span>' + (x.prem ? '<span class="pass-tag">' + icon('crown') + 'Premium</span>' : '') + '</div>' +
         '<div class="pass-bar"><i style="width:' + Math.round(into / PASS_STEP * 100) + '%"></i></div>' +
         '<div class="pass-bar-t"><span>' + (max ? 'Höchste Stufe erreicht' : fmtNum(into) + ' / ' + PASS_STEP + ' Punkte') + '</span><span>' + (max ? fmtNum(xp) + ' Punkte' : 'bis Stufe ' + (L + 1)) + '</span></div></div>';
     if (!x.prem) h += '<div class="pass-prem">' + icon('crown') + '<span><b>Premium-Reihe</b><small>Mehr Gems, Königliche Kisten, Marsch-Skin „Saisonzug“ (Stufe 20) und Rahmen „Saisonkrone“ (Stufe 40) – auch für erreichte Stufen.</small></span>' +
         '<button class="btn btn--primary btn--sm" type="button" data-pass-buy>' + (arm ? '<span>Sicher?</span>' : '') + icon('gem') + '<span>' + fmtNum(PASS_PREMIUM) + '</span></button></div>';
-    if (old.length) h += '<div class="pass-old">' + icon('hourglass') + '<span><b>Saison ' + (n - 1) + ': ' + old.length + (old.length === 1 ? ' Belohnung' : ' Belohnungen') + ' offen</b><small>Noch <span id="passOldLeft"></span> abholbar</small></span>' +
+    if (old.length) h += '<div class="pass-old">' + icon('hourglass') + '<span><b>Saison-Pass ' + (n - 1) + ': ' + old.length + (old.length === 1 ? ' Belohnung' : ' Belohnungen') + ' offen</b><small>Noch <span id="passOldLeft"></span> abholbar</small></span>' +
         '<button class="btn btn--primary btn--sm" type="button" data-pass-old><span>Abholen</span></button></div>';
     if (ready.length > 1) h += '<button class="btn btn--primary pass-all" type="button" data-pass-all>' + icon('check') + '<span>Alle abholen · ' + ready.length + '</span></button>';
     h += '<div class="pass-track"><div class="pass-head"><span>Frei</span><span></span><span>' + (x.prem ? '' : icon('lock')) + 'Premium</span></div>';
@@ -10210,15 +10210,25 @@ function barbSpawn() {                              // a third near you, 40 % ne
 }
 function dbossEnsure() {                            // today's boss: the kind turns every day, the place is the same for everyone today
     const d = todayKey(); if (dayBoss && dayBoss.d === d) return dayBoss;
+    if (dayBoss && dayBoss.hp > 0 && rechnet()) dbossEntkommen(dayBoss);                  // gestern nicht gefallen: alle, die getroffen haben, bekommen etwas Kleines
     const now = new Date(), n = Math.round(new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12).getTime() / 864e5), K = DBOSS_KINDS[n % DBOSS_KINDS.length], r = mulberry32(n * 7919 + 13);
     const lms = BARB_LMS.filter(l => l.ring <= 3); let p = null, lm = null;
     for (let t = 0; t < 20 && !p; t++) { lm = lms[Math.floor(r() * lms.length)]; p = barbSpot(lm, r, 3.5); }
     if (!p) p = { x: lm.x, y: lm.y };
     let pool = 0; for (const bot of BOT_DEFS) { let big = 0; for (const id of botOwnedIslands[bot.id] || []) big = Math.max(big, islandTroops[id] || 0); pool += big * .25 * DBOSS_HITS * barbFa(bot.id); }
-    const hp = niceRound(Math.max(5e7, pool * .8)), had = !!dayBoss;                        // life: about 80 % of what everyone's strikes (× their Angriff) can take in a day - it falls in the evening
+    const hp = niceRound(Math.max(saisonAnfang() ? DBOSS_MIN_ANFANG : 5e7, pool * .8)), had = !!dayBoss;   // life: about 80 % of what everyone's strikes (× their Angriff) can take in a day - it falls in the evening
     dayBoss = { d, k: K.k, name: K.name, x: Math.round(p.x), y: Math.round(p.y), lm: lm.id, hp, max: hp, dmg: {}, fell: 0 };
     saveBarb(); if (had) flashHint('Neuer Tagesboss: ' + K.name + ' ist erschienen!', 5000);
     return dayBoss;
+}
+// Neue Welt-Saison (09f saisonAnfang): in den ersten 3 Tagen haben alle nur Start-Truppen – die Untergrenze so, dass 8 Spieler mit je
+// 10 Angriffen aus einem Viertel ihrer Start-Truppen ihn schaffen (sonst 5e7: über 1000 Angriffe mit 50.000)
+const DBOSS_MIN_ANFANG = 8 * DBOSS_HITS * PLAYER_START_TROOPS * .25;
+function dbossEntkommen(b) {                        // (nur wer rechnet) der Boss ist nicht gefallen: wie beim Drachen alle, die getroffen haben, etwas Kleines –
+    const rk = dbossRanks(b); if (!rk.length) return;   //   fester Schlüssel je Tag (derselbe wie der Preis beim Fallen: nie beides, nie doppelt)
+    for (const [who] of rk) evPreis(who, 'boss', b.name + ' entkommen', DR_PREISE[2], b.d);
+    if (b.dmg.player) flashHint(b.name + ' ist entkommen – alle, die getroffen haben, bekommen eine kleine Belohnung unter Events.', 6000);
+    saveBotState();
 }
 const DBOSS_GONE = 5 * 60000;                          // a fallen boss leaves the map 5 min after it fell
 let dbossOffen = '';                                // (Tagesboss: einmal am Tag seinen Platz aufdecken – er ist für alle angekündigt, wie Drache und Kriegsherr)
@@ -10501,7 +10511,7 @@ function barbSheetHtml() {
         '<div class="field-lines"><span>' + (dead ? 'Neuer Boss in' : 'Verschwindet in') + '</span>' + mid + '<span>Deine Angriffe</span><b>' + rec.h + ' / ' + dbossHitsMax() + ' heute</b>' +
         '<span>Dein Schaden</span><b>' + (mine >= 0 ? fmtCompact(rk[mine][1]) + ' · Platz ' + (mine + 1) : '–') + (barbOut('player', 'b') ? ' <small>· Angriff unterwegs</small>' : '') + '</b></div>' +
         (rk.length ? '<ol class="barb-rank">' + rk.slice(0, 5).map(row).join('') + (mine >= 5 ? row(rk[mine], mine) : '') + '</ol>' : '<div class="notice">' + icon('info') + '<span>Noch hat niemand angegriffen.</span></div>');
-    const rules = '<div class="barb-note">Pro Angriff Münzen nach Schaden, ein Viertel der Kämpfer fällt, höchstens 5 % Leben pro Angriff. Fällt der Boss, gibt es für alle nach Rang Gems, Kisten und Splitter – Platz 1 bis 3 extra.</div>';
+    const rules = '<div class="barb-note">Pro Angriff Münzen nach Schaden, ein Viertel der Kämpfer fällt, höchstens 5 % Leben pro Angriff. Fällt der Boss, gibt es für alle nach Rang Gems, Kisten und Splitter – Platz 1 bis 3 extra. Entkommt er, bekommen alle, die getroffen haben, etwas Kleines.</div>';
     if (v.kind === 'boss') {
         const src = barbSource(b, 1, true);
         return bossHtml + (dead ? '' : rec.h >= dbossHitsMax() ? '<div class="notice notice--gold">' + icon('hourglass') + '<span>Heute keine Angriffe mehr – morgen wieder.</span></div>' :
@@ -10747,6 +10757,7 @@ function invTakt(now) {                              // (nur Weltrechner) Wellen
 // Fällt er: Platz 1 lila Kiste, Platz 2–10 blaue Kiste (nie Legendär – Alexander 2.10.), alle anderen etwas Kleines. Entkommt er: alle etwas Kleines.
 const DR_STUNDE = 19, DR_DAUER = 3 * 3600000, DR_HITS = 10, DR_CAP = .02, DR_NAME = 'Urdrache Vharak', DR_COL = '#d8452e';
 const DR_PREISE = [{ gems: 150, crate: 3, sh: 20, t: '1.' }, { gems: 60, crate: 2, sh: 8, t: '2.–10.' }, { gems: 15, crate: -1, sh: 2, t: 'Alle anderen' }];
+const DR_MIN_ANFANG = 4 * DR_HITS * PLAYER_START_TROOPS * .25;   // neue Welt-Saison (erste 3 Tage, nur Start-Truppen): 4 Spieler mit je 10 Angriffen aus einem Viertel schaffen ihn (sonst 1e7)
 const drPreisVon = i => DR_PREISE[i < 1 ? 0 : i < 10 ? 1 : 2];
 function drPlan(now) {
     now = now || Date.now();
@@ -10758,7 +10769,7 @@ function drOnMap(now) { const D = evState.dr; now = now || Date.now(); return D 
 function drNeu(p) {                                  // über dem Thron; Leben: etwa 75 % von dem, was alle mit ihren Angriffen schaffen können
     const m = islandById[megaTempleId] || islands[0];
     let pool = 0; for (const bot of BOT_DEFS) { let big = 0; for (const id of botOwnedIslands[bot.id] || []) big = Math.max(big, islandTroops[id] || 0); pool += big * .25 * DR_HITS * barbFa(bot.id); }
-    const hp = niceRound(Math.max(1e7, pool * .75));
+    const hp = niceRound(Math.max(saisonAnfang() ? DR_MIN_ANFANG : 1e7, pool * .75));
     return { start: p.start, end: p.end, x: Math.round(m.x), y: Math.round(m.y - ISLAND_RADIUS * 6), lm: m.landmassId, name: DR_NAME, hp, max: hp, dmg: {}, hits: {}, fell: 0, paid: false };
 }
 function drTreffer(m, now) {                         // wie beim Tagesboss: Schaden (höchstens 2 %), ein Drittel der Kämpfer fällt, Münzen nach Schaden
@@ -11594,7 +11605,7 @@ multiAttackConfirmBtn.addEventListener('click', () => {
 // damit alle Fähigkeitspunkte), Bündnisse, Märsche, Rallys, Verstärkungen, Armeen, Felder, Nebel, Kampfberichte. Die Hauptstadt zieht
 // auf einen freien Zufallsplatz am Rand (wie der Startplatz eines neuen Spielers). Mitspieler genau wie echte Spieler.
 // Der eigene Spielstand eines echten Spielers übernimmt den Reset über die Nachricht „saison“ (unten) → Neuladen → 01a-grundlagen.js.
-const SAISON_WOCHEN = 8, SAISON_STUNDE = 18, SAISON_BALD_MS = 3 * 864e5;
+const SAISON_WOCHEN = 8, SAISON_STUNDE = 18, SAISON_BALD_MS = 3 * 864e5, SAISON_ANFANG_MS = 3 * 864e5;
 const SAISON_PREISE = [3000, 2000, 1500, 500, 500, 500, 500, 500, 500, 500];   // Gems für Platz 1–10 (Vorschlag, LIESMICH)
 var saison = null, saisonSichT = 0;
 function saisonLaden() { try { saison = JSON.parse(store.get('openWaterSaison')) || null; } catch (e) { saison = null; } if (saison && !(saison.nr > 0 && saison.ende > 0)) saison = null; return saison; }
@@ -11624,7 +11635,7 @@ function saisonTakt() {                               // (nur wer rechnet) Termi
     saisonNeu(now);
 }
 setInterval(saisonTakt, 5000);
-const saisonBaldText = ende => 'In 3 Tagen beginnt eine neue Welt-Saison (' + evWann(ende) + ' Uhr). Deine Hauptstadt mit Burg, Gebäuden, Forschung, Helden, Ausrüstung, Gems und Rohstoffen bleibt – Basen, Truppen, Münzen, Stufe und Bündnisse fangen neu an. Die besten 10 bekommen Gems und einen Titel für immer.';
+const saisonBaldText = ende => { const t = Math.max(1, Math.round((ende - Date.now()) / 864e5)); return 'In ' + t + (t === 1 ? ' Tag' : ' Tagen') + ' beginnt eine neue Welt-Saison (' + evWann(ende) + ' Uhr). Deine Hauptstadt mit Burg, Gebäuden, Forschung, Helden, Ausrüstung, Gems und Rohstoffen bleibt – Basen, Truppen, Münzen, Stufe und Bündnisse fangen neu an. Die besten 10 bekommen Gems und einen Titel für immer.'; };   // (nach der echten Restzeit – die Nachricht kann später gelesen werden)
 function saisonAnkuendigen() {
     if (window.WELT) { for (const id in WELT.menschen) { const uid = parseInt(id.slice(1), 10); if (uid > 0) WELT.nachricht(uid, { art: 'saisonBald', nr: saison.nr, ende: saison.ende }, 'saisonBald|' + saison.nr); } }
     else afterSplash(() => flashHint(saisonBaldText(saison.ende), 12000, true));
@@ -11646,7 +11657,7 @@ function saisonNeu(now) {
     saisonWelt(now);
     // 4) echte Spieler: Konto beim Weltrechner zurücksetzen, die Nachricht „saison“ (sein Handy übernimmt den Reset und lädt neu) –
     //    Nummer je Reset eindeutig (mit Zeitpunkt): nach dem Zurückspielen kommt ein neuer Reset derselben Nummer sonst nie an
-    for (const id of menschen) { try { WELT.saisonKonto(id); } catch (e) { console.warn('Saison:', e); } WELT.nachricht(parseInt(id.slice(1), 10), { art: 'saison', nr, alt, neuBis: (loadBotState()[id] || {}).neuBis || 0 }, 'saison|' + nr + '|' + now); try { WELT.deltaBasis(id); } catch (e) {} }
+    for (const id of menschen) { try { WELT.saisonKonto(id); } catch (e) { console.warn('Saison:', e); } WELT.nachricht(parseInt(id.slice(1), 10), { art: 'saison', nr, alt, neuBis: (loadBotState()[id] || {}).neuBis || now + NEULING_MS }, 'saison|' + nr + '|' + now); try { WELT.deltaBasis(id); } catch (e) {} }
     saison = { nr, start: now, ende: saisonEnde(now), last: { nr: alt, top: top.map(([w, v]) => [neutralId(w), Math.round(v)]) } }; saisonSpeichern();
     window.__prVorher = null;                          // (Prüfer im Weltrechner: die Welt ist gewollt so viel kleiner – neue Grundlinie)
     if (!window.WELT && !SYSTEM) {                     // (Vorschau, allein) dein Spielstand übernimmt den Reset beim Neuladen wie am Handy
@@ -11682,7 +11693,9 @@ function saisonWelt(now) {                            // alles Weltliche zurück
         if (w === 'player') { ownedIslands.add(z.id); playerIslandId = z.id; store.set('openWaterPlayerIslandId', String(z.id)); }
         else { botOwnedIslands[w].add(z.id); bs[w].capital = z.id; bs[w].capMovedAt = now; bs[w].neuBis = now + NEULING_MS; }   // 48 Std. Anfängerschutz wie ein neuer Spieler (Alexander 5.10.)
     }
-    if (hatte.includes('player')) store.set('openWaterSaisonSchutz', String(now + NEULING_MS));   // (Vorschau: dein Anfängerschutz – übernimmt das Laden)
+    // 48 Std. Anfängerschutz für alle echten Spieler – auch die, die beim Reset keine Basis hatten (die Nachricht „saison“ schickt ihn mit)
+    for (const w of wer) if (w !== 'player' && botById[w] && botById[w].mensch) bs[w].neuBis = now + NEULING_MS;
+    if (wer.includes('player')) store.set('openWaterSaisonSchutz', String(now + NEULING_MS));   // (Vorschau: dein Anfängerschutz – übernimmt das Laden)
     // Spieler und Mitspieler: Stufe 1, keine Fähigkeitspunkte, keine Münzen, keine Verwundeten, keine alten Pläne
     for (const w of wer) { if (w === 'player') continue; const b = bs[w];
         b.lvl = 1; b.xp = 0; b.sp = 0; b.xpNeu = 0; for (const k in b.skills || {}) b.skills[k] = 0; b.wounded = 0; b.tt = 0; botCoins[w] = 0;
@@ -11692,6 +11705,8 @@ function saisonWelt(now) {                            // alles Weltliche zurück
     requestRender();
 }
 // ---- was man sieht: der Countdown (Leiste unter dem HUD in den letzten 3 Tagen, Karte oben im Events-Fenster) ----
+// In den ersten 3 Tagen einer neuen Saison haben alle nur Start-Truppen: Tagesboss und Drache mit weniger Leben (09b dbossEnsure, 09c drNeu)
+function saisonAnfang(now) { return !!(saison && saison.nr > 1 && saison.start > 0 && (now || Date.now()) - saison.start < SAISON_ANFANG_MS); }
 function saisonChip(now) {
     const S = saison; if (!S || now >= S.ende || S.ende - now > SAISON_BALD_MS) return null;
     return [1, '<button type="button" class="mb-chip is-warn" data-mb="ev-boss">' + icon('crown') + '<span>Neue Saison in</span><i data-ev-bis="' + S.ende + '"></i></button>'];
@@ -11702,7 +11717,7 @@ function saisonKarte() {
     const preise = 'Platz 1: ' + fmtNum(SAISON_PREISE[0]) + ' · 2: ' + fmtNum(SAISON_PREISE[1]) + ' · 3: ' + fmtNum(SAISON_PREISE[2]) + ' · 4–10: ' + fmtNum(SAISON_PREISE[3]) + ' Gems + Saison-Titel für immer';
     const last = S.last && S.last.top && S.last.top.length ? '<div class="lb-gap">Saison ' + S.last.nr + ' · Top 10</div>' + evRangHtml(S.last.top.map(([w, v]) => [lokalId(w), v]), v => fmtCompact(v)) : '';
     return evKarte('crown', 'Welt-Saison ' + S.nr, now < S.ende ? 'Neue Saison in ' + evUhr(S.ende) : S.halt ? 'Neue Saison: der Termin folgt' : 'Die neue Saison beginnt gleich …',
-        '<div class="field-lines"><span>Neustart</span><b>' + evWann(S.ende) + ' Uhr</b><span>Bleibt</span><b>Hauptstadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Gems, Holz/Stein/Eisen, Gekauftes</b>' +
+        '<div class="field-lines"><span>Neustart</span><b>' + (S.halt ? 'vom Admin' : evWann(S.ende) + ' Uhr') + '</b><span>Bleibt</span><b>Hauptstadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Gems, Holz/Stein/Eisen, Gekauftes</b>' +
         '<span>Neu</span><b>Basen, Truppen, Münzen, Stufe, Bündnisse – die Hauptstadt zieht an einen neuen Platz am Rand</b><span>Preise</span><b>Die besten 10 nach Macht: ' + preise + '</b></div>', bald ? 'is-warn' : '') + last;
 }
 // ---- (Handy) Nachrichten vom Weltrechner: Ankündigung, neue Saison ----
