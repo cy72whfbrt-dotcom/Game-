@@ -222,6 +222,13 @@ pruefe('Grenze Fehlversuche je Adresse', strpos($ix, "bremse('loginip:' . client
 // CSP: fremde Skripte nur genau three.js (nicht ganz jsdelivr) – und genau die Datei, die die Spielseite einbindet
 $sh = file_get_contents(__DIR__ . '/../Game/server/02-sicherheit-datenlecks.php');
 pruefe('CSP nur three.js', [strpos($sh, "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js; script-src-attr") !== false, strpos($sh, 'https://cdn.jsdelivr.net;') !== false], [true, false]);
-pruefe('Spielseite bindet genau diese Datei ein', strpos(file_get_contents(__DIR__ . '/../Game/spielseite/08-dialoge-stadt-skripte.php'), 'src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"') !== false, true);
+pruefe('Spielseite bindet genau diese Datei ein', strpos(file_get_contents(__DIR__ . '/../Game/spielseite/08-dialoge-stadt-skripte.php'), 'data-three="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"') !== false, true);   // (lädt spiel.js nach dem ersten Bild: dreiDLaden)
+// Skript-Adressen (schneller laden, 6.10.): verkleinert über skript.php, wenn Game/klein/ aktuell ist – sonst das Original
+$g = __DIR__ . '/../Game';
+$frisch = is_file("$g/klein/spiel.js") && filemtime("$g/klein/spiel.js") >= filemtime("$g/spiel.js");
+pruefe('Skript-Adresse spiel', skript('spiel'), $frisch ? 'skript.php?d=spiel&amp;v=' . filemtime("$g/klein/spiel.js") : 'spiel.js?v=' . filemtime("$g/spiel.js"));
+pruefe('Skript ohne verkleinerte Fassung → Original', skript('sw'), 'sw.js?v=' . filemtime("$g/sw.js"));
+$sk = file_get_contents("$g/skript.php"); preg_match("/const SKRIPTE = \[([^\]]*)\]/", $sk, $m1); preg_match("/const SKRIPTE = \[([^\]]*)\]/", file_get_contents(__DIR__ . '/../werkzeuge/verkleinern.js'), $m2);
+pruefe('skript.php und verkleinern.js: dieselbe Liste', [$m1[1] ?? 'fehlt', strpos($sk, "in_array(\$name, SKRIPTE, true)") !== false], [$m2[1] ?? 'fehlt2', true]);
 echo ($fehler ? "$fehler von $n Tests FEHLGESCHLAGEN\n" : "Alle $n Server-Tests bestanden.\n");
 exit($fehler ? 1 : 0);

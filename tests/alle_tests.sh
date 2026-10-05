@@ -3,7 +3,7 @@
 # bis zu 4 gleichzeitig (OW_PARALLEL=1: nacheinander wie früher).
 #   tests/alle_tests.sh                → am Ende „ALLES OK“ oder die Liste der Fehler
 #   tests/alle_tests.sh rally burg     → Schnelltest: nur die Browser-Tests, deren Name so anfängt (plus die Einheitstests)
-# Browser-Tests (tests/browser/): Bündnis, Verstärkung, gemeinsamer Angriff, Rally 2 gegen 1, Rally-Schild/Boss je Spieler, Rally „jeder für sich“ (Helden, Flucht, Krankenhaus, Punkte, EP), neue Kampf-Regel, Welt-Saison (Server-Reset), Klick-Test aller Fenster, fremde Werte nur nach dem Spähen, Spähbericht mit Verstärkung + Kriegsherr gegen Verstärkung, Handy-Texte nicht abgeschnitten.
+# Browser-Tests (tests/browser/): Bündnis, Verstärkung, gemeinsamer Angriff, Rally 2 gegen 1, Rally-Schild/Boss je Spieler, Rally „jeder für sich“ (Helden, Flucht, Krankenhaus, Punkte, EP), neue Kampf-Regel, Welt-Saison (Server-Reset), Klick-Test aller Fenster, fremde Werte nur nach dem Spähen, Spähbericht mit Verstärkung + Kriegsherr gegen Verstärkung, Handy-Texte nicht abgeschnitten, schneller laden (verkleinerte Skripte, skript.php, 3D später).
 # Mit Server dazu, beide Reihen gleichzeitig: tests/komplett.sh <arbeitsordner>
 # Mehrere Läufe gleichzeitig (auch in verschiedenen Kopien) stören sich nicht: eigener Temp-Ordner je Lauf, die
 # Browser-Tests nehmen einen freien Port vom System (listen(0)) und legen Bilder in ihren Arbeitsordner.
@@ -42,7 +42,7 @@ EINHEIT="welt_test.js server_test.php karte_test.js"
 for x in $EINHEIT; do test1 Einheit "$x" ${BEFEHL[$x]} & done   # (erst nach dem Zusammensetzen von spiel.js)
 # Test | Vorschau (alles_test/teil2_test bekommen den Arbeitsordner für ihre Bilder dazu – jeder seinen eigenen)
 LISTE="bund_bot_test|$V bund_amt_test|$V verst_kampf_test|$V hilfe_auto_test|$N gemeinsam_test|$V regel_test|$N rally21_test|$N rally_menschen_test|$N rally_jeder_test|$N
-rally_held_test|$N rally_schild_test|$N rally_name_test|$N helden_beute_test|$N burg_test|$N haenger_test|$N haenger_holen_test|$N saison_test|$N saison_anfang_test|$N rally_maut_test|$N gemeinsam_heim_test|$V handy_stadt_test|$V mitspieler_feld_test|$V alles_test|$V teil2_test|$V fremd_test|$V spaeh_verst_test|$V handy_texte_test|$V"
+rally_held_test|$N rally_schild_test|$N rally_name_test|$N helden_beute_test|$N burg_test|$N haenger_test|$N haenger_holen_test|$N saison_test|$N saison_anfang_test|$N rally_maut_test|$N gemeinsam_heim_test|$V handy_stadt_test|$V mitspieler_feld_test|$V alles_test|$V teil2_test|$V fremd_test|$V spaeh_verst_test|$V handy_texte_test|$V laden_test|$N"
 WAHL=""; for t in $LISTE; do n=${t%%|*}; if [ $# = 0 ]; then WAHL="$WAHL $t"; else for p in "$@"; do [[ $n == $p* ]] && WAHL="$WAHL $t"; done; fi; done
 for t in $WAHL; do n=${t%%|*}; v=${t#*|}; mkdir -p "$T/a_$n"; BEFEHL[$n]="node tests/browser/$n.js $v $T/a_$n"; fortschritt Browser "$n" wartet; done
 for t in $WAHL; do n=${t%%|*}
