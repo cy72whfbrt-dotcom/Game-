@@ -58,7 +58,7 @@ function spawnWander() {
     const cand = islands.filter(i => i.type === 'tower' && !islandOwnerOf(i.id) && !bossAt(i.id) && landmasses[i.landmassId].tier === 'outer' && landmasses[i.landmassId].ring >= 3);
     if (!cand.length) return false;
     const isl = cand[Math.floor(Math.random() * cand.length)], now = Date.now();
-    const troops = niceRound(Math.max(1e6, worldArmy() * (1.5 + Math.random())));
+    const troops = niceRound(Math.max(wirtK(1e6), worldArmy() * (1.5 + Math.random())));   // (Mindeststärke × WIRTSCHAFT_KOSTEN)
     wander = { wander: true, name: WANDER_NAMES[Math.floor(Math.random() * WANDER_NAMES.length)], troops, defense: niceRound(troops * .15), max: troops,
         at: isl.id, from: null, to: null, departAt: 0, arriveAt: 0, campUntil: now + 60000, endsAt: now + 25 * 60 * 1000 };
     scoutedIslands.add(isl.id);

@@ -30,7 +30,7 @@ function passXp(v) {
 }
 function passGive(who, r) {                               // one reward to anyone (you or the others) - returns the text for the hint
     const b = who === 'player' ? null : loadBotState()[who]; if (who !== 'player' && !b) return ''; const n = r.n || 1;
-    if (r.k === 'coins') { const c = Math.max(5000, Math.round(hourProduction(who).coins)) * n; if (b) botCoins[who] = (botCoins[who] || 0) + c; else coins += c; return '+' + fmtCompact(c) + ' Münzen'; }
+    if (r.k === 'coins') { const c = Math.max(wirtK(5000), Math.round(hourProduction(who).coins)) * n; if (b) botCoins[who] = (botCoins[who] || 0) + c; else coins += c; return '+' + fmtCompact(c) + ' Münzen'; }
     if (r.k === 'gems') { if (b) b.gems += n; else gems += n; return '+' + n + ' Edelsteine'; }
     if (r.k === 'tp') { if (b) b.tp = (b.tp || 0) + n; else { throneState.pts = (throneState.pts || 0) + n; saveThrone(); } return '+' + n + ' Thron-Punkte'; }
     if (r.k === 'shards') { const h = heroGrantShards(who, n); if (h) return '+' + n + ' Splitter ' + h.name; if (b) b.gems += n * 20; else gems += n * 20; return '+' + n * 20 + ' Edelsteine (alle Helden voll)'; }
@@ -62,7 +62,7 @@ function passBuy() {
 }
 function passCellHtml(r, hp, got) {                            // icon + amount of one reward
     const k = r.k, n = r.n || 1, row = (ic, b, s, cls) => '<span class="pc-ic' + (cls ? ' ' + cls : '') + '">' + ic + '</span><span class="pc-t"><b>' + b + '</b><small>' + s + '</small></span>';
-    if (k === 'coins') return row(icon('coin', 'ico-coin'), fmtCompact(Math.max(5000, Math.round(hp.coins)) * n), 'Münzen');
+    if (k === 'coins') return row(icon('coin', 'ico-coin'), fmtCompact(Math.max(wirtK(5000), Math.round(hp.coins)) * n), 'Münzen');
     if (k === 'gems') return row(icon('gem', 'ico-gem'), '+' + n, 'Edelsteine');
     if (k === 'tp') return row(icon('crown', 'ico-tp'), '+' + n, 'Thron-Punkte');
     if (k === 'shards') return row(icon('star', 'ico-shard'), '+' + n, 'Helden-Splitter');

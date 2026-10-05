@@ -21,7 +21,9 @@ const HD = {
     PREIS_STUNDE_MAX: 2e6                                    // Preise wachsen mit der Stunden-Produktion, aber höchstens bis zu dieser
 };
 const HD_NAMEN = ['Ottokar der Krämer', 'Mira mit dem Karren', 'Bertram aus dem Süden', 'Liesel die Händlerin', 'Hakon der Fernreisende', 'Zora vom Markt', 'Anselm der Tuchhändler', 'Greta mit dem Esel'];
-// Preis = Faktor × Stunden-Produktion an Münzen (mindestens min, Stunde zählt höchstens 2 Mio.) – für Anfänger und Große „maßvoll“
+// Preis = Faktor × Stunden-Produktion an Münzen (mindestens min, Stunde zählt höchstens 2 Mio.) – für Anfänger und Große „maßvoll“.
+// Wirtschaft 5.10.: Preise sind Kosten – × WIRTSCHAFT_KOSTEN wie vorher; die Stunden-Produktion ist × WIRTSCHAFT_ERTRAG, zählt also
+// × Kosten ÷ Ertrag (= doppelt), min und die Grenze × WIRTSCHAFT_KOSTEN
 const HD_WAREN = {
     sh:      { name: '3 Helden-Splitter', text: 'Für einen zufälligen Helden.', ic: 'star', f: 2, min: 20000 },
     kiste:   { name: 'Blaue Ausrüstungskiste', text: 'Ein Ausrüstungsteil, genau Selten (blau).', ic: 'shop', f: 3, min: 30000 },
@@ -32,7 +34,8 @@ const HD_WAREN = {
 var hdState = (() => { try { return JSON.parse(store.get('openWaterHaendler')) || null; } catch (e) { return null; } })() || {};
 function hdSpeichern() { if (rechnet()) store.set('openWaterHaendler', JSON.stringify(hdState)); requestRender(); }
 function hdDa(now) { const h = hdState.h; return h && h.start <= (now || Date.now()) && h.end > (now || Date.now()) ? h : null; }
-function hdPreis(who, k) { const w = HD_WAREN[k]; if (!w) return Infinity; let c = 0; try { c = hourProduction(who).coins || 0; } catch (e) {} return niceRoundW(Math.max(w.min, w.f * Math.min(c, HD.PREIS_STUNDE_MAX))); }
+function hdPreis(who, k) { const w = HD_WAREN[k]; if (!w) return Infinity; let c = 0; try { c = (hourProduction(who).coins || 0) * WIRTSCHAFT_KOSTEN / WIRTSCHAFT_ERTRAG; } catch (e) {}
+    return niceRoundW(Math.max(wirtK(w.min), w.f * Math.min(c, wirtK(HD.PREIS_STUNDE_MAX)))); }
 function hdGekauft(who, k) { const l = (hdState.kauf || {})[who]; return !!l && l.includes(k); }
 function hdSammeln(who) { const b = hdState.boost && hdState.boost[who]; return b && b > Date.now() ? HD.BOOST : 1; }   // (fieldTick in spiel.js)
 const hdWerName = w => w === 'player' ? 'Du' : (botById[w] || {}).name || 'Jemand';

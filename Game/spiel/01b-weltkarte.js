@@ -26,6 +26,8 @@ const TIER_STATS = {
 const RING_MULT = { 2: 300, 3: 60, 4: 20, 5: 8, 6: 2, 7: 1 };   // neutral strength of outer regions: the edge is easy, near the middle hard
 function ringMult(lm) { return lm.tier === 'outer' ? (RING_MULT[lm.ring] || 1) : 1; }
 function niceRoundW(n) { const p = Math.pow(10, Math.max(0, Math.floor(Math.log10(n)) - 1)); return Math.round(n / p) * p; }
+// Wirtschaft 5.10. (LIESMICH 11b A): Kosten und Gegner × WIRTSCHAFT_KOSTEN – als ganze Zahl, nie unter mn (sonst 1)
+function wirtK(n, mn = 1) { return Math.max(mn, Math.round(n * WIRTSCHAFT_KOSTEN)); }
 const ISLAND_RADIUS = 650; // tower footprint - bigger again, still well under the guaranteed minimum spacing between towers
 const NEUTRAL_DEFENSE_MAX = 100;
 const NEUTRAL_DEFENSE_MIN = 20;
@@ -116,7 +118,7 @@ const UPGRADE_BASE_COST = 120, UPGRADE_COST_GROWTH = 1.27;
 // skill bonus - used for bot- and (in a future PvP defense) other-
 // player-owned bases, which don't have the human player's gear.
 function baseDefenseForLevel(level) {
-    return Math.round(BASE_DEFENSE * Math.pow(DEFENSE_GROWTH, Math.min(level, MAX_BASE_LEVEL) - 1));
+    return wirtK(BASE_DEFENSE * Math.pow(DEFENSE_GROWTH, Math.min(level, MAX_BASE_LEVEL) - 1));   // (× WIRTSCHAFT_KOSTEN)
 }
 function defenseForLevel(level) {
     return Math.round(baseDefenseForLevel(level) * (1 + armorDefensePct() / 100));
@@ -127,7 +129,7 @@ function coinsPerTick(level) {
 function troopsPerTick(level) {
     return Math.round(BASE_TROOPS * Math.pow(PRODUCTION_GROWTH, Math.min(level, MAX_BASE_LEVEL) - 1));
 }
-function upgradeCostRoh(level) { return Math.round(UPGRADE_BASE_COST * Math.pow(UPGRADE_COST_GROWTH, level - 1)); }   // ohne Rabatt
+function upgradeCostRoh(level) { return wirtK(UPGRADE_BASE_COST * Math.pow(UPGRADE_COST_GROWTH, level - 1)); }   // ohne Rabatt (× WIRTSCHAFT_KOSTEN)
 function upgradeCost(level) {                    // Wochen-Event „Bauherr“: 20 % günstiger
     let r = 1; try { if (evThemaAktiv('bau')) r = .8; } catch (e) {}
     return Math.round(upgradeCostRoh(level) * r);
@@ -311,13 +313,13 @@ var gateCfg = null;
 function loadGateCfg() { if (!gateCfg) { try { gateCfg = JSON.parse(store.get('openWaterGateCfg')) || {}; } catch (e) { gateCfg = {}; } } return gateCfg; }
 function gateSettings(gate) { return Object.assign({ toll: gate.toll, closed: false }, loadGateCfg()[gate.id] || {}); }
 function setGateSettings(gateId, patch) { const c = loadGateCfg(); c[gateId] = Object.assign(gateSettings(islandById[gateId]), patch); store.set('openWaterGateCfg', JSON.stringify(c)); }
-const GATE_TOLLS = [0, 0.1, 0.25, 0.5, 1, 2], TOLL_MAX = 1e6;   // per troop, but never more than 1 Mio. per march
+const GATE_TOLLS = [0, 0.1, 0.25, 0.5, 1, 2], TOLL_MIN = 100, TOLL_MAX = 1e6;   // per troop, at least 100 and never more than 1 Mio. per march (beides × WIRTSCHAFT_KOSTEN)
 function tollFor(fromLm, toLm, troops, payer, targetId, cut) {  // → { gate, cost, closed } (free for the gate's owner - and for an attack ON the gate itself); cut = a hero's −% Maut
     const gate = gateOnRoute(fromLm, toLm);
     if (!gate || islandOwnerOf(gate.id) === payer || gate.id === targetId || bundFreund(islandOwnerOf(gate.id), payer)) return { gate, cost: 0 };   // Bündnis: Tore der Mitglieder sind für alle Mitglieder frei und offen
     const cfg = gateSettings(gate);
     if (!islandOwnerOf(gate.id) || cfg.closed) return { gate, cost: Infinity, closed: true };   // unowned gates are shut
-    return { gate, cost: cfg.toll > 0 ? Math.round(Math.max(100, Math.min(TOLL_MAX, Math.round(Math.max(0, troops) * cfg.toll))) * (1 - Math.min(90, cut || 0) / 100)) : 0 };   // (ganze Münzen – auch mit Helden-Rabatt)
+    return { gate, cost: cfg.toll > 0 ? Math.round(Math.max(wirtK(TOLL_MIN), Math.min(wirtK(TOLL_MAX), Math.round(Math.max(0, troops) * cfg.toll))) * (1 - Math.min(90, cut || 0) / 100)) : 0 };   // (ganze Münzen – auch mit Helden-Rabatt)
 }
 function payToll(fromLm, toLm, troops, payer, targetId, cut) { // payer: 'player' | bot id → false when it can't pay
     const { gate, cost, closed } = tollFor(fromLm, toLm, troops, payer, targetId, cut);

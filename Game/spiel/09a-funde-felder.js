@@ -6,8 +6,8 @@ let pickups = [], pickupFx = [], nextPickupAt = Date.now() + 8000;
 function pickupAmount(kind) {
     const L = Math.max(playerLvl, 1);
     if (kind === 'gem') return 1 + Math.floor(Math.random() * 3);
-    if (kind === 'troops') return Math.max(100, niceRound(levelRewardTroops(Math.max(L, 2)) * 0.05));
-    return Math.max(200, niceRound(levelRewardCoins(L) * 0.1));
+    if (kind === 'troops') return Math.max(wirtK(100), niceRound(levelRewardTroops(Math.max(L, 2)) * 0.05));   // (Stufen-Belohnung und Mindestwert × WIRTSCHAFT_KOSTEN)
+    return Math.max(wirtK(200), niceRound(levelRewardCoins(L) * 0.1));
 }
 function pickupScreenPos(p) { return { x: p.x * mapState.zoom + mapState.offsetX, y: p.y * mapState.zoom + mapState.offsetY }; }
 function trySpawnPickup() {

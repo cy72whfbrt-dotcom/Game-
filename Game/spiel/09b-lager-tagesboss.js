@@ -2,8 +2,8 @@
 // ===== BARBAREN-LAGER + TAGESBOSS: camps (Stufe 1-25) out on the land and one boss a day with a big pool of life for everyone.
 // A camp of level N only after N-1 (level 1 always), 20 camp wins a day (reset at midnight) - the same for you and every other player.
 const BARB_MAX_L = 25, BARB_DAY = 20, BARB_WANT = 110, DBOSS_HITS = 10, DBOSS_CAP = .05;   // camps on the map · a boss hit takes at most 5 % of its life
-const barbTroopsOf = L => niceRound(2000 * Math.pow(2, L - 1));                         // 2 Tsd. at 1, ~1 Mio. at 10, ~34 Mrd. at 25
-const barbLootOf = L => niceRound(barbTroopsOf(L) * .6 + 500 * L * L);                    // coins for a win (+ Angriff: Gold per warrior)
+const barbTroopsOf = L => niceRound(wirtK(2000 * Math.pow(2, L - 1)));                  // × WIRTSCHAFT_KOSTEN (5.10.): 1 at 1, ~570 at 10, ~19 Mio. at 25 (vorher 2 Tsd. · 1 Mio. · 34 Mrd.)
+const barbLootOf = L => niceRound(barbTroopsOf(L) * .6 + wirtK(500 * L * L));             // coins for a win (+ Angriff: Gold per warrior)
 const barbTier = L => L >= 21 ? 4 : L >= 15 ? 3 : L >= 8 ? 2 : 1;                         // badge colour like the gear rarities
 const DBOSS_KINDS = [{ k: 'kraken', name: 'Kraken Thalor', col: '#3fb0c4' }, { k: 'giant', name: 'Steinriese Gorm', col: '#b39b72' }, { k: 'dragon', name: 'Feuerdrache Ignar', col: '#ee6a34' }, { k: 'wraith', name: 'Nebelkönig Morvan', col: '#9d86ea' }];
 const DBOSS_PRIZE = [{ gems: 300, crate: 3, sh: 30 }, { gems: 200, crate: 3, sh: 20 }, { gems: 150, crate: 3, sh: 15 }, { gems: 80, crate: 2, sh: 10 }, { gems: 30, crate: -1, sh: 5 }];   // 1 · 2 · 3 · 4-10 · everyone else who hit it
@@ -50,13 +50,14 @@ function dbossEnsure() {                            // today's boss: the kind tu
     for (let t = 0; t < 20 && !p; t++) { lm = lms[Math.floor(r() * lms.length)]; p = barbSpot(lm, r, 3.5); }
     if (!p) p = { x: lm.x, y: lm.y };
     let pool = 0; for (const bot of BOT_DEFS) { let big = 0; for (const id of botOwnedIslands[bot.id] || []) big = Math.max(big, islandTroops[id] || 0); pool += big * .25 * DBOSS_HITS * barbFa(bot.id); }
-    const hp = niceRound(Math.max(saisonAnfang() ? DBOSS_MIN_ANFANG : 5e7, pool * .8)), had = !!dayBoss;   // life: about 80 % of what everyone's strikes (× their Angriff) can take in a day - it falls in the evening
+    const hp = niceRound(Math.max(saisonAnfang() ? DBOSS_MIN_ANFANG : wirtK(5e7), pool * .8)), had = !!dayBoss;   // life: about 80 % of what everyone's strikes (× their Angriff) can take in a day - it falls in the evening
     dayBoss = { d, k: K.k, name: K.name, x: Math.round(p.x), y: Math.round(p.y), lm: lm.id, hp, max: hp, dmg: {}, fell: 0 };
     saveBarb(); if (had) flashHint('Neuer Tagesboss: ' + K.name + ' ist erschienen!', 5000);
     return dayBoss;
 }
 // Neue Welt-Saison (09f saisonAnfang): in den ersten 3 Tagen haben alle nur Start-Truppen – die Untergrenze so, dass 8 Spieler mit je
-// 10 Angriffen aus einem Viertel ihrer Start-Truppen ihn schaffen (sonst 5e7: über 1000 Angriffe mit 50.000)
+// 10 Angriffen aus einem Viertel ihrer Start-Truppen ihn schaffen (sonst 5e7 × WIRTSCHAFT_KOSTEN = 27.778). Die Start-Truppen bleiben
+// 100.000 (Alexander 5.10.) – darum bleibt auch diese Untergrenze (sonst fiele er am ersten Tag mit einem Angriff)
 const DBOSS_MIN_ANFANG = 8 * DBOSS_HITS * PLAYER_START_TROOPS * .25;
 function dbossEntkommen(b) {                        // (nur wer rechnet) der Boss ist nicht gefallen: wie beim Drachen alle, die getroffen haben, etwas Kleines –
     const rk = dbossRanks(b); if (!rk.length) return;   //   fester Schlüssel je Tag (derselbe wie der Preis beim Fallen: nie beides, nie doppelt)

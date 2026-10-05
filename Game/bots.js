@@ -981,7 +981,7 @@ function botCityBuild(bot, now) {                         // one builder (two on
 // ---- the bot's Krankenhaus ----
 function botHospitalPct(botId) { return Math.min(60, 5 * botBld(botId, 'hospital')) + (AUF ? AUF.lazarettPlus(botId) : 0); }   // (+ Forschung Krankenhaus)
 
-function botHospitalCapacity(botId) { const l = botBld(botId, 'hospital'); return l ? Math.round(1e6 * Math.pow(1.6, l - 1)) : 0; }
+function botHospitalCapacity(botId) { return hospitalPlatz(botBld(botId, 'hospital')); }   // (wie deins)
 
 function botHospitalTake(botId, fallen, pct) {
     const b = loadBotState()[botId]; if (!b || fallen <= 0 || !botBld(botId, 'hospital')) return 0;
@@ -1658,7 +1658,7 @@ function botGatherField(bot, freeOnly) {                 // freeOnly: under thei
     const own = botOwnedIslands[bot.id]; if (!own || !own.size) return false;
     const thr = botThreatened(bot.id); let base = null; for (const id of own) if (!thr.has(id) && (base === null || (islandTroops[id] || 0) > (islandTroops[base] || 0))) base = id;
     if (base === null) return false;
-    const have = Math.floor((islandTroops[base] || 0) * .35); if (have < 300) return false;
+    const have = Math.floor((islandTroops[base] || 0) * .35); if (have < wirtK(300)) return false;   // (Truppen-Grenzen × WIRTSCHAFT_KOSTEN)
     const kennt = botKennt(bot.id), b = islandById[base], reach = new Set((reachableLandmassIds[b.landmassId] || [b.landmassId]).filter(l => landmassesConnected(b.landmassId, l) && kennt.has(l)));
     let best = null, bd = Infinity; const wunsch = AUF ? AUF.botRohWunsch(bot.id) : null;   // der Rohstoff, der für die Burg am meisten fehlt, lockt mehr
     for (const f of resFields) { if (!reach.has(f.landmassId) || dort.has(f.id)) continue; const st = fieldInfo(f); if (st.left <= 0) continue;
@@ -1903,7 +1903,7 @@ function botDrache(bot) {                                 // ein paar Schläge �
     const due = Math.min(DR_HITS, Math.ceil(DR_HITS * (Date.now() - D.start) / (D.end - D.start)) + 1);
     if ((D.hits[bot.id] || 0) >= due || barbOut(bot.id, 'd')) return false;
     const base = botBarbBase(bot); if (base === null) return false;
-    const n = Math.floor((islandTroops[base] || 0) * (.15 + Math.random() * .2)); if (n < 1000) return false;
+    const n = Math.floor((islandTroops[base] || 0) * (.15 + Math.random() * .2)); if (n < wirtK(1000)) return false;
     return barbSend(bot.id, base, 'd', null, n, heroPickBest(bot.id, null, null, n));
 }
 function botDayBoss(bot) {                                // the daily boss: a few strikes a day with a share of their biggest free base
@@ -1911,6 +1911,6 @@ function botDayBoss(bot) {                                // the daily boss: a f
     if (!d || d.hp <= 0 || barbRec(bot.id).h >= due || barbOut(bot.id, 'b') || Math.random() < .5) return false;
     const base = botBarbBase(bot); if (base === null) return false;
     // (kein Nebel-Tor mehr: der Tagesboss ist für alle angekündigt, wie Drache und Kriegsherr – vorher griff nur an, wer seine Insel kannte: 1 von 150)
-    const n = Math.floor((islandTroops[base] || 0) * (.15 + Math.random() * .2)); if (n < 1000) return false;
+    const n = Math.floor((islandTroops[base] || 0) * (.15 + Math.random() * .2)); if (n < wirtK(1000)) return false;
     const hp = heroPickPair(bot.id, null, null, n); return barbSend(bot.id, base, 'b', null, n, hp[0], hp[1]);
 }

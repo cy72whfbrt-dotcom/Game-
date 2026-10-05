@@ -239,7 +239,7 @@ function bundGeschenk(geber, grund) {
     for (const w of a.mit) {
         if (w === geber || (g.n[w] || 0) >= BUND.GESCHENKE_TAG) continue;
         g.n[w] = (g.n[w] || 0) + 1;
-        const hp = hourProduction(w), bg = AUF ? AUF.botschaftGeschenk(w) : 1, c = Math.round(Math.max(2000, hp.coins * .05) * bg), tr = Math.round(Math.max(500, hp.troops * .05) * bg);   // (Botschaft: größer)
+        const hp = hourProduction(w), bg = AUF ? AUF.botschaftGeschenk(w) : 1, c = Math.round(Math.max(wirtK(2000), hp.coins * .05) * bg), tr = Math.round(Math.max(wirtK(500), hp.troops * .05) * bg);   // (Botschaft: größer · Mindestwerte × WIRTSCHAFT_KOSTEN)
         const x = Math.random(), crate = x < .03 ? 1 : x < .12 ? 0 : -1;                       // selten eine graue oder grüne Ausrüstung
         if (botById[w] && botById[w].mensch) {
             if (WELT.wache) WELT.wache.gutschrift(w, c, tr);                                   // (damit der Schummel-Schutz das Abholen durchlässt)

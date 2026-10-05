@@ -1,4 +1,7 @@
 // Teil 01a-grundlagen.js: Grundlagen: rechnet(), Zahlen- und Zeit-Anzeige, Bausteine für Kampfbericht und Live-Anzeige, Konstanten
+// Wirtschaft (Alexander 5.10.): Ertrag pro Stunde statt pro Sekunde; Kosten-Faktor siehe LIESMICH 11b A
+const WIRTSCHAFT_ERTRAG = 1 / 3600;   // was früher pro Sekunde kam, kommt jetzt pro Stunde
+const WIRTSCHAFT_KOSTEN = 1 / 1800;   // Kosten/Gegner: kleiner, aber nur halb so stark wie der Ertrag → alles etwa 2× langsamer als vorher (nie zu einfach)
 // Rechnet dieses Spiel gerade die Welt (Weltrechner)? Ohne welt.js: immer.
 function rechnet() { return !window.WELT || WELT.leiter; }
 // Läuft hier der Weltrechner auf dem Server (weltrechner/start.js)? Dann: kein eigener Spieler, keine Basis, nichts zeichnen.

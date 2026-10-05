@@ -75,9 +75,9 @@ const cityBuildOf = (c, id) => c.builds.find(b => b.id === id) || null;
 function saveCity() { store.set('openWaterCity', JSON.stringify(cityState)); }
 const KEEP_DEF = { id: 'keep', name: 'Burg', icon: 'castle' };   // die Burg als „Gebäude“ (Bauarbeiter, Bauzeit) – Paket D
 function cityDef(id) { return id === 'keep' ? KEEP_DEF : CITY_BUILDINGS.find(b => b.id === id); }
-function cityCost(id, level) {                    // coins to go from `level` to level + 1
-    if (id === 'keep') return niceRound(2000 * Math.pow(1.85, level - 1));   // Burg-Stufe (dazu Rohstoffe: aufbau.js)
-    return niceRound(500 * Math.pow(1.9, level));
+function cityCost(id, level) {                    // coins to go from `level` to level + 1 (× WIRTSCHAFT_KOSTEN)
+    if (id === 'keep') return niceRound(wirtK(2000 * Math.pow(1.85, level - 1)));   // Burg-Stufe (dazu Rohstoffe: aufbau.js)
+    return niceRound(wirtK(500 * Math.pow(1.9, level)));
 }
 function cityTimeRoh(id, level) {                 // build time for level -> level + 1 – auch der Weltrechner prüft damit (Hauptbuch)
     // fast at first (20 s … 1,5 h up to level 12), then +20 % per level, never more than 7 days - like the big strategy games
