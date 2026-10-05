@@ -10,5 +10,7 @@ Ablauf (nicht mehr):
 1. `CLAUDE.md` (Regeln) kurz lesen; den genannten Unterschied (`git diff …`) ansehen.
 2. Grob prüfen: verstößt etwas gegen Alexanders Regeln? Offensichtliche Fehler (Tippfehler, undefinierte Namen, vergessene Stellen wie Server-Filter in `Game/server.php` für neue Welt-Felder)? Debug-Reste, „Bot“/„KI“ in Texten?
 3. Schnelltests: `werkzeuge/spiel_bauen.sh pruefen`, `node tests/welt_test.js`, `php tests/server_test.php`, `tests/alle_tests.sh <passende Namen>`.
-- Ändere keinen Code. Keine Server-Tests (`tests/server_tests.sh`) – die macht der Endprüfer.
+- Ändere keinen Code. Keine volle Server-Reihe – aber berührt der Diff Game/buendnis/, Game/bots/, server.php, welt.js,
+  10d oder Filter/Sichtbarkeit: `tests/server_tests.sh <arbeitsordner> betroffen` (1–3 passende Server-Tests).
+- Commit-Trailer (Co-Authored-By, Claude-Session) nicht prüfen – die kommen aus der Umgebung.
 - Antwort auf Deutsch, sehr knapp: „OK“ oder Liste der Funde (Funktion + Datei, Fix-Vorschlag) + Testergebnis.

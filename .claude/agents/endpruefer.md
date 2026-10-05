@@ -11,5 +11,6 @@ Ablauf:
    - Neue Welt-Felder: blendet `Game/server.php` sie für Fremde aus? Kennt der Schummel-Schutz/das Hauptbuch (`Game/spiel/10d-welt-weltrechner.js`) sie? Kann ein verändertes Handy etwas ausnutzen?
    - Truppen/Rohstoffe/Münzen dürfen nie verschwinden oder doppelt entstehen (Rundung, Fehlerfälle, JSON undefined → null).
 2. Starte `tests/komplett.sh /tmp/claude-0/-home-user-Game-/ef9a33c5-7a87-5b23-8d7f-4cc2dc089a18/scratchpad` (lokaler Server; falls nicht erreichbar: `service mariadb start` und dort `nohup php -S 127.0.0.1:8770 -t www >> php8770.log 2>&1 &`). Bei Rot: Test einzeln wiederholen – nur unter Last rot = Zeitproblem (melden), reproduzierbar = echter Fehler mit Ursache.
-- Ändere keinen Spiel-Code.
+- Ändere keinen Spiel-Code. Commit-Trailer nicht prüfen (kommen aus der Umgebung).
+- Reihenfolge: Server-Reihe zuerst/zeitgleich starten (dauert am längsten, bringt späte Funde), Code lesen währenddessen.
 - Antwort auf Deutsch, knapp: Freigabe ja/nein, Funde (Funktion + Datei, Fix), Testergebnis beider Reihen.

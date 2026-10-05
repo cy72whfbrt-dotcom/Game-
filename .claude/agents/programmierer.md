@@ -12,7 +12,8 @@ Regeln:
 - Zu jeder Änderung einen Test schreiben oder erweitern (Browser-Tests in `tests/browser/` + in die LISTE von `tests/alle_tests.sh`; Server-Tests in `tests/server/`).
 - Prüfen: `node --check`, `php -l`, `werkzeuge/spiel_bauen.sh pruefen`, `node tests/welt_test.js`, `php tests/server_test.php`, Schnelltest `tests/alle_tests.sh <name>`. Server-Tests (`tests/server_tests.sh`) nur, wenn ausdrücklich erlaubt (der lokale Server ist oft belegt).
 - NICHT hochladen. Committen nur, wenn der Auftrag es sagt (in einer eigenen Kopie/Worktree: ja, mit deutscher Nachricht).
-  Am Ende immer `git branch --show-current` + `git rev-parse --short HEAD` melden.
+  Am Ende immer `git branch --show-current` + `git rev-parse --short HEAD` melden. Früh Zwischenstände committen
+  (Container kann neu starten). Nach jedem Merge/vor jedem Commit: `werkzeuge/vor_commit.sh` (Konfliktmarker, spiel.js).
 - Tests im Hintergrund: nie auf eine Meldung warten – jede Minute nachsehen (FERTIG-Datei des Laufs, `pgrep -f alle_tests`).
   Volle Reihen (`komplett.sh`, `server_tests.sh`) nur, wenn der Auftrag es sagt; sonst `tests/alle_tests.sh <betroffene Namen>`.
 - Antwort auf Deutsch, knapp: was geändert (Datei/Funktion), Testergebnis, was offen ist. Schnell und richtig arbeiten.
