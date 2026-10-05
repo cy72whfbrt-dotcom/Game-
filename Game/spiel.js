@@ -1649,6 +1649,7 @@ function addCombatLogEntry(entry) {
 // Marsch-Plätze der Burg (Paket D): ist noch ein Platz frei? (für dich mit Hinweis) – grp: gehört zu einem Mehrfachangriff
 function marschPlatz(who, grp, src) { if (!AUF || AUF.marschOk(who, grp, src)) return true; if (who === 'player' && !SYSTEM) flashHint(AUF.marschVoll('player'), 4000); return false; }
 var naechsteGruppe = null;                                           // (Mehrfachangriff, „Truppen sammeln“: alle zusammen = EINE Aktion)
+var mautZahler = null;                                              // (Rally: jeder zahlt die Maut für SEINE Truppen – siehe rallyMaut)
 function launchAttack(sourceId, targetId, attackerBotId, troopsOverride, heldWunsch, held2Wunsch) {
     const source = islandById[sourceId];
     const target = islandById[targetId];
@@ -1686,7 +1687,7 @@ function launchAttack(sourceId, targetId, attackerBotId, troopsOverride, heldWun
         : attackerBotId ? botPair[0] : nextAttackHero && heroOwned('player', nextAttackHero) && !heroBusy('player', nextAttackHero) ? nextAttackHero : null;
     const hero2 = heroZweitOk(who, hero, mensch ? held2Wunsch : attackerBotId ? botPair[1] : nextAttackHero2);   // Besitz und belegt geprüft (auch beim Weltrechner)
     const hop = lastHop(source.landmassId, target.landmassId, who), hp = hero && heroPeek(who, hero, source, target, rawTroops, hero2);
-    if (!payToll(hop[0], hop[1], rawTroops, who, target.id, hp ? hp.toll : 0)) return false;
+    if (!(mautZahler || payToll)(hop[0], hop[1], rawTroops, who, target.id, hp ? hp.toll : 0)) return false;
 
     islandTroops[sourceId] = available - rawTroops; // only the sent troops march out, the rest stay to defend
     const hx = hero ? heroLaunch(who, hero, source, target, rawTroops, hero2) : null;   // a full rage fires the hero's active skill in this fight

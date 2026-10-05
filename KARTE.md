@@ -460,7 +460,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundBasen` → Game/buendnis/01-daten-regeln.js:84
 - `bundBasenText` → Game/buendnis/01-daten-regeln.js:81
 - `bundBefehl` → Game/buendnis/04-fenster-karte-welt.js:7
-- `bundBonus` → Game/buendnis/02-rally-geschenke.js:227
+- `bundBonus` → Game/buendnis/02-rally-geschenke.js:248
 - `bundBotBereit` → Game/buendnis/03-mitspieler.js:17
 - `bundBotGetippt` → Game/buendnis/03-mitspieler.js:18
 - `bundCap` → Game/buendnis/01-daten-regeln.js:83
@@ -479,9 +479,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundEinmal` → Game/buendnis/01-daten-regeln.js:101
 - `bundEinzelgaenger` → Game/buendnis/03-mitspieler.js:16
 - `bundFreund` → Game/spiel/01a-grundlagen.js:14
-- `bundGebiet` → Game/buendnis/02-rally-geschenke.js:241
+- `bundGebiet` → Game/buendnis/02-rally-geschenke.js:262
 - `bundGehoert` → Game/buendnis/01-daten-regeln.js:105
-- `bundGeschenk` → Game/buendnis/02-rally-geschenke.js:201
+- `bundGeschenk` → Game/buendnis/02-rally-geschenke.js:222
 - `bundGesehen` → Game/buendnis/04-fenster-karte-welt.js:250
 - `bundHeimschicken` → Game/buendnis/01-daten-regeln.js:333
 - `bundHelfen` → Game/buendnis/01-daten-regeln.js:373
@@ -516,16 +516,16 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundOhneListeHtml` → Game/buendnis/04-fenster-karte-welt.js:381
 - `bundOp` → Game/buendnis/01-daten-regeln.js:136
 - `bundProdFaktor` → Game/spiel/01e-nebel-kampfwerte-hud.js:200
-- `bundProdMult` → Game/buendnis/02-rally-geschenke.js:238
+- `bundProdMult` → Game/buendnis/02-rally-geschenke.js:259
 - `bundProfilKnopf` → Game/buendnis/04-fenster-karte-welt.js:392
 - `bundPunkt` → Game/buendnis/04-fenster-karte-welt.js:251
 - `bundPush` → Game/buendnis/01-daten-regeln.js:104
 - `bundQuellen` → Game/buendnis/04-fenster-karte-welt.js:137
-- `bundRallyBeute` → Game/buendnis/02-rally-geschenke.js:181
+- `bundRallyBeute` → Game/buendnis/02-rally-geschenke.js:202
 - `bundRallyDazu` → Game/buendnis/02-rally-geschenke.js:32
 - `bundRallyEnde` → Game/buendnis/02-rally-geschenke.js:54
 - `bundRallyFuer` → Game/buendnis/03-mitspieler.js:280
-- `bundRallyHeim` → Game/buendnis/02-rally-geschenke.js:138
+- `bundRallyHeim` → Game/buendnis/02-rally-geschenke.js:159
 - `bundRallyHtml` → Game/buendnis/04-fenster-karte-welt.js:104
 - `bundRallyLos` → Game/buendnis/02-rally-geschenke.js:63
 - `bundRallyPlan` → Game/buendnis/03-mitspieler.js:288
@@ -545,10 +545,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundSpeichern` → Game/buendnis/01-daten-regeln.js:71
 - `bundSuchenHtml` → Game/buendnis/04-fenster-karte-welt.js:110
 - `bundTagFuer` → Game/buendnis/03-mitspieler.js:19
-- `bundTagHeute` → Game/buendnis/02-rally-geschenke.js:199
+- `bundTagHeute` → Game/buendnis/02-rally-geschenke.js:220
 - `bundTagVon` → Game/buendnis/01-daten-regeln.js:75
 - `bundTakt` → Game/buendnis/03-mitspieler.js:317
-- `bundTempo` → Game/buendnis/02-rally-geschenke.js:252
+- `bundTempo` → Game/buendnis/02-rally-geschenke.js:273
 - `bundUnterAngriff` → Game/buendnis/01-daten-regeln.js:87
 - `bundVerbuendet` → Game/buendnis/01-daten-regeln.js:74
 - `bundVon` → Game/buendnis/01-daten-regeln.js:73
@@ -1303,12 +1303,12 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `json_antwort` → Game/server/03-nebel-maersche-seite.php:133
 - `jwtFuer` → Game/weltrechner/push.js:167
 - `kampf` → Game/aufbau.js:207
-- `kampfAnteile` → Game/buendnis/02-rally-geschenke.js:162
+- `kampfAnteile` → Game/buendnis/02-rally-geschenke.js:183
 - `kampfAufraeumen` → Game/spiel/04-kampf.js:236
 - `kampfDazu` → Game/spiel/07a-schlachten.js:50
 - `kampfEp` → Game/spiel/02a-shop-stufen.js:251
 - `kampfKey` → Game/spiel/07a-schlachten.js:55
-- `kampfTeile` → Game/buendnis/02-rally-geschenke.js:152
+- `kampfTeile` → Game/buendnis/02-rally-geschenke.js:173
 - `kannZahlen` → Game/aufbau.js:68
 - `karte` → Game/spiel/05d-maersche-kampfbericht.js:149
 - `keep` → Game/baukunst/06-turmhof-festung.js:69
@@ -1342,9 +1342,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `lathe` → Game/baukunst/07-hafen-palast.js:438
 - `lathe` → Game/baukunst/07-hafen-palast.js:49
 - `lathe` → Game/baukunst/08-himmelsfeste-bilder.js:46
-- `launchAttack` → Game/spiel/02b-maersche.js:82
+- `launchAttack` → Game/spiel/02b-maersche.js:83
 - `launchScout` → Game/spiel/02c-spaeher-ankunft.js:19
-- `launchSend` → Game/spiel/02b-maersche.js:154
+- `launchSend` → Game/spiel/02b-maersche.js:155
 - `layoutBanners` → Game/spiel/03c-wappen-thronplatz.js:120
 - `lazarettPlus` → Game/aufbau.js:216
 - `leafGeo` → Game/baukunst/04-vielfalt-stile.js:495
@@ -1407,9 +1407,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `makeTileKeyboard` → Game/spiel/05b-truhe-skills.js:34
 - `mapBattleShake` → Game/spiel/07a-schlachten.js:304
 - `mapFocusPoint` → Game/spiel/03e-kamera-eingabe.js:441
-- `marchButtons` → Game/spiel/02b-maersche.js:310
+- `marchButtons` → Game/spiel/02b-maersche.js:311
 - `marchFlag` → Game/spiel/03d-maersche-tagnacht.js:4
-- `marchKeyOf` → Game/spiel/02b-maersche.js:197
+- `marchKeyOf` → Game/spiel/02b-maersche.js:198
 - `marchPath` → Game/spiel/03c-wappen-thronplatz.js:400
 - `marchPointAt` → Game/spiel/03c-wappen-thronplatz.js:432
 - `marchSkinOf` → Game/spiel/05a-aussehen-profil.js:91
@@ -1684,7 +1684,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `pat` → Game/spiel/08e-stadtbild-haeuser.js:313
 - `patchAttackPreview` → Game/spiel/10a-inselfenster-vorschau.js:332
 - `patchSendPreview` → Game/spiel/10a-inselfenster-vorschau.js:312
-- `pathSoFar` → Game/spiel/02b-maersche.js:198
+- `pathSoFar` → Game/spiel/02b-maersche.js:199
 - `PAVE` → Game/baukunst/07-hafen-palast.js:17
 - `PAVE` → Game/baukunst/07-hafen-palast.js:411
 - `payGold` → Game/spiel/04-kampf.js:278
@@ -1775,15 +1775,16 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `questProgress` → Game/spiel/06a-aufgaben.js:128
 - `queueHover` → Game/spiel/03e-kamera-eingabe.js:359
 - `queueLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:285
-- `rallyAussortieren` → Game/buendnis/02-rally-geschenke.js:117
-- `rallyFlucht` → Game/buendnis/02-rally-geschenke.js:132
+- `rallyAussortieren` → Game/buendnis/02-rally-geschenke.js:138
+- `rallyFlucht` → Game/buendnis/02-rally-geschenke.js:153
 - `rallyFrei` → Game/buendnis/01-daten-regeln.js:444
-- `rallyHx` → Game/buendnis/02-rally-geschenke.js:129
+- `rallyHx` → Game/buendnis/02-rally-geschenke.js:150
+- `rallyMaut` → Game/buendnis/02-rally-geschenke.js:90
 - `rallyPlatz` → Game/buendnis/01-daten-regeln.js:443
 - `rallyPlatzStufe` → Game/buendnis/01-daten-regeln.js:442
-- `rallySchild` → Game/buendnis/02-rally-geschenke.js:105
-- `rallyVerluste` → Game/buendnis/02-rally-geschenke.js:108
-- `rallyWerte` → Game/buendnis/02-rally-geschenke.js:89
+- `rallySchild` → Game/buendnis/02-rally-geschenke.js:126
+- `rallyVerluste` → Game/buendnis/02-rally-geschenke.js:129
+- `rallyWerte` → Game/buendnis/02-rally-geschenke.js:110
 - `rankIndexFor` → Game/spiel/05a-aussehen-profil.js:76
 - `rankPeople` → Game/spiel/05c-erfolge-rangliste.js:241
 - `rankRowHtml` → Game/spiel/05c-erfolge-rangliste.js:246
@@ -1791,7 +1792,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `raus.push` → Game/spiel/10d-welt-weltrechner.js:228
 - `rauswurf` → Game/speichern.js:111
 - `reach` → Game/bots/05-verteidigen-takt.js:148
-- `recallMarch` → Game/spiel/02b-maersche.js:207
+- `recallMarch` → Game/spiel/02b-maersche.js:208
 - `recallSources` → Game/spiel/10b-inselfenster-knoepfe.js:46
 - `recenterOnHome` → Game/spiel/03e-kamera-eingabe.js:194
 - `rechnerStatus` → Game/spiel/10d-welt-weltrechner.js:10
@@ -1851,7 +1852,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `resolveBotAttack` → Game/bots/02-kampf-karte.js:14
 - `resolveRetreat` → Game/spiel/02c-spaeher-ankunft.js:319
 - `resolveScout` → Game/spiel/02c-spaeher-ankunft.js:111
-- `resolveSend` → Game/spiel/02b-maersche.js:316
+- `resolveSend` → Game/spiel/02b-maersche.js:317
 - `restyleMerlons` → Game/baukunst/04-vielfalt-stile.js:354
 - `retex` → Game/baukunst/04-vielfalt-stile.js:595
 - `retreatPct` → Game/spiel/02c-spaeher-ankunft.js:142
@@ -1965,8 +1966,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `schedule` → Game/baukunst/08-himmelsfeste-bilder.js:392
 - `schedule` → Game/spiel/10c-start-einstellungen.js:108
 - `schluesselTausch` → Game/welt.js:90
-- `schnellerDrueber` → Game/spiel/02b-maersche.js:243
-- `schnellerMerken` → Game/spiel/02b-maersche.js:242
+- `schnellerDrueber` → Game/spiel/02b-maersche.js:244
+- `schnellerMerken` → Game/spiel/02b-maersche.js:243
 - `schonBezahlt` → Game/spiel/10d-welt-weltrechner.js:458
 - `schutzVon` → Game/spiel/08a-stadt-bauen.js:31
 - `scoutNote` → Game/bots/03-angreifen.js:78
@@ -2056,10 +2057,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `spawnBattleFx` → Game/spiel/07a-schlachten.js:356
 - `spawnMapBattle` → Game/spiel/07a-schlachten.js:24
 - `spawnWander` → Game/spiel/07b-kriegsherr.js:57
-- `speedableMarches` → Game/spiel/02b-maersche.js:294
-- `speedUpAll` → Game/spiel/02b-maersche.js:298
-- `speedUpCost` → Game/spiel/02b-maersche.js:270
-- `speedUpMarch` → Game/spiel/02b-maersche.js:272
+- `speedableMarches` → Game/spiel/02b-maersche.js:295
+- `speedUpAll` → Game/spiel/02b-maersche.js:299
+- `speedUpCost` → Game/spiel/02b-maersche.js:271
+- `speedUpMarch` → Game/spiel/02b-maersche.js:273
 - `speichern_anfrage` → Game/server/06-speichern-push-konto.php:6
 - `spieler_liste` → Game/server/05-datenbank-welt.php:277
 - `spielerTakt` → Game/aufbau.js:250
@@ -2226,7 +2227,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `variant` → Game/baukunst/04-vielfalt-stile.js:188
 - `verlustChips` → Game/spiel/01a-grundlagen.js:173
 - `verschluesseln` → Game/weltrechner/push.js:22
-- `verstAnteile` → Game/buendnis/02-rally-geschenke.js:154
+- `verstAnteile` → Game/buendnis/02-rally-geschenke.js:175
 - `verstBelegt` → Game/buendnis/01-daten-regeln.js:445
 - `verstBerichte` → Game/buendnis/01-daten-regeln.js:495
 - `verstecke` → Game/speichern.js:83
@@ -2250,8 +2251,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `visibleIslands` → Game/spiel/03d-maersche-tagnacht.js:154
 - `vorAltern` → Game/spiel/10d-welt-weltrechner.js:269
 - `vorhangZeigen` → Game/speichern.js:86
-- `vorlaeufigDazu` → Game/spiel/02b-maersche.js:255
-- `vorlaeufigDrueber` → Game/spiel/02b-maersche.js:259
+- `vorlaeufigDazu` → Game/spiel/02b-maersche.js:256
+- `vorlaeufigDrueber` → Game/spiel/02b-maersche.js:260
 - `W.befehl` → Game/welt.js:521
 - `W.deltaBasis` → Game/welt.js:370
 - `W.deltaJetzt` → Game/welt.js:363
@@ -3032,23 +3033,24 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundRallyUnterwegs` :53
 - `bundRallyEnde` :54 — abgebrochen: alle Truppen wieder heim
 - `bundRallyLos` :63
-- `rallyWerte` :89 — Rally: jeder zählt mit SEINEN Werten für SEINE Truppen (Skill Angriff, Titel, F…
-- `rallySchild` :105 — Schild (Ausrüstung) eines Mitglieds: weniger Verluste für SEINE Truppen (Alexan…
-- `rallyVerluste` :108 — (Kampf, gewonnen) Verluste einer Rally/eines gemeinsamen Angriffs je Eintrag: j…
-- `rallyAussortieren` :117 — (Kampf, vor dem Kampf) Wer nicht mehr im Bündnis des Anführers ist (verlassen n…
-- `rallyHx` :129 — Der Held eines Spielers in einem gemeinsamen Kampf (Anführer: der Held des Angr…
-- `rallyFlucht` :132 — (Kampf, verloren) Wer flieht: jeder Spieler mit SEINEM Helden (Standhaft, Leich…
-- `bundRallyHeim` :138 — (Kampf) Überlebende einer Rally gehen anteilig zu ihren Basen zurück. ohneStart…
-- `kampfTeile` :152 — Anteile an einem gemeinsamen Kampf nach Stärke (für Wochen-Punkte und Erfahrung…
-- `verstAnteile` :154 — Anteile der Verteidiger: Besitzer + jeder Helfer (Verstärkung) nach seiner Stär…
-- `kampfAnteile` :162 — (Kampf) Gemeinsamer Angriff (Rally oder mehrere Bündnis-Angriffe auf dasselbe Z…
-- `bundRallyBeute` :181 — (Kampf) Beute (Gold, Holz, Stein, Eisen) der Rally nach Truppen verteilen und a…
-- `bundTagHeute` :199 — 4) GESCHENKE, TEMPEL-BONUS, GEBIET
-- `bundGeschenk` :201 — Boss besiegt / große Kiste gekauft → alle ANDEREN Mitglieder bekommen ein klein…
-- `bundBonus` :227
-- `bundProdMult` :238
-- `bundGebiet` :241
-- `bundTempo` :252
+- `rallyMaut` :90 — Maut einer Rally (für launchAttack): die Maut für alle Truppen (mit dem Helden-…
+- `rallyWerte` :110 — Rally: jeder zählt mit SEINEN Werten für SEINE Truppen (Skill Angriff, Titel, F…
+- `rallySchild` :126 — Schild (Ausrüstung) eines Mitglieds: weniger Verluste für SEINE Truppen (Alexan…
+- `rallyVerluste` :129 — (Kampf, gewonnen) Verluste einer Rally/eines gemeinsamen Angriffs je Eintrag: j…
+- `rallyAussortieren` :138 — (Kampf, vor dem Kampf) Wer nicht mehr im Bündnis des Anführers ist (verlassen n…
+- `rallyHx` :150 — Der Held eines Spielers in einem gemeinsamen Kampf (Anführer: der Held des Angr…
+- `rallyFlucht` :153 — (Kampf, verloren) Wer flieht: jeder Spieler mit SEINEM Helden (Standhaft, Leich…
+- `bundRallyHeim` :159 — (Kampf) Überlebende einer Rally gehen anteilig zu ihren Basen zurück. ohneStart…
+- `kampfTeile` :173 — Anteile an einem gemeinsamen Kampf nach Stärke (für Wochen-Punkte und Erfahrung…
+- `verstAnteile` :175 — Anteile der Verteidiger: Besitzer + jeder Helfer (Verstärkung) nach seiner Stär…
+- `kampfAnteile` :183 — (Kampf) Gemeinsamer Angriff (Rally oder mehrere Bündnis-Angriffe auf dasselbe Z…
+- `bundRallyBeute` :202 — (Kampf) Beute (Gold, Holz, Stein, Eisen) der Rally nach Truppen verteilen und a…
+- `bundTagHeute` :220 — 4) GESCHENKE, TEMPEL-BONUS, GEBIET
+- `bundGeschenk` :222 — Boss besiegt / große Kiste gekauft → alle ANDEREN Mitglieder bekommen ein klein…
+- `bundBonus` :248
+- `bundProdMult` :259
+- `bundGebiet` :262
+- `bundTempo` :273
 
 ### Game/buendnis/03-mitspieler.js — Bündnis: was Mitspieler im Bündnis tun
 - `bundWeg` :10 — Weg da, letztes Tor offen und die Maut bezahlbar? (wie botCanCross, aber je Run…
@@ -3441,21 +3443,21 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `travelDurationSeconds` :18 — everyone gets their own speed skill + Akademie, never under 3 s
 - `addCombatLogEntry` :60
 - `marschPlatz` :80 — troopsOverride lets the player send only part of a base's garrison (chosen via …
-- `launchAttack` :82
-- `launchSend` :154 — "Truppen verschicken": same travel time as an attack, but a blue march to one o…
-- `marchKeyOf` :197 — MARCH ORDERS: recall a column on the way, or speed it up with gems
-- `pathSoFar` :198 — the stretch of the route already walked, from the start to where the column is …
-- `recallMarch` :207 — an attack or a send turns round where it is and walks home
-- `schnellerMerken` :242
-- `schnellerDrueber` :243
-- `vorlaeufigDazu` :255
-- `vorlaeufigDrueber` :259
-- `speedUpCost` :270
-- `speedUpMarch` :272 — halves the time still to go; the column keeps its place on the road
-- `speedableMarches` :294 — "Alle schneller": halves the time left of every own column on the road at once …
-- `speedUpAll` :298
-- `marchButtons` :310
-- `resolveSend` :316
+- `launchAttack` :83
+- `launchSend` :155 — "Truppen verschicken": same travel time as an attack, but a blue march to one o…
+- `marchKeyOf` :198 — MARCH ORDERS: recall a column on the way, or speed it up with gems
+- `pathSoFar` :199 — the stretch of the route already walked, from the start to where the column is …
+- `recallMarch` :208 — an attack or a send turns round where it is and walks home
+- `schnellerMerken` :243
+- `schnellerDrueber` :244
+- `vorlaeufigDazu` :256
+- `vorlaeufigDrueber` :260
+- `speedUpCost` :271
+- `speedUpMarch` :273 — halves the time still to go; the column keeps its place on the road
+- `speedableMarches` :295 — "Alle schneller": halves the time left of every own column on the road at once …
+- `speedUpAll` :299
+- `marchButtons` :311
+- `resolveSend` :317
 
 ### Game/spiel/02c-spaeher-ankunft.js — Späher und Späherbericht, Ankunft der Angriffe (resolveAttack), Rückzug
 - `nearestOwnedIslandTo` :8 — "Spähen": no troops needed, but a scout still takes time to reach the target - …
