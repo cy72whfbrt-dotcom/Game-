@@ -5970,10 +5970,10 @@ function renderCombatLog() {
         }
         if (entry.type === 'scout') {
             if (entry.fehl) return karte(entry, 'scout', 'scout', ['scout', 'Kein Bericht'], T(entry.targetId), '', '', [['info', 'Der Späher hat keinen Bericht gebracht']]);   // (der Weltrechner hat ihn abgelehnt oder nach 10 Min. nichts geschickt)
-            const alt = Date.now() - (entry.at || 0) >= SPAEH_ALT_MS;   // Alter des Berichts: ab 30 Min. gelb
+            const alt = Date.now() - (entry.at || 0) >= SPAEH_ALT_MS;   // Alter des Berichts: ab 30 Min. gelb „neu spähen?“
             return karte(entry, 'scout', 'scout', ['scout', 'Gespäht'], T(entry.targetId), entry.spy ? escapeHtml(entry.spy.name) + ' · Spieler-Stufe ' + fmtNum(entry.spy.lvl) + (entry.spy.bl ? ' · Basis Stufe ' + fmtNum(entry.spy.bl) : '') : '', '',
                 [['troops', chipN(entry.troops) + ' Truppen'], ...(entry.verst > 0 ? [['troops', chipN(entry.verst) + ' Verstärkung']] : []), ['defense', chipN(entry.defense) + ' Verteidigung'],
-                    !entry.wartet && ['hourglass', 'gespäht ' + ago(entry) + (alt ? ' · neu spähen?' : ''), alt ? 'warn' : '']], spaeherBlickHtml(entry.spy));
+                    alt && !entry.wartet && ['hourglass', 'gespäht ' + ago(entry) + ' · neu spähen?', 'warn']], spaeherBlickHtml(entry.spy));   // (die Zeit steht schon in der Karte)
         }
         if (entry.type === 'ausgespaeht') return karte(entry, 'loss', 'scout', ['loss', 'Ausgespäht'], T(entry.targetId),   // jemand hat deine Basis ausgespäht
             whoLink(entry.botId || botIdByName[entry.botName], entry.botName || 'Jemand') + ' hat deine Basis ausgespäht – rechne mit einem Angriff.', '', []);
@@ -6193,9 +6193,9 @@ const kampflogUmbauen = (function () {
         const s = e.spy, name = (s && s.name) || v('Herr').split(' · ')[0], alt = Date.now() - (e.at || 0) >= SPAEH_ALT_MS;
         const teile = s && Array.isArray(s.teile) && s.teile.length ? s.teile : null;   // (ältere Berichte: nur die Summe)
         const vert = teile ? teile.map((q, i) => zl(escapeHtml(q[0]), (i ? (q[1] < 0 ? '−' : '+') : '') + fmt(Math.abs(q[1])), i ? (q[1] < 0 ? ' buff malus' : ' buff') : '', escapeHtml(q[2] || ''))).join('')
-            : zl('Grundverteidigung', fmt(e.defense), '', s ? 'gesamt – älterer Bericht ohne Aufteilung, neu spähen' : 'gesamt');
+            : zl('Grundverteidigung', fmt(e.defense), '', s ? 'gesamt – älterer Bericht ohne Aufteilung, neu spähen' : e.wartet ? 'Bericht kommt gleich …' : 'gesamt');
         const items = s && s.gear ? Object.keys(EQUIPMENT_DEFS).map(k => { const g = s.gear[k]; return g ? [k, g[0], g[1], g[2] || 0] : [k, -1, 0, 0]; }) : null;   // leerer Platz = nichts angelegt
-        const gear = items ? kampfGearHtml({ lvl: fmt(s.lvl), title: s.titel, items, skills: [], city: [] }) : leerGear(s ? 'Spieler-Stufe ' + fmt(s.lvl) : 'Ohne Herrn', false);
+        const gear = items ? kampfGearHtml({ lvl: fmt(s.lvl), title: s.titel, items, skills: [], city: [] }) : leerGear(s ? 'Spieler-Stufe ' + fmt(s.lvl) : e.wartet ? 'Bericht kommt gleich …' : 'Ohne Herrn', false);
         const box = el('<div class="logSide"><div class="logSideLabel">Gespäht · ' + escapeHtml(name) + '</div>' +
             zl('Gespäht', timeAgoLabel(e.at || 0) + (alt ? ' – neu spähen?' : ''), alt ? ' kl-alt' : '') +
             zl('Truppen', fmt(e.troops)) + (Number.isFinite(e.verst) ? zl('Verstärkung', fmt(e.verst), '', 'Bündnis-Truppen in der Basis – verteidigen mit') : '') + zl('Held', '+0', '', 'zählt beim Verteidigen nicht') + vert +
@@ -6206,8 +6206,8 @@ const kampflogUmbauen = (function () {
         const kh = box.querySelector('.kl-keinheld small'); if (kh && L['Helden']) kh.textContent = 'Zuhause: ' + v('Helden') + ' – zählen beim Verteidigen nicht';
         const meta = box.querySelector('.logGearMeta');
         if (meta) meta.textContent = s && s.sk ? 'Fähigkeiten Angriff ' + s.sk.attack + ' · Vert. ' + s.sk.defense + ' · Truppen ' + s.sk.troops
-            : s ? 'Ausrüstung und Fähigkeiten unbekannt (älterer Bericht) – neu spähen' : 'Neutrale Basis: keine Ausrüstung, keine Helden';
-        if (!items) box.querySelectorAll('.logGear .tile.empty').forEach(t => { t.title = t.title.replace('leer', 'unbekannt'); });
+            : s ? 'Ausrüstung und Fähigkeiten unbekannt (älterer Bericht) – neu spähen' : e.wartet ? 'Ausrüstung und Fähigkeiten: der Bericht kommt gleich' : 'Ohne Herrn: keine Ausrüstung, keine Helden';
+        if (!items && (s || e.wartet)) box.querySelectorAll('.logGear .tile.empty').forEach(t => { t.title = t.title.replace('leer', 'unbekannt'); });
         box.insertAdjacentHTML('beforeend', '<div class="kl-rss"><div class="logGearHead">Basis</div>' + zl('Basis-Stufe', s && s.bl ? 'Stufe ' + fmt(s.bl) : '–') + zl('Friedensschild', v('Friedensschild')) + zl('Mauer', v('Mauer')) + zl('Burg', v('Burg')) + zl('Forschung', v('Forschung')) + zl('Helden zu Hause', v('Helden')) + '</div>' +
             '<div class="kl-rss"><div class="logGearHead">Rohstoffe</div>' + roh + '</div>');
         const sum = d.querySelector('summary').outerHTML;
