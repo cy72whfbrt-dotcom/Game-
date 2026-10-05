@@ -14,3 +14,4 @@ Ablauf:
 - Ändere keinen Spiel-Code. Commit-Trailer nicht prüfen (kommen aus der Umgebung).
 - Reihenfolge: Server-Reihe zuerst/zeitgleich starten (dauert am längsten, bringt späte Funde), Code lesen währenddessen.
 - Antwort auf Deutsch, knapp: Freigabe ja/nein, Funde (Funktion + Datei, Fix), Testergebnis beider Reihen.
+- Bei langen Läufen alle 5 Min. eine Zeile Zwischenstand an den Projektleiter (aus `<arbeitsordner>/FORTSCHRITT`), nie still warten.

@@ -18,3 +18,4 @@ Regeln:
 - Tests im Hintergrund: nie auf eine Meldung warten – jede Minute nachsehen (FERTIG-Datei des Laufs, `pgrep -f alle_tests`).
   Volle Reihen (`komplett.sh`, `server_tests.sh`) nur, wenn der Auftrag es sagt; sonst `tests/alle_tests.sh <betroffene Namen>`.
 - Antwort auf Deutsch, knapp: was geändert (Datei/Funktion), Testergebnis, was offen ist. Schnell und richtig arbeiten.
+- Tests dürfen nie fremde Prozesse beenden: kein `pkill`/`killall` ohne eigenen Gruppen-/Ordnerpfad.
