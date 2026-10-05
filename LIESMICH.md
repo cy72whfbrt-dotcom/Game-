@@ -784,7 +784,11 @@ nötig; Knöpfe usw. frei gestalten. Pflicht: **wirklich übersichtlich, sortier
 
 **I. Dazu (Claudes Vorschläge, Alexander ja):** Weltrechner robuster bei Hoster-Last (seltener nachfragen, geduldiger,
 nicht gleich neu starten) · Sortier-Tag zu Ende bringen (alten, ungenutzten Code raus – kleiner, lädt schneller).
-**Nein:** Wachturm kommt nicht zurück (Alexander).
+**Nein:** Wachturm kommt nicht zurück (Alexander). · Die vorhandene Übersicht „während du weg warst“ an die neue
+Wirtschaft (pro Stunde) und das neue Design anpassen · **Kampfbericht im Bündnis teilen** (ein Knopf) – **Mitspieler
+müssen ihn verstehen** und darauf reagieren (z. B. schwachen Gegner mit angreifen, bei starkem Gegner vorsichtig sein).
+**Nein:** Erklär-Fenster neue Saison · Gleichgewicht nach 1–2 Tagen prüfen · Extra-Sicherung · „Nochmal“-Knopf ·
+Sammler mit einem Tipp neu · Ankunftszeit als Uhrzeit.
 
 **H. Ganz zum Schluss:** wenn alles fertig ist, **alles komplett testen** (`tests/komplett.sh` + Spieltester auf Handy
 und Desktop über alle Fenster) – erst danach Alexander wegen Hochladen fragen.
