@@ -274,6 +274,7 @@ document.getElementById('popupBund') && document.getElementById('popupBund').add
     if (art === 'rallyWahl') { const why = bundZielOk('player', id); if (why) { flashHint(why + '.', 3000); return; } closeIslandPopup(); bundWahl = { mode: 'rally', t: id, min: 3, f: 1 }; bundOeffnen('rally'); return; }
     if (art === 'hilfeWahl') { closeIslandPopup(); bundWahl = { mode: 'hilfe', nach: id, f: .5 }; bundOeffnen('sig'); return; }
     if (art === 'einladen') { const ow = islandOwnerOf(id); if (!bundKannEinladen(ow) || bundEingeladen(ow)) return; b.disabled = true; bundBefehl('einladen', { w: ow }, 'Einladung an ' + bundName(ow) + ' geschickt.'); return; }
+    if (art === 'hilfe' && !verstMoeglich('player')) { flashHint('Hilfe braucht eine Botschaft (ab Burg-Stufe 5).', 3500); return; }   // (ohne Botschaft kann keiner Truppen schicken)
     if (art === 'teilen' || art === 'hilfe') { if (Date.now() - (bundMem.chatSend || 0) < BUND_CHAT_PAUSE) return; bundMem.chatSend = Date.now();
         bundBefehl('chat', { k: art, z: id }, art === 'teilen' ? 'Im Bündnis-Chat geteilt.' : 'Hilferuf im Bündnis-Chat.'); sfx('send'); b.disabled = true; }
 });
@@ -334,7 +335,7 @@ function bundSaisonNeu() {
     verst = { n: verst.n || 0, l: [] }; verstSpeichern();
     bundAustritt.clear(); bundWegMem.clear();
     for (const k of ['chatAt', 'botNext', 'rallySagt', 'rallyWeg', 'ziel', 'hilfeSig', 'rallyRunde']) bundMem[k] = {};
-    bundMem.chatQ = []; bundMem.sigGemacht.clear(); bundMem.rallyGemacht.clear();
+    bundMem.chatQ = []; bundMem.sigGemacht.clear(); bundMem.sigGeschickt.clear(); bundMem.rallyGemacht.clear();
 }
 
 // ==============================================================================================================
