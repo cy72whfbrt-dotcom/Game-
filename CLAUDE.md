@@ -43,6 +43,9 @@ Alles Wichtige steht in `LIESMICH.md` – jede Änderung wird dort eingetragen.
   Gruppe 2/3 legt das Skript selbst an und räumt sie am Ende ab: Ordner `<arbeitsordner>/gruppeN/`, DB `<testdb>_gN`
   (frische Kopie, `mysql` als Admin über den Socket), Port 8771/8772, eigener Weltrechner. Am Ende „ALLES OK“.
   Einzelne Tests: Namen dahinter schreiben (nacheinander, nur 8770). Mehr im Kopf des Skripts.
+  Nur passende Tests zu den Änderungen: `tests/server_tests.sh <arbeitsordner> betroffen [<git-bereich>]` (Tabelle im
+  Skript; `OW_TROCKEN=1` zeigt nur die Auswahl). Server startet bei Bedarf selbst (`werkzeuge/server_starten.sh`).
+- **Vor jedem Commit: `werkzeuge/vor_commit.sh`** (Leerzeichen-Fehler, Konfliktmarker, `spiel_bauen.sh pruefen`).
 
 ## Arbeitsweise (Alexander 5.10.: „schneller, effizient, richtig“)
 - Erst EINMAL alles sammeln (mehrere Agenten gleichzeitig suchen, je ein Bereich), daraus EINE Liste; offene Fragen auf
@@ -60,6 +63,7 @@ Alles Wichtige steht in `LIESMICH.md` – jede Änderung wird dort eingetragen.
   unvergeben. Nach 30 Min. ohne Ergebnis Zwischenstand holen und antreiben. Live-Seite (Artifact „Agenten-Firma“,
   claude.ai/artifact/UDzcMoamcZSv1qugqKXymm) bei jeder Vergabe/jedem Abschluss aktualisieren (Regelwerk steht dort).
 - Einmal am Ende komplett testen (`tests/komplett.sh`), dann Alexander wegen Hochladen fragen.
+- Programmierer/Schnellprüfer: Server-Tests nur `betroffen` statt der ganzen Reihe; vor dem Commit `werkzeuge/vor_commit.sh`.
 - Maschine hat 4 Kerne: nie mehrere volle Testreihen gleichzeitig (nur Endprüfer/Zusammenführen); Programmierer testen nur
   ihre betroffenen Tests. Zusammenführen: zuerst Branch + Commit prüfen (`git log -1 <branch>`).
 - Fragen an Alexander: immer mit Beispiel aus dem Spiel, Folge für den Spieler in einem Satz, Auswahl A/B mit Empfehlung.

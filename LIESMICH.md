@@ -70,7 +70,8 @@ tests/                 Tests (liegen NIE auf dem Server)
   server/              die Server-Tests: Absturz/Zurückspielen, Admin, Nebel bei Armeen, Bündnis-Kiste,
                        Verstärkung, Klick-Test neuer Spieler (+ geschenk.sh: Admin-Geschenk für Tests)
 werkzeuge/             spiel_bauen.sh (spiel.js, bots.js, buendnis.js zusammensetzen), vorschau_bauen.php (Vorschau ohne Server),
-                       vorschau_test*.js (Test-Modus), welt_neustart.php (neue Saison)
+                       vorschau_test*.js (Test-Modus), welt_neustart.php (neue Saison), vor_commit.sh (Prüfung vor dem
+                       Commit), server_starten.sh (MariaDB + lokaler PHP-Server 8770 für die Server-Tests)
 ```
 **Server kaputt oder Editor abgestürzt?** Einfach `./hochladen.sh` – lädt alles neu hoch, erzeugt `config.php` aus den
 Umgebungsvariablen, entfernt fremde Reste aus `Game/` und prüft, dass alles heil angekommen ist.
@@ -332,6 +333,13 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   nur die Burg + Hinweis aufs Spähen. Neuer Browser-Test `fremd_test` (kürzt mit dem echten Filter aus server.php),
   Server-Einheitstests ergänzt. Nachtrag (Alexanders Entscheidung): auch die **Münzen der Mitspieler** in `openWaterBotCoins` sieht nur noch der Weltrechner
   (`muenzen_kuerzen` leert den Teil für Spieler; das Handy rechnet fehlende als 0, Beute steht im Spähbericht). Stufe bleibt sichtbar.
+- **6.10. Drei Werkzeuge für die Firma (nur Werkzeuge, kein Spiel-Code):** `werkzeuge/vor_commit.sh` (vor jedem Commit:
+  Leerzeichen-Fehler im Staging, Konfliktmarker in allen getrackten .md/.js/.sh/.php/.json, `spiel_bauen.sh pruefen` –
+  Exit-Code 1 bei Fund). `werkzeuge/server_starten.sh <arbeitsordner>` startet MariaDB und `php -S 127.0.0.1:8770` nur, wenn
+  sie nicht laufen (prüft per curl); `tests/server_tests.sh` ruft es selbst auf, wenn 8770 nicht antwortet.
+  `tests/server_tests.sh <arbeitsordner> betroffen [<git-bereich>]` lässt nur die Server-Tests laufen, die zu den geänderten
+  Dateien passen (Tabelle `BETROFFEN` im Skript, Standard-Bereich `origin/claude/neues-projekt-8agldl...HEAD` + Änderungen
+  ohne Commit; `OW_TROCKEN=1` zeigt nur die Auswahl).
 - **4.10. Aufräumen:** unbenutzte CSS-Reste raus, wichtige Tests ins Projekt (`tests/browser/`, Start mit `tests/alle_tests.sh`).
 - **4.10. Server-Tests ins Projekt:** `tests/server/` + `tests/server_tests.sh <arbeitsordner>` (lokaler PHP-Server,
   MariaDB, Weltrechner): Absturz/Zurückspielen, Admin, Nebel, Bündnis-Kiste, Verstärkung, Klick-Test – alle grün.
