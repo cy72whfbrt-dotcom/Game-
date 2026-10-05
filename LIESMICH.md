@@ -245,7 +245,8 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
     Preisen und der Top 10 der letzten Saison).
   - **Ende:** die besten 10 nach Macht (wie die Rangliste, `powerOf`) bekommen Gems ins Abholfach (Mitspieler direkt) und einen
     **Saison-Titel für immer** (Kennung `s<Saison>p<Platz>`: „Champion Saison N“ bzw. „Saison N · Platz X“, gleich angelegt,
-    steht unter Aussehen → Titel; Mitspieler tragen ihn). **Gems = Vorschlag: Platz 1: 3.000, 2: 2.000, 3: 1.500, 4–10: 500**
+    steht unter Aussehen → Titel; Mitspieler tragen ihn). Vergeben merkt sich nur der Weltrechner (`botState[id].sTitel`) – bei
+    echten Spielern zeigt die Welt einen Saison-Titel nur, wenn er dort steht (ein verändertes Handy kann sich keinen vortäuschen). **Gems = Vorschlag: Platz 1: 3.000, 2: 2.000, 3: 1.500, 4–10: 500**
     (`SAISON_PREISE` in 09-events.js) – Alexander fragen.
   - **Bleibt:** Hauptstadt (Burg, alle Gebäude, Forschung), Helden mit Fähigkeiten, Ausrüstung, Gems, Holz/Stein/Eisen, alles
     Gekaufte (Skins, Marsch-Aussehen, Titel, Rahmen), Abholfach, Aufgaben/Erfolge/Pass, Thron-Punkte.
