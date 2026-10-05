@@ -703,6 +703,8 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
   Das andere Repo `-Open-source-pixel-art-game-project-built` gehört nicht zu Open Water – löschen kann es nur Alexander.
 - Fremde Tabellen eines anderen Spiels in der Datenbank (`nutzer`, `mail`, `handel` …): löschen? Noch nicht gefragt.
 - Münz-Wirtschaft bei hohen Stufen riesig („Münzen fühlen sich nichts wert an“).
+- **Fehler (Alexander 5.10.):** Späher auf der Karte antippen → die Knöpfe „Schneller“ und „Zurück“ fehlen (Regel: alle
+  Märsche hin = Zurück + Schneller, heim = Schneller).
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
