@@ -66,16 +66,26 @@ function bundRallyLos(r) {
     if (islandOwnerOf(r.at) !== by) return bundRallyEnde(r, 'der Sammelpunkt ist gefallen');
     if (bundZielOk(by, r.t)) { const ow = islandOwnerOf(r.t);                // (Grund für alle Mitglieder verständlich)
         return bundRallyEnde(r, ow === by || bundVerbuendet(ow, by) ? 'das Ziel gehört inzwischen dem Bündnis' : 'das Ziel steht unter einem Friedensschild'); }
-    const total = bundRallyTruppen(r), vorher = islandTroops[r.at] || 0, maut = {};
+    let total = bundRallyTruppen(r); const vorher = islandTroops[r.at] || 0;
     islandTroops[r.at] = vorher + total;
     if (AUF) AUF.frei.an();                                                     // (der gemeinsame Angriff war schon als Rally gezählt)
     r.startet = true;                                                           // (ihr Held ist ab jetzt im Angriff – nicht mehr „belegt durch die Rally“)
-    mautZahler = rallyMaut(r, maut);                                            // (jeder zahlt die Maut für SEINE Truppen – Alexander #11)
-    const k = pendingAttacks.length; let kaputt = false;
-    try { launchAttack(r.at, r.t, by, total, r.held || null, r.held2 || null); } catch (e) { kaputt = true; console.warn('Rally:', e); } finally { mautZahler = null; if (AUF) AUF.frei.aus(); }
-    const atk = pendingAttacks.length > k ? pendingAttacks[pendingAttacks.length - 1] : null;   // (auch wenn danach etwas warf: steht er drin, marschiert er – Maut ist bezahlt)
-    if (!atk || atk.attackerBotId !== by) { islandTroops[r.at] = Math.min(islandTroops[r.at] || 0, vorher);   // (noch nicht los: die Truppen wieder heim, auch nach einem Fehler)
-        return bundRallyEnde(r, kaputt ? 'ein Fehler beim Losmarsch' : maut.fehlt ? bundName(maut.fehlt) + ' hat nicht genug Münzen für seine Maut' : 'der Weg ist versperrt (Tor zu oder Maut zu teuer)'); }
+    let atk = null, kaputt = false, fehlt = null;
+    try { for (;;) {                                                            // (jeder zahlt die Maut für SEINE Truppen – Alexander #11)
+        const maut = {}, k = pendingAttacks.length; mautZahler = rallyMaut(r, maut);
+        try { launchAttack(r.at, r.t, by, total, r.held || null, r.held2 || null); } catch (e) { kaputt = true; console.warn('Rally:', e); } finally { mautZahler = null; }
+        atk = pendingAttacks.length > k ? pendingAttacks[pendingAttacks.length - 1] : null;   // (auch wenn danach etwas warf: steht er drin, marschiert er – Maut ist bezahlt)
+        if (atk && atk.attackerBotId === by) break; atk = null;
+        fehlt = !kaputt && maut.fehlt; if (!fehlt || fehlt === by) break;
+        // Ein Mitglied kann seinen Maut-Anteil nicht zahlen (Alexander B1): nur er bleibt draußen, seine Truppen gehen heim, die anderen zahlen neu
+        const raus = r.j.filter(j => j.da && j.w === fehlt), n = raus.reduce((s, j) => s + j.n, 0);
+        r.j = r.j.filter(j => !raus.includes(j)); total -= n; islandTroops[r.at] = Math.max(0, (islandTroops[r.at] || 0) - n);
+        for (const j of raus) bundHeimschicken(j.w, r.at, j.f, j.n);
+        bundMelden(fehlt, 'Du hattest nicht genug Münzen für deinen Maut-Anteil – deine Truppen kehren heim.');
+        bundMelden(by, bundName(fehlt) + ' war zu arm für die Maut und ist nicht dabei.');
+    } } finally { if (AUF) AUF.frei.aus(); }
+    if (!atk) { islandTroops[r.at] = Math.min(islandTroops[r.at] || 0, vorher);   // (noch nicht los: die Truppen wieder heim, auch nach einem Fehler)
+        return bundRallyEnde(r, kaputt ? 'ein Fehler beim Losmarsch' : fehlt ? bundName(fehlt) + ' hat nicht genug Münzen für seine Maut' : 'der Weg ist versperrt (Tor zu oder Maut zu teuer)'); }
     atk.rally = { id: r.id, by, an: [[by, r.at, r.n0]].concat(r.j.filter(j => j.da).map(j => [j.w, j.f, j.n])) };
     try { rallyWerte(atk, by, r.n0, r.j.filter(j => j.da)); } catch (e) { console.warn('Rally-Werte:', e); }   // (der Angriff ist schon unterwegs – er kämpft dann mit den Werten des Anführers)
     for (const j of r.j) if (j.da) { botDropShield(j.w); botNeulingWeg(j.w, islandOwnerOf(r.t)); }   // (alle, die mitmachen, greifen an: Friedensschild und Anfängerschutz fallen)
@@ -86,7 +96,8 @@ function bundRallyLos(r) {
     saveGame(); saveProgression(); bundSpeichern();
 }
 // Maut einer Rally (für launchAttack): die Maut für alle Truppen (mit dem Helden-Rabatt des Anführers, wie bisher) wird nach
-// Truppen-Anteil auf die Teilnehmer verteilt – jeder zahlt seinen Teil. Kann einer nicht zahlen, zahlt keiner (maut.fehlt = wer).
+// Truppen-Anteil auf die Teilnehmer verteilt – jeder zahlt seinen Teil. Kann einer nicht zahlen, zahlt keiner (maut.fehlt = wer;
+// zuerst der Anführer) – bundRallyLos nimmt ihn heraus und versucht es mit den anderen nochmal.
 function rallyMaut(r, maut) {
     return (fromLm, toLm, n, by, targetId, cut) => {
         const { gate, cost, closed } = tollFor(fromLm, toLm, n, by, targetId, cut);

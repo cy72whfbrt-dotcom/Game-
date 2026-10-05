@@ -1,5 +1,6 @@
 // Rally-Maut (Alexander #11): jeder Teilnehmer zahlt die Maut für SEINE Truppen (nach Anteil); kann einer nicht zahlen,
-// geht die Rally nicht los (wie früher beim Anführer) und alle Truppen gehen heim. Dazu Fehlerschutz beim Losmarsch:
+// bleibt nur er draußen (seine Truppen gehen heim), die anderen zahlen neu und marschieren (Alexander B1); kann der Anführer
+// nicht zahlen, geht die Rally nicht los und alle Truppen gehen heim. Dazu Fehlerschutz beim Losmarsch:
 // wirft etwas, bleibt die Rally nicht stehen (sonst Truppen und Angriff doppelt in der nächsten Sekunde).
 const { chromium, devices } = require('playwright');
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x) : ''));
@@ -8,24 +9,33 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   const p = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); const fe = []; p.on('pageerror', e => fe.push(e.message)); p.on('console', m => { if (/FEHLER/.test(m.text())) fe.push(m.text().slice(0, 300)); });
   await p.goto('file://' + require('path').resolve(process.argv[2]) + '/index.html'); await p.waitForTimeout(9000);
   const v = await p.evaluate(() => { for (const id of ['welcomeModal', 'dailyModal']) { const m = document.getElementById(id); if (m) m.hidden = true; }
-    const bots = BOT_DEFS.filter(x => !x.mensch && botOwnedIslands[x.id] && botOwnedIslands[x.id].size && islandById[botCapitalOf(x.id)]).slice(0, 3);
+    const bots = BOT_DEFS.filter(x => !x.mensch && botOwnedIslands[x.id] && botOwnedIslands[x.id].size && islandById[botCapitalOf(x.id)]).slice(0, 4);
     for (const x of bots) if (bundVon(x.id)) bundOp(x.id, { op: 'verlassen' });
-    const [A, E, Z] = bots, aCap = botCapitalOf(A.id), eCap = botCapitalOf(E.id), ziel = botCapitalOf(Z.id);
-    botCoins[A.id] = 1e9; bundOp(A.id, { op: 'gruenden', name: 'Test', tag: 'TST', offen: true }); bundOp(E.id, { op: 'beitreten', aid: bundVon(A.id).id });
+    const [A, E, Z, F] = bots, aCap = botCapitalOf(A.id), eCap = botCapitalOf(E.id), ziel = botCapitalOf(Z.id);
+    botCoins[A.id] = 1e9; bundOp(A.id, { op: 'gruenden', name: 'Test', tag: 'TST', offen: true }); bundOp(E.id, { op: 'beitreten', aid: bundVon(A.id).id }); bundOp(F.id, { op: 'beitreten', aid: bundVon(A.id).id });
     const tore = []; tollFor = (f, t, n, payer) => { tore.push({ n, payer }); return { gate: islandById[ziel], cost: 4000 }; };   // ein Tor von Z: 4000 Münzen für alle
     const heim = []; bundHeimschicken = (w, von, nach, n) => heim.push({ w, n });
-    const rally = (id, n0, nE) => { const r = { id, by: A.id, at: aCap, t: ziel, n0, j: [{ w: E.id, f: eCap, n: nE, da: true }], aid: bundVon(A.id).id, los: Date.now() - 1 }; bund.r.push(r); return r; };
+    const rally = (id, n0, nE, nF) => { const r = { id, by: A.id, at: aCap, t: ziel, n0, j: [{ w: E.id, f: eCap, n: nE, da: true }].concat(nF ? [{ w: F.id, f: botCapitalOf(F.id), n: nF, da: true }] : []), aid: bundVon(A.id).id, los: Date.now() - 1 }; bund.r.push(r); return r; };
     const atk = id => pendingAttacks.filter(x => x.rally && x.rally.id === id).length;
-    const geld = () => ({ A: botCoins[A.id], E: botCoins[E.id], Z: botCoins[Z.id] });
+    const geld = () => ({ A: botCoins[A.id], E: botCoins[E.id], F: botCoins[F.id], Z: botCoins[Z.id] });
     const out = {};
     // 1) Maut nach Anteil: Alex 3000 Truppen, Emma 1000 → 3000 + 1000 Münzen, Z bekommt 4000
     botCoins[A.id] = 1e6; botCoins[E.id] = 1e6; botCoins[Z.id] = 0;
     bundRallyLos(rally('rm1', 3000, 1000));
     out.m1 = { g: geld(), atk: atk('rm1'), tor: tore[tore.length - 1], drin: bund.r.some(x => x.id === 'rm1') };
-    // 2) Emma kann ihren Teil nicht zahlen → keiner zahlt, die Rally geht nicht los, alle Truppen heim
-    botCoins[E.id] = 500; heim.length = 0; const t0 = islandTroops[aCap] || 0;
-    bundRallyLos(rally('rm2', 3000, 1000));
-    out.m2 = { g: geld(), atk: atk('rm2'), drin: bund.r.some(x => x.id === 'rm2'), alexDa: (islandTroops[aCap] || 0) - t0, heim: heim.slice() };
+    // 2) Emma kann ihren Teil nicht zahlen → nur sie bleibt draußen (ihre Truppen heim), Alex + Finn zahlen neu und marschieren
+    const mp0 = marschPlatz; marschPlatz = () => true;                        // (Marsch-Plätze: rm1 läuft noch)
+    botCoins[E.id] = 500; botCoins[F.id] = 1e6; botCoins[Z.id] = 0; heim.length = 0; const t0 = islandTroops[aCap] || 0, g0 = geld();
+    bundRallyLos(rally('rm2', 3000, 1000, 1000));
+    const a2 = pendingAttacks.find(x => x.rally && x.rally.id === 'rm2'), g2 = geld();
+    out.m2 = { atk: atk('rm2'), drin: bund.r.some(x => x.id === 'rm2'), alexDa: (islandTroops[aCap] || 0) - t0, heim: heim.slice(), n: a2 && a2.rawTroops,
+      an: a2 ? a2.rally.an.map(x => x[0] === A.id ? 'A' : x[0] === E.id ? 'E' : 'F') : null, tor: tore[tore.length - 1].n,
+      zahlt: { A: g0.A - g2.A, E: g0.E - g2.E, F: g0.F - g2.F, Z: g2.Z - g0.Z } };
+    // 2b) Der Anführer kann nicht zahlen → die ganze Rally fällt aus, keiner zahlt, alle Truppen heim
+    botCoins[A.id] = 100; botCoins[E.id] = 1e6; heim.length = 0; const t2 = islandTroops[aCap] || 0, g2b = geld();
+    bundRallyLos(rally('rm2b', 3000, 1000, 1000)); marschPlatz = mp0; const g2n = geld();
+    out.m2b = { atk: atk('rm2b'), drin: bund.r.some(x => x.id === 'rm2b'), alexDa: (islandTroops[aCap] || 0) - t2, heim: heim.map(x => x.n), zahlt: g2b.A - g2n.A + g2b.E - g2n.E + g2b.F - g2n.F + g2n.Z - g2b.Z };
+    botCoins[A.id] = 1e6;
     // 3) Fehler nach dem Losmarsch (rallyWerte wirft): Rally ist raus, im nächsten Takt kein zweiter Angriff
     botCoins[E.id] = 1e6; const rw = rallyWerte; rallyWerte = () => { throw new Error('Test'); };
     const w0 = window.WELT, cw = console.warn, warn = []; console.warn = (...x) => warn.push(String(x[0])); window.WELT = { leiter: true };
@@ -49,8 +59,10 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     return out; });
   ok(v.m1.atk === 1 && !v.m1.drin && v.m1.tor.n === 4000, 'Rally geht los, Maut für alle 4000 Truppen', v.m1);
   ok(v.m1.g.A === 1e6 - 3000 && v.m1.g.E === 1e6 - 1000 && v.m1.g.Z === 4000, 'Jeder zahlt seinen Anteil der Maut (3000 / 1000), der Tor-Besitzer bekommt alles', v.m1.g);
-  ok(v.m2.atk === 0 && !v.m2.drin && v.m2.g.A === 1e6 - 3000 && v.m2.g.E === 500 && v.m2.g.Z === 4000, 'Emma kann nicht zahlen: Rally geht nicht los, keiner zahlt', v.m2);
-  ok(v.m2.alexDa === 3000 && v.m2.heim.length === 1 && v.m2.heim[0].n === 1000, 'Alle Truppen gehen heim', v.m2);
+  ok(v.m2.atk === 1 && !v.m2.drin && v.m2.n === 4000 && v.m2.tor === 4000 && JSON.stringify(v.m2.an) === '["A","F"]', 'Emma kann nicht zahlen: Rally läuft mit Alex und Finn (4000 Truppen)', v.m2);
+  ok(v.m2.zahlt.A === 3000 && v.m2.zahlt.F === 1000 && v.m2.zahlt.E === 0 && v.m2.zahlt.Z === 4000, 'Maut genau einmal, nur von den Zahlern', v.m2.zahlt);
+  ok(v.m2.alexDa === 0 && v.m2.heim.length === 1 && v.m2.heim[0].n === 1000, 'Nur Emmas 1000 Truppen gehen heim, Summe stimmt', v.m2);
+  ok(v.m2b.atk === 0 && !v.m2b.drin && v.m2b.alexDa === 3000 && v.m2b.heim.join() === '1000,1000' && v.m2b.zahlt === 0, 'Anführer kann nicht zahlen: ganze Rally fällt aus, keiner zahlt, alle heim', v.m2b);
   ok(v.m3.atk === 1 && !v.m3.drin && v.m3.alexDa === 0 && v.m3.warn.length === 1, 'Fehler nach dem Losmarsch: EIN Angriff, Rally nicht mehr da, keine doppelten Truppen', v.m3);
   ok(v.m4.atk === 0 && !v.m4.drin && v.m4.alexDa === 3000 && v.m4.heim.length === 1 && v.m4.heim[0].n === 1000 && v.m4.warn.length === 1, 'Fehler vor dem Start: Rally weg, Truppen genau einmal zurück', v.m4);
   ok(v.m5.atk === 1 && !v.m5.drin && v.m5.alexDa === 0 && v.m5.heim.length === 0 && v.m5.rally && v.m5.warn.length === 1, 'Fehler nach dem Eintragen: Angriff marschiert, Rally weg, keine Truppen doppelt heim', v.m5);

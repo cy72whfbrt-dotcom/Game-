@@ -461,7 +461,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundBasen` → Game/buendnis/01-daten-regeln.js:84
 - `bundBasenText` → Game/buendnis/01-daten-regeln.js:81
 - `bundBefehl` → Game/buendnis/04-fenster-karte-welt.js:7
-- `bundBonus` → Game/buendnis/02-rally-geschenke.js:248
+- `bundBonus` → Game/buendnis/02-rally-geschenke.js:259
 - `bundBotBereit` → Game/buendnis/03-mitspieler.js:17
 - `bundBotGetippt` → Game/buendnis/03-mitspieler.js:18
 - `bundCap` → Game/buendnis/01-daten-regeln.js:83
@@ -480,9 +480,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundEinmal` → Game/buendnis/01-daten-regeln.js:101
 - `bundEinzelgaenger` → Game/buendnis/03-mitspieler.js:16
 - `bundFreund` → Game/spiel/01a-grundlagen.js:14
-- `bundGebiet` → Game/buendnis/02-rally-geschenke.js:262
+- `bundGebiet` → Game/buendnis/02-rally-geschenke.js:273
 - `bundGehoert` → Game/buendnis/01-daten-regeln.js:105
-- `bundGeschenk` → Game/buendnis/02-rally-geschenke.js:222
+- `bundGeschenk` → Game/buendnis/02-rally-geschenke.js:233
 - `bundGesehen` → Game/buendnis/04-fenster-karte-welt.js:250
 - `bundHeimschicken` → Game/buendnis/01-daten-regeln.js:333
 - `bundHelfen` → Game/buendnis/01-daten-regeln.js:373
@@ -517,16 +517,16 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundOhneListeHtml` → Game/buendnis/04-fenster-karte-welt.js:381
 - `bundOp` → Game/buendnis/01-daten-regeln.js:136
 - `bundProdFaktor` → Game/spiel/01e-nebel-kampfwerte-hud.js:200
-- `bundProdMult` → Game/buendnis/02-rally-geschenke.js:259
+- `bundProdMult` → Game/buendnis/02-rally-geschenke.js:270
 - `bundProfilKnopf` → Game/buendnis/04-fenster-karte-welt.js:392
 - `bundPunkt` → Game/buendnis/04-fenster-karte-welt.js:251
 - `bundPush` → Game/buendnis/01-daten-regeln.js:104
 - `bundQuellen` → Game/buendnis/04-fenster-karte-welt.js:137
-- `bundRallyBeute` → Game/buendnis/02-rally-geschenke.js:202
+- `bundRallyBeute` → Game/buendnis/02-rally-geschenke.js:213
 - `bundRallyDazu` → Game/buendnis/02-rally-geschenke.js:32
 - `bundRallyEnde` → Game/buendnis/02-rally-geschenke.js:54
 - `bundRallyFuer` → Game/buendnis/03-mitspieler.js:280
-- `bundRallyHeim` → Game/buendnis/02-rally-geschenke.js:159
+- `bundRallyHeim` → Game/buendnis/02-rally-geschenke.js:170
 - `bundRallyHtml` → Game/buendnis/04-fenster-karte-welt.js:104
 - `bundRallyLos` → Game/buendnis/02-rally-geschenke.js:63
 - `bundRallyPlan` → Game/buendnis/03-mitspieler.js:288
@@ -546,10 +546,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundSpeichern` → Game/buendnis/01-daten-regeln.js:71
 - `bundSuchenHtml` → Game/buendnis/04-fenster-karte-welt.js:110
 - `bundTagFuer` → Game/buendnis/03-mitspieler.js:19
-- `bundTagHeute` → Game/buendnis/02-rally-geschenke.js:220
+- `bundTagHeute` → Game/buendnis/02-rally-geschenke.js:231
 - `bundTagVon` → Game/buendnis/01-daten-regeln.js:75
 - `bundTakt` → Game/buendnis/03-mitspieler.js:317
-- `bundTempo` → Game/buendnis/02-rally-geschenke.js:273
+- `bundTempo` → Game/buendnis/02-rally-geschenke.js:284
 - `bundUnterAngriff` → Game/buendnis/01-daten-regeln.js:87
 - `bundVerbuendet` → Game/buendnis/01-daten-regeln.js:74
 - `bundVon` → Game/buendnis/01-daten-regeln.js:73
@@ -1311,13 +1311,13 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `json_antwort` → Game/server/03-nebel-maersche-seite.php:133
 - `jwtFuer` → Game/weltrechner/push.js:167
 - `kampf` → Game/aufbau.js:207
-- `kampfAnteile` → Game/buendnis/02-rally-geschenke.js:183
+- `kampfAnteile` → Game/buendnis/02-rally-geschenke.js:194
 - `kampfAufraeumen` → Game/spiel/04-kampf.js:246
 - `kampfDazu` → Game/spiel/07a-schlachten.js:50
 - `kampfEp` → Game/spiel/02a-shop-stufen.js:251
 - `kampfHeimTeile` → Game/bots/02-kampf-karte.js:16
 - `kampfKey` → Game/spiel/07a-schlachten.js:55
-- `kampfTeile` → Game/buendnis/02-rally-geschenke.js:173
+- `kampfTeile` → Game/buendnis/02-rally-geschenke.js:184
 - `kannZahlen` → Game/aufbau.js:68
 - `karte` → Game/spiel/05d-maersche-kampfbericht.js:149
 - `keep` → Game/baukunst/06-turmhof-festung.js:69
@@ -1785,16 +1785,16 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `questProgress` → Game/spiel/06a-aufgaben.js:128
 - `queueHover` → Game/spiel/03e-kamera-eingabe.js:359
 - `queueLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:285
-- `rallyAussortieren` → Game/buendnis/02-rally-geschenke.js:138
-- `rallyFlucht` → Game/buendnis/02-rally-geschenke.js:153
+- `rallyAussortieren` → Game/buendnis/02-rally-geschenke.js:149
+- `rallyFlucht` → Game/buendnis/02-rally-geschenke.js:164
 - `rallyFrei` → Game/buendnis/01-daten-regeln.js:444
-- `rallyHx` → Game/buendnis/02-rally-geschenke.js:150
-- `rallyMaut` → Game/buendnis/02-rally-geschenke.js:90
+- `rallyHx` → Game/buendnis/02-rally-geschenke.js:161
+- `rallyMaut` → Game/buendnis/02-rally-geschenke.js:101
 - `rallyPlatz` → Game/buendnis/01-daten-regeln.js:443
 - `rallyPlatzStufe` → Game/buendnis/01-daten-regeln.js:442
-- `rallySchild` → Game/buendnis/02-rally-geschenke.js:126
-- `rallyVerluste` → Game/buendnis/02-rally-geschenke.js:129
-- `rallyWerte` → Game/buendnis/02-rally-geschenke.js:110
+- `rallySchild` → Game/buendnis/02-rally-geschenke.js:137
+- `rallyVerluste` → Game/buendnis/02-rally-geschenke.js:140
+- `rallyWerte` → Game/buendnis/02-rally-geschenke.js:121
 - `rankIndexFor` → Game/spiel/05a-aussehen-profil.js:77
 - `rankPeople` → Game/spiel/05c-erfolge-rangliste.js:241
 - `rankRowHtml` → Game/spiel/05c-erfolge-rangliste.js:246
@@ -2243,7 +2243,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `variant` → Game/baukunst/04-vielfalt-stile.js:188
 - `verlustChips` → Game/spiel/01a-grundlagen.js:173
 - `verschluesseln` → Game/weltrechner/push.js:22
-- `verstAnteile` → Game/buendnis/02-rally-geschenke.js:175
+- `verstAnteile` → Game/buendnis/02-rally-geschenke.js:186
 - `verstBelegt` → Game/buendnis/01-daten-regeln.js:445
 - `verstBerichte` → Game/buendnis/01-daten-regeln.js:495
 - `verstecke` → Game/speichern.js:83
@@ -3054,24 +3054,24 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundRallyUnterwegs` :53
 - `bundRallyEnde` :54 — abgebrochen: alle Truppen wieder heim
 - `bundRallyLos` :63
-- `rallyMaut` :90 — Maut einer Rally (für launchAttack): die Maut für alle Truppen (mit dem Helden-…
-- `rallyWerte` :110 — Rally: jeder zählt mit SEINEN Werten für SEINE Truppen (Skill Angriff, Titel, F…
-- `rallySchild` :126 — Schild (Ausrüstung) eines Mitglieds: weniger Verluste für SEINE Truppen (Alexan…
-- `rallyVerluste` :129 — (Kampf, gewonnen) Verluste einer Rally/eines gemeinsamen Angriffs je Eintrag: j…
-- `rallyAussortieren` :138 — (Kampf, vor dem Kampf) Wer nicht mehr im Bündnis des Anführers ist (verlassen n…
-- `rallyHx` :150 — Der Held eines Spielers in einem gemeinsamen Kampf (Anführer: der Held des Angr…
-- `rallyFlucht` :153 — (Kampf, verloren) Wer flieht: jeder Spieler mit SEINEM Helden (Standhaft, Leich…
-- `bundRallyHeim` :159 — (Kampf) Überlebende einer Rally gehen anteilig zu ihren Basen zurück. ohneStart…
-- `kampfTeile` :173 — Anteile an einem gemeinsamen Kampf nach Stärke (für Wochen-Punkte und Erfahrung…
-- `verstAnteile` :175 — Anteile der Verteidiger: Besitzer + jeder Helfer (Verstärkung) nach seiner Stär…
-- `kampfAnteile` :183 — (Kampf) Gemeinsamer Angriff (Rally oder mehrere Bündnis-Angriffe auf dasselbe Z…
-- `bundRallyBeute` :202 — (Kampf) Beute (Gold, Holz, Stein, Eisen) der Rally nach Truppen verteilen und a…
-- `bundTagHeute` :220 — 4) GESCHENKE, TEMPEL-BONUS, GEBIET
-- `bundGeschenk` :222 — Boss besiegt / große Kiste gekauft → alle ANDEREN Mitglieder bekommen ein klein…
-- `bundBonus` :248
-- `bundProdMult` :259
-- `bundGebiet` :262
-- `bundTempo` :273
+- `rallyMaut` :101 — Maut einer Rally (für launchAttack): die Maut für alle Truppen (mit dem Helden-…
+- `rallyWerte` :121 — Rally: jeder zählt mit SEINEN Werten für SEINE Truppen (Skill Angriff, Titel, F…
+- `rallySchild` :137 — Schild (Ausrüstung) eines Mitglieds: weniger Verluste für SEINE Truppen (Alexan…
+- `rallyVerluste` :140 — (Kampf, gewonnen) Verluste einer Rally/eines gemeinsamen Angriffs je Eintrag: j…
+- `rallyAussortieren` :149 — (Kampf, vor dem Kampf) Wer nicht mehr im Bündnis des Anführers ist (verlassen n…
+- `rallyHx` :161 — Der Held eines Spielers in einem gemeinsamen Kampf (Anführer: der Held des Angr…
+- `rallyFlucht` :164 — (Kampf, verloren) Wer flieht: jeder Spieler mit SEINEM Helden (Standhaft, Leich…
+- `bundRallyHeim` :170 — (Kampf) Überlebende einer Rally gehen anteilig zu ihren Basen zurück. ohneStart…
+- `kampfTeile` :184 — Anteile an einem gemeinsamen Kampf nach Stärke (für Wochen-Punkte und Erfahrung…
+- `verstAnteile` :186 — Anteile der Verteidiger: Besitzer + jeder Helfer (Verstärkung) nach seiner Stär…
+- `kampfAnteile` :194 — (Kampf) Gemeinsamer Angriff (Rally oder mehrere Bündnis-Angriffe auf dasselbe Z…
+- `bundRallyBeute` :213 — (Kampf) Beute (Gold, Holz, Stein, Eisen) der Rally nach Truppen verteilen und a…
+- `bundTagHeute` :231 — 4) GESCHENKE, TEMPEL-BONUS, GEBIET
+- `bundGeschenk` :233 — Boss besiegt / große Kiste gekauft → alle ANDEREN Mitglieder bekommen ein klein…
+- `bundBonus` :259
+- `bundProdMult` :270
+- `bundGebiet` :273
+- `bundTempo` :284
 
 ### Game/buendnis/03-mitspieler.js — Bündnis: was Mitspieler im Bündnis tun
 - `bundWeg` :10 — Weg da, letztes Tor offen und die Maut bezahlbar? (wie botCanCross, aber je Run…

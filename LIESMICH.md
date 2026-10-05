@@ -476,6 +476,10 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   oder Zeichnen), galt die Rally als nicht gestartet und schickte alle Truppen heim, obwohl der Angriff schon marschierte –
   Truppen doppelt. Jetzt zählt der eingetragene Angriff als gestartet (Maut nur einmal bezahlt, `bundRallyLos`, buendnis/02).
   Test `rally_maut_test` (Fall 5).
+- **5.10. Rally-Maut (Alexanders Entscheidung B1):** Kann ein Mitglied seinen Maut-Anteil nicht zahlen, bleibt nur ER draußen
+  (seine Truppen gehen heim, Meldung an ihn, der Anführer liest „X war zu arm für die Maut und ist nicht dabei.“); die anderen
+  zahlen die Maut neu verteilt und marschieren. Kann der Anführer selbst nicht zahlen, fällt die Rally wie bisher ganz aus
+  (`bundRallyLos`, buendnis/02). Test `rally_maut_test` (Fall 2 und 2b).
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
