@@ -752,7 +752,10 @@ Alles für heute Nacht kommt hier rein. Erst besprechen (Fragen an Alexander), d
    fertig“ · Kisten-Aufgabe zählt Gratis-Kisten · Ranglisten-Reiter „Hauptstadt“.
    **NEIN:** Push bei Stillstand nachts · Admin-Ampel · „Leicht“ bei neutralen Basen · Fenster „Erste Basis erobert“ ·
    Zeile „Nächstes Ziel“ · Karte heller · „Warum verloren?“ im Kampfbericht · Pass umbenennen (bleibt „Saison-Pass“).
-   **Noch offen:** 15 (Anleitung im Browser?), 19 (Verstärkung-Meldung), 27 (Ranglisten je Saison), 29 (Erfolge prüfen).
+   **Auch JA:** 15 prüfen, ob der Anleitungs-Stand im Browser liegt → wenn ja auf den Server · 19 Meldung, wenn ein
+   Verbündeter seine Verstärkung heimholt + beim Antippen der eigenen Basis sehen, wer dort verstärkt (prüfen, ob es
+   das schon gibt) · 29 unerreichbare Erfolge senken, aber auch ein paar sehr hohe drinlassen. **NEIN:** 27 Ranglisten
+   bleiben „für immer“.
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
