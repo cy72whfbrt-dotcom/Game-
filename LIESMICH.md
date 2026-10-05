@@ -426,6 +426,14 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   mit `JSON_INVALID_UTF8_SUBSTITUTE`, geht es gar nicht: Log + 500 (`welt_antwort_text`). Alexander (#13, Schulklassen):
   30 neue Konten pro Stunde und 100 Fehlversuche in 15 Min. je Adresse (index.php). Alexander (#14): erledigte bezahlte Befehle
   bleiben 14 Tage (`aufraeumen`) – die Saison-Sicherung (2 Wochen) holt sie beim Zurückspielen nach. Tests: server_test.php.
+- **5.10. Heimweg nach der Ankunft:** eine Welle, die am Ziel nicht kämpft (Ziel gehört inzwischen einem Bündnis-Mitglied,
+  Friedensschild, kaputtes Ziel), war sofort wieder daheim – jetzt läuft sie den Weg zurück (`welleHeim`, 04-kampf.js;
+  Mitspieler/echte Spieler über `bundHeimschicken`, Vorschau-Spieler als Rückzug; ebenso `resolveBotAttack`, Zweig
+  Bündnis-Mitglied). Zwei Wellen desselben Angreifers aus verschiedenen Basen in einem Kampf: jede Basis bekommt ihren Teil
+  der Heimkehrer (`fight.quellen` → `kampfHeimTeile`, bots/02; kommt ein Verbündeter dazu, wird jede Quelle ein Eintrag in
+  `rally.an`). Wer ohne Rally bzw. als Anführer einer zweiten Rally dazukommt, bringt seinen Skill-Anteil `x[6]` mit
+  (`rallyAussortieren` zieht sonst zu viel/zu wenig ab). Offen: im Vorschau-Kampf des Spielers (`resolveAttack`, 02c) gehen
+  zusammengelegte Wellen weiter zur ersten Basis. Test `tests/browser/gemeinsam_heim_test.js`.
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.

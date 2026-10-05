@@ -135,6 +135,13 @@ const BOT_SKILLS = ['troops', 'attack', 'defense', 'speed', 'attackGold', 'defen
 // ==============================================================================================================
 //    Kampf: wenn ein Angriff der anderen ankommt
 // ==============================================================================================================
+// Die Truppen eines Kampfs gehen heim: hat derselbe Angreifer Wellen aus mehreren Basen zusammengelegt (attack.quellen, siehe
+// Ankunft), bekommt jede Basis ihren Anteil → [[Basis, Truppen], …] (Summe genau n)
+function kampfHeimTeile(attack, n) {
+    const q = attack.quellen && attack.quellen.length ? attack.quellen : [[attack.sourceId, n]], sum = q.reduce((s, x) => s + x[1], 0) || 1;
+    let rest = n;
+    return q.map((x, i) => { const k = i === q.length - 1 ? rest : Math.min(rest, Math.floor(n * x[1] / sum)); rest -= k; return [x[0], k]; }).filter(x => x[1] > 0);
+}
 function resolveBotAttack(attack) {
     const bot = botById[attack.attackerBotId];
     const source = islandById[attack.sourceId];
@@ -147,8 +154,8 @@ function resolveBotAttack(attack) {
     if (targetOwner === bot.id) { islandTroops[target.id] = (islandTroops[target.id] || 0) + (attack.rally ? bundRallyHeim(attack, attack.rawTroops, target.id, true) : attack.rawTroops); saveGame(); return; }   // (gemeinsam: nur sein Anteil zieht ein, die anderen gehen heim)   // inzwischen die eigene (ein anderer Angriff hat sie genommen): die Truppen bleiben dort
     if (targetOwner && targetOwner !== bot.id && typeof bundFreund === 'function' && bundFreund(bot.id, targetOwner)) {   // inzwischen ein Bündnis-Mitglied: kein Kampf, heim
         if (attack.rally) { bundRallyHeim(attack, attack.rawTroops, target.id); saveGame(); return; }   // (gemeinsam: jeder zu sich)
-        const back = botOwnedIslands[bot.id] && botOwnedIslands[bot.id].has(attack.sourceId) ? attack.sourceId : botCapitalOf(bot.id);
-        if (back !== null && back !== undefined) islandTroops[back] = (islandTroops[back] || 0) + attack.rawTroops; saveGame(); return; }
+        for (const [von, n] of kampfHeimTeile(attack, attack.rawTroops)) bundHeimschicken(bot.id, target.id, von, n, attack.hx ? attack.hx.ret || 0 : 0);   // (den Weg zurück, jeder Teil zu seiner Basis)
+        saveGame(); return; }
     attack._kampf = 1;                                                // (ab hier wird gekämpft – Wut und Truppen zählen)
     const vk = targetOwner && typeof verstVorKampf === 'function' ? verstVorKampf(target.id) : null;   // Verstärkung (Botschaft) verteidigt mit
     attack._vk = vk;                                                  // (bricht der Kampf mit einem Fehler ab: kampfAufraeumen trennt sie wieder)
@@ -188,7 +195,8 @@ function resolveBotAttack(attack) {
         const sk = angreifer.reduce((s, q) => s + (q.k !== undefined ? q.k : q.n), 0) || 1;
         for (const q of angreifer) { q.gold = payGold(q.w, n * (q.k !== undefined ? q.k : q.n) / sk * (q.w === bot.id ? botKillRate : q.rate || 0)); delete q.rate; } };
     const homeAgain = n => { if (attack.rally) attack._heim = 1; if (n <= 0) return; if (attack.rally) { bundRallyHeim(attack, n, target.id); return; } const t0 = Date.now();                 // they walk home like yours (a fallen home: resolveSend sends them to another base) – eine Rally: jeder zu sich
-        pendingSends.push({ fromId: target.id, toId: source.id, troops: n, startedAt: t0, resolveAt: t0 + retreatSecs(attack, target, source, bot.id) * 1000, senderBotId: bot.id, back: true }); };
+        for (const [von, k] of kampfHeimTeile(attack, n)) { const zu = islandById[von] || source;   // (mehrere Wellen: jeder Teil zu seiner Basis)
+            pendingSends.push({ fromId: target.id, toId: zu.id, troops: k, startedAt: t0, resolveAt: t0 + retreatSecs(attack, target, zu, bot.id) * 1000, senderBotId: bot.id, back: true }); } };
     const plunder = won && targetOwner ? plunderOf(targetOwner, capitalHolds) : null;   // Beute: ein kleiner Teil über dem Burg-Schutz des Verlierers (nur an der Hauptstadt – Turm: nichts) - auch deins
     if (plunder) plunderMove(targetOwner, bot.id, plunder.loot, plunder.roh);
     if (capitalHolds) brandSetzen(target.id);                                 // die Hauptstadt brennt (nur zu sehen)
