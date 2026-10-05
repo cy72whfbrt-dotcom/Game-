@@ -42,6 +42,8 @@ Game/                  ← genau dieser Ordner liegt auf dem Server
   aufbau.js            Aufbau: Burg-Stufe, Holz/Stein/Eisen, Forschung, Truppen-Stufen, Markt, Marsch-Plätze (Abschnitt 22)
   haendler.js          wandernder Händler: Karren auf der Karte, Angebot, Kauf über den Weltrechner (Abschnitt 23)
   server.php           alles auf dem Server: Datenbank, Login, Laden, Speichern, Welt, Sicherheit
+  skript.php           liefert die verkleinerten Skripte aus klein/ (gepackt, ein Jahr zwischengespeichert, Version in der Adresse)
+  klein/               die Skripte verkleinert (für den Browser) – entstehen beim Bauen (spiel_bauen.sh), nie im Git
   admin.php            nur für Admins (alexander): Wartung an/aus, Geschenke verschicken, Spielerliste
   app/                 Open Water als App auf dem Startbildschirm:
     index.html         Installier-Seite (Android: Knopf „Zum Startbildschirm hinzufügen“, iPhone: Anleitung)
@@ -71,7 +73,8 @@ tests/                 Tests (liegen NIE auf dem Server)
   server/              die Server-Tests: Absturz/Zurückspielen, Admin, Nebel bei Armeen, Bündnis-Kiste,
                        Verstärkung, Klick-Test neuer Spieler (+ geschenk.sh: Admin-Geschenk für Tests)
 werkzeuge/             spiel_bauen.sh (spiel.js, bots.js, buendnis.js, baukunst.js, spiel.php, server.php zusammensetzen),
-                       vorschau_bauen.php (Vorschau ohne Server),
+                       vorschau_bauen.php (Vorschau ohne Server), verkleinern.js (+ terser.js: Skripte für den Browser
+                       verkleinern → Game/klein/, läuft in spiel_bauen.sh),
                        vorschau_test*.js (Test-Modus), welt_neustart.php (neue Saison), vor_commit.sh (Prüfung vor dem
                        Commit), server_starten.sh (MariaDB + lokaler PHP-Server 8770 für die Server-Tests),
                        karte.sh (+ karte.js: erzeugt KARTE.md), fortschritt.sh (FORTSCHRITT-Zeilen der Testreihen),
@@ -762,7 +765,7 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
   Neustart-Dauer des Weltrechners messen.
 - Neue Spieler: tägliche Belohnung erst nach der Anleitung · Anleitung wiederholbar, Schritt 6 erst nach Abholen ·
   Hauptstadt-Fenster erklärt sich, nächster Knopf leuchtet · Knöpfe ohne Text werden in der Anleitung erklärt ·
-  schneller laden · prüfen, ob der Anleitungs-Stand im Browser liegt (wenn ja: auf den Server).
+  schneller laden (**gebaut, nicht hochgeladen** – Verlauf 5./6.10. Nacht) · prüfen, ob der Anleitungs-Stand im Browser liegt (wenn ja: auf den Server).
 - Kampf/Bündnis: Nachricht, wenn ein echter Spieler dich ausspäht · Warnung + automatische Hilfe bei einer Rally gegen
   das Bündnis · Meldung, wenn ein Verbündeter seine Verstärkung heimholt, und beim Antippen der eigenen Basis sehen, wer
   dort verstärkt · Mitspieler: auf „Später“ folgt „Jetzt!“, sie schreiben „Danke!“/„Gut gemacht!“.

@@ -229,6 +229,8 @@ $frisch = is_file("$g/klein/spiel.js") && filemtime("$g/klein/spiel.js") >= file
 pruefe('Skript-Adresse spiel', skript('spiel'), $frisch ? 'skript.php?d=spiel&amp;v=' . filemtime("$g/klein/spiel.js") : 'spiel.js?v=' . filemtime("$g/spiel.js"));
 pruefe('Skript ohne verkleinerte Fassung → Original', skript('sw'), 'sw.js?v=' . filemtime("$g/sw.js"));
 $sk = file_get_contents("$g/skript.php"); preg_match("/const SKRIPTE = \[([^\]]*)\]/", $sk, $m1); preg_match("/const SKRIPTE = \[([^\]]*)\]/", file_get_contents(__DIR__ . '/../werkzeuge/verkleinern.js'), $m2);
+pruefe('Startseite holt die Skripte vorab (nicht in der Wartung)', strpos($ix, "if (!wartung()) foreach (['ladebildschirm', 'speichern', 'bots', 'welt', 'spiel', 'aufbau', 'buendnis', 'haendler', 'benachrichtigung'] as \$s) echo '<link rel=\"prefetch\" href=\"' . skript(\$s) . '\">'") !== false, true);
+pruefe('Spielseite gepackt (nach dem Login-Teil)', preg_match("/spielseite_vorbereiten\(\);[^\n]*\nif \(!ini_get\('zlib.output_compression'\) && function_exists\('ob_gzhandler'\)\) ob_start\('ob_gzhandler'\);/", file_get_contents("$g/spiel.php")), 1);
 pruefe('skript.php und verkleinern.js: dieselbe Liste', [$m1[1] ?? 'fehlt', strpos($sk, "in_array(\$name, SKRIPTE, true)") !== false], [$m2[1] ?? 'fehlt2', true]);
 echo ($fehler ? "$fehler von $n Tests FEHLGESCHLAGEN\n" : "Alle $n Server-Tests bestanden.\n");
 exit($fehler ? 1 : 0);

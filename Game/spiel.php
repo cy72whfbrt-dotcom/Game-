@@ -3,6 +3,7 @@
 // Der Spielstand kommt gleich mit der Seite mit (aus der Datenbank), speichern.js schickt Änderungen zurück.
 require __DIR__ . '/server.php';
 $kopf = spielseite_vorbereiten();   // Login prüfen, Spielstand laden (sonst geht es zur Anmeldung)
+if (!ini_get('zlib.output_compression') && function_exists('ob_gzhandler')) ob_start('ob_gzhandler');   // gepackt schicken, wenn der Browser es kann (die ganze Welt steht in der Seite)
 ?>
 <!DOCTYPE html>
 <html lang="de">

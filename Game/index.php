@@ -61,6 +61,8 @@ function h($s) { return htmlspecialchars($s, ENT_QUOTES, 'UTF-8'); }
 <link rel="manifest" href="app/manifest.webmanifest">
 <link rel="icon" href="app/logo.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="app/apple-touch-icon.png">
+<?php   // die Spiel-Skripte schon hier im Hintergrund holen (während man sich anmeldet) – das Spiel startet dann schneller
+if (!wartung()) foreach (['ladebildschirm', 'speichern', 'bots', 'welt', 'spiel', 'aufbau', 'buendnis', 'haendler', 'benachrichtigung'] as $s) echo '<link rel="prefetch" href="' . skript($s) . '">' . "\n"; ?>
 <meta name="theme-color" content="#0b2a4a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
