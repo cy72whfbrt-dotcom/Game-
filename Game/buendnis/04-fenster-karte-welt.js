@@ -163,14 +163,15 @@ function bundWahlRechnen() {
     const w = bundWahl, info = document.getElementById('bdInfo'); if (!w || !info || w.von === null) return;
     const n = Math.floor((islandTroops[w.von] || 0) * (w.f || 1)), von = islandById[w.von];
     const ziel = islandById[w.mode === 'rally' ? w.t : w.mode === 'dazu' ? (bund.r.find(r => r.id === w.rid) || {}).at : w.nach]; if (!ziel || !von) return;
-    const frei = w.mode === 'hilfe' ? Math.floor(verstFrei(islandOwnerOf(ziel.id))) : Infinity;
+    const ow = islandOwnerOf(ziel.id), offen = w.mode === 'hilfe' && verstUnbekannt(ow);   // (Platz bei anderen: nur der Weltrechner weiß ihn – er schickt höchstens so viele)
+    const frei = w.mode === 'hilfe' && !offen ? Math.floor(verstFrei(ow)) : Infinity;
     info.textContent = fmtNum(Math.min(n, frei)) + ' Truppen · ' + (w.mode === 'rally' ? 'Angriff nach ' + (w.min || 3) + ' Min. · Marsch dann ca. ' + fmtClock(travelDurationSeconds(von, ziel)) : 'Ankunft in ca. ' + fmtClock(travelDurationSeconds(von, ziel)) +
-        (w.mode === 'hilfe' ? ' · Platz in der Botschaft: ' + fmtNum(frei) + (n > frei ? ' (mehr passt nicht)' : '') + ' · bleiben deine, zurückholen in der Botschaft' : ''));
+        (w.mode === 'hilfe' ? (offen ? ' · höchstens so viele, wie in die Botschaft passen' : ' · Platz in der Botschaft: ' + fmtNum(frei) + (n > frei ? ' (mehr passt nicht)' : '')) + ' · bleiben deine, zurückholen in der Botschaft' : ''));
 }
 function bundWahlLos() {
     const w = bundWahl; if (!w || w.von === null || w.von === undefined) return;
     const von = islandById[w.von]; let n = Math.floor((islandTroops[w.von] || 0) * (w.f || 1)); if (!von || n < 1) { flashHint('Dort sind keine Truppen.', 2500); return; }
-    if (w.mode === 'hilfe') { const ow = islandOwnerOf(w.nach), frei = Math.floor(verstFrei(ow)); if (frei < 1) { flashHint('Die Botschaft von ' + bundName(ow) + ' ist voll.', 3000); return; } n = Math.min(n, frei); }
+    if (w.mode === 'hilfe' && !verstUnbekannt(islandOwnerOf(w.nach))) { const ow = islandOwnerOf(w.nach), frei = Math.floor(verstFrei(ow)); if (frei < 1) { flashHint('Die Botschaft von ' + bundName(ow) + ' ist voll.', 3000); return; } n = Math.min(n, frei); }
     if (w.mode === 'rally') {
         const why = bundZielOk('player', w.t); if (why) { flashHint(why + '.', 3000); return; }
         const held = w.held && heroOwned('player', w.held) && !heroBusy('player', w.held) ? w.held : null, held2 = heroZweitOk('player', held, w.held2);
@@ -260,7 +261,7 @@ function bundInselfenster(island, view) {
     if (ally) { attackBtn.style.display = 'none'; multiAttackBtn.style.display = 'none'; popupOverline.textContent = 'Bündnis-Mitglied · [' + a.tag + ']'; }
     kn.push(['teilen', 'flag', 'Im Chat teilen']);                                                   // im Bündnis-Chat besprechen
     if (mein) kn.push(['hilfe', 'shield', 'Brauche Hilfe!']);
-    else if (ally) { if (verstStufe(islandOwnerOf(island.id))) kn.push(['hilfeWahl', 'send', 'Verstärkung']); }   // (nur mit Botschaft – die Truppen bleiben deine)
+    else if (ally) { if (verstMoeglich(islandOwnerOf(island.id))) kn.push(['hilfeWahl', 'send', 'Verstärkung']); }   // (nur mit Botschaft – die Truppen bleiben deine)
     else if (!bundZielOk('player', island.id)) kn.push(['rallyWahl', 'troops', 'Rally']);
     if (bundKannEinladen(ow)) kn.push(['einladen', 'bund', bundEingeladen(ow) ? 'Eingeladen' : 'Einladen']);   // Anführer: Herr dieser Basis ins Bündnis einladen
     liveHtml(box, (ally ? '<div class="notice notice--gold">' + icon('bund') + '<span>' + escapeHtml(bundName(ow)) + ' ist in deinem Bündnis – Mitglieder greifen sich nicht an.</span></div>' : '') +

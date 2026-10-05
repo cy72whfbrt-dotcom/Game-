@@ -440,6 +440,9 @@ function rallyPlatz(w) { return rallyPlatzStufe(w, verstStufe(w)); }
 const rallyFrei = r => Math.max(0, Math.floor(rallyPlatz(r.by) - r.j.reduce((s, j) => s + j.n, 0)));
 function verstBelegt(w) { return verst.l.reduce((s, v) => s + (islandOwnerOf(v.t) === w ? v.n : 0), 0); }
 function verstFrei(w) { return Math.max(0, verstPlatz(w) - verstBelegt(w)); }
+// Zuschauer (Handy): die Botschaft anderer kennt nur der Weltrechner (vom Server kommt nur ihre Burg-Stufe) – er prüft Platz und Stufe
+function verstUnbekannt(w) { return w !== 'player' && typeof fremdGeheim === 'function' && fremdGeheim(); }
+function verstMoeglich(w) { return verstUnbekannt(w) ? !!AUF && AUF.burgStufe(w) >= AUF.BAU_AB_BURG.embassy : verstStufe(w) > 0; }
 function verstHeim(v, text) {                                    // eine Verstärkung marschiert heim (zu ihrer Basis, sonst zur Hauptstadt)
     verst.l = verst.l.filter(x => x !== v); verstSpeichern();
     if (v.n >= 1) bundHeimschicken(v.w, v.t, v.von, v.n);
