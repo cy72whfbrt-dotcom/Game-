@@ -373,6 +373,13 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Zusammengesetzte Dateien (spiel.js … server.php, Liste aus der Tabelle ZIELE in `spiel_bauen.sh`) stehen nur als Teile drin
   (z. B. `marsch_welt` → `Game/server/03-…php`). `werkzeuge/vor_commit.sh` meldet „KARTE.md veraltet“, Test `tests/karte_test.js`
   (läuft in `tests/alle_tests.sh` mit). Server-Tests `betroffen`: auch `Game/server/*`, `Game/spielseite/*`, `Game/baukunst/*`.
+- **5.10. Hänger bei Last beim Hoster:** ein Welt-Puls dauert dann 15–30 s – das Handy zeigte sofort „Verbindung wird
+  wiederhergestellt …“, Angriffe standen bei 0:00. Jetzt: die Weltrechner-Leitung gilt 45 s (statt 12), gerechnet ab dem ENDE
+  seines Pulses (`LEITER_SEK`, 07-welt-puls.php; einen Absturz erkennt der Wachhund weiter am Herzschlag, 180 s). Der Hinweis
+  kommt erst nach 20 s durchgehend ohne Weltrechner (`rechnerStatus`, 10d). Ein Marsch am Ziel zeigt „wird ausgewertet …“
+  statt 0:00 (`marschUhr`, Unterwegs-Liste, Marsch-Uhr auf der Karte, Armee/Rally-Uhren; nur Anzeige). Weltrechner wartet
+  auf den Server bis 60 s (statt 30) und gibt nach einem eigenen Stillstand 2 s Nachfrist (`zeitGrenze`, start.js).
+  Test `tests/browser/haenger_test.js`, server_test.php.
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
