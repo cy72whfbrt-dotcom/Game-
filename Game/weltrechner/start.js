@@ -51,10 +51,14 @@ function herzSchreiben(extra) {
 }
 // Längste Pause (der Weltrechner war so lange am Stück beschäftigt – ab 3 Min. hält ihn der Wachhund für hängend):
 // jede Sekunde nachsehen, wie viel später als geplant wir drankommen. Steht im Herzschlag (Admin-Seite), lange Pausen im Log.
-let pauseLetzte = Date.now(); stat.pauseMax = 0; stat.pauseMaxStunde = 0;
-setInterval(() => { const j = Date.now(), p = j - pauseLetzte - 1000; pauseLetzte = j;
+// Bei einer langen Pause steht im Log, WARUM: hat er selbst gerechnet (CPU ≈ Pause) oder kam er nicht dran (CPU ≈ 0 – der
+// Office-Server war ausgelastet: Last, freier Speicher)? So lässt sich die Ursache der Hänger finden (5.10.).
+let pauseLetzte = Date.now(), cpuLetzte = process.cpuUsage(); stat.pauseMax = 0; stat.pauseMaxStunde = 0;
+setInterval(() => { const j = Date.now(), p = j - pauseLetzte - 1000, cpu = process.cpuUsage(cpuLetzte); pauseLetzte = j; cpuLetzte = process.cpuUsage();
     if (p > stat.pauseMax) stat.pauseMax = p; if (p > stat.pauseMaxStunde) stat.pauseMaxStunde = p;
-    if (p > 20000 && phase === 'läuft') log('Warnung: ' + Math.round(p / 1000) + ' s am Stück beschäftigt'); }, 1000).unref();
+    if (p > 20000 && phase === 'läuft') { let wie = ''; try { const os = require('os'), last = os.loadavg().map(x => x.toFixed(1)).join('/'), rechen = Math.round((cpu.user + cpu.system) / 1000);
+            wie = ' (selbst gerechnet ' + Math.round(rechen / 1000) + ' s von ' + Math.round((p + 1000) / 1000) + ' s · Server-Last ' + last + ' · frei ' + Math.round(os.freemem() / 1048576) + ' von ' + Math.round(os.totalmem() / 1048576) + ' MB · eigener Speicher ' + Math.round(process.memoryUsage().rss / 1048576) + ' MB)'; } catch (e) {}
+        log('Warnung: ' + Math.round(p / 1000) + ' s am Stück beschäftigt' + wie); } }, 1000).unref();
 setInterval(() => { stat.pauseMaxStunde = 0; }, 3600000).unref();
 herzSchreiben();   // gleich beim Start: der Wachhund sieht sofort „lebt, lädt noch“ (nicht erst nach 5 s)
 setInterval(() => {
