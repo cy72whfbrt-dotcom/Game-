@@ -13559,7 +13559,7 @@ if (window.WELT) {
     {   const Z = SYSTEM && window.__OW ? +window.__OW.zurueck || 0 : 0;
         if (Z) { const bs = loadBotState(); let n = 0;
             const leerOk = Date.now() - Z < 15 * 60000;   // ein leerer Eintrag (nach der Sicherung beigetreten) nur gleich nach dem Zurückspielen – später fehlt er wegen eines Neustarts: neu
-            for (const id in bs) { const b = bs[id]; if (!b || !(b.mensch || (leerOk && BOT_DEFS.some(x => x.id === id && x.mensch))) || nn(b.zT) >= Z) continue;
+            for (const id in bs) { const b = bs[id]; if (!b || !((b.mensch && !b.hbRoh) || (leerOk && BOT_DEFS.some(x => x.id === id && x.mensch))) || nn(b.zT) >= Z) continue;
                 b.zT = Z; b.zProfil = 1; b.zEich = 1; n++;
                 if (b.wache) { delete b.wache.u; delete b.wache.w; delete b.wache.lm; delete b.wache.fl; }   // → am nächsten Profil neu eichen
                 if (b.hb) { delete b.hb.gU; delete b.hb.rU; } }
