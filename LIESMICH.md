@@ -226,6 +226,8 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Später (Alexander): fremde Helden/Ausrüstung erst nach dem Spähen zeigen (braucht Macht vom Server für die Rangliste).
   Live 5.10. 3:02 und 5:51–5:57 Uhr (und seit Tagen in Schüben): Weltrechner 20–40 s am Stück nicht drangekommen (einmal Neustart
   durch den Wachhund). Verdacht: niedrigste Priorität `nice 19` auf dem geteilten Office-Server – jetzt `nice 10` (wachhund.php).
+- **5.10., 7:20 Uhr – HOCHGELADEN (Alexanders Ja):** alles vom 5.10. (Rally jeder für sich, Kampf-Fehler, Schummel-Schutz,
+  Login, Push, nice 10). Tests vorher: beide Reihen grün. Weltrechner danach in 11 s gestartet (vorher 3–4 Min.), läuft.
 - **5.10. Tests schneller (Alexander):** `tests/alle_tests.sh` lässt bis zu 4 Browser-Tests gleichzeitig laufen (vorher
   nacheinander, ~10 Min.), Schnelltest mit Namen (`tests/alle_tests.sh rally`); `tests/komplett.sh <arbeitsordner>` startet
   beide Reihen gleichzeitig (~30 statt ~40 Min.).
