@@ -106,6 +106,15 @@ $p = json_decode(profil_bereinigen(json_encode(['lvl' => 3, 'saison' => 4])), tr
 pruefe('Welt-Saison: Saison des Spielstands bleibt im Profil', $p['saison'], 4);
 pruefe('Welt-Saison: Saison-Sicherung bleibt 2 Wochen', SAISON_SICHERUNG_SEK, 14 * 86400);
 pruefe('Welt-Saison: Wegräumen der Sicherungen schont die Saison-Sicherung', strpos(file_get_contents(__DIR__ . '/../Game/server.php'), "AND behalten_bis < ' . time()") !== false, true);
+// Zurückspielen einer Sicherung mit fälligem Reset: angehalten bis zum Admin-Knopf (sonst begänne gleich wieder eine neue Saison)
+$jz = 1700000000000;
+$s = json_decode(saison_anhalten(json_encode(['nr' => 3, 'start' => 1, 'ende' => $jz - 1000, 'bald' => 1]), $jz), true);
+pruefe('Welt-Saison zurückgespielt: Termin vorbei → angehalten', [$s['nr'], $s['halt']['seit'] ?? 0, $s['halt']['grund'] ?? ''], [3, $jz, 'sicherung']);
+$s = json_decode(saison_anhalten(json_encode(['nr' => 3, 'start' => 1, 'ende' => $jz + 9e6, 'jetzt' => $jz - 5]), $jz), true);
+pruefe('Welt-Saison zurückgespielt: Admin-Knopf gedrückt → angehalten, Anforderung weg', [isset($s['halt']), isset($s['jetzt'])], [true, false]);
+$w = json_encode(['nr' => 3, 'start' => 1, 'ende' => $jz + 9e6]);
+pruefe('Welt-Saison zurückgespielt: Termin noch nicht da → unverändert', saison_anhalten($w, $jz), $w);
+pruefe('Welt-Saison zurückgespielt: kaputter Wert → unverändert', saison_anhalten('null', $jz), 'null');
 pruefe('Welt-Saison: Nachrichten saison/saisonBald darf der Weltrechner schicken', in_array('saison', WELTRECHNER_NACHRICHTEN, true) && in_array('saisonBald', WELTRECHNER_NACHRICHTEN, true), true);
 $bits = str_repeat("\0", 4); $bits[1] = chr(1 << 2);   // Insel 10 sichtbar
 $s = ['bits' => $bits, 'eigen' => [3 => true]];

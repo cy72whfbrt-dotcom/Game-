@@ -286,6 +286,20 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
     4. **Die Saison-Sicherung bleibt 2 Wochen** (`ow_sicherungen.behalten_bis`, `SAISON_SICHERUNG_SEK`) – das Wegräumen nach 48
        Sicherungen lässt sie aus; auf der Admin-Seite steht „Saison-Sicherung, bleibt bis …“. Tabellen-Stand `2026-10-05s`.
     Getestet: `saison_test` (Anfängerschutz du + Mitspieler, Zurückspielen holt Stufe 20/Gold/Fähigkeiten zurück), `server_test`.
+- **5.10. Welt-Saison: Zurückspielen und fehlende Nachricht (Fehler vom Endprüfer, Alexanders Entscheidung A):**
+    1. **Zurückspielen hält einen fälligen Reset an:** Die Saison-Sicherung entsteht erst, wenn der Termin vorbei ist (oder nach dem
+       Admin-Knopf) – zurückgespielt begann sofort wieder eine neue Saison. Jetzt setzt `sicherung_zurueck` (server.php,
+       `saison_anhalten`) in so einem Fall `openWaterSaison.halt` (und löscht `jetzt`); `saisonTakt` (09f-saison.js) macht dann
+       nichts mehr (auch keinen Termin), bis der Admin „Neue Saison jetzt beginnen“ drückt. admin.php zeigt „Reset angehalten
+       (Sicherung zurückgespielt)“, im Events-Fenster steht „Neue Saison: der Termin folgt“.
+    2. **Nachricht „saison“ je Reset eindeutig** (`'saison|' + nr + '|' + Zeitpunkt`): vorher legte der Server sie nach dem
+       Zurückspielen beim zweiten Reset nicht noch einmal ab – das Handy übernahm den Reset nie und der Weltrechner ignorierte sein
+       Profil für immer. Die Preise behalten ihre feste Nummer (nie doppelt).
+    3. **Rückfall am Handy** (`saisonNachholen`): Ist die Saison der Welt neuer als `openWaterSaisonMein` und kam im ersten Puls
+       (mit weniger als 200 Nachrichten, `WELT.nachrichtenVoll` in welt.js) keine Nachricht „saison“ (z. B. über 60 Tage offline,
+       der Server hat sie gelöscht), übernimmt das Handy den Reset trotzdem (Neuladen, Anfängerschutz ab Saison-Start). Alte
+       Münz-Nachrichten sind dann schon in der alten Saison verbucht; der Schummel-Schutz (Hauptbuch) bleibt maßgeblich.
+    Getestet: `saison_test` (angehalten → kein Reset von selbst, erst der Knopf; Rückfall ohne Nachricht), `server_test`.
 - **5.10. Tests schneller (Alexander):** `tests/alle_tests.sh` lässt bis zu 4 Browser-Tests gleichzeitig laufen (vorher
   nacheinander, ~10 Min.), Schnelltest mit Namen (`tests/alle_tests.sh rally`); `tests/komplett.sh <arbeitsordner>` startet
   beide Reihen gleichzeitig (jetzt ca. 15–20 Min.: Server-Tests laufen in 3 Gruppen gleichzeitig, Gruppe 2/3 mit eigener DB `<testdb>_gN`, Port 8771/8772, eigenem Weltrechner).

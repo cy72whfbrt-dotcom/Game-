@@ -981,7 +981,7 @@ class MysqlLager {
         $this->db->exec('DELETE FROM ow_bots WHERE spieler_id = 0');
         $this->db->exec('DELETE FROM ow_welt_flicken');   // alte Änderungen passen nicht mehr zum zurückgespielten Stand
         $s = $this->db->prepare('INSERT INTO ow_spielstand (spieler_id, schluessel, wert) VALUES (0, ?, ?)');
-        foreach ($d['spielstand'] as $z) $s->execute([$z['schluessel'], $z['wert']]);
+        foreach ($d['spielstand'] as $z) $s->execute([$z['schluessel'], $z['schluessel'] === 'openWaterSaison' ? saison_anhalten($z['wert'], (int)round(microtime(true) * 1000)) : $z['wert']]);   // (ein fälliger Saison-Reset wartet auf den Admin-Knopf)
         $b = $this->db->prepare('INSERT INTO ow_bots (spieler_id, bot_id, nr, stufe, muenzen, anzahl_basen, basen, zustand) VALUES (0, ?, ?, ?, ?, ?, ?, ?)');
         foreach ($d['bots'] as $z) $b->execute([$z['bot_id'], $z['nr'], $z['stufe'], $z['muenzen'], $z['anzahl_basen'], $z['basen'], $z['zustand']]);
         $i = $this->welt_info(); $v = (int)$i['version'] + 1; $vs = [];
@@ -1334,6 +1334,15 @@ function sicherung_gueltig($d) {
     foreach ($d['spielstand'] as $z) { if (!isset($z['schluessel'], $z['wert']) || !is_string($z['wert']) || json_decode($z['wert']) === null && $z['wert'] !== 'null') return false; $keys[$z['schluessel']] = 1; }
     foreach ($d['bots'] as $z) if (!isset($z['bot_id']) || !array_key_exists('basen', $z) || !array_key_exists('zustand', $z)) return false;
     return isset($keys['openWaterIslandTroops'], $keys['openWaterKarte']);   // die Karte und die Truppen gehören immer dazu
+}
+// Welt-Saison nach dem Zurückspielen (Alexander 5.10.): war in der Sicherung der Reset schon fällig (Termin vorbei oder Admin-Knopf),
+// würde der Weltrechner sofort wieder neu beginnen – das Zurückspielen wäre umsonst. Dann ist der Reset ANGEHALTEN (halt), bis der
+// Admin „Neue Saison jetzt beginnen“ drückt (09f-saison.js saisonTakt). $wert: openWaterSaison (JSON) → derselbe oder angehalten.
+function saison_anhalten($wert, $jetzt_ms) {
+    $s = json_decode((string)$wert, true);
+    if (!is_array($s) || !((int)($s['nr'] ?? 0) > 0) || (empty($s['jetzt']) && (float)($s['ende'] ?? 0) > $jetzt_ms)) return $wert;   // (nicht fällig: bleibt)
+    unset($s['jetzt']); $s['halt'] = ['seit' => (int)$jetzt_ms, 'grund' => 'sicherung'];
+    return json_encode($s, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 }
 function welt_puls($ich, $d) {
     $l = lager();

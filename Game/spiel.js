@@ -11580,7 +11580,9 @@ multiAttackConfirmBtn.addEventListener('click', () => {
 });
 
 // ===== WELT-SAISON: Server-Reset alle 8 Wochen (Alexander 5.10.) =====
-// Welt-Teil openWaterSaison = { nr, start, ende, bald (Ankündigung verschickt), jetzt (Admin-Knopf), last: { nr, top: [[wer, Macht]] } }.
+// Welt-Teil openWaterSaison = { nr, start, ende, bald (Ankündigung verschickt), jetzt (Admin-Knopf), halt (angehalten), last: { nr, top: [[wer, Macht]] } }.
+// halt = { seit, grund }: eine Sicherung mit fälligem Reset wurde zurückgespielt (server.php saison_anhalten) – kein Reset, bis der
+// Admin „Neue Saison jetzt beginnen“ drückt (sonst begänne gleich wieder eine neue Saison und das Zurückspielen wäre umsonst).
 // Wer rechnet (der Weltrechner – in der Vorschau das eigene Gerät), beginnt zum Termin die neue Saison: Sonntag 18 Uhr (vor dem
 // Drachen um 19 Uhr), 8 Wochen nach dem Start. Vorher immer eine Sicherung der Welt beim Server (welt.js sicherungBitte → server.php).
 // 3 Tage vorher eine Nachricht an alle echten Spieler, im Spiel ein Countdown (Leiste unter dem HUD, Events-Fenster).
@@ -11610,6 +11612,7 @@ function saisonTakt() {                               // (nur wer rechnet) Termi
     if (!rechnet()) return;
     const now = Date.now();
     if (!saison) { saison = { nr: 1, start: now, ende: saisonEnde(now) }; saisonSpeichern(); return; }
+    if (saison.halt && !saison.jetzt) return;          // angehalten (Sicherung zurückgespielt): erst wieder mit dem Admin-Knopf
     if (!saison.bald && now >= saison.ende - SAISON_BALD_MS && now < saison.ende) { saison.bald = 1; saisonSpeichern(); saisonAnkuendigen(); }
     if (now < saison.ende && !saison.jetzt) return;
     if (window.WELT) {                                 // erst die Sicherung beim Server – ohne sie keine neue Saison
@@ -11639,8 +11642,9 @@ function saisonNeu(now) {
     for (const id of menschen) try { WELT.deltaJetzt(id); } catch (e) { console.warn('Saison:', e); }
     // 3) die Welt neu
     saisonWelt(now);
-    // 4) echte Spieler: Konto beim Weltrechner zurücksetzen, die Nachricht „saison“ (sein Handy übernimmt den Reset und lädt neu)
-    for (const id of menschen) { try { WELT.saisonKonto(id); } catch (e) { console.warn('Saison:', e); } WELT.nachricht(parseInt(id.slice(1), 10), { art: 'saison', nr, alt, neuBis: (loadBotState()[id] || {}).neuBis || 0 }, 'saison|' + nr); try { WELT.deltaBasis(id); } catch (e) {} }
+    // 4) echte Spieler: Konto beim Weltrechner zurücksetzen, die Nachricht „saison“ (sein Handy übernimmt den Reset und lädt neu) –
+    //    Nummer je Reset eindeutig (mit Zeitpunkt): nach dem Zurückspielen kommt ein neuer Reset derselben Nummer sonst nie an
+    for (const id of menschen) { try { WELT.saisonKonto(id); } catch (e) { console.warn('Saison:', e); } WELT.nachricht(parseInt(id.slice(1), 10), { art: 'saison', nr, alt, neuBis: (loadBotState()[id] || {}).neuBis || 0 }, 'saison|' + nr + '|' + now); try { WELT.deltaBasis(id); } catch (e) {} }
     saison = { nr, start: now, ende: saisonEnde(now), last: { nr: alt, top: top.map(([w, v]) => [neutralId(w), Math.round(v)]) } }; saisonSpeichern();
     window.__prVorher = null;                          // (Prüfer im Weltrechner: die Welt ist gewollt so viel kleiner – neue Grundlinie)
     if (!window.WELT && !SYSTEM) {                     // (Vorschau, allein) dein Spielstand übernimmt den Reset beim Neuladen wie am Handy
@@ -11695,7 +11699,7 @@ function saisonKarte() {
     const now = Date.now(), bald = S.ende - now <= SAISON_BALD_MS;
     const preise = 'Platz 1: ' + fmtNum(SAISON_PREISE[0]) + ' · 2: ' + fmtNum(SAISON_PREISE[1]) + ' · 3: ' + fmtNum(SAISON_PREISE[2]) + ' · 4–10: ' + fmtNum(SAISON_PREISE[3]) + ' Gems + Saison-Titel für immer';
     const last = S.last && S.last.top && S.last.top.length ? '<div class="lb-gap">Saison ' + S.last.nr + ' · Top 10</div>' + evRangHtml(S.last.top.map(([w, v]) => [lokalId(w), v]), v => fmtCompact(v)) : '';
-    return evKarte('crown', 'Welt-Saison ' + S.nr, now < S.ende ? 'Neue Saison in ' + evUhr(S.ende) : 'Die neue Saison beginnt gleich …',
+    return evKarte('crown', 'Welt-Saison ' + S.nr, now < S.ende ? 'Neue Saison in ' + evUhr(S.ende) : S.halt ? 'Neue Saison: der Termin folgt' : 'Die neue Saison beginnt gleich …',
         '<div class="field-lines"><span>Neustart</span><b>' + evWann(S.ende) + ' Uhr</b><span>Bleibt</span><b>Hauptstadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Gems, Holz/Stein/Eisen, Gekauftes</b>' +
         '<span>Neu</span><b>Basen, Truppen, Münzen, Stufe, Bündnisse – die Hauptstadt zieht an einen neuen Platz am Rand</b><span>Preise</span><b>Die besten 10 nach Macht: ' + preise + '</b></div>', bald ? 'is-warn' : '') + last;
 }
@@ -11709,6 +11713,20 @@ if (window.WELT && !SYSTEM) {
         flashHint('Eine neue Welt-Saison beginnt – das Spiel lädt neu …', 4000); setTimeout(() => location.reload(), 1500);
     });
 }
+// (Handy) Rückfall: die Welt ist in einer neueren Saison als dein Spielstand, aber die Nachricht „saison“ kam nicht (über 60 Tage
+// offline – der Server hat sie gelöscht – oder nicht mehr abgelegt). Erst nach dem ersten Puls, dessen Nachrichten nicht abgeschnitten
+// waren (höchstens 200): alte Münz-Nachrichten werden so noch in der alten Saison verbucht. Dann wie die Nachricht „saison“.
+// (Der Schummel-Schutz bleibt maßgeblich: das Konto beim Weltrechner hat der Reset schon zurückgesetzt.)
+function saisonNachholen() {
+    if (SYSTEM || !window.WELT || !saison || WELT.saisonHalt || !(WELT.pulse > 0) || WELT.nachrichtenVoll) return false;
+    const mein = parseInt(store.get('openWaterSaisonMein'), 10) || 1; if (saison.nr <= mein) return true;
+    WELT.saisonHalt = true; store.set('openWaterSaisonNeu', String(saison.nr));       // → nach dem Neuladen übernimmt 01a-grundlagen.js den Reset
+    const schutz = (saison.start || 0) + NEULING_MS; if (schutz > Date.now()) store.set('openWaterSaisonSchutz', String(schutz));   // Anfängerschutz ab dem Reset
+    console.warn('Welt-Saison ' + saison.nr + ': Nachricht fehlt – Reset trotzdem übernommen');
+    flashHint('Eine neue Welt-Saison beginnt – das Spiel lädt neu …', 4000); setTimeout(() => location.reload(), 1500);
+    return true;
+}
+if (window.WELT && !SYSTEM) { const t = setInterval(() => { if (saisonNachholen()) clearInterval(t); }, 1000); }
 // (Handy) die Welt ist wieder in einer älteren Saison als dein Spielstand (Sicherung zurückgespielt – das kann nur der Server):
 // neu laden, 01a-grundlagen.js holt den Stand von vor dem Reset zurück
 function saisonWeltZurueck() {

@@ -503,6 +503,7 @@
         // nächsten Sicherung (zusammen mit Münzen, Gems … aus denselben Nachrichten) zum Server, erst dann gelten sie als abgeholt
         // Welt-Saison: nach der Nachricht „saison“ nichts mehr verbuchen – die Seite lädt gleich neu und übernimmt den Reset; was danach
         // kam (Ertrag der neuen Saison), kommt beim nächsten Laden nochmal (noch nicht verbucht)
+        W.nachrichtenVoll = (a.ereignisse || []).length >= 200;   // (Server gibt höchstens 200 – es warten noch mehr; 09f-saison.js saisonNachholen)
         const fertig = new Set(W.ereignisFertig); let neu = false;
         for (const e of W.saisonHalt ? [] : a.ereignisse || []) {
             const id = e && e._eid; if (id && fertig.has(id)) continue;
