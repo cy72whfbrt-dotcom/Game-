@@ -376,6 +376,11 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
 - **5.10. Bündnis am Handy:** Verstärkungs-/Rally-Formular ragt auf 390 px nicht mehr rechts aus der Box (Titel bricht um,
   Spalte `minmax(0,1fr)`). Rally-Ziel heißt wie auf der Karte: „Neutrale Basis · X … · Y …“ bzw. „Basis von <Besitzer>“ statt
   „Turm #23697“ (`bundZielName`, auch in Rally-Meldungen und Chat). Test `tests/browser/rally_name_test.js`.
+- **5.10. Handy-Darstellung (Spieltest 390×844):** Saison-Hinweis („In 3 Tagen beginnt …“) jetzt ganz lesbar (Umbruch statt „…“,
+  12 s) und am Handy nie über einem offenen Fenster (dort steht die Saison ohnehin unter Events → Boss & Lager) – `flashHint(text,
+  ms, lang)` mit Klasse `toast--lang`. Fremde Basis nach dem Spähen: Kopfzeile bricht um statt „Kevin_93 · S…“/„GES…“, Knopf heißt
+  „Neu spähen“ (passt Handy + Desktop). Obere Leiste: die Werte bekommen Platz nach ihrer Länge – „100 Mrd.“ statt „100 Mr…“.
+  Test `tests/browser/handy_texte_test.js` (Handy + Desktop).
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.

@@ -17,10 +17,10 @@
 .mb-chip.is-tour{border-color:rgba(176,120,255,.55);background:linear-gradient(90deg,rgba(110,55,190,.7),rgba(16,12,24,.85))} .mb-chip.is-tour .icon{color:#f2c75c} .mb-chip.is-tour i{color:#d9c6ff}
 .mb-chip.is-drache{border-color:rgba(255,140,70,.6);background:linear-gradient(90deg,rgba(170,50,20,.78),rgba(22,10,8,.88))} .mb-chip.is-drache .icon{color:#ffc46a} .mb-chip.is-drache i{color:#ffd9c0}
 .mb-chip.is-warn{border-color:rgba(225,72,60,.6);background:linear-gradient(90deg,rgba(150,30,30,.75),rgba(20,12,12,.88));color:#ffd9d3} .mb-chip.is-warn > .icon:first-child{color:#ffb3aa}
-.res{position:relative;flex:1 1 0;min-width:0;max-width:136px;height:var(--hud-h);display:flex;align-items:center;gap:6px;padding:0 9px 0 6px;
+.res{position:relative;flex:1 1 auto;min-width:0;max-width:136px;height:var(--hud-h);display:flex;align-items:center;gap:6px;padding:0 9px 0 6px;
   background:var(--glass);border:1px solid var(--line-2);border-radius:var(--r-sm);box-shadow:var(--sh-1);
   -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
-.res > .icon{width:18px;height:18px}
+.res > .icon{width:18px;height:18px}   /* (flex-basis auto: freier Platz geht an den längeren Wert – „100 Mrd.“ statt „100 Mr…“) */
 .res b{font:600 var(--fs-13)/1 var(--font-ui);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .res--coin > .icon{color:var(--res-coin)} .res--gem > .icon{color:var(--res-gem)} .res--troop > .icon{color:var(--res-troop)}
 /* phone portrait: the dock already has Shop - the "+" would only squeeze the gem value into an ellipsis */
@@ -287,6 +287,7 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
   -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);animation:toast-in var(--dur-2) var(--ease-out)}
 .toast::before{content:"";position:absolute;left:11px;top:50%;width:6px;height:6px;margin-top:-3px;transform:rotate(45deg);background:var(--gold-300);box-shadow:0 0 6px rgba(214,170,90,.6)}
 .toast:empty{display:none}
+.toast--lang{display:block;-webkit-line-clamp:none}   /* langer Hinweis (Saison): ganz lesbar, Umbruch statt „…“ */
 .anleitung{position:fixed;z-index:var(--z-toast);left:calc(var(--safe-l,0px) + 10px);right:calc(var(--safe-r,0px) + 58px);bottom:calc(var(--dock-h,64px) + var(--safe-bd,0px) + 14px);
   max-width:420px;display:flex;align-items:center;gap:10px;padding:10px 8px 10px 12px;
   background:var(--glass);border:1px solid var(--gold-300);border-radius:var(--r-sm);box-shadow:var(--sh-2);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
@@ -301,6 +302,7 @@ body.has-midbar:not(.has-sheet) .toast{top:calc(var(--safe-t) + var(--hud-top-sp
 /* phone: while a sheet is open the toast docks just above the sheet's footer (never over the HUD values or the sheet header) */
 @media (max-width:899px) and (min-height:501px){
   body.has-sheet .toast{top:auto;bottom:calc(var(--dock-h) + var(--safe-bd) + 72px);box-shadow:var(--sh-2),0 0 0 1px rgba(0,0,0,.35)}
+  body.has-sheet .toast--lang{display:none}   /* ein langer Hinweis würde das Fenster verdecken (die Saison steht dort ohnehin: Events → Boss & Lager) */
   body.has-sheet:has(#battleLogPopup.is-open,#goalsPopup.is-open,#shopPopup.is-open,#profilePopup.is-open:not([data-tab="equip"])) .toast{bottom:calc(var(--dock-h) + var(--safe-bd) + 16px)}
 }
 
@@ -352,6 +354,7 @@ body.has-midbar:not(.has-sheet) .toast{top:calc(var(--safe-t) + var(--hud-top-sp
 .psub > span:last-child{flex:none}   /* the march time never gets cut, the name truncates instead */
 .psub > span:not(:last-child):not(.sep){min-width:0;overflow:hidden;text-overflow:ellipsis}
 .psub > .psub-who{flex:0 1 auto;white-space:nowrap}
+.psub:has(> .chip--scouted){flex-wrap:wrap;row-gap:3px}   /* fremde Basis: lieber zweite Zeile als „GES…“ oder „Kevin_93 · S…“ */
 .dot{width:7px;height:7px;border-radius:50%;flex:none;box-shadow:0 0 0 2px rgba(0,0,0,.35)}
 .dot--player{background:var(--f-player)} .dot--enemy{background:var(--f-enemy)} .dot--neutral{background:var(--f-neutral)}
 .btn-x{width:32px;height:32px;display:grid;place-items:center;align-self:start;border-radius:var(--r-sm);color:var(--tx-2);border:1px solid transparent;transition:color var(--dur-1),border-color var(--dur-1)}

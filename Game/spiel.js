@@ -7238,8 +7238,9 @@ var splashQueue, splashFinished;   // no initialisers: afterSplash() already run
 function afterSplash(fn) { if (splashFinished || SYSTEM) { if (!SYSTEM) fn(); return; }   // (Weltrechner: kein Ladebildschirm – Hinweise braucht er nicht)
      else (splashQueue || (splashQueue = [])).push(fn); }
 function splashDone() { splashFinished = true; const q = splashQueue || []; splashQueue = []; q.forEach(f => { try { f(); } catch (e) {} }); }
-function flashHint(text, ms) {
+function flashHint(text, ms, lang) {                // lang: langer Hinweis – ganz lesbar (kein „…“), am Handy nicht über einem offenen Fenster
     clearTimeout(hintResetTimer);
+    hintEl.classList.toggle('toast--lang', !!lang);
     hintEl.textContent = text;
     if (ms) hintResetTimer = setTimeout(() => { hintEl.textContent = defaultHint; }, ms);
 }
@@ -11625,7 +11626,7 @@ setInterval(saisonTakt, 5000);
 const saisonBaldText = ende => 'In 3 Tagen beginnt eine neue Welt-Saison (' + evWann(ende) + ' Uhr). Deine Hauptstadt mit Burg, Gebäuden, Forschung, Helden, Ausrüstung, Gems und Rohstoffen bleibt – Basen, Truppen, Münzen, Stufe und Bündnisse fangen neu an. Die besten 10 bekommen Gems und einen Titel für immer.';
 function saisonAnkuendigen() {
     if (window.WELT) { for (const id in WELT.menschen) { const uid = parseInt(id.slice(1), 10); if (uid > 0) WELT.nachricht(uid, { art: 'saisonBald', nr: saison.nr, ende: saison.ende }, 'saisonBald|' + saison.nr); } }
-    else afterSplash(() => flashHint(saisonBaldText(saison.ende), 9000));
+    else afterSplash(() => flashHint(saisonBaldText(saison.ende), 12000, true));
 }
 function saisonTop() {                                // die besten 10 nach Macht (wie die Rangliste) → [[wer, Macht]]
     const l = [], bs = loadBotState();
@@ -11705,7 +11706,7 @@ function saisonKarte() {
 }
 // ---- (Handy) Nachrichten vom Weltrechner: Ankündigung, neue Saison ----
 if (window.WELT && !SYSTEM) {
-    WELT.beiNachricht.push(function (e) { if (e && e.art === 'saisonBald' && e.ende > Date.now()) afterSplash(() => setTimeout(() => flashHint(saisonBaldText(e.ende), 9000), 2500)); });
+    WELT.beiNachricht.push(function (e) { if (e && e.art === 'saisonBald' && e.ende > Date.now()) afterSplash(() => setTimeout(() => flashHint(saisonBaldText(e.ende), 12000, true), 2500)); });
     WELT.beiNachricht.push(function (e) {
         if (!e || e.art !== 'saison' || !(e.nr > 0) || e.nr <= (parseInt(store.get('openWaterSaisonMein'), 10) || 1)) return;   // (schon übernommen)
         WELT.saisonHalt = true; store.set('openWaterSaisonNeu', String(e.nr));                // → nach dem Neuladen übernimmt 01a-grundlagen.js den Reset
@@ -11919,7 +11920,7 @@ function renderPopup() {
             // Scouting is always allowed, even on an already-scouted
             // island (re-scout to refresh) - only block a second
             // scout while one is already en route to this target.
-            setBtnLabel(scoutBtn, scouted ? (matchMedia('(max-width:359px)').matches ? 'Erneut' : 'Erneut spähen') : 'Spähen');
+            setBtnLabel(scoutBtn, scouted ? (matchMedia('(max-width:359px)').matches ? 'Erneut' : 'Neu spähen') : 'Spähen');
             scoutBtn.disabled = scoutEnRoute;
         }
     }
