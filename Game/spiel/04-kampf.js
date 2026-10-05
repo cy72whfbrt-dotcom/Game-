@@ -231,7 +231,8 @@ setInterval(() => {
 }, 1000);
 
 // Ein Kampf ist mit einem Fehler abgebrochen: die Verstärkung wieder trennen (sonst doppelt in der Besatzung und verstDefPlus
-// hängt), die Truppen einer Rally gehen heim (sonst wären sie weg). attack._vk / _heim setzt der Kampf selbst.
+// hängt), die Truppen einer Rally gehen heim (sonst wären sie weg). attack._vk / _heim setzt der Kampf selbst
+// (_heim: in jedem Zweig gleich nach dem Stationieren/Heimschicken, auch wenn keiner übrig ist – sonst entstünden Truppen doppelt).
 function kampfAufraeumen(a) {
     try { if (a._vk && typeof verstNachKampf === 'function') verstNachKampf(a.targetId, a._vk, false); } catch (e) { console.warn('FEHLER Aufräumen', e); }
     delete a._vk;

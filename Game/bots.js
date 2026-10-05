@@ -186,7 +186,7 @@ function resolveBotAttack(attack) {
         if (!angreifer) { botCoins[bot.id] += Math.round(n * botKillRate); return; }
         const sk = angreifer.reduce((s, q) => s + (q.k !== undefined ? q.k : q.n), 0) || 1;
         for (const q of angreifer) { q.gold = payGold(q.w, n * (q.k !== undefined ? q.k : q.n) / sk * (q.w === bot.id ? botKillRate : q.rate || 0)); delete q.rate; } };
-    const homeAgain = n => { if (n <= 0) return; if (attack.rally) { bundRallyHeim(attack, n, target.id); return; } const t0 = Date.now();                 // they walk home like yours (a fallen home: resolveSend sends them to another base) – eine Rally: jeder zu sich
+    const homeAgain = n => { if (attack.rally) attack._heim = 1; if (n <= 0) return; if (attack.rally) { bundRallyHeim(attack, n, target.id); return; } const t0 = Date.now();                 // they walk home like yours (a fallen home: resolveSend sends them to another base) – eine Rally: jeder zu sich
         pendingSends.push({ fromId: target.id, toId: source.id, troops: n, startedAt: t0, resolveAt: t0 + retreatSecs(attack, target, source, bot.id) * 1000, senderBotId: bot.id, back: true }); };
     const plunder = won && targetOwner ? plunderOf(targetOwner, capitalHolds) : null;   // Beute: ein kleiner Teil über dem Burg-Schutz des Verlierers (nur an der Hauptstadt – Turm: nichts) - auch deins
     if (plunder) plunderMove(targetOwner, bot.id, plunder.loot, plunder.roh);
@@ -201,6 +201,7 @@ function resolveBotAttack(attack) {
         const levelAfterCapture = Math.max(1, (islandLevels[target.id] || 1) - 1);
         if (targetOwner) { botNoteLoss(targetOwner, target.id); clearIslandOwner(target.id); }
         islandTroops[target.id] = attack.rally ? bundRallyHeim(attack, survivors, target.id, true) : survivors;   // (Rally: die Truppen der anderen gehen heim)
+        if (attack.rally) attack._heim = 1;                          // (verteilt – bricht der Kampf danach ab, gehen sie nicht nochmal heim)
         botOwnedIslands[bot.id].add(target.id); botStat(bot.id, 'caps'); if (targetOwner) botStat(bot.id, 'pvp'); if (target.type === 'temple' || target.type === 'megaTemple' || target.guardian) botStat(bot.id, 'temples');
         if (target.type === 'gate' && bot.mensch) setGateSettings(target.id, { toll: target.toll, closed: false });   // ein echter Spieler: wie bei dir (offen, normale Maut – er stellt es selbst ein)
         else if (target.type === 'gate') { const sty = bot.style, r = Math.random();                  // how this player runs a gate
