@@ -44,6 +44,22 @@ let b;
   const zB = zustand(), hA = (zA.res || {}).h || 0, hB = (zB.res || {}).h || 0;
   ok('Profil nochmal angewendet: Welt-Holz springt nicht auf das alte Profil zurück (Ertrag bleibt)', hB - hA >= 3, hA + ' → ' + hB);
   ok('… und schaukelt sich auch nicht hoch', hB - h0 < 1e5, h0 + ' → ' + hB);
+  // 5) Neustart kurz nach dem Beitritt: die gespeicherte Welt kennt ihn (und sein Hauptbuch) noch nicht, sein Profil ist gefälscht.
+  //    Früher eichte sich der Weltrechner dann am Profil – Stufe, Labor und Holz kamen so in die Welt.
+  const lvA = (zB.city && zB.city.levels) || {};
+  php('foreach (wr_alle_pids() as $x) exec("kill -9 " . (int)$x);');   // (nur der Weltrechner DIESER Gruppe)
+  await warte(1000);
+  sql(`DELETE FROM ow_bots WHERE spieler_id=0 AND bot_id='u${UID}'`);
+  sql(`UPDATE ow_spieler SET profil = JSON_SET(profil, '$.lvl', 40, '$.coins', 1e9, '$.res.h', 9e6, '$.city.levels.academy', 9) WHERE id=${UID}`);
+  sql("UPDATE ow_welt_info SET leiter_bis = 0, leiter_token = ''");
+  ok('Weltrechner neu gestartet', php('echo wachhund_neustart();') === 'gestartet');
+  await G.bis(() => !!zustand().hb, 180000);
+  await warte(RUNDE);
+  const zN = zustand(), lvN = (zN.city && zN.city.levels) || {};
+  ok('Neustart: gefälschte Stufe kommt nicht in die Welt', (zN.lvl || 1) < 10, 'Stufe ' + zN.lvl);
+  ok('Neustart: gefälschtes Labor kommt nicht in die Welt', (lvN.academy || 0) <= (lvA.academy || 0) + 1, (lvA.academy || 0) + ' → ' + (lvN.academy || 0));
+  ok('Neustart: gefälschtes Holz kommt nicht in die Welt', ((zN.res || {}).h || 0) < 1e6, JSON.stringify(zN.res));
+  ok('Neustart: gefälschte Münzen kommen nicht in die Welt', muenzen() < 1e8, Math.round(muenzen()));
   ende();
   await b.close();
 })().catch(async e => { ok('Test lief durch', false, e.message); ende(); if (b) await b.close(); });

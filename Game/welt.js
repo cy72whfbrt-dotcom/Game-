@@ -160,7 +160,10 @@
             const bs = UMRECHNEN.openWaterBotState(P(teile.openWaterBotState) || {}, 'c');
             if (bs[ICH] && bs[ICH].capital != null) { S.roh('openWaterPlayerIslandId', String(bs[ICH].capital)); geaendert.add('openWaterPlayerIslandId'); }
             delete bs[ICH];
-            for (const id in W.menschen) if (id !== ICH && !(SYSTEM && bs[id])) bs[id] = profilZuBot(W.menschen[id].profil, bs[id]);   // (Weltrechner: die Welt-Werte sind schon geprüft – nie roh aus dem Profil)
+            for (const id in W.menschen) if (id !== ICH && !(SYSTEM && bs[id])) {   // (Weltrechner: die Welt-Werte sind schon geprüft – nie roh aus dem Profil)
+                bs[id] = profilZuBot(W.menschen[id].profil, bs[id]);
+                if (SYSTEM) bs[id].hbRoh = 1;          // nicht in der gespeicherten Welt (z. B. Neustart kurz nach dem Beitritt): das Hauptbuch fängt an wie bei einem neuen Spieler
+            }
             S.roh('openWaterBotState', J(bs)); geaendert.add('openWaterBotState');
         }
         if ('openWaterBotCoins' in teile) {
