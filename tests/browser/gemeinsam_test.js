@@ -1,9 +1,9 @@
 // Gemeinsamer Kampf: A (2 Wellen) + B (Bündnis) auf dasselbe Ziel → EIN Kampf, jeder verliert seinen Anteil, Bericht listet alle
 const { chromium, devices } = require('playwright'); const http = require('http'), fs = require('fs'), path = require('path');
-const D = process.argv[2]; const srv = http.createServer((q, r) => { const f = path.join(D, decodeURIComponent(q.url.split('?')[0]).replace(/\/$/, '/index.html')); fs.readFile(f, (e, d) => { if (e) { r.writeHead(404); r.end(); return; } r.writeHead(200, { 'Content-Type': f.endsWith('.html') ? 'text/html' : 'text/javascript' }); r.end(d); }); }).listen(8805);
+const D = process.argv[2]; const srv = http.createServer((q, r) => { const f = path.join(D, decodeURIComponent(q.url.split('?')[0]).replace(/\/$/, '/index.html')); fs.readFile(f, (e, d) => { if (e) { r.writeHead(404); r.end(); return; } r.writeHead(200, { 'Content-Type': f.endsWith('.html') ? 'text/html' : 'text/javascript' }); r.end(d); }); }).listen(0, '127.0.0.1');
 (async () => {
   const b = await chromium.launch({ args: ['--proxy-server=http://127.0.0.1:9', '--proxy-bypass-list=127.0.0.1;localhost'] });
-  const p = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); const fe = []; p.on('pageerror', e => fe.push(e.message)); await p.goto('http://127.0.0.1:8805/'); await p.waitForTimeout(9000);
+  const p = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); const fe = []; p.on('pageerror', e => fe.push(e.message)); await p.goto('http://127.0.0.1:' + srv.address().port + '/'); await p.waitForTimeout(9000);
   const info = await p.evaluate(() => {
     const bots = BOT_DEFS.filter(x => !x.mensch && botOwnedIslands[x.id] && botOwnedIslands[x.id].size && islandById[botCapitalOf(x.id)]);
     for (const x of bots) if (bundVon(x.id)) bundOp(x.id, { op: 'verlassen' });

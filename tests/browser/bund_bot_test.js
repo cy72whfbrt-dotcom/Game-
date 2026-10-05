@@ -2,12 +2,12 @@
 const { chromium, devices } = require('playwright');
 const http = require('http'), fs = require('fs'), path = require('path');
 const D = process.argv[2];
-const srv = http.createServer((q, r) => { const f = path.join(D, decodeURIComponent(q.url.split('?')[0]).replace(/\/$/, '/index.html')); fs.readFile(f, (e, d) => { if (e) { r.writeHead(404); r.end(); return; } r.writeHead(200, { 'Content-Type': f.endsWith('.html') ? 'text/html' : f.endsWith('.js') ? 'text/javascript' : 'application/octet-stream' }); r.end(d); }); }).listen(8794);
+const srv = http.createServer((q, r) => { const f = path.join(D, decodeURIComponent(q.url.split('?')[0]).replace(/\/$/, '/index.html')); fs.readFile(f, (e, d) => { if (e) { r.writeHead(404); r.end(); return; } r.writeHead(200, { 'Content-Type': f.endsWith('.html') ? 'text/html' : f.endsWith('.js') ? 'text/javascript' : 'application/octet-stream' }); r.end(d); }); }).listen(0, '127.0.0.1');
 (async () => {
   const b = await chromium.launch({ args: ['--proxy-server=http://127.0.0.1:9', '--proxy-bypass-list=127.0.0.1;localhost'] });
   const p = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); const fehler = [];
   p.on('pageerror', e => fehler.push(e.message));
-  await p.goto('http://127.0.0.1:8794/'); await p.waitForTimeout(9000);
+  await p.goto('http://127.0.0.1:' + srv.address().port + '/'); await p.waitForTimeout(9000);
   const r = await p.evaluate(() => {
     const out = {}, now = Date.now(); const altR = Math.random, altOn = window.botOnline;
     window.botOnline = () => true; Math.random = () => 0;   // (Zufall und „online“ für den Test festlegen)

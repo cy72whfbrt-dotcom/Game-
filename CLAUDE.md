@@ -22,6 +22,8 @@ Alles Wichtige steht in `LIESMICH.md` – jede Änderung wird dort eingetragen.
 - **Alle Tests ohne Server auf einmal: `tests/alle_tests.sh`** (Einheitstests + Browser-Tests aus `tests/browser/`, bis zu
   4 gleichzeitig, ca. 3–4 Min., am Ende „ALLES OK“). Schnelltest: `tests/alle_tests.sh rally burg` (nur Tests, deren Name so
   anfängt). Neue Browser-Tests dort ablegen und in die LISTE im Skript eintragen (Argument: Vorschau-Ordner).
+  Parallel-Läufe in verschiedenen Kopien (Worktrees) sind erlaubt. Darum in Browser-Tests nie feste Ports oder /tmp-Namen:
+  `srv.listen(0, '127.0.0.1')` + `srv.address().port`, Dateien in den Arbeitsordner (`process.argv[3]`).
 - **Beide Reihen gleichzeitig: `tests/komplett.sh <arbeitsordner>`** (ca. 30 Min.) – vor jedem Hochladen.
 - **Tests mit lokalem Server: `tests/server_tests.sh <arbeitsordner>`** (Tests aus `tests/server/`, ca. 30 Min.).
   Braucht MariaDB + `php -S 127.0.0.1:8770 -t www` im Arbeitsordner; dort `www/…/Game/config.php` (Test-DB) und

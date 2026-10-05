@@ -5,6 +5,8 @@
 #   tests/alle_tests.sh rally burg     → Schnelltest: nur die Browser-Tests, deren Name so anfängt (plus die Einheitstests)
 # Browser-Tests (tests/browser/): Bündnis, Verstärkung, gemeinsamer Angriff, Rally 2 gegen 1, Rally-Schild/Boss je Spieler, Rally „jeder für sich“ (Helden, Flucht, Krankenhaus, Punkte, EP), neue Kampf-Regel, Welt-Saison (Server-Reset), Klick-Test aller Fenster, fremde Werte nur nach dem Spähen.
 # Mit Server dazu, beide Reihen gleichzeitig: tests/komplett.sh <arbeitsordner>
+# Mehrere Läufe gleichzeitig (auch in verschiedenen Kopien) stören sich nicht: eigener Temp-Ordner je Lauf, die
+# Browser-Tests nehmen einen freien Port vom System (listen(0)) und legen Bilder in ihren Arbeitsordner.
 cd "$(dirname "$0")/.." || exit 1
 T=$(mktemp -d); V="$T/test"; N="$T/normal"; FEHLER=0; J="${OW_PARALLEL:-4}"
 filter() { grep -E "^(OK|FEHLER)|bestanden|Fehler|Text-Auff"; }

@@ -40,6 +40,6 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   const seite = await p.evaluate(() => { const x = document.querySelector('.kl-seite'); return x && !x.hidden ? [...x.querySelectorAll('.logSide')].map(l => [l.querySelector('.logSideLabel').textContent, l.querySelector('.logSum').lastElementChild.textContent, [...l.querySelectorAll('.kl-rss .logLine')].map(z => z.lastElementChild.textContent).join(' ')]) : null; });
   ok(seite && seite.length === 3, 'Kampflog-Seite: 2 Angreifer-Fenster + Verteidiger, Rohstoffe je Fenster', seite);
   const h = await p.evaluate(() => document.querySelector('.kl-seite').scrollHeight); await p.setViewportSize({ width: 390, height: Math.min(h, 14000) }); await p.waitForTimeout(300);
-  await p.screenshot({ path: require('os').tmpdir() + '/rally21.png' });
+  await p.screenshot({ path: (process.argv[3] || require('os').tmpdir()) + '/rally21.png' });
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();
 })();
