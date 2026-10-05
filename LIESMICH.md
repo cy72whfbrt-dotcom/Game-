@@ -223,7 +223,7 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Armee, Feld, Rally – `botNeulingWeg`) und ab 50 Mio. Macht auch bei echten Spielern; Friedensschild fällt bei allen
   Rally-Teilnehmern; Bündnis-Hilfe nur für die nächste Stufe, je Gebäude/Forschung eine offene Bitte; nach dem Verlassen
   1 Std. kein neuer Beitritt. Tote Meldungen „Münzen geplündert“ raus. Test rally_schild_test erweitert.
-  Später (Alexander): fremde Helden/Ausrüstung erst nach dem Spähen zeigen (braucht Macht vom Server für die Rangliste).
+  Später (Alexander): fremde Helden/Ausrüstung erst nach dem Spähen zeigen (braucht Macht vom Server für die Rangliste) – erledigt 6.10. (siehe unten).
   Live 5.10. 3:02 und 5:51–5:57 Uhr (und seit Tagen in Schüben): Weltrechner 20–40 s am Stück nicht drangekommen (einmal Neustart
   durch den Wachhund). Verdacht: niedrigste Priorität `nice 19` auf dem geteilten Office-Server – jetzt `nice 10` (wachhund.php).
 - **5.10. nachmittags – Fund durch den neuen Test `schummel_test`:** wer gleichzeitig Holz erfindet und ein Gebäude ohne
@@ -236,6 +236,22 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
 - **5.10. Tests schneller (Alexander):** `tests/alle_tests.sh` lässt bis zu 4 Browser-Tests gleichzeitig laufen (vorher
   nacheinander, ~10 Min.), Schnelltest mit Namen (`tests/alle_tests.sh rally`); `tests/komplett.sh <arbeitsordner>` startet
   beide Reihen gleichzeitig (~30 statt ~40 Min.).
+- **6.10. Fremde Werte erst nach dem Spähen (Alexanders Entscheidung) – NICHT hochgeladen:** Der Server schickte jedem Handy
+  den ganzen Zustand aller Spieler/Mitspieler (Helden, Ausrüstung, Skills, Stadt, Forschung, Gems …) – ein verändertes Handy
+  konnte alles lesen. Jetzt (`server.php` `FREMD_OEFFENTLICH`, `fremd_kuerzen`, in `weltteil_fuer_spieler` UND
+  `flicken_fuer_spieler`): von anderen nur Stufe, Macht (`macht`), Truppen-Summe (`tt`), Hauptstadt, Schild/Anfängerschutz,
+  online, Aussehen (Ring, Marsch-Skin, Rahmen, Titel), Burg-Stufe (`city` nur `levels.keep`), Eroberungen/Thron-Punkte
+  (`stats` nur `caps`, `capSeed`, `tpEarned`). Weg: `hs`, `gear`, `spare`, `skills`, `equip`, `items`, `gems`, `xp`, `sp`,
+  `pts`, `salvage`, `shields`, `goals`, `ps` (Pass), `tp`, ganze Stadt/Forschung u. a. Der eigene Eintrag (`u<id>`) und der
+  Weltrechner bekommen alles. Auch die Profile anderer in `spieler_liste` nur noch öffentlich (`profil_oeffentlich`).
+  **Macht:** der Weltrechner rechnet sie jede Minute für alle (`powerOf`, in `hbRunde` neben `tt`, nur bei > 1 % Änderung) –
+  Handys nehmen `b.macht` (Rangliste, Profil, Bündnis, Anfängerschutz-Grenze). **Spähen:** Späher zu einer fremden Basis schickt
+  zusätzlich den Befehl `spaehen` mit `blick`; der Weltrechner merkt ihn (`hb.sb`) und schickt bei Ankunft die Nachricht `spaeh`
+  (Truppen, Verteidigung, Spähblick wie bisher + Abwehr-Werte `k`) – sie füllt den Kampflog-Eintrag (`spaehBericht`, auch wenn
+  sie vor dem eigenen Späher ankommt). Gespähte Abwehr (Insel-Fenster, Angriffs-Vorschau) rechnet mit den Werten aus dem
+  neuesten Spähbericht (`spaehWerte`), ungespäht bleibt „Abwehr unbekannt“. Profil anderer: statt Ausrüstung/Helden/Skills/Stadt
+  nur die Burg + Hinweis aufs Spähen. Neuer Browser-Test `fremd_test` (kürzt mit dem echten Filter aus server.php),
+  Server-Einheitstests ergänzt. (Münzen der Mitspieler in `openWaterBotCoins` sind noch sichtbar – nur die echter Spieler nicht.)
 - **4.10. Aufräumen:** unbenutzte CSS-Reste raus, wichtige Tests ins Projekt (`tests/browser/`, Start mit `tests/alle_tests.sh`).
 - **4.10. Server-Tests ins Projekt:** `tests/server/` + `tests/server_tests.sh <arbeitsordner>` (lokaler PHP-Server,
   MariaDB, Weltrechner): Absturz/Zurückspielen, Admin, Nebel, Bündnis-Kiste, Verstärkung, Klick-Test – alle grün.

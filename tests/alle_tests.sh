@@ -3,7 +3,7 @@
 # bis zu 4 gleichzeitig (OW_PARALLEL=1: nacheinander wie früher).
 #   tests/alle_tests.sh                → am Ende „ALLES OK“ oder die Liste der Fehler
 #   tests/alle_tests.sh rally burg     → Schnelltest: nur die Browser-Tests, deren Name so anfängt (plus die Einheitstests)
-# Browser-Tests (tests/browser/): Bündnis, Verstärkung, gemeinsamer Angriff, Rally 2 gegen 1, Rally-Schild/Boss je Spieler, Rally „jeder für sich“ (Helden, Flucht, Krankenhaus, Punkte, EP), neue Kampf-Regel, Klick-Test aller Fenster.
+# Browser-Tests (tests/browser/): Bündnis, Verstärkung, gemeinsamer Angriff, Rally 2 gegen 1, Rally-Schild/Boss je Spieler, Rally „jeder für sich“ (Helden, Flucht, Krankenhaus, Punkte, EP), neue Kampf-Regel, Klick-Test aller Fenster, fremde Werte nur nach dem Spähen.
 # Mit Server dazu, beide Reihen gleichzeitig: tests/komplett.sh <arbeitsordner>
 cd "$(dirname "$0")/.." || exit 1
 T=$(mktemp -d); V="$T/test"; N="$T/normal"; FEHLER=0; J="${OW_PARALLEL:-4}"
@@ -13,7 +13,7 @@ php werkzeuge/vorschau_bauen.php "$N" >/dev/null || exit 1                 # nor
 for x in "welt_test.js|node tests/welt_test.js" "server_test.php|php tests/server_test.php"; do (timeout 900 ${x#*|} > "$T/${x%%|*}.log" 2>&1) & done   # (erst nach dem Zusammensetzen von spiel.js)
 # Test | Vorschau (alles_test/teil2_test bekommen den Arbeitsordner für ihre Bilder dazu – jeder seinen eigenen)
 LISTE="bund_bot_test|$V bund_amt_test|$V verst_kampf_test|$V gemeinsam_test|$V regel_test|$N rally21_test|$N rally_menschen_test|$N rally_jeder_test|$N
-rally_held_test|$N rally_schild_test|$N helden_beute_test|$N burg_test|$N alles_test|$V teil2_test|$V"
+rally_held_test|$N rally_schild_test|$N helden_beute_test|$N burg_test|$N alles_test|$V teil2_test|$V fremd_test|$V"
 WAHL=""; for t in $LISTE; do n=${t%%|*}; if [ $# = 0 ]; then WAHL="$WAHL $t"; else for p in "$@"; do [[ $n == $p* ]] && WAHL="$WAHL $t"; done; fi; done
 for t in $WAHL; do n=${t%%|*}; v=${t#*|}; mkdir -p "$T/a_$n"
   while [ "$(jobs -rp | wc -l)" -ge "$J" ]; do wait -n; done

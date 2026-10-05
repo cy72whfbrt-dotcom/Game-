@@ -3,6 +3,9 @@
 function rechnet() { return !window.WELT || WELT.leiter; }
 // Läuft hier der Weltrechner auf dem Server (weltrechner/start.js)? Dann: kein eigener Spieler, keine Basis, nichts zeichnen.
 const SYSTEM = !!(window.__OW && window.__OW.system);
+// Zuschauer (Handy am Server): von anderen kennt es nur Öffentliches (server.php FREMD_OEFFENTLICH) – Macht vom Weltrechner,
+// Helden, Ausrüstung, Fähigkeiten, Stadt und Forschung nur aus dem Spähbericht
+function fremdGeheim() { return !SYSTEM && !rechnet(); }
 // Zuschauer: Befehl an den Weltrechner (gibt true zurück, wenn er geschickt wurde – dann nur noch das Private hier tun)
 function alsBefehl(art, daten) { if (rechnet()) return false; WELT.befehl(art, daten); return true; }
 const neutralId = id => (id === 'player' && window.WELT) ? WELT.ich : id;     // 'player' → u<meine id> (für Befehle/Nachrichten)
@@ -1040,9 +1043,11 @@ function effectiveDefense(island) {
     if (!owner) return island.neutralDefense;
     const level = islandLevels[island.id] || 1;
     const garrison = islandTroops[island.id] || 0;   // Verteidigung skill: the garrison fights harder, +3 % of it per level (mirror of the sword)
+    const sw = owner !== 'player' && fremdGeheim() ? spaehWerte(owner) : null;   // Zuschauer: fremde Werte aus dem letzten Spähbericht (sonst ohne Boni)
     const def = (owner === 'player' ? (defenseForLevel(level) + garrison * (skills.defense || 0) * SKILL_DEFS.defense.defPct / 100) * (1 + wallDefensePct() / 100)
+                                    : sw ? (baseDefenseForLevel(level) * (1 + sw.ar / 100) + garrison * sw.dp / 100) * (1 + sw.wall * 2 / 100)
                                     : (baseDefenseForLevel(level) * (1 + (botMults(owner).armorPct || 0) / 100) + garrison * (botMults(owner).defensePct || 0) / 100) * (1 + botBld(owner, 'wall') * 2 / 100)) * titleMult(owner, 'defense');
-    const kk = AUF ? AUF.kampf(owner, 'd') : 1;       // Truppen-Stufe + Forschung (Paket D): Besatzung UND Verteidigung zählen × Kampfkraft – das Mehr steckt hier
+    const kk = sw ? sw.kk : AUF ? AUF.kampf(owner, 'd') : 1;       // Truppen-Stufe + Forschung (Paket D): Besatzung UND Verteidigung zählen × Kampfkraft – das Mehr steckt hier
     const vp = typeof verstDefPlus !== 'undefined' && verstDefPlus[island.id] || 0;   // Verstärkung: jeder Helfer mit seinen eigenen Werten
     return Math.max(0, Math.round(def * kk + garrison * (kk - 1) + vp));
 }

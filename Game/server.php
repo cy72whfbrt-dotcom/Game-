@@ -191,7 +191,7 @@ function flicken_anwenden($obj, $p) {
 }
 // Befehle der Spieler an den Weltrechner: nur bekannte Arten, nur saubere Werte (keine Texte statt Zahlen, nichts
 // Unendliches, keine Riesenzahlen, nicht zu tief verschachtelt). Der Weltrechner prüft dann noch die Spielregeln.
-const BEFEHL_ARTEN = ['angriff', 'senden', 'zurueck', 'schneller', 'ausbau', 'hauptstadt', 'truppen', 'tor', 'titel', 'feld', 'feldHeim', 'lager', 'armee', 'beitreten', 'bund', 'haendler', 'spaehen'];   // spaehen (3B): Erkundungs-Späher – der Weltrechner deckt danach den Nebel auf
+const BEFEHL_ARTEN = ['angriff', 'senden', 'zurueck', 'schneller', 'ausbau', 'hauptstadt', 'truppen', 'tor', 'titel', 'feld', 'feldHeim', 'lager', 'armee', 'beitreten', 'bund', 'haendler', 'spaehen'];   // spaehen (3B): Erkundungs-Späher – der Weltrechner deckt danach den Nebel auf (mit blick: Späher zu einer fremden Basis – er schreibt den Spähbericht)
 const BEFEHLE_BEZAHLT = ['ausbau', 'hauptstadt', 'schneller', 'truppen'];   // hat das Handy schon bezahlt (wie BEZAHLT in welt.js)
 const BEFEHL_MENGEN = ['n', 'stufe', 'anteil', 'tr'];   // müssen echte Zahlen ≥ 0 sein
 function befehl_ok($b) {
@@ -217,35 +217,67 @@ function mitspieler_kuerzen($b, $jetztMs) {
     if (isset($b->handy) && !(is_object($b->handy) && ($b->handy->bis ?? 0) > $jetztMs)) unset($b->handy);   // nur sichtbar, solange er wirklich online ist
     return $b;
 }
+// Fremde Spieler und Mitspieler (6.10., Alexander): ohne Spähen sieht man nur Name, Macht, Bündnis, Burg-Stufe (dazu Stufe,
+// Aussehen, Hauptstadt, Schild/Anfängerschutz, Eroberungen und Thron-Punkte für die Rangliste). Helden, Ausrüstung, Fähigkeiten,
+// Stadt, Forschung, Gems, Schild-Vorrat, Pass … nur im Spähbericht (kommt fertig vom Weltrechner). Die Macht rechnet der
+// Weltrechner (macht). Der eigene Eintrag (u<id>) bleibt ganz – nur NUR_WELTRECHNER fehlt wie bei allen.
+const FREMD_OEFFENTLICH = ['lvl', 'macht', 'tt', 'capital', 'shieldUntil', 'neuBis', 'mensch', 'v2', 'hbK', 'handy', 'city', 'stats',
+    'lookMig', 'ringMig', 'ring', 'rings', 'march', 'marchs', 'frames', 'titles', 'throneLook', 'lookFrame', 'lookTitle', 'achLook', 'bestRank'];
+const FREMD_STATS = ['caps', 'capSeed', 'tpEarned'];   // (Rangliste: Eroberungen, Thron-Punkte)
+function fremd_wert($f, $v) {                         // city: nur die Burg-Stufe · stats: nur die der Rangliste
+    if ($f === 'city') return (object)['levels' => (object)(is_object($v) && isset($v->levels->keep) ? ['keep' => $v->levels->keep] : [])];
+    if ($f === 'stats') { $r = []; if (is_object($v)) foreach (FREMD_STATS as $k) if (isset($v->{$k})) $r[$k] = $v->{$k}; return (object)$r; }
+    return $v;
+}
+function fremd_kuerzen($b) {
+    if (!is_object($b)) return $b;
+    foreach (array_keys((array)$b) as $f) { if (!in_array($f, FREMD_OEFFENTLICH, true)) unset($b->{$f}); elseif ($f === 'city' || $f === 'stats') $b->{$f} = fremd_wert($f, $b->{$f}); }
+    return $b;
+}
+// Profil eines anderen Spielers (spieler_liste): nur Stufe, Aussehen, Wappen, Baustil, Schild, Anfängerschutz, Burg-Stufe,
+// Eroberungen und Thron-Punkte (wie FREMD_OEFFENTLICH)
+function profil_oeffentlich($p) {
+    if (!is_object($p)) return null;
+    $r = new stdClass();
+    foreach (['lvl', 'look', 'crest', 'baustil', 'shieldUntil', 'neuBis', 'earned'] as $f) if (isset($p->{$f})) $r->{$f} = $p->{$f};
+    if (isset($p->city->levels->keep)) $r->city = (object)['levels' => (object)['keep' => $p->city->levels->keep]];
+    if (isset($p->stats->captures)) $r->stats = (object)['captures' => $p->stats->captures];
+    return $r;
+}
 // Münzen echter Spieler (u<id>) in openWaterBotCoins sieht nur der Weltrechner – wie in spieler_liste
 function muenzen_kuerzen($o) { foreach ($o as $id => $v) if (preg_match('/^u\d+$/', (string)$id)) unset($o->{$id}); return $o; }
-// ganzer Welt-Teil für einen Spieler
-function weltteil_fuer_spieler($k, $text) {
+// ganzer Welt-Teil für einen Spieler ($ich: 'u<id>' – sein eigener Eintrag bleibt ganz; null: alle sind fremd)
+function weltteil_fuer_spieler($k, $text, $ich = null) {
     if ($k === 'openWaterBotCoins' && is_string($text)) { $o = json_decode($text); return is_object($o) ? json_encode(muenzen_kuerzen($o), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION) : 'null'; }
     if ($k !== 'openWaterBotState' || !is_string($text)) return $text;
     $o = json_decode($text); if (!is_object($o)) return 'null';   // (kaputt: lieber gar nichts als ungefiltert)
-    $j = microtime(true) * 1000; foreach ($o as $id => $b) $o->{$id} = mitspieler_kuerzen($b, $j);
+    $j = microtime(true) * 1000; foreach ($o as $id => $b) { $b = mitspieler_kuerzen($b, $j); $o->{$id} = (string)$id === $ich ? $b : fremd_kuerzen($b); }
     return json_encode($o, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION);
 }
 // Flicken für einen Spieler
-function flicken_fuer_spieler($k, $text) {
+function flicken_fuer_spieler($k, $text, $ich = null) {
     if ($k === 'openWaterBotCoins' && is_string($text)) { $p = json_decode($text); if (is_object($p) && isset($p->s) && is_object($p->s)) { muenzen_kuerzen($p->s); return json_encode($p, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION); } return is_object($p) ? $text : 'null'; }
     if ($k !== 'openWaterBotState' || !is_string($text)) return $text;
     $p = json_decode($text); if (!is_object($p)) return 'null';
     $j = microtime(true) * 1000;
-    foreach ((array)($p->s ?? []) as $id => $b) $p->s->{$id} = mitspieler_kuerzen($b, $j);
+    foreach ((array)($p->s ?? []) as $id => $b) { $b = mitspieler_kuerzen($b, $j); $p->s->{$id} = (string)$id === $ich ? $b : fremd_kuerzen($b); }
     foreach ((array)($p->d ?? []) as $id => $sub) {
         if (!is_object($sub)) continue;
+        if (!isset($sub->s) || !is_object($sub->s)) $sub->s = new stdClass();
         foreach (NUR_WELTRECHNER as $f) unset($sub->s->{$f});
         if (isset($sub->s->handy) && !(is_object($sub->s->handy) && ($sub->s->handy->bis ?? 0) > $j)) { unset($sub->s->handy); $sub->w = array_values(array_unique(array_merge((array)($sub->w ?? []), ['handy']))); }
         if (isset($sub->w)) $sub->w = array_values(array_diff((array)$sub->w, NUR_WELTRECHNER));
+        if ((string)$id === $ich) continue;
+        foreach (array_keys((array)$sub->s) as $f) { if (!in_array($f, FREMD_OEFFENTLICH, true)) unset($sub->s->{$f}); else $sub->s->{$f} = fremd_wert($f, $sub->s->{$f}); }   // fremd: nur Öffentliches
+        if (isset($sub->w)) $sub->w = array_values(array_intersect((array)$sub->w, FREMD_OEFFENTLICH));
     }
     return json_encode($p, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION);
 }
-// ein ganzer Welt-Stand (welt_seit / welt_seit_flicken) für einen Spieler
-function welt_fuer_spieler($w) {
-    if (isset($w['setzen'])) { $t = (array)$w['setzen']; foreach ($t as $k => $v) $t[$k] = weltteil_fuer_spieler($k, $v); $w['setzen'] = (object)$t; }
-    if (isset($w['flicken'])) { $f = (array)$w['flicken']; foreach ($f as $k => $liste) $f[$k] = array_map(function ($t) use ($k) { return flicken_fuer_spieler($k, $t); }, (array)$liste); $w['flicken'] = (object)$f; }
+// ein ganzer Welt-Stand (welt_seit / welt_seit_flicken) für einen Spieler ($uid: seine Nummer)
+function welt_fuer_spieler($w, $uid = 0) {
+    $ich = $uid ? 'u' . (int)$uid : null;
+    if (isset($w['setzen'])) { $t = (array)$w['setzen']; foreach ($t as $k => $v) $t[$k] = weltteil_fuer_spieler($k, $v, $ich); $w['setzen'] = (object)$t; }
+    if (isset($w['flicken'])) { $f = (array)$w['flicken']; foreach ($f as $k => $liste) $f[$k] = array_map(function ($t) use ($k, $ich) { return flicken_fuer_spieler($k, $t, $ich); }, (array)$liste); $w['flicken'] = (object)$f; }
     return $w;
 }
 // ===== Nebel auf dem Server (3B) =====
@@ -346,7 +378,7 @@ function bot_namen() {
     return $n;
 }
 // Nachrichten, die der Weltrechner an andere schicken darf (Geschenke nur über admin.php – bis auf das kleine Bündnis-Geschenk)
-const WELTRECHNER_NACHRICHTEN = ['delta', 'bericht', 'startschild', 'evPreis', 'bundInfo', 'bundGeschenk', 'haendlerWare'];   // evPreis: Preis aus Wochen-Event/Invasion/Drache (Abholfach)
+const WELTRECHNER_NACHRICHTEN = ['delta', 'bericht', 'startschild', 'evPreis', 'bundInfo', 'bundGeschenk', 'haendlerWare', 'spaeh'];   // evPreis: Preis aus Wochen-Event/Invasion/Drache (Abholfach) · spaeh: Spähbericht (6.10.)
 // Ware vom wandernden Händler (haendler.js): höchstens 10 Splitter, eine Kiste bis blau, Truppen, ein 2-Std.-Schild – nie Gems, nie Münzen
 function haendler_ware_ok($e) {
     foreach ($e as $k => $v) if (!in_array($k, ['art', 'title', 'sh', 'kiste', 'tr', 'schild', 'text'], true)) return false;
@@ -409,7 +441,7 @@ function spielseite_vorbereiten() {
         // die EINE Welt: ganzer Stand und alle Spieler. Rechnen tut sie nur der Weltrechner auf dem Server – nie ein Spieler.
         $leiter = false;
         [$welt, $sicht] = lager()->fest_lesen(function () use ($ich) { return [lager()->welt_seit(0), lager()->sicht_laden($ich['id'])]; });   // (ohne Welt-Sperre, aus einem festen Stand – wie beim Puls)
-        $welt = welt_fuer_spieler($welt);
+        $welt = welt_fuer_spieler($welt, $ich['id']);
         $welt = nebel_welt($welt, $sicht);   // 3B: Truppen nur, wo er hinsehen darf
         $welt = marsch_welt($welt, $ich['id'], $sicht);   // fremde Kolonnen ohne Zahlen (erst im Kampf)
         $spieler = lager()->spieler_liste(0);
@@ -1077,7 +1109,7 @@ class MysqlLager {
         $q->execute([(int)$seit]);
         return array_map(function ($z) use ($alles) {
             $p = $z['profil'] !== null ? json_decode($z['profil'], false, 12) : null;
-            if ($p && !$alles) { unset($p->coins, $p->wounded, $p->res, $p->gems, $p->stW); }   // Münzen, Verwundete, Rohstoffe und Gems anderer sieht nur der Weltrechner
+            if ($p && !$alles) $p = profil_oeffentlich($p);   // Münzen, Verwundete, Rohstoffe, Gems, Helden, Ausrüstung, Fähigkeiten, Stadt anderer sieht nur der Weltrechner
             return ['id' => (int)$z['id'], 'name' => $z['name'], 'online' => (int)$z['online_bis'] > time(), 'profil_zeit' => (int)$z['profil_zeit'], 'profil' => $p]; }, $q->fetchAll());
     }
 
@@ -1329,7 +1361,7 @@ function welt_puls($ich, $d) {
             return [$i, $welt, $sicht, $ganz, $sk];
         });
         // filtern erst danach (ohne festen Stand, ohne Sperre)
-        $antwort = ['welt' => welt_fuer_spieler($welt)]; unset($welt);   // Spieler bekommen nur Änderungen
+        $antwort = ['welt' => welt_fuer_spieler($welt, $uid)]; unset($welt);   // Spieler bekommen nur Änderungen
         if ($ganz !== null) {
             $w = &$antwort['welt'];
             $t = (array)$w['setzen']; $f = (array)($w['flicken'] ?? []);

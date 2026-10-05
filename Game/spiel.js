@@ -4,6 +4,9 @@
 function rechnet() { return !window.WELT || WELT.leiter; }
 // Läuft hier der Weltrechner auf dem Server (weltrechner/start.js)? Dann: kein eigener Spieler, keine Basis, nichts zeichnen.
 const SYSTEM = !!(window.__OW && window.__OW.system);
+// Zuschauer (Handy am Server): von anderen kennt es nur Öffentliches (server.php FREMD_OEFFENTLICH) – Macht vom Weltrechner,
+// Helden, Ausrüstung, Fähigkeiten, Stadt und Forschung nur aus dem Spähbericht
+function fremdGeheim() { return !SYSTEM && !rechnet(); }
 // Zuschauer: Befehl an den Weltrechner (gibt true zurück, wenn er geschickt wurde – dann nur noch das Private hier tun)
 function alsBefehl(art, daten) { if (rechnet()) return false; WELT.befehl(art, daten); return true; }
 const neutralId = id => (id === 'player' && window.WELT) ? WELT.ich : id;     // 'player' → u<meine id> (für Befehle/Nachrichten)
@@ -1041,9 +1044,11 @@ function effectiveDefense(island) {
     if (!owner) return island.neutralDefense;
     const level = islandLevels[island.id] || 1;
     const garrison = islandTroops[island.id] || 0;   // Verteidigung skill: the garrison fights harder, +3 % of it per level (mirror of the sword)
+    const sw = owner !== 'player' && fremdGeheim() ? spaehWerte(owner) : null;   // Zuschauer: fremde Werte aus dem letzten Spähbericht (sonst ohne Boni)
     const def = (owner === 'player' ? (defenseForLevel(level) + garrison * (skills.defense || 0) * SKILL_DEFS.defense.defPct / 100) * (1 + wallDefensePct() / 100)
+                                    : sw ? (baseDefenseForLevel(level) * (1 + sw.ar / 100) + garrison * sw.dp / 100) * (1 + sw.wall * 2 / 100)
                                     : (baseDefenseForLevel(level) * (1 + (botMults(owner).armorPct || 0) / 100) + garrison * (botMults(owner).defensePct || 0) / 100) * (1 + botBld(owner, 'wall') * 2 / 100)) * titleMult(owner, 'defense');
-    const kk = AUF ? AUF.kampf(owner, 'd') : 1;       // Truppen-Stufe + Forschung (Paket D): Besatzung UND Verteidigung zählen × Kampfkraft – das Mehr steckt hier
+    const kk = sw ? sw.kk : AUF ? AUF.kampf(owner, 'd') : 1;       // Truppen-Stufe + Forschung (Paket D): Besatzung UND Verteidigung zählen × Kampfkraft – das Mehr steckt hier
     const vp = typeof verstDefPlus !== 'undefined' && verstDefPlus[island.id] || 0;   // Verstärkung: jeder Helfer mit seinen eigenen Werten
     return Math.max(0, Math.round(def * kk + garrison * (kk - 1) + vp));
 }
@@ -1915,6 +1920,7 @@ function launchScout(targetId, explore, at) {
         ex: at ? at.x : undefined, ey: at ? at.y : undefined
     });
     if (explore) alsBefehl('spaehen', { ziel: targetId, ex: at ? Math.round(at.x) : undefined, ey: at ? Math.round(at.y) : undefined });   // 3B: der Weltrechner deckt den Nebel auf dem Server mit auf
+    else if (fremdGeheim() && islandOwnerOf(targetId) && islandOwnerOf(targetId) !== 'player' && !bossAt(targetId)) alsBefehl('spaehen', { ziel: targetId, blick: 1 });   // fremde Basis: den Bericht schreibt der Weltrechner (nur er kennt die Werte)
     questProgress('scout', 1);
     saveGame();
     saveProgression();
@@ -1932,7 +1938,37 @@ function spaeherBlick(owner) {
     o.sk = { attack: (b.skills || {}).attack || 0, defense: (b.skills || {}).defense || 0, troops: (b.skills || {}).troops || 0 };
     o.gear = {}; for (const k of Object.keys(EQUIPMENT_DEFS)) { const it = botItem(b, k); o.gear[k] = it ? [it.rarity, it.level, it.stars] : null; }
     o.auf = AUF ? AUF.spaeherMehr(owner) : null;                             // Burg, Rohstoffe, Forschung
+    const m = botMults(owner);                                               // Abwehr-Werte (Zuschauer: effectiveDefense rechnet damit, bis wieder gespäht wird)
+    o.k = { ar: Math.round((m.armorPct || 0) * 100) / 100, dp: Math.round((m.defensePct || 0) * 100) / 100, wall: o.wall, kk: Math.round((AUF ? AUF.kampf(owner, 'd') : 1) * 1e4) / 1e4 };
+    o.who = neutralId(owner);
     return o;
+}
+// Zuschauer: Abwehr-Werte eines Herrn aus dem neuesten Spähbericht (null: nie gespäht)
+let spaehWerteMem = null;
+function spaehWerte(owner) {
+    if (!combatLog) return null;
+    if (!spaehWerteMem || spaehWerteMem.l !== combatLog.length || spaehWerteMem.e !== combatLog[0]) {   // (neu sortiert erst, wenn ein Bericht dazukam)
+        const by = {}; for (const e of combatLog) if (e && e.type === 'scout' && e.spy && e.spy.k && e.spy.who && !by[e.spy.who]) by[e.spy.who] = e.spy.k;
+        spaehWerteMem = { l: combatLog.length, e: combatLog[0], by };
+    }
+    const k = spaehWerteMem.by[neutralId(owner)]; if (!k) return null;
+    const n = v => Number.isFinite(v) ? v : 0;
+    return { ar: n(k.ar), dp: n(k.dp), wall: n(k.wall), kk: Number.isFinite(k.kk) && k.kk > 0 ? k.kk : 1 };
+}
+// Spähbericht vom Weltrechner (Zuschauer): kam er vor dem eigenen Späher an, wartet er hier (nur im Speicher), sonst füllt er
+// den wartenden Eintrag im Kampflog
+const spaehPost = new Map();
+function spaehBericht(r) {
+    if (!r || !Number.isInteger(r.ziel) || !islandById[r.ziel]) return;
+    const x = combatLog.find(e => e.type === 'scout' && e.targetId === r.ziel && e.wartet);
+    if (!x) { spaehPost.set(r.ziel, { r, bis: Date.now() + 600000 }); return; }
+    spaehEinsetzen(x, r); store.set('openWaterCombatLog', JSON.stringify(combatLog)); spaehWerteMem = null;
+    const logPanel = document.getElementById('battleLogPopup');
+    if (logPanel && logPanel.classList.contains('is-open')) refreshOpenCombatLog();
+}
+function spaehEinsetzen(x, r) {
+    const z = v => Number.isFinite(v) && v >= 0 ? v : 0;
+    x.troops = z(r.troops); x.defense = z(r.defense); x.spy = r.spy && typeof r.spy === 'object' ? r.spy : null; delete x.wartet;
 }
 function spaeherBlickHtml(s) {
     if (!s) return '';
@@ -1972,14 +2008,18 @@ function resolveScout(scout) {
     // Same reasoning as resolveSend(): persist the now-shorter
     // pendingScouts array, or a reload replays this scout again.
     saveProgression();
-    addCombatLogEntry({
+    const ow = islandOwnerOf(target.id), vomWr = fremdGeheim() && ow && ow !== 'player' && !bossAt(target.id);   // Zuschauer: fremde Werte kennt nur der Weltrechner
+    const post = vomWr ? spaehPost.get(scout.targetId) : null; if (post) spaehPost.delete(scout.targetId);
+    const eintrag = {
         type: 'scout',
         sourceId: scout.sourceId,
         targetId: scout.targetId,
         troops: effectiveTroops(target),
         defense: effectiveDefense(target),
-        spy: spaeherBlick(islandOwnerOf(target.id))
-    });
+        spy: vomWr ? null : spaeherBlick(ow)
+    };
+    if (post && post.bis > Date.now()) spaehEinsetzen(eintrag, post.r); else if (vomWr) eintrag.wartet = 1;   // (wartet: der Bericht vom Weltrechner kommt gleich)
+    addCombatLogEntry(eintrag); spaehWerteMem = null;
     flashHint(islandTitle(target) + ' gespäht – Bericht im Kampflog.', 3000);   // (die Zahlen stehen im Kampflog, nicht im Hinweis)
 }
 
@@ -5437,6 +5477,7 @@ function whoProfile(who) {                       // the same facts for you and f
         skills: Object.assign({}, b.skills), city: Object.assign({}, b.city.levels), capital: botCapitalOf(who), online: botOnline(bd, Date.now()) };
 }
 function powerOf(pr) {                           // Macht: troops, bases, gear, heroes, skills and city - one number to compare rulers by
+    if (pr.who !== 'player' && fremdGeheim()) { const b = loadBotState()[pr.who]; return b && Number.isFinite(b.macht) ? b.macht : 0; }   // Zuschauer: die Macht anderer rechnet der Weltrechner (die Werte dafür hat das Handy nicht)
     let bases = 0; for (const id of (pr.who === 'player' ? ownedIslands : botOwnedIslands[pr.who] || [])) bases += baseDefenseForLevel(islandLevels[id] || 1);
     const gear = pr.items.reduce((a, it) => a + (it[1] >= 0 ? itemScore({ rarity: it[1], level: it[2] }) * (1 + it[3] * .2) : 0), 0);
     const heroes = pr.heroes.reduce((a, x) => a + (4 + x[1]) * x[2] / 2, 0), sk = Object.values(pr.skills).reduce((a, v) => a + v, 0), city = Object.values(pr.city).reduce((a, v) => a + v, 0);
@@ -5471,16 +5512,20 @@ function openRulerProfile(who) {
     const heroes = pr.heroes.length ? pr.heroes.slice().sort((a, b) => b[2] - a[2] || b[1] - a[1]).map(x => heroChipHtml(x[0], x[1])).join('') : '<div class="war-empty">Noch keine Helden freigeschaltet.</div>';
     const skillsHtml = Object.keys(SKILL_DEFS).map(k => '<div><span>' + SKILL_DEFS[k].name + '</span><b>' + (pr.skills[k] || 0) + '</b></div>').join('');
     const cityHtml = BOT_BUILDINGS.map(k => '<div class="rp-bld' + ((pr.city[k] || 0) ? '' : ' is-zero') + '"><span class="rp-bld-ic">' + icon(cityDef(k).icon) + '<b>' + (pr.city[k] || 0) + '</b></span><small>' + cityDef(k).name + '</small></div>').join('');
-    const last = lastFightWith(pr);
+    const last = lastFightWith(pr), verdeckt = who !== 'player' && fremdGeheim();   // Zuschauer: Ausrüstung, Helden, Skills, Stadt anderer nur im Spähbericht
+    const burg = AUF ? AUF.burgStufe(who) : (pr.city.keep || 1);
+    const verdecktHtml = '<div class="sect"><h4>Stadt</h4></div><div class="rp-blds"><div class="rp-bld"><span class="rp-bld-ic">' + icon(cityDef('keep').icon) + '<b>' + burg + '</b></span><small>' + cityDef('keep').name + '</small></div></div>' +
+        '<div class="notice">' + icon('scout') + '<span>Ausrüstung, Helden, Fähigkeiten und Forschung siehst du erst, wenn du eine Basis von ' + escapeHtml(pr.name) + ' ausspähst – im Spähbericht im Kampflog.</span></div>';
     document.getElementById('rulerBody').innerHTML =
         '<div class="rp-stats"><div class="rp-stat"><small>Macht</small><b>' + fmtCompact(powerOf(pr)) + '</b></div><div class="rp-stat"><small>Basen</small><b>' + fmtNum(pr.bases) + '</b></div>' +
         '<div class="rp-stat"><small>Stufe</small><b>' + pr.lvl + '</b></div><div class="rp-stat"><small>Tempel</small><b>' + (rulerOwner() === who ? 'Herrscher' : pr.temple ? escapeHtml(pr.temple.name) : '–') + '</b></div></div>' +
         (ownerShielded(who) ? '<div class="notice notice--gold">' + icon('shield') + '<span>' + (who === 'player' ? 'Dein Friedensschild' : 'Friedensschild') + ' aktiv – noch ' + fmtHours(ownerShieldUntil(who) - Date.now()) + '</span></div>' : '') +
-        passChip(who) + (last ? '<div class="rp-last">' + last + '</div>' : '') +
+        (verdeckt ? '' : passChip(who)) + (last ? '<div class="rp-last">' + last + '</div>' : '') +
+        (verdeckt ? verdecktHtml :
         '<div class="sect"><h4>Ausrüstung</h4></div><div class="rp-gear">' + gear + '</div>' +
         '<div class="sect"><h4>Helden</h4></div><div class="rp-heroes">' + heroes + '</div>' +
         '<div class="sect"><h4>Skills</h4></div><div class="rp-grid">' + skillsHtml + '</div>' +
-        '<div class="sect"><h4>Stadt</h4></div><div class="rp-blds">' + cityHtml + '</div>' +
+        '<div class="sect"><h4>Stadt</h4></div><div class="rp-blds">' + cityHtml + '</div>') +
         '<div class="rp-actions">' + (typeof bundProfilKnopf === 'function' ? bundProfilKnopf(who) : '') + '<button class="btn btn--secondary btn--sm" type="button" data-rp="map">' + icon('flag') + '<span>Zur Karte</span></button>' +
         '<button class="btn btn--primary btn--sm" type="button" data-rp="capital">' + icon('castle') + '<span>Hauptstadt</span></button></div>';
     openPanel(rulerPopup);
@@ -13351,6 +13396,20 @@ if (window.WELT) {
         const b64 = bitsZu(s);
         if (b64 !== z.gesendet) { z.gesendet = b64; WELT.sichtRaus[parseInt(who.slice(1), 10)] = b64; }
     }
+    // Späher an einer fremden Basis angekommen: der Bericht so, wie er gerade ist (Truppen, Verteidigung, Blick auf den Herrn) –
+    // das Handy hat diese Werte nicht (server.php FREMD_OEFFENTLICH)
+    function spaehRunde(who, hb, now) {
+        if (!hb.sb || !hb.sb.some(sc => now >= sc[1])) return;
+        hb.sb = hb.sb.filter(sc => {
+            if (now < sc[1]) return true;
+            const t = islandById[sc[0]], ow = t && islandOwnerOf(t.id);
+            const r = { art: 'spaeh', ziel: sc[0] };
+            if (t) { r.troops = effectiveTroops(t); r.defense = effectiveDefense(t); r.spy = ow && ow !== who ? spaeherBlick(ow) : null; }
+            WELT.nachricht(parseInt(who.slice(1), 10), r); return false;
+        });
+        if (!hb.sb.length) delete hb.sb;
+        saveBotState();
+    }
     // Fremde Armeen und besetzte Felder, die er sieht (ihr Feld ist bei ihm aufgedeckt – wie am Handy isCellOpen): nur für die
     // schickt der Server Truppen und Helden (server.php marsch_welt). Geschickt wird nur, wenn sich die Liste ändert.
     function armeeSichtRunde(who, hb) {
@@ -13382,13 +13441,16 @@ if (window.WELT) {
         for (const who in WELT.menschen) {
             const b = bs[who], hb = b && b.hb && b.hb.v === HB_V ? b.hb : null; if (!hb || !botById[who]) continue;
             try { nebelRunde(who, hb, now); armeeSichtRunde(who, hb); } catch (e) { console.warn('Nebel:', e); }
+            try { spaehRunde(who, hb, now); } catch (e) { console.warn('Späher:', e); }
             const mm = wm(who); if (mm.hbOffen && now - nn(mm.hbPrT) > 10000) { const p = profilVon(who); if (p) hbNochmal(who, b, p); else mm.hbOffen = 0; }   // (Münzen/Gems kommen evtl. später)
         }
         if (now - hbTtT > 60000) {                     // Truppen-Summe je Herrscher (Spieler bekommen fremde Truppen nur, wo sie hinsehen dürfen)
             if (Math.floor(now / 600000) !== Math.floor(hbTtT / 600000)) for (const who in nbMem) { if (nbMem[who].gesendet) WELT.sichtRaus[parseInt(who.slice(1), 10)] = nbMem[who].gesendet; nbMem[who].armGesendet = null; }   // (alle 10 Min. die Sicht nochmal – falls ein Puls sie verloren hat; der Server ändert nur Neues)
             hbTtT = now;
             for (const bd of BOT_DEFS) { const b = bs[bd.id]; if (!b) continue; let n = 0; for (const id of botOwnedIslands[bd.id] || []) n += islandTroops[id] || 0;
-                const r = n < 1000 ? Math.round(n) : Number(n.toPrecision(3)); if (b.tt !== r && Math.abs((b.tt || 0) - r) > r * .01) b.tt = r; }
+                const r = n < 1000 ? Math.round(n) : Number(n.toPrecision(3)); if (b.tt !== r && Math.abs((b.tt || 0) - r) > r * .01) b.tt = r;
+                let m = 0; try { m = powerOf(whoProfile(bd.id)); } catch (e) { m = 0; }      // Macht für Rangliste, Profil, Bündnis (die Handys kennen die Werte dafür nicht)
+                const mr = m < 1000 ? Math.round(m) : Number(m.toPrecision(3)); if (b.macht !== mr && !(Math.abs((b.macht || 0) - mr) <= mr * .01)) b.macht = mr; }   // (nur bei Änderung – sonst ein Flicken je Minute)
         }
     }
     // Ziel einer Armee/Ort einer neuen Armee: nur echte Orte (Basis, Feld, Armee, Punkt auf Land)
@@ -13469,6 +13531,13 @@ if (window.WELT) {
             const hb = hbDa(who); if (!hb || !inselOk(b.ziel)) return;
             if (zuOft(wm(who), 'spaehen', 120, 3600000)) { warnen(who, 'spaehen', 'Über 120 Späher in einer Stunde – abgelehnt.'); return; }
             const t = islandById[b.ziel], pt = { x: Number.isFinite(b.ex) ? b.ex : t.x, y: Number.isFinite(b.ey) ? b.ey : t.y, lm: t.landmassId };
+            if (b.blick) {                            // Späher zu einer fremden Basis: bei Ankunft schreibt der Weltrechner den Bericht (nur er kennt die Werte des Herrn)
+                const ow = islandOwnerOf(t.id); if (!ow || ow === who || bossAt(t.id)) return;
+                let h = null, hd = Infinity; for (const id of botOwnedIslands[who] || []) { const i = islandById[id]; if (!i) continue; const d = Math.hypot(i.x - t.x, i.y - t.y); if (d < hd) { hd = d; h = i; } }
+                if (!h || !spaeherWeg(h.landmassId, t.landmassId, who)) return;
+                if (!nbKennt(who, hb, t.landmassId)) { warnen(who, 'spaehen', 'Späher zu einer Basis, die er nicht kennen kann – abgelehnt.'); return; }
+                const now = Date.now(); hb.sb = (hb.sb || []).slice(-20); hb.sb.push([t.id, now + scoutSecs(h, t, who) * 1000]); saveBotState(); return;
+            }
             if (!punktOk(pt)) { warnen(who, 'kaputt', 'Späher mit kaputtem Ziel – abgelehnt.'); return; }
             let home = null, bd = Infinity; for (const id of botOwnedIslands[who] || []) { const i = islandById[id]; if (!i) continue; const d = Math.hypot(i.x - t.x, i.y - t.y); if (d < bd) { bd = d; home = i; } }
             if (!home || !spaeherWeg(home.landmassId, t.landmassId, who)) return;                 // (wie auf dem Handy: von der nächsten eigenen Basis, nicht durch zu Tore)
@@ -13670,6 +13739,7 @@ if (window.WELT) {
         if (x.targetId !== undefined && islandById[x.targetId]) spawnBattleFx(x.targetId, x.type === 'attack' ? !!x.won : !x.won || !!x.capitalHolds, x.type === 'attack' ? (x.won ? 'Sieg' : 'Niederlage') : (x.won ? (x.capitalHolds ? 'Hauptstadt hält' : 'Basis verloren') : 'Verteidigt'), x.botName || x.defenderName || '');
         sfx(x.won === (x.type === 'attack') ? 'victory' : 'warn');
     });
+    WELT.beiNachricht.push(function (e) { if (e && e.art === 'spaeh') spaehBericht(e); });   // Spähbericht vom Weltrechner (fremde Werte kennt nur er)
     WELT.beiNachricht.push(function (e) {             // Preis aus einem Event (Wochen-Event, Invasion, Drache): ins Abholfach, auch Kisten
         if (!e || e.art !== 'evPreis') return;
         const z = (v, max) => typeof v === 'number' && Number.isFinite(v) && v > 0 ? Math.min(max, Math.round(v)) : 0;
