@@ -54,7 +54,7 @@ function claimDaily() {
     gems += r.gems;
     dailyState = { last: todayKey(), day };
     store.set('openWaterDaily', JSON.stringify(dailyState));
-    saveGame(); saveProgression(); updateHud(); updateGoalsBadge();
+    saveGame(); saveProgression(); updateHud(); updateGoalsBadge(); anleitungAbgeholt();
     return { day, gems: r.gems, items };
 }
 function itemRewardRow(item) {
@@ -142,7 +142,7 @@ function questProgress(type, n) {
 function claimQuest(i) {
     const q = loadQuests(), t = q.list[i];
     if (!t || t.claimed || t.progress < t.target) return;
-    t.claimed = true; passBump('quest');
+    t.claimed = true; passBump('quest'); anleitungAbgeholt();
     gems += t.gems;
     saveQuests(); saveGame(); updateHud();
     flashHint('+' + t.gems + ' Edelsteine', 1800);
@@ -163,14 +163,14 @@ function claimChain() {
     const items = []; for (let i = 0; i < CHAIN_REWARD.crates; i++) items.push(grantFreeCrate(CHAIN_REWARD.minRarity));
     gems += CHAIN_REWARD.gems; questChain.streak = Math.max(0, questChain.streak - 7); store.set('openWaterQuestChain', JSON.stringify(questChain));   // (ein 8. Tag zählt schon für die nächste Kette)
     const shH = heroGrantShards('player', HERO_SHARDS_CHAIN); if (!shH) gems += HERO_SHARDS_CHAIN * 20;   // (alle Helden voll: Gems statt Splitter, wie im Abholfach)
-    saveGame(); saveProgression(); updateHud(); sfx('crate');
+    saveGame(); saveProgression(); updateHud(); sfx('crate'); anleitungAbgeholt();
     flashHint('Große Kiste: ' + items.map(it => RARITY_DEFS[it.rarity].label + ' ' + EQUIPMENT_DEFS[it.slot].name).join(', ') + ' + ' + CHAIN_REWARD.gems + ' Edelsteine' + (shH ? ' + ' + HERO_SHARDS_CHAIN + ' Splitter ' + shH.name : ''), 5000);
     renderQuestPanel(); updateGoalsBadge();
 }
 function claimQuestBonus() {
     const q = loadQuests();
     if (q.bonusClaimed || !q.list.every(t => t.claimed)) return;
-    q.bonusClaimed = true; chainLink(); passBump('questBonus');
+    q.bonusClaimed = true; chainLink(); passBump('questBonus'); anleitungAbgeholt();
     const items = [];
     for (let i = 0; i < QUEST_BONUS.crates; i++) items.push(grantFreeCrate(0));
     gems += QUEST_BONUS.gems; const shH = heroGrantShards('player', HERO_SHARDS_DAY); if (!shH) gems += HERO_SHARDS_DAY * 20;   // (alle Helden voll)
@@ -208,7 +208,7 @@ function inboxClaim(id) {                           // into your coffers - retur
     if (x.schild === 2) { const st = shieldStock(); st[2] = (st[2] || 0) + 1; store.set('openWaterShieldStock', JSON.stringify(st)); got.push('Friedensschild 2 h'); }
     if (x.sh) { const h = heroGrantShards('player', x.sh); if (h) got.push(x.sh + ' Splitter ' + h.name); else { gems += x.sh * 20; got.push('+' + x.sh * 20 + ' Edelsteine (alle Helden voll)'); } }
     if (x.tr) { const b = rewardBaseId(); if (b !== null) { eigeneTruppenDazu(b, x.tr, 'geschenk'); got.push('+' + fmtCompact(x.tr) + ' Truppen'); } else L.splice(i, 0, Object.assign({}, x, { gems: 0, coins: 0, sh: 0, crate: -1, kiste: -1, schild: 0 })); }   // no base right now: only the troops stay in the inbox
-    inboxSave(); saveGame(); saveProgression(); updateHud(); return got.join(', ');
+    inboxSave(); saveGame(); saveProgression(); updateHud(); if (got.length) anleitungAbgeholt(); return got.join(', ');
 }
 function renderInbox() {
     const L = inboxList(), now = Date.now(), el = document.getElementById('inboxList'); if (!el) return;

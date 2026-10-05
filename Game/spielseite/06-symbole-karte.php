@@ -122,7 +122,9 @@
 
 <!-- Toast: text-only, JS writes textContent. Empty = hidden. -->
 <div id="hint" class="toast" role="status" aria-live="polite"></div>
-<div id="anleitung" class="anleitung" role="status" hidden><span id="anleitungSchritt" class="anleitung-n"></span><span id="anleitungText" class="anleitung-t"></span><button id="anleitungWeg" class="btn-x" type="button" aria-label="Anleitung überspringen"><svg class="icon"><use href="#i-close"/></svg></button></div>
+<div id="anleitung" class="anleitung" role="status" hidden><span id="anleitungSchritt" class="anleitung-n"></span><span id="anleitungText" class="anleitung-t"></span><button id="anleitungWeg" class="btn-x" type="button" aria-label="Anleitung überspringen"><svg class="icon"><use href="#i-close"/></svg></button>
+  <span id="anleitungFrage" class="anleitung-k" hidden><button id="anleitungJa" class="btn btn--secondary btn--sm" type="button">Überspringen</button><button id="anleitungNein" class="btn btn--primary btn--sm" type="button">Weiter lernen</button></span>
+  <button id="anleitungOk" class="btn btn--primary btn--sm anleitung-ok" type="button" hidden>Verstanden</button></div>
 
 <!-- Multi-attack floating bar (JS sets style.display='flex') -->
 <div id="multiAttackBar" class="mabar">
