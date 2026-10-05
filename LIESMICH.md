@@ -712,6 +712,9 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
   „Grundverteidigung 557,6 Mrd.“ als eine Zahl, der Kampfbericht teilt auf (Grund 171,4 Mrd. „Basis Stufe 93“ + Rüstung
   + Fähigkeit + Mauer + Forschung) – Spähbericht sollte genauso aufschlüsseln; Spähbericht-Kopf sagt „Stufe 107“, der
   Kampfbericht „Basis Stufe 93“ (prüfen, was stimmt). Summe passt ungefähr (824,9 vs. 827,2 Mrd.).
+- **Anzeige (Alexander 5.10., „wie bei Million Lords“):** Ertrag überall **pro Stunde** statt „/ Tick“ bzw. „/ s“ (Profil
+  „Truppen / Tick“, „Münzen / Tick“, Basis-Fenster, Tempel). Richtig umrechnen: ein Tick ist `productionTickMs()` (mit
+  Fähigkeit „Geschwindigkeit“ bis 0,4 s). Beispiel: +44 Mio./Tick → +158 Mrd. pro Stunde. Nur Anzeige, Ertrag unverändert.
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
