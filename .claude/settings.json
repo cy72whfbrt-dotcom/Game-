@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tests/*)",
+      "Bash(werkzeuge/*)",
+      "Bash(git status*)",
+      "Bash(git log*)",
+      "Bash(git diff*)",
+      "Bash(git show*)",
+      "Bash(git add*)",
+      "Bash(git commit*)",
+      "Bash(git merge*)",
+      "Bash(git branch*)",
+      "Bash(git checkout*)",
+      "Bash(git switch*)",
+      "Bash(git worktree*)",
+      "Bash(git fetch*)",
+      "Bash(git pull*)",
+      "Bash(git push -u origin claude/neues-projekt-8agldl*)",
+      "Bash(git rev-parse*)",
+      "Bash(git merge-base*)",
+      "Bash(git merge-tree*)",
+      "Bash(git rev-list*)",
+      "Bash(node *)",
+      "Bash(php *)",
+      "Bash(python3 *)",
+      "Bash(npx playwright*)",
+      "Bash(ls*)",
+      "Bash(mkdir*)",
+      "Bash(date*)",
+      "Bash(sleep*)",
+      "Bash(flock*)",
+      "Bash(pgrep*)",
+      "Bash(bash -n*)"
+    ]
+  }
+}
