@@ -367,6 +367,24 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   stießen zusammen. Jetzt nimmt jeder Test einen freien Port vom System, Bilder kommen in den eigenen Arbeitsordner.
   gemeinsam-, saison-, fremd- und helden_beute-Test warten nicht mehr feste Zeiten, sondern auf das Ergebnis (bis zu 3× so
   lang) – unter Last nicht mehr rot. (Nur Tests, kein Spiel-Code.)
+- **5./6.10. Nacht – Schneller laden (11b D) – GEBAUT, NICHT hochgeladen:** (1) `werkzeuge/spiel_bauen.sh` verkleinert am
+  Ende alle Browser-Skripte nach `Game/klein/` (`werkzeuge/verkleinern.js` mit terser in `werkzeuge/terser.js`, ohne Netz:
+  nur Leerraum/Kommentare raus, lokale Namen kürzer, Funktionsnamen bleiben; unverändertes Original → nichts zu tun).
+  `klein/` ist nicht im Git, entsteht bei jedem Bauen (also auch vor dem Hochladen, in der Vorschau und den Server-Tests);
+  `spiel_bauen.sh pruefen` meldet eine veraltete Datei. Die Originale bleiben – Weltrechner, Server und Tests lesen sie.
+  spiel.js 1,28 MB → 0,80 MB, baukunst.js 381 → 241 KB. (2) Neue `Game/skript.php` liefert sie gepackt (gzip) und mit
+  „ein Jahr behalten“ (Version in der Adresse, `skript()` in server.php; ist `klein/` älter als das Original oder fehlt,
+  kommt das Original – nie alter Code). Der Weltrechner bekommt immer die Originale. Die Spielseite selbst geht jetzt
+  gepackt raus (`ob_gzhandler` – die ganze Welt steht darin), die Startseite holt die Skripte schon während des
+  Anmeldens im Hintergrund (`prefetch`). (3) three.js (CDN) und baukunst.js kommen erst nach dem ersten Bild der Karte
+  (`dreiDLaden` in 10c) – vorher hielten sie DOMContentLoaded auf, und damit auch den Start der Welt-Verbindung
+  (welt.js startet dort). Ohne three.js wird baukunst.js gar nicht geladen. `hochladen.sh` prüft `klein/` nach dem
+  Hochladen mit. Gemessen in der Vorschau (Handy-Größe, gedrosseltes Netz, Maschine stark belastet – Zeiten nur grob):
+  Start-Daten ungepackt 1.915 → 1.277 KB, gepackt 566 → 390 KB (ohne die 3D-Dateien, die jetzt später kommen); langsames
+  Netz (200 KB/s): Skripte da nach 12,4 → 7,2 s, Karte sichtbar 35 → 22 s; 4G gepackt: Skripte 1,0 → 0,7 s, Karte
+  sichtbar 29 → 23 s. **Live prüfen** (ging von hier nicht): ob der Hoster statische .js schon packt
+  (`curl -sI -H 'Accept-Encoding: gzip' …/Game/spiel.js` → `Content-Encoding`), ob `skript.php` gepackt + mit
+  `Cache-Control: … immutable` ankommt und die Spielseite gepackt. Test: `tests/browser/laden_test.js` (+ server_test).
 - **5.10. Fremde Werte erst nach dem Spähen (Alexanders Entscheidung) – NICHT hochgeladen:** Der Server schickte jedem Handy
   den ganzen Zustand aller Spieler/Mitspieler (Helden, Ausrüstung, Skills, Stadt, Forschung, Gems …) – ein verändertes Handy
   konnte alles lesen. Jetzt (`server.php` `FREMD_OEFFENTLICH`, `fremd_kuerzen`, in `weltteil_fuer_spieler` UND
