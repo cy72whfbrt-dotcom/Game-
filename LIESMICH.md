@@ -333,7 +333,7 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   nur die Burg + Hinweis aufs Spähen. Neuer Browser-Test `fremd_test` (kürzt mit dem echten Filter aus server.php),
   Server-Einheitstests ergänzt. Nachtrag (Alexanders Entscheidung): auch die **Münzen der Mitspieler** in `openWaterBotCoins` sieht nur noch der Weltrechner
   (`muenzen_kuerzen` leert den Teil für Spieler; das Handy rechnet fehlende als 0, Beute steht im Spähbericht). Stufe bleibt sichtbar.
-- **6.10. Drei Werkzeuge für die Firma (nur Werkzeuge, kein Spiel-Code):** `werkzeuge/vor_commit.sh` (vor jedem Commit:
+- **5.10. Drei Werkzeuge für die Firma (nur Werkzeuge, kein Spiel-Code):** `werkzeuge/vor_commit.sh` (vor jedem Commit:
   Leerzeichen-Fehler im Staging, Konfliktmarker in allen getrackten .md/.js/.sh/.php/.json, `spiel_bauen.sh pruefen` –
   Exit-Code 1 bei Fund). `werkzeuge/server_starten.sh <arbeitsordner>` startet MariaDB und `php -S 127.0.0.1:8770` nur, wenn
   sie nicht laufen (prüft per curl); `tests/server_tests.sh` ruft es selbst auf, wenn 8770 nicht antwortet.
@@ -553,7 +553,7 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
   sie SELBST aufleveln, das kostet Rohstoffe (Münzen u. a.) – wie ein eigenes Gebäude, nicht automatisch mit dem Level.
 - ✅ ~~Gems kommen zu schnell~~ – erledigt 2.10. (neue Saison, Abschnitt 16).
-- **Punkt 11 – Münz-Wirtschaft:** bei hohen Stufen fühlen sich Münzen nichts wert an.
+- **Punkt 11 – Münz-Wirtschaft:** bei hohen Stufen fühlen sich Münzen nichts wert an. Alexander 5.10.: passt so (nichts ändern).
 - **Punkt 6 – Bündnis-Signale statt Chat** (siehe Abschnitt 12).
 - ⭐ **Beute neu (Alexander 4.10., „merke Liste, lass es uns so machen“) – noch NICHT gebaut:**
   - **Hauptstadt:** kann man angreifen, aber nie verlieren. Gewinnt der Angreifer, bekommt er **Rohstoffe – jede Art, die
@@ -625,6 +625,9 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
 - *Reden:* Basen/Hauptbasis, 8, 25, 17 (Spähbericht mit Held/Ausrüstung – heute nur Truppen + Verteidigung).
 - *Nicht:* 13 (mehrere Truppenarten), 21/22 (Talente/Helden-Ausrüstung, zu viel). 12 (Burg-Aussehen je Stufe) und
   15 (Lazarett, der Rest stirbt) gibt es schon.
+- **„reparieren“ (Alexander 5.10.):** sein Stichwort für die Subdomain – klappt vermutlich nicht, vorerst nichts tun.
+- **Prüfen (Endprüfer 5.10.):** startet der Weltrechner kurz nach dem Beitritt eines neuen Spielers neu, eicht er sich am
+  Profil neu (`wacheSehen`/`hbKlemmen`, `Game/spiel/10d-welt-weltrechner.js`) – seltenes Zeitfenster für Schummeln.
 
 ## 12. Ideen (gemerkt, noch nicht gebaut)
 - **Bündnis-Signale statt Chat (Alexander: „B finde ich gut“):** Kein freier Text. Feste Knöpfe: „Hilfe!“, „Greif

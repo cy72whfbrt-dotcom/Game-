@@ -21,7 +21,10 @@ const zuf = () => Math.random().toString(36).slice(2, 10) + Math.random().toStri
   ok('fremder Weltrechner bei laufendem', r.s === 409, r.s + ' ' + r.t);
   ok('Version unverändert', info().v === i.v);
   // 2) Absturz mitten im Puls: hart beenden, Leitung läuft ab
-  execSync('pgrep -f "[n]ode --permission" | xargs -r kill -9 || true');
+  // nur den Weltrechner DIESER Gruppe (Ordner W/weltrechner), nie die der anderen Gruppen von server_tests.sh
+  const eigene = php('echo implode(" ", wr_alle_pids());');
+  ok('eigener Weltrechner gefunden', eigene !== '', W);
+  if (eigene) execSync('kill -9 ' + eigene + ' || true');
   await warte(13500);
   i = info();
   // 3) alter Stand (seit zu klein) darf nach Ablauf nicht übernehmen
