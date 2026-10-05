@@ -6,6 +6,7 @@
 // C) Ein Mitspieler späht deine Basis aus → Kampflog-Eintrag „… hat deine Basis … ausgespäht“
 // D) Weltrechner (WELT nachgebaut): echter Spieler bzw. Mitspieler späht einen echten Spieler aus → Bericht an ihn + Push;
 //    das Handy zeigt den Eintrag im Kampflog; Push-Text und Einstellung
+// E) Viele Späher: je Späher und Basis höchstens 1 Meldung in 30 Min., höchstens 10 „ausgespäht“ im Kampflog (Kampfberichte bleiben)
 const { chromium, devices } = require('playwright');
 const path = require('path');
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x).slice(0, 400) : ''));
@@ -72,6 +73,24 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     row = m ? reihe(m) : null;
     out.C = { gelernt, neu: combatLog.length - vor, eintrag: m ? { botId: m.botId, botName: m.botName } : null, text: zeile(row), name: botById[w.H].name };
     closeAllPopups();
+    // E) Flut: 30 Späher (6 Mitspieler, 2 Basen, mehrfach dieselbe), dazwischen ein Angriffsbericht → Späher-Meldungen begrenzt
+    ausgespaehtZuletzt.clear();
+    const K = BOT_DEFS.filter(d => !d.mensch).slice(0, 6).map(d => d.id), Z = [playerIslandId, w.T], echt = addCombatLogEntry, je = {};
+    window.addCombatLogEntry = x => { if (x.type === 'ausgespaeht') { const k = x.botId + '|' + x.targetId; je[k] = (je[k] || 0) + 1; } return echt(x); };
+    for (let i = 0; i < 30; i++) {
+      if (i === 10) echt({ type: 'attack', targetId: w.T, sourceId: playerIslandId, outcome: 'fail', flut: 1 });
+      ausgespaeht('player', K[i % 6], Z[Math.floor(i / 6) % 2]);
+    }
+    const zaehl = () => combatLog.filter(x => x.type === 'ausgespaeht').length;
+    out.E = { gemeldet: Object.values(je).reduce((x, y) => x + y, 0), schluessel: Object.keys(je).length, max: Math.max(...Object.values(je)), imLog: zaehl(), angriff: combatLog.some(x => x.flut) };
+    const k0 = 'player|' + K[0] + '|' + playerIslandId; ausgespaehtZuletzt.set(k0, Date.now() - 31 * 60000);   // 31 Min. später: wieder eine Meldung
+    ausgespaeht('player', K[0], playerIslandId); ausgespaeht('player', K[0], playerIslandId);
+    out.E.nach31 = je[K[0] + '|' + playerIslandId];
+    out.E.einEintrag = combatLog.filter(x => x.type === 'ausgespaeht' && x.botId === K[0] && x.targetId === playerIslandId).length;
+    window.addCombatLogEntry = echt;
+    const alt = { type: 'ausgespaeht', botId: K[5], botName: 'x', targetId: w.T, at: Date.now() - 3600000 };   // älterer Bericht kommt spät an: kein zweiter Eintrag
+    echt(alt); out.E.spaet = combatLog.filter(x => x.type === 'ausgespaeht' && x.botId === K[5] && x.targetId === w.T).length;
+    out.E.imLogEnde = zaehl(); out.E.angriffEnde = combatLog.some(x => x.flut);
     out.bad = (document.getElementById('battleLogPopup').textContent.match(/undefined|NaN|\[object|Infinity/g) || []).slice(0, 5);
     return out;
   }, w));
@@ -87,6 +106,10 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(a.B && /vor 2 Std\./.test(a.B.angriff || '') && a.B.angriffGelb && /neu spähen/.test(a.B.menu || ''), 'Angriffsfenster + Basis-Fenster: Alter des Berichts, ab 30 Min. gelb', a.B);
   ok(a.B && /vor 5 Min\./.test(a.B.frisch || '') && !a.B.frischGelb, 'frischer Bericht (5 Min.): nicht gelb', a.B);
   ok(a.C && a.C.gelernt !== false && a.C.eintrag && a.C.eintrag.botId === a.w.H && new RegExp(a.C.name + '.*hat deine Basis.*ausgespäht').test(a.C.text), 'Mitspieler späht deine Basis aus → Kampflog „… hat deine Basis ausgespäht“', a.C);
+  const E = a.E || {};
+  ok(E.schluessel === 12 && E.max === 1 && E.gemeldet === 12, '30 Späher (6 Mitspieler × 2 Basen): je Späher und Basis nur 1 Meldung in 30 Min.', E);
+  ok(E.imLog === 10 && E.imLogEnde === 10 && E.angriff && E.angriffEnde, 'Kampflog: höchstens 10 „ausgespäht“, der Angriffsbericht bleibt', E);
+  ok(E.nach31 === 2 && E.einEintrag === 1 && E.spaet === 1, 'nach 30 Min. wieder 1 Meldung – derselbe Späher bleibt EIN Eintrag (auch wenn ein alter spät ankommt)', E);
   ok(!(a.bad || []).length, 'Kampflog ohne kaputte Texte', a.bad);
   // D) Weltrechner nachgebaut
   const p2 = await seite(() => {
@@ -116,6 +139,10 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const r2 = __nachr.find(e => e.art === 'bericht' && e.eintrag && e.eintrag.type === 'ausgespaeht');
     out.zwei = r2 ? { an: r2.an, von: r2.eintrag.botId, name: r2.eintrag.botName, M: M.id, Mname: M.name } : null;
     out.push2 = (window.__bundPush || []).filter(e => e.art === 'spaeher' && e.fertig).length;
+    // (2b) derselbe echte Spieler späht dieselbe Basis gleich noch einmal: kein zweiter Bericht, kein zweiter Push
+    window.__bundPush = []; __nachr.length = 0; bs[w.H].hb.sb = [[w.T, Date.now() - 1]];
+    try { __weltVorPuls(); } catch (e) { out.puls2 = e.message; }
+    out.nochmal = { bericht: __nachr.filter(e => e.art === 'bericht' && e.eintrag && e.eintrag.type === 'ausgespaeht').length, spaeh: __nachr.filter(e => e.art === 'spaeh').length, push: window.__bundPush.length };
     // (3) das Handy des Ausgespähten: Eintrag im Kampflog
     const vor = combatLog.length;
     for (const f of WELT.beiNachricht) try { f({ art: 'bericht', eintrag: { type: 'ausgespaeht', botId: neutralId(w.H), botName: 'Clara_V', targetId: playerIslandId, at: Date.now() }, hint: 'Clara_V hat deine Basis ausgespäht.' }); } catch (e) { out.handyFehler = e.message; }
@@ -130,6 +157,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(d.wrSpy && d.wrSpy.bl === 20 && d.wrSpy.summe === d.wrSpy.def && Object.values(d.wrSpy.gear || {}).filter(g => g && g[1] === 10).length === 4, 'Weltrechner-Spähbericht: Ausrüstung, Basis-Stufe, Teile (Summe = Verteidigung)', d.wrSpy);
   ok(d.push1 && d.push1.length === 1 && d.push1[0].an === d.w.B, 'Echter Spieler späht aus → Push „ausgespäht“ (Art spaeher, abschaltbar)', d.push1);
   ok(d.gelernt !== false && d.zwei && d.zwei.name === d.zwei.Mname && d.push2 === 1, 'Mitspieler späht einen echten Spieler aus → Bericht + Push', d.zwei);
+  ok(d.nochmal && d.nochmal.bericht === 0 && d.nochmal.push === 0 && d.nochmal.spaeh === 1, 'Derselbe Späher gleich noch einmal: Späher bekommt seinen Bericht, der Ausgespähte keine zweite Meldung/Push', d.nochmal);
   ok(d.handy && d.handy.neu === 1 && d.handy.botId === d.w.H && /Clara_V.*hat deine Basis.*ausgespäht/.test(d.handy.text), 'Handy: Kampflog-Eintrag „Clara_V hat deine Basis … ausgespäht“', d.handy);
   ok(/ausgespäht/.test(d.einst || ''), 'Einstellungen: Push-Art „Späher“ nennt auch „ausgespäht“', d.einst);
   // Push-Text (weltrechner/push.js)

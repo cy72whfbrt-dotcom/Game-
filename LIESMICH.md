@@ -512,6 +512,10 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   bots/03) deine Basis aus, bekommst du bei Ankunft einen Kampflog-Eintrag „X hat deine Basis ausgespäht – rechne mit einem
   Angriff“ (`ausgespaeht`; echte Spieler über `WELT.bericht`) und, wenn du nicht im Spiel bist, einen Push (Art `spaeher`, in den
   Einstellungen „Späher bei dir“ abschaltbar; `push.js` `fertig`). Neuer Test `spaeh_bericht_test`.
+  Gegen eine Flut (Mitspieler spähen alle 10 Min. neu, Prüfer-Fund): derselbe Späher an derselben Basis meldet höchstens alle
+  30 Min. (`ausgespaehtZuletzt`, `AUSGESPAEHT_PAUSE_MS` – kein Eintrag, kein `WELT.bericht`, kein Push); im Kampflog bleibt je
+  Späher und Basis nur der neueste Eintrag und höchstens 10 „ausgespäht“ (`AUSGESPAEHT_LIMIT`, älteste dieser Art zuerst raus),
+  damit echte Kampfberichte im 50er-Fenster bleiben (Test: 30 Späher + Angriffsbericht).
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.

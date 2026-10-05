@@ -83,9 +83,16 @@ function botScoutsArrive(now) {
 }
 
 // von (Mitspieler oder echter Spieler) hat eine Basis von an ausgespäht: Eintrag im Kampflog des Herrn – bei dir direkt, ein echter
-// Spieler bekommt ihn vom Weltrechner (+ Push, wenn er nicht im Spiel ist; Einstellungen: Art „Späher“)
+// Spieler bekommt ihn vom Weltrechner (+ Push, wenn er nicht im Spiel ist; Einstellungen: Art „Späher“).
+// Derselbe Späher an derselben Basis meldet höchstens alle 30 Min. (Mitspieler spähen alle 10 Min. neu – sonst
+// verdrängen Späher-Meldungen die Kampfberichte, füllen die Ereignisse und schicken Push um Push)
+const AUSGESPAEHT_PAUSE_MS = 30 * 60000, ausgespaehtZuletzt = new Map();
 function ausgespaeht(an, von, zielId) {
     const t = islandById[zielId], wer = botById[von]; if (!t || !wer || an === von) return;
+    const jetzt = Date.now(), k = an + '|' + von + '|' + zielId;
+    if (jetzt - (ausgespaehtZuletzt.get(k) || 0) < AUSGESPAEHT_PAUSE_MS) return;
+    if (ausgespaehtZuletzt.size > 500) for (const [x, z] of ausgespaehtZuletzt) if (jetzt - z >= AUSGESPAEHT_PAUSE_MS) ausgespaehtZuletzt.delete(x);
+    ausgespaehtZuletzt.set(k, jetzt);
     const e = { type: 'ausgespaeht', botId: von, botName: wer.name, targetId: zielId };
     if (an === 'player') { addCombatLogEntry(e); scoutNote('back', von, zielId); return; }
     if (!(botById[an] && botById[an].mensch) || !window.WELT || typeof WELT.bericht !== 'function') return;
