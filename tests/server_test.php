@@ -178,8 +178,26 @@ pruefe('marsch_welt: vorgeladenes Teil ganz geschickt, Flicken weg', [isset(((ar
 // Weltrechner-Leitung (Hänger bei Last): gilt 45 s, gerechnet ab dem ENDE seines Pulses (ein Puls von 15–30 s ist kein Ausfall)
 pruefe('Leitung gilt 45 s', LEITER_SEK, 45);
 $wp = file_get_contents(__DIR__ . '/../Game/server/07-welt-puls.php');
-pruefe('Leitung ab Ende der Anfrage (time(), nicht $jetzt)', [strpos($wp, 'leiter_setzen(0, $tok, time() + LEITER_SEK)') !== false, strpos($wp, '$jetzt + LEITER_SEK') !== false], [true, false]);
+pruefe('Leitung ab Ende der Anfrage (time(), nicht $jetzt)', [strpos($wp, 'leiter_setzen(0, $tok, time() + leiter_sek(time() - ') !== false, strpos($wp, '$jetzt + LEITER_SEK') !== false], [true, false]);
+// (6.10.) überlasteter Server: dauerte der Puls lange, gilt die Leitung doppelt so lange (höchstens 3 Min.) – kein „Verbindung …“ bei allen
+pruefe('Leitung: schneller Puls 45 s, Puls 30 s → 60 s, Puls 93 s → 180 s (höchstens)', [leiter_sek(0), leiter_sek(30), leiter_sek(93), leiter_sek(600)], [45, 60, 180, 180]);
 pruefe('Wachhund erkennt einen Absturz am Herzschlag, nicht an der Leitung', LEITER_SEK < 180 && strpos(file_get_contents(__DIR__ . '/../Game/weltrechner/wachhund.php'), 'const WR_HERZ_ALT = 180;') !== false, true);
+// Wachhund (6.10.): bei überlastetem Office-Server Geduld statt Neustart – aber nur, wenn der Weltrechner selbst kaum rechnet
+// (eine Endlosschleife rechnet) und höchstens 10 Min.
+require_once __DIR__ . '/../Game/weltrechner/wachhund.php';
+pruefe('Geduld: 5.10. 21:07 (Last 3 je Kern, selbst 2 von 27 s gerechnet)', wr_geduldig(200, 3.0, 2 / 27), true);
+pruefe('keine Geduld: Endlosschleife (rechnet so viel, wie er bei der Last bekommt)', wr_geduldig(200, 3.0, 0.3), false);
+pruefe('keine Geduld: Server nicht überlastet (echter Hänger)', wr_geduldig(200, 0.8, 0.0), false);
+pruefe('keine Geduld: über 10 Min. ohne Herzschlag', wr_geduldig(601, 3.0, 0.0), false);
+pruefe('Geduld ohne Messung nur eine Runde (dann ist eine da)', wr_geduldig(200, 3.0, null), true);
+pruefe('Rechenzeit eines Prozesses lesbar (/proc)', is_float(wr_cpu(getmypid())) || is_int(wr_cpu(getmypid())), true);
+$zw = []; pruefe('Anteil: erste Messung → noch keiner', [wr_anteil($zw, getmypid(), time()), $zw['cpu']['pid'] ?? 0], [null, getmypid()]);
+$zw['cpu'] = ['pid' => getmypid(), 't' => time() - 60, 's' => wr_cpu(getmypid())];
+$a = wr_anteil($zw, getmypid(), time()); pruefe('Anteil: nach 60 s gemessen (0…1), neue Messung gemerkt', [$a !== null && $a >= 0 && $a < 1, $zw['cpu']['t']], [true, time()]);
+$zw['cpu'] = ['pid' => 4242, 't' => time() - 60, 's' => 0]; pruefe('Anteil: Messung eines anderen Prozesses zählt nicht', wr_anteil($zw, getmypid(), time()), null);
+$wh = file_get_contents(__DIR__ . '/../Game/weltrechner/wachhund.php');
+pruefe('Wachhund merkt sich die Start-Dauer (letzte 10)', strpos($wh, "\$z['startDauern'] = array_slice(") !== false && strpos($wh, "-10)") !== false, true);
+pruefe('Wachhund: einmal am Tag eine Sicherung mit Spielerkonten', strpos($wh, 'lager()->letzte_sicherung_zeit(true) >= 84600') !== false && strpos($wh, 'sicherung_anlegen(0, $konten)') !== false, true);
 // --- Datenbank-Teile ohne Datenbank: eine nachgemachte (merkt sich SQL und Werte)
 class TestDb { public $sql = []; public $werte = []; public $zeilen = [];
     function prepare($q) { $this->sql[] = $q; return $this; } function exec($q) { $this->sql[] = $q; return 0; } function query($q) { $this->sql[] = $q; return $this; }

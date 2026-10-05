@@ -16,9 +16,17 @@ let b;
   await p.fill('#pw', APW); await Promise.all([p.waitForNavigation(), p.click('button[type=submit]')]);
   const h2 = await p.textContent('h1');
   ok('… danach Admin-Seite', h2.trim() === 'Admin', h2);
-  let gefragt = null; p.on('dialog', d => { gefragt = d.message().slice(0, 40); d.dismiss(); });
-  const fr = await p.$('form[data-frage] button'); if (fr) { await fr.click(); await p.waitForTimeout(800); }
+  let gefragt = null, annehmen = false; p.on('dialog', d => { gefragt = d.message().slice(0, 40); if (annehmen) d.accept(); else d.dismiss(); });
+  const fr = await p.$('#sicherung ~ button[data-frage]'); if (fr) { await fr.click(); await p.waitForTimeout(800); }
   ok('Rückfrage beim Zurückspielen', !fr || !!gefragt, fr ? gefragt : 'keine Sicherungs-Liste');
+  // „Alles zurückspielen“ (6.10.: mit Spielerkonten): eigene Rückfrage + Kästchen – ohne Kästchen ändert der Server nichts
+  if (fr) {
+    ok('„Alles zurückspielen“ mit Rückfrage und Kästchen', !!(await p.$('button[name=alles][data-frage]')) && !!(await p.$('input[type=checkbox][name=alles_ja]')));
+    await p.click('summary:has-text("Alles zurückspielen")'); gefragt = null; annehmen = true;
+    await Promise.all([p.waitForNavigation(), p.click('button[name=alles]')]); annehmen = false;
+    const meld = await p.textContent('.fehler').catch(() => '');
+    ok('… ohne Kästchen: nichts zurückgespielt', !!gefragt && /Kästchen/.test(meld || ''), (meld || '').slice(0, 80));
+  }
   await p.goto(B); const k = await p.$('form[data-laedt] button');
   ok('Weiterspielen-Knopf da', !!k);
   ok('keine Skript-/CSP-Fehler', !f.length, f.join(' | '));

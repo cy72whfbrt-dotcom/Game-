@@ -102,11 +102,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             else { $r = wachhund_neustart(); $meldung = 'Weltrechner neu gestartet (' . $r . ').'; } }
         if ($was === 'wr_entsperren') { wachhund_entsperren(); $meldung = 'Sperre aufgehoben. Wenn der Fehler behoben ist: Wartung beenden – dann startet der Weltrechner von selbst.'; }
         if ($was === 'wr_cron') $meldung = wachhund_cron_einrichten();
+        // Zurückspielen: „nur Welt“ wie bisher, oder „alles“ (6.10.: dazu Spielerkonten + private Spielstände – nur Sicherungen mit
+        // Konten, einmal am Tag; nur mit Rückfrage: Kästchen ankreuzen + Bestätigen)
         if ($was === 'wr_sicherung') {
-            $sid = (int)($_POST['sicherung'] ?? 0); $h = wr_herz();
-            if ($h && !wr_beenden((int)($h['pid'] ?? 0), 'Sicherung wird zurückgespielt')) $fehler = 'Der Weltrechner lässt sich nicht beenden – nichts verändert.';
-            elseif (lager()->sicherung_zurueck($sid)) { wr_log('Sicherung ' . $sid . ' vom Admin zurückgespielt'); wachhund_neustart(); $meldung = 'Sicherung zurückgespielt – die Welt ist wieder auf dem Stand von damals. Der Weltrechner startet neu.'; }
-            else { $fehler = 'Sicherung nicht gefunden oder kaputt – nichts verändert.'; if ($h) wachhund_neustart(); }   // (der Weltrechner war schon beendet – gleich wieder starten)
+            $sid = (int)($_POST['sicherung'] ?? 0); $alles = !empty($_POST['alles']); $mitKonten = false;
+            foreach (lager()->sicherungen_liste() as $sc) if ((int)$sc['id'] === $sid) $mitKonten = !empty($sc['konten']);
+            if ($alles && empty($_POST['alles_ja'])) $fehler = 'Alles zurückspielen: bitte zuerst das Kästchen „Ja, auch alle Spielerkonten und Spielstände“ ankreuzen – nichts verändert.';
+            elseif ($alles && !$mitKonten) $fehler = 'Diese Sicherung enthält keine Spielerkonten (die kommen einmal am Tag mit) – nichts verändert.';
+            else {
+                $h = wr_herz();
+                if ($h && !wr_beenden((int)($h['pid'] ?? 0), 'Sicherung wird zurückgespielt')) $fehler = 'Der Weltrechner lässt sich nicht beenden – nichts verändert.';
+                else {
+                    try { $ok = lager()->sicherung_zurueck($sid, $alles); } catch (Throwable $e) { $ok = false; error_log('Open Water: Zurückspielen: ' . $e->getMessage()); }
+                    if ($ok) { wr_log('Sicherung ' . $sid . ($alles ? ' (alles: Welt, Spielerkonten, Spielstände)' : '') . ' vom Admin zurückgespielt'); wachhund_neustart();
+                        $meldung = $alles ? 'Alles zurückgespielt – Welt, Spielerkonten und Spielstände sind wieder auf dem Stand von damals (wer sich seitdem angemeldet hat, bleibt). Offene Spiele laden neu. Der Weltrechner startet neu.'
+                            : 'Sicherung zurückgespielt – die Welt ist wieder auf dem Stand von damals. Der Weltrechner startet neu.'; }
+                    else { $fehler = 'Sicherung nicht gefunden oder kaputt – nichts verändert.'; if ($h) wachhund_neustart(); }   // (der Weltrechner war schon beendet – gleich wieder starten)
+                }
+            }
         }
         if ($was === 'nebel') {
             $an = (string)($_POST['an'] ?? ''); $ids = [];
@@ -127,7 +140,15 @@ if (isset($_GET['m'])) $meldung = mb_substr((string)$_GET['m'], 0, 400); if (iss
 $spieler = lager()->alle_spieler();
 $wrH = wr_herz(); $wrZ = wr_zustand(); $wrCron = wachhund_cron_da();
 $wrLaeuft = $wrH && empty($wrH['ende']) && wr_laeuft($wrH['pid'] ?? 0) && time() - (int)(($wrH['zeit'] ?? 0) / 1000) <= wr_herz_alt($wrH);
+$wrGeduld = !empty($wrZ['geduld']) && $wrH && empty($wrH['ende']) && wr_laeuft($wrH['pid'] ?? 0);   // (Wachhund wartet bei überlastetem Server)
 $wrSicherungen = lager()->sicherungen_liste();
+// Dauer eines Starts (start.js startDauer, Millisekunden) als kurzer Text
+function start_text($d) {
+    $s = function ($ms) { return number_format($ms / 1000, 1, ',', '') . ' s'; };
+    if (!is_array($d) || empty($d['gesamt'])) return 'noch nicht fertig';
+    return '<b>' . $s($d['gesamt']) . '</b> (Node ' . $s($d['node'] ?? 0) . ' · Laden ' . $s($d['laden'] ?? 0) . ' · Einlesen ' . $s(max(0, ($d['einlesen'] ?? 0) - ($d['laden'] ?? 0)))
+        . ' · erster Puls ' . $s(max(0, ($d['puls'] ?? 0) - ($d['einlesen'] ?? 0))) . ')';
+}
 $saison = json_decode((string)(lager()->stand_laden(0, ['openWaterSaison'])['openWaterSaison'] ?? ''), true);   // Welt-Saison: Nummer, Start, Termin (spiel/09f-saison.js)
 // Auffälligkeiten (Schummel-Schutz des Weltrechners, weltrechner/schummel.php): wer, was, wann – mit Namen statt u-Nummer
 $auffaellig = (wr_lesen('schummel.php') ?: [])['liste'] ?? [];
@@ -185,13 +206,16 @@ function zahl($n) { return $n === null ? '–' : number_format((float)$n, 0, ','
 
 <div class="karte">
   <h2>Weltrechner (rechnet die Welt auf dem Server)</h2>
-  <p class="status">Zurzeit: <b><?= !empty($wrZ['gesperrt']) ? '⛔ gestoppt (Alarm)' : (wartung() ? '⏸ wartet (Wartung)' : ($wrLaeuft ? ((($wrH['phase'] ?? '') === 'start') ? '⏳ startet (lädt die Welt)' : '✅ läuft') : (time() < (int)($wrZ['serverBis'] ?? 0) ? '🐢 Server zu langsam – neuer Versuch um ' . date('H:i', (int)$wrZ['serverBis']) : '⏳ startet / nicht da'))) ?></b></p>
+  <p class="status">Zurzeit: <b><?= !empty($wrZ['gesperrt']) ? '⛔ gestoppt (Alarm)' : (wartung() ? '⏸ wartet (Wartung)' : ($wrGeduld ? '🐢 Office-Server überlastet – der Weltrechner wartet (kein Neustart, höchstens ' . (WR_HERZ_ALT_LAST / 60) . ' Min.)' : ($wrLaeuft ? ((($wrH['phase'] ?? '') === 'start') ? '⏳ startet (lädt die Welt)' : '✅ läuft') : (time() < (int)($wrZ['serverBis'] ?? 0) ? '🐢 Server zu langsam – neuer Versuch um ' . date('H:i', (int)$wrZ['serverBis']) : '⏳ startet / nicht da')))) ?></b></p>
   <?php if ($wrH): ?>
   <table>
     <tr><td>Speicher</td><td><b><?= (int)($wrH['speicherMb'] ?? 0) ?> MB</b> von höchstens <?= (int)($wrH['grenzeMb'] ?? 600) ?> MB</td></tr>
-    <tr><td>Längste Pause</td><td><b><?= round(($wrH['pauseStundeMs'] ?? 0) / 1000, 1) ?> s</b> diese Stunde · seit dem Start <?= round(($wrH['pauseMaxMs'] ?? 0) / 1000, 1) ?> s <small>(ab <?= WR_HERZ_ALT ?> s gilt er als hängend)</small></td></tr>
+    <tr><td>Längste Pause</td><td><b><?= round(($wrH['pauseStundeMs'] ?? 0) / 1000, 1) ?> s</b> diese Stunde · seit dem Start <?= round(($wrH['pauseMaxMs'] ?? 0) / 1000, 1) ?> s <small>(ab <?= WR_HERZ_ALT ?> s gilt er als hängend – bei überlastetem Server erst nach <?= WR_HERZ_ALT_LAST / 60 ?> Min., solange er selbst kaum rechnet)</small></td></tr>
+    <tr><td>Server-Last</td><td><?= number_format(wr_last(), 1, ',', '') ?> je Kern <small>(überlastet ab <?= number_format(WR_LAST_HOCH, 1, ',', '') ?>)</small><?= !empty($wrH['geduld']) ? ' · <b>Puls fehlt seit ' . h(date('H:i', (int)($wrH['geduld'] / 1000))) . '</b> – er wartet bis 10 Min. statt neu zu starten' : '' ?></td></tr>
     <tr><td>Letzter Herzschlag</td><td>vor <?= max(0, time() - (int)(($wrH['zeit'] ?? 0) / 1000)) ?> s</td></tr>
     <tr><td>Läuft seit</td><td><?= h(date('d.m.Y H:i', (int)(($wrH['gestartet'] ?? 0) / 1000))) ?></td></tr>
+    <tr><td>Start dauerte</td><td><?= start_text($wrH['startDauer'] ?? null) ?></td></tr>
+    <?php if (!empty($wrZ['startDauern'])): ?><tr><td>Letzte Starts</td><td><small><?= implode(' · ', array_map(function ($x) { return h(date('d.m. H:i', (int)($x['zeit'] ?? 0))) . ': ' . number_format((($x['ms']['gesamt'] ?? 0) / 1000), 1, ',', '') . ' s'; }, array_reverse((array)$wrZ['startDauern']))) ?></small></td></tr><?php endif; ?>
     <tr><td>Puls zum Server</td><td><?= (int)($wrH['pulsMs'] ?? 0) ?> ms · <?= zahl($wrH['pulseOk'] ?? 0) ?> gut, <?= zahl($wrH['pulseFehler'] ?? 0) ?> Fehler</td></tr>
     <tr><td>Befehle der Spieler</td><td><?= zahl($wrH['befehle'] ?? 0) ?></td></tr>
     <tr><td>Fehler (letzte Minute)</td><td><?= (int)($wrH['fehlerProMinute'] ?? 0) ?> · Prüfer hat <?= (int)($wrH['prueferFehler'] ?? 0) ?>× kaputte Zahlen verhindert</td></tr>
@@ -208,11 +232,17 @@ function zahl($n) { return $n === null ? '–' : number_format((float)$n, 0, ','
   <details style="margin-top:10px"><summary>Protokoll (letzte 40 Zeilen)</summary>
     <pre style="white-space:pre-wrap;font-size:12px;max-height:300px;overflow:auto;background:#fff;padding:8px;border-radius:6px"><?= h(wr_log_ende(40)) ?></pre></details>
   <?php if ($wrSicherungen): ?>
-  <form method="post" style="margin-top:10px" data-frage="Wirklich? Die Welt springt auf diesen Stand zurück. Was seitdem in der Welt passiert ist, ist weg (die Spielstände der Spieler bleiben).">
+  <form method="post" style="margin-top:10px">
     <input type="hidden" name="zeichen" value="<?= h($zeichen) ?>"><input type="hidden" name="nr" value="<?= h($formNr) ?>"><input type="hidden" name="was" value="wr_sicherung">
-    <label for="sicherung">Sicherung zurückspielen (jede Stunde eine, die letzten 48)</label>
-    <select id="sicherung" name="sicherung"><?php foreach ($wrSicherungen as $sc): ?><option value="<?= (int)$sc['id'] ?>"><?= h(date('d.m.Y H:i', strtotime($sc['erstellt']))) ?> (<?= round($sc['groesse'] / 1024) ?> KB)<?= (int)($sc['behalten_bis'] ?? 0) > time() ? ' · Saison-Sicherung, bleibt bis ' . h(date('d.m.', (int)$sc['behalten_bis'])) : '' ?></option><?php endforeach; ?></select>
-    <button class="rot">Zurückspielen</button>
+    <label for="sicherung">Sicherung zurückspielen (jede Stunde eine, die letzten 48; einmal am Tag mit Spielerkonten)</label>
+    <select id="sicherung" name="sicherung"><?php foreach ($wrSicherungen as $sc): ?><option value="<?= (int)$sc['id'] ?>"><?= h(date('d.m.Y H:i', strtotime($sc['erstellt']))) ?> (<?= round($sc['groesse'] / 1024) ?> KB)<?= !empty($sc['konten']) ? ' · mit Spielerkonten' : '' ?><?= (int)($sc['behalten_bis'] ?? 0) > time() ? ' · Saison-Sicherung, bleibt bis ' . h(date('d.m.', (int)$sc['behalten_bis'])) : '' ?></option><?php endforeach; ?></select>
+    <button class="rot" data-frage="Wirklich? Die Welt springt auf diesen Stand zurück. Was seitdem in der Welt passiert ist, ist weg (die Spielstände der Spieler bleiben).">Nur die Welt zurückspielen</button>
+    <details style="margin-top:10px"><summary>Alles zurückspielen (Welt + Spielerkonten + Spielstände)</summary>
+      <p style="font-size:14px">Nur für Sicherungen „mit Spielerkonten“. Konten (Name, Passwort), Spielstände und die Welt aller Spieler von damals
+         kommen zurück – was seitdem passiert ist, ist für sie weg (auch Gekauftes). Wer sich seitdem neu angemeldet hat, bleibt unverändert.</p>
+      <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="alles_ja" value="1" style="width:auto"> Ja, auch alle Spielerkonten und Spielstände</label>
+      <button class="rot" name="alles" value="1" data-frage="Wirklich ALLES zurückspielen? Welt, Spielerkonten und Spielstände aller Spieler springen auf diesen Stand zurück – was seitdem passiert ist (auch Gekauftes), ist weg.">Alles zurückspielen</button>
+    </details>
   </form>
   <?php endif; ?>
 </div>

@@ -2,7 +2,10 @@
 // ===== weltrechner/wachhund.php – passt auf den Weltrechner auf =====
 // Läuft jede Minute (Cronjob) – und zur Sicherheit auch, wenn ein Spieler online ist und der Herzschlag fehlt (server.php).
 //   - Weltrechner läuft und schlägt (Herzschlag jünger als 60 s) → nichts tun
-//   - hängt (Herzschlag älter als 60 s) → hart beenden, zählt als Absturz, neu starten
+//   - hängt (Herzschlag älter als 180 s) → hart beenden, zählt als Absturz, neu starten
+//     Ausnahme (6.10.): ist der Office-Server überlastet (Last je Kern über 1,5) und rechnet der Weltrechner selbst kaum (er kommt
+//     nur nicht dran, eine Endlosschleife würde rechnen), wartet der Wachhund bis 10 Min. – ein Neustart lädt die ganze Welt und
+//     belastet den Server nur noch mehr. Rechnet er (Endlosschleife) oder sind 10 Min. um: wie bisher beenden.
 //   - abgestürzt → neu starten
 //   - 5 Abstürze in 5 Minuten → keine Neustarts mehr, WARTUNG an (niemand kommt rein, die Welt steht still, nichts geht
 //     verloren) und Alarm auf der Admin-Seite. Wartung und Sperre hebt nur Alexander auf (admin.php).
@@ -16,6 +19,8 @@ const WR_ORDNER = __DIR__;
 const WR_SPERRE = "<?php http_response_code(404); exit; ?>\n";
 const WR_HERZ_ALT = 180;           // Sekunden ohne Herzschlag = hängt (im Betrieb; eine große Welt speichern darf dauern)
 const WR_HERZ_ALT_START = 900;     // … beim Start (Welt holen und einlesen): bei großer Welt und langsamem Server dauert das
+const WR_HERZ_ALT_LAST = 600;      // … bei überlastetem Server, solange er selbst kaum rechnet (er wartet, er hängt nicht)
+const WR_LAST_HOCH = 1.5;          // Server-Last je Kern, ab der der Office-Server überlastet ist (5.10. 21 Uhr: 30–53 bei 16 Kernen)
 const WR_OHNE_HERZ = 120;          // gestartet, aber nach so vielen Sekunden noch kein einziger Herzschlag = Node startet gar nicht
 const WR_ABSTUERZE = 5;            // so viele Abstürze …
 const WR_FENSTER = 300;            // … in so vielen Sekunden → Wartung + Alarm
@@ -53,6 +58,36 @@ function wr_zustand() { return wr_lesen('zustand.php') ?: ['abstuerze' => [], 'g
 function wr_herz() { return wr_lesen('herz.php'); }
 // Wie lange darf der Herzschlag fehlen? Beim Start (Welt einlesen) viel länger als im Betrieb.
 function wr_herz_alt($h) { return ($h['phase'] ?? '') === 'start' ? WR_HERZ_ALT_START : WR_HERZ_ALT; }
+// Server-Last je Kern (1-Minuten-Mittel; 0: unbekannt)
+function wr_last() {
+    static $kerne = null;
+    if ($kerne === null) { $c = @file_get_contents('/proc/cpuinfo'); $kerne = max(1, $c ? preg_match_all('/^processor\s*:/m', $c) : 1); }
+    $l = function_exists('sys_getloadavg') ? @sys_getloadavg() : false;
+    return is_array($l) ? $l[0] / $kerne : 0.0;
+}
+// Verbrauchte Rechenzeit eines Prozesses in Sekunden (/proc/<pid>/stat: utime + stime, Takte zu 1/100 s); null = nicht lesbar
+function wr_cpu($pid) {
+    $t = @file_get_contents('/proc/' . (int)$pid . '/stat'); if (!$t || ($k = strrpos($t, ')')) === false) return null;
+    $f = explode(' ', substr($t, $k + 2));   // ($f[0] = Feld 3; utime = Feld 14, stime = Feld 15)
+    return isset($f[12]) ? ((int)$f[11] + (int)$f[12]) / 100 : null;
+}
+// Anteil Rechenzeit seit der letzten Messung (0…1, null = noch keine brauchbare Messung). Merkt sich die Messung in $z['cpu']
+// (höchstens alle 20 s neu – eine Runde aus dem Puls eines Spielers kurz nach dem Cronjob ergäbe ein zu kurzes Fenster).
+function wr_anteil(&$z, $pid, $jetzt) {
+    $cpu = wr_cpu($pid); $vor = $z['cpu'] ?? null; $anteil = null;
+    if ($cpu === null) { $z['cpu'] = null; return null; }
+    $gleich = is_array($vor) && (int)($vor['pid'] ?? 0) === (int)$pid;
+    if ($gleich && $jetzt - (int)$vor['t'] >= 20) $anteil = max(0, $cpu - (float)$vor['s']) / ($jetzt - (int)$vor['t']);
+    if (!$gleich || $jetzt - (int)$vor['t'] >= 20) $z['cpu'] = ['pid' => (int)$pid, 't' => $jetzt, 's' => $cpu];
+    return $anteil;
+}
+// Noch warten statt beenden? Nur bei überlastetem Server, höchstens WR_HERZ_ALT_LAST Sekunden ohne Herzschlag, und nur, wenn er
+// selbst kaum rechnet: eine Endlosschleife bekäme bei dieser Last etwa 1/Last eines Kerns – er bekam weniger als ein Drittel davon
+// (5.10. 21:07: 2 s von 27 s). Ohne Messung (erste Runde): eine Runde warten, dann ist eine da.
+function wr_geduldig($alt, $last, $anteil) {
+    if ($alt > WR_HERZ_ALT_LAST || $last <= WR_LAST_HOCH) return false;
+    return $anteil === null || $anteil < 0.3 * min(1, 1 / $last);
+}
 // Codes, bei denen der SERVER nicht (schnell genug) antwortet – kein Fehler des Weltrechners: zählt nie als Absturz (keine Notbremse),
 // der Wachhund versucht es mit wachsender Pause wieder (1, 2, 4 … höchstens 10 Min.), bis der Server wieder antwortet
 const WR_SERVER_CODES = [7, 8];
@@ -144,12 +179,26 @@ function wachhund_runde($quelle = 'cron') {
         $laeuft = $pid && wr_laeuft($pid);
         if ($laeuft && $h && empty($h['ende']) && $jetzt - (int)($h['zeit'] / 1000) <= wr_herz_alt($h)) {
             if (($h['phase'] ?? '') !== 'start' && !empty($z['serverWeg'])) { $z['serverWeg'] = 0; $z['serverBis'] = 0; }   // läuft wieder: die Pause beim nächsten Mal wieder kurz
+            wr_anteil($z, $pid, $jetzt);   // (Messung für später: hängt er einmal, zeigt sie, ob er rechnet oder nur nicht drankommt)
+            if (!empty($z['geduld'])) { wr_log('Weltrechner schlägt wieder (nach ' . ($jetzt - (int)$z['geduld']) . ' s Geduld bei überlastetem Server)'); $z['geduld'] = 0; }
+            // Dauer seines Starts (start.js startDauer) – die letzten 10 für die Admin-Seite
+            if (!empty($h['startDauer']['gesamt']) && (int)($z['startGemerkt'] ?? 0) !== $pid) {
+                $z['startGemerkt'] = $pid; $z['startDauern'] = array_slice(array_merge((array)($z['startDauern'] ?? []), [['zeit' => (int)($h['gestartet'] / 1000), 'ms' => $h['startDauer']]]), -10); }
             $fremd = array_values(array_diff(wr_alle_pids(), [$pid]));   // übrig gebliebene Weltrechner (ohne Herzschlag): weg damit
             if ($fremd) { foreach ($fremd as $x) exec('kill -9 ' . (int)$x . ' 2>/dev/null'); wr_log(count($fremd) . ' übrige(n) Weltrechner-Prozess(e) beendet'); }
             wr_schreiben('zustand.php', $z); return ($h['phase'] ?? '') === 'start' ? 'startet' : 'läuft'; }
         $starts = (array)($z['starts'] ?? []); $letzterStart = $starts ? (int)end($starts) : 0;   // (alte zustand.php ohne „starts“)
-        if ($laeuft) {   // läuft, aber kein Herzschlag mehr: hängt (Endlosschleife o. ä.)
-            if (!wr_beenden($pid, 'hängt – letzter Herzschlag vor ' . ($jetzt - (int)($h['zeit'] / 1000)) . ' s')) { wr_schreiben('zustand.php', $z); return 'hängt, lässt sich nicht beenden'; }
+        if ($laeuft) {   // läuft, aber kein Herzschlag mehr: hängt (Endlosschleife o. ä.) – oder kommt bei überlastetem Server nicht dran
+            $alt = $jetzt - (int)($h['zeit'] / 1000);
+            if ($h && empty($h['ende']) && ($h['phase'] ?? '') !== 'start') {
+                $last = wr_last(); $anteil = wr_anteil($z, $pid, $jetzt);
+                if (wr_geduldig($alt, $last, $anteil)) {
+                    if (empty($z['geduld'])) { $z['geduld'] = $jetzt; wr_log('Server überlastet (Last ' . round($last, 1) . ' je Kern): Herzschlag vor ' . $alt . ' s, der Weltrechner rechnet selbst ' . ($anteil === null ? '(noch nicht gemessen)' : 'nur ' . round($anteil * 100) . ' %') . ' – er wartet, hängt nicht: kein Neustart (höchstens ' . (WR_HERZ_ALT_LAST / 60) . ' Min.)'); }
+                    wr_schreiben('zustand.php', $z); return 'wartet (Server überlastet)';
+                }
+            }
+            $z['geduld'] = 0;
+            if (!wr_beenden($pid, 'hängt – letzter Herzschlag vor ' . $alt . ' s')) { wr_schreiben('zustand.php', $z); return 'hängt, lässt sich nicht beenden'; }
             $z['abstuerze'][] = $jetzt; $z['gezaehlt'] = $pid;
         } elseif ($h && $pid && (int)($z['gezaehlt'] ?? 0) !== $pid) {   // beendet: geplant (Wartung, Code 0) oder Absturz?
             $z['gezaehlt'] = $pid;
@@ -196,15 +245,16 @@ function wachhund_runde($quelle = 'cron') {
 }
 // Jede Stunde eine Sicherung der Welt (nur im Cronjob). Höchstens ein Versuch pro Stunde – auch wenn er scheitert, z. B. weil
 // der jetzige Stand unvollständig ist: sonst jede Minute die ganze Welt lesen. Mit niedriger Priorität (der Weltrechner geht vor).
+// Einmal am Tag (6.10.) mit den Spielerkonten und privaten Spielständen (spätestens nach 23,5 Std. – die Stunden-Runde wandert etwas).
 function wr_sicherung() {
     try {
         $z = wr_zustand(); $jetzt = time();
         if ($jetzt - (int)($z['sicherungVersuch'] ?? 0) < 3600 || $jetzt - lager()->letzte_sicherung_zeit() < 3600) return;
         $z['sicherungVersuch'] = $jetzt; wr_schreiben('zustand.php', $z);
         if (function_exists('proc_nice')) @proc_nice(10);   // (dieser Prozess endet gleich danach)
-        $t0 = microtime(true);
-        if (lager()->sicherung_anlegen()) { $si = lager()->sicherung_info ?: [];
-            wr_log('Sicherung der Welt angelegt (' . round((microtime(true) - $t0), 1) . ' s, ' . round(($si['roh'] ?? 0) / 1048576, 1) . ' MB → gepackt ' . round(($si['gz'] ?? 0) / 1048576, 1) . ' MB)'); }
+        $t0 = microtime(true); $konten = $jetzt - lager()->letzte_sicherung_zeit(true) >= 84600;
+        if (lager()->sicherung_anlegen(0, $konten)) { $si = lager()->sicherung_info ?: [];
+            wr_log('Sicherung der Welt' . ($konten ? ' mit Spielerkonten' : '') . ' angelegt (' . round((microtime(true) - $t0), 1) . ' s, ' . round(($si['roh'] ?? 0) / 1048576, 1) . ' MB → gepackt ' . round(($si['gz'] ?? 0) / 1048576, 1) . ' MB)'); }
         else wr_log('Sicherung NICHT angelegt: der jetzige Stand ist unvollständig (' . round((microtime(true) - $t0), 1) . ' s)');
     } catch (Throwable $e) { wr_log('Sicherung fehlgeschlagen: ' . $e->getMessage()); }
 }

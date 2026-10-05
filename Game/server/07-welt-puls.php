@@ -6,6 +6,10 @@
 // Antwort:  {leiter, version, welt:{setzen,loeschen}, befehle:[{von,b}] (nur Weltrechner), ereignisse:[…], spieler:[…]}
 // Weltrechner ist nur der Server-Weltrechner (weltrechner/start.js) – nie das Gerät eines Spielers.
 const LEITER_SEK = 45;   // so lange gilt der Weltrechner nach seinem letzten Puls als „läuft“ (bei Last dauert ein Puls 15–30 s; einen Absturz erkennt der Wachhund am Herzschlag)
+const LEITER_SEK_LAST = 180;   // höchstens so lange, wenn der Server überlastet ist (6.10.: Puls bis 93 s)
+// Wie lange gilt die Leitung? Dauerte diese Anfrage lange (Server überlastet), kommt auch der nächste Puls später: doppelte Dauer,
+// mindestens LEITER_SEK, höchstens LEITER_SEK_LAST – sonst sähen alle Spieler unnötig „Verbindung wird wiederhergestellt …“
+function leiter_sek($dauer) { return (int)min(LEITER_SEK_LAST, max(LEITER_SEK, 2 * $dauer)); }
 const SAISON_SICHERUNG_SEK = 14 * 86400;   // die Sicherung vor einer neuen Welt-Saison bleibt 2 Wochen (Alexander 5.10.)
 // Eine Sicherung ist nur gültig, wenn sie ganz ist: Welt-Teile (Schlüssel + gültiges JSON) und Mitspieler vorhanden.
 function sicherung_gueltig($d) {
@@ -14,6 +18,17 @@ function sicherung_gueltig($d) {
     foreach ($d['spielstand'] as $z) { if (!isset($z['schluessel'], $z['wert']) || !is_string($z['wert']) || json_decode($z['wert']) === null && $z['wert'] !== 'null') return false; $keys[$z['schluessel']] = 1; }
     foreach ($d['bots'] as $z) if (!isset($z['bot_id']) || !array_key_exists('basen', $z) || !array_key_exists('zustand', $z)) return false;
     return isset($keys['openWaterIslandTroops'], $keys['openWaterKarte']);   // die Karte und die Truppen gehören immer dazu
+}
+// Konten-Teil einer Sicherung (6.10.): Spieler mit Nummer, Name und Passwort-Prüfwert; Spielstände/Mitspieler je Spieler (> 0)
+function konten_gueltig($k) {
+    if (!is_array($k) || !isset($k['spieler'], $k['staende'], $k['bots']) || !is_array($k['spieler']) || !$k['spieler'] || !is_array($k['staende']) || !is_array($k['bots'])) return false;
+    foreach ($k['spieler'] as $z) {
+        if (!is_array($z) || !((int)($z['id'] ?? 0) > 0) || !is_string($z['name'] ?? null) || !is_string($z['pw_hash'] ?? null) || $z['pw_hash'] === '') return false;
+        foreach (array_keys($z) as $c) if (!preg_match('/^[a-z_]{1,40}$/', (string)$c)) return false;   // (die Spaltennamen kommen ins SQL)
+    }
+    foreach ($k['staende'] as $z) if (!is_array($z) || !((int)($z['spieler_id'] ?? 0) > 0) || !is_string($z['schluessel'] ?? null) || !is_string($z['wert'] ?? null)) return false;
+    foreach ($k['bots'] as $z) if (!is_array($z) || !((int)($z['spieler_id'] ?? 0) > 0) || !isset($z['bot_id']) || !array_key_exists('basen', $z) || !array_key_exists('zustand', $z)) return false;
+    return true;
 }
 // Welt-Saison nach dem Zurückspielen (Alexander 5.10.): war in der Sicherung der Reset schon fällig (Termin vorbei oder Admin-Knopf),
 // würde der Weltrechner sofort wieder neu beginnen – das Zurückspielen wäre umsonst. Dann ist der Reset ANGEHALTEN (halt), bis der
@@ -125,7 +140,7 @@ function welt_puls($ich, $d) {
     $neu_leiter = false;
     if ($sys) {   // Weltrechner bleibt (oder übernimmt nach einem Neustart)
         $neu_leiter = !$bin_leiter;
-        $l->leiter_setzen(0, $tok, time() + LEITER_SEK);   // ab dem Ende der Anfrage (nicht ab ihrem Anfang: eine langsame wäre sonst schon fast abgelaufen)
+        $l->leiter_setzen(0, $tok, time() + leiter_sek(time() - (int)($_SERVER['REQUEST_TIME'] ?? time())));   // ab dem Ende der Anfrage (nicht ab ihrem Anfang: eine langsame wäre sonst schon fast abgelaufen)
         $bin_leiter = true;
     }
     $seit = (int)($d['seit'] ?? 0);
@@ -139,7 +154,7 @@ function welt_puls($ich, $d) {
     $antwort['neu_leiter'] = $neu_leiter;
     $antwort['version'] = $antwort['welt']['version'];
     $antwort['ereignisse'] = $sys ? [] : $l->ereignisse_abholen($uid);   // (schon verbuchte, noch nicht gesicherte überspringt das Handy)
-    $antwort['spieler'] = $l->spieler_liste((int)($d['spieler_seit'] ?? 0), $sys);
+    $antwort['spieler'] = $l->spieler_liste((int)($d['spieler_seit'] ?? 0), $sys, !array_key_exists('spieler_alle', $d) || !empty($d['spieler_alle']));   // (auch der Weltrechner: die ganze Liste nur alle 10 s)
     if (!$sys && !empty($d['befehle'])) $antwort['befehle_ok'] = $befehle_ok;
     if (!$sys && isset($profil_ok)) $antwort['profil_ok'] = $profil_ok;
     $antwort['zeit'] = $jetzt;

@@ -103,39 +103,47 @@
         return count($da);
     }
     // ===== Sicherungen der Welt =====
+    // $konten (6.10., einmal am Tag – wachhund.php): dazu die Spielerkonten (ow_spieler; Passwörter nur als gespeicherte Prüfwerte
+    // pw_hash) und die privaten Spielstände (ow_spielstand/ow_bots der Spieler) – aus demselben festen Stand wie die Welt.
     public $sicherung_info = null;   // (für das Log des Wachhunds: Dauer, Größe)
-    function sicherung_anlegen($behalten_bis = 0) {   // behalten_bis (Unix-Zeit): so lange nicht wegräumen (Saison-Sicherung: 2 Wochen)
+    function sicherung_anlegen($behalten_bis = 0, $konten = false) {   // behalten_bis (Unix-Zeit): so lange nicht wegräumen (Saison-Sicherung: 2 Wochen)
         $t0 = microtime(true);
-        // beide Tabellen aus demselben Stand (fester Stand statt Welt-Sperre: der Weltrechner muss nicht warten)
-        [$sp, $bo, $v] = $this->fest_lesen(function () {
+        // alle Tabellen aus demselben Stand (fester Stand statt Welt-Sperre: der Weltrechner muss nicht warten)
+        [$sp, $bo, $v, $k] = $this->fest_lesen(function () use ($konten) {
             return [$this->db->query('SELECT schluessel, wert FROM ow_spielstand WHERE spieler_id = 0')->fetchAll(),
                 $this->db->query('SELECT bot_id, nr, stufe, muenzen, anzahl_basen, basen, zustand FROM ow_bots WHERE spieler_id = 0')->fetchAll(),
-                $this->db->query('SELECT version FROM ow_welt_info WHERE id = 1')->fetchColumn()];   // welcher Welt-Stand das ist
+                $this->db->query('SELECT version FROM ow_welt_info WHERE id = 1')->fetchColumn(),   // welcher Welt-Stand das ist
+                $konten ? ['spieler' => $this->db->query('SELECT * FROM ow_spieler ORDER BY id')->fetchAll(),
+                    'staende' => $this->db->query('SELECT spieler_id, schluessel, wert FROM ow_spielstand WHERE spieler_id > 0')->fetchAll(),
+                    'bots' => $this->db->query('SELECT spieler_id, bot_id, nr, stufe, muenzen, anzahl_basen, basen, zustand FROM ow_bots WHERE spieler_id > 0')->fetchAll()] : null];
         });
         if (!sicherung_gueltig(['spielstand' => $sp, 'bots' => $bo])) return 0;   // eine leere/kaputte Welt verdrängt nie eine gute Sicherung
-        $j = json_encode(['spielstand' => $sp, 'bots' => $bo, 'version' => (int)$v], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        unset($sp, $bo);   // (Speicher früh freigeben)
+        $d = ['spielstand' => $sp, 'bots' => $bo, 'version' => (int)$v]; if ($k !== null) $d['konten'] = $k;
+        unset($sp, $bo, $k);   // (Speicher früh freigeben)
+        $j = json_encode($d, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE); unset($d);   // (ein alter Name mit kaputtem UTF-8 verhindert nie die ganze Sicherung)
         if ($j === false) return 0;
         $roh = strlen($j);
         $gz = gzencode($j, 3); unset($j);   // (Stufe 3: kaum größer als 6, aber viel weniger Rechenzeit auf dem geteilten Server)
         if ($gz === false || gzdecode($gz) === false) return 0;   // (nur ganz lesbare Sicherungen)
-        $this->db->prepare('INSERT INTO ow_sicherungen (groesse, daten, behalten_bis) VALUES (?, ?, ?)')->execute([strlen($gz), $gz, (int)$behalten_bis]);
+        $this->db->prepare('INSERT INTO ow_sicherungen (groesse, daten, behalten_bis, konten) VALUES (?, ?, ?, ?)')->execute([strlen($gz), $gz, (int)$behalten_bis, $konten ? 1 : 0]);
         $id = (int)$this->db->lastInsertId();
         $this->db->exec('DELETE FROM ow_sicherungen WHERE id <= ' . ($id - 48) . ' AND behalten_bis < ' . time());   // die letzten 48 bleiben (und die Saison-Sicherung 2 Wochen)
-        $this->sicherung_info = ['ms' => (int)round((microtime(true) - $t0) * 1000), 'roh' => $roh, 'gz' => strlen($gz)];
+        $this->sicherung_info = ['ms' => (int)round((microtime(true) - $t0) * 1000), 'roh' => $roh, 'gz' => strlen($gz), 'konten' => (bool)$konten];
         return $id;
     }
-    function letzte_sicherung_zeit() { return (int)$this->db->query('SELECT UNIX_TIMESTAMP(MAX(erstellt)) FROM ow_sicherungen')->fetchColumn(); }
-    function sicherungen_liste() { return $this->db->query('SELECT id, erstellt, groesse, behalten_bis FROM ow_sicherungen ORDER BY id DESC')->fetchAll(); }
+    function letzte_sicherung_zeit($konten = false) { return (int)$this->db->query('SELECT UNIX_TIMESTAMP(MAX(erstellt)) FROM ow_sicherungen' . ($konten ? ' WHERE konten = 1' : ''))->fetchColumn(); }
+    function sicherungen_liste() { return $this->db->query('SELECT id, erstellt, groesse, behalten_bis, konten FROM ow_sicherungen ORDER BY id DESC')->fetchAll(); }
     // Eine Sicherung zurückspielen (der Weltrechner muss dafür aus sein). Alle Teile bekommen eine neue Version → alle laden neu.
     // Vorher wird der jetzige Stand selbst gesichert (nichts geht still verloren – auch das Zurückspielen lässt sich zurückspielen).
     // Bereits ausgeführte Befehle bleiben quittiert (sie laufen nie ein zweites Mal), nicht ausgeführte warten weiter;
     // Auszahlungen, die der Weltrechner danach nochmal macht, haben feste Nummern und kommen nicht doppelt an.
-    function sicherung_zurueck($id) {
-        $q = $this->db->prepare('SELECT daten FROM ow_sicherungen WHERE id = ?'); $q->execute([(int)$id]);
-        $d = json_decode((string)@gzdecode((string)$q->fetchColumn()), true);
-        if (!sicherung_gueltig($d)) return false;
-        $vorher = $this->sicherung_anlegen();   // der jetzige Stand – ist er selbst kaputt (oft der Grund fürs Zurückspielen), gibt es keine
+    // $alles (6.10., nur mit Rückfrage im Admin, nur Sicherungen mit Konten): dazu die Spielerkonten und privaten Spielstände
+    // (konten_zurueck). Ohne: nur die Welt wie bisher – die Spielstände der Spieler bleiben.
+    function sicherung_zurueck($id, $alles = false) {
+        $q = $this->db->prepare('SELECT daten, erstellt FROM ow_sicherungen WHERE id = ?'); $q->execute([(int)$id]); $z = $q->fetch() ?: ['daten' => '', 'erstellt' => ''];
+        $d = json_decode((string)@gzdecode((string)$z['daten']), true); $damals = (string)$z['erstellt']; unset($z);
+        if (!sicherung_gueltig($d) || ($alles && !konten_gueltig($d['konten'] ?? null))) return false;
+        $vorher = $this->sicherung_anlegen(0, $alles);   // der jetzige Stand (bei „alles“ mit Konten) – ist er selbst kaputt (oft der Grund fürs Zurückspielen), gibt es keine
         if (!$vorher) error_log('Open Water: Zurückspielen ohne Vorab-Sicherung – der jetzige Stand ist nicht vollständig');   // Sicherung davon, aber das Zurückspielen geht
         $this->welt_sperren();
         try {
@@ -157,11 +165,46 @@
         // Alles andere (Angriffe, Märsche …) bleibt erledigt – die Welt ist eben wieder auf dem Stand von damals.
         // Nur die der Weltrechner damals angenommen hat (ok) – die laufen jetzt OHNE nochmal zu bezahlen (nach): bezahlt hat er schon,
         // und das Hauptbuch wird gerade an seinen Spielstand angeglichen (der die Zahlung schon enthält).
-        if (isset($d['version'])) $this->db->prepare("UPDATE ow_befehle SET fertig = 0, fertig_v = NULL, nach = 1 WHERE fertig = 1 AND ok = 1 AND fertig_v > ? AND art IN ('" . implode("','", BEFEHLE_BEZAHLT) . "')")->execute([(int)$d['version']]);
+        // Bei „alles“ von den zurückgespielten Spielern nur die vor der Sicherung gegebenen: nur deren Zahlung steckt in ihrem Spielstand
+        // von damals (spätere siehe konten_zurueck). Wer seitdem neu ist, behält seinen Spielstand – bei ihm wie bisher.
+        $wer = $alles ? implode(',', array_map(function ($z) { return (int)$z['id']; }, $d['konten']['spieler'])) : '';
+        if (isset($d['version'])) $this->db->prepare("UPDATE ow_befehle SET fertig = 0, fertig_v = NULL, nach = 1 WHERE fertig = 1 AND ok = 1 AND fertig_v > ? AND art IN ('" . implode("','", BEFEHLE_BEZAHLT) . "')" . ($alles ? " AND (erstellt <= ? OR spieler_id NOT IN ($wer))" : ''))->execute($alles ? [(int)$d['version'], $damals] : [(int)$d['version']]);
+        if ($alles) $this->konten_zurueck($d['konten'], $damals);
         $this->db->commit();
         } catch (Throwable $e) { if ($this->db->inTransaction()) $this->db->rollBack(); $this->welt_entsperren(); throw $e; }   // ganz oder gar nicht
         $this->welt_entsperren();
         return true;
+    }
+    // Spielerkonten + private Spielstände aus einer Sicherung von $damals (in der Transaktion von sicherung_zurueck). Wer damals
+    // schon da war, bekommt Konto und Spielstand von damals; wer sich seitdem angemeldet hat, bleibt unverändert. Nur Spalten, die es
+    // heute noch gibt. Offene Spiele dieser Spieler müssen neu laden (spiel_token leer → „anderswo geöffnet“) – sonst schickte ein
+    // offenes Handy seinen neueren Stand über den zurückgespielten. Genau einmal, bezogen auf den Stand von damals:
+    //   - Nachrichten von damals, die sein Spielstand noch nicht verbucht hatte (Nummer über der höchsten in openWaterEreignisFertig),
+    //     kommen wieder; spätere gehören zur zurückgedrehten Welt und verfallen
+    //   - seine Befehle seit damals, die noch nicht ausgeführt sind, verfallen (ihre Zahlung ist mit dem Spielstand zurückgedreht)
+    function konten_zurueck($k, $damals) {
+        $q = $this->db->query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'ow_spieler'");
+        $heute = array_flip($q->fetchAll(PDO::FETCH_COLUMN)); $ids = [];
+        foreach ($k['spieler'] as $z) {
+            $z = array_intersect_key($z, $heute); unset($z['spiel_token'], $z['speicher_nr']);
+            $sp = array_keys($z); $ids[] = (int)$z['id'];
+            $this->db->prepare('INSERT INTO ow_spieler (' . implode(', ', $sp) . ', spiel_token, speicher_nr) VALUES (' . implode(', ', array_fill(0, count($sp), '?')) . ", '', 0)"
+                . ' ON DUPLICATE KEY UPDATE ' . implode(', ', array_map(function ($c) { return "$c = VALUES($c)"; }, array_diff($sp, ['id']))) . ", spiel_token = '', speicher_nr = 0")->execute(array_values($z));
+        }
+        $in = implode(',', $ids);
+        $this->db->exec("DELETE FROM ow_spielstand WHERE spieler_id IN ($in)");
+        $this->db->exec("DELETE FROM ow_bots WHERE spieler_id IN ($in)");
+        $s = $this->db->prepare('INSERT INTO ow_spielstand (spieler_id, schluessel, wert) VALUES (?, ?, ?)'); $fertig = [];
+        foreach ($k['staende'] as $z) if (in_array((int)$z['spieler_id'], $ids, true)) {
+            $s->execute([(int)$z['spieler_id'], $z['schluessel'], $z['wert']]);
+            if ($z['schluessel'] === 'openWaterEreignisFertig') $fertig[(int)$z['spieler_id']] = max(array_merge([0], array_map('intval', (array)json_decode($z['wert'], true))));
+        }
+        $b = $this->db->prepare('INSERT INTO ow_bots (spieler_id, bot_id, nr, stufe, muenzen, anzahl_basen, basen, zustand) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+        foreach ($k['bots'] as $z) if (in_array((int)$z['spieler_id'], $ids, true)) $b->execute([(int)$z['spieler_id'], $z['bot_id'], $z['nr'], $z['stufe'], $z['muenzen'], $z['anzahl_basen'], $z['basen'], $z['zustand']]);
+        $wieder = $this->db->prepare('UPDATE ow_ereignisse SET abgeholt = 0 WHERE spieler_id = ? AND id > ? AND erstellt <= ?');
+        foreach ($ids as $uid) $wieder->execute([$uid, $fertig[$uid] ?? 0, $damals]);
+        $this->db->prepare("UPDATE ow_ereignisse SET abgeholt = 1 WHERE spieler_id IN ($in) AND erstellt > ?")->execute([$damals]);
+        $this->db->prepare("UPDATE ow_befehle SET fertig = 1 WHERE fertig = 0 AND spieler_id IN ($in) AND erstellt > ?")->execute([$damals]);
     }
     // Wie groß wäre der Spielstand eines Spielers mit diesen neuen Teilen? (Bytes)
     function groesse_nach($uid, $setzen) {
