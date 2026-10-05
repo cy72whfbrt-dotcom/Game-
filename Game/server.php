@@ -456,7 +456,7 @@ function weltrechner_seite($sys) {
 
 // ===== MySQL =====
 class MysqlLager {
-    const TABELLEN_STAND = '2026-10-03h';   // (siehe Konstruktor)
+    const TABELLEN_STAND = '2026-10-05s';   // (siehe Konstruktor)
     private $db;
     // Transaktionen (auch verschachtelt): was zusammengehört, gilt ganz oder gar nicht – stirbt PHP mittendrin, nimmt die Datenbank
     // alles zurück (z. B. Welt + Nachrichten + Quittungen des Weltrechners, Spielstand + „verbucht“ eines Spielers)
@@ -593,7 +593,8 @@ class MysqlLager {
         // art: welche Art (bezahlte verfallen nie unbemerkt), fertig_v: Welt-Version, mit der die Wirkung gespeichert wurde (Zurückspielen)
         foreach (['ow_befehle' => ['cid' => 'VARCHAR(24) NULL', 'fertig' => 'TINYINT UNSIGNED NOT NULL DEFAULT 0', 'art' => 'VARCHAR(16) NULL', 'fertig_v' => 'BIGINT UNSIGNED NULL', 'ok' => 'TINYINT UNSIGNED NOT NULL DEFAULT 0', 'nach' => 'TINYINT UNSIGNED NOT NULL DEFAULT 0'],
                   'ow_ereignisse' => ['mid' => 'VARCHAR(24) NULL', 'abgeholt' => 'TINYINT UNSIGNED NOT NULL DEFAULT 0'],
-                  'ow_push' => ['sitzung' => "CHAR(64) NOT NULL DEFAULT ''"]] as $tab => $spalten) {   // (sitzung: mit welchem Login das Gerät eingetragen ist – Abmelden trägt es aus)
+                  'ow_push' => ['sitzung' => "CHAR(64) NOT NULL DEFAULT ''"],
+                  'ow_sicherungen' => ['behalten_bis' => 'INT UNSIGNED NOT NULL DEFAULT 0']] as $tab => $spalten) {   // (behalten_bis: die Saison-Sicherung bleibt 2 Wochen)   // (sitzung: mit welchem Login das Gerät eingetragen ist – Abmelden trägt es aus)
             $q = $this->db->prepare("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?"); $q->execute([$tab]);
             $hat = $q->fetchAll(PDO::FETCH_COLUMN);
             foreach ($spalten as $sp => $typ) if (!in_array($sp, $hat, true)) $this->db->exec("ALTER TABLE $tab ADD COLUMN $sp $typ");
@@ -902,7 +903,7 @@ class MysqlLager {
     }
     // ===== Sicherungen der Welt =====
     public $sicherung_info = null;   // (für das Log des Wachhunds: Dauer, Größe)
-    function sicherung_anlegen() {
+    function sicherung_anlegen($behalten_bis = 0) {   // behalten_bis (Unix-Zeit): so lange nicht wegräumen (Saison-Sicherung: 2 Wochen)
         $t0 = microtime(true);
         // beide Tabellen aus demselben Stand (fester Stand statt Welt-Sperre: der Weltrechner muss nicht warten)
         [$sp, $bo, $v] = $this->fest_lesen(function () {
@@ -917,14 +918,14 @@ class MysqlLager {
         $roh = strlen($j);
         $gz = gzencode($j, 3); unset($j);   // (Stufe 3: kaum größer als 6, aber viel weniger Rechenzeit auf dem geteilten Server)
         if ($gz === false || gzdecode($gz) === false) return 0;   // (nur ganz lesbare Sicherungen)
-        $this->db->prepare('INSERT INTO ow_sicherungen (groesse, daten) VALUES (?, ?)')->execute([strlen($gz), $gz]);
+        $this->db->prepare('INSERT INTO ow_sicherungen (groesse, daten, behalten_bis) VALUES (?, ?, ?)')->execute([strlen($gz), $gz, (int)$behalten_bis]);
         $id = (int)$this->db->lastInsertId();
-        $this->db->exec('DELETE FROM ow_sicherungen WHERE id <= ' . ($id - 48));   // die letzten 48 bleiben
+        $this->db->exec('DELETE FROM ow_sicherungen WHERE id <= ' . ($id - 48) . ' AND behalten_bis < ' . time());   // die letzten 48 bleiben (und die Saison-Sicherung 2 Wochen)
         $this->sicherung_info = ['ms' => (int)round((microtime(true) - $t0) * 1000), 'roh' => $roh, 'gz' => strlen($gz)];
         return $id;
     }
     function letzte_sicherung_zeit() { return (int)$this->db->query('SELECT UNIX_TIMESTAMP(MAX(erstellt)) FROM ow_sicherungen')->fetchColumn(); }
-    function sicherungen_liste() { return $this->db->query('SELECT id, erstellt, groesse FROM ow_sicherungen ORDER BY id DESC')->fetchAll(); }
+    function sicherungen_liste() { return $this->db->query('SELECT id, erstellt, groesse, behalten_bis FROM ow_sicherungen ORDER BY id DESC')->fetchAll(); }
     // Eine Sicherung zurückspielen (der Weltrechner muss dafür aus sein). Alle Teile bekommen eine neue Version → alle laden neu.
     // Vorher wird der jetzige Stand selbst gesichert (nichts geht still verloren – auch das Zurückspielen lässt sich zurückspielen).
     // Bereits ausgeführte Befehle bleiben quittiert (sie laufen nie ein zweites Mal), nicht ausgeführte warten weiter;
@@ -1287,6 +1288,7 @@ function name_anfrage($ich, $d) {
 // Antwort:  {leiter, version, welt:{setzen,loeschen}, befehle:[{von,b}] (nur Weltrechner), ereignisse:[…], spieler:[…]}
 // Weltrechner ist nur der Server-Weltrechner (weltrechner/start.js) – nie das Gerät eines Spielers.
 const LEITER_SEK = 12;
+const SAISON_SICHERUNG_SEK = 14 * 86400;   // die Sicherung vor einer neuen Welt-Saison bleibt 2 Wochen (Alexander 5.10.)
 // Eine Sicherung ist nur gültig, wenn sie ganz ist: Welt-Teile (Schlüssel + gültiges JSON) und Mitspieler vorhanden.
 function sicherung_gueltig($d) {
     if (!is_array($d) || empty($d['spielstand']) || !is_array($d['spielstand']) || empty($d['bots']) || !is_array($d['bots'])) return false;
@@ -1364,7 +1366,7 @@ function welt_puls($ich, $d) {
     $antwort = [];
     // Welt-Saison: vor dem Reset immer eine Sicherung der Welt, wie sie jetzt in der Datenbank steht (der Weltrechner fragt danach und
     // setzt die Welt erst zurück, wenn hier eine Nummer > 0 zurückkommt; 0 = nicht geklappt, er fragt später nochmal)
-    if ($sys && !empty($d['sicherung'])) { try { $antwort['sicherung'] = (int)$l->sicherung_anlegen(); } catch (Throwable $e) { error_log('Open Water: Saison-Sicherung: ' . $e->getMessage()); $antwort['sicherung'] = 0; } }
+    if ($sys && !empty($d['sicherung'])) { try { $antwort['sicherung'] = (int)$l->sicherung_anlegen(time() + SAISON_SICHERUNG_SEK); } catch (Throwable $e) { error_log('Open Water: Saison-Sicherung: ' . $e->getMessage()); $antwort['sicherung'] = 0; } }
     $l->tx_anfang();   // Welt + Nachrichten + Sicht + Quittungen: ganz oder gar nicht
     try {
     if ($sys && isset($d['welt'])) {   // nur der Weltrechner darf die Welt schreiben (Leiter oder mit dem neuesten Stand – siehe oben)

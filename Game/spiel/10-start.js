@@ -1033,7 +1033,7 @@ if (window.WELT) {
         if (k.has('openWaterBarbWho')) barbWho = PJ('openWaterBarbWho') || {};
         if (k.has('openWaterDayBoss')) dayBoss = PJ('openWaterDayBoss');
         if (k.has('openWaterEvents')) evState = PJ('openWaterEvents') || {};
-        if (k.has('openWaterSaison')) saisonLaden();                       // Welt-Saison: Termin, Countdown
+        if (k.has('openWaterSaison')) { saisonLaden(); saisonWeltZurueck(); }   // Welt-Saison: Termin, Countdown (ältere Saison: Sicherung zurückgespielt → neu laden)
         if (k.has('openWaterArmies')) { const a = PJ('openWaterArmies') || {}; armies = a.armies || []; armyJoins = a.joins || []; armyRaids = a.raids || []; }
         if (k.has('openWaterBotState')) { if (botSaveTimer) { clearTimeout(botSaveTimer); botSaveTimer = null; } botState = null; loadBotState(); }
         if (k.has('openWaterBotCoins')) { botCoins = PJ('openWaterBotCoins') || {}; for (const bot of BOT_DEFS) if (!botCoins[bot.id]) botCoins[bot.id] = 0; }

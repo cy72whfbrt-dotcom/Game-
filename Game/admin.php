@@ -211,7 +211,7 @@ function zahl($n) { return $n === null ? '–' : number_format((float)$n, 0, ','
   <form method="post" style="margin-top:10px" data-frage="Wirklich? Die Welt springt auf diesen Stand zurück. Was seitdem in der Welt passiert ist, ist weg (die Spielstände der Spieler bleiben).">
     <input type="hidden" name="zeichen" value="<?= h($zeichen) ?>"><input type="hidden" name="nr" value="<?= h($formNr) ?>"><input type="hidden" name="was" value="wr_sicherung">
     <label for="sicherung">Sicherung zurückspielen (jede Stunde eine, die letzten 48)</label>
-    <select id="sicherung" name="sicherung"><?php foreach ($wrSicherungen as $sc): ?><option value="<?= (int)$sc['id'] ?>"><?= h(date('d.m.Y H:i', strtotime($sc['erstellt']))) ?> (<?= round($sc['groesse'] / 1024) ?> KB)</option><?php endforeach; ?></select>
+    <select id="sicherung" name="sicherung"><?php foreach ($wrSicherungen as $sc): ?><option value="<?= (int)$sc['id'] ?>"><?= h(date('d.m.Y H:i', strtotime($sc['erstellt']))) ?> (<?= round($sc['groesse'] / 1024) ?> KB)<?= (int)($sc['behalten_bis'] ?? 0) > time() ? ' · Saison-Sicherung, bleibt bis ' . h(date('d.m.', (int)$sc['behalten_bis'])) : '' ?></option><?php endforeach; ?></select>
     <button class="rot">Zurückspielen</button>
   </form>
   <?php endif; ?>
