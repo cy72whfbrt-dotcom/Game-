@@ -209,8 +209,8 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Person höchstens alle 10 Min. (4) Login: die große Grenze pro Konto sperrt nicht, wo der Spieler in den letzten 24 Std.
   gespielt hat – ein Fremder sperrt nur sich selbst (nichts im Browser, gemerkt auf dem Server). (5) Abmelden trägt die
   Handy-Nachrichten dieses Geräts aus (Server: `ow_push.sitzung`, Handy: Abo + sw.js weg). Neuer Test rally_schild_test.
-  Fund auf der Karte: ein Befehl kommt immer über den Puls – wer schickt, ist „online“; offen bleibt nur ein Skript, das
-  rund um die Uhr läuft (höchstens 12 Funde in 10 Min.) – Frage an Alexander: Tagesgrenze?
+  Fund auf der Karte: „nur online“ hilft nicht (ein Befehl kommt immer über den Puls – wer schickt, ist online); darum
+  zusätzlich höchstens 300 Truppen-Funde am Tag (Alexanders Ja; ~7 Std. ohne Pause, gemerkt in der Welt `wache.fund`).
 - **4.10. Aufräumen:** unbenutzte CSS-Reste raus, wichtige Tests ins Projekt (`tests/browser/`, Start mit `tests/alle_tests.sh`).
 - **4.10. Server-Tests ins Projekt:** `tests/server/` + `tests/server_tests.sh <arbeitsordner>` (lokaler PHP-Server,
   MariaDB, Weltrechner): Absturz/Zurückspielen, Admin, Nebel, Bündnis-Kiste, Verstärkung, Klick-Test – alle grün.

@@ -1366,6 +1366,9 @@ if (window.WELT) {
             let r = Math.min(n, erlaubt), x = Math.min(r, m.w.vor); m.w.vor -= x; r -= x; m.w.u = Math.max(0, m.w.u - r);
         } else if (q === 'fund') {                     // Fund auf der Karte: höchstens 3 liegen herum, alle 20–45 s ein neuer
             if (zuOft(m, 'fund', 12, 600000)) { warnen(who, 'truppen', 'Zu viele Funde auf der Karte (über 12 in 10 Minuten) – abgelehnt.', b.n); return 0; }   // (echt: ~7 in 10 Min.)
+            const heute = todayKey(); if (!d.fund || d.fund.t !== heute) d.fund = { t: heute, n: 0 };   // höchstens 300 am Tag (Alexander 5.10.: ~7 Std. ohne Pause – gegen ein Skript rund um die Uhr; überlebt Neustarts)
+            if (d.fund.n >= 300) { if (d.fund.n === 300) warnen(who, 'truppen', 'Über 300 Funde auf der Karte an einem Tag – abgelehnt.', b.n); d.fund.n = 301; saveBotState(); return 0; }
+            d.fund.n++; saveBotState();
             erlaubt = Math.max(100, niceRound(levelRewardTroops(Math.max(m.lvl, 2)) * 0.05)) * 1.05 + 10;
         } else {                                       // Admin-Geschenk: nur so viel, wie der Admin geschickt hat
             if (n > nn(d.gTr) + 0.5 && !ende) return -1;
