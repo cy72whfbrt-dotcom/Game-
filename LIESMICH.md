@@ -733,6 +733,11 @@ Alles für heute Nacht kommt hier rein. Erst besprechen (Fragen an Alexander), d
 4. **Prüfen (Alexander):** Die Produktion im Profil muss genau die Summe der Basen sein – z. B. 2 Basen, Profil sagt
    10 Mio. → es kommen genau 10 Mio., nicht mehr und nicht weniger.
 2. Alexanders 3 Fehler (Abschnitt 11): Späher-Knöpfe, Angriff von der nächsten Basis, Spähbericht ohne Ausrüstung.
+   **Entschieden:** (1) Späher: hin Zurück + Schneller, heim Schneller (ab 500 Edelsteine „Wirklich?“).
+   (2) Startbasis: automatisch die nächste Basis mit **genug** Truppen (hat keine genug → die nächste mit den meisten);
+   **vorausgewählt**, der Spieler kann sie im Angriffsfenster aber ändern. (3) Spähbericht: Einzelheiten weiter nach
+   Wachturm-Stufe, aber was gezeigt wird, muss stimmen; was fehlt, wird **deutlich gekennzeichnet** („Wachturm-Stufe X
+   nötig“ statt leerer Plätze); Verteidigung aufgeschlüsselt wie im Kampfbericht; Alter des Berichts anzeigen.
 3. Ideen-Liste Teil 1 (32 Punkte) und Teil 2 (N1–N11) – Punkt für Punkt besprechen.
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
