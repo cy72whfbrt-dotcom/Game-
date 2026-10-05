@@ -732,6 +732,9 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
   Bestand. **Prüfen:** was im Profil steht, kommt genau so an (nicht mehr, nicht weniger), Tick-Länge
   (`productionTickMs`, Fähigkeit „Geschwindigkeit“) richtig eingerechnet.
 - Edelstein-Preise bleiben, **außer Kisten: 150 Edelsteine** (statt 30).
+- **Auch die Hauptstadt** (Alexander): ihre Produktion (Truppen, Gold, Holz/Stein/Eisen aus Holzfäller, Steinbruch,
+  Eisenmine) und die Kosten in der Stadt (Burg, Gebäude, Labor) passend mit umstellen – Beispiel 2 Türme je 100/Std.
+  → Profil 200/Std.; Macht = Bestand (Truppen + Verteidigung der Basen + Ausrüstung/Helden/Fähigkeiten/Stadt), nicht die Produktion.
 - Genaue Zahlen liefert der Sucher „Wirtschaft“; vor dem Bauen hier eintragen.
 
 **B. Alexanders 3 Fehler** (Einzelheiten Abschnitt 11)
