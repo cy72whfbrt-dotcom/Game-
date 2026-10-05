@@ -26,9 +26,10 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       // 2) Rahmen für 1000 Gems: erster Tipp fragt, Doppel-Tipp zählt nicht, zweiter Tipp nach >450 ms kauft
       closeAllPopups(); openLookSheet('frame'); await warte(300);
       const btn = document.querySelector('[data-lk="frame:diamond"]'), g0 = gems;
-      btn.click(); await warte(50); const frage = btn.textContent; btn.click(); await warte(50);
+      const echt = Date.now; let T = echt.call(Date); Date.now = () => T;   // eigene Uhr: unter Last zählt nicht, wie lange der Browser braucht
+      btn.click(); const frage = btn.textContent; T += 50; btn.click();
       const nachDoppel = { gems: gems === g0, gehoert: lkHas('frame', 'diamond') };
-      await warte(500); (document.querySelector('[data-lk="frame:diamond"]')).click(); await warte(100);
+      T += 600; document.querySelector('[data-lk="frame:diamond"]').click(); Date.now = echt;
       o.lk = { frage: /Wirklich\?/.test(frage) && /1\.000/.test(frage), nachDoppel, gekauft: lkHas('frame', 'diamond') && g0 - gems === 1000 };
       const g1 = gems; lkBuy('frame', 'silver'); o.lkKlein = lkHas('frame', 'silver') && g1 - gems === 200;   // unter 500: sofort
       document.getElementById('lookSheet').hidden = true;
@@ -37,12 +38,12 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       Object.assign(H[a], { own: true, q: HERO_MAXQ, sh: 30, sk: [2, 0, 0, 0] }); Object.assign(H[z], { own: false, q: 0, sh: 1 }); saveHeroes();
       const vorher = heroDoSwap('player', z, a, 1);
       openHeroHall(a); await warte(300);
-      const rs = document.querySelector('[data-hh-reset]'), g2 = gems; rs.click(); await warte(80);
-      const rsFrage = document.querySelector('[data-hh-reset]').textContent, rsNicht = heroSt('player', a).sk[0] === 2 && gems === g2;
-      await warte(450); document.querySelector('[data-hh-reset]').click(); await warte(100);
+      const rs = document.querySelector('[data-hh-reset]'), g2 = gems; let U = Date.now(); const echt2 = Date.now; Date.now = () => U;
+      rs.click(); const rsFrage = document.querySelector('[data-hh-reset]').textContent, rsNicht = heroSt('player', a).sk[0] === 2 && gems === g2;
+      U += 600; document.querySelector('[data-hh-reset]').click(); Date.now = echt2;   // gleich prüfen (ohne Pause: kein anderer Takt dazwischen)
       o.reset = { frage: /Wirklich\?/.test(rsFrage), rsNicht, zurueck: heroSt('player', a).sk[0] === 0 && g2 - gems === HERO_RESET_GEMS };
-      const sel = document.querySelector('[data-hh-swap-to]'), a0 = heroSt('player', a).sh, z0 = heroSt('player', z).sh; sel.value = z; document.querySelector('[data-hh-swap]').click(); await warte(100);
-      o.swap = { vorherNein: !vorher, a: heroSt('player', a).sh, dazu: heroSt('player', z).sh - z0 === a0 && a0 > 0, gems: gems === g2 - HERO_RESET_GEMS, zielOhneMax: ![...sel.options].some(x => x.value === a) };
+      const sel = document.querySelector('[data-hh-swap-to]'), a0 = heroSt('player', a).sh, z0 = heroSt('player', z).sh, g3 = gems; sel.value = z; document.querySelector('[data-hh-swap]').click();
+      o.swap = { vorherNein: !vorher, a: heroSt('player', a).sh, dazu: heroSt('player', z).sh - z0 === a0 && a0 > 0, gems: gems === g3, zielOhneMax: ![...sel.options].some(x => x.value === a) };
       await (async () => { const s = heroSt('player', a); s.sh = 5; saveHeroes(); renderHeroHall(); await warte(200); })();
       o.helden = document.getElementById('heroHall').scrollHeight > 0;
       return o;
