@@ -778,6 +778,11 @@ verständlich, übersichtlich, **weniger hin- und hertippen** – HUD, Leiste, a
 Namensfahnen an den Basen, gestrichelte Marschwege). Beispiele aus den Bildern 5.10. 21:20: Angriff/Abwehr-Karte wird
 beim Scrollen abgeschnitten; Namen auf der Karte immer abgeschnitten („[WEL] C…“); Kopfgeld liegt auf der Karte;
 Fenster nehmen den halben Bildschirm. Farben/Stil bleiben (das Design an sich gefällt).
+**Freie Hand (Alexander):** überall prüfen – Spiel, Fenster, Knöpfe, **auch Login/Startseite** – und verbessern, wo
+nötig; Knöpfe usw. frei gestalten. Pflicht: **wirklich übersichtlich, sortiert, nicht hin und her tippen müssen.**
+
+**H. Ganz zum Schluss:** wenn alles fertig ist, **alles komplett testen** (`tests/komplett.sh` + Spieltester auf Handy
+und Desktop über alle Fenster) – erst danach Alexander wegen Hochladen fragen.
 
 **G. Später (nicht heute Nacht): lebendige Welt** – Karte bleibt wie jetzt, dazu **einige** Berge/Felsen; Märsche laufen
 drumherum (Wege etwas länger, Basen dahinter etwas geschützter). Kommt mit dem Saison-Reset **nach** dem von heute
