@@ -295,7 +295,7 @@ function marsch_teil($k, $text, $ich, $eigen, $sieht = []) {
         $mein = null; foreach ((array)($v->b ?? []) as $aid => $a) if (is_object($a) && in_array($ich, (array)($a->mit ?? []), true)) $mein = (string)$aid;
         foreach ((array)($v->b ?? []) as $aid => $a) if (is_object($a) && (string)$aid !== $mein) unset($a->log, $a->sig);
         if (isset($v->r) && is_array($v->r)) foreach ($v->r as $r) if (is_object($r) && (string)($r->aid ?? '') !== $mein) {
-            $r->n0 = 0; unset($r->held, $r->held2); if (isset($r->j) && is_array($r->j)) foreach ($r->j as $j) if (is_object($j)) $j->n = 0; }
+            $r->n0 = 0; unset($r->held, $r->held2); if (isset($r->j) && is_array($r->j)) foreach ($r->j as $j) if (is_object($j)) { $j->n = 0; unset($j->held, $j->held2); } }
     } elseif ($k === 'openWaterVerstaerkung') {
         if (isset($v->l) && is_array($v->l)) $v->l = array_values(array_filter($v->l, function ($x) use ($wer, $ich, $eigen) { return is_object($x) && ($wer($x, 'w') === $ich || isset($eigen[(int)($x->t ?? -1)])); }));
     } elseif ($k === 'openWaterFields') {
@@ -307,13 +307,13 @@ function marsch_teil($k, $text, $ich, $eigen, $sieht = []) {
             if ($wer($e, 'attackerBotId') === $ich) continue;
             if (isset($e->rally) && is_object($e->rally) && isset($e->rally->an) && is_array($e->rally->an)) {   // gemeinsamer Angriff: die Zahlen sieht nur, wer dabei ist
                 $dabei = false; foreach ($e->rally->an as $x) if (is_array($x) && ($x[0] ?? '') === $ich) $dabei = true;
-                if (!$dabei) foreach ($e->rally->an as $i => $x) if (is_array($x)) { $e->rally->an[$i][2] = 0; unset($e->rally->an[$i][3], $e->rally->an[$i][4], $e->rally->an[$i][5]); }
+                if (!$dabei) foreach ($e->rally->an as $i => $x) if (is_array($x)) { $e->rally->an[$i][2] = 0; unset($e->rally->an[$i][3], $e->rally->an[$i][4], $e->rally->an[$i][5], $e->rally->an[$i][6], $e->rally->an[$i][7]); }
             }
             $kampf = !empty($e->fightEndsAt); $aufMich = isset($eigen[(int)($e->targetId ?? -1)]); $genau = $aufMich && $kampf;   // (kämpft er schon bei dir, siehst du seine Stärke – wie danach im Kampfbericht)
             $e->rawTroops = $genau ? ($e->rawTroops ?? 0) : 0;
             foreach (['hx', 'attackBonus', 'skillBonus', 'skillLvl', 'attackGoldRate', 'rewardGoldRate', 'shieldLossReductionPct', 'atkTitle', 'atkTitleKey', 'atkKraft', 'atkFo', 'planId', 'lastWave', 'heldBonus', 'heldVon'] as $f) unset($e->$f);
             if (!$genau) unset($e->hero, $e->hero2);
-        } elseif ($k === 'openWaterPendingSends') { if ($wer($e, 'senderBotId') !== $ich) $e->troops = 0; }
+        } elseif ($k === 'openWaterPendingSends') { if ($wer($e, 'senderBotId') !== $ich) { $e->troops = 0; unset($e->held, $e->held2); } }
         elseif ($k === 'openWaterPendingRetreats') { if ($wer($e, 'owner') !== $ich) $e->troops = 0; }
         else { if ($wer($e, 'who') !== $ich) { $e->troops = 0; unset($e->hero, $e->hero2, $e->load); } }
     }
