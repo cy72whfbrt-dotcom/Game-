@@ -1245,6 +1245,20 @@ if (window.WELT) {
     }
     // Münzen, die er ausgegeben hat und die kein Befehl abgeholt hat (nach 60 s) → Topf hb.cA (bezahlt Bauen/Forschen im Hauptbuch)
     function vorAltern(who, m, now) { if (m.c.vor > 0 && now - m.c.vorT > WACHE_WARTEN_MS) { const hb = hbDa(who); if (hb) hb.cA = nn(hb.cA) + m.c.vor; m.c.vor = 0; } }
+    // Nachrichten unterwegs (m.flug) zusammengezählt – für einen Neustart in der Welt gemerkt (bs.wache.fl, klein: nur die Summen)
+    function flugSumme(m) { const P = {}, M = {}; for (const f of m.flug) { for (const k in f.P) P[k] = (P[k] || 0) + f.P[k]; for (const k in f.M) M[k] = (M[k] || 0) + f.M[k]; } return { P, M }; }
+    function flugMerken(d, m) {
+        const { P, M } = flugSumme(m), rund = o => { const r = {}; for (const k of FLUG_K) if (o[k] >= 1) r[k] = Math.round(o[k]); return r; }, p = rund(P), mm = rund(M);
+        if (!Object.keys(p).length && !Object.keys(mm).length) { if (d.fl) delete d.fl; return; }
+        const t = m.flug.reduce((a, f) => Math.min(a, f.t), Infinity);
+        if (!d.fl || JSON.stringify(d.fl.P) !== JSON.stringify(p) || JSON.stringify(d.fl.M) !== JSON.stringify(mm)) d.fl = { t, P: p, M: mm };
+    }
+    function flugAus(fl, now) {                        // (nach dem Neustart) → ein Eintrag für m.flug – zählt wieder bis zwei Profile später
+        if (!fl || typeof fl !== 'object') return null; const t = zahlOk(fl.t) && fl.t <= now ? fl.t : now, P = {}, M = {};
+        if (now - t >= FLUG_MAX_MS) return null;
+        for (const k of FLUG_K) { if (zahlOk((fl.P || {})[k], 1e15)) P[k] = fl.P[k]; if (zahlOk((fl.M || {})[k], 1e15)) M[k] = fl.M[k]; }
+        return Object.keys(P).length || Object.keys(M).length ? { t, n: 0, P, M } : null;
+    }
     function wacheSehen(who) {
         const m = wm(who), p = profilVon(who), b = loadBotState()[who]; if (!b) return m;
         const now = Date.now(), d = wd(who), hb = b.hb && b.hb.v === HB_V ? b.hb : null;
@@ -1254,16 +1268,17 @@ if (window.WELT) {
             // Was der Weltrechner schon über ihn weiß, steht in der Welt (bs.wache) – das zählt mehr als sein Profil in der
             // Datenbank (das hat ja sein Handy geschickt). Nur wer noch nie gesehen wurde, wird einmal am Profil „geeicht“.
             m.geeicht = Number.isFinite(d.u);
-            m.c.u = p ? nn(p.coins) : nn(botCoins[who]); if (m.geeicht) m.c.u = Math.min(m.c.u, d.u) + m.hp0 * 0.25;   // (+ eine Viertelstunde: was zuletzt nicht mehr gespeichert wurde)
-            m.w.u = p ? nn(p.wounded) : nn(b.wounded); if (Number.isFinite(d.w)) m.w.u = Math.min(m.w.u, d.w) + 1000;
+            const fl = m.geeicht ? flugAus(d.fl, now) : null, fP = fl ? fl.P : {}; if (fl) m.flug = [fl];   // Nachrichten, die vor dem Neustart noch unterwegs waren (sein Profil kennt sie evtl. noch nicht)
+            m.c.u = p ? nn(p.coins) : nn(botCoins[who]); if (m.geeicht) m.c.u = Math.min(m.c.u + nn(fP.c), d.u) + m.hp0 * 0.25;   // (+ eine Viertelstunde: was zuletzt nicht mehr gespeichert wurde)
+            m.w.u = p ? nn(p.wounded) : nn(b.wounded); if (Number.isFinite(d.w)) m.w.u = Math.min(m.w.u + nn(fP.w), d.w) + 1000;
             const gHb = !!(hb && Number.isFinite(hb.gU));   // 3B: Gems wie die Münzen (das Hauptbuch weiß es besser als das Profil)
             m.g.u = gHb ? hb.gU : p ? nn(p.gems) : 0; m.gGeeicht = gHb || !!(p && p.gems != null);
-            if (m.geeicht && p && nn(p.coins) < d.u) { m.c.vor = d.u - nn(p.coins); m.c.vorT = now; }   // während der Weltrechner weg war ausgegeben: wie ein normaler Rückgang (bezahlt wartende Befehle – nie doppelt)
+            if (m.geeicht && p && nn(p.coins) + nn(fP.c) < d.u) { m.c.vor = d.u - nn(fP.c) - nn(p.coins); m.c.vorT = now; }   // während der Weltrechner weg war ausgegeben: wie ein normaler Rückgang (bezahlt wartende Befehle – nie doppelt; was noch unterwegs ist, hat er nicht ausgegeben)
             m.lvl = Number.isFinite(d.lm) && d.lm >= 1 ? d.lm : Math.max(1, Math.floor(nn(p ? p.lvl : b.lvl) || 1));
             m.xpRest = xpNeededForLevel(m.lvl) - 1;    // wie voll sein Balken ist, weiß niemand: voll (großzügig)
             m.lvlLog = [{ t: now, l: m.lvl }];
             m.rEin = []; m.rk = null; try { m.rHp0 = AUF ? AUF.rohStunde(who) : null; } catch (e) { m.rHp0 = null; }
-            if (hb && hb.rU) { m.rk = {}; for (const k of ROHK) { m.rk[k] = konto(); m.rk[k].u = nn(hb.rU[k]); } }   // (3B: was der Weltrechner weiß – gleich ab jetzt mitzählen)
+            if (hb && hb.rU) { m.rk = {}; for (const k of ROHK) { m.rk[k] = konto(); m.rk[k].u = nn(hb.rU[k]); } m.rkNeu = true; }   // (3B: was der Weltrechner weiß – gleich ab jetzt mitzählen; das Profil prüft hbKlemmen einmal dagegen)
             else if (p && p.res) rohWacheProfil(who, m, p, {}, {}, now);
         }
         m.flug = m.flug.filter(f => !(f.n >= 2 && now - f.t > FLUG_MS) && now - f.t < FLUG_MAX_MS);   // angekommen (zwei Profile später) oder uralt
@@ -1310,13 +1325,14 @@ if (window.WELT) {
                 if (mg > 0) {
                     const roh = mg;
                     for (const q of ['gIn', 'sternG']) { const x = Math.min(mg, nn(hb[q])); hb[q] = nn(hb[q]) - x; mg -= x; }
+                    mg -= hbSplitterGems(hb, p, mg);
                     { const x = Math.min(mg, nn(hb.fr.g)); hb.fr.g -= x; mg -= x; }
                     if (mg >= 1) { m.g.u = pg - mg; warnen(who, 'gems', 'Gems springen: +' + fz(roh) + ' mehr als erwartet, möglich wären höchstens +' + fz(roh - mg) + '.', mg); }
                 }
             }
             rohWacheProfil(who, m, p, P, M, now);
         }
-        if (m.geeicht) { d.u = Math.round(m.c.u); d.w = Math.round(m.w.u); }   // für den nächsten Start merken (geht mit der Welt mit)
+        if (m.geeicht) { d.u = Math.round(m.c.u); d.w = Math.round(m.w.u); flugMerken(d, m); }   // für den nächsten Start merken (geht mit der Welt mit)
         if (hb && m.gGeeicht && now - (m.hbMerkT || 0) > 60000) hbKontenMerken(hb, m, now);   // (3B: höchstens jede Minute – sonst ginge das Hauptbuch bei jedem Puls über die Leitung)
         d.lm = m.lvl;
         return m;
@@ -1491,6 +1507,19 @@ if (window.WELT) {
     const hbPunkteGrenze = N => 25.6 * N + 300;      // Stufen-Punkte (aus verkauften Teilen): Ø 12,8 je Kiste, doppelt + Start
     const hbLvlPunkte = l => 2.5 * l * (l - 1);       // Stufe 1 → l kostet 5 + 10 + … Punkte
     const hbItemWert = z => (z[0] * ITEM_MAX_LEVEL + z[1]) * (1 + z[2] * STAR_PCT / 100);
+    // Alle Helden voll (5 Sterne): neue Splitter kommen als Gems (06-alltag.js: 20 je Splitter – Abholfach, Aufgaben, Wochenkette,
+    // Pass). → so viele Gems, wie seine unverbrauchten Splitter (sicher hb.shB, Spielraum hb.fr.sh) hergeben; die sind dann weg.
+    // (Gilt auch, wenn erst sein Profil die Helden voll zeigt: mehr als 20 Gems je echtem Splitter gibt es so nie – Splitter kosten mehr.)
+    const HB_VOLL_G = 20;
+    function hbSplitterGems(hb, p, mg) {
+        if (!(mg > 0)) return 0;
+        const voll = z => !!(z && z[0] && z[1] >= HERO_MAXQ), alle = f => HEROES.every(h => voll(f(h.id)));
+        if (!alle(id => hb.hs[id]) && !(p && p.hs && typeof p.hs === 'object' && alle(id => p.hs[id] ? hbHeldZeile(p.hs[id]) : null))) return 0;
+        const frei = Math.max(0, nn(hb.shB) - (hbHeldenWert(hb.hs) - hbE0f())), fr = Math.max(0, nn(hb.fr.sh));
+        const x = Math.min(mg, HB_VOLL_G * (frei + fr)); if (!(x > 0)) return 0;
+        let sh = x / HB_VOLL_G; const a = Math.min(sh, fr); hb.fr.sh = nn(hb.fr.sh) - a; sh -= a; hb.shB = nn(hb.shB) - sh;
+        return x;
+    }
     function hbKisteDazu(hb, minR) { hb.kN = nn(hb.kN) + 1; if (minR >= 3) hb.kG = nn(hb.kG) + kWert(minR); }
     function hbNeu(who, now, p, frisch) {
         const hb = { v: HB_V, t0: frisch ? now : 0, st: {}, fo: {}, foT: frisch ? now : 0, tb: 1, gear: {}, kN: 0, kG: 0, hs: hbHeldenStart(), shB: 0,
@@ -1510,8 +1539,16 @@ if (window.WELT) {
     }
     // Spielraum wächst mit der Zeit (je Quelle die Tages-Grenze), dazu Erfolge, Stufen-Gems und der Saison-Pass
     function hbKontenMerken(hb, m, now) { m.hbMerkT = now; hb.gU = Math.round(m.g.u); if (m.rk) hb.rU = { h: Math.round(m.rk.h.u), s: Math.round(m.rk.s.u), e: Math.round(m.rk.e.u) }; saveBotState(); }   // (für einen Neustart)
+    // Thron-Shop (06-alltag.js THRONE_OFFERS): jede Ausrüstungskiste 60 Punkte, jede Königliche (mind. Episch) 400. Großzügig: seine
+    // Thron-Punkte (zählt der Weltrechner selbst) zählen für beides – sonst gibt eine gekaufte Kiste einen falschen Alarm
+    const hbThronPreis = (id, sonst) => { const o = typeof THRONE_OFFERS !== 'undefined' && THRONE_OFFERS.find(x => x.id === id); return o && o.cost > 0 ? o.cost : sonst; };
+    function hbThronKisten(hb, E) {
+        const d = nn(E) - nn(hb.thK); if (!(d > 0)) return; hb.thK = nn(E);
+        hb.fr.k = nn(hb.fr.k) + d / hbThronPreis('crate', 60); hb.fr.kg = nn(hb.fr.kg) + kWert(3) * d / hbThronPreis('royal', 400);
+    }
     function hbFreiDazu(who, hb, now) {
-        const dt = Math.min(HB_KAPPE_TAGE * TAG, now - nn(hb.frT)); if (dt < 300000) return; hb.frT = now;   // (in 5-Minuten-Schritten: das Hauptbuch ändert sich nicht bei jedem Profil)
+        try { hbThronKisten(hb, throneEarnedOf(who)); } catch (e) {}   // (bei jedem Profil – eine gerade gekaufte Kiste soll nicht 5 Min. warten)
+        const dt =Math.min(HB_KAPPE_TAGE * TAG, now - nn(hb.frT)); if (dt < 300000) return; hb.frT = now;   // (in 5-Minuten-Schritten: das Hauptbuch ändert sich nicht bei jedem Profil)
         const f = hb.fr, on = !!(WELT.menschen[who] && WELT.menschen[who].online), t = dt / TAG;
         const dazu = (k, v, kappe) => { const vorher = nn(f[k]); f[k] = Math.max(vorher, Math.min(vorher + v, kappe)); };
         const heute = todayKey(); if (!hb.gOn || hb.gOn.t !== heute) hb.gOn = { t: heute, n: 0 };   // Karten-Funde höchstens ~7 Std. am Tag (wie die Truppen-Funde: 300 am Tag – gegen ein Skript rund um die Uhr)
@@ -1755,7 +1792,7 @@ if (window.WELT) {
                 if (b.hb) { delete b.hb.gU; delete b.hb.rU; } }
             if (n) { saveBotState(); console.log('Zurückgespielt: Hauptbuch von ' + n + ' Spielern wird an ihre Spielstände angeglichen'); } }
     }
-    WELT.kontoMuenzen = who => { const m = wm(who); return m.init ? m.c.u + m.c.vor : Infinity; };
+    WELT.kontoMuenzen = who => { const m = wacheSehen(who); return m.init ? m.c.u + m.c.vor : 0; };   // (noch nie gesehen: jetzt ansehen – nie ungeprüft das Profil; ohne Mitspieler-Datensatz hat er keine Münzen in der Welt)
     WELT.hauptbuch = who => hbDa(who);                // (für Tests und die Admin-Ansicht)
 
     // ===== Nebel auf dem Server (3B) =====
