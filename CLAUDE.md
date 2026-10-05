@@ -28,6 +28,13 @@ Alles Wichtige steht in `LIESMICH.md` – jede Änderung wird dort eingetragen.
   `zugang.env` mit `OW_ADMIN_NAME`, `OW_ADMIN_PW`, `OW_TEST_PW` (nie ins Git). Kopiert `Game/`, startet den
   Weltrechner neu, am Ende „ALLES OK“. Einzelne Tests: Namen dahinter schreiben. Mehr im Kopf des Skripts.
 
+## Arbeitsweise (Alexander 5.10.: „schneller, effizient, richtig“)
+- Erst EINMAL alles sammeln (mehrere Agenten gleichzeitig suchen, je ein Bereich), daraus EINE Liste; offene Fragen auf
+  einmal an Alexander. Dann in einem Rutsch abarbeiten – nicht Stück für Stück immer Neues anfangen.
+- So viele Agenten parallel wie sinnvoll: je Agent eine Aufgabe, getrennte Dateien (sonst eigene Kopie: Worktree).
+  Claude ist Aufpasser: verteilt Aufgaben, prüft alle 5 Min. (Wecker), treibt langsame Agenten an, führt Ergebnisse zusammen.
+- Einmal am Ende komplett testen (`tests/komplett.sh`), dann Alexander wegen Hochladen fragen.
+
 ## Regeln von Alexander
 - Code zuerst auf GitHub (Branch `claude/neues-projekt-8agldl`), **vor jedem Hochladen Alexander fragen**
   (`./hochladen.sh`, nur nach seinem Ja).
