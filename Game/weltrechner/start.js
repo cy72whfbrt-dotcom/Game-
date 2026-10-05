@@ -129,7 +129,12 @@ async function holen(url, opt) {
     const ziel = new URL(url, URL_BASIS + 'spiel.php').href;
     if (!ziel.startsWith(URL_BASIS)) throw new Error('fremde Adresse – der Schlüssel geht nur an den eigenen Server');
     const zg = zeitGrenze(opt.zeit || 60000);
-    return fetch(ziel, { method: opt.method || 'GET', headers: kopf, body, redirect: 'error', signal: zg.signal }).finally(zg.stopp);   // (nie einer Umleitung folgen – der Schlüssel ginge mit)
+    try {
+        const r = await fetch(ziel, { method: opt.method || 'GET', headers: kopf, body, redirect: 'error', signal: zg.signal });   // (nie einer Umleitung folgen – der Schlüssel ginge mit)
+        // Inhalt noch unter der Zeitgrenze lesen: hängt der Server mitten in der Antwort, bricht auch das nach der Frist ab
+        const inhalt = [204, 205, 304].includes(r.status) ? null : await r.arrayBuffer();
+        return new Response(inhalt, { status: r.status, statusText: r.statusText, headers: r.headers });
+    } finally { zg.stopp(); }
 }
 
 // ===== Prüfer: sind die Zahlen der Welt in Ordnung? (läuft im Spiel, vor jedem Schreiben) =====

@@ -388,6 +388,10 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   statt 0:00 (`marschUhr`, Unterwegs-Liste, Marsch-Uhr auf der Karte, Armee/Rally-Uhren; nur Anzeige). Weltrechner wartet
   auf den Server bis 60 s (statt 30) und gibt nach einem eigenen Stillstand 2 s Nachfrist (`zeitGrenze`, start.js).
   Test `tests/browser/haenger_test.js`, server_test.php.
+  Nachtrag: die 60 s gelten jetzt bis der Inhalt gelesen ist (`holen` liest ihn selbst) – ein Server, der mitten in der
+  Antwort hängt, bricht auch ab. Test `tests/browser/haenger_holen_test.js`. `handy_texte_test.js` war rot, weil zufällig
+  andere Ansagen (Drache erscheint, Testmodus-Hinweis) den Saison-Hinweis ersetzten (der neueste gilt – so gewollt):
+  der Test schaltet sie während der Szene stumm (Test-Problem, kein Spielfehler).
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.

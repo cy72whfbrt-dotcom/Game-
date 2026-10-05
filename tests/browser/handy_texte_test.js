@@ -17,14 +17,16 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       coins = 1e13; gems = 1e7; islandTroops[playerIslandId] = 1e11; updateHud(); await warte(300);
       const leiste = [...document.querySelectorAll('.hud .res b')].slice(0, 3).map(e => [e.textContent, ganz(e)]);
       // 2) Saison-Hinweis: ohne Fenster ganz lesbar (kein „…“), mit offenem Fenster (Events → Boss & Lager) am Handy versteckt
-      const h = document.getElementById('hint'), handy = matchMedia('(max-width:899px) and (min-height:501px)').matches;
-      flashHint(saisonBaldText(Date.now() + 3 * 864e5), 9000, true); await warte(300);
+      //    Andere Ansagen (Drache erscheint, Testmodus-Hinweis …) ersetzen jeden Hinweis (der neueste gilt) – während der Szene still.
+      const h = document.getElementById('hint'), handy = matchMedia('(max-width:899px) and (min-height:501px)').matches, hinweis = flashHint;
+      window.flashHint = () => {};
+      hinweis(saisonBaldText(Date.now() + 3 * 864e5), 9000, true); await warte(300);
       const lang = { klasse: h.classList.contains('toast--lang'), ganz: h.scrollHeight <= h.clientHeight + 1, preise: /besten 10/.test(h.textContent), sichtbar: getComputedStyle(h).display !== 'none' };
       openGoals('boss'); await warte(500);
       const mitFenster = getComputedStyle(h).display;
-      flashHint('Kurzer Hinweis', 3000); await warte(100);
+      hinweis('Kurzer Hinweis', 3000); await warte(100);
       const kurz = { klasse: h.classList.contains('toast--lang'), sichtbar: getComputedStyle(h).display !== 'none' };
-      closeAllPopups(); flashHint('', 1);
+      window.flashHint = hinweis; closeAllPopups(); flashHint('', 1);
       // 3) fremde Hauptstadt nach dem Spähen
       const home = islandById[playerIslandId], d = x => Math.hypot(islandById[botCapitalOf(x.id)].x - home.x, islandById[botCapitalOf(x.id)].y - home.y);
       const bot = BOT_DEFS.filter(x => !x.mensch && islandById[botCapitalOf(x.id)]).sort((a, c) => d(a) - d(c))[0], isl = botCapitalOf(bot.id);
