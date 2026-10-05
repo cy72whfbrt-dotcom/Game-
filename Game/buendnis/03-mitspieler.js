@@ -317,7 +317,7 @@ function bundRallyPlan(a, bot, now) {                            // → { basis,
 function bundTakt() {
     if (!window.WELT || !WELT.leiter) return;
     const now = Date.now(); let geaendert = false;
-    for (const r of bund.r.slice()) if (now >= r.los) bundRallyLos(r);
+    for (const r of bund.r.slice()) if (now >= r.los) try { bundRallyLos(r); } catch (e) { bund.r = bund.r.filter(x => x !== r); console.warn('Rally:', e); }   // (eine kaputte Rally hält den Takt nicht an)
     try { bundChatTakt(now); } catch (e) { if (!bundTakt.chatGewarnt) { bundTakt.chatGewarnt = true; console.warn('Bündnis-Chat:', e); } }
     for (const id in bund.b) { const a = bund.b[id], vor = (a.sig || []).length; a.sig = (a.sig || []).filter(s => now - s.at < 30 * 60000); if (a.sig.length !== vor) geaendert = true;
         const q = (a.anfragen || []).length; a.anfragen = (a.anfragen || []).filter(x => now - x.at < 24 * 3600000 && !bundVon(x.w)); if (a.anfragen.length !== q) geaendert = true;

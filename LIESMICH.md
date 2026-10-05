@@ -2368,7 +2368,13 @@ Truppen. Belohnungen nach Anteil. Neu dazu (vorher galt vieles nur für den Anf�
   seines Helden auf seinem Heimweg (`bundHeimschicken(…, ret)`).
 - **Krankenhaus** je Spieler: sein Krankenhaus + sein Held (`kampfAnteile`).
 - **Rammbock/Sturmflut/Mauerbrecher:** jeder Held nur nach dem Stärke-Anteil seines Spielers (`heroDefCut`).
-  Marsch-Tempo und Maut der Rally bleiben beim Anführer (ein Heer).
+  Das Marsch-Tempo der Rally bleibt beim Anführer (ein Heer).
+- **Rally-Maut je Teilnehmer (Alexander #11):** die Maut (für alle Truppen, Helden-Rabatt des Anführers wie bisher) wird nach
+  Truppen-Anteil verteilt – jeder zahlt seinen Teil (`rallyMaut`, über `mautZahler` in `launchAttack`). Kann einer nicht zahlen,
+  zahlt keiner und die Rally geht nicht los (wie früher beim Anführer), alle Truppen gehen heim. Test `rally_maut_test`.
+- **Rally-Start mit Fehlerschutz:** `bundRallyLos` nimmt die Rally zuerst aus `bund.r` (vorher: warf etwas nach dem Losmarsch,
+  startete sie in der nächsten Sekunde nochmal – Truppen und Angriff doppelt); Fehler vor dem Start → Truppen zurück wie beim
+  Abbruch; `bundTakt` fängt Fehler je Rally ab (bricht nicht mehr ab).
 - **Wochen-Event-Punkte** (Krieger-Woche) nach Anteil an alle Angreifer und auf der Verteidiger-Seite an Besitzer + Verstärkung
   (`midFight`, auch Barbaren-Invasion). **Verteidigungs-Gold:** jeder Helfer seinen Anteil mit seinem Satz, der Besitzer nur seinen.
 - **Erfahrung** nach Anteil an alle Angreifer (vorher nur der Anführer).

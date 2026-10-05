@@ -575,26 +575,47 @@ function bundRallyEnde(r, grund) {                               // abgebrochen:
     saveGame(); saveProgression(); bundSpeichern();
 }
 function bundRallyLos(r) {
+    bund.r = bund.r.filter(x => x !== r);                                       // zuerst raus: bricht unten etwas ab, startet sie nicht in der nächsten Sekunde nochmal (doppelte Truppen)
     const by = r.by;
     if (islandOwnerOf(r.at) !== by) return bundRallyEnde(r, 'der Sammelpunkt ist gefallen');
     if (bundZielOk(by, r.t)) { const ow = islandOwnerOf(r.t);                // (Grund für alle Mitglieder verständlich)
         return bundRallyEnde(r, ow === by || bundVerbuendet(ow, by) ? 'das Ziel gehört inzwischen dem Bündnis' : 'das Ziel steht unter einem Friedensschild'); }
-    const total = bundRallyTruppen(r);
-    islandTroops[r.at] = (islandTroops[r.at] || 0) + total;
+    const total = bundRallyTruppen(r), vorher = islandTroops[r.at] || 0, maut = {};
+    islandTroops[r.at] = vorher + total;
     if (AUF) AUF.frei.an();                                                     // (der gemeinsame Angriff war schon als Rally gezählt)
     r.startet = true;                                                           // (ihr Held ist ab jetzt im Angriff – nicht mehr „belegt durch die Rally“)
-    const k = pendingAttacks.length; let ok = false; try { ok = launchAttack(r.at, r.t, by, total, r.held || null, r.held2 || null); } finally { if (AUF) AUF.frei.aus(); }
+    mautZahler = rallyMaut(r, maut);                                            // (jeder zahlt die Maut für SEINE Truppen – Alexander #11)
+    const k = pendingAttacks.length; let ok = false, kaputt = false;
+    try { ok = launchAttack(r.at, r.t, by, total, r.held || null, r.held2 || null); } catch (e) { kaputt = true; console.warn('Rally:', e); } finally { mautZahler = null; if (AUF) AUF.frei.aus(); }
     const atk = ok && pendingAttacks.length > k ? pendingAttacks[pendingAttacks.length - 1] : null;
-    if (!atk || atk.attackerBotId !== by) { islandTroops[r.at] = Math.max(0, (islandTroops[r.at] || 0) - total); return bundRallyEnde(r, 'der Weg ist versperrt (Tor zu oder Maut zu teuer)'); }
+    if (!atk || atk.attackerBotId !== by) { islandTroops[r.at] = Math.min(islandTroops[r.at] || 0, vorher);   // (noch nicht los: die Truppen wieder heim, auch nach einem Fehler)
+        return bundRallyEnde(r, kaputt ? 'ein Fehler beim Losmarsch' : maut.fehlt ? bundName(maut.fehlt) + ' hat nicht genug Münzen für seine Maut' : 'der Weg ist versperrt (Tor zu oder Maut zu teuer)'); }
     atk.rally = { id: r.id, by, an: [[by, r.at, r.n0]].concat(r.j.filter(j => j.da).map(j => [j.w, j.f, j.n])) };
-    rallyWerte(atk, by, r.n0, r.j.filter(j => j.da));
+    try { rallyWerte(atk, by, r.n0, r.j.filter(j => j.da)); } catch (e) { console.warn('Rally-Werte:', e); }   // (der Angriff ist schon unterwegs – er kämpft dann mit den Werten des Anführers)
     for (const j of r.j) if (j.da) { botDropShield(j.w); botNeulingWeg(j.w, islandOwnerOf(r.t)); }   // (alle, die mitmachen, greifen an: Friedensschild und Anfängerschutz fallen)
     for (const k in bundMem.rallyWeg) if (bundMem.rallyWeg[k].bis < Date.now()) delete bundMem.rallyWeg[k];   // (abgelaufene weg – sonst wächst die Liste ewig)
     bundMem.rallyWeg[r.id] = { t: r.t, at: r.at, by, bis: Date.now() + 60 * 60000 };   // (für Nachzügler: sie folgen direkt zum Ziel)
-    bund.r = bund.r.filter(x => x !== r);
     const a = bund.b[r.aid], txt = 'Rally auf ' + bundZielName(islandById[r.t]) + ' marschiert los: ' + fmtCompact(total) + ' Truppen von ' + atk.rally.an.length + (atk.rally.an.length === 1 ? ' Basis.' : ' Basen.');
     if (a) bundLog(a, txt); for (const w of new Set(atk.rally.an.map(x => x[0]))) bundMelden(w, txt);
     saveGame(); saveProgression(); bundSpeichern();
+}
+// Maut einer Rally (für launchAttack): die Maut für alle Truppen (mit dem Helden-Rabatt des Anführers, wie bisher) wird nach
+// Truppen-Anteil auf die Teilnehmer verteilt – jeder zahlt seinen Teil. Kann einer nicht zahlen, zahlt keiner (maut.fehlt = wer).
+function rallyMaut(r, maut) {
+    return (fromLm, toLm, n, by, targetId, cut) => {
+        const { gate, cost, closed } = tollFor(fromLm, toLm, n, by, targetId, cut);
+        if (!cost) return true; if (closed) return false;
+        const an = new Map([[by, r.n0]]); for (const j of r.j) if (j.da) an.set(j.w, (an.get(j.w) || 0) + j.n);
+        const sum = [...an.values()].reduce((s, x) => s + x, 0) || 1, teil = new Map(); let bis = 0, vor = 0;
+        for (const [w, x] of an) { bis += x; const z = Math.round(cost * bis / sum); teil.set(w, z - vor); vor = z; }   // (aufsummiert gerundet: zusammen genau die Maut)
+        const hat = w => w === 'player' ? coins : (botCoins[w] || 0);
+        for (const [w, z] of teil) if (hat(w) < z) { maut.fehlt = w; return false; }
+        const owner = islandOwnerOf(gate.id);
+        for (const [w, z] of teil) { if (!z) continue; if (w === 'player') coins -= z; else botCoins[w] -= z; goalBump(w, 'tolls'); }
+        if (owner === 'player') coins += cost; else if (owner) botCoins[owner] = (botCoins[owner] || 0) + cost;
+        goalBump(owner, 'tollCoins', cost);
+        return true;
+    };
 }
 // Rally: jeder zählt mit SEINEN Werten für SEINE Truppen (Skill Angriff, Titel, Forschung, seine Helden) – der Held des Anführers für dessen Truppen.
 // (Stärke = (Truppen + Bonus) × Titel × Forschung des Anführers; die anderen werden darauf umgerechnet)
@@ -1088,7 +1109,7 @@ function bundRallyPlan(a, bot, now) {                            // → { basis,
 function bundTakt() {
     if (!window.WELT || !WELT.leiter) return;
     const now = Date.now(); let geaendert = false;
-    for (const r of bund.r.slice()) if (now >= r.los) bundRallyLos(r);
+    for (const r of bund.r.slice()) if (now >= r.los) try { bundRallyLos(r); } catch (e) { bund.r = bund.r.filter(x => x !== r); console.warn('Rally:', e); }   // (eine kaputte Rally hält den Takt nicht an)
     try { bundChatTakt(now); } catch (e) { if (!bundTakt.chatGewarnt) { bundTakt.chatGewarnt = true; console.warn('Bündnis-Chat:', e); } }
     for (const id in bund.b) { const a = bund.b[id], vor = (a.sig || []).length; a.sig = (a.sig || []).filter(s => now - s.at < 30 * 60000); if (a.sig.length !== vor) geaendert = true;
         const q = (a.anfragen || []).length; a.anfragen = (a.anfragen || []).filter(x => now - x.at < 24 * 3600000 && !bundVon(x.w)); if (a.anfragen.length !== q) geaendert = true;
