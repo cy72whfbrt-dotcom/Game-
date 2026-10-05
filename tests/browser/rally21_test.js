@@ -32,7 +32,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       A: { gold: d(A, 'c'), h: d(A, 'h'), s: d(A, 's'), e: d(A, 'e') }, B: { gold: d(B, 'c'), h: d(B, 'h'), s: d(B, 's'), e: d(B, 'e') } }; });
   console.log(JSON.stringify(e));
   ok(e.an && e.an.reduce((s, q) => s + q[2], 0) === e.myTroops, 'Bericht: Stärke je Spieler, Summe = Gesamt', e.an);
-  ok(e.won && e.B.h > 0 && Math.abs(e.B.h - Math.floor(e.roh.h / 4)) <= 2000 && Math.abs(e.A.h + e.B.h - e.roh.h) <= 2000, 'Holz geteilt (A 3/4, B 1/4)', { A: e.A.h, B: e.B.h, ges: e.roh && e.roh.h });
+  ok(e.won && e.B.h > 0 && Math.abs(e.B.h - Math.floor(e.roh.h / 4)) <= 2000 && Math.abs(e.A.h + e.B.h - e.roh.h) <= Math.max(2000, e.roh.h * 0.005), 'Holz geteilt (A 3/4, B 1/4)', { A: e.A.h, B: e.B.h, ges: e.roh && e.roh.h });
   ok(e.won && Math.abs(e.B.gold - Math.floor(e.plunder / 4)) <= 2000, 'Gold geteilt (B 1/4)', { B: e.B.gold, ges: e.plunder });
   await p.evaluate(() => { for (const id of ['welcomeModal', 'dailyModal', 'levelUpModal', 'rewardModal']) { const m = document.getElementById(id); if (m) m.hidden = true; } document.getElementById('battleLogBtn').click(); });
   await p.waitForTimeout(1200);

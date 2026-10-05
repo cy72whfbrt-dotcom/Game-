@@ -15,7 +15,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const st = loadBotState(); st[A.id].skills.attack = 10; st[E.id].skills.attack = 30; saveBotState();
     const ziel = botCapitalOf(Z.id); islandTroops[ziel] = 1000; botCoins[Z.id] = 5e7; const rz = AUF.rohVon(Z.id); rz.h = 3e7; rz.s = 2e7; rz.e = 1e7; AUF.rohSpeichern();
     const vorher = id => ({ c: botCoins[id], ...AUF.rohVon(id) });
-    window.__t = { A: A.id, E: E.id, Z: Z.id, vA: vorher(A.id), vE: vorher(E.id), berichte: [] };
+    window.__t = { A: A.id, E: E.id, Z: Z.id, ziel, vA: vorher(A.id), vE: vorher(E.id), berichte: [] };
     // wie auf dem Server: die beiden sind Menschen, ihre Berichte gehen über WELT.bericht an ihr Handy
     const orig = resolveBotAttack;
     resolveBotAttack = function (a) {
@@ -31,7 +31,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     return { bonus: a.attackBonus, erwartet: Math.round(3e6 * m(A.id) / 100 + (a.hx ? Math.round(3e6 * a.hx.atk / 100) + heroGefOf(a.hx, 3e6) : 0) + (1e6 + Math.round(1e6 * m(E.id) / 100)) * s(E.id) / s(A.id) - 1e6), alt: Math.round(4e6 * m(A.id) / 100) }; });
   ok(v.bonus && Math.abs(v.bonus - v.erwartet) <= 2 && v.bonus !== v.alt, 'Werte von Alex UND Emma zählen (jeder für seine Truppen)', v);
   await p.waitForTimeout(30000);
-  const e = await p.evaluate(() => { const { A, E, vA, vE, berichte } = __t, n = id => ({ c: botCoins[id], ...AUF.rohVon(id) });
+  const e = await p.evaluate(() => { const { A, E, vA, vE } = __t, berichte = __t.berichte.filter(q => q.e.targetId === __t.ziel),   // (nur der Rally-Kampf – Alex ist nebenbei ein Mitspieler und greift evtl. selbst etwas an)
+      n = id => ({ c: botCoins[id], ...AUF.rohVon(id) });
     const d = (id, v0) => { const x = n(id); return { gold: Math.round(x.c - v0.c), h: Math.round(x.h - v0.h), s: Math.round(x.s - v0.s), e: Math.round(x.e - v0.e) }; };
     return { berichte: berichte.map(q => ({ an: q.w === A ? 'Alex' : q.w === E ? 'Emma' : q.w, rolle: q.e.rolle || 'Anführer', txt: q.txt })), A: d(A, vA), E: d(E, vE),
       plunder: berichte[0] && berichte[0].e.plunder, roh: berichte[0] && berichte[0].e.plunderRoh, won: berichte[0] && berichte[0].e.won }; });
@@ -42,7 +43,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(e.won && ['h', 's', 'e'].every(k => nah(e.E[k], e.roh[k] / 4) && nah(e.A[k], e.roh[k] * 3 / 4)), 'Holz, Stein, Eisen: Alex ¾, Emma ¼', { Alex: e.A, Emma: e.E, ges: e.roh });
   // jeden Bericht so anzeigen, wie der Spieler ihn auf dem Handy sieht
   for (const wer of ['Alex', 'Emma']) {
-    const seite = await p.evaluate(wer => { const q = __t.berichte.find(x => (x.w === __t.A ? 'Alex' : 'Emma') === wer); combatLog.unshift(Object.assign(q.e, { at: Date.now() }));
+    const seite = await p.evaluate(wer => { const q = __t.berichte.find(x => x.e.targetId === __t.ziel && (x.w === __t.A ? 'Alex' : 'Emma') === wer); combatLog.unshift(Object.assign(q.e, { at: Date.now() }));
       for (const id of ['welcomeModal', 'dailyModal', 'levelUpModal', 'rewardModal']) { const m = document.getElementById(id); if (m) m.hidden = true; }
       if (!isPanelOpen(battleLogPopup)) document.getElementById('battleLogBtn').click(); else renderCombatLog();
       document.querySelector('#combatLogList summary').click();
