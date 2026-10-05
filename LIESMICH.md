@@ -714,70 +714,71 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
   Kampfbericht „Basis Stufe 93“ (prüfen, was stimmt). Summe passt ungefähr (824,9 vs. 827,2 Mrd.).
 - **Anzeige (Alexander 5.10., „wie bei Million Lords“):** Ertrag überall **pro Stunde** statt „/ Tick“ bzw. „/ s“ (Profil
   „Truppen / Tick“, „Münzen / Tick“, Basis-Fenster, Tempel). Richtig umrechnen: ein Tick ist `productionTickMs()` (mit
-  Fähigkeit „Geschwindigkeit“ bis 0,4 s). Beispiel: +44 Mio./Tick → +158 Mrd. pro Stunde. Nur Anzeige, Ertrag unverändert.
+  Fähigkeit „Geschwindigkeit“ bis 0,4 s). → Inzwischen entschieden: Ertrag selbst wird langsamer, siehe 11b A.
   **Nachtrag (Alexander):** gemeint ist der ERTRAG selbst „wie Million Lords pro Stunde“ (dort Stadt Stufe 100:
   2,63 Mio. Truppen/h, 14,3 Mio. Gold/h; Stufe 110: 8,53 Mio./h, 28,4 Mio./h) – große Wirtschafts-Umstellung, Sucher
   rechnet die Folgen aus, dann Fragen an Alexander.
 
-## 11b. GUTE-NACHT-MERKLISTE (Alexander 5.10. abends) – wird gemeinsam besprochen, dann über Nacht gebaut
-Alles für heute Nacht kommt hier rein. Erst besprechen (Fragen an Alexander), dann bauen. Hochladen nur nach Alexanders Ja.
-1. **Truppen/Wirtschaft „pro Stunde“ wie Million Lords** – Ertrag deutlich langsamer (Alexander: „geht alles etwas
-   langsamer, finde ich schön“; an Million-Lords-Werte müssen wir uns nicht halten). Sucher rechnet die Folgen aus;
-   Fragen dazu laufen. *(in Besprechung)*
-   **Entschieden:** F1 Umstellung mit einem **Saison-Ende** (Reset) – dabei gleich sehen, ob Hauptstadt usw. bleibt.
-   F2 **3.600× langsamer** (was heute pro Sekunde kommt, kommt pro Stunde). F3 Kosten/Gegner im gleichen Verhältnis
-   verkleinern – **aber nicht zu einfach** (lange spielen). F4 Mitspieler **immer** genau wie echte Spieler. F5 Truppen
-   **und** Gold. F6 Es darf **nie zu einfach** werden (lange spielen). F7 Saison-Ende wie geplant: Hauptstadt komplett
-   (Burg, Gebäude, Labor-Forschung), Helden, Ausrüstung bleiben; Fähigkeiten zurück. F8 Saison-Ende **gleich beim
-   Hochladen**, ohne 3-Tage-Countdown (Test).
-4. **Prüfen (Alexander):** Die Produktion im Profil muss genau die Summe der Basen sein – z. B. 2 Basen, Profil sagt
-   10 Mio. → es kommen genau 10 Mio., nicht mehr und nicht weniger.
-2. Alexanders 3 Fehler (Abschnitt 11): Späher-Knöpfe, Angriff von der nächsten Basis, Spähbericht ohne Ausrüstung.
-   **Entschieden:** (1) Späher: hin Zurück + Schneller, heim Schneller (ab 500 Edelsteine „Wirklich?“).
-   (2) Startbasis: automatisch die nächste Basis mit **genug** Truppen (hat keine genug → die nächste mit den meisten);
-   **vorausgewählt**, der Spieler kann sie im Angriffsfenster aber ändern. (3) Spähbericht: Einzelheiten weiter nach
-   Wachturm-Stufe, aber was gezeigt wird, muss stimmen; was fehlt, wird **deutlich gekennzeichnet** („Wachturm-Stufe X
-   nötig“ statt leerer Plätze); Verteidigung aufgeschlüsselt wie im Kampfbericht; Alter des Berichts anzeigen.
-3. Ideen-Liste Teil 1 (32 Punkte) und Teil 2 (N1–N11) – Punkt für Punkt besprechen.
-   **Teil 2 entschieden:** N1 ja (Mitspieler sehen Angriffsstärke nur ungenau, wie Spieler) · N2 ja (Bündnis-Signal
-   „Rückzug!“) · N3 ja (Verstärkung im Thron bekommt kleinen Teil der Thron-Punkte) · N4 nein (keine Belohnung je
-   Burg-Stufe) · N5 ja (Stadt-Bau/Forschung geben Pass-Punkte + zählen für Aufgaben) · N6 ja (neue Forschungen ab
-   Labor 23) · N7 nein (Saison-Preise nur Top 10) · N8 nein (kein Bau-Beschleuniger beim Händler) · N9 ja (Saison-Start
-   sicher 18 Uhr deutscher Zeit) · N10 B (Schummel-Verdacht: nur Nachricht an Alexander, kein Bremsen) · N11 nein.
-   **Teil 1 entschieden – JA:** Hochladen wiederholt + prüft · Spielerkonten in die Sicherung · Neustart-Dauer messen ·
-   Ertrag „pro Stunde“ · tägliche Belohnung erst nach der Anleitung · Anleitung wiederholbar + Schritt 6 erst nach
-   Abholen · Hauptstadt-Fenster erklärt + nächster Knopf leuchtet · Knöpfe ohne Text nur **in der Anleitung** erklären ·
-   schneller laden · Benachrichtigung, wenn ein echter Spieler dich ausspäht · Warnung + Auto-Hilfe bei Rally gegen
-   das Bündnis · Mitspieler: „Später“ → „Jetzt!“, „Danke!“/„Gut gemacht!“ · Hauptstadt-Erfolge · Push „Bau/Forschung
-   fertig“ · Kisten-Aufgabe zählt Gratis-Kisten · Ranglisten-Reiter „Hauptstadt“.
-   **NEIN:** Push bei Stillstand nachts · Admin-Ampel · „Leicht“ bei neutralen Basen · Fenster „Erste Basis erobert“ ·
-   Zeile „Nächstes Ziel“ · Karte heller · „Warum verloren?“ im Kampfbericht · Pass umbenennen (bleibt „Saison-Pass“).
-   **Auch JA:** 15 prüfen, ob der Anleitungs-Stand im Browser liegt → wenn ja auf den Server · 19 Meldung, wenn ein
-   Verbündeter seine Verstärkung heimholt + beim Antippen der eigenen Basis sehen, wer dort verstärkt (prüfen, ob es
-   das schon gibt) · 29 unerreichbare Erfolge senken, aber auch ein paar sehr hohe drinlassen. **NEIN:** 27 Ranglisten
-   bleiben „für immer“.
-5. **Neu (Alexander):** Bündnis direkt im Profil sehen und öffnen – im Profil (eigenes und das anderer Spieler) steht
-   das Bündnis (Name, Wappen); antippen öffnet sofort das Bündnis-Fenster, ohne Umweg über den Reiter „Bündnis“.
-6. **Neu (Alexander, Rückmeldung von Spielern):** Das Design an sich ist schön, aber **Aufbau/Layout** (HUD oben,
-   Fenster wie „Angriff vorbereiten“ und „Feindliche Basis“, Karte) könnte schöner sein – gilt **überall**.
-   Beispiele (Bilder 5.10. 21:20): Beim Scrollen im Angriffsfenster wird die Angriff/Abwehr-Karte oben abgeschnitten;
-   Namen auf der Karte immer abgeschnitten („[WEL] C…“, „94 ✕ ?“); Kopfgeld-Pille liegt auf der Karte; Fenster nehmen
-   den halben Bildschirm; „Stufe 107“ (Spieler) neben Basis-Stufe 94 verwirrt. Erst Vorschlag zeigen, dann bauen.
-   Vorbild für den Aufbau: **Million Lords** (Bild 21:22): Spieler-Bild oben links, Werte klein darunter, runde Knöpfe
-   in einer Leiste unten, kleine Namensfahnen an den Basen, Marschwege als gestrichelte Linien.
-7. **Neu (Alexander): lebendige Welt** – Felsen/Berge (Hindernisse) auf der Karte; Märsche müssen **drumherum laufen**
-   (gestrichelter Weg wie bei Million Lords), wenn ein Hindernis zwischen Spieler und Ziel liegt. Neue Regel –
-   Marschzeiten werden dadurch länger. **Entschieden:** W1 Karte sieht aus wie jetzt, nur mit Struktur (Berge/Felsen
-   eingefügt) · W2 **einige** Hindernisse (Wege etwas länger, Basen dahinter etwas geschützter) · W3 kommt mit dem
-   **übernächsten** Saison-Reset (nicht heute Nacht) – vorher bauen + testen.
-8. **Weitere Antworten (Alexander):** Q3 Bündnis im Profil – ja wie beschrieben · Q4 Layout **gleich umbauen** (kein
-   Vorschlag vorher) · Q5 **das ganze Design**: übersichtlich, verständlich, **weniger hin- und hertippen** ·
-   N3 Thron-Punkte (heute alle 3 Min. 30 für den Halter): Halter bekommt weiter **30**, **jeder**, der dort Verstärkung
-   stehen hat, bekommt **15** · Q9 neue Forschungen ab Labor 23: Krankenhaus II, Burg-Schutz+, Marschtempo II ·
-   Q2 **Kisten 150 Edelsteine** (statt 30), sonst Edelstein-Preise gleich · Q1 Start **100.000 Truppen** für neue
-   Spieler und nach dem Reset (bleibt so) · Profil zeigt die **Produktion pro Stunde** aller Basen zusammen (nicht den
-   Bestand) – produzieren alle Basen zusammen 100.000/Std., steht dort genau 100.000 · Q7 Rückzug: Mitspieler kehren
-   automatisch um, echte Spieler bekommen eine Nachricht und entscheiden selbst.
+## 11b. GUTE-NACHT-MERKLISTE (Alexander 5.10. abends) – alles besprochen, wird gebaut; Hochladen nur nach Alexanders Ja
+**A. Wirtschaft „pro Stunde“ (wie Million Lords, eigene Werte erlaubt)**
+- Ertrag **3.600× langsamer**: was heute pro Sekunde kommt, kommt pro Stunde – Truppen **und** Gold.
+- Kosten/Gegner im gleichen Verhältnis kleiner (Burg, Forschung, neutrale Basen, Barbaren, Drache, Tagesboss …),
+  aber es darf **nie zu einfach** werden (lange spielen). **Ausnahme:** Start bleibt **100.000 Truppen** (neue Spieler
+  und nach dem Reset), Gold-Start wie bisher (0).
+- Mitspieler **immer** genau wie echte Spieler.
+- Umstellung mit einem **Saison-Ende gleich beim Hochladen** (ohne 3-Tage-Countdown, als Test): Hauptstadt komplett
+  (Burg, Gebäude, Labor-Forschung), Helden, Ausrüstung bleiben; Fähigkeiten zurück; Rest wie im Saison-Plan (12a).
+- Anzeige überall **pro Stunde** (Profil, Basis, Tempel) – Profil zeigt die Produktion aller Basen zusammen, nicht den
+  Bestand. **Prüfen:** was im Profil steht, kommt genau so an (nicht mehr, nicht weniger), Tick-Länge
+  (`productionTickMs`, Fähigkeit „Geschwindigkeit“) richtig eingerechnet.
+- Edelstein-Preise bleiben, **außer Kisten: 150 Edelsteine** (statt 30).
+- Genaue Zahlen liefert der Sucher „Wirtschaft“; vor dem Bauen hier eintragen.
+
+**B. Alexanders 3 Fehler** (Einzelheiten Abschnitt 11)
+1. Späher: hin Zurück + Schneller, heim Schneller; Zurück = sofort umkehren, kein Bericht; ab 500 Edelsteine „Wirklich?“.
+2. Startbasis eines Angriffs: automatisch die nächste Basis mit **genug** Truppen (keine hat genug → nächste mit den
+   meisten), **vorausgewählt**, im Angriffsfenster änderbar.
+3. Spähbericht: zeigt die Ausrüstung richtig; Einzelheiten weiter nach Wachturm-Stufe, Fehlendes **deutlich
+   gekennzeichnet** („Wachturm-Stufe X nötig“ statt leerer Plätze); Verteidigung aufgeschlüsselt wie im Kampfbericht;
+   Alter des Berichts („gespäht vor 2 Std.“, ab 30 Min. gelb); Spieler-Stufe und Basis-Stufe eindeutig beschriften.
+
+**C. Neue Regeln (Teil 2)**
+- Mitspieler sehen die Stärke eines Angriffs nur so ungenau wie echte Spieler.
+- Bündnis-Signal **„Rückzug!“**: Mitspieler kehren automatisch um, echte Spieler bekommen eine Nachricht und
+  entscheiden selbst.
+- Thron-Punkte (alle 3 Min.): Halter weiter **30**, **jeder** mit Verstärkung im Thron **15**.
+- Stadt-Bau und Forschung geben Pass-Punkte und zählen für Aufgaben (z. B. „Starte eine Forschung“).
+- Neue Forschungen ab Labor 23: **Krankenhaus II, Burg-Schutz+, Marschtempo II**.
+- Neue Saison startet sicher **sonntags 18 Uhr deutscher Zeit**.
+- Schummel-Verdacht: nur Nachricht an Alexander, kein automatisches Bremsen.
+- **Nein:** Belohnung je Burg-Stufe · Saison-Preise für Platz 11–50 · Bau-Beschleuniger beim Händler · Dienst von außen.
+
+**D. Verbesserungen (Teil 1)**
+- Technik: Hochladen wiederholt abgebrochene Dateien + prüft danach alles · Spielerkonten in die Sicherung ·
+  Neustart-Dauer des Weltrechners messen.
+- Neue Spieler: tägliche Belohnung erst nach der Anleitung · Anleitung wiederholbar, Schritt 6 erst nach Abholen ·
+  Hauptstadt-Fenster erklärt sich, nächster Knopf leuchtet · Knöpfe ohne Text werden in der Anleitung erklärt ·
+  schneller laden · prüfen, ob der Anleitungs-Stand im Browser liegt (wenn ja: auf den Server).
+- Kampf/Bündnis: Nachricht, wenn ein echter Spieler dich ausspäht · Warnung + automatische Hilfe bei einer Rally gegen
+  das Bündnis · Meldung, wenn ein Verbündeter seine Verstärkung heimholt, und beim Antippen der eigenen Basis sehen, wer
+  dort verstärkt · Mitspieler: auf „Später“ folgt „Jetzt!“, sie schreiben „Danke!“/„Gut gemacht!“.
+- Langzeit: Hauptstadt-Erfolge · Push „Bau fertig“/„Forschung fertig“ · Aufgabe „Öffne 3 Kisten“ zählt auch
+  Gratis-Kisten · Ranglisten-Reiter „Hauptstadt“ · unerreichbare Erfolge senken, ein paar sehr hohe bleiben.
+- **Nein:** Push bei Stillstand · Admin-Ampel · „Leicht“ bei neutralen Basen · Fenster „Erste Basis erobert“ ·
+  Zeile „Nächstes Ziel“ · Karte heller · „Warum verloren?“ · Pass umbenennen · Ranglisten nur je Saison.
+
+**E. Bündnis im Profil:** im eigenen und fremden Profil steht das Bündnis (Name, Wappen); antippen öffnet es sofort.
+
+**F. Ganzes Design übersichtlicher** (Rückmeldung von Spielern; **gleich umbauen**, kein Vorschlag vorher):
+verständlich, übersichtlich, **weniger hin- und hertippen** – HUD, Leiste, alle Fenster, Karte. Vorbild für den Aufbau
+**Million Lords** (Spieler-Bild oben links, Werte klein darunter, runde Knöpfe in einer Leiste unten, kleine
+Namensfahnen an den Basen, gestrichelte Marschwege). Beispiele aus den Bildern 5.10. 21:20: Angriff/Abwehr-Karte wird
+beim Scrollen abgeschnitten; Namen auf der Karte immer abgeschnitten („[WEL] C…“); Kopfgeld liegt auf der Karte;
+Fenster nehmen den halben Bildschirm. Farben/Stil bleiben (das Design an sich gefällt).
+
+**G. Später (nicht heute Nacht): lebendige Welt** – Karte bleibt wie jetzt, dazu **einige** Berge/Felsen; Märsche laufen
+drumherum (Wege etwas länger, Basen dahinter etwas geschützter). Kommt mit dem Saison-Reset **nach** dem von heute
+Nacht – vorher bauen und testen.
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
