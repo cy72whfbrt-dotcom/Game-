@@ -756,6 +756,8 @@ Alles für heute Nacht kommt hier rein. Erst besprechen (Fragen an Alexander), d
    Verbündeter seine Verstärkung heimholt + beim Antippen der eigenen Basis sehen, wer dort verstärkt (prüfen, ob es
    das schon gibt) · 29 unerreichbare Erfolge senken, aber auch ein paar sehr hohe drinlassen. **NEIN:** 27 Ranglisten
    bleiben „für immer“.
+5. **Neu (Alexander):** Bündnis direkt im Profil sehen und öffnen – im Profil (eigenes und das anderer Spieler) steht
+   das Bündnis (Name, Wappen); antippen öffnet sofort das Bündnis-Fenster, ohne Umweg über den Reiter „Bündnis“.
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
