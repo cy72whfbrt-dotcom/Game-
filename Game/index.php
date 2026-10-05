@@ -24,7 +24,7 @@ try {
             elseif (strlen($pw) > 72) $fehler = 'Das Passwort darf höchstens 72 Zeichen haben.';
             elseif ($pw !== (string)($_POST['pw2'] ?? '')) $fehler = 'Die beiden Passwörter sind nicht gleich.';
             elseif (!lager()->name_frei(0, $name)) $fehler = 'Diesen Namen gibt es schon.';
-            elseif (!bremse('neu:' . client_ip(), 5, 3600)) $fehler = 'Zu viele neue Konten von hier – bitte später nochmal.';   // (nur gültige Versuche zählen – ein Tippfehler sperrt keine ganze Schulklasse)
+            elseif (!bremse('neu:' . client_ip(), 30, 3600)) $fehler = 'Zu viele neue Konten von hier – bitte später nochmal.';   // (nur gültige Versuche zählen – ein Tippfehler sperrt keine ganze Schulklasse)
             else {
                 $uid = lager()->spieler_anlegen($name, password_hash($pw, PASSWORD_DEFAULT));
                 if ($uid === null) $fehler = 'Diesen Namen gibt es schon.';
@@ -37,7 +37,7 @@ try {
             $konto = $u ? 'id' . $u['id'] : 'name:' . mb_strtolower(mb_substr($name, 0, 60), 'UTF-8');
             $sperre = 'login:' . $konto . ':' . client_ip();
             // (die große Grenze pro Konto gilt nicht, wo er in den letzten 24 Std. schon gespielt hat – ein Fremder sperrt so nur sich selbst)
-            if (!bremse($sperre, 8, 900) || !bremse('loginip:' . client_ip(), 30, 900) || (!bremse('loginkonto:' . $konto, 60, 900) && !($u && geraet_bekannt($u['id'])))) { sleep(1); $fehler = 'Zu viele Versuche – bitte in 15 Minuten nochmal.'; }
+            if (!bremse($sperre, 8, 900) || !bremse('loginip:' . client_ip(), 100, 900) || (!bremse('loginkonto:' . $konto, 60, 900) && !($u && geraet_bekannt($u['id'])))) { sleep(1); $fehler = 'Zu viele Versuche – bitte in 15 Minuten nochmal.'; }
             else {
                 $hash = $u ? $u['pw_hash'] : '$2y$10$PxK0RyR6Ng9cebr4sv40xeBHhcwZlL4gVKoVfvcJFrVmDh4qaH.ma';   // gleich lange prüfen, ob es den Namen gibt oder nicht
                 if (password_verify($pw, $hash) && $u) { lager()->bremse_frei(hash('sha256', $sperre)); bremse_zurueck('loginkonto:' . $konto); bremse_zurueck('loginip:' . client_ip()); geraet_bekannt_merken($u['id']); anmelden((int)$u['id']); header('Location: spiel.php'); exit; }   // (gelungene Anmeldungen zählen nicht)
