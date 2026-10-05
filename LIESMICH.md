@@ -342,6 +342,9 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Aufgabe statt alle 30 Min. Jeder Agent schreibt mindestens alle 5 Min. eine Statuszeile nach `<scratchpad>/firma/<kurzname>.txt`
   (älter als 10 Min. = hängt, Live-Seite zeigt sie rot). Claude selbst nur Kleinkram unter 2 Min.; nach dem Hochladen
   `werkzeuge/nach_hochladen.sh`.
+- **5.10. Drei neue Rollen der Firma (nur Firmen-Dateien):** `zusammenfuehrer` (mergt geprüfte Branches, löst Konflikte in den
+  Teilen, Schnelltests, pusht), `spieltester` (spielt die Vorschau mit Playwright auf Handy + Desktop, meldet Fehler mit
+  Bildschirmfotos, ändert keinen Code), `livewaechter` (stündlich + nach dem Hochladen `werkzeuge/nach_hochladen.sh`, nur lesen).
 - **5.10. Drei Werkzeuge für die Firma (nur Werkzeuge, kein Spiel-Code):** `werkzeuge/vor_commit.sh` (vor jedem Commit:
   Leerzeichen-Fehler im Staging, Konfliktmarker in allen getrackten .md/.js/.sh/.php/.json, `spiel_bauen.sh pruefen` –
   Exit-Code 1 bei Fund). `werkzeuge/server_starten.sh <arbeitsordner>` startet MariaDB und `php -S 127.0.0.1:8770` nur, wenn

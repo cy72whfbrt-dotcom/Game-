@@ -72,7 +72,10 @@ Alles Wichtige steht in `LIESMICH.md` – jede Änderung wird dort eingetragen.
   **endpruefer** (einmal vor dem Hochladen, gründlich: alle Änderungen + `tests/komplett.sh`) · **aufpasser** (inkl.
   Disponent; alle 5 Min., max. 2 Min.: bekommt laufende Agenten + wartende Aufgaben, meldet „läuft ok / hängt → antreiben /
   jetzt starten“) · **verbesserer** (nach jeder großen Aufgabe – nach dem Hochladen bzw. wenn eine Aufgabenliste fertig ist:
-  Vorschläge, wie die Firma schneller/genauer wird – Claude baut sie ein). Nur ZWEI Prüfungen (schnell + end). Schnell UND genau.
+  Vorschläge, wie die Firma schneller/genauer wird – Claude baut sie ein) · **zusammenfuehrer** (nach jeder Prüfung:
+  fertige Branches mergen, Konflikte lösen, Schnelltests, pushen – nie hochladen) · **spieltester** (vor dem Endprüfer und
+  nach großen Änderungen an Oberfläche/Abläufen: spielt die Vorschau auf Handy + Desktop, Liste mit Bildschirmfotos) ·
+  **livewaechter** (stündlich + nach jedem Hochladen, nur lesen: `werkzeuge/nach_hochladen.sh`, „LIVE OK“ oder Funde). Nur ZWEI Prüfungen (schnell + end). Schnell UND genau.
   **Niemand wartet still:** jeder Agent schreibt beim Start und mindestens alle 5 Min. eine Zeile in
   `<scratchpad>/firma/<kurzname>.txt` (`<Uhrzeit UTC> | <Schritt> | <was läuft>`, am Ende `… | fertig | <Ergebnis>`);
   den Kurznamen gibt Claude im Auftrag mit. Älter als 10 Min. = „hängt“.
