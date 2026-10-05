@@ -373,6 +373,9 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Zusammengesetzte Dateien (spiel.js … server.php, Liste aus der Tabelle ZIELE in `spiel_bauen.sh`) stehen nur als Teile drin
   (z. B. `marsch_welt` → `Game/server/03-…php`). `werkzeuge/vor_commit.sh` meldet „KARTE.md veraltet“, Test `tests/karte_test.js`
   (läuft in `tests/alle_tests.sh` mit). Server-Tests `betroffen`: auch `Game/server/*`, `Game/spielseite/*`, `Game/baukunst/*`.
+- **5.10. Bündnis am Handy:** Verstärkungs-/Rally-Formular ragt auf 390 px nicht mehr rechts aus der Box (Titel bricht um,
+  Spalte `minmax(0,1fr)`). Rally-Ziel heißt wie auf der Karte: „Neutrale Basis · X … · Y …“ bzw. „Basis von <Besitzer>“ statt
+  „Turm #23697“ (`bundZielName`, auch in Rally-Meldungen und Chat). Test `tests/browser/rally_name_test.js`.
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.

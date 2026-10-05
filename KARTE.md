@@ -456,14 +456,14 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `buildPlinth` → Game/baukunst/02-buehne-grundbasis.js:72
 - `buildTerritoryChunk` → Game/spiel/03a-karte-hintergrund.js:162
 - `bund_geschenk_ok` → Game/server/03-nebel-maersche-seite.php:114
-- `bundAlleMelden` → Game/buendnis/01-daten-regeln.js:99
-- `bundBasen` → Game/buendnis/01-daten-regeln.js:80
-- `bundBasenText` → Game/buendnis/01-daten-regeln.js:77
+- `bundAlleMelden` → Game/buendnis/01-daten-regeln.js:103
+- `bundBasen` → Game/buendnis/01-daten-regeln.js:84
+- `bundBasenText` → Game/buendnis/01-daten-regeln.js:81
 - `bundBefehl` → Game/buendnis/04-fenster-karte-welt.js:7
 - `bundBonus` → Game/buendnis/02-rally-geschenke.js:227
 - `bundBotBereit` → Game/buendnis/03-mitspieler.js:17
 - `bundBotGetippt` → Game/buendnis/03-mitspieler.js:18
-- `bundCap` → Game/buendnis/01-daten-regeln.js:79
+- `bundCap` → Game/buendnis/01-daten-regeln.js:83
 - `bundChat` → Game/buendnis/01-daten-regeln.js:49
 - `bundChatAntworten` → Game/buendnis/03-mitspieler.js:156
 - `bundChatDazu` → Game/buendnis/01-daten-regeln.js:54
@@ -474,22 +474,22 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundChatText` → Game/buendnis/04-fenster-karte-welt.js:65
 - `bundChatZeilen` → Game/buendnis/04-fenster-karte-welt.js:75
 - `bundEingeladen` → Game/buendnis/04-fenster-karte-welt.js:379
-- `bundEinladungen` → Game/buendnis/01-daten-regeln.js:131
+- `bundEinladungen` → Game/buendnis/01-daten-regeln.js:135
 - `bundEinladungenHtml` → Game/buendnis/04-fenster-karte-welt.js:29
-- `bundEinmal` → Game/buendnis/01-daten-regeln.js:97
+- `bundEinmal` → Game/buendnis/01-daten-regeln.js:101
 - `bundEinzelgaenger` → Game/buendnis/03-mitspieler.js:16
 - `bundFreund` → Game/spiel/01a-grundlagen.js:14
 - `bundGebiet` → Game/buendnis/02-rally-geschenke.js:241
-- `bundGehoert` → Game/buendnis/01-daten-regeln.js:101
+- `bundGehoert` → Game/buendnis/01-daten-regeln.js:105
 - `bundGeschenk` → Game/buendnis/02-rally-geschenke.js:201
 - `bundGesehen` → Game/buendnis/04-fenster-karte-welt.js:250
-- `bundHeimschicken` → Game/buendnis/01-daten-regeln.js:329
-- `bundHelfen` → Game/buendnis/01-daten-regeln.js:369
-- `bundHilfe` → Game/buendnis/01-daten-regeln.js:272
-- `bundHilfeBitte` → Game/buendnis/01-daten-regeln.js:355
-- `bundHilfeHtml` → Game/buendnis/01-daten-regeln.js:397
-- `bundHilfeKnopf` → Game/buendnis/01-daten-regeln.js:390
-- `bundHilfeTakt` → Game/buendnis/01-daten-regeln.js:407
+- `bundHeimschicken` → Game/buendnis/01-daten-regeln.js:333
+- `bundHelfen` → Game/buendnis/01-daten-regeln.js:373
+- `bundHilfe` → Game/buendnis/01-daten-regeln.js:276
+- `bundHilfeBitte` → Game/buendnis/01-daten-regeln.js:359
+- `bundHilfeHtml` → Game/buendnis/01-daten-regeln.js:401
+- `bundHilfeKnopf` → Game/buendnis/01-daten-regeln.js:394
+- `bundHilfeTakt` → Game/buendnis/01-daten-regeln.js:411
 - `bundIch` → Game/buendnis/04-fenster-karte-welt.js:11
 - `bundIndex` → Game/buendnis/01-daten-regeln.js:70
 - `bundInfoHtml` → Game/buendnis/04-fenster-karte-welt.js:37
@@ -499,27 +499,27 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundKarteUnten` → Game/buendnis/04-fenster-karte-welt.js:284
 - `bundKommtHin` → Game/buendnis/02-rally-geschenke.js:26
 - `bundLaden` → Game/buendnis/01-daten-regeln.js:64
-- `bundLog` → Game/buendnis/01-daten-regeln.js:82
-- `bundMacht` → Game/buendnis/01-daten-regeln.js:78
-- `bundMarsch` → Game/buendnis/01-daten-regeln.js:279
-- `bundMelden` → Game/buendnis/01-daten-regeln.js:94
+- `bundLog` → Game/buendnis/01-daten-regeln.js:86
+- `bundMacht` → Game/buendnis/01-daten-regeln.js:82
+- `bundMarsch` → Game/buendnis/01-daten-regeln.js:283
+- `bundMelden` → Game/buendnis/01-daten-regeln.js:98
 - `bundMitspielerAntworten` → Game/buendnis/03-mitspieler.js:207
 - `bundMitspielerRally` → Game/buendnis/03-mitspieler.js:239
 - `bundMitspielerRunde` → Game/buendnis/03-mitspieler.js:25
 - `bundMitspielerSignale` → Game/buendnis/03-mitspieler.js:137
-- `bundMitte` → Game/buendnis/01-daten-regeln.js:81
+- `bundMitte` → Game/buendnis/01-daten-regeln.js:85
 - `bundName` → Game/buendnis/01-daten-regeln.js:76
 - `bundObenSchluessel` → Game/buendnis/04-fenster-karte-welt.js:120
 - `bundObenZeichnen` → Game/buendnis/04-fenster-karte-welt.js:121
 - `bundOeffnen` → Game/buendnis/04-fenster-karte-welt.js:13
 - `bundOhneHtml` → Game/buendnis/04-fenster-karte-welt.js:36
 - `bundOhneListeHtml` → Game/buendnis/04-fenster-karte-welt.js:381
-- `bundOp` → Game/buendnis/01-daten-regeln.js:132
+- `bundOp` → Game/buendnis/01-daten-regeln.js:136
 - `bundProdFaktor` → Game/spiel/01e-nebel-kampfwerte-hud.js:200
 - `bundProdMult` → Game/buendnis/02-rally-geschenke.js:238
 - `bundProfilKnopf` → Game/buendnis/04-fenster-karte-welt.js:392
 - `bundPunkt` → Game/buendnis/04-fenster-karte-welt.js:251
-- `bundPush` → Game/buendnis/01-daten-regeln.js:100
+- `bundPush` → Game/buendnis/01-daten-regeln.js:104
 - `bundQuellen` → Game/buendnis/04-fenster-karte-welt.js:137
 - `bundRallyBeute` → Game/buendnis/02-rally-geschenke.js:181
 - `bundRallyDazu` → Game/buendnis/02-rally-geschenke.js:32
@@ -533,14 +533,14 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundRallyTruppen` → Game/buendnis/02-rally-geschenke.js:52
 - `bundRallyUnterwegs` → Game/buendnis/02-rally-geschenke.js:53
 - `bundRallyZeile` → Game/buendnis/04-fenster-karte-welt.js:94
-- `bundRaus` → Game/buendnis/01-daten-regeln.js:116
-- `bundRein` → Game/buendnis/01-daten-regeln.js:126
+- `bundRaus` → Game/buendnis/01-daten-regeln.js:120
+- `bundRein` → Game/buendnis/01-daten-regeln.js:130
 - `bundRender` → Game/buendnis/04-fenster-karte-welt.js:16
 - `bundSaisonNeu` → Game/buendnis/04-fenster-karte-welt.js:331
 - `bundSchliessen` → Game/buendnis/04-fenster-karte-welt.js:14
-- `bundSendAnkunft` → Game/buendnis/01-daten-regeln.js:292
+- `bundSendAnkunft` → Game/buendnis/01-daten-regeln.js:296
 - `bundSicherKnopf` → Game/buendnis/04-fenster-karte-welt.js:15
-- `bundSignal` → Game/buendnis/01-daten-regeln.js:254
+- `bundSignal` → Game/buendnis/01-daten-regeln.js:258
 - `bundSigText` → Game/buendnis/04-fenster-karte-welt.js:64
 - `bundSpeichern` → Game/buendnis/01-daten-regeln.js:71
 - `bundSuchenHtml` → Game/buendnis/04-fenster-karte-welt.js:110
@@ -549,17 +549,18 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundTagVon` → Game/buendnis/01-daten-regeln.js:75
 - `bundTakt` → Game/buendnis/03-mitspieler.js:317
 - `bundTempo` → Game/buendnis/02-rally-geschenke.js:252
-- `bundUnterAngriff` → Game/buendnis/01-daten-regeln.js:83
+- `bundUnterAngriff` → Game/buendnis/01-daten-regeln.js:87
 - `bundVerbuendet` → Game/buendnis/01-daten-regeln.js:74
 - `bundVon` → Game/buendnis/01-daten-regeln.js:73
 - `bundWahlHtml` → Game/buendnis/04-fenster-karte-welt.js:145
 - `bundWahlLos` → Game/buendnis/04-fenster-karte-welt.js:171
 - `bundWahlRechnen` → Game/buendnis/04-fenster-karte-welt.js:162
 - `bundWeg` → Game/buendnis/03-mitspieler.js:10
-- `bundZahl` → Game/buendnis/01-daten-regeln.js:102
-- `bundZahlen` → Game/buendnis/01-daten-regeln.js:111
+- `bundZahl` → Game/buendnis/01-daten-regeln.js:106
+- `bundZahlen` → Game/buendnis/01-daten-regeln.js:115
 - `bundZeichenHtml` → Game/buendnis/04-fenster-karte-welt.js:12
-- `bundZielOk` → Game/buendnis/01-daten-regeln.js:103
+- `bundZielName` → Game/buendnis/01-daten-regeln.js:77
+- `bundZielOk` → Game/buendnis/01-daten-regeln.js:107
 - `bundZielVon` → Game/buendnis/03-mitspieler.js:15
 - `burg` → Game/baukunst/02-buehne-grundbasis.js:282
 - `burgKarte` → Game/aufbau.js:447
@@ -844,7 +845,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `effectiveTroops` → Game/spiel/01e-nebel-kampfwerte-hud.js:58
 - `effektText` → Game/aufbau.js:302
 - `eigeneFeldBarb` → Game/spiel/09b-lager-tagesboss.js:63
-- `eigeneTruppen` → Game/buendnis/01-daten-regeln.js:434
+- `eigeneTruppen` → Game/buendnis/01-daten-regeln.js:438
 - `eigeneTruppenDazu` → Game/spiel/01a-grundlagen.js:17
 - `einschalten` → Game/benachrichtigung.js:75
 - `einstellungenZeigen` → Game/spiel/10c-start-einstellungen.js:144
@@ -902,7 +903,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `feldBarbSpeichern` → Game/spiel/09b-lager-tagesboss.js:65
 - `feldBericht` → Game/spiel/09a-funde-felder.js:264
 - `feldErlaubt` → Game/spiel/10c-start-einstellungen.js:231
-- `fertig` → Game/buendnis/01-daten-regeln.js:136
+- `fertig` → Game/buendnis/01-daten-regeln.js:140
 - `fertig` → Game/speichern.js:153
 - `fest_lesen` → Game/server/05-datenbank-welt.php:9
 - `festeNummer` → Game/welt.js:374
@@ -1228,12 +1229,12 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `hhPartnerBlk` → Game/spiel/08c-helden.js:323
 - `hhStars` → Game/spiel/08c-helden.js:140
 - `hideAllButtons` → Game/spiel/09e-inselfenster.js:119
-- `hilfeAnwenden` → Game/buendnis/01-daten-regeln.js:379
-- `hilfeDauer` → Game/buendnis/01-daten-regeln.js:343
-- `hilfeJob` → Game/buendnis/01-daten-regeln.js:349
-- `hilfeMeine` → Game/buendnis/01-daten-regeln.js:389
-- `hilfeName` → Game/buendnis/01-daten-regeln.js:354
-- `hilfeSchritt` → Game/buendnis/01-daten-regeln.js:348
+- `hilfeAnwenden` → Game/buendnis/01-daten-regeln.js:383
+- `hilfeDauer` → Game/buendnis/01-daten-regeln.js:347
+- `hilfeJob` → Game/buendnis/01-daten-regeln.js:353
+- `hilfeMeine` → Game/buendnis/01-daten-regeln.js:393
+- `hilfeName` → Game/buendnis/01-daten-regeln.js:358
+- `hilfeSchritt` → Game/buendnis/01-daten-regeln.js:352
 - `hinweis` → Game/benachrichtigung.js:17
 - `hipFaces` → Game/baukunst/04-vielfalt-stile.js:291
 - `hipRoof` → Game/baukunst/06-turmhof-festung.js:265
@@ -1311,7 +1312,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `kannZahlen` → Game/aufbau.js:68
 - `karte` → Game/spiel/05d-maersche-kampfbericht.js:149
 - `keep` → Game/baukunst/06-turmhof-festung.js:69
-- `kennung` → Game/buendnis/01-daten-regeln.js:135
+- `kennung` → Game/buendnis/01-daten-regeln.js:139
 - `kennungOk` → Game/spiel/10d-welt-weltrechner.js:97
 - `killGoldRate` → Game/spiel/04-kampf.js:273
 - `killPay` → Game/bots/02-kampf-karte.js:62
@@ -1774,10 +1775,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `queueLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:285
 - `rallyAussortieren` → Game/buendnis/02-rally-geschenke.js:117
 - `rallyFlucht` → Game/buendnis/02-rally-geschenke.js:132
-- `rallyFrei` → Game/buendnis/01-daten-regeln.js:440
+- `rallyFrei` → Game/buendnis/01-daten-regeln.js:444
 - `rallyHx` → Game/buendnis/02-rally-geschenke.js:129
-- `rallyPlatz` → Game/buendnis/01-daten-regeln.js:439
-- `rallyPlatzStufe` → Game/buendnis/01-daten-regeln.js:438
+- `rallyPlatz` → Game/buendnis/01-daten-regeln.js:443
+- `rallyPlatzStufe` → Game/buendnis/01-daten-regeln.js:442
 - `rallySchild` → Game/buendnis/02-rally-geschenke.js:105
 - `rallyVerluste` → Game/buendnis/02-rally-geschenke.js:108
 - `rallyWerte` → Game/buendnis/02-rally-geschenke.js:89
@@ -2223,23 +2224,23 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `verlustChips` → Game/spiel/01a-grundlagen.js:172
 - `verschluesseln` → Game/weltrechner/push.js:22
 - `verstAnteile` → Game/buendnis/02-rally-geschenke.js:154
-- `verstBelegt` → Game/buendnis/01-daten-regeln.js:441
-- `verstBerichte` → Game/buendnis/01-daten-regeln.js:491
+- `verstBelegt` → Game/buendnis/01-daten-regeln.js:445
+- `verstBerichte` → Game/buendnis/01-daten-regeln.js:495
 - `verstecke` → Game/speichern.js:83
-- `verstFrei` → Game/buendnis/01-daten-regeln.js:442
-- `verstHeim` → Game/buendnis/01-daten-regeln.js:446
-- `verstHtml` → Game/buendnis/01-daten-regeln.js:498
-- `verstLesen` → Game/buendnis/01-daten-regeln.js:431
-- `verstMoeglich` → Game/buendnis/01-daten-regeln.js:445
-- `verstNachKampf` → Game/buendnis/01-daten-regeln.js:473
-- `verstPlatz` → Game/buendnis/01-daten-regeln.js:436
-- `verstPlatzStufe` → Game/buendnis/01-daten-regeln.js:435
-- `verstPruefen` → Game/buendnis/01-daten-regeln.js:452
-- `verstSpeichern` → Game/buendnis/01-daten-regeln.js:432
-- `verstStufe` → Game/buendnis/01-daten-regeln.js:433
-- `verstUnbekannt` → Game/buendnis/01-daten-regeln.js:444
-- `verstVorKampf` → Game/buendnis/01-daten-regeln.js:458
-- `verstWert` → Game/buendnis/01-daten-regeln.js:468
+- `verstFrei` → Game/buendnis/01-daten-regeln.js:446
+- `verstHeim` → Game/buendnis/01-daten-regeln.js:450
+- `verstHtml` → Game/buendnis/01-daten-regeln.js:502
+- `verstLesen` → Game/buendnis/01-daten-regeln.js:435
+- `verstMoeglich` → Game/buendnis/01-daten-regeln.js:449
+- `verstNachKampf` → Game/buendnis/01-daten-regeln.js:477
+- `verstPlatz` → Game/buendnis/01-daten-regeln.js:440
+- `verstPlatzStufe` → Game/buendnis/01-daten-regeln.js:439
+- `verstPruefen` → Game/buendnis/01-daten-regeln.js:456
+- `verstSpeichern` → Game/buendnis/01-daten-regeln.js:436
+- `verstStufe` → Game/buendnis/01-daten-regeln.js:437
+- `verstUnbekannt` → Game/buendnis/01-daten-regeln.js:448
+- `verstVorKampf` → Game/buendnis/01-daten-regeln.js:462
+- `verstWert` → Game/buendnis/01-daten-regeln.js:472
 - `verstZeilen` → Game/spiel/01a-grundlagen.js:150
 - `villageTower` → Game/baukunst/05-umland.js:233
 - `VINE` → Game/baukunst/08-himmelsfeste-bilder.js:19
@@ -2392,7 +2393,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `zahlOk` → Game/spiel/10d-welt-weltrechner.js:95
 - `zeige` → Game/speichern.js:65
 - `zeigen` → Game/benachrichtigung.js:44
-- `zeile` → Game/buendnis/01-daten-regeln.js:500
+- `zeile` → Game/buendnis/01-daten-regeln.js:504
 - `zielPruefen` → Game/spiel/10d-welt-weltrechner.js:943
 - `zitadelle` → Game/baukunst/02-buehne-grundbasis.js:330
 - `zoomAt` → Game/spiel/03e-kamera-eingabe.js:151
@@ -2960,64 +2961,65 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundVerbuendet` :74
 - `bundTagVon` :75
 - `bundName` :76
-- `bundBasenText` :77
-- `bundMacht` :78
-- `bundCap` :79
-- `bundBasen` :80
-- `bundMitte` :81
-- `bundLog` :82
-- `bundUnterAngriff` :83 — kommt gerade ein Angriff (oder eine Armee) von außerhalb des Bündnisses?
-- `bundMelden` :94 — 2) REGELN – nur der Weltrechner ändert die Bündnisse. who = 'u<id>' (echter Spi…
-- `bundEinmal` :97
-- `bundAlleMelden` :99
-- `bundPush` :100
-- `bundGehoert` :101
-- `bundZahl` :102
-- `bundZielOk` :103 — darf w diese Basis angreifen? '' = ja
-- `bundZahlen` :111 — Münzen abziehen (bei echten Spielern über ihr Konto beim Weltrechner)
-- `bundRaus` :116 — w verlässt das Bündnis (oder wird rausgeworfen)
-- `bundRein` :126
-- `bundEinladungen` :131
-- `bundOp` :132
-- `kennung` :135
-- `fertig` :136
-- `bundSignal` :254
-- `bundHilfe` :272 — Truppen zur Verstärkung an die Basis eines Mitglieds, die gerade angegriffen wi…
-- `bundMarsch` :279 — ein Marsch zur Basis eines anderen Mitglieds (Rally oder Hilfe) → '' oder Grund
-- `bundSendAnkunft` :292 — (resolveSend) ein Rally-/Hilfe-Marsch kommt an → true, wenn hier erledigt
-- `bundHeimschicken` :329 — ret: Rückweg-Bonus SEINES Helden (+ % Tempo, wie retreatSecs)
-- `hilfeDauer` :343 — ganze Dauer (ms) dieses Baus / dieser Forschung
-- `hilfeSchritt` :348
-- `hilfeJob` :349 — der laufende Bau / die laufende Forschung (Spieler oder Mitspieler)
-- `hilfeName` :354
-- `bundHilfeBitte` :355
-- `bundHelfen` :369 — → true, wenn geholfen
-- `hilfeAnwenden` :379 — (Handy) die Hilfen der anderen an meinen Bau / meine Forschung anrechnen – jede…
-- `hilfeMeine` :389
-- `bundHilfeKnopf` :390 — im Gebäude-/Labor-Fenster während des Baus: um Hilfe bitten oder sehen, wie vie…
-- `bundHilfeHtml` :397 — Bündnis-Fenster: wem du gerade helfen kannst
-- `bundHilfeTakt` :407 — (Weltrechner) Mitspieler bitten um Hilfe bei langen Bauten und helfen den ander…
-- `verstLesen` :431
-- `verstSpeichern` :432
-- `verstStufe` :433
-- `eigeneTruppen` :434
-- `verstPlatzStufe` :435
-- `verstPlatz` :436
-- `rallyPlatzStufe` :438 — Rally-Größe (Botschaft, Alexander 4.10.): so viele Truppen dürfen einer Rally b…
-- `rallyPlatz` :439
-- `rallyFrei` :440
-- `verstBelegt` :441
-- `verstFrei` :442
-- `verstUnbekannt` :444 — Zuschauer (Handy): die Botschaft anderer kennt nur der Weltrechner (vom Server …
-- `verstMoeglich` :445
-- `verstHeim` :446 — eine Verstärkung marschiert heim (zu ihrer Basis, sonst zur Hauptstadt)
-- `verstPruefen` :452 — (Weltrechner, alle 15 s) Verstärkung bei jemandem, der nicht mehr im selben Bün…
-- `verstVorKampf` :458 — Kampf um Basis id: vorher die Verstärkung dazu (kämpft wie die Besatzung), nach…
-- `verstWert` :468 — was n Truppen von w in einer Basis an Verteidigung mitbringen (Skill Verteidigu…
-- `verstNachKampf` :473
-- `verstBerichte` :491 — Kampfbericht an die Helfer (echte Spieler): derselbe große Bericht, aus ihrer S…
-- `verstHtml` :498 — Die Botschaft (Stadt): wer dich verstärkt – und wo deine Truppen stehen. Zurück…
-- `zeile` :500
+- `bundZielName` :77 — Ziel wie auf der Karte: Besitzer bzw. „Neutrale Basis“ statt „Turm #N“
+- `bundBasenText` :81
+- `bundMacht` :82
+- `bundCap` :83
+- `bundBasen` :84
+- `bundMitte` :85
+- `bundLog` :86
+- `bundUnterAngriff` :87 — kommt gerade ein Angriff (oder eine Armee) von außerhalb des Bündnisses?
+- `bundMelden` :98 — 2) REGELN – nur der Weltrechner ändert die Bündnisse. who = 'u<id>' (echter Spi…
+- `bundEinmal` :101
+- `bundAlleMelden` :103
+- `bundPush` :104
+- `bundGehoert` :105
+- `bundZahl` :106
+- `bundZielOk` :107 — darf w diese Basis angreifen? '' = ja
+- `bundZahlen` :115 — Münzen abziehen (bei echten Spielern über ihr Konto beim Weltrechner)
+- `bundRaus` :120 — w verlässt das Bündnis (oder wird rausgeworfen)
+- `bundRein` :130
+- `bundEinladungen` :135
+- `bundOp` :136
+- `kennung` :139
+- `fertig` :140
+- `bundSignal` :258
+- `bundHilfe` :276 — Truppen zur Verstärkung an die Basis eines Mitglieds, die gerade angegriffen wi…
+- `bundMarsch` :283 — ein Marsch zur Basis eines anderen Mitglieds (Rally oder Hilfe) → '' oder Grund
+- `bundSendAnkunft` :296 — (resolveSend) ein Rally-/Hilfe-Marsch kommt an → true, wenn hier erledigt
+- `bundHeimschicken` :333 — ret: Rückweg-Bonus SEINES Helden (+ % Tempo, wie retreatSecs)
+- `hilfeDauer` :347 — ganze Dauer (ms) dieses Baus / dieser Forschung
+- `hilfeSchritt` :352
+- `hilfeJob` :353 — der laufende Bau / die laufende Forschung (Spieler oder Mitspieler)
+- `hilfeName` :358
+- `bundHilfeBitte` :359
+- `bundHelfen` :373 — → true, wenn geholfen
+- `hilfeAnwenden` :383 — (Handy) die Hilfen der anderen an meinen Bau / meine Forschung anrechnen – jede…
+- `hilfeMeine` :393
+- `bundHilfeKnopf` :394 — im Gebäude-/Labor-Fenster während des Baus: um Hilfe bitten oder sehen, wie vie…
+- `bundHilfeHtml` :401 — Bündnis-Fenster: wem du gerade helfen kannst
+- `bundHilfeTakt` :411 — (Weltrechner) Mitspieler bitten um Hilfe bei langen Bauten und helfen den ander…
+- `verstLesen` :435
+- `verstSpeichern` :436
+- `verstStufe` :437
+- `eigeneTruppen` :438
+- `verstPlatzStufe` :439
+- `verstPlatz` :440
+- `rallyPlatzStufe` :442 — Rally-Größe (Botschaft, Alexander 4.10.): so viele Truppen dürfen einer Rally b…
+- `rallyPlatz` :443
+- `rallyFrei` :444
+- `verstBelegt` :445
+- `verstFrei` :446
+- `verstUnbekannt` :448 — Zuschauer (Handy): die Botschaft anderer kennt nur der Weltrechner (vom Server …
+- `verstMoeglich` :449
+- `verstHeim` :450 — eine Verstärkung marschiert heim (zu ihrer Basis, sonst zur Hauptstadt)
+- `verstPruefen` :456 — (Weltrechner, alle 15 s) Verstärkung bei jemandem, der nicht mehr im selben Bün…
+- `verstVorKampf` :462 — Kampf um Basis id: vorher die Verstärkung dazu (kämpft wie die Besatzung), nach…
+- `verstWert` :472 — was n Truppen von w in einer Basis an Verteidigung mitbringen (Skill Verteidigu…
+- `verstNachKampf` :477
+- `verstBerichte` :495 — Kampfbericht an die Helfer (echte Spieler): derselbe große Bericht, aus ihrer S…
+- `verstHtml` :502 — Die Botschaft (Stadt): wer dich verstärkt – und wo deine Truppen stehen. Zurück…
+- `zeile` :504
 
 ### Game/buendnis/02-rally-geschenke.js — Bündnis: Rally, Geschenke, Tempel-Bonus, Gebiet
 - `bundRallyStart` :5 — 3) RALLY – gemeinsamer Angriff: sammeln beim Starter, nach Ablauf EIN Angriff m…

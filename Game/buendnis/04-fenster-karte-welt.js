@@ -64,7 +64,7 @@ function bundInfoHtml(a) {
 function bundSigText(s) { const S = BUND_SIGNALE[s.art]; return S ? S.text(s.z !== null && islandById[s.z] ? islandTitle(islandById[s.z]) : '') : ''; }
 function bundChatText(x, du) {                                    // was eine Zeile sagt (ohne den Namen; du: die eigene Zeile – „Du hast …“)
     const C = BUND_CHAT[x.k]; if (!C) return '';
-    const ort = x.z !== null && x.z !== undefined && islandById[x.z] ? islandTitle(islandById[x.z]) : '';
+    const ort = x.z !== null && x.z !== undefined && islandById[x.z] ? bundZielName(islandById[x.z]) : '';
     if (x.k === 'teilen') return (du ? 'hast ' : 'hat ') + (ort || 'einen Ort') + ' geteilt';
     if (x.k === 's_rally') return (du ? 'hast' : 'hat') + ' eine Rally auf ' + (ort || 'ein Ziel') + ' gestartet';
     if (x.k === 's_rein') return du ? 'bist dem Bündnis beigetreten' : C.t;
@@ -93,7 +93,7 @@ function bundChatNeu() {                                          // (Handy) neu
 }
 function bundRallyZeile(r, meins) {
     const now = Date.now(), ziel = islandById[r.t], mein = r.j.filter(j => j.w === 'player').reduce((s, j) => s + j.n, 0) + (r.by === 'player' ? r.n0 : 0);
-    return '<div class="bd-zeile bd-rally' + (meins ? '' : ' is-feind') + '"><span class="bd-sic">' + icon(meins ? 'flag' : 'attack') + '</span><span class="bd-name"><b>' + (meins ? 'Rally auf ' : 'Gefahr: Rally auf ') + escapeHtml(islandTitle(ziel)) + '</b>' +
+    return '<div class="bd-zeile bd-rally' + (meins ? '' : ' is-feind') + '"><span class="bd-sic">' + icon(meins ? 'flag' : 'attack') + '</span><span class="bd-name"><b>' + (meins ? 'Rally auf ' : 'Gefahr: Rally auf ') + escapeHtml(bundZielName(ziel)) + '</b>' +
         '<small>' + escapeHtml(bundName(r.by)) + (meins && r.held && heroById(r.held) ? ' mit ' + heroById(r.held).name + (r.held2 && heroById(r.held2) ? ' & ' + heroById(r.held2).name : '') : '') + ' · los in ' + uhrHtml(r.los, 'clock') + (meins ? ' · ' + fmtCompact(bundRallyTruppen(r)) + ' bereit' + (bundRallyUnterwegs(r) ? ' + ' + fmtCompact(bundRallyUnterwegs(r)) + ' unterwegs' : '') + ' · ' + (new Set([r.by].concat(r.j.map(j => j.w))).size) + ' dabei' + (mein ? ' · du: ' + fmtCompact(mein) : '') : '') + '</small></span>' +
         '<button type="button" class="btn btn--secondary btn--sm" data-bact="zeigen" data-z="' + r.at + '">Zeigen</button>' +
         (meins && now < r.los - 2000 ? '<button type="button" class="btn btn--primary btn--sm" data-bact="dazuWahl" data-rid="' + r.id + '">Mitmachen</button>' : '') +
@@ -149,7 +149,7 @@ function bundWahlHtml() {
     const q = w.mode === 'rally' ? [...ownedIslands].filter(id => (islandTroops[id] || 0) >= 1 && id !== ziel.id && routeFor(islandById[id].landmassId, ziel.landmassId, 'player')).map(id => ({ id, n: islandTroops[id] || 0, eta: travelDurationSeconds(islandById[id], ziel) * 1000 })).sort((x, y) => y.n - x.n).slice(0, 40)
         : bundQuellen(ziel, undefined, w.mode === 'dazu');   // (Rally beitreten: jederzeit und Tore egal – wer zu spät kommt, folgt direkt zum Ziel)   // (Verstärkung: jederzeit – sie bleibt dort, bis du sie zurückholst)
     if (w.von === undefined || !q.some(x => x.id === w.von)) w.von = q.length ? q[0].id : null;
-    const titel = w.mode === 'rally' ? 'Rally auf ' + islandTitle(ziel) : w.mode === 'dazu' ? 'Mitmachen: Rally auf ' + islandTitle(islandById[r.t]) : 'Verstärkung für ' + bundName(islandOwnerOf(ziel.id)) + ' · ' + islandTitle(ziel);
+    const titel = w.mode === 'rally' ? 'Rally auf ' + bundZielName(ziel) : w.mode === 'dazu' ? 'Mitmachen: Rally auf ' + bundZielName(islandById[r.t]) : 'Verstärkung für ' + bundName(islandOwnerOf(ziel.id)) + ' · ' + islandTitle(ziel);
     return '<div class="bd-form bd-wahl"><div class="sect"><h4>' + escapeHtml(titel) + '</h4></div>' +
         (q.length ? '<label class="bd-feld"><span>' + (w.mode === 'rally' ? 'Sammelpunkt (deine Basis)' : 'Von Basis') + '</span><select id="bdVon">' + q.map(x => '<option value="' + x.id + '"' + (x.id === w.von ? ' selected' : '') + '>' + escapeHtml(islandTitle(islandById[x.id])) + ' · ' + fmtCompact(x.n) + ' · ' + fmtClock(x.eta / 1000) + '</option>').join('') + '</select></label>' +
             ((w.mode === 'rally' || (w.mode === 'dazu' && r && r.by !== 'player' && !r.j.some(j => j.w === 'player' && (j.held || j.held2)))) && heroSegHtml('data-rhero', w.held) ?'<div class="bd-feld"><span>Haupt- und Zweitheld (zählen für deine Truppen)</span><div class="seg hero-seg" id="bdHeld">' + heroSegHtml('data-rhero', w.held) + '</div><div class="seg hero-seg hero-seg2" id="bdHeld2">' + heroSeg2Html('data-rhero2', w.held, w.held2) + '</div></div>' : '') +

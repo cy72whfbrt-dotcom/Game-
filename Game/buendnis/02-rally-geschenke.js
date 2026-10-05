@@ -16,11 +16,11 @@ function bundRallyStart(a, who, b) {
     const held = typeof b.held === 'string' && heroOwned(who, b.held) && !heroBusy(who, b.held) ? b.held : null;   // der Held des Anführers führt die ganze Rally (Alexander 4.10.)
     if (held) { r.held = held; const h2 = heroZweitOk(who, held, typeof b.held2 === 'string' ? b.held2 : null); if (h2) r.held2 = h2; }
     bund.r.push(r);
-    bundLog(a, bundName(who) + ' sammelt zur Rally auf ' + islandTitle(islandById[t]) + '.'); bundChatDazu(a, who, 's_rally', t);
+    bundLog(a, bundName(who) + ' sammelt zur Rally auf ' + bundZielName(islandById[t]) + '.'); bundChatDazu(a, who, 's_rally', t);
     const ow = islandOwnerOf(t), warnt = ow && ow !== who && bundEinmal('r|' + ow + '|' + who + '|' + t);
-    if (warnt) bundPush(ow, { art: 'rally', von: bundName(who), basis: islandTitle(islandById[t]), ankunft: r.los });
-    if (warnt && botById[ow] && botById[ow].mensch) bundMelden(ow, 'Achtung: ' + bundName(who) + ' sammelt Truppen für einen gemeinsamen Angriff auf ' + islandTitle(islandById[t]) + '!');
-    for (const w of a.mit) if (w !== who && bundKommtHin(w, at, Infinity) && bundEinmal('ri|' + w + '|' + who + '|' + t)) bundMelden(w, bundName(who) + ' startet eine Rally auf ' + islandTitle(islandById[t]) + ' – mach mit (Bündnis → Rally).');   // (nur wer es rechtzeitig schafft)
+    if (warnt) bundPush(ow, { art: 'rally', von: bundName(who), basis: bundZielName(islandById[t]), ankunft: r.los });
+    if (warnt && botById[ow] && botById[ow].mensch) bundMelden(ow, 'Achtung: ' + bundName(who) + ' sammelt Truppen für einen gemeinsamen Angriff auf ' + bundZielName(islandById[t]) + '!');
+    for (const w of a.mit) if (w !== who && bundKommtHin(w, at, Infinity) && bundEinmal('ri|' + w + '|' + who + '|' + t)) bundMelden(w, bundName(who) + ' startet eine Rally auf ' + bundZielName(islandById[t]) + ' – mach mit (Bündnis → Rally).');   // (nur wer es rechtzeitig schafft)
     saveGame(); return '';
 }
 function bundKommtHin(w, ziel, bis) {                            // hat w eine Basis, deren Truppen rechtzeitig bei ziel sind?
@@ -56,7 +56,7 @@ function bundRallyEnde(r, grund) {                               // abgebrochen:
     const by = r.by, own = islandOwnerOf(r.at) === by;
     if (own) islandTroops[r.at] = (islandTroops[r.at] || 0) + r.n0; else bundHeimschicken(by, r.at, bundCap(by), r.n0);
     for (const j of r.j) if (j.da) bundHeimschicken(j.w, r.at, j.f, j.n);    // (die noch unterwegs sind, kehren bei der Ankunft um)
-    const a = bund.b[r.aid], txt = 'Rally auf ' + islandTitle(islandById[r.t]) + ' abgebrochen: ' + grund + '.';
+    const a = bund.b[r.aid], txt = 'Rally auf ' + bundZielName(islandById[r.t]) + ' abgebrochen: ' + grund + '.';
     if (a) bundLog(a, txt); for (const w of new Set([by].concat(r.j.map(j => j.w)))) bundMelden(w, txt);   // (Bescheid bekommen nur die, die mitmachen)
     saveGame(); saveProgression(); bundSpeichern();
 }
@@ -78,7 +78,7 @@ function bundRallyLos(r) {
     for (const k in bundMem.rallyWeg) if (bundMem.rallyWeg[k].bis < Date.now()) delete bundMem.rallyWeg[k];   // (abgelaufene weg – sonst wächst die Liste ewig)
     bundMem.rallyWeg[r.id] = { t: r.t, at: r.at, by, bis: Date.now() + 60 * 60000 };   // (für Nachzügler: sie folgen direkt zum Ziel)
     bund.r = bund.r.filter(x => x !== r);
-    const a = bund.b[r.aid], txt = 'Rally auf ' + islandTitle(islandById[r.t]) + ' marschiert los: ' + fmtCompact(total) + ' Truppen von ' + atk.rally.an.length + (atk.rally.an.length === 1 ? ' Basis.' : ' Basen.');
+    const a = bund.b[r.aid], txt = 'Rally auf ' + bundZielName(islandById[r.t]) + ' marschiert los: ' + fmtCompact(total) + ' Truppen von ' + atk.rally.an.length + (atk.rally.an.length === 1 ? ' Basis.' : ' Basen.');
     if (a) bundLog(a, txt); for (const w of new Set(atk.rally.an.map(x => x[0]))) bundMelden(w, txt);
     saveGame(); saveProgression(); bundSpeichern();
 }
@@ -179,7 +179,7 @@ function kampfAnteile(attack, fallen, hosp, rv, won) {   // rv: Verluste je Eint
 }
 // (Kampf) Beute (Gold, Holz, Stein, Eisen) der Rally nach Truppen verteilen und allen Beteiligten Bescheid geben
 function bundRallyBeute(attack, gain, won, targetId, roh) {   // roh: Holz/Stein/Eisen aus der Beute – auch nach Truppen geteilt
-    const an = attack.rally.an, by = attack.rally.by, sum = an.reduce((s, x) => s + x[2], 0) || 1, ziel = islandTitle(islandById[targetId]);
+    const an = attack.rally.an, by = attack.rally.by, sum = an.reduce((s, x) => s + x[2], 0) || 1, ziel = bundZielName(islandById[targetId]);
     const anteile = {}; for (const x of an) anteile[x[0]] = (anteile[x[0]] || 0) + x[2];
     for (const w in anteile) {
         const teil = gain > 0 && w !== by ? Math.floor(gain * anteile[w] / sum) : 0;

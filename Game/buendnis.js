@@ -73,6 +73,10 @@ function bundVon(who) { const id = who && bundIdx.get(who); return id ? bund.b[i
 function bundVerbuendet(a, b) { if (!a || !b || a === b) return false; const x = bundIdx.get(a); return !!x && x === bundIdx.get(b); }
 function bundTagVon(who) { const a = bundVon(who); return a ? a.tag : ''; }
 function bundName(w) { return w === 'player' ? ((window.profileName && profileName.value) || 'Du') : (botById[w] || {}).name || 'Jemand'; }
+function bundZielName(isl) {                                                  // Ziel wie auf der Karte: Besitzer bzw. „Neutrale Basis“ statt „Turm #N“
+    const t = islandTitle(isl); if (!/^Turm #/.test(t)) return t;
+    const ow = islandOwnerOf(isl.id); return ow ? 'Basis von ' + bundName(ow) : 'Neutrale Basis · ' + coordText(isl.x, isl.y);
+}
 function bundBasenText(w) { const n = whoBases(w); return fmtNum(n) + (n === 1 ? ' Basis' : ' Basen'); }
 function bundMacht(a) { let s = 0; for (const w of a.mit) s += staerke(w); return s; }
 function bundCap(w) { return w === 'player' ? playerIslandId : botCapitalOf(w); }
@@ -298,7 +302,7 @@ function bundSendAnkunft(send) {
         if (!r && L && Date.now() < L.bis && send.toId === L.at && !bundZielOk(who, L.t) && (islandOwnerOf(L.at) === who || bundVerbuendet(islandOwnerOf(L.at), who))) {
             islandTroops[L.at] = (islandTroops[L.at] || 0) + send.troops; const k = pendingAttacks.length; let ok = false;
             if (AUF) AUF.frei.an(); try { ok = launchAttack(L.at, L.t, who, send.troops, send.held || null, send.held2 || null); } finally { if (AUF) AUF.frei.aus(); }   // (seine Helden kommen mit)
-            if (ok && pendingAttacks.length > k) { bundMelden(who, 'Die Rally auf ' + islandTitle(islandById[L.t]) + ' ist schon los – deine ' + fmtCompact(send.troops) + ' Truppen ziehen direkt weiter zum Ziel.'); saveGame(); saveProgression(); return true; }
+            if (ok && pendingAttacks.length > k) { bundMelden(who, 'Die Rally auf ' + bundZielName(islandById[L.t]) + ' ist schon los – deine ' + fmtCompact(send.troops) + ' Truppen ziehen direkt weiter zum Ziel.'); saveGame(); saveProgression(); return true; }
             islandTroops[L.at] = Math.max(0, (islandTroops[L.at] || 0) - send.troops);
         }
     } else if (send.verst) {                                     // Verstärkung kommt an: stationiert (bleibt seine), sonst heim
@@ -526,11 +530,11 @@ function bundRallyStart(a, who, b) {
     const held = typeof b.held === 'string' && heroOwned(who, b.held) && !heroBusy(who, b.held) ? b.held : null;   // der Held des Anführers führt die ganze Rally (Alexander 4.10.)
     if (held) { r.held = held; const h2 = heroZweitOk(who, held, typeof b.held2 === 'string' ? b.held2 : null); if (h2) r.held2 = h2; }
     bund.r.push(r);
-    bundLog(a, bundName(who) + ' sammelt zur Rally auf ' + islandTitle(islandById[t]) + '.'); bundChatDazu(a, who, 's_rally', t);
+    bundLog(a, bundName(who) + ' sammelt zur Rally auf ' + bundZielName(islandById[t]) + '.'); bundChatDazu(a, who, 's_rally', t);
     const ow = islandOwnerOf(t), warnt = ow && ow !== who && bundEinmal('r|' + ow + '|' + who + '|' + t);
-    if (warnt) bundPush(ow, { art: 'rally', von: bundName(who), basis: islandTitle(islandById[t]), ankunft: r.los });
-    if (warnt && botById[ow] && botById[ow].mensch) bundMelden(ow, 'Achtung: ' + bundName(who) + ' sammelt Truppen für einen gemeinsamen Angriff auf ' + islandTitle(islandById[t]) + '!');
-    for (const w of a.mit) if (w !== who && bundKommtHin(w, at, Infinity) && bundEinmal('ri|' + w + '|' + who + '|' + t)) bundMelden(w, bundName(who) + ' startet eine Rally auf ' + islandTitle(islandById[t]) + ' – mach mit (Bündnis → Rally).');   // (nur wer es rechtzeitig schafft)
+    if (warnt) bundPush(ow, { art: 'rally', von: bundName(who), basis: bundZielName(islandById[t]), ankunft: r.los });
+    if (warnt && botById[ow] && botById[ow].mensch) bundMelden(ow, 'Achtung: ' + bundName(who) + ' sammelt Truppen für einen gemeinsamen Angriff auf ' + bundZielName(islandById[t]) + '!');
+    for (const w of a.mit) if (w !== who && bundKommtHin(w, at, Infinity) && bundEinmal('ri|' + w + '|' + who + '|' + t)) bundMelden(w, bundName(who) + ' startet eine Rally auf ' + bundZielName(islandById[t]) + ' – mach mit (Bündnis → Rally).');   // (nur wer es rechtzeitig schafft)
     saveGame(); return '';
 }
 function bundKommtHin(w, ziel, bis) {                            // hat w eine Basis, deren Truppen rechtzeitig bei ziel sind?
@@ -566,7 +570,7 @@ function bundRallyEnde(r, grund) {                               // abgebrochen:
     const by = r.by, own = islandOwnerOf(r.at) === by;
     if (own) islandTroops[r.at] = (islandTroops[r.at] || 0) + r.n0; else bundHeimschicken(by, r.at, bundCap(by), r.n0);
     for (const j of r.j) if (j.da) bundHeimschicken(j.w, r.at, j.f, j.n);    // (die noch unterwegs sind, kehren bei der Ankunft um)
-    const a = bund.b[r.aid], txt = 'Rally auf ' + islandTitle(islandById[r.t]) + ' abgebrochen: ' + grund + '.';
+    const a = bund.b[r.aid], txt = 'Rally auf ' + bundZielName(islandById[r.t]) + ' abgebrochen: ' + grund + '.';
     if (a) bundLog(a, txt); for (const w of new Set([by].concat(r.j.map(j => j.w)))) bundMelden(w, txt);   // (Bescheid bekommen nur die, die mitmachen)
     saveGame(); saveProgression(); bundSpeichern();
 }
@@ -588,7 +592,7 @@ function bundRallyLos(r) {
     for (const k in bundMem.rallyWeg) if (bundMem.rallyWeg[k].bis < Date.now()) delete bundMem.rallyWeg[k];   // (abgelaufene weg – sonst wächst die Liste ewig)
     bundMem.rallyWeg[r.id] = { t: r.t, at: r.at, by, bis: Date.now() + 60 * 60000 };   // (für Nachzügler: sie folgen direkt zum Ziel)
     bund.r = bund.r.filter(x => x !== r);
-    const a = bund.b[r.aid], txt = 'Rally auf ' + islandTitle(islandById[r.t]) + ' marschiert los: ' + fmtCompact(total) + ' Truppen von ' + atk.rally.an.length + (atk.rally.an.length === 1 ? ' Basis.' : ' Basen.');
+    const a = bund.b[r.aid], txt = 'Rally auf ' + bundZielName(islandById[r.t]) + ' marschiert los: ' + fmtCompact(total) + ' Truppen von ' + atk.rally.an.length + (atk.rally.an.length === 1 ? ' Basis.' : ' Basen.');
     if (a) bundLog(a, txt); for (const w of new Set(atk.rally.an.map(x => x[0]))) bundMelden(w, txt);
     saveGame(); saveProgression(); bundSpeichern();
 }
@@ -689,7 +693,7 @@ function kampfAnteile(attack, fallen, hosp, rv, won) {   // rv: Verluste je Eint
 }
 // (Kampf) Beute (Gold, Holz, Stein, Eisen) der Rally nach Truppen verteilen und allen Beteiligten Bescheid geben
 function bundRallyBeute(attack, gain, won, targetId, roh) {   // roh: Holz/Stein/Eisen aus der Beute – auch nach Truppen geteilt
-    const an = attack.rally.an, by = attack.rally.by, sum = an.reduce((s, x) => s + x[2], 0) || 1, ziel = islandTitle(islandById[targetId]);
+    const an = attack.rally.an, by = attack.rally.by, sum = an.reduce((s, x) => s + x[2], 0) || 1, ziel = bundZielName(islandById[targetId]);
     const anteile = {}; for (const x of an) anteile[x[0]] = (anteile[x[0]] || 0) + x[2];
     for (const w in anteile) {
         const teil = gain > 0 && w !== by ? Math.floor(gain * anteile[w] / sum) : 0;
@@ -1165,7 +1169,7 @@ function bundInfoHtml(a) {
 function bundSigText(s) { const S = BUND_SIGNALE[s.art]; return S ? S.text(s.z !== null && islandById[s.z] ? islandTitle(islandById[s.z]) : '') : ''; }
 function bundChatText(x, du) {                                    // was eine Zeile sagt (ohne den Namen; du: die eigene Zeile – „Du hast …“)
     const C = BUND_CHAT[x.k]; if (!C) return '';
-    const ort = x.z !== null && x.z !== undefined && islandById[x.z] ? islandTitle(islandById[x.z]) : '';
+    const ort = x.z !== null && x.z !== undefined && islandById[x.z] ? bundZielName(islandById[x.z]) : '';
     if (x.k === 'teilen') return (du ? 'hast ' : 'hat ') + (ort || 'einen Ort') + ' geteilt';
     if (x.k === 's_rally') return (du ? 'hast' : 'hat') + ' eine Rally auf ' + (ort || 'ein Ziel') + ' gestartet';
     if (x.k === 's_rein') return du ? 'bist dem Bündnis beigetreten' : C.t;
@@ -1194,7 +1198,7 @@ function bundChatNeu() {                                          // (Handy) neu
 }
 function bundRallyZeile(r, meins) {
     const now = Date.now(), ziel = islandById[r.t], mein = r.j.filter(j => j.w === 'player').reduce((s, j) => s + j.n, 0) + (r.by === 'player' ? r.n0 : 0);
-    return '<div class="bd-zeile bd-rally' + (meins ? '' : ' is-feind') + '"><span class="bd-sic">' + icon(meins ? 'flag' : 'attack') + '</span><span class="bd-name"><b>' + (meins ? 'Rally auf ' : 'Gefahr: Rally auf ') + escapeHtml(islandTitle(ziel)) + '</b>' +
+    return '<div class="bd-zeile bd-rally' + (meins ? '' : ' is-feind') + '"><span class="bd-sic">' + icon(meins ? 'flag' : 'attack') + '</span><span class="bd-name"><b>' + (meins ? 'Rally auf ' : 'Gefahr: Rally auf ') + escapeHtml(bundZielName(ziel)) + '</b>' +
         '<small>' + escapeHtml(bundName(r.by)) + (meins && r.held && heroById(r.held) ? ' mit ' + heroById(r.held).name + (r.held2 && heroById(r.held2) ? ' & ' + heroById(r.held2).name : '') : '') + ' · los in ' + uhrHtml(r.los, 'clock') + (meins ? ' · ' + fmtCompact(bundRallyTruppen(r)) + ' bereit' + (bundRallyUnterwegs(r) ? ' + ' + fmtCompact(bundRallyUnterwegs(r)) + ' unterwegs' : '') + ' · ' + (new Set([r.by].concat(r.j.map(j => j.w))).size) + ' dabei' + (mein ? ' · du: ' + fmtCompact(mein) : '') : '') + '</small></span>' +
         '<button type="button" class="btn btn--secondary btn--sm" data-bact="zeigen" data-z="' + r.at + '">Zeigen</button>' +
         (meins && now < r.los - 2000 ? '<button type="button" class="btn btn--primary btn--sm" data-bact="dazuWahl" data-rid="' + r.id + '">Mitmachen</button>' : '') +
@@ -1250,7 +1254,7 @@ function bundWahlHtml() {
     const q = w.mode === 'rally' ? [...ownedIslands].filter(id => (islandTroops[id] || 0) >= 1 && id !== ziel.id && routeFor(islandById[id].landmassId, ziel.landmassId, 'player')).map(id => ({ id, n: islandTroops[id] || 0, eta: travelDurationSeconds(islandById[id], ziel) * 1000 })).sort((x, y) => y.n - x.n).slice(0, 40)
         : bundQuellen(ziel, undefined, w.mode === 'dazu');   // (Rally beitreten: jederzeit und Tore egal – wer zu spät kommt, folgt direkt zum Ziel)   // (Verstärkung: jederzeit – sie bleibt dort, bis du sie zurückholst)
     if (w.von === undefined || !q.some(x => x.id === w.von)) w.von = q.length ? q[0].id : null;
-    const titel = w.mode === 'rally' ? 'Rally auf ' + islandTitle(ziel) : w.mode === 'dazu' ? 'Mitmachen: Rally auf ' + islandTitle(islandById[r.t]) : 'Verstärkung für ' + bundName(islandOwnerOf(ziel.id)) + ' · ' + islandTitle(ziel);
+    const titel = w.mode === 'rally' ? 'Rally auf ' + bundZielName(ziel) : w.mode === 'dazu' ? 'Mitmachen: Rally auf ' + bundZielName(islandById[r.t]) : 'Verstärkung für ' + bundName(islandOwnerOf(ziel.id)) + ' · ' + islandTitle(ziel);
     return '<div class="bd-form bd-wahl"><div class="sect"><h4>' + escapeHtml(titel) + '</h4></div>' +
         (q.length ? '<label class="bd-feld"><span>' + (w.mode === 'rally' ? 'Sammelpunkt (deine Basis)' : 'Von Basis') + '</span><select id="bdVon">' + q.map(x => '<option value="' + x.id + '"' + (x.id === w.von ? ' selected' : '') + '>' + escapeHtml(islandTitle(islandById[x.id])) + ' · ' + fmtCompact(x.n) + ' · ' + fmtClock(x.eta / 1000) + '</option>').join('') + '</select></label>' +
             ((w.mode === 'rally' || (w.mode === 'dazu' && r && r.by !== 'player' && !r.j.some(j => j.w === 'player' && (j.held || j.held2)))) && heroSegHtml('data-rhero', w.held) ?'<div class="bd-feld"><span>Haupt- und Zweitheld (zählen für deine Truppen)</span><div class="seg hero-seg" id="bdHeld">' + heroSegHtml('data-rhero', w.held) + '</div><div class="seg hero-seg hero-seg2" id="bdHeld2">' + heroSeg2Html('data-rhero2', w.held, w.held2) + '</div></div>' : '') +

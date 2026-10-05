@@ -273,7 +273,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .bd-knoepfe{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
 .bd-log{display:grid;gap:2px} .bd-log div{display:flex;justify-content:space-between;gap:10px;padding:5px 2px;border-bottom:1px solid var(--line-1);font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-2)}
 .bd-log div:last-child{border-bottom:0} .bd-log small{flex:none;color:var(--tx-3)}
-.bd-form{display:grid;gap:10px;padding:10px;margin-bottom:12px;border:1px solid var(--line-2);border-radius:var(--r-lg);background:rgba(0,0,0,.22)}
+.bd-form{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;padding:10px;margin-bottom:12px;border:1px solid var(--line-2);border-radius:var(--r-lg);background:rgba(0,0,0,.22)}
 .bd-form input:not([type=checkbox]),.bd-form select{width:100%;height:40px;padding:0 10px;border:1px solid var(--line-2);border-radius:var(--r-xs);background:#12151b;color:var(--tx-1);font:600 16px/1 var(--font-ui);box-sizing:border-box}
 .bd-form input:focus,.bd-form select:focus{outline:none;border-color:var(--gold-300)} .bd-tag{text-transform:uppercase;letter-spacing:.15em}
 .bd-farben,.bd-zeichen{display:flex;flex-wrap:wrap;gap:6px}
@@ -281,7 +281,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .bd-zeichen button{width:38px;height:38px;display:grid;place-items:center;border-radius:8px;border:1px solid var(--line-2);color:var(--tx-2)} .bd-zeichen button.on{border-color:var(--gold-300);color:var(--gold-100);background:rgba(214,170,90,.16)}
 .bd-zeichen .icon{width:20px;height:20px}
 .bd-fehler{margin:0;min-height:16px;color:#ff9d8f;font:500 var(--fs-12)/1.3 var(--font-ui)} .bd-fehler:empty{display:none}
-.bd-feld{display:grid;gap:5px} .bd-feld > span{font:600 var(--fs-10)/1.3 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--tx-3)}
+.bd-feld{display:grid;gap:5px;min-width:0} .bd-wahl .sect h4{white-space:normal;line-height:1.3;min-width:0} .bd-feld > span{font:600 var(--fs-10)/1.3 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--tx-3)}   /* Handy: langer Titel bricht um, nichts ragt aus der Box */
 .bd-info{margin:0;font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-2)}
 #popupBund:empty{display:none} #popupBund{display:flex;flex-direction:column;gap:8px}
 .bd-insel{display:flex;flex-wrap:wrap;align-items:center;gap:6px} .bd-insel .btn .icon{width:14px;height:14px}

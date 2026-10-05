@@ -74,6 +74,10 @@ function bundVon(who) { const id = who && bundIdx.get(who); return id ? bund.b[i
 function bundVerbuendet(a, b) { if (!a || !b || a === b) return false; const x = bundIdx.get(a); return !!x && x === bundIdx.get(b); }
 function bundTagVon(who) { const a = bundVon(who); return a ? a.tag : ''; }
 function bundName(w) { return w === 'player' ? ((window.profileName && profileName.value) || 'Du') : (botById[w] || {}).name || 'Jemand'; }
+function bundZielName(isl) {                                                  // Ziel wie auf der Karte: Besitzer bzw. „Neutrale Basis“ statt „Turm #N“
+    const t = islandTitle(isl); if (!/^Turm #/.test(t)) return t;
+    const ow = islandOwnerOf(isl.id); return ow ? 'Basis von ' + bundName(ow) : 'Neutrale Basis · ' + coordText(isl.x, isl.y);
+}
 function bundBasenText(w) { const n = whoBases(w); return fmtNum(n) + (n === 1 ? ' Basis' : ' Basen'); }
 function bundMacht(a) { let s = 0; for (const w of a.mit) s += staerke(w); return s; }
 function bundCap(w) { return w === 'player' ? playerIslandId : botCapitalOf(w); }
@@ -299,7 +303,7 @@ function bundSendAnkunft(send) {
         if (!r && L && Date.now() < L.bis && send.toId === L.at && !bundZielOk(who, L.t) && (islandOwnerOf(L.at) === who || bundVerbuendet(islandOwnerOf(L.at), who))) {
             islandTroops[L.at] = (islandTroops[L.at] || 0) + send.troops; const k = pendingAttacks.length; let ok = false;
             if (AUF) AUF.frei.an(); try { ok = launchAttack(L.at, L.t, who, send.troops, send.held || null, send.held2 || null); } finally { if (AUF) AUF.frei.aus(); }   // (seine Helden kommen mit)
-            if (ok && pendingAttacks.length > k) { bundMelden(who, 'Die Rally auf ' + islandTitle(islandById[L.t]) + ' ist schon los – deine ' + fmtCompact(send.troops) + ' Truppen ziehen direkt weiter zum Ziel.'); saveGame(); saveProgression(); return true; }
+            if (ok && pendingAttacks.length > k) { bundMelden(who, 'Die Rally auf ' + bundZielName(islandById[L.t]) + ' ist schon los – deine ' + fmtCompact(send.troops) + ' Truppen ziehen direkt weiter zum Ziel.'); saveGame(); saveProgression(); return true; }
             islandTroops[L.at] = Math.max(0, (islandTroops[L.at] || 0) - send.troops);
         }
     } else if (send.verst) {                                     // Verstärkung kommt an: stationiert (bleibt seine), sonst heim
