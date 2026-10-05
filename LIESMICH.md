@@ -382,6 +382,15 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   `tests/server_tests.sh <arbeitsordner> betroffen [<git-bereich>]` lässt nur die Server-Tests laufen, die zu den geänderten
   Dateien passen (Tabelle `BETROFFEN` im Skript, Standard-Bereich `origin/claude/neues-projekt-8agldl...HEAD` + Änderungen
   ohne Commit; `OW_TROCKEN=1` zeigt nur die Auswahl).
+- **5.10. Werkzeuge aus der Verbesserer-Runde (nur Werkzeuge, kein Spiel-Code):** `tests/server_tests.sh` wartet, wenn im
+  selben Arbeitsordner schon ein Lauf ist (bis 60 Min., `OW_WARTEN_MIN`; jede Minute „wartet auf Lauf von <pid · Start ·
+  Befehl>“ aus `<arbeitsordner>/.server.lock.info`), statt abzubrechen; `OW_NICHT_WARTEN=1` = altes Verhalten. Mit der Sperre
+  räumt es Reste abgebrochener Läufe ab (PHP-Server mit Arbeitsordner `<arbeitsordner>/gruppeN`, Weltrechner dort, DB
+  `<testdb>_gN`). `betroffen` ohne Bereich nimmt `$(git merge-base origin/claude/neues-projekt-8agldl HEAD)..HEAD` und meldet
+  „N Dateien → Tests …“. `KARTE.md` hat `merge=ours` (`.gitattributes`; Treiber setzt `werkzeuge/git_einrichten.sh`, das
+  `spiel_bauen.sh` und `vor_commit.sh` aufrufen) – keine Merge-Konflikte mehr in der Karte. `werkzeuge/vor_commit.sh` prüft
+  zusätzlich alle geänderten *.sh mit `bash -n`. Neu `werkzeuge/status.sh <kurzname> <schritt> <text>` schreibt die
+  Statuszeile der Firma (`OW_FIRMA` = Ordner).
 - **5.10. Testreihen ohne Handarbeit (nur Tests/Werkzeuge, kein Spiel-Code):** letzter `komplett.sh`-Lauf dauerte 40 Min.
   mit Fehlalarmen unter Last. Jetzt: `tests/komplett.sh` startet zuerst die Server-Reihe, die Browser-Reihe erst wenn alle
   Server-Gruppen laufen (+30 s) und nur mit `OW_SLOTS=2 nice -n 10`. Schreibt `<arbeitsordner>/FORTSCHRITT` (je Test: Gruppe |

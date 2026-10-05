@@ -1,0 +1,2 @@
+# KARTE.md wird beim Bauen neu erzeugt – bei Merges eigene Fassung behalten (Treiber: werkzeuge/git_einrichten.sh)
+KARTE.md merge=ours
