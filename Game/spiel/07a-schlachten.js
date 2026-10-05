@@ -1,5 +1,4 @@
 // Teil 07a-schlachten.js: Schlachten auf der Karte (auch Zuschauer-Anzeige) und Kampf-Effekte
-// ===== Teil 07-schlachten.js: Schlachten auf der Karte (auch Zuschauer-Anzeige), Kampf-Effekte, Kriegsherr (Wanderboss) =====
 // ===== BATTLES ON THE MAP =====
 // When a fight the player is part of resolves, it plays out at the base itself: the arriving column
 // forms up, the garrison steps out, they clash, soldiers fall in proportion to the real losses,

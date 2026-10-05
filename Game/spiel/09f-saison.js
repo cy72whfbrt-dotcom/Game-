@@ -9,7 +9,7 @@
 // Weg: alle Basen, alle Truppen (Start mit PLAYER_START_TROOPS wie ein neuer Spieler), Münzen (0 wie ein neuer Spieler), Stufe (→ 1,
 // damit alle Fähigkeitspunkte), Bündnisse, Märsche, Rallys, Verstärkungen, Armeen, Felder, Nebel, Kampfberichte. Die Hauptstadt zieht
 // auf einen freien Zufallsplatz am Rand (wie der Startplatz eines neuen Spielers). Mitspieler genau wie echte Spieler.
-// Der eigene Spielstand eines echten Spielers übernimmt den Reset über die Nachricht „saison“ (unten) → Neuladen → 01-grundlagen.js.
+// Der eigene Spielstand eines echten Spielers übernimmt den Reset über die Nachricht „saison“ (unten) → Neuladen → 01a-grundlagen.js.
 const SAISON_WOCHEN = 8, SAISON_STUNDE = 18, SAISON_BALD_MS = 3 * 864e5;
 const SAISON_PREISE = [3000, 2000, 1500, 500, 500, 500, 500, 500, 500, 500];   // Gems für Platz 1–10 (Vorschlag, LIESMICH)
 var saison = null, saisonSichT = 0;
@@ -124,13 +124,13 @@ if (window.WELT && !SYSTEM) {
     WELT.beiNachricht.push(function (e) { if (e && e.art === 'saisonBald' && e.ende > Date.now()) afterSplash(() => setTimeout(() => flashHint(saisonBaldText(e.ende), 9000), 2500)); });
     WELT.beiNachricht.push(function (e) {
         if (!e || e.art !== 'saison' || !(e.nr > 0) || e.nr <= (parseInt(store.get('openWaterSaisonMein'), 10) || 1)) return;   // (schon übernommen)
-        WELT.saisonHalt = true; store.set('openWaterSaisonNeu', String(e.nr));                // → nach dem Neuladen übernimmt 01-grundlagen.js den Reset
+        WELT.saisonHalt = true; store.set('openWaterSaisonNeu', String(e.nr));                // → nach dem Neuladen übernimmt 01a-grundlagen.js den Reset
         if (e.neuBis > Date.now()) store.set('openWaterSaisonSchutz', String(Math.min(e.neuBis, Date.now() + NEULING_MS)));   // Anfängerschutz (die Zeit sagt der Weltrechner)
         flashHint('Eine neue Welt-Saison beginnt – das Spiel lädt neu …', 4000); setTimeout(() => location.reload(), 1500);
     });
 }
 // (Handy) die Welt ist wieder in einer älteren Saison als dein Spielstand (Sicherung zurückgespielt – das kann nur der Server):
-// neu laden, 01-grundlagen.js holt den Stand von vor dem Reset zurück
+// neu laden, 01a-grundlagen.js holt den Stand von vor dem Reset zurück
 function saisonWeltZurueck() {
     if (SYSTEM || !window.WELT || !saison || WELT.saisonHalt || (parseInt(store.get('openWaterSaisonMein'), 10) || 1) <= saison.nr) return;
     WELT.saisonHalt = true; flashHint('Die Welt wurde auf einen früheren Stand zurückgesetzt – das Spiel lädt neu …', 5000); setTimeout(() => location.reload(), 1500);

@@ -1,5 +1,4 @@
 // Teil 06a-aufgaben.js: Aufgaben und tägliche Belohnung
-// ===== Teil 06-alltag.js: Aufgaben, Saison-Pass, Anleitung, Thron-Punkte, die Mitte, Kopfgeld, Friedensschild, Willkommen zurück, Nebel =====
 // ===== AUFGABEN (daily quests) + TÄGLICHE BELOHNUNG =====
 
 // (VIP ist seit 2.10. ganz raus – Alexander)

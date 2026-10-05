@@ -1,5 +1,4 @@
 // ===== spiel.js – AUTOMATISCH ZUSAMMENGESETZT aus Game/spiel/*.js (werkzeuge/spiel_bauen.sh). NICHT hier ändern! =====
-// ===== Teil 01-grundlagen.js: Grundlagen: Konstanten, Inseln und Karte, Truppen, Werte, Helden-Daten, Herrscher der Meere =====
 // Rechnet dieses Spiel gerade die Welt (Weltrechner)? Ohne welt.js: immer.
 function rechnet() { return !window.WELT || WELT.leiter; }
 // Läuft hier der Weltrechner auf dem Server (weltrechner/start.js)? Dann: kein eigener Spieler, keine Basis, nichts zeichnen.
@@ -44,14 +43,14 @@ if (!SYSTEM && store.get('openWaterReset') !== RESET_VERSION) {   // (nie beim W
 }
 // WELT-SAISON (Server-Reset alle 8 Wochen, Alexander 5.10.) – der eigene Spielstand übernimmt den Reset beim Laden, bevor das
 // Spiel irgendetwas liest. openWaterSaisonMein = die Saison, in der dieser Spielstand ist (geht im Profil mit – ein Profil von
-// vor dem Reset zählt beim Weltrechner nicht). openWaterSaisonNeu setzt die Nachricht „saison“ (09-events.js), danach lädt die
+// vor dem Reset zählt beim Weltrechner nicht). openWaterSaisonNeu setzt die Nachricht „saison“ (09f-saison.js), danach lädt die
 // Seite neu. Bleibt: Stadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Gems, Holz/Stein/Eisen, Gekauftes, Abholfach.
 // Weg: Stufe (→ 1, damit alle Fähigkeitspunkte), Münzen (→ 0 wie ein neuer Spieler), Verwundete, Kampfberichte, Nebel, Späher,
 // alte Befehle. (Basen, Truppen, Bündnis, Märsche stehen in der Welt – die setzt der Weltrechner zurück.)
 // Anfängerschutz (Alexander 5.10.): nach dem Reset 48 Std. wie ein neuer Spieler – die Zeit kommt vom Weltrechner (openWaterSaisonSchutz).
 // Zurückgespielte Sicherung (Alexander 5.10.): ist die Saison der Welt älter als die dieses Spielstands, holt er sich den Stand von
 // vor dem Reset zurück (openWaterSaisonVorher, beim Reset gemerkt) – die Welt (Server) ist maßgeblich, das Handy folgt nur.
-var saisonNeuGeladen = 0, saisonZurueckGeladen = 0;  // (09-events.js: Hinweis nach dem Neuladen)
+var saisonNeuGeladen = 0, saisonZurueckGeladen = 0;  // (09f-saison.js: Hinweis nach dem Neuladen)
 const SAISON_PRIVAT = ['openWaterLevel', 'openWaterXp', 'openWaterSkills', 'openWaterSkillPoints', 'openWaterCoins', 'openWaterNeulingBis'];   // (was der Reset ändert und das Zurückspielen wiederholt)
 if (!SYSTEM) {
     let mein = parseInt(store.get('openWaterSaisonMein'), 10) || 0, nrW = 0;
@@ -63,7 +62,7 @@ if (!SYSTEM) {
     }
     if (nrW > 0 && mein > nrW && !(neu > mein)) {    // die Welt ist wieder in einer älteren Saison (Sicherung zurückgespielt)
         let v = null; try { v = JSON.parse(store.get('openWaterSaisonVorher')); } catch (e) {}
-        if (v && v.nr === nrW && v.k) { for (const k of SAISON_PRIVAT) { if (typeof v.k[k] === 'string') store.set(k, v.k[k]); else if (k === 'openWaterNeulingBis') store.set(k, '0'); else store.remove(k); }   // (ohne NeulingBis gäbe 10-start.js neuen Schutz)
+        if (v && v.nr === nrW && v.k) { for (const k of SAISON_PRIVAT) { if (typeof v.k[k] === 'string') store.set(k, v.k[k]); else if (k === 'openWaterNeulingBis') store.set(k, '0'); else store.remove(k); }   // (ohne NeulingBis gäbe 10d-welt-weltrechner.js neuen Schutz)
             try { const c = JSON.parse(store.get('openWaterCity')); if (c && typeof c === 'object' && v.w >= 0) { c.wounded = v.w; store.set('openWaterCity', JSON.stringify(c)); } } catch (e) {} }
         mein = nrW; store.set('openWaterSaisonMein', String(mein)); saisonZurueckGeladen = nrW;
         if (window.WELT) { WELT.befehle.length = 0; WELT.ausgang = []; }
@@ -1278,7 +1277,6 @@ const SKILL_DEFS = {
 };
 const EQUIPMENT_BASE_COST = 100;
 
-// ===== Teil 02-maersche.js: Shop, Ausrüstung, Angriffe losschicken, Märsche (Zurückrufen, Beschleunigen), Ankunft beim Senden =====
 // ===== Shop: gem-bought crates, rarity items, combine, salvage =====
 // A second, separate equipment layer on top of the existing coin-
 // upgraded weapon/armor/shield/boots levels above - gem crates drop
@@ -2271,7 +2269,6 @@ const islandsByLandmass = {};
 for (const isl of islands) {
     (islandsByLandmass[isl.landmassId] = islandsByLandmass[isl.landmassId] || []).push(isl);
 }
-// ===== Teil 03-karte.js: Karte zeichnen, 3D-Gebäude, Baukunst-Bilder, Wappen, Thronplatz, Tag und Nacht, Kamera und Eingabe =====
 // ===== MAP RENDERER (verified in the running game; see spec §5) =====
 var viewW = innerWidth, viewH = innerHeight;           // CSS px; written ONLY by sizeBackingStore() (§6) so a resize still knows the old centre.
                                                       // `var` on purpose: sizeBackingStore() already runs at boot, before this block.
@@ -4458,7 +4455,6 @@ function fightEstimate(a) {                       // the fight as it stands righ
 function fightDurationMs(est) {                   // a skirmish is over in ~4 s, a clash of millions takes ~12 s
     return Math.round(Math.max(4000, Math.min(12000, 4000 + 1500 * Math.log10(Math.max(1, est.my + est.en) / 1000))));
 }
-// ===== Teil 04-kampf.js: Titel (Mega-Tempel), Bot-Takt, Ankunft der Angriffe und Kämpfe (kampfDazu, Warten), Kampf-Schätzung, Boni =====
 // ===== TITLES (Mega-Tempel) =====
 // Whoever holds the Mega-Tempel hands out titles: 4 buffs for friends, 4 penalties for rivals (±25 %).
 // A new holder starts with a clean slate. Bots that hold it hand them out too - you may get the Narr.
@@ -4823,7 +4819,6 @@ const RANK_TIERS = [
     { min: 120, name: 'Meister' },
     { min: 225, name: 'Legende' }
 ];
-// ===== Teil 05-profil.js: Titel & Rahmen, Profil, Truhe/Ausrüstung, Skills, Erfolge, Profil antippen, Rangliste, Märsche-Liste, Kampfbericht =====
 // ===== TITEL & RAHMEN: only to buy (Gems or Thron-Punkte) - what you had by rank or Erfolg before stays yours (lookMigrate) =====
 const FRAMES = [
     { id: 'bronze', name: 'Bronze', rank: 0, gems: 0 }, { id: 'silver', name: 'Silber', rank: 1, gems: 200 }, { id: 'gold', name: 'Gold', rank: 2, gems: 400 }, { id: 'platin', name: 'Platin', rank: 3, gems: 700 },
@@ -6193,7 +6188,6 @@ battleLogCloseBtn.addEventListener('click', () => {
     closePanel(battleLogPopup);
     clearInterval(battleLogRefreshTimer);
 });
-// ===== Teil 06-alltag.js: Aufgaben, Saison-Pass, Anleitung, Thron-Punkte, die Mitte, Kopfgeld, Friedensschild, Willkommen zurück, Nebel =====
 // ===== AUFGABEN (daily quests) + TÄGLICHE BELOHNUNG =====
 
 // (VIP ist seit 2.10. ganz raus – Alexander)
@@ -7435,7 +7429,6 @@ function drawPasses(view, now) {                   // a gatehouse on every gated
         ctx.fillStyle = '#f3e6c4'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(label, mx - w / 2 + 22, cy + .5);
     }
 }
-// ===== Teil 07-schlachten.js: Schlachten auf der Karte (auch Zuschauer-Anzeige), Kampf-Effekte, Kriegsherr (Wanderboss) =====
 // ===== BATTLES ON THE MAP =====
 // When a fight the player is part of resolves, it plays out at the base itself: the arriving column
 // forms up, the garrison steps out, they clash, soldiers fall in proportion to the real losses,
@@ -8114,7 +8107,6 @@ function checkRuler() {             // announces a change of ruler once
     else if (lost) flashHint(lost.trim(), 5000);
     updateHudPlayer(); requestRender();
 }
-// ===== Teil 08-stadt.js: Stadt und Gebäude, Burg, Aussehen, Helden, Stadtansicht, Stufenaufstieg =====
 // ===== CAPITAL / CITY (step 1: buildings can be built and upgraded, effects come later) =====
 var CITY_BUILDINGS = [
     { id: 'academy',  name: 'Labor',         icon: 'flask',   x: 215, y: 430, roof: '#2f4f86', dome: true,
@@ -9810,7 +9802,6 @@ function closeLevelUpModal() {
 }
 document.getElementById('levelUpBtn').addEventListener('click', closeLevelUpModal);
 document.getElementById('levelUpModal').addEventListener('click', e => { if (e.target.id === 'levelUpModal') closeLevelUpModal(); });
-// ===== Teil 09-events.js: Funde, Ressourcenfelder, Barbaren-Lager + Tagesboss, Events, Invasion, Drache, Armeen, Wegmarken =====
 // ===== MAP PICKUPS (mini events, player only) =====
 // Every 20-45 s a coin pouch, gem or troop banner appears on land inside the current view; tapping collects it.
 const PICKUP_MAX = 3, PICKUP_LIFE_MS = 40000, PICKUP_HIT_PX = 30;
@@ -11598,7 +11589,7 @@ multiAttackConfirmBtn.addEventListener('click', () => {
 // Weg: alle Basen, alle Truppen (Start mit PLAYER_START_TROOPS wie ein neuer Spieler), Münzen (0 wie ein neuer Spieler), Stufe (→ 1,
 // damit alle Fähigkeitspunkte), Bündnisse, Märsche, Rallys, Verstärkungen, Armeen, Felder, Nebel, Kampfberichte. Die Hauptstadt zieht
 // auf einen freien Zufallsplatz am Rand (wie der Startplatz eines neuen Spielers). Mitspieler genau wie echte Spieler.
-// Der eigene Spielstand eines echten Spielers übernimmt den Reset über die Nachricht „saison“ (unten) → Neuladen → 01-grundlagen.js.
+// Der eigene Spielstand eines echten Spielers übernimmt den Reset über die Nachricht „saison“ (unten) → Neuladen → 01a-grundlagen.js.
 const SAISON_WOCHEN = 8, SAISON_STUNDE = 18, SAISON_BALD_MS = 3 * 864e5;
 const SAISON_PREISE = [3000, 2000, 1500, 500, 500, 500, 500, 500, 500, 500];   // Gems für Platz 1–10 (Vorschlag, LIESMICH)
 var saison = null, saisonSichT = 0;
@@ -11713,20 +11704,19 @@ if (window.WELT && !SYSTEM) {
     WELT.beiNachricht.push(function (e) { if (e && e.art === 'saisonBald' && e.ende > Date.now()) afterSplash(() => setTimeout(() => flashHint(saisonBaldText(e.ende), 9000), 2500)); });
     WELT.beiNachricht.push(function (e) {
         if (!e || e.art !== 'saison' || !(e.nr > 0) || e.nr <= (parseInt(store.get('openWaterSaisonMein'), 10) || 1)) return;   // (schon übernommen)
-        WELT.saisonHalt = true; store.set('openWaterSaisonNeu', String(e.nr));                // → nach dem Neuladen übernimmt 01-grundlagen.js den Reset
+        WELT.saisonHalt = true; store.set('openWaterSaisonNeu', String(e.nr));                // → nach dem Neuladen übernimmt 01a-grundlagen.js den Reset
         if (e.neuBis > Date.now()) store.set('openWaterSaisonSchutz', String(Math.min(e.neuBis, Date.now() + NEULING_MS)));   // Anfängerschutz (die Zeit sagt der Weltrechner)
         flashHint('Eine neue Welt-Saison beginnt – das Spiel lädt neu …', 4000); setTimeout(() => location.reload(), 1500);
     });
 }
 // (Handy) die Welt ist wieder in einer älteren Saison als dein Spielstand (Sicherung zurückgespielt – das kann nur der Server):
-// neu laden, 01-grundlagen.js holt den Stand von vor dem Reset zurück
+// neu laden, 01a-grundlagen.js holt den Stand von vor dem Reset zurück
 function saisonWeltZurueck() {
     if (SYSTEM || !window.WELT || !saison || WELT.saisonHalt || (parseInt(store.get('openWaterSaisonMein'), 10) || 1) <= saison.nr) return;
     WELT.saisonHalt = true; flashHint('Die Welt wurde auf einen früheren Stand zurückgesetzt – das Spiel lädt neu …', 5000); setTimeout(() => location.reload(), 1500);
 }
 if (saisonZurueckGeladen) afterSplash(() => setTimeout(() => flashHint('Die Welt wurde auf einen früheren Stand zurückgesetzt (Saison ' + saisonZurueckGeladen + ') – dein Spielstand passt wieder dazu.', 8000), 1500));
 if (saisonNeuGeladen) afterSplash(() => setTimeout(() => flashHint('Welt-Saison ' + saisonNeuGeladen + ' hat begonnen! Deine Hauptstadt steht an einem neuen Platz am Rand – Burg, Gebäude, Forschung, Helden, Ausrüstung, Gems und Rohstoffe sind geblieben.', 9000), 1500));
-// ===== Teil 10-start.js: Fenster-Start, Ladebild, Musik, Einstellungen, Live-Anzeige, Verbindung zur Welt (Weltrechner-Befehle, Schummel-Schutz) =====
 // ===== UI boot (design-spec §4.4): constants into the markup, shop odds,
 // HUD shortcuts, first-launch toast, player plate =====
 for (const el of document.querySelectorAll('[data-const]'))
@@ -13237,7 +13227,7 @@ if (window.WELT) {
     const hbPunkteGrenze = N => 25.6 * N + 300;      // Stufen-Punkte (aus verkauften Teilen): Ø 12,8 je Kiste, doppelt + Start
     const hbLvlPunkte = l => 2.5 * l * (l - 1);       // Stufe 1 → l kostet 5 + 10 + … Punkte
     const hbItemWert = z => (z[0] * ITEM_MAX_LEVEL + z[1]) * (1 + z[2] * STAR_PCT / 100);
-    // Alle Helden voll (5 Sterne): neue Splitter kommen als Gems (06-alltag.js: 20 je Splitter – Abholfach, Aufgaben, Wochenkette,
+    // Alle Helden voll (5 Sterne): neue Splitter kommen als Gems (06a-aufgaben.js, 06b-pass-anleitung.js: 20 je Splitter – Abholfach, Aufgaben, Wochenkette,
     // Pass). → so viele Gems, wie seine unverbrauchten Splitter (sicher hb.shB, Spielraum hb.fr.sh) hergeben; die sind dann weg.
     // (Gilt auch, wenn erst sein Profil die Helden voll zeigt: mehr als 20 Gems je echtem Splitter gibt es so nie – Splitter kosten mehr.)
     const HB_VOLL_G = 20;
@@ -13269,7 +13259,7 @@ if (window.WELT) {
     }
     // Spielraum wächst mit der Zeit (je Quelle die Tages-Grenze), dazu Erfolge, Stufen-Gems und der Saison-Pass
     function hbKontenMerken(hb, m, now) { m.hbMerkT = now; hb.gU = Math.round(m.g.u); if (m.rk) hb.rU = { h: Math.round(m.rk.h.u), s: Math.round(m.rk.s.u), e: Math.round(m.rk.e.u) }; saveBotState(); }   // (für einen Neustart)
-    // Thron-Shop (06-alltag.js THRONE_OFFERS): jede Ausrüstungskiste 60 Punkte, jede Königliche (mind. Episch) 400. Großzügig: seine
+    // Thron-Shop (06c-thron-mitte.js THRONE_OFFERS): jede Ausrüstungskiste 60 Punkte, jede Königliche (mind. Episch) 400. Großzügig: seine
     // Thron-Punkte (zählt der Weltrechner selbst) zählen für beides – sonst gibt eine gekaufte Kiste einen falschen Alarm
     const hbThronPreis = (id, sonst) => { const o = typeof THRONE_OFFERS !== 'undefined' && THRONE_OFFERS.find(x => x.id === id); return o && o.cost > 0 ? o.cost : sonst; };
     function hbThronKisten(hb, E) {
@@ -13534,7 +13524,7 @@ if (window.WELT) {
     }
     WELT.kontoMuenzen = who => { const m = wacheSehen(who); return m.init ? m.c.u + m.c.vor : 0; };   // (noch nie gesehen: jetzt ansehen – nie ungeprüft das Profil; ohne Mitspieler-Datensatz hat er keine Münzen in der Welt)
     WELT.hauptbuch = who => hbDa(who);                // (für Tests und die Admin-Ansicht)
-    // Neue Welt-Saison (09-events.js saisonNeu): sein Konto passend zurücksetzen – Stufe 1 (EP neu, Stufen-Truppen/-Gems wieder ab
+    // Neue Welt-Saison (09f-saison.js saisonNeu): sein Konto passend zurücksetzen – Stufe 1 (EP neu, Stufen-Truppen/-Gems wieder ab
     // Stufe 1, Fähigkeiten 0 ohne Rücksetz-Gems), Münzen 0, keine Verwundeten, Nebel neu. Bleibt: Stadt, Forschung, Ausrüstung,
     // Helden, Schild, Gems und Rohstoffe (Konten, Topf des Ausgegebenen – ein laufender Bau ist schon bezahlt). Sein altes Profil
     // zählt nicht mehr (welt.js: erst das Profil der neuen Saison) – so gibt es keine Fehlalarme, wenn sein Handy später kommt.
@@ -13858,7 +13848,7 @@ if (window.WELT) {
             for (const who in WELT.menschen) { if (b.an !== 'alle' && who !== 'u' + parseInt(b.an, 10)) continue; const hb = hbDa(who); if (!hb) continue; hb.nbAlle = 1; if (nbMem[who]) nbMem[who].dirty = true; }
             saveBotState(); return;
         }
-        if (b.was === 'saison') { saisonJetzt(); return; }   // Admin-Knopf „Neue Saison jetzt“ (mit Rückfrage): erst die Sicherung, dann der Reset (09-events.js)
+        if (b.was === 'saison') { saisonJetzt(); return; }   // Admin-Knopf „Neue Saison jetzt“ (mit Rückfrage): erst die Sicherung, dann der Reset (09f-saison.js)
         if (b.was !== 'geschenk_bot') return;
         const bs = loadBotState(), ziele = BOT_DEFS.filter(d => !d.mensch && (b.bot === 'alle' || d.id === b.bot));
         for (const d of ziele) { const st = bs[d.id]; if (!st) continue;

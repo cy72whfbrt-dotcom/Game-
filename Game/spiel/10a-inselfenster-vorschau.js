@@ -1,5 +1,4 @@
 // Teil 10a-inselfenster-vorschau.js: Fenster-Start, Insel-Fenster: Inhalt, Angriffs- und Sende-Vorschau, Truppen-Regler
-// ===== Teil 10-start.js: Fenster-Start, Ladebild, Musik, Einstellungen, Live-Anzeige, Verbindung zur Welt (Weltrechner-Befehle, Schummel-Schutz) =====
 // ===== UI boot (design-spec §4.4): constants into the markup, shop odds,
 // HUD shortcuts, first-launch toast, player plate =====
 for (const el of document.querySelectorAll('[data-const]'))

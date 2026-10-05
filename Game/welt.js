@@ -271,7 +271,7 @@
     // ===================================================================================================
     // 3) Beim Laden: Welt einsetzen, andere Spieler als Mitspieler eintragen
     // ===================================================================================================
-    // Welt-Saison (09-events.js): ein Profil aus einer älteren Saison (sein Handy hat den Reset noch nicht übernommen) zählt nicht
+    // Welt-Saison (09f-saison.js): ein Profil aus einer älteren Saison (sein Handy hat den Reset noch nicht übernommen) zählt nicht
     function saisonNr() { const t = S.daten.openWaterSaison || (OW.welt && OW.welt.setzen && OW.welt.setzen.openWaterSaison); const v = P(t); return v && v.nr > 0 ? v.nr : 1; }
     function menschenAktualisieren(liste) {
         const nr = saisonNr();

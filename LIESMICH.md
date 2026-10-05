@@ -2276,7 +2276,8 @@ Truppen. Belohnungen nach Anteil. Neu dazu (vorher galt vieles nur für den Anf�
   setzt alle drei Dateien zusammen und prüft sie (`pruefen`), immer in fester Reihenfolge (`LC_ALL=C`).
 - **Jeder Teil beginnt mit einer Kopfzeile** „// Teil <name>: was drin ist“ – sie kommt nicht in die zusammengesetzte Datei.
 - Das Spiel bekommt Byte für Byte denselben Code wie vorher (geprüft: spiel.js, bots.js, buendnis.js unverändert); danach
-  nur Kommentare mit alten Dateinamen angepasst (welt.js, buendnis.js, admin.php, Teile von spiel.js).
+  nur Kommentare mit alten Dateinamen angepasst (welt.js, buendnis.js, admin.php, Teile von spiel.js); die alten
+  Bereichs-Überschriften „===== Teil 0X-….js“ sind raus (die Kopfzeile jedes Teils ersetzt sie).
 - `hochladen.sh` lädt die Teil-Ordner nicht hoch (nur die zusammengesetzten Dateien); `tests/welt_test.js` liest jetzt
   `10d-welt-weltrechner.js` und `09f-saison.js`.
 - Dazu toter Code raus (keine Wirkung): `window.__splashTips` (ladebildschirm.js), `gesendetKs` (welt.js),

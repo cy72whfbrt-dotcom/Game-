@@ -1,5 +1,4 @@
 // Teil 05a-aussehen-profil.js: Titel und Rahmen kaufen, Profil-Fenster
-// ===== Teil 05-profil.js: Titel & Rahmen, Profil, Truhe/Ausrüstung, Skills, Erfolge, Profil antippen, Rangliste, Märsche-Liste, Kampfbericht =====
 // ===== TITEL & RAHMEN: only to buy (Gems or Thron-Punkte) - what you had by rank or Erfolg before stays yours (lookMigrate) =====
 const FRAMES = [
     { id: 'bronze', name: 'Bronze', rank: 0, gems: 0 }, { id: 'silver', name: 'Silber', rank: 1, gems: 200 }, { id: 'gold', name: 'Gold', rank: 2, gems: 400 }, { id: 'platin', name: 'Platin', rank: 3, gems: 700 },

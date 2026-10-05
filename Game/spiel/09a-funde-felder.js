@@ -1,5 +1,4 @@
 // Teil 09a-funde-felder.js: Funde auf der Karte und Ressourcenfelder
-// ===== Teil 09-events.js: Funde, Ressourcenfelder, Barbaren-Lager + Tagesboss, Events, Invasion, Drache, Armeen, Wegmarken =====
 // ===== MAP PICKUPS (mini events, player only) =====
 // Every 20-45 s a coin pouch, gem or troop banner appears on land inside the current view; tapping collects it.
 const PICKUP_MAX = 3, PICKUP_LIFE_MS = 40000, PICKUP_HIT_PX = 30;

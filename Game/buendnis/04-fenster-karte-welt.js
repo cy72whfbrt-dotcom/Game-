@@ -325,7 +325,7 @@ function bundKarteOben(z, now) {
     ctx.restore();
 }
 
-// Neue Welt-Saison (09-events.js saisonWelt): alle Bündnisse aufgelöst (neu gründen), Rallys, Chat und Verstärkungen weg
+// Neue Welt-Saison (09f-saison.js saisonWelt): alle Bündnisse aufgelöst (neu gründen), Rallys, Chat und Verstärkungen weg
 function bundSaisonNeu() {
     bund = { b: {}, r: [], n: bund.n || 1 }; bundSpeichern();
     bundChat = {}; store.set('openWaterBundChat', '{}');

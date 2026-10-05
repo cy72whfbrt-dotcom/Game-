@@ -1,5 +1,4 @@
 // Teil 02a-shop-stufen.js: Shop: Kisten, Gegenstände (vereinen, zerlegen, verbessern), Erfahrung und Stufen-Belohnungen
-// ===== Teil 02-maersche.js: Shop, Ausrüstung, Angriffe losschicken, Märsche (Zurückrufen, Beschleunigen), Ankunft beim Senden =====
 // ===== Shop: gem-bought crates, rarity items, combine, salvage =====
 // A second, separate equipment layer on top of the existing coin-
 // upgraded weapon/armor/shield/boots levels above - gem crates drop

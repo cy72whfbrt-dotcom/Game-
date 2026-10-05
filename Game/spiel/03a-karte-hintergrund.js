@@ -1,5 +1,4 @@
 // Teil 03a-karte-hintergrund.js: Karte zeichnen: Grundlagen, Meer, Inseln, Gebiete, Wege
-// ===== Teil 03-karte.js: Karte zeichnen, 3D-Gebäude, Baukunst-Bilder, Wappen, Thronplatz, Tag und Nacht, Kamera und Eingabe =====
 // ===== MAP RENDERER (verified in the running game; see spec §5) =====
 var viewW = innerWidth, viewH = innerHeight;           // CSS px; written ONLY by sizeBackingStore() (§6) so a resize still knows the old centre.
                                                       // `var` on purpose: sizeBackingStore() already runs at boot, before this block.

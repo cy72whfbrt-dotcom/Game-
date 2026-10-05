@@ -511,7 +511,7 @@ if (window.WELT) {
     const hbPunkteGrenze = N => 25.6 * N + 300;      // Stufen-Punkte (aus verkauften Teilen): Ø 12,8 je Kiste, doppelt + Start
     const hbLvlPunkte = l => 2.5 * l * (l - 1);       // Stufe 1 → l kostet 5 + 10 + … Punkte
     const hbItemWert = z => (z[0] * ITEM_MAX_LEVEL + z[1]) * (1 + z[2] * STAR_PCT / 100);
-    // Alle Helden voll (5 Sterne): neue Splitter kommen als Gems (06-alltag.js: 20 je Splitter – Abholfach, Aufgaben, Wochenkette,
+    // Alle Helden voll (5 Sterne): neue Splitter kommen als Gems (06a-aufgaben.js, 06b-pass-anleitung.js: 20 je Splitter – Abholfach, Aufgaben, Wochenkette,
     // Pass). → so viele Gems, wie seine unverbrauchten Splitter (sicher hb.shB, Spielraum hb.fr.sh) hergeben; die sind dann weg.
     // (Gilt auch, wenn erst sein Profil die Helden voll zeigt: mehr als 20 Gems je echtem Splitter gibt es so nie – Splitter kosten mehr.)
     const HB_VOLL_G = 20;
@@ -543,7 +543,7 @@ if (window.WELT) {
     }
     // Spielraum wächst mit der Zeit (je Quelle die Tages-Grenze), dazu Erfolge, Stufen-Gems und der Saison-Pass
     function hbKontenMerken(hb, m, now) { m.hbMerkT = now; hb.gU = Math.round(m.g.u); if (m.rk) hb.rU = { h: Math.round(m.rk.h.u), s: Math.round(m.rk.s.u), e: Math.round(m.rk.e.u) }; saveBotState(); }   // (für einen Neustart)
-    // Thron-Shop (06-alltag.js THRONE_OFFERS): jede Ausrüstungskiste 60 Punkte, jede Königliche (mind. Episch) 400. Großzügig: seine
+    // Thron-Shop (06c-thron-mitte.js THRONE_OFFERS): jede Ausrüstungskiste 60 Punkte, jede Königliche (mind. Episch) 400. Großzügig: seine
     // Thron-Punkte (zählt der Weltrechner selbst) zählen für beides – sonst gibt eine gekaufte Kiste einen falschen Alarm
     const hbThronPreis = (id, sonst) => { const o = typeof THRONE_OFFERS !== 'undefined' && THRONE_OFFERS.find(x => x.id === id); return o && o.cost > 0 ? o.cost : sonst; };
     function hbThronKisten(hb, E) {
@@ -808,7 +808,7 @@ if (window.WELT) {
     }
     WELT.kontoMuenzen = who => { const m = wacheSehen(who); return m.init ? m.c.u + m.c.vor : 0; };   // (noch nie gesehen: jetzt ansehen – nie ungeprüft das Profil; ohne Mitspieler-Datensatz hat er keine Münzen in der Welt)
     WELT.hauptbuch = who => hbDa(who);                // (für Tests und die Admin-Ansicht)
-    // Neue Welt-Saison (09-events.js saisonNeu): sein Konto passend zurücksetzen – Stufe 1 (EP neu, Stufen-Truppen/-Gems wieder ab
+    // Neue Welt-Saison (09f-saison.js saisonNeu): sein Konto passend zurücksetzen – Stufe 1 (EP neu, Stufen-Truppen/-Gems wieder ab
     // Stufe 1, Fähigkeiten 0 ohne Rücksetz-Gems), Münzen 0, keine Verwundeten, Nebel neu. Bleibt: Stadt, Forschung, Ausrüstung,
     // Helden, Schild, Gems und Rohstoffe (Konten, Topf des Ausgegebenen – ein laufender Bau ist schon bezahlt). Sein altes Profil
     // zählt nicht mehr (welt.js: erst das Profil der neuen Saison) – so gibt es keine Fehlalarme, wenn sein Handy später kommt.
@@ -1132,7 +1132,7 @@ if (window.WELT) {
             for (const who in WELT.menschen) { if (b.an !== 'alle' && who !== 'u' + parseInt(b.an, 10)) continue; const hb = hbDa(who); if (!hb) continue; hb.nbAlle = 1; if (nbMem[who]) nbMem[who].dirty = true; }
             saveBotState(); return;
         }
-        if (b.was === 'saison') { saisonJetzt(); return; }   // Admin-Knopf „Neue Saison jetzt“ (mit Rückfrage): erst die Sicherung, dann der Reset (09-events.js)
+        if (b.was === 'saison') { saisonJetzt(); return; }   // Admin-Knopf „Neue Saison jetzt“ (mit Rückfrage): erst die Sicherung, dann der Reset (09f-saison.js)
         if (b.was !== 'geschenk_bot') return;
         const bs = loadBotState(), ziele = BOT_DEFS.filter(d => !d.mensch && (b.bot === 'alle' || d.id === b.bot));
         for (const d of ziele) { const st = bs[d.id]; if (!st) continue;

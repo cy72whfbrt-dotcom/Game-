@@ -1,5 +1,4 @@
 // Teil 01a-grundlagen.js: Grundlagen: rechnet(), Zahlen- und Zeit-Anzeige, Bausteine für Kampfbericht und Live-Anzeige, Konstanten
-// ===== Teil 01-grundlagen.js: Grundlagen: Konstanten, Inseln und Karte, Truppen, Werte, Helden-Daten, Herrscher der Meere =====
 // Rechnet dieses Spiel gerade die Welt (Weltrechner)? Ohne welt.js: immer.
 function rechnet() { return !window.WELT || WELT.leiter; }
 // Läuft hier der Weltrechner auf dem Server (weltrechner/start.js)? Dann: kein eigener Spieler, keine Basis, nichts zeichnen.
@@ -44,14 +43,14 @@ if (!SYSTEM && store.get('openWaterReset') !== RESET_VERSION) {   // (nie beim W
 }
 // WELT-SAISON (Server-Reset alle 8 Wochen, Alexander 5.10.) – der eigene Spielstand übernimmt den Reset beim Laden, bevor das
 // Spiel irgendetwas liest. openWaterSaisonMein = die Saison, in der dieser Spielstand ist (geht im Profil mit – ein Profil von
-// vor dem Reset zählt beim Weltrechner nicht). openWaterSaisonNeu setzt die Nachricht „saison“ (09-events.js), danach lädt die
+// vor dem Reset zählt beim Weltrechner nicht). openWaterSaisonNeu setzt die Nachricht „saison“ (09f-saison.js), danach lädt die
 // Seite neu. Bleibt: Stadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Gems, Holz/Stein/Eisen, Gekauftes, Abholfach.
 // Weg: Stufe (→ 1, damit alle Fähigkeitspunkte), Münzen (→ 0 wie ein neuer Spieler), Verwundete, Kampfberichte, Nebel, Späher,
 // alte Befehle. (Basen, Truppen, Bündnis, Märsche stehen in der Welt – die setzt der Weltrechner zurück.)
 // Anfängerschutz (Alexander 5.10.): nach dem Reset 48 Std. wie ein neuer Spieler – die Zeit kommt vom Weltrechner (openWaterSaisonSchutz).
 // Zurückgespielte Sicherung (Alexander 5.10.): ist die Saison der Welt älter als die dieses Spielstands, holt er sich den Stand von
 // vor dem Reset zurück (openWaterSaisonVorher, beim Reset gemerkt) – die Welt (Server) ist maßgeblich, das Handy folgt nur.
-var saisonNeuGeladen = 0, saisonZurueckGeladen = 0;  // (09-events.js: Hinweis nach dem Neuladen)
+var saisonNeuGeladen = 0, saisonZurueckGeladen = 0;  // (09f-saison.js: Hinweis nach dem Neuladen)
 const SAISON_PRIVAT = ['openWaterLevel', 'openWaterXp', 'openWaterSkills', 'openWaterSkillPoints', 'openWaterCoins', 'openWaterNeulingBis'];   // (was der Reset ändert und das Zurückspielen wiederholt)
 if (!SYSTEM) {
     let mein = parseInt(store.get('openWaterSaisonMein'), 10) || 0, nrW = 0;
@@ -63,7 +62,7 @@ if (!SYSTEM) {
     }
     if (nrW > 0 && mein > nrW && !(neu > mein)) {    // die Welt ist wieder in einer älteren Saison (Sicherung zurückgespielt)
         let v = null; try { v = JSON.parse(store.get('openWaterSaisonVorher')); } catch (e) {}
-        if (v && v.nr === nrW && v.k) { for (const k of SAISON_PRIVAT) { if (typeof v.k[k] === 'string') store.set(k, v.k[k]); else if (k === 'openWaterNeulingBis') store.set(k, '0'); else store.remove(k); }   // (ohne NeulingBis gäbe 10-start.js neuen Schutz)
+        if (v && v.nr === nrW && v.k) { for (const k of SAISON_PRIVAT) { if (typeof v.k[k] === 'string') store.set(k, v.k[k]); else if (k === 'openWaterNeulingBis') store.set(k, '0'); else store.remove(k); }   // (ohne NeulingBis gäbe 10d-welt-weltrechner.js neuen Schutz)
             try { const c = JSON.parse(store.get('openWaterCity')); if (c && typeof c === 'object' && v.w >= 0) { c.wounded = v.w; store.set('openWaterCity', JSON.stringify(c)); } } catch (e) {} }
         mein = nrW; store.set('openWaterSaisonMein', String(mein)); saisonZurueckGeladen = nrW;
         if (window.WELT) { WELT.befehle.length = 0; WELT.ausgang = []; }

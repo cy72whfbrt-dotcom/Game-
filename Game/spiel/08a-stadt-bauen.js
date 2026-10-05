@@ -1,5 +1,4 @@
 // Teil 08a-stadt-bauen.js: Stadt: Gebäude bauen und ausbauen, Stadt betreten und verlassen
-// ===== Teil 08-stadt.js: Stadt und Gebäude, Burg, Aussehen, Helden, Stadtansicht, Stufenaufstieg =====
 // ===== CAPITAL / CITY (step 1: buildings can be built and upgraded, effects come later) =====
 var CITY_BUILDINGS = [
     { id: 'academy',  name: 'Labor',         icon: 'flask',   x: 215, y: 430, roof: '#2f4f86', dome: true,

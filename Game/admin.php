@@ -91,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
         // ===== Welt-Saison: jetzt neu beginnen (sonst automatisch alle 8 Wochen am Sonntag 18 Uhr). Der Weltrechner legt vorher eine
-        // Sicherung an (ohne sie keinen Reset) und verteilt die Preise der alten Saison (09-events.js saisonJetzt)
+        // Sicherung an (ohne sie keinen Reset) und verteilt die Preise der alten Saison (09f-saison.js saisonJetzt)
         if ($was === 'saison') {
             lager()->befehl_ablegen(0, json_encode(['art' => 'admin', 'was' => 'saison']), $nr . 's');
             $meldung = 'Neue Welt-Saison angefordert – der Weltrechner legt zuerst eine Sicherung an, dann beginnt die neue Saison (in etwa 1 Minute). Alle Spieler laden dann neu.';
@@ -128,7 +128,7 @@ $spieler = lager()->alle_spieler();
 $wrH = wr_herz(); $wrZ = wr_zustand(); $wrCron = wachhund_cron_da();
 $wrLaeuft = $wrH && empty($wrH['ende']) && wr_laeuft($wrH['pid'] ?? 0) && time() - (int)(($wrH['zeit'] ?? 0) / 1000) <= wr_herz_alt($wrH);
 $wrSicherungen = lager()->sicherungen_liste();
-$saison = json_decode((string)(lager()->stand_laden(0, ['openWaterSaison'])['openWaterSaison'] ?? ''), true);   // Welt-Saison: Nummer, Start, Termin (09-events.js)
+$saison = json_decode((string)(lager()->stand_laden(0, ['openWaterSaison'])['openWaterSaison'] ?? ''), true);   // Welt-Saison: Nummer, Start, Termin (spiel/09f-saison.js)
 // Auffälligkeiten (Schummel-Schutz des Weltrechners, weltrechner/schummel.php): wer, was, wann – mit Namen statt u-Nummer
 $auffaellig = (wr_lesen('schummel.php') ?: [])['liste'] ?? [];
 if (!is_array($auffaellig)) $auffaellig = [];
