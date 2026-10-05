@@ -12,6 +12,7 @@ const php = (code, ein) => execFileSync('php', ['-r', "$_SERVER['SCRIPT_FILENAME
   const p = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); const fe = [];
   p.on('pageerror', e => fe.push(e.message));
   await p.goto('file://' + path.resolve(process.argv[2]) + '/index.html'); await p.waitForTimeout(9000);
+  await p.waitForFunction(() => typeof BOT_DEFS !== 'undefined' && typeof AUF !== 'undefined' && typeof islands !== 'undefined' && islands.length && islandById[playerIslandId], null, { timeout: 60000, polling: 500 }).catch(() => {});   // (unter Last länger warten, bis das Spiel steht)
   const ev = (f, a) => p.evaluate(f, a);
   await ev(() => { for (const id of ['welcomeModal', 'dailyModal', 'levelUpModal', 'rewardModal', 'titleModal']) { const m = document.getElementById(id); if (m) m.hidden = true; } });
   // vorher (Weltrechner-Sicht): ein Mitspieler mit Basis, seine Abwehr, sein Spähblick, seine Macht
@@ -22,6 +23,8 @@ const php = (code, ein) => execFileSync('php', ['-r', "$_SERVER['SCRIPT_FILENAME
     for (const h of Object.keys(b.hs).slice(0, 2)) { b.hs[h].own = true; b.hs[h].q = 6; }
     const isl = [...botOwnedIslands[bot.id]].find(id => islandById[id].type === 'tower' && !bossAt(id));
     islandTroops[isl] = 5000; staerkeMem[bot.id] = null;
+    const lange = Date.now() + 1e9; for (const d of BOT_DEFS) botNextAt[d.id] = lange;   // (bis zum Zuschauer-Modus greift keiner an – unter Last dauert das länger)
+    for (let i = pendingAttacks.length - 1; i >= 0; i--) if (pendingAttacks[i].targetId === isl) pendingAttacks.splice(i, 1);
     for (const d of BOT_DEFS) bs[d.id].macht = Math.round(powerOf(whoProfile(d.id)));   // (wie der Weltrechner jede Minute)
     botCoins[bot.id] = 123456;
     return { bot: bot.id, isl, def: effectiveDefense(islandById[isl]), troops: effectiveTroops(islandById[isl]), spy: spaeherBlick(bot.id), macht: bs[bot.id].macht, state: JSON.stringify(bs), coins: JSON.stringify(botCoins) };
@@ -34,7 +37,7 @@ const php = (code, ein) => execFileSync('php', ['-r', "$_SERVER['SCRIPT_FILENAME
   ok(gekC === '{}', 'Filter: Münzen aller anderen (auch Mitspieler) weg', gekC.slice(0, 80));
   ok(JSON.stringify(g.city) === '{"levels":{"keep":4}}' && g.macht === vor.macht && g.lvl >= 1, 'Filter: Burg-Stufe, Macht, Stufe bleiben', { city: g.city, macht: g.macht });
   // jetzt Zuschauer: WELT da, rechnet nicht; der gekürzte Stand
-  const r1 = await ev(([gek, gekC]) => {
+  const r1 = await ev(([gek, gekC, V]) => {
     window.__befehle = [];
     const W = { leiter: false, ich: 'u999', menschen: {}, beiNachricht: [], ereignisseRaus: [], sichtRaus: {}, armeeSichtRaus: {}, sichtV: -1,
       befehl(art, d) { window.__befehle.push(Object.assign({ art }, d)); }, nachricht() {}, bericht() {} };
@@ -42,9 +45,11 @@ const php = (code, ein) => execFileSync('php', ['-r', "$_SERVER['SCRIPT_FILENAME
     if (botSaveTimer) { clearTimeout(botSaveTimer); botSaveTimer = null; }
     store.set('openWaterBotState', gek); botState = null; loadBotState(); for (const k in staerkeMem) delete staerkeMem[k];
     store.set('openWaterBotCoins', gekC); botCoins = JSON.parse(gekC) || {}; for (const bot of BOT_DEFS) if (!botCoins[bot.id]) botCoins[bot.id] = 0;   // (wie 10-start)
-    return { geheim: fremdGeheim() };
-  }, [gek, gekC]);
+    islandTroops[V.isl] = 5000;   // (bis hier lief die Welt weiter: dieselbe Besatzung wie beim Messen oben)
+    return { geheim: fremdGeheim(), herr: islandOwnerOf(V.isl) === V.bot };
+  }, [gek, gekC, vor]);
   ok(r1.geheim, 'Zuschauer-Modus aktiv');
+  ok(r1.herr, 'die Basis gehört noch dem Mitspieler');
   const r2 = await ev(v => {
     const out = {}, txt = [];
     out.macht = staerke(v.bot); out.def0 = effectiveDefense(islandById[v.isl]);

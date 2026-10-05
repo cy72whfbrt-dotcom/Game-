@@ -6,6 +6,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   const b = await chromium.launch({ args: ['--proxy-server=http://127.0.0.1:9'] });
   const p = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); const fe = []; p.on('pageerror', e => fe.push(e.message));
   await p.goto('file://' + require('path').resolve(process.argv[2]) + '/index.html'); await p.waitForTimeout(9000);
+  await p.waitForFunction(() => typeof BOT_DEFS !== 'undefined' && typeof AUF !== 'undefined' && typeof islands !== 'undefined' && islands.length && islandById[playerIslandId], null, { timeout: 60000, polling: 500 }).catch(() => {});   // (unter Last länger warten, bis das Spiel steht)
   const v = await p.evaluate(() => {
     const frei = x => Object.keys((loadBotState()[x.id] || {}).hs || {}).filter(id => heroOwned(x.id, id) && !heroBusy(x.id, id));
     const A = BOT_DEFS.find(x => !x.mensch && botCapitalOf(x.id) != null && frei(x).length >= 4); if (!A) return { fehler: 'kein Mitspieler mit 4 Helden' };
@@ -23,7 +24,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   console.log(JSON.stringify(v));
   ok(v.turm === 0 && v.haupt > 0, 'Beute nur an der Hauptstadt (andere Basis: 0)', { turm: v.turm, haupt: v.haupt });
   ok(v.gestartet && v.gestartet[2] === 2, 'zwei Wellen mit je 2 Helden unterwegs', v.wellen);
-  await p.waitForTimeout(2500);
+  await p.waitForFunction(() => pendingAttacks.some(a => a.attackerBotId === __h.A && a.targetId === __h.ziel && a.fightEndsAt && a.waves === 2), null, { timeout: 7500, polling: 100 }).catch(() => {});   // (beide Wellen im Kampf – unter Last später)
   const k = await p.evaluate(() => { const f = pendingAttacks.find(a => a.attackerBotId === __h.A && a.targetId === __h.ziel && a.fightEndsAt);
     return f ? { helden: [f.hx && f.hx.id, f.hx && f.hx.id2, f.hx && (f.hx.extra || []).length], bonus: Math.round(f.attackBonus), erwartet: __h.b1 + __h.skill2, wellen: f.waves } : null; });
   ok(k && k.wellen === 2 && k.helden[2] === 0, 'im Kampf nur Haupt- + Zweitheld der ersten Welle', k);
