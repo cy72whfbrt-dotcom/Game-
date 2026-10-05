@@ -61,17 +61,24 @@ Alles Wichtige steht in `LIESMICH.md` – jede Änderung wird dort eingetragen.
 - Erst EINMAL alles sammeln (mehrere Agenten gleichzeitig suchen, je ein Bereich), daraus EINE Liste; offene Fragen auf
   einmal an Alexander. Dann in einem Rutsch abarbeiten – nicht Stück für Stück immer Neues anfangen.
 - **Agenten-Firma** (immer benutzen): Alexander = Chef (Aufgaben, Ideen). Claude = Projektleiter: redet mit Alexander,
-  klärt Fragen, verteilt an die Firma, prüft alle 5 Min. (Wecker), treibt langsame Agenten an – arbeitet selbst kaum:
-  auch Zusammenführen, Sortieren und Hochladen-Vorbereitung machen Agenten.
+  klärt Fragen, verteilt an die Firma, prüft alle 5 Min. (Wecker), treibt langsame Agenten an.
+  **Grenze:** Claude macht selbst nur Kleinkram unter 2 Min. (ein Satz in Regeln/LIESMICH, Live-Seite). Spiel-Code, Tests,
+  Skripte, Zusammenführen und Prüfen machen immer Agenten. Hochladen macht Claude nur nach Alexanders Ja, danach immer
+  `werkzeuge/nach_hochladen.sh` (sobald vorhanden).
   Rollen in `.claude/agents/`: **sucher** (findet Fehler/Lücken, nur lesen) · **programmierer** (baut eine Aufgabe in
-  zugewiesenen Dateien + Test) · **disponent** (bei jeder 5-Min.-Runde: welche wartende Aufgabe kann jetzt schon laufen?) ·
-  **verbesserer** (alle ~30 Min. + nach großen Schritten: Vorschläge, wie die Firma schneller/genauer wird – Claude baut sie ein).
-  Aufpasser-Runde prüft auch: wartet ein Agent, obwohl bei ihm nichts mehr läuft (keine Test-Prozesse)? → sofort antreiben. Nur ZWEI Prüfungen: **schnellpruefer** (nach jeder Aufgabe, ~5–10 Min.: Diff + Schnelltests)
-  und **endpruefer** (einmal vor dem Hochladen, gründlich: alle Änderungen + `tests/komplett.sh`). Schnell UND genau.
+  zugewiesenen Dateien + Test) · **schnellpruefer** (nach jeder Aufgabe, ~5–10 Min.: Diff + Schnelltests) ·
+  **endpruefer** (einmal vor dem Hochladen, gründlich: alle Änderungen + `tests/komplett.sh`) · **aufpasser** (inkl.
+  Disponent; alle 5 Min., max. 2 Min.: bekommt laufende Agenten + wartende Aufgaben, meldet „läuft ok / hängt → antreiben /
+  jetzt starten“) · **verbesserer** (nach jeder großen Aufgabe – nach dem Hochladen bzw. wenn eine Aufgabenliste fertig ist:
+  Vorschläge, wie die Firma schneller/genauer wird – Claude baut sie ein). Nur ZWEI Prüfungen (schnell + end). Schnell UND genau.
+  **Niemand wartet still:** jeder Agent schreibt beim Start und mindestens alle 5 Min. eine Zeile in
+  `<scratchpad>/firma/<kurzname>.txt` (`<Uhrzeit UTC> | <Schritt> | <was läuft>`, am Ende `… | fertig | <Ergebnis>`);
+  den Kurznamen gibt Claude im Auftrag mit. Älter als 10 Min. = „hängt“.
   So viele parallel wie sinnvoll: je Agent eine Aufgabe, getrennte Dateien (sonst eigene Kopie: Worktree).
 - **Immer arbeiten, nie warten:** ist ein Agent fertig, bekommt sofort der nächste eine Aufgabe; nichts Offenes bleibt
   unvergeben. Nach 30 Min. ohne Ergebnis Zwischenstand holen und antreiben. Live-Seite (Artifact „Agenten-Firma“,
-  claude.ai/artifact/UDzcMoamcZSv1qugqKXymm) bei jeder Vergabe/jedem Abschluss aktualisieren (Regelwerk steht dort).
+  claude.ai/artifact/UDzcMoamcZSv1qugqKXymm) bei jeder Vergabe/jedem Abschluss aktualisieren (Regelwerk steht dort); sie
+  zeigt bei jedem Agenten den letzten Schritt aus seiner Statusdatei, wer >10 Min. nichts meldet, steht dort rot.
 - Einmal am Ende komplett testen (`tests/komplett.sh`), dann Alexander wegen Hochladen fragen.
 - Programmierer/Schnellprüfer: Server-Tests nur `betroffen` statt der ganzen Reihe; vor dem Commit `werkzeuge/vor_commit.sh`.
 - Maschine hat 4 Kerne: nie mehrere volle Testreihen gleichzeitig (nur Endprüfer/Zusammenführen); Programmierer testen nur

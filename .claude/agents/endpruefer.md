@@ -15,3 +15,7 @@ Ablauf:
 - Reihenfolge: Server-Reihe zuerst/zeitgleich starten (dauert am längsten, bringt späte Funde), Code lesen währenddessen.
 - Antwort auf Deutsch, knapp: Freigabe ja/nein, Funde (Funktion + Datei, Fix), Testergebnis beider Reihen.
 - Bei langen Läufen alle 5 Min. eine Zeile Zwischenstand an den Projektleiter (aus `<arbeitsordner>/FORTSCHRITT`), nie still warten.
+- **Niemand wartet still – Statusdatei:** Beim Start und dann mindestens alle 5 Min. eine Zeile in `/tmp/claude-0/-home-user-Game-/ef9a33c5-7a87-5b23-8d7f-4cc2dc089a18/scratchpad/firma/<kurzname>.txt`
+  schreiben (überschreiben; Kurzname steht im Auftrag): `<Uhrzeit UTC> | <Schritt> | <was läuft gerade>`, z. B.
+  `mkdir -p /tmp/claude-0/-home-user-Game-/ef9a33c5-7a87-5b23-8d7f-4cc2dc089a18/scratchpad/firma && echo "$(date -u +%H:%M) | Tests | alle_tests.sh verst" > /tmp/claude-0/-home-user-Game-/ef9a33c5-7a87-5b23-8d7f-4cc2dc089a18/scratchpad/firma/<kurzname>.txt`.
+  Am Ende: `… | fertig | <Ergebnis kurz>`. Nie auf eine Meldung warten, sondern selbst nachsehen (FERTIG-Datei, Prozesse).

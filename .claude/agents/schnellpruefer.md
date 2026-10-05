@@ -14,3 +14,7 @@ Ablauf (nicht mehr):
   10d oder Filter/Sichtbarkeit: `tests/server_tests.sh <arbeitsordner> betroffen` (1–3 passende Server-Tests).
 - Commit-Trailer (Co-Authored-By, Claude-Session) nicht prüfen – die kommen aus der Umgebung.
 - Antwort auf Deutsch, sehr knapp: „OK“ oder Liste der Funde (Funktion + Datei, Fix-Vorschlag) + Testergebnis.
+- **Niemand wartet still – Statusdatei:** Beim Start und dann mindestens alle 5 Min. eine Zeile in `/tmp/claude-0/-home-user-Game-/ef9a33c5-7a87-5b23-8d7f-4cc2dc089a18/scratchpad/firma/<kurzname>.txt`
+  schreiben (überschreiben; Kurzname steht im Auftrag): `<Uhrzeit UTC> | <Schritt> | <was läuft gerade>`, z. B.
+  `mkdir -p /tmp/claude-0/-home-user-Game-/ef9a33c5-7a87-5b23-8d7f-4cc2dc089a18/scratchpad/firma && echo "$(date -u +%H:%M) | Tests | alle_tests.sh verst" > /tmp/claude-0/-home-user-Game-/ef9a33c5-7a87-5b23-8d7f-4cc2dc089a18/scratchpad/firma/<kurzname>.txt`.
+  Am Ende: `… | fertig | <Ergebnis kurz>`. Nie auf eine Meldung warten, sondern selbst nachsehen (FERTIG-Datei, Prozesse).

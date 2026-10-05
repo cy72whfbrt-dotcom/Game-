@@ -336,6 +336,11 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   nur die Burg + Hinweis aufs Spähen. Neuer Browser-Test `fremd_test` (kürzt mit dem echten Filter aus server.php),
   Server-Einheitstests ergänzt. Nachtrag (Alexanders Entscheidung): auch die **Münzen der Mitspieler** in `openWaterBotCoins` sieht nur noch der Weltrechner
   (`muenzen_kuerzen` leert den Teil für Spieler; das Handy rechnet fehlende als 0, Beute steht im Spähbericht). Stufe bleibt sichtbar.
+- **5.10. Umbau der Agenten-Firma (nur Firmen-Dateien):** Aufpasser + Disponent sind eine Rolle (`.claude/agents/aufpasser.md`,
+  alle 5 Min., max. 2 Min.: hängt einer? was kann jetzt starten?), `disponent.md` entfällt. Verbesserer läuft nach jeder großen
+  Aufgabe statt alle 30 Min. Jeder Agent schreibt mindestens alle 5 Min. eine Statuszeile nach `<scratchpad>/firma/<kurzname>.txt`
+  (älter als 10 Min. = hängt, Live-Seite zeigt sie rot). Claude selbst nur Kleinkram unter 2 Min.; nach dem Hochladen
+  `werkzeuge/nach_hochladen.sh`.
 - **5.10. Drei Werkzeuge für die Firma (nur Werkzeuge, kein Spiel-Code):** `werkzeuge/vor_commit.sh` (vor jedem Commit:
   Leerzeichen-Fehler im Staging, Konfliktmarker in allen getrackten .md/.js/.sh/.php/.json, `spiel_bauen.sh pruefen` –
   Exit-Code 1 bei Fund). `werkzeuge/server_starten.sh <arbeitsordner>` startet MariaDB und `php -S 127.0.0.1:8770` nur, wenn
