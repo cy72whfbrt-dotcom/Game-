@@ -1523,7 +1523,7 @@ if (window.WELT) {
     function hbKisteDazu(hb, minR) { hb.kN = nn(hb.kN) + 1; if (minR >= 3) hb.kG = nn(hb.kG) + kWert(minR); }
     function hbNeu(who, now, p, frisch) {
         const hb = { v: HB_V, t0: frisch ? now : 0, st: {}, fo: {}, foT: frisch ? now : 0, tb: 1, gear: {}, kN: 0, kG: 0, hs: hbHeldenStart(), shB: 0,
-            gA: 0, cA: 0, rA: { h: 0, s: 0, e: 0 }, gIn: 0, sternG: 0, fr: { g: 10, k: 1, kg: 0, sh: 0, schild: 0 }, frT: frisch ? now : 0, ach: 0, lvG: 1, pass: 0, passF: 0,
+            gA: 0, cA: 0, rA: { h: 0, s: 0, e: 0 }, gIn: 0, sternG: 0, fr: { g: 10, k: 1, kg: 0, sh: 0, schild: 0 }, frT: frisch ? now : 0, thK: frisch ? 0 : undefined, ach: 0, lvG: 1, pass: 0, passF: 0,
             schild: 0, w: {}, sp: [] };                // (fr am Anfang: die Anleitung gibt einmal 10 Gems + 1 Kiste)
         for (const id of hbBauten()) hb.st[id] = [id === 'keep' ? 1 : 0, hb.t0];
         for (const s of HB_SLOTS) hb.gear[s] = [];
@@ -1543,6 +1543,7 @@ if (window.WELT) {
     // Thron-Punkte (zählt der Weltrechner selbst) zählen für beides – sonst gibt eine gekaufte Kiste einen falschen Alarm
     const hbThronPreis = (id, sonst) => { const o = typeof THRONE_OFFERS !== 'undefined' && THRONE_OFFERS.find(x => x.id === id); return o && o.cost > 0 ? o.cost : sonst; };
     function hbThronKisten(hb, E) {
+        if (hb.thK === undefined) { hb.thK = nn(E); return; }   // (bisherige Spieler: erst merken – die schon verdienten Punkte sind keine neuen Kisten)
         const d = nn(E) - nn(hb.thK); if (!(d > 0)) return; hb.thK = nn(E);
         hb.fr.k = nn(hb.fr.k) + d / hbThronPreis('crate', 60); hb.fr.kg = nn(hb.fr.kg) + kWert(3) * d / hbThronPreis('royal', 400);
     }

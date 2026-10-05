@@ -36,6 +36,13 @@ const srv = http.createServer((q, r) => { const f = path.join(D, decodeURICompon
     islandTroops[T] = 1000; verst.l = [{ id: 'vU', w: H.id, t: T, n: 1000, von: [...botOwnedIslands[H.id]][0], at: Date.now() }];
     resolveBotAttack({ sourceId: S, targetId: T, rawTroops: 9e9, startedAt: now - 1000, resolveAt: now, attackerBotId: X.id, attackBonus: 0, atkTitle: 1, atkKraft: 1 });
     out.erobert = { neuerBesitzer: islandOwnerOf(T), angreifer: X.id, hauptstadt: isCapital(T), garnison: islandTroops[T], verstUebrig: verst.l.filter(v => v.t === T).length };
+    // 3) Kampf bricht nach der Eroberung ab (vor verstNachKampf): Aufräumen nimmt die überlebenden Angreifer nicht als Verteidiger-Rest
+    { const T2 = [...botOwnedIslands[B.id]][0]; islandTroops[T2] = 500; verst.l = [{ id: 'vA', w: H.id, t: T2, n: 500, von: [...botOwnedIslands[H.id]][0], at: Date.now() }];
+      const a3 = { targetId: T2, _vk: verstVorKampf(T2), _vkOwner: 'nicht-mehr-da' }; islandTroops[T2] = 3000;   // (Besitzer jetzt ein anderer, dort 3.000 Angreifer)
+      kampfAufraeumen(a3); out.abbruch = { garnison: islandTroops[T2], verstUebrig: verst.l.filter(v => v.t === T2).length, vk: a3._vk === undefined && a3._vkOwner === undefined };
+      islandTroops[T2] = 500; verst.l = [{ id: 'vB', w: H.id, t: T2, n: 500, von: [...botOwnedIslands[H.id]][0], at: Date.now() }];
+      kampfAufraeumen({ targetId: T2, _vk: verstVorKampf(T2), _vkOwner: islandOwnerOf(T2) }); const vb = verst.l.find(v => v.id === 'vB');
+      out.abbruchGehalten = { garnison: islandTroops[T2], helfer: vb ? vb.n : 0 }; }
     return out;
   });
   console.log(JSON.stringify(r, null, 1));
@@ -45,5 +52,7 @@ const srv = http.createServer((q, r) => { const f = path.join(D, decodeURICompon
   console.log((g.helferVerwundet > 0 && g.helferVerwundet < 10000 - g.helferNachher ? 'OK   ' : 'FEHLER ') + 'Helfer mit Lazarett: ein Teil seiner Verluste ist nur verwundet (in seinem Lazarett) – ' + g.helferVerwundet + ' von ' + (10000 - g.helferNachher));
   const u = r.ungleich; console.log((u.besitzerNoch && u.helferVerlust > 0 && u.helferVerlust < 1000 && Math.abs(u.besitzerVerlust - 9 * u.helferVerlust) <= 9 ? 'OK   ' : 'FEHLER ') + 'ungleich (9.000 + 1.000): Helfer verliert nur seinen Anteil');
   console.log(((r.erobert.neuerBesitzer === r.erobert.angreifer || (r.erobert.hauptstadt && r.erobert.garnison === 0)) && r.erobert.verstUebrig === 0 ? 'OK   ' : 'FEHLER ') + 'erobert: Verstärkung gefallen');
+  console.log((r.abbruch.garnison === 3000 && r.abbruch.verstUebrig === 0 && r.abbruch.vk ? 'OK   ' : 'FEHLER ') + 'Abbruch nach Eroberung: Angreifer bleiben, Verstärkung gefallen – ' + JSON.stringify(r.abbruch));
+  console.log((r.abbruchGehalten.garnison === 500 && r.abbruchGehalten.helfer === 500 ? 'OK   ' : 'FEHLER ') + 'Abbruch ohne Eroberung: Besatzung und Verstärkung wieder getrennt – ' + JSON.stringify(r.abbruchGehalten));
   console.log('Fehler:', fehler.length ? fehler : 'keine'); await b.close(); srv.close();
 })();

@@ -152,6 +152,7 @@ function resolveBotAttack(attack) {
     attack._kampf = 1;                                                // (ab hier wird gekämpft – Wut und Truppen zählen)
     const vk = targetOwner && typeof verstVorKampf === 'function' ? verstVorKampf(target.id) : null;   // Verstärkung (Botschaft) verteidigt mit
     attack._vk = vk;                                                  // (bricht der Kampf mit einem Fehler ab: kampfAufraeumen trennt sie wieder)
+    attack._vkOwner = targetOwner;                                    // (Besitzer vor dem Kampf: so erkennt das Aufräumen eine schon eroberte Insel)
     const originalEnemyTroops = effectiveTroops(target);
     const fullDefense = effectiveDefense(target), originalEnemyDefense = Math.round(fullDefense * (1 - heroDefCut(attack)));   // (a hero's Rammbock, Sturmflut, Mauerbrecher)
     const mensch = w => w === 'player' || !!(w && botById[w] && botById[w].mensch);   // (Berichte gehen nur an Menschen – nur dann die Rechnung aufschreiben)
@@ -227,7 +228,7 @@ function resolveBotAttack(attack) {
         }
     }
     const vs = vk ? verstNachKampf(target.id, vk, won) : null;            // wieder trennen: jeder trägt seinen Anteil an den Verlusten
-    delete attack._vk;
+    delete attack._vk; delete attack._vkOwner;
     const dTeile = typeof verstAnteile === 'function' ? verstAnteile(vk, targetOwner, originalEnemyTroops + fullDefense) : null;   // Verteidiger: Besitzer + Helfer nach Anteil
     const dTeil = w => { const t = dTeile && dTeile.find(x => x[0] === w); return t ? t[1] : 1; };
     const atkWeg = won ? botSentLoss : attack.rawTroops - fled;          // so viele Angreifer haben die Verteidiger getötet

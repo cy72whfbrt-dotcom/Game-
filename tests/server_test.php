@@ -155,5 +155,10 @@ pruefe('fremde Rally: Ziel bleibt (Warnung)', $m['r'][1]['t'], 5);
 pruefe('fremdes Bündnis: Log weg', isset($m['b']['a2']['log']), false);
 pruefe('eigenes Bündnis: Log bleibt', $m['b']['a1']['log'][0]['t'], 'meins');
 
+// Puls: Marsch-Teile, die nur als Flicken kamen, aus demselben festen Stand (vorgeladen) – kein Nachladen (hier ohne Datenbank)
+$mw = ['setzen' => (object)['openWaterArmies' => '[]'], 'flicken' => (object)['openWaterPendingSends' => [['x']], 'openWaterArmies' => [['y']], 'islandTroops' => [['z']]]];
+pruefe('marsch_fehlt: nur Marsch-Teile, die bloß als Flicken kamen', marsch_fehlt($mw), ['openWaterPendingSends']);
+$mw2 = marsch_welt($mw, 1, ['eigen' => [], 'armeen' => []], ['openWaterPendingSends' => '[]']);
+pruefe('marsch_welt: vorgeladenes Teil ganz geschickt, Flicken weg', [isset(((array)$mw2['setzen'])['openWaterPendingSends']), isset(((array)$mw2['flicken'])['openWaterPendingSends']), isset(((array)$mw2['flicken'])['islandTroops'])], [true, false, true]);
 echo ($fehler ? "$fehler von $n Tests FEHLGESCHLAGEN\n" : "Alle $n Server-Tests bestanden.\n");
 exit($fehler ? 1 : 0);

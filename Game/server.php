@@ -353,12 +353,17 @@ function marsch_teil($k, $text, $ich, $eigen, $sieht = []) {
     return json_encode($v, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION);
 }
 // $s: Sicht (für die eigenen Basen), $uid: der Spieler. Teile, die nur als Flicken kamen, werden ganz (gefiltert) geschickt.
-function marsch_welt($w, $uid, $s) {
+// $vorgeladen: diese Teile schon aus demselben festen Stand geladen (marsch_fehlt) – sonst hier nachladen.
+function marsch_fehlt($w) {
+    $t = (array)($w['setzen'] ?? []); $f = (array)($w['flicken'] ?? []);
+    return array_values(array_filter(MARSCH_TEILE, function ($k) use ($t, $f) { return !isset($t[$k]) && isset($f[$k]); }));
+}
+function marsch_welt($w, $uid, $s, $vorgeladen = null) {
     $t = (array)($w['setzen'] ?? []); $f = (array)($w['flicken'] ?? []);
     $da = array_values(array_filter(MARSCH_TEILE, function ($k) use ($t, $f) { return isset($t[$k]) || isset($f[$k]); }));
     if (!$da) return $w;
     $fehlt = array_values(array_filter($da, function ($k) use ($t) { return !isset($t[$k]); }));
-    if ($fehlt) foreach (lager()->stand_laden(0, $fehlt) as $k => $v) $t[$k] = $v;
+    if ($fehlt) foreach ($vorgeladen ?? lager()->stand_laden(0, $fehlt) as $k => $v) if (in_array($k, $fehlt, true)) $t[$k] = $v;
     foreach ($da as $k) { unset($f[$k]); if (isset($t[$k]) && is_string($t[$k])) $t[$k] = marsch_teil($k, $t[$k], 'u' . (int)$uid, $s['eigen'], $s['armeen'] ?? []); }
     $w['setzen'] = (object)$t; if (isset($w['flicken'])) $w['flicken'] = (object)$f;
     return $w;
@@ -1353,13 +1358,14 @@ function welt_puls($ich, $d) {
 
     if (!$sys) {   // Spieler: nur lesen – OHNE die Welt-Sperre, aus einem festen Stand (der Weltrechner muss nie auf sie warten)
         $seit = (int)($d['seit'] ?? 0);
-        [$i, $welt, $sicht, $ganz, $sk] = $l->fest_lesen(function () use ($l, $d, $uid, $seit) {
+        [$i, $welt, $sicht, $ganz, $sk, $mv] = $l->fest_lesen(function () use ($l, $d, $uid, $seit) {
             $i = $l->welt_info();
             $welt = $l->welt_seit_flicken($seit);   // (Version und Teile aus demselben Stand)
             $sicht = $l->sicht_laden($uid);
             $sk = array_merge(NEBEL_TEILE, ['openWaterArmies', 'openWaterFields']);   // (auch Armeen/Felder: was er jetzt sieht, kommt mit Zahlen)
             $ganz = (int)($d['sicht_v'] ?? -1) !== $sicht['v'] && $seit > 0 ? $l->stand_laden(0, $sk) : null;   // 3B: neue Sicht → diese Teile ganz (gefiltert) schicken
-            return [$i, $welt, $sicht, $ganz, $sk];
+            $mf = marsch_fehlt($welt); $mv = $mf ? $l->stand_laden(0, $mf) : [];   // Marsch-Teile, die nur als Flicken kamen: ganz aus demselben Stand
+            return [$i, $welt, $sicht, $ganz, $sk, $mv];
         });
         // filtern erst danach (ohne festen Stand, ohne Sperre)
         $antwort = ['welt' => welt_fuer_spieler($welt, $uid)]; unset($welt);   // Spieler bekommen nur Änderungen
@@ -1370,7 +1376,7 @@ function welt_puls($ich, $d) {
             $w['setzen'] = (object)$t; $w['flicken'] = (object)$f; unset($w, $ganz);
         }
         $antwort['welt'] = nebel_welt($antwort['welt'], $sicht);   // 3B: Nebel – Truppen nur für Inseln, die er sehen darf
-        $antwort['welt'] = marsch_welt($antwort['welt'], $uid, $sicht);   // fremde Kolonnen ohne Zahlen (erst im Kampf)
+        $antwort['welt'] = marsch_welt($antwort['welt'], $uid, $sicht, $mv); unset($mv);   // fremde Kolonnen ohne Zahlen (erst im Kampf)
         $antwort['sicht_v'] = $sicht['v'];
         $antwort['leiter'] = false;
         $antwort['rechner'] = (int)$i['leiter_id'] === 0 && (int)$i['leiter_bis'] >= $jetzt;   // läuft der Weltrechner? (sonst: „Verbindung wird wiederhergestellt …“)

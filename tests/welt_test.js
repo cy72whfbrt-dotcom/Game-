@@ -43,7 +43,9 @@ pruefe('Flicken auf fehlenden Eintrag wird erkannt', flickenAnwenden({ a: 1 }, {
     pruefe('Hauptbuch: Episches Teil ohne sichere Kiste und ohne Gems wird abgelehnt', H.hbGearNeu('u1', hb, {}, 'weapon', [3, 1, 0], 5) !== '');
     hb = hbLeer(); hb.fr.kg = 27;
     pruefe('Hauptbuch: Episches Teil aus Wochenkette/Pass (fr.kg) wird angenommen', H.hbGearNeu('u1', hb, {}, 'weapon', [3, 1, 0], 5) === '' && hb.fr.kg === 0 && hb.kG === 0);
-    hb = hbLeer(); H.hbThronKisten(hb, 400); H.hbThronKisten(hb, 400);
+    hb = hbLeer(); H.hbThronKisten(hb, 900);
+    pruefe('Hauptbuch: bisheriger Spieler ohne thK – schon verdiente Thron-Punkte nur gemerkt, keine Kisten', hb.thK === 900 && hb.fr.k === 0 && hb.fr.kg === 0);
+    hb = hbLeer(); hb.thK = 0; H.hbThronKisten(hb, 400); H.hbThronKisten(hb, 400);
     pruefe('Hauptbuch: 400 Thron-Punkte → Königliche Kiste (einmal gutgeschrieben)', hb.fr.kg === 27 && Math.abs(hb.fr.k - 400 / 60) < 1e-9 && hb.thK === 400);
     pruefe('Hauptbuch: … und das Epische Teil daraus wird angenommen', H.hbGearNeu('u1', hb, {}, 'armor', [3, 1, 0], 5) === '');
     hb = hbLeer(); WERT.a = 100; hb.shB = 95; hb.fr.sh = 2;   // Helden voll (Wert 100, Start 10): 5 unverbrauchte Splitter + 2 aus dem Spielraum

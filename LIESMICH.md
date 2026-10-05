@@ -2205,3 +2205,12 @@ Truppen. Belohnungen nach Anteil. Neu dazu (vorher galt vieles nur für den Anf�
   (server.php versteckt bei fremden Rallys bisher nur [3]–[5] – [6]/[7] dort noch nachtragen).
 - Getestet: neuer `rally_jeder_test` (Helden der Mitglieder, Flucht, Krankenhaus, Rückweg, Punkte, Gold, EP, Kampflog, Rammbock,
   Aufräumen nach Fehler) + alle Tests ohne Server.
+
+### Nachträge Endprüfer (5.10.)
+- **Puls aus EINEM Stand:** Marsch-Teile, die nur als Flicken kamen, lädt der Puls jetzt im selben festen Stand mit
+  (`marsch_fehlt`, an `marsch_welt(…, $vorgeladen)`) – vorher evtl. aus einer neueren Version (Märsche/Truppen kurz unpassend).
+- **Thron-Kisten:** bisherige Spieler ohne `hb.thK` bekommen beim ersten Mal nur gemerkt, was sie schon verdient haben
+  (vorher: alle je verdienten Thron-Punkte als freie Kisten). Neue Hauptbücher starten mit `thK: 0`.
+- **Aufräumen nach Eroberung:** `attack._vkOwner` merkt den Besitzer vor dem Kampf; `kampfAufraeumen` erkennt eine schon
+  eroberte Insel (Verstärkung gefallen, die überlebenden Angreifer bleiben, kein Verteidiger-Rest).
+- Getestet: `welt_test` (thK), `server_test` (marsch_fehlt/marsch_welt), `verst_kampf_test` (Abbruch mit/ohne Eroberung).

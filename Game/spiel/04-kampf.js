@@ -234,8 +234,8 @@ setInterval(() => {
 // hängt), die Truppen einer Rally gehen heim (sonst wären sie weg). attack._vk / _heim setzt der Kampf selbst
 // (_heim: in jedem Zweig gleich nach dem Stationieren/Heimschicken, auch wenn keiner übrig ist – sonst entstünden Truppen doppelt).
 function kampfAufraeumen(a) {
-    try { if (a._vk && typeof verstNachKampf === 'function') verstNachKampf(a.targetId, a._vk, false); } catch (e) { console.warn('FEHLER Aufräumen', e); }
-    delete a._vk;
+    try { if (a._vk && typeof verstNachKampf === 'function') verstNachKampf(a.targetId, a._vk, a._vkOwner !== undefined && islandOwnerOf(a.targetId) !== a._vkOwner); } catch (e) { console.warn('FEHLER Aufräumen', e); }   // (schon erobert: dort stehen die Angreifer, kein Verteidiger-Rest)
+    delete a._vk; delete a._vkOwner;
     try { if (a.rally && !a._heim && typeof bundRallyHeim === 'function') bundRallyHeim(a, a.rawTroops, a.targetId); } catch (e) { console.warn('FEHLER Aufräumen', e); }
     try { saveGame(); saveProgression(); } catch (e) {}
 }

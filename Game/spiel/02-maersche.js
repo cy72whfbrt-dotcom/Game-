@@ -805,6 +805,7 @@ function resolveAttack(attack) {
     if (targetOwner === 'player') { islandTroops[target.id] = (islandTroops[target.id] || 0) + attack.rawTroops; saveGame(); requestRender(); return; }   // inzwischen deine (ein anderer Angriff hat sie genommen): die Truppen bleiben dort
     const vk = targetOwner && typeof verstVorKampf === 'function' ? verstVorKampf(target.id) : null;   // Verstärkung (Botschaft) verteidigt mit
     attack._vk = vk;                                                  // (bricht der Kampf mit einem Fehler ab: kampfAufraeumen trennt sie wieder)
+    attack._vkOwner = targetOwner;                                    // (Besitzer vor dem Kampf: so erkennt das Aufräumen eine schon eroberte Insel)
     const originalEnemyTroops = effectiveTroops(target);
     const fullDefense = effectiveDefense(target), originalEnemyDefense = Math.round(fullDefense * (1 - heroDefCut(attack))), defParts = heroDefPart(defenseParts(target), attack, fullDefense);
     const atkParts = attackParts('player', attack.rawTroops, atkBonus, myTroops, attack.hero, attack), hosp = attack.hx ? Math.min(100, hospitalPct() + attack.hx.hosp) : undefined;
@@ -894,7 +895,7 @@ function resolveAttack(attack) {
             });
         }
     }
-    const vs = vk ? verstNachKampf(target.id, vk, won) : null; delete attack._vk;   // jeder trägt seinen Anteil
+    const vs = vk ? verstNachKampf(target.id, vk, won) : null; delete attack._vk; delete attack._vkOwner;   // jeder trägt seinen Anteil
     if (vs) for (const h of vs.helfer) h.gold = payGold(h.w, atkWeg * dTeil(h.w) * defGoldRate(h.w));   // "Verteidigung: Gold" der Helfer: ihr Anteil mit IHREM Satz
     const verstInfo = vs ? { verst: vs.helfer, eigen: vs.eigen } : {};
     const defWeg = vs ? vs.eigenWeg : defenderCasualties;

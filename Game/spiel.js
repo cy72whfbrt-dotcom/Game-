@@ -2044,6 +2044,7 @@ function resolveAttack(attack) {
     if (targetOwner === 'player') { islandTroops[target.id] = (islandTroops[target.id] || 0) + attack.rawTroops; saveGame(); requestRender(); return; }   // inzwischen deine (ein anderer Angriff hat sie genommen): die Truppen bleiben dort
     const vk = targetOwner && typeof verstVorKampf === 'function' ? verstVorKampf(target.id) : null;   // Verstärkung (Botschaft) verteidigt mit
     attack._vk = vk;                                                  // (bricht der Kampf mit einem Fehler ab: kampfAufraeumen trennt sie wieder)
+    attack._vkOwner = targetOwner;                                    // (Besitzer vor dem Kampf: so erkennt das Aufräumen eine schon eroberte Insel)
     const originalEnemyTroops = effectiveTroops(target);
     const fullDefense = effectiveDefense(target), originalEnemyDefense = Math.round(fullDefense * (1 - heroDefCut(attack))), defParts = heroDefPart(defenseParts(target), attack, fullDefense);
     const atkParts = attackParts('player', attack.rawTroops, atkBonus, myTroops, attack.hero, attack), hosp = attack.hx ? Math.min(100, hospitalPct() + attack.hx.hosp) : undefined;
@@ -2133,7 +2134,7 @@ function resolveAttack(attack) {
             });
         }
     }
-    const vs = vk ? verstNachKampf(target.id, vk, won) : null; delete attack._vk;   // jeder trägt seinen Anteil
+    const vs = vk ? verstNachKampf(target.id, vk, won) : null; delete attack._vk; delete attack._vkOwner;   // jeder trägt seinen Anteil
     if (vs) for (const h of vs.helfer) h.gold = payGold(h.w, atkWeg * dTeil(h.w) * defGoldRate(h.w));   // "Verteidigung: Gold" der Helfer: ihr Anteil mit IHREM Satz
     const verstInfo = vs ? { verst: vs.helfer, eigen: vs.eigen } : {};
     const defWeg = vs ? vs.eigenWeg : defenderCasualties;
@@ -4652,8 +4653,8 @@ setInterval(() => {
 // hängt), die Truppen einer Rally gehen heim (sonst wären sie weg). attack._vk / _heim setzt der Kampf selbst
 // (_heim: in jedem Zweig gleich nach dem Stationieren/Heimschicken, auch wenn keiner übrig ist – sonst entstünden Truppen doppelt).
 function kampfAufraeumen(a) {
-    try { if (a._vk && typeof verstNachKampf === 'function') verstNachKampf(a.targetId, a._vk, false); } catch (e) { console.warn('FEHLER Aufräumen', e); }
-    delete a._vk;
+    try { if (a._vk && typeof verstNachKampf === 'function') verstNachKampf(a.targetId, a._vk, a._vkOwner !== undefined && islandOwnerOf(a.targetId) !== a._vkOwner); } catch (e) { console.warn('FEHLER Aufräumen', e); }   // (schon erobert: dort stehen die Angreifer, kein Verteidiger-Rest)
+    delete a._vk; delete a._vkOwner;
     try { if (a.rally && !a._heim && typeof bundRallyHeim === 'function') bundRallyHeim(a, a.rawTroops, a.targetId); } catch (e) { console.warn('FEHLER Aufräumen', e); }
     try { saveGame(); saveProgression(); } catch (e) {}
 }
@@ -13061,7 +13062,7 @@ if (window.WELT) {
     function hbKisteDazu(hb, minR) { hb.kN = nn(hb.kN) + 1; if (minR >= 3) hb.kG = nn(hb.kG) + kWert(minR); }
     function hbNeu(who, now, p, frisch) {
         const hb = { v: HB_V, t0: frisch ? now : 0, st: {}, fo: {}, foT: frisch ? now : 0, tb: 1, gear: {}, kN: 0, kG: 0, hs: hbHeldenStart(), shB: 0,
-            gA: 0, cA: 0, rA: { h: 0, s: 0, e: 0 }, gIn: 0, sternG: 0, fr: { g: 10, k: 1, kg: 0, sh: 0, schild: 0 }, frT: frisch ? now : 0, ach: 0, lvG: 1, pass: 0, passF: 0,
+            gA: 0, cA: 0, rA: { h: 0, s: 0, e: 0 }, gIn: 0, sternG: 0, fr: { g: 10, k: 1, kg: 0, sh: 0, schild: 0 }, frT: frisch ? now : 0, thK: frisch ? 0 : undefined, ach: 0, lvG: 1, pass: 0, passF: 0,
             schild: 0, w: {}, sp: [] };                // (fr am Anfang: die Anleitung gibt einmal 10 Gems + 1 Kiste)
         for (const id of hbBauten()) hb.st[id] = [id === 'keep' ? 1 : 0, hb.t0];
         for (const s of HB_SLOTS) hb.gear[s] = [];
@@ -13081,6 +13082,7 @@ if (window.WELT) {
     // Thron-Punkte (zählt der Weltrechner selbst) zählen für beides – sonst gibt eine gekaufte Kiste einen falschen Alarm
     const hbThronPreis = (id, sonst) => { const o = typeof THRONE_OFFERS !== 'undefined' && THRONE_OFFERS.find(x => x.id === id); return o && o.cost > 0 ? o.cost : sonst; };
     function hbThronKisten(hb, E) {
+        if (hb.thK === undefined) { hb.thK = nn(E); return; }   // (bisherige Spieler: erst merken – die schon verdienten Punkte sind keine neuen Kisten)
         const d = nn(E) - nn(hb.thK); if (!(d > 0)) return; hb.thK = nn(E);
         hb.fr.k = nn(hb.fr.k) + d / hbThronPreis('crate', 60); hb.fr.kg = nn(hb.fr.kg) + kWert(3) * d / hbThronPreis('royal', 400);
     }
