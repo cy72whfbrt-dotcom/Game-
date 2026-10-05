@@ -24,3 +24,4 @@ Regeln:
 - **Niemand wartet still – Statusdatei:** Beim Start und dann mindestens alle 5 Min. eine Zeile in `/tmp/claude-0/-home-user-Game-/ef9a33c5-7a87-5b23-8d7f-4cc2dc089a18/scratchpad/firma/<kurzname>.txt`
   schreiben (überschreiben; Kurzname steht im Auftrag): `<Uhrzeit UTC> | <Schritt> | <was läuft gerade>`.
   Am Ende: `… | fertig | <Ergebnis kurz>`.
+- Zweige nach dem Merge nur lokal löschen (`git branch -d`), nie auf GitHub (gesperrt); Liste alter Remote-Zweige im Bericht nennen.

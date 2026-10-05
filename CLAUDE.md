@@ -85,6 +85,8 @@ Alles Wichtige steht in `LIESMICH.md` – jede Änderung wird dort eingetragen.
   claude.ai/artifact/UDzcMoamcZSv1qugqKXymm) bei jeder Vergabe/jedem Abschluss aktualisieren (Regelwerk steht dort); sie
   zeigt bei jedem Agenten den letzten Schritt aus seiner Statusdatei, wer >10 Min. nichts meldet, steht dort rot.
 - Einmal am Ende komplett testen (`tests/komplett.sh`), dann Alexander wegen Hochladen fragen.
+- Spieltester schon auf dem ersten fertigen Branch einer Oberflächen-Aufgabe laufen lassen (parallel), nicht erst vor dem Endprüfer.
+  Bei Netz/Server-Änderungen prüft ein Sucher Fristen/Zeitgrenzen gegen langsame Antworten (Hoster-Last).
 - Programmierer/Schnellprüfer: Server-Tests nur `betroffen` statt der ganzen Reihe; vor dem Commit `werkzeuge/vor_commit.sh`.
 - Maschine hat 4 Kerne: nie mehrere volle Testreihen gleichzeitig (nur Endprüfer/Zusammenführen); Programmierer testen nur
   ihre betroffenen Tests. Zusammenführen: zuerst Branch + Commit prüfen (`git log -1 <branch>`).

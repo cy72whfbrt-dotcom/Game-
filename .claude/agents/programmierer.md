@@ -23,3 +23,4 @@ Regeln:
   schreiben (überschreiben; Kurzname steht im Auftrag): `<Uhrzeit UTC> | <Schritt> | <was läuft gerade>`, z. B.
   `mkdir -p /tmp/claude-0/-home-user-Game-/ef9a33c5-7a87-5b23-8d7f-4cc2dc089a18/scratchpad/firma && echo "$(date -u +%H:%M) | Tests | alle_tests.sh verst" > /tmp/claude-0/-home-user-Game-/ef9a33c5-7a87-5b23-8d7f-4cc2dc089a18/scratchpad/firma/<kurzname>.txt`.
   Am Ende: `… | fertig | <Ergebnis kurz>`. Nie auf eine Meldung warten, sondern selbst nachsehen (FERTIG-Datei, Prozesse).
+- Vor „fertig“ Pflicht: `tests/alle_tests.sh <Präfixe der betroffenen Tests>` (bei Oberfläche/Texten/Handy zusätzlich `handy`) – im Bericht die Zeile „Testlauf: <Befehl> → ALLES OK“.
