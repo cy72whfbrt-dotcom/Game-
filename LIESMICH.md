@@ -499,6 +499,16 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   zahlen die Maut neu verteilt und marschieren. Kann der Anführer selbst nicht zahlen, fällt die Rally wie bisher ganz aus
   (`bundRallyLos`, buendnis/02; wirft dabei etwas, geht die Rally nicht los und alle Truppen genau einmal heim). Test
   `rally_maut_test` (Fall 2, 2b, 6; der Test schaltet die Mitspieler-Runde ab – sonst trat Z zufällig dem Test-Bündnis bei).
+- **5./6.10. Nacht – Wirtschaft 1: Ertrag pro Stunde + Saison-Umstellung (Alexander 11b A) – NICHT hochgeladen:** Was vorher pro
+  Sekunde kam, kommt jetzt pro Stunde (`WIRTSCHAFT_ERTRAG`, 01a): Basen, Tempel, Hauptstadt-Rohstoffe, Sammel-Felder – für dich,
+  Mitspieler und echte Spieler gleich (06d `produceTicks`, Reste je Basis in `truppenMitRest`, nie eine Einheit durch Kommazahlen
+  verloren). Mitspieler-Stunde (`hourProduction`) zählt jetzt auch ihre Tempel (wie bei dir). Anzeige „/ Std.“ (Profil, Basis,
+  Tempel, Rohstoffe, Willkommen) mit `fmtStunde`/`proStunde` (01e). Hauptbuch: Grenzen aus der Stunden-Produktion rechnen von
+  selbst mit; der feste Rohstoff-Spielraum (früher 2.000/Std.) ist jetzt `ROH_RAUM` (10). Saison: `saison.wirtAb` = erste Saison
+  der neuen Wirtschaft; der erste Reset danach rechnet behaltene Holz/Stein/Eisen × `WIRTSCHAFT_KOSTEN` um – beim Weltrechner
+  (Mitspieler, echte Spieler, Hauptbuch-Konten und Töpfe in `saisonKonto`, aufgerundet) und am Handy (01a, abgerundet; Nachricht
+  `saison` mit `roh`, sonst aus `wirtAb`); Zurückspielen holt die alten Rohstoffe zurück. Saison-Ende Sonntag 18 Uhr Europe/Berlin
+  (`saisonEnde`, `berlinUm`). Tabelle vorher/nachher: Abschnitt 11b A. Tests: `profil_stunde_test` (neu), `saison_test`.
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
@@ -736,6 +746,35 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
   Eisenmine) und die Kosten in der Stadt (Burg, Gebäude, Labor) passend mit umstellen – Beispiel 2 Türme je 100/Std.
   → Profil 200/Std.; Macht = Bestand (Truppen + Verteidigung der Basen + Ausrüstung/Helden/Fähigkeiten/Stadt), nicht die Produktion.
 - Genaue Zahlen liefert der Sucher „Wirtschaft“; vor dem Bauen hier eintragen.
+- **Wirtschaft 1 – Ertrag pro Stunde + Saison-Umstellung: GEBAUT 5./6.10. Nacht (lokal getestet, NICHT hochgeladen).**
+  Konstanten oben in `Game/spiel/01a-grundlagen.js`: `WIRTSCHAFT_ERTRAG = 1/3600` (Ertrag), `WIRTSCHAFT_KOSTEN = 1/1800`
+  (Kosten/Gegner – macht Paket „Wirtschaft 2“). Ertrag je Tick × `WIRTSCHAFT_ERTRAG` für alle gleich (du, Mitspieler, echte
+  Spieler beim Weltrechner): Basen (`coinsPerTick`/`troopsPerTick`), Tempel (Münzen/Truppen; Edelsteine bleiben), Hauptstadt-Rohstoffe
+  (`rohStunde`), Sammel-Felder Gold/Holz/Stein/Eisen (Edelstein-Adern bleiben). Bruchteile warten je Basis bis zur ganzen
+  Truppe/Münze (nichts geht verloren). Anzeige überall „/ Std.“ (Profil = alle Basen zusammen inkl. Tempel und Boni, mit der
+  echten Tick-Länge `productionTickMs`; Basis-Fenster; Tempel; Rohstoffe; „Während du weg warst“: Zeile „Ertrag pro Stunde“).
+  Start-Rohstoffe neuer Spieler × `WIRTSCHAFT_KOSTEN` (2 Holz, 2 Stein, 1 Eisen). Saison-Reset: erster Reset danach rechnet
+  behaltene Holz/Stein/Eisen × `WIRTSCHAFT_KOSTEN` um (Admin-Knopf „Neue Saison jetzt“ geht sofort, mit Sicherung vorher).
+  Nächste Saison endet immer **Sonntag 18 Uhr deutscher Zeit** (Europe/Berlin, nicht die Server-Uhr).
+
+  | Ertrag pro Stunde (ohne Boni, Tick 1 s) | vorher | nachher |
+  |---|---|---|
+  | Basis Stufe 1: Truppen / Münzen | 18.000 / 36.000 | 5 / 10 |
+  | Basis Stufe 10 | 64.800 / 126.000 | 18 / 35 |
+  | Basis Stufe 50 | 17,0 Mio. / 33,9 Mio. | 4.712 / 9.423 |
+  | Basis Stufe 100 | 18,4 Mrd. / 36,8 Mrd. | 5,1 Mio. / 10,2 Mio. |
+  | Tempel (normal; Wächter ×3, Mega ×8) | 21.600 Truppen / 54.000 Münzen | 6 / 15 |
+  | Hauptstadt je Rohstoff: nur Burg (kein Gebäude) | 150 | 0,04 |
+  | Holzfäller/Steinbruch/Eisenmine Stufe 1 (+ Burg) | 750 | 0,2 |
+  | … Stufe 10 | 14.235 | 4 |
+  | … Stufe 20 | 469.644 | 130 |
+  | … Stufe 25 | 2,7 Mio. | 753 |
+  | Sammel-Feld Gold außen (leert sich in 1 Std.) | 40.000 | 11 |
+
+  (Rohstoffe: × Landschaft der Hauptstadt 0,6–1,4 und Forschung „Ertrag“; Fähigkeit „Geschwindigkeit“ bis Tick 0,6 s = bis
+  1,67× pro Stunde.) Test: `tests/browser/profil_stunde_test.js` (2 Türme je 94/Std. → Profil +188, genau 188 kommen in einer
+  Stunde an; auch mit Geschwindigkeit, Boni, Tempel, Hauptstadt, Mitspieler; Saison-Ende Sonntag 18 Uhr Berlin bei
+  Geräte-Uhr Los Angeles), `saison_test` (Umrechnung beim ersten Reset, Zurückspielen holt die alten Rohstoffe).
 
 **B. Alexanders 3 Fehler** (Einzelheiten Abschnitt 11)
 1. Späher: hin Zurück + Schneller, heim Schneller; Zurück = sofort umkehren, kein Bericht; ab 500 Edelsteine „Wirklich?“.
