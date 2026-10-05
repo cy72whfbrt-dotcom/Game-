@@ -25,3 +25,5 @@ Regeln:
   schreiben (überschreiben; Kurzname steht im Auftrag): `<Uhrzeit UTC> | <Schritt> | <was läuft gerade>`.
   Am Ende: `… | fertig | <Ergebnis kurz>`.
 - Zweige nach dem Merge nur lokal löschen (`git branch -d`), nie auf GitHub (gesperrt); Liste alter Remote-Zweige im Bericht nennen.
+- Nach jedem Merge (auch Fast-Forward/ohne Konflikt) `werkzeuge/spiel_bauen.sh` laufen lassen und eine geänderte `KARTE.md`
+  nachcommitten, BEVOR gepusht wird (KARTE.md hat `merge=ours`, kann sonst veraltet sein). Nach Konflikten in *.sh: `bash -n`.
