@@ -225,7 +225,7 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Armee, Feld, Rally – `botNeulingWeg`) und ab 50 Mio. Macht auch bei echten Spielern; Friedensschild fällt bei allen
   Rally-Teilnehmern; Bündnis-Hilfe nur für die nächste Stufe, je Gebäude/Forschung eine offene Bitte; nach dem Verlassen
   1 Std. kein neuer Beitritt. Tote Meldungen „Münzen geplündert“ raus. Test rally_schild_test erweitert.
-  Später (Alexander): fremde Helden/Ausrüstung erst nach dem Spähen zeigen (braucht Macht vom Server für die Rangliste) – erledigt 6.10. (siehe unten).
+  Später (Alexander): fremde Helden/Ausrüstung erst nach dem Spähen zeigen (braucht Macht vom Server für die Rangliste) – erledigt 5.10. (siehe unten).
   Live 5.10. 3:02 und 5:51–5:57 Uhr (und seit Tagen in Schüben): Weltrechner 20–40 s am Stück nicht drangekommen (einmal Neustart
   durch den Wachhund). Verdacht: niedrigste Priorität `nice 19` auf dem geteilten Office-Server – jetzt `nice 10` (wachhund.php).
 - **5.10. nachmittags – Fund durch den neuen Test `schummel_test`:** wer gleichzeitig Holz erfindet und ein Gebäude ohne
@@ -316,7 +316,7 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   stießen zusammen. Jetzt nimmt jeder Test einen freien Port vom System, Bilder kommen in den eigenen Arbeitsordner.
   gemeinsam-, saison-, fremd- und helden_beute-Test warten nicht mehr feste Zeiten, sondern auf das Ergebnis (bis zu 3× so
   lang) – unter Last nicht mehr rot. (Nur Tests, kein Spiel-Code.)
-- **6.10. Fremde Werte erst nach dem Spähen (Alexanders Entscheidung) – NICHT hochgeladen:** Der Server schickte jedem Handy
+- **5.10. Fremde Werte erst nach dem Spähen (Alexanders Entscheidung) – NICHT hochgeladen:** Der Server schickte jedem Handy
   den ganzen Zustand aller Spieler/Mitspieler (Helden, Ausrüstung, Skills, Stadt, Forschung, Gems …) – ein verändertes Handy
   konnte alles lesen. Jetzt (`server.php` `FREMD_OEFFENTLICH`, `fremd_kuerzen`, in `weltteil_fuer_spieler` UND
   `flicken_fuer_spieler`): von anderen nur Stufe, Macht (`macht`), Truppen-Summe (`tt`), Hauptstadt, Schild/Anfängerschutz,
