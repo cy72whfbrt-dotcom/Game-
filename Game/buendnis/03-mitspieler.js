@@ -5,7 +5,7 @@
 const BUND_NAMEN = ['Sturmbund', 'Nordwacht', 'Eisenkrone', 'Seewoelfe', 'Drachenhort', 'Goldene Flotte', 'Schwarze Segel', 'Rote Rose', 'Bernsteinbund', 'Silberne Hand',
     'Wellenreiter', 'Graue Garde', 'Feuerkreis', 'Sternenwacht', 'Klippenbund', 'Tiefe See', 'Morgenrot', 'Wolfsrudel', 'Inselherren', 'Sturmflut', 'Kronenwacht', 'Nebelbund',
     'Donnerbucht', 'Salzkrieger', 'Leuchtturm', 'Ankerbund', 'Gezeiten', 'Brandungsrat', 'Kaperbund', 'Nordlicht Pakt'];
-const bundMem = { chatAt: {}, chatQ: [], botNext: {}, sigGemacht: new Set(), rallyGemacht: new Set(), rallySagt: {}, rallyWeg: {}, ziel: {}, hilfeSig: {}, runde: 0, rallyRunde: {}, rallySeh: 0, sigSeh: 0 };
+const bundMem = { chatAt: {}, chatQ: [], botNext: {}, sigGemacht: new Set(), sigGeschickt: new Set(), rallyGemacht: new Set(), rallySagt: {}, rallyWeg: {}, ziel: {}, hilfeSig: {}, runde: 0, rallyRunde: {}, rallySeh: 0, sigSeh: 0 };
 const bundWegMem = new Map();                                  // gibt es einen Weg (über eigene Tore)? – je Runde gemerkt
 function bundWeg(a, b, w, n) {                                 // Weg da, letztes Tor offen und die Maut bezahlbar? (wie botCanCross, aber je Runde gemerkt)
     if (a === b) return true; const k = a + '>' + b + ':' + w; let h = bundWegMem.get(k);
@@ -133,18 +133,22 @@ function bundMitspielerRunde(now) {                              // alle 15 s: g
             bundLog(a, bundName(bot.id) + ' hat die Hauptstadt näher ans Bündnis verlegt.'); bundSpeichern(); bundBotGetippt(bot, now); }
     }
 }
-// Signale der Mitspieler: angegriffen und allein zu schwach → „Hilfe!“
+// Signale der Mitglieder: angegriffen und allein zu schwach → „Hilfe!“ – auch für echte Spieler (Alexander 5.10.: die
+// Verbündeten helfen ihnen ohne Knopfdruck, ob sie gerade online sind oder nicht)
 function bundMitspielerSignale(now) {
     for (const id in bund.b) {
         const a = bund.b[id];
         for (const w of a.mit) {
-            const bot = botById[w]; if (!bot || bot.mensch || !botOnline(bot, now) || now - (bundMem.hilfeSig[w] || 0) < 4 * 60000) continue;   // höchstens alle 4 Min. ein Hilferuf
+            const bot = botById[w]; if (!bot || (!bot.mensch && !botOnline(bot, now)) || now - (bundMem.hilfeSig[w] || 0) < 4 * 60000) continue;   // höchstens alle 4 Min. ein Hilferuf
             for (const t of botThreatened(w)) {
                 const k = w + ':' + t, last = bundMem.hilfeSig[k] || ((a.sig || []).find(s => s.w === w && s.z === t && s.art === 'hilfe') || {}).at; if (last && now - last < 5 * 60000) continue;
                 const g = bundUnterAngriff(t); if (!g || g.at - now < 8000) continue;
                 const isl = islandById[t], def = effectiveTroops(isl) + effectiveDefense(isl);
-                if (def >= g.str * 1.1 || isCapital(t)) continue;
-                if ((islandLevels[t] || 1) < 5 && (islandTroops[t] || 0) < whoTroops(w) * .05 && isl.type === 'tower') continue;   // nur für Basen, um die es sich lohnt
+                if (def >= g.str * 1.1) continue;                   // (auch die Hauptstadt – Alexander 5.10.: alle Basen gleich)
+                if (!isCapital(t) && (islandLevels[t] || 1) < 5 && (islandTroops[t] || 0) < whoTroops(w) * .05 && isl.type === 'tower') continue;   // nur für Basen, um die es sich lohnt (die Hauptstadt immer)
+                if (bot.mensch && !verstStufe(w)) {                     // echter Spieler ohne Botschaft: keiner kann helfen – kein Signal, nur die Meldung an ihn
+                    if (bundEinmal('hb|' + w)) bundMelden(w, 'Deine Verbündeten können dir nicht helfen: du hast noch keine Botschaft (ab Burg-Stufe 5).');
+                    break; }
                 if (!bundSignal(a, w, 'hilfe', t)) { bundMem.hilfeSig[k] = bundMem.hilfeSig[w] = now; bundSpeichern(); }
                 break;
             }
@@ -211,12 +215,17 @@ function bundMitspielerAntworten(now) {
             if (now - s.at > 3 * 60000) continue;
             if (s.art === 'hilfe' || s.art === 'verteidigen') {
                 const g = bundUnterAngriff(s.z); if (!g) continue;
-                const isl = islandById[s.z], kommt = pendingSends.filter(x => x.toId === s.z && !x.back && x.resolveAt < g.at).reduce((n, x) => n + x.troops, 0);
+                const isl = islandById[s.z], ow = islandOwnerOf(s.z), kommt = pendingSends.filter(x => x.toId === s.z && !x.back && x.resolveAt < g.at).reduce((n, x) => n + x.troops, 0);
                 let fehlt = g.str * 1.2 - (effectiveTroops(isl) + effectiveDefense(isl) + kommt); if (fehlt <= 0) continue;
+                if (!verstStufe(ow) || verstFrei(ow) < 1) {                // ohne Botschaft (oder voll) kann keiner helfen – sag es dem Spieler einmal, statt still nichts
+                    if (bundEinmal('hb|' + ow)) bundMelden(ow, 'Deine Verbündeten können dir nicht helfen: ' + (verstStufe(ow) ? 'deine Botschaft ist voll' : 'du hast noch keine Botschaft (ab Burg-Stufe 5)') + '.');
+                    continue; }
+                let offen = false;                                          // (ein Helfer kann später noch: gerade nicht bereit / kein Marsch-Platz)
                 for (const w of a.mit) {
                     const bot = botById[w], key = s.id + ':' + w; if (fehlt <= 0) break;
-                    if (!bot || bot.mensch || w === islandOwnerOf(s.z) || bundMem.sigGemacht.has(key) || !bundBotBereit(bot, now) || botFreeSlots(bot) <= 0) continue;
-                    bundMem.sigGemacht.add(key);
+                    if (!bot || bot.mensch || w === ow || bundMem.sigGemacht.has(key)) continue;
+                    if (!bundBotBereit(bot, now) || botFreeSlots(bot) <= 0) { if (botOnline(bot, now)) offen = true; continue; }
+                    bundMem.sigGemacht.add(key);                            // (geschickt oder kommt nicht rechtzeitig: dieser Helfer ist für das Signal fertig)
                     const thr = botThreatened(w); let best = null;
                     for (const sid of botOwnedIslands[w]) { if (thr.has(sid) || sid === megaTempleId) continue; const n = Math.floor((islandTroops[sid] || 0) * .5); if (n < 1000) continue;
                         const src = islandById[sid]; if (!bundWeg(src.landmassId, isl.landmassId, w, n)) continue;
@@ -224,8 +233,9 @@ function bundMitspielerAntworten(now) {
                         if (!best || n > best.n) best = { id: sid, n }; }
                     if (!best) continue;
                     const give = Math.min(best.n, Math.ceil(fehlt));
-                    if (!bundHilfe(w, best.id, s.z, give)) { fehlt -= give; bundBotGetippt(bot, now); bundMem.chatQ.push({ at: now + 1500 + Math.random() * 4000, aid: a.id, w, k: 'unterwegs', z: null }); }
+                    if (!bundHilfe(w, best.id, s.z, give)) { fehlt -= give; bundMem.sigGeschickt.add(s.id); bundBotGetippt(bot, now); bundMem.chatQ.push({ at: now + 1500 + Math.random() * 4000, aid: a.id, w, k: 'unterwegs', z: null }); }
                 }
+                if (!offen && fehlt > 0 && !bundMem.sigGeschickt.has(s.id) && bundEinmal('kh|' + ow + '|' + s.z)) bundMelden(ow, 'Keiner deiner Verbündeten kommt rechtzeitig an.');
             } else if (s.art === 'angriff') {
                 for (const w of a.mit) { const bot = botById[w]; if (!bot || bot.mensch || w === s.w || bundMem.sigGemacht.has(s.id + ':' + w)) continue;
                     bundMem.sigGemacht.add(s.id + ':' + w);
@@ -234,7 +244,7 @@ function bundMitspielerAntworten(now) {
             }
         }
     }
-    if (bundMem.sigGemacht.size > 5000) bundMem.sigGemacht.clear();
+    if (bundMem.sigGemacht.size > 5000) { bundMem.sigGemacht.clear(); bundMem.sigGeschickt.clear(); }
 }
 function bundMitspielerRally(now) {
     // a) mitmachen: wer einen Weg hat, schickt einen guten Teil einer großen Basis (zu spät am Sammelpunkt → folgt direkt zum Ziel)

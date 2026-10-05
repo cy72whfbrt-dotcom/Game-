@@ -258,7 +258,7 @@ function bundOp(who, b) {
 function bundSignal(a, who, art, z) {
     const S = BUND_SIGNALE[art]; if (!S) return 'kaputt';
     const now = Date.now(); a.sig = (a.sig || []).filter(s => now - s.at < 30 * 60000);
-    const letztes = a.sig.find(s => s.w === who); if (letztes && now - letztes.at < BUND.SIG_PAUSE) return 'Warte kurz – höchstens ein Signal alle 30 Sekunden';
+    const letztes = a.sig.find(s => s.w === who && s.art !== 'teilen'); if (letztes && now - letztes.at < BUND.SIG_PAUSE) return 'Warte kurz – höchstens ein Signal alle 30 Sekunden';
     if (art === 'danke') z = null;
     else {
         if (!Number.isInteger(z) || !islandById[z]) return 'kaputt';
@@ -267,6 +267,7 @@ function bundSignal(a, who, art, z) {
         if ((art === 'sammeln' || art === 'verteidigen') && !(ow === who || bundVerbuendet(ow, who))) return 'Nur für Basen des Bündnisses';
         if (art === 'angriff' && (ow === who || bundVerbuendet(ow, who))) return 'Das ist eine Basis des Bündnisses';
     }
+    if (art === 'hilfe' && a.sig.some(s => s.w === who && s.art === 'hilfe' && s.z === z && now - s.at < 3 * 60000)) { bundChatDazu(a, who, 'hilfe', z); return ''; }   // (läuft schon – z. B. von selbst gesetzt: kein zweites Signal)
     const s = { id: 's' + (bund.n++), w: who, art, z, at: now };
     a.sig.unshift(s); if (a.sig.length > BUND.SIG_MAX) a.sig.length = BUND.SIG_MAX;
     if (art === 'hilfe') { for (const w of a.mit) if (w !== who) bundPush(w, { art: 'hilfe', von: bundName(who), basis: islandTitle(islandById[z]) }); bundChatDazu(a, who, 'hilfe', z); }

@@ -337,6 +337,20 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
     „Verstärkung geschickt – passt nicht alles in die Botschaft, bleibt der Rest daheim“ (`bundWahlLos`). Lehnt der Weltrechner ab
     („noch keine Botschaft“ / „voll“), kommt das als Bündnis-Meldung (`bundMelden` → `bundInfo`) am Handy an.
     Getestet: `verst_kampf_test` (Handy-Fall), `verst_test` (Server).
+- **5.10. Verbündete helfen echten Spielern von selbst (Alexanders Entscheidung A1) + 2 Fehler:** Wird ein echter Spieler
+  im Bündnis angegriffen (z. B. auf der Thron-Insel, während er in der Stadt ist), setzt der Weltrechner für ihn das
+  Hilfe-Signal wie bei den Mitspielern (`bundMitspielerSignale`, buendnis/03) – die Verbündeten schicken Verstärkung ohne
+  Knopfdruck (Bedingungen wie bisher: Botschaft mit Platz, Helfer online, freier Marsch-Platz, kommt vor dem Angriff an).
+  Drückt er zusätzlich „Brauche Hilfe!“, entsteht kein zweites Signal (`bundSignal`). Fehler 1: ohne Botschaft (oder volle)
+  ging der Hilferuf still verloren – jetzt einmal die Meldung „Deine Verbündeten können dir nicht helfen: …“; kommt keiner
+  rechtzeitig: einmal „Keiner deiner Verbündeten kommt rechtzeitig an.“ (`bundMitspielerAntworten`). Der Knopf
+  „Brauche Hilfe!“ sagt ohne Botschaft „Hilfe braucht eine Botschaft (ab Burg-Stufe 5)“. Fehler 2: „Im Chat teilen“ zählte
+  für die 30-s-Sperre der Signale – ein Hilferuf direkt danach ging verloren. Nachtrag (Alexander: „alle gleich
+  behandeln“): auch die HAUPTSTADT bekommt automatische Hilfe – für echte Spieler und Mitspieler (die Ausnahme stammte aus
+  der Zeit, als Hauptstädte gar nicht angegriffen werden konnten; Helfer schicken weiter höchstens die Hälfte einer
+  nicht bedrohten Basis). Hauptstadt-Regeln (Schutz, Beute, brennt) unverändert. Echter Spieler ohne Botschaft: kein
+  Hilfe-Signal/Chat/Push an die Verbündeten (keiner kann helfen), nur die Meldung an ihn (höchstens alle 10 Min.). Getestet: `hilfe_auto_test` (neu,
+  normale Vorschau).
 - **5.10. Handy-Kleinkram (Spieltest) + saison_test:** Gebäude-Wirkung mit festem Leerzeichen vor „%“ („Nächste Stufe: +3 %“
   bricht nicht mehr um, `cityEffectText`). Stadt am Handy: der Hinweis-Kasten (z. B. „Der Drache ist erschienen!“) liegt immer unter
   der Bauarbeiter-Zeile (`--stadt-kopf`, auch wenn sie zweizeilig ist). Shop: Kisten-Zeile „Legendär + Mythisch …“ mit Innenabstand.
