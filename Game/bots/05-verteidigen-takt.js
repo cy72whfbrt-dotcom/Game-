@@ -53,7 +53,8 @@ function botDefend(bot) {
     // 3) otherwise help where it can be held, pull the troops out where it can't
     for (const { th, target, def, gap, helpers, can } of plans) {
         if (can >= gap || (def < th.str && def + can >= th.str)) {                                        // can be held (with what gets there in time): the biggest helper goes first
-            launchSend(helpers[0].id, th.id, bot.id, Math.min(helpers[0].n, Math.ceil(gap * 1.1))); tapped(); return;
+            for (const h of helpers) { const k = pendingSends.length; launchSend(h.id, th.id, bot.id, Math.min(h.n, Math.ceil(gap * 1.1))); if (pendingSends.length > k) { tapped(); return; } }   // (kein Marsch-Platz, Maut …: der nächste Helfer)
+            continue;
         }
         if (def + can >= th.str) continue;                                                                 // it repels the strike on its own: never hand over a base that holds
         if (botEvacuated[th.id] && now - botEvacuated[th.id] < 60000) continue;
@@ -64,7 +65,8 @@ function botDefend(bot) {
             if (b.landmassId !== target.landmassId) { const tl = tollFor(target.landmassId, b.landmassId, islandTroops[th.id] || 0, bot.id); if (tl.closed || tl.cost > (botCoins[bot.id] || 0)) continue; }
             const d = Math.hypot(b.x - target.x, b.y - target.y); if (d < bd) { bd = d; best = id; } }
         if (best === null) continue;
-        botEvacuated[th.id] = now; launchSend(th.id, best, bot.id); tapped(); return;
+        const k = pendingSends.length; launchSend(th.id, best, bot.id);
+        if (pendingSends.length > k) { botEvacuated[th.id] = now; tapped(); return; }                     // nur, wenn der Marsch wirklich losging
     }
 }
 
@@ -84,8 +86,10 @@ function botUseShield(bot, why, needMs, now) {
     const act = botActOf(bot.id); if (act.plan && act.plan.kind === 'attack') act.plan = null; b.rally = null;
     for (const a of armies) if (a.who === bot.id) { a.until = Math.min(a.until || now, now - 1);      // the armies out there come home - also one already marching (arriving would drop the shield)
         if (a.mv && a.mv.to.kind !== 'home') { const h = armyHome(a), hb = h !== null && h !== undefined && islandById[h]; if (!hb || armyMove(a, { kind: 'home', id: h, x: hb.x, y: hb.y, lm: hb.landmassId })) armyHalt(a, now); } }
-    for (let i = pendingAttacks.length - 1; i >= 0; i--) { const a = pendingAttacks[i]; if (a.attackerBotId !== bot.id || a.fightEndsAt) continue;   // its own columns on the road turn round
-        const back = botOwnedIslands[bot.id].has(a.sourceId) ? a.sourceId : botCapitalOf(bot.id); if (back !== null && back !== undefined) islandTroops[back] = (islandTroops[back] || 0) + a.rawTroops; pendingAttacks.splice(i, 1); }
+    for (let i = pendingAttacks.length - 1; i >= 0; i--) { const a = pendingAttacks[i]; if (a.attackerBotId !== bot.id || a.fightEndsAt || a.rally) continue;   // its own columns on the road turn round and walk home, like yours (a Rally belongs to everyone in it)
+        const back = botOwnedIslands[bot.id].has(a.sourceId) ? a.sourceId : botCapitalOf(bot.id); if (back === null || back === undefined) continue;
+        heroWutZurueck(bot.id, a.hx); pendingAttacks.splice(i, 1);                                     // (nicht gekämpft: die Wut bleibt)
+        pendingSends.push({ fromId: a.targetId, toId: back, troops: a.rawTroops, startedAt: now, resolveAt: now + Math.max(1000, Math.min(now, a.resolveAt) - a.startedAt), senderBotId: bot.id, back: true }); }
     const own = botOwnedIslands[bot.id];
     const mine = pendingAttacks.filter(a => !a.attackerBotId && !a.fightEndsAt && own.has(a.targetId) && shieldCovers(islandById[a.targetId])).length
                + armies.filter(a => armyWho(a) === 'player' && a.mv && a.mv.to.kind === 'base' && own.has(a.mv.to.id) && shieldCovers(islandById[a.mv.to.id])).length;
@@ -274,14 +278,15 @@ function botRulerTitles(bot, now) {               // a bot on the throne hands o
 function botRespawn(bot, now) {                   // knocked out: like a player starting over, back after ~10 min on a free outer base
     const b = loadBotState()[bot.id];
     if (!b.outAt) { b.outAt = now; saveBotState(); return; }
-    if (now - b.outAt < 600000 || !botOnline(bot, now)) return;
+    if (now - b.outAt < 600000 || now < (b.outNext || 0) || !botOnline(bot, now)) return;
+    b.outNext = now + 60000;                                                                    // kein Platz frei: erst in einer Minute wieder suchen (nicht jede Sekunde die ganze Karte)
     const edge = i => i.type === 'tower' && landmasses[i.landmassId].tier === 'outer' && landmasses[i.landmassId].ring >= 3 && !bossAt(i.id);
     let free = islands.filter(i => edge(i) && !islandOwnerOf(i.id));
     if (!free.length) { const big = BOT_DEFS.filter(x => x.id !== bot.id && !x.mensch && !(ownerShieldUntil(x.id) > now)).sort((u, v) => botOwnedIslands[v.id].size - botOwnedIslands[u.id].size)[0];   // the map is full: a fresh start on the edge of the biggest empire
         free = big && botOwnedIslands[big.id].size >= 40 ? [...botOwnedIslands[big.id]].map(id => islandById[id]).filter(i => edge(i) && !isCapital(i.id) && !pendingAttacks.some(a => a.targetId === i.id)) : []; }
     if (!free.length) return;
     const t = free[Math.floor(Math.random() * free.length)]; clearIslandOwner(t.id);
-    botOwnedIslands[bot.id].add(t.id); islandLevels[t.id] = 1; islandTroops[t.id] = 0; b.outAt = 0; b.capital = t.id; b.capMovedAt = now; b.capWish = null; capitalCache = null;
+    botOwnedIslands[bot.id].add(t.id); islandLevels[t.id] = 1; islandTroops[t.id] = 0; b.outAt = 0; b.outNext = 0; b.capital = t.id; b.capMovedAt = now; b.capWish = null; capitalCache = null;
     b.shieldUntil = now + 3600000; b.shieldWhy = 'start'; b.shieldAt = now;                   // an hour of peace to get going (a lone base in someone's land would fall at once)
     if (window.WELT) b.neuBis = now + NEULING_MS;                                                // Neustart: wieder Anfängerschutz (wie jeder Neue)
     saveBotState(); saveGame();

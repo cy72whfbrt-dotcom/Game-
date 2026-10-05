@@ -340,13 +340,14 @@ function botGather(bot) {
     return true;
 }
 
-function botCapitalOf(botId) {                  // each bot's main base: its strongest base at first - later moved like yours (botConsiderCapital)
+function botCapitalOf(botId) {                  // each bot's main base: its strongest tower at first - later moved like yours (botConsiderCapital)
     const b = loadBotState()[botId], own = botOwnedIslands[botId];
     if (!own || !own.size) return null;
-    if (b.capital === undefined || !own.has(b.capital)) {
+    if (b.capital === undefined || b.capital === null || !own.has(b.capital) || islandById[b.capital].type !== 'tower') {   // die Hauptstadt ist immer ein Turm – nie ein Tor oder Tempel (wie bei dir)
         let best = null; for (const id of own) { const isl = islandById[id]; if (isl.type !== 'tower') continue;
             if (best === null || (islandLevels[id] || 1) > (islandLevels[best] || 1)) best = id; }
-        b.capital = best ?? [...own][0]; saveBotState(); capitalCache = null;
+        if (best === null) return null;                                     // gar kein Turm: keine Hauptstadt
+        b.capital = best; saveBotState(); capitalCache = null;
     }
     return b.capital;
 }
