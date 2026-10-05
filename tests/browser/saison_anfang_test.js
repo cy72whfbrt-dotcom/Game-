@@ -42,7 +42,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(r.halt && !r.haltDatum && r.normal, 'Angehalten: „Neustart: vom Admin“ statt des alten Datums (sonst das Datum)', { halt: r.halt, datum: r.haltDatum, normal: r.normal });
   ok(new RegExp('Saison-Pass ' + r.passNr).test(r.pass) && !/(^|[^-])Saison \d/.test(r.pass.replace(/Saison-Pass \d+/g, '')), 'Pass heißt „Saison-Pass N“', r.pass.slice(0, 80));
   ok(r.anfang[0] === 2e6 && r.anfang[1] === 1e6, 'Erste 3 Tage einer neuen Saison: Tagesboss 2 Mio., Drache 1 Mio. Leben (Untergrenze nach Start-Truppen)', r.anfang);
-  ok(r.spaeter[0] === 5e7 && r.spaeter[1] === 1e7 && r.erste[0] === 5e7, 'Danach (und in der allerersten Saison) wie immer: 50 Mio. / 10 Mio.', { spaeter: r.spaeter, erste: r.erste });
+  ok(r.spaeter[0] === 28000 && r.spaeter[1] === 5600 && r.erste[0] === 28000, 'Danach (und in der allerersten Saison) wie immer: 50 Mio. / 10 Mio. × WIRTSCHAFT_KOSTEN (28.000 / 5.600)', { spaeter: r.spaeter, erste: r.erste });
   ok(r.trost.length === 1 && r.trost[0][0] === 15 && r.trost[0][1] === 2 && r.trost[0][2] === -1 && r.ib === 1 && r.gx === 15, 'Tagesboss entkommen: alle, die getroffen haben, bekommen etwas Kleines wie beim Drachen – nur einmal', { trost: r.trost, neu: r.ib, mitspielerGems: r.gx });
   ok(r.gefallen === 0, 'Gefallener Boss: kein Trostpreis (er hat schon nach Rang bezahlt)', r.gefallen);
   ok(r.schutzY > 47.9 && r.schutzY <= 48 && r.schutzIch > 47.9 && r.schutzIch <= 48, 'Reset: 48 Std. Anfängerschutz für alle echten Spieler – auch ohne Basis', { ohneBasis: r.schutzY, du: r.schutzIch });
