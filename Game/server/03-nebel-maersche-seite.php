@@ -139,13 +139,17 @@ function json_antwort($code, $daten) {
 }
 
 // Adresse eines Spiel-Skripts für die Spielseite: verkleinert über skript.php (gepackt, lange zwischengespeichert), wenn
-// Game/klein/<name>.js da und nicht älter als das Original ist – sonst das Original. Der Weltrechner bekommt immer das
-// Original (er liest die Skripte selbst von der Festplatte, weltrechner/start.js).
+// Game/klein/<name>.js aus genau diesem Original entstand (sha1 in seiner ersten Zeile, werkzeuge/verkleinern.js) – sonst
+// das Original. Version in der Adresse = Anfang der sha1 (gleicher Inhalt, gleiche Adresse). Der Weltrechner bekommt immer
+// das Original (er liest die Skripte selbst von der Festplatte, weltrechner/start.js).
 function skript($name) {
     static $sys = null;
     if ($sys === null) $sys = (bool)system_zugang();
-    $quelle = __DIR__ . '/' . $name . '.js'; $klein = __DIR__ . '/klein/' . $name . '.js';
-    if (!$sys && is_file($klein) && filemtime($klein) >= filemtime($quelle)) return 'skript.php?d=' . $name . '&amp;v=' . filemtime($klein);
+    $quelle = __DIR__ . '/' . $name . '.js';
+    if (!$sys) {
+        $kopf = @file_get_contents(__DIR__ . '/klein/' . $name . '.js', false, null, 0, 160); $sha = sha1_file($quelle);
+        if ($kopf !== false && strpos($kopf, '/* verkleinert aus ' . $name . '.js · ' . $sha . ' · ') === 0) return 'skript.php?d=' . $name . '&amp;v=' . substr($sha, 0, 12);
+    }
     return $name . '.js?v=' . filemtime($quelle);
 }
 

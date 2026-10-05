@@ -1,8 +1,7 @@
 // Verkleinert die Skripte, die der Browser lädt, nach Game/klein/<name>.js (läuft am Ende von werkzeuge/spiel_bauen.sh).
 // Die Originale bleiben, wie sie sind: der Weltrechner, der Server (liest Namen aus spiel.js/bots.js) und die Tests lesen sie.
 // Nur Leerraum und Kommentare raus und lokale Namen kürzer – nichts umgebaut (compress aus), Funktionsnamen bleiben (Fehlermeldungen
-// lesbar), globale Namen bleiben (die Skripte rufen sich gegenseitig auf). Die erste Zeile merkt sich, aus welchem Original
-// die Datei entstand – unverändertes Original: nichts zu tun (schnell).
+// lesbar), globale Namen bleiben (die Skripte rufen sich gegenseitig auf). Unverändertes Original: nichts zu tun (schnell).
 //   node werkzeuge/verkleinern.js          → fehlende/veraltete neu, nicht mehr gebrauchte löschen
 //   node werkzeuge/verkleinern.js pruefen  → nur prüfen: Fehler, wenn eine Datei in Game/klein/ nicht zu ihrem Original passt
 'use strict';
@@ -12,7 +11,10 @@ const GAME = path.join(__dirname, '..', 'Game'), KLEIN = path.join(GAME, 'klein'
 const SKRIPTE = ['ladebildschirm', 'speichern', 'bots', 'welt', 'spiel', 'aufbau', 'buendnis', 'haendler', 'benachrichtigung', 'baukunst'];
 const OPTIONEN = { compress: false, mangle: { keep_fnames: true, keep_classnames: true }, format: { comments: false } };
 const pruefen = process.argv[2] === 'pruefen';
-const kennung = q => '/* verkleinert aus ' + q + ' · ' + crypto.createHash('sha1').update(fs.readFileSync(path.join(GAME, q))).update('terser 5.36.0 ' + JSON.stringify(OPTIONEN)).digest('hex') + ' */';
+// erste Zeile: Original-Name · sha1 des Originals (skript() in server.php vergleicht ihn – nie alter Code, egal in welcher
+// Reihenfolge die Dateien hochkommen) · Kennung von terser + Einstellungen (ändern sie sich, wird alles neu verkleinert)
+const sha1 = x => crypto.createHash('sha1').update(x).digest('hex');
+const kennung = q => '/* verkleinert aus ' + q + ' · ' + sha1(fs.readFileSync(path.join(GAME, q))) + ' · ' + sha1('terser 5.36.0 ' + JSON.stringify(OPTIONEN)).slice(0, 8) + ' */';
 const ersteZeile = f => { try { const fd = fs.openSync(f, 'r'), b = Buffer.alloc(200), n = fs.readSync(fd, b, 0, 200, 0); fs.closeSync(fd); return b.toString('utf8', 0, n).split('\n')[0]; } catch (e) { return ''; } };
 
 (async () => {

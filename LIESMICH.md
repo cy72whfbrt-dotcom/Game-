@@ -373,8 +373,9 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   `klein/` ist nicht im Git, entsteht bei jedem Bauen (also auch vor dem Hochladen, in der Vorschau und den Server-Tests);
   `spiel_bauen.sh pruefen` meldet eine veraltete Datei. Die Originale bleiben – Weltrechner, Server und Tests lesen sie.
   spiel.js 1,28 MB → 0,80 MB, baukunst.js 381 → 241 KB. (2) Neue `Game/skript.php` liefert sie gepackt (gzip) und mit
-  „ein Jahr behalten“ (Version in der Adresse, `skript()` in server.php; ist `klein/` älter als das Original oder fehlt,
-  kommt das Original – nie alter Code). Der Weltrechner bekommt immer die Originale. Die Spielseite selbst geht jetzt
+  „ein Jahr behalten“ (Version = Anfang der sha1 des Originals in der Adresse, `skript()` in server.php; jede verkleinerte
+  Datei nennt in der ersten Zeile die sha1 ihres Originals – passt sie nicht oder fehlt die Datei, kommt das Original,
+  nie alter Code, egal in welcher Reihenfolge `hochladen.sh` die Dateien hochlädt). Der Weltrechner bekommt immer die Originale. Die Spielseite selbst geht jetzt
   gepackt raus (`ob_gzhandler` – die ganze Welt steht darin), die Startseite holt die Skripte schon während des
   Anmeldens im Hintergrund (`prefetch`). (3) three.js (CDN) und baukunst.js kommen erst nach dem ersten Bild der Karte
   (`dreiDLaden` in 10c) – vorher hielten sie DOMContentLoaded auf, und damit auch den Start der Welt-Verbindung

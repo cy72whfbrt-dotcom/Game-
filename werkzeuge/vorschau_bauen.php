@@ -9,9 +9,10 @@ $ziel = $argv[1] ?? (dirname(__DIR__) . '/vorschau');
 $html = file_get_contents($quelle . '/spiel.php');
 $html = substr($html, strpos($html, '<!DOCTYPE html>'));
 $html = str_replace('<?= $kopf ?>', '', $html);
-// Skripte wie auf dem Server (skript() in server.php): verkleinert aus klein/, wenn da und nicht älter als das Original
-$html = preg_replace_callback("/<\?= skript\('([a-z]+)'\) \?>/", function ($m) use ($quelle) { $k = $quelle . '/klein/' . $m[1] . '.js'; $q = $quelle . '/' . $m[1] . '.js';
-    return is_file($k) && filemtime($k) >= filemtime($q) ? 'klein/' . $m[1] . '.js?v=' . filemtime($k) : $m[1] . '.js?v=' . filemtime($q); }, $html);
+// Skripte wie auf dem Server (skript() in server.php): verkleinert aus klein/, wenn aus genau diesem Original entstanden
+$html = preg_replace_callback("/<\?= skript\('([a-z]+)'\) \?>/", function ($m) use ($quelle) { $q = $quelle . '/' . $m[1] . '.js'; $sha = sha1_file($q);
+    return strpos((string)@file_get_contents($quelle . '/klein/' . $m[1] . '.js', false, null, 0, 160), '/* verkleinert aus ' . $m[1] . '.js · ' . $sha . ' · ') === 0
+        ? 'klein/' . $m[1] . '.js?v=' . substr($sha, 0, 12) : $m[1] . '.js?v=' . filemtime($q); }, $html);
 foreach (['welt.js', 'benachrichtigung.js'] as $weg) $html = preg_replace('#\s*<script[^>]*src="(klein/)?' . preg_quote($weg, '#') . '[^"]*"[^>]*></script>#', '', $html);   // brauchen den Server
 if (strpos($html, '<?') !== false) exit("Fehler: noch PHP in spiel.php\n");
 if (in_array('test', $argv, true)) {   // Test-Modus (kein Nebel, fast unbegrenzt alles) – nur für die Vorschau

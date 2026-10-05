@@ -225,8 +225,8 @@ pruefe('CSP nur three.js', [strpos($sh, "https://cdn.jsdelivr.net/npm/three@0.16
 pruefe('Spielseite bindet genau diese Datei ein', strpos(file_get_contents(__DIR__ . '/../Game/spielseite/08-dialoge-stadt-skripte.php'), 'data-three="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"') !== false, true);   // (lädt spiel.js nach dem ersten Bild: dreiDLaden)
 // Skript-Adressen (schneller laden, 6.10.): verkleinert über skript.php, wenn Game/klein/ aktuell ist – sonst das Original
 $g = __DIR__ . '/../Game';
-$frisch = is_file("$g/klein/spiel.js") && filemtime("$g/klein/spiel.js") >= filemtime("$g/spiel.js");
-pruefe('Skript-Adresse spiel', skript('spiel'), $frisch ? 'skript.php?d=spiel&amp;v=' . filemtime("$g/klein/spiel.js") : 'spiel.js?v=' . filemtime("$g/spiel.js"));
+$sha = sha1_file("$g/spiel.js"); $frisch = strpos((string)@file_get_contents("$g/klein/spiel.js", false, null, 0, 160), "/* verkleinert aus spiel.js · $sha · ") === 0;
+pruefe('Skript-Adresse spiel', skript('spiel'), $frisch ? 'skript.php?d=spiel&amp;v=' . substr($sha, 0, 12) : 'spiel.js?v=' . filemtime("$g/spiel.js"));
 pruefe('Skript ohne verkleinerte Fassung → Original', skript('sw'), 'sw.js?v=' . filemtime("$g/sw.js"));
 $sk = file_get_contents("$g/skript.php"); preg_match("/const SKRIPTE = \[([^\]]*)\]/", $sk, $m1); preg_match("/const SKRIPTE = \[([^\]]*)\]/", file_get_contents(__DIR__ . '/../werkzeuge/verkleinern.js'), $m2);
 pruefe('Startseite holt die Skripte vorab (nicht in der Wartung)', strpos($ix, "if (!wartung()) foreach (['ladebildschirm', 'speichern', 'bots', 'welt', 'spiel', 'aufbau', 'buendnis', 'haendler', 'benachrichtigung'] as \$s) echo '<link rel=\"prefetch\" href=\"' . skript(\$s) . '\">'") !== false, true);

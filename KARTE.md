@@ -2048,7 +2048,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `size` → Game/bots/05-verteidigen-takt.js:262
 - `sizeBackingStore` → Game/spiel/03e-kamera-eingabe.js:397
 - `skillBonusText` → Game/spiel/04-kampf.js:297
-- `skript` → Game/server/03-nebel-maersche-seite.php:144
+- `skript` → Game/server/03-nebel-maersche-seite.php:145
 - `skyAt` → Game/ladebildschirm.js:23
 - `slab` → Game/baukunst/06-turmhof-festung.js:15
 - `sliderToTroops` → Game/spiel/10a-inselfenster-vorschau.js:258
@@ -2086,7 +2086,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `spielraumNehmen` → Game/spiel/10d-welt-weltrechner.js:168
 - `spielraumTag` → Game/spiel/10d-welt-weltrechner.js:167
 - `spielraumTeile` → Game/spiel/10d-welt-weltrechner.js:158
-- `spielseite_vorbereiten` → Game/server/03-nebel-maersche-seite.php:155
+- `spielseite_vorbereiten` → Game/server/03-nebel-maersche-seite.php:159
 - `splashDone` → Game/spiel/06d-schild-produktion.js:349
 - `spots` → Game/baukunst/03-wahrzeichen-feuer.js:316
 - `SPRAY` → Game/baukunst/07-hafen-palast.js:419
@@ -2340,7 +2340,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `weltNachholen` → Game/spiel/06d-schild-produktion.js:241
 - `weltNameSetzen` → Game/spiel/04-kampf.js:355
 - `weltrechner_schluessel` → Game/server/01-grundlagen-login.php:54
-- `weltrechner_seite` → Game/server/03-nebel-maersche-seite.php:204
+- `weltrechner_seite` → Game/server/03-nebel-maersche-seite.php:208
 - `weltteil_fuer_spieler` → Game/server/02-sicherheit-datenlecks.php:171
 - `weltZuClient` → Game/welt.js:143
 - `werIst` → Game/aufbau.js:120
@@ -3186,9 +3186,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `client_ip` :120 — (IPv6: das ganze /64-Netz zählt als eine Adresse – sonst wechselt man einfach d…
 - `herkunft_ok` :126 — Kommt ein Formular / eine Anfrage wirklich von dieser Seite? (fremde Seiten dür…
 - `json_antwort` :133
-- `skript` :144 — Adresse eines Spiel-Skripts für die Spielseite: verkleinert über skript.php (ge…
-- `spielseite_vorbereiten` :155 — Spielseite vorbereiten (spiel.php) ===== Login prüfen, auf die letzte Sicherung…
-- `weltrechner_seite` :204 — Die Spielseite für den Weltrechner: kein eigener Spielstand, keine Basis – nur …
+- `skript` :145 — Adresse eines Spiel-Skripts für die Spielseite: verkleinert über skript.php (ge…
+- `spielseite_vorbereiten` :159 — Spielseite vorbereiten (spiel.php) ===== Login prüfen, auf die letzte Sicherung…
+- `weltrechner_seite` :208 — Die Spielseite für den Weltrechner: kein eigener Spielstand, keine Basis – nur …
 
 ### Game/server/04-datenbank-spieler.php — MysqlLager: Tabellen, Spieler, Sitzungen, Spielstand, Bremse, Namen
 - `MysqlLager->tx_anfang` :10

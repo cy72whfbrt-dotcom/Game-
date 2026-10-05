@@ -1,7 +1,7 @@
 // Schneller laden (6.10.): verkleinerte Skripte aus Game/klein/, skript.php (gepackt + lange zwischengespeichert),
 // three.js + baukunst.js erst nach dem ersten Bild der Karte.   node tests/browser/laden_test.js <vorschau> [arbeitsordner]
 const { chromium } = require('playwright');
-const http = require('http'), fs = require('fs'), path = require('path'), net = require('net'), zlib = require('zlib'), vm = require('vm');
+const http = require('http'), fs = require('fs'), path = require('path'), net = require('net'), zlib = require('zlib'), vm = require('vm'), crypto = require('crypto');
 const { spawn } = require('child_process');
 const D = process.argv[2], GAME = path.join(__dirname, '..', '..', 'Game');
 const SKRIPTE = ['ladebildschirm', 'speichern', 'bots', 'welt', 'spiel', 'aufbau', 'buendnis', 'haendler', 'benachrichtigung', 'baukunst'];
@@ -20,7 +20,8 @@ const holen = (port, pfad, gzip) => new Promise((ja, nein) => http.get({ host: '
     if (!fs.existsSync(k)) { pruef(false, 'Game/klein/' + n + '.js fehlt'); continue; }
     const t = fs.readFileSync(k, 'utf8');
     let gueltig = true; try { new vm.Script(t); } catch (e) { gueltig = false; }
-    pruef(gueltig && t.startsWith('/* verkleinert aus ' + n + '.js · ') && t.length < fs.statSync(q).size * .9, n + '.js verkleinert (' + Math.round(fs.statSync(q).size / 1024) + ' → ' + Math.round(t.length / 1024) + ' KB)');
+    const sha = crypto.createHash('sha1').update(fs.readFileSync(q)).digest('hex');
+    pruef(gueltig && t.startsWith('/* verkleinert aus ' + n + '.js · ' + sha + ' · ') && t.length < fs.statSync(q).size * .9, n + '.js verkleinert (' + Math.round(fs.statSync(q).size / 1024) + ' → ' + Math.round(t.length / 1024) + ' KB)');
   }
 
   // 2) skript.php auf einem PHP-Server (ohne Datenbank, nur diese Datei)
@@ -28,7 +29,7 @@ const holen = (port, pfad, gzip) => new Promise((ja, nein) => http.get({ host: '
   const php = spawn('php', ['-S', '127.0.0.1:' + port, '-t', GAME], { stdio: 'ignore' });
   try {
     for (let i = 0; i < 50; i++) { try { await holen(port, '/skript.php'); break; } catch (e) { await new Promise(r => setTimeout(r, 100)); } }
-    const v = String(Math.floor(fs.statSync(path.join(GAME, 'klein', 'spiel.js')).mtimeMs / 1000)), klein = fs.readFileSync(path.join(GAME, 'klein', 'spiel.js'));
+    const v = crypto.createHash('sha1').update(fs.readFileSync(path.join(GAME, 'spiel.js'))).digest('hex').slice(0, 12), klein = fs.readFileSync(path.join(GAME, 'klein', 'spiel.js'));
     let r = await holen(port, '/skript.php?d=spiel&v=' + v, true);
     pruef(r.code === 200 && r.h['content-encoding'] === 'gzip' && /immutable/.test(r.h['cache-control'] || '') && /javascript/.test(r.h['content-type'] || '') && zlib.gunzipSync(r.body).equals(klein),
       'skript.php: gepackt, ein Jahr zwischenspeichern, genau Game/klein/spiel.js (' + Math.round(r.body.length / 1024) + ' KB gepackt)');
