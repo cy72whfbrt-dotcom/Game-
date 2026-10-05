@@ -40,9 +40,9 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     out.m4 = { atk: atk('rm4'), drin: bund.r.some(x => x.id === 'rm4'), alexDa: (islandTroops[aCap] || 0) - t4, heim: heim.slice(), warn: warn.slice() };
     // 5) Fehler NACH dem Eintragen in launchAttack (z. B. beim Zeichnen): der Angriff marschiert – nichts heim, Maut einmal
     console.warn = (...x) => warn.push(String(x[0])); warn.length = 0; heim.length = 0; window.WELT = { leiter: true }; bundZielOk = () => ''; ownerShielded = () => false;
-    launchAttack = (...x) => { la(...x); throw new Error('Test'); };
+    launchAttack = (...x) => { la(...x); throw new Error('Test'); }; const mp = marschPlatz; marschPlatz = () => true;   // (Marsch-Plätze: rm1/rm3 laufen noch)
     const t5 = islandTroops[aCap] || 0, g5 = geld();
-    try { rally('rm5', 3000, 1000); bundTakt(); bundTakt(); } finally { window.WELT = w0; launchAttack = la; console.warn = cw; bundZielOk = zo; ownerShielded = os; }
+    try { rally('rm5', 3000, 1000); bundTakt(); bundTakt(); } finally { window.WELT = w0; launchAttack = la; marschPlatz = mp; console.warn = cw; bundZielOk = zo; ownerShielded = os; }
     const a5 = pendingAttacks.find(x => x.rally && x.rally.id === 'rm5'), g5n = geld();
     out.m5 = { atk: atk('rm5'), drin: bund.r.some(x => x.id === 'rm5'), alexDa: (islandTroops[aCap] || 0) - t5, heim: heim.slice(), warn: warn.slice(),
       n: a5 && a5.troops, rally: !!(a5 && a5.rally.an), zahltA: g5.A - g5n.A, zahltE: g5.E - g5n.E };
