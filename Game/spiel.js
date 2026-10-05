@@ -13524,7 +13524,8 @@ if (window.WELT) {
             // dem Profil), zählt er als neu – sonst brächte ein gefälschtes Profil seine Werte in die Welt
             const frisch = !(alt && alt.city) || (!alt.zProfil && (!alt.mensch || !!alt.hbRoh));   // (nach dem Zurückspielen: angleichen wie bisher)
             hb = hbNeu(who, now, p, frisch);
-            if (frisch) { b.wache = Object.assign({ lv: 0, tk: 0, gTr: 0, gC: 0 }, b.wache || {}, { u: 0, w: 0, lm: 1 }); hb.gU = 0; hb.rU = AUF ? Object.assign({}, AUF.ROH_START) : { h: 0, s: 0, e: 0 }; }
+            if (frisch) { b.wache = Object.assign({ lv: 0, tk: 0, gTr: 0, gC: 0 }, b.wache || {}, { u: 0, w: 0, lm: 1 }); hb.gU = 0; hb.rU = AUF ? Object.assign({}, AUF.ROH_START) : { h: 0, s: 0, e: 0 };
+                if (alt) alt.wache = b.wache; delete wacheMem[who]; }   // (wacheSehen liest den Eintrag in der Welt – und darf sich vorher nicht schon am Profil geeicht haben)
         }
         b.hb = hb; if (alt && alt !== b) alt.hb = hb;
         delete b.hbRoh; if (alt) delete alt.hbRoh;
