@@ -767,7 +767,9 @@ Alles für heute Nacht kommt hier rein. Erst besprechen (Fragen an Alexander), d
    in einer Leiste unten, kleine Namensfahnen an den Basen, Marschwege als gestrichelte Linien.
 7. **Neu (Alexander): lebendige Welt** – Felsen/Berge (Hindernisse) auf der Karte; Märsche müssen **drumherum laufen**
    (gestrichelter Weg wie bei Million Lords), wenn ein Hindernis zwischen Spieler und Ziel liegt. Neue Regel –
-   Marschzeiten werden dadurch länger. Erst Fragen klären.
+   Marschzeiten werden dadurch länger. **Entschieden:** W1 Karte sieht aus wie jetzt, nur mit Struktur (Berge/Felsen
+   eingefügt) · W2 **einige** Hindernisse (Wege etwas länger, Basen dahinter etwas geschützter) · W3 kommt mit dem
+   **übernächsten** Saison-Reset (nicht heute Nacht) – vorher bauen + testen.
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
