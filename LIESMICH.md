@@ -381,6 +381,13 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   ms, lang)` mit Klasse `toast--lang`. Fremde Basis nach dem Spähen: Kopfzeile bricht um statt „Kevin_93 · S…“/„GES…“, Knopf heißt
   „Neu spähen“ (passt Handy + Desktop). Obere Leiste: die Werte bekommen Platz nach ihrer Länge – „100 Mrd.“ statt „100 Mr…“.
   Test `tests/browser/handy_texte_test.js` (Handy + Desktop).
+- **5.10. Hänger bei Last beim Hoster:** ein Welt-Puls dauert dann 15–30 s – das Handy zeigte sofort „Verbindung wird
+  wiederhergestellt …“, Angriffe standen bei 0:00. Jetzt: die Weltrechner-Leitung gilt 45 s (statt 12), gerechnet ab dem ENDE
+  seines Pulses (`LEITER_SEK`, 07-welt-puls.php; einen Absturz erkennt der Wachhund weiter am Herzschlag, 180 s). Der Hinweis
+  kommt erst nach 20 s durchgehend ohne Weltrechner (`rechnerStatus`, 10d). Ein Marsch am Ziel zeigt „wird ausgewertet …“
+  statt 0:00 (`marschUhr`, Unterwegs-Liste, Marsch-Uhr auf der Karte, Armee/Rally-Uhren; nur Anzeige). Weltrechner wartet
+  auf den Server bis 60 s (statt 30) und gibt nach einem eigenen Stillstand 2 s Nachfrist (`zeitGrenze`, start.js).
+  Test `tests/browser/haenger_test.js`, server_test.php.
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.

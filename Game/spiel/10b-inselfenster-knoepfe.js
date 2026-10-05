@@ -297,7 +297,7 @@ function handleTap(screenX, screenY) {
     if (pendingAttackTargetId !== null) {
         const target = islandById[pendingAttackTargetId];
         pendingAttackTargetId = null;
-        hintEl.textContent = defaultHint;
+        hintEl.textContent = defaultHint; hintEl.classList.remove('toast--lang');
 
         if (ownedIslands.has(island.id) && target && (islandTroops[island.id] || 0) > 0) {
             // Crossing to a different landmass is only allowed over
@@ -323,7 +323,7 @@ function handleTap(screenX, screenY) {
     if (pendingSendFromId !== null) {
         const fromId = pendingSendFromId;
         pendingSendFromId = null;
-        hintEl.textContent = defaultHint;
+        hintEl.textContent = defaultHint; hintEl.classList.remove('toast--lang');
 
         if (ownedIslands.has(island.id) && island.id !== fromId && (islandTroops[fromId] || 0) > 0) {
             closeAllPopups();                                     // pick how many go, like for an attack

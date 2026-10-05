@@ -1204,7 +1204,7 @@ function bundRallyZeile(r, meins) {
         (meins && now < r.los - 2000 ? '<button type="button" class="btn btn--primary btn--sm" data-bact="dazuWahl" data-rid="' + r.id + '">Mitmachen</button>' : '') +
         (meins && (r.by === 'player' || bundIch().anf === 'player') ? '<button type="button" class="btn btn--ghost btn--sm" data-bact="abbruch" data-rid="' + r.id + '">' + bundSicherKnopf('abbruch:' + r.id, 'Abbrechen', 'Sicher?') + '</button>' : '') +
         (meins && r.j.length ? '<div class="bd-rally-mit">' + r.j.map(j => { const m = !j.da && pendingSends.find(x => x.rally === r.id && (x.senderBotId || 'player') === j.w && !x.back);   // wer mitmacht: angekommen oder unterwegs (mit Ankunft)
-            return '<small>' + escapeHtml(bundName(j.w)) + ' · ' + fmtCompact(j.n) + ' · ' + (j.da ? '✓ da' : m ? 'unterwegs, da in ' + uhrHtml(m.resolveAt, 'clock') + (m.resolveAt > r.los ? ' (folgt zum Ziel)' : '') : 'unterwegs') + '</small>'; }).join('') + '</div>' : '') + '</div>';
+            return '<small>' + escapeHtml(bundName(j.w)) + ' · ' + fmtCompact(j.n) + ' · ' + (j.da ? '✓ da' : m ? 'unterwegs, da in ' + uhrHtml(m.resolveAt, 'marsch') + (m.resolveAt > r.los ? ' (folgt zum Ziel)' : '') : 'unterwegs') + '</small>'; }).join('') + '</div>' : '') + '</div>';
 }
 function bundRallyHtml(a) {
     const meine = bund.r.filter(r => r.aid === a.id), gegen = bund.r.filter(r => r.aid !== a.id && bundVerbuendet('player', islandOwnerOf(r.t)) || r.aid !== a.id && islandOwnerOf(r.t) === 'player');

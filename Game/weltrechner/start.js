@@ -110,14 +110,26 @@ function fehler(t) {
     if (stat.fehlerMinute.length > 120) ende(4, 'zu viele Fehler (über 120 in einer Minute)');
 }
 
-// ===== Mit dem Server reden: immer mit Schlüssel, nie länger als 30 s warten (die Spielseite beim Start: 5 Min.) =====
+// ===== Mit dem Server reden: immer mit Schlüssel, nie länger als 60 s warten (die Spielseite beim Start: 5 Min.) =====
+// Bei Last beim Hoster dauert ein Puls 15–30 s. Stand Node selbst (großer Rechen-Schritt), kommt die Uhr zu spät dran – die
+// Antwort liegt dann oft schon bereit: einmal 2 s Nachfrist, statt sie als Fehler zu verwerfen.
+function zeitGrenze(ms) {
+    const ac = new AbortController(), soll = Date.now() + ms; let nachfrist = false;
+    const pruefen = () => {
+        if (!nachfrist && Date.now() - soll > 1000) { nachfrist = true; setTimeout(pruefen, 2000).unref(); return; }
+        ac.abort(new DOMException('Zeitgrenze (' + Math.round(ms / 1000) + ' s)', 'TimeoutError'));
+    };
+    const t = setTimeout(pruefen, ms); t.unref();
+    return { signal: ac.signal, stopp: () => { clearTimeout(t); } };
+}
 async function holen(url, opt) {
     opt = Object.assign({}, opt || {});
     const kopf = Object.assign({}, opt.headers || {}); kopf['X-Weltrechner'] = SCHLUESSEL;
     let body = opt.body; if (body && typeof body !== 'string') body = Buffer.from(body.buffer ? new Uint8Array(body.buffer, body.byteOffset, body.byteLength) : body);
     const ziel = new URL(url, URL_BASIS + 'spiel.php').href;
     if (!ziel.startsWith(URL_BASIS)) throw new Error('fremde Adresse – der Schlüssel geht nur an den eigenen Server');
-    return fetch(ziel, { method: opt.method || 'GET', headers: kopf, body, redirect: 'error', signal: AbortSignal.timeout(opt.zeit || 30000) });   // (nie einer Umleitung folgen – der Schlüssel ginge mit)
+    const zg = zeitGrenze(opt.zeit || 60000);
+    return fetch(ziel, { method: opt.method || 'GET', headers: kopf, body, redirect: 'error', signal: zg.signal }).finally(zg.stopp);   // (nie einer Umleitung folgen – der Schlüssel ginge mit)
 }
 
 // ===== Prüfer: sind die Zahlen der Welt in Ordnung? (läuft im Spiel, vor jedem Schreiben) =====

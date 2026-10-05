@@ -25,7 +25,7 @@ const zuf = () => Math.random().toString(36).slice(2, 10) + Math.random().toStri
   const eigene = php('echo implode(" ", wr_alle_pids());');
   ok('eigener Weltrechner gefunden', eigene !== '', W);
   if (eigene) execSync('kill -9 ' + eigene + ' || true');
-  await warte(13500);
+  await warte(46500);   // (Leitung gilt LEITER_SEK = 45 s ab dem Ende des letzten Pulses)
   i = info();
   // 3) alter Stand (seit zu klein) darf nach Ablauf nicht übernehmen
   r = await puls(zuf().slice(0, 32), i.v - 1, { welt });

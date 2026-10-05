@@ -175,5 +175,10 @@ $mw = ['setzen' => (object)['openWaterArmies' => '[]'], 'flicken' => (object)['o
 pruefe('marsch_fehlt: nur Marsch-Teile, die bloß als Flicken kamen', marsch_fehlt($mw), ['openWaterPendingSends']);
 $mw2 = marsch_welt($mw, 1, ['eigen' => [], 'armeen' => []], ['openWaterPendingSends' => '[]']);
 pruefe('marsch_welt: vorgeladenes Teil ganz geschickt, Flicken weg', [isset(((array)$mw2['setzen'])['openWaterPendingSends']), isset(((array)$mw2['flicken'])['openWaterPendingSends']), isset(((array)$mw2['flicken'])['islandTroops'])], [true, false, true]);
+// Weltrechner-Leitung (Hänger bei Last): gilt 45 s, gerechnet ab dem ENDE seines Pulses (ein Puls von 15–30 s ist kein Ausfall)
+pruefe('Leitung gilt 45 s', LEITER_SEK, 45);
+$wp = file_get_contents(__DIR__ . '/../Game/server/07-welt-puls.php');
+pruefe('Leitung ab Ende der Anfrage (time(), nicht $jetzt)', [strpos($wp, 'leiter_setzen(0, $tok, time() + LEITER_SEK)') !== false, strpos($wp, '$jetzt + LEITER_SEK') !== false], [true, false]);
+pruefe('Wachhund erkennt einen Absturz am Herzschlag, nicht an der Leitung', LEITER_SEK < 180 && strpos(file_get_contents(__DIR__ . '/../Game/weltrechner/wachhund.php'), 'const WR_HERZ_ALT = 180;') !== false, true);
 echo ($fehler ? "$fehler von $n Tests FEHLGESCHLAGEN\n" : "Alle $n Server-Tests bestanden.\n");
 exit($fehler ? 1 : 0);

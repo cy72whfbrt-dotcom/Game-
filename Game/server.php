@@ -1325,7 +1325,7 @@ function name_anfrage($ich, $d) {
 //           welt/ereignisse schickt nur der Weltrechner.
 // Antwort:  {leiter, version, welt:{setzen,loeschen}, befehle:[{von,b}] (nur Weltrechner), ereignisse:[…], spieler:[…]}
 // Weltrechner ist nur der Server-Weltrechner (weltrechner/start.js) – nie das Gerät eines Spielers.
-const LEITER_SEK = 12;
+const LEITER_SEK = 45;   // so lange gilt der Weltrechner nach seinem letzten Puls als „läuft“ (bei Last dauert ein Puls 15–30 s; einen Absturz erkennt der Wachhund am Herzschlag)
 const SAISON_SICHERUNG_SEK = 14 * 86400;   // die Sicherung vor einer neuen Welt-Saison bleibt 2 Wochen (Alexander 5.10.)
 // Eine Sicherung ist nur gültig, wenn sie ganz ist: Welt-Teile (Schlüssel + gültiges JSON) und Mitspieler vorhanden.
 function sicherung_gueltig($d) {
@@ -1443,7 +1443,7 @@ function welt_puls($ich, $d) {
     $neu_leiter = false;
     if ($sys) {   // Weltrechner bleibt (oder übernimmt nach einem Neustart)
         $neu_leiter = !$bin_leiter;
-        $l->leiter_setzen(0, $tok, $jetzt + LEITER_SEK);
+        $l->leiter_setzen(0, $tok, time() + LEITER_SEK);   // ab dem Ende der Anfrage (nicht ab ihrem Anfang: eine langsame wäre sonst schon fast abgelaufen)
         $bin_leiter = true;
     }
     $seit = (int)($d['seit'] ?? 0);

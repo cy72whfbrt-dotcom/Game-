@@ -350,5 +350,5 @@ function flashHint(text, ms, lang) {                // lang: langer Hinweis – 
     clearTimeout(hintResetTimer);
     hintEl.classList.toggle('toast--lang', !!lang);
     hintEl.textContent = text;
-    if (ms) hintResetTimer = setTimeout(() => { hintEl.textContent = defaultHint; }, ms);
+    if (ms) hintResetTimer = setTimeout(() => { hintEl.textContent = defaultHint; hintEl.classList.remove('toast--lang'); }, ms);
 }

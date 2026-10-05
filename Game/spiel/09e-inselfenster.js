@@ -170,7 +170,7 @@ function cancelMultiAttack() {
     multiAttackTargets = [];
     multiAttackBar.style.display = 'none';
     document.body.classList.remove('is-multi');
-    hintEl.textContent = defaultHint;
+    hintEl.textContent = defaultHint; hintEl.classList.remove('toast--lang');
 }
 
 multiAttackCancelBtn.addEventListener('click', cancelMultiAttack);

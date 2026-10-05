@@ -102,7 +102,7 @@ const TUTORIAL_HINT = 'Ziehen zum Bewegen · Pinch oder Mausrad zum Zoomen · Ba
 function dismissTutorialHint() {
     if (hintEl.textContent !== TUTORIAL_HINT) return;
     clearTimeout(hintResetTimer);
-    hintEl.textContent = defaultHint;
+    hintEl.textContent = defaultHint; hintEl.classList.remove('toast--lang');
 }
 
 // A convex/concave hull spanning every owned island used to draw
