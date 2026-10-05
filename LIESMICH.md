@@ -230,7 +230,7 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Bauzeit hochstuft, bei dem schaukelte sich das Holz in der Welt hoch (alle 15 s +Millionen): wartet etwas im Hauptbuch,
   wendet der Weltrechner dasselbe Profil alle 10 s nochmal an – die Rohstoff-Grenze galt aber nur beim ersten Mal. Jetzt gilt
   sie für das ganze Profil (`m.rDeckelP`). Weltrechner schreibt bei Hängern die Ursache ins Log (eigene CPU, Server-Last,
-  freier Speicher). NICHT hochgeladen.
+  freier Speicher). HOCHGELADEN 5.10. nachmittags (Alexanders Ja; Tests grün – kiste_test nur unter Last rot, allein grün).
 - **5.10., 7:20 Uhr – HOCHGELADEN (Alexanders Ja):** alles vom 5.10. (Rally jeder für sich, Kampf-Fehler, Schummel-Schutz,
   Login, Push, nice 10). Tests vorher: beide Reihen grün. Weltrechner danach in 11 s gestartet (vorher 3–4 Min.), läuft.
 - **5.10. Tests schneller (Alexander):** `tests/alle_tests.sh` lässt bis zu 4 Browser-Tests gleichzeitig laufen (vorher
