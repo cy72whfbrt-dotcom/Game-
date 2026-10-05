@@ -707,6 +707,11 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
   Märsche hin = Zurück + Schneller, heim = Schneller).
 - **Fehler (Alexander 5.10.):** Angriffe auf andere sollen immer von der nächsten eigenen Basis mit Truppen losgehen –
   heute nehmen sie teils einen weiten Weg (von weiter weg).
+- **Fehler (Alexander 5.10., Bildschirmfotos Turm #23633 / Clara_V):** Spähbericht zeigt **keine Ausrüstung** (4 leere
+  Plätze), der Kampfbericht danach zeigt 4 Teile Stufe 10 („Rüstung +56,6 Mrd.“). Dazu: Spähbericht nennt
+  „Grundverteidigung 557,6 Mrd.“ als eine Zahl, der Kampfbericht teilt auf (Grund 171,4 Mrd. „Basis Stufe 93“ + Rüstung
+  + Fähigkeit + Mauer + Forschung) – Spähbericht sollte genauso aufschlüsseln; Spähbericht-Kopf sagt „Stufe 107“, der
+  Kampfbericht „Basis Stufe 93“ (prüfen, was stimmt). Summe passt ungefähr (824,9 vs. 827,2 Mrd.).
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
