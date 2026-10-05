@@ -499,6 +499,24 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   zahlen die Maut neu verteilt und marschieren. Kann der Anführer selbst nicht zahlen, fällt die Rally wie bisher ganz aus
   (`bundRallyLos`, buendnis/02; wirft dabei etwas, geht die Rally nicht los und alle Truppen genau einmal heim). Test
   `rally_maut_test` (Fall 2, 2b, 6; der Test schaltet die Mitspieler-Runde ab – sonst trat Z zufällig dem Test-Bündnis bei).
+- **5./6.10. Nacht – Bündnis (11b C/D/I, NICHT hochgeladen):** Neues Signal **„Rückzug!“** (Inselfenster → Bündnis →
+  „Rückzug!“, mit Ort): Mitspieler kehren mit allem um, was dorthin unterwegs ist (Angriffe, Hilfe, Verstärkung – zurück so
+  lange, wie sie unterwegs waren), holen ihre Verstärkung dort heim und brechen ihre Rally dorthin ab; echte Spieler bekommen
+  nur eine Nachricht (`bundSignal`, `bundRueckzugTun`). **Rally gegen ein Mitglied:** Zeile „sammelt Truppen für eine Rally
+  auf … – Gefahr!“ mit „Zeigen“ im Chat des angegriffenen Bündnisses, Push + Nachricht wie bisher; die Rally zählt jetzt als
+  Gefahr (`bundUnterAngriff`: Stärke, Ankunft = Start + Marsch, `bundBedroht`) → die Verbündeten helfen von selbst wie beim
+  Hilferuf (Botschaft, rechtzeitig, gleiche Grenzen). **Verstärkung heim:** holt ein Verbündeter sie heim (auch Mitspieler nach
+  30 ruhigen Min., vorher ohne Wort), bekommt der Gastgeber „Finn holt seine 2 Mio. Truppen aus … heim.“ und im Chat steht
+  eine Zeile (`verstHolen`). Eigene Basis antippen → „Verstärkung hier“: wer mit wie vielen Truppen (mit „Heimschicken“); bei
+  der Basis eines Mitglieds „Deine Truppen hier“ (mit „Zurückholen“). **Mitspieler im Chat:** auf „Später“ folgt nach 5–15 Min.
+  „Jetzt!“ (und sie greifen das geteilte Ziel an) oder „Nein“; selten „Danke!“, wenn Hilfe/Verstärkung ankommt (statt des
+  stummen Danke-Signals), „Gut gemacht!“ nach einem gemeinsamen Sieg. **Kampfbericht teilen:** Knopf „Im Bündnis teilen“
+  neben „Zeigen“ (Angriff und Verteidigung) → Zeile „hat einen Kampfbericht geteilt: Angriff auf … – Niederlage · Gegner
+  5.300“. Die Mitspieler lesen nur frische Berichte (Kampf dort vor höchstens 15 Min.; der Bericht zählt wie ein Späher):
+  schwach → „Schwach – ich greife mit an!“ und greifen an; für jeden allein zu stark → „Zu stark – lieber eine Rally!“, keiner
+  allein, reicht das Bündnis zusammen, startet einer eine Rally; gehört der Ort dem Bündnis → „Gut gemacht!“. **Thron-Punkte:**
+  Halter weiter 30, jeder mit Verstärkung im Thron 15 (`THRONE_PTS_VERST`, `throneHelfer`, 06c). Neue Tests
+  `bund_rueckzug_test`, `rally_warnung_test`, `verst_heim_test`, `bund_bericht_test`, `thron_verst_test`.
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
@@ -749,8 +767,8 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
 **C. Neue Regeln (Teil 2)**
 - Mitspieler sehen die Stärke eines Angriffs nur so ungenau wie echte Spieler.
 - Bündnis-Signal **„Rückzug!“**: Mitspieler kehren automatisch um, echte Spieler bekommen eine Nachricht und
-  entscheiden selbst.
-- Thron-Punkte (alle 3 Min.): Halter weiter **30**, **jeder** mit Verstärkung im Thron **15**.
+  entscheiden selbst. – *gebaut (nicht hochgeladen)*
+- Thron-Punkte (alle 3 Min.): Halter weiter **30**, **jeder** mit Verstärkung im Thron **15**. – *gebaut (nicht hochgeladen)*
 - Stadt-Bau und Forschung geben Pass-Punkte und zählen für Aufgaben (z. B. „Starte eine Forschung“).
 - Neue Forschungen ab Labor 23: **Krankenhaus II, Burg-Schutz+, Marschtempo II**.
 - Neue Saison startet sicher **sonntags 18 Uhr deutscher Zeit**.
@@ -765,7 +783,8 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
   schneller laden · prüfen, ob der Anleitungs-Stand im Browser liegt (wenn ja: auf den Server).
 - Kampf/Bündnis: Nachricht, wenn ein echter Spieler dich ausspäht · Warnung + automatische Hilfe bei einer Rally gegen
   das Bündnis · Meldung, wenn ein Verbündeter seine Verstärkung heimholt, und beim Antippen der eigenen Basis sehen, wer
-  dort verstärkt · Mitspieler: auf „Später“ folgt „Jetzt!“, sie schreiben „Danke!“/„Gut gemacht!“.
+  dort verstärkt · Mitspieler: auf „Später“ folgt „Jetzt!“, sie schreiben „Danke!“/„Gut gemacht!“. – *Rally-Warnung + Hilfe,
+  Verstärkung-Meldung + eigene Basis, Später/Jetzt, Danke/Gut gemacht: gebaut (nicht hochgeladen)*
 - Langzeit: Hauptstadt-Erfolge · Push „Bau fertig“/„Forschung fertig“ · Aufgabe „Öffne 3 Kisten“ zählt auch
   Gratis-Kisten · Ranglisten-Reiter „Hauptstadt“ · unerreichbare Erfolge senken, ein paar sehr hohe bleiben.
 - **Nein:** Push bei Stillstand · Admin-Ampel · „Leicht“ bei neutralen Basen · Fenster „Erste Basis erobert“ ·
@@ -787,6 +806,7 @@ nicht gleich neu starten) · Sortier-Tag zu Ende bringen (alten, ungenutzten Cod
 **Nein:** Wachturm kommt nicht zurück (Alexander). · Die vorhandene Übersicht „während du weg warst“ an die neue
 Wirtschaft (pro Stunde) und das neue Design anpassen · **Kampfbericht im Bündnis teilen** (ein Knopf) – **Mitspieler
 müssen ihn verstehen** und darauf reagieren (z. B. schwachen Gegner mit angreifen, bei starkem Gegner vorsichtig sein).
+– *gebaut (nicht hochgeladen)*
 **Nein:** Erklär-Fenster neue Saison · Gleichgewicht nach 1–2 Tagen prüfen · Extra-Sicherung · „Nochmal“-Knopf ·
 Sammler mit einem Tipp neu · Ankunftszeit als Uhrzeit.
 
