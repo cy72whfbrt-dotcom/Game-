@@ -47,24 +47,39 @@ if (!SYSTEM && store.get('openWaterReset') !== RESET_VERSION) {   // (nie beim W
 // Seite neu. Bleibt: Stadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Gems, Holz/Stein/Eisen, Gekauftes, Abholfach.
 // Weg: Stufe (→ 1, damit alle Fähigkeitspunkte), Münzen (→ 0 wie ein neuer Spieler), Verwundete, Kampfberichte, Nebel, Späher,
 // alte Befehle. (Basen, Truppen, Bündnis, Märsche stehen in der Welt – die setzt der Weltrechner zurück.)
-var saisonNeuGeladen = 0;                            // (09-events.js: Hinweis nach dem Neuladen)
+// Anfängerschutz (Alexander 5.10.): nach dem Reset 48 Std. wie ein neuer Spieler – die Zeit kommt vom Weltrechner (openWaterSaisonSchutz).
+// Zurückgespielte Sicherung (Alexander 5.10.): ist die Saison der Welt älter als die dieses Spielstands, holt er sich den Stand von
+// vor dem Reset zurück (openWaterSaisonVorher, beim Reset gemerkt) – die Welt (Server) ist maßgeblich, das Handy folgt nur.
+var saisonNeuGeladen = 0, saisonZurueckGeladen = 0;  // (09-events.js: Hinweis nach dem Neuladen)
+const SAISON_PRIVAT = ['openWaterLevel', 'openWaterXp', 'openWaterSkills', 'openWaterSkillPoints', 'openWaterCoins', 'openWaterNeulingBis'];   // (was der Reset ändert und das Zurückspielen wiederholt)
 if (!SYSTEM) {
-    let mein = parseInt(store.get('openWaterSaisonMein'), 10) || 0;
+    let mein = parseInt(store.get('openWaterSaisonMein'), 10) || 0, nrW = 0;
     const neu = parseInt(store.get('openWaterSaisonNeu'), 10) || 0;
+    try { nrW = (JSON.parse(store.get('openWaterSaison')) || {}).nr | 0; } catch (e) {}
     if (!mein) {                                     // ganz neu: die laufende Saison · ein Spielstand von vor der Saison-Regel: Saison 1
-        let w = 1; try { w = Math.max(1, (JSON.parse(store.get('openWaterSaison')) || {}).nr | 0); } catch (e) {}
-        mein = store.get('openWaterLevel') === null && store.get('openWaterCity') === null ? w : 1;
+        mein = store.get('openWaterLevel') === null && store.get('openWaterCity') === null ? Math.max(1, nrW) : 1;
         store.set('openWaterSaisonMein', String(mein));
     }
+    if (nrW > 0 && mein > nrW && !(neu > mein)) {    // die Welt ist wieder in einer älteren Saison (Sicherung zurückgespielt)
+        let v = null; try { v = JSON.parse(store.get('openWaterSaisonVorher')); } catch (e) {}
+        if (v && v.nr === nrW && v.k) { for (const k of SAISON_PRIVAT) { if (typeof v.k[k] === 'string') store.set(k, v.k[k]); else if (k === 'openWaterNeulingBis') store.set(k, '0'); else store.remove(k); }   // (ohne NeulingBis gäbe 10-start.js neuen Schutz)
+            try { const c = JSON.parse(store.get('openWaterCity')); if (c && typeof c === 'object' && v.w >= 0) { c.wounded = v.w; store.set('openWaterCity', JSON.stringify(c)); } } catch (e) {} }
+        mein = nrW; store.set('openWaterSaisonMein', String(mein)); saisonZurueckGeladen = nrW;
+        if (window.WELT) { WELT.befehle.length = 0; WELT.ausgang = []; }
+    }
     if (neu > mein) {
+        const vorher = { nr: mein, k: {}, w: 0 }; for (const k of SAISON_PRIVAT) { const x = store.get(k); if (x !== null) vorher.k[k] = x; }
+        try { vorher.w = (JSON.parse(store.get('openWaterCity')) || {}).wounded || 0; } catch (e) {}
+        store.set('openWaterSaisonVorher', JSON.stringify(vorher));   // (für ein Zurückspielen der Sicherung von vor dem Reset)
         store.set('openWaterLevel', '1'); store.set('openWaterXp', '0'); store.set('openWaterSkills', '{}'); store.set('openWaterSkillPoints', '0');
         store.set('openWaterCoins', '0');
+        const schutz = parseFloat(store.get('openWaterSaisonSchutz')) || 0; if (schutz > Date.now()) store.set('openWaterNeulingBis', String(schutz));   // 48 Std. Anfängerschutz
         for (const k of ['openWaterCombatLog', 'openWaterFogCells', 'openWaterExplored', 'openWaterScoutedIslands', 'openWaterPendingScouts', 'openWaterCarryTroops', 'openWaterBefehlAus']) store.remove(k);
         try { const c = JSON.parse(store.get('openWaterCity')); if (c && typeof c === 'object') { c.wounded = 0; store.set('openWaterCity', JSON.stringify(c)); } } catch (e) {}
         if (window.WELT) { WELT.befehle.length = 0; WELT.ausgang = []; }   // (welt.js hat die alten Befehle schon gelesen – sie gehören zur alten Welt)
         store.set('openWaterSaisonMein', String(neu)); saisonNeuGeladen = neu;
     }
-    if (store.get('openWaterSaisonNeu') !== null) store.remove('openWaterSaisonNeu');
+    for (const k of ['openWaterSaisonNeu', 'openWaterSaisonSchutz']) if (store.get(k) !== null) store.remove(k);
 }
 const canvas = document.getElementById('mapCanvas');
 const ctx = canvas.getContext('2d');

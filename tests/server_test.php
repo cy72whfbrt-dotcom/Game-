@@ -104,6 +104,8 @@ pruefe('Gems fehlen → null', $p['gems'], null);
 pruefe('Welt-Saison: Profil ohne Saison → 1', $p['saison'], 1);
 $p = json_decode(profil_bereinigen(json_encode(['lvl' => 3, 'saison' => 4])), true);
 pruefe('Welt-Saison: Saison des Spielstands bleibt im Profil', $p['saison'], 4);
+pruefe('Welt-Saison: Saison-Sicherung bleibt 2 Wochen', SAISON_SICHERUNG_SEK, 14 * 86400);
+pruefe('Welt-Saison: Wegräumen der Sicherungen schont die Saison-Sicherung', strpos(file_get_contents(__DIR__ . '/../Game/server.php'), "AND behalten_bis < ' . time()") !== false, true);
 pruefe('Welt-Saison: Nachrichten saison/saisonBald darf der Weltrechner schicken', in_array('saison', WELTRECHNER_NACHRICHTEN, true) && in_array('saisonBald', WELTRECHNER_NACHRICHTEN, true), true);
 $bits = str_repeat("\0", 4); $bits[1] = chr(1 << 2);   // Insel 10 sichtbar
 $s = ['bits' => $bits, 'eigen' => [3 => true]];

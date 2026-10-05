@@ -271,9 +271,20 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
     Preise + Titel Platz 1/2, alle 150 Reiche auf eine Hauptstadt), `welt_test` (Termin immer Sonntag 18 Uhr über Sommer-/Winterzeit,
     Profil-Saison), `server_test` (Profil-Saison, Nachrichten). `tests/alle_tests.sh`: ALLES OK. Server-Tests mit echtem
     Weltrechner (Sicherung, Nachricht ans Handy, Hauptbuch) noch NICHT gelaufen (lokaler Server war belegt).
-  - **Offen (Alexander fragen):** Gems-Preise (Vorschlag oben); sollen alle nach dem Reset 48 Std. Anfängerschutz bekommen wie ein
-    neuer Spieler (jetzt: nein – nichts erfunden)? Zurückspielen einer Sicherung nach dem Reset setzt nur die Welt zurück, nicht die
-    schon zurückgesetzten Handys.
+  - **Alexanders Antworten (5.10.) – eingebaut:**
+    1. Gems 3.000 / 2.000 / 1.500 / 4.–10. je 500 bleiben so.
+    2. **48 Std. Anfängerschutz nach dem Reset für alle** (echte Spieler + Mitspieler), derselbe Mechanismus wie beim neuen Spieler:
+       der Weltrechner setzt `neuBis` = Reset + 48 Std. (Welt-Wert, das Profil kann ihn nur kürzer machen), das Handy bekommt die Zeit
+       mit der Nachricht `saison` und setzt `openWaterNeulingBis`. Wie beim neuen Spieler endet er früher ab 50 Mio. Macht oder beim
+       Angriff auf einen echten Spieler.
+    3. **Sicherung zurückgespielt → Handys folgen:** beim Reset merkt sich das Handy seinen alten Stand (`openWaterSaisonVorher`:
+       Stufe, EP, Fähigkeiten, Münzen, Anfängerschutz, Verwundete). Ist die Saison der Welt danach älter als die des Handys (nur der
+       Server/Admin kann das auslösen), kommt ein Hinweis, die Seite lädt neu und holt diesen Stand zurück; der Weltrechner gleicht
+       sein Hauptbuch wie bei jedem Zurückspielen an. Hatte der alte Stand keinen Anfängerschutz, wird er auf 0 gesetzt (nicht
+       gelöscht) – sonst gäbe es beim Laden neue 48 Std. Schutz.
+    4. **Die Saison-Sicherung bleibt 2 Wochen** (`ow_sicherungen.behalten_bis`, `SAISON_SICHERUNG_SEK`) – das Wegräumen nach 48
+       Sicherungen lässt sie aus; auf der Admin-Seite steht „Saison-Sicherung, bleibt bis …“. Tabellen-Stand `2026-10-05s`.
+    Getestet: `saison_test` (Anfängerschutz du + Mitspieler, Zurückspielen holt Stufe 20/Gold/Fähigkeiten zurück), `server_test`.
 - **5.10. Tests schneller (Alexander):** `tests/alle_tests.sh` lässt bis zu 4 Browser-Tests gleichzeitig laufen (vorher
   nacheinander, ~10 Min.), Schnelltest mit Namen (`tests/alle_tests.sh rally`); `tests/komplett.sh <arbeitsordner>` startet
   beide Reihen gleichzeitig (~30 statt ~40 Min.).
