@@ -33,6 +33,9 @@ Alles Wichtige steht in `LIESMICH.md` – jede Änderung wird dort eingetragen.
   anfängt). Neue Browser-Tests dort ablegen und in die LISTE im Skript eintragen (Argument: Vorschau-Ordner).
   Parallel-Läufe in verschiedenen Kopien (Worktrees) sind erlaubt. Darum in Browser-Tests nie feste Ports oder /tmp-Namen:
   `srv.listen(0, '127.0.0.1')` + `srv.address().port`, Dateien in den Arbeitsordner (`process.argv[3]`).
+  Grenze für die ganze Maschine: höchstens 4 Test-Prozesse über ALLE Läufe (Slots `/tmp/ow_slot1…4` per `flock`,
+  `OW_SLOTS` ändert die Zahl) – weitere warten. Ergebnis steht am Ende in `<arbeitsordner>/FERTIG` (Pfad wird am
+  Anfang ausgegeben): dort nachsehen statt zu warten.
 - **Beide Reihen gleichzeitig: `tests/komplett.sh <arbeitsordner>`** (ca. 15–20 Min.) – vor jedem Hochladen.
 - **Tests mit lokalem Server: `tests/server_tests.sh <arbeitsordner>`** (Tests aus `tests/server/` in 3 Gruppen
   gleichzeitig, ca. 15 statt 30 Min.). Braucht MariaDB + `php -S 127.0.0.1:8770 -t www` im Arbeitsordner; dort
@@ -40,7 +43,7 @@ Alles Wichtige steht in `LIESMICH.md` – jede Änderung wird dort eingetragen.
   Gruppe 2/3 legt das Skript selbst an und räumt sie am Ende ab: Ordner `<arbeitsordner>/gruppeN/`, DB `<testdb>_gN`
   (frische Kopie, `mysql` als Admin über den Socket), Port 8771/8772, eigener Weltrechner. Am Ende „ALLES OK“.
   Einzelne Tests: Namen dahinter schreiben (nacheinander, nur 8770). Mehr im Kopf des Skripts.
->>>>>>> server-parallel
+
 ## Arbeitsweise (Alexander 5.10.: „schneller, effizient, richtig“)
 - Erst EINMAL alles sammeln (mehrere Agenten gleichzeitig suchen, je ein Bereich), daraus EINE Liste; offene Fragen auf
   einmal an Alexander. Dann in einem Rutsch abarbeiten – nicht Stück für Stück immer Neues anfangen.

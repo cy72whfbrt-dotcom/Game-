@@ -60,11 +60,11 @@ LIESMICH.md            diese Datei
 CLAUDE.md              Kurz-Hinweise für Claude
 hochladen.sh           lädt Game/ auf den Server (ein Befehl)
 tests/                 Tests (liegen NIE auf dem Server)
-  alle_tests.sh        ALLE Tests ohne Server auf einmal (ca. 10 Min., am Ende „ALLES OK“)
+  alle_tests.sh        ALLE Tests ohne Server auf einmal (ca. 3–4 Min., am Ende „ALLES OK“)
   welt_test.js, server_test.php   Einheitstests (Spiel / Server)
   browser/             Browser-Tests in der Vorschau: Bündnis, Verstärkung, gemeinsamer Angriff, Rally 2 gegen 1,
                        neue Kampf-Regel (jeder mit seinen Werten), Klick-Test aller Fenster
-  server_tests.sh      Tests mit LOKALEM Server (MariaDB + php -S + Weltrechner, ca. 30 Min.):
+  server_tests.sh      Tests mit LOKALEM Server (MariaDB + php -S + Weltrechner, ca. 15 Min. in 3 Gruppen gleichzeitig):
                        tests/server_tests.sh <arbeitsordner> – kopiert Game/ dorthin, startet den Weltrechner neu,
                        am Ende „ALLES OK“. Zugang der Test-Konten in <arbeitsordner>/zugang.env (nie im Git)
   server/              die Server-Tests: Absturz/Zurückspielen, Admin, Nebel bei Armeen, Bündnis-Kiste,
@@ -288,7 +288,8 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
     Getestet: `saison_test` (Anfängerschutz du + Mitspieler, Zurückspielen holt Stufe 20/Gold/Fähigkeiten zurück), `server_test`.
 - **5.10. Tests schneller (Alexander):** `tests/alle_tests.sh` lässt bis zu 4 Browser-Tests gleichzeitig laufen (vorher
   nacheinander, ~10 Min.), Schnelltest mit Namen (`tests/alle_tests.sh rally`); `tests/komplett.sh <arbeitsordner>` startet
-  beide Reihen gleichzeitig (~30 statt ~40 Min.).
+  beide Reihen gleichzeitig (jetzt ca. 15–20 Min.: Server-Tests laufen in 3 Gruppen gleichzeitig, Gruppe 2/3 mit eigener DB `<testdb>_gN`, Port 8771/8772, eigenem Weltrechner).
+- **5.10. Test-Slots und FERTIG-Datei:** höchstens 4 Test-Prozesse über ALLE Läufe der Maschine (Slots `/tmp/ow_slot1…4` per `flock`, `OW_SLOTS` ändert die Zahl, weitere warten). Das Ergebnis steht am Ende in `<arbeitsordner>/FERTIG` (Pfad wird am Anfang ausgegeben) – dort nachsehen statt warten.
 - **5.10. Tests parallel in mehreren Kopien:** Browser-Tests hatten feste Ports (8792–8796, 8805) – zwei Läufe gleichzeitig
   stießen zusammen. Jetzt nimmt jeder Test einen freien Port vom System, Bilder kommen in den eigenen Arbeitsordner.
   gemeinsam-, saison-, fremd- und helden_beute-Test warten nicht mehr feste Zeiten, sondern auf das Ergebnis (bis zu 3× so
