@@ -199,6 +199,18 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   bei anderen Basen 0 (vorher 2 % Gold, `plunderOf`). (2) Höchstens 2 Helden je Angreifer: schickt einer mehrere eigene
   Wellen mit Helden in denselben Kampf, führen nur die Helden der ersten Welle (vorher zählten alle, z. B. 4 –
   `heroMergeHx` entfernt); auch alte Berichte zeigen nur Haupt- und Zweitheld.
+- **5.10. Alexanders Entscheidungen (besprochen):** (1) Rally/gemeinsamer Angriff: jeder verliert nach SEINEM Schild
+  (Ausrüstung, beim Anführer + Held) – wie Helden und Stärke; seine Überlebenden gehen genau zu ihm heim (`rallyVerluste`,
+  `rallySchild`, Eintrag `an[5]`; der Server streicht ihn bei fremden Rallys). (2) Boss mit Rally: JEDER Teilnehmer bekommt
+  den vollen Preis (Kiste, Gems, Splitter). Basis: Anführer bzw. wer zuerst ankommt; Hauptstadt-Beute nach Truppen – bleibt.
+  (3) Schummel-Schutz: Heilen kostet auch beim Weltrechner Münzen; Stufen-Belohnung startet bei der Stufe des Weltrechners
+  (nie der vom Handy); Mehrfachangriff/Truppen sammeln kosten 1 Gem (sonst normaler Marsch mit eigenem Platz), Sammeln nur
+  aus dem Umkreis und zur selben Basis; Rally-Warnung, Rally-Einladung, Beitritts-Anfrage und Bündnis-Einladung an dieselbe
+  Person höchstens alle 10 Min. (4) Login: die große Grenze pro Konto sperrt nicht, wo der Spieler in den letzten 24 Std.
+  gespielt hat – ein Fremder sperrt nur sich selbst (nichts im Browser, gemerkt auf dem Server). (5) Abmelden trägt die
+  Handy-Nachrichten dieses Geräts aus (Server: `ow_push.sitzung`, Handy: Abo + sw.js weg). Neuer Test rally_schild_test.
+  Fund auf der Karte: ein Befehl kommt immer über den Puls – wer schickt, ist „online“; offen bleibt nur ein Skript, das
+  rund um die Uhr läuft (höchstens 12 Funde in 10 Min.) – Frage an Alexander: Tagesgrenze?
 - **4.10. Aufräumen:** unbenutzte CSS-Reste raus, wichtige Tests ins Projekt (`tests/browser/`, Start mit `tests/alle_tests.sh`).
 - **4.10. Server-Tests ins Projekt:** `tests/server/` + `tests/server_tests.sh <arbeitsordner>` (lokaler PHP-Server,
   MariaDB, Weltrechner): Absturz/Zurückspielen, Admin, Nebel, Bündnis-Kiste, Verstärkung, Klick-Test – alle grün.

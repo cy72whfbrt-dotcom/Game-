@@ -114,5 +114,14 @@
         catch (e) { hinweis('Das hat nicht geklappt – bitte nochmal.'); }
     });
 
+    // Abmelden: dieses Gerät bekommt danach keine Nachrichten mehr (der Server trägt es auch selbst aus) – und nichts bleibt im Browser
+    const abForm = document.querySelector('form.set-ab');
+    if (abForm && kann) abForm.addEventListener('submit', e => {
+        if (abForm.dataset.weg) return; e.preventDefault(); abForm.dataset.weg = '1';
+        const fertig = () => abForm.submit();
+        Promise.race([(async () => { const { reg, sub } = await meinAbo(); if (sub) await sub.unsubscribe().catch(() => {}); if (reg) await reg.unregister().catch(() => {}); })().catch(() => {}),
+            new Promise(r => setTimeout(r, 2000))]).then(fertig, fertig);
+    });
+
     setTimeout(pruefen, 2500);   // nach dem Laden (das Spiel geht vor)
 })();

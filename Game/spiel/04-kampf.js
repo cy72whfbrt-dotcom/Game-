@@ -141,8 +141,9 @@ setInterval(() => {
                     const st = x => (x.atkTitle !== undefined ? x.atkTitle : titleMult(x.attackerBotId, 'attack')) * (x.atkKraft || 1);
                     a.attackBonus = (a.rawTroops + (a.attackBonus || 0)) * st(a) / st(fight) - a.rawTroops;
                 }
+                if (a.rally && anderer) for (const x of a.rally.an) if (x[0] === a.rally.by && x[5] == null) x[5] = a.shieldLossReductionPct;   // (sein Schild + Held gilt nur für seine Truppen)
                 if (anderer || fight.rally || a.rally)
-                    fight.rally.an.push(...(a.rally ? a.rally.an : [[a.attackerBotId, a.sourceId, a.rawTroops, anderer ? Math.round(a.attackBonus || 0) : undefined, anderer && a.hx && !ohneHeld ? a.hx : undefined]]));
+                    fight.rally.an.push(...(a.rally ? a.rally.an : [[a.attackerBotId, a.sourceId, a.rawTroops, anderer ? Math.round(a.attackBonus || 0) : undefined, anderer && a.hx && !ohneHeld ? a.hx : undefined, anderer ? a.shieldLossReductionPct : undefined]]));
                 fight.rawTroops += a.rawTroops; fight.attackBonus = (fight.attackBonus || 0) + (a.attackBonus || 0);
                 if (fight.skillBonus !== undefined || a.skillBonus !== undefined) fight.skillBonus = (fight.skillBonus || 0) + (a.skillBonus !== undefined ? a.skillBonus : a.attackBonus || 0); fight.waves = (fight.waves || 1) + (a.waves || 1);
                 if (a.hx && anderer && !ohneHeld) heroFought(a.attackerBotId, a.hx);              // (ein Held eines Mitspielers führt nur seinen eigenen Kampf – er bekommt seine Wut)

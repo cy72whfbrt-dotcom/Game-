@@ -74,9 +74,10 @@ function anmelden($uid) {
     setze_cookie($t, $ablauf);
 }
 
+function sitzung_hash() { $t = $_COOKIE[COOKIE_NAME] ?? ''; return is_string($t) && preg_match('/^[a-f0-9]{64}$/', $t) ? hash('sha256', $t) : ''; }
 function abmelden() {
-    $t = $_COOKIE[COOKIE_NAME] ?? '';
-    if (is_string($t) && preg_match('/^[a-f0-9]{64}$/', $t)) lager()->sitzung_loeschen(hash('sha256', $t));
+    $h = sitzung_hash();
+    if ($h !== '') { lager()->push_weg_sitzung($h); lager()->sitzung_loeschen($h); }   // (die Handy-Nachrichten dieses Geräts hören auch auf – Alexander 5.10.)
     setze_cookie('', time() - 3600);
 }
 
@@ -119,6 +120,10 @@ function bremse($schluessel, $max, $sek) {
     return lager()->bremse(hash('sha256', $schluessel), $max, $sek);
 }
 function bremse_zurueck($schluessel) { lager()->bremse_zurueck(hash('sha256', $schluessel)); }
+// Bekannter Ort (IP), von dem aus dieser Spieler in den letzten 24 Std. gespielt hat: dort sperrt ihn die große Grenze pro Konto
+// nicht aus (sonst könnte ein Fremder mit vielen falschen Passwörtern sein Konto sperren – Alexander 5.10.). Nichts im Browser.
+function geraet_bekannt_merken($uid) { lager()->bremse(hash('sha256', 'kennt:' . (int)$uid . ':' . client_ip()), PHP_INT_MAX, 1); }
+function geraet_bekannt($uid) { return lager()->bremse_da(hash('sha256', 'kennt:' . (int)$uid . ':' . client_ip()), 86400); }
 // Erlaubte Namen: Buchstaben (auch Umlaute, keine Doppelgänger-Schriften), Ziffern, Leerzeichen, _ . – und nie „Spieler 12“
 // (so heißt jeder ohne eigenen Namen – sonst könnte man sich als ein anderer ausgeben)
 function name_erlaubt($name) { return preg_match('/^[A-Za-z0-9ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿ _.-]{3,20}$/u', $name) && !preg_match('/^\s*spieler\s*\d+\s*$/iu', $name); }
@@ -301,7 +306,7 @@ function marsch_teil($k, $text, $ich, $eigen, $sieht = []) {
             if ($wer($e, 'attackerBotId') === $ich) continue;
             if (isset($e->rally) && is_object($e->rally) && isset($e->rally->an) && is_array($e->rally->an)) {   // gemeinsamer Angriff: die Zahlen sieht nur, wer dabei ist
                 $dabei = false; foreach ($e->rally->an as $x) if (is_array($x) && ($x[0] ?? '') === $ich) $dabei = true;
-                if (!$dabei) foreach ($e->rally->an as $i => $x) if (is_array($x)) { $e->rally->an[$i][2] = 0; unset($e->rally->an[$i][3], $e->rally->an[$i][4]); }
+                if (!$dabei) foreach ($e->rally->an as $i => $x) if (is_array($x)) { $e->rally->an[$i][2] = 0; unset($e->rally->an[$i][3], $e->rally->an[$i][4], $e->rally->an[$i][5]); }
             }
             $kampf = !empty($e->fightEndsAt); $aufMich = isset($eigen[(int)($e->targetId ?? -1)]); $genau = $aufMich && $kampf;   // (kämpft er schon bei dir, siehst du seine Stärke – wie danach im Kampfbericht)
             $e->rawTroops = $genau ? ($e->rawTroops ?? 0) : 0;
@@ -391,6 +396,7 @@ function spielseite_vorbereiten() {
         $altTok = lager()->spiel_token($ich['id']);
         $uebernehmen = ($_GET['weiter'] ?? '') === '1' && in_array($_SERVER['HTTP_SEC_FETCH_SITE'] ?? 'same-origin', ['same-origin', 'none'], true);   // "Hier weiterspielen": sofort übernehmen (das andere Gerät fliegt raus) – nie von einer fremden Seite aus
         if (!bremse('seite:' . $ich['id'], 30, 60)) { http_response_code(429); exit('Zu oft neu geladen – bitte kurz warten.'); }   // (jedes Laden ist teuer: ganze Welt)
+        geraet_bekannt_merken($ich['id']);
         if (!$uebernehmen && $altTok !== '' && time() - lager()->zuletzt_gespeichert($ich['id']) < 60) {
             for ($i = 0; $i < 20 && lager()->abschied($ich['id']) !== $altTok; $i++) usleep(100000);
         }
@@ -586,7 +592,8 @@ class MysqlLager {
         // verspätete Wiederholung es nicht neu anlegt.
         // art: welche Art (bezahlte verfallen nie unbemerkt), fertig_v: Welt-Version, mit der die Wirkung gespeichert wurde (Zurückspielen)
         foreach (['ow_befehle' => ['cid' => 'VARCHAR(24) NULL', 'fertig' => 'TINYINT UNSIGNED NOT NULL DEFAULT 0', 'art' => 'VARCHAR(16) NULL', 'fertig_v' => 'BIGINT UNSIGNED NULL', 'ok' => 'TINYINT UNSIGNED NOT NULL DEFAULT 0', 'nach' => 'TINYINT UNSIGNED NOT NULL DEFAULT 0'],
-                  'ow_ereignisse' => ['mid' => 'VARCHAR(24) NULL', 'abgeholt' => 'TINYINT UNSIGNED NOT NULL DEFAULT 0']] as $tab => $spalten) {
+                  'ow_ereignisse' => ['mid' => 'VARCHAR(24) NULL', 'abgeholt' => 'TINYINT UNSIGNED NOT NULL DEFAULT 0'],
+                  'ow_push' => ['sitzung' => "CHAR(64) NOT NULL DEFAULT ''"]] as $tab => $spalten) {   // (sitzung: mit welchem Login das Gerät eingetragen ist – Abmelden trägt es aus)
             $q = $this->db->prepare("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?"); $q->execute([$tab]);
             $hat = $q->fetchAll(PDO::FETCH_COLUMN);
             foreach ($spalten as $sp => $typ) if (!in_array($sp, $hat, true)) $this->db->exec("ALTER TABLE $tab ADD COLUMN $sp $typ");
@@ -768,6 +775,7 @@ class MysqlLager {
         $q = $this->db->prepare('SELECT anzahl FROM ow_bremse WHERE schluessel = ?'); $q->execute([$k]);
         return (int)$q->fetchColumn() <= $max;
     }
+    function bremse_da($k, $sek) { $q = $this->db->prepare('SELECT 1 FROM ow_bremse WHERE schluessel = ? AND seit >= ?'); $q->execute([$k, time() - $sek]); return (bool)$q->fetchColumn(); }
     function bremse_frei($k) { $this->db->prepare('DELETE FROM ow_bremse WHERE schluessel = ?')->execute([$k]); }
     function bremse_zurueck($k) { $this->db->prepare('UPDATE ow_bremse SET anzahl = GREATEST(0, anzahl - 1) WHERE schluessel = ?')->execute([$k]); }   // ein gelungener Versuch zählt nicht
     // Anzeigename: frei, wenn ihn kein anderer Spieler als Login- oder Anzeigenamen hat
@@ -985,15 +993,17 @@ class MysqlLager {
     }
     // ===== Handy-Benachrichtigungen (Web-Push) =====
     // Ein Gerät gehört immer dem, der sich dort zuletzt angemeldet hat (gleiches Gerät, anderes Konto → wird umgeschrieben).
-    function push_speichern($uid, $endpoint, $p256dh, $auth) {
-        $this->db->prepare('INSERT INTO ow_push (spieler_id, endpoint_hash, endpoint, p256dh, auth) VALUES (?, ?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE spieler_id = VALUES(spieler_id), endpoint = VALUES(endpoint), p256dh = VALUES(p256dh), auth = VALUES(auth), erstellt = CURRENT_TIMESTAMP')
-            ->execute([$uid, hash('sha256', $endpoint), $endpoint, $p256dh, $auth]);
+    function push_speichern($uid, $endpoint, $p256dh, $auth, $sitzung = '') {
+        $this->db->prepare('INSERT INTO ow_push (spieler_id, endpoint_hash, endpoint, p256dh, auth, sitzung) VALUES (?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE spieler_id = VALUES(spieler_id), endpoint = VALUES(endpoint), p256dh = VALUES(p256dh), auth = VALUES(auth), sitzung = VALUES(sitzung), erstellt = CURRENT_TIMESTAMP')
+            ->execute([$uid, hash('sha256', $endpoint), $endpoint, $p256dh, $auth, $sitzung]);
         // höchstens 10 Geräte pro Spieler: die ältesten fliegen raus
         $q = $this->db->prepare('SELECT id FROM ow_push WHERE spieler_id = ? ORDER BY erstellt DESC, id DESC LIMIT 100 OFFSET 10');
         $q->execute([$uid]);
         foreach ($q->fetchAll(PDO::FETCH_COLUMN) as $id) $this->db->prepare('DELETE FROM ow_push WHERE id = ?')->execute([(int)$id]);
     }
+    function push_weg_sitzung($sitzung) { $this->db->prepare('DELETE FROM ow_push WHERE sitzung = ?')->execute([$sitzung]); }
+    function push_sitzung($uid, $endpoint, $sitzung) { $this->db->prepare('UPDATE ow_push SET sitzung = ? WHERE spieler_id = ? AND endpoint_hash = ?')->execute([$sitzung, $uid, hash('sha256', $endpoint)]); }
     function push_abmelden($uid, $endpoint) { $this->db->prepare('DELETE FROM ow_push WHERE spieler_id = ? AND endpoint_hash = ?')->execute([$uid, hash('sha256', $endpoint)]); }
     function push_hat($uid, $endpoint) { $q = $this->db->prepare('SELECT COUNT(*) FROM ow_push WHERE spieler_id = ? AND endpoint_hash = ?'); $q->execute([$uid, hash('sha256', $endpoint)]); return (int)$q->fetchColumn() > 0; }
     function push_aus($uid) { $q = $this->db->prepare('SELECT push_aus FROM ow_spieler WHERE id = ?'); $q->execute([$uid]); $v = (string)$q->fetchColumn(); return $v === '' ? [] : explode(',', $v); }
@@ -1175,9 +1185,10 @@ function push_anfrage($ich, $d, $aktion) {
     }
     $uid = (int)$ich['id'];
     if ($aktion === 'push_info') {   // mit endpoint: ist dieses Gerät für mich eingetragen? (sonst trägt das Spiel es neu ein)
-        $e = $d['endpoint'] ?? null;
+        $e = $d['endpoint'] ?? null; $dieses = is_string($e) && strlen($e) <= 800 ? $l->push_hat($uid, $e) : false;
+        if ($dieses && sitzung_hash() !== '') $l->push_sitzung($uid, $e, sitzung_hash());   // (ältere Einträge: an dieses Login binden)
         json_antwort(200, ['an' => (bool)$s, 'schluessel' => $s ? $s['public'] : null, 'geraete' => $l->push_anzahl($uid), 'aus' => $l->push_aus($uid),
-            'dieses' => is_string($e) && strlen($e) <= 800 ? $l->push_hat($uid, $e) : false]);
+            'dieses' => $dieses]);
     }
     if (!bremse('push:' . $uid, 30, 3600)) json_antwort(429, ['fehler' => 'Zu viele Versuche – bitte später nochmal.']);
     if ($aktion === 'push_an') {
@@ -1188,7 +1199,7 @@ function push_anfrage($ich, $d, $aktion) {
         $e = $a['endpoint'] ?? ''; $p = $a['keys']['p256dh'] ?? ''; $au = $a['keys']['auth'] ?? '';
         if (!push_endpoint_ok($e)) json_antwort(200, ['ok' => false, 'grund' => 'Dieser Push-Dienst wird nicht unterstützt.']);
         if (b64url_bytes($p) !== 65 || b64url_bytes($au) !== 16) json_antwort(400, ['fehler' => 'ungültig']);
-        $l->push_speichern($uid, $e, $p, $au);
+        $l->push_speichern($uid, $e, $p, $au, sitzung_hash());
         json_antwort(200, ['ok' => true]);
     }
     if ($aktion === 'push_arten') {   // Einstellungen: welche Arten von Nachrichten will er NICHT

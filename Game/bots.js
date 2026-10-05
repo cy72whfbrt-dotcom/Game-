@@ -168,10 +168,11 @@ function resolveBotAttack(attack) {
 
     // The capital can never be taken: a winning raid only wipes out its garrison.
     const capitalHolds = won && isCapital(target.id);
-    const botSentLoss = won ? sentLossFor(attack.rawTroops, myTroops, originalEnemyDefense, red) : 0, survivors = won ? attack.rawTroops - botSentLoss : 0;   // same rule as yours   // the sword bonus fights along but doesn't stay
+    const rv = won && attack.rally ? rallyVerluste(attack, originalEnemyDefense, myTroops, red) : null;   // (gemeinsam: jeder verliert nach SEINEM Schild)
+    const botSentLoss = won ? (rv ? Math.min(attack.rawTroops, rv.summe) : sentLossFor(attack.rawTroops, myTroops, originalEnemyDefense, red)) : 0, survivors = won ? attack.rawTroops - botSentLoss : 0;   // same rule as yours   // the sword bonus fights along but doesn't stay
     const fled = won ? 0 : retreatSurvivorsPreview(attack);
     const atkFallen = attack.rawTroops - survivors - fled;
-    const angreifer = attack.rally ? kampfAnteile(attack, atkFallen, hosp) : null, atkWounded = angreifer ? angreifer.reduce((s, x) => s + x.wounded, 0) : botHospitalTake(bot.id, atkFallen, hosp);   // (gemeinsam: jeder trägt seinen Anteil, Verwundete in sein Krankenhaus)
+    const angreifer = attack.rally ? kampfAnteile(attack, atkFallen, hosp, rv) : null, atkWounded = angreifer ? angreifer.reduce((s, x) => s + x.wounded, 0) : botHospitalTake(bot.id, atkFallen, hosp);   // (gemeinsam: jeder trägt seinen Anteil, Verwundete in sein Krankenhaus)
     const atkInfo = angreifer ? { angreifer } : {};
     const homeAgain = n => { if (n <= 0) return; if (attack.rally) { bundRallyHeim(attack, n, target.id); return; } const t0 = Date.now();                 // they walk home like yours (a fallen home: resolveSend sends them to another base) – eine Rally: jeder zu sich
         pendingSends.push({ fromId: target.id, toId: source.id, troops: n, startedAt: t0, resolveAt: t0 + retreatSecs(attack, target, source, bot.id) * 1000, senderBotId: bot.id, back: true }); };
@@ -223,9 +224,10 @@ function resolveBotAttack(attack) {
     if (!won) botLearn(bot.id, target.id);                          // a lost fight tells them what's really there
     if (!won && targetOwner && targetOwner !== 'player') botStat(targetOwner, 'defs');
     if (won && bossHere && typeof bundGeschenk === 'function') bundGeschenk(bot.id, 'boss');         // Boss besiegt: kleine Geschenke fürs ganze Bündnis
-    if (won && bossHere) { botStat(bot.id, 'bosses');                // der Preis wie bei dir: Gems, epische Kiste, Splitter
-        evPreis(bot.id, 'wboss', bossHere.name + ' besiegt', { gems: WANDER_REWARD_GEMS, crate: WANDER_CRATE, sh: HERO_SHARDS_WANDER }, bossHere.endsAt || bossHere.name);   // (ein echter Spieler: als Nachricht ins Abholfach)
-        if (bot.mensch) evBericht(bot.id, { type: 'ev', ic: 'star', gut: true, badge: 'Kriegsherr', title: bossHere.name + ' besiegt', txt: 'Die Beute liegt unter Events → Belohnung.', at: Date.now() }, bossHere.name + ' ist gefallen – die Beute liegt unter Events → Belohnung.'); }
+    if (won && bossHere) for (const w of attack.rally ? [...new Set(attack.rally.an.map(x => x[0]))] : [bot.id]) { if (!botById[w]) continue;   // (gemeinsam: JEDER bekommt den vollen Preis – Alexander 5.10.)
+        botStat(w, 'bosses');                                        // der Preis wie bei dir: Gems, epische Kiste, Splitter
+        evPreis(w, 'wboss', bossHere.name + ' besiegt', { gems: WANDER_REWARD_GEMS, crate: WANDER_CRATE, sh: HERO_SHARDS_WANDER }, bossHere.endsAt || bossHere.name);   // (ein echter Spieler: als Nachricht ins Abholfach)
+        if (botById[w].mensch) evBericht(w, { type: 'ev', ic: 'star', gut: true, badge: 'Kriegsherr', title: bossHere.name + ' besiegt', txt: 'Die Beute liegt unter Events → Belohnung.', at: Date.now() }, bossHere.name + ' ist gefallen – die Beute liegt unter Events → Belohnung.'); }
     updateHud();
     if (bossHere && won) { spawnBattleFx(target.id, false, bossHere.name + ' gefallen', bot.name); endWander(bot.name + ' hat ' + bossHere.name + ' besiegt!'); }
 

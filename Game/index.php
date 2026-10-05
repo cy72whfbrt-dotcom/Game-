@@ -36,10 +36,11 @@ try {
             $u = $name !== '' && strlen($name) <= 60 ? lager()->spieler_nach_name($name) : null;
             $konto = $u ? 'id' . $u['id'] : 'name:' . mb_strtolower(mb_substr($name, 0, 60), 'UTF-8');
             $sperre = 'login:' . $konto . ':' . client_ip();
-            if (!bremse($sperre, 8, 900) || !bremse('loginkonto:' . $konto, 60, 900) || !bremse('loginip:' . client_ip(), 30, 900)) { sleep(1); $fehler = 'Zu viele Versuche – bitte in 15 Minuten nochmal.'; }
+            // (die große Grenze pro Konto gilt nicht, wo er in den letzten 24 Std. schon gespielt hat – ein Fremder sperrt so nur sich selbst)
+            if (!bremse($sperre, 8, 900) || !bremse('loginip:' . client_ip(), 30, 900) || (!bremse('loginkonto:' . $konto, 60, 900) && !($u && geraet_bekannt($u['id'])))) { sleep(1); $fehler = 'Zu viele Versuche – bitte in 15 Minuten nochmal.'; }
             else {
                 $hash = $u ? $u['pw_hash'] : '$2y$10$PxK0RyR6Ng9cebr4sv40xeBHhcwZlL4gVKoVfvcJFrVmDh4qaH.ma';   // gleich lange prüfen, ob es den Namen gibt oder nicht
-                if (password_verify($pw, $hash) && $u) { lager()->bremse_frei(hash('sha256', $sperre)); bremse_zurueck('loginkonto:' . $konto); bremse_zurueck('loginip:' . client_ip()); anmelden((int)$u['id']); header('Location: spiel.php'); exit; }   // (gelungene Anmeldungen zählen nicht)
+                if (password_verify($pw, $hash) && $u) { lager()->bremse_frei(hash('sha256', $sperre)); bremse_zurueck('loginkonto:' . $konto); bremse_zurueck('loginip:' . client_ip()); geraet_bekannt_merken($u['id']); anmelden((int)$u['id']); header('Location: spiel.php'); exit; }   // (gelungene Anmeldungen zählen nicht)
                 sleep(1);   // bremst Passwort-Raten
                 $fehler = 'Name oder Passwort stimmt nicht.';
             }

@@ -91,6 +91,9 @@ function bundUnterAngriff(id) {                                  // kommt gerade
 //    → '' (gut) oder ein kurzer Grund, warum nicht. Echte Spieler bekommen den Grund als Nachricht.
 // ==============================================================================================================
 function bundMelden(w, text) { if (window.WELT && /^u\d+$/.test(w) && botById[w] && botById[w].mensch) WELT.nachricht(parseInt(w.slice(1), 10), { art: 'bundInfo', text: String(text).slice(0, 300) }); }
+const bundMeldeZeit = new Map();                                 // gegen Spam (Rally an/ab, Einladung an/weg …): dieselbe Meldung an dieselbe Person höchstens alle 10 Min.
+function bundEinmal(key) { const now = Date.now(), t = bundMeldeZeit.get(key); if (t && now - t < 600000) return false;
+    bundMeldeZeit.set(key, now); if (bundMeldeZeit.size > 5000) for (const [k, v] of bundMeldeZeit) if (now - v >= 600000) bundMeldeZeit.delete(k); return true; }
 function bundAlleMelden(a, text, ausser) { for (const w of a.mit) if (w !== ausser) bundMelden(w, text); }
 function bundPush(w, daten) { if (/^u\d+$/.test(w || '')) (window.__bundPush || (window.__bundPush = [])).push(Object.assign({ an: w }, daten)); if (window.__bundPush && window.__bundPush.length > 200) window.__bundPush.splice(0, 100); }
 function bundGehoert(id, w) { return Number.isInteger(id) && !!islandById[id] && islandOwnerOf(id) === w; }
@@ -150,7 +153,7 @@ function bundOp(who, b) {
         if (z.offen && !voll) { bundRein(z, who); bundAlleMelden(z, bundName(who) + ' ist deinem Bündnis beigetreten.', who); return fertig('Willkommen im Bündnis [' + z.tag + '] ' + z.name + '!'); }
         z.anfragen = (z.anfragen || []).filter(q => q.w !== who && now - q.at < 24 * 3600000);
         if (z.anfragen.length >= 30) return 'Zu viele Anfragen – versuch es später';
-        z.anfragen.push({ w: who, at: now }); bundMelden(z.anf, bundName(who) + ' möchte deinem Bündnis beitreten' + (voll ? ' (es ist voll – du kannst tauschen).' : '.'));
+        z.anfragen.push({ w: who, at: now }); if (bundEinmal('a|' + z.anf + '|' + who)) bundMelden(z.anf, bundName(who) + ' möchte deinem Bündnis beitreten' + (voll ? ' (es ist voll – du kannst tauschen).' : '.'));
         return fertig('Anfrage an [' + z.tag + '] ' + z.name + ' geschickt' + (voll ? ' – das Bündnis ist voll, der Anführer kann tauschen.' : '.'));
     }
     if (op === 'einladungAntwort') {                              // Eingeladener: Ja / Nein (geht auch, wenn das Bündnis nur auf Anfrage offen ist)
@@ -192,7 +195,7 @@ function bundOp(who, b) {
         if (a.einl.some(x => x.w === ziel)) return '';
         if (a.einl.length >= 10) return 'Zu viele offene Einladungen (höchstens 10)';
         a.einl.push({ w: ziel, at: now });
-        bundMelden(ziel, bundName(who) + ' lädt dich ins Bündnis [' + a.tag + '] ' + a.name + ' ein – im Bündnis-Fenster annehmen oder ablehnen (24 Std.).');
+        if (bundEinmal('e|' + ziel + '|' + a.tag)) bundMelden(ziel, bundName(who) + ' lädt dich ins Bündnis [' + a.tag + '] ' + a.name + ' ein – im Bündnis-Fenster annehmen oder ablehnen (24 Std.).');
         return fertig('Einladung an ' + bundName(ziel) + ' geschickt.');
     }
     if (op === 'einladungWeg') { if (!chef) return 'Nur der Anführer'; a.einl = (a.einl || []).filter(x => x.w !== ziel); return fertig(''); }
@@ -516,9 +519,10 @@ function bundRallyStart(a, who, b) {
     if (held) { r.held = held; const h2 = heroZweitOk(who, held, typeof b.held2 === 'string' ? b.held2 : null); if (h2) r.held2 = h2; }
     bund.r.push(r);
     bundLog(a, bundName(who) + ' sammelt zur Rally auf ' + islandTitle(islandById[t]) + '.'); bundChatDazu(a, who, 's_rally', t);
-    const ow = islandOwnerOf(t); if (ow && ow !== who) bundPush(ow, { art: 'rally', von: bundName(who), basis: islandTitle(islandById[t]), ankunft: r.los });
-    if (ow && botById[ow] && botById[ow].mensch) bundMelden(ow, 'Achtung: ' + bundName(who) + ' sammelt Truppen für einen gemeinsamen Angriff auf ' + islandTitle(islandById[t]) + '!');
-    for (const w of a.mit) if (w !== who && bundKommtHin(w, at, Infinity)) bundMelden(w, bundName(who) + ' startet eine Rally auf ' + islandTitle(islandById[t]) + ' – mach mit (Bündnis → Rally).');   // (nur wer es rechtzeitig schafft)
+    const ow = islandOwnerOf(t), warnt = ow && ow !== who && bundEinmal('r|' + ow + '|' + who + '|' + t);
+    if (warnt) bundPush(ow, { art: 'rally', von: bundName(who), basis: islandTitle(islandById[t]), ankunft: r.los });
+    if (warnt && botById[ow] && botById[ow].mensch) bundMelden(ow, 'Achtung: ' + bundName(who) + ' sammelt Truppen für einen gemeinsamen Angriff auf ' + islandTitle(islandById[t]) + '!');
+    for (const w of a.mit) if (w !== who && bundKommtHin(w, at, Infinity) && bundEinmal('ri|' + w + '|' + who + '|' + t)) bundMelden(w, bundName(who) + ' startet eine Rally auf ' + islandTitle(islandById[t]) + ' – mach mit (Bündnis → Rally).');   // (nur wer es rechtzeitig schafft)
     saveGame(); return '';
 }
 function bundKommtHin(w, ziel, bis) {                            // hat w eine Basis, deren Truppen rechtzeitig bei ziel sind?
@@ -580,15 +584,27 @@ function rallyWerte(atk, by, n0, mit) {
     const hb = atk.hx ? Math.round(n0 * atk.hx.atk / 100) + heroGefOf(atk.hx, n0) : 0; atk.heldBonus = hb;
     let skill = sk(by, n0), bonus = skill + hb;
     for (const j of mit) { const b = sk(j.w, j.n), p = (j.n + b) * st(j.w) / stBy - j.n; skill += b; bonus += p;
-        const x = atk.rally.an.find(q => q[0] === j.w && q[2] === j.n && q[3] === undefined); if (x) x[3] = Math.round(p); }   // (für den Kampfbericht: was er mitbringt)
+        const x = atk.rally.an.find(q => q[0] === j.w && q[2] === j.n && q[3] === undefined); if (x) { x[3] = Math.round(p); x[5] = rallySchild(j.w); } }   // (für den Kampfbericht: was er mitbringt · [5]: sein Schild)
     atk.attackBonus = Math.round(bonus); atk.skillBonus = skill;
+}
+// Schild (Ausrüstung) eines Mitglieds: weniger Verluste für SEINE Truppen (Alexander 5.10.: jeder für sich, wie Helden und Stärke)
+function rallySchild(w) { return Math.min(90, (w === 'player' ? shieldLossReductionPct() : botMults(w).shield) || 0); }
+// (Kampf, gewonnen) Verluste einer Rally/eines gemeinsamen Angriffs je Eintrag: jeder mit SEINEM Schild (der Anführer: red, mit Held).
+// Merkt sich die Überlebenden je Eintrag (rally.rest) – bundRallyHeim schickt dann genau die heim.
+function rallyVerluste(attack, def, my, red) {
+    const an = attack.rally.an, by = attack.rally.by;
+    const e = an.map(x => { const r = x[0] === by ? red : x[5] != null ? x[5] : rallySchild(x[0]);
+        return Math.max(0, Math.min(x[2], Math.round(def * (1 - (Number.isFinite(r) ? r : 0) / 100) * x[2] / Math.max(1, my)))); });
+    attack.rally.rest = an.map((x, i) => x[2] - e[i]);
+    return { summe: e.reduce((s, v) => s + v, 0), e };
 }
 // (Kampf) Überlebende einer Rally gehen anteilig zu ihren Basen zurück. ohneStarter: dessen Anteil wird zurückgegeben (bleibt vor Ort)
 function bundRallyHeim(attack, n, vonId, ohneStarter) {
     const an = attack.rally && attack.rally.an || [], sum = an.reduce((s, x) => s + x[2], 0); let rest = Math.floor(n), bleibt = 0;
     if (!sum || rest < 1) return 0;
+    const je = attack.rally.rest && attack.rally.rest.length === an.length && attack.rally.rest.reduce((s, v) => s + v, 0) === rest ? attack.rally.rest : null;   // (gewonnen: genau seine Überlebenden)
     an.forEach((x, i) => {
-        const share = i === an.length - 1 ? rest : Math.min(rest, Math.floor(n * x[2] / sum)); rest -= share; if (share < 1) return;
+        const share = je ? je[i] : i === an.length - 1 ? rest : Math.min(rest, Math.floor(n * x[2] / sum)); rest -= share; if (share < 1) return;
         if (ohneStarter && x[0] === attack.rally.by) { bleibt += share; return; }
         bundHeimschicken(x[0], vonId, x[1], share);
     });
@@ -596,15 +612,16 @@ function bundRallyHeim(attack, n, vonId, ohneStarter) {
 }
 // (Kampf) Gemeinsamer Angriff (Rally oder mehrere Bündnis-Angriffe auf dasselbe Ziel): jeder verliert nach seiner Truppenzahl,
 // seine Verwundeten gehen in SEIN Krankenhaus. Gibt die Angreifer-Liste für den Kampfbericht zurück.
-function kampfAnteile(attack, fallen, hosp) {
+function kampfAnteile(attack, fallen, hosp, rv) {   // rv: Verluste je Eintrag (rallyVerluste, gewonnen) – sonst nach Truppen
     const an = attack.rally.an, by = attack.rally.by, sum = an.reduce((s, x) => s + x[2], 0) || 1, m = new Map();
     for (const x of an) { if (!m.has(x[0])) m.set(x[0], { w: x[0], n: 0, plus: 0, eig: 0 }); const q = m.get(x[0]); q.n += x[2]; if (x[3] !== undefined) { q.plus += x[3]; q.eig = 1; } if (x[4]) q.hx = x[4]; }
     const stA = (attack.atkTitle !== undefined ? attack.atkTitle : titleMult(by, 'attack')) * (attack.atkKraft || 1), ganz = Math.round((attack.rawTroops + (attack.attackBonus || 0)) * stA);
     let andere = 0; for (const q of m.values()) if (q.w !== by && q.eig) { q.k = Math.round((q.n + q.plus) * stA); andere += q.k; }
     if (m.has(by)) { const q = m.get(by); q.k = ganz - andere; }                  // (Stärke je Spieler: der Anführer bekommt den Rest – die Summe passt genau)
     const L = [...m.values()]; let rest = Math.max(0, Math.floor(fallen));
+    const fw = {}; if (rv) an.forEach((x, i) => { fw[x[0]] = (fw[x[0]] || 0) + rv.e[i]; });
     L.forEach((x, i) => {
-        const f = i === L.length - 1 ? rest : Math.min(rest, Math.round(fallen * x.n / sum)); rest -= f;
+        const f = rv ? fw[x.w] || 0 : i === L.length - 1 ? rest : Math.min(rest, Math.round(fallen * x.n / sum)); rest -= f;
         const wd = f > 0 ? (x.w === 'player' ? hospitalTake(f) : botHospitalTake(x.w, f, x.w === by ? hosp : undefined)) || 0 : 0;
         Object.assign(x, { name: bundName(x.w), fallen: f - wd, wounded: wd, gear: fighterSnapshot(x.w, x.w === by ? attack.hx : x.hx) }); delete x.eig; delete x.hx;
     });

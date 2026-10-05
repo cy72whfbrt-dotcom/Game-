@@ -1347,7 +1347,7 @@ if (window.WELT) {
         if (q === 'stufe') {                           // jede Stufe zahlt genau einmal ihre Truppen (levelRewardTroops)
             if (!Number.isInteger(b.von) || !Number.isInteger(b.bis) || b.von < 0 || b.bis <= b.von || b.bis - b.von > 400) { warnen(who, 'truppen', 'Stufen-Belohnung mit kaputten Stufen – abgelehnt.'); return 0; }
             if (b.bis > m.lvl && !ende) return -1;     // seine EP sind evtl. noch unterwegs
-            if (!d.lv) { const pl = Math.max(1, Math.floor(nn((m.prof || {}).lvl) || m.lvl)); d.lv = Math.max(b.von, pl - 3); }   // zum ersten Mal: ein paar Stufen Spielraum nach hinten
+            if (!d.lv) d.lv = Math.max(b.von, m.lvl - 3);   // zum ersten Mal: ein paar Stufen Spielraum nach hinten (seine Stufe rechnet der Weltrechner selbst – nie die vom Handy)
             const hoch = Math.min(b.bis, m.lvl), ab = Math.max(b.von, d.lv);
             erlaubt = 0; for (let l = ab + 1; l <= hoch; l++) erlaubt += levelRewardTroops(l);
             if (hoch > d.lv) { d.lv = hoch; saveBotState(); }
@@ -1361,6 +1361,8 @@ if (window.WELT) {
             if (now - m.w.vorT > WACHE_WARTEN_MS) m.w.vor = 0;
             erlaubt = (m.w.vor + m.w.u) * 1.02 + 10;
             if (n > erlaubt && !ende) return -1;
+            const kosten = Math.ceil(Math.min(n, erlaubt) * HEAL_COIN_PER_TROOP);   // (Heilen kostet Münzen – wie am Handy; vorher nicht geprüft)
+            if (kosten > 0 && !wacheBezahlen(who, m, kosten)) { if (!ende) return -1; warnen(who, 'truppen', 'Krankenhaus: ' + fz(n) + ' Truppen heilen ohne die ' + fz(kosten) + ' Münzen – abgelehnt.', kosten); return 0; }
             let r = Math.min(n, erlaubt), x = Math.min(r, m.w.vor); m.w.vor -= x; r -= x; m.w.u = Math.max(0, m.w.u - r);
         } else if (q === 'fund') {                     // Fund auf der Karte: höchstens 3 liegen herum, alle 20–45 s ein neuer
             if (zuOft(m, 'fund', 12, 600000)) { warnen(who, 'truppen', 'Zu viele Funde auf der Karte (über 12 in 10 Minuten) – abgelehnt.', b.n); return 0; }   // (echt: ~7 in 10 Min.)
@@ -1821,6 +1823,18 @@ if (window.WELT) {
     const truppenVon = (id, n) => zahlOk(n) ? Math.floor(Math.min(n, islandTroops[id] || 0)) : 0;   // nie mehr, als die Basis hat
     // Wege wie auf dem Handy (dort prüft das Spiel sie in den Fenstern): Brücken, Pässe, fremde Tore – nie mehr nur „vertrauen“
     const wegOk = (who, vonLm, nachLm) => vonLm === nachLm || canReach(vonLm, nachLm, who);
+    // Mehrfachangriff / „Truppen sammeln“ (grp): zusammen EIN Marsch-Platz – kostet 1 Gem (wie am Handy, vorher hier gratis).
+    // Gehört der Marsch zu einer schon laufenden Gruppe, ist sie bezahlt. Sonst ohne Gem: ein normaler Marsch (eigener Platz).
+    function gruppeBezahlt(who, grp, src, nach) {
+        if (!kennungOk(grp)) return null;
+        if (AUF && AUF.gruppeLaeuft && AUF.gruppeLaeuft(who, grp, src)) {
+            if (nach === undefined || pendingSends.some(s => werIstWer(s.senderBotId) === who && s.grp === grp && !s.back && s.toId === nach)) return grp;   // (sammeln: alle zur SELBEN Basis)
+            return null; }
+        const hb = hbDa(who); if (!hb) return grp;                        // (noch kein Hauptbuch: wie bisher)
+        if (hbZahlen(who, hb, wacheSehen(who), { g: MULTI_ATTACK_GEM_COST })) { saveBotState(); return grp; }
+        warnen(who, 'gems', (src !== undefined ? 'Mehrfachangriff' : 'Truppen sammeln') + ' ohne den Gem dafür – zählt als normaler Marsch.', 1); return null;
+    }
+    const werIstWer = x => x || 'player';
     const BEFEHLE = {
         angriff(who, b) {
             if (!inselOk(b.src) || !inselOk(b.ziel) || !zahlOk(b.n) || b.n < 1) { warnen(who, 'kaputt', 'Angriff mit kaputten Angaben – abgelehnt.'); return; }
@@ -1828,7 +1842,7 @@ if (window.WELT) {
             if (!gehoert(b.src, who)) return;
             if (!wegOk(who, islandById[b.src].landmassId, islandById[b.ziel].landmassId)) { warnen(who, 'weg', 'Angriff ohne Weg dorthin (Brücke/Tor) – abgelehnt.'); nichtLos(who, null, b.src, 'Angriff auf ' + islandTitle(islandById[b.ziel]), 'kein Weg – ein fremdes Tor liegt dazwischen'); return; }
             b.n = Math.floor(b.n);
-            naechsteGruppe = kennungOk(b.grp) ? b.grp : null;                // Mehrfachangriff = ein Marsch-Platz (nur vom selben Ort, nur kurz nacheinander)
+            naechsteGruppe = gruppeBezahlt(who, b.grp, b.src);                // Mehrfachangriff = ein Marsch-Platz (nur vom selben Ort, nur kurz nacheinander)
             const grpA = naechsteGruppe; let okA = false;
             try { okA = launchAttack(b.src, b.ziel, who, b.n, heldOk(b.held), heldOk(b.held2)); } finally { naechsteGruppe = null; }
             if (!okA) nichtLos(who, grpA, b.src, 'Angriff auf ' + islandTitle(islandById[b.ziel]));   // (vorher: still verworfen – auf dem Handy verschwand der Marsch einfach)
@@ -1838,7 +1852,8 @@ if (window.WELT) {
             if (!gehoert(b.von, who) || !gehoert(b.nach, who)) return;
             if (!wegOk(who, islandById[b.von].landmassId, islandById[b.nach].landmassId)) { warnen(who, 'weg', 'Senden ohne Weg dorthin (Brücke/Tor) – abgelehnt.'); nichtLos(who, null, undefined, 'Truppen nach ' + islandTitle(islandById[b.nach]), 'kein Weg – ein fremdes Tor liegt dazwischen'); return; }
             b.n = Math.floor(b.n);
-            naechsteGruppe = kennungOk(b.grp) ? b.grp : null;
+            const vI = islandById[b.von], nI = islandById[b.nach];               // („Truppen sammeln“: nur aus dem Umkreis, wie am Handy)
+            naechsteGruppe = Math.hypot(vI.x - nI.x, vI.y - nI.y) <= RECALL_RADIUS ? gruppeBezahlt(who, b.grp, undefined, b.nach) : null;
             const grpS = naechsteGruppe, kS = pendingSends.length;
             try { launchSend(b.von, b.nach, who, b.n); } finally { naechsteGruppe = null; }
             if (pendingSends.length === kS) nichtLos(who, grpS, undefined, 'Truppen nach ' + islandTitle(islandById[b.nach]));
