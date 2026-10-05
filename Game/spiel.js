@@ -1107,7 +1107,7 @@ function defenseParts(island) {
     if (owner === 'player') { armor = defenseForLevel(L) - base; sl = skills.defense || 0; skill = g * sl * SKILL_DEFS.defense.defPct / 100; wallPct = wallDefensePct(); }
     else { const m = botMults(owner), b = loadBotState()[owner]; armor = base * (m.armorPct || 0) / 100; sl = b ? b.skills.defense : 0; skill = g * (m.defensePct || 0) / 100; wallPct = botBld(owner, 'wall') * 2; }
     if (armor) out.push(['Rüstung', Math.round(armor), 'Ausrüstung']);
-    if (skill) out.push(['Skill Verteidigung', Math.round(skill), 'Stufe ' + sl + ' · +' + sl * SKILL_DEFS.defense.defPct + ' % der Truppen']);
+    if (skill) out.push(['Fähigkeit Verteidigung', Math.round(skill), 'Stufe ' + sl + ' · +' + sl * SKILL_DEFS.defense.defPct + ' % der Truppen']);
     const sub = base + armor + skill;
     if (wallPct) out.push(['Mauer', Math.round(sub * wallPct / 100), 'Stadt · +' + wallPct + ' %']);
     const x = titleOf(owner); if (x && x.kind === 'defense') out.push(['Titel ' + x.name, Math.round(sub * (1 + wallPct / 100) * x.v), 'Mega-Tempel · ' + (x.v > 0 ? '+' : '−') + Math.round(Math.abs(x.v) * 100) + ' %']);
@@ -1115,7 +1115,7 @@ function defenseParts(island) {
     if (kk !== 1) { const vor = out.reduce((a, q) => a + q[1], 0);
         out.push(['Forschung Verteidigung', Math.round((vor + g) * (kk - 1)), '+' + Math.round((kk - 1) * 100) + ' % auf Besatzung und Verteidigung']); }
     const vp = typeof verstDefPlus !== 'undefined' && Math.round(verstDefPlus[island.id] || 0);
-    if (vp) out.push(['Verstärkung: eigene Werte', vp, 'jeder Helfer mit seinem Skill, Titel und seiner Forschung']);
+    if (vp) out.push(['Verstärkung: eigene Werte', vp, 'jeder Helfer mit seiner Fähigkeit, seinem Titel und seiner Forschung']);
     out[0][1] += effectiveDefense(island) - out.reduce((a, q) => a + q[1], 0);        // rounding goes to the base line
     return out;
 }
@@ -1140,7 +1140,7 @@ function attackParts(who, raw, bonus, total, hero, a) {       // a = the attack:
     const out = [], snap = a && a.skillBonus !== undefined;
     const sl = snap && a.skillLvl !== undefined ? a.skillLvl : who === 'player' ? skills.attack || 0 : (loadBotState()[who] || { skills: {} }).skills.attack || 0;
     const skill = Math.min(bonus, snap ? a.skillBonus : who === 'player' ? attackFlatBonus(raw) : Math.round(raw * sl * SKILL_DEFS.attack.atkPct / 100));
-    if (skill) out.push(['Skill Angriff', skill, 'Stufe ' + sl + ' · +' + sl * SKILL_DEFS.attack.atkPct + ' %']);
+    if (skill) out.push(['Fähigkeit Angriff', skill, 'Stufe ' + sl + ' · +' + sl * SKILL_DEFS.attack.atkPct + ' %']);
     const hx = a && a.hx, hd = hx && heroById(hx.id);             // the hero's Angriff and Gefolge (a fired skill included)
     const h2n = hx && hx.id2 && heroById(hx.id2) ? ' & ' + heroById(hx.id2).name : '';   // der Zweitheld zählt mit
     if (bonus - skill) out.push([hd ? 'Held ' + hd.name + ' ' + heroStarTxt(hx.q) + h2n : 'Helden', bonus - skill, hd ? 'Angriff +' + Math.round(hx.atk) + ' %' + (heroGefOf(hx, raw) ? ' · Gefolge +' + fmtCompact(heroGefOf(hx, raw)) : '') + (hx.fired ? ' · ' + hx.skill + ' gezündet' : '') : '']);
@@ -1243,7 +1243,7 @@ function setShown(el, on) { const d = on ? 'block' : 'none'; if (el && el.style.
 function updateHud() {
     const troops = totalTroops();
     setText(coinCountEl, fmtCompact(Math.floor(coins)));
-    const tc = fmtNum(Math.floor(coins)) + ' Münzen', tg = fmtNum(Math.floor(gems)) + ' Gems', tt = fmtNum(troops) + ' Truppen';
+    const tc = fmtNum(Math.floor(coins)) + ' Münzen', tg = fmtNum(Math.floor(gems)) + ' Edelsteine', tt = fmtNum(troops) + ' Truppen';
     if (coinCountEl.parentNode.title !== tc) coinCountEl.parentNode.title = tc;
     setText(gemCountEl, fmtCompact(Math.floor(gems)));
     if (gemCountEl.parentNode.title !== tg) gemCountEl.parentNode.title = tg;
@@ -1847,7 +1847,7 @@ let speedUpZuletzt = 0;                               // (ein Doppel-Tipp beschl
 function speedUpMarch(key, btn) {                    // halves the time still to go; the column keeps its place on the road
     const now = Date.now(); if (now - speedUpZuletzt < 600) return; speedUpZuletzt = now;
     const sc = pendingScouts.find(x => marchKeyOf(x) === key);                // ein Späher (nur deiner – kein Befehl an den Weltrechner nötig)
-    if (sc) { const rem = sc.resolveAt - now; if (rem < 1500) return; const cost = speedUpCost(sc); if (gems < cost) { flashHint('Zu wenig Gems – Beschleunigen kostet ' + cost + '.', 3000); return; }
+    if (sc) { const rem = sc.resolveAt - now; if (rem < 1500) return; const cost = speedUpCost(sc); if (gems < cost) { flashHint('Zu wenig Edelsteine – Beschleunigen kostet ' + cost + '.', 3000); return; }
         if (!gemsWirklich('marsch:' + key, cost, btn)) return;
         gems -= cost; const p = Math.max(0, Math.min(.99, (now - sc.startedAt) / Math.max(1, sc.resolveAt - sc.startedAt)));
         sc.resolveAt = now + rem / 2; sc.startedAt = sc.resolveAt - (rem / 2) / (1 - p);
@@ -1857,7 +1857,7 @@ function speedUpMarch(key, btn) {                    // halves the time still to
         if (m.fightEndsAt) return;
         if (m.vorlaeufig) { flashHint('Einen Moment – der Marsch läuft gerade los.', 1500); return; }
         const rem = m.resolveAt - now; if (rem < 1500) return;
-        const cost = speedUpCost(m); if (gems < cost) { flashHint('Zu wenig Gems – Beschleunigen kostet ' + cost + '.', 3000); return; }
+        const cost = speedUpCost(m); if (gems < cost) { flashHint('Zu wenig Edelsteine – Beschleunigen kostet ' + cost + '.', 3000); return; }
         if (!gemsWirklich('marsch:' + key, cost, btn)) return;
         gems -= cost;
         alsBefehl('schneller', { keys: [key] });
@@ -1876,7 +1876,7 @@ function speedUpAll(btn) {
     if (Date.now() - speedUpZuletzt < 600) return; speedUpZuletzt = Date.now();
     const list = speedableMarches(); if (!list.length) return;
     const cost = list.reduce((a, m) => a + speedUpCost(m), 0);
-    if (gems < cost) { flashHint('Zu wenig Gems – alle beschleunigen kostet ' + fmtNum(cost) + '.', 3000); return; }
+    if (gems < cost) { flashHint('Zu wenig Edelsteine – alle beschleunigen kostet ' + fmtNum(cost) + '.', 3000); return; }
     if (!gemsWirklich('marschAlle', cost, btn)) return;
     gems -= cost; const now = Date.now();
     alsBefehl('schneller', { keys: list.map(marchKeyOf) });
@@ -4937,7 +4937,7 @@ document.addEventListener('click', e => {
     if (!id) { look.ring = ''; store.set('openWaterLook', JSON.stringify(look)); ringVer++; requestRender(); }
     else if (ringSkinsOf('player').includes(id)) { if (inShop) return; look.ring = id; store.set('openWaterLook', JSON.stringify(look)); ringVer++; requestRender(); flashHint('Ring „' + r.name + '“ angelegt' + (titleOf('player') || rulerOwner() === 'player' ? ' – solange du einen Titel trägst, siehst du den Titel-Ring.' : '.'), 3000); }
     else if (r.tp) { throneBuy('ring_' + id); if (!ringSkinsOf('player').includes(id)) return; }
-    else { if (gems < r.gems) { flashHint('Zu wenig Gems – Ring „' + r.name + '“ kostet ' + fmtNum(r.gems) + '.', 2500); return; }
+    else { if (gems < r.gems) { flashHint('Zu wenig Edelsteine – Ring „' + r.name + '“ kostet ' + fmtNum(r.gems) + '.', 2500); return; }
         if (!gemsWirklich('ring:' + id, r.gems, b)) return;
         gems -= r.gems; ringGive('player', id); updateHud(); saveGame(); sfx('coin'); flashHint('Ring „' + r.name + '“ gekauft und angelegt.', 2500); }
     if (isPanelOpen(shopPopup)) renderShop();
@@ -5044,8 +5044,8 @@ function renderProfile(live) {                  // live = the per-second refresh
 
     const activeCount = playerRelevantAttackCount() + playerRelevantSendCount() + pendingScouts.length + pendingRetreats.length;
     liveHtml(profileStats,
-        '<div class="statRow"><span>' + icon('star') + 'Skillpunkte</span><b>' + fmtNum(skillPoints) + '</b></div>' +
-        '<div class="statRow"><span>' + icon('gem') + 'Gems</span><b>' + fmtTile(Math.floor(gems)) + '</b></div>' +
+        '<div class="statRow"><span>' + icon('star') + 'Fähigkeitspunkte</span><b>' + fmtNum(skillPoints) + '</b></div>' +
+        '<div class="statRow"><span>' + icon('gem') + 'Edelsteine</span><b>' + fmtTile(Math.floor(gems)) + '</b></div>' +
         (activeCount > 0 ? '<div class="statRow"><span>' + icon('hourglass') + 'Unterwegs</span><b>' + fmtNum(activeCount) + '</b></div>' : '') +
         '<div class="statRow"><span>' + icon('home') + 'Heimat</span><b>' + homeLabel + '</b></div>');
     updateHudPlayer();
@@ -5323,13 +5323,13 @@ const SKILL_RESET_GEMS = 500;
 let skillResetArmed = false, skillResetTimer = null, skillResetAt = 0;
 function resetSkills() {
     const spent = Object.keys(SKILL_DEFS).reduce((a, k) => a + (skills[k] || 0), 0); if (!spent) return;
-    if (gems < SKILL_RESET_GEMS) { flashHint('Zu wenig Gems: Zurücksetzen kostet ' + SKILL_RESET_GEMS + ' Gems.', 3000); return; }
+    if (gems < SKILL_RESET_GEMS) { flashHint('Zu wenig Edelsteine: Zurücksetzen kostet ' + SKILL_RESET_GEMS + ' Edelsteine.', 3000); return; }
     if (skillResetArmed && Date.now() - skillResetAt < 450) return;   // ein Doppel-Tipp ist keine Bestätigung (500 Gems)
     if (!skillResetArmed) { skillResetArmed = true; skillResetAt = Date.now(); clearTimeout(skillResetTimer); skillResetTimer = setTimeout(() => { skillResetArmed = false; renderSkillGrid(); }, 4000); renderSkillGrid(); return; }
     skillResetArmed = false; clearTimeout(skillResetTimer);
     gems -= SKILL_RESET_GEMS; skillPoints += spent; for (const k of Object.keys(SKILL_DEFS)) skills[k] = 0;
     saveProgression(); saveGame(); updateHud(); renderSkillGrid();
-    flashHint('Skills zurückgesetzt: ' + fmtNum(spent) + ' Skillpunkte sind wieder frei.', 3500);
+    flashHint('Fähigkeiten zurückgesetzt: ' + fmtNum(spent) + ' Fähigkeitspunkte sind wieder frei.', 3500);
 }
 // Gems-Käufe ab 500 (und Helden-Zurücksetzen): erst „Wirklich? N Gems“, erst der zweite Tipp (nach >450 ms, binnen 4 s) zahlt – wie resetSkills
 const GEMS_WIRKLICH = 500;
@@ -5350,7 +5350,7 @@ function gemsArmAus() {
 }
 function renderSkillGrid() {
     const spentPts = Object.keys(SKILL_DEFS).reduce((a, k) => a + (skills[k] || 0), 0);
-    skillPointsLine.innerHTML = icon('star') + '<span>Verfügbare Skillpunkte</span><b>' + fmtNum(skillPoints) + '</b>' +
+    skillPointsLine.innerHTML = icon('star') + '<span>Verfügbare Fähigkeitspunkte</span><b>' + fmtNum(skillPoints) + '</b>' +
         (spentPts ? '<button type="button" class="skill-reset' + (skillResetArmed ? ' is-armed' : '') + '" data-skillreset>' + (skillResetArmed ? 'Wirklich? ' + icon('gem') + SKILL_RESET_GEMS : icon('recall') + 'Zurücksetzen') + '</button>' : '');
     const rb = skillPointsLine.querySelector('[data-skillreset]'); if (rb) rb.addEventListener('click', resetSkills);
 
@@ -5365,8 +5365,8 @@ function renderSkillGrid() {
     detailBtn.type = 'button';
     detailBtn.className = 'btn btn--primary btn--sm';
     detailBtn.innerHTML = icon('plus') + '<span>1</span>';
-    detailBtn.setAttribute('aria-label', 'Skillpunkt vergeben');
-    detailBtn.title = 'Skillpunkt vergeben';
+    detailBtn.setAttribute('aria-label', 'Fähigkeitspunkt vergeben');
+    detailBtn.title = 'Fähigkeitspunkt vergeben';
     const atMax = def.max && level >= def.max;
     if (atMax) detailBtn.innerHTML = '<span>Max.</span>';
     detailBtn.disabled = skillPoints <= 0 || atMax;
@@ -5528,7 +5528,7 @@ function achCheck() {                                                        // 
     if (achLookSet && achLookSet.late) { delete achLookSet.late; if (achDone(ACHIEVEMENTS.find(a => a.id === 'city5')) && !achLookSet.includes('city5')) achLookSet.push('city5'); store.set('openWaterAchLook', JSON.stringify(achLookSet)); }
     const ready = achClaimable();
     if (achKnown === null) achKnown = new Set(ready.map(a => a.id));
-    for (const a of ready) if (!achKnown.has(a.id)) { achKnown.add(a.id); flashHint('Erfolg erreicht: ' + a.name + ' – hol dir ' + a.gems + ' Gems unter „Events“ ab.', 4500); sfx('crown'); }
+    for (const a of ready) if (!achKnown.has(a.id)) { achKnown.add(a.id); flashHint('Erfolg erreicht: ' + a.name + ' – hol dir ' + a.gems + ' Edelsteine unter „Events“ ab.', 4500); sfx('crown'); }
     updateGoalsBadge(ready.length);
     if (isPanelOpen(goalsPopup) && goalsTab === 'ach') renderAchievements();
 }
@@ -5558,10 +5558,10 @@ function claimAch(a) {
 }
 document.getElementById('achList').addEventListener('click', e => {
     if (e.target.closest('[data-ach-all]')) { const l = achClaimable(), n = l.reduce((s, a) => s + claimAch(a), 0); if (!n) return;
-        saveProgression(); updateHud(); sfx('gem'); flashHint('+' + fmtNum(n) + ' Gems für ' + l.length + ' Erfolge.', 2500); renderAchievements(); achCheck(); return; }
+        saveProgression(); updateHud(); sfx('gem'); flashHint('+' + fmtNum(n) + ' Edelsteine für ' + l.length + ' Erfolge.', 2500); renderAchievements(); achCheck(); return; }
     const b = e.target.closest('[data-ach]'); if (!b || b.disabled) return;
     const a = ACHIEVEMENTS.find(q => q.id === b.dataset.ach), n = claimAch(a); if (!n) return;
-    saveProgression(); updateHud(); sfx('gem'); flashHint('+' + fmtNum(n) + ' Gems für „' + a.name + '“.', 2500);
+    saveProgression(); updateHud(); sfx('gem'); flashHint('+' + fmtNum(n) + ' Edelsteine für „' + a.name + '“.', 2500);
     renderAchievements(); achCheck();
 });
 document.getElementById('achList').addEventListener('toggle', e => { if (e.target.classList && e.target.classList.contains('ach-done')) achOpenDone = e.target.open; }, true);
@@ -5635,7 +5635,7 @@ function openRulerProfile(who) {
         (verdeckt ? verdecktHtml :
         '<div class="sect"><h4>Ausrüstung</h4></div><div class="rp-gear">' + gear + '</div>' +
         '<div class="sect"><h4>Helden</h4></div><div class="rp-heroes">' + heroes + '</div>' +
-        '<div class="sect"><h4>Skills</h4></div><div class="rp-grid">' + skillsHtml + '</div>' +
+        '<div class="sect"><h4>Fähigkeiten</h4></div><div class="rp-grid">' + skillsHtml + '</div>' +
         '<div class="sect"><h4>Stadt</h4></div><div class="rp-blds">' + cityHtml + '</div>') +
         '<div class="rp-actions">' + (typeof bundProfilKnopf === 'function' ? bundProfilKnopf(who) : '') + '<button class="btn btn--secondary btn--sm" type="button" data-rp="map">' + icon('flag') + '<span>Zur Karte</span></button>' +
         '<button class="btn btn--primary btn--sm" type="button" data-rp="capital">' + icon('castle') + '<span>Hauptstadt</span></button></div>';
@@ -5876,7 +5876,7 @@ function renderCombatLog() {
         if (g.heroOnly) return '<div class="logGear"><div class="logGearHeroes">' + heroes + '</div></div>';
         return '<div class="logGear"><div class="logGearHead">Stufe ' + g.lvl + (g.title ? ' · Titel ' + escapeHtml(g.title) : '') + '</div>' +
             '<div class="logGearItems">' + tiles + '</div>' + (heroes ? '<div class="logGearHeroes">' + heroes + '</div>' : '') +
-            '<div class="logGearMeta">Skill Angriff ' + g.skills[0] + ' · Verteidigung ' + g.skills[1] + '<br>Mauer ' + g.city[0] + ' · Krankenhaus ' + g.city[1] + ' · Heldenhalle ' + g.city[2] + '</div></div>'; };
+            '<div class="logGearMeta">Fähigkeit Angriff ' + g.skills[0] + ' · Verteidigung ' + g.skills[1] + '<br>Mauer ' + g.city[0] + ' · Krankenhaus ' + g.city[1] + ' · Heldenhalle ' + g.city[2] + '</div></div>'; };
     const fieldHeroLine = e => [[e.attacker, e.hA], [e.defender, e.hD]].map(([n, t]) => t ? ' · ' + (n === 'Du' ? 'dein Held ' : escapeHtml(n) + ' mit ') + escapeHtml(t) : '').join('');   // who led out in the open
     const fieldHeroDet = e => e.hx ? '<details><summary>Dein Held</summary>' + gearHtml({ items: [], lvl: playerLvl, hx: e.hx, skills: [], city: [], heroOnly: 1 }) + '</details>' : undefined;
     const karte = (e, kind, ic, badge, title, sub, bar, chips, det) => logRowHtml(kind, ic, logBadge(badge[0], badge[1]) + title, sub, ago(e), (bar || '') + logChips(chips) + (det || ''));   // jede Karte gleich aufgebaut
@@ -5931,7 +5931,7 @@ function renderCombatLog() {
         }
         if (entry.type === 'ev') return karte(entry, entry.gut ? 'win' : 'loss', entry.ic || 'attack', [entry.gut ? 'win' : 'loss', escapeHtml(String(entry.badge || ''))], escapeHtml(entry.title || ''), escapeHtml(entry.txt || ''));   // Events (Invasion, Drache)
         if (entry.type === 'dbossWin') return karte(entry, 'win', 'crown', ['win', 'Boss gefallen'], escapeHtml(entry.name), 'Preis liegt im Abholfach', '',
-            [['rank', 'Platz ' + entry.rank + ' von ' + entry.of], ['attack', chipN(entry.dmg) + ' Schaden'], entry.gems > 0 && ['gem', '+' + chipN(entry.gems) + ' Gems', 'gut'], entry.crate && ['crate', escapeHtml(entry.crate), 'gut'], entry.sh && ['star', escapeHtml(entry.sh), 'gut']]);
+            [['rank', 'Platz ' + entry.rank + ' von ' + entry.of], ['attack', chipN(entry.dmg) + ' Schaden'], entry.gems > 0 && ['gem', '+' + chipN(entry.gems) + ' Edelsteine', 'gut'], entry.crate && ['crate', escapeHtml(entry.crate), 'gut'], entry.sh && ['star', escapeHtml(entry.sh), 'gut']]);
         if (entry.type === 'army') {
             const side = (n, own) => n === 'Du' ? (own ? 'Deine Armee' : 'deine Armee') : (own ? 'Die Armee von ' : 'die Armee von ') + escapeHtml(n);
             return karte(entry, entry.won ? 'win' : 'loss', 'troops', [entry.won ? 'win' : 'loss', entry.won ? 'Armee siegt' : 'Armee geschlagen'], 'Kampf im Feld', side(entry.attacker, true) + ' gegen ' + side(entry.defender, false) + fieldHeroLine(entry),
@@ -6026,7 +6026,7 @@ function renderCombatLog() {
                     angreiferZeilen(entry, gearHtml) +
                     '<div class="logLine"><span>Truppen' + (angreiferZeilen(entry, gearHtml) ? ' (alle)' : '') + '</span><span>' + fmtD(entry.myTroops) + '</span></div>' +
                     (entry.atkParts ? partLines(entry.atkParts)
-                        : '<div class="logLine buff"><span>Angriff-Skill</span><span>+' + fmtD(entry.skillBuff) + '</span></div>' +
+                        : '<div class="logLine buff"><span>Fähigkeit Angriff</span><span>+' + fmtD(entry.skillBuff) + '</span></div>' +
                           (entry.titleBuff ? '<div class="logLine buff"><span>Titel</span><span>' + (entry.titleBuff > 0 ? '+' : '−') + fmtD(Math.abs(entry.titleBuff)) + '</span></div>' : '')) +
                     '<div class="logSum' + (atkTotal >= defTotal ? ' advantage' : '') + '"><span>Gesamt</span><span>' + fmtD(atkTotal) + '</span></div>' +
                     '<div class="logCasualty"><span>Gefallen</span><span>−' + fmtD(entry.attackerCasualties || 0) + '</span></div>' +
@@ -6080,7 +6080,7 @@ const kampflogUmbauen = (function () {
     const leerHeld = (n, t) => '<div class="logHero kl-keinheld"><span class="ghero"><span class="kl-leer">?</span><span><b>' + n + '</b><small>' + t + '</small></span></span></div>';
     const leerGear = (stufe, angr) => '<div class="logGear"><div class="logGearHead">' + (stufe || 'Stufe –') + '</div><div class="logGearItems">' +
         [['weapon', 'Waffe'], ['armor', 'Rüstung'], ['shield', 'Schild'], ['boots', 'Stiefel']].map(([i, n]) => '<span class="gslot"><span class="tile empty" title="' + n + ' – leer">' + ic(i) + '</span></span>').join('') +
-        '</div><div class="logGearMeta">Skill Angriff – · Verteidigung –</div></div>';
+        '</div><div class="logGearMeta">Fähigkeit Angriff – · Verteidigung –</div></div>';
     const textOf = n => (n && n.firstElementChild ? n.firstElementChild.textContent : '').trim();
 
     // ein Fenster auf den immer gleichen Aufbau bringen
@@ -6147,7 +6147,7 @@ const kampflogUmbauen = (function () {
         side.querySelectorAll(':scope > .logLine.buff').forEach(l => l.remove());
         const schon = angr ? 0 : Array.isArray(e.defParts) && e.defParts.length ? e.defParts[0][1] || 0 : (e.enemyDefense || 0) - andere.reduce((x, p) => x + (p.plus || 0), 0);   // (Grundverteidigung bzw. Verteidigung steht schon als eigene Zeile da – ohne Bericht-Teile steckt darin auch das Plus der Helfer)
         const eig = gesamt - staerkeAndere - (erster.n || 0) - schon;
-        if (eig && tr) tr.insertAdjacentHTML('afterend', zl('Eigene Werte', (eig > 0 ? '+' : '−') + fmt(Math.abs(eig)), ' buff', angr ? 'Held, Skill Angriff, Titel, Forschung' : 'Rüstung, Skill Verteidigung, Mauer, Titel, Forschung'));
+        if (eig && tr) tr.insertAdjacentHTML('afterend', zl('Eigene Werte', (eig > 0 ? '+' : '−') + fmt(Math.abs(eig)), ' buff', angr ? 'Held, Fähigkeit Angriff, Titel, Forschung' : 'Rüstung, Fähigkeit Verteidigung, Mauer, Titel, Forschung'));
         if (angr && erster.fallen !== undefined) { const c = side.querySelector(':scope > .logCasualty:not(.wounded)'); if (c) c.lastElementChild.textContent = '−' + fmt(erster.fallen);
             const w = side.querySelector(':scope > .logCasualty.wounded'); if (w) { if (erster.wounded) w.lastElementChild.textContent = fmt(erster.wounded); else w.remove(); } }   // (nur seine – nicht die der ganzen Rally)
         if (!angr && e.type === 'attack') { const weg = andere.reduce((x, p) => x + (p.fallen || 0) + (p.wounded || 0), 0), c = side.querySelector(':scope > .logCasualty:not(.wounded)');   // Besitzer: ohne die Verluste der Helfer (die stehen in ihren Fenstern)
@@ -6156,7 +6156,7 @@ const kampflogUmbauen = (function () {
         // weitere Fenster: Rally-Mitglieder / Verstärkung
         for (const p of andere) {
             const b = el('<div class="logSide"><div class="logSideLabel">' + (angr ? 'Angreifer · ' : 'Verteidiger · ') + escapeHtml(p.name || '?') + ' <small style="text-transform:none;letter-spacing:0">(' + (angr ? 'Verbündeter' : 'Verstärkung') + ')</small></div>' +
-                zl('Truppen', fmt(p.n)) + (p.k !== undefined && p.k !== p.n ? zl('Eigene Werte', (p.k > p.n ? '+' : '−') + fmt(Math.abs(p.k - p.n)), ' buff', angr ? 'Held, Skill Angriff, Titel, Forschung' : 'Skill Verteidigung, Titel, Forschung') : '') +
+                zl('Truppen', fmt(p.n)) + (p.k !== undefined && p.k !== p.n ? zl('Eigene Werte', (p.k > p.n ? '+' : '−') + fmt(Math.abs(p.k - p.n)), ' buff', angr ? 'Held, Fähigkeit Angriff, Titel, Forschung' : 'Fähigkeit Verteidigung, Titel, Forschung') : '') +
                 '<div class="logSum' + (sumEl && sumEl.classList.contains('advantage') ? ' advantage' : '') + '"><span>Gesamt</span><span>' + fmt(p.k !== undefined ? p.k : p.n) + '</span></div>' +
                 '<div class="logCasualty"><span>Gefallen</span><span>−' + fmt(p.fallen || 0) + '</span></div>' +   // (fallen enthält die Verwundeten schon nicht)
                 (p.wounded ? '<div class="logCasualty wounded"><span>Verwundet</span><span>' + fmt(p.wounded) + '</span></div>' : '') + '</div>');
@@ -6291,7 +6291,7 @@ function dailyNextDay() {           // the day (1-7) that the next claim gives
     return d.last === yesterdayKey() ? d.day % 7 + 1 : 1;
 }
 function dailyRewardLabel(r) {
-    return (r.epic ? 'Epische Kiste' : r.crates + (r.crates === 1 ? ' Kiste' : ' Kisten')) + (r.gems ? ' + ' + r.gems + ' Gems' : '');
+    return (r.epic ? 'Epische Kiste' : r.crates + (r.crates === 1 ? ' Kiste' : ' Kisten')) + (r.gems ? ' + ' + r.gems + ' Edelsteine' : '');
 }
 function dailyDaysHtml() {
     const today = dailyNextDay(), claimed = !dailyClaimable();
@@ -6330,7 +6330,7 @@ function showDailyModal() {
     document.getElementById('dailyModalLabel').textContent = 'Heute';
     document.getElementById('dailyModalRewards').innerHTML =
         '<li>' + icon('shop', 'ico-coin') + '<span>' + (r.epic ? 'Epische Kiste (mind. Episch)' : r.crates === 1 ? 'Ausrüstungskiste' : 'Ausrüstungskisten') + '</span><b>×' + r.crates + '</b></li>' +
-        (r.gems ? '<li>' + icon('gem', 'ico-gem') + '<span>Gems</span><b>+' + r.gems + '</b></li>' : '');
+        (r.gems ? '<li>' + icon('gem', 'ico-gem') + '<span>Edelsteine</span><b>+' + r.gems + '</b></li>' : '');
     [...document.getElementById('dailyModalRewards').children].forEach((li, i) => { li.style.animationDelay = (150 + i * 110) + 'ms'; });
     const btn = document.getElementById('dailyModalBtn');
     btn.dataset.state = 'claim'; btn.querySelector('span').textContent = 'Abholen';
@@ -6350,7 +6350,7 @@ document.getElementById('dailyModalBtn').addEventListener('click', () => {
     document.getElementById('dailyModalDays').innerHTML = dailyDaysHtml();
     document.getElementById('dailyModalLabel').textContent = 'Erhalten';
     const list = document.getElementById('dailyModalRewards');
-    list.innerHTML = res.items.map(itemRewardRow).join('') + (res.gems ? '<li>' + icon('gem', 'ico-gem') + '<span>Gems</span><b>+' + res.gems + '</b></li>' : '');
+    list.innerHTML = res.items.map(itemRewardRow).join('') + (res.gems ? '<li>' + icon('gem', 'ico-gem') + '<span>Edelsteine</span><b>+' + res.gems + '</b></li>' : '');
     [...list.children].forEach((li, i) => { li.style.animationDelay = (80 + i * 120) + 'ms'; });
     btn.dataset.state = 'done'; btn.querySelector('span').textContent = 'Weiter';
 });
@@ -6403,7 +6403,7 @@ function claimQuest(i) {
     t.claimed = true; passBump('quest');
     gems += t.gems;
     saveQuests(); saveGame(); updateHud();
-    flashHint('+' + t.gems + ' Gems', 1800);
+    flashHint('+' + t.gems + ' Edelsteine', 1800);
     renderQuestPanel(); updateGoalsBadge();
 }
 // ---- the week chain: every day with ALL tasks done is a link; 7 in a row = the big chest ----
@@ -6422,7 +6422,7 @@ function claimChain() {
     gems += CHAIN_REWARD.gems; questChain.streak = Math.max(0, questChain.streak - 7); store.set('openWaterQuestChain', JSON.stringify(questChain));   // (ein 8. Tag zählt schon für die nächste Kette)
     const shH = heroGrantShards('player', HERO_SHARDS_CHAIN); if (!shH) gems += HERO_SHARDS_CHAIN * 20;   // (alle Helden voll: Gems statt Splitter, wie im Abholfach)
     saveGame(); saveProgression(); updateHud(); sfx('crate');
-    flashHint('Große Kiste: ' + items.map(it => RARITY_DEFS[it.rarity].label + ' ' + EQUIPMENT_DEFS[it.slot].name).join(', ') + ' + ' + CHAIN_REWARD.gems + ' Gems' + (shH ? ' + ' + HERO_SHARDS_CHAIN + ' Splitter ' + shH.name : ''), 5000);
+    flashHint('Große Kiste: ' + items.map(it => RARITY_DEFS[it.rarity].label + ' ' + EQUIPMENT_DEFS[it.slot].name).join(', ') + ' + ' + CHAIN_REWARD.gems + ' Edelsteine' + (shH ? ' + ' + HERO_SHARDS_CHAIN + ' Splitter ' + shH.name : ''), 5000);
     renderQuestPanel(); updateGoalsBadge();
 }
 function claimQuestBonus() {
@@ -6434,7 +6434,7 @@ function claimQuestBonus() {
     gems += QUEST_BONUS.gems; const shH = heroGrantShards('player', HERO_SHARDS_DAY); if (!shH) gems += HERO_SHARDS_DAY * 20;   // (alle Helden voll)
     saveQuests(); saveGame(); saveProgression(); updateHud();
     const it = items[0];
-    flashHint('Bonus: ' + RARITY_DEFS[it.rarity].label + ' ' + EQUIPMENT_DEFS[it.slot].name + ' + ' + QUEST_BONUS.gems + ' Gems' + (shH ? ' + ' + HERO_SHARDS_DAY + ' Splitter ' + shH.name : ''), 3000);
+    flashHint('Bonus: ' + RARITY_DEFS[it.rarity].label + ' ' + EQUIPMENT_DEFS[it.slot].name + ' + ' + QUEST_BONUS.gems + ' Edelsteine' + (shH ? ' + ' + HERO_SHARDS_DAY + ' Splitter ' + shH.name : ''), 3000);
     renderQuestPanel(); updateGoalsBadge();
 }
 function dailyGoalCount() {                                      // Events → Täglich: tasks, the bonus and the week chain
@@ -6457,14 +6457,14 @@ function inboxAdd(o) {                              // o: { src, title?, gems, c
     if (pile) { pile.coins = (pile.coins || 0) + o.coins; pile.gems = (pile.gems || 0) + o.gems; pile.sh = (pile.sh || 0) + (o.sh || 0); pile.n = (pile.n || 1) + 1; pile.at = now; } else L.unshift(Object.assign(o, { id: now.toString(36) + Math.floor(Math.random() * 1e6).toString(36), at: now }));   // (shards pile up too)
     inboxSave(); updateGoalsBadge(); if (isPanelOpen(goalsPopup) && goalsTab === 'reward') renderInbox(); return o.coins || o.gems;
 }
-function inboxWhat(x) { return [x.gems ? '+' + fmtNum(x.gems) + ' Gems' : '', x.coins ? '+' + fmtCompact(x.coins) + ' Münzen' : '', x.crate >= 0 ? 'Kiste (mind. ' + RARITY_DEFS[x.crate].label + ')' : '', x.sh ? x.sh + ' Helden-Splitter' : '', x.tr ? '+' + fmtCompact(x.tr) + ' Truppen' : '', x.kiste >= 0 ? 'Kiste (' + RARITY_DEFS[x.kiste].label + ')' : '', x.schild ? 'Friedensschild ' + x.schild + ' h' : ''].filter(Boolean).join(' · '); }
+function inboxWhat(x) { return [x.gems ? '+' + fmtNum(x.gems) + ' Edelsteine' : '', x.coins ? '+' + fmtCompact(x.coins) + ' Münzen' : '', x.crate >= 0 ? 'Kiste (mind. ' + RARITY_DEFS[x.crate].label + ')' : '', x.sh ? x.sh + ' Helden-Splitter' : '', x.tr ? '+' + fmtCompact(x.tr) + ' Truppen' : '', x.kiste >= 0 ? 'Kiste (' + RARITY_DEFS[x.kiste].label + ')' : '', x.schild ? 'Friedensschild ' + x.schild + ' h' : ''].filter(Boolean).join(' · '); }
 function inboxClaim(id) {                           // into your coffers - returns what you got
     const L = inboxList(), i = L.findIndex(x => x.id === id); if (i < 0) return ''; const x = L.splice(i, 1)[0], got = [];
-    if (x.gems) { gems += x.gems; got.push('+' + fmtNum(x.gems) + ' Gems'); } if (x.coins) { coins += x.coins; got.push('+' + fmtCompact(x.coins) + ' Münzen'); }
+    if (x.gems) { gems += x.gems; got.push('+' + fmtNum(x.gems) + ' Edelsteine'); } if (x.coins) { coins += x.coins; got.push('+' + fmtCompact(x.coins) + ' Münzen'); }
     if (x.crate >= 0) { const it = grantFreeCrate(x.crate); if (it && it.rarity !== undefined) got.push(EQUIPMENT_DEFS[it.slot].name + ' (' + RARITY_DEFS[it.rarity].label + ')'); }
     if (x.kiste >= 0 && x.kiste <= 2) { const it = addInventoryItem(pickRandomSlot(), x.kiste, 1); if (it && it.rarity !== undefined) got.push(EQUIPMENT_DEFS[it.slot].name + ' (' + RARITY_DEFS[it.rarity].label + ')'); }
     if (x.schild === 2) { const st = shieldStock(); st[2] = (st[2] || 0) + 1; store.set('openWaterShieldStock', JSON.stringify(st)); got.push('Friedensschild 2 h'); }
-    if (x.sh) { const h = heroGrantShards('player', x.sh); if (h) got.push(x.sh + ' Splitter ' + h.name); else { gems += x.sh * 20; got.push('+' + x.sh * 20 + ' Gems (alle Helden voll)'); } }
+    if (x.sh) { const h = heroGrantShards('player', x.sh); if (h) got.push(x.sh + ' Splitter ' + h.name); else { gems += x.sh * 20; got.push('+' + x.sh * 20 + ' Edelsteine (alle Helden voll)'); } }
     if (x.tr) { const b = rewardBaseId(); if (b !== null) { eigeneTruppenDazu(b, x.tr, 'geschenk'); got.push('+' + fmtCompact(x.tr) + ' Truppen'); } else L.splice(i, 0, Object.assign({}, x, { gems: 0, coins: 0, sh: 0, crate: -1, kiste: -1, schild: 0 })); }   // no base right now: only the troops stay in the inbox
     inboxSave(); saveGame(); saveProgression(); updateHud(); return got.join(', ');
 }
@@ -6501,7 +6501,7 @@ function renderQuestPanel() {
     { const k = chainStreak(), full = k >= 7;                                        // the week chain: 7 links, the chest at the end
       document.getElementById('chainCard').innerHTML = '<div class="chain-links">' + Array.from({ length: 7 }, (_, i) => '<span class="chain-link' + (i < k ? ' on' : '') + '">' + (i < k ? icon('check') : i + 1) + '</span>').join('') +
         '<span class="chain-chest' + (full ? ' on' : '') + '">' + icon('shop') + '</span></div>' +
-        '<div class="daily-row"><div class="daily-txt"><b>' + (full ? 'Große Kiste bereit!' : k + ' von 7 Tagen') + '</b><small>' + (full ? CHAIN_REWARD.crates + ' Kisten (mind. episch) + ' + CHAIN_REWARD.gems + ' Gems' : 'Schaffe jeden Tag alle Aufgaben – ein verpasster Tag bricht die Kette.') + '</small></div>' +
+        '<div class="daily-row"><div class="daily-txt"><b>' + (full ? 'Große Kiste bereit!' : k + ' von 7 Tagen') + '</b><small>' + (full ? CHAIN_REWARD.crates + ' Kisten (mind. episch) + ' + CHAIN_REWARD.gems + ' Edelsteine' : 'Schaffe jeden Tag alle Aufgaben – ein verpasster Tag bricht die Kette.') + '</small></div>' +
         (full ? '<button class="btn btn--primary btn--sm" type="button" data-chain>' + icon('shop') + '<span>Abholen</span></button>' : '') + '</div>'; }
     let html = q.list.map((t, i) => {
         const def = QUEST_DEFS[t.type], done = t.progress >= t.target;
@@ -6584,15 +6584,15 @@ function passXp(v) {
 function passGive(who, r) {                               // one reward to anyone (you or the others) - returns the text for the hint
     const b = who === 'player' ? null : loadBotState()[who]; if (who !== 'player' && !b) return ''; const n = r.n || 1;
     if (r.k === 'coins') { const c = Math.max(5000, Math.round(hourProduction(who).coins)) * n; if (b) botCoins[who] = (botCoins[who] || 0) + c; else coins += c; return '+' + fmtCompact(c) + ' Münzen'; }
-    if (r.k === 'gems') { if (b) b.gems += n; else gems += n; return '+' + n + ' Gems'; }
+    if (r.k === 'gems') { if (b) b.gems += n; else gems += n; return '+' + n + ' Edelsteine'; }
     if (r.k === 'tp') { if (b) b.tp = (b.tp || 0) + n; else { throneState.pts = (throneState.pts || 0) + n; saveThrone(); } return '+' + n + ' Thron-Punkte'; }
-    if (r.k === 'shards') { const h = heroGrantShards(who, n); if (h) return '+' + n + ' Splitter ' + h.name; if (b) b.gems += n * 20; else gems += n * 20; return '+' + n * 20 + ' Gems (alle Helden voll)'; }
+    if (r.k === 'shards') { const h = heroGrantShards(who, n); if (h) return '+' + n + ' Splitter ' + h.name; if (b) b.gems += n * 20; else gems += n * 20; return '+' + n * 20 + ' Edelsteine (alle Helden voll)'; }
     if (r.k === 'shield') { if (b) { b.shields = b.shields || {}; b.shields[n] = (b.shields[n] || 0) + 1; } else { const st = shieldStock(); st[n] = (st[n] || 0) + 1; store.set('openWaterShieldStock', JSON.stringify(st)); } return 'Friedensschild ' + n + ' h'; }
     if (r.k === 'crate' || r.k === 'royal') { const t = [];
         for (let i = 0; i < n; i++) { const rr = r.k === 'royal' ? Math.max(3, pickRandomRarity()) : pickRandomRarity(), slot = pickRandomSlot();
             if (b) b.spare[slot][rr]++; else { addInventoryItem(slot, rr, 1); t.push(RARITY_DEFS[rr].label + ' ' + EQUIPMENT_DEFS[slot].name); } } return t.join(', '); }
     if (r.k === 'frame' || r.k === 'march') { const d = lkDef(r.k, r.id), key = r.k + 's', has = ((b ? b[key] : look[key]) || []).includes(r.id);
-        if (has) { if (b) b.gems += PASS_OWNED_GEMS; else gems += PASS_OWNED_GEMS; return '+' + PASS_OWNED_GEMS + ' Gems („' + d.name + '“ hast du schon)'; }   // a later season: gems instead
+        if (has) { if (b) b.gems += PASS_OWNED_GEMS; else gems += PASS_OWNED_GEMS; return '+' + PASS_OWNED_GEMS + ' Edelsteine („' + d.name + '“ hast du schon)'; }   // a later season: gems instead
         if (b) { b[key] = [...(b[key] || []), r.id]; if (r.k === 'march') b.march = r.id; }
         else { look[key] = [...new Set([...(look[key] || []), r.id])]; look[r.k] = r.id; saveLook(); renderLook(); }
         return (r.k === 'frame' ? 'Rahmen' : 'Marsch-Skin') + ' „' + d.name + '“ – schon angelegt'; }
@@ -6608,7 +6608,7 @@ function passClaim(list) {                                // [[season, level, pr
 }
 function passBuy() {
     const x = passOf(passNo(Date.now())); if (x.prem) return;
-    if (gems < PASS_PREMIUM) { flashHint('Zu wenig Gems – Premium kostet ' + fmtNum(PASS_PREMIUM) + '.', 2500); return; }
+    if (gems < PASS_PREMIUM) { flashHint('Zu wenig Edelsteine – Premium kostet ' + fmtNum(PASS_PREMIUM) + '.', 2500); return; }
     if (Date.now() - passArm > 4000) { passArm = Date.now(); renderPass(); return; }            // tap twice: 1000 Gems are a lot
     gems -= PASS_PREMIUM; x.prem = true; passArm = 0; passSave(); saveGame(); updateHud(); sfx('coin');
     flashHint('Premium freigeschaltet – die zweite Reihe gehört dir, auch für erreichte Stufen.', 3500); renderPass(); updateGoalsBadge();
@@ -6616,15 +6616,15 @@ function passBuy() {
 function passCellHtml(r, hp, got) {                            // icon + amount of one reward
     const k = r.k, n = r.n || 1, row = (ic, b, s, cls) => '<span class="pc-ic' + (cls ? ' ' + cls : '') + '">' + ic + '</span><span class="pc-t"><b>' + b + '</b><small>' + s + '</small></span>';
     if (k === 'coins') return row(icon('coin', 'ico-coin'), fmtCompact(Math.max(5000, Math.round(hp.coins)) * n), 'Münzen');
-    if (k === 'gems') return row(icon('gem', 'ico-gem'), '+' + n, 'Gems');
+    if (k === 'gems') return row(icon('gem', 'ico-gem'), '+' + n, 'Edelsteine');
     if (k === 'tp') return row(icon('crown', 'ico-tp'), '+' + n, 'Thron-Punkte');
     if (k === 'shards') return row(icon('star', 'ico-shard'), '+' + n, 'Helden-Splitter');
     if (k === 'shield') return row(icon('shield'), n + ' h', 'Friedensschild');
     if (k === 'crate') return row(icon('shop'), n + '×', n === 1 ? 'Kiste' : 'Kisten');
     if (k === 'royal') return row(icon('shop', 'ico-royal'), '1×', 'Königliche Kiste');
     const d = lkDef(k, r.id), own = !got && lkHas(k, r.id);
-    if (k === 'frame') return row('<span class="frame-ring pc-frame" data-frame="' + r.id + '"><img alt="" src="' + crestDataUrl(28) + '"></span>', d.name, own ? 'Schon da: ' + fmtNum(PASS_OWNED_GEMS) + ' Gems' : 'Rahmen', 'is-look');
-    return row('<i class="pc-flag" style="--c:' + d.flag + ';--t:' + d.trail + '"></i>', d.name, own ? 'Schon da: ' + fmtNum(PASS_OWNED_GEMS) + ' Gems' : 'Marsch-Skin', 'is-look');
+    if (k === 'frame') return row('<span class="frame-ring pc-frame" data-frame="' + r.id + '"><img alt="" src="' + crestDataUrl(28) + '"></span>', d.name, own ? 'Schon da: ' + fmtNum(PASS_OWNED_GEMS) + ' Edelsteine' : 'Rahmen', 'is-look');
+    return row('<i class="pc-flag" style="--c:' + d.flag + ';--t:' + d.trail + '"></i>', d.name, own ? 'Schon da: ' + fmtNum(PASS_OWNED_GEMS) + ' Edelsteine' : 'Marsch-Skin', 'is-look');
 }
 function passChip(who) { try { const x = who === 'player' ? passOf(passNo(Date.now())) : null, i = x ? { lvl: passLvl(x), prem: x.prem } : botPassInfo(who);   // the pass level in the profile
     return '<div class="rp-pass' + (i.prem ? ' is-prem' : '') + '">' + icon('crown') + '<span>Saison-Pass</span><b>Stufe ' + i.lvl + '</b>' + (i.prem ? '<em>Premium</em>' : '') + '</div>'; } catch (e) { return ''; } }
@@ -6641,7 +6641,7 @@ function renderPass() {
         '<span class="pass-ht"><b>Saison-Pass ' + n + '</b><small>Endet in <span id="passLeft"></span></small></span>' + (x.prem ? '<span class="pass-tag">' + icon('crown') + 'Premium</span>' : '') + '</div>' +
         '<div class="pass-bar"><i style="width:' + Math.round(into / PASS_STEP * 100) + '%"></i></div>' +
         '<div class="pass-bar-t"><span>' + (max ? 'Höchste Stufe erreicht' : fmtNum(into) + ' / ' + PASS_STEP + ' Punkte') + '</span><span>' + (max ? fmtNum(xp) + ' Punkte' : 'bis Stufe ' + (L + 1)) + '</span></div></div>';
-    if (!x.prem) h += '<div class="pass-prem">' + icon('crown') + '<span><b>Premium-Reihe</b><small>Mehr Gems, Königliche Kisten, Marsch-Skin „Saisonzug“ (Stufe 20) und Rahmen „Saisonkrone“ (Stufe 40) – auch für erreichte Stufen.</small></span>' +
+    if (!x.prem) h += '<div class="pass-prem">' + icon('crown') + '<span><b>Premium-Reihe</b><small>Mehr Edelsteine, Königliche Kisten, Marsch-Skin „Saisonzug“ (Stufe 20) und Rahmen „Saisonkrone“ (Stufe 40) – auch für erreichte Stufen.</small></span>' +
         '<button class="btn btn--primary btn--sm" type="button" data-pass-buy>' + (arm ? '<span>Sicher?</span>' : '') + icon('gem') + '<span>' + fmtNum(PASS_PREMIUM) + '</span></button></div>';
     if (old.length) h += '<div class="pass-old">' + icon('hourglass') + '<span><b>Saison-Pass ' + (n - 1) + ': ' + old.length + (old.length === 1 ? ' Belohnung' : ' Belohnungen') + ' offen</b><small>Noch <span id="passOldLeft"></span> abholbar</small></span>' +
         '<button class="btn btn--primary btn--sm" type="button" data-pass-old><span>Abholen</span></button></div>';
@@ -6765,7 +6765,7 @@ function throneAmount(who, id) { const hp = hourProduction(who);
 function throneGive(who, id) {                        // hands one offer over; returns what it was, for the hint
     const n = throneAmount(who, id), b = who === 'player' ? null : loadBotState()[who];
     if (id === 'coins') { if (b) botCoins[who] = (botCoins[who] || 0) + n; else coins += n; return '+' + fmtCompact(n) + ' Münzen'; }
-    if (id === 'gems') { if (b) b.gems += n; else gems += n; return '+' + n + ' Gems'; }
+    if (id === 'gems') { if (b) b.gems += n; else gems += n; return '+' + n + ' Edelsteine'; }
     if (id === 'troops') { const to = b ? botCapitalOf(who) : rewardBaseId(); if (to === null || to === undefined) return '';
         if (b) islandTroops[to] = (islandTroops[to] || 0) + n; else eigeneTruppenDazu(to, n, 'thron'); return '+' + fmtCompact(n) + ' Truppen in ' + (b ? 'die Hauptstadt' : islandTitle(islandById[to])); }
     if (id === 'crate' || id === 'royal') { const r = id === 'royal' ? Math.max(3, pickRandomRarity()) : pickRandomRarity(), slot = pickRandomSlot();
@@ -6872,7 +6872,7 @@ function renderThroneShop() {
             '<div class="ts-row">' + icon('hourglass') + '<span>Nächste Thron-Punkte</span><b data-throne-pts>' + fmtClock((ts.nextPts - Date.now()) / 1000) + '</b></div>' +
             '<div class="ts-row">' + icon('attack') + '<span>Beschuss' + (hd ? ' · ' + sh.length + ' Wächter' : '') + '</span><b' + (hd === 'player' && sh.length ? ' class="warn"' : '') + ' data-throne-fire>' + fmtClock((ts.nextFire - Date.now()) / 1000) + '</b></div>' +
             '<div class="ts-row">' + icon('points') + '<span>Du bekommst</span><b>' + (inc ? '+' + inc + ' alle 3 Min.' : 'nichts – erobere die Mitte') + '</b></div>' +
-            (bo ? '<div class="ts-row">' + icon(bo.who === 'player' ? 'losses' : 'gem') + '<span>' + (bo.who === 'player' ? 'Kopfgeld auf dich' : 'Kopfgeld') + '</span><b' + (bo.who === 'player' ? ' class="warn"' : '') + '>' + fmtNum(bo.gems) + ' Gems · ' + fmtCompact(bo.coins) + '</b></div>' : '') +
+            (bo ? '<div class="ts-row">' + icon(bo.who === 'player' ? 'losses' : 'gem') + '<span>' + (bo.who === 'player' ? 'Kopfgeld auf dich' : 'Kopfgeld') + '</span><b' + (bo.who === 'player' ? ' class="warn"' : '') + '>' + fmtNum(bo.gems) + ' Edelsteine · ' + fmtCompact(bo.coins) + '</b></div>' : '') +
         '</div>' +
         '<p class="mail-intro">Wer den Mega-Tempel hält, bekommt alle 3 Min. ' + THRONE_PTS_MEGA + ' Thron-Punkte, jeder Wächter-Tempel bringt ' + THRONE_PTS_GUARD + '. Genauso oft feuern die Wächter-Tempel, die dem Herrscher nicht gehören, auf die Truppen im Mega-Tempel (je ' + THRONE_FIRE_PCT + ' %) – die Getroffenen kommen ins Krankenhaus, soweit Platz ist.</p>' +
         '<div class="sect"><h4>Eintauschen</h4></div><div class="throne-list">' +
@@ -6925,8 +6925,8 @@ function bountyCheck(r) {                             // a new ruler: whoever to
     bountyState = { ruler: r, gems: 0, coins: 0, since: Date.now() }; saveBounty();
     if (!was || !r || !(g || c) || (was !== 'player' && !botById[was]) || (r !== 'player' && !botById[r])) return;
     bountyPay(r, g, c);
-    const txt = r === 'player' ? 'Kopfgeld für den Sturz von ' + botById[was].name + ': ' + fmtNum(g) + ' Gems und ' + fmtCompact(c) + ' Münzen – abholen unter Events → Belohnung!'
-        : was === 'player' ? botById[r].name + ' hat das Kopfgeld auf dich kassiert: ' + fmtNum(g) + ' Gems.' : g >= 100 ? botById[r].name + ' kassiert das Kopfgeld auf ' + botById[was].name + ': ' + fmtNum(g) + ' Gems.' : '';
+    const txt = r === 'player' ? 'Kopfgeld für den Sturz von ' + botById[was].name + ': ' + fmtNum(g) + ' Edelsteine und ' + fmtCompact(c) + ' Münzen – abholen unter Events → Belohnung!'
+        : was === 'player' ? botById[r].name + ' hat das Kopfgeld auf dich kassiert: ' + fmtNum(g) + ' Edelsteine.' : g >= 100 ? botById[r].name + ' kassiert das Kopfgeld auf ' + botById[was].name + ': ' + fmtNum(g) + ' Edelsteine.' : '';
     if (txt) afterSplash(() => setTimeout(() => flashHint(txt, 5000), 4500));
     if (r === 'player') sfx('coin');
 }
@@ -6955,8 +6955,8 @@ function midAnzeige(now) {                            // jede Sekunde (auch bei 
 }
 function midNotice(island) {                          // das Kopfgeld auf dem Mega-Tempel
     const b = bountyOf(); let h = '';
-    if (b && island.type === 'megaTemple') h += b.who === 'player' ? '<div class="notice notice--warn">' + icon('losses') + '<span><b>Kopfgeld auf dich: ' + fmtNum(b.gems) + ' Gems + ' + fmtCompact(b.coins) + ' Münzen.</b> Wer dir den Thron abnimmt, kassiert alles – je länger du herrschst, desto mehr kommen.</span></div>'
-        : '<div class="notice notice--gold">' + icon('coin') + '<span><b>Kopfgeld auf ' + escapeHtml(botById[b.who].name) + ': ' + fmtNum(b.gems) + ' Gems + ' + fmtCompact(b.coins) + ' Münzen.</b> Nimm den Thron und kassiere alles.</span></div>';
+    if (b && island.type === 'megaTemple') h += b.who === 'player' ? '<div class="notice notice--warn">' + icon('losses') + '<span><b>Kopfgeld auf dich: ' + fmtNum(b.gems) + ' Edelsteine + ' + fmtCompact(b.coins) + ' Münzen.</b> Wer dir den Thron abnimmt, kassiert alles – je länger du herrschst, desto mehr kommen.</span></div>'
+        : '<div class="notice notice--gold">' + icon('coin') + '<span><b>Kopfgeld auf ' + escapeHtml(botById[b.who].name) + ': ' + fmtNum(b.gems) + ' Edelsteine + ' + fmtCompact(b.coins) + ' Münzen.</b> Nimm den Thron und kassiere alles.</span></div>';
     return h;
 }
 
@@ -7017,7 +7017,7 @@ shopPopup.addEventListener('click', e => {                 // Shop → Schilde: 
         flashHint('Friedensschild aktiv – noch ' + fmtHours(shieldUntil() - Date.now()), 3000); renderShop(); requestRender(); return; }
     const bt = e.target.closest('[data-shield]'); if (!bt) return;
     const h = +bt.dataset.shield, cost = SHIELD_PRICES[h];
-    if (gems < cost) { flashHint('Zu wenig Gems – der Schild kostet ' + cost + '.', 3000); return; }
+    if (gems < cost) { flashHint('Zu wenig Edelsteine – der Schild kostet ' + cost + '.', 3000); return; }
     gems -= cost; const stock = shieldStock(); stock[h]++; store.set('openWaterShieldStock', JSON.stringify(stock));
     updateHud(); saveGame(); renderShop();
     flashHint('Schild (' + h + ' Std.) liegt im Vorrat – unten einschalten, wann du willst.', 3500); });
@@ -7035,7 +7035,7 @@ function heroChestOpen(who, c) {                    // the same chest for you an
 }
 shopPopup.addEventListener('click', e => { const bt = e.target.closest('[data-hchest]'); if (!bt) return;
     const c = HERO_CHESTS.find(x => x.id === bt.dataset.hchest); if (!c) return;
-    if (gems < c.gems) { flashHint('Zu wenig Gems – die ' + c.name + ' kostet ' + fmtNum(c.gems) + '.', 3000); return; }
+    if (gems < c.gems) { flashHint('Zu wenig Edelsteine – die ' + c.name + ' kostet ' + fmtNum(c.gems) + '.', 3000); return; }
     if (!heroChestPool(c.minR).length) { flashHint('Alle passenden Helden haben schon 5 Sterne.', 3000); return; }
     if (!gemsWirklich('kiste:' + c.id, c.gems, bt)) return;
     gems -= c.gems; const got = heroChestOpen('player', c); updateHud(); saveGame(); renderShop();
@@ -7055,7 +7055,7 @@ function renderShop() {
     if (shopTab === 'hd' && typeof hdRender === 'function') hdRender();
     if (shopTab === 'markt' && AUF) liveHtml(document.getElementById('shopMarkt'), AUF.marktHtml());
     setText(shopGemCount, fmtCompact(Math.floor(gems)));
-    shopGemCount.title = fmtNum(Math.floor(gems)) + ' Gems';
+    shopGemCount.title = fmtNum(Math.floor(gems)) + ' Edelsteine';
     shopOpenCrateBtn.disabled = gems < CRATE_GEM_COST;
 }
 function openShop(tab) {                              // der EINE Shop (Dock); tab: gems | shield | throne | hd | markt
@@ -7074,7 +7074,7 @@ shopOpenCrateBtn.addEventListener('click', () => {
         shopCrateResult.style.display = 'block';
         delete shopCrateResult.dataset.r;
         shopCrateResult.innerHTML = '<div class="tile empty">' + icon('gem') + '</div>' +
-            '<div><b>Nicht genug Gems</b><small>Eine Kiste kostet ' + fmtNum(CRATE_GEM_COST) + ' Gems.</small></div>';
+            '<div><b>Nicht genug Edelsteine</b><small>Eine Kiste kostet ' + fmtNum(CRATE_GEM_COST) + ' Edelsteine.</small></div>';
         shopCrateResult.scrollIntoView({ block: 'nearest' });
         return;
     }
@@ -7996,7 +7996,7 @@ function defeatBoss(boss) {
     document.getElementById('rewardModalSub').textContent = boss.name + ' ist gefallen – die Beute liegt unter Events → Belohnung.';
     const list = document.getElementById('rewardModalRewards'), rd = RARITY_DEFS[WANDER_CRATE];
     list.innerHTML = '<li style="border-color:' + rd.color + '66">' + icon('shop') + '<span>Kiste</span><b style="color:' + rd.color + '">mind. ' + rd.label + '</b></li>' +
-        '<li>' + icon('gem', 'ico-gem') + '<span>Gems</span><b>+' + rewardGems + '</b></li><li>' + icon('star') + '<span>Helden-Splitter</span><b>+' + shN + '</b></li>';
+        '<li>' + icon('gem', 'ico-gem') + '<span>Edelsteine</span><b>+' + rewardGems + '</b></li><li>' + icon('star') + '<span>Helden-Splitter</span><b>+' + shN + '</b></li>';
     [...list.children].forEach((li, i) => { li.style.animationDelay = (200 + i * 120) + 'ms'; });
     bossRewardPending = true;
     setTimeout(() => { bossRewardPending = false; document.getElementById('rewardModal').hidden = false; }, 9800);   // after the fight on the map
@@ -8292,7 +8292,7 @@ function cityBlocker(id) {                        // why this building can't be 
     if (AUF && id !== 'keep') { const B = AUF.burgStufe('player');                 // Paket D: höchstens bis zur Burg-Stufe, neue Gebäude erst ab einer Burg-Stufe
         if (!lvl && AUF.BAU_AB_BURG[id] > B) return 'Braucht Burg-Stufe ' + AUF.BAU_AB_BURG[id] + ' (jetzt ' + B + ').';
         if (lvl >= AUF.stadtCap('player', id)) return 'Erst die Burg aufwerten – Gebäude gehen höchstens bis zur Burg-Stufe (' + B + ').'; }
-    if (c.builds.length >= citySlots(c)) return c.builder2 ? 'Beide Bauarbeiter sind beschäftigt.' : 'Der Bauarbeiter ist beschäftigt (' + cityDef(c.builds[0].id).name + '). Ein zweiter kostet ' + CITY_BUILDER2_GEMS + ' Gems.';
+    if (c.builds.length >= citySlots(c)) return c.builder2 ? 'Beide Bauarbeiter sind beschäftigt.' : 'Der Bauarbeiter ist beschäftigt (' + cityDef(c.builds[0].id).name + '). Ein zweiter kostet ' + CITY_BUILDER2_GEMS + ' Edelsteine.';
     return null;
 }
 function cityStartBuild(id) {
@@ -8413,7 +8413,7 @@ function updateCityBuilder() {
 }
 function cityBuyBuilder2() {
     const c = loadCity(); if (c.builder2) return;
-    if (gems < CITY_BUILDER2_GEMS) { flashHint('Zu wenig Gems – der zweite Bauarbeiter kostet ' + CITY_BUILDER2_GEMS + ' Gems.', 2500); return; }
+    if (gems < CITY_BUILDER2_GEMS) { flashHint('Zu wenig Edelsteine – der zweite Bauarbeiter kostet ' + CITY_BUILDER2_GEMS + ' Edelsteine.', 2500); return; }
     if (cityB2Armed < Date.now()) { cityB2Armed = Date.now() + 4000; updateCityBuilder(); return; }
     if (cityB2Armed - Date.now() > 3550) return;                  // ein Doppel-Tipp ist keine Bestätigung (500 Gems)
     gems -= CITY_BUILDER2_GEMS; c.builder2 = true; cityB2Armed = 0; saveCity(); saveGame(); updateHud(); sfx('upgrade');
@@ -8432,7 +8432,7 @@ function renderCitySheetTimer() {
     const tot = b.endsAt - b.startedAt, done = Date.now() - b.startedAt;
     el.style.setProperty('--p', Math.min(100, done / tot * 100) + '%');
     document.querySelector('#cityBNoteTime').textContent = fmtDuration((b.endsAt - Date.now()) / 1000);
-    setBtnLabel(document.getElementById('citySpeedBtn'), (gemsArmed('speed:' + cityBauId(cityOpenId)) ? 'Wirklich? ' : 'Fertig für ') + citySpeedCost(b.id) + ' Gems');
+    setBtnLabel(document.getElementById('citySpeedBtn'), (gemsArmed('speed:' + cityBauId(cityOpenId)) ? 'Wirklich? ' : 'Fertig für ') + citySpeedCost(b.id));   // (das Edelstein-Symbol steht schon vorn im Knopf)
     document.getElementById('citySpeedBtn').disabled = gems < citySpeedCost(b.id);
 }
 // Rohstoff-Liste oben (aufbau.js): ein Tipp woanders hin (z. B. ein Fenster öffnen) schließt sie – sie bleibt nicht über dem Fenster stehen
@@ -8476,7 +8476,7 @@ function lkBuy(kind, id, btn) {                       // Gems or Thron-Punkte; b
     if (lkHas(kind, id)) { lkUse(kind, id); return; }
     if (d.buy === 'pass') { flashHint('„' + d.name + '“ gibt es nur im Saison-Pass (Premium-Reihe) – unter „Events“.', 3000); return; }
     const cost = d.tp || d.gems || 0;
-    if (d.tp ? (throneState.pts || 0) < cost : gems < cost) { flashHint('Zu wenig ' + (d.tp ? 'Thron-Punkte' : 'Gems') + ' – „' + d.name + '“ kostet ' + fmtNum(cost) + '.', 2500); return; }
+    if (d.tp ? (throneState.pts || 0) < cost : gems < cost) { flashHint('Zu wenig ' + (d.tp ? 'Thron-Punkte' : 'Edelsteine') + ' – „' + d.name + '“ kostet ' + fmtNum(cost) + '.', 2500); return; }
     if (!d.tp && !gemsWirklich('lk:' + kind + ':' + id, cost, btn)) return;
     if (d.tp) { throneState.pts -= cost; saveThrone(); } else gems -= cost;
     if (d.buy === 'throne') throneGive('player', 'look');                   // Thronhüter + Thron-Rahmen come together
@@ -8970,7 +8970,7 @@ function hhHero(id) {
                 '<div class="hh-blk"><h3>Sterne</h3>' + hhStars(s.q) + stars + '</div>' +
                 (s.own ? '<div class="hh-blk"><h3>Wut</h3><div class="hh-qinfo"><span>' + (s.sk[0] ? (s.rage >= 100 ? 'Voll – ' + h.sk[0][0] + ' zündet im nächsten Kampf' : '+' + HERO_RAGE + ' % pro Kampf, den ' + h.name + ' führt') : 'Erst mit ' + h.sk[0][0] + ' auf Stufe 1') + '</span><b>' + Math.round(s.rage || 0) + ' %</b></div><div class="hh-bar hh-rage"><i style="width:' + Math.round(s.rage || 0) + '%"></i></div></div>' : '') +
                 '<div class="hh-blk"><div class="hh-skh"><h3>Fähigkeiten</h3>' + (s.own ? '<span class="hh-pts">' + free + (free === 1 ? ' Punkt' : ' Punkte') + ' frei</span>' : '<span class="hh-pts off">nach dem Freischalten</span>') + '</div><div class="hh-sklist">' + skills + '</div>' +
-                    (s.own ? '<p class="hh-hint">Jeder halbe Stern gibt 1 Punkt – bei 5 Sternen 10. Das reicht für 2 Fähigkeiten auf Stufe 5. Bisher ' + heroPoints(s) + ' von 10.</p><button type="button" class="hh-reset" data-hh-reset' + (spent ? '' : ' disabled') + '>' + (gemsArmed('hhreset:' + id) ? 'Wirklich? ' + icon('gem') + HERO_RESET_GEMS : 'Fähigkeiten zurücksetzen · ' + HERO_RESET_GEMS + ' Gems') + '</button>' : '') + '</div>' +
+                    (s.own ? '<p class="hh-hint">Jeder halbe Stern gibt 1 Punkt – bei 5 Sternen 10. Das reicht für 2 Fähigkeiten auf Stufe 5. Bisher ' + heroPoints(s) + ' von 10.</p><button type="button" class="hh-reset" data-hh-reset' + (spent ? '' : ' disabled') + '>' + (gemsArmed('hhreset:' + id) ? 'Wirklich? ' + icon('gem') + HERO_RESET_GEMS : 'Fähigkeiten zurücksetzen · ' + icon('gem') + HERO_RESET_GEMS) + '</button>' : '') + '</div>' +
                 '<div class="hh-blk"><h3>Werte · wenn ' + h.name + ' mitkämpft</h3><div class="hh-vals"><div><span>Angriff</span><b>+' + st.atk + ' %</b></div><div><span>Verteidigung</span><b>+' + st.def + ' %</b></div><div><span>Tempo</span><b>+' + st.spd + ' %</b></div><div><span>Gefolge</span><b>+' + fmtCompact(st.gef) + '</b></div></div>' +
                     '<p class="hh-hint">Verteidigung: weniger eigene Verluste. Gefolge: so viele Truppen kämpfen zusätzlich mit (höchstens so viele, wie der Held anführt) – wächst mit Sternen, deiner Stufe und der Heldenhalle.</p></div>' +
             '</div></div>' +
@@ -9004,7 +9004,7 @@ document.getElementById('heroHall').addEventListener('click', e => {
     const sk = e.target.closest('[data-hh-sk]:not([disabled])');
     if (sk) { if (heroDoSkill('player', hhCur, +sk.dataset.hhSk)) { sfx('upgrade'); flashHint(h.sk[+sk.dataset.hhSk][0] + ' ist jetzt auf Stufe ' + s.sk[+sk.dataset.hhSk] + '.', 2000); } return renderHeroHall(); }
     if (e.target.closest('[data-hh-reset]:not([disabled])')) {
-        if (gems < HERO_RESET_GEMS) { flashHint('Zu wenig Gems – Zurücksetzen kostet ' + HERO_RESET_GEMS + '.', 2500); return; }
+        if (gems < HERO_RESET_GEMS) { flashHint('Zu wenig Edelsteine – Zurücksetzen kostet ' + HERO_RESET_GEMS + '.', 2500); return; }
         if (!gemsWirklich('hhreset:' + hhCur, HERO_RESET_GEMS, e.target.closest('[data-hh-reset]'), true)) return;
         gems -= HERO_RESET_GEMS; s.sk = [0, 0, 0, 0]; saveHeroes(); updateHud(); saveGame(); flashHint('Fähigkeiten von ' + h.name + ' zurückgesetzt – ' + heroPoints(s) + ' Punkte frei.', 2500); return renderHeroHall(); }
     if (e.target.closest('[data-hh-swap]')) { const sel = el.querySelector('[data-hh-swap-to]'), n = s.sh, to = sel && heroById(sel.value);
@@ -9067,7 +9067,7 @@ function cityExtraHtml(id, lvl) {
                 const st = item.stars || 0, rd = RARITY_DEFS[item.rarity], cost = starGemCost(st), on = equippedItems[item.slot] === item.id;
                 return '<div class="forge-row">' + icon(EQUIPMENT_DEFS[item.slot].icon) + '<span><b class="rar-text" data-r="' + rd.key + '">' + rd.label + ' · Stufe ' + (item.level || 1) + (on ? ' <em class="forge-on">angelegt</em>' : '') + '</b>' +
                     '<small class="starbar">' + icon('star').repeat(st) + '<i>' + icon('star').repeat(Math.max(0, cap - st)) + '</i></small></span>' +
-                    (st >= cap ? '<em>' + (st >= STAR_MAX ? 'max.' : 'Schmiede ausbauen') + '</em>' : '<button type="button" class="btn btn--secondary btn--sm" data-star="' + item.id + '"' + (gems < cost ? ' disabled' : '') + '>+1 Stern · ' + cost + ' Gems</button>') + '</div>';
+                    (st >= cap ? '<em>' + (st >= STAR_MAX ? 'max.' : 'Schmiede ausbauen') + '</em>' : '<button type="button" class="btn btn--secondary btn--sm" data-star="' + item.id + '"' + (gems < cost ? ' disabled' : '') + '>+1 Stern · ' + icon('gem') + cost + '</button>') + '</div>';
             }).join('') : '<div class="forge-row is-empty">' + icon(EQUIPMENT_DEFS[forgeSlot].icon) + '<span>Keine ' + EQUIPMENT_DEFS[forgeSlot].name + ' im Besitz – Kisten gibt es im Shop.</span></div>') + '</div>';
     }
     if (id === 'hospital' && lvl) {
@@ -9105,10 +9105,10 @@ function stadtLeiste(an) {
 var teleportMode = false, teleportBis = 0;   // (bleibt nur 20 s scharf – danach kostet ein Tipp auf eine Basis keine Gems mehr aus Versehen)
 const TELEPORT_GEMS = 50;
 document.getElementById('teleportBtn').addEventListener('click', () => {
-    if (gems < TELEPORT_GEMS) { flashHint('Zum Verlegen brauchst du ' + TELEPORT_GEMS + ' Gems.', 3000); return; }
+    if (gems < TELEPORT_GEMS) { flashHint('Zum Verlegen brauchst du ' + TELEPORT_GEMS + ' Edelsteine.', 3000); return; }
     if (![...ownedIslands].some(id => id !== playerIslandId && islandById[id] && islandById[id].type === 'tower')) { flashHint('Du brauchst noch einen zweiten Turm, um die Hauptstadt zu verlegen – Tempel und Tore zählen nicht.', 3500); return; }
     closeIslandPopup(); teleportMode = true; teleportBis = Date.now() + 20000; requestRender();
-    flashHint('Tippe einen deiner Türme an – die Hauptstadt zieht dorthin (' + TELEPORT_GEMS + ' Gems). Woanders tippen bricht ab.', 5000);
+    flashHint('Tippe einen deiner Türme an – die Hauptstadt zieht dorthin (' + TELEPORT_GEMS + ' Edelsteine). Woanders tippen bricht ab.', 5000);
 });
 function teleportCapital(toId) {
     const from = playerIslandId, to = islandById[toId];
@@ -9860,7 +9860,7 @@ var levelUpTimer = null;
 function levelRewardText(level) {
     const g = levelRewardGems(level);
     return '<b>' + fmtCompact(levelRewardCoins(level)) + '</b> Münzen · <b>' + fmtCompact(levelRewardTroops(level)) + '</b> Truppen' +
-        (g ? ' · <b>' + g + '</b> Gems' : '');
+        (g ? ' · <b>' + g + '</b> Edelsteine' : '');
 }
 function queueLevelUpModal(from, to, r) {
     if (levelUpShown) {                 // several level-ups before the player taps: merge into one window
@@ -9884,8 +9884,8 @@ function renderLevelUpModal() {
     let html = '';
     if (s.coins) html += row('coin', 'Münzen', fmtNum(s.coins));
     if (s.troops) html += row('troops', 'Truppen (Heimat)', fmtNum(s.troops));
-    if (s.gems) html += row('gem', 'Gems', fmtNum(s.gems));
-    html += row('points', s.points === 1 ? 'Skillpunkt' : 'Skillpunkte', fmtNum(s.points));
+    if (s.gems) html += row('gem', 'Edelsteine', fmtNum(s.gems));
+    html += row('points', s.points === 1 ? 'Fähigkeitspunkt' : 'Fähigkeitspunkte', fmtNum(s.points));
     const list = document.getElementById('levelUpRewards');
     list.innerHTML = html;
     [...list.children].forEach((li, i) => { li.style.animationDelay = (180 + i * 110) + 'ms'; });
@@ -9947,7 +9947,7 @@ function collectPickupAt(sx, sy) {
         if (Math.hypot(s.x - sx, s.y - sy) > PICKUP_HIT_PX) continue;
         pickups.splice(i, 1);
         let label;
-        if (p.kind === 'gem') { gems += p.amount; label = '+' + fmtNum(p.amount) + (p.amount === 1 ? ' Gem' : ' Gems'); }
+        if (p.kind === 'gem') { gems += p.amount; label = '+' + fmtNum(p.amount) + (p.amount === 1 ? ' Edelstein' : ' Edelsteine'); }
         else if (p.kind === 'troops') {
             const baseId = rewardBaseId();
             if (baseId !== null) eigeneTruppenDazu(baseId, p.amount, 'fund');
@@ -10049,7 +10049,7 @@ function canConnectHalos(a, b, corridorHalfWidth) {
 // loot. Bots gather too - and whoever is sitting on a field can be driven off it by a stronger army.
 const FIELD_KINDS = {
     gold: { name: 'Goldmine', what: 'Münzen', icon: 'coin', load: 10, base: 40000, col: '#e8c547' },
-    gem:  { name: 'Edelsteinader', what: 'Gems', icon: 'gem', load: .02, base: 20, col: '#7fd0ff' },
+    gem:  { name: 'Edelsteinader', what: 'Edelsteine', icon: 'gem', load: .02, base: 20, col: '#7fd0ff' },
     // Paket D: Rohstoffe – gleiche RoK-Regel (feste Dauer, Truppen = Traglast). g = Geschlecht für „der/dem/zur/zum“
     holz:  { name: 'Holzfällerei', what: 'Holz', icon: 'wood', load: 2, base: 8000, col: '#c08a4c', roh: 'h' },
     stein: { name: 'Steinbruch', what: 'Stein', icon: 'stone', load: 2, base: 8000, col: '#aab3bd', roh: 's', g: 'm' },
@@ -10244,7 +10244,7 @@ function openFieldSheet(f) {
         '<div class="marker-head"><b>' + icon(K.icon) + ' ' + K.name + '</b><button class="btn-x" type="button" data-fclose aria-label="Schließen">' + icon('close') + '</button></div>' +
         '<div class="field-lines"><span>Vorrat</span><b>' + (st.left <= 0 ? 'erschöpft – wächst in ' + uhrHtml(st.regenAt, 'clock') + ' nach' : fmtNum(Math.floor(st.left)) + ' ' + K.what) + '</b>' +
         '<span>Besetzt</span><b>' + (o ? fieldWhoName(o.who) + (o.hero && heroById(o.hero) ? ' mit ' + heroById(o.hero).name + (o.hero2 && heroById(o.hero2) ? ' & ' + heroById(o.hero2).name : '') : '') + ' · ' + fmtCompact(o.troops) + ' Truppen · ' + fmtNum(Math.floor(o.got)) + ' gesammelt' : 'frei') + '</b>' +
-        '<span>Tragen</span><b>' + (K.load >= 1 ? (K.load * (AUF ? AUF.traglast('player') : 1)).toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' ' + K.what + ' pro Truppe' : '1 Gem pro ' + Math.round(1 / K.load) + ' Truppen') + '</b></div>' +
+        '<span>Tragen</span><b>' + (K.load >= 1 ? (K.load * (AUF ? AUF.traglast('player') : 1)).toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' ' + K.what + ' pro Truppe' : '1 Edelstein pro ' + Math.round(1 / K.load) + ' Truppen') + '</b></div>' +
         (mine ? '<button class="btn btn--secondary btn--sm" type="button" data-frecall>' + icon('recall') + '<span>Mit Beute heimkehren</span></button>' :
          src === null ? '<div class="notice">' + icon('lock') + '<span>Keine deiner Basen mit Truppen kommt hierher.</span></div>' :
          o && ownerShielded(o.who) ? '<div class="notice notice--gold">' + icon('shield') + '<span>' + fieldWhoName(o.who) + ' steht unter einem Friedensschild (noch ' + uhrHtml(ownerShieldUntil(o.who)) + ') – die Sammler dort kann niemand angreifen.</span></div>' :
@@ -10611,7 +10611,7 @@ function barbSheetHtml() {
         '<div class="field-lines"><span>' + (dead ? 'Neuer Boss in' : 'Verschwindet in') + '</span>' + mid + '<span>Deine Angriffe</span><b>' + rec.h + ' / ' + dbossHitsMax() + ' heute</b>' +
         '<span>Dein Schaden</span><b>' + (mine >= 0 ? fmtCompact(rk[mine][1]) + ' · Platz ' + (mine + 1) : '–') + (barbOut('player', 'b') ? ' <small>· Angriff unterwegs</small>' : '') + '</b></div>' +
         (rk.length ? '<ol class="barb-rank">' + rk.slice(0, 5).map(row).join('') + (mine >= 5 ? row(rk[mine], mine) : '') + '</ol>' : '<div class="notice">' + icon('info') + '<span>Noch hat niemand angegriffen.</span></div>');
-    const rules = '<div class="barb-note">Pro Angriff Münzen nach Schaden, ein Viertel der Kämpfer fällt, höchstens 5 % Leben pro Angriff. Fällt der Boss, gibt es für alle nach Rang Gems, Kisten und Splitter – Platz 1 bis 3 extra. Entkommt er, bekommen alle, die getroffen haben, etwas Kleines.</div>';
+    const rules = '<div class="barb-note">Pro Angriff Münzen nach Schaden, ein Viertel der Kämpfer fällt, höchstens 5 % Leben pro Angriff. Fällt der Boss, gibt es für alle nach Rang Edelsteine, Kisten und Splitter – Platz 1 bis 3 extra. Entkommt er, bekommen alle, die getroffen haben, etwas Kleines.</div>';
     if (v.kind === 'boss') {
         const src = barbSource(b, 1, true);
         return bossHtml + (dead ? '' : rec.h >= dbossHitsMax() ? '<div class="notice notice--gold">' + icon('hourglass') + '<span>Heute keine Angriffe mehr – morgen wieder.</span></div>' :
@@ -11024,7 +11024,7 @@ function drSheetHtml(head) {
         (rk.length ? '<ol class="barb-rank">' + rk.slice(0, 5).map(row).join('') + (mine >= 5 ? row(rk[mine], mine) : '') + '</ol>' : '') +
         (dead ? '' : hits >= DR_HITS ? '<div class="notice notice--gold">' + icon('hourglass') + '<span>Du hast alle ' + DR_HITS + ' Angriffe gemacht – jetzt sind die anderen dran.</span></div>' :
             src === null ? '<div class="notice">' + icon('lock') + '<span>Keine deiner Basen hat Truppen.</span></div>' : barbAttackHtml(islandTroops[src] || 0, (islandTroops[src] || 0) * .5, src, 'Angreifen')) +
-        '<div class="barb-note">Höchstens 2 % Leben pro Angriff, ein Drittel der Kämpfer fällt. Fällt er: Platz 1 epische Kiste, Platz 2–10 seltene Kiste, alle anderen Gems und Splitter. Entkommt er: alle etwas Kleines.</div>';
+        '<div class="barb-note">Höchstens 2 % Leben pro Angriff, ein Drittel der Kämpfer fällt. Fällt er: Platz 1 epische Kiste, Platz 2–10 seltene Kiste, alle anderen Edelsteine und Splitter. Entkommt er: alle etwas Kleines.</div>';
 }
 
 // ---- die Ereignisse im Events-Fenster (Dock → Events, untere Reiter): Termine, Uhren, Ranglisten ----
@@ -11657,7 +11657,7 @@ multiAttackConfirmBtn.addEventListener('click', () => {
     const targets = multiAttackTargets.slice();
     if (sourceId === null || targets.length === 0) return;
     if (gems < MULTI_ATTACK_GEM_COST) {
-        flashHint('Nicht genug Gems für den Mehrfachangriff.', 3000);
+        flashHint('Nicht genug Edelsteine für den Mehrfachangriff.', 3000);
         return;
     }
     const available = Math.floor((islandTroops[sourceId] || 0) * multiAttackShare);
@@ -11736,7 +11736,7 @@ function saisonTakt() {                               // (nur wer rechnet) Termi
     saisonNeu(now);
 }
 setInterval(saisonTakt, 5000);
-const saisonBaldText = ende => { const t = Math.max(1, Math.round((ende - Date.now()) / 864e5)); return 'In ' + t + (t === 1 ? ' Tag' : ' Tagen') + ' beginnt eine neue Welt-Saison (' + evWann(ende) + ' Uhr). Deine Hauptstadt mit Burg, Gebäuden, Forschung, Helden, Ausrüstung, Gems und Rohstoffen bleibt – Basen, Truppen, Münzen, Stufe und Bündnisse fangen neu an. Die besten 10 bekommen Gems und einen Titel für immer.'; };   // (nach der echten Restzeit – die Nachricht kann später gelesen werden)
+const saisonBaldText = ende => { const t = Math.max(1, Math.round((ende - Date.now()) / 864e5)); return 'In ' + t + (t === 1 ? ' Tag' : ' Tagen') + ' beginnt eine neue Welt-Saison (' + evWann(ende) + ' Uhr). Deine Hauptstadt mit Burg, Gebäuden, Forschung, Helden, Ausrüstung, Edelsteine und Rohstoffen bleibt – Basen, Truppen, Münzen, Stufe und Bündnisse fangen neu an. Die besten 10 bekommen Edelsteine und einen Titel für immer.'; };   // (nach der echten Restzeit – die Nachricht kann später gelesen werden)
 function saisonAnkuendigen() {
     if (window.WELT) { for (const id in WELT.menschen) { const uid = parseInt(id.slice(1), 10); if (uid > 0) WELT.nachricht(uid, { art: 'saisonBald', nr: saison.nr, ende: saison.ende }, 'saisonBald|' + saison.nr); } }
     else afterSplash(() => flashHint(saisonBaldText(saison.ende), 12000, true));
@@ -11818,10 +11818,10 @@ function saisonChip(now) {
 function saisonKarte() {
     const S = saison; if (!S) return '';
     const now = Date.now(), bald = S.ende - now <= SAISON_BALD_MS;
-    const preise = 'Platz 1: ' + fmtNum(SAISON_PREISE[0]) + ' · 2: ' + fmtNum(SAISON_PREISE[1]) + ' · 3: ' + fmtNum(SAISON_PREISE[2]) + ' · 4–10: ' + fmtNum(SAISON_PREISE[3]) + ' Gems + Saison-Titel für immer';
+    const preise = 'Platz 1: ' + fmtNum(SAISON_PREISE[0]) + ' · 2: ' + fmtNum(SAISON_PREISE[1]) + ' · 3: ' + fmtNum(SAISON_PREISE[2]) + ' · 4–10: ' + fmtNum(SAISON_PREISE[3]) + ' Edelsteine + Saison-Titel für immer';
     const last = S.last && S.last.top && S.last.top.length ? '<div class="lb-gap">Saison ' + S.last.nr + ' · Top 10</div>' + evRangHtml(S.last.top.map(([w, v]) => [lokalId(w), v]), v => fmtCompact(v)) : '';
     return evKarte('crown', 'Welt-Saison ' + S.nr, now < S.ende ? 'Neue Saison in ' + evUhr(S.ende) : S.halt ? 'Neue Saison: der Termin folgt' : 'Die neue Saison beginnt gleich …',
-        '<div class="field-lines"><span>Neustart</span><b>' + (S.halt ? 'vom Admin' : evWann(S.ende) + ' Uhr') + '</b><span>Bleibt</span><b>Hauptstadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Gems, Holz/Stein/Eisen, Gekauftes</b>' +
+        '<div class="field-lines"><span>Neustart</span><b>' + (S.halt ? 'vom Admin' : evWann(S.ende) + ' Uhr') + '</b><span>Bleibt</span><b>Hauptstadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Edelsteine, Holz/Stein/Eisen, Gekauftes</b>' +
         '<span>Neu</span><b>Basen, Truppen, Münzen, Stufe, Bündnisse – die Hauptstadt zieht an einen neuen Platz am Rand</b><span>Preise</span><b>Die besten 10 nach Macht: ' + preise + '</b></div>', bald ? 'is-warn' : '') + last;
 }
 // ---- (Handy) Nachrichten vom Weltrechner: Ankündigung, neue Saison ----
@@ -11855,7 +11855,7 @@ function saisonWeltZurueck() {
     WELT.saisonHalt = true; flashHint('Die Welt wurde auf einen früheren Stand zurückgesetzt – das Spiel lädt neu …', 5000); setTimeout(() => location.reload(), 1500);
 }
 if (saisonZurueckGeladen) afterSplash(() => setTimeout(() => flashHint('Die Welt wurde auf einen früheren Stand zurückgesetzt (Saison ' + saisonZurueckGeladen + ') – dein Spielstand passt wieder dazu.', 8000), 1500));
-if (saisonNeuGeladen) afterSplash(() => setTimeout(() => flashHint('Welt-Saison ' + saisonNeuGeladen + ' hat begonnen! Deine Hauptstadt steht an einem neuen Platz am Rand – Burg, Gebäude, Forschung, Helden, Ausrüstung, Gems und Rohstoffe sind geblieben.', 9000), 1500));
+if (saisonNeuGeladen) afterSplash(() => setTimeout(() => flashHint('Welt-Saison ' + saisonNeuGeladen + ' hat begonnen! Deine Hauptstadt steht an einem neuen Platz am Rand – Burg, Gebäude, Forschung, Helden, Ausrüstung, Edelsteine und Rohstoffe sind geblieben.', 9000), 1500));
 // ===== UI boot (design-spec §4.4): constants into the markup, shop odds,
 // HUD shortcuts, first-launch toast, player plate =====
 for (const el of document.querySelectorAll('[data-const]'))
@@ -11925,7 +11925,7 @@ function templeBonusLine(island) {
     const heldSince = templeHoldSince[island.id];
     const heldMin = heldSince ? Math.floor((Date.now() - heldSince) / 60000) : 0;
     return '<div class="notice notice--gold">' + icon('gem') + '<span>+' +
-        fmtNum(TEMPLE_GEMS_PER_TICK * mult * 3600000 / productionTickMs()) + ' Gems pro Stunde · +' +
+        fmtNum(TEMPLE_GEMS_PER_TICK * mult * 3600000 / productionTickMs()) + ' Edelsteine pro Stunde · +' +
         fmtNum(TEMPLE_COIN_BONUS_PER_TICK * mult) + ' Münzen · +' + fmtNum(TEMPLE_TROOP_BONUS_PER_TICK * mult) + ' Truppen pro Tick' +
         (heldSince ? ' · gehalten seit ' + heldMin + ' Min. (×' +
             templeHoldMultiplier(island.id).toLocaleString('de-DE', { maximumFractionDigits: 2 }) + ')' : '') + '</span></div>';
@@ -12027,8 +12027,8 @@ function renderPopup() {
                 (isCapital(island.id) ? '<div class="notice notice--gold">' + icon('castle') + '<span>Fällt nie · Sieg = ' + Math.round(HAUPT_BEUTE * 100) + ' % Beute über dem Schutz' + (brennt(island.id) ? ' · brennt gerade' : '') + '</span></div>' : '') +
                 (island.type === 'gate' && !ownerBot ? '<div class="notice notice--gold">' + icon('lock') + '<span>Tor: Unbesetzt ist es verschlossen – erobere es, um über die Brücke zu kommen. Wer es besitzt, geht kostenlos durch und bestimmt die Maut für alle anderen.</span></div>' : '') +
                 (island.type === 'megaTemple' ? '<div class="notice">' + icon('rank') + '<span>' + (ownerBot ? escapeHtml(ownerBot.name) + ' verteilt die Titel (neu alle 3 Min.).' : 'Niemand verteilt gerade Titel.') + '</span><button type="button" class="btn btn--secondary btn--sm" data-view-titles>Titel ansehen</button></div>' : '') +
-                (isTemple ? '<div class="notice notice--gold">' + icon('temple') + '<span>' + (island.type === 'megaTemple' ? 'Thron der Meere: wer ihn hält, trägt die Krone – +25 % Münzen und Truppen im ganzen Reich und alle 3 Min. ' + THRONE_PTS_MEGA + ' Thron-Punkte. Die Wächter-Tempel feuern auf ihn – nächster Beschuss in <b data-throne-fire>' + fmtClock((throneState.nextFire - Date.now()) / 1000) + '</b>.' : island.guardian ? 'Wächter-Tempel: 3-facher Tempel-Bonus und alle 3 Min. ' + THRONE_PTS_GUARD + ' Thron-Punkte. Gehört er nicht dem Herrscher, feuert er alle 3 Min. auf den Thron.' : 'Tempel: gibt Produktion, Gems und Münzen, sobald erobert.') + '</span></div>' : '') +
-                (bossAt(island.id) ? '<div class="notice notice--gold">' + icon('shop') + '<span><b>Belohnung:</b> ' + RARITY_DEFS[WANDER_CRATE].label + ' Kiste + ' + WANDER_REWARD_GEMS + ' Gems · zieht weiter in <b data-boss-clock>' + fmtClock((bossAt(island.id).campUntil - Date.now()) / 1000) + '</b></span></div>' : '') +
+                (isTemple ? '<div class="notice notice--gold">' + icon('temple') + '<span>' + (island.type === 'megaTemple' ? 'Thron der Meere: wer ihn hält, trägt die Krone – +25 % Münzen und Truppen im ganzen Reich und alle 3 Min. ' + THRONE_PTS_MEGA + ' Thron-Punkte. Die Wächter-Tempel feuern auf ihn – nächster Beschuss in <b data-throne-fire>' + fmtClock((throneState.nextFire - Date.now()) / 1000) + '</b>.' : island.guardian ? 'Wächter-Tempel: 3-facher Tempel-Bonus und alle 3 Min. ' + THRONE_PTS_GUARD + ' Thron-Punkte. Gehört er nicht dem Herrscher, feuert er alle 3 Min. auf den Thron.' : 'Tempel: gibt Produktion, Edelsteine und Münzen, sobald erobert.') + '</span></div>' : '') +
+                (bossAt(island.id) ? '<div class="notice notice--gold">' + icon('shop') + '<span><b>Belohnung:</b> ' + RARITY_DEFS[WANDER_CRATE].label + ' Kiste + ' + WANDER_REWARD_GEMS + ' Edelsteine · zieht weiter in <b data-boss-clock>' + fmtClock((bossAt(island.id).campUntil - Date.now()) / 1000) + '</b></span></div>' : '') +
                 (scoutEnRoute ? '<div class="notice notice--warn">' + icon('hourglass') + '<span>Späher bereits unterwegs …</span></div>' : '') +
                 (shieldOw ? '<div class="notice notice--gold">' + icon('shield') + '<span>Friedensschild – ' + escapeHtml(shieldOw.name) + ' ist noch ' + uhrHtml(ownerShieldUntil(shieldOw.id)) +
                     ' geschützt. Solange der Schild hält, kann niemand die Türme von ' + escapeHtml(shieldOw.name) + ' angreifen (Tore und Tempel schon) – Spähen geht.</span></div>' : ''));
@@ -12293,7 +12293,7 @@ function renderRecallPreview(island) {
     const sources = recallSources(island.id), total = sources.reduce((a, id) => a + (islandTroops[id] || 0), 0);
     const f = previewFraction || 1, come = sources.reduce((a, id) => a + Math.floor((islandTroops[id] || 0) * f), 0), big = fmtNum;
     popupOverline.textContent = 'Truppen sammeln';
-    popupSub.innerHTML = icon('send') + '<span>' + (sources.length === 1 ? '1 Basis' : sources.length + ' Basen') + ' im Umkreis</span><span class="sep"></span>' + icon('gem') + '<span>' + RECALL_GEM_COST + ' Gem</span>';
+    popupSub.innerHTML = icon('send') + '<span>' + (sources.length === 1 ? '1 Basis' : sources.length + ' Basen') + ' im Umkreis</span><span class="sep"></span>' + icon('gem') + '<span>' + RECALL_GEM_COST + ' Edelstein</span>';
     popupStats.dataset.preview = 'recall';
     popupStats.innerHTML = '<div class="stat-grid">' +
             statTile('Hier jetzt', 'troops', big(islandTroops[island.id] || 0)) +
@@ -12471,7 +12471,7 @@ function handleTap(screenX, screenY) {
     if (teleportMode) {
         teleportMode = false; requestRender();
         const isl = pickIslandAtScreen(screenX, screenY);
-        if (isl && ownedIslands.has(isl.id) && isl.id !== playerIslandId && isl.type === 'tower') { if (teleportCapital(isl.id) === false) flashHint('Verlegen geht gerade nicht (genug Gems? frei?).', 2500); }
+        if (isl && ownedIslands.has(isl.id) && isl.id !== playerIslandId && isl.type === 'tower') { if (teleportCapital(isl.id) === false) flashHint('Verlegen geht gerade nicht (genug Edelsteine? frei?).', 2500); }
         else if (isl && ownedIslands.has(isl.id) && isl.id !== playerIslandId) flashHint('Die Hauptstadt kann nur in einen Turm ziehen – nicht in Tempel, Tore oder den Thron.', 3500);
         else flashHint('Verlegen abgebrochen.', 2000);
         return;

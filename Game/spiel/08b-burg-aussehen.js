@@ -37,7 +37,7 @@ function lkBuy(kind, id, btn) {                       // Gems or Thron-Punkte; b
     if (lkHas(kind, id)) { lkUse(kind, id); return; }
     if (d.buy === 'pass') { flashHint('„' + d.name + '“ gibt es nur im Saison-Pass (Premium-Reihe) – unter „Events“.', 3000); return; }
     const cost = d.tp || d.gems || 0;
-    if (d.tp ? (throneState.pts || 0) < cost : gems < cost) { flashHint('Zu wenig ' + (d.tp ? 'Thron-Punkte' : 'Gems') + ' – „' + d.name + '“ kostet ' + fmtNum(cost) + '.', 2500); return; }
+    if (d.tp ? (throneState.pts || 0) < cost : gems < cost) { flashHint('Zu wenig ' + (d.tp ? 'Thron-Punkte' : 'Edelsteine') + ' – „' + d.name + '“ kostet ' + fmtNum(cost) + '.', 2500); return; }
     if (!d.tp && !gemsWirklich('lk:' + kind + ':' + id, cost, btn)) return;
     if (d.tp) { throneState.pts -= cost; saveThrone(); } else gems -= cost;
     if (d.buy === 'throne') throneGive('player', 'look');                   // Thronhüter + Thron-Rahmen come together

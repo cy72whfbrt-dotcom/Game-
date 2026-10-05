@@ -82,7 +82,7 @@
     <span class="hud-me-text"><b id="hudName">Du</b><small id="hudRankLine">Bronze</small></span>
   </button>
   <div class="res res--coin" title="Münzen"><svg class="icon"><use href="#i-coin"/></svg><b id="coinCount">0</b></div>
-  <div class="res res--gem" title="Gems"><svg class="icon"><use href="#i-gem"/></svg><b id="gemCount">0</b></div>
+  <div class="res res--gem" title="Edelsteine"><svg class="icon"><use href="#i-gem"/></svg><b id="gemCount">0</b></div>
   <div class="res res--troop" title="Truppen"><svg class="icon"><use href="#i-troops"/></svg><b id="troopCount">0</b></div>
   <button id="hudRoh" class="res res--roh" type="button" title="Rohstoffe" aria-label="Rohstoffe"><svg class="icon"><use href="#i-crate"/></svg><span class="roh-mini"><span class="roh-v roh-h"><svg class="icon"><use href="#i-wood"/></svg><b data-r="h">0</b></span><span class="roh-v roh-s"><svg class="icon"><use href="#i-stone"/></svg><b data-r="s">0</b></span><span class="roh-v roh-e"><svg class="icon"><use href="#i-iron"/></svg><b data-r="e">0</b></span></span></button>
 </div>
@@ -98,7 +98,7 @@
   <button id="battleLogBtn" class="nav-btn" type="button" title="Kampf: Märsche und Berichte"><svg class="icon"><use href="#i-battlelog"/></svg><span class="nav-l">Kampf</span><span id="battleLogBadge" class="badge" style="display:none">0</span></button>
   <button id="goalsBtn" class="nav-btn" type="button" title="Events: Aufgaben, Belohnungen, Erfolge, Pass, Wochen-Event, Invasion, Drache, Boss"><svg class="icon"><use href="#i-event"/></svg><span class="nav-l">Events</span><span id="goalsBadge" class="badge" style="display:none">0</span></button>
   <button id="shopBtn" class="nav-btn" type="button" title="Shop: Kisten, Schilde, Thron, Händler, Markt"><svg class="icon"><use href="#i-shop"/></svg><span class="nav-l">Shop</span></button>
-  <button id="profileBtn" class="nav-btn" type="button" title="Profil: Spieler, Ausrüstung, Skills, Rangliste, Einstellungen"><svg class="icon"><use href="#i-profile"/></svg><span class="nav-l">Profil</span></button>
+  <button id="profileBtn" class="nav-btn" type="button" title="Profil: Spieler, Ausrüstung, Fähigkeiten, Rangliste, Einstellungen"><svg class="icon"><use href="#i-profile"/></svg><span class="nav-l">Profil</span></button>
 </nav>
 
 <!-- Map controls: nur Kartensachen -->

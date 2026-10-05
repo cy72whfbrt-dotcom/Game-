@@ -56,7 +56,7 @@ shopPopup.addEventListener('click', e => {                 // Shop → Schilde: 
         flashHint('Friedensschild aktiv – noch ' + fmtHours(shieldUntil() - Date.now()), 3000); renderShop(); requestRender(); return; }
     const bt = e.target.closest('[data-shield]'); if (!bt) return;
     const h = +bt.dataset.shield, cost = SHIELD_PRICES[h];
-    if (gems < cost) { flashHint('Zu wenig Gems – der Schild kostet ' + cost + '.', 3000); return; }
+    if (gems < cost) { flashHint('Zu wenig Edelsteine – der Schild kostet ' + cost + '.', 3000); return; }
     gems -= cost; const stock = shieldStock(); stock[h]++; store.set('openWaterShieldStock', JSON.stringify(stock));
     updateHud(); saveGame(); renderShop();
     flashHint('Schild (' + h + ' Std.) liegt im Vorrat – unten einschalten, wann du willst.', 3500); });
@@ -74,7 +74,7 @@ function heroChestOpen(who, c) {                    // the same chest for you an
 }
 shopPopup.addEventListener('click', e => { const bt = e.target.closest('[data-hchest]'); if (!bt) return;
     const c = HERO_CHESTS.find(x => x.id === bt.dataset.hchest); if (!c) return;
-    if (gems < c.gems) { flashHint('Zu wenig Gems – die ' + c.name + ' kostet ' + fmtNum(c.gems) + '.', 3000); return; }
+    if (gems < c.gems) { flashHint('Zu wenig Edelsteine – die ' + c.name + ' kostet ' + fmtNum(c.gems) + '.', 3000); return; }
     if (!heroChestPool(c.minR).length) { flashHint('Alle passenden Helden haben schon 5 Sterne.', 3000); return; }
     if (!gemsWirklich('kiste:' + c.id, c.gems, bt)) return;
     gems -= c.gems; const got = heroChestOpen('player', c); updateHud(); saveGame(); renderShop();
@@ -94,7 +94,7 @@ function renderShop() {
     if (shopTab === 'hd' && typeof hdRender === 'function') hdRender();
     if (shopTab === 'markt' && AUF) liveHtml(document.getElementById('shopMarkt'), AUF.marktHtml());
     setText(shopGemCount, fmtCompact(Math.floor(gems)));
-    shopGemCount.title = fmtNum(Math.floor(gems)) + ' Gems';
+    shopGemCount.title = fmtNum(Math.floor(gems)) + ' Edelsteine';
     shopOpenCrateBtn.disabled = gems < CRATE_GEM_COST;
 }
 function openShop(tab) {                              // der EINE Shop (Dock); tab: gems | shield | throne | hd | markt
@@ -113,7 +113,7 @@ shopOpenCrateBtn.addEventListener('click', () => {
         shopCrateResult.style.display = 'block';
         delete shopCrateResult.dataset.r;
         shopCrateResult.innerHTML = '<div class="tile empty">' + icon('gem') + '</div>' +
-            '<div><b>Nicht genug Gems</b><small>Eine Kiste kostet ' + fmtNum(CRATE_GEM_COST) + ' Gems.</small></div>';
+            '<div><b>Nicht genug Edelsteine</b><small>Eine Kiste kostet ' + fmtNum(CRATE_GEM_COST) + ' Edelsteine.</small></div>';
         shopCrateResult.scrollIntoView({ block: 'nearest' });
         return;
     }

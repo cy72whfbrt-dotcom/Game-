@@ -17,7 +17,7 @@
   <div id="profileTabs" class="tabs" role="tablist">
     <button id="tabBtnInfo" class="tab active" type="button" role="tab"><svg class="icon"><use href="#i-profile"/></svg><span>Spieler</span></button>
     <button id="tabBtnEquip" class="tab" type="button" role="tab"><svg class="icon"><use href="#i-shield"/></svg><span>Ausrüstung</span></button>
-    <button id="tabBtnSkills" class="tab" type="button" role="tab"><svg class="icon"><use href="#i-star"/></svg><span>Skills</span></button>
+    <button id="tabBtnSkills" class="tab" type="button" role="tab"><svg class="icon"><use href="#i-star"/></svg><span>Fähigkeiten</span></button>
     <button id="tabBtnRank" class="tab" type="button" role="tab"><svg class="icon"><use href="#i-rank"/></svg><span>Rangliste</span></button>
     <button id="tabBtnSet" class="tab" type="button" role="tab"><svg class="icon"><use href="#i-gear"/></svg><span>Einstellungen</span></button>
   </div>
@@ -110,7 +110,7 @@
         <p><b>Kampf</b> → deine Märsche und alle Berichte.</p>
         <p><b>Events</b> → Aufgaben, Belohnungen, Erfolge, Pass, Wochen-Event, Invasion, Drache, Tagesboss und Lager.</p>
         <p><b>Shop</b> → Kisten, Friedensschilde, Thron-Shop, Händler, Markt.</p>
-        <p><b>Profil</b> → Spieler, Aussehen, Ausrüstung, Skills, Rangliste, Einstellungen.</p>
+        <p><b>Profil</b> → Spieler, Aussehen, Ausrüstung, Fähigkeiten, Rangliste, Einstellungen.</p>
         <p><b>Karte</b> → Basis antippen: angreifen, Truppen senden, aufwerten. Felder: sammeln. Mitte: wer den Mega-Tempel hält, herrscht.</p>
       </div>
       <div class="sect"><h4>Info</h4></div>
@@ -242,7 +242,7 @@
   <header class="phead">
     <div class="emblem emblem--gold"><svg class="icon"><use href="#i-shop"/></svg></div>
     <div class="phead-text"><div class="overline">Kaufen &amp; Tauschen</div><h3 id="shopTitle" class="ptitle">Shop</h3>
-      <div class="psub"><span class="pill pill--gem"><svg class="icon"><use href="#i-gem"/></svg><b id="shopGemCount">0</b><small>Gems</small></span><span class="pill pill--throne"><svg class="icon"><use href="#i-crown"/></svg><b id="shopThroneCount">0</b><small>Thron</small></span></div></div>
+      <div class="psub"><span class="pill pill--gem"><svg class="icon"><use href="#i-gem"/></svg><b id="shopGemCount">0</b><small>Edelsteine</small></span><span class="pill pill--throne"><svg class="icon"><use href="#i-crown"/></svg><b id="shopThroneCount">0</b><small>Thron</small></span></div></div>
     <button id="shopCloseBtn" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button>
   </header>
   <div id="shopTabs" class="tabs mail-tabs" role="tablist">

@@ -42,7 +42,7 @@ function collectPickupAt(sx, sy) {
         if (Math.hypot(s.x - sx, s.y - sy) > PICKUP_HIT_PX) continue;
         pickups.splice(i, 1);
         let label;
-        if (p.kind === 'gem') { gems += p.amount; label = '+' + fmtNum(p.amount) + (p.amount === 1 ? ' Gem' : ' Gems'); }
+        if (p.kind === 'gem') { gems += p.amount; label = '+' + fmtNum(p.amount) + (p.amount === 1 ? ' Edelstein' : ' Edelsteine'); }
         else if (p.kind === 'troops') {
             const baseId = rewardBaseId();
             if (baseId !== null) eigeneTruppenDazu(baseId, p.amount, 'fund');
@@ -144,7 +144,7 @@ function canConnectHalos(a, b, corridorHalfWidth) {
 // loot. Bots gather too - and whoever is sitting on a field can be driven off it by a stronger army.
 const FIELD_KINDS = {
     gold: { name: 'Goldmine', what: 'Münzen', icon: 'coin', load: 10, base: 40000, col: '#e8c547' },
-    gem:  { name: 'Edelsteinader', what: 'Gems', icon: 'gem', load: .02, base: 20, col: '#7fd0ff' },
+    gem:  { name: 'Edelsteinader', what: 'Edelsteine', icon: 'gem', load: .02, base: 20, col: '#7fd0ff' },
     // Paket D: Rohstoffe – gleiche RoK-Regel (feste Dauer, Truppen = Traglast). g = Geschlecht für „der/dem/zur/zum“
     holz:  { name: 'Holzfällerei', what: 'Holz', icon: 'wood', load: 2, base: 8000, col: '#c08a4c', roh: 'h' },
     stein: { name: 'Steinbruch', what: 'Stein', icon: 'stone', load: 2, base: 8000, col: '#aab3bd', roh: 's', g: 'm' },
@@ -339,7 +339,7 @@ function openFieldSheet(f) {
         '<div class="marker-head"><b>' + icon(K.icon) + ' ' + K.name + '</b><button class="btn-x" type="button" data-fclose aria-label="Schließen">' + icon('close') + '</button></div>' +
         '<div class="field-lines"><span>Vorrat</span><b>' + (st.left <= 0 ? 'erschöpft – wächst in ' + uhrHtml(st.regenAt, 'clock') + ' nach' : fmtNum(Math.floor(st.left)) + ' ' + K.what) + '</b>' +
         '<span>Besetzt</span><b>' + (o ? fieldWhoName(o.who) + (o.hero && heroById(o.hero) ? ' mit ' + heroById(o.hero).name + (o.hero2 && heroById(o.hero2) ? ' & ' + heroById(o.hero2).name : '') : '') + ' · ' + fmtCompact(o.troops) + ' Truppen · ' + fmtNum(Math.floor(o.got)) + ' gesammelt' : 'frei') + '</b>' +
-        '<span>Tragen</span><b>' + (K.load >= 1 ? (K.load * (AUF ? AUF.traglast('player') : 1)).toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' ' + K.what + ' pro Truppe' : '1 Gem pro ' + Math.round(1 / K.load) + ' Truppen') + '</b></div>' +
+        '<span>Tragen</span><b>' + (K.load >= 1 ? (K.load * (AUF ? AUF.traglast('player') : 1)).toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' ' + K.what + ' pro Truppe' : '1 Edelstein pro ' + Math.round(1 / K.load) + ' Truppen') + '</b></div>' +
         (mine ? '<button class="btn btn--secondary btn--sm" type="button" data-frecall>' + icon('recall') + '<span>Mit Beute heimkehren</span></button>' :
          src === null ? '<div class="notice">' + icon('lock') + '<span>Keine deiner Basen mit Truppen kommt hierher.</span></div>' :
          o && ownerShielded(o.who) ? '<div class="notice notice--gold">' + icon('shield') + '<span>' + fieldWhoName(o.who) + ' steht unter einem Friedensschild (noch ' + uhrHtml(ownerShieldUntil(o.who)) + ') – die Sammler dort kann niemand angreifen.</span></div>' :

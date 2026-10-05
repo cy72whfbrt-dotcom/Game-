@@ -143,7 +143,7 @@ function renderCombatLog() {
         if (g.heroOnly) return '<div class="logGear"><div class="logGearHeroes">' + heroes + '</div></div>';
         return '<div class="logGear"><div class="logGearHead">Stufe ' + g.lvl + (g.title ? ' · Titel ' + escapeHtml(g.title) : '') + '</div>' +
             '<div class="logGearItems">' + tiles + '</div>' + (heroes ? '<div class="logGearHeroes">' + heroes + '</div>' : '') +
-            '<div class="logGearMeta">Skill Angriff ' + g.skills[0] + ' · Verteidigung ' + g.skills[1] + '<br>Mauer ' + g.city[0] + ' · Krankenhaus ' + g.city[1] + ' · Heldenhalle ' + g.city[2] + '</div></div>'; };
+            '<div class="logGearMeta">Fähigkeit Angriff ' + g.skills[0] + ' · Verteidigung ' + g.skills[1] + '<br>Mauer ' + g.city[0] + ' · Krankenhaus ' + g.city[1] + ' · Heldenhalle ' + g.city[2] + '</div></div>'; };
     const fieldHeroLine = e => [[e.attacker, e.hA], [e.defender, e.hD]].map(([n, t]) => t ? ' · ' + (n === 'Du' ? 'dein Held ' : escapeHtml(n) + ' mit ') + escapeHtml(t) : '').join('');   // who led out in the open
     const fieldHeroDet = e => e.hx ? '<details><summary>Dein Held</summary>' + gearHtml({ items: [], lvl: playerLvl, hx: e.hx, skills: [], city: [], heroOnly: 1 }) + '</details>' : undefined;
     const karte = (e, kind, ic, badge, title, sub, bar, chips, det) => logRowHtml(kind, ic, logBadge(badge[0], badge[1]) + title, sub, ago(e), (bar || '') + logChips(chips) + (det || ''));   // jede Karte gleich aufgebaut
@@ -198,7 +198,7 @@ function renderCombatLog() {
         }
         if (entry.type === 'ev') return karte(entry, entry.gut ? 'win' : 'loss', entry.ic || 'attack', [entry.gut ? 'win' : 'loss', escapeHtml(String(entry.badge || ''))], escapeHtml(entry.title || ''), escapeHtml(entry.txt || ''));   // Events (Invasion, Drache)
         if (entry.type === 'dbossWin') return karte(entry, 'win', 'crown', ['win', 'Boss gefallen'], escapeHtml(entry.name), 'Preis liegt im Abholfach', '',
-            [['rank', 'Platz ' + entry.rank + ' von ' + entry.of], ['attack', chipN(entry.dmg) + ' Schaden'], entry.gems > 0 && ['gem', '+' + chipN(entry.gems) + ' Gems', 'gut'], entry.crate && ['crate', escapeHtml(entry.crate), 'gut'], entry.sh && ['star', escapeHtml(entry.sh), 'gut']]);
+            [['rank', 'Platz ' + entry.rank + ' von ' + entry.of], ['attack', chipN(entry.dmg) + ' Schaden'], entry.gems > 0 && ['gem', '+' + chipN(entry.gems) + ' Edelsteine', 'gut'], entry.crate && ['crate', escapeHtml(entry.crate), 'gut'], entry.sh && ['star', escapeHtml(entry.sh), 'gut']]);
         if (entry.type === 'army') {
             const side = (n, own) => n === 'Du' ? (own ? 'Deine Armee' : 'deine Armee') : (own ? 'Die Armee von ' : 'die Armee von ') + escapeHtml(n);
             return karte(entry, entry.won ? 'win' : 'loss', 'troops', [entry.won ? 'win' : 'loss', entry.won ? 'Armee siegt' : 'Armee geschlagen'], 'Kampf im Feld', side(entry.attacker, true) + ' gegen ' + side(entry.defender, false) + fieldHeroLine(entry),
@@ -293,7 +293,7 @@ function renderCombatLog() {
                     angreiferZeilen(entry, gearHtml) +
                     '<div class="logLine"><span>Truppen' + (angreiferZeilen(entry, gearHtml) ? ' (alle)' : '') + '</span><span>' + fmtD(entry.myTroops) + '</span></div>' +
                     (entry.atkParts ? partLines(entry.atkParts)
-                        : '<div class="logLine buff"><span>Angriff-Skill</span><span>+' + fmtD(entry.skillBuff) + '</span></div>' +
+                        : '<div class="logLine buff"><span>Fähigkeit Angriff</span><span>+' + fmtD(entry.skillBuff) + '</span></div>' +
                           (entry.titleBuff ? '<div class="logLine buff"><span>Titel</span><span>' + (entry.titleBuff > 0 ? '+' : '−') + fmtD(Math.abs(entry.titleBuff)) + '</span></div>' : '')) +
                     '<div class="logSum' + (atkTotal >= defTotal ? ' advantage' : '') + '"><span>Gesamt</span><span>' + fmtD(atkTotal) + '</span></div>' +
                     '<div class="logCasualty"><span>Gefallen</span><span>−' + fmtD(entry.attackerCasualties || 0) + '</span></div>' +
@@ -347,7 +347,7 @@ const kampflogUmbauen = (function () {
     const leerHeld = (n, t) => '<div class="logHero kl-keinheld"><span class="ghero"><span class="kl-leer">?</span><span><b>' + n + '</b><small>' + t + '</small></span></span></div>';
     const leerGear = (stufe, angr) => '<div class="logGear"><div class="logGearHead">' + (stufe || 'Stufe –') + '</div><div class="logGearItems">' +
         [['weapon', 'Waffe'], ['armor', 'Rüstung'], ['shield', 'Schild'], ['boots', 'Stiefel']].map(([i, n]) => '<span class="gslot"><span class="tile empty" title="' + n + ' – leer">' + ic(i) + '</span></span>').join('') +
-        '</div><div class="logGearMeta">Skill Angriff – · Verteidigung –</div></div>';
+        '</div><div class="logGearMeta">Fähigkeit Angriff – · Verteidigung –</div></div>';
     const textOf = n => (n && n.firstElementChild ? n.firstElementChild.textContent : '').trim();
 
     // ein Fenster auf den immer gleichen Aufbau bringen
@@ -414,7 +414,7 @@ const kampflogUmbauen = (function () {
         side.querySelectorAll(':scope > .logLine.buff').forEach(l => l.remove());
         const schon = angr ? 0 : Array.isArray(e.defParts) && e.defParts.length ? e.defParts[0][1] || 0 : (e.enemyDefense || 0) - andere.reduce((x, p) => x + (p.plus || 0), 0);   // (Grundverteidigung bzw. Verteidigung steht schon als eigene Zeile da – ohne Bericht-Teile steckt darin auch das Plus der Helfer)
         const eig = gesamt - staerkeAndere - (erster.n || 0) - schon;
-        if (eig && tr) tr.insertAdjacentHTML('afterend', zl('Eigene Werte', (eig > 0 ? '+' : '−') + fmt(Math.abs(eig)), ' buff', angr ? 'Held, Skill Angriff, Titel, Forschung' : 'Rüstung, Skill Verteidigung, Mauer, Titel, Forschung'));
+        if (eig && tr) tr.insertAdjacentHTML('afterend', zl('Eigene Werte', (eig > 0 ? '+' : '−') + fmt(Math.abs(eig)), ' buff', angr ? 'Held, Fähigkeit Angriff, Titel, Forschung' : 'Rüstung, Fähigkeit Verteidigung, Mauer, Titel, Forschung'));
         if (angr && erster.fallen !== undefined) { const c = side.querySelector(':scope > .logCasualty:not(.wounded)'); if (c) c.lastElementChild.textContent = '−' + fmt(erster.fallen);
             const w = side.querySelector(':scope > .logCasualty.wounded'); if (w) { if (erster.wounded) w.lastElementChild.textContent = fmt(erster.wounded); else w.remove(); } }   // (nur seine – nicht die der ganzen Rally)
         if (!angr && e.type === 'attack') { const weg = andere.reduce((x, p) => x + (p.fallen || 0) + (p.wounded || 0), 0), c = side.querySelector(':scope > .logCasualty:not(.wounded)');   // Besitzer: ohne die Verluste der Helfer (die stehen in ihren Fenstern)
@@ -423,7 +423,7 @@ const kampflogUmbauen = (function () {
         // weitere Fenster: Rally-Mitglieder / Verstärkung
         for (const p of andere) {
             const b = el('<div class="logSide"><div class="logSideLabel">' + (angr ? 'Angreifer · ' : 'Verteidiger · ') + escapeHtml(p.name || '?') + ' <small style="text-transform:none;letter-spacing:0">(' + (angr ? 'Verbündeter' : 'Verstärkung') + ')</small></div>' +
-                zl('Truppen', fmt(p.n)) + (p.k !== undefined && p.k !== p.n ? zl('Eigene Werte', (p.k > p.n ? '+' : '−') + fmt(Math.abs(p.k - p.n)), ' buff', angr ? 'Held, Skill Angriff, Titel, Forschung' : 'Skill Verteidigung, Titel, Forschung') : '') +
+                zl('Truppen', fmt(p.n)) + (p.k !== undefined && p.k !== p.n ? zl('Eigene Werte', (p.k > p.n ? '+' : '−') + fmt(Math.abs(p.k - p.n)), ' buff', angr ? 'Held, Fähigkeit Angriff, Titel, Forschung' : 'Fähigkeit Verteidigung, Titel, Forschung') : '') +
                 '<div class="logSum' + (sumEl && sumEl.classList.contains('advantage') ? ' advantage' : '') + '"><span>Gesamt</span><span>' + fmt(p.k !== undefined ? p.k : p.n) + '</span></div>' +
                 '<div class="logCasualty"><span>Gefallen</span><span>−' + fmt(p.fallen || 0) + '</span></div>' +   // (fallen enthält die Verwundeten schon nicht)
                 (p.wounded ? '<div class="logCasualty wounded"><span>Verwundet</span><span>' + fmt(p.wounded) + '</span></div>' : '') + '</div>');

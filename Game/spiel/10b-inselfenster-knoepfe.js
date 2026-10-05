@@ -57,7 +57,7 @@ function renderRecallPreview(island) {
     const sources = recallSources(island.id), total = sources.reduce((a, id) => a + (islandTroops[id] || 0), 0);
     const f = previewFraction || 1, come = sources.reduce((a, id) => a + Math.floor((islandTroops[id] || 0) * f), 0), big = fmtNum;
     popupOverline.textContent = 'Truppen sammeln';
-    popupSub.innerHTML = icon('send') + '<span>' + (sources.length === 1 ? '1 Basis' : sources.length + ' Basen') + ' im Umkreis</span><span class="sep"></span>' + icon('gem') + '<span>' + RECALL_GEM_COST + ' Gem</span>';
+    popupSub.innerHTML = icon('send') + '<span>' + (sources.length === 1 ? '1 Basis' : sources.length + ' Basen') + ' im Umkreis</span><span class="sep"></span>' + icon('gem') + '<span>' + RECALL_GEM_COST + ' Edelstein</span>';
     popupStats.dataset.preview = 'recall';
     popupStats.innerHTML = '<div class="stat-grid">' +
             statTile('Hier jetzt', 'troops', big(islandTroops[island.id] || 0)) +
@@ -235,7 +235,7 @@ function handleTap(screenX, screenY) {
     if (teleportMode) {
         teleportMode = false; requestRender();
         const isl = pickIslandAtScreen(screenX, screenY);
-        if (isl && ownedIslands.has(isl.id) && isl.id !== playerIslandId && isl.type === 'tower') { if (teleportCapital(isl.id) === false) flashHint('Verlegen geht gerade nicht (genug Gems? frei?).', 2500); }
+        if (isl && ownedIslands.has(isl.id) && isl.id !== playerIslandId && isl.type === 'tower') { if (teleportCapital(isl.id) === false) flashHint('Verlegen geht gerade nicht (genug Edelsteine? frei?).', 2500); }
         else if (isl && ownedIslands.has(isl.id) && isl.id !== playerIslandId) flashHint('Die Hauptstadt kann nur in einen Turm ziehen – nicht in Tempel, Tore oder den Thron.', 3500);
         else flashHint('Verlegen abgebrochen.', 2000);
         return;

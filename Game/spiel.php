@@ -1669,7 +1669,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
     <span class="hud-me-text"><b id="hudName">Du</b><small id="hudRankLine">Bronze</small></span>
   </button>
   <div class="res res--coin" title="Münzen"><svg class="icon"><use href="#i-coin"/></svg><b id="coinCount">0</b></div>
-  <div class="res res--gem" title="Gems"><svg class="icon"><use href="#i-gem"/></svg><b id="gemCount">0</b></div>
+  <div class="res res--gem" title="Edelsteine"><svg class="icon"><use href="#i-gem"/></svg><b id="gemCount">0</b></div>
   <div class="res res--troop" title="Truppen"><svg class="icon"><use href="#i-troops"/></svg><b id="troopCount">0</b></div>
   <button id="hudRoh" class="res res--roh" type="button" title="Rohstoffe" aria-label="Rohstoffe"><svg class="icon"><use href="#i-crate"/></svg><span class="roh-mini"><span class="roh-v roh-h"><svg class="icon"><use href="#i-wood"/></svg><b data-r="h">0</b></span><span class="roh-v roh-s"><svg class="icon"><use href="#i-stone"/></svg><b data-r="s">0</b></span><span class="roh-v roh-e"><svg class="icon"><use href="#i-iron"/></svg><b data-r="e">0</b></span></span></button>
 </div>
@@ -1685,7 +1685,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
   <button id="battleLogBtn" class="nav-btn" type="button" title="Kampf: Märsche und Berichte"><svg class="icon"><use href="#i-battlelog"/></svg><span class="nav-l">Kampf</span><span id="battleLogBadge" class="badge" style="display:none">0</span></button>
   <button id="goalsBtn" class="nav-btn" type="button" title="Events: Aufgaben, Belohnungen, Erfolge, Pass, Wochen-Event, Invasion, Drache, Boss"><svg class="icon"><use href="#i-event"/></svg><span class="nav-l">Events</span><span id="goalsBadge" class="badge" style="display:none">0</span></button>
   <button id="shopBtn" class="nav-btn" type="button" title="Shop: Kisten, Schilde, Thron, Händler, Markt"><svg class="icon"><use href="#i-shop"/></svg><span class="nav-l">Shop</span></button>
-  <button id="profileBtn" class="nav-btn" type="button" title="Profil: Spieler, Ausrüstung, Skills, Rangliste, Einstellungen"><svg class="icon"><use href="#i-profile"/></svg><span class="nav-l">Profil</span></button>
+  <button id="profileBtn" class="nav-btn" type="button" title="Profil: Spieler, Ausrüstung, Fähigkeiten, Rangliste, Einstellungen"><svg class="icon"><use href="#i-profile"/></svg><span class="nav-l">Profil</span></button>
 </nav>
 
 <!-- Map controls: nur Kartensachen -->
@@ -1744,7 +1744,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
   <div id="profileTabs" class="tabs" role="tablist">
     <button id="tabBtnInfo" class="tab active" type="button" role="tab"><svg class="icon"><use href="#i-profile"/></svg><span>Spieler</span></button>
     <button id="tabBtnEquip" class="tab" type="button" role="tab"><svg class="icon"><use href="#i-shield"/></svg><span>Ausrüstung</span></button>
-    <button id="tabBtnSkills" class="tab" type="button" role="tab"><svg class="icon"><use href="#i-star"/></svg><span>Skills</span></button>
+    <button id="tabBtnSkills" class="tab" type="button" role="tab"><svg class="icon"><use href="#i-star"/></svg><span>Fähigkeiten</span></button>
     <button id="tabBtnRank" class="tab" type="button" role="tab"><svg class="icon"><use href="#i-rank"/></svg><span>Rangliste</span></button>
     <button id="tabBtnSet" class="tab" type="button" role="tab"><svg class="icon"><use href="#i-gear"/></svg><span>Einstellungen</span></button>
   </div>
@@ -1837,7 +1837,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         <p><b>Kampf</b> → deine Märsche und alle Berichte.</p>
         <p><b>Events</b> → Aufgaben, Belohnungen, Erfolge, Pass, Wochen-Event, Invasion, Drache, Tagesboss und Lager.</p>
         <p><b>Shop</b> → Kisten, Friedensschilde, Thron-Shop, Händler, Markt.</p>
-        <p><b>Profil</b> → Spieler, Aussehen, Ausrüstung, Skills, Rangliste, Einstellungen.</p>
+        <p><b>Profil</b> → Spieler, Aussehen, Ausrüstung, Fähigkeiten, Rangliste, Einstellungen.</p>
         <p><b>Karte</b> → Basis antippen: angreifen, Truppen senden, aufwerten. Felder: sammeln. Mitte: wer den Mega-Tempel hält, herrscht.</p>
       </div>
       <div class="sect"><h4>Info</h4></div>
@@ -1969,7 +1969,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
   <header class="phead">
     <div class="emblem emblem--gold"><svg class="icon"><use href="#i-shop"/></svg></div>
     <div class="phead-text"><div class="overline">Kaufen &amp; Tauschen</div><h3 id="shopTitle" class="ptitle">Shop</h3>
-      <div class="psub"><span class="pill pill--gem"><svg class="icon"><use href="#i-gem"/></svg><b id="shopGemCount">0</b><small>Gems</small></span><span class="pill pill--throne"><svg class="icon"><use href="#i-crown"/></svg><b id="shopThroneCount">0</b><small>Thron</small></span></div></div>
+      <div class="psub"><span class="pill pill--gem"><svg class="icon"><use href="#i-gem"/></svg><b id="shopGemCount">0</b><small>Edelsteine</small></span><span class="pill pill--throne"><svg class="icon"><use href="#i-crown"/></svg><b id="shopThroneCount">0</b><small>Thron</small></span></div></div>
     <button id="shopCloseBtn" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button>
   </header>
   <div id="shopTabs" class="tabs mail-tabs" role="tablist">
@@ -2178,13 +2178,13 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
     <div id="popupStats" class="popup-stats"></div>
     <div id="popupBund"></div>
     <div id="popupActions" class="actgrid">
-      <button id="teleportBtn" class="act act--city" type="button" style="display:none"><span class="act-ic act-ic--city"><svg class="icon"><use href="#i-send"/></svg></span><span class="act-t">Hauptstadt verlegen</span><span class="act-s">in einen eigenen Turm · 50 Gems</span></button>
+      <button id="teleportBtn" class="act act--city" type="button" style="display:none"><span class="act-ic act-ic--city"><svg class="icon"><use href="#i-send"/></svg></span><span class="act-t">Hauptstadt verlegen</span><span class="act-s">in einen eigenen Turm · <svg class="icon icon--gem"><use href="#i-gem"/></svg>50</span></button>
       <button id="titleBtn" class="act act--city" type="button" style="display:none"><span class="act-ic act-ic--city"><svg class="icon"><use href="#i-temple"/></svg></span><span class="act-t">Titel</span><span class="act-s">Buffs und Strafen vergeben</span></button>
       <button id="cityBtn" class="act act--city" type="button" style="display:none"><span class="act-ic act-ic--city"><svg class="icon"><use href="#i-castle"/></svg></span><span class="act-t">Stadt betreten</span><span class="act-s">Hauptstadt ausbauen</span></button>
       <button id="upgradeBtn" class="act act--primary" type="button"><span class="act-ic"><svg class="icon"><use href="#i-upgrade"/></svg></span><span class="act-t">Aufwerten</span><span class="act-s" id="upgradeCostLabel">–</span></button>
       <button id="sendBtn" class="act" type="button"><span class="act-ic act-ic--send"><svg class="icon"><use href="#i-send"/></svg></span><span class="act-t">Senden</span><span class="act-s">Verstärken</span></button>
-      <button id="multiAttackBtn" class="act" type="button"><span class="act-ic act-ic--attack"><svg class="icon"><use href="#i-multiattack"/></svg></span><span class="act-t">Mehrfach</span><span class="act-s"><svg class="icon icon--gem"><use href="#i-gem"/></svg><b data-const="MULTI_ATTACK_GEM_COST">1</b> Gem</span></button>
-      <button id="recallBtn" class="act" type="button"><span class="act-ic act-ic--recall"><svg class="icon"><use href="#i-recall"/></svg></span><span class="act-t">Sammeln</span><span class="act-s"><svg class="icon icon--gem"><use href="#i-gem"/></svg><b data-const="RECALL_GEM_COST">1</b> Gem</span></button>
+      <button id="multiAttackBtn" class="act" type="button"><span class="act-ic act-ic--attack"><svg class="icon"><use href="#i-multiattack"/></svg></span><span class="act-t">Mehrfach</span><span class="act-s"><svg class="icon icon--gem"><use href="#i-gem"/></svg><b data-const="MULTI_ATTACK_GEM_COST">1</b></span></button>
+      <button id="recallBtn" class="act" type="button"><span class="act-ic act-ic--recall"><svg class="icon"><use href="#i-recall"/></svg></span><span class="act-t">Sammeln</span><span class="act-s"><svg class="icon icon--gem"><use href="#i-gem"/></svg><b data-const="RECALL_GEM_COST">1</b></span></button>
     </div>
   </div>
   <footer class="pfoot">

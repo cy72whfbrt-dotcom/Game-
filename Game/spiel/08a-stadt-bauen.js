@@ -102,7 +102,7 @@ function cityBlocker(id) {                        // why this building can't be 
     if (AUF && id !== 'keep') { const B = AUF.burgStufe('player');                 // Paket D: höchstens bis zur Burg-Stufe, neue Gebäude erst ab einer Burg-Stufe
         if (!lvl && AUF.BAU_AB_BURG[id] > B) return 'Braucht Burg-Stufe ' + AUF.BAU_AB_BURG[id] + ' (jetzt ' + B + ').';
         if (lvl >= AUF.stadtCap('player', id)) return 'Erst die Burg aufwerten – Gebäude gehen höchstens bis zur Burg-Stufe (' + B + ').'; }
-    if (c.builds.length >= citySlots(c)) return c.builder2 ? 'Beide Bauarbeiter sind beschäftigt.' : 'Der Bauarbeiter ist beschäftigt (' + cityDef(c.builds[0].id).name + '). Ein zweiter kostet ' + CITY_BUILDER2_GEMS + ' Gems.';
+    if (c.builds.length >= citySlots(c)) return c.builder2 ? 'Beide Bauarbeiter sind beschäftigt.' : 'Der Bauarbeiter ist beschäftigt (' + cityDef(c.builds[0].id).name + '). Ein zweiter kostet ' + CITY_BUILDER2_GEMS + ' Edelsteine.';
     return null;
 }
 function cityStartBuild(id) {
@@ -223,7 +223,7 @@ function updateCityBuilder() {
 }
 function cityBuyBuilder2() {
     const c = loadCity(); if (c.builder2) return;
-    if (gems < CITY_BUILDER2_GEMS) { flashHint('Zu wenig Gems – der zweite Bauarbeiter kostet ' + CITY_BUILDER2_GEMS + ' Gems.', 2500); return; }
+    if (gems < CITY_BUILDER2_GEMS) { flashHint('Zu wenig Edelsteine – der zweite Bauarbeiter kostet ' + CITY_BUILDER2_GEMS + ' Edelsteine.', 2500); return; }
     if (cityB2Armed < Date.now()) { cityB2Armed = Date.now() + 4000; updateCityBuilder(); return; }
     if (cityB2Armed - Date.now() > 3550) return;                  // ein Doppel-Tipp ist keine Bestätigung (500 Gems)
     gems -= CITY_BUILDER2_GEMS; c.builder2 = true; cityB2Armed = 0; saveCity(); saveGame(); updateHud(); sfx('upgrade');
@@ -242,7 +242,7 @@ function renderCitySheetTimer() {
     const tot = b.endsAt - b.startedAt, done = Date.now() - b.startedAt;
     el.style.setProperty('--p', Math.min(100, done / tot * 100) + '%');
     document.querySelector('#cityBNoteTime').textContent = fmtDuration((b.endsAt - Date.now()) / 1000);
-    setBtnLabel(document.getElementById('citySpeedBtn'), (gemsArmed('speed:' + cityBauId(cityOpenId)) ? 'Wirklich? ' : 'Fertig für ') + citySpeedCost(b.id) + ' Gems');
+    setBtnLabel(document.getElementById('citySpeedBtn'), (gemsArmed('speed:' + cityBauId(cityOpenId)) ? 'Wirklich? ' : 'Fertig für ') + citySpeedCost(b.id));   // (das Edelstein-Symbol steht schon vorn im Knopf)
     document.getElementById('citySpeedBtn').disabled = gems < citySpeedCost(b.id);
 }
 // Rohstoff-Liste oben (aufbau.js): ein Tipp woanders hin (z. B. ein Fenster öffnen) schließt sie – sie bleibt nicht über dem Fenster stehen

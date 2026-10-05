@@ -1,5 +1,6 @@
 // Handy (390×844) und Desktop: nichts abgeschnitten (Spieltest 5.10.) – Truppen in der oberen Leiste („100 Mrd.“ statt „100 Mr…“),
-// Saison-Hinweis ganz lesbar und nie über einem offenen Fenster, fremde Basis nach dem Spähen: Name, Marke „Gespäht“ und Knopf „Neu spähen“ ganz.
+// Saison-Hinweis ganz lesbar und nie über einem offenen Fenster, fremde Basis nach dem Spähen: Name, Marke „Gespäht“ und Knopf „Neu spähen“ ganz;
+// Wörter: „Edelsteine“ statt „Gems“, „Fähigkeiten“ statt „Skills“ in Shop und Profil, ohne Abschneiden.
 const { chromium, devices } = require('playwright');
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x) : ''));
 (async () => {
@@ -32,7 +33,17 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       const bot = BOT_DEFS.filter(x => !x.mensch && islandById[botCapitalOf(x.id)]).sort((a, c) => d(a) - d(c))[0], isl = botCapitalOf(bot.id);
       scoutedIslands.add(isl); openIslandPopup(islandById[isl]); await warte(600);
       const chip = document.querySelector('#popupSub .chip--scouted'), wer = document.querySelector('#popupSub .psub-who'), knopf = document.querySelector('#scoutBtn .lbl');
-      return { leiste, handy, lang, mitFenster, kurz, fremd: { marke: ganz(chip), wer: ganz(wer), werText: wer && wer.textContent, knopf: knopf.textContent, knopfGanz: ganz(knopf) } };
+      const fremd = { marke: ganz(chip), wer: ganz(wer), werText: wer && wer.textContent, knopf: knopf.textContent, knopfGanz: ganz(knopf) };
+      // 4) Wörter (5.10.): „Edelsteine“ statt „Gems“, „Fähigkeiten“ statt „Skills“ – und trotzdem nichts abgeschnitten
+      closeAllPopups(); const alt = /(^|[^A-Za-zäöü])(Gems?|Skills?|Skillpunkte?)([^A-Za-zäöü]|$)/;
+      openShop('gems'); await warte(500);
+      const pill = document.querySelector('#shopGemCount + small'), shopTxt = document.getElementById('shopPopup').innerText;
+      const shop = { wort: pill.textContent, ganz: ganz(pill.closest('.psub')), alt: alt.test(shopTxt) };
+      closeAllPopups(); skillPoints = 12345; profileBtn.click(); await warte(300); showProfileTab('skills'); await warte(300);
+      const reiter = document.querySelector('#tabBtnSkills span'), zeile = document.querySelector('#skillPointsLine span');
+      const profil = { reiter: reiter.textContent, reiterGanz: ganz(reiter), zeile: zeile.textContent, zeileGanz: ganz(zeile), alt: alt.test(document.getElementById('profilePopup').innerText) };
+      closeAllPopups();
+      return { leiste, handy, lang, mitFenster, kurz, fremd, shop, profil };
     }).catch(e => ({ fehler: e.message }));
     ok(!r.fehler, art + ': Szenen laufen', r.fehler);
     if (r.fehler) { await ctx.close(); continue; }
@@ -42,6 +53,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     ok(!r.kurz.klasse && r.kurz.sichtbar, art + ': kurze Hinweise wie bisher', r.kurz);
     ok(r.fremd.marke && r.fremd.wer, art + ': fremde Basis – Name und Marke „Gespäht“ ganz', r.fremd);
     ok(r.fremd.knopf === 'Neu spähen' && r.fremd.knopfGanz, art + ': Knopf „Neu spähen“ ganz', r.fremd);
+    ok(r.shop.wort === 'Edelsteine' && r.shop.ganz && !r.shop.alt, art + ': Shop sagt „Edelsteine“ (ganz, kein „Gems“ mehr)', r.shop);
+    ok(r.profil.reiter === 'Fähigkeiten' && r.profil.reiterGanz && r.profil.zeile === 'Verfügbare Fähigkeitspunkte' && r.profil.zeileGanz && !r.profil.alt, art + ': Profil sagt „Fähigkeiten“/„Fähigkeitspunkte“ (ganz, kein „Skill“ mehr)', r.profil);
     await ctx.close();
   }
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();

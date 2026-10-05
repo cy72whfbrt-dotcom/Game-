@@ -186,7 +186,7 @@ multiAttackConfirmBtn.addEventListener('click', () => {
     const targets = multiAttackTargets.slice();
     if (sourceId === null || targets.length === 0) return;
     if (gems < MULTI_ATTACK_GEM_COST) {
-        flashHint('Nicht genug Gems für den Mehrfachangriff.', 3000);
+        flashHint('Nicht genug Edelsteine für den Mehrfachangriff.', 3000);
         return;
     }
     const available = Math.floor((islandTroops[sourceId] || 0) * multiAttackShare);

@@ -128,7 +128,7 @@ function nachrichtBauen(liste, jetzt) {
     const boss = liste.filter(e => e.art === 'boss'), sammler = liste.filter(e => e.art === 'sammler'), schild = liste.filter(e => e.art === 'schild');
     if (boss.length) teile.push(boss.map(b => b.von + ' ist erschienen (' + b.basis + ').').join(' '));
     if (sammler.length) { const g = sammler.filter(x => x.was === 'gem').reduce((a, x) => a + x.menge, 0), c = sammler.filter(x => x.was !== 'gem').reduce((a, x) => a + x.menge, 0);
-        teile.push('Deine Sammler sind zurück: ' + [c ? '+' + Math.round(c).toLocaleString('de-DE') + ' Münzen' : '', g ? '+' + Math.round(g).toLocaleString('de-DE') + ' Gems' : ''].filter(Boolean).join(', ') + '.'); }
+        teile.push('Deine Sammler sind zurück: ' + [c ? '+' + Math.round(c).toLocaleString('de-DE') + ' Münzen' : '', g ? '+' + Math.round(g).toLocaleString('de-DE') + ' Edelsteine' : ''].filter(Boolean).join(', ') + '.'); }
     if (schild.length) teile.push('Dein Friedensschild läuft in ' + minuten(schild[0].bis - jetzt) + ' ab.');
     const invasion = liste.filter(e => e.art === 'invasion'), drache = liste.filter(e => e.art === 'drache');
     if (invasion.length) teile.push('Barbaren-Invasion beginnt in ' + minuten(Math.min(...invasion.map(e => e.ankunft)) - jetzt) + ' – stärke deine Basen!');

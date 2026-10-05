@@ -152,7 +152,7 @@ const FORSCHUNG = [
     { id: 'w_prod', ast: 'w', name: 'Ertrag', icon: 'coin', max: 10, aka: 1, pro: 3, txt: v => '+' + v + ' % Münzen aus allen Basen und Rohstoffe aus der Stadt' },
     { id: 'w_sam', ast: 'w', name: 'Sammeln', icon: 'hourglass', max: 10, aka: 2, pro: 5, txt: v => 'Sammler arbeiten ' + v + ' % schneller' },
     { id: 'w_last', ast: 'w', name: 'Traglast', icon: 'crate', max: 10, aka: 3, pro: 6, txt: v => 'Sammler tragen ' + v + ' % mehr' },
-    { id: 'w_tempel', ast: 'w', name: 'Tempel', icon: 'temple', max: 10, aka: 4, pro: 10, txt: v => '+' + v + ' % Bonus aus allen deinen Tempeln (Münzen, Truppen, Gems)' },
+    { id: 'w_tempel', ast: 'w', name: 'Tempel', icon: 'temple', max: 10, aka: 4, pro: 10, txt: v => '+' + v + ' % Bonus aus allen deinen Tempeln (Münzen, Truppen, Edelsteine)' },
     { id: 'm_atk', ast: 'm', name: 'Angriff', icon: 'attack', max: 10, aka: 2, pro: 2, txt: v => '+' + v + ' % Kampfkraft beim Angreifen' },
     { id: 'm_def', ast: 'm', name: 'Verteidigung', icon: 'defense', max: 10, aka: 2, pro: 2, txt: v => '+' + v + ' % Kampfkraft beim Verteidigen' },
     { id: 'm_laz', ast: 'm', name: 'Krankenhaus', icon: 'plus', max: 10, aka: 4, pro: 2, txt: v => '+' + v + ' % der Gefallenen ins Krankenhaus' },
@@ -342,7 +342,7 @@ function foDetail(d) {
 function extraHtml(id, lvl) {
     if (id === 'academy') {
         const c = loadCity(), r = c.foRun, d = r && FO_BY[r.id];
-        const lauf = d ? '<div class="notice notice--gold fo-lauf">' + icon('hourglass') + '<span style="flex:1"><b>' + d.name + (d.max > 1 ? ' Stufe ' + r.to : '') + '</b> · noch ' + uhrHtml(r.endsAt) + '<div class="city-progress" style="margin-top:6px"><i style="--p:' + Math.min(100, (Date.now() - r.startedAt) / Math.max(1, r.endsAt - r.startedAt) * 100).toFixed(1) + '%"></i></div>' + (typeof bundHilfeKnopf === 'function' ? bundHilfeKnopf('fo', r.id, r.to, r.endsAt) : '') + '</span><button type="button" class="btn btn--secondary btn--sm" data-fo-gems' + (gems < foGems(c) ? ' disabled' : '') + '>' + (gemsArmed('fo:' + r.id) ? 'Wirklich? ' + icon('gem') + foGems(c) : 'Fertig · ' + foGems(c) + ' Gems') + '</button></div>' : '';
+        const lauf = d ? '<div class="notice notice--gold fo-lauf">' + icon('hourglass') + '<span style="flex:1"><b>' + d.name + (d.max > 1 ? ' Stufe ' + r.to : '') + '</b> · noch ' + uhrHtml(r.endsAt) + '<div class="city-progress" style="margin-top:6px"><i style="--p:' + Math.min(100, (Date.now() - r.startedAt) / Math.max(1, r.endsAt - r.startedAt) * 100).toFixed(1) + '%"></i></div>' + (typeof bundHilfeKnopf === 'function' ? bundHilfeKnopf('fo', r.id, r.to, r.endsAt) : '') + '</span><button type="button" class="btn btn--secondary btn--sm" data-fo-gems' + (gems < foGems(c) ? ' disabled' : '') + '>' + (gemsArmed('fo:' + r.id) ? 'Wirklich? ' + icon('gem') + foGems(c) : 'Fertig · ' + icon('gem') + foGems(c)) + '</button></div>' : '';
         if (!lvl) return lauf;
         return lauf + '<div class="seg fo-tabs">' + Object.keys(FO_AESTE).map(a => '<button type="button" data-fo-ast="' + a + '"' + (a === foAst ? ' class="on"' : '') + '>' + FO_AESTE[a] + '</button>').join('') + '</div>' +
             foBaum(lvl);

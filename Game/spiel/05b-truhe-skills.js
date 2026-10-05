@@ -271,13 +271,13 @@ const SKILL_RESET_GEMS = 500;
 let skillResetArmed = false, skillResetTimer = null, skillResetAt = 0;
 function resetSkills() {
     const spent = Object.keys(SKILL_DEFS).reduce((a, k) => a + (skills[k] || 0), 0); if (!spent) return;
-    if (gems < SKILL_RESET_GEMS) { flashHint('Zu wenig Gems: Zurücksetzen kostet ' + SKILL_RESET_GEMS + ' Gems.', 3000); return; }
+    if (gems < SKILL_RESET_GEMS) { flashHint('Zu wenig Edelsteine: Zurücksetzen kostet ' + SKILL_RESET_GEMS + ' Edelsteine.', 3000); return; }
     if (skillResetArmed && Date.now() - skillResetAt < 450) return;   // ein Doppel-Tipp ist keine Bestätigung (500 Gems)
     if (!skillResetArmed) { skillResetArmed = true; skillResetAt = Date.now(); clearTimeout(skillResetTimer); skillResetTimer = setTimeout(() => { skillResetArmed = false; renderSkillGrid(); }, 4000); renderSkillGrid(); return; }
     skillResetArmed = false; clearTimeout(skillResetTimer);
     gems -= SKILL_RESET_GEMS; skillPoints += spent; for (const k of Object.keys(SKILL_DEFS)) skills[k] = 0;
     saveProgression(); saveGame(); updateHud(); renderSkillGrid();
-    flashHint('Skills zurückgesetzt: ' + fmtNum(spent) + ' Skillpunkte sind wieder frei.', 3500);
+    flashHint('Fähigkeiten zurückgesetzt: ' + fmtNum(spent) + ' Fähigkeitspunkte sind wieder frei.', 3500);
 }
 // Gems-Käufe ab 500 (und Helden-Zurücksetzen): erst „Wirklich? N Gems“, erst der zweite Tipp (nach >450 ms, binnen 4 s) zahlt – wie resetSkills
 const GEMS_WIRKLICH = 500;
@@ -298,7 +298,7 @@ function gemsArmAus() {
 }
 function renderSkillGrid() {
     const spentPts = Object.keys(SKILL_DEFS).reduce((a, k) => a + (skills[k] || 0), 0);
-    skillPointsLine.innerHTML = icon('star') + '<span>Verfügbare Skillpunkte</span><b>' + fmtNum(skillPoints) + '</b>' +
+    skillPointsLine.innerHTML = icon('star') + '<span>Verfügbare Fähigkeitspunkte</span><b>' + fmtNum(skillPoints) + '</b>' +
         (spentPts ? '<button type="button" class="skill-reset' + (skillResetArmed ? ' is-armed' : '') + '" data-skillreset>' + (skillResetArmed ? 'Wirklich? ' + icon('gem') + SKILL_RESET_GEMS : icon('recall') + 'Zurücksetzen') + '</button>' : '');
     const rb = skillPointsLine.querySelector('[data-skillreset]'); if (rb) rb.addEventListener('click', resetSkills);
 
@@ -313,8 +313,8 @@ function renderSkillGrid() {
     detailBtn.type = 'button';
     detailBtn.className = 'btn btn--primary btn--sm';
     detailBtn.innerHTML = icon('plus') + '<span>1</span>';
-    detailBtn.setAttribute('aria-label', 'Skillpunkt vergeben');
-    detailBtn.title = 'Skillpunkt vergeben';
+    detailBtn.setAttribute('aria-label', 'Fähigkeitspunkt vergeben');
+    detailBtn.title = 'Fähigkeitspunkt vergeben';
     const atMax = def.max && level >= def.max;
     if (atMax) detailBtn.innerHTML = '<span>Max.</span>';
     detailBtn.disabled = skillPoints <= 0 || atMax;

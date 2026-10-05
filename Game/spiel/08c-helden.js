@@ -318,7 +318,7 @@ function hhHero(id) {
                 '<div class="hh-blk"><h3>Sterne</h3>' + hhStars(s.q) + stars + '</div>' +
                 (s.own ? '<div class="hh-blk"><h3>Wut</h3><div class="hh-qinfo"><span>' + (s.sk[0] ? (s.rage >= 100 ? 'Voll – ' + h.sk[0][0] + ' zündet im nächsten Kampf' : '+' + HERO_RAGE + ' % pro Kampf, den ' + h.name + ' führt') : 'Erst mit ' + h.sk[0][0] + ' auf Stufe 1') + '</span><b>' + Math.round(s.rage || 0) + ' %</b></div><div class="hh-bar hh-rage"><i style="width:' + Math.round(s.rage || 0) + '%"></i></div></div>' : '') +
                 '<div class="hh-blk"><div class="hh-skh"><h3>Fähigkeiten</h3>' + (s.own ? '<span class="hh-pts">' + free + (free === 1 ? ' Punkt' : ' Punkte') + ' frei</span>' : '<span class="hh-pts off">nach dem Freischalten</span>') + '</div><div class="hh-sklist">' + skills + '</div>' +
-                    (s.own ? '<p class="hh-hint">Jeder halbe Stern gibt 1 Punkt – bei 5 Sternen 10. Das reicht für 2 Fähigkeiten auf Stufe 5. Bisher ' + heroPoints(s) + ' von 10.</p><button type="button" class="hh-reset" data-hh-reset' + (spent ? '' : ' disabled') + '>' + (gemsArmed('hhreset:' + id) ? 'Wirklich? ' + icon('gem') + HERO_RESET_GEMS : 'Fähigkeiten zurücksetzen · ' + HERO_RESET_GEMS + ' Gems') + '</button>' : '') + '</div>' +
+                    (s.own ? '<p class="hh-hint">Jeder halbe Stern gibt 1 Punkt – bei 5 Sternen 10. Das reicht für 2 Fähigkeiten auf Stufe 5. Bisher ' + heroPoints(s) + ' von 10.</p><button type="button" class="hh-reset" data-hh-reset' + (spent ? '' : ' disabled') + '>' + (gemsArmed('hhreset:' + id) ? 'Wirklich? ' + icon('gem') + HERO_RESET_GEMS : 'Fähigkeiten zurücksetzen · ' + icon('gem') + HERO_RESET_GEMS) + '</button>' : '') + '</div>' +
                 '<div class="hh-blk"><h3>Werte · wenn ' + h.name + ' mitkämpft</h3><div class="hh-vals"><div><span>Angriff</span><b>+' + st.atk + ' %</b></div><div><span>Verteidigung</span><b>+' + st.def + ' %</b></div><div><span>Tempo</span><b>+' + st.spd + ' %</b></div><div><span>Gefolge</span><b>+' + fmtCompact(st.gef) + '</b></div></div>' +
                     '<p class="hh-hint">Verteidigung: weniger eigene Verluste. Gefolge: so viele Truppen kämpfen zusätzlich mit (höchstens so viele, wie der Held anführt) – wächst mit Sternen, deiner Stufe und der Heldenhalle.</p></div>' +
             '</div></div>' +
@@ -352,7 +352,7 @@ document.getElementById('heroHall').addEventListener('click', e => {
     const sk = e.target.closest('[data-hh-sk]:not([disabled])');
     if (sk) { if (heroDoSkill('player', hhCur, +sk.dataset.hhSk)) { sfx('upgrade'); flashHint(h.sk[+sk.dataset.hhSk][0] + ' ist jetzt auf Stufe ' + s.sk[+sk.dataset.hhSk] + '.', 2000); } return renderHeroHall(); }
     if (e.target.closest('[data-hh-reset]:not([disabled])')) {
-        if (gems < HERO_RESET_GEMS) { flashHint('Zu wenig Gems – Zurücksetzen kostet ' + HERO_RESET_GEMS + '.', 2500); return; }
+        if (gems < HERO_RESET_GEMS) { flashHint('Zu wenig Edelsteine – Zurücksetzen kostet ' + HERO_RESET_GEMS + '.', 2500); return; }
         if (!gemsWirklich('hhreset:' + hhCur, HERO_RESET_GEMS, e.target.closest('[data-hh-reset]'), true)) return;
         gems -= HERO_RESET_GEMS; s.sk = [0, 0, 0, 0]; saveHeroes(); updateHud(); saveGame(); flashHint('Fähigkeiten von ' + h.name + ' zurückgesetzt – ' + heroPoints(s) + ' Punkte frei.', 2500); return renderHeroHall(); }
     if (e.target.closest('[data-hh-swap]')) { const sel = el.querySelector('[data-hh-swap-to]'), n = s.sh, to = sel && heroById(sel.value);

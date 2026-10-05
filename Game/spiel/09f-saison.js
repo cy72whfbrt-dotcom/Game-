@@ -42,7 +42,7 @@ function saisonTakt() {                               // (nur wer rechnet) Termi
     saisonNeu(now);
 }
 setInterval(saisonTakt, 5000);
-const saisonBaldText = ende => { const t = Math.max(1, Math.round((ende - Date.now()) / 864e5)); return 'In ' + t + (t === 1 ? ' Tag' : ' Tagen') + ' beginnt eine neue Welt-Saison (' + evWann(ende) + ' Uhr). Deine Hauptstadt mit Burg, Gebäuden, Forschung, Helden, Ausrüstung, Gems und Rohstoffen bleibt – Basen, Truppen, Münzen, Stufe und Bündnisse fangen neu an. Die besten 10 bekommen Gems und einen Titel für immer.'; };   // (nach der echten Restzeit – die Nachricht kann später gelesen werden)
+const saisonBaldText = ende => { const t = Math.max(1, Math.round((ende - Date.now()) / 864e5)); return 'In ' + t + (t === 1 ? ' Tag' : ' Tagen') + ' beginnt eine neue Welt-Saison (' + evWann(ende) + ' Uhr). Deine Hauptstadt mit Burg, Gebäuden, Forschung, Helden, Ausrüstung, Edelsteine und Rohstoffen bleibt – Basen, Truppen, Münzen, Stufe und Bündnisse fangen neu an. Die besten 10 bekommen Edelsteine und einen Titel für immer.'; };   // (nach der echten Restzeit – die Nachricht kann später gelesen werden)
 function saisonAnkuendigen() {
     if (window.WELT) { for (const id in WELT.menschen) { const uid = parseInt(id.slice(1), 10); if (uid > 0) WELT.nachricht(uid, { art: 'saisonBald', nr: saison.nr, ende: saison.ende }, 'saisonBald|' + saison.nr); } }
     else afterSplash(() => flashHint(saisonBaldText(saison.ende), 12000, true));
@@ -124,10 +124,10 @@ function saisonChip(now) {
 function saisonKarte() {
     const S = saison; if (!S) return '';
     const now = Date.now(), bald = S.ende - now <= SAISON_BALD_MS;
-    const preise = 'Platz 1: ' + fmtNum(SAISON_PREISE[0]) + ' · 2: ' + fmtNum(SAISON_PREISE[1]) + ' · 3: ' + fmtNum(SAISON_PREISE[2]) + ' · 4–10: ' + fmtNum(SAISON_PREISE[3]) + ' Gems + Saison-Titel für immer';
+    const preise = 'Platz 1: ' + fmtNum(SAISON_PREISE[0]) + ' · 2: ' + fmtNum(SAISON_PREISE[1]) + ' · 3: ' + fmtNum(SAISON_PREISE[2]) + ' · 4–10: ' + fmtNum(SAISON_PREISE[3]) + ' Edelsteine + Saison-Titel für immer';
     const last = S.last && S.last.top && S.last.top.length ? '<div class="lb-gap">Saison ' + S.last.nr + ' · Top 10</div>' + evRangHtml(S.last.top.map(([w, v]) => [lokalId(w), v]), v => fmtCompact(v)) : '';
     return evKarte('crown', 'Welt-Saison ' + S.nr, now < S.ende ? 'Neue Saison in ' + evUhr(S.ende) : S.halt ? 'Neue Saison: der Termin folgt' : 'Die neue Saison beginnt gleich …',
-        '<div class="field-lines"><span>Neustart</span><b>' + (S.halt ? 'vom Admin' : evWann(S.ende) + ' Uhr') + '</b><span>Bleibt</span><b>Hauptstadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Gems, Holz/Stein/Eisen, Gekauftes</b>' +
+        '<div class="field-lines"><span>Neustart</span><b>' + (S.halt ? 'vom Admin' : evWann(S.ende) + ' Uhr') + '</b><span>Bleibt</span><b>Hauptstadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Edelsteine, Holz/Stein/Eisen, Gekauftes</b>' +
         '<span>Neu</span><b>Basen, Truppen, Münzen, Stufe, Bündnisse – die Hauptstadt zieht an einen neuen Platz am Rand</b><span>Preise</span><b>Die besten 10 nach Macht: ' + preise + '</b></div>', bald ? 'is-warn' : '') + last;
 }
 // ---- (Handy) Nachrichten vom Weltrechner: Ankündigung, neue Saison ----
@@ -161,4 +161,4 @@ function saisonWeltZurueck() {
     WELT.saisonHalt = true; flashHint('Die Welt wurde auf einen früheren Stand zurückgesetzt – das Spiel lädt neu …', 5000); setTimeout(() => location.reload(), 1500);
 }
 if (saisonZurueckGeladen) afterSplash(() => setTimeout(() => flashHint('Die Welt wurde auf einen früheren Stand zurückgesetzt (Saison ' + saisonZurueckGeladen + ') – dein Spielstand passt wieder dazu.', 8000), 1500));
-if (saisonNeuGeladen) afterSplash(() => setTimeout(() => flashHint('Welt-Saison ' + saisonNeuGeladen + ' hat begonnen! Deine Hauptstadt steht an einem neuen Platz am Rand – Burg, Gebäude, Forschung, Helden, Ausrüstung, Gems und Rohstoffe sind geblieben.', 9000), 1500));
+if (saisonNeuGeladen) afterSplash(() => setTimeout(() => flashHint('Welt-Saison ' + saisonNeuGeladen + ' hat begonnen! Deine Hauptstadt steht an einem neuen Platz am Rand – Burg, Gebäude, Forschung, Helden, Ausrüstung, Edelsteine und Rohstoffe sind geblieben.', 9000), 1500));

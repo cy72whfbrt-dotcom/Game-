@@ -97,7 +97,7 @@ function achCheck() {                                                        // 
     if (achLookSet && achLookSet.late) { delete achLookSet.late; if (achDone(ACHIEVEMENTS.find(a => a.id === 'city5')) && !achLookSet.includes('city5')) achLookSet.push('city5'); store.set('openWaterAchLook', JSON.stringify(achLookSet)); }
     const ready = achClaimable();
     if (achKnown === null) achKnown = new Set(ready.map(a => a.id));
-    for (const a of ready) if (!achKnown.has(a.id)) { achKnown.add(a.id); flashHint('Erfolg erreicht: ' + a.name + ' – hol dir ' + a.gems + ' Gems unter „Events“ ab.', 4500); sfx('crown'); }
+    for (const a of ready) if (!achKnown.has(a.id)) { achKnown.add(a.id); flashHint('Erfolg erreicht: ' + a.name + ' – hol dir ' + a.gems + ' Edelsteine unter „Events“ ab.', 4500); sfx('crown'); }
     updateGoalsBadge(ready.length);
     if (isPanelOpen(goalsPopup) && goalsTab === 'ach') renderAchievements();
 }
@@ -127,10 +127,10 @@ function claimAch(a) {
 }
 document.getElementById('achList').addEventListener('click', e => {
     if (e.target.closest('[data-ach-all]')) { const l = achClaimable(), n = l.reduce((s, a) => s + claimAch(a), 0); if (!n) return;
-        saveProgression(); updateHud(); sfx('gem'); flashHint('+' + fmtNum(n) + ' Gems für ' + l.length + ' Erfolge.', 2500); renderAchievements(); achCheck(); return; }
+        saveProgression(); updateHud(); sfx('gem'); flashHint('+' + fmtNum(n) + ' Edelsteine für ' + l.length + ' Erfolge.', 2500); renderAchievements(); achCheck(); return; }
     const b = e.target.closest('[data-ach]'); if (!b || b.disabled) return;
     const a = ACHIEVEMENTS.find(q => q.id === b.dataset.ach), n = claimAch(a); if (!n) return;
-    saveProgression(); updateHud(); sfx('gem'); flashHint('+' + fmtNum(n) + ' Gems für „' + a.name + '“.', 2500);
+    saveProgression(); updateHud(); sfx('gem'); flashHint('+' + fmtNum(n) + ' Edelsteine für „' + a.name + '“.', 2500);
     renderAchievements(); achCheck();
 });
 document.getElementById('achList').addEventListener('toggle', e => { if (e.target.classList && e.target.classList.contains('ach-done')) achOpenDone = e.target.open; }, true);
@@ -204,7 +204,7 @@ function openRulerProfile(who) {
         (verdeckt ? verdecktHtml :
         '<div class="sect"><h4>Ausrüstung</h4></div><div class="rp-gear">' + gear + '</div>' +
         '<div class="sect"><h4>Helden</h4></div><div class="rp-heroes">' + heroes + '</div>' +
-        '<div class="sect"><h4>Skills</h4></div><div class="rp-grid">' + skillsHtml + '</div>' +
+        '<div class="sect"><h4>Fähigkeiten</h4></div><div class="rp-grid">' + skillsHtml + '</div>' +
         '<div class="sect"><h4>Stadt</h4></div><div class="rp-blds">' + cityHtml + '</div>') +
         '<div class="rp-actions">' + (typeof bundProfilKnopf === 'function' ? bundProfilKnopf(who) : '') + '<button class="btn btn--secondary btn--sm" type="button" data-rp="map">' + icon('flag') + '<span>Zur Karte</span></button>' +
         '<button class="btn btn--primary btn--sm" type="button" data-rp="capital">' + icon('castle') + '<span>Hauptstadt</span></button></div>';

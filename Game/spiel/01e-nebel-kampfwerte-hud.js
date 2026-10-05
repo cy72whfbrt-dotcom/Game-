@@ -87,7 +87,7 @@ function defenseParts(island) {
     if (owner === 'player') { armor = defenseForLevel(L) - base; sl = skills.defense || 0; skill = g * sl * SKILL_DEFS.defense.defPct / 100; wallPct = wallDefensePct(); }
     else { const m = botMults(owner), b = loadBotState()[owner]; armor = base * (m.armorPct || 0) / 100; sl = b ? b.skills.defense : 0; skill = g * (m.defensePct || 0) / 100; wallPct = botBld(owner, 'wall') * 2; }
     if (armor) out.push(['Rüstung', Math.round(armor), 'Ausrüstung']);
-    if (skill) out.push(['Skill Verteidigung', Math.round(skill), 'Stufe ' + sl + ' · +' + sl * SKILL_DEFS.defense.defPct + ' % der Truppen']);
+    if (skill) out.push(['Fähigkeit Verteidigung', Math.round(skill), 'Stufe ' + sl + ' · +' + sl * SKILL_DEFS.defense.defPct + ' % der Truppen']);
     const sub = base + armor + skill;
     if (wallPct) out.push(['Mauer', Math.round(sub * wallPct / 100), 'Stadt · +' + wallPct + ' %']);
     const x = titleOf(owner); if (x && x.kind === 'defense') out.push(['Titel ' + x.name, Math.round(sub * (1 + wallPct / 100) * x.v), 'Mega-Tempel · ' + (x.v > 0 ? '+' : '−') + Math.round(Math.abs(x.v) * 100) + ' %']);
@@ -95,7 +95,7 @@ function defenseParts(island) {
     if (kk !== 1) { const vor = out.reduce((a, q) => a + q[1], 0);
         out.push(['Forschung Verteidigung', Math.round((vor + g) * (kk - 1)), '+' + Math.round((kk - 1) * 100) + ' % auf Besatzung und Verteidigung']); }
     const vp = typeof verstDefPlus !== 'undefined' && Math.round(verstDefPlus[island.id] || 0);
-    if (vp) out.push(['Verstärkung: eigene Werte', vp, 'jeder Helfer mit seinem Skill, Titel und seiner Forschung']);
+    if (vp) out.push(['Verstärkung: eigene Werte', vp, 'jeder Helfer mit seiner Fähigkeit, seinem Titel und seiner Forschung']);
     out[0][1] += effectiveDefense(island) - out.reduce((a, q) => a + q[1], 0);        // rounding goes to the base line
     return out;
 }
@@ -120,7 +120,7 @@ function attackParts(who, raw, bonus, total, hero, a) {       // a = the attack:
     const out = [], snap = a && a.skillBonus !== undefined;
     const sl = snap && a.skillLvl !== undefined ? a.skillLvl : who === 'player' ? skills.attack || 0 : (loadBotState()[who] || { skills: {} }).skills.attack || 0;
     const skill = Math.min(bonus, snap ? a.skillBonus : who === 'player' ? attackFlatBonus(raw) : Math.round(raw * sl * SKILL_DEFS.attack.atkPct / 100));
-    if (skill) out.push(['Skill Angriff', skill, 'Stufe ' + sl + ' · +' + sl * SKILL_DEFS.attack.atkPct + ' %']);
+    if (skill) out.push(['Fähigkeit Angriff', skill, 'Stufe ' + sl + ' · +' + sl * SKILL_DEFS.attack.atkPct + ' %']);
     const hx = a && a.hx, hd = hx && heroById(hx.id);             // the hero's Angriff and Gefolge (a fired skill included)
     const h2n = hx && hx.id2 && heroById(hx.id2) ? ' & ' + heroById(hx.id2).name : '';   // der Zweitheld zählt mit
     if (bonus - skill) out.push([hd ? 'Held ' + hd.name + ' ' + heroStarTxt(hx.q) + h2n : 'Helden', bonus - skill, hd ? 'Angriff +' + Math.round(hx.atk) + ' %' + (heroGefOf(hx, raw) ? ' · Gefolge +' + fmtCompact(heroGefOf(hx, raw)) : '') + (hx.fired ? ' · ' + hx.skill + ' gezündet' : '') : '']);
@@ -223,7 +223,7 @@ function setShown(el, on) { const d = on ? 'block' : 'none'; if (el && el.style.
 function updateHud() {
     const troops = totalTroops();
     setText(coinCountEl, fmtCompact(Math.floor(coins)));
-    const tc = fmtNum(Math.floor(coins)) + ' Münzen', tg = fmtNum(Math.floor(gems)) + ' Gems', tt = fmtNum(troops) + ' Truppen';
+    const tc = fmtNum(Math.floor(coins)) + ' Münzen', tg = fmtNum(Math.floor(gems)) + ' Edelsteine', tt = fmtNum(troops) + ' Truppen';
     if (coinCountEl.parentNode.title !== tc) coinCountEl.parentNode.title = tc;
     setText(gemCountEl, fmtCompact(Math.floor(gems)));
     if (gemCountEl.parentNode.title !== tg) gemCountEl.parentNode.title = tg;

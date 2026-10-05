@@ -273,7 +273,7 @@ let speedUpZuletzt = 0;                               // (ein Doppel-Tipp beschl
 function speedUpMarch(key, btn) {                    // halves the time still to go; the column keeps its place on the road
     const now = Date.now(); if (now - speedUpZuletzt < 600) return; speedUpZuletzt = now;
     const sc = pendingScouts.find(x => marchKeyOf(x) === key);                // ein Späher (nur deiner – kein Befehl an den Weltrechner nötig)
-    if (sc) { const rem = sc.resolveAt - now; if (rem < 1500) return; const cost = speedUpCost(sc); if (gems < cost) { flashHint('Zu wenig Gems – Beschleunigen kostet ' + cost + '.', 3000); return; }
+    if (sc) { const rem = sc.resolveAt - now; if (rem < 1500) return; const cost = speedUpCost(sc); if (gems < cost) { flashHint('Zu wenig Edelsteine – Beschleunigen kostet ' + cost + '.', 3000); return; }
         if (!gemsWirklich('marsch:' + key, cost, btn)) return;
         gems -= cost; const p = Math.max(0, Math.min(.99, (now - sc.startedAt) / Math.max(1, sc.resolveAt - sc.startedAt)));
         sc.resolveAt = now + rem / 2; sc.startedAt = sc.resolveAt - (rem / 2) / (1 - p);
@@ -283,7 +283,7 @@ function speedUpMarch(key, btn) {                    // halves the time still to
         if (m.fightEndsAt) return;
         if (m.vorlaeufig) { flashHint('Einen Moment – der Marsch läuft gerade los.', 1500); return; }
         const rem = m.resolveAt - now; if (rem < 1500) return;
-        const cost = speedUpCost(m); if (gems < cost) { flashHint('Zu wenig Gems – Beschleunigen kostet ' + cost + '.', 3000); return; }
+        const cost = speedUpCost(m); if (gems < cost) { flashHint('Zu wenig Edelsteine – Beschleunigen kostet ' + cost + '.', 3000); return; }
         if (!gemsWirklich('marsch:' + key, cost, btn)) return;
         gems -= cost;
         alsBefehl('schneller', { keys: [key] });
@@ -302,7 +302,7 @@ function speedUpAll(btn) {
     if (Date.now() - speedUpZuletzt < 600) return; speedUpZuletzt = Date.now();
     const list = speedableMarches(); if (!list.length) return;
     const cost = list.reduce((a, m) => a + speedUpCost(m), 0);
-    if (gems < cost) { flashHint('Zu wenig Gems – alle beschleunigen kostet ' + fmtNum(cost) + '.', 3000); return; }
+    if (gems < cost) { flashHint('Zu wenig Edelsteine – alle beschleunigen kostet ' + fmtNum(cost) + '.', 3000); return; }
     if (!gemsWirklich('marschAlle', cost, btn)) return;
     gems -= cost; const now = Date.now();
     alsBefehl('schneller', { keys: list.map(marchKeyOf) });

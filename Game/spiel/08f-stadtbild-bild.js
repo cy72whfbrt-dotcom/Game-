@@ -280,7 +280,7 @@ var levelUpTimer = null;
 function levelRewardText(level) {
     const g = levelRewardGems(level);
     return '<b>' + fmtCompact(levelRewardCoins(level)) + '</b> Münzen · <b>' + fmtCompact(levelRewardTroops(level)) + '</b> Truppen' +
-        (g ? ' · <b>' + g + '</b> Gems' : '');
+        (g ? ' · <b>' + g + '</b> Edelsteine' : '');
 }
 function queueLevelUpModal(from, to, r) {
     if (levelUpShown) {                 // several level-ups before the player taps: merge into one window
@@ -304,8 +304,8 @@ function renderLevelUpModal() {
     let html = '';
     if (s.coins) html += row('coin', 'Münzen', fmtNum(s.coins));
     if (s.troops) html += row('troops', 'Truppen (Heimat)', fmtNum(s.troops));
-    if (s.gems) html += row('gem', 'Gems', fmtNum(s.gems));
-    html += row('points', s.points === 1 ? 'Skillpunkt' : 'Skillpunkte', fmtNum(s.points));
+    if (s.gems) html += row('gem', 'Edelsteine', fmtNum(s.gems));
+    html += row('points', s.points === 1 ? 'Fähigkeitspunkt' : 'Fähigkeitspunkte', fmtNum(s.points));
     const list = document.getElementById('levelUpRewards');
     list.innerHTML = html;
     [...list.children].forEach((li, i) => { li.style.animationDelay = (180 + i * 110) + 'ms'; });

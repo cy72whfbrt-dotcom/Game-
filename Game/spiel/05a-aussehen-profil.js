@@ -67,7 +67,7 @@ document.addEventListener('click', e => {
     if (!id) { look.ring = ''; store.set('openWaterLook', JSON.stringify(look)); ringVer++; requestRender(); }
     else if (ringSkinsOf('player').includes(id)) { if (inShop) return; look.ring = id; store.set('openWaterLook', JSON.stringify(look)); ringVer++; requestRender(); flashHint('Ring „' + r.name + '“ angelegt' + (titleOf('player') || rulerOwner() === 'player' ? ' – solange du einen Titel trägst, siehst du den Titel-Ring.' : '.'), 3000); }
     else if (r.tp) { throneBuy('ring_' + id); if (!ringSkinsOf('player').includes(id)) return; }
-    else { if (gems < r.gems) { flashHint('Zu wenig Gems – Ring „' + r.name + '“ kostet ' + fmtNum(r.gems) + '.', 2500); return; }
+    else { if (gems < r.gems) { flashHint('Zu wenig Edelsteine – Ring „' + r.name + '“ kostet ' + fmtNum(r.gems) + '.', 2500); return; }
         if (!gemsWirklich('ring:' + id, r.gems, b)) return;
         gems -= r.gems; ringGive('player', id); updateHud(); saveGame(); sfx('coin'); flashHint('Ring „' + r.name + '“ gekauft und angelegt.', 2500); }
     if (isPanelOpen(shopPopup)) renderShop();
@@ -174,8 +174,8 @@ function renderProfile(live) {                  // live = the per-second refresh
 
     const activeCount = playerRelevantAttackCount() + playerRelevantSendCount() + pendingScouts.length + pendingRetreats.length;
     liveHtml(profileStats,
-        '<div class="statRow"><span>' + icon('star') + 'Skillpunkte</span><b>' + fmtNum(skillPoints) + '</b></div>' +
-        '<div class="statRow"><span>' + icon('gem') + 'Gems</span><b>' + fmtTile(Math.floor(gems)) + '</b></div>' +
+        '<div class="statRow"><span>' + icon('star') + 'Fähigkeitspunkte</span><b>' + fmtNum(skillPoints) + '</b></div>' +
+        '<div class="statRow"><span>' + icon('gem') + 'Edelsteine</span><b>' + fmtTile(Math.floor(gems)) + '</b></div>' +
         (activeCount > 0 ? '<div class="statRow"><span>' + icon('hourglass') + 'Unterwegs</span><b>' + fmtNum(activeCount) + '</b></div>' : '') +
         '<div class="statRow"><span>' + icon('home') + 'Heimat</span><b>' + homeLabel + '</b></div>');
     updateHudPlayer();

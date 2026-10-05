@@ -406,6 +406,12 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   ms, lang)` mit Klasse `toast--lang`. Fremde Basis nach dem Spähen: Kopfzeile bricht um statt „Kevin_93 · S…“/„GES…“, Knopf heißt
   „Neu spähen“ (passt Handy + Desktop). Obere Leiste: die Werte bekommen Platz nach ihrer Länge – „100 Mrd.“ statt „100 Mr…“.
   Test `tests/browser/handy_texte_test.js` (Handy + Desktop).
+- **5.10. Wörter (Alexanders Entscheidung):** in allen Texten, die der Spieler sieht, heißt es „Edelsteine“ (1 Edelstein) statt
+  „Gems“ und „Fähigkeiten“/„Fähigkeitspunkte“ statt „Skills“/„Skillpunkte“ (Shop, Profil, Kampfbericht, Pass, Aufgaben, Hinweise,
+  Ladebild-Tipps, Push). Code-Namen bleiben (`gems`, `skills` …), Admin-Seite und Weltrechner-Warnungen unverändert. Wo es eng
+  ist, nur Symbol + Zahl: „Fertig für 12“ (Stadt beschleunigen, Symbol vorn), „Fertig · ◆12“ (Forschung), „+1 Stern · ◆40“,
+  „Fähigkeiten zurücksetzen · ◆200“ (Helden), Aktionen „Mehrfach“/„Sammeln“ (◆1) und „Hauptstadt verlegen“ (◆50).
+  Test `handy_texte_test` (Shop/Profil: neue Wörter, nichts abgeschnitten).
 - **5.10. Hänger bei Last beim Hoster:** ein Welt-Puls dauert dann 15–30 s – das Handy zeigte sofort „Verbindung wird
   wiederhergestellt …“, Angriffe standen bei 0:00. Jetzt: die Weltrechner-Leitung gilt 45 s (statt 12), gerechnet ab dem ENDE
   seines Pulses (`LEITER_SEK`, 07-welt-puls.php; einen Absturz erkennt der Wachhund weiter am Herzschlag, 180 s). Der Hinweis
