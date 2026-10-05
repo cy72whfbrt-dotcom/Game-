@@ -34,7 +34,10 @@ const rein = name => G.rein(b, name, { fehler });
   h = await rein(HN);
   console.log(G.geschenk(HID, 0, 500000)); await warte(6000);
   await h.evaluate(() => { for (const x of inboxList().slice()) inboxClaim(x.id); saveGame(); }); await warte(75000);   // Münzen für die Maut (Profil → Weltrechner)
-  ok('Gastgeber hat jetzt eine Botschaft', await h.evaluate(w => verstStufe(w) > 0 && verstFrei(w) >= 500, wahl.wirt));
+  const zw = JSON.parse(sql(`SELECT zustand FROM ow_bots WHERE spieler_id=0 AND bot_id='${wahl.wirt}'`));
+  ok('Gastgeber hat jetzt eine Botschaft (Welt)', (zw.city.levels.embassy || 0) >= 1, JSON.stringify(zw.city.levels));
+  // Handy: die Botschaft anderer ist geheim (nur die Burg-Stufe kommt an) – trotzdem gibt es den Knopf „Verstärkung“ (Weltrechner prüft den Platz)
+  ok('Handy kennt die fremde Botschaft nicht, bietet Verstärkung trotzdem an', await h.evaluate(w => verstUnbekannt(w) && verstMoeglich(w), wahl.wirt));
   ok('H ist im Bündnis', await h.evaluate(a => { const x = bundVon('player'); return !!x && x.id === a; }, wahl.aid));
   const r = await h.evaluate(z => { islandTroops[playerIslandId] = Math.max(islandTroops[playerIslandId] || 0, 0); const n = islandTroops[playerIslandId] || 0; bundWahl = { mode: 'hilfe', nach: z, f: Math.min(1, 500 / Math.max(1, n)), von: playerIslandId }; const aus0 = WELT.ausgang.length; const hint = []; const fh = window.flashHint; window.flashHint = t => { hint.push(t); return fh && fh(t); }; bundWahlLos(); window.flashHint = fh; return 'Truppen ' + n + ' · frei ' + Math.floor(verstFrei(islandOwnerOf(z))) + ' · Befehl ' + (WELT.ausgang.length > aus0) + ' · ' + hint.join(' / '); }, wahl.ziel);
   await warte(12000);
