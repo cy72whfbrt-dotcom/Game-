@@ -70,7 +70,7 @@ function bundMitspielerRunde(now) {                              // alle 15 s: g
     verstPruefen();
     for (const v of verst.l.slice()) { const bot = botById[v.w]; if (!bot || bot.mensch) continue;
         if (bundUnterAngriff(v.t)) { v.ruhe = now; continue; }
-        if (now - (v.ruhe || v.at) > 30 * 60000 && Math.random() < .3) verstHeim(v, ''); }
+        if (now - (v.ruhe || v.at) > 30 * 60000 && Math.random() < .3) verstHolen(v); }
     // d) Was echte Spieler als Anführer auch können – Mitspieler als Anführer tun es selten und nachvollziehbar (gleiche Befehle):
     //    Mitglieder entfernen, die seit einem Tag keine Basis mehr haben · das Amt dem viel stärkeren Mitspieler übergeben ·
     //    fast voll → nur noch auf Anfrage, wieder Platz → offen
@@ -140,7 +140,7 @@ function bundMitspielerSignale(now) {
         const a = bund.b[id];
         for (const w of a.mit) {
             const bot = botById[w]; if (!bot || (!bot.mensch && !botOnline(bot, now)) || now - (bundMem.hilfeSig[w] || 0) < 4 * 60000) continue;   // höchstens alle 4 Min. ein Hilferuf
-            for (const t of botThreatened(w)) {
+            for (const t of bundBedroht(w)) {                       // (auch eine Rally, die gegen ihn sammelt)
                 const k = w + ':' + t, last = bundMem.hilfeSig[k] || ((a.sig || []).find(s => s.w === w && s.z === t && s.art === 'hilfe') || {}).at; if (last && now - last < 5 * 60000) continue;
                 const g = bundUnterAngriff(t); if (!g || g.at - now < 8000) continue;
                 const isl = islandById[t], def = effectiveTroops(isl) + effectiveDefense(isl);
@@ -157,21 +157,22 @@ function bundMitspielerSignale(now) {
     for (const k in bundMem.hilfeSig) if (now - bundMem.hilfeSig[k] > 10 * 60000) delete bundMem.hilfeSig[k];
 }
 // Mitspieler antworten im Chat – kurz danach, wie ein Mensch, und nur, was sie dann auch tun
-function bundChatAntworten(a, who, k) {
+// („Später“: nach 5–15 Min. folgt „Jetzt!“ – und sie greifen an – oder „Nein“, siehe bundChatTakt)
+function bundChatAntworten(a, who, k, ort) {
     const now = Date.now(), on = a.mit.filter(w => w !== who && botById[w] && !botById[w].mensch && botOnline(botById[w], now));
     const spaeter = (w, kk, z, tat) => bundMem.chatQ.push({ at: now + 3000 + Math.random() * 15000, aid: a.id, w, k: kk, z: z === undefined ? null : z, tat });
-    const c = bundChat[a.id], geteilt = c && c.l.slice().reverse().find(x => x.k === 'teilen' && now - x.at < 10 * 60000);
+    const geteilt = bundGeteilt(a, now, 10 * 60000);
     if (k === 'angriff') {
-        const z = geteilt ? geteilt.z : null;
+        const z = geteilt;
         if (z === null) { if (on[0]) spaeter(on[0], 'wo'); return; }   // noch kein Ziel geteilt: „Wo?“
         for (const w of on.slice(0, 4)) { const ok = !bundZielOk(w, z) && botFreeSlots(botById[w]) > 0 && !(botById[w].style === 'builder' && Math.random() < .6);
-            spaeter(w, ok ? (Math.random() < .5 ? 'ja' : 'dabei') : (Math.random() < .5 ? 'nein' : 'spaeter'), null, ok ? { ziel: z } : null); }
+            spaeter(w, ok ? (Math.random() < .5 ? 'ja' : 'dabei') : (Math.random() < .5 ? 'nein' : 'spaeter'), null, ok ? { ziel: z } : { spaeter: z }); }
     } else if (k === 'rally' || k === 'rallyBitte') {
         // läuft schon eine Rally des Bündnisses: wer kann, kommt dazu (das Mitmachen selbst macht bundMitspielerRally)
         const lauf = k === 'rally' && bund.r.some(r => r.aid === a.id && now < r.los - 5000);
         if (lauf) { for (const w of on.slice(0, 4)) spaeter(w, botFreeSlots(botById[w]) > 0 ? 'dabei' : 'nein'); return; }
         // sonst: einer startet sie auf das geteilte Ziel – wer es erreicht und Truppen hat. „Ja“ heißt: er startet sie wirklich.
-        const z = geteilt ? geteilt.z : null;
+        const z = geteilt;
         if (z === null) { if (on[0]) spaeter(on[0], 'wo'); return; }   // noch kein Ziel geteilt
         let wer = null, plan = null;
         for (const w of on) { if (bund.r.some(r => r.by === w) || botFreeSlots(botById[w]) <= 0 || bundZielOk(w, z)) continue;
@@ -184,11 +185,13 @@ function bundChatAntworten(a, who, k) {
         spaeter(wer, 'starte', null, { rally: plan });
         for (const w of on.filter(x => x !== wer).slice(0, 3)) if (botFreeSlots(botById[w]) > 0) spaeter(w, 'dabei');
     } else if (k === 'online') { for (const w of on.slice(0, 4)) spaeter(w, 'binon'); }
-    else if (k === 'wann') { if (on[0]) spaeter(on[0], Math.random() < .7 ? 'jetzt' : 'spaeter'); }
+    else if (k === 'wann') { if (on[0]) spaeter(on[0], Math.random() < .7 ? 'jetzt' : 'spaeter', null, { spaeter: geteilt }); }
+    else if (k === 'bericht') bundBerichtLesen(a, who, ort, on, spaeter, now);
     else if (k === 'wo') {                                         // ein Mitspieler mit einem Ziel teilt es
         for (const w of on) { const zi = bundMem.ziel[w]; if (zi && now < zi.until) { spaeter(w, 'teilen', zi.t); break; } }
     }
 }
+function bundGeteilt(a, now, ms) { const c = bundChat[a.id], x = c && c.l.slice().reverse().find(y => y.k === 'teilen' && now - y.at < ms); return x ? x.z : null; }   // zuletzt geteilter Ort
 function bundChatTakt(now) {                                      // (Weltrechner) fällige Antworten der Mitspieler schreiben
     if (!bundMem.chatQ.length) return;
     const bleibt = [];
@@ -202,17 +205,85 @@ function bundChatTakt(now) {                                      // (Weltrechne
             if (bundRallyStart(a, q.w, q.tat.rally)) bundChatDazu(a, q.w, 'nein'); else bundSpeichern();   // (bundRallyStart schreibt „hat eine Rally gestartet“ dazu)
             continue;
         }
+        if (q.tat && q.tat.folge !== undefined) {                       // nach „Später“: jetzt wirklich angreifen – oder absagen
+            const z = q.tat.folge !== null ? q.tat.folge : bundGeteilt(a, now, 20 * 60000), bot = botById[q.w];
+            if (bot && !botOnline(bot, now) && now < q.tat.bis) { q.at = now + (2 + Math.random() * 3) * 60000; bleibt.push(q); continue; }   // (gerade nicht da: sagt es, sobald er wieder online ist)
+            const ja = z !== null && bot && botOnline(bot, now) && !bundZielOk(q.w, z) && botFreeSlots(bot) > 0 && bundAngriffKraft(bot, z) > 0;
+            bundChatDazu(a, q.w, ja ? 'jetzt' : 'nein'); if (ja) bundMem.ziel[q.w] = { t: z, until: now + 10 * 60000 };
+            continue;
+        }
         bundChatDazu(a, q.w, q.k, q.z);
         if (q.tat && q.tat.ziel !== undefined) bundMem.ziel[q.w] = { t: q.tat.ziel, until: now + 10 * 60000 };   // „Ja“ heißt: sie greifen das geteilte Ziel an
+        if (q.k === 'spaeter') bleibt.push({ at: now + (5 + Math.random() * 10) * 60000, aid: a.id, w: q.w, k: 'jetzt', z: null, tat: { folge: q.tat && q.tat.spaeter !== undefined ? q.tat.spaeter : null, bis: now + 45 * 60000 } });
     }
     bundMem.chatQ = bleibt;
+}
+// Was ein Mitspieler von EINER Basis aus gegen z werfen kann (wie bei seinen Angriffen: Anteil der Besatzung × Angriffswerte)
+function bundAngriffKraft(bot, z) {
+    const T = islandById[z], thr = botThreatened(bot.id), commit = botStyle(bot).commit || .7; let best = 0; if (!T) return 0;
+    for (const id of botOwnedIslands[bot.id] || []) { const I = islandById[id]; if (!I || thr.has(id) || id === megaTempleId) continue;
+        const n = Math.floor((islandTroops[id] || 0) * commit); if (n < BOT_MIN_GARRISON_TO_ATTACK || n <= best) continue;
+        if (routeFor(I.landmassId, T.landmassId, bot.id) && bundWeg(I.landmassId, T.landmassId, bot.id, n)) best = n; }
+    return best * botAtkFactor(bot, true);
+}
+// Kampfbericht geteilt: die Mitspieler lesen ihn – nur einen frischen (Kampf dort vor höchstens 15 Min.), je Ort einmal. Was dort
+// jetzt steht, zeigt der Bericht (wie ein Späher). Schwach für einen → „Schwach – ich greife mit an!“ (und er greift an); für jeden
+// allein zu stark → vorsichtig („Zu stark“, keiner allein) und reicht das Bündnis zusammen, startet einer eine Rally.
+// Gehört der Ort dem Bündnis (gewonnen bzw. gehalten): „Gut gemacht!“.
+function bundBerichtLesen(a, who, z, on, sag, now) {
+    const T = islandById[z]; if (!T || !on.length || !(baseFought[z] > now - 15 * 60000) || !bundEinmal('bt|' + a.id + '|' + z)) return;
+    const ow = islandOwnerOf(z);
+    if (ow && (ow === who || bundVerbuendet(ow, who))) { if (Math.random() < .7) sag(on[0], 'gut'); return; }
+    const S = effectiveTroops(T) + effectiveDefense(T) + verst.l.reduce((s, v) => s + (v.t === z ? v.n : 0), 0);
+    let zusammen = 0, schwach = 0; const stark = [];
+    for (const w of on.slice(0, 4)) {
+        const bot = botById[w]; if (bundZielOk(w, z) || botFreeSlots(bot) <= 0) continue;
+        const it = botIntelMem[w] || (botIntelMem[w] = {}); it[z] = { s: S, ready: now, pending: false };
+        const k = bundAngriffKraft(bot, z); zusammen += k;
+        if (k >= S * 1.15) { schwach++; sag(w, 'schwach', null, { ziel: z }); }
+        else { stark.push(w); if (bundMem.ziel[w] && bundMem.ziel[w].t === z) delete bundMem.ziel[w]; }   // nicht allein angreifen
+    }
+    if (schwach || !stark.length) return;
+    sag(stark[0], 'stark');
+    if (zusammen < S * 1.15) return;                                // auch zusammen zu stark: nur vorsichtig
+    for (const w of stark) { if (bund.r.some(r => r.by === w)) continue; const plan = bundRallyFuer(w, z, now);
+        if (plan) { bundMem.chatQ.push({ at: now + 20000 + Math.random() * 10000, aid: a.id, w, k: 'starte', z: null, tat: { rally: plan } }); break; } }
+}
+// „Danke!“ – selten: wenn bei einem Mitspieler Hilfe oder Verstärkung ankommt (höchstens alle 10 Min.)
+function bundDanke(w) {
+    const a = bundVon(w), bot = botById[w]; if (!a || !bot || bot.mensch || !botOnline(bot, Date.now()) || Math.random() > .4 || !bundEinmal('dk|' + w)) return;
+    bundMem.chatQ.push({ at: Date.now() + 4000 + Math.random() * 10000, aid: a.id, w, k: 'danke', z: null });
+}
+// „Gut gemacht!“ – nach einem gemeinsamen Sieg sagt es manchmal einer der Mitspieler, die dabei waren
+function bundGutGemacht(a, wer) {
+    if (new Set(wer).size < 2 || Math.random() > .6) return; const now = Date.now();
+    const kann = wer.filter(w => botById[w] && !botById[w].mensch && a.mit.includes(w) && botOnline(botById[w], now)); if (!kann.length) return;
+    bundMem.chatQ.push({ at: now + 4000 + Math.random() * 10000, aid: a.id, w: kann[Math.floor(Math.random() * kann.length)], k: 'gut', z: null });
+}
+// Rückzug: ein Mitspieler kehrt mit allem um, was zu z unterwegs ist (Angriffe, Hilfe, Verstärkung), holt seine Verstärkung
+// dort heim und bricht seine Rally dorthin ab. Wie „Zurück“ bei dir: zurück so lange, wie er schon unterwegs war. → wie viel
+function bundRueckzugTun(w, z) {
+    const now = Date.now(); let n = 0;
+    for (const liste of [pendingAttacks, pendingSends]) for (const m of liste.slice()) {
+        const an = liste === pendingAttacks ? m.attackerBotId === w && m.targetId === z : m.senderBotId === w && m.toId === z && !m.back;
+        if (!an || m.fightEndsAt || m.rally) continue;
+        const von = m.sourceId ?? m.fromId, tr = m.rawTroops ?? m.troops;
+        if (liste === pendingAttacks) heroWutZurueck(w, m.hx);       // (nicht gekämpft: die Wut bleibt)
+        liste.splice(liste.indexOf(m), 1); n++;
+        pendingSends.push({ fromId: z, toId: bundBasen(w).has(von) ? von : bundCap(w), troops: tr, startedAt: now, resolveAt: now + Math.max(1000, Math.min(now, m.resolveAt) - m.startedAt), senderBotId: w, back: true });
+    }
+    for (const v of verst.l.filter(v => v.w === w && v.t === z)) { verstHolen(v); n++; }
+    for (const r of bund.r.filter(r => r.by === w && r.t === z)) { bundRallyEnde(r, bundName(w) + ' hat sich zurückgezogen'); n++; }
+    if (bundMem.ziel[w] && bundMem.ziel[w].t === z) delete bundMem.ziel[w];
+    if (n) { saveGame(); saveProgression(); }
+    return n;
 }
 // Antworten mit Taten: Hilfe schicken, mit angreifen, zur Rally kommen
 function bundMitspielerAntworten(now) {
     for (const id in bund.b) {
         const a = bund.b[id];
         for (const s of a.sig || []) {
-            if (now - s.at > 3 * 60000) continue;
+            if (now - s.at > (s.art === 'rueckzug' ? BUND.SIG_MS : 3 * 60000)) continue;
             if (s.art === 'hilfe' || s.art === 'verteidigen') {
                 const g = bundUnterAngriff(s.z); if (!g) continue;
                 const isl = islandById[s.z], ow = islandOwnerOf(s.z), kommt = pendingSends.filter(x => x.toId === s.z && !x.back && x.resolveAt < g.at).reduce((n, x) => n + x.troops, 0);
@@ -236,6 +307,10 @@ function bundMitspielerAntworten(now) {
                     if (!bundHilfe(w, best.id, s.z, give)) { fehlt -= give; bundMem.sigGeschickt.add(s.id); bundBotGetippt(bot, now); bundMem.chatQ.push({ at: now + 1500 + Math.random() * 4000, aid: a.id, w, k: 'unterwegs', z: null }); }
                 }
                 if (!offen && fehlt > 0 && !bundMem.sigGeschickt.has(s.id) && bundEinmal('kh|' + ow + '|' + s.z)) bundMelden(ow, 'Keiner deiner Verbündeten kommt rechtzeitig an.');
+            } else if (s.art === 'rueckzug') {                           // Rückzug: wer online ist, kehrt um (wer gerade weg ist, sobald er wieder da ist)
+                for (const w of a.mit) { const bot = botById[w], key = s.id + ':' + w; if (!bot || bot.mensch || w === s.w || bundMem.sigGemacht.has(key) || !botOnline(bot, now)) continue;
+                    bundMem.sigGemacht.add(key);
+                    if (bundRueckzugTun(w, s.z) && Math.random() < .5) bundMem.chatQ.push({ at: now + 2000 + Math.random() * 6000, aid: a.id, w, k: 'ja', z: null }); }
             } else if (s.art === 'angriff') {
                 for (const w of a.mit) { const bot = botById[w]; if (!bot || bot.mensch || w === s.w || bundMem.sigGemacht.has(s.id + ':' + w)) continue;
                     bundMem.sigGemacht.add(s.id + ':' + w);

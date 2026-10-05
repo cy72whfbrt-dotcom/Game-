@@ -29,7 +29,7 @@ const BUND_SIGNALE = {
     angriff:     { name: 'Angriff!', ic: 'attack', farbe: '#e67e22', text: z => 'Angriff auf ' + z + '!' },
     sammeln:     { name: 'Sammeln', ic: 'flag', farbe: '#f1c40f', text: z => 'Sammeln bei ' + z },
     verteidigen: { name: 'Verteidigt', ic: 'defense', farbe: '#3498db', text: z => 'Verteidigt ' + z + '!' },
-    danke:       { name: 'Danke!', ic: 'star', farbe: '#2ecc71', text: () => 'Danke!' },
+    rueckzug:    { name: 'Rückzug!', ic: 'recall', farbe: '#95a5a6', text: z => 'Rückzug von ' + z + '!' },   // Mitspieler kehren um, echte Spieler entscheiden selbst
     teilen:      { name: 'Geteilt', ic: 'flag', farbe: '#f1c40f', text: z => 'Geteilt: ' + z }
 };
 // Bündnis-Chat (Alexander 4.10.): nur feste Sätze (kein freier Text), dazu „Ort teilen“ und Meldungen des Spiels.
@@ -41,20 +41,24 @@ const BUND_CHAT = {
     ja: { g: 'a', t: 'Ja' }, nein: { g: 'a', t: 'Nein' }, dabei: { g: 'a', t: 'Bin dabei' }, jetzt: { g: 'a', t: 'Jetzt!' }, spaeter: { g: 'a', t: 'Später' },
     starte: { g: 'a', t: 'Ja, ich starte die Rally!' }, machdu: { g: 'a', t: 'Starte du die Rally – ich trete bei!' }, zuweit: { g: 'a', t: 'Bin zu weit weg' }, keinweg: { g: 'a', t: 'Kein Weg dorthin – ein Tor ist zu' },
     unterwegs: { g: 'a', t: 'Bin unterwegs' }, binon: { g: 'a', t: 'Bin online' }, danke: { g: 'a', t: 'Danke!' }, gut: { g: 'a', t: 'Gut gemacht!' },
-    teilen: { g: 'o', t: 'hat einen Ort geteilt' },
-    s_rally: { g: 's', t: 'hat eine Rally gestartet' }, s_rein: { g: 's', t: 'ist dem Bündnis beigetreten' }, s_raus: { g: 's', t: 'ist nicht mehr im Bündnis' }
+    schwach: { g: 'a', t: 'Schwach – ich greife mit an!' }, stark: { g: 'a', t: 'Zu stark – lieber eine Rally!' },
+    teilen: { g: 'o', t: 'hat einen Ort geteilt' }, rueckzug: { g: 'o', t: 'Rückzug!' }, bericht: { g: 'o', t: 'hat einen Kampfbericht geteilt' },   // (mit Ort: Inselfenster bzw. Kampfbericht)
+    s_rally: { g: 's', t: 'hat eine Rally gestartet' }, s_rein: { g: 's', t: 'ist dem Bündnis beigetreten' }, s_raus: { g: 's', t: 'ist nicht mehr im Bündnis' },
+    s_gegen: { g: 's', t: 'sammelt Truppen für eine Rally gegen uns!' }, s_heim: { g: 's', t: 'holt seine Verstärkung heim' }
 };
 const BUND_CHAT_MAX = 80, BUND_CHAT_PAUSE = 1500;                // gemerkte Zeilen je Bündnis · höchstens eine Zeile pro 1,5 s und Spieler
-// Welt-Teil openWaterBundChat = { aid: { mit: [Mitglieder – der Server zeigt jedem nur den Chat seines Bündnisses], l: [{ id, w, k, z, at }] } }
+// Welt-Teil openWaterBundChat = { aid: { mit: [Mitglieder – der Server zeigt jedem nur den Chat seines Bündnisses], l: [{ id, w, k, z, at, d? }] } }
+// (d: Zahlen der Zeile – Kampfbericht { s: Sieg, n: Stärke des Gegners, v: 'a' Angriff / 'v' Verteidigung }, Heimholen { n: Truppen })
 let bundChat = (() => { try { const v = JSON.parse(store.get('openWaterBundChat')); return v && typeof v === 'object' ? v : {}; } catch (e) { return {}; } })();
 function bundChatSpeichern() {
     for (const id in bundChat) { const a = bund.b[id]; if (!a) delete bundChat[id]; else bundChat[id].mit = a.mit.slice(); }
     store.set('openWaterBundChat', JSON.stringify(bundChat)); requestRender();
 }
-function bundChatDazu(a, w, k, z) {                               // eine Zeile in den Chat des Bündnisses a
+function bundChatDazu(a, w, k, z, d) {                            // eine Zeile in den Chat des Bündnisses a
     if (!a || !BUND_CHAT[k]) return;
     const c = bundChat[a.id] || (bundChat[a.id] = { mit: [], l: [] }); if (!Array.isArray(c.l)) c.l = [];
-    c.l.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), w, k, z: Number.isInteger(z) ? z : null, at: Date.now() });
+    const x = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), w, k, z: Number.isInteger(z) ? z : null, at: Date.now() }; if (d) x.d = d;
+    c.l.push(x);
     if (c.l.length > BUND_CHAT_MAX) c.l.splice(0, c.l.length - BUND_CHAT_MAX);
     bundChatSpeichern();
 }
@@ -88,7 +92,15 @@ function bundUnterAngriff(id) {                                  // kommt gerade
     const ow = islandOwnerOf(id); if (!ow) return null; let str = 0, at = Infinity;
     for (const a of pendingAttacks) if (a.targetId === id && !a.fightEndsAt && (a.attackerBotId || 'player') !== ow && !bundVerbuendet(a.attackerBotId || 'player', ow)) { str += (a.rawTroops + (a.attackBonus || 0)) * (a.atkTitle || 1) * (a.atkKraft || 1); at = Math.min(at, a.resolveAt); }
     for (const x of armies) if (x.mv && x.mv.to && x.mv.to.kind === 'base' && x.mv.to.id === id) { const w = armyWho(x); if (w !== ow && !bundVerbuendet(w, ow)) { str += x.troops; at = Math.min(at, x.mv.resolveAt); } }
+    for (const r of bund.r) if (r.t === id && r.by !== ow && !bundVerbuendet(r.by, ow) && islandById[r.at]) {   // eine Rally sammelt gegen sie: Ankunft = Start + Marsch vom Sammelpunkt
+        str += bundRallyTruppen(r) + bundRallyUnterwegs(r);
+        at = Math.min(at, Math.max(r.los, Date.now()) + travelDurationSeconds(islandById[r.at], islandById[id], r.by === 'player' ? undefined : r.by) * 1000); }
     return at < Infinity ? { str, at } : null;   // (am Handy ist die Stärke fremder Angriffe unbekannt – 0 – der Angriff zählt trotzdem)
+}
+function bundBedroht(w) {                                        // eigene Basen, auf die ein Angriff oder eine Rally zielt
+    const s = botThreatened(w);
+    for (const r of bund.r) if (islandOwnerOf(r.t) === w && r.by !== w && !bundVerbuendet(r.by, w)) s.add(r.t);
+    return s;
 }
 
 // ==============================================================================================================
@@ -227,8 +239,14 @@ function bundOp(who, b) {
         } else if (k === 'hilfe') {                                // Hilfe für eine eigene Basis (die angegriffene oder die Hauptstadt)
             if (z === null || islandOwnerOf(z) !== who) { z = [...bundBasen(who)].find(id => bundUnterAngriff(id)); if (z === undefined) z = bundCap(who); }
             if (bundSignal(a, who, 'hilfe', z)) bundChatDazu(a, who, 'hilfe', z);   // (das Signal schreibt die Zeile selbst – nur wenn es gerade nicht geht, die Zeile allein)
+        } else if (k === 'rueckzug') {                             // Rückzug von einem Ort (Signal + Zeile; die Mitspieler kehren um)
+            if (z === null) return 'kaputt';
+            const why = bundSignal(a, who, 'rueckzug', z); if (why) return why;
+        } else if (k === 'bericht') {                              // Kampfbericht geteilt: Ort, Sieg, Stärke des Gegners (nur zum Lesen – Mitspieler urteilen selbst)
+            if (z === null) return 'kaputt';
+            bundChatDazu(a, who, 'bericht', z, { s: b.s === true ? 1 : 0, n: bundZahl(b.n) ? Math.round(b.n) : 0, v: b.v === 'v' ? 'v' : 'a' });
         } else bundChatDazu(a, who, k, null);
-        bundChatAntworten(a, who, k);
+        bundChatAntworten(a, who, k, z);
         return fertig('');
     }
     if (op === 'rally') return bundRallyStart(a, who, b) || fertig('');
@@ -245,7 +263,7 @@ function bundOp(who, b) {
     if (op === 'verstZurueck') {                                   // Verstärkung heim: der Helfer holt sie, oder der Gastgeber schickt sie
         const v = verst.l.find(x => x.id === kennung(b.vid)); if (!v) return '';
         const gast = islandOwnerOf(v.t); if (v.w !== who && gast !== who) return 'Nicht deine Verstärkung';
-        verstHeim(v, v.w === who ? bundName(who) + ' holt ' + fmtCompact(v.n) + ' Truppen aus ' + islandTitle(islandById[v.t]) + ' zurück.' : bundName(who) + ' schickt deine ' + fmtCompact(v.n) + ' Truppen aus ' + islandTitle(islandById[v.t]) + ' heim.');
+        if (v.w === who) verstHolen(v); else verstHeim(v, bundName(who) + ' schickt deine ' + fmtCompact(v.n) + ' Truppen aus ' + islandTitle(islandById[v.t]) + ' heim.');
         return fertig('');
     }
     if (op === 'kiste') {                                          // im Shop eine große Kiste gekauft → Geschenk für die anderen (pro Tag gedeckelt)
@@ -259,18 +277,19 @@ function bundSignal(a, who, art, z) {
     const S = BUND_SIGNALE[art]; if (!S) return 'kaputt';
     const now = Date.now(); a.sig = (a.sig || []).filter(s => now - s.at < 30 * 60000);
     const letztes = a.sig.find(s => s.w === who && s.art !== 'teilen'); if (letztes && now - letztes.at < BUND.SIG_PAUSE) return 'Warte kurz – höchstens ein Signal alle 30 Sekunden';
-    if (art === 'danke') z = null;
-    else {
-        if (!Number.isInteger(z) || !islandById[z]) return 'kaputt';
-        const ow = islandOwnerOf(z);
-        if (art === 'hilfe' && ow !== who) return 'Hilfe rufen geht nur für eigene Basen';
-        if ((art === 'sammeln' || art === 'verteidigen') && !(ow === who || bundVerbuendet(ow, who))) return 'Nur für Basen des Bündnisses';
-        if (art === 'angriff' && (ow === who || bundVerbuendet(ow, who))) return 'Das ist eine Basis des Bündnisses';
-    }
+    if (!Number.isInteger(z) || !islandById[z]) return 'kaputt';
+    const ow = islandOwnerOf(z);
+    if (art === 'hilfe' && ow !== who) return 'Hilfe rufen geht nur für eigene Basen';
+    if ((art === 'sammeln' || art === 'verteidigen') && !(ow === who || bundVerbuendet(ow, who))) return 'Nur für Basen des Bündnisses';
+    if (art === 'angriff' && (ow === who || bundVerbuendet(ow, who))) return 'Das ist eine Basis des Bündnisses';
     if (art === 'hilfe' && a.sig.some(s => s.w === who && s.art === 'hilfe' && s.z === z && now - s.at < 3 * 60000)) { bundChatDazu(a, who, 'hilfe', z); return ''; }   // (läuft schon – z. B. von selbst gesetzt: kein zweites Signal)
     const s = { id: 's' + (bund.n++), w: who, art, z, at: now };
     a.sig.unshift(s); if (a.sig.length > BUND.SIG_MAX) a.sig.length = BUND.SIG_MAX;
     if (art === 'hilfe') { for (const w of a.mit) if (w !== who) bundPush(w, { art: 'hilfe', von: bundName(who), basis: islandTitle(islandById[z]) }); bundChatDazu(a, who, 'hilfe', z); }
+    if (art === 'rueckzug') {                                      // echte Spieler: nur eine Nachricht – sie entscheiden selbst (die Mitspieler: bundMitspielerAntworten)
+        bundChatDazu(a, who, 'rueckzug', z);
+        for (const w of a.mit) if (w !== who) bundMelden(w, bundName(who) + ' ruft zum Rückzug von ' + bundZielName(islandById[z]) + '! Du entscheidest selbst: Marsch antippen → „Zurück“, Verstärkung in der Botschaft zurückholen.');
+    }
     return '';
 }
 // Truppen zur Verstärkung an die Basis eines Mitglieds, die gerade angegriffen wird (sie gehören dann dort zur Besatzung)
@@ -316,7 +335,7 @@ function bundSendAnkunft(send) {
             if (send.troops > n) bundHeimschicken(who, send.toId, send.fromId, send.troops - n);
             bundMelden(ow, bundName(who) + ' verstärkt dich in ' + islandTitle(islandById[send.toId]) + ' mit ' + fmtCompact(n) + ' Truppen (Botschaft).');
             bundMelden(who, 'Deine ' + fmtCompact(n) + ' Truppen verstärken jetzt ' + bundName(ow) + ' in ' + islandTitle(islandById[send.toId]) + '.');
-            const a = bundVon(ow); if (a && !(botById[ow] || {}).mensch && Math.random() < .5) bundSignal(a, ow, 'danke');
+            bundDanke(ow);
             saveGame(); return true;
         }
     } else if (send.hilfe) {
@@ -324,7 +343,7 @@ function bundSendAnkunft(send) {
         if (ow && bundVerbuendet(ow, who)) {
             islandTroops[send.toId] = (islandTroops[send.toId] || 0) + send.troops;
             bundMelden(ow, bundName(who) + ' hat dir ' + fmtCompact(send.troops) + ' Truppen nach ' + islandTitle(islandById[send.toId]) + ' geschickt.');
-            const a = bundVon(ow); if (a && !(botById[ow] || {}).mensch && Math.random() < .5) bundSignal(a, ow, 'danke');   // ein Mitspieler bedankt sich
+            bundDanke(ow);
             saveGame(); return true;
         }
     } else return false;
@@ -452,6 +471,12 @@ function verstHeim(v, text) {                                    // eine Verstä
     verst.l = verst.l.filter(x => x !== v); verstSpeichern();
     if (v.n >= 1) bundHeimschicken(v.w, v.t, v.von, v.n);
     if (text) { bundMelden(v.w, text); const g = islandOwnerOf(v.t); if (g && g !== v.w) bundMelden(g, text); }
+}
+function verstHolen(v) {                                         // der Helfer holt seine Verstärkung heim: Meldung an den Gastgeber + Zeile im Bündnis-Chat
+    const g = islandOwnerOf(v.t), a = bundVon(v.w), n = Math.floor(v.n);
+    verstHeim(v, '');
+    if (g && g !== v.w) bundMelden(g, bundName(v.w) + ' holt seine ' + fmtCompact(n) + ' Truppen aus ' + islandTitle(islandById[v.t]) + ' heim.');
+    if (a) bundChatDazu(a, v.w, 's_heim', v.t, { n });
 }
 // (Weltrechner, alle 15 s) Verstärkung bei jemandem, der nicht mehr im selben Bündnis ist oder die Basis nicht mehr hat → heim
 function verstPruefen() {

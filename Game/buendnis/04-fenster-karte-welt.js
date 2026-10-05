@@ -70,6 +70,12 @@ function bundChatText(x, du) {                                    // was eine Ze
     if (x.k === 's_rein') return du ? 'bist dem Bündnis beigetreten' : C.t;
     if (x.k === 's_raus') return du ? 'bist nicht mehr im Bündnis' : C.t;
     if (x.k === 'hilfe' && ort) return 'Brauche Hilfe! (' + ort + ')';
+    if (x.k === 'rueckzug') return 'Rückzug von ' + (ort || 'dort') + '!';
+    if (x.k === 's_gegen') return 'sammelt Truppen für eine Rally auf ' + (ort || 'uns') + ' – Gefahr!';
+    if (x.k === 's_heim') return (du ? 'holst deine ' : 'holt seine ') + (x.d && x.d.n ? fmtCompact(x.d.n) + ' ' : '') + 'Truppen aus ' + (ort || 'einer Basis') + ' heim';
+    if (x.k === 'bericht') { const d = x.d || {};                // „hat einen Kampfbericht geteilt: Angriff auf X – Sieg · Gegner 1,2 Mio.“
+        return (du ? 'hast' : 'hat') + ' einen Kampfbericht geteilt: ' + (d.v === 'v' ? 'Verteidigung von ' : 'Angriff auf ') + (ort || 'einen Ort') + ' – ' +
+            (d.v === 'v' ? (d.s ? 'gehalten' : 'verloren') : d.s ? 'Sieg' : 'Niederlage') + (d.n ? ' · ' + (d.v === 'v' ? 'Angreifer ' : 'Gegner ') + fmtCompact(d.n) : ''); }
     return C.t;
 }
 function bundChatZeilen(a) { const c = bundChat[a.id]; return c && Array.isArray(c.l) ? c.l : []; }
@@ -77,7 +83,7 @@ function bundChatHtml(a) {
     const l = bundChatZeilen(a).slice(-50), now = Date.now();
     const knopf = k => '<button type="button" class="btn btn--secondary btn--sm" data-bact="chat" data-k="' + k + '">' + escapeHtml(BUND_CHAT[k].t) + '</button>';
     return '<div class="bd-chat" id="bdChat">' + (l.length ? l.map(x => { const mir = x.w === 'player', sys = BUND_CHAT[x.k] && BUND_CHAT[x.k].g === 's', ort = x.z !== null && x.z !== undefined && islandById[x.z];
-            return '<div class="bd-cz' + (mir ? ' is-me' : '') + (sys ? ' is-sys' : '') + (x.k === 'hilfe' ? ' is-hilfe' : '') + '"><b>' + (mir ? 'Du' : escapeHtml(bundName(x.w))) + (BUND_CHAT[x.k] && 'fa'.includes(BUND_CHAT[x.k].g) ? ':' : '') + '</b> <span>' + escapeHtml(bundChatText(x, mir)) + '</span>' +
+            return '<div class="bd-cz' + (mir ? ' is-me' : '') + (sys ? ' is-sys' : '') + (x.k === 'hilfe' || x.k === 's_gegen' || x.k === 'rueckzug' ? ' is-hilfe' : '') + '"><b>' + (mir ? 'Du' : escapeHtml(bundName(x.w))) + (BUND_CHAT[x.k] && 'fa'.includes(BUND_CHAT[x.k].g) ? ':' : '') + '</b> <span>' + escapeHtml(bundChatText(x, mir)) + '</span>' +
                 (ort ? ' <button type="button" class="btn btn--ghost btn--sm" data-bact="zeigen" data-z="' + x.z + '">Zeigen</button>' : '') + '<small>' + uhrHtml(x.at, 'vor') + '</small></div>'; }).join('')
             : '<div class="inbox-empty">Noch ist es ruhig. Frag dein Bündnis – oder tippe eine Basis an → „Im Chat teilen“.</div>') + '</div>' +
         '<div class="bd-ck"><span>Fragen</span>' + Object.keys(BUND_CHAT).filter(k => BUND_CHAT[k].g === 'f').map(knopf).join('') + '</div>' +   // (alle festen Sätze aus BUND_CHAT – kein zweites Verzeichnis)
@@ -261,22 +267,29 @@ function bundInselfenster(island, view) {
     const ally = ow && ow !== 'player' && bundVerbuendet('player', ow), mein = ow === 'player', kn = [];
     if (ally) { attackBtn.style.display = 'none'; multiAttackBtn.style.display = 'none'; popupOverline.textContent = 'Bündnis-Mitglied · [' + a.tag + ']'; }
     kn.push(['teilen', 'flag', 'Im Chat teilen']);                                                   // im Bündnis-Chat besprechen
+    kn.push(['rueckzug', 'recall', 'Rückzug!']);                                                     // Mitspieler kehren um, echte Spieler entscheiden selbst
     if (mein) kn.push(['hilfe', 'shield', 'Brauche Hilfe!']);
     else if (ally) { if (verstMoeglich(islandOwnerOf(island.id))) kn.push(['hilfeWahl', 'send', 'Verstärkung']); }   // (nur mit Botschaft – die Truppen bleiben deine)
     else if (!bundZielOk('player', island.id)) kn.push(['rallyWahl', 'troops', 'Rally']);
     if (bundKannEinladen(ow)) kn.push(['einladen', 'bund', bundEingeladen(ow) ? 'Eingeladen' : 'Einladen']);   // Anführer: Herr dieser Basis ins Bündnis einladen
+    const vl = verst.l.filter(v => v.t === island.id && (mein || v.w === 'player'));         // deine Basis: wer verstärkt dich hier · Basis eines Mitglieds: deine Truppen dort
     liveHtml(box, (ally ? '<div class="notice notice--gold">' + icon('bund') + '<span>' + escapeHtml(bundName(ow)) + ' ist in deinem Bündnis – Mitglieder greifen sich nicht an.</span></div>' : '') +
+        (vl.length ? '<div class="sect"><h4>' + (mein ? 'Verstärkung hier' : 'Deine Truppen hier') + '</h4><span class="sect-aside">' + fmtCompact(vl.reduce((s, v) => s + v.n, 0)) + '</span></div><div class="bd-liste">' +
+            vl.map(v => '<div class="bd-zeile"><span class="bd-name"><b>' + escapeHtml(mein ? bundName(v.w) : 'Du') + '</b><small>' + fmtNum(Math.floor(v.n)) + ' Truppen</small></span>' +
+                '<button type="button" class="btn btn--ghost btn--sm" data-bvheim="' + v.id + '">' + (mein ? 'Heimschicken' : 'Zurückholen') + '</button></div>').join('') + '</div>' : '') +
         (kn.length ? '<div class="bd-insel"><span class="bd-insel-l">' + icon('bund') + 'Bündnis</span>' + kn.map(k => '<button type="button" class="btn btn--secondary btn--sm" data-bsig="' + k[0] + '">' + icon(k[1]) + '<span>' + k[2] + '</span></button>').join('') + '</div>' : ''));
 }
 document.getElementById('popupBund') && document.getElementById('popupBund').addEventListener('click', e => {
+    const vh = e.target.closest('[data-bvheim]'), v = vh && verst.l.find(x => x.id === vh.dataset.bvheim);   // Verstärkung heim (wie in der Botschaft)
+    if (v) { vh.disabled = true; bundBefehl('verstZurueck', { vid: v.id }, v.w === 'player' ? 'Deine Truppen kommen zurück.' : 'Die Verstärkung marschiert heim.'); return; }
     const b = e.target.closest('[data-bsig]'); if (!b || popupIslandId === null) return;
     const id = popupIslandId, art = b.dataset.bsig;
     if (art === 'rallyWahl') { const why = bundZielOk('player', id); if (why) { flashHint(why + '.', 3000); return; } closeIslandPopup(); bundWahl = { mode: 'rally', t: id, min: 3, f: 1 }; bundOeffnen('rally'); return; }
     if (art === 'hilfeWahl') { closeIslandPopup(); bundWahl = { mode: 'hilfe', nach: id, f: .5 }; bundOeffnen('sig'); return; }
     if (art === 'einladen') { const ow = islandOwnerOf(id); if (!bundKannEinladen(ow) || bundEingeladen(ow)) return; b.disabled = true; bundBefehl('einladen', { w: ow }, 'Einladung an ' + bundName(ow) + ' geschickt.'); return; }
     if (art === 'hilfe' && !verstMoeglich('player')) { flashHint('Hilfe braucht eine Botschaft (ab Burg-Stufe 5).', 3500); return; }   // (ohne Botschaft kann keiner Truppen schicken)
-    if (art === 'teilen' || art === 'hilfe') { if (Date.now() - (bundMem.chatSend || 0) < BUND_CHAT_PAUSE) return; bundMem.chatSend = Date.now();
-        bundBefehl('chat', { k: art, z: id }, art === 'teilen' ? 'Im Bündnis-Chat geteilt.' : 'Hilferuf im Bündnis-Chat.'); sfx('send'); b.disabled = true; }
+    if (art === 'teilen' || art === 'hilfe' || art === 'rueckzug') { if (Date.now() - (bundMem.chatSend || 0) < BUND_CHAT_PAUSE) return; bundMem.chatSend = Date.now();
+        bundBefehl('chat', { k: art, z: id }, art === 'teilen' ? 'Im Bündnis-Chat geteilt.' : art === 'hilfe' ? 'Hilferuf im Bündnis-Chat.' : 'Rückzug-Signal an dein Bündnis.'); sfx('send'); b.disabled = true; }
 });
 
 // ==============================================================================================================
@@ -374,6 +387,24 @@ if (window.WELT) {
     });
     WELT.beiNachricht.push(function (e) { if (e && e.art === 'bundInfo' && typeof e.text === 'string') { flashHint(e.text.slice(0, 300), 4500); if (bundPopup && isPanelOpen(bundPopup)) bundRender(); } });
 }
+
+// Kampfbericht im Bündnis teilen (Knopf neben „Zeigen“ im Kampfbericht, 05d): Ort, Sieg und Stärke des Gegners als Chat-Zeile
+function bundTeilenKnopf(e) {
+    return window.WELT && !SYSTEM && bundIch() && (e.type === 'attack' || e.type === 'botAttack') && islandById[e.targetId]
+        ? ' <button type="button" class="btn btn--ghost btn--sm" data-logteilen="1">Im Bündnis teilen</button>' : '';
+}
+function bundBerichtDaten(e) {                                    // → { s: Sieg (aus deiner Sicht), n: Stärke des Gegners, v: 'a' Angriff / 'v' Verteidigung }
+    if (e.type === 'botAttack') return { s: !e.won, n: e.myTroops || 0, v: 'v' };
+    return { s: !!e.won, n: (e.enemyTroops || 0) + (e.enemyDefense || 0) + (e.defenseBuff || 0), v: 'a' };
+}
+combatLogListEl.addEventListener('click', ev => {
+    const b = ev.target.closest('[data-logteilen]'); if (!b) return;
+    ev.preventDefault(); ev.stopPropagation();
+    const row = b.closest('.logRow'), e = row && combatLog.find(x => combatLogKey(x) === row.dataset.key); if (!e) return;
+    if (Date.now() - (bundMem.chatSend || 0) < BUND_CHAT_PAUSE) return; bundMem.chatSend = Date.now();
+    const d = bundBerichtDaten(e);
+    if (bundBefehl('chat', Object.assign({ k: 'bericht', z: e.targetId }, d), 'Kampfbericht im Bündnis geteilt.')) { b.disabled = true; sfx('send'); }
+});
 
 // Darf ich (Anführer, Platz frei) w einladen? Ist w schon eingeladen?
 function bundKannEinladen(w) { const a = bundIch(); return !SYSTEM && !!a && a.anf === 'player' && a.mit.length < BUND.MAX && !!w && w !== 'player' && !!botById[w] && !bundVon(w) && bundBasen(w).size > 0; }
