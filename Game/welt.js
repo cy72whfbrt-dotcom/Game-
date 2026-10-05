@@ -160,12 +160,12 @@
             const bs = UMRECHNEN.openWaterBotState(P(teile.openWaterBotState) || {}, 'c');
             if (bs[ICH] && bs[ICH].capital != null) { S.roh('openWaterPlayerIslandId', String(bs[ICH].capital)); geaendert.add('openWaterPlayerIslandId'); }
             delete bs[ICH];
-            for (const id in W.menschen) if (id !== ICH) bs[id] = profilZuBot(W.menschen[id].profil, bs[id]);
+            for (const id in W.menschen) if (id !== ICH && !(SYSTEM && bs[id])) bs[id] = profilZuBot(W.menschen[id].profil, bs[id]);   // (Weltrechner: die Welt-Werte sind schon geprüft – nie roh aus dem Profil)
             S.roh('openWaterBotState', J(bs)); geaendert.add('openWaterBotState');
         }
         if ('openWaterBotCoins' in teile) {
             const bc = P(teile.openWaterBotCoins) || {}; delete bc[ICH];
-            for (const id in W.menschen) if (id !== ICH && W.menschen[id].profil) bc[id] = Math.max(0, Math.min(1e15, +W.menschen[id].profil.coins || 0));
+            if (!SYSTEM) for (const id in W.menschen) if (id !== ICH && W.menschen[id].profil) bc[id] = Math.max(0, Math.min(1e15, +W.menschen[id].profil.coins || 0));   // (Weltrechner: die Welt-Münzen sind schon gedeckelt)
             S.roh('openWaterBotCoins', J(bc)); geaendert.add('openWaterBotCoins');
         }
         S.roh('openWaterWorldVersion', WELT_VERSION);
@@ -414,6 +414,7 @@
             if (!a.quittung_offen) { for (const id of anfrage.quittung || []) W.befehlFertig.delete(id); for (const id of anfrage.bezahlt_ok || []) W.befehlOk.delete(id); }   // quittiert: kommt nicht mehr (sonst beim nächsten Puls nochmal)
             for (const k of a.welt_voll || []) { delete gesendet[k]; S.weltGeaendert.add(k === 'openWaterBotOwnedIslands' ? 'openWaterOwnedIslands' : k); }   // Flicken passte nicht: nächstes Mal ganz
             antwortVerarbeiten(a, anfrage);
+            if (anfrage.profil && a && a.profil_ok === false) letztesProfil = '';   // (vom Server abgelehnt – zu schnell: beim nächsten Mal nochmal schicken)
         } catch (e) {
             // nichts verloren: Befehle/Welt-Teile/Nachrichten beim nächsten Mal nochmal (mit derselben Nummer – der Server legt
             // nichts doppelt ab). Alte Befehle nicht mehr (bezahlte nach 50 Min., andere nach 5 Min.: die Lage hat sich geändert).

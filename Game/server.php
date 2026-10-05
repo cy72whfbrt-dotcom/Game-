@@ -1063,7 +1063,8 @@ class MysqlLager {
     }
     function armee_sicht_setzen($uid, $json) { $this->db->prepare('UPDATE ow_spieler SET armee_sicht = ?, sicht_v = sicht_v + 1 WHERE id = ? AND (armee_sicht IS NULL OR armee_sicht <> ?)')->execute([$json, $uid, $json]); }   // (geändert: neue Sicht → Teile ganz)
     function sicht_setzen($uid, $b64) { $this->db->prepare('UPDATE ow_spieler SET sicht = ?, sicht_v = sicht_v + 1 WHERE id = ? AND (sicht IS NULL OR sicht <> ?)')->execute([$b64, $uid, $b64]); }   // (gleich geblieben: nichts)
-    function profil_setzen($uid, $p) { $this->db->prepare('UPDATE ow_spieler SET profil = ?, profil_zeit = ? WHERE id = ?')->execute([$p, (int)round(microtime(true) * 1000), $uid]); }   // (ms: zwei Profile in derselben Sekunde gehen nicht verloren)
+    function profil_setzen($uid, $p, $abstand = 8000) { $j = (int)round(microtime(true) * 1000);   // höchstens ein Profil je 8 s (ehrliche Handys: alle 10 s – sonst bis 150/Min. an alle Handys und den Weltrechner)
+        $q = $this->db->prepare('UPDATE ow_spieler SET profil = ?, profil_zeit = ? WHERE id = ? AND profil_zeit <= ?'); $q->execute([$p, $j, $uid, $j - $abstand]); return $q->rowCount() > 0; }   // (ms: zwei Profile in derselben Sekunde gehen nicht verloren)
     // Puls zählen (zugleich „online“ setzen) – gibt zurück, wie viele Pulse in dieser Minute schon kamen
     function puls_zaehlen($uid, $jetzt) {
         $m = intdiv($jetzt, 60);
@@ -1305,7 +1306,7 @@ function welt_puls($ich, $d) {
     if (!$sys && $jetzt - (int)@filemtime(__DIR__ . '/weltrechner/herz.php') > 60 && $jetzt - (int)@filemtime(__DIR__ . '/weltrechner/zustand.php') > 30 && is_file(__DIR__ . '/weltrechner/wachhund.php')) {
         try { require_once __DIR__ . '/weltrechner/wachhund.php'; wachhund_runde('spieler'); } catch (Throwable $e) { error_log('Open Water Wachhund: ' . $e->getMessage()); }
     }
-    if (!$sys && isset($d['profil']) && is_string($d['profil']) && strlen($d['profil']) < 400000 && ($pr = profil_bereinigen($d['profil'])) !== null && $pr !== false) $l->profil_setzen($uid, $pr);
+    if (!$sys && isset($d['profil']) && is_string($d['profil']) && strlen($d['profil']) < 400000 && ($pr = profil_bereinigen($d['profil'])) !== null && $pr !== false) $profil_ok = $l->profil_setzen($uid, $pr);
     // Angenommene Befehle meldet der Server zurück (befehle_ok) – nur die nimmt das Handy aus seinem Ausgang. Nie mehr als 200
     // wartende Befehle pro Spieler (kein Stau für alle) – bezahlte zählen nicht dazu und werden immer angenommen (sonst wäre
     // Bezahltes weg; sie sind durch die Kosten begrenzt).
@@ -1345,6 +1346,7 @@ function welt_puls($ich, $d) {
         $antwort['ereignisse'] = $l->ereignisse_abholen($uid);   // (schon verbuchte, noch nicht gesicherte überspringt das Handy)
         $antwort['spieler'] = $l->spieler_liste((int)($d['spieler_seit'] ?? 0), false);
         if (!empty($d['befehle'])) $antwort['befehle_ok'] = $befehle_ok;
+        if (isset($profil_ok)) $antwort['profil_ok'] = $profil_ok;   // (false: zu schnell – das Handy schickt es beim nächsten Mal nochmal)
         $antwort['zeit'] = $jetzt;
         welt_antwort($antwort);
     }
@@ -1403,6 +1405,7 @@ function welt_puls($ich, $d) {
     $antwort['ereignisse'] = $sys ? [] : $l->ereignisse_abholen($uid);   // (schon verbuchte, noch nicht gesicherte überspringt das Handy)
     $antwort['spieler'] = $l->spieler_liste((int)($d['spieler_seit'] ?? 0), $sys);
     if (!$sys && !empty($d['befehle'])) $antwort['befehle_ok'] = $befehle_ok;
+    if (!$sys && isset($profil_ok)) $antwort['profil_ok'] = $profil_ok;
     $antwort['zeit'] = $jetzt;
     welt_antwort($antwort);
 }
