@@ -52,7 +52,7 @@ Alles Wichtige steht in `LIESMICH.md` – jede Änderung wird dort eingetragen.
 - **Tests mit lokalem Server: `tests/server_tests.sh <arbeitsordner>`** (Tests aus `tests/server/` in 3 Gruppen
   gleichzeitig, ca. 15 statt 30 Min.). Braucht MariaDB + `php -S 127.0.0.1:8770 -t www` im Arbeitsordner; dort
   `www/…/Game/config.php` (Test-DB) und `zugang.env` mit `OW_ADMIN_NAME`, `OW_ADMIN_PW`, `OW_TEST_PW` (nie ins Git).
-  Gruppe 2/3 legt das Skript selbst an und räumt sie am Ende ab: Ordner `<arbeitsordner>/gruppeN/`, DB `<testdb>_gN`
+  Gruppe 2/3 legt das Skript selbst an (Server/Weltrechner werden am Ende beendet, Ordner + DB erst beim nächsten Lauf neu angelegt): Ordner `<arbeitsordner>/gruppeN/`, DB `<testdb>_gN`
   (frische Kopie, `mysql` als Admin über den Socket), Port 8771/8772, eigener Weltrechner. Am Ende „ALLES OK“.
   Einzelne Tests: Namen dahinter schreiben (nacheinander, nur 8770). Mehr im Kopf des Skripts.
   Nur passende Tests zu den Änderungen: `tests/server_tests.sh <arbeitsordner> betroffen [<git-bereich>]` (Tabelle im
