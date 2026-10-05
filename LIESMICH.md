@@ -669,7 +669,7 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
 - *Reden:* Basen/Hauptbasis, 8, 25, 17 (Spähbericht mit Held/Ausrüstung – heute nur Truppen + Verteidigung).
 - *Nicht:* 13 (mehrere Truppenarten), 21/22 (Talente/Helden-Ausrüstung, zu viel). 12 (Burg-Aussehen je Stufe) und
   15 (Lazarett, der Rest stirbt) gibt es schon.
-- **„reparieren“ (Alexander 5.10.):** sein Stichwort für die Subdomain – klappt vermutlich nicht, vorerst nichts tun.
+- **Subdomain/eigene Domain (Alexander 5.10.):** erledigt – bleibt bei der jetzigen Adresse (kleiner Spielerkreis, eigene Domain lohnt nicht).
 - **Prüfen (Endprüfer 5.10.):** startet der Weltrechner kurz nach dem Beitritt eines neuen Spielers neu, eicht er sich am
   Profil neu (`wacheSehen`/`hbKlemmen`, `Game/spiel/10d-welt-weltrechner.js`) – seltenes Zeitfenster für Schummeln.
 
