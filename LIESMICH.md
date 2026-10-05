@@ -479,7 +479,8 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
 - **5.10. Rally-Maut (Alexanders Entscheidung B1):** Kann ein Mitglied seinen Maut-Anteil nicht zahlen, bleibt nur ER draußen
   (seine Truppen gehen heim, Meldung an ihn, der Anführer liest „X war zu arm für die Maut und ist nicht dabei.“); die anderen
   zahlen die Maut neu verteilt und marschieren. Kann der Anführer selbst nicht zahlen, fällt die Rally wie bisher ganz aus
-  (`bundRallyLos`, buendnis/02). Test `rally_maut_test` (Fall 2 und 2b).
+  (`bundRallyLos`, buendnis/02; wirft dabei etwas, geht die Rally nicht los und alle Truppen genau einmal heim). Test
+  `rally_maut_test` (Fall 2, 2b, 6; der Test schaltet die Mitspieler-Runde ab – sonst trat Z zufällig dem Test-Bündnis bei).
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.

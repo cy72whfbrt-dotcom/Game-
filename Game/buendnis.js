@@ -592,12 +592,11 @@ function bundRallyLos(r) {
         if (atk && atk.attackerBotId === by) break; atk = null;
         fehlt = !kaputt && maut.fehlt; if (!fehlt || fehlt === by) break;
         // Ein Mitglied kann seinen Maut-Anteil nicht zahlen (Alexander B1): nur er bleibt draußen, seine Truppen gehen heim, die anderen zahlen neu
-        const raus = r.j.filter(j => j.da && j.w === fehlt), n = raus.reduce((s, j) => s + j.n, 0);
-        r.j = r.j.filter(j => !raus.includes(j)); total -= n; islandTroops[r.at] = Math.max(0, (islandTroops[r.at] || 0) - n);
-        for (const j of raus) bundHeimschicken(j.w, r.at, j.f, j.n);
+        for (const j of r.j.filter(x => x.da && x.w === fehlt)) {         // (einzeln: wirft etwas, steht der Rest noch in der Rally – nichts doppelt/weg)
+            bundHeimschicken(j.w, r.at, j.f, j.n); r.j = r.j.filter(x => x !== j); total -= j.n; islandTroops[r.at] = Math.max(0, (islandTroops[r.at] || 0) - j.n); }
         bundMelden(fehlt, 'Du hattest nicht genug Münzen für deinen Maut-Anteil – deine Truppen kehren heim.');
         bundMelden(by, bundName(fehlt) + ' war zu arm für die Maut und ist nicht dabei.');
-    } } finally { if (AUF) AUF.frei.aus(); }
+    } } catch (e) { atk = null; kaputt = true; console.warn('Rally:', e); } finally { if (AUF) AUF.frei.aus(); }   // (noch nicht los: unten wieder heim)
     if (!atk) { islandTroops[r.at] = Math.min(islandTroops[r.at] || 0, vorher);   // (noch nicht los: die Truppen wieder heim, auch nach einem Fehler)
         return bundRallyEnde(r, kaputt ? 'ein Fehler beim Losmarsch' : fehlt ? bundName(fehlt) + ' hat nicht genug Münzen für seine Maut' : 'der Weg ist versperrt (Tor zu oder Maut zu teuer)'); }
     atk.rally = { id: r.id, by, an: [[by, r.at, r.n0]].concat(r.j.filter(j => j.da).map(j => [j.w, j.f, j.n])) };
