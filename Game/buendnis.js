@@ -937,8 +937,11 @@ function bundMitspielerSignale(now) {
                 const k = w + ':' + t, last = bundMem.hilfeSig[k] || ((a.sig || []).find(s => s.w === w && s.z === t && s.art === 'hilfe') || {}).at; if (last && now - last < 5 * 60000) continue;
                 const g = bundUnterAngriff(t); if (!g || g.at - now < 8000) continue;
                 const isl = islandById[t], def = effectiveTroops(isl) + effectiveDefense(isl);
-                if (def >= g.str * 1.1 || isCapital(t)) continue;
-                if ((islandLevels[t] || 1) < 5 && (islandTroops[t] || 0) < whoTroops(w) * .05 && isl.type === 'tower') continue;   // nur für Basen, um die es sich lohnt
+                if (def >= g.str * 1.1) continue;                   // (auch die Hauptstadt – Alexander 5.10.: alle Basen gleich)
+                if (!isCapital(t) && (islandLevels[t] || 1) < 5 && (islandTroops[t] || 0) < whoTroops(w) * .05 && isl.type === 'tower') continue;   // nur für Basen, um die es sich lohnt (die Hauptstadt immer)
+                if (bot.mensch && !verstStufe(w)) {                     // echter Spieler ohne Botschaft: keiner kann helfen – kein Signal, nur die Meldung an ihn
+                    if (bundEinmal('hb|' + w)) bundMelden(w, 'Deine Verbündeten können dir nicht helfen: du hast noch keine Botschaft (ab Burg-Stufe 5).');
+                    break; }
                 if (!bundSignal(a, w, 'hilfe', t)) { bundMem.hilfeSig[k] = bundMem.hilfeSig[w] = now; bundSpeichern(); }
                 break;
             }

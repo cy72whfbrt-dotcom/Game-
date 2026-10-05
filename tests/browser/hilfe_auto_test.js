@@ -1,6 +1,7 @@
 // Hilfe ohne Knopfdruck (Alexander 5.10.): ein ECHTER Spieler (mensch) im Bündnis wird angegriffen → ein Verbündeter schickt
 // von selbst Verstärkung (genau einmal, Truppen stimmen). Ohne Botschaft: genau eine Meldung, keine Truppen. Kommt keiner
-// rechtzeitig: genau eine Meldung. „Im Chat teilen“ kurz vor „Brauche Hilfe!“ → das Hilfe-Signal entsteht trotzdem.
+// rechtzeitig: genau eine Meldung. Auch die Hauptstadt bekommt Hilfe. „Im Chat teilen“ kurz vor „Brauche Hilfe!“ → das
+// Hilfe-Signal entsteht trotzdem.
 const { chromium, devices } = require('playwright');
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x) : ''));
 (async () => {
@@ -23,11 +24,15 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const meld = []; window.bundMelden = (w, text) => { if (botById[w] && botById[w].mensch) meld.push({ w, text }); };   // (wie WELT.nachricht an das Handy)
     const botschaft = L => { const s = loadBotState()[M.id]; s.city.levels.keep = Math.max(5, s.city.levels.keep || 0); s.city.levels.embassy = L; saveBotState(); };
     const frisch = () => { a.sig = []; bundMem.hilfeSig = {}; bundMem.sigGemacht.clear(); bundMem.chatAt = {}; bundMem.botNext = {}; verst.l = [];
-      pendingAttacks = pendingAttacks.filter(x => x.targetId !== T); pendingSends = pendingSends.filter(x => x.senderBotId !== H.id); meld.length = 0; };
-    const angriff = ms => { const n = Date.now(); pendingAttacks.push({ sourceId: S, targetId: T, rawTroops: 50000, startedAt: n, resolveAt: n + ms, attackerBotId: X.id, attackBonus: 0, atkTitle: 1, atkKraft: 1 }); };
+      pendingAttacks = pendingAttacks.filter(x => x.targetId !== T && x.targetId !== C); pendingSends = pendingSends.filter(x => x.senderBotId !== H.id); meld.length = 0; };
+    const angriff = (ms, ziel) => { const n = Date.now(); pendingAttacks.push({ sourceId: S, targetId: ziel ?? T, rawTroops: 50000, startedAt: n, resolveAt: n + ms, attackerBotId: X.id, attackBonus: 0, atkTitle: 1, atkKraft: 1 }); };
     const runde = () => { const now = Date.now(); bundWegMem.clear(); bundMitspielerSignale(now); bundMitspielerAntworten(now); };
     islandLevels[T] = Math.max(5, islandLevels[T] || 1); islandTroops[T] = 1000; islandTroops[Q] = 200000;
-    const out = { M: M.id, H: H.id, T, Q };
+    // Hauptstadt C von M; H bekommt dazu eine freie Insel F auf derselben Landmasse (mit Truppen)
+    const C = botCapitalOf(M.id), F = (islands.find(i => i.landmassId === islandById[C].landmassId && i.id !== megaTempleId && i.id !== T && !islandOwnerOf(i.id)) || {}).id;
+    if (F === undefined) return { fehler: 'keine freie Insel neben der Hauptstadt' };
+    botOwnedIslands[H.id].add(F); islandTroops[F] = 200000;
+    const out = { M: M.id, H: H.id, T, Q, C, F };
     botById[M.id].mensch = true;
     try {
       // 1) mit Botschaft: Verbündeter schickt von selbst, genau einmal
@@ -39,9 +44,9 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       hs.forEach(s => s.at -= 60000); bundMem.chatAt = {}; bundOp(M.id, { op: 'chat', k: 'hilfe', z: T });
       out.knopf = { signale: a.sig.filter(s => s.art === 'hilfe' && s.w === M.id && s.z === T).length };
       // 2) ohne Botschaft: genau eine Meldung, keine Truppen
-      frisch(); botschaft(0); angriff(3600000); const q2 = islandTroops[Q];
+      frisch(); botschaft(0); angriff(3600000); const q2 = islandTroops[Q], hz = () => ((bundChat[a.id] || {}).l || []).filter(x => x.k === 'hilfe' && x.w === M.id).length, h2 = hz();
       for (let i = 0; i < 4; i++) runde();
-      out.ohne = { signale: a.sig.filter(s => s.art === 'hilfe' && s.w === M.id).length, maersche: pendingSends.filter(x => x.senderBotId === H.id && x.toId === T).length, weg: q2 - islandTroops[Q], meld: meld.slice() };
+      out.ohne = { signale: a.sig.filter(s => s.art === 'hilfe' && s.w === M.id).length, chat: hz() - h2, maersche: pendingSends.filter(x => x.senderBotId === H.id && x.toId === T).length, weg: q2 - islandTroops[Q], meld: meld.slice() };
       // 3) Angriff gleich da: keiner kommt rechtzeitig → genau eine Meldung
       frisch(); botschaft(1); angriff(9000);
       for (let i = 0; i < 4; i++) runde();
@@ -51,15 +56,21 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       bundOp(M.id, { op: 'chat', k: 'teilen', z: S }); bundMem.chatAt = {};
       bundOp(M.id, { op: 'chat', k: 'hilfe', z: T });
       out.teilen = { teilen: a.sig.filter(s => s.art === 'teilen' && s.w === M.id).length, hilfe: a.sig.filter(s => s.art === 'hilfe' && s.w === M.id && s.z === T).length };
-    } finally { botById[M.id].mensch = false; frisch(); botOwnedIslands[M.id].delete(T); }
+      // 5) Angriff auf die HAUPTSTADT (Alexander 5.10.: wie jede andere Basis) → Verstärkung kommt von selbst
+      frisch(); botschaft(1); islandTroops[C] = 1000; angriff(3600000, C); const f0 = islandTroops[F];
+      runde(); runde();
+      const m5 = pendingSends.filter(x => x.senderBotId === H.id && x.toId === C && x.verst);
+      out.hauptstadt = { signale: a.sig.filter(s => s.art === 'hilfe' && s.w === M.id && s.z === C).length, maersche: m5.length, n: m5[0] ? m5[0].troops : 0, weg: f0 - islandTroops[F] };
+    } finally { botById[M.id].mensch = false; frisch(); botOwnedIslands[M.id].delete(T); botOwnedIslands[H.id].delete(F); }
     return out;
   });
   console.log(JSON.stringify(r));
   if (r.fehler) { ok(false, r.fehler); await b.close(); return; }
   ok(r.auto.signale === 1 && r.auto.maersche === 1 && r.auto.n > 0 && r.auto.n === r.auto.weg && !r.auto.meld.length, 'angegriffen, mit Botschaft: Verbündeter schickt von selbst genau einmal Verstärkung (Truppen stimmen)', r.auto);
   ok(r.knopf.signale === 1, '„Brauche Hilfe!“ danach: kein zweites Hilfe-Signal', r.knopf);
-  ok(r.ohne.signale === 1 && r.ohne.maersche === 0 && r.ohne.weg === 0 && r.ohne.meld.length === 1 && /keine Botschaft/.test(r.ohne.meld[0].text), 'ohne Botschaft: genau eine Meldung, keine Truppen', r.ohne);
+  ok(r.ohne.signale === 0 && r.ohne.chat === 0 && r.ohne.maersche === 0 && r.ohne.weg === 0 && r.ohne.meld.length === 1 && /keine Botschaft/.test(r.ohne.meld[0].text), 'ohne Botschaft: kein Signal/Chat an die Verbündeten, genau eine Meldung, keine Truppen', r.ohne);
   ok(r.zuSpaet.maersche === 0 && r.zuSpaet.meld.length === 1 && /rechtzeitig/.test(r.zuSpaet.meld[0].text), 'Angriff gleich da: genau eine Meldung „kommt nicht rechtzeitig“', r.zuSpaet);
+  ok(r.hauptstadt.signale === 1 && r.hauptstadt.maersche === 1 && r.hauptstadt.n > 0 && r.hauptstadt.n === r.hauptstadt.weg, 'Angriff auf die Hauptstadt: Verstärkung kommt von selbst (Truppen stimmen)', r.hauptstadt);
   ok(r.teilen.teilen === 1 && r.teilen.hilfe === 1, '„teilen“ kurz vor „Hilfe“: Hilfe-Signal entsteht', r.teilen);
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();
 })();

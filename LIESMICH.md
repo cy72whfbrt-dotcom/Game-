@@ -345,7 +345,12 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   ging der Hilferuf still verloren – jetzt einmal die Meldung „Deine Verbündeten können dir nicht helfen: …“; kommt keiner
   rechtzeitig: einmal „Keiner deiner Verbündeten kommt rechtzeitig an.“ (`bundMitspielerAntworten`). Der Knopf
   „Brauche Hilfe!“ sagt ohne Botschaft „Hilfe braucht eine Botschaft (ab Burg-Stufe 5)“. Fehler 2: „Im Chat teilen“ zählte
-  für die 30-s-Sperre der Signale – ein Hilferuf direkt danach ging verloren. Getestet: `hilfe_auto_test` (neu).
+  für die 30-s-Sperre der Signale – ein Hilferuf direkt danach ging verloren. Nachtrag (Alexander: „alle gleich
+  behandeln“): auch die HAUPTSTADT bekommt automatische Hilfe – für echte Spieler und Mitspieler (die Ausnahme stammte aus
+  der Zeit, als Hauptstädte gar nicht angegriffen werden konnten; Helfer schicken weiter höchstens die Hälfte einer
+  nicht bedrohten Basis). Hauptstadt-Regeln (Schutz, Beute, brennt) unverändert. Echter Spieler ohne Botschaft: kein
+  Hilfe-Signal/Chat/Push an die Verbündeten (keiner kann helfen), nur die Meldung an ihn (höchstens alle 10 Min.). Getestet: `hilfe_auto_test` (neu,
+  normale Vorschau).
 - **5.10. Handy-Kleinkram (Spieltest) + saison_test:** Gebäude-Wirkung mit festem Leerzeichen vor „%“ („Nächste Stufe: +3 %“
   bricht nicht mehr um, `cityEffectText`). Stadt am Handy: der Hinweis-Kasten (z. B. „Der Drache ist erschienen!“) liegt immer unter
   der Bauarbeiter-Zeile (`--stadt-kopf`, auch wenn sie zweizeilig ist). Shop: Kisten-Zeile „Legendär + Mythisch …“ mit Innenabstand.
