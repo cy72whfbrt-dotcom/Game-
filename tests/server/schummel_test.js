@@ -3,7 +3,7 @@
 //   Münzen erfinden · Rohstoffe erfinden (ohne Markt) · Gebäude-Stufe ohne Bauzeit – auch zusammen (dann wartet etwas im
 //   Hauptbuch und dasselbe Profil wird alle 10 s nochmal angewendet: früher schaukelte sich das erfundene Holz dabei hoch)
 const G = require('./gemeinsam');
-const { sql, warte, ok, ende } = G;
+const { sql, php, warte, ok, ende } = G;
 let UID = 0;
 const zustand = () => JSON.parse(sql(`SELECT zustand FROM ow_bots WHERE spieler_id=0 AND bot_id='u${UID}'`) || '{}');
 const muenzen = () => { const v = JSON.parse(sql("SELECT wert FROM ow_spielstand WHERE spieler_id=0 AND schluessel='openWaterBotCoins'") || '{}'); return +(v['u' + UID] || 0); };
