@@ -78,13 +78,31 @@ function spaehBericht(r) {
     if (!r || !Number.isInteger(r.ziel) || !islandById[r.ziel]) return;
     const x = combatLog.find(e => e.type === 'scout' && e.targetId === r.ziel && e.wartet);
     if (!x) { spaehPost.set(r.ziel, { r, bis: Date.now() + 600000 }); return; }
-    spaehEinsetzen(x, r); store.set('openWaterCombatLog', JSON.stringify(combatLog)); spaehWerteMem = null;
+    spaehEinsetzen(x, r); spaehGeaendert();
+}
+function spaehGeaendert() {
+    store.set('openWaterCombatLog', JSON.stringify(combatLog)); spaehWerteMem = null;
     const logPanel = document.getElementById('battleLogPopup');
     if (logPanel && logPanel.classList.contains('is-open')) refreshOpenCombatLog();
 }
 function spaehEinsetzen(x, r) {
+    delete x.wartet;
+    if (r.fehl) { x.fehl = 1; return; }                   // der Weltrechner hat den Späher abgelehnt: kein Bericht
     const z = v => Number.isFinite(v) && v >= 0 ? v : 0;
-    x.troops = z(r.troops); x.defense = z(r.defense); x.spy = r.spy && typeof r.spy === 'object' ? r.spy : null; delete x.wartet;
+    x.troops = z(r.troops); x.defense = z(r.defense); x.verst = z(r.verst); x.spy = r.spy && typeof r.spy === 'object' ? r.spy : null;
+}
+// (Zuschauer) Ein Spähbericht, der nach 10 Min. immer noch fehlt, kommt nicht mehr: „kein Bericht“ statt für immer „wartet“
+const SPAEH_WARTEN_MS = 600000;
+function spaehAbgelaufen(now) {
+    let neu = false;
+    for (const e of combatLog || []) if (e && e.type === 'scout' && e.wartet && now - (e.wartet > 1 ? e.wartet : e.at || 0) > SPAEH_WARTEN_MS) { delete e.wartet; e.fehl = 1; neu = true; }
+    if (neu) spaehGeaendert();
+}
+setInterval(() => spaehAbgelaufen(Date.now()), 30000);
+// Verstärkung in einer fremden Basis laut dem neuesten Spähbericht (Zuschauer kennen sie sonst nicht)
+function spaehVerst(id) {
+    const e = (combatLog || []).find(x => x && x.type === 'scout' && x.targetId === id && !x.wartet && !x.fehl);
+    return e && Number.isFinite(e.verst) ? e.verst : 0;
 }
 function spaeherBlickHtml(s) {
     if (!s) return '';
@@ -134,7 +152,8 @@ function resolveScout(scout) {
         defense: effectiveDefense(target),
         spy: vomWr ? null : spaeherBlick(ow)
     };
-    if (post && post.bis > Date.now()) spaehEinsetzen(eintrag, post.r); else if (vomWr) eintrag.wartet = 1;   // (wartet: der Bericht vom Weltrechner kommt gleich)
+    if (ow && !vomWr && typeof verst !== 'undefined') eintrag.verst = verst.l.reduce((s, v) => s + (v.t === target.id ? v.n : 0), 0);   // Verstärkung (Botschaft): eigene Zeile im Bericht
+    if (post && post.bis > Date.now()) spaehEinsetzen(eintrag, post.r); else if (vomWr) eintrag.wartet = Date.now();   // (wartet: der Bericht vom Weltrechner kommt gleich – sonst nach 10 Min. „kein Bericht“)
     addCombatLogEntry(eintrag); spaehWerteMem = null;
     flashHint(islandTitle(target) + ' gespäht – Bericht im Kampflog.', 3000);   // (die Zahlen stehen im Kampflog, nicht im Hinweis)
 }

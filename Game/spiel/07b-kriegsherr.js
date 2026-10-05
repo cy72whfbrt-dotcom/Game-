@@ -84,35 +84,44 @@ function wanderDepart(now) {                          // off to the next base: o
 }
 function wanderArrive(now) {                          // the storm: same maths as any attack; a win razes the base and he camps there
     const tgt = islandById[wander.to], from = wander.from; if (!tgt) return endWander(null);
-    const owner = islandOwnerOf(tgt.id), en = effectiveTroops(tgt), def = effectiveDefense(tgt), my = wander.troops, won = my > en + def;
+    const owner = islandOwnerOf(tgt.id), my = wander.troops;
     if (shieldCovers(islandById[wander.to]) && ownerShielded(owner, Math.min(now, wander.arriveAt || now))) { Object.assign(wander, { at: from, to: null, campUntil: now + 20000 }); saveWander(); return; }
-    const capitalHolds = won && isCapital(tgt.id);          // capitals are never razed: only the garrison falls and he pulls back
-    if (capitalHolds) {
-        islandTroops[tgt.id] = 0; brandSetzen(tgt.id);          // (die Hauptstadt brennt – nur zu sehen)
-        wander.troops = Math.max(1, Math.round(my - def * .6 - en * .3));
-        Object.assign(wander, { at: from, to: null, campUntil: now + 45000 });
-    } else if (won) {
-        if (owner) { botNoteLoss(owner, tgt.id); clearIslandOwner(tgt.id); }
-        islandTroops[tgt.id] = 0; tgt.neutralTroops = 0; neutralTroopOverrides[tgt.id] = 0;
-        wander.troops = Math.max(1, Math.round(my - def * .6 - en * .3));
-        Object.assign(wander, { at: tgt.id, to: null, campUntil: now + 90000 });
-    } else {
-        const cas = Math.min(en, my);
-        if (owner) islandTroops[tgt.id] = Math.max(0, (islandTroops[tgt.id] || 0) - cas); else { tgt.neutralTroops = en - cas; neutralTroopOverrides[tgt.id] = tgt.neutralTroops; }
-        wander.troops = Math.max(0, Math.round(my * .35));
-        Object.assign(wander, { at: from, to: null, campUntil: now + 45000 });
-    }
+    const vk = owner && typeof verstVorKampf === 'function' ? verstVorKampf(tgt.id) : null;   // Verstärkung (Botschaft) verteidigt mit
+    let en = 0, def = 0, won = false, capitalHolds = false, vs = null;
+    try {                                                                  // (ein Fehler dazwischen: die Verstärkung wird trotzdem wieder getrennt)
+        en = effectiveTroops(tgt); def = effectiveDefense(tgt); won = my > en + def;
+        capitalHolds = won && isCapital(tgt.id);          // capitals are never razed: only the garrison falls and he pulls back
+        if (capitalHolds) {
+            islandTroops[tgt.id] = 0; brandSetzen(tgt.id);          // (die Hauptstadt brennt – nur zu sehen)
+            wander.troops = Math.max(1, Math.round(my - def * .6 - en * .3));
+            Object.assign(wander, { at: from, to: null, campUntil: now + 45000 });
+        } else if (won) {
+            if (owner) { botNoteLoss(owner, tgt.id); clearIslandOwner(tgt.id); }
+            islandTroops[tgt.id] = 0; tgt.neutralTroops = 0; neutralTroopOverrides[tgt.id] = 0;
+            wander.troops = Math.max(1, Math.round(my - def * .6 - en * .3));
+            Object.assign(wander, { at: tgt.id, to: null, campUntil: now + 90000 });
+        } else {
+            const cas = Math.min(en, my);
+            if (owner) islandTroops[tgt.id] = Math.max(0, (islandTroops[tgt.id] || 0) - cas); else { tgt.neutralTroops = en - cas; neutralTroopOverrides[tgt.id] = tgt.neutralTroops; }
+            wander.troops = Math.max(0, Math.round(my * .35));
+            Object.assign(wander, { at: from, to: null, campUntil: now + 45000 });
+        }
+    } finally { vs = vk ? verstNachKampf(tgt.id, vk, won) : null; }   // wieder trennen: jeder trägt seinen Anteil an den Verlusten
     wander.defense = niceRound(wander.troops * .15);
-    const wKilled = Math.max(0, my - wander.troops);
-    if (owner && owner !== 'player') { botHospitalTake(owner, won ? en : Math.min(en, my)); botCoins[owner] = (botCoins[owner] || 0) + Math.round(wKilled * botGoldRate(owner, 'defenseGold')); }
-    const wGold = owner === 'player' ? Math.round(wKilled * (skills.defenseGold || 0) * SKILL_DEFS.defenseGold.rate) : 0; if (wGold) inboxAdd({ src: 'fight', coins: wGold });
+    const wKilled = Math.max(0, my - wander.troops), fallenAlle = won ? en : Math.min(en, my), fallen = vs ? vs.eigenWeg : fallenAlle;   // (Besitzer: nur seine)
+    const dTeile = typeof verstAnteile === 'function' ? verstAnteile(vk, owner, en + def) : null, dTeil = w => { const t = dTeile && dTeile.find(x => x[0] === w); return t ? t[1] : 1; };
+    if (vs) for (const h of vs.helfer) h.gold = payGold(h.w, wKilled * dTeil(h.w) * defGoldRate(h.w));   // "Verteidigung: Gold" der Helfer: ihr Anteil mit IHREM Satz
+    const verstInfo = vs ? { verst: vs.helfer, eigen: vs.eigen } : {};
+    let dwBesitzer = 0;
+    if (owner && owner !== 'player') { dwBesitzer = botHospitalTake(owner, fallen) || 0; botCoins[owner] = (botCoins[owner] || 0) + Math.round(wKilled * dTeil(owner) * botGoldRate(owner, 'defenseGold')); }
+    const wGold = owner === 'player' ? Math.round(wKilled * dTeil('player') * (skills.defenseGold || 0) * SKILL_DEFS.defenseGold.rate) : 0; if (wGold) inboxAdd({ src: 'fight', coins: wGold });
     if (owner === 'player') {
         scoutedIslands.add(tgt.id);
         const name = wander.name;
-        const fallen = won ? en : Math.min(en, my), wounded = hospitalTake(fallen);
-        spawnMapBattle({ sourceId: from, targetId: tgt.id, atk: 'boss', def: 'mine', my, myLoss: my - wander.troops, en, enLoss: fallen, won,
+        const wounded = hospitalTake(fallen); dwBesitzer = wounded;
+        spawnMapBattle({ sourceId: from, targetId: tgt.id, atk: 'boss', def: 'mine', my, myLoss: my - wander.troops, en, enLoss: fallenAlle, won,
             onEnd: () => spawnBattleFx(tgt.id, !won || capitalHolds, capitalHolds ? 'Hauptstadt hält' : won ? 'Basis verloren' : 'Verteidigt', capitalHolds ? 'Garnison gefallen' : won ? 'von ' + name : name + ' abgewehrt') });
-        addCombatLogEntry({ type: 'botAttack', botName: name, targetId: tgt.id, myTroops: my, enemyTroops: en, enemyDefense: def, wounded, armor: armorDefenseFor(tgt.id), fallen, won, capitalHolds, defGold: wGold });
+        addCombatLogEntry({ type: 'botAttack', botName: name, targetId: tgt.id, myTroops: my, enemyTroops: en, enemyDefense: def, wounded, armor: armorDefenseFor(tgt.id), fallen, won, capitalHolds, defGold: wGold, ...verstInfo });
         flashHint((capitalHolds ? name + ' hat die Garnison deiner Hauptstadt geschlagen – die Stadt hält.' : won ? name + ' hat deine Basis ' + islandTitle(tgt) + ' zerstört!' : 'Verteidigt! ' + name + ' wurde bei ' + islandTitle(tgt) + ' zurückgeschlagen.') + (wounded ? ' ' + fmtCompact(wounded) + ' Verwundete ins Krankenhaus.' : ''), 5000);
     }
     if (owner && owner !== 'player' && botById[owner] && botById[owner].mensch) {   // ein echter Spieler: der Bericht kommt bei ihm an (wie bei jedem Angriff)
@@ -121,6 +130,8 @@ function wanderArrive(now) {                          // the storm: same maths a
             txt: fmtCompact(my) + ' gegen ' + fmtCompact(en + def) + (won && !capitalHolds ? ' · die Basis ist zerstört' : capitalHolds ? ' · die Garnison ist gefallen, die Hauptstadt hält' : ' · abgewehrt'), at: now },
             capitalHolds ? wander.name + ' hat die Garnison deiner Hauptstadt geschlagen – die Stadt hält.' : won ? wander.name + ' hat deine Basis ' + t + ' zerstört!' : 'Verteidigt! ' + wander.name + ' wurde bei ' + t + ' zurückgeschlagen.');
     }
+    if (vs) verstBerichte(vs, { type: 'botAttack', botName: wander.name, targetId: tgt.id, myTroops: my, enemyTroops: en, enemyDefense: def, fallen, wounded: dwBesitzer,   // die Helfer: derselbe Bericht
+        won, capitalHolds, defGear: owner ? fighterSnapshot(owner) : null, defName: owner === 'player' ? ((window.profileName && profileName.value) || 'Spieler') : (botById[owner] || {}).name, ...verstInfo });
     if (wander.troops <= 0) return endWander(wander.name + ' ist zerschlagen.');
     updateHud(); saveGame(); saveWander(); requestRender();
 }

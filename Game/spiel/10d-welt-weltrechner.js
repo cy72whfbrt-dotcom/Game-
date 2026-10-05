@@ -904,7 +904,7 @@ if (window.WELT) {
             if (now < sc[1]) return true;
             const t = islandById[sc[0]], ow = t && islandOwnerOf(t.id);
             const r = { art: 'spaeh', ziel: sc[0] };
-            if (t) { r.troops = effectiveTroops(t); r.defense = effectiveDefense(t); r.spy = ow && ow !== who ? spaeherBlick(ow) : null; }
+            if (t) { r.troops = effectiveTroops(t); r.defense = effectiveDefense(t); r.verst = verst.l.reduce((s, v) => s + (v.t === t.id ? v.n : 0), 0); r.spy = ow && ow !== who ? spaeherBlick(ow) : null; }   // (verst: Verstärkung – eigene Zeile im Bericht)
             WELT.nachricht(parseInt(who.slice(1), 10), r); return false;
         });
         if (!hb.sb.length) delete hb.sb;
@@ -1028,14 +1028,15 @@ if (window.WELT) {
             saveProgression(); feldBarbSpeichern(); if (ms.length) befehlBezahlt(b);
         },
         spaehen(who, b) {                             // 3B: Erkundungs-Späher – der Weltrechner deckt seinen Nebel (auf dem Server) mit auf
-            const hb = hbDa(who); if (!hb || !inselOk(b.ziel)) return;
-            if (zuOft(wm(who), 'spaehen', 120, 3600000)) { warnen(who, 'spaehen', 'Über 120 Späher in einer Stunde – abgelehnt.'); return; }
+            const nein = () => { if (b.blick && inselOk(b.ziel)) WELT.nachricht(parseInt(who.slice(1), 10), { art: 'spaeh', ziel: b.ziel, fehl: 1 }); };   // (Spähbericht abgelehnt: das Handy wartet sonst für immer)
+            const hb = hbDa(who); if (!hb || !inselOk(b.ziel)) return nein();
+            if (zuOft(wm(who), 'spaehen', 120, 3600000)) { warnen(who, 'spaehen', 'Über 120 Späher in einer Stunde – abgelehnt.'); return nein(); }
             const t = islandById[b.ziel], pt = { x: Number.isFinite(b.ex) ? b.ex : t.x, y: Number.isFinite(b.ey) ? b.ey : t.y, lm: t.landmassId };
             if (b.blick) {                            // Späher zu einer fremden Basis: bei Ankunft schreibt der Weltrechner den Bericht (nur er kennt die Werte des Herrn)
-                const ow = islandOwnerOf(t.id); if (!ow || ow === who || bossAt(t.id)) return;
+                const ow = islandOwnerOf(t.id); if (!ow || ow === who || bossAt(t.id)) return nein();
                 let h = null, hd = Infinity; for (const id of botOwnedIslands[who] || []) { const i = islandById[id]; if (!i) continue; const d = Math.hypot(i.x - t.x, i.y - t.y); if (d < hd) { hd = d; h = i; } }
-                if (!h || !spaeherWeg(h.landmassId, t.landmassId, who)) return;
-                if (!nbKennt(who, hb, t.landmassId)) { warnen(who, 'spaehen', 'Späher zu einer Basis, die er nicht kennen kann – abgelehnt.'); return; }
+                if (!h || !spaeherWeg(h.landmassId, t.landmassId, who)) return nein();
+                if (!nbKennt(who, hb, t.landmassId)) { warnen(who, 'spaehen', 'Späher zu einer Basis, die er nicht kennen kann – abgelehnt.'); return nein(); }
                 const now = Date.now(); hb.sb = (hb.sb || []).slice(-20); hb.sb.push([t.id, now + scoutSecs(h, t, who) * 1000]); saveBotState(); return;
             }
             if (!punktOk(pt)) { warnen(who, 'kaputt', 'Späher mit kaputtem Ziel – abgelehnt.'); return; }

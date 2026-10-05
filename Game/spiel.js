@@ -2002,13 +2002,31 @@ function spaehBericht(r) {
     if (!r || !Number.isInteger(r.ziel) || !islandById[r.ziel]) return;
     const x = combatLog.find(e => e.type === 'scout' && e.targetId === r.ziel && e.wartet);
     if (!x) { spaehPost.set(r.ziel, { r, bis: Date.now() + 600000 }); return; }
-    spaehEinsetzen(x, r); store.set('openWaterCombatLog', JSON.stringify(combatLog)); spaehWerteMem = null;
+    spaehEinsetzen(x, r); spaehGeaendert();
+}
+function spaehGeaendert() {
+    store.set('openWaterCombatLog', JSON.stringify(combatLog)); spaehWerteMem = null;
     const logPanel = document.getElementById('battleLogPopup');
     if (logPanel && logPanel.classList.contains('is-open')) refreshOpenCombatLog();
 }
 function spaehEinsetzen(x, r) {
+    delete x.wartet;
+    if (r.fehl) { x.fehl = 1; return; }                   // der Weltrechner hat den Späher abgelehnt: kein Bericht
     const z = v => Number.isFinite(v) && v >= 0 ? v : 0;
-    x.troops = z(r.troops); x.defense = z(r.defense); x.spy = r.spy && typeof r.spy === 'object' ? r.spy : null; delete x.wartet;
+    x.troops = z(r.troops); x.defense = z(r.defense); x.verst = z(r.verst); x.spy = r.spy && typeof r.spy === 'object' ? r.spy : null;
+}
+// (Zuschauer) Ein Spähbericht, der nach 10 Min. immer noch fehlt, kommt nicht mehr: „kein Bericht“ statt für immer „wartet“
+const SPAEH_WARTEN_MS = 600000;
+function spaehAbgelaufen(now) {
+    let neu = false;
+    for (const e of combatLog || []) if (e && e.type === 'scout' && e.wartet && now - (e.wartet > 1 ? e.wartet : e.at || 0) > SPAEH_WARTEN_MS) { delete e.wartet; e.fehl = 1; neu = true; }
+    if (neu) spaehGeaendert();
+}
+setInterval(() => spaehAbgelaufen(Date.now()), 30000);
+// Verstärkung in einer fremden Basis laut dem neuesten Spähbericht (Zuschauer kennen sie sonst nicht)
+function spaehVerst(id) {
+    const e = (combatLog || []).find(x => x && x.type === 'scout' && x.targetId === id && !x.wartet && !x.fehl);
+    return e && Number.isFinite(e.verst) ? e.verst : 0;
 }
 function spaeherBlickHtml(s) {
     if (!s) return '';
@@ -2058,7 +2076,8 @@ function resolveScout(scout) {
         defense: effectiveDefense(target),
         spy: vomWr ? null : spaeherBlick(ow)
     };
-    if (post && post.bis > Date.now()) spaehEinsetzen(eintrag, post.r); else if (vomWr) eintrag.wartet = 1;   // (wartet: der Bericht vom Weltrechner kommt gleich)
+    if (ow && !vomWr && typeof verst !== 'undefined') eintrag.verst = verst.l.reduce((s, v) => s + (v.t === target.id ? v.n : 0), 0);   // Verstärkung (Botschaft): eigene Zeile im Bericht
+    if (post && post.bis > Date.now()) spaehEinsetzen(eintrag, post.r); else if (vomWr) eintrag.wartet = Date.now();   // (wartet: der Bericht vom Weltrechner kommt gleich – sonst nach 10 Min. „kein Bericht“)
     addCombatLogEntry(eintrag); spaehWerteMem = null;
     flashHint(islandTitle(target) + ' gespäht – Bericht im Kampflog.', 3000);   // (die Zahlen stehen im Kampflog, nicht im Hinweis)
 }
@@ -4443,10 +4462,21 @@ function isCapital(id) {
 
 
 function sentLossFor(raw, my, def, redPct) { return Math.min(raw, Math.round(Math.round(def * (1 - redPct / 100)) * raw / Math.max(1, my))); }
+// Verstärkung in Basis id vor dem Kampf: ihre Truppen (n) und was jeder Helfer mit seinen Werten an Verteidigung mitbringt (d).
+// Im Kampf steckt sie schon in der Besatzung (verstVorKampf). Zuschauer kennen fremde Verstärkung nur aus dem Spähbericht.
+function verstSchaetzung(id) {
+    const ow = islandOwnerOf(id), nix = { n: 0, d: 0 };
+    if (!ow || typeof verst === 'undefined' || (typeof verstDefPlus !== 'undefined' && id in verstDefPlus)) return nix;
+    const L = verst.l.filter(v => v.t === id);
+    if (!L.length) return ow !== 'player' && fremdGeheim() ? { n: spaehVerst(id), d: 0 } : nix;
+    const mauer = ow === 'player' ? wallDefensePct() : botBld(ow, 'wall') * 2;
+    return { n: L.reduce((s, v) => s + v.n, 0), d: Math.round(L.reduce((s, v) => s + verstWert(v.w, v.n, mauer), 0)) };
+}
 function fightEstimate(a) {                       // the fight as it stands right now (no side effects) - same maths as resolveAttack/resolveBotAttack
     const target = islandById[a.targetId]; if (!target) return null;
     const who = a.attackerBotId || 'player', bonus = a.attackBonus !== undefined ? a.attackBonus : attackFlatBonus(a.rawTroops);
-    const my = Math.round((a.rawTroops + (bonus || 0)) * (a.atkTitle !== undefined ? a.atkTitle : titleMult(who, 'attack')) * (a.atkKraft || 1)), en = effectiveTroops(target), def = Math.round(effectiveDefense(target) * (1 - heroDefCut(a))), won = my > en + def;
+    const vz = verstSchaetzung(target.id);       // Verstärkung (Botschaft) verteidigt mit – wie im echten Kampf
+    const my = Math.round((a.rawTroops + (bonus || 0)) * (a.atkTitle !== undefined ? a.atkTitle : titleMult(who, 'attack')) * (a.atkKraft || 1)), en = effectiveTroops(target) + vz.n, def = Math.round((effectiveDefense(target) + vz.d) * (1 - heroDefCut(a))), won = my > en + def;
     const red0 = a.attackerBotId ? (a.botShield ? a.shieldLossReductionPct : botMults(a.attackerBotId).shield) : (a.shieldLossReductionPct !== undefined ? a.shieldLossReductionPct : shieldLossReductionPct());
     const red = Number.isFinite(red0) ? red0 : 0;   // (fremder Angriff: der Server streicht den Schild-Wert – dann ohne Schild schätzen, nie NaN)
     const e = { my, en, won, myLoss: my - (won ? a.rawTroops - sentLossFor(a.rawTroops, my, def, red) : retreatSurvivorsPreview(a)), enLoss: won ? en : Math.min(en, my) };   // the counter ends at the troops really left
@@ -5889,8 +5919,9 @@ function renderCombatLog() {
                 [['attack', chipN(entry.hit) + ' getroffen', 'schlecht'], ...verlustChips(dead, entry.wounded)], vdet);
         }
         if (entry.type === 'scout') {
+            if (entry.fehl) return karte(entry, 'scout', 'scout', ['scout', 'Kein Bericht'], T(entry.targetId), '', '', [['info', 'Der Späher hat keinen Bericht gebracht']]);   // (der Weltrechner hat ihn abgelehnt oder nach 10 Min. nichts geschickt)
             return karte(entry, 'scout', 'scout', ['scout', 'Gespäht'], T(entry.targetId), entry.spy ? escapeHtml(entry.spy.name) + ' · Stufe ' + fmtNum(entry.spy.lvl) : '', '',
-                [['troops', chipN(entry.troops) + ' Truppen'], ['defense', chipN(entry.defense) + ' Verteidigung']], spaeherBlickHtml(entry.spy));
+                [['troops', chipN(entry.troops) + ' Truppen'], ...(entry.verst > 0 ? [['troops', chipN(entry.verst) + ' Verstärkung']] : []), ['defense', chipN(entry.defense) + ' Verteidigung']], spaeherBlickHtml(entry.spy));
         }
         if (entry.type === 'retreat') {
             return karte(entry, 'retreat', 'recall', ['retreat', 'Zurück'], T(entry.toId), '', '', [['troops', chipN(entry.troops) + ' Truppen wieder daheim']]);
@@ -6106,8 +6137,8 @@ const kampflogUmbauen = (function () {
             return zl(n, haupt.textContent.trim(), ' buff', sm ? sm.textContent.replace(/[()]/g, '') : ''); }).join('');
         const name = (e.spy && e.spy.name) || v('Herr').split(' · ')[0];
         const box = el('<div class="logSide"><div class="logSideLabel">Gespäht · ' + escapeHtml(name) + '</div>' +
-            zl('Truppen', fmt(e.troops)) + zl('Held', '+0', '', 'zählt beim Verteidigen nicht') + zl('Grundverteidigung', fmt(e.defense)) +
-            '<div class="logSum"><span>Gesamt</span><span>' + fmt((e.troops || 0) + (e.defense || 0)) + '</span></div>' + '<div class="logCasualty kl-null"><span>Gefallen</span><span>–</span></div>' + zl('Geflohen', '–', ' kl-null') +
+            zl('Truppen', fmt(e.troops)) + (Number.isFinite(e.verst) ? zl('Verstärkung', fmt(e.verst), '', 'Bündnis-Truppen in der Basis – verteidigen mit') : '') + zl('Held', '+0', '', 'zählt beim Verteidigen nicht') + zl('Grundverteidigung', fmt(e.defense)) +
+            '<div class="logSum"><span>Gesamt</span><span>' + fmt((e.troops || 0) + (e.verst || 0) + (e.defense || 0)) + '</span></div>' + '<div class="logCasualty kl-null"><span>Gefallen</span><span>–</span></div>' + zl('Geflohen', '–', ' kl-null') +
             leerGear('Stufe ' + fmt(e.spy && e.spy.lvl), false) + '</div>');
         normal(box, false, {}, 0);
         box.querySelector('.kl-rss').remove();
@@ -7989,35 +8020,44 @@ function wanderDepart(now) {                          // off to the next base: o
 }
 function wanderArrive(now) {                          // the storm: same maths as any attack; a win razes the base and he camps there
     const tgt = islandById[wander.to], from = wander.from; if (!tgt) return endWander(null);
-    const owner = islandOwnerOf(tgt.id), en = effectiveTroops(tgt), def = effectiveDefense(tgt), my = wander.troops, won = my > en + def;
+    const owner = islandOwnerOf(tgt.id), my = wander.troops;
     if (shieldCovers(islandById[wander.to]) && ownerShielded(owner, Math.min(now, wander.arriveAt || now))) { Object.assign(wander, { at: from, to: null, campUntil: now + 20000 }); saveWander(); return; }
-    const capitalHolds = won && isCapital(tgt.id);          // capitals are never razed: only the garrison falls and he pulls back
-    if (capitalHolds) {
-        islandTroops[tgt.id] = 0; brandSetzen(tgt.id);          // (die Hauptstadt brennt – nur zu sehen)
-        wander.troops = Math.max(1, Math.round(my - def * .6 - en * .3));
-        Object.assign(wander, { at: from, to: null, campUntil: now + 45000 });
-    } else if (won) {
-        if (owner) { botNoteLoss(owner, tgt.id); clearIslandOwner(tgt.id); }
-        islandTroops[tgt.id] = 0; tgt.neutralTroops = 0; neutralTroopOverrides[tgt.id] = 0;
-        wander.troops = Math.max(1, Math.round(my - def * .6 - en * .3));
-        Object.assign(wander, { at: tgt.id, to: null, campUntil: now + 90000 });
-    } else {
-        const cas = Math.min(en, my);
-        if (owner) islandTroops[tgt.id] = Math.max(0, (islandTroops[tgt.id] || 0) - cas); else { tgt.neutralTroops = en - cas; neutralTroopOverrides[tgt.id] = tgt.neutralTroops; }
-        wander.troops = Math.max(0, Math.round(my * .35));
-        Object.assign(wander, { at: from, to: null, campUntil: now + 45000 });
-    }
+    const vk = owner && typeof verstVorKampf === 'function' ? verstVorKampf(tgt.id) : null;   // Verstärkung (Botschaft) verteidigt mit
+    let en = 0, def = 0, won = false, capitalHolds = false, vs = null;
+    try {                                                                  // (ein Fehler dazwischen: die Verstärkung wird trotzdem wieder getrennt)
+        en = effectiveTroops(tgt); def = effectiveDefense(tgt); won = my > en + def;
+        capitalHolds = won && isCapital(tgt.id);          // capitals are never razed: only the garrison falls and he pulls back
+        if (capitalHolds) {
+            islandTroops[tgt.id] = 0; brandSetzen(tgt.id);          // (die Hauptstadt brennt – nur zu sehen)
+            wander.troops = Math.max(1, Math.round(my - def * .6 - en * .3));
+            Object.assign(wander, { at: from, to: null, campUntil: now + 45000 });
+        } else if (won) {
+            if (owner) { botNoteLoss(owner, tgt.id); clearIslandOwner(tgt.id); }
+            islandTroops[tgt.id] = 0; tgt.neutralTroops = 0; neutralTroopOverrides[tgt.id] = 0;
+            wander.troops = Math.max(1, Math.round(my - def * .6 - en * .3));
+            Object.assign(wander, { at: tgt.id, to: null, campUntil: now + 90000 });
+        } else {
+            const cas = Math.min(en, my);
+            if (owner) islandTroops[tgt.id] = Math.max(0, (islandTroops[tgt.id] || 0) - cas); else { tgt.neutralTroops = en - cas; neutralTroopOverrides[tgt.id] = tgt.neutralTroops; }
+            wander.troops = Math.max(0, Math.round(my * .35));
+            Object.assign(wander, { at: from, to: null, campUntil: now + 45000 });
+        }
+    } finally { vs = vk ? verstNachKampf(tgt.id, vk, won) : null; }   // wieder trennen: jeder trägt seinen Anteil an den Verlusten
     wander.defense = niceRound(wander.troops * .15);
-    const wKilled = Math.max(0, my - wander.troops);
-    if (owner && owner !== 'player') { botHospitalTake(owner, won ? en : Math.min(en, my)); botCoins[owner] = (botCoins[owner] || 0) + Math.round(wKilled * botGoldRate(owner, 'defenseGold')); }
-    const wGold = owner === 'player' ? Math.round(wKilled * (skills.defenseGold || 0) * SKILL_DEFS.defenseGold.rate) : 0; if (wGold) inboxAdd({ src: 'fight', coins: wGold });
+    const wKilled = Math.max(0, my - wander.troops), fallenAlle = won ? en : Math.min(en, my), fallen = vs ? vs.eigenWeg : fallenAlle;   // (Besitzer: nur seine)
+    const dTeile = typeof verstAnteile === 'function' ? verstAnteile(vk, owner, en + def) : null, dTeil = w => { const t = dTeile && dTeile.find(x => x[0] === w); return t ? t[1] : 1; };
+    if (vs) for (const h of vs.helfer) h.gold = payGold(h.w, wKilled * dTeil(h.w) * defGoldRate(h.w));   // "Verteidigung: Gold" der Helfer: ihr Anteil mit IHREM Satz
+    const verstInfo = vs ? { verst: vs.helfer, eigen: vs.eigen } : {};
+    let dwBesitzer = 0;
+    if (owner && owner !== 'player') { dwBesitzer = botHospitalTake(owner, fallen) || 0; botCoins[owner] = (botCoins[owner] || 0) + Math.round(wKilled * dTeil(owner) * botGoldRate(owner, 'defenseGold')); }
+    const wGold = owner === 'player' ? Math.round(wKilled * dTeil('player') * (skills.defenseGold || 0) * SKILL_DEFS.defenseGold.rate) : 0; if (wGold) inboxAdd({ src: 'fight', coins: wGold });
     if (owner === 'player') {
         scoutedIslands.add(tgt.id);
         const name = wander.name;
-        const fallen = won ? en : Math.min(en, my), wounded = hospitalTake(fallen);
-        spawnMapBattle({ sourceId: from, targetId: tgt.id, atk: 'boss', def: 'mine', my, myLoss: my - wander.troops, en, enLoss: fallen, won,
+        const wounded = hospitalTake(fallen); dwBesitzer = wounded;
+        spawnMapBattle({ sourceId: from, targetId: tgt.id, atk: 'boss', def: 'mine', my, myLoss: my - wander.troops, en, enLoss: fallenAlle, won,
             onEnd: () => spawnBattleFx(tgt.id, !won || capitalHolds, capitalHolds ? 'Hauptstadt hält' : won ? 'Basis verloren' : 'Verteidigt', capitalHolds ? 'Garnison gefallen' : won ? 'von ' + name : name + ' abgewehrt') });
-        addCombatLogEntry({ type: 'botAttack', botName: name, targetId: tgt.id, myTroops: my, enemyTroops: en, enemyDefense: def, wounded, armor: armorDefenseFor(tgt.id), fallen, won, capitalHolds, defGold: wGold });
+        addCombatLogEntry({ type: 'botAttack', botName: name, targetId: tgt.id, myTroops: my, enemyTroops: en, enemyDefense: def, wounded, armor: armorDefenseFor(tgt.id), fallen, won, capitalHolds, defGold: wGold, ...verstInfo });
         flashHint((capitalHolds ? name + ' hat die Garnison deiner Hauptstadt geschlagen – die Stadt hält.' : won ? name + ' hat deine Basis ' + islandTitle(tgt) + ' zerstört!' : 'Verteidigt! ' + name + ' wurde bei ' + islandTitle(tgt) + ' zurückgeschlagen.') + (wounded ? ' ' + fmtCompact(wounded) + ' Verwundete ins Krankenhaus.' : ''), 5000);
     }
     if (owner && owner !== 'player' && botById[owner] && botById[owner].mensch) {   // ein echter Spieler: der Bericht kommt bei ihm an (wie bei jedem Angriff)
@@ -8026,6 +8066,8 @@ function wanderArrive(now) {                          // the storm: same maths a
             txt: fmtCompact(my) + ' gegen ' + fmtCompact(en + def) + (won && !capitalHolds ? ' · die Basis ist zerstört' : capitalHolds ? ' · die Garnison ist gefallen, die Hauptstadt hält' : ' · abgewehrt'), at: now },
             capitalHolds ? wander.name + ' hat die Garnison deiner Hauptstadt geschlagen – die Stadt hält.' : won ? wander.name + ' hat deine Basis ' + t + ' zerstört!' : 'Verteidigt! ' + wander.name + ' wurde bei ' + t + ' zurückgeschlagen.');
     }
+    if (vs) verstBerichte(vs, { type: 'botAttack', botName: wander.name, targetId: tgt.id, myTroops: my, enemyTroops: en, enemyDefense: def, fallen, wounded: dwBesitzer,   // die Helfer: derselbe Bericht
+        won, capitalHolds, defGear: owner ? fighterSnapshot(owner) : null, defName: owner === 'player' ? ((window.profileName && profileName.value) || 'Spieler') : (botById[owner] || {}).name, ...verstInfo });
     if (wander.troops <= 0) return endWander(wander.name + ' ist zerschlagen.');
     updateHud(); saveGame(); saveWander(); requestRender();
 }
@@ -13640,7 +13682,7 @@ if (window.WELT) {
             if (now < sc[1]) return true;
             const t = islandById[sc[0]], ow = t && islandOwnerOf(t.id);
             const r = { art: 'spaeh', ziel: sc[0] };
-            if (t) { r.troops = effectiveTroops(t); r.defense = effectiveDefense(t); r.spy = ow && ow !== who ? spaeherBlick(ow) : null; }
+            if (t) { r.troops = effectiveTroops(t); r.defense = effectiveDefense(t); r.verst = verst.l.reduce((s, v) => s + (v.t === t.id ? v.n : 0), 0); r.spy = ow && ow !== who ? spaeherBlick(ow) : null; }   // (verst: Verstärkung – eigene Zeile im Bericht)
             WELT.nachricht(parseInt(who.slice(1), 10), r); return false;
         });
         if (!hb.sb.length) delete hb.sb;
@@ -13764,14 +13806,15 @@ if (window.WELT) {
             saveProgression(); feldBarbSpeichern(); if (ms.length) befehlBezahlt(b);
         },
         spaehen(who, b) {                             // 3B: Erkundungs-Späher – der Weltrechner deckt seinen Nebel (auf dem Server) mit auf
-            const hb = hbDa(who); if (!hb || !inselOk(b.ziel)) return;
-            if (zuOft(wm(who), 'spaehen', 120, 3600000)) { warnen(who, 'spaehen', 'Über 120 Späher in einer Stunde – abgelehnt.'); return; }
+            const nein = () => { if (b.blick && inselOk(b.ziel)) WELT.nachricht(parseInt(who.slice(1), 10), { art: 'spaeh', ziel: b.ziel, fehl: 1 }); };   // (Spähbericht abgelehnt: das Handy wartet sonst für immer)
+            const hb = hbDa(who); if (!hb || !inselOk(b.ziel)) return nein();
+            if (zuOft(wm(who), 'spaehen', 120, 3600000)) { warnen(who, 'spaehen', 'Über 120 Späher in einer Stunde – abgelehnt.'); return nein(); }
             const t = islandById[b.ziel], pt = { x: Number.isFinite(b.ex) ? b.ex : t.x, y: Number.isFinite(b.ey) ? b.ey : t.y, lm: t.landmassId };
             if (b.blick) {                            // Späher zu einer fremden Basis: bei Ankunft schreibt der Weltrechner den Bericht (nur er kennt die Werte des Herrn)
-                const ow = islandOwnerOf(t.id); if (!ow || ow === who || bossAt(t.id)) return;
+                const ow = islandOwnerOf(t.id); if (!ow || ow === who || bossAt(t.id)) return nein();
                 let h = null, hd = Infinity; for (const id of botOwnedIslands[who] || []) { const i = islandById[id]; if (!i) continue; const d = Math.hypot(i.x - t.x, i.y - t.y); if (d < hd) { hd = d; h = i; } }
-                if (!h || !spaeherWeg(h.landmassId, t.landmassId, who)) return;
-                if (!nbKennt(who, hb, t.landmassId)) { warnen(who, 'spaehen', 'Späher zu einer Basis, die er nicht kennen kann – abgelehnt.'); return; }
+                if (!h || !spaeherWeg(h.landmassId, t.landmassId, who)) return nein();
+                if (!nbKennt(who, hb, t.landmassId)) { warnen(who, 'spaehen', 'Späher zu einer Basis, die er nicht kennen kann – abgelehnt.'); return nein(); }
                 const now = Date.now(); hb.sb = (hb.sb || []).slice(-20); hb.sb.push([t.id, now + scoutSecs(h, t, who) * 1000]); saveBotState(); return;
             }
             if (!punktOk(pt)) { warnen(who, 'kaputt', 'Späher mit kaputtem Ziel – abgelehnt.'); return; }

@@ -514,10 +514,21 @@ function isCapital(id) {
 
 
 function sentLossFor(raw, my, def, redPct) { return Math.min(raw, Math.round(Math.round(def * (1 - redPct / 100)) * raw / Math.max(1, my))); }
+// Verstärkung in Basis id vor dem Kampf: ihre Truppen (n) und was jeder Helfer mit seinen Werten an Verteidigung mitbringt (d).
+// Im Kampf steckt sie schon in der Besatzung (verstVorKampf). Zuschauer kennen fremde Verstärkung nur aus dem Spähbericht.
+function verstSchaetzung(id) {
+    const ow = islandOwnerOf(id), nix = { n: 0, d: 0 };
+    if (!ow || typeof verst === 'undefined' || (typeof verstDefPlus !== 'undefined' && id in verstDefPlus)) return nix;
+    const L = verst.l.filter(v => v.t === id);
+    if (!L.length) return ow !== 'player' && fremdGeheim() ? { n: spaehVerst(id), d: 0 } : nix;
+    const mauer = ow === 'player' ? wallDefensePct() : botBld(ow, 'wall') * 2;
+    return { n: L.reduce((s, v) => s + v.n, 0), d: Math.round(L.reduce((s, v) => s + verstWert(v.w, v.n, mauer), 0)) };
+}
 function fightEstimate(a) {                       // the fight as it stands right now (no side effects) - same maths as resolveAttack/resolveBotAttack
     const target = islandById[a.targetId]; if (!target) return null;
     const who = a.attackerBotId || 'player', bonus = a.attackBonus !== undefined ? a.attackBonus : attackFlatBonus(a.rawTroops);
-    const my = Math.round((a.rawTroops + (bonus || 0)) * (a.atkTitle !== undefined ? a.atkTitle : titleMult(who, 'attack')) * (a.atkKraft || 1)), en = effectiveTroops(target), def = Math.round(effectiveDefense(target) * (1 - heroDefCut(a))), won = my > en + def;
+    const vz = verstSchaetzung(target.id);       // Verstärkung (Botschaft) verteidigt mit – wie im echten Kampf
+    const my = Math.round((a.rawTroops + (bonus || 0)) * (a.atkTitle !== undefined ? a.atkTitle : titleMult(who, 'attack')) * (a.atkKraft || 1)), en = effectiveTroops(target) + vz.n, def = Math.round((effectiveDefense(target) + vz.d) * (1 - heroDefCut(a))), won = my > en + def;
     const red0 = a.attackerBotId ? (a.botShield ? a.shieldLossReductionPct : botMults(a.attackerBotId).shield) : (a.shieldLossReductionPct !== undefined ? a.shieldLossReductionPct : shieldLossReductionPct());
     const red = Number.isFinite(red0) ? red0 : 0;   // (fremder Angriff: der Server streicht den Schild-Wert – dann ohne Schild schätzen, nie NaN)
     const e = { my, en, won, myLoss: my - (won ? a.rawTroops - sentLossFor(a.rawTroops, my, def, red) : retreatSurvivorsPreview(a)), enLoss: won ? en : Math.min(en, my) };   // the counter ends at the troops really left

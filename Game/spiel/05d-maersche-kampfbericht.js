@@ -223,8 +223,9 @@ function renderCombatLog() {
                 [['attack', chipN(entry.hit) + ' getroffen', 'schlecht'], ...verlustChips(dead, entry.wounded)], vdet);
         }
         if (entry.type === 'scout') {
+            if (entry.fehl) return karte(entry, 'scout', 'scout', ['scout', 'Kein Bericht'], T(entry.targetId), '', '', [['info', 'Der Späher hat keinen Bericht gebracht']]);   // (der Weltrechner hat ihn abgelehnt oder nach 10 Min. nichts geschickt)
             return karte(entry, 'scout', 'scout', ['scout', 'Gespäht'], T(entry.targetId), entry.spy ? escapeHtml(entry.spy.name) + ' · Stufe ' + fmtNum(entry.spy.lvl) : '', '',
-                [['troops', chipN(entry.troops) + ' Truppen'], ['defense', chipN(entry.defense) + ' Verteidigung']], spaeherBlickHtml(entry.spy));
+                [['troops', chipN(entry.troops) + ' Truppen'], ...(entry.verst > 0 ? [['troops', chipN(entry.verst) + ' Verstärkung']] : []), ['defense', chipN(entry.defense) + ' Verteidigung']], spaeherBlickHtml(entry.spy));
         }
         if (entry.type === 'retreat') {
             return karte(entry, 'retreat', 'recall', ['retreat', 'Zurück'], T(entry.toId), '', '', [['troops', chipN(entry.troops) + ' Truppen wieder daheim']]);
@@ -440,8 +441,8 @@ const kampflogUmbauen = (function () {
             return zl(n, haupt.textContent.trim(), ' buff', sm ? sm.textContent.replace(/[()]/g, '') : ''); }).join('');
         const name = (e.spy && e.spy.name) || v('Herr').split(' · ')[0];
         const box = el('<div class="logSide"><div class="logSideLabel">Gespäht · ' + escapeHtml(name) + '</div>' +
-            zl('Truppen', fmt(e.troops)) + zl('Held', '+0', '', 'zählt beim Verteidigen nicht') + zl('Grundverteidigung', fmt(e.defense)) +
-            '<div class="logSum"><span>Gesamt</span><span>' + fmt((e.troops || 0) + (e.defense || 0)) + '</span></div>' + '<div class="logCasualty kl-null"><span>Gefallen</span><span>–</span></div>' + zl('Geflohen', '–', ' kl-null') +
+            zl('Truppen', fmt(e.troops)) + (Number.isFinite(e.verst) ? zl('Verstärkung', fmt(e.verst), '', 'Bündnis-Truppen in der Basis – verteidigen mit') : '') + zl('Held', '+0', '', 'zählt beim Verteidigen nicht') + zl('Grundverteidigung', fmt(e.defense)) +
+            '<div class="logSum"><span>Gesamt</span><span>' + fmt((e.troops || 0) + (e.verst || 0) + (e.defense || 0)) + '</span></div>' + '<div class="logCasualty kl-null"><span>Gefallen</span><span>–</span></div>' + zl('Geflohen', '–', ' kl-null') +
             leerGear('Stufe ' + fmt(e.spy && e.spy.lvl), false) + '</div>');
         normal(box, false, {}, 0);
         box.querySelector('.kl-rss').remove();

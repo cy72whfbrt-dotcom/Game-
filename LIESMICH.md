@@ -392,6 +392,14 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Antwort hängt, bricht auch ab. Test `tests/browser/haenger_holen_test.js`. `handy_texte_test.js` war rot, weil zufällig
   andere Ansagen (Drache erscheint, Testmodus-Hinweis) den Saison-Hinweis ersetzten (der neueste gilt – so gewollt):
   der Test schaltet sie während der Szene stumm (Test-Problem, kein Spielfehler).
+- **5.10. Verstärkung gegen den Kriegsherrn, im Spähbericht (#10), Späher ohne Bericht:** Der Kriegsherr (`wanderArrive`,
+  07b) kämpfte nur gegen die Besatzung – die Verstärkung ging heil heim. Jetzt wie bei jedem Angriff: `verstVorKampf`/
+  `verstNachKampf`, Verluste anteilig (Krankenhaus, „Verteidigung: Gold“ je Anteil), Helfer bekommen den Kampfbericht
+  (`verstBerichte`). Spähbericht: eigene Zeile „Verstärkung“ (Chip + Zeile im Bericht, `r.verst` aus `spaehRunde`, 10d – geht
+  nur an den Späher); `fightEstimate` (03e) rechnet sie mit (`verstSchaetzung`; Zuschauer: aus dem neuesten Spähbericht).
+  Lehnt der Weltrechner einen Späher zu einer fremden Basis ab, schickt er `{art:'spaeh', fehl:1}` → Eintrag „Kein Bericht“;
+  ohne Antwort nach 10 Min. dasselbe (`spaehAbgelaufen`, 02c – alte, ewig wartende Einträge auch). Test
+  `tests/browser/spaeh_verst_test.js`.
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
