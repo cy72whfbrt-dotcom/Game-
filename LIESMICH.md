@@ -739,6 +739,11 @@ Alles für heute Nacht kommt hier rein. Erst besprechen (Fragen an Alexander), d
    Wachturm-Stufe, aber was gezeigt wird, muss stimmen; was fehlt, wird **deutlich gekennzeichnet** („Wachturm-Stufe X
    nötig“ statt leerer Plätze); Verteidigung aufgeschlüsselt wie im Kampfbericht; Alter des Berichts anzeigen.
 3. Ideen-Liste Teil 1 (32 Punkte) und Teil 2 (N1–N11) – Punkt für Punkt besprechen.
+   **Teil 2 entschieden:** N1 ja (Mitspieler sehen Angriffsstärke nur ungenau, wie Spieler) · N2 ja (Bündnis-Signal
+   „Rückzug!“) · N3 ja (Verstärkung im Thron bekommt kleinen Teil der Thron-Punkte) · N4 nein (keine Belohnung je
+   Burg-Stufe) · N5 ja (Stadt-Bau/Forschung geben Pass-Punkte + zählen für Aufgaben) · N6 ja (neue Forschungen ab
+   Labor 23) · N7 nein (Saison-Preise nur Top 10) · N8 nein (kein Bau-Beschleuniger beim Händler) · N9 ja (Saison-Start
+   sicher 18 Uhr deutscher Zeit) · N10 B (Schummel-Verdacht: nur Nachricht an Alexander, kein Bremsen) · N11 nein.
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
