@@ -219,7 +219,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `beam` → Game/baukunst/03-wahrzeichen-feuer.js:12
 - `beam` → Game/baukunst/06-turmhof-festung.js:19
 - `befehl_ablegen` → Game/server/05-datenbank-welt.php:184
-- `befehl_ok` → Game/server/02-sicherheit-datenlecks.php:117
+- `befehl_ok` → Game/server/02-sicherheit-datenlecks.php:120
 - `befehlBezahlt` → Game/spiel/10d-welt-weltrechner.js:460
 - `befehle_abholen` → Game/server/05-datenbank-welt.php:197
 - `befehle_bezahlt_ok` → Game/server/05-datenbank-welt.php:193
@@ -946,8 +946,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `flameTexture` → Game/baukunst/03-wahrzeichen-feuer.js:299
 - `flankAngle` → Game/baukunst/04-vielfalt-stile.js:71
 - `flashHint` → Game/spiel/06d-schild-produktion.js:350
-- `flicken_anwenden` → Game/server/02-sicherheit-datenlecks.php:102
-- `flicken_fuer_spieler` → Game/server/02-sicherheit-datenlecks.php:179
+- `flicken_anwenden` → Game/server/02-sicherheit-datenlecks.php:105
+- `flicken_fuer_spieler` → Game/server/02-sicherheit-datenlecks.php:183
 - `flickenAnwenden` → Game/welt.js:41
 - `flickenBauen` → Game/welt.js:23
 - `FLOW` → Game/baukunst/07-hafen-palast.js:416
@@ -1005,8 +1005,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `frei` → Game/spiel/08e-stadtbild-haeuser.js:351
 - `freierStartplatz` → Game/spiel/01c-basen-spielstand.js:149
 - `freiText` → Game/aufbau.js:271
-- `fremd_kuerzen` → Game/server/02-sicherheit-datenlecks.php:152
-- `fremd_wert` → Game/server/02-sicherheit-datenlecks.php:147
+- `fremd_kuerzen` → Game/server/02-sicherheit-datenlecks.php:156
+- `fremd_wert` → Game/server/02-sicherheit-datenlecks.php:151
 - `fremdGeheim` → Game/spiel/01a-grundlagen.js:8
 - `front` → Game/baukunst/04-vielfalt-stile.js:80
 - `FRUIT` → Game/baukunst/07-hafen-palast.js:418
@@ -1479,7 +1479,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `mini` → Game/spiel/05a-aussehen-profil.js:117
 - `minuten` → Game/weltrechner/push.js:116
 - `missing` → Game/spiel/03a-karte-hintergrund.js:463
-- `mitspieler_kuerzen` → Game/server/02-sicherheit-datenlecks.php:134
+- `mitspieler_kuerzen` → Game/server/02-sicherheit-datenlecks.php:137
 - `mix` → Game/ladebildschirm.js:11
 - `mix` → Game/spiel/03d-maersche-tagnacht.js:193
 - `mixHue` → Game/baukunst/04-vielfalt-stile.js:136
@@ -1513,7 +1513,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `MT.white` → Game/baukunst/05-umland.js:49
 - `MT.wool` → Game/baukunst/05-umland.js:38
 - `MT.yard` → Game/baukunst/05-umland.js:28
-- `muenzen_kuerzen` → Game/server/02-sicherheit-datenlecks.php:169
+- `muenzen_kuerzen` → Game/server/02-sicherheit-datenlecks.php:173
 - `muenzGutscheine` → Game/spiel/10d-welt-weltrechner.js:176
 - `mulberry32` → Game/spiel/01b-weltkarte.js:51
 - `Music` → Game/spiel/10c-start-einstellungen.js:8
@@ -1744,7 +1744,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `productionTickMs` → Game/spiel/04-kampf.js:294
 - `prof` → Game/baukunst/04-vielfalt-stile.js:311
 - `profil_bereinigen` → Game/server/02-sicherheit-datenlecks.php:51
-- `profil_oeffentlich` → Game/server/02-sicherheit-datenlecks.php:159
+- `profil_oeffentlich` → Game/server/02-sicherheit-datenlecks.php:163
 - `profil_setzen` → Game/server/05-datenbank-welt.php:269
 - `profilVon` → Game/spiel/10d-welt-weltrechner.js:138
 - `profilZuBot` → Game/welt.js:237
@@ -2328,7 +2328,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `welt_antwort` → Game/server/07-welt-puls.php:155
 - `welt_antwort_text` → Game/server/07-welt-puls.php:152
 - `welt_entsperren` → Game/server/05-datenbank-welt.php:5
-- `welt_fuer_spieler` → Game/server/02-sicherheit-datenlecks.php:198
+- `welt_fuer_spieler` → Game/server/02-sicherheit-datenlecks.php:202
 - `welt_info` → Game/server/05-datenbank-welt.php:19
 - `welt_puls` → Game/server/07-welt-puls.php:27
 - `welt_schreiben` → Game/server/05-datenbank-welt.php:30
@@ -2339,7 +2339,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `weltNameSetzen` → Game/spiel/04-kampf.js:355
 - `weltrechner_schluessel` → Game/server/01-grundlagen-login.php:54
 - `weltrechner_seite` → Game/server/03-nebel-maersche-seite.php:193
-- `weltteil_fuer_spieler` → Game/server/02-sicherheit-datenlecks.php:171
+- `weltteil_fuer_spieler` → Game/server/02-sicherheit-datenlecks.php:175
 - `weltZuClient` → Game/welt.js:143
 - `werIst` → Game/aufbau.js:120
 - `werIstWer` → Game/spiel/10d-welt-weltrechner.js:990
@@ -3159,16 +3159,16 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `geraet_bekannt` :45
 - `name_erlaubt` :48 — Erlaubte Namen: Buchstaben (auch Umlaute, keine Doppelgänger-Schriften), Ziffer…
 - `profil_bereinigen` :51 — Profil eines Spielers (sehen alle anderen): wird komplett neu aufgebaut – nur b…
-- `flicken_anwenden` :102 — Einen Flicken auf einen Welt-Teil anwenden (Objekte, nicht Arrays – leere {} bl…
-- `befehl_ok` :117
-- `mitspieler_kuerzen` :134
-- `fremd_wert` :147 — city: nur die Burg-Stufe · stats: nur die der Rangliste
-- `fremd_kuerzen` :152
-- `profil_oeffentlich` :159 — Profil eines anderen Spielers (spieler_liste): nur Stufe, Aussehen, Wappen, Bau…
-- `muenzen_kuerzen` :169 — Münzen anderer in openWaterBotCoins (Mitspieler und echte Spieler) sieht nur de…
-- `weltteil_fuer_spieler` :171 — ganzer Welt-Teil für einen Spieler ($ich: 'u<id>' – sein eigener Eintrag bleibt…
-- `flicken_fuer_spieler` :179 — Flicken für einen Spieler
-- `welt_fuer_spieler` :198 — ein ganzer Welt-Stand (welt_seit / welt_seit_flicken) für einen Spieler ($uid: …
+- `flicken_anwenden` :105 — Einen Flicken auf einen Welt-Teil anwenden (Objekte, nicht Arrays – leere {} bl…
+- `befehl_ok` :120
+- `mitspieler_kuerzen` :137
+- `fremd_wert` :151 — city: nur die Burg-Stufe · stats: nur die der Rangliste
+- `fremd_kuerzen` :156
+- `profil_oeffentlich` :163 — Profil eines anderen Spielers (spieler_liste): nur Stufe, Aussehen, Wappen, Bau…
+- `muenzen_kuerzen` :173 — Münzen anderer in openWaterBotCoins (Mitspieler und echte Spieler) sieht nur de…
+- `weltteil_fuer_spieler` :175 — ganzer Welt-Teil für einen Spieler ($ich: 'u<id>' – sein eigener Eintrag bleibt…
+- `flicken_fuer_spieler` :183 — Flicken für einen Spieler
+- `welt_fuer_spieler` :202 — ein ganzer Welt-Stand (welt_seit / welt_seit_flicken) für einen Spieler ($uid: …
 
 ### Game/server/03-nebel-maersche-seite.php — Nebel, Marschgrößen, Hilfen (IP, Herkunft, JSON) und Spielseite vorbereiten
 - `nebel_sieht` :10 — $s = ['bits' => Bitfeld (Byte-Text) oder '', 'eigen' => [Insel-Nummer => true]]

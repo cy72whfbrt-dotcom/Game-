@@ -47,6 +47,14 @@ pruefe('unbekanntes Gebäude weg', isset($p['city']['levels']['gibtsnicht']), fa
 pruefe('Held: Stufe höchstens 20', $p['hs']['h1']['q'], 20);
 pruefe('Held: Fähigkeit höchstens 5', $p['hs']['h1']['sk'][0], 5);
 pruefe('Kaputtes Profil', profil_bereinigen('kein json'), null);
+// Langzeit (6.10.): Rohstoff-Gebäude bleiben im Profil, Bau- und Forschungs-Ende für den Push „Bau fertig“ / „Forschung fertig“
+$p = json_decode(profil_bereinigen(json_encode(['lvl' => 3, 'city' => ['levels' => ['lumber' => 4, 'quarry' => 99, 'mine' => 2], 'bau' => ['gibtsnicht', 'wall', 'keep'], 'bauBis' => [5, 1700000000000, 'x'], 'foLauf' => 'm_atk', 'foBis' => 1700000500000]])), true);
+pruefe('Holzfäller/Steinbruch/Eisenmine bleiben (höchstens 25)', [$p['city']['levels']['lumber'] ?? null, $p['city']['levels']['quarry'] ?? null, $p['city']['levels']['mine'] ?? null], [4, 25, 2]);
+pruefe('Bau-Ende passt zum Gebäude (Unbekanntes fällt mit seiner Zeit weg)', [$p['city']['bau'] ?? null, $p['city']['bauBis'] ?? null], [['wall'], [1700000000000]]);
+pruefe('Forschungs-Ende bleibt', $p['city']['foBis'] ?? null, 1700000500000);
+$p = json_decode(profil_bereinigen(json_encode(['lvl' => 3, 'city' => ['levels' => ['keep' => 2], 'foBis' => 'kaputt']])), true);
+pruefe('ohne Bau/Forschung: keine Zeiten', [$p['city']['bau'], $p['city']['bauBis'] ?? null, $p['city']['foBis'] ?? null], [[], [], 0]);
+pruefe('Push-Arten: Bau fertig, Forschung fertig', [in_array('bau', PUSH_ARTEN, true), in_array('forschung', PUSH_ARTEN, true)], [true, true]);
 
 // --- Flicken: hin und zurück, leere {} bleiben {}
 $o = json_decode('{"a":{"x":1,"y":2},"b":5,"c":{}}');
@@ -72,6 +80,8 @@ pruefe('fremd: ohne Helden/Ausrüstung/Skills/Gems/Schilde/Pass', array_values(a
 pruefe('fremd: Stadt nur Burg-Stufe', json_encode($b['bot1']['city']), '{"levels":{"keep":4}}');
 pruefe('fremd: Rangliste-Zahlen bleiben', json_encode($b['bot1']['stats']), '{"caps":12,"tpEarned":40}');
 pruefe('fremd: Macht, Stufe, Aussehen, Hauptstadt, Schild bleiben', [$b['bot1']['macht'], $b['bot1']['lvl'], $b['bot1']['ring'], $b['bot1']['march'], $b['bot1']['capital'], $b['bot1']['shieldUntil'], $b['bot1']['tt']], [12345, 7, 'jade', 'glut', 17, 5, 800]);
+$bf = json_decode(weltteil_fuer_spieler('openWaterBotState', '{"bot1":{"lvl":2,"foP":17,"city":{"levels":{"keep":4},"fo":{"m_def":5}}}}', 'u3'), true);
+pruefe('fremd: Forschungs-Summe (Rangliste Hauptstadt) sichtbar, die Forschung selbst nicht', [$bf['bot1']['foP'] ?? null, isset($bf['bot1']['city']['fo'])], [17, false]);
 pruefe('eigener Eintrag ganz', [isset($b['u3']['hs']), $b['u3']['city']['levels']['wall'], $b['u3']['skills']['defense']], [true, 9, 5]);
 $b = json_decode(weltteil_fuer_spieler('openWaterBotState', '{"u3":' . $voll . '}'), true);
 pruefe('ohne Spieler-Nummer: alle fremd', isset($b['u3']['hs']), false);
