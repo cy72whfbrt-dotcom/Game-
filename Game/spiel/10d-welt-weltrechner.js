@@ -783,11 +783,15 @@ if (window.WELT) {
         const now = Date.now();
         let hb = alt && alt.hb && alt.hb.v === HB_V ? alt.hb : b.hb && b.hb.v === HB_V ? b.hb : null;
         if (!hb) {
-            const frisch = !(alt && alt.city);         // ganz neu (noch nie in der Welt) → alles bei Null, sonst einmal aus dem Profil
+            // ganz neu (noch nie in der Welt) → alles bei Null, sonst einmal aus dem Profil (Spielstand von vor 3B). Kannte ihn die
+            // gespeicherte Welt beim Neustart nicht (nur ein leerer Eintrag aus loadBotState ohne mensch, oder welt.js hbRoh: roh aus
+            // dem Profil), zählt er als neu – sonst brächte ein gefälschtes Profil seine Werte in die Welt
+            const frisch = !(alt && alt.city) || (!alt.zProfil && (!alt.mensch || !!alt.hbRoh));   // (nach dem Zurückspielen: angleichen wie bisher)
             hb = hbNeu(who, now, p, frisch);
             if (frisch) { b.wache = Object.assign({ lv: 0, tk: 0, gTr: 0, gC: 0 }, b.wache || {}, { u: 0, w: 0, lm: 1 }); hb.gU = 0; hb.rU = AUF ? Object.assign({}, AUF.ROH_START) : { h: 0, s: 0, e: 0 }; }
         }
         b.hb = hb; if (alt && alt !== b) alt.hb = hb;
+        delete b.hbRoh; if (alt) delete alt.hbRoh;
         if (b.zProfil && p && Object.keys(p).length) { hbAusProfil(who, hb, p, now); delete b.zProfil; if (alt) delete alt.zProfil; }   // (nach dem Zurückspielen, einmal)
         const m = wacheSehen(who);
         if (m.rkNeu) { m.rkNeu = false; if (p === m.prof && m.rDeckelP !== p && p.res) { const { P, M } = flugSumme(m); rohWacheProfil(who, m, p, P, M, now); } }   // (nach einem Neustart: das Profil einmal gegen das gemerkte Konto prüfen – vorher kam es ungeprüft in die Welt)
@@ -818,7 +822,8 @@ if (window.WELT) {
     }
     {   const Z = SYSTEM && window.__OW ? +window.__OW.zurueck || 0 : 0;
         if (Z) { const bs = loadBotState(); let n = 0;
-            for (const id in bs) { const b = bs[id]; if (!b || !b.mensch || nn(b.zT) >= Z) continue;
+            const leerOk = Date.now() - Z < 15 * 60000;   // ein leerer Eintrag (nach der Sicherung beigetreten) nur gleich nach dem Zurückspielen – später fehlt er wegen eines Neustarts: neu
+            for (const id in bs) { const b = bs[id]; if (!b || !((b.mensch && !b.hbRoh) || (leerOk && BOT_DEFS.some(x => x.id === id && x.mensch))) || nn(b.zT) >= Z) continue;
                 b.zT = Z; b.zProfil = 1; b.zEich = 1; n++;
                 if (b.wache) { delete b.wache.u; delete b.wache.w; delete b.wache.lm; delete b.wache.fl; }   // → am nächsten Profil neu eichen
                 if (b.hb) { delete b.hb.gU; delete b.hb.rU; } }
