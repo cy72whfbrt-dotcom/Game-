@@ -12817,6 +12817,17 @@ renderActiveMarches();
 if (bonusGrantedAtBoot) saveGame();      // a reload right after the first start must not lose the grant
 updateZoomBounds(); clampCamera();
 requestAnimationFrame(frame);
+requestAnimationFrame(() => setTimeout(dreiDLaden, 0));   // (nach dem ersten Bild der Karte)
+
+// 3D-Basen erst jetzt laden (three.js vom CDN, dann baukunst.js) – vorher würden sie den Start bremsen. Ohne Netz oder
+// WebGL bleiben die gezeichneten Basen (bk3d). Der Weltrechner braucht sie nie.
+function dreiDLaden() {
+    const el = document.getElementById('spaeterLaden');
+    if (SYSTEM || !el || el.dataset.geladen) return;
+    el.dataset.geladen = '1';
+    const laden = (src, sri, dann) => { const s = document.createElement('script'); s.src = src; if (sri) { s.integrity = sri; s.crossOrigin = 'anonymous'; } s.onload = dann; document.body.appendChild(s); };
+    laden(el.dataset.three, el.dataset.sri, () => laden(el.dataset.baukunst, '', requestRender));
+}
 
 // Nichts markieren und kein Kopieren-Menü beim langen Drücken (außer in Eingabefeldern)
 const feldErlaubt = t => t && t.closest && t.closest('input,textarea,select,[contenteditable]');

@@ -421,6 +421,17 @@ function json_antwort($code, $daten) {
     exit;
 }
 
+// Adresse eines Spiel-Skripts für die Spielseite: verkleinert über skript.php (gepackt, lange zwischengespeichert), wenn
+// Game/klein/<name>.js da und nicht älter als das Original ist – sonst das Original. Der Weltrechner bekommt immer das
+// Original (er liest die Skripte selbst von der Festplatte, weltrechner/start.js).
+function skript($name) {
+    static $sys = null;
+    if ($sys === null) $sys = (bool)system_zugang();
+    $quelle = __DIR__ . '/' . $name . '.js'; $klein = __DIR__ . '/klein/' . $name . '.js';
+    if (!$sys && is_file($klein) && filemtime($klein) >= filemtime($quelle)) return 'skript.php?d=' . $name . '&amp;v=' . filemtime($klein);
+    return $name . '.js?v=' . filemtime($quelle);
+}
+
 // ===== Spielseite vorbereiten (spiel.php) =====
 // Login prüfen, auf die letzte Sicherung eines gerade geschlossenen Fensters warten, Spielstand laden.
 // Gibt die Zeilen für den Seitenkopf zurück (Spielstand + speichern.js).
@@ -470,7 +481,7 @@ function spielseite_vorbereiten() {
     ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_INVALID_UTF8_SUBSTITUTE | JSON_PARTIAL_OUTPUT_ON_ERROR);
     if ($ow === false) { http_response_code(503); exit('Der Server hat gerade ein Problem. Bitte gleich nochmal versuchen.'); }
     return '<script nonce="' . csp_nonce() . '">window.__OW = ' . $ow . ';</script>'
-        . '<script src="speichern.js?v=' . filemtime(__DIR__ . '/speichern.js') . '"></script>';
+        . '<script src="' . skript('speichern') . '"></script>';
 }
 // Die Spielseite für den Weltrechner: kein eigener Spielstand, keine Basis – nur die Welt und alle Spieler
 function weltrechner_seite($sys) {

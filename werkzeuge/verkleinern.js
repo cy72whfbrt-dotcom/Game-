@@ -1,0 +1,36 @@
+// Verkleinert die Skripte, die der Browser lädt, nach Game/klein/<name>.js (läuft am Ende von werkzeuge/spiel_bauen.sh).
+// Die Originale bleiben, wie sie sind: der Weltrechner, der Server (liest Namen aus spiel.js/bots.js) und die Tests lesen sie.
+// Nur Leerraum und Kommentare raus und lokale Namen kürzer – nichts umgebaut (compress aus), Funktionsnamen bleiben (Fehlermeldungen
+// lesbar), globale Namen bleiben (die Skripte rufen sich gegenseitig auf). Die erste Zeile merkt sich, aus welchem Original
+// die Datei entstand – unverändertes Original: nichts zu tun (schnell).
+//   node werkzeuge/verkleinern.js          → fehlende/veraltete neu, nicht mehr gebrauchte löschen
+//   node werkzeuge/verkleinern.js pruefen  → nur prüfen: Fehler, wenn eine Datei in Game/klein/ nicht zu ihrem Original passt
+'use strict';
+const fs = require('fs'), path = require('path'), crypto = require('crypto');
+const GAME = path.join(__dirname, '..', 'Game'), KLEIN = path.join(GAME, 'klein');
+// dieselbe Liste wie SKRIPTE in Game/skript.php
+const SKRIPTE = ['ladebildschirm', 'speichern', 'bots', 'welt', 'spiel', 'aufbau', 'buendnis', 'haendler', 'benachrichtigung', 'baukunst'];
+const OPTIONEN = { compress: false, mangle: { keep_fnames: true, keep_classnames: true }, format: { comments: false } };
+const pruefen = process.argv[2] === 'pruefen';
+const kennung = q => '/* verkleinert aus ' + q + ' · ' + crypto.createHash('sha1').update(fs.readFileSync(path.join(GAME, q))).update('terser 5.36.0 ' + JSON.stringify(OPTIONEN)).digest('hex') + ' */';
+const ersteZeile = f => { try { const fd = fs.openSync(f, 'r'), b = Buffer.alloc(200), n = fs.readSync(fd, b, 0, 200, 0); fs.closeSync(fd); return b.toString('utf8', 0, n).split('\n')[0]; } catch (e) { return ''; } };
+
+(async () => {
+    let fehler = 0, neu = 0;
+    if (!pruefen) fs.mkdirSync(KLEIN, { recursive: true });
+    for (const n of SKRIPTE) {
+        const ziel = path.join(KLEIN, n + '.js'), k = kennung(n + '.js');
+        if (ersteZeile(ziel) === k) continue;
+        if (pruefen) { if (fs.existsSync(ziel)) { console.log('FEHLER: Game/klein/' + n + '.js passt nicht zu Game/' + n + '.js – erst werkzeuge/spiel_bauen.sh'); fehler = 1; } continue; }
+        const { minify } = require('./terser.js');
+        const r = await minify(fs.readFileSync(path.join(GAME, n + '.js'), 'utf8'), OPTIONEN);
+        if (!r.code) throw new Error(n + '.js: kein Ergebnis');
+        fs.writeFileSync(ziel + '.neu', k + '\n' + r.code + '\n'); fs.renameSync(ziel + '.neu', ziel);   // (erst ganz fertig, dann an den Platz)
+        neu++;
+    }
+    if (fs.existsSync(KLEIN)) for (const f of fs.readdirSync(KLEIN)) if (!SKRIPTE.includes(f.replace(/\.js$/, '')) || !f.endsWith('.js')) {
+        if (pruefen) { console.log('FEHLER: Game/klein/' + f + ' gehört nicht dazu – erst werkzeuge/spiel_bauen.sh'); fehler = 1; } else fs.rmSync(path.join(KLEIN, f), { force: true, recursive: true });
+    }
+    if (pruefen) console.log(fehler ? '' : 'Game/klein/ passt zu den Originalen'); else console.log('Game/klein/: ' + (neu ? neu + ' Skripte neu verkleinert' : 'unverändert'));
+    process.exit(fehler);
+})().catch(e => { console.log('FEHLER beim Verkleinern: ' + (e && e.message || e)); process.exit(1); });

@@ -824,6 +824,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drawWander` → Game/spiel/07b-kriegsherr.js:148
 - `drawWorldFrame` → Game/spiel/06e-nebel-zeichnen.js:3
 - `drDraw` → Game/spiel/09c-events-drache.js:328
+- `dreiDLaden` → Game/spiel/10c-start-einstellungen.js:233
 - `dressing` → Game/baukunst/04-vielfalt-stile.js:504
 - `dressing` → Game/baukunst/05-umland.js:669
 - `drK` → Game/spiel/09c-events-drache.js:291
@@ -905,7 +906,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `feldBarbMarsch` → Game/spiel/09b-lager-tagesboss.js:74
 - `feldBarbSpeichern` → Game/spiel/09b-lager-tagesboss.js:75
 - `feldBericht` → Game/spiel/09a-funde-felder.js:264
-- `feldErlaubt` → Game/spiel/10c-start-einstellungen.js:231
+- `feldErlaubt` → Game/spiel/10c-start-einstellungen.js:242
 - `fertig` → Game/buendnis/01-daten-regeln.js:140
 - `fertig` → Game/speichern.js:153
 - `fest_lesen` → Game/server/05-datenbank-welt.php:9
@@ -1337,6 +1338,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `kWert` → Game/spiel/10d-welt-weltrechner.js:526
 - `label` → Game/spiel/03d-maersche-tagnacht.js:116
 - `lacq` → Game/baukunst/04-vielfalt-stile.js:231
+- `laden` → Game/spiel/10c-start-einstellungen.js:237
 - `lager` → Game/baukunst/02-buehne-grundbasis.js:158
 - `lager` → Game/server/01-grundlagen-login.php:43
 - `LAMP` → Game/baukunst/07-hafen-palast.js:24
@@ -1377,9 +1379,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `LIME` → Game/baukunst/07-hafen-palast.js:408
 - `LIMEDK` → Game/baukunst/07-hafen-palast.js:409
 - `LIMELT` → Game/baukunst/07-hafen-palast.js:410
-- `liveBald` → Game/spiel/10c-start-einstellungen.js:243
+- `liveBald` → Game/spiel/10c-start-einstellungen.js:254
 - `liveHtml` → Game/spiel/01a-grundlagen.js:114
-- `liveTick` → Game/spiel/10c-start-einstellungen.js:247
+- `liveTick` → Game/spiel/10c-start-einstellungen.js:258
 - `liveUhren` → Game/spiel/01a-grundlagen.js:132
 - `lkBuy` → Game/spiel/08b-burg-aussehen.js:35
 - `lkCard` → Game/spiel/08b-burg-aussehen.js:17
@@ -1589,7 +1591,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `noteBattle` → Game/bots/02-kampf-karte.js:259
 - `oculus` → Game/baukunst/07-hafen-palast.js:449
 - `oeffnen` → Game/spiel/05d-maersche-kampfbericht.js:485
-- `offen` → Game/spiel/10c-start-einstellungen.js:250
+- `offen` → Game/spiel/10c-start-einstellungen.js:261
 - `offene_befehle` → Game/server/05-datenbank-welt.php:186
 - `okPt` → Game/baukunst/05-umland.js:714
 - `one` → Game/baukunst/04-vielfalt-stile.js:525
@@ -2046,6 +2048,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `size` → Game/bots/05-verteidigen-takt.js:262
 - `sizeBackingStore` → Game/spiel/03e-kamera-eingabe.js:397
 - `skillBonusText` → Game/spiel/04-kampf.js:297
+- `skript` → Game/server/03-nebel-maersche-seite.php:144
 - `skyAt` → Game/ladebildschirm.js:23
 - `slab` → Game/baukunst/06-turmhof-festung.js:15
 - `sliderToTroops` → Game/spiel/10a-inselfenster-vorschau.js:258
@@ -2083,7 +2086,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `spielraumNehmen` → Game/spiel/10d-welt-weltrechner.js:168
 - `spielraumTag` → Game/spiel/10d-welt-weltrechner.js:167
 - `spielraumTeile` → Game/spiel/10d-welt-weltrechner.js:158
-- `spielseite_vorbereiten` → Game/server/03-nebel-maersche-seite.php:144
+- `spielseite_vorbereiten` → Game/server/03-nebel-maersche-seite.php:155
 - `splashDone` → Game/spiel/06d-schild-produktion.js:349
 - `spots` → Game/baukunst/03-wahrzeichen-feuer.js:316
 - `SPRAY` → Game/baukunst/07-hafen-palast.js:419
@@ -2128,7 +2131,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `tapFog` → Game/spiel/10b-inselfenster-knoepfe.js:213
 - `tapped` → Game/bots/05-verteidigen-takt.js:29
 - `tausch` → Game/welt.js:89
-- `teil` → Game/spiel/10c-start-einstellungen.js:251
+- `teil` → Game/spiel/10c-start-einstellungen.js:262
 - `teleportCapital` → Game/spiel/08d-gebaeude-wirkung.js:90
 - `tempelPlus` → Game/aufbau.js:218
 - `temple` → Game/spiel/03b-gebaeude-3d.js:224
@@ -2237,7 +2240,6 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `upgradeCost` → Game/spiel/01b-weltkarte.js:131
 - `upgradeCostRoh` → Game/spiel/01b-weltkarte.js:130
 - `urnGeo` → Game/baukunst/07-hafen-palast.js:456
-- `v` → Game/spielseite/01-kopf-grundwerte.php:7
 - `val` → Game/bots/05-verteidigen-takt.js:117
 - `vapidJwt` → Game/weltrechner/push.js:52
 - `variant` → Game/baukunst/04-vielfalt-stile.js:188
@@ -2338,7 +2340,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `weltNachholen` → Game/spiel/06d-schild-produktion.js:241
 - `weltNameSetzen` → Game/spiel/04-kampf.js:355
 - `weltrechner_schluessel` → Game/server/01-grundlagen-login.php:54
-- `weltrechner_seite` → Game/server/03-nebel-maersche-seite.php:193
+- `weltrechner_seite` → Game/server/03-nebel-maersche-seite.php:204
 - `weltteil_fuer_spieler` → Game/server/02-sicherheit-datenlecks.php:171
 - `weltZuClient` → Game/welt.js:143
 - `werIst` → Game/aufbau.js:120
@@ -3184,8 +3186,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `client_ip` :120 — (IPv6: das ganze /64-Netz zählt als eine Adresse – sonst wechselt man einfach d…
 - `herkunft_ok` :126 — Kommt ein Formular / eine Anfrage wirklich von dieser Seite? (fremde Seiten dür…
 - `json_antwort` :133
-- `spielseite_vorbereiten` :144 — Spielseite vorbereiten (spiel.php) ===== Login prüfen, auf die letzte Sicherung…
-- `weltrechner_seite` :193 — Die Spielseite für den Weltrechner: kein eigener Spielstand, keine Basis – nur …
+- `skript` :144 — Adresse eines Spiel-Skripts für die Spielseite: verkleinert über skript.php (ge…
+- `spielseite_vorbereiten` :155 — Spielseite vorbereiten (spiel.php) ===== Login prüfen, auf die letzte Sicherung…
+- `weltrechner_seite` :204 — Die Spielseite für den Weltrechner: kein eigener Spielstand, keine Basis – nur …
 
 ### Game/server/04-datenbank-spieler.php — MysqlLager: Tabellen, Spieler, Sitzungen, Spielstand, Bremse, Namen
 - `MysqlLager->tx_anfang` :10
@@ -4560,11 +4563,13 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `pct` :186
 - `work` :200
 - `finish` :206
-- `feldErlaubt` :231 — Nichts markieren und kein Kopieren-Menü beim langen Drücken (außer in Eingabefe…
-- `liveBald` :243 — neue Daten: gleich nachziehen, aber höchstens 1× pro Sekunde
-- `liveTick` :247
-- `offen` :250
-- `teil` :251
+- `dreiDLaden` :233 — 3D-Basen erst jetzt laden (three.js vom CDN, dann baukunst.js) – vorher würden …
+- `laden` :237
+- `feldErlaubt` :242 — Nichts markieren und kein Kopieren-Menü beim langen Drücken (außer in Eingabefe…
+- `liveBald` :254 — neue Daten: gleich nachziehen, aber höchstens 1× pro Sekunde
+- `liveTick` :258
+- `offen` :261
+- `teil` :262
 
 ### Game/spiel/10d-welt-weltrechner.js — Die eine Welt: Verbindung zu welt.js, Weltrechner-Befehle, Schummel-Schutz, Sta…
 - `rechnerStatus` :10 — (welt.js meldet jede Änderung von „rechner“)
@@ -4702,7 +4707,6 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 ## Game/spielseite/ (Teile)
 
 ### Game/spielseite/01-kopf-grundwerte.php — PHP-Kopf (Login, Spielstand), <head>, Stil: Farben, Größen, Grundregeln, Karten…
-- `v` :7
 
 ### Game/spielseite/02-stil-hud-fenster.php — Stil: HUD, Navigation, Kartenknöpfe, Hinweis, Mehrfach-Angriff, Fenster-Rahmen
 
@@ -4873,6 +4877,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `frame` :161
 - `showTip` :183
 - `window.__stopSplashScene` :193
+
+### Game/skript.php — skript.php – liefert die verkleinerten Spiel-Skripte aus Game/klein/ (entstehen…
 
 ### Game/speichern.js — speichern.js – Speichern und Laden: nichts im Browser, alles auf den Server (se…
 - `merke` :29

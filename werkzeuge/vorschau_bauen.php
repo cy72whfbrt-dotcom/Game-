@@ -9,17 +9,19 @@ $ziel = $argv[1] ?? (dirname(__DIR__) . '/vorschau');
 $html = file_get_contents($quelle . '/spiel.php');
 $html = substr($html, strpos($html, '<!DOCTYPE html>'));
 $html = str_replace('<?= $kopf ?>', '', $html);
-$html = preg_replace_callback("/<\?= v\('([^']+)'\) \?>/", function ($m) use ($quelle) { return filemtime($quelle . '/' . $m[1]); }, $html);
-foreach (['welt.js', 'benachrichtigung.js'] as $weg) $html = preg_replace('#\s*<script[^>]*src="' . preg_quote($weg, '#') . '[^"]*"[^>]*></script>#', '', $html);   // brauchen den Server
+// Skripte wie auf dem Server (skript() in server.php): verkleinert aus klein/, wenn da und nicht älter als das Original
+$html = preg_replace_callback("/<\?= skript\('([a-z]+)'\) \?>/", function ($m) use ($quelle) { $k = $quelle . '/klein/' . $m[1] . '.js'; $q = $quelle . '/' . $m[1] . '.js';
+    return is_file($k) && filemtime($k) >= filemtime($q) ? 'klein/' . $m[1] . '.js?v=' . filemtime($k) : $m[1] . '.js?v=' . filemtime($q); }, $html);
+foreach (['welt.js', 'benachrichtigung.js'] as $weg) $html = preg_replace('#\s*<script[^>]*src="(klein/)?' . preg_quote($weg, '#') . '[^"]*"[^>]*></script>#', '', $html);   // brauchen den Server
 if (strpos($html, '<?') !== false) exit("Fehler: noch PHP in spiel.php\n");
 if (in_array('test', $argv, true)) {   // Test-Modus (kein Nebel, fast unbegrenzt alles) – nur für die Vorschau
     copy(__DIR__ . '/vorschau_test.js', $ziel . '/testmodus.js');
-    $html = preg_replace('#(<script src="haendler\.js[^"]*"></script>)#', '$1' . "\n" . '    <script src="testmodus.js"></script>', $html, 1);
+    $html = preg_replace('#(<script src="(?:klein/)?haendler\.js[^"]*"></script>)#', '$1' . "\n" . '    <script src="testmodus.js"></script>', $html, 1);
     if (strpos($html, 'testmodus.js') === false) exit("Fehler: Test-Modus nicht eingebaut\n");
     // vorher (vor bots.js): eine eigene, frische Testwelt je Version – mit nur EINEM Mitspieler (… test viele: alle Mitspieler, für Tests)
     if (!in_array('viele', $argv, true)) {
     file_put_contents($ziel . '/testvorher.js', str_replace('TESTWELT_VERSION', date('Y-m-d H:i:s'), file_get_contents(__DIR__ . '/vorschau_test_vorher.js')));
-    $html = preg_replace('#(<script src="bots\.js[^"]*"></script>)#', '<script src="testvorher.js"></script>' . "\n" . '    $1', $html, 1);
+    $html = preg_replace('#(<script src="(?:klein/)?bots\.js[^"]*"></script>)#', '<script src="testvorher.js"></script>' . "\n" . '    $1', $html, 1);
     if (strpos($html, 'testvorher.js') === false) exit("Fehler: Test-Welt nicht eingebaut\n");
     }
 }
@@ -29,6 +31,8 @@ if (($argv[2] ?? '') === 'artifact') {   // als Claude-Artifact: ohne <html>/<he
 }
 file_put_contents($ziel . '/index.html', $html);
 foreach (['ladebildschirm.js', 'baukunst.js', 'bots.js', 'spiel.js', 'aufbau.js', 'buendnis.js', 'haendler.js'] as $f) copy($quelle . '/' . $f, $ziel . '/' . $f);
+@mkdir($ziel . '/klein', 0755, true);
+foreach (glob($quelle . '/klein/*.js') as $f) copy($f, $ziel . '/klein/' . basename($f));
 @mkdir($ziel . '/app', 0755, true);
 foreach (glob($quelle . '/app/*') as $f) copy($f, $ziel . '/app/' . basename($f));
 echo "Vorschau in $ziel (" . round(array_sum(array_map('filesize', glob($ziel . '/*.*'))) / 1048576, 1) . " MB)\n";
