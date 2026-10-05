@@ -392,6 +392,15 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Antwort hängt, bricht auch ab. Test `tests/browser/haenger_holen_test.js`. `handy_texte_test.js` war rot, weil zufällig
   andere Ansagen (Drache erscheint, Testmodus-Hinweis) den Saison-Hinweis ersetzten (der neueste gilt – so gewollt):
   der Test schaltet sie während der Szene stumm (Test-Problem, kein Spielfehler).
+- **5.10. Mitspieler (Alexander #1/#2: alle gleich):** Mitspieler greifen jetzt auch die Feld-Armeen echter Spieler an (vorher
+  nur deine) – Friedensschild und Bündnis schützen wie bei dir, der Kampfbericht geht als Nachricht an den Eigentümer, seine
+  Verwundeten in sein Krankenhaus (`armyBotWatch`/`armyRaidArrive`, bots/06). Startverteilung (01d) nur auf dem Weltrechner und
+  nur für Mitspieler, die noch nie Basen hatten: Ausgeschiedene bekamen nach einem Neustart (und auf Handys) sofort einen Turm
+  geschenkt – jetzt kommen sie wie vorgesehen über `botRespawn` zurück (10 Min., Schild). `botRespawn` sucht bei vollem Rand nur
+  einmal pro Minute (`outNext`). Armee-Befehle: eine heimgeschickte Armee beendete die Schleife für alle anderen (`botArmyStep`).
+  Verteidigen: Hilfe/Abzug gilt nur, wenn der Marsch wirklich losging, sonst der nächste Helfer (`botDefend`). Schild: eigene
+  Angriffe kehren um und laufen heim wie deine (nicht mehr sofort zu Hause, `botUseShield`). Hauptstadt eines Mitspielers ist
+  immer ein Turm, nie Tor/Tempel (`botCapitalOf`). Test `tests/browser/mitspieler_feld_test.js`.
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
