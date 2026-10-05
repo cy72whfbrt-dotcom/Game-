@@ -392,6 +392,14 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Antwort hängt, bricht auch ab. Test `tests/browser/haenger_holen_test.js`. `handy_texte_test.js` war rot, weil zufällig
   andere Ansagen (Drache erscheint, Testmodus-Hinweis) den Saison-Hinweis ersetzten (der neueste gilt – so gewollt):
   der Test schaltet sie während der Szene stumm (Test-Problem, kein Spielfehler).
+- **5.10. Heimweg nach der Ankunft:** eine Welle, die am Ziel nicht kämpft (Ziel gehört inzwischen einem Bündnis-Mitglied,
+  Friedensschild, kaputtes Ziel), war sofort wieder daheim – jetzt läuft sie den Weg zurück (`welleHeim`, 04-kampf.js;
+  Mitspieler/echte Spieler über `bundHeimschicken`, Vorschau-Spieler als Rückzug; ebenso `resolveBotAttack`, Zweig
+  Bündnis-Mitglied). Zwei Wellen desselben Angreifers aus verschiedenen Basen in einem Kampf: jede Basis bekommt ihren Teil
+  der Heimkehrer (`fight.quellen` → `kampfHeimTeile`, bots/02; kommt ein Verbündeter dazu, wird jede Quelle ein Eintrag in
+  `rally.an`). Wer ohne Rally bzw. als Anführer einer zweiten Rally dazukommt, bringt seinen Skill-Anteil `x[6]` mit
+  (`rallyAussortieren` zieht sonst zu viel/zu wenig ab). Offen: im Vorschau-Kampf des Spielers (`resolveAttack`, 02c) gehen
+  zusammengelegte Wellen weiter zur ersten Basis. Test `tests/browser/gemeinsam_heim_test.js`.
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.

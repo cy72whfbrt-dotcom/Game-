@@ -4554,16 +4554,11 @@ setInterval(() => {
             if (tow !== atkr && !(tow && bundFreund(atkr, tow)) && !kampfDazu(a, now) && pendingAttacks.some(p => p !== a && p.fightEndsAt && p.targetId === a.targetId)) { a.wartet = 1; continue; }
             delete a.wartet;
             if (tow && tow !== atkr && bundFreund(atkr, tow)) {                     // inzwischen gehört das Ziel einem Bündnis-Mitglied: kein Kampf, die Truppen gehen heim
-                if (a.rally) bundRallyHeim(a, a.rawTroops, a.targetId);
-                else { const own = atkr === 'player' ? ownedIslands : botOwnedIslands[atkr], back = own && own.has(a.sourceId) ? a.sourceId : atkr === 'player' ? rewardBaseId() : botCapitalOf(atkr);
-                    if (back !== null && back !== undefined) islandTroops[back] = (islandTroops[back] || 0) + a.rawTroops; }
+                welleHeim(a, atkr, a.targetId);
                 heroWutZurueck(atkr, a.hx); pendingAttacks.splice(pendingAttacks.indexOf(a), 1); renderActiveMarches(); continue;
             }
             if (tow && tow !== atkr && shieldCovers(islandById[a.targetId]) && ownerShielded(tow, gewartet ? now : Math.min(now, a.resolveAt))) {   // bounces off the Friedensschild (as it stood when the wave arrived – nach dem Warten: wie er JETZT steht) - the troops come back
-                const own = atkr === 'player' ? ownedIslands : botOwnedIslands[atkr];
-                const back = own && own.has(a.sourceId) ? a.sourceId : atkr === 'player' ? rewardBaseId() : botCapitalOf(atkr);
-                if (a.rally) bundRallyHeim(a, a.rawTroops, a.targetId);              // (eine Rally: jeder bekommt seinen Anteil zurück)
-                else if (back !== null && back !== undefined) islandTroops[back] = (islandTroops[back] || 0) + a.rawTroops;
+                const back = welleHeim(a, atkr, a.targetId);                        // (eine Rally: jeder bekommt seinen Anteil zurück)
                 heroWutZurueck(atkr, a.hx); pendingAttacks.splice(pendingAttacks.indexOf(a), 1);
                 if (tow === 'player') { flashHint('Dein Friedensschild hat den Angriff von ' + botById[a.attackerBotId].name + ' auf ' + islandTitle(islandById[a.targetId]) + ' abgewehrt.', 4000);
                     spawnBattleFx(a.targetId, true, 'Schild hält', botById[a.attackerBotId].name + ' prallt ab'); }
@@ -4585,9 +4580,10 @@ setInterval(() => {
             if (fight) {
                 const anderer = fight.attackerBotId !== a.attackerBotId;
                 if (anderer || fight.rally || a.rally) {          // ein gemeinsamer Kampf: wer mit wie vielen Truppen dabei ist (Verluste, Heimweg, Beute, Bericht)
-                    if (!fight.rally) fight.rally = { id: 'z' + fight.id, by: fight.attackerBotId, an: [[fight.attackerBotId, fight.sourceId, fight.rawTroops]], zus: 1 };
+                    if (!fight.rally) { fight.rally = { id: 'z' + fight.id, by: fight.attackerBotId, an: (fight.quellen || [[fight.sourceId, fight.rawTroops]]).map(q => [fight.attackerBotId, q[0], q[1]]), zus: 1 }; delete fight.quellen; }
                     else fight.rally.zus = 1;
-                }
+                } else if (a.sourceId !== fight.sourceId || fight.quellen)   // eine weitere eigene Welle aus einer anderen Basis: jeder Teil kehrt zu SEINER Basis heim
+                    (fight.quellen = fight.quellen || [[fight.sourceId, fight.rawTroops]]).push([a.sourceId, a.rawTroops]);
                 const wer = a.attackerBotId || 'player';               // höchstens 2 Helden je Angreifer (Alexander 4.10.): hat er schon Helden im Kampf, zählen die dieser Welle nicht
                 if (!fight.heldVon) { fight.heldVon = fight.hx ? { [fight.attackerBotId || 'player']: 1 } : {};
                     if (fight.rally) for (const x of fight.rally.an) if (x && x[4]) fight.heldVon[x[0]] = 1; }   // (auch die Helden der Rally-Mitglieder)
@@ -4609,11 +4605,13 @@ setInterval(() => {
                     let mit = 0, erster = true;
                     for (const x of a.rally.an) if (x[0] !== a.rally.by && x[3] != null) { x[3] = Math.round((x[2] + x[3]) * umf - x[2]); mit += x[3]; }
                     for (const x of a.rally.an) if (x[0] === a.rally.by) {
-                        x[3] = erster ? Math.round((a.attackBonus || 0) - mit) : 0; if (erster && a.hx && !ohneHeld) x[4] = a.hx; erster = false;
+                        x[3] = erster ? Math.round((a.attackBonus || 0) - mit) : 0; if (erster && a.hx && !ohneHeld) x[4] = a.hx;
+                        if (x[6] == null) x[6] = erster && a.skillBonus !== undefined ? Math.max(0, a.skillBonus - a.rally.an.reduce((s, q) => s + (q[0] !== a.rally.by && q[6] || 0), 0)) : 0;   // (sein Skill-Anteil – für rallyAussortieren)
+                        erster = false;
                         if (x[5] == null) x[5] = a.shieldLossReductionPct; }   // (sein Schild + Held gilt nur für seine Truppen)
                 }
                 if (anderer || fight.rally || a.rally)
-                    fight.rally.an.push(...(a.rally ? a.rally.an : [[a.attackerBotId, a.sourceId, a.rawTroops, anderer ? Math.round(a.attackBonus || 0) : undefined, anderer && a.hx && !ohneHeld ? a.hx : undefined, anderer ? a.shieldLossReductionPct : undefined]]));
+                    fight.rally.an.push(...(a.rally ? a.rally.an : [[a.attackerBotId, a.sourceId, a.rawTroops, anderer ? Math.round(a.attackBonus || 0) : undefined, anderer && a.hx && !ohneHeld ? a.hx : undefined, anderer ? a.shieldLossReductionPct : undefined, anderer ? a.skillBonus : undefined]]));
                 fight.rawTroops += a.rawTroops; fight.attackBonus = (fight.attackBonus || 0) + (a.attackBonus || 0);
                 if (fight.skillBonus !== undefined || a.skillBonus !== undefined) fight.skillBonus = (fight.skillBonus || 0) + (a.skillBonus !== undefined ? a.skillBonus : a.attackBonus || 0); fight.waves = (fight.waves || 1) + (a.waves || 1);
                 // (ein Held eines Mitspielers führt nur seinen eigenen Teil – seine Wut füllt sich am Kampfende, siehe resolveBotAttack: rally.an[4])
@@ -4626,8 +4624,7 @@ setInterval(() => {
             } else {
                 const est = fightEstimate(a);
                 if (!est) {                                         // (kaputtes/altes Ziel: nie ein Kampf – die Truppen gehen heim statt ewig zu warten)
-                    const own = atkr === 'player' ? ownedIslands : botOwnedIslands[atkr], back = own && own.has(a.sourceId) ? a.sourceId : atkr === 'player' ? rewardBaseId() : botCapitalOf(atkr);
-                    if (a.rally) bundRallyHeim(a, a.rawTroops, a.sourceId); else if (back !== null && back !== undefined) islandTroops[back] = (islandTroops[back] || 0) + a.rawTroops;
+                    welleHeim(a, atkr, a.targetId);
                     heroWutZurueck(atkr, a.hx); pendingAttacks.splice(pendingAttacks.indexOf(a), 1); continue; }
                 a.id = a.id || (a.startedAt + '-' + a.sourceId + '-' + a.targetId);
                 a.fightEndsAt = now + fightDurationMs(est);
@@ -4686,6 +4683,19 @@ setInterval(() => {
     if (!isPanelOpen(battleLogPopup)) renderActiveMarches();
     updateHudPlayer();
 }, 1000);
+
+// Eine Welle kämpft nicht (Ziel gehört einem Bündnis-Mitglied, Friedensschild, kaputtes Ziel): die Truppen laufen den Weg
+// heim statt sofort daheim zu sein (Rally: jeder zu sich). von: wo sie umkehren (fehlt die Insel: die eigene Basis). → Basis oder null
+function welleHeim(a, atkr, von) {
+    if (!islandById[von]) von = a.sourceId;
+    if (a.rally) { bundRallyHeim(a, a.rawTroops, von); return null; }
+    const own = atkr === 'player' ? ownedIslands : botOwnedIslands[atkr], back = own && own.has(a.sourceId) ? a.sourceId : atkr === 'player' ? rewardBaseId() : botCapitalOf(atkr);
+    if (back === null || back === undefined || !islandById[back]) return null;
+    if (atkr !== 'player') { bundHeimschicken(atkr, von, back, a.rawTroops, a.hx ? a.hx.ret || 0 : 0); return back; }
+    const t0 = Date.now(), weg = islandById[von] ? retreatSecs(a, islandById[von], islandById[back]) : 0;   // (Vorschau: dein Rückweg)
+    pendingRetreats.push({ fromId: von, toId: back, troops: a.rawTroops, startedAt: t0, resolveAt: t0 + Math.max(1, weg) * 1000 });
+    return back;
+}
 
 // Ein Kampf ist mit einem Fehler abgebrochen: die Verstärkung wieder trennen (sonst doppelt in der Besatzung und verstDefPlus
 // hängt), die Truppen einer Rally gehen heim (sonst wären sie weg). attack._vk / _heim setzt der Kampf selbst
