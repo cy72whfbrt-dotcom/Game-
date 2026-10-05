@@ -724,6 +724,12 @@ Alles für heute Nacht kommt hier rein. Erst besprechen (Fragen an Alexander), d
 1. **Truppen/Wirtschaft „pro Stunde“ wie Million Lords** – Ertrag deutlich langsamer (Alexander: „geht alles etwas
    langsamer, finde ich schön“; an Million-Lords-Werte müssen wir uns nicht halten). Sucher rechnet die Folgen aus;
    Fragen dazu laufen. *(in Besprechung)*
+   **Entschieden:** F1 Umstellung mit einem **Saison-Ende** (Reset) – dabei gleich sehen, ob Hauptstadt usw. bleibt.
+   F2 **3.600× langsamer** (was heute pro Sekunde kommt, kommt pro Stunde). F3 Kosten/Gegner im gleichen Verhältnis
+   verkleinern – **aber nicht zu einfach** (lange spielen). F4 Mitspieler **immer** genau wie echte Spieler. F5 Truppen
+   **und** Gold. Offen: „Kosten zurücksetzen wie Fähigkeiten, Helden bleiben“ genauer klären.
+4. **Prüfen (Alexander):** Die Produktion im Profil muss genau die Summe der Basen sein – z. B. 2 Basen, Profil sagt
+   10 Mio. → es kommen genau 10 Mio., nicht mehr und nicht weniger.
 2. Alexanders 3 Fehler (Abschnitt 11): Späher-Knöpfe, Angriff von der nächsten Basis, Spähbericht ohne Ausrüstung.
 3. Ideen-Liste Teil 1 (32 Punkte) und Teil 2 (N1–N11) – Punkt für Punkt besprechen.
 
