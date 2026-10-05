@@ -9,9 +9,9 @@ function todayKey(d) {
 function yesterdayKey() { const d = new Date(); d.setDate(d.getDate() - 1); return todayKey(d); }
 function msToMidnight() { const d = new Date(); const m = new Date(d); m.setHours(24, 0, 0, 0); return m - d; }
 
-// Grants one crate item (like the shop) - minRarity for the big day-7 chest.
+// Grants one crate item (like the shop) - minRarity for the big day-7 chest. Jede geöffnete Kiste zählt für die Tagesaufgabe.
 function grantFreeCrate(minRarity) {
-    return addInventoryItem(pickRandomSlot(), Math.max(minRarity || 0, pickRandomRarity()), 1);
+    const it = addInventoryItem(pickRandomSlot(), Math.max(minRarity || 0, pickRandomRarity()), 1); questProgress('crate', 1); return it;
 }
 
 // ---- daily reward: 7-day cycle, missing a day starts again at day 1 ----
@@ -106,8 +106,21 @@ var QUEST_DEFS = {
     pickup:  { icon: 'coin',        text: n => 'Sammle ' + n + ' Karten-Belohnungen',  steps: [2, 4, 6] },
     scout:   { icon: 'scout',       text: n => 'Späh ' + n + ' Basen aus',             steps: [2, 4, 6] },
     send:    { icon: 'send',        text: n => 'Schicke ' + n + '-mal Truppen',        steps: [2, 4, 6] },
-    crate:   { icon: 'shop',        text: n => 'Öffne ' + n + (n === 1 ? ' Kiste' : ' Kisten') + ' im Shop', steps: [1, 2, 3] }
+    crate:   { icon: 'shop',        text: n => 'Öffne ' + n + (n === 1 ? ' Kiste' : ' Kisten'), steps: [1, 2, 3] },   // (jede Kiste: Shop, Helden-Kiste, Abholfach, Pass, Thron-Shop, Belohnungen)
+    bau:     { icon: 'castle',      text: n => n === 1 ? 'Starte einen Bau in der Stadt' : 'Starte ' + n + ' Bauten in der Stadt', steps: [1, 1, 2], geht: () => questStadtGeht('bau') },
+    forschung: { icon: 'flask',     text: () => 'Starte eine Forschung im Labor', steps: [1, 1, 1], geht: () => questStadtGeht('forschung') }
 };
+// Bau/Forschung nur als Aufgabe, wenn es heute noch geht (Bauarbeiter bzw. Labor vor Mitternacht frei, etwas zu bauen/erforschen da)
+function questStadtGeht(art) {
+    try {
+        if (!AUF) return true;                                       // (beim Laden noch nicht bereit: ja)
+        const c = loadCity(), nacht = new Date().setHours(24, 0, 0, 0), B = AUF.burgStufe('player');
+        if (art === 'forschung') return (c.levels.academy || 0) > 0 && (!c.foRun || c.foRun.endsAt < nacht) && AUF.foSumme('player') < AUF.foGesamt();
+        const frei = c.builds.length < citySlots(c) || c.builds.some(b => b.endsAt < nacht);
+        return frei && ['keep', ...CITY_BUILDINGS.map(b => b.id)].some(id => { const L = id === 'keep' ? B : c.levels[id] || 0;
+            return !cityBuildOf(c, id) && (id === 'keep' ? L < AUF.BURG_MAX : L < AUF.stadtCap('player', id) && !(!L && AUF.BAU_AB_BURG[id] > B)); });
+    } catch (e) { return true; }
+}
 var QUEST_GEMS = [5, 10, 15];
 var QUEST_BONUS = { crates: 1, gems: 10 };
 var questState = null;
@@ -115,7 +128,7 @@ function loadQuests() {
     const today = todayKey();
     if (!questState) { try { questState = JSON.parse(store.get('openWaterQuests')) || null; } catch (e) { questState = null; } }
     if (!questState || questState.date !== today || !Array.isArray(questState.list)) {
-        const types = Object.keys(QUEST_DEFS).sort(() => Math.random() - 0.5).slice(0, 3);
+        const types = Object.keys(QUEST_DEFS).filter(t => !QUEST_DEFS[t].geht || QUEST_DEFS[t].geht()).sort(() => Math.random() - 0.5).slice(0, 3);
         questState = { date: today, bonusClaimed: false, list: types.map((type, i) => {
             const tier = i;                                  // one easy, one medium, one hard
             return { type, target: QUEST_DEFS[type].steps[tier], progress: 0, gems: QUEST_GEMS[tier], claimed: false };
@@ -204,7 +217,7 @@ function inboxClaim(id) {                           // into your coffers - retur
     const L = inboxList(), i = L.findIndex(x => x.id === id); if (i < 0) return ''; const x = L.splice(i, 1)[0], got = [];
     if (x.gems) { gems += x.gems; got.push('+' + fmtNum(x.gems) + ' Edelsteine'); } if (x.coins) { coins += x.coins; got.push('+' + fmtCompact(x.coins) + ' Münzen'); }
     if (x.crate >= 0) { const it = grantFreeCrate(x.crate); if (it && it.rarity !== undefined) got.push(EQUIPMENT_DEFS[it.slot].name + ' (' + RARITY_DEFS[it.rarity].label + ')'); }
-    if (x.kiste >= 0 && x.kiste <= 2) { const it = addInventoryItem(pickRandomSlot(), x.kiste, 1); if (it && it.rarity !== undefined) got.push(EQUIPMENT_DEFS[it.slot].name + ' (' + RARITY_DEFS[it.rarity].label + ')'); }
+    if (x.kiste >= 0 && x.kiste <= 2) { const it = addInventoryItem(pickRandomSlot(), x.kiste, 1); questProgress('crate', 1); if (it && it.rarity !== undefined) got.push(EQUIPMENT_DEFS[it.slot].name + ' (' + RARITY_DEFS[it.rarity].label + ')'); }
     if (x.schild === 2) { const st = shieldStock(); st[2] = (st[2] || 0) + 1; store.set('openWaterShieldStock', JSON.stringify(st)); got.push('Friedensschild 2 h'); }
     if (x.sh) { const h = heroGrantShards('player', x.sh); if (h) got.push(x.sh + ' Splitter ' + h.name); else { gems += x.sh * 20; got.push('+' + x.sh * 20 + ' Edelsteine (alle Helden voll)'); } }
     if (x.tr) { const b = rewardBaseId(); if (b !== null) { eigeneTruppenDazu(b, x.tr, 'geschenk'); got.push('+' + fmtCompact(x.tr) + ' Truppen'); } else L.splice(i, 0, Object.assign({}, x, { gems: 0, coins: 0, sh: 0, crate: -1, kiste: -1, schild: 0 })); }   // no base right now: only the troops stay in the inbox

@@ -785,7 +785,9 @@ body.has-panel .mapctl{display:none}
 .logRow .lt small.logOrt{display:flex;align-items:center;gap:8px;-webkit-line-clamp:unset;font-variant-numeric:tabular-nums}
 .logRow .lt small.logOrt .btn{min-height:22px;padding:0 8px;font-size:10px}
 #popupEmblem[data-profile]{cursor:pointer}
-.rp-bund{display:block;margin-top:4px;font:600 var(--fs-12)/1.2 var(--font-ui);color:var(--tx-2)}
+.rp-bund{display:flex;align-items:center;gap:6px;width:fit-content;max-width:100%;margin-top:5px;padding:3px 9px 3px 3px;border:1px solid var(--line-1);border-radius:999px;background:rgba(0,0,0,.22);font:600 var(--fs-12)/1.2 var(--font-ui);color:var(--tx-1);text-align:left;cursor:pointer}
+.rp-bund > span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .rp-bund .bd-wappen{width:20px;height:20px;border-radius:6px} .rp-bund .bd-wappen .icon{width:12px;height:12px}
+.rp-bund.is-leer{color:var(--tx-2);padding-left:9px} span.rp-bund{cursor:default} .rp-bund > .icon{width:14px;height:14px} .bd-zeile.is-ziel{outline:2px solid var(--gold-300);outline-offset:2px;border-radius:10px}
 .logRow .lv{font:600 var(--fs-12)/1 var(--font-ui);color:var(--tx-2);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
 .seg.hero-seg{display:flex;flex-wrap:wrap} .seg.hero-seg button{flex:1 1 28%;display:inline-flex;align-items:center;justify-content:center;gap:4px;padding:0 6px;border-left:3px solid var(--hc,var(--line-1))} .seg.hero-seg button small{color:var(--gold-200);font-size:10px} .seg.hero-seg button:disabled{opacity:.4} .seg.hero-seg .hero-pic{width:22px;height:22px;flex:none;border-radius:5px;border:1px solid var(--hc)} .seg.hero-seg button small{white-space:nowrap}
 .logHero{padding:6px 0;border-top:1px solid var(--line-1)} .logHeroFire{font-style:normal;color:var(--gold-200);font-weight:700}
@@ -1741,6 +1743,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
       <div class="xp"><span class="xp-l">Stufe <b id="xpLevelNum">1</b></span><div class="xp-track"><i id="xpFill" class="xpFill"></i></div><span id="xpNums" class="xp-n">0 / 50 XP</span></div>
       <div id="xpNext" class="xp-next"></div>
       <div id="profileTitle" class="ptitle-tag"></div>
+      <div id="profileBund"></div>
     </div>
     <button id="profileCloseBtn" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button>
   </header>
@@ -1809,6 +1812,8 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
           <label class="set-zeile"><span>Bündnis ruft um Hilfe</span><input type="checkbox" data-push-art="hilfe"></label>
           <label class="set-zeile"><span>Rally gegen dich</span><input type="checkbox" data-push-art="rally"></label>
           <label class="set-zeile"><span>Ein Händler ist da<small>Wandernder Händler auf der Karte</small></span><input type="checkbox" data-push-art="haendler"></label>
+          <label class="set-zeile"><span>Bau fertig<small>Gebäude und Burg in deiner Stadt</small></span><input type="checkbox" data-push-art="bau"></label>
+          <label class="set-zeile"><span>Forschung fertig<small>Labor ist wieder frei</small></span><input type="checkbox" data-push-art="forschung"></label>
         </div>
       </div>
       <div class="sect"><h4>Ton</h4></div>
@@ -1914,6 +1919,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
   <div id="rankTabs" class="tabs" role="tablist">
     <button class="tab active" type="button" role="tab" data-rtab="power"><svg class="icon"><use href="#i-attack"/></svg><span>Macht</span></button>
     <button class="tab" type="button" role="tab" data-rtab="caps"><svg class="icon"><use href="#i-flag"/></svg><span>Eroberungen</span></button>
+    <button class="tab" type="button" role="tab" data-rtab="burg"><svg class="icon"><use href="#i-castle"/></svg><span>Hauptstadt</span></button>
     <button class="tab" type="button" role="tab" data-rtab="titles"><svg class="icon"><use href="#i-crown"/></svg><span>Titel</span></button>
     <button class="tab" type="button" role="tab" data-rtab="week"><svg class="icon"><use href="#i-points"/></svg><span>Thron-Punkte</span></button>
   </div>

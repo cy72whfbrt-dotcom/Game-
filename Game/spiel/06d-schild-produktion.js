@@ -77,7 +77,7 @@ shopPopup.addEventListener('click', e => { const bt = e.target.closest('[data-hc
     if (gems < c.gems) { flashHint('Zu wenig Edelsteine – die ' + c.name + ' kostet ' + fmtNum(c.gems) + '.', 3000); return; }
     if (!heroChestPool(c.minR).length) { flashHint('Alle passenden Helden haben schon 5 Sterne.', 3000); return; }
     if (!gemsWirklich('kiste:' + c.id, c.gems, bt)) return;
-    gems -= c.gems; const got = heroChestOpen('player', c); updateHud(); saveGame(); renderShop();
+    gems -= c.gems; const got = heroChestOpen('player', c); questProgress('crate', 1); updateHud(); saveGame(); renderShop();   // (zählt für „Öffne … Kisten“)
     const res = document.getElementById('shopHeroResult');
     res.innerHTML = '<b class="hchest-h">' + c.name + '</b>' + got.map(h => { const s = heroSt('player', h.id), need = s.own ? (s.q >= HERO_MAXQ ? 0 : heroStepCost(h, s.q)) : HERO_UNLOCK[h.r], rd = RARITY_DEFS[h.r];
         return '<div class="hchest-row" style="--rc:' + rd.color + '">' + heroImg(h.id, 'hchest-pic') + '<span><b>' + h.name + '</b><small style="color:' + rd.color + '">' + rd.label + '</small></span><i>+' + c.sh + ' Splitter' + (need ? ' · ' + (s.sh >= need ? (s.own ? 'Aufwerten bereit' : 'Freischalten bereit') : s.sh + ' / ' + need) : '') + '</i></div>'; }).join('') +

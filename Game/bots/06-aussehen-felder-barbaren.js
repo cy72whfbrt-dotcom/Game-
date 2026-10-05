@@ -41,7 +41,9 @@ const BOT_GOAL_VAL = {
     cityMin: b => Math.min(...BOT_BUILDINGS.filter(k => !BOT_MIN_AUSNAHME.includes(k)).map(k => b.city.levels[k] || 0)),   // (the newer Lager doesn't count, like yours)
     baseTop: (b, st, id) => goalBaseTop(id), gates: (b, st, id) => goalGates(id), tolls: (b, st) => st.tolls, tollCoins: (b, st) => st.tollCoins,
     armyWins: (b, st) => st.armyWins, heroes: (b, st, id) => goalHeroes(id), heroStars: (b, st, id) => goalHeroStars(id), heroFires: (b, st) => st.heroFires,
-    healed: (b, st) => st.healed, shields: (b, st) => st.shields, teleports: (b, st) => st.teleports, barb: (b, st) => st.barb, dboss: (b, st) => st.dboss
+    healed: (b, st) => st.healed, shields: (b, st) => st.shields, teleports: (b, st) => st.teleports, barb: (b, st) => st.barb, dboss: (b, st) => st.dboss,
+    burg: (b, st, id) => AUF ? AUF.burgStufe(id) : b.city.levels.keep || 1, foStufen: (b, st, id) => AUF ? AUF.foSumme(id) : 0, drache: (b, st) => st.drache, inv: (b, st) => st.inv,
+    saisonTop: b => new Set([...(b.sTitel || []), ...(b.titles || [])].filter(saisonTitel)).size
 };
 function botGoalVal(botId, k) { const b = loadBotState()[botId], f = BOT_GOAL_VAL[k]; return b && f ? f(b, b.stats || {}, botId) || 0 : 0; }
 function botClaimGoals(bot) {

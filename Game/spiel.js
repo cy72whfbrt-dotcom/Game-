@@ -5012,6 +5012,7 @@ function renderProfile(live) {                  // live = the per-second refresh
 
     setText(document.getElementById('profileLevelBadge'), playerLvl);      // (live: jede Sekunde aus liveTick – geschrieben wird nur, was sich ändert)
     setText(document.getElementById('profileRank'), currentRank());
+    liveHtml(document.getElementById('profileBund'), profilBundHtml('player'));   // dein Bündnis (antippen: Bündnis-Fenster)
     if (!live) renderLook();
     const worldPct = ownedIslands.size / islands.length * 100;
     setText(document.getElementById('profileProgress'), worldPct > 0 && worldPct < 0.1
@@ -5459,8 +5460,11 @@ const GOAL_VAL = {
     temples: () => achStat('temples'), throne: () => achStat('throne'), throneMin: () => achStat('throneMin'), throneEarned: () => throneState.earned || 0, scouts: () => achStat('scouts'),
     cityMin: cityMinLevel, baseTop: () => goalBaseTop('player'), gates: () => goalGates('player'), tolls: () => achStat('tolls'), tollCoins: () => achStat('tollCoins'),
     armyWins: () => achStat('armyWins'), heroes: () => goalHeroes('player'), heroStars: () => goalHeroStars('player'), heroFires: () => achStat('heroFires'),
-    healed: () => achStat('healed'), shields: () => achStat('shields'), teleports: () => achStat('teleports'), barb: () => achStat('barb'), dboss: () => achStat('dboss')
+    healed: () => achStat('healed'), shields: () => achStat('shields'), teleports: () => achStat('teleports'), barb: () => achStat('barb'), dboss: () => achStat('dboss'),
+    burg: () => AUF ? AUF.burgStufe('player') : 1, foStufen: () => AUF ? AUF.foSumme('player') : 0, drache: () => achStat('drache'), inv: () => achStat('inv'),
+    saisonTop: () => (look.titles || []).filter(saisonTitel).length   // Hauptstadt (Burg, Labor), Drache, Invasion, Saison-Titel (die besten 10)
 };
+const foGesamtZiel = () => AUF ? AUF.foGesamt() : 95;   // „alles erforscht“ – wächst mit, wenn neue Forschungen dazukommen
 const ACHIEVEMENTS = [   // the old ids stay (claims are kept); the tiers of one kind share k
     { id: 'cap1',    name: 'Erste Eroberung',  icon: 'flag',    desc: 'Erobere deine erste Basis.',             goal: 1,    k: 'captures', gems: 20 },
     { id: 'cap10',   name: 'Landnahme',        icon: 'flag',    desc: 'Erobere 10 Basen.',                      goal: 10,   k: 'captures', gems: 50 },
@@ -5468,7 +5472,7 @@ const ACHIEVEMENTS = [   // the old ids stay (claims are kept); the tiers of one
     { id: 'cap500',  name: 'Feldherr',         icon: 'flag',    desc: 'Erobere 500 Basen.',                     goal: 500,  k: 'captures', gems: 600 },
     { id: 'cap1000', name: 'Kriegsherr',       icon: 'flag',    desc: 'Erobere 1.000 Basen.',                   goal: 1000, k: 'captures', gems: 1500 },
     { id: 'emp50',   name: 'Weites Reich',     icon: 'home',    desc: 'Halte 50 Basen gleichzeitig.',           goal: 50,   k: 'empire', gems: 300 },
-    { id: 'emp150',  name: 'Großreich',        icon: 'home',    desc: 'Halte 150 Basen gleichzeitig.',          goal: 150,  k: 'empire', gems: 800 },
+    { id: 'emp150',  name: 'Großreich',        icon: 'home',    desc: 'Halte 100 Basen gleichzeitig.',          goal: 100,  k: 'empire', gems: 800 },   // (6.10.: vorher 150 – in einer Saison von 8 Wochen kaum zu schaffen)
     { id: 'def25',   name: 'Standhaft',        icon: 'shield',  desc: 'Wehre 25 Angriffe ab.',                  goal: 25,   k: 'defends', gems: 250 },
     { id: 'def100',  name: 'Unbezwingbar',     icon: 'shield',  desc: 'Wehre 100 Angriffe ab.',                 goal: 100,  k: 'defends', gems: 500 },
     { id: 'emma1',   name: 'Kräftemessen',     icon: 'attack',  desc: 'Erobere eine Basis eines anderen Spielers.', goal: 1,  k: 'pvp', gems: 100 },
@@ -5511,6 +5515,21 @@ const ACHIEVEMENTS = [   // the old ids stay (claims are kept); the tiers of one
     { id: 'barb25',  name: 'Barbarenschreck',  icon: 'attack',  desc: 'Besiege 25 Barbaren-Lager.',             goal: 25,   k: 'barb', gems: 100 },
     { id: 'barb250', name: 'Lagerstürmer',     icon: 'attack',  desc: 'Besiege 250 Barbaren-Lager.',            goal: 250,  k: 'barb', gems: 500 },
     { id: 'dboss5',  name: 'Bossbrecher',      icon: 'crown',   desc: 'Kämpf bei 5 gefallenen Tagesbossen mit.', goal: 5,   k: 'dboss', gems: 300 },
+    // Hauptstadt (6.10.): die Burg wächst über viele Saisons (Burg 25 ≈ ein Jahr), das Labor genauso – die hohen sind Langzeit-Ziele
+    { id: 'burg5',   name: 'Burgvogt',         icon: 'castle',  desc: 'Bring deine Burg auf Stufe 5.',          goal: 5,    k: 'burg', gems: 150 },
+    { id: 'burg10',  name: 'Burgherr',         icon: 'castle',  desc: 'Bring deine Burg auf Stufe 10.',         goal: 10,   k: 'burg', gems: 400 },
+    { id: 'burg15',  name: 'Schlossherr',      icon: 'castle',  desc: 'Bring deine Burg auf Stufe 15.',         goal: 15,   k: 'burg', gems: 800 },
+    { id: 'burg20',  name: 'Landesfürst',      icon: 'castle',  desc: 'Bring deine Burg auf Stufe 20.',         goal: 20,   k: 'burg', gems: 1500 },
+    { id: 'burg25',  name: 'König der Meere',  icon: 'castle',  desc: 'Bring deine Burg auf Stufe 25 – die höchste.', goal: 25, k: 'burg', gems: 3000 },
+    { id: 'fo10',    name: 'Forscher',         icon: 'flask',   desc: 'Erforsche 10 Stufen im Labor.',          goal: 10,   k: 'foStufen', gems: 100 },
+    { id: 'fo50',    name: 'Gelehrter',        icon: 'flask',   desc: 'Erforsche 50 Stufen im Labor.',          goal: 50,   k: 'foStufen', gems: 400 },
+    { id: 'foall',   name: 'Meister des Wissens', icon: 'flask', desc: 'Erforsche alles im Labor.',             get goal() { return foGesamtZiel(); }, k: 'foStufen', gems: 2000 },
+    { id: 'drache1', name: 'Drachentöter',     icon: 'star',    desc: 'Kämpf mit, wenn der Drache besiegt wird.', goal: 1,  k: 'drache', gems: 250 },
+    { id: 'drache5', name: 'Drachenbezwinger', icon: 'star',    desc: 'Kämpf bei 5 besiegten Drachen mit.',     goal: 5,    k: 'drache', gems: 600 },
+    { id: 'inv1',    name: 'Grenzwacht',       icon: 'defense', desc: 'Hol dir einen Preis bei einer Barbaren-Invasion.', goal: 1, k: 'inv', gems: 100 },
+    { id: 'inv10',   name: 'Küstenwacht',      icon: 'defense', desc: 'Hol dir bei 10 Barbaren-Invasionen einen Preis.', goal: 10, k: 'inv', gems: 500 },
+    { id: 'saison1', name: 'Saison-Held',      icon: 'crown',   desc: 'Komm am Ende einer Welt-Saison unter die besten 10.', goal: 1, k: 'saisonTop', gems: 1000 },
+    { id: 'saison3', name: 'Legende',          icon: 'crown',   desc: 'Komm in 3 Welt-Saisons unter die besten 10.', goal: 3, k: 'saisonTop', gems: 2500 },
 ];
 for (const a of ACHIEVEMENTS) a.gems = Math.max(5, Math.round(a.gems / 25) * 5);   // (2.10.) 5× weniger Gems – zusammen vorher ~18.000, das gab Gold-Ausrüstung in Stunden
 const achVal = a => GOAL_VAL[a.k]();
@@ -5615,7 +5634,7 @@ function openRulerProfile(who) {
     document.getElementById('rulerName').textContent = pr.name;
     document.getElementById('rulerOver').textContent = (who === 'player' ? 'Dein Profil' : 'Profil') + ' · Rang ' + RANK_TIERS[rankIndexFor(pr.bases)].name;
     document.getElementById('rulerSub').innerHTML = '<span class="ptitle-tag" style="margin:0">' + escapeHtml(pr.title) + '</span>' + (who === 'player' ? '' : ' <span class="rp-online' + (pr.online ? ' on' : '') + '"><i></i>' + (pr.online ? 'online' : 'offline') + '</span>') +
-        (() => { const a = typeof bundVon === 'function' && bundVon(who); return '<span class="rp-bund">' + (a ? '[' + escapeHtml(a.tag) + '] ' + escapeHtml(a.name) : 'kein Bündnis') + '</span>'; })();   // sein Bündnis
+        profilBundHtml(who);   // sein Bündnis (antippen: Bündnis-Fenster)
     const rd = r => RARITY_DEFS[r];
     const gear = pr.items.map(it => { const d = EQUIPMENT_DEFS[it[0]], r = rd(it[1]);
         return '<span class="gslot"><span class="tile' + (r ? '' : ' empty') + '"' + (r ? ' data-r="' + r.key + '"' : '') + ' title="' + d.name + (r ? ' – ' + r.label + ', Stufe ' + it[2] : ' – leer') + '">' + icon(d.icon) +
@@ -5654,6 +5673,22 @@ document.getElementById('rulerBody').addEventListener('click', e => {
     for (const id of own) { const isl = islandById[id], d = Math.hypot(isl.x - c.x, isl.y - c.y); if (d < bd) { bd = d; best = isl; } }
     if (best) { flyTo(best.x, best.y, { zoom: Math.max(mapState.zoom, 0.015) }); flashHint(whoProfile(who).name + ': ' + own.size + (own.size === 1 ? ' Basis' : ' Basen') + ' auf der Karte.', 2500); }
 });
+// Bündnis im Profil (eigenes und fremdes): Wappen + Name, antippen öffnet gleich das Bündnis-Fenster – das eigene Bündnis auf
+// „Info“, ein fremdes unter „Suchen“ (dort beitreten/anfragen), ohne Bündnis ebenso „Suchen“
+function profilBundHtml(who) {
+    const a = typeof bundVon === 'function' ? bundVon(who) : null;
+    if (!a) return who === 'player' ? '<button type="button" class="rp-bund is-leer" data-bund-zeigen="">' + icon('bund') + '<span>Kein Bündnis – jetzt eins suchen</span></button>' : '<span class="rp-bund is-leer"><span>kein Bündnis</span></span>';
+    return '<button type="button" class="rp-bund" data-bund-zeigen="' + escapeHtml(a.id) + '">' + bundZeichenHtml(a) + '<span>[' + escapeHtml(a.tag) + '] ' + escapeHtml(a.name) + '</span></button>';
+}
+function bundZeigen(id) {
+    if (typeof bundOeffnen !== 'function') return;
+    const mein = typeof bundIch === 'function' && bundIch(), a = id && bund && bund.b[id];
+    closeAllPopups(); bundOeffnen(a && mein && mein.id === a.id ? 'info' : 'suchen');
+    if (!a || (mein && mein.id === a.id)) return;
+    const z = [...bundPopup.querySelectorAll('.bd-zeile')].find(r => { const n = r.querySelector('.bd-name b'); return n && n.textContent === '[' + a.tag + '] ' + a.name; });
+    if (z) { z.scrollIntoView({ block: 'center' }); z.classList.add('is-ziel'); setTimeout(() => z.classList.remove('is-ziel'), 2500); }
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-bund-zeigen]'); if (b) { e.preventDefault(); bundZeigen(b.dataset.bundZeigen); } });
 // every name you see can be tapped: the ranking, the owner line of a base, the battle reports
 document.addEventListener('click', e => { const l = e.target.closest('[data-profile]'); if (!l) return; e.preventDefault(); e.stopPropagation(); openRulerProfile(l.dataset.profile); }, true);
 function whoLink(who, name) { return who ? '<button type="button" class="who-link" data-profile="' + who + '">' + escapeHtml(name) + '</button>' : escapeHtml(name); }
@@ -5666,9 +5701,14 @@ const rankPopup = document.getElementById('rankPopup'), RANK_TOP = 50;
 let rankTab = 'power';
 const RANK_TABS = { power: { t: 'Macht', sub: 'Die Stärke des ganzen Reichs', unit: 'Macht' },
     caps: { t: 'Eroberungen', sub: 'Eroberte Basen insgesamt', unit: 'erobert' },
+    burg: { t: 'Hauptstadt', sub: 'Burg-Stufe · bei Gleichstand zählt die Forschung', unit: 'Burg-Stufe' },
     titles: { t: 'Titel', sub: 'Wer die Mitte hält und wer einen Titel trägt', unit: 'Thron-P.' },
     week: { t: 'Thron-Punkte', sub: 'Fürs Halten der Mitte · alle je verdienten', unit: 'Thron-P.' } };
 function conquestsOf(who) { return who === 'player' ? playerStats.captures || 0 : botConquests(who); }
+function foPunkte(who, bs) {                             // alle erforschten Stufen – von anderen nur die Summe (rechnet der Weltrechner, foP)
+    if (!AUF) return 0; if (who !== 'player' && fremdGeheim()) { const b = (bs || loadBotState())[who]; return b && Number.isFinite(b.foP) ? b.foP : 0; }
+    return AUF.foSumme(who);
+}
 function rankPeople() {                                  // everyone once: name, frame, look title, level, bases
     const bs = loadBotState(), out = [{ who: 'player', name: profileName.value || 'Du', frame: playerFrame(), title: playerTitle(), lvl: playerLvl, bases: ownedIslands.size }];
     for (const bd of BOT_DEFS) { const lk = botLook(bd.id); out.push({ who: bd.id, name: bd.name, frame: lk.frame, title: lk.title, lvl: (bs[bd.id] || {}).lvl || 1, bases: whoBases(bd.id) }); }
@@ -5689,6 +5729,8 @@ function renderRankings() {
     let list, medals = true, empty = '';
     if (rankTab === 'power') { for (const e of people) { const pr = whoProfile(e.who); e.val = pr ? powerOf(pr) : 0; e.sub = escapeHtml(e.title) + ' <i>· ' + basesTxt(e.bases) + '</i>'; } list = people.slice(); }
     else if (rankTab === 'caps') { for (const e of people) { e.val = conquestsOf(e.who); e.sub = escapeHtml(e.title) + ' <i>· hält ' + basesTxt(e.bases) + '</i>'; } list = people.slice(); saveBotState(); }
+    else if (rankTab === 'burg') { for (const e of people) { e.val = AUF ? AUF.burgStufe(e.who) : 1; e.fo = foPunkte(e.who, bs); e.sub = escapeHtml(e.title) + ' <i>· Forschung ' + fmtNum(e.fo) + '</i>'; }
+        list = people.slice().sort((a, b) => b.val - a.val || b.fo - a.fo || b.lvl - a.lvl); }
     else if (rankTab === 'titles') {                      // the ruler first, then everyone wearing a title from the middle
         medals = false; const by = {}; for (const x of TITLES) if (t.by[x.key]) by[t.by[x.key]] = x;
         for (const e of people) { const x = by[e.who]; e.val = throneEarnedOf(e.who, bs);
@@ -5698,7 +5740,7 @@ function renderRankings() {
         empty = ruler ? '' : 'Niemand hält gerade die Mitte – erobere den Mega-Tempel, dann verteilst du die Titel.';
     } else { for (const e of people) { e.val = throneEarnedOf(e.who, bs); e.sub = escapeHtml(e.title) + ' <i>· ' + basesTxt(e.bases) + '</i>'; } list = people.filter(e => e.val > 0);
         empty = 'Noch hat niemand Thron-Punkte geholt. Halte die Mitte oder einen Wächter-Tempel.'; }
-    if (rankTab !== 'titles') list.sort((a, b) => b.val - a.val || b.lvl - a.lvl);
+    if (rankTab !== 'titles' && rankTab !== 'burg') list.sort((a, b) => b.val - a.val || b.lvl - a.lvl);
     const lim = RANK_TOP, top = list.slice(0, lim), mi = list.findIndex(e => e.who === 'player');
     document.getElementById('rankTitle').textContent = tab.t;
     document.getElementById('rankSub').textContent = tab.sub;                     // one line what this list counts
@@ -6267,9 +6309,9 @@ function todayKey(d) {
 function yesterdayKey() { const d = new Date(); d.setDate(d.getDate() - 1); return todayKey(d); }
 function msToMidnight() { const d = new Date(); const m = new Date(d); m.setHours(24, 0, 0, 0); return m - d; }
 
-// Grants one crate item (like the shop) - minRarity for the big day-7 chest.
+// Grants one crate item (like the shop) - minRarity for the big day-7 chest. Jede geöffnete Kiste zählt für die Tagesaufgabe.
 function grantFreeCrate(minRarity) {
-    return addInventoryItem(pickRandomSlot(), Math.max(minRarity || 0, pickRandomRarity()), 1);
+    const it = addInventoryItem(pickRandomSlot(), Math.max(minRarity || 0, pickRandomRarity()), 1); questProgress('crate', 1); return it;
 }
 
 // ---- daily reward: 7-day cycle, missing a day starts again at day 1 ----
@@ -6364,8 +6406,21 @@ var QUEST_DEFS = {
     pickup:  { icon: 'coin',        text: n => 'Sammle ' + n + ' Karten-Belohnungen',  steps: [2, 4, 6] },
     scout:   { icon: 'scout',       text: n => 'Späh ' + n + ' Basen aus',             steps: [2, 4, 6] },
     send:    { icon: 'send',        text: n => 'Schicke ' + n + '-mal Truppen',        steps: [2, 4, 6] },
-    crate:   { icon: 'shop',        text: n => 'Öffne ' + n + (n === 1 ? ' Kiste' : ' Kisten') + ' im Shop', steps: [1, 2, 3] }
+    crate:   { icon: 'shop',        text: n => 'Öffne ' + n + (n === 1 ? ' Kiste' : ' Kisten'), steps: [1, 2, 3] },   // (jede Kiste: Shop, Helden-Kiste, Abholfach, Pass, Thron-Shop, Belohnungen)
+    bau:     { icon: 'castle',      text: n => n === 1 ? 'Starte einen Bau in der Stadt' : 'Starte ' + n + ' Bauten in der Stadt', steps: [1, 1, 2], geht: () => questStadtGeht('bau') },
+    forschung: { icon: 'flask',     text: () => 'Starte eine Forschung im Labor', steps: [1, 1, 1], geht: () => questStadtGeht('forschung') }
 };
+// Bau/Forschung nur als Aufgabe, wenn es heute noch geht (Bauarbeiter bzw. Labor vor Mitternacht frei, etwas zu bauen/erforschen da)
+function questStadtGeht(art) {
+    try {
+        if (!AUF) return true;                                       // (beim Laden noch nicht bereit: ja)
+        const c = loadCity(), nacht = new Date().setHours(24, 0, 0, 0), B = AUF.burgStufe('player');
+        if (art === 'forschung') return (c.levels.academy || 0) > 0 && (!c.foRun || c.foRun.endsAt < nacht) && AUF.foSumme('player') < AUF.foGesamt();
+        const frei = c.builds.length < citySlots(c) || c.builds.some(b => b.endsAt < nacht);
+        return frei && ['keep', ...CITY_BUILDINGS.map(b => b.id)].some(id => { const L = id === 'keep' ? B : c.levels[id] || 0;
+            return !cityBuildOf(c, id) && (id === 'keep' ? L < AUF.BURG_MAX : L < AUF.stadtCap('player', id) && !(!L && AUF.BAU_AB_BURG[id] > B)); });
+    } catch (e) { return true; }
+}
 var QUEST_GEMS = [5, 10, 15];
 var QUEST_BONUS = { crates: 1, gems: 10 };
 var questState = null;
@@ -6373,7 +6428,7 @@ function loadQuests() {
     const today = todayKey();
     if (!questState) { try { questState = JSON.parse(store.get('openWaterQuests')) || null; } catch (e) { questState = null; } }
     if (!questState || questState.date !== today || !Array.isArray(questState.list)) {
-        const types = Object.keys(QUEST_DEFS).sort(() => Math.random() - 0.5).slice(0, 3);
+        const types = Object.keys(QUEST_DEFS).filter(t => !QUEST_DEFS[t].geht || QUEST_DEFS[t].geht()).sort(() => Math.random() - 0.5).slice(0, 3);
         questState = { date: today, bonusClaimed: false, list: types.map((type, i) => {
             const tier = i;                                  // one easy, one medium, one hard
             return { type, target: QUEST_DEFS[type].steps[tier], progress: 0, gems: QUEST_GEMS[tier], claimed: false };
@@ -6462,7 +6517,7 @@ function inboxClaim(id) {                           // into your coffers - retur
     const L = inboxList(), i = L.findIndex(x => x.id === id); if (i < 0) return ''; const x = L.splice(i, 1)[0], got = [];
     if (x.gems) { gems += x.gems; got.push('+' + fmtNum(x.gems) + ' Edelsteine'); } if (x.coins) { coins += x.coins; got.push('+' + fmtCompact(x.coins) + ' Münzen'); }
     if (x.crate >= 0) { const it = grantFreeCrate(x.crate); if (it && it.rarity !== undefined) got.push(EQUIPMENT_DEFS[it.slot].name + ' (' + RARITY_DEFS[it.rarity].label + ')'); }
-    if (x.kiste >= 0 && x.kiste <= 2) { const it = addInventoryItem(pickRandomSlot(), x.kiste, 1); if (it && it.rarity !== undefined) got.push(EQUIPMENT_DEFS[it.slot].name + ' (' + RARITY_DEFS[it.rarity].label + ')'); }
+    if (x.kiste >= 0 && x.kiste <= 2) { const it = addInventoryItem(pickRandomSlot(), x.kiste, 1); questProgress('crate', 1); if (it && it.rarity !== undefined) got.push(EQUIPMENT_DEFS[it.slot].name + ' (' + RARITY_DEFS[it.rarity].label + ')'); }
     if (x.schild === 2) { const st = shieldStock(); st[2] = (st[2] || 0) + 1; store.set('openWaterShieldStock', JSON.stringify(st)); got.push('Friedensschild 2 h'); }
     if (x.sh) { const h = heroGrantShards('player', x.sh); if (h) got.push(x.sh + ' Splitter ' + h.name); else { gems += x.sh * 20; got.push('+' + x.sh * 20 + ' Edelsteine (alle Helden voll)'); } }
     if (x.tr) { const b = rewardBaseId(); if (b !== null) { eigeneTruppenDazu(b, x.tr, 'geschenk'); got.push('+' + fmtCompact(x.tr) + ' Truppen'); } else L.splice(i, 0, Object.assign({}, x, { gems: 0, coins: 0, sh: 0, crate: -1, kiste: -1, schild: 0 })); }   // no base right now: only the troops stay in the inbox
@@ -6554,10 +6609,10 @@ setInterval(() => {                 // day rollover while the game stays open
 updateGoalsBadge();
 // ===== SAISON-PASS: 28 days on one calendar for everyone, 40 levels of 300 points, a free row and a premium row (Gems, never money). Points come from what you do anyway =====
 var PASS_EPOCH = Date.UTC(2026, 0, 5), PASS_LEN = 28 * 86400000, PASS_GRACE = 3 * 86400000, PASS_LVLS = 40, PASS_STEP = 300, PASS_PREMIUM = 1000, PASS_OWNED_GEMS = 150;   // (Skin schon da: 150 Gems – vorher 1000, dann brachte der Premium-Pass mehr Gems zurück, als er kostet)
-var PASS_XP = { quest: 40, questBonus: 80, captures: 20, pvpWins: 10, defends: 15, armyWins: 15, bosses: 60, temples: 25, throneMin: 2, upgrade: 4, pickup: 8, crate: 3, scouts: 3, heroFires: 2 };   // what each deed is worth
-var PASS_BOT_XP = { caps: 20, pvp: 10, defs: 15, armyWins: 15, bosses: 60, temples: 25, throneMin: 2, scouts: 3, heroFires: 2 };   // the same by the names in the others' stats (+ 200 a day with all tasks done)
+var PASS_XP = { quest: 40, questBonus: 80, captures: 20, pvpWins: 10, defends: 15, armyWins: 15, bosses: 60, temples: 25, throneMin: 2, upgrade: 4, pickup: 8, crate: 3, scouts: 3, heroFires: 2, bau: 15, forschung: 15 };   // what each deed is worth (bau/forschung: in der Stadt gestartet)
+var PASS_BOT_XP = { caps: 20, pvp: 10, defs: 15, armyWins: 15, bosses: 60, temples: 25, throneMin: 2, scouts: 3, heroFires: 2, bau: 15, fo: 15 };   // the same by the names in the others' stats (+ 200 a day with all tasks done)
 var PASS_HOW = [['goal', 'Tagesaufgabe abgeholt', 40], ['star', 'Alle drei Aufgaben (Bonus)', 80], ['flag', 'Basis erobert', 20], ['attack', 'Basis eines Spielers (zusätzlich)', '+10'], ['shield', 'Angriff abgewehrt', 15], ['troops', 'Armee siegt im Feld', 15],
-    ['losses', 'Kriegsherr besiegt', 60], ['temple', 'Tempel erobert', 25], ['crown', 'Minute auf dem Thron', 2], ['upgrade', 'Basis ausgebaut', 4], ['coin', 'Karten-Belohnung', 8], ['scout', 'Späher ausgeschickt', 3], ['shop', 'Kiste geöffnet', 3]];
+    ['losses', 'Kriegsherr besiegt', 60], ['temple', 'Tempel erobert', 25], ['crown', 'Minute auf dem Thron', 2], ['upgrade', 'Basis ausgebaut', 4], ['coin', 'Karten-Belohnung', 8], ['scout', 'Späher ausgeschickt', 3], ['shop', 'Kiste geöffnet', 3], ['castle', 'Bau in der Stadt gestartet', 15], ['flask', 'Forschung gestartet', 15]];
 function passRewardAt(L, prem) {                          // what level L gives in each row
     if (!prem) return L % 10 === 0 ? { k: 'royal', n: 1 } : L % 5 === 0 ? { k: 'gems', n: 50 } : L % 4 === 0 ? { k: 'shards', n: 5 } : L % 3 === 0 ? { k: 'crate', n: 2 } : L % 2 === 0 ? { k: 'coins', n: 1 } : { k: 'gems', n: 15 };
     return L === 20 ? { k: 'march', id: 'saison' } : L === 40 ? { k: 'frame', id: 'saison' } : L % 10 === 0 ? { k: 'gems', n: 200 } : L % 5 === 0 ? { k: 'royal', n: 1 } : L % 4 === 0 ? { k: 'shards', n: 15 } :
@@ -6590,7 +6645,7 @@ function passGive(who, r) {                               // one reward to anyon
     if (r.k === 'shield') { if (b) { b.shields = b.shields || {}; b.shields[n] = (b.shields[n] || 0) + 1; } else { const st = shieldStock(); st[n] = (st[n] || 0) + 1; store.set('openWaterShieldStock', JSON.stringify(st)); } return 'Friedensschild ' + n + ' h'; }
     if (r.k === 'crate' || r.k === 'royal') { const t = [];
         for (let i = 0; i < n; i++) { const rr = r.k === 'royal' ? Math.max(3, pickRandomRarity()) : pickRandomRarity(), slot = pickRandomSlot();
-            if (b) b.spare[slot][rr]++; else { addInventoryItem(slot, rr, 1); t.push(RARITY_DEFS[rr].label + ' ' + EQUIPMENT_DEFS[slot].name); } } return t.join(', '); }
+            if (b) b.spare[slot][rr]++; else { addInventoryItem(slot, rr, 1); questProgress('crate', 1); t.push(RARITY_DEFS[rr].label + ' ' + EQUIPMENT_DEFS[slot].name); } } return t.join(', '); }
     if (r.k === 'frame' || r.k === 'march') { const d = lkDef(r.k, r.id), key = r.k + 's', has = ((b ? b[key] : look[key]) || []).includes(r.id);
         if (has) { if (b) b.gems += PASS_OWNED_GEMS; else gems += PASS_OWNED_GEMS; return '+' + PASS_OWNED_GEMS + ' Edelsteine („' + d.name + '“ hast du schon)'; }   // a later season: gems instead
         if (b) { b[key] = [...(b[key] || []), r.id]; if (r.k === 'march') b.march = r.id; }
@@ -6770,7 +6825,7 @@ function throneGive(who, id) {                        // hands one offer over; r
         if (b) islandTroops[to] = (islandTroops[to] || 0) + n; else eigeneTruppenDazu(to, n, 'thron'); return '+' + fmtCompact(n) + ' Truppen in ' + (b ? 'die Hauptstadt' : islandTitle(islandById[to])); }
     if (id === 'crate' || id === 'royal') { const r = id === 'royal' ? Math.max(3, pickRandomRarity()) : pickRandomRarity(), slot = pickRandomSlot();
         if (b) { b.spare[slot][r]++; return ''; }
-        addInventoryItem(slot, r, 1); sfx('crate'); return RARITY_DEFS[r].label + ' ' + EQUIPMENT_DEFS[slot].name + ' im Inventar'; }
+        addInventoryItem(slot, r, 1); sfx('crate'); questProgress('crate', 1); return RARITY_DEFS[r].label + ' ' + EQUIPMENT_DEFS[slot].name + ' im Inventar'; }
     if (id === 'look') { if (b) b.throneLook = true; else { look.bought = Object.assign({}, look.bought, { throne: true }); look.title = 'keeper'; look.frame = 'throne'; store.set('openWaterLook', JSON.stringify(look)); renderLook(); }
         return 'Titel „Thronhüter“ und Thron-Rahmen – schon angelegt'; }
     if (id.startsWith('ring_')) { const r = ringSkinDef(id.slice(5)); if (!r) return ''; ringGive(who, r.id); return 'Ring „' + r.name + '“ – schon angelegt'; }
@@ -7038,7 +7093,7 @@ shopPopup.addEventListener('click', e => { const bt = e.target.closest('[data-hc
     if (gems < c.gems) { flashHint('Zu wenig Edelsteine – die ' + c.name + ' kostet ' + fmtNum(c.gems) + '.', 3000); return; }
     if (!heroChestPool(c.minR).length) { flashHint('Alle passenden Helden haben schon 5 Sterne.', 3000); return; }
     if (!gemsWirklich('kiste:' + c.id, c.gems, bt)) return;
-    gems -= c.gems; const got = heroChestOpen('player', c); updateHud(); saveGame(); renderShop();
+    gems -= c.gems; const got = heroChestOpen('player', c); questProgress('crate', 1); updateHud(); saveGame(); renderShop();   // (zählt für „Öffne … Kisten“)
     const res = document.getElementById('shopHeroResult');
     res.innerHTML = '<b class="hchest-h">' + c.name + '</b>' + got.map(h => { const s = heroSt('player', h.id), need = s.own ? (s.q >= HERO_MAXQ ? 0 : heroStepCost(h, s.q)) : HERO_UNLOCK[h.r], rd = RARITY_DEFS[h.r];
         return '<div class="hchest-row" style="--rc:' + rd.color + '">' + heroImg(h.id, 'hchest-pic') + '<span><b>' + h.name + '</b><small style="color:' + rd.color + '">' + rd.label + '</small></span><i>+' + c.sh + ' Splitter' + (need ? ' · ' + (s.sh >= need ? (s.own ? 'Aufwerten bereit' : 'Freischalten bereit') : s.sh + ' / ' + need) : '') + '</i></div>'; }).join('') +
@@ -8302,7 +8357,7 @@ function cityStartBuild(id) {
     if (AUF ? !AUF.zahlen('player', k) : coins < k.c) { flashHint('Nicht genug Münzen oder Rohstoffe für ' + cityDef(id).name + ' Stufe ' + (lvl + 1) + '.', 2500); return; }
     if (!AUF) coins -= k.c;
     c.builds.push({ id, to: lvl + 1, startedAt: Date.now(), endsAt: Date.now() + cityTimeSec(id, lvl) * 1000 });
-    saveCity(); saveGame(); updateHud(); sfx('upgrade');
+    saveCity(); saveGame(); updateHud(); sfx('upgrade'); questProgress('bau', 1);   // (Tagesaufgabe + Saison-Pass)
     renderCitySheet(); updateCityBuilder();
 }
 function citySpeedCost(id) {
@@ -8314,7 +8369,7 @@ function cityFinishBuild(announce, id) {
     const def = cityDef(b.id);
     c.levels[b.id] = b.to;
     const to = b.to; c.builds = c.builds.filter(x => x !== b);
-    saveCity();
+    saveCity(); evPunkte('bau', 'player', 2 + to);   // Wochen-Event „Bauherr“ (wie eine Basis; beim Weltrechner zählt es das Hauptbuch)
     if (announce) flashHint(def.name + ' ist fertig – jetzt ' + (b.id === 'keep' ? 'Burg-Stufe ' : 'Stufe ') + to + '.', 3000);
     if (cityOpenId) renderCitySheet();
     updateCityBuilder();
@@ -10671,7 +10726,7 @@ const EV_WOCHE = [
     { k: 'sam', name: 'Sammel-Rausch', ic: 'coin', pkt: 'Gesammeltes – ein volles Feld bringt 30', bonus: 'Sammeln 50 % schneller' },
     { k: 'krieg', name: 'Krieger-Woche', ic: 'attack', pkt: 'besiegte Truppen – überall: Basen, Felder, Lager, Barbaren', bonus: '10 Barbaren-Lager mehr pro Tag' },
     { k: 'boss', name: 'Boss-Jagd', ic: 'star', pkt: 'Schaden an Tagesboss und Drache (30 je voller Treffer)', bonus: 'Kriegsherr doppelt so oft, 5 Tagesboss-Angriffe mehr' },
-    { k: 'bau', name: 'Bauherr', ic: 'upgrade', pkt: 'Aufwerten von Basen (2 + neue Stufe)', bonus: 'Ausbau 20 % günstiger' }
+    { k: 'bau', name: 'Bauherr', ic: 'upgrade', pkt: 'Aufwerten von Basen und Gebäuden in der Stadt (2 + neue Stufe)', bonus: 'Ausbau 20 % günstiger' }
 ];
 // ---- WOCHEN-EVENT Mo 0:00 – Fr 23:59, Wochenende frei jede Woche eins der 4 Themen, eigene Punkte (gedeckelt), Rangliste und kleine Preise ----
 const WO_PRIZES = [{ to: 1, gems: 200, sh: 10, crate: 3, t: '1.' }, { to: 3, gems: 100, sh: 5, crate: 2, t: '2.–3.' }, { to: 10, gems: 40, sh: 2, crate: 1, t: '4.–10.' }, { to: Infinity, gems: 10, sh: 1, crate: -1, t: 'Alle anderen' }];
@@ -10839,7 +10894,7 @@ function invTreffer(m, now) {                        // deine (oder ihre) Truppe
 function invAuszahlen() {                            // nach der Invasion: Belohnung nach Punkten (klein)
     const I = evState.inv; if (!I || I.paid) return; I.paid = true; I.armies = []; evDirty = true;
     let n = 0;
-    for (const [who, p] of evRang(I.pts)) { const pr = INV_PREISE.find(x => p >= x.ab); if (!pr) continue; n++;
+    for (const [who, p] of evRang(I.pts)) { const pr = INV_PREISE.find(x => p >= x.ab); if (!pr) continue; n++; goalBump(who, 'inv');   // (Erfolg: eine Invasion mit Preis überstanden)
         evPreis(who, 'inv', 'Barbaren-Invasion · ' + Math.floor(p) + ' Punkte', pr, I.start); }
     if (n) flashHint('Die Barbaren-Invasion ist vorbei – ' + n + ' Verteidiger werden belohnt (Events → Belohnung).', 5000);
     saveBotState(); requestRender();
@@ -10901,7 +10956,7 @@ function drTreffer(m, now) {                         // wie beim Tagesboss: Scha
 function drAuszahlen(fell) {
     const D = evState.dr; if (!D || D.paid) return; D.paid = true; evDirty = true;
     const rk = evRang(D.dmg);
-    rk.forEach(([who], i) => { const p = fell ? drPreisVon(i) : DR_PREISE[2]; goalBump(who, 'dboss');
+    rk.forEach(([who], i) => { const p = fell ? drPreisVon(i) : DR_PREISE[2]; goalBump(who, 'dboss'); if (fell) goalBump(who, 'drache');   // (Erfolg: beim Sieg über den Drachen dabei)
         evPreis(who, 'drache', D.name + (fell ? ' · Platz ' + (i + 1) : ' entkommen'), p, D.start); });
     flashHint(fell ? D.name + ' ist gefallen! ' + rk.length + ' Kämpfer werden nach Schaden belohnt.' : D.name + ' ist entkommen – alle Kämpfer bekommen eine kleine Belohnung.', 6000);
     if (fell) spawnBattleFx({ x: D.x, y: D.y }, true, D.name + ' gefallen', rk.length + ' Kämpfer belohnt');
@@ -13491,6 +13546,7 @@ if (window.WELT) {
         hb.st[id] = [L + 1, g ? now : Math.min(now, start + need)];   // (fertig spätestens jetzt – die nächste Stufe zählt ab da)
         bu[i] = hb.st[id][1];                                          // (dieser Bauarbeiter ist ab da wieder frei)
         if (hb.hilfe) delete hb.hilfe[hk];
+        evPunkte('bau', who, 2 + L + 1);                               // Wochen-Event „Bauherr“: auch die Stadt (wie bei Mitspielern)
         return 'ok';
     }
     function hbFoSchritt(who, hb, m, d, now) {
@@ -13820,7 +13876,8 @@ if (window.WELT) {
             for (const bd of BOT_DEFS) { const b = bs[bd.id]; if (!b) continue; let n = 0; for (const id of botOwnedIslands[bd.id] || []) n += islandTroops[id] || 0;
                 const r = n < 1000 ? Math.round(n) : Number(n.toPrecision(3)); if (b.tt !== r && Math.abs((b.tt || 0) - r) > r * .01) b.tt = r;
                 let m = 0; try { m = powerOf(whoProfile(bd.id)); } catch (e) { m = 0; }      // Macht für Rangliste, Profil, Bündnis (die Handys kennen die Werte dafür nicht)
-                const mr = m < 1000 ? Math.round(m) : Number(m.toPrecision(3)); if (b.macht !== mr && !(Math.abs((b.macht || 0) - mr) <= mr * .01)) b.macht = mr; }   // (nur bei Änderung – sonst ein Flicken je Minute)
+                const mr = m < 1000 ? Math.round(m) : Number(m.toPrecision(3)); if (b.macht !== mr && !(Math.abs((b.macht || 0) - mr) <= mr * .01)) b.macht = mr;   // (nur bei Änderung – sonst ein Flicken je Minute)
+                const fp = AUF.foSumme(bd.id); if (b.foP !== fp) b.foP = fp; }   // Forschung zusammen (Rangliste „Hauptstadt“ – die Forschung selbst sehen andere erst im Spähbericht)
         }
     }
     // Ziel einer Armee/Ort einer neuen Armee: nur echte Orte (Basis, Feld, Armee, Punkt auf Land)
@@ -14079,7 +14136,7 @@ if (window.WELT) {
     };
 
     // Nachrichten vom Weltrechner an mich: Münzen, Gems, EP, Thron-Punkte, Krankenhaus, Splitter, Zahlen
-    const STAT_NAMEN = { caps: 'captures', pvp: 'pvpWins', defs: 'defends', bosses: 'bosses', temples: 'temples', scouts: 'scouts', tolls: 'tolls', tollCoins: 'tollCoins', armyWins: 'armyWins', healed: 'healed', barb: 'barb', dboss: 'dboss', throneMin: 'throneMin', heroFires: 'heroFires' };   // (Thron-Minuten und Helden-Zünder zählt der Weltrechner – vorher kamen sie nie an)
+    const STAT_NAMEN = { caps: 'captures', pvp: 'pvpWins', defs: 'defends', bosses: 'bosses', temples: 'temples', scouts: 'scouts', tolls: 'tolls', tollCoins: 'tollCoins', armyWins: 'armyWins', healed: 'healed', barb: 'barb', dboss: 'dboss', throneMin: 'throneMin', heroFires: 'heroFires', drache: 'drache', inv: 'inv' };   // (Thron-Minuten und Helden-Zünder zählt der Weltrechner – vorher kamen sie nie an)
     WELT.beiNachricht.push(function (e) {
         if (!e || e.art !== 'delta') return;
         if (e.coins) coins = Math.max(0, coins + e.coins);

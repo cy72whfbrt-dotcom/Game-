@@ -77,7 +77,7 @@ function botBld(botId, id) { const b = loadBotState()[botId]; return b ? (b.city
 
 function botCityFinish(bot, now) {                        // a build is done when its time is up - online or not, like yours
     const c = loadBotState()[bot.id].city, done = c.builds.filter(x => now >= x.endsAt); if (!done.length) return;
-    for (const x of done) c.levels[x.id] = x.to; c.builds = c.builds.filter(x => now < x.endsAt); saveBotState();
+    for (const x of done) { c.levels[x.id] = x.to; evPunkte('bau', bot.id, 2 + x.to); } c.builds = c.builds.filter(x => now < x.endsAt); saveBotState();   // (Wochen-Event Bauherr: auch die Stadt)
 }
 
 const BOT_BUILD_PREF = {                                  // what each kind of player builds first (lower = sooner)
@@ -107,7 +107,7 @@ function botCityBuild(bot, now) {                         // one builder (two on
     if ((botCoins[bot.id] || 0) * (botStyle(bot).build || .5) < k.c) return;   // keeps half for troops and bases (a Schatzmeister less, a Bettler more)
     if (AUF && !AUF.kannZahlen(bot.id, k)) { if (Math.random() < .25) AUF.botMarkt(bot, k); return; }      // Rohstoffe fehlen: sammeln, Markt – später wieder
     if (AUF) AUF.zahlen(bot.id, k); else botCoins[bot.id] -= k.c;
-    c.builds.push({ id: best, to: lv + 1, startedAt: now, endsAt: now + cityTimeSec(best, lv) * 1000 }); saveBotState();
+    c.builds.push({ id: best, to: lv + 1, startedAt: now, endsAt: now + cityTimeSec(best, lv) * 1000 }); botStat(bot.id, 'bau');   // (Saison-Pass wie bei dir)
 }
 
 // ---- the bot's Krankenhaus ----

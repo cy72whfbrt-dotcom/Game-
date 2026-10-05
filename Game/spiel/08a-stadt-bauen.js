@@ -112,7 +112,7 @@ function cityStartBuild(id) {
     if (AUF ? !AUF.zahlen('player', k) : coins < k.c) { flashHint('Nicht genug Münzen oder Rohstoffe für ' + cityDef(id).name + ' Stufe ' + (lvl + 1) + '.', 2500); return; }
     if (!AUF) coins -= k.c;
     c.builds.push({ id, to: lvl + 1, startedAt: Date.now(), endsAt: Date.now() + cityTimeSec(id, lvl) * 1000 });
-    saveCity(); saveGame(); updateHud(); sfx('upgrade');
+    saveCity(); saveGame(); updateHud(); sfx('upgrade'); questProgress('bau', 1);   // (Tagesaufgabe + Saison-Pass)
     renderCitySheet(); updateCityBuilder();
 }
 function citySpeedCost(id) {
@@ -124,7 +124,7 @@ function cityFinishBuild(announce, id) {
     const def = cityDef(b.id);
     c.levels[b.id] = b.to;
     const to = b.to; c.builds = c.builds.filter(x => x !== b);
-    saveCity();
+    saveCity(); evPunkte('bau', 'player', 2 + to);   // Wochen-Event „Bauherr“ (wie eine Basis; beim Weltrechner zählt es das Hauptbuch)
     if (announce) flashHint(def.name + ' ist fertig – jetzt ' + (b.id === 'keep' ? 'Burg-Stufe ' : 'Stufe ') + to + '.', 3000);
     if (cityOpenId) renderCitySheet();
     updateCityBuilder();
