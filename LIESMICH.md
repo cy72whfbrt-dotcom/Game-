@@ -211,6 +211,21 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Handy-Nachrichten dieses Geräts aus (Server: `ow_push.sitzung`, Handy: Abo + sw.js weg). Neuer Test rally_schild_test.
   Fund auf der Karte: „nur online“ hilft nicht (ein Befehl kommt immer über den Puls – wer schickt, ist online); darum
   zusätzlich höchstens 300 Truppen-Funde am Tag (Alexanders Ja; ~7 Std. ohne Pause, gemerkt in der Welt `wache.fund`).
+- **5.10. mittags (Alexanders Ja zu allem):** Kampf: Treffen zwei Bündnis-Angriffe zusammen, zeigt der Bericht bei jedem
+  seine eigene Stärke und seinen Helden; Gold für getötete Gegner bekommt jeder selbst (für den Teil, den seine Truppen töten,
+  mit seinem Gold-Satz – Alexander: „A“), nur die Hauptstadt-Beute wird nach Truppen geteilt; ein Held im gemeinsamen Kampf
+  bleibt belegt; wer nach dem Losmarsch das Bündnis verlässt, kämpft nicht mit (`rallyAussortieren`); richtiger Text beim
+  Rally-Abbruch. Schummel-Schutz: Bauzeit/Forschungszeit zählt ab Baubeginn (Profil schickt `city.bau`, `b2`, `foLauf`;
+  Hauptbuch `hb.ruhe`, `hb.bu` je Bauarbeiter, `hb.foRuhe`) statt ab dem letzten fertigen Bau; Münz-Spielraum: Stufen-Münzen je
+  Stunde, der feste Teil nur einmal am Tag (`spielraumTeile`, `wache.srN`); Markt-Rohstoffe: Tageslimit für alle zusammen und
+  die Münzen werden abgebucht (`wache.rm`); Gem-Funde höchstens ~7 Std. am Tag (`hb.gOn`); Fähigkeiten bzw. Helden-Fähigkeiten
+  zurücksetzen kostet 500 bzw. 200 Gems (`hb.sk`); Anfängerschutz fällt bei jedem Angriff auf einen echten Spieler (auch
+  Armee, Feld, Rally – `botNeulingWeg`) und ab 50 Mio. Macht auch bei echten Spielern; Friedensschild fällt bei allen
+  Rally-Teilnehmern; Bündnis-Hilfe nur für die nächste Stufe, je Gebäude/Forschung eine offene Bitte; nach dem Verlassen
+  1 Std. kein neuer Beitritt. Tote Meldungen „Münzen geplündert“ raus. Test rally_schild_test erweitert.
+  Später (Alexander): fremde Helden/Ausrüstung erst nach dem Spähen zeigen (braucht Macht vom Server für die Rangliste).
+  Live 5.10. 3:02 und 5:51–5:57 Uhr: Weltrechner 20–40 s am Stück beschäftigt (einmal Neustart durch den Wachhund) – Ursache
+  noch offen, Spiel lief danach normal.
 - **4.10. Aufräumen:** unbenutzte CSS-Reste raus, wichtige Tests ins Projekt (`tests/browser/`, Start mit `tests/alle_tests.sh`).
 - **4.10. Server-Tests ins Projekt:** `tests/server/` + `tests/server_tests.sh <arbeitsordner>` (lokaler PHP-Server,
   MariaDB, Weltrechner): Absturz/Zurückspielen, Admin, Nebel, Bündnis-Kiste, Verstärkung, Klick-Test – alle grün.
@@ -419,8 +434,6 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
   Das andere Repo `-Open-source-pixel-art-game-project-built` gehört nicht zu Open Water – löschen kann es nur Alexander.
 - Fremde Tabellen eines anderen Spiels in der Datenbank (`nutzer`, `mail`, `handel` …): löschen? Noch nicht gefragt.
 - Münz-Wirtschaft bei hohen Stufen riesig („Münzen fühlen sich nichts wert an“).
-- Kleinigkeiten: Schild-Restzeit in der Burg zählt nicht live; Ausbau-Knopf schaltet nicht live frei; Stadt-Ansicht am
-  Handy manchmal langsam (Wolken).
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
@@ -432,7 +445,7 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
   - **Hauptstadt:** kann man angreifen, aber nie verlieren. Gewinnt der Angreifer, bekommt er **Rohstoffe – jede Art, die
     es gibt (Gold usw.)**, aber nur so viel, wie der Verteidiger hat; die Hauptstadt **brennt**. Gewinnt der Verteidiger,
     bekommt der Angreifer nichts. Rohstoffe holt man **nur** aus der Hauptstadt.
-  - **Andere Basen (Türme):** kann man verlieren; der Angreifer bekommt dort **nur Gold**, sonst nichts.
+  - **Andere Basen (Türme):** kann man verlieren; der Angreifer bekommt dort **keine Beute** (4.10. abends: auch kein Gold mehr).
   - **Hauptstadt-Stufe:** bleibt bis 25 (Alexander 4.10.).
   - **Entschieden (Alexander 4.10.):** Der Angreifer bekommt **immer nur einen Teil** von dem, was über dem
     Burg-Schutz liegt – **ein kleiner Teil**, damit man **oft angreifen** muss
@@ -2073,7 +2086,7 @@ Alles aus der Merkliste 12a („Hauptstadt = das Wichtigste“) – **außer dem
 - **Hauptstadt angreifen:** geht jetzt (Knopf „Angreifen“, auch Mitspieler tun es – nicht, solange sie brennt). Sie fällt
   **nie**: gewinnt der Angreifer, fällt die Garnison, er bekommt **10 % von jedem Rohstoff über dem Schutz** (`HAUPT_BEUTE`),
   die Stadt **brennt 30 Min. (nur zu sehen: Flammen und Rauch auf der Karte)**. Gewinnt der Verteidiger: nichts.
-  **Türme:** wer sie erobert, bekommt nur Gold (2 % über dem Schutz, wie vorher ohne Lager). Armeen greifen Hauptstädte nicht an.
+  **Türme:** wer sie erobert, bekommt keine Beute (seit 4.10. abends; vorher 2 % Gold). Armeen greifen Hauptstädte nicht an.
   Neuer Welt-Teil `openWaterBrand` (welche Hauptstadt brennt bis wann).
 - **Spähbericht nach Wachturm-Forschung** (`WACHT` in aufbau.js): 0 = Truppen nur ungefähr; 1 = genau + Mauer, Angriffe auf
   dich ungefähr; 3 Helden; 4 Burg; 5 Rohstoffe (und wie viel zu holen ist); 6 Angriffe auf dich genau; 7 Fähigkeiten;

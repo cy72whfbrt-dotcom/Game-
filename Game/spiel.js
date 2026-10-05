@@ -2003,7 +2003,7 @@ function resolveAttack(attack) {
     if (targetOwner && targetOwner !== 'player')                    // the defending bot's "Verteidigung: Gold": every attacker its garrison really kills pays out
         botCoins[targetOwner] = (botCoins[targetOwner] || 0) + Math.round((won ? sentLoss : attack.rawTroops - retreatSurvivorsPreview(attack)) * botGoldRate(targetOwner, 'defenseGold'));
     let retreatSurvivors = 0, woundedAdded = 0;
-    const plunder = won && targetOwner && targetOwner !== 'player' ? plunderOf(targetOwner, capitalHolds) : null;   // Beute: ein kleiner Teil über seinem Burg-Schutz (Turm: nur Gold, Hauptstadt: alles)
+    const plunder = won && targetOwner && targetOwner !== 'player' ? plunderOf(targetOwner, capitalHolds) : null;   // Beute: ein kleiner Teil über seinem Burg-Schutz (nur an der Hauptstadt – Turm: nichts; Hauptstadt: alles)
     if (plunder) { plunderMove(targetOwner, null, plunder.loot, plunder.roh); inboxAdd({ src: 'fight', coins: plunder.loot }); if (plunder.roh && AUF) AUF.rohDazu('player', plunder.roh); }   // (das Gold wartet im Abholfach)
     if (capitalHolds) brandSetzen(target.id);                               // die Hauptstadt brennt (nur zu sehen)
 
@@ -2135,7 +2135,7 @@ function resolveAttack(attack) {
 
     flashHint(capitalHolds ? 'Die Hauptstadt von ' + botById[targetOwner].name + ' brennt – ihre Garnison ist gefallen, ' + fmtCompact(remaining) + ' Truppen kehren mit der Beute zurück' + (beuteText(plunder) ? ': ' + beuteText(plunder) + '.' : '.') : (won
         ? 'Sieg bei ' + islandTitle(target) + (targetOwner ? ' gegen ' + botById[targetOwner].name : '') + '! ' + fmtCompact(remaining) + ' übrig' + (woundedAdded ? ', ' + fmtCompact(woundedAdded) + ' ins Krankenhaus.' : '.')
-        : 'Niederlage bei ' + islandTitle(target) + ' – ' + fmtCompact(retreatSurvivors) + ' fliehen' + (woundedAdded ? ', ' + fmtCompact(woundedAdded) + ' ins Krankenhaus.' : '.')) + (plunder && plunder.loot && !capitalHolds ? ' Beute: ' + fmtCompact(plunder.loot) + ' Münzen.' : ''), 6000);
+        : 'Niederlage bei ' + islandTitle(target) + ' – ' + fmtCompact(retreatSurvivors) + ' fliehen' + (woundedAdded ? ', ' + fmtCompact(woundedAdded) + ' ins Krankenhaus.' : '.')), 6000);
 }
 
 function resolveRetreat(retreat) {
@@ -8005,7 +8005,7 @@ var CITY_BUILDINGS = [
       desc: 'Fördert Eisen in deiner Stadt – jede Stunde, auch wenn du nicht spielst. Jede Stufe bringt mehr. Eisen brauchst du für die Burg, Gebäude und Forschung.' }
 ];
 // Beute (Alexander 4.10.) – gleich für alle. Die Burg schützt von jedem Rohstoff (Gold, Holz, Stein, Eisen) einen Teil.
-// Fällt eine Basis (Turm): der Sieger bekommt NUR Gold (ein kleiner Teil über dem Schutz). Die Hauptstadt fällt nie: gewinnt der
+// Fällt eine Basis (Turm): der Sieger bekommt KEINE Beute (Alexander 4.10. abends). Die Hauptstadt fällt nie: gewinnt der
 // Angreifer, bekommt er von JEDEM Rohstoff einen kleinen Teil über dem Schutz (HAUPT_BEUTE) und die Hauptstadt brennt (nur zu
 // sehen). Gewinnt der Verteidiger, bekommt der Angreifer nichts. Rohstoffe gibt es nur aus der Hauptstadt.
 const HAUPT_BEUTE = .1;                              // Hauptstadt: 10 % von jedem Rohstoff über dem Schutz – klein, damit man oft angreifen muss
@@ -12577,14 +12577,22 @@ if (window.WELT) {
     // letzten Stunde schickte) – nie aus seinen jetzigen Basis-Stufen, sonst würde ein erschlichener Ausbau den Spielraum
     // gleich weiter vergrößern. Am Anfang (noch keine Stunde gemessen) gilt die Produktion beim ersten Sehen (m.hp0).
     const FLUG_MS = 10000, FLUG_MAX_MS = 48 * 3600000;
-    function spielraumStunde(who, m) {
+    // Zwei Töpfe (Alexander 5.10.): Stufen-Münzen (sicher: die EP kommen vom Weltrechner) je Stunde – der feste Rest nur EINMAL
+    // am Tag (vorher jede Stunde neu: ~8 Mio. Münzen am Tag „ohne Beleg“). Der Tages-Topf steht in der Welt (überlebt Neustarts).
+    function spielraumTeile(who, m) {
         const L = Math.max(1, m.lvl), now = Date.now();
         let von = L; for (const x of m.lvlLog) if (x.l < von) von = x.l;
         let lv = 0; for (let l = Math.max(2, von); l <= L + 1 && l <= von + 300; l++) lv += levelRewardCoins(l);
         while (m.ein.length && now - m.ein[0].t > 3600000) m.ein.shift();
         const gemessen = m.ein.reduce((a, x) => a + x.n, 0), dauer = now - m.initT;
         const stunde = dauer >= 3600000 ? gemessen : Math.max(m.hp0, gemessen * 3600000 / Math.max(dauer, 600000));
-        return 50000 + lv + 3 * Math.max(5000, stunde) + 3 * levelRewardCoins(L + 1);
+        return { lv, fix: 50000 + 3 * Math.max(5000, stunde) + 3 * levelRewardCoins(L + 1) };
+    }
+    function spielraumTag(who) { const d = wd(who), t = todayKey(); if (!d) return null; if (d.srT !== t) { d.srT = t; d.srN = 0; } return d; }
+    function spielraumNehmen(who, m, n) {           // n Münzen aus dem Spielraum: erst die Stufen-Münzen (Stunde), dann der Tages-Topf
+        if (!(n > 0)) return; const now = Date.now(), { lv } = spielraumTeile(who, m);
+        const a = Math.min(n, Math.max(0, lv - m.sr.reduce((s, x) => s + x.n, 0))); if (a > 0) m.sr.push({ t: now, n: a });
+        const d = spielraumTag(who); if (d && n - a > 0) { d.srN = nn(d.srN) + n - a; saveBotState(); }
     }
     // Münzen, die auf einmal kommen dürfen: Saison-Pass (je Saison höchstens die Münz-Stufen beider Reihen) und Thron-Shop
     // (so viele Käufe, wie seine Thron-Punkte hergeben – die zählt der Weltrechner selbst). Gemessen in Stunden Ertrag.
@@ -12601,7 +12609,8 @@ if (window.WELT) {
     }
     function spielraumFrei(who, m) {
         const now = Date.now(); while (m.sr.length && now - m.sr[0].t > 3600000) m.sr.shift();
-        return Math.max(0, spielraumStunde(who, m) - m.sr.reduce((a, x) => a + x.n, 0));
+        const { lv, fix } = spielraumTeile(who, m), d = spielraumTag(who);
+        return Math.max(0, lv - m.sr.reduce((a, x) => a + x.n, 0)) + Math.max(0, fix - (d ? nn(d.srN) : 0));
     }
     // (welt.js → Server) jede Nachricht „delta“ an einen Spieler mitzählen – genau das kommt bei ihm an
     // Unterwegs (m.flug): je Art (c Münzen, w Verwundete, g Gems, h/s/e Rohstoffe) P = dazu, M = weg
@@ -12725,7 +12734,7 @@ if (window.WELT) {
             if (mehr > 0) {
                 const roh = mehr;
                 if (d.gC > 0) { const g = Math.min(d.gC, mehr); d.gC -= g; mehr -= g; saveBotState(); }
-                const nimm = Math.min(mehr, spielraumFrei(who, m)); if (nimm > 0) m.sr.push({ t: now, n: nimm }); mehr -= nimm;
+                const nimm = Math.min(mehr, spielraumFrei(who, m)); spielraumNehmen(who, m, nimm); mehr -= nimm;
                 if (mehr > 0) mehr -= muenzGutscheine(who, mehr, d);   // Saison-Pass und Thron-Shop zahlen Münzen auf einmal aus (z. B. „Alle abholen“)
                 m.c.u = pc - mehr;
                 if (mehr >= 1) warnen(who, 'muenzen', 'Münzen springen: +' + fz(roh) + ' mehr als erwartet, möglich wären höchstens +' + fz(roh - mehr) + '.', mehr);
@@ -12767,7 +12776,7 @@ if (window.WELT) {
         x = Math.min(r, topf); if (x > 0) hb.cA = topf - x; r -= x;   // (erst, was er schon ausgegeben hat – dann sein Konto: sonst doppelt abgezogen)
         x = Math.min(r, m.c.u); m.c.u -= x; r -= x;
         x = Math.min(r, gesch); if (x > 0) { d.gC = Math.max(0, d.gC - x); saveBotState(); } r -= x;
-        if (r > 0) m.sr.push({ t: now, n: r });
+        if (r > 0) spielraumNehmen(who, m, r);
         return true;
     }
     // Ausbau prüfen: 'ok' | 'warten' (Münzen noch nicht zu sehen) | 'nein'
@@ -13090,6 +13099,9 @@ if (window.WELT) {
         for (const h of HEROES) { const z = p.hs[h.id] ? hbHeldZeile(p.hs[h.id]) : hb.hs[h.id]; if (!z) continue;
             const pts = z[0] ? Math.floor(z[1] / 2) : 0, sum = z[3] + z[4] + z[5] + z[6];   // Fähigkeiten: 1 Punkt je halbem Stern
             if (sum > pts) for (let i = 3; i < 7; i++) z[i] = Math.floor(z[i] * pts / sum);
+            const a = hb.hs[h.id];                          // eine Fähigkeit weniger als vorher = zurückgesetzt: kostet HERO_RESET_GEMS (vorher gratis)
+            if (a && [3, 4, 5, 6].some(i => z[i] < (a[i] | 0)) && !hbZahlen(who, hb, m, { g: HERO_RESET_GEMS })) {
+                for (let i = 3; i < 7; i++) z[i] = a[i] | 0; hbWarte(who, hb, 'heldReset:' + h.id, now, h.name + ': Fähigkeiten zurückgesetzt ohne die ' + HERO_RESET_GEMS + ' Gems – es gelten die alten.', HERO_RESET_GEMS); }
             neu[h.id] = z; }
         const gleich = (a, b) => !!a && !!b && a.every((v, i) => v === b[i]);
         const geaendert = HEROES.filter(h => neu[h.id] && !gleich(neu[h.id], hb.hs[h.id])); if (!geaendert.length) { hbGut(hb, 'helden'); return; }
@@ -13123,6 +13135,10 @@ if (window.WELT) {
         for (const k of Object.keys(SKILL_DEFS)) { sk[k] = Math.max(0, Math.min(SKILL_DEFS[k].max || 50, Math.floor(nn((p.skills || {})[k])))); sum += sk[k]; }
         const maxP = Math.max(0, L - 1) + 2;          // 1 Fähigkeits-Punkt je Stufe
         if (sum > maxP) { for (const k in sk) sk[k] = Math.floor(sk[k] * maxP / sum); hbWarte(who, hb, 'skills', now, 'Fähigkeiten: ' + sum + ' Punkte verteilt, mit Stufe ' + L + ' gehen höchstens ' + maxP + '.', sum - maxP); } else hbGut(hb, 'skills');
+        if (hb.sk && Object.keys(sk).some(k => sk[k] < (hb.sk[k] | 0))) {   // ein Punkt weniger als vorher = zurückgesetzt: kostet SKILL_RESET_GEMS (vorher nicht geprüft – umverteilen vor jedem Kampf gratis)
+            if (hbZahlen(who, hb, wacheSehen(who), { g: SKILL_RESET_GEMS })) hbGut(hb, 'skillReset');
+            else { for (const k in sk) sk[k] = hb.sk[k] | 0; hbWarte(who, hb, 'skillReset', now, 'Fähigkeiten zurückgesetzt ohne die ' + SKILL_RESET_GEMS + ' Gems – es gelten die alten.', SKILL_RESET_GEMS); } }
+        hb.sk = Object.assign({}, sk);
         b.skills = sk;
         const pl = (p.city && p.city.levels) || {}, lv = {};
         for (const id of hbBauten()) lv[id] = Math.max(0, Math.min(Math.floor(nn(pl[id])), hb.st[id][0])); if (!(lv.keep >= 1)) lv.keep = 1;

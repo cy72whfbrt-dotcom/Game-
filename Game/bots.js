@@ -181,7 +181,7 @@ function resolveBotAttack(attack) {
         for (const q of angreifer) { q.gold = payGold(q.w, n * (q.k !== undefined ? q.k : q.n) / sk * (q.w === bot.id ? botKillRate : q.rate || 0)); delete q.rate; } };
     const homeAgain = n => { if (n <= 0) return; if (attack.rally) { bundRallyHeim(attack, n, target.id); return; } const t0 = Date.now();                 // they walk home like yours (a fallen home: resolveSend sends them to another base) – eine Rally: jeder zu sich
         pendingSends.push({ fromId: target.id, toId: source.id, troops: n, startedAt: t0, resolveAt: t0 + retreatSecs(attack, target, source, bot.id) * 1000, senderBotId: bot.id, back: true }); };
-    const plunder = won && targetOwner ? plunderOf(targetOwner, capitalHolds) : null;   // Beute: ein kleiner Teil über dem Burg-Schutz des Verlierers (Turm: Gold, Hauptstadt: alles) - auch deins
+    const plunder = won && targetOwner ? plunderOf(targetOwner, capitalHolds) : null;   // Beute: ein kleiner Teil über dem Burg-Schutz des Verlierers (nur an der Hauptstadt – Turm: nichts) - auch deins
     if (plunder) plunderMove(targetOwner, bot.id, plunder.loot, plunder.roh);
     if (capitalHolds) brandSetzen(target.id);                                 // die Hauptstadt brennt (nur zu sehen)
     if (capitalHolds) {
@@ -298,7 +298,7 @@ function resolveBotAttack(attack) {
             ? bot.name + ' hat deine Hauptstadt geplündert (' + (beuteText(plunder) || 'nichts über dem Schutz') + ') – die Garnison ist gefallen, die Stadt brennt, aber sie hält.'
             : won
             ? bot.name + ' hat deine Basis ' + islandTitle(target) + ' erobert!'
-            : 'Verteidigung erfolgreich – ' + bot.name + ' bei ' + islandTitle(target) + ' zurückgeschlagen.') + (defWounded ? ' ' + fmtCompact(defWounded) + ' Verwundete ins Krankenhaus.' : '') + (plunder && plunder.loot && !capitalHolds ? ' −' + fmtCompact(plunder.loot) + ' Münzen geplündert.' : ''), 5000);
+            : 'Verteidigung erfolgreich – ' + bot.name + ' bei ' + islandTitle(target) + ' zurückgeschlagen.') + (defWounded ? ' ' + fmtCompact(defWounded) + ' Verwundete ins Krankenhaus.' : ''), 5000);
         renderActiveMarches();
         if (isPanelOpen(popup) && popupIslandId === target.id) renderPopup();
     }

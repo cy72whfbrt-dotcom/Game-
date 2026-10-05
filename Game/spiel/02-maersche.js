@@ -785,7 +785,7 @@ function resolveAttack(attack) {
     if (targetOwner && targetOwner !== 'player')                    // the defending bot's "Verteidigung: Gold": every attacker its garrison really kills pays out
         botCoins[targetOwner] = (botCoins[targetOwner] || 0) + Math.round((won ? sentLoss : attack.rawTroops - retreatSurvivorsPreview(attack)) * botGoldRate(targetOwner, 'defenseGold'));
     let retreatSurvivors = 0, woundedAdded = 0;
-    const plunder = won && targetOwner && targetOwner !== 'player' ? plunderOf(targetOwner, capitalHolds) : null;   // Beute: ein kleiner Teil über seinem Burg-Schutz (Turm: nur Gold, Hauptstadt: alles)
+    const plunder = won && targetOwner && targetOwner !== 'player' ? plunderOf(targetOwner, capitalHolds) : null;   // Beute: ein kleiner Teil über seinem Burg-Schutz (nur an der Hauptstadt – Turm: nichts; Hauptstadt: alles)
     if (plunder) { plunderMove(targetOwner, null, plunder.loot, plunder.roh); inboxAdd({ src: 'fight', coins: plunder.loot }); if (plunder.roh && AUF) AUF.rohDazu('player', plunder.roh); }   // (das Gold wartet im Abholfach)
     if (capitalHolds) brandSetzen(target.id);                               // die Hauptstadt brennt (nur zu sehen)
 
@@ -917,7 +917,7 @@ function resolveAttack(attack) {
 
     flashHint(capitalHolds ? 'Die Hauptstadt von ' + botById[targetOwner].name + ' brennt – ihre Garnison ist gefallen, ' + fmtCompact(remaining) + ' Truppen kehren mit der Beute zurück' + (beuteText(plunder) ? ': ' + beuteText(plunder) + '.' : '.') : (won
         ? 'Sieg bei ' + islandTitle(target) + (targetOwner ? ' gegen ' + botById[targetOwner].name : '') + '! ' + fmtCompact(remaining) + ' übrig' + (woundedAdded ? ', ' + fmtCompact(woundedAdded) + ' ins Krankenhaus.' : '.')
-        : 'Niederlage bei ' + islandTitle(target) + ' – ' + fmtCompact(retreatSurvivors) + ' fliehen' + (woundedAdded ? ', ' + fmtCompact(woundedAdded) + ' ins Krankenhaus.' : '.')) + (plunder && plunder.loot && !capitalHolds ? ' Beute: ' + fmtCompact(plunder.loot) + ' Münzen.' : ''), 6000);
+        : 'Niederlage bei ' + islandTitle(target) + ' – ' + fmtCompact(retreatSurvivors) + ' fliehen' + (woundedAdded ? ', ' + fmtCompact(woundedAdded) + ' ins Krankenhaus.' : '.')), 6000);
 }
 
 function resolveRetreat(retreat) {

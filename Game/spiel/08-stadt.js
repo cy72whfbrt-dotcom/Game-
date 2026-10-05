@@ -24,7 +24,7 @@ var CITY_BUILDINGS = [
       desc: 'Fördert Eisen in deiner Stadt – jede Stunde, auch wenn du nicht spielst. Jede Stufe bringt mehr. Eisen brauchst du für die Burg, Gebäude und Forschung.' }
 ];
 // Beute (Alexander 4.10.) – gleich für alle. Die Burg schützt von jedem Rohstoff (Gold, Holz, Stein, Eisen) einen Teil.
-// Fällt eine Basis (Turm): der Sieger bekommt NUR Gold (ein kleiner Teil über dem Schutz). Die Hauptstadt fällt nie: gewinnt der
+// Fällt eine Basis (Turm): der Sieger bekommt KEINE Beute (Alexander 4.10. abends). Die Hauptstadt fällt nie: gewinnt der
 // Angreifer, bekommt er von JEDEM Rohstoff einen kleinen Teil über dem Schutz (HAUPT_BEUTE) und die Hauptstadt brennt (nur zu
 // sehen). Gewinnt der Verteidiger, bekommt der Angreifer nichts. Rohstoffe gibt es nur aus der Hauptstadt.
 const HAUPT_BEUTE = .1;                              // Hauptstadt: 10 % von jedem Rohstoff über dem Schutz – klein, damit man oft angreifen muss
