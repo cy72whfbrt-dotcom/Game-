@@ -775,7 +775,7 @@ function botThink(bot) {
     //  der Hauptstadt nie eine erste freie Basis und schickte nur Späher, live 3.10.: 44 von 150 so festgesteckt)
     let lvSum = 0, lvN = 0; for (const id of owned) if (!isCapital(id)) { lvSum += islandLevels[id] || 1; lvN++; }
     const builtUp = !lvN || lvSum / lvN >= Math.min(14, 1 + owned.size / 25);
-    let grabs = builtUp && now - (mem.lastGrabAt || 0) > 1500 ? 1 : 0;                  // at most one new base every 1.5 s, even for the fastest
+    const grabs = builtUp && now - (mem.lastGrabAt || 0) > 1500 ? 1 : 0;                  // at most one new base every 1.5 s, even for the fastest
     for (const [li, e] of list.entries()) {
         if (n >= launches || slots <= 0) break;
         const boss = bossAt(e.target.id);                                                          // an event's strength is public
@@ -840,7 +840,7 @@ function botThink(bot) {
         if (sum < need) continue;
         steps.sort((u, v) => v.eta - u.eta);
         act.plan = { kind: 'attack', t: e.target.id, steps, until: now + 30000, believed: it.s };
-        if (botPlanStep(bot)) { n++; if (grab) { grabs--; mem.lastGrabAt = now; } botRevengeLaunched(bot, e.target.id); if (rally && rally.t === e.target.id) mem.rally = null; }
+        if (botPlanStep(bot)) { n++; if (grab) mem.lastGrabAt = now; botRevengeLaunched(bot, e.target.id); if (rally && rally.t === e.target.id) mem.rally = null; }
         break;                                                                                    // one decision per move
     }
     // nothing to strike: scout the most interesting base they don't know yet (that is this move's order)

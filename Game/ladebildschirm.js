@@ -186,7 +186,6 @@
         if (reduce) { tipI = (tipI + 1) % TIPS.length; showTip(tipI); return; }
         card.classList.add('is-swap'); setTimeout(function () { tipI = (tipI + 1) % TIPS.length; showTip(tipI); card.classList.remove('is-swap'); }, 350);
     }, 3800);
-    window.__splashTips = TIPS;                                                                          // (for tests)
 
     resize();
     window.addEventListener('resize', resize);
