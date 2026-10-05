@@ -181,11 +181,11 @@
     }
     // für welt.js: direkter Zugriff (Welt-Teile setzen, ohne sie als "hier geändert" zu markieren)
     window.__owSpeicher = {
-        WELT: WELT, istWelt: istWelt, daten: daten, weltGeaendert: weltGeaendert,
+        WELT: WELT, daten: daten, weltGeaendert: weltGeaendert,
         roh: function (k, v) { if (v === null || v === undefined) delete daten[k]; else daten[k] = String(v); },
         set beimSetzen(f) { beimSetzen = f; },
         privat: function (k, v) { v = String(v); if (daten[k] === v) return; daten[k] = v; geaendert.add(k); },
-        get gestoppt() { return gestoppt; }, token: OW.token, stoppe: function (text, knopf) { gestoppt = true; zeige(text, knopf); },
+        get gestoppt() { return gestoppt; }, token: OW.token,
         rauswurf: function (status) { if (status === 503) { try { sofort(true); } catch (e) {} } return rauswurf(status); }   // Wartung: vorher noch alles sichern
     };
     window.__owSofort = sofort;

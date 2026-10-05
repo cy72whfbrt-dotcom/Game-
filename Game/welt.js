@@ -391,7 +391,6 @@
             if (!SYSTEM && jetzt - profilAt > 10000) { const pr = J(meinProfil()); if (pr !== letztesProfil) { anfrage.profil = pr; letztesProfil = pr; } profilAt = jetzt; }
             if (W.befehleSpaeter.length && jetzt - (W.spaeterT || 0) > 5000) { W.spaeterT = jetzt; W.befehle.push(...W.befehleSpaeter.splice(0).filter(befehlFrisch)); }
             if (W.befehle.length) anfrage.befehle = W.befehle.splice(0, 30);   // der Server nimmt höchstens 30 pro Puls – der Rest gleich im nächsten
-            let gesendetKs = null;
             if (W.leiter) {
                 deltasSammeln();                                                       // erst die Nachrichten (ändert dOffen) …
                 if (typeof window.__weltVorPuls === 'function') window.__weltVorPuls();   // … dann alles in die Daten schreiben (dOffen im selben Stand)
@@ -407,7 +406,6 @@
                     const f = J(flickenBauen(gesendet[k], neu));
                     if (f.length < anfrage.welt.setzen[k].length * .6) { (anfrage.welt.flicken || (anfrage.welt.flicken = {}))[k] = f; delete anfrage.welt.setzen[k]; }
                 }
-                if (ks.length) gesendetKs = ks;
                 if (W.ereignisseRaus.length) anfrage.ereignisse = W.ereignisseRaus.splice(0).map(x => { if (!x.mid) x.mid = neueNummer(); return x; });   // (eine Wiederholung behält ihre Nummer)
                 anfrage.quittung = Array.from(W.befehlFertig);               // diese Befehle stecken jetzt in der Welt, die ich schicke
                 if (W.befehlOk.size) anfrage.bezahlt_ok = Array.from(W.befehlOk);
