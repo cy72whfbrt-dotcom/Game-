@@ -694,6 +694,7 @@ function whoProfile(who) {                       // the same facts for you and f
         skills: Object.assign({}, b.skills), city: Object.assign({}, b.city.levels), capital: botCapitalOf(who), online: botOnline(bd, Date.now()) };
 }
 function powerOf(pr) {                           // Macht: troops, bases, gear, heroes, skills and city - one number to compare rulers by
+    if (pr.who !== 'player' && fremdGeheim()) { const b = loadBotState()[pr.who]; return b && Number.isFinite(b.macht) ? b.macht : 0; }   // Zuschauer: die Macht anderer rechnet der Weltrechner (die Werte dafür hat das Handy nicht)
     let bases = 0; for (const id of (pr.who === 'player' ? ownedIslands : botOwnedIslands[pr.who] || [])) bases += baseDefenseForLevel(islandLevels[id] || 1);
     const gear = pr.items.reduce((a, it) => a + (it[1] >= 0 ? itemScore({ rarity: it[1], level: it[2] }) * (1 + it[3] * .2) : 0), 0);
     const heroes = pr.heroes.reduce((a, x) => a + (4 + x[1]) * x[2] / 2, 0), sk = Object.values(pr.skills).reduce((a, v) => a + v, 0), city = Object.values(pr.city).reduce((a, v) => a + v, 0);
@@ -728,16 +729,20 @@ function openRulerProfile(who) {
     const heroes = pr.heroes.length ? pr.heroes.slice().sort((a, b) => b[2] - a[2] || b[1] - a[1]).map(x => heroChipHtml(x[0], x[1])).join('') : '<div class="war-empty">Noch keine Helden freigeschaltet.</div>';
     const skillsHtml = Object.keys(SKILL_DEFS).map(k => '<div><span>' + SKILL_DEFS[k].name + '</span><b>' + (pr.skills[k] || 0) + '</b></div>').join('');
     const cityHtml = BOT_BUILDINGS.map(k => '<div class="rp-bld' + ((pr.city[k] || 0) ? '' : ' is-zero') + '"><span class="rp-bld-ic">' + icon(cityDef(k).icon) + '<b>' + (pr.city[k] || 0) + '</b></span><small>' + cityDef(k).name + '</small></div>').join('');
-    const last = lastFightWith(pr);
+    const last = lastFightWith(pr), verdeckt = who !== 'player' && fremdGeheim();   // Zuschauer: Ausrüstung, Helden, Skills, Stadt anderer nur im Spähbericht
+    const burg = AUF ? AUF.burgStufe(who) : (pr.city.keep || 1);
+    const verdecktHtml = '<div class="sect"><h4>Stadt</h4></div><div class="rp-blds"><div class="rp-bld"><span class="rp-bld-ic">' + icon(cityDef('keep').icon) + '<b>' + burg + '</b></span><small>' + cityDef('keep').name + '</small></div></div>' +
+        '<div class="notice">' + icon('scout') + '<span>Ausrüstung, Helden, Fähigkeiten und Forschung siehst du erst, wenn du eine Basis von ' + escapeHtml(pr.name) + ' ausspähst – im Spähbericht im Kampflog.</span></div>';
     document.getElementById('rulerBody').innerHTML =
         '<div class="rp-stats"><div class="rp-stat"><small>Macht</small><b>' + fmtCompact(powerOf(pr)) + '</b></div><div class="rp-stat"><small>Basen</small><b>' + fmtNum(pr.bases) + '</b></div>' +
         '<div class="rp-stat"><small>Stufe</small><b>' + pr.lvl + '</b></div><div class="rp-stat"><small>Tempel</small><b>' + (rulerOwner() === who ? 'Herrscher' : pr.temple ? escapeHtml(pr.temple.name) : '–') + '</b></div></div>' +
         (ownerShielded(who) ? '<div class="notice notice--gold">' + icon('shield') + '<span>' + (who === 'player' ? 'Dein Friedensschild' : 'Friedensschild') + ' aktiv – noch ' + fmtHours(ownerShieldUntil(who) - Date.now()) + '</span></div>' : '') +
-        passChip(who) + (last ? '<div class="rp-last">' + last + '</div>' : '') +
+        (verdeckt ? '' : passChip(who)) + (last ? '<div class="rp-last">' + last + '</div>' : '') +
+        (verdeckt ? verdecktHtml :
         '<div class="sect"><h4>Ausrüstung</h4></div><div class="rp-gear">' + gear + '</div>' +
         '<div class="sect"><h4>Helden</h4></div><div class="rp-heroes">' + heroes + '</div>' +
         '<div class="sect"><h4>Skills</h4></div><div class="rp-grid">' + skillsHtml + '</div>' +
-        '<div class="sect"><h4>Stadt</h4></div><div class="rp-blds">' + cityHtml + '</div>' +
+        '<div class="sect"><h4>Stadt</h4></div><div class="rp-blds">' + cityHtml + '</div>') +
         '<div class="rp-actions">' + (typeof bundProfilKnopf === 'function' ? bundProfilKnopf(who) : '') + '<button class="btn btn--secondary btn--sm" type="button" data-rp="map">' + icon('flag') + '<span>Zur Karte</span></button>' +
         '<button class="btn btn--primary btn--sm" type="button" data-rp="capital">' + icon('castle') + '<span>Hauptstadt</span></button></div>';
     openPanel(rulerPopup);

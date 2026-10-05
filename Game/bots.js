@@ -876,8 +876,9 @@ function loadBotState() {
         b.equip = Object.assign({ weapon: 0, armor: 0, shield: 0, boots: 0 }, b.equip || {});
         if (!b.v2 && !b.items) { b.items = {}; for (const k of Object.keys(EQUIPMENT_DEFS)) b.items[k] = RARITY_DEFS.map(() => 0); }
         if (!b.v2) botMigrateV2(bot, b);
+        if (!b.city || typeof b.city !== 'object') b.city = { levels: {}, builds: [], builder2: false };   // (Zuschauer: von anderen kommt nur die Burg-Stufe)
         b.city.levels = Object.assign(Object.fromEntries(BOT_BUILDINGS.map(k => [k, 0])), b.city.levels || {}); cityBuildsFix(b.city);   // one build → a list (a second builder can be bought, like yours)
-        if (!b.hs) b.hs = heroConvert(b.heroes, b.city.levels.heroes || 0); heroFix(b.hs); delete b.heroes;   // the old 3 heroes → stars, like yours (+ the same starter shards)
+        if (!b.hs) b.hs = typeof fremdGeheim === 'function' && fremdGeheim() ? {} : heroConvert(b.heroes, b.city.levels.heroes || 0); heroFix(b.hs); delete b.heroes;   // the old 3 heroes → stars, like yours (+ the same starter shards) – Zuschauer: fremde Helden kennt er nicht (keine Start-Helden vortäuschen)
         if (!(b.wounded >= 0)) b.wounded = 0;
         b.shields = Object.assign({ 2: 0, 8: 0, 24: 0 }, b.shields || {}); if (!(b.shieldUntil > 0)) b.shieldUntil = 0;
         if (!b.achLook) { const st = b.stats || {}, cm = Math.min(...BOT_BUILDINGS.filter(k => !BOT_MIN_AUSNAHME.includes(k)).map(k => b.city.levels[k] || 0));   // Erfolge give no titles any more: the ones reached so far stay

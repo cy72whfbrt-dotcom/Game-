@@ -681,6 +681,7 @@ function launchScout(targetId, explore, at) {
         ex: at ? at.x : undefined, ey: at ? at.y : undefined
     });
     if (explore) alsBefehl('spaehen', { ziel: targetId, ex: at ? Math.round(at.x) : undefined, ey: at ? Math.round(at.y) : undefined });   // 3B: der Weltrechner deckt den Nebel auf dem Server mit auf
+    else if (fremdGeheim() && islandOwnerOf(targetId) && islandOwnerOf(targetId) !== 'player' && !bossAt(targetId)) alsBefehl('spaehen', { ziel: targetId, blick: 1 });   // fremde Basis: den Bericht schreibt der Weltrechner (nur er kennt die Werte)
     questProgress('scout', 1);
     saveGame();
     saveProgression();
@@ -698,7 +699,37 @@ function spaeherBlick(owner) {
     o.sk = { attack: (b.skills || {}).attack || 0, defense: (b.skills || {}).defense || 0, troops: (b.skills || {}).troops || 0 };
     o.gear = {}; for (const k of Object.keys(EQUIPMENT_DEFS)) { const it = botItem(b, k); o.gear[k] = it ? [it.rarity, it.level, it.stars] : null; }
     o.auf = AUF ? AUF.spaeherMehr(owner) : null;                             // Burg, Rohstoffe, Forschung
+    const m = botMults(owner);                                               // Abwehr-Werte (Zuschauer: effectiveDefense rechnet damit, bis wieder gespäht wird)
+    o.k = { ar: Math.round((m.armorPct || 0) * 100) / 100, dp: Math.round((m.defensePct || 0) * 100) / 100, wall: o.wall, kk: Math.round((AUF ? AUF.kampf(owner, 'd') : 1) * 1e4) / 1e4 };
+    o.who = neutralId(owner);
     return o;
+}
+// Zuschauer: Abwehr-Werte eines Herrn aus dem neuesten Spähbericht (null: nie gespäht)
+let spaehWerteMem = null;
+function spaehWerte(owner) {
+    if (!combatLog) return null;
+    if (!spaehWerteMem || spaehWerteMem.l !== combatLog.length || spaehWerteMem.e !== combatLog[0]) {   // (neu sortiert erst, wenn ein Bericht dazukam)
+        const by = {}; for (const e of combatLog) if (e && e.type === 'scout' && e.spy && e.spy.k && e.spy.who && !by[e.spy.who]) by[e.spy.who] = e.spy.k;
+        spaehWerteMem = { l: combatLog.length, e: combatLog[0], by };
+    }
+    const k = spaehWerteMem.by[neutralId(owner)]; if (!k) return null;
+    const n = v => Number.isFinite(v) ? v : 0;
+    return { ar: n(k.ar), dp: n(k.dp), wall: n(k.wall), kk: Number.isFinite(k.kk) && k.kk > 0 ? k.kk : 1 };
+}
+// Spähbericht vom Weltrechner (Zuschauer): kam er vor dem eigenen Späher an, wartet er hier (nur im Speicher), sonst füllt er
+// den wartenden Eintrag im Kampflog
+const spaehPost = new Map();
+function spaehBericht(r) {
+    if (!r || !Number.isInteger(r.ziel) || !islandById[r.ziel]) return;
+    const x = combatLog.find(e => e.type === 'scout' && e.targetId === r.ziel && e.wartet);
+    if (!x) { spaehPost.set(r.ziel, { r, bis: Date.now() + 600000 }); return; }
+    spaehEinsetzen(x, r); store.set('openWaterCombatLog', JSON.stringify(combatLog)); spaehWerteMem = null;
+    const logPanel = document.getElementById('battleLogPopup');
+    if (logPanel && logPanel.classList.contains('is-open')) refreshOpenCombatLog();
+}
+function spaehEinsetzen(x, r) {
+    const z = v => Number.isFinite(v) && v >= 0 ? v : 0;
+    x.troops = z(r.troops); x.defense = z(r.defense); x.spy = r.spy && typeof r.spy === 'object' ? r.spy : null; delete x.wartet;
 }
 function spaeherBlickHtml(s) {
     if (!s) return '';
@@ -738,14 +769,18 @@ function resolveScout(scout) {
     // Same reasoning as resolveSend(): persist the now-shorter
     // pendingScouts array, or a reload replays this scout again.
     saveProgression();
-    addCombatLogEntry({
+    const ow = islandOwnerOf(target.id), vomWr = fremdGeheim() && ow && ow !== 'player' && !bossAt(target.id);   // Zuschauer: fremde Werte kennt nur der Weltrechner
+    const post = vomWr ? spaehPost.get(scout.targetId) : null; if (post) spaehPost.delete(scout.targetId);
+    const eintrag = {
         type: 'scout',
         sourceId: scout.sourceId,
         targetId: scout.targetId,
         troops: effectiveTroops(target),
         defense: effectiveDefense(target),
-        spy: spaeherBlick(islandOwnerOf(target.id))
-    });
+        spy: vomWr ? null : spaeherBlick(ow)
+    };
+    if (post && post.bis > Date.now()) spaehEinsetzen(eintrag, post.r); else if (vomWr) eintrag.wartet = 1;   // (wartet: der Bericht vom Weltrechner kommt gleich)
+    addCombatLogEntry(eintrag); spaehWerteMem = null;
     flashHint(islandTitle(target) + ' gespäht – Bericht im Kampflog.', 3000);   // (die Zahlen stehen im Kampflog, nicht im Hinweis)
 }
 

@@ -64,6 +64,28 @@ pruefe('Flicken ohne Groll', isset($f['d']['bot1']['s']['grudge']), false);
 pruefe('Flicken behält Stufe', $f['d']['bot1']['s']['lvl'], 6);
 pruefe('Flicken löscht Handy beim Spieler', in_array('handy', $f['d']['bot1']['w'] ?? [], true), true);
 
+// --- Fremde Spieler (6.10.): nur Öffentliches – Helden, Ausrüstung, Skills, Stadt, Forschung erst im Spähbericht
+$voll = '{"lvl":7,"macht":12345,"hs":{"ida":{"own":true,"q":4}},"gear":{"armor":{"r":3}},"spare":{},"skills":{"defense":5},"gems":900,"xp":5,"sp":1,"pts":3,"shields":{"2":1},"ps":{"s":1},"goals":{},"tp":50,'
+    . '"city":{"levels":{"keep":4,"wall":9,"academy":3},"fo":{"m_def":5},"builds":[1]},"stats":{"caps":12,"tpEarned":40,"healed":99},"ring":"jade","march":"glut","frames":["gold"],"titles":["x"],"capital":17,"shieldUntil":5,"neuBis":0,"mensch":1,"tt":800}';
+$b = json_decode(weltteil_fuer_spieler('openWaterBotState', '{"bot1":' . $voll . ',"u3":' . $voll . '}', 'u3'), true);
+pruefe('fremd: ohne Helden/Ausrüstung/Skills/Gems/Schilde/Pass', array_values(array_intersect(array_keys($b['bot1']), ['hs', 'gear', 'spare', 'skills', 'gems', 'xp', 'sp', 'pts', 'shields', 'ps', 'goals', 'tp'])), []);
+pruefe('fremd: Stadt nur Burg-Stufe', json_encode($b['bot1']['city']), '{"levels":{"keep":4}}');
+pruefe('fremd: Rangliste-Zahlen bleiben', json_encode($b['bot1']['stats']), '{"caps":12,"tpEarned":40}');
+pruefe('fremd: Macht, Stufe, Aussehen, Hauptstadt, Schild bleiben', [$b['bot1']['macht'], $b['bot1']['lvl'], $b['bot1']['ring'], $b['bot1']['march'], $b['bot1']['capital'], $b['bot1']['shieldUntil'], $b['bot1']['tt']], [12345, 7, 'jade', 'glut', 17, 5, 800]);
+pruefe('eigener Eintrag ganz', [isset($b['u3']['hs']), $b['u3']['city']['levels']['wall'], $b['u3']['skills']['defense']], [true, 9, 5]);
+$b = json_decode(weltteil_fuer_spieler('openWaterBotState', '{"u3":' . $voll . '}'), true);
+pruefe('ohne Spieler-Nummer: alle fremd', isset($b['u3']['hs']), false);
+$f = json_decode(flicken_fuer_spieler('openWaterBotState', '{"s":{"bot2":' . $voll . '},"d":{"bot1":{"s":{"hs":{"a":1},"city":{"levels":{"keep":5,"wall":2}},"macht":99,"gear":{}},"w":["spare","ring"]},"u3":{"s":{"hs":{"a":1},"city":{"levels":{"keep":5,"wall":2}}}}}}', 'u3'), true);
+pruefe('Flicken fremd: neuer Eintrag gekürzt', [isset($f['s']['bot2']['hs']), json_encode($f['s']['bot2']['city'])], [false, '{"levels":{"keep":4}}']);
+pruefe('Flicken fremd: Felder gekürzt', [isset($f['d']['bot1']['s']['hs']), isset($f['d']['bot1']['s']['gear']), $f['d']['bot1']['s']['macht'], json_encode($f['d']['bot1']['s']['city'])], [false, false, 99, '{"levels":{"keep":5}}']);
+pruefe('Flicken fremd: Löschen nur Öffentliches', $f['d']['bot1']['w'], ['ring']);
+pruefe('Flicken eigener Eintrag ganz', [isset($f['d']['u3']['s']['hs']), $f['d']['u3']['s']['city']['levels']['wall']], [true, 2]);
+$p = profil_oeffentlich(json_decode(profil_bereinigen(json_encode(['lvl' => 9, 'skills' => ['attack' => 3], 'gear' => ['weapon' => ['r' => 2, 'lvl' => 3]], 'hs' => ['ida' => ['own' => true]],
+    'city' => ['levels' => ['keep' => 3, 'wall' => 5]], 'fo' => ['m_atk' => 2], 'stats' => ['captures' => 4, 'healed' => 9], 'look' => ['ring' => 'jade'], 'coins' => 5]))));
+pruefe('Profil anderer: nur Öffentliches', [isset($p->skills), isset($p->gear), isset($p->hs), isset($p->fo), isset($p->coins), json_encode($p->city), json_encode($p->stats), $p->lvl, $p->look->ring], [false, false, false, false, false, '{"levels":{"keep":3}}', '{"captures":4}', 9, 'jade']);
+
+pruefe('Spähbericht darf vom Weltrechner kommen', in_array('spaeh', WELTRECHNER_NACHRICHTEN, true), true);
+
 // --- 3B: Hauptbuch und Gems nie beim Spieler, Nebel auf dem Server
 $b = json_decode(weltteil_fuer_spieler('openWaterBotState', '{"u3":{"lvl":5,"hb":{"st":{"keep":[3,0]}},"hbK":1}}'), true);
 pruefe('Hauptbuch verborgen', isset($b['u3']['hb']), false);
