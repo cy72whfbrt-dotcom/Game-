@@ -705,6 +705,8 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
 - Münz-Wirtschaft bei hohen Stufen riesig („Münzen fühlen sich nichts wert an“).
 - **Fehler (Alexander 5.10.):** Späher auf der Karte antippen → die Knöpfe „Schneller“ und „Zurück“ fehlen (Regel: alle
   Märsche hin = Zurück + Schneller, heim = Schneller).
+- **Fehler (Alexander 5.10.):** Angriffe auf andere sollen immer von der nächsten eigenen Basis mit Truppen losgehen –
+  heute nehmen sie teils einen weiten Weg (von weiter weg).
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
