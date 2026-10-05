@@ -220,6 +220,7 @@ function updateCityBuilder() {
         if (i === 0 || c.builder2) return '<span class="cb-slot">' + icon('check') + '<span>' + (c.builder2 ? (i + 1) + '. Bauarbeiter frei' : 'Bauarbeiter frei') + '</span></span>';
         return '<button type="button" class="cb-slot cb-buy' + (cityB2Armed > now ? ' is-armed' : '') + '" data-cb-buy>' + icon('plus') + '<span>' + (cityB2Armed > now ? 'Wirklich kaufen?' : '2. Bauarbeiter') + '</span><b>' + icon('gem') + CITY_BUILDER2_GEMS + '</b></button>';
     }).join(''));
+    stadtKopf();   // (zwei Zeilen Bauarbeiter: der Hinweis rückt mit)
 }
 function cityBuyBuilder2() {
     const c = loadCity(); if (c.builder2) return;

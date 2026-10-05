@@ -297,6 +297,8 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 .anleitung .btn-x{flex:0 0 auto}
 body.has-sheet .anleitung{display:none}
 body.has-midbar:not(.has-sheet) .toast{top:calc(var(--safe-t) + var(--hud-top-space) + var(--mb-h,0px))}
+/* in der Stadt (Handy): der Hinweis erst unter der Bauarbeiter-Zeile – nie über ihren Knöpfen (--stadt-kopf: Unterkante, 08d stadtKopf) */
+@media (max-width:899px),(max-height:500px){ body.in-stadt:not(.has-sheet) .toast{top:calc(var(--stadt-kopf,96px) + 10px)} }
 @keyframes toast-in{from{opacity:0;translate:0 -6px}}
 /* a full sheet starts right under the HUD: the toast then floats over the HUD row instead of the sheet header */
 /* phone: while a sheet is open the toast docks just above the sheet's footer (never over the HUD values or the sheet header) */
