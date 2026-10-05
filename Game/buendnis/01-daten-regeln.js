@@ -86,9 +86,9 @@ function bundMitte(a) { let x = 0, y = 0, n = 0; for (const w of a.mit) { const 
 function bundLog(a, t) { (a.log || (a.log = [])).unshift({ at: Date.now(), t: String(t).slice(0, 160) }); if (a.log.length > 12) a.log.length = 12; }
 function bundUnterAngriff(id) {                                  // kommt gerade ein Angriff (oder eine Armee) von außerhalb des Bündnisses?
     const ow = islandOwnerOf(id); if (!ow) return null; let str = 0, at = Infinity;
-    for (const a of pendingAttacks) if (a.targetId === id && !a.fightEndsAt && (a.attackerBotId || 'player') !== ow && !bundVerbuendet(a.attackerBotId || 'player', ow)) { str += (a.rawTroops + (a.attackBonus || 0)) * (a.atkTitle || 1) * (a.atkKraft || 1); at = Math.min(at, a.resolveAt); }
-    for (const x of armies) if (x.mv && x.mv.to && x.mv.to.kind === 'base' && x.mv.to.id === id) { const w = armyWho(x); if (w !== ow && !bundVerbuendet(w, ow)) { str += x.troops; at = Math.min(at, x.mv.resolveAt); } }
-    return at < Infinity ? { str, at } : null;   // (am Handy ist die Stärke fremder Angriffe unbekannt – 0 – der Angriff zählt trotzdem)
+    for (const a of pendingAttacks) if (a.targetId === id && !a.fightEndsAt && (a.attackerBotId || 'player') !== ow && !bundVerbuendet(a.attackerBotId || 'player', ow)) { str += botSchaetzAngriff(a); at = Math.min(at, a.resolveAt); }
+    for (const x of armies) if (x.mv && x.mv.to && x.mv.to.kind === 'base' && x.mv.to.id === id) { const w = armyWho(x); if (w !== ow && !bundVerbuendet(w, ow)) { str += botSchaetzArmee(x); at = Math.min(at, x.mv.resolveAt); } }
+    return at < Infinity ? { str, at } : null;   // (Stärke wie die Mitspieler sie schätzen; am Handy unbekannt – 0 – der Angriff zählt trotzdem)
 }
 
 // ==============================================================================================================
