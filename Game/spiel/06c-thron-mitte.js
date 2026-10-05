@@ -26,7 +26,9 @@ function hourProduction(who) {                       // what an empire makes in 
     if (who === 'player') { const k = 3600000 / productionTickMs(); return { coins: totalCoinProductionPerTick() * k, troops: totalTroopProductionPerTick() * k }; }
     const own = botOwnedIslands[who]; if (!own) return { coins: 0, troops: 0 };
     const bm = botMults(who), rb = rulerOwner() === who ? RULER_BONUS : 1, k = 3600000 / botTickMs(who); let c = 0, t = 0;
-    for (const id of own) { const L = islandLevels[id] || 1; c += coinsPerTick(L) * rb * bm.coins; t += troopsPerTick(L) * rb * bm.troops; }
+    for (const id of own) { const L = islandLevels[id] || 1; c += coinsPerTick(L) * rb * bm.coins; t += troopsPerTick(L) * rb * bm.troops;
+        const isl = islandById[id];                    // Tempel wie bei dir (produceTicks)
+        if (isl && (isl.type === 'temple' || isl.type === 'megaTemple')) { const mult = templeBaseMult(isl) * templeHoldMultiplier(id) * shrineMult(who); c += TEMPLE_COIN_BONUS_PER_TICK * mult; t += TEMPLE_TROOP_BONUS_PER_TICK * mult; } }
     return { coins: c * k, troops: t * k };
 }
 function throneAmount(who, id) { const hp = hourProduction(who);

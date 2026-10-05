@@ -68,8 +68,8 @@ function templeBonusLine(island) {
     const heldSince = templeHoldSince[island.id];
     const heldMin = heldSince ? Math.floor((Date.now() - heldSince) / 60000) : 0;
     return '<div class="notice notice--gold">' + icon('gem') + '<span>+' +
-        fmtNum(TEMPLE_GEMS_PER_TICK * mult * 3600000 / productionTickMs()) + ' Edelsteine pro Stunde · +' +
-        fmtNum(TEMPLE_COIN_BONUS_PER_TICK * mult) + ' Münzen · +' + fmtNum(TEMPLE_TROOP_BONUS_PER_TICK * mult) + ' Truppen pro Tick' +
+        fmtStunde(proStunde(TEMPLE_GEMS_PER_TICK * mult)) + ' Edelsteine · +' +
+        fmtStunde(proStunde(TEMPLE_COIN_BONUS_PER_TICK * mult)) + ' Münzen · +' + fmtStunde(proStunde(TEMPLE_TROOP_BONUS_PER_TICK * mult)) + ' Truppen pro Stunde' +
         (heldSince ? ' · gehalten seit ' + heldMin + ' Min. (×' +
             templeHoldMultiplier(island.id).toLocaleString('de-DE', { maximumFractionDigits: 2 }) + ')' : '') + '</span></div>';
 }
@@ -133,8 +133,8 @@ function renderPopup() {
         liveHtml(popupStats, '<div class="stat-grid">' +
             statTile('Truppen hier', 'troops', fmtTile(troopsHere)) +
             statTile('Verteidigung', 'defense', fmtTile(effectiveDefense(island))) +
-            statTile('Münzen / s', 'coin', '+' + fmtNum(Math.round(coinsPerTick(level) * playerCoinMult() * 1000 / productionTickMs())), 'is-good') +
-            statTile('Truppen / s', 'troops', '+' + fmtNum(Math.round(troopsPerTick(level) * playerTroopMult() * 1000 / productionTickMs())), 'is-good') + '</div>' +
+            statTile('Münzen / Std.', 'coin', '+' + fmtStunde(proStunde(coinsPerTick(level) * playerCoinMult())), 'is-good') +
+            statTile('Truppen / Std.', 'troops', '+' + fmtStunde(proStunde(troopsPerTick(level) * playerTroopMult())), 'is-good') + '</div>' +
             (island.type === 'gate' ? gateControlsHtml(island) : '') +
             (isTemple ? templeBonusLine(island) : '') + throneNotice(island) + midNotice(island) + ringNotice(island));
         liveHtml(upgradeCostLabel, level >= MAX_BASE_LEVEL ? 'Max. Stufe' : icon('coin', 'icon--coin') + fmtCompact(upgradeCost(level)));

@@ -43,8 +43,8 @@ const MEGA_TEMPLE_MULT = 8;        // Mega-Tempel (centre): 8x a normal temple's
 const GUARDIAN_TEMPLE_MULT = 3;    // Wächter-Tempel (the 4 guardian islands): 3x
 function templeBaseMult(isl) { return isl.type === 'megaTemple' ? MEGA_TEMPLE_MULT : isl.guardian ? GUARDIAN_TEMPLE_MULT : 1; }
 const TEMPLE_GEMS_PER_TICK = 0.0015;   // ~5 Gems an hour (up to ~24 held with a full Tempelschrein): a few hundred a day, not tens of thousands
-const TEMPLE_COIN_BONUS_PER_TICK = 15;
-const TEMPLE_TROOP_BONUS_PER_TICK = 6;
+const TEMPLE_COIN_BONUS_PER_TICK = 15 * WIRTSCHAFT_ERTRAG;    // 15 Münzen und 6 Truppen pro Stunde (Gems bleiben wie sie sind)
+const TEMPLE_TROOP_BONUS_PER_TICK = 6 * WIRTSCHAFT_ERTRAG;
 const TEMPLE_HOLD_STREAK_MS = 30 * 60 * 1000; // 30min to reach the max hold bonus
 const TEMPLE_HOLD_STREAK_MAX_MULT = 2; // holding it long enough doubles its output
 
@@ -121,11 +121,13 @@ function baseDefenseForLevel(level) {
 function defenseForLevel(level) {
     return Math.round(baseDefenseForLevel(level) * (1 + armorDefensePct() / 100));
 }
+// Ertrag je Produktions-Tick (1 s, mit „Geschwindigkeit“ kürzer): der runde Wert der Stufe kommt pro STUNDE (Alexander 5.10.) –
+// je Tick also ein Bruchteil, die Reste sammeln prodCarry/botProdCarry (06d), damit nichts verloren geht
 function coinsPerTick(level) {
-    return Math.round(BASE_COINS * Math.pow(PRODUCTION_GROWTH, Math.min(level, MAX_BASE_LEVEL) - 1));
+    return Math.round(BASE_COINS * Math.pow(PRODUCTION_GROWTH, Math.min(level, MAX_BASE_LEVEL) - 1)) * WIRTSCHAFT_ERTRAG;
 }
 function troopsPerTick(level) {
-    return Math.round(BASE_TROOPS * Math.pow(PRODUCTION_GROWTH, Math.min(level, MAX_BASE_LEVEL) - 1));
+    return Math.round(BASE_TROOPS * Math.pow(PRODUCTION_GROWTH, Math.min(level, MAX_BASE_LEVEL) - 1)) * WIRTSCHAFT_ERTRAG;
 }
 function upgradeCostRoh(level) { return Math.round(UPGRADE_BASE_COST * Math.pow(UPGRADE_COST_GROWTH, level - 1)); }   // ohne Rabatt
 function upgradeCost(level) {                    // Wochen-Event „Bauherr“: 20 % günstiger

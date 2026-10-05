@@ -12,7 +12,7 @@
 // ---------------------------------------------------------------------------------------------------------------
 const ROH = ['h', 's', 'e'];
 const ROH_DEF = { h: { name: 'Holz', icon: 'wood', col: '#c08a4c' }, s: { name: 'Stein', icon: 'stone', col: '#aab3bd' }, e: { name: 'Eisen', icon: 'iron', col: '#8fb6e0' } };
-const ROH_START = { h: 3000, s: 2000, e: 500 };                 // so viel hat jeder am Anfang (auch alte Spielstände ohne Rohstoffe)
+const ROH_START = { h: Math.ceil(3000 * WIRTSCHAFT_KOSTEN), s: Math.ceil(2000 * WIRTSCHAFT_KOSTEN), e: Math.ceil(500 * WIRTSCHAFT_KOSTEN) };   // so viel hat jeder am Anfang (auch alte Spielstände ohne Rohstoffe) – ein Bestand: umgerechnet wie die Kosten (11b A)
 const ROH_BIOM = { green: { h: 1, s: .5, e: .25 }, sand: { h: .3, s: 1, e: .5 }, snow: { h: .45, s: .6, e: 1 },   // Wiese: Holz · Wüste: Stein · Schnee/Gebirge: Eisen
     ice: { h: .2, s: .5, e: 1.3 }, volcano: { h: .15, s: 1.2, e: 1.1 }, swamp: { h: 1.3, s: .3, e: .3 } };   // (Paket C) Eis: viel Eisen · Vulkan: Stein + Eisen · Sumpf: viel Holz
 const rohLeer = () => ({ h: 0, s: 0, e: 0 });
@@ -41,12 +41,12 @@ function rohDazu(who, d, faktor) {                             // d: {h, s, e} (
 // kleines Grundeinkommen der Burg. Die Landschaft der Hauptstadt färbt es etwas (Schnee: mehr Eisen …). Die Basen draußen
 // machen Münzen und Truppen, keine Rohstoffe mehr. (produceTicks ruft das für jede Basis – gezählt wird nur die Hauptstadt.)
 const ROH_GEB = { h: 'lumber', s: 'quarry', e: 'mine' };      // Rohstoff → Gebäude
-const ROH_GEB_STUNDE = 600, ROH_GEB_WACHS = 1.42, ROH_BURG_STUNDE = 150;   // Stufe 1: 600/Std. … Stufe 25: ~2,7 Mio./Std.; Burg allein: 150/Std. je Rohstoff
+const ROH_GEB_STUNDE = 600, ROH_GEB_WACHS = 1.42, ROH_BURG_STUNDE = 150;   // Grundwerte (vor 5.10. pro Stunde, jetzt × WIRTSCHAFT_ERTRAG): Stufe 1: 600 … Stufe 25: ~2,7 Mio.; Burg allein: 150 je Rohstoff
 const rohGebStunde = L => L > 0 ? ROH_GEB_STUNDE * Math.pow(ROH_GEB_WACHS, L - 1) : 0;
-function rohStunde(who) {                                      // was ein Reich in einer Stunde an Rohstoffen macht (Anzeige, Markt, Schummel-Schutz)
+function rohStunde(who) {                                      // was ein Reich in einer Stunde an Rohstoffen macht (Anzeige, Markt, Schummel-Schutz) – 3.600× weniger als vor dem 5.10.
     const out = rohLeer(), cap = who === 'player' ? playerIslandId : botCapitalOf(who), isl = islandById[cap]; if (!isl) return out;
     const rg = rohRegion(isl.landmassId), e = ertrag(who);
-    for (const x of ROH) out[x] = (ROH_BURG_STUNDE + rohGebStunde(bauStufe(who, ROH_GEB[x]))) * (.6 + .4 * rg[x]) * e;
+    for (const x of ROH) out[x] = (ROH_BURG_STUNDE + rohGebStunde(bauStufe(who, ROH_GEB[x]))) * (.6 + .4 * rg[x]) * e * WIRTSCHAFT_ERTRAG;
     return out;
 }
 const rohCarry = {};
@@ -263,7 +263,7 @@ function hudRoh() {
 function rohDropMalen() {
     const d = document.getElementById('rohDrop'); if (!d) return;
     const ps = rohStunde('player');
-    liveHtml(d, ROH.map(x => '<div class="roh-row">' + icon(ROH_DEF[x].icon, 'roh-' + x) + '<span>' + ROH_DEF[x].name + '</span><b>' + fmtNum(Math.floor(roh[x])) + '</b><small>+' + fmtCompact(Math.round(ps[x])) + '/Std.</small></div>').join('') +
+    liveHtml(d, ROH.map(x => '<div class="roh-row">' + icon(ROH_DEF[x].icon, 'roh-' + x) + '<span>' + ROH_DEF[x].name + '</span><b>' + fmtNum(Math.floor(roh[x])) + '</b><small>+' + fmtStunde(ps[x]) + '/Std.</small></div>').join('') +
         '<small class="roh-hint">Holzfäller, Steinbruch und Eisenmine in deiner Stadt machen Rohstoffe (je nach Landschaft der Hauptstadt). Mehr durch Sammeln auf Holz-, Stein- und Eisen-Feldern der Karte. Gebraucht für Burg, Gebäude und Forschung. Die Burg schützt ' + fmtCompact(burgSchutz('player')) + ' von jedem Rohstoff vor Angreifern.</small>');
 }
 function rohUmschalten(an) { rohOffen = an === undefined ? !rohOffen : an; const d = document.getElementById('rohDrop'); if (!d) return; d.hidden = !rohOffen; document.getElementById('hudRoh').classList.toggle('on', rohOffen); if (rohOffen) rohDropMalen(); }
@@ -305,7 +305,7 @@ function effektText(id, lvl) {
         return (lvl ? t(lvl) : 'Verstärkung, Rally, Bündnis-Hilfe') + (lvl < CITY_MAX_LEVEL ? ' → ' + t(lvl + 1) : ''); }
     const rx = { lumber: ['h', 'Holz'], quarry: ['s', 'Stein'], mine: ['e', 'Eisen'] }[id];
     if (rx) { const k = rx[0], jetzt = rohStunde('player')[k], f = jetzt / Math.max(1, ROH_BURG_STUNDE + rohGebStunde(lvl));
-        return (lvl ? 'Jetzt: ' : 'Ohne Gebäude (nur die Burg): ') + fmtCompact(jetzt) + ' ' + rx[1] + ' pro Stunde.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: ' + fmtCompact((ROH_BURG_STUNDE + rohGebStunde(lvl + 1)) * f) + '.' : ''); }
+        return (lvl ? 'Jetzt: ' : 'Ohne Gebäude (nur die Burg): ') + fmtStunde(jetzt) + ' ' + rx[1] + ' pro Stunde.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: ' + fmtStunde((ROH_BURG_STUNDE + rohGebStunde(lvl + 1)) * f) + '.' : ''); }
     if (id === 'market') return lvl ? 'Gebühr ' + Math.round(marktGebuehr(lvl) * 100) + ' % · Tageslimit ' + fmtCompact(marktLimit('player')) + ' Münzen je Richtung.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: Gebühr ' + Math.round(marktGebuehr(lvl + 1) * 100) + ' %, höheres Limit.' : '') : 'Baue den Markt, um Rohstoffe gegen Münzen zu tauschen.';
     return '';
 }

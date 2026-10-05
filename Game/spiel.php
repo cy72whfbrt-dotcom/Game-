@@ -1764,8 +1764,8 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         <div class="stat"><span class="stat-l"><svg class="icon"><use href="#i-troops"/></svg>Truppen</span><b class="stat-v" id="kTroops">0</b></div>
         <div class="stat"><span class="stat-l"><svg class="icon"><use href="#i-flag"/></svg>Basen</span><b class="stat-v" id="kBases">0</b></div>
         <div class="stat"><span class="stat-l"><svg class="icon"><use href="#i-coin"/></svg>Münzen</span><b class="stat-v" id="kCoins">0</b></div>
-        <div class="stat"><span class="stat-l"><svg class="icon"><use href="#i-troops"/></svg>Truppen / Tick</span><b class="stat-v is-good" id="kTroopsRate">0</b></div>
-        <div class="stat"><span class="stat-l"><svg class="icon"><use href="#i-coin"/></svg>Münzen / Tick</span><b class="stat-v is-good" id="kCoinsRate">0</b></div>
+        <div class="stat"><span class="stat-l"><svg class="icon"><use href="#i-troops"/></svg>Truppen / Std.</span><b class="stat-v is-good" id="kTroopsRate">0</b></div>
+        <div class="stat"><span class="stat-l"><svg class="icon"><use href="#i-coin"/></svg>Münzen / Std.</span><b class="stat-v is-good" id="kCoinsRate">0</b></div>
         <div class="stat"><span class="stat-l"><svg class="icon"><use href="#i-home"/></svg>Weltanteil</span><b class="stat-v" id="profileProgress">0%</b></div>
       </div>
       <div class="sect"><h4>Übersicht</h4></div>

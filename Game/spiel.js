@@ -1,4 +1,7 @@
 // ===== spiel.js – AUTOMATISCH ZUSAMMENGESETZT aus Game/spiel/*.js (werkzeuge/spiel_bauen.sh). NICHT hier ändern! =====
+// Wirtschaft (Alexander 5.10.): Ertrag pro Stunde statt pro Sekunde; Kosten-Faktor siehe LIESMICH 11b A
+const WIRTSCHAFT_ERTRAG = 1 / 3600;   // was früher pro Sekunde kam, kommt jetzt pro Stunde
+const WIRTSCHAFT_KOSTEN = 1 / 1800;   // Kosten/Gegner: kleiner, aber nur halb so stark wie der Ertrag → alles etwa 2× langsamer als vorher (nie zu einfach)
 // Rechnet dieses Spiel gerade die Welt (Weltrechner)? Ohne welt.js: immer.
 function rechnet() { return !window.WELT || WELT.leiter; }
 // Läuft hier der Weltrechner auf dem Server (weltrechner/start.js)? Dann: kein eigener Spieler, keine Basis, nichts zeichnen.
@@ -48,14 +51,16 @@ if (!SYSTEM && store.get('openWaterReset') !== RESET_VERSION) {   // (nie beim W
 // Weg: Stufe (→ 1, damit alle Fähigkeitspunkte), Münzen (→ 0 wie ein neuer Spieler), Verwundete, Kampfberichte, Nebel, Späher,
 // alte Befehle. (Basen, Truppen, Bündnis, Märsche stehen in der Welt – die setzt der Weltrechner zurück.)
 // Anfängerschutz (Alexander 5.10.): nach dem Reset 48 Std. wie ein neuer Spieler – die Zeit kommt vom Weltrechner (openWaterSaisonSchutz).
+// Erster Reset nach der Umstellung auf „pro Stunde“ (11b A): Holz/Stein/Eisen × WIRTSCHAFT_KOSTEN (openWaterSaisonRoh aus der Nachricht,
+// sonst aus der Welt: saison.wirtAb liegt zwischen der alten und der neuen Saison dieses Spielstands) – wie beim Weltrechner abgerundet.
 // Zurückgespielte Sicherung (Alexander 5.10.): ist die Saison der Welt älter als die dieses Spielstands, holt er sich den Stand von
 // vor dem Reset zurück (openWaterSaisonVorher, beim Reset gemerkt) – die Welt (Server) ist maßgeblich, das Handy folgt nur.
 var saisonNeuGeladen = 0, saisonZurueckGeladen = 0;  // (09f-saison.js: Hinweis nach dem Neuladen)
 const SAISON_PRIVAT = ['openWaterLevel', 'openWaterXp', 'openWaterSkills', 'openWaterSkillPoints', 'openWaterCoins', 'openWaterNeulingBis'];   // (was der Reset ändert und das Zurückspielen wiederholt)
 if (!SYSTEM) {
-    let mein = parseInt(store.get('openWaterSaisonMein'), 10) || 0, nrW = 0;
+    let mein = parseInt(store.get('openWaterSaisonMein'), 10) || 0, nrW = 0, wirtAb = 0;
     const neu = parseInt(store.get('openWaterSaisonNeu'), 10) || 0;
-    try { nrW = (JSON.parse(store.get('openWaterSaison')) || {}).nr | 0; } catch (e) {}
+    try { const sw = JSON.parse(store.get('openWaterSaison')) || {}; nrW = sw.nr | 0; wirtAb = sw.wirtAb | 0; } catch (e) {}
     if (!mein) {                                     // ganz neu: die laufende Saison · ein Spielstand von vor der Saison-Regel: Saison 1
         mein = store.get('openWaterLevel') === null && store.get('openWaterCity') === null ? Math.max(1, nrW) : 1;
         store.set('openWaterSaisonMein', String(mein));
@@ -63,7 +68,8 @@ if (!SYSTEM) {
     if (nrW > 0 && mein > nrW && !(neu > mein)) {    // die Welt ist wieder in einer älteren Saison (Sicherung zurückgespielt)
         let v = null; try { v = JSON.parse(store.get('openWaterSaisonVorher')); } catch (e) {}
         if (v && v.nr === nrW && v.k) { for (const k of SAISON_PRIVAT) { if (typeof v.k[k] === 'string') store.set(k, v.k[k]); else if (k === 'openWaterNeulingBis') store.set(k, '0'); else store.remove(k); }   // (ohne NeulingBis gäbe 10d-welt-weltrechner.js neuen Schutz)
-            try { const c = JSON.parse(store.get('openWaterCity')); if (c && typeof c === 'object' && v.w >= 0) { c.wounded = v.w; store.set('openWaterCity', JSON.stringify(c)); } } catch (e) {} }
+            try { const c = JSON.parse(store.get('openWaterCity')); if (c && typeof c === 'object' && v.w >= 0) { c.wounded = v.w; store.set('openWaterCity', JSON.stringify(c)); } } catch (e) {}
+            if (typeof v.res === 'string') store.set('openWaterRes', v.res); }   // (Rohstoffe vor der Umrechnung)
         mein = nrW; store.set('openWaterSaisonMein', String(mein)); saisonZurueckGeladen = nrW;
         if (window.WELT) { WELT.befehle.length = 0; WELT.ausgang = []; }
     }
@@ -76,10 +82,13 @@ if (!SYSTEM) {
         const schutz = parseFloat(store.get('openWaterSaisonSchutz')) || 0; if (schutz > Date.now()) store.set('openWaterNeulingBis', String(schutz));   // 48 Std. Anfängerschutz
         for (const k of ['openWaterCombatLog', 'openWaterFogCells', 'openWaterExplored', 'openWaterScoutedIslands', 'openWaterPendingScouts', 'openWaterCarryTroops', 'openWaterBefehlAus']) store.remove(k);
         try { const c = JSON.parse(store.get('openWaterCity')); if (c && typeof c === 'object') { c.wounded = 0; store.set('openWaterCity', JSON.stringify(c)); } } catch (e) {}
+        const f = wirtAb > mein && wirtAb <= neu ? WIRTSCHAFT_KOSTEN : parseFloat(store.get('openWaterSaisonRoh')) || 1;
+        if (f > 0 && f < 1) try { const r = JSON.parse(store.get('openWaterRes'));
+            if (r && typeof r === 'object') { vorher.res = store.get('openWaterRes'); for (const k of ['h', 's', 'e']) r[k] = Math.floor((+r[k] || 0) * f); store.set('openWaterRes', JSON.stringify(r)); store.set('openWaterSaisonVorher', JSON.stringify(vorher)); } } catch (e) {}
         if (window.WELT) { WELT.befehle.length = 0; WELT.ausgang = []; }   // (welt.js hat die alten Befehle schon gelesen – sie gehören zur alten Welt)
         store.set('openWaterSaisonMein', String(neu)); saisonNeuGeladen = neu;
     }
-    for (const k of ['openWaterSaisonNeu', 'openWaterSaisonSchutz']) if (store.get(k) !== null) store.remove(k);
+    for (const k of ['openWaterSaisonNeu', 'openWaterSaisonSchutz', 'openWaterSaisonRoh']) if (store.get(k) !== null) store.remove(k);
 }
 const canvas = document.getElementById('mapCanvas');
 const ctx = canvas.getContext('2d');
@@ -281,8 +290,8 @@ const MEGA_TEMPLE_MULT = 8;        // Mega-Tempel (centre): 8x a normal temple's
 const GUARDIAN_TEMPLE_MULT = 3;    // Wächter-Tempel (the 4 guardian islands): 3x
 function templeBaseMult(isl) { return isl.type === 'megaTemple' ? MEGA_TEMPLE_MULT : isl.guardian ? GUARDIAN_TEMPLE_MULT : 1; }
 const TEMPLE_GEMS_PER_TICK = 0.0015;   // ~5 Gems an hour (up to ~24 held with a full Tempelschrein): a few hundred a day, not tens of thousands
-const TEMPLE_COIN_BONUS_PER_TICK = 15;
-const TEMPLE_TROOP_BONUS_PER_TICK = 6;
+const TEMPLE_COIN_BONUS_PER_TICK = 15 * WIRTSCHAFT_ERTRAG;    // 15 Münzen und 6 Truppen pro Stunde (Gems bleiben wie sie sind)
+const TEMPLE_TROOP_BONUS_PER_TICK = 6 * WIRTSCHAFT_ERTRAG;
 const TEMPLE_HOLD_STREAK_MS = 30 * 60 * 1000; // 30min to reach the max hold bonus
 const TEMPLE_HOLD_STREAK_MAX_MULT = 2; // holding it long enough doubles its output
 
@@ -359,11 +368,13 @@ function baseDefenseForLevel(level) {
 function defenseForLevel(level) {
     return Math.round(baseDefenseForLevel(level) * (1 + armorDefensePct() / 100));
 }
+// Ertrag je Produktions-Tick (1 s, mit „Geschwindigkeit“ kürzer): der runde Wert der Stufe kommt pro STUNDE (Alexander 5.10.) –
+// je Tick also ein Bruchteil, die Reste sammeln prodCarry/botProdCarry (06d), damit nichts verloren geht
 function coinsPerTick(level) {
-    return Math.round(BASE_COINS * Math.pow(PRODUCTION_GROWTH, Math.min(level, MAX_BASE_LEVEL) - 1));
+    return Math.round(BASE_COINS * Math.pow(PRODUCTION_GROWTH, Math.min(level, MAX_BASE_LEVEL) - 1)) * WIRTSCHAFT_ERTRAG;
 }
 function troopsPerTick(level) {
-    return Math.round(BASE_TROOPS * Math.pow(PRODUCTION_GROWTH, Math.min(level, MAX_BASE_LEVEL) - 1));
+    return Math.round(BASE_TROOPS * Math.pow(PRODUCTION_GROWTH, Math.min(level, MAX_BASE_LEVEL) - 1)) * WIRTSCHAFT_ERTRAG;
 }
 function upgradeCostRoh(level) { return Math.round(UPGRADE_BASE_COST * Math.pow(UPGRADE_COST_GROWTH, level - 1)); }   // ohne Rabatt
 function upgradeCost(level) {                    // Wochen-Event „Bauherr“: 20 % günstiger
@@ -1224,7 +1235,7 @@ function totalTroopProductionPerTick() {
     for (const ownedId of ownedIslands) {
         sum += troopsPerTick(islandLevels[ownedId] || 1) * m;
         const isl = islandById[ownedId];
-        if (isl && (isl.type === 'temple' || isl.type === 'megaTemple')) sum += Math.round(TEMPLE_TROOP_BONUS_PER_TICK * templeBaseMult(isl) * templeHoldMultiplier(ownedId) * shrineMult('player'));
+        if (isl && (isl.type === 'temple' || isl.type === 'megaTemple')) sum += TEMPLE_TROOP_BONUS_PER_TICK * templeBaseMult(isl) * templeHoldMultiplier(ownedId) * shrineMult('player');
     }
     return sum;
 }
@@ -1234,10 +1245,15 @@ function totalCoinProductionPerTick() {
     for (const ownedId of ownedIslands) {
         sum += coinsPerTick(islandLevels[ownedId] || 1) * m;
         const isl = islandById[ownedId];
-        if (isl && (isl.type === 'temple' || isl.type === 'megaTemple')) sum += Math.round(TEMPLE_COIN_BONUS_PER_TICK * templeBaseMult(isl) * templeHoldMultiplier(ownedId) * shrineMult('player'));
+        if (isl && (isl.type === 'temple' || isl.type === 'megaTemple')) sum += TEMPLE_COIN_BONUS_PER_TICK * templeBaseMult(isl) * templeHoldMultiplier(ownedId) * shrineMult('player');
     }
     return sum;
 }
+// Ertrag pro Stunde (Alexander 5.10.: überall „pro Stunde“ wie Million Lords): je Tick × Ticks in einer Stunde (Tick-Länge mit
+// der Fähigkeit „Geschwindigkeit“); unter 100 mit einer Nachkommastelle, damit kleine Werte nicht als 0 erscheinen
+const proStunde = (jeTick, ms) => jeTick * 3600000 / (ms || productionTickMs());
+const NF_1 = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 1 });
+function fmtStunde(n) { return Math.abs(n) >= 100 ? fmtNum(Math.round(n)) : NF_1.format(Math.round(n * 10) / 10); }
 function setText(el, v) { v = String(v); if (el && el.textContent !== v) el.textContent = v; }        // DOM writes only on a change: an equal write still costs a layout
 function setShown(el, on) { const d = on ? 'block' : 'none'; if (el && el.style.display !== d) el.style.display = d; }
 function updateHud() {
@@ -5033,10 +5049,9 @@ function renderProfile(live) {                  // live = the per-second refresh
     const kCoinsEl = document.getElementById('kCoins');
     setText(kCoinsEl, fmtCompact(Math.floor(coins)));
     kCoinsEl.title = fmtNum(Math.floor(coins)) + ' Münzen';
-    setText(document.getElementById('kTroopsRate'),
-        '+' + fmtNum(Math.round(totalTroopProductionPerTick())));
-    setText(document.getElementById('kCoinsRate'),
-        '+' + fmtNum(Math.round(totalCoinProductionPerTick())));
+    const hp = hourProduction('player');                 // alle Basen zusammen (mit Tempeln und Boni), pro Stunde – genau das kommt an
+    setText(document.getElementById('kTroopsRate'), '+' + fmtStunde(hp.troops));
+    setText(document.getElementById('kCoinsRate'), '+' + fmtStunde(hp.coins));
 
     const progressPct = Math.round(ownedIslands.size / islands.length * 100);
     const avatarRing = document.getElementById('pAvatarRing');
@@ -6757,7 +6772,9 @@ function hourProduction(who) {                       // what an empire makes in 
     if (who === 'player') { const k = 3600000 / productionTickMs(); return { coins: totalCoinProductionPerTick() * k, troops: totalTroopProductionPerTick() * k }; }
     const own = botOwnedIslands[who]; if (!own) return { coins: 0, troops: 0 };
     const bm = botMults(who), rb = rulerOwner() === who ? RULER_BONUS : 1, k = 3600000 / botTickMs(who); let c = 0, t = 0;
-    for (const id of own) { const L = islandLevels[id] || 1; c += coinsPerTick(L) * rb * bm.coins; t += troopsPerTick(L) * rb * bm.troops; }
+    for (const id of own) { const L = islandLevels[id] || 1; c += coinsPerTick(L) * rb * bm.coins; t += troopsPerTick(L) * rb * bm.troops;
+        const isl = islandById[id];                    // Tempel wie bei dir (produceTicks)
+        if (isl && (isl.type === 'temple' || isl.type === 'megaTemple')) { const mult = templeBaseMult(isl) * templeHoldMultiplier(id) * shrineMult(who); c += TEMPLE_COIN_BONUS_PER_TICK * mult; t += TEMPLE_TROOP_BONUS_PER_TICK * mult; } }
     return { coins: c * k, troops: t * k };
 }
 function throneAmount(who, id) { const hp = hourProduction(who);
@@ -7111,6 +7128,9 @@ shopToEquipBtn.addEventListener('click', () => {
 // correctly.
 let nextProductionTickAt = Date.now() + productionTickMs();
 const prodCarry = { coins: 0, troops: {} };      // fractions left over each tick, so small % bonuses aren't rounded away
+function truppenMitRest(carry, id, n) {          // n Truppen (auch ein Bruchteil) zur Basis id – der Rest wartet im carry auf den nächsten Tick
+    const tc = (carry[id] || 0) + n, tw = Math.floor(tc); carry[id] = tc - tw; if (tw) islandTroops[id] = (islandTroops[id] || 0) + tw;
+}
 function runProductionTick() {
     const now = Date.now();
     let ticks = 0;
@@ -7140,17 +7160,15 @@ function produceTicks(ticks) {                  // everyone's bases produce for 
         for (const ownedId of ownedIslands) {
             const level = islandLevels[ownedId] || 1;
             prodCarry.coins += coinsPerTick(level) * coinMult * ticks;
-            const tc = (prodCarry.troops[ownedId] || 0) + troopsPerTick(level) * troopMult * ticks, tw = Math.floor(tc);
-            prodCarry.troops[ownedId] = tc - tw;
-            islandTroops[ownedId] = (islandTroops[ownedId] || 0) + tw;
+            truppenMitRest(prodCarry.troops, ownedId, troopsPerTick(level) * troopMult * ticks);
             if (AUF) AUF.basisRoh('player', ownedId, level, ticks);           // Holz, Stein, Eisen je nach Landschaft (Paket D)
 
             const isl = islandById[ownedId];
             if (isl && (isl.type === 'temple' || isl.type === 'megaTemple')) {
                 const mult = templeBaseMult(isl) * templeHoldMultiplier(ownedId) * shrineMult('player');
                 gems += TEMPLE_GEMS_PER_TICK * mult * ticks;
-                coins += Math.round(TEMPLE_COIN_BONUS_PER_TICK * mult) * ticks;
-                islandTroops[rewardBaseId() ?? ownedId] += Math.round(TEMPLE_TROOP_BONUS_PER_TICK * mult) * ticks;   // bonus troops go to the capital
+                prodCarry.coins += TEMPLE_COIN_BONUS_PER_TICK * mult * ticks;
+                truppenMitRest(prodCarry.troops, rewardBaseId() ?? ownedId, TEMPLE_TROOP_BONUS_PER_TICK * mult * ticks);   // bonus troops go to the capital
             }
         }
         const cw = Math.floor(prodCarry.coins); coins += cw; prodCarry.coins -= cw;
@@ -7166,15 +7184,14 @@ function produceTicks(ticks) {                  // everyone's bases produce for 
             for (const ownedId of own) {
                 const level = islandLevels[ownedId] || 1;
                 bc.coins += coinsPerTick(level) * rb * bm.coins * bt;
-                const tc = (bc.troops[ownedId] || 0) + troopsPerTick(level) * rb * bm.troops * bt, tw = Math.floor(tc);
-                bc.troops[ownedId] = tc - tw; islandTroops[ownedId] = (islandTroops[ownedId] || 0) + tw;
+                truppenMitRest(bc.troops, ownedId, troopsPerTick(level) * rb * bm.troops * bt);
                 if (AUF) AUF.basisRoh(bot.id, ownedId, level, bt);
                 const isl = islandById[ownedId];
                 if (isl && (isl.type === 'temple' || isl.type === 'megaTemple')) {
                     const mult = templeBaseMult(isl) * templeHoldMultiplier(ownedId) * shrineMult(bot.id);
-                    bc.coins += Math.round(TEMPLE_COIN_BONUS_PER_TICK * mult) * bt;
+                    bc.coins += TEMPLE_COIN_BONUS_PER_TICK * mult * bt;
                     const to = cap !== null && cap !== undefined && own.has(cap) ? cap : ownedId;   // bonus troops go to the capital, like yours
-                    islandTroops[to] = (islandTroops[to] || 0) + Math.round(TEMPLE_TROOP_BONUS_PER_TICK * mult) * bt;
+                    truppenMitRest(bc.troops, to, TEMPLE_TROOP_BONUS_PER_TICK * mult * bt);
                     b.gems += TEMPLE_GEMS_PER_TICK * mult * bt;
                 }
             }
@@ -7243,7 +7260,7 @@ function fmtAway(ms) { const m = Math.round(ms / 60000), d = Math.floor(m / 1440
 function welcomeRows(from) {
     const rows = [], now = empireSnapshot(), log = combatLog.filter(e => e.at >= from.at);
     const lv = from.live, pr = lv ? { coins: Math.max(0, coins - lv.c0), troops: Math.max(0, now.troops - lv.t0), capped: false, thronePts: Math.max(0, (throneState.pts || 0) - lv.tp0), throneHit: null } : from.produced;
-    if (pr && (pr.coins > 0 || pr.troops > 0)) rows.push(['coin', 'Produktion' + (pr.capped ? ' (8 Std.)' : ''), '+' + fmtCompact(pr.coins) + ' · ' + fmtCompact(pr.troops) + ' Truppen']);
+    if (pr && (pr.coins > 0 || pr.troops > 0)) rows.push(['coin', 'Produktion' + (pr.capped ? ' (8 Std.)' : ''), '+' + fmtCompact(pr.coins) + ' Münzen · +' + fmtCompact(pr.troops) + ' Truppen']);
     if (pr && pr.thronePts > 0) rows.push(['crown', 'Am Thron', '+' + fmtNum(pr.thronePts) + ' Thron-Punkte']);
     if (pr && pr.throneHit) rows.push(['attack', 'Beschuss auf den Thron', fmtCompact(pr.throneHit.loss) + ' getroffen · ' + fmtCompact(pr.throneHit.w) + ' im Krankenhaus']);
     const onYou = log.filter(e => e.type === 'botAttack' && e.rolle !== 'helfer'), lost = onYou.filter(e => e.won && !e.capitalHolds).length, held = onYou.filter(e => !e.won).length;
@@ -7260,6 +7277,8 @@ function welcomeRows(from) {
     if (now.bases !== from.bases) rows.push(['castle', 'Basen', from.bases + ' → ' + now.bases]);
     if (now.wounded > (from.wounded || 0)) rows.push(['losses', 'Im Krankenhaus', fmtCompact(now.wounded) + ' Verwundete']);
     if (!rows.length) rows.push(['check', 'Alles ruhig', 'Niemand hat dich angegriffen']);
+    const hp = hourProduction('player');               // (5.10.: die Wirtschaft rechnet pro Stunde)
+    if (hp.coins > 0 || hp.troops > 0) rows.push(['hourglass', 'Ertrag pro Stunde', '+' + fmtStunde(hp.coins) + ' Münzen · +' + fmtStunde(hp.troops) + ' Truppen']);
     return rows;
 }
 function showWelcome() {
@@ -10067,7 +10086,8 @@ const FIELD_KINDS = {
 const fArt = (K, fall) => ({ dat: K.g === 'm' ? 'dem' : 'der', akk: K.g === 'm' ? 'den' : 'die', zu: K.g === 'm' ? 'zum' : 'zur' })[fall] + ' ' + K.name;   // „an der Goldmine“, „zum Steinbruch“
 // Sammeln wie bei RoK (2.10.): ein Feld leert sich in fester Zeit – außen 1 Std., ganz innen 4 Std. –, egal wie viele Truppen.
 // Die Truppen bestimmen nur, wie viel sie tragen können. Gems: außen 20, innen ~150 (vorher bis 18.000 in unter einer Minute).
-const fieldCapFor = (kind, rm) => Math.round(kind === 'gem' ? FIELD_KINDS.gem.base * Math.pow(rm, .35) : FIELD_KINDS[kind].base * rm);
+// Gold, Holz, Stein, Eisen: × WIRTSCHAFT_ERTRAG wie jede Produktion (5.10.: was vorher in einer Sekunde kam, kommt in einer Stunde) – Gems bleiben
+const fieldCapFor = (kind, rm) => kind === 'gem' ? Math.round(FIELD_KINDS.gem.base * Math.pow(rm, .35)) : Math.max(1, Math.round(FIELD_KINDS[kind].base * rm * WIRTSCHAFT_ERTRAG));
 const fieldDauerSec = rm => 3600 * (1 + 3 * Math.log(Math.max(1, rm)) / Math.log(300));
 const FIELD_REGEN_MS = 60 * 60000;
 const resFields = (() => {
@@ -10105,7 +10125,7 @@ let fieldMarches = (() => { try { return JSON.parse(store.get('openWaterFieldMar
 let fieldSaveAt = 0;
 function saveFields(now) { if (now && now - fieldSaveAt < 5000) return; fieldSaveAt = now || Date.now(); store.set('openWaterFields', JSON.stringify(fieldState)); store.set('openWaterFieldMarches', JSON.stringify(fieldMarches)); }
 window.addEventListener('pagehide', () => saveFields()); document.addEventListener('visibilitychange', () => { if (document.hidden) saveFields(); });
-function fieldInfo(f) { const st = fieldState[f.id] || (fieldState[f.id] = { left: f.cap, occ: null }); if (st.regenAt && Date.now() >= st.regenAt) { st.left = f.cap; st.regenAt = 0; } return st; }
+function fieldInfo(f) { const st = fieldState[f.id] || (fieldState[f.id] = { left: f.cap, occ: null }); if (st.regenAt && Date.now() >= st.regenAt) { st.left = f.cap; st.regenAt = 0; } if (st.left > f.cap) st.left = f.cap; return st; }   // (ein Vorrat von vor der Umstellung 5.10.: höchstens der neue)
 const fieldWhoName = who => who === 'player' ? 'Du' : (botById[who] || {}).name || '?';
 const fieldLoadCap = (f, troops) => troops * FIELD_KINDS[f.kind].load;
 const fieldCapOf = (f, o, gx) => fieldLoadCap(f, o.troops) * (1 + ((gx === undefined ? heroGatherFx(o) : gx) || HX0).carry / 100) * (AUF ? AUF.traglast(o.who) : 1);   // Packesel, Lastträger: they carry more (+ Forschung Traglast)
@@ -10187,7 +10207,7 @@ function fieldTick() {
     const due = fieldMarches.filter(m => m.resolveAt <= now);
     if (due.length) { fieldMarches = fieldMarches.filter(m => m.resolveAt > now); for (const m of due) fieldArrive(m, now); saveFields(); requestRender(); }
     for (const f of resFields) {
-        const st = fieldState[f.id]; if (!st || !st.occ) continue;
+        const st = fieldState[f.id]; if (!st || !st.occ) continue; if (st.left > f.cap) st.left = f.cap;
         const o = st.occ, gx = heroGatherFx(o), cap = fieldCapOf(f, o, gx), amt = Math.min(f.cap / f.dauer * dt * (1 + (gx ? gx.gSpd : 0) / 100) * sr * (AUF ? AUF.sammelTempo(o.who) : 1) * (typeof hdSammeln === 'function' ? hdSammeln(o.who) : 1), st.left, cap - o.got);   // (+ Forschung Sammeln)   // festes Tempo (nicht mehr Truppen × Tempo) · Spürnase: schneller
         o.got += Math.max(0, amt); st.left -= Math.max(0, amt);
         if (o.got >= cap - 1e-9 || st.left <= 0) { fieldGoHome(f, st, now); requestRender(); }
@@ -11706,8 +11726,8 @@ multiAttackConfirmBtn.addEventListener('click', () => {
 // Welt-Teil openWaterSaison = { nr, start, ende, bald (Ankündigung verschickt), jetzt (Admin-Knopf), halt (angehalten), last: { nr, top: [[wer, Macht]] } }.
 // halt = { seit, grund }: eine Sicherung mit fälligem Reset wurde zurückgespielt (server.php saison_anhalten) – kein Reset, bis der
 // Admin „Neue Saison jetzt beginnen“ drückt (sonst begänne gleich wieder eine neue Saison und das Zurückspielen wäre umsonst).
-// Wer rechnet (der Weltrechner – in der Vorschau das eigene Gerät), beginnt zum Termin die neue Saison: Sonntag 18 Uhr (vor dem
-// Drachen um 19 Uhr), 8 Wochen nach dem Start. Vorher immer eine Sicherung der Welt beim Server (welt.js sicherungBitte → server.php).
+// Wer rechnet (der Weltrechner – in der Vorschau das eigene Gerät), beginnt zum Termin die neue Saison: Sonntag 18 Uhr deutscher Zeit
+// (Europe/Berlin mit Sommer-/Winterzeit – nicht die Uhr des Servers; vor dem Drachen um 19 Uhr), 8 Wochen nach dem Start. Vorher immer eine Sicherung der Welt beim Server (welt.js sicherungBitte → server.php).
 // 3 Tage vorher eine Nachricht an alle echten Spieler, im Spiel ein Countdown (Leiste unter dem HUD, Events-Fenster).
 // Ende: die besten 10 nach Macht (wie die Rangliste) bekommen Gems ins Abholfach und einen Saison-Titel für immer.
 // Bleibt: die ganze Hauptstadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Gems, Holz/Stein/Eisen, alles Gekaufte.
@@ -11715,14 +11735,25 @@ multiAttackConfirmBtn.addEventListener('click', () => {
 // damit alle Fähigkeitspunkte), Bündnisse, Märsche, Rallys, Verstärkungen, Armeen, Felder, Nebel, Kampfberichte. Die Hauptstadt zieht
 // auf einen freien Zufallsplatz am Rand (wie der Startplatz eines neuen Spielers). Mitspieler genau wie echte Spieler.
 // Der eigene Spielstand eines echten Spielers übernimmt den Reset über die Nachricht „saison“ (unten) → Neuladen → 01a-grundlagen.js.
+// Umstellung auf „pro Stunde“ (Alexander 5.10., 11b A): der ERSTE Reset danach rechnet die behaltenen Holz/Stein/Eisen × WIRTSCHAFT_KOSTEN
+// um (sonst wäre jeder mit den alten Beständen ewig reich). saison.wirtAb = die erste Saison mit der neuen Wirtschaft (fehlt: noch alt).
 const SAISON_WOCHEN = 8, SAISON_STUNDE = 18, SAISON_BALD_MS = 3 * 864e5, SAISON_ANFANG_MS = 3 * 864e5;
 const SAISON_PREISE = [3000, 2000, 1500, 500, 500, 500, 500, 500, 500, 500];   // Gems für Platz 1–10 (Vorschlag, LIESMICH)
 var saison = null, saisonSichT = 0;
 function saisonLaden() { try { saison = JSON.parse(store.get('openWaterSaison')) || null; } catch (e) { saison = null; } if (saison && !(saison.nr > 0 && saison.ende > 0)) saison = null; return saison; }
 function saisonSpeichern() { store.set('openWaterSaison', JSON.stringify(saison)); }
 saisonLaden();
-function saisonEnde(ab) {                             // der Sonntag 18 Uhr, 8 Wochen nach ab (Sommer-/Winterzeit: bis 2 Std. Spielraum)
-    const ziel = ab + SAISON_WOCHEN * 7 * 864e5, d = new Date(ziel); d.setHours(SAISON_STUNDE, 0, 0, 0);
+const BERLIN = (() => { try { return new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Berlin', hourCycle: 'h23', weekday: 'short', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' }); } catch (e) { return null; } })();
+function berlinTeile(t) { const p = {}; for (const x of BERLIN.formatToParts(new Date(t))) p[x.type] = x.value; return { y: +p.year, mo: +p.month, d: +p.day, h: +p.hour % 24, mi: +p.minute, so: p.weekday === 'Sun' }; }
+function berlinUm(y, mo, d, h) {                      // Zeitpunkt von „d.mo.y, h Uhr“ in Berlin (Tage über das Monatsende zählen weiter)
+    const soll = Date.UTC(y, mo - 1, d, h); let t = soll - 3600000;
+    for (let i = 0; i < 3; i++) { const p = berlinTeile(t); t += soll - Date.UTC(p.y, p.mo - 1, p.d, p.h, p.mi); }
+    return t;
+}
+function saisonEnde(ab) {                             // der Sonntag 18 Uhr (Berlin), 8 Wochen nach ab (bis 2 Std. Spielraum)
+    const ziel = ab + SAISON_WOCHEN * 7 * 864e5;
+    if (BERLIN) { const p = berlinTeile(ziel); for (let i = 0; i < 8; i++) { const t = berlinUm(p.y, p.mo, p.d + i, SAISON_STUNDE); if (berlinTeile(t).so && t >= ziel - 2 * 3600000) return t; } }
+    const d = new Date(ziel); d.setHours(SAISON_STUNDE, 0, 0, 0);   // (ohne Zeitzonen im Browser: die Uhr des Geräts)
     for (let i = 0; i < 8 && (d.getDay() !== 0 || d.getTime() < ziel - 2 * 3600000); i++) { d.setDate(d.getDate() + 1); d.setHours(SAISON_STUNDE, 0, 0, 0); }
     return d.getTime();
 }
@@ -11756,7 +11787,7 @@ function saisonTop() {                                // die besten 10 nach Mach
     return l.sort((a, b) => b[1] - a[1]).slice(0, SAISON_PREISE.length);
 }
 function saisonNeu(now) {
-    const alt = saison.nr, nr = alt + 1, top = saisonTop();
+    const alt = saison.nr, nr = alt + 1, top = saisonTop(), wirtAb = saison.wirtAb > 0 ? saison.wirtAb : nr, f = wirtAb === nr ? WIRTSCHAFT_KOSTEN : 1;   // f: Holz/Stein/Eisen umrechnen (nur beim ersten Reset nach der Umstellung)
     console.warn('Welt-Saison ' + alt + ' zu Ende – Saison ' + nr + ' beginnt (Top 10: ' + top.map(([w]) => (botById[w] || {}).name || w).join(', ') + ')');
     // 1) Preise: Gems ins Abholfach (Mitspieler direkt) und der Saison-Titel – feste Nummer je Saison (nie doppelt)
     top.forEach(([w], i) => evPreis(w, 'saison', 'Welt-Saison ' + alt + ' · Platz ' + (i + 1), { gems: SAISON_PREISE[i], titel: 's' + alt + 'p' + (i + 1) }, alt));
@@ -11764,18 +11795,18 @@ function saisonNeu(now) {
     const menschen = window.WELT ? Object.keys(WELT.menschen).filter(id => id !== WELT.ich && parseInt(id.slice(1), 10) > 0) : [];
     for (const id of menschen) try { WELT.deltaJetzt(id); } catch (e) { console.warn('Saison:', e); }
     // 3) die Welt neu
-    saisonWelt(now);
+    saisonWelt(now, f);
     // 4) echte Spieler: Konto beim Weltrechner zurücksetzen, die Nachricht „saison“ (sein Handy übernimmt den Reset und lädt neu) –
     //    Nummer je Reset eindeutig (mit Zeitpunkt): nach dem Zurückspielen kommt ein neuer Reset derselben Nummer sonst nie an
-    for (const id of menschen) { try { WELT.saisonKonto(id); } catch (e) { console.warn('Saison:', e); } WELT.nachricht(parseInt(id.slice(1), 10), { art: 'saison', nr, alt, neuBis: (loadBotState()[id] || {}).neuBis || now + NEULING_MS }, 'saison|' + nr + '|' + now); try { WELT.deltaBasis(id); } catch (e) {} }
-    saison = { nr, start: now, ende: saisonEnde(now), last: { nr: alt, top: top.map(([w, v]) => [neutralId(w), Math.round(v)]) } }; saisonSpeichern();
+    for (const id of menschen) { try { WELT.saisonKonto(id, f); } catch (e) { console.warn('Saison:', e); } WELT.nachricht(parseInt(id.slice(1), 10), Object.assign({ art: 'saison', nr, alt, neuBis: (loadBotState()[id] || {}).neuBis || now + NEULING_MS }, f < 1 ? { roh: f } : {}), 'saison|' + nr + '|' + now); try { WELT.deltaBasis(id); } catch (e) {} }
+    saison = { nr, start: now, ende: saisonEnde(now), wirtAb, last: { nr: alt, top: top.map(([w, v]) => [neutralId(w), Math.round(v)]) } }; saisonSpeichern();
     window.__prVorher = null;                          // (Prüfer im Weltrechner: die Welt ist gewollt so viel kleiner – neue Grundlinie)
     if (!window.WELT && !SYSTEM) {                     // (Vorschau, allein) dein Spielstand übernimmt den Reset beim Neuladen wie am Handy
-        store.set('openWaterSaisonNeu', String(nr)); try { saveGameNow(); saveProgressionNow(); flushBotState(); } catch (e) {}
+        store.set('openWaterSaisonNeu', String(nr)); if (f < 1) store.set('openWaterSaisonRoh', String(f)); try { saveGameNow(); saveProgressionNow(); flushBotState(); } catch (e) {}
         flashHint('Eine neue Welt-Saison beginnt – das Spiel lädt neu …', 4000); setTimeout(() => location.reload(), 600);
     }
 }
-function saisonWelt(now) {                            // alles Weltliche zurück, die Hauptstädte auf neue Plätze
+function saisonWelt(now, f) {                         // alles Weltliche zurück, die Hauptstädte auf neue Plätze (f < 1: Holz/Stein/Eisen umrechnen)
     const bs = loadBotState(), wer = (SYSTEM || window.WELT ? [] : ['player']).concat(BOT_DEFS.map(b => b.id).filter(id => bs[id]));
     const hatte = wer.filter(w => (w === 'player' ? ownedIslands : botOwnedIslands[w] || new Set()).size > 0);   // wer gerade Basen hat, bekommt eine Hauptstadt (die anderen wie bisher: Neustart der Mitspieler)
     // Märsche, Späher, Armeen, Felder, Barbaren-Märsche, Verstärkungen, Rallys, Bündnisse – mit allen Truppen darin
@@ -11812,7 +11843,8 @@ function saisonWelt(now) {                            // alles Weltliche zurück
     // Spieler und Mitspieler: Stufe 1, keine Fähigkeitspunkte, keine Münzen, keine Verwundeten, keine alten Pläne
     for (const w of wer) { if (w === 'player') continue; const b = bs[w];
         b.lvl = 1; b.xp = 0; b.sp = 0; b.xpNeu = 0; for (const k in b.skills || {}) b.skills[k] = 0; b.wounded = 0; b.tt = 0; botCoins[w] = 0;
-        b.rally = null; b.capWish = null; b.outAt = 0; b.vendetta = null; b.grudge = {}; b.annoy = {}; b.fails = {}; delete b.kennt; delete b.plan; }
+        b.rally = null; b.capWish = null; b.outAt = 0; b.vendetta = null; b.grudge = {}; b.annoy = {}; b.fails = {}; delete b.kennt; delete b.plan;
+        if (f < 1 && b.res) for (const k of ['h', 's', 'e']) b.res[k] = Math.floor((+b.res[k] || 0) * f); }   // (echte Spieler: ihr Handy rechnet genauso – 01a-grundlagen.js)
     capitalCache = null; ownVer++;
     saveGameNow(); flushBotState(); saveProgressionNow(); saveFields(); saveBarb(); saveArmies(); saveEv();
     requestRender();
@@ -11839,6 +11871,7 @@ if (window.WELT && !SYSTEM) {
     WELT.beiNachricht.push(function (e) {
         if (!e || e.art !== 'saison' || !(e.nr > 0) || e.nr <= (parseInt(store.get('openWaterSaisonMein'), 10) || 1)) return;   // (schon übernommen)
         WELT.saisonHalt = true; store.set('openWaterSaisonNeu', String(e.nr));                // → nach dem Neuladen übernimmt 01a-grundlagen.js den Reset
+        if (e.roh > 0 && e.roh < 1) store.set('openWaterSaisonRoh', String(e.roh));         // (erster Reset nach der Umstellung: Rohstoffe umrechnen)
         if (e.neuBis > Date.now()) store.set('openWaterSaisonSchutz', String(Math.min(e.neuBis, Date.now() + NEULING_MS)));   // Anfängerschutz (die Zeit sagt der Weltrechner)
         flashHint('Eine neue Welt-Saison beginnt – das Spiel lädt neu …', 4000); setTimeout(() => location.reload(), 1500);
     });
@@ -11934,8 +11967,8 @@ function templeBonusLine(island) {
     const heldSince = templeHoldSince[island.id];
     const heldMin = heldSince ? Math.floor((Date.now() - heldSince) / 60000) : 0;
     return '<div class="notice notice--gold">' + icon('gem') + '<span>+' +
-        fmtNum(TEMPLE_GEMS_PER_TICK * mult * 3600000 / productionTickMs()) + ' Edelsteine pro Stunde · +' +
-        fmtNum(TEMPLE_COIN_BONUS_PER_TICK * mult) + ' Münzen · +' + fmtNum(TEMPLE_TROOP_BONUS_PER_TICK * mult) + ' Truppen pro Tick' +
+        fmtStunde(proStunde(TEMPLE_GEMS_PER_TICK * mult)) + ' Edelsteine · +' +
+        fmtStunde(proStunde(TEMPLE_COIN_BONUS_PER_TICK * mult)) + ' Münzen · +' + fmtStunde(proStunde(TEMPLE_TROOP_BONUS_PER_TICK * mult)) + ' Truppen pro Stunde' +
         (heldSince ? ' · gehalten seit ' + heldMin + ' Min. (×' +
             templeHoldMultiplier(island.id).toLocaleString('de-DE', { maximumFractionDigits: 2 }) + ')' : '') + '</span></div>';
 }
@@ -11999,8 +12032,8 @@ function renderPopup() {
         liveHtml(popupStats, '<div class="stat-grid">' +
             statTile('Truppen hier', 'troops', fmtTile(troopsHere)) +
             statTile('Verteidigung', 'defense', fmtTile(effectiveDefense(island))) +
-            statTile('Münzen / s', 'coin', '+' + fmtNum(Math.round(coinsPerTick(level) * playerCoinMult() * 1000 / productionTickMs())), 'is-good') +
-            statTile('Truppen / s', 'troops', '+' + fmtNum(Math.round(troopsPerTick(level) * playerTroopMult() * 1000 / productionTickMs())), 'is-good') + '</div>' +
+            statTile('Münzen / Std.', 'coin', '+' + fmtStunde(proStunde(coinsPerTick(level) * playerCoinMult())), 'is-good') +
+            statTile('Truppen / Std.', 'troops', '+' + fmtStunde(proStunde(troopsPerTick(level) * playerTroopMult())), 'is-good') + '</div>' +
             (island.type === 'gate' ? gateControlsHtml(island) : '') +
             (isTemple ? templeBonusLine(island) : '') + throneNotice(island) + midNotice(island) + ringNotice(island));
         liveHtml(upgradeCostLabel, level >= MAX_BASE_LEVEL ? 'Max. Stufe' : icon('coin', 'icon--coin') + fmtCompact(upgradeCost(level)));
@@ -13103,10 +13136,11 @@ if (window.WELT) {
         return 0;                                       // dazwischen: unklar, wie viel unterwegs schon drin ist – das Konto bleibt
     }
     // Rohstoffe (Paket D, 3B): ein Konto je Rohstoff wie bei den Münzen = was der Weltrechner ihm geschickt hat. Mehr im Profil
-    // (Markt-Kauf) geht nur im Spielraum pro Stunde (2.000 + ¼ Stunde seiner Einnahmen + Markt-Tageslimit), der Rest
+    // (Markt-Kauf) geht nur im Spielraum pro Stunde (ROH_RAUM + ¼ Stunde seiner Einnahmen + Markt-Tageslimit), der Rest
     // ist auffällig und zählt nicht. Was sein Profil weniger zeigt, hat er ausgegeben (Topf hb.rA – bezahlt Burg, Gebäude,
     // Forschung, Truppen-Stufe im Hauptbuch).
     const ROHK = ['h', 's', 'e'];
+    const ROH_RAUM = Math.max(10, Math.round(2000 * WIRTSCHAFT_KOSTEN));   // (vor der Umstellung 5.10.: 2.000 – ein Bestand, umgerechnet wie die Kosten; 10 gegen Rundungen)
     function rohWacheProfil(who, m, p, P, M, now) {
         if (!p || !p.res || typeof p.res !== 'object') return;
         m.rDeckel = null; m.rDeckelP = p;              // (die Grenze gilt für genau dieses Profil – auch wenn es nochmal angewendet wird)
@@ -13120,7 +13154,7 @@ if (window.WELT) {
             const pr = nn(p.res[k]), kk = m.rk[k]; let mehr = kontoProfil(kk, pr, P[k] || 0, M[k] || 0, now);
             if (kk.vor > 0) { if (hb) hb.rA[k] = nn(hb.rA[k]) + kk.vor; kk.vor = 0; }      // ausgegeben → Topf
             if (mehr <= 0) continue;
-            const stunde = m.rEin.reduce((a, x) => a + x[k], 0), raum = Math.max(0, 2000 + .25 * Math.max(stunde, (m.rHp0 || {})[k] || 0) - m.rsr.reduce((a, x) => a + (x[k] || 0), 0));
+            const stunde = m.rEin.reduce((a, x) => a + x[k], 0), raum = Math.max(0, ROH_RAUM + .25 * Math.max(stunde, (m.rHp0 || {})[k] || 0) - m.rsr.reduce((a, x) => a + (x[k] || 0), 0));
             const nimm = Math.min(mehr, raum); if (nimm > 0) m.rsr.push({ t: now, [k]: nimm }); mehr -= nimm;
             if (mehr > 0 && d && hb && lim > d.rm.n) {     // Markt-Kauf: höchstens das Tageslimit – und die Münzen dafür werden abgebucht (vorher: jede Stunde neu und gratis)
                 const markt = Math.min(mehr, Math.floor(lim - d.rm.n));
@@ -13700,7 +13734,9 @@ if (window.WELT) {
     // Stufe 1, Fähigkeiten 0 ohne Rücksetz-Gems), Münzen 0, keine Verwundeten, Nebel neu. Bleibt: Stadt, Forschung, Ausrüstung,
     // Helden, Schild, Gems und Rohstoffe (Konten, Topf des Ausgegebenen – ein laufender Bau ist schon bezahlt). Sein altes Profil
     // zählt nicht mehr (welt.js: erst das Profil der neuen Saison) – so gibt es keine Fehlalarme, wenn sein Handy später kommt.
-    WELT.saisonKonto = function (who) {
+    // f < 1: erster Reset nach der Umstellung auf „pro Stunde“ – Rohstoff-Konten und die Töpfe des Ausgegebenen (Rohstoffe, Münzen,
+    // Admin-Münzen) werden wie seine Bestände umgerechnet (aufgerundet: sein Handy rundet ab – nie ein Fehlalarm, nie eine Lücke).
+    WELT.saisonKonto = function (who, f) {
         const b = loadBotState()[who]; if (!b) return;
         const m = wacheMem[who], hb = hbDa(who), d = wd(who);
         if (m) { for (const art in m.warte) for (const x of m.warte[art]) befehlFertig(x);   // (wartende Befehle der alten Welt: erledigt)
@@ -13708,6 +13744,10 @@ if (window.WELT) {
         delete wacheMem[who]; delete nbMem[who];      // (beim nächsten Ansehen neu – aus den Werten unten)
         if (d) { d.u = 0; d.w = 0; d.lm = 1; d.lv = 1; delete d.fl; }
         if (hb) { hb.sk = {}; hb.lvG = 1; hb.nb = ''; hb.sp = []; delete hb.nbAlle; hb.w = {}; }
+        if (f > 0 && f < 1) {
+            if (hb) { for (const k of ROHK) { if (hb.rU) hb.rU[k] = Math.ceil(nn(hb.rU[k]) * f); hb.rA[k] = Math.floor(nn(hb.rA[k]) * f); } hb.cA = Math.floor(nn(hb.cA) * f); }
+            if (d) d.gC = Math.floor(nn(d.gC) * f);
+        }
         const x = WELT.menschen[who]; if (x) { x.profil = null; x.profilNeu = false; }
         saveBotState();
     };

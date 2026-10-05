@@ -163,10 +163,9 @@ function renderProfile(live) {                  // live = the per-second refresh
     const kCoinsEl = document.getElementById('kCoins');
     setText(kCoinsEl, fmtCompact(Math.floor(coins)));
     kCoinsEl.title = fmtNum(Math.floor(coins)) + ' Münzen';
-    setText(document.getElementById('kTroopsRate'),
-        '+' + fmtNum(Math.round(totalTroopProductionPerTick())));
-    setText(document.getElementById('kCoinsRate'),
-        '+' + fmtNum(Math.round(totalCoinProductionPerTick())));
+    const hp = hourProduction('player');                 // alle Basen zusammen (mit Tempeln und Boni), pro Stunde – genau das kommt an
+    setText(document.getElementById('kTroopsRate'), '+' + fmtStunde(hp.troops));
+    setText(document.getElementById('kCoinsRate'), '+' + fmtStunde(hp.coins));
 
     const progressPct = Math.round(ownedIslands.size / islands.length * 100);
     const avatarRing = document.getElementById('pAvatarRing');

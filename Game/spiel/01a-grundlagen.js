@@ -1,4 +1,7 @@
 // Teil 01a-grundlagen.js: Grundlagen: rechnet(), Zahlen- und Zeit-Anzeige, Bausteine für Kampfbericht und Live-Anzeige, Konstanten
+// Wirtschaft (Alexander 5.10.): Ertrag pro Stunde statt pro Sekunde; Kosten-Faktor siehe LIESMICH 11b A
+const WIRTSCHAFT_ERTRAG = 1 / 3600;   // was früher pro Sekunde kam, kommt jetzt pro Stunde
+const WIRTSCHAFT_KOSTEN = 1 / 1800;   // Kosten/Gegner: kleiner, aber nur halb so stark wie der Ertrag → alles etwa 2× langsamer als vorher (nie zu einfach)
 // Rechnet dieses Spiel gerade die Welt (Weltrechner)? Ohne welt.js: immer.
 function rechnet() { return !window.WELT || WELT.leiter; }
 // Läuft hier der Weltrechner auf dem Server (weltrechner/start.js)? Dann: kein eigener Spieler, keine Basis, nichts zeichnen.
@@ -48,14 +51,16 @@ if (!SYSTEM && store.get('openWaterReset') !== RESET_VERSION) {   // (nie beim W
 // Weg: Stufe (→ 1, damit alle Fähigkeitspunkte), Münzen (→ 0 wie ein neuer Spieler), Verwundete, Kampfberichte, Nebel, Späher,
 // alte Befehle. (Basen, Truppen, Bündnis, Märsche stehen in der Welt – die setzt der Weltrechner zurück.)
 // Anfängerschutz (Alexander 5.10.): nach dem Reset 48 Std. wie ein neuer Spieler – die Zeit kommt vom Weltrechner (openWaterSaisonSchutz).
+// Erster Reset nach der Umstellung auf „pro Stunde“ (11b A): Holz/Stein/Eisen × WIRTSCHAFT_KOSTEN (openWaterSaisonRoh aus der Nachricht,
+// sonst aus der Welt: saison.wirtAb liegt zwischen der alten und der neuen Saison dieses Spielstands) – wie beim Weltrechner abgerundet.
 // Zurückgespielte Sicherung (Alexander 5.10.): ist die Saison der Welt älter als die dieses Spielstands, holt er sich den Stand von
 // vor dem Reset zurück (openWaterSaisonVorher, beim Reset gemerkt) – die Welt (Server) ist maßgeblich, das Handy folgt nur.
 var saisonNeuGeladen = 0, saisonZurueckGeladen = 0;  // (09f-saison.js: Hinweis nach dem Neuladen)
 const SAISON_PRIVAT = ['openWaterLevel', 'openWaterXp', 'openWaterSkills', 'openWaterSkillPoints', 'openWaterCoins', 'openWaterNeulingBis'];   // (was der Reset ändert und das Zurückspielen wiederholt)
 if (!SYSTEM) {
-    let mein = parseInt(store.get('openWaterSaisonMein'), 10) || 0, nrW = 0;
+    let mein = parseInt(store.get('openWaterSaisonMein'), 10) || 0, nrW = 0, wirtAb = 0;
     const neu = parseInt(store.get('openWaterSaisonNeu'), 10) || 0;
-    try { nrW = (JSON.parse(store.get('openWaterSaison')) || {}).nr | 0; } catch (e) {}
+    try { const sw = JSON.parse(store.get('openWaterSaison')) || {}; nrW = sw.nr | 0; wirtAb = sw.wirtAb | 0; } catch (e) {}
     if (!mein) {                                     // ganz neu: die laufende Saison · ein Spielstand von vor der Saison-Regel: Saison 1
         mein = store.get('openWaterLevel') === null && store.get('openWaterCity') === null ? Math.max(1, nrW) : 1;
         store.set('openWaterSaisonMein', String(mein));
@@ -63,7 +68,8 @@ if (!SYSTEM) {
     if (nrW > 0 && mein > nrW && !(neu > mein)) {    // die Welt ist wieder in einer älteren Saison (Sicherung zurückgespielt)
         let v = null; try { v = JSON.parse(store.get('openWaterSaisonVorher')); } catch (e) {}
         if (v && v.nr === nrW && v.k) { for (const k of SAISON_PRIVAT) { if (typeof v.k[k] === 'string') store.set(k, v.k[k]); else if (k === 'openWaterNeulingBis') store.set(k, '0'); else store.remove(k); }   // (ohne NeulingBis gäbe 10d-welt-weltrechner.js neuen Schutz)
-            try { const c = JSON.parse(store.get('openWaterCity')); if (c && typeof c === 'object' && v.w >= 0) { c.wounded = v.w; store.set('openWaterCity', JSON.stringify(c)); } } catch (e) {} }
+            try { const c = JSON.parse(store.get('openWaterCity')); if (c && typeof c === 'object' && v.w >= 0) { c.wounded = v.w; store.set('openWaterCity', JSON.stringify(c)); } } catch (e) {}
+            if (typeof v.res === 'string') store.set('openWaterRes', v.res); }   // (Rohstoffe vor der Umrechnung)
         mein = nrW; store.set('openWaterSaisonMein', String(mein)); saisonZurueckGeladen = nrW;
         if (window.WELT) { WELT.befehle.length = 0; WELT.ausgang = []; }
     }
@@ -76,10 +82,13 @@ if (!SYSTEM) {
         const schutz = parseFloat(store.get('openWaterSaisonSchutz')) || 0; if (schutz > Date.now()) store.set('openWaterNeulingBis', String(schutz));   // 48 Std. Anfängerschutz
         for (const k of ['openWaterCombatLog', 'openWaterFogCells', 'openWaterExplored', 'openWaterScoutedIslands', 'openWaterPendingScouts', 'openWaterCarryTroops', 'openWaterBefehlAus']) store.remove(k);
         try { const c = JSON.parse(store.get('openWaterCity')); if (c && typeof c === 'object') { c.wounded = 0; store.set('openWaterCity', JSON.stringify(c)); } } catch (e) {}
+        const f = wirtAb > mein && wirtAb <= neu ? WIRTSCHAFT_KOSTEN : parseFloat(store.get('openWaterSaisonRoh')) || 1;
+        if (f > 0 && f < 1) try { const r = JSON.parse(store.get('openWaterRes'));
+            if (r && typeof r === 'object') { vorher.res = store.get('openWaterRes'); for (const k of ['h', 's', 'e']) r[k] = Math.floor((+r[k] || 0) * f); store.set('openWaterRes', JSON.stringify(r)); store.set('openWaterSaisonVorher', JSON.stringify(vorher)); } } catch (e) {}
         if (window.WELT) { WELT.befehle.length = 0; WELT.ausgang = []; }   // (welt.js hat die alten Befehle schon gelesen – sie gehören zur alten Welt)
         store.set('openWaterSaisonMein', String(neu)); saisonNeuGeladen = neu;
     }
-    for (const k of ['openWaterSaisonNeu', 'openWaterSaisonSchutz']) if (store.get(k) !== null) store.remove(k);
+    for (const k of ['openWaterSaisonNeu', 'openWaterSaisonSchutz', 'openWaterSaisonRoh']) if (store.get(k) !== null) store.remove(k);
 }
 const canvas = document.getElementById('mapCanvas');
 const ctx = canvas.getContext('2d');

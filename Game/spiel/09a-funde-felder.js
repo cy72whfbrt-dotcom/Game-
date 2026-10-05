@@ -153,7 +153,8 @@ const FIELD_KINDS = {
 const fArt = (K, fall) => ({ dat: K.g === 'm' ? 'dem' : 'der', akk: K.g === 'm' ? 'den' : 'die', zu: K.g === 'm' ? 'zum' : 'zur' })[fall] + ' ' + K.name;   // „an der Goldmine“, „zum Steinbruch“
 // Sammeln wie bei RoK (2.10.): ein Feld leert sich in fester Zeit – außen 1 Std., ganz innen 4 Std. –, egal wie viele Truppen.
 // Die Truppen bestimmen nur, wie viel sie tragen können. Gems: außen 20, innen ~150 (vorher bis 18.000 in unter einer Minute).
-const fieldCapFor = (kind, rm) => Math.round(kind === 'gem' ? FIELD_KINDS.gem.base * Math.pow(rm, .35) : FIELD_KINDS[kind].base * rm);
+// Gold, Holz, Stein, Eisen: × WIRTSCHAFT_ERTRAG wie jede Produktion (5.10.: was vorher in einer Sekunde kam, kommt in einer Stunde) – Gems bleiben
+const fieldCapFor = (kind, rm) => kind === 'gem' ? Math.round(FIELD_KINDS.gem.base * Math.pow(rm, .35)) : Math.max(1, Math.round(FIELD_KINDS[kind].base * rm * WIRTSCHAFT_ERTRAG));
 const fieldDauerSec = rm => 3600 * (1 + 3 * Math.log(Math.max(1, rm)) / Math.log(300));
 const FIELD_REGEN_MS = 60 * 60000;
 const resFields = (() => {
@@ -191,7 +192,7 @@ let fieldMarches = (() => { try { return JSON.parse(store.get('openWaterFieldMar
 let fieldSaveAt = 0;
 function saveFields(now) { if (now && now - fieldSaveAt < 5000) return; fieldSaveAt = now || Date.now(); store.set('openWaterFields', JSON.stringify(fieldState)); store.set('openWaterFieldMarches', JSON.stringify(fieldMarches)); }
 window.addEventListener('pagehide', () => saveFields()); document.addEventListener('visibilitychange', () => { if (document.hidden) saveFields(); });
-function fieldInfo(f) { const st = fieldState[f.id] || (fieldState[f.id] = { left: f.cap, occ: null }); if (st.regenAt && Date.now() >= st.regenAt) { st.left = f.cap; st.regenAt = 0; } return st; }
+function fieldInfo(f) { const st = fieldState[f.id] || (fieldState[f.id] = { left: f.cap, occ: null }); if (st.regenAt && Date.now() >= st.regenAt) { st.left = f.cap; st.regenAt = 0; } if (st.left > f.cap) st.left = f.cap; return st; }   // (ein Vorrat von vor der Umstellung 5.10.: höchstens der neue)
 const fieldWhoName = who => who === 'player' ? 'Du' : (botById[who] || {}).name || '?';
 const fieldLoadCap = (f, troops) => troops * FIELD_KINDS[f.kind].load;
 const fieldCapOf = (f, o, gx) => fieldLoadCap(f, o.troops) * (1 + ((gx === undefined ? heroGatherFx(o) : gx) || HX0).carry / 100) * (AUF ? AUF.traglast(o.who) : 1);   // Packesel, Lastträger: they carry more (+ Forschung Traglast)
@@ -273,7 +274,7 @@ function fieldTick() {
     const due = fieldMarches.filter(m => m.resolveAt <= now);
     if (due.length) { fieldMarches = fieldMarches.filter(m => m.resolveAt > now); for (const m of due) fieldArrive(m, now); saveFields(); requestRender(); }
     for (const f of resFields) {
-        const st = fieldState[f.id]; if (!st || !st.occ) continue;
+        const st = fieldState[f.id]; if (!st || !st.occ) continue; if (st.left > f.cap) st.left = f.cap;
         const o = st.occ, gx = heroGatherFx(o), cap = fieldCapOf(f, o, gx), amt = Math.min(f.cap / f.dauer * dt * (1 + (gx ? gx.gSpd : 0) / 100) * sr * (AUF ? AUF.sammelTempo(o.who) : 1) * (typeof hdSammeln === 'function' ? hdSammeln(o.who) : 1), st.left, cap - o.got);   // (+ Forschung Sammeln)   // festes Tempo (nicht mehr Truppen × Tempo) · Spürnase: schneller
         o.got += Math.max(0, amt); st.left -= Math.max(0, amt);
         if (o.got >= cap - 1e-9 || st.left <= 0) { fieldGoHome(f, st, now); requestRender(); }

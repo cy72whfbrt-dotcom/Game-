@@ -239,10 +239,11 @@ if (window.WELT) {
         return 0;                                       // dazwischen: unklar, wie viel unterwegs schon drin ist – das Konto bleibt
     }
     // Rohstoffe (Paket D, 3B): ein Konto je Rohstoff wie bei den Münzen = was der Weltrechner ihm geschickt hat. Mehr im Profil
-    // (Markt-Kauf) geht nur im Spielraum pro Stunde (2.000 + ¼ Stunde seiner Einnahmen + Markt-Tageslimit), der Rest
+    // (Markt-Kauf) geht nur im Spielraum pro Stunde (ROH_RAUM + ¼ Stunde seiner Einnahmen + Markt-Tageslimit), der Rest
     // ist auffällig und zählt nicht. Was sein Profil weniger zeigt, hat er ausgegeben (Topf hb.rA – bezahlt Burg, Gebäude,
     // Forschung, Truppen-Stufe im Hauptbuch).
     const ROHK = ['h', 's', 'e'];
+    const ROH_RAUM = Math.max(10, Math.round(2000 * WIRTSCHAFT_KOSTEN));   // (vor der Umstellung 5.10.: 2.000 – ein Bestand, umgerechnet wie die Kosten; 10 gegen Rundungen)
     function rohWacheProfil(who, m, p, P, M, now) {
         if (!p || !p.res || typeof p.res !== 'object') return;
         m.rDeckel = null; m.rDeckelP = p;              // (die Grenze gilt für genau dieses Profil – auch wenn es nochmal angewendet wird)
@@ -256,7 +257,7 @@ if (window.WELT) {
             const pr = nn(p.res[k]), kk = m.rk[k]; let mehr = kontoProfil(kk, pr, P[k] || 0, M[k] || 0, now);
             if (kk.vor > 0) { if (hb) hb.rA[k] = nn(hb.rA[k]) + kk.vor; kk.vor = 0; }      // ausgegeben → Topf
             if (mehr <= 0) continue;
-            const stunde = m.rEin.reduce((a, x) => a + x[k], 0), raum = Math.max(0, 2000 + .25 * Math.max(stunde, (m.rHp0 || {})[k] || 0) - m.rsr.reduce((a, x) => a + (x[k] || 0), 0));
+            const stunde = m.rEin.reduce((a, x) => a + x[k], 0), raum = Math.max(0, ROH_RAUM + .25 * Math.max(stunde, (m.rHp0 || {})[k] || 0) - m.rsr.reduce((a, x) => a + (x[k] || 0), 0));
             const nimm = Math.min(mehr, raum); if (nimm > 0) m.rsr.push({ t: now, [k]: nimm }); mehr -= nimm;
             if (mehr > 0 && d && hb && lim > d.rm.n) {     // Markt-Kauf: höchstens das Tageslimit – und die Münzen dafür werden abgebucht (vorher: jede Stunde neu und gratis)
                 const markt = Math.min(mehr, Math.floor(lim - d.rm.n));
@@ -836,7 +837,9 @@ if (window.WELT) {
     // Stufe 1, Fähigkeiten 0 ohne Rücksetz-Gems), Münzen 0, keine Verwundeten, Nebel neu. Bleibt: Stadt, Forschung, Ausrüstung,
     // Helden, Schild, Gems und Rohstoffe (Konten, Topf des Ausgegebenen – ein laufender Bau ist schon bezahlt). Sein altes Profil
     // zählt nicht mehr (welt.js: erst das Profil der neuen Saison) – so gibt es keine Fehlalarme, wenn sein Handy später kommt.
-    WELT.saisonKonto = function (who) {
+    // f < 1: erster Reset nach der Umstellung auf „pro Stunde“ – Rohstoff-Konten und die Töpfe des Ausgegebenen (Rohstoffe, Münzen,
+    // Admin-Münzen) werden wie seine Bestände umgerechnet (aufgerundet: sein Handy rundet ab – nie ein Fehlalarm, nie eine Lücke).
+    WELT.saisonKonto = function (who, f) {
         const b = loadBotState()[who]; if (!b) return;
         const m = wacheMem[who], hb = hbDa(who), d = wd(who);
         if (m) { for (const art in m.warte) for (const x of m.warte[art]) befehlFertig(x);   // (wartende Befehle der alten Welt: erledigt)
@@ -844,6 +847,10 @@ if (window.WELT) {
         delete wacheMem[who]; delete nbMem[who];      // (beim nächsten Ansehen neu – aus den Werten unten)
         if (d) { d.u = 0; d.w = 0; d.lm = 1; d.lv = 1; delete d.fl; }
         if (hb) { hb.sk = {}; hb.lvG = 1; hb.nb = ''; hb.sp = []; delete hb.nbAlle; hb.w = {}; }
+        if (f > 0 && f < 1) {
+            if (hb) { for (const k of ROHK) { if (hb.rU) hb.rU[k] = Math.ceil(nn(hb.rU[k]) * f); hb.rA[k] = Math.floor(nn(hb.rA[k]) * f); } hb.cA = Math.floor(nn(hb.cA) * f); }
+            if (d) d.gC = Math.floor(nn(d.gC) * f);
+        }
         const x = WELT.menschen[who]; if (x) { x.profil = null; x.profilNeu = false; }
         saveBotState();
     };

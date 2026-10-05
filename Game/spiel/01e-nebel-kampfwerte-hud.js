@@ -204,7 +204,7 @@ function totalTroopProductionPerTick() {
     for (const ownedId of ownedIslands) {
         sum += troopsPerTick(islandLevels[ownedId] || 1) * m;
         const isl = islandById[ownedId];
-        if (isl && (isl.type === 'temple' || isl.type === 'megaTemple')) sum += Math.round(TEMPLE_TROOP_BONUS_PER_TICK * templeBaseMult(isl) * templeHoldMultiplier(ownedId) * shrineMult('player'));
+        if (isl && (isl.type === 'temple' || isl.type === 'megaTemple')) sum += TEMPLE_TROOP_BONUS_PER_TICK * templeBaseMult(isl) * templeHoldMultiplier(ownedId) * shrineMult('player');
     }
     return sum;
 }
@@ -214,10 +214,15 @@ function totalCoinProductionPerTick() {
     for (const ownedId of ownedIslands) {
         sum += coinsPerTick(islandLevels[ownedId] || 1) * m;
         const isl = islandById[ownedId];
-        if (isl && (isl.type === 'temple' || isl.type === 'megaTemple')) sum += Math.round(TEMPLE_COIN_BONUS_PER_TICK * templeBaseMult(isl) * templeHoldMultiplier(ownedId) * shrineMult('player'));
+        if (isl && (isl.type === 'temple' || isl.type === 'megaTemple')) sum += TEMPLE_COIN_BONUS_PER_TICK * templeBaseMult(isl) * templeHoldMultiplier(ownedId) * shrineMult('player');
     }
     return sum;
 }
+// Ertrag pro Stunde (Alexander 5.10.: überall „pro Stunde“ wie Million Lords): je Tick × Ticks in einer Stunde (Tick-Länge mit
+// der Fähigkeit „Geschwindigkeit“); unter 100 mit einer Nachkommastelle, damit kleine Werte nicht als 0 erscheinen
+const proStunde = (jeTick, ms) => jeTick * 3600000 / (ms || productionTickMs());
+const NF_1 = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 1 });
+function fmtStunde(n) { return Math.abs(n) >= 100 ? fmtNum(Math.round(n)) : NF_1.format(Math.round(n * 10) / 10); }
 function setText(el, v) { v = String(v); if (el && el.textContent !== v) el.textContent = v; }        // DOM writes only on a change: an equal write still costs a layout
 function setShown(el, on) { const d = on ? 'block' : 'none'; if (el && el.style.display !== d) el.style.display = d; }
 function updateHud() {

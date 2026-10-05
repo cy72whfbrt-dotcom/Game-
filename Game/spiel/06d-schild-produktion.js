@@ -150,6 +150,9 @@ shopToEquipBtn.addEventListener('click', () => {
 // correctly.
 let nextProductionTickAt = Date.now() + productionTickMs();
 const prodCarry = { coins: 0, troops: {} };      // fractions left over each tick, so small % bonuses aren't rounded away
+function truppenMitRest(carry, id, n) {          // n Truppen (auch ein Bruchteil) zur Basis id – der Rest wartet im carry auf den nächsten Tick
+    const tc = (carry[id] || 0) + n, tw = Math.floor(tc); carry[id] = tc - tw; if (tw) islandTroops[id] = (islandTroops[id] || 0) + tw;
+}
 function runProductionTick() {
     const now = Date.now();
     let ticks = 0;
@@ -179,17 +182,15 @@ function produceTicks(ticks) {                  // everyone's bases produce for 
         for (const ownedId of ownedIslands) {
             const level = islandLevels[ownedId] || 1;
             prodCarry.coins += coinsPerTick(level) * coinMult * ticks;
-            const tc = (prodCarry.troops[ownedId] || 0) + troopsPerTick(level) * troopMult * ticks, tw = Math.floor(tc);
-            prodCarry.troops[ownedId] = tc - tw;
-            islandTroops[ownedId] = (islandTroops[ownedId] || 0) + tw;
+            truppenMitRest(prodCarry.troops, ownedId, troopsPerTick(level) * troopMult * ticks);
             if (AUF) AUF.basisRoh('player', ownedId, level, ticks);           // Holz, Stein, Eisen je nach Landschaft (Paket D)
 
             const isl = islandById[ownedId];
             if (isl && (isl.type === 'temple' || isl.type === 'megaTemple')) {
                 const mult = templeBaseMult(isl) * templeHoldMultiplier(ownedId) * shrineMult('player');
                 gems += TEMPLE_GEMS_PER_TICK * mult * ticks;
-                coins += Math.round(TEMPLE_COIN_BONUS_PER_TICK * mult) * ticks;
-                islandTroops[rewardBaseId() ?? ownedId] += Math.round(TEMPLE_TROOP_BONUS_PER_TICK * mult) * ticks;   // bonus troops go to the capital
+                prodCarry.coins += TEMPLE_COIN_BONUS_PER_TICK * mult * ticks;
+                truppenMitRest(prodCarry.troops, rewardBaseId() ?? ownedId, TEMPLE_TROOP_BONUS_PER_TICK * mult * ticks);   // bonus troops go to the capital
             }
         }
         const cw = Math.floor(prodCarry.coins); coins += cw; prodCarry.coins -= cw;
@@ -205,15 +206,14 @@ function produceTicks(ticks) {                  // everyone's bases produce for 
             for (const ownedId of own) {
                 const level = islandLevels[ownedId] || 1;
                 bc.coins += coinsPerTick(level) * rb * bm.coins * bt;
-                const tc = (bc.troops[ownedId] || 0) + troopsPerTick(level) * rb * bm.troops * bt, tw = Math.floor(tc);
-                bc.troops[ownedId] = tc - tw; islandTroops[ownedId] = (islandTroops[ownedId] || 0) + tw;
+                truppenMitRest(bc.troops, ownedId, troopsPerTick(level) * rb * bm.troops * bt);
                 if (AUF) AUF.basisRoh(bot.id, ownedId, level, bt);
                 const isl = islandById[ownedId];
                 if (isl && (isl.type === 'temple' || isl.type === 'megaTemple')) {
                     const mult = templeBaseMult(isl) * templeHoldMultiplier(ownedId) * shrineMult(bot.id);
-                    bc.coins += Math.round(TEMPLE_COIN_BONUS_PER_TICK * mult) * bt;
+                    bc.coins += TEMPLE_COIN_BONUS_PER_TICK * mult * bt;
                     const to = cap !== null && cap !== undefined && own.has(cap) ? cap : ownedId;   // bonus troops go to the capital, like yours
-                    islandTroops[to] = (islandTroops[to] || 0) + Math.round(TEMPLE_TROOP_BONUS_PER_TICK * mult) * bt;
+                    truppenMitRest(bc.troops, to, TEMPLE_TROOP_BONUS_PER_TICK * mult * bt);
                     b.gems += TEMPLE_GEMS_PER_TICK * mult * bt;
                 }
             }
@@ -282,7 +282,7 @@ function fmtAway(ms) { const m = Math.round(ms / 60000), d = Math.floor(m / 1440
 function welcomeRows(from) {
     const rows = [], now = empireSnapshot(), log = combatLog.filter(e => e.at >= from.at);
     const lv = from.live, pr = lv ? { coins: Math.max(0, coins - lv.c0), troops: Math.max(0, now.troops - lv.t0), capped: false, thronePts: Math.max(0, (throneState.pts || 0) - lv.tp0), throneHit: null } : from.produced;
-    if (pr && (pr.coins > 0 || pr.troops > 0)) rows.push(['coin', 'Produktion' + (pr.capped ? ' (8 Std.)' : ''), '+' + fmtCompact(pr.coins) + ' · ' + fmtCompact(pr.troops) + ' Truppen']);
+    if (pr && (pr.coins > 0 || pr.troops > 0)) rows.push(['coin', 'Produktion' + (pr.capped ? ' (8 Std.)' : ''), '+' + fmtCompact(pr.coins) + ' Münzen · +' + fmtCompact(pr.troops) + ' Truppen']);
     if (pr && pr.thronePts > 0) rows.push(['crown', 'Am Thron', '+' + fmtNum(pr.thronePts) + ' Thron-Punkte']);
     if (pr && pr.throneHit) rows.push(['attack', 'Beschuss auf den Thron', fmtCompact(pr.throneHit.loss) + ' getroffen · ' + fmtCompact(pr.throneHit.w) + ' im Krankenhaus']);
     const onYou = log.filter(e => e.type === 'botAttack' && e.rolle !== 'helfer'), lost = onYou.filter(e => e.won && !e.capitalHolds).length, held = onYou.filter(e => !e.won).length;
@@ -299,6 +299,8 @@ function welcomeRows(from) {
     if (now.bases !== from.bases) rows.push(['castle', 'Basen', from.bases + ' → ' + now.bases]);
     if (now.wounded > (from.wounded || 0)) rows.push(['losses', 'Im Krankenhaus', fmtCompact(now.wounded) + ' Verwundete']);
     if (!rows.length) rows.push(['check', 'Alles ruhig', 'Niemand hat dich angegriffen']);
+    const hp = hourProduction('player');               // (5.10.: die Wirtschaft rechnet pro Stunde)
+    if (hp.coins > 0 || hp.troops > 0) rows.push(['hourglass', 'Ertrag pro Stunde', '+' + fmtStunde(hp.coins) + ' Münzen · +' + fmtStunde(hp.troops) + ' Truppen']);
     return rows;
 }
 function showWelcome() {
