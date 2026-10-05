@@ -15,7 +15,8 @@ const stueck = name => { const a = quelle.indexOf('\nfunction ' + name) >= 0 ? q
   });
   await new Promise(f => srv.listen(0, '127.0.0.1', f));
   const URL_BASIS = 'http://127.0.0.1:' + srv.address().port + '/', SCHLUESSEL = 'probe';
-  const holen = new Function('URL_BASIS', 'SCHLUESSEL', stueck('zeitGrenze') + stueck('holen') + 'return holen;')(URL_BASIS, SCHLUESSEL);
+  let last = 0.2;   // Server-Last je Kern (6.10.: über 1,5 wartet holen ohne eigene Frist 2 Min. statt 1 Min.)
+  const holen = new Function('URL_BASIS', 'SCHLUESSEL', 'lastJeKern', 'LAST_HOCH', stueck('zeitGrenze') + stueck('holen') + 'return holen;')(URL_BASIS, SCHLUESSEL, () => last, 1.5);
   try {
     const r = await holen('spiel.php');
     ok(r.ok && r.status === 200 && r.headers.get('x-probe') === 'a' && (await r.json()).schluessel === 'probe', 'normale Antwort: Status, Kopfzeilen, Inhalt (mit Schlüssel)');
@@ -26,6 +27,10 @@ const stueck = name => { const a = quelle.indexOf('\nfunction ' + name) >= 0 ? q
     try { await Promise.race([lesen, new Promise(f => setTimeout(f, 6000))]); } catch (e) { fehler = e; }
     const ms = Date.now() - t0;
     ok(fehler && /Zeitgrenze/.test(String(fehler && (fehler.message || fehler))) && ms < 4000, 'Hänger beim Lesen des Inhalts: Abbruch nach der Zeitgrenze', { ms, fehler: String(fehler && (fehler.message || fehler)) });
+    // ohne eigene Frist: 60 s, bei überlastetem Server 120 s (eine abgebrochene Anfrage rechnet der Server trotzdem zu Ende)
+    const zg = quelle.match(/zeitGrenze\(opt\.zeit \|\| \(lastJeKern\(\) > LAST_HOCH \? (\d+) : (\d+)\)\)/);
+    ok(zg && zg[1] === '120000' && zg[2] === '60000', 'Frist ohne Angabe: 60 s, bei überlastetem Server 120 s', zg && zg.slice(1));
+    last = 3; const u = await holen('spiel.php'); ok(u.ok && (await u.json()).schluessel === 'probe', 'überlasteter Server: normale Antwort wie sonst');
     let fremd = null; try { await holen('https://example.org/x'); } catch (e) { fremd = e.message; }
     ok(/fremde Adresse/.test(fremd || ''), 'Schlüssel nie an eine fremde Adresse', fremd);
   } catch (e) { ok(false, 'Ablauf', e.message); }

@@ -71,7 +71,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `anleitungZeigen` → Game/spiel/06b-pass-anleitung.js:150
 - `anmelden` → Game/server/01-grundlagen-login.php:71
 - `antwort` → Game/speichern.js:136
-- `antwort` → Game/weltrechner/start.js:331
+- `antwort` → Game/weltrechner/start.js:333
 - `antwortVerarbeiten` → Game/welt.js:459
 - `anyIn` → Game/spiel/03a-karte-hintergrund.js:433
 - `anzahl_teile` → Game/server/05-datenbank-welt.php:99
@@ -234,13 +234,13 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `BELL` → Game/baukunst/06-turmhof-festung.js:237
 - `bergfried` → Game/baukunst/02-buehne-grundbasis.js:235
 - `berlinZeit` → Game/spiel/03d-maersche-tagnacht.js:178
-- `besondere.createImageData` → Game/weltrechner/start.js:225
-- `besondere.createLinearGradient` → Game/weltrechner/start.js:223
-- `besondere.createPattern` → Game/weltrechner/start.js:224
-- `besondere.getImageData` → Game/weltrechner/start.js:226
-- `besondere.getTransform` → Game/weltrechner/start.js:227
-- `besondere.isPointInPath` → Game/weltrechner/start.js:228
-- `besondere.measureText` → Game/weltrechner/start.js:222
+- `besondere.createImageData` → Game/weltrechner/start.js:227
+- `besondere.createLinearGradient` → Game/weltrechner/start.js:225
+- `besondere.createPattern` → Game/weltrechner/start.js:226
+- `besondere.getImageData` → Game/weltrechner/start.js:228
+- `besondere.getTransform` → Game/weltrechner/start.js:229
+- `besondere.isPointInPath` → Game/weltrechner/start.js:230
+- `besondere.measureText` → Game/weltrechner/start.js:224
 - `best` → Game/bots/05-verteidigen-takt.js:159
 - `besterOrt` → Game/spiel/01c-basen-spielstand.js:155
 - `bestRank` → Game/spiel/05a-aussehen-profil.js:78
@@ -1067,7 +1067,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `gemsArmed` → Game/spiel/05b-truhe-skills.js:294
 - `gemsWirklich` → Game/spiel/05b-truhe-skills.js:285
 - `generateRegionShape` → Game/spiel/01b-weltkarte.js:147
-- `geprueftHolen` → Game/weltrechner/start.js:281
+- `geprueftHolen` → Game/weltrechner/start.js:283
 - `geraet_bekannt` → Game/server/02-sicherheit-datenlecks.php:45
 - `geraet_bekannt_merken` → Game/server/02-sicherheit-datenlecks.php:44
 - `gilt` → Game/baukunst/04-vielfalt-stile.js:237
@@ -1249,7 +1249,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `hipFaces` → Game/baukunst/04-vielfalt-stile.js:291
 - `hipRoof` → Game/baukunst/06-turmhof-festung.js:265
 - `hitsAny` → Game/spiel/03d-maersche-tagnacht.js:40
-- `holen` → Game/weltrechner/start.js:177
+- `holen` → Game/weltrechner/start.js:179
 - `homeAgain` → Game/bots/02-kampf-karte.js:73
 - `horn` → Game/spiel/10c-start-einstellungen.js:71
 - `hornsGeo` → Game/baukunst/04-vielfalt-stile.js:337
@@ -1370,7 +1370,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `leer.setItem` → Game/speichern.js:54
 - `leerGear` → Game/spiel/05d-maersche-kampfbericht.js:348
 - `leerHeld` → Game/spiel/05d-maersche-kampfbericht.js:347
-- `leinwand` → Game/weltrechner/start.js:218
+- `leinwand` → Game/weltrechner/start.js:220
 - `leiter_sek` → Game/server/07-welt-puls.php:12
 - `leiter_setzen` → Game/server/05-datenbank-welt.php:24
 - `letzte_sicherung_zeit` → Game/server/05-datenbank-welt.php:134
@@ -1417,7 +1417,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `lookOldUnlocked` → Game/spiel/05a-aussehen-profil.js:79
 - `lookOwns` → Game/spiel/05a-aussehen-profil.js:89
 - `los` → Game/speichern.js:100
-- `los` → Game/weltrechner/start.js:237
+- `los` → Game/weltrechner/start.js:239
 - `lute` → Game/spiel/10c-start-einstellungen.js:33
 - `makeTileKeyboard` → Game/spiel/05b-truhe-skills.js:34
 - `mapBattleShake` → Game/spiel/07a-schlachten.js:304
@@ -1587,7 +1587,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `niceRound` → Game/spiel/02a-shop-stufen.js:215
 - `niceRoundW` → Game/spiel/01b-weltkarte.js:28
 - `nichtLos` → Game/spiel/10d-welt-weltrechner.js:95
-- `nichts` → Game/weltrechner/start.js:220
+- `nichts` → Game/weltrechner/start.js:222
 - `noise` → Game/spiel/10c-start-einstellungen.js:65
 - `noiseTile` → Game/spiel/03a-karte-hintergrund.js:8
 - `normal` → Game/spiel/05d-maersche-kampfbericht.js:354
@@ -1757,7 +1757,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `profilZuBotRoh` → Game/welt.js:243
 - `projectConvex` → Game/spiel/03e-kamera-eingabe.js:81
 - `pruefen` → Game/benachrichtigung.js:54
-- `pruefen` → Game/weltrechner/start.js:170
+- `pruefen` → Game/weltrechner/start.js:172
 - `puls` → Game/welt.js:387
 - `puls_wachhund` → Game/server/07-welt-puls.php:163
 - `puls_zaehlen` → Game/server/05-datenbank-welt.php:315
@@ -2425,14 +2425,14 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `yAt` → Game/baukunst/04-vielfalt-stile.js:274
 - `yesterdayKey` → Game/spiel/06a-aufgaben.js:9
 - `zahl` → Game/admin.php:164
-- `zahl` → Game/weltrechner/start.js:197
+- `zahl` → Game/weltrechner/start.js:199
 - `zahlen` → Game/aufbau.js:69
 - `zahlOderNull` → Game/spiel/10d-welt-weltrechner.js:139
 - `zahlOk` → Game/spiel/10d-welt-weltrechner.js:113
 - `zeige` → Game/speichern.js:65
 - `zeigen` → Game/benachrichtigung.js:44
 - `zeile` → Game/buendnis/01-daten-regeln.js:505
-- `zeitGrenze` → Game/weltrechner/start.js:168
+- `zeitGrenze` → Game/weltrechner/start.js:170
 - `zielPruefen` → Game/spiel/10d-welt-weltrechner.js:967
 - `zitadelle` → Game/baukunst/02-buehne-grundbasis.js:330
 - `zoomAt` → Game/spiel/03e-kamera-eingabe.js:151
@@ -5013,22 +5013,22 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `muster` :135
 - `auffaelligSammeln` :136
 - `fehler` :160
-- `zeitGrenze` :168 — Mit dem Server reden: immer mit Schlüssel, nie länger als 60 s warten (die Spie…
-- `pruefen` :170
-- `holen` :177
-- `zahl` :197 — Grenzen nur gegen KAPUTTE Zahlen (keine Zahl, unendlich, negativ, absurd) – nie…
-- `leinwand` :218 — Ein Leinwand-Ersatz: alles Zeichnen tut nichts (der Weltrechner hat keinen Bild…
-- `nichts` :220
-- `besondere.measureText` :222
-- `besondere.createLinearGradient` :223
-- `besondere.createPattern` :224
-- `besondere.createImageData` :225
-- `besondere.getImageData` :226
-- `besondere.getTransform` :227
-- `besondere.isPointInPath` :228
-- `los` :237 — Die Spielseite laden und ohne Bildschirm laufen lassen
-- `geprueftHolen` :281 — Vor jedem Puls: Zahlen prüfen. Kaputt → die Welt wird diesmal nicht geschrieben…
-- `antwort` :331
+- `zeitGrenze` :170 — Mit dem Server reden: immer mit Schlüssel, nie länger als 60 s warten (die Spie…
+- `pruefen` :172
+- `holen` :179
+- `zahl` :199 — Grenzen nur gegen KAPUTTE Zahlen (keine Zahl, unendlich, negativ, absurd) – nie…
+- `leinwand` :220 — Ein Leinwand-Ersatz: alles Zeichnen tut nichts (der Weltrechner hat keinen Bild…
+- `nichts` :222
+- `besondere.measureText` :224
+- `besondere.createLinearGradient` :225
+- `besondere.createPattern` :226
+- `besondere.createImageData` :227
+- `besondere.getImageData` :228
+- `besondere.getTransform` :229
+- `besondere.isPointInPath` :230
+- `los` :239 — Die Spielseite laden und ohne Bildschirm laufen lassen
+- `geprueftHolen` :283 — Vor jedem Puls: Zahlen prüfen. Kaputt → die Welt wird diesmal nicht geschrieben…
+- `antwort` :333
 
 ### Game/weltrechner/wachhund.php — weltrechner/wachhund.php – passt auf den Weltrechner auf
 - `wr_lesen` :29

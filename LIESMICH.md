@@ -499,6 +499,36 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   zahlen die Maut neu verteilt und marschieren. Kann der Anführer selbst nicht zahlen, fällt die Rally wie bisher ganz aus
   (`bundRallyLos`, buendnis/02; wirft dabei etwas, geht die Rally nicht los und alle Truppen genau einmal heim). Test
   `rally_maut_test` (Fall 2, 2b, 6; der Test schaltet die Mitspieler-Runde ab – sonst trat Z zufällig dem Test-Bündnis bei).
+- **5./6.10. Nacht – Technik (11b D + I, Branch `nacht-technik`, NICHT hochgeladen):**
+  - `hochladen.sh`: jede Anfrage mit Zeitgrenzen (`--connect-timeout 20`, `--max-time 300`) und bis zu 3 Wiederholungen (Pausen
+    5/15/30 s) – auch Anmelden, Ordner anlegen, Wartung an/aus (vorher brach spiel.php 2× mit „curl: (35) Connection reset“ ab).
+    Jede hochgeladene Datei (auch PHP und config.php) wird über den Editor zurückgelesen und verglichen (Bilder über die Adresse;
+    zeigt der Editor eine JS-Datei anders, zählt die Adresse); anders angekommen → nochmal hochladen. Erst wenn alles gleich ist:
+    Wartung aus, danach geprüft, dass `wartung.txt` wirklich weg ist. Klappt etwas nicht: große Meldung
+    „WARTUNG NOCH AN – Datei X fehlt – ./hochladen.sh erneut starten“. Umleitbar zum Testen (`OW_OFFICE`, `OW_PAUSEN` …); Test
+    `welt_hochladen_test` mit nachgebautem Editor (kappt jede 3. Verbindung, eine Anfrage hängt, eine Datei kommt halb an).
+  - Sicherung: einmal am Tag kommen die Spielerkonten (`ow_spieler`, Passwörter nur als gespeicherter Prüfwert) und die privaten
+    Spielstände mit („mit Spielerkonten“ in der Liste; Grenze wie bisher: die letzten 48). Admin: „Nur die Welt zurückspielen“ wie
+    bisher, „Alles zurückspielen“ nur mit Kästchen + Rückfrage. Bei „alles“: Konten und Spielstände von damals, wer seitdem neu
+    ist, bleibt; offene Spiele laden neu; genau einmal: damals unverbuchte Nachrichten kommen wieder, spätere verfallen, Befehle
+    seitdem verfallen (ihre Zahlung ist mit zurückgedreht), bezahlte von vorher laufen nochmal. Vorher wird der jetzige Stand
+    (mit Konten) gesichert – auch „alles“ lässt sich zurückspielen. Test `tests/sicherung_test.php` (eigene MariaDB-Datenbank).
+  - Weltrechner-Start: Dauer gemessen (Node, Laden, Einlesen, erster Puls, gesamt) → Log „Start-Dauer: …“, Herzschlag
+    (`startDauer`), Admin („Start dauerte“, „Letzte Starts“ – der Wachhund merkt sich die letzten 10).
+  - Weltrechner geduldig bei Hoster-Überlast (5.10. 21:07/21:37: Last 30–53 bei 16 Kernen, er selbst rechnete 2 von 27 s,
+    Puls 93 s → zwei unnötige Neustarts): start.js wartet bei Last über 1,5 je Kern bis 10 Min. auf den Puls statt nach 2 Min.
+    neu zu starten (Log-Zeile, im Herzschlag `geduld`), Anfragen dürfen dann 2 statt 1 Min. dauern (eine abgebrochene rechnet der
+    Server trotzdem zu Ende → doppelte Arbeit). Wachhund: Herzschlag über 3 Min. alt, aber Server überlastet UND der Weltrechner
+    rechnet selbst kaum (weniger als ein Drittel dessen, was eine Endlosschleife bei der Last bekäme, gemessen über
+    `/proc/<pid>/stat`) → bis 10 Min. warten statt hart beenden; echte Hänger (Endlosschleife rechnet, oder Server nicht
+    überlastet, oder über 10 Min.) wie bisher. Leitung (`welt-puls`): nach einem langsamen Puls doppelte Dauer (45 s bis 3 Min.),
+    damit nicht alle Spieler „Verbindung wird wiederhergestellt“ sehen. Weniger Anfragen: „Befehle da?“ nie mehrfach
+    gleichzeitig (bei Last liefen bis zu 30 nebeneinander), nach langsamem Puls Pause (halbe Dauer, höchstens 20 s), die ganze
+    Spieler-Liste auch für den Weltrechner nur alle 10 s. Admin zeigt Server-Last und „🐢 Office-Server überlastet – wartet“.
+    Tests `welt_rechner_test`, `haenger_holen_test`, `server_test.php`.
+  - Schummel-Verdacht: ab 5 Auffälligkeiten eines Spielers in einer Stunde eine Handy-Nachricht an die Admin-Konten
+    (`admin_ids`, auch wenn sie spielen; höchstens 1× pro Spieler und Stunde, steht in `schummel.php` → übersteht Neustarts).
+    Nur Nachricht – nie automatisch bremsen. (Nicht gebaut, wie entschieden: Admin-Ampel, Push bei Stillstand.)
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
@@ -754,12 +784,12 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
 - Stadt-Bau und Forschung geben Pass-Punkte und zählen für Aufgaben (z. B. „Starte eine Forschung“).
 - Neue Forschungen ab Labor 23: **Krankenhaus II, Burg-Schutz+, Marschtempo II**.
 - Neue Saison startet sicher **sonntags 18 Uhr deutscher Zeit**.
-- Schummel-Verdacht: nur Nachricht an Alexander, kein automatisches Bremsen.
+- Schummel-Verdacht: nur Nachricht an Alexander, kein automatisches Bremsen. **→ gebaut (nicht hochgeladen): Push an die Admin-Konten, Branch `nacht-technik`.**
 - **Nein:** Belohnung je Burg-Stufe · Saison-Preise für Platz 11–50 · Bau-Beschleuniger beim Händler · Dienst von außen.
 
 **D. Verbesserungen (Teil 1)**
 - Technik: Hochladen wiederholt abgebrochene Dateien + prüft danach alles · Spielerkonten in die Sicherung ·
-  Neustart-Dauer des Weltrechners messen.
+  Neustart-Dauer des Weltrechners messen. **→ gebaut (nicht hochgeladen), Branch `nacht-technik`, Verlauf 5./6.10. Nacht.**
 - Neue Spieler: tägliche Belohnung erst nach der Anleitung · Anleitung wiederholbar, Schritt 6 erst nach Abholen ·
   Hauptstadt-Fenster erklärt sich, nächster Knopf leuchtet · Knöpfe ohne Text werden in der Anleitung erklärt ·
   schneller laden · prüfen, ob der Anleitungs-Stand im Browser liegt (wenn ja: auf den Server).
@@ -782,7 +812,7 @@ Fenster nehmen den halben Bildschirm. Farben/Stil bleiben (das Design an sich ge
 **Freie Hand (Alexander):** überall prüfen – Spiel, Fenster, Knöpfe, **auch Login/Startseite** – und verbessern, wo
 nötig; Knöpfe usw. frei gestalten. Pflicht: **wirklich übersichtlich, sortiert, nicht hin und her tippen müssen.**
 
-**I. Dazu (Claudes Vorschläge, Alexander ja):** Weltrechner robuster bei Hoster-Last (seltener nachfragen, geduldiger,
+**I. Dazu (Claudes Vorschläge, Alexander ja):** Weltrechner robuster bei Hoster-Last **(gebaut, nicht hochgeladen – `nacht-technik`)** (seltener nachfragen, geduldiger,
 nicht gleich neu starten) · Sortier-Tag zu Ende bringen (alten, ungenutzten Code raus – kleiner, lädt schneller).
 **Nein:** Wachturm kommt nicht zurück (Alexander). · Die vorhandene Übersicht „während du weg warst“ an die neue
 Wirtschaft (pro Stunde) und das neue Design anpassen · **Kampfbericht im Bündnis teilen** (ein Knopf) – **Mitspieler

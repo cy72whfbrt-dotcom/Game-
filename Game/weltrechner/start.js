@@ -163,6 +163,8 @@ function fehler(t) {
 }
 
 // ===== Mit dem Server reden: immer mit Schlüssel, nie länger als 60 s warten (die Spielseite beim Start: 5 Min.) =====
+// Bei überlastetem Server (6.10.) 2 Min.: eine abgebrochene Anfrage rechnet der Server trotzdem zu Ende, und der Weltrechner schickt
+// danach alles nochmal – doppelte Arbeit genau dann, wenn der Server am wenigsten Zeit hat.
 // Bei Last beim Hoster dauert ein Puls 15–30 s. Stand Node selbst (großer Rechen-Schritt), kommt die Uhr zu spät dran – die
 // Antwort liegt dann oft schon bereit: einmal 2 s Nachfrist, statt sie als Fehler zu verwerfen.
 function zeitGrenze(ms) {
@@ -180,7 +182,7 @@ async function holen(url, opt) {
     let body = opt.body; if (body && typeof body !== 'string') body = Buffer.from(body.buffer ? new Uint8Array(body.buffer, body.byteOffset, body.byteLength) : body);
     const ziel = new URL(url, URL_BASIS + 'spiel.php').href;
     if (!ziel.startsWith(URL_BASIS)) throw new Error('fremde Adresse – der Schlüssel geht nur an den eigenen Server');
-    const zg = zeitGrenze(opt.zeit || 60000);
+    const zg = zeitGrenze(opt.zeit || (lastJeKern() > LAST_HOCH ? 120000 : 60000));
     try {
         const r = await fetch(ziel, { method: opt.method || 'GET', headers: kopf, body, redirect: 'error', signal: zg.signal });   // (nie einer Umleitung folgen – der Schlüssel ginge mit)
         // Inhalt noch unter der Zeitgrenze lesen: hängt der Server mitten in der Antwort, bricht auch das nach der Frist ab
