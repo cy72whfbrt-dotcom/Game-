@@ -31,8 +31,11 @@ Alles Wichtige steht in `LIESMICH.md` – jede Änderung wird dort eingetragen.
 ## Arbeitsweise (Alexander 5.10.: „schneller, effizient, richtig“)
 - Erst EINMAL alles sammeln (mehrere Agenten gleichzeitig suchen, je ein Bereich), daraus EINE Liste; offene Fragen auf
   einmal an Alexander. Dann in einem Rutsch abarbeiten – nicht Stück für Stück immer Neues anfangen.
-- So viele Agenten parallel wie sinnvoll: je Agent eine Aufgabe, getrennte Dateien (sonst eigene Kopie: Worktree).
-  Claude ist Aufpasser: verteilt Aufgaben, prüft alle 5 Min. (Wecker), treibt langsame Agenten an, führt Ergebnisse zusammen.
+- **Agenten-Firma** (immer benutzen): Alexander = Chef (Aufgaben, Ideen). Claude = Projektleiter: redet mit Alexander,
+  klärt Fragen, verteilt an die Firma, prüft alle 5 Min. (Wecker), treibt langsame Agenten an, führt Ergebnisse zusammen.
+  Rollen in `.claude/agents/`: **sucher** (findet Fehler/Lücken, nur lesen) · **programmierer** (baut eine Aufgabe in
+  zugewiesenen Dateien + Test) · **tester** (führt Testreihen aus, wertet Rot aus) · **pruefer** (Code-Review vor dem
+  Hochladen). So viele parallel wie sinnvoll: je Agent eine Aufgabe, getrennte Dateien (sonst eigene Kopie: Worktree).
 - Einmal am Ende komplett testen (`tests/komplett.sh`), dann Alexander wegen Hochladen fragen.
 
 ## Regeln von Alexander
