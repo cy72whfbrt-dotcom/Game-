@@ -30,5 +30,29 @@ pruefe('Flicken hin und zurück (' + gut + ' von 2000)', gut === 2000);
 pruefe('leere {} bleiben {}', (() => { const a = { x: {} }, b = { x: {}, y: {} }, c = JSON.parse(J(a)); flickenAnwenden(c, flickenBauen(a, b)); return J(c) === '{"x":{},"y":{}}'; })());
 pruefe('Flicken auf fehlenden Eintrag wird erkannt', flickenAnwenden({ a: 1 }, { d: { z: { s: { x: 1 } } } }) === false);
 
+// 3) Hauptbuch (10-start.js): keine Fehlalarme für Thron-Shop-Kisten, Splitter → Gems (alle Helden voll), Wochenketten-/Pass-Kisten (fr.kg)
+{
+    const s10 = fs.readFileSync(path.join(G, 'spiel', '10-start.js'), 'utf8'), stueck = (a, b) => { const i = s10.indexOf(a), j = s10.indexOf(b, i); if (i < 0 || j < 0) throw new Error('nicht gefunden: ' + a); return s10.slice(i, j); };
+    const code = stueck('    const kWert', '    function hbKisteDazu') + stueck('    const hbThronPreis', '    function hbFreiDazu') + stueck('    function hbGearNeu', '    // alle Neuerungen eines Profils');
+    const nn = v => (typeof v === 'number' && Number.isFinite(v) ? v : 0), WERT = { a: 0 };
+    const H = new Function('nn', 'HEROES', 'HERO_MAXQ', 'hbHeldZeile', 'hbHeldenWert', 'hbE0f', 'HB_SLOTS', 'starGemCost', 'CRATE_GEM_COST', 'hbZahlen', 'fz', 'THRONE_OFFERS', 'STAR_PCT', 'ITEM_MAX_LEVEL',
+        code + '; return { hbThronKisten, hbSplitterGems, hbGearNeu };')(nn, [{ id: 'a', r: 1 }], 20, z => [z.own ? 1 : 0, z.q | 0, z.sh | 0, 0, 0, 0, 0], () => WERT.a, () => 10,
+        ['weapon', 'armor', 'shield', 'boots'], () => 50, 100, () => false, String, [{ id: 'crate', cost: 60 }, { id: 'royal', cost: 400 }], 5, 30);
+    const hbLeer = () => ({ kN: 0, kG: 0, fr: { k: 0, kg: 0, sh: 0 }, gear: { weapon: [], armor: [], shield: [], boots: [] }, hs: { a: [1, 20, 0, 0, 0, 0, 0] }, shB: 0 });
+    let hb = hbLeer();
+    pruefe('Hauptbuch: Episches Teil ohne sichere Kiste und ohne Gems wird abgelehnt', H.hbGearNeu('u1', hb, {}, 'weapon', [3, 1, 0], 5) !== '');
+    hb = hbLeer(); hb.fr.kg = 27;
+    pruefe('Hauptbuch: Episches Teil aus Wochenkette/Pass (fr.kg) wird angenommen', H.hbGearNeu('u1', hb, {}, 'weapon', [3, 1, 0], 5) === '' && hb.fr.kg === 0 && hb.kG === 0);
+    hb = hbLeer(); H.hbThronKisten(hb, 400); H.hbThronKisten(hb, 400);
+    pruefe('Hauptbuch: 400 Thron-Punkte → Königliche Kiste (einmal gutgeschrieben)', hb.fr.kg === 27 && Math.abs(hb.fr.k - 400 / 60) < 1e-9 && hb.thK === 400);
+    pruefe('Hauptbuch: … und das Epische Teil daraus wird angenommen', H.hbGearNeu('u1', hb, {}, 'armor', [3, 1, 0], 5) === '');
+    hb = hbLeer(); WERT.a = 100; hb.shB = 95; hb.fr.sh = 2;   // Helden voll (Wert 100, Start 10): 5 unverbrauchte Splitter + 2 aus dem Spielraum
+    pruefe('Hauptbuch: Splitter → Gems bei vollen Helden (20 je Splitter, verbraucht)', H.hbSplitterGems(hb, null, 100) === 100 && hb.fr.sh === 0 && hb.shB === 92);
+    pruefe('Hauptbuch: … höchstens so viele, wie Splitter da sind', H.hbSplitterGems(hb, null, 1000) === 40 && hb.shB === 90);
+    hb = hbLeer(); hb.hs.a = [1, 12, 0, 0, 0, 0, 0]; hb.shB = 95;
+    pruefe('Hauptbuch: Helden nicht voll → keine Gems aus Splittern', H.hbSplitterGems(hb, { hs: { a: { own: true, q: 12 } } }, 100) === 0);
+    pruefe('Hauptbuch: … außer sein Profil zeigt sie gerade voll', H.hbSplitterGems(hb, { hs: { a: { own: true, q: 20 } } }, 100) === 100);
+}
+
 console.log(fehler ? fehler + ' von ' + n + ' Tests FEHLGESCHLAGEN' : 'Alle ' + n + ' Spiel-Tests bestanden.');
 process.exit(fehler ? 1 : 0);

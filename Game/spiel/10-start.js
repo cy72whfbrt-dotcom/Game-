@@ -1747,6 +1747,13 @@ if (window.WELT) {
         if (nn(b.shieldUntil) > nn(hb.schild)) b.shieldUntil = nn(hb.schild);
         b.hbK = 1;
     }
+    // Rohstoffe und Verwundete aus seinem Profil nie über sein Konto (+ was er an Abzügen noch nicht kennt) – immer, nicht nur nach
+    // einem Sprung im neuen Profil (z. B. nach einem Neustart des Weltrechners kam das gespeicherte Profil sonst ungeprüft in die Welt)
+    function hbKontoDeckel(m, b, p) {
+        const { M } = flugSumme(m);
+        if (m.rk && b.res && p.res && typeof p.res === 'object') for (const k of ROHK) { const max = Math.floor(m.rk[k].u + (M[k] || 0)) + 1; if (nn(b.res[k]) > max) b.res[k] = max; }
+        if (m.geeicht) { const max = Math.floor(m.w.u + (M.w || 0)) + 1; if (nn(b.wounded) > max) b.wounded = max; }
+    }
     // (welt.js profilZuBot, nur beim Weltrechner) ein Profil kommt an → Hauptbuch prüfen, Mitspieler-Datensatz klemmen
     function hbKlemmen(who, b, p, alt) {
         if (!AUF) { if (alt && alt.hbK) for (const k of ['lvl', 'skills', 'gear', 'city', 'hs', 'shieldUntil', 'hbK']) if (alt[k] !== undefined) b[k] = alt[k]; return; }   // (aufbau.js noch nicht geladen: die Welt-Werte bleiben)
@@ -1760,6 +1767,8 @@ if (window.WELT) {
         b.hb = hb; if (alt && alt !== b) alt.hb = hb;
         if (b.zProfil && p && Object.keys(p).length) { hbAusProfil(who, hb, p, now); delete b.zProfil; if (alt) delete alt.zProfil; }   // (nach dem Zurückspielen, einmal)
         const m = wacheSehen(who);
+        if (m.rkNeu) { m.rkNeu = false; if (p === m.prof && m.rDeckelP !== p && p.res) { const { P, M } = flugSumme(m); rohWacheProfil(who, m, p, P, M, now); } }   // (nach einem Neustart: das Profil einmal gegen das gemerkte Konto prüfen – vorher kam es ungeprüft in die Welt)
+        if (m.init) hbKontoDeckel(m, b, p);           // (vor dem Prüfen: das bezahlt aus dem Konto)
         hbPruefen(who, hb, p, m, now, b.schildAlt);
         if (m.rDeckel && m.rDeckelP === p && b.res) for (const k in m.rDeckel) if (nn(b.res[k]) > m.rDeckel[k]) b.res[k] = m.rDeckel[k];   // Rohstoff-Sprung: die Welt bekommt nur das Mögliche – auch wenn dasselbe Profil nach 10 s nochmal angewendet wird (wartet etwas im Hauptbuch; vorher kam das erfundene Holz dann doch in die Welt und schaukelte sich hoch)
         hbSchreiben(who, hb, b, p, alt);
@@ -1788,7 +1797,7 @@ if (window.WELT) {
         if (Z) { const bs = loadBotState(); let n = 0;
             for (const id in bs) { const b = bs[id]; if (!b || !b.mensch || nn(b.zT) >= Z) continue;
                 b.zT = Z; b.zProfil = 1; b.zEich = 1; n++;
-                if (b.wache) { delete b.wache.u; delete b.wache.w; delete b.wache.lm; }   // → am nächsten Profil neu eichen
+                if (b.wache) { delete b.wache.u; delete b.wache.w; delete b.wache.lm; delete b.wache.fl; }   // → am nächsten Profil neu eichen
                 if (b.hb) { delete b.hb.gU; delete b.hb.rU; } }
             if (n) { saveBotState(); console.log('Zurückgespielt: Hauptbuch von ' + n + ' Spielern wird an ihre Spielstände angeglichen'); } }
     }

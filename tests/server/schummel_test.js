@@ -34,6 +34,16 @@ let b;
   await warte(60000);   // noch eine Minute: es darf sich nichts hochschaukeln
   const z2 = zustand(); ok('… und eine Minute später immer noch nicht', ((z2.res || {}).h || 0) - h0 < 1e5, JSON.stringify(z2.res));
   ok('keine Skript-Fehler', !fehler.length, fehler.join(' | '));
+  // 4) Das Labor wartet noch im Hauptbuch → dasselbe (alte) Profil wird alle 10 s nochmal angewendet. Früher sprangen die
+  //    Welt-Rohstoffe dabei auf die Profil-Werte zurück (Ertrag/Beute weg, der Unterschied ging als Nachricht ans Handy).
+  //    Handy zu (kein neues Profil mehr): der Ertrag seiner Burg muss in der Welt stehen bleiben und wachsen.
+  await p.close();
+  await warte(RUNDE);
+  const zA = zustand();
+  await warte(5 * 60000);
+  const zB = zustand(), hA = (zA.res || {}).h || 0, hB = (zB.res || {}).h || 0;
+  ok('Profil nochmal angewendet: Welt-Holz springt nicht auf das alte Profil zurück (Ertrag bleibt)', hB - hA >= 3, hA + ' → ' + hB);
+  ok('… und schaukelt sich auch nicht hoch', hB - h0 < 1e5, h0 + ' → ' + hB);
   ende();
   await b.close();
 })().catch(async e => { ok('Test lief durch', false, e.message); ende(); if (b) await b.close(); });
