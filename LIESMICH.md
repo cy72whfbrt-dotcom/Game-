@@ -792,7 +792,7 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Berge nicht länger (nur die unter 60 s; ein Umweg kostet etwa 5–25 %). Gezeichnet in den Karten-Kacheln (weit: Schattierung,
   mittel: Gipfel, nah: Kanten, Kappen, Geröll, Einzelfelsen). Test `welt_felsen_test` (neu).
   Nachbesserung nach Designer-Prüfung: Gipfel wie die Stadtbild-Berge aus 5 Flächen (hell/licht/mittel/dunkel/tief,
-  `felsFacetten`), Stöcke größer und in zwei versetzten Reihen (höchster in der Mitte), ca. 360 Stöcke statt 255 (findet
+  `felsFacetten`), Stöcke größer und in zwei versetzten Reihen (höchster in der Mitte), ca. 490 Stöcke auf 237 von 267 Regionen statt 255 (findet
   sich kein Platz: kleinere Stufe); weit weg dunkle Silhouette statt beiger Hülle. Wüste/Stein: Low-Poly-Felsgruppen statt
   der runden Häufchen (`buildForest` dort nicht mehr gemalt). **Fehler behoben:** Marsch-Zeitschild zeigte „9̶1:43“ –
   `drawMarchChips` setzte `textAlign` nicht, es galt noch 'center' von den Armee-Schildern (09d), die Zahl lag über der Sanduhr.

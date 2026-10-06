@@ -30,7 +30,7 @@ function felsenListe() {                             // alle Bergstöcke (einmal
         const want = eigene.length < 8 ? Math.floor(r() * 2) : 2 + Math.floor(r() * 2), enden = [];   // kleine Regionen 0–1, sonst 2–3 (passen nicht alle: 1–3)
         for (const br of bridges) { if (br.a === lm.id || br.b === lm.id) enden.push([br.x1, br.y1], [br.x2, br.y2]); }
         const meineFelder = felder.filter(f => f.landmassId === lm.id);
-        for (let k = 0, tries = 0; k < want && tries < 160; tries++) {
+        for (let k = 0, tries = 0; k < want && tries < 240; tries++) {
             const x = lm.x + (r() * 2 - 1) * lm.shapeMaxR * .75, y = lm.y + (r() * 2 - 1) * lm.shapeMaxR * .75;
             if (eigene.some(i => Math.abs(i.x - x) < 3200 && Math.abs(i.y - y) < 3200 && Math.hypot(i.x - x, i.y - y) < i.radius + FELS_ABSTAND.basis + 1200)) continue;   // (schnell: zu nah an einer Basis)
             if (!aufLand(lm, x, y) || band.some(q => pointToSegmentDistance(x, y, q[0], q[1], q[2], q[3]) < FELS_ABSTAND.band + 800)) continue;   // (schnell: Wasser oder Band)
