@@ -337,6 +337,7 @@ body[data-anl-puls="abholen"] #goalsPopup :is([data-daily],[data-quest],[data-bo
 }
 /* Hinweise (Toast) nie über Kopf oder Fußzeile dieser Fenster */
 body:has(#heroHall:not([hidden])) .toast{top:auto;bottom:calc(var(--safe-b) + 96px)}
+@media (min-width:900px) and (min-height:501px){ body:has(#citySheet:not([hidden])) .toast.toast.toast{top:calc(var(--safe-t) + var(--hud-top-space));bottom:auto} }   /* Desktop: die Leiste steht unten in der Mitte, das Burg-Fenster reicht bis dort – der Hinweis oben statt über der Fußzeile */
 @media (max-width:899px),(max-height:500px){
   body:has(#shopPopup.is-open) .toast.toast.toast,body:has(#citySheet:not([hidden])) .toast.toast.toast{top:auto;bottom:calc(var(--dock-h) + var(--safe-bd) + 104px)}   /* (.toast dreifach: geht vor die allgemeine Fenster-Regel in 02) */
 }
