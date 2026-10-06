@@ -81,10 +81,16 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const hz = loadHeroes(); for (const id of ['brunhild', 'sigrun']) Object.assign(hz[id], { own: true, q: 8 }); saveHeroes();
     out.F = { vor: effectiveDefense(islandById[playerIslandId]) };
     closeAllPopups(); openCity(); cityOpenId = 'wall'; cityPage = 'bau'; renderCitySheet();
-    const box = () => document.querySelector('#cityBExtra [data-vh-box]');
-    out.F.box = !!box(); __befehle.length = 0; WELT.leiter = false;   // (wie ein Handy: der Befehl geht an den Weltrechner)
+    const box = () => document.querySelector('#cityBExtra [data-vh-box]'), sh = document.getElementById('citySheet');
+    out.F.reiter = [...document.querySelectorAll('#cityTabs [data-cpage]')].map(x => x.textContent);   // wie Krankenhaus/Schmiede: Aufwerten | Helden
+    document.querySelector('#cityTabs [data-cpage="nutz"]').click();
+    out.F.box = !!box() && getComputedStyle(document.getElementById('cityBExtra')).display !== 'none'; __befehle.length = 0; WELT.leiter = false;   // (wie ein Handy: der Befehl geht an den Weltrechner)
+    out.F.chips = box() ? box().querySelectorAll('[data-vh-auf]').length : 0; out.F.zuVorher = !box().querySelector('[data-vh1]');   // zu: nur die zwei Chips
+    const auf = k => { const c = box() && box().querySelector('[data-vh-auf="' + k + '"]'); if (c) c.click(); };
+    auf(1); out.F.auf = box().querySelectorAll('[data-vh1]').length;
     const k1 = box() && box().querySelector('[data-vh1="brunhild"]'); if (k1) k1.click();
-    const k2 = box() && box().querySelector('[data-vh2="sigrun"]'); if (k2) k2.click();
+    out.F.zuNach = !box().querySelector('[data-vh1]');
+    auf(2); const k2 = box() && box().querySelector('[data-vh2="sigrun"]'); if (k2) k2.click();
     WELT.leiter = true; out.F.vh = loadCity().vh; vhMem = null; out.F.nach = effectiveDefense(islandById[playerIslandId]);
     out.F.befehle = __befehle.filter(x => x[0] === 'vheld');
     out.F.text = box() ? box().textContent.replace(/\s+/g, ' ') : '';
@@ -108,10 +114,22 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(F.box && F.vh && F.vh[0] === 'brunhild' && F.vh[1] === 'sigrun' && F.nach > F.vor, 'Mauer-Fenster: Haupt- und Zweitheld eingetragen, deine Basis verteidigt stärker', F);
   ok(F.befehle && F.befehle.length === 2 && F.befehle[1][1].h1 === 'brunhild' && F.befehle[1][1].h2 === 'sigrun', 'Befehl „vheld“ an den Weltrechner', F.befehle);
   ok(/Verteidigungs-Helden/.test(F.text || '') && /Brunhild/.test(F.text || ''), 'Mauer-Fenster zeigt den Stand', (F.text || '').slice(0, 200));
+  ok(F.reiter && F.reiter.length === 2 && /Helden/.test(F.reiter[1]) && F.chips === 2 && F.zuVorher && F.zuNach, 'Mauer-Fenster: Reiter „Helden“, zwei Chips, antippen klappt die Auswahl auf (nach der Wahl zu)', F);
+  await p.waitForTimeout(1500);   // (das Stadt-Fenster fährt erst herein)
+  const L = await p.evaluate(() => { vhAuf = 1; renderCitySheet(); const sh = document.getElementById('citySheet'), rs = sh.getBoundingClientRect(), kb = [...document.querySelectorAll('[data-vh-box] [data-vh1]')];
+    return { n: kb.length, passt: kb.every(x => { const q = x.getBoundingClientRect(); return q.width > 40 && q.left >= rs.left + 14 && q.right <= rs.right - 14; }),   // nichts rechts abgeschnitten
+      rahmen: getComputedStyle(sh, '::before').content === 'none' && /url/.test(getComputedStyle(sh).borderImageSource),   // der Rahmen ist der Rand: scrollt nicht mit
+      kopf: document.querySelector('.city-sheet-head').getBoundingClientRect().top >= rs.top && sh.scrollTop === 0 && sh.scrollHeight <= sh.clientHeight + 1 }; });   // Reiter „Helden“ passt ohne Scrollen
+  ok(F.box && F.auf > 1 && L.n > 1 && L.passt && L.rahmen && L.kopf, 'Mauer-Fenster: Auswahl passt in die Breite, Rahmen fest, Kopf sichtbar, kein Scrollen', L);
+  await p.evaluate(() => { vhAuf = 0; renderCitySheet(); });
+  ok(/Angriff der Verteidiger/.test(F.text || '') && /Eigene Verluste/.test(F.text || ''), 'Werte verständlich: „Angriff der Verteidiger“, „Eigene Verluste“', (F.text || '').slice(0, 300));
   const zu = () => { for (const id of ['welcomeModal', 'dailyModal', 'levelUpModal', 'rewardModal', 'titleModal']) { const m = document.getElementById(id); if (m) m.hidden = true; }
     document.querySelectorAll('body > div').forEach(d => { if (d.style.zIndex === '100000') d.remove(); }); flashHint('', 1); };   // (Willkommen-Fenster der nachgebauten Welt)
-  if (bilder) { await p.evaluate(zu); await p.waitForTimeout(2500); await p.evaluate(() => { cityOpenId = 'wall'; cityPage = 'bau'; renderCitySheet(); const sh = document.getElementById('citySheet'), bx = document.querySelector('[data-vh-box]'); if (bx) sh.scrollTop = bx.offsetTop - 80; });
-    await p.waitForTimeout(400); await p.screenshot({ path: path.join(bilder, 'mauer_fenster.png') }); }
+  if (bilder) { await p.evaluate(zu); await p.waitForTimeout(2500); await p.evaluate(() => { cityOpenId = 'wall'; cityPage = 'nutz'; vhAuf = 0; renderCitySheet(); flashHint('', 1); });
+    await p.waitForTimeout(400); await p.screenshot({ path: path.join(bilder, 'mauer_fenster.png') });
+    await p.evaluate(() => { vhAuf = 2; renderCitySheet(); flashHint('', 1); }); await p.waitForTimeout(300); await p.screenshot({ path: path.join(bilder, 'mauer_fenster_auf.png') });
+    await p.evaluate(() => { cityPage = 'bau'; vhAuf = 0; renderCitySheet(); const sh = document.getElementById('citySheet'); sh.scrollTop = sh.scrollHeight; });
+    await p.waitForTimeout(300); await p.screenshot({ path: path.join(bilder, 'mauer_aufwerten.png') }); }
   // G) Weltrechner: Befehl vheld (echter Spieler = Mitspieler mit mensch)
   const g = await p.evaluate(() => {
     const out = {}; if (!WELT.BEFEHLE || !WELT.BEFEHLE.vheld) { out.fehlt = 1; return out; }

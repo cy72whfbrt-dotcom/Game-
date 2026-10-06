@@ -656,6 +656,10 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   vhBest), `08d` (Mauer-Fenster), `01e`, `02c`, `04` (defGoldRateHx), `05d`, `bots/02`, `bots/04`, `10d`, `server/02`.
   Test `tests/browser/mauer_helden_test.js`, `tests/server_test.php`. Offen: Drache/Kriegsherr-Angriffe auf Basen nehmen nur
   Angriff + Gefolge der Verteidigungs-Helden (keine Verluste/Krankenhaus/Gold).
+  Nachbesserung (Designer): Mauer-Fenster wie Krankenhaus/Schmiede mit Reitern **Aufwerten | Helden**; Haupt- und Zweitheld als
+  zwei Chips (wie im Angriffs-Fenster), antippen klappt die Auswahl darunter auf (zwei je Zeile, nichts abgeschnitten); Werte
+  „Angriff der Verteidiger“ / „Eigene Verluste“. Gebäude-Fenster allgemein: der goldene Rahmen ist der Rand von `#citySheet`
+  (scrollt nicht mehr mit – die Ecken saßen beim Scrollen mitten im Inhalt). `08b` (cityNutz), `08d` (vhHtml, vhChip), `spielseite/03`.
 - **6.10. – Design P1: Grundwerte, HUD, Leiste, Streifen (11b F, Branch `design-p1`, NICHT hochgeladen):** **Grundwerte**
   (`spielseite/01`, andere Design-Pakete bauen darauf): Abstände `--ab-1…4` (4/8/12/16), Schriftstufen `--fs-11/13/15/17/22`
   (`--fs-9`/`--fs-10` = 11 px, nichts Kleineres mehr), Knopf-Arten `--k-haupt` 48 · `--k-zweit` 44 · `--k-gefahr` 48 · `--k-chip` 36

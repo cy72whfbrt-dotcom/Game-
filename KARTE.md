@@ -1383,7 +1383,6 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `killPay` → Game/bots/02-kampf-karte.js:71
 - `kind` → Game/baukunst/05-umland.js:690
 - `kiosk` → Game/baukunst/05-umland.js:423
-- `knoepfe` → Game/spiel/08d-gebaeude-wirkung.js:55
 - `knopf` → Game/buendnis/04-fenster-karte-welt.js:85
 - `knoten` → Game/aufbau.js:326
 - `konten_gueltig` → Game/server/07-welt-puls.php:23
@@ -1439,6 +1438,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `LIME` → Game/baukunst/07-hafen-palast.js:408
 - `LIMEDK` → Game/baukunst/07-hafen-palast.js:409
 - `LIMELT` → Game/baukunst/07-hafen-palast.js:410
+- `liste` → Game/spiel/08d-gebaeude-wirkung.js:62
 - `liveBald` → Game/spiel/10c-start-einstellungen.js:262
 - `liveHtml` → Game/spiel/01a-grundlagen.js:123
 - `liveTick` → Game/spiel/10c-start-einstellungen.js:266
@@ -2169,9 +2169,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `SPRAY` → Game/baukunst/07-hafen-palast.js:419
 - `squarePlate` → Game/baukunst/02-buehne-grundbasis.js:155
 - `stadtCap` → Game/aufbau.js:112
-- `stadtKopf` → Game/spiel/08d-gebaeude-wirkung.js:102
+- `stadtKopf` → Game/spiel/08d-gebaeude-wirkung.js:113
 - `stadtKosten` → Game/aufbau.js:107
-- `stadtLeiste` → Game/spiel/08d-gebaeude-wirkung.js:96
+- `stadtLeiste` → Game/spiel/08d-gebaeude-wirkung.js:107
 - `stadtVon` → Game/aufbau.js:89
 - `staerke` → Game/spiel/06d-schild-produktion.js:21
 - `stand` → Game/baukunst/05-umland.js:196
@@ -2211,7 +2211,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `tapped` → Game/bots/05-verteidigen-takt.js:49
 - `tausch` → Game/welt.js:89
 - `teil` → Game/spiel/10c-start-einstellungen.js:270
-- `teleportCapital` → Game/spiel/08d-gebaeude-wirkung.js:117
+- `teleportCapital` → Game/spiel/08d-gebaeude-wirkung.js:128
 - `tempelPlus` → Game/aufbau.js:224
 - `temple` → Game/spiel/03b-gebaeude-3d.js:224
 - `templeBaseMult` → Game/spiel/01b-weltkarte.js:46
@@ -2311,6 +2311,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `UMRECHNEN.openWaterTitles` → Game/welt.js:95
 - `UMRECHNEN.openWaterVerstaerkung` → Game/welt.js:128
 - `unb64` → Game/weltrechner/push.js:19
+- `unten` → Game/spiel/08d-gebaeude-wirkung.js:61
 - `updateCamera` → Game/spiel/03e-kamera-eingabe.js:201
 - `updateCityBuilder` → Game/spiel/08a-stadt-bauen.js:216
 - `updateGoalsBadge` → Game/spiel/06a-aufgaben.js:252
@@ -2350,15 +2351,16 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `verstWert` → Game/buendnis/01-daten-regeln.js:498
 - `verstZeilen` → Game/spiel/01a-grundlagen.js:160
 - `vhBest` → Game/spiel/08c-helden.js:178
+- `vhChip` → Game/spiel/08d-gebaeude-wirkung.js:54
 - `vhFx` → Game/spiel/08c-helden.js:160
-- `vhHtml` → Game/spiel/08d-gebaeude-wirkung.js:53
+- `vhHtml` → Game/spiel/08d-gebaeude-wirkung.js:59
 - `vhMauer` → Game/spiel/08c-helden.js:149
 - `vhName` → Game/spiel/08c-helden.js:169
 - `vhPlus` → Game/spiel/08c-helden.js:168
 - `vhRechnen` → Game/spiel/08c-helden.js:150
 - `vhSetzen` → Game/spiel/08c-helden.js:170
 - `vhSoll` → Game/spiel/08c-helden.js:145
-- `vhWaehlen` → Game/spiel/08d-gebaeude-wirkung.js:68
+- `vhWaehlen` → Game/spiel/08d-gebaeude-wirkung.js:77
 - `villageTower` → Game/baukunst/05-umland.js:233
 - `VINE` → Game/baukunst/08-himmelsfeste-bilder.js:19
 - `visibleIslands` → Game/spiel/03d-maersche-tagnacht.js:154
@@ -2440,6 +2442,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `weltZuClient` → Game/welt.js:143
 - `werIst` → Game/aufbau.js:120
 - `werIstWer` → Game/spiel/10d-welt-weltrechner.js:1012
+- `wert` → Game/spiel/08d-gebaeude-wirkung.js:70
 - `who` → Game/spiel/04-kampf.js:62
 - `whoBases` → Game/spiel/05c-erfolge-rangliste.js:161
 - `whoIslands` → Game/spiel/05c-erfolge-rangliste.js:21
@@ -4348,12 +4351,15 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `cityEffectText` :17
 - `cityEffectRoh` :18
 - `cityExtraHtml` :27
-- `vhHtml` :53 — Mauer: die zwei Plätze für die Verteidigungs-Helden (Hauptheld ab Mauer 1, Zwei…
-- `knoepfe` :55
-- `vhWaehlen` :68 — 1: Hauptheld, 2: Zweitheld (ohne Hauptheld kein Zweitheld – wie beim Angriff)
-- `stadtLeiste` :96 — Auch in der Stadt bleiben die obere Leiste (Münzen, Gems, Truppen, Rohstoffe) u…
-- `stadtKopf` :102 — Unterkante der Bauarbeiter-Zeile → der Hinweis (Handy) liegt darunter
-- `teleportCapital` :117
+- `vhChip` :54 — ein Chip: Bild, Name, darunter klein Sterne/Hinweis
+- `vhHtml` :59
+- `unten` :61
+- `liste` :62
+- `wert` :70
+- `vhWaehlen` :77 — 1: Hauptheld, 2: Zweitheld (ohne Hauptheld kein Zweitheld – wie beim Angriff)
+- `stadtLeiste` :107 — Auch in der Stadt bleiben die obere Leiste (Münzen, Gems, Truppen, Rohstoffe) u…
+- `stadtKopf` :113 — Unterkante der Bauarbeiter-Zeile → der Hinweis (Handy) liegt darunter
+- `teleportCapital` :128
 
 ### Game/spiel/08e-stadtbild-haeuser.js — Stadtansicht (isometrisch): Häuser und Gebäude zeichnen
 - `cIso` :21 — world → screen units (before zoom)

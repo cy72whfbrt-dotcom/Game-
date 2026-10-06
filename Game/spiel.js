@@ -8809,7 +8809,7 @@ function cityNutz(id, lvl) {                       // die eigene Seite eines Geb
     if (id === 'academy') return lvl || loadCity().foRun ? ['Forschen', 'flask'] : null;
     if (id === 'heroes') return lvl ? ['Helden', 'profile'] : null;   // erst gebaut: vorher keine Reiter (nur „Bauen“)
     if (!lvl) return null;
-    return { forge: ['Schmieden', 'weapon'], hospital: ['Heilen', 'plus'], market: ['Handeln', 'market'], embassy: ['Verstärkung', 'bund'] }[id] || null;
+    return { forge: ['Schmieden', 'weapon'], hospital: ['Heilen', 'plus'], market: ['Handeln', 'market'], embassy: ['Verstärkung', 'bund'], wall: ['Helden', 'defense'] }[id] || null;   // (Mauer: die Verteidigungs-Helden)
 }
 function cityBildSpr(id, lvl) {                    // dasselbe Bild wie in der Stadt
     if (id === 'keep') return citySprite('keep', Math.min(4, Math.floor((lvl || 1) / 5)));
@@ -9381,26 +9381,36 @@ function cityExtraHtml(id, lvl) {
     }
     return '';
 }
-// Mauer: die zwei Plätze für die Verteidigungs-Helden (Hauptheld ab Mauer 1, Zweitheld ab Mauer 5) – jederzeit änderbar
+// Mauer (Reiter „Helden“): zwei Chips Haupt- und Zweitheld wie im Angriffs-Fenster – antippen klappt die Auswahl darunter auf
+var vhAuf = 0;                                     // aufgeklappt: 0 zu, 1 Hauptheld, 2 Zweitheld
+function vhChip(k, id, unten, zu) {                // ein Chip: Bild, Name, darunter klein Sterne/Hinweis
+    const h = id && heroById(id);
+    return '<button type="button" class="vh-chip' + (vhAuf === k ? ' on' : '') + '" data-vh-auf="' + k + '" aria-expanded="' + (vhAuf === k) + '"' + (zu ? ' disabled' : '') +
+        ' style="--hc:' + (h ? RARITY_DEFS[h.r].color : 'var(--line-1)') + '">' + (h ? heroImg(id) : '') + '<span class="vh-chip-t"><b>' + (h ? h.name : k === 1 ? 'Kein Held' : '+ Zweitheld') + '</b><small>' + unten + '</small></span></button>';
+}
 function vhHtml(lvl) {
     const [a, b] = vhSoll('player'), fx = vhFx('player'), hs = HEROES.filter(h => heroOwned('player', h.id)).sort((x, y) => y.r - x.r || heroSt('player', y.id).q - heroSt('player', x.id).q);
-    const knoepfe = (k, cur, ohne) => '<div class="seg hero-seg chips-quer">' + '<button type="button" data-vh' + k + '=""' + (!cur ? ' class="on"' : '') + '>Keiner</button>' +
+    const unten = id => heroBusy('player', id) ? 'unterwegs' : icon('star') + heroStarNum(heroSt('player', id).q);
+    const liste = (k, cur, ohne) => '<div class="seg hero-seg vh-wahl"><button type="button" data-vh' + k + '=""' + (!cur ? ' class="on"' : '') + '>Keiner</button>' +
         hs.filter(h => h.id !== ohne).map(h => '<button type="button" data-vh' + k + '="' + h.id + '"' + (cur === h.id ? ' class="on"' : '') + ' style="--hc:' + RARITY_DEFS[h.r].color + '">' + heroImg(h.id) + h.name +
-            '<small>' + (heroBusy('player', h.id) ? 'unterwegs' : icon('star') + heroStarNum(heroSt('player', h.id).q)) + '</small></button>').join('') + '</div>';
+            '<small>' + unten(h.id) + '</small></button>').join('') + '</div>';
     const weg = [a, b].filter(id => id && heroBusy('player', id)).map(id => heroById(id).name);
     const stand = !lvl ? 'Baue die Mauer – dann verteidigt ein Held jede deiner Basen.' : !hs.length ? 'Du hast noch keinen Helden – schalte einen in der Heldenhalle frei.'
-        : (fx ? 'Verteidigt jetzt jede deiner Basen: ' + escapeHtml(heroTag(fx)) + '.' : a ? 'Gerade verteidigt keiner.' : 'Trag einen Helden ein – er verteidigt jede deiner Basen.') +
+        : (fx ? 'Verteidigt jede deiner Basen.' : a ? 'Gerade verteidigt keiner.' : 'Trag einen Helden ein – er verteidigt jede deiner Basen.') +
           (weg.length ? ' ' + weg.join(' und ') + (weg.length > 1 ? ' sind' : ' ist') + ' unterwegs und verteidigt erst wieder, wenn ' + (weg.length > 1 ? 'sie' : 'er') + ' zurück ist.' : '');
+    const zweitZu = lvl < VH_ZWEIT_MAUER || !a; if (zweitZu && vhAuf === 2) vhAuf = 0;
+    const wert = l => l[0] === 'Angriff' ? ['Angriff der Verteidiger', l[1]] : l[0] === 'Verteidigung' ? ['Eigene Verluste', l[1].replace(' Verluste', '')] : l;
     return '<div class="vh-box" data-vh-box><div class="vh-kopf">' + icon('defense') + '<b>Verteidigungs-Helden</b></div><small class="vh-stand">' + stand + '</small>' +
-        (lvl && hs.length ? '<div class="vh-l">Hauptheld</div>' + knoepfe(1, a, null) +
-            '<div class="vh-l">Zweitheld · Werte und passive Fähigkeiten zu ' + Math.round(HERO_ZWEIT * 100) + ' %</div>' +
-            (lvl < VH_ZWEIT_MAUER ? '<small class="vh-zu">Ab Mauer ' + VH_ZWEIT_MAUER + '</small>' : a ? knoepfe(2, b, a) : '<small class="vh-zu">Erst einen Hauptheld eintragen</small>') : '') +
-        (fx ? '<div class="vh-werte">' + fx.lines.map(l => '<div class="logLine buff"><span>' + escapeHtml(l[0]) + '</span><span>' + escapeHtml(l[1]) + '</span></div>').join('') + '</div>' : '') + '</div>';
+        (lvl && hs.length ? '<div class="vh-zeile">' + vhChip(1, a, a ? 'Hauptheld · ' + unten(a) : 'Hauptheld wählen') +
+            vhChip(2, b, lvl < VH_ZWEIT_MAUER ? 'ab Mauer ' + VH_ZWEIT_MAUER : !a ? 'erst Hauptheld' : (b ? 'Zweitheld · ' : 'Werte zu ') + Math.round(HERO_ZWEIT * 100) + ' %', zweitZu) + '</div>' +
+            (vhAuf === 1 ? liste(1, a, null) : vhAuf === 2 ? liste(2, b, a) : '') : '') +
+        (fx ? '<div class="vh-werte">' + fx.lines.map(l => { const [t, v] = wert(l); return '<div class="logLine buff"><span>' + escapeHtml(t) + '</span><span>' + escapeHtml(v) + '</span></div>'; }).join('') + '</div>' : '') + '</div>';
 }
 function vhWaehlen(k, id) {                        // 1: Hauptheld, 2: Zweitheld (ohne Hauptheld kein Zweitheld – wie beim Angriff)
     const [a, b] = vhSoll('player'), h1 = k === 1 ? id || null : a, h2 = k === 2 ? id || null : (b === h1 ? null : b);
     const z = h1 && cityLevelSafe('wall') >= VH_ZWEIT_MAUER ? h2 : null;
-    if (!vhSetzen('player', h1, z)) return;
+    vhAuf = 0;
+    if (!vhSetzen('player', h1, z)) return renderCitySheet();
     alsBefehl('vheld', { h1, h2: z });
     flashHint(h1 ? heroById(h1).name + (z ? ' und ' + heroById(z).name + ' verteidigen' : ' verteidigt') + ' jetzt jede deiner Basen.' : 'Kein Verteidigungs-Held mehr eingetragen.', 2500);
     renderCitySheet();
@@ -9409,6 +9419,7 @@ var forgeSlot = 'weapon';
 document.getElementById('citySheet').addEventListener('click', e => {
     const fs = e.target.closest('[data-forge-slot]'); if (fs) { forgeSlot = fs.dataset.forgeSlot; renderCitySheet(); return; }
     if (e.target.closest('[data-hero-open]')) { openHeroHall(); return; }
+    const va = e.target.closest('[data-vh-auf]'); if (va) { const n = +va.dataset.vhAuf; vhAuf = vhAuf === n ? 0 : n; renderCitySheet(); return; }
     const vh = e.target.closest('[data-vh1],[data-vh2]'); if (vh) { vhWaehlen(vh.hasAttribute('data-vh1') ? 1 : 2, vh.dataset.vh1 ?? vh.dataset.vh2); return; }
     const st = e.target.closest('[data-star]'), hl = e.target.closest('[data-heal]');
     if (st) { const item = inventory[st.dataset.star]; if (!item) return;
