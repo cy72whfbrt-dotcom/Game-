@@ -15,9 +15,13 @@ function attackSpeedMultiplier() {
     return 1 + Math.min(skills.speed || 0, SKILL_DEFS.speed.max) * 0.05;
 }
 function scoutSecs(from, to, botId) { return travelDurationSeconds(from, to, botId) / (AUF ? AUF.spaeherTempo(botId || 'player') : 1); }   // (+ Forschung Späher)   // a scout's walk, Späherturm included - the same for everyone
-function travelDurationSeconds(source, target, botId) {   // everyone gets their own speed skill + Akademie, never under 3 s
+function marschStrecke(source, target) {          // der Weg in Welt-Einheiten (über die Brücken)
     const pts = source.landmassId === target.landmassId ? [source, target] : marchPath(source, target);
     let distance = 0; for (let i = 1; i < pts.length; i++) distance += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
+    return distance;
+}
+function travelDurationSeconds(source, target, botId) {   // everyone gets their own speed skill + Akademie, never under 3 s
+    const distance = marschStrecke(source, target);
     const bt = typeof bundTempo === 'function' ? bundTempo(botId || 'player', target) : 1;      // Bündnis-Gebiet: 10 % schneller
     if (botId) return Math.max(3, Math.min(MAX_ATTACK_SECONDS, Math.max(MIN_ATTACK_SECONDS, distance / BASE_ATTACK_SPEED)) / botMarchMult(botId) / bt);   // their speed skill + Akademie, like yours
     const base = Math.min(MAX_ATTACK_SECONDS, Math.max(MIN_ATTACK_SECONDS, distance / BASE_ATTACK_SPEED));   // clamp first, so the speed skill and the Akademie also shorten long marches
@@ -209,6 +213,7 @@ function recallMarch(key) {                          // an attack or a send turn
     const now = Date.now();
     const sc = pendingScouts.find(x => marchKeyOf(x) === key);                // ein Späher kehrt um (ohne Bericht)
     if (sc) { if (sc.back) return; pendingScouts = pendingScouts.filter(x => x !== sc); spaeherHeim(sc, now - sc.startedAt);   // kehrt um: zurück so lange, wie er schon unterwegs war
+        alsBefehl('zurueck', { key });                                         // (Zuschauer: auch beim Weltrechner – kein Bericht)
         saveProgression(); renderActiveMarches(); requestRender(); flashHint('Dein Späher kehrt um.', 2500); return; }
     const fm = feldBarbMarsch('player', key);                                  // Lager, Boss, Drache, Invasion, Sammler
     if (fm) { if (fm.back) return;
@@ -272,10 +277,10 @@ function speedUpCost(m) { return Math.max(1, Math.ceil((m.resolveAt - Date.now()
 let speedUpZuletzt = 0;                               // (ein Doppel-Tipp beschleunigt nicht zweimal)
 function speedUpMarch(key, btn) {                    // halves the time still to go; the column keeps its place on the road
     const now = Date.now(); if (now - speedUpZuletzt < 600) return; speedUpZuletzt = now;
-    const sc = pendingScouts.find(x => marchKeyOf(x) === key);                // ein Späher (nur deiner – kein Befehl an den Weltrechner nötig)
+    const sc = pendingScouts.find(x => marchKeyOf(x) === key);                // ein Späher (hin: auch beim Weltrechner, er schreibt den Bericht)
     if (sc) { const rem = sc.resolveAt - now; if (rem < 1500) return; const cost = speedUpCost(sc); if (gems < cost) { flashHint('Zu wenig Edelsteine – Beschleunigen kostet ' + cost + '.', 3000); return; }
         if (!gemsWirklich('marsch:' + key, cost, btn)) return;
-        gems -= cost; const p = Math.max(0, Math.min(.99, (now - sc.startedAt) / Math.max(1, sc.resolveAt - sc.startedAt)));
+        gems -= cost; if (!sc.back) alsBefehl('schneller', { keys: [key] }); const p = Math.max(0, Math.min(.99, (now - sc.startedAt) / Math.max(1, sc.resolveAt - sc.startedAt)));
         sc.resolveAt = now + rem / 2; sc.startedAt = sc.resolveAt - (rem / 2) / (1 - p);
         flashHint('Späher beschleunigt – noch ' + fmtClock(Math.ceil(rem / 2000)) + '.', 2500); updateHud(); saveGame(); saveProgression(); renderActiveMarches(); requestRender(); return; }
     for (const list of [pendingAttacks, pendingSends, pendingRetreats, eigeneFeldBarb()]) {
@@ -296,7 +301,7 @@ function speedUpMarch(key, btn) {                    // halves the time still to
 // "Alle schneller": halves the time left of every own column on the road at once (same price as one by one)
 function speedableMarches() {
     const now = Date.now();
-    return [...pendingAttacks.filter(a => !a.attackerBotId), ...pendingSends.filter(x => !x.senderBotId), ...pendingRetreats, ...eigeneFeldBarb()].filter(m => !m.fightEndsAt && !m.vorlaeufig && m.resolveAt - now >= 1500);
+    return [...pendingAttacks.filter(a => !a.attackerBotId), ...pendingSends.filter(x => !x.senderBotId), ...pendingRetreats, ...pendingScouts, ...eigeneFeldBarb()].filter(m => !m.fightEndsAt && !m.vorlaeufig && m.resolveAt - now >= 1500);
 }
 function speedUpAll(btn) {
     if (Date.now() - speedUpZuletzt < 600) return; speedUpZuletzt = Date.now();

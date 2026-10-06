@@ -118,6 +118,24 @@ backBtn.addEventListener('click', () => {
     renderPopup();
 });
 
+// Angriff: eigene Basen mit Truppen, die hinkommen – die nächste (kürzester Weg) zuerst
+function angriffQuellen(target) {
+    return [...ownedIslands].filter(id => id !== target.id && islandById[id] && (islandTroops[id] || 0) > 0 && canReach(islandById[id].landmassId, target.landmassId))
+        .map(id => ({ id, weg: marschStrecke(islandById[id], target) })).sort((a, b) => a.weg - b.weg).map(x => x.id);
+}
+// Reicht eine Basis mit allen Truppen (ohne Held) gegen das gespähte Ziel? – gerechnet wie die Vorschau (Schwert, Titel, Forschung)
+function angriffReicht(id, target) {
+    const t = islandTroops[id] || 0, mine = (t + attackFlatBonus(t)) * titleMult('player', 'attack') * (AUF ? AUF.kampf('player', 'a') : 1);
+    return mine > effectiveTroops(target) + effectiveDefense(target);
+}
+// Vorausgewählt: die nächste Basis mit genug Truppen; reicht keine, die mit den meisten (bei Gleichstand die nächste).
+// Nicht gespäht (Stärke unbekannt): die nächste mit Truppen.
+function angriffStart(target) {
+    const q = angriffQuellen(target); if (!q.length) return null;
+    if (!scoutedIslands.has(target.id)) return q[0];
+    const genug = q.find(id => angriffReicht(id, target)); if (genug !== undefined) return genug;
+    return q.reduce((b, id) => (islandTroops[id] || 0) > (islandTroops[b] || 0) ? id : b, q[0]);
+}
 attackBtn.addEventListener('click', () => {
     if (popupView === 'recall') { if (Date.now() - previewShownAt >= 350) confirmRecall(); return; }
     if (popupView === 'send') {
@@ -159,14 +177,9 @@ attackBtn.addEventListener('click', () => {
     // wrongly clear pendingAttackTargetId and show a stale hint.
     if (popupIslandId === null) return;
     { const ow = islandOwnerOf(popupIslandId); if (ow && ow !== 'player' && baseShieldedFor(popupIslandId, 'player')) { flashHint(shieldBlockText(ow), 4000); return; } }
-    // pick the own base next to the target with the most troops (same region or one bridge away) - no hunting on the map
+    // Startbasis: die nächste eigene Basis mit genug Truppen (siehe angriffStart) – im Angriffsfenster änderbar
     const target = islandById[popupIslandId];
-    let best = null;
-    for (const id of ownedIslands) {
-        const isl = islandById[id], t = islandTroops[id] || 0;
-        if (t <= 0 || !canReach(isl.landmassId, target.landmassId)) continue;
-        if (!best || t > (islandTroops[best] || 0)) best = id;
-    }
+    const best = angriffStart(target);
     if (best === null) {
         const any = [...ownedIslands].some(id => canReach(islandById[id].landmassId, target.landmassId));
         flashHint(any ? 'Deine Basen neben diesem Gebiet haben keine Truppen – schicke erst Truppen dorthin (Senden).'

@@ -578,6 +578,19 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   - Schummel-Verdacht: ab 5 Auffälligkeiten eines Spielers in einer Stunde eine Handy-Nachricht an die Admin-Konten
     (`admin_ids`, auch wenn sie spielen; höchstens 1× pro Spieler und Stunde, steht in `schummel.php` → übersteht Neustarts).
     Nur Nachricht – nie automatisch bremsen. (Nicht gebaut, wie entschieden: Admin-Ampel, Push bei Stillstand.)
+- **5./6.10. Nacht – Märsche: Späher-Knöpfe + Startbasis (11b B1/B2, gebaut, NICHT hochgeladen):**
+  **Späher auf der Karte:** wurde ohne Marsch-Kennung gezeichnet und war darum nicht antippbar (`drawActiveMarches` 03d;
+  `drawMarchButtons` suchte nur Angriffe/Senden/Rückwege). Jetzt wie jeder Marsch: hin „Zurück“ + „Schneller“, heim nur
+  „Schneller“ (entschieden am Marsch selbst: Rückweg/`back`) – auch Lager/Boss/Drache und Sammler auf der Karte (09a/09b).
+  „Zurück“ = Späher kehrt sofort um, kein Bericht; „Schneller“ kostet Edelsteine, ab 500 „Wirklich?“. Über den Weltrechner:
+  der Späher-Befehl trägt die Kennung des Marschs (`spaehen` mit `key`, 02c), der Weltrechner merkt sie (`hb.sb`/`hb.sp`)
+  und findet den Späher bei `zurueck`/`schneller` (`spaeherVon`, 10d) – zurückgerufen schreibt er keinen Bericht und deckt
+  nichts mehr auf; beschleunigt kommt der Bericht passend früher, die Edelsteine zieht das Hauptbuch ab. „Alle schneller“
+  nimmt die Späher mit. **Startbasis eines Angriffs:** „Angreifen“ nahm die Basis mit den MEISTEN Truppen, egal wie weit weg
+  (10b). Jetzt `angriffStart`: die nächste eigene Basis (kürzester Weg über die Brücken, `marschStrecke` 02b) mit GENUG
+  Truppen (gerechnet wie die Vorschau: Schwert, Titel, Forschung, ohne Held); reicht keine → die mit den meisten; Ziel nicht
+  gespäht (Stärke unbekannt) → die nächste mit Truppen. Im Angriffsfenster oben „Von Basis“ zum Ändern (Auswahl: Name ·
+  Truppen · Marschzeit · „reicht“, nächste zuerst; 10a). Test `tests/browser/maersche_knoepfe_test.js` (Handy + Desktop).
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
@@ -783,9 +796,9 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
 - Fremde Tabellen eines anderen Spiels in der Datenbank (`nutzer`, `mail`, `handel` …): löschen? Noch nicht gefragt.
 - Münz-Wirtschaft bei hohen Stufen riesig („Münzen fühlen sich nichts wert an“).
 - **Fehler (Alexander 5.10.):** Späher auf der Karte antippen → die Knöpfe „Schneller“ und „Zurück“ fehlen (Regel: alle
-  Märsche hin = Zurück + Schneller, heim = Schneller).
+  Märsche hin = Zurück + Schneller, heim = Schneller). → gebaut 5./6.10. Nacht (nicht hochgeladen), siehe 11b B1.
 - **Fehler (Alexander 5.10.):** Angriffe auf andere sollen immer von der nächsten eigenen Basis mit Truppen losgehen –
-  heute nehmen sie teils einen weiten Weg (von weiter weg).
+  heute nehmen sie teils einen weiten Weg (von weiter weg). → gebaut 5./6.10. Nacht (nicht hochgeladen), siehe 11b B2.
 - **Fehler (Alexander 5.10., Bildschirmfotos Turm #23633 / Clara_V):** Spähbericht zeigt **keine Ausrüstung** (4 leere
   Plätze), der Kampfbericht danach zeigt 4 Teile Stufe 10 („Rüstung +56,6 Mrd.“). Dazu: Spähbericht nennt
   „Grundverteidigung 557,6 Mrd.“ als eine Zahl, der Kampfbericht teilt auf (Grund 171,4 Mrd. „Basis Stufe 93“ + Rüstung
@@ -887,8 +900,8 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
   | Thron-Tor, Reich „Mitte“ | 1,9 Std. | 23 Std. | 12× (Absicht: nie mit der Start-Armee) |
 
 **B. Alexanders 3 Fehler** (Einzelheiten Abschnitt 11)
-1. Späher: hin Zurück + Schneller, heim Schneller; Zurück = sofort umkehren, kein Bericht; ab 500 Edelsteine „Wirklich?“.
-2. Startbasis eines Angriffs: automatisch die nächste Basis mit **genug** Truppen (keine hat genug → nächste mit den
+1. ✅ *gebaut (nicht hochgeladen), Verlauf 5./6.10. Nacht:* Späher: hin Zurück + Schneller, heim Schneller; Zurück = sofort umkehren, kein Bericht; ab 500 Edelsteine „Wirklich?“.
+2. ✅ *gebaut (nicht hochgeladen), Verlauf 5./6.10. Nacht:* Startbasis eines Angriffs: automatisch die nächste Basis mit **genug** Truppen (keine hat genug → nächste mit den
    meisten), **vorausgewählt**, im Angriffsfenster änderbar.
 3. Spähbericht: zeigt **immer alles richtig** – Ausrüstung, Helden, Verteidigung aufgeschlüsselt wie im Kampfbericht
    (den Wachturm gibt es seit dem Hauptstadt-Umbau nicht mehr – keine Stufen-Sperre; was wirklich unbekannt ist, deutlich

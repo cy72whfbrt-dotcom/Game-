@@ -1614,9 +1614,13 @@ function attackSpeedMultiplier() {
     return 1 + Math.min(skills.speed || 0, SKILL_DEFS.speed.max) * 0.05;
 }
 function scoutSecs(from, to, botId) { return travelDurationSeconds(from, to, botId) / (AUF ? AUF.spaeherTempo(botId || 'player') : 1); }   // (+ Forschung Späher)   // a scout's walk, Späherturm included - the same for everyone
-function travelDurationSeconds(source, target, botId) {   // everyone gets their own speed skill + Akademie, never under 3 s
+function marschStrecke(source, target) {          // der Weg in Welt-Einheiten (über die Brücken)
     const pts = source.landmassId === target.landmassId ? [source, target] : marchPath(source, target);
     let distance = 0; for (let i = 1; i < pts.length; i++) distance += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
+    return distance;
+}
+function travelDurationSeconds(source, target, botId) {   // everyone gets their own speed skill + Akademie, never under 3 s
+    const distance = marschStrecke(source, target);
     const bt = typeof bundTempo === 'function' ? bundTempo(botId || 'player', target) : 1;      // Bündnis-Gebiet: 10 % schneller
     if (botId) return Math.max(3, Math.min(MAX_ATTACK_SECONDS, Math.max(MIN_ATTACK_SECONDS, distance / BASE_ATTACK_SPEED)) / botMarchMult(botId) / bt);   // their speed skill + Akademie, like yours
     const base = Math.min(MAX_ATTACK_SECONDS, Math.max(MIN_ATTACK_SECONDS, distance / BASE_ATTACK_SPEED));   // clamp first, so the speed skill and the Akademie also shorten long marches
@@ -1808,6 +1812,7 @@ function recallMarch(key) {                          // an attack or a send turn
     const now = Date.now();
     const sc = pendingScouts.find(x => marchKeyOf(x) === key);                // ein Späher kehrt um (ohne Bericht)
     if (sc) { if (sc.back) return; pendingScouts = pendingScouts.filter(x => x !== sc); spaeherHeim(sc, now - sc.startedAt);   // kehrt um: zurück so lange, wie er schon unterwegs war
+        alsBefehl('zurueck', { key });                                         // (Zuschauer: auch beim Weltrechner – kein Bericht)
         saveProgression(); renderActiveMarches(); requestRender(); flashHint('Dein Späher kehrt um.', 2500); return; }
     const fm = feldBarbMarsch('player', key);                                  // Lager, Boss, Drache, Invasion, Sammler
     if (fm) { if (fm.back) return;
@@ -1871,10 +1876,10 @@ function speedUpCost(m) { return Math.max(1, Math.ceil((m.resolveAt - Date.now()
 let speedUpZuletzt = 0;                               // (ein Doppel-Tipp beschleunigt nicht zweimal)
 function speedUpMarch(key, btn) {                    // halves the time still to go; the column keeps its place on the road
     const now = Date.now(); if (now - speedUpZuletzt < 600) return; speedUpZuletzt = now;
-    const sc = pendingScouts.find(x => marchKeyOf(x) === key);                // ein Späher (nur deiner – kein Befehl an den Weltrechner nötig)
+    const sc = pendingScouts.find(x => marchKeyOf(x) === key);                // ein Späher (hin: auch beim Weltrechner, er schreibt den Bericht)
     if (sc) { const rem = sc.resolveAt - now; if (rem < 1500) return; const cost = speedUpCost(sc); if (gems < cost) { flashHint('Zu wenig Edelsteine – Beschleunigen kostet ' + cost + '.', 3000); return; }
         if (!gemsWirklich('marsch:' + key, cost, btn)) return;
-        gems -= cost; const p = Math.max(0, Math.min(.99, (now - sc.startedAt) / Math.max(1, sc.resolveAt - sc.startedAt)));
+        gems -= cost; if (!sc.back) alsBefehl('schneller', { keys: [key] }); const p = Math.max(0, Math.min(.99, (now - sc.startedAt) / Math.max(1, sc.resolveAt - sc.startedAt)));
         sc.resolveAt = now + rem / 2; sc.startedAt = sc.resolveAt - (rem / 2) / (1 - p);
         flashHint('Späher beschleunigt – noch ' + fmtClock(Math.ceil(rem / 2000)) + '.', 2500); updateHud(); saveGame(); saveProgression(); renderActiveMarches(); requestRender(); return; }
     for (const list of [pendingAttacks, pendingSends, pendingRetreats, eigeneFeldBarb()]) {
@@ -1895,7 +1900,7 @@ function speedUpMarch(key, btn) {                    // halves the time still to
 // "Alle schneller": halves the time left of every own column on the road at once (same price as one by one)
 function speedableMarches() {
     const now = Date.now();
-    return [...pendingAttacks.filter(a => !a.attackerBotId), ...pendingSends.filter(x => !x.senderBotId), ...pendingRetreats, ...eigeneFeldBarb()].filter(m => !m.fightEndsAt && !m.vorlaeufig && m.resolveAt - now >= 1500);
+    return [...pendingAttacks.filter(a => !a.attackerBotId), ...pendingSends.filter(x => !x.senderBotId), ...pendingRetreats, ...pendingScouts, ...eigeneFeldBarb()].filter(m => !m.fightEndsAt && !m.vorlaeufig && m.resolveAt - now >= 1500);
 }
 function speedUpAll(btn) {
     if (Date.now() - speedUpZuletzt < 600) return; speedUpZuletzt = Date.now();
@@ -1985,16 +1990,18 @@ function launchScout(targetId, explore, at) {
 
     const durationSec = scoutSecs(home, target);   // the Späherturm makes scouts faster
     const startedAt = Date.now();
-    pendingScouts.push({
+    const sc = {
         sourceId,
         targetId,
         startedAt,
         resolveAt: startedAt + durationSec * 1000,
         explore: !!explore,
         ex: at ? at.x : undefined, ey: at ? at.y : undefined
-    });
-    if (explore) alsBefehl('spaehen', { ziel: targetId, ex: at ? Math.round(at.x) : undefined, ey: at ? Math.round(at.y) : undefined });   // 3B: der Weltrechner deckt den Nebel auf dem Server mit auf
-    else if (fremdGeheim() && islandOwnerOf(targetId) && islandOwnerOf(targetId) !== 'player' && !bossAt(targetId)) alsBefehl('spaehen', { ziel: targetId, blick: 1 });   // fremde Basis: den Bericht schreibt der Weltrechner (nur er kennt die Werte)
+    };
+    pendingScouts.push(sc);
+    const key = marchKeyOf(sc);                                                  // (Zurück/Schneller finden ihn beim Weltrechner über diese Kennung)
+    if (explore) alsBefehl('spaehen', { ziel: targetId, ex: at ? Math.round(at.x) : undefined, ey: at ? Math.round(at.y) : undefined, key });   // 3B: der Weltrechner deckt den Nebel auf dem Server mit auf
+    else if (fremdGeheim() && islandOwnerOf(targetId) && islandOwnerOf(targetId) !== 'player' && !bossAt(targetId)) alsBefehl('spaehen', { ziel: targetId, blick: 1, key });   // fremde Basis: den Bericht schreibt der Weltrechner (nur er kennt die Werte)
     questProgress('scout', 1);
     saveGame();
     saveProgression();
@@ -3682,7 +3689,7 @@ function drawMarchLine(type, source, target, startedAt, resolveAt, now, pathOver
   const seg = []; let tot = 0; for (let i = 0; i < pts.length - 1; i++) { const l = Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].y - pts[i].y); seg.push(l); tot += l; }
   // placed in drawMarchTokens(), after the nameplates, so the token can start past the source's own plate
   const own = type !== 'incoming' && type !== 'enemyScout'; if (who === undefined) who = own ? 'player' : null;
-  marchTokens.push({ pts, seg, tot, progress, r: (source.radius || 0) * mapState.zoom, srcId: source.id, key: type + source.id + '>' + target.id + '@' + resolveAt, col, glyph: glyphName, own, mk: mk || null, recall: type !== 'retreat', secs: Math.max(0, Math.ceil((resolveAt - now) / 1000)),
+  marchTokens.push({ pts, seg, tot, progress, r: (source.radius || 0) * mapState.zoom, srcId: source.id, key: type + source.id + '>' + target.id + '@' + resolveAt, col, glyph: glyphName, own, mk: mk || null, secs: Math.max(0, Math.ceil((resolveAt - now) / 1000)),
                     who, sk: who && glyphName !== 'scout' ? marchSkinOf(who) : null });
 }
 function marchPointAt(m, d) {                   // screen point at path distance d
@@ -3757,7 +3764,7 @@ const CHIP_SLOTS = [0, -20, 20, -40, 40, -60, 60].flatMap(dy => [[1, dy], [-1, d
           [0, -20, 20, -40, 40].flatMap(dy => [[2, dy], [-2, dy]]), [0, -20, 20, -40, 40].flatMap(dy => [[3, dy], [-3, dy]]));
 let chipDigit = null;                             // the widest digit: chips reserve the width of their widest label
 let chipSlotOf = new Map();                       // cluster key → slot used last frame (a chip only moves when that slot gets blocked)
-// Tap your own marching column: two small buttons pop up beside it - Zurück and Schneller (gems).
+// Tap your own marching column (Späher, Lager, Sammler too): small buttons pop up beside it - on the way Zurück + Schneller (gems), heim nur Schneller.
 var selMarch = null, marchBtnRects = [];
 function drawMarchButtons() {
   marchBtnRects = [];
@@ -3765,9 +3772,9 @@ function drawMarchButtons() {
   const m = marchTokens.find(t => t.mk === selMarch);
   if (!m || m.x === undefined) { selMarch = null; return; }
   setScreen(ctx);
-  const list = [pendingAttacks, pendingSends, pendingRetreats].find(l => l.some(x => marchKeyOf(x) === selMarch)), mm = list && list.find(x => marchKeyOf(x) === selMarch);
+  const list = [pendingAttacks, pendingSends, pendingRetreats, pendingScouts, eigeneFeldBarb()].find(l => l.some(x => marchKeyOf(x) === selMarch)), mm = list && list.find(x => marchKeyOf(x) === selMarch);
   if (!mm) { selMarch = null; return; }
-  const btns = (m.recall ? [{ act: 'recall', glyph: 'recall', label: 'Zurück' }] : []).concat([{ act: 'speed', glyph: 'hourglass', label: (gemsArmed('marsch:' + selMarch) ? 'Wirklich? ' : 'Schneller · ') + speedUpCost(mm) }]);
+  const btns = (list !== pendingRetreats && !mm.back ? [{ act: 'recall', glyph: 'recall', label: 'Zurück' }] : []).concat([{ act: 'speed', glyph: 'hourglass', label: (gemsArmed('marsch:' + selMarch) ? 'Wirklich? ' : 'Schneller · ') + speedUpCost(mm) }]);
   ctx.font = '700 12px Inter, system-ui, sans-serif';
   const ws = btns.map(b => ctx.measureText(b.label).width + 34 + (b.act === 'speed' ? 14 : 0)), total = ws.reduce((a, b) => a + b, 0) + 8 * (btns.length - 1);
   let x = Math.max(8, Math.min(viewW - total - 8, m.x - total / 2)); const y = Math.max(8, m.y - 74);
@@ -3945,7 +3952,7 @@ function drawMap() {
       if (!bundFreund(s.senderBotId, 'player') || (!s.back && islandOwnerOf(s.toId) !== 'player')) continue;   // (auch ihre Rückwege nach Hause – z. B. nach einer gemeinsamen Rally)
       drawMarchLine(s.back ? 'retreat' : 'send', islandById[s.fromId], islandById[s.toId], s.startedAt, s.resolveAt, wallNow, null, null, s.senderBotId); continue; }
     drawMarchLine('send', islandById[s.fromId], islandById[s.toId], s.startedAt, s.resolveAt, wallNow, null, marchKeyOf(s)); }
-  for (const s of pendingScouts) drawMarchLine('scout', islandById[s.sourceId], islandById[s.targetId], s.startedAt, s.resolveAt, wallNow);
+  for (const s of pendingScouts) drawMarchLine('scout', islandById[s.sourceId], islandById[s.targetId], s.startedAt, s.resolveAt, wallNow, null, marchKeyOf(s));   // (antippen: Zurück/Schneller wie jeder Marsch)
   for (const s of botScoutsOnMap) drawMarchLine('enemyScout', islandById[s.sourceId], islandById[s.targetId], s.startedAt, s.resolveAt, wallNow);   // a bot's scout coming to look at you
   for (const r of pendingRetreats) drawMarchLine('retreat', islandById[r.fromId], islandById[r.toId], r.startedAt, r.resolveAt, wallNow, r.path, marchKeyOf(r));   // 6
   setScreen(ctx);
@@ -10232,7 +10239,7 @@ function fieldAt(sx, sy) { const z = mapState.zoom; if (z < .004) return null; r
 function drawResFields(now, wallNow) {
     const z = mapState.zoom; if (z < .004) return;
     for (const m of fieldMarches) if (m.who === 'player') { const f = fieldById[m.fieldId], home = islandById[m.homeId]; if (!f || !home) continue;
-        m.back ? drawMarchLine('send', m.vx !== undefined ? { x: m.vx, y: m.vy, landmassId: m.vlm ?? f.landmassId } : f, home, m.startedAt, m.resolveAt, wallNow) : drawMarchLine('attack', home, f, m.startedAt, m.resolveAt, wallNow); }
+        m.back ? drawMarchLine('send', m.vx !== undefined ? { x: m.vx, y: m.vy, landmassId: m.vlm ?? f.landmassId } : f, home, m.startedAt, m.resolveAt, wallNow, null, marchKeyOf(m)) : drawMarchLine('attack', home, f, m.startedAt, m.resolveAt, wallNow, null, marchKeyOf(m)); }   // (antippen: Knöpfe wie jeder Marsch)
     setScreen(ctx);
     const k = Math.max(.6, Math.min(2.2, z / .012));
     for (const f of resFields) {
@@ -10564,7 +10571,7 @@ function drawBarb(now, wallNow) {
     for (const m of barbMarches) {                   // the columns: yours like every march, the others' as thin lines in their colour
         const home = islandById[m.homeId]; if (!home) continue;
         const pt = barbPt(m);
-        if (m.who === 'player') { m.back ? drawMarchLine('send', pt, home, m.startedAt, m.resolveAt, wallNow) : drawMarchLine('attack', home, pt, m.startedAt, m.resolveAt, wallNow); continue; }
+        if (m.who === 'player') { m.back ? drawMarchLine('send', pt, home, m.startedAt, m.resolveAt, wallNow, null, marchKeyOf(m)) : drawMarchLine('attack', home, pt, m.startedAt, m.resolveAt, wallNow, null, marchKeyOf(m)); continue; }   // (antippen: Knöpfe wie jeder Marsch)
         if (z < .006 || (!isCellOpen(pt.x, pt.y) && !isCellOpen(home.x, home.y))) continue;
         let p = barbPathMem.get(m); if (!p) { p = m.back ? marchPath(pt, home) : marchPath(home, pt); barbPathMem.set(m, p); }
         const sp = p.map(q => ({ x: toSX(q.x), y: toSY(q.y) })); let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
@@ -12127,7 +12134,11 @@ function renderAttackPreview(island, scouted) {
         icon('hourglass') + '<span><span class="xs-hide">Marsch ca. </span><span class="num" id="previewMarch">' + fmtClock(travelDurationSeconds(source, island)) + '</span></span>';
     if (popupStats.dataset.preview !== key || !document.getElementById('attackTroopsSlider')) {
         popupStats.dataset.preview = key;
+        const quellen = angriffQuellen(island).slice(0, 40); if (!quellen.includes(previewSourceId)) quellen.unshift(previewSourceId);   // (die gewählte steht immer drin)
         popupStats.innerHTML =
+            '<label class="field from-field"><span class="field-l">Von Basis</span><select id="attackFromSel" class="from-sel" aria-label="Von Basis">' +
+                quellen.map(id => '<option value="' + id + '"' + (id === previewSourceId ? ' selected' : '') + '>' + escapeHtml(islandTitle(islandById[id])) + ' · ' + fmtCompact(islandTroops[id] || 0) +
+                    ' · ' + fmtClock(travelDurationSeconds(islandById[id], island)) + (scouted && angriffReicht(id, island) ? ' · reicht' : '') + '</option>').join('') + '</select></label>' +
             '<div class="versus">' +
                 '<div class="force force--me"><span class="stat-l">' + icon('troops') + 'Angriff</span><b id="previewMyTroops"></b><small>' +
                     (atkPct > 0 ? '<span id="previewRawTroops"></span> + <span id="previewAtkBonus"></span> Schwert (+' + fmtNum(atkPct) + ' %)<span id="previewHeroBonus"></span><span id="previewTitleBonus"></span>' : 'aus ' + islandTitle(source) + '<span id="previewHeroBonus"></span><span id="previewTitleBonus"></span>') + '</small></div>' +
@@ -12142,6 +12153,10 @@ function renderAttackPreview(island, scouted) {
                 '<div class="seg" data-preview="quick"><button type="button" data-f=".25">25 %</button><button type="button" data-f=".5">50 %</button><button type="button" data-f=".75">75 %</button><button type="button" data-f="1">Alle</button></div></div>' +
             (heroSegHtml('data-hero', previewHero) ? '<div class="field"><div class="field-top"><span class="field-l">Held</span><span class="val" data-preview="herofx"></span></div><div class="seg hero-seg" data-preview="hero">' +
                 heroSegHtml('data-hero', previewHero) + '</div><div class="seg hero-seg hero-seg2" data-preview="hero2"></div></div>' : '');
+        document.getElementById('attackFromSel').addEventListener('change', e => {   // andere Startbasis gewählt
+            const id = +e.target.value; if (!ownedIslands.has(id)) return;
+            previewSourceId = id; previewFraction = 1; previewAttackTroops = null; renderPopup();
+        });
         const slider = document.getElementById('attackTroopsSlider');
         slider.addEventListener('input', () => {
             const mx = sourceTroops();
@@ -12409,6 +12424,24 @@ backBtn.addEventListener('click', () => {
     renderPopup();
 });
 
+// Angriff: eigene Basen mit Truppen, die hinkommen – die nächste (kürzester Weg) zuerst
+function angriffQuellen(target) {
+    return [...ownedIslands].filter(id => id !== target.id && islandById[id] && (islandTroops[id] || 0) > 0 && canReach(islandById[id].landmassId, target.landmassId))
+        .map(id => ({ id, weg: marschStrecke(islandById[id], target) })).sort((a, b) => a.weg - b.weg).map(x => x.id);
+}
+// Reicht eine Basis mit allen Truppen (ohne Held) gegen das gespähte Ziel? – gerechnet wie die Vorschau (Schwert, Titel, Forschung)
+function angriffReicht(id, target) {
+    const t = islandTroops[id] || 0, mine = (t + attackFlatBonus(t)) * titleMult('player', 'attack') * (AUF ? AUF.kampf('player', 'a') : 1);
+    return mine > effectiveTroops(target) + effectiveDefense(target);
+}
+// Vorausgewählt: die nächste Basis mit genug Truppen; reicht keine, die mit den meisten (bei Gleichstand die nächste).
+// Nicht gespäht (Stärke unbekannt): die nächste mit Truppen.
+function angriffStart(target) {
+    const q = angriffQuellen(target); if (!q.length) return null;
+    if (!scoutedIslands.has(target.id)) return q[0];
+    const genug = q.find(id => angriffReicht(id, target)); if (genug !== undefined) return genug;
+    return q.reduce((b, id) => (islandTroops[id] || 0) > (islandTroops[b] || 0) ? id : b, q[0]);
+}
 attackBtn.addEventListener('click', () => {
     if (popupView === 'recall') { if (Date.now() - previewShownAt >= 350) confirmRecall(); return; }
     if (popupView === 'send') {
@@ -12450,14 +12483,9 @@ attackBtn.addEventListener('click', () => {
     // wrongly clear pendingAttackTargetId and show a stale hint.
     if (popupIslandId === null) return;
     { const ow = islandOwnerOf(popupIslandId); if (ow && ow !== 'player' && baseShieldedFor(popupIslandId, 'player')) { flashHint(shieldBlockText(ow), 4000); return; } }
-    // pick the own base next to the target with the most troops (same region or one bridge away) - no hunting on the map
+    // Startbasis: die nächste eigene Basis mit genug Truppen (siehe angriffStart) – im Angriffsfenster änderbar
     const target = islandById[popupIslandId];
-    let best = null;
-    for (const id of ownedIslands) {
-        const isl = islandById[id], t = islandTroops[id] || 0;
-        if (t <= 0 || !canReach(isl.landmassId, target.landmassId)) continue;
-        if (!best || t > (islandTroops[best] || 0)) best = id;
-    }
+    const best = angriffStart(target);
     if (best === null) {
         const any = [...ownedIslands].some(id => canReach(islandById[id].landmassId, target.landmassId));
         flashHint(any ? 'Deine Basen neben diesem Gebiet haben keine Truppen – schicke erst Truppen dorthin (Senden).'
@@ -13024,6 +13052,16 @@ if (window.WELT) {
         bundMelden(who, was + ' ist nicht losgegangen – ' + (grund ? grund + '. Deine Truppen bleiben, wo sie sind.' : AUF && !AUF.marschOk(who, grp, src) ? AUF.marschVoll(who) : 'kein Weg frei (Tor zu, Maut zu teuer, Friedensschild oder zu wenig Truppen). Deine Truppen bleiben, wo sie sind.'));
     }
     const marschVon = (who, key) => pendingAttacks.find(x => x.attackerBotId === who && marchKeyOf(x) === key) || pendingSends.find(x => x.senderBotId === who && marchKeyOf(x) === key) || feldBarbMarsch(who, key);
+    // Sein Späher (Kennung vom Handy) wie ein Marsch: hb.sb [Ziel, an, Kennung, los] (Bericht), hb.sp [Heim, x, y, los, an, Weg, Kennung] (Erkundung).
+    // setz(): die neue Zeit zurückschreiben (Schneller), weg(): umkehren – er bringt keinen Bericht und deckt nichts mehr auf (Zurück)
+    function spaeherVon(who, key) {
+        const hb = hbDa(who); if (!hb) return null;
+        const sb = (hb.sb || []).find(x => x[2] === key), l = sb ? 'sb' : 'sp', e = sb || (hb.sp || []).find(x => x[6] === key); if (!e) return null;
+        const an = sb ? 1 : 4;
+        return { startedAt: nn(e[3]) || Date.now(), resolveAt: e[an],
+            setz() { e[an] = Math.round(this.resolveAt); e[3] = Math.round(this.startedAt); saveBotState(); },
+            weg() { hb[l] = hb[l].filter(x => x !== e); saveBotState(); } };
+    }
 
     // ===== Schummel-Schutz (nur beim Weltrechner) =====
     // Münzen, Gems und Stufe eines Spielers rechnet noch sein eigenes Handy. Ein Schummler könnte also Befehle fälschen
@@ -13950,7 +13988,8 @@ if (window.WELT) {
         },
         zurueck(who, b) {                             // umkehren: wie bei dir, nur als "Marsch zurück" dieses Spielers
             if (!kennungOk(b.key)) return;
-            const m = marschVon(who, b.key); if (!m || m.fightEndsAt || m.rally || m.back) return;   // (eine Rally gehört allen, die mitmachen; wer schon heimgeht, kehrt nicht nochmal um)
+            const m = marschVon(who, b.key); if (!m) { const sp = spaeherVon(who, b.key); if (sp) sp.weg(); return; }   // (sein Späher kehrt um)
+            if (m.fightEndsAt || m.rally || m.back) return;   // (eine Rally gehört allen, die mitmachen; wer schon heimgeht, kehrt nicht nochmal um)
             if (!pendingAttacks.includes(m) && !pendingSends.includes(m)) { marschUmkehren(m, Date.now()); requestRender(); return; }   // Lager, Boss, Drache, Invasion, Sammler
             const now = Date.now(), fromId = m.sourceId ?? m.fromId, toId = m.targetId ?? m.toId, troops = m.rawTroops ?? m.troops;
             if (pendingAttacks.includes(m)) heroWutZurueck(who, m.hx);   // (nicht gekämpft: die Wut bleibt)
@@ -13963,11 +14002,11 @@ if (window.WELT) {
             if (!Array.isArray(b.keys)) return;
             if (zuOft(wm(who), 'schneller', 60, 60000)) { warnen(who, 'schneller', 'Beschleunigen über 60-mal pro Minute – der Rest verfällt.'); return; }
             const now = Date.now(), keys = [...new Set(b.keys.filter(kennungOk))].slice(0, 200), ms = [];
-            for (const key of keys) { const m = marschVon(who, key); if (!m || m.fightEndsAt || m.resolveAt - now < 1500) continue; ms.push(m); }
+            for (const key of keys) { const m = marschVon(who, key) || spaeherVon(who, key); if (!m || m.fightEndsAt || m.resolveAt - now < 1500) continue; ms.push(m); }   // (auch seine Späher)
             const kosten = ms.reduce((a, m) => a + speedUpCost(m), 0), hb = hbDa(who);
             if (hb && kosten > 0 && !b._nach && !schonBezahlt(wacheSehen(who), b, true) && !hbZahlen(who, hb, wacheSehen(who), { g: kosten })) { warnen(who, 'gems', 'Beschleunigen für ' + kosten + ' Gems – so viele kann er nicht haben. Abgelehnt.', kosten); return; }
             for (const m of ms) { const rem = m.resolveAt - now;
-                const pr = Math.max(0, Math.min(.99, (now - m.startedAt) / Math.max(1, m.resolveAt - m.startedAt))); m.resolveAt = now + rem / 2; m.startedAt = m.resolveAt - (rem / 2) / (1 - pr); }
+                const pr = Math.max(0, Math.min(.99, (now - m.startedAt) / Math.max(1, m.resolveAt - m.startedAt))); m.resolveAt = now + rem / 2; m.startedAt = m.resolveAt - (rem / 2) / (1 - pr); if (m.setz) m.setz(); }
             saveProgression(); feldBarbSpeichern(); if (ms.length) befehlBezahlt(b);
         },
         spaehen(who, b) {                             // 3B: Erkundungs-Späher – der Weltrechner deckt seinen Nebel (auf dem Server) mit auf
@@ -13980,13 +14019,13 @@ if (window.WELT) {
                 let h = null, hd = Infinity; for (const id of botOwnedIslands[who] || []) { const i = islandById[id]; if (!i) continue; const d = Math.hypot(i.x - t.x, i.y - t.y); if (d < hd) { hd = d; h = i; } }
                 if (!h || !spaeherWeg(h.landmassId, t.landmassId, who)) return nein();
                 if (!nbKennt(who, hb, t.landmassId)) { warnen(who, 'spaehen', 'Späher zu einer Basis, die er nicht kennen kann – abgelehnt.'); return nein(); }
-                const now = Date.now(); hb.sb = (hb.sb || []).slice(-20); hb.sb.push([t.id, now + scoutSecs(h, t, who) * 1000]); saveBotState(); return;
+                const now = Date.now(); hb.sb = (hb.sb || []).slice(-20); hb.sb.push([t.id, now + scoutSecs(h, t, who) * 1000, kennungOk(b.key) ? b.key : 0, now]); saveBotState(); return;   // (Kennung: Zurück/Schneller vom Handy)
             }
             if (!punktOk(pt)) { warnen(who, 'kaputt', 'Späher mit kaputtem Ziel – abgelehnt.'); return; }
             let home = null, bd = Infinity; for (const id of botOwnedIslands[who] || []) { const i = islandById[id]; if (!i) continue; const d = Math.hypot(i.x - t.x, i.y - t.y); if (d < bd) { bd = d; home = i; } }
             if (!home || !spaeherWeg(home.landmassId, t.landmassId, who)) return;                 // (wie auf dem Handy: von der nächsten eigenen Basis, nicht durch zu Tore)
             if (!nbKennt(who, hb, t.landmassId)) { warnen(who, 'spaehen', 'Späher in ein Gebiet, das er nicht kennen kann – abgelehnt.'); return; }
-            const now = Date.now(); hb.sp = (hb.sp || []).slice(-40); hb.sp.push([home.id, Math.round(pt.x), Math.round(pt.y), now, now + scoutSecs(home, t, who) * 1000, 0]); saveBotState();
+            const now = Date.now(); hb.sp = (hb.sp || []).slice(-40); hb.sp.push([home.id, Math.round(pt.x), Math.round(pt.y), now, now + scoutSecs(home, t, who) * 1000, 0, kennungOk(b.key) ? b.key : 0]); saveBotState();
         },
         ausbau(who, b) {                              // die Münzen zahlt er selbst – der Weltrechner prüft, ob er sie haben kann
             const m = wm(who);

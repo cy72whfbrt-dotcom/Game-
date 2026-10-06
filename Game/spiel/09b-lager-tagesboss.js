@@ -257,7 +257,7 @@ function drawBarb(now, wallNow) {
     for (const m of barbMarches) {                   // the columns: yours like every march, the others' as thin lines in their colour
         const home = islandById[m.homeId]; if (!home) continue;
         const pt = barbPt(m);
-        if (m.who === 'player') { m.back ? drawMarchLine('send', pt, home, m.startedAt, m.resolveAt, wallNow) : drawMarchLine('attack', home, pt, m.startedAt, m.resolveAt, wallNow); continue; }
+        if (m.who === 'player') { m.back ? drawMarchLine('send', pt, home, m.startedAt, m.resolveAt, wallNow, null, marchKeyOf(m)) : drawMarchLine('attack', home, pt, m.startedAt, m.resolveAt, wallNow, null, marchKeyOf(m)); continue; }   // (antippen: Knöpfe wie jeder Marsch)
         if (z < .006 || (!isCellOpen(pt.x, pt.y) && !isCellOpen(home.x, home.y))) continue;
         let p = barbPathMem.get(m); if (!p) { p = m.back ? marchPath(pt, home) : marchPath(home, pt); barbPathMem.set(m, p); }
         const sp = p.map(q => ({ x: toSX(q.x), y: toSY(q.y) })); let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;

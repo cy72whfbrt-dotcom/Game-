@@ -27,16 +27,18 @@ function launchScout(targetId, explore, at) {
 
     const durationSec = scoutSecs(home, target);   // the Späherturm makes scouts faster
     const startedAt = Date.now();
-    pendingScouts.push({
+    const sc = {
         sourceId,
         targetId,
         startedAt,
         resolveAt: startedAt + durationSec * 1000,
         explore: !!explore,
         ex: at ? at.x : undefined, ey: at ? at.y : undefined
-    });
-    if (explore) alsBefehl('spaehen', { ziel: targetId, ex: at ? Math.round(at.x) : undefined, ey: at ? Math.round(at.y) : undefined });   // 3B: der Weltrechner deckt den Nebel auf dem Server mit auf
-    else if (fremdGeheim() && islandOwnerOf(targetId) && islandOwnerOf(targetId) !== 'player' && !bossAt(targetId)) alsBefehl('spaehen', { ziel: targetId, blick: 1 });   // fremde Basis: den Bericht schreibt der Weltrechner (nur er kennt die Werte)
+    };
+    pendingScouts.push(sc);
+    const key = marchKeyOf(sc);                                                  // (Zurück/Schneller finden ihn beim Weltrechner über diese Kennung)
+    if (explore) alsBefehl('spaehen', { ziel: targetId, ex: at ? Math.round(at.x) : undefined, ey: at ? Math.round(at.y) : undefined, key });   // 3B: der Weltrechner deckt den Nebel auf dem Server mit auf
+    else if (fremdGeheim() && islandOwnerOf(targetId) && islandOwnerOf(targetId) !== 'player' && !bossAt(targetId)) alsBefehl('spaehen', { ziel: targetId, blick: 1, key });   // fremde Basis: den Bericht schreibt der Weltrechner (nur er kennt die Werte)
     questProgress('scout', 1);
     saveGame();
     saveProgression();
