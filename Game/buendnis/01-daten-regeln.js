@@ -15,7 +15,7 @@
 // 1) DATEN
 // ==============================================================================================================
 const BUND = {
-    MAX: 5, KOSTEN: wirtK(30000),                             // höchstens 5 Mitglieder (Spieler und Mitspieler zusammen – Alexander 3.10.) · Gründen kostet 30.000 Münzen × WIRTSCHAFT_KOSTEN (17)
+    MAX: 5, KOSTEN: Math.round(wirtK(30000) / 10) * 10,       // höchstens 5 Mitglieder (Spieler und Mitspieler zusammen – Alexander 3.10.) · Gründen kostet 30.000 Münzen × WIRTSCHAFT_KOSTEN, auf 10 gerundet (20 statt krumm 17)
     SIG_MS: 10 * 60000, SIG_PAUSE: 30000, SIG_MAX: 30,        // Signale: 10 Min. auf der Karte, 1 pro 30 s und Spieler
     RALLY_MIN: [1, 3, 5], RALLY_PRO_BUND: 3,
     GESCHENKE_TAG: 5, KISTEN_TAG: 3,                          // pro Mitglied höchstens 5 Geschenke am Tag · pro Geber 3 Kisten-Geschenke

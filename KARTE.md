@@ -27,7 +27,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `addMat` → Game/baukunst/04-vielfalt-stile.js:232
 - `addPoly` → Game/spiel/03a-karte-hintergrund.js:168
 - `addProps` → Game/baukunst/04-vielfalt-stile.js:514
-- `addXp` → Game/spiel/02a-shop-stufen.js:257
+- `addXp` → Game/spiel/02a-shop-stufen.js:259
 - `adminBefehl` → Game/spiel/10d-welt-weltrechner.js:1166
 - `adminMelden` → Game/weltrechner/push.js:214
 - `adminSenden` → Game/weltrechner/push.js:215
@@ -898,7 +898,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `endWander` → Game/spiel/07b-kriegsherr.js:52
 - `envTex` → Game/baukunst/02-buehne-grundbasis.js:63
 - `equipInventoryItem` → Game/spiel/02a-shop-stufen.js:181
-- `equipmentUpgradeCost` → Game/spiel/02a-shop-stufen.js:291
+- `equipmentUpgradeCost` → Game/spiel/02a-shop-stufen.js:293
 - `equippedItemBonusPct` → Game/spiel/02a-shop-stufen.js:53
 - `ereignis_ablegen` → Game/server/05-datenbank-welt.php:260
 - `ereignisse_abholen` → Game/server/05-datenbank-welt.php:261
@@ -1136,7 +1136,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `goldPerKillRate` → Game/spiel/04-kampf.js:280
 - `gone` → Game/spiel/09d-armeen-wegmarken.js:125
 - `grantFreeCrate` → Game/spiel/06a-aufgaben.js:13
-- `grantLevelRewards` → Game/spiel/02a-shop-stufen.js:236
+- `grantLevelRewards` → Game/spiel/02a-shop-stufen.js:238
 - `GRAV` → Game/baukunst/07-hafen-palast.js:412
 - `groesse_nach` → Game/server/05-datenbank-welt.php:210
 - `groundGlow` → Game/baukunst/03-wahrzeichen-feuer.js:25
@@ -1367,7 +1367,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `kampfAnteile` → Game/buendnis/02-rally-geschenke.js:194
 - `kampfAufraeumen` → Game/spiel/04-kampf.js:246
 - `kampfDazu` → Game/spiel/07a-schlachten.js:50
-- `kampfEp` → Game/spiel/02a-shop-stufen.js:253
+- `kampfEp` → Game/spiel/02a-shop-stufen.js:255
 - `kampfGearHtml` → Game/spiel/05d-maersche-kampfbericht.js:114
 - `kampfHeimTeile` → Game/bots/02-kampf-karte.js:16
 - `kampfKey` → Game/spiel/07a-schlachten.js:55
@@ -1428,10 +1428,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `leiter_sek` → Game/server/07-welt-puls.php:12
 - `leiter_setzen` → Game/server/05-datenbank-welt.php:24
 - `letzte_sicherung_zeit` → Game/server/05-datenbank-welt.php:134
-- `levelRewardCoins` → Game/spiel/02a-shop-stufen.js:223
-- `levelRewardGems` → Game/spiel/02a-shop-stufen.js:226
+- `levelRewardCoins` → Game/spiel/02a-shop-stufen.js:225
+- `levelRewardGems` → Game/spiel/02a-shop-stufen.js:228
 - `levelRewardText` → Game/spiel/08f-stadtbild-bild.js:280
-- `levelRewardTroops` → Game/spiel/02a-shop-stufen.js:220
+- `levelRewardTroops` → Game/spiel/02a-shop-stufen.js:222
 - `levelUpItem` → Game/spiel/02a-shop-stufen.js:171
 - `LILY` → Game/baukunst/08-himmelsfeste-bilder.js:20
 - `LIME` → Game/baukunst/07-hafen-palast.js:408
@@ -1640,7 +1640,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `neulingBis` → Game/spiel/06d-schild-produktion.js:26
 - `neulingEnde` → Game/spiel/06d-schild-produktion.js:38
 - `neutralId` → Game/spiel/01a-grundlagen.js:16
-- `niceRound` → Game/spiel/02a-shop-stufen.js:215
+- `niceRound` → Game/spiel/02a-shop-stufen.js:217
 - `niceRoundW` → Game/spiel/01b-weltkarte.js:32
 - `nichtLos` → Game/spiel/10d-welt-weltrechner.js:95
 - `nichts` → Game/weltrechner/start.js:222
@@ -1940,7 +1940,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `retreatSecs` → Game/spiel/02c-spaeher-ankunft.js:175
 - `retreatSurvivorsPreview` → Game/spiel/02c-spaeher-ankunft.js:176
 - `revealAround` → Game/spiel/01e-nebel-kampfwerte-hud.js:40
-- `rewardBaseId` → Game/spiel/02a-shop-stufen.js:229
+- `rewardBaseId` → Game/spiel/02a-shop-stufen.js:231
 - `rgba` → Game/ladebildschirm.js:12
 - `ribbed` → Game/baukunst/04-vielfalt-stile.js:258
 - `ribbon` → Game/spiel/02c-spaeher-ankunft.js:298
@@ -2040,8 +2040,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `saveLeave` → Game/spiel/06d-schild-produktion.js:239
 - `saveLook` → Game/spiel/05a-aussehen-profil.js:88
 - `saveMarkers` → Game/spiel/09d-armeen-wegmarken.js:298
-- `saveProgression` → Game/spiel/02a-shop-stufen.js:269
-- `saveProgressionNow` → Game/spiel/02a-shop-stufen.js:275
+- `saveProgression` → Game/spiel/02a-shop-stufen.js:271
+- `saveProgressionNow` → Game/spiel/02a-shop-stufen.js:277
 - `saveQuests` → Game/spiel/06a-aufgaben.js:153
 - `saveThrone` → Game/spiel/06c-thron-mitte.js:20
 - `saveTitles` → Game/spiel/04-kampf.js:23
@@ -2451,7 +2451,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `window.__weltLaden` → Game/spiel/10d-welt-weltrechner.js:26
 - `window.__weltLeiterWechsel` → Game/spiel/10d-welt-weltrechner.js:78
 - `window.__weltNeuerMensch` → Game/spiel/10d-welt-weltrechner.js:85
-- `window.__weltSpeicherJetzt` → Game/spiel/02a-shop-stufen.js:274
+- `window.__weltSpeicherJetzt` → Game/spiel/02a-shop-stufen.js:276
 - `window.__weltVorPuls` → Game/spiel/10d-welt-weltrechner.js:67
 - `wing` → Game/baukunst/07-hafen-palast.js:538
 - `wirtK` → Game/spiel/01b-weltkarte.js:34
@@ -3572,18 +3572,18 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `levelUpItem` :171
 - `equipInventoryItem` :181
 - `xpNeededForLevel` :211 — Each player level needs 30 % more XP than the one before (XP = enemy troops kil…
-- `niceRound` :215 — Level rewards: small at the start, 2 Mio. troops at level 30, then linear growt…
-- `levelRewardTroops` :220
-- `levelRewardCoins` :223
-- `levelRewardGems` :226
-- `rewardBaseId` :229
-- `grantLevelRewards` :236 — Rewards are granted the moment the level is reached (so a reload can't lose the…
-- `kampfEp` :253 — … und nur, wenn der Gegner ebenbürtig war: wer mit der zehnfachen Übermacht ein…
-- `addXp` :257
-- `saveProgression` :269
-- `window.__weltSpeicherJetzt` :274 — Alles, was mit 1 s Verzögerung gespeichert würde, jetzt gleich in den Spielstan…
-- `saveProgressionNow` :275
-- `equipmentUpgradeCost` :291
+- `niceRound` :217
+- `levelRewardTroops` :222
+- `levelRewardCoins` :225
+- `levelRewardGems` :228
+- `rewardBaseId` :231
+- `grantLevelRewards` :238 — Rewards are granted the moment the level is reached (so a reload can't lose the…
+- `kampfEp` :255 — … und nur, wenn der Gegner ebenbürtig war: wer mit der zehnfachen Übermacht ein…
+- `addXp` :259
+- `saveProgression` :271
+- `window.__weltSpeicherJetzt` :276 — Alles, was mit 1 s Verzögerung gespeichert würde, jetzt gleich in den Spielstan…
+- `saveProgressionNow` :277
+- `equipmentUpgradeCost` :293
 
 ### Game/spiel/02b-maersche.js — Märsche: Angriffe und Verlegen losschicken, Laufzeit, Zurückrufen, Beschleunigen
 - `attackSpeedMultiplier` :14

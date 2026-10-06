@@ -59,8 +59,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(r.forschKosten[0], 'Forschung Angriff Stufe 1: Münzen ÷ 1800, Holz in RoK-Größe', r.forschKosten[1]);
   ok(r.gebaeude.every(Boolean), 'Gebäude (Mauer 5): Münzen ÷ 1800, Holz in RoK-Größe', r.gebaeude);
   ok(r.kiste[0] === 150 && r.kiste[1] === '150', 'Ausrüstungskiste kostet 150 Edelsteine (auch der Knopf)', r.kiste);
-  ok(r.bund === 17, 'Bündnis gründen: 30.000 ÷ 1800 = 17 Münzen', r.bund);
-  ok(r.belohnung[0] === 1100 && r.belohnung[1] === 250 && r.belohnung[2] >= 1, 'Stufen-Belohnung Stufe 30 ÷ 1800 (Truppen, Münzen), nie 0', r.belohnung);
+  ok(r.bund === 20, 'Bündnis gründen: 30.000 ÷ 1800 auf 10 gerundet = 20 Münzen', r.bund);
+  ok(r.belohnung[0] === 1100 && r.belohnung[1] === 250 && r.belohnung[2] === 10, 'Stufen-Belohnung Stufe 30 ÷ 1800 (Truppen, Münzen), nie unter 10', r.belohnung);
   ok(r.ep, 'EP: ein besiegter Krieger zählt wie vorher 1.800 (Stufen gleich schnell)');
   ok(r.lager[0] === 1 && r.lager[1] === 570, 'Barbaren-Lager Stufe 1 / 10 ÷ 1800', r.lager);
   ok(r.krankenhaus[0] === 556 && r.krankenhaus[1] > 10000, 'Krankenhaus-Platz ÷ 1800', r.krankenhaus);
