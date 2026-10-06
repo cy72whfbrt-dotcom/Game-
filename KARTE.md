@@ -68,10 +68,15 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `angriffQuellen` → Game/spiel/10b-inselfenster-knoepfe.js:122
 - `angriffReicht` → Game/spiel/10b-inselfenster-knoepfe.js:127
 - `angriffStart` → Game/spiel/10b-inselfenster-knoepfe.js:133
-- `anleitung` → Game/spiel/06b-pass-anleitung.js:145
-- `anleitungInsel` → Game/spiel/06b-pass-anleitung.js:144
-- `anleitungSpeichern` → Game/spiel/06b-pass-anleitung.js:148
-- `anleitungZeigen` → Game/spiel/06b-pass-anleitung.js:150
+- `anleitung` → Game/spiel/06b-pass-anleitung.js:155
+- `anleitungAbgeholt` → Game/spiel/06b-pass-anleitung.js:161
+- `anleitungFenster` → Game/spiel/06b-pass-anleitung.js:165
+- `anleitungInsel` → Game/spiel/06b-pass-anleitung.js:154
+- `anleitungNeutral` → Game/spiel/06b-pass-anleitung.js:131
+- `anleitungPuls` → Game/spiel/06b-pass-anleitung.js:164
+- `anleitungSpeichern` → Game/spiel/06b-pass-anleitung.js:163
+- `anleitungStarten` → Game/spiel/06b-pass-anleitung.js:199
+- `anleitungZeigen` → Game/spiel/06b-pass-anleitung.js:169
 - `anmelden` → Game/server/01-grundlagen-login.php:71
 - `antwort` → Game/speichern.js:136
 - `antwort` → Game/weltrechner/start.js:333
@@ -894,6 +899,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `evBossTakt` → Game/spiel/09c-events-drache.js:50
 - `evChips` → Game/spiel/09c-events-drache.js:462
 - `evDrHtml` → Game/spiel/09c-events-drache.js:422
+- `eventsBereit` → Game/spiel/06b-pass-anleitung.js:162
 - `evHinweise` → Game/spiel/09c-events-drache.js:268
 - `evInvHtml` → Game/spiel/09c-events-drache.js:404
 - `evJetzt` → Game/spiel/09c-events-drache.js:378
@@ -3992,10 +3998,16 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderPass` :83
 - `passScroll` :106 — the level you're on in view
 - `maybeShowDaily` :119
-- `anleitungInsel` :144
-- `anleitung` :145
-- `anleitungSpeichern` :148
-- `anleitungZeigen` :150
+- `anleitungNeutral` :131 — ANLEITUNG für neue Spieler (Idee 45): 7 kurze Schritte unten am Bildschirm, jed…
+- `anleitungInsel` :154
+- `anleitung` :155
+- `anleitungAbgeholt` :161
+- `eventsBereit` :162
+- `anleitungSpeichern` :163
+- `anleitungPuls` :164
+- `anleitungFenster` :165 — Hauptstadt-Fenster: ein Satz, was es zeigt (solange die Anleitung läuft)
+- `anleitungZeigen` :169
+- `anleitungStarten` :199
 
 ### Game/spiel/06c-thron-mitte.js — Thron-Punkte, die Mitte (Thron, Wächter-Tempel, Tore), Kopfgeld auf den Herrsch…
 - `throneOwned` :15

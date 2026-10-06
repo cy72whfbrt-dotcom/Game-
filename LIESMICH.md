@@ -628,6 +628,22 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Selbstprüfung: Rückzug ohne Basis zum Heimkehren lässt den Marsch laufen (Truppen nie weg), je Mitspieler höchstens eine
   offene „Später“-Folge (Fragen-Spam), Bericht-Wissen über `botLearn` (Merker begrenzt). Neue Tests
   `bund_rueckzug_test`, `rally_warnung_test`, `verst_heim_test`, `bund_bericht_test`, `thron_verst_test`.
+- **5./6.10. Nacht – Anleitung und erster Eindruck (11b D „Neue Spieler“, NICHT hochgeladen):** (06b-pass-anleitung.js)
+  Die tägliche Belohnung kommt beim allerersten Start erst nach Anleitung Schritt 2 (`maybeShowDaily`, `ANLEITUNG_TAEGLICH`).
+  Schritt 6 („Belohnungen unter Events“) zählt erst nach echtem Abholen (Tagesbelohnung, Aufgabe, Bonus, Wochenkette,
+  Abholfach, Erfolg, Pass melden `anleitungAbgeholt`; ist gar nichts abholbereit, reicht das Öffnen – sonst bliebe man hängen).
+  Hauptstadt-Fenster: Satz „Hier stehen deine Truppen. Mit ihnen greifst du an und sammelst.“ (`#popupAnleitung`, solange die
+  Anleitung läuft). In jedem Schritt pulsiert der nächste nötige Knopf (`body[data-anl-puls]`: Fadenkreuz, Angreifen,
+  Aufwerten, Stadt/Stadt betreten/Aufwerten im Holzfäller, Sammeln, Events, Abholen). Neuer kurzer Schritt 7 erklärt die
+  Knöpfe ohne Text (Fadenkreuz = zur Hauptstadt, Fahne = Wegmarke, Schwerter = Armee aufstellen, +/− = Zoom und der Würfel
+  oben neben Münzen/Edelsteinen/Truppen = Rohstoffe; alle pulsieren) mit Knopf „Verstanden“ unter dem Text (Leiste kompakt:
+  Schritt, Text und „×“ in einer Zeile). „×“ fragt erst im Spiel „Wirklich überspringen?“ (Überspringen / Weiter lernen, kein
+  confirm()); nach „Überspringen“ kommt die tägliche Belohnung gleich (nicht erst beim nächsten Laden). Profil → Einstellungen → „Anleitung noch mal“ startet von vorn; die Belohnung (10 Edelsteine ins Abholfach)
+  gibt es nur beim ersten Mal (`anleitung.belohnt`; alter Stand „6 von 6“ bleibt fertig). **Anleitungs-Stand im Browser?
+  Nein:** `store` (01a) geht über `localStorage`, das auf der Spielseite speichern.js ersetzt – `openWaterAnleitung` liegt im
+  Spielstand auf dem Server (wie alle `openWater…`-Werte; `sessionStorage` nur im Arbeitsspeicher, sw.js nur Push, Cookie nur
+  Login). Nur die Vorschau ohne Server nutzt den echten Browser-Speicher. Nichts zu verlegen. Test
+  `tests/browser/anleitung_test.js` (Handy 390×844 + Desktop).
 
 - **5./6.10. Nacht – Mitspieler schätzen Angriffe (11b C, Alexander N1):** Mitspieler kannten beim Losmarsch die genaue
   Stärke eines Angriffs (Held, Fähigkeit, Titel, Forschung) und schickten genau passende Hilfe oder räumten rechtzeitig. Jetzt
@@ -971,6 +987,9 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
 - Neue Spieler: tägliche Belohnung erst nach der Anleitung · Anleitung wiederholbar, Schritt 6 erst nach Abholen ·
   Hauptstadt-Fenster erklärt sich, nächster Knopf leuchtet · Knöpfe ohne Text werden in der Anleitung erklärt ·
   schneller laden (**gebaut, nicht hochgeladen** – Verlauf 5./6.10. Nacht) · prüfen, ob der Anleitungs-Stand im Browser liegt (wenn ja: auf den Server).
+  schneller laden · prüfen, ob der Anleitungs-Stand im Browser liegt (wenn ja: auf den Server).
+  → **Anleitung: gebaut (nicht hochgeladen)** – Verlauf „5./6.10. Nacht – Anleitung“; der Stand lag schon auf dem Server.
+  „Schneller laden“ gehört nicht zu diesem Paket.
 - Kampf/Bündnis: Nachricht, wenn ein echter Spieler dich ausspäht · Warnung + automatische Hilfe bei einer Rally gegen
   schneller laden · prüfen, ob der Anleitungs-Stand im Browser liegt (wenn ja: auf den Server).
 - Kampf/Bündnis: Nachricht, wenn ein echter Spieler dich ausspäht (**gebaut, nicht hochgeladen** – auch Mitspieler) · Warnung + automatische Hilfe bei einer Rally gegen

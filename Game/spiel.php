@@ -413,13 +413,22 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 .toast:empty{display:none}
 .toast--lang{display:block;-webkit-line-clamp:none}   /* langer Hinweis (Saison): ganz lesbar, Umbruch statt „…“ */
 .anleitung{position:fixed;z-index:var(--z-toast);left:calc(var(--safe-l,0px) + 10px);right:calc(var(--safe-r,0px) + 58px);bottom:calc(var(--dock-h,64px) + var(--safe-bd,0px) + 14px);
-  max-width:420px;display:flex;align-items:center;gap:10px;padding:10px 8px 10px 12px;
+  max-width:420px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:8px 10px;padding:10px 8px 10px 12px;   /* Schritt · Text · × in einer Zeile, Knöpfe darunter */
   background:var(--glass);border:1px solid var(--gold-300);border-radius:var(--r-sm);box-shadow:var(--sh-2);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 .anleitung[hidden]{display:none}
-.anleitung-n{flex:0 0 auto;font:600 var(--fs-11)/1 var(--font-ui);color:var(--gold-100);letter-spacing:.06em;white-space:nowrap}
-.anleitung-t{flex:1 1 auto;font:500 var(--fs-13)/1.35 var(--font-ui);color:var(--tx-1)}
-.anleitung .btn-x{flex:0 0 auto}
+.anleitung-n{font:600 var(--fs-11)/1 var(--font-ui);color:var(--gold-100);letter-spacing:.06em;white-space:nowrap}
+.anleitung-t{font:500 var(--fs-13)/1.35 var(--font-ui);color:var(--tx-1)}
+.anleitung-k{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px}
+.anleitung-ok{grid-column:1/-1;justify-self:end}
 body.has-sheet .anleitung{display:none}
+/* Anleitung: der nächste nötige Knopf pulsiert (06b anleitungZeigen setzt body[data-anl-puls]) */
+@keyframes anl-puls{0%,100%{box-shadow:0 0 0 0 rgba(240,200,110,.85)}60%{box-shadow:0 0 0 9px rgba(240,200,110,0)}}
+body[data-anl-puls="heim"] #homeBtn,body[data-anl-puls="knoepfe"] :is(#mapControls button,#hudRoh),
+body[data-anl-puls="angriff"] #attackBtn,body[data-anl-puls="aufwerten"] #upgradeBtn,
+body[data-anl-puls="stadt"] #cityNavBtn,body[data-anl-puls="stadtfenster"] #cityBtn,body[data-anl-puls="bauen"] #cityUpgradeBtn,
+body[data-anl-puls="sammeln"] #fieldSheet [data-fsend],body[data-anl-puls="events"] #goalsBtn,
+body[data-anl-puls="abholen"] #goalsPopup :is([data-daily],[data-quest],[data-bonus],[data-chain],[data-inbox],[data-inbox-all],[data-ach],[data-ach-all],[data-pass-l],[data-pass-all],[data-pass-old]):not(:disabled)
+  {animation:anl-puls 1.4s ease-out infinite}
 body.has-midbar:not(.has-sheet) .toast{top:calc(var(--safe-t) + var(--hud-top-space) + var(--mb-h,0px))}
 /* in der Stadt (Handy): der Hinweis erst unter der Bauarbeiter-Zeile – nie über ihren Knöpfen (--stadt-kopf: Unterkante, 08d stadtKopf) */
 @media (max-width:899px),(max-height:500px){ body.in-stadt:not(.has-sheet) .toast{top:calc(var(--stadt-kopf,96px) + 10px)} }
@@ -1716,7 +1725,9 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 
 <!-- Toast: text-only, JS writes textContent. Empty = hidden. -->
 <div id="hint" class="toast" role="status" aria-live="polite"></div>
-<div id="anleitung" class="anleitung" role="status" hidden><span id="anleitungSchritt" class="anleitung-n"></span><span id="anleitungText" class="anleitung-t"></span><button id="anleitungWeg" class="btn-x" type="button" aria-label="Anleitung überspringen"><svg class="icon"><use href="#i-close"/></svg></button></div>
+<div id="anleitung" class="anleitung" role="status" hidden><span id="anleitungSchritt" class="anleitung-n"></span><span id="anleitungText" class="anleitung-t"></span><button id="anleitungWeg" class="btn-x" type="button" aria-label="Anleitung überspringen"><svg class="icon"><use href="#i-close"/></svg></button>
+  <span id="anleitungFrage" class="anleitung-k" hidden><button id="anleitungJa" class="btn btn--secondary btn--sm" type="button">Überspringen</button><button id="anleitungNein" class="btn btn--primary btn--sm" type="button">Weiter lernen</button></span>
+  <button id="anleitungOk" class="btn btn--primary btn--sm anleitung-ok" type="button" hidden>Verstanden</button></div>
 
 <!-- Multi-attack floating bar (JS sets style.display='flex') -->
 <div id="multiAttackBar" class="mabar">
@@ -1847,6 +1858,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
         <p><b>Profil</b> → Spieler, Aussehen, Ausrüstung, Fähigkeiten, Rangliste, Einstellungen.</p>
         <p><b>Karte</b> → Basis antippen: angreifen, Truppen senden, aufwerten. Felder: sammeln. Mitte: wer den Mega-Tempel hält, herrscht.</p>
       </div>
+      <div class="set-knoepfe"><button id="anleitungNochmal" class="btn btn--secondary btn--sm" type="button">Anleitung noch mal</button></div>
       <div class="sect"><h4>Info</h4></div>
       <div class="kv"><div><span>Version</span><b id="setVersion"></b></div></div>
     </div>
@@ -2183,6 +2195,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
   </header>
   <div class="pbody">
     <div id="popupStats" class="popup-stats"></div>
+    <div id="popupAnleitung" class="notice notice--gold" hidden><svg class="icon"><use href="#i-info"/></svg><span>Hier stehen deine Truppen. Mit ihnen greifst du an und sammelst.</span></div>
     <div id="popupBund"></div>
     <div id="popupActions" class="actgrid">
       <button id="teleportBtn" class="act act--city" type="button" style="display:none"><span class="act-ic act-ic--city"><svg class="icon"><use href="#i-send"/></svg></span><span class="act-t">Hauptstadt verlegen</span><span class="act-s">in einen eigenen Turm · <svg class="icon icon--gem"><use href="#i-gem"/></svg>50</span></button>
