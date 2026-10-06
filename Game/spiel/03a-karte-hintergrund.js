@@ -39,8 +39,17 @@ function karteBilder() {                             // true, sobald alle Bilder
       im.onload = () => ende(im.naturalWidth > 0); im.onerror = () => ende(false); im.src = 'bilder/karte_' + n + '.webp'; } }
   return KB.fertig;
 }
+const TOR_MITTE = { l: .3, r: .7 };                  // Tor an einer senkrechten Grenze: nur dieser Teil des Bilds (Mauer + Türme, ohne die Seitenfelsen)
+function kbVariante(n) {                             // „name~warm“: in den inneren Ringen warm getönt (kein grünes Moos auf Ocker) · „name~mitte“: Tor-Mitte, Ränder weich
+  const [art, v] = n.split('~'), im = KB.img[art], c = document.createElement('canvas'), x = c.getContext('2d');
+  if (v === 'warm') { c.width = im.width; c.height = im.height; x.drawImage(im, 0, 0); x.globalCompositeOperation = 'source-atop'; x.fillStyle = 'rgba(214,170,104,.32)'; x.fillRect(0, 0, c.width, c.height); }
+  else { const l = Math.round(im.width * TOR_MITTE.l), w = Math.round(im.width * (TOR_MITTE.r - TOR_MITTE.l)); c.width = w; c.height = im.height; x.drawImage(im, l, 0, w, im.height, 0, 0, w, im.height);
+    const gr = x.createLinearGradient(0, 0, w, 0); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(.14, '#000'); gr.addColorStop(.86, '#000'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+    x.globalCompositeOperation = 'destination-in'; x.fillStyle = gr; x.fillRect(0, 0, w, im.height); }
+  return c;
+}
 function kbBild(n, px) {                             // Bild n, so oft halbiert, wie es noch ≥ px breit bleibt (verkleinert flimmert es sonst)
-  const m = KB.mip[n] || (KB.mip[n] = [KB.img[n]]);
+  const m = KB.mip[n] || (KB.mip[n] = [n.includes('~') ? kbVariante(n) : KB.img[n]]);
   let i = 0;
   while (i < 6 && m[i].width >= 2 * px && m[i].width > 8) {
     if (!m[i + 1]) { const c = document.createElement('canvas'); c.width = m[i].width >> 1; c.height = m[i].height >> 1;
@@ -49,9 +58,10 @@ function kbBild(n, px) {                             // Bild n, so oft halbiert,
   return m[i];
 }
 // Maße (Welt-Einheiten, Burg ≈ 1.000; Vorgabe Designer): Achse = wo im Bild die Gratlinie liegt (Bilder vorab gerade geschert)
-const KARTE_MASS = { boden: 7000, quer: 11000, hoch: 11000, knoten: 9000, tor: 11000, wald: [2600, 3400], abstand: .55 };
+const KARTE_MASS = { boden: 7000, quer: 11000, hoch: 11000, knoten: 9000, tor: 11000, wald: [2600, 3400], abstand: .42 };
+const KETTE_REIHEN = { quer: [[-1100, .5, .85], [0, 0, 1]], hoch: [[-850, 0, 1], [850, .5, .9]] };   // je Reihe: Abstand quer zur Grenze, Versatz (Stück), Größe
 const KETTE_ACHSE = { kette_quer1: .63, kette_quer2: .616, kette_hoch1: .512, kette_hoch2: .485, tor_zu: .553, tor_offen: .553, kette_knoten: .6 };
-const KARTE_BILD_ZOOM = 0.0025;                      // darunter (ganz draußen): nur Farbflächen + Bänder (schont das Handy)
+const KARTE_BILD_ZOOM = 0.0025, BODEN_BILD_ZOOM = 0.006;   // darunter (ganz draußen): nur Farbflächen + Bänder (schont das Handy) · Boden-Kacheln erst ab hier (weiter draußen wäre es ein Punkte-Raster)
 const BODEN_ARTEN = ['aussen', 'mitte', 'innen', 'sand'], BODEN_BIS_RING = { mitte: 5, innen: 3, sand: 1 };
 const BODEN_FARBE = { aussen: [122, 154, 44], mitte: [163, 152, 56], innen: [190, 138, 76], sand: [207, 176, 131] };   // weit draußen (Mittel der Bilder, etwas ruhiger)
 
@@ -123,31 +133,32 @@ const KO_ZELLE = 20000;
 function karteObjekte() {
   if (KO) return KO;
   const liste = [], S = HEX_SPACING, M = KARTE_MASS, ende = (GRID_HALF + .5) * S, rnd = mulberry32(90917);
-  const neu = (n, x, y, w, ax, ay, sx, sy, fuss) => { const im = KB.img[n], h = w * im.height / im.width;
-    const xs = [], ys = []; for (const u of [-ax * w, (1 - ax) * w]) for (const v of [-ay * h, (1 - ay) * h]) { xs.push(x + u + (sx || 0) * v); ys.push(y + v + (sy || 0) * u); }
-    liste.push({ n, x, y, w, h, ax, ay, sx: sx || 0, sy: sy || 0, fuss, bb: { l: Math.min(...xs), r: Math.max(...xs), t: Math.min(...ys), b: Math.max(...ys) } }); };
+  const neu = (n, x, y, w, ax, ay, sx, sy, fuss, f = 1) => { const im = KB.img[n.split('~')[0]], h = w * im.height / im.width;   // f = -1: gespiegelt
+    const xs = [], ys = []; for (const u of [-ax * w, (1 - ax) * w]) for (const v of [-ay * h, (1 - ay) * h]) { xs.push(x + f * u + sx * v); ys.push(y + v + sy * f * u); }
+    liste.push({ n, x, y, w, h, ax, ay, sx, sy, f, fuss, bb: { l: Math.min(...xs), r: Math.max(...xs), t: Math.min(...ys), b: Math.max(...ys) } }); };
+  const warm = (n, x, y) => ringAn(x, y) <= BODEN_BIS_RING.innen ? n + '~warm' : n;
   const linien = []; for (let k = -GRID_HALF - 1; k <= GRID_HALF; k++) linien.push(k + .5);
   // Gipfel-Knoten, wo Ketten zusammenstoßen (auch am Rand: dort laufen die Ketten in den Knoten)
   const knoten = {};
   for (const lv of linien) for (const lh of linien) { let x = lv * S, y = lh * S;
     for (let it = 0; it < 4; it++) { x = grenzLinie(true, lv, y); y = grenzLinie(false, lh, x); }
     knoten[lv + ',' + lh] = { x, y };
-    neu('kette_knoten', x, y, M.knoten * (.92 + rnd() * .16), .5, KETTE_ACHSE.kette_knoten, 0, 0, y); }
+    neu(warm('kette_knoten', x, y), x, y, M.knoten * (.92 + rnd() * .16), .5, KETTE_ACHSE.kette_knoten, 0, 0, y, rnd() < .5 ? -1 : 1); }
   // Ketten: Stücke entlang jeder Grenze, Lücke an jedem Tor (Brückenmitte) und an den Knoten
   const tore = bridges.map(br => ({ x: (br.x1 + br.x2) / 2, y: (br.y1 + br.y2) / 2, senk: Math.abs(br.x2 - br.x1) > Math.abs(br.y2 - br.y1) }));
   for (const senk of [true, false]) for (const L of linien) {
     const sperren = linien.map(l2 => { const k = knoten[senk ? L + ',' + l2 : l2 + ',' + L]; return [senk ? k.y : k.x, M.knoten * .3]; });
-    for (const t of tore) if (t.senk === senk && Math.abs((senk ? t.x : t.y) - grenzLinie(senk, L, senk ? t.y : t.x)) < S * .3) sperren.push([senk ? t.y : t.x, M.tor * .36]);
+    for (const t of tore) if (t.senk === senk && Math.abs((senk ? t.x : t.y) - grenzLinie(senk, L, senk ? t.y : t.x)) < S * .3) sperren.push([senk ? t.y : t.x, senk ? 1500 : 3000]);   // (die Nachbarstücke laufen hinter die Torfelsen)
     sperren.sort((a, b) => a[0] - b[0]);
     const len = senk ? M.hoch : M.quer, schritt = len * M.abstand;
     for (let i = 0; i + 1 < sperren.length; i++) {
       const a = sperren[i][0] + sperren[i][1], b = sperren[i + 1][0] - sperren[i + 1][1]; if (b <= a || a > ende || b < -ende) continue;
       const anz = Math.max(1, Math.round((b - a) / schritt));
-      for (let s = 0; s < anz; s++) {
-        const t = a + (s + .5) * (b - a) / anz, gr = len * (.92 + rnd() * .16), n = (senk ? 'kette_hoch' : 'kette_quer') + (rnd() < .5 ? 1 : 2);
-        const p = grenzLinie(senk, L, t), steig = Math.max(-.3, Math.min(.3, (grenzLinie(senk, L, t + gr / 2) - grenzLinie(senk, L, t - gr / 2)) / gr));
-        if (senk) neu(n, p, t, gr * KB.img[n].width / KB.img[n].height, KETTE_ACHSE[n], .5, steig, 0, t + gr * .3);
-        else neu(n, t, p, gr, .5, KETTE_ACHSE[n], 0, steig, p);
+      for (const [ab, ph, gs] of KETTE_REIHEN[senk ? 'hoch' : 'quer']) for (let s = 0; s < anz - (ph ? 1 : 0); s++) {   // zwei Reihen: ein breiter Gebirgszug
+        const t = a + (s + .5 + ph) * (b - a) / anz, gr = len * gs * (.92 + rnd() * .16), n = (senk ? 'kette_hoch' : 'kette_quer') + (rnd() < .5 ? 1 : 2), f = rnd() < .5 ? -1 : 1;
+        const p = grenzLinie(senk, L, t) + ab, steig = Math.max(-.5, Math.min(.5, (grenzLinie(senk, L, t + gr / 2) - grenzLinie(senk, L, t - gr / 2)) / gr));
+        if (senk) neu(warm(n, p, t), p, t, gr * KB.img[n].width / KB.img[n].height, KETTE_ACHSE[n], .5, steig, 0, t + gr * .3, f);
+        else neu(warm(n, t, p), t, p, gr, .5, KETTE_ACHSE[n], 0, steig, p, f);
       } } }
   // Wälder: lockere Gruppen auf freier Wiese – nicht auf Basen, Feldern, Wegen (Bändern), Bergen, nicht an der Kette
   for (const lm of landmasses) {
@@ -159,7 +170,7 @@ function karteObjekte() {
       if (bases.some(b => Math.abs(b.x - x) < 2600 && Math.abs(b.y - y) < 2600 && Math.hypot(b.x - x, b.y - y) < b.radius + w * .5)) continue;
       if (felder.some(f => Math.hypot(f.x - x, f.y - y) < f.radius + w * .5) || felsAuf(x, y, w * .6) || wald.some(o => Math.hypot(o[0] - x, o[1] - y) < 4000)) continue;
       if (band.some(s => pointToSegmentDistance(x, y, s[0], s[1], s[2], s[3]) < w * .4)) continue;
-      wald.push([x, y]); neu(r2() < .55 ? 'wald1' : 'wald2', x, y, w, .5, .78, 0, 0, y); } }
+      wald.push([x, y]); neu(r2() < .55 ? 'wald1' : 'wald2', x, y, w, .5, .78, 0, 0, y, r2() < .5 ? -1 : 1); } }
   liste.sort((a, b) => a.fuss - b.fuss);
   const zellen = new Map();
   liste.forEach((o, i) => { o.ord = i;
@@ -173,7 +184,7 @@ function paintGelaende(g, T, v) {                    // die Gelände-Bilder im W
     for (const o of K.zellen.get(cx + ',' + cy) || []) if (o.bb.r > v.l && o.bb.l < v.r && o.bb.b > v.t && o.bb.t < v.b) hier.add(o);
   for (const o of [...hier].sort((a, b) => a.ord - b.ord)) {
     const px = o.w * k; if (px < 2) continue;
-    g.setTransform(k, k * o.sy, k * o.sx, k, k * o.x + E, k * o.y + F);
+    g.setTransform(k * o.f, k * o.sy * o.f, k * o.sx, k, k * o.x + E, k * o.y + F);
     g.drawImage(kbBild(o.n, px), -o.ax * o.w, -o.ay * o.h, o.w, o.h);
   }
 }
@@ -434,7 +445,7 @@ function paintBackground(T, clip, noTerritory) {  // T = tile {c, g, z, l, t}; c
   const world = () => g.setTransform(dpr * z, 0, 0, dpr * z, -T.l * z * dpr, -T.t * z * dpr);
   // 1 Boden nach Ringen – nah aus den Bildern, weit draußen (und solange sie laden) die Farbfläche
   const bild = !T.part && z >= KARTE_BILD_ZOOM && karteBilder(), zd = T.part ? 0 : z;
-  paintBoden(g, T, cl, ct, W, H, clip, bild);
+  paintBoden(g, T, cl, ct, W, H, clip, bild && z >= BODEN_BILD_ZOOM);
   // 2 Bergstöcke (01f), dann Ketten, Knoten, Wald als Bilder – oder weit draußen die Gebirgs-Bänder
   world();
   for (const lm of landmasses) {

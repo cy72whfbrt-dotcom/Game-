@@ -260,19 +260,33 @@ function buildingSprite(kind, ownerKey, home, sizePx, tier) {
   else if (kind === 'gate' || kind === 'gateShut') paintGateIso(g, ownerKey, detail, kind === 'gate'); else paintMegaTemple(g, ownerKey, detail);
   BUILDING_SPRITES.set(key, s = { c, bucket }); return s;
 }
+// Pass-Tor als Karten-Bild: steht genau auf der Grenzlinie (Fuß auf der Linie der Kette, quer geschert wie die Nachbarstücke)
+// → { x, y, r: Abstand Mitte–Schild, senk: Grenze läuft senkrecht (dann nur Mauer + Türme, die Kette läuft oben/unten an), steig } oder null
+function torMitte(island) {
+  if (island.type !== 'gate' || !karteBilder()) return null;
+  if (island.torMitte) return island.torMitte;
+  const [[x1, y1], [x2, y2]] = island.ends, im = KB.img.tor_zu, senk = Math.abs(x2 - x1) > Math.abs(y2 - y1), w = KARTE_MASS.tor, S = HEX_SPACING;
+  let x = (x1 + x2) / 2, y = (y1 + y2) / 2, steig = 0;
+  if (senk) x = grenzLinie(true, Math.round(x / S - .5) + .5, y);
+  else { const L = Math.round(y / S - .5) + .5; y = grenzLinie(false, L, x); steig = Math.max(-.5, Math.min(.5, (grenzLinie(false, L, x + w / 2) - grenzLinie(false, L, x - w / 2)) / w)); }
+  return (island.torMitte = { x, y, senk, steig, r: w * im.height / im.width * (1 - KETTE_ACHSE.tor_zu) * .9 });
+}
 function drawBuilding(island, ownerKey, z) {                                   // screen space (setScreen active)
   const kind = island.type === 'megaTemple' ? 'mega' : island.guardian ? 'guardian' : island.type === 'temple' ? 'temple' : 'tower';
   const home = island.id === playerIslandId, cap = home || isCapital(island.id);
   const tier = island.type === 'tower' ? towerTier(baseLevelOf(island)) : 1;
   const size = 2 * island.radius * z * 1.5 * (cap ? 1.3 : 1) * (island.type === 'tower' ? [1.15, 1, 1.05, 1.15, 1.25][tier] : island.type === 'megaTemple' ? 2.3 : 1.2), x = toSX(island.x), y = toSY(island.y);   // 3D sprites fill less of their box: drawn 1.5× larger
   if (island.type === 'gate') {                                                // gates: the gatehouse, an owner pennant on top
-    if (karteBilder()) {                                                       // Karte wie RoK: das Pass-Tor (Bild) in der Lücke der Kette, offen/zu wie heute
-      const open = ownerKey !== 'neutral' && !gateSettings(island).closed, [[x1, y1], [x2, y2]] = island.ends, n = open ? 'tor_offen' : 'tor_zu';
-      const w = KARTE_MASS.tor * z, mx = toSX((x1 + x2) / 2), my = toSY((y1 + y2) / 2);
-      if (w < 16) { ctx.beginPath(); ctx.arc(mx, my, 4, 0, Math.PI * 2); ctx.fillStyle = open ? '#d4ad66' : '#d24c40'; ctx.fill();   // weit draußen: goldener Punkt (zu: rot)
+    const tm = torMitte(island);
+    if (tm) {                                                                  // Karte wie RoK: das Pass-Tor (Bild) in der Lücke der Kette, offen/zu wie heute
+      const open = ownerKey !== 'neutral' && !gateSettings(island).closed, n = open ? 'tor_offen' : 'tor_zu';
+      const w = KARTE_MASS.tor * z, mx = toSX(tm.x), my = toSY(tm.y);
+      if (w < 16) { ctx.beginPath(); ctx.arc(mx, my, 2.5, 0, Math.PI * 2); ctx.fillStyle = open ? '#d4ad66' : '#d24c40'; ctx.fill();   // weit draußen: goldener Punkt (zu: rot)
         ctx.lineWidth = 1.5; ctx.strokeStyle = '#0f1217'; ctx.stroke(); return; }
-      const im = kbBild(n, w * dpr), h = w * im.height / im.width;
-      ctx.drawImage(im, mx - w / 2, my - h * KETTE_ACHSE[n], w, h);
+      const k = tm.senk ? TOR_MITTE.r - TOR_MITTE.l : 1, h = w * KB.img[n].height / KB.img[n].width, im = kbBild(tm.senk ? n + '~mitte' : n, w * k * dpr);
+      ctx.save(); ctx.translate(mx, my); ctx.transform(1, tm.steig, 0, 1, 0, 0);
+      ctx.drawImage(im, -w * k / 2, -h * KETTE_ACHSE[n], w * k, h);
+      ctx.restore();
       return;
     }
     if (size < 8) { ctx.fillStyle = '#b8b2a6'; ctx.fillRect(x - 3, y - 3, 6, 6); return; }

@@ -1,10 +1,10 @@
 // Teil 06e-nebel-zeichnen.js: Nebel und Pässe zeichnen
 // ===== FOG + PASSES (drawing) =====
-function drawWorldFrame() {                        // the square map border: darker sea outside, a framed edge with corner marks
+function drawWorldFrame() {                        // the square map border: dark outside (kein Meer mehr), a framed edge with corner marks
     const z = mapState.zoom, ox = mapState.offsetX, oy = mapState.offsetY;
     const l = -FRAME_HALF * z + ox, t = -FRAME_HALF * z + oy, r = FRAME_HALF * z + ox, b = FRAME_HALF * z + oy;
     setScreen(ctx);
-    ctx.fillStyle = 'rgba(3,7,12,.72)';
+    ctx.fillStyle = 'rgba(15,18,23,.94)';
     ctx.beginPath(); ctx.rect(-10, -10, viewW + 20, viewH + 20); ctx.rect(l, t, r - l, b - t); ctx.fill('evenodd');
     ctx.lineJoin = 'miter';
     ctx.strokeStyle = 'rgba(8,10,14,.95)'; ctx.lineWidth = 7; strokeBox(ctx, l, t, r - l, b - t);
@@ -128,6 +128,9 @@ function drawFog(view, now) {
         ctx.setTransform(dpr * z, 0, 0, dpr * z, dpr * mapState.offsetX, dpr * mapState.offsetY);
         ctx.lineJoin = 'round'; ctx.fillStyle = ctx.strokeStyle = 'rgba(228,200,134,.55)'; ctx.lineWidth = 6 / z;
         for (const t of TERR.player.values()) { ctx.fill(t.path); ctx.stroke(t.path); }
+        const mitte = landmasses[0];                                                // die Mitte (Thron) ist immer zu sehen – das Ziel aller (wie RoK)
+        if (!isExplored(mitte.id)) { ctx.fillStyle = 'rgba(' + BODEN_FARBE.sand + ',.9)'; ctx.fill(mitte.path); }
+        ctx.strokeStyle = '#d4ad66'; ctx.lineWidth = 3 / z; ctx.stroke(mitte.path);
         ctx.restore();
     }
     if (fogPrompt) {                                   // confirm chip: "Späher senden · 0:25" above a marker at the spot
