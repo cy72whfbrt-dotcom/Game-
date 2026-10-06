@@ -20,6 +20,7 @@ function bundRallyStart(a, who, b) {
     const ow = islandOwnerOf(t), warnt = ow && ow !== who && bundEinmal('r|' + ow + '|' + who + '|' + t);
     if (warnt) bundPush(ow, { art: 'rally', von: bundName(who), basis: bundZielName(islandById[t]), ankunft: r.los });
     if (warnt && botById[ow] && botById[ow].mensch) bundMelden(ow, 'Achtung: ' + bundName(who) + ' sammelt Truppen für einen gemeinsamen Angriff auf ' + bundZielName(islandById[t]) + '!');
+    if (warnt && bundVon(ow)) bundChatDazu(bundVon(ow), who, 's_gegen', t);   // Warnung im Chat des angegriffenen Bündnisses (die Hilfe: bundMitspielerSignale – wie bei jedem Angriff)
     for (const w of a.mit) if (w !== who && bundKommtHin(w, at, Infinity) && bundEinmal('ri|' + w + '|' + who + '|' + t)) bundMelden(w, bundName(who) + ' startet eine Rally auf ' + bundZielName(islandById[t]) + ' – mach mit (Bündnis → Rally).');   // (nur wer es rechtzeitig schafft)
     saveGame(); return '';
 }
@@ -222,6 +223,7 @@ function bundRallyBeute(attack, gain, won, targetId, roh) {   // roh: Holz/Stein
         if (w !== by && !attack.rally.zus) bundMelden(w, 'Rally auf ' + ziel + ': ' + (won ? 'Sieg!' : 'gescheitert.') + ' Deine überlebenden Truppen kehren heim' + (anteil ? '. Dein Anteil: ' + anteil + '.' : '.'));
     }
     const a = bundVon(by); if (a) { bundLog(a, (attack.rally.zus ? 'Gemeinsamer Angriff auf ' : 'Rally auf ') + ziel + ': ' + (won ? 'Sieg' : 'gescheitert') + '.'); bundSpeichern(); }
+    if (a && won) bundGutGemacht(a, Object.keys(anteile));
 }
 
 // ==============================================================================================================

@@ -2,7 +2,7 @@
 // ===== THRON-PUNKTE: the middle is always open to attack. Every few minutes whoever holds the Mega-Tempel gets
 // Thron-Punkte (each Wächter-Tempel a few too), and the 4 Wächter-Tempel fire on the holder's garrison unless he
 // holds them himself. The points buy things in the shop's "Thron" tab - for you and for everyone else alike.
-const THRONE_TICK_MS = 3 * 60000, THRONE_PTS_MEGA = 30, THRONE_PTS_GUARD = 10, THRONE_FIRE_MS = 3 * 60000, THRONE_FIRE_PCT = 1;   // 1 % per Wächter-Tempel; the hit are wounded, not killed
+const THRONE_TICK_MS = 3 * 60000, THRONE_PTS_MEGA = 30, THRONE_PTS_VERST = 15, THRONE_PTS_GUARD = 10, THRONE_FIRE_MS = 3 * 60000, THRONE_FIRE_PCT = 1;   // 1 % per Wächter-Tempel; the hit are wounded, not killed
 const guardianTempleIds = islands.filter(i => i.guardian).map(i => i.id);
 const THRONE_OFFERS = [
     { id: 'coins',  name: 'Münzen',              icon: 'coin',   cost: 150 },
@@ -20,7 +20,9 @@ var throneState = (() => { try { return JSON.parse(store.get('openWaterThrone'))
 function saveThrone() { store.set('openWaterThrone', JSON.stringify(throneState)); }
 function throneEarnedOf(who, bs) { const ts = throneState, w = (ts.week || {})[who] || 0;   // all Thron-Punkte ever earned (the ranking) - the larger of the tally and the old totals, so nobody loses any
     return Math.floor(Math.max(w, who === 'player' ? ts.earned || 0 : (((bs || loadBotState())[who] || {}).stats || {}).tpEarned || 0)); }
-function throneIncome(who) { return (rulerOwner() === who ? THRONE_PTS_MEGA : 0) + guardianTempleIds.filter(g => islandOwnerOf(g) === who).length * THRONE_PTS_GUARD; }
+function throneHelfer() { const hd = rulerOwner();               // wer Verstärkung im Thron stehen hat (Bündnis, Botschaft) – nur beim verbündeten Halter (sonst geht sie gerade heim)
+    return typeof verst === 'undefined' || !hd ? new Set() : new Set(verst.l.filter(v => v.t === megaTempleId && v.n >= 1 && bundVerbuendet(v.w, hd)).map(v => v.w)); }
+function throneIncome(who) { return (rulerOwner() === who ? THRONE_PTS_MEGA : 0) + (throneHelfer().has(who) ? THRONE_PTS_VERST : 0) + guardianTempleIds.filter(g => islandOwnerOf(g) === who).length * THRONE_PTS_GUARD; }
 function throneShooters() { const hd = rulerOwner(); return hd ? guardianTempleIds.filter(g => islandOwnerOf(g) !== hd) : []; }
 function hourProduction(who) {                       // what an empire makes in an hour (the coin and troop offers pay this much)
     if (who === 'player') { const k = 3600000 / productionTickMs(); return { coins: totalCoinProductionPerTick() * k, troops: totalTroopProductionPerTick() * k }; }
@@ -60,6 +62,7 @@ function throneAward(silent, at) {                    // at: when this award hap
     const got = {};
     const add = (who, n) => { if (!who) return; got[who] = (got[who] || 0) + n; };
     add(rulerOwner(), THRONE_PTS_MEGA); for (const g of guardianTempleIds) add(islandOwnerOf(g), THRONE_PTS_GUARD);
+    for (const w of throneHelfer()) add(w, THRONE_PTS_VERST);                    // jeder mit Verstärkung im Thron (Alexander 5.10.)
     goalBump(rulerOwner(), 'throneMin', THRONE_TICK_MS / 60000);   // minutes on the throne (Erfolge)
     bountyGrow();                                                                 // the Kopfgeld on the ruler grows
     for (const [who, n] of Object.entries(got)) {
@@ -67,7 +70,7 @@ function throneAward(silent, at) {                    // at: when this award hap
         else { const b = loadBotState()[who]; if (!b) continue; b.tp = (b.tp || 0) + n; b.stats = b.stats || {}; b.stats.tpEarned = (b.stats.tpEarned || 0) + n; }
         ts.week[who] = (ts.week[who] || 0) + n;
     }
-    if (got.player && !silent) flashHint('+' + got.player + ' Thron-Punkte – du hältst ' + (rulerOwner() === 'player' ? 'die Mitte' : 'einen Wächter-Tempel') + '. Einlösen im Shop unter „Thron“.', 3500);
+    if (got.player && !silent) flashHint('+' + got.player + ' Thron-Punkte – ' + (rulerOwner() === 'player' ? 'du hältst die Mitte' : guardianTempleIds.some(g => islandOwnerOf(g) === 'player') ? 'du hältst einen Wächter-Tempel' : 'deine Verstärkung steht im Thron') + '. Einlösen im Shop unter „Thron“.', 3500);
     saveBotState();
 }
 function throneVolley(times, silent) {                // times: several volleys at once (the time you were away)
@@ -145,7 +148,7 @@ function renderThroneShop() {
             '<div class="ts-row">' + icon('points') + '<span>Du bekommst</span><b>' + (inc ? '+' + inc + ' alle 3 Min.' : 'nichts – erobere die Mitte') + '</b></div>' +
             (bo ? '<div class="ts-row">' + icon(bo.who === 'player' ? 'losses' : 'gem') + '<span>' + (bo.who === 'player' ? 'Kopfgeld auf dich' : 'Kopfgeld') + '</span><b' + (bo.who === 'player' ? ' class="warn"' : '') + '>' + fmtNum(bo.gems) + ' Edelsteine · ' + fmtCompact(bo.coins) + '</b></div>' : '') +
         '</div>' +
-        '<p class="mail-intro">Wer den Mega-Tempel hält, bekommt alle 3 Min. ' + THRONE_PTS_MEGA + ' Thron-Punkte, jeder Wächter-Tempel bringt ' + THRONE_PTS_GUARD + '. Genauso oft feuern die Wächter-Tempel, die dem Herrscher nicht gehören, auf die Truppen im Mega-Tempel (je ' + THRONE_FIRE_PCT + ' %) – die Getroffenen kommen ins Krankenhaus, soweit Platz ist.</p>' +
+        '<p class="mail-intro">Wer den Mega-Tempel hält, bekommt alle 3 Min. ' + THRONE_PTS_MEGA + ' Thron-Punkte, wer dort Verstärkung stehen hat ' + THRONE_PTS_VERST + ', jeder Wächter-Tempel bringt ' + THRONE_PTS_GUARD + '. Genauso oft feuern die Wächter-Tempel, die dem Herrscher nicht gehören, auf die Truppen im Mega-Tempel (je ' + THRONE_FIRE_PCT + ' %) – die Getroffenen kommen ins Krankenhaus, soweit Platz ist.</p>' +
         '<div class="sect"><h4>Eintauschen</h4></div><div class="throne-list">' +
         THRONE_OFFERS.filter(o => !o.once).map(o => { const done = o.once && throneOwned('player', o), n = throneAmount('player', o.id);   // looks are bought in the Aussehen sheet
             const sub = o.id === 'coins' ? fmtCompact(n) + ' – so viel, wie dein Reich in 1 Std. verdient' : o.id === 'troops' ? fmtCompact(n) + ' – eine Stunde deiner Ausbildung, in die Hauptstadt'
