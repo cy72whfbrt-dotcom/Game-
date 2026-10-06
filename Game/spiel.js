@@ -4940,27 +4940,44 @@ const RANK_TIERS = [
     { min: 120, name: 'Meister' },
     { min: 225, name: 'Legende' }
 ];
-// ===== TITEL & RAHMEN: only to buy (Gems or Thron-Punkte) - what you had by rank or Erfolg before stays yours (lookMigrate) =====
-const FRAMES = [
-    { id: 'bronze', name: 'Bronze', rank: 0, gems: 0 }, { id: 'silver', name: 'Silber', rank: 1, gems: 200 }, { id: 'gold', name: 'Gold', rank: 2, gems: 400 }, { id: 'platin', name: 'Platin', rank: 3, gems: 700 },
-    { id: 'diamond', name: 'Diamant', rank: 4, gems: 1000 }, { id: 'master', name: 'Meister', rank: 5, gems: 1500 }, { id: 'legend', name: 'Legende', rank: 6, gems: 2500 },
-    { id: 'throne', name: 'Thron', buy: 'throne', tp: 3000 },
-    { id: 'saison', name: 'Saisonkrone', buy: 'pass' }                     // only from the Saison-Pass (premium, level 40)
+// ===== RAHMEN (Alexander 6.10.): Titel und Rahmen sind EIN Ding – ein Titel kommt immer mit seinem Ring ums Wappen. Nicht mehr zu
+// kaufen: man bekommt sie am Saison-Ende (Platz 1–10, bis zum nächsten Saison-Ende) oder über die Mitte (Herrscher, Titel aus der Mitte).
+// Was jemand vorher gekauft oder nach Rang/Erfolg hatte, bleibt seins (look.frames / look.titles, Mitspieler b.frames / b.titles).
+// f: alte Rahmen-Kennung = id, t: alte Titel-Kennung (wer eins von beiden hatte, hat den Rahmen); rank / ach / buy: nur für alte Spielstände (lookMigrate)
+const RAHMEN = [
+    { id: 'bronze', name: 'Neuling', t: 'novice', frei: 1 },
+    { id: 'silver', name: 'Silberritter', t: 'knight', rank: 1 }, { id: 'gold', name: 'Goldfürst', t: 'lord', rank: 2 }, { id: 'platin', name: 'Platingraf', t: 'count', rank: 3 },
+    { id: 'diamond', name: 'Diamantherzog', t: 'duke', rank: 4 }, { id: 'master', name: 'Meister der Meere', t: 'master', rank: 5 }, { id: 'legend', name: 'Legende', t: 'legend', rank: 6 },
+    { id: 'conq', name: 'Eroberer', t: 'conq', ach: 'cap100' }, { id: 'warlord', name: 'Kriegsherr', t: 'warlord', ach: 'cap1000' }, { id: 'wall', name: 'Standhaft', t: 'wall', ach: 'def25' },
+    { id: 'emma', name: 'Gefürchtet', t: 'emma', ach: 'emma10' }, { id: 'slayer', name: 'Bezwinger', t: 'slayer', ach: 'boss1' }, { id: 'builder', name: 'Baumeister', t: 'builder', ach: 'city5' },
+    { id: 'king', name: 'Herrscher der Meere', t: 'king', ach: 'throne' }, { id: 'throne', name: 'Thronhüter', t: 'keeper', buy: 'throne' },
+    { id: 'saison', name: 'Saisonkrone', buy: 'pass' },                     // Saison-Pass (Premium, Stufe 40)
+    // Saison-Rahmen: die besten 10 am Ende einer Welt-Saison – nur bis zum nächsten Saison-Ende (dann bekommen ihn die neuen)
+    { id: 'sz1', name: 'Saison-Champion', platz: [1, 1] }, { id: 'sz2', name: 'Saison-Großadmiral', platz: [2, 3] },
+    { id: 'sz4', name: 'Saison-Admiral', platz: [4, 5] }, { id: 'sz6', name: 'Saison-Kapitän', platz: [6, 10] }
 ];
-const TITLES_P = [                                  // rank / ach: only for the old save (lookMigrate), nothing unlocks by it any more
-    { id: 'novice', name: 'Neuling', gems: 0 },
-    { id: 'knight', name: 'Silberritter', rank: 1, gems: 200 }, { id: 'lord', name: 'Goldfürst', rank: 2, gems: 400 }, { id: 'count', name: 'Platingraf', rank: 3, gems: 700 },
-    { id: 'duke', name: 'Diamantherzog', rank: 4, gems: 1000 }, { id: 'master', name: 'Meister der Meere', rank: 5, gems: 1500 }, { id: 'legend', name: 'Legende', rank: 6, gems: 2500 },
-    { id: 'conq', name: 'Eroberer', ach: 'cap100', gems: 500 }, { id: 'warlord', name: 'Kriegsherr', ach: 'cap1000', gems: 1200 }, { id: 'wall', name: 'Standhaft', ach: 'def25', gems: 400 },
-    { id: 'emma', name: 'Gefürchtet', ach: 'emma10', gems: 600 }, { id: 'slayer', name: 'Bezwinger', ach: 'boss1', gems: 600 }, { id: 'builder', name: 'Baumeister', ach: 'city5', gems: 500 },
-    { id: 'king', name: 'Herrscher der Meere', ach: 'throne', tp: 2500 }, { id: 'keeper', name: 'Thronhüter', buy: 'throne', tp: 3000 }
-];
-// Saison-Titel (Ende einer Welt-Saison, die besten 10 – für immer, nie zu kaufen): Kennung s<Saison>p<Platz>
+const rahmenDef = id => RAHMEN.find(r => r.id === id) || null;
+const rahmenPlatzText = r => 'Platz ' + r.platz[0] + (r.platz[1] > r.platz[0] ? '–' + r.platz[1] : '');
+// Platz in der letzten Welt-Saison (Welt-Teil openWaterSaison.last.top – wer rechnet, schreibt ihn; 0 = nicht unter den besten 10)
+function saisonPlatz(who) { const t = typeof saison !== 'undefined' && saison && saison.last && saison.last.top; return t ? t.findIndex(([w]) => lokalId(w) === who) + 1 : 0; }
+function rahmenHat(who, r) {                         // hat who den Rahmen r? (Saison-Rahmen: nur, solange die Welt ihn so führt)
+    if (!r) return false; if (r.frei) return true;
+    if (r.platz) { const pl = saisonPlatz(who); return pl >= r.platz[0] && pl <= r.platz[1]; }
+    if (who === 'player') return (look.frames || []).includes(r.id) || !!(r.t && (look.titles || []).includes(r.t)) || (r.buy === 'throne' && !!(look.bought && look.bought.throne)) || (!look.lookMig && lookOldUnlocked(r));
+    const b = loadBotState()[who]; if (!b) return false;
+    return (b.frames || []).includes(r.id) || !!(r.t && (b.titles || []).includes(r.t)) || (r.buy === 'throne' && !!b.throneLook);
+}
+// Mitte geht vor: der Herrscher trägt „Herrscher der Meere“, ein Titel aus der Mitte seinen eigenen Rahmen (gut: Gold, Straf-Titel: Rot) – kommen und gehen
+function rahmenVon(who, gewaehlt) {                  // → { frame, title } – gewaehlt: der angelegte Rahmen (fehlt er oder ist er weg: Standard)
+    if (rulerOwner() === who) return { frame: 'king', title: 'Herrscher der Meere' };
+    const mt = titleOf(who); if (mt) return { frame: mt.good ? 'mgut' : 'mstraf', title: mt.name };
+    const r = rahmenDef(gewaehlt); return rahmenHat(who, r) ? { frame: r.id, title: r.name } : { frame: 'bronze', title: 'Neuling' };
+}
+// Saison-Platz (Ende einer Welt-Saison, die besten 10): Kennung s<Saison>p<Platz> – bleibt als Eintrag für das Erfolg „Saison“, getragen wird der Saison-Rahmen
 function saisonTitel(id) { const m = /^s(\d{1,4})p(\d{1,2})$/.exec(String(id || '')); if (!m) return null; const n = +m[1], pl = +m[2];
     return { id: m[0], name: pl === 1 ? 'Champion Saison ' + n : 'Saison ' + n + ' · Platz ' + pl, saison: n, platz: pl }; }
-const titelDef = id => TITLES_P.find(t => t.id === id) || saisonTitel(id);
-const saisonTitelBest = l => (l || []).map(saisonTitel).filter(Boolean).sort((a, b) => a.platz - b.platz || b.saison - a.saison)[0] || null;
-function saisonTitelGeben(id) { if (!saisonTitel(id)) return; look.titles = [...new Set([...(look.titles || []), id])]; look.title = id; saveLook(); try { renderLook(); } catch (e) {} }   // (gleich angelegt)
+const saisonRahmenFuer = pl => RAHMEN.find(r => r.platz && pl >= r.platz[0] && pl <= r.platz[1]) || null;
+function saisonTitelGeben(id) { if (!saisonTitel(id)) return; look.titles = [...new Set([...(look.titles || []), id])]; const r = saisonRahmenFuer(saisonTitel(id).platz); if (r) look.frame = r.id; saveLook(); try { renderLook(); } catch (e) {} }   // (der Saison-Rahmen gleich angelegt)
 // Marsch-Skins: how your columns look on the map - flag colour (with your crest on it) and a trail behind them
 const MARCH_SKINS = [
     { id: 'standard', name: 'Standard', gems: 0, flag: '#e9dfc6' },
@@ -5018,25 +5035,25 @@ document.addEventListener('click', e => {
 function rankIndexFor(bases) { let r = 0; RANK_TIERS.forEach((t, i) => { if (bases >= t.min) r = i; }); return r; }
 function bestRank() { const r = rankIndexFor(ownedIslands.size); if (!(look.best >= r)) { look.best = r; store.set('openWaterLook', JSON.stringify(look)); } return look.best; }
 function lookOldUnlocked(x) {                       // the old rule (rank / Erfolg) - only to carry an old save over
+    if (x.platz) return false;
     if (x.buy) return !!(look.bought && look.bought[x.buy]);
     if (x.ach) { try { return achLookKept(x.ach) || !!(achClaimed[x.ach] || ACHIEVEMENTS.find(a => a.id === x.ach && a.val() >= a.goal)); } catch (e) { return false; } }
     return (x.rank || 0) <= bestRank();
 }
-function lookMigrate() {                            // once: everything unlocked so far becomes owned, from now on looks are only bought
-    if (look.lookMig) return; look.frames = [...new Set([...(look.frames || []), ...FRAMES.filter(lookOldUnlocked).map(f => f.id)])];
-    look.titles = [...new Set([...(look.titles || []), ...TITLES_P.filter(lookOldUnlocked).map(t => t.id)])]; look.lookMig = 1; saveLook();
+function lookMigrate() {                            // once: everything unlocked by the old rule becomes owned
+    if (look.lookMig) return; const alt = RAHMEN.filter(r => !r.frei && lookOldUnlocked(r)); look.frames = [...new Set([...(look.frames || []), ...alt.map(r => r.id)])];
+    look.lookMig = 1; saveLook();
 }
 function saveLook() { store.set('openWaterLook', JSON.stringify(look)); }
-const lookOwns = (k, x) => x.gems === 0 || (look[k] || []).includes(x.id) || !!(x.buy && look.bought && look.bought[x.buy]) || (!look.lookMig && lookOldUnlocked(x));   // k: 'frames' | 'titles'
-function playerFrame() { const f = FRAMES.find(q => q.id === look.frame); return f && lookOwns('frames', f) ? f.id : [...FRAMES].reverse().find(q => !q.buy && lookOwns('frames', q)).id; }
-function playerTitle() { const t = titelDef(look.title); return t && lookOwns('titles', t) ? t.name : 'Neuling'; }
+function playerFrame() { return rahmenVon('player', look.frame).frame; }
+function playerTitle() { return rahmenVon('player', look.frame).title; }
 function marchSkinOf(who) { const id = who === 'player' ? look.march : who ? (loadBotState()[who] || {}).march : ''; return MARCH_SKINS.find(m => m.id === id) || MARCH_SKINS[0]; }
 function renderLook() {                             // the profile header and its "Aussehen" line; choosing happens in the Aussehen sheet
     const fr = playerFrame();
     document.getElementById('pAvatarRing').dataset.frame = fr;
     document.getElementById('profileTitle').textContent = playerTitle();
     const cur = document.getElementById('lookNow');     // die eine Aussehen-Karte im Profil (Wappen + was du trägst)
-    if (cur) cur.innerHTML = '<b>Aussehen · ' + escapeHtml(playerTitle()) + '</b><small>Wappen · Rahmen ' + (FRAMES.find(f => f.id === fr) || FRAMES[0]).name + ' · ' + BAUSTILE[loadBaustil().style] + ' · Marsch ' + marchSkinOf('player').name + '</small>';
+    if (cur) cur.innerHTML = '<b>Aussehen · ' + escapeHtml(playerTitle()) + '</b><small>Wappen · Rahmen · ' + BAUSTILE[loadBaustil().style] + ' · Marsch ' + marchSkinOf('player').name + '</small>';
     renderLookSheet();
 }
 function currentRank() {
@@ -5526,7 +5543,7 @@ const GOAL_VAL = {
     armyWins: () => achStat('armyWins'), heroes: () => goalHeroes('player'), heroStars: () => goalHeroStars('player'), heroFires: () => achStat('heroFires'),
     healed: () => achStat('healed'), shields: () => achStat('shields'), teleports: () => achStat('teleports'), barb: () => achStat('barb'), dboss: () => achStat('dboss'),
     burg: () => AUF ? AUF.burgStufe('player') : 1, foStufen: () => AUF ? AUF.foSumme('player') : 0, drache: () => achStat('drache'), inv: () => achStat('inv'),
-    saisonTop: () => (look.titles || []).filter(saisonTitel).length   // Hauptstadt (Burg, Labor), Drache, Invasion, Saison-Titel (die besten 10)
+    saisonTop: () => (look.titles || []).filter(saisonTitel).length   // Hauptstadt (Burg, Labor), Drache, Invasion, Saison-Platz (die besten 10)
 };
 const foGesamtZiel = () => AUF ? AUF.foGesamt() : 95;   // „alles erforscht“ – wächst mit, wenn neue Forschungen dazukommen
 const ACHIEVEMENTS = [   // the old ids stay (claims are kept); the tiers of one kind share k
@@ -6960,10 +6977,9 @@ const THRONE_OFFERS = [
     { id: 'troops', name: 'Truppen',             icon: 'troops', cost: 200 },
     { id: 'crate',  name: 'Ausrüstungskiste',    icon: 'shop',   cost: 60 },
     { id: 'royal',  name: 'Königliche Kiste',    icon: 'shop',   cost: 400 },
-    { id: 'look',   name: 'Titel „Thronhüter“ + Thron-Rahmen', icon: 'crown', cost: 3000, once: true },
     ...RING_SKINS.filter(r => r.tp).map(r => ({ id: 'ring_' + r.id, name: 'Ring „' + r.name + '“', icon: 'crown', cost: r.tp, once: true, ring: r.id }))
 ];
-const throneOwned = (who, o) => o.ring ? ringSkinsOf(who).includes(o.ring) : who === 'player' ? !!(look.bought && look.bought.throne) : !!(loadBotState()[who] || {}).throneLook;
+const throneOwned = (who, o) => !!o.ring && ringSkinsOf(who).includes(o.ring);   // (Thronhüter + Thron-Rahmen gibt es nicht mehr – Rahmen nicht zu kaufen, Alexander 6.10.)
 var throneState = (() => { try { return JSON.parse(store.get('openWaterThrone')) || null; } catch (e) { return null; } })() || { pts: 0 };
 (() => { const now = Date.now(), ts = throneState;               // no points or volleys pile up while the game was closed
     if (!(ts.nextPts > now)) ts.nextPts = now + THRONE_TICK_MS; if (!(ts.nextFire > now)) ts.nextFire = now + THRONE_FIRE_MS;
@@ -6997,8 +7013,6 @@ function throneGive(who, id) {                        // hands one offer over; r
     if (id === 'crate' || id === 'royal') { const r = id === 'royal' ? Math.max(3, pickRandomRarity()) : pickRandomRarity(), slot = pickRandomSlot();
         if (b) { b.spare[slot][r]++; return ''; }
         addInventoryItem(slot, r, 1); sfx('crate'); questProgress('crate', 1); return RARITY_DEFS[r].label + ' ' + EQUIPMENT_DEFS[slot].name + ' im Inventar'; }
-    if (id === 'look') { if (b) b.throneLook = true; else { look.bought = Object.assign({}, look.bought, { throne: true }); look.title = 'keeper'; look.frame = 'throne'; store.set('openWaterLook', JSON.stringify(look)); renderLook(); }
-        return 'Titel „Thronhüter“ und Thron-Rahmen – schon angelegt'; }
     if (id.startsWith('ring_')) { const r = ringSkinDef(id.slice(5)); if (!r) return ''; ringGive(who, r.id); return 'Ring „' + r.name + '“ – schon angelegt'; }
     return '';
 }
@@ -8692,47 +8706,46 @@ function cityFehlt(id) {                           // fehlt nur etwas zum Bezahl
     const f = k.c > coins ? [k.c - coins, 'Münzen'] : ['h', 's', 'e'].filter(x => k[x] > (r[x] || 0)).map(x => [k[x] - (r[x] || 0), AUF.ROH_DEF[x].name])[0];
     return f ? 'Fehlt: ' + fmtCompact(Math.ceil(f[0])) + ' ' + f[1] : '';
 }
-// ===== AUSSEHEN: every look in one place - Wappen, Rahmen, Titel, Basis-Skin (+ Ring), Marsch-Skin. Only to buy (Gems or Thron-Punkte) or a title from the middle =====
+// ===== AUSSEHEN: every look in one place - Wappen, Rahmen (= Titel), Basis-Skin (+ Ring), Marsch-Skin. Basis und Marsch zu kaufen (Gems oder Thron-Punkte), Rahmen nicht (05a RAHMEN) =====
 var lkTab = 'frame';
-function lkPrice(d) { if (d.buy === 'pass') return '<span class="lk-cost">' + icon('crown') + 'Saison-Pass</span>'; return d.tp ? '<span class="lk-cost' + ((throneState.pts || 0) < d.tp ? ' is-bad' : '') + '">' + icon('crown') + fmtNum(d.tp) + '</span>' : '<span class="lk-cost' + (gems < d.gems ? ' is-bad' : '') + '">' + icon('gem') + fmtNum(d.gems) + '</span>'; }
+function lkPrice(d) { if (d.platz) return '<span class="lk-cost">' + icon('crown') + rahmenPlatzText(d) + '</span>'; if (d.buy === 'pass') return '<span class="lk-cost">' + icon('crown') + 'Saison-Pass</span>'; return d.tp ? '<span class="lk-cost' + ((throneState.pts || 0) < d.tp ? ' is-bad' : '') + '">' + icon('crown') + fmtNum(d.tp) + '</span>' : '<span class="lk-cost' + (gems < d.gems ? ' is-bad' : '') + '">' + icon('gem') + fmtNum(d.gems) + '</span>'; }
 function lkCard(kind, d, prev, has, on, label) {     // one look: preview, name, and Angelegt / Anlegen / price
     return '<button type="button" class="skin-card lk-card' + (on ? ' on' : '') + (has ? '' : ' is-shop') + '" data-lk="' + kind + ':' + d.id + '">' + prev + (label === false ? '' : '<b>' + (label || d.name) + '</b>') +
         '<small>' + (on ? icon('check') + 'Angelegt' : has ? 'Anlegen' : lkPrice(d)) + '</small></button>';
 }
 function lkDef(kind, id) {
-    if (kind === 'frame') return FRAMES.find(f => f.id === id); if (kind === 'title') return titelDef(id); if (kind === 'march') return MARCH_SKINS.find(m => m.id === id);
+    if (kind === 'frame') return rahmenDef(id); if (kind === 'march') return MARCH_SKINS.find(m => m.id === id);
     if (kind === 'style') return BAUSTILE[id] ? Object.assign({ id, name: BAUSTILE[id] }, BAUSTIL_PRICE[id]) : null;
     if (kind === 'color') { const d = SKIN_DEFS[id]; return d ? { id, name: d.name, gems: d.cost } : null; } return null;
 }
 function lkHas(kind, id) { const d = lkDef(kind, id); if (!d) return false;
-    if (kind === 'frame') return lookOwns('frames', d); if (kind === 'title') return lookOwns('titles', d); if (kind === 'march') return d.gems === 0 || (look.marchs || []).includes(id);
+    if (kind === 'frame') return rahmenHat('player', d); if (kind === 'march') return d.gems === 0 || (look.marchs || []).includes(id);
     if (kind === 'style') return loadBaustil().own.includes(id); return loadSkins().own.includes(id); }
 function lkUse(kind, id) {                            // put on something you own
-    if (kind === 'frame' || kind === 'title' || kind === 'march') { look[kind] = id; saveLook(); }
+    if (kind === 'frame' || kind === 'march') { look[kind] = id; saveLook(); }
     else if (kind === 'style') { const v = loadBaustil(); v.style = id; store.set('openWaterBaustil', JSON.stringify(v)); }
     else if (kind === 'color') { const sk = loadSkins(); sk.active = id; store.set('openWaterSkins', JSON.stringify(sk)); BUILDING_SPRITES.clear(); }
     renderLook(); if (cityOpenId === '_keep') renderKeepSheet(); requestRender();
 }
-function lkBuy(kind, id, btn) {                       // Gems or Thron-Punkte; bought = put on at once
+function lkBuy(kind, id, btn) {                       // Gems or Thron-Punkte; bought = put on at once (Rahmen: nur anlegen)
     const d = lkDef(kind, id); if (!d) return;
     if (lkHas(kind, id)) { lkUse(kind, id); return; }
+    if (kind === 'frame') { flashHint('„' + d.name + '“ ' + (d.platz ? 'bekommen am Saison-Ende die Spieler auf ' + rahmenPlatzText(d) + ' – bis zum nächsten Saison-Ende.' : 'gibt es nicht mehr – Rahmen gibt es am Saison-Ende und in der Mitte.'), 3500); return; }   // Rahmen nicht zu kaufen (Alexander 6.10.)
     if (d.buy === 'pass') { flashHint('„' + d.name + '“ gibt es nur im Saison-Pass (Premium-Reihe) – unter „Events“.', 3000); return; }
     const cost = d.tp || d.gems || 0;
     if (d.tp ? (throneState.pts || 0) < cost : gems < cost) { flashHint('Zu wenig ' + (d.tp ? 'Thron-Punkte' : 'Edelsteine') + ' – „' + d.name + '“ kostet ' + fmtNum(cost) + '.', 2500); return; }
     if (!d.tp && !gemsWirklich('lk:' + kind + ':' + id, cost, btn)) return;
     if (d.tp) { throneState.pts -= cost; saveThrone(); } else gems -= cost;
-    if (d.buy === 'throne') throneGive('player', 'look');                   // Thronhüter + Thron-Rahmen come together
-    else if (kind === 'frame' || kind === 'title' || kind === 'march') { const k = kind + 's'; look[k] = [...new Set([...(look[k] || []), id])]; saveLook(); }
+    if (kind === 'march') { look.marchs = [...new Set([...(look.marchs || []), id])]; saveLook(); }
     else if (kind === 'style') { const v = loadBaustil(); v.own = [...new Set([...v.own, id])]; store.set('openWaterBaustil', JSON.stringify(v)); }
     else { const sk = loadSkins(); sk.own = [...new Set([...sk.own, id])]; store.set('openWaterSkins', JSON.stringify(sk)); }
-    if (d.buy !== 'throne') lkUse(kind, id); else renderLook();
+    lkUse(kind, id);
     updateHud(); saveGame(); sfx('coin'); flashHint('„' + d.name + '“ gekauft und angelegt.', 2500);
 }
 function renderLookTop() {                            // what you wear now + what you can pay with
     const el = document.getElementById('lkTop'); if (!el || document.getElementById('lookSheet').hidden) return;
-    const fr = playerFrame(), mt = titleOf('player'), rl = rulerOwner() === 'player';
-    liveHtml(el, '<span class="frame-ring lk-me" data-frame="' + fr + '"><img alt="" src="' + crestDataUrl(48) + '"></span>' +
-        '<span class="lk-me-t"><b>' + escapeHtml(profileName.value || 'Du') + '</b><small>' + escapeHtml(playerTitle()) + (rl ? ' · Herrscher der Meere' : mt ? ' · ' + mt.name : '') + '</small></span>' +
+    liveHtml(el, '<span class="frame-ring lk-me" data-frame="' + playerFrame() + '"><img alt="" src="' + crestDataUrl(48) + '"></span>' +
+        '<span class="lk-me-t"><b>' + escapeHtml(profileName.value || 'Du') + '</b><small>' + escapeHtml(playerTitle()) + '</small></span>' +
         '<span class="lk-pay"><span class="pill pill--gem">' + icon('gem') + '<b>' + fmtCompact(Math.floor(gems)) + '</b></span><span class="pill pill--throne">' + icon('crown') + '<b>' + fmtCompact(throneState.pts || 0) + '</b></span></span>');
 }
 function lkMarchPrev() {                              // the march cards: a little column with your flag and the trail
@@ -8755,15 +8768,15 @@ function renderLookSheet(live) {                     // live = jede Sekunde aus 
     document.getElementById('crestPage').hidden = lkTab !== 'crest';
     const el = document.getElementById('lkPane'); el.hidden = lkTab === 'crest'; let h = '';
     if (lkTab === 'crest') { if (!live) renderCrestEditor(); }
-    else if (lkTab === 'frame') { const fr = playerFrame(), img = '<img alt="" src="' + crestDataUrl(36) + '">';   // Rahmen und Titel in einem Reiter (Alexander 6.10.): erst die Rahmen, darunter die Titel
-        const cur = playerTitle(), mt = titleOf('player'), rl = rulerOwner() === 'player', own = [...TITLES_P, ...(look.titles || []).map(saisonTitel).filter(Boolean)].filter(t => lkHas('title', t.id)), buy = TITLES_P.filter(t => !lkHas('title', t.id));
-        h = '<div class="skin-grid lk-grid">' + FRAMES.map(f => lkCard('frame', f, '<span class="frame-ring lk-frame" data-frame="' + f.id + '">' + img + '</span>', lkHas('frame', f.id), f.id === fr)).join('') + '</div>' +
-            '<small class="keep-note">Dein Rahmen um Wappen und Profil – so sehen dich alle in der Rangliste. Der Thron-Rahmen kommt mit dem Titel „Thronhüter“.</small>' +
-            '<div id="lkTitel" class="keep-h">Titel aus der Mitte</div><div class="lk-mid' + (rl ? ' is-ruler' : mt ? (mt.good ? ' is-good' : ' is-bad') : '') + '">' + icon('crown') + '<span><b>' + (rl ? 'Herrscher der Meere' : mt ? mt.name : 'Gerade keiner') + '</b><small>' +
-                (rl ? 'Solange du den Mega-Tempel hältst · Ring Blutrot-Gold' : mt ? mt.desc + ' · gilt bis zum nächsten Herrscher' : 'Titel aus der Mitte vergibt der Herrscher – sie kommen und gehen.') + '</small></span></div>' +
-            '<div class="keep-h">Deine Titel</div><div class="look-titles">' + own.map(t => '<button type="button" class="look-title' + (t.name === cur ? ' on' : '') + '" data-lk="title:' + t.id + '">' + (t.name === cur ? icon('check') : '') + t.name + '</button>').join('') + '</div>' +
-            (buy.length ? '<div class="keep-h">Titel zu kaufen</div><div class="skin-grid lk-grid lk-grid--t">' + buy.map(t => lkCard('title', t, '<span class="lk-plate">' + t.name + '</span>', false, false, false)).join('') + '</div>' : '') +
-            '<small class="keep-note">Dein Titel steht im Profil und in der Rangliste.</small>'; }
+    else if (lkTab === 'frame') {                     // Rahmen = Titel (Alexander 6.10.): deine Rahmen zum Anlegen, die Saison-Rahmen, der aus der Mitte
+        const img = '<img alt="" src="' + crestDataUrl(36) + '">', an = rahmenDef(look.frame) && lkHas('frame', look.frame) ? look.frame : 'bronze', mt = titleOf('player'), rl = rulerOwner() === 'player';
+        const ring = id => '<span class="frame-ring lk-frame" data-frame="' + id + '">' + img + '</span>', card = r => lkCard('frame', r, ring(r.id), lkHas('frame', r.id), r.id === an);
+        const sz = RAHMEN.filter(r => r.platz), dein = RAHMEN.filter(r => !r.platz && lkHas('frame', r.id));
+        h = '<div class="skin-grid lk-grid">' + dein.map(card).join('') + '</div>' +
+            '<div id="lkTitel" class="keep-h">Saison-Rahmen</div><div class="skin-grid lk-grid">' + sz.map(card).join('') + '</div>' +
+            '<div class="keep-h">Aus der Mitte</div><div class="lk-mid' + (rl ? ' is-ruler' : mt ? (mt.good ? ' is-good' : ' is-bad') : '') + '">' + ring(rl ? 'king' : mt ? (mt.good ? 'mgut' : 'mstraf') : 'bronze') + '<span><b>' + (rl ? 'Herrscher der Meere' : mt ? mt.name : 'Gerade keiner') + '</b><small>' +
+                (rl ? 'Solange du den Mega-Tempel hältst · geht vor' : mt ? mt.desc + ' · geht vor, bis zum nächsten Herrscher' : 'Den Rahmen aus der Mitte vergibt der Herrscher – er kommt und geht.') + '</small></span></div>' +
+            '<small class="keep-note">Titel und Rahmen sind eins: so sehen dich alle in Profil und Rangliste. Rahmen gibt es nicht zu kaufen – Saison-Rahmen bekommen die besten 10 am Saison-Ende (bis zum nächsten), dazu die aus der Mitte.</small>'; }
     else if (lkTab === 'base') { const bs = loadBaustil(), sk = loadSkins();
         h = '<div class="keep-h">Baustil</div><div class="skin-grid lk-grid">' + Object.keys(BAUSTILE).map(k => lkCard('style', lkDef('style', k), '<canvas data-bk-prev="' + k + '" width="120" height="132"></canvas>', lkHas('style', k), bs.style === k)).join('') + '</div>' +
             '<small class="keep-note">Gilt für alle deine Basen. Die Stufe zeigt der Stein, dich zeigen Dach und Fahne mit deinem Wappen.</small>' +
@@ -8782,7 +8795,7 @@ function renderLookSheet(live) {                     // live = jede Sekunde aus 
     if (lkTab === 'march') lkMarchPrev();
     sh.scrollTop = top;
 }
-function openLookSheet(tab) {                         // tab 'title': die Titel stehen im Reiter „Rahmen“ unten – dorthin rollen
+function openLookSheet(tab) {                         // tab 'title': Titel = Rahmen (Alexander 6.10.) – Reiter „Rahmen“, zu den Saison-Rahmen rollen
     lookMigrate(); if (tab) lkTab = tab === 'title' ? 'frame' : tab; const sh = document.getElementById('lookSheet'); sh.hidden = false; renderLookSheet(); sh.scrollTop = 0;
     const ti = tab === 'title' && document.getElementById('lkTitel'); if (ti) sh.scrollTop = ti.getBoundingClientRect().top - sh.getBoundingClientRect().top - document.getElementById('lkTabs').offsetHeight - 8;
 }
@@ -10973,7 +10986,7 @@ function saveEv() { evDirty = false; evSaveAt = Date.now(); store.set('openWater
 window.addEventListener('pagehide', () => { if (evDirty && rechnet()) saveEv(); });
 const evRang = o => Object.entries(o || {}).filter(e => e[1] > 0 && (e[0] === 'player' || botById[e[0]])).sort((a, b) => b[1] - a[1]);
 function evPreis(who, src, title, p, schl) {          // schl: fester Schlüssel der Auszahlung (Woche, Tag …) – kommt nie doppelt an; ein Preis: deiner ins Abholfach, ein echter Mitspieler bekommt ihn als Nachricht (auch Kisten), Mitspieler direkt
-    const gems = Math.round(p.gems || 0), sh = Math.round(p.sh || 0), crate = p.crate >= 0 ? p.crate : -1, titel = saisonTitel(p.titel) ? p.titel : null;   // titel: Saison-Titel (für immer)
+    const gems = Math.round(p.gems || 0), sh = Math.round(p.sh || 0), crate = p.crate >= 0 ? p.crate : -1, titel = saisonTitel(p.titel) ? p.titel : null;   // titel: Saison-Platz (Erfolg; der Saison-Rahmen kommt aus saison.last)
     if (who === 'player') { inboxAdd({ src, title, gems, sh, crate }); if (titel) saisonTitelGeben(titel); return; }
     const bd = botById[who]; if (!bd) return;
     if (titel) { const b0 = loadBotState()[who]; if (b0) { b0.sTitel = [...new Set([...(b0.sTitel || []), titel])]; saveBotState(); } }   // die vergebenen Saison-Titel führt nur, wer rechnet (ein Profil kann sich keinen eintragen)
@@ -11963,7 +11976,8 @@ multiAttackConfirmBtn.addEventListener('click', () => {
 // Wer rechnet (der Weltrechner – in der Vorschau das eigene Gerät), beginnt zum Termin die neue Saison: Sonntag 18 Uhr deutscher Zeit
 // (Europe/Berlin mit Sommer-/Winterzeit – nicht die Uhr des Servers; vor dem Drachen um 19 Uhr), 8 Wochen nach dem Start. Vorher immer eine Sicherung der Welt beim Server (welt.js sicherungBitte → server.php).
 // 3 Tage vorher eine Nachricht an alle echten Spieler, im Spiel ein Countdown (Leiste unter dem HUD, Events-Fenster).
-// Ende: die besten 10 nach Macht (wie die Rangliste) bekommen Gems ins Abholfach und einen Saison-Titel für immer.
+// Ende: die besten 10 nach Macht (wie die Rangliste) bekommen Gems ins Abholfach und einen Saison-Rahmen bis zum
+// nächsten Saison-Ende (05a RAHMEN: Platz 1 · 2–3 · 4–5 · 6–10, aus last.top – Alexander 6.10.).
 // Bleibt: die ganze Hauptstadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Gems, Holz/Stein/Eisen, alles Gekaufte.
 // Weg: alle Basen, alle Truppen (Start mit PLAYER_START_TROOPS wie ein neuer Spieler), Münzen (0 wie ein neuer Spieler), Stufe (→ 1,
 // damit alle Fähigkeitspunkte), Bündnisse, Märsche, Rallys, Verstärkungen, Armeen, Felder, Nebel, Kampfberichte. Die Hauptstadt zieht
@@ -12023,7 +12037,7 @@ function saisonTop() {                                // die besten 10 nach Mach
 function saisonNeu(now) {
     const alt = saison.nr, nr = alt + 1, top = saisonTop(), wirtAb = saison.wirtAb > 0 ? saison.wirtAb : nr, f = wirtAb === nr ? WIRTSCHAFT_KOSTEN : 1;   // f: Holz/Stein/Eisen umrechnen (nur beim ersten Reset nach der Umstellung)
     console.warn('Welt-Saison ' + alt + ' zu Ende – Saison ' + nr + ' beginnt (Top 10: ' + top.map(([w]) => (botById[w] || {}).name || w).join(', ') + ')');
-    // 1) Preise: Gems ins Abholfach (Mitspieler direkt) und der Saison-Titel – feste Nummer je Saison (nie doppelt)
+    // 1) Preise: Gems ins Abholfach (Mitspieler direkt) und der Saison-Platz (für das Erfolg; der Rahmen kommt aus last.top) – feste Nummer je Saison
     top.forEach(([w], i) => evPreis(w, 'saison', 'Welt-Saison ' + alt + ' · Platz ' + (i + 1), { gems: SAISON_PREISE[i], titel: 's' + alt + 'p' + (i + 1) }, alt));
     // 2) echte Spieler: was die Welt ihnen noch schuldet, geht jetzt raus (vor der Nachricht „saison“ – sein Handy verbucht es noch in der alten Saison)
     const menschen = window.WELT ? Object.keys(WELT.menschen).filter(id => id !== WELT.ich && parseInt(id.slice(1), 10) > 0) : [];
@@ -12093,7 +12107,7 @@ function saisonChip(now) {
 function saisonKarte() {
     const S = saison; if (!S) return '';
     const now = Date.now(), bald = S.ende - now <= SAISON_BALD_MS;
-    const preise = 'Platz 1: ' + fmtNum(SAISON_PREISE[0]) + ' · 2: ' + fmtNum(SAISON_PREISE[1]) + ' · 3: ' + fmtNum(SAISON_PREISE[2]) + ' · 4–10: ' + fmtNum(SAISON_PREISE[3]) + ' Edelsteine + Saison-Titel für immer';
+    const preise = 'Platz 1: ' + fmtNum(SAISON_PREISE[0]) + ' · 2: ' + fmtNum(SAISON_PREISE[1]) + ' · 3: ' + fmtNum(SAISON_PREISE[2]) + ' · 4–10: ' + fmtNum(SAISON_PREISE[3]) + ' Edelsteine + Saison-Rahmen bis zum nächsten Saison-Ende';
     const last = S.last && S.last.top && S.last.top.length ? '<div class="lb-gap">Saison ' + S.last.nr + ' · Top 10</div>' + evRangHtml(S.last.top.map(([w, v]) => [lokalId(w), v]), v => fmtCompact(v)) : '';
     return evKarte('crown', 'Welt-Saison ' + S.nr, now < S.ende ? 'Neue Saison in ' + evUhr(S.ende) : S.halt ? 'Neue Saison: der Termin folgt' : 'Die neue Saison beginnt gleich …',
         '<div class="field-lines"><span>Neustart</span><b>' + (S.halt ? 'vom Admin' : evWann(S.ende) + ' Uhr') + '</b><span>Bleibt</span><b>Hauptstadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Edelsteine, Holz/Stein/Eisen, Gekauftes</b>' +
@@ -13984,7 +13998,7 @@ if (window.WELT) {
     }
     // (welt.js profilZuBot, nur beim Weltrechner) ein Profil kommt an → Hauptbuch prüfen, Mitspieler-Datensatz klemmen
     function hbKlemmen(who, b, p, alt) {
-        if (!AUF) { if (alt && alt.hbK) for (const k of ['lvl', 'skills', 'gear', 'city', 'hs', 'shieldUntil', 'hbK']) if (alt[k] !== undefined) b[k] = alt[k]; return; }   // (aufbau.js noch nicht geladen: die Welt-Werte bleiben)
+        if (!AUF) { if (alt && alt.hbK) for (const k of ['lvl', 'skills', 'gear', 'city', 'hs', 'shieldUntil', 'frames', 'titles', 'throneLook', 'hbK']) if (alt[k] !== undefined) b[k] = alt[k]; return; }   // (aufbau.js noch nicht geladen: die Welt-Werte bleiben)
         const now = Date.now();
         let hb = alt && alt.hb && alt.hb.v === HB_V ? alt.hb : b.hb && b.hb.v === HB_V ? b.hb : null;
         if (!hb) {
@@ -14005,11 +14019,20 @@ if (window.WELT) {
         hbPruefen(who, hb, p, m, now, b.schildAlt);
         if (m.rDeckel && m.rDeckelP === p && b.res) for (const k in m.rDeckel) if (nn(b.res[k]) > m.rDeckel[k]) b.res[k] = m.rDeckel[k];   // Rohstoff-Sprung: die Welt bekommt nur das Mögliche – auch wenn dasselbe Profil nach 10 s nochmal angewendet wird (wartet etwas im Hauptbuch; vorher kam das erfundene Holz dann doch in die Welt und schaukelte sich hoch)
         hbSchreiben(who, hb, b, p, alt);
+        hbRahmen(hb, b, alt);
         if (m.init && m.gGeeicht && now - (m.hbMerkT || 0) > 60000) hbKontenMerken(hb, m, now);
         const d = b.wache; if (m.init && m.geeicht && d) d.u = Math.round(m.c.u);
         saveBotState();                                // (das Hauptbuch geht mit der Welt mit)
     }
     WELT.klemmen = hbKlemmen;
+    // Rahmen (Alexander 6.10.): nicht mehr zu kaufen – was er bis jetzt hatte, merkt sich das Hauptbuch einmal (neu: nichts), danach
+    // kommt aus dem Profil keiner mehr dazu. Saison-Rahmen und die aus der Mitte führt die Welt selbst (05a rahmenHat / rahmenVon).
+    // (Saisonkrone: Saison-Pass Stufe 40 – die Stufe kennt das Hauptbuch nicht genau, darum erlaubt)
+    function hbRahmen(hb, b, alt) {
+        const frisch = !(alt && alt.city);
+        if (!hb.lk) hb.lk = frisch ? { f: [], t: [], th: 0 } : { f: (b.frames || []).slice(0, 60), t: (b.titles || []).slice(0, 60), th: b.throneLook ? 1 : 0 };
+        b.frames = (b.frames || []).filter(x => x === 'saison' || hb.lk.f.includes(x)); b.titles = (b.titles || []).filter(x => hb.lk.t.includes(x)); if (!hb.lk.th) b.throneLook = 0;
+    }
     // Nach dem Zurückspielen einer Sicherung (server.php: ow_welt_info.zurueck) ist die Welt – mit dem Hauptbuch – wieder alt, die
     // Spielstände der Spieler nicht (was sie seitdem verdient und gebaut haben, behalten sie). Damit beides zusammenpasst, gleicht der
     // Weltrechner EINMAL je Spieler an: Münzen, Verwundete, Gems, Rohstoffe und Stufe werden am nächsten Profil neu geeicht; Stadt,
@@ -14467,8 +14490,8 @@ if (window.WELT) {
         if (!e || e.art !== 'evPreis') return;
         const z = (v, max) => typeof v === 'number' && Number.isFinite(v) && v > 0 ? Math.min(max, Math.round(v)) : 0;
         const crate = Number.isInteger(e.crate) && e.crate >= 0 && e.crate <= 4 ? e.crate : -1, src = INBOX_SRC[e.src] ? e.src : 'woche', title = String(e.title || '').slice(0, 80);
-        if (saisonTitel(e.titel)) saisonTitelGeben(e.titel);   // Saison-Titel (Ende einer Welt-Saison): gehört dir für immer, gleich angelegt
-        if (inboxAdd({ src, title, gems: z(e.gems, 5000), sh: z(e.sh, 100), crate }) || crate >= 0 || e.sh > 0) { sfx('coin'); flashHint(title + ': dein Preis liegt unter Events → Belohnung.' + (saisonTitel(e.titel) ? ' Neuer Titel: „' + saisonTitel(e.titel).name + '“.' : ''), 6000); }
+        if (saisonTitel(e.titel)) saisonTitelGeben(e.titel);   // Saison-Platz (Ende einer Welt-Saison): der Saison-Rahmen, gleich angelegt (bis zum nächsten Saison-Ende)
+        if (inboxAdd({ src, title, gems: z(e.gems, 5000), sh: z(e.sh, 100), crate }) || crate >= 0 || e.sh > 0) { sfx('coin'); flashHint(title + ': dein Preis liegt unter Events → Belohnung.' + (saisonTitel(e.titel) && saisonRahmenFuer(saisonTitel(e.titel).platz) ? ' Neuer Rahmen: „' + saisonRahmenFuer(saisonTitel(e.titel).platz).name + '“ (bis zum nächsten Saison-Ende).' : ''), 6000); }
     });
     WELT.beiNachricht.push(function (e) {             // Nebel freischalten (vom Admin): die ganze Karte ist aufgedeckt
         if (!e || e.art !== 'nebel') return;

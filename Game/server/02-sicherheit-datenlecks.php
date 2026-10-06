@@ -92,7 +92,7 @@ function profil_bereinigen($text) {
         'hs' => $hs,
         'shieldUntil' => min($plus($p['shieldUntil'] ?? 0, 1e15), $jetztMs + 8 * 86400000), 'neuBis' => min($plus($p['neuBis'] ?? 0, 1e15), $jetztMs + 48 * 3600000),   // längster Schild 8 Tage, Anfängerschutz 48 h
         'look' => ['ring' => $id($lk['ring'] ?? null), 'rings' => $liste($lk['rings'] ?? []), 'march' => $id($lk['march'] ?? null), 'marchs' => $liste($lk['marchs'] ?? []),
-                   'frame' => $id($lk['frame'] ?? null), 'title' => $id($lk['title'] ?? null), 'throne' => !empty($lk['throne'])],
+                   'frame' => $id($lk['frame'] ?? null), 'frames' => $liste($lk['frames'] ?? []), 'titles' => $liste($lk['titles'] ?? []), 'throne' => !empty($lk['throne'])],   // (Rahmen: angelegt + die er hat – Weltrechner hbRahmen)
         'stats' => $karte($p['stats'] ?? [], function ($x) use ($plus) { return $plus($x, 1e15); }, 80),
         'saison' => (int)max(1, $plus($p['saison'] ?? 1, 1e6)),   // Welt-Saison seines Spielstands (ein älteres Profil zählt beim Weltrechner nicht)
         'earned' => $plus($p['earned'] ?? 0, 1e12), 'coins' => $plus($p['coins'] ?? 0, 1e15), 'gems' => isset($p['gems']) ? $plus($p['gems'], 1e13) : null,
@@ -147,7 +147,7 @@ function mitspieler_kuerzen($b, $jetztMs) {
 // Weltrechner (macht), ebenso die Summe aller Forschungs-Stufen (foP – Rangliste „Hauptstadt“ bei gleicher Burg-Stufe, ohne
 // zu verraten, was erforscht ist). Der eigene Eintrag (u<id>) bleibt ganz – nur NUR_WELTRECHNER fehlt wie bei allen.
 const FREMD_OEFFENTLICH = ['lvl', 'macht', 'foP', 'tt', 'capital', 'shieldUntil', 'neuBis', 'mensch', 'v2', 'hbK', 'handy', 'city', 'stats',
-    'lookMig', 'ringMig', 'ring', 'rings', 'march', 'marchs', 'frames', 'titles', 'throneLook', 'lookFrame', 'lookTitle', 'achLook', 'bestRank'];
+    'lookMig', 'ringMig', 'ring', 'rings', 'march', 'marchs', 'frames', 'titles', 'throneLook', 'lookFrame', 'achLook', 'bestRank'];
 const FREMD_STATS = ['caps', 'capSeed', 'tpEarned'];   // (Rangliste: Eroberungen, Thron-Punkte)
 function fremd_wert($f, $v) {                         // city: nur die Burg-Stufe · stats: nur die der Rangliste
     if ($f === 'city') return (object)['levels' => (object)(is_object($v) && isset($v->levels->keep) ? ['keep' => $v->levels->keep] : [])];

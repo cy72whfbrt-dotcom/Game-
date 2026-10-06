@@ -794,7 +794,7 @@ if (window.WELT) {
     }
     // (welt.js profilZuBot, nur beim Weltrechner) ein Profil kommt an → Hauptbuch prüfen, Mitspieler-Datensatz klemmen
     function hbKlemmen(who, b, p, alt) {
-        if (!AUF) { if (alt && alt.hbK) for (const k of ['lvl', 'skills', 'gear', 'city', 'hs', 'shieldUntil', 'hbK']) if (alt[k] !== undefined) b[k] = alt[k]; return; }   // (aufbau.js noch nicht geladen: die Welt-Werte bleiben)
+        if (!AUF) { if (alt && alt.hbK) for (const k of ['lvl', 'skills', 'gear', 'city', 'hs', 'shieldUntil', 'frames', 'titles', 'throneLook', 'hbK']) if (alt[k] !== undefined) b[k] = alt[k]; return; }   // (aufbau.js noch nicht geladen: die Welt-Werte bleiben)
         const now = Date.now();
         let hb = alt && alt.hb && alt.hb.v === HB_V ? alt.hb : b.hb && b.hb.v === HB_V ? b.hb : null;
         if (!hb) {
@@ -815,11 +815,20 @@ if (window.WELT) {
         hbPruefen(who, hb, p, m, now, b.schildAlt);
         if (m.rDeckel && m.rDeckelP === p && b.res) for (const k in m.rDeckel) if (nn(b.res[k]) > m.rDeckel[k]) b.res[k] = m.rDeckel[k];   // Rohstoff-Sprung: die Welt bekommt nur das Mögliche – auch wenn dasselbe Profil nach 10 s nochmal angewendet wird (wartet etwas im Hauptbuch; vorher kam das erfundene Holz dann doch in die Welt und schaukelte sich hoch)
         hbSchreiben(who, hb, b, p, alt);
+        hbRahmen(hb, b, alt);
         if (m.init && m.gGeeicht && now - (m.hbMerkT || 0) > 60000) hbKontenMerken(hb, m, now);
         const d = b.wache; if (m.init && m.geeicht && d) d.u = Math.round(m.c.u);
         saveBotState();                                // (das Hauptbuch geht mit der Welt mit)
     }
     WELT.klemmen = hbKlemmen;
+    // Rahmen (Alexander 6.10.): nicht mehr zu kaufen – was er bis jetzt hatte, merkt sich das Hauptbuch einmal (neu: nichts), danach
+    // kommt aus dem Profil keiner mehr dazu. Saison-Rahmen und die aus der Mitte führt die Welt selbst (05a rahmenHat / rahmenVon).
+    // (Saisonkrone: Saison-Pass Stufe 40 – die Stufe kennt das Hauptbuch nicht genau, darum erlaubt)
+    function hbRahmen(hb, b, alt) {
+        const frisch = !(alt && alt.city);
+        if (!hb.lk) hb.lk = frisch ? { f: [], t: [], th: 0 } : { f: (b.frames || []).slice(0, 60), t: (b.titles || []).slice(0, 60), th: b.throneLook ? 1 : 0 };
+        b.frames = (b.frames || []).filter(x => x === 'saison' || hb.lk.f.includes(x)); b.titles = (b.titles || []).filter(x => hb.lk.t.includes(x)); if (!hb.lk.th) b.throneLook = 0;
+    }
     // Nach dem Zurückspielen einer Sicherung (server.php: ow_welt_info.zurueck) ist die Welt – mit dem Hauptbuch – wieder alt, die
     // Spielstände der Spieler nicht (was sie seitdem verdient und gebaut haben, behalten sie). Damit beides zusammenpasst, gleicht der
     // Weltrechner EINMAL je Spieler an: Münzen, Verwundete, Gems, Rohstoffe und Stufe werden am nächsten Profil neu geeicht; Stadt,
@@ -1277,8 +1286,8 @@ if (window.WELT) {
         if (!e || e.art !== 'evPreis') return;
         const z = (v, max) => typeof v === 'number' && Number.isFinite(v) && v > 0 ? Math.min(max, Math.round(v)) : 0;
         const crate = Number.isInteger(e.crate) && e.crate >= 0 && e.crate <= 4 ? e.crate : -1, src = INBOX_SRC[e.src] ? e.src : 'woche', title = String(e.title || '').slice(0, 80);
-        if (saisonTitel(e.titel)) saisonTitelGeben(e.titel);   // Saison-Titel (Ende einer Welt-Saison): gehört dir für immer, gleich angelegt
-        if (inboxAdd({ src, title, gems: z(e.gems, 5000), sh: z(e.sh, 100), crate }) || crate >= 0 || e.sh > 0) { sfx('coin'); flashHint(title + ': dein Preis liegt unter Events → Belohnung.' + (saisonTitel(e.titel) ? ' Neuer Titel: „' + saisonTitel(e.titel).name + '“.' : ''), 6000); }
+        if (saisonTitel(e.titel)) saisonTitelGeben(e.titel);   // Saison-Platz (Ende einer Welt-Saison): der Saison-Rahmen, gleich angelegt (bis zum nächsten Saison-Ende)
+        if (inboxAdd({ src, title, gems: z(e.gems, 5000), sh: z(e.sh, 100), crate }) || crate >= 0 || e.sh > 0) { sfx('coin'); flashHint(title + ': dein Preis liegt unter Events → Belohnung.' + (saisonTitel(e.titel) && saisonRahmenFuer(saisonTitel(e.titel).platz) ? ' Neuer Rahmen: „' + saisonRahmenFuer(saisonTitel(e.titel).platz).name + '“ (bis zum nächsten Saison-Ende).' : ''), 6000); }
     });
     WELT.beiNachricht.push(function (e) {             // Nebel freischalten (vom Admin): die ganze Karte ist aufgedeckt
         if (!e || e.art !== 'nebel') return;

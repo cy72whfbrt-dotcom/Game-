@@ -1,25 +1,42 @@
-// Teil 05a-aussehen-profil.js: Titel und Rahmen kaufen, Profil-Fenster
-// ===== TITEL & RAHMEN: only to buy (Gems or Thron-Punkte) - what you had by rank or Erfolg before stays yours (lookMigrate) =====
-const FRAMES = [
-    { id: 'bronze', name: 'Bronze', rank: 0, gems: 0 }, { id: 'silver', name: 'Silber', rank: 1, gems: 200 }, { id: 'gold', name: 'Gold', rank: 2, gems: 400 }, { id: 'platin', name: 'Platin', rank: 3, gems: 700 },
-    { id: 'diamond', name: 'Diamant', rank: 4, gems: 1000 }, { id: 'master', name: 'Meister', rank: 5, gems: 1500 }, { id: 'legend', name: 'Legende', rank: 6, gems: 2500 },
-    { id: 'throne', name: 'Thron', buy: 'throne', tp: 3000 },
-    { id: 'saison', name: 'Saisonkrone', buy: 'pass' }                     // only from the Saison-Pass (premium, level 40)
+// Teil 05a-aussehen-profil.js: Rahmen (Titel + Ring ums Wappen), Profil-Fenster
+// ===== RAHMEN (Alexander 6.10.): Titel und Rahmen sind EIN Ding – ein Titel kommt immer mit seinem Ring ums Wappen. Nicht mehr zu
+// kaufen: man bekommt sie am Saison-Ende (Platz 1–10, bis zum nächsten Saison-Ende) oder über die Mitte (Herrscher, Titel aus der Mitte).
+// Was jemand vorher gekauft oder nach Rang/Erfolg hatte, bleibt seins (look.frames / look.titles, Mitspieler b.frames / b.titles).
+// f: alte Rahmen-Kennung = id, t: alte Titel-Kennung (wer eins von beiden hatte, hat den Rahmen); rank / ach / buy: nur für alte Spielstände (lookMigrate)
+const RAHMEN = [
+    { id: 'bronze', name: 'Neuling', t: 'novice', frei: 1 },
+    { id: 'silver', name: 'Silberritter', t: 'knight', rank: 1 }, { id: 'gold', name: 'Goldfürst', t: 'lord', rank: 2 }, { id: 'platin', name: 'Platingraf', t: 'count', rank: 3 },
+    { id: 'diamond', name: 'Diamantherzog', t: 'duke', rank: 4 }, { id: 'master', name: 'Meister der Meere', t: 'master', rank: 5 }, { id: 'legend', name: 'Legende', t: 'legend', rank: 6 },
+    { id: 'conq', name: 'Eroberer', t: 'conq', ach: 'cap100' }, { id: 'warlord', name: 'Kriegsherr', t: 'warlord', ach: 'cap1000' }, { id: 'wall', name: 'Standhaft', t: 'wall', ach: 'def25' },
+    { id: 'emma', name: 'Gefürchtet', t: 'emma', ach: 'emma10' }, { id: 'slayer', name: 'Bezwinger', t: 'slayer', ach: 'boss1' }, { id: 'builder', name: 'Baumeister', t: 'builder', ach: 'city5' },
+    { id: 'king', name: 'Herrscher der Meere', t: 'king', ach: 'throne' }, { id: 'throne', name: 'Thronhüter', t: 'keeper', buy: 'throne' },
+    { id: 'saison', name: 'Saisonkrone', buy: 'pass' },                     // Saison-Pass (Premium, Stufe 40)
+    // Saison-Rahmen: die besten 10 am Ende einer Welt-Saison – nur bis zum nächsten Saison-Ende (dann bekommen ihn die neuen)
+    { id: 'sz1', name: 'Saison-Champion', platz: [1, 1] }, { id: 'sz2', name: 'Saison-Großadmiral', platz: [2, 3] },
+    { id: 'sz4', name: 'Saison-Admiral', platz: [4, 5] }, { id: 'sz6', name: 'Saison-Kapitän', platz: [6, 10] }
 ];
-const TITLES_P = [                                  // rank / ach: only for the old save (lookMigrate), nothing unlocks by it any more
-    { id: 'novice', name: 'Neuling', gems: 0 },
-    { id: 'knight', name: 'Silberritter', rank: 1, gems: 200 }, { id: 'lord', name: 'Goldfürst', rank: 2, gems: 400 }, { id: 'count', name: 'Platingraf', rank: 3, gems: 700 },
-    { id: 'duke', name: 'Diamantherzog', rank: 4, gems: 1000 }, { id: 'master', name: 'Meister der Meere', rank: 5, gems: 1500 }, { id: 'legend', name: 'Legende', rank: 6, gems: 2500 },
-    { id: 'conq', name: 'Eroberer', ach: 'cap100', gems: 500 }, { id: 'warlord', name: 'Kriegsherr', ach: 'cap1000', gems: 1200 }, { id: 'wall', name: 'Standhaft', ach: 'def25', gems: 400 },
-    { id: 'emma', name: 'Gefürchtet', ach: 'emma10', gems: 600 }, { id: 'slayer', name: 'Bezwinger', ach: 'boss1', gems: 600 }, { id: 'builder', name: 'Baumeister', ach: 'city5', gems: 500 },
-    { id: 'king', name: 'Herrscher der Meere', ach: 'throne', tp: 2500 }, { id: 'keeper', name: 'Thronhüter', buy: 'throne', tp: 3000 }
-];
-// Saison-Titel (Ende einer Welt-Saison, die besten 10 – für immer, nie zu kaufen): Kennung s<Saison>p<Platz>
+const rahmenDef = id => RAHMEN.find(r => r.id === id) || null;
+const rahmenPlatzText = r => 'Platz ' + r.platz[0] + (r.platz[1] > r.platz[0] ? '–' + r.platz[1] : '');
+// Platz in der letzten Welt-Saison (Welt-Teil openWaterSaison.last.top – wer rechnet, schreibt ihn; 0 = nicht unter den besten 10)
+function saisonPlatz(who) { const t = typeof saison !== 'undefined' && saison && saison.last && saison.last.top; return t ? t.findIndex(([w]) => lokalId(w) === who) + 1 : 0; }
+function rahmenHat(who, r) {                         // hat who den Rahmen r? (Saison-Rahmen: nur, solange die Welt ihn so führt)
+    if (!r) return false; if (r.frei) return true;
+    if (r.platz) { const pl = saisonPlatz(who); return pl >= r.platz[0] && pl <= r.platz[1]; }
+    if (who === 'player') return (look.frames || []).includes(r.id) || !!(r.t && (look.titles || []).includes(r.t)) || (r.buy === 'throne' && !!(look.bought && look.bought.throne)) || (!look.lookMig && lookOldUnlocked(r));
+    const b = loadBotState()[who]; if (!b) return false;
+    return (b.frames || []).includes(r.id) || !!(r.t && (b.titles || []).includes(r.t)) || (r.buy === 'throne' && !!b.throneLook);
+}
+// Mitte geht vor: der Herrscher trägt „Herrscher der Meere“, ein Titel aus der Mitte seinen eigenen Rahmen (gut: Gold, Straf-Titel: Rot) – kommen und gehen
+function rahmenVon(who, gewaehlt) {                  // → { frame, title } – gewaehlt: der angelegte Rahmen (fehlt er oder ist er weg: Standard)
+    if (rulerOwner() === who) return { frame: 'king', title: 'Herrscher der Meere' };
+    const mt = titleOf(who); if (mt) return { frame: mt.good ? 'mgut' : 'mstraf', title: mt.name };
+    const r = rahmenDef(gewaehlt); return rahmenHat(who, r) ? { frame: r.id, title: r.name } : { frame: 'bronze', title: 'Neuling' };
+}
+// Saison-Platz (Ende einer Welt-Saison, die besten 10): Kennung s<Saison>p<Platz> – bleibt als Eintrag für das Erfolg „Saison“, getragen wird der Saison-Rahmen
 function saisonTitel(id) { const m = /^s(\d{1,4})p(\d{1,2})$/.exec(String(id || '')); if (!m) return null; const n = +m[1], pl = +m[2];
     return { id: m[0], name: pl === 1 ? 'Champion Saison ' + n : 'Saison ' + n + ' · Platz ' + pl, saison: n, platz: pl }; }
-const titelDef = id => TITLES_P.find(t => t.id === id) || saisonTitel(id);
-const saisonTitelBest = l => (l || []).map(saisonTitel).filter(Boolean).sort((a, b) => a.platz - b.platz || b.saison - a.saison)[0] || null;
-function saisonTitelGeben(id) { if (!saisonTitel(id)) return; look.titles = [...new Set([...(look.titles || []), id])]; look.title = id; saveLook(); try { renderLook(); } catch (e) {} }   // (gleich angelegt)
+const saisonRahmenFuer = pl => RAHMEN.find(r => r.platz && pl >= r.platz[0] && pl <= r.platz[1]) || null;
+function saisonTitelGeben(id) { if (!saisonTitel(id)) return; look.titles = [...new Set([...(look.titles || []), id])]; const r = saisonRahmenFuer(saisonTitel(id).platz); if (r) look.frame = r.id; saveLook(); try { renderLook(); } catch (e) {} }   // (der Saison-Rahmen gleich angelegt)
 // Marsch-Skins: how your columns look on the map - flag colour (with your crest on it) and a trail behind them
 const MARCH_SKINS = [
     { id: 'standard', name: 'Standard', gems: 0, flag: '#e9dfc6' },
@@ -77,25 +94,25 @@ document.addEventListener('click', e => {
 function rankIndexFor(bases) { let r = 0; RANK_TIERS.forEach((t, i) => { if (bases >= t.min) r = i; }); return r; }
 function bestRank() { const r = rankIndexFor(ownedIslands.size); if (!(look.best >= r)) { look.best = r; store.set('openWaterLook', JSON.stringify(look)); } return look.best; }
 function lookOldUnlocked(x) {                       // the old rule (rank / Erfolg) - only to carry an old save over
+    if (x.platz) return false;
     if (x.buy) return !!(look.bought && look.bought[x.buy]);
     if (x.ach) { try { return achLookKept(x.ach) || !!(achClaimed[x.ach] || ACHIEVEMENTS.find(a => a.id === x.ach && a.val() >= a.goal)); } catch (e) { return false; } }
     return (x.rank || 0) <= bestRank();
 }
-function lookMigrate() {                            // once: everything unlocked so far becomes owned, from now on looks are only bought
-    if (look.lookMig) return; look.frames = [...new Set([...(look.frames || []), ...FRAMES.filter(lookOldUnlocked).map(f => f.id)])];
-    look.titles = [...new Set([...(look.titles || []), ...TITLES_P.filter(lookOldUnlocked).map(t => t.id)])]; look.lookMig = 1; saveLook();
+function lookMigrate() {                            // once: everything unlocked by the old rule becomes owned
+    if (look.lookMig) return; const alt = RAHMEN.filter(r => !r.frei && lookOldUnlocked(r)); look.frames = [...new Set([...(look.frames || []), ...alt.map(r => r.id)])];
+    look.lookMig = 1; saveLook();
 }
 function saveLook() { store.set('openWaterLook', JSON.stringify(look)); }
-const lookOwns = (k, x) => x.gems === 0 || (look[k] || []).includes(x.id) || !!(x.buy && look.bought && look.bought[x.buy]) || (!look.lookMig && lookOldUnlocked(x));   // k: 'frames' | 'titles'
-function playerFrame() { const f = FRAMES.find(q => q.id === look.frame); return f && lookOwns('frames', f) ? f.id : [...FRAMES].reverse().find(q => !q.buy && lookOwns('frames', q)).id; }
-function playerTitle() { const t = titelDef(look.title); return t && lookOwns('titles', t) ? t.name : 'Neuling'; }
+function playerFrame() { return rahmenVon('player', look.frame).frame; }
+function playerTitle() { return rahmenVon('player', look.frame).title; }
 function marchSkinOf(who) { const id = who === 'player' ? look.march : who ? (loadBotState()[who] || {}).march : ''; return MARCH_SKINS.find(m => m.id === id) || MARCH_SKINS[0]; }
 function renderLook() {                             // the profile header and its "Aussehen" line; choosing happens in the Aussehen sheet
     const fr = playerFrame();
     document.getElementById('pAvatarRing').dataset.frame = fr;
     document.getElementById('profileTitle').textContent = playerTitle();
     const cur = document.getElementById('lookNow');     // die eine Aussehen-Karte im Profil (Wappen + was du trägst)
-    if (cur) cur.innerHTML = '<b>Aussehen · ' + escapeHtml(playerTitle()) + '</b><small>Wappen · Rahmen ' + (FRAMES.find(f => f.id === fr) || FRAMES[0]).name + ' · ' + BAUSTILE[loadBaustil().style] + ' · Marsch ' + marchSkinOf('player').name + '</small>';
+    if (cur) cur.innerHTML = '<b>Aussehen · ' + escapeHtml(playerTitle()) + '</b><small>Wappen · Rahmen · ' + BAUSTILE[loadBaustil().style] + ' · Marsch ' + marchSkinOf('player').name + '</small>';
     renderLookSheet();
 }
 function currentRank() {

@@ -224,7 +224,7 @@
             hs: P(d.openWaterHeroes2) || {}, shieldUntil: parseFloat(d.openWaterShield) || 0,
             fo: city.fo || {}, res: P(d.openWaterRes) || null,   // Paket D: Forschung, Rohstoffe (Burg-Stufe steht in city.levels.keep)
             neuBis: typeof neulingBis === 'function' ? neulingBis() : 0,
-            look: { ring: look.ring || null, rings: look.rings || [], march: look.march || null, marchs: look.marchs || [], frame: look.frame || null, title: look.title || null, throne: !!(look.bought && look.bought.throne) },
+            look: { ring: look.ring || null, rings: look.rings || [], march: look.march || null, marchs: look.marchs || [], frame: look.frame || null, frames: look.frames || [], titles: look.titles || [], throne: !!(look.bought && look.bought.throne) },   // (Rahmen: angelegt + was er schon hat)
             saison: parseInt(d.openWaterSaisonMein, 10) || 1,   // Welt-Saison dieses Spielstands (ein Profil von vor dem Reset zählt nicht)
             stats: P(d.openWaterStats) || {}, earned: thr.earned || 0, coins: parseFloat(d.openWaterCoins) || 0, gems: parseFloat(d.openWaterGems) || 0,   // (Gems sieht nur der Weltrechner – 3B: Hauptbuch)
             crest: P(d.openWaterCrest), baustil: P(d.openWaterBaustil)
@@ -237,7 +237,7 @@
     function profilZuBot(p, alt, id) {
         const b = profilZuBotRoh(p, alt);
         if (SYSTEM && id && typeof W.klemmen === 'function') { try { W.klemmen(id, b, p || {}, alt); } catch (e) { console.warn('Hauptbuch:', e); } }
-        else if (alt && alt.hbK) { b.hbK = 1; for (const k of ['lvl', 'skills', 'gear', 'city', 'hs', 'shieldUntil']) if (alt[k] !== undefined) b[k] = alt[k]; }
+        else if (alt && alt.hbK) { b.hbK = 1; for (const k of ['lvl', 'skills', 'gear', 'city', 'hs', 'shieldUntil', 'frames', 'titles', 'throneLook']) if (alt[k] !== undefined) b[k] = alt[k]; }
         return b;
     }
     function profilZuBotRoh(p, alt) {
@@ -261,8 +261,8 @@
         b.neuBis = Math.max(0, Math.min(+p.neuBis || 0, jetzt + 48 * 3600000, alt && alt.neuBis !== undefined ? +alt.neuBis || 0 : Infinity));
         const lk = p.look || {};
         b.ring = lk.ring || null; b.rings = lk.rings || []; b.march = lk.march || null; b.marchs = lk.marchs || [];
-        b.frames = lk.frame ? [lk.frame] : []; b.titles = lk.title ? [lk.title] : []; b.throneLook = lk.throne ? 1 : 0;
-        b.lookFrame = lk.frame || null; b.lookTitle = lk.title || null;
+        b.frames = Array.isArray(lk.frames) ? lk.frames.slice(0, 60) : []; b.titles = Array.isArray(lk.titles) ? lk.titles.slice(0, 60) : []; b.throneLook = lk.throne ? 1 : 0;   // (beim Weltrechner gegen das Hauptbuch geklemmt: hbRahmen)
+        b.lookFrame = lk.frame || null;
         const st = p.stats || {};
         b.stats = Object.assign({}, b.stats || {}, { caps: st.captures || 0, pvp: st.pvpWins || 0, defs: st.defends || 0, bosses: st.bosses || 0,
             tpEarned: SYSTEM ? ((alt && alt.stats && alt.stats.tpEarned) || (b.stats && b.stats.tpEarned) || 0) : p.earned || 0 });   // (der Weltrechner zählt die Thron-Punkte selbst – nie, was das Handy behauptet)

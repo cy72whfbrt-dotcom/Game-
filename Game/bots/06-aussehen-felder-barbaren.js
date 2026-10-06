@@ -2,27 +2,23 @@
 // ==============================================================================================================
 // 8) AUSSEHEN, STATISTIK, THRON-SHOP
 // ==============================================================================================================
-function botLook(botId) {
-    const b = loadBotState()[botId]; if (!b) return { frame: FRAMES[0].id, title: 'Neuling' };
-    if (b.mensch) { const t = saisonTitel(b.lookTitle) && !(b.sTitel || []).includes(b.lookTitle) ? null : titelDef(b.lookTitle);   // (Saison-Titel nur, wenn die Welt ihn vergeben hat – nie aus dem Profil allein)
-        return { frame: b.throneLook ? 'throne' : b.lookFrame || FRAMES[0].id, title: t ? t.name : 'Neuling' }; }   // echter Spieler: sein Aussehen
-    if (!b.lookMig) { const own = botOwnedIslands[botId], r = Math.max(b.bestRank || 0, rankIndexFor(own ? own.size : 0)), st = b.stats || {}, cityMin = Math.min(...BOT_BUILDINGS.filter(k => !BOT_MIN_AUSNAHME.includes(k)).map(k => b.city.levels[k] || 0));   // once: what they had by rank and deeds stays theirs - from now on looks are only bought (as for the player)
+function botLook(botId) {                            // → { frame, title }: Rahmen = Titel (05a RAHMEN, Alexander 6.10.) – die Mitte geht vor
+    const b = loadBotState()[botId]; if (!b) return { frame: 'bronze', title: 'Neuling' };
+    if (b.mensch) return rahmenVon(botId, b.lookFrame);   // echter Spieler: was er angelegt hat (nur Rahmen, die er hat – der Weltrechner hält sie gegen sein Hauptbuch)
+    if (!b.lookMig) { const own = botOwnedIslands[botId], r = Math.max(b.bestRank || 0, rankIndexFor(own ? own.size : 0)), st = b.stats || {}, cityMin = Math.min(...BOT_BUILDINGS.filter(k => !BOT_MIN_AUSNAHME.includes(k)).map(k => b.city.levels[k] || 0));   // once: what they had by rank and deeds stays theirs
         const ach = { cap100: (st.caps || 0) >= 100, cap1000: (st.caps || 0) >= 1000, def25: (st.defs || 0) >= 25, boss1: (st.bosses || 0) >= 1, emma10: (st.pvp || 0) >= 10, city5: cityMin >= 5, throne: !!st.ruled };
-        b.frames = [...new Set([...(b.frames || []), ...FRAMES.filter(f => !f.buy && (f.rank || 0) <= r).map(f => f.id)])];
-        b.titles = [...new Set([...(b.titles || []), ...TITLES_P.filter(t => !t.buy && (t.ach ? ach[t.ach] || (b.achLook || []).includes(t.ach) : (t.rank || 0) <= r)).map(t => t.id)])]; b.lookMig = 1; saveBotState(); }
-    const earned = TITLES_P.filter(t => t.buy ? !!b.throneLook : t.gems === 0 || b.titles.includes(t.id));
-    const idn = parseInt(botId.slice(3), 10) || 0, pick = earned[earned.length - 1 - Math.floor(mulberry32(idn * 31 + earned.length)() * Math.min(3, earned.length))];   // one of their three best - everyone has a favourite
-    const st = saisonTitelBest((b.titles || []).filter(t => (b.sTitel || []).includes(t)));                                                // ein Saison-Titel (Welt-Saison, für immer) – den tragen sie
-    return { frame: b.throneLook ? 'throne' : (b.frames || []).includes('saison') ? 'saison' : [...FRAMES].reverse().find(f => !f.buy && (f.gems === 0 || b.frames.includes(f.id))).id, title: st ? st.name : pick ? pick.name : 'Neuling' };
+        b.frames = [...new Set([...(b.frames || []), ...RAHMEN.filter(x => !x.frei && !x.buy && !x.platz && (x.ach ? ach[x.ach] || (b.achLook || []).includes(x.ach) : (x.rank || 0) <= r)).map(x => x.id)])]; b.lookMig = 1; saveBotState(); }
+    // sie tragen, was sie haben: einen Saison-Rahmen zuerst, dann den Thron-Rahmen, sonst einen ihrer drei besten (jeder hat seinen Liebling)
+    const own = RAHMEN.filter(x => rahmenHat(botId, x)), sz = own.find(x => x.platz), idn = parseInt(botId.slice(3), 10) || 0, alt = own.filter(x => !x.platz && x.id !== 'throne');
+    const pick = sz || own.find(x => x.id === 'throne') || alt[alt.length - 1 - Math.floor(mulberry32(idn * 31 + alt.length)() * Math.min(3, alt.length))];
+    return rahmenVon(botId, pick ? pick.id : 'bronze');
 }
-// Looks are only bought: everyone has a favourite frame, title and (6 in 10) a Marsch-Skin, bought once they can spare it - like the player in the Aussehen sheet
-function botLookFav(botId) { const r = mulberry32((parseInt(botId.slice(3), 10) || 0) * 389 + 71), gf = FRAMES.filter(f => f.gems), gt = TITLES_P.filter(t => t.gems), ms = MARCH_SKINS.filter(m => m.gems || m.tp);
-    return { frame: gf[Math.floor(r() * gf.length)], title: gt[Math.floor(r() * gt.length)], march: r() < .6 ? ms[Math.floor(r() * ms.length)] : null }; }
+// Marsch-Skins: 6 in 10 have a favourite, bought once they can spare it - like the player in the Aussehen sheet (Rahmen gibt es nicht mehr zu kaufen)
+function botLookFav(botId) { const r = mulberry32((parseInt(botId.slice(3), 10) || 0) * 389 + 71), ms = MARCH_SKINS.filter(m => m.gems || m.tp);
+    return { march: r() < .6 ? ms[Math.floor(r() * ms.length)] : null }; }
 function botLookShop(bot, b) {
-    botLook(bot.id); const fav = botLookFav(bot.id), can = p => b.gems >= p * 2 && b.gems - p >= TELEPORT_GEMS;
+    const fav = botLookFav(bot.id), can = p => b.gems >= p * 2 && b.gems - p >= TELEPORT_GEMS;
     if (fav.march && fav.march.gems && !(b.marchs || []).includes(fav.march.id) && can(fav.march.gems)) { b.gems -= fav.march.gems; b.marchs = [...(b.marchs || []), fav.march.id]; b.march = fav.march.id; }
-    else if (!b.frames.includes(fav.frame.id) && can(fav.frame.gems)) { b.gems -= fav.frame.gems; b.frames.push(fav.frame.id); }
-    else if (!b.titles.includes(fav.title.id) && can(fav.title.gems)) { b.gems -= fav.title.gems; b.titles.push(fav.title.id); }
 }
 
 // Baukunst: like you, everyone builds in one style of their own (picked once, the same on every device) and 1 in 3 set their capital in water
@@ -82,7 +78,7 @@ function botThroneShop(botId) {                       // the others spend their 
     const fm = botLookFav(botId).march;                   // a Marsch-Skin from the Thron-Shop the same way
     if (fm && fm.tp && !(b.marchs || []).includes(fm.id) && b.tp >= fm.tp * 1.2 && Math.random() < .5) { b.tp -= fm.tp; b.marchs = [...(b.marchs || []), fm.id]; b.march = fm.id; }
     for (let n = 0; n < 5; n++) { const r = Math.random();
-        const id = !b.throneLook && b.tp >= 3000 && r < .4 ? 'look' : r < .45 ? 'troops' : r < .7 ? 'coins' : r < .95 ? 'crate' : 'royal';   // (Gems gibt es im Thron-Shop nicht mehr)
+        const id = r < .45 ? 'troops' : r < .7 ? 'coins' : r < .95 ? 'crate' : 'royal';   // (Gems gibt es im Thron-Shop nicht mehr)
         const o = THRONE_OFFERS.find(x => x.id === id); if (!(b.tp >= o.cost)) break; b.tp -= o.cost; throneGive(botId, id); }
 }
 
