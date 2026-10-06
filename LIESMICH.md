@@ -779,6 +779,17 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   (06c `throneAmount`) = Stunden-Produktion × `THRONE_STUNDEN` (= WIRTSCHAFT_KOSTEN ÷ WIRTSCHAFT_ERTRAG = 2), wie Händler
   (`hdPreis`) und Markt (`marktLimit`); Mindestwerte bleiben. Shop zeigt „in 2 Std.“. Hauptbuch (10d `muenzGutscheine`,
   `truppenPruefen` „thron“) rechnet je Kauf ebenso 2 Stunden (sonst Fehlalarm). Tests `thron_verst_test`, `welt_test`.
+- **6.10. – Wirtschaft 3: Holz/Stein/Eisen in RoK-Größe, Start 5.000 Truppen, neutrale Basen fest (Alexander Z1–Z4, 11b A3,
+  Branch `wirtschaft-roh`, NICHT hochgeladen):** `ROH_FAKTOR = 1800` (01a), `wirtR()` (01b). Holz/Stein/Eisen-Kosten (Burg, Gebäude,
+  Forschung, aufbau.js) ohne ÷ 1.800, Münzen bleiben klein (Z3: beides). Ertrag Hauptstadt (`rohStunde`) × ROH_FAKTOR, Sammel-Felder
+  Holz/Stein/Eisen × ROH_FAKTOR; alle Felder außer Edelsteinen mit √Ring-Faktor (Ring 2 Gold war 300× außen). Burg-Schutz getrennt:
+  Gold `burgSchutz`, Rohstoffe `burgSchutzRoh` (× 1.800) – Beute (`plunderOf`), Spähbericht, Kampfbericht, Burg-Fenster. Markt:
+  `MARKT_WERT = 5 / ROH_FAKTOR` (360 Rohstoffe = 1 Münze – sonst Münzen ohne Ende), Mengen 1.000 … 1 Mio. `ROH_START` 3.000/2.000/500,
+  `ROH_RAUM` 2.000 (Hauptbuch). Saison-Reset (Z2): Holz/Stein/Eisen bleiben **unverändert** (keine Umrechnung mehr – 09f, Handy 01a,
+  `saisonKonto`; Münz-Töpfe weiter einmal × WIRTSCHAFT_KOSTEN). Start-Truppen `PLAYER_START_TROOPS` **5.000** (auch Mitspieler beim
+  ersten Start und Neustart). Neutrale Werte fest statt ÷ 1.800 (01b `RING_TRUPPEN`, `TIER_STATS`, 01c Tore). Anzeige-Fix Feld-Vorrat
+  (`drawResFields`: höchstens `f.cap`). Tests `wirtschaft_roh_test` (neu), `forschung_kosten_test`, `profil_stunde_test`,
+  `saison_test`, `saison_anfang_test` (Boss/Drache Anfang 100.000/50.000 aus 5.000 Start-Truppen), Server `schummel_test` (Text).
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 
@@ -1087,6 +1098,34 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
   | Basis aufwerten 60 → 61 (eine Basis) | 1,2 Std. | 2,3 Std. | 2× |
   | Basis aufwerten 1 → 2 (eine Basis) | 12 s | 6 Min. | 30× (mindestens 1 Münze) |
   | Thron-Tor, Reich „Mitte“ | 1,9 Std. | 23 Std. | 12× (Absicht: nie mit der Start-Armee) |
+
+**A3. Holz/Stein/Eisen in RoK-Größe, Start 5.000, Gegner fest (Alexander 6.10., Z1–Z4) – gebaut, NICHT hochgeladen**
+- Z1: `ROH_FAKTOR = 1800` – Rohstoff-Kosten wieder die alten Zahlen, Rohstoff-Ertrag × 1.800 (Stunden zum Sammeln bleiben wie in A2).
+  Z2: Saison-Reset: Holz/Stein/Eisen bleiben unverändert (das einmalige „alles auf 0“ für den kommenden Reset baut burg-fair).
+  Z3: Burg/Gebäude/Forschung kosten Münzen (klein) **und** Rohstoffe. Z4: Start 5.000 Truppen, neutrale Werte fest.
+
+  | Burg (Stufe → +1) | Münzen | Holz / Stein / Eisen vorher (A2) | jetzt | Std. Holz aus der Stadt* | Holz-Feld außen** |
+  |---|---|---|---|---|---|
+  | 2 → 3 | 9 | 4 / 4 / 2 | 8.000 / 6.400 / 4.000 | 16 | 2 Märsche |
+  | 4 → 5 | 23 | 11 / 9 / 6 | 20.000 / 16.000 / 10.000 | 21 | 5 |
+  | 6 → 7 | 58 | 29 / 23 / 15 | 52.000 / 42.000 / 26.000 | 29 | 13 |
+  | 10 → 11 | 380 | 190 / 150 / 95 | 340.000 / 270.000 / 170.000 | 48 | 85 |
+  | 15 → 16 | 12.000 | 6.100 / 4.900 / 3.100 | 11 Mio. / 8,8 Mio. / 5,5 Mio. | 270 | – |
+  | 20 → 21 | 390.000 | 200.000 / … | 350 Mio. / 280 Mio. / 180 Mio. | 1.490 | – |
+
+  \* Holzfäller auf Burg-Stufe, Landschaft 1, ohne Forschung (Burg allein: 75 Holz/Std.). \*\* Feld außen: 4.000 Holz je Leerung
+  (1 Std.), Ring 2: 69.000; Tragen 2 Holz je Truppe (4.000 Holz = 2.000 Truppen).
+
+  | Gegner (Truppen) | vorher (A2, ÷ 1.800) | jetzt |
+  |---|---|---|
+  | Basis außen (Ring 7/8) | 0 | 70–100 (+ 10–30 Verteidigung) |
+  | Ring 6 / 5 / 4 / 3 | 0 / 0 / 0–1 / 0–3 | bis 200 / 300 / 450 / 700 |
+  | Ring 2 | 0–17 | 700–1.000 (+ 100–300) |
+  | Tempel normal (Ring 3/5) | 1–9 | 150–260 % einer Basis des Rings (450–1.820) |
+  | Grenz-Tore (außen → innen) | 1 / 7 / 56 / 222 | 500 / 2.000 / 6.000 / 12.000 |
+  | Wächter-Türme / Wächter-Tempel / Wächter-Tor | 56–556 / 2.778 / 1.111 | 5.000–20.000 / 60.000 / 30.000 (+ 10.000) |
+  | Thron-Türme / Mega-Tempel / Thron-Tor | 2.778–11.111 / 138.889 / 150.000 | 50.000–150.000 / 500.000 / 200.000 (+ 60.000) |
+  | Start-Truppen | 100.000 | 5.000 |
 
 **B. Alexanders 3 Fehler** (Einzelheiten Abschnitt 11)
 1. ✅ *gebaut (nicht hochgeladen), Verlauf 5./6.10. Nacht:* Späher: hin Zurück + Schneller, heim Schneller; Zurück = sofort umkehren, kein Bericht; ab 500 Edelsteine „Wirklich?“.

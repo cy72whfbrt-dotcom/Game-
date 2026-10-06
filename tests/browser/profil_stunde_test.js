@@ -71,9 +71,9 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(O.profil[0] === '+' + O.fmt[0] && O.profil[1] === '+' + O.fmt[1] && O.hp.troops > 188 && O.hp.coins > 376 && Math.abs(O.kommt.troops - O.hp.troops) < 2 && Math.abs(O.kommt.coins - O.hp.coins) < 1, 'mit Boni: was im Profil steht, kommt in einer Stunde an (±1)', O);
   ok(/pro Stunde/.test(r.tempel) && !/Tick/.test(r.tempel) && r.tempel.includes('+' + Math.round(15 * r.tempelMult) + ' Münzen') && r.tempel.includes('+' + Math.round(6 * r.tempelMult) + ' Truppen pro Stunde'), 'Tempel: Münzen und Truppen pro Stunde', r.tempel);
   const R = r.roh;
-  ok(['h', 's', 'e'].every(k => Math.abs(R.kam[k] - R.rs[k]) <= 1) && R.rs.h > 50 && R.rs.h < 1000, 'Hauptstadt: Holz/Stein/Eisen pro Stunde wie angezeigt (Holzfäller 20: ' + Math.round(R.rs.h) + ' Holz/Std.)', R);
+  ok(['h', 's', 'e'].every(k => Math.abs(R.kam[k] - R.rs[k]) <= 1) && R.rs.h > 5e4 && R.rs.h < 1e6, 'Hauptstadt: Holz/Stein/Eisen pro Stunde wie angezeigt (RoK-Größe, × ROH_FAKTOR) (Holzfäller 20: ' + Math.round(R.rs.h) + ' Holz/Std.)', R);
   const K = r.klein;
-  ok(K.f.join('|') === '0,04|0|1,3|150' && K.burg > 0 && K.burg < 1 && K.burgText !== '0' && K.burgText === String(Math.round(K.burg * 100) / 100).replace('.', ','), 'kleine Erträge: unter 1 mit zwei Nachkommastellen (nur die Burg: ' + K.burgText + ' Holz/Std., nicht „0“)', K);
+  ok(K.f.join('|') === '0,04|0|1,3|150' && K.burg > 30 && K.burg < 150 && K.burgText === String(Math.round(K.burg * 10) / 10).replace('.', ','), 'kleine Erträge: unter 1 mit zwei Nachkommastellen, nur die Burg ' + K.burgText + ' Holz/Std. (75 × Landschaft)', K);
   const M = r.bot;
   ok(Math.abs(M.troops - M.hp.troops * M.anteil) <= 2 && Math.abs(M.coins - M.hp.coins * M.anteil) <= 2 && M.hp.troops > 0, 'Mitspieler: eine Stunde bringt genau seine Produktion pro Stunde', M);
   ok(r.ortszeit !== -60 && r.ortszeit !== -120 && r.saison.every(s => s.ende === 'So., 18:00' && s.tage >= 56 - 1 / 12 && s.tage < 63), 'Saison-Ende: immer Sonntag 18:00 deutscher Zeit (Gerät in Los Angeles, Sommer-/Winterzeit)', r.saison);

@@ -265,6 +265,6 @@ const SKILL_DEFS = {
   defenseGold: { icon: 'shield',    name: 'Verteidigung: Gold', desc: 'Gold für getötete Truppen', rate: 0.3 * WIRTSCHAFT_KOSTEN, max: 50 },
   attack:      { icon: 'attack',    name: 'Angriff',            desc: 'mehr Truppen bei jedem Angriff', atkPct: 3, max: 50 },
   attackGold:  { icon: 'sell',      name: 'Angriff: Gold',      desc: 'Gold für getötete Truppen', rate: 0.3 * WIRTSCHAFT_KOSTEN, max: 50 }
-};   // (Gold je Truppe × WIRTSCHAFT_KOSTEN wie alle Münzen außerhalb der Produktion – die 100.000 Start-Truppen bleiben, Kosten sind ÷ 1.800)
+};   // (Gold je Truppe × WIRTSCHAFT_KOSTEN wie alle Münzen außerhalb der Produktion – Kosten sind ÷ 1.800)
 const EQUIPMENT_BASE_COST = 100;
 

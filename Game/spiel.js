@@ -1305,7 +1305,7 @@ const SKILL_DEFS = {
   defenseGold: { icon: 'shield',    name: 'Verteidigung: Gold', desc: 'Gold für getötete Truppen', rate: 0.3 * WIRTSCHAFT_KOSTEN, max: 50 },
   attack:      { icon: 'attack',    name: 'Angriff',            desc: 'mehr Truppen bei jedem Angriff', atkPct: 3, max: 50 },
   attackGold:  { icon: 'sell',      name: 'Angriff: Gold',      desc: 'Gold für getötete Truppen', rate: 0.3 * WIRTSCHAFT_KOSTEN, max: 50 }
-};   // (Gold je Truppe × WIRTSCHAFT_KOSTEN wie alle Münzen außerhalb der Produktion – die 100.000 Start-Truppen bleiben, Kosten sind ÷ 1.800)
+};   // (Gold je Truppe × WIRTSCHAFT_KOSTEN wie alle Münzen außerhalb der Produktion – Kosten sind ÷ 1.800)
 const EQUIPMENT_BASE_COST = 100;
 
 // ===== Shop: gem-bought crates, rarity items, combine, salvage =====
@@ -10586,8 +10586,8 @@ function dbossEnsure() {                            // today's boss: the kind tu
     return dayBoss;
 }
 // Neue Welt-Saison (09f saisonAnfang): in den ersten 3 Tagen haben alle nur Start-Truppen – die Untergrenze so, dass 8 Spieler mit je
-// 10 Angriffen aus einem Viertel ihrer Start-Truppen ihn schaffen (sonst 5e7 × WIRTSCHAFT_KOSTEN = 27.778). Die Start-Truppen bleiben
-// 100.000 (Alexander 5.10.) – darum bleibt auch diese Untergrenze (sonst fiele er am ersten Tag mit einem Angriff)
+// 10 Angriffen aus einem Viertel ihrer Start-Truppen ihn schaffen (sonst 5e7 × WIRTSCHAFT_KOSTEN = 27.778). Start-Truppen 5.000
+// (Alexander 6.10.) → 100.000 Leben (sonst fiele er am ersten Tag mit einem Angriff)
 const DBOSS_MIN_ANFANG = 8 * DBOSS_HITS * PLAYER_START_TROOPS * .25;
 function dbossEntkommen(b) {                        // (nur wer rechnet) der Boss ist nicht gefallen: wie beim Drachen alle, die getroffen haben, etwas Kleines –
     const rk = dbossRanks(b); if (!rk.length) return;   //   fester Schlüssel je Tag (derselbe wie der Preis beim Fallen: nie beides, nie doppelt)
@@ -11122,7 +11122,7 @@ function invTakt(now) {                              // (nur Weltrechner) Wellen
 // Fällt er: Platz 1 lila Kiste, Platz 2–10 blaue Kiste (nie Legendär – Alexander 2.10.), alle anderen etwas Kleines. Entkommt er: alle etwas Kleines.
 const DR_STUNDE = 19, DR_DAUER = 3 * 3600000, DR_HITS = 10, DR_CAP = .02, DR_NAME = 'Urdrache Vharak', DR_COL = '#d8452e';
 const DR_PREISE = [{ gems: 150, crate: 3, sh: 20, t: '1.' }, { gems: 60, crate: 2, sh: 8, t: '2.–10.' }, { gems: 15, crate: -1, sh: 2, t: 'Alle anderen' }];
-const DR_MIN_ANFANG = 4 * DR_HITS * PLAYER_START_TROOPS * .25;   // neue Welt-Saison (erste 3 Tage, nur Start-Truppen): 4 Spieler mit je 10 Angriffen aus einem Viertel schaffen ihn (sonst 1e7 × WIRTSCHAFT_KOSTEN) – die Start-Truppen bleiben 100.000, darum bleibt sie
+const DR_MIN_ANFANG = 4 * DR_HITS * PLAYER_START_TROOPS * .25;   // neue Welt-Saison (erste 3 Tage, nur Start-Truppen): 4 Spieler mit je 10 Angriffen aus einem Viertel schaffen ihn (sonst 1e7 × WIRTSCHAFT_KOSTEN) – bei 5.000 Start-Truppen 50.000 Leben
 const drPreisVon = i => DR_PREISE[i < 1 ? 0 : i < 10 ? 1 : 2];
 function drPlan(now) {
     now = now || Date.now();

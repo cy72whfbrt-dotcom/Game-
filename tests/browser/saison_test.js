@@ -1,7 +1,7 @@
 // Welt-Saison (Server-Reset alle 8 Wochen, Alexander 5.10.): Countdown in den letzten 3 Tagen, dann eine neue Saison auslösen (wie der
 // Admin-Knopf) und prüfen: Hauptstadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Gems, Rohstoffe bleiben – Stufe 1, keine Fähigkeiten,
 // Start-Truppen, Start-Gold, keine anderen Basen, keine Bündnisse; die besten 10 bekommen Gems + Saison-Titel. Für dich und Mitspieler gleich.
-// Erster Reset nach der Umstellung auf „pro Stunde“ (11b A): Holz/Stein/Eisen × WIRTSCHAFT_KOSTEN (Zurückspielen holt die alten zurück).
+// Holz/Stein/Eisen bleiben bei jedem Reset unverändert (Alexander 6.10. – keine Umrechnung mehr). Start-Truppen 5.000.
 const { chromium, devices } = require('playwright');
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x) : ''));
 // Nur in der NORMALEN Vorschau (alle_tests.sh: $N): der Test-Modus füllt alle 10 s Gems, Münzen, Truppen und Helden-Gefolge auf –
@@ -50,7 +50,7 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
   await p.addInitScript(() => document.addEventListener('DOMContentLoaded', () => { try { const L = k => localStorage.getItem(k);
     window.__nach = { coins: L('openWaterCoins'), lvl: L('openWaterLevel'), sp: L('openWaterSkillPoints'), skills: L('openWaterSkills'), own: L('openWaterOwnedIslands'), troops: L('openWaterIslandTroops'), bund: L('openWaterBuendnisse'),
       botOwn: L('openWaterBotOwnedIslands'), botState: L('openWaterBotState'), schutz: L('openWaterNeulingBis'), res: L('openWaterRes'), at: Date.now(), botCoins: L('openWaterBotCoins'), log: L('openWaterCombatLog'), fog: L('openWaterFogCells') }; } catch (e) {} }));
-  const resVor = await p.evaluate(X => Object.assign({}, loadBotState()[X].res), v.X), wk = await p.evaluate(() => WIRTSCHAFT_KOSTEN);   // (er produziert weiter – unter Last mehr: Stand direkt vor dem Neustart)
+  const resVor = await p.evaluate(X => Object.assign({}, loadBotState()[X].res), v.X);   // (er produziert weiter – unter Last mehr: Stand direkt vor dem Neustart)
   await Promise.all([p.waitForNavigation({ timeout: 30000 }), p.evaluate(() => saisonJetzt())]);
   await p.waitForTimeout(9000);
   await p.waitForFunction(() => window.__nach && typeof saison !== 'undefined' && saison && saison.nr === 2 && typeof inboxList === 'function' && inboxList().some(x => x.src === 'saison'), null, { timeout: 27000, polling: 500 }).catch(() => {});
@@ -72,22 +72,22 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
   ok(n.lvl === '1' && n.sp === '0' && n.skills && Object.values(n.skills).every(x => !x), 'Stufe 1, keine Fähigkeitspunkte', { lvl: n.lvl, sp: n.sp, skills: n.skills });
   ok(n.coins === '0', 'Start-Gold wie ein neuer Spieler (0)', n.coins);
   ok(n.ownN === 1 && n.capNeu && n.rand && n.zweite === null, 'nur noch die Hauptstadt – auf einem neuen Platz am Rand, die zweite Basis ist neutral', { ownN: n.ownN, neu: n.capNeu, rand: n.rand, zweite: n.zweite });
-  ok(n.truppen >= 100000 && n.truppen < 2e5, 'Start-Truppen wie ein neuer Spieler (100.000)', n.truppen);
+  ok(n.truppen >= 5000 && n.truppen < 6000, 'Start-Truppen wie ein neuer Spieler (5.000)', n.truppen);
   ok(n.bund === 0, 'keine Bündnisse mehr', n.bund);
   ok(!n.log && (!n.fog || !n.weit) && n.wounded === 0, 'Kampfberichte, Nebel (um die alten Basen wieder zu) und Verwundete neu', { log: n.log, alteFelder: n.fog, wounded: n.wounded });
   ok(n.keep === 7 && n.aca === 3 && n.forge === 2 && n.fo && n.fo.w_prod === 2 && n.fo.m_atk === 1, 'Hauptstadt bleibt: Burg, Gebäude, Forschung', { keep: n.keep, aca: n.aca, forge: n.forge, fo: n.fo });
   ok(n.inv && n.eq && n.hel, 'Ausrüstung und Helden bleiben', { inv: n.inv, eq: n.eq, hel: n.hel });
-  const um = x => Math.floor(x * wk), umOk = (r, x) => r >= um(x) && r <= um(x) + 2;   // (+2: was danach schon wieder produziert wurde)
-  ok(n.gems >= 12345 && umOk(n.roh.h, 77777) && umOk(n.roh.s, 66666) && umOk(n.roh.e, 55555), 'Gems bleiben, Holz/Stein/Eisen bleiben – beim ersten Reset nach der Umstellung × WIRTSCHAFT_KOSTEN (77.777 → ' + um(77777) + ' Holz)', { gems: n.gems, roh: n.roh });
-  ok(n.saison.wirtAb === 2, 'Saison 2 ist die erste mit der neuen Wirtschaft (der nächste Reset rechnet nicht noch einmal um)', n.saison.wirtAb);
+  const bleibt = (r, x) => r >= x && r <= x + 300;   // (+300: was danach schon wieder produziert wurde – Rohstoffe in RoK-Größe)
+  ok(n.gems >= 12345 && bleibt(n.roh.h, 77777) && bleibt(n.roh.s, 66666) && bleibt(n.roh.e, 55555), 'Gems bleiben, Holz/Stein/Eisen bleiben unverändert (keine Umrechnung)', { gems: n.gems, roh: n.roh });
+  ok(n.saison.wirtAb === 2, 'Saison 2 ist die erste mit der neuen Wirtschaft (Münz-Töpfe des Weltrechners: nur einmal umgerechnet)', n.saison.wirtAb);
   ok(n.preis === 3000 && (n.titel || []).includes('s1p1') && n.traegt === 'Champion Saison 1', 'Platz 1: 3.000 Gems im Abholfach + Titel „Champion Saison 1“ (angelegt)', { preis: n.preis, titel: n.titel, traegt: n.traegt });
   ok(!n.saison.halt, 'Admin-Knopf: die angehaltene Saison beginnt neu (nicht mehr angehalten)', n.saison);
   ok(n.saison.nr === 2 && n.saison.top === 10 && n.saison.erster === 'player' && n.saison.ende > 55 * 864e5, 'Saison 2 läuft, nächste in 8 Wochen, Top 10 gemerkt', n.saison);
   ok(/['"]saison\|['"]\s*\+\s*\w+\s*\+\s*['"]\|['"]\s*\+\s*\w+/.test(await p.evaluate(() => saisonNeu.toString())), 'Nachricht „saison“: Nummer je Reset eindeutig (mit Zeitpunkt)');
   const B = n.bot;
   ok(B.lvl === 1 && B.skills === 0 && B.coins < 1e5 && B.basen === 1, 'Mitspieler: Stufe 1, keine Fähigkeiten, Start-Gold, nur die Hauptstadt', B);
-  ok(B.truppen >= 100000 && B.truppen < 2e5, 'Mitspieler: Start-Truppen wie ein neuer Spieler', B.truppen);
-  ok(B.keep && B.city && B.fo && B.gear && B.hs && ['h', 's', 'e'].every(k => umOk(B.res[k], resVor[k])) && resVor.h >= 4444 && resVor.s >= 3333 && resVor.e >= 2222, 'Mitspieler: Stadt, Forschung, Ausrüstung, Helden bleiben, Rohstoffe genauso umgerechnet', { B, resVor });
+  ok(B.truppen >= 5000 && B.truppen < 6000, 'Mitspieler: Start-Truppen wie ein neuer Spieler (5.000)', B.truppen);
+  ok(B.keep && B.city && B.fo && B.gear && B.hs && ['h', 's', 'e'].every(k => bleibt(B.res[k], resVor[k])) && resVor.h >= 4444 && resVor.s >= 3333 && resVor.e >= 2222, 'Mitspieler: Stadt, Forschung, Ausrüstung, Helden, Rohstoffe bleiben', { B, resVor });
   ok(B.gems === 999 + 2000 && (B.titel || []).includes('s1p2') && B.look === 'Saison 1 · Platz 2', 'Mitspieler Platz 2: 2.000 Gems + Titel „Saison 1 · Platz 2“', { gems: B.gems, titel: B.titel, look: B.look });
   ok(n.anderer === 0 && n.ohne >= 100, 'alle Reiche auf eine Hauptstadt zurückgesetzt', { mehr: n.anderer, eine: n.ohne });
   ok(!/Neue Saison in/.test(n.chip), 'Countdown oben erst wieder in den letzten 3 Tagen', n.chip);
@@ -98,7 +98,7 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
   const z = await p.evaluate(() => ({ lvl: window.__nach.lvl, coins: +window.__nach.coins, skills: JSON.parse(window.__nach.skills || '{}'), mein: localStorage.getItem('openWaterSaisonMein'), schutz: localStorage.getItem('openWaterNeulingBis'), res: JSON.parse(window.__nach.res || '{}') }));
   ok(z.lvl === '20' && z.coins >= 5e6 && z.skills.attack === 10 && z.mein === '1', 'Sicherung zurückgespielt: Handy holt den alten Stand (Stufe, Gold, Fähigkeiten)', z);
   ok(z.schutz !== null && !(+z.schutz > Date.now()), 'Sicherung zurückgespielt: kein neuer Anfängerschutz (alter Stand ohne Schutz)', z.schutz);
-  ok(z.res.h >= 77777 && z.res.s >= 66666 && z.res.e >= 55555, 'Sicherung zurückgespielt: Holz/Stein/Eisen wieder wie vor der Umrechnung', z.res);
+  ok(z.res.h >= 77777 && z.res.s >= 66666 && z.res.e >= 55555, 'Sicherung zurückgespielt: Holz/Stein/Eisen wie vorher', z.res);
   await p.waitForTimeout(8000);
   // ein echter Spieler kann sich keinen Saison-Titel ins Profil schreiben: angezeigt wird er nur, wenn die Welt ihn vergeben hat
   const f = await p.evaluate(() => { const Y = BOT_DEFS.find(x => !x.mensch && loadBotState()[x.id] && !(loadBotState()[x.id].sTitel || []).length).id, by = loadBotState()[Y];
@@ -116,6 +116,6 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
   await p.waitForNavigation({ timeout: 30000 }).catch(() => {}); await p.waitForTimeout(500);
   const z3 = await p.evaluate(() => ({ lvl: window.__nach.lvl, coins: window.__nach.coins, mein: localStorage.getItem('openWaterSaisonMein'), res: JSON.parse(window.__nach.res || '{}') }));
   ok(z3.lvl === '1' && z3.coins === '0' && z3.mein === '2', 'Rückfall: nach dem Neuladen Stufe 1, 0 Münzen, Saison 2', z3);
-  ok(z3.res.h <= um(z.res.h) + 2 && z3.res.h >= um(z.res.h), 'Rückfall ohne Nachricht: Rohstoffe trotzdem umgerechnet (die Welt sagt: Saison 2 ist die erste neue)', { vor: z.res, nach: z3.res });
+  ok(bleibt(z3.res.h, z.res.h), 'Rückfall ohne Nachricht: Rohstoffe bleiben unverändert', { vor: z.res, nach: z3.res });
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();
 })();

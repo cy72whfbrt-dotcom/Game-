@@ -56,8 +56,8 @@ function dbossEnsure() {                            // today's boss: the kind tu
     return dayBoss;
 }
 // Neue Welt-Saison (09f saisonAnfang): in den ersten 3 Tagen haben alle nur Start-Truppen – die Untergrenze so, dass 8 Spieler mit je
-// 10 Angriffen aus einem Viertel ihrer Start-Truppen ihn schaffen (sonst 5e7 × WIRTSCHAFT_KOSTEN = 27.778). Die Start-Truppen bleiben
-// 100.000 (Alexander 5.10.) – darum bleibt auch diese Untergrenze (sonst fiele er am ersten Tag mit einem Angriff)
+// 10 Angriffen aus einem Viertel ihrer Start-Truppen ihn schaffen (sonst 5e7 × WIRTSCHAFT_KOSTEN = 27.778). Start-Truppen 5.000
+// (Alexander 6.10.) → 100.000 Leben (sonst fiele er am ersten Tag mit einem Angriff)
 const DBOSS_MIN_ANFANG = 8 * DBOSS_HITS * PLAYER_START_TROOPS * .25;
 function dbossEntkommen(b) {                        // (nur wer rechnet) der Boss ist nicht gefallen: wie beim Drachen alle, die getroffen haben, etwas Kleines –
     const rk = dbossRanks(b); if (!rk.length) return;   //   fester Schlüssel je Tag (derselbe wie der Preis beim Fallen: nie beides, nie doppelt)
