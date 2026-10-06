@@ -492,7 +492,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundBasenText` → Game/buendnis/01-daten-regeln.js:85
 - `bundBedroht` → Game/buendnis/01-daten-regeln.js:100
 - `bundBefehl` → Game/buendnis/04-fenster-karte-welt.js:8
-- `bundBerichtDaten` → Game/buendnis/04-fenster-karte-welt.js:402
+- `bundBerichtDaten` → Game/buendnis/04-fenster-karte-welt.js:423
 - `bundBerichtLesen` → Game/buendnis/03-mitspieler.js:256
 - `bundBonus` → Game/buendnis/02-rally-geschenke.js:260
 - `bundBotBereit` → Game/buendnis/03-mitspieler.js:17
@@ -501,24 +501,25 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundChat` → Game/buendnis/01-daten-regeln.js:52
 - `bundChatAntworten` → Game/buendnis/03-mitspieler.js:183
 - `bundChatDazu` → Game/buendnis/01-daten-regeln.js:57
-- `bundChatHtml` → Game/buendnis/04-fenster-karte-welt.js:83
-- `bundChatNeu` → Game/buendnis/04-fenster-karte-welt.js:93
+- `bundChatHtml` → Game/buendnis/04-fenster-karte-welt.js:89
+- `bundChatNeu` → Game/buendnis/04-fenster-karte-welt.js:99
 - `bundChatSpeichern` → Game/buendnis/01-daten-regeln.js:53
 - `bundChatTakt` → Game/buendnis/03-mitspieler.js:217
-- `bundChatText` → Game/buendnis/04-fenster-karte-welt.js:66
-- `bundChatZeilen` → Game/buendnis/04-fenster-karte-welt.js:82
+- `bundChatText` → Game/buendnis/04-fenster-karte-welt.js:72
+- `bundChatZeilen` → Game/buendnis/04-fenster-karte-welt.js:88
 - `bundDanke` → Game/buendnis/03-mitspieler.js:276
-- `bundEingeladen` → Game/buendnis/04-fenster-karte-welt.js:417
+- `bundEingeladen` → Game/buendnis/04-fenster-karte-welt.js:438
 - `bundEinladungen` → Game/buendnis/01-daten-regeln.js:147
-- `bundEinladungenHtml` → Game/buendnis/04-fenster-karte-welt.js:30
+- `bundEinladungenHtml` → Game/buendnis/04-fenster-karte-welt.js:32
 - `bundEinmal` → Game/buendnis/01-daten-regeln.js:113
 - `bundEinzelgaenger` → Game/buendnis/03-mitspieler.js:16
 - `bundFreund` → Game/spiel/01a-grundlagen.js:17
 - `bundGebiet` → Game/buendnis/02-rally-geschenke.js:274
 - `bundGehoert` → Game/buendnis/01-daten-regeln.js:117
 - `bundGeschenk` → Game/buendnis/02-rally-geschenke.js:234
-- `bundGesehen` → Game/buendnis/04-fenster-karte-welt.js:262
+- `bundGesehen` → Game/buendnis/04-fenster-karte-welt.js:283
 - `bundGeteilt` → Game/buendnis/03-mitspieler.js:216
+- `bundGruendenKnopf` → Game/buendnis/04-fenster-karte-welt.js:157
 - `bundGutGemacht` → Game/buendnis/03-mitspieler.js:281
 - `bundHeimschicken` → Game/buendnis/01-daten-regeln.js:353
 - `bundHelfen` → Game/buendnis/01-daten-regeln.js:393
@@ -529,13 +530,14 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundHilfeTakt` → Game/buendnis/01-daten-regeln.js:431
 - `bundIch` → Game/buendnis/04-fenster-karte-welt.js:12
 - `bundIndex` → Game/buendnis/01-daten-regeln.js:74
-- `bundInfoHtml` → Game/buendnis/04-fenster-karte-welt.js:38
-- `bundInselfenster` → Game/buendnis/04-fenster-karte-welt.js:269
-- `bundKannEinladen` → Game/buendnis/04-fenster-karte-welt.js:416
-- `bundKarteOben` → Game/buendnis/04-fenster-karte-welt.js:313
-- `bundKarteUnten` → Game/buendnis/04-fenster-karte-welt.js:304
+- `bundInfoHtml` → Game/buendnis/04-fenster-karte-welt.js:44
+- `bundInselfenster` → Game/buendnis/04-fenster-karte-welt.js:290
+- `bundKannEinladen` → Game/buendnis/04-fenster-karte-welt.js:437
+- `bundKarteOben` → Game/buendnis/04-fenster-karte-welt.js:334
+- `bundKarteUnten` → Game/buendnis/04-fenster-karte-welt.js:325
 - `bundKommtHin` → Game/buendnis/02-rally-geschenke.js:27
 - `bundLaden` → Game/buendnis/01-daten-regeln.js:68
+- `bundListeHtml` → Game/buendnis/04-fenster-karte-welt.js:124
 - `bundLog` → Game/buendnis/01-daten-regeln.js:90
 - `bundMacht` → Game/buendnis/01-daten-regeln.js:86
 - `bundMarsch` → Game/buendnis/01-daten-regeln.js:303
@@ -546,24 +548,23 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundMitspielerSignale` → Game/buendnis/03-mitspieler.js:160
 - `bundMitte` → Game/buendnis/01-daten-regeln.js:89
 - `bundName` → Game/buendnis/01-daten-regeln.js:80
-- `bundObenSchluessel` → Game/buendnis/04-fenster-karte-welt.js:127
-- `bundObenZeichnen` → Game/buendnis/04-fenster-karte-welt.js:128
+- `bundObenSchluessel` → Game/buendnis/04-fenster-karte-welt.js:133
+- `bundObenZeichnen` → Game/buendnis/04-fenster-karte-welt.js:134
 - `bundOeffnen` → Game/buendnis/04-fenster-karte-welt.js:14
-- `bundOhneHtml` → Game/buendnis/04-fenster-karte-welt.js:37
-- `bundOhneListeHtml` → Game/buendnis/04-fenster-karte-welt.js:419
+- `bundOhneListeHtml` → Game/buendnis/04-fenster-karte-welt.js:440
 - `bundOp` → Game/buendnis/01-daten-regeln.js:148
 - `bundProdFaktor` → Game/spiel/01e-nebel-kampfwerte-hud.js:203
 - `bundProdMult` → Game/buendnis/02-rally-geschenke.js:271
-- `bundProfilKnopf` → Game/buendnis/04-fenster-karte-welt.js:430
-- `bundPunkt` → Game/buendnis/04-fenster-karte-welt.js:263
+- `bundProfilKnopf` → Game/buendnis/04-fenster-karte-welt.js:451
+- `bundPunkt` → Game/buendnis/04-fenster-karte-welt.js:284
 - `bundPush` → Game/buendnis/01-daten-regeln.js:116
-- `bundQuellen` → Game/buendnis/04-fenster-karte-welt.js:148
+- `bundQuellen` → Game/buendnis/04-fenster-karte-welt.js:169
 - `bundRallyBeute` → Game/buendnis/02-rally-geschenke.js:213
 - `bundRallyDazu` → Game/buendnis/02-rally-geschenke.js:33
 - `bundRallyEnde` → Game/buendnis/02-rally-geschenke.js:55
 - `bundRallyFuer` → Game/buendnis/03-mitspieler.js:389
 - `bundRallyHeim` → Game/buendnis/02-rally-geschenke.js:170
-- `bundRallyHtml` → Game/buendnis/04-fenster-karte-welt.js:111
+- `bundRallyHtml` → Game/buendnis/04-fenster-karte-welt.js:117
 - `bundRallyLage` → Game/buendnis/03-mitspieler.js:154
 - `bundRallyLos` → Game/buendnis/02-rally-geschenke.js:64
 - `bundRallyPlan` → Game/buendnis/03-mitspieler.js:404
@@ -571,32 +572,34 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundRallyStart` → Game/buendnis/02-rally-geschenke.js:5
 - `bundRallyTruppen` → Game/buendnis/02-rally-geschenke.js:53
 - `bundRallyUnterwegs` → Game/buendnis/02-rally-geschenke.js:54
-- `bundRallyZeile` → Game/buendnis/04-fenster-karte-welt.js:101
+- `bundRallyZeile` → Game/buendnis/04-fenster-karte-welt.js:107
 - `bundRaus` → Game/buendnis/01-daten-regeln.js:132
 - `bundRein` → Game/buendnis/01-daten-regeln.js:142
 - `bundRender` → Game/buendnis/04-fenster-karte-welt.js:17
 - `bundRueckzugTun` → Game/buendnis/03-mitspieler.js:288
-- `bundSaisonNeu` → Game/buendnis/04-fenster-karte-welt.js:351
+- `bundSaisonNeu` → Game/buendnis/04-fenster-karte-welt.js:372
 - `bundSchliessen` → Game/buendnis/04-fenster-karte-welt.js:15
 - `bundSendAnkunft` → Game/buendnis/01-daten-regeln.js:316
 - `bundSicherKnopf` → Game/buendnis/04-fenster-karte-welt.js:16
 - `bundSignal` → Game/buendnis/01-daten-regeln.js:276
-- `bundSigText` → Game/buendnis/04-fenster-karte-welt.js:65
+- `bundSigText` → Game/buendnis/04-fenster-karte-welt.js:71
 - `bundSpeichern` → Game/buendnis/01-daten-regeln.js:75
-- `bundSuchenHtml` → Game/buendnis/04-fenster-karte-welt.js:117
+- `bundStartHtml` → Game/buendnis/04-fenster-karte-welt.js:39
+- `bundSuchenHtml` → Game/buendnis/04-fenster-karte-welt.js:123
 - `bundTagFuer` → Game/buendnis/03-mitspieler.js:19
 - `bundTagHeute` → Game/buendnis/02-rally-geschenke.js:232
 - `bundTagVon` → Game/buendnis/01-daten-regeln.js:79
 - `bundTakt` → Game/buendnis/03-mitspieler.js:434
-- `bundTeilenKnopf` → Game/buendnis/04-fenster-karte-welt.js:398
+- `bundTeilenKnopf` → Game/buendnis/04-fenster-karte-welt.js:419
 - `bundTempo` → Game/buendnis/02-rally-geschenke.js:285
 - `bundTreffpunkt` → Game/buendnis/03-mitspieler.js:145
 - `bundUnterAngriff` → Game/buendnis/01-daten-regeln.js:91
 - `bundVerbuendet` → Game/buendnis/01-daten-regeln.js:78
 - `bundVon` → Game/buendnis/01-daten-regeln.js:77
-- `bundWahlHtml` → Game/buendnis/04-fenster-karte-welt.js:156
-- `bundWahlLos` → Game/buendnis/04-fenster-karte-welt.js:182
-- `bundWahlRechnen` → Game/buendnis/04-fenster-karte-welt.js:173
+- `bundVorschau` → Game/buendnis/04-fenster-karte-welt.js:162
+- `bundWahlHtml` → Game/buendnis/04-fenster-karte-welt.js:177
+- `bundWahlLos` → Game/buendnis/04-fenster-karte-welt.js:203
+- `bundWahlRechnen` → Game/buendnis/04-fenster-karte-welt.js:194
 - `bundWeg` → Game/buendnis/03-mitspieler.js:10
 - `bundZahl` → Game/buendnis/01-daten-regeln.js:118
 - `bundZahlen` → Game/buendnis/01-daten-regeln.js:127
@@ -954,6 +957,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `fArt` → Game/spiel/09a-funde-felder.js:153
 - `fehler` → Game/weltrechner/start.js:160
 - `fehlgeschlagen` → Game/speichern.js:141
+- `feld` → Game/buendnis/04-fenster-karte-welt.js:147
 - `feldBarbMarsch` → Game/spiel/09b-lager-tagesboss.js:75
 - `feldBarbSpeichern` → Game/spiel/09b-lager-tagesboss.js:76
 - `feldBericht` → Game/spiel/09a-funde-felder.js:265
@@ -1401,7 +1405,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `kiosk` → Game/baukunst/05-umland.js:423
 - `kisteBild` → Game/spiel/06d-schild-produktion.js:82
 - `kisteStern` → Game/spiel/06d-schild-produktion.js:80
-- `knopf` → Game/buendnis/04-fenster-karte-welt.js:85
+- `knopf` → Game/buendnis/04-fenster-karte-welt.js:91
 - `knoten` → Game/aufbau.js:340
 - `konten_gueltig` → Game/server/07-welt-puls.php:23
 - `konten_zurueck` → Game/server/05-datenbank-welt.php:185
@@ -1792,7 +1796,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `pickupAmount` → Game/spiel/09a-funde-felder.js:6
 - `pickupScreenPos` → Game/spiel/09a-funde-felder.js:12
 - `piecesPath` → Game/spiel/03a-karte-hintergrund.js:199
-- `pille` → Game/buendnis/04-fenster-karte-welt.js:317
+- `pille` → Game/buendnis/04-fenster-karte-welt.js:338
 - `pinnGeo` → Game/baukunst/04-vielfalt-stile.js:342
 - `Pipeline` → Game/baukunst/02-buehne-grundbasis.js:28
 - `Pipeline.prototype.render` → Game/baukunst/02-buehne-grundbasis.js:42
@@ -1850,7 +1854,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `pulsFrist` → Game/weltrechner/start.js:64
 - `pulsPruefen` → Game/weltrechner/start.js:103
 - `pump` → Game/baukunst/08-himmelsfeste-bilder.js:381
-- `punkt` → Game/buendnis/04-fenster-karte-welt.js:316
+- `punkt` → Game/buendnis/04-fenster-karte-welt.js:337
 - `punktOk` → Game/spiel/10d-welt-weltrechner.js:1013
 - `push_abmelden` → Game/server/05-datenbank-welt.php:286
 - `push_alle` → Game/server/05-datenbank-welt.php:294
@@ -2498,7 +2502,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `window.__owSpeicher.roh` → Game/speichern.js:185
 - `window.__stopSplashScene` → Game/ladebildschirm.js:193
 - `window.__weltBefehl` → Game/spiel/10d-welt-weltrechner.js:1228
-- `window.__weltLaden` → Game/buendnis/04-fenster-karte-welt.js:372
+- `window.__weltLaden` → Game/buendnis/04-fenster-karte-welt.js:393
 - `window.__weltLaden` → Game/haendler.js:139
 - `window.__weltLaden` → Game/spiel/10d-welt-weltrechner.js:1356
 - `window.__weltLaden` → Game/spiel/10d-welt-weltrechner.js:1381
@@ -3267,39 +3271,43 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundSchliessen` :15
 - `bundSicherKnopf` :16
 - `bundRender` :17
-- `bundEinladungenHtml` :30 — an mich: Annehmen / Ablehnen
-- `bundOhneHtml` :37
-- `bundInfoHtml` :38
-- `bundSigText` :65
-- `bundChatText` :66 — was eine Zeile sagt (ohne den Namen; du: die eigene Zeile – „Du hast …“)
-- `bundChatZeilen` :82
-- `bundChatHtml` :83
-- `knopf` :85
-- `bundChatNeu` :93 — (Handy) neuer Chat vom Weltrechner: kurzer Hinweis, wenn das Fenster zu ist
-- `bundRallyZeile` :101
-- `bundRallyHtml` :111
-- `bundSuchenHtml` :117
-- `bundObenSchluessel` :127 — oben im Fenster: was sich nicht jede Sekunde ändern darf (Eingaben, Auswahl)
-- `bundObenZeichnen` :128
-- `bundQuellen` :148 — Auswahl: Rally starten (Ziel t) · bei einer Rally mitmachen (rid) · Hilfe sende…
-- `bundWahlHtml` :156
-- `bundWahlRechnen` :173
-- `bundWahlLos` :182
-- `bundGesehen` :262
-- `bundPunkt` :263
-- `bundInselfenster` :269 — Inselfenster: Bündnis-Knöpfe (Signal, Rally, Hilfe) und keine Angriffe auf Mitg…
-- `bundKarteUnten` :304 — 7) KARTE: Gebiet zart in der Bündnisfarbe, Signale und Rally-Fahnen
-- `bundKarteOben` :313
-- `punkt` :316
-- `pille` :317
-- `bundSaisonNeu` :351 — Neue Welt-Saison (09f-saison.js saisonWelt): alle Bündnisse aufgelöst (neu grün…
-- `window.__weltLaden` :372
-- `bundTeilenKnopf` :398 — Kampfbericht im Bündnis teilen (Knopf neben „Zeigen“ im Kampfbericht, 05d): Ort…
-- `bundBerichtDaten` :402 — → { s: Sieg (aus deiner Sicht), n: Stärke des Gegners, v: 'a' Angriff / 'v' Ver…
-- `bundKannEinladen` :416 — Darf ich (Anführer, Platz frei) w einladen? Ist w schon eingeladen?
-- `bundEingeladen` :417
-- `bundOhneListeHtml` :419 — Reiter „Suchen“ für den Anführer: alle ohne Bündnis (Mitspieler und echte Spiel…
-- `bundProfilKnopf` :430 — Profil eines Spielers (spiel.js openRulerProfile): als Anführer „Ins Bündnis ei…
+- `bundEinladungenHtml` :32 — an mich: Annehmen / Ablehnen
+- `bundStartHtml` :39 — ohne Bündnis: Einladungen, kurz wozu, dann alle Bündnisse zum Beitreten
+- `bundInfoHtml` :44
+- `bundSigText` :71
+- `bundChatText` :72 — was eine Zeile sagt (ohne den Namen; du: die eigene Zeile – „Du hast …“)
+- `bundChatZeilen` :88
+- `bundChatHtml` :89
+- `knopf` :91
+- `bundChatNeu` :99 — (Handy) neuer Chat vom Weltrechner: kurzer Hinweis, wenn das Fenster zu ist
+- `bundRallyZeile` :107
+- `bundRallyHtml` :117
+- `bundSuchenHtml` :123
+- `bundListeHtml` :124 — alle Bündnisse nach Macht; ohne eigenes mit Beitreten/Anfragen
+- `bundObenSchluessel` :133 — oben im Fenster: was sich nicht jede Sekunde ändern darf (Eingaben, Auswahl)
+- `bundObenZeichnen` :134
+- `feld` :147 — Gründen: eigene Seite mit Wappen-Vorschau
+- `bundGruendenKnopf` :157 — zu wenig Münzen: grau mit „Fehlt: … Münzen“ (wie die Gebäude) statt gold
+- `bundVorschau` :162 — Gründen: so sieht das Bündnis aus (Wappen, Kürzel, Name)
+- `bundQuellen` :169 — Auswahl: Rally starten (Ziel t) · bei einer Rally mitmachen (rid) · Hilfe sende…
+- `bundWahlHtml` :177
+- `bundWahlRechnen` :194
+- `bundWahlLos` :203
+- `bundGesehen` :283
+- `bundPunkt` :284
+- `bundInselfenster` :290 — Inselfenster: Bündnis-Knöpfe (Signal, Rally, Hilfe) und keine Angriffe auf Mitg…
+- `bundKarteUnten` :325 — 7) KARTE: Gebiet zart in der Bündnisfarbe, Signale und Rally-Fahnen
+- `bundKarteOben` :334
+- `punkt` :337
+- `pille` :338
+- `bundSaisonNeu` :372 — Neue Welt-Saison (09f-saison.js saisonWelt): alle Bündnisse aufgelöst (neu grün…
+- `window.__weltLaden` :393
+- `bundTeilenKnopf` :419 — Kampfbericht im Bündnis teilen (Knopf neben „Zeigen“ im Kampfbericht, 05d): Ort…
+- `bundBerichtDaten` :423 — → { s: Sieg (aus deiner Sicht), n: Stärke des Gegners, v: 'a' Angriff / 'v' Ver…
+- `bundKannEinladen` :437 — Darf ich (Anführer, Platz frei) w einladen? Ist w schon eingeladen?
+- `bundEingeladen` :438
+- `bundOhneListeHtml` :440 — Reiter „Suchen“ für den Anführer: alle ohne Bündnis (Mitspieler und echte Spiel…
+- `bundProfilKnopf` :451 — Profil eines Spielers (spiel.js openRulerProfile): als Anführer „Ins Bündnis ei…
 
 ## Game/server/ (Teile)
 

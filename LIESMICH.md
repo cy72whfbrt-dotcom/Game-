@@ -885,6 +885,13 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   blendet die Stadt aus, während die Karte zurückkommt. Boden-Bild läuft am Rand 90 Einheiten weich in die Grundfarbe aus (keine
   harte Kante). Schilder nur, wenn sie ganz im Bild sind (Mauer-Schild nicht mehr halb am Rand). Handy-Start etwas weiter weg
   (`W / 420`, Mauer-Tor samt Schild im Bild), vorn 4 Felsgruppen mit Palmen/Bäumen als Rand-Kulisse. Zurück zur Karte ist erst frei, wenn die Stadt ganz ausgeblendet ist (unter Last).
+- **6.10. – Bündnis ohne Bündnis wie RoK (Blick F, Punkte 26/27/29), NICHT hochgeladen:** ohne Bündnis keine Reiter mehr,
+  nur EINE Startseite (`bundStartHtml`: Einladungen, Vorteile Rally/Tempel-Bonus/Hilfe, alle Bündnisse mit Beitreten);
+  darunter Knopf „Bündnis gründen“ (Preis rechts, nichts abgeschnitten). Gründen ist eine eigene Seite mit „Zurück“ und
+  Wappen-Vorschau (`bundVorschau`), Farben in 2 gleichen Reihen, Zeichen in einer, Kürzel-Platzhalter normal. Nach
+  Beitreten/Gründen → Übersicht. Preis unverändert. Dateien: buendnis/04, CSS-Block in spielseite/05. Test `handy_fenster_test`.
+  Nachtrag (Designer-Prüfung): zu wenig Münzen → „Gründen“ grau mit „Fehlt: 17 Münzen“ (wie die Gebäude) statt gold; zieht
+  jede Sekunde nach (`bundGruendenKnopf`).
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 
