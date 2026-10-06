@@ -237,9 +237,8 @@ function renderAttackPreview(island, scouted) {
     if (previewAttackTroops === null || previewAttackTroops > maxTroops) previewAttackTroops = maxTroops;
     const atkPct = attackBonusPct();
     const key = island.id + ':' + previewSourceId + ':' + scouted + ':' + atkPct;
-    popupOverline.textContent = 'Angriff vorbereiten';
-    // Kopfzeile: nur Maut/Tor (Startbasis + Marschzeit stehen EINMAL in der Auswahl darunter)
-    popupSub.innerHTML = '<span id="previewToll" style="display:contents"></span>';
+    // Maut/Tor hinten in der Überzeile, keine Unterzeile (Startbasis + Marschzeit stehen EINMAL in der Auswahl darunter)
+    popupOverline.innerHTML = 'Angriff vorbereiten<span id="previewToll"></span>'; popupSub.innerHTML = '';
     if (popupStats.dataset.preview !== key || !document.getElementById('attackTroopsSlider')) {
         popupStats.dataset.preview = key; previewHeldAuf = 0;
         const quellen = angriffQuellen(island).slice(0, 40); if (!quellen.includes(previewSourceId)) quellen.unshift(previewSourceId);   // (die gewählte steht immer drin)
@@ -398,10 +397,10 @@ function patchAttackPreview() {
     const mitTitel = Math.round((shown + atkBonus) * titleMult('player', 'attack')), kv = mine - mitTitel;   // Paket D: Forschung getrennt zeigen
     const tv = mitTitel - Math.round(shown + atkBonus), tx = titleOf('player'), tbEl = popupStats.querySelector('#previewTitleBonus');
     if (tbEl) tbEl.textContent = (tv && tx ? (tv > 0 ? ' + ' : ' − ') + fmtNum(Math.abs(tv)) + ' Titel ' + tx.name : '') + (kv ? ' + ' + fmtNum(kv) + ' Forschung' : '');
-    const src = islandById[previewSourceId], tEl = popupSub.querySelector('#previewToll'), opt = document.getElementById('attackFromSel').selectedOptions[0];
+    const src = islandById[previewSourceId], tEl = popupOverline.querySelector('#previewToll'), opt = document.getElementById('attackFromSel').selectedOptions[0];
     if (opt && src) { const t = apQuelleText(previewSourceId, island, scouted, px ? px.spd : 0); if (opt._t !== t) { opt._t = t; opt.innerHTML = t; } }   // the hero's Tempo
     if (tEl && src) { const hop = lastHop(src.landmassId, island.landmassId, 'player'), t = tollFor(hop[0], hop[1], shown, 'player', island.id, px ? px.toll : 0);
-        liveHtml(tEl, t.closed ? icon('lock') + '<span>Tor geschlossen</span>' : t.cost ? icon('coin') + '<span>Maut <span class="num">' + fmtCompact(t.cost) + '</span></span>' : ''); }
+        liveHtml(tEl, t.closed ? ' · ' + icon('lock') + 'Tor geschlossen' : t.cost ? ' · ' + icon('coin') + 'Maut <span class="num">' + fmtCompact(t.cost) + '</span>' : ''); }
     const meEl = popupStats.querySelector('.force--me small'); if (meEl) popupStats.querySelector('.force--me').title = 'Angriff: ' + meEl.textContent;   // ganz beim Draufzeigen
     document.getElementById('previewMyTroops').textContent = fmtBig(mine);
     const raw = document.getElementById('previewRawTroops');

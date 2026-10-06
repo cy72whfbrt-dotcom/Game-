@@ -49,17 +49,19 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       // 4b) Angriff kompakt (Alexander 6.10.): Handy höchstens 55 % hoch ohne Scrollen, Startbasis + Marschzeit nur EINMAL,
       //     Zahlen ganz, Held + Zweitheld als zwei Chips (≥ 44 px) – antippen klappt die Auswahl auf, eine Wahl klappt sie zu
       const hs0 = loadHeroes(); HEROES.forEach((h, i) => { if (hs0[h.id]) hs0[h.id].own = i < 3; });
-      const kompakt = [];
+      const kompakt = [], maut0 = tollFor;
       for (const sp of [false, true]) {
         if (sp) scoutedIslands.add(ziel.id); else scoutedIslands.delete(ziel.id);
+        tollFor = sp ? () => ({ closed: true, cost: 0 }) : maut0;   // gespäht: hinter einem geschlossenen Tor (macht das Fenster nicht höher)
         openIslandPopup(ziel); await warte(300);
         previewSourceId = playerIslandId; previewFraction = 1; previewHero = HEROES[0].id; previewHero2 = null; popupView = 'preview'; previewShownAt = Date.now(); renderPopup(); await warte(500);
         const pb = popup.querySelector('.pbody'), sel = document.getElementById('attackFromSel'), pr2 = popup.getBoundingClientRect(), ch = [...st.querySelectorAll('.ap-hchip')].filter(sichtbar);
         kompakt.push({ sp, hoch: +(pr2.height / innerHeight).toFixed(3), scroll: pb.scrollHeight - pb.clientHeight, kopf: sub.textContent.trim(),
           zeit: (sel.selectedOptions[0].textContent.match(/\d+:\d\d/g) || []).length, label: !!st.querySelector('.from-field, .field-l + #attackFromSel'),
           chips: ch.length, chipsOk: ch.every(c => c.getBoundingClientRect().right <= pr2.right && c.getBoundingClientRect().height >= 44 && ganz(c.querySelector('b'))),
-          zahlen: [...st.querySelectorAll('.force b')].every(ganz), zu: st.querySelector('[data-preview="hero"]').hidden });
+          zahlen: [...st.querySelectorAll('.force b')].every(ganz), zu: st.querySelector('[data-preview="hero"]').hidden, tor: document.getElementById('popupOverline').textContent });
       }
+      tollFor = maut0;
       const c1 = st.querySelector('[data-held-auf="1"]'), l1 = st.querySelector('[data-preview="hero"]'); c1.click(); await warte(100);
       const auf = { liste1: !l1.hidden && c1.getAttribute('aria-expanded') === 'true' };
       l1.querySelector('[data-hero="' + HEROES[1].id + '"]').click(); await warte(100);
@@ -96,7 +98,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     for (const k of r.kompakt) {
       const w = art + ': Angriff kompakt (' + (k.sp ? 'gespäht' : 'ungespäht') + ', 3 Helden)';
       ok(k.scroll <= 1 && (art !== 'Handy' || k.hoch <= 0.55), w + ' – alles ohne Scrollen' + (art === 'Handy' ? ', höchstens 55 % hoch' : ''), k);
-      ok(!/Von |Marsch/.test(k.kopf) && k.zeit === 1 && !k.label, w + ' – Startbasis + Marschzeit nur einmal (in der Auswahl), kein Extra-Label', k);
+      ok(k.kopf === '' && k.zeit === 1 && !k.label && (!k.sp || /Tor geschlossen/.test(k.tor)), w + ' – Startbasis + Marschzeit nur einmal (in der Auswahl), keine Unterzeile (Maut/Tor in der Überzeile), kein Extra-Label', k);
       ok(k.chips === 2 && k.chipsOk && k.zahlen && k.zu, w + ' – Held + Zweitheld als zwei ganze Chips (≥ 44 px), Zahlen ganz', k);
     }
     ok(r.auf.liste1 && r.auf.zu1 && r.auf.liste2 && r.auf.zu2, art + ': Held-Chip antippen klappt die Auswahl auf, eine Wahl klappt sie zu (Held und Zweitheld)', r.auf);

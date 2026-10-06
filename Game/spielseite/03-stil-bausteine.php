@@ -553,7 +553,7 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
 .ap-kopf .force--foe{grid-template-columns:minmax(0,1fr) auto} .ap-kopf .force--foe b{text-align:right}
 .ap-kopf .force small{grid-column:1/-1;margin-top:2px;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .ap-kopf .balance-note{margin-top:3px}
-#popupSub:has(> #previewToll:only-child:empty){display:none}   /* Kopfzeile nur mit Maut/Tor */
+#previewToll{color:var(--gold-200)} #previewToll .icon{width:11px;height:11px;margin:0 3px 0 1px;vertical-align:-1px}   /* Maut/Tor in der Überzeile: keine zweite Kopfzeile */
 .ap-truppen .troop-in{width:7.5em;max-width:40vw;height:28px;padding:0 4px;border:0;border-bottom:1px dashed var(--line-3);border-radius:0;background:transparent;font-size:var(--fs-15)}
 .ap-truppen .troop-in:focus{border-bottom-style:solid;box-shadow:none}
 .ap-truppen .field-top{align-items:center;margin-bottom:0}

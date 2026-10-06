@@ -712,8 +712,8 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
 - **6.10. – Angriffsfenster kompakt (Alexander 6.10., Handy-Bild „noch doof“; Branch `fix-angriff-fenster`, NICHT
   hochgeladen):** „Angriff vorbereiten“ nach Vorbild Million Lords, Farben/Stil gleich (spiel/10a `renderAttackPreview`,
   `patchAttackPreview`, neu `apQuelleText`/`apHeldChip`; CSS spielseite/03). Startbasis + Truppen + Marschzeit nur noch
-  EINMAL in der Auswahl (Zeit mit dem Tempo des Helden – vorher Kopfzeile 0:24 und Auswahl 0:25); Kopfzeile nur noch bei
-  Maut/Tor; kein abgeschnittenes „Von Basis“ mehr. Angriff | VS | Abwehr je eine Zeile (Zeichen + Zahl, darunter klein
+  EINMAL in der Auswahl (Zeit mit dem Tempo des Helden – vorher Kopfzeile 0:24 und Auswahl 0:25); keine Unterzeile mehr
+  (Maut/„Tor geschlossen“ hinten in der Überzeile); kein abgeschnittenes „Von Basis“ mehr. Angriff | VS | Abwehr je eine Zeile (Zeichen + Zahl, darunter klein
   woraus; Abwehr kurz „100 Mrd.“). Schieber und 25/50/75/Alle in einer Zeile. Held + Zweitheld als zwei Chips in einer
   Zeile (Bild, Name, Sterne bzw. „Zweitheld · 50 %“/„Paar +x %“) – antippen klappt die Auswahl auf, eine Wahl klappt sie zu;
   darunter klein, was der Held bewirkt. Handy 390×844: höchstens 55 % hoch, ohne Scrollen (vorher 62 % + Scrollen),
