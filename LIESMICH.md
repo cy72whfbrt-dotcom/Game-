@@ -1617,6 +1617,8 @@ Nacht – vorher bauen und testen.
 17. **Tore auf der Karte nicht mehr markiert + eigene Basen nicht erkennbar** (Bild 4b1cd453, 18:48): Tore (Brücken über
     die Flüsse) haben keine Markierung mehr; Gebiets-Blöcke grün/orange, aber man sieht nicht, welche Basis die eigene ist
     (Hauptstadt hervorheben, z. B. eigener Ring/Wappen/Name). (Truppen „111,1 Mrd.“ im HUD: von Alexander selbst gegeben, ok.)
+18. **Zuletzt benutzte Helden werden nicht gespeichert** (18:58): bei jedem Marsch/Angriff muss man die Helden neu
+    auswählen. Gewünscht: letzte Auswahl (Haupt- + Zweitheld) vorbelegen (im Spielstand speichern, nicht im Browser).
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
