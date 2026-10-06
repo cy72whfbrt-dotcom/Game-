@@ -113,6 +113,7 @@
   .res{flex:0 0 auto;max-width:none;padding:0 var(--ab-2)}   /* pills size to their value: no ellipsis on "999,9 Tsd." */
   .res b{min-width:max-content}
   .mapctl{bottom:calc(var(--safe-b) + 10px)}
+  .anleitung{left:calc(var(--rail-w) + var(--safe-l) + 10px);bottom:calc(var(--safe-b) + 10px)}   /* neben der Leiste, nie darüber */
   .mabar{left:calc(var(--rail-w) + var(--safe-l) + 10px);bottom:calc(var(--safe-b) + 10px);right:calc(var(--safe-r) + 60px)}
   body.is-multi .mapctl{display:flex;bottom:calc(var(--safe-b) + 10px)}
   .toast{left:calc(50% + var(--rail-w) / 2)}

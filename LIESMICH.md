@@ -644,6 +644,20 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Spielstand auf dem Server (wie alle `openWater…`-Werte; `sessionStorage` nur im Arbeitsspeicher, sw.js nur Push, Cookie nur
   Login). Nur die Vorschau ohne Server nutzt den echten Browser-Speicher. Nichts zu verlegen. Test
   `tests/browser/anleitung_test.js` (Handy 390×844 + Desktop).
+- **6.10. – Design P1: Grundwerte, HUD, Leiste, Streifen (11b F, Branch `design-p1`, NICHT hochgeladen):** **Grundwerte**
+  (`spielseite/01`, andere Design-Pakete bauen darauf): Abstände `--ab-1…4` (4/8/12/16), Schriftstufen `--fs-11/13/15/17/22`
+  (`--fs-9`/`--fs-10` = 11 px, nichts Kleineres mehr), Knopf-Arten `--k-haupt` 48 · `--k-zweit` 44 · `--k-gefahr` 48 · `--k-chip` 36
+  (Tippfläche `--k-tipp` 44) · `--k-rund` 48; Klassen `.btn--haupt/--zweit/--gefahr/--chip`, `.btn-rund`, `.tipp44`, Fenster-Gerüst
+  `.fenster > .fenster-kopf/.fenster-mitte/.fenster-fuss` (wie `.panel > .phead/.pbody/.pfoot`), `.scroll-schatten` (Schatten oben/unten nur,
+  solange es dort weitergeht – auch in jedem `.pbody`). Handy: `--btn-h` 44 / `--btn-h-sm` 36, Schließen-X 44 px. **HUD wie Million Lords**
+  (`spielseite/02`, `06`): Handy oben links das Spielerbild (44 px, Stufe, Name klein darunter, antippen = Profil), daneben EINE Zeile
+  Münzen · Edelsteine · Truppen ohne Kästen, rechts der runde Rohstoff-Knopf. **Ein Streifen** (`06c renderMidBar`): alle Dauer-Hinweise
+  (Wochen-Event, Kopfgeld, Invasion, Drache, Händler, Saison) in einer Zeile unter den Werten – der dringendste sichtbar, der Rest als
+  „+N“ (antippen klappt alle auf). **Leiste:** 5 runde Knöpfe Karte/Stadt · Bündnis · Kampf · Events · Shop (Profil über das
+  Spielerbild; `#profileBtn` bleibt unsichtbar für die Fenster-Logik), Desktop unten Mitte. **Fenster** am Handy höchstens 70 % hoch
+  (Karte bleibt oben sichtbar), Fußzeile fest. **Hinweise** am Handy immer oben unter dem HUD – nie über Fenster-Kopf/Fuß oder den
+  Zoom-Knöpfen (reicht ein Fenster so hoch, liegt der Hinweis dahinter); Anleitung „Schritt 1/7“ klein über dem Text.
+  Test `tests/browser/design_hud_test.js` (Handy 390×844 + Desktop 1280×800).
 - **5./6.10. Nacht – Langzeit (11b C/D/E, gebaut, NICHT hochgeladen):** **Erfolge Hauptstadt** (`05c` ACHIEVEMENTS, gleich
   für Mitspieler `BOT_GOAL_VAL`): Burg 5/10/15/20/25 (30/80/160/300/600 Edelsteine), Labor 10/50 Stufen und „alles erforscht“
   (Ziel wächst mit neuen Forschungen, `AUF.foGesamt`), beim Sieg über den Drachen dabei 1/5, Preis bei einer Barbaren-Invasion 1/10,
