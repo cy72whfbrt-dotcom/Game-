@@ -656,7 +656,7 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   „+N“ (antippen klappt alle auf). **Leiste:** 5 runde Knöpfe Karte/Stadt · Bündnis · Kampf · Events · Shop (Profil über das
   Spielerbild; `#profileBtn` bleibt unsichtbar für die Fenster-Logik), Desktop unten Mitte. **Fenster** am Handy höchstens 70 % hoch
   (Karte bleibt oben sichtbar), Fußzeile fest. **Hinweise** am Handy immer oben unter dem HUD – nie über Fenster-Kopf/Fuß oder den
-  Zoom-Knöpfen (reicht ein Fenster so hoch, liegt der Hinweis dahinter); Anleitung „Schritt 1/7“ klein über dem Text.
+  Zoom-Knöpfen (reicht ein Fenster so hoch, liegt der Hinweis dahinter); Anleitung quer neben der Leiste (nie darüber).
   Test `tests/browser/design_hud_test.js` (Handy 390×844 + Desktop 1280×800).
 - **5./6.10. Nacht – Langzeit (11b C/D/E, gebaut, NICHT hochgeladen):** **Erfolge Hauptstadt** (`05c` ACHIEVEMENTS, gleich
   für Mitspieler `BOT_GOAL_VAL`): Burg 5/10/15/20/25 (30/80/160/300/600 Edelsteine), Labor 10/50 Stufen und „alles erforscht“
