@@ -754,7 +754,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `closeCity` → Game/spiel/08a-stadt-bauen.js:218
 - `closeDailyModal` → Game/spiel/06a-aufgaben.js:81
 - `closeFieldSheet` → Game/spiel/09a-funde-felder.js:353
-- `closeHeroHall` → Game/spiel/08c-helden.js:393
+- `closeHeroHall` → Game/spiel/08c-helden.js:396
 - `closeIslandPopup` → Game/spiel/09e-inselfenster.js:110
 - `closeLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:322
 - `closeLookSheet` → Game/spiel/08b-burg-aussehen.js:113
@@ -925,7 +925,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `evBericht` → Game/spiel/09c-events-drache.js:67
 - `evBossHtml` → Game/spiel/09c-events-drache.js:442
 - `evBossTakt` → Game/spiel/09c-events-drache.js:50
-- `evChips` → Game/spiel/09c-events-drache.js:467
+- `evChips` → Game/spiel/09c-events-drache.js:470
 - `evDrHtml` → Game/spiel/09c-events-drache.js:427
 - `eventsBereit` → Game/spiel/06b-pass-anleitung.js:165
 - `evHinweise` → Game/spiel/09c-events-drache.js:268
@@ -1247,7 +1247,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `heroCanDo` → Game/spiel/08c-helden.js:140
 - `heroChestOpen` → Game/spiel/06d-schild-produktion.js:102
 - `heroChestPool` → Game/spiel/06d-schild-produktion.js:63
-- `heroChipHtml` → Game/spiel/08c-helden.js:428
+- `heroChipHtml` → Game/spiel/08c-helden.js:433
 - `heroConvert` → Game/spiel/08c-helden.js:5
 - `heroDefCut` → Game/spiel/01e-nebel-kampfwerte-hud.js:138
 - `heroDefPart` → Game/spiel/01e-nebel-kampfwerte-hud.js:148
@@ -1265,7 +1265,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `heroGatherFx` → Game/spiel/08c-helden.js:105
 - `heroGefOf` → Game/spiel/08c-helden.js:49
 - `heroGrantShards` → Game/spiel/08c-helden.js:127
-- `heroHallLive` → Game/spiel/08c-helden.js:387
+- `heroHallLive` → Game/spiel/08c-helden.js:390
 - `heroImg` → Game/spiel/08c-helden.js:214
 - `heroIn` → Game/spiel/08c-helden.js:107
 - `heroLaunch` → Game/spiel/08c-helden.js:85
@@ -1285,8 +1285,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `heroRageUp` → Game/spiel/08c-helden.js:93
 - `heroReportOf` → Game/spiel/01e-nebel-kampfwerte-hud.js:106
 - `heroSave` → Game/spiel/08c-helden.js:24
-- `heroSeg2Html` → Game/spiel/08c-helden.js:421
-- `heroSegHtml` → Game/spiel/08c-helden.js:416
+- `heroSeg2Html` → Game/spiel/08c-helden.js:426
+- `heroSegHtml` → Game/spiel/08c-helden.js:421
 - `heroSkillVal` → Game/spiel/08c-helden.js:31
 - `heroSt` → Game/spiel/08c-helden.js:22
 - `heroStarNum` → Game/spiel/08c-helden.js:28
@@ -1302,11 +1302,11 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `hex` → Game/ladebildschirm.js:10
 - `hfl` → Game/spiel/10a-inselfenster-vorschau.js:391
 - `hhGrid` → Game/spiel/08c-helden.js:327
-- `hhHero` → Game/spiel/08c-helden.js:348
-- `hhPairs` → Game/spiel/08c-helden.js:340
-- `hhPartnerBlk` → Game/spiel/08c-helden.js:381
+- `hhHero` → Game/spiel/08c-helden.js:350
+- `hhPairs` → Game/spiel/08c-helden.js:342
+- `hhPartnerBlk` → Game/spiel/08c-helden.js:384
 - `hhStars` → Game/spiel/08c-helden.js:188
-- `hhSwapHtml` → Game/spiel/08c-helden.js:376
+- `hhSwapHtml` → Game/spiel/08c-helden.js:379
 - `hideAllButtons` → Game/spiel/09e-inselfenster.js:119
 - `hilfeAnwenden` → Game/buendnis/01-daten-regeln.js:403
 - `hilfeDauer` → Game/buendnis/01-daten-regeln.js:367
@@ -1394,7 +1394,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `kampfTeile` → Game/buendnis/02-rally-geschenke.js:184
 - `kannZahlen` → Game/aufbau.js:68
 - `karte` → Game/spiel/05d-maersche-kampfbericht.js:159
-- `karte` → Game/spiel/08c-helden.js:329
+- `karte` → Game/spiel/08c-helden.js:330
 - `karteTauchen` → Game/spiel/08a-stadt-bauen.js:191
 - `keep` → Game/baukunst/06-turmhof-festung.js:69
 - `kennung` → Game/buendnis/01-daten-regeln.js:151
@@ -1690,7 +1690,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `openCrate` → Game/spiel/02a-shop-stufen.js:80
 - `openFieldSheet` → Game/spiel/09a-funde-felder.js:335
 - `openGoals` → Game/spiel/06a-aufgaben.js:309
-- `openHeroHall` → Game/spiel/08c-helden.js:392
+- `openHeroHall` → Game/spiel/08c-helden.js:395
 - `openIslandPopup` → Game/spiel/09e-inselfenster.js:102
 - `openLookSheet` → Game/spiel/08b-burg-aussehen.js:109
 - `openMarkerSheet` → Game/spiel/09d-armeen-wegmarken.js:300
@@ -1935,7 +1935,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderEvents` → Game/spiel/09c-events-drache.js:452
 - `renderGoalsSub` → Game/spiel/06a-aufgaben.js:307
 - `renderHeroChests` → Game/spiel/06d-schild-produktion.js:64
-- `renderHeroHall` → Game/spiel/08c-helden.js:386
+- `renderHeroHall` → Game/spiel/08c-helden.js:389
 - `renderInbox` → Game/spiel/06a-aufgaben.js:239
 - `renderKeep` → Game/aufbau.js:298
 - `renderKeepSheet` → Game/spiel/08b-burg-aussehen.js:13
@@ -2046,6 +2046,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `saisonNachholen` → Game/spiel/09f-saison.js:189
 - `saisonNeu` → Game/spiel/09f-saison.js:74
 - `saisonNr` → Game/welt.js:278
+- `saisonOben` → Game/spiel/09c-events-drache.js:458
 - `saisonPlatz` → Game/spiel/05a-aussehen-profil.js:21
 - `saisonRahmenFuer` → Game/spiel/05a-aussehen-profil.js:38
 - `saisonSpeichern` → Game/spiel/09f-saison.js:29
@@ -4394,18 +4395,18 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `heroImg` :214
 - `heroSvg` :215
 - `hhGrid` :327
-- `karte` :329
-- `hhPairs` :340 — Paket E: die passenden Paare – zusammen in einem Marsch +10 % auf alle Heldenwe…
-- `hhHero` :348
-- `hhSwapHtml` :376 — übrige Splitter umtauschen: Ziel wählen, alle auf einmal (1:1)
-- `hhPartnerBlk` :381 — sein Paar: Partner, Bonus, gemeinsame Geschichte
-- `renderHeroHall` :386
-- `heroHallLive` :387 — (liveTick) neue Splitter, Wut, Stufe, „unterwegs“: nur bei einer Änderung neu z…
-- `openHeroHall` :392
-- `closeHeroHall` :393
-- `heroSegHtml` :416 — the hero choice for an attack, an army or a field march: the ones you have, wit…
-- `heroSeg2Html` :421 — der Zweitheld (Paket E): erst mit Hauptheld; der passende Partner steht vorn un…
-- `heroChipHtml` :428 — profile + report: a hero with rarity and stars
+- `karte` :330
+- `hhPairs` :342 — Paket E: die passenden Paare – zusammen in einem Marsch +10 % auf alle Heldenwe…
+- `hhHero` :350
+- `hhSwapHtml` :379 — übrige Splitter umtauschen: Ziel wählen, alle auf einmal (1:1)
+- `hhPartnerBlk` :384 — sein Paar: Partner, Bonus, gemeinsame Geschichte
+- `renderHeroHall` :389
+- `heroHallLive` :390 — (liveTick) neue Splitter, Wut, Stufe, „unterwegs“: nur bei einer Änderung neu z…
+- `openHeroHall` :395
+- `closeHeroHall` :396
+- `heroSegHtml` :421 — the hero choice for an attack, an army or a field march: the ones you have, wit…
+- `heroSeg2Html` :426 — der Zweitheld (Paket E): erst mit Hauptheld; der passende Partner steht vorn un…
+- `heroChipHtml` :433 — profile + report: a hero with rarity and stars
 
 ### Game/spiel/08d-gebaeude-wirkung.js — Wirkung der Gebäude (Labor, Schmiede, Lazarett), Stadt-Leiste, Hauptstadt verle…
 - `academyLevel` :3 — ---- building effects ----
@@ -4668,7 +4669,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `evBossHtml` :442 — Reiter „Boss & Lager“: Tagesboss und Barbaren-Lager (jeden Tag neu)
 - `evOffen` :451
 - `renderEvents` :452
-- `evChips` :467 — der Hinweis unter dem HUD: Invasion bald/läuft, Drache bald/da → [Dringlichkeit…
+- `saisonOben` :458 — Welt-Saison: nur in den letzten 3 Tagen (oder angehalten) oben in jedem Reiter …
+- `evChips` :470 — der Hinweis unter dem HUD: Invasion bald/läuft, Drache bald/da → [Dringlichkeit…
 
 ### Game/spiel/09d-armeen-wegmarken.js — Armeen auf der Karte und Wegmarken
 - `saveArmies` :9

@@ -1,4 +1,4 @@
-// Welt-Saison, Feinheiten (Alexander 5.10.): Ankündigung nach echter Restzeit, „Neustart: vom Admin“ wenn angehalten, „Saison-Pass N“,
+// Welt-Saison, Feinheiten (Alexander 5.10.): Ankündigung nach echter Restzeit, „Neustart: vom Admin“ wenn angehalten, Pass „Saison-Pass“ ohne Nummer,
 // Tagesboss und Drache in den ersten 3 Tagen einer neuen Saison mit weniger Leben, Trostpreis wenn der Tagesboss entkommt (einmal),
 // nach dem Reset 48 Std. Anfängerschutz für alle echten Spieler – auch ohne Basis. Burg fair (Alexander 6.10. A, aufbau.js burgFair): Burg 3
 // bleibt mit ihrem Bau auf 4, Burg 4 verliert den Bau auf 5, Forschung mit Vorgänger fällt mit ihm.
@@ -15,7 +15,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const bald = [1, 2, 3].map(t => saisonBaldText(now + t * 864e5 - 60000).slice(0, 12));
     // 2) angehalten: „Neustart: vom Admin“ statt des alten Datums
     saison.halt = { seit: now, grund: 'sicherung' }; const halt = saisonKarte(); delete saison.halt; const normal = saisonKarte();
-    // 3) der Pass heißt „Saison-Pass N“
+    // 3) der Pass heißt „Saison-Pass“ (ohne Nummer – keine zweite Saison-Zahl neben der Welt-Saison)
     openGoals('pass'); const pass = (document.getElementById('passPane') || {}).innerText || ''; closePanel(goalsPopup);
     // 4) Tagesboss und Drache: erste 3 Tage einer neuen Saison weniger Leben (alle Mitspieler ohne Truppen → die Untergrenze zählt)
     const tr0 = Object.assign({}, islandTroops); for (const bd of BOT_DEFS) for (const id of botOwnedIslands[bd.id] || []) islandTroops[id] = 0;
@@ -48,7 +48,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   console.log(JSON.stringify(r));
   ok(r.bald[0] === 'In 1 Tag beg' && r.bald[1] === 'In 2 Tagen b' && r.bald[2] === 'In 3 Tagen b', 'Ankündigung nach echter Restzeit (1 Tag, 2 Tage, 3 Tage)', r.bald);
   ok(r.halt && !r.haltDatum && r.normal, 'Angehalten: „Neustart: vom Admin“ statt des alten Datums (sonst das Datum)', { halt: r.halt, datum: r.haltDatum, normal: r.normal });
-  ok(new RegExp('Saison-Pass ' + r.passNr).test(r.pass) && !/(^|[^-])Saison \d/.test(r.pass.replace(/Saison-Pass \d+/g, '')), 'Pass heißt „Saison-Pass N“', r.pass.slice(0, 80));
+  ok(/Saison-Pass/.test(r.pass) && !/Saison-Pass \d/.test(r.pass) && !/(^|[^-])Saison \d/.test(r.pass), 'Pass heißt „Saison-Pass“ ohne Nummer (keine zweite Saison-Zahl)', r.pass.slice(0, 80));
   ok(r.anfang[0] === 2e6 && r.anfang[1] === 1e6, 'Erste 3 Tage einer neuen Saison: Tagesboss 2 Mio., Drache 1 Mio. Leben (Untergrenze nach Start-Truppen)', r.anfang);
   ok(r.spaeter[0] === 28000 && r.spaeter[1] === 5600 && r.erste[0] === 28000, 'Danach (und in der allerersten Saison) wie immer: 50 Mio. / 10 Mio. × WIRTSCHAFT_KOSTEN (28.000 / 5.600)', { spaeter: r.spaeter, erste: r.erste });
   ok(r.trost.length === 1 && r.trost[0][0] === 15 && r.trost[0][1] === 2 && r.trost[0][2] === -1 && r.ib === 1 && r.gx === 15, 'Tagesboss entkommen: alle, die getroffen haben, bekommen etwas Kleines wie beim Drachen – nur einmal', { trost: r.trost, neu: r.ib, mitspielerGems: r.gx });

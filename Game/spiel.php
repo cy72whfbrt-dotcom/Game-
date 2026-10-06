@@ -1992,6 +1992,24 @@ button.cb-slot{position:relative} button.cb-slot::before{content:"";position:abs
 .p5-chip.active{color:var(--gold-100);border-color:var(--gold-300);background:rgba(214,170,90,.14)}
 .p5-chip .badge{position:static}
 #combatLogList > .logRow{cursor:pointer}
+/* Events (Blick 6.10.): am Handy passen alle 4 Ereignis-Chips (kurze Namen), Welt-Saison linksbündig, Preise gut lesbar */
+.p5-kurz{display:none}
+@media (max-width:480px){ #goalsTabs{gap:6px;padding-inline:12px} #goalsTabs .p5-chip{padding:0 12px} #goalsTabs .p5-lang{display:none} #goalsTabs .p5-kurz{display:inline} }
+.ev-saison{margin-top:12px} .ev-saison .field-lines b{text-align:left;justify-content:flex-start}
+.tour-prize{gap:4px;padding:9px 4px} .tour-prize b{font-size:var(--fs-13)} .tour-prize span{font-size:12px} .tour-prize .icon{width:14px;height:14px} .tour-prize em{font-size:10px}
+.lb-info summary{display:flex;align-items:center;gap:6px;min-height:44px;list-style:none;cursor:pointer;font:600 13px/1.2 var(--font-ui);color:var(--tx-2)} .lb-info summary::-webkit-details-marker{display:none}
+.lb-info summary .icon{width:18px;height:18px;color:var(--gold-300)} .lb-info p{margin:0 0 8px}
+.empty-state.lb-leer{flex-direction:row;align-items:center;gap:12px;padding:12px 14px;text-align:left;border:1px dashed var(--line-2);border-radius:10px} .lb-leer > span{display:flex;flex-direction:column;gap:2px} .lb-leer .icon{flex:none;width:26px;height:26px}
+/* Heldenhalle (Blick 6.10.): genug Splitter → goldene Karte mit „Freischalten“, Stern in 4 Vierteln als Balken, am Desktop größere Karten */
+.hh-card.is-ready{border-color:var(--gold-300);box-shadow:0 0 0 1px var(--gold-300),0 0 18px rgba(242,199,92,.45)} .hh-card.is-ready .hh-art{filter:grayscale(.35) brightness(.8)}
+.hh-frei{display:inline-flex;align-items:center;gap:4px;margin-top:4px;padding:6px 10px;border-radius:var(--r-pill);background:linear-gradient(180deg,var(--gold-200),var(--gold-400));color:var(--tx-inv);font:800 11px/1 var(--font-ui);letter-spacing:.04em;text-transform:uppercase}
+.hh-frei .icon{width:12px;height:12px}
+.hh > .hh-zu-h{margin:12px auto 4px}
+.hh-steps span{height:8px;padding:0;border:1px solid #ffffff14} .hh-steps span.on{background:var(--gold-300)}
+@media (min-width:900px){ .hh-cards{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px} .hh-cards.hh-cards--zu{grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px}
+  .hh-hero{grid-template-columns:minmax(0,1fr) 440px} }
+/* Willkommen zurück (6.10.): Bezeichnung einzeilig („Ertrag pro Stunde“ brach in 3 Zeilen um), lange Zahlen rutschen darunter */
+#welcomeModal .lvlup-rewards li{flex-wrap:wrap;row-gap:2px} #welcomeModal .lvlup-rewards li span{flex:1 0 auto;white-space:nowrap} #welcomeModal .lvlup-rewards li b{flex:1 1 auto}
 /* Profil: Kopf in 3 Zeilen (Rang + Titel, Name, Stufe) */
 .p5-kopfzeile{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 16px}
 .p5-kopfzeile .ptitle-tag{position:relative;margin:0;white-space:nowrap}
@@ -2279,10 +2297,10 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
     <button class="p5-chip" type="button" role="tab" data-gtab="ach" data-ggrp-von="aufgaben"><span>Erfolge</span><span class="badge" data-gbadge="ach" style="display:none">0</span></button>
     <button class="p5-chip" type="button" role="tab" data-gtab="reward" data-ggrp-von="abholen" hidden><span>Belohnung</span><span class="badge" data-gbadge="reward" style="display:none">0</span></button>
     <button class="p5-chip" type="button" role="tab" data-gtab="pass" data-ggrp-von="pass" hidden><span>Pass</span><span class="badge" data-gbadge="pass" style="display:none">0</span></button>
-    <button class="p5-chip" type="button" role="tab" data-gtab="tour" data-ggrp-von="ereignisse" hidden><span>Wochen-Event</span><span class="badge" data-gbadge="tour" style="display:none">!</span></button>
+    <button class="p5-chip" type="button" role="tab" data-gtab="tour" data-ggrp-von="ereignisse" hidden><span class="p5-lang">Wochen-Event</span><span class="p5-kurz">Woche</span><span class="badge" data-gbadge="tour" style="display:none">!</span></button>
     <button class="p5-chip" type="button" role="tab" data-gtab="inv" data-ggrp-von="ereignisse" hidden><span>Invasion</span><span class="badge" data-gbadge="inv" style="display:none">!</span></button>
     <button class="p5-chip" type="button" role="tab" data-gtab="drache" data-ggrp-von="ereignisse" hidden><span>Drache</span><span class="badge" data-gbadge="drache" style="display:none">!</span></button>
-    <button class="p5-chip" type="button" role="tab" data-gtab="boss" data-ggrp-von="ereignisse" hidden><span>Boss &amp; Lager</span></button>
+    <button class="p5-chip" type="button" role="tab" data-gtab="boss" data-ggrp-von="ereignisse" hidden><span class="p5-lang">Boss &amp; Lager</span><span class="p5-kurz">Boss</span></button>
   </div>
   <div class="pbody">
     <div class="mail-pane" data-gpane="daily">
