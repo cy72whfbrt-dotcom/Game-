@@ -934,6 +934,16 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Reiter „Ubersicht“): Ursache war Zeilenhöhe 1–1,2 zusammen mit `overflow:hidden` – das schnitt die Punkte über Ä/Ö/Ü oben ab;
   einzeilige Texte mit „…“ (Reiter, Überzeilen, Titel, Werte) schneiden jetzt nur seitlich ab (`overflow-x:clip`, 05 Ende).
   Test `handy_leiste_test` (rot auf altem Stand).
+- **6.10. – Design Events/Bündnis/Shop (Gesamt-Blick Punkte 9+10, Branch `design-events`, NICHT hochgeladen):** Vorbild
+  RoK/Call of Dragons: jedes Ereignis hat oben ein gezeichnetes Bild-Banner (SVG, 96 px) mit Titel und Uhr darauf – Woche
+  (gekreuzte Schwerter, Fahnen), Invasion (Zelte, Feuer), Drache (Drache über Burg, Feueratem), Boss (gehörnter Riese), im
+  Bündnis Rally (Krieger am Sammelbanner) und Tempel (Säulentempel im Licht) (09c `evBild`/`evBanner`, CSS in 07-fenster).
+  Lange Erklärungen (Rally 10 Zeilen, Tempel-Bonus, Invasion-/Drache-/Wochen-Regeln) stehen hinter „i“ zum Aufklappen
+  (`infoKlapp`, bleibt beim Neuzeichnen offen – nur im Speicher). Woche: „Punkte für“/„Bonus“ als Zeilen, Text linksbündig.
+  Leere Zustände mit Symbol + Satz + EINEM Gold-Knopf (`leerHtml`): Rally leer („Ziel auf der Karte wählen“ schließt das
+  Fenster), Bündnis-Chat leer, Shop → Markt noch nicht gebaut („Markt bauen“ bzw. „Burg ausbauen“ öffnet die Stadt beim
+  Gebäude, aufbau.js), Schild-Vorrat leer (ein Satz statt drei „0×“-Kästen). Desktop-Angriff: Zweitheld-Wahl war schon da
+  (fehlt nur, wenn man nur einen Helden hat – wie am Handy), jetzt mit Test. Test `aufgabe_bild_test`.
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 
