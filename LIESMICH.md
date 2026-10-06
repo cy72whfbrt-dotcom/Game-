@@ -1591,10 +1591,10 @@ Nacht – vorher bauen und testen.
 13. **DRINGEND – Münzen explodieren durch Basis-Aufwerten** (Bilder d5be07d4 18:40 → 4e504f53 18:43): in 2 Minuten Basis
     Stufe 11 → 64, Münzen 3.617 → 152,9 Mio., Münzen/Std. 40.000 → 66,7 Mio. Gewinnschleife beim Aufwerten (Kosten
     vs. Ertrag/Belohnung). Ursache wird gesucht (Sucher such-muenz) → sofort beheben + hochladen (mit Alexanders Ja).
-    **Nachtrag 18:50:** Die Münzen (und Truppen) hat sich Alexander selbst gegeben (Admin), also KEINE Münz-Quelle aus dem Nichts.
-    Bleibt: (a) Aufwerten zu billig – Kosten 66,7×1,27^(L−1) vs. Ertrag 10.000×1,15^(L−1), mit 150 Mio. in 2 Min. von Stufe
-    11 auf 64 (66,7 Mio./h); (b) echte Schleife laut Sucher: Pass-/Thron-Belohnungen zahlen „Stunden-Ertrag × n“ aus der
-    aktuellen Stufe (passGive/throneAmount) und das Hauptbuch erlaubt hourProduction×1,2 → Hotfix hotfix-muenz läuft.
+    **Nachtrag 18:52:** Nur die TRUPPEN (111,1 Mrd.) hat sich Alexander selbst gegeben. Die Münzen sind echt → Fehler bleibt
+    DRINGEND. Ursache laut Sucher: Pass-/Thron-Belohnungen zahlen „Stunden-Ertrag × n“ aus der aktuellen Stufe
+    (passGive/throneAmount), Hauptbuch erlaubt hourProduction×1,2, Aufwerten zu billig (Kosten 66,7×1,27^(L−1) vs. Ertrag
+    10.000×1,15^(L−1)) → Hotfix hotfix-muenz läuft.
 14. **Insel-Design + Berge „komplett Dreck“** (Bild 192e18ee, 18:43): Landfläche ist eine flache rosa-beige Fläche voller
     kleiner gleicher Krabbel-Symbole (Barbaren-Lager? Steinchen?), wirkt wie Muster/Tapete; Berge sind kleine graue Dreiecke
     (wie Zelte) verstreut; Fluss ok. Gewünscht: Landschaft wie Million Lords/RoK – Gelände mit Struktur (Gras, Sand,
