@@ -1144,6 +1144,11 @@ if (window.WELT) {
             if (b.op === 'held') armySetHeroes(a, heldOk(b.held), heldOk(b.held2));   // Haupt- und Zweitheld: nur eigene, freie (armySetHeroes prüft)
             saveArmies(); requestRender();
         },
+        vheld(who, b) {                               // Verteidigungs-Helden in der Mauer: nur eigene Helden, Zweitheld erst ab Mauer 5 (vhSetzen prüft)
+            if (zuOft(wm(who), 'vheld', 60, 60000)) { warnen(who, 'vheld', 'Verteidigungs-Helden über 60-mal pro Minute geändert – der Rest verfällt.'); return; }
+            const h1 = b.h1 ? heldOk(b.h1) : null, h2 = b.h2 ? heldOk(b.h2) : null;
+            if ((b.h1 && !h1) || (b.h2 && !h2) || !vhSetzen(who, h1, h2)) warnen(who, 'vheld', 'Verteidigungs-Held, den er nicht hat (oder Zweitheld unter Mauer ' + VH_ZWEIT_MAUER + ') – abgelehnt.');
+        },
         beitreten(who, b) {                           // ein neuer Spieler braucht seinen Platz auf der Karte
             if (!botOwnedIslands[who]) window.__weltNeuerMensch(who);
             if (botOwnedIslands[who] && botOwnedIslands[who].size) return;      // hat schon einen

@@ -285,10 +285,10 @@ function killGoldRate(who, hx) {               // "Angriff: Gold" per enemy kill
     return (who === 'player' ? goldPerKillRate() : botGoldRate(who, 'attackGold')) * (1 + g) + g * WIRTSCHAFT_KOSTEN;
 }
 function defGoldRate(who) { return who === 'player' ? (skills.defenseGold || 0) * SKILL_DEFS.defenseGold.rate : botGoldRate(who, 'defenseGold'); }
+function defGoldRateHx(who, hx) { const g = hx ? (hx.gold || 0) / 100 : 0; return defGoldRate(who) * (1 + g) + g * WIRTSCHAFT_KOSTEN; }   // "Verteidigung: Gold" + der Held des Verteidigers (wie killGoldRate)
 function payGold(who, n) { n = Math.round(n); if (n <= 0 || !who) return 0; if (who === 'player') inboxAdd({ src: 'fight', coins: n }); else botCoins[who] = (botCoins[who] || 0) + n; return n; }
 function fieldGold(aWho, dWho, fb, aHx, dHx) {  // fights in the open pay like fights for bases: the attacker per enemy killed, the defender per attacker killed (+ each side's hero)
-    const g = dHx ? (dHx.gold || 0) / 100 : 0;
-    return { a: payGold(aWho, fb.dLoss * killGoldRate(aWho, aHx)), d: payGold(dWho, fb.aLoss * (defGoldRate(dWho) * (1 + g) + g * WIRTSCHAFT_KOSTEN)) };
+    return { a: payGold(aWho, fb.dLoss * killGoldRate(aWho, aHx)), d: payGold(dWho, fb.aLoss * defGoldRateHx(dWho, dHx)) };
 }
 // "Geschwindigkeit" skill: shortens the production tick interval.
 function productionTickMs() {

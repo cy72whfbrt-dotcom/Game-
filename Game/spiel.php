@@ -879,6 +879,9 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
 .hh-pair-t{display:grid;gap:2px;min-width:0} .hh-pair-t b{font:700 var(--fs-13)/1.2 var(--font-ui);color:var(--gold-100)} .hh-pair-t small{font-size:11px;color:var(--tx-3)} .hh-pair-t em{font-style:italic;font-size:12px;color:var(--tx-2)}
 .hh-story{margin:0;font-style:italic;font-size:var(--fs-13);line-height:1.45;color:var(--tx-2)}
 .seg.hero-seg2{margin-top:6px} .hero-seg2-l{flex:1 1 100%;font-size:11px;color:var(--tx-3);padding:2px 2px 4px} .seg.hero-seg button.is-pair{box-shadow:inset 0 0 0 1px var(--gold-300)} .seg.hero-seg button.is-pair small{color:var(--gold-100)}
+/* Mauer: Verteidigungs-Helden (2 Plätze) */
+.vh-box{margin-top:10px;padding:10px;border:1px solid var(--line-1);border-radius:10px;background:rgba(0,0,0,.18)} .vh-kopf{display:flex;align-items:center;gap:6px} .vh-kopf .icon{width:16px;height:16px}
+.vh-stand{display:block;margin:4px 0 2px;color:var(--tx-2)} .vh-l{font-size:11px;color:var(--tx-3);margin:8px 2px 4px} .vh-zu{display:block;color:var(--tx-3);font-size:12px;padding:2px} .vh-werte{margin-top:8px}
 .hh-count{padding:8px 0;font:500 var(--fs-12)/1.4 var(--font-ui);color:var(--tx-3);text-align:center}
 .hh-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px;padding:4px 0 8px}
 .hh-card{position:relative;aspect-ratio:3/4.3;border-radius:var(--r-lg);overflow:hidden;cursor:pointer;border:2px solid var(--rc);background:linear-gradient(170deg,var(--rc) 0%,#0b0c10 78%);padding:0;color:var(--tx-1);font:inherit;box-shadow:0 4px 10px #0008;transition:transform var(--dur-1) ease}

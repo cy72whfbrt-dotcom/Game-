@@ -117,7 +117,7 @@ function kampfGearHtml(g) { if (!g) return '';
             (rd ? '<span class="lvl">' + it[2] + '</span>' + (it[3] ? '<span class="stars">' + icon('star').repeat(it[3]) + '</span>' : '') : '') + '</span></span>'; }).join('');
     const heroes = (g.hx ? [g.hx, ...(g.hx.h2 ? [g.hx.h2] : [])] : []).map(x => { const hd = heroById(x.id); if (!hd) return ''; const rd = RARITY_DEFS[hd.r];   // who led (Haupt- und Zweitheld), his stars, whether the rage fired, every bonus
             return '<div class="logHero" style="--hc:' + rd.color + '"><span class="ghero">' + heroImg(hd.id) + '<span><b>' + hd.name + ' <small>' + heroStarTxt(x.q) + ' · ' + rd.label + '</small></b>' +
-                '<small>' + (x.zweit ? 'Zweitheld · Werte und passive Fähigkeiten zu ' + Math.round(HERO_ZWEIT * 100) + ' %' : x.fired ? '<em class="logHeroFire">' + escapeHtml(x.skill || '') + ' gezündet</em>' : 'Aktive Fähigkeit nicht gezündet') + '</small></span></span>' +
+                '<small>' + (x.zweit ? 'Zweitheld · Werte und passive Fähigkeiten zu ' + Math.round(HERO_ZWEIT * 100) + ' %' : x.vh ? 'Verteidigungs-Held · aus der Mauer' : x.fired ? '<em class="logHeroFire">' + escapeHtml(x.skill || '') + ' gezündet</em>' : 'Aktive Fähigkeit nicht gezündet') + '</small></span></span>' +
                 (x.lines || []).map(l => '<div class="logLine buff"><span>' + escapeHtml(l[0]) + '</span><span>' + escapeHtml(l[1]) + '</span></div>').join('') + '</div>'; }).join('') +
         (g.heroes || []).map(x => { const hd = heroById(x[0]); return hd ? '<span class="ghero" style="--hc:' + RARITY_DEFS[hd.r].color + '">' + heroImg(hd.id) + '<span><b>' + hd.name + '</b><small>Stufe ' + x[1] + '</small></span></span>' : ''; }).join('');   // (older reports)
     if (g.heroOnly) return '<div class="logGear"><div class="logGearHeroes">' + heroes + '</div></div>';
@@ -370,7 +370,7 @@ const kampflogUmbauen = (function () {
         const truppen = lines().find(l => textOf(l).startsWith('Truppen'));
         if (truppen) truppen.firstElementChild.firstChild.textContent = 'Truppen';
         const mitHeld = !!box.querySelector('.logGear .logHero:not(.kl-keinheld)');
-        if (!lines().some(l => textOf(l).startsWith('Held'))) (truppen || box.firstElementChild).insertAdjacentHTML('afterend', mitHeld ? zl('Held', 'dabei', '', 'steckt in „Eigene Werte“') : zl('Held', '+0', '', angr ? 'ohne Held' : 'zählt beim Verteidigen nicht'));
+        if (!lines().some(l => textOf(l).startsWith('Held'))) (truppen || box.firstElementChild).insertAdjacentHTML('afterend', mitHeld ? zl('Held', 'dabei', '', 'steckt in „Eigene Werte“') : zl('Held', '+0', '', angr ? 'ohne Held' : 'kein Verteidigungs-Held in der Mauer'));
         const sum = box.querySelector(':scope > .logSum');
         if (!lines().some(l => textOf(l).startsWith('Grundverteidigung')) && sum) sum.insertAdjacentHTML('beforebegin', zl('Grundverteidigung', '0', ' kl-null', 'zählt nur beim Besitzer der Basis'));
         const cas = lines().filter(l => l.classList.contains('logCasualty'));
@@ -383,7 +383,7 @@ const kampflogUmbauen = (function () {
         let hs = gear.querySelector('.logGearHeroes');
         if (!hs) { hs = el('<div class="logGearHeroes"></div>'); const meta = gear.querySelector('.logGearMeta'); meta ? gear.insertBefore(hs, meta) : gear.appendChild(hs); }
         const helden = hs.querySelectorAll('.logHero');
-        if (helden.length === 0) hs.insertAdjacentHTML('beforeend', leerHeld('Kein Hauptheld', angr ? 'Ohne Held losgeschickt' : 'Beim Verteidigen einer Basis zählt kein Held'));
+        if (helden.length === 0) hs.insertAdjacentHTML('beforeend', leerHeld('Kein Hauptheld', angr ? 'Ohne Held losgeschickt' : 'Kein Verteidigungs-Held in der Mauer (oder er war unterwegs)'));
         if (hs.querySelectorAll('.logHero').length === 1) hs.insertAdjacentHTML('beforeend', leerHeld('Kein Zweitheld', 'Zweitheld · Werte und passive Fähigkeiten zu 50 %'));
         hs.querySelectorAll('.logHero').forEach(h => {                       // jeder Heldenplatz: dieselben 7 Zeilen
             const L = [...h.querySelectorAll(':scope > .logLine')].map(l => { const r = [textOf(l), l.lastElementChild.textContent.trim()]; l.remove(); return r; });
@@ -428,7 +428,7 @@ const kampflogUmbauen = (function () {
         side.querySelectorAll(':scope > .logLine.buff').forEach(l => l.remove());
         const schon = angr ? 0 : Array.isArray(e.defParts) && e.defParts.length ? e.defParts[0][1] || 0 : (e.enemyDefense || 0) - andere.reduce((x, p) => x + (p.plus || 0), 0);   // (Grundverteidigung bzw. Verteidigung steht schon als eigene Zeile da – ohne Bericht-Teile steckt darin auch das Plus der Helfer)
         const eig = gesamt - staerkeAndere - (erster.n || 0) - schon;
-        if (eig && tr) tr.insertAdjacentHTML('afterend', zl('Eigene Werte', (eig > 0 ? '+' : '−') + fmt(Math.abs(eig)), ' buff', angr ? 'Held, Fähigkeit Angriff, Titel, Forschung' : 'Rüstung, Fähigkeit Verteidigung, Mauer, Titel, Forschung'));
+        if (eig && tr) tr.insertAdjacentHTML('afterend', zl('Eigene Werte', (eig > 0 ? '+' : '−') + fmt(Math.abs(eig)), ' buff', angr ? 'Held, Fähigkeit Angriff, Titel, Forschung' : 'Rüstung, Fähigkeit Verteidigung, Mauer, Mauer-Held, Titel, Forschung'));
         if (angr && erster.fallen !== undefined) { const c = side.querySelector(':scope > .logCasualty:not(.wounded)'); if (c) c.lastElementChild.textContent = '−' + fmt(erster.fallen);
             const w = side.querySelector(':scope > .logCasualty.wounded'); if (w) { if (erster.wounded) w.lastElementChild.textContent = fmt(erster.wounded); else w.remove(); } }   // (nur seine – nicht die der ganzen Rally)
         if (!angr && e.type === 'attack') { const weg = andere.reduce((x, p) => x + (p.fallen || 0) + (p.wounded || 0), 0), c = side.querySelector(':scope > .logCasualty:not(.wounded)');   // Besitzer: ohne die Verluste der Helfer (die stehen in ihren Fenstern)
@@ -459,15 +459,16 @@ const kampflogUmbauen = (function () {
         const vert = teile ? teile.map((q, i) => zl(escapeHtml(q[0]), (i ? (q[1] < 0 ? '−' : '+') : '') + fmt(Math.abs(q[1])), i ? (q[1] < 0 ? ' buff malus' : ' buff') : '', escapeHtml(q[2] || ''))).join('')
             : zl('Grundverteidigung', fmt(e.defense), '', s ? 'gesamt – älterer Bericht ohne Aufteilung, neu spähen' : e.wartet ? 'Bericht kommt gleich …' : 'gesamt');
         const items = s && s.gear ? Object.keys(EQUIPMENT_DEFS).map(k => { const g = s.gear[k]; return g ? [k, g[0], g[1], g[2] || 0] : [k, -1, 0, 0]; }) : null;   // leerer Platz = nichts angelegt
-        const gear = items ? kampfGearHtml({ lvl: fmt(s.lvl), title: s.titel, items, skills: [], city: [] }) : leerGear(s ? 'Spieler-Stufe ' + fmt(s.lvl) : e.wartet ? 'Bericht kommt gleich …' : 'Ohne Herrn', false);
+        const vhd = s && s.vh && heroById(s.vh.id) ? s.vh : null;                 // der Verteidigungs-Held aus der Mauer (wer beim Spähen zu Hause war)
+        const gear = items ? kampfGearHtml({ lvl: fmt(s.lvl), title: s.titel, items, skills: [], city: [], hx: vhd }) : leerGear(s ? 'Spieler-Stufe ' + fmt(s.lvl) : e.wartet ? 'Bericht kommt gleich …' : 'Ohne Herrn', false);
         const box = el('<div class="logSide"><div class="logSideLabel">Gespäht · ' + escapeHtml(name) + '</div>' +
             zl('Gespäht', timeAgoLabel(e.at || 0) + (alt ? ' – neu spähen?' : ''), alt ? ' kl-alt' : '') +
-            zl('Truppen', fmt(e.troops)) + (Number.isFinite(e.verst) ? zl('Verstärkung', fmt(e.verst), '', 'Bündnis-Truppen in der Basis – verteidigen mit') : '') + zl('Held', '+0', '', 'zählt beim Verteidigen nicht') + vert +
+            zl('Truppen', fmt(e.troops)) + (Number.isFinite(e.verst) ? zl('Verstärkung', fmt(e.verst), '', 'Bündnis-Truppen in der Basis – verteidigen mit') : '') + (teile && teile.some(q => String(q[0]).startsWith('Held')) ? '' : zl('Held', '+0', '', s && s.vh !== undefined ? 'kein Verteidigungs-Held in der Mauer' : 'zählt beim Verteidigen nicht')) + vert +
             '<div class="logSum"><span>Gesamt</span><span>' + fmt((e.troops || 0) + (e.verst || 0) + (e.defense || 0)) + '</span></div>' + '<div class="logCasualty kl-null"><span>Gefallen</span><span>–</span></div>' + zl('Geflohen', '–', ' kl-null') +
             gear + '</div>');
         normal(box, false, {}, 0);
         box.querySelector('.kl-rss').remove();
-        const kh = box.querySelector('.kl-keinheld small'); if (kh && L['Helden']) kh.textContent = 'Zuhause: ' + v('Helden') + ' – zählen beim Verteidigen nicht';
+        const kh = box.querySelector('.kl-keinheld small'); if (kh && L['Helden']) kh.textContent = s && s.vh !== undefined ? 'Kein Verteidigungs-Held in der Mauer · Zuhause: ' + v('Helden') : 'Zuhause: ' + v('Helden') + ' – zählen beim Verteidigen nicht';   // (älterer Bericht: vor den Mauer-Helden)
         const meta = box.querySelector('.logGearMeta');
         if (meta) meta.textContent = s && s.sk ? 'Fähigkeiten Angriff ' + s.sk.attack + ' · Vert. ' + s.sk.defense + ' · Truppen ' + s.sk.troops
             : s ? 'Ausrüstung und Fähigkeiten unbekannt (älterer Bericht) – neu spähen' : e.wartet ? 'Ausrüstung und Fähigkeiten: der Bericht kommt gleich' : 'Ohne Herrn: keine Ausrüstung, keine Helden';

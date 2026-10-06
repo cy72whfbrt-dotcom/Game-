@@ -138,6 +138,49 @@ function heroDoSwap(who, from, to, n) {              // übrige Splitter eines H
 }
 function heroDoSkill(who, id, k) { const s = heroSt(who, id); if (!s || !s.own || !heroFree(s) || s.sk[k] >= 5) return false; s.sk[k]++; heroSave(who); return true; }
 function heroCanDo(who, id) { const h = heroById(id), s = heroSt(who, id); if (!h || !s) return false; return s.own ? heroFree(s) > 0 || (s.q < HERO_MAXQ && s.sh >= heroStepCost(h, s.q)) : s.sh >= HERO_UNLOCK[h.r]; }
+// ---- Verteidigungs-Helden (Mauer, 6.10.): in der Mauer eingetragen verteidigen sie JEDE eigene Basis – Hauptheld ab Mauer 1,
+// Zweitheld ab Mauer 5 (zu 50 %). Gleiche Rechnung wie beim Angriff (Angriff, Verluste, Krankenhaus, Gold, Gefolge – ohne Wut).
+// Wer gerade unterwegs ist (Angriff, Armee, Feld, Rally), verteidigt nicht; zurück → verteidigt wieder.
+const VH_ZWEIT_MAUER = 5;
+function vhSoll(who) {                              // [Haupt-, Zweitheld] wie eingetragen (dein Eintrag steht in der Stadt)
+    let v = null; try { v = who === 'player' ? loadCity().vh : (loadBotState()[who] || {}).vh; } catch (e) { v = null; }
+    return Array.isArray(v) ? [heroById(v[0]) ? v[0] : null, heroById(v[1]) ? v[1] : null] : [null, null];
+}
+function vhMauer(who) { return who === 'player' ? cityLevelSafe('wall') : botBld(who, 'wall'); }
+function vhRechnen(who) {
+    const [a, b] = vhSoll(who), L = vhMauer(who), ctx = { fight: 1 }, frei = id => id && heroOwned(who, id) && !heroBusy(who, id) ? id : null;
+    const h1 = L >= 1 ? frei(a) : null, h2 = L >= VH_ZWEIT_MAUER && b !== a ? frei(b) : null;
+    let fx = null;
+    if (h1) fx = heroDuo(who, heroFx(who, h1, ctx, false), h2, ctx);
+    else if (h2) { fx = heroFx(who, h2, ctx, false, null, HERO_ZWEIT); if (fx) fx.zweit = 1; }   // der Hauptheld ist unterwegs: der Zweitheld allein, zu 50 %
+    if (fx) fx.vh = 1;
+    return fx;
+}
+let vhMem = null;                                   // (effectiveDefense fragt sehr oft: je Sekunde und Marsch-Stand einmal rechnen)
+function vhFx(who) {
+    if (!who || !(who === 'player' || botById[who])) return null;
+    try {
+        const k = Math.floor(Date.now() / 1000) + '|' + pendingAttacks.length + '|' + pendingSends.length + '|' + armies.length;
+        if (!vhMem || vhMem.k !== k) vhMem = { k, by: {} };
+        return who in vhMem.by ? vhMem.by[who] : (vhMem.by[who] = vhRechnen(who));
+    } catch (e) { return null; }                    // (die ersten Schritte beim Laden: Märsche und Stadt sind noch nicht da)
+}
+function vhPlus(fx, g) { return fx ? Math.round(g * fx.atk / 100) + heroGefOf(fx, g) : 0; }   // was die Helden der Besatzung dazugeben: Angriff % + Gefolge
+function vhName(fx) { const h = heroById(fx.id), h2 = fx.id2 && heroById(fx.id2); return 'Held ' + (h ? h.name + ' ' + heroStarTxt(fx.q) : '') + (h2 ? ' & ' + h2.name : ''); }
+function vhSetzen(who, h1, h2) {                    // eintragen (prüft: eigener Held, Mauer-Stufe) → true, wenn es gilt
+    const L = vhMauer(who), ok = id => id && heroById(id) && heroOwned(who, id) ? id : null;
+    const a = L >= 1 ? ok(h1) : null, b = a && L >= VH_ZWEIT_MAUER && h2 !== a ? ok(h2) : null;
+    if ((h1 && !a) || (h2 && !b)) return false;
+    if (who === 'player') { const c = loadCity(); c.vh = [a, b]; saveCity(); }
+    else { const s = loadBotState()[who]; if (!s) return false; s.vh = [a, b]; saveBotState(); }
+    vhMem = null; return true;
+}
+function vhBest(who, ohne) {                        // der beste eigene Held fürs Verteidigen (Mitspieler): Angriff + weniger Verluste + Krankenhaus
+    let best = null, bs = -1;
+    for (const h of HEROES) { if (h.id === ohne || !heroOwned(who, h.id)) continue; const f = heroFx(who, h.id, { fight: 1 }, false); if (!f) continue;
+        const sc = f.atk + f.loss + f.hosp / 2 + heroPower(who, h.id) / 1e6; if (sc > bs) { bs = sc; best = h.id; } }
+    return best;
+}
 function heroTag(hx) { if (!hx) return ''; const h = heroById(hx.id), h2 = hx.id2 && heroById(hx.id2); return h ? h.name + ' ' + heroStarTxt(hx.q) + (h2 ? ' & ' + h2.name + (hx.pair ? ' (Paar)' : '') : '') + (hx.fired ? ' · ' + hx.skill + ' gezündet' : '') : ''; }   // one line for the short reports
 var previewHero = null, nextAttackHero = null, previewHero2 = null, nextAttackHero2 = null;
 // ---- the Heldenhalle screen: a grid of tall rarity cards → one hero with figure, stars, skills and values ----

@@ -29,6 +29,7 @@ function cityExtraHtml(id, lvl) {
     if (id === 'heroes') { const up = HEROES.filter(h => heroCanDo('player', h.id)).length;   // the way into the hero screen
         return '<button type="button" class="btn btn--primary btn--grow hh-open" data-hero-open>' + icon('profile') + '<span>Helden öffnen</span>' + (up ? '<em class="hh-badge">' + up + '</em>' : '') + '</button>'; }
     if (id === 'embassy' && lvl && typeof verstHtml === 'function') return verstHtml();   // Botschaft: Verstärkung (buendnis.js)
+    if (id === 'wall') return vhHtml(lvl);                                                 // Verteidigungs-Helden
     if (id === 'forge' && lvl) {                   // pick a slot, then any piece you own in it - equipped or in the chest
         const slots = Object.keys(EQUIPMENT_DEFS), cap = Math.min(STAR_MAX, lvl);
         const items = Object.values(inventory).filter(it => it.slot === forgeSlot)
@@ -48,10 +49,35 @@ function cityExtraHtml(id, lvl) {
     }
     return '';
 }
+// Mauer: die zwei Plätze für die Verteidigungs-Helden (Hauptheld ab Mauer 1, Zweitheld ab Mauer 5) – jederzeit änderbar
+function vhHtml(lvl) {
+    const [a, b] = vhSoll('player'), fx = vhFx('player'), hs = HEROES.filter(h => heroOwned('player', h.id)).sort((x, y) => y.r - x.r || heroSt('player', y.id).q - heroSt('player', x.id).q);
+    const knoepfe = (k, cur, ohne) => '<div class="seg hero-seg chips-quer">' + '<button type="button" data-vh' + k + '=""' + (!cur ? ' class="on"' : '') + '>Keiner</button>' +
+        hs.filter(h => h.id !== ohne).map(h => '<button type="button" data-vh' + k + '="' + h.id + '"' + (cur === h.id ? ' class="on"' : '') + ' style="--hc:' + RARITY_DEFS[h.r].color + '">' + heroImg(h.id) + h.name +
+            '<small>' + (heroBusy('player', h.id) ? 'unterwegs' : icon('star') + heroStarNum(heroSt('player', h.id).q)) + '</small></button>').join('') + '</div>';
+    const weg = [a, b].filter(id => id && heroBusy('player', id)).map(id => heroById(id).name);
+    const stand = !lvl ? 'Baue die Mauer – dann verteidigt ein Held jede deiner Basen.' : !hs.length ? 'Du hast noch keinen Helden – schalte einen in der Heldenhalle frei.'
+        : (fx ? 'Verteidigt jetzt jede deiner Basen: ' + escapeHtml(heroTag(fx)) + '.' : a ? 'Gerade verteidigt keiner.' : 'Trag einen Helden ein – er verteidigt jede deiner Basen.') +
+          (weg.length ? ' ' + weg.join(' und ') + (weg.length > 1 ? ' sind' : ' ist') + ' unterwegs und verteidigt erst wieder, wenn ' + (weg.length > 1 ? 'sie' : 'er') + ' zurück ist.' : '');
+    return '<div class="vh-box" data-vh-box><div class="vh-kopf">' + icon('defense') + '<b>Verteidigungs-Helden</b></div><small class="vh-stand">' + stand + '</small>' +
+        (lvl && hs.length ? '<div class="vh-l">Hauptheld</div>' + knoepfe(1, a, null) +
+            '<div class="vh-l">Zweitheld · Werte und passive Fähigkeiten zu ' + Math.round(HERO_ZWEIT * 100) + ' %</div>' +
+            (lvl < VH_ZWEIT_MAUER ? '<small class="vh-zu">Ab Mauer ' + VH_ZWEIT_MAUER + '</small>' : a ? knoepfe(2, b, a) : '<small class="vh-zu">Erst einen Hauptheld eintragen</small>') : '') +
+        (fx ? '<div class="vh-werte">' + fx.lines.map(l => '<div class="logLine buff"><span>' + escapeHtml(l[0]) + '</span><span>' + escapeHtml(l[1]) + '</span></div>').join('') + '</div>' : '') + '</div>';
+}
+function vhWaehlen(k, id) {                        // 1: Hauptheld, 2: Zweitheld (ohne Hauptheld kein Zweitheld – wie beim Angriff)
+    const [a, b] = vhSoll('player'), h1 = k === 1 ? id || null : a, h2 = k === 2 ? id || null : (b === h1 ? null : b);
+    const z = h1 && cityLevelSafe('wall') >= VH_ZWEIT_MAUER ? h2 : null;
+    if (!vhSetzen('player', h1, z)) return;
+    alsBefehl('vheld', { h1, h2: z });
+    flashHint(h1 ? heroById(h1).name + (z ? ' und ' + heroById(z).name + ' verteidigen' : ' verteidigt') + ' jetzt jede deiner Basen.' : 'Kein Verteidigungs-Held mehr eingetragen.', 2500);
+    renderCitySheet();
+}
 var forgeSlot = 'weapon';
 document.getElementById('citySheet').addEventListener('click', e => {
     const fs = e.target.closest('[data-forge-slot]'); if (fs) { forgeSlot = fs.dataset.forgeSlot; renderCitySheet(); return; }
     if (e.target.closest('[data-hero-open]')) { openHeroHall(); return; }
+    const vh = e.target.closest('[data-vh1],[data-vh2]'); if (vh) { vhWaehlen(vh.hasAttribute('data-vh1') ? 1 : 2, vh.dataset.vh1 ?? vh.dataset.vh2); return; }
     const st = e.target.closest('[data-star]'), hl = e.target.closest('[data-heal]');
     if (st) { const item = inventory[st.dataset.star]; if (!item) return;
         const s0 = item.stars || 0, cost = starGemCost(s0);

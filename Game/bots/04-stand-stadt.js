@@ -164,6 +164,11 @@ function botHeroCare(bot) {                               // like a player in th
             if (!heroDoSkill(bot.id, h.id, k)) break;
         }
     }
+    if (!bot.mensch) botVhCare(bot.id, b);
+}
+function botVhCare(botId, b) {                            // Verteidigungs-Helden in der Mauer: ihr bester Held (ab Mauer 5 dazu der zweitbeste) – wie du
+    const L = botBld(botId, 'wall'), h1 = L >= 1 ? vhBest(botId) : null, soll = [h1, h1 && L >= VH_ZWEIT_MAUER ? vhBest(botId, h1) : null];
+    if (!Array.isArray(b.vh) || b.vh[0] !== soll[0] || b.vh[1] !== soll[1]) { b.vh = soll; vhMem = null; }
 }
 function botHeroLikes(bot) {                              // what their heroes should be good at: the moment first (the middle when they hold part of it, the ruler with a bounty on him), then their style
     const r = rulerOwner(), mid = [...botOwnedIslands[bot.id] || []].some(id => midZoneIds.has(id));

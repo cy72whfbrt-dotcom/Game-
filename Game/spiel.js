@@ -1112,7 +1112,8 @@ function effectiveDefense(island) {
                                     : (baseDefenseForLevel(level) * (1 + (botMults(owner).armorPct || 0) / 100) + garrison * (botMults(owner).defensePct || 0) / 100) * (1 + botBld(owner, 'wall') * 2 / 100)) * titleMult(owner, 'defense');
     const kk = sw ? sw.kk : AUF ? AUF.kampf(owner, 'd') : 1;       // Truppen-Stufe + Forschung (Paket D): Besatzung UND Verteidigung zählen × Kampfkraft – das Mehr steckt hier
     const vp = typeof verstDefPlus !== 'undefined' && verstDefPlus[island.id] || 0;   // Verstärkung: jeder Helfer mit seinen eigenen Werten
-    return Math.max(0, Math.round(def * kk + garrison * (kk - 1) + vp));
+    const vh = sw ? Math.round(garrison * sw.va / 100) + Math.min(sw.vg, garrison) : vhPlus(vhFx(owner), garrison);   // Verteidigungs-Helden aus der Mauer (Zuschauer: laut Spähbericht)
+    return Math.max(0, Math.round(def * kk + garrison * (kk - 1) + vp + vh));
 }
 // Where every point of a fight comes from - for the battle report, line by line with its source.
 function defenseParts(island) {
@@ -1133,11 +1134,13 @@ function defenseParts(island) {
         out.push(['Forschung Verteidigung', Math.round((vor + g) * (kk - 1)), '+' + Math.round((kk - 1) * 100) + ' % auf Besatzung und Verteidigung']); }
     const vp = typeof verstDefPlus !== 'undefined' && Math.round(verstDefPlus[island.id] || 0);
     if (vp) out.push(['Verstärkung: eigene Werte', vp, 'jeder Helfer mit seiner Fähigkeit, seinem Titel und seiner Forschung']);
+    const vx = owner === 'player' || !fremdGeheim() ? vhFx(owner) : null, vh = vhPlus(vx, g);   // Verteidigungs-Held aus der Mauer
+    if (vh) out.push([vhName(vx), vh, 'Mauer · Angriff +' + heroNum(vx.atk) + ' % der Besatzung' + (heroGefOf(vx, g) ? ' · Gefolge +' + fmtCompact(heroGefOf(vx, g)) : '')]);
     out[0][1] += effectiveDefense(island) - out.reduce((a, q) => a + q[1], 0);        // rounding goes to the base line
     return out;
 }
 // what each side brought: level, title, the 4 equipped items, the hero who led (stars, rage, every bonus) and the city - kept with the report
-function heroReportOf(hx) { return hx && hx.id ? { id: hx.id, q: hx.q, fired: !!hx.fired, skill: hx.skill || null, lines: hx.lines || [], pair: hx.pair || null,
+function heroReportOf(hx) { return hx && hx.id ? { id: hx.id, q: hx.q, fired: !!hx.fired, skill: hx.skill || null, lines: hx.lines || [], pair: hx.pair || null, ...(hx.vh ? { vh: 1 } : {}), ...(hx.zweit ? { zweit: 1 } : {}),   // (vh: Verteidigungs-Held aus der Mauer)
     h2: hx.h2 ? { id: hx.h2.id, q: hx.h2.q, zweit: 1, lines: hx.h2.lines || [] } : null,
     extra: (hx.extra || []).map(e => ({ id: e.id, q: e.q, fired: !!e.fired, zweit: e.zweit ? 1 : 0, skill: e.skill || null, lines: e.lines || [] })) } : null; }
 function fighterSnapshot(who, hx) {
@@ -2031,7 +2034,10 @@ function spaeherBlick(owner, island) {
     o.gear = {}; for (const k of Object.keys(EQUIPMENT_DEFS)) { const it = botItem(b, k); o.gear[k] = it ? [it.rarity, it.level, it.stars] : null; }
     o.auf = AUF ? AUF.spaeherMehr(owner) : null;                             // Burg, Rohstoffe, Forschung
     const m = botMults(owner);                                               // Abwehr-Werte (Zuschauer: effectiveDefense rechnet damit, bis wieder gespäht wird)
-    o.k = { ar: Math.round((m.armorPct || 0) * 100) / 100, dp: Math.round((m.defensePct || 0) * 100) / 100, wall: o.wall, kk: Math.round((AUF ? AUF.kampf(owner, 'd') : 1) * 1e4) / 1e4 };
+    const vx = vhFx(owner);                                                  // Verteidigungs-Helden aus der Mauer (wer gerade zu Hause ist)
+    o.k = { ar: Math.round((m.armorPct || 0) * 100) / 100, dp: Math.round((m.defensePct || 0) * 100) / 100, wall: o.wall, kk: Math.round((AUF ? AUF.kampf(owner, 'd') : 1) * 1e4) / 1e4,
+            va: vx ? vx.atk : 0, vg: vx ? vx.gef : 0 };
+    o.vh = heroReportOf(vx);
     o.who = neutralId(owner);
     if (island) { o.bl = islandLevels[island.id] || 1; o.teile = defenseParts(island).map(q => [q[0], Math.round(q[1]), q[2] || '']); }
     return o;
@@ -2046,7 +2052,7 @@ function spaehWerte(owner) {
     }
     const k = spaehWerteMem.by[neutralId(owner)]; if (!k) return null;
     const n = v => Number.isFinite(v) ? v : 0;
-    return { ar: n(k.ar), dp: n(k.dp), wall: n(k.wall), kk: Number.isFinite(k.kk) && k.kk > 0 ? k.kk : 1 };
+    return { ar: n(k.ar), dp: n(k.dp), wall: n(k.wall), kk: Number.isFinite(k.kk) && k.kk > 0 ? k.kk : 1, va: n(k.va), vg: n(k.vg) };
 }
 // Spähbericht vom Weltrechner (Zuschauer): kam er vor dem eigenen Späher an, wartet er hier (nur im Speicher), sonst füllt er
 // den wartenden Eintrag im Kampflog
@@ -2102,6 +2108,7 @@ function spaeherBlickHtml(s) {
         zeile('Friedensschild', s.schild ? 'aktiv' : 'keiner') +
         (s.wall !== undefined ? zeile('Mauer', 'Stufe ' + s.wall) : '') +
         (s.held ? zeile('Helden', s.held.length ? s.held.map(h => escapeHtml(h[0]) + stern(h[1])).join(', ') : 'keine') : '') +
+        (s.vh !== undefined ? zeile('Verteidigungs-Held', s.vh && heroById(s.vh.id) ? escapeHtml(heroTag(Object.assign({}, s.vh, { id2: s.vh.h2 && s.vh.h2.id }))) : 'keiner') : '') +
         (A.burg ? zeile('Burg', 'Stufe ' + A.burg + (R ? ' · schützt ' + fmtCompact(R.schutz) + ' je Rohstoff' : '')) : '') +
         (R ? zeile('Gold', beute(R.c)) + (R.h !== undefined ? zeile('Holz', beute(R.h)) + zeile('Stein', beute(R.s)) + zeile('Eisen', beute(R.e)) : '') : '') +
         (s.sk ? zeile('Fähigkeiten', 'Angriff ' + s.sk.attack + ' · Vert. ' + s.sk.defense + ' · Truppen ' + s.sk.troops) : '') +
@@ -2167,6 +2174,7 @@ function resolveAttack(attack) {
     attack._vk = vk;                                                  // (bricht der Kampf mit einem Fehler ab: kampfAufraeumen trennt sie wieder)
     attack._vkOwner = targetOwner;                                    // (Besitzer vor dem Kampf: so erkennt das Aufräumen eine schon eroberte Insel)
     const originalEnemyTroops = effectiveTroops(target);
+    const dHx = targetOwner ? vhFx(targetOwner) : null;               // Verteidigungs-Helden aus seiner Mauer (stecken schon in effectiveDefense)
     const fullDefense = effectiveDefense(target), originalEnemyDefense = Math.round(fullDefense * (1 - heroDefCut(attack))), defParts = heroDefPart(defenseParts(target), attack, fullDefense);
     const atkParts = attackParts('player', attack.rawTroops, atkBonus, myTroops, attack.hero, attack), hosp = attack.hx ? Math.min(100, hospitalPct() + attack.hx.hosp) : undefined;
     const totalStrength = originalEnemyTroops + originalEnemyDefense;
@@ -2182,7 +2190,7 @@ function resolveAttack(attack) {
     const dTeile = typeof verstAnteile === 'function' ? verstAnteile(vk, targetOwner, originalEnemyTroops + fullDefense) : null;   // Verteidiger: Besitzer + Helfer nach Anteil
     const dTeil = w => { const t = dTeile && dTeile.find(x => x[0] === w); return t ? t[1] : 1; }, atkWeg = won ? sentLoss : attack.rawTroops - retreatSurvivorsPreview(attack);
     if (targetOwner && targetOwner !== 'player')                    // the defending bot's "Verteidigung: Gold": every attacker its garrison really kills pays out (nur sein Anteil – die Helfer: unten)
-        botCoins[targetOwner] = (botCoins[targetOwner] || 0) + Math.round(atkWeg * dTeil(targetOwner) * botGoldRate(targetOwner, 'defenseGold'));
+        botCoins[targetOwner] = (botCoins[targetOwner] || 0) + Math.round(atkWeg * dTeil(targetOwner) * defGoldRateHx(targetOwner, dHx));
     let retreatSurvivors = 0, woundedAdded = 0;
     const plunder = won && targetOwner && targetOwner !== 'player' ? plunderOf(targetOwner, capitalHolds) : null;   // Beute: ein kleiner Teil über seinem Burg-Schutz (nur an der Hauptstadt – Turm: nichts; Hauptstadt: alles)
     if (plunder) { plunderMove(targetOwner, null, plunder.loot, plunder.roh); inboxAdd({ src: 'fight', coins: plunder.loot }); if (plunder.roh && AUF) AUF.rohDazu('player', plunder.roh); }   // (das Gold wartet im Abholfach)
@@ -2227,7 +2235,7 @@ function resolveAttack(attack) {
         // base for next time. And a fraction of the attacker's
         // "dead" troops actually survive and retreat back to the
         // base the attack was launched from.
-        defenderCasualties = Math.min(originalEnemyTroops, myTroops);
+        defenderCasualties = Math.round(Math.min(originalEnemyTroops, myTroops) * (1 - (dHx ? dHx.loss : 0) / 100));   // (sein Verteidigungs-Held: weniger Verluste)
         if (targetOwner) {
             islandTroops[target.id] = Math.max(0, (islandTroops[target.id] || 0) - defenderCasualties);
         } else if (bossHere) {
@@ -2259,7 +2267,7 @@ function resolveAttack(attack) {
     if (vs) for (const h of vs.helfer) h.gold = payGold(h.w, atkWeg * dTeil(h.w) * defGoldRate(h.w));   // "Verteidigung: Gold" der Helfer: ihr Anteil mit IHREM Satz
     const verstInfo = vs ? { verst: vs.helfer, eigen: vs.eigen } : {};
     const defWeg = vs ? vs.eigenWeg : defenderCasualties;
-    if (targetOwner && targetOwner !== 'player') enemyWounded = botHospitalTake(targetOwner, defWeg);   // the bot's Krankenhaus takes part of ITS fallen
+    if (targetOwner && targetOwner !== 'player') enemyWounded = botHospitalTake(targetOwner, defWeg, dHx ? Math.min(100, botHospitalPct(targetOwner) + dHx.hosp) : undefined);   // the bot's Krankenhaus takes part of ITS fallen
     // XP for troops that died in the clash either way: a win kills
     // the whole enemy force, a loss costs your whole attack force
     noteBattle(target.id, won ? originalEnemyTroops : attack.rawTroops - retreatSurvivors, won ? targetOwner : 'player');
@@ -2301,17 +2309,17 @@ function resolveAttack(attack) {
         retreatSurvivors,
         defenderName: targetOwner ? botById[targetOwner].name : null, defenderId: targetOwner && targetOwner !== 'player' ? targetOwner : null,
         atkParts, defParts, enemyWounded, plunder: plunder ? plunder.loot : 0, plunderSafe: plunder ? plunder.safe : 0, plunderRoh: plunder && plunder.roh || null, capitalHolds,
-        atkGear: fighterSnapshot('player', attack.hx), defGear: targetOwner && targetOwner !== 'player' ? fighterSnapshot(targetOwner) : null,
+        atkGear: fighterSnapshot('player', attack.hx), defGear: targetOwner && targetOwner !== 'player' ? fighterSnapshot(targetOwner, dHx) : null,
         won,
         remaining, ...verstInfo
     });
     if (vs) verstBerichte(vs, { type: 'botAttack', botName: profileName.value || 'Spieler', botId: 'player', targetId: target.id, myTroops, atkRaw: attack.rawTroops, atkBonus,
-        atkGear: fighterSnapshot('player', attack.hx), defGear: fighterSnapshot(targetOwner), enemyTroops: originalEnemyTroops, enemyDefense: originalEnemyDefense, fallen: defWeg, wounded: 0,
+        atkGear: fighterSnapshot('player', attack.hx), defGear: fighterSnapshot(targetOwner, dHx), enemyTroops: originalEnemyTroops, enemyDefense: originalEnemyDefense, fallen: defWeg, wounded: 0,
         won, capitalHolds, defName: (botById[targetOwner] || {}).name, ...verstInfo });
     if (window.WELT && targetOwner && botById[targetOwner] && botById[targetOwner].mensch) {   // du hast einen echten Spieler angegriffen: sein Bericht
         const meinName = profileName.value || 'Spieler';
         WELT.bericht(targetOwner, { type: 'botAttack', botName: meinName, botId: 'player', targetId: target.id, myTroops, atkRaw: attack.rawTroops, atkBonus: atkBonus,
-            atkGear: fighterSnapshot('player', attack.hx), defGear: fighterSnapshot(targetOwner), enemyTroops: originalEnemyTroops, enemyDefense: originalEnemyDefense,
+            atkGear: fighterSnapshot('player', attack.hx), defGear: fighterSnapshot(targetOwner, dHx), enemyTroops: originalEnemyTroops, enemyDefense: originalEnemyDefense,
             wounded: enemyWounded || 0, fallen: defWeg, won, capitalHolds, defGold: 0, plunder: plunder ? plunder.loot : 0, plunderSafe: plunder ? plunder.safe : 0, plunderRoh: plunder && plunder.roh || null, ...verstInfo },
             capitalHolds ? meinName + ' hat deine Hauptstadt geplündert (' + (beuteText(plunder) || 'nichts über dem Schutz') + ') – die Garnison ist gefallen, die Stadt brennt, aber sie hält.' : won ? meinName + ' hat deine Basis ' + islandTitle(target) + ' erobert!' : 'Verteidigung erfolgreich – ' + meinName + ' bei ' + islandTitle(target) + ' zurückgeschlagen.');
     }
@@ -4852,10 +4860,10 @@ function killGoldRate(who, hx) {               // "Angriff: Gold" per enemy kill
     return (who === 'player' ? goldPerKillRate() : botGoldRate(who, 'attackGold')) * (1 + g) + g * WIRTSCHAFT_KOSTEN;
 }
 function defGoldRate(who) { return who === 'player' ? (skills.defenseGold || 0) * SKILL_DEFS.defenseGold.rate : botGoldRate(who, 'defenseGold'); }
+function defGoldRateHx(who, hx) { const g = hx ? (hx.gold || 0) / 100 : 0; return defGoldRate(who) * (1 + g) + g * WIRTSCHAFT_KOSTEN; }   // "Verteidigung: Gold" + der Held des Verteidigers (wie killGoldRate)
 function payGold(who, n) { n = Math.round(n); if (n <= 0 || !who) return 0; if (who === 'player') inboxAdd({ src: 'fight', coins: n }); else botCoins[who] = (botCoins[who] || 0) + n; return n; }
 function fieldGold(aWho, dWho, fb, aHx, dHx) {  // fights in the open pay like fights for bases: the attacker per enemy killed, the defender per attacker killed (+ each side's hero)
-    const g = dHx ? (dHx.gold || 0) / 100 : 0;
-    return { a: payGold(aWho, fb.dLoss * killGoldRate(aWho, aHx)), d: payGold(dWho, fb.aLoss * (defGoldRate(dWho) * (1 + g) + g * WIRTSCHAFT_KOSTEN)) };
+    return { a: payGold(aWho, fb.dLoss * killGoldRate(aWho, aHx)), d: payGold(dWho, fb.aLoss * defGoldRateHx(dWho, dHx)) };
 }
 // "Geschwindigkeit" skill: shortens the production tick interval.
 function productionTickMs() {
@@ -5958,7 +5966,7 @@ function kampfGearHtml(g) { if (!g) return '';
             (rd ? '<span class="lvl">' + it[2] + '</span>' + (it[3] ? '<span class="stars">' + icon('star').repeat(it[3]) + '</span>' : '') : '') + '</span></span>'; }).join('');
     const heroes = (g.hx ? [g.hx, ...(g.hx.h2 ? [g.hx.h2] : [])] : []).map(x => { const hd = heroById(x.id); if (!hd) return ''; const rd = RARITY_DEFS[hd.r];   // who led (Haupt- und Zweitheld), his stars, whether the rage fired, every bonus
             return '<div class="logHero" style="--hc:' + rd.color + '"><span class="ghero">' + heroImg(hd.id) + '<span><b>' + hd.name + ' <small>' + heroStarTxt(x.q) + ' · ' + rd.label + '</small></b>' +
-                '<small>' + (x.zweit ? 'Zweitheld · Werte und passive Fähigkeiten zu ' + Math.round(HERO_ZWEIT * 100) + ' %' : x.fired ? '<em class="logHeroFire">' + escapeHtml(x.skill || '') + ' gezündet</em>' : 'Aktive Fähigkeit nicht gezündet') + '</small></span></span>' +
+                '<small>' + (x.zweit ? 'Zweitheld · Werte und passive Fähigkeiten zu ' + Math.round(HERO_ZWEIT * 100) + ' %' : x.vh ? 'Verteidigungs-Held · aus der Mauer' : x.fired ? '<em class="logHeroFire">' + escapeHtml(x.skill || '') + ' gezündet</em>' : 'Aktive Fähigkeit nicht gezündet') + '</small></span></span>' +
                 (x.lines || []).map(l => '<div class="logLine buff"><span>' + escapeHtml(l[0]) + '</span><span>' + escapeHtml(l[1]) + '</span></div>').join('') + '</div>'; }).join('') +
         (g.heroes || []).map(x => { const hd = heroById(x[0]); return hd ? '<span class="ghero" style="--hc:' + RARITY_DEFS[hd.r].color + '">' + heroImg(hd.id) + '<span><b>' + hd.name + '</b><small>Stufe ' + x[1] + '</small></span></span>' : ''; }).join('');   // (older reports)
     if (g.heroOnly) return '<div class="logGear"><div class="logGearHeroes">' + heroes + '</div></div>';
@@ -6211,7 +6219,7 @@ const kampflogUmbauen = (function () {
         const truppen = lines().find(l => textOf(l).startsWith('Truppen'));
         if (truppen) truppen.firstElementChild.firstChild.textContent = 'Truppen';
         const mitHeld = !!box.querySelector('.logGear .logHero:not(.kl-keinheld)');
-        if (!lines().some(l => textOf(l).startsWith('Held'))) (truppen || box.firstElementChild).insertAdjacentHTML('afterend', mitHeld ? zl('Held', 'dabei', '', 'steckt in „Eigene Werte“') : zl('Held', '+0', '', angr ? 'ohne Held' : 'zählt beim Verteidigen nicht'));
+        if (!lines().some(l => textOf(l).startsWith('Held'))) (truppen || box.firstElementChild).insertAdjacentHTML('afterend', mitHeld ? zl('Held', 'dabei', '', 'steckt in „Eigene Werte“') : zl('Held', '+0', '', angr ? 'ohne Held' : 'kein Verteidigungs-Held in der Mauer'));
         const sum = box.querySelector(':scope > .logSum');
         if (!lines().some(l => textOf(l).startsWith('Grundverteidigung')) && sum) sum.insertAdjacentHTML('beforebegin', zl('Grundverteidigung', '0', ' kl-null', 'zählt nur beim Besitzer der Basis'));
         const cas = lines().filter(l => l.classList.contains('logCasualty'));
@@ -6224,7 +6232,7 @@ const kampflogUmbauen = (function () {
         let hs = gear.querySelector('.logGearHeroes');
         if (!hs) { hs = el('<div class="logGearHeroes"></div>'); const meta = gear.querySelector('.logGearMeta'); meta ? gear.insertBefore(hs, meta) : gear.appendChild(hs); }
         const helden = hs.querySelectorAll('.logHero');
-        if (helden.length === 0) hs.insertAdjacentHTML('beforeend', leerHeld('Kein Hauptheld', angr ? 'Ohne Held losgeschickt' : 'Beim Verteidigen einer Basis zählt kein Held'));
+        if (helden.length === 0) hs.insertAdjacentHTML('beforeend', leerHeld('Kein Hauptheld', angr ? 'Ohne Held losgeschickt' : 'Kein Verteidigungs-Held in der Mauer (oder er war unterwegs)'));
         if (hs.querySelectorAll('.logHero').length === 1) hs.insertAdjacentHTML('beforeend', leerHeld('Kein Zweitheld', 'Zweitheld · Werte und passive Fähigkeiten zu 50 %'));
         hs.querySelectorAll('.logHero').forEach(h => {                       // jeder Heldenplatz: dieselben 7 Zeilen
             const L = [...h.querySelectorAll(':scope > .logLine')].map(l => { const r = [textOf(l), l.lastElementChild.textContent.trim()]; l.remove(); return r; });
@@ -6269,7 +6277,7 @@ const kampflogUmbauen = (function () {
         side.querySelectorAll(':scope > .logLine.buff').forEach(l => l.remove());
         const schon = angr ? 0 : Array.isArray(e.defParts) && e.defParts.length ? e.defParts[0][1] || 0 : (e.enemyDefense || 0) - andere.reduce((x, p) => x + (p.plus || 0), 0);   // (Grundverteidigung bzw. Verteidigung steht schon als eigene Zeile da – ohne Bericht-Teile steckt darin auch das Plus der Helfer)
         const eig = gesamt - staerkeAndere - (erster.n || 0) - schon;
-        if (eig && tr) tr.insertAdjacentHTML('afterend', zl('Eigene Werte', (eig > 0 ? '+' : '−') + fmt(Math.abs(eig)), ' buff', angr ? 'Held, Fähigkeit Angriff, Titel, Forschung' : 'Rüstung, Fähigkeit Verteidigung, Mauer, Titel, Forschung'));
+        if (eig && tr) tr.insertAdjacentHTML('afterend', zl('Eigene Werte', (eig > 0 ? '+' : '−') + fmt(Math.abs(eig)), ' buff', angr ? 'Held, Fähigkeit Angriff, Titel, Forschung' : 'Rüstung, Fähigkeit Verteidigung, Mauer, Mauer-Held, Titel, Forschung'));
         if (angr && erster.fallen !== undefined) { const c = side.querySelector(':scope > .logCasualty:not(.wounded)'); if (c) c.lastElementChild.textContent = '−' + fmt(erster.fallen);
             const w = side.querySelector(':scope > .logCasualty.wounded'); if (w) { if (erster.wounded) w.lastElementChild.textContent = fmt(erster.wounded); else w.remove(); } }   // (nur seine – nicht die der ganzen Rally)
         if (!angr && e.type === 'attack') { const weg = andere.reduce((x, p) => x + (p.fallen || 0) + (p.wounded || 0), 0), c = side.querySelector(':scope > .logCasualty:not(.wounded)');   // Besitzer: ohne die Verluste der Helfer (die stehen in ihren Fenstern)
@@ -6300,15 +6308,16 @@ const kampflogUmbauen = (function () {
         const vert = teile ? teile.map((q, i) => zl(escapeHtml(q[0]), (i ? (q[1] < 0 ? '−' : '+') : '') + fmt(Math.abs(q[1])), i ? (q[1] < 0 ? ' buff malus' : ' buff') : '', escapeHtml(q[2] || ''))).join('')
             : zl('Grundverteidigung', fmt(e.defense), '', s ? 'gesamt – älterer Bericht ohne Aufteilung, neu spähen' : e.wartet ? 'Bericht kommt gleich …' : 'gesamt');
         const items = s && s.gear ? Object.keys(EQUIPMENT_DEFS).map(k => { const g = s.gear[k]; return g ? [k, g[0], g[1], g[2] || 0] : [k, -1, 0, 0]; }) : null;   // leerer Platz = nichts angelegt
-        const gear = items ? kampfGearHtml({ lvl: fmt(s.lvl), title: s.titel, items, skills: [], city: [] }) : leerGear(s ? 'Spieler-Stufe ' + fmt(s.lvl) : e.wartet ? 'Bericht kommt gleich …' : 'Ohne Herrn', false);
+        const vhd = s && s.vh && heroById(s.vh.id) ? s.vh : null;                 // der Verteidigungs-Held aus der Mauer (wer beim Spähen zu Hause war)
+        const gear = items ? kampfGearHtml({ lvl: fmt(s.lvl), title: s.titel, items, skills: [], city: [], hx: vhd }) : leerGear(s ? 'Spieler-Stufe ' + fmt(s.lvl) : e.wartet ? 'Bericht kommt gleich …' : 'Ohne Herrn', false);
         const box = el('<div class="logSide"><div class="logSideLabel">Gespäht · ' + escapeHtml(name) + '</div>' +
             zl('Gespäht', timeAgoLabel(e.at || 0) + (alt ? ' – neu spähen?' : ''), alt ? ' kl-alt' : '') +
-            zl('Truppen', fmt(e.troops)) + (Number.isFinite(e.verst) ? zl('Verstärkung', fmt(e.verst), '', 'Bündnis-Truppen in der Basis – verteidigen mit') : '') + zl('Held', '+0', '', 'zählt beim Verteidigen nicht') + vert +
+            zl('Truppen', fmt(e.troops)) + (Number.isFinite(e.verst) ? zl('Verstärkung', fmt(e.verst), '', 'Bündnis-Truppen in der Basis – verteidigen mit') : '') + (teile && teile.some(q => String(q[0]).startsWith('Held')) ? '' : zl('Held', '+0', '', s && s.vh !== undefined ? 'kein Verteidigungs-Held in der Mauer' : 'zählt beim Verteidigen nicht')) + vert +
             '<div class="logSum"><span>Gesamt</span><span>' + fmt((e.troops || 0) + (e.verst || 0) + (e.defense || 0)) + '</span></div>' + '<div class="logCasualty kl-null"><span>Gefallen</span><span>–</span></div>' + zl('Geflohen', '–', ' kl-null') +
             gear + '</div>');
         normal(box, false, {}, 0);
         box.querySelector('.kl-rss').remove();
-        const kh = box.querySelector('.kl-keinheld small'); if (kh && L['Helden']) kh.textContent = 'Zuhause: ' + v('Helden') + ' – zählen beim Verteidigen nicht';
+        const kh = box.querySelector('.kl-keinheld small'); if (kh && L['Helden']) kh.textContent = s && s.vh !== undefined ? 'Kein Verteidigungs-Held in der Mauer · Zuhause: ' + v('Helden') : 'Zuhause: ' + v('Helden') + ' – zählen beim Verteidigen nicht';   // (älterer Bericht: vor den Mauer-Helden)
         const meta = box.querySelector('.logGearMeta');
         if (meta) meta.textContent = s && s.sk ? 'Fähigkeiten Angriff ' + s.sk.attack + ' · Vert. ' + s.sk.defense + ' · Truppen ' + s.sk.troops
             : s ? 'Ausrüstung und Fähigkeiten unbekannt (älterer Bericht) – neu spähen' : e.wartet ? 'Ausrüstung und Fähigkeiten: der Bericht kommt gleich' : 'Ohne Herrn: keine Ausrüstung, keine Helden';
@@ -9033,6 +9042,49 @@ function heroDoSwap(who, from, to, n) {              // übrige Splitter eines H
 }
 function heroDoSkill(who, id, k) { const s = heroSt(who, id); if (!s || !s.own || !heroFree(s) || s.sk[k] >= 5) return false; s.sk[k]++; heroSave(who); return true; }
 function heroCanDo(who, id) { const h = heroById(id), s = heroSt(who, id); if (!h || !s) return false; return s.own ? heroFree(s) > 0 || (s.q < HERO_MAXQ && s.sh >= heroStepCost(h, s.q)) : s.sh >= HERO_UNLOCK[h.r]; }
+// ---- Verteidigungs-Helden (Mauer, 6.10.): in der Mauer eingetragen verteidigen sie JEDE eigene Basis – Hauptheld ab Mauer 1,
+// Zweitheld ab Mauer 5 (zu 50 %). Gleiche Rechnung wie beim Angriff (Angriff, Verluste, Krankenhaus, Gold, Gefolge – ohne Wut).
+// Wer gerade unterwegs ist (Angriff, Armee, Feld, Rally), verteidigt nicht; zurück → verteidigt wieder.
+const VH_ZWEIT_MAUER = 5;
+function vhSoll(who) {                              // [Haupt-, Zweitheld] wie eingetragen (dein Eintrag steht in der Stadt)
+    let v = null; try { v = who === 'player' ? loadCity().vh : (loadBotState()[who] || {}).vh; } catch (e) { v = null; }
+    return Array.isArray(v) ? [heroById(v[0]) ? v[0] : null, heroById(v[1]) ? v[1] : null] : [null, null];
+}
+function vhMauer(who) { return who === 'player' ? cityLevelSafe('wall') : botBld(who, 'wall'); }
+function vhRechnen(who) {
+    const [a, b] = vhSoll(who), L = vhMauer(who), ctx = { fight: 1 }, frei = id => id && heroOwned(who, id) && !heroBusy(who, id) ? id : null;
+    const h1 = L >= 1 ? frei(a) : null, h2 = L >= VH_ZWEIT_MAUER && b !== a ? frei(b) : null;
+    let fx = null;
+    if (h1) fx = heroDuo(who, heroFx(who, h1, ctx, false), h2, ctx);
+    else if (h2) { fx = heroFx(who, h2, ctx, false, null, HERO_ZWEIT); if (fx) fx.zweit = 1; }   // der Hauptheld ist unterwegs: der Zweitheld allein, zu 50 %
+    if (fx) fx.vh = 1;
+    return fx;
+}
+let vhMem = null;                                   // (effectiveDefense fragt sehr oft: je Sekunde und Marsch-Stand einmal rechnen)
+function vhFx(who) {
+    if (!who || !(who === 'player' || botById[who])) return null;
+    try {
+        const k = Math.floor(Date.now() / 1000) + '|' + pendingAttacks.length + '|' + pendingSends.length + '|' + armies.length;
+        if (!vhMem || vhMem.k !== k) vhMem = { k, by: {} };
+        return who in vhMem.by ? vhMem.by[who] : (vhMem.by[who] = vhRechnen(who));
+    } catch (e) { return null; }                    // (die ersten Schritte beim Laden: Märsche und Stadt sind noch nicht da)
+}
+function vhPlus(fx, g) { return fx ? Math.round(g * fx.atk / 100) + heroGefOf(fx, g) : 0; }   // was die Helden der Besatzung dazugeben: Angriff % + Gefolge
+function vhName(fx) { const h = heroById(fx.id), h2 = fx.id2 && heroById(fx.id2); return 'Held ' + (h ? h.name + ' ' + heroStarTxt(fx.q) : '') + (h2 ? ' & ' + h2.name : ''); }
+function vhSetzen(who, h1, h2) {                    // eintragen (prüft: eigener Held, Mauer-Stufe) → true, wenn es gilt
+    const L = vhMauer(who), ok = id => id && heroById(id) && heroOwned(who, id) ? id : null;
+    const a = L >= 1 ? ok(h1) : null, b = a && L >= VH_ZWEIT_MAUER && h2 !== a ? ok(h2) : null;
+    if ((h1 && !a) || (h2 && !b)) return false;
+    if (who === 'player') { const c = loadCity(); c.vh = [a, b]; saveCity(); }
+    else { const s = loadBotState()[who]; if (!s) return false; s.vh = [a, b]; saveBotState(); }
+    vhMem = null; return true;
+}
+function vhBest(who, ohne) {                        // der beste eigene Held fürs Verteidigen (Mitspieler): Angriff + weniger Verluste + Krankenhaus
+    let best = null, bs = -1;
+    for (const h of HEROES) { if (h.id === ohne || !heroOwned(who, h.id)) continue; const f = heroFx(who, h.id, { fight: 1 }, false); if (!f) continue;
+        const sc = f.atk + f.loss + f.hosp / 2 + heroPower(who, h.id) / 1e6; if (sc > bs) { bs = sc; best = h.id; } }
+    return best;
+}
 function heroTag(hx) { if (!hx) return ''; const h = heroById(hx.id), h2 = hx.id2 && heroById(hx.id2); return h ? h.name + ' ' + heroStarTxt(hx.q) + (h2 ? ' & ' + h2.name + (hx.pair ? ' (Paar)' : '') : '') + (hx.fired ? ' · ' + hx.skill + ' gezündet' : '') : ''; }   // one line for the short reports
 var previewHero = null, nextAttackHero = null, previewHero2 = null, nextAttackHero2 = null;
 // ---- the Heldenhalle screen: a grid of tall rarity cards → one hero with figure, stars, skills and values ----
@@ -9309,6 +9361,7 @@ function cityExtraHtml(id, lvl) {
     if (id === 'heroes') { const up = HEROES.filter(h => heroCanDo('player', h.id)).length;   // the way into the hero screen
         return '<button type="button" class="btn btn--primary btn--grow hh-open" data-hero-open>' + icon('profile') + '<span>Helden öffnen</span>' + (up ? '<em class="hh-badge">' + up + '</em>' : '') + '</button>'; }
     if (id === 'embassy' && lvl && typeof verstHtml === 'function') return verstHtml();   // Botschaft: Verstärkung (buendnis.js)
+    if (id === 'wall') return vhHtml(lvl);                                                 // Verteidigungs-Helden
     if (id === 'forge' && lvl) {                   // pick a slot, then any piece you own in it - equipped or in the chest
         const slots = Object.keys(EQUIPMENT_DEFS), cap = Math.min(STAR_MAX, lvl);
         const items = Object.values(inventory).filter(it => it.slot === forgeSlot)
@@ -9328,10 +9381,35 @@ function cityExtraHtml(id, lvl) {
     }
     return '';
 }
+// Mauer: die zwei Plätze für die Verteidigungs-Helden (Hauptheld ab Mauer 1, Zweitheld ab Mauer 5) – jederzeit änderbar
+function vhHtml(lvl) {
+    const [a, b] = vhSoll('player'), fx = vhFx('player'), hs = HEROES.filter(h => heroOwned('player', h.id)).sort((x, y) => y.r - x.r || heroSt('player', y.id).q - heroSt('player', x.id).q);
+    const knoepfe = (k, cur, ohne) => '<div class="seg hero-seg chips-quer">' + '<button type="button" data-vh' + k + '=""' + (!cur ? ' class="on"' : '') + '>Keiner</button>' +
+        hs.filter(h => h.id !== ohne).map(h => '<button type="button" data-vh' + k + '="' + h.id + '"' + (cur === h.id ? ' class="on"' : '') + ' style="--hc:' + RARITY_DEFS[h.r].color + '">' + heroImg(h.id) + h.name +
+            '<small>' + (heroBusy('player', h.id) ? 'unterwegs' : icon('star') + heroStarNum(heroSt('player', h.id).q)) + '</small></button>').join('') + '</div>';
+    const weg = [a, b].filter(id => id && heroBusy('player', id)).map(id => heroById(id).name);
+    const stand = !lvl ? 'Baue die Mauer – dann verteidigt ein Held jede deiner Basen.' : !hs.length ? 'Du hast noch keinen Helden – schalte einen in der Heldenhalle frei.'
+        : (fx ? 'Verteidigt jetzt jede deiner Basen: ' + escapeHtml(heroTag(fx)) + '.' : a ? 'Gerade verteidigt keiner.' : 'Trag einen Helden ein – er verteidigt jede deiner Basen.') +
+          (weg.length ? ' ' + weg.join(' und ') + (weg.length > 1 ? ' sind' : ' ist') + ' unterwegs und verteidigt erst wieder, wenn ' + (weg.length > 1 ? 'sie' : 'er') + ' zurück ist.' : '');
+    return '<div class="vh-box" data-vh-box><div class="vh-kopf">' + icon('defense') + '<b>Verteidigungs-Helden</b></div><small class="vh-stand">' + stand + '</small>' +
+        (lvl && hs.length ? '<div class="vh-l">Hauptheld</div>' + knoepfe(1, a, null) +
+            '<div class="vh-l">Zweitheld · Werte und passive Fähigkeiten zu ' + Math.round(HERO_ZWEIT * 100) + ' %</div>' +
+            (lvl < VH_ZWEIT_MAUER ? '<small class="vh-zu">Ab Mauer ' + VH_ZWEIT_MAUER + '</small>' : a ? knoepfe(2, b, a) : '<small class="vh-zu">Erst einen Hauptheld eintragen</small>') : '') +
+        (fx ? '<div class="vh-werte">' + fx.lines.map(l => '<div class="logLine buff"><span>' + escapeHtml(l[0]) + '</span><span>' + escapeHtml(l[1]) + '</span></div>').join('') + '</div>' : '') + '</div>';
+}
+function vhWaehlen(k, id) {                        // 1: Hauptheld, 2: Zweitheld (ohne Hauptheld kein Zweitheld – wie beim Angriff)
+    const [a, b] = vhSoll('player'), h1 = k === 1 ? id || null : a, h2 = k === 2 ? id || null : (b === h1 ? null : b);
+    const z = h1 && cityLevelSafe('wall') >= VH_ZWEIT_MAUER ? h2 : null;
+    if (!vhSetzen('player', h1, z)) return;
+    alsBefehl('vheld', { h1, h2: z });
+    flashHint(h1 ? heroById(h1).name + (z ? ' und ' + heroById(z).name + ' verteidigen' : ' verteidigt') + ' jetzt jede deiner Basen.' : 'Kein Verteidigungs-Held mehr eingetragen.', 2500);
+    renderCitySheet();
+}
 var forgeSlot = 'weapon';
 document.getElementById('citySheet').addEventListener('click', e => {
     const fs = e.target.closest('[data-forge-slot]'); if (fs) { forgeSlot = fs.dataset.forgeSlot; renderCitySheet(); return; }
     if (e.target.closest('[data-hero-open]')) { openHeroHall(); return; }
+    const vh = e.target.closest('[data-vh1],[data-vh2]'); if (vh) { vhWaehlen(vh.hasAttribute('data-vh1') ? 1 : 2, vh.dataset.vh1 ?? vh.dataset.vh2); return; }
     const st = e.target.closest('[data-star]'), hl = e.target.closest('[data-heal]');
     if (st) { const item = inventory[st.dataset.star]; if (!item) return;
         const s0 = item.stars || 0, cost = starGemCost(s0);
@@ -14330,6 +14408,11 @@ if (window.WELT) {
             if (b.op === 'ziehen') { const t = zielPruefen(b.ziel); if (t) armyMove(a, t); }
             if (b.op === 'held') armySetHeroes(a, heldOk(b.held), heldOk(b.held2));   // Haupt- und Zweitheld: nur eigene, freie (armySetHeroes prüft)
             saveArmies(); requestRender();
+        },
+        vheld(who, b) {                               // Verteidigungs-Helden in der Mauer: nur eigene Helden, Zweitheld erst ab Mauer 5 (vhSetzen prüft)
+            if (zuOft(wm(who), 'vheld', 60, 60000)) { warnen(who, 'vheld', 'Verteidigungs-Helden über 60-mal pro Minute geändert – der Rest verfällt.'); return; }
+            const h1 = b.h1 ? heldOk(b.h1) : null, h2 = b.h2 ? heldOk(b.h2) : null;
+            if ((b.h1 && !h1) || (b.h2 && !h2) || !vhSetzen(who, h1, h2)) warnen(who, 'vheld', 'Verteidigungs-Held, den er nicht hat (oder Zweitheld unter Mauer ' + VH_ZWEIT_MAUER + ') – abgelehnt.');
         },
         beitreten(who, b) {                           // ein neuer Spieler braucht seinen Platz auf der Karte
             if (!botOwnedIslands[who]) window.__weltNeuerMensch(who);
