@@ -2,7 +2,8 @@
 // Gebäude-Fenster endet über der Leiste (Bauen-Knopf frei), unter festen Fußknöpfen (Burg „Bauen“, Held „Aufwerten“) schaut kein Inhalt
 // hervor, am Ende ist alles über dem Fußknopf; eigene Basis: steht frei (nicht unter Anleitung, Fenster oder Leiste), alle Knöpfe im
 // Fenster; Anleitung: „Schritt 1/7“ als Überzeile, höchstens 4 Textzeilen; HUD: Holz/Stein/Eisen am Desktop, Handy „Rohstoffe“;
-// ganz rausgezoomt ruhiger Nebel statt Wolken-Brei. Bilder in den Arbeitsordner (process.argv[3]), wenn angegeben.
+// ganz rausgezoomt ruhiger Nebel statt Wolken-Brei, die Gebiete schimmern durch, Wappen an der Hauptstadt; Umlaute in Versalien
+// (Reiter, Überzeilen) nicht abgeschnitten. Bilder in den Arbeitsordner (process.argv[3]), wenn angegeben.
 const { chromium, devices } = require('playwright');
 const path = require('path');
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x) : ''));
@@ -36,20 +37,27 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     // 2) Nebel ganz draußen: ruhige Fläche (kaum Helligkeits-Unterschiede), nah: Wolken
     const nebel = await ev(async () => {
       const warte = ms => new Promise(f => setTimeout(f, ms)), h = islandById[playerIslandId];
-      const streu = (wx, wy) => { const c = fogComp, g = c.getContext('2d'), z = mapState.zoom;   // 60×60 Punkte Nebel um die Welt-Stelle (wx, wy), ohne Stelle: Ecke oben links
-        const x = wx === undefined ? 0 : Math.max(0, Math.round((wx * z + mapState.offsetX) / innerWidth * c.width) - 30), y = wy === undefined ? 0 : Math.max(0, Math.round((wy * z + mapState.offsetY) / innerHeight * c.height) - 30);
-        const d = g.getImageData(x, y, Math.min(60, c.width - x), Math.min(60, c.height - y)).data;
+      const streu = (wx, wy, k = 60) => { const c = fogComp, g = c.getContext('2d'), z = mapState.zoom;   // k×k Punkte Nebel um die Welt-Stelle (wx, wy), ohne Stelle: Ecke oben links
+        const x = wx === undefined ? 0 : Math.max(0, Math.round((wx * z + mapState.offsetX) / innerWidth * c.width) - k / 2), y = wy === undefined ? 0 : Math.max(0, Math.round((wy * z + mapState.offsetY) / innerHeight * c.height) - k / 2);
+        const d = g.getImageData(x, y, Math.min(k, c.width - x), Math.min(k, c.height - y)).data;
         const L = []; for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 200) L.push(d[i] + d[i + 1] + d[i + 2]);
         const m = L.reduce((s, x) => s + x, 0) / Math.max(1, L.length); return { n: L.length, sd: Math.round(Math.sqrt(L.reduce((s, x) => s + (x - m) * (x - m), 0) / Math.max(1, L.length))) }; };
       flyTo(h.x, h.y, { zoom: 0.012, instant: true }); requestRender(); await warte(700); const nah = streu();
-      flyTo(h.x, h.y, { zoom: minZoom, instant: true }); requestRender(); await warte(1200); await new Promise(f => requestAnimationFrame(() => requestAnimationFrame(f))); const weit = streu(-FRAME_HALF * 0.6, -FRAME_HALF * 0.6);   // weit weg von der Hauptstadt, innerhalb des Kartenrands
-      const z = mapState.zoom, rx = (h.x * z + mapState.offsetX + 15) * dpr, ry = (h.y * z + mapState.offsetY) * dpr;   // goldener Ring (r 15) um die Hauptstadt
-      const px = ctx.getImageData(Math.round(rx) - 2, Math.round(ry) - 2, 5, 5).data; let ring = 0;
-      for (let i = 0; i < px.length; i += 4) ring = Math.max(ring, px[i] - px[i + 2]);
+      flyTo(h.x, h.y, { zoom: minZoom }); await warte(1500); requestRender(); await new Promise(f => requestAnimationFrame(() => requestAnimationFrame(f)));   // wie mit „−“: die Kamera darf die Hauptstadt über die Leiste schieben
+      const z = mapState.zoom, imBild = l => { const x = l.x * z + mapState.offsetX, y = l.y * z + mapState.offsetY; return x > 60 && x < innerWidth - 60 && y > 120 && y < innerHeight - 120; };
+      const fern = landmasses.filter(imBild).reduce((a, l) => Math.hypot(l.x - h.x, l.y - h.y) > Math.hypot(a.x - h.x, a.y - h.y) ? l : a);   // das Gebiet im Bild am weitesten weg (im Nebel)
+      const weit = streu(fern.x, fern.y, 6), c = fogComp.getContext('2d');
+      const fx = Math.round((fern.x * z + mapState.offsetX) / innerWidth * fogComp.width), fy = Math.round((fern.y * z + mapState.offsetY) / innerHeight * fogComp.height);
+      const f = c.getImageData(fx, fy, 1, 1).data, land = Math.abs(f[0] - 0x1a) + Math.abs(f[1] - 0x24) + Math.abs(f[2] - 0x33);   // Gebiet schimmert durch (nicht die leere Nebelfläche)
+      const hx = h.x * z + mapState.offsetX, hy = h.y * z + mapState.offsetY, px = ctx.getImageData(Math.round((hx + 22) * dpr) - 2, Math.round(hy * dpr) - 2, 5, 5).data; let ring = 0;
+      for (let i = 0; i < px.length; i += 4) ring = Math.max(ring, px[i] - px[i + 2]);                   // goldener Rand (r 22) um das Wappen an der Hauptstadt
+      const nav = document.getElementById('cornerButtons').getBoundingClientRect(), hud = document.getElementById('hud').getBoundingClientRect();
+      const frei = hy + 22 <= nav.top + 1 && hy - 22 >= hud.bottom - 1 && hx > 0 && hx < innerWidth;   // das Wappen nicht unter Leiste oder HUD
       const w = typeof nebelWeit === 'function' ? nebelWeit : () => -1;   // (alter Stand: keine Weit-Stufe)
-      return { nah, weit, ring, w0: w(0.012), w1: w(minZoom) };
+      return { nah, weit, land, ring, frei, wappen: [Math.round(hx), Math.round(hy)], leiste: Math.round(nav.top), w0: w(0.012), w1: w(minZoom) };
     });
-    ok(nebel.w0 === 0 && nebel.w1 === 1 && nebel.weit.n > 100 && nebel.weit.sd < nebel.nah.sd / 2 && nebel.ring > 60, art + ': ganz draußen ruhiger Nebel statt Wolken, goldener Ring an der Hauptstadt', nebel);
+    ok(nebel.w0 === 0 && nebel.w1 === 1 && nebel.weit.n >= 30 && nebel.weit.sd < 12 && nebel.weit.sd < nebel.nah.sd / 2, art + ': ganz draußen ruhiger Nebel statt Wolken', nebel);
+    ok(nebel.land > 40 && nebel.ring > 60 && nebel.frei, art + ': ganz draußen Gebiete unter dem Nebel zu sehen, Wappen mit goldenem Rand an der Hauptstadt (frei)', nebel);
     await bild('nebel_weit');
     // 3) eigene Basis: frei sichtbar, alle Knöpfe im Fenster
     const basis = await ev(async () => {
@@ -100,6 +108,25 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       closeHeroHall(); return o;
     });
     ok(held.ohne || !held.scroll || held.unten, art + ': Held – „Aufwerten“ bis an den Rand, nichts schaut darunter hervor', held);
+    // 6) Umlaute in Versalien (Reiter „Übersicht“, Überzeile „Spähbericht“): die Punkte werden nicht oben abgeschnitten
+    const schnitt = () => ev(() => { const out = [], w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      for (let n; (n = w.nextNode());) { if (!/[ÄÖÜäöü]/.test(n.data)) continue; const el = n.parentElement; if (!el || !el.getClientRects().length) continue;
+        const cs = getComputedStyle(el); if (cs.visibility === 'hidden' || !(cs.textTransform === 'uppercase' || /Cinzel/.test(cs.fontFamily) || /[ÄÖÜ]/.test(n.data))) continue;
+        const r = document.createRange(); r.selectNodeContents(n); const rr = r.getBoundingClientRect(); if (!rr.width) continue;
+        for (let a = el, k = 0; a && a !== document.body && k < 4; a = a.parentElement, k++) { const ac = getComputedStyle(a); if (ac.overflowY === 'visible') continue;
+          const top = a.getBoundingClientRect().top + parseFloat(ac.borderTopWidth), lh = parseFloat(cs.lineHeight), fs = parseFloat(cs.fontSize);
+          if (rr.top < top - 0.2 || (a === el && lh < fs * 1.25)) out.push(n.data.trim().slice(0, 20) + ' (' + el.className + ')'); break; } }
+      return out; });
+    await ev(() => { closeAllPopups(); bundOeffnen('info'); }); await p.waitForTimeout(800);
+    const uBund = await schnitt();
+    const uSpaeh = await ev(async () => { const warte = ms => new Promise(f => setTimeout(f, ms)); closeAllPopups();
+      const B = BOT_DEFS.find(d => !d.mensch && botOwnedIslands[d.id] && botOwnedIslands[d.id].size), K = [...botOwnedIslands[B.id]][0], jetzt = Date.now();
+      resolveScout({ sourceId: playerIslandId, targetId: K, startedAt: jetzt - 2000, resolveAt: jetzt - 1 }); battleLogBtn.click(); await warte(800);
+      const s = [...combatLogListEl.children][0].querySelector('summary'); if (s) s.click(); await warte(1500);
+      const k = document.getElementById('klArt'); return k && k.offsetParent ? k.textContent : null; });
+    const uBericht = await schnitt();
+    ok(!uBund.length && !uBericht.length && /Späh/.test(uSpaeh || ''), art + ': Umlaute in Reitern und Überschriften ganz zu sehen (nicht abgeschnitten)', { uBund, uBericht, uSpaeh });
+    if (uSpaeh) await bild('spaehbericht');
     await ctx.close();
   }
   ok(!fe.length, 'keine Skriptfehler', fe.slice(0, 3));

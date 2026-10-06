@@ -310,4 +310,9 @@ button.cb-slot{position:relative} button.cb-slot::before{content:"";position:abs
 .odds-mehr > summary::-webkit-details-marker{display:none} .odds-mehr > summary .icon{width:16px;height:16px;color:var(--gold-300)} .odds-mehr[open] > summary{color:var(--gold-100)}
 .odds-mehr .odds{margin-top:0}
 .hchest-opts .btn{min-height:48px} .hchest-opts .cost b{font-size:var(--fs-15,15px)}
+/* Umlaut-Punkte über Großbuchstaben (Ä/Ö/Ü in Überschriften, Reitern, Versalien) nicht abschneiden: einzeilige Texte mit
+   „…“ schneiden nur noch seitlich ab (overflow-x:clip), nach oben bleibt Platz – die Zeilenhöhe (oft 1) war kleiner als die Punkte hoch sind */
+@supports (overflow:clip) {
+  .tab span,.overline,.ptitle:not(.ptitle--input),.hh-head h2,.city-title h2,.act-t,.stat-l,.stat-v,.slot-r,.gslot small,.lb-name small,.hud-me-text b,.rp-stat b,.pc-t b,.lk-me-t b,.kv b,.statRow b,.res b{overflow-x:clip;overflow-y:visible}
+}
     </style>

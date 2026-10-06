@@ -270,6 +270,7 @@ function drawMap() {
   drawWander(now);                                                                                                     // the Kriegsherr and his host
   drawNacht(vis, z, viewPad);                                                                                          // Paket C: Abendrot, Nacht, Lichter
   if (typeof drawHaendler === 'function') drawHaendler();                                                              // Paket C: der Karren des wandernden Händlers (haendler.js)
+  drawHeimWappen(z);                                                                                                   // weit draußen: Wappen an der Hauptstadt
   const plates = layoutBanners(vis, z, isPanelOpen(popup) ? popupIslandId : null);
   drawMarchTokens();                                                                                                   // 8 tokens (clear of the plates)
   paintBanners(plates);                                                                                                // 9 nameplates on top

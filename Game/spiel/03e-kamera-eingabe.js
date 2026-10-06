@@ -96,6 +96,8 @@ function camInsetTarget(now, fresh) {    // the island sheet (phone: bottom, lan
   if (sheet && sheet.classList.contains('is-open') && layout !== 'desktop') { const pr = sheet.getBoundingClientRect();
     if (layout === 'phone') v.b = Math.max(0, Math.min(viewH * 0.8, viewH - pr.top));
     else v.r = Math.max(0, Math.min(viewW * 0.8, viewW - pr.left)); }
+  const nav = layout === 'desktop' && document.getElementById('cornerButtons');   // Desktop: die Leiste unten in der Mitte – der Kartenrand darf darüber geschoben werden
+  if (nav) { const nr = nav.getBoundingClientRect(); if (nr.height && nr.top > viewH / 2) v.b = Math.max(v.b, viewH - nr.top + 28); }   // (+ Platz fürs Wappen der Hauptstadt ganz draußen)
   insetCache = { at: now, v }; return v;
 }
 function camRange(h, W, mid, a, b, sl) { // allowed centre interval on one axis; a / b: world units covered at the low / high side; sl: slack
