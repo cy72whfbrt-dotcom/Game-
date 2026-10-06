@@ -18,27 +18,33 @@ const FRAME_HALF = (GRID_HALF + .5) * HEX_SPACING + 9000;   // the square map bo
 // not a rigid grid) - only constraint is a minimum distance from
 // every other base and the temple, so nothing ends up crowded.
 // Neutral strength of the inner islands (the outer ring keeps the small starter values):
-// the Thron-Insel is late-game, the Wächter-Inseln mid-game.
+// the Thron-Insel is late-game, the Wächter-Inseln mid-game. Truppen in festen Zahlen (Alexander 6.10., Z4: Start 5.000 –
+// reicht außen, aber nicht für den Wächter, „muss ja schwer sein“)
 const TIER_STATS = {
-    throne:   { troops: [5e6, 2e7],   def: [1e6, 4e6],   level: 40, temple: [2.5e8, 6e7], templeLevel: 60 },
-    guardian: { troops: [1e5, 1e6],   def: [2e4, 2e5],   level: 20, temple: [5e6, 1e6],   templeLevel: 30 }
+    throne:   { troops: [5e4, 1.5e5], def: [1e4, 4e4],   level: 40, temple: [5e5, 1.5e5], templeLevel: 60 },
+    guardian: { troops: [5e3, 2e4],   def: [1e3, 4e3],   level: 20, temple: [6e4, 1.5e4], templeLevel: 30 }
 };
+// Neutrale Basen außen: höchste Besatzung je Ring (außen 100, nach innen steigend bis 1.000 im Ring 2) – Basis 70–100 %, Tempel 150–260 %
+const RING_TRUPPEN = { 2: 1000, 3: 700, 4: 450, 5: 300, 6: 200, 7: 100, 8: 100 };
+const ringTruppen = lm => RING_TRUPPEN[lm.ring] || 100;
 const RING_MULT = { 2: 300, 3: 60, 4: 20, 5: 8, 6: 2, 7: 1 };   // neutral strength of outer regions: the edge is easy, near the middle hard
 function ringMult(lm) { return lm.tier === 'outer' ? (RING_MULT[lm.ring] || 1) : 1; }
 function niceRoundW(n) { const p = Math.pow(10, Math.max(0, Math.floor(Math.log10(n)) - 1)); return Math.round(n / p) * p; }
 // Wirtschaft 5.10. (LIESMICH 11b A): Kosten und Gegner × WIRTSCHAFT_KOSTEN – als ganze Zahl, nie unter mn (sonst 1)
 function wirtK(n, mn = 1) { return Math.max(mn, Math.round(n * WIRTSCHAFT_KOSTEN)); }
+// Holz/Stein/Eisen (Z1, 6.10.): Kosten in RoK-Größe – × WIRTSCHAFT_KOSTEN × ROH_FAKTOR, ganze Zahl, nie unter 1
+function wirtR(n) { return Math.max(1, Math.round(n * WIRTSCHAFT_KOSTEN * ROH_FAKTOR)); }
 const ISLAND_RADIUS = 650; // tower footprint - bigger again, still well under the guaranteed minimum spacing between towers
-const NEUTRAL_DEFENSE_MAX = 100;
-const NEUTRAL_DEFENSE_MIN = 20;
+const NEUTRAL_DEFENSE_MAX = 30;    // (alle neutralen Werte außen: % von ringTruppen)
+const NEUTRAL_DEFENSE_MIN = 10;
 const NEUTRAL_TROOPS_MAX = 100;
-const NEUTRAL_TROOPS_MIN = 0;
+const NEUTRAL_TROOPS_MIN = 70;
 // Temples: one per landmass except the center, which gets the
 // stronger Mega-Tempel instead. Harder to hold than a regular tower,
 // and reward Gold/Truppen/Gems on top of the normal per-level
 // production for as long as the player keeps holding them.
-const TEMPLE_DEFENSE_MIN = 220;
-const TEMPLE_DEFENSE_MAX = 380;
+const TEMPLE_DEFENSE_MIN = 40;
+const TEMPLE_DEFENSE_MAX = 80;
 const TEMPLE_TROOPS_MIN = 150;
 const TEMPLE_TROOPS_MAX = 260;
 const MEGA_TEMPLE_MULT = 8;        // Mega-Tempel (centre): 8x a normal temple's bonus
