@@ -94,9 +94,9 @@ if (!wartung()) foreach (['ladebildschirm', 'speichern', 'bots', 'welt', 'spiel'
        filter: drop-shadow(0 2px 0 #5a3f14) drop-shadow(0 4px 14px rgba(0,0,0,.75)); }
   h1 span { background-image: linear-gradient(180deg, #fff3cf 8%, #e4c886 45%, #a27832 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
   h1 span:first-child { font-size: .55em; letter-spacing: .34em; margin-right: -.34em; }
-  .logo::before { content: ""; position: absolute; inset: -28px -56px; z-index: -1; background: radial-gradient(ellipse at center, rgba(4,8,20,.5), transparent 70%); }   /* Kontrast auf hellem Himmel */
+  .logo::before { content: ""; position: absolute; inset: -28px -56px; z-index: -1; background: radial-gradient(ellipse 70% 60% at 45% 50%, rgba(6,12,32,.62), transparent 72%); }   /* Kontrast auf hellem Himmel */
   .unter { display: flex; align-items: center; gap: 12px; margin: 12px 0 0; font: 600 12px/1 var(--font-ui); letter-spacing: .34em; text-transform: uppercase; color: #fff1d0;
-           text-shadow: 0 1px 8px rgba(0,0,0,.9); }
+           text-shadow: 0 1px 3px #000, 0 0 10px rgba(0,0,0,.7); }
   .unter span { width: 30px; height: 1px; background: linear-gradient(90deg, transparent, #d9b56a); } .unter span:last-child { transform: scaleX(-1); }
   .karte { width: 100%; max-width: 380px; margin-top: auto; padding: 16px 16px 12px; border: 1px solid var(--line-2); border-radius: 10px;
            background: rgba(10,14,28,.78); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
@@ -137,12 +137,13 @@ if (!wartung()) foreach (['ladebildschirm', 'speichern', 'bots', 'welt', 'spiel'
   /* Desktop: Logo oben links wie ein Plakat, Kasten rechts in der Mitte – die Burg bleibt frei */
   @media (min-width: 900px) and (min-aspect-ratio: 11/10) {
     body { display: block; padding: 0; }
-    .logo { position: absolute; left: 4vw; top: 12vh; align-items: flex-start; text-align: left; }
+    .logo { position: absolute; left: 4vw; top: 15vh; align-items: flex-start; text-align: left; }
     h1 { font-size: 88px; align-items: flex-start; } .unter { margin-top: 16px; }
     .karte { position: absolute; right: 4vw; bottom: calc(8vh + 40px); width: 380px; margin: 0; }
     .fuss { position: absolute; right: 4vw; bottom: calc(8vh); width: 380px; }
-    .hinweis { position: absolute; left: 0; right: 0; bottom: 12px; margin: 0; }
+    .hinweis { position: absolute; right: 4vw; bottom: calc(8vh - 22px); width: 380px; margin: 0; }
   }
+  @media (max-width: 380px) { .unter { letter-spacing: .22em; gap: 8px; } .unter span { width: 18px; } }   /* (sonst 8 px breiter als ein kleines Handy) */
   /* Handy hochkant: kleineres Logo, damit der Feldherr über dem Kasten frei bleibt */
   @media (max-width: 899px) and (orientation: portrait) { h1 { font-size: clamp(34px, 10vw, 44px); } }
   /* Handy quer: alles ohne Scrollen */
