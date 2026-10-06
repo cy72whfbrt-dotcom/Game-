@@ -72,9 +72,9 @@ const ANFANG = () => { window.__OW = { neu: true, nameGewaehlt: true }; window._
       o.frage.ja.taeglich = await bis(() => taeglich > 0, 4000); maybeShowDaily = md;
       // 8) Schritt 1, aber der Spieler tippt schon eine fremde Basis: kein stehengebliebenes „Tippe auf deine Hauptstadt“
       closeAllPopups(); nm.click(); await bis(() => anleitung.schritt === 0 && !zu('anleitung'));
-      const fremd = islands.find(i => islandOwnerOf(i.id) && islandOwnerOf(i.id) !== 'player' && !bossAt(i.id));
-      if (fremd) { openIslandPopup(fremd); await warte(1300); }
-      o.vorweg = { fremd: !!fremd, schritt: anleitung.schritt, text: el('anleitungText').textContent };
+      const fremd = islands.find(i => islandOwnerOf(i.id) && islandOwnerOf(i.id) !== 'player' && !bossAt(i.id)), sah = islandSeen;
+      if (fremd) { islandSeen = () => true; try { openIslandPopup(fremd); } finally { islandSeen = sah; } await warte(1300); }   // (im Nebel ginge kein Fenster auf)
+      o.vorweg = { fremd: !!fremd, offen: anleitungInsel() ? popupIslandId : null, schritt: anleitung.schritt, text: el('anleitungText').textContent };
       closeAllPopups(); await warte(300);
       if (nb) { openIslandPopup(nb); await warte(100); attackBtn.click(); }   // gleich „Angriff vorbereiten“
       o.vorweg.neutral = await bis(() => anleitung.schritt === 1); o.vorweg.neutralText = el('anleitungText').textContent; o.vorweg.ansicht = popupView;
