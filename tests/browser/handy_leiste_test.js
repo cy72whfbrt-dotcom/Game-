@@ -1,7 +1,7 @@
 // Spieler-Durchsicht 6.10. (Bereiche A + J), Handy 390×844 und Desktop 1440×900 / 1280×720:
 // Gebäude-Fenster endet über der Leiste (Bauen-Knopf frei), unter festen Fußknöpfen (Burg „Bauen“, Held „Aufwerten“) schaut kein Inhalt
 // hervor, am Ende ist alles über dem Fußknopf; eigene Basis: steht frei (nicht unter Anleitung, Fenster oder Leiste), alle Knöpfe im
-// Fenster; Anleitung: „Schritt 1/7“ als Überzeile, höchstens 4 Textzeilen; HUD: Holz/Stein/Eisen am Desktop, Handy „Rohstoffe“;
+// Fenster; Anleitung: „Schritt 1/7“ links neben dem Text, höchstens 2 Textzeilen (≤ 56 px); HUD: Holz/Stein/Eisen am Desktop, Handy „Rohstoffe“;
 // ganz rausgezoomt ruhiger Nebel statt Wolken-Brei, die Gebiete schimmern durch, Wappen an der Hauptstadt; Umlaute in Versalien
 // (Reiter, Überzeilen) nicht abgeschnitten. Bilder in den Arbeitsordner (process.argv[3]), wenn angegeben.
 const { chromium, devices } = require('playwright');
@@ -26,11 +26,11 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       const zeilen = Math.round(t.getBoundingClientRect().height / parseFloat(getComputedStyle(t).lineHeight));
       const roh = document.getElementById('hudRoh'), mini = roh.querySelector('.roh-mini'), nach = getComputedStyle(roh, '::after');
       const zahlen = [...roh.querySelectorAll('.roh-mini b')].map(x => x.getBoundingClientRect()).filter(r => r.width > 0 && r.right <= innerWidth);
-      return { sicht: !a.hidden, ueberzeile: n.bottom <= t.getBoundingClientRect().top + 1, zeilen, hoehe: Math.round(a.getBoundingClientRect().height),
+      return { sicht: !a.hidden, nebenText: (n.top + n.bottom) / 2 > t.getBoundingClientRect().top && (n.top + n.bottom) / 2 < t.getBoundingClientRect().bottom && n.right <= t.getBoundingClientRect().left, zeilen, hoehe: Math.round(a.getBoundingClientRect().height),
         mini: getComputedStyle(mini).display !== 'none' && zahlen.length === 3, schrift: nach.content, schriftRechts: (() => { const r = roh.getBoundingClientRect(), w = parseFloat(nach.width) || 0;   // ragt die Beschriftung rechts aus dem Bild?
           return w > 0 && (nach.right === 'auto' ? r.left + r.width / 2 + w / 2 : r.right - parseFloat(nach.right)) <= innerWidth + 0.5; })() };
     });
-    ok(anl.sicht && anl.ueberzeile && anl.zeilen <= 4, art + ': Anleitung – „Schritt“ als Überzeile, Text höchstens 4 Zeilen', anl);
+    ok(anl.sicht && anl.nebenText && anl.zeilen <= 2 && anl.hoehe <= 56, art + ': Anleitung – „Schritt“ links neben dem Text, Text höchstens 2 Zeilen, ≤ 56 px hoch', anl);   // (Entscheidung Projektleiter 6.10.: eine Zeile statt Überzeile)
     if (handy) ok(/Rohstoffe/.test(anl.schrift) && anl.schriftRechts, art + ': Rohstoff-Knopf beschriftet („Rohstoffe“)', anl);
     else ok(anl.mini, art + ': Holz/Stein/Eisen im HUD zu sehen', anl);
     await bild('hud');
