@@ -156,14 +156,7 @@ function renderProfile(live) {                  // live = the per-second refresh
     document.getElementById('xpFill').style.width = Math.min(100, Math.round(playerXp / xpNeeded * 100)) + '%';
     liveHtml(document.getElementById('xpNext'), 'Stufe ' + (playerLvl + 1) + ': ' + levelRewardText(playerLvl + 1));
 
-    const troops = totalTroops();
-    const kTroopsEl = document.getElementById('kTroops');
-    setText(kTroopsEl, fmtCompact(troops));
-    kTroopsEl.title = fmtNum(troops) + ' Truppen';
-    setText(document.getElementById('kBases'), fmtNum(ownedIslands.size) + ' / ' + fmtNum(islands.length));
-    const kCoinsEl = document.getElementById('kCoins');
-    setText(kCoinsEl, fmtCompact(Math.floor(coins)));
-    kCoinsEl.title = fmtNum(Math.floor(coins)) + ' Münzen';
+    setText(document.getElementById('kBases'), fmtNum(ownedIslands.size) + ' / ' + fmtNum(islands.length));   // (Truppen, Münzen, Edelsteine stehen oben im HUD)
     const hp = hourProduction('player');                 // alle Basen zusammen (mit Tempeln und Boni), pro Stunde – genau das kommt an
     setText(document.getElementById('kTroopsRate'), '+' + fmtStunde(hp.troops));
     setText(document.getElementById('kCoinsRate'), '+' + fmtStunde(hp.coins));
@@ -175,7 +168,6 @@ function renderProfile(live) {                  // live = the per-second refresh
     const activeCount = playerRelevantAttackCount() + playerRelevantSendCount() + pendingScouts.length + pendingRetreats.length;
     liveHtml(profileStats,
         '<div class="statRow"><span>' + icon('star') + 'Fähigkeitspunkte</span><b>' + fmtNum(skillPoints) + '</b></div>' +
-        '<div class="statRow"><span>' + icon('gem') + 'Edelsteine</span><b>' + fmtTile(Math.floor(gems)) + '</b></div>' +
         (activeCount > 0 ? '<div class="statRow"><span>' + icon('hourglass') + 'Unterwegs</span><b>' + fmtNum(activeCount) + '</b></div>' : '') +
         '<div class="statRow"><span>' + icon('home') + 'Heimat</span><b>' + homeLabel + '</b></div>');
     updateHudPlayer();

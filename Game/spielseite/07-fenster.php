@@ -1,16 +1,61 @@
 // Teil 07-fenster.php: Fenster: Profil, Kampfbericht, Herrscher, Bündnis, Rangliste, Events, Shop, Gegenstand
 
+<style>
+/* Fenster Events, Kampf, Bündnis, Profil: höchstens 4 Reiter, Unterreiter als Chips, Tippflächen mind. 44 px, nichts abgeschnitten */
+#goalsGruppen.tabs,#profilePopup #profileTabs.tabs{grid-template-columns:repeat(4,minmax(0,1fr))}
+#battleTabs.tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
+.p5-reiter .tab .badge{position:absolute;top:4px;right:8px}
+@media (min-height:501px),(orientation:portrait){
+  .p5-reiter .tab,#profilePopup #profileTabs .tab{min-height:48px;font-size:12px}
+}
+.p5-reiter .tab span,#profilePopup #profileTabs .tab span{text-overflow:clip}
+.p5-chips{flex:none;display:flex;gap:8px;padding:8px 16px;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--line-1);background:rgba(0,0,0,.12)}
+.p5-chips::-webkit-scrollbar{display:none}
+.p5-chips[hidden],.p5-chip[hidden]{display:none}
+.p5-chip{position:relative;flex:none;display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:18px;border:1px solid var(--line-2);background:rgba(255,255,255,.03);
+  color:var(--tx-2);font:600 13px/1 var(--font-ui);white-space:nowrap;cursor:pointer}
+.p5-chip::before{content:"";position:absolute;left:0;right:0;top:-4px;bottom:-4px}   /* Tippfläche 44 px */
+.p5-chip.active{color:var(--gold-100);border-color:var(--gold-300);background:rgba(214,170,90,.14)}
+.p5-chip .badge{position:static}
+#combatLogList > .logRow{cursor:pointer}
+/* Profil: Kopf in 3 Zeilen (Rang + Titel, Name, Stufe) */
+.p5-kopfzeile{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px}
+.p5-kopfzeile .ptitle-tag{margin:0}
+.p5-kopfzeile .ptitle-tag::before{content:"· ";color:var(--tx-3)}
+.p5-naechste{margin:0 0 8px;padding:8px 12px;border:1px solid var(--line-1);border-radius:8px;font-size:13px;color:var(--tx-2)}
+.p5-zeile{display:flex;align-items:center;gap:12px;width:100%;min-height:48px;margin:0 0 8px;padding:8px 12px;border:1px solid var(--line-2);border-radius:10px;
+  background:rgba(255,255,255,.03);color:var(--tx-1);font:600 15px/1.2 var(--font-ui);text-align:left;cursor:pointer}
+.p5-zeile > span{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
+.p5-zeile small{font:400 13px/1.3 var(--font-ui);color:var(--tx-3)}
+.p5-zeile .icon{flex:none;width:20px;height:20px;color:var(--gold-300)}
+.p5-zeile .p5-pfeil{width:16px;height:16px;transform:scaleX(-1);color:var(--tx-3)}
+/* Einstellungen: Sprung-Leiste und Gruppen */
+.p5-sprung{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
+.p5-sprung button{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 12px;border:1px solid var(--line-2);border-radius:22px;background:rgba(255,255,255,.03);
+  color:var(--tx-1);font:600 13px/1 var(--font-ui);cursor:pointer}
+.p5-sprung .icon{width:16px;height:16px;color:var(--gold-300)}
+.p5-gruppe{margin:12px 0 4px;font:700 11px/1 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--gold-200)}
+.p5-gruppe:first-child{margin-top:4px}
+#tabSet .set-zeile{min-height:44px}
+#tabSet .set-zeile input{width:24px;height:24px}
+#tabSet .set-knoepfe .btn,#tabSet .set-ab .btn,#tabSet .set-pw .btn,#pushKnopf{min-height:44px}
+.p5-hilfe summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font:600 13px/1.2 var(--font-ui);color:var(--tx-1)}
+.p5-hilfe p{font-size:13px}
+/* Bündnis ohne Bündnis: Gründen unter der Liste */
+#bundUnten:not(:empty){margin-top:16px}
+.p5-gruenden{min-height:44px;gap:8px}
+.p5-gruenden .cost{margin-left:auto;display:inline-flex;align-items:center;gap:4px}
+</style>
+
 <!-- ============ PROFILE ============ -->
 <section id="profilePopup" class="panel panel--sheet" role="dialog" aria-labelledby="profileName" data-tab="info">
   <span class="sheet-grab" aria-hidden="true"></span>
   <header class="phead phead--hero">
     <div id="pAvatarRing" class="avatar-ring"><span class="avatar"><svg class="icon"><use href="#i-profile"/></svg></span><span id="profileLevelBadge" class="lvl">1</span></div>
     <div class="phead-text">
-      <div class="overline">Profil · Rang <b id="profileRank">Bronze</b></div>
+      <div class="overline p5-kopfzeile">Profil · Rang <b id="profileRank">Bronze</b><span id="profileTitle" class="ptitle-tag"></span></div>
       <input id="profileName" class="ptitle ptitle--input" type="text" maxlength="20" placeholder="Dein Name" autocomplete="off" spellcheck="false">
       <div class="xp"><span class="xp-l">Stufe <b id="xpLevelNum">1</b></span><div class="xp-track"><i id="xpFill" class="xpFill"></i></div><span id="xpNums" class="xp-n">0 / 50 XP</span></div>
-      <div id="xpNext" class="xp-next"></div>
-      <div id="profileTitle" class="ptitle-tag"></div>
       <div id="profileBund"></div>
     </div>
     <button id="profileCloseBtn" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button>
@@ -19,22 +64,22 @@
     <button id="tabBtnInfo" class="tab active" type="button" role="tab"><svg class="icon"><use href="#i-profile"/></svg><span>Spieler</span></button>
     <button id="tabBtnEquip" class="tab" type="button" role="tab"><svg class="icon"><use href="#i-shield"/></svg><span>Ausrüstung</span></button>
     <button id="tabBtnSkills" class="tab" type="button" role="tab"><svg class="icon"><use href="#i-star"/></svg><span>Fähigkeiten</span></button>
-    <button id="tabBtnRank" class="tab" type="button" role="tab"><svg class="icon"><use href="#i-rank"/></svg><span>Rangliste</span></button>
     <button id="tabBtnSet" class="tab" type="button" role="tab"><svg class="icon"><use href="#i-gear"/></svg><span>Einstellungen</span></button>
   </div>
   <div class="pbody">
     <div id="tabInfo" class="profileTabPanel active" role="tabpanel">
+      <div id="xpNext" class="xp-next p5-naechste"></div>
       <!-- Aussehen: nur hier (Wappen, Rahmen, Titel, Basis- und Marsch-Skins, Ringe) -->
       <button id="crestCard" class="crest-card" type="button" aria-label="Aussehen: Wappen, Rahmen, Titel, Skins, Ringe">
         <canvas id="crestSmall" width="112" height="112"></canvas>
         <span id="lookNow" class="crest-card-t"><b>Aussehen</b><small>Wappen, Rahmen, Titel, Skins, Ringe</small></span>
         <span class="crest-card-go">Ändern<svg class="icon"><use href="#i-upgrade"/></svg></span>
       </button>
+      <!-- Rangliste: eigenes Fenster, hier nur der Weg dorthin -->
+      <button id="tabBtnRank" class="p5-zeile" type="button"><svg class="icon"><use href="#i-rank"/></svg><span>Rangliste<small>Macht, Eroberungen, Hauptstadt, Titel, Thron-Punkte</small></span><svg class="icon p5-pfeil"><use href="#i-back"/></svg></button>
       <div class="sect"><h4>Reich</h4></div>
-      <div class="stat-grid stat-grid--3">
-        <div class="stat"><span class="stat-l"><svg class="icon"><use href="#i-troops"/></svg>Truppen</span><b class="stat-v" id="kTroops">0</b></div>
+      <div class="stat-grid">
         <div class="stat"><span class="stat-l"><svg class="icon"><use href="#i-flag"/></svg>Basen</span><b class="stat-v" id="kBases">0</b></div>
-        <div class="stat"><span class="stat-l"><svg class="icon"><use href="#i-coin"/></svg>Münzen</span><b class="stat-v" id="kCoins">0</b></div>
         <div class="stat"><span class="stat-l"><svg class="icon"><use href="#i-troops"/></svg>Truppen / Std.</span><b class="stat-v is-good" id="kTroopsRate">0</b></div>
         <div class="stat"><span class="stat-l"><svg class="icon"><use href="#i-coin"/></svg>Münzen / Std.</span><b class="stat-v is-good" id="kCoinsRate">0</b></div>
         <div class="stat"><span class="stat-l"><svg class="icon"><use href="#i-home"/></svg>Weltanteil</span><b class="stat-v" id="profileProgress">0%</b></div>
@@ -64,37 +109,43 @@
 
     <!-- EINSTELLUNGEN (nur hier): Benachrichtigungen (benachrichtigung.js), Ton, Grafik, Konto, Hilfe -->
     <div id="tabSet" class="profileTabPanel" role="tabpanel">
-      <div class="sect"><h4>Benachrichtigungen</h4></div>
+      <nav class="p5-sprung" aria-label="Einstellungen">
+        <button type="button" data-sprung="setBen"><svg class="icon"><use href="#i-flag"/></svg>Benachrichtigungen</button><button type="button" data-sprung="setTonGrafik"><svg class="icon"><use href="#i-sound"/></svg>Ton &amp; Grafik</button><button type="button" data-sprung="setKonto"><svg class="icon"><use href="#i-profile"/></svg>Konto</button><button type="button" data-sprung="setHilfe"><svg class="icon"><use href="#i-info"/></svg>Hilfe</button>
+      </nav>
+      <div class="sect" id="setBen"><h4>Benachrichtigungen</h4></div>
       <div id="pushKarte" class="push-karte">
         <p id="pushText" class="push-text">Einen Moment …</p>
         <button id="pushKnopf" class="btn btn--secondary btn--sm" type="button" hidden></button>
         <div id="pushArten" class="set-liste" hidden>
+          <div class="p5-gruppe">Angriff</div>
           <label class="set-zeile"><span>Angriff auf deine Basis</span><input type="checkbox" data-push-art="angriff"></label>
           <label class="set-zeile"><span>Späher bei dir<small>unterwegs zu dir und „hat deine Basis ausgespäht“</small></span><input type="checkbox" data-push-art="spaeher"></label>
           <label class="set-zeile"><span>Basis verloren</span><input type="checkbox" data-push-art="verloren"></label>
-          <label class="set-zeile"><span>Kriegsherr erschienen</span><input type="checkbox" data-push-art="boss"></label>
-          <label class="set-zeile"><span>Sammler zurück</span><input type="checkbox" data-push-art="sammler"></label>
           <label class="set-zeile"><span>Friedensschild läuft ab</span><input type="checkbox" data-push-art="schild"></label>
+          <label class="set-zeile"><span>Rally gegen dich</span><input type="checkbox" data-push-art="rally"></label>
+          <div class="p5-gruppe">Bündnis</div>
+          <label class="set-zeile"><span>Bündnis ruft um Hilfe</span><input type="checkbox" data-push-art="hilfe"></label>
+          <div class="p5-gruppe">Events</div>
+          <label class="set-zeile"><span>Kriegsherr erschienen</span><input type="checkbox" data-push-art="boss"></label>
           <label class="set-zeile"><span>Barbaren-Invasion beginnt<small>10 Minuten vorher</small></span><input type="checkbox" data-push-art="invasion"></label>
           <label class="set-zeile"><span>Der Drache ist erschienen<small>Sonntagabend</small></span><input type="checkbox" data-push-art="drache"></label>
-          <label class="set-zeile"><span>Bündnis ruft um Hilfe</span><input type="checkbox" data-push-art="hilfe"></label>
-          <label class="set-zeile"><span>Rally gegen dich</span><input type="checkbox" data-push-art="rally"></label>
           <label class="set-zeile"><span>Ein Händler ist da<small>Wandernder Händler auf der Karte</small></span><input type="checkbox" data-push-art="haendler"></label>
+          <div class="p5-gruppe">Stadt</div>
+          <label class="set-zeile"><span>Sammler zurück</span><input type="checkbox" data-push-art="sammler"></label>
           <label class="set-zeile"><span>Bau fertig<small>Gebäude und Burg in deiner Stadt</small></span><input type="checkbox" data-push-art="bau"></label>
           <label class="set-zeile"><span>Forschung fertig<small>Labor ist wieder frei</small></span><input type="checkbox" data-push-art="forschung"></label>
         </div>
       </div>
-      <div class="sect"><h4>Ton</h4></div>
+      <div class="sect" id="setTonGrafik"><h4>Ton &amp; Grafik</h4></div>
       <div id="setTon" class="set-wahl" role="radiogroup" aria-label="Ton">
         <button type="button" data-ton="all"><svg class="icon"><use href="#i-sound"/></svg>Musik + Effekte</button>
         <button type="button" data-ton="sfx"><svg class="icon"><use href="#i-sfx"/></svg>Nur Effekte</button>
         <button type="button" data-ton="off"><svg class="icon"><use href="#i-mute"/></svg>Aus</button>
       </div>
-      <div class="sect"><h4>Grafik</h4></div>
       <div class="set-liste">
         <label class="set-zeile"><span>Akku sparen<small>Karte ruhiger, weniger Bilder pro Sekunde</small></span><input type="checkbox" id="setAkku"></label>
       </div>
-      <div class="sect"><h4>Konto</h4></div>
+      <div class="sect" id="setKonto"><h4>Konto</h4></div>
       <div class="kv"><div><span>Name</span><b id="setName"></b></div><div><span>Spieler-Nummer</span><b id="setNr"></b></div></div>
       <div class="set-knoepfe"><button id="setNameBtn" class="btn btn--secondary btn--sm" type="button">Name ändern</button>
         <button id="setPwOffen" class="btn btn--secondary btn--sm" type="button">Passwort ändern</button></div>
@@ -106,17 +157,18 @@
         <small>Danach bist du auf allen anderen Geräten abgemeldet.</small>
       </form>
       <form action="index.php?aus=1" method="post" class="set-ab"><button class="btn btn--secondary btn--sm" type="submit">Abmelden</button></form>
-      <div class="sect"><h4>Hilfe – wo finde ich was?</h4></div>
-      <div class="set-hilfe">
+      <div class="sect" id="setHilfe"><h4>Hilfe</h4></div>
+      <div class="set-knoepfe"><button id="anleitungNochmal" class="btn btn--secondary btn--sm" type="button">Anleitung noch mal</button></div>
+      <details class="set-hilfe p5-hilfe">
+        <summary>Wo finde ich was?</summary>
         <p><b>Stadt</b> → Burg (deine Hauptstadt-Stufe), Gebäude, Holz/Stein/Eisen, Forschung, Krankenhaus, Helden.</p>
         <p><b>Bündnis</b> → zusammen mit anderen: Chat, Rally, Verstärkung, Bündnis-Hilfe, Tempel-Bonus.</p>
-        <p><b>Kampf</b> → deine Märsche und alle Berichte.</p>
-        <p><b>Events</b> → Aufgaben, Belohnungen, Erfolge, Pass, Wochen-Event, Invasion, Drache, Tagesboss und Lager.</p>
+        <p><b>Kampf</b> → Unterwegs (deine Märsche) und Berichte.</p>
+        <p><b>Events</b> → Aufgaben (Täglich, Erfolge), Abholen (Abholfach, tägliche Belohnung), Pass, Ereignisse (Wochen-Event, Invasion, Drache, Tagesboss und Lager).</p>
         <p><b>Shop</b> → Kisten, Friedensschilde, Thron-Shop, Händler, Markt.</p>
-        <p><b>Profil</b> → Spieler, Aussehen, Ausrüstung, Fähigkeiten, Rangliste, Einstellungen.</p>
+        <p><b>Profil</b> → Spieler (Aussehen, Rangliste), Ausrüstung, Fähigkeiten, Einstellungen.</p>
         <p><b>Karte</b> → Basis antippen: angreifen, Truppen senden, aufwerten. Felder: sammeln. Mitte: wer den Mega-Tempel hält, herrscht.</p>
-      </div>
-      <div class="set-knoepfe"><button id="anleitungNochmal" class="btn btn--secondary btn--sm" type="button">Anleitung noch mal</button></div>
+      </details>
       <div class="sect"><h4>Info</h4></div>
       <div class="kv"><div><span>Version</span><b id="setVersion"></b></div></div>
     </div>
@@ -141,11 +193,13 @@
     <div class="phead-text"><div class="overline">Angriffe &amp; Berichte</div><h3 id="battleLogTitle" class="ptitle">Kampf</h3></div>
     <button id="battleLogCloseBtn" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button>
   </header>
+  <div id="battleTabs" class="tabs p5-reiter" role="tablist">
+    <button class="tab active" type="button" role="tab" data-ktab="unterwegs"><svg class="icon"><use href="#i-hourglass"/></svg><span>Unterwegs</span><span class="badge" id="battleTabBadge" style="display:none">0</span></button>
+    <button class="tab" type="button" role="tab" data-ktab="berichte"><svg class="icon"><use href="#i-battlelog"/></svg><span>Berichte</span></button>
+  </div>
   <div class="pbody">
-    <div class="sect"><h4>Unterwegs</h4></div>
-    <div id="activeMarches" class="logList"></div>
-    <div class="sect"><h4>Kampflog</h4></div>
-    <div id="combatLogList" class="logList"></div>
+    <div id="activeMarches" class="logList" data-kpane="unterwegs"></div>
+    <div id="combatLogList" class="logList" data-kpane="berichte" hidden></div>
   </div>
 </section>
 
@@ -174,7 +228,7 @@
     <button class="tab" type="button" role="tab" data-btab="rally"><svg class="icon"><use href="#i-troops"/></svg><span>Rally</span></button>
     <button class="tab" type="button" role="tab" data-btab="suchen"><svg class="icon"><use href="#i-scout"/></svg><span>Suchen</span></button>
   </div>
-  <div class="pbody"><div id="bundOben"></div><div id="bundLive" class="bd-live"></div></div>
+  <div class="pbody"><div id="bundOben"></div><div id="bundLive" class="bd-live"></div><div id="bundUnten"></div></div>
 </section>
 
 <!-- ============ RANGLISTE (Profil → Rangliste) ============ -->
@@ -196,8 +250,8 @@
   <footer class="pfoot lb-foot" id="rankFoot"></footer>
 </section>
 
-<!-- ============ EVENTS (Dock): oben Aufgaben (Täglich, Belohnung + Abholfach, Erfolge, Pass), unten Ereignisse
-     (Wochen-Event, Invasion, Drache, Tagesboss + Barbaren-Lager) – alles nur hier ============ -->
+<!-- ============ EVENTS (Dock): 4 Reiter Aufgaben (Täglich, Erfolge) · Abholen (Abholfach + tägliche Belohnung) · Pass ·
+     Ereignisse (Wochen-Event, Invasion, Drache, Tagesboss + Barbaren-Lager) – alles nur hier ============ -->
 <section id="goalsPopup" class="panel panel--sheet" role="dialog" aria-labelledby="goalsTitle">
   <span class="sheet-grab" aria-hidden="true"></span>
   <header class="phead">
@@ -205,15 +259,22 @@
     <div class="phead-text"><div class="overline">Aufgaben &amp; Ereignisse</div><h3 id="goalsTitle" class="ptitle">Events</h3><div class="psub" id="goalsSub"></div></div>
     <button id="goalsCloseBtn" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button>
   </header>
-  <div id="goalsTabs" class="tabs mail-tabs" role="tablist">
-    <button class="tab active" type="button" role="tab" data-gtab="daily"><svg class="icon"><use href="#i-flag"/></svg><span>Täglich</span><span class="badge" data-gbadge="daily" style="display:none">0</span></button>
-    <button class="tab" type="button" role="tab" data-gtab="reward"><svg class="icon"><use href="#i-shop"/></svg><span>Belohnung</span><span class="badge" data-gbadge="reward" style="display:none">0</span></button>
-    <button class="tab" type="button" role="tab" data-gtab="ach"><svg class="icon"><use href="#i-star"/></svg><span>Erfolge</span><span class="badge" data-gbadge="ach" style="display:none">0</span></button>
-    <button class="tab" type="button" role="tab" data-gtab="pass"><svg class="icon"><use href="#i-crown"/></svg><span>Pass</span><span class="badge" data-gbadge="pass" style="display:none">0</span></button>
-    <button class="tab" type="button" role="tab" data-gtab="tour"><svg class="icon"><use href="#i-rank"/></svg><span>Wochen-Event</span><span class="badge" data-gbadge="tour" style="display:none">!</span></button>
-    <button class="tab" type="button" role="tab" data-gtab="inv"><svg class="icon"><use href="#i-defense"/></svg><span>Invasion</span><span class="badge" data-gbadge="inv" style="display:none">!</span></button>
-    <button class="tab" type="button" role="tab" data-gtab="drache"><svg class="icon"><use href="#i-attack"/></svg><span>Drache</span><span class="badge" data-gbadge="drache" style="display:none">!</span></button>
-    <button class="tab" type="button" role="tab" data-gtab="boss"><svg class="icon"><use href="#i-event"/></svg><span>Boss &amp; Lager</span></button>
+  <div id="goalsGruppen" class="tabs mail-tabs p5-reiter" role="tablist">
+    <button class="tab active" type="button" role="tab" data-ggrp="aufgaben"><svg class="icon"><use href="#i-flag"/></svg><span>Aufgaben</span><span class="badge" data-ggbadge="aufgaben" style="display:none">0</span></button>
+    <button class="tab" type="button" role="tab" data-ggrp="abholen"><svg class="icon"><use href="#i-shop"/></svg><span>Abholen</span><span class="badge" data-ggbadge="abholen" style="display:none">0</span></button>
+    <button class="tab" type="button" role="tab" data-ggrp="pass"><svg class="icon"><use href="#i-crown"/></svg><span>Pass</span><span class="badge" data-ggbadge="pass" style="display:none">0</span></button>
+    <button class="tab" type="button" role="tab" data-ggrp="ereignisse"><svg class="icon"><use href="#i-event"/></svg><span>Ereignisse</span><span class="badge" data-ggbadge="ereignisse" style="display:none">!</span></button>
+  </div>
+  <!-- Unterreiter als Chips: nur die der offenen Gruppe sind sichtbar -->
+  <div id="goalsTabs" class="p5-chips" role="tablist">
+    <button class="p5-chip active" type="button" role="tab" data-gtab="daily" data-ggrp-von="aufgaben"><span>Täglich</span><span class="badge" data-gbadge="daily" style="display:none">0</span></button>
+    <button class="p5-chip" type="button" role="tab" data-gtab="ach" data-ggrp-von="aufgaben"><span>Erfolge</span><span class="badge" data-gbadge="ach" style="display:none">0</span></button>
+    <button class="p5-chip" type="button" role="tab" data-gtab="reward" data-ggrp-von="abholen" hidden><span>Belohnung</span><span class="badge" data-gbadge="reward" style="display:none">0</span></button>
+    <button class="p5-chip" type="button" role="tab" data-gtab="pass" data-ggrp-von="pass" hidden><span>Pass</span><span class="badge" data-gbadge="pass" style="display:none">0</span></button>
+    <button class="p5-chip" type="button" role="tab" data-gtab="tour" data-ggrp-von="ereignisse" hidden><span>Wochen-Event</span><span class="badge" data-gbadge="tour" style="display:none">!</span></button>
+    <button class="p5-chip" type="button" role="tab" data-gtab="inv" data-ggrp-von="ereignisse" hidden><span>Invasion</span><span class="badge" data-gbadge="inv" style="display:none">!</span></button>
+    <button class="p5-chip" type="button" role="tab" data-gtab="drache" data-ggrp-von="ereignisse" hidden><span>Drache</span><span class="badge" data-gbadge="drache" style="display:none">!</span></button>
+    <button class="p5-chip" type="button" role="tab" data-gtab="boss" data-ggrp-von="ereignisse" hidden><span>Boss &amp; Lager</span></button>
   </div>
   <div class="pbody">
     <div class="mail-pane" data-gpane="daily">

@@ -1253,7 +1253,8 @@ setInterval(bundTakt, 1000);
 // ==============================================================================================================
 // 6) FENSTER „Bündnis“ (Zuschauer)
 // ==============================================================================================================
-const bundPopup = document.getElementById('bundPopup'), bundBody = document.getElementById('bundLive'), bundOben = document.getElementById('bundOben');
+const bundPopup = document.getElementById('bundPopup'), bundBody = document.getElementById('bundLive'), bundOben = document.getElementById('bundOben'), bundUnten = document.getElementById('bundUnten');
+let bundGruendenAuf = false;   // ohne Bündnis: erst Suchen/Beitreten, das Gründen-Formular erst nach „Eigenes Bündnis gründen“
 let bundTab = 'info', bundWahl = null, bundSicher = {}, bundTauschFuer = null;   // bundTauschFuer: Bewerber, für den der Anführer gerade jemanden zum Tauschen wählt        // bundWahl: offene Auswahl (Rally starten / mitmachen / Hilfe senden)
 function bundBefehl(op, d, hint) {
     if (!window.WELT || SYSTEM) return false;
@@ -1374,21 +1375,25 @@ function bundSuchenHtml(a) {
             : '<div class="inbox-empty">Noch gibt es keine Bündnisse.</div>') + '</div>';
 }
 // oben im Fenster: was sich nicht jede Sekunde ändern darf (Eingaben, Auswahl)
-function bundObenSchluessel() { const a = bundIch(); return bundTab + '|' + (a ? a.id : '-') + '|' + (bundWahl ? JSON.stringify(bundWahl) : ''); }
+function bundObenSchluessel() { const a = bundIch(); return bundTab + '|' + (a ? a.id : '-') + '|' + (bundWahl ? JSON.stringify(bundWahl) : '') + '|' + bundGruendenAuf; }
 function bundObenZeichnen() {
     bundOben.dataset.fuer = bundObenSchluessel();
     const a = bundIch();
+    bundUnten.innerHTML = '';
     if (bundWahl) { bundOben.innerHTML = bundWahlHtml(); bundWahlRechnen(); return; }
+    bundOben.innerHTML = '';
+    if (bundTab === 'suchen' && !a && !bundGruendenAuf) {   // unter der Liste: erst ein Knopf
+        bundUnten.innerHTML = '<button type="button" class="btn btn--secondary btn--full p5-gruenden" data-bact="gruendenAuf">' + icon('flag') + '<span>Eigenes Bündnis gründen</span><span class="cost">' + icon('coin', 'icon--coin') + fmtNum(BUND.KOSTEN) + '</span></button>';
+        return;
+    }
     if (bundTab === 'suchen' && !a) {
-        bundOben.innerHTML = '<div class="bd-form"><div class="sect"><h4>Bündnis gründen</h4><span class="sect-aside">' + icon('coin', 'icon--coin') + fmtNum(BUND.KOSTEN) + '</span></div>' +
+        bundUnten.innerHTML = '<div class="bd-form"><div class="sect"><h4>Bündnis gründen</h4><span class="sect-aside">' + icon('coin', 'icon--coin') + fmtNum(BUND.KOSTEN) + '</span></div>' +
             '<input id="bdName" maxlength="20" placeholder="Name (3–20 Buchstaben)" autocomplete="off"><input id="bdTag" maxlength="4" placeholder="Kürzel (2–4)" autocomplete="off" class="bd-tag">' +
             '<div class="bd-farben" id="bdFarben">' + BUND.FARBEN.map((f, i) => '<button type="button" data-farbe="' + i + '" style="--bf:' + f + '"' + (i === 0 ? ' class="on"' : '') + ' aria-label="Farbe ' + (i + 1) + '"></button>').join('') + '</div>' +
             '<div class="bd-zeichen" id="bdZeichen">' + BUND.ZEICHEN.map((z, i) => '<button type="button" data-zeichen="' + i + '"' + (i === 0 ? ' class="on"' : '') + '>' + icon(z) + '</button>').join('') + '</div>' +
             '<label class="set-zeile"><span>Offen für alle<small>sonst nur auf Anfrage</small></span><input type="checkbox" id="bdOffen" checked></label>' +
             '<button type="button" class="btn btn--primary" data-bact="gruenden">' + icon('flag') + '<span>Gründen</span></button><p class="bd-fehler" id="bdFehler"></p></div>';
-        return;
     }
-    bundOben.innerHTML = '';
 }
 // Auswahl: Rally starten (Ziel t) · bei einer Rally mitmachen (rid) · Hilfe senden (nach)
 function bundQuellen(ziel, frist, toreEgal) {                     // eigene Basen, die ziel erreichen (frist: rechtzeitig bis dahin; toreEgal: Rally beitreten)
@@ -1464,9 +1469,10 @@ if (bundPopup) {
         const act = b.dataset.bact, w = b.dataset.w ? neutralId(b.dataset.w) : null, now = Date.now();
         const sicher = key => { if (bundSicher[key] && now < bundSicher[key]) { delete bundSicher[key]; return true; } bundSicher[key] = now + 3000; bundRender(); setTimeout(bundRender, 3100); return false; };
         if (act === 'tab') { bundTab = b.dataset.t; bundRender(true); }
+        else if (act === 'gruendenAuf') { bundGruendenAuf = true; bundRender(true); const n = document.getElementById('bdName'); if (n) { n.scrollIntoView({ block: 'center' }); n.focus(); } }
         else if (act === 'gruenden') {
             const name = document.getElementById('bdName').value.trim(), tag = document.getElementById('bdTag').value.trim().toUpperCase(), fehler = document.getElementById('bdFehler');
-            const farbe = +((bundOben.querySelector('#bdFarben .on') || {}).dataset || {}).farbe || 0, zeichen = +((bundOben.querySelector('#bdZeichen .on') || {}).dataset || {}).zeichen || 0;
+            const farbe = +((bundUnten.querySelector('#bdFarben .on') || {}).dataset || {}).farbe || 0, zeichen = +((bundUnten.querySelector('#bdZeichen .on') || {}).dataset || {}).zeichen || 0;
             const grund = !BUND_NAME_RE.test(name) ? 'Name: 3–20 lateinische Buchstaben oder Ziffern (Leerzeichen in der Mitte erlaubt).' : !BUND_TAG_RE.test(tag) ? 'Kürzel: 2–4 Buchstaben A–Z.'
                 : Object.values(bund.b).some(x => x.name.toLowerCase() === name.toLowerCase()) ? 'Diesen Namen gibt es schon.' : Object.values(bund.b).some(x => x.tag === tag) ? 'Dieses Kürzel gibt es schon.'
                 : coins < BUND.KOSTEN ? 'Zu wenig Münzen – Gründen kostet ' + fmtNum(BUND.KOSTEN) + '.' : '';
