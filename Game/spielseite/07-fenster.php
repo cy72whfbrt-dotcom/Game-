@@ -34,6 +34,8 @@
 .hh-steps span{height:8px;padding:0;border:1px solid #ffffff14} .hh-steps span.on{background:var(--gold-300)}
 @media (min-width:900px){ .hh-cards{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px} .hh-cards.hh-cards--zu{grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px}
   .hh-hero{grid-template-columns:minmax(0,1fr) 440px} }
+/* Willkommen zurück (6.10.): Bezeichnung einzeilig („Ertrag pro Stunde“ brach in 3 Zeilen um), lange Zahlen rutschen darunter */
+#welcomeModal .lvlup-rewards li{flex-wrap:wrap;row-gap:2px} #welcomeModal .lvlup-rewards li span{flex:1 0 auto;white-space:nowrap} #welcomeModal .lvlup-rewards li b{flex:1 1 auto}
 /* Profil: Kopf in 3 Zeilen (Rang + Titel, Name, Stufe) */
 .p5-kopfzeile{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 16px}
 .p5-kopfzeile .ptitle-tag{position:relative;margin:0;white-space:nowrap}
