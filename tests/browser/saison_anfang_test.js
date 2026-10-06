@@ -1,7 +1,8 @@
 // Welt-Saison, Feinheiten (Alexander 5.10.): Ankündigung nach echter Restzeit, „Neustart: vom Admin“ wenn angehalten, Pass „Saison-Pass“ ohne Nummer,
 // Tagesboss und Drache in den ersten 3 Tagen einer neuen Saison mit weniger Leben, Trostpreis wenn der Tagesboss entkommt (einmal),
 // nach dem Reset 48 Std. Anfängerschutz für alle echten Spieler – auch ohne Basis. Burg fair (Alexander 6.10. A, aufbau.js burgFair): Burg 3
-// bleibt mit ihrem Bau auf 4, Burg 4 verliert den Bau auf 5, Forschung mit Vorgänger fällt mit ihm.
+// bleibt mit ihrem Bau auf 4, Burg 4 verliert den Bau auf 5, Forschung mit Vorgänger fällt mit ihm. Saison-Preis eines echten Spielers erst
+// nach der Nachricht „saison“ (Endprüfung 6.10.).
 const { chromium, devices } = require('playwright');
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x) : ''));
 (async () => {
@@ -41,8 +42,14 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const c4 = { levels: { keep: 4, academy: 4 }, fo: {}, builds: [bau('keep', 5), bau('academy', 5)] }, g4 = AUF.burgFair(c4, 4);
     const c25 = { levels: { keep: 25, academy: 25, hospital: 30 }, fo: { m_laz: 10, m_laz2: 3, x_tempo2: 1, w_schutz: 2 } }; AUF.burgFair(c25, 4);
     const fair = { g3, gleich3: JSON.stringify(c3) === c3vor, g4, bau4: c4.builds.length, c25: c25.levels, fo25: c25.fo };
+    // 8) Saison-Preis eines echten Spielers erst NACH der Nachricht „saison“ (sein Handy verbucht ihn nach dem Neuladen, nach der Ausnahme
+    //    Edelsteine = 1.000 – vorher konnte er ihn in den 1,5 s davor abholen und verlor ihn); Welt und Weltrechner hier nur nachgestellt
+    const W0 = window.WELT, top0 = window.saisonTop, welt0 = window.saisonWelt, s8 = JSON.parse(JSON.stringify(saison)), reihe = [];
+    botById.u7 = { id: 'u7', name: 'Testspieler', mensch: true }; window.saisonTop = () => [['u7', 9]]; window.saisonWelt = () => {};
+    window.WELT = { menschen: { u7: {} }, ich: 'u0', deltaJetzt() {}, saisonKonto() {}, deltaBasis() {}, nachricht(uid, e) { reihe.push(uid + ':' + e.art); } };
+    try { saisonNeu(now); } finally { window.WELT = W0; window.saisonTop = top0; window.saisonWelt = welt0; delete botById.u7; saison = s8; saisonSpeichern(); }
     return { fair, bald, halt: /Neustart\s*vom Admin/.test(halt.replace(/<[^>]+>/g, ' ')), haltDatum: /\d{1,2}:\d{2} Uhr/.test(halt), normal: !/vom Admin/.test(normal) && / Uhr</.test(normal),
-      lager, pass, passNr: passNo(Date.now()), anfang, spaeter, erste, trost: trost.map(x => [x.gems, x.sh, x.crate]), ib: ib.length - ib0, gx: gx1 - gx, gefallen, aerger, schutzY, schutzIch,
+      reihe, lager, pass, passNr: passNo(Date.now()), anfang, spaeter, erste, trost: trost.map(x => [x.gems, x.sh, x.crate]), ib: ib.length - ib0, gx: gx1 - gx, gefallen, aerger, schutzY, schutzIch,
       nachricht: /neuBis:\s*\(loadBotState\(\)\[\w+\]\s*\|\|\s*\{\}\)\.neuBis\s*\|\|\s*\w+\s*\+\s*NEULING_MS/.test(saisonNeu.toString()) };
   });
   console.log(JSON.stringify(r));
@@ -57,6 +64,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(r.lager.ich === 0 && r.lager.x === 0 && r.lager.gespeichert === 0 && r.lager.heute === 3 && r.lager.vor > 0 && r.lager.nach === 0, 'Reset: Lager-Fortschritt für alle wieder ab Stufe 1, alte Lager weg (Zähler von heute bleiben)', r.lager);
   ok(r.aerger[0] === 1 && r.aerger[1] === 0, 'Reset: der Ärger der Mitspieler (Hauptstadt/Truppen nach Lage) ist vergessen', r.aerger);
   ok(r.nachricht, 'Nachricht „saison“ schickt den neuen Anfängerschutz mit');
+  ok(r.reihe.join() === '7:saison,7:evPreis', 'Saison-Preis eines echten Spielers kommt nach der Nachricht „saison“ (nach dem Neuladen, nicht von der Ausnahme überschrieben)', r.reihe);
   const F = r.fair;
   ok(!F.g3 && F.gleich3, 'Burg fair: Burg 3 mit Bau auf 4 und Forschung bleibt genau so', F);
   ok(F.g4 && F.bau4 === 0, 'Burg fair: Burg 4 – Bau auf 5 (Burg und Labor) abgebrochen', F);

@@ -77,16 +77,18 @@ function saisonNeu(now) {
     const burgFair = saison.burgFair > 0 ? saison.burgFair : nr, B = burgFair === nr ? BURG_FAIR : 0;   // B: Burg fair (nur beim ersten Reset danach)
     console.warn('Welt-Saison ' + alt + ' zu Ende – Saison ' + nr + ' beginnt (Top 10: ' + top.map(([w]) => (botById[w] || {}).name || w).join(', ') + ')');
     if (B) saisonAusnahme();                           // (vor den Preisen: die kommen wie bei echten Spielern zusätzlich dazu)
-    // 1) Preise: Gems ins Abholfach (Mitspieler direkt) und der Saison-Platz (für das Erfolg; der Rahmen kommt aus last.top) – feste Nummer je Saison
-    top.forEach(([w], i) => evPreis(w, 'saison', 'Welt-Saison ' + alt + ' · Platz ' + (i + 1), { gems: SAISON_PREISE[i], titel: 's' + alt + 'p' + (i + 1) }, alt));
-    // 2) echte Spieler: was die Welt ihnen noch schuldet, geht jetzt raus (vor der Nachricht „saison“ – sein Handy verbucht es noch in der alten Saison)
+    // 1) echte Spieler: was die Welt ihnen noch schuldet, geht jetzt raus (vor der Nachricht „saison“ – sein Handy verbucht es noch in der alten Saison)
     const menschen = window.WELT ? Object.keys(WELT.menschen).filter(id => id !== WELT.ich && parseInt(id.slice(1), 10) > 0) : [];
     for (const id of menschen) try { WELT.deltaJetzt(id); } catch (e) { console.warn('Saison:', e); }
-    // 3) die Welt neu
+    // 2) die Welt neu
     saisonWelt(now, f, B);
-    // 4) echte Spieler: Konto beim Weltrechner zurücksetzen, die Nachricht „saison“ (sein Handy übernimmt den Reset und lädt neu) –
+    // 3) echte Spieler: Konto beim Weltrechner zurücksetzen, die Nachricht „saison“ (sein Handy übernimmt den Reset und lädt neu) –
     //    Nummer je Reset eindeutig (mit Zeitpunkt): nach dem Zurückspielen kommt ein neuer Reset derselben Nummer sonst nie an
     for (const id of menschen) { try { WELT.saisonKonto(id, f, B); } catch (e) { console.warn('Saison:', e); } WELT.nachricht(parseInt(id.slice(1), 10), Object.assign({ art: 'saison', nr, alt, neuBis: (loadBotState()[id] || {}).neuBis || now + NEULING_MS }, B ? { burg: B } : {}), 'saison|' + nr + '|' + now); try { WELT.deltaBasis(id); } catch (e) {} }
+    // 4) Preise: Gems ins Abholfach (Mitspieler direkt) und der Saison-Platz (für das Erfolg; der Rahmen kommt aus last.top) – feste Nummer
+    //    je Saison. Erst nach der Nachricht „saison“: sein Handy verbucht den Preis dann nach dem Neuladen, also nach der Ausnahme
+    //    (Edelsteine = 1.000) – vorher konnte er ihn in den 1,5 s bis zum Neuladen abholen und verlor ihn wieder
+    top.forEach(([w], i) => evPreis(w, 'saison', 'Welt-Saison ' + alt + ' · Platz ' + (i + 1), { gems: SAISON_PREISE[i], titel: 's' + alt + 'p' + (i + 1) }, alt));
     saison = { nr, start: now, ende: saisonEnde(now), wirtAb, burgFair, last: { nr: alt, top: top.map(([w, v]) => [neutralId(w), Math.round(v)]) } }; saisonSpeichern();
     window.__prVorher = null;                          // (Prüfer im Weltrechner: die Welt ist gewollt so viel kleiner – neue Grundlinie)
     if (!window.WELT && !SYSTEM) {                     // (Vorschau, allein) dein Spielstand übernimmt den Reset beim Neuladen wie am Handy

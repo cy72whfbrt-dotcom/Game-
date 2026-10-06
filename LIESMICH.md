@@ -1070,6 +1070,12 @@ Befehle und Nachrichten verteilen, Spielerliste mit Profilen.
   mehr dazu; Profil schickt `frames`/`titles` statt `title` (welt.js, server/02). `openLookSheet('title')` öffnet „Rahmen“ bei den
   Saison-Rahmen. Tests `aussehen_rahmen_test` (neu), `saison_test` (Reset 1/2), `handy_stadt_test` („Wirklich?“ jetzt am Marsch-Skin),
   `server_test`, `tests/server/schummel_test.js` (erfundene Rahmen).
+- **6.10. – Endprüfung: Rahmen nach Neustart, Saison-Preis (Branch `fix-endpr2`, NICHT hochgeladen):** **Rahmen:** nach einem
+  Neustart des Weltrechners kamen zuerst alte Profile ohne `look.frames`/`titles` – `hbRahmen` merkte sich dann „keine“ für immer,
+  gekaufte Rahmen waren für andere unsichtbar. Jetzt merkt es sich die Rahmen erst am ersten Profil mit `look.frames`; ein altes Profil
+  zeigt bis dahin wie vorher den angelegten (welt.js `profilZuBotRoh`: `frame`/`title`). **Saison-Preis:** die Preise (09f `saisonNeu`)
+  gehen erst nach der Nachricht „saison“ raus – sein Handy verbucht sie nach dem Neuladen, nach der Ausnahme „Edelsteine = 1.000“
+  (vorher konnte ein schnell abgeholter Preis davon überschrieben werden). Tests `welt_test` (Rahmen), `saison_anfang_test` (Reihenfolge).
 - **6.10. – Profil aus Spieler-Sicht (Spieler-Durchsicht Bereich C, Branch `blick-c`, NICHT hochgeladen):** **Name überall gleich**
   (05a): fehlt er im Spielstand, steht der Konto-Name (`__OW.name`) im Profil – damit auch im HUD, in der Rangliste und in den
   Einstellungen (vorher „Du“ / „Dein Name“ / „–“); ohne Konto (Vorschau) „Statthalter“. Gespeichert wird nur, was der Spieler

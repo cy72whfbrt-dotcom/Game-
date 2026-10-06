@@ -613,7 +613,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundZielVon` → Game/buendnis/03-mitspieler.js:15
 - `burg` → Game/baukunst/02-buehne-grundbasis.js:282
 - `burgFair` → Game/aufbau.js:175
-- `burgFairWer` → Game/spiel/09f-saison.js:150
+- `burgFairWer` → Game/spiel/09f-saison.js:152
 - `burgKarte` → Game/aufbau.js:478
 - `burgKosten` → Game/aufbau.js:97
 - `burgKostenAlt` → Game/spiel/10d-welt-weltrechner.js:504
@@ -2084,16 +2084,16 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `S.scoped` → Game/baukunst/02-buehne-grundbasis.js:101
 - `S.thumb` → Game/baukunst/02-buehne-grundbasis.js:107
 - `saison_anhalten` → Game/server/07-welt-puls.php:36
-- `saisonAnfang` → Game/spiel/09f-saison.js:158
+- `saisonAnfang` → Game/spiel/09f-saison.js:160
 - `saisonAnkuendigen` → Game/spiel/09f-saison.js:66
-- `saisonAusnahme` → Game/spiel/09f-saison.js:142
+- `saisonAusnahme` → Game/spiel/09f-saison.js:144
 - `saisonBaldText` → Game/spiel/09f-saison.js:65
-- `saisonChip` → Game/spiel/09f-saison.js:159
+- `saisonChip` → Game/spiel/09f-saison.js:161
 - `saisonEnde` → Game/spiel/09f-saison.js:39
 - `saisonJetzt` → Game/spiel/09f-saison.js:46
-- `saisonKarte` → Game/spiel/09f-saison.js:163
+- `saisonKarte` → Game/spiel/09f-saison.js:165
 - `saisonLaden` → Game/spiel/09f-saison.js:29
-- `saisonNachholen` → Game/spiel/09f-saison.js:188
+- `saisonNachholen` → Game/spiel/09f-saison.js:190
 - `saisonNeu` → Game/spiel/09f-saison.js:75
 - `saisonNr` → Game/welt.js:278
 - `saisonOben` → Game/spiel/09c-events-drache.js:503
@@ -2104,8 +2104,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `saisonTitel` → Game/spiel/05a-aussehen-profil.js:36
 - `saisonTitelGeben` → Game/spiel/05a-aussehen-profil.js:39
 - `saisonTop` → Game/spiel/09f-saison.js:70
-- `saisonWelt` → Game/spiel/09f-saison.js:97
-- `saisonWeltZurueck` → Game/spiel/09f-saison.js:200
+- `saisonWelt` → Game/spiel/09f-saison.js:99
+- `saisonWeltZurueck` → Game/spiel/09f-saison.js:202
 - `salvageItem` → Game/spiel/02a-shop-stufen.js:142
 - `salvageItems` → Game/spiel/02a-shop-stufen.js:155
 - `sammelTempo` → Game/aufbau.js:236
@@ -4853,14 +4853,14 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `saisonAnkuendigen` :66
 - `saisonTop` :70 — die besten 10 nach Macht (wie die Rangliste) → [[wer, Macht]]
 - `saisonNeu` :75
-- `saisonWelt` :97 — alles Weltliche zurück, die Hauptstädte auf neue Plätze (f < 1: Münz-Töpfe umre…
-- `saisonAusnahme` :142 — Alexander 6.10.: einmalige Ausnahme – Mitspieler: Edelsteine genau 1.000, Holz/…
-- `burgFairWer` :150 — Burg fair für einen Mitspieler oder echten Spieler in der Welt: seine Stadt und…
-- `saisonAnfang` :158 — ---- was man sieht: der Countdown (Leiste unter dem HUD in den letzten 3 Tagen,…
-- `saisonChip` :159
-- `saisonKarte` :163
-- `saisonNachholen` :188 — (Handy) Rückfall: die Welt ist in einer neueren Saison als dein Spielstand, abe…
-- `saisonWeltZurueck` :200 — (Handy) die Welt ist wieder in einer älteren Saison als dein Spielstand (Sicher…
+- `saisonWelt` :99 — alles Weltliche zurück, die Hauptstädte auf neue Plätze (f < 1: Münz-Töpfe umre…
+- `saisonAusnahme` :144 — Alexander 6.10.: einmalige Ausnahme – Mitspieler: Edelsteine genau 1.000, Holz/…
+- `burgFairWer` :152 — Burg fair für einen Mitspieler oder echten Spieler in der Welt: seine Stadt und…
+- `saisonAnfang` :160 — ---- was man sieht: der Countdown (Leiste unter dem HUD in den letzten 3 Tagen,…
+- `saisonChip` :161
+- `saisonKarte` :165
+- `saisonNachholen` :190 — (Handy) Rückfall: die Welt ist in einer neueren Saison als dein Spielstand, abe…
+- `saisonWeltZurueck` :202 — (Handy) die Welt ist wieder in einer älteren Saison als dein Spielstand (Sicher…
 
 ### Game/spiel/10a-inselfenster-vorschau.js — Fenster-Start, Insel-Fenster: Inhalt, Angriffs- und Sende-Vorschau, Truppen-Reg…
 - `islandTitle` :25 — Renders whichever screen (menu or the upgrade preview) is currently active - ne…
