@@ -55,8 +55,9 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   const s = await ev(async () => { document.getElementById('profileBtn').click(); document.getElementById('tabBtnSkills').click(); await new Promise(r => setTimeout(r, 200));
     const k = [...document.querySelectorAll('#skillGrid .skillNode')]; const r = k[0].getBoundingClientRect();
     const namen = k.map(x => (x.querySelector('.nName') || {}).textContent || ''), sicht = k.every(x => { const q = x.querySelector('.nName').getBoundingClientRect(); return q.height > 0 && q.left >= 0 && q.right <= innerWidth; });
-    closeAllPopups(); return { n: k.length, namen, w: Math.round(r.width), rund: getComputedStyle(k[0]).borderRadius, sicht }; });
-  ok(s.n === 6 && s.namen.every(t => t.length > 2) && s.namen.includes('Geschwindigkeit') && s.w >= 64 && s.rund === '50%' && s.sicht, 'Fähigkeiten: 6 große runde Knoten, Name unter jedem (ganz zu sehen)', s);
+    const ueber = k.filter(x => { const q = x.querySelector('.nName'); return q.scrollWidth > q.clientWidth + 1; }).length;   // kein Name ragt über seine Breite (in den Nachbarn)
+    closeAllPopups(); return { n: k.length, namen: namen.map(t => t.replace(/\u00ad/g, '')), ueber, w: Math.round(r.width), rund: getComputedStyle(k[0]).borderRadius, sicht }; });
+  ok(s.n === 6 && s.namen.every(t => t.length > 2) && s.ueber === 0 && s.namen.includes('Geschwindigkeit') && s.w >= 64 && s.rund === '50%' && s.sicht, 'Fähigkeiten: 6 große runde Knoten, Name unter jedem (ganz zu sehen, keiner ragt in den Nachbarn)', s);
 
   ok(!fe.length, 'keine Skriptfehler', fe.slice(0, 3));
   await b.close();

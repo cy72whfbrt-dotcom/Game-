@@ -1919,7 +1919,7 @@ button.cb-slot{position:relative} button.cb-slot::before{content:"";position:abs
 #skillGrid.skillCross{width:min(100%,330px);aspect-ratio:auto;grid-template-rows:repeat(3,112px)}
 #skillGrid .skillNode{width:66px;height:66px;border-radius:50%}
 #skillGrid .skillNode .nIcon .icon{width:26px;height:26px}
-#skillGrid .skillNode .nName{position:absolute;top:calc(100% + 5px);left:50%;width:100px;transform:translateX(-50%);font:600 11px/1.2 var(--font-ui);color:var(--tx-2);text-align:center}
+#skillGrid .skillNode .nName{position:absolute;top:calc(100% + 5px);left:50%;width:92px;transform:translateX(-50%);font:600 11px/1.2 var(--font-ui);hyphens:manual;color:var(--tx-2);text-align:center}
 #skillGrid .skillNode.selected .nName{color:var(--gold-100)}
 #skillGrid .skillNode[data-level="0"]{filter:saturate(.35)}
 .p5-naechste{margin:0 0 8px;padding:8px 12px;border:1px solid var(--line-1);border-radius:8px;font-size:13px;color:var(--tx-2)}

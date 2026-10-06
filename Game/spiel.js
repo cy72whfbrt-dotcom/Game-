@@ -5490,7 +5490,7 @@ function renderSkillGrid() {
         node.innerHTML =                                    // runder Knoten, Stufe darin, Name darunter
             '<div class="nIcon">' + icon(skillInfo.icon) + '</div>' +
             '<div class="nLevel">' + skillLevel + (skillInfo.max ? '/' + skillInfo.max : '') + '</div>' +
-            '<span class="nName">' + escapeHtml(skillInfo.name) + '</span>';
+            '<span class="nName">' + escapeHtml(skillInfo.name).replace('herstellung', '&shy;herstellung') + '</span>';   // (Trennstelle: das lange Wort bricht unter dem Knoten um)
         node.addEventListener('click', () => {
             selectedSkillKey = key;
             renderSkillGrid();
