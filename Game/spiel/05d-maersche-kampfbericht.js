@@ -449,7 +449,7 @@ const kampflogUmbauen = (function () {
     // Spähbericht (Vorbild RoK): oben die Verteidigung Teil für Teil wie im Kampfbericht, darunter kompakt Herr, Verteidigungs-Held,
     // Basis und Rohstoffe – nur was der Späher gefunden hat (keine Zeilen voller „–“); das Alter steht EINMAL oben in der Karte
     const block = (kopf, inhalt) => inhalt ? '<div class="kl-rss"><div class="logGearHead">' + kopf + '</div>' + inhalt + '</div>' : '';
-    const gitter = h => '<div class="kl-gitter" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));column-gap:16px">' + h + '</div>';
+    const gitter = h => '<div class="kl-gitter" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));column-gap:16px">' + h + '</div>';
     function spaehHerr(s) {                                                   // Stufe, Titel, angelegte Ausrüstung, Fähigkeiten
         const items = s.gear ? Object.keys(EQUIPMENT_DEFS).filter(k => s.gear[k]).map(k => [k, s.gear[k][0], s.gear[k][1], s.gear[k][2] || 0]) : [];
         const g = el(kampfGearHtml({ lvl: fmt(s.lvl), title: s.titel, items, skills: [], city: [] }));
@@ -460,10 +460,12 @@ const kampflogUmbauen = (function () {
         return g.outerHTML;
     }
     function spaehHeld(s) {                                                   // Verteidigungs-Held aus der Mauer: eine Karte, nur seine echten Werte
-        const vhd = s.vh && heroById(s.vh.id) ? s.vh : null;
-        if (!vhd) return zl('Verteidigungs-Held', 'keiner', ' kl-null', s.vh !== undefined ? 'keiner in der Mauer (oder unterwegs)' : 'älterer Bericht – neu spähen');
+        const vhd = s.vh && heroById(s.vh.id) ? s.vh : null, kopf = '<div class="logGearHead">Verteidigungs-Held</div>';
+        if (!vhd) return '<div class="logGear">' + kopf + zl('In der Mauer', 'keiner', ' kl-null', s.vh !== undefined ? 'oder gerade unterwegs' : 'älterer Bericht – neu spähen') + '</div>';
         const g = el(kampfGearHtml({ items: [], hx: vhd, heroOnly: 1 }));
-        g.querySelectorAll('.logHero').forEach(h => { const L = [...h.querySelectorAll(':scope > .logLine')]; if (!L.length) return;
+        g.insertAdjacentHTML('afterbegin', kopf);
+        g.querySelectorAll('.logHero').forEach((h, i) => { if (!i) h.style.borderTop = '0';   // (die Linie zieht schon der Kasten)
+            const L = [...h.querySelectorAll(':scope > .logLine')]; if (!L.length) return;
             h.insertAdjacentHTML('beforeend', gitter(L.map(l => l.outerHTML).join(''))); L.forEach(l => l.remove()); });
         return g.outerHTML;
     }
@@ -488,7 +490,7 @@ const kampflogUmbauen = (function () {
         const box = el('<div class="logSide"><div class="logSideLabel">Gespäht · ' + escapeHtml(name) + '</div>' +
             zl('Truppen', fmt(e.troops)) + (e.verst > 0 ? zl('Verstärkung', fmt(e.verst), '', 'Bündnis-Truppen in der Basis – verteidigen mit') : '') + vert +
             '<div class="logSum"><span>Gesamt</span><span>' + fmt((e.troops || 0) + (e.verst || 0) + (e.defense || 0)) + '</span></div>' +
-            (s ? spaehHerr(s) + block('Verteidigungs-Held', spaehHeld(s)) + block('Basis', spaehBasis(s)) + block('Rohstoffe', spaehRoh(s)) : '') + '</div>');
+            (s ? spaehHerr(s) + spaehHeld(s) + block('Basis', spaehBasis(s)) + block('Rohstoffe', spaehRoh(s)) : '') + '</div>');
         const sum = d.querySelector('summary').outerHTML;
         d.innerHTML = sum; const cmp = el('<div class="logCompare"><div class="kl-gruppe kl-v"></div></div>'); cmp.firstChild.appendChild(box); d.appendChild(cmp);
     }

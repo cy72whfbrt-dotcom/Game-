@@ -60,7 +60,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `alike` → Game/spiel/03a-karte-hintergrund.js:458
 - `allowed` → Game/baukunst/05-umland.js:660
 - `alsBefehl` → Game/spiel/01a-grundlagen.js:13
-- `alter` → Game/spiel/05d-maersche-kampfbericht.js:570
+- `alter` → Game/spiel/05d-maersche-kampfbericht.js:572
 - `analyse` → Game/baukunst/04-vielfalt-stile.js:366
 - `andere_sitzungen_loeschen` → Game/server/05-datenbank-welt.php:292
 - `anfKosten` → Game/spiel/08b-burg-aussehen.js:149
@@ -950,7 +950,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `feldBarbSpeichern` → Game/spiel/09b-lager-tagesboss.js:76
 - `feldBericht` → Game/spiel/09a-funde-felder.js:265
 - `feldErlaubt` → Game/spiel/10c-start-einstellungen.js:250
-- `fensterArt` → Game/spiel/05d-maersche-kampfbericht.js:525
+- `fensterArt` → Game/spiel/05d-maersche-kampfbericht.js:527
 - `fertig` → Game/buendnis/01-daten-regeln.js:152
 - `fertig` → Game/speichern.js:153
 - `fest_lesen` → Game/server/05-datenbank-welt.php:9
@@ -1656,7 +1656,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `noRouteHint` → Game/spiel/01b-weltkarte.js:352
 - `noteBattle` → Game/bots/02-kampf-karte.js:261
 - `oculus` → Game/baukunst/07-hafen-palast.js:449
-- `oeffnen` → Game/spiel/05d-maersche-kampfbericht.js:530
+- `oeffnen` → Game/spiel/05d-maersche-kampfbericht.js:532
 - `offen` → Game/spiel/10c-start-einstellungen.js:269
 - `offene_befehle` → Game/server/05-datenbank-welt.php:229
 - `okPt` → Game/baukunst/05-umland.js:714
@@ -1885,7 +1885,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `rechnerStatus` → Game/spiel/10d-welt-weltrechner.js:10
 - `rechnet` → Game/spiel/01a-grundlagen.js:6
 - `recol` → Game/baukunst/04-vielfalt-stile.js:214
-- `refreshBattleLog` → Game/spiel/05d-maersche-kampfbericht.js:568
+- `refreshBattleLog` → Game/spiel/05d-maersche-kampfbericht.js:570
 - `refreshOpenCombatLog` → Game/spiel/05d-maersche-kampfbericht.js:130
 - `refreshTerritory` → Game/spiel/03a-karte-hintergrund.js:223
 - `regionBiome` → Game/spiel/01b-weltkarte.js:182
@@ -2133,10 +2133,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `sofort` → Game/speichern.js:168
 - `soot` → Game/baukunst/03-wahrzeichen-feuer.js:330
 - `sourceTroops` → Game/spiel/10a-inselfenster-vorschau.js:221
-- `spaeh` → Game/spiel/05d-maersche-kampfbericht.js:482
+- `spaeh` → Game/spiel/05d-maersche-kampfbericht.js:484
 - `spaehAbgelaufen` → Game/spiel/02c-spaeher-ankunft.js:103
 - `spaehAlterText` → Game/spiel/02c-spaeher-ankunft.js:116
-- `spaehBasis` → Game/spiel/05d-maersche-kampfbericht.js:470
+- `spaehBasis` → Game/spiel/05d-maersche-kampfbericht.js:472
 - `spaehBericht` → Game/spiel/02c-spaeher-ankunft.js:84
 - `spaehEinsetzen` → Game/spiel/02c-spaeher-ankunft.js:95
 - `spaeherBlick` → Game/spiel/02c-spaeher-ankunft.js:52
@@ -2149,7 +2149,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `spaehGeaendert` → Game/spiel/02c-spaeher-ankunft.js:90
 - `spaehHeld` → Game/spiel/05d-maersche-kampfbericht.js:462
 - `spaehHerr` → Game/spiel/05d-maersche-kampfbericht.js:453
-- `spaehRoh` → Game/spiel/05d-maersche-kampfbericht.js:477
+- `spaehRoh` → Game/spiel/05d-maersche-kampfbericht.js:479
 - `spaehRunde` → Game/spiel/10d-welt-weltrechner.js:928
 - `spaehVerst` → Game/spiel/02c-spaeher-ankunft.js:118
 - `spaehVom` → Game/spiel/02c-spaeher-ankunft.js:111
@@ -2300,7 +2300,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `uhrHtml` → Game/spiel/01a-grundlagen.js:138
 - `uhrText` → Game/spiel/01a-grundlagen.js:137
 - `uiLayout` → Game/spiel/01a-grundlagen.js:221
-- `umbauen` → Game/spiel/05d-maersche-kampfbericht.js:496
+- `umbauen` → Game/spiel/05d-maersche-kampfbericht.js:498
 - `UMRECHNEN.openWaterArmies` → Game/welt.js:110
 - `UMRECHNEN.openWaterBarbMarches` → Game/welt.js:100
 - `UMRECHNEN.openWaterBarbWho` → Game/welt.js:101
@@ -4013,14 +4013,14 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `gitter` :452
 - `spaehHerr` :453 — Stufe, Titel, angelegte Ausrüstung, Fähigkeiten
 - `spaehHeld` :462 — Verteidigungs-Held aus der Mauer: eine Karte, nur seine echten Werte
-- `spaehBasis` :470
-- `spaehRoh` :477 — was er hat – und was davon an der Hauptstadt zu holen ist
-- `spaeh` :482
-- `umbauen` :496
-- `fensterArt` :525
-- `oeffnen` :530
-- `refreshBattleLog` :568 — live countdowns + the rows' relative times ("vor 12 s") while the panel is open
-- `alter` :570
+- `spaehBasis` :472
+- `spaehRoh` :479 — was er hat – und was davon an der Hauptstadt zu holen ist
+- `spaeh` :484
+- `umbauen` :498
+- `fensterArt` :527
+- `oeffnen` :532
+- `refreshBattleLog` :570 — live countdowns + the rows' relative times ("vor 12 s") while the panel is open
+- `alter` :572
 
 ### Game/spiel/06a-aufgaben.js — Aufgaben und tägliche Belohnung
 - `todayKey` :5 — (VIP ist seit 2.10. ganz raus – Alexander)
