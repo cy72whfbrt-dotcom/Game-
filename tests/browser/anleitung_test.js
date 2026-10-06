@@ -1,7 +1,7 @@
 // Anleitung für neue Spieler (LIESMICH 11b D, 5./6.10.): tägliche Belohnung erst nach Schritt 2, Hauptstadt-Fenster erklärt sich,
 // der nächste nötige Knopf pulsiert, Schritt 6 zählt erst nach echtem Abholen, Schritt 7 erklärt die Knöpfe ohne Text (auch den Würfel = Rohstoffe, Verstanden),
 // Schritt 2 beginnt positiv, Schritt 1 springt bei einer neutralen Basis gleich weiter (6.10. Spieltest), Belohnung nur beim ersten Mal, „Anleitung noch mal“ in den Einstellungen, „×“ fragt erst im Spiel (kein confirm()), alter
-// Stand mit 6 Schritten bleibt fertig. Leiste kompakt: Schritt, Text und „×“ in einer Zeile. Handy (390×844) + Desktop. Bilder in den Arbeitsordner (process.argv[3]), wenn angegeben.
+// Stand mit 6 Schritten bleibt fertig. Leiste kompakt: Schritt, Text und „×“ in einer Zeile, Text höchstens 2 Zeilen (≤ 56 px, antippen zeigt alles). Handy (390×844) + Desktop. Bilder in den Arbeitsordner (process.argv[3]), wenn angegeben.
 const { chromium, devices } = require('playwright');
 const path = require('path');
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x) : ''));
@@ -24,7 +24,10 @@ const ANFANG = () => { window.__OW = { neu: true, nameGewaehlt: true }; window._
       // 1) Start: Schritt 1, keine tägliche Belohnung (obwohl abholbar), das Fadenkreuz pulsiert
       o.start = { schritt: anleitung.schritt, sicht: !zu('anleitung'), text: el('anleitungSchritt').textContent, daily: zu('dailyModal'), abholbar: dailyClaimable(), puls: document.body.dataset.anlPuls, heim: puls(el('homeBtn')) };
       const rT = el('anleitungText').getBoundingClientRect(), mitte = e => { const q = e.getBoundingClientRect(); return (q.top + q.bottom) / 2; };
-      o.start.zeile = { hoehe: Math.round(el('anleitung').getBoundingClientRect().height), eine: ['anleitungSchritt', 'anleitungWeg'].every(id => mitte(el(id)) > rT.top && mitte(el(id)) < rT.bottom) };   // Schritt · Text · × nebeneinander
+      const zeilen = () => Math.round(el('anleitungText').getBoundingClientRect().height / parseFloat(getComputedStyle(el('anleitungText')).lineHeight)), xb = el('anleitungWeg').getBoundingClientRect(), xm = [(xb.left + xb.right) / 2, (xb.top + xb.bottom) / 2];
+      o.start.zeile = { hoehe: Math.round(el('anleitung').getBoundingClientRect().height), zeilen: zeilen(), eine: ['anleitungSchritt', 'anleitungWeg'].every(id => mitte(el(id)) > rT.top && mitte(el(id)) < rT.bottom),   // Schritt · Text · × nebeneinander
+        x44: [[-21, 0], [21, 0], [0, -21], [0, 21]].every(([dx, dy]) => el('anleitungWeg').contains(document.elementFromPoint(xm[0] + dx, xm[1] + dy))) };   // × sichtbar kleiner, Tippfläche 44 px
+      el('anleitungText').click(); o.start.zeile.auf = zeilen(); el('anleitungText').click(); o.start.zeile.wiederZu = zeilen();   // langer Text: antippen zeigt alles
       // 2) Hauptstadt antippen: der erklärende Satz im Fenster, weiter zu Schritt 2 – noch immer keine tägliche Belohnung
       openIslandPopup(islandById[playerIslandId]); await bis(() => anleitung.schritt === 1);
       const sa = el('popupAnleitung'); o.haupt = { schritt: anleitung.schritt, text: el('anleitungText').textContent, satz: !sa.hidden && sa.getBoundingClientRect().height > 0 && /Hier stehen deine Truppen\. Mit ihnen greifst du an und sammelst\./.test(sa.textContent) };
@@ -85,7 +88,8 @@ const ANFANG = () => { window.__OW = { neu: true, nameGewaehlt: true }; window._
     if (r.fehler) { await ctx.close(); continue; }
     ok(r.start.schritt === 0 && r.start.sicht && r.start.text === 'Schritt 1/7', art + ': neuer Spieler sieht Schritt 1/7', r.start);
     ok(r.start.abholbar && r.start.daily && r.haupt.daily, art + ': tägliche Belohnung beim ersten Start NICHT vor Schritt 2', { start: r.start.daily, nachSchritt1: r.haupt.daily });
-    ok(r.start.zeile.eine && r.start.zeile.hoehe <= (art === 'Handy' ? 110 : 80), art + ': Leiste kompakt: Schritt, Text und „×“ in einer Zeile', r.start.zeile);
+    ok(r.start.zeile.eine && r.start.zeile.zeilen <= 2 && r.start.zeile.hoehe <= 56 && r.start.zeile.x44, art + ': Leiste kompakt: Schritt, Text und „×“ in einer Zeile, Text höchstens 2 Zeilen, ≤ 56 px hoch (× tippbar 44 px)', r.start.zeile);
+    if (art === 'Handy') ok(r.start.zeile.auf > 2 && r.start.zeile.wiederZu === r.start.zeile.zeilen, art + ': langer Text gekürzt – antippen zeigt alles, nochmal antippen kürzt wieder', r.start.zeile);
     ok(r.start.puls === 'heim' && r.start.heim, art + ': Schritt 1: das Fadenkreuz (zur Hauptstadt) pulsiert', r.start);
     ok(r.haupt.schritt === 1 && r.haupt.satz, art + ': Hauptstadt-Fenster erklärt sich („Hier stehen deine Truppen …“)', r.haupt);
     ok(/^Gut!/.test(r.haupt.text) && !/keine neutrale/.test(r.haupt.text), art + ': Schritt 2 beginnt positiv (Hauptstadt noch offen: „Gut! …“, kein Fehler-Satz)', r.haupt.text);

@@ -311,12 +311,13 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 .toast:empty{display:none}
 .toast--lang{display:block;-webkit-line-clamp:none}   /* langer Hinweis (Saison): ganz lesbar, Umbruch statt „…“ */
 .anleitung{position:fixed;z-index:var(--z-toast);left:calc(var(--safe-l,0px) + 10px);right:calc(var(--safe-r,0px) + 58px);bottom:calc(var(--dock-h,64px) + var(--safe-bd,0px) + 14px);
-  max-width:420px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:3px 6px;padding:8px 4px 9px 12px;   /* „Schritt 1/7“ als Überzeile, darunter der Text (volle Breite), × rechts, Knöpfe darunter */
+  max-width:420px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px 8px;padding:6px 6px 6px 10px;   /* Schritt · Text · × in einer Zeile (Text höchstens 2 Zeilen, ≤ 56 px), Knöpfe darunter */
   background:var(--glass);border:1px solid var(--gold-300);border-radius:var(--r-sm);box-shadow:var(--sh-2);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 .anleitung[hidden]{display:none}
-.anleitung-n{grid-column:1;grid-row:1;font:700 10px/1 var(--font-ui);color:var(--gold-200);letter-spacing:.12em;text-transform:uppercase;white-space:nowrap}
-.anleitung-t{grid-column:1;grid-row:2;font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-1)}
-#anleitungWeg{grid-column:2;grid-row:1 / 3}
+.anleitung-n{width:min-content;font:700 10px/1.15 var(--font-ui);color:var(--gold-200);text-align:center}   /* „Schritt“ über „1/7“: schmal */
+.anleitung-t{font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-1);cursor:pointer}
+.anleitung:not(.is-auf):not(.is-frage):not(.is-ok) .anleitung-t{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}   /* langer Text: „…“, antippen zeigt alles */
+#anleitungWeg{position:relative;width:32px;height:32px;align-self:center} #anleitungWeg::before{content:"";position:absolute;inset:-7px}   /* (sichtbar 32 px, Tippfläche 44 px – ab der Innenkante: 1 px Rand dazu) */
 /* Handy: mit offenem Basis-Fenster oben unter dem HUD statt direkt über dem Fenster – dort steht die Basis (inselMittig) */
 @media (max-width:899px) and (min-height:501px){ body:has(#islandPopup.is-open) .anleitung{top:calc(var(--safe-t) + var(--hud-top-space));bottom:auto!important} }
 .anleitung-k{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px}

@@ -797,6 +797,13 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   P1: die Regeln `#goalsTabs .tab:nth-child…` in spielseite/02 wirken nicht mehr (Chips statt `.tab`) und können weg.
   Test `tests/browser/handy_fenster_test.js` (neu); `alles_test`/`klick_test`: Kampf-Reiter mit durchgeklickt, neue Reiter
   nicht als Knopf gedrückt.
+- **6.10. – Rote Tests nach dem Zusammenführen (Branch `fix-rot`, NICHT hochgeladen):** **Mauer → Helden** (08d `vhHtml`): solange die
+  Auswahl offen ist, ruhen die Werte-Zeilen – das Fenster passt am Handy ohne Scrollen, der Kopf bleibt sichtbar. **Anleitung**
+  (02-Stil, 06b): wieder Schritt · Text · × in einer Zeile („Schritt“ über „1/7“), Text höchstens 2 Zeilen (≤ 56 px), langer Text
+  „…“ – antippen zeigt alles (mit „Verstanden“/Frage immer ganz); × sichtbar 32 px, Tippfläche 44 px. **Angriff 25 %…Alle**
+  (07-Stil): Tippfläche 44 px (sichtbar 42). Tests: Thron-Karten „… · 2 Std. Ertrag/Ausbildung“, Shop als Ausnahme der 70-%-Regel
+  (Vorgabe design_shop.md: bis an die Leiste, 70 % jetzt am Kampf-Fenster geprüft), Heldenhalle in der Test-Welt mit gesperrten
+  Helden (dort sonst genug Splitter für alle → „Freischalten“ oben).
 - **6.10. – Texte aus dem Spieltest (Branch `fix-design-texte`, NICHT hochgeladen):** **Anleitung** (spiel/06b): Schritt 1
   springt gleich zu Schritt 2, wenn schon eine neutrale Basis offen ist (auch „Angriff vorbereiten“) oder angegriffen wurde; eine
   fremde Basis in Schritt 1 → „Das ist nicht deine Hauptstadt …“ statt des stehengebliebenen Satzes. Schritt 2 mit noch offener

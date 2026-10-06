@@ -1,6 +1,6 @@
 // Design 11b F, Paket P1 (Handy 390×844 + Desktop 1280×800): Grundwerte als CSS-Variablen, HUD mit Spielerbild (antippen = Profil),
 // EIN Streifen für alle Dauer-Hinweise („+N“ klappt auf), Leiste mit 5 runden Knöpfen (Profil nicht mehr dort),
-// Fenster am Handy höchstens 70 % hoch mit fester Fußzeile, Hinweis nie über Fenster-Kopf/Fuß oder den Zoom-Knöpfen.
+// Fenster am Handy höchstens 70 % hoch (Ausnahme Shop: bis an die Leiste) mit fester Fußzeile, Hinweis nie über Fenster-Kopf/Fuß oder den Zoom-Knöpfen.
 // Spieltest: Tippflächen ≥ 44 px, Angriffs-Karte über der Leiste, Startbasis/Kopfzeile/Profil nicht abgeschnitten, Bauarbeiter unter dem HUD.
 const { chromium, devices } = require('playwright');
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x) : ''));
@@ -41,8 +41,10 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       const sp = document.getElementById('shopPopup'), kopf = sp.querySelector('.phead'), fuss = sp.querySelector('.pfoot');
       flashHint('Kurzer Hinweis', 4000); await warte(200);
       const h = document.getElementById('hint'), hb = box(h), hz = +getComputedStyle(h).zIndex, sz = +getComputedStyle(sp).zIndex;
-      const fenster = { hoehe: box(sp).height / innerHeight, fussGanz: !fuss || (box(fuss).bottom <= innerHeight && box(fuss).top >= box(sp).top),   // (der Shop hat keine Fußzeile mehr)
+      const fenster = { shop: box(sp).height / innerHeight, shopUeberLeiste: box(sp).bottom <= box(document.getElementById('cornerButtons')).top + 1, fussGanz: !fuss || (box(fuss).bottom <= innerHeight && box(fuss).top >= box(sp).top),   // (der Shop hat keine Fußzeile mehr)
         hinweisFrei: (!ueber(hb, box(kopf)) && !(fuss && ueber(hb, box(fuss)))) || hz < sz };
+      closeAllPopups(); document.getElementById('battleLogBtn').click(); await warte(400);   // (ein gewöhnliches Fenster: Kampf)
+      fenster.hoehe = box(document.getElementById('battleLogPopup')).height / innerHeight;
       closeAllPopups(); flashHint('Kurzer Hinweis', 4000); await warte(200);
       const zoom = document.getElementById('mapControls'); fenster.zoomFrei = !sicht(zoom) || !ueber(box(h), box(zoom));
       flashHint('', 1);
@@ -91,6 +93,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     ok(r.streifen.chips === 1 && r.streifen.auf >= 2 && r.streifen.mehr === '+' + (r.streifen.auf - 1) && r.streifen.zeile && r.streifen.unterHud, art + ': ein Streifen unter den Werten – ein Hinweis + „+N“ (Drache, Invasion …)', r.streifen);
     ok(r.streifen.zu === 1, art + ': „+N“ klappt alle Hinweise auf und wieder zu', r.streifen);
     if (art === 'Handy') ok(r.fenster.hoehe <= 0.705, art + ': Fenster höchstens 70 % hoch (Karte bleibt sichtbar)', r.fenster);
+    // Ausnahme Shop (Vorgabe design_shop.md, Schaufenster A): bis an die Leiste hoch, damit alle Kisten ohne Scrollen passen
+    if (art === 'Handy') ok(r.fenster.shop > 0.705 && r.fenster.shop <= 0.9 && r.fenster.shopUeberLeiste, art + ': Shop (Ausnahme) höher, endet über der Leiste', r.fenster);
     ok(r.fenster.fussGanz, art + ': Fußzeile mit dem Haupt-Knopf ganz zu sehen', r.fenster);
     ok(r.fenster.hinweisFrei && r.fenster.zoomFrei, art + ': Hinweis nie über Fenster-Kopf/Fuß oder den Zoom-Knöpfen', r.fenster);
     ok(!r.st.klein.length, art + ': Tippflächen ≥ 44 px (Zoom-Knöpfe, Rohstoff-Knopf, Angriff-Chips/Held/Knöpfe, Bündnis im Profil, Zurück/Schneller, Bauarbeiter)', r.st);

@@ -91,6 +91,7 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
 .rp-bund.is-leer{font-size:var(--fs-11)} .rp-bund.is-leer > span{white-space:normal}   /* „Kein Bündnis – jetzt eins suchen“ ganz, notfalls in zwei Zeilen */
 .panel--island .seg button{position:relative;min-height:36px}
 .panel--island .seg button::before{content:"";position:absolute;left:-1px;right:-1px;top:-5px;bottom:-5px}   /* (ab der Innenkante: 1 px Rand dazu) */
+.ap-regler .seg button::before{left:-3px;right:-3px}   /* Angriff 25 %…Alle: 42 px breit, die Tippfläche reicht in die Lücke (44 px) */
 .panel--island .hero-seg.chips-quer{padding-block:4px}   /* (die Liste schiebt quer: die Tippfläche braucht Platz im Rahmen) */
 .panel--island .pfoot .btn{min-height:var(--k-zweit)}
 .from-sel{padding:0 6px 0 10px;font-weight:500}   /* („· reicht“ dahinter passt auch noch) */

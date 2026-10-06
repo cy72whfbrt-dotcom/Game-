@@ -7282,7 +7282,7 @@ function anleitungZeigen() {
     if (document.getElementById('wkName') || ['welcomeModal', 'dailyModal', 'levelUpModal', 'rewardModal'].some(id => { const m = document.getElementById(id); return m && !m.hidden; })) { el.hidden = true; anleitungPuls(''); return; }   // erst Name/Begrüßung
     let weiter = false; try { weiter = !!ANLEITUNG[anleitung.schritt].fertig(); } catch (e) {}
     if (weiter) {
-        anleitung.schritt++; delete anleitungTat.abgeholt; sfx('upgrade');   // (Abholen zählt nur im Schritt, in dem es passiert)
+        anleitung.schritt++; delete anleitungTat.abgeholt; sfx('upgrade'); el.classList.remove('is-auf');   // (Abholen zählt nur im Schritt, in dem es passiert)
         if (anleitung.schritt >= ANLEITUNG.length) {
             const erstesMal = !anleitung.belohnt; anleitung.belohnt = true; anleitungSpeichern(); el.hidden = true; anleitungPuls(''); anleitungFenster();
             if (erstesMal) { inboxAdd({ src: 'gift', title: 'Anleitung geschafft', gems: 10, crate: 0 }); flashHint('Geschafft! Unter „Events“ → Abholfach wartet eine kleine Belohnung. Viel Spaß!', 6000); }
@@ -7300,7 +7300,7 @@ function anleitungZeigen() {
     let txt = null; try { txt = s.tipp && s.tipp(); } catch (e) {}
     setText(document.getElementById('anleitungSchritt'), 'Schritt ' + (anleitung.schritt + 1) + '/' + ANLEITUNG.length);
     setText(document.getElementById('anleitungText'), anleitungFrage ? 'Anleitung wirklich überspringen? Unter Profil → Einstellungen kannst du sie jederzeit noch mal starten.' : txt || s.t);
-    el.classList.toggle('is-frage', anleitungFrage);
+    el.classList.toggle('is-frage', anleitungFrage); el.classList.toggle('is-ok', !anleitungFrage && !!s.ok);   // (mit Knöpfen darunter: Text ganz)
     document.getElementById('anleitungFrage').hidden = !anleitungFrage; document.getElementById('anleitungOk').hidden = anleitungFrage || !s.ok; document.getElementById('anleitungWeg').hidden = anleitungFrage;
     const fenster = [...document.querySelectorAll('.panel.is-open, .marker-sheet:not([hidden]), #heroHall:not([hidden])')].map(f => f.getBoundingClientRect()).filter(r => r.height > 0).sort((x, y) => x.top - y.top)[0];
     el.style.bottom = fenster ? Math.round(innerHeight - fenster.top + 10) + 'px' : '';   // ein Fenster ist offen: direkt darüber, damit seine Knöpfe frei bleiben
@@ -7308,6 +7308,7 @@ function anleitungZeigen() {
 }
 function anleitungStarten() { anleitungZeigen(); if (!anleitungUhr && anleitung.schritt < ANLEITUNG.length) anleitungUhr = setInterval(anleitungZeigen, 1000); }
 document.getElementById('anleitungWeg').addEventListener('click', () => { anleitungFrage = true; anleitungZeigen(); });   // erst fragen (im Spiel, kein Browser-Fenster)
+document.getElementById('anleitungText').addEventListener('click', () => document.getElementById('anleitung').classList.toggle('is-auf'));   // langer Text: antippen zeigt alles
 document.getElementById('anleitungNein').addEventListener('click', () => { anleitungFrage = false; anleitungZeigen(); });
 document.getElementById('anleitungJa').addEventListener('click', () => {
     anleitungFrage = false; anleitung.schritt = ANLEITUNG.length; anleitungSpeichern(); anleitungZeigen(); setTimeout(maybeShowDaily, 1500);   // (vor Schritt 3 übersprungen: die tägliche Belohnung kommt jetzt)
@@ -9866,12 +9867,13 @@ function vhHtml(lvl) {
         : (fx ? 'Verteidigt jede deiner Basen.' : a ? 'Gerade verteidigt keiner.' : 'Trag einen Helden ein – er verteidigt jede deiner Basen.') +
           (weg.length ? ' ' + weg.join(' und ') + (weg.length > 1 ? ' sind' : ' ist') + ' unterwegs und verteidigt erst wieder, wenn ' + (weg.length > 1 ? 'sie' : 'er') + ' zurück ist.' : '');
     const zweitZu = lvl < VH_ZWEIT_MAUER || !a; if (zweitZu && vhAuf === 2) vhAuf = 0;
+    // (Auswahl offen: die Werte-Zeilen ruhen – so passt das Fenster am Handy ohne Scrollen, Kopf bleibt sichtbar)
     const wert = l => l[0] === 'Angriff' ? ['Angriff der Verteidiger', l[1]] : l[0] === 'Verteidigung' ? ['Eigene Verluste', l[1].replace(' Verluste', '')] : l;
     return '<div class="vh-box" data-vh-box><div class="vh-kopf">' + icon('defense') + '<b>Verteidigungs-Helden</b></div><small class="vh-stand">' + stand + '</small>' +
         (lvl && hs.length ? '<div class="vh-zeile">' + vhChip(1, a, a ? 'Hauptheld · ' + unten(a) : 'Hauptheld wählen') +
             vhChip(2, b, lvl < VH_ZWEIT_MAUER ? 'ab Mauer ' + VH_ZWEIT_MAUER : !a ? 'erst Hauptheld' : (b ? 'Zweitheld · ' : 'Werte zu ') + Math.round(HERO_ZWEIT * 100) + ' %', zweitZu) + '</div>' +
             (vhAuf === 1 ? liste(1, a, null) : vhAuf === 2 ? liste(2, b, a) : '') : '') +
-        (fx ? '<div class="vh-werte">' + fx.lines.map(l => { const [t, v] = wert(l); return '<div class="logLine buff"><span>' + escapeHtml(t) + '</span><span>' + escapeHtml(v) + '</span></div>'; }).join('') + '</div>' : '') + '</div>';
+        (fx && !vhAuf ? '<div class="vh-werte">' + fx.lines.map(l => { const [t, v] = wert(l); return '<div class="logLine buff"><span>' + escapeHtml(t) + '</span><span>' + escapeHtml(v) + '</span></div>'; }).join('') + '</div>' : '') + '</div>';
 }
 function vhWaehlen(k, id) {                        // 1: Hauptheld, 2: Zweitheld (ohne Hauptheld kein Zweitheld – wie beim Angriff)
     const [a, b] = vhSoll('player'), h1 = k === 1 ? id || null : a, h2 = k === 2 ? id || null : (b === h1 ? null : b);

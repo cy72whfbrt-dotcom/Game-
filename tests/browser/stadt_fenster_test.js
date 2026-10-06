@@ -27,17 +27,18 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       const toast = document.getElementById('hint');
       o.burg = { knopf: sicht(up), fehlt, aus, schildUnten: note.getBoundingClientRect().top > anf.getBoundingClientRect().top,
         kreisWeg: [...document.querySelectorAll('#cityBStats .anf.is-bad > i')].every(i => getComputedStyle(i).visibility === 'hidden'), toastFrei: !deckt(toast, document.querySelector('.city-bfoot')),
-        x44: document.getElementById('citySheetClose').getBoundingClientRect().height >= 44 };
+        xh: Math.round(document.getElementById('citySheetClose').getBoundingClientRect().height * 10) / 10 }; o.burg.x44 = o.burg.xh >= 44;
       rohSetzen(1e9); renderCitySheet(); o.burg.wiederAuf = /Burg aufwerten/i.test(up.textContent) && !up.disabled;
       // 2) Labor: Forschen-Knopf ohne Scrollen sichtbar
       cityOpenId = 'academy'; cityPage = 'nutz'; renderCitySheet(); sh.scrollTop = 0; await warte(300);
       const go = document.querySelector('#citySheet .fo-go'); o.forschen = { da: !!go, sicht: !!go && sicht(go) && go.getBoundingClientRect().bottom <= sh.getBoundingClientRect().bottom + 1 };
       cityPage = 'bau'; sh.hidden = true; cityOpenId = null; flashHint('', 1);
       // 3) Helden: Reiter, gesperrte Helden kleiner darunter, Paare auf eigenem Reiter
+      const Hs = loadHeroes(), ohne = HEROES.filter(h => !Hs[h.id].own); ohne.forEach((h, i) => { Hs[h.id].sh = i ? 0 : Math.max(Hs[h.id].sh, HERO_UNLOCK[h.r]); });   // (Test-Welt: fast unbegrenzt Splitter – sonst wäre jeder „Freischalten“ statt gesperrt)
       openHeroHall(); await warte(200);
       const hh = document.getElementById('heroHall'), seiten = [...hh.querySelectorAll('[data-hh-seite]')];
       o.helden = { reiter: seiten.map(x => x.textContent).join('|'), h44: seiten.every(x => x.getBoundingClientRect().height >= 44),
-        eigeneOben: !hh.querySelector('.hh-cards:not(.hh-cards--zu) .is-locked'), gesperrt: hh.querySelectorAll('.hh-cards--zu .hh-card.is-locked').length, paareNichtHier: !hh.querySelector('.hh-pairs') };
+        eigeneOben: !hh.querySelector('.hh-cards:not(.hh-cards--zu) .is-locked'), bereitOben: !ohne.length || !!hh.querySelector('.hh-cards:not(.hh-cards--zu) .is-ready'), gesperrt: hh.querySelectorAll('.hh-cards--zu .hh-card.is-locked').length, paareNichtHier: !hh.querySelector('.hh-pairs') };
       hh.querySelector('[data-hh-seite="paare"]').click(); await warte(100);
       o.helden.paare = !!hh.querySelector('.hh-pairs .hh-pair') && !hh.querySelector('.hh-cards');
       hh.querySelector('[data-hh-seite="helden"]').click(); closeHeroHall();
@@ -53,7 +54,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     ok(r.burg.toastFrei, art + ': Burg – Hinweis liegt nicht über der Fußzeile', r.burg);
     ok(r.forschen.da && r.forschen.sicht, art + ': Labor – „Forschen“ ohne Scrollen sichtbar', r.forschen);
     ok(r.helden.reiter === 'Helden|Paare' && r.helden.h44 && r.helden.paare && r.helden.paareNichtHier, art + ': Helden – Reiter Helden | Paare (44 px)', r.helden);
-    ok(r.helden.eigeneOben && r.helden.gesperrt > 0, art + ': Helden – eigene oben, gesperrte kleiner darunter', r.helden);
+    ok(r.helden.eigeneOben && r.helden.bereitOben && r.helden.gesperrt > 0, art + ': Helden – eigene + freischaltbare oben, gesperrte kleiner darunter', r.helden);
     await ctx.close();
   }
   ok(!fe.length, 'keine Seitenfehler', fe.slice(0, 3));

@@ -2239,9 +2239,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `stadtBlende` → Game/spiel/08a-stadt-bauen.js:198
 - `stadtCap` → Game/aufbau.js:113
 - `stadtCapB` → Game/aufbau.js:112
-- `stadtKopf` → Game/spiel/08d-gebaeude-wirkung.js:113
+- `stadtKopf` → Game/spiel/08d-gebaeude-wirkung.js:114
 - `stadtKosten` → Game/aufbau.js:107
-- `stadtLeiste` → Game/spiel/08d-gebaeude-wirkung.js:107
+- `stadtLeiste` → Game/spiel/08d-gebaeude-wirkung.js:108
 - `stadtVon` → Game/aufbau.js:89
 - `staerke` → Game/spiel/06d-schild-produktion.js:21
 - `stand` → Game/baukunst/05-umland.js:196
@@ -2281,7 +2281,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `tapped` → Game/bots/05-verteidigen-takt.js:49
 - `tausch` → Game/welt.js:89
 - `teil` → Game/spiel/10c-start-einstellungen.js:272
-- `teleportCapital` → Game/spiel/08d-gebaeude-wirkung.js:128
+- `teleportCapital` → Game/spiel/08d-gebaeude-wirkung.js:129
 - `tempelPlus` → Game/aufbau.js:238
 - `temple` → Game/spiel/03b-gebaeude-3d.js:224
 - `templeBaseMult` → Game/spiel/01b-weltkarte.js:46
@@ -2429,7 +2429,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `vhRechnen` → Game/spiel/08c-helden.js:150
 - `vhSetzen` → Game/spiel/08c-helden.js:170
 - `vhSoll` → Game/spiel/08c-helden.js:145
-- `vhWaehlen` → Game/spiel/08d-gebaeude-wirkung.js:77
+- `vhWaehlen` → Game/spiel/08d-gebaeude-wirkung.js:78
 - `villageTower` → Game/baukunst/05-umland.js:233
 - `VINE` → Game/baukunst/08-himmelsfeste-bilder.js:19
 - `visibleIslands` → Game/spiel/03d-maersche-tagnacht.js:154
@@ -2513,7 +2513,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `weltZuClient` → Game/welt.js:143
 - `werIst` → Game/aufbau.js:118
 - `werIstWer` → Game/spiel/10d-welt-weltrechner.js:1040
-- `wert` → Game/spiel/08d-gebaeude-wirkung.js:70
+- `wert` → Game/spiel/08d-gebaeude-wirkung.js:71
 - `who` → Game/spiel/04-kampf.js:62
 - `whoBases` → Game/spiel/05c-erfolge-rangliste.js:161
 - `whoIslands` → Game/spiel/05c-erfolge-rangliste.js:21
@@ -4480,11 +4480,11 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `vhHtml` :59
 - `unten` :61
 - `liste` :62
-- `wert` :70
-- `vhWaehlen` :77 — 1: Hauptheld, 2: Zweitheld (ohne Hauptheld kein Zweitheld – wie beim Angriff)
-- `stadtLeiste` :107 — Auch in der Stadt bleiben die obere Leiste (Münzen, Gems, Truppen, Rohstoffe) u…
-- `stadtKopf` :113 — Unterkante der Bauarbeiter-Zeile → der Hinweis (Handy) liegt darunter
-- `teleportCapital` :128
+- `wert` :71 — (Auswahl offen: die Werte-Zeilen ruhen – so passt das Fenster am Handy ohne Scr…
+- `vhWaehlen` :78 — 1: Hauptheld, 2: Zweitheld (ohne Hauptheld kein Zweitheld – wie beim Angriff)
+- `stadtLeiste` :108 — Auch in der Stadt bleiben die obere Leiste (Münzen, Gems, Truppen, Rohstoffe) u…
+- `stadtKopf` :114 — Unterkante der Bauarbeiter-Zeile → der Hinweis (Handy) liegt darunter
+- `teleportCapital` :129
 
 ### Game/spiel/08e-stadtbild-haeuser.js — Stadtansicht (isometrisch): Häuser und Gebäude zeichnen
 - `cIso` :21 — world → screen units (before zoom)
