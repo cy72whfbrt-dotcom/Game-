@@ -56,7 +56,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       const st = { klein: klein('#midBar .mb-chip, .hud > .res--roh' + (innerWidth < 900 ? ', #mapControls button' : '')) };
       const h0 = islandById[playerIslandId], ziel = islands.filter(i => !islandOwnerOf(i.id) && !/temple|gate/i.test(i.type || '')).sort((a, c) => Math.hypot(a.x - h0.x, a.y - h0.y) - Math.hypot(c.x - h0.x, c.y - h0.y))[0];
       openIslandPopup(ziel); await warte(400); document.getElementById('attackBtn').click(); await warte(600);
-      st.klein.push(...klein('.panel--island .seg button, .panel--island .ap-hchip, .panel--island .pfoot .btn'));
+      st.klein.push(...klein('.panel--island .seg button, .panel--island .ap-hchip, .panel--island .ap-spaehen, .panel--island .pfoot .btn'));
       const sel = document.getElementById('attackFromSel'), mass = document.createElement('canvas').getContext('2d'); mass.font = getComputedStyle(sel).font;
       const selText = Math.round(mass.measureText(sel.options[sel.selectedIndex].text).width);
       const selCs = getComputedStyle(sel); st.startbasis = selText + parseFloat(selCs.paddingLeft) + parseFloat(selCs.paddingRight) + 22 <= sel.offsetWidth || [selText, sel.offsetWidth];   // (22: Pfeil + Rand)

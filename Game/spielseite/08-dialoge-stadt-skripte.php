@@ -147,7 +147,7 @@
   <footer class="pfoot">
     <button id="backBtn" class="btn btn--secondary" type="button"><svg class="icon"><use href="#i-back"/></svg><span>Zurück</span></button>
     <button id="scoutBtn" class="btn btn--secondary btn--grow" type="button"><svg class="icon"><use href="#i-scout"/></svg><span class="lbl">Spähen</span></button>
-    <button id="attackBtn" class="btn btn--danger btn--grow" type="button"><svg class="icon"><use href="#i-attack"/></svg><span class="lbl">Angreifen</span></button>
+    <button id="attackBtn" class="btn btn--danger btn--grow" type="button"><svg class="icon"><use href="#i-attack"/></svg><span class="lbl">Angreifen</span><span class="btn-zeit" id="attackZeit"></span></button>
   </footer>
 </section>
 

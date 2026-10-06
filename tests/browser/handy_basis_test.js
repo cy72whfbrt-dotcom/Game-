@@ -4,7 +4,8 @@
 // Untertitel nie abgeschnitten (Koordinaten in eigener Zeile); Handy: die Basis steht mittig über dem Fenster;
 // Angriff vorbereiten: Startbasis + Angriff gegen Abwehr bleiben beim Scrollen oben stehen, „Abwehr unbekannt“ nicht doppelt,
 // Helden in einer Zeile (quer wischen), Knopf „Angreifen“ fest unten. Angriff kompakt (6.10.): Handy ≤ 55 % hoch ohne Scrollen,
-// Startbasis/Marschzeit nur einmal, Held + Zweitheld als zwei Chips zum Aufklappen.
+// Marschzeit nur einmal (Sanduhr im Knopf), Angriff/Abwehr mit Überschrift, ungespäht „Spähen“, Schieber ganze Breite,
+// Held + Zweitheld als zwei Chips zum Aufklappen.
 const { chromium, devices } = require('playwright');
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x) : ''));
 (async () => {
@@ -58,8 +59,13 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
         const pb = popup.querySelector('.pbody'), sel = document.getElementById('attackFromSel'), pr2 = popup.getBoundingClientRect(), ch = [...st.querySelectorAll('.ap-hchip')].filter(sichtbar);
         kompakt.push({ sp, hoch: +(pr2.height / innerHeight).toFixed(3), scroll: pb.scrollHeight - pb.clientHeight, kopf: sub.textContent.trim(),
           zeit: (sel.selectedOptions[0].textContent.match(/\d+:\d\d/g) || []).length, label: !!st.querySelector('.from-field, .field-l + #attackFromSel'),
+          knopfZeit: sichtbar(document.getElementById('attackZeit')) && /^\d+:\d\d$/.test(document.getElementById('attackZeit').textContent) && !!document.querySelector('#attackZeit .icon'),
+          titel: [...st.querySelectorAll('.force .stat-l')].filter(sichtbar).map(e => e.textContent.trim()).join(), spaehen: sichtbar(st.querySelector('.force--foe [data-spaehen]')),
+          strich: getComputedStyle(document.getElementById('attackTroopsLabel')).borderBottomStyle, schieber: +(document.getElementById('attackTroopsSlider').getBoundingClientRect().width / st.getBoundingClientRect().width).toFixed(2),
           chips: ch.length, chipsOk: ch.every(c => c.getBoundingClientRect().right <= pr2.right && c.getBoundingClientRect().height >= 44 && ganz(c.querySelector('b'))),
           zahlen: [...st.querySelectorAll('.force b')].every(ganz), zu: st.querySelector('[data-preview="hero"]').hidden, tor: document.getElementById('popupOverline').textContent });
+        if (!sp) { const s0 = pendingScouts.length, b0 = window.__befehle ? window.__befehle.length : 0; st.querySelector('.ap-spaehen').click(); await warte(300);   // „Spähen“ schickt den Späher
+          kompakt[0].geschickt = pendingScouts.length > s0 || (window.__befehle && window.__befehle.length > b0); pendingScouts.splice(0, pendingScouts.length); }
       }
       tollFor = maut0;
       const c1 = st.querySelector('[data-held-auf="1"]'), l1 = st.querySelector('[data-preview="hero"]'); c1.click(); await warte(100);
@@ -98,7 +104,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     for (const k of r.kompakt) {
       const w = art + ': Angriff kompakt (' + (k.sp ? 'gespäht' : 'ungespäht') + ', 3 Helden)';
       ok(k.scroll <= 1 && (art !== 'Handy' || k.hoch <= 0.55), w + ' – alles ohne Scrollen' + (art === 'Handy' ? ', höchstens 55 % hoch' : ''), k);
-      ok(k.kopf === '' && k.zeit === 1 && !k.label && (!k.sp || /Tor geschlossen/.test(k.tor)), w + ' – Startbasis + Marschzeit nur einmal (in der Auswahl), keine Unterzeile (Maut/Tor in der Überzeile), kein Extra-Label', k);
+      ok(k.kopf === '' && k.zeit === 0 && k.knopfZeit && !k.label && (!k.sp || /Tor geschlossen/.test(k.tor)), w + ' – Marschzeit nur einmal (Sanduhr im Knopf „Angreifen“), keine Unterzeile (Maut/Tor in der Überzeile), kein Extra-Label', k);
+      ok(k.titel === 'Angriff,Abwehr' && k.spaehen === !k.sp && (k.sp || k.geschickt) && k.strich === 'none' && k.schieber >= 0.95, w + ' – Überschriften Angriff/Abwehr, ungespäht „Spähen“ in der Abwehr, Schieber ganze Breite, keine gestrichelte Linie', k);
       ok(k.chips === 2 && k.chipsOk && k.zahlen && k.zu, w + ' – Held + Zweitheld als zwei ganze Chips (≥ 44 px), Zahlen ganz', k);
     }
     ok(r.auf.liste1 && r.auf.zu1 && r.auf.liste2 && r.auf.zu2, art + ': Held-Chip antippen klappt die Auswahl auf, eine Wahl klappt sie zu (Held und Zweitheld)', r.auf);

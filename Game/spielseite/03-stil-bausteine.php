@@ -544,20 +544,26 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
 #popupActions > .act.act--haupt:disabled > .act-t,#popupActions > .act.act--haupt:disabled > .act-s{color:var(--tx-4)}
 .ap-kopf{position:sticky;top:-14px;z-index:2;display:flex;flex-direction:column;gap:8px;padding-bottom:8px;border-bottom:1px solid var(--line-1);background:#11151c;
   box-shadow:-14px 0 0 #11151c,14px 0 0 #11151c,0 -14px 0 #11151c,-14px -14px 0 #11151c,14px -14px 0 #11151c}   /* (Schatten statt Rand: deckt den Innenabstand, ohne waagrecht zu scrollen) */
-.ap-kopf{gap:6px;padding-bottom:6px} .ap-kopf .from-sel{height:40px}
-/* Angriff kompakt (Vorbild Million Lords): Angriff | VS | Abwehr je eine Zeile, die Aufschlüsselung klein darunter (höchstens 2 Zeilen) */
+.ap-kopf{gap:4px;padding-bottom:4px} .popup-stats:has(> .ap-kopf){gap:8px} .ap-kopf .from-sel{height:40px;border:0;background:rgba(0,0,0,.3)}   /* (weniger Rahmen: Auswahl nur dunkler) */
+.panel--island:has(.ap-kopf) .phead::after{display:none}   /* Angriff: keine Raute unter dem Titel (der Kopf hat schon seine Kante) */
+/* Angriff kompakt: ANGRIFF | VS | ABWEHR – kleine Überschrift, Zahl, darunter EINE Zeile woraus (ganz beim Draufzeigen) */
 .ap-kopf .versus{grid-template-columns:minmax(0,1fr) 20px minmax(0,1fr);gap:4px} .ap-kopf .vs{width:18px;height:18px} .ap-kopf .vs span{font-size:8px}
-.ap-kopf .force{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;column-gap:6px;padding:6px 8px}
-.ap-kopf .force > .icon{width:15px;height:15px;color:var(--f-player)} .ap-kopf .force--foe > .icon{color:var(--f-enemy)}
-.ap-kopf .force b{margin-top:0;font-size:var(--fs-15);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ap-kopf .force--foe{grid-template-columns:minmax(0,1fr) auto} .ap-kopf .force--foe b{text-align:right}
-.ap-kopf .force small{grid-column:1/-1;margin-top:2px;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.ap-kopf .balance-note{margin-top:3px}
+.ap-kopf .force{display:flex;flex-direction:column;justify-content:center;padding:6px 8px;border:0}
+.ap-kopf .force b{margin-top:3px;font-size:var(--fs-17);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ap-kopf .force small,#popupStats .ap-kopf .force--foe small[data-foe="sub"]{margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ap-kopf .force--foe{align-items:flex-end} .ap-kopf .force--foe > *{max-width:100%} .ap-kopf .force--me .stat-l{justify-content:flex-start}
+.ap-spaehen{position:relative;display:inline-flex;align-items:center;gap:4px;height:24px;margin-top:3px;padding:0 8px;border:1px solid var(--line-3);border-radius:var(--r-xs);background:rgba(214,170,90,.12);color:var(--gold-100);font:600 var(--fs-11)/1 var(--font-ui)}
+.ap-spaehen::before{content:"";position:absolute;inset:-10px -4px} .ap-spaehen .icon{width:12px;height:12px} .ap-spaehen:disabled{opacity:.5}   /* (Tippfläche 44 px) */
+.ap-bal{display:flex;align-items:center;gap:8px} .ap-bal .balance{flex:1 1 auto} .ap-bal .balance-note{margin:0;white-space:nowrap}   /* Balken + „Überlegen 190×“ in einer Zeile */
 #previewToll{color:var(--gold-200)} #previewToll .icon{width:11px;height:11px;margin:0 3px 0 1px;vertical-align:-1px}   /* Maut/Tor in der Überzeile: keine zweite Kopfzeile */
-.ap-truppen .troop-in{width:7.5em;max-width:40vw;height:28px;padding:0 4px;border:0;border-bottom:1px dashed var(--line-3);border-radius:0;background:transparent;font-size:var(--fs-15)}
-.ap-truppen .troop-in:focus{border-bottom-style:solid;box-shadow:none}
-.ap-truppen .field-top{align-items:center;margin-bottom:0}
-.ap-regler{display:flex;align-items:center;gap:8px} .ap-regler .slider{flex:1 1 auto;min-width:0} .ap-regler .seg{flex:none;grid-template-columns:repeat(4,44px);margin-top:0}   /* Schieber + 25/50/75/Alle in einer Zeile */
+/* Truppen: Schieber über die ganze Breite (Daumen), darunter 25/50/75/Alle und die Zahl */
+.ap-truppen{display:flex;flex-direction:column;gap:2px}
+.ap-regler{display:flex;align-items:center;justify-content:space-between;gap:8px} .ap-regler .seg{flex:none;grid-template-columns:repeat(4,42px);margin-top:0}
+.ap-regler .val{display:flex;min-width:0}
+.ap-truppen .troop-in{width:7.5em;max-width:40vw;height:36px;padding:0 6px;border:0;border-radius:var(--r-xs);background:rgba(0,0,0,.3);font-size:var(--fs-15)}
+.ap-truppen .troop-in:focus{box-shadow:0 0 0 1px var(--gold-300)}
+.btn-zeit{display:none} #attackBtn.mit-zeit .btn-zeit{display:inline-flex;align-items:center;gap:3px;margin-left:8px;font:600 var(--fs-12)/1 var(--font-ui);letter-spacing:0;text-transform:none;opacity:.9;font-variant-numeric:tabular-nums}
+#attackBtn .btn-zeit .icon{width:12px;height:12px}   /* Marschzeit mit Sanduhr im Knopf (wie Rise of Kingdoms) */
 /* Held + Zweitheld: zwei Chips in einer Zeile, antippen klappt die Auswahl darunter auf */
 .ap-held{display:flex;flex-direction:column;gap:4px} .ap-held-zeile{display:flex;gap:6px}
 .ap-hchip{position:relative;flex:1 1 0;min-width:0;display:flex;align-items:center;gap:6px;min-height:var(--k-tipp);padding:0 24px 0 8px;border-radius:var(--r-xs);background:var(--ink-3);border:1px solid var(--line-1);border-left:3px solid var(--hc,var(--line-1));color:var(--tx-1);text-align:left}

@@ -93,7 +93,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `apply` → Game/baukunst/04-vielfalt-stile.js:575
 - `applyCrestAvatars` → Game/spiel/05a-aussehen-profil.js:131
 - `applySkin` → Game/baukunst/04-vielfalt-stile.js:41
-- `apQuelleText` → Game/spiel/10a-inselfenster-vorschau.js:219
+- `apQuelleText` → Game/spiel/10a-inselfenster-vorschau.js:220
 - `APRON` → Game/baukunst/07-hafen-palast.js:18
 - `arc` → Game/baukunst/07-hafen-palast.js:54
 - `arch` → Game/baukunst/06-turmhof-festung.js:22
@@ -270,7 +270,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bgRange` → Game/spiel/03a-karte-hintergrund.js:297
 - `bgShow` → Game/spiel/03a-karte-hintergrund.js:291
 - `bgWarm` → Game/spiel/03a-karte-hintergrund.js:318
-- `bindTroopInput` → Game/spiel/10a-inselfenster-vorschau.js:306
+- `bindTroopInput` → Game/spiel/10a-inselfenster-vorschau.js:307
 - `bitHat` → Game/spiel/10d-welt-weltrechner.js:887
 - `bitsZu` → Game/spiel/10d-welt-weltrechner.js:886
 - `bk3d` → Game/spiel/03b-gebaeude-3d.js:325
@@ -1281,7 +1281,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `heroZweitOk` → Game/spiel/08c-helden.js:83
 - `herzSchreiben` → Game/weltrechner/start.js:65
 - `hex` → Game/ladebildschirm.js:10
-- `hfl` → Game/spiel/10a-inselfenster-vorschau.js:390
+- `hfl` → Game/spiel/10a-inselfenster-vorschau.js:391
 - `hhGrid` → Game/spiel/08c-helden.js:284
 - `hhHero` → Game/spiel/08c-helden.js:305
 - `hhPairs` → Game/spiel/08c-helden.js:297
@@ -1324,7 +1324,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `inboxSave` → Game/spiel/06a-aufgaben.js:217
 - `inboxWhat` → Game/spiel/06a-aufgaben.js:228
 - `init` → Game/spiel/10c-start-einstellungen.js:20
-- `inselMittig` → Game/spiel/10a-inselfenster-vorschau.js:210
+- `inselMittig` → Game/spiel/10a-inselfenster-vorschau.js:211
 - `inselOk` → Game/spiel/10d-welt-weltrechner.js:124
 - `inside` → Game/spiel/01c-basen-spielstand.js:44
 - `insideConvex` → Game/spiel/03e-kamera-eingabe.js:89
@@ -1727,7 +1727,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `palm` → Game/baukunst/05-umland.js:598
 - `panBy` → Game/spiel/03e-kamera-eingabe.js:428
 - `parapet` → Game/baukunst/07-hafen-palast.js:202
-- `parseTroopInput` → Game/spiel/10a-inselfenster-vorschau.js:295
+- `parseTroopInput` → Game/spiel/10a-inselfenster-vorschau.js:296
 - `partLines` → Game/spiel/05d-maersche-kampfbericht.js:160
 - `partsFor` → Game/bots/02-kampf-karte.js:42
 - `passBump` → Game/spiel/06b-pass-anleitung.js:25
@@ -1754,8 +1754,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `passwort_anfrage` → Game/server/06-speichern-push-konto.php:159
 - `passXp` → Game/spiel/06b-pass-anleitung.js:26
 - `pat` → Game/spiel/08e-stadtbild-haeuser.js:313
-- `patchAttackPreview` → Game/spiel/10a-inselfenster-vorschau.js:367
-- `patchSendPreview` → Game/spiel/10a-inselfenster-vorschau.js:347
+- `patchAttackPreview` → Game/spiel/10a-inselfenster-vorschau.js:368
+- `patchSendPreview` → Game/spiel/10a-inselfenster-vorschau.js:348
 - `pathSoFar` → Game/spiel/02b-maersche.js:213
 - `PAVE` → Game/baukunst/07-hafen-palast.js:17
 - `PAVE` → Game/baukunst/07-hafen-palast.js:411
@@ -1917,7 +1917,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderQuestPanel` → Game/spiel/06a-aufgaben.js:260
 - `renderRankings` → Game/spiel/05c-erfolge-rangliste.js:293
 - `renderRecallPreview` → Game/spiel/10b-inselfenster-knoepfe.js:56
-- `renderSendPreview` → Game/spiel/10a-inselfenster-vorschau.js:316
+- `renderSendPreview` → Game/spiel/10a-inselfenster-vorschau.js:317
 - `renderShieldState` → Game/spiel/06d-schild-produktion.js:47
 - `renderShop` → Game/spiel/06d-schild-produktion.js:87
 - `renderSkillGrid` → Game/spiel/05b-truhe-skills.js:299
@@ -2079,7 +2079,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `setScreen` → Game/spiel/03a-karte-hintergrund.js:5
 - `setShown` → Game/spiel/01e-nebel-kampfwerte-hud.js:228
 - `setText` → Game/spiel/01e-nebel-kampfwerte-hud.js:227
-- `setTroopInput` → Game/spiel/10a-inselfenster-vorschau.js:305
+- `setTroopInput` → Game/spiel/10a-inselfenster-vorschau.js:306
 - `setW` → Game/spiel/03a-karte-hintergrund.js:247
 - `setze_cookie` → Game/server/01-grundlagen-login.php:37
 - `setzen` → Game/spiel/01a-grundlagen.js:24
@@ -2122,7 +2122,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `skript` → Game/server/03-nebel-maersche-seite.php:145
 - `skyAt` → Game/ladebildschirm.js:23
 - `slab` → Game/baukunst/06-turmhof-festung.js:15
-- `sliderToTroops` → Game/spiel/10a-inselfenster-vorschau.js:293
+- `sliderToTroops` → Game/spiel/10a-inselfenster-vorschau.js:294
 - `slot` → Game/spiel/03d-maersche-tagnacht.js:121
 - `smokeTexture` → Game/baukunst/03-wahrzeichen-feuer.js:307
 - `sofort` → Game/speichern.js:168
@@ -2274,7 +2274,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `triPrism` → Game/baukunst/04-vielfalt-stile.js:564
 - `troopProductionMultiplier` → Game/spiel/04-kampf.js:259
 - `troopsPerTick` → Game/spiel/01b-weltkarte.js:131
-- `troopsToSlider` → Game/spiel/10a-inselfenster-vorschau.js:294
+- `troopsToSlider` → Game/spiel/10a-inselfenster-vorschau.js:295
 - `trunc` → Game/spiel/03b-gebaeude-3d.js:389
 - `truppenBekannt` → Game/spiel/01e-nebel-kampfwerte-hud.js:38
 - `truppenGeben` → Game/spiel/10d-welt-weltrechner.js:446
@@ -4652,20 +4652,20 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `templeBonusLine` :69
 - `coordText` :91 — Presentation rewrite (design-spec §4.5). Which buttons show, when they are disa…
 - `renderPopup` :92
-- `inselMittig` :210 — Handy: die Basis immer mittig in den freien Teil der Karte über dem Fenster (un…
-- `apQuelleText` :219 — „Turm #23633 · 16,8 Bio. · 0:24 · reicht“ (Marschzeit mit dem Tempo des Helden)
+- `inselMittig` :211 — Handy: die Basis immer mittig in den freien Teil der Karte über dem Fenster (un…
+- `apQuelleText` :220 — „Turm #23633 · 16,8 Bio. · reicht“ (die nächste steht vorn)
 - `apHeldChip` :223 — ein Chip: Bild, Name, darunter klein Sterne/Hinweis
 - `renderAttackPreview` :232 — Attack preview. Built ONCE per (target, source, scouted, bonus); later calls (t…
 - `sourceTroops` :233
-- `sliderToTroops` :293
-- `troopsToSlider` :294
-- `parseTroopInput` :295
-- `setTroopInput` :305
-- `bindTroopInput` :306
-- `renderSendPreview` :316 — Sending troops to your own base: like the attack, pick how many go (slider or 2…
-- `patchSendPreview` :347
-- `patchAttackPreview` :367 — Writes the live numbers of the attack preview (own force, enemy force when scou…
-- `hfl` :390
+- `sliderToTroops` :294
+- `troopsToSlider` :295
+- `parseTroopInput` :296
+- `setTroopInput` :306
+- `bindTroopInput` :307
+- `renderSendPreview` :317 — Sending troops to your own base: like the attack, pick how many go (slider or 2…
+- `patchSendPreview` :348
+- `patchAttackPreview` :368 — Writes the live numbers of the attack preview (own force, enemy force when scou…
+- `hfl` :391
 
 ### Game/spiel/10b-inselfenster-knoepfe.js — Insel-Fenster: Ausbau merken, Zurückrufen, Nebel antippen, Tippen auf die Karte
 - `ausbauMerken` :5

@@ -195,6 +195,7 @@ function renderPopup() {
         }
     }
     const menu = popupView !== 'preview' && popupView !== 'send' && popupView !== 'recall';
+    attackBtn.classList.toggle('mit-zeit', popupView === 'preview');   // Angriff: Marschzeit mit Sanduhr im Knopf
     popupSub.classList.toggle('psub--zwei', menu);                       // Name/Stufe und Koordinaten in zwei Zeilen: nichts wird abgeschnitten
     if (menu) liveHtml(popupSub, subH + '<span class="num coord psub-ort">' + coordText(island.x, island.y) + '</span>');
     if (typeof bundInselfenster === 'function') bundInselfenster(island, popupView);               // Bündnis: Signale, Rally, Hilfe
@@ -214,11 +215,10 @@ function inselMittig(island) {
     flyTo(island.x, island.y, { screenX: viewW / 2, screenY: oben + (unten - oben) * 0.55 });
 }
 
-// Angriff kompakt: Startbasis mit Truppen + Marschzeit EINMAL (in der Auswahl), Held + Zweitheld als zwei Chips
+// Angriff kompakt: Startbasis mit Truppen in der Auswahl, die Marschzeit EINMAL (im Knopf), Held + Zweitheld als zwei Chips
 let previewHeldAuf = 0;                                 // aufgeklappte Helden-Auswahl: 0 zu, 1 Held, 2 Zweitheld
-function apQuelleText(id, island, scouted, spd) {       // „Turm #23633 · 16,8 Bio. · 0:24 · reicht“ (Marschzeit mit dem Tempo des Helden)
-    const q = islandById[id];
-    return escapeHtml(islandTitle(q)) + ' · ' + fmtCompact(islandTroops[id] || 0) + ' · ' + fmtClock(travelDurationSeconds(q, island) / (1 + spd / 100)) + (scouted && angriffReicht(id, island) ? ' · reicht' : '');
+function apQuelleText(id, island, scouted) {            // „Turm #23633 · 16,8 Bio. · reicht“ (die nächste steht vorn)
+    return escapeHtml(islandTitle(islandById[id])) + ' · ' + fmtCompact(islandTroops[id] || 0) + (scouted && angriffReicht(id, island) ? ' · reicht' : '');
 }
 function apHeldChip(el, id, oben, unten) {             // ein Chip: Bild, Name, darunter klein Sterne/Hinweis
     if (!el) return;
@@ -245,18 +245,19 @@ function renderAttackPreview(island, scouted) {
         const helden = heroSegHtml('data-hero', previewHero);
         popupStats.innerHTML = '<div class="ap-kopf">' +                   // bleibt beim Scrollen oben stehen: Startbasis + Angriff gegen Abwehr
             '<select id="attackFromSel" class="from-sel" aria-label="Von Basis">' +
-                quellen.map(id => '<option value="' + id + '"' + (id === previewSourceId ? ' selected' : '') + '>' + apQuelleText(id, island, scouted, 0) + '</option>').join('') + '</select>' +
+                quellen.map(id => '<option value="' + id + '"' + (id === previewSourceId ? ' selected' : '') + '>' + apQuelleText(id, island, scouted) + '</option>').join('') + '</select>' +
             '<div class="versus">' +
-                '<div class="force force--me" title="Angriff">' + icon('troops') + '<b id="previewMyTroops"></b><small>' +   // Zeichen + Zahl in einer Zeile, darunter klein woraus
+                '<div class="force force--me"><span class="stat-l">' + icon('troops') + 'Angriff</span><b id="previewMyTroops"></b><small>' +   // darunter klein woraus (eine Zeile, ganz beim Draufzeigen)
                     (atkPct > 0 ? '<span id="previewRawTroops"></span> + <span id="previewAtkBonus"></span> Schwert (+' + fmtNum(atkPct) + ' %)' : '<span id="previewRawTroops"></span> Truppen') + '<span id="previewHeroBonus"></span><span id="previewTitleBonus"></span></small></div>' +
                 '<div class="vs"><span>VS</span></div>' +
-                '<div class="force force--foe" title="Abwehr"><b data-foe="total">?</b>' + icon('defense') + '<small data-foe="sub">nicht gespäht</small></div>' +
+                '<div class="force force--foe"><span class="stat-l">Abwehr' + icon('defense') + '</span><b data-foe="total">?</b>' + (scouted ? '<small data-foe="sub"></small>' :
+                    '<button type="button" class="ap-spaehen" data-spaehen>' + icon('scout') + '<span>Spähen</span></button>') + '</div>' +   // ungespäht: gleich Späher schicken
             '</div>' +
-            (scouted ? '<div><div class="balance" data-preview="balance"><i></i><b></b></div><div class="balance-note"><span>Kräfteverhältnis</span><span data-preview="verdict"></span></div></div>' : '') + '</div>' +
+            (scouted ? '<div class="ap-bal" title="Kräfteverhältnis"><div class="balance" data-preview="balance"><i></i><b></b></div><span class="balance-note" data-preview="verdict"></span></div>' : '') + '</div>' +
             (scouted ? '<div class="notice" data-preview="alter" hidden></div>' : '') +
-            '<div class="field ap-truppen"><div class="field-top"><span class="field-l"><span class="sm-hide">Truppen </span>entsenden</span><span class="val"><input id="attackTroopsLabel" class="troop-in" inputmode="decimal" autocomplete="off" enterkeyhint="done" aria-label="Anzahl Truppen"> / <span data-preview="max"></span></span></div>' +
-                '<div class="ap-regler"><input type="range" id="attackTroopsSlider" class="slider" min="0" max="' + SLIDER_STEPS + '" value="' + troopsToSlider(previewAttackTroops || 0, maxTroops) + '"' + (maxTroops <= 0 ? ' disabled' : '') + ' aria-label="Truppen entsenden">' +
-                '<div class="seg" data-preview="quick"><button type="button" data-f=".25">25 %</button><button type="button" data-f=".5">50 %</button><button type="button" data-f=".75">75 %</button><button type="button" data-f="1">Alle</button></div></div></div>' +
+            '<div class="ap-truppen"><input type="range" id="attackTroopsSlider" class="slider" min="0" max="' + SLIDER_STEPS + '" value="' + troopsToSlider(previewAttackTroops || 0, maxTroops) + '"' + (maxTroops <= 0 ? ' disabled' : '') + ' aria-label="Truppen entsenden">' +   // Schieber ganze Breite (Daumen)
+                '<div class="ap-regler"><div class="seg" data-preview="quick"><button type="button" data-f=".25">25 %</button><button type="button" data-f=".5">50 %</button><button type="button" data-f=".75">75 %</button><button type="button" data-f="1">Alle</button></div>' +
+                '<span class="val"><input id="attackTroopsLabel" class="troop-in" inputmode="decimal" autocomplete="off" enterkeyhint="done" aria-label="Anzahl Truppen"></span></div></div>' +
             (helden ? '<div class="ap-held"><div class="ap-held-zeile"><button type="button" class="ap-hchip" data-held-auf="1" aria-label="Held wählen"></button><button type="button" class="ap-hchip" data-held-auf="2" aria-label="Zweitheld wählen"></button></div>' +   // Held + Zweitheld als zwei Chips, antippen klappt die Auswahl auf
                 '<div class="seg hero-seg chips-quer" data-preview="hero" hidden>' + helden + '</div><div class="seg hero-seg hero-seg2 chips-quer" data-preview="hero2" hidden></div>' +
                 '<small class="ap-herofx" data-preview="herofx"></small></div>' : '');
@@ -397,16 +398,17 @@ function patchAttackPreview() {
     const mitTitel = Math.round((shown + atkBonus) * titleMult('player', 'attack')), kv = mine - mitTitel;   // Paket D: Forschung getrennt zeigen
     const tv = mitTitel - Math.round(shown + atkBonus), tx = titleOf('player'), tbEl = popupStats.querySelector('#previewTitleBonus');
     if (tbEl) tbEl.textContent = (tv && tx ? (tv > 0 ? ' + ' : ' − ') + fmtNum(Math.abs(tv)) + ' Titel ' + tx.name : '') + (kv ? ' + ' + fmtNum(kv) + ' Forschung' : '');
-    const src = islandById[previewSourceId], tEl = popupOverline.querySelector('#previewToll'), opt = document.getElementById('attackFromSel').selectedOptions[0];
-    if (opt && src) { const t = apQuelleText(previewSourceId, island, scouted, px ? px.spd : 0); if (opt._t !== t) { opt._t = t; opt.innerHTML = t; } }   // the hero's Tempo
+    const src = islandById[previewSourceId], tEl = popupOverline.querySelector('#previewToll');
+    if (src) liveHtml(document.getElementById('attackZeit'), icon('hourglass') + fmtClock(travelDurationSeconds(src, island) / (1 + (px ? px.spd : 0) / 100)));   // Marschzeit mit dem Tempo des Helden
+    const spB = popupStats.querySelector('.ap-spaehen');
+    if (spB) { const unterwegs = pendingScouts.some(s => !s.back && s.targetId === island.id); spB.disabled = unterwegs || scoutBtn.disabled; setBtnLabel(spB, unterwegs ? 'Späher unterwegs' : 'Spähen'); }
     if (tEl && src) { const hop = lastHop(src.landmassId, island.landmassId, 'player'), t = tollFor(hop[0], hop[1], shown, 'player', island.id, px ? px.toll : 0);
         liveHtml(tEl, t.closed ? ' · ' + icon('lock') + 'Tor geschlossen' : t.cost ? ' · ' + icon('coin') + 'Maut <span class="num">' + fmtCompact(t.cost) + '</span>' : ''); }
-    const meEl = popupStats.querySelector('.force--me small'); if (meEl) popupStats.querySelector('.force--me').title = 'Angriff: ' + meEl.textContent;   // ganz beim Draufzeigen
+    const meEl = popupStats.querySelector('.force--me small'); if (meEl) meEl.title = meEl.textContent;   // ganz beim Draufzeigen
     document.getElementById('previewMyTroops').textContent = fmtBig(mine);
     const raw = document.getElementById('previewRawTroops');
     if (raw) raw.textContent = fmtBig(shown);
     setTroopInput(document.getElementById('attackTroopsLabel'), shown);
-    popupStats.querySelector('[data-preview="max"]').textContent = fmtBig(maxTroops);
     slider.style.setProperty('--pct', (maxTroops > 1 ? (Math.max(1, shown) - 1) / (maxTroops - 1) * 100 : 100) + '%');
     for (const b of popupStats.querySelectorAll('[data-preview="quick"] button'))
         b.classList.toggle('on', maxTroops > 0 && (previewFraction !== null
