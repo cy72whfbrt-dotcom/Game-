@@ -1091,6 +1091,16 @@ Befehle und Nachrichten verteilen, Spielerliste mit Profilen.
   („Ubersicht“, „SPAHBERICHT“); Unter-Chips nicht größer als die Hauptreiter; kleine Knöpfe nicht zusammengedrückt;
   gesperrter Knopf in `--tx-3`; Platzhalter normal/gedämpft; lesbarer Kleintext mindestens `--fs-11`; Zahlen-Klassen
   `.zahl`, `.zahl--plus`, `.zahl--minus`. Test `design_stil_test` (+ server_test Startseite).
+- **6.10. – Politur nach Designer-Runde 4 (Branch `politur`, NICHT hochgeladen, nur Anzeige):** Burg-Schutz heißt „Münzen“
+  statt „Gold“ und steht glatt da (10.000 statt 10.001, 5.600 statt 5.556; aufbau.js `schutzText`); Fuß-Knopf nennt alle
+  fehlenden Sachen („Fehlt: Holz, Stein, Eisen“, nur eins: „Fehlt: 2.000 Holz“); Rohstoffe pro Stunde immer ganze Zahlen
+  (`rohStd`), ungebauter Holzfäller/Steinbruch/Mine „Jetzt –“. Wochen-Event: Banner nur „Krieger-Woche“ (Bild nach rechts,
+  dunkler Verlauf hinter dem Text), „18 Punkte je 10 besiegte Krieger“, ohne Platz nur „Deine Punkte 0 Punkte“; leere
+  Top 10 (Woche/Invasion/Drache), „Alle Bündnisse“ und Kampf „Gerade nichts unterwegs“ mit Symbol + Satz (Kampf: Gold-Knopf
+  „Ziel auf der Karte wählen“). Ereignis-Chips überall kurz (Woche · Invasion · Drache · Boss). Bündnis ohne Bündnis: Kopf
+  ohne doppeltes „Bündnis“. Shop: Kistennamen dürfen 2 Zeilen haben („Ausrüstungs-kiste“), Reiter am Desktop 13 px,
+  Karten-Knöpfe weg, solange der breite Shop offen ist. Schon durch die Wirtschaft erledigt: Bündnis gründen 20.000 Münzen.
+  Offen (Frage an Alexander): Burg 1→2 dauert 1 Tag. Test `design_politur_test` (neu).
 - **Befehle der Zuschauer** (in `spiel.js`, Helfer `alsBefehl`): Angreifen (mit gewähltem Held), Senden, Zurückrufen,
   Beschleunigen (Gems zahlt man selbst), Basis/Burg ausbauen (Münzen zahlt man selbst), Hauptstadt verlegen,
   Truppen-Geschenke (Stufe, Thron-Shop, Lazarett, Funde → `eigeneTruppenDazu`), Tore (Maut/zu), Titel vergeben als
