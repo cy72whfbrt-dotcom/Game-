@@ -948,20 +948,42 @@ function bundMitspielerRunde(now) {                              // alle 15 s: g
             const ja = !bundEinzelgaenger(bot) && nah && a.mit.length < BUND.MAX;
             bundOp(bot.id, { op: 'einladungAntwort', aid: a.id, ja }); if (ja) { bundBotGetippt(bot, now); break; } }
     }
-    // h) näher ans Bündnis: ein Mitspieler verlegt seine Hauptstadt (wie du: auf einen EIGENEN Turm, 50 Gems) auf den Turm,
-    //    der seinen Bündnis-Mitgliedern am nächsten ist – nur wenn das deutlich näher ist, und nicht öfter als sonst
-    for (const bot of bots.filter(b => bundVon(b.id) && botOnline(b, now) && Math.random() < .05).slice(0, 3)) {
+    // h) gemeinsam vorrücken: ein Mitspieler verlegt seine Hauptstadt (wie du: auf einen EIGENEN Turm, 50 Gems) auf den Turm, der dem
+    //    Treffpunkt des Bündnisses am nächsten ist. Der liegt ein Stück näher am Thron als die Mitglieder (Alexander 4.10.: nach und nach
+    //    in die Mitte) – ist hinten viel Ärger (Basen der Mitglieder angegriffen, Hilferufe), liegt er dort: dann geht es zurück, um zu
+    //    helfen (Alexander 6.10.: „alles im Fokus, nach vorne oder auch zurück“). Nur wenn es merklich näher ist, nicht öfter als sonst.
+    for (const bot of bots.filter(b => bundVon(b.id) && botOnline(b, now) && Math.random() < .15).slice(0, 4)) {
         const a = bundVon(bot.id), st = loadBotState()[bot.id]; if (!a || !st || (st.gems || 0) < TELEPORT_GEMS || now - (st.capMovedAt || 0) < BOT_CAP_COOLDOWN) continue;
-        const andere = a.mit.filter(w => w !== bot.id).map(w => islandById[bundCap(w)]).filter(Boolean); if (!andere.length) continue;
-        const VOR = .3;                                                // (Alexander 4.10.: Bündnisse ziehen nach und nach in die Mitte – der Treffpunkt liegt ein Stück näher am Thron (0,0) als die Mitglieder)
-        const mx = andere.reduce((s2, c) => s2 + c.x, 0) / andere.length * (1 - VOR), my = andere.reduce((s2, c) => s2 + c.y, 0) / andere.length * (1 - VOR);
-        const cap = islandById[botCapitalOf(bot.id)]; if (!cap) continue; const dJetzt = Math.hypot(cap.x - mx, cap.y - my);
+        const z = bundTreffpunkt(a, bot.id, now); if (!z) continue;
+        const cap = islandById[botCapitalOf(bot.id)]; if (!cap) continue; const dJetzt = Math.hypot(cap.x - z.x, cap.y - z.y);
         let best = null;
         for (const id of botOwnedIslands[bot.id]) { const t = islandById[id]; if (!t || t.type !== 'tower' || !botCapitalMoveOk(bot.id, id)) continue;
-            const d = Math.hypot(t.x - mx, t.y - my); if (!best || d < best.d) best = { id, d }; }
-        if (best && best.d < dJetzt * .6 && dJetzt - best.d > FRAME_HALF * .15 && botTeleportCapital(bot, best.id)) {
-            bundLog(a, bundName(bot.id) + ' hat die Hauptstadt näher ans Bündnis verlegt.'); bundSpeichern(); bundBotGetippt(bot, now); }
+            const d = Math.hypot(t.x - z.x, t.y - z.y); if (!best || d < best.d) best = { id, d }; }
+        if (best && best.d < dJetzt * .8 && dJetzt - best.d > FRAME_HALF * .06 && botTeleportCapital(bot, best.id)) {
+            bundLog(a, bundName(bot.id) + (z.zurueck ? ' hat die Hauptstadt zurückverlegt, um hinten zu helfen.' : ' ist mit der Hauptstadt vorgerückt.')); bundSpeichern(); bundBotGetippt(bot, now); }
     }
+}
+// Ärger beim Bündnis: Basen der anderen Mitglieder, die gerade angegriffen werden, und frische Hilferufe → [{ x, y }]
+function bundAerger(a, ohne, now) {
+    const orte = new Set();
+    for (const w of a.mit) if (w !== ohne) for (const t of bundBedroht(w)) if (bundUnterAngriff(t)) orte.add(t);
+    for (const s of a.sig || []) if (s.art === 'hilfe' && s.w !== ohne && now - s.at < 10 * 60000) orte.add(s.z);
+    return [...orte].map(id => islandById[id]).filter(Boolean);
+}
+// Wohin das Bündnis rückt (für ohne): viel Ärger hinten (2 Orte und mehr) → dorthin zurück, sonst der Schwerpunkt der anderen Mitglieder
+// ein Stück näher am Thron (0,0) → { x, y, zurueck } oder null
+function bundTreffpunkt(a, ohne, now) {
+    const aerger = bundAerger(a, ohne, now);
+    if (aerger.length >= 2) return { x: aerger.reduce((s, c) => s + c.x, 0) / aerger.length, y: aerger.reduce((s, c) => s + c.y, 0) / aerger.length, zurueck: true };
+    const andere = a.mit.filter(w => w !== ohne).map(w => islandById[bundCap(w)]).filter(Boolean); if (!andere.length) return null;
+    const VOR = .4;
+    return { x: andere.reduce((s, c) => s + c.x, 0) / andere.length * (1 - VOR), y: andere.reduce((s, c) => s + c.y, 0) / andere.length * (1 - VOR), zurueck: false };
+}
+// Wie viel ein Mitspieler aus seinen Basen in eine Rally schickt: nicht pauschal, sondern nach Lage – je eigene bedrohte Basis und bei
+// Ärger im Bündnis bleibt mehr daheim (die bedrohten Basen selbst schicken gar nichts). → Anteil 0 … 1
+function bundRallyLage(w, a, now) {
+    const thr = Math.min(3, bundBedroht(w).size), aerger = a && bundAerger(a, w, now).length ? .15 : 0;
+    return Math.max(.4, 1 - thr * .15 - aerger);
 }
 // Signale der Mitglieder: angegriffen und allein zu schwach → „Hilfe!“ – auch für echte Spieler (Alexander 5.10.: die
 // Verbündeten helfen ihnen ohne Knopfdruck, ob sie gerade online sind oder nicht)
@@ -1161,8 +1183,8 @@ function bundMitspielerRally(now) {
         for (const w of a.mit) {
             const bot = botById[w], key = r.id + ':' + w; if (!bot || bot.mensch || w === r.by || bundMem.rallyGemacht.has(key) || r.j.some(j => j.w === w) || !bundBotBereit(bot, now) || botFreeSlots(bot) <= 0) continue;
             const zielOw = islandOwnerOf(r.t); if (zielOw && (bundVerbuendet(w, zielOw) || zielOw === w)) continue;
-            const thr = botThreatened(w); let best = null;
-            for (const sid of botOwnedIslands[w]) { if (thr.has(sid) || sid === megaTempleId || sid === r.at) continue; const n = Math.floor((islandTroops[sid] || 0) * (botStyle(bot).commit || .7) * .8); if (n < wirtK(1000)) continue;
+            const thr = botThreatened(w), lage = bundRallyLage(w, a, now); let best = null;   // (nach Lage: wer hinten Ärger hat, schickt weniger)
+            for (const sid of botOwnedIslands[w]) { if (thr.has(sid) || sid === megaTempleId || sid === r.at) continue; const n = Math.floor((islandTroops[sid] || 0) * (botStyle(bot).commit || .7) * .8 * lage); if (n < wirtK(1000)) continue;
                 const src = islandById[sid];                                // (Tore egal beim Beitreten)
                 if (!best || n > best.n) best = { id: sid, n }; }
             bundMem.rallyGemacht.add(key);
@@ -1202,13 +1224,20 @@ function bundRallyFuer(w, z, now) {
         if (!best || n > best.n) best = { basis: id, ziel: z, min: 3, n }; }
     return best;
 }
+// Reiz eines Rally-Ziels (kleiner = lieber): der Thron, Tempel und Tore vor Türmen, innen vor außen, nah vor fern. Neutral geht
+// nur die Mitte: Tore, Tempel (auch die Wächter-Tempel) und der freie Thron – freie Türme nimmt jeder allein (Alexander 6.10.)
+function bundRallyReiz(t, ow, A) {
+    if (!ow && t.type === 'tower') return null;
+    const art = t.id === megaTempleId ? .2 : t.type === 'temple' ? (t.guardian ? .35 : .5) : t.type === 'gate' ? .6 : 1;
+    return art * (botById[ow] && botById[ow].mensch ? .7 : 1) * (1 + landmasses[t.landmassId].ring * .15) * Math.hypot(t.x - A.x, t.y - A.y);
+}
 function bundRallyPlan(a, bot, now) {                            // → { basis, ziel, min, n } oder null
-    const own = [...botOwnedIslands[bot.id]], thr = botThreatened(bot.id);
+    const own = [...botOwnedIslands[bot.id]], thr = botThreatened(bot.id), lage = bundRallyLage(bot.id, a, now) * .9;   // (nicht pauschal 90 %: nach Lage)
     const quellen = own.filter(id => !thr.has(id) && id !== megaTempleId && (islandTroops[id] || 0) > wirtK(5000)).sort((x, y) => (islandTroops[y] || 0) - (islandTroops[x] || 0)).slice(0, 3);
     if (!quellen.length) return null;
     const kennt = botKennt(bot.id), atk = botAtkFactor(bot, true);
     // was das Bündnis in ~3 Minuten zum Sammelpunkt bringen kann (grob: die halbe Besatzung der großen Basen in der Nähe)
-    const kraft = at => { let s = (islandTroops[at] || 0) * .9; const A = islandById[at];
+    const kraft = at => { let s = (islandTroops[at] || 0) * lage; const A = islandById[at];
         for (const w of a.mit) { if (w === bot.id) continue; const top = [...bundBasen(w)].sort((x, y) => (islandTroops[y] || 0) - (islandTroops[x] || 0)).slice(0, 4);
             for (const id of top) { const I = islandById[id]; if ((I.landmassId === A.landmassId || landmassesConnected(I.landmassId, A.landmassId)) && travelDurationSeconds(I, A, w === 'player' ? undefined : w) < 150) s += (islandTroops[id] || 0) * .4; } }
         return s; };
@@ -1218,17 +1247,18 @@ function bundRallyPlan(a, bot, now) {                            // → { basis,
         for (const lm of reachableLandmassIds[A.landmassId] || []) {
             if (!kennt.has(lm) || !landmassesConnected(A.landmassId, lm)) continue;
             for (const t of islandsByLandmass[lm] || []) {
-                const ow = islandOwnerOf(t.id); if (!ow || bundZielOk(bot.id, t.id)) continue;
+                const ow = islandOwnerOf(t.id); if (bundZielOk(bot.id, t.id)) continue;
+                const reiz = bundRallyReiz(t, ow, A); if (reiz === null) continue;
+                const tor = tollFor(A.landmassId, lm, (islandTroops[at] || 0) * lage, bot.id, t.id); if (tor.closed || (botCoins[bot.id] || 0) < tor.cost) continue;   // (verschlossenes Tor davor: erst das Tor)
                 const it = botIntel(bot, t.id);
                 if (!it) { if (!gespaeht && !botScouting(bot, t.id) && (t.type !== 'tower' || (islandLevels[t.id] || 1) >= 5) && Math.random() < .2) { gespaeht = true; botLearn(bot.id, t.id, now + scoutSecs(A, t, bot.id) * 1000, A.landmassId); } continue; }   // erst spähen (einer pro Runde)
                 const s = it.s; if (s < allein * .9 || s > k * atk * .85) continue;                // allein zu schwer, gemeinsam machbar
-                const reiz = (t.id === megaTempleId ? .2 : t.type === 'temple' ? .5 : 1) * (botById[ow] && botById[ow].mensch ? .7 : 1) * (1 + landmasses[t.landmassId].ring * .15) * Math.hypot(t.x - A.x, t.y - A.y);
                 if (!best || reiz < best.reiz) best = { reiz, at, ziel: t.id };
             }
         }
     }
     if (!best) return null;
-    return { basis: best.at, ziel: best.ziel, min: Math.random() < .5 ? 3 : 5, n: Math.floor((islandTroops[best.at] || 0) * .9) };
+    return { basis: best.at, ziel: best.ziel, min: Math.random() < .5 ? 3 : 5, n: Math.floor((islandTroops[best.at] || 0) * lage) };
 }
 // (Weltrechner) jede Sekunde: Rallys losschicken, alte Signale weg, die Mitspieler handeln lassen
 function bundTakt() {
