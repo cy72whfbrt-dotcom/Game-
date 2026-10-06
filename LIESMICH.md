@@ -1636,6 +1636,10 @@ Nacht – vorher bauen und testen.
     stehen außerhalb der Mauer selbst gezeichnete Berge, Wälder, Fluss, Felsen. Gewünscht wie RoK: um die Mauer herum
     nur ein kleines Stück der echten Weltkarte (gleiches Gelände/Biom wie auf der Karte an dieser Stelle), sonst nichts
     Eigenes; Blick auf die Stadt enger, Stadt füllt den Bildschirm. Auch: Gebäude-Namen/Plätze, Schloss-Symbole prüfen.
+23. **Entscheidungen Design (19:36):** Kampfbericht: AUFBAU bleibt wie er ist, nur Aussehen darf angepasst werden. Kisten im
+    Shop: Knöpfe „1x öffnen“ / „10x öffnen“ (wie RoK). Angriff auf der Karte wie RoK (Bilder f027e614, dc4e5516, 15b390d0):
+    Helden-Porträt im Sechseck über der Armee, Lebensbalken, Schadens-Zahlen fliegen hoch, roter Kampf-Kreis, Geschosse,
+    Armeen als Soldaten-Gruppen mit Fahne/Allianz-Kürzel, Rally-Pfeile. Vorbild-Bilder: scratchpad/vorbilder/ (Designer).
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
