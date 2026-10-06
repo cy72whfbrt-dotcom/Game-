@@ -2,7 +2,7 @@
 absturz_test 71
 admin_test 25
 armee_test 79
-kiste_test 312
-klick_test 387
+kiste_test 250
+klick_test 359
 schummel_test 887
-verst_test 261
+verst_test 251
