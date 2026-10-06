@@ -14,6 +14,9 @@
 // Der eigene Spielstand eines echten Spielers übernimmt den Reset über die Nachricht „saison“ (unten) → Neuladen → 01a-grundlagen.js.
 // Umstellung auf „pro Stunde“ (Alexander 5.10., 11b A): der ERSTE Reset danach rechnet die behaltenen Holz/Stein/Eisen × WIRTSCHAFT_KOSTEN
 // um (sonst wäre jeder mit den alten Beständen ewig reich). saison.wirtAb = die erste Saison mit der neuen Wirtschaft (fehlt: noch alt).
+// Burg fair (Alexander 6.10. A): der ERSTE Reset danach setzt EINMAL jede Burg über Stufe BURG_FAIR auf BURG_FAIR (bis 5.10. galt die alte,
+// kurze Bauzeit – Burg 13–14 bei Mitspielern, mit den neuen Regeln geht höchstens 3–4), für Mitspieler und echte Spieler gleich.
+// Gebäude/Forschung fallen auf das, was Burg/Labor dann erlauben (aufbau.js burgFair), ohne Erstattung. saison.burgFair = diese Saison.
 const SAISON_WOCHEN = 8, SAISON_STUNDE = 18, SAISON_BALD_MS = 3 * 864e5, SAISON_ANFANG_MS = 3 * 864e5;
 const SAISON_PREISE = [3000, 2000, 1500, 500, 500, 500, 500, 500, 500, 500];   // Gems für Platz 1–10 (Vorschlag, LIESMICH)
 var saison = null, saisonSichT = 0;
@@ -65,6 +68,7 @@ function saisonTop() {                                // die besten 10 nach Mach
 }
 function saisonNeu(now) {
     const alt = saison.nr, nr = alt + 1, top = saisonTop(), wirtAb = saison.wirtAb > 0 ? saison.wirtAb : nr, f = wirtAb === nr ? WIRTSCHAFT_KOSTEN : 1;   // f: Holz/Stein/Eisen umrechnen (nur beim ersten Reset nach der Umstellung)
+    const burgFair = saison.burgFair > 0 ? saison.burgFair : nr, B = burgFair === nr ? BURG_FAIR : 0;   // B: Burg fair (nur beim ersten Reset danach)
     console.warn('Welt-Saison ' + alt + ' zu Ende – Saison ' + nr + ' beginnt (Top 10: ' + top.map(([w]) => (botById[w] || {}).name || w).join(', ') + ')');
     // 1) Preise: Gems ins Abholfach (Mitspieler direkt) und der Saison-Titel – feste Nummer je Saison (nie doppelt)
     top.forEach(([w], i) => evPreis(w, 'saison', 'Welt-Saison ' + alt + ' · Platz ' + (i + 1), { gems: SAISON_PREISE[i], titel: 's' + alt + 'p' + (i + 1) }, alt));
@@ -72,18 +76,18 @@ function saisonNeu(now) {
     const menschen = window.WELT ? Object.keys(WELT.menschen).filter(id => id !== WELT.ich && parseInt(id.slice(1), 10) > 0) : [];
     for (const id of menschen) try { WELT.deltaJetzt(id); } catch (e) { console.warn('Saison:', e); }
     // 3) die Welt neu
-    saisonWelt(now, f);
+    saisonWelt(now, f, B);
     // 4) echte Spieler: Konto beim Weltrechner zurücksetzen, die Nachricht „saison“ (sein Handy übernimmt den Reset und lädt neu) –
     //    Nummer je Reset eindeutig (mit Zeitpunkt): nach dem Zurückspielen kommt ein neuer Reset derselben Nummer sonst nie an
-    for (const id of menschen) { try { WELT.saisonKonto(id, f); } catch (e) { console.warn('Saison:', e); } WELT.nachricht(parseInt(id.slice(1), 10), Object.assign({ art: 'saison', nr, alt, neuBis: (loadBotState()[id] || {}).neuBis || now + NEULING_MS }, f < 1 ? { roh: f } : {}), 'saison|' + nr + '|' + now); try { WELT.deltaBasis(id); } catch (e) {} }
-    saison = { nr, start: now, ende: saisonEnde(now), wirtAb, last: { nr: alt, top: top.map(([w, v]) => [neutralId(w), Math.round(v)]) } }; saisonSpeichern();
+    for (const id of menschen) { try { WELT.saisonKonto(id, f); } catch (e) { console.warn('Saison:', e); } WELT.nachricht(parseInt(id.slice(1), 10), Object.assign({ art: 'saison', nr, alt, neuBis: (loadBotState()[id] || {}).neuBis || now + NEULING_MS }, f < 1 ? { roh: f } : {}, B ? { burg: B } : {}), 'saison|' + nr + '|' + now); try { WELT.deltaBasis(id); } catch (e) {} }
+    saison = { nr, start: now, ende: saisonEnde(now), wirtAb, burgFair, last: { nr: alt, top: top.map(([w, v]) => [neutralId(w), Math.round(v)]) } }; saisonSpeichern();
     window.__prVorher = null;                          // (Prüfer im Weltrechner: die Welt ist gewollt so viel kleiner – neue Grundlinie)
     if (!window.WELT && !SYSTEM) {                     // (Vorschau, allein) dein Spielstand übernimmt den Reset beim Neuladen wie am Handy
-        store.set('openWaterSaisonNeu', String(nr)); if (f < 1) store.set('openWaterSaisonRoh', String(f)); try { saveGameNow(); saveProgressionNow(); flushBotState(); } catch (e) {}
+        store.set('openWaterSaisonNeu', String(nr)); if (f < 1) store.set('openWaterSaisonRoh', String(f)); if (B) store.set('openWaterSaisonBurg', String(B)); try { saveGameNow(); saveProgressionNow(); flushBotState(); } catch (e) {}
         flashHint('Eine neue Welt-Saison beginnt – das Spiel lädt neu …', 4000); setTimeout(() => location.reload(), 600);
     }
 }
-function saisonWelt(now, f) {                         // alles Weltliche zurück, die Hauptstädte auf neue Plätze (f < 1: Holz/Stein/Eisen umrechnen)
+function saisonWelt(now, f, B) {                      // alles Weltliche zurück, die Hauptstädte auf neue Plätze (f < 1: Holz/Stein/Eisen umrechnen, B: Burg fair)
     const bs = loadBotState(), wer = (SYSTEM || window.WELT ? [] : ['player']).concat(BOT_DEFS.map(b => b.id).filter(id => bs[id]));
     const hatte = wer.filter(w => (w === 'player' ? ownedIslands : botOwnedIslands[w] || new Set()).size > 0);   // wer gerade Basen hat, bekommt eine Hauptstadt (die anderen wie bisher: Neustart der Mitspieler)
     // Märsche, Späher, Armeen, Felder, Barbaren-Märsche, Verstärkungen, Rallys, Bündnisse – mit allen Truppen darin
@@ -121,10 +125,20 @@ function saisonWelt(now, f) {                         // alles Weltliche zurück
     for (const w of wer) { if (w === 'player') continue; const b = bs[w];
         b.lvl = 1; b.xp = 0; b.sp = 0; b.xpNeu = 0; for (const k in b.skills || {}) b.skills[k] = 0; b.wounded = 0; b.tt = 0; botCoins[w] = 0;
         b.rally = null; b.capWish = null; b.outAt = 0; b.vendetta = null; b.grudge = {}; b.annoy = {}; b.fails = {}; delete b.kennt; delete b.plan;
-        if (f < 1 && b.res) for (const k of ['h', 's', 'e']) b.res[k] = Math.floor((+b.res[k] || 0) * f); }   // (echte Spieler: ihr Handy rechnet genauso – 01a-grundlagen.js)
+        if (f < 1 && b.res) for (const k of ['h', 's', 'e']) b.res[k] = Math.floor((+b.res[k] || 0) * f);   // (echte Spieler: ihr Handy rechnet genauso – 01a-grundlagen.js)
+        if (B > 0 && AUF) burgFairWer(b, B); }
     capitalCache = null; ownVer++;
     saveGameNow(); flushBotState(); saveProgressionNow(); saveFields(); saveBarb(); saveArmies(); saveEv();
     requestRender();
+}
+// Burg fair für einen Mitspieler oder echten Spieler in der Welt: seine Stadt und (echte Spieler) das Hauptbuch des Weltrechners
+// (10d hb.st/hb.fo) – sonst nähme das Hauptbuch die alten Stufen weiter als möglich an und die Welt bliebe hoch.
+// Sein Handy macht dasselbe beim Neuladen (01a-grundlagen.js → aufbau.js) – Handy und Hauptbuch passen zusammen, kein Fehlalarm.
+function burgFairWer(b, B) {
+    AUF.burgFair(b.city, B);
+    const h = b.hb; if (!h || !h.st || !h.st.keep) return;
+    const c = { levels: {}, fo: h.fo || (h.fo = {}) }; for (const id in h.st) c.levels[id] = h.st[id][0];
+    AUF.burgFair(c, B); for (const id in h.st) if (c.levels[id] < h.st[id][0]) h.st[id] = [c.levels[id], h.st[id][1]];
 }
 // ---- was man sieht: der Countdown (Leiste unter dem HUD in den letzten 3 Tagen, Karte oben im Events-Fenster) ----
 // In den ersten 3 Tagen einer neuen Saison haben alle nur Start-Truppen: Tagesboss und Drache mit weniger Leben (09b dbossEnsure, 09c drNeu)
@@ -139,7 +153,7 @@ function saisonKarte() {
     const preise = 'Platz 1: ' + fmtNum(SAISON_PREISE[0]) + ' · 2: ' + fmtNum(SAISON_PREISE[1]) + ' · 3: ' + fmtNum(SAISON_PREISE[2]) + ' · 4–10: ' + fmtNum(SAISON_PREISE[3]) + ' Edelsteine + Saison-Titel für immer';
     const last = S.last && S.last.top && S.last.top.length ? '<div class="lb-gap">Saison ' + S.last.nr + ' · Top 10</div>' + evRangHtml(S.last.top.map(([w, v]) => [lokalId(w), v]), v => fmtCompact(v)) : '';
     return evKarte('crown', 'Welt-Saison ' + S.nr, now < S.ende ? 'Neue Saison in ' + evUhr(S.ende) : S.halt ? 'Neue Saison: der Termin folgt' : 'Die neue Saison beginnt gleich …',
-        '<div class="field-lines"><span>Neustart</span><b>' + (S.halt ? 'vom Admin' : evWann(S.ende) + ' Uhr') + '</b><span>Bleibt</span><b>Hauptstadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Edelsteine, Holz/Stein/Eisen, Gekauftes</b>' +
+        '<div class="field-lines"><span>Neustart</span><b>' + (S.halt ? 'vom Admin' : evWann(S.ende) + ' Uhr') + '</b><span>Bleibt</span><b>Hauptstadt (Burg, Gebäude, Forschung' + (S.burgFair ? '' : ' – einmalig für alle: Burg höchstens Stufe ' + BURG_FAIR) + '), Helden, Ausrüstung, Edelsteine, Holz/Stein/Eisen, Gekauftes</b>' +
         '<span>Neu</span><b>Basen, Truppen, Münzen, Stufe, Bündnisse – die Hauptstadt zieht an einen neuen Platz am Rand</b><span>Preise</span><b>Die besten 10 nach Macht: ' + preise + '</b></div>', bald ? 'is-warn' : '') + last;
 }
 // ---- (Handy) Nachrichten vom Weltrechner: Ankündigung, neue Saison ----
@@ -149,6 +163,7 @@ if (window.WELT && !SYSTEM) {
         if (!e || e.art !== 'saison' || !(e.nr > 0) || e.nr <= (parseInt(store.get('openWaterSaisonMein'), 10) || 1)) return;   // (schon übernommen)
         WELT.saisonHalt = true; store.set('openWaterSaisonNeu', String(e.nr));                // → nach dem Neuladen übernimmt 01a-grundlagen.js den Reset
         if (e.roh > 0 && e.roh < 1) store.set('openWaterSaisonRoh', String(e.roh));         // (erster Reset nach der Umstellung: Rohstoffe umrechnen)
+        if (e.burg > 0) store.set('openWaterSaisonBurg', String(e.burg));                    // (Burg fair)
         if (e.neuBis > Date.now()) store.set('openWaterSaisonSchutz', String(Math.min(e.neuBis, Date.now() + NEULING_MS)));   // Anfängerschutz (die Zeit sagt der Weltrechner)
         flashHint('Eine neue Welt-Saison beginnt – das Spiel lädt neu …', 4000); setTimeout(() => location.reload(), 1500);
     });
@@ -174,4 +189,5 @@ function saisonWeltZurueck() {
     WELT.saisonHalt = true; flashHint('Die Welt wurde auf einen früheren Stand zurückgesetzt – das Spiel lädt neu …', 5000); setTimeout(() => location.reload(), 1500);
 }
 if (saisonZurueckGeladen) afterSplash(() => setTimeout(() => flashHint('Die Welt wurde auf einen früheren Stand zurückgesetzt (Saison ' + saisonZurueckGeladen + ') – dein Spielstand passt wieder dazu.', 8000), 1500));
-if (saisonNeuGeladen) afterSplash(() => setTimeout(() => flashHint('Welt-Saison ' + saisonNeuGeladen + ' hat begonnen! Deine Hauptstadt steht an einem neuen Platz am Rand – Burg, Gebäude, Forschung, Helden, Ausrüstung, Edelsteine und Rohstoffe sind geblieben.', 9000), 1500));
+if (saisonNeuGeladen) afterSplash(() => setTimeout(() => flashHint('Welt-Saison ' + saisonNeuGeladen + ' hat begonnen! Deine Hauptstadt steht an einem neuen Platz am Rand – ' +
+    (saisonBurgGeladen ? 'für alle gleich: jede Burg über Stufe ' + saisonBurgGeladen + ' steht jetzt auf Stufe ' + saisonBurgGeladen + ' (Gebäude und Forschung passend). Helden' : 'Burg, Gebäude, Forschung, Helden') + ', Ausrüstung, Edelsteine und Rohstoffe sind geblieben.', 9000), 1500));

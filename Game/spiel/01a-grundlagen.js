@@ -53,14 +53,17 @@ if (!SYSTEM && store.get('openWaterReset') !== RESET_VERSION) {   // (nie beim W
 // Anfängerschutz (Alexander 5.10.): nach dem Reset 48 Std. wie ein neuer Spieler – die Zeit kommt vom Weltrechner (openWaterSaisonSchutz).
 // Erster Reset nach der Umstellung auf „pro Stunde“ (11b A): Holz/Stein/Eisen × WIRTSCHAFT_KOSTEN (openWaterSaisonRoh aus der Nachricht,
 // sonst aus der Welt: saison.wirtAb liegt zwischen der alten und der neuen Saison dieses Spielstands) – wie beim Weltrechner abgerundet.
+// Burg fair (Alexander 6.10. A): der erste Reset danach setzt jede Burg über Stufe BURG_FAIR auf BURG_FAIR (saison.burgFair = diese Saison,
+// sonst openWaterSaisonBurg aus der Nachricht) – Gebäude, Forschung, Bauten passt aufbau.js beim Laden an (openWaterBurgFair, burgFair).
 // Zurückgespielte Sicherung (Alexander 5.10.): ist die Saison der Welt älter als die dieses Spielstands, holt er sich den Stand von
 // vor dem Reset zurück (openWaterSaisonVorher, beim Reset gemerkt) – die Welt (Server) ist maßgeblich, das Handy folgt nur.
-var saisonNeuGeladen = 0, saisonZurueckGeladen = 0;  // (09f-saison.js: Hinweis nach dem Neuladen)
+var saisonNeuGeladen = 0, saisonZurueckGeladen = 0, saisonBurgGeladen = 0;  // (09f-saison.js: Hinweis nach dem Neuladen · Burg: aufbau.js)
+const BURG_FAIR = 4;
 const SAISON_PRIVAT = ['openWaterLevel', 'openWaterXp', 'openWaterSkills', 'openWaterSkillPoints', 'openWaterCoins', 'openWaterNeulingBis'];   // (was der Reset ändert und das Zurückspielen wiederholt)
 if (!SYSTEM) {
-    let mein = parseInt(store.get('openWaterSaisonMein'), 10) || 0, nrW = 0, wirtAb = 0;
+    let mein = parseInt(store.get('openWaterSaisonMein'), 10) || 0, nrW = 0, wirtAb = 0, fairNr = 0;
     const neu = parseInt(store.get('openWaterSaisonNeu'), 10) || 0;
-    try { const sw = JSON.parse(store.get('openWaterSaison')) || {}; nrW = sw.nr | 0; wirtAb = sw.wirtAb | 0; } catch (e) {}
+    try { const sw = JSON.parse(store.get('openWaterSaison')) || {}; nrW = sw.nr | 0; wirtAb = sw.wirtAb | 0; fairNr = sw.burgFair | 0; } catch (e) {}
     if (!mein) {                                     // ganz neu: die laufende Saison · ein Spielstand von vor der Saison-Regel: Saison 1
         mein = store.get('openWaterLevel') === null && store.get('openWaterCity') === null ? Math.max(1, nrW) : 1;
         store.set('openWaterSaisonMein', String(mein));
@@ -69,12 +72,15 @@ if (!SYSTEM) {
         let v = null; try { v = JSON.parse(store.get('openWaterSaisonVorher')); } catch (e) {}
         if (v && v.nr === nrW && v.k) { for (const k of SAISON_PRIVAT) { if (typeof v.k[k] === 'string') store.set(k, v.k[k]); else if (k === 'openWaterNeulingBis') store.set(k, '0'); else store.remove(k); }   // (ohne NeulingBis gäbe 10d-welt-weltrechner.js neuen Schutz)
             try { const c = JSON.parse(store.get('openWaterCity')); if (c && typeof c === 'object' && v.w >= 0) { c.wounded = v.w; store.set('openWaterCity', JSON.stringify(c)); } } catch (e) {}
-            if (typeof v.res === 'string') store.set('openWaterRes', v.res); }   // (Rohstoffe vor der Umrechnung)
+            if (typeof v.res === 'string') store.set('openWaterRes', v.res);   // (Rohstoffe vor der Umrechnung)
+            if (typeof v.city === 'string') { store.set('openWaterCity', v.city); store.remove('openWaterBurgFair'); } }   // (Stadt vor „Burg fair“)
         mein = nrW; store.set('openWaterSaisonMein', String(mein)); saisonZurueckGeladen = nrW;
         if (window.WELT) { WELT.befehle.length = 0; WELT.ausgang = []; }
     }
     if (neu > mein) {
         const vorher = { nr: mein, k: {}, w: 0 }; for (const k of SAISON_PRIVAT) { const x = store.get(k); if (x !== null) vorher.k[k] = x; }
+        const fair = fairNr > mein && fairNr <= neu ? BURG_FAIR : Math.min(BURG_FAIR, parseInt(store.get('openWaterSaisonBurg'), 10) || 0);
+        if (fair > 0) { if (store.get('openWaterCity') !== null) vorher.city = store.get('openWaterCity'); store.set('openWaterBurgFair', String(fair)); }   // → aufbau.js
         try { vorher.w = (JSON.parse(store.get('openWaterCity')) || {}).wounded || 0; } catch (e) {}
         store.set('openWaterSaisonVorher', JSON.stringify(vorher));   // (für ein Zurückspielen der Sicherung von vor dem Reset)
         store.set('openWaterLevel', '1'); store.set('openWaterXp', '0'); store.set('openWaterSkills', '{}'); store.set('openWaterSkillPoints', '0');
@@ -88,7 +94,7 @@ if (!SYSTEM) {
         if (window.WELT) { WELT.befehle.length = 0; WELT.ausgang = []; }   // (welt.js hat die alten Befehle schon gelesen – sie gehören zur alten Welt)
         store.set('openWaterSaisonMein', String(neu)); saisonNeuGeladen = neu;
     }
-    for (const k of ['openWaterSaisonNeu', 'openWaterSaisonSchutz', 'openWaterSaisonRoh']) if (store.get(k) !== null) store.remove(k);
+    for (const k of ['openWaterSaisonNeu', 'openWaterSaisonSchutz', 'openWaterSaisonRoh', 'openWaterSaisonBurg']) if (store.get(k) !== null) store.remove(k);
 }
 const canvas = document.getElementById('mapCanvas');
 const ctx = canvas.getContext('2d');
