@@ -49,6 +49,9 @@ pruefe('Held: Fähigkeit höchstens 5', $p['hs']['h1']['sk'][0], 5);
 $p = json_decode(profil_bereinigen(json_encode(['lvl' => 50, 'fo' => ['m_laz2' => 9, 'x_tempo2' => 2, 'w_schutz' => 3, 'gibtsnicht' => 4]])), true);
 pruefe('Forschung ab Labor 23 bleibt im Profil (höchstens 3)', [$p['fo']['m_laz2'], $p['fo']['x_tempo2'], $p['fo']['w_schutz'], isset($p['fo']['gibtsnicht'])], [3, 2, 3, false]);
 pruefe('Kaputtes Profil', profil_bereinigen('kein json'), null);
+// Rahmen (Alexander 6.10.): angelegter Rahmen + die er hat (Listen, nur Kennungen), kein eigener Titel mehr
+$p = json_decode(profil_bereinigen(json_encode(['lvl' => 3, 'look' => ['frame' => 'gold', 'frames' => ['gold', '<b>', 'conq'], 'titles' => ['lord', 5], 'title' => 'king', 'throne' => 1]])), true);
+pruefe('Profil: Rahmen-Listen bereinigt', [$p['look']['frame'], $p['look']['frames'], $p['look']['titles'], isset($p['look']['title']), $p['look']['throne']], ['gold', ['gold', 'conq'], ['lord'], false, true]);
 // Langzeit (6.10.): Rohstoff-Gebäude bleiben im Profil, Bau- und Forschungs-Ende für den Push „Bau fertig“ / „Forschung fertig“
 $p = json_decode(profil_bereinigen(json_encode(['lvl' => 3, 'city' => ['levels' => ['lumber' => 4, 'quarry' => 99, 'mine' => 2], 'bau' => ['gibtsnicht', 'wall', 'keep'], 'bauBis' => [5, 1700000000000, 'x'], 'foLauf' => 'm_atk', 'foBis' => 1700000500000]])), true);
 pruefe('Holzfäller/Steinbruch/Eisenmine bleiben (höchstens 25)', [$p['city']['levels']['lumber'] ?? null, $p['city']['levels']['quarry'] ?? null, $p['city']['levels']['mine'] ?? null], [4, 25, 2]);

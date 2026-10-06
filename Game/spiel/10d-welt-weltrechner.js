@@ -802,7 +802,7 @@ if (window.WELT) {
             // gespeicherte Welt beim Neustart nicht (nur ein leerer Eintrag aus loadBotState ohne mensch, oder welt.js hbRoh: roh aus
             // dem Profil), zählt er als neu – sonst brächte ein gefälschtes Profil seine Werte in die Welt
             const frisch = !(alt && alt.city) || (!alt.zProfil && (!alt.mensch || !!alt.hbRoh));   // (nach dem Zurückspielen: angleichen wie bisher)
-            hb = hbNeu(who, now, p, frisch);
+            hb = hbNeu(who, now, p, frisch); if (frisch) hb.lk = { f: [], t: [], th: 0 };   // (ganz neu: keine alten Rahmen)
             if (frisch) { b.wache = Object.assign({ lv: 0, tk: 0, gTr: 0, gC: 0 }, b.wache || {}, { u: 0, w: 0, lm: 1 }); hb.gU = 0; hb.rU = AUF ? Object.assign({}, AUF.ROH_START) : { h: 0, s: 0, e: 0 };
                 if (alt) alt.wache = b.wache; delete wacheMem[who]; }   // (wacheSehen liest den Eintrag in der Welt – und darf sich vorher nicht schon am Profil geeicht haben)
         }
@@ -815,7 +815,7 @@ if (window.WELT) {
         hbPruefen(who, hb, p, m, now, b.schildAlt);
         if (m.rDeckel && m.rDeckelP === p && b.res) for (const k in m.rDeckel) if (nn(b.res[k]) > m.rDeckel[k]) b.res[k] = m.rDeckel[k];   // Rohstoff-Sprung: die Welt bekommt nur das Mögliche – auch wenn dasselbe Profil nach 10 s nochmal angewendet wird (wartet etwas im Hauptbuch; vorher kam das erfundene Holz dann doch in die Welt und schaukelte sich hoch)
         hbSchreiben(who, hb, b, p, alt);
-        hbRahmen(hb, b, alt);
+        hbRahmen(hb, b);
         if (m.init && m.gGeeicht && now - (m.hbMerkT || 0) > 60000) hbKontenMerken(hb, m, now);
         const d = b.wache; if (m.init && m.geeicht && d) d.u = Math.round(m.c.u);
         saveBotState();                                // (das Hauptbuch geht mit der Welt mit)
@@ -824,9 +824,8 @@ if (window.WELT) {
     // Rahmen (Alexander 6.10.): nicht mehr zu kaufen – was er bis jetzt hatte, merkt sich das Hauptbuch einmal (neu: nichts), danach
     // kommt aus dem Profil keiner mehr dazu. Saison-Rahmen und die aus der Mitte führt die Welt selbst (05a rahmenHat / rahmenVon).
     // (Saisonkrone: Saison-Pass Stufe 40 – die Stufe kennt das Hauptbuch nicht genau, darum erlaubt)
-    function hbRahmen(hb, b, alt) {
-        const frisch = !(alt && alt.city);
-        if (!hb.lk) hb.lk = frisch ? { f: [], t: [], th: 0 } : { f: (b.frames || []).slice(0, 60), t: (b.titles || []).slice(0, 60), th: b.throneLook ? 1 : 0 };
+    function hbRahmen(hb, b) {
+        if (!hb.lk) hb.lk = { f: (b.frames || []).slice(0, 60), t: (b.titles || []).slice(0, 60), th: b.throneLook ? 1 : 0 };
         b.frames = (b.frames || []).filter(x => x === 'saison' || hb.lk.f.includes(x)); b.titles = (b.titles || []).filter(x => hb.lk.t.includes(x)); if (!hb.lk.th) b.throneLook = 0;
     }
     // Nach dem Zurückspielen einer Sicherung (server.php: ow_welt_info.zurueck) ist die Welt – mit dem Hauptbuch – wieder alt, die

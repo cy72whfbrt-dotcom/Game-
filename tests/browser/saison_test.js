@@ -1,6 +1,7 @@
 // Welt-Saison (Server-Reset alle 8 Wochen, Alexander 5.10.): Countdown in den letzten 3 Tagen, dann eine neue Saison auslösen (wie der
 // Admin-Knopf) und prüfen: Hauptstadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Gems, Rohstoffe bleiben – Stufe 1, keine Fähigkeiten,
-// Start-Truppen, Start-Gold, keine anderen Basen, keine Bündnisse; die besten 10 bekommen Gems + Saison-Titel. Für dich und Mitspieler gleich.
+// Start-Truppen, Start-Gold, keine anderen Basen, keine Bündnisse; die besten 10 bekommen Gems + Saison-Rahmen (= Titel, nur bis zum nächsten
+// Saison-Ende: Platz 1 · 2–3 · 4–5 · 6–10, Alexander 6.10.). Für dich und Mitspieler gleich.
 // Erster Reset nach der Umstellung auf „pro Stunde“ (11b A): Holz/Stein/Eisen × WIRTSCHAFT_KOSTEN (Zurückspielen holt die alten zurück).
 const { chromium, devices } = require('playwright');
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x) : ''));
@@ -62,9 +63,9 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
       truppen: tr[cap], bund: Object.keys((J(N.bund) || {}).b || {}).length, log: N.log, fog: (J(N.fog) || []).filter(k => k === V.fogAlt || k === V.fogZweite).length, weit: Math.hypot(isl.x - islandById[V.cap0].x, isl.y - islandById[V.cap0].y) > 2 * REVEAL_BASE,
       keep: c.levels.keep, aca: c.levels.academy, forge: c.levels.forge, fo: c.fo, wounded: c.wounded, gems, roh: AUF.rohVon('player'),
       inv: localStorage.getItem('openWaterInventory') === V.inv, eq: localStorage.getItem('openWaterEquippedItems') === V.eq, hel: localStorage.getItem('openWaterHeroes2') === V.hel,
-      preis: inbox && inbox.gems, titel: look.titles, traegt: playerTitle(), saison: { nr: saison.nr, wirtAb: saison.wirtAb, halt: saison.halt, ende: saison.ende - Date.now(), top: saison.last && saison.last.top.length, erster: saison.last && saison.last.top[0][0] },
+      preis: inbox && inbox.gems, titel: look.titles, traegt: playerTitle(), rahmen: playerFrame(), saison: { nr: saison.nr, wirtAb: saison.wirtAb, halt: saison.halt, ende: saison.ende - Date.now(), top: saison.last && saison.last.top.length, erster: saison.last && saison.last.top[0][0] },
       bot: { lvl: bx.lvl, skills: Object.values(bx.skills).reduce((a, x) => a + x, 0), coins: bc[V.X], basen: (bo[V.X] || []).length, keep: bx.city.levels.keep === V.bot.city.keep, city: JSON.stringify(bx.city.levels) === JSON.stringify(V.bot.city),
-        fo: JSON.stringify(bx.city.fo) === JSON.stringify(V.bot.fo), gear: JSON.stringify(bx.gear) === JSON.stringify(V.bot.gear), gems: bx.gems, res: bx.res, titel: bx.titles, look: botLook(V.X).title,
+        fo: JSON.stringify(bx.city.fo) === JSON.stringify(V.bot.fo), gear: JSON.stringify(bx.gear) === JSON.stringify(V.bot.gear), gems: bx.gems, res: bx.res, titel: bx.sTitel, look: botLook(V.X).title, rahmen: botLook(V.X).frame,
         hs: Object.entries(bx.hs).every(([k, x]) => V.bot.hs[k] && V.bot.hs[k][0] === x.own && V.bot.hs[k][1] === x.q), truppen: tr[bx.capital] },
       schutz: (+N.schutz - N.at) / 36e5, botSchutz: (bx.neuBis - N.at) / 36e5, anderer, ohne, chip: document.getElementById('midBar').innerText };
   }, v.vor);
@@ -80,7 +81,7 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
   const um = x => Math.floor(x * wk), umOk = (r, x) => r >= um(x) && r <= um(x) + 2;   // (+2: was danach schon wieder produziert wurde)
   ok(n.gems >= 12345 && umOk(n.roh.h, 77777) && umOk(n.roh.s, 66666) && umOk(n.roh.e, 55555), 'Gems bleiben, Holz/Stein/Eisen bleiben – beim ersten Reset nach der Umstellung × WIRTSCHAFT_KOSTEN (77.777 → ' + um(77777) + ' Holz)', { gems: n.gems, roh: n.roh });
   ok(n.saison.wirtAb === 2, 'Saison 2 ist die erste mit der neuen Wirtschaft (der nächste Reset rechnet nicht noch einmal um)', n.saison.wirtAb);
-  ok(n.preis === 3000 && (n.titel || []).includes('s1p1') && n.traegt === 'Champion Saison 1', 'Platz 1: 3.000 Gems im Abholfach + Titel „Champion Saison 1“ (angelegt)', { preis: n.preis, titel: n.titel, traegt: n.traegt });
+  ok(n.preis === 3000 && (n.titel || []).includes('s1p1') && n.traegt === 'Saison-Champion' && n.rahmen === 'sz1', 'Platz 1: 3.000 Gems im Abholfach + Rahmen „Saison-Champion“ (angelegt)', { preis: n.preis, titel: n.titel, traegt: n.traegt, rahmen: n.rahmen });
   ok(!n.saison.halt, 'Admin-Knopf: die angehaltene Saison beginnt neu (nicht mehr angehalten)', n.saison);
   ok(n.saison.nr === 2 && n.saison.top === 10 && n.saison.erster === 'player' && n.saison.ende > 55 * 864e5, 'Saison 2 läuft, nächste in 8 Wochen, Top 10 gemerkt', n.saison);
   ok(/['"]saison\|['"]\s*\+\s*\w+\s*\+\s*['"]\|['"]\s*\+\s*\w+/.test(await p.evaluate(() => saisonNeu.toString())), 'Nachricht „saison“: Nummer je Reset eindeutig (mit Zeitpunkt)');
@@ -88,7 +89,7 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
   ok(B.lvl === 1 && B.skills === 0 && B.coins < 1e5 && B.basen === 1, 'Mitspieler: Stufe 1, keine Fähigkeiten, Start-Gold, nur die Hauptstadt', B);
   ok(B.truppen >= 100000 && B.truppen < 2e5, 'Mitspieler: Start-Truppen wie ein neuer Spieler', B.truppen);
   ok(B.keep && B.city && B.fo && B.gear && B.hs && ['h', 's', 'e'].every(k => umOk(B.res[k], resVor[k])) && resVor.h >= 4444 && resVor.s >= 3333 && resVor.e >= 2222, 'Mitspieler: Stadt, Forschung, Ausrüstung, Helden bleiben, Rohstoffe genauso umgerechnet', { B, resVor });
-  ok(B.gems === 999 + 2000 && (B.titel || []).includes('s1p2') && B.look === 'Saison 1 · Platz 2', 'Mitspieler Platz 2: 2.000 Gems + Titel „Saison 1 · Platz 2“', { gems: B.gems, titel: B.titel, look: B.look });
+  ok(B.gems === 999 + 2000 && (B.titel || []).includes('s1p2') && B.look === 'Saison-Großadmiral' && B.rahmen === 'sz2', 'Mitspieler Platz 2: 2.000 Gems + Rahmen „Saison-Großadmiral“ (Platz 2–3)', { gems: B.gems, titel: B.titel, look: B.look, rahmen: B.rahmen });
   ok(n.anderer === 0 && n.ohne >= 100, 'alle Reiche auf eine Hauptstadt zurückgesetzt', { mehr: n.anderer, eine: n.ohne });
   ok(!/Neue Saison in/.test(n.chip), 'Countdown oben erst wieder in den letzten 3 Tagen', n.chip);
   ok(n.schutz > 47 && n.schutz <= 48 && n.botSchutz > 47 && n.botSchutz <= 48, '48 Std. Anfängerschutz nach dem Reset (du und Mitspieler)', { du: n.schutz, mitspieler: n.botSchutz });
@@ -100,11 +101,16 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
   ok(z.schutz !== null && !(+z.schutz > Date.now()), 'Sicherung zurückgespielt: kein neuer Anfängerschutz (alter Stand ohne Schutz)', z.schutz);
   ok(z.res.h >= 77777 && z.res.s >= 66666 && z.res.e >= 55555, 'Sicherung zurückgespielt: Holz/Stein/Eisen wieder wie vor der Umrechnung', z.res);
   await p.waitForTimeout(8000);
-  // ein echter Spieler kann sich keinen Saison-Titel ins Profil schreiben: angezeigt wird er nur, wenn die Welt ihn vergeben hat
-  const f = await p.evaluate(() => { const Y = BOT_DEFS.find(x => !x.mensch && loadBotState()[x.id] && !(loadBotState()[x.id].sTitel || []).length).id, by = loadBotState()[Y];
-    botById[Y].mensch = true; by.lookTitle = 's1p1'; const falsch = botLook(Y).title;
-    evPreis(Y, 'saison', 'Test', { gems: 0, titel: 's1p1' }, 'test'); const echt = botLook(Y).title; botById[Y].mensch = false; return { falsch, echt, liste: by.sTitel }; });
-  ok(f.falsch === 'Neuling' && f.echt === 'Champion Saison 1' && f.liste.includes('s1p1'), 'Saison-Titel nur, wenn die Welt ihn vergeben hat (nicht aus dem Profil)', f);
+  // Saison-Rahmen nur, solange die Welt ihn führt (saison.last.top): ein echter Spieler kann ihn sich nicht ins Profil schreiben; beim
+  // nächsten Reset mit einem anderen Platz 1 verliert der alte ihn (angelegt → Standard) und der neue bekommt ihn
+  const f = await p.evaluate(() => { const Y = BOT_DEFS.find(x => !x.mensch && loadBotState()[x.id]).id, by = loadBotState()[Y], alt = saison.last;
+    botById[Y].mensch = true; by.lookFrame = 'sz1'; const falsch = botLook(Y);
+    saison.last = { nr: 1, top: [['player', 9], [Y, 8]] }; look.frame = 'sz1'; const r1 = { ich: playerFrame(), ichT: playerTitle(), y: botLook(Y).frame };
+    saison.last = { nr: 2, top: [[Y, 9], ['player', 8]] }; const r2 = { ich: playerFrame(), ichT: playerTitle(), hat2: lkHas('frame', 'sz2'), y: botLook(Y).frame, yT: botLook(Y).title };
+    botById[Y].mensch = false; saison.last = alt; return { falsch, r1, r2 }; });
+  ok(f.falsch.frame === 'bronze' && f.falsch.title === 'Neuling', 'Saison-Rahmen nicht aus dem Profil (nur, wenn die Welt ihn führt)', f.falsch);
+  ok(f.r1.ich === 'sz1' && f.r1.ichT === 'Saison-Champion' && f.r1.y === 'bronze', 'Reset 1: Platz 1 (du) trägt „Saison-Champion“', f.r1);
+  ok(f.r2.ich === 'bronze' && f.r2.ichT === 'Neuling' && f.r2.hat2 && f.r2.y === 'sz1' && f.r2.yT === 'Saison-Champion', 'Reset 2, anderer Platz 1: du verlierst ihn (angelegt → Standard), der neue trägt ihn', f.r2);
   // 3) Handy ohne Nachricht „saison“ (über 60 Tage offline / nicht abgelegt): nach dem ersten Puls übernimmt es den Reset trotzdem
   const r3 = await p.evaluate(() => { const s = JSON.parse(localStorage.getItem('openWaterSaison')); localStorage.setItem('openWaterSaison', JSON.stringify({ nr: 2, start: Date.now() - 36e5, ende: Date.now() + 50 * 864e5, wirtAb: 2, last: s.last })); saisonLaden();
     window.onbeforeunload = null; const W0 = window.WELT; window.WELT = { pulse: 0, nachrichtenVoll: false };

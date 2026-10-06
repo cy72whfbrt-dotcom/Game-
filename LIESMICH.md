@@ -779,80 +779,18 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   (06c `throneAmount`) = Stunden-Produktion × `THRONE_STUNDEN` (= WIRTSCHAFT_KOSTEN ÷ WIRTSCHAFT_ERTRAG = 2), wie Händler
   (`hdPreis`) und Markt (`marktLimit`); Mindestwerte bleiben. Shop zeigt „in 2 Std.“. Hauptbuch (10d `muenzGutscheine`,
   `truppenPruefen` „thron“) rechnet je Kauf ebenso 2 Stunden (sonst Fehlalarm). Tests `thron_verst_test`, `welt_test`.
-- **6.10. – Aussehen: Rahmen + Titel in einem Reiter (Alexander 6.10., Branch `fix-aussehen-rahmen`, NICHT hochgeladen):** Im Fenster
-  „Profil · Aussehen“ nur noch die Reiter Wappen · Rahmen · Basis · Marsch (spielseite/08, 4 Spalten in spielseite/03). Im Reiter
-  „Rahmen“ (08b `renderLookSheet`) erst die Rahmen, darunter Titel aus der Mitte, Deine Titel, Titel zu kaufen. `openLookSheet('title')`
-  öffnet „Rahmen“ und rollt zu den Titeln (`#lkTitel`). Preise, Käufe, „Wirklich?“ ab 500 unverändert. Test `aussehen_rahmen_test` (neu).
-## 9. Fehlerliste (Alexander)
-Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
-
-20. ✅ **Nebel zeigt zu viel:** Boss, Wanderer, Felder, Lager, Tagesboss, fremde Armeen/Märsche, Kampf-Effekte und
-    Thron-Effekte werden unter dem Nebel nicht mehr gezeichnet.
-21. ✅ **Angriff in den Nebel:** Basen, Felder, Lager, Boss und fremde Armeen im Nebel lassen sich nicht antippen und
-    nicht angreifen („liegt im Nebel – schick zuerst einen Späher“). Auch „Zum Boss“/„nächstes Lager“ führen nicht in den Nebel.
-22. ✅ **Nebel für Mitspieler:** Sie kennen nur Inseln mit eigenen Basen (auch früheren) und deren direkte Nachbarn über
-    eine Brücke (`botKennt` in bots.js, gespeichert als `kennt`); nur dort greifen sie an, jagen Lager, sammeln, schlagen den Tagesboss.
-23. ✅ **Sammeln ohne Bericht:** Kehren Sammler zurück, gibt es einen Bericht „Sammler zurück · Goldmine · +… Münzen ·
-    … Truppen zurück“ (auch für Zuschauer, über den Weltrechner).
-24. ✅ **Neue Spieler sofort plattgemacht:** **Anfängerschutz** – 48 Std. unangreifbar (für Mitspieler und echte
-    Spieler), auch wenn man selbst Mitspieler/Lager/Felder angreift. Endet früher, sobald die **Macht 50 Mio.** erreicht
-    (wie in der Rangliste) oder man einen echten Spieler angreift. Gilt auch für alle, die schon spielen und ihn noch nie
-    hatten (einmalig ab dem nächsten Start).
-25. ✅ **Späher durch geschlossene Tore:** Ein geschlossenes fremdes Tor lässt keinen Späher durch (`spaeherWeg`) – gilt
-    für dich und die Mitspieler. Gibt es einen anderen Weg ohne geschlossenes Tor, darf er den nehmen.
-27. ✅ **Kopieren/Nachschlagen beim langen Drücken:** Im Spiel lässt sich nichts mehr markieren, kein Kopieren-Menü
-    (CSS `user-select:none`, `-webkit-touch-callout:none` + `selectstart`/`contextmenu` blockiert); Eingabefelder gehen weiter.
-28. ✅ **Schwarzer Streifen unten (iPhone-App):** iOS-Fehler mit Statusleiste „black-translucent“ (Höhe um die
-    Statusleiste zu klein) → Statusleiste jetzt „black“. Evtl. App einmal vom Home-Bildschirm löschen und neu hinzufügen.
-29. ✅ **„Hier weiterspielen“ reagierte nicht:** Der Knopf zeigt sofort „Lädt …“, reagiert direkt aufs Tippen, und
-    `spiel.php?weiter=1` übernimmt sofort (ohne bis zu 8 s auf das alte Gerät zu warten). Getestet: 1,7 s, altes Gerät fliegt raus.
-26. ✅ **Anfängerschutz auch für Mitspieler:** gleiche Regeln (48 Std. ab Weltstart bzw. ab ihrem Neustart, endet mit
-    50 Mio. Macht oder wenn sie einen echten Spieler angreifen; `botNeulingBis`). Text: „Anfängerschutz: … ist neu und
-    noch … unangreifbar.“
-- Hochladen: `hochladen.sh` wartet nach dem Einschalten der Wartung jetzt 10 s, damit jedes laufende Spiel noch
-  speichert (beim Wartungs-Fenster wird automatisch gesichert), am Ende geht die Wartung wieder aus.
-
-## 10. EINE Welt für alle (läuft auf dem Server)
-Alexander will: **Alle Spieler und alle Mitspieler auf einer einzigen Karte.** Keine eigenen Welten pro Spieler.
-
-**Plan (so wird es gebaut):**
-1. **Die Welt liegt einmal in der Datenbank** – wie ein Spielstand mit der Nummer 0 (`ow_spielstand`/`ow_bots` mit
-   `spieler_id = 0`): Karte, Besitzer aller Basen, Truppen, Märsche, Thron, Ereignisse, die 150 Mitspieler.
-   Jeder Spieler behält seinen eigenen Teil (Münzen, Gems, Stadt, Helden, Skills, Aufgaben, Aussehen, Nebel, Berichte).
-2. **Weltrechner:** Der Server kann nicht dauernd selbst rechnen (normales Webhosting). Darum rechnet **ein** Spieler,
-   der gerade online ist, die Welt für alle (Mitspieler denken, Märsche kommen an, Kämpfe, Thron …) und schickt sie alle
-   ~2 s an den Server. Meldet er sich 12 s nicht, übernimmt automatisch der nächste.
-3. **Alle anderen** holen sich die Welt alle ~2 s (nur geänderte Teile). Ihre Befehle (angreifen, senden, spähen,
-   ausbauen …) gehen über den Server an den Weltrechner, der sie ausführt.
-4. **Andere echte Spieler** erscheinen in jedem Browser wie Mitspieler (Eintrag in der Mitspieler-Liste, Kennung `u<id>`,
-   ohne eigenes Denken) – so funktionieren Karte, Kämpfe, Titel, Rangliste und Profil für sie gleich mit. Ihre Kampfwerte
-   (Skills, Ausrüstung, Helden, Stadt) schicken sie als „Profil“ an den Server.
-5. **Nachrichten** vom Weltrechner an einen Spieler (geplündert, Beute, Belohnung) laufen über `ow_ereignisse`.
-6. Niemand online → die Welt steht still; der nächste Weltrechner holt die verpasste Zeit nach (wie „Willkommen zurück“).
-7. Start der neuen Welt: **alle fangen bei Null an.**
-
-**Server-Teil (fertig, lokal getestet, noch nicht hochgeladen):** in `server.php` → Tabellen `ow_welt_info`
-(Version, wer Weltrechner ist), `ow_befehle`, `ow_ereignisse`, neue Spalten `profil`, `profil_zeit`, `online_bis` in
-`ow_spieler`. Anfrage `aktion: "puls"` an `server.php`: Weltrechner wählen, Welt schreiben/lesen (nur geänderte Teile),
-Befehle und Nachrichten verteilen, Spielerliste mit Profilen.
-
-**Browser-Teil, Stufe 1 (fertig, lokal mit 2 Spielern getestet, noch nicht hochgeladen):**
-- Neue Datei `Game/welt.js` (geladen nach bots.js, vor spiel.js): rechnet Welt-Teile um (neutral `u<id>` ↔ `'player'`,
-  6 Arten, wie „du“ im Spiel markiert bist – siehe Kommentare), trägt andere echte Spieler als Mitspieler ein
-  (`BOT_DEFS` mit `mensch: true`, Datensatz aus ihrem Profil), Puls alle 2 s, Weltrechner/Zuschauer-Wechsel,
-  Unterschiede bei Münzen/Gems/EP/Thron-Punkten/Lazarett/Splittern der anderen als Nachrichten.
-- `speichern.js`: Welt-Teile gehen nicht mehr in den eigenen Spielstand (Liste `WELT`); Thron-/Turnier-Teile werden
-  geteilt (privat: `openWaterThroneMein`, `openWaterTourMein`).
-- `bots.js`: Mitspieler-Gehirn überspringt echte Spieler, `botOnline` = wirklich online, EP gehen als Nachricht,
-  Aussehen/Baustil aus dem Profil.
-- `spiel.js`: Welt-Takte (Märsche, Kämpfe, Produktion, Thron, Boss, Wanderer, Felder, Lager, Armeen, Titel) nur beim
-  Weltrechner (`rechnet()`); neuer Spieler bekommt einen freien Startplatz (`freierStartplatz`) und meldet ihn an
-  (Befehl `beitreten`); Zuschauer laden die Welt laufend neu (`__weltLaden`); verpasste Zeit wird nachgeholt (`weltNachholen`).
-- `server.php`: Spielseite bringt Welt, Spielerliste und „bin ich Weltrechner“ gleich mit.
-- Test: Anna (Weltrechner) + Bernd (Zuschauer) sehen sich auf derselben Karte mit allen 150 Mitspielern; Bernds Münzen/
-  Truppen wachsen über den Weltrechner; Anna schließt → Bernd wird nach ~12 s Weltrechner. Keine Fehler.
-
-**Browser-Teil, Stufe 2 (fertig, lokal mit 3 Spielern getestet, noch nicht hochgeladen):**
+- **6.10. – Rahmen = Titel, nicht mehr zu kaufen (Alexander 6.10., Branch `fix-aussehen-rahmen`, NICHT hochgeladen):** Im Fenster
+  „Profil · Aussehen“ nur noch die Reiter Wappen · Rahmen · Basis · Marsch (spielseite/08, 4 Spalten in spielseite/03). Titel und
+  Rahmen sind EIN Ding (05a `RAHMEN`: Titel + Ring ums Wappen, z. B. „Goldfürst“ = goldener Rahmen; `rahmenHat`, `rahmenVon`). Rahmen
+  gibt es nicht mehr zu kaufen (kein Raster mit Preisen, `lkBuy` nur Hinweis; Thron-Shop ohne „Thronhüter + Thron-Rahmen“, 06c; Mitspieler
+  kaufen keine, bots/06 `botLookShop`). Man bekommt sie: **Saison-Ende** Platz 1 „Saison-Champion“, 2–3 „Saison-Großadmiral“, 4–5
+  „Saison-Admiral“, 6–10 „Saison-Kapitän“ – nur bis zum nächsten Saison-Ende (abgeleitet aus `saison.last.top`, beim nächsten Reset
+  verliert der alte Halter ihn: angelegt → Standard); **Mitte**: Herrscher „Herrscher der Meere“, Titel aus der Mitte mit Rahmen Gold
+  (gut) / Rot (Straf-Titel), geht vor. Vorher Gekauftes bleibt (look.frames / look.titles). Saisonkrone aus dem Saison-Pass bleibt.
+  Weltrechner (10d `hbRahmen`): merkt sich einmal, welche Rahmen ein Spieler bis jetzt hatte (neu: keine), aus dem Profil kommt keiner
+  mehr dazu; Profil schickt `frames`/`titles` statt `title` (welt.js, server/02). `openLookSheet('title')` öffnet „Rahmen“ bei den
+  Saison-Rahmen. Tests `aussehen_rahmen_test` (neu), `saison_test` (Reset 1/2), `handy_stadt_test` („Wirklich?“ jetzt am Marsch-Skin),
+  `server_test`, `tests/server/schummel_test.js` (erfundene Rahmen).
 - **Befehle der Zuschauer** (in `spiel.js`, Helfer `alsBefehl`): Angreifen (mit gewähltem Held), Senden, Zurückrufen,
   Beschleunigen (Gems zahlt man selbst), Basis/Burg ausbauen (Münzen zahlt man selbst), Hauptstadt verlegen,
   Truppen-Geschenke (Stufe, Thron-Shop, Lazarett, Funde → `eigeneTruppenDazu`), Tore (Maut/zu), Titel vergeben als
