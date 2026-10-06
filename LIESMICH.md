@@ -1546,6 +1546,12 @@ Nacht – vorher bauen und testen.
      da → beim Reset leeren (oder als „letzte Saison“ kennzeichnen). Drachen-Leben/Schaden ebenfalls an neue Wirtschaft prüfen.
    - Barbaren-Lager „bis Stufe 1“, 0/30 heute – ok? (Woche-Bonus „10 Lager mehr pro Tag“).
    - Erfolge 25/63 bleiben (gehören zum Konto – ok, wenn so gewollt; Alexander fragen).
+6. **Kisten öffnen** (Bild a6ccbf9d, 18:34):
+   - **Andere Animation beim Öffnen** – heute erscheint das Ergebnis nur als Kasten unten („Gewöhnlich Waffe …“, „Heldenkiste
+     Pia +6 Splitter“). Gewünscht: richtige Öffnen-Animation wie in RoK/Lords Mobile (Truhe wackelt/springt auf, Licht in der
+     Seltenheitsfarbe, Belohnungen fliegen einzeln heraus). Designer: Vorbilder online suchen.
+   - **Heldenkiste: Splitter auf verschiedene Helden verteilen** – heute kommen alle Splitter (z. B. 6) von EINEM Helden. Gewünscht:
+     mehrere verschiedene Helden je Kiste (z. B. 6 Splitter → 2–3 Helden), gewichtet nach Seltenheit wie bisher.
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
