@@ -73,7 +73,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   // I) Heldenhalle
   const h = await ev(async () => {
     const warte = ms => new Promise(f => setTimeout(f, ms)), H = loadHeroes(), z = HEROES.find(x => !H[x.id].own && x.r === 1);
-    H[z.id].sh = HERO_UNLOCK[z.r]; saveHeroes(); openHeroHall(); await warte(200);
+    H[z.id].sh = HERO_UNLOCK[z.r]; const zu1 = HEROES.find(x => !H[x.id].own && x.id !== z.id); if (zu1) H[zu1.id].sh = 0; saveHeroes();   /* (einer bleibt gesperrt) */ openHeroHall(); await warte(200);
     const karte = document.querySelector('#heroHall .hh-cards:not(.hh-cards--zu) [data-hh="' + z.id + '"]');
     const o = { id: z.id, oben: !!karte && karte.classList.contains('is-ready'), knopf: !!(karte && karte.querySelector('[data-hh-frei]')), gesperrt: !!(karte && karte.querySelector('.hh-lk')),
       unten: !!document.querySelector('#heroHall .hh-cards--zu [data-hh="' + z.id + '"]') };
