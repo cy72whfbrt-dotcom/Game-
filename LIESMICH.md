@@ -673,6 +673,15 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Flackern) und ohne Boni; Feld-Armeen mit ihrer Truppenzahl ohne Boni; sobald der Kampf läuft, die echte Stärke
   (`botSchaetzAngriff`/`botSchaetzArmee`, bots/05 – genutzt von `botDefend` und der Bündnis-Hilfe `bundUnterAngriff`,
   buendnis/01). Die Vorsicht (×1,1 halten, ×1,2 Hilfe) bleibt. Test `tests/browser/mitspieler_schaetzen_test.js`.
+- **6.10. – Design 11b F, Paket P4 (Stadt, Burg, Labor, Helden, Shop), NICHT hochgeladen:** Gebäude-/Burg-Fenster: Haupt-Knopf
+  (Aufwerten/Bauen) fest unten, nie unter dem Falz; Burg: Voraussetzungen und „Jetzt/schaltet frei“ zuerst, Schild-Kasten unten;
+  fehlt nur ein Rohstoff, sagt der Knopf „Fehlt: 2.000 Holz“ (`cityFehlt`, 08b), der rote Kreis fällt weg (rote Zahl reicht).
+  Labor: „Forschen“ bleibt beim Scrollen sichtbar. Heldenhalle: Reiter **Helden | Paare**, gesperrte Helden kleiner unter
+  „17 gesperrt“ (`hhSeite`, 08c). Shop: Heldenkisten-Knöpfe vor den Chancen, Chancen hinter „Chancen“ eingeklappt, Preis groß;
+  „Kiste öffnen“ zeigt 150. Hinweise (Toast) liegen bei Shop, Gebäude-Fenster und Heldenhalle über der Fußzeile statt darauf.
+  Knöpfe/X/Reiter dort mind. 44 px. Stil in spielseite/05 (eigene Klassen), Funktion unverändert. Test `stadt_fenster_test`
+  (neu), `handy_stadt_test` (Chancen aufklappen).
+
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 
