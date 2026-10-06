@@ -480,7 +480,8 @@ function frameIslandInView(island) {      // ease the base into the free map are
   else {                                   // desktop: keep the base (tower + nameplate) out from under the HUD, nav and map controls
     const hud = document.getElementById('hud').getBoundingClientRect(), nav = document.getElementById('cornerButtons').getBoundingClientRect();
     const mc = document.getElementById('mapControls').getBoundingClientRect();
-    const safe = { l: 24, t: Math.max(hud.bottom, nav.bottom) + 16, r: (mc.width ? mc.left : viewW) - 24, b: viewH - 24 };
+    const navUnten = nav.top > viewH / 2;                                   // die Leiste steht unten in der Mitte: die Basis darüber, nicht dahinter
+    const safe = { l: 24, t: Math.max(hud.bottom, navUnten ? 0 : nav.bottom) + 16, r: (mc.width ? mc.left : viewW) - 24, b: (navUnten && nav.height ? nav.top : viewH) - 24 };
     const z = mapState.zoom, up = island.radius * z * 1.3 + 8, down = island.radius * z + 40, side = Math.max(island.radius * z, 60);
     const s = { x: island.x * z + mapState.offsetX, y: island.y * z + mapState.offsetY };
     const tx = Math.min(safe.r - side, Math.max(safe.l + side, s.x)), ty = Math.min(safe.b - down, Math.max(safe.t + up, s.y));

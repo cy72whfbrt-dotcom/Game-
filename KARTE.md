@@ -95,7 +95,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `APRON` → Game/baukunst/07-hafen-palast.js:18
 - `arc` → Game/baukunst/07-hafen-palast.js:54
 - `arch` → Game/baukunst/06-turmhof-festung.js:22
-- `arch` → Game/spiel/06e-nebel-zeichnen.js:151
+- `arch` → Game/spiel/06e-nebel-zeichnen.js:169
 - `archGeo` → Game/baukunst/07-hafen-palast.js:440
 - `archGeo` → Game/baukunst/08-himmelsfeste-bilder.js:82
 - `archShape` → Game/baukunst/07-hafen-palast.js:439
@@ -835,8 +835,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drawCrest` → Game/spiel/03c-wappen-thronplatz.js:19
 - `drawCrown` → Game/spiel/07b-kriegsherr.js:185
 - `drawEvents` → Game/spiel/09c-events-drache.js:293
-- `drawFog` → Game/spiel/06e-nebel-zeichnen.js:84
-- `drawGatehouse` → Game/spiel/06e-nebel-zeichnen.js:133
+- `drawFog` → Game/spiel/06e-nebel-zeichnen.js:85
+- `drawGatehouse` → Game/spiel/06e-nebel-zeichnen.js:151
 - `drawGlyph` → Game/spiel/01a-grundlagen.js:205
 - `drawHaendler` → Game/haendler.js:152
 - `drawMap` → Game/spiel/03d-maersche-tagnacht.js:233
@@ -849,7 +849,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drawMarkers` → Game/spiel/09d-armeen-wegmarken.js:326
 - `drawn` → Game/spiel/03a-karte-hintergrund.js:457
 - `drawNacht` → Game/spiel/03d-maersche-tagnacht.js:206
-- `drawPasses` → Game/spiel/06e-nebel-zeichnen.js:165
+- `drawPasses` → Game/spiel/06e-nebel-zeichnen.js:183
 - `drawPickups` → Game/spiel/09a-funde-felder.js:61
 - `drawResFields` → Game/spiel/09a-funde-felder.js:287
 - `drawRings` → Game/spiel/03c-wappen-thronplatz.js:354
@@ -972,9 +972,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `fieldTick` → Game/spiel/09a-funde-felder.js:271
 - `fieldTravelSec` → Game/spiel/09a-funde-felder.js:200
 - `fieldWhoName` → Game/spiel/09a-funde-felder.js:196
-- `fightDurationMs` → Game/spiel/03e-kamera-eingabe.js:541
+- `fightDurationMs` → Game/spiel/03e-kamera-eingabe.js:542
 - `fighterSnapshot` → Game/spiel/01e-nebel-kampfwerte-hud.js:106
-- `fightEstimate` → Game/spiel/03e-kamera-eingabe.js:530
+- `fightEstimate` → Game/spiel/03e-kamera-eingabe.js:531
 - `findAnyCombinableGroup` → Game/spiel/02a-shop-stufen.js:94
 - `finGeo` → Game/baukunst/04-vielfalt-stile.js:320
 - `finish` → Game/spiel/10c-start-einstellungen.js:214
@@ -1344,7 +1344,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `invWelle` → Game/spiel/09c-events-drache.js:130
 - `invZiele` → Game/spiel/09c-events-drache.js:118
 - `invZielOk` → Game/spiel/09c-events-drache.js:114
-- `isCapital` → Game/spiel/03e-kamera-eingabe.js:510
+- `isCapital` → Game/spiel/03e-kamera-eingabe.js:511
 - `isCellOpen` → Game/spiel/01e-nebel-kampfwerte-hud.js:30
 - `isExplored` → Game/spiel/01e-nebel-kampfwerte-hud.js:39
 - `islandOwnerOf` → Game/spiel/01d-helden-mitspieler.js:152
@@ -1531,7 +1531,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `merke` → Game/speichern.js:29
 - `merlonGeo` → Game/baukunst/04-vielfalt-stile.js:348
 - `merlons` → Game/spiel/03b-gebaeude-3d.js:46
-- `merlons` → Game/spiel/06e-nebel-zeichnen.js:138
+- `merlons` → Game/spiel/06e-nebel-zeichnen.js:156
 - `mid` → Game/spiel/03a-karte-hintergrund.js:29
 - `midAnzeige` → Game/spiel/06c-thron-mitte.js:233
 - `midFight` → Game/spiel/06c-thron-mitte.js:178
@@ -1634,6 +1634,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `nebel_welt` → Game/server/03-nebel-maersche-seite.php:90
 - `nebelRunde` → Game/spiel/10d-welt-weltrechner.js:908
 - `nebelVomServer` → Game/spiel/01e-nebel-kampfwerte-hud.js:37
+- `nebelWeit` → Game/spiel/06e-nebel-zeichnen.js:84
 - `nebelWeite` → Game/aufbau.js:223
 - `neueNummer` → Game/welt.js:384
 - `neulingBis` → Game/spiel/06d-schild-produktion.js:26
@@ -2065,7 +2066,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `senden` → Game/speichern.js:160
 - `sendenAlle` → Game/weltrechner/push.js:205
 - `sendenAn` → Game/weltrechner/push.js:191
-- `sentLossFor` → Game/spiel/03e-kamera-eingabe.js:519
+- `sentLossFor` → Game/spiel/03e-kamera-eingabe.js:520
 - `server` → Game/benachrichtigung.js:20
 - `server` → Game/weltrechner/push.js:168
 - `serverJetzt` → Game/spiel/03d-maersche-tagnacht.js:177
@@ -2339,7 +2340,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `verstPlatz` → Game/buendnis/01-daten-regeln.js:460
 - `verstPlatzStufe` → Game/buendnis/01-daten-regeln.js:459
 - `verstPruefen` → Game/buendnis/01-daten-regeln.js:482
-- `verstSchaetzung` → Game/spiel/03e-kamera-eingabe.js:522
+- `verstSchaetzung` → Game/spiel/03e-kamera-eingabe.js:523
 - `verstSpeichern` → Game/buendnis/01-daten-regeln.js:456
 - `verstStufe` → Game/buendnis/01-daten-regeln.js:457
 - `verstUnbekannt` → Game/buendnis/01-daten-regeln.js:468
@@ -3826,11 +3827,11 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `updateMapControls` :450
 - `positionIslandPopover` :456 — ---------------- island popup placement ----------------
 - `frameIslandInView` :475 — ease the base into the free map area (next to the sheet / clear of the desktop …
-- `isCapital` :510
-- `sentLossFor` :519
-- `verstSchaetzung` :522 — Verstärkung in Basis id vor dem Kampf: ihre Truppen (n) und was jeder Helfer mi…
-- `fightEstimate` :530 — the fight as it stands right now (no side effects) - same maths as resolveAttac…
-- `fightDurationMs` :541 — a skirmish is over in ~4 s, a clash of millions takes ~12 s
+- `isCapital` :511
+- `sentLossFor` :520
+- `verstSchaetzung` :523 — Verstärkung in Basis id vor dem Kampf: ihre Truppen (n) und was jeder Helfer mi…
+- `fightEstimate` :531 — the fight as it stands right now (no side effects) - same maths as resolveAttac…
+- `fightDurationMs` :542 — a skirmish is over in ~4 s, a clash of millions takes ~12 s
 
 ### Game/spiel/04-kampf.js — Titel (Mega-Tempel), Takt der Mitspieler, Ankunft und Kämpfe (kampfDazu, Warten…
 - `loadTitles` :16
@@ -4142,11 +4143,12 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `fogTexture` :28
 - `fogBlob` :48 — soft round eraser, 1 fog cell ≈ half its width
 - `fogMask` :54 — canvas over the whole frame: alpha = fog
-- `drawFog` :84
-- `drawGatehouse` :133 — front view like the towers: two turrets, a wall, an arch with a portcullis
-- `merlons` :138
-- `arch` :151
-- `drawPasses` :165 — a gatehouse on every gated bridge; closed ones carry a countdown
+- `nebelWeit` :84 — 0 = Wolken (nah), 1 = flache Fläche (ganz draußen)
+- `drawFog` :85
+- `drawGatehouse` :151 — front view like the towers: two turrets, a wall, an arch with a portcullis
+- `merlons` :156
+- `arch` :169
+- `drawPasses` :183 — a gatehouse on every gated bridge; closed ones carry a countdown
 
 ### Game/spiel/07a-schlachten.js — Schlachten auf der Karte (auch Zuschauer-Anzeige) und Kampf-Effekte
 - `mbT` :8

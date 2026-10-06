@@ -4505,7 +4505,8 @@ function frameIslandInView(island) {      // ease the base into the free map are
   else {                                   // desktop: keep the base (tower + nameplate) out from under the HUD, nav and map controls
     const hud = document.getElementById('hud').getBoundingClientRect(), nav = document.getElementById('cornerButtons').getBoundingClientRect();
     const mc = document.getElementById('mapControls').getBoundingClientRect();
-    const safe = { l: 24, t: Math.max(hud.bottom, nav.bottom) + 16, r: (mc.width ? mc.left : viewW) - 24, b: viewH - 24 };
+    const navUnten = nav.top > viewH / 2;                                   // die Leiste steht unten in der Mitte: die Basis darüber, nicht dahinter
+    const safe = { l: 24, t: Math.max(hud.bottom, navUnten ? 0 : nav.bottom) + 16, r: (mc.width ? mc.left : viewW) - 24, b: (navUnten && nav.height ? nav.top : viewH) - 24 };
     const z = mapState.zoom, up = island.radius * z * 1.3 + 8, down = island.radius * z + 40, side = Math.max(island.radius * z, 60);
     const s = { x: island.x * z + mapState.offsetX, y: island.y * z + mapState.offsetY };
     const tx = Math.min(safe.r - side, Math.max(safe.l + side, s.x)), ty = Math.min(safe.b - down, Math.max(safe.t + up, s.y));
@@ -7631,6 +7632,7 @@ function fogMask(now) {                                 // canvas over the whole
     g.globalAlpha = 1; fogMaskCv.o = o; fogMaskCv.n = n;
     return fogMaskCv;
 }
+const nebelWeit = z => Math.max(0, Math.min(1, (0.005 - z) / 0.003));   // 0 = Wolken (nah), 1 = flache Fläche (ganz draußen)
 function drawFog(view, now) {
     const z = mapState.zoom;
     fogFx = fogFx.filter(f => now - f.t < 1500 + f.d / 5);
@@ -7656,9 +7658,26 @@ function drawFog(view, now) {
     g.globalCompositeOperation = 'source-atop';                                                      // a finer, brighter layer on top
     const p2 = g.createPattern(FOG_TEX, 'repeat'); p2.setTransform(new DOMMatrix().rotate(23).scale(Math.max(26000, 0.9 / z) / 256));   // never finer than ~1 px of noise
     g.globalAlpha = .55 * Math.max(0, Math.min(1, (z - 0.004) / 0.006)); g.fillStyle = p2; g.fillRect(view.l - 1e5, view.t - 1e5, view.r - view.l + 2e5, view.b - view.t + 2e5); g.globalAlpha = 1;
+    const weit = nebelWeit(z);
+    if (weit > 0) {                                                                                  // weit draußen: ruhige dunkle Fläche mit Kartengitter statt Wolken-Brei
+        g.globalAlpha = weit; g.fillStyle = '#18202b'; g.fillRect(view.l - 1e5, view.t - 1e5, view.r - view.l + 2e5, view.b - view.t + 2e5);
+        const st = 2 * FRAME_HALF / 12; g.beginPath();
+        for (let k = 1; k < 12; k++) { const a = -FRAME_HALF + k * st; g.moveTo(a, -FRAME_HALF); g.lineTo(a, FRAME_HALF); g.moveTo(-FRAME_HALF, a); g.lineTo(FRAME_HALF, a); }
+        g.lineWidth = 1 / (FS * z); g.strokeStyle = 'rgba(212,176,102,.16)'; g.stroke(); g.globalAlpha = 1;
+    }
     ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.imageSmoothingEnabled = true; ctx.drawImage(fogComp, 0, 0, Math.round(viewW * dpr), Math.round(viewH * dpr)); ctx.restore();
     }
     if (fogFx.length) liveAnimation = true;
+    const heim = nebelWeit(z) > 0 && islandById[playerIslandId];
+    if (heim) {                                        // weit draußen: ein goldener Ring zeigt, wo die eigene Hauptstadt liegt
+        setScreen(ctx);
+        const hx = heim.x * z + mapState.offsetX, hy = heim.y * z + mapState.offsetY;
+        ctx.save(); ctx.globalAlpha = nebelWeit(z);
+        ctx.beginPath(); ctx.arc(hx, hy, 15, 0, Math.PI * 2); ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(8,10,14,.6)'; ctx.stroke();
+        ctx.lineWidth = 2; ctx.strokeStyle = '#e4c886'; ctx.stroke();
+        ctx.beginPath(); ctx.arc(hx, hy, 4, 0, Math.PI * 2); ctx.fillStyle = '#f3e6c4'; ctx.fill();
+        ctx.restore();
+    }
     if (fogPrompt) {                                   // confirm chip: "Späher senden · 0:25" above a marker at the spot
         setScreen(ctx);
         const px = fogPrompt.x * z + mapState.offsetX, py = fogPrompt.y * z + mapState.offsetY, k = Math.min(1, (now - fogPrompt.at) / 180);

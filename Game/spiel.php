@@ -193,6 +193,11 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
 /* der Rohstoff-Knopf: rund, oben rechts (Tippfläche 44 px) */
 .hud > .res--roh{flex:none;width:var(--hud-h);height:var(--hud-h);padding:0;justify-content:center;border-radius:50%;
   background:var(--glass);border:1px solid var(--line-2);box-shadow:var(--sh-1);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.hud > .res--roh .roh-mini b{min-width:0;font-size:var(--fs-13)}
+@media (max-width:899px) and (min-height:501px){   /* Handy: Beschriftung unter dem runden Knopf (wie „Du“ unter dem Wappen) – antippen öffnet Holz/Stein/Eisen */
+  .hud > .res--roh::after{content:"Rohstoffe";position:absolute;top:calc(100% + 4px);left:50%;transform:translateX(-50%);pointer-events:none;
+    font:600 10px/1 var(--font-ui);color:var(--gold-100);white-space:nowrap;text-shadow:0 1px 2px #000} }
+@media (min-width:900px) and (min-height:501px){ .hud > .res--roh .roh-mini{display:flex} }   /* Desktop: Holz · Stein · Eisen immer im HUD */
 .hud > .res--roh::before{content:"";position:absolute;inset:-7px}   /* (flex-basis auto: freier Platz geht an den längeren Wert – „100 Mrd.“ statt „100 Mr…“) */
 .res b{font:600 var(--fs-13)/1 var(--font-ui);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .res--coin > .icon{color:var(--res-coin)} .res--gem > .icon{color:var(--res-gem)} .res--troop > .icon{color:var(--res-troop)}
@@ -463,11 +468,14 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 .toast:empty{display:none}
 .toast--lang{display:block;-webkit-line-clamp:none}   /* langer Hinweis (Saison): ganz lesbar, Umbruch statt „…“ */
 .anleitung{position:fixed;z-index:var(--z-toast);left:calc(var(--safe-l,0px) + 10px);right:calc(var(--safe-r,0px) + 58px);bottom:calc(var(--dock-h,64px) + var(--safe-bd,0px) + 14px);
-  max-width:420px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:8px 10px;padding:10px 8px 10px 12px;   /* Schritt · Text · × in einer Zeile, Knöpfe darunter */
+  max-width:420px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:3px 6px;padding:8px 4px 9px 12px;   /* „Schritt 1/7“ als Überzeile, darunter der Text (volle Breite), × rechts, Knöpfe darunter */
   background:var(--glass);border:1px solid var(--gold-300);border-radius:var(--r-sm);box-shadow:var(--sh-2);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 .anleitung[hidden]{display:none}
-.anleitung-n{font:600 var(--fs-11)/1 var(--font-ui);color:var(--gold-100);letter-spacing:.06em;white-space:nowrap}
-.anleitung-t{font:500 var(--fs-13)/1.35 var(--font-ui);color:var(--tx-1)}
+.anleitung-n{grid-column:1;grid-row:1;font:700 10px/1 var(--font-ui);color:var(--gold-200);letter-spacing:.12em;text-transform:uppercase;white-space:nowrap}
+.anleitung-t{grid-column:1;grid-row:2;font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-1)}
+#anleitungWeg{grid-column:2;grid-row:1 / 3}
+/* Handy: mit offenem Basis-Fenster oben unter dem HUD statt direkt über dem Fenster – dort steht die Basis (inselMittig) */
+@media (max-width:899px) and (min-height:501px){ body:has(#islandPopup.is-open) .anleitung{top:calc(var(--safe-t) + var(--hud-top-space));bottom:auto!important} }
 .anleitung-k{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px}
 .anleitung-ok{grid-column:1/-1;justify-self:end}
 body.has-sheet .anleitung{display:none}
@@ -482,6 +490,14 @@ body[data-anl-puls="abholen"] #goalsPopup :is([data-daily],[data-quest],[data-bo
 /* in der Stadt (Handy): der Hinweis erst unter der Bauarbeiter-Zeile – nie über ihren Knöpfen (--stadt-kopf: Unterkante, 08d stadtKopf) */
 @media (max-width:899px),(max-height:500px){ body.in-stadt:not(.has-sheet) .toast{top:calc(var(--stadt-kopf,96px) + 10px)} }
 @keyframes toast-in{from{opacity:0;translate:0 -6px}}
+/* Feste Fußknöpfe (Burg/Gebäude „Bauen“, Held „Aufwerten“): bis an die Unterkante des Fensters – unter ihnen schaut kein Inhalt mehr
+   hervor (sticky zählt ab dem Innenabstand); ein Schatten oben zeigt, dass darüber noch mehr kommt */
+body.in-stadt #citySheet > .city-bfoot{bottom:-14px;box-shadow:0 -10px 14px -8px rgba(0,0,0,.6)}
+#heroHall .hh-actions{bottom:calc(-16px - var(--safe-b));padding-bottom:calc(10px + var(--safe-b));background:linear-gradient(0deg,#07080b 70%,transparent)}
+/* Desktop: das Gebäude-Fenster endet über der Leiste unten in der Mitte (sonst liegt der Bauen-Knopf darunter) */
+@media (min-width:900px) and (min-height:501px){
+  body.in-stadt #citySheet.city-sheet{bottom:104px;max-height:calc(100% - 104px - 84px);border-bottom:1px solid var(--line-2);border-radius:var(--r-lg)}
+}
 /* Handy: der Hinweis bleibt oben unter dem HUD (über der Karte, die Fenster sind höchstens 70 % hoch) – nie über Fenster-Kopf/Fuß oder den
    Zoom-Knöpfen; reicht ein Fenster doch so hoch, liegt der Hinweis dahinter */
 @media (max-width:899px) and (min-height:501px){
