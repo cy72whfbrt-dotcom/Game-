@@ -1653,6 +1653,12 @@ Nacht – vorher bauen und testen.
     („1.000“, „60m“, „4h“), unten rechts Anzahl („25“). In Tabellen: Zeile je Stufe/Platz (z. B. „10001+“), Kacheln
     nebeneinander. Überall gleich nutzen: Events, Pass, Kisten-Ergebnis, Shop, Postfach, Ranglisten-Belohnung.
     Vorbild-Datei: scratchpad/vorbilder/11_belohnung_rok_alexander.jpg.
+25. **Weltkarte neu wie RoK – Entscheidungen Alexander (6.10. abends):** KEIN Wasser mehr (kein Meer, keine Flüsse, keine
+    Seen), eine große Land-Karte. Statt Flüssen hohe Felsketten zwischen den Gebieten, durch die man nicht laufen kann –
+    nur durch Pass-Tore (heutige Brücken-Tore; Logik Gebiete/Tore/Maut/Öffnungszeiten bleibt). Boden nur nach Ringen
+    (außen grün → Mitte karg/Sand), Schnee/Wüste/Vulkan weg. Bergstöcke in Gebieten bleiben (neues Aussehen) + Felskessel
+    um Tempel. Grafik als KI-Bilder (Alexander erzeugt mit ChatGPT), Code setzt nur zusammen. Plan + Bilderliste + Prompts:
+    scratchpad/karte_rok_plan.md, Vorbilder vorbilder/12_rokkarte_*.jpg. Burgen bleiben Code.
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
