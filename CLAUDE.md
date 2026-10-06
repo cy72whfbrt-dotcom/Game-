@@ -90,6 +90,9 @@ Alles Wichtige steht in `LIESMICH.md` – jede Änderung wird dort eingetragen.
   Zahlen sinnvoll? Ablauf klappt? Fehler?) und gibt Funde gleich an den Programmierer. Designer ändert nichts: sucht
   Grafik-Fehler (→ an Prüfer → an Programmierer) und gibt Alexander Verbesserungs-Ideen. Nichts geht hoch, bevor Prüfer
   + Designer durch sind. Claude startet nichts ohne Alexanders Auftrag (Fehler-Meldungen nur in die Merkliste).
+  **Design-Liste = VORGABE:** Die echten Vorbild-Fotos der Design-Liste (`<scratchpad>/vorbilder/`, `LISTE.md`, Seite
+  `design_liste.html`) sind verbindlich. Jeder Design-Auftrag nennt die Fotos zu seinem Punkt; Designer, Programmierer und
+  Prüfer vergleichen jedes Bild damit. Fertige Punkte bekommen in der Liste ein ✅.
   **Niemand wartet still:** jeder Agent schreibt beim Start und mindestens alle 5 Min. eine Zeile in
   `<scratchpad>/firma/<kurzname>.txt` (`<Uhrzeit UTC> | <Schritt> | <was läuft>`, am Ende `… | fertig | <Ergebnis>`);
   den Kurznamen gibt Claude im Auftrag mit. Älter als 10 Min. = „hängt“.
