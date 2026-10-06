@@ -1556,6 +1556,13 @@ Nacht – vorher bauen und testen.
    angelegt – im Aussehen-Fenster sieht man den Ring, auf der Karte zeigt die Hauptstadt-Fahne aber nur das Burg-Symbol ohne
    Wappen/Ring, und der Kreis um die Hauptstadt hat keinen Rahmen. Auch oben links (HUD-Wappen) kein Ring. Gewünscht: der
    angelegte Rahmen sichtbar an der eigenen Hauptstadt (Fahne/Plakette + Kreis), im HUD, für andere Spieler genauso.
+8. **Ranglisten nicht zurückgesetzt** (Bilder 16bc372c, cdedbdcd, 18:37):
+   - „Eroberungen“ zeigt Werte der letzten Saison (Hanna 5.660, Aylin 5.426 …) → beim Reset auf 0 (Saison-Zähler).
+   - **Thron-Punkte nicht auf 20.000 gekappt:** Clara_V hat 29.460 → Regel: höchstens 20.000 behalten, Rest 10:1 als
+     Edelsteine ins Postfach. Gilt offenbar bei Mitspielern nicht (bei Alexander 9.540 < 20.000, unauffällig) – prüfen
+     `saisonWelt`/Bot-Zweig und ob der Reset die Thron-Punkte der Mitspieler überhaupt anfasst.
+   - Beobachtung: 30 Min. nach dem Reset haben Mitspieler schon 15–24 Basen (Clara_V 15, Elias_G 24, Nebelreiter 19) – mit
+     5.000 Start und neutralen Basen 100–1.000 evtl. zu schnell? Prüfen (Alexander fragen).
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
