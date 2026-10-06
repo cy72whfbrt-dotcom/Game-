@@ -6,7 +6,8 @@
 // D) Marsch um einen Berg: länger als Luftlinie (Strecke, Angriff, Mitspieler, Späher), marchPath = gezeichnete Linie
 // E) Handy (Zuschauer, vorläufiger Marsch) und Weltrechner (WELT nachgebaut, leiter) rechnen dieselbe Marschzeit
 // F) Schalter WELT_FELSEN = false (Kopie der Vorschau): keine Berge, alle Wege wie vorher (Luftlinie über die Brücken)
-// G) Aussehen: Low-Poly-Gipfel (5 Flächen-Töne), 1–3 Stöcke je Region; Wüste/Stein: Felsen statt der alten runden Häufchen
+// G) Aussehen: Low-Poly-Gipfel (5 Flächen-Töne, Ersatz solange die Bilder laden), 1–3 Stöcke je Region; Karte wie RoK: keine runden
+//    Wald-Häufchen mehr in der Kachel (Wald nur noch als Bild, 03a karteObjekte – lm.forest braucht nur noch das Stadtbild)
 // G2) Bergstöcke als KI-Bilder (fels_1/2.webp): Fuß deckt die Hülle, fest aus der Saat, drawImage in der Kachel, Weltrechner lädt nichts
 // H) Marsch-Zeitschild: die Zahl steht links neben der Sanduhr (textAlign 'left'; vorher 'center' von den Namensschildern →
 //    Zahl über der Sanduhr, „9̶1:43“); Restzeit passt zum Hinweis oben („ca. …“, Dauer aus dem Umweg)
@@ -85,7 +86,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   });
   ok(gg.max <= 3 && gg.ohne <= gg.gross * .15, '1–3 Bergstöcke je Region (große Regionen fast alle mit Bergen)', gg);
   ok(gg.toene, 'Low-Poly: 5 verschiedene Flächen-Töne je Landschaft (hell, licht, mittel, dunkel, tief)');
-  ok(gg.felsW && gg.wald[0] === 0 && gg.wald[1] === 0 && gg.gruen > 0, 'Wüste/Stein: Felsen statt der runden Häufchen (Wiese: Wald bleibt)', gg);
+  ok(gg.wald[0] === 0 && gg.wald[1] === 0 && gg.gruen === 0, 'Karte wie RoK: keine runden Wald-Häufchen mehr in der Kachel (Wald als Bild)', gg);
 
   // ===== G2) Bergstöcke als KI-Bilder (bilder/fels_1/2.webp): geladen, Fuß deckt die Hülle, fest aus der Saat, Weltrechner lädt nichts =====
   await p.waitForFunction(() => felsBilder.fertig === FELS_BILDER.length, null, { timeout: 20000 }).catch(() => {});

@@ -1656,7 +1656,7 @@ function felsenMalen(g, lm, zd, zl) {                // in paintBackground: zd =
     const k = lm.stone ? 'stone' : FELS_FARBE[lm.bio] ? lm.bio : 'green', f = FELS_FARBE[k], t = FELS_TOENE[k];
     const gipfelA = Math.min(1, Math.max(0, (Math.max(zd, zl) - 0.0042) / 0.002)), feinA = Math.min(1, Math.max(0, (zd - 0.016) / 0.006));
     felsBilderLaden();
-    if (felsBilder.fertig === FELS_BILDER.length) {  // Bilder da: Bergstöcke als Bild
+    if (felsBilder.fertig === FELS_BILDER.length && zd >= KARTE_BILD_ZOOM) {   // Bilder da: Bergstöcke als Bild (ganz draußen nur die Silhouette)
         felsStueckeMalen(g, d, lm.boden === 'innen' || lm.boden === 'sand' ? 'sand' : 'green');   // (getönt nach dem Boden-Ring; die kleinen Low-Poly-Einzelfelsen fallen weg: Stilbruch)
         return; }
     if (gipfelA < 1) { g.globalAlpha = 1 - gipfelA; g.fillStyle = f[1]; g.fill(d.sil); }   // weit weg (Gipfel < 6 px): nur die dunkle Silhouette
