@@ -3,6 +3,8 @@
 // HUD shortcuts, first-launch toast, player plate =====
 for (const el of document.querySelectorAll('[data-const]'))
     el.textContent = fmtNum({ CRATE_GEM_COST, MULTI_ATTACK_GEM_COST, RECALL_GEM_COST }[el.dataset.const]);
+document.querySelector('#teleportBtn .act-t').textContent = 'Verlegen';   // Zweit-Knopf: kurzer Name + Preis (die Erklärung sagt der Hinweis beim Antippen)
+document.querySelector('#teleportBtn .act-s').innerHTML = icon('gem', 'icon--gem') + fmtNum(TELEPORT_GEMS);
 document.getElementById('shopOdds').innerHTML = RARITY_DEFS.map((rd, i) => RARITY_DROP_WEIGHTS[i] > 0 ?
     '<span class="chip chip--rar" data-r="' + rd.key + '">' + rd.label + ' ' + RARITY_DROP_WEIGHTS[i].toLocaleString('de-DE') + ' %</span>' : '').join('') +
     '<span class="chip chip--rar">' + RARITY_DEFS[4].label + ' + ' + RARITY_DEFS[5].label + ': nur durch Zusammenlegen</span>';
@@ -46,6 +48,7 @@ popupStats.addEventListener('click', e => {
     else return;
     openIslandPopup(isl); requestRender();
 });
+popupStats.addEventListener('click', e => { const k = e.target.closest('[data-spaehen]'); if (k && !k.disabled && !scoutBtn.disabled) scoutBtn.click(); });   // die Kachel „Stärke unbekannt“ schickt den Späher
 function ringNotice(isl) {                         // whose ring is it: a title from the middle or a bought Ring-Skin
     if (isl.type !== 'tower') return '';
     const o = islandOwnerOf(isl.id), st = o ? ringStatusByOwner().get(o) : null; if (!st) return '';
@@ -130,6 +133,8 @@ function renderPopup() {
 
         popupOverline.textContent = island.id === playerIslandId ? 'Deine Hauptstadt' + (brennt(island.id) ? ' · brennt' : '') : isTemple ? 'Dein Tempel' : island.type === 'gate' ? 'Dein Tor · Maut für dich' : 'Deine Basis';
         if (island.id === playerIslandId) { document.getElementById('cityBtn').style.display = 'inline-block'; document.getElementById('teleportBtn').style.display = 'inline-block'; }
+        document.getElementById('cityBtn').classList.toggle('act--haupt', island.id === playerIslandId);   // ein Haupt-Knopf: Stadt betreten (Hauptstadt) bzw. Aufwerten
+        upgradeBtn.classList.toggle('act--haupt', island.id !== playerIslandId);
         liveHtml(popupStats, '<div class="stat-grid">' +
             statTile('Truppen hier', 'troops', fmtTile(troopsHere)) +
             statTile('Verteidigung', 'defense', fmtTile(effectiveDefense(island))) +
@@ -163,17 +168,18 @@ function renderPopup() {
         } else {
             const scoutEnRoute = pendingScouts.some(s => !s.back && s.targetId === island.id);
             popupOverline.textContent = bossAt(island.id) ? 'Weltereignis · Boss' : ownerBot ? (isCapital(island.id) ? (brennt(island.id) ? 'Hauptstadt · brennt' : 'Feindliche Hauptstadt') : isTemple ? 'Feindlicher Tempel' : island.type === 'gate' ? 'Feindliches Tor' : 'Feindliche Basis') : (isTemple ? 'Tempel · unbesetzt' : island.type === 'gate' ? 'Tor · unbesetzt' : 'Neutrale Basis');
-            liveHtml(popupStats, '<div class="stat-grid">' +
-                statTile('Truppen', 'troops', scouted ? fmtTile(effectiveTroops(island)) : UNK, scouted && ownerBot ? 'is-enemy' : '') +
-                statTile('Verteidigung', 'defense', scouted ? fmtTile(effectiveDefense(island)) : UNK) + '</div>' +
-                (scouted ? (spaehAlterText(island.id) ? '<div class="notice' + (Date.now() - spaehVom(island.id) >= SPAEH_ALT_MS ? ' notice--warn' : '') + '">' + icon('scout') + '<span>' + spaehAlterText(island.id) + '</span></div>' : '')   // wie alt ist der Bericht?
-                    : '<div class="notice">' + icon('scout') + '<span>Stärke unbekannt. Spähen deckt Truppen und Verteidigung auf.</span></div>') + midNotice(island) + ringNotice(island) +
+            liveHtml(popupStats, (scouted ? '<div class="stat-grid">' +
+                statTile('Truppen', 'troops', fmtTile(effectiveTroops(island)), ownerBot ? 'is-enemy' : '') +
+                statTile('Verteidigung', 'defense', fmtTile(effectiveDefense(island))) + '</div>' +
+                (spaehAlterText(island.id) ? '<div class="notice' + (Date.now() - spaehVom(island.id) >= SPAEH_ALT_MS ? ' notice--warn' : '') + '">' + icon('scout') + '<span>' + spaehAlterText(island.id) + '</span></div>' : '')   // wie alt ist der Bericht?
+                    : '<button type="button" class="spaeh-kachel" data-spaehen' + (scoutEnRoute ? ' disabled' : '') + '>' + icon('scout') + '<span><b>Stärke unbekannt</b><small>' +   // eine Kachel: antippen = spähen
+                        (scoutEnRoute ? 'Späher ist unterwegs …' : 'Antippen: Späher schicken') + '</small></span><span class="spaeh-kachel-w">' + icon('troops') + '?' + icon('defense') + '?</span></button>') + midNotice(island) + ringNotice(island) +
                 (isCapital(island.id) ? '<div class="notice notice--gold">' + icon('castle') + '<span>Fällt nie · Sieg = ' + Math.round(HAUPT_BEUTE * 100) + ' % Beute über dem Schutz' + (brennt(island.id) ? ' · brennt gerade' : '') + '</span></div>' : '') +
                 (island.type === 'gate' && !ownerBot ? '<div class="notice notice--gold">' + icon('lock') + '<span>Tor: Unbesetzt ist es verschlossen – erobere es, um über die Brücke zu kommen. Wer es besitzt, geht kostenlos durch und bestimmt die Maut für alle anderen.</span></div>' : '') +
                 (island.type === 'megaTemple' ? '<div class="notice">' + icon('rank') + '<span>' + (ownerBot ? escapeHtml(ownerBot.name) + ' verteilt die Titel (neu alle 3 Min.).' : 'Niemand verteilt gerade Titel.') + '</span><button type="button" class="btn btn--secondary btn--sm" data-view-titles>Titel ansehen</button></div>' : '') +
                 (isTemple ? '<div class="notice notice--gold">' + icon('temple') + '<span>' + (island.type === 'megaTemple' ? 'Thron der Meere: wer ihn hält, trägt die Krone – +25 % Münzen und Truppen im ganzen Reich und alle 3 Min. ' + THRONE_PTS_MEGA + ' Thron-Punkte. Die Wächter-Tempel feuern auf ihn – nächster Beschuss in <b data-throne-fire>' + fmtClock((throneState.nextFire - Date.now()) / 1000) + '</b>.' : island.guardian ? 'Wächter-Tempel: 3-facher Tempel-Bonus und alle 3 Min. ' + THRONE_PTS_GUARD + ' Thron-Punkte. Gehört er nicht dem Herrscher, feuert er alle 3 Min. auf den Thron.' : 'Tempel: gibt Produktion, Edelsteine und Münzen, sobald erobert.') + '</span></div>' : '') +
                 (bossAt(island.id) ? '<div class="notice notice--gold">' + icon('shop') + '<span><b>Belohnung:</b> ' + RARITY_DEFS[WANDER_CRATE].label + ' Kiste + ' + WANDER_REWARD_GEMS + ' Edelsteine · zieht weiter in <b data-boss-clock>' + fmtClock((bossAt(island.id).campUntil - Date.now()) / 1000) + '</b></span></div>' : '') +
-                (scoutEnRoute ? '<div class="notice notice--warn">' + icon('hourglass') + '<span>Späher bereits unterwegs …</span></div>' : '') +
+                (scoutEnRoute && scouted ? '<div class="notice notice--warn">' + icon('hourglass') + '<span>Späher bereits unterwegs …</span></div>' : '') +
                 (shieldOw ? '<div class="notice notice--gold">' + icon('shield') + '<span>Friedensschild – ' + escapeHtml(shieldOw.name) + ' ist noch ' + uhrHtml(ownerShieldUntil(shieldOw.id)) +
                     ' geschützt. Solange der Schild hält, kann niemand die Türme von ' + escapeHtml(shieldOw.name) + ' angreifen (Tore und Tempel schon) – Spähen geht.</span></div>' : ''));
             if (shieldOw) popupOverline.textContent = 'Friedensschild · unangreifbar';
@@ -188,14 +194,24 @@ function renderPopup() {
             scoutBtn.disabled = scoutEnRoute;
         }
     }
-    if (popupView !== 'preview' && popupView !== 'send' && popupView !== 'recall') liveHtml(popupSub, subH + sep + '<span class="num coord">' + coordText(island.x, island.y) + '</span>');
+    const menu = popupView !== 'preview' && popupView !== 'send' && popupView !== 'recall';
+    popupSub.classList.toggle('psub--zwei', menu);                       // Name/Stufe und Koordinaten in zwei Zeilen: nichts wird abgeschnitten
+    if (menu) liveHtml(popupSub, subH + '<span class="num coord psub-ort">' + coordText(island.x, island.y) + '</span>');
     if (typeof bundInselfenster === 'function') bundInselfenster(island, popupView);               // Bündnis: Signale, Rally, Hilfe
     if (!isPanelOpen(popup)) {
         openPanel(popup);
         // camera framing (design-spec §6.6): after layout, so the sheet/popover size is known
-        requestAnimationFrame(() => frameIslandInView(island));
-    } else if (popupView !== popupFramedView) requestAnimationFrame(() => frameIslandInView(island));   // the preview sheet is taller: keep the target visible
+        requestAnimationFrame(() => inselMittig(island));
+    } else if (popupView !== popupFramedView) requestAnimationFrame(() => inselMittig(island));   // the preview sheet is taller: keep the target visible
     popupFramedView = popupView;
+}
+
+// Handy: die Basis immer mittig in den freien Teil der Karte über dem Fenster (unter der oberen Leiste); sonst wie bisher
+function inselMittig(island) {
+    if (uiLayout() !== 'phone') return frameIslandInView(island);
+    const oben = Math.max(46, document.getElementById('hud').getBoundingClientRect().bottom), unten = popup.getBoundingClientRect().top;
+    if (unten - oben < 80) return frameIslandInView(island);
+    flyTo(island.x, island.y, { screenX: viewW / 2, screenY: oben + (unten - oben) * 0.55 });
 }
 
 // Attack preview. Built ONCE per (target, source, scouted, bonus); later
@@ -217,7 +233,7 @@ function renderAttackPreview(island, scouted) {
     if (popupStats.dataset.preview !== key || !document.getElementById('attackTroopsSlider')) {
         popupStats.dataset.preview = key;
         const quellen = angriffQuellen(island).slice(0, 40); if (!quellen.includes(previewSourceId)) quellen.unshift(previewSourceId);   // (die gewählte steht immer drin)
-        popupStats.innerHTML =
+        popupStats.innerHTML = '<div class="ap-kopf">' +                   // bleibt beim Scrollen oben stehen: Startbasis + Angriff gegen Abwehr
             '<label class="field from-field"><span class="field-l">Von Basis</span><select id="attackFromSel" class="from-sel" aria-label="Von Basis">' +
                 quellen.map(id => '<option value="' + id + '"' + (id === previewSourceId ? ' selected' : '') + '>' + escapeHtml(islandTitle(islandById[id])) + ' · ' + fmtCompact(islandTroops[id] || 0) +
                     ' · ' + fmtClock(travelDurationSeconds(islandById[id], island)) + (scouted && angriffReicht(id, island) ? ' · reicht' : '') + '</option>').join('') + '</select></label>' +
@@ -227,14 +243,12 @@ function renderAttackPreview(island, scouted) {
                 '<div class="vs"><span>VS</span></div>' +
                 '<div class="force force--foe"><span class="stat-l">Abwehr' + icon('defense') + '</span><b data-foe="total">?</b><small data-foe="sub">nicht gespäht</small></div>' +
             '</div>' +
-            (scouted
-                ? '<div><div class="balance" data-preview="balance"><i></i><b></b></div><div class="balance-note"><span>Kräfteverhältnis</span><span data-preview="verdict"></span></div></div>' +
-                  '<div class="notice" data-preview="alter" hidden></div>'
-                : '<div class="notice">' + icon('scout') + '<span>Abwehr unbekannt: ohne Spähen ist der Ausgang ungewiss.</span></div>') +
-            '<div class="field"><div class="field-top"><span class="field-l"><span class="sm-hide">Truppen </span>entsenden</span><span class="val"><input id="attackTroopsLabel" class="troop-in" inputmode="decimal" autocomplete="off" enterkeyhint="done" aria-label="Anzahl Truppen"> / <span data-preview="max"></span></span></div>' +
+            (scouted ? '<div><div class="balance" data-preview="balance"><i></i><b></b></div><div class="balance-note"><span>Kräfteverhältnis</span><span data-preview="verdict"></span></div></div>' : '') + '</div>' +
+            (scouted ? '<div class="notice" data-preview="alter" hidden></div>' : '') +
+            '<div class="field ap-truppen"><div class="field-top"><span class="field-l"><span class="sm-hide">Truppen </span>entsenden</span><span class="val"><input id="attackTroopsLabel" class="troop-in" inputmode="decimal" autocomplete="off" enterkeyhint="done" aria-label="Anzahl Truppen"> / <span data-preview="max"></span></span></div>' +
                 '<input type="range" id="attackTroopsSlider" class="slider" min="0" max="' + SLIDER_STEPS + '" value="' + troopsToSlider(previewAttackTroops || 0, maxTroops) + '"' + (maxTroops <= 0 ? ' disabled' : '') + ' aria-label="Truppen entsenden">' +
                 '<div class="seg" data-preview="quick"><button type="button" data-f=".25">25 %</button><button type="button" data-f=".5">50 %</button><button type="button" data-f=".75">75 %</button><button type="button" data-f="1">Alle</button></div></div>' +
-            (heroSegHtml('data-hero', previewHero) ? '<div class="field"><div class="field-top"><span class="field-l">Held</span><span class="val" data-preview="herofx"></span></div><div class="seg hero-seg" data-preview="hero">' +
+            (heroSegHtml('data-hero', previewHero) ? '<div class="field"><div class="field-top"><span class="field-l">Held</span><span class="val" data-preview="herofx"></span></div><div class="seg hero-seg chips-quer" data-preview="hero">' +
                 heroSegHtml('data-hero', previewHero) + '</div><div class="seg hero-seg hero-seg2" data-preview="hero2"></div></div>' : '');
         document.getElementById('attackFromSel').addEventListener('change', e => {   // andere Startbasis gewählt
             const id = +e.target.value; if (!ownedIslands.has(id)) return;
