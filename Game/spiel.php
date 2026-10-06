@@ -1558,6 +1558,7 @@ input::placeholder,textarea::placeholder{font-weight:400;font-size:min(1em,var(-
 .splash.is-leaving{opacity:0;visibility:hidden}
 .splash.is-leaving .splash-bg{transform:scale(1.05)}
 .splash-bg{position:absolute;inset:0;width:100%;height:100%;display:block;transition:transform 1.4s cubic-bezier(.2,.8,.2,1);animation:sp-zoom 12s ease-out both}
+.splash .titel-bild{object-fit:cover;object-position:50% 50%;opacity:0;transition:opacity .8s ease,transform 1.4s cubic-bezier(.2,.8,.2,1)}.splash .titel-bild.da{opacity:1}   /* gemaltes Titelbild über der Szene */
 @keyframes sp-zoom{from{transform:scale(1.04)}to{transform:scale(1)}}
 /* vignette + a darker bottom for the tip and the bar */
 .splash-vig{position:absolute;inset:0;pointer-events:none;
