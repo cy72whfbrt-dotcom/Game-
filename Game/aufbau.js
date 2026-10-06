@@ -313,7 +313,7 @@ function effektText(id, lvl) {
     if (id === 'market') return lvl ? 'Gebühr ' + Math.round(marktGebuehr(lvl) * 100) + ' % · Tageslimit ' + fmtCompact(marktLimit('player')) + ' Münzen je Richtung.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: Gebühr ' + Math.round(marktGebuehr(lvl + 1) * 100) + ' %, höheres Limit.' : '') : 'Baue den Markt, um Rohstoffe gegen Münzen zu tauschen.';
     return '';
 }
-let foAst = 'w', marktMenge = 100;
+let foAst = 'w', marktMenge = 1;   // (Markt-Mengen 1 … 1.000: das kleinste Tageslimit ist 28 Münzen-Wert = 5 Rohstoffe)
 // Forschung als Baum (wie in Rise of Kingdoms): Spalten nach der nötigen Labor-Stufe, jede Forschung ein Feld mit
 // Stufen-Balken; antippen zeigt unten alles dazu (Wirkung jetzt → nächste Stufe, Voraussetzungen, hast / brauchst, Forschen)
 let foSel = null;
@@ -358,7 +358,7 @@ function marktHtml() {                                         // Shop → Markt
     const lvl = bauStufe('player', 'market');
     if (!lvl) return '<div class="notice">' + icon('lock') + '<span>Baue zuerst den Markt in deiner Stadt (ab Burg-Stufe ' + BAU_AB_BURG.market + ').</span></div>';
     const c = loadCity(), m = marktHeute(c), lim = marktLimit('player'), f = marktGebuehr(lvl), N = marktMenge;
-    return '<div class="seg" data-mk-n>' + [10, 100, 1000, 10000].map(v => '<button type="button" data-mk-menge="' + v + '"' + (v === N ? ' class="on"' : '') + '>' + fmtCompact(v) + '</button>').join('') + '</div><div class="fo-list">' +
+    return '<div class="seg" data-mk-n>' + [1, 10, 100, 1000].map(v => '<button type="button" data-mk-menge="' + v + '"' + (v === N ? ' class="on"' : '') + '>' + fmtCompact(v) + '</button>').join('') + '</div><div class="fo-list">' +
             ROH.map(x => '<div class="fo-row">' + icon(ROH_DEF[x].icon, 'roh-' + x) + '<span class="fo-t"><b>' + ROH_DEF[x].name + '</b><small>' + fmtNum(Math.floor(roh[x])) + ' vorhanden</small></span>' +
                 '<button type="button" class="btn btn--secondary btn--sm" data-mk="v:' + x + '"' + (roh[x] < N || m.v + N * MARKT_WERT > lim ? ' disabled' : '') + '>+' + fmtCompact(Math.floor(N * MARKT_WERT * (1 - f))) + ' ' + icon('coin', 'icon--coin') + '</button>' +
                 '<button type="button" class="btn btn--primary btn--sm" data-mk="k:' + x + '"' + (coins < Math.ceil(N * MARKT_WERT * (1 + f)) || m.k + N * MARKT_WERT > lim ? ' disabled' : '') + '>−' + fmtCompact(Math.ceil(N * MARKT_WERT * (1 + f))) + ' ' + icon('coin', 'icon--coin') + '</button></div>').join('') +

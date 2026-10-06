@@ -754,7 +754,10 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
   Bündnis gründen (17 Münzen), Mindestwerte von Thron-Shop, Pass, Kopfgeld, Bündnis-Geschenk, Funde, Verstärkungs-/Rally-Platz,
   Stufen-Belohnungen (Stufe 30: 1.100 Truppen, 250 Münzen), Krieger-Woche (1 Punkt je 0,56 Besiegte), Truppen-Grenzen der
   Mitspieler (Sammeln, Drache, Tagesboss, Bündnis-Hilfe/Rally). Händler-Preise und Markt-Limit: Faktor × Stunden-Produktion ×
-  2 (Kosten ÷ Ertrag), Mindestwert/Grenze ÷ 1.800. Markt-Mengen 10/100/1.000/10.000.
+  2 (Kosten ÷ Ertrag), Mindestwert/Grenze ÷ 1.800. Markt-Mengen 1/10/100/1.000 (das kleinste Tageslimit ist 28 Münzen-Wert –
+  mit 10 ging gar nichts). Erfolge „Zöllner“ (56 Münzen Maut), „Feldscher“ (6) und „Heiler der Meere“ (556 Geheilte) ÷ 1.800 –
+  sonst wegen kleinerer Maut/Krankenhaus-Plätze unerreichbar. Texte: Tor „höchstens 556 Münzen pro Marsch“, Krieger-Woche
+  „1,8 Punkte pro besiegtem Krieger“ (vorher „1 Punkt pro 1“), Mauer-Beispiel 10.000 → 11.000.
 - EP: ein besiegter Krieger zählt wie vorher 1.800 – Stufen kommen so schnell wie vorher (je Kampf höchstens ¼ Stufe).
 - Bleiben: Start 100.000 Truppen und 0 Gold; Bauzeiten (Burg 1–60 Tage); alle Edelstein-Preise außer der Kiste; die
   Saison-Anfangs-Untergrenzen von Drache (1 Mio.) und Tagesboss (2 Mio.) – sie sind aus den Start-Truppen gerechnet, die bleiben.

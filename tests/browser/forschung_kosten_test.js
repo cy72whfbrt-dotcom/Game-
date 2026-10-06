@@ -23,6 +23,11 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     o.ep = kampfEp(2, 10, 2, 2) === Math.ceil(xpNeededForLevel(10) * KAMPF_EP_ANTEIL);   // 2 besiegte Krieger zählen wie vorher 3.600
     o.lager = [barbTroopsOf(1), barbTroopsOf(10)];
     o.krankenhaus = [hospitalPlatz(1), hospitalPlatz(10)];
+    // Erfolge mit Münzen/Truppen-Zielen × 1/1800 (sonst unerreichbar), Texte ohne alte Zahlen
+    const ach = id => ACHIEVEMENTS.find(x => x.id === id);
+    o.erfolge = [ach('tollin').goal, ach('heal10k').goal, ach('heal1m').goal, ach('tollin').desc, ach('heal1m').desc];
+    o.markt = (() => { const c = loadCity(); c.levels.market = 1; saveCity(); const d = document.createElement('div'); d.innerHTML = AUF.marktHtml();
+      return [...d.querySelectorAll('[data-mk-menge]')].map(b => +b.dataset.mkMenge).concat([AUF.marktLimit('player')]); })();
     // Gegner auf der Karte: neutral × 1/1800, die Thron-Tore nie unter 150.000 + 50.000
     const tore = islands.filter(i => i.type === 'gate' && i.gateKind === 'throne'), mega = islands.find(i => i.type === 'megaTemple');
     const rand = islands.filter(i => i.type === 'tower' && !i.startSlot && landmasses[i.landmassId].tier === 'outer' && landmasses[i.landmassId].ring === 8);
@@ -57,6 +62,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(r.ep, 'EP: ein besiegter Krieger zählt wie vorher 1.800 (Stufen gleich schnell)');
   ok(r.lager[0] === 1 && r.lager[1] === 570, 'Barbaren-Lager Stufe 1 / 10 ÷ 1800', r.lager);
   ok(r.krankenhaus[0] === 556 && r.krankenhaus[1] > 10000, 'Krankenhaus-Platz ÷ 1800', r.krankenhaus);
+  ok(r.erfolge[0] === 56 && r.erfolge[1] === 6 && r.erfolge[2] === 556 && /Nimm 56 Münzen/.test(r.erfolge[3]) && /Heil 556 /.test(r.erfolge[4]), 'Erfolge Zöllner/Feldscher/Heiler: Ziele ÷ 1800 (Maut und Krankenhaus-Platz sind kleiner)', r.erfolge);
+  ok(r.markt.length === 5 && r.markt.slice(0, 4).join() === '1,10,100,1000' && r.markt[4] >= 28 && r.markt[0] * 5 <= r.markt[4], 'Markt: Mengen 1/10/100/1.000 – die kleinste passt ins kleinste Tageslimit (28)', r.markt);
   ok(r.thronTor.every(Boolean), 'Thron-Tore nie mit den Start-Truppen allein (mind. 150.000 + 50.000)', r.thronTor);
   ok(r.mega[0] === 138889 && r.mega[1] === 33333, 'Mega-Tempel ÷ 1800', r.mega);
   ok(r.rand.every(Boolean), 'Basen am Rand: Verteidigung 1, höchstens 1 Krieger', r.rand);

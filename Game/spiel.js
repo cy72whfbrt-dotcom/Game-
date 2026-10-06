@@ -5503,7 +5503,7 @@ const ACHIEVEMENTS = [   // the old ids stay (claims are kept); the tiers of one
     { id: 'gate1',   name: 'Torhüter',         icon: 'lock',    desc: 'Halte ein Tor.',                         goal: 1,    k: 'gates', gems: 50 },
     { id: 'gate3',   name: 'Herr der Brücken', icon: 'lock',    desc: 'Halte 3 Tore gleichzeitig.',             goal: 3,    k: 'gates', gems: 250 },
     { id: 'toll10',  name: 'Brückengänger',    icon: 'coin',    desc: 'Zahl 10 Mal Maut an einem Tor.',         goal: 10,   k: 'tolls', gems: 40 },
-    { id: 'tollin',  name: 'Zöllner',          icon: 'coin',    desc: 'Nimm 100.000 Münzen Maut ein.',          goal: 100000, k: 'tollCoins', gems: 300 },
+    { id: 'tollin',  name: 'Zöllner',          icon: 'coin',    desc: 'Nimm ' + fmtNum(wirtK(100000)) + ' Münzen Maut ein.', goal: wirtK(100000), k: 'tollCoins', gems: 300 },   // (Maut und Krankenhaus-Platz × WIRTSCHAFT_KOSTEN – die Ziele mit)
     { id: 'army5',   name: 'Feldschlacht',     icon: 'troops',  desc: 'Gewinn 5 Kämpfe mit Armeen im Feld.',    goal: 5,    k: 'armyWins', gems: 80 },
     { id: 'army50',  name: 'Heerführer',       icon: 'troops',  desc: 'Gewinn 50 Kämpfe mit Armeen im Feld.',   goal: 50,   k: 'armyWins', gems: 400 },
     { id: 'hero1',   name: 'Erster Held',      icon: 'profile', desc: 'Schalte einen Helden frei.',             goal: 1,    k: 'heroes', gems: 30 },
@@ -5513,8 +5513,8 @@ const ACHIEVEMENTS = [   // the old ids stay (claims are kept); the tiers of one
     { id: 'star5',   name: 'Sternenheld',      icon: 'star',    desc: 'Bring einen Helden auf 5 Sterne.',       goal: 5,    k: 'heroStars', gems: 600 },
     { id: 'fire10',  name: 'Kampfrausch',      icon: 'level',   desc: 'Lass Helden 10 Mal ihre Fähigkeit zünden.', goal: 10, k: 'heroFires', gems: 80 },
     { id: 'fire100', name: 'Heldensturm',      icon: 'level',   desc: 'Lass Helden 100 Mal ihre Fähigkeit zünden.', goal: 100, k: 'heroFires', gems: 400 },
-    { id: 'heal10k', name: 'Feldscher',        icon: 'plus',    desc: 'Heil 10.000 Verwundete im Krankenhaus.',    goal: 10000, k: 'healed', gems: 60 },
-    { id: 'heal1m',  name: 'Heiler der Meere', icon: 'plus',    desc: 'Heil 1.000.000 Verwundete im Krankenhaus.', goal: 1000000, k: 'healed', gems: 500 },
+    { id: 'heal10k', name: 'Feldscher',        icon: 'plus',    desc: 'Heil ' + fmtNum(wirtK(1e4)) + ' Verwundete im Krankenhaus.', goal: wirtK(1e4), k: 'healed', gems: 60 },
+    { id: 'heal1m',  name: 'Heiler der Meere', icon: 'plus',    desc: 'Heil ' + fmtNum(wirtK(1e6)) + ' Verwundete im Krankenhaus.', goal: wirtK(1e6), k: 'healed', gems: 500 },
     { id: 'shield1', name: 'Schutzschild',     icon: 'shield',  desc: 'Setz einen Friedensschild ein.',         goal: 1,    k: 'shields', gems: 20 },
     { id: 'shield10', name: 'Vorsichtig',      icon: 'shield',  desc: 'Setz 10 Friedensschilde ein.',           goal: 10,   k: 'shields', gems: 150 },
     { id: 'tele1',   name: 'Umzug',            icon: 'home',    desc: 'Verlege deine Hauptstadt.',              goal: 1,    k: 'teleports', gems: 30 },
@@ -8210,7 +8210,7 @@ var CITY_BUILDINGS = [
     { id: 'hospital', name: 'Krankenhaus',   icon: 'plus',    x: 215, y: 670, roof: '#e8e2d2', cross: true,
       desc: 'Von deinen Gefallenen (Angriff oder Verteidigung) kommen Verwundete hierher statt zu sterben (5 % pro Stufe, bis 60 % – mit Forschung mehr). Heile sie gegen Münzen – sie gehen in die Hauptstadt.' },
     { id: 'wall',     name: 'Mauer',         icon: 'defense', x: 715, y: 815, roof: '#6b6456', gate: true,
-      desc: 'Stärkt die Verteidigung aller deiner Basen: +2 % pro Stufe (Stufe 25: +50 %). Beispiel: 10 Mio. Verteidigung und Mauer Stufe 5 ergeben 11 Mio.' },
+      desc: 'Stärkt die Verteidigung aller deiner Basen: +2 % pro Stufe (Stufe 25: +50 %). Beispiel: 10.000 Verteidigung und Mauer Stufe 5 ergeben 11.000.' },
     { id: 'heroes',   name: 'Heldenhalle',   icon: 'profile', x: 285, y: 815, roof: '#7a2e2a',
       desc: 'Hier leben deine Helden: mit Splittern freischalten, Sterne aufwerten, Fähigkeiten wählen. Ein Held führt einen Angriff oder eine Armee. Jede Stufe gibt allen Helden +' + HERO_HALL_GEF + ' % Gefolge.' },
     { id: 'embassy',  name: 'Botschaft',     icon: 'bund',
@@ -11070,7 +11070,7 @@ function woHtml() {                                   // das Wochen-Event: Thema
     const preise = WO_PRIZES.map((p, i) => '<div class="tour-prize' + (i ? '' : ' is-1') + '"><b>' + p.t + '</b><span>' + icon('gem') + fmtNum(p.gems) + '</span><span>' + icon('star') + p.sh + '</span>' + (p.crate >= 0 ? '<em>' + RARITY_DEFS[p.crate].label + '-Kiste</em>' : '') + '</div>').join('');
     const plan = [1, 2, 3, 4].map(i => { const t = w.start + 7 * 864e5 * i + 3600000, x = woThemaAm(t), a = new Date(t), e = new Date(t + 4 * 864e5); return '<span>Mo ' + a.getDate() + '.' + (a.getMonth() === e.getMonth() ? '' : (a.getMonth() + 1) + '.') + ' – Fr ' + e.getDate() + '.' + (e.getMonth() + 1) + '.</span><b>' + icon(x.ic) + ' ' + x.name + '</b>'; }).join('');
     const alt = !live && W.last && W.last.top ? W.last.top : null, liste = live ? rk : alt || [];
-    return evKarte(th.ic, 'Wochen-Event · ' + th.name, kopf, '<div class="field-lines"><span>Punkte für</span><b>' + th.pkt + (th.k === 'krieg' ? ' (1 Punkt pro ' + fmtNum(WO_KILL_PER) + ')' : '') + '</b><span>Bonus</span><b>' + th.bonus + '</b>' +
+    return evKarte(th.ic, 'Wochen-Event · ' + th.name, kopf, '<div class="field-lines"><span>Punkte für</span><b>' + th.pkt + (th.k === 'krieg' ? ' (' + (1 / WO_KILL_PER).toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' Punkte pro besiegtem Krieger)' : '') + '</b><span>Bonus</span><b>' + th.bonus + '</b>' +
             (live ? '<span>Dein Platz</span><b>' + (mine || '–') + ' · ' + fmtNum(Math.floor((W.pts || {}).player || 0)) + ' Punkte</b>' : '') + '</div>', 'is-tour') +
         '<div class="lb-gap">' + (live ? 'Live · Top 10' : alt ? 'Letzte Woche · Top 10' : 'Top 10') + '</div>' +
         (evRangHtml(liste, v => fmtNum(Math.floor(v)) + ' P.') || '<div class="war-empty">' + (w.on ? 'Noch hat niemand Punkte – sobald jemand Punkte holt, steht er hier.' : 'Am Montag geht es los.') + '</div>') +
@@ -11916,7 +11916,7 @@ function gateControlsHtml(gate) {
     return '<div class="gate-ctl"><div class="gate-row"><span class="stat-l">' + icon('coin') + 'Maut pro Truppe</span><div class="seg">' +
         GATE_TOLLS.map(v => '<button type="button" data-toll="' + v + '" class="' + (cfg.toll === v ? 'is-on' : '') + '">' + (v ? v.toLocaleString('de-DE') : 'frei') + '</button>').join('') + '</div></div>' +
         '<button type="button" data-gate-toggle class="btn ' + (cfg.closed ? 'btn--primary' : 'btn--secondary') + ' btn--grow">' + icon('lock') + '<span>' + (cfg.closed ? 'Tor öffnen' : 'Tor schließen') + '</span></button>' +
-        '<p class="gate-note">' + (cfg.closed ? 'Geschlossen: niemand sonst kommt über die Brücke – nur wer das Tor erobert.' : 'Offen: andere zahlen die Maut an dich – höchstens 1 Mio. Münzen pro Marsch.') + '</p></div>';
+        '<p class="gate-note">' + (cfg.closed ? 'Geschlossen: niemand sonst kommt über die Brücke – nur wer das Tor erobert.' : 'Offen: andere zahlen die Maut an dich – höchstens ' + fmtNum(wirtK(TOLL_MAX)) + ' Münzen pro Marsch.') + '</p></div>';
 }
 popupStats.addEventListener('click', e => {
     const isl = islandById[popupIslandId]; if (!isl || isl.type !== 'gate' || !ownedIslands.has(isl.id)) return;
