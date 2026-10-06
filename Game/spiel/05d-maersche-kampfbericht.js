@@ -468,7 +468,7 @@ const kampflogUmbauen = (function () {
             gear + '</div>');
         normal(box, false, {}, 0);
         box.querySelector('.kl-rss').remove();
-        const kh = box.querySelector('.kl-keinheld small'); if (kh && L['Helden']) kh.textContent = s && s.vh !== undefined ? 'Kein Verteidigungs-Held in der Mauer · Zuhause: ' + v('Helden') : 'Zuhause: ' + v('Helden') + ' – zählen beim Verteidigen nicht';   // (älterer Bericht: vor den Mauer-Helden)
+        const kh = box.querySelector('.kl-keinheld small'); if (kh && L['Helden'] && !vhd) kh.textContent = s && s.vh !== undefined ? 'Kein Verteidigungs-Held in der Mauer · Zuhause: ' + v('Helden') : 'Zuhause: ' + v('Helden') + ' – zählen beim Verteidigen nicht';   // (älterer Bericht: vor den Mauer-Helden)
         const meta = box.querySelector('.logGearMeta');
         if (meta) meta.textContent = s && s.sk ? 'Fähigkeiten Angriff ' + s.sk.attack + ' · Vert. ' + s.sk.defense + ' · Truppen ' + s.sk.troops
             : s ? 'Ausrüstung und Fähigkeiten unbekannt (älterer Bericht) – neu spähen' : e.wartet ? 'Ausrüstung und Fähigkeiten: der Bericht kommt gleich' : 'Ohne Herrn: keine Ausrüstung, keine Helden';

@@ -87,6 +87,13 @@ pruefe('fremd: Forschungs-Summe (Rangliste Hauptstadt) sichtbar, die Forschung s
 pruefe('eigener Eintrag ganz', [isset($b['u3']['hs']), $b['u3']['city']['levels']['wall'], $b['u3']['skills']['defense']], [true, 9, 5]);
 $b = json_decode(weltteil_fuer_spieler('openWaterBotState', '{"u3":' . $voll . '}'), true);
 pruefe('ohne Spieler-Nummer: alle fremd', isset($b['u3']['hs']), false);
+// Verteidigungs-Helden (Mauer, 6.10.): Befehl „vheld“ geht durch; Fremde sehen die Helden eines anderen nur im Spähbericht
+pruefe('Befehl vheld', befehl_ok(['art' => 'vheld', 'h1' => 'brunhild', 'h2' => 'sigrun', 'at' => 1]), true);
+pruefe('Befehl vheld mit HTML', befehl_ok(['art' => 'vheld', 'h1' => '<b>']), false);
+$b = json_decode(weltteil_fuer_spieler('openWaterBotState', '{"bot1":{"lvl":3,"vh":["brunhild","sigrun"]},"u3":{"lvl":3,"vh":["ida",null]}}', 'u3'), true);
+pruefe('vh: fremd weg, eigener bleibt', [isset($b['bot1']['vh']), $b['u3']['vh'][0] ?? null], [false, 'ida']);
+$f = json_decode(flicken_fuer_spieler('openWaterBotState', '{"d":{"bot1":{"s":{"vh":["brunhild",null],"lvl":4}},"u3":{"s":{"vh":["ida",null]}}}}', 'u3'), true);
+pruefe('vh im Flicken: fremd weg, eigener bleibt', [isset($f['d']['bot1']['s']['vh']), $f['d']['u3']['s']['vh'][0] ?? null], [false, 'ida']);
 $f = json_decode(flicken_fuer_spieler('openWaterBotState', '{"s":{"bot2":' . $voll . '},"d":{"bot1":{"s":{"hs":{"a":1},"city":{"levels":{"keep":5,"wall":2}},"macht":99,"gear":{}},"w":["spare","ring"]},"u3":{"s":{"hs":{"a":1},"city":{"levels":{"keep":5,"wall":2}}}}}}', 'u3'), true);
 pruefe('Flicken fremd: neuer Eintrag gekürzt', [isset($f['s']['bot2']['hs']), json_encode($f['s']['bot2']['city'])], [false, '{"levels":{"keep":4}}']);
 pruefe('Flicken fremd: Felder gekürzt', [isset($f['d']['bot1']['s']['hs']), isset($f['d']['bot1']['s']['gear']), $f['d']['bot1']['s']['macht'], json_encode($f['d']['bot1']['s']['city'])], [false, false, 99, '{"levels":{"keep":5}}']);

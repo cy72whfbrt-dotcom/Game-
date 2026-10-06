@@ -20,7 +20,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       nachricht() {}, befehl(art, d) { window.__befehle.push([art, d]); }, profilZuBot(p, b) { return b; } };
     window.WELT = new Proxy(W, { get: (o, k) => k in o ? o[k] : () => [] });
   });
-  await p.goto(url); await p.waitForTimeout(9000);
+  await p.goto(url, { timeout: 120000 }); await p.waitForTimeout(9000);
   await p.waitForFunction(() => typeof BOT_DEFS !== 'undefined' && typeof islands !== 'undefined' && islands.length && islandById[playerIslandId] && typeof verst !== 'undefined', null, { timeout: 60000, polling: 500 }).catch(() => {});
   await p.evaluate(() => { for (const id of ['welcomeModal', 'dailyModal', 'levelUpModal', 'rewardModal', 'titleModal']) { const m = document.getElementById(id); if (m) m.hidden = true; } });
   const a = await p.evaluate(() => {
@@ -108,7 +108,9 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(F.box && F.vh && F.vh[0] === 'brunhild' && F.vh[1] === 'sigrun' && F.nach > F.vor, 'Mauer-Fenster: Haupt- und Zweitheld eingetragen, deine Basis verteidigt stärker', F);
   ok(F.befehle && F.befehle.length === 2 && F.befehle[1][1].h1 === 'brunhild' && F.befehle[1][1].h2 === 'sigrun', 'Befehl „vheld“ an den Weltrechner', F.befehle);
   ok(/Verteidigungs-Helden/.test(F.text || '') && /Brunhild/.test(F.text || ''), 'Mauer-Fenster zeigt den Stand', (F.text || '').slice(0, 200));
-  if (bilder) { await p.evaluate(() => { const sh = document.getElementById('citySheet'); const bx = document.querySelector('[data-vh-box]'); if (bx) sh.scrollTop = bx.offsetTop - 80; });
+  const zu = () => { for (const id of ['welcomeModal', 'dailyModal', 'levelUpModal', 'rewardModal', 'titleModal']) { const m = document.getElementById(id); if (m) m.hidden = true; }
+    document.querySelectorAll('body > div').forEach(d => { if (d.style.zIndex === '100000') d.remove(); }); flashHint('', 1); };   // (Willkommen-Fenster der nachgebauten Welt)
+  if (bilder) { await p.evaluate(zu); await p.waitForTimeout(2500); await p.evaluate(() => { cityOpenId = 'wall'; cityPage = 'bau'; renderCitySheet(); const sh = document.getElementById('citySheet'), bx = document.querySelector('[data-vh-box]'); if (bx) sh.scrollTop = bx.offsetTop - 80; });
     await p.waitForTimeout(400); await p.screenshot({ path: path.join(bilder, 'mauer_fenster.png') }); }
   // G) Weltrechner: Befehl vheld (echter Spieler = Mitspieler mit mensch)
   const g = await p.evaluate(() => {
@@ -125,8 +127,9 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   });
   ok(!g.fehlt && g.unter5 === null && g.haupt[0] === 'ida' && g.fremd[0] === 'ida' && g.m5[1] === 'lene' && g.fx === 'lene', 'Weltrechner: Befehl „vheld“ prüft eigenen Held und Mauer-Stufe', g);
   if (bilder) {
-    await p.evaluate(() => { closeAllPopups(); closeCity(); battleLogBtn.click(); const e = combatLog.find(x => x.type === 'scout'); const row = [...combatLogListEl.children][combatLog.indexOf(e)];
-      const d = row && row.querySelector('details'); if (d) { d.open = true; row.scrollIntoView(); const h = row.querySelector('.logGearHeroes'); if (h) h.scrollIntoView({ block: 'center' }); } });
+    await p.evaluate(zu); await p.evaluate(() => { closeAllPopups(); closeCity(); battleLogBtn.click(); document.querySelector('#battleTabs [data-ktab="berichte"]').click(); const e = combatLog.find(x => x.type === 'scout'); const row = [...combatLogListEl.children][combatLog.indexOf(e)];
+      const sm = row && row.querySelector('details summary'); if (sm) sm.click(); });
+    await p.waitForTimeout(600); await p.evaluate(() => { const h = [...document.querySelectorAll('.logGearHeroes')].find(x => x.offsetParent && /Brunhild/.test(x.textContent)); if (h) h.scrollIntoView({ block: 'center' }); });
     await p.waitForTimeout(400); await p.screenshot({ path: path.join(bilder, 'spaehbericht.png') });
   }
   ok(!fe.length, 'keine Seitenfehler', fe.slice(0, 3));
