@@ -108,11 +108,12 @@
   .nav-btn.active::after{top:50%;left:0;width:2px;height:28px;transform:translateY(-50%);background:linear-gradient(180deg,transparent,var(--gold-300),transparent)}
   .nav-btn .badge{top:calc(50% - 24px)}
   .hud{left:calc(var(--rail-w) + var(--safe-l) + 10px);right:auto;width:auto;max-width:calc(100vw - var(--rail-w) - 40px)}
-  .midbar{left:calc(var(--rail-w) + var(--safe-l) + 10px)} body.has-panel .midbar{display:none}
+  .midbar{left:calc(var(--rail-w) + var(--safe-l) + 70px);right:auto;max-width:calc(100vw - var(--rail-w) - 90px)} body.has-panel .midbar{display:none}
   body.has-panel .hud{max-width:calc(100vw - var(--rail-w) - var(--safe-l) - min(380px,50vw) - var(--safe-r) - 36px)}
-  .res{flex:0 0 auto;max-width:none}   /* pills size to their value: no ellipsis on "999,9 Tsd." */
+  .res{flex:0 0 auto;max-width:none;padding:0 var(--ab-2)}   /* pills size to their value: no ellipsis on "999,9 Tsd." */
   .res b{min-width:max-content}
   .mapctl{bottom:calc(var(--safe-b) + 10px)}
+  .anleitung{left:calc(var(--rail-w) + var(--safe-l) + 10px);bottom:calc(var(--safe-b) + 10px)}   /* neben der Leiste, nie darüber */
   .mabar{left:calc(var(--rail-w) + var(--safe-l) + 10px);bottom:calc(var(--safe-b) + 10px);right:calc(var(--safe-r) + 60px)}
   body.is-multi .mapctl{display:flex;bottom:calc(var(--safe-b) + 10px)}
   .toast{left:calc(50% + var(--rail-w) / 2)}
@@ -142,10 +143,16 @@
 /* desktop */
 @media (min-width:900px) and (min-height:501px){
   :root{--hud-h:34px;--tile:56px}
-  .hud{top:14px;left:14px;right:auto;gap:0;padding:0;background:var(--glass);border:1px solid var(--line-2);border-radius:var(--r-sm);box-shadow:var(--sh-2);
+  .hud{top:14px;left:14px;right:auto;gap:0;padding:0;align-items:center;background:var(--glass);border:1px solid var(--line-2);border-radius:var(--r-sm);box-shadow:var(--sh-2);
     -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
-  .midbar{top:72px;left:14px}
-  .hud-me{display:flex;align-items:center;gap:12px;height:48px;padding:0 14px 0 8px;border-right:1px solid var(--line-1);text-align:left}
+  .midbar{top:72px;left:14px;right:auto;max-width:min(560px,calc(100vw - 460px))}
+  .hud-me{flex-direction:row;width:auto;align-items:center;gap:12px;height:48px;padding:0 14px 0 8px;border-right:1px solid var(--line-1);text-align:left}
+  .hud-me .avatar-ring--sm{width:34px;height:34px}
+  .hud-me .avatar-ring--sm .avatar .icon{width:17px;height:17px}
+  .hud-me-text{max-width:none;text-align:left}
+  .hud-me-text small{display:block}
+  .hud-werte{flex:none;height:auto;padding:0;background:none;border:0;border-radius:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+  .hud > .res--roh{width:auto;height:48px;padding:0 14px;border:0;border-left:1px solid var(--line-1);border-radius:0;background:none;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
   .hud-me:hover{background:rgba(255,255,255,.03)}
   .hud-me-text b{display:block;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 13px/1.1 var(--font-display);color:var(--gold-100);letter-spacing:.04em}
   .hud-me-text small{display:block;font:500 10.5px/1.2 var(--font-ui);color:var(--tx-3);margin-top:2px}
@@ -153,24 +160,21 @@
   .res + .res{border-left:1px solid var(--line-1)}
   .res b{font-size:var(--fs-15);min-width:6.2em}   /* room for "999,9 Tsd.": the frame never jumps when a value changes length */
   .res > .icon{width:20px;height:20px}
-  .nav{left:auto;bottom:auto;top:14px;right:14px;height:auto;padding:4px;display:flex;gap:2px;background:var(--glass);border:1px solid var(--line-2);border-radius:var(--r-sm);box-shadow:var(--sh-2);
+  /* Leiste unten Mitte (gleiche Reihenfolge wie am Handy); mit offenem Fenster rechts mittig über der freien Karte */
+  .nav{left:50%;right:auto;top:auto;bottom:14px;height:auto;transform:translateX(-50%);padding:6px 10px;display:flex;gap:6px;background:var(--glass);border:1px solid var(--line-2);border-radius:var(--r-lg);box-shadow:var(--sh-2);
     -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+  body.has-sheet .nav{left:calc(50% - 209px)}
   .nav::before{display:none}
-  .nav-btn{flex-direction:row;gap:8px;height:40px;padding:0 14px;border-radius:var(--r-xs)}
-  .nav-btn .icon{width:18px;height:18px}
-  .nav-l{font:600 12px/1 var(--font-display);letter-spacing:.06em;text-transform:none}
-  .nav-btn:hover{background:rgba(255,255,255,.03)}
-  .nav-btn.active{background:linear-gradient(180deg,rgba(214,170,90,.14),rgba(214,170,90,.04));box-shadow:inset 0 0 0 1px var(--line-2)}
-  .nav-btn.active::after{top:auto;bottom:-5px;width:40px}
-  .nav-btn .badge{top:3px;left:24px}
+  .nav-btn{width:72px;gap:4px}
+  .nav-l{font:600 12px/1 var(--font-display);letter-spacing:.04em;text-transform:none}
   .mapctl{bottom:18px;right:18px}
   body.has-panel .mapctl{display:flex}
   body.has-sheet .mapctl{right:432px}
-  .mabar{left:50%;right:auto;bottom:22px;transform:translateX(-50%);width:min(560px,calc(100vw - 40px))}
+  .mabar{left:50%;right:auto;bottom:104px;transform:translateX(-50%);width:min(560px,calc(100vw - 40px))}
   body.is-multi .mapctl{display:flex;bottom:18px}
-  .toast,body.has-midbar:not(.has-sheet) .toast{top:auto;bottom:22px;max-width:min(640px,calc(100vw - 40px))}   /* (the mid-bar rule set a top too: the toast stretched over the whole height) */
+  .toast{top:auto;bottom:104px;max-width:min(640px,calc(100vw - 40px))}   /* über der Leiste */
   body.has-sheet .toast{left:calc(50% - 209px);max-width:min(640px,calc(100vw - 458px))}   /* centred in the map area left of the drawer */
-  body.is-multi .toast{bottom:88px}
+  body.is-multi .toast{bottom:170px}
   .scrim{display:none!important}
   .sheet-grab{display:none}
   .panel .sheet-grab + .phead{padding-top:10px}

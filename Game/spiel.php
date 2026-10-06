@@ -65,7 +65,8 @@ if (!ini_get('zlib.output_compression') && function_exists('ob_gzhandler')) ob_s
   /* ---- type ---- */
   --font-display:'Cinzel','Trajan Pro',Georgia,serif;
   --font-ui:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
-  --fs-9:9.5px; --fs-10:10px; --fs-11:11px; --fs-12:12px; --fs-13:13px; --fs-15:15px; --fs-17:17px;
+  /* Schriftstufen (Design 11b F): 11 Kleingedrucktes · 13 Text · 15 Werte/Knopftext · 17 Fenstertitel · 22 Zahl-Held. 9.5/10 gibt es nicht mehr (= 11) */
+  --fs-9:11px; --fs-10:11px; --fs-11:11px; --fs-12:12px; --fs-13:13px; --fs-15:15px; --fs-17:17px; --fs-22:22px;
   --track-caps:.1em; --track-display:.05em;
   /* ---- radii: small, carved - never bubbly ---- */
   --r-xs:2px; --r-sm:3px; --r-lg:6px; --r-pill:999px;
@@ -76,8 +77,12 @@ if (!ini_get('zlib.output_compression') && function_exists('ob_gzhandler')) ob_s
   --sh-3:var(--hi-inset),0 22px 60px rgba(0,0,0,.66),0 0 0 1px rgba(0,0,0,.6);
   --glow-gold:0 0 0 1px rgba(228,200,134,.45),0 0 16px rgba(214,170,90,.22);
   --focus:0 0 0 2px var(--ink-1),0 0 0 4px var(--gold-300);
+  /* ---- Abstände (Design 11b F): nur 4 / 8 / 12 / 16 – Fensterrand 16, Kartenabstand 8, Abschnitt 16 ---- */
+  --ab-1:4px; --ab-2:8px; --ab-3:12px; --ab-4:16px;
+  /* ---- Knopf-Arten: Haupt (gold, 1 pro Fenster, unten fest) · Zweit (dunkel) · Gefahr (rot) · Chip (sichtbar 36, Tippfläche 44) · Rund (Leiste) ---- */
+  --k-haupt:48px; --k-zweit:44px; --k-gefahr:48px; --k-chip:36px; --k-tipp:44px; --k-rund:48px;
   /* ---- component sizes ---- */
-  --hud-h:30px; --btn-h:34px; --btn-h-sm:28px; --dock-h:58px; --rail-w:64px; --tile:58px; --hud-top-space:46px;
+  --hud-h:32px; --btn-h:34px; --btn-h-sm:28px; --dock-h:58px; --rail-w:64px; --tile:58px; --hud-top-space:46px;
   --icon:18px;
   /* ---- motion ---- */
   --ease-out:cubic-bezier(.2,.8,.2,1);
@@ -94,7 +99,9 @@ if (!ini_get('zlib.output_compression') && function_exists('ob_gzhandler')) ob_s
   --noise:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 .92 0 0 0 0 .78 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   --tick:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231d1406' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E");
 }
-@media (pointer:coarse){ :root{ --btn-h:40px; --btn-h-sm:34px; } }
+@media (pointer:coarse){ :root{ --btn-h:44px; --btn-h-sm:36px; } }   /* Handy: nichts unter 44 px Tippfläche (kleine Knöpfe über .btn--chip) */
+/* Handy hochkant: HUD-Block = Spielerbild + Werte-Zeile + EIN Streifen (78 px), Leiste mit runden Knöpfen (66 px) */
+@media (max-width:899px) and (min-height:501px){ :root{ --hud-top-space:78px; --dock-h:66px; } }
 
 /* ---------------- base ---------------- */
 *,*::before,*::after{box-sizing:border-box}
@@ -116,6 +123,28 @@ b,strong{font-weight:600}
 .icon--gem{color:var(--res-gem)} .icon--coin{color:var(--res-coin)}
 .num{font-variant-numeric:tabular-nums}
 
+/* ---------------- Design-Bausteine (11b F): Knopf-Arten, Fenster-Gerüst – andere Teile bauen darauf ---------------- */
+.btn--haupt{height:var(--k-haupt);font-size:var(--fs-15)}                 /* mit .btn--primary: der eine goldene Knopf unten im Fenster */
+.btn--zweit{height:var(--k-zweit)}                                         /* mit .btn--secondary */
+.btn--gefahr{height:var(--k-gefahr);font-size:var(--fs-15)}               /* mit .btn--danger: Angreifen */
+.btn--chip{height:var(--k-chip);padding:0 var(--ab-3);font-size:var(--fs-13);border-radius:var(--r-pill)}
+.btn--chip::before,.tipp44::before{content:"";position:absolute;left:0;right:0;top:50%;height:var(--k-tipp);transform:translateY(-50%)}   /* Tippfläche 44 px */
+.tipp44{position:relative}
+.btn-rund{position:relative;display:inline-flex;flex-direction:column;align-items:center;gap:2px;min-width:var(--k-rund);color:var(--tx-2);font:600 var(--fs-11)/1 var(--font-ui)}
+.btn-rund > .icon{width:var(--k-rund);height:var(--k-rund);padding:13px;border-radius:50%;border:1px solid var(--line-2);color:var(--gold-200);
+  background:radial-gradient(circle at 50% 30%,#232833,#0e1116);box-shadow:var(--sh-1)}
+/* Fenster: feste Kopfzeile · scrollender Mittelteil mit Schatten-Hinweis · feste Fußzeile mit dem Haupt-Knopf
+   (.panel > .phead / .pbody / .pfoot – oder für eigene Fenster .fenster > .fenster-kopf / .fenster-mitte / .fenster-fuss) */
+.fenster{display:flex;flex-direction:column;min-height:0;max-height:var(--fenster-max,70dvh)}
+.fenster-kopf,.fenster-fuss{flex:none}
+.fenster-mitte{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.fenster-fuss{display:flex;gap:var(--ab-2);align-items:center;padding:var(--ab-3) var(--ab-4);border-top:1px solid var(--line-1)}
+.fenster-mitte,.scroll-schatten,.pbody{   /* Schatten oben/unten nur, solange es dort weitergeht (Hintergrund wandert mit, Schatten bleibt) */
+  background:linear-gradient(rgb(16,19,25) 30%,rgba(16,19,25,0)) top/100% 24px no-repeat local,
+             linear-gradient(rgba(12,15,20,0),rgb(12,15,20) 70%) bottom/100% 24px no-repeat local,
+             radial-gradient(farthest-side at 50% 0,rgba(0,0,0,.55),transparent) top/100% 10px no-repeat scroll,
+             radial-gradient(farthest-side at 50% 100%,rgba(0,0,0,.6),transparent) bottom/100% 12px no-repeat scroll}
+
 /* ---------------- map layers ---------------- */
 #mapCanvas{position:fixed;inset:0;width:100vw;height:100dvh;display:block;touch-action:none;cursor:grab;z-index:var(--z-map)}
 #mapCanvas.is-dragging{cursor:grabbing}
@@ -127,28 +156,48 @@ b,strong{font-weight:600}
 /* =====================================================================
    HUD
    ===================================================================== */
+/* HUD wie Million Lords: links das Spielerbild (antippen = Profil, Name klein darunter), rechts davon EINE Zeile Werte ohne Kästen, ganz rechts der runde Rohstoff-Knopf */
 .hud{position:fixed;z-index:var(--z-hud);top:calc(var(--safe-t) + 8px);left:calc(var(--safe-l) + 10px);right:calc(var(--safe-r) + 10px);
-  display:flex;gap:6px;align-items:center;pointer-events:none}
+  display:flex;gap:var(--ab-2);align-items:flex-start;pointer-events:none}
 .hud > *{pointer-events:auto}
-.hud-me{display:none}
-/* the chips under the HUD (Wochen-Event, Kopfgeld, Invasion, Drache, Händler) */
-.midbar{position:fixed;z-index:var(--z-hud);top:calc(var(--safe-t) + 14px + var(--hud-h));left:calc(var(--safe-l) + 10px);display:flex;flex-direction:column;align-items:flex-start;gap:5px;pointer-events:none}
+.hud-me{display:flex;flex-direction:column;align-items:center;gap:3px;flex:none;width:52px}
+.hud-me .avatar-ring--sm{width:44px;height:44px}
+.hud-me .avatar-ring--sm .avatar .icon{width:22px;height:22px}
+.hud-me-text{display:block;max-width:56px;text-align:center}
+.hud-me-text b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 var(--fs-11)/1.1 var(--font-ui);color:var(--gold-100);text-shadow:0 1px 2px #000}
+.hud-me-text small{display:none}
+body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--gold-200),0 0 12px rgba(214,170,90,.5)}
+.hud-werte{flex:1 1 auto;min-width:0;height:var(--hud-h);display:flex;align-items:center;padding:0 var(--ab-1);
+  background:var(--glass);border:1px solid var(--line-2);border-radius:var(--r-pill);box-shadow:var(--sh-1);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+/* der EINE Streifen unter der Werte-Zeile: alle Dauer-Hinweise (Wochen-Event, Kopfgeld, Thron, Invasion, Drache, Händler, Saison), einzeilig –
+   der dringendste sichtbar, der Rest als Zähler „+2“ (antippen klappt alle auf) */
+.midbar{position:fixed;z-index:var(--z-hud);top:calc(var(--safe-t) + 14px + var(--hud-h));left:calc(var(--safe-l) + 70px);right:calc(var(--safe-r) + 10px);
+  display:flex;align-items:flex-start;gap:var(--ab-1);pointer-events:none}
+.midbar.offen{flex-direction:column}
 .midbar[hidden]{display:none} .midbar > *{pointer-events:auto}
-.mb-chip{display:flex;align-items:center;gap:6px;max-width:calc(100vw - 80px);height:26px;padding:0 10px 0 7px;border-radius:var(--r-pill);background:var(--glass);border:1px solid var(--line-2);box-shadow:var(--sh-1);
+.mb-mehr{position:relative;flex:none;min-width:34px;height:26px;padding:0 8px;border-radius:var(--r-pill);background:var(--glass-strong);border:1px solid var(--line-3);
+  font:700 var(--fs-11)/1 var(--font-ui);color:var(--gold-100)}
+.mb-mehr::before{content:"";position:absolute;left:-4px;right:-4px;top:50%;height:var(--k-tipp);transform:translateY(-50%)}   /* Tippfläche 44 px */
+.midbar.offen .mb-mehr{order:-1}
+.mb-chip{position:relative;display:flex;align-items:center;gap:6px;min-width:0;max-width:100%;height:26px;padding:0 10px 0 7px;border-radius:var(--r-pill);background:var(--glass);border:1px solid var(--line-2);box-shadow:var(--sh-1);
   font:600 11px/1 var(--font-ui);color:var(--tx-2);white-space:nowrap;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 .mb-chip .icon{width:14px;height:14px;flex:none;color:var(--gold-200)} .mb-chip .icon.mb-gem{width:12px;height:12px;margin-left:-3px;color:var(--res-gem)}
 .mb-chip b{color:var(--tx-1);font-variant-numeric:tabular-nums} .mb-chip i{font-style:normal;color:var(--tx-3);font-variant-numeric:tabular-nums}
 .mb-chip.is-tour{border-color:rgba(176,120,255,.55);background:linear-gradient(90deg,rgba(110,55,190,.7),rgba(16,12,24,.85))} .mb-chip.is-tour .icon{color:#f2c75c} .mb-chip.is-tour i{color:#d9c6ff}
 .mb-chip.is-drache{border-color:rgba(255,140,70,.6);background:linear-gradient(90deg,rgba(170,50,20,.78),rgba(22,10,8,.88))} .mb-chip.is-drache .icon{color:#ffc46a} .mb-chip.is-drache i{color:#ffd9c0}
 .mb-chip.is-warn{border-color:rgba(225,72,60,.6);background:linear-gradient(90deg,rgba(150,30,30,.75),rgba(20,12,12,.88));color:#ffd9d3} .mb-chip.is-warn > .icon:first-child{color:#ffb3aa}
-.res{position:relative;flex:1 1 auto;min-width:0;max-width:136px;height:var(--hud-h);display:flex;align-items:center;gap:6px;padding:0 9px 0 6px;
-  background:var(--glass);border:1px solid var(--line-2);border-radius:var(--r-sm);box-shadow:var(--sh-1);
-  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
-.res > .icon{width:18px;height:18px}   /* (flex-basis auto: freier Platz geht an den längeren Wert – „100 Mrd.“ statt „100 Mr…“) */
+.mb-chip > span{overflow:hidden;text-overflow:ellipsis}
+.mb-chip::before{content:"";position:absolute;left:0;right:0;top:50%;height:var(--k-tipp);transform:translateY(-50%)}   /* Tippfläche 44 px */
+.res{position:relative;flex:1 1 auto;min-width:0;height:100%;display:flex;align-items:center;justify-content:center;gap:var(--ab-1);padding:0 var(--ab-1)}
+.res > .icon{width:16px;height:16px}
+/* der Rohstoff-Knopf: rund, oben rechts (Tippfläche 44 px) */
+.hud > .res--roh{flex:none;width:var(--hud-h);height:var(--hud-h);padding:0;justify-content:center;border-radius:50%;
+  background:var(--glass);border:1px solid var(--line-2);box-shadow:var(--sh-1);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.hud > .res--roh::before{content:"";position:absolute;inset:-6px}   /* (flex-basis auto: freier Platz geht an den längeren Wert – „100 Mrd.“ statt „100 Mr…“) */
 .res b{font:600 var(--fs-13)/1 var(--font-ui);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .res--coin > .icon{color:var(--res-coin)} .res--gem > .icon{color:var(--res-gem)} .res--troop > .icon{color:var(--res-troop)}
 /* phone portrait: the dock already has Shop - the "+" would only squeeze the gem value into an ellipsis */
-@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){ .res,.nav,.mapctl,.toast,.mabar{background:var(--glass-strong)} }
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){ .hud-werte,.res--roh,.nav,.mapctl,.toast,.mabar{background:var(--glass-strong)} }
 
 /* avatar ring (profile header + desktop HUD). --progress (0-100) is written by renderProfile */
 .avatar-ring{--progress:0;position:relative;flex:none;width:48px;height:48px;border-radius:50%;padding:2px;
@@ -169,19 +218,22 @@ b,strong{font-weight:600}
    NAVIGATION  #cornerButtons  (phone = bottom dock)
    ===================================================================== */
 .nav{position:fixed;z-index:var(--z-dock);left:0;right:0;bottom:0;height:calc(var(--dock-h) + var(--safe-bd));
-  padding:0 calc(var(--safe-r) + 6px) var(--safe-bd) calc(var(--safe-l) + 6px);display:grid;grid-template-columns:repeat(6,1fr);
+  padding:0 calc(var(--safe-r) + 6px) var(--safe-bd) calc(var(--safe-l) + 6px);display:grid;grid-template-columns:repeat(5,1fr);
   background:linear-gradient(180deg,rgb(18,21,28),rgb(8,10,13));border-top:1px solid var(--line-2);box-shadow:0 -12px 30px rgba(0,0,0,.45)}
 .nav::before{content:"";position:absolute;left:18%;right:18%;top:-1px;height:1px;background:linear-gradient(90deg,transparent,var(--gold-200),transparent)}
-.nav-btn{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:0;color:var(--tx-3);transition:color var(--dur-1)}
-.nav-btn .icon{width:22px;height:22px}
-.nav-l{font:600 var(--fs-9)/1 var(--font-ui);letter-spacing:var(--track-caps);text-transform:uppercase;white-space:nowrap}
+/* Leiste: 5 runde Knöpfe mit festen Plätzen (Karte/Stadt · Bündnis · Kampf · Events · Shop); das Profil öffnet das Spielerbild im HUD */
+.nav-btn{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0;color:var(--tx-2);transition:color var(--dur-1)}
+.nav-btn > .icon{width:var(--k-rund);height:var(--k-rund);padding:13px;border-radius:50%;border:1px solid var(--line-2);color:var(--gold-200);
+  background:radial-gradient(circle at 50% 30%,#232833,#0e1116);box-shadow:var(--sh-1);transition:border-color var(--dur-1),box-shadow var(--dur-1)}
+.nav-l{font:600 var(--fs-11)/1 var(--font-ui);letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+#profileBtn{display:none}   /* nur noch über das Spielerbild (#hudPlayer) – der Knopf bleibt für die Fenster-Logik */
 .nav-btn:hover{color:var(--tx-1)}
+.nav-btn:hover > .icon{border-color:var(--line-3)}
 .nav-btn.active{color:var(--gold-100)}
-.nav-btn.active .icon{color:var(--gold-300);filter:drop-shadow(0 0 6px rgba(214,170,90,.45))}
-.nav-btn.active::after{content:"";position:absolute;top:0;left:50%;width:28px;height:2px;transform:translateX(-50%);background:linear-gradient(90deg,transparent,var(--gold-300),transparent)}
+.nav-btn.active > .icon{color:var(--gold-100);border-color:var(--gold-300);background:radial-gradient(circle at 50% 30%,#4a3a1c,#1a140a);box-shadow:0 0 12px rgba(214,170,90,.45)}
 .badge{position:absolute;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--blood-400);border:1.5px solid var(--ink-1);
   color:#fff;font:700 9.5px/13px var(--font-ui);text-align:center;font-variant-numeric:tabular-nums;pointer-events:none}
-.nav-btn .badge{top:7px;left:calc(50% + 6px)}
+.nav-btn .badge{top:2px;left:calc(50% + 12px)}
 
 /* =====================================================================
    MAP CONTROLS
@@ -425,20 +477,18 @@ body.has-sheet .anleitung{display:none}
 @keyframes anl-puls{0%,100%{box-shadow:0 0 0 0 rgba(240,200,110,.85)}60%{box-shadow:0 0 0 9px rgba(240,200,110,0)}}
 body[data-anl-puls="heim"] #homeBtn,body[data-anl-puls="knoepfe"] :is(#mapControls button,#hudRoh),
 body[data-anl-puls="angriff"] #attackBtn,body[data-anl-puls="aufwerten"] #upgradeBtn,
-body[data-anl-puls="stadt"] #cityNavBtn,body[data-anl-puls="stadtfenster"] #cityBtn,body[data-anl-puls="bauen"] #cityUpgradeBtn,
-body[data-anl-puls="sammeln"] #fieldSheet [data-fsend],body[data-anl-puls="events"] #goalsBtn,
+body[data-anl-puls="stadt"] #cityNavBtn > .icon,body[data-anl-puls="stadtfenster"] #cityBtn,body[data-anl-puls="bauen"] #cityUpgradeBtn,
+body[data-anl-puls="sammeln"] #fieldSheet [data-fsend],body[data-anl-puls="events"] #goalsBtn > .icon,
 body[data-anl-puls="abholen"] #goalsPopup :is([data-daily],[data-quest],[data-bonus],[data-chain],[data-inbox],[data-inbox-all],[data-ach],[data-ach-all],[data-pass-l],[data-pass-all],[data-pass-old]):not(:disabled)
   {animation:anl-puls 1.4s ease-out infinite}
-body.has-midbar:not(.has-sheet) .toast{top:calc(var(--safe-t) + var(--hud-top-space) + var(--mb-h,0px))}
 /* in der Stadt (Handy): der Hinweis erst unter der Bauarbeiter-Zeile – nie über ihren Knöpfen (--stadt-kopf: Unterkante, 08d stadtKopf) */
 @media (max-width:899px),(max-height:500px){ body.in-stadt:not(.has-sheet) .toast{top:calc(var(--stadt-kopf,96px) + 10px)} }
 @keyframes toast-in{from{opacity:0;translate:0 -6px}}
-/* a full sheet starts right under the HUD: the toast then floats over the HUD row instead of the sheet header */
-/* phone: while a sheet is open the toast docks just above the sheet's footer (never over the HUD values or the sheet header) */
+/* Handy: der Hinweis bleibt oben unter dem HUD (über der Karte, die Fenster sind höchstens 70 % hoch) – nie über Fenster-Kopf/Fuß oder den
+   Zoom-Knöpfen; reicht ein Fenster doch so hoch, liegt der Hinweis dahinter */
 @media (max-width:899px) and (min-height:501px){
-  body.has-sheet .toast{top:auto;bottom:calc(var(--dock-h) + var(--safe-bd) + 72px);box-shadow:var(--sh-2),0 0 0 1px rgba(0,0,0,.35)}
+  body.has-sheet .toast{z-index:calc(var(--z-sheet) - 1);box-shadow:var(--sh-2),0 0 0 1px rgba(0,0,0,.35)}
   body.has-sheet .toast--lang{display:none}   /* ein langer Hinweis würde das Fenster verdecken (die Saison steht dort ohnehin: Events → Boss & Lager) */
-  body.has-sheet:has(#battleLogPopup.is-open,#goalsPopup.is-open,#shopPopup.is-open,#profilePopup.is-open:not([data-tab="equip"])) .toast{bottom:calc(var(--dock-h) + var(--safe-bd) + 16px)}
 }
 
 /* =====================================================================
@@ -492,7 +542,7 @@ body.has-midbar:not(.has-sheet) .toast{top:calc(var(--safe-t) + var(--hud-top-sp
 .psub:has(> .chip--scouted){flex-wrap:wrap;row-gap:3px}   /* fremde Basis: lieber zweite Zeile als „GES…“ oder „Kevin_93 · S…“ */
 .dot{width:7px;height:7px;border-radius:50%;flex:none;box-shadow:0 0 0 2px rgba(0,0,0,.35)}
 .dot--player{background:var(--f-player)} .dot--enemy{background:var(--f-enemy)} .dot--neutral{background:var(--f-neutral)}
-.btn-x{width:32px;height:32px;display:grid;place-items:center;align-self:start;border-radius:var(--r-sm);color:var(--tx-2);border:1px solid transparent;transition:color var(--dur-1),border-color var(--dur-1)}
+.btn-x{width:var(--k-tipp);height:var(--k-tipp);display:grid;place-items:center;align-self:start;border-radius:var(--r-sm);color:var(--tx-2);border:1px solid transparent;transition:color var(--dur-1),border-color var(--dur-1)}
 .btn-x .icon{width:16px;height:16px}
 .btn-x:hover{color:var(--gold-100);border-color:var(--line-2)}
 
@@ -509,14 +559,15 @@ body.has-midbar:not(.has-sheet) .toast{top:calc(var(--safe-t) + var(--hud-top-sp
 .pbody{position:relative;flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
   padding:14px;display:flex;flex-direction:column;gap:12px;scrollbar-width:thin;scrollbar-color:var(--ink-5) transparent;
   /* top 10px fade: scrolled content dissolves before it reaches the header crest (.phead::after hangs 6px into the body) */
-  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 10px,#000 calc(100% - 14px),transparent);mask-image:linear-gradient(180deg,transparent 0,#000 10px,#000 calc(100% - 14px),transparent)}
+  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 10px);mask-image:linear-gradient(180deg,transparent 0,#000 10px)}   /* unten: Schatten-Hinweis (01 .pbody) */
 .pfoot{position:relative;flex:none;display:flex;gap:8px;align-items:center;padding:10px 14px 12px;border-top:1px solid var(--line-1);
   background:linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,.3))}
 .pfoot--wrap{flex-wrap:wrap}
 .pfoot:not(:has(> :not([style*="display: none"]):not([hidden]))){display:none}
 
 /* ---- panel placement: PHONE PORTRAIT (default) ---- */
-.panel--sheet{--sheet-max:calc(100dvh - var(--safe-t) - var(--hud-top-space) - var(--dock-h) - var(--safe-bd));
+/* Handy: ein Fenster ist höchstens 70 % hoch – die Karte bleibt oben sichtbar (Insel/Angriff 62 %) */
+.panel--sheet{--sheet-max:min(70dvh,calc(100dvh - var(--safe-t) - var(--hud-top-space) - var(--dock-h) - var(--safe-bd)));
   left:var(--safe-l);right:var(--safe-r);top:auto;bottom:calc(var(--dock-h) + var(--safe-bd));max-height:var(--sheet-max);
   z-index:var(--z-sheet);border-radius:var(--r-lg) var(--r-lg) 0 0}   /* bottom-anchored, hugs its content up to the HUD */
 #profilePopup{min-height:min(680px,var(--sheet-max))}   /* stable height: switching tabs never makes the sheet jump */
@@ -524,7 +575,7 @@ body.has-midbar:not(.has-sheet) .toast{top:calc(var(--safe-t) + var(--hud-top-sp
 .panel--island{left:var(--safe-l);right:var(--safe-r);bottom:calc(var(--dock-h) + var(--safe-bd));z-index:var(--z-sheet);
   max-height:min(62dvh,calc(100dvh - var(--dock-h) - var(--safe-bd) - var(--safe-t) - var(--hud-top-space)));border-radius:var(--r-lg) var(--r-lg) 0 0}
 .panel--item{left:var(--safe-l);right:var(--safe-r);bottom:calc(var(--dock-h) + var(--safe-bd));z-index:var(--z-modal);
-  max-height:min(76dvh,calc(100dvh - var(--dock-h) - var(--safe-bd) - var(--safe-t) - var(--hud-top-space)));border-radius:var(--r-lg) var(--r-lg) 0 0}
+  max-height:min(70dvh,calc(100dvh - var(--dock-h) - var(--safe-bd) - var(--safe-t) - var(--hud-top-space)));border-radius:var(--r-lg) var(--r-lg) 0 0}
 .panel .sheet-grab + .phead{padding-top:4px}
 @media (max-width:899px),(max-height:500px){ body.has-sheet .mabar{display:none!important} }
 body.has-panel .mapctl{display:none}
@@ -1152,11 +1203,12 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
   .nav-btn.active::after{top:50%;left:0;width:2px;height:28px;transform:translateY(-50%);background:linear-gradient(180deg,transparent,var(--gold-300),transparent)}
   .nav-btn .badge{top:calc(50% - 24px)}
   .hud{left:calc(var(--rail-w) + var(--safe-l) + 10px);right:auto;width:auto;max-width:calc(100vw - var(--rail-w) - 40px)}
-  .midbar{left:calc(var(--rail-w) + var(--safe-l) + 10px)} body.has-panel .midbar{display:none}
+  .midbar{left:calc(var(--rail-w) + var(--safe-l) + 70px);right:auto;max-width:calc(100vw - var(--rail-w) - 90px)} body.has-panel .midbar{display:none}
   body.has-panel .hud{max-width:calc(100vw - var(--rail-w) - var(--safe-l) - min(380px,50vw) - var(--safe-r) - 36px)}
-  .res{flex:0 0 auto;max-width:none}   /* pills size to their value: no ellipsis on "999,9 Tsd." */
+  .res{flex:0 0 auto;max-width:none;padding:0 var(--ab-2)}   /* pills size to their value: no ellipsis on "999,9 Tsd." */
   .res b{min-width:max-content}
   .mapctl{bottom:calc(var(--safe-b) + 10px)}
+  .anleitung{left:calc(var(--rail-w) + var(--safe-l) + 10px);bottom:calc(var(--safe-b) + 10px)}   /* neben der Leiste, nie darüber */
   .mabar{left:calc(var(--rail-w) + var(--safe-l) + 10px);bottom:calc(var(--safe-b) + 10px);right:calc(var(--safe-r) + 60px)}
   body.is-multi .mapctl{display:flex;bottom:calc(var(--safe-b) + 10px)}
   .toast{left:calc(50% + var(--rail-w) / 2)}
@@ -1186,10 +1238,16 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
 /* desktop */
 @media (min-width:900px) and (min-height:501px){
   :root{--hud-h:34px;--tile:56px}
-  .hud{top:14px;left:14px;right:auto;gap:0;padding:0;background:var(--glass);border:1px solid var(--line-2);border-radius:var(--r-sm);box-shadow:var(--sh-2);
+  .hud{top:14px;left:14px;right:auto;gap:0;padding:0;align-items:center;background:var(--glass);border:1px solid var(--line-2);border-radius:var(--r-sm);box-shadow:var(--sh-2);
     -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
-  .midbar{top:72px;left:14px}
-  .hud-me{display:flex;align-items:center;gap:12px;height:48px;padding:0 14px 0 8px;border-right:1px solid var(--line-1);text-align:left}
+  .midbar{top:72px;left:14px;right:auto;max-width:min(560px,calc(100vw - 460px))}
+  .hud-me{flex-direction:row;width:auto;align-items:center;gap:12px;height:48px;padding:0 14px 0 8px;border-right:1px solid var(--line-1);text-align:left}
+  .hud-me .avatar-ring--sm{width:34px;height:34px}
+  .hud-me .avatar-ring--sm .avatar .icon{width:17px;height:17px}
+  .hud-me-text{max-width:none;text-align:left}
+  .hud-me-text small{display:block}
+  .hud-werte{flex:none;height:auto;padding:0;background:none;border:0;border-radius:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+  .hud > .res--roh{width:auto;height:48px;padding:0 14px;border:0;border-left:1px solid var(--line-1);border-radius:0;background:none;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
   .hud-me:hover{background:rgba(255,255,255,.03)}
   .hud-me-text b{display:block;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 13px/1.1 var(--font-display);color:var(--gold-100);letter-spacing:.04em}
   .hud-me-text small{display:block;font:500 10.5px/1.2 var(--font-ui);color:var(--tx-3);margin-top:2px}
@@ -1197,24 +1255,21 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
   .res + .res{border-left:1px solid var(--line-1)}
   .res b{font-size:var(--fs-15);min-width:6.2em}   /* room for "999,9 Tsd.": the frame never jumps when a value changes length */
   .res > .icon{width:20px;height:20px}
-  .nav{left:auto;bottom:auto;top:14px;right:14px;height:auto;padding:4px;display:flex;gap:2px;background:var(--glass);border:1px solid var(--line-2);border-radius:var(--r-sm);box-shadow:var(--sh-2);
+  /* Leiste unten Mitte (gleiche Reihenfolge wie am Handy); mit offenem Fenster rechts mittig über der freien Karte */
+  .nav{left:50%;right:auto;top:auto;bottom:14px;height:auto;transform:translateX(-50%);padding:6px 10px;display:flex;gap:6px;background:var(--glass);border:1px solid var(--line-2);border-radius:var(--r-lg);box-shadow:var(--sh-2);
     -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+  body.has-sheet .nav{left:calc(50% - 209px)}
   .nav::before{display:none}
-  .nav-btn{flex-direction:row;gap:8px;height:40px;padding:0 14px;border-radius:var(--r-xs)}
-  .nav-btn .icon{width:18px;height:18px}
-  .nav-l{font:600 12px/1 var(--font-display);letter-spacing:.06em;text-transform:none}
-  .nav-btn:hover{background:rgba(255,255,255,.03)}
-  .nav-btn.active{background:linear-gradient(180deg,rgba(214,170,90,.14),rgba(214,170,90,.04));box-shadow:inset 0 0 0 1px var(--line-2)}
-  .nav-btn.active::after{top:auto;bottom:-5px;width:40px}
-  .nav-btn .badge{top:3px;left:24px}
+  .nav-btn{width:72px;gap:4px}
+  .nav-l{font:600 12px/1 var(--font-display);letter-spacing:.04em;text-transform:none}
   .mapctl{bottom:18px;right:18px}
   body.has-panel .mapctl{display:flex}
   body.has-sheet .mapctl{right:432px}
-  .mabar{left:50%;right:auto;bottom:22px;transform:translateX(-50%);width:min(560px,calc(100vw - 40px))}
+  .mabar{left:50%;right:auto;bottom:104px;transform:translateX(-50%);width:min(560px,calc(100vw - 40px))}
   body.is-multi .mapctl{display:flex;bottom:18px}
-  .toast,body.has-midbar:not(.has-sheet) .toast{top:auto;bottom:22px;max-width:min(640px,calc(100vw - 40px))}   /* (the mid-bar rule set a top too: the toast stretched over the whole height) */
+  .toast{top:auto;bottom:104px;max-width:min(640px,calc(100vw - 40px))}   /* über der Leiste */
   body.has-sheet .toast{left:calc(50% - 209px);max-width:min(640px,calc(100vw - 458px))}   /* centred in the map area left of the drawer */
-  body.is-multi .toast{bottom:88px}
+  body.is-multi .toast{bottom:170px}
   .scrim{display:none!important}
   .sheet-grab{display:none}
   .panel .sheet-grab + .phead{padding-top:10px}
@@ -1680,23 +1735,25 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 <canvas id="mapCanvas" aria-label="Weltkarte"></canvas>
 <div id="mapVignette" aria-hidden="true"></div>
 
-<!-- HUD: resources (phone = 3 pills, desktop = one framed bar with player plate) -->
+<!-- HUD: Spielerbild (antippen = Profil) + eine Werte-Zeile + runder Rohstoff-Knopf; Desktop = ein Rahmen mit Namensschild -->
 <div id="hud" class="hud">
   <button id="hudPlayer" class="hud-me" type="button" title="Profil öffnen">
     <span class="avatar-ring avatar-ring--sm"><span class="avatar"><svg class="icon"><use href="#i-profile"/></svg></span><span id="hudLevel" class="lvl">1</span></span>
     <span class="hud-me-text"><b id="hudName">Du</b><small id="hudRankLine">Bronze</small></span>
   </button>
-  <div class="res res--coin" title="Münzen"><svg class="icon"><use href="#i-coin"/></svg><b id="coinCount">0</b></div>
-  <div class="res res--gem" title="Edelsteine"><svg class="icon"><use href="#i-gem"/></svg><b id="gemCount">0</b></div>
-  <div class="res res--troop" title="Truppen"><svg class="icon"><use href="#i-troops"/></svg><b id="troopCount">0</b></div>
+  <div class="hud-werte">
+    <div class="res res--coin" title="Münzen"><svg class="icon"><use href="#i-coin"/></svg><b id="coinCount">0</b></div>
+    <div class="res res--gem" title="Edelsteine"><svg class="icon"><use href="#i-gem"/></svg><b id="gemCount">0</b></div>
+    <div class="res res--troop" title="Truppen"><svg class="icon"><use href="#i-troops"/></svg><b id="troopCount">0</b></div>
+  </div>
   <button id="hudRoh" class="res res--roh" type="button" title="Rohstoffe" aria-label="Rohstoffe"><svg class="icon"><use href="#i-crate"/></svg><span class="roh-mini"><span class="roh-v roh-h"><svg class="icon"><use href="#i-wood"/></svg><b data-r="h">0</b></span><span class="roh-v roh-s"><svg class="icon"><use href="#i-stone"/></svg><b data-r="s">0</b></span><span class="roh-v roh-e"><svg class="icon"><use href="#i-iron"/></svg><b data-r="e">0</b></span></span></button>
 </div>
 <div id="rohDrop" class="roh-drop" hidden></div>
 
 <div id="midBar" class="midbar" hidden></div>
 
-<!-- Navigation (die EINE Ordnung, Abschnitt 26): Stadt · Bündnis · Kampf · Events · Shop · Profil – jedes Fenster nur hier.
-     phone = bottom dock, landscape phone = left rail, desktop = top-right cluster -->
+<!-- Navigation (die EINE Ordnung, Abschnitt 26): Karte/Stadt · Bündnis · Kampf · Events · Shop – runde Knöpfe; das Profil über das Spielerbild.
+     phone = bottom dock, landscape phone = left rail, desktop = unten Mitte -->
 <nav id="cornerButtons" class="nav" aria-label="Hauptmenü">
   <button id="cityNavBtn" class="nav-btn" type="button" title="Stadt: Burg, Gebäude, Forschung, Helden, Rohstoffe"><svg class="icon"><use href="#i-castle"/></svg><span class="nav-l">Stadt</span></button>
   <button id="bundBtn" class="nav-btn" type="button" title="Bündnis"><svg class="icon"><use href="#i-bund"/></svg><span class="nav-l">Bündnis</span><span id="bundBadge" class="badge" style="display:none">0</span></button>
