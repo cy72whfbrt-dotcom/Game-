@@ -1537,6 +1537,15 @@ Nacht – vorher bauen und testen.
    Auch prüfen: Pass-Belohnung Stufe 40 Premium „Saisonkrone · Rahmen“ – passt das zur Regel „Rahmen nicht kaufbar, nur Saison-
    Top-10 und Mitte“? (Alexander fragen.) Nebenbei: Edelsteine 4.000 statt 1.000 – vermutlich Thron-Punkte-Umtausch aus dem
    Postfach abgeholt; prüfen, dass die Summe stimmt.
+5. **Events beim Reset nicht zurückgesetzt** (Bilder 9fd95dd9, 5025e146, f920be79, 9840c589, 18:33):
+   - Krieger-Woche: Punkte laufen aus der alten Saison weiter (Top: Clara_V 24.323, Alexander 1.832 / Platz 59) → beim Reset
+     Wochen-Punkte aller auf 0 (bzw. Woche neu starten).
+   - **Tagesboss „Kraken Thalor“ hat 2,6 Brd. Leben** – alte Wirtschaft! Mit 5.000 Start-Truppen unerreichbar → Boss-Leben an
+     die neue Wirtschaft anpassen (wie neutrale Basen/Tore) und beim Reset neu setzen.
+   - Drache „Letzter Drache“: Clara_V 1,6 Bio., Jonas_K 630,7 Mrd. … und Invasion „Letzte Invasion“ – alte Ranglisten stehen noch
+     da → beim Reset leeren (oder als „letzte Saison“ kennzeichnen). Drachen-Leben/Schaden ebenfalls an neue Wirtschaft prüfen.
+   - Barbaren-Lager „bis Stufe 1“, 0/30 heute – ok? (Woche-Bonus „10 Lager mehr pro Tag“).
+   - Erfolge 25/63 bleiben (gehören zum Konto – ok, wenn so gewollt; Alexander fragen).
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
