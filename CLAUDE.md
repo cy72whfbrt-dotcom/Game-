@@ -85,6 +85,11 @@ Alles Wichtige steht in `LIESMICH.md` – jede Änderung wird dort eingetragen.
   nach großen Änderungen an Oberfläche/Abläufen: spielt die Vorschau auf Handy + Desktop, Liste mit Bildschirmfotos) ·
   **livewaechter** (stündlich + nach jedem Hochladen, nur lesen: `werkzeuge/nach_hochladen.sh`, „LIVE OK“ oder Funde) ·
   **designer** (vor jeder Design-Aufgabe: Vorbilder online → Vorgabe; danach: Bilder prüfen, bevor Alexander sie sieht). Nur ZWEI Prüfungen (schnell + end). Schnell UND genau.
+  **DURCHLAUF (Alexander 6.10., gilt für jede Aufgabe):** Programmierer vorn → direkt dahinter Prüfer → dahinter Designer,
+  alle GLEICHZEITIG, nicht nacheinander. Prüfer prüft jedes fertige Stück sofort wie ein Spieler (Vorschau, Handy-Fotos:
+  Zahlen sinnvoll? Ablauf klappt? Fehler?) und gibt Funde gleich an den Programmierer. Designer ändert nichts: sucht
+  Grafik-Fehler (→ an Prüfer → an Programmierer) und gibt Alexander Verbesserungs-Ideen. Nichts geht hoch, bevor Prüfer
+  + Designer durch sind. Claude startet nichts ohne Alexanders Auftrag (Fehler-Meldungen nur in die Merkliste).
   **Niemand wartet still:** jeder Agent schreibt beim Start und mindestens alle 5 Min. eine Zeile in
   `<scratchpad>/firma/<kurzname>.txt` (`<Uhrzeit UTC> | <Schritt> | <was läuft>`, am Ende `… | fertig | <Ergebnis>`);
   den Kurznamen gibt Claude im Auftrag mit. Älter als 10 Min. = „hängt“.
