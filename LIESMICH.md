@@ -672,6 +672,11 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   „Mindestens 10 Zeichen“) und werden beim Tippen grün/rot (nur Länge; der Rest bleibt Server-Prüfung). Auge-Knopf zeigt das
   Passwort (`type="button"`, ohne Skript versteckt). App-Link als dunkler Knopf statt blauem Link. Login/Registrieren,
   Nonce/CSP und Bremsen unverändert. Tests in `tests/server_test.php` („Startseite: …“).
+- **6.10. Design 11b F – Namensfahnen auf der Karte (P2):** Bündnis-Kürzel als eigenes Chip vor dem Namen (statt „[WEL] …“),
+  Name bis 14 Zeichen (danach „…“; zu breit → erst kleiner bis 11 px, dann schmaler, nie abgeschnitten), feste Breite je Stufe,
+  Schrift überall mind. 11 px, Fahne höher (Zeilen berühren sich nicht). Weit weg (Stufe C) nur Wappen + Truppenzahl.
+  Neutrale Basen ruhig: nur Wappen + Stufe (gespäht: + Zahl), die volle Fahne „Neutral“ erst beim Antippen oder ganz nah
+  (`TIER`/`bannerModel` spiel/03b, `paintPlate`/`layoutBanners` spiel/03c). Test `karte_fahnen_test`.
 
 - **5./6.10. Nacht – Mitspieler schätzen Angriffe (11b C, Alexander N1):** Mitspieler kannten beim Losmarsch die genaue
   Stärke eines Angriffs (Held, Fähigkeit, Titel, Forschung) und schickten genau passende Hilfe oder räumten rechtzeitig. Jetzt
