@@ -1588,6 +1588,9 @@ Nacht – vorher bauen und testen.
     Feld leer ist) und wann man zurück ist. Gewünscht wie RoK: „fertig in 3 h 12 m“, Fortschrittsbalken (gesammelt/Traglast),
     Sammel-Tempo pro Stunde; auch am Marsch-Symbol auf der Karte und in Kampf → Unterwegs. Prüfen: 5 gesammelt nach ein paar
     Minuten wirkt langsam – Tempo aus Spieler-Sicht ok?
+13. **DRINGEND – Münzen explodieren durch Basis-Aufwerten** (Bilder d5be07d4 18:40 → 4e504f53 18:43): in 2 Minuten Basis
+    Stufe 11 → 64, Münzen 3.617 → 152,9 Mio., Münzen/Std. 40.000 → 66,7 Mio. Gewinnschleife beim Aufwerten (Kosten
+    vs. Ertrag/Belohnung). Ursache wird gesucht (Sucher such-muenz) → sofort beheben + hochladen (mit Alexanders Ja).
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
