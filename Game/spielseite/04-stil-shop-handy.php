@@ -5,7 +5,6 @@
    ===================================================================== */
 .field-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:4px}
 .field-l{font:600 var(--fs-10)/1 var(--font-ui);letter-spacing:.12em;text-transform:uppercase;color:var(--tx-3)}
-.from-field{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:10px;min-width:0}   /* Angriff: Startbasis wählen (Handy: groß genug zum Tippen, 16px – iOS zoomt nicht) */
 .from-sel{width:100%;min-width:0;height:38px;padding:0 10px;border:1px solid var(--line-2);border-radius:var(--r-xs);background:#12151b;color:var(--tx-1);font:600 16px/1 var(--font-ui);box-sizing:border-box;text-overflow:ellipsis}
 .from-sel:focus{outline:none;border-color:var(--gold-300);box-shadow:0 0 0 2px rgba(214,170,90,.25)}
 .val{font:500 var(--fs-12)/1 var(--font-ui);color:var(--tx-3);font-variant-numeric:tabular-nums;white-space:nowrap}

@@ -75,7 +75,6 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
 .panel--island .seg button::before{content:"";position:absolute;left:-1px;right:-1px;top:-5px;bottom:-5px}   /* (ab der Innenkante: 1 px Rand dazu) */
 .panel--island .hero-seg.chips-quer{padding-block:4px}   /* (die Liste schiebt quer: die Tippfläche braucht Platz im Rahmen) */
 .panel--island .pfoot .btn{min-height:var(--k-zweit)}
-.from-field{grid-template-columns:minmax(0,1fr);gap:4px}   /* Startbasis: Name, Truppen und Marschzeit ganz zu lesen */
 .from-sel{padding:0 6px 0 10px;font-weight:500}   /* („· reicht“ dahinter passt auch noch) */
 .mact button{position:relative} .logRow .mact button,.march-all .mact button{min-height:36px} .mact button::before{content:"";position:absolute;left:-1px;right:-1px;top:-5px;bottom:-5px}
 @media (pointer:coarse){ .mapctl button{width:44px;height:44px} .ap-kopf .from-sel{height:44px} }

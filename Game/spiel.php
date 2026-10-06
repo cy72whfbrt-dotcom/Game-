@@ -1146,11 +1146,37 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
 #popupActions > .act.act--haupt:disabled > .act-t,#popupActions > .act.act--haupt:disabled > .act-s{color:var(--tx-4)}
 .ap-kopf{position:sticky;top:-14px;z-index:2;display:flex;flex-direction:column;gap:8px;padding-bottom:8px;border-bottom:1px solid var(--line-1);background:#11151c;
   box-shadow:-14px 0 0 #11151c,14px 0 0 #11151c,0 -14px 0 #11151c,-14px -14px 0 #11151c,14px -14px 0 #11151c}   /* (Schatten statt Rand: deckt den Innenabstand, ohne waagrecht zu scrollen) */
-.ap-kopf .force{padding:8px 10px} .ap-kopf .force b{font-size:var(--fs-15)} .ap-kopf .from-sel{height:40px}
-#popupStats .force--foe small[data-foe="sub"]{white-space:normal}
-.ap-truppen .troop-in{width:7.5em;max-width:40vw;height:32px;padding:0 4px;border:0;border-bottom:1px dashed var(--line-3);border-radius:0;background:transparent;font-size:var(--fs-15)}
-.ap-truppen .troop-in:focus{border-bottom-style:solid;box-shadow:none}
-.ap-truppen .field-top{align-items:center}
+.ap-kopf{gap:4px;padding-bottom:4px} .popup-stats:has(> .ap-kopf){gap:8px} .ap-kopf .from-sel{height:40px;border:0;background:rgba(0,0,0,.3)}   /* (weniger Rahmen: Auswahl nur dunkler) */
+.panel--island:has(.ap-kopf) .phead::after{display:none}   /* Angriff: keine Raute unter dem Titel (der Kopf hat schon seine Kante) */
+/* Angriff kompakt: ANGRIFF | VS | ABWEHR – kleine Überschrift, Zahl, darunter EINE Zeile woraus (ganz beim Draufzeigen) */
+.ap-kopf .versus{grid-template-columns:minmax(0,1fr) 20px minmax(0,1fr);gap:4px} .ap-kopf .vs{width:18px;height:18px} .ap-kopf .vs span{font-size:8px}
+.ap-kopf .force{display:flex;flex-direction:column;justify-content:center;padding:6px 8px;border:0}
+.ap-kopf .force b{margin-top:3px;font-size:var(--fs-17);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ap-kopf .force small,#popupStats .ap-kopf .force--foe small[data-foe="sub"]{margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ap-kopf .force--foe{align-items:flex-end} .ap-kopf .force--foe > *{max-width:100%} .ap-kopf .force--me .stat-l{justify-content:flex-start}
+.ap-spaehen{position:relative;display:inline-flex;align-items:center;gap:4px;height:24px;margin-top:3px;padding:0 8px;border:1px solid var(--line-3);border-radius:var(--r-xs);background:rgba(214,170,90,.12);color:var(--gold-100);font:600 var(--fs-11)/1 var(--font-ui)}
+.ap-spaehen::before{content:"";position:absolute;inset:-10px -4px} .ap-spaehen .icon{width:12px;height:12px} .ap-spaehen:disabled{opacity:.5}   /* (Tippfläche 44 px) */
+.ap-bal{display:flex;align-items:center;gap:8px} .ap-bal .balance{flex:1 1 auto} .ap-bal .balance-note{margin:0;white-space:nowrap}   /* Balken + „Überlegen 190×“ in einer Zeile */
+#previewToll{color:var(--gold-200)} #previewToll .icon{width:11px;height:11px;margin:0 3px 0 1px;vertical-align:-1px}   /* Maut/Tor in der Überzeile: keine zweite Kopfzeile */
+/* Truppen: Schieber über die ganze Breite (Daumen), darunter 25/50/75/Alle und die Zahl */
+.ap-truppen{display:flex;flex-direction:column;gap:2px}
+.ap-regler{display:flex;align-items:center;justify-content:space-between;gap:8px} .ap-regler .seg{flex:none;grid-template-columns:repeat(4,42px);margin-top:0}
+.ap-regler .val{display:flex;min-width:0}
+.ap-truppen .troop-in{width:7.5em;max-width:40vw;height:36px;padding:0 6px;border:0;border-radius:var(--r-xs);background:rgba(0,0,0,.3);font-size:var(--fs-15)}
+.ap-truppen .troop-in:focus{box-shadow:0 0 0 1px var(--gold-300)}
+.btn-zeit{display:none} #attackBtn.mit-zeit .btn-zeit{display:inline-flex;align-items:center;gap:3px;margin-left:8px;font:600 var(--fs-12)/1 var(--font-ui);letter-spacing:0;text-transform:none;opacity:.9;font-variant-numeric:tabular-nums}
+#attackBtn .btn-zeit .icon{width:12px;height:12px}   /* Marschzeit mit Sanduhr im Knopf (wie Rise of Kingdoms) */
+/* Held + Zweitheld: zwei Chips in einer Zeile, antippen klappt die Auswahl darunter auf */
+.ap-held{display:flex;flex-direction:column;gap:4px} .ap-held-zeile{display:flex;gap:6px}
+.ap-hchip{position:relative;flex:1 1 0;min-width:0;display:flex;align-items:center;gap:6px;min-height:var(--k-tipp);padding:0 24px 0 8px;border-radius:var(--r-xs);background:var(--ink-3);border:1px solid var(--line-1);border-left:3px solid var(--hc,var(--line-1));color:var(--tx-1);text-align:left}
+.ap-hchip::after{content:"";position:absolute;right:10px;top:50%;width:6px;height:6px;margin-top:-5px;border-right:1.5px solid var(--tx-3);border-bottom:1.5px solid var(--tx-3);transform:rotate(45deg)}
+.ap-hchip.on{background:rgba(214,170,90,.12);border-color:var(--line-3);border-left-color:var(--hc,var(--line-3))} .ap-hchip.on::after{margin-top:-1px;transform:rotate(-135deg)}
+.ap-hchip .hero-pic{width:26px;height:26px;flex:none;border-radius:5px;border:1px solid var(--hc)}
+.ap-hchip-t{display:flex;flex-direction:column;min-width:0}
+.ap-hchip-t b{font:600 var(--fs-13)/1.15 var(--font-ui);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ap-hchip-t small{font:500 var(--fs-11)/1.2 var(--font-ui);color:var(--gold-200);white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .ap-hchip-t small .icon{width:10px;height:10px;vertical-align:-1px}
+.ap-held .seg.hero-seg2{margin-top:0} .ap-held .hero-seg2-l{display:none}   /* („Zweitheld · 50 %“ steht im Chip) */
+.ap-herofx{font:500 var(--fs-11)/1.3 var(--font-ui);color:var(--tx-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .ap-herofx:empty{display:none}
 .hero-seg.chips-quer{flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;padding-bottom:2px}
 .hero-seg.chips-quer::-webkit-scrollbar{display:none}
 .hero-seg.chips-quer > button{flex:none;min-width:max-content;padding:0 12px}
@@ -1160,7 +1186,6 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
    ===================================================================== */
 .field-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:4px}
 .field-l{font:600 var(--fs-10)/1 var(--font-ui);letter-spacing:.12em;text-transform:uppercase;color:var(--tx-3)}
-.from-field{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:10px;min-width:0}   /* Angriff: Startbasis wählen (Handy: groß genug zum Tippen, 16px – iOS zoomt nicht) */
 .from-sel{width:100%;min-width:0;height:38px;padding:0 10px;border:1px solid var(--line-2);border-radius:var(--r-xs);background:#12151b;color:var(--tx-1);font:600 16px/1 var(--font-ui);box-sizing:border-box;text-overflow:ellipsis}
 .from-sel:focus{outline:none;border-color:var(--gold-300);box-shadow:0 0 0 2px rgba(214,170,90,.25)}
 .val{font:500 var(--fs-12)/1 var(--font-ui);color:var(--tx-3);font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -1966,7 +1991,6 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
 .panel--island .seg button::before{content:"";position:absolute;left:-1px;right:-1px;top:-5px;bottom:-5px}   /* (ab der Innenkante: 1 px Rand dazu) */
 .panel--island .hero-seg.chips-quer{padding-block:4px}   /* (die Liste schiebt quer: die Tippfläche braucht Platz im Rahmen) */
 .panel--island .pfoot .btn{min-height:var(--k-zweit)}
-.from-field{grid-template-columns:minmax(0,1fr);gap:4px}   /* Startbasis: Name, Truppen und Marschzeit ganz zu lesen */
 .from-sel{padding:0 6px 0 10px;font-weight:500}   /* („· reicht“ dahinter passt auch noch) */
 .mact button{position:relative} .logRow .mact button,.march-all .mact button{min-height:36px} .mact button::before{content:"";position:absolute;left:-1px;right:-1px;top:-5px;bottom:-5px}
 @media (pointer:coarse){ .mapctl button{width:44px;height:44px} .ap-kopf .from-sel{height:44px} }
@@ -2455,7 +2479,7 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
   <footer class="pfoot">
     <button id="backBtn" class="btn btn--secondary" type="button"><svg class="icon"><use href="#i-back"/></svg><span>Zurück</span></button>
     <button id="scoutBtn" class="btn btn--secondary btn--grow" type="button"><svg class="icon"><use href="#i-scout"/></svg><span class="lbl">Spähen</span></button>
-    <button id="attackBtn" class="btn btn--danger btn--grow" type="button"><svg class="icon"><use href="#i-attack"/></svg><span class="lbl">Angreifen</span></button>
+    <button id="attackBtn" class="btn btn--danger btn--grow" type="button"><svg class="icon"><use href="#i-attack"/></svg><span class="lbl">Angreifen</span><span class="btn-zeit" id="attackZeit"></span></button>
   </footer>
 </section>
 

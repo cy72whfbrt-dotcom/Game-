@@ -195,6 +195,7 @@ function renderPopup() {
         }
     }
     const menu = popupView !== 'preview' && popupView !== 'send' && popupView !== 'recall';
+    attackBtn.classList.toggle('mit-zeit', popupView === 'preview');   // Angriff: Marschzeit mit Sanduhr im Knopf
     popupSub.classList.toggle('psub--zwei', menu);                       // Name/Stufe und Koordinaten in zwei Zeilen: nichts wird abgeschnitten
     if (menu) liveHtml(popupSub, subH + '<span class="num coord psub-ort">' + coordText(island.x, island.y) + '</span>');
     if (typeof bundInselfenster === 'function') bundInselfenster(island, popupView);               // Bündnis: Signale, Rally, Hilfe
@@ -214,6 +215,17 @@ function inselMittig(island) {
     flyTo(island.x, island.y, { screenX: viewW / 2, screenY: oben + (unten - oben) * 0.55 });
 }
 
+// Angriff kompakt: Startbasis mit Truppen in der Auswahl, die Marschzeit EINMAL (im Knopf), Held + Zweitheld als zwei Chips
+let previewHeldAuf = 0;                                 // aufgeklappte Helden-Auswahl: 0 zu, 1 Held, 2 Zweitheld
+function apQuelleText(id, island, scouted) {            // „Turm #23633 · 16,8 Bio. · reicht“ (die nächste steht vorn)
+    return escapeHtml(islandTitle(islandById[id])) + ' · ' + fmtCompact(islandTroops[id] || 0) + (scouted && angriffReicht(id, island) ? ' · reicht' : '');
+}
+function apHeldChip(el, id, oben, unten) {             // ein Chip: Bild, Name, darunter klein Sterne/Hinweis
+    if (!el) return;
+    const h = heroById(id); el.style.setProperty('--hc', h ? RARITY_DEFS[h.r].color : 'var(--line-1)');
+    liveHtml(el, (h ? heroImg(id) : '') + '<span class="ap-hchip-t"><b>' + oben + '</b><small>' + unten + '</small></span>');
+}
+
 // Attack preview. Built ONCE per (target, source, scouted, bonus); later
 // calls (the production tick re-renders every tick) only patch the
 // numbers, so a finger dragging the slider is never interrupted.
@@ -224,32 +236,31 @@ function renderAttackPreview(island, scouted) {
     // hold part of the garrison back.
     if (previewAttackTroops === null || previewAttackTroops > maxTroops) previewAttackTroops = maxTroops;
     const atkPct = attackBonusPct();
-    const source = islandById[previewSourceId];
     const key = island.id + ':' + previewSourceId + ':' + scouted + ':' + atkPct;
-    popupOverline.textContent = 'Angriff vorbereiten';
-    // source + march time live in the header subline (frees the body on short screens)
-    popupSub.innerHTML = '<span id="previewToll" style="display:contents"></span>' + icon('defense') + '<span>Von ' + islandTitle(source) + '</span><span class="sep"></span>' +
-        icon('hourglass') + '<span><span class="xs-hide">Marsch ca. </span><span class="num" id="previewMarch">' + fmtClock(travelDurationSeconds(source, island)) + '</span></span>';
+    // Maut/Tor hinten in der Überzeile, keine Unterzeile (Startbasis + Marschzeit stehen EINMAL in der Auswahl darunter)
+    popupOverline.innerHTML = 'Angriff vorbereiten<span id="previewToll"></span>'; popupSub.innerHTML = '';
     if (popupStats.dataset.preview !== key || !document.getElementById('attackTroopsSlider')) {
-        popupStats.dataset.preview = key;
+        popupStats.dataset.preview = key; previewHeldAuf = 0;
         const quellen = angriffQuellen(island).slice(0, 40); if (!quellen.includes(previewSourceId)) quellen.unshift(previewSourceId);   // (die gewählte steht immer drin)
+        const helden = heroSegHtml('data-hero', previewHero);
         popupStats.innerHTML = '<div class="ap-kopf">' +                   // bleibt beim Scrollen oben stehen: Startbasis + Angriff gegen Abwehr
-            '<label class="field from-field"><span class="field-l">Von Basis</span><select id="attackFromSel" class="from-sel" aria-label="Von Basis">' +
-                quellen.map(id => '<option value="' + id + '"' + (id === previewSourceId ? ' selected' : '') + '>' + escapeHtml(islandTitle(islandById[id])) + ' · ' + fmtCompact(islandTroops[id] || 0) +
-                    ' · ' + fmtClock(travelDurationSeconds(islandById[id], island)) + (scouted && angriffReicht(id, island) ? ' · reicht' : '') + '</option>').join('') + '</select></label>' +
+            '<select id="attackFromSel" class="from-sel" aria-label="Von Basis">' +
+                quellen.map(id => '<option value="' + id + '"' + (id === previewSourceId ? ' selected' : '') + '>' + apQuelleText(id, island, scouted) + '</option>').join('') + '</select>' +
             '<div class="versus">' +
-                '<div class="force force--me"><span class="stat-l">' + icon('troops') + 'Angriff</span><b id="previewMyTroops"></b><small>' +
-                    (atkPct > 0 ? '<span id="previewRawTroops"></span> + <span id="previewAtkBonus"></span> Schwert (+' + fmtNum(atkPct) + ' %)<span id="previewHeroBonus"></span><span id="previewTitleBonus"></span>' : 'aus ' + islandTitle(source) + '<span id="previewHeroBonus"></span><span id="previewTitleBonus"></span>') + '</small></div>' +
+                '<div class="force force--me"><span class="stat-l">' + icon('troops') + 'Angriff</span><b id="previewMyTroops"></b><small>' +   // darunter klein woraus (eine Zeile, ganz beim Draufzeigen)
+                    (atkPct > 0 ? '<span id="previewRawTroops"></span> + <span id="previewAtkBonus"></span> Schwert (+' + fmtNum(atkPct) + ' %)' : '<span id="previewRawTroops"></span> Truppen') + '<span id="previewHeroBonus"></span><span id="previewTitleBonus"></span></small></div>' +
                 '<div class="vs"><span>VS</span></div>' +
-                '<div class="force force--foe"><span class="stat-l">Abwehr' + icon('defense') + '</span><b data-foe="total">?</b><small data-foe="sub">nicht gespäht</small></div>' +
+                '<div class="force force--foe"><span class="stat-l">Abwehr' + icon('defense') + '</span><b data-foe="total">?</b>' + (scouted ? '<small data-foe="sub"></small>' :
+                    '<button type="button" class="ap-spaehen" data-spaehen>' + icon('scout') + '<span>Spähen</span></button>') + '</div>' +   // ungespäht: gleich Späher schicken
             '</div>' +
-            (scouted ? '<div><div class="balance" data-preview="balance"><i></i><b></b></div><div class="balance-note"><span>Kräfteverhältnis</span><span data-preview="verdict"></span></div></div>' : '') + '</div>' +
+            (scouted ? '<div class="ap-bal" title="Kräfteverhältnis"><div class="balance" data-preview="balance"><i></i><b></b></div><span class="balance-note" data-preview="verdict"></span></div>' : '') + '</div>' +
             (scouted ? '<div class="notice" data-preview="alter" hidden></div>' : '') +
-            '<div class="field ap-truppen"><div class="field-top"><span class="field-l"><span class="sm-hide">Truppen </span>entsenden</span><span class="val"><input id="attackTroopsLabel" class="troop-in" inputmode="decimal" autocomplete="off" enterkeyhint="done" aria-label="Anzahl Truppen"> / <span data-preview="max"></span></span></div>' +
-                '<input type="range" id="attackTroopsSlider" class="slider" min="0" max="' + SLIDER_STEPS + '" value="' + troopsToSlider(previewAttackTroops || 0, maxTroops) + '"' + (maxTroops <= 0 ? ' disabled' : '') + ' aria-label="Truppen entsenden">' +
-                '<div class="seg" data-preview="quick"><button type="button" data-f=".25">25 %</button><button type="button" data-f=".5">50 %</button><button type="button" data-f=".75">75 %</button><button type="button" data-f="1">Alle</button></div></div>' +
-            (heroSegHtml('data-hero', previewHero) ? '<div class="field"><div class="field-top"><span class="field-l">Held</span><span class="val" data-preview="herofx"></span></div><div class="seg hero-seg chips-quer" data-preview="hero">' +
-                heroSegHtml('data-hero', previewHero) + '</div><div class="seg hero-seg hero-seg2" data-preview="hero2"></div></div>' : '');
+            '<div class="ap-truppen"><input type="range" id="attackTroopsSlider" class="slider" min="0" max="' + SLIDER_STEPS + '" value="' + troopsToSlider(previewAttackTroops || 0, maxTroops) + '"' + (maxTroops <= 0 ? ' disabled' : '') + ' aria-label="Truppen entsenden">' +   // Schieber ganze Breite (Daumen)
+                '<div class="ap-regler"><div class="seg" data-preview="quick"><button type="button" data-f=".25">25 %</button><button type="button" data-f=".5">50 %</button><button type="button" data-f=".75">75 %</button><button type="button" data-f="1">Alle</button></div>' +
+                '<span class="val"><input id="attackTroopsLabel" class="troop-in" inputmode="decimal" autocomplete="off" enterkeyhint="done" aria-label="Anzahl Truppen"></span></div></div>' +
+            (helden ? '<div class="ap-held"><div class="ap-held-zeile"><button type="button" class="ap-hchip" data-held-auf="1" aria-label="Held wählen"></button><button type="button" class="ap-hchip" data-held-auf="2" aria-label="Zweitheld wählen"></button></div>' +   // Held + Zweitheld als zwei Chips, antippen klappt die Auswahl auf
+                '<div class="seg hero-seg chips-quer" data-preview="hero" hidden>' + helden + '</div><div class="seg hero-seg hero-seg2 chips-quer" data-preview="hero2" hidden></div>' +
+                '<small class="ap-herofx" data-preview="herofx"></small></div>' : '');
         document.getElementById('attackFromSel').addEventListener('change', e => {   // andere Startbasis gewählt
             const id = +e.target.value; if (!ownedIslands.has(id)) return;
             previewSourceId = id; previewFraction = 1; previewAttackTroops = null; renderPopup();
@@ -263,9 +274,10 @@ function renderAttackPreview(island, scouted) {
         });
         bindTroopInput(document.getElementById('attackTroopsLabel'), sourceTroops, patchAttackPreview);
         const heroSeg = popupStats.querySelector('[data-preview="hero"]');
-        if (heroSeg) heroSeg.addEventListener('click', e => { const bt = e.target.closest('[data-hero]'); if (!bt || bt.disabled) return; previewHero = bt.dataset.hero || null; if (previewHero === previewHero2 || !previewHero) previewHero2 = null; patchAttackPreview(); });
+        if (heroSeg) heroSeg.addEventListener('click', e => { const bt = e.target.closest('[data-hero]'); if (!bt || bt.disabled) return; previewHero = bt.dataset.hero || null; if (previewHero === previewHero2 || !previewHero) previewHero2 = null; previewHeldAuf = 0; patchAttackPreview(); });
         const heroSeg2 = popupStats.querySelector('[data-preview="hero2"]');
-        if (heroSeg2) heroSeg2.addEventListener('click', e => { const bt = e.target.closest('[data-hero2]'); if (!bt || bt.disabled) return; previewHero2 = bt.dataset.hero2 || null; patchAttackPreview(); });
+        if (heroSeg2) heroSeg2.addEventListener('click', e => { const bt = e.target.closest('[data-hero2]'); if (!bt || bt.disabled) return; previewHero2 = bt.dataset.hero2 || null; previewHeldAuf = 0; patchAttackPreview(); });
+        for (const bt of popupStats.querySelectorAll('[data-held-auf]')) bt.addEventListener('click', () => { const n = +bt.dataset.heldAuf; previewHeldAuf = previewHeldAuf === n ? 0 : n; patchAttackPreview(); });
         popupStats.querySelector('[data-preview="quick"]').addEventListener('click', (e) => {
             const f = parseFloat(e.target.closest('button') && e.target.closest('button').dataset.f);
             if (!f || slider.disabled) return;
@@ -365,7 +377,16 @@ function patchAttackPreview() {
     const shown = Math.max(0, previewAttackTroops || 0);
     if (previewHero && (!heroOwned('player', previewHero) || heroBusy('player', previewHero))) previewHero = null;
     for (const b of popupStats.querySelectorAll('[data-hero]')) { const id = b.dataset.hero; b.disabled = !!id && heroBusy('player', id); b.classList.toggle('on', (id || null) === previewHero); }
-    previewHero2 = heroZweitOk('player', previewHero, previewHero2); liveHtml(popupStats.querySelector('[data-preview="hero2"]'), heroSeg2Html('data-hero2', previewHero, previewHero2));   // der Zweitheld
+    previewHero2 = heroZweitOk('player', previewHero, previewHero2); const seg2 = heroSeg2Html('data-hero2', previewHero, previewHero2);
+    liveHtml(popupStats.querySelector('[data-preview="hero2"]'), seg2);   // der Zweitheld
+    const chip1 = popupStats.querySelector('[data-held-auf="1"]'), chip2 = popupStats.querySelector('[data-held-auf="2"]');
+    if (chip2 && !seg2) { chip2.hidden = true; if (previewHeldAuf === 2) previewHeldAuf = 0; } else if (chip2) chip2.hidden = false;
+    apHeldChip(chip1, previewHero, previewHero ? heroById(previewHero).name : 'Kein Held', previewHero ? icon('star') + heroStarNum(heroSt('player', previewHero).q) : 'Held wählen');
+    if (chip2 && seg2) { const p2 = previewHero2 && heroPairOf(previewHero, previewHero2);
+        apHeldChip(chip2, previewHero2, previewHero2 ? heroById(previewHero2).name : '+ Zweitheld', p2 ? 'Paar +' + HERO_PAIR_BONUS + ' %' : previewHero2 ? 'Zweitheld · ' + Math.round(HERO_ZWEIT * 100) + ' %' : Math.round(HERO_ZWEIT * 100) + ' % der Passiven'); }
+    for (const [el, n] of [[chip1, 1], [chip2, 2]]) if (el) { el.classList.toggle('on', previewHeldAuf === n); el.setAttribute('aria-expanded', previewHeldAuf === n); }
+    const hl1 = popupStats.querySelector('[data-preview="hero"]'), hl2 = popupStats.querySelector('[data-preview="hero2"]');
+    if (hl1) hl1.hidden = previewHeldAuf !== 1; if (hl2) hl2.hidden = previewHeldAuf !== 2;
     const src0 = islandById[previewSourceId], px = previewHero && src0 ? heroPeek('player', previewHero, src0, island, shown, previewHero2) : null, hfx = popupStats.querySelector('[data-preview="herofx"]');   // what the hero does in THIS attack
     const hfl = x => x.lines.filter(l => l[0] !== 'Gefolge' && l[0] !== 'Tempo' && l[0].indexOf('Paar') !== 0).map(l => l[1]).join(', ');
     if (hfx) hfx.textContent = !px ? '' : heroStarTxt(px.q) + (px.fired ? ' · ' + px.skill + ' zündet' : '') + (px.pair ? ' · Paar +' + HERO_PAIR_BONUS + ' %' : px.h2 ? ' · + ' + heroById(px.h2.id).name : '') + ' · ' + hfl(px);
@@ -377,15 +398,17 @@ function patchAttackPreview() {
     const mitTitel = Math.round((shown + atkBonus) * titleMult('player', 'attack')), kv = mine - mitTitel;   // Paket D: Forschung getrennt zeigen
     const tv = mitTitel - Math.round(shown + atkBonus), tx = titleOf('player'), tbEl = popupStats.querySelector('#previewTitleBonus');
     if (tbEl) tbEl.textContent = (tv && tx ? (tv > 0 ? ' + ' : ' − ') + fmtNum(Math.abs(tv)) + ' Titel ' + tx.name : '') + (kv ? ' + ' + fmtNum(kv) + ' Forschung' : '');
-    const src = islandById[previewSourceId], tEl = popupSub.querySelector('#previewToll'), mEl = popupSub.querySelector('#previewMarch');
-    if (mEl && src) mEl.textContent = fmtClock(travelDurationSeconds(src, island) / (1 + (px ? px.spd : 0) / 100));   // the hero's Tempo
+    const src = islandById[previewSourceId], tEl = popupOverline.querySelector('#previewToll');
+    if (src) liveHtml(document.getElementById('attackZeit'), icon('hourglass') + fmtClock(travelDurationSeconds(src, island) / (1 + (px ? px.spd : 0) / 100)));   // Marschzeit mit dem Tempo des Helden
+    const spB = popupStats.querySelector('.ap-spaehen');
+    if (spB) { const unterwegs = pendingScouts.some(s => !s.back && s.targetId === island.id); spB.disabled = unterwegs || scoutBtn.disabled; setBtnLabel(spB, unterwegs ? 'Späher unterwegs' : 'Spähen'); }
     if (tEl && src) { const hop = lastHop(src.landmassId, island.landmassId, 'player'), t = tollFor(hop[0], hop[1], shown, 'player', island.id, px ? px.toll : 0);
-        tEl.innerHTML = t.closed ? '<span class="sep"></span>' + icon('lock') + '<span>Tor geschlossen</span>' : t.cost ? '<span class="sep"></span>' + icon('coin') + '<span>Maut <span class="num">' + fmtCompact(t.cost) + '</span></span>' : ''; }
+        liveHtml(tEl, t.closed ? ' · ' + icon('lock') + 'Tor geschlossen' : t.cost ? ' · ' + icon('coin') + 'Maut <span class="num">' + fmtCompact(t.cost) + '</span>' : ''); }
+    const meEl = popupStats.querySelector('.force--me small'); if (meEl) meEl.title = meEl.textContent;   // ganz beim Draufzeigen
     document.getElementById('previewMyTroops').textContent = fmtBig(mine);
     const raw = document.getElementById('previewRawTroops');
     if (raw) raw.textContent = fmtBig(shown);
     setTroopInput(document.getElementById('attackTroopsLabel'), shown);
-    popupStats.querySelector('[data-preview="max"]').textContent = fmtBig(maxTroops);
     slider.style.setProperty('--pct', (maxTroops > 1 ? (Math.max(1, shown) - 1) / (maxTroops - 1) * 100 : 100) + '%');
     for (const b of popupStats.querySelectorAll('[data-preview="quick"] button'))
         b.classList.toggle('on', maxTroops > 0 && (previewFraction !== null
@@ -396,7 +419,7 @@ function patchAttackPreview() {
         if (alEl.textContent !== t) alEl.innerHTML = icon('scout') + '<span>' + t + '</span>'; }
     if (scouted) {                                      // fog of war: enemy numbers and the ratio exist only when scouted
         const enemyTroops = effectiveTroops(island), enemyDefense = Math.round(effectiveDefense(island) * (1 - (px ? Math.min(90, px.def) : 0) / 100)), total = enemyTroops + enemyDefense;   // (Rammbock & Co. cut it)
-        popupStats.querySelector('[data-foe="total"]').textContent = fmtNum(total);
+        popupStats.querySelector('[data-foe="total"]').textContent = fmtBig(total);
         popupStats.querySelector('[data-foe="sub"]').innerHTML = fmtCompact(enemyTroops) + '<span class="xs-hide">\u00a0Truppen</span> +\u00a0' + fmtCompact(enemyDefense) + '\u00a0Vert.';
         const ratio = total > 0 ? mine / total : Infinity;
         popupStats.querySelector('[data-preview="balance"]').style.setProperty('--a', (mine + total > 0 ? Math.round(mine / (mine + total) * 100) : 50) + '%');
