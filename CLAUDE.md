@@ -83,7 +83,8 @@ Alles Wichtige steht in `LIESMICH.md` – jede Änderung wird dort eingetragen.
   Vorschläge, wie die Firma schneller/genauer wird – Claude baut sie ein) · **zusammenfuehrer** (nach jeder Prüfung:
   fertige Branches mergen, Konflikte lösen, Schnelltests, pushen – nie hochladen) · **spieltester** (vor dem Endprüfer und
   nach großen Änderungen an Oberfläche/Abläufen: spielt die Vorschau auf Handy + Desktop, Liste mit Bildschirmfotos) ·
-  **livewaechter** (stündlich + nach jedem Hochladen, nur lesen: `werkzeuge/nach_hochladen.sh`, „LIVE OK“ oder Funde). Nur ZWEI Prüfungen (schnell + end). Schnell UND genau.
+  **livewaechter** (stündlich + nach jedem Hochladen, nur lesen: `werkzeuge/nach_hochladen.sh`, „LIVE OK“ oder Funde) ·
+  **designer** (vor jeder Design-Aufgabe: Vorbilder online → Vorgabe; danach: Bilder prüfen, bevor Alexander sie sieht). Nur ZWEI Prüfungen (schnell + end). Schnell UND genau.
   **Niemand wartet still:** jeder Agent schreibt beim Start und mindestens alle 5 Min. eine Zeile in
   `<scratchpad>/firma/<kurzname>.txt` (`<Uhrzeit UTC> | <Schritt> | <was läuft>`, am Ende `… | fertig | <Ergebnis>`);
   den Kurznamen gibt Claude im Auftrag mit. Älter als 10 Min. = „hängt“.
