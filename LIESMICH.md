@@ -719,6 +719,18 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Schrift überall mind. 11 px, Fahne höher (Zeilen berühren sich nicht). Weit weg (Stufe C) nur Wappen + Truppenzahl.
   Neutrale Basen ruhig: nur Wappen + Stufe (gespäht: + Zahl), die volle Fahne „Neutral“ erst beim Antippen oder ganz nah
   (`TIER`/`bannerModel` spiel/03b, `paintPlate`/`layoutBanners` spiel/03c). Test `karte_fahnen_test`.
+- **6.10. Fehler aus dem Live-Spiel: Fahnen beim Rauszoomen unruhig (Alexander, Handy; Branch `fix-fahnen`, NICHT hochgeladen):**
+  Wer viele Basen nebeneinander hat, sah auf jeder eine lange Fahne „iceman · 78 · 464,7 Mrd.“, fremde nicht gespähte Basen
+  lange leere Balken „✕ ?“, die Stufe „100“ ragte über Wappen und Zahl. Jetzt: Fahnen so breit wie ihr Text (höchstens die
+  alte Breite); eigene Basen ohne Namen (Farbe + Wappen reichen), Name nur an der Hauptstadt; fremde Nicht-Hauptstädte
+  mittel weit nur kompakt (neue Stufe K: Wappen + Stufe + Zahl), Name erst ganz nah; Stufen-Chip so breit wie die Zahl,
+  Text dahinter; verdeckt eine Fahne trotz kleinerer Stufe noch eine andere, wird sie weggelassen (Hauptstadt, Tempel,
+  angetippte Basis bleiben); Thron-Fahne unter dem großen Gebäude statt darauf (`plateGeo`/`layoutBanners` spiel/03c,
+  `bannerModel`/`TIER` spiel/03b). Test `karte_fahnen_test` erweitert (3 Zoomstufen, 40 eigene Basen, keine Überdeckung).
+  Nach Designer-Prüfung: Stufen-Chip rechts neben dem Wappen statt darauf; weit weg eigene Basen nur Wappen + Stufe;
+  Zahl weit weg kürzer („465 Mrd.“ statt gestaucht „464,7 Mrd.“), Schrift mit dunklem Rand; Fahnen von Hauptstädten tiefer
+  (nicht auf der Mauer); Fahnen unter oberer Leiste, Anleitung, Zoom-Knöpfen blass (`paintBanners`); Drachen-Name erst
+  nach allen Gebäuden (`drawDragonName` spiel/09c, vorher deckte ihn die Thron-Kuppel zu).
 
 - **5./6.10. Nacht – Mitspieler schätzen Angriffe (11b C, Alexander N1):** Mitspieler kannten beim Losmarsch die genaue
   Stärke eines Angriffs (Held, Fähigkeit, Titel, Forschung) und schickten genau passende Hilfe oder räumten rechtzeitig. Jetzt

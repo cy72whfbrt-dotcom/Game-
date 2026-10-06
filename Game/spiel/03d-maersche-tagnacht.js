@@ -275,6 +275,7 @@ function drawMap() {
   paintBanners(plates);                                                                                                // 9 nameplates on top
   drawArmyCamps(now);                                                                                                  // armies camping in the field
   drawRulerCrowns(plates);
+  drawDragonName(wallNow);                                                                                             // Drachen-Name über der Thron-Kuppel
   drawTitleBadges(z, now);                                                                                             // crown on the ruler's plates
   drawWander(now, true);
   drawMarchChips();                                                                                                    // 10 countdown chips

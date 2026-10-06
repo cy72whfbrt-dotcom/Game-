@@ -57,12 +57,28 @@ function crestDataUrl(px, who) {                      // for the HTML avatars (y
     drawCrest(g, px / 2, px / 2, px * .86, cr); return crestUrlCache[k] = c.toDataURL();
 }
 const FONT = (w, px) => w + ' ' + px + 'px Inter, system-ui, sans-serif';
-function plateW(T) { return T.tw ? T.av + 4 + T.tw + T.pad : T.av + T.lv / 2; }   // feste Breite je Stufe (N: nur Wappen + Stufen-Chip)
-function plateText(g, t, x, y, maxW, color) {     // mit 1px Schatten; zu breit → schmaler gesetzt, nie abgeschnitten
-  g.fillStyle = 'rgba(0,0,0,.55)'; g.fillText(t, x, y + 1, maxW); g.fillStyle = color; g.fillText(t, x, y, maxW);
+// Truppenzahl auf der Fahne: weit weg (Stufe C) kürzer statt gestaucht – „464,7 Mrd.“ → „465 Mrd.“ (3 Ziffern)
+function plateTroops(T, t) { const k = T === TIER.C && /^(\d{3}),(\d) (.+)$/.exec(t); return k ? Math.round(+(k[1] + '.' + k[2])) + ' ' + k[3] : t; }
+const plateFw = T => T.max ? 600 : 700;            // einzeilige Plaketten (K/C) fett
+function plateGeo(g, T, m, withDef) {             // Maße einer Fahne: Textfeld so breit wie Name bzw. Truppenzeile (höchstens T.tw), Stufen-Chip so breit wie die Zahl
+  const ls = T.lv; g.font = FONT(700, Math.max(11, ls * .66));
+  const lw = Math.max(ls, Math.ceil(g.measureText(String(m.level)).width) + 5), lx0 = T.av - 3;   // Chip rechts neben dem Wappen (nur über dem Rand), breitere Zahl wächst nach rechts
+  const tx = lx0 + lw + 2;                                                                         // Text beginnt hinter dem Chip
+  if (!T.tw) return { tw: 0, tx, lw, lx0, W: lx0 + lw + 1 };
+  const s = T.fs; g.font = FONT(plateFw(T), s); let w = s * 1.25 + g.measureText(plateTroops(T, m.troops)).width + (withDef ? s * 1.95 + g.measureText(m.def).width : 0);
+  if (T.max && m.name) {
+    g.font = FONT(700, 11); const chip = m.tag ? Math.ceil(g.measureText(m.tag).width) + 12 : 0;
+    g.font = FONT(600, T.fn); w = Math.max(w, chip + g.measureText(trunc(m.name, T.max)).width);
+  }
+  const tw = Math.min(T.tw, Math.ceil(w) + 2);
+  return { tw, tx, lw, lx0, W: tx + tw + T.pad };
 }
-function paintPlate(g, T, m, withDef) {           // g translated so the plate's top-left is (0,0); returns nothing
-  const o = PLATE[m.kind], W = plateW(T), H = T.H, px = T.av / 2, pw = W - T.av / 2, tx = T.av + 4, tw = T.tw;
+function plateText(g, t, x, y, maxW, color) {     // mit 1px Schatten und dunklem Rand; zu breit → schmaler gesetzt, nie abgeschnitten
+  g.fillStyle = 'rgba(0,0,0,.55)'; g.fillText(t, x, y + 1, maxW);
+  g.lineWidth = 2; g.lineJoin = 'round'; g.strokeStyle = 'rgba(0,0,0,.6)'; g.strokeText(t, x, y, maxW); g.fillStyle = color; g.fillText(t, x, y, maxW);
+}
+function paintPlate(g, T, m, withDef, geo) {      // g translated so the plate's top-left is (0,0); geo from plateGeo(); returns nothing
+  const o = PLATE[m.kind], { W, tw, tx } = geo, H = T.H, px = T.av / 2, pw = W - T.av / 2;
   g.textBaseline = 'alphabetic'; g.textAlign = 'left';
   if (tw) {
     const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, o.top); gr.addColorStop(1, o.bot);
@@ -70,15 +86,15 @@ function paintPlate(g, T, m, withDef) {           // g translated so the plate's
     g.strokeStyle = 'rgba(0,0,0,.55)'; rr(g, px - .5, -.5, pw + 1, H + 1, 3.5); g.stroke();                                          // 0.5px black outer line (no blur)
     g.strokeStyle = 'rgba(255,255,255,.13)'; g.beginPath(); g.moveTo(px + T.av / 2, 1.5); g.lineTo(px + pw - 3, 1.5); g.stroke();    // top highlight
     const trW = (y, size) => {                                                                                                     // Zeile Truppen (+ Abwehr)
-      g.font = FONT(600, size); const s = size, t1 = g.measureText(m.troops).width, d1 = withDef ? g.measureText(m.def).width : 0;
+      g.font = FONT(plateFw(T), size); const s = size, tr = plateTroops(T, m.troops), t1 = g.measureText(tr).width, d1 = withDef ? g.measureText(m.def).width : 0;
       const need = s * 1.25 + t1 + (withDef ? s * 1.95 + d1 : 0), k = Math.min(1, tw / need);
       g.save(); g.translate(tx, 0); g.scale(k, 1);
       drawGlyph(g, 'troops', s * .5, y - s * .36, s * 1.05, 'rgba(238,230,212,.78)');
-      plateText(g, m.troops, s * 1.25, y, undefined, m.troops === '?' ? 'rgba(238,230,212,.62)' : '#eee6d4');
+      plateText(g, tr, s * 1.25, y, undefined, m.troops === '?' ? 'rgba(238,230,212,.62)' : '#eee6d4');
       if (withDef) { const dx = s * 1.25 + t1 + s * .7; drawGlyph(g, 'shield', dx + s * .5, y - s * .36, s * 1.05, 'rgba(238,230,212,.78)'); plateText(g, m.def, dx + s * 1.25, y, undefined, '#eee6d4'); }
       g.restore();
     };
-    if (T.max) {                                                                                                                   // A/B: Zeile 1 Kürzel-Chip + Name, Zeile 2 Truppen
+    if (T.max && m.name) {                                                                                                         // A/B: Zeile 1 Kürzel-Chip + Name, Zeile 2 Truppen
       const y1 = 3 + T.fn * .78, y2 = H - 3 - T.fs * .22; let nx = tx;
       if (m.tag) {
         g.font = FONT(700, 11); const cw = Math.ceil(g.measureText(m.tag).width) + 8, ch = 14, cy = y1 - 11;
@@ -90,7 +106,7 @@ function paintPlate(g, T, m, withDef) {           // g translated so the plate's
       if (nw > room) { fn = Math.max(11, fn * room / nw); g.font = FONT(600, fn); }                                                  // erst kleiner (bis 11 px), dann schmaler
       plateText(g, name, nx, y1, room, '#f5f0e5');
       trW(y2, T.fs);
-    } else trW(H / 2 + T.fs * .36, T.fs);                                                                                           // C: nur die Zahl
+    } else trW(H / 2 + T.fs * .36, T.fs);                                                                                           // K/C (und ohne Namen): nur die Zahl
   }
   const ax = T.av / 2, ay = H / 2, ar = T.av / 2;                                                                                  // avatar medallion
   const rg = g.createRadialGradient(ax, ay - ar * .35, 1, ax, ay, ar); rg.addColorStop(0, o.top); rg.addColorStop(1, o.bot);
@@ -99,8 +115,8 @@ function paintPlate(g, T, m, withDef) {           // g translated so the plate's
   g.lineWidth = 1; g.strokeStyle = 'rgba(0,0,0,.6)'; g.beginPath(); g.arc(ax, ay, ar + .6, 0, Math.PI * 2); g.stroke();
   if (m.glyph.startsWith('crest')) drawCrest(g, ax - 1, ay - 1, T.av * .62, crestFor(m.glyph.split(':')[1])); else
   drawGlyph(g, m.glyph, ax - 1.5, ay - 1.5, T.av * .52, '#f5f0e5');                                                                // up-left, clear of the chip
-  const ls = T.lv, lx = ax + ar * .78, lyy = Math.min(ay + ar * .66, H + 1.5 - ls / 2);                                          // gold level chip on the rim
-  rr(g, lx - ls / 2, lyy - ls / 2, ls, ls, 2); g.fillStyle = '#14110b'; g.fill(); g.lineWidth = 1; g.strokeStyle = '#d8b56c'; g.stroke();
+  const ls = T.lv, lw = geo.lw, lx = geo.lx0 + lw / 2, lyy = Math.min(ay + ar * .66, H + 1.5 - ls / 2);                        // gold level chip on the rim
+  rr(g, geo.lx0, lyy - ls / 2, lw, ls, 2); g.fillStyle = '#14110b'; g.fill(); g.lineWidth = 1; g.strokeStyle = '#d8b56c'; g.stroke();
   g.fillStyle = '#f0dfb0'; g.font = FONT(700, Math.max(11, ls * .66)); g.textAlign = 'center';
   g.fillText(String(m.level), lx, lyy + 4); g.textAlign = 'left';
 }
@@ -112,16 +128,16 @@ function bannerSprite(tierKey, m) {
   const key = tierKey + '|' + m.kind + '|' + m.glyph + '|' + (m.tag || '') + '|' + (T.max ? m.name : '') + '|' + (T.tw ? m.troops : '') + '|' + (withDef ? m.def : '') + '|' + m.level + '|' + (m.temple ? 1 : 0) + '|' + dpr;
   let s = BANNER_SPRITES.get(key);
   if (s) { BANNER_SPRITES.delete(key); BANNER_SPRITES.set(key, s); return s; }           // LRU refresh
-  const W = Math.ceil(plateW(T)), H = T.H;
-  const c = document.createElement('canvas'); c.width = Math.ceil((W + 4) * dpr); c.height = Math.ceil((H + 4) * dpr);
-  const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 2 * dpr, 2 * dpr);
-  paintPlate(g, T, m, withDef);
+  const c = document.createElement('canvas'), g = c.getContext('2d'), geo = plateGeo(g, T, m, withDef), W = Math.ceil(geo.W), H = T.H;
+  c.width = Math.ceil((W + 4) * dpr); c.height = Math.ceil((H + 4) * dpr);
+  g.setTransform(dpr, 0, 0, dpr, 2 * dpr, 2 * dpr);
+  paintPlate(g, T, m, withDef, { ...geo, W });
   s = { c, w: W, h: H };
   BANNER_SPRITES.set(key, s);
   while (BANNER_SPRITES.size > 400) BANNER_SPRITES.delete(BANNER_SPRITES.keys().next().value);   // (die Truppenzahl steckt im Schlüssel – 1500 hielten bis ~100 MB im Handy)
   return s;
 }
-const DOWN = { A: 'B', B: 'C', C: 'C', N: 'N' };
+const DOWN = { A: 'B', B: 'K', K: 'C', C: 'C', N: 'N' };
 function tierFor(z) { return z >= 0.06 ? 'A' : z >= 0.026 ? 'B' : 'C'; }
 let bannerHitRects = [];
 function overlap(a, b) { return Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y)); }
@@ -134,17 +150,19 @@ function layoutBanners(visible, z, selectedId) {  // places every nameplate (set
   const towers = towerRects = visible.map(isl => { const s = 2 * isl.radius * z; return { id: isl.id, x: toSX(isl.x) - s / 2, y: toSY(isl.y) - s * 0.65, w: s, h: s }; });
   if (z < TERRITORY_VIEW_ZOOM) return [];
   const base = tierFor(z);
-  const items = visible.map(isl => {
+  let items = visible.map(isl => {
     const m = bannerModel(isl);
     let p = m.p; if (isl.id === selectedId) p = 5;
     let tier = base;
     if (m.filler && isl.id !== selectedId) tier = z >= 0.1 ? DOWN[base] : m.troops === '?' ? 'N' : 'C';   // neutrale Basen ruhig: Wappen + Stufe (gespäht: + Zahl), Name erst beim Antippen/ganz nah
-    if (m.mega) { if (tier === 'C') tier = 'B'; if (p < 5) p = 4.5; }                  // placed first: temple > player > bot > neutral
+    else if (isl.id !== selectedId && m.kind === 'player' && !m.name) tier = tier === 'C' ? 'N' : 'K';   // eigene Basen ohne Namen, weit weg nur Wappen + Stufe
+    else if (isl.id !== selectedId && m.cap === false && tier === 'B') tier = 'K';                       // fremde Nicht-Hauptstädte erst ganz nah mit Namen
+    if (m.mega) { if (tier === 'C' || tier === 'K') tier = 'B'; if (p < 5) p = 4.5; }   // placed first: temple > player > bot > neutral
     return { isl, m, p, tier };
   }).sort((a, b) => b.p - a.p || a.isl.y - b.isl.y);
   const placed = [];
   for (const it of items) {
-    const r = it.isl.radius * z, sx = toSX(it.isl.x), sy = toSY(it.isl.y);
+    const r = it.isl.radius * z * (it.isl.type === 'megaTemple' ? 1.8 : it.m.cap ? 1.25 : 1), sx = toSX(it.isl.x), sy = toSY(it.isl.y);   // Thron und Hauptstädte sind größer: Fahne darunter, nicht auf der Mauer
     let best = null;
     for (let t = it.tier; ; t = DOWN[t]) {
       const sp = bannerSprite(t, it.m), w = sp.w, h = sp.h;
@@ -155,18 +173,22 @@ function layoutBanners(visible, z, selectedId) {  // places every nameplate (set
         for (const tw of towers) if (tw.id !== it.isl.id) sc += 0.35 * overlap(rect, tw);
         if (!best || sc < best.sc) best = { sc, rect, sp, t };
       }
-      if (best.sc <= 0.25 * best.rect.w * best.rect.h || it.p > 3 || DOWN[t] === t) break;
+      if (best.sc <= 0.25 * best.rect.w * best.rect.h || it.p >= 4 || DOWN[t] === t) break;   // überdeckt → kleinere Stufe (Hauptstadt, Tempel, Auswahl bleiben)
     }
+    if (it.p < 4 && placed.reduce((a, q) => a + overlap(best.rect, q), 0) > 0.3 * best.rect.w * best.rect.h) { it.rect = null; continue; }   // auch klein noch verdeckt → weglassen
     it.rect = best.rect; it.sp = best.sp; placed.push(best.rect);
   }
-  items.reverse();                                                               // painted lowest priority first
+  items = items.filter(it => it.rect).reverse();                                 // painted lowest priority first
   for (const it of items) bannerHitRects.push({ id: it.isl.id, x: it.rect.x, y: it.rect.y, w: it.rect.w, h: it.rect.h });
   return items;
 }
+const BANNER_UNTER = ['hud', 'midBar', 'mapControls', 'anleitung', 'cornerButtons'];   // Leisten über der Karte: Fahnen darunter blass
 function paintBanners(items) {
   setScreen(ctx);
+  const cv = canvas.getBoundingClientRect(), unter = [];
+  for (const id of BANNER_UNTER) { const el = document.getElementById(id); if (!el || el.hidden) continue; const b = el.getBoundingClientRect(); if (b.width && b.height) unter.push({ x: b.left - cv.left, y: b.top - cv.top, w: b.width, h: b.height }); }
   for (const it of items) {
-    ctx.globalAlpha = it.m.filler ? 0.8 : 1;
+    ctx.globalAlpha = (it.m.filler ? 0.8 : 1) * (unter.some(q => overlap(it.rect, q) > 0) ? 0.35 : 1);
     const x = Math.round(it.rect.x * dpr) / dpr, y = Math.round(it.rect.y * dpr) / dpr;
     ctx.drawImage(it.sp.c, x - 2, y - 2, it.sp.c.width / dpr, it.sp.c.height / dpr);
   }
