@@ -8650,10 +8650,11 @@ function closeCity() {
     if (cityCam) cityCam.anim = { from: 1, to: .62, t0: performance.now(), dur: 650 };   // the town falls away …
     const auf = karteTauchen(CITY_TAUCH, 1, 650, home);                      // … the map comes back up from close by …
     cloudsRun(300, 0, .35, () => cloudsRun(500, .35, 0));
-    setTimeout(() => stadtBlende(1, 0, () => { cityView.hidden = true; stadtLeiste(false); cancelAnimationFrame(cityRaf); cityLagenFrei(); requestRender(); }), 120);
+    let offen = 2; const fertig = () => { if (--offen === 0) cityBusy = false; };   // frei erst, wenn die Stadt weg ist UND die Karte zurückfliegt (unter Last kann das Ausblenden länger dauern)
+    setTimeout(() => stadtBlende(1, 0, () => { cityView.hidden = true; stadtLeiste(false); cancelAnimationFrame(cityRaf); cityLagenFrei(); requestRender(); fertig(); }), 120);
     setTimeout(() => { if (auf) auf.cancel();
         flyTo(back.x, back.y, { zoom: back.zoom, ms: 900 });                // … and opens up again where it was
-        cityBusy = false; }, 650);
+        fertig(); }, 650);
     return true;
 }
 let cityB2Armed = 0;                              // the buy button asks once more before 500 gems go
@@ -10002,7 +10003,7 @@ function cityFrame(now) {
     cityFrame.drawn = now;
     const dpr2 = Math.min(window.devicePixelRatio || 1, 2), W = window.innerWidth, H = window.innerHeight;
     if (cityCanvas.width !== Math.round(W * dpr2) || cityCanvas.height !== Math.round(H * dpr2)) { cityCanvas.width = Math.round(W * dpr2); cityCanvas.height = Math.round(H * dpr2); }
-    if (!cityCam) { const [kx, ky] = cIso(CC, CC); cityCam = { x: kx, y: ky + 6, z: Math.max(cityFitZoom(W, H), Math.min(2.2, W / 420)) };   // (Handy: die ganze Mauer-Raute im Bild)
+    if (!cityCam) { const [kx, ky] = cIso(CC, CC); cityCam = { x: kx, y: ky + 6, z: Math.max(cityFitZoom(W, H), Math.min(2.2, W / 420)) };   // (Handy: das Mauer-Tor samt Schild im Bild)
         if (cityPendingAnim) { cityCam.anim = { from: .62, t0: now, dur: 1100 }; cityPendingAnim = false; } }
     let animZ = 1;
     if (cityCam.anim) { const a = cityCam.anim, q = Math.min(1, (now - a.t0) / a.dur), e = 1 - Math.pow(1 - q, 3), to = a.to ?? 1;

@@ -795,7 +795,7 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   320 ms) und kommt von 0,62 näher; dünne Wolken (Dichte 0,35, hellere Puffs) decken die Ränder, nie ganz weiß; zurück
   blendet die Stadt aus, während die Karte zurückkommt. Boden-Bild läuft am Rand 90 Einheiten weich in die Grundfarbe aus (keine
   harte Kante). Schilder nur, wenn sie ganz im Bild sind (Mauer-Schild nicht mehr halb am Rand). Handy-Start etwas weiter weg
-  (`W / 420`, ganze Mauer im Bild), vorn 4 Felsgruppen mit Palmen/Bäumen als Rand-Kulisse.
+  (`W / 420`, Mauer-Tor samt Schild im Bild), vorn 4 Felsgruppen mit Palmen/Bäumen als Rand-Kulisse. Zurück zur Karte ist erst frei, wenn die Stadt ganz ausgeblendet ist (unter Last).
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 
