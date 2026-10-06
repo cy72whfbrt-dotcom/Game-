@@ -509,6 +509,12 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   (Mitspieler, echte Spieler, Hauptbuch-Konten und Töpfe in `saisonKonto`, aufgerundet) und am Handy (01a, abgerundet; Nachricht
   `saison` mit `roh`, sonst aus `wirtAb`); Zurückspielen holt die alten Rohstoffe zurück. Saison-Ende Sonntag 18 Uhr Europe/Berlin
   (`saisonEnde`, `berlinUm`). Tabelle vorher/nachher: Abschnitt 11b A. Tests: `profil_stunde_test` (neu), `saison_test`.
+  Nachtrag (Gold nie zu leicht): Münzen/Truppen außerhalb der Produktion, die Paket „Wirtschaft 2“ nicht anfasst, × `WIRTSCHAFT_KOSTEN`:
+  Kampf-Gold je getöteter Truppe (Fähigkeiten „Angriff/Verteidigung: Gold“, `SKILL_DEFS` 01e, und der Held-Anteil in `killGoldRate`/
+  `fieldGold`, 04 – Anzeige „Gold je 1.000 Kills“), Gold je Schaden bei Tagesboss/Drache/Barbaren-Armee (09b/09c), Söldner-Mindestwert
+  beim Händler (`hdSoeldner`). Hauptbuch (10d): fester Münz-Spielraum (Tages-Rest 50.000 → 28, Mindest-Stunde 5.000 → 3) und die
+  Mindest-Truppen für Thron-Shop/Fund ebenso. Tests: `wirtschaft_gold_test` (neu), `welt_test`; `schummel_test` (Server) prüft beim
+  nochmal angewendeten Profil „Welt-Holz bleibt mindestens“ (der Ertrag der Burg – 0,04 Holz/Std. – ist in 5 Min. nicht messbar).
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.

@@ -74,6 +74,8 @@ function hdTakt() {
     }
     if (ch) hdSpeichern();
 }
+// Söldner: eine Stunde Truppen-Ausbildung, mindestens 1.000 × WIRTSCHAFT_KOSTEN (5.10.: wie alle Truppen außerhalb der Produktion)
+const hdSoeldner = who => Math.round(Math.max(Math.max(1, Math.round(1000 * WIRTSCHAFT_KOSTEN)), hourProduction(who).troops));
 function hdKaufen(who, k) {                           // (Weltrechner) bezahlen + Ware geben → '' oder der Grund
     const h = hdDa(); if (!h) return 'Der Händler ist schon weitergezogen';
     if (!h.waren.includes(k)) return 'Diese Ware hat der Händler nicht';
@@ -87,7 +89,7 @@ function hdKaufen(who, k) {                           // (Weltrechner) bezahlen 
     const w = HD_WAREN[k], titel = 'Händler: ' + w.name;
     if (k === 'sammeln') { (hdState.boost || (hdState.boost = {}))[who] = Math.max(Date.now(), hdState.boost[who] || 0) + HD.BOOST_MS; }
     if (bd && bd.mensch && window.WELT) {
-        const tr = k === 'truppen' ? Math.round(Math.max(1000, hourProduction(who).troops)) : 0;
+        const tr = k === 'truppen' ? hdSoeldner(who) : 0;
         if (tr && WELT.wache) WELT.wache.gutschrift(who, 0, tr);                // (damit der Schummel-Schutz das Abholen durchlässt)
         WELT.nachricht(parseInt(who.slice(1), 10), { art: 'haendlerWare', title: titel, sh: k === 'sh' ? 3 : 0, kiste: k === 'kiste' ? 2 : -1, tr, schild: k === 'schild' ? 2 : 0,
             text: k === 'sammeln' ? 'Sammel-Beschleuniger gekauft – 2 Std. sammelst du 30 % schneller.' : 'Gekauft: ' + w.name + ' – liegt unter Events → Belohnung.' });
@@ -96,7 +98,7 @@ function hdKaufen(who, k) {                           // (Weltrechner) bezahlen 
         if (k === 'sh') heroGrantShards(who, 3);
         if (k === 'kiste' && bs && bs.spare) { const sp = bs.spare[pickRandomSlot()]; if (sp) sp[2] = (sp[2] || 0) + 1; }
         if (k === 'schild' && bs) { bs.shields = bs.shields || {}; bs.shields[2] = (bs.shields[2] || 0) + 1; }
-        if (k === 'truppen') { const cap = botCapitalOf(who); if (cap != null) islandTroops[cap] = (islandTroops[cap] || 0) + Math.round(Math.max(1000, hourProduction(who).troops)); }
+        if (k === 'truppen') { const cap = botCapitalOf(who); if (cap != null) islandTroops[cap] = (islandTroops[cap] || 0) + hdSoeldner(who); }
         saveBotState();
     }
     saveGame(); return '';

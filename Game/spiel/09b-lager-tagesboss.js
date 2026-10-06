@@ -159,7 +159,7 @@ function dbossHit(m, now) {                         // every attack takes life o
     const dmg = Math.max(1, Math.min(b.hp, Math.round((m.troops + heroGefOf(h, m.troops)) * fa), Math.round(b.max * DBOSS_CAP)));
     const used = Math.min(m.troops, dmg / fa), loss = Math.min(m.troops, Math.round(used * .25 * (1 - Math.min(90, fieldShield(who) + h.loss) / 100))), wounded = fieldHurt(who, loss, hx);   // a quarter of those who struck
     const hp0 = b.hp; b.hp -= dmg; b.dmg[who] = (b.dmg[who] || 0) + dmg; evPunkte('boss', who, 30 * dmg / (b.max * DBOSS_CAP));   // Boss-Jagd
-    const gold = payGold(who, dmg * .3 * (1 + h.gold / 100));
+    const gold = payGold(who, dmg * .3 * WIRTSCHAFT_KOSTEN * (1 + h.gold / 100));   // (Gold je Schaden × WIRTSCHAFT_KOSTEN wie das Kampf-Gold)
     barbHome(m, m.troops - loss, now);
     if (isP) {
         const rk = dbossRanks(b), gef = heroGefOf(h, m.troops);

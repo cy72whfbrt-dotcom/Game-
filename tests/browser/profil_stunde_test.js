@@ -41,7 +41,9 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     // 4) Tempel: Münzen und Truppen pro Stunde
     const tp = islands.find(i => i.type === 'temple'); out.tempel = templeBonusLine(tp).replace(/<[^>]+>/g, ''); out.tempelMult = templeBaseMult(tp) * templeHoldMultiplier(tp.id) * shrineMult('player');
     // 5) Hauptstadt: Holz/Stein/Eisen pro Stunde (Holzfäller Stufe 20) – kommt genau so an
-    const c = loadCity(), alt = c.levels.lumber; c.levels.lumber = 20; const rs = AUF.rohStunde('player'), r0 = Object.assign({}, AUF.rohVon('player'));
+    const c = loadCity(), alt = c.levels.lumber; c.levels.lumber = 0; const burg = AUF.rohStunde('player').h;
+    out.klein = { burg, burgText: fmtStunde(burg), f: [fmtStunde(.04), fmtStunde(.004), fmtStunde(1.25), fmtStunde(150.4)] };   // (kleine Werte nicht als 0)
+    c.levels.lumber = 20; const rs = AUF.rohStunde('player'), r0 = Object.assign({}, AUF.rohVon('player'));
     produceTicks(3600000 / productionTickMs()); const r1 = AUF.rohVon('player'); out.roh = { rs, kam: { h: r1.h - r0.h, s: r1.s - r0.s, e: r1.e - r0.e } }; c.levels.lumber = alt;
     // 6) Mitspieler: genau die gleiche Rechnung (eigener Takt, eigene Boni) – eine Stunde
     const X = BOT_DEFS.find(x => !x.mensch && botOwnedIslands[x.id].size && islandById[botCapitalOf(x.id)]).id, own = botOwnedIslands[X];
@@ -70,6 +72,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(/pro Stunde/.test(r.tempel) && !/Tick/.test(r.tempel) && r.tempel.includes('+' + Math.round(15 * r.tempelMult) + ' Münzen') && r.tempel.includes('+' + Math.round(6 * r.tempelMult) + ' Truppen pro Stunde'), 'Tempel: Münzen und Truppen pro Stunde', r.tempel);
   const R = r.roh;
   ok(['h', 's', 'e'].every(k => Math.abs(R.kam[k] - R.rs[k]) <= 1) && R.rs.h > 50 && R.rs.h < 1000, 'Hauptstadt: Holz/Stein/Eisen pro Stunde wie angezeigt (Holzfäller 20: ' + Math.round(R.rs.h) + ' Holz/Std.)', R);
+  const K = r.klein;
+  ok(K.f.join('|') === '0,04|0|1,3|150' && K.burg > 0 && K.burg < 1 && K.burgText !== '0' && K.burgText === String(Math.round(K.burg * 100) / 100).replace('.', ','), 'kleine Erträge: unter 1 mit zwei Nachkommastellen (nur die Burg: ' + K.burgText + ' Holz/Std., nicht „0“)', K);
   const M = r.bot;
   ok(Math.abs(M.troops - M.hp.troops * M.anteil) <= 2 && Math.abs(M.coins - M.hp.coins * M.anteil) <= 2 && M.hp.troops > 0, 'Mitspieler: eine Stunde bringt genau seine Produktion pro Stunde', M);
   ok(r.ortszeit !== -60 && r.ortszeit !== -120 && r.saison.every(s => s.ende === 'So., 18:00' && s.tage >= 56 - 1 / 12 && s.tage < 63), 'Saison-Ende: immer Sonntag 18:00 deutscher Zeit (Gerät in Los Angeles, Sommer-/Winterzeit)', r.saison);

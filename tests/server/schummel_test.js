@@ -36,13 +36,15 @@ let b;
   ok('keine Skript-Fehler', !fehler.length, fehler.join(' | '));
   // 4) Das Labor wartet noch im Hauptbuch → dasselbe (alte) Profil wird alle 10 s nochmal angewendet. Früher sprangen die
   //    Welt-Rohstoffe dabei auf die Profil-Werte zurück (Ertrag/Beute weg, der Unterschied ging als Nachricht ans Handy).
-  //    Handy zu (kein neues Profil mehr): der Ertrag seiner Burg muss in der Welt stehen bleiben und wachsen.
+  //    Handy zu (kein neues Profil mehr): was in der Welt steht, bleibt (Ertrag pro Stunde, in 5 Min. nicht messbar: nur die Burg
+  //    gibt etwa 0,04 Holz pro Stunde – darum „nicht weniger“ statt „wächst“; ein Holz-Gutschein per SQL ginge nicht: der Weltrechner
+  //    rechnet im Speicher und liest ow_bots nicht zurück)
   await p.close();
   await warte(RUNDE);
   const zA = zustand();
   await warte(5 * 60000);
   const zB = zustand(), hA = (zA.res || {}).h || 0, hB = (zB.res || {}).h || 0;
-  ok('Profil nochmal angewendet: Welt-Holz springt nicht auf das alte Profil zurück (Ertrag bleibt)', hB - hA >= 3, hA + ' → ' + hB);
+  ok('Profil nochmal angewendet: Welt-Holz springt nicht auf das alte Profil zurück (bleibt mindestens)', hB >= hA, hA + ' → ' + hB);
   ok('… und schaukelt sich auch nicht hoch', hB - h0 < 1e5, h0 + ' → ' + hB);
   // 5) Neustart kurz nach dem Beitritt: die gespeicherte Welt kennt ihn (und sein Hauptbuch) noch nicht, sein Profil ist gefälscht.
   //    Früher eichte sich der Weltrechner dann am Profil – Stufe, Labor und Holz kamen so in die Welt.

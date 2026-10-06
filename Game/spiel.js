@@ -1250,10 +1250,11 @@ function totalCoinProductionPerTick() {
     return sum;
 }
 // Ertrag pro Stunde (Alexander 5.10.: überall „pro Stunde“ wie Million Lords): je Tick × Ticks in einer Stunde (Tick-Länge mit
-// der Fähigkeit „Geschwindigkeit“); unter 100 mit einer Nachkommastelle, damit kleine Werte nicht als 0 erscheinen
+// der Fähigkeit „Geschwindigkeit“); unter 100 mit einer, unter 1 mit zwei Nachkommastellen, damit kleine Werte nicht als 0
+// erscheinen (nur die Burg: 0,04 Holz pro Stunde)
 const proStunde = (jeTick, ms) => jeTick * 3600000 / (ms || productionTickMs());
-const NF_1 = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 1 });
-function fmtStunde(n) { return Math.abs(n) >= 100 ? fmtNum(Math.round(n)) : NF_1.format(Math.round(n * 10) / 10); }
+const NF_1 = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 1 }), NF_2 = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 2 });
+function fmtStunde(n) { const a = Math.abs(n); return a >= 100 ? fmtNum(Math.round(n)) : a >= 1 ? NF_1.format(Math.round(n * 10) / 10) : NF_2.format(Math.round(n * 100) / 100); }
 function setText(el, v) { v = String(v); if (el && el.textContent !== v) el.textContent = v; }        // DOM writes only on a change: an equal write still costs a layout
 function setShown(el, on) { const d = on ? 'block' : 'none'; if (el && el.style.display !== d) el.style.display = d; }
 function updateHud() {
@@ -1292,10 +1293,10 @@ const SKILL_DEFS = {
   speed:       { icon: 'hourglass', name: 'Geschwindigkeit',    desc: 'schnellere Produktion und Märsche', msPerLevel: 40, max: 10 },
   troops:      { icon: 'troops',    name: 'Truppenherstellung', desc: 'Truppenproduktion', pct: 3, max: 50 },
   defense:     { icon: 'defense',   name: 'Verteidigung',       desc: 'jede Basis verteidigt mit mehr Truppen', defPct: 3, max: 50 },
-  defenseGold: { icon: 'shield',    name: 'Verteidigung: Gold', desc: 'Gold pro getöteter Truppe', rate: 0.3, max: 50 },
+  defenseGold: { icon: 'shield',    name: 'Verteidigung: Gold', desc: 'Gold für getötete Truppen', rate: 0.3 * WIRTSCHAFT_KOSTEN, max: 50 },
   attack:      { icon: 'attack',    name: 'Angriff',            desc: 'mehr Truppen bei jedem Angriff', atkPct: 3, max: 50 },
-  attackGold:  { icon: 'sell',      name: 'Angriff: Gold',      desc: 'Gold pro getöteter Truppe', rate: 0.3, max: 50 }
-};
+  attackGold:  { icon: 'sell',      name: 'Angriff: Gold',      desc: 'Gold für getötete Truppen', rate: 0.3 * WIRTSCHAFT_KOSTEN, max: 50 }
+};   // (Gold je Truppe × WIRTSCHAFT_KOSTEN wie alle Münzen außerhalb der Produktion – die 100.000 Start-Truppen bleiben, Kosten sind ÷ 1.800)
 const EQUIPMENT_BASE_COST = 100;
 
 // ===== Shop: gem-bought crates, rarity items, combine, salvage =====
@@ -4792,15 +4793,15 @@ function attackFlatBonus(troops) {
 function goldPerKillRate() {
     return (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate;
 }
-function killGoldRate(who, hx) {               // "Angriff: Gold" per enemy killed; a hero's +X % Gold: X % on it, and X % of a coin per kill of his own
+function killGoldRate(who, hx) {               // "Angriff: Gold" per enemy killed; a hero's +X % Gold: X % on it, and X % of a coin per kill of his own (× WIRTSCHAFT_KOSTEN wie der Satz)
     const g = hx ? (hx.gold || 0) / 100 : 0;
-    return (who === 'player' ? goldPerKillRate() : botGoldRate(who, 'attackGold')) * (1 + g) + g;
+    return (who === 'player' ? goldPerKillRate() : botGoldRate(who, 'attackGold')) * (1 + g) + g * WIRTSCHAFT_KOSTEN;
 }
 function defGoldRate(who) { return who === 'player' ? (skills.defenseGold || 0) * SKILL_DEFS.defenseGold.rate : botGoldRate(who, 'defenseGold'); }
 function payGold(who, n) { n = Math.round(n); if (n <= 0 || !who) return 0; if (who === 'player') inboxAdd({ src: 'fight', coins: n }); else botCoins[who] = (botCoins[who] || 0) + n; return n; }
 function fieldGold(aWho, dWho, fb, aHx, dHx) {  // fights in the open pay like fights for bases: the attacker per enemy killed, the defender per attacker killed (+ each side's hero)
     const g = dHx ? (dHx.gold || 0) / 100 : 0;
-    return { a: payGold(aWho, fb.dLoss * killGoldRate(aWho, aHx)), d: payGold(dWho, fb.aLoss * (defGoldRate(dWho) * (1 + g) + g)) };
+    return { a: payGold(aWho, fb.dLoss * killGoldRate(aWho, aHx)), d: payGold(dWho, fb.aLoss * (defGoldRate(dWho) * (1 + g) + g * WIRTSCHAFT_KOSTEN)) };
 }
 // "Geschwindigkeit" skill: shortens the production tick interval.
 function productionTickMs() {
@@ -4811,7 +4812,7 @@ function skillBonusText(def, level) {
     if (def.atkPct) return '+' + fmtNum(level * def.atkPct) + ' % Truppen';
     if (def.defPct) return '+' + fmtNum(level * def.defPct) + ' % Truppen';
     if (def.flat) return '+' + fmtNum(level * def.flat) + (def.unit || '');
-    if (def.rate) return '+' + (level * def.rate).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' Gold/Kill';
+    if (def.rate) return '+' + (level * def.rate * 1000).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' Gold je 1.000 Kills';
     if (def.msPerLevel) { const l = Math.min(level, def.max || level); return '+' + fmtNum(Math.round(1000 / (1000 - l * def.msPerLevel) * 100 - 100)) + ' % Produktion, +' + fmtNum(l * 5) + ' % Marschtempo' + (def.max && level >= def.max ? ' (max.)' : ''); }
     return '';
 }
@@ -10455,7 +10456,7 @@ function dbossHit(m, now) {                         // every attack takes life o
     const dmg = Math.max(1, Math.min(b.hp, Math.round((m.troops + heroGefOf(h, m.troops)) * fa), Math.round(b.max * DBOSS_CAP)));
     const used = Math.min(m.troops, dmg / fa), loss = Math.min(m.troops, Math.round(used * .25 * (1 - Math.min(90, fieldShield(who) + h.loss) / 100))), wounded = fieldHurt(who, loss, hx);   // a quarter of those who struck
     const hp0 = b.hp; b.hp -= dmg; b.dmg[who] = (b.dmg[who] || 0) + dmg; evPunkte('boss', who, 30 * dmg / (b.max * DBOSS_CAP));   // Boss-Jagd
-    const gold = payGold(who, dmg * .3 * (1 + h.gold / 100));
+    const gold = payGold(who, dmg * .3 * WIRTSCHAFT_KOSTEN * (1 + h.gold / 100));   // (Gold je Schaden × WIRTSCHAFT_KOSTEN wie das Kampf-Gold)
     barbHome(m, m.troops - loss, now);
     if (isP) {
         const rk = dbossRanks(b), gef = heroGefOf(h, m.troops);
@@ -10846,7 +10847,7 @@ function invTreffer(m, now) {                        // deine (oder ihre) Truppe
     const I = invAktiv(now), a = I && I.armies.find(x => x.id === m.tid), who = m.who, isP = who === 'player';
     if (!a) { barbHome(m, m.troops, now); if (isP) flashHint('Die Barbaren-Armee ist schon weg – deine Truppen kehren um.', 3500); return; }
     const hx = heroFieldFx(who, m.hero, {}, m.hero2), fb = barbFight(who, m.troops, hx, a.t), wounded = fieldHurt(who, fb.loss, hx);
-    const gold = payGold(who, fb.kill * .3 * (1 + (hx || HX0).gold / 100)), pts = fb.won ? INV_PTS_SIEG : Math.max(1, Math.round(INV_PTS_SIEG * fb.kill / a.max));
+    const gold = payGold(who, fb.kill * .3 * WIRTSCHAFT_KOSTEN * (1 + (hx || HX0).gold / 100)), pts = fb.won ? INV_PTS_SIEG : Math.max(1, Math.round(INV_PTS_SIEG * fb.kill / a.max));
     if (fb.won) I.armies = I.armies.filter(x => x !== a); else a.t = Math.max(1, Math.round(a.t - fb.kill));
     invPunkteDazu(I, who, pts); evPunkte('krieg', who, fb.kill / WO_KILL_PER); goalBump(who, 'barb');
     barbHome(m, m.troops - fb.loss, now); evDirty = true;
@@ -10909,7 +10910,7 @@ function drTreffer(m, now) {                         // wie beim Tagesboss: Scha
     const dmg = Math.max(1, Math.min(D.hp, Math.round((m.troops + heroGefOf(h, m.troops)) * fa), Math.round(D.max * DR_CAP)));
     const used = Math.min(m.troops, dmg / fa), loss = Math.min(m.troops, Math.round(used * .33 * (1 - Math.min(90, fieldShield(who) + h.loss) / 100))), wounded = fieldHurt(who, loss, hx);
     D.hp -= dmg; D.dmg[who] = (D.dmg[who] || 0) + dmg; evDirty = true;
-    const gold = payGold(who, dmg * .2 * (1 + h.gold / 100));
+    const gold = payGold(who, dmg * .2 * WIRTSCHAFT_KOSTEN * (1 + h.gold / 100));   // (Gold je Schaden × WIRTSCHAFT_KOSTEN wie das Kampf-Gold)
     evPunkte('boss', who, 30 * dmg / (D.max * DR_CAP));
     barbHome(m, m.troops - loss, now);
     const rk = evRang(D.dmg), pl = rk.findIndex(e => e[0] === who) + 1;
@@ -13053,6 +13054,9 @@ if (window.WELT) {
     const FLUG_MS = 10000, FLUG_MAX_MS = 48 * 3600000;
     // Zwei Töpfe (Alexander 5.10.): Stufen-Münzen (sicher: die EP kommen vom Weltrechner) je Stunde – der feste Rest nur EINMAL
     // am Tag (vorher jede Stunde neu: ~8 Mio. Münzen am Tag „ohne Beleg“). Der Tages-Topf steht in der Welt (überlebt Neustarts).
+    // Feste Größen × WIRTSCHAFT_KOSTEN (5.10., wie die Münzen/Truppen außerhalb der Produktion): Tages-Rest vorher 50.000, Thron-Shop/
+    // Saison-Pass mindestens 5.000 Münzen bzw. 1.000 Truppen, Fund mindestens 100 Truppen
+    const kW = n => Math.max(1, Math.round(n * WIRTSCHAFT_KOSTEN)), SR_FIX = kW(50000), SR_STUNDE_MIN = kW(5000), TR_STUNDE_MIN = kW(1000), FUND_TR_MIN = kW(100);
     function spielraumTeile(who, m) {
         const L = Math.max(1, m.lvl), now = Date.now();
         let von = L; for (const x of m.lvlLog) if (x.l < von) von = x.l;
@@ -13060,7 +13064,7 @@ if (window.WELT) {
         while (m.ein.length && now - m.ein[0].t > 3600000) m.ein.shift();
         const gemessen = m.ein.reduce((a, x) => a + x.n, 0), dauer = now - m.initT;
         const stunde = dauer >= 3600000 ? gemessen : Math.max(m.hp0, gemessen * 3600000 / Math.max(dauer, 600000));
-        return { lv, fix: 50000 + 3 * Math.max(5000, stunde) + 3 * levelRewardCoins(L + 1) };
+        return { lv, fix: SR_FIX + 3 * Math.max(SR_STUNDE_MIN, stunde) + 3 * levelRewardCoins(L + 1) };
     }
     function spielraumTag(who) { const d = wd(who), t = todayKey(); if (!d) return null; if (d.srT !== t) { d.srT = t; d.srN = 0; } return d; }
     function spielraumNehmen(who, m, n) {           // n Münzen aus dem Spielraum: erst die Stufen-Münzen (Stunde), dann der Tages-Topf
@@ -13074,7 +13078,7 @@ if (window.WELT) {
     function muenzGutscheine(who, mehr, d) {
         if (!d || !(mehr > 0)) return 0;
         if (passMuenzH === null) { passMuenzH = 0; for (let L = 1; L <= PASS_LVLS; L++) for (const pr of [false, true]) { const r = passRewardAt(L, pr); if (r.k === 'coins') passMuenzH += r.n || 1; } }
-        const h = Math.max(5000, nn(hourProduction(who).coins)) * 1.2, s = passNo(Date.now());   // (+20 %: sein Handy rechnet mit eigenen Boni)
+        const h = Math.max(SR_STUNDE_MIN, nn(hourProduction(who).coins)) * 1.2, s = passNo(Date.now());   // (+20 %: sein Handy rechnet mit eigenen Boni)
         if (d.pS !== s) { d.pS = s; d.pM = 0; }
         const passRest = Math.max(0, passMuenzH - nn(d.pM)), thronRest = Math.max(0, Math.floor(throneEarnedOf(who) / 150) + 3 - nn(d.tC));
         const use = Math.min(mehr, (passRest + thronRest) * h); if (!(use > 0)) return 0;
@@ -13307,7 +13311,7 @@ if (window.WELT) {
             const kaeufe = Math.floor(throneEarnedOf(who) / 200) + 5;
             if (d.tk + 1 > kaeufe) { if (!ende) return -1; warnen(who, 'truppen', 'Thron-Shop: ' + (d.tk + 1) + '. Truppen-Kauf, mit seinen Thron-Punkten gehen höchstens ' + kaeufe + ' – abgelehnt.', b.n); return 0; }
             d.tk++; saveBotState();
-            erlaubt = 3 * Math.max(1000, hourProduction(who).troops) + 1000;   // ×3: sein Handy rechnet die Produktion mit eigenen Boni etwas anders
+            erlaubt = 3 * Math.max(TR_STUNDE_MIN, hourProduction(who).troops) + TR_STUNDE_MIN;   // ×3: sein Handy rechnet die Produktion mit eigenen Boni etwas anders
         } else if (q === 'heil') {                     // Krankenhaus: höchstens so viele, wie verwundet sind
             if (now - m.w.vorT > WACHE_WARTEN_MS) m.w.vor = 0;
             erlaubt = (m.w.vor + m.w.u) * 1.02 + 10;
@@ -13320,7 +13324,7 @@ if (window.WELT) {
             const heute = todayKey(); if (!d.fund || d.fund.t !== heute) d.fund = { t: heute, n: 0 };   // höchstens 300 am Tag (Alexander 5.10.: ~7 Std. ohne Pause – gegen ein Skript rund um die Uhr; überlebt Neustarts)
             if (d.fund.n >= 300) { if (d.fund.n === 300) warnen(who, 'truppen', 'Über 300 Funde auf der Karte an einem Tag – abgelehnt.', b.n); d.fund.n = 301; saveBotState(); return 0; }
             d.fund.n++; saveBotState();
-            erlaubt = Math.max(100, niceRound(levelRewardTroops(Math.max(m.lvl, 2)) * 0.05)) * 1.05 + 10;
+            erlaubt = Math.max(FUND_TR_MIN, niceRound(levelRewardTroops(Math.max(m.lvl, 2)) * 0.05)) * 1.05 + FUND_TR_MIN;
         } else {                                       // Admin-Geschenk: nur so viel, wie der Admin geschickt hat
             if (n > nn(d.gTr) + 0.5 && !ende) return -1;
             erlaubt = nn(d.gTr); d.gTr = Math.max(0, nn(d.gTr) - Math.min(n, erlaubt)); saveBotState();

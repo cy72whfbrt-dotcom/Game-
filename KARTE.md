@@ -28,7 +28,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `addPoly` → Game/spiel/03a-karte-hintergrund.js:168
 - `addProps` → Game/baukunst/04-vielfalt-stile.js:514
 - `addXp` → Game/spiel/02a-shop-stufen.js:255
-- `adminBefehl` → Game/spiel/10d-welt-weltrechner.js:1150
+- `adminBefehl` → Game/spiel/10d-welt-weltrechner.js:1153
 - `afterSplash` → Game/spiel/06d-schild-produktion.js:350
 - `ago` → Game/spiel/05c-erfolge-rangliste.js:170
 - `ago` → Game/spiel/05d-maersche-kampfbericht.js:130
@@ -92,7 +92,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `archShape` → Game/baukunst/08-himmelsfeste-bilder.js:81
 - `archWin` → Game/baukunst/06-turmhof-festung.js:24
 - `armee_sicht_setzen` → Game/server/05-datenbank-welt.php:267
-- `armeeSichtRunde` → Game/spiel/10d-welt-weltrechner.js:928
+- `armeeSichtRunde` → Game/spiel/10d-welt-weltrechner.js:931
 - `armillary` → Game/baukunst/08-himmelsfeste-bilder.js:158
 - `armorDefenseFor` → Game/spiel/04-kampf.js:265
 - `armorDefensePct` → Game/spiel/04-kampf.js:266
@@ -133,7 +133,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `aufraeumen` → Game/server/05-datenbank-welt.php:176
 - `ausbauDrueber` → Game/spiel/10b-inselfenster-knoepfe.js:6
 - `ausbauMerken` → Game/spiel/10b-inselfenster-knoepfe.js:5
-- `ausbauPruefen` → Game/spiel/10d-welt-weltrechner.js:377
+- `ausbauPruefen` → Game/spiel/10d-welt-weltrechner.js:380
 - `ausgangSichern` → Game/welt.js:83
 - `ausschalten` → Game/benachrichtigung.js:89
 - `autoCombineAll` → Game/spiel/02a-shop-stufen.js:107
@@ -220,14 +220,14 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `beam` → Game/baukunst/06-turmhof-festung.js:19
 - `befehl_ablegen` → Game/server/05-datenbank-welt.php:184
 - `befehl_ok` → Game/server/02-sicherheit-datenlecks.php:117
-- `befehlBezahlt` → Game/spiel/10d-welt-weltrechner.js:461
+- `befehlBezahlt` → Game/spiel/10d-welt-weltrechner.js:464
 - `befehle_abholen` → Game/server/05-datenbank-welt.php:197
 - `befehle_bezahlt_ok` → Game/server/05-datenbank-welt.php:193
 - `befehle_gerecht` → Game/server/05-datenbank-welt.php:209
 - `befehle_offen` → Game/server/05-datenbank-welt.php:187
 - `befehle_quittieren` → Game/server/05-datenbank-welt.php:188
 - `befehleGezaehlt` → Game/weltrechner/start.js:53
-- `befehlFertig` → Game/spiel/10d-welt-weltrechner.js:460
+- `befehlFertig` → Game/spiel/10d-welt-weltrechner.js:463
 - `befehlFrisch` → Game/welt.js:79
 - `BELL` → Game/baukunst/06-turmhof-festung.js:237
 - `bergfried` → Game/baukunst/02-buehne-grundbasis.js:235
@@ -258,8 +258,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bgShow` → Game/spiel/03a-karte-hintergrund.js:291
 - `bgWarm` → Game/spiel/03a-karte-hintergrund.js:318
 - `bindTroopInput` → Game/spiel/10a-inselfenster-vorschau.js:271
-- `bitHat` → Game/spiel/10d-welt-weltrechner.js:873
-- `bitsZu` → Game/spiel/10d-welt-weltrechner.js:872
+- `bitHat` → Game/spiel/10d-welt-weltrechner.js:876
+- `bitsZu` → Game/spiel/10d-welt-weltrechner.js:875
 - `bk3d` → Game/spiel/03b-gebaeude-3d.js:325
 - `bkDraw` → Game/spiel/03b-gebaeude-3d.js:359
 - `bkModel` → Game/spiel/03b-gebaeude-3d.js:328
@@ -569,11 +569,11 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `burg` → Game/baukunst/02-buehne-grundbasis.js:282
 - `burgKarte` → Game/aufbau.js:448
 - `burgKosten` → Game/aufbau.js:97
-- `burgKostenAlt` → Game/spiel/10d-welt-weltrechner.js:490
+- `burgKostenAlt` → Game/spiel/10d-welt-weltrechner.js:493
 - `burgSchutz` → Game/aufbau.js:105
 - `burgSchutzStufe` → Game/aufbau.js:104
 - `burgStufe` → Game/aufbau.js:93
-- `burgZeitAlt` → Game/spiel/10d-welt-weltrechner.js:489
+- `burgZeitAlt` → Game/spiel/10d-welt-weltrechner.js:492
 - `burgZeitRoh` → Game/aufbau.js:101
 - `bytes` → Game/benachrichtigung.js:26
 - `CAM_PIECES` → Game/spiel/03e-kamera-eingabe.js:49
@@ -803,7 +803,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drawFog` → Game/spiel/06e-nebel-zeichnen.js:84
 - `drawGatehouse` → Game/spiel/06e-nebel-zeichnen.js:133
 - `drawGlyph` → Game/spiel/01a-grundlagen.js:205
-- `drawHaendler` → Game/haendler.js:147
+- `drawHaendler` → Game/haendler.js:149
 - `drawMap` → Game/spiel/03d-maersche-tagnacht.js:233
 - `drawMapBattles` → Game/spiel/07a-schlachten.js:103
 - `drawMarchButtons` → Game/spiel/03d-maersche-tagnacht.js:71
@@ -955,9 +955,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `flickenBauen` → Game/welt.js:23
 - `FLOW` → Game/baukunst/07-hafen-palast.js:416
 - `FLOW2` → Game/baukunst/07-hafen-palast.js:417
-- `flugAus` → Game/spiel/10d-welt-weltrechner.js:279
-- `flugMerken` → Game/spiel/10d-welt-weltrechner.js:273
-- `flugSumme` → Game/spiel/10d-welt-weltrechner.js:272
+- `flugAus` → Game/spiel/10d-welt-weltrechner.js:282
+- `flugMerken` → Game/spiel/10d-welt-weltrechner.js:276
+- `flugSumme` → Game/spiel/10d-welt-weltrechner.js:275
 - `flushBannerSprites` → Game/spiel/03c-wappen-thronplatz.js:93
 - `flushBotState` → Game/bots/04-stand-stadt.js:71
 - `flute` → Game/spiel/10c-start-einstellungen.js:49
@@ -976,7 +976,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `fmtM` → Game/spiel/05d-maersche-kampfbericht.js:132
 - `fmtNum` → Game/spiel/01a-grundlagen.js:101
 - `fmtPassWait` → Game/spiel/01b-weltkarte.js:347
-- `fmtStunde` → Game/spiel/01e-nebel-kampfwerte-hud.js:225
+- `fmtStunde` → Game/spiel/01e-nebel-kampfwerte-hud.js:226
 - `fo` → Game/spiel/10c-start-einstellungen.js:57
 - `foAkaFuer` → Game/aufbau.js:164
 - `FOAM` → Game/baukunst/08-himmelsfeste-bilder.js:21
@@ -1096,14 +1096,14 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `groundGlow` → Game/baukunst/03-wahrzeichen-feuer.js:25
 - `grow` → Game/spiel/03a-karte-hintergrund.js:216
 - `grow` → Game/spiel/03a-karte-hintergrund.js:226
-- `gruppeBezahlt` → Game/spiel/10d-welt-weltrechner.js:988
+- `gruppeBezahlt` → Game/spiel/10d-welt-weltrechner.js:991
 - `gruppeLaeuft` → Game/aufbau.js:132
 - `h` → Game/admin.php:140
 - `h` → Game/index.php:54
 - `haendler_ware_ok` → Game/server/03-nebel-maersche-seite.php:107
-- `haendlerAt` → Game/haendler.js:173
-- `haendlerChip` → Game/haendler.js:207
-- `haendlerOeffnen` → Game/haendler.js:178
+- `haendlerAt` → Game/haendler.js:175
+- `haendlerChip` → Game/haendler.js:209
+- `haendlerOeffnen` → Game/haendler.js:180
 - `hall` → Game/baukunst/06-turmhof-festung.js:115
 - `handleTap` → Game/spiel/10b-inselfenster-knoepfe.js:233
 - `has` → Game/spiel/03a-karte-hintergrund.js:432
@@ -1113,58 +1113,59 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `hauptstadtStufen` → Game/aufbau.js:451
 - `hauptVon` → Game/aufbau.js:449
 - `hauptVor` → Game/aufbau.js:450
-- `HB_ACH` → Game/spiel/10d-welt-weltrechner.js:508
-- `hbAusProfil` → Game/spiel/10d-welt-weltrechner.js:814
-- `hbBauten` → Game/spiel/10d-welt-weltrechner.js:505
-- `hbDa` → Game/spiel/10d-welt-weltrechner.js:503
-- `hbE0f` → Game/spiel/10d-welt-weltrechner.js:522
-- `hbFoSchritt` → Game/spiel/10d-welt-weltrechner.js:633
-- `hbFreiDazu` → Game/spiel/10d-welt-weltrechner.js:573
-- `hbGearNeu` → Game/spiel/10d-welt-weltrechner.js:657
-- `hbGut` → Game/spiel/10d-welt-weltrechner.js:614
-- `hbHeldenPruefen` → Game/spiel/10d-welt-weltrechner.js:712
-- `hbHeldenStart` → Game/spiel/10d-welt-weltrechner.js:521
-- `hbHeldenWert` → Game/spiel/10d-welt-weltrechner.js:520
-- `hbHeldObj` → Game/spiel/10d-welt-weltrechner.js:518
-- `hbHeldWert` → Game/spiel/10d-welt-weltrechner.js:519
-- `hbHeldZeile` → Game/spiel/10d-welt-weltrechner.js:517
-- `hbItemWert` → Game/spiel/10d-welt-weltrechner.js:532
-- `hbKisteDazu` → Game/spiel/10d-welt-weltrechner.js:546
-- `hbKisteFrei` → Game/spiel/10d-welt-weltrechner.js:1199
-- `hbKistenGesamt` → Game/spiel/10d-welt-weltrechner.js:529
-- `hbKistenGrenze` → Game/spiel/10d-welt-weltrechner.js:528
-- `hbKlemmen` → Game/spiel/10d-welt-weltrechner.js:782
-- `hbKontenMerken` → Game/spiel/10d-welt-weltrechner.js:564
-- `hbKontoDeckel` → Game/spiel/10d-welt-weltrechner.js:776
-- `hbLvlPunkte` → Game/spiel/10d-welt-weltrechner.js:531
-- `hbMax` → Game/spiel/10d-welt-weltrechner.js:506
-- `hbNeu` → Game/spiel/10d-welt-weltrechner.js:547
-- `hbNochmal` → Game/spiel/10d-welt-weltrechner.js:940
-- `hbPass` → Game/spiel/10d-welt-weltrechner.js:509
-- `hbPruefen` → Game/spiel/10d-welt-weltrechner.js:678
-- `hbPunkteGrenze` → Game/spiel/10d-welt-weltrechner.js:530
-- `hbRunde` → Game/spiel/10d-welt-weltrechner.js:947
-- `hbSchildPruefen` → Game/spiel/10d-welt-weltrechner.js:738
-- `hbSchreiben` → Game/spiel/10d-welt-weltrechner.js:747
-- `hbSplitterGems` → Game/spiel/10d-welt-weltrechner.js:537
-- `hbStadtSchritt` → Game/spiel/10d-welt-weltrechner.js:616
-- `hbSterne` → Game/spiel/10d-welt-weltrechner.js:649
-- `hbStufe` → Game/spiel/10d-welt-weltrechner.js:504
-- `hbThronKisten` → Game/spiel/10d-welt-weltrechner.js:568
-- `hbThronPreis` → Game/spiel/10d-welt-weltrechner.js:567
-- `hbVorrat` → Game/spiel/10d-welt-weltrechner.js:592
-- `hbWarte` → Game/spiel/10d-welt-weltrechner.js:610
-- `hbZahlen` → Game/spiel/10d-welt-weltrechner.js:597
-- `hdBefehl` → Game/haendler.js:113
-- `hdBild` → Game/haendler.js:146
+- `HB_ACH` → Game/spiel/10d-welt-weltrechner.js:511
+- `hbAusProfil` → Game/spiel/10d-welt-weltrechner.js:817
+- `hbBauten` → Game/spiel/10d-welt-weltrechner.js:508
+- `hbDa` → Game/spiel/10d-welt-weltrechner.js:506
+- `hbE0f` → Game/spiel/10d-welt-weltrechner.js:525
+- `hbFoSchritt` → Game/spiel/10d-welt-weltrechner.js:636
+- `hbFreiDazu` → Game/spiel/10d-welt-weltrechner.js:576
+- `hbGearNeu` → Game/spiel/10d-welt-weltrechner.js:660
+- `hbGut` → Game/spiel/10d-welt-weltrechner.js:617
+- `hbHeldenPruefen` → Game/spiel/10d-welt-weltrechner.js:715
+- `hbHeldenStart` → Game/spiel/10d-welt-weltrechner.js:524
+- `hbHeldenWert` → Game/spiel/10d-welt-weltrechner.js:523
+- `hbHeldObj` → Game/spiel/10d-welt-weltrechner.js:521
+- `hbHeldWert` → Game/spiel/10d-welt-weltrechner.js:522
+- `hbHeldZeile` → Game/spiel/10d-welt-weltrechner.js:520
+- `hbItemWert` → Game/spiel/10d-welt-weltrechner.js:535
+- `hbKisteDazu` → Game/spiel/10d-welt-weltrechner.js:549
+- `hbKisteFrei` → Game/spiel/10d-welt-weltrechner.js:1202
+- `hbKistenGesamt` → Game/spiel/10d-welt-weltrechner.js:532
+- `hbKistenGrenze` → Game/spiel/10d-welt-weltrechner.js:531
+- `hbKlemmen` → Game/spiel/10d-welt-weltrechner.js:785
+- `hbKontenMerken` → Game/spiel/10d-welt-weltrechner.js:567
+- `hbKontoDeckel` → Game/spiel/10d-welt-weltrechner.js:779
+- `hbLvlPunkte` → Game/spiel/10d-welt-weltrechner.js:534
+- `hbMax` → Game/spiel/10d-welt-weltrechner.js:509
+- `hbNeu` → Game/spiel/10d-welt-weltrechner.js:550
+- `hbNochmal` → Game/spiel/10d-welt-weltrechner.js:943
+- `hbPass` → Game/spiel/10d-welt-weltrechner.js:512
+- `hbPruefen` → Game/spiel/10d-welt-weltrechner.js:681
+- `hbPunkteGrenze` → Game/spiel/10d-welt-weltrechner.js:533
+- `hbRunde` → Game/spiel/10d-welt-weltrechner.js:950
+- `hbSchildPruefen` → Game/spiel/10d-welt-weltrechner.js:741
+- `hbSchreiben` → Game/spiel/10d-welt-weltrechner.js:750
+- `hbSplitterGems` → Game/spiel/10d-welt-weltrechner.js:540
+- `hbStadtSchritt` → Game/spiel/10d-welt-weltrechner.js:619
+- `hbSterne` → Game/spiel/10d-welt-weltrechner.js:652
+- `hbStufe` → Game/spiel/10d-welt-weltrechner.js:507
+- `hbThronKisten` → Game/spiel/10d-welt-weltrechner.js:571
+- `hbThronPreis` → Game/spiel/10d-welt-weltrechner.js:570
+- `hbVorrat` → Game/spiel/10d-welt-weltrechner.js:595
+- `hbWarte` → Game/spiel/10d-welt-weltrechner.js:613
+- `hbZahlen` → Game/spiel/10d-welt-weltrechner.js:600
+- `hdBefehl` → Game/haendler.js:115
+- `hdBild` → Game/haendler.js:148
 - `hdDa` → Game/haendler.js:34
 - `hdGekauft` → Game/haendler.js:36
-- `hdKaufen` → Game/haendler.js:77
-- `hdOffen` → Game/haendler.js:177
+- `hdKaufen` → Game/haendler.js:79
+- `hdOffen` → Game/haendler.js:179
 - `hdOrt` → Game/haendler.js:41
 - `hdPreis` → Game/haendler.js:35
-- `hdRender` → Game/haendler.js:179
+- `hdRender` → Game/haendler.js:181
 - `hdSammeln` → Game/haendler.js:37
+- `hdSoeldner` → Game/haendler.js:78
 - `hdSpeichern` → Game/haendler.js:33
 - `hdState` → Game/haendler.js:32
 - `hdTakt` → Game/haendler.js:51
@@ -1172,7 +1173,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `head` → Game/spiel/09d-armeen-wegmarken.js:220
 - `heatAt` → Game/bots/02-kampf-karte.js:266
 - `HEDGE` → Game/baukunst/07-hafen-palast.js:413
-- `heldOk` → Game/spiel/10d-welt-weltrechner.js:982
+- `heldOk` → Game/spiel/10d-welt-weltrechner.js:985
 - `herkunft_ok` → Game/server/03-nebel-maersche-seite.php:126
 - `heroBaseCtx` → Game/spiel/08c-helden.js:65
 - `heroBusy` → Game/spiel/08c-helden.js:108
@@ -1334,11 +1335,11 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `knopf` → Game/buendnis/04-fenster-karte-welt.js:78
 - `knoten` → Game/aufbau.js:320
 - `konto` → Game/spiel/10d-welt-weltrechner.js:125
-- `kontoProfil` → Game/spiel/10d-welt-weltrechner.js:235
+- `kontoProfil` → Game/spiel/10d-welt-weltrechner.js:238
 - `kostenHtml` → Game/aufbau.js:76
 - `kraft` → Game/buendnis/03-mitspieler.js:304
 - `kreis` → Game/spiel/08e-stadtbild-haeuser.js:369
-- `kWert` → Game/spiel/10d-welt-weltrechner.js:527
+- `kWert` → Game/spiel/10d-welt-weltrechner.js:530
 - `label` → Game/spiel/03d-maersche-tagnacht.js:116
 - `lacq` → Game/baukunst/04-vielfalt-stile.js:231
 - `lager` → Game/baukunst/02-buehne-grundbasis.js:158
@@ -1518,7 +1519,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `MT.wool` → Game/baukunst/05-umland.js:38
 - `MT.yard` → Game/baukunst/05-umland.js:28
 - `muenzen_kuerzen` → Game/server/02-sicherheit-datenlecks.php:169
-- `muenzGutscheine` → Game/spiel/10d-welt-weltrechner.js:176
+- `muenzGutscheine` → Game/spiel/10d-welt-weltrechner.js:179
 - `mulberry32` → Game/spiel/01b-weltkarte.js:51
 - `Music` → Game/spiel/10c-start-einstellungen.js:8
 - `muster` → Game/weltrechner/start.js:87
@@ -1562,20 +1563,20 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `name_anfrage` → Game/server/06-speichern-push-konto.php:176
 - `name_erlaubt` → Game/server/02-sicherheit-datenlecks.php:48
 - `names` → Game/bots/03-angreifen.js:85
-- `nbAufdecken` → Game/spiel/10d-welt-weltrechner.js:877
-- `nbAuspacken` → Game/spiel/10d-welt-weltrechner.js:876
-- `nbIndex` → Game/spiel/10d-welt-weltrechner.js:864
-- `nbKennt` → Game/spiel/10d-welt-weltrechner.js:890
-- `nbOffen` → Game/spiel/10d-welt-weltrechner.js:888
-- `nbPacken` → Game/spiel/10d-welt-weltrechner.js:875
-- `nbZ` → Game/spiel/10d-welt-weltrechner.js:889
+- `nbAufdecken` → Game/spiel/10d-welt-weltrechner.js:880
+- `nbAuspacken` → Game/spiel/10d-welt-weltrechner.js:879
+- `nbIndex` → Game/spiel/10d-welt-weltrechner.js:867
+- `nbKennt` → Game/spiel/10d-welt-weltrechner.js:893
+- `nbOffen` → Game/spiel/10d-welt-weltrechner.js:891
+- `nbPacken` → Game/spiel/10d-welt-weltrechner.js:878
+- `nbZ` → Game/spiel/10d-welt-weltrechner.js:892
 - `near` → Game/bots/05-verteidigen-takt.js:177
 - `nearestOwnedIslandTo` → Game/spiel/02c-spaeher-ankunft.js:8
 - `nebel_flicken` → Game/server/03-nebel-maersche-seite.php:23
 - `nebel_sieht` → Game/server/03-nebel-maersche-seite.php:10
 - `nebel_teil` → Game/server/03-nebel-maersche-seite.php:17
 - `nebel_welt` → Game/server/03-nebel-maersche-seite.php:90
-- `nebelRunde` → Game/spiel/10d-welt-weltrechner.js:894
+- `nebelRunde` → Game/spiel/10d-welt-weltrechner.js:897
 - `nebelVomServer` → Game/spiel/01e-nebel-kampfwerte-hud.js:37
 - `nebelWeite` → Game/aufbau.js:217
 - `neueNummer` → Game/welt.js:381
@@ -1719,7 +1720,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `place` → Game/baukunst/04-vielfalt-stile.js:241
 - `place` → Game/spiel/03d-maersche-tagnacht.js:130
 - `plan` → Game/baukunst/04-vielfalt-stile.js:420
-- `plane` → Game/haendler.js:158
+- `plane` → Game/haendler.js:160
 - `plaster` → Game/baukunst/06-turmhof-festung.js:10
 - `plate` → Game/baukunst/02-buehne-grundbasis.js:149
 - `play` → Game/spiel/10c-start-einstellungen.js:99
@@ -1755,7 +1756,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `profilZuBot` → Game/welt.js:237
 - `profilZuBotRoh` → Game/welt.js:243
 - `projectConvex` → Game/spiel/03e-kamera-eingabe.js:81
-- `proStunde` → Game/spiel/01e-nebel-kampfwerte-hud.js:223
+- `proStunde` → Game/spiel/01e-nebel-kampfwerte-hud.js:224
 - `pruefen` → Game/benachrichtigung.js:54
 - `pruefen` → Game/weltrechner/start.js:118
 - `puls` → Game/welt.js:384
@@ -1763,7 +1764,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `puls_zaehlen` → Game/server/05-datenbank-welt.php:272
 - `pump` → Game/baukunst/08-himmelsfeste-bilder.js:381
 - `punkt` → Game/buendnis/04-fenster-karte-welt.js:297
-- `punktOk` → Game/spiel/10d-welt-weltrechner.js:970
+- `punktOk` → Game/spiel/10d-welt-weltrechner.js:973
 - `push_abmelden` → Game/server/05-datenbank-welt.php:243
 - `push_alle` → Game/server/05-datenbank-welt.php:251
 - `push_alle_weg` → Game/server/05-datenbank-welt.php:256
@@ -1806,7 +1807,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `rankRowHtml` → Game/spiel/05c-erfolge-rangliste.js:246
 - `ratio` → Game/spiel/03a-karte-hintergrund.js:441
 - `raus` → Game/spiel/01d-helden-mitspieler.js:118
-- `raus.push` → Game/spiel/10d-welt-weltrechner.js:228
+- `raus.push` → Game/spiel/10d-welt-weltrechner.js:231
 - `rauswurf` → Game/speichern.js:111
 - `reach` → Game/bots/05-verteidigen-takt.js:152
 - `recallMarch` → Game/spiel/02b-maersche.js:208
@@ -1914,7 +1915,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `rohTeil` → Game/spiel/05d-maersche-kampfbericht.js:387
 - `rohUmschalten` → Game/aufbau.js:269
 - `rohVon` → Game/aufbau.js:29
-- `rohWacheProfil` → Game/spiel/10d-welt-weltrechner.js:247
+- `rohWacheProfil` → Game/spiel/10d-welt-weltrechner.js:250
 - `roof2` → Game/baukunst/07-hafen-palast.js:57
 - `roofMat` → Game/baukunst/04-vielfalt-stile.js:226
 - `roofUV` → Game/baukunst/06-turmhof-festung.js:30
@@ -1986,7 +1987,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `schluesselTausch` → Game/welt.js:90
 - `schnellerDrueber` → Game/spiel/02b-maersche.js:244
 - `schnellerMerken` → Game/spiel/02b-maersche.js:243
-- `schonBezahlt` → Game/spiel/10d-welt-weltrechner.js:459
+- `schonBezahlt` → Game/spiel/10d-welt-weltrechner.js:462
 - `schutzVon` → Game/spiel/08a-stadt-bauen.js:31
 - `scoutNote` → Game/bots/03-angreifen.js:78
 - `scoutNotesFlush` → Game/bots/03-angreifen.js:83
@@ -2011,8 +2012,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `setMarkerMode` → Game/spiel/09d-armeen-wegmarken.js:310
 - `setMode` → Game/spiel/10c-start-einstellungen.js:139
 - `setScreen` → Game/spiel/03a-karte-hintergrund.js:5
-- `setShown` → Game/spiel/01e-nebel-kampfwerte-hud.js:227
-- `setText` → Game/spiel/01e-nebel-kampfwerte-hud.js:226
+- `setShown` → Game/spiel/01e-nebel-kampfwerte-hud.js:228
+- `setText` → Game/spiel/01e-nebel-kampfwerte-hud.js:227
 - `setTroopInput` → Game/spiel/10a-inselfenster-vorschau.js:270
 - `setW` → Game/spiel/03a-karte-hintergrund.js:247
 - `setze_cookie` → Game/server/01-grundlagen-login.php:37
@@ -2071,7 +2072,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `spaeherTempo` → Game/aufbau.js:215
 - `spaeherWeg` → Game/spiel/01b-weltkarte.js:295
 - `spaehGeaendert` → Game/spiel/02c-spaeher-ankunft.js:83
-- `spaehRunde` → Game/spiel/10d-welt-weltrechner.js:914
+- `spaehRunde` → Game/spiel/10d-welt-weltrechner.js:917
 - `spaehVerst` → Game/spiel/02c-spaeher-ankunft.js:103
 - `spaehWerte` → Game/spiel/02c-spaeher-ankunft.js:64
 - `spaeter` → Game/buendnis/03-mitspieler.js:162
@@ -2085,10 +2086,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `speichern_anfrage` → Game/server/06-speichern-push-konto.php:6
 - `spieler_liste` → Game/server/05-datenbank-welt.php:281
 - `spielerTakt` → Game/aufbau.js:250
-- `spielraumFrei` → Game/spiel/10d-welt-weltrechner.js:186
-- `spielraumNehmen` → Game/spiel/10d-welt-weltrechner.js:168
-- `spielraumTag` → Game/spiel/10d-welt-weltrechner.js:167
-- `spielraumTeile` → Game/spiel/10d-welt-weltrechner.js:158
+- `spielraumFrei` → Game/spiel/10d-welt-weltrechner.js:189
+- `spielraumNehmen` → Game/spiel/10d-welt-weltrechner.js:171
+- `spielraumTag` → Game/spiel/10d-welt-weltrechner.js:170
+- `spielraumTeile` → Game/spiel/10d-welt-weltrechner.js:161
 - `spielseite_vorbereiten` → Game/server/03-nebel-maersche-seite.php:144
 - `splashDone` → Game/spiel/06d-schild-produktion.js:352
 - `spots` → Game/baukunst/03-wahrzeichen-feuer.js:316
@@ -2201,10 +2202,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `troopsToSlider` → Game/spiel/10a-inselfenster-vorschau.js:259
 - `trunc` → Game/spiel/03b-gebaeude-3d.js:387
 - `truppenBekannt` → Game/spiel/01e-nebel-kampfwerte-hud.js:38
-- `truppenGeben` → Game/spiel/10d-welt-weltrechner.js:433
+- `truppenGeben` → Game/spiel/10d-welt-weltrechner.js:436
 - `truppenMitRest` → Game/spiel/06d-schild-produktion.js:154
-- `truppenPruefen` → Game/spiel/10d-welt-weltrechner.js:394
-- `truppenVon` → Game/spiel/10d-welt-weltrechner.js:983
+- `truppenPruefen` → Game/spiel/10d-welt-weltrechner.js:397
+- `truppenVon` → Game/spiel/10d-welt-weltrechner.js:986
 - `tryPlace` → Game/baukunst/05-umland.js:740
 - `trySpawnPickup` → Game/spiel/09a-funde-felder.js:13
 - `turm` → Game/spiel/01c-basen-spielstand.js:156
@@ -2236,8 +2237,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `updateCamera` → Game/spiel/03e-kamera-eingabe.js:201
 - `updateCityBuilder` → Game/spiel/08a-stadt-bauen.js:216
 - `updateGoalsBadge` → Game/spiel/06a-aufgaben.js:226
-- `updateHud` → Game/spiel/01e-nebel-kampfwerte-hud.js:228
-- `updateHudPlayer` → Game/spiel/01e-nebel-kampfwerte-hud.js:244
+- `updateHud` → Game/spiel/01e-nebel-kampfwerte-hud.js:229
+- `updateHudPlayer` → Game/spiel/01e-nebel-kampfwerte-hud.js:245
 - `updateMapControls` → Game/spiel/03e-kamera-eingabe.js:450
 - `updateMultiAttackBar` → Game/spiel/09e-inselfenster.js:145
 - `updateZoomBounds` → Game/spiel/03e-kamera-eingabe.js:21
@@ -2273,7 +2274,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `villageTower` → Game/baukunst/05-umland.js:233
 - `VINE` → Game/baukunst/08-himmelsfeste-bilder.js:19
 - `visibleIslands` → Game/spiel/03d-maersche-tagnacht.js:154
-- `vorAltern` → Game/spiel/10d-welt-weltrechner.js:270
+- `vorAltern` → Game/spiel/10d-welt-weltrechner.js:273
 - `vorhangZeigen` → Game/speichern.js:86
 - `vorlaeufigDazu` → Game/spiel/02b-maersche.js:256
 - `vorlaeufigDrueber` → Game/spiel/02b-maersche.js:260
@@ -2282,12 +2283,12 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `W.deltaJetzt` → Game/welt.js:367
 - `W.nachricht` → Game/welt.js:377
 - `W.start` → Game/welt.js:535
-- `wacheAbarbeiten` → Game/spiel/10d-welt-weltrechner.js:435
-- `wacheBezahlen` → Game/spiel/10d-welt-weltrechner.js:364
-- `wacheDelta` → Game/spiel/10d-welt-weltrechner.js:194
-- `wacheNachricht` → Game/spiel/10d-welt-weltrechner.js:211
-- `wacheRunde` → Game/spiel/10d-welt-weltrechner.js:463
-- `wacheSehen` → Game/spiel/10d-welt-weltrechner.js:285
+- `wacheAbarbeiten` → Game/spiel/10d-welt-weltrechner.js:438
+- `wacheBezahlen` → Game/spiel/10d-welt-weltrechner.js:367
+- `wacheDelta` → Game/spiel/10d-welt-weltrechner.js:197
+- `wacheNachricht` → Game/spiel/10d-welt-weltrechner.js:214
+- `wacheRunde` → Game/spiel/10d-welt-weltrechner.js:466
+- `wacheSehen` → Game/spiel/10d-welt-weltrechner.js:288
 - `wachhund_cron_da` → Game/weltrechner/wachhund.php:238
 - `wachhund_cron_einrichten` → Game/weltrechner/wachhund.php:239
 - `wachhund_entsperren` → Game/weltrechner/wachhund.php:213
@@ -2304,34 +2305,34 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `warStat` → Game/spiel/05c-erfolge-rangliste.js:8
 - `wartung` → Game/server/02-sicherheit-datenlecks.php:26
 - `wd` → Game/spiel/10d-welt-weltrechner.js:127
-- `wegOk` → Game/spiel/10d-welt-weltrechner.js:985
+- `wegOk` → Game/spiel/10d-welt-weltrechner.js:988
 - `weight` → Game/bots/04-stand-stadt.js:285
 - `welcomeListHtml` → Game/spiel/06d-schild-produktion.js:320
 - `welcomeNachziehen` → Game/spiel/06d-schild-produktion.js:323
 - `welcomeRows` → Game/spiel/06d-schild-produktion.js:283
 - `welleHeim` → Game/spiel/04-kampf.js:232
-- `WELT.BEFEHLE.angriff` → Game/spiel/10d-welt-weltrechner.js:999
-- `WELT.BEFEHLE.armee` → Game/spiel/10d-welt-weltrechner.js:1117
-- `WELT.BEFEHLE.ausbau` → Game/spiel/10d-welt-weltrechner.js:1061
-- `WELT.BEFEHLE.beitreten` → Game/spiel/10d-welt-weltrechner.js:1131
-- `WELT.BEFEHLE.feld` → Game/spiel/10d-welt-weltrechner.js:1093
-- `WELT.BEFEHLE.feldHeim` → Game/spiel/10d-welt-weltrechner.js:1100
-- `WELT.BEFEHLE.haendler` → Game/haendler.js:108
-- `WELT.BEFEHLE.hauptstadt` → Game/spiel/10d-welt-weltrechner.js:1067
-- `WELT.BEFEHLE.lager` → Game/spiel/10d-welt-weltrechner.js:1101
-- `WELT.BEFEHLE.schneller` → Game/spiel/10d-welt-weltrechner.js:1032
-- `WELT.BEFEHLE.senden` → Game/spiel/10d-welt-weltrechner.js:1010
-- `WELT.BEFEHLE.spaehen` → Game/spiel/10d-welt-weltrechner.js:1043
-- `WELT.BEFEHLE.titel` → Game/spiel/10d-welt-weltrechner.js:1087
-- `WELT.BEFEHLE.tor` → Game/spiel/10d-welt-weltrechner.js:1080
-- `WELT.BEFEHLE.truppen` → Game/spiel/10d-welt-weltrechner.js:1076
-- `WELT.BEFEHLE.zurueck` → Game/spiel/10d-welt-weltrechner.js:1021
-- `WELT.bericht` → Game/spiel/10d-welt-weltrechner.js:1240
-- `WELT.kisteGekauft` → Game/spiel/10d-welt-weltrechner.js:1211
-- `WELT.saisonKonto` → Game/spiel/10d-welt-weltrechner.js:842
-- `WELT.wache.gutschrift` → Game/spiel/10d-welt-weltrechner.js:1218
-- `WELT.wache.hilfe` → Game/spiel/10d-welt-weltrechner.js:1219
-- `WELT.wache.kann` → Game/spiel/10d-welt-weltrechner.js:1217
+- `WELT.BEFEHLE.angriff` → Game/spiel/10d-welt-weltrechner.js:1002
+- `WELT.BEFEHLE.armee` → Game/spiel/10d-welt-weltrechner.js:1120
+- `WELT.BEFEHLE.ausbau` → Game/spiel/10d-welt-weltrechner.js:1064
+- `WELT.BEFEHLE.beitreten` → Game/spiel/10d-welt-weltrechner.js:1134
+- `WELT.BEFEHLE.feld` → Game/spiel/10d-welt-weltrechner.js:1096
+- `WELT.BEFEHLE.feldHeim` → Game/spiel/10d-welt-weltrechner.js:1103
+- `WELT.BEFEHLE.haendler` → Game/haendler.js:110
+- `WELT.BEFEHLE.hauptstadt` → Game/spiel/10d-welt-weltrechner.js:1070
+- `WELT.BEFEHLE.lager` → Game/spiel/10d-welt-weltrechner.js:1104
+- `WELT.BEFEHLE.schneller` → Game/spiel/10d-welt-weltrechner.js:1035
+- `WELT.BEFEHLE.senden` → Game/spiel/10d-welt-weltrechner.js:1013
+- `WELT.BEFEHLE.spaehen` → Game/spiel/10d-welt-weltrechner.js:1046
+- `WELT.BEFEHLE.titel` → Game/spiel/10d-welt-weltrechner.js:1090
+- `WELT.BEFEHLE.tor` → Game/spiel/10d-welt-weltrechner.js:1083
+- `WELT.BEFEHLE.truppen` → Game/spiel/10d-welt-weltrechner.js:1079
+- `WELT.BEFEHLE.zurueck` → Game/spiel/10d-welt-weltrechner.js:1024
+- `WELT.bericht` → Game/spiel/10d-welt-weltrechner.js:1243
+- `WELT.kisteGekauft` → Game/spiel/10d-welt-weltrechner.js:1214
+- `WELT.saisonKonto` → Game/spiel/10d-welt-weltrechner.js:845
+- `WELT.wache.gutschrift` → Game/spiel/10d-welt-weltrechner.js:1221
+- `WELT.wache.hilfe` → Game/spiel/10d-welt-weltrechner.js:1222
+- `WELT.wache.kann` → Game/spiel/10d-welt-weltrechner.js:1220
 - `welt_antwort` → Game/server/07-welt-puls.php:155
 - `welt_antwort_text` → Game/server/07-welt-puls.php:152
 - `welt_entsperren` → Game/server/05-datenbank-welt.php:5
@@ -2349,7 +2350,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `weltteil_fuer_spieler` → Game/server/02-sicherheit-datenlecks.php:171
 - `weltZuClient` → Game/welt.js:143
 - `werIst` → Game/aufbau.js:120
-- `werIstWer` → Game/spiel/10d-welt-weltrechner.js:997
+- `werIstWer` → Game/spiel/10d-welt-weltrechner.js:1000
 - `who` → Game/spiel/04-kampf.js:62
 - `whoBases` → Game/spiel/05c-erfolge-rangliste.js:143
 - `whoIslands` → Game/spiel/05c-erfolge-rangliste.js:21
@@ -2357,7 +2358,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `whoProfile` → Game/spiel/05c-erfolge-rangliste.js:144
 - `whoTroops` → Game/spiel/05c-erfolge-rangliste.js:140
 - `width` → Game/spiel/03d-maersche-tagnacht.js:120
-- `willkommenFenster` → Game/spiel/10d-welt-weltrechner.js:1277
+- `willkommenFenster` → Game/spiel/10d-welt-weltrechner.js:1280
 - `win` → Game/baukunst/07-hafen-palast.js:442
 - `win` → Game/baukunst/08-himmelsfeste-bilder.js:84
 - `win` → Game/ladebildschirm.js:62
@@ -2365,11 +2366,11 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `window.__owSpeicher.rauswurf` → Game/speichern.js:189
 - `window.__owSpeicher.roh` → Game/speichern.js:185
 - `window.__stopSplashScene` → Game/ladebildschirm.js:193
-- `window.__weltBefehl` → Game/spiel/10d-welt-weltrechner.js:1179
+- `window.__weltBefehl` → Game/spiel/10d-welt-weltrechner.js:1182
 - `window.__weltLaden` → Game/buendnis/04-fenster-karte-welt.js:353
-- `window.__weltLaden` → Game/haendler.js:134
-- `window.__weltLaden` → Game/spiel/10d-welt-weltrechner.js:1306
-- `window.__weltLaden` → Game/spiel/10d-welt-weltrechner.js:1331
+- `window.__weltLaden` → Game/haendler.js:136
+- `window.__weltLaden` → Game/spiel/10d-welt-weltrechner.js:1309
+- `window.__weltLaden` → Game/spiel/10d-welt-weltrechner.js:1334
 - `window.__weltLaden` → Game/spiel/10d-welt-weltrechner.js:26
 - `window.__weltLeiterWechsel` → Game/spiel/10d-welt-weltrechner.js:78
 - `window.__weltNeuerMensch` → Game/spiel/10d-welt-weltrechner.js:85
@@ -2424,7 +2425,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `zeigen` → Game/benachrichtigung.js:44
 - `zeile` → Game/buendnis/01-daten-regeln.js:505
 - `zeitGrenze` → Game/weltrechner/start.js:116
-- `zielPruefen` → Game/spiel/10d-welt-weltrechner.js:974
+- `zielPruefen` → Game/spiel/10d-welt-weltrechner.js:977
 - `zitadelle` → Game/baukunst/02-buehne-grundbasis.js:330
 - `zoomAt` → Game/spiel/03e-kamera-eingabe.js:151
 - `zug` → Game/spiel/08e-stadtbild-haeuser.js:332
@@ -3434,12 +3435,12 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `totalTroopProductionPerTick` :202
 - `shrineMult` :211
 - `totalCoinProductionPerTick` :212
-- `proStunde` :223 — Ertrag pro Stunde (Alexander 5.10.: überall „pro Stunde“ wie Million Lords): je…
-- `fmtStunde` :225
-- `setText` :226
-- `setShown` :227
-- `updateHud` :228
-- `updateHudPlayer` :244 — Desktop player plate (#hudPlayer). Called at boot, from the 1s interval and fro…
+- `proStunde` :224 — Ertrag pro Stunde (Alexander 5.10.: überall „pro Stunde“ wie Million Lords): je…
+- `fmtStunde` :226
+- `setText` :227
+- `setShown` :228
+- `updateHud` :229
+- `updateHudPlayer` :245 — Desktop player plate (#hudPlayer). Called at boot, from the 1s interval and fro…
 
 ### Game/spiel/02a-shop-stufen.js — Shop: Kisten, Gegenstände (vereinen, zerlegen, verbessern), Erfahrung und Stufe…
 - `itemScore` :29
@@ -4598,120 +4599,120 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `zuOft` :132 — mehr als max-mal in ms? (dann zählt dieser nicht mit)
 - `profilVon` :138
 - `zahlOderNull` :139
-- `spielraumTeile` :158 — Zwei Töpfe (Alexander 5.10.): Stufen-Münzen (sicher: die EP kommen vom Weltrech…
-- `spielraumTag` :167
-- `spielraumNehmen` :168 — n Münzen aus dem Spielraum: erst die Stufen-Münzen (Stunde), dann der Tages-Topf
-- `muenzGutscheine` :176
-- `spielraumFrei` :186
-- `wacheDelta` :194
-- `wacheNachricht` :211 — (3B) andere Nachrichten des Weltrechners an ihn: Preise (Gems, Splitter, Kisten…
-- `raus.push` :228
-- `kontoProfil` :235 — Ein Wert aus seinem neuen Profil gegen das Konto k halten (für Münzen und Verwu…
-- `rohWacheProfil` :247
-- `vorAltern` :270 — Münzen, die er ausgegeben hat und die kein Befehl abgeholt hat (nach 60 s) → To…
-- `flugSumme` :272 — Nachrichten unterwegs (m.flug) zusammengezählt – für einen Neustart in der Welt…
-- `flugMerken` :273
-- `flugAus` :279 — (nach dem Neustart) → ein Eintrag für m.flug – zählt wieder bis zwei Profile sp…
-- `wacheSehen` :285
-- `wacheBezahlen` :364 — aus dem Konto bezahlen (Vorschuss → Konto → Topf (3B) → Admin-Geschenk → Spielr…
-- `ausbauPruefen` :377 — Ausbau prüfen: 'ok' | 'warten' (Münzen noch nicht zu sehen) | 'nein'
-- `truppenPruefen` :394
-- `truppenGeben` :433
-- `wacheAbarbeiten` :435 — Wartende Befehle (Ausbau/Truppen) der Reihe nach abarbeiten – nie überholen, so…
-- `schonBezahlt` :459 — Wartende Befehle (Ausbau, Truppen – bis 60 s, bis sein Profil die Zahlung zeigt…
-- `befehlFertig` :460
-- `befehlBezahlt` :461
-- `wacheRunde` :463 — (vor jedem Puls) alle echten Spieler ansehen, Wartendes erledigen
-- `burgZeitAlt` :489
-- `burgKostenAlt` :490
-- `hbDa` :503
-- `hbStufe` :504
-- `hbBauten` :505 — die Burg zuerst (sie schaltet die anderen frei)
-- `hbMax` :506
-- `HB_ACH` :508
-- `hbPass` :509 — was der Saison-Pass (frei + Premium) höchstens gibt
-- `hbHeldZeile` :517 — Helden: „Splitter-Wert“ = unverbrauchte Splitter + was Freischalten und Sterne …
-- `hbHeldObj` :518
-- `hbHeldWert` :519
-- `hbHeldenWert` :520
-- `hbHeldenStart` :521
-- `hbE0f` :522
-- `kWert` :527 — Ausrüstung: Kisten-Wert je Platz (Seltenheit r zählt 3^r – 3 gleiche ergeben ei…
-- `hbKistenGrenze` :528
-- `hbKistenGesamt` :529 — alle 4 Plätze zusammen (Ø 3,42 je Kiste, Streuung 5,4) – das glückliche Lila nu…
-- `hbPunkteGrenze` :530 — Stufen-Punkte (aus verkauften Teilen): Ø 12,8 je Kiste, doppelt + Start
-- `hbLvlPunkte` :531 — Stufe 1 → l kostet 5 + 10 + … Punkte
-- `hbItemWert` :532
-- `hbSplitterGems` :537
-- `hbKisteDazu` :546
-- `hbNeu` :547
-- `hbKontenMerken` :564 — Spielraum wächst mit der Zeit (je Quelle die Tages-Grenze), dazu Erfolge, Stufe…
-- `hbThronPreis` :567 — Thron-Shop (06c-thron-mitte.js THRONE_OFFERS): jede Ausrüstungskiste 60 Punkte,…
-- `hbThronKisten` :568
-- `hbFreiDazu` :573
-- `hbVorrat` :592 — Kosten {c, g, h, s, e}: aus Topf (ausgegeben), Konto und Spielraum – alles oder…
-- `hbZahlen` :597
-- `hbWarte` :610 — abgelehnt: erst nach 2 Min. (immer noch im Profil) eine Auffälligkeit – einmal
-- `hbGut` :614
-- `hbStadtSchritt` :616 — Burg/Gebäude: eine Stufe weiter → 'ok' | 'nein' (Regel) | 'geld' (Bauzeit-Gems,…
-- `hbFoSchritt` :633
-- `hbSterne` :649 — Sterne (alle Teile, angelegt oder nicht – Profil stW = Gems in allen Sternen): …
-- `hbGearNeu` :657 — ein neuer Gegenstand in Platz s (z = [Seltenheit, Stufe, Sterne]) → '' (angenom…
-- `hbPruefen` :678 — alle Neuerungen eines Profils gegen das Hauptbuch prüfen (und das Angenommene b…
-- `hbHeldenPruefen` :712 — Helden: Splitter-Wert aller Helden höchstens so viel, wie er an Splittern bekom…
-- `hbSchildPruefen` :738 — Friedensschild: länger nur, wenn er ihn gekauft (Gems, 24 Std. = 300) oder gesc…
-- `hbSchreiben` :747 — was die Welt von ihm benutzt: aus dem Hauptbuch (nie mehr als das Profil sagt)
-- `hbKontoDeckel` :776 — Rohstoffe und Verwundete aus seinem Profil nie über sein Konto (+ was er an Abz…
-- `hbKlemmen` :782 — (welt.js profilZuBot, nur beim Weltrechner) ein Profil kommt an → Hauptbuch prü…
-- `hbAusProfil` :814 — Nach dem Zurückspielen einer Sicherung (server.php: ow_welt_info.zurueck) ist d…
-- `WELT.saisonKonto` :842 — Neue Welt-Saison (09f-saison.js saisonNeu): sein Konto passend zurücksetzen – S…
-- `nbIndex` :864 — alle Felder, die für die Sicht zählen (Land, Inseln, Brücken-Enden) → Bit-Nummer
-- `bitsZu` :872
-- `bitHat` :873
-- `nbPacken` :875 — aufgedeckte Felder fürs Hauptbuch: nur die Nummern der gesetzten Bits (Abstände…
-- `nbAuspacken` :876
-- `nbAufdecken` :877 — wie revealAround
-- `nbOffen` :888
-- `nbZ` :889
-- `nbKennt` :890 — kennt er dieses Gebiet (oder ein Nachbar-Gebiet über eine Brücke)?
-- `nebelRunde` :894
-- `spaehRunde` :914 — Späher an einer fremden Basis angekommen: der Bericht so, wie er gerade ist (Tr…
-- `armeeSichtRunde` :928 — Fremde Armeen und besetzte Felder, die er sieht (ihr Feld ist bei ihm aufgedeck…
-- `hbNochmal` :940 — dasselbe (alte) Profil nochmal anwenden – nur fürs Hauptbuch. Was die Welt seit…
-- `hbRunde` :947
-- `punktOk` :970 — Ziel einer Armee/Ort einer neuen Armee: nur echte Orte (Basis, Feld, Armee, Pun…
-- `zielPruefen` :974
-- `heldOk` :982
-- `truppenVon` :983 — nie mehr, als die Basis hat
-- `wegOk` :985 — Wege wie auf dem Handy (dort prüft das Spiel sie in den Fenstern): Brücken, Päs…
-- `gruppeBezahlt` :988 — Mehrfachangriff / „Truppen sammeln“ (grp): zusammen EIN Marsch-Platz – kostet 1…
-- `werIstWer` :997
-- `WELT.BEFEHLE.angriff` :999
-- `WELT.BEFEHLE.senden` :1010
-- `WELT.BEFEHLE.zurueck` :1021 — umkehren: wie bei dir, nur als "Marsch zurück" dieses Spielers
-- `WELT.BEFEHLE.schneller` :1032 — die Gems zahlt er auf seinem Handy – 3B: das Hauptbuch zieht sie ab (kann er si…
-- `WELT.BEFEHLE.spaehen` :1043 — 3B: Erkundungs-Späher – der Weltrechner deckt seinen Nebel (auf dem Server) mit…
-- `WELT.BEFEHLE.ausbau` :1061 — die Münzen zahlt er selbst – der Weltrechner prüft, ob er sie haben kann
-- `WELT.BEFEHLE.hauptstadt` :1067
-- `WELT.BEFEHLE.truppen` :1076 — geschenkte Truppen (Stufe, Thron-Shop, Krankenhaus, Fund, Admin) → Hauptstadt
-- `WELT.BEFEHLE.tor` :1080
-- `WELT.BEFEHLE.titel` :1087
-- `WELT.BEFEHLE.feld` :1093
-- `WELT.BEFEHLE.feldHeim` :1100
-- `WELT.BEFEHLE.lager` :1101
-- `WELT.BEFEHLE.armee` :1117
-- `WELT.BEFEHLE.beitreten` :1131 — ein neuer Spieler braucht seinen Platz auf der Karte
-- `adminBefehl` :1150 — Vom Admin (kommt nur von admin.php – der Server legt es unter Spieler 0 ab): Ge…
-- `window.__weltBefehl` :1179
-- `hbKisteFrei` :1199
-- `WELT.kisteGekauft` :1211
-- `WELT.wache.kann` :1217
-- `WELT.wache.gutschrift` :1218
-- `WELT.wache.hilfe` :1219 — Bündnis-Hilfe: so viel schneller darf dieser Bau / diese Forschung fertig sein
-- `WELT.bericht` :1240 — Kampfbericht an einen anderen echten Spieler (vom Weltrechner): Kennungen neutr…
-- `willkommenFenster` :1277
-- `window.__weltLaden` :1306
-- `window.__weltLaden` :1331
+- `spielraumTeile` :161
+- `spielraumTag` :170
+- `spielraumNehmen` :171 — n Münzen aus dem Spielraum: erst die Stufen-Münzen (Stunde), dann der Tages-Topf
+- `muenzGutscheine` :179
+- `spielraumFrei` :189
+- `wacheDelta` :197
+- `wacheNachricht` :214 — (3B) andere Nachrichten des Weltrechners an ihn: Preise (Gems, Splitter, Kisten…
+- `raus.push` :231
+- `kontoProfil` :238 — Ein Wert aus seinem neuen Profil gegen das Konto k halten (für Münzen und Verwu…
+- `rohWacheProfil` :250
+- `vorAltern` :273 — Münzen, die er ausgegeben hat und die kein Befehl abgeholt hat (nach 60 s) → To…
+- `flugSumme` :275 — Nachrichten unterwegs (m.flug) zusammengezählt – für einen Neustart in der Welt…
+- `flugMerken` :276
+- `flugAus` :282 — (nach dem Neustart) → ein Eintrag für m.flug – zählt wieder bis zwei Profile sp…
+- `wacheSehen` :288
+- `wacheBezahlen` :367 — aus dem Konto bezahlen (Vorschuss → Konto → Topf (3B) → Admin-Geschenk → Spielr…
+- `ausbauPruefen` :380 — Ausbau prüfen: 'ok' | 'warten' (Münzen noch nicht zu sehen) | 'nein'
+- `truppenPruefen` :397
+- `truppenGeben` :436
+- `wacheAbarbeiten` :438 — Wartende Befehle (Ausbau/Truppen) der Reihe nach abarbeiten – nie überholen, so…
+- `schonBezahlt` :462 — Wartende Befehle (Ausbau, Truppen – bis 60 s, bis sein Profil die Zahlung zeigt…
+- `befehlFertig` :463
+- `befehlBezahlt` :464
+- `wacheRunde` :466 — (vor jedem Puls) alle echten Spieler ansehen, Wartendes erledigen
+- `burgZeitAlt` :492
+- `burgKostenAlt` :493
+- `hbDa` :506
+- `hbStufe` :507
+- `hbBauten` :508 — die Burg zuerst (sie schaltet die anderen frei)
+- `hbMax` :509
+- `HB_ACH` :511
+- `hbPass` :512 — was der Saison-Pass (frei + Premium) höchstens gibt
+- `hbHeldZeile` :520 — Helden: „Splitter-Wert“ = unverbrauchte Splitter + was Freischalten und Sterne …
+- `hbHeldObj` :521
+- `hbHeldWert` :522
+- `hbHeldenWert` :523
+- `hbHeldenStart` :524
+- `hbE0f` :525
+- `kWert` :530 — Ausrüstung: Kisten-Wert je Platz (Seltenheit r zählt 3^r – 3 gleiche ergeben ei…
+- `hbKistenGrenze` :531
+- `hbKistenGesamt` :532 — alle 4 Plätze zusammen (Ø 3,42 je Kiste, Streuung 5,4) – das glückliche Lila nu…
+- `hbPunkteGrenze` :533 — Stufen-Punkte (aus verkauften Teilen): Ø 12,8 je Kiste, doppelt + Start
+- `hbLvlPunkte` :534 — Stufe 1 → l kostet 5 + 10 + … Punkte
+- `hbItemWert` :535
+- `hbSplitterGems` :540
+- `hbKisteDazu` :549
+- `hbNeu` :550
+- `hbKontenMerken` :567 — Spielraum wächst mit der Zeit (je Quelle die Tages-Grenze), dazu Erfolge, Stufe…
+- `hbThronPreis` :570 — Thron-Shop (06c-thron-mitte.js THRONE_OFFERS): jede Ausrüstungskiste 60 Punkte,…
+- `hbThronKisten` :571
+- `hbFreiDazu` :576
+- `hbVorrat` :595 — Kosten {c, g, h, s, e}: aus Topf (ausgegeben), Konto und Spielraum – alles oder…
+- `hbZahlen` :600
+- `hbWarte` :613 — abgelehnt: erst nach 2 Min. (immer noch im Profil) eine Auffälligkeit – einmal
+- `hbGut` :617
+- `hbStadtSchritt` :619 — Burg/Gebäude: eine Stufe weiter → 'ok' | 'nein' (Regel) | 'geld' (Bauzeit-Gems,…
+- `hbFoSchritt` :636
+- `hbSterne` :652 — Sterne (alle Teile, angelegt oder nicht – Profil stW = Gems in allen Sternen): …
+- `hbGearNeu` :660 — ein neuer Gegenstand in Platz s (z = [Seltenheit, Stufe, Sterne]) → '' (angenom…
+- `hbPruefen` :681 — alle Neuerungen eines Profils gegen das Hauptbuch prüfen (und das Angenommene b…
+- `hbHeldenPruefen` :715 — Helden: Splitter-Wert aller Helden höchstens so viel, wie er an Splittern bekom…
+- `hbSchildPruefen` :741 — Friedensschild: länger nur, wenn er ihn gekauft (Gems, 24 Std. = 300) oder gesc…
+- `hbSchreiben` :750 — was die Welt von ihm benutzt: aus dem Hauptbuch (nie mehr als das Profil sagt)
+- `hbKontoDeckel` :779 — Rohstoffe und Verwundete aus seinem Profil nie über sein Konto (+ was er an Abz…
+- `hbKlemmen` :785 — (welt.js profilZuBot, nur beim Weltrechner) ein Profil kommt an → Hauptbuch prü…
+- `hbAusProfil` :817 — Nach dem Zurückspielen einer Sicherung (server.php: ow_welt_info.zurueck) ist d…
+- `WELT.saisonKonto` :845 — Neue Welt-Saison (09f-saison.js saisonNeu): sein Konto passend zurücksetzen – S…
+- `nbIndex` :867 — alle Felder, die für die Sicht zählen (Land, Inseln, Brücken-Enden) → Bit-Nummer
+- `bitsZu` :875
+- `bitHat` :876
+- `nbPacken` :878 — aufgedeckte Felder fürs Hauptbuch: nur die Nummern der gesetzten Bits (Abstände…
+- `nbAuspacken` :879
+- `nbAufdecken` :880 — wie revealAround
+- `nbOffen` :891
+- `nbZ` :892
+- `nbKennt` :893 — kennt er dieses Gebiet (oder ein Nachbar-Gebiet über eine Brücke)?
+- `nebelRunde` :897
+- `spaehRunde` :917 — Späher an einer fremden Basis angekommen: der Bericht so, wie er gerade ist (Tr…
+- `armeeSichtRunde` :931 — Fremde Armeen und besetzte Felder, die er sieht (ihr Feld ist bei ihm aufgedeck…
+- `hbNochmal` :943 — dasselbe (alte) Profil nochmal anwenden – nur fürs Hauptbuch. Was die Welt seit…
+- `hbRunde` :950
+- `punktOk` :973 — Ziel einer Armee/Ort einer neuen Armee: nur echte Orte (Basis, Feld, Armee, Pun…
+- `zielPruefen` :977
+- `heldOk` :985
+- `truppenVon` :986 — nie mehr, als die Basis hat
+- `wegOk` :988 — Wege wie auf dem Handy (dort prüft das Spiel sie in den Fenstern): Brücken, Päs…
+- `gruppeBezahlt` :991 — Mehrfachangriff / „Truppen sammeln“ (grp): zusammen EIN Marsch-Platz – kostet 1…
+- `werIstWer` :1000
+- `WELT.BEFEHLE.angriff` :1002
+- `WELT.BEFEHLE.senden` :1013
+- `WELT.BEFEHLE.zurueck` :1024 — umkehren: wie bei dir, nur als "Marsch zurück" dieses Spielers
+- `WELT.BEFEHLE.schneller` :1035 — die Gems zahlt er auf seinem Handy – 3B: das Hauptbuch zieht sie ab (kann er si…
+- `WELT.BEFEHLE.spaehen` :1046 — 3B: Erkundungs-Späher – der Weltrechner deckt seinen Nebel (auf dem Server) mit…
+- `WELT.BEFEHLE.ausbau` :1064 — die Münzen zahlt er selbst – der Weltrechner prüft, ob er sie haben kann
+- `WELT.BEFEHLE.hauptstadt` :1070
+- `WELT.BEFEHLE.truppen` :1079 — geschenkte Truppen (Stufe, Thron-Shop, Krankenhaus, Fund, Admin) → Hauptstadt
+- `WELT.BEFEHLE.tor` :1083
+- `WELT.BEFEHLE.titel` :1090
+- `WELT.BEFEHLE.feld` :1096
+- `WELT.BEFEHLE.feldHeim` :1103
+- `WELT.BEFEHLE.lager` :1104
+- `WELT.BEFEHLE.armee` :1120
+- `WELT.BEFEHLE.beitreten` :1134 — ein neuer Spieler braucht seinen Platz auf der Karte
+- `adminBefehl` :1153 — Vom Admin (kommt nur von admin.php – der Server legt es unter Spieler 0 ab): Ge…
+- `window.__weltBefehl` :1182
+- `hbKisteFrei` :1202
+- `WELT.kisteGekauft` :1214
+- `WELT.wache.kann` :1220
+- `WELT.wache.gutschrift` :1221
+- `WELT.wache.hilfe` :1222 — Bündnis-Hilfe: so viel schneller darf dieser Bau / diese Forschung fertig sein
+- `WELT.bericht` :1243 — Kampfbericht an einen anderen echten Spieler (vom Weltrechner): Kennungen neutr…
+- `willkommenFenster` :1280
+- `window.__weltLaden` :1309
+- `window.__weltLaden` :1334
 
 ## Game/spielseite/ (Teile)
 
@@ -4849,18 +4850,19 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `hdWerName` :38
 - `hdOrt` :41 — ---- Weltrechner: kommen, gehen, Mitspieler kaufen ----
 - `hdTakt` :51
-- `hdKaufen` :77 — (Weltrechner) bezahlen + Ware geben → '' oder der Grund
-- `WELT.BEFEHLE.haendler` :108
-- `hdBefehl` :113 — (Münzen eben erst bekommen? Sein Profil kommt alle 10 s – dann bis zu 4-mal 5 s…
-- `window.__weltLaden` :134
-- `hdBild` :146 — ---- Karte: der Karren (auch im Nebel sichtbar), antippen öffnet das Angebot --…
-- `drawHaendler` :147
-- `plane` :158
-- `haendlerAt` :173
-- `hdOffen` :177
-- `haendlerOeffnen` :178
-- `hdRender` :179
-- `haendlerChip` :207 — Hinweis unter dem HUD (renderMidBar in spiel.js holt ihn, wenn nichts Dringende…
+- `hdSoeldner` :78 — Söldner: eine Stunde Truppen-Ausbildung, mindestens 1.000 × WIRTSCHAFT_KOSTEN (…
+- `hdKaufen` :79 — (Weltrechner) bezahlen + Ware geben → '' oder der Grund
+- `WELT.BEFEHLE.haendler` :110
+- `hdBefehl` :115 — (Münzen eben erst bekommen? Sein Profil kommt alle 10 s – dann bis zu 4-mal 5 s…
+- `window.__weltLaden` :136
+- `hdBild` :148 — ---- Karte: der Karren (auch im Nebel sichtbar), antippen öffnet das Angebot --…
+- `drawHaendler` :149
+- `plane` :160
+- `haendlerAt` :175
+- `hdOffen` :179
+- `haendlerOeffnen` :180
+- `hdRender` :181
+- `haendlerChip` :209 — Hinweis unter dem HUD (renderMidBar in spiel.js holt ihn, wenn nichts Dringende…
 
 ### Game/index.php — index.php – Startseite: Anmelden oder Registrieren. Danach geht es ins Spiel (s…
 - Aktion `'neu'` :20

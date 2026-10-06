@@ -219,10 +219,11 @@ function totalCoinProductionPerTick() {
     return sum;
 }
 // Ertrag pro Stunde (Alexander 5.10.: überall „pro Stunde“ wie Million Lords): je Tick × Ticks in einer Stunde (Tick-Länge mit
-// der Fähigkeit „Geschwindigkeit“); unter 100 mit einer Nachkommastelle, damit kleine Werte nicht als 0 erscheinen
+// der Fähigkeit „Geschwindigkeit“); unter 100 mit einer, unter 1 mit zwei Nachkommastellen, damit kleine Werte nicht als 0
+// erscheinen (nur die Burg: 0,04 Holz pro Stunde)
 const proStunde = (jeTick, ms) => jeTick * 3600000 / (ms || productionTickMs());
-const NF_1 = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 1 });
-function fmtStunde(n) { return Math.abs(n) >= 100 ? fmtNum(Math.round(n)) : NF_1.format(Math.round(n * 10) / 10); }
+const NF_1 = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 1 }), NF_2 = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 2 });
+function fmtStunde(n) { const a = Math.abs(n); return a >= 100 ? fmtNum(Math.round(n)) : a >= 1 ? NF_1.format(Math.round(n * 10) / 10) : NF_2.format(Math.round(n * 100) / 100); }
 function setText(el, v) { v = String(v); if (el && el.textContent !== v) el.textContent = v; }        // DOM writes only on a change: an equal write still costs a layout
 function setShown(el, on) { const d = on ? 'block' : 'none'; if (el && el.style.display !== d) el.style.display = d; }
 function updateHud() {
@@ -261,9 +262,9 @@ const SKILL_DEFS = {
   speed:       { icon: 'hourglass', name: 'Geschwindigkeit',    desc: 'schnellere Produktion und Märsche', msPerLevel: 40, max: 10 },
   troops:      { icon: 'troops',    name: 'Truppenherstellung', desc: 'Truppenproduktion', pct: 3, max: 50 },
   defense:     { icon: 'defense',   name: 'Verteidigung',       desc: 'jede Basis verteidigt mit mehr Truppen', defPct: 3, max: 50 },
-  defenseGold: { icon: 'shield',    name: 'Verteidigung: Gold', desc: 'Gold pro getöteter Truppe', rate: 0.3, max: 50 },
+  defenseGold: { icon: 'shield',    name: 'Verteidigung: Gold', desc: 'Gold für getötete Truppen', rate: 0.3 * WIRTSCHAFT_KOSTEN, max: 50 },
   attack:      { icon: 'attack',    name: 'Angriff',            desc: 'mehr Truppen bei jedem Angriff', atkPct: 3, max: 50 },
-  attackGold:  { icon: 'sell',      name: 'Angriff: Gold',      desc: 'Gold pro getöteter Truppe', rate: 0.3, max: 50 }
-};
+  attackGold:  { icon: 'sell',      name: 'Angriff: Gold',      desc: 'Gold für getötete Truppen', rate: 0.3 * WIRTSCHAFT_KOSTEN, max: 50 }
+};   // (Gold je Truppe × WIRTSCHAFT_KOSTEN wie alle Münzen außerhalb der Produktion – die 100.000 Start-Truppen bleiben, Kosten sind ÷ 1.800)
 const EQUIPMENT_BASE_COST = 100;
 

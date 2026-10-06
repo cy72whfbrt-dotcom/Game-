@@ -155,6 +155,9 @@ if (window.WELT) {
     const FLUG_MS = 10000, FLUG_MAX_MS = 48 * 3600000;
     // Zwei Töpfe (Alexander 5.10.): Stufen-Münzen (sicher: die EP kommen vom Weltrechner) je Stunde – der feste Rest nur EINMAL
     // am Tag (vorher jede Stunde neu: ~8 Mio. Münzen am Tag „ohne Beleg“). Der Tages-Topf steht in der Welt (überlebt Neustarts).
+    // Feste Größen × WIRTSCHAFT_KOSTEN (5.10., wie die Münzen/Truppen außerhalb der Produktion): Tages-Rest vorher 50.000, Thron-Shop/
+    // Saison-Pass mindestens 5.000 Münzen bzw. 1.000 Truppen, Fund mindestens 100 Truppen
+    const kW = n => Math.max(1, Math.round(n * WIRTSCHAFT_KOSTEN)), SR_FIX = kW(50000), SR_STUNDE_MIN = kW(5000), TR_STUNDE_MIN = kW(1000), FUND_TR_MIN = kW(100);
     function spielraumTeile(who, m) {
         const L = Math.max(1, m.lvl), now = Date.now();
         let von = L; for (const x of m.lvlLog) if (x.l < von) von = x.l;
@@ -162,7 +165,7 @@ if (window.WELT) {
         while (m.ein.length && now - m.ein[0].t > 3600000) m.ein.shift();
         const gemessen = m.ein.reduce((a, x) => a + x.n, 0), dauer = now - m.initT;
         const stunde = dauer >= 3600000 ? gemessen : Math.max(m.hp0, gemessen * 3600000 / Math.max(dauer, 600000));
-        return { lv, fix: 50000 + 3 * Math.max(5000, stunde) + 3 * levelRewardCoins(L + 1) };
+        return { lv, fix: SR_FIX + 3 * Math.max(SR_STUNDE_MIN, stunde) + 3 * levelRewardCoins(L + 1) };
     }
     function spielraumTag(who) { const d = wd(who), t = todayKey(); if (!d) return null; if (d.srT !== t) { d.srT = t; d.srN = 0; } return d; }
     function spielraumNehmen(who, m, n) {           // n Münzen aus dem Spielraum: erst die Stufen-Münzen (Stunde), dann der Tages-Topf
@@ -176,7 +179,7 @@ if (window.WELT) {
     function muenzGutscheine(who, mehr, d) {
         if (!d || !(mehr > 0)) return 0;
         if (passMuenzH === null) { passMuenzH = 0; for (let L = 1; L <= PASS_LVLS; L++) for (const pr of [false, true]) { const r = passRewardAt(L, pr); if (r.k === 'coins') passMuenzH += r.n || 1; } }
-        const h = Math.max(5000, nn(hourProduction(who).coins)) * 1.2, s = passNo(Date.now());   // (+20 %: sein Handy rechnet mit eigenen Boni)
+        const h = Math.max(SR_STUNDE_MIN, nn(hourProduction(who).coins)) * 1.2, s = passNo(Date.now());   // (+20 %: sein Handy rechnet mit eigenen Boni)
         if (d.pS !== s) { d.pS = s; d.pM = 0; }
         const passRest = Math.max(0, passMuenzH - nn(d.pM)), thronRest = Math.max(0, Math.floor(throneEarnedOf(who) / 150) + 3 - nn(d.tC));
         const use = Math.min(mehr, (passRest + thronRest) * h); if (!(use > 0)) return 0;
@@ -409,7 +412,7 @@ if (window.WELT) {
             const kaeufe = Math.floor(throneEarnedOf(who) / 200) + 5;
             if (d.tk + 1 > kaeufe) { if (!ende) return -1; warnen(who, 'truppen', 'Thron-Shop: ' + (d.tk + 1) + '. Truppen-Kauf, mit seinen Thron-Punkten gehen höchstens ' + kaeufe + ' – abgelehnt.', b.n); return 0; }
             d.tk++; saveBotState();
-            erlaubt = 3 * Math.max(1000, hourProduction(who).troops) + 1000;   // ×3: sein Handy rechnet die Produktion mit eigenen Boni etwas anders
+            erlaubt = 3 * Math.max(TR_STUNDE_MIN, hourProduction(who).troops) + TR_STUNDE_MIN;   // ×3: sein Handy rechnet die Produktion mit eigenen Boni etwas anders
         } else if (q === 'heil') {                     // Krankenhaus: höchstens so viele, wie verwundet sind
             if (now - m.w.vorT > WACHE_WARTEN_MS) m.w.vor = 0;
             erlaubt = (m.w.vor + m.w.u) * 1.02 + 10;
@@ -422,7 +425,7 @@ if (window.WELT) {
             const heute = todayKey(); if (!d.fund || d.fund.t !== heute) d.fund = { t: heute, n: 0 };   // höchstens 300 am Tag (Alexander 5.10.: ~7 Std. ohne Pause – gegen ein Skript rund um die Uhr; überlebt Neustarts)
             if (d.fund.n >= 300) { if (d.fund.n === 300) warnen(who, 'truppen', 'Über 300 Funde auf der Karte an einem Tag – abgelehnt.', b.n); d.fund.n = 301; saveBotState(); return 0; }
             d.fund.n++; saveBotState();
-            erlaubt = Math.max(100, niceRound(levelRewardTroops(Math.max(m.lvl, 2)) * 0.05)) * 1.05 + 10;
+            erlaubt = Math.max(FUND_TR_MIN, niceRound(levelRewardTroops(Math.max(m.lvl, 2)) * 0.05)) * 1.05 + FUND_TR_MIN;
         } else {                                       // Admin-Geschenk: nur so viel, wie der Admin geschickt hat
             if (n > nn(d.gTr) + 0.5 && !ende) return -1;
             erlaubt = nn(d.gTr); d.gTr = Math.max(0, nn(d.gTr) - Math.min(n, erlaubt)); saveBotState();
