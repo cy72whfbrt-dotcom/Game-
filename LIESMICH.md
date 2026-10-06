@@ -1520,6 +1520,9 @@ und Desktop über alle Fenster) – erst danach Alexander wegen Hochladen fragen
 drumherum (Wege etwas länger, Basen dahinter etwas geschützter). Kommt mit dem Saison-Reset **nach** dem von heute
 Nacht – vorher bauen und testen.
 
+## 11c. FEHLER-MERKLISTE nach dem Hochladen 6.10. (Alexander: „nur merken“) – noch nicht bauen
+- (Einträge folgen)
+
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
   sie SELBST aufleveln, das kostet Rohstoffe (Münzen u. a.) – wie ein eigenes Gebäude, nicht automatisch mit dem Level.
