@@ -257,8 +257,7 @@ function renderAttackPreview(island, scouted) {
             (scouted ? '<div class="notice" data-preview="alter" hidden></div>' : '') +
             '<div class="ap-truppen"><input type="range" id="attackTroopsSlider" class="slider" min="0" max="' + SLIDER_STEPS + '" value="' + troopsToSlider(previewAttackTroops || 0, maxTroops) + '"' + (maxTroops <= 0 ? ' disabled' : '') + ' aria-label="Truppen entsenden">' +   // Schieber ganze Breite (Daumen)
                 '<div class="ap-regler"><div class="seg" data-preview="quick"><button type="button" data-f=".25">25 %</button><button type="button" data-f=".5">50 %</button><button type="button" data-f=".75">75 %</button><button type="button" data-f="1">Alle</button></div>' +
-                '<span class="val"><input id="attackTroopsLabel" class="troop-in" inputmode="decimal" autocomplete="off" enterkeyhint="done" aria-label="Anzahl Truppen"></span></div>' +
-                '<small class="ap-leer" data-preview="leer" hidden>' + icon('alert') + 'Deine Hauptstadt bleibt ohne Truppen</small></div>' +   // nur ein Hinweis, keine Regel
+                '<span class="val"><input id="attackTroopsLabel" class="troop-in" inputmode="decimal" autocomplete="off" enterkeyhint="done" aria-label="Anzahl Truppen"></span></div></div>' +
             (helden ? '<div class="ap-held"><div class="ap-held-zeile"><button type="button" class="ap-hchip" data-held-auf="1" aria-label="Held wählen"></button><button type="button" class="ap-hchip" data-held-auf="2" aria-label="Zweitheld wählen"></button></div>' +   // Held + Zweitheld als zwei Chips, antippen klappt die Auswahl auf
                 '<div class="seg hero-seg chips-quer" data-preview="hero" hidden>' + helden + '</div><div class="seg hero-seg hero-seg2 chips-quer" data-preview="hero2" hidden></div>' +
                 '<small class="ap-herofx" data-preview="herofx"></small></div>' : '');
@@ -415,7 +414,6 @@ function patchAttackPreview() {
         b.classList.toggle('on', maxTroops > 0 && (previewFraction !== null
             ? previewFraction === parseFloat(b.dataset.f)
             : Math.max(1, Math.round(maxTroops * parseFloat(b.dataset.f))) === shown));
-    const leer = popupStats.querySelector('[data-preview="leer"]'); if (leer) leer.hidden = !(previewSourceId === playerIslandId && maxTroops > 0 && shown >= maxTroops);   // „Alle“ aus der Hauptstadt
     const alEl = popupStats.querySelector('[data-preview="alter"]');
     if (alEl) { const t = spaehAlterText(island.id); alEl.hidden = !t; alEl.classList.toggle('notice--warn', !!t && Date.now() - spaehVom(island.id) >= SPAEH_ALT_MS);   // Alter des Spähberichts, ab 30 Min. gelb
         if (alEl.textContent !== t) alEl.innerHTML = icon('scout') + '<span>' + t + '</span>'; }

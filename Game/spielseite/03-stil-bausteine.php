@@ -590,7 +590,6 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
 .ap-hchip-t small{font:500 var(--fs-11)/1.2 var(--font-ui);color:var(--gold-200);white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .ap-hchip-t small .icon{width:10px;height:10px;vertical-align:-1px}
 .ap-held .seg.hero-seg2{margin-top:0} .ap-held .hero-seg2-l{display:none}   /* („Zweitheld · 50 %“ steht im Chip) */
 .ap-herofx{font:500 var(--fs-11)/1.3 var(--font-ui);color:var(--tx-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .ap-herofx:empty{display:none}
-.ap-leer{display:flex;align-items:center;gap:4px;font:500 var(--fs-11)/1.3 var(--font-ui);color:var(--gold-200)} .ap-leer[hidden]{display:none} .ap-leer .icon{width:12px;height:12px;flex:none}   /* „Alle“ aus der Hauptstadt: nur ein Hinweis */
 .hero-seg.chips-quer{flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;padding-bottom:2px}
 .hero-seg.chips-quer::-webkit-scrollbar{display:none}
 .hero-seg.chips-quer > button{flex:none;min-width:max-content;padding:0 12px}

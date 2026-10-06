@@ -1095,8 +1095,8 @@ Befehle und Nachrichten verteilen, Spielerliste mit Profilen.
   landmassId“:** `botGather` (bots/04) nahm den ersten Helfer auch, wenn es keinen gab (Quelle allein stark genug) und fragte
   `botFrei` nach „undefined“ → jetzt kein Plan ohne Helfer; `botFrei` (bots/02) gibt ohne Insel 0 zurück. **Tägliche Belohnung**
   springt nie mehr mitten in die Anleitung (vorher nach Schritt 2), erst wenn sie fertig/übersprungen ist (abholen geht in
-  Schritt 6 unter „Events“). **Angriff mit „Alle“ aus der Hauptstadt:** Hinweis „Deine Hauptstadt bleibt ohne Truppen“ im
-  Angriffs-Fenster (nur Hinweis, keine Regel). **Tippflächen ≥ 44 px:** alle kleinen Knöpfe (`.btn--sm`: „Abholen“, „Zeigen“ …),
+  Schritt 6 unter „Events“). **Angriff mit „Alle“ aus der Hauptstadt:** Anleitung Schritt 2 sagt „Tippe „Angreifen“ – mit
+  „Alle“ bleibt deine Hauptstadt ohne Truppen“ (nur Hinweis, keine Regel; im Angriffs-Fenster selbst kein Platz – ≤ 55 % hoch). **Tippflächen ≥ 44 px:** alle kleinen Knöpfe (`.btn--sm`: „Abholen“, „Zeigen“ …),
   „Spähen“, Kartenknöpfe auf dem Desktop jetzt 44 px. **Heldenkisten:** die ganze Karte kauft (Tipp aufs Bild lief ins Leere),
   ab 500 weiter „Wirklich?“. Profil → Rangliste/Einstellungen geprüft: kein Fehler (Test mit echtem Tipp). **Funde** (Münz-Kreis
   auf der Karte) mit Beschriftung „+Menge“, auf einem Namensschild unsichtbar und nicht antippbar. **Wochen-Event-Chip:**

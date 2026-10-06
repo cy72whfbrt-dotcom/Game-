@@ -1,6 +1,6 @@
 // Gesamt-Spieltest 6.10. (fix-st2), Handy (390×844) + Desktop: Tippflächen ≥ 44 px (sichtbar kleiner erlaubt: Rohstoffe, Anleitung-×,
-// „Spähen“, Prozent-Chips, „Abholen“, „2. Bauarbeiter“, Kartenknöpfe), Angriff mit „Alle“ aus der Hauptstadt zeigt „Deine Hauptstadt bleibt
-// ohne Truppen“ (nur Hinweis), Profil → Rangliste/Einstellungen mit echtem Tipp, Heldenkisten: Tipp auf die ganze Karte fragt „Wirklich?“
+// „Spähen“, Prozent-Chips, „Abholen“, „2. Bauarbeiter“, Kartenknöpfe), Anleitung Schritt 2 + Angriff mit „Alle“ aus der Hauptstadt sagt
+// „… bleibt deine Hauptstadt ohne Truppen“ (nur Hinweis; das Fenster bleibt ≤ 55 % hoch), Profil → Rangliste/Einstellungen mit echtem Tipp, Heldenkisten: Tipp auf die ganze Karte fragt „Wirklich?“
 // (ab 500), Wochen-Event-Chip springt nicht, wenn der Rang erscheint, Stadt: alle Baufelder samt Mauer im Start-Bild, Funde auf der Karte
 // beschriftet und nie auf einem Namensschild. Bilder in den Arbeitsordner (process.argv[3]), wenn angegeben.
 const { chromium, devices } = require('playwright');
@@ -30,13 +30,15 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const a = await ev(async () => { const w = ms => new Promise(f => setTimeout(f, ms)), h = islandById[playerIslandId];
       const nb = islands.filter(i => !islandOwnerOf(i.id) && !bossAt(i.id) && i.type !== 'megaTemple').sort((x, y) => Math.hypot(x.x - h.x, x.y - h.y) - Math.hypot(y.x - h.x, y.y - h.y))[0];
       scoutedIslands.delete(nb.id); islandTroops[playerIslandId] = Math.max(1000, islandTroops[playerIslandId] || 0); openIslandPopup(nb); attackBtn.click(); await w(400);
-      const leer = () => { const l = popupStats.querySelector('[data-preview="leer"]'); return !!l && !l.hidden && l.getBoundingClientRect().height > 0 && /Deine Hauptstadt bleibt ohne Truppen/.test(l.textContent); };
+      const s0 = anleitung.schritt, an = document.getElementById('anleitung'); anleitung.schritt = 1;
+      const leer = () => { anleitungZeigen(); return /bleibt deine Hauptstadt ohne Truppen/.test(document.getElementById('anleitungText').textContent); };
       const o = { quelle: previewSourceId === playerIslandId, alle: leer(), spaeh: __t44('.ap-spaehen'), chips: __t44('.ap-regler .seg button') };
       popupStats.querySelector('[data-preview="quick"] [data-f=".5"]').click(); await w(100); o.halb = leer();
       popupStats.querySelector('[data-preview="quick"] [data-f="1"]').click(); await w(100); o.wieder = leer();
-      o.truppen = islandTroops[playerIslandId] > 0; return o; });
+      o.truppen = islandTroops[playerIslandId] > 0; const tx = document.getElementById('anleitungText');
+      o.zeilen = Math.round(tx.getBoundingClientRect().height / parseFloat(getComputedStyle(tx).lineHeight)); o.ganz = tx.scrollHeight <= tx.clientHeight + 1; o.text = tx.textContent; anleitung.schritt = s0; anleitungZeigen(); an.hidden = true; return o; });
     await bild('angriff');
-    ok(a.quelle && a.alle && !a.halb && a.wieder && a.truppen, art + ': Angriff mit „Alle“ aus der Hauptstadt: Hinweis „Deine Hauptstadt bleibt ohne Truppen“ (bei 50 % nicht, nichts abgezogen)', a);
+    ok(a.quelle && a.alle && !a.halb && a.wieder && a.truppen && a.zeilen <= 2 && a.ganz, art + ': Anleitung + Angriff mit „Alle“ aus der Hauptstadt: Hinweis „… bleibt deine Hauptstadt ohne Truppen“ (bei 50 % nicht, nichts abgezogen, ganz in ≤ 2 Zeilen)', a);
     ok(gross(a.spaeh) && gross(a.chips), art + ': „Spähen“ und 25/50/75 %/Alle mit Tippfläche ≥ 44 px', { spaeh: a.spaeh, chips: a.chips });
     await ev(() => closeAllPopups());
     // 3) Events: „Abholen“ ≥ 44 px
@@ -53,7 +55,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     // 5) Heldenkisten: Tipp auf das Bild der Karte = Preis-Knopf, ab 500 erst „Wirklich?“
     await ev(() => { gems = 5000; updateHud(); }); await tap('#shopBtn'); await p.waitForTimeout(700);
     const ks = {};
-    for (const id of ['hc3', 'hcE']) { const g0 = await ev(() => gems);
+    for (const id of ['hc3', 'hcE']) { await p.waitForTimeout(900); const g0 = await ev(() => gems);   // (nach einem Kauf rollt das Ergebnis weich ins Bild)
       await tap('#heroChestOpts .ware:has([data-hchest="' + id + '"]) .ware-bild'); await p.waitForTimeout(200);
       ks[id] = await ev(([id, g0]) => { const bt = document.querySelector('[data-hchest="' + id + '"]'); return { frage: /Wirklich\?/.test(bt.textContent), nichtsWeg: gems === g0 }; }, [id, g0]);
       await p.waitForTimeout(600); await tap('#heroChestOpts .ware:has([data-hchest="' + id + '"]) .ware-bild'); await p.waitForTimeout(300);
