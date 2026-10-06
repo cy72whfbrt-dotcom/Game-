@@ -868,6 +868,23 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Thron: Status in einer Zeile (antippen klappt Details + Erklärung auf, bleibt beim Neuzeichnen offen), Waren 2×2; Schilde als
   3 Karten. Preise/Regeln gleich. CSS-Block „Shop-Schaufenster“ (spielseite/04). Test `shop_test` (neu), `stadt_fenster_test`
   (Shop-Teil nach shop_test), `design_hud_test`, `handy_stadt_test` angepasst.
+- **6.10. – Stadtansicht wie RoK (Alexander, Handy; Branch `fix-stadtbild`, NICHT hochgeladen):** **Schilder** (08f
+  `cityFrame`, `cityNamePlatz`): Ursache – jedes Schild wurde in den Bildschirm geklemmt (`Math.max(6, Math.min(W − 6 − Breite, …))`),
+  darum stapelten sie sich am Rand, wenn das Gebäude draußen lag. Jetzt klebt jedes Schild unter seinem Gebäude, liegt seine
+  Mitte außerhalb des Bilds, bleibt es weg; überdeckt es ein schon gesetztes, auch (Vorrang: Burg, im Bau, Mauer, gebaut,
+  leere Plätze). **Draußen** (08e `cityPaintGround`, `cityAussen`): Felder, Weg, Karren, Windmühle, Hof, Brunnen, Heu weg; um die
+  Mauer liegt die Weltkarte der Hauptstadt (Basis füllt die Mauer, Karte gestaucht wie das Stadtbild): Bäume dicht, wo die Karte
+  Wald hat, Nachbar-Regionen in ihrer Farbe, Meer mit Strand, wo die Karte Wasser hat (die Stadt selbst steht immer auf Land);
+  Berge hinten und der Fluss bleiben (nur auf Land). Innen alles wie vorher. **Übergang** (08a `openCity`/`closeCity`,
+  `karteTauchen`): die Karte fliegt zur Hauptstadt und taucht weiter hinein (CSS-Zoom ×3,2 des Karten-Bilds, kostet am Handy
+  fast nichts), Wolken, dann kommt die Stadt von weit unten näher (0,4 → 1 in 1,15 s, Wolken reißen schneller auf); zurück
+  umgekehrt (Stadt fällt weg, Karte kommt aus der Nähe zurück, dann zurück an die alte Stelle). Test `stadt_bild_test` (neu).
+  **Nachbesserung (Designer):** Übergang ohne Aufblasen – die Kamera fliegt nur bis kurz vor die Basis (`CITY_NAH` = 0,4 ×
+  größter Zoom), die Karte taucht dann nur ×1,8 ein (weich, `blur(2px)`), ab 280 ms blendet die Stadt darüber (`stadtBlende`,
+  320 ms) und kommt von 0,62 näher; dünne Wolken (Dichte 0,35, hellere Puffs) decken die Ränder, nie ganz weiß; zurück
+  blendet die Stadt aus, während die Karte zurückkommt. Boden-Bild läuft am Rand 90 Einheiten weich in die Grundfarbe aus (keine
+  harte Kante). Schilder nur, wenn sie ganz im Bild sind (Mauer-Schild nicht mehr halb am Rand). Handy-Start etwas weiter weg
+  (`W / 420`, Mauer-Tor samt Schild im Bild), vorn 4 Felsgruppen mit Palmen/Bäumen als Rand-Kulisse. Zurück zur Karte ist erst frei, wenn die Stadt ganz ausgeblendet ist (unter Last).
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 
