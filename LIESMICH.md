@@ -665,6 +665,9 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Fenster (max. 600 px) über der abgedunkelten Karte statt schwarzer Vollseite, Klick daneben schließt. Code: `05d`
   (`kampflogUmbauen` → `spaeh`, `spaehHerr`, `spaehHeld`, `spaehBasis`, `spaehRoh`, `fensterArt`; `refreshBattleLog`),
   `02c` (`spaeherBlickHtml`). Test `tests/browser/spaeh_bericht_test.js`. Offen: Kampf-Fenster auf Desktop sehr leer (Punkt 19).
+  Nachtrag (Designer-Prüfung): EINE Zahl für die Verteidigung – der Chip zeigt jetzt „Verteidigung gesamt“ = Truppen +
+  Verstärkung + alle Zeilen (vorher Chip ohne Truppen 21.241, Summe mit Truppen 61.241), dieselbe Zahl unten (`spaehGesamt`, `02c`).
+  „Grundverteidigung 1“ bei Basis-Stufe 10 ist der echte Wert (100 × 1,26⁹ × WIRTSCHAFT_KOSTEN = 0,44 → mindestens 1) – Sache der Wirtschaft.
 - **6.10. – Design P1: Grundwerte, HUD, Leiste, Streifen (11b F, Branch `design-p1`, NICHT hochgeladen):** **Grundwerte**
   (`spielseite/01`, andere Design-Pakete bauen darauf): Abstände `--ab-1…4` (4/8/12/16), Schriftstufen `--fs-11/13/15/17/22`
   (`--fs-9`/`--fs-10` = 11 px, nichts Kleineres mehr), Knopf-Arten `--k-haupt` 48 · `--k-zweit` 44 · `--k-gefahr` 48 · `--k-chip` 36

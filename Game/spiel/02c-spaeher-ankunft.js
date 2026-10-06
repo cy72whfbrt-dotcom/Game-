@@ -66,6 +66,8 @@ function spaeherBlick(owner, island) {
     if (island) { o.bl = islandLevels[island.id] || 1; o.teile = defenseParts(island).map(q => [q[0], Math.round(q[1]), q[2] || '']); }
     return o;
 }
+// Spähbericht: EINE Zahl für die Verteidigung (Chip und Summe im Bericht) = Truppen + Verstärkung + Verteidigung – die Zeilen addieren sich zu ihr
+function spaehGesamt(e) { return (e.troops || 0) + (e.verst || 0) + (e.defense || 0); }
 // Zuschauer: Abwehr-Werte eines Herrn aus dem neuesten Spähbericht (null: nie gespäht)
 let spaehWerteMem = null;
 function spaehWerte(owner) {

@@ -258,7 +258,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `besterOrt` → Game/spiel/01c-basen-spielstand.js:159
 - `bestRank` → Game/spiel/05a-aussehen-profil.js:78
 - `bestSlot` → Game/spiel/03d-maersche-tagnacht.js:132
-- `beute` → Game/spiel/02c-spaeher-ankunft.js:128
+- `beute` → Game/spiel/02c-spaeher-ankunft.js:130
 - `beuteChips` → Game/spiel/01a-grundlagen.js:183
 - `beuteText` → Game/spiel/08a-stadt-bauen.js:44
 - `bgDropGen` → Game/spiel/03a-karte-hintergrund.js:289
@@ -880,7 +880,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drTreffer` → Game/spiel/09c-events-drache.js:221
 - `drum` → Game/spiel/10c-start-einstellungen.js:41
 - `dTeil` → Game/bots/02-kampf-karte.js:119
-- `dTeil` → Game/spiel/02c-spaeher-ankunft.js:215
+- `dTeil` → Game/spiel/02c-spaeher-ankunft.js:217
 - `duck` → Game/baukunst/05-umland.js:195
 - `E.smoke` → Game/baukunst/05-umland.js:781
 - `E.sub` → Game/baukunst/05-umland.js:780
@@ -1935,21 +1935,21 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `resetSkills` → Game/spiel/05b-truhe-skills.js:272
 - `resFields` → Game/spiel/09a-funde-felder.js:160
 - `resize` → Game/ladebildschirm.js:35
-- `resolveAttack` → Game/spiel/02c-spaeher-ankunft.js:181
+- `resolveAttack` → Game/spiel/02c-spaeher-ankunft.js:183
 - `resolveBotAttack` → Game/bots/02-kampf-karte.js:21
-- `resolveRetreat` → Game/spiel/02c-spaeher-ankunft.js:356
-- `resolveScout` → Game/spiel/02c-spaeher-ankunft.js:146
+- `resolveRetreat` → Game/spiel/02c-spaeher-ankunft.js:358
+- `resolveScout` → Game/spiel/02c-spaeher-ankunft.js:148
 - `resolveSend` → Game/spiel/02b-maersche.js:336
 - `restyleMerlons` → Game/baukunst/04-vielfalt-stile.js:354
 - `retex` → Game/baukunst/04-vielfalt-stile.js:595
-- `retreatPct` → Game/spiel/02c-spaeher-ankunft.js:178
-- `retreatSecs` → Game/spiel/02c-spaeher-ankunft.js:179
-- `retreatSurvivorsPreview` → Game/spiel/02c-spaeher-ankunft.js:180
+- `retreatPct` → Game/spiel/02c-spaeher-ankunft.js:180
+- `retreatSecs` → Game/spiel/02c-spaeher-ankunft.js:181
+- `retreatSurvivorsPreview` → Game/spiel/02c-spaeher-ankunft.js:182
 - `revealAround` → Game/spiel/01e-nebel-kampfwerte-hud.js:40
 - `rewardBaseId` → Game/spiel/02a-shop-stufen.js:229
 - `rgba` → Game/ladebildschirm.js:12
 - `ribbed` → Game/baukunst/04-vielfalt-stile.js:258
-- `ribbon` → Game/spiel/02c-spaeher-ankunft.js:303
+- `ribbon` → Game/spiel/02c-spaeher-ankunft.js:305
 - `ring` → Game/baukunst/04-vielfalt-stile.js:266
 - `ring` → Game/spiel/03c-wappen-thronplatz.js:343
 - `ringBadge` → Game/spiel/03c-wappen-thronplatz.js:347
@@ -2134,27 +2134,28 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `soot` → Game/baukunst/03-wahrzeichen-feuer.js:330
 - `sourceTroops` → Game/spiel/10a-inselfenster-vorschau.js:221
 - `spaeh` → Game/spiel/05d-maersche-kampfbericht.js:484
-- `spaehAbgelaufen` → Game/spiel/02c-spaeher-ankunft.js:103
-- `spaehAlterText` → Game/spiel/02c-spaeher-ankunft.js:116
+- `spaehAbgelaufen` → Game/spiel/02c-spaeher-ankunft.js:105
+- `spaehAlterText` → Game/spiel/02c-spaeher-ankunft.js:118
 - `spaehBasis` → Game/spiel/05d-maersche-kampfbericht.js:472
-- `spaehBericht` → Game/spiel/02c-spaeher-ankunft.js:84
-- `spaehEinsetzen` → Game/spiel/02c-spaeher-ankunft.js:95
+- `spaehBericht` → Game/spiel/02c-spaeher-ankunft.js:86
+- `spaehEinsetzen` → Game/spiel/02c-spaeher-ankunft.js:97
 - `spaeherBlick` → Game/spiel/02c-spaeher-ankunft.js:52
-- `spaeherBlickHtml` → Game/spiel/02c-spaeher-ankunft.js:122
-- `spaeherHeim` → Game/spiel/02c-spaeher-ankunft.js:142
+- `spaeherBlickHtml` → Game/spiel/02c-spaeher-ankunft.js:124
+- `spaeherHeim` → Game/spiel/02c-spaeher-ankunft.js:144
 - `spaeherMehr` → Game/aufbau.js:388
 - `spaeherTempo` → Game/aufbau.js:221
 - `spaeherVon` → Game/spiel/10d-welt-weltrechner.js:102
 - `spaeherWeg` → Game/spiel/01b-weltkarte.js:297
-- `spaehGeaendert` → Game/spiel/02c-spaeher-ankunft.js:90
+- `spaehGeaendert` → Game/spiel/02c-spaeher-ankunft.js:92
+- `spaehGesamt` → Game/spiel/02c-spaeher-ankunft.js:70
 - `spaehHeld` → Game/spiel/05d-maersche-kampfbericht.js:462
 - `spaehHerr` → Game/spiel/05d-maersche-kampfbericht.js:453
 - `spaehRoh` → Game/spiel/05d-maersche-kampfbericht.js:479
 - `spaehRunde` → Game/spiel/10d-welt-weltrechner.js:928
-- `spaehVerst` → Game/spiel/02c-spaeher-ankunft.js:118
-- `spaehVom` → Game/spiel/02c-spaeher-ankunft.js:111
-- `spaehWann` → Game/spiel/02c-spaeher-ankunft.js:115
-- `spaehWerte` → Game/spiel/02c-spaeher-ankunft.js:71
+- `spaehVerst` → Game/spiel/02c-spaeher-ankunft.js:120
+- `spaehVom` → Game/spiel/02c-spaeher-ankunft.js:113
+- `spaehWann` → Game/spiel/02c-spaeher-ankunft.js:117
+- `spaehWerte` → Game/spiel/02c-spaeher-ankunft.js:73
 - `spaeter` → Game/buendnis/03-mitspieler.js:185
 - `spawnBattleFx` → Game/spiel/07a-schlachten.js:356
 - `spawnMapBattle` → Game/spiel/07a-schlachten.js:24
@@ -2198,7 +2199,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `step` → Game/spiel/08a-stadt-bauen.js:156
 - `stepGable` → Game/baukunst/07-hafen-palast.js:65
 - `stepOf` → Game/baukunst/02-buehne-grundbasis.js:142
-- `stern` → Game/spiel/02c-spaeher-ankunft.js:124
+- `stern` → Game/spiel/02c-spaeher-ankunft.js:126
 - `stoneLantern` → Game/baukunst/04-vielfalt-stile.js:497
 - `stoneWarte` → Game/baukunst/05-umland.js:356
 - `stop` → Game/spiel/10c-start-einstellungen.js:129
@@ -3630,27 +3631,28 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `nearestOwnedIslandTo` :8 — "Spähen": no troops needed, but a scout still takes time to reach the target - …
 - `launchScout` :19
 - `spaeherBlick` :52 — Spähbericht: was der Späher über den Herrn der Basis herausfindet – alles, sofo…
-- `spaehWerte` :71
-- `spaehBericht` :84
-- `spaehGeaendert` :90
-- `spaehEinsetzen` :95
-- `spaehAbgelaufen` :103
-- `spaehVom` :111
-- `spaehWann` :115
-- `spaehAlterText` :116
-- `spaehVerst` :118 — Verstärkung in einer fremden Basis laut dem neuesten Spähbericht (Zuschauer ken…
-- `spaeherBlickHtml` :122
-- `stern` :124 — (held: Sterne/2 – wie die Heldenkarte)
-- `beute` :128
-- `spaeherHeim` :142 — Der Späher läuft hin UND zurück (Alexander 4.10.): am Ziel gibt es den Bericht,…
-- `resolveScout` :146
-- `retreatPct` :178
-- `retreatSecs` :179
-- `retreatSurvivorsPreview` :180
-- `resolveAttack` :181
-- `dTeil` :215
-- `ribbon` :303
-- `resolveRetreat` :356
+- `spaehGesamt` :70 — Spähbericht: EINE Zahl für die Verteidigung (Chip und Summe im Bericht) = Trupp…
+- `spaehWerte` :73
+- `spaehBericht` :86
+- `spaehGeaendert` :92
+- `spaehEinsetzen` :97
+- `spaehAbgelaufen` :105
+- `spaehVom` :113
+- `spaehWann` :117
+- `spaehAlterText` :118
+- `spaehVerst` :120 — Verstärkung in einer fremden Basis laut dem neuesten Spähbericht (Zuschauer ken…
+- `spaeherBlickHtml` :124
+- `stern` :126 — (held: Sterne/2 – wie die Heldenkarte)
+- `beute` :130
+- `spaeherHeim` :144 — Der Späher läuft hin UND zurück (Alexander 4.10.): am Ziel gibt es den Bericht,…
+- `resolveScout` :148
+- `retreatPct` :180
+- `retreatSecs` :181
+- `retreatSurvivorsPreview` :182
+- `resolveAttack` :183
+- `dTeil` :217
+- `ribbon` :305
+- `resolveRetreat` :358
 
 ### Game/spiel/03a-karte-hintergrund.js — Karte zeichnen: Grundlagen, Meer, Inseln, Gebiete, Wege
 - `setScreen` :5 — `var` on purpose: sizeBackingStore() already runs at boot, before this block.
