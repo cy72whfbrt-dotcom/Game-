@@ -44,7 +44,7 @@ function botPlanStep(bot) {                                 // gives the next or
     if (botFreeSlots(bot) <= 0) return false;                  // every march slot busy: keep the step for a later move
     const st = p.steps.shift(); if (!p.steps.length) act.plan = null;
     if (!own.has(st.from) || (p.kind === 'attack' && botThreatened(bot.id).has(st.from))) return false;
-    if (p.kind === 'send') { if ((islandTroops[st.from] || 0) < BOT_MIN_GARRISON_TO_ATTACK) return false; launchSend(st.from, p.t, bot.id); return true; }
+    if (p.kind === 'send') { if ((islandTroops[st.from] || 0) < BOT_MIN_GARRISON_TO_ATTACK || botThreatened(bot.id).has(st.from)) return false; launchSend(st.from, p.t, bot.id, st.n); return true; }   // (st.n: was die Basis entbehren kann – ohne: alle)
     // before every further order: is it still a good idea? A fresh report showing a stronger base, or a base that no
     // longer has the troops it was meant to send, calls the whole strike off - nobody sends 100 men against 240.000.
     const fresh = botIntel(bot, p.t);
@@ -199,7 +199,7 @@ function botThink(bot) {
     if (rally && !sampled.includes(rally.at)) sampled.push(rally.at);
     for (const sourceId of sampled) {
         if (thr.has(sourceId) || sourceId === megaTempleId && !(rally && rally.at === sourceId)) continue;   // nobody empties the throne for an ordinary attack - or a base the enemy is marching on
-        const have = Math.floor((islandTroops[sourceId] || 0) * (rally && rally.at === sourceId ? .95 : commit));   // the gathered army goes almost whole
+        const have = Math.floor((islandTroops[sourceId] || 0) * (rally && rally.at === sourceId ? .95 : Math.min(commit, botFrei(bot.id, sourceId, now))));   // the gathered army goes almost whole (sonst nach Lage: botFrei)
         if (have < BOT_MIN_GARRISON_TO_ATTACK) continue;
         const source = islandById[sourceId];
         for (const lmId of reachableLandmassIds[source.landmassId]) {
@@ -241,7 +241,7 @@ function botThink(bot) {
         const have0 = new Set(e.sources.map(sv => sv.id));
         for (const sourceId of owned) {
             if (have0.has(sourceId) || thr.has(sourceId)) continue;
-            const src = islandById[sourceId], have = Math.floor((islandTroops[sourceId] || 0) * commit);
+            const src = islandById[sourceId], have = Math.floor((islandTroops[sourceId] || 0) * Math.min(commit, botFrei(bot.id, sourceId, now)));   // (bedrohte Basen und die Hauptstadt behalten ihren Teil)
             if (have < BOT_MIN_GARRISON_TO_ATTACK || !(reachableLandmassIds[src.landmassId] || []).includes(e.target.landmassId) || !landmassesConnected(src.landmassId, e.target.landmassId)) continue;
             e.sources.push({ id: sourceId, have });
         }

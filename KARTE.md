@@ -253,7 +253,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `besondere.getTransform` → Game/weltrechner/start.js:229
 - `besondere.isPointInPath` → Game/weltrechner/start.js:230
 - `besondere.measureText` → Game/weltrechner/start.js:224
-- `best` → Game/bots/05-verteidigen-takt.js:169
+- `best` → Game/bots/05-verteidigen-takt.js:181
 - `besterOrt` → Game/spiel/01c-basen-spielstand.js:159
 - `bestRank` → Game/spiel/05a-aussehen-profil.js:78
 - `bestSlot` → Game/spiel/03d-maersche-tagnacht.js:132
@@ -294,7 +294,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `BOT_GOAL_VAL.saisonTop` → Game/bots/06-aussehen-felder-barbaren.js:46
 - `BOT_GOAL_VAL.temples` → Game/bots/06-aussehen-felder-barbaren.js:40
 - `bot_namen` → Game/server/03-nebel-maersche-seite.php:97
-- `botActOf` → Game/bots/02-kampf-karte.js:428
+- `botActOf` → Game/bots/02-kampf-karte.js:448
+- `botAerger` → Game/bots/05-verteidigen-takt.js:21
+- `botAergerNote` → Game/bots/05-verteidigen-takt.js:18
 - `botAnnoyOf` → Game/bots/02-kampf-karte.js:235
 - `botArmies` → Game/bots/06-aussehen-felder-barbaren.js:122
 - `botArmyMerge` → Game/bots/06-aussehen-felder-barbaren.js:200
@@ -311,25 +313,26 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `botBurgWert` → Game/aufbau.js:436
 - `botById` → Game/welt.js:368
 - `botCanCross` → Game/bots/01-spieler.js:116
-- `botCapitalMoveOk` → Game/bots/05-verteidigen-takt.js:151
-- `botCapitalNotice` → Game/bots/05-verteidigen-takt.js:186
-- `botCapitalOf` → Game/bots/04-stand-stadt.js:343
-- `botCapitalPlan` → Game/bots/05-verteidigen-takt.js:158
-- `botCapLocal` → Game/bots/05-verteidigen-takt.js:145
+- `botCapitalMoveOk` → Game/bots/05-verteidigen-takt.js:163
+- `botCapitalNotice` → Game/bots/05-verteidigen-takt.js:203
+- `botCapitalOf` → Game/bots/04-stand-stadt.js:345
+- `botCapitalPlan` → Game/bots/05-verteidigen-takt.js:170
+- `botCapLocal` → Game/bots/05-verteidigen-takt.js:157
 - `botCityBuild` → Game/bots/04-stand-stadt.js:91
 - `botCityFinish` → Game/bots/04-stand-stadt.js:78
 - `botClaimGoals` → Game/bots/06-aussehen-felder-barbaren.js:49
-- `botClock` → Game/bots/05-verteidigen-takt.js:88
+- `botClock` → Game/bots/05-verteidigen-takt.js:98
 - `botConquests` → Game/bots/06-aussehen-felder-barbaren.js:297
-- `botConsiderCapital` → Game/bots/05-verteidigen-takt.js:195
+- `botConsiderCapital` → Game/bots/05-verteidigen-takt.js:212
 - `botConsiderUpgrade` → Game/bots/04-stand-stadt.js:278
 - `botDayBoss` → Game/bots/06-aussehen-felder-barbaren.js:357
-- `botDefend` → Game/bots/05-verteidigen-takt.js:25
+- `botDefend` → Game/bots/05-verteidigen-takt.js:34
 - `botDrache` → Game/bots/06-aussehen-felder-barbaren.js:349
 - `botDropShield` → Game/bots/06-aussehen-felder-barbaren.js:92
 - `botFails` → Game/bots/02-kampf-karte.js:278
 - `botForschung` → Game/aufbau.js:414
 - `botFreeSlots` → Game/bots/03-angreifen.js:38
+- `botFrei` → Game/bots/02-kampf-karte.js:327
 - `botGather` → Game/bots/04-stand-stadt.js:318
 - `botGatherField` → Game/bots/06-aussehen-felder-barbaren.js:103
 - `botGatherHeroes` → Game/bots/04-stand-stadt.js:135
@@ -338,8 +341,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `botGoldRate` → Game/bots/04-stand-stadt.js:189
 - `botGrudge` → Game/bots/02-kampf-karte.js:223
 - `botGrudgeOn` → Game/bots/02-kampf-karte.js:237
-- `botHandy` → Game/bots/05-verteidigen-takt.js:236
-- `botHandyLage` → Game/bots/05-verteidigen-takt.js:225
+- `botHandy` → Game/bots/05-verteidigen-takt.js:254
+- `botHandyLage` → Game/bots/05-verteidigen-takt.js:243
 - `botHeal` → Game/bots/04-stand-stadt.js:125
 - `botHeroAtk` → Game/bots/04-stand-stadt.js:141
 - `botHeroCare` → Game/bots/04-stand-stadt.js:146
@@ -348,20 +351,21 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `botHospitalCapacity` → Game/bots/04-stand-stadt.js:116
 - `botHospitalPct` → Game/bots/04-stand-stadt.js:114
 - `botHospitalTake` → Game/bots/04-stand-stadt.js:118
-- `botIntel` → Game/bots/02-kampf-karte.js:401
+- `botIntel` → Game/bots/02-kampf-karte.js:421
 - `botInvasion` → Game/bots/06-aussehen-felder-barbaren.js:329
 - `botItem` → Game/bots/04-stand-stadt.js:174
-- `botKeepsShield` → Game/bots/05-verteidigen-takt.js:211
+- `botKeepsShield` → Game/bots/05-verteidigen-takt.js:229
 - `botKennt` → Game/bots/03-angreifen.js:147
-- `botLastSeen` → Game/bots/02-kampf-karte.js:358
-- `botLearn` → Game/bots/02-kampf-karte.js:412
+- `botLastSeen` → Game/bots/02-kampf-karte.js:378
+- `botLearn` → Game/bots/02-kampf-karte.js:432
+- `botLmShare` → Game/bots/02-kampf-karte.js:301
 - `botLook` → Game/bots/06-aussehen-felder-barbaren.js:5
 - `botLookFav` → Game/bots/06-aussehen-felder-barbaren.js:19
 - `botLookShop` → Game/bots/06-aussehen-felder-barbaren.js:21
 - `botLosses` → Game/bots/05-verteidigen-takt.js:13
-- `botLoyal` → Game/bots/02-kampf-karte.js:360
+- `botLoyal` → Game/bots/02-kampf-karte.js:380
 - `botMarchMult` → Game/bots/04-stand-stadt.js:197
-- `botMarginFor` → Game/bots/02-kampf-karte.js:390
+- `botMarginFor` → Game/bots/02-kampf-karte.js:410
 - `botMarkt` → Game/aufbau.js:427
 - `botMidPull` → Game/bots/02-kampf-karte.js:290
 - `botMigrateV2` → Game/bots/04-stand-stadt.js:34
@@ -372,7 +376,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `botNeulingWeg` → Game/bots/06-aussehen-felder-barbaren.js:89
 - `botNoteFail` → Game/bots/02-kampf-karte.js:280
 - `botNoteLoss` → Game/bots/05-verteidigen-takt.js:10
-- `botNoteTooStrong` → Game/bots/02-kampf-karte.js:355
+- `botNoteTooStrong` → Game/bots/02-kampf-karte.js:375
 - `botOnline` → Game/bots/04-stand-stadt.js:217
 - `botOnlinePlan` → Game/bots/04-stand-stadt.js:223
 - `botPassCare` → Game/bots/06-aussehen-felder-barbaren.js:60
@@ -381,45 +385,45 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `botPassScore` → Game/bots/06-aussehen-felder-barbaren.js:57
 - `botPickHero` → Game/bots/04-stand-stadt.js:134
 - `botPlanStep` → Game/bots/03-angreifen.js:40
-- `botPoolFor` → Game/bots/02-kampf-karte.js:320
+- `botPoolFor` → Game/bots/02-kampf-karte.js:340
 - `botRally` → Game/bots/04-stand-stadt.js:302
-- `botRespawn` → Game/bots/05-verteidigen-takt.js:288
-- `botRespects` → Game/bots/02-kampf-karte.js:362
+- `botRespawn` → Game/bots/05-verteidigen-takt.js:306
+- `botRespects` → Game/bots/02-kampf-karte.js:382
 - `botRevengeLaunched` → Game/bots/02-kampf-karte.js:242
 - `botRingFav` → Game/bots/04-stand-stadt.js:232
 - `botRings` → Game/bots/04-stand-stadt.js:233
 - `botRohWunsch` → Game/aufbau.js:442
-- `botRulerTitles` → Game/bots/05-verteidigen-takt.js:266
-- `botSampleSources` → Game/bots/04-stand-stadt.js:355
-- `botSchaetzAngriff` → Game/bots/05-verteidigen-takt.js:18
-- `botSchaetzArmee` → Game/bots/05-verteidigen-takt.js:23
+- `botRulerTitles` → Game/bots/05-verteidigen-takt.js:284
+- `botSampleSources` → Game/bots/04-stand-stadt.js:357
+- `botSchaetzAngriff` → Game/bots/05-verteidigen-takt.js:27
+- `botSchaetzArmee` → Game/bots/05-verteidigen-takt.js:32
 - `botschaftGeschenk` → Game/aufbau.js:227
 - `botschaftTempo` → Game/aufbau.js:226
-- `botScouting` → Game/bots/02-kampf-karte.js:410
+- `botScouting` → Game/bots/02-kampf-karte.js:430
 - `botScoutLos` → Game/bots/03-angreifen.js:70
 - `botScoutsArrive` → Game/bots/03-angreifen.js:77
 - `botScoutVisible` → Game/bots/03-angreifen.js:62
-- `botShieldCrisis` → Game/bots/05-verteidigen-takt.js:123
-- `botShieldNight` → Game/bots/05-verteidigen-takt.js:111
-- `botShieldUser` → Game/bots/05-verteidigen-takt.js:86
+- `botShieldCrisis` → Game/bots/05-verteidigen-takt.js:133
+- `botShieldNight` → Game/bots/05-verteidigen-takt.js:121
+- `botShieldUser` → Game/bots/05-verteidigen-takt.js:96
 - `botShop` → Game/bots/04-stand-stadt.js:242
-- `botSitCtx` → Game/bots/02-kampf-karte.js:365
-- `botSituation` → Game/bots/02-kampf-karte.js:370
+- `botSitCtx` → Game/bots/02-kampf-karte.js:385
+- `botSituation` → Game/bots/02-kampf-karte.js:390
 - `botSortGroups` → Game/bots/01-spieler.js:104
 - `botSpendSkills` → Game/bots/04-stand-stadt.js:57
 - `botStadtFix` → Game/aufbau.js:406
 - `botStat` → Game/bots/06-aussehen-felder-barbaren.js:73
-- `botStrategic` → Game/bots/02-kampf-karte.js:301
+- `botStrategic` → Game/bots/02-kampf-karte.js:309
 - `botStyle` → Game/bots/03-angreifen.js:21
 - `botTapped` → Game/bots/03-angreifen.js:36
-- `botTeleportCapital` → Game/bots/05-verteidigen-takt.js:176
+- `botTeleportCapital` → Game/bots/05-verteidigen-takt.js:193
 - `botThink` → Game/bots/03-angreifen.js:162
-- `botThreatened` → Game/bots/02-kampf-karte.js:339
+- `botThreatened` → Game/bots/02-kampf-karte.js:359
 - `botThroneHold` → Game/bots/03-angreifen.js:133
 - `botThroneShop` → Game/bots/06-aussehen-felder-barbaren.js:78
 - `botTickMs` → Game/bots/04-stand-stadt.js:195
-- `botTooStrong` → Game/bots/02-kampf-karte.js:350
-- `botUseShield` → Game/bots/05-verteidigen-takt.js:90
+- `botTooStrong` → Game/bots/02-kampf-karte.js:370
+- `botUseShield` → Game/bots/05-verteidigen-takt.js:100
 - `botVendetta` → Game/bots/02-kampf-karte.js:284
 - `bountyCheck` → Game/spiel/06c-thron-mitte.js:197
 - `bountyGems` → Game/spiel/06c-thron-mitte.js:187
@@ -872,7 +876,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `duck` → Game/baukunst/05-umland.js:195
 - `E.smoke` → Game/baukunst/05-umland.js:781
 - `E.sub` → Game/baukunst/05-umland.js:780
-- `edge` → Game/bots/05-verteidigen-takt.js:293
+- `edge` → Game/bots/05-verteidigen-takt.js:311
 - `edge` → Game/spiel/01b-weltkarte.js:153
 - `edgeDist` → Game/spiel/03a-karte-hintergrund.js:131
 - `effectiveDefense` → Game/spiel/01e-nebel-kampfwerte-hud.js:66
@@ -1618,7 +1622,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `nbOffen` → Game/spiel/10d-welt-weltrechner.js:902
 - `nbPacken` → Game/spiel/10d-welt-weltrechner.js:889
 - `nbZ` → Game/spiel/10d-welt-weltrechner.js:903
-- `near` → Game/bots/05-verteidigen-takt.js:187
+- `near` → Game/bots/05-verteidigen-takt.js:204
 - `nearestOwnedIslandTo` → Game/spiel/02c-spaeher-ankunft.js:8
 - `nebel_flicken` → Game/server/03-nebel-maersche-seite.php:23
 - `nebel_sieht` → Game/server/03-nebel-maersche-seite.php:10
@@ -1863,7 +1867,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `raus` → Game/spiel/01d-helden-mitspieler.js:118
 - `raus.push` → Game/spiel/10d-welt-weltrechner.js:241
 - `rauswurf` → Game/speichern.js:111
-- `reach` → Game/bots/05-verteidigen-takt.js:162
+- `reach` → Game/bots/05-verteidigen-takt.js:174
 - `recallMarch` → Game/spiel/02b-maersche.js:222
 - `recallSources` → Game/spiel/10b-inselfenster-knoepfe.js:46
 - `recenterOnHome` → Game/spiel/03e-kamera-eingabe.js:194
@@ -1981,7 +1985,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `rr` → Game/spiel/03a-karte-hintergrund.js:542
 - `rueckzuegeZuClient` → Game/welt.js:204
 - `rulerOwner` → Game/spiel/01d-helden-mitspieler.js:164
-- `runBotTick` → Game/bots/05-verteidigen-takt.js:307
+- `runBotTick` → Game/bots/05-verteidigen-takt.js:325
 - `rund` → Game/spiel/08f-stadtbild-bild.js:245
 - `runde` → Game/weltrechner/push.js:224
 - `rundturm` → Game/baukunst/02-buehne-grundbasis.js:204
@@ -2049,7 +2053,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `screen` → Game/spiel/03a-karte-hintergrund.js:372
 - `screenToWorld` → Game/spiel/09d-armeen-wegmarken.js:341
 - `sectorGeo` → Game/baukunst/08-himmelsfeste-bilder.js:48
-- `see` → Game/bots/05-verteidigen-takt.js:30
+- `see` → Game/bots/05-verteidigen-takt.js:39
 - `seed` → Game/spiel/01c-basen-spielstand.js:57
 - `seg` → Game/spiel/08e-stadtbild-haeuser.js:427
 - `segDistW` → Game/spiel/01c-basen-spielstand.js:33
@@ -2106,7 +2110,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `sicht_setzen` → Game/server/05-datenbank-welt.php:311
 - `sitOf` → Game/bots/03-angreifen.js:185
 - `sitzung_hash` → Game/server/01-grundlagen-login.php:78
-- `size` → Game/bots/05-verteidigen-takt.js:272
+- `size` → Game/bots/05-verteidigen-takt.js:290
 - `sizeBackingStore` → Game/spiel/03e-kamera-eingabe.js:397
 - `skillBonusText` → Game/spiel/04-kampf.js:297
 - `skript` → Game/server/03-nebel-maersche-seite.php:145
@@ -2197,7 +2201,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `system_zugang` → Game/server/01-grundlagen-login.php:58
 - `tagLicht` → Game/spiel/03d-maersche-tagnacht.js:185
 - `tapFog` → Game/spiel/10b-inselfenster-knoepfe.js:226
-- `tapped` → Game/bots/05-verteidigen-takt.js:39
+- `tapped` → Game/bots/05-verteidigen-takt.js:49
 - `tausch` → Game/welt.js:89
 - `teil` → Game/spiel/10c-start-einstellungen.js:270
 - `teleportCapital` → Game/spiel/08d-gebaeude-wirkung.js:91
@@ -2311,7 +2315,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `upgradeCost` → Game/spiel/01b-weltkarte.js:135
 - `upgradeCostRoh` → Game/spiel/01b-weltkarte.js:134
 - `urnGeo` → Game/baukunst/07-hafen-palast.js:456
-- `val` → Game/bots/05-verteidigen-takt.js:127
+- `val` → Game/bots/05-verteidigen-takt.js:137
 - `vapidJwt` → Game/weltrechner/push.js:54
 - `variant` → Game/baukunst/04-vielfalt-stile.js:188
 - `verdachtPruefen` → Game/weltrechner/start.js:125
@@ -2912,21 +2916,23 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `botVendetta` :284
 - `coalitionOn` :286 — the throne held for 20 min: the others stop quarrelling and go for it
 - `botMidPull` :290 — a fat Kopfgeld draws everyone to the ruler's bases
-- `botStrategic` :301
-- `botPoolFor` :320
-- `botThreatened` :339 — own bases an enemy column or army is on its way to: help goes in, nothing goes …
-- `botTooStrong` :350
-- `botNoteTooStrong` :355
-- `botLastSeen` :358
-- `botLoyal` :360
-- `botRespects` :362
-- `botSitCtx` :365
-- `botSituation` :370 — how the moment changes the pull of a target (lower = more wanted)
-- `botMarginFor` :390 — how careful: a vendetta and past failures bring more, weakness less
-- `botIntel` :401
-- `botScouting` :410
-- `botLearn` :412 — (ready = when the report comes in; vonLm = Landmasse, von der der Späher losläu…
-- `botActOf` :428
+- `botLmShare` :301 — → { v: Anteil eigener, f: Anteil fremder Basen auf der Insel } (15 s gemerkt)
+- `botStrategic` :309
+- `botFrei` :327 — → Anteil der Truppen, der los darf (0 … .9)
+- `botPoolFor` :340
+- `botThreatened` :359 — own bases an enemy column or army is on its way to: help goes in, nothing goes …
+- `botTooStrong` :370
+- `botNoteTooStrong` :375
+- `botLastSeen` :378
+- `botLoyal` :380
+- `botRespects` :382
+- `botSitCtx` :385
+- `botSituation` :390 — how the moment changes the pull of a target (lower = more wanted)
+- `botMarginFor` :410 — how careful: a vendetta and past failures bring more, weakness less
+- `botIntel` :421
+- `botScouting` :430
+- `botLearn` :432 — (ready = when the report comes in; vonLm = Landmasse, von der der Späher losläu…
+- `botActOf` :448
 
 ### Game/bots/03-angreifen.js — Mitspieler: Angreifen, Spähen, Sammeln, der Kopf (botThink)
 - `botMood` :17
@@ -2984,40 +2990,42 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `weight` :285
 - `botRally` :302 — Big targets (gates, temples, Wächter, the throne) need more than one garrison: …
 - `botGather` :318
-- `botCapitalOf` :343 — each bot's main base: its strongest tower at first - later moved like yours (bo…
-- `botSampleSources` :355 — a person looks at their big armies and a few others, not at all 500 bases
+- `botCapitalOf` :345 — each bot's main base: its strongest tower at first - later moved like yours (bo…
+- `botSampleSources` :357 — a person looks at their big armies and a few others, not at all 500 bases
 
 ### Game/bots/05-verteidigen-takt.js — Mitspieler: Verteidigen, Friedensschild, Hauptstadt verlegen, Titel, Takt
 - `botNoteLoss` :10
 - `botLosses` :13
-- `botSchaetzAngriff` :18 — Wie stark ein fremder Angriff aussieht (Alexander 5.10., 11b C): ein Mitspieler…
-- `botSchaetzArmee` :23
-- `botDefend` :25
-- `see` :30
-- `tapped` :39 — one defence order at a time (its own pace - it doesn't stop the armies)
-- `botShieldUser` :86 — FRIEDENSSCHILD of the other players: bought with gems like yours, switched on l…
-- `botClock` :88
-- `botUseShield` :90
-- `botShieldNight` :111 — bedtime: a careful person with something to lose switches one on
-- `botShieldCrisis` :123 — lost: [{id, str, at}] - neither holdable nor reinforceable in time
-- `val` :127
-- `botCapLocal` :145
-- `botCapitalMoveOk` :151 — your rules + not into a fight that is already on its way
-- `botCapitalPlan` :158 — → { to, why } | null
-- `reach` :162
-- `best` :169
-- `botTeleportCapital` :176
-- `botCapitalNotice` :186 — only news if it happens next to you
-- `near` :187
-- `botConsiderCapital` :195
-- `botKeepsShield` :211 — under their own shield a person doesn't attack - until it's nearly over
-- `botHandyLage` :225 — HANDY-MELDUNG: angegriffen, während sie offline sind ===== Wie ein Mensch mit B…
-- `botHandy` :236
-- `botRulerTitles` :266 — a bot on the throne hands out titles like a person: whoever keeps attacking it …
-- `size` :272
-- `botRespawn` :288 — knocked out: like a player starting over, back after ~10 min on a free outer ba…
-- `edge` :293
-- `runBotTick` :307
+- `botAergerNote` :18
+- `botAerger` :21 — → Inseln mit Ärger in den letzten ms (ohne die einer alten Karte)
+- `botSchaetzAngriff` :27 — Wie stark ein fremder Angriff aussieht (Alexander 5.10., 11b C): ein Mitspieler…
+- `botSchaetzArmee` :32
+- `botDefend` :34
+- `see` :39
+- `tapped` :49 — one defence order at a time (its own pace - it doesn't stop the armies)
+- `botShieldUser` :96 — FRIEDENSSCHILD of the other players: bought with gems like yours, switched on l…
+- `botClock` :98
+- `botUseShield` :100
+- `botShieldNight` :121 — bedtime: a careful person with something to lose switches one on
+- `botShieldCrisis` :133 — lost: [{id, str, at}] - neither holdable nor reinforceable in time
+- `val` :137
+- `botCapLocal` :157
+- `botCapitalMoveOk` :163 — your rules + not into a fight that is already on its way
+- `botCapitalPlan` :170 — → { to, why } | null
+- `reach` :174
+- `best` :181
+- `botTeleportCapital` :193
+- `botCapitalNotice` :203 — only news if it happens next to you
+- `near` :204
+- `botConsiderCapital` :212
+- `botKeepsShield` :229 — under their own shield a person doesn't attack - until it's nearly over
+- `botHandyLage` :243 — HANDY-MELDUNG: angegriffen, während sie offline sind ===== Wie ein Mensch mit B…
+- `botHandy` :254
+- `botRulerTitles` :284 — a bot on the throne hands out titles like a person: whoever keeps attacking it …
+- `size` :290
+- `botRespawn` :306 — knocked out: like a player starting over, back after ~10 min on a free outer ba…
+- `edge` :311
+- `runBotTick` :325
 
 ### Game/bots/06-aussehen-felder-barbaren.js — Mitspieler: Aussehen, Statistik, Thron-Shop, Felder und Armeen
 - `botLook` :5 — 8) AUSSEHEN, STATISTIK, THRON-SHOP

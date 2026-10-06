@@ -422,11 +422,17 @@ function botMidPull(bot, target, ruler, now) {             // a fat Kopfgeld dra
 // A far base of someone else is left alone unless it is personal.   (lower = more wanted, 1 = nothing special)
 const botLmShareMem = {};
 
+function botLmShare(botId, lmId, now) {                    // → { v: Anteil eigener, f: Anteil fremder Basen auf der Insel } (15 s gemerkt)
+    const key = botId + ':' + lmId; let sh = botLmShareMem[key];
+    if (!sh || now - sh.at > 15000) { const on = islandsByLandmass[lmId] || [], own = botOwnedIslands[botId]; let mine = 0, fremd = 0;
+        for (const i of on) if (own.has(i.id)) mine++; else if (islandOwnerOf(i.id)) fremd++;
+        sh = botLmShareMem[key] = { v: on.length ? mine / on.length : 0, f: on.length ? fremd / on.length : 0, at: now }; }
+    return sh;
+}
+
 function botStrategic(bot, target) {
     const own = botOwnedIslands[bot.id]; if (!own || !own.size) return 1;
-    const key = bot.id + ':' + target.landmassId, now = Date.now(); let sh = botLmShareMem[key];
-    if (!sh || now - sh.at > 15000) { const on = islandsByLandmass[target.landmassId] || []; let mine = 0; for (const i of on) if (own.has(i.id)) mine++;
-        sh = botLmShareMem[key] = { v: on.length ? mine / on.length : 0, at: now }; }
+    const sh = botLmShare(bot.id, target.landmassId, Date.now());
     let m = sh.v >= .5 ? .35 : sh.v > 0 ? .6 : 1;                                           // inside our land / at our border
     const cap = islandById[botCapitalOf(bot.id)];
     if (cap) {
@@ -435,6 +441,20 @@ function botStrategic(bot, target) {
         if (Math.hypot(target.x - cap.x, target.y - cap.y) < ISLAND_RADIUS * 25) m *= .6;     // right next to home
     }
     return m;
+}
+
+// Wie viel eine Basis für einen großen Schlag hergeben kann (Alexander 6.10.: „die können selbst entscheiden, wie viel sie
+// schicken“) – kein fester Satz, sondern nach Lage, wie bei einem Menschen, der überall Truppen hat: greift sie gerade jemand
+// an, nichts; gab es dort eben Ärger (Angriff, verlorene Basis nebenan), wenig; Grenzland mit mehr fremden als eigenen
+// Basen, die Hälfte bleibt; die Hauptstadt hält als Helfer immer die Hälfte (ihr Rückhalt). Sonst fast alles.
+let botFreiCtx = null;
+function botFrei(botId, id, now) {                          // → Anteil der Truppen, der los darf (0 … .9)
+    if (!botFreiCtx || botFreiCtx.bot !== botId || botFreiCtx.now !== now) botFreiCtx = { bot: botId, now, thr: botThreatened(botId), aer: botAerger(botId, 30 * 60000, now), cap: botCapitalOf(botId) };
+    const c = botFreiCtx, isl = islandById[id]; if (c.thr.has(id)) return 0;
+    let f = .9;
+    if (c.aer.some(i => Math.hypot(i.x - isl.x, i.y - isl.y) < ISLAND_RADIUS * 25)) f = .3;
+    else { const sh = botLmShare(botId, isl.landmassId, now); if (sh.f > sh.v) f = .6; }
+    return id === c.cap ? Math.min(f, .5) : f;
 }
 
 // Everything that could get there: every base with a route (the capital too - nobody can attack it anyway) and the
@@ -450,7 +470,7 @@ function botPoolFor(bot, target) {
         const t = tollFor(r[r.length - 2], r[r.length - 1], n, bot.id, target.id); return !t.closed && (botCoins[bot.id] || 0) >= t.cost; };
     for (const id of own) {
         if (id === megaTempleId || thr.has(id)) continue;                                   // a base under attack keeps its troops
-        const isl = islandById[id], have = Math.floor((islandTroops[id] || 0) * .9);
+        const isl = islandById[id], have = Math.floor((islandTroops[id] || 0) * botFrei(bot.id, id, now));   // (nach Lage, nicht immer 90 %)
         if (have < BOT_MIN_GARRISON_TO_ATTACK || !reach(isl.landmassId, have)) continue;
         src.push({ id, have }); s += have;
     }
@@ -596,7 +616,7 @@ function botPlanStep(bot) {                                 // gives the next or
     if (botFreeSlots(bot) <= 0) return false;                  // every march slot busy: keep the step for a later move
     const st = p.steps.shift(); if (!p.steps.length) act.plan = null;
     if (!own.has(st.from) || (p.kind === 'attack' && botThreatened(bot.id).has(st.from))) return false;
-    if (p.kind === 'send') { if ((islandTroops[st.from] || 0) < BOT_MIN_GARRISON_TO_ATTACK) return false; launchSend(st.from, p.t, bot.id); return true; }
+    if (p.kind === 'send') { if ((islandTroops[st.from] || 0) < BOT_MIN_GARRISON_TO_ATTACK || botThreatened(bot.id).has(st.from)) return false; launchSend(st.from, p.t, bot.id, st.n); return true; }   // (st.n: was die Basis entbehren kann – ohne: alle)
     // before every further order: is it still a good idea? A fresh report showing a stronger base, or a base that no
     // longer has the troops it was meant to send, calls the whole strike off - nobody sends 100 men against 240.000.
     const fresh = botIntel(bot, p.t);
@@ -751,7 +771,7 @@ function botThink(bot) {
     if (rally && !sampled.includes(rally.at)) sampled.push(rally.at);
     for (const sourceId of sampled) {
         if (thr.has(sourceId) || sourceId === megaTempleId && !(rally && rally.at === sourceId)) continue;   // nobody empties the throne for an ordinary attack - or a base the enemy is marching on
-        const have = Math.floor((islandTroops[sourceId] || 0) * (rally && rally.at === sourceId ? .95 : commit));   // the gathered army goes almost whole
+        const have = Math.floor((islandTroops[sourceId] || 0) * (rally && rally.at === sourceId ? .95 : Math.min(commit, botFrei(bot.id, sourceId, now))));   // the gathered army goes almost whole (sonst nach Lage: botFrei)
         if (have < BOT_MIN_GARRISON_TO_ATTACK) continue;
         const source = islandById[sourceId];
         for (const lmId of reachableLandmassIds[source.landmassId]) {
@@ -793,7 +813,7 @@ function botThink(bot) {
         const have0 = new Set(e.sources.map(sv => sv.id));
         for (const sourceId of owned) {
             if (have0.has(sourceId) || thr.has(sourceId)) continue;
-            const src = islandById[sourceId], have = Math.floor((islandTroops[sourceId] || 0) * commit);
+            const src = islandById[sourceId], have = Math.floor((islandTroops[sourceId] || 0) * Math.min(commit, botFrei(bot.id, sourceId, now)));   // (bedrohte Basen und die Hauptstadt behalten ihren Teil)
             if (have < BOT_MIN_GARRISON_TO_ATTACK || !(reachableLandmassIds[src.landmassId] || []).includes(e.target.landmassId) || !landmassesConnected(src.landmassId, e.target.landmassId)) continue;
             e.sources.push({ id: sourceId, have });
         }
@@ -1197,15 +1217,15 @@ function botConsiderUpgrade(bot) {
 // ==============================================================================================================
 function botRally(bot, target, atId, need, maxHelpers) {
     if (pendingSends.some(sd => sd.senderBotId === bot.id && !sd.back)) return false;
-    const at = islandById[atId], helpers = [];
+    const at = islandById[atId], helpers = [], now = Date.now();
     let pool = (islandTroops[atId] || 0) * .95;
-    const thr = botThreatened(bot.id), own = [...botOwnedIslands[bot.id]].filter(id => id !== atId && id !== megaTempleId && !thr.has(id) && (islandTroops[id] || 0) > BOT_MIN_GARRISON_TO_ATTACK)
-        .map(id => ({ id, isl: islandById[id] })).filter(h => h.isl.landmassId === at.landmassId || landmassesConnected(h.isl.landmassId, at.landmassId))
-        .sort((u, v) => (islandTroops[v.id] || 0) - (islandTroops[u.id] || 0));
+    const own = [...botOwnedIslands[bot.id]].filter(id => id !== atId && id !== megaTempleId)                       // jede Basis gibt nur, was sie nach Lage entbehren kann (botFrei)
+        .map(id => ({ id, isl: islandById[id], n: Math.floor((islandTroops[id] || 0) * botFrei(bot.id, id, now)) })).filter(h => h.n >= BOT_MIN_GARRISON_TO_ATTACK && (h.isl.landmassId === at.landmassId || landmassesConnected(h.isl.landmassId, at.landmassId)))
+        .sort((u, v) => v.n - u.n);
     const most = Math.max(maxHelpers ?? 8, BOT_STYLES[bot.style].gather || 8);
-    for (const h of own) { if (pool >= need * 1.3 || helpers.length >= most) break; helpers.push(h.id); pool += (islandTroops[h.id] || 0) * .95; }
+    for (const h of own) { if (pool >= need * 1.3 || helpers.length >= most) break; helpers.push(h); pool += h.n; }
     if (pool < need * 1.1 || !helpers.length) return false;
-    botActOf(bot.id).plan = { kind: 'send', t: atId, steps: helpers.map(id => ({ from: id })), until: Date.now() + 120000 };
+    botActOf(bot.id).plan = { kind: 'send', t: atId, steps: helpers.map(h => ({ from: h.id, n: h.n })), until: now + 120000 };
     botPlanStep(bot);
     loadBotState()[bot.id].rally = { t: target.id, at: atId, until: Date.now() + 6 * 60000 };
     return true;
@@ -1232,7 +1252,9 @@ function botGather(bot) {
         }
     }
     if (!plan) return false;
-    for (const id of plan.helpers.sort((a, c) => (islandTroops[c] || 0) - (islandTroops[a] || 0)).slice(0, 1)) launchSend(id, plan.sourceId, bot.id);
+    const id = plan.helpers.sort((a, c) => (islandTroops[c] || 0) - (islandTroops[a] || 0))[0], n = Math.floor((islandTroops[id] || 0) * botFrei(bot.id, id, Date.now()));
+    if (n < BOT_MIN_GARRISON_TO_ATTACK) return false;
+    launchSend(id, plan.sourceId, bot.id, n);                                                   // (nach Lage, nicht die ganze Basis)
     return true;
 }
 
@@ -1267,6 +1289,15 @@ function botNoteLoss(botId, islandId) { if (!botById[botId]) return; const l = b
 
 function botLosses(botId, ms, now) { return (botLossMem[botId] || []).filter(x => now - x.at < ms); }
 
+// Ärger (Alexander 6.10.): jeder Angriff auf eine ihrer Basen, den sie gesehen haben (botDefend), und jede verlorene Basis –
+// danach richten sie Hauptstadt (botCapitalPlan) und Truppen (botFrei) wie ein Mensch, der überall Truppen hat.
+const botAergerMem = {};
+function botAergerNote(botId, id, now) { const l = botAergerMem[botId] || (botAergerMem[botId] = []);
+    if (l.some(x => x.id === id && now - x.at < 10 * 60000)) return;                                 // derselbe Angriff: einmal
+    l.push({ id, at: now }); while (l.length && (l.length > 40 || now - l[0].at > 2 * 3600000)) l.shift(); }
+function botAerger(botId, ms, now) {                    // → Inseln mit Ärger in den letzten ms (ohne die einer alten Karte)
+    return (botAergerMem[botId] || []).filter(x => now - x.at < ms).concat(botLosses(botId, ms, now)).map(x => islandById[x.id]).filter(Boolean); }
+
 // Wie stark ein fremder Angriff aussieht (Alexander 5.10., 11b C): ein Mitspieler weiß so wenig wie du – vor dem Kampf nur
 // die Truppenzahl, ungefähr (±30 %, je Angriff fest: kein Flackern) und ohne Boni (Held, Fähigkeit, Titel, Forschung);
 // kämpft er schon, die echte Stärke (wie im Kampfbericht). Feld-Armeen: ihre Truppenzahl (steht auf der Karte), ohne Boni.
@@ -1291,6 +1322,7 @@ function botDefend(bot) {
     for (const a of armies) if (a.mv && a.mv.to.kind === 'base') { const w = armyWho(a);                 // a field army marching on the base is on the map too
         if (w !== bot.id) see(a.mv.to.id, a.mv.startedAt, a.mv.resolveAt, botSchaetzArmee(a)); }
     if (!threats.size) return;
+    for (const id of threats.keys()) botAergerNote(bot.id, id, now);
     const tapped = () => { act.defNext = now + (botStyle(bot).tapMs || 5000) * (.7 + Math.random() * .6); };   // one defence order at a time (its own pace - it doesn't stop the armies)
     // 1) look at every threat: does it hold, can it be held with help that gets there in time, or is it lost?
     const plans = [];
@@ -1390,10 +1422,12 @@ function botShieldCrisis(bot, now, lost) {             // lost: [{id, str, at}] 
 }
 
 // ===== HAUPTSTADT VERLEGEN (the others): 50 gems like yours, a tower of their own, the garrison moves along.
-// Why a person does it: the land around the capital is being lost (retreat), the front has moved towards the middle
-// (forward, a step of 2-3 rings), or most of the empire now lies elsewhere (mass). The wish has to hold for a few
-// minutes, then one tap - never into a fight that is already on its way, at most once in 45 minutes.
-const BOT_CAP_EVAL_MS = 75000, BOT_CAP_COOLDOWN = 45 * 60000, BOT_CAP_GAP = 20000;
+// Why a person does it: the land around the capital is being lost (retreat), trouble further back - several attacks or
+// lost bases in a short time - so it moves close to help (hilfe, Alexander 6.10.), the front has moved towards the middle
+// and it is calm (forward, 1-3 rings), or most of the empire now lies elsewhere (mass). Nach vorne oder zurück, je nach
+// Lage – ab 6 eigenen Türmen in der Nähe. The wish has to hold for a few minutes, then one tap - never into a fight that
+// is already on its way; at most once in 45 minutes (to help: after 15), so nobody jumps back and forth.
+const BOT_CAP_EVAL_MS = 75000, BOT_CAP_COOLDOWN = 45 * 60000, BOT_CAP_HILFE = 15 * 60000, BOT_CAP_GAP = 20000;
 
 let botCapLastAny = 0; const botCapNext = {};
 
@@ -1411,21 +1445,26 @@ function botCapitalMoveOk(botId, toId, busy) {          // your rules + not into
     return !(wander && wander.to === toId); }
 
 function botCapitalPlan(bot, now) {                      // → { to, why } | null
-    const own = botOwnedIslands[bot.id], capId = botCapitalOf(bot.id), cap = islandById[capId]; if (!cap || own.size < 12) return null;
+    const own = botOwnedIslands[bot.id], capId = botCapitalOf(bot.id), cap = islandById[capId]; if (!cap || own.size < 10) return null;
     const busy = new Set(pendingAttacks.map(a => a.targetId)), mine = {};
     for (const id of own) { const l = islandById[id].landmassId; mine[l] = (mine[l] || 0) + 1; }
     const reach = t => { let s2 = 0; for (const l in mine) { const d = Math.hypot(landmasses[l].x - t.x, landmasses[l].y - t.y) / HEX_SPACING; s2 += mine[l] * (d < .8 ? 1 : d < 1.6 ? .5 : 0); } return s2; };
-    const capRing = landmasses[cap.landmassId].ring, here = botCapLocal(bot.id, cap), capReach = reach(cap);
-    const lost = botLosses(bot.id, 15 * 60000, now).filter(x => Math.hypot(islandById[x.id].x - cap.x, islandById[x.id].y - cap.y) < ISLAND_RADIUS * 37).length;
+    const capRing = landmasses[cap.landmassId].ring, here = botCapLocal(bot.id, cap), capReach = reach(cap), dCap = i => Math.hypot(i.x - cap.x, i.y - cap.y);
+    const lost = botLosses(bot.id, 15 * 60000, now).filter(x => dCap(islandById[x.id]) < ISLAND_RADIUS * 37).length;
     const cand = [];
     for (const id of own) { const t = islandById[id]; if (t.type !== 'tower' || id === capId || !botCapitalMoveOk(bot.id, id, busy)) continue;
-        const loc = botCapLocal(bot.id, t); if (loc.o < 10 || loc.s < .6) continue;
-        cand.push({ id, ring: landmasses[t.landmassId].ring, loc, reach: reach(t), lv: islandLevels[id] || 1 }); }
-    const best = (l, f) => l.reduce((a, c) => !a || f(c) > f(a) ? c : a, null);
-    if (here.s < .4 || (lost >= 3 && here.s < .6)) { const c = best(cand.filter(c => c.loc.s >= .75), c => c.reach * c.loc.s + c.lv * .1); if (c) return { to: c.id, why: 'retreat' }; }
-    const fwd = cand.filter(c => c.ring <= capRing - 2 && c.ring >= capRing - 3);
+        const loc = botCapLocal(bot.id, t); if (loc.o < 3 || loc.s < .5) continue;
+        cand.push({ id, t, ring: landmasses[t.landmassId].ring, loc, reach: reach(t), lv: islandLevels[id] || 1 }); }
+    const best = (l, f) => l.reduce((a, c) => !a || f(c) > f(a) ? c : a, null), fest = cand.filter(c => c.loc.o >= 6 && c.loc.s >= .6);
+    if (here.s < .4 || (lost >= 3 && here.s < .6)) { const c = best(fest.filter(c => c.loc.s >= .75), c => c.reach * c.loc.s + c.lv * .1); if (c) return { to: c.id, why: 'retreat' }; }
+    const hinten = botAerger(bot.id, 20 * 60000, now).filter(i => dCap(i) >= ISLAND_RADIUS * 37);   // Ärger weiter weg: dorthin, helfen
+    if (hinten.length >= 3) { const mx = hinten.reduce((s2, i) => s2 + i.x, 0) / hinten.length, my = hinten.reduce((s2, i) => s2 + i.y, 0) / hinten.length;
+        const dM = c => Math.hypot(c.t.x - mx, c.t.y - my), c = best(cand.filter(c => dM(c) < Math.hypot(cap.x - mx, cap.y - my) * .5), c => -dM(c) + c.loc.o * ISLAND_RADIUS);
+        if (c) return { to: c.id, why: 'hilfe' }; }
+    const ruhig = botAerger(bot.id, 30 * 60000, now).length < 2;                                       // nach vorne nur, wenn hinten Ruhe ist
+    const fwd = ruhig ? fest.filter(c => c.ring <= capRing - 1 && c.ring >= capRing - 3) : [];
     if (fwd.length) return { to: best(fwd, c => c.loc.o * c.loc.s + c.reach * .3 + (capRing - c.ring) * 4 + c.lv * .1).id, why: 'forward' };
-    const m = best(cand, c => c.reach + c.lv * .1);
+    const m = best(fest, c => c.reach + c.lv * .1);
     return m && m.reach >= capReach * 1.6 && m.loc.o > here.o ? { to: m.id, why: 'mass' } : null; }
 
 function botTeleportCapital(bot, toId) {
@@ -1451,10 +1490,11 @@ function botConsiderCapital(bot, now) {
     const b = loadBotState()[bot.id], act = botActOf(bot.id);
     if (now >= (botCapNext[bot.id] ?? (botCapNext[bot.id] = now + Math.random() * 10 * 60000))) {
         botCapNext[bot.id] = now + BOT_CAP_EVAL_MS * (.8 + Math.random() * .4);
-        const pl = (b.rally && b.rally.at === botCapitalOf(bot.id)) || now - (b.capMovedAt || 0) < BOT_CAP_COOLDOWN ? null : botCapitalPlan(bot, now), w = b.capWish;
+        const seit = now - (b.capMovedAt || 0), pl0 = (b.rally && b.rally.at === botCapitalOf(bot.id)) || seit < BOT_CAP_HILFE ? null : botCapitalPlan(bot, now);
+        const pl = pl0 && (pl0.why === 'hilfe' || seit >= BOT_CAP_COOLDOWN) ? pl0 : null, w = b.capWish;   // helfen geht schon nach 15 Min., alles andere nach 45
         if (!pl) b.capWish = null;
         else if (!w || w.why !== pl.why || islandById[w.to].landmassId !== islandById[pl.to].landmassId)
-            b.capWish = { to: pl.to, why: pl.why, since: now, wait: (pl.why === 'retreat' ? 60 : 180 + Math.random() * 300) * 1000 };
+            b.capWish = { to: pl.to, why: pl.why, since: now, wait: (pl.why === 'retreat' || pl.why === 'hilfe' ? 60 : 180 + Math.random() * 300) * 1000 };
         else w.to = pl.to;
         saveBotState(); }
     const w = b.capWish, capNow = botCapitalOf(bot.id);
@@ -1725,15 +1765,15 @@ function botArmyRally(bot, target, need, srcList) {
         pt = { x, y, lm: lm.id }; break;
     }
     if (!pt) return false;
-    const helpers = []; let pool = 0;
+    const helpers = []; let pool = 0; const now = Date.now(), frei = id => Math.floor((islandTroops[id] || 0) * botFrei(bot.id, id, now));   // (nach Lage, nicht immer 90 %)
     const most = (BOT_STYLES[bot.style].gather || 8) * 4;                          // as many bases as the strike needs (the loop stops at enough) - the good ones call up more
-    for (const id of strong) { if (pool >= need * 1.3 || helpers.length >= most) break;
-        if (!botCanCross(bot.id, islandById[id].landmassId, pt.lm, Math.floor((islandTroops[id] || 0) * .9))) continue; helpers.push(id); pool += Math.floor((islandTroops[id] || 0) * .9); }
+    for (const id of strong) { if (pool >= need * 1.3 || helpers.length >= most) break; const n = frei(id);
+        if (n < BOT_MIN_GARRISON_TO_ATTACK || !botCanCross(bot.id, islandById[id].landmassId, pt.lm, n)) continue; helpers.push(id); pool += n; }
     if (pool < need * 1.1) return false;
     const hp = botPickHero(bot.id, null, null, need, true);
     const a = { id: 'b' + Date.now().toString(36) + Math.floor(Math.random() * 1e4), who: bot.id, hero: hp[0], hero2: hp[1], x: pt.x, y: pt.y, lm: pt.lm, troops: 0, homeId: helpers[0], mv: null, t: target.id, until: Date.now() + (helpers.length > 6 ? 12 : 8) * 60000 };
     armies.push(a); let sent = 0;
-    for (const id of helpers) { const n = Math.floor((islandTroops[id] || 0) * .9); if (armySendFrom(a, id, n)) sent += n; }
+    for (const id of helpers) { const n = frei(id); if (armySendFrom(a, id, n)) sent += n; }
     if (!sent) { armies = armies.filter(x => x !== a); return false; }
     if (islandOwnerOf(target.id) === 'player') flashHint(bot.name + ' sammelt eine Armee vor deiner Basis ' + islandTitle(target) + '.', 4500);
     saveArmies(); requestRender(); return true;
@@ -1753,7 +1793,7 @@ function botArmyRethink(bot, a, atk, needS, now) {
         const helpers = pool.src.filter(sv => own.has(sv.id) && sv.id !== megaTempleId && !thr.has(sv.id) && botCanCross(bot.id, islandById[sv.id].landmassId, a.lm, sv.have)).slice(0, (st.gather || 8) * 4);
         const can = helpers.reduce((s2, sv) => s2 + sv.have, 0);
         if (can + others >= gap * 1.05 && can > 0) {
-            let sent = 0; for (const sv of helpers) { if (sent >= gap * 1.25 - others) break; const n = Math.floor((islandTroops[sv.id] || 0) * .9); if (armySendFrom(a, sv.id, n)) sent += n; }
+            let sent = 0; for (const sv of helpers) { if (sent >= gap * 1.25 - others) break; const n = Math.floor((islandTroops[sv.id] || 0) * botFrei(bot.id, sv.id, now)); if (armySendFrom(a, sv.id, n)) sent += n; }
             if (sent) { a.calls = (a.calls || 0) + 1; a.until = Math.max(a.until, now + 8 * 60000);
                 if (islandOwnerOf(a.t) === 'player') flashHint(bot.name + ' holt Verstärkung für die Armee vor ' + islandTitle(t0) + '.', 4000);
                 saveArmies(); return true; }
