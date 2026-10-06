@@ -1,7 +1,8 @@
 // Spähbericht zeigt alles richtig + Nachricht „X hat deine Basis ausgespäht“ (Vorschau, ohne Server):
 // A) Mitspieler mit 4 Teilen Stufe 10: der Spähbericht zeigt die Ausrüstung (keine leeren Plätze), die Verteidigung
 //    aufgeschlüsselt wie im Kampfbericht (Grund „Basis Stufe X“ + Rüstung + Fähigkeit + Mauer …), Summe = Kampf-Verteidigung,
-//    Spieler-Stufe und Basis-Stufe eindeutig beschriftet
+//    Spieler-Stufe und Basis-Stufe eindeutig beschriftet; EINE Verteidigung: Chip = „Verteidigung gesamt“ = Truppen + alle Zeilen,
+//    Grundverteidigung = Wert der Basis-Stufe
 // B) Alter des Berichts: „gespäht vor 2 Std.“, ab 30 Min. gelb „neu spähen?“ – im Kampflog und im Angriffsfenster
 // C) Ein Mitspieler späht deine Basis aus → Kampflog-Eintrag „… hat deine Basis … ausgespäht“
 // D) Weltrechner (WELT nachgebaut): echter Spieler bzw. Mitspieler späht einen echten Spieler aus → Bericht an ihn + Push;
@@ -9,6 +10,7 @@
 // E) Viele Späher: je Späher und Basis höchstens 1 Meldung in 30 Min., höchstens 10 „ausgespäht“ im Kampflog (Kampfberichte bleiben)
 const { chromium, devices } = require('playwright');
 const path = require('path');
+const fmtZ = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');   // wie fmtNum (Tausender-Punkte)
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x).slice(0, 400) : ''));
 (async () => {
   const b = await chromium.launch({ args: ['--proxy-server=http://127.0.0.1:9'] });
@@ -48,6 +50,24 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     out.A.voll = row ? row.querySelectorAll('.logGear .tile[data-r]').length : -1;
     out.A.leer = row ? row.querySelectorAll('.logGear .tile.empty').length : -1;
     out.A.text = zeile(row);
+    // A2) kompakt: keine Zeilen voller „–“, kein Gefallen/Geflohen, kein leerer Zweitheld, nur EIN Alter (oben in der Karte)
+    out.A.striche = row ? [...row.querySelectorAll('.logLine, .logCasualty')].filter(l => l.lastElementChild && /^[–—-]$/.test(l.lastElementChild.textContent.trim())).length : -1;
+    out.A.leerZ = /Gefallen|Geflohen|Kein Zweitheld|Kein Hauptheld|Fähigkeit –/.test(out.A.text);
+    out.A.alter = (out.A.text.match(/vor \d+ (s|Min\.|Std\.)/g) || []).length;
+    const sm = row && row.querySelector('summary'); if (sm) sm.click();
+    const ks = document.querySelector('.kl-seite');
+    out.A.seite = ks && !ks.hidden;
+    // A3) EINE Zahl für die Verteidigung: Chip = „Verteidigung gesamt“ = Truppen + jede Zeile darüber; Grundverteidigung = Basis-Stufe
+    if (ks) { const box = ks.querySelector('.kl-v > .logSide'), wert = el => { const t = el.lastElementChild.textContent; return (/^−/.test(t.trim()) ? -1 : 1) * parseInt(t.replace(/[^\d]/g, ''), 10); };
+      const sumEl = box && box.querySelector(':scope > .logSum'), zeilen = box ? [...box.querySelectorAll(':scope > .logLine')] : [];
+      const chip = [...ks.querySelectorAll('.lchip')].map(c => c.textContent.trim()).find(t => /Verteidigung/.test(t)) || '';
+      out.A.gesamt = { soll: spaehGesamt(e), chip, chipSoll: chipN(spaehGesamt(e)) + ' Verteidigung gesamt', name: sumEl ? sumEl.firstElementChild.textContent : '', summe: sumEl ? wert(sumEl) : null,
+        zeilen: zeilen.reduce((x, l) => x + wert(l), 0), grund: (zeilen.find(l => /^Grundverteidigung/.test(l.textContent)) || { textContent: '' }).textContent, grundSoll: baseDefenseForLevel(islandLevels[w.T] || 1) }; }
+    const dn = Date.now; Date.now = () => dn() + 3 * 60000; refreshBattleLog(); Date.now = dn;   // 3 Min. später: läuft das Alter in der offenen Seite mit?
+    const st = ks ? zeile(ks.querySelector('#klInhalt')) : '';
+    out.A.seiteAlter = st.match(/vor \d+ (s|Min\.|Std\.)/g) || [];
+    out.A.seiteStriche = ks ? [...ks.querySelectorAll('.logLine')].filter(l => l.lastElementChild && /^[–—-]$/.test(l.lastElementChild.textContent.trim())).length : -1;
+    if (ks) ks.querySelector('[data-klzu]').click();
     // Kampf gleich danach (1 Truppe – verliert): dieselbe Verteidigung wie im Spähbericht
     try { resolveAttack({ sourceId: playerIslandId, targetId: w.T, rawTroops: 1, attackBonus: 0, atkTitle: 1, atkKraft: 1, startedAt: now - 1000, resolveAt: now, shieldLossReductionPct: 0, rewardGoldRate: 0 }); } catch (x) { out.A.kampfFehler = x.message; }
     const k = combatLog.find(x => x.type === 'attack' && x.targetId === w.T);
@@ -94,14 +114,28 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     out.bad = (document.getElementById('battleLogPopup').textContent.match(/undefined|NaN|\[object|Infinity/g) || []).slice(0, 5);
     return out;
   }, w));
+  // F) Desktop: die Bericht-Seite ist ein Fenster über der Karte (keine schwarze Vollseite), Klick daneben schließt
+  await p.setViewportSize({ width: 1440, height: 900 }); await p.waitForTimeout(300);
+  a.F = await p.evaluate(T => { closeAllPopups(); battleLogBtn.click(); const e = combatLog.find(x => x.type === 'scout' && x.targetId === T && x.spy);
+    const row = e && [...combatLogListEl.children][combatLog.indexOf(e)], sm = row && row.querySelector('summary'); if (!sm) return null; sm.click();
+    const ks = document.querySelector('.kl-seite'), f = ks.firstElementChild, r = f.getBoundingClientRect(), bg = getComputedStyle(ks).backgroundColor;
+    const out = { offen: !ks.hidden, breite: Math.round(r.width), links: Math.round(r.left), bg, fensterBg: getComputedStyle(f).backgroundColor };
+    ks.dispatchEvent(new MouseEvent('click', { bubbles: true })); out.zu = ks.hidden; return out; }, a.w.T);
+  await p.setViewportSize({ width: 390, height: 844 });
   console.log(JSON.stringify(a).slice(0, 1500));
+  ok(a.F && a.F.offen && a.F.breite <= 600 && a.F.links > 300 && /rgba\(.*0\.6/.test(a.F.bg) && a.F.zu, 'Desktop: Bericht als Fenster (max. 600 px, Karte dahinter abgedunkelt), Klick daneben schließt', a.F);
   const A = a.A || {};
   ok(A.gear && Object.values(A.gear).filter(g => g && g[0] === 4 && g[1] === 10).length === 4, 'Spähbericht: alle 4 Teile Stufe 10 im Bericht', A.gear);
   ok(A.voll === 4 && A.leer === 0, 'Spähbericht zeigt 4 Ausrüstungsteile (keine leeren Plätze)', { voll: A.voll, leer: A.leer });
   ok(Array.isArray(A.teile) && A.teile[0] && /Basis Stufe 20/.test(A.teile[0][2]) && A.teile.some(q => q[0] === 'Rüstung' && q[1] > 0) && A.teile.some(q => /Fähigkeit Verteidigung/.test(q[0])) && A.teile.some(q => q[0] === 'Mauer'), 'Spähbericht: Verteidigung aufgeschlüsselt (Basis Stufe 20, Rüstung, Fähigkeit, Mauer)', A.teile);
   ok(A.summe === A.def && A.def === A.eff, 'Spähbericht: Summe der Teile = Verteidigung = effectiveDefense', { summe: A.summe, def: A.def, eff: A.eff });
+  { const G = A.gesamt || {};
+    ok(G.summe === G.soll && G.zeilen === G.soll && G.chip === G.chipSoll && G.name === 'Verteidigung gesamt', 'Spähbericht: EINE Verteidigung – Chip = „Verteidigung gesamt“ = Truppen + alle Zeilen (vorher Chip ohne Truppen, Summe mit)', G);
+    ok(new RegExp('^Grundverteidigung.*Basis Stufe 20' + fmtZ(G.grundSoll) + '$').test(G.grund || ''), 'Spähbericht: Grundverteidigung = Wert der Basis-Stufe 20 (baseDefenseForLevel)', { grund: G.grund, soll: G.grundSoll }); }
   ok(A.kampf === A.def && JSON.stringify((A.kampfTeile || []).map(q => [q[0], q[1]])) === JSON.stringify((A.teile || []).map(q => [q[0], q[1]])), 'Kampf gleich danach: dieselbe Verteidigung, dieselben Teile wie im Spähbericht', { kampf: A.kampf, kampfFehler: A.kampfFehler });
   ok(/Rüstung/.test(A.text || '') && /Basis Stufe 20/.test(A.text || '') && /Spieler-Stufe/.test(A.text || ''), 'Spähbericht-Anzeige: Rüstung-Zeile, „Basis Stufe 20“ und „Spieler-Stufe“ beschriftet', (A.text || '').slice(0, 300));
+  ok(A.striche === 0 && !A.leerZ, 'Spähbericht kompakt: keine „–“-Zeilen, kein Gefallen/Geflohen, keine leeren Heldenplätze', { striche: A.striche, text: (A.text || '').slice(0, 300) });
+  ok(A.alter === 1 && A.seite && A.seiteAlter.length === 1 && A.seiteAlter[0] === 'vor 3 Min.' && A.seiteStriche === 0, 'Spähbericht: nur EIN Alter (läuft auch in der offenen Seite mit)', { alter: A.alter, seite: A.seite, seiteAlter: A.seiteAlter, striche: A.seiteStriche });
   ok(a.B && /gespäht vor 2 Std\./.test(a.B.chip || '') && /neu spähen/.test(a.B.chip || '') && a.B.gelb, 'Kampflog: „gespäht vor 2 Std. · neu spähen?“ gelb', a.B);
   ok(a.B && /vor 2 Std\./.test(a.B.angriff || '') && a.B.angriffGelb && /neu spähen/.test(a.B.menu || ''), 'Angriffsfenster + Basis-Fenster: Alter des Berichts, ab 30 Min. gelb', a.B);
   ok(a.B && /vor 5 Min\./.test(a.B.frisch || '') && !a.B.frischGelb, 'frischer Bericht (5 Min.): nicht gelb', a.B);

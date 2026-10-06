@@ -660,6 +660,18 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   zwei Chips (wie im Angriffs-Fenster), antippen klappt die Auswahl darunter auf (zwei je Zeile, nichts abgeschnitten); Werte
   „Angriff der Verteidiger“ / „Eigene Verluste“. Gebäude-Fenster allgemein: der goldene Rahmen ist der Rand von `#citySheet`
   (scrollt nicht mehr mit – die Ecken saßen beim Scrollen mitten im Inhalt); Desktop: das Fenster steht über der schwebenden Leiste. `08b` (cityNutz), `08d` (vhHtml, vhChip), `spielseite/03`.
+- **6.10. – Spähbericht kompakt (Spieler-Durchsicht Bereich D, Branch `blick-d`, NICHT hochgeladen):** Der Spähbericht ist keine
+  Tabelle voller „–“ mehr (Vorbild RoK): Truppen, Verstärkung (nur wenn da), Verteidigung Teil für Teil (Teile mit 0 fallen weg),
+  Gesamt; darunter kompakt **Herr** (Stufe, Titel, nur angelegte Ausrüstung, Fähigkeiten), **Verteidigungs-Held** als eine Karte
+  mit seinen echten Werten (sonst eine Zeile „keiner“), **Basis** und **Rohstoffe** (was zu holen ist). Kein „Gefallen/Geflohen“,
+  keine leeren Heldenplätze. Das Alter steht nur EINMAL oben (vorher „vor 11 s“ oben, „vor 0 s“ unten) und läuft auch in der
+  offenen Bericht-Seite mit; Sterne der Helden zu Hause stimmen jetzt („3 Sterne“ statt 6 ★). Desktop: Bericht/Kampfdetails als
+  Fenster (max. 600 px) über der abgedunkelten Karte statt schwarzer Vollseite, Klick daneben schließt. Code: `05d`
+  (`kampflogUmbauen` → `spaeh`, `spaehHerr`, `spaehHeld`, `spaehBasis`, `spaehRoh`, `fensterArt`; `refreshBattleLog`),
+  `02c` (`spaeherBlickHtml`). Test `tests/browser/spaeh_bericht_test.js`. Offen: Kampf-Fenster auf Desktop sehr leer (Punkt 19).
+  Nachtrag (Designer-Prüfung): EINE Zahl für die Verteidigung – der Chip zeigt jetzt „Verteidigung gesamt“ = Truppen +
+  Verstärkung + alle Zeilen (vorher Chip ohne Truppen 21.241, Summe mit Truppen 61.241), dieselbe Zahl unten (`spaehGesamt`, `02c`).
+  „Grundverteidigung 1“ bei Basis-Stufe 10 ist der echte Wert (100 × 1,26⁹ × WIRTSCHAFT_KOSTEN = 0,44 → mindestens 1) – Sache der Wirtschaft.
 - **6.10. – Design P1: Grundwerte, HUD, Leiste, Streifen (11b F, Branch `design-p1`, NICHT hochgeladen):** **Grundwerte**
   (`spielseite/01`, andere Design-Pakete bauen darauf): Abstände `--ab-1…4` (4/8/12/16), Schriftstufen `--fs-11/13/15/17/22`
   (`--fs-9`/`--fs-10` = 11 px, nichts Kleineres mehr), Knopf-Arten `--k-haupt` 48 · `--k-zweit` 44 · `--k-gefahr` 48 · `--k-chip` 36
