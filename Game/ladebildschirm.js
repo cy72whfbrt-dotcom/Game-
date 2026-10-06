@@ -216,11 +216,11 @@
             var b = leinwand(W, H, D), x = b.x, iw = fotoBild.naturalWidth, ih = fotoBild.naturalHeight, f = Math.max(W / iw, H / ih), v = (iw / ih) / (W / H);
             function weich() { var k = leinwand(40, Math.max(1, Math.round(40 * ih / iw)), 1); k.x.drawImage(fotoBild, 0, 0, 40, k.c.height);
                 x.drawImage(k.c, (W - iw * f) / 2, (H - ih * f) / 2, iw * f, ih * f); x.fillStyle = 'rgba(8,14,34,.55)'; x.fillRect(0, 0, W, H); }
-            if (opt.login && W <= H && v > 1) {
-                // Startseite hochkant: Bild in voller Breite oben – der Feldherr bleibt über dem Anmelde-Kasten sichtbar
+            if (opt.login && W <= H && v > 0.95) {
+                // Startseite hochkant: Bild in voller Breite oben (bei kurzen Handys etwas hochgeschoben) – der Feldherr bleibt über dem Anmelde-Kasten sichtbar
                 weich();
-                var bh = ih * W / iw, ug = x.createLinearGradient(0, bh - 70, 0, bh); x.drawImage(fotoBild, 0, 0, W, bh);
-                ug.addColorStop(0, 'rgba(4,6,14,0)'); ug.addColorStop(1, 'rgba(4,6,14,.85)'); x.fillStyle = ug; x.fillRect(0, bh - 70, W, 70);
+                var bh = ih * W / iw, oben = -Math.max(0, bh - H * 0.82), ug = x.createLinearGradient(0, oben + bh - 70, 0, oben + bh); x.drawImage(fotoBild, 0, oben, W, bh);
+                ug.addColorStop(0, 'rgba(4,6,14,0)'); ug.addColorStop(1, 'rgba(4,6,14,.85)'); x.fillStyle = ug; x.fillRect(0, oben + bh - 70, W, 70);
             } else if (v > 1.5 || v < 1 / 1.5) {
                 weich();
                 var e = Math.min(W / iw, H / ih), bw = iw * e, bh2 = ih * e, m = leinwand(bw, bh2, D), mg = v < 1 ? m.x.createLinearGradient(0, 0, bw, 0) : m.x.createLinearGradient(0, 0, 0, bh2);

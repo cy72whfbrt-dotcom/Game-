@@ -19,9 +19,9 @@
   filter:drop-shadow(0 2px 0 #5a3f14) drop-shadow(0 4px 14px rgba(0,0,0,.75));animation:sp-rise 1.1s .15s cubic-bezier(.2,.8,.2,1) both}
 .splash-title span{background-image:linear-gradient(180deg,#fff3cf 8%,#e4c886 45%,#a27832 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
 .splash-title span:first-child{font-size:.55em;letter-spacing:.34em;margin-right:-.34em}
-.splash-sub{display:flex;align-items:center;gap:12px;margin-top:14px;font:600 var(--fs-12)/1 var(--font-ui);letter-spacing:.34em;text-transform:uppercase;color:#fff1d0;
+.splash-sub{display:flex;align-items:center;gap:12px;margin-top:14px;font:700 13px/1 var(--font-ui);letter-spacing:.3em;text-transform:uppercase;color:#fff1d0;
   text-shadow:0 1px 3px #000,0 0 10px rgba(0,0,0,.7);animation:sp-rise 1.1s .3s cubic-bezier(.2,.8,.2,1) both}
-.splash-top::before{content:"";position:absolute;inset:-28px -56px;z-index:-1;background:radial-gradient(ellipse 70% 60% at 45% 50%,rgba(6,12,32,.62),transparent 72%)}   /* Kontrast auf hellem Himmel */
+.splash-top::before{content:"";position:absolute;inset:-40px -70px;z-index:-1;background:radial-gradient(ellipse 75% 65% at 40% 50%,rgba(6,10,28,.68),transparent 75%)}   /* Kontrast auf hellem Himmel */
 .splash-sub span{width:34px;height:1px;background:linear-gradient(90deg,transparent,#d9b56a)}
 .splash-sub span:last-child{transform:scaleX(-1)}
 @keyframes sp-rise{from{opacity:0;transform:translateY(14px)}}

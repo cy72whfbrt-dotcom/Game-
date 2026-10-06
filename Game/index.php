@@ -88,14 +88,14 @@ if (!wartung()) foreach (['ladebildschirm', 'speichern', 'bots', 'welt', 'spiel'
   .szene { display: block; }
   .schleier { background: radial-gradient(ellipse 90% 80% at 50% 40%, transparent 55%, rgba(3,5,12,.6)),
                           linear-gradient(180deg, rgba(3,5,12,.3), transparent 20%, transparent 45%, rgba(4,6,14,.9)); }
-  .logo, .karte, .hinweis { position: relative; }
+  .logo, .karte { position: relative; }
   .logo { display: flex; flex-direction: column; align-items: center; text-align: center; }
   h1 { margin: 0; display: flex; flex-direction: column; align-items: center; font: 700 clamp(42px, 12vw, 54px)/.98 var(--font-display); letter-spacing: .06em; text-transform: uppercase;
        filter: drop-shadow(0 2px 0 #5a3f14) drop-shadow(0 4px 14px rgba(0,0,0,.75)); }
   h1 span { background-image: linear-gradient(180deg, #fff3cf 8%, #e4c886 45%, #a27832 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
   h1 span:first-child { font-size: .55em; letter-spacing: .34em; margin-right: -.34em; }
-  .logo::before { content: ""; position: absolute; inset: -28px -56px; z-index: -1; background: radial-gradient(ellipse 70% 60% at 45% 50%, rgba(6,12,32,.62), transparent 72%); }   /* Kontrast auf hellem Himmel */
-  .unter { display: flex; align-items: center; gap: 12px; margin: 12px 0 0; font: 600 12px/1 var(--font-ui); letter-spacing: .34em; text-transform: uppercase; color: #fff1d0;
+  .logo::before { content: ""; position: absolute; inset: -40px -70px; z-index: -1; background: radial-gradient(ellipse 75% 65% at 40% 50%, rgba(6,10,28,.68), transparent 75%); }   /* Kontrast auf hellem Himmel */
+  .unter { display: flex; align-items: center; gap: 12px; margin: 12px 0 0; font: 700 13px/1 var(--font-ui); letter-spacing: .3em; text-transform: uppercase; color: #fff1d0;
            text-shadow: 0 1px 3px #000, 0 0 10px rgba(0,0,0,.7); }
   .unter span { width: 30px; height: 1px; background: linear-gradient(90deg, transparent, #d9b56a); } .unter span:last-child { transform: scaleX(-1); }
   .karte { width: 100%; max-width: 380px; margin-top: auto; padding: 16px 16px 12px; border: 1px solid var(--line-2); border-radius: 10px;
@@ -105,6 +105,7 @@ if (!wartung()) foreach (['ladebildschirm', 'speichern', 'bots', 'welt', 'spiel'
   .reiter a { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 44px; margin-bottom: -1px; text-decoration: none; border-bottom: 2px solid transparent;
               font: 600 14px/1 var(--font-ui); letter-spacing: .04em; color: var(--tx-3); }
   .reiter a.an { color: var(--gold-100); border-bottom-color: var(--gold-200); }
+  form { margin: 0; }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .feld { position: relative; margin-top: 10px; }
   input[type=text], input[type=password] { display: block; width: 100%; height: 48px; margin-top: 10px; padding: 0 14px; font: 400 16px var(--font-ui); color: var(--tx-1);
@@ -131,7 +132,6 @@ if (!wartung()) foreach (['ladebildschirm', 'speichern', 'bots', 'welt', 'spiel'
   .knopf2 { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 8px; text-decoration: none; font: 600 12px/1.2 var(--font-ui); color: var(--tx-2); text-shadow: 0 1px 3px #000; }
   .knopf2 svg { width: 16px; height: 16px; flex: none; color: var(--gold-200); }
   .fehler { margin: 10px 0 4px; padding: 8px 12px; border: 1px solid rgba(240,138,126,.45); border-radius: 6px; background: rgba(210,76,64,.14); color: var(--blood-300); font-size: 13px; }
-  .hinweis { margin: 0; text-align: center; font-size: 10px; color: var(--tx-3); text-shadow: 0 1px 3px #000; }
   .hallo { margin: 0; text-align: center; font-size: 15px; color: var(--tx-2); } .hallo b { color: var(--gold-100); }
   :focus-visible { outline: 2px solid var(--gold-300); outline-offset: 2px; }
   /* Desktop: Logo oben links wie ein Plakat, Kasten rechts in der Mitte – die Burg bleibt frei */
@@ -141,14 +141,18 @@ if (!wartung()) foreach (['ladebildschirm', 'speichern', 'bots', 'welt', 'spiel'
     h1 { font-size: 88px; align-items: flex-start; } .unter { margin-top: 16px; }
     .karte { position: absolute; right: 4vw; bottom: calc(8vh + 40px); width: 380px; margin: 0; }
     .fuss { position: absolute; right: 4vw; bottom: calc(8vh); width: 380px; }
-    .hinweis { position: absolute; right: 4vw; bottom: calc(8vh - 22px); width: 380px; margin: 0; }
   }
-  @media (max-width: 380px) { .unter { letter-spacing: .22em; gap: 8px; } .unter span { width: 18px; } }   /* (sonst 8 px breiter als ein kleines Handy) */
+  @media (max-width: 380px) { .unter { font-size: 11px; letter-spacing: .2em; gap: 8px; } .unter span { width: 16px; } }   /* (sonst breiter als ein kleines Handy) */
   /* Handy hochkant: kleineres Logo, damit der Feldherr über dem Kasten frei bleibt */
   @media (max-width: 899px) and (orientation: portrait) { h1 { font-size: clamp(34px, 10vw, 44px); } }
+  /* kleines Handy hochkant (360×640): Unterzeile + App-Link weg, Logo noch kleiner */
+  @media (max-height: 700px) and (orientation: portrait) { body { padding-top: 4vh; } h1 { font-size: 30px; } .unter, .fuss { display: none; } }
   /* Handy quer: alles ohne Scrollen */
   @media (max-height: 560px) { body { padding-top: 12px; padding-bottom: 8px; } h1 { font-size: 30px; } .unter { display: none; } .karte { padding: 10px 14px; margin-top: 12px; }
-    .reiter a { min-height: 36px; } input[type=text], input[type=password] { height: 42px; margin-top: 8px; } .feld { margin-top: 8px; } button { min-height: 46px; margin-top: 10px; } .hinweis { display: none; } }
+    .reiter a { min-height: 36px; } input[type=text], input[type=password] { height: 42px; margin-top: 8px; } .feld { margin-top: 8px; } button { min-height: 46px; margin-top: 10px; } }
+  /* Handy quer: Logo oben links, Kasten rechts – der Feldherr links bleibt frei */
+  @media (max-height: 560px) and (orientation: landscape) { body { display: block; } .logo { position: absolute; left: 16px; top: 12px; align-items: flex-start; } h1 { align-items: flex-start; }
+    .karte { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); width: min(360px, 50vw); margin: 0; } .fuss { display: none; } }
 </style>
 </head>
 <body>
@@ -196,7 +200,6 @@ if (!wartung()) foreach (['ladebildschirm', 'speichern', 'bots', 'welt', 'spiel'
 <?php if (!$ich): ?>
 <div class="fuss"><a class="knopf2" href="app/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/></svg>App auf den Startbildschirm</a></div>
 <?php endif; ?>
-<p class="hinweis">Dein Spielstand liegt auf dem Server. Im Browser bleibt nur ein Login-Cookie (30 Tage).</p>
 <script src="<?= skript('ladebildschirm') ?>"></script>
 <script nonce="<?= h(csp_nonce()) ?>">   // (statt onsubmit=…: Inline-Handler erlaubt die CSP nicht mehr)
 document.querySelectorAll('form[data-laedt]').forEach(function (f) { f.addEventListener('submit', function () { var k = f.querySelector('button'); k.textContent = 'Lädt …'; k.disabled = true; }); });
