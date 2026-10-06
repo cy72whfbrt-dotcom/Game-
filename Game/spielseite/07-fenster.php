@@ -334,9 +334,9 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
     <div class="mail-pane" data-spane="hd" hidden><div class="sect"><h4 id="hdTitle">Wandernder Händler</h4><span id="hdSub" class="sect-aside"></span></div><div id="hdLive" class="hd-live"></div></div>
     <div class="mail-pane" data-spane="markt" hidden><div id="shopMarkt" class="ev-body"></div></div>
     <div class="mail-pane" data-spane="shield" hidden>
-      <p class="mail-intro">Friedensschild: niemand kann deine Türme angreifen, solange er steht – Tore, Tempel und der Thron bleiben angreifbar. Greifst du selbst an, fällt der Schild sofort.</p>
       <div id="shieldState" class="notice"></div>
-      <div class="sect"><h4>Kaufen</h4><span class="sect-aside">kommt in den Vorrat</span></div>
+      <div class="sect"><h4>Kaufen</h4><span class="sect-aside">kommt in den Vorrat<button type="button" class="shop-i" data-sinfo="schild" aria-expanded="false" aria-label="Erklärung"><svg class="icon"><use href="#i-info"/></svg></button></span></div>
+      <p class="mail-intro shop-info" data-sinfo-box="schild" hidden>Friedensschild: niemand kann deine Türme angreifen, solange er steht – Tore, Tempel und der Thron bleiben angreifbar. Greifst du selbst an, fällt der Schild sofort.</p>
       <div class="shield-opts">
         <button type="button" class="btn btn--secondary" data-shield="2"><span>2 Std.</span><span class="cost cost--gem"><svg class="icon"><use href="#i-gem"/></svg><b>40</b></span></button>
         <button type="button" class="btn btn--secondary" data-shield="8"><span>8 Std.</span><span class="cost cost--gem"><svg class="icon"><use href="#i-gem"/></svg><b>120</b></span></button>
@@ -346,31 +346,20 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
       <div id="shieldUse" class="shield-opts"></div>
     </div>
     <div class="mail-pane" data-spane="gems">
-    <article class="offer">
-      <div class="offer-art"><svg class="icon"><use href="#i-shop"/></svg></div>
-      <div class="offer-text">
-        <h4>Ausrüstungskiste</h4>
-        <p>Enthält ein zufälliges Ausrüstungsteil (Waffe, Rüstung, Schild oder Stiefel) in einer von sechs Seltenheiten.</p>
-        <details class="odds-mehr"><summary><svg class="icon"><use href="#i-info"/></svg>Chancen</summary><div id="shopOdds" class="odds"><!-- JS fills from RARITY_DEFS + RARITY_DROP_WEIGHTS --></div></details>
+      <!-- Kisten wie Thron: je Zeile Bild, Name, Inhalt in einer Zeile, eigener Preis-Knopf (ein Tipp = kaufen); Erklärung und Chancen hinter „i“ -->
+      <div class="sect"><h4>Ausrüstung</h4><span class="sect-aside"><button id="shopToEquipBtn" class="shop-link" type="button">Inventar ›</button><button type="button" class="shop-i" data-sinfo="aus" aria-expanded="false" aria-label="Erklärung und Chancen"><svg class="icon"><use href="#i-info"/></svg></button></span></div>
+      <div class="shop-info" data-sinfo-box="aus" hidden><p class="mail-intro">Ein zufälliges Teil (Waffe, Rüstung, Schild oder Stiefel) in einer von sechs Seltenheiten.</p><div id="shopOdds" class="odds"><!-- JS fills from RARITY_DEFS + RARITY_DROP_WEIGHTS --></div></div>
+      <div class="throne-list kisten">
+        <div class="throne-row kiste-row"><span class="tr-ic"><svg class="icon"><use href="#i-shop"/></svg></span><span class="tr-t"><b>Ausrüstungskiste</b><small>1 Teil · Grau bis Episch</small></span>
+          <button id="shopOpenCrateBtn" class="btn btn--primary btn--sm" type="button" aria-label="Ausrüstungskiste kaufen"><span class="cost cost--gem"><svg class="icon"><use href="#i-gem"/></svg><b data-const="CRATE_GEM_COST">150</b></span></button></div>
       </div>
-    </article>
-    <div id="shopCrateResult" class="loot" style="display:none"></div>
-    <article class="offer">
-      <div class="offer-art"><svg class="icon"><use href="#i-crown"/></svg></div>
-      <div class="offer-text">
-        <h4>Heldenkisten</h4>
-        <p>Splitter für zufällige Helden – je gewöhnlicher, desto öfter. Damit schaltest du Helden frei und wertest sie um Viertel-Sterne auf.</p>
-        <div id="heroChestOpts" class="shield-opts hchest-opts"></div>
-        <details class="odds-mehr"><summary><svg class="icon"><use href="#i-info"/></svg>Chancen</summary><div id="heroChestOdds" class="odds"></div></details>
-      </div>
-    </article>
-    <div id="shopHeroResult" class="hchest-res" hidden></div>
+      <div id="shopCrateResult" class="loot" style="display:none"></div>
+      <div class="sect"><h4>Helden</h4><span class="sect-aside">Splitter für zufällige Helden<button type="button" class="shop-i" data-sinfo="held" aria-expanded="false" aria-label="Erklärung und Chancen"><svg class="icon"><use href="#i-info"/></svg></button></span></div>
+      <div class="shop-info" data-sinfo-box="held" hidden><p class="mail-intro">Je gewöhnlicher ein Held, desto öfter. Mit Splittern schaltest du Helden frei und wertest sie um Viertel-Sterne auf. Helden mit 5 Sternen fallen heraus.</p><div id="heroChestOdds" class="odds"></div></div>
+      <div id="heroChestOpts" class="throne-list kisten"></div>
+      <div id="shopHeroResult" class="hchest-res" hidden></div>
     </div>
   </div>
-  <footer class="pfoot" id="shopFoot">
-    <button id="shopToEquipBtn" class="btn btn--secondary" type="button"><svg class="icon"><use href="#i-shield"/></svg><span>Ausrüstung</span></button>
-    <button id="shopOpenCrateBtn" class="btn btn--primary btn--grow" type="button"><span class="lbl">Kiste öffnen</span><span class="cost cost--gem"><svg class="icon"><use href="#i-gem"/></svg><b data-const="CRATE_GEM_COST">150</b></span></button>
-  </footer>
 </section>
 
 <!-- ============ ITEM DETAIL (nested over profile) ============ -->

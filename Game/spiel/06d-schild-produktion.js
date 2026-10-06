@@ -65,9 +65,14 @@ function renderHeroChests() {                       // the odds per rarity follo
     const pool = heroChestPool(1), tot = pool.reduce((a, h) => a + 5 - h.r, 0);
     liveHtml(document.getElementById('heroChestOdds'), [1, 2, 3, 4].map(r => { const w = pool.filter(h => h.r === r).reduce((a, h) => a + 5 - h.r, 0); const rd = RARITY_DEFS[r];
         return '<span class="chip" style="color:' + rd.color + ';border-color:' + rd.color + '88">' + rd.label + ' ' + (tot ? Math.round(w / tot * 100) : 0) + ' %</span>'; }).join(''));
-    liveHtml(document.getElementById('heroChestOpts'), HERO_CHESTS.map(c => '<button type="button" class="btn btn--secondary" data-hchest="' + c.id + '"' + (gems < c.gems || !heroChestPool(c.minR).length ? ' disabled' : '') + '><span class="hc-t"><span>' + c.name + '</span><small>' + c.txt + '</small></span>' +
-        '<span class="cost cost--gem"><svg class="icon"><use href="#i-gem"/></svg><b>' + fmtNum(c.gems) + '</b></span></button>').join(''));
+    liveHtml(document.getElementById('heroChestOpts'), HERO_CHESTS.map(c => { const rd = RARITY_DEFS[c.minR >= 3 ? 3 : c.n > 1 ? 4 : 2];   // Bildfarbe: Episch+ lila, Große Kiste gold
+        return '<div class="throne-row kiste-row"><span class="tr-ic" style="--rc:' + rd.color + '">' + icon('crown') + '</span><span class="tr-t"><b>' + c.name + '</b><small>' + c.txt + '</small></span>' +
+            '<button type="button" class="btn btn--primary btn--sm" data-hchest="' + c.id + '" aria-label="' + c.name + ' kaufen"' + (gems < c.gems || !heroChestPool(c.minR).length ? ' disabled' : '') + '><span class="cost cost--gem">' + icon('gem') + '<b>' + fmtNum(c.gems) + '</b></span></button></div>'; }).join(''));
 }
+shopPopup.addEventListener('click', e => { const b = e.target.closest('[data-sinfo]'); if (!b) return;   // „i“: Erklärung/Chancen auf und zu
+    const k = b.dataset.sinfo, auf = !shopInfoAuf.has(k); if (auf) shopInfoAuf.add(k); else shopInfoAuf.delete(k);
+    b.setAttribute('aria-expanded', auf ? 'true' : 'false'); b.classList.toggle('on', auf);
+    for (const el of shopPopup.querySelectorAll('[data-sinfo-box="' + k + '"]')) el.hidden = !auf; });
 function heroChestOpen(who, c) {                    // the same chest for you and the others: n draws of c.sh shards
     if (c.gems >= 500) { if (who === 'player') alsBefehl('bund', { op: 'kiste', c: c.id }); else if (typeof bundGeschenk === 'function') bundGeschenk(who, 'kiste'); }   // große Kiste: Geschenk fürs Bündnis
     const got = []; for (let i = 0; i < c.n; i++) { const h = heroGrantShards(who, c.sh, null, c.minR); if (h) got.push(h); } return got;

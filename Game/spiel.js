@@ -7101,21 +7101,24 @@ function renderThroneShop() {
             '<div class="ts-row">' + icon('points') + '<span>Du bekommst</span><b>' + (inc ? '+' + inc + ' alle 3 Min.' : 'nichts – erobere die Mitte') + '</b></div>' +
             (bo ? '<div class="ts-row">' + icon(bo.who === 'player' ? 'losses' : 'gem') + '<span>' + (bo.who === 'player' ? 'Kopfgeld auf dich' : 'Kopfgeld') + '</span><b' + (bo.who === 'player' ? ' class="warn"' : '') + '>' + fmtNum(bo.gems) + ' Edelsteine · ' + fmtCompact(bo.coins) + '</b></div>' : '') +
         '</div>' +
-        '<p class="mail-intro">Wer den Mega-Tempel hält, bekommt alle 3 Min. ' + THRONE_PTS_MEGA + ' Thron-Punkte, wer dort Verstärkung stehen hat ' + THRONE_PTS_VERST + ', jeder Wächter-Tempel bringt ' + THRONE_PTS_GUARD + '. Genauso oft feuern die Wächter-Tempel, die dem Herrscher nicht gehören, auf die Truppen im Mega-Tempel (je ' + THRONE_FIRE_PCT + ' %) – die Getroffenen kommen ins Krankenhaus, soweit Platz ist.</p>' +
-        '<div class="sect"><h4>Eintauschen</h4></div><div class="throne-list">' +
+        '<div class="sect"><h4>Eintauschen</h4><span class="sect-aside">für Thron-Punkte' + shopInfoKnopf('thron') + '</span></div>' +
+        '<div class="shop-info" data-sinfo-box="thron"' + (shopInfoAuf.has('thron') ? '' : ' hidden') + '><p class="mail-intro">Wer den Mega-Tempel hält, bekommt alle 3 Min. ' + THRONE_PTS_MEGA + ' Thron-Punkte, wer dort Verstärkung stehen hat ' + THRONE_PTS_VERST + ', jeder Wächter-Tempel bringt ' + THRONE_PTS_GUARD + '. Genauso oft feuern die Wächter-Tempel, die dem Herrscher nicht gehören, auf die Truppen im Mega-Tempel (je ' + THRONE_FIRE_PCT + ' %) – die Getroffenen kommen ins Krankenhaus, soweit Platz ist.</p>' +
+            '<p class="mail-intro">Thron-Rahmen, Titel und Ringe für Thron-Punkte gibt es unter Profil → Aussehen, die Thron-Punkte-Rangliste unter Profil → Rangliste.</p></div>' +
+        '<div class="throne-list">' +
         THRONE_OFFERS.filter(o => !o.once).map(o => { const done = o.once && throneOwned('player', o), n = throneAmount('player', o.id);   // looks are bought in the Aussehen sheet
             const sub = o.id === 'coins' ? fmtCompact(n) + ' – so viel, wie dein Reich in ' + fmtNum(THRONE_STUNDEN) + ' Std. verdient' : o.id === 'troops' ? fmtCompact(n) + ' – ' + fmtNum(THRONE_STUNDEN) + ' Std. deiner Ausbildung, in die Hauptstadt'
                 : o.id === 'gems' ? 'für Kisten, Helden und Sterne' : o.id === 'crate' ? 'ein zufälliges Teil (Grau bis Episch)' : o.id === 'royal' ? 'mindestens Lila' : done ? 'gehört dir' : o.ring ? 'Ring um alle deine Basen – nur hier' : 'gibt es nur hier';
             return '<div class="throne-row' + (o.once ? ' is-special' : '') + '"><span class="tr-ic">' + icon(o.icon, 'ico-' + o.icon) + '</span><span class="tr-t"><b>' + o.name + '</b><small>' + sub + '</small></span>' +
-                (done ? '<span class="chip">' + icon('check') + 'Gekauft</span>' : '<button type="button" class="btn btn--primary btn--sm" data-throne-buy="' + o.id + '"' + ((ts.pts || 0) < o.cost ? ' disabled' : '') + '>' + icon('crown') + '<b>' + fmtNum(o.cost) + '</b></button>') + '</div>'; }).join('') + '</div>' +
-            '<p class="mail-intro">Thron-Rahmen, Titel und Ringe für Thron-Punkte gibt es unter Profil → Aussehen, die Thron-Punkte-Rangliste unter Profil → Rangliste.</p>');
+                (done ? '<span class="chip">' + icon('check') + 'Gekauft</span>' : '<button type="button" class="btn btn--primary btn--sm" data-throne-buy="' + o.id + '"' + ((ts.pts || 0) < o.cost ? ' disabled' : '') + '>' + icon('crown') + '<b>' + fmtNum(o.cost) + '</b></button>') + '</div>'; }).join('') + '</div>');
 }
+const shopInfoAuf = new Set();                      // Shop: offene Erklärungen hinter „i“ (Thron baut sie bei jedem Takt neu – darum gemerkt)
+function shopInfoKnopf(k) { const auf = shopInfoAuf.has(k);   // das „i“ neben einer Überschrift im Shop
+    return '<button type="button" class="shop-i' + (auf ? ' on' : '') + '" data-sinfo="' + k + '" aria-expanded="' + auf + '" aria-label="Erklärung">' + icon('info') + '</button>'; }
 let shopTab = 'gems';
 function showShopTab(t) {
     shopTab = t;
     for (const b of document.querySelectorAll('#shopTabs [data-stab]')) { const on = b.dataset.stab === t; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }
     for (const pn of document.querySelectorAll('#shopPopup [data-spane]')) pn.hidden = pn.dataset.spane !== t;
-    document.getElementById('shopFoot').hidden = t !== 'gems';
     renderShop();
 }
 document.getElementById('shopTabs').addEventListener('click', e => { const b = e.target.closest('[data-stab]'); if (b) showShopTab(b.dataset.stab); });
@@ -7258,9 +7261,14 @@ function renderHeroChests() {                       // the odds per rarity follo
     const pool = heroChestPool(1), tot = pool.reduce((a, h) => a + 5 - h.r, 0);
     liveHtml(document.getElementById('heroChestOdds'), [1, 2, 3, 4].map(r => { const w = pool.filter(h => h.r === r).reduce((a, h) => a + 5 - h.r, 0); const rd = RARITY_DEFS[r];
         return '<span class="chip" style="color:' + rd.color + ';border-color:' + rd.color + '88">' + rd.label + ' ' + (tot ? Math.round(w / tot * 100) : 0) + ' %</span>'; }).join(''));
-    liveHtml(document.getElementById('heroChestOpts'), HERO_CHESTS.map(c => '<button type="button" class="btn btn--secondary" data-hchest="' + c.id + '"' + (gems < c.gems || !heroChestPool(c.minR).length ? ' disabled' : '') + '><span class="hc-t"><span>' + c.name + '</span><small>' + c.txt + '</small></span>' +
-        '<span class="cost cost--gem"><svg class="icon"><use href="#i-gem"/></svg><b>' + fmtNum(c.gems) + '</b></span></button>').join(''));
+    liveHtml(document.getElementById('heroChestOpts'), HERO_CHESTS.map(c => { const rd = RARITY_DEFS[c.minR >= 3 ? 3 : c.n > 1 ? 4 : 2];   // Bildfarbe: Episch+ lila, Große Kiste gold
+        return '<div class="throne-row kiste-row"><span class="tr-ic" style="--rc:' + rd.color + '">' + icon('crown') + '</span><span class="tr-t"><b>' + c.name + '</b><small>' + c.txt + '</small></span>' +
+            '<button type="button" class="btn btn--primary btn--sm" data-hchest="' + c.id + '" aria-label="' + c.name + ' kaufen"' + (gems < c.gems || !heroChestPool(c.minR).length ? ' disabled' : '') + '><span class="cost cost--gem">' + icon('gem') + '<b>' + fmtNum(c.gems) + '</b></span></button></div>'; }).join(''));
 }
+shopPopup.addEventListener('click', e => { const b = e.target.closest('[data-sinfo]'); if (!b) return;   // „i“: Erklärung/Chancen auf und zu
+    const k = b.dataset.sinfo, auf = !shopInfoAuf.has(k); if (auf) shopInfoAuf.add(k); else shopInfoAuf.delete(k);
+    b.setAttribute('aria-expanded', auf ? 'true' : 'false'); b.classList.toggle('on', auf);
+    for (const el of shopPopup.querySelectorAll('[data-sinfo-box="' + k + '"]')) el.hidden = !auf; });
 function heroChestOpen(who, c) {                    // the same chest for you and the others: n draws of c.sh shards
     if (c.gems >= 500) { if (who === 'player') alsBefehl('bund', { op: 'kiste', c: c.id }); else if (typeof bundGeschenk === 'function') bundGeschenk(who, 'kiste'); }   // große Kiste: Geschenk fürs Bündnis
     const got = []; for (let i = 0; i < c.n; i++) { const h = heroGrantShards(who, c.sh, null, c.minR); if (h) got.push(h); } return got;

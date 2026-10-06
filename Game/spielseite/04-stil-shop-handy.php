@@ -30,18 +30,24 @@
 /* =====================================================================
    SHOP
    ===================================================================== */
-.offer{display:grid;grid-template-columns:64px minmax(0,1fr);gap:12px;padding:12px;border-radius:var(--r-sm);background:var(--well);border:1px solid var(--line-2)}
-.offer-art{width:64px;height:64px;display:grid;place-items:center;border-radius:var(--r-sm);border:1px solid var(--line-3);
-  background:radial-gradient(90% 70% at 50% 110%,rgba(234,178,74,.35),transparent 65%),var(--tile-bg);box-shadow:0 0 14px rgba(234,178,74,.15)}
-.offer-art .icon{width:34px;height:34px;color:var(--gold-200)}
-.offer-text h4{margin:0 0 4px;font:600 var(--fs-13)/1.2 var(--font-display);letter-spacing:.05em;color:var(--gold-100)}
-.offer-text p{margin:0;font:500 var(--fs-12)/1.4 var(--font-ui);color:var(--tx-3)}
+/* Shop-Zeilen (6.10.): Kisten wie die Thron-Zeilen – Bild, Name, Inhalt in einer Zeile, eigener Preis-Knopf; Erklärung hinter „i“ */
+#shopPopup .pbody > .mail-pane:not([hidden]){display:grid;gap:8px}
+#shopPopup .sect{min-height:28px} #shopPopup .sect-aside{gap:2px}
+.shop-i,.shop-link{display:inline-grid;place-items:center;min-width:44px;min-height:44px;margin:-8px -10px -8px 0;padding:0;background:none;border:0;cursor:pointer;color:var(--tx-3)}
+.shop-i .icon{width:17px;height:17px;color:var(--gold-300)} .shop-i.on .icon{color:var(--gold-100)}
+.shop-link{margin:-8px 4px -8px 0;padding:0 6px;font:600 var(--fs-11)/1 var(--font-ui);color:var(--gold-200)}
+.shop-info{padding:8px 10px;border-radius:var(--r-sm);background:var(--well);border:1px solid var(--line-1)} .shop-info .mail-intro{margin:0} .shop-info .mail-intro + .mail-intro{margin-top:6px}
+.shop-info .odds{margin-top:6px}
+.kisten .kiste-row{min-height:56px}
+.kiste-row .tr-ic{--rc:var(--gold-200);width:44px;height:44px;background:radial-gradient(90% 70% at 50% 110%,color-mix(in srgb,var(--rc) 35%,transparent),transparent 70%),var(--tile-bg);border-color:color-mix(in srgb,var(--rc) 45%,var(--line-2))}
+.throne-row.kiste-row .tr-ic .icon{width:24px;height:24px;color:var(--rc)}
+.kiste-row .tr-t b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .kiste-row .tr-t small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.throne-row.kiste-row .btn{min-width:92px;min-height:44px} .kiste-row .btn .cost{background:none;padding:0;gap:4px} .kiste-row .btn .cost b{font-size:var(--fs-14,14px)}
+.kiste-row .btn .cost .icon{color:var(--res-gem);filter:drop-shadow(0 0 1px rgba(0,0,0,.6))} .kiste-row .btn.is-armed{min-width:132px}
 .odds{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
 .shield-opts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px} .shield-opts .btn{min-height:52px;flex-direction:column;justify-content:center;gap:4px;padding:6px 4px}
 .odds .chip{height:20px;padding:0 6px;font-size:var(--fs-10)}
 .odds .chip--rar{height:auto;min-height:20px;padding:4px 6px;line-height:1.3}   /* zweizeilig (Handy): Innenabstand oben/unten, nicht am Rand */
-.hchest-opts{grid-template-columns:1fr} .hchest-opts .btn{min-height:46px;flex-direction:row;justify-content:space-between;gap:8px;padding:6px 10px;text-align:left}
-.hchest-opts .btn .hc-t{display:grid;gap:2px} .hchest-opts .btn small{font:500 var(--fs-10)/1.2 var(--font-ui);color:var(--tx-3);letter-spacing:0;text-transform:none}
 .hchest-res{display:grid;gap:6px;padding:10px 12px;border-radius:var(--r-sm);background:var(--well);border:1px solid var(--line-3)} .hchest-h{font:600 var(--fs-13)/1.2 var(--font-display);color:var(--gold-100)}
 .hchest-row{display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:10px;padding:6px 8px;border-radius:var(--r-sm);border:1px solid color-mix(in srgb,var(--rc) 55%,transparent);background:rgba(0,0,0,.2)}
 .hchest-row .hchest-pic{width:44px;height:44px;border-radius:8px} .hchest-row span{display:grid;gap:2px} .hchest-row small{font-size:var(--fs-10)} .hchest-row i{font-style:normal;font-weight:700;color:var(--gold-100);font-size:var(--fs-12);text-align:right}

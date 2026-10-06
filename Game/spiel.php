@@ -1167,18 +1167,24 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
 /* =====================================================================
    SHOP
    ===================================================================== */
-.offer{display:grid;grid-template-columns:64px minmax(0,1fr);gap:12px;padding:12px;border-radius:var(--r-sm);background:var(--well);border:1px solid var(--line-2)}
-.offer-art{width:64px;height:64px;display:grid;place-items:center;border-radius:var(--r-sm);border:1px solid var(--line-3);
-  background:radial-gradient(90% 70% at 50% 110%,rgba(234,178,74,.35),transparent 65%),var(--tile-bg);box-shadow:0 0 14px rgba(234,178,74,.15)}
-.offer-art .icon{width:34px;height:34px;color:var(--gold-200)}
-.offer-text h4{margin:0 0 4px;font:600 var(--fs-13)/1.2 var(--font-display);letter-spacing:.05em;color:var(--gold-100)}
-.offer-text p{margin:0;font:500 var(--fs-12)/1.4 var(--font-ui);color:var(--tx-3)}
+/* Shop-Zeilen (6.10.): Kisten wie die Thron-Zeilen – Bild, Name, Inhalt in einer Zeile, eigener Preis-Knopf; Erklärung hinter „i“ */
+#shopPopup .pbody > .mail-pane:not([hidden]){display:grid;gap:8px}
+#shopPopup .sect{min-height:28px} #shopPopup .sect-aside{gap:2px}
+.shop-i,.shop-link{display:inline-grid;place-items:center;min-width:44px;min-height:44px;margin:-8px -10px -8px 0;padding:0;background:none;border:0;cursor:pointer;color:var(--tx-3)}
+.shop-i .icon{width:17px;height:17px;color:var(--gold-300)} .shop-i.on .icon{color:var(--gold-100)}
+.shop-link{margin:-8px 4px -8px 0;padding:0 6px;font:600 var(--fs-11)/1 var(--font-ui);color:var(--gold-200)}
+.shop-info{padding:8px 10px;border-radius:var(--r-sm);background:var(--well);border:1px solid var(--line-1)} .shop-info .mail-intro{margin:0} .shop-info .mail-intro + .mail-intro{margin-top:6px}
+.shop-info .odds{margin-top:6px}
+.kisten .kiste-row{min-height:56px}
+.kiste-row .tr-ic{--rc:var(--gold-200);width:44px;height:44px;background:radial-gradient(90% 70% at 50% 110%,color-mix(in srgb,var(--rc) 35%,transparent),transparent 70%),var(--tile-bg);border-color:color-mix(in srgb,var(--rc) 45%,var(--line-2))}
+.throne-row.kiste-row .tr-ic .icon{width:24px;height:24px;color:var(--rc)}
+.kiste-row .tr-t b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .kiste-row .tr-t small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.throne-row.kiste-row .btn{min-width:92px;min-height:44px} .kiste-row .btn .cost{background:none;padding:0;gap:4px} .kiste-row .btn .cost b{font-size:var(--fs-14,14px)}
+.kiste-row .btn .cost .icon{color:var(--res-gem);filter:drop-shadow(0 0 1px rgba(0,0,0,.6))} .kiste-row .btn.is-armed{min-width:132px}
 .odds{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
 .shield-opts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px} .shield-opts .btn{min-height:52px;flex-direction:column;justify-content:center;gap:4px;padding:6px 4px}
 .odds .chip{height:20px;padding:0 6px;font-size:var(--fs-10)}
 .odds .chip--rar{height:auto;min-height:20px;padding:4px 6px;line-height:1.3}   /* zweizeilig (Handy): Innenabstand oben/unten, nicht am Rand */
-.hchest-opts{grid-template-columns:1fr} .hchest-opts .btn{min-height:46px;flex-direction:row;justify-content:space-between;gap:8px;padding:6px 10px;text-align:left}
-.hchest-opts .btn .hc-t{display:grid;gap:2px} .hchest-opts .btn small{font:500 var(--fs-10)/1.2 var(--font-ui);color:var(--tx-3);letter-spacing:0;text-transform:none}
 .hchest-res{display:grid;gap:6px;padding:10px 12px;border-radius:var(--r-sm);background:var(--well);border:1px solid var(--line-3)} .hchest-h{font:600 var(--fs-13)/1.2 var(--font-display);color:var(--gold-100)}
 .hchest-row{display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:10px;padding:6px 8px;border-radius:var(--r-sm);border:1px solid color-mix(in srgb,var(--rc) 55%,transparent);background:rgba(0,0,0,.2)}
 .hchest-row .hchest-pic{width:44px;height:44px;border-radius:8px} .hchest-row span{display:grid;gap:2px} .hchest-row small{font-size:var(--fs-10)} .hchest-row i{font-style:normal;font-weight:700;color:var(--gold-100);font-size:var(--fs-12);text-align:right}
@@ -1722,11 +1728,6 @@ button.cb-slot{position:relative} button.cb-slot::before{content:"";position:abs
 .hh-cards--zu .hh-foot{padding:4px 2px 5px} .hh-cards--zu .hh-foot b{font-size:var(--fs-12,12px)} .hh-cards--zu .hh-foot > small:first-of-type{display:none}
 .hh-cards--zu .hh-lk{font-size:8px;padding:2px 4px;right:3px;top:3px}
 .hh-plus{width:44px;height:44px}
-/* Shop: Kaufknöpfe zuerst, Chancen hinter „i“; Preis groß im Knopf */
-.odds-mehr{margin-top:8px} .odds-mehr > summary{display:inline-flex;align-items:center;gap:6px;min-height:44px;cursor:pointer;list-style:none;font:600 var(--fs-13)/1 var(--font-ui);color:var(--tx-2)}
-.odds-mehr > summary::-webkit-details-marker{display:none} .odds-mehr > summary .icon{width:16px;height:16px;color:var(--gold-300)} .odds-mehr[open] > summary{color:var(--gold-100)}
-.odds-mehr .odds{margin-top:0}
-.hchest-opts .btn{min-height:48px} .hchest-opts .cost b{font-size:var(--fs-15,15px)}
     </style>
 </head>
 <body>
@@ -2207,9 +2208,9 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
     <div class="mail-pane" data-spane="hd" hidden><div class="sect"><h4 id="hdTitle">Wandernder Händler</h4><span id="hdSub" class="sect-aside"></span></div><div id="hdLive" class="hd-live"></div></div>
     <div class="mail-pane" data-spane="markt" hidden><div id="shopMarkt" class="ev-body"></div></div>
     <div class="mail-pane" data-spane="shield" hidden>
-      <p class="mail-intro">Friedensschild: niemand kann deine Türme angreifen, solange er steht – Tore, Tempel und der Thron bleiben angreifbar. Greifst du selbst an, fällt der Schild sofort.</p>
       <div id="shieldState" class="notice"></div>
-      <div class="sect"><h4>Kaufen</h4><span class="sect-aside">kommt in den Vorrat</span></div>
+      <div class="sect"><h4>Kaufen</h4><span class="sect-aside">kommt in den Vorrat<button type="button" class="shop-i" data-sinfo="schild" aria-expanded="false" aria-label="Erklärung"><svg class="icon"><use href="#i-info"/></svg></button></span></div>
+      <p class="mail-intro shop-info" data-sinfo-box="schild" hidden>Friedensschild: niemand kann deine Türme angreifen, solange er steht – Tore, Tempel und der Thron bleiben angreifbar. Greifst du selbst an, fällt der Schild sofort.</p>
       <div class="shield-opts">
         <button type="button" class="btn btn--secondary" data-shield="2"><span>2 Std.</span><span class="cost cost--gem"><svg class="icon"><use href="#i-gem"/></svg><b>40</b></span></button>
         <button type="button" class="btn btn--secondary" data-shield="8"><span>8 Std.</span><span class="cost cost--gem"><svg class="icon"><use href="#i-gem"/></svg><b>120</b></span></button>
@@ -2219,31 +2220,20 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
       <div id="shieldUse" class="shield-opts"></div>
     </div>
     <div class="mail-pane" data-spane="gems">
-    <article class="offer">
-      <div class="offer-art"><svg class="icon"><use href="#i-shop"/></svg></div>
-      <div class="offer-text">
-        <h4>Ausrüstungskiste</h4>
-        <p>Enthält ein zufälliges Ausrüstungsteil (Waffe, Rüstung, Schild oder Stiefel) in einer von sechs Seltenheiten.</p>
-        <details class="odds-mehr"><summary><svg class="icon"><use href="#i-info"/></svg>Chancen</summary><div id="shopOdds" class="odds"><!-- JS fills from RARITY_DEFS + RARITY_DROP_WEIGHTS --></div></details>
+      <!-- Kisten wie Thron: je Zeile Bild, Name, Inhalt in einer Zeile, eigener Preis-Knopf (ein Tipp = kaufen); Erklärung und Chancen hinter „i“ -->
+      <div class="sect"><h4>Ausrüstung</h4><span class="sect-aside"><button id="shopToEquipBtn" class="shop-link" type="button">Inventar ›</button><button type="button" class="shop-i" data-sinfo="aus" aria-expanded="false" aria-label="Erklärung und Chancen"><svg class="icon"><use href="#i-info"/></svg></button></span></div>
+      <div class="shop-info" data-sinfo-box="aus" hidden><p class="mail-intro">Ein zufälliges Teil (Waffe, Rüstung, Schild oder Stiefel) in einer von sechs Seltenheiten.</p><div id="shopOdds" class="odds"><!-- JS fills from RARITY_DEFS + RARITY_DROP_WEIGHTS --></div></div>
+      <div class="throne-list kisten">
+        <div class="throne-row kiste-row"><span class="tr-ic"><svg class="icon"><use href="#i-shop"/></svg></span><span class="tr-t"><b>Ausrüstungskiste</b><small>1 Teil · Grau bis Episch</small></span>
+          <button id="shopOpenCrateBtn" class="btn btn--primary btn--sm" type="button" aria-label="Ausrüstungskiste kaufen"><span class="cost cost--gem"><svg class="icon"><use href="#i-gem"/></svg><b data-const="CRATE_GEM_COST">150</b></span></button></div>
       </div>
-    </article>
-    <div id="shopCrateResult" class="loot" style="display:none"></div>
-    <article class="offer">
-      <div class="offer-art"><svg class="icon"><use href="#i-crown"/></svg></div>
-      <div class="offer-text">
-        <h4>Heldenkisten</h4>
-        <p>Splitter für zufällige Helden – je gewöhnlicher, desto öfter. Damit schaltest du Helden frei und wertest sie um Viertel-Sterne auf.</p>
-        <div id="heroChestOpts" class="shield-opts hchest-opts"></div>
-        <details class="odds-mehr"><summary><svg class="icon"><use href="#i-info"/></svg>Chancen</summary><div id="heroChestOdds" class="odds"></div></details>
-      </div>
-    </article>
-    <div id="shopHeroResult" class="hchest-res" hidden></div>
+      <div id="shopCrateResult" class="loot" style="display:none"></div>
+      <div class="sect"><h4>Helden</h4><span class="sect-aside">Splitter für zufällige Helden<button type="button" class="shop-i" data-sinfo="held" aria-expanded="false" aria-label="Erklärung und Chancen"><svg class="icon"><use href="#i-info"/></svg></button></span></div>
+      <div class="shop-info" data-sinfo-box="held" hidden><p class="mail-intro">Je gewöhnlicher ein Held, desto öfter. Mit Splittern schaltest du Helden frei und wertest sie um Viertel-Sterne auf. Helden mit 5 Sternen fallen heraus.</p><div id="heroChestOdds" class="odds"></div></div>
+      <div id="heroChestOpts" class="throne-list kisten"></div>
+      <div id="shopHeroResult" class="hchest-res" hidden></div>
     </div>
   </div>
-  <footer class="pfoot" id="shopFoot">
-    <button id="shopToEquipBtn" class="btn btn--secondary" type="button"><svg class="icon"><use href="#i-shield"/></svg><span>Ausrüstung</span></button>
-    <button id="shopOpenCrateBtn" class="btn btn--primary btn--grow" type="button"><span class="lbl">Kiste öffnen</span><span class="cost cost--gem"><svg class="icon"><use href="#i-gem"/></svg><b data-const="CRATE_GEM_COST">150</b></span></button>
-  </footer>
 </section>
 
 <!-- ============ ITEM DETAIL (nested over profile) ============ -->
