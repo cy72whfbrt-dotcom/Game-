@@ -856,6 +856,18 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   `profil_bereinigen`, nicht öffentlich – höchstens seine Punkte darin). Beim Ausnahme-Reset: erst 1.000, die umgetauschten
   zusätzlich im Abholfach. Start-Truppen 5.000: anderer Branch (`wirtschaft-roh`).
 
+  `truppenPruefen` „thron“) rechnet je Kauf ebenso 2 Stunden (sonst Fehlalarm). Tests `thron_verst_test`, `welt_test`.
+- **6.10. – Shop neu als Schaufenster (Alexander 6.10., Handy: „Shop komisch“, dann „wie ein Spiel-Shop“; Vorgabe
+  `design_shop.md` Layout A), NICHT hochgeladen:** Waren als Karten – ganze Karte in der Farbe der Seltenheit (Verlauf, Rahmen,
+  Leuchten), gezeichnete Truhe (SVG, 06d `kisteBild`: Ausrüstung Holz/Eisen, Helden blau, Groß gold, Episch lila mit Stein,
+  Königlich navy/gold; Münzstapel 06c `muenzBild`), Name groß, Inhalt eine Zeile, Preis-Knopf unten über die volle Breite
+  (Gold = Edelsteine, Navy = Thron-Punkte, zu wenig = grau mit roter Zahl). Epische Kiste groß über beide Spalten mit Strahlen
+  und Glanz, Bänder „Bester Wert“/„Beliebt“/„Mind. Lila“ (nur Optik). Ein Tipp = kaufen, ab 500 weiter „Wirklich?“
+  (`gemsWirklich`). Fester Unten-Knopf „Kiste öffnen“ weg; „Inventar ›“ und „Chancen“ als Kachel. Kopf auf eine Zeile, Shop auf
+  dem Handy höher (alle Kisten auf 390×844 ohne Scrollen), Desktop breit (4 Karten nebeneinander, endet über der Leiste).
+  Thron: Status in einer Zeile (antippen klappt Details + Erklärung auf, bleibt beim Neuzeichnen offen), Waren 2×2; Schilde als
+  3 Karten. Preise/Regeln gleich. CSS-Block „Shop-Schaufenster“ (spielseite/04). Test `shop_test` (neu), `stadt_fenster_test`
+  (Shop-Teil nach shop_test), `design_hud_test`, `handy_stadt_test` angepasst.
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 

@@ -41,8 +41,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       const sp = document.getElementById('shopPopup'), kopf = sp.querySelector('.phead'), fuss = sp.querySelector('.pfoot');
       flashHint('Kurzer Hinweis', 4000); await warte(200);
       const h = document.getElementById('hint'), hb = box(h), hz = +getComputedStyle(h).zIndex, sz = +getComputedStyle(sp).zIndex;
-      const fenster = { hoehe: box(sp).height / innerHeight, fussGanz: box(fuss).bottom <= innerHeight && box(fuss).top >= box(sp).top,
-        hinweisFrei: (!ueber(hb, box(kopf)) && !ueber(hb, box(fuss))) || hz < sz };
+      const fenster = { hoehe: box(sp).height / innerHeight, fussGanz: !fuss || (box(fuss).bottom <= innerHeight && box(fuss).top >= box(sp).top),   // (der Shop hat keine Fußzeile mehr)
+        hinweisFrei: (!ueber(hb, box(kopf)) && !(fuss && ueber(hb, box(fuss)))) || hz < sz };
       closeAllPopups(); flashHint('Kurzer Hinweis', 4000); await warte(200);
       const zoom = document.getElementById('mapControls'); fenster.zoomFrei = !sicht(zoom) || !ueber(box(h), box(zoom));
       flashHint('', 1);

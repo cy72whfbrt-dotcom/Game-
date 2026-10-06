@@ -7205,30 +7205,39 @@ function drawThroneShots(now) {                        // glowing shots on an ar
 }
 function renderThroneShop() {
     const el = document.getElementById('throneShop'); if (!el) return;
-    const ts = throneState, hd = rulerOwner(), sh = throneShooters(), inc = throneIncome('player'), bo = bountyOf();
+    const ts = throneState, hd = rulerOwner(), sh = throneShooters(), inc = throneIncome('player'), bo = bountyOf(), auf = shopInfoAuf.has('thron');
     const hdName = hd === 'player' ? '<span class="me">Du</span>' : hd ? whoLink(hd, botById[hd].name) : 'niemand';
-    liveHtml(el, '<div class="throne-status">' +
+    liveHtml(el, '<button type="button" class="thron-zeile' + (auf ? ' on' : '') + '" data-sinfo="thron" aria-expanded="' + auf + '">' + icon('crown') + '<span>Mitte: <b>' + (hd === 'player' ? 'Du' : hd ? botById[hd].name : 'niemand') + '</b></span>' +
+            icon('hourglass') + '<b data-throne-pts>' + fmtClock((ts.nextPts - Date.now()) / 1000) + '</b>' + icon('info', 'tz-i') + '</button>' +   // eine Zeile – antippen klappt alles auf
+        '<div class="shop-info" data-sinfo-box="thron"' + (auf ? '' : ' hidden') + '><div class="throne-status">' +
             '<div class="ts-row">' + icon('crown') + '<span>Die Mitte hält</span><b>' + hdName + '</b></div>' +
             '<div class="ts-row">' + icon('hourglass') + '<span>Nächste Thron-Punkte</span><b data-throne-pts>' + fmtClock((ts.nextPts - Date.now()) / 1000) + '</b></div>' +
             '<div class="ts-row">' + icon('attack') + '<span>Beschuss' + (hd ? ' · ' + sh.length + ' Wächter' : '') + '</span><b' + (hd === 'player' && sh.length ? ' class="warn"' : '') + ' data-throne-fire>' + fmtClock((ts.nextFire - Date.now()) / 1000) + '</b></div>' +
             '<div class="ts-row">' + icon('points') + '<span>Du bekommst</span><b>' + (inc ? '+' + inc + ' alle 3 Min.' : 'nichts – erobere die Mitte') + '</b></div>' +
             (bo ? '<div class="ts-row">' + icon(bo.who === 'player' ? 'losses' : 'gem') + '<span>' + (bo.who === 'player' ? 'Kopfgeld auf dich' : 'Kopfgeld') + '</span><b' + (bo.who === 'player' ? ' class="warn"' : '') + '>' + fmtNum(bo.gems) + ' Edelsteine · ' + fmtCompact(bo.coins) + '</b></div>' : '') +
-        '</div>' +
-        '<p class="mail-intro">Wer den Mega-Tempel hält, bekommt alle 3 Min. ' + THRONE_PTS_MEGA + ' Thron-Punkte, wer dort Verstärkung stehen hat ' + THRONE_PTS_VERST + ', jeder Wächter-Tempel bringt ' + THRONE_PTS_GUARD + '. Genauso oft feuern die Wächter-Tempel, die dem Herrscher nicht gehören, auf die Truppen im Mega-Tempel (je ' + THRONE_FIRE_PCT + ' %) – die Getroffenen kommen ins Krankenhaus, soweit Platz ist.</p>' +
-        '<div class="sect"><h4>Eintauschen</h4></div><div class="throne-list">' +
-        THRONE_OFFERS.filter(o => !o.once).map(o => { const done = o.once && throneOwned('player', o), n = throneAmount('player', o.id);   // looks are bought in the Aussehen sheet
-            const sub = o.id === 'coins' ? fmtCompact(n) + ' – so viel, wie dein Reich in ' + fmtNum(THRONE_STUNDEN) + ' Std. verdient' : o.id === 'troops' ? fmtCompact(n) + ' – ' + fmtNum(THRONE_STUNDEN) + ' Std. deiner Ausbildung, in die Hauptstadt'
-                : o.id === 'gems' ? 'für Kisten, Helden und Sterne' : o.id === 'crate' ? 'ein zufälliges Teil (Grau bis Episch)' : o.id === 'royal' ? 'mindestens Lila' : done ? 'gehört dir' : o.ring ? 'Ring um alle deine Basen – nur hier' : 'gibt es nur hier';
-            return '<div class="throne-row' + (o.once ? ' is-special' : '') + '"><span class="tr-ic">' + icon(o.icon, 'ico-' + o.icon) + '</span><span class="tr-t"><b>' + o.name + '</b><small>' + sub + '</small></span>' +
-                (done ? '<span class="chip">' + icon('check') + 'Gekauft</span>' : '<button type="button" class="btn btn--primary btn--sm" data-throne-buy="' + o.id + '"' + ((ts.pts || 0) < o.cost ? ' disabled' : '') + '>' + icon('crown') + '<b>' + fmtNum(o.cost) + '</b></button>') + '</div>'; }).join('') + '</div>' +
-            '<p class="mail-intro">Thron-Rahmen, Titel und Ringe für Thron-Punkte gibt es unter Profil → Aussehen, die Thron-Punkte-Rangliste unter Profil → Rangliste.</p>');
+        '</div><p class="mail-intro">Wer den Mega-Tempel hält, bekommt alle 3 Min. ' + THRONE_PTS_MEGA + ' Thron-Punkte, wer dort Verstärkung stehen hat ' + THRONE_PTS_VERST + ', jeder Wächter-Tempel bringt ' + THRONE_PTS_GUARD + '. Genauso oft feuern die Wächter-Tempel, die dem Herrscher nicht gehören, auf die Truppen im Mega-Tempel (je ' + THRONE_FIRE_PCT + ' %) – die Getroffenen kommen ins Krankenhaus, soweit Platz ist.</p>' +
+            '<p class="mail-intro">Thron-Rahmen, Titel und Ringe für Thron-Punkte gibt es unter Profil → Aussehen, die Thron-Punkte-Rangliste unter Profil → Rangliste.</p></div>' +
+        '<div class="waren waren--2">' +
+        THRONE_OFFERS.filter(o => !o.once).map(o => { const n = throneAmount('player', o.id);   // looks are bought in the Aussehen sheet; Waren als Karten wie die Kisten
+            const sub = o.id === 'coins' ? fmtCompact(n) + ' · ' + fmtNum(THRONE_STUNDEN) + ' Std. Ertrag' : o.id === 'troops' ? fmtCompact(n) + ' · ' + fmtNum(THRONE_STUNDEN) + ' Std. Ausbildung'
+                : o.id === 'gems' ? 'für Kisten und Helden' : o.id === 'crate' ? '1 Teil · Grau bis Episch' : o.id === 'royal' ? 'mindestens Lila' : 'gibt es nur hier';
+            const k = o.id === 'crate' ? 'aus' : o.id === 'royal' ? 'royal' : null;
+            const bild = k ? kisteBild(k, 't') : o.id === 'coins' ? muenzBild() : icon(o.icon, 'ico-' + o.icon);
+            return '<div class="ware ware--klein" data-r="' + (k ? KISTE_R[k] : 'navy') + '">' + (o.id === 'royal' ? '<span class="band">Mind. Lila</span>' : '') + '<span class="ware-bild' + (k || o.id === 'coins' ? '' : ' ware-bild--ic') + '">' + bild + '</span>' +
+                '<span class="ware-txt"><b class="ware-name">' + o.name + '</b><small>' + sub + '</small></span>' +
+                '<button type="button" class="ware-preis thron" data-throne-buy="' + o.id + '"' + ((ts.pts || 0) < o.cost ? ' disabled' : '') + '>' + icon('crown') + '<b>' + fmtNum(o.cost) + '</b></button></div>'; }).join('') + '</div>');
 }
+function muenzBild() {                                // Münzstapel für die Thron-Karte „Münzen“
+    const m = (x, y) => '<ellipse cx="' + x + '" cy="' + (y + 4) + '" rx="22" ry="8" fill="#8a5d14"/><rect x="' + (x - 22) + '" y="' + y + '" width="44" height="4" fill="#a8761c"/><ellipse cx="' + x + '" cy="' + y + '" rx="22" ry="8" fill="url(#mbz)" stroke="#5a3b06" stroke-width="1"/><ellipse cx="' + x + '" cy="' + y + '" rx="13" ry="4.5" fill="none" stroke="#a8761c" stroke-width="1.5"/>';
+    return '<svg viewBox="0 0 120 100" aria-hidden="true"><defs><linearGradient id="mbz" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff0b8"/><stop offset="1" stop-color="#e2a93a"/></linearGradient></defs>' +
+        '<ellipse cx="60" cy="91" rx="44" ry="6" fill="#000" opacity=".5"/>' + m(42, 76) + m(42, 66) + m(42, 56) + m(78, 78) + m(78, 68) + m(60, 46) + m(60, 36) + kisteStern(98, 20, 6, .95) + kisteStern(20, 30, 3.5, .7) + '</svg>';
+}
+const shopInfoAuf = new Set();                      // Shop: offene Erklärungen hinter „i“ (Thron baut sie bei jedem Takt neu – darum gemerkt)
 let shopTab = 'gems';
 function showShopTab(t) {
     shopTab = t;
     for (const b of document.querySelectorAll('#shopTabs [data-stab]')) { const on = b.dataset.stab === t; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }
     for (const pn of document.querySelectorAll('#shopPopup [data-spane]')) pn.hidden = pn.dataset.spane !== t;
-    document.getElementById('shopFoot').hidden = t !== 'gems';
     renderShop();
 }
 document.getElementById('shopTabs').addEventListener('click', e => { const b = e.target.closest('[data-stab]'); if (b) showShopTab(b.dataset.stab); });
@@ -7371,9 +7380,40 @@ function renderHeroChests() {                       // the odds per rarity follo
     const pool = heroChestPool(1), tot = pool.reduce((a, h) => a + 5 - h.r, 0);
     liveHtml(document.getElementById('heroChestOdds'), [1, 2, 3, 4].map(r => { const w = pool.filter(h => h.r === r).reduce((a, h) => a + 5 - h.r, 0); const rd = RARITY_DEFS[r];
         return '<span class="chip" style="color:' + rd.color + ';border-color:' + rd.color + '88">' + rd.label + ' ' + (tot ? Math.round(w / tot * 100) : 0) + ' %</span>'; }).join(''));
-    liveHtml(document.getElementById('heroChestOpts'), HERO_CHESTS.map(c => '<button type="button" class="btn btn--secondary" data-hchest="' + c.id + '"' + (gems < c.gems || !heroChestPool(c.minR).length ? ' disabled' : '') + '><span class="hc-t"><span>' + c.name + '</span><small>' + c.txt + '</small></span>' +
-        '<span class="cost cost--gem"><svg class="icon"><use href="#i-gem"/></svg><b>' + fmtNum(c.gems) + '</b></span></button>').join(''));
+    liveHtml(document.getElementById('heroChestOpts'), HERO_CHESTS.slice().reverse().map(c => { const k = HCHEST_ART[c.id] || 'held';   // die wertvollste groß zuerst
+        return '<div class="ware' + (c.id === 'hcE' ? ' ware--gross glanz' : '') + '" data-r="' + KISTE_R[k] + '">' + (HCHEST_BAND[c.id] ? '<span class="band">' + HCHEST_BAND[c.id] + '</span>' : '') +
+            '<span class="ware-bild">' + kisteBild(k, 'k') + '</span><span class="ware-txt"><b class="ware-name">' + c.name + '</b><small>' + c.txt + '</small></span>' +
+            '<button type="button" class="ware-preis" data-hchest="' + c.id + '" aria-label="' + c.name + ' kaufen"' + (gems < c.gems || !heroChestPool(c.minR).length ? ' disabled' : '') + '>' + icon('gem') + '<b>' + fmtNum(c.gems) + '</b></button></div>'; }).join(''));
 }
+// Gezeichnete Truhe für die Shop-Karten (SVG): Deckel, Kasten, Bänder, Schloss, Glanz, Sterne – das Leuchten macht die Karte
+const KISTE_ART = {                                  // Kasten oben/unten, Bänder hell/dunkel, Zeichen auf dem Schloss
+    aus: { k: ['#8a5a2e', '#3e2410'], b: ['#e3e7ec', '#6b7078'] }, held: { k: ['#8a5a2e', '#3e2410'], b: ['#a9d4ff', '#2c62b0'], z: 'krone' },
+    gross: { k: ['#9a6428', '#432410'], b: ['#f6e7bf', '#a27832'], z: 'stern' }, episch: { k: ['#7c4cc4', '#1e1033'], b: ['#f6e7bf', '#a27832'], z: 'stein' },
+    royal: { k: ['#2f5490', '#0d1a33'], b: ['#f6e7bf', '#a27832'], z: 'krone' } };
+const KISTE_R = { aus: 'grau', held: 'blau', gross: 'gold', episch: 'lila', royal: 'lila' };
+const HCHEST_ART = { hc1: 'held', hc3: 'gross', hcE: 'episch' }, HCHEST_BAND = { hcE: 'Bester Wert', hc1: 'Beliebt' };   // (Bänder nur Optik)
+function kisteStern(x, y, r, o) { const q = r * .28, p = r * .72;   // 4-Zack-Stern (Glanz)
+    return '<path d="M' + x + ' ' + (y - r) + 'l' + q + ' ' + p + ' ' + p + ' ' + q + ' ' + -p + ' ' + q + ' ' + -q + ' ' + p + ' ' + -q + ' ' + -p + ' ' + -p + ' ' + -q + 'z" fill="#fff" opacity="' + o + '"/>'; }
+function kisteBild(k, ort) {                         // ort: eigene Verlaufs-Namen je Reiter (gleich bei jedem Neuzeichnen – liveHtml tauscht nichts)
+    const a = KISTE_ART[k] || KISTE_ART.aus, n = 'kb' + (ort || 'k') + k;
+    const z = a.z === 'stein' ? '<path d="M60 42l6.5 7.5-6.5 8.5-6.5-8.5z" fill="#c99bff" stroke="#fff" stroke-width=".8"/><circle cx="58" cy="47" r="1.3" fill="#fff"/>'
+        : a.z === 'krone' ? '<path d="M53 55v-8l3.5 3 3.5-5 3.5 5 3.5-3v8z" fill="#2a1a05"/>' : a.z === 'stern' ? '<path d="M60 42l2.3 4.7 5.2.7-3.8 3.6.9 5.1-4.6-2.4-4.6 2.4.9-5.1-3.8-3.6 5.2-.7z" fill="#2a1a05"/>'
+        : '<path d="M60 45a3 3 0 0 1 1.6 5.5l1.1 4.5h-5.4l1.1-4.5A3 3 0 0 1 60 45z" fill="#1c1205"/>';
+    return '<svg viewBox="0 0 120 100" aria-hidden="true"><defs>' +
+        '<linearGradient id="' + n + 'k" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + a.k[0] + '"/><stop offset="1" stop-color="' + a.k[1] + '"/></linearGradient>' +
+        '<linearGradient id="' + n + 'b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + a.b[0] + '"/><stop offset="1" stop-color="' + a.b[1] + '"/></linearGradient></defs>' +
+        '<ellipse cx="60" cy="91" rx="44" ry="6" fill="#000" opacity=".5"/>' +
+        '<rect x="14" y="46" width="92" height="42" rx="4" fill="url(#' + n + 'k)" stroke="#0b0805" stroke-width="2"/>' +
+        '<path d="M14 48V34Q14 14 60 14Q106 14 106 34V48Z" fill="url(#' + n + 'k)" stroke="#0b0805" stroke-width="2"/>' +
+        '<path d="M14 62h92M14 75h92" stroke="#000" stroke-opacity=".22" stroke-width="1.2"/><path d="M20 34Q22 21 56 19" stroke="#fff" stroke-opacity=".3" stroke-width="4" fill="none" stroke-linecap="round"/>' +
+        '<g fill="url(#' + n + 'b)" stroke="#2a1a05" stroke-width="1"><path d="M30 17.5h8v70.5h-8zM82 17.5h8v70.5h-8z"/><rect x="12.5" y="43" width="95" height="7" rx="2"/><rect x="51" y="39" width="18" height="20" rx="3"/></g>' +
+        z + kisteStern(101, 14, 6, .95) + kisteStern(16, 24, 3.5, .7) + kisteStern(110, 40, 2.5, .6) + '</svg>';
+}
+for (const el of document.querySelectorAll('[data-kiste-art]')) el.innerHTML = kisteBild(el.dataset.kisteArt, 'k');
+shopPopup.addEventListener('click', e => { const b = e.target.closest('[data-sinfo]'); if (!b) return;   // „i“: Erklärung/Chancen auf und zu
+    const k = b.dataset.sinfo, auf = !shopInfoAuf.has(k); if (auf) shopInfoAuf.add(k); else shopInfoAuf.delete(k);
+    b.setAttribute('aria-expanded', auf ? 'true' : 'false'); b.classList.toggle('on', auf);
+    for (const el of shopPopup.querySelectorAll('[data-sinfo-box="' + k + '"]')) { el.hidden = !auf; if (auf) el.scrollIntoView({ block: 'nearest' }); } });
 function heroChestOpen(who, c) {                    // the same chest for you and the others: n draws of c.sh shards
     if (c.gems >= 500) { if (who === 'player') alsBefehl('bund', { op: 'kiste', c: c.id }); else if (typeof bundGeschenk === 'function') bundGeschenk(who, 'kiste'); }   // große Kiste: Geschenk fürs Bündnis
     const got = []; for (let i = 0; i < c.n; i++) { const h = heroGrantShards(who, c.sh, null, c.minR); if (h) got.push(h); } return got;

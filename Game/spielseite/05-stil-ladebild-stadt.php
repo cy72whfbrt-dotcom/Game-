@@ -305,9 +305,4 @@ button.cb-slot{position:relative} button.cb-slot::before{content:"";position:abs
 .hh-cards--zu .hh-foot{padding:4px 2px 5px} .hh-cards--zu .hh-foot b{font-size:var(--fs-12,12px)} .hh-cards--zu .hh-foot > small:first-of-type{display:none}
 .hh-cards--zu .hh-lk{font-size:8px;padding:2px 4px;right:3px;top:3px}
 .hh-plus{width:44px;height:44px}
-/* Shop: Kaufknöpfe zuerst, Chancen hinter „i“; Preis groß im Knopf */
-.odds-mehr{margin-top:8px} .odds-mehr > summary{display:inline-flex;align-items:center;gap:6px;min-height:44px;cursor:pointer;list-style:none;font:600 var(--fs-13)/1 var(--font-ui);color:var(--tx-2)}
-.odds-mehr > summary::-webkit-details-marker{display:none} .odds-mehr > summary .icon{width:16px;height:16px;color:var(--gold-300)} .odds-mehr[open] > summary{color:var(--gold-100)}
-.odds-mehr .odds{margin-top:0}
-.hchest-opts .btn{min-height:48px} .hchest-opts .cost b{font-size:var(--fs-15,15px)}
     </style>

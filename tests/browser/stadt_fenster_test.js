@@ -1,6 +1,6 @@
 // Stadt, Burg, Labor, Helden und Shop übersichtlich (11b F, P4) – Handy + Desktop: Haupt-Knopf (Aufwerten/Forschen) ohne Scrollen
 // sichtbar, Burg-Schild-Kasten unter den Voraussetzungen, „Fehlt: … Holz“ statt totem Knopf, Helden-Reiter Helden | Paare mit
-// gesperrten Helden darunter, Shop-Chancen hinter „Chancen“, Kiste öffnen 150 Edelsteine, Toast nie über der Fußzeile, Knöpfe ≥ 44 px.
+// gesperrten Helden darunter, Knöpfe ≥ 44 px. (Shop: shop_test.js)
 const { chromium, devices } = require('playwright');
 const path = require('path');
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x) : ''));
@@ -42,12 +42,6 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       o.helden.paare = !!hh.querySelector('.hh-pairs .hh-pair') && !hh.querySelector('.hh-cards');
       hh.querySelector('[data-hh-seite="helden"]').click(); closeHeroHall();
       cityView.hidden = true; stadtLeiste(false);
-      // 4) Shop: Kaufknöpfe vor den Chancen, Kiste 150, Toast nie über der Fußzeile
-      openShop(); await warte(400); flashHint('Späher unterwegs zu Turm #23739 · ca. 0:21', 60000); await warte(200);
-      const offen = [...document.querySelectorAll('#shopPopup .odds-mehr')];
-      o.shop = { kiste: document.getElementById('shopOpenCrateBtn').textContent.replace(/\s+/g, ' ').trim(), chancenZu: offen.length === 2 && offen.every(d => !d.open),
-        knopfZuerst: !!document.querySelector('#heroChestOpts + .odds-mehr #heroChestOdds'), fussFrei: !deckt(toast, document.getElementById('shopFoot')),
-        knopfSicht: sicht(document.getElementById('shopOpenCrateBtn')), kisten44: [...document.querySelectorAll('[data-hchest]')].every(x => x.getBoundingClientRect().height >= 44) };
       flashHint('', 1); closeAllPopups();
       return o;
     }).catch(e => ({ fehler: e.message }));
@@ -60,9 +54,6 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     ok(r.forschen.da && r.forschen.sicht, art + ': Labor – „Forschen“ ohne Scrollen sichtbar', r.forschen);
     ok(r.helden.reiter === 'Helden|Paare' && r.helden.h44 && r.helden.paare && r.helden.paareNichtHier, art + ': Helden – Reiter Helden | Paare (44 px)', r.helden);
     ok(r.helden.eigeneOben && r.helden.gesperrt > 0, art + ': Helden – eigene oben, gesperrte kleiner darunter', r.helden);
-    ok(/Kiste öffnen ?150$/.test(r.shop.kiste) && r.shop.knopfSicht, art + ': Shop – „Kiste öffnen 150“ sichtbar', r.shop);
-    ok(r.shop.chancenZu && r.shop.knopfZuerst && r.shop.kisten44, art + ': Shop – Kaufknöpfe zuerst, Chancen eingeklappt', r.shop);
-    ok(r.shop.fussFrei, art + ': Shop – Hinweis liegt nicht über der Fußzeile', r.shop);
     await ctx.close();
   }
   ok(!fe.length, 'keine Seitenfehler', fe.slice(0, 3));
