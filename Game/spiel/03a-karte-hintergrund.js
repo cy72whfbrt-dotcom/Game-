@@ -56,7 +56,7 @@ function dekoPlaetze(lm, n, seed, frei) {          // freie Plätze auf der Regi
   for (let i = 0; i < n * 8 && out.length < n; i++) {
     const a = rnd() * Math.PI * 2, d = Math.sqrt(rnd()) * lm.shapeMaxR, x = lm.x + Math.cos(a) * d, y = lm.y + Math.sin(a) * d;
     if (bases.some(b => Math.abs(b.x - x) < frei + b.radius && Math.abs(b.y - y) < frei + b.radius + 600 && Math.hypot(b.x - x, b.y - y) < b.radius + frei)) continue;
-    if (!aufLand(lm, x, y) || !aufLand(lm, x + 900, y) || !aufLand(lm, x - 900, y) || !aufLand(lm, x, y + 900) || !aufLand(lm, x, y - 900)) continue;
+    if (felsAuf(x, y, 900) || !aufLand(lm, x, y) || !aufLand(lm, x + 900, y) || !aufLand(lm, x - 900, y) || !aufLand(lm, x, y + 900) || !aufLand(lm, x, y - 900)) continue;
     out.push([x, y, rnd]);
   }
   return out;
@@ -134,6 +134,7 @@ function buildForest(lm) {
     const a = rnd() * Math.PI * 2, d = Math.sqrt(rnd()) * lm.shapeMaxR;
     const fx = lm.x + Math.cos(a) * d, fy = lm.y + Math.sin(a) * d, cnt = 3 + (rnd() * 5 | 0), spread = 380 + rnd() * 420;
     if (bases.some(b => Math.abs(b.x - fx) < 1600 && Math.abs(b.y - fy) < 1900 && (Math.hypot(b.x - fx, b.y - fy) < b.radius + 550 || (fy > b.y && fy < b.y + 1900)))) continue;   // cheap test first
+    if (felsAuf(fx, fy, 400 + spread)) continue;                                  // kein Wald an den Bergen (01f)
     const deep = fx > sb.l + 9000 && fx < sb.r - 9000 && fy > sb.t + 9000 && fy < sb.b - 9000;   // far from every bank: no coast test needed
     if (!deep && (!pointInPolygon(fx, fy, lm.shape) || edgeDist(fx, fy) < 700)) continue;
     const trees = [];
@@ -384,7 +385,7 @@ function paintBackground(T, clip, noTerritory) {  // T = tile {c, g, z, l, t}; c
     g.fillStyle = lm.fill; g.fill(lm.path);
     if (grassA > 0) { g.globalAlpha = grassA * (lm.stone ? .35 : lm.bio === 'snow' || lm.bio === 'ice' ? .12 : lm.bio === 'sand' ? .2 : lm.bio === 'volcano' ? .3 : lm.bio === 'swamp' ? .8 : 1); g.fillStyle = GRASS_PATTERN; g.fill(lm.path); g.globalAlpha = 1; }
     if (lm.deko) paintDeko(g, lm, Math.max(forestA, Math.min(1, Math.max(0, (zd - 0.007) / 0.008))));                                        // Paket C: Eis, Vulkan, Sumpf (statt Wald)
-    else if (forestA > 0) { g.globalAlpha = forestA;
+    else if (forestA > 0 && !(WELT_FELSEN && (lm.stone || lm.bio === 'sand'))) { g.globalAlpha = forestA;   // (Wüste/Stein: statt der runden Häufchen die Felsen aus 01f)
       if (lm.bio === 'snow' && !lm.stone) { g.fillStyle = '#3f5a4c'; g.fill(lm.forest[0]); g.fillStyle = '#56735f'; g.fill(lm.forest[1]);   // snowy firs
         g.fillStyle = 'rgba(250,252,255,.7)'; g.fill(lm.forest[2]); }
       else if (lm.bio === 'sand' && !lm.stone) { g.fillStyle = '#9c7e4c'; g.fill(lm.forest[0]); g.fillStyle = '#b39360'; g.fill(lm.forest[1]);   // dunes and dry scrub
@@ -394,6 +395,7 @@ function paintBackground(T, clip, noTerritory) {  // T = tile {c, g, z, l, t}; c
       else { g.fillStyle = '#284d22'; g.fill(lm.forest[0]); g.fillStyle = '#35652c'; g.fill(lm.forest[1]);
         g.fillStyle = 'rgba(128,176,90,.38)'; g.fill(lm.forest[2]); }
       g.globalAlpha = 1; }
+    felsenMalen(g, lm, zd, zl);                                                    // Berge (01f, Lebendige Welt)
     g.lineJoin = 'round'; g.lineWidth = 1.4 / zl; g.strokeStyle = lm.stone ? 'rgba(24,24,26,.92)' : 'rgba(14,30,12,.92)'; g.stroke(lm.path);
   }
   // 3 bridges: straight timber between the polygonPointAtAngle endpoints, extended 250 units along their own axis

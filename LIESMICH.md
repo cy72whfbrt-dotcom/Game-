@@ -902,6 +902,25 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Beitreten/Gründen → Übersicht. Preis unverändert. Dateien: buendnis/04, CSS-Block in spielseite/05. Test `handy_fenster_test`.
   Nachtrag (Designer-Prüfung): zu wenig Münzen → „Gründen“ grau mit „Fehlt: 17 Münzen“ (wie die Gebäude) statt gold; zieht
   jede Sekunde nach (`bundGruendenKnopf`).
+- **6.10. – Lebendige Welt: Berge auf der Karte, Märsche drumherum (11b G, Branch `welt-felsen`, NICHT hochgeladen):** Neuer Teil
+  `01f-felsen.js` (Schalter `WELT_FELSEN`, false = keine Berge, alles wie vorher – Projektleiter entscheidet, ob es in den
+  nächsten Saison-Reset kommt). Design-Vorgabe Variante A „Berge in den Lücken“: je Region 1–3 Bergstöcke (3–7 Low-Poly-Gipfel,
+  Farben je Landschaft, Wüste Tafelberge, Schneekappen), nicht auf Thron-Insel, Vulkan, Sumpf; fest aus eigenem Welt-Zufall
+  (gleich auf Handy und Weltrechner). Frei bleiben Basen (+1400), Startplätze/Tempel/Tore (+3000), Gebiets-Bänder (alle
+  Nachbarpaare bis 6000, +900), Brücken-Enden (+2000), Felder (+1200), Küste; Lager/Tagesboss (`barbSpot`), Wälder und
+  Eis-Deko meiden die Berge. Jeder Bergstock wird verworfen, wenn eine Basis ihrer Region eine andere nur mit mehr als 1,6 ×
+  Luftlinie erreicht. Wege: kürzester Weg über die Hüllen-Ecken (`felsenWeg`, Dijkstra, Ecken als Bogen, gemerkt),
+  `marchPath` (03c) und `marschStrecke` (02b) nutzen ihn → Marschzeit = Weglänge für alle (du, Mitspieler, Späher, Rally,
+  Verstärkung, Felder, Lager, Weltrechner). **Achtung:** `MAX_ATTACK_SECONDS` = 60 s bleibt – lange Märsche werden durch
+  Berge nicht länger (nur die unter 60 s; ein Umweg kostet etwa 5–25 %). Gezeichnet in den Karten-Kacheln (weit: Schattierung,
+  mittel: Gipfel, nah: Kanten, Kappen, Geröll, Einzelfelsen). Test `welt_felsen_test` (neu).
+  Nachbesserung nach Designer-Prüfung: Gipfel wie die Stadtbild-Berge aus 5 Flächen (hell/licht/mittel/dunkel/tief,
+  `felsFacetten`), Stöcke größer und in zwei versetzten Reihen (höchster in der Mitte), ca. 490 Stöcke auf 237 von 267 Regionen statt 255 (findet
+  sich kein Platz: kleinere Stufe); weit weg dunkle Silhouette statt beiger Hülle. Wüste/Stein: Low-Poly-Felsgruppen statt
+  der runden Häufchen (`buildForest` dort nicht mehr gemalt). **Fehler behoben:** Marsch-Zeitschild zeigte „9̶1:43“ –
+  `drawMarchChips` setzte `textAlign` nicht, es galt noch 'center' von den Armee-Schildern (09d), die Zahl lag über der Sanduhr.
+  „ca. 0:41“ oben vs. „9:35“ am Schild (Designer-Prüfung): kein Spielfehler – das Testbild setzte einen erfundenen 10-Min.-Marsch
+  ein; jetzt zeigt es den echten Marsch (Dauer aus dem Umweg), der Test prüft, dass Hinweis und Schild zusammenpassen.
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 

@@ -443,7 +443,7 @@ function marchPath(source, target) {             // source → over every bridge
     }
   }
   path.push({ x: target.x, y: target.y });
-  return path;
+  return felsenPfad(path);                       // um die Berge herum (01f; Schalter aus: unverändert)
 }
 function drawMarchLine(type, source, target, startedAt, resolveAt, now, pathOverride, mk, who) {   // who: whose column (their Marsch-Skin); yours by default
   if (!source || !target) return;

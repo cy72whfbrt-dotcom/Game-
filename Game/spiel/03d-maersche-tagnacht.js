@@ -111,7 +111,7 @@ function drawMarchChips() {                       // after the nameplates: one c
   for (const c of clusters) c.y = c.sy / c.n;
   const lastSlot = chipSlotOf; chipSlotOf = new Map();
   if (!clusters.length) return;
-  ctx.font = '600 10.5px Inter, system-ui, sans-serif'; ctx.textBaseline = 'alphabetic';
+  ctx.font = '600 10.5px Inter, system-ui, sans-serif'; ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';   // (sonst steht noch 'center' von den Namensschildern: Zahl über der Sanduhr)
   if (!chipDigit) chipDigit = [...'0123456789'].reduce((w, d) => ctx.measureText(d).width > ctx.measureText(w).width ? d : w, '0');
   const label = c => marschUhr(c.secs) + (c.n > 1 ? '  ×' + c.n : '');
   const tokens = marchTokens.map(m => ({ x: m.x - 8.5, y: m.y - 8.5, w: 17, h: 17 }));

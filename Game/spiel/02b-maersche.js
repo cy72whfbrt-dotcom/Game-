@@ -15,8 +15,8 @@ function attackSpeedMultiplier() {
     return 1 + Math.min(skills.speed || 0, SKILL_DEFS.speed.max) * 0.05;
 }
 function scoutSecs(from, to, botId) { return travelDurationSeconds(from, to, botId) / (AUF ? AUF.spaeherTempo(botId || 'player') : 1); }   // (+ Forschung Späher)   // a scout's walk, Späherturm included - the same for everyone
-function marschStrecke(source, target) {          // der Weg in Welt-Einheiten (über die Brücken)
-    const pts = source.landmassId === target.landmassId ? [source, target] : marchPath(source, target);
+function marschStrecke(source, target) {          // der Weg in Welt-Einheiten (über die Brücken, um die Berge – 01f)
+    const pts = source.landmassId === target.landmassId ? felsenWeg(source, target) : marchPath(source, target);
     let distance = 0; for (let i = 1; i < pts.length; i++) distance += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
     return distance;
 }
