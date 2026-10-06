@@ -40,7 +40,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const bot = BOT_DEFS.find(x => !x.mensch && botOwnedIslands[x.id] && botOwnedIslands[x.id].size), hp = hourProduction('player'), hb = hourProduction(bot.id);
     renderThroneShop(); const text = (document.getElementById('throneShop') || {}).innerText || '';
     return { f: WIRTSCHAFT_KOSTEN / WIRTSCHAFT_ERTRAG, c: throneAmount('player', 'coins'), t: throneAmount('player', 'troops'), hc: hp.coins, ht: hp.troops,
-      bc: throneAmount(bot.id, 'coins'), bhc: hb.coins, minC: wirtK(5000), minT: wirtK(1000), text: text.replace(/\s+/g, ' '), cTxt: fmtCompact(throneAmount('player', 'coins')) };
+      bc: throneAmount(bot.id, 'coins'), bhc: hb.coins, minC: wirtM(5000), minT: wirtK(1000), text: text.replace(/\s+/g, ' '), cTxt: fmtCompact(throneAmount('player', 'coins')) };
   });
   ok(m.f === 2 && m.c === Math.max(m.minC, Math.round(2 * m.hc)) && m.t === Math.max(m.minT, Math.round(2 * m.ht)) && m.c > m.minC, 'Thron-Shop: Münzen/Truppen = 2 × Stundenproduktion (wie Händler/Markt)', m);
   ok(m.bc === Math.max(m.minC, Math.round(2 * m.bhc)), 'Thron-Shop für Mitspieler genauso: 2 × Stundenproduktion', { bc: m.bc, bhc: m.bhc });

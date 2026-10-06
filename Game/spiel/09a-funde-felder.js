@@ -7,7 +7,7 @@ function pickupAmount(kind) {
     const L = Math.max(playerLvl, 1);
     if (kind === 'gem') return 1 + Math.floor(Math.random() * 3);
     if (kind === 'troops') return Math.max(wirtK(100), niceRound(levelRewardTroops(Math.max(L, 2)) * 0.05));   // (Stufen-Belohnung und Mindestwert × WIRTSCHAFT_KOSTEN)
-    return Math.max(wirtK(200), niceRound(levelRewardCoins(L) * 0.1));
+    return Math.max(wirtM(200), niceRound(levelRewardCoins(L) * 0.1));   // (Münzen: wirtM)
 }
 function pickupScreenPos(p) { return { x: p.x * mapState.zoom + mapState.offsetX, y: p.y * mapState.zoom + mapState.offsetY }; }
 function trySpawnPickup() {
@@ -154,9 +154,10 @@ const fArt = (K, fall) => ({ dat: K.g === 'm' ? 'dem' : 'der', akk: K.g === 'm' 
 // Sammeln wie bei RoK (2.10.): ein Feld leert sich in fester Zeit – außen 1 Std., ganz innen 4 Std. –, egal wie viele Truppen.
 // Die Truppen bestimmen nur, wie viel sie tragen können. Gems: außen 20, innen ~150 (vorher bis 18.000 in unter einer Minute).
 // Gold, Holz, Stein, Eisen: × WIRTSCHAFT_ERTRAG wie jede Produktion (5.10.: was vorher in einer Sekunde kam, kommt in einer Stunde) – Gems bleiben.
-// 6.10. (Z1): Holz/Stein/Eisen dazu × ROH_FAKTOR (RoK-Größe); innen nur mit der Wurzel des Ring-Faktors (Ring 2 sonst 300× außen)
+// 6.10. (Z1): Holz/Stein/Eisen dazu × ROH_FAKTOR, Gold × MUENZ_FAKTOR (RoK-Größe; die Traglast je Truppe bleibt – außen braucht
+// eine volle Goldmine ~1.100 Truppen wie ein Holzfeld ~2.000); innen nur mit der Wurzel des Ring-Faktors (Ring 2 sonst 300× außen)
 const fieldCapFor = (kind, rm) => kind === 'gem' ? Math.round(FIELD_KINDS.gem.base * Math.pow(rm, .35))
-    : Math.max(1, Math.round(FIELD_KINDS[kind].base * Math.sqrt(rm) * WIRTSCHAFT_ERTRAG * (FIELD_KINDS[kind].roh ? ROH_FAKTOR : 1)));
+    : Math.max(1, Math.round(FIELD_KINDS[kind].base * Math.sqrt(rm) * WIRTSCHAFT_ERTRAG * (FIELD_KINDS[kind].roh ? ROH_FAKTOR : MUENZ_FAKTOR)));
 const fieldDauerSec = rm => 3600 * (1 + 3 * Math.log(Math.max(1, rm)) / Math.log(300));
 const FIELD_REGEN_MS = 60 * 60000;
 const resFields = (() => {

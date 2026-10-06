@@ -24,7 +24,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     rr.h = schutzR + 10000; rr.s = schutzR; rr.e = 0; coins = schutz + 100;
     o.beute = { schutz, schutzR, p: plunderOf('player', true) };
     o.spaeh = AUF.spaeherMehr('player').roh;
-    // 5) Markt: 1.000 Holz verkaufen gibt höchstens 2 Münzen; kaufen und wieder verkaufen macht nie Münzen
+    // 5) Markt: 1.000 Holz verkaufen gibt ~2.640 Münzen (100 Rohstoffe = 278 Münzen, 5 % Gebühr); kaufen und wieder verkaufen macht nie Münzen
     c.levels.market = 20; saveCity(); coins = 1000; rr.h = 1e6; delete c.markt;
     const m0 = coins; marktTausch('player', 'v', 'h', 1000); o.verkauf = coins - m0;
     let schleife = coins; for (let i = 0; i < 20; i++) { marktTausch('player', 'k', 's', 1000); marktTausch('player', 'v', 's', 1000); }
@@ -47,17 +47,17 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   });
   console.log(JSON.stringify(r));
   ok(r.faktor === 1800, 'ROH_FAKTOR = 1.800', r.faktor);
-  ok(r.burg3.h === 13000 && r.burg3.s === 10000 && r.burg3.e === 6400 && r.burg3.c > 0 && r.burg3.c < 100, 'Burg 3 → 4: 13.000 Holz, 10.000 Stein, 6.400 Eisen – Münzen bleiben klein', r.burg3);
+  ok(r.burg3.h === 13000 && r.burg3.s === 10000 && r.burg3.e === 6400 && r.burg3.c === 14000, 'Burg 3 → 4: 13.000 Holz, 10.000 Stein, 6.400 Eisen, 14.000 Münzen (6.10.: Münzen × 1.000)', r.burg3);
   ok(r.burg9.h >= 2e5 && r.burg9.h <= 2.2e5, 'Burg 9 → 10: etwa 210.000 Holz', r.burg9);
   ok(r.burgStunde >= 75 * .6 && r.burgStunde <= 75 * 1.4 * 1.3 + 1, 'Burg allein: etwa 75 Holz pro Stunde (× Landschaft)', r.burgStunde);
   const F = r.felder;
   ok(F.h8 === 4000 && F.h2 === Math.round(8000 * Math.sqrt(300) / 2), 'Holz-Feld außen 4.000, Ring 2 nur × √300 (' + F.h2 + ')', F);
-  ok(F.g8 === 11 && F.g2 === Math.round(40000 * Math.sqrt(300) / 3600), 'Gold-Feld außen 11, Ring 2 × √300 (statt × 300)', F);
+  ok(F.g8 === 11111 && F.g2 === Math.round(40000 * Math.sqrt(300) / 3600 * 1000), 'Gold-Feld außen 11.111 Münzen, Ring 2 × √300 (statt × 300)', F);
   ok(F.gem === Math.round(20 * Math.pow(300, .35)), 'Edelstein-Adern wie vorher', F.gem);
   const B = r.beute;
-  ok(B.schutzR === B.schutz * 1800 && B.p.safe === B.schutz && B.p.loot === 10 && B.p.roh.h === 1000 && B.p.roh.s === 0 && B.p.roh.e === 0, 'Beute: Gold über dem Gold-Schutz, Holz über dem Rohstoff-Schutz (× 1.800)', B);
+  ok(B.schutzR === Math.round(B.schutz * 1.8) && B.p.safe === B.schutz && B.p.loot === 10 && B.p.roh.h === 1000 && B.p.roh.s === 0 && B.p.roh.e === 0, 'Beute: Gold über dem Gold-Schutz, Holz über dem Rohstoff-Schutz (× 1,8)', B);
   ok(r.spaeh.schutz === B.schutz && r.spaeh.schutzR === B.schutzR, 'Spähbericht kennt beide Schutz-Werte', r.spaeh);
-  ok(r.verkauf >= 0 && r.verkauf <= 3, 'Markt: 1.000 Holz verkaufen gibt nur ~2 Münzen (360 Rohstoffe = 1 Münze)', r.verkauf);
+  ok(r.verkauf === Math.floor(1000 * 5000 / 1800 * .95), 'Markt: 1.000 Holz verkaufen gibt 2.638 Münzen (100 Rohstoffe = 278 Münzen, Gebühr 5 %)', r.verkauf);
   ok(r.schleife[1] <= r.schleife[0], 'Markt: kaufen und verkaufen erzeugt keine Münzen', r.schleife);
   ok(r.start === 5000, 'Start-Truppen 5.000', r.start);
   const R = r.ringe;

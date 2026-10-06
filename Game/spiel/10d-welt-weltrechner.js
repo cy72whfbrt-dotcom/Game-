@@ -166,8 +166,8 @@ if (window.WELT) {
     // Zwei Töpfe (Alexander 5.10.): Stufen-Münzen (sicher: die EP kommen vom Weltrechner) je Stunde – der feste Rest nur EINMAL
     // am Tag (vorher jede Stunde neu: ~8 Mio. Münzen am Tag „ohne Beleg“). Der Tages-Topf steht in der Welt (überlebt Neustarts).
     // Feste Größen × WIRTSCHAFT_KOSTEN (5.10., wie die Münzen/Truppen außerhalb der Produktion): Tages-Rest vorher 50.000, Thron-Shop/
-    // Saison-Pass mindestens 5.000 Münzen bzw. 1.000 Truppen, Fund mindestens 100 Truppen
-    const kW = n => Math.max(1, Math.round(n * WIRTSCHAFT_KOSTEN)), SR_FIX = kW(50000), SR_STUNDE_MIN = kW(5000), TR_STUNDE_MIN = kW(1000), FUND_TR_MIN = kW(100);
+    // Saison-Pass mindestens 5.000 Münzen bzw. 1.000 Truppen, Fund mindestens 100 Truppen – Münzen wirtM (6.10.: × MUENZ_FAKTOR)
+    const SR_FIX = wirtM(50000), SR_STUNDE_MIN = wirtM(5000), TR_STUNDE_MIN = wirtK(1000), FUND_TR_MIN = wirtK(100);
     function spielraumTeile(who, m) {
         const L = Math.max(1, m.lvl), now = Date.now();
         let von = L; for (const x of m.lvlLog) if (x.l < von) von = x.l;

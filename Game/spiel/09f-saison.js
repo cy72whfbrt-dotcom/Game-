@@ -13,7 +13,7 @@
 // auf einen freien Zufallsplatz am Rand (wie der Startplatz eines neuen Spielers). Mitspieler genau wie echte Spieler.
 // Der eigene Spielstand eines echten Spielers übernimmt den Reset über die Nachricht „saison“ (unten) → Neuladen → 01a-grundlagen.js.
 // Umstellung auf „pro Stunde“ (Alexander 5.10., 11b A): der ERSTE Reset danach rechnet beim Weltrechner die Münz-Töpfe des Hauptbuchs
-// × WIRTSCHAFT_KOSTEN um. saison.wirtAb = die erste Saison mit der neuen Wirtschaft (fehlt: noch alt). Holz/Stein/Eisen bleiben bei jedem
+// × WIRTSCHAFT_KOSTEN × MUENZ_FAKTOR um (Münzen 6.10. in normalen Zahlen). saison.wirtAb = die erste Saison mit der neuen Wirtschaft (fehlt: noch alt). Holz/Stein/Eisen bleiben bei jedem
 // Reset unverändert (Alexander 6.10.: sie sind wieder in RoK-Größe, ROH_FAKTOR).
 const SAISON_WOCHEN = 8, SAISON_STUNDE = 18, SAISON_BALD_MS = 3 * 864e5, SAISON_ANFANG_MS = 3 * 864e5;
 const SAISON_PREISE = [3000, 2000, 1500, 500, 500, 500, 500, 500, 500, 500];   // Gems für Platz 1–10 (Vorschlag, LIESMICH)
@@ -65,7 +65,7 @@ function saisonTop() {                                // die besten 10 nach Mach
     return l.sort((a, b) => b[1] - a[1]).slice(0, SAISON_PREISE.length);
 }
 function saisonNeu(now) {
-    const alt = saison.nr, nr = alt + 1, top = saisonTop(), wirtAb = saison.wirtAb > 0 ? saison.wirtAb : nr, f = wirtAb === nr ? WIRTSCHAFT_KOSTEN : 1;   // f: Münz-Töpfe umrechnen (nur beim ersten Reset nach der Umstellung)
+    const alt = saison.nr, nr = alt + 1, top = saisonTop(), wirtAb = saison.wirtAb > 0 ? saison.wirtAb : nr, f = wirtAb === nr ? WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR : 1;   // f: Münz-Töpfe umrechnen (nur beim ersten Reset nach der Umstellung)
     console.warn('Welt-Saison ' + alt + ' zu Ende – Saison ' + nr + ' beginnt (Top 10: ' + top.map(([w]) => (botById[w] || {}).name || w).join(', ') + ')');
     // 1) Preise: Gems ins Abholfach (Mitspieler direkt) und der Saison-Titel – feste Nummer je Saison (nie doppelt)
     top.forEach(([w], i) => evPreis(w, 'saison', 'Welt-Saison ' + alt + ' · Platz ' + (i + 1), { gems: SAISON_PREISE[i], titel: 's' + alt + 'p' + (i + 1) }, alt));

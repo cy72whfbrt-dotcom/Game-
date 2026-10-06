@@ -2,8 +2,11 @@
 // Wirtschaft (Alexander 5.10.): Ertrag pro Stunde statt pro Sekunde; Kosten-Faktor siehe LIESMICH 11b A
 const WIRTSCHAFT_ERTRAG = 1 / 3600;   // was früher pro Sekunde kam, kommt jetzt pro Stunde
 const WIRTSCHAFT_KOSTEN = 1 / 1800;   // Kosten/Gegner: kleiner, aber nur halb so stark wie der Ertrag → alles etwa 2× langsamer als vorher (nie zu einfach)
-// Holz/Stein/Eisen in normalen RoK-Größen (Alexander 6.10., Z1): ihre Kosten ohne ÷ 1.800, ihr Ertrag × 1.800 – Münzen bleiben klein
+// Holz/Stein/Eisen in normalen RoK-Größen (Alexander 6.10., Z1): ihre Kosten ohne ÷ 1.800, ihr Ertrag × 1.800
 const ROH_FAKTOR = 1800;
+// Münzen auch in normalen Zahlen (Alexander 6.10., „B“): Ertrag, Kosten und Belohnungen in Münzen × 1.000 – das Verhältnis bleibt
+const MUENZ_FAKTOR = 1000;
+const ROH_JE_MUENZE = ROH_FAKTOR / MUENZ_FAKTOR;   // Burg-Schutz: je Münze Schutz 1,8 je Holz/Stein/Eisen
 // Rechnet dieses Spiel gerade die Welt (Weltrechner)? Ohne welt.js: immer.
 function rechnet() { return !window.WELT || WELT.leiter; }
 // Läuft hier der Weltrechner auf dem Server (weltrechner/start.js)? Dann: kein eigener Spieler, keine Basis, nichts zeichnen.
@@ -278,6 +281,8 @@ function niceRoundW(n) { const p = Math.pow(10, Math.max(0, Math.floor(Math.log1
 function wirtK(n, mn = 1) { return Math.max(mn, Math.round(n * WIRTSCHAFT_KOSTEN)); }
 // Holz/Stein/Eisen (Z1, 6.10.): Kosten in RoK-Größe – × WIRTSCHAFT_KOSTEN × ROH_FAKTOR, ganze Zahl, nie unter 1
 function wirtR(n) { return Math.max(1, Math.round(n * WIRTSCHAFT_KOSTEN * ROH_FAKTOR)); }
+// Münzen (6.10., „B“): Kosten und Belohnungen × WIRTSCHAFT_KOSTEN × MUENZ_FAKTOR, ganze Zahl, nie unter 1
+function wirtM(n) { return Math.max(1, Math.round(n * WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR)); }
 const ISLAND_RADIUS = 650; // tower footprint - bigger again, still well under the guaranteed minimum spacing between towers
 const NEUTRAL_DEFENSE_MAX = 30;    // (alle neutralen Werte außen: % von ringTruppen)
 const NEUTRAL_DEFENSE_MIN = 10;
@@ -295,7 +300,7 @@ const MEGA_TEMPLE_MULT = 8;        // Mega-Tempel (centre): 8x a normal temple's
 const GUARDIAN_TEMPLE_MULT = 3;    // Wächter-Tempel (the 4 guardian islands): 3x
 function templeBaseMult(isl) { return isl.type === 'megaTemple' ? MEGA_TEMPLE_MULT : isl.guardian ? GUARDIAN_TEMPLE_MULT : 1; }
 const TEMPLE_GEMS_PER_TICK = 0.0015;   // ~5 Gems an hour (up to ~24 held with a full Tempelschrein): a few hundred a day, not tens of thousands
-const TEMPLE_COIN_BONUS_PER_TICK = 15 * WIRTSCHAFT_ERTRAG;    // 15 Münzen und 6 Truppen pro Stunde (Gems bleiben wie sie sind)
+const TEMPLE_COIN_BONUS_PER_TICK = 15 * WIRTSCHAFT_ERTRAG * MUENZ_FAKTOR;    // 15.000 Münzen und 6 Truppen pro Stunde (Gems bleiben wie sie sind)
 const TEMPLE_TROOP_BONUS_PER_TICK = 6 * WIRTSCHAFT_ERTRAG;
 const TEMPLE_HOLD_STREAK_MS = 30 * 60 * 1000; // 30min to reach the max hold bonus
 const TEMPLE_HOLD_STREAK_MAX_MULT = 2; // holding it long enough doubles its output
@@ -367,8 +372,12 @@ const UPGRADE_BASE_COST = 120, UPGRADE_COST_GROWTH = 1.27;
 // The level-based defense every base gets, with no equipment/
 // skill bonus - used for bot- and (in a future PvP defense) other-
 // player-owned bases, which don't have the human player's gear.
+// Grundverteidigung (6.10.): mindestens GRUND_VERT_STUFE je Stufe (Stufe 1: 50, Stufe 10: 500 – wie neutrale Basen außen 10–300),
+// ab etwa Stufe 47 wächst sie wie bisher (× WIRTSCHAFT_KOSTEN: Stufe 60 ~46.000) – vorher stand sie bis Stufe 10 bei 1
+const GRUND_VERT_STUFE = 50;
 function baseDefenseForLevel(level) {
-    return wirtK(BASE_DEFENSE * Math.pow(DEFENSE_GROWTH, Math.min(level, MAX_BASE_LEVEL) - 1));   // (× WIRTSCHAFT_KOSTEN)
+    const L = Math.max(1, Math.min(level, MAX_BASE_LEVEL));
+    return Math.max(GRUND_VERT_STUFE * L, wirtK(BASE_DEFENSE * Math.pow(DEFENSE_GROWTH, L - 1)));
 }
 function defenseForLevel(level) {
     return Math.round(baseDefenseForLevel(level) * (1 + armorDefensePct() / 100));
@@ -376,12 +385,14 @@ function defenseForLevel(level) {
 // Ertrag je Produktions-Tick (1 s, mit „Geschwindigkeit“ kürzer): der runde Wert der Stufe kommt pro STUNDE (Alexander 5.10.) –
 // je Tick also ein Bruchteil, die Reste sammeln prodCarry/botProdCarry (06d), damit nichts verloren geht
 function coinsPerTick(level) {
-    return Math.round(BASE_COINS * Math.pow(PRODUCTION_GROWTH, Math.min(level, MAX_BASE_LEVEL) - 1)) * WIRTSCHAFT_ERTRAG;
+    return Math.round(BASE_COINS * Math.pow(PRODUCTION_GROWTH, Math.min(level, MAX_BASE_LEVEL) - 1)) * WIRTSCHAFT_ERTRAG * MUENZ_FAKTOR;   // (Stufe 1: 10.000 / Std.)
 }
 function troopsPerTick(level) {
     return Math.round(BASE_TROOPS * Math.pow(PRODUCTION_GROWTH, Math.min(level, MAX_BASE_LEVEL) - 1)) * WIRTSCHAFT_ERTRAG;
 }
-function upgradeCostRoh(level) { return wirtK(UPGRADE_BASE_COST * Math.pow(UPGRADE_COST_GROWTH, level - 1)); }   // ohne Rabatt (× WIRTSCHAFT_KOSTEN)
+// Basis aufwerten (ohne Rabatt): Münzen wirtM, gerundet, nie unter AUFWERTEN_MIN (6.10.: sonst „67 Münzen“ bei einem Ertrag von 10.000 / Std.)
+const AUFWERTEN_MIN = 1000;
+function upgradeCostRoh(level) { return Math.max(AUFWERTEN_MIN, niceRoundW(wirtM(UPGRADE_BASE_COST * Math.pow(UPGRADE_COST_GROWTH, level - 1)))); }
 function upgradeCost(level) {                    // Wochen-Event „Bauherr“: 20 % günstiger
     let r = 1; try { if (evThemaAktiv('bau')) r = .8; } catch (e) {}
     return Math.round(upgradeCostRoh(level) * r);
@@ -565,13 +576,16 @@ var gateCfg = null;
 function loadGateCfg() { if (!gateCfg) { try { gateCfg = JSON.parse(store.get('openWaterGateCfg')) || {}; } catch (e) { gateCfg = {}; } } return gateCfg; }
 function gateSettings(gate) { return Object.assign({ toll: gate.toll, closed: false }, loadGateCfg()[gate.id] || {}); }
 function setGateSettings(gateId, patch) { const c = loadGateCfg(); c[gateId] = Object.assign(gateSettings(islandById[gateId]), patch); store.set('openWaterGateCfg', JSON.stringify(c)); }
-const GATE_TOLLS = [0, 0.1, 0.25, 0.5, 1, 2], TOLL_MIN = 100, TOLL_MAX = 1e6;   // per troop, at least 100 and never more than 1 Mio. per march (beides × WIRTSCHAFT_KOSTEN)
+// Maut je Truppe: die Stufe (gespeichert wie vorher 0,1 … 2) × MUENZ_FAKTOR = 100 … 2.000 Münzen; je Marsch mindestens 100 und
+// höchstens 1 Mio. (beides wirtM, gerundet: 56 … 560.000)
+const GATE_TOLLS = [0, 0.1, 0.25, 0.5, 1, 2], MAUT_MIN = niceRoundW(wirtM(100)), MAUT_MAX = niceRoundW(wirtM(1e6));
+const mautJeTruppe = t => t * MUENZ_FAKTOR;
 function tollFor(fromLm, toLm, troops, payer, targetId, cut) {  // → { gate, cost, closed } (free for the gate's owner - and for an attack ON the gate itself); cut = a hero's −% Maut
     const gate = gateOnRoute(fromLm, toLm);
     if (!gate || islandOwnerOf(gate.id) === payer || gate.id === targetId || bundFreund(islandOwnerOf(gate.id), payer)) return { gate, cost: 0 };   // Bündnis: Tore der Mitglieder sind für alle Mitglieder frei und offen
     const cfg = gateSettings(gate);
     if (!islandOwnerOf(gate.id) || cfg.closed) return { gate, cost: Infinity, closed: true };   // unowned gates are shut
-    return { gate, cost: cfg.toll > 0 ? Math.round(Math.max(wirtK(TOLL_MIN), Math.min(wirtK(TOLL_MAX), Math.round(Math.max(0, troops) * cfg.toll))) * (1 - Math.min(90, cut || 0) / 100)) : 0 };   // (ganze Münzen – auch mit Helden-Rabatt)
+    return { gate, cost: cfg.toll > 0 ? Math.round(Math.max(MAUT_MIN, Math.min(MAUT_MAX, Math.round(Math.max(0, troops) * mautJeTruppe(cfg.toll)))) * (1 - Math.min(90, cut || 0) / 100)) : 0 };   // (ganze Münzen – auch mit Helden-Rabatt)
 }
 function payToll(fromLm, toLm, troops, payer, targetId, cut) { // payer: 'player' | bot id → false when it can't pay
     const { gate, cost, closed } = tollFor(fromLm, toLm, troops, payer, targetId, cut);
@@ -1302,10 +1316,10 @@ const SKILL_DEFS = {
   speed:       { icon: 'hourglass', name: 'Geschwindigkeit',    desc: 'schnellere Produktion und Märsche', msPerLevel: 40, max: 10 },
   troops:      { icon: 'troops',    name: 'Truppenherstellung', desc: 'Truppenproduktion', pct: 3, max: 50 },
   defense:     { icon: 'defense',   name: 'Verteidigung',       desc: 'jede Basis verteidigt mit mehr Truppen', defPct: 3, max: 50 },
-  defenseGold: { icon: 'shield',    name: 'Verteidigung: Gold', desc: 'Gold für getötete Truppen', rate: 0.3 * WIRTSCHAFT_KOSTEN, max: 50 },
+  defenseGold: { icon: 'shield',    name: 'Verteidigung: Gold', desc: 'Gold für getötete Truppen', rate: 0.3 * WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR, max: 50 },
   attack:      { icon: 'attack',    name: 'Angriff',            desc: 'mehr Truppen bei jedem Angriff', atkPct: 3, max: 50 },
-  attackGold:  { icon: 'sell',      name: 'Angriff: Gold',      desc: 'Gold für getötete Truppen', rate: 0.3 * WIRTSCHAFT_KOSTEN, max: 50 }
-};   // (Gold je Truppe × WIRTSCHAFT_KOSTEN wie alle Münzen außerhalb der Produktion – Kosten sind ÷ 1.800)
+  attackGold:  { icon: 'sell',      name: 'Angriff: Gold',      desc: 'Gold für getötete Truppen', rate: 0.3 * WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR, max: 50 }
+};   // (Gold je Truppe × WIRTSCHAFT_KOSTEN × MUENZ_FAKTOR wie alle Münzen außerhalb der Produktion: je Stufe ~0,17 Münzen je Kill)
 const EQUIPMENT_BASE_COST = 100;
 
 // ===== Shop: gem-bought crates, rarity items, combine, salvage =====
@@ -1521,7 +1535,8 @@ function xpNeededForLevel(level) {
     return Math.round(50 * Math.pow(1.3, Math.min(level, 400) - 1));
 }
 // Level rewards: small at the start, 2 Mio. troops at level 30, then linear growth – × WIRTSCHAFT_KOSTEN (5.10.: heute 1.100 bei Stufe 30).
-// Nie unter STUFE_LOHN_MIN (6.10.: „+1 Münze, +1 Truppe“ sah kaputt aus – 10 ist etwa eine Stunde Ertrag einer Basis)
+// Nie unter STUFE_LOHN_MIN (6.10.: „+1 Münze, +1 Truppe“ sah kaputt aus – 10 ist etwa eine Stunde Ertrag einer Basis); Münzen
+// × MUENZ_FAKTOR (mindestens 10.000, Stufe 30: 250.000)
 const STUFE_LOHN_MIN = 10;
 function niceRound(n) {
     if (n < 100) return Math.round(n);
@@ -1532,7 +1547,7 @@ function levelRewardTroops(level) {
     return niceRound(Math.max(STUFE_LOHN_MIN, wirtK(level <= 30 ? 2000000 * Math.pow(level / 30, 3) : 2000000 + (level - 30) * 100000)));
 }
 function levelRewardCoins(level) {
-    return niceRound(Math.max(STUFE_LOHN_MIN, wirtK(level <= 30 ? 500 * level * level : 450000 + (level - 30) * 20000)));
+    return niceRound(Math.max(STUFE_LOHN_MIN * MUENZ_FAKTOR, wirtM(level <= 30 ? 500 * level * level : 450000 + (level - 30) * 20000)));
 }
 function levelRewardGems(level) {
     return level % 10 === 0 ? 10 : level % 5 === 0 ? 5 : 0;
@@ -2100,7 +2115,7 @@ function spaeherBlickHtml(s) {
     const A = s.auf || {}, R = A.roh;
     const gear = s.gear ? Object.keys(EQUIPMENT_DEFS).map(k => { const g = s.gear[k]; return '<div class="logLine"><span>' + EQUIPMENT_DEFS[k].name + '</span><span' + (g ? ' style="color:' + RARITY_DEFS[g[0]].color + '"' : '') + '>' +
         (g ? RARITY_DEFS[g[0]].label + ' · St. ' + g[1] + (g[2] ? ' · ' + g[2] + '★' : '') : '—') + '</span></div>'; }).join('') : '';
-    const beute = (v, sch) => fmtCompact(v) + (R && v > sch ? ' <small>(' + fmtCompact(Math.floor((v - sch) * HAUPT_BEUTE)) + ' zu holen an der Hauptstadt)</small>' : ''), schR = R ? R.schutzR || R.schutz * ROH_FAKTOR : 0;   // (Holz/Stein/Eisen: Schutz × ROH_FAKTOR)
+    const beute = (v, sch) => fmtCompact(v) + (R && v > sch ? ' <small>(' + fmtCompact(Math.floor((v - sch) * HAUPT_BEUTE)) + ' zu holen an der Hauptstadt)</small>' : ''), schR = R ? R.schutzR || R.schutz * ROH_JE_MUENZE : 0;   // (Holz/Stein/Eisen: Schutz × ROH_JE_MUENZE)
     return '<details><summary>Spähbericht</summary><div class="logSide" style="margin-top:6px">' +
         zeile('Herr', escapeHtml(s.name) + ' · Spieler-Stufe ' + fmtNum(s.lvl) + (s.titel ? ' · ' + escapeHtml(s.titel) : '')) +
         (s.bl ? zeile('Basis', 'Stufe ' + fmtNum(s.bl)) : '') +
@@ -4852,15 +4867,15 @@ function attackFlatBonus(troops) {
 function goldPerKillRate() {
     return (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate;
 }
-function killGoldRate(who, hx) {               // "Angriff: Gold" per enemy killed; a hero's +X % Gold: X % on it, and X % of a coin per kill of his own (× WIRTSCHAFT_KOSTEN wie der Satz)
+function killGoldRate(who, hx) {               // "Angriff: Gold" per enemy killed; a hero's +X % Gold: X % on it, and X % of a coin per kill of his own (× WIRTSCHAFT_KOSTEN × MUENZ_FAKTOR wie der Satz)
     const g = hx ? (hx.gold || 0) / 100 : 0;
-    return (who === 'player' ? goldPerKillRate() : botGoldRate(who, 'attackGold')) * (1 + g) + g * WIRTSCHAFT_KOSTEN;
+    return (who === 'player' ? goldPerKillRate() : botGoldRate(who, 'attackGold')) * (1 + g) + g * WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR;
 }
 function defGoldRate(who) { return who === 'player' ? (skills.defenseGold || 0) * SKILL_DEFS.defenseGold.rate : botGoldRate(who, 'defenseGold'); }
 function payGold(who, n) { n = Math.round(n); if (n <= 0 || !who) return 0; if (who === 'player') inboxAdd({ src: 'fight', coins: n }); else botCoins[who] = (botCoins[who] || 0) + n; return n; }
 function fieldGold(aWho, dWho, fb, aHx, dHx) {  // fights in the open pay like fights for bases: the attacker per enemy killed, the defender per attacker killed (+ each side's hero)
     const g = dHx ? (dHx.gold || 0) / 100 : 0;
-    return { a: payGold(aWho, fb.dLoss * killGoldRate(aWho, aHx)), d: payGold(dWho, fb.aLoss * (defGoldRate(dWho) * (1 + g) + g * WIRTSCHAFT_KOSTEN)) };
+    return { a: payGold(aWho, fb.dLoss * killGoldRate(aWho, aHx)), d: payGold(dWho, fb.aLoss * (defGoldRate(dWho) * (1 + g) + g * WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR)) };
 }
 // "Geschwindigkeit" skill: shortens the production tick interval.
 function productionTickMs() {
@@ -4871,7 +4886,7 @@ function skillBonusText(def, level) {
     if (def.atkPct) return '+' + fmtNum(level * def.atkPct) + ' % Truppen';
     if (def.defPct) return '+' + fmtNum(level * def.defPct) + ' % Truppen';
     if (def.flat) return '+' + fmtNum(level * def.flat) + (def.unit || '');
-    if (def.rate) return '+' + (level * def.rate * 1000).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' Gold je 1.000 Kills';
+    if (def.rate) return '+' + fmtNum(Math.round(level * def.rate * 1000)) + ' Gold je 1.000 Kills';   // (Münzen × MUENZ_FAKTOR: Stufe 1 = 167)
     if (def.msPerLevel) { const l = Math.min(level, def.max || level); return '+' + fmtNum(Math.round(1000 / (1000 - l * def.msPerLevel) * 100 - 100)) + ' % Produktion, +' + fmtNum(l * 5) + ' % Marschtempo' + (def.max && level >= def.max ? ' (max.)' : ''); }
     return '';
 }
@@ -5100,7 +5115,7 @@ function renderProfile(live) {                  // live = the per-second refresh
     setText(document.getElementById('xpLevelNum'), playerLvl);
     setText(document.getElementById('xpNums'), fmtNum(playerXp) + ' / ' + fmtNum(xpNeeded) + ' XP');
     document.getElementById('xpFill').style.width = Math.min(100, Math.round(playerXp / xpNeeded * 100)) + '%';
-    const nx = playerLvl + 1, nM = levelRewardCoins(nx), nT = levelRewardTroops(nx), nG = levelRewardGems(nx);   // Belohnung beim nächsten Aufstieg (1 Münze, 2 Münzen …)
+    const nx = playerLvl + 1, nM = levelRewardCoins(nx), nT = levelRewardTroops(nx), nG = levelRewardGems(nx);   // Belohnung beim nächsten Aufstieg
     liveHtml(document.getElementById('xpNext'), 'Belohnung für Stufe ' + nx + ': <b>+' + fmtCompact(nM) + '</b> ' + (nM === 1 ? 'Münze' : 'Münzen') + ', <b>+' + fmtCompact(nT) + '</b> ' + (nT === 1 ? 'Truppe' : 'Truppen') +
         (nG ? ', <b>+' + nG + '</b> ' + (nG === 1 ? 'Edelstein' : 'Edelsteine') : ''));
 
@@ -5565,7 +5580,7 @@ const ACHIEVEMENTS = [   // the old ids stay (claims are kept); the tiers of one
     { id: 'gate1',   name: 'Torhüter',         icon: 'lock',    desc: 'Halte ein Tor.',                         goal: 1,    k: 'gates', gems: 50 },
     { id: 'gate3',   name: 'Herr der Brücken', icon: 'lock',    desc: 'Halte 3 Tore gleichzeitig.',             goal: 3,    k: 'gates', gems: 250 },
     { id: 'toll10',  name: 'Brückengänger',    icon: 'coin',    desc: 'Zahl 10 Mal Maut an einem Tor.',         goal: 10,   k: 'tolls', gems: 40 },
-    { id: 'tollin',  name: 'Zöllner',          icon: 'coin',    desc: 'Nimm ' + fmtNum(wirtK(100000)) + ' Münzen Maut ein.', goal: wirtK(100000), k: 'tollCoins', gems: 300 },   // (Maut und Krankenhaus-Platz × WIRTSCHAFT_KOSTEN – die Ziele mit)
+    { id: 'tollin',  name: 'Zöllner',          icon: 'coin',    desc: 'Nimm ' + fmtNum(niceRound(wirtM(1e5))) + ' Münzen Maut ein.', goal: niceRound(wirtM(1e5)), k: 'tollCoins', gems: 300 },   // (Maut und Krankenhaus-Platz × WIRTSCHAFT_KOSTEN – die Ziele mit)
     { id: 'army5',   name: 'Feldschlacht',     icon: 'troops',  desc: 'Gewinn 5 Kämpfe mit Armeen im Feld.',    goal: 5,    k: 'armyWins', gems: 80 },
     { id: 'army50',  name: 'Heerführer',       icon: 'troops',  desc: 'Gewinn 50 Kämpfe mit Armeen im Feld.',   goal: 50,   k: 'armyWins', gems: 400 },
     { id: 'hero1',   name: 'Erster Held',      icon: 'profile', desc: 'Schalte einen Helden frei.',             goal: 1,    k: 'heroes', gems: 30 },
@@ -6241,7 +6256,7 @@ const kampflogUmbauen = (function () {
         box.insertAdjacentHTML('beforeend', '<div class="kl-rss"><div class="logGearHead">Rohstoffe</div>' +
             [['g', 'Gold'], ['h', 'Holz'], ['s', 'Stein'], ['e', 'Eisen']].map(([k, n]) => { const v = roh[k] || 0;
                 return zl(n, (v > 0 ? '+' : v < 0 ? '−' : '') + fmt(Math.abs(v)), v > 0 ? ' buff' : v < 0 ? ' buff malus' : ''); }).join('') +
-            (schutz ? zl('<small class="logSrc">Burg schützt ' + fmt(schutz) + ' Gold · ' + fmt(schutz * ROH_FAKTOR) + ' je Rohstoff</small>', '') : '') + '</div>');
+            (schutz ? zl('<small class="logSrc">Burg schützt ' + fmt(schutz) + ' Gold · ' + fmt(schutz * ROH_JE_MUENZE) + ' je Rohstoff</small>', '') : '') + '</div>');
         return box;
     }
     const rohTeil = (beute, anteil, vz) => ({ g: vz * Math.round(beute.g * anteil), h: vz * Math.round(beute.h * anteil), s: vz * Math.round(beute.s * anteil), e: vz * Math.round(beute.e * anteil) });
@@ -6762,7 +6777,7 @@ function passXp(v) {
 }
 function passGive(who, r) {                               // one reward to anyone (you or the others) - returns the text for the hint
     const b = who === 'player' ? null : loadBotState()[who]; if (who !== 'player' && !b) return ''; const n = r.n || 1;
-    if (r.k === 'coins') { const c = Math.max(wirtK(5000), Math.round(hourProduction(who).coins)) * n; if (b) botCoins[who] = (botCoins[who] || 0) + c; else coins += c; return '+' + fmtCompact(c) + ' Münzen'; }
+    if (r.k === 'coins') { const c = Math.max(wirtM(5000), Math.round(hourProduction(who).coins)) * n; if (b) botCoins[who] = (botCoins[who] || 0) + c; else coins += c; return '+' + fmtCompact(c) + ' Münzen'; }
     if (r.k === 'gems') { if (b) b.gems += n; else gems += n; return '+' + n + ' Edelsteine'; }
     if (r.k === 'tp') { if (b) b.tp = (b.tp || 0) + n; else { throneState.pts = (throneState.pts || 0) + n; saveThrone(); } return '+' + n + ' Thron-Punkte'; }
     if (r.k === 'shards') { const h = heroGrantShards(who, n); if (h) return '+' + n + ' Splitter ' + h.name; if (b) b.gems += n * 20; else gems += n * 20; return '+' + n * 20 + ' Edelsteine (alle Helden voll)'; }
@@ -6794,7 +6809,7 @@ function passBuy() {
 }
 function passCellHtml(r, hp, got) {                            // icon + amount of one reward
     const k = r.k, n = r.n || 1, row = (ic, b, s, cls) => '<span class="pc-ic' + (cls ? ' ' + cls : '') + '">' + ic + '</span><span class="pc-t"><b>' + b + '</b><small>' + s + '</small></span>';
-    if (k === 'coins') return row(icon('coin', 'ico-coin'), fmtCompact(Math.max(wirtK(5000), Math.round(hp.coins)) * n), 'Münzen');
+    if (k === 'coins') return row(icon('coin', 'ico-coin'), fmtCompact(Math.max(wirtM(5000), Math.round(hp.coins)) * n), 'Münzen');
     if (k === 'gems') return row(icon('gem', 'ico-gem'), '+' + n, 'Edelsteine');
     if (k === 'tp') return row(icon('crown', 'ico-tp'), '+' + n, 'Thron-Punkte');
     if (k === 'shards') return row(icon('star', 'ico-shard'), '+' + n, 'Helden-Splitter');
@@ -6990,9 +7005,10 @@ function hourProduction(who) {                       // what an empire makes in 
     return { coins: c * k, troops: t * k };
 }
 // Münzen/Truppen wie Händler und Markt (Alexander 6.10.): Stunden-Produktion × Kosten ÷ Ertrag (= 2 Stunden), Mindestwerte × WIRTSCHAFT_KOSTEN
+// (Münzen: wirtM)
 const THRONE_STUNDEN = WIRTSCHAFT_KOSTEN / WIRTSCHAFT_ERTRAG;
 function throneAmount(who, id) { const hp = hourProduction(who);
-    return id === 'coins' ? Math.max(wirtK(5000), Math.round(hp.coins * THRONE_STUNDEN)) : id === 'troops' ? Math.max(wirtK(1000), Math.round(hp.troops * THRONE_STUNDEN)) : id === 'gems' ? 100 : 1; }
+    return id === 'coins' ? Math.max(wirtM(5000), Math.round(hp.coins * THRONE_STUNDEN)) : id === 'troops' ? Math.max(wirtK(1000), Math.round(hp.troops * THRONE_STUNDEN)) : id === 'gems' ? 100 : 1; }
 function throneGive(who, id) {                        // hands one offer over; returns what it was, for the hint
     const n = throneAmount(who, id), b = who === 'player' ? null : loadBotState()[who];
     if (id === 'coins') { if (b) botCoins[who] = (botCoins[who] || 0) + n; else coins += n; return '+' + fmtCompact(n) + ' Münzen'; }
@@ -7146,7 +7162,7 @@ function bountyGems() { const b = bountyState; return b.ruler && b.ruler === rul
 function bountyGrow() {
     const r = rulerOwner(); bountyCheck(r); if (!r) return;
     const b = bountyState, hc = hourProduction(r).coins;
-    b.gems = Math.min(BOUNTY_GEMS_MAX, (b.gems || 0) + BOUNTY_GEMS); b.coins = Math.min(Math.max(wirtK(1e4), hc * BOUNTY_COIN_MAX_H), (b.coins || 0) + Math.max(wirtK(500), hc * BOUNTY_COIN_H)); saveBounty();   // (Mindestwerte × WIRTSCHAFT_KOSTEN)
+    b.gems = Math.min(BOUNTY_GEMS_MAX, (b.gems || 0) + BOUNTY_GEMS); b.coins = Math.min(Math.max(wirtM(1e4), hc * BOUNTY_COIN_MAX_H), (b.coins || 0) + Math.max(wirtM(500), hc * BOUNTY_COIN_H)); saveBounty();   // (Mindestwerte in Münzen: wirtM)
 }
 function bountyPay(who, g, c) {
     if (who !== 'player') { botBountyReward(who, g, c); return; }
@@ -8458,12 +8474,12 @@ var CITY_BUILDINGS = [
 // Angreifer, bekommt er von JEDEM Rohstoff einen kleinen Teil über dem Schutz (HAUPT_BEUTE) und die Hauptstadt brennt (nur zu
 // sehen). Gewinnt der Verteidiger, bekommt der Angreifer nichts. Rohstoffe gibt es nur aus der Hauptstadt.
 const HAUPT_BEUTE = .1;                              // Hauptstadt: 10 % von jedem Rohstoff über dem Schutz – klein, damit man oft angreifen muss
-const schutzVon = who => AUF ? AUF.burgSchutz(who) : 0;   // Gold – Holz/Stein/Eisen × ROH_FAKTOR (6.10.: Rohstoffe in RoK-Größe)
+const schutzVon = who => AUF ? AUF.burgSchutz(who) : 0;   // Gold – Holz/Stein/Eisen × ROH_JE_MUENZE (6.10.: Rohstoffe und Münzen in RoK-Größe)
 function plunderOf(who, capital) {                  // { loot (Gold), roh: {h, s, e} (nur Hauptstadt), safe }
     const have = Math.max(0, who === 'player' ? coins : botCoins[who] || 0), safe = schutzVon(who);
     if (capital) { const r = AUF ? AUF.rohVon(who) : null, roh = { h: 0, s: 0, e: 0 };
-        if (r) for (const x of ['h', 's', 'e']) roh[x] = Math.floor(Math.max(0, (r[x] || 0) - safe * ROH_FAKTOR) * HAUPT_BEUTE);
-        return { loot: Math.floor(Math.max(0, have - safe) * HAUPT_BEUTE), roh, safe }; }   // (safe: der Burg-Schutz für Gold – so steht er im Bericht, je Rohstoff × ROH_FAKTOR)
+        if (r) for (const x of ['h', 's', 'e']) roh[x] = Math.floor(Math.max(0, (r[x] || 0) - safe * ROH_JE_MUENZE) * HAUPT_BEUTE);
+        return { loot: Math.floor(Math.max(0, have - safe) * HAUPT_BEUTE), roh, safe }; }   // (safe: der Burg-Schutz für Gold – so steht er im Bericht, je Rohstoff × ROH_JE_MUENZE)
     return { loot: 0, safe: 0 };   // Beute (Gold, Holz, Stein, Eisen) gibt es NUR an der Hauptstadt (Alexander 4.10.)
 }
 function plunderMove(from, to, loot, roh) {         // Gold (und bei der Hauptstadt Holz, Stein, Eisen) wechselt den Besitzer
@@ -8505,9 +8521,9 @@ const cityBuildOf = (c, id) => c.builds.find(b => b.id === id) || null;
 function saveCity() { store.set('openWaterCity', JSON.stringify(cityState)); }
 const KEEP_DEF = { id: 'keep', name: 'Burg', icon: 'castle' };   // die Burg als „Gebäude“ (Bauarbeiter, Bauzeit) – Paket D
 function cityDef(id) { return id === 'keep' ? KEEP_DEF : CITY_BUILDINGS.find(b => b.id === id); }
-function cityCost(id, level) {                    // coins to go from `level` to level + 1 (× WIRTSCHAFT_KOSTEN)
-    if (id === 'keep') return niceRound(wirtK(2000 * Math.pow(1.85, level - 1)));   // Burg-Stufe (dazu Rohstoffe: aufbau.js)
-    return niceRound(wirtK(500 * Math.pow(1.9, level)));
+function cityCost(id, level) {                    // coins to go from `level` to level + 1 (Münzen: wirtM)
+    if (id === 'keep') return niceRound(wirtM(2000 * Math.pow(1.85, level - 1)));   // Burg-Stufe (dazu Rohstoffe: aufbau.js)
+    return niceRound(wirtM(500 * Math.pow(1.9, level)));
 }
 function cityTimeRoh(id, level) {                 // build time for level -> level + 1 – auch der Weltrechner prüft damit (Hauptbuch)
     // fast at first (20 s … 1,5 h up to level 12), then +20 % per level, never more than 7 days - like the big strategy games
@@ -9291,7 +9307,7 @@ function hospitalLevel() { return loadCity().levels.hospital || 0; }
 function hospitalPct() { return Math.min(60, hospitalLevel() * 5) + (AUF ? AUF.lazarettPlus('player') : 0); }   // (+ Forschung Krankenhaus)
 function hospitalPlatz(l) { return l ? wirtK(1e6 * Math.pow(1.6, l - 1)) : 0; }   // Platz für Verwundete bei Krankenhaus-Stufe l (für alle gleich, × WIRTSCHAFT_KOSTEN)
 function hospitalCapacity() { return hospitalPlatz(hospitalLevel()); }
-const HEAL_COIN_PER_TROOP = 0.1;
+const HEAL_COIN_PER_TROOP = 0.1 * MUENZ_FAKTOR;   // 100 Münzen je Truppe (6.10.: Münzen × MUENZ_FAKTOR)
 function hospitalTake(fallen, pct) {              // Krankenhaus: part of your fallen (attack won or lost, or defending) are only wounded → how many
     if (!hospitalLevel() || fallen <= 0) return 0;
     const c = loadCity(), room = Math.max(0, hospitalCapacity() - c.wounded), w = Math.min(room, Math.floor(fallen * (pct ?? hospitalPct()) / 100));
@@ -10175,7 +10191,7 @@ function pickupAmount(kind) {
     const L = Math.max(playerLvl, 1);
     if (kind === 'gem') return 1 + Math.floor(Math.random() * 3);
     if (kind === 'troops') return Math.max(wirtK(100), niceRound(levelRewardTroops(Math.max(L, 2)) * 0.05));   // (Stufen-Belohnung und Mindestwert × WIRTSCHAFT_KOSTEN)
-    return Math.max(wirtK(200), niceRound(levelRewardCoins(L) * 0.1));
+    return Math.max(wirtM(200), niceRound(levelRewardCoins(L) * 0.1));   // (Münzen: wirtM)
 }
 function pickupScreenPos(p) { return { x: p.x * mapState.zoom + mapState.offsetX, y: p.y * mapState.zoom + mapState.offsetY }; }
 function trySpawnPickup() {
@@ -10322,9 +10338,10 @@ const fArt = (K, fall) => ({ dat: K.g === 'm' ? 'dem' : 'der', akk: K.g === 'm' 
 // Sammeln wie bei RoK (2.10.): ein Feld leert sich in fester Zeit – außen 1 Std., ganz innen 4 Std. –, egal wie viele Truppen.
 // Die Truppen bestimmen nur, wie viel sie tragen können. Gems: außen 20, innen ~150 (vorher bis 18.000 in unter einer Minute).
 // Gold, Holz, Stein, Eisen: × WIRTSCHAFT_ERTRAG wie jede Produktion (5.10.: was vorher in einer Sekunde kam, kommt in einer Stunde) – Gems bleiben.
-// 6.10. (Z1): Holz/Stein/Eisen dazu × ROH_FAKTOR (RoK-Größe); innen nur mit der Wurzel des Ring-Faktors (Ring 2 sonst 300× außen)
+// 6.10. (Z1): Holz/Stein/Eisen dazu × ROH_FAKTOR, Gold × MUENZ_FAKTOR (RoK-Größe; die Traglast je Truppe bleibt – außen braucht
+// eine volle Goldmine ~1.100 Truppen wie ein Holzfeld ~2.000); innen nur mit der Wurzel des Ring-Faktors (Ring 2 sonst 300× außen)
 const fieldCapFor = (kind, rm) => kind === 'gem' ? Math.round(FIELD_KINDS.gem.base * Math.pow(rm, .35))
-    : Math.max(1, Math.round(FIELD_KINDS[kind].base * Math.sqrt(rm) * WIRTSCHAFT_ERTRAG * (FIELD_KINDS[kind].roh ? ROH_FAKTOR : 1)));
+    : Math.max(1, Math.round(FIELD_KINDS[kind].base * Math.sqrt(rm) * WIRTSCHAFT_ERTRAG * (FIELD_KINDS[kind].roh ? ROH_FAKTOR : MUENZ_FAKTOR)));
 const fieldDauerSec = rm => 3600 * (1 + 3 * Math.log(Math.max(1, rm)) / Math.log(300));
 const FIELD_REGEN_MS = 60 * 60000;
 const resFields = (() => {
@@ -10535,7 +10552,7 @@ document.getElementById('fieldSheet').addEventListener('click', e => {
 // A camp of level N only after N-1 (level 1 always), 20 camp wins a day (reset at midnight) - the same for you and every other player.
 const BARB_MAX_L = 25, BARB_DAY = 20, BARB_WANT = 110, DBOSS_HITS = 10, DBOSS_CAP = .05;   // camps on the map · a boss hit takes at most 5 % of its life
 const barbTroopsOf = L => niceRound(wirtK(2000 * Math.pow(2, L - 1)));                  // × WIRTSCHAFT_KOSTEN (5.10.): 1 at 1, ~570 at 10, ~19 Mio. at 25 (vorher 2 Tsd. · 1 Mio. · 34 Mrd.)
-const barbLootOf = L => niceRound(barbTroopsOf(L) * .6 + wirtK(500 * L * L));             // coins for a win (+ Angriff: Gold per warrior)
+const barbLootOf = L => niceRound(barbTroopsOf(L) * .6 * MUENZ_FAKTOR + wirtM(500 * L * L));   // coins for a win (+ Angriff: Gold per warrior) – Münzen × MUENZ_FAKTOR
 const barbTier = L => L >= 21 ? 4 : L >= 15 ? 3 : L >= 8 ? 2 : 1;                         // badge colour like the gear rarities
 const DBOSS_KINDS = [{ k: 'kraken', name: 'Kraken Thalor', col: '#3fb0c4' }, { k: 'giant', name: 'Steinriese Gorm', col: '#b39b72' }, { k: 'dragon', name: 'Feuerdrache Ignar', col: '#ee6a34' }, { k: 'wraith', name: 'Nebelkönig Morvan', col: '#9d86ea' }];
 const DBOSS_PRIZE = [{ gems: 300, crate: 3, sh: 30 }, { gems: 200, crate: 3, sh: 20 }, { gems: 150, crate: 3, sh: 15 }, { gems: 80, crate: 2, sh: 10 }, { gems: 30, crate: -1, sh: 5 }];   // 1 · 2 · 3 · 4-10 · everyone else who hit it
@@ -10692,7 +10709,7 @@ function dbossHit(m, now) {                         // every attack takes life o
     const dmg = Math.max(1, Math.min(b.hp, Math.round((m.troops + heroGefOf(h, m.troops)) * fa), Math.round(b.max * DBOSS_CAP)));
     const used = Math.min(m.troops, dmg / fa), loss = Math.min(m.troops, Math.round(used * .25 * (1 - Math.min(90, fieldShield(who) + h.loss) / 100))), wounded = fieldHurt(who, loss, hx);   // a quarter of those who struck
     const hp0 = b.hp; b.hp -= dmg; b.dmg[who] = (b.dmg[who] || 0) + dmg; evPunkte('boss', who, 30 * dmg / (b.max * DBOSS_CAP));   // Boss-Jagd
-    const gold = payGold(who, dmg * .3 * WIRTSCHAFT_KOSTEN * (1 + h.gold / 100));   // (Gold je Schaden × WIRTSCHAFT_KOSTEN wie das Kampf-Gold)
+    const gold = payGold(who, dmg * .3 * WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR * (1 + h.gold / 100));   // (Gold je Schaden wie das Kampf-Gold)
     barbHome(m, m.troops - loss, now);
     if (isP) {
         const rk = dbossRanks(b), gef = heroGefOf(h, m.troops);
@@ -11083,7 +11100,7 @@ function invTreffer(m, now) {                        // deine (oder ihre) Truppe
     const I = invAktiv(now), a = I && I.armies.find(x => x.id === m.tid), who = m.who, isP = who === 'player';
     if (!a) { barbHome(m, m.troops, now); if (isP) flashHint('Die Barbaren-Armee ist schon weg – deine Truppen kehren um.', 3500); return; }
     const hx = heroFieldFx(who, m.hero, {}, m.hero2), fb = barbFight(who, m.troops, hx, a.t), wounded = fieldHurt(who, fb.loss, hx);
-    const gold = payGold(who, fb.kill * .3 * WIRTSCHAFT_KOSTEN * (1 + (hx || HX0).gold / 100)), pts = fb.won ? INV_PTS_SIEG : Math.max(1, Math.round(INV_PTS_SIEG * fb.kill / a.max));
+    const gold = payGold(who, fb.kill * .3 * WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR * (1 + (hx || HX0).gold / 100)), pts = fb.won ? INV_PTS_SIEG : Math.max(1, Math.round(INV_PTS_SIEG * fb.kill / a.max));
     if (fb.won) I.armies = I.armies.filter(x => x !== a); else a.t = Math.max(1, Math.round(a.t - fb.kill));
     invPunkteDazu(I, who, pts); evPunkte('krieg', who, fb.kill / WO_KILL_PER); goalBump(who, 'barb');
     barbHome(m, m.troops - fb.loss, now); evDirty = true;
@@ -11146,7 +11163,7 @@ function drTreffer(m, now) {                         // wie beim Tagesboss: Scha
     const dmg = Math.max(1, Math.min(D.hp, Math.round((m.troops + heroGefOf(h, m.troops)) * fa), Math.round(D.max * DR_CAP)));
     const used = Math.min(m.troops, dmg / fa), loss = Math.min(m.troops, Math.round(used * .33 * (1 - Math.min(90, fieldShield(who) + h.loss) / 100))), wounded = fieldHurt(who, loss, hx);
     D.hp -= dmg; D.dmg[who] = (D.dmg[who] || 0) + dmg; evDirty = true;
-    const gold = payGold(who, dmg * .2 * WIRTSCHAFT_KOSTEN * (1 + h.gold / 100));   // (Gold je Schaden × WIRTSCHAFT_KOSTEN wie das Kampf-Gold)
+    const gold = payGold(who, dmg * .2 * WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR * (1 + h.gold / 100));   // (Gold je Schaden wie das Kampf-Gold)
     evPunkte('boss', who, 30 * dmg / (D.max * DR_CAP));
     barbHome(m, m.troops - loss, now);
     const rk = evRang(D.dmg), pl = rk.findIndex(e => e[0] === who) + 1;
@@ -11974,7 +11991,7 @@ multiAttackConfirmBtn.addEventListener('click', () => {
 // auf einen freien Zufallsplatz am Rand (wie der Startplatz eines neuen Spielers). Mitspieler genau wie echte Spieler.
 // Der eigene Spielstand eines echten Spielers übernimmt den Reset über die Nachricht „saison“ (unten) → Neuladen → 01a-grundlagen.js.
 // Umstellung auf „pro Stunde“ (Alexander 5.10., 11b A): der ERSTE Reset danach rechnet beim Weltrechner die Münz-Töpfe des Hauptbuchs
-// × WIRTSCHAFT_KOSTEN um. saison.wirtAb = die erste Saison mit der neuen Wirtschaft (fehlt: noch alt). Holz/Stein/Eisen bleiben bei jedem
+// × WIRTSCHAFT_KOSTEN × MUENZ_FAKTOR um (Münzen 6.10. in normalen Zahlen). saison.wirtAb = die erste Saison mit der neuen Wirtschaft (fehlt: noch alt). Holz/Stein/Eisen bleiben bei jedem
 // Reset unverändert (Alexander 6.10.: sie sind wieder in RoK-Größe, ROH_FAKTOR).
 const SAISON_WOCHEN = 8, SAISON_STUNDE = 18, SAISON_BALD_MS = 3 * 864e5, SAISON_ANFANG_MS = 3 * 864e5;
 const SAISON_PREISE = [3000, 2000, 1500, 500, 500, 500, 500, 500, 500, 500];   // Gems für Platz 1–10 (Vorschlag, LIESMICH)
@@ -12026,7 +12043,7 @@ function saisonTop() {                                // die besten 10 nach Mach
     return l.sort((a, b) => b[1] - a[1]).slice(0, SAISON_PREISE.length);
 }
 function saisonNeu(now) {
-    const alt = saison.nr, nr = alt + 1, top = saisonTop(), wirtAb = saison.wirtAb > 0 ? saison.wirtAb : nr, f = wirtAb === nr ? WIRTSCHAFT_KOSTEN : 1;   // f: Münz-Töpfe umrechnen (nur beim ersten Reset nach der Umstellung)
+    const alt = saison.nr, nr = alt + 1, top = saisonTop(), wirtAb = saison.wirtAb > 0 ? saison.wirtAb : nr, f = wirtAb === nr ? WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR : 1;   // f: Münz-Töpfe umrechnen (nur beim ersten Reset nach der Umstellung)
     console.warn('Welt-Saison ' + alt + ' zu Ende – Saison ' + nr + ' beginnt (Top 10: ' + top.map(([w]) => (botById[w] || {}).name || w).join(', ') + ')');
     // 1) Preise: Gems ins Abholfach (Mitspieler direkt) und der Saison-Titel – feste Nummer je Saison (nie doppelt)
     top.forEach(([w], i) => evPreis(w, 'saison', 'Welt-Saison ' + alt + ' · Platz ' + (i + 1), { gems: SAISON_PREISE[i], titel: 's' + alt + 'p' + (i + 1) }, alt));
@@ -12172,14 +12189,14 @@ function islandTitle(island) {
 function gateControlsHtml(gate) {
     const cfg = gateSettings(gate);
     return '<div class="gate-ctl"><div class="gate-row"><span class="stat-l">' + icon('coin') + 'Maut pro Truppe</span><div class="seg">' +
-        GATE_TOLLS.map(v => '<button type="button" data-toll="' + v + '" class="' + (cfg.toll === v ? 'is-on' : '') + '">' + (v ? v.toLocaleString('de-DE') : 'frei') + '</button>').join('') + '</div></div>' +
+        GATE_TOLLS.map(v => '<button type="button" data-toll="' + v + '" class="' + (cfg.toll === v ? 'is-on' : '') + '">' + (v ? fmtNum(mautJeTruppe(v)) : 'frei') + '</button>').join('') + '</div></div>' +
         '<button type="button" data-gate-toggle class="btn ' + (cfg.closed ? 'btn--primary' : 'btn--secondary') + ' btn--grow">' + icon('lock') + '<span>' + (cfg.closed ? 'Tor öffnen' : 'Tor schließen') + '</span></button>' +
-        '<p class="gate-note">' + (cfg.closed ? 'Geschlossen: niemand sonst kommt über die Brücke – nur wer das Tor erobert.' : 'Offen: andere zahlen die Maut an dich – höchstens ' + fmtNum(wirtK(TOLL_MAX)) + ' Münzen pro Marsch.') + '</p></div>';
+        '<p class="gate-note">' + (cfg.closed ? 'Geschlossen: niemand sonst kommt über die Brücke – nur wer das Tor erobert.' : 'Offen: andere zahlen die Maut an dich – höchstens ' + fmtNum(MAUT_MAX) + ' Münzen pro Marsch.') + '</p></div>';
 }
 popupStats.addEventListener('click', e => {
     const isl = islandById[popupIslandId]; if (!isl || isl.type !== 'gate' || !ownedIslands.has(isl.id)) return;
     const t = e.target.closest('[data-toll]'), tg = e.target.closest('[data-gate-toggle]');
-    if (t) { setGateSettings(isl.id, { toll: +t.dataset.toll }); alsBefehl('tor', { tor: isl.id, patch: { toll: +t.dataset.toll } }); flashHint('Maut: ' + (+t.dataset.toll ? (+t.dataset.toll).toLocaleString('de-DE') + ' Münzen pro Truppe' : 'frei') + '.', 2200); }
+    if (t) { setGateSettings(isl.id, { toll: +t.dataset.toll }); alsBefehl('tor', { tor: isl.id, patch: { toll: +t.dataset.toll } }); flashHint('Maut: ' + (+t.dataset.toll ? fmtNum(mautJeTruppe(+t.dataset.toll)) + ' Münzen pro Truppe' : 'frei') + '.', 2200); }
     else if (tg) { const c = !gateSettings(isl).closed; setGateSettings(isl.id, { closed: c }); alsBefehl('tor', { tor: isl.id, patch: { closed: c } }); flashHint(c ? 'Tor geschlossen.' : 'Tor geöffnet.', 2000); }
     else return;
     openIslandPopup(isl); requestRender();
@@ -13359,8 +13376,8 @@ if (window.WELT) {
     // Zwei Töpfe (Alexander 5.10.): Stufen-Münzen (sicher: die EP kommen vom Weltrechner) je Stunde – der feste Rest nur EINMAL
     // am Tag (vorher jede Stunde neu: ~8 Mio. Münzen am Tag „ohne Beleg“). Der Tages-Topf steht in der Welt (überlebt Neustarts).
     // Feste Größen × WIRTSCHAFT_KOSTEN (5.10., wie die Münzen/Truppen außerhalb der Produktion): Tages-Rest vorher 50.000, Thron-Shop/
-    // Saison-Pass mindestens 5.000 Münzen bzw. 1.000 Truppen, Fund mindestens 100 Truppen
-    const kW = n => Math.max(1, Math.round(n * WIRTSCHAFT_KOSTEN)), SR_FIX = kW(50000), SR_STUNDE_MIN = kW(5000), TR_STUNDE_MIN = kW(1000), FUND_TR_MIN = kW(100);
+    // Saison-Pass mindestens 5.000 Münzen bzw. 1.000 Truppen, Fund mindestens 100 Truppen – Münzen wirtM (6.10.: × MUENZ_FAKTOR)
+    const SR_FIX = wirtM(50000), SR_STUNDE_MIN = wirtM(5000), TR_STUNDE_MIN = wirtK(1000), FUND_TR_MIN = wirtK(100);
     function spielraumTeile(who, m) {
         const L = Math.max(1, m.lvl), now = Date.now();
         let von = L; for (const x of m.lvlLog) if (x.l < von) von = x.l;

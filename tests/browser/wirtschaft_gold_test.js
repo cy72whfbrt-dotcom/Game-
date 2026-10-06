@@ -1,6 +1,7 @@
 // Wirtschaft „pro Stunde“ (LIESMICH 11b A): Münzen und Truppen, die nicht aus der Produktion kommen, sind × WIRTSCHAFT_KOSTEN
 // kleiner wie alle Kosten (sonst wäre Gold zu leicht – die 100.000 Start-Truppen bleiben): Kampf-Gold je getöteter Truppe
 // (Fähigkeit und Held), Gold je Schaden beim Tagesboss, Söldner beim Händler (mindestens 1.000 × WIRTSCHAFT_KOSTEN).
+// 6.10.: Münzen dazu × MUENZ_FAKTOR (1.000) – Gold je Kill und je Schaden also × 1.000 ÷ 1.800.
 const { chromium } = require('playwright');
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x) : ''));
 (async () => {
@@ -10,7 +11,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   await p.waitForFunction(() => typeof BOT_DEFS !== 'undefined' && typeof killGoldRate === 'function' && typeof hdSoeldner === 'function' && typeof islands !== 'undefined' && islands.length, null, { timeout: 60000 });
   const r = await p.evaluate(() => {
     for (const bd of BOT_DEFS) botNextAt[bd.id] = Date.now() + 1e9;
-    const out = { K: WIRTSCHAFT_KOSTEN };
+    const out = { K: WIRTSCHAFT_KOSTEN, M: WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR };
     // 1) Fähigkeit „Angriff: Gold“ voll (50) + Held mit +50 % Gold: 100.000 getötete Truppen
     const s0 = skills.attackGold, d0 = skills.defenseGold; skills.attackGold = 50; skills.defenseGold = 50;
     out.rate = killGoldRate('player', { gold: 50 }); out.defRate = defGoldRate('player');
@@ -29,11 +30,11 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     return out;
   });
   console.log(JSON.stringify(r));
-  const K = r.K, sollRate = 50 * .3 * K * 1.5 + .5 * K;
-  ok(Math.abs(r.rate - sollRate) < 1e-12 && Math.abs(r.defRate - 15 * K) < 1e-12, 'Kampf-Gold je Truppe × WIRTSCHAFT_KOSTEN (Fähigkeit 50 + Held +50 %: ' + (r.rate * 1000).toFixed(2) + ' je 1.000)', r);
-  ok(r.feld.a === Math.round(1e5 * sollRate) && r.feld.a > 0 && r.feld.a < 2000 && r.feld.d === r.feld.a, '100.000 getötete Truppen bringen höchstens ~1.300 Münzen (vorher 2,3 Mio.)', r.feld);
-  ok(r.text[0] === '+8,3 Gold je 1.000 Kills' && r.text[1] === '+0,2 Gold je 1.000 Kills', 'Fähigkeit zeigt „Gold je 1.000 Kills“ (nicht „0,0 Gold/Kill“)', r.text);
-  ok(r.boss.schaden > 0 && r.boss.gold === Math.round(r.boss.schaden * .3 * K) && r.boss.kam === r.boss.gold, 'Tagesboss (ohne Held): Gold je Schaden × WIRTSCHAFT_KOSTEN (100.000 Schaden → ' + r.boss.gold + ' Münzen, vorher 30.000)', r.boss);
+  const K = r.K, M = r.M, sollRate = 50 * .3 * M * 1.5 + .5 * M;
+  ok(Math.abs(r.rate - sollRate) < 1e-12 && Math.abs(r.defRate - 15 * M) < 1e-12 && M === 1000 / 1800, 'Kampf-Gold je Truppe × 1.000 ÷ 1.800 (Fähigkeit 50 + Held +50 %: ' + (r.rate * 1000).toFixed(2) + ' je 1.000)', r);
+  ok(r.feld.a === Math.round(1e5 * sollRate) && r.feld.a > 0 && r.feld.a < 2e6 && r.feld.d === r.feld.a, '100.000 getötete Truppen bringen ~1,3 Mio. Münzen (vor dem 5.10.: 2,3 Mio.)', r.feld);
+  ok(r.text[0] === '+8.333 Gold je 1.000 Kills' && r.text[1] === '+167 Gold je 1.000 Kills', 'Fähigkeit zeigt „Gold je 1.000 Kills“ als ganze Zahl', r.text);
+  ok(r.boss.schaden > 0 && r.boss.gold === Math.round(r.boss.schaden * .3 * M) && r.boss.kam === r.boss.gold, 'Tagesboss (ohne Held): Gold je Schaden × 1.000 ÷ 1.800 (100.000 Schaden → ' + r.boss.gold + ' Münzen, vorher 30.000)', r.boss);
   ok(r.soeldner.n === Math.round(Math.max(Math.max(1, Math.round(1000 * K)), r.soeldner.hp)) && r.soeldner.n < 1000, 'Händler-Söldner: eine Stunde Ausbildung, Mindestwert × WIRTSCHAFT_KOSTEN', r.soeldner);
   ok(!fe.length, 'keine Skript-Fehler', fe.slice(0, 3)); await b.close();
 })();

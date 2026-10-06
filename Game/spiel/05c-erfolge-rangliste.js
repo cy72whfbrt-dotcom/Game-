@@ -64,7 +64,7 @@ const ACHIEVEMENTS = [   // the old ids stay (claims are kept); the tiers of one
     { id: 'gate1',   name: 'Torhüter',         icon: 'lock',    desc: 'Halte ein Tor.',                         goal: 1,    k: 'gates', gems: 50 },
     { id: 'gate3',   name: 'Herr der Brücken', icon: 'lock',    desc: 'Halte 3 Tore gleichzeitig.',             goal: 3,    k: 'gates', gems: 250 },
     { id: 'toll10',  name: 'Brückengänger',    icon: 'coin',    desc: 'Zahl 10 Mal Maut an einem Tor.',         goal: 10,   k: 'tolls', gems: 40 },
-    { id: 'tollin',  name: 'Zöllner',          icon: 'coin',    desc: 'Nimm ' + fmtNum(wirtK(100000)) + ' Münzen Maut ein.', goal: wirtK(100000), k: 'tollCoins', gems: 300 },   // (Maut und Krankenhaus-Platz × WIRTSCHAFT_KOSTEN – die Ziele mit)
+    { id: 'tollin',  name: 'Zöllner',          icon: 'coin',    desc: 'Nimm ' + fmtNum(niceRound(wirtM(1e5))) + ' Münzen Maut ein.', goal: niceRound(wirtM(1e5)), k: 'tollCoins', gems: 300 },   // (Maut und Krankenhaus-Platz × WIRTSCHAFT_KOSTEN – die Ziele mit)
     { id: 'army5',   name: 'Feldschlacht',     icon: 'troops',  desc: 'Gewinn 5 Kämpfe mit Armeen im Feld.',    goal: 5,    k: 'armyWins', gems: 80 },
     { id: 'army50',  name: 'Heerführer',       icon: 'troops',  desc: 'Gewinn 50 Kämpfe mit Armeen im Feld.',   goal: 50,   k: 'armyWins', gems: 400 },
     { id: 'hero1',   name: 'Erster Held',      icon: 'profile', desc: 'Schalte einen Helden frei.',             goal: 1,    k: 'heroes', gems: 30 },

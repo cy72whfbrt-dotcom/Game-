@@ -6,7 +6,7 @@ function hospitalLevel() { return loadCity().levels.hospital || 0; }
 function hospitalPct() { return Math.min(60, hospitalLevel() * 5) + (AUF ? AUF.lazarettPlus('player') : 0); }   // (+ Forschung Krankenhaus)
 function hospitalPlatz(l) { return l ? wirtK(1e6 * Math.pow(1.6, l - 1)) : 0; }   // Platz für Verwundete bei Krankenhaus-Stufe l (für alle gleich, × WIRTSCHAFT_KOSTEN)
 function hospitalCapacity() { return hospitalPlatz(hospitalLevel()); }
-const HEAL_COIN_PER_TROOP = 0.1;
+const HEAL_COIN_PER_TROOP = 0.1 * MUENZ_FAKTOR;   // 100 Münzen je Truppe (6.10.: Münzen × MUENZ_FAKTOR)
 function hospitalTake(fallen, pct) {              // Krankenhaus: part of your fallen (attack won or lost, or defending) are only wounded → how many
     if (!hospitalLevel() || fallen <= 0) return 0;
     const c = loadCity(), room = Math.max(0, hospitalCapacity() - c.wounded), w = Math.min(room, Math.floor(fallen * (pct ?? hospitalPct()) / 100));

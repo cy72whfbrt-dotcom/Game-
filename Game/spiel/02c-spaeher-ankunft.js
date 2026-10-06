@@ -122,7 +122,7 @@ function spaeherBlickHtml(s) {
     const A = s.auf || {}, R = A.roh;
     const gear = s.gear ? Object.keys(EQUIPMENT_DEFS).map(k => { const g = s.gear[k]; return '<div class="logLine"><span>' + EQUIPMENT_DEFS[k].name + '</span><span' + (g ? ' style="color:' + RARITY_DEFS[g[0]].color + '"' : '') + '>' +
         (g ? RARITY_DEFS[g[0]].label + ' · St. ' + g[1] + (g[2] ? ' · ' + g[2] + '★' : '') : '—') + '</span></div>'; }).join('') : '';
-    const beute = (v, sch) => fmtCompact(v) + (R && v > sch ? ' <small>(' + fmtCompact(Math.floor((v - sch) * HAUPT_BEUTE)) + ' zu holen an der Hauptstadt)</small>' : ''), schR = R ? R.schutzR || R.schutz * ROH_FAKTOR : 0;   // (Holz/Stein/Eisen: Schutz × ROH_FAKTOR)
+    const beute = (v, sch) => fmtCompact(v) + (R && v > sch ? ' <small>(' + fmtCompact(Math.floor((v - sch) * HAUPT_BEUTE)) + ' zu holen an der Hauptstadt)</small>' : ''), schR = R ? R.schutzR || R.schutz * ROH_JE_MUENZE : 0;   // (Holz/Stein/Eisen: Schutz × ROH_JE_MUENZE)
     return '<details><summary>Spähbericht</summary><div class="logSide" style="margin-top:6px">' +
         zeile('Herr', escapeHtml(s.name) + ' · Spieler-Stufe ' + fmtNum(s.lvl) + (s.titel ? ' · ' + escapeHtml(s.titel) : '')) +
         (s.bl ? zeile('Basis', 'Stufe ' + fmtNum(s.bl)) : '') +
