@@ -13872,12 +13872,12 @@ document.addEventListener('click', e => { const bt = e.target.closest && e.targe
     const wait = Math.max(0, 2600 - performance.now());
     steps.slice(1, 3).forEach((t, i) => setTimeout(() => { statusEl.textContent = t; }, wait * (i + 1) / 3));
     setTimeout(() => {
-        statusEl.textContent = steps[3];
         const fill = document.getElementById('splashFill');
         fill.style.width = getComputedStyle(fill).width;             // freeze the CSS animation where it is …
         sp.classList.add('is-done');
         requestAnimationFrame(() => { fill.style.width = '100%'; }); // … and finish from there
         setTimeout(() => {
+            statusEl.textContent = steps[3];                         // „Bereit“ erst, wenn der Balken voll ist
             sp.classList.add('is-leaving');
             splashDone();
             setTimeout(() => { if (window.__stopSplashScene) window.__stopSplashScene(); sp.remove(); }, 800);

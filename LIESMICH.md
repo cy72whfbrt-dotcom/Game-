@@ -1614,6 +1614,13 @@ Nacht – vorher bauen und testen.
       Login über dem Titelbild (gleiche Szene wie Ladebild), Eingabefelder im Spielstil (dunkel, Goldrand, kein Autofill-Gelb –
       `-webkit-autofill` überschreiben), großer Gold-Knopf, wie Spiel-Startbildschirme.
     → Designer mit Online-Vorbildern (Start-/Login-Bildschirme RoK, Call of Dragons, Lords Mobile).
+    **Umgesetzt (Branch worktree-agent-acc1893e595e6fd6f), wartet auf Alexander:** Titelbild von Alexander (KI, `Game/bilder/
+    titel_hoch.jpg` / `titel_quer.jpg`, je < 250 KB, nach Seitenverhältnis, weich eingeblendet, Glut-Funken darüber) hinter
+    Ladebild UND Startseite; bis es geladen ist, malt `ladebildschirm.js` eine Ersatz-Szene (Burg auf der Klippe, Feldherr,
+    Feuerbälle, Heer). Gold-Logo groß, unten nur Tipp-Zeile + 4-px-Balken; Prozent kommt jetzt aus dem Ladebild selbst
+    (vorher „0 %“ bei fast vollem Balken), „Bereit“ erst bei vollem Balken. Startseite: dunkle Felder mit Goldrand ohne
+    Autofill-Gelb, Gold-Knopf „Spielen“, Kasten unten (Handy) bzw. rechts unten (Desktop), Feldherr bleibt frei.
+    Test: `tests/browser/ladebild_test.js`.
 17. **Tore auf der Karte nicht mehr markiert + eigene Basen nicht erkennbar** (Bild 4b1cd453, 18:48): Tore (Brücken über
     die Flüsse) haben keine Markierung mehr; Gebiets-Blöcke grün/orange, aber man sieht nicht, welche Basis die eigene ist
     (Hauptstadt hervorheben, z. B. eigener Ring/Wappen/Name). (Truppen „111,1 Mrd.“ im HUD: von Alexander selbst gegeben, ok.)

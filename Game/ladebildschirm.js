@@ -1,8 +1,8 @@
 // ===== Ladebildschirm + Titelbild der Startseite: gemalte Dämmerung, Burg auf der Klippe, Nebel, Spiegelung (läuft vor dem Spiel) =====
 // Die Szene wird einmal gemalt; danach bewegt sich nur Kleines (Nebel, Funken, Fahnen, Glitzern, Vögel) mit höchstens 30 Bildern/s.
 (function () {
-    // Gemaltes Titelbild (Hochformat 9:16 / Querformat 16:9): sobald hier eingetragen, blendet es weich über die Canvas-Szene
-    var TITELBILD = window.__titelBild || null;   // z. B. { hoch: 'bilder/titel_hoch.webp', quer: 'bilder/titel_quer.webp' }
+    // Gemaltes Titelbild (Hochformat 9:16 / Querformat 16:9): blendet weich über die Canvas-Szene, sobald es geladen ist
+    var TITELBILD = window.__titelBild !== undefined ? window.__titelBild : { hoch: 'bilder/titel_hoch.jpg', quer: 'bilder/titel_quer.jpg' };   // (Tests: false = nur die Szene)
     var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
     function rng(seed) { return function () { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }; }
     function leinwand(w, h, d) { var c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w * d)); c.height = Math.max(1, Math.round(h * d)); var x = c.getContext('2d'); x.scale(d, d); return { c: c, x: x }; }
@@ -15,7 +15,7 @@
     }
 
     function titelSzene(cv, opt) {
-        var g = cv.getContext('2d'), W, H, D, HZ, WY, CX, U, SX, M, bild = null, nebel = null, funken = [], voegel = [], glitzer = [], fenster = [], fahnen = [], fackeln = [], kugeln = [], feuer = null, held = null;
+        var g = cv.getContext('2d'), W, H, D, HZ, WY, CX, U, SX, M, bild = null, nebel = null, funken = [], voegel = [], glitzer = [], fenster = [], fahnen = [], fackeln = [], kugeln = [], feuer = null, held = null, foto = null, fotoBild = null, fotoAb = 0, glut = [];
         var stopped = false, t0 = performance.now(), last = 0;
         function lage() {
             D = Math.min(window.devicePixelRatio || 1, 2); W = window.innerWidth; H = window.innerHeight; M = Math.min(W, H);
@@ -210,9 +210,30 @@
                 for (var k = -1; k <= 1; k++) { x.save(); x.translate(cx + k * W, cy); x.scale(rx / ry, 1); var ng = x.createRadialGradient(0, 0, 0, 0, 0, ry); ng.addColorStop(0, 'rgba(236,196,200,.6)'); ng.addColorStop(1, 'rgba(236,196,200,0)'); x.fillStyle = ng; x.fillRect(-ry, -ry, ry * 2, ry * 2); x.restore(); } }
             return { c: n.c, h: nh };
         }
+        // Titelbild auf die ganze Fläche (füllt sie). Nur bei sehr anderem Seitenverhältnis steht es ganz sichtbar in der Mitte,
+        // rundherum dasselbe Bild stark weichgezeichnet und dunkel (kein schwarzer Rand)
+        function maleFoto() {
+            var b = leinwand(W, H, D), x = b.x, iw = fotoBild.naturalWidth, ih = fotoBild.naturalHeight, f = Math.max(W / iw, H / ih), v = (iw / ih) / (W / H);
+            function weich() { var k = leinwand(40, Math.max(1, Math.round(40 * ih / iw)), 1); k.x.drawImage(fotoBild, 0, 0, 40, k.c.height);
+                x.drawImage(k.c, (W - iw * f) / 2, (H - ih * f) / 2, iw * f, ih * f); x.fillStyle = 'rgba(8,14,34,.55)'; x.fillRect(0, 0, W, H); }
+            if (opt.login && W <= H && v > 1) {
+                // Startseite hochkant: Bild in voller Breite oben – der Feldherr bleibt über dem Anmelde-Kasten sichtbar
+                weich();
+                var bh = ih * W / iw, ug = x.createLinearGradient(0, bh - 70, 0, bh); x.drawImage(fotoBild, 0, 0, W, bh);
+                ug.addColorStop(0, 'rgba(4,6,14,0)'); ug.addColorStop(1, 'rgba(4,6,14,.85)'); x.fillStyle = ug; x.fillRect(0, bh - 70, W, 70);
+            } else if (v > 1.5 || v < 1 / 1.5) {
+                weich();
+                var e = Math.min(W / iw, H / ih), bw = iw * e, bh2 = ih * e, m = leinwand(bw, bh2, D), mg = v < 1 ? m.x.createLinearGradient(0, 0, bw, 0) : m.x.createLinearGradient(0, 0, 0, bh2);
+                m.x.drawImage(fotoBild, 0, 0, bw, bh2); m.x.globalCompositeOperation = 'destination-in';   // Ränder weich ausblenden
+                mg.addColorStop(0, 'rgba(0,0,0,0)'); mg.addColorStop(0.08, '#000'); mg.addColorStop(0.92, '#000'); mg.addColorStop(1, 'rgba(0,0,0,0)'); m.x.fillStyle = mg; m.x.fillRect(0, 0, bw, bh2);
+                x.drawImage(m.c, (W - bw) / 2, (H - bh2) / 2, bw, bh2);
+            } else x.drawImage(fotoBild, (W - iw * f) / 2, (H - ih * f) / 2, iw * f, ih * f);
+            return b.c;
+        }
         function neu() {
-            lage(); bild = male(); nebel = maleNebel();
-            var r = rng(17), i; funken = []; voegel = []; glitzer = [];
+            lage(); bild = male(); nebel = maleNebel(); if (fotoBild) foto = maleFoto();
+            var r = rng(17), i; funken = []; voegel = []; glitzer = []; glut = [];
+            for (i = 0; i < 36; i++) glut.push({ x: r() * W, y: H * (0.6 + r() * 0.42), sp: 12 + r() * 22, ph: r() * 6.28, s: 1 + r() * 1.6, hoch: H * (0.15 + r() * 0.3) });
             for (i = 0; i < 60; i++) funken.push(i % 2 ? { x: feuer[0] + (r() - 0.5) * 16 * U, y: feuer[1], sp: 10 + r() * 16, ph: r() * 6.28, s: 1 + r(), hoch: 50 * U + r() * H * 0.2 } : { x: CX + (r() - 0.5) * 130 * U, y: WY - r() * 40 * U, sp: 6 + r() * 12, ph: r() * 6.28, s: 1 + r(), hoch: 60 * U + r() * H * 0.25 });
             for (i = 0; i < 4; i++) voegel.push({ x: r(), y: HZ * (0.38 + r() * 0.25), v: 8 + r() * 6, s: 3 + r() * 3, ph: r() * 6.28 });
             for (i = 0; i < 34; i++) { var dep = Math.pow(r(), 1.4); glitzer.push({ x: SX + (r() - 0.5) * (M * 0.06 + dep * W * 0.3), y: HZ + 3 + dep * (H - HZ) * 0.9, w: 3 + dep * 14, ph: r() * 6.28, k: 1.5 + r() * 2.5 }); }
@@ -220,7 +241,16 @@
         }
         function zeichne(now, immer) {
             if (stopped || (!immer && now - last < 33)) return;
-            last = now; var t = reduce ? 0 : (now - t0) / 1000, i, nb;
+            last = now; var t = reduce ? 0 : (now - t0) / 1000, fa = foto ? (reduce ? 1 : Math.min(1, (now - fotoAb) / 700)) : 0, i, nb;
+            if (fa < 1) szene(t);
+            if (!foto) return;
+            g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = fa; g.drawImage(foto, 0, 0); g.globalAlpha = 1; g.setTransform(D, 0, 0, D, 0, 0);
+            // über dem Bild nur Glut, die langsam aufsteigt
+            for (i = 0; i < glut.length; i++) { nb = glut[i]; var h = (t * nb.sp + nb.ph * 40) % nb.hoch, ga = Math.sin(Math.PI * h / nb.hoch) * 0.85 * fa;
+                g.fillStyle = 'rgba(255,176,90,' + ga.toFixed(3) + ')'; g.fillRect(nb.x + Math.sin(t * 0.8 + nb.ph) * 8, nb.y - h, nb.s, nb.s); }
+        }
+        function szene(t) {
+            var i, nb;
             g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(bild, 0, 0); g.setTransform(D, 0, 0, D, 0, 0);
             // Glitzern auf der Lichtbahn
             for (i = 0; i < glitzer.length; i++) { nb = glitzer[i]; var a = 0.5 + 0.5 * Math.sin(t * nb.k + nb.ph); g.fillStyle = 'rgba(255,217,160,' + (a * 0.55).toFixed(3) + ')'; g.fillRect(nb.x - nb.w / 2 + Math.sin(t * 0.7 + nb.ph) * 3, nb.y, nb.w, 1.3); }
@@ -261,9 +291,9 @@
         neu();
         window.addEventListener('resize', neu);
         if (!reduce) requestAnimationFrame(bild30);
-        if (TITELBILD) { var img = new Image(); img.alt = ''; img.className = cv.className + ' titel-bild'; img.setAttribute('aria-hidden', 'true');
-            img.onload = function () { if (stopped) return; cv.parentNode.insertBefore(img, cv.nextSibling); requestAnimationFrame(function () { img.classList.add('da'); }); setTimeout(stop, 900); };   // (danach ruht das Canvas)
-            img.src = W > H * 1.1 ? TITELBILD.quer : TITELBILD.hoch; }
+        if (TITELBILD) { var img = new Image(), fotoQuer = W > H && !!TITELBILD.quer;
+            img.onload = function () { if (stopped) return; fotoBild = img; foto = maleFoto(); fotoAb = performance.now(); zeichne(fotoAb, true); };
+            img.src = fotoQuer ? TITELBILD.quer : TITELBILD.hoch; }
         return { stop: stop };
     }
 

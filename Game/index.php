@@ -68,6 +68,8 @@ if (!wartung()) foreach (['ladebildschirm', 'speichern', 'bots', 'welt', 'spiel'
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Open Water">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
+<link rel="preload" href="bilder/titel_hoch.jpg" as="image" media="(orientation: portrait)">
+<link rel="preload" href="bilder/titel_quer.jpg" as="image" media="(orientation: landscape)">
 <link rel="preload" href="schrift/cinzel.woff2" as="font" type="font/woff2" crossorigin>
 <link href="schrift/schrift.css" rel="stylesheet">
 <style>
@@ -84,7 +86,6 @@ if (!wartung()) foreach (['ladebildschirm', 'speichern', 'bots', 'welt', 'spiel'
          font: 400 13px/1.4 var(--font-ui); color: var(--tx-1); -webkit-font-smoothing: antialiased; background: #0b1430; }
   .szene, .schleier { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
   .szene { display: block; }
-  .titel-bild { object-fit: cover; object-position: 50% 50%; opacity: 0; transition: opacity .8s ease; } .titel-bild.da { opacity: 1; }
   .schleier { background: radial-gradient(ellipse 90% 80% at 50% 40%, transparent 55%, rgba(3,5,12,.6)),
                           linear-gradient(180deg, rgba(3,5,12,.3), transparent 20%, transparent 45%, rgba(4,6,14,.9)); }
   .logo, .karte, .hinweis { position: relative; }
@@ -93,10 +94,11 @@ if (!wartung()) foreach (['ladebildschirm', 'speichern', 'bots', 'welt', 'spiel'
        filter: drop-shadow(0 2px 0 #5a3f14) drop-shadow(0 4px 14px rgba(0,0,0,.75)); }
   h1 span { background-image: linear-gradient(180deg, #fff3cf 8%, #e4c886 45%, #a27832 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
   h1 span:first-child { font-size: .55em; letter-spacing: .34em; margin-right: -.34em; }
-  .unter { display: flex; align-items: center; gap: 12px; margin: 12px 0 0; font: 600 11px/1 var(--font-ui); letter-spacing: .34em; text-transform: uppercase; color: #f0d6a0;
+  .logo::before { content: ""; position: absolute; inset: -28px -56px; z-index: -1; background: radial-gradient(ellipse at center, rgba(4,8,20,.5), transparent 70%); }   /* Kontrast auf hellem Himmel */
+  .unter { display: flex; align-items: center; gap: 12px; margin: 12px 0 0; font: 600 12px/1 var(--font-ui); letter-spacing: .34em; text-transform: uppercase; color: #fff1d0;
            text-shadow: 0 1px 8px rgba(0,0,0,.9); }
   .unter span { width: 30px; height: 1px; background: linear-gradient(90deg, transparent, #d9b56a); } .unter span:last-child { transform: scaleX(-1); }
-  .karte { width: 100%; max-width: 380px; margin-top: auto; padding: 20px; border: 1px solid var(--line-2); border-radius: 10px;
+  .karte { width: 100%; max-width: 380px; margin-top: auto; padding: 16px 16px 12px; border: 1px solid var(--line-2); border-radius: 10px;
            background: rgba(10,14,28,.78); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
            box-shadow: inset 0 1px 0 rgba(255,240,205,.06), 0 20px 50px rgba(0,0,0,.6); }
   .reiter { display: flex; margin: -6px 0 6px; border-bottom: 1px solid var(--line-1); }
@@ -116,8 +118,8 @@ if (!wartung()) foreach (['ladebildschirm', 'speichern', 'bots', 'welt', 'spiel'
   .regel { margin: 4px 2px 0; font-size: 11px; line-height: 1.3; color: var(--tx-3); }
   .regel.ok { color: var(--good); } .regel.nein { color: var(--blood-300); }
   button { width: 100%; min-height: 56px; margin-top: 16px; padding: 0 16px; font: 700 18px/1 var(--font-display); letter-spacing: .12em; text-transform: uppercase; border-radius: 8px; cursor: pointer;
-           border: 1px solid var(--gold-100); background: linear-gradient(180deg, #fff0c4 0%, #e4c886 40%, #c29449 75%, #8a6224 100%); color: #1d1406;
-           text-shadow: 0 1px 0 rgba(255,240,205,.5); box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -2px 0 rgba(0,0,0,.25), 0 6px 18px rgba(214,170,90,.35); }
+           border: 1px solid #ffe9a8; background: linear-gradient(180deg, #ffe28a 0%, #f5b82e 55%, #d98a12 100%); color: #3a2306;
+           text-shadow: 0 1px 0 rgba(255,240,205,.5); box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -2px 0 rgba(0,0,0,.25), 0 6px 18px rgba(245,184,46,.35); }
   button:active { transform: translateY(1px); }
   button:disabled { opacity: .6; cursor: default; }
   .auge { position: absolute; top: 2px; right: 2px; width: 44px; min-height: 44px; margin: 0; padding: 0; display: grid; place-items: center;
@@ -125,22 +127,27 @@ if (!wartung()) foreach (['ladebildschirm', 'speichern', 'bots', 'welt', 'spiel'
   .auge[hidden] { display: none; } .auge svg { width: 20px; height: 20px; } .auge[aria-pressed=true] { color: var(--gold-200); }
   button.leise { min-height: 44px; margin-top: 4px; border: 0; background: none; box-shadow: none; text-shadow: none; font: 600 13px/1 var(--font-ui); letter-spacing: .02em; text-transform: none;
            color: var(--tx-2); text-decoration: underline; text-underline-offset: 3px; }
-  .fuss { display: flex; justify-content: center; margin: 6px 0 -8px; }
-  .knopf2 { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 8px; text-decoration: none; font: 600 13px/1.2 var(--font-ui); color: var(--tx-2); }
+  .fuss { position: relative; display: flex; justify-content: center; margin: 4px 0 0; }
+  .knopf2 { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 8px; text-decoration: none; font: 600 12px/1.2 var(--font-ui); color: var(--tx-2); text-shadow: 0 1px 3px #000; }
   .knopf2 svg { width: 16px; height: 16px; flex: none; color: var(--gold-200); }
   .fehler { margin: 10px 0 4px; padding: 8px 12px; border: 1px solid rgba(240,138,126,.45); border-radius: 6px; background: rgba(210,76,64,.14); color: var(--blood-300); font-size: 13px; }
-  .hinweis { margin: 10px 0 0; text-align: center; font-size: 10px; color: var(--tx-3); text-shadow: 0 1px 3px #000; }
+  .hinweis { margin: 0; text-align: center; font-size: 10px; color: var(--tx-3); text-shadow: 0 1px 3px #000; }
   .hallo { margin: 0; text-align: center; font-size: 15px; color: var(--tx-2); } .hallo b { color: var(--gold-100); }
   :focus-visible { outline: 2px solid var(--gold-300); outline-offset: 2px; }
   /* Desktop: Logo oben links wie ein Plakat, Kasten rechts in der Mitte – die Burg bleibt frei */
   @media (min-width: 900px) and (min-aspect-ratio: 11/10) {
     body { display: block; padding: 0; }
-    .logo { position: absolute; left: 7vw; top: 12vh; align-items: flex-start; text-align: left; }
+    .logo { position: absolute; left: 4vw; top: 12vh; align-items: flex-start; text-align: left; }
     h1 { font-size: 88px; align-items: flex-start; } .unter { margin-top: 16px; }
-    .karte { position: absolute; right: 8vw; top: 50%; transform: translateY(-50%); width: 380px; margin: 0; }
-    .hinweis { position: absolute; left: 0; right: 0; bottom: 16px; margin: 0; }
+    .karte { position: absolute; right: 4vw; bottom: calc(8vh + 40px); width: 380px; margin: 0; }
+    .fuss { position: absolute; right: 4vw; bottom: calc(8vh); width: 380px; }
+    .hinweis { position: absolute; left: 0; right: 0; bottom: 12px; margin: 0; }
   }
-  @media (max-height: 560px) { body { padding-top: 16px; } h1 { font-size: 34px; } .unter { margin-top: 6px; } }
+  /* Handy hochkant: kleineres Logo, damit der Feldherr über dem Kasten frei bleibt */
+  @media (max-width: 899px) and (orientation: portrait) { h1 { font-size: clamp(34px, 10vw, 44px); } }
+  /* Handy quer: alles ohne Scrollen */
+  @media (max-height: 560px) { body { padding-top: 12px; padding-bottom: 8px; } h1 { font-size: 30px; } .unter { display: none; } .karte { padding: 10px 14px; margin-top: 12px; }
+    .reiter a { min-height: 36px; } input[type=text], input[type=password] { height: 42px; margin-top: 8px; } .feld { margin-top: 8px; } button { min-height: 46px; margin-top: 10px; } .hinweis { display: none; } }
 </style>
 </head>
 <body>
@@ -183,14 +190,18 @@ if (!wartung()) foreach (['ladebildschirm', 'speichern', 'bots', 'welt', 'spiel'
     <?php endif; ?>
     <button type="submit"><?= $modus === 'neu' ? 'Konto anlegen' : 'Spielen' ?></button>
   </form>
-  <div class="fuss"><a class="knopf2" href="app/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/></svg>App auf den Startbildschirm</a></div>
 <?php endif; ?>
 </main>
+<?php if (!$ich): ?>
+<div class="fuss"><a class="knopf2" href="app/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/></svg>App auf den Startbildschirm</a></div>
+<?php endif; ?>
 <p class="hinweis">Dein Spielstand liegt auf dem Server. Im Browser bleibt nur ein Login-Cookie (30 Tage).</p>
 <script src="<?= skript('ladebildschirm') ?>"></script>
 <script nonce="<?= h(csp_nonce()) ?>">   // (statt onsubmit=…: Inline-Handler erlaubt die CSP nicht mehr)
 document.querySelectorAll('form[data-laedt]').forEach(function (f) { f.addEventListener('submit', function () { var k = f.querySelector('button'); k.textContent = 'Lädt …'; k.disabled = true; }); });
 document.querySelectorAll('form[data-einmal]').forEach(function (f) { f.addEventListener('submit', function (e) { var b = f.querySelector('button[type=submit]'); if (b.disabled) { e.preventDefault(); return; } b.disabled = true; }); });
+// Am Rechner gleich ins Namensfeld (am Handy nicht – sonst springt die Tastatur auf)
+if (matchMedia('(pointer: fine)').matches && document.getElementById('name')) document.getElementById('name').focus();
 // Auge: Passwort zeigen/verbergen (ohne Skript bleibt der Knopf versteckt)
 document.querySelectorAll('.auge').forEach(function (a) { var i = a.parentNode.querySelector('input'); a.hidden = false;
   a.addEventListener('click', function () { var zeigen = i.type === 'password'; i.type = zeigen ? 'text' : 'password'; a.setAttribute('aria-pressed', zeigen); a.setAttribute('aria-label', zeigen ? 'Passwort verbergen' : 'Passwort zeigen'); }); });

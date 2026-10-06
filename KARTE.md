@@ -36,7 +36,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `ago` → Game/spiel/05d-maersche-kampfbericht.js:153
 - `Aktion 'befehle_da'` → Game/server/06-speichern-push-konto.php:26
 - `Aktion 'geschenk'` → Game/admin.php:65
-- `Aktion 'login'` → Game/index.php:165
+- `Aktion 'login'` → Game/index.php:172
 - `Aktion 'name'` → Game/server/06-speichern-push-konto.php:28
 - `Aktion 'nebel'` → Game/admin.php:124
 - `Aktion 'neu'` → Game/index.php:20
@@ -274,7 +274,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bgRange` → Game/spiel/03a-karte-hintergrund.js:298
 - `bgShow` → Game/spiel/03a-karte-hintergrund.js:292
 - `bgWarm` → Game/spiel/03a-karte-hintergrund.js:319
-- `bild30` → Game/ladebildschirm.js:259
+- `bild30` → Game/ladebildschirm.js:289
 - `bindTroopInput` → Game/spiel/10a-inselfenster-vorschau.js:307
 - `bitHat` → Game/spiel/10d-welt-weltrechner.js:918
 - `bitsZu` → Game/spiel/10d-welt-weltrechner.js:917
@@ -1373,7 +1373,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `HULL` → Game/baukunst/07-hafen-palast.js:22
 - `hullGeo` → Game/baukunst/07-hafen-palast.js:79
 - `icon` → Game/spiel/01a-grundlagen.js:119
-- `img.onload` → Game/ladebildschirm.js:265
+- `img.onload` → Game/ladebildschirm.js:295
 - `impulse` → Game/spiel/10c-start-einstellungen.js:18
 - `inboxAdd` → Game/spiel/06a-aufgaben.js:221
 - `inboxClaim` → Game/spiel/06a-aufgaben.js:229
@@ -1547,6 +1547,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `makeTileKeyboard` → Game/spiel/05b-truhe-skills.js:36
 - `male` → Game/ladebildschirm.js:100
 - `maleBurg` → Game/ladebildschirm.js:45
+- `maleFoto` → Game/ladebildschirm.js:215
 - `maleNebel` → Game/ladebildschirm.js:207
 - `mapBattleShake` → Game/spiel/07a-schlachten.js:304
 - `mapFocusPoint` → Game/spiel/03e-kamera-eingabe.js:443
@@ -1713,7 +1714,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `nebelVomServer` → Game/spiel/01e-nebel-kampfwerte-hud.js:37
 - `nebelWeit` → Game/spiel/06e-nebel-zeichnen.js:84
 - `nebelWeite` → Game/aufbau.js:241
-- `neu` → Game/ladebildschirm.js:213
+- `neu` → Game/ladebildschirm.js:233
 - `neueNummer` → Game/welt.js:384
 - `neulingBis` → Game/spiel/06d-schild-produktion.js:26
 - `neulingEnde` → Game/spiel/06d-schild-produktion.js:38
@@ -1837,7 +1838,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `PAVE` → Game/baukunst/07-hafen-palast.js:411
 - `payGold` → Game/spiel/04-kampf.js:289
 - `payToll` → Game/spiel/01b-weltkarte.js:343
-- `pct` → Game/ladebildschirm.js:299
+- `pct` → Game/ladebildschirm.js:329
 - `pentRoof` → Game/baukunst/06-turmhof-festung.js:42
 - `pfad` → Game/spiel/08e-stadtbild-haeuser.js:416
 - `pick` → Game/baukunst/05-umland.js:688
@@ -2290,7 +2291,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `stern` → Game/spiel/02c-spaeher-ankunft.js:126
 - `stoneLantern` → Game/baukunst/04-vielfalt-stile.js:497
 - `stoneWarte` → Game/baukunst/05-umland.js:356
-- `stop` → Game/ladebildschirm.js:260
+- `stop` → Game/ladebildschirm.js:290
 - `stop` → Game/spiel/10c-start-einstellungen.js:129
 - `stopFlight` → Game/spiel/03e-kamera-eingabe.js:139
 - `Strip` → Game/baukunst/05-umland.js:151
@@ -2304,6 +2305,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `surf` → Game/baukunst/04-vielfalt-stile.js:271
 - `syncPanelState` → Game/spiel/09e-inselfenster.js:36
 - `system_zugang` → Game/server/01-grundlagen-login.php:58
+- `szene` → Game/ladebildschirm.js:252
 - `tagLicht` → Game/spiel/03d-maersche-tagnacht.js:185
 - `tal` → Game/ladebildschirm.js:35
 - `tapFog` → Game/spiel/10b-inselfenster-knoepfe.js:226
@@ -2496,6 +2498,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `wartung` → Game/server/02-sicherheit-datenlecks.php:26
 - `wd` → Game/spiel/10d-welt-weltrechner.js:137
 - `wegOk` → Game/spiel/10d-welt-weltrechner.js:1031
+- `weich` → Game/ladebildschirm.js:217
 - `weich` → Game/spiel/08a-stadt-bauen.js:194
 - `weight` → Game/bots/04-stand-stadt.js:290
 - `welcomeListHtml` → Game/spiel/06d-schild-produktion.js:351
@@ -2558,7 +2561,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `window.__owSpeicher.privat` → Game/speichern.js:187
 - `window.__owSpeicher.rauswurf` → Game/speichern.js:189
 - `window.__owSpeicher.roh` → Game/speichern.js:185
-- `window.__stopSplashScene` → Game/ladebildschirm.js:305
+- `window.__stopSplashScene` → Game/ladebildschirm.js:335
 - `window.__weltBefehl` → Game/spiel/10d-welt-weltrechner.js:1231
 - `window.__weltLaden` → Game/buendnis/04-fenster-karte-welt.js:396
 - `window.__weltLaden` → Game/haendler.js:139
@@ -2622,7 +2625,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `zahlen` → Game/aufbau.js:69
 - `zahlOderNull` → Game/spiel/10d-welt-weltrechner.js:149
 - `zahlOk` → Game/spiel/10d-welt-weltrechner.js:123
-- `zeichne` → Game/ladebildschirm.js:221
+- `zeichne` → Game/ladebildschirm.js:242
 - `zeige` → Game/speichern.js:65
 - `zeigen` → Game/benachrichtigung.js:50
 - `zeile` → Game/buendnis/01-daten-regeln.js:530
@@ -5254,7 +5257,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 ### Game/index.php — index.php – Startseite: Anmelden oder Registrieren. Danach geht es ins Spiel (s…
 - Aktion `'neu'` :20
 - `h` :54
-- Aktion `'login'` :165
+- Aktion `'login'` :172
 
 ### Game/ladebildschirm.js — Ladebildschirm + Titelbild der Startseite: gemalte Dämmerung, Burg auf der Klip…
 - `rng` :7
@@ -5278,13 +5281,16 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `q` :181
 - `reiter` :185
 - `maleNebel` :207 — Bodennebel: weiche Schwaden, nahtlos nebeneinander zu legen
-- `neu` :213
-- `zeichne` :221
-- `bild30` :259
-- `stop` :260
-- `img.onload` :265 — (danach ruht das Canvas)
-- `pct` :299
-- `window.__stopSplashScene` :305
+- `maleFoto` :215 — Titelbild auf die ganze Fläche (füllt sie). Nur bei sehr anderem Seitenverhältn…
+- `weich` :217
+- `neu` :233
+- `zeichne` :242
+- `szene` :252
+- `bild30` :289
+- `stop` :290
+- `img.onload` :295
+- `pct` :329
+- `window.__stopSplashScene` :335
 
 ### Game/skript.php — skript.php – liefert die verkleinerten Spiel-Skripte aus Game/klein/ (entstehen…
 
