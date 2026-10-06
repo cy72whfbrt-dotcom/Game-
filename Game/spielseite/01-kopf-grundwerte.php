@@ -22,6 +22,8 @@ if (!ini_get('zlib.output_compression') && function_exists('ob_gzhandler')) ob_s
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Open Water</title>
+    <link rel="preload" href="bilder/titel_hoch.jpg" as="image" media="(orientation: portrait)">
+    <link rel="preload" href="bilder/titel_quer.jpg" as="image" media="(orientation: landscape)">
     <link rel="preload" href="schrift/cinzel.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="schrift/inter.woff2" as="font" type="font/woff2" crossorigin>
     <link href="schrift/schrift.css" rel="stylesheet">

@@ -41,4 +41,6 @@ foreach (glob($quelle . '/klein/*.js') as $f) copy($f, $ziel . '/klein/' . basen
 foreach (glob($quelle . '/app/*') as $f) copy($f, $ziel . '/app/' . basename($f));
 @mkdir($ziel . '/schrift', 0755, true);   // (Cinzel/Inter selbst ausgeliefert – auch ohne Netz die richtige Schrift)
 foreach (glob($quelle . '/schrift/*') as $f) copy($f, $ziel . '/schrift/' . basename($f));
+@mkdir($ziel . '/bilder', 0755, true);   // (Titelbild des Ladebilds)
+foreach (glob($quelle . '/bilder/*') as $f) copy($f, $ziel . '/bilder/' . basename($f));
 echo "Vorschau in $ziel (" . round(array_sum(array_map('filesize', glob($ziel . '/*.*'))) / 1048576, 1) . " MB)\n";

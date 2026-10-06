@@ -62,13 +62,13 @@
   <canvas id="splashCanvas" class="splash-bg" aria-hidden="true"></canvas>
   <div class="splash-vig" aria-hidden="true"></div>
   <div class="splash-top">
-    <h1 class="splash-title">Open Water</h1>
+    <h1 class="splash-title"><span>Open</span> <span>Water</span></h1>
     <div class="splash-sub"><span></span>Erobere die Inseln<span></span></div>
   </div>
   <div class="splash-bottom">
-    <div id="splashTipCard" class="splash-tipcard"><div id="splashTipPic" class="splash-tippic" aria-hidden="true"></div><div class="splash-tiptxt"><b>Tipp</b><span id="splashTip" class="splash-tip">Späh eine Basis aus, bevor du angreifst – dann siehst du ihre Truppen.</span></div></div>
-    <div class="splash-barwrap"><span class="splash-cap"></span><div class="splash-bar"><i id="splashFill"></i></div><span class="splash-cap"></span></div>
+    <p id="splashTipCard" class="splash-tipline"><b>Tipp:</b> <span id="splashTip" class="splash-tip">Späh eine Basis aus, bevor du angreifst – dann siehst du ihre Truppen.</span></p>
     <div class="splash-meta"><span id="splashStatus" class="splash-status">Welt wird erschaffen …</span><span id="splashPct" class="splash-pct">0 %</span></div>
+    <div class="splash-bar"><i id="splashFill"></i></div>
   </div>
 </div>
 <script src="<?= skript('ladebildschirm') ?>"></script>
