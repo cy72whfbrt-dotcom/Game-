@@ -386,6 +386,11 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   sichtbar 29 → 23 s. **Live prüfen** (ging von hier nicht): ob der Hoster statische .js schon packt
   (`curl -sI -H 'Accept-Encoding: gzip' …/Game/spiel.js` → `Content-Encoding`), ob `skript.php` gepackt + mit
   `Cache-Control: … immutable` ankommt und die Spielseite gepackt. Test: `tests/browser/laden_test.js` (+ server_test).
+  Nachbesserung: Profil → Einstellungen → „Version“ zeigt wieder die Zeit von spiel.js (kommt jetzt mit der Spielseite,
+  `version` in `window.__OW`; ohne Server die ersten 7 Zeichen der sha1 aus der Skript-Adresse, `spielVersion()` in 10c).
+  `Game/klein/` (nicht im Git) wird in jeder Kopie beim Bauen erzeugt – Vorschau, `tests/alle_tests.sh` und `hochladen.sh`
+  prüfen danach mit `node werkzeuge/verkleinern.js voll`, dass jede Datei da ist und passt (sonst Abbruch). Zwei Bau-Läufe
+  gleichzeitig (z. B. `komplett.sh`) stören sich beim Verkleinern nicht mehr.
 - **5.10. Fremde Werte erst nach dem Spähen (Alexanders Entscheidung) – NICHT hochgeladen:** Der Server schickte jedem Handy
   den ganzen Zustand aller Spieler/Mitspieler (Helden, Ausrüstung, Skills, Stadt, Forschung, Gems …) – ein verändertes Handy
   konnte alles lesen. Jetzt (`server.php` `FREMD_OEFFENTLICH`, `fremd_kuerzen`, in `weltteil_fuer_spieler` UND
