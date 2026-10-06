@@ -58,7 +58,10 @@ function spaeherBlick(owner, island) {
     o.gear = {}; for (const k of Object.keys(EQUIPMENT_DEFS)) { const it = botItem(b, k); o.gear[k] = it ? [it.rarity, it.level, it.stars] : null; }
     o.auf = AUF ? AUF.spaeherMehr(owner) : null;                             // Burg, Rohstoffe, Forschung
     const m = botMults(owner);                                               // Abwehr-Werte (Zuschauer: effectiveDefense rechnet damit, bis wieder gespäht wird)
-    o.k = { ar: Math.round((m.armorPct || 0) * 100) / 100, dp: Math.round((m.defensePct || 0) * 100) / 100, wall: o.wall, kk: Math.round((AUF ? AUF.kampf(owner, 'd') : 1) * 1e4) / 1e4 };
+    const vx = vhFx(owner);                                                  // Verteidigungs-Helden aus der Mauer (wer gerade zu Hause ist)
+    o.k = { ar: Math.round((m.armorPct || 0) * 100) / 100, dp: Math.round((m.defensePct || 0) * 100) / 100, wall: o.wall, kk: Math.round((AUF ? AUF.kampf(owner, 'd') : 1) * 1e4) / 1e4,
+            va: vx ? vx.atk : 0, vg: vx ? vx.gef : 0 };
+    o.vh = heroReportOf(vx);
     o.who = neutralId(owner);
     if (island) { o.bl = islandLevels[island.id] || 1; o.teile = defenseParts(island).map(q => [q[0], Math.round(q[1]), q[2] || '']); }
     return o;
@@ -73,7 +76,7 @@ function spaehWerte(owner) {
     }
     const k = spaehWerteMem.by[neutralId(owner)]; if (!k) return null;
     const n = v => Number.isFinite(v) ? v : 0;
-    return { ar: n(k.ar), dp: n(k.dp), wall: n(k.wall), kk: Number.isFinite(k.kk) && k.kk > 0 ? k.kk : 1 };
+    return { ar: n(k.ar), dp: n(k.dp), wall: n(k.wall), kk: Number.isFinite(k.kk) && k.kk > 0 ? k.kk : 1, va: n(k.va), vg: n(k.vg) };
 }
 // Spähbericht vom Weltrechner (Zuschauer): kam er vor dem eigenen Späher an, wartet er hier (nur im Speicher), sonst füllt er
 // den wartenden Eintrag im Kampflog
@@ -129,6 +132,7 @@ function spaeherBlickHtml(s) {
         zeile('Friedensschild', s.schild ? 'aktiv' : 'keiner') +
         (s.wall !== undefined ? zeile('Mauer', 'Stufe ' + s.wall) : '') +
         (s.held ? zeile('Helden', s.held.length ? s.held.map(h => escapeHtml(h[0]) + stern(h[1])).join(', ') : 'keine') : '') +
+        (s.vh !== undefined ? zeile('Verteidigungs-Held', s.vh && heroById(s.vh.id) ? escapeHtml(heroTag(Object.assign({}, s.vh, { id2: s.vh.h2 && s.vh.h2.id }))) : 'keiner') : '') +
         (A.burg ? zeile('Burg', 'Stufe ' + A.burg + (R ? ' · schützt ' + fmtCompact(R.schutz) + ' je Rohstoff' : '')) : '') +
         (R ? zeile('Gold', beute(R.c)) + (R.h !== undefined ? zeile('Holz', beute(R.h)) + zeile('Stein', beute(R.s)) + zeile('Eisen', beute(R.e)) : '') : '') +
         (s.sk ? zeile('Fähigkeiten', 'Angriff ' + s.sk.attack + ' · Vert. ' + s.sk.defense + ' · Truppen ' + s.sk.troops) : '') +
@@ -194,6 +198,7 @@ function resolveAttack(attack) {
     attack._vk = vk;                                                  // (bricht der Kampf mit einem Fehler ab: kampfAufraeumen trennt sie wieder)
     attack._vkOwner = targetOwner;                                    // (Besitzer vor dem Kampf: so erkennt das Aufräumen eine schon eroberte Insel)
     const originalEnemyTroops = effectiveTroops(target);
+    const dHx = targetOwner ? vhFx(targetOwner) : null;               // Verteidigungs-Helden aus seiner Mauer (stecken schon in effectiveDefense)
     const fullDefense = effectiveDefense(target), originalEnemyDefense = Math.round(fullDefense * (1 - heroDefCut(attack))), defParts = heroDefPart(defenseParts(target), attack, fullDefense);
     const atkParts = attackParts('player', attack.rawTroops, atkBonus, myTroops, attack.hero, attack), hosp = attack.hx ? Math.min(100, hospitalPct() + attack.hx.hosp) : undefined;
     const totalStrength = originalEnemyTroops + originalEnemyDefense;
@@ -209,7 +214,7 @@ function resolveAttack(attack) {
     const dTeile = typeof verstAnteile === 'function' ? verstAnteile(vk, targetOwner, originalEnemyTroops + fullDefense) : null;   // Verteidiger: Besitzer + Helfer nach Anteil
     const dTeil = w => { const t = dTeile && dTeile.find(x => x[0] === w); return t ? t[1] : 1; }, atkWeg = won ? sentLoss : attack.rawTroops - retreatSurvivorsPreview(attack);
     if (targetOwner && targetOwner !== 'player')                    // the defending bot's "Verteidigung: Gold": every attacker its garrison really kills pays out (nur sein Anteil – die Helfer: unten)
-        botCoins[targetOwner] = (botCoins[targetOwner] || 0) + Math.round(atkWeg * dTeil(targetOwner) * botGoldRate(targetOwner, 'defenseGold'));
+        botCoins[targetOwner] = (botCoins[targetOwner] || 0) + Math.round(atkWeg * dTeil(targetOwner) * defGoldRateHx(targetOwner, dHx));
     let retreatSurvivors = 0, woundedAdded = 0;
     const plunder = won && targetOwner && targetOwner !== 'player' ? plunderOf(targetOwner, capitalHolds) : null;   // Beute: ein kleiner Teil über seinem Burg-Schutz (nur an der Hauptstadt – Turm: nichts; Hauptstadt: alles)
     if (plunder) { plunderMove(targetOwner, null, plunder.loot, plunder.roh); inboxAdd({ src: 'fight', coins: plunder.loot }); if (plunder.roh && AUF) AUF.rohDazu('player', plunder.roh); }   // (das Gold wartet im Abholfach)
@@ -254,7 +259,7 @@ function resolveAttack(attack) {
         // base for next time. And a fraction of the attacker's
         // "dead" troops actually survive and retreat back to the
         // base the attack was launched from.
-        defenderCasualties = Math.min(originalEnemyTroops, myTroops);
+        defenderCasualties = Math.round(Math.min(originalEnemyTroops, myTroops) * (1 - (dHx ? dHx.loss : 0) / 100));   // (sein Verteidigungs-Held: weniger Verluste)
         if (targetOwner) {
             islandTroops[target.id] = Math.max(0, (islandTroops[target.id] || 0) - defenderCasualties);
         } else if (bossHere) {
@@ -286,7 +291,7 @@ function resolveAttack(attack) {
     if (vs) for (const h of vs.helfer) h.gold = payGold(h.w, atkWeg * dTeil(h.w) * defGoldRate(h.w));   // "Verteidigung: Gold" der Helfer: ihr Anteil mit IHREM Satz
     const verstInfo = vs ? { verst: vs.helfer, eigen: vs.eigen } : {};
     const defWeg = vs ? vs.eigenWeg : defenderCasualties;
-    if (targetOwner && targetOwner !== 'player') enemyWounded = botHospitalTake(targetOwner, defWeg);   // the bot's Krankenhaus takes part of ITS fallen
+    if (targetOwner && targetOwner !== 'player') enemyWounded = botHospitalTake(targetOwner, defWeg, dHx ? Math.min(100, botHospitalPct(targetOwner) + dHx.hosp) : undefined);   // the bot's Krankenhaus takes part of ITS fallen
     // XP for troops that died in the clash either way: a win kills
     // the whole enemy force, a loss costs your whole attack force
     noteBattle(target.id, won ? originalEnemyTroops : attack.rawTroops - retreatSurvivors, won ? targetOwner : 'player');
@@ -328,17 +333,17 @@ function resolveAttack(attack) {
         retreatSurvivors,
         defenderName: targetOwner ? botById[targetOwner].name : null, defenderId: targetOwner && targetOwner !== 'player' ? targetOwner : null,
         atkParts, defParts, enemyWounded, plunder: plunder ? plunder.loot : 0, plunderSafe: plunder ? plunder.safe : 0, plunderRoh: plunder && plunder.roh || null, capitalHolds,
-        atkGear: fighterSnapshot('player', attack.hx), defGear: targetOwner && targetOwner !== 'player' ? fighterSnapshot(targetOwner) : null,
+        atkGear: fighterSnapshot('player', attack.hx), defGear: targetOwner && targetOwner !== 'player' ? fighterSnapshot(targetOwner, dHx) : null,
         won,
         remaining, ...verstInfo
     });
     if (vs) verstBerichte(vs, { type: 'botAttack', botName: profileName.value || 'Spieler', botId: 'player', targetId: target.id, myTroops, atkRaw: attack.rawTroops, atkBonus,
-        atkGear: fighterSnapshot('player', attack.hx), defGear: fighterSnapshot(targetOwner), enemyTroops: originalEnemyTroops, enemyDefense: originalEnemyDefense, fallen: defWeg, wounded: 0,
+        atkGear: fighterSnapshot('player', attack.hx), defGear: fighterSnapshot(targetOwner, dHx), enemyTroops: originalEnemyTroops, enemyDefense: originalEnemyDefense, fallen: defWeg, wounded: 0,
         won, capitalHolds, defName: (botById[targetOwner] || {}).name, ...verstInfo });
     if (window.WELT && targetOwner && botById[targetOwner] && botById[targetOwner].mensch) {   // du hast einen echten Spieler angegriffen: sein Bericht
         const meinName = profileName.value || 'Spieler';
         WELT.bericht(targetOwner, { type: 'botAttack', botName: meinName, botId: 'player', targetId: target.id, myTroops, atkRaw: attack.rawTroops, atkBonus: atkBonus,
-            atkGear: fighterSnapshot('player', attack.hx), defGear: fighterSnapshot(targetOwner), enemyTroops: originalEnemyTroops, enemyDefense: originalEnemyDefense,
+            atkGear: fighterSnapshot('player', attack.hx), defGear: fighterSnapshot(targetOwner, dHx), enemyTroops: originalEnemyTroops, enemyDefense: originalEnemyDefense,
             wounded: enemyWounded || 0, fallen: defWeg, won, capitalHolds, defGold: 0, plunder: plunder ? plunder.loot : 0, plunderSafe: plunder ? plunder.safe : 0, plunderRoh: plunder && plunder.roh || null, ...verstInfo },
             capitalHolds ? meinName + ' hat deine Hauptstadt geplündert (' + (beuteText(plunder) || 'nichts über dem Schutz') + ') – die Garnison ist gefallen, die Stadt brennt, aber sie hält.' : won ? meinName + ' hat deine Basis ' + islandTitle(target) + ' erobert!' : 'Verteidigung erfolgreich – ' + meinName + ' bei ' + islandTitle(target) + ' zurückgeschlagen.');
     }

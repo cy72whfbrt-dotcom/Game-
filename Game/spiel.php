@@ -864,12 +864,14 @@ body.has-panel .mapctl{display:none}
 /* Alle Fenster gleich (Alexander 4.10., wie in Rise of Kingdoms): derselbe Rahmen, Kopf (Zeichen · Überzeile · Titel · ×), Hintergrund, Höhe */
 .hh{background:var(--noise),var(--panel-bg)}
 .hh::before,.city-sheet::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:3;border:20px solid transparent;border-image:var(--frame) 20 / 20px stretch}
-.city-sheet::before{position:absolute}
+.city-sheet::before{content:none}   /* Gebäude-Fenster: der Rahmen ist der eigene Rand – er scrollt nicht mit dem Inhalt (die Ecken bleiben in den Ecken) */
+#citySheet{border-image:var(--frame) 20 / 20px stretch}   /* (#: das „border“ der Grundform weiter hinten setzt border-image sonst zurück) */
 .panel--sheet{height:var(--sheet-max)}
 body.in-stadt .hud,body.in-stadt .nav{z-index:52} body.in-stadt .panel{z-index:53} body.in-stadt .roh-drop{z-index:54}
 body.in-stadt .city-head{padding-top:calc(var(--safe-t) + var(--hud-top-space) + 6px);background:linear-gradient(180deg,rgba(6,8,12,.75),rgba(6,8,12,.3) 70%,transparent)}
 body.in-stadt .city-title,body.in-stadt #cityCloseBtn{display:none}
 body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bottom:14px;max-height:calc(100% - var(--dock-h) - var(--safe-bd) - var(--safe-t) - var(--hud-top-space) - 60px)}
+@media (min-width:900px) and (min-height:501px){ body.in-stadt .city-sheet{bottom:100px;max-height:calc(100% - 100px - var(--safe-t) - var(--hud-top-space) - 60px)} }   /* Desktop: die Leiste schwebt (bis ~92 px hoch) – das Fenster steht darüber */
 .city-bdesc{display:none} .city-sheet.zeig-info .city-bdesc{display:block}
 .city-info-btn.on{color:var(--gold-100);border-color:var(--line-3)}
 .hh-pairs{padding:8px 0 4px;border-top:1px solid var(--line-2)} .hh-pairs h3{margin:6px 0;font:700 var(--fs-11)/1 var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--tx-3)}
@@ -879,6 +881,18 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
 .hh-pair-t{display:grid;gap:2px;min-width:0} .hh-pair-t b{font:700 var(--fs-13)/1.2 var(--font-ui);color:var(--gold-100)} .hh-pair-t small{font-size:11px;color:var(--tx-3)} .hh-pair-t em{font-style:italic;font-size:12px;color:var(--tx-2)}
 .hh-story{margin:0;font-style:italic;font-size:var(--fs-13);line-height:1.45;color:var(--tx-2)}
 .seg.hero-seg2{margin-top:6px} .hero-seg2-l{flex:1 1 100%;font-size:11px;color:var(--tx-3);padding:2px 2px 4px} .seg.hero-seg button.is-pair{box-shadow:inset 0 0 0 1px var(--gold-300)} .seg.hero-seg button.is-pair small{color:var(--gold-100)}
+/* Mauer: Verteidigungs-Helden – Haupt- und Zweitheld als zwei Chips (wie im Angriffs-Fenster), die Auswahl klappt darunter auf */
+.vh-box{padding:10px;border:1px solid var(--line-1);border-radius:10px;background:rgba(0,0,0,.18);display:flex;flex-direction:column;gap:6px} .vh-kopf{display:flex;align-items:center;gap:6px} .vh-kopf .icon{width:16px;height:16px}
+.vh-stand{display:block;color:var(--tx-2)} .vh-zeile{display:flex;gap:6px}
+.vh-chip{position:relative;flex:1 1 0;min-width:0;display:flex;align-items:center;gap:6px;min-height:var(--k-tipp,44px);padding:0 24px 0 8px;border-radius:var(--r-xs);background:var(--ink-3);border:1px solid var(--line-1);border-left:3px solid var(--hc,var(--line-1));color:var(--tx-1);text-align:left}
+.vh-chip::after{content:"";position:absolute;right:10px;top:50%;width:6px;height:6px;margin-top:-5px;border-right:1.5px solid var(--tx-3);border-bottom:1.5px solid var(--tx-3);transform:rotate(45deg)}
+.vh-chip.on{background:rgba(214,170,90,.12);border-color:var(--line-3);border-left-color:var(--hc,var(--line-3))} .vh-chip.on::after{margin-top:-1px;transform:rotate(-135deg)}
+.vh-chip:disabled{opacity:.55} .vh-chip:disabled::after{display:none}
+.vh-chip .hero-pic{width:26px;height:26px;flex:none;border-radius:5px;border:1px solid var(--hc)}
+.vh-chip-t{display:flex;flex-direction:column;min-width:0} .vh-chip-t b{font:600 var(--fs-13)/1.15 var(--font-ui);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vh-chip-t small{font:500 var(--fs-11)/1.2 var(--font-ui);color:var(--gold-200);white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .vh-chip-t small .icon{width:10px;height:10px;vertical-align:-1px}
+.seg.hero-seg.vh-wahl{gap:6px;margin:0} .seg.hero-seg.vh-wahl button{flex:1 1 calc(50% - 6px);min-width:0;justify-content:flex-start;white-space:nowrap;overflow:hidden}   /* zwei je Zeile: nichts ragt rechts hinaus */
+.vh-werte .logLine{gap:8px}
 .hh-count{padding:8px 0;font:500 var(--fs-12)/1.4 var(--font-ui);color:var(--tx-3);text-align:center}
 .hh-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px;padding:4px 0 8px}
 .hh-card{position:relative;aspect-ratio:3/4.3;border-radius:var(--r-lg);overflow:hidden;cursor:pointer;border:2px solid var(--rc);background:linear-gradient(170deg,var(--rc) 0%,#0b0c10 78%);padding:0;color:var(--tx-1);font:inherit;box-shadow:0 4px 10px #0008;transition:transform var(--dur-1) ease}

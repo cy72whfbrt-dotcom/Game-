@@ -75,7 +75,8 @@ function effectiveDefense(island) {
                                     : (baseDefenseForLevel(level) * (1 + (botMults(owner).armorPct || 0) / 100) + garrison * (botMults(owner).defensePct || 0) / 100) * (1 + botBld(owner, 'wall') * 2 / 100)) * titleMult(owner, 'defense');
     const kk = sw ? sw.kk : AUF ? AUF.kampf(owner, 'd') : 1;       // Truppen-Stufe + Forschung (Paket D): Besatzung UND Verteidigung zählen × Kampfkraft – das Mehr steckt hier
     const vp = typeof verstDefPlus !== 'undefined' && verstDefPlus[island.id] || 0;   // Verstärkung: jeder Helfer mit seinen eigenen Werten
-    return Math.max(0, Math.round(def * kk + garrison * (kk - 1) + vp));
+    const vh = sw ? Math.round(garrison * sw.va / 100) + Math.min(sw.vg, garrison) : vhPlus(vhFx(owner), garrison);   // Verteidigungs-Helden aus der Mauer (Zuschauer: laut Spähbericht)
+    return Math.max(0, Math.round(def * kk + garrison * (kk - 1) + vp + vh));
 }
 // Where every point of a fight comes from - for the battle report, line by line with its source.
 function defenseParts(island) {
@@ -96,11 +97,13 @@ function defenseParts(island) {
         out.push(['Forschung Verteidigung', Math.round((vor + g) * (kk - 1)), '+' + Math.round((kk - 1) * 100) + ' % auf Besatzung und Verteidigung']); }
     const vp = typeof verstDefPlus !== 'undefined' && Math.round(verstDefPlus[island.id] || 0);
     if (vp) out.push(['Verstärkung: eigene Werte', vp, 'jeder Helfer mit seiner Fähigkeit, seinem Titel und seiner Forschung']);
+    const vx = owner === 'player' || !fremdGeheim() ? vhFx(owner) : null, vh = vhPlus(vx, g);   // Verteidigungs-Held aus der Mauer
+    if (vh) out.push([vhName(vx), vh, 'Mauer · Angriff +' + heroNum(vx.atk) + ' % der Besatzung' + (heroGefOf(vx, g) ? ' · Gefolge +' + fmtCompact(heroGefOf(vx, g)) : '')]);
     out[0][1] += effectiveDefense(island) - out.reduce((a, q) => a + q[1], 0);        // rounding goes to the base line
     return out;
 }
 // what each side brought: level, title, the 4 equipped items, the hero who led (stars, rage, every bonus) and the city - kept with the report
-function heroReportOf(hx) { return hx && hx.id ? { id: hx.id, q: hx.q, fired: !!hx.fired, skill: hx.skill || null, lines: hx.lines || [], pair: hx.pair || null,
+function heroReportOf(hx) { return hx && hx.id ? { id: hx.id, q: hx.q, fired: !!hx.fired, skill: hx.skill || null, lines: hx.lines || [], pair: hx.pair || null, ...(hx.vh ? { vh: 1 } : {}), ...(hx.zweit ? { zweit: 1 } : {}),   // (vh: Verteidigungs-Held aus der Mauer)
     h2: hx.h2 ? { id: hx.h2.id, q: hx.h2.q, zweit: 1, lines: hx.h2.lines || [] } : null,
     extra: (hx.extra || []).map(e => ({ id: e.id, q: e.q, fired: !!e.fired, zweit: e.zweit ? 1 : 0, skill: e.skill || null, lines: e.lines || [] })) } : null; }
 function fighterSnapshot(who, hx) {

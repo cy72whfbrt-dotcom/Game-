@@ -644,6 +644,22 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Spielstand auf dem Server (wie alle `openWater…`-Werte; `sessionStorage` nur im Arbeitsspeicher, sw.js nur Push, Cookie nur
   Login). Nur die Vorschau ohne Server nutzt den echten Browser-Speicher. Nichts zu verlegen. Test
   `tests/browser/anleitung_test.js` (Handy 390×844 + Desktop).
+- **6.10. – Verteidigungs-Helden über die Mauer (Alexander, Branch `mauer-helden`, NICHT hochgeladen):** Stadt → Mauer: zwei
+  Plätze **Verteidigungs-Hauptheld** (ab Mauer 1) und **Zweitheld** (ab Mauer 5, Werte/passive Fähigkeiten zu 50 %, Paar +10 %),
+  jederzeit änderbar. Sie verteidigen **jede** eigene Basis mit derselben Rechnung wie beim Angriff, ohne Wut: Angriff % auf die
+  Besatzung + Gefolge (Zeile „Held …“ in der Verteidigung, `effectiveDefense`/`defenseParts`), Verteidigung = weniger gefallene
+  Verteidiger bei einem abgewehrten Angriff, Krankenhaus und Gold wie beim Angreifer (`resolveAttack`, `resolveBotAttack`).
+  Derselbe Held darf angreifen (M1 = A): solange er unterwegs ist (Angriff, Armee, Feld, Rally), verteidigt er nicht (`heroBusy`).
+  Spähbericht und Kampfbericht zeigen den Verteidigungs-Helden mit Werten („Verteidigungs-Held · aus der Mauer“). Mitspieler tragen
+  ihren besten Helden ein (`botVhCare`). Weltrechner: Befehl `vheld` (eigener Held, Mauer-Stufe – `vhSetzen`), Eintrag `vh` im
+  Mitspieler-Datensatz (Fremde sehen ihn nur im Spähbericht – Server-Filter FREMD_OEFFENTLICH). Code: `08c` (vhFx, vhSetzen,
+  vhBest), `08d` (Mauer-Fenster), `01e`, `02c`, `04` (defGoldRateHx), `05d`, `bots/02`, `bots/04`, `10d`, `server/02`.
+  Test `tests/browser/mauer_helden_test.js`, `tests/server_test.php`. Offen: Drache/Kriegsherr-Angriffe auf Basen nehmen nur
+  Angriff + Gefolge der Verteidigungs-Helden (keine Verluste/Krankenhaus/Gold).
+  Nachbesserung (Designer): Mauer-Fenster wie Krankenhaus/Schmiede mit Reitern **Aufwerten | Helden**; Haupt- und Zweitheld als
+  zwei Chips (wie im Angriffs-Fenster), antippen klappt die Auswahl darunter auf (zwei je Zeile, nichts abgeschnitten); Werte
+  „Angriff der Verteidiger“ / „Eigene Verluste“. Gebäude-Fenster allgemein: der goldene Rahmen ist der Rand von `#citySheet`
+  (scrollt nicht mehr mit – die Ecken saßen beim Scrollen mitten im Inhalt); Desktop: das Fenster steht über der schwebenden Leiste. `08b` (cityNutz), `08d` (vhHtml, vhChip), `spielseite/03`.
 - **6.10. – Design P1: Grundwerte, HUD, Leiste, Streifen (11b F, Branch `design-p1`, NICHT hochgeladen):** **Grundwerte**
   (`spielseite/01`, andere Design-Pakete bauen darauf): Abstände `--ab-1…4` (4/8/12/16), Schriftstufen `--fs-11/13/15/17/22`
   (`--fs-9`/`--fs-10` = 11 px, nichts Kleineres mehr), Knopf-Arten `--k-haupt` 48 · `--k-zweit` 44 · `--k-gefahr` 48 · `--k-chip` 36

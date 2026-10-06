@@ -125,7 +125,7 @@ function cityNutz(id, lvl) {                       // die eigene Seite eines Geb
     if (id === 'academy') return lvl || loadCity().foRun ? ['Forschen', 'flask'] : null;
     if (id === 'heroes') return lvl ? ['Helden', 'profile'] : null;   // erst gebaut: vorher keine Reiter (nur „Bauen“)
     if (!lvl) return null;
-    return { forge: ['Schmieden', 'weapon'], hospital: ['Heilen', 'plus'], market: ['Handeln', 'market'], embassy: ['Verstärkung', 'bund'] }[id] || null;
+    return { forge: ['Schmieden', 'weapon'], hospital: ['Heilen', 'plus'], market: ['Handeln', 'market'], embassy: ['Verstärkung', 'bund'], wall: ['Helden', 'defense'] }[id] || null;   // (Mauer: die Verteidigungs-Helden)
 }
 function cityBildSpr(id, lvl) {                    // dasselbe Bild wie in der Stadt
     if (id === 'keep') return citySprite('keep', Math.min(4, Math.floor((lvl || 1) / 5)));
