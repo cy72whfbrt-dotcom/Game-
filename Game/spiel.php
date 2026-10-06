@@ -705,7 +705,7 @@ body.has-panel .mapctl{display:none}
 .sect::before{content:"";width:5px;height:5px;transform:rotate(45deg);border:1px solid var(--gold-300);flex:none}
 .sect h4{margin:0;font:600 var(--fs-12)/1 var(--font-display);letter-spacing:.08em;color:var(--gold-100);white-space:nowrap}
 .sect::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line-2),transparent);order:5;min-width:12px}
-.sect-aside{order:6;display:inline-flex;align-items:center;gap:6px}
+.sect-aside{order:6;display:inline-flex;align-items:center;gap:6px} .sect > span.sect-aside{font:500 var(--fs-11)/1 var(--font-ui);color:var(--tx-3)}   /* Randnotiz wie „Neu um …“ (nicht größer als der Rest) */
 /* Handy-Benachrichtigungen im Profil (benachrichtigung.js) */
 .push-karte{display:flex;flex-direction:column;gap:8px}
 .set-liste{display:flex;flex-direction:column}
@@ -1319,6 +1319,7 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
   .panel--island{left:var(--ax,50%);top:var(--ay,90px);right:auto;bottom:auto;width:360px;max-height:min(calc(100dvh - 100px),var(--amax,100dvh));border-radius:var(--r-xs);z-index:var(--z-popover)}
   .panel--island::after{content:"";position:absolute;left:-7px;top:var(--py,60px);width:12px;height:12px;transform:rotate(45deg);background:#12161d;border-left:1px solid var(--line-3);border-bottom:1px solid var(--line-3)}
   .panel--island .pfoot .btn{padding:0 12px}
+  .panel--island .from-sel{font-size:var(--fs-15)}   /* „Hauptstadt · 100 Tsd. · 0:21 · reicht“ passt in die 360px-Karte (16px nur am Handy: iOS zoomt sonst) */
   #popupSub .xs-hide{display:none}   /* 360px-Karte: „Von Hauptstadt“ ganz, die Sanduhr sagt „Marsch“ */
   body.in-stadt .city-head{padding-top:72px}   /* Bauarbeiter-Zeile unter dem HUD-Streifen (oben 14 + 48 hoch) */   /* two grow buttons side by side: "Neu spähen" fits the 360px popover */
   .panel--island.is-left::after{left:auto;right:-7px;border-left:0;border-bottom:0;border-right:1px solid var(--line-3);border-top:1px solid var(--line-3)}
@@ -1925,6 +1926,7 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
 .panel--island .hero-seg.chips-quer{padding-block:4px}   /* (die Liste schiebt quer: die Tippfläche braucht Platz im Rahmen) */
 .panel--island .pfoot .btn{min-height:var(--k-zweit)}
 .from-field{grid-template-columns:minmax(0,1fr);gap:4px}   /* Startbasis: Name, Truppen und Marschzeit ganz zu lesen */
+.from-sel{padding:0 6px 0 10px;font-weight:500}   /* („· reicht“ dahinter passt auch noch) */
 .mact button{position:relative} .logRow .mact button,.march-all .mact button{min-height:36px} .mact button::before{content:"";position:absolute;left:-1px;right:-1px;top:-5px;bottom:-5px}
 @media (pointer:coarse){ .mapctl button{width:44px;height:44px} .ap-kopf .from-sel{height:44px} }
 </style>
