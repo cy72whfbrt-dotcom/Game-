@@ -238,7 +238,7 @@ function updateHud() {
     if (AUF) AUF.hud();                                                       // Holz, Stein, Eisen (aufbau.js)
     requestRender();   // HUD changes coincide with state changes -> the map may need a redraw
 }
-// Desktop player plate (#hudPlayer). Called at boot, from the 1s
+// Player plate (#hudPlayer, Handy + Desktop: antippen = Profil). Called at boot, from the 1s
 // interval and from renderProfile(). It reads playerLvl, profileName
 // and RANK_TIERS, which are declared further down, so it must never
 // run before the script has passed those lines.

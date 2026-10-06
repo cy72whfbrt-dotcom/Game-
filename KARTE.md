@@ -1518,9 +1518,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `merlons` → Game/spiel/03b-gebaeude-3d.js:46
 - `merlons` → Game/spiel/06e-nebel-zeichnen.js:138
 - `mid` → Game/spiel/03a-karte-hintergrund.js:29
-- `midAnzeige` → Game/spiel/06c-thron-mitte.js:227
+- `midAnzeige` → Game/spiel/06c-thron-mitte.js:231
 - `midFight` → Game/spiel/06c-thron-mitte.js:176
-- `midNotice` → Game/spiel/06c-thron-mitte.js:231
+- `midNotice` → Game/spiel/06c-thron-mitte.js:235
 - `mine` → Game/spiel/08c-helden.js:109
 - `mini` → Game/spiel/05a-aussehen-profil.js:117
 - `minuten` → Game/weltrechner/push.js:124
@@ -3522,7 +3522,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `setText` :227
 - `setShown` :228
 - `updateHud` :229
-- `updateHudPlayer` :245 — Desktop player plate (#hudPlayer). Called at boot, from the 1s interval and fro…
+- `updateHudPlayer` :245 — Player plate (#hudPlayer, Handy + Desktop: antippen = Profil). Called at boot, …
 
 ### Game/spiel/02a-shop-stufen.js — Shop: Kisten, Gegenstände (vereinen, zerlegen, verbessern), Erfahrung und Stufe…
 - `itemScore` :29
@@ -4060,8 +4060,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bountyPay` :193
 - `bountyCheck` :197 — a new ruler: whoever took the throne collects everything, the bounty starts aga…
 - `renderMidBar` :211
-- `midAnzeige` :227 — jede Sekunde (auch bei Zuschauern): die Leiste unter dem HUD, das Wochen-Event …
-- `midNotice` :231 — das Kopfgeld auf dem Mega-Tempel
+- `midAnzeige` :231 — jede Sekunde (auch bei Zuschauern): die Leiste unter dem HUD, das Wochen-Event …
+- `midNotice` :235 — das Kopfgeld auf dem Mega-Tempel
 
 ### Game/spiel/06d-schild-produktion.js — Friedensschild, Willkommen zurück, Produktion
 - `shieldUntil` :5

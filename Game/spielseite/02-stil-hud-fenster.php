@@ -3,28 +3,48 @@
 /* =====================================================================
    HUD
    ===================================================================== */
+/* HUD wie Million Lords: links das Spielerbild (antippen = Profil, Name klein darunter), rechts davon EINE Zeile Werte ohne Kästen, ganz rechts der runde Rohstoff-Knopf */
 .hud{position:fixed;z-index:var(--z-hud);top:calc(var(--safe-t) + 8px);left:calc(var(--safe-l) + 10px);right:calc(var(--safe-r) + 10px);
-  display:flex;gap:6px;align-items:center;pointer-events:none}
+  display:flex;gap:var(--ab-2);align-items:flex-start;pointer-events:none}
 .hud > *{pointer-events:auto}
-.hud-me{display:none}
-/* the chips under the HUD (Wochen-Event, Kopfgeld, Invasion, Drache, Händler) */
-.midbar{position:fixed;z-index:var(--z-hud);top:calc(var(--safe-t) + 14px + var(--hud-h));left:calc(var(--safe-l) + 10px);display:flex;flex-direction:column;align-items:flex-start;gap:5px;pointer-events:none}
+.hud-me{display:flex;flex-direction:column;align-items:center;gap:3px;flex:none;width:52px}
+.hud-me .avatar-ring--sm{width:44px;height:44px}
+.hud-me .avatar-ring--sm .avatar .icon{width:22px;height:22px}
+.hud-me-text{display:block;max-width:56px;text-align:center}
+.hud-me-text b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 var(--fs-11)/1.1 var(--font-ui);color:var(--gold-100);text-shadow:0 1px 2px #000}
+.hud-me-text small{display:none}
+body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--gold-200),0 0 12px rgba(214,170,90,.5)}
+.hud-werte{flex:1 1 auto;min-width:0;height:var(--hud-h);display:flex;align-items:center;padding:0 var(--ab-1);
+  background:var(--glass);border:1px solid var(--line-2);border-radius:var(--r-pill);box-shadow:var(--sh-1);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+/* der EINE Streifen unter der Werte-Zeile: alle Dauer-Hinweise (Wochen-Event, Kopfgeld, Thron, Invasion, Drache, Händler, Saison), einzeilig –
+   der dringendste sichtbar, der Rest als Zähler „+2“ (antippen klappt alle auf) */
+.midbar{position:fixed;z-index:var(--z-hud);top:calc(var(--safe-t) + 14px + var(--hud-h));left:calc(var(--safe-l) + 70px);right:calc(var(--safe-r) + 10px);
+  display:flex;align-items:flex-start;gap:var(--ab-1);pointer-events:none}
+.midbar.offen{flex-direction:column}
 .midbar[hidden]{display:none} .midbar > *{pointer-events:auto}
-.mb-chip{display:flex;align-items:center;gap:6px;max-width:calc(100vw - 80px);height:26px;padding:0 10px 0 7px;border-radius:var(--r-pill);background:var(--glass);border:1px solid var(--line-2);box-shadow:var(--sh-1);
+.mb-mehr{position:relative;flex:none;min-width:34px;height:26px;padding:0 8px;border-radius:var(--r-pill);background:var(--glass-strong);border:1px solid var(--line-3);
+  font:700 var(--fs-11)/1 var(--font-ui);color:var(--gold-100)}
+.mb-mehr::before{content:"";position:absolute;left:-4px;right:-4px;top:50%;height:var(--k-tipp);transform:translateY(-50%)}   /* Tippfläche 44 px */
+.midbar.offen .mb-mehr{order:-1}
+.mb-chip{position:relative;display:flex;align-items:center;gap:6px;min-width:0;max-width:100%;height:26px;padding:0 10px 0 7px;border-radius:var(--r-pill);background:var(--glass);border:1px solid var(--line-2);box-shadow:var(--sh-1);
   font:600 11px/1 var(--font-ui);color:var(--tx-2);white-space:nowrap;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 .mb-chip .icon{width:14px;height:14px;flex:none;color:var(--gold-200)} .mb-chip .icon.mb-gem{width:12px;height:12px;margin-left:-3px;color:var(--res-gem)}
 .mb-chip b{color:var(--tx-1);font-variant-numeric:tabular-nums} .mb-chip i{font-style:normal;color:var(--tx-3);font-variant-numeric:tabular-nums}
 .mb-chip.is-tour{border-color:rgba(176,120,255,.55);background:linear-gradient(90deg,rgba(110,55,190,.7),rgba(16,12,24,.85))} .mb-chip.is-tour .icon{color:#f2c75c} .mb-chip.is-tour i{color:#d9c6ff}
 .mb-chip.is-drache{border-color:rgba(255,140,70,.6);background:linear-gradient(90deg,rgba(170,50,20,.78),rgba(22,10,8,.88))} .mb-chip.is-drache .icon{color:#ffc46a} .mb-chip.is-drache i{color:#ffd9c0}
 .mb-chip.is-warn{border-color:rgba(225,72,60,.6);background:linear-gradient(90deg,rgba(150,30,30,.75),rgba(20,12,12,.88));color:#ffd9d3} .mb-chip.is-warn > .icon:first-child{color:#ffb3aa}
-.res{position:relative;flex:1 1 auto;min-width:0;max-width:136px;height:var(--hud-h);display:flex;align-items:center;gap:6px;padding:0 9px 0 6px;
-  background:var(--glass);border:1px solid var(--line-2);border-radius:var(--r-sm);box-shadow:var(--sh-1);
-  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
-.res > .icon{width:18px;height:18px}   /* (flex-basis auto: freier Platz geht an den längeren Wert – „100 Mrd.“ statt „100 Mr…“) */
+.mb-chip > span{overflow:hidden;text-overflow:ellipsis}
+.mb-chip::before{content:"";position:absolute;left:0;right:0;top:50%;height:var(--k-tipp);transform:translateY(-50%)}   /* Tippfläche 44 px */
+.res{position:relative;flex:1 1 auto;min-width:0;height:100%;display:flex;align-items:center;justify-content:center;gap:var(--ab-1);padding:0 var(--ab-1)}
+.res > .icon{width:16px;height:16px}
+/* der Rohstoff-Knopf: rund, oben rechts (Tippfläche 44 px) */
+.hud > .res--roh{flex:none;width:var(--hud-h);height:var(--hud-h);padding:0;justify-content:center;border-radius:50%;
+  background:var(--glass);border:1px solid var(--line-2);box-shadow:var(--sh-1);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.hud > .res--roh::before{content:"";position:absolute;inset:-6px}   /* (flex-basis auto: freier Platz geht an den längeren Wert – „100 Mrd.“ statt „100 Mr…“) */
 .res b{font:600 var(--fs-13)/1 var(--font-ui);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .res--coin > .icon{color:var(--res-coin)} .res--gem > .icon{color:var(--res-gem)} .res--troop > .icon{color:var(--res-troop)}
 /* phone portrait: the dock already has Shop - the "+" would only squeeze the gem value into an ellipsis */
-@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){ .res,.nav,.mapctl,.toast,.mabar{background:var(--glass-strong)} }
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){ .hud-werte,.res--roh,.nav,.mapctl,.toast,.mabar{background:var(--glass-strong)} }
 
 /* avatar ring (profile header + desktop HUD). --progress (0-100) is written by renderProfile */
 .avatar-ring{--progress:0;position:relative;flex:none;width:48px;height:48px;border-radius:50%;padding:2px;
@@ -45,19 +65,22 @@
    NAVIGATION  #cornerButtons  (phone = bottom dock)
    ===================================================================== */
 .nav{position:fixed;z-index:var(--z-dock);left:0;right:0;bottom:0;height:calc(var(--dock-h) + var(--safe-bd));
-  padding:0 calc(var(--safe-r) + 6px) var(--safe-bd) calc(var(--safe-l) + 6px);display:grid;grid-template-columns:repeat(6,1fr);
+  padding:0 calc(var(--safe-r) + 6px) var(--safe-bd) calc(var(--safe-l) + 6px);display:grid;grid-template-columns:repeat(5,1fr);
   background:linear-gradient(180deg,rgb(18,21,28),rgb(8,10,13));border-top:1px solid var(--line-2);box-shadow:0 -12px 30px rgba(0,0,0,.45)}
 .nav::before{content:"";position:absolute;left:18%;right:18%;top:-1px;height:1px;background:linear-gradient(90deg,transparent,var(--gold-200),transparent)}
-.nav-btn{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:0;color:var(--tx-3);transition:color var(--dur-1)}
-.nav-btn .icon{width:22px;height:22px}
-.nav-l{font:600 var(--fs-9)/1 var(--font-ui);letter-spacing:var(--track-caps);text-transform:uppercase;white-space:nowrap}
+/* Leiste: 5 runde Knöpfe mit festen Plätzen (Karte/Stadt · Bündnis · Kampf · Events · Shop); das Profil öffnet das Spielerbild im HUD */
+.nav-btn{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0;color:var(--tx-2);transition:color var(--dur-1)}
+.nav-btn > .icon{width:var(--k-rund);height:var(--k-rund);padding:13px;border-radius:50%;border:1px solid var(--line-2);color:var(--gold-200);
+  background:radial-gradient(circle at 50% 30%,#232833,#0e1116);box-shadow:var(--sh-1);transition:border-color var(--dur-1),box-shadow var(--dur-1)}
+.nav-l{font:600 var(--fs-11)/1 var(--font-ui);letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+#profileBtn{display:none}   /* nur noch über das Spielerbild (#hudPlayer) – der Knopf bleibt für die Fenster-Logik */
 .nav-btn:hover{color:var(--tx-1)}
+.nav-btn:hover > .icon{border-color:var(--line-3)}
 .nav-btn.active{color:var(--gold-100)}
-.nav-btn.active .icon{color:var(--gold-300);filter:drop-shadow(0 0 6px rgba(214,170,90,.45))}
-.nav-btn.active::after{content:"";position:absolute;top:0;left:50%;width:28px;height:2px;transform:translateX(-50%);background:linear-gradient(90deg,transparent,var(--gold-300),transparent)}
+.nav-btn.active > .icon{color:var(--gold-100);border-color:var(--gold-300);background:radial-gradient(circle at 50% 30%,#4a3a1c,#1a140a);box-shadow:0 0 12px rgba(214,170,90,.45)}
 .badge{position:absolute;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--blood-400);border:1.5px solid var(--ink-1);
   color:#fff;font:700 9.5px/13px var(--font-ui);text-align:center;font-variant-numeric:tabular-nums;pointer-events:none}
-.nav-btn .badge{top:7px;left:calc(50% + 6px)}
+.nav-btn .badge{top:2px;left:calc(50% + 12px)}
 
 /* =====================================================================
    MAP CONTROLS
@@ -297,24 +320,26 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 .anleitung-k{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px}
 .anleitung-ok{grid-column:1/-1;justify-self:end}
 body.has-sheet .anleitung{display:none}
+@media (max-width:899px) and (min-height:501px){   /* Handy: „Schritt 1/7“ klein über dem Text – der Kasten bleibt 2–3 Zeilen hoch */
+  .anleitung{grid-template-columns:minmax(0,1fr) auto;gap:2px 8px;padding:8px 6px 8px 12px}
+  .anleitung-n{grid-row:1} .anleitung-t{grid-row:2} #anleitungWeg{grid-row:1/3;grid-column:2;align-self:center}
+}
 /* Anleitung: der nächste nötige Knopf pulsiert (06b anleitungZeigen setzt body[data-anl-puls]) */
 @keyframes anl-puls{0%,100%{box-shadow:0 0 0 0 rgba(240,200,110,.85)}60%{box-shadow:0 0 0 9px rgba(240,200,110,0)}}
 body[data-anl-puls="heim"] #homeBtn,body[data-anl-puls="knoepfe"] :is(#mapControls button,#hudRoh),
 body[data-anl-puls="angriff"] #attackBtn,body[data-anl-puls="aufwerten"] #upgradeBtn,
-body[data-anl-puls="stadt"] #cityNavBtn,body[data-anl-puls="stadtfenster"] #cityBtn,body[data-anl-puls="bauen"] #cityUpgradeBtn,
-body[data-anl-puls="sammeln"] #fieldSheet [data-fsend],body[data-anl-puls="events"] #goalsBtn,
+body[data-anl-puls="stadt"] #cityNavBtn > .icon,body[data-anl-puls="stadtfenster"] #cityBtn,body[data-anl-puls="bauen"] #cityUpgradeBtn,
+body[data-anl-puls="sammeln"] #fieldSheet [data-fsend],body[data-anl-puls="events"] #goalsBtn > .icon,
 body[data-anl-puls="abholen"] #goalsPopup :is([data-daily],[data-quest],[data-bonus],[data-chain],[data-inbox],[data-inbox-all],[data-ach],[data-ach-all],[data-pass-l],[data-pass-all],[data-pass-old]):not(:disabled)
   {animation:anl-puls 1.4s ease-out infinite}
-body.has-midbar:not(.has-sheet) .toast{top:calc(var(--safe-t) + var(--hud-top-space) + var(--mb-h,0px))}
 /* in der Stadt (Handy): der Hinweis erst unter der Bauarbeiter-Zeile – nie über ihren Knöpfen (--stadt-kopf: Unterkante, 08d stadtKopf) */
 @media (max-width:899px),(max-height:500px){ body.in-stadt:not(.has-sheet) .toast{top:calc(var(--stadt-kopf,96px) + 10px)} }
 @keyframes toast-in{from{opacity:0;translate:0 -6px}}
-/* a full sheet starts right under the HUD: the toast then floats over the HUD row instead of the sheet header */
-/* phone: while a sheet is open the toast docks just above the sheet's footer (never over the HUD values or the sheet header) */
+/* Handy: der Hinweis bleibt oben unter dem HUD (über der Karte, die Fenster sind höchstens 70 % hoch) – nie über Fenster-Kopf/Fuß oder den
+   Zoom-Knöpfen; reicht ein Fenster doch so hoch, liegt der Hinweis dahinter */
 @media (max-width:899px) and (min-height:501px){
-  body.has-sheet .toast{top:auto;bottom:calc(var(--dock-h) + var(--safe-bd) + 72px);box-shadow:var(--sh-2),0 0 0 1px rgba(0,0,0,.35)}
+  body.has-sheet .toast{z-index:calc(var(--z-sheet) - 1);box-shadow:var(--sh-2),0 0 0 1px rgba(0,0,0,.35)}
   body.has-sheet .toast--lang{display:none}   /* ein langer Hinweis würde das Fenster verdecken (die Saison steht dort ohnehin: Events → Boss & Lager) */
-  body.has-sheet:has(#battleLogPopup.is-open,#goalsPopup.is-open,#shopPopup.is-open,#profilePopup.is-open:not([data-tab="equip"])) .toast{bottom:calc(var(--dock-h) + var(--safe-bd) + 16px)}
 }
 
 /* =====================================================================
@@ -368,7 +393,7 @@ body.has-midbar:not(.has-sheet) .toast{top:calc(var(--safe-t) + var(--hud-top-sp
 .psub:has(> .chip--scouted){flex-wrap:wrap;row-gap:3px}   /* fremde Basis: lieber zweite Zeile als „GES…“ oder „Kevin_93 · S…“ */
 .dot{width:7px;height:7px;border-radius:50%;flex:none;box-shadow:0 0 0 2px rgba(0,0,0,.35)}
 .dot--player{background:var(--f-player)} .dot--enemy{background:var(--f-enemy)} .dot--neutral{background:var(--f-neutral)}
-.btn-x{width:32px;height:32px;display:grid;place-items:center;align-self:start;border-radius:var(--r-sm);color:var(--tx-2);border:1px solid transparent;transition:color var(--dur-1),border-color var(--dur-1)}
+.btn-x{width:var(--k-tipp);height:var(--k-tipp);display:grid;place-items:center;align-self:start;border-radius:var(--r-sm);color:var(--tx-2);border:1px solid transparent;transition:color var(--dur-1),border-color var(--dur-1)}
 .btn-x .icon{width:16px;height:16px}
 .btn-x:hover{color:var(--gold-100);border-color:var(--line-2)}
 
@@ -385,14 +410,15 @@ body.has-midbar:not(.has-sheet) .toast{top:calc(var(--safe-t) + var(--hud-top-sp
 .pbody{position:relative;flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
   padding:14px;display:flex;flex-direction:column;gap:12px;scrollbar-width:thin;scrollbar-color:var(--ink-5) transparent;
   /* top 10px fade: scrolled content dissolves before it reaches the header crest (.phead::after hangs 6px into the body) */
-  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 10px,#000 calc(100% - 14px),transparent);mask-image:linear-gradient(180deg,transparent 0,#000 10px,#000 calc(100% - 14px),transparent)}
+  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 10px);mask-image:linear-gradient(180deg,transparent 0,#000 10px)}   /* unten: Schatten-Hinweis (01 .pbody) */
 .pfoot{position:relative;flex:none;display:flex;gap:8px;align-items:center;padding:10px 14px 12px;border-top:1px solid var(--line-1);
   background:linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,.3))}
 .pfoot--wrap{flex-wrap:wrap}
 .pfoot:not(:has(> :not([style*="display: none"]):not([hidden]))){display:none}
 
 /* ---- panel placement: PHONE PORTRAIT (default) ---- */
-.panel--sheet{--sheet-max:calc(100dvh - var(--safe-t) - var(--hud-top-space) - var(--dock-h) - var(--safe-bd));
+/* Handy: ein Fenster ist höchstens 70 % hoch – die Karte bleibt oben sichtbar (Insel/Angriff 62 %) */
+.panel--sheet{--sheet-max:min(70dvh,calc(100dvh - var(--safe-t) - var(--hud-top-space) - var(--dock-h) - var(--safe-bd)));
   left:var(--safe-l);right:var(--safe-r);top:auto;bottom:calc(var(--dock-h) + var(--safe-bd));max-height:var(--sheet-max);
   z-index:var(--z-sheet);border-radius:var(--r-lg) var(--r-lg) 0 0}   /* bottom-anchored, hugs its content up to the HUD */
 #profilePopup{min-height:min(680px,var(--sheet-max))}   /* stable height: switching tabs never makes the sheet jump */
@@ -400,7 +426,7 @@ body.has-midbar:not(.has-sheet) .toast{top:calc(var(--safe-t) + var(--hud-top-sp
 .panel--island{left:var(--safe-l);right:var(--safe-r);bottom:calc(var(--dock-h) + var(--safe-bd));z-index:var(--z-sheet);
   max-height:min(62dvh,calc(100dvh - var(--dock-h) - var(--safe-bd) - var(--safe-t) - var(--hud-top-space)));border-radius:var(--r-lg) var(--r-lg) 0 0}
 .panel--item{left:var(--safe-l);right:var(--safe-r);bottom:calc(var(--dock-h) + var(--safe-bd));z-index:var(--z-modal);
-  max-height:min(76dvh,calc(100dvh - var(--dock-h) - var(--safe-bd) - var(--safe-t) - var(--hud-top-space)));border-radius:var(--r-lg) var(--r-lg) 0 0}
+  max-height:min(70dvh,calc(100dvh - var(--dock-h) - var(--safe-bd) - var(--safe-t) - var(--hud-top-space)));border-radius:var(--r-lg) var(--r-lg) 0 0}
 .panel .sheet-grab + .phead{padding-top:4px}
 @media (max-width:899px),(max-height:500px){ body.has-sheet .mabar{display:none!important} }
 body.has-panel .mapctl{display:none}

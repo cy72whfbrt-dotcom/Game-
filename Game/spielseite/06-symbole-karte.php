@@ -75,23 +75,25 @@
 <canvas id="mapCanvas" aria-label="Weltkarte"></canvas>
 <div id="mapVignette" aria-hidden="true"></div>
 
-<!-- HUD: resources (phone = 3 pills, desktop = one framed bar with player plate) -->
+<!-- HUD: Spielerbild (antippen = Profil) + eine Werte-Zeile + runder Rohstoff-Knopf; Desktop = ein Rahmen mit Namensschild -->
 <div id="hud" class="hud">
   <button id="hudPlayer" class="hud-me" type="button" title="Profil öffnen">
     <span class="avatar-ring avatar-ring--sm"><span class="avatar"><svg class="icon"><use href="#i-profile"/></svg></span><span id="hudLevel" class="lvl">1</span></span>
     <span class="hud-me-text"><b id="hudName">Du</b><small id="hudRankLine">Bronze</small></span>
   </button>
-  <div class="res res--coin" title="Münzen"><svg class="icon"><use href="#i-coin"/></svg><b id="coinCount">0</b></div>
-  <div class="res res--gem" title="Edelsteine"><svg class="icon"><use href="#i-gem"/></svg><b id="gemCount">0</b></div>
-  <div class="res res--troop" title="Truppen"><svg class="icon"><use href="#i-troops"/></svg><b id="troopCount">0</b></div>
+  <div class="hud-werte">
+    <div class="res res--coin" title="Münzen"><svg class="icon"><use href="#i-coin"/></svg><b id="coinCount">0</b></div>
+    <div class="res res--gem" title="Edelsteine"><svg class="icon"><use href="#i-gem"/></svg><b id="gemCount">0</b></div>
+    <div class="res res--troop" title="Truppen"><svg class="icon"><use href="#i-troops"/></svg><b id="troopCount">0</b></div>
+  </div>
   <button id="hudRoh" class="res res--roh" type="button" title="Rohstoffe" aria-label="Rohstoffe"><svg class="icon"><use href="#i-crate"/></svg><span class="roh-mini"><span class="roh-v roh-h"><svg class="icon"><use href="#i-wood"/></svg><b data-r="h">0</b></span><span class="roh-v roh-s"><svg class="icon"><use href="#i-stone"/></svg><b data-r="s">0</b></span><span class="roh-v roh-e"><svg class="icon"><use href="#i-iron"/></svg><b data-r="e">0</b></span></span></button>
 </div>
 <div id="rohDrop" class="roh-drop" hidden></div>
 
 <div id="midBar" class="midbar" hidden></div>
 
-<!-- Navigation (die EINE Ordnung, Abschnitt 26): Stadt · Bündnis · Kampf · Events · Shop · Profil – jedes Fenster nur hier.
-     phone = bottom dock, landscape phone = left rail, desktop = top-right cluster -->
+<!-- Navigation (die EINE Ordnung, Abschnitt 26): Karte/Stadt · Bündnis · Kampf · Events · Shop – runde Knöpfe; das Profil über das Spielerbild.
+     phone = bottom dock, landscape phone = left rail, desktop = unten Mitte -->
 <nav id="cornerButtons" class="nav" aria-label="Hauptmenü">
   <button id="cityNavBtn" class="nav-btn" type="button" title="Stadt: Burg, Gebäude, Forschung, Helden, Rohstoffe"><svg class="icon"><use href="#i-castle"/></svg><span class="nav-l">Stadt</span></button>
   <button id="bundBtn" class="nav-btn" type="button" title="Bündnis"><svg class="icon"><use href="#i-bund"/></svg><span class="nav-l">Bündnis</span><span id="bundBadge" class="badge" style="display:none">0</span></button>

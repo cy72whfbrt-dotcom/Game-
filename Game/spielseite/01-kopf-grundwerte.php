@@ -66,7 +66,8 @@ if (!ini_get('zlib.output_compression') && function_exists('ob_gzhandler')) ob_s
   /* ---- type ---- */
   --font-display:'Cinzel','Trajan Pro',Georgia,serif;
   --font-ui:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
-  --fs-9:9.5px; --fs-10:10px; --fs-11:11px; --fs-12:12px; --fs-13:13px; --fs-15:15px; --fs-17:17px;
+  /* Schriftstufen (Design 11b F): 11 Kleingedrucktes · 13 Text · 15 Werte/Knopftext · 17 Fenstertitel · 22 Zahl-Held. 9.5/10 gibt es nicht mehr (= 11) */
+  --fs-9:11px; --fs-10:11px; --fs-11:11px; --fs-12:12px; --fs-13:13px; --fs-15:15px; --fs-17:17px; --fs-22:22px;
   --track-caps:.1em; --track-display:.05em;
   /* ---- radii: small, carved - never bubbly ---- */
   --r-xs:2px; --r-sm:3px; --r-lg:6px; --r-pill:999px;
@@ -77,8 +78,12 @@ if (!ini_get('zlib.output_compression') && function_exists('ob_gzhandler')) ob_s
   --sh-3:var(--hi-inset),0 22px 60px rgba(0,0,0,.66),0 0 0 1px rgba(0,0,0,.6);
   --glow-gold:0 0 0 1px rgba(228,200,134,.45),0 0 16px rgba(214,170,90,.22);
   --focus:0 0 0 2px var(--ink-1),0 0 0 4px var(--gold-300);
+  /* ---- Abstände (Design 11b F): nur 4 / 8 / 12 / 16 – Fensterrand 16, Kartenabstand 8, Abschnitt 16 ---- */
+  --ab-1:4px; --ab-2:8px; --ab-3:12px; --ab-4:16px;
+  /* ---- Knopf-Arten: Haupt (gold, 1 pro Fenster, unten fest) · Zweit (dunkel) · Gefahr (rot) · Chip (sichtbar 36, Tippfläche 44) · Rund (Leiste) ---- */
+  --k-haupt:48px; --k-zweit:44px; --k-gefahr:48px; --k-chip:36px; --k-tipp:44px; --k-rund:48px;
   /* ---- component sizes ---- */
-  --hud-h:30px; --btn-h:34px; --btn-h-sm:28px; --dock-h:58px; --rail-w:64px; --tile:58px; --hud-top-space:46px;
+  --hud-h:32px; --btn-h:34px; --btn-h-sm:28px; --dock-h:58px; --rail-w:64px; --tile:58px; --hud-top-space:46px;
   --icon:18px;
   /* ---- motion ---- */
   --ease-out:cubic-bezier(.2,.8,.2,1);
@@ -95,7 +100,9 @@ if (!ini_get('zlib.output_compression') && function_exists('ob_gzhandler')) ob_s
   --noise:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 .92 0 0 0 0 .78 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   --tick:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231d1406' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E");
 }
-@media (pointer:coarse){ :root{ --btn-h:40px; --btn-h-sm:34px; } }
+@media (pointer:coarse){ :root{ --btn-h:44px; --btn-h-sm:36px; } }   /* Handy: nichts unter 44 px Tippfläche (kleine Knöpfe über .btn--chip) */
+/* Handy hochkant: HUD-Block = Spielerbild + Werte-Zeile + EIN Streifen (78 px), Leiste mit runden Knöpfen (66 px) */
+@media (max-width:899px) and (min-height:501px){ :root{ --hud-top-space:78px; --dock-h:66px; } }
 
 /* ---------------- base ---------------- */
 *,*::before,*::after{box-sizing:border-box}
@@ -116,6 +123,28 @@ b,strong{font-weight:600}
 .icon use{pointer-events:none}
 .icon--gem{color:var(--res-gem)} .icon--coin{color:var(--res-coin)}
 .num{font-variant-numeric:tabular-nums}
+
+/* ---------------- Design-Bausteine (11b F): Knopf-Arten, Fenster-Gerüst – andere Teile bauen darauf ---------------- */
+.btn--haupt{height:var(--k-haupt);font-size:var(--fs-15)}                 /* mit .btn--primary: der eine goldene Knopf unten im Fenster */
+.btn--zweit{height:var(--k-zweit)}                                         /* mit .btn--secondary */
+.btn--gefahr{height:var(--k-gefahr);font-size:var(--fs-15)}               /* mit .btn--danger: Angreifen */
+.btn--chip{height:var(--k-chip);padding:0 var(--ab-3);font-size:var(--fs-13);border-radius:var(--r-pill)}
+.btn--chip::before,.tipp44::before{content:"";position:absolute;left:0;right:0;top:50%;height:var(--k-tipp);transform:translateY(-50%)}   /* Tippfläche 44 px */
+.tipp44{position:relative}
+.btn-rund{position:relative;display:inline-flex;flex-direction:column;align-items:center;gap:2px;min-width:var(--k-rund);color:var(--tx-2);font:600 var(--fs-11)/1 var(--font-ui)}
+.btn-rund > .icon{width:var(--k-rund);height:var(--k-rund);padding:13px;border-radius:50%;border:1px solid var(--line-2);color:var(--gold-200);
+  background:radial-gradient(circle at 50% 30%,#232833,#0e1116);box-shadow:var(--sh-1)}
+/* Fenster: feste Kopfzeile · scrollender Mittelteil mit Schatten-Hinweis · feste Fußzeile mit dem Haupt-Knopf
+   (.panel > .phead / .pbody / .pfoot – oder für eigene Fenster .fenster > .fenster-kopf / .fenster-mitte / .fenster-fuss) */
+.fenster{display:flex;flex-direction:column;min-height:0;max-height:var(--fenster-max,70dvh)}
+.fenster-kopf,.fenster-fuss{flex:none}
+.fenster-mitte{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.fenster-fuss{display:flex;gap:var(--ab-2);align-items:center;padding:var(--ab-3) var(--ab-4);border-top:1px solid var(--line-1)}
+.fenster-mitte,.scroll-schatten,.pbody{   /* Schatten oben/unten nur, solange es dort weitergeht (Hintergrund wandert mit, Schatten bleibt) */
+  background:linear-gradient(rgb(16,19,25) 30%,rgba(16,19,25,0)) top/100% 24px no-repeat local,
+             linear-gradient(rgba(12,15,20,0),rgb(12,15,20) 70%) bottom/100% 24px no-repeat local,
+             radial-gradient(farthest-side at 50% 0,rgba(0,0,0,.55),transparent) top/100% 10px no-repeat scroll,
+             radial-gradient(farthest-side at 50% 100%,rgba(0,0,0,.6),transparent) bottom/100% 12px no-repeat scroll}
 
 /* ---------------- map layers ---------------- */
 #mapCanvas{position:fixed;inset:0;width:100vw;height:100dvh;display:block;touch-action:none;cursor:grab;z-index:var(--z-map)}

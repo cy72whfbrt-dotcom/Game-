@@ -1275,7 +1275,7 @@ function updateHud() {
     if (AUF) AUF.hud();                                                       // Holz, Stein, Eisen (aufbau.js)
     requestRender();   // HUD changes coincide with state changes -> the map may need a redraw
 }
-// Desktop player plate (#hudPlayer). Called at boot, from the 1s
+// Player plate (#hudPlayer, Handy + Desktop: antippen = Profil). Called at boot, from the 1s
 // interval and from renderProfile(). It reads playerLvl, profileName
 // and RANK_TIERS, which are declared further down, so it must never
 // run before the script has passed those lines.
@@ -7115,22 +7115,26 @@ function bountyCheck(r) {                             // a new ruler: whoever to
     if (txt) afterSplash(() => setTimeout(() => flashHint(txt, 5000), 4500));
     if (r === 'player') sfx('coin');
 }
-// ---- what you see: ONE chip under the HUD (the most urgent: Invasion, Drache, Wochen-Event, Kopfgeld, Händler), a card in the Thron tab, the Kopfgeld on the Mega-Tempel
+// ---- what you see: EIN Streifen unter dem HUD (der dringendste Hinweis, der Rest als „+2“ – antippen klappt alle auf), a card in the Thron tab, the Kopfgeld on the Mega-Tempel
 const midBar = document.getElementById('midBar');
-let midBarHtml = '';
+let midBarHtml = '', midBarAuf = false;
 function renderMidBar() {
-    const now = Date.now(), b = bountyOf(), chips = [];   // [Dringlichkeit, html] – gezeigt wird nur der dringendste
+    const now = Date.now(), b = bountyOf(), chips = [];   // [Dringlichkeit, html]
     if (woOn(now)) { const th = woThemaAm(now), W = evState.wo || {}, rk = W.key === woWin(now).key ? evRang(W.pts) : [], pl = rk.findIndex(e => e[0] === 'player') + 1;   // Wochen-Event (Mo–Fr)
         chips.push([9, '<button type="button" class="mb-chip is-tour" data-mb="woche">' + icon(th.ic) + '<span>Wochen-Event · ' + th.name + '</span>' + (pl ? '<b>Platz ' + pl + '</b>' : '') + '</button>']); }
     if (b && b.gems >= 5) chips.push([b.who === 'player' ? 1 : 7, '<button type="button" class="mb-chip' + (b.who === 'player' ? ' is-warn' : '') + '" data-mb="bounty">' + icon(b.who === 'player' ? 'losses' : 'coin') +
         '<span>' + (b.who === 'player' ? 'Kopfgeld auf dich' : 'Kopfgeld') + '</span><b>' + fmtNum(b.gems) + '</b>' + icon('gem', 'mb-gem') + '</button>']);
     chips.push(...evChips(now));                                                        // Invasion, Drache (Events)
     if (typeof haendlerChip === 'function') { const hc = haendlerChip(now); if (hc) chips.push([6, hc]); }   // Paket C: ein Händler ist da
-    const h = chips.length ? chips.sort((x, y) => x[0] - y[0])[0][1] : '';
-    if (h !== midBarHtml) { midBarHtml = h; midBar.innerHTML = h; midBar.hidden = !h; document.body.classList.toggle('has-midbar', !!h); document.body.style.setProperty('--mb-h', midBar.children.length * 31 + 'px'); }   // the toast moves below the chips
+    chips.sort((x, y) => x[0] - y[0]);
+    if (chips.length < 2) midBarAuf = false;
+    const h = chips.length ? (midBarAuf ? chips.map(c => c[1]).join('') : chips[0][1]) + (chips.length > 1 ? '<button type="button" class="mb-mehr" data-mb="mehr" aria-label="' + (midBarAuf ? 'Weniger zeigen' : 'Alle Hinweise zeigen') + '">' + (midBarAuf ? '−' : '+' + (chips.length - 1)) + '</button>' : '') : '';
+    if (h !== midBarHtml) { midBarHtml = h; midBar.innerHTML = h; midBar.hidden = !h; midBar.classList.toggle('offen', midBarAuf); }
     for (const el of midBar.querySelectorAll('[data-ev-bis]')) setText(el, fmtDHMS(Math.max(0, +el.dataset.evBis - now) / 1000));
 }
 midBar.addEventListener('click', e => { const c = e.target.closest('[data-mb]'); if (!c) return;
+    if (c.dataset.mb === 'mehr') { midBarAuf = !midBarAuf; renderMidBar(); return; }
+    midBarAuf = false;
     if (c.dataset.mb === 'woche') { openGoals('tour'); return; }
     if (c.dataset.mb.startsWith('ev-')) { openGoals(c.dataset.mb.slice(3)); return; }
     const m = islandById[megaTempleId]; if (!m) return; closeAllPopups(); flyTo(m.x, m.y, { zoom: Math.max(mapState.zoom, 0.02) }); setTimeout(() => openIslandPopup(m), 650); });
