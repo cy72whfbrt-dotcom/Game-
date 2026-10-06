@@ -47,8 +47,9 @@ function launchScout(targetId, explore, at) {
 }
 
 // Spähbericht: was der Späher über den Herrn der Basis herausfindet – alles, sofort (Alexander 4.10.): Herr, Stufe, Titel,
-// Schild, Mauer, Helden, Burg, Rohstoffe (und wie viel davon zu holen ist), Fähigkeiten, Forschung, Ausrüstung
-function spaeherBlick(owner) {
+// Schild, Mauer, Helden, Burg, Rohstoffe (und wie viel davon zu holen ist), Fähigkeiten, Forschung, Ausrüstung – dazu die Basis
+// (island): ihre Stufe und die Verteidigung Teil für Teil wie im Kampfbericht (defenseParts, Summe = effectiveDefense)
+function spaeherBlick(owner, island) {
     if (!owner || owner === 'player' || !botById[owner]) return null;
     const b = loadBotState()[owner]; if (!b) return null;
     const t = titleOf(owner), o = { name: botById[owner].name, lvl: b.lvl || 1, titel: t ? t.name : '', schild: !!ownerShielded(owner), wall: botBld(owner, 'wall') || 0 };
@@ -59,6 +60,7 @@ function spaeherBlick(owner) {
     const m = botMults(owner);                                               // Abwehr-Werte (Zuschauer: effectiveDefense rechnet damit, bis wieder gespäht wird)
     o.k = { ar: Math.round((m.armorPct || 0) * 100) / 100, dp: Math.round((m.defensePct || 0) * 100) / 100, wall: o.wall, kk: Math.round((AUF ? AUF.kampf(owner, 'd') : 1) * 1e4) / 1e4 };
     o.who = neutralId(owner);
+    if (island) { o.bl = islandLevels[island.id] || 1; o.teile = defenseParts(island).map(q => [q[0], Math.round(q[1]), q[2] || '']); }
     return o;
 }
 // Zuschauer: Abwehr-Werte eines Herrn aus dem neuesten Spähbericht (null: nie gespäht)
@@ -101,6 +103,14 @@ function spaehAbgelaufen(now) {
     if (neu) spaehGeaendert();
 }
 setInterval(() => spaehAbgelaufen(Date.now()), 30000);
+// Wann wurde diese Basis zuletzt gespäht (neuester Bericht im Kampflog; null: keiner)? Ab 30 Min. gilt er als alt („neu spähen?“)
+const SPAEH_ALT_MS = 30 * 60000;
+function spaehVom(id) {
+    const e = (combatLog || []).find(x => x && x.type === 'scout' && x.targetId === id && !x.wartet && !x.fehl);
+    return e && Number.isFinite(e.at) ? e.at : null;
+}
+function spaehWann(at) { const m = Math.floor((Date.now() - at) / 60000); return m < 1 ? 'gerade eben' : m < 60 ? 'vor ' + m + ' Min.' : 'vor ' + Math.floor(m / 60) + ' Std.'; }   // (ändert sich höchstens jede Minute)
+function spaehAlterText(id) { const at = spaehVom(id); return at === null ? '' : 'Gespäht ' + spaehWann(at) + (Date.now() - at >= SPAEH_ALT_MS ? ' – die Werte können sich geändert haben, neu spähen?' : ''); }
 // Verstärkung in einer fremden Basis laut dem neuesten Spähbericht (Zuschauer kennen sie sonst nicht)
 function spaehVerst(id) {
     const e = (combatLog || []).find(x => x && x.type === 'scout' && x.targetId === id && !x.wartet && !x.fehl);
@@ -114,7 +124,8 @@ function spaeherBlickHtml(s) {
         (g ? RARITY_DEFS[g[0]].label + ' · St. ' + g[1] + (g[2] ? ' · ' + g[2] + '★' : '') : '—') + '</span></div>'; }).join('') : '';
     const beute = v => fmtCompact(v) + (R && v > R.schutz ? ' <small>(' + fmtCompact(Math.floor((v - R.schutz) * HAUPT_BEUTE)) + ' zu holen an der Hauptstadt)</small>' : '');
     return '<details><summary>Spähbericht</summary><div class="logSide" style="margin-top:6px">' +
-        zeile('Herr', escapeHtml(s.name) + ' · Stufe ' + fmtNum(s.lvl) + (s.titel ? ' · ' + escapeHtml(s.titel) : '')) +
+        zeile('Herr', escapeHtml(s.name) + ' · Spieler-Stufe ' + fmtNum(s.lvl) + (s.titel ? ' · ' + escapeHtml(s.titel) : '')) +
+        (s.bl ? zeile('Basis', 'Stufe ' + fmtNum(s.bl)) : '') +
         zeile('Friedensschild', s.schild ? 'aktiv' : 'keiner') +
         (s.wall !== undefined ? zeile('Mauer', 'Stufe ' + s.wall) : '') +
         (s.held ? zeile('Helden', s.held.length ? s.held.map(h => escapeHtml(h[0]) + stern(h[1])).join(', ') : 'keine') : '') +
@@ -152,7 +163,7 @@ function resolveScout(scout) {
         targetId: scout.targetId,
         troops: effectiveTroops(target),
         defense: effectiveDefense(target),
-        spy: vomWr ? null : spaeherBlick(ow)
+        spy: vomWr ? null : spaeherBlick(ow, target)
     };
     if (ow && !vomWr && typeof verst !== 'undefined') eintrag.verst = verst.l.reduce((s, v) => s + (v.t === target.id ? v.n : 0), 0);   // Verstärkung (Botschaft): eigene Zeile im Bericht
     if (post && post.bis > Date.now()) spaehEinsetzen(eintrag, post.r); else if (vomWr) eintrag.wartet = Date.now();   // (wartet: der Bericht vom Weltrechner kommt gleich – sonst nach 10 Min. „kein Bericht“)

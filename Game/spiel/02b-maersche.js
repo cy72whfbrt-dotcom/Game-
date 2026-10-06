@@ -55,6 +55,7 @@ try {
 
 // History of resolved attacks/transfers, newest first, capped
 const COMBAT_LOG_LIMIT = 50;
+const AUSGESPAEHT_LIMIT = 10;                        // (höchstens so viele „… hat deine Basis ausgespäht“: echte Kampfberichte bleiben im Log)
 let combatLog;
 try {
     combatLog = JSON.parse(store.get('openWaterCombatLog')) || [];
@@ -65,10 +66,19 @@ function addCombatLogEntry(entry) {
     // Zeit des Kampfes: ein Bericht vom Weltrechner bringt sie mit (kam er erst später an, z. B. nach der Nacht) – sonst jetzt
     const jetzt = Date.now();
     entry.at = Number.isFinite(entry.at) && entry.at > jetzt - 30 * 86400000 ? Math.min(entry.at, jetzt) : jetzt;
+    if (entry.type === 'ausgespaeht') {               // derselbe Späher an derselben Basis: nur der neueste Eintrag
+        const gleich = x => x.type === 'ausgespaeht' && x.botId === entry.botId && x.targetId === entry.targetId;
+        if (combatLog.some(x => gleich(x) && (x.at || 0) >= entry.at)) return;
+        for (let i = combatLog.length - 1; i >= 0; i--) if (gleich(combatLog[i])) combatLog.splice(i, 1);
+    }
     entry.names = {};                                // names as they were then (a boss may camp there later)
     for (const k of ['targetId', 'sourceId', 'toId', 'fromId']) if (entry[k] !== undefined && islandById[entry[k]]) entry.names[entry[k]] = islandTitle(islandById[entry[k]]);
     let pos = 0; while (pos < combatLog.length && (combatLog[pos].at || 0) > entry.at) pos++;   // neueste zuerst, auch wenn Berichte spät ankommen
     combatLog.splice(pos, 0, entry);
+    if (entry.type === 'ausgespaeht') {               // zu viele Späher-Meldungen: die ältesten dieser Art raus
+        let n = combatLog.filter(x => x.type === 'ausgespaeht').length;
+        for (let i = combatLog.length - 1; i >= 0 && n > AUSGESPAEHT_LIMIT; i--) if (combatLog[i].type === 'ausgespaeht') { combatLog.splice(i, 1); n--; }
+    }
     if (combatLog.length > COMBAT_LOG_LIMIT) combatLog.length = COMBAT_LOG_LIMIT;
     store.set('openWaterCombatLog', JSON.stringify(combatLog));
     // an open battle log shows the new entry right away

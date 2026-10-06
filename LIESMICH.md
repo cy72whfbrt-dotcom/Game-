@@ -591,6 +591,23 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Truppen (gerechnet wie die Vorschau: Schwert, Titel, Forschung, ohne Held); reicht keine → die mit den meisten; Ziel nicht
   gespäht (Stärke unbekannt) → die nächste mit Truppen. Im Angriffsfenster oben „Von Basis“ zum Ändern (Auswahl: Name ·
   Truppen · Marschzeit · „reicht“, nächste zuerst; 10a). Test `tests/browser/maersche_knoepfe_test.js` (Handy + Desktop).
+- **5./6.10. Nacht – Spähbericht richtig + „hat deine Basis ausgespäht“ (11b B3 + D, Paket „spaeh“) – NICHT hochgeladen:**
+  Fehler (Bilder Turm #23633 / Clara_V): der Spähbericht zeigte 4 leere Ausrüstungsplätze, obwohl der Späher die Ausrüstung
+  mitbrachte – **Ursache:** der neue Kampflog-Aufbau (`kampflogUmbauen` → `spaeh`, 05d) baute die Ausrüstung immer als leere
+  Vorlage (`leerGear`) und warf die echten Zeilen weg. Jetzt: Ausrüstung mit Seltenheit/Stufe/Sternen wie im Kampfbericht
+  (`kampfGearHtml`, aus `renderCombatLog` herausgezogen); Verteidigung Teil für Teil wie im Kampfbericht (`spaeherBlick(owner,
+  island)` schickt `teile` = `defenseParts` und `bl` = Basis-Stufe mit – auch der Weltrechner in `spaehRunde`; Summe = Verteidigung
+  im Kampf); Kopf „Spieler-Stufe 107 · Basis Stufe 93“ (auch im Kampfbericht heißt die Kopfzeile „Spieler-Stufe“); was wirklich
+  unbekannt ist (älterer Bericht ohne Daten) steht so da. Alter des Berichts: im Bericht „Gespäht vor …“, ab 30 Min. gelb
+  „neu spähen?“ (Kampflog-Karte, Basis-Fenster, Angriffsfenster – `spaehVom`, `spaehAlterText`, `SPAEH_ALT_MS`).
+  Neu: Späht ein echter Spieler (Weltrechner `spaehRunde`) oder ein Mitspieler (jeder Späher aus `botLearn` → `botScoutLos`,
+  bots/03) deine Basis aus, bekommst du bei Ankunft einen Kampflog-Eintrag „X hat deine Basis ausgespäht – rechne mit einem
+  Angriff“ (`ausgespaeht`; echte Spieler über `WELT.bericht`) und, wenn du nicht im Spiel bist, einen Push (Art `spaeher`, in den
+  Einstellungen „Späher bei dir“ abschaltbar; `push.js` `fertig`). Neuer Test `spaeh_bericht_test`.
+  Gegen eine Flut (Mitspieler spähen alle 10 Min. neu, Prüfer-Fund): derselbe Späher an derselben Basis meldet höchstens alle
+  30 Min. (`ausgespaehtZuletzt`, `AUSGESPAEHT_PAUSE_MS` – kein Eintrag, kein `WELT.bericht`, kein Push); im Kampflog bleibt je
+  Späher und Basis nur der neueste Eintrag und höchstens 10 „ausgespäht“ (`AUSGESPAEHT_LIMIT`, älteste dieser Art zuerst raus),
+  damit echte Kampfberichte im 50er-Fenster bleiben (Test: 30 Späher + Angriffsbericht).
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
@@ -804,6 +821,8 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
   „Grundverteidigung 557,6 Mrd.“ als eine Zahl, der Kampfbericht teilt auf (Grund 171,4 Mrd. „Basis Stufe 93“ + Rüstung
   + Fähigkeit + Mauer + Forschung) – Spähbericht sollte genauso aufschlüsseln; Spähbericht-Kopf sagt „Stufe 107“, der
   Kampfbericht „Basis Stufe 93“ (prüfen, was stimmt). Summe passt ungefähr (824,9 vs. 827,2 Mrd.).
+  → **Behoben 5./6.10. Nacht (nicht hochgeladen):** beides stimmt – 107 ist die Spieler-Stufe, 93 die Stufe der Basis; jetzt
+  so beschriftet, Ausrüstung und Aufteilung im Spähbericht (Verlauf 5./6.10.).
 - **Anzeige (Alexander 5.10., „wie bei Million Lords“):** Ertrag überall **pro Stunde** statt „/ Tick“ bzw. „/ s“ (Profil
   „Truppen / Tick“, „Münzen / Tick“, Basis-Fenster, Tempel). Richtig umrechnen: ein Tick ist `productionTickMs()` (mit
   Fähigkeit „Geschwindigkeit“ bis 0,4 s). → Inzwischen entschieden: Ertrag selbst wird langsamer, siehe 11b A.
@@ -907,6 +926,7 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
    (den Wachturm gibt es seit dem Hauptstadt-Umbau nicht mehr – keine Stufen-Sperre; was wirklich unbekannt ist, deutlich
    kennzeichnen statt leerer Plätze);
    Alter des Berichts („gespäht vor 2 Std.“, ab 30 Min. gelb); Spieler-Stufe und Basis-Stufe eindeutig beschriften.
+   → **gebaut (nicht hochgeladen)**, Verlauf 5./6.10. Nacht.
 
 **C. Neue Regeln (Teil 2)**
 - Mitspieler sehen die Stärke eines Angriffs nur so ungenau wie echte Spieler.
@@ -926,6 +946,8 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
   Hauptstadt-Fenster erklärt sich, nächster Knopf leuchtet · Knöpfe ohne Text werden in der Anleitung erklärt ·
   schneller laden (**gebaut, nicht hochgeladen** – Verlauf 5./6.10. Nacht) · prüfen, ob der Anleitungs-Stand im Browser liegt (wenn ja: auf den Server).
 - Kampf/Bündnis: Nachricht, wenn ein echter Spieler dich ausspäht · Warnung + automatische Hilfe bei einer Rally gegen
+  schneller laden · prüfen, ob der Anleitungs-Stand im Browser liegt (wenn ja: auf den Server).
+- Kampf/Bündnis: Nachricht, wenn ein echter Spieler dich ausspäht (**gebaut, nicht hochgeladen** – auch Mitspieler) · Warnung + automatische Hilfe bei einer Rally gegen
   das Bündnis · Meldung, wenn ein Verbündeter seine Verstärkung heimholt, und beim Antippen der eigenen Basis sehen, wer
   dort verstärkt · Mitspieler: auf „Später“ folgt „Jetzt!“, sie schreiben „Danke!“/„Gut gemacht!“.
 - Langzeit: Hauptstadt-Erfolge · Push „Bau fertig“/„Forschung fertig“ · Aufgabe „Öffne 3 Kisten“ zählt auch

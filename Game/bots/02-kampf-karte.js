@@ -418,7 +418,7 @@ function botLearn(botId, targetId, ready, vonLm) {            // (ready = when t
     const it = botIntelMem[botId] || (botIntelMem[botId] = {});
     it[targetId] = { s: effectiveTroops(t) + effectiveDefense(t), ready: ready || Date.now(), pending: !!ready && ready > Date.now() };
     const keys = Object.keys(it); if (keys.length > 120) for (const k of keys.sort((u, v) => it[u].ready - it[v].ready).slice(0, keys.length - 120)) delete it[k];
-    if (ready) botStat(botId, 'scouts');                                  // a scout sent out (Erfolge)
+    if (ready) { botStat(botId, 'scouts'); botScoutLos(botId, targetId, ready); }   // a scout sent out (Erfolge) – der Herr erfährt es bei Ankunft
 }
 
 // A person can only tap so fast: every order (attack, send, scout, reinforce) takes a few seconds, and a strike

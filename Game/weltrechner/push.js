@@ -1,7 +1,7 @@
 // ===== weltrechner/push.js – Handy-Benachrichtigungen (Web-Push) vom Weltrechner =====
 // Der Weltrechner weiß als Einziger, wann ein echter Spieler (u<id>) angegriffen wird. Ist der Spieler gerade NICHT im
 // Spiel, schickt er ihm eine Benachrichtigung aufs Handy („Deine Basis X wird angegriffen“, „Basis X verloren“,
-// „Späher von Y unterwegs“) – auch wenn die App zu ist.
+// „Späher von Y unterwegs“, „Y hat deine Basis X ausgespäht“) – auch wenn die App zu ist.
 //
 // Ganz ohne npm-Pakete, nur mit dem, was Node 22 mitbringt (crypto, fetch):
 //   - Verschlüsseln der Nachricht nach RFC 8291 („aes128gcm“: ECDH P-256, HKDF-SHA-256, AES-128-GCM)
@@ -118,7 +118,8 @@ const ALT_MS = 10 * 60000;        // ältere Meldungen verfallen
 function minuten(ms) { const m = Math.floor(ms / 60000); return m < 1 ? 'weniger als 1 Minute' : m === 1 ? '1 Minute' : m + ' Minuten'; }
 // Aus den gesammelten Meldungen eines Spielers EINE Benachrichtigung bauen (kurz, deutsch, ohne Fachwörter)
 function nachrichtBauen(liste, jetzt) {
-    const angriffe = liste.filter(e => e.art === 'angriff'), verloren = liste.filter(e => e.art === 'verloren'), spaeher = liste.filter(e => e.art === 'spaeher');
+    const angriffe = liste.filter(e => e.art === 'angriff'), verloren = liste.filter(e => e.art === 'verloren'), spaeher = liste.filter(e => e.art === 'spaeher' && !e.fertig);
+    const aus = liste.filter(e => e.art === 'spaeher' && e.fertig);   // fertig: der Späher war schon da (Kampflog „… hat deine Basis ausgespäht“)
     const teile = [];
     if (angriffe.length === 1) { const a = angriffe[0]; teile.push(a.von + ' greift deine Basis ' + a.basis + ' an (Ankunft in ' + minuten(a.ankunft - jetzt) + ').'); }
     else if (angriffe.length) { const erst = Math.min(...angriffe.map(a => a.ankunft)), wer = [...new Set(angriffe.map(a => a.von))];
@@ -127,6 +128,8 @@ function nachrichtBauen(liste, jetzt) {
     else if (verloren.length) teile.push(verloren.length + ' Basen verloren (' + verloren.slice(0, 3).map(v => v.basis).join(', ') + (verloren.length > 3 ? ' …' : '') + ').');
     if (spaeher.length === 1) teile.push('Ein Späher von ' + spaeher[0].von + ' ist unterwegs zu deiner Basis ' + spaeher[0].basis + '.');
     else if (spaeher.length) { const wer = [...new Set(spaeher.map(s => s.von))]; teile.push(spaeher.length + ' Späher sind unterwegs zu deinen Basen (' + wer.slice(0, 3).join(', ') + (wer.length > 3 ? ' …' : '') + ').'); }
+    if (aus.length === 1) teile.push(aus[0].von + ' hat deine Basis ' + aus[0].basis + ' ausgespäht – rechne mit einem Angriff.');
+    else if (aus.length) { const wer = [...new Set(aus.map(s => s.von))]; teile.push(aus.length + ' deiner Basen wurden ausgespäht (' + wer.slice(0, 3).join(', ') + (wer.length > 3 ? ' …' : '') + ') – rechne mit Angriffen.'); }
     const boss = liste.filter(e => e.art === 'boss'), sammler = liste.filter(e => e.art === 'sammler'), schild = liste.filter(e => e.art === 'schild');
     if (boss.length) teile.push(boss.map(b => b.von + ' ist erschienen (' + b.basis + ').').join(' '));
     if (sammler.length) { const g = sammler.filter(x => x.was === 'gem').reduce((a, x) => a + x.menge, 0), c = sammler.filter(x => x.was !== 'gem').reduce((a, x) => a + x.menge, 0);
@@ -141,7 +144,7 @@ function nachrichtBauen(liste, jetzt) {
     if (rally.length) { const r = rally[0]; teile.push('Rally gegen deine Basis ' + r.basis + ': ' + r.von + ' sammelt Truppen' + (r.ankunft > jetzt ? ' (Start in ' + minuten(r.ankunft - jetzt) + ')' : '') + '.'); }
     if (hilfe.length === 1) teile.push('Bündnis: ' + hilfe[0].von + ' ruft um Hilfe – ' + hilfe[0].basis + ' wird angegriffen.');
     else if (hilfe.length) teile.push('Bündnis: ' + hilfe.length + '-mal Hilfe gerufen (' + [...new Set(hilfe.map(h => h.von))].slice(0, 3).join(', ') + ').');
-    const titel = angriffe.length ? 'Angriff auf deine Basis!' : verloren.length ? 'Basis verloren' : rally.length ? 'Rally gegen dich!' : hilfe.length ? 'Dein Bündnis braucht Hilfe' : spaeher.length ? 'Späher unterwegs' : invasion.length ? 'Barbaren-Invasion' : drache.length ? 'Der Drache ist da' : boss.length ? 'Ein Boss ist erschienen' : schild.length ? 'Friedensschild' : haendler.length ? 'Ein Händler ist da' : 'Sammler zurück';
+    const titel = angriffe.length ? 'Angriff auf deine Basis!' : verloren.length ? 'Basis verloren' : rally.length ? 'Rally gegen dich!' : hilfe.length ? 'Dein Bündnis braucht Hilfe' : spaeher.length ? 'Späher unterwegs' : aus.length ? 'Basis ausgespäht' : invasion.length ? 'Barbaren-Invasion' : drache.length ? 'Der Drache ist da' : boss.length ? 'Ein Boss ist erschienen' : schild.length ? 'Friedensschild' : haendler.length ? 'Ein Händler ist da' : 'Sammler zurück';
     return { titel, text: teile.join(' ').slice(0, 400), tag: 'open-water' };
 }
 
