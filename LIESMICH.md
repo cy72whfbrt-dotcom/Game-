@@ -778,7 +778,19 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
 - **6.10. – Thron-Shop wie Händler – Alexander 6.10. (11b, Frage 6 = B), NICHT hochgeladen:** Münzen/Truppen im Thron-Shop
   (06c `throneAmount`) = Stunden-Produktion × `THRONE_STUNDEN` (= WIRTSCHAFT_KOSTEN ÷ WIRTSCHAFT_ERTRAG = 2), wie Händler
   (`hdPreis`) und Markt (`marktLimit`); Mindestwerte bleiben. Shop zeigt „in 2 Std.“. Hauptbuch (10d `muenzGutscheine`,
-  `truppenPruefen` „thron“) rechnet je Kauf ebenso 2 Stunden (sonst Fehlalarm). Tests `thron_verst_test`, `welt_test`.
+  `truppenPruefen` „thron“) rechnet je Kauf ebenso 2 Stunden (sonst Fehlalarm). Tests `thron_verst_test`, `welt_test`.- **6.10. – Burg fair beim Reset – Alexander 6.10. A (11b, Branch `burg-fair`, NICHT hochgeladen):** Bis 4./5.10. galt die
+  alte kurze Burg-Bauzeit – Mitspieler haben Burg 13–14 / Forschung 57–58, mit den neuen Regeln geht höchstens Burg 3–4.
+  Darum setzt der **nächste Saison-Reset EINMALIG** (Merker `saison.burgFair` = die Saison, in der es passierte; danach nie
+  wieder) jede Burg über Stufe 4 auf 4 – Mitspieler und echte Spieler gleich (`BURG_FAIR` in 01a). Die anderen Gebäude fallen auf
+  das, was die Burg erlaubt (`stadtCapB`), die Forschung auf das, was das Labor erlaubt (`foAkaFuer`, Vorgänger), laufende Bauten
+  (Burg über 4, Gebäude über die Burg) und Forschung darüber werden abgebrochen. **Keine Erstattung** (Alexander hat nichts dazu
+  gesagt – Kosten der abgebrochenen Bauten/Forschung und der verlorenen Stufen sind weg). Gems, Helden, Ausrüstung, Rohstoffe
+  unverändert. Code: `aufbau.js burgFair(c, B)` (eine Rechnung für alle), `09f saisonWelt` → `burgFairWer` (Welt-Stadt + Hauptbuch
+  `hb.st`/`hb.fo` echter Spieler), Handy: Nachricht „saison“ `burg: 4` bzw. `saison.burgFair` → `01a` merkt `openWaterBurgFair` vor →
+  `aufbau.js` beim Laden (Zurückspielen einer Sicherung holt die alte Stadt zurück). Hauptbuch: die alten Burg-Bauzeiten
+  (`BURG_ALT_BIS`) enden mit dem Reset (`burgAlt`). Rangliste „Hauptstadt“ zeigt danach die neuen Werte. Hinweis nach dem
+  Neuladen und im Events-Fenster („einmalig für alle: Burg höchstens Stufe 4“). Tests `saison_test`, `saison_anfang_test`, `welt_test`.
+
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 

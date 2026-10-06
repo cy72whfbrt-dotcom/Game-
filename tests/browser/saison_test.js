@@ -2,6 +2,8 @@
 // Admin-Knopf) und prüfen: Hauptstadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Gems, Rohstoffe bleiben – Stufe 1, keine Fähigkeiten,
 // Start-Truppen, Start-Gold, keine anderen Basen, keine Bündnisse; die besten 10 bekommen Gems + Saison-Titel. Für dich und Mitspieler gleich.
 // Erster Reset nach der Umstellung auf „pro Stunde“ (11b A): Holz/Stein/Eisen × WIRTSCHAFT_KOSTEN (Zurückspielen holt die alten zurück).
+// Burg fair (Alexander 6.10. A): derselbe erste Reset setzt jede Burg über 4 auf 4 (Gebäude bis zur Burg, Forschung bis zum Labor, Bauten
+// darüber weg) – du, Mitspieler und das Hauptbuch eines echten Spielers gleich; der nächste Reset ändert nichts mehr (saison.burgFair).
 const { chromium, devices } = require('playwright');
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x) : ''));
 // Nur in der NORMALEN Vorschau (alle_tests.sh: $N): der Test-Modus füllt alle 10 s Gems, Münzen, Truppen und Helden-Gefolge auf –
@@ -14,7 +16,8 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
   await p.waitForFunction(() => typeof BOT_DEFS !== 'undefined' && typeof AUF !== 'undefined' && typeof islands !== 'undefined' && islands.length && islandById[playerIslandId], null, { timeout: 60000, polling: 500 }).catch(() => {});   // (unter Last länger warten, bis das Spiel steht)
   // 1) vorher: ein großes Reich (2 Basen, Bündnis, Stufe 20, Münzen) mit Stadt, Forschung, Helden, Ausrüstung, Gems, Rohstoffen
   const v = await p.evaluate(() => { for (const id of ['welcomeModal', 'dailyModal']) { const m = document.getElementById(id); if (m) m.hidden = true; }
-    const c = loadCity(); c.levels.keep = 7; c.levels.academy = 3; c.levels.forge = 2; c.fo = { w_prod: 2, m_atk: 1 }; c.wounded = 5000; saveCity();
+    const c = loadCity(); c.levels.keep = 7; c.levels.academy = 6; c.levels.forge = 2; c.levels.lumber = 6; c.fo = { w_prod: 3, m_atk: 1, x_nebel: 1 }; c.wounded = 5000;
+    c.builds = [{ id: 'keep', to: 8, startedAt: Date.now(), endsAt: Date.now() + 864e5 }]; c.foRun = { id: 'w_sam', to: 3, startedAt: Date.now(), endsAt: Date.now() + 864e5 }; saveCity();
     const hs = loadHeroes(); const h0 = Object.keys(hs)[0]; hs[h0].sh = 77; saveHeroes();
     const it = addInventoryItem('weapon', 3, 1); if (it && it.id !== undefined) equippedItems.weapon = it.id;
     gems = 12345; coins = 5e6; playerLvl = 20; skillPoints = 4; skills.attack = 10; skills.defense = 5;
@@ -23,14 +26,18 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
     const zweite = islands.find(i => i.type === 'tower' && !islandOwnerOf(i.id) && i.landmassId === home.landmassId && i.id !== cap0);
     ownedIslands.add(zweite.id); islandLevels[zweite.id] = 9; islandTroops[zweite.id] = 5e5; islandTroops[cap0] = 1e15;   // (Macht: Platz 1)
     const X = BOT_DEFS.find(x => !x.mensch && botOwnedIslands[x.id].size && islandById[botCapitalOf(x.id)]).id, bx = loadBotState()[X];
-    islandTroops[botCapitalOf(X)] = 1e14; bx.lvl = 30; bx.skills.attack = 12; bx.city.levels.keep = 6; bx.city.fo = { w_prod: 3 }; bx.gems = 999; bx.res = { h: 4444, s: 3333, e: 2222 }; botCoins[X] = 7e6; bx.city.builds = []; delete bx.city.foRun; saveBotState();
+    islandTroops[botCapitalOf(X)] = 1e14; bx.lvl = 30; bx.skills.attack = 12; bx.city.levels.keep = 14; bx.city.levels.academy = 14; bx.city.levels.lumber = 13; bx.city.levels.wall = 3; bx.city.fo = { w_prod: 7, m_atk: 6, x_tempo: 5, x_nebel: 3 }; bx.gems = 999; bx.res = { h: 4444, s: 3333, e: 2222 }; botCoins[X] = 7e6;
+    bx.city.builds = [{ id: 'keep', to: 15, startedAt: Date.now(), endsAt: Date.now() + 864e5 }]; bx.city.foRun = { id: 'w_sam', to: 3, startedAt: Date.now(), endsAt: Date.now() + 864e5 };
+    // ein echter Spieler (Hauptbuch des Weltrechners, 10d hb.st/hb.fo): Burg 6 → 4
+    const Y = BOT_DEFS.find(x => !x.mensch && x.id !== X && loadBotState()[x.id] && loadBotState()[x.id].city).id, by = loadBotState()[Y], T = Date.now() - 864e5;
+    by.city.levels.keep = 6; by.city.levels.academy = 5; by.city.fo = { w_prod: 3 }; by.hb = { v: 1, st: { keep: [6, T], academy: [5, T], lumber: [6, T], wall: [3, T] }, fo: { w_prod: 3, x_nebel: 1 } }; saveBotState();
     botNextAt[X] = Date.now() + 1e9;   // (bis zum Neuladen kauft und baut er nichts – so lässt sich vergleichen)
     if (bundVon(X)) bundOp(X, { op: 'verlassen' }); bundOp(X, { op: 'gruenden', name: 'Saisontest', tag: 'STT', offen: true }); if (!bundVon('player')) { bundRein(bundVon(X), 'player'); bundSpeichern(); }
     saveGameNow(); saveProgressionNow();
     saisonTakt(); saison.ende = Date.now() + 2 * 864e5; saison.bald = 0; saisonSpeichern();   // nur noch 2 Tage: Ankündigung + Countdown
     const L = k => localStorage.getItem(k);
     const fk = i => fogKey(Math.floor(i.x / FOG_CELL), Math.floor(i.y / FOG_CELL));
-    const vor = { X, cap0, fogAlt: fk(home), fogZweite: fk(zweite), zweite: zweite.id, inv: L('openWaterInventory'), eq: L('openWaterEquippedItems'), hel: L('openWaterHeroes2'), bot: JSON.parse(JSON.stringify({ city: bx.city.levels, fo: bx.city.fo, gear: bx.gear, hs: Object.fromEntries(Object.entries(bx.hs).map(([k, x]) => [k, [x.own, x.q]])) })) };
+    const vor = { X, Y, cap0, fogAlt: fk(home), fogZweite: fk(zweite), zweite: zweite.id, inv: L('openWaterInventory'), eq: L('openWaterEquippedItems'), hel: L('openWaterHeroes2'), bot: JSON.parse(JSON.stringify({ city: bx.city.levels, fo: bx.city.fo, gear: bx.gear, hs: Object.fromEntries(Object.entries(bx.hs).map(([k, x]) => [k, [x.own, x.q]])) })) };
     return { vor, X, bund: !!bundVon(X), ich: bundVon('player') ? 1 : 0, nr: saison.nr };
   });
   ok(v.nr === 1 && v.bund && v.ich, 'Saison 1 läuft, Bündnis gegründet (du bist dabei)', { nr: v.nr, bund: v.bund, ich: v.ich });
@@ -49,7 +56,7 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
   // 2) die neue Saison (wie der Admin-Knopf, auch aus dem angehaltenen Zustand) – die Seite lädt neu und übernimmt den Reset
   await p.addInitScript(() => document.addEventListener('DOMContentLoaded', () => { try { const L = k => localStorage.getItem(k);
     window.__nach = { coins: L('openWaterCoins'), lvl: L('openWaterLevel'), sp: L('openWaterSkillPoints'), skills: L('openWaterSkills'), own: L('openWaterOwnedIslands'), troops: L('openWaterIslandTroops'), bund: L('openWaterBuendnisse'),
-      botOwn: L('openWaterBotOwnedIslands'), botState: L('openWaterBotState'), schutz: L('openWaterNeulingBis'), res: L('openWaterRes'), at: Date.now(), botCoins: L('openWaterBotCoins'), log: L('openWaterCombatLog'), fog: L('openWaterFogCells') }; } catch (e) {} }));
+      botOwn: L('openWaterBotOwnedIslands'), botState: L('openWaterBotState'), schutz: L('openWaterNeulingBis'), res: L('openWaterRes'), at: Date.now(), botCoins: L('openWaterBotCoins'), log: L('openWaterCombatLog'), fog: L('openWaterFogCells'), city: L('openWaterCity') }; } catch (e) {} }));
   const resVor = await p.evaluate(X => Object.assign({}, loadBotState()[X].res), v.X), wk = await p.evaluate(() => WIRTSCHAFT_KOSTEN);   // (er produziert weiter – unter Last mehr: Stand direkt vor dem Neustart)
   await Promise.all([p.waitForNavigation({ timeout: 30000 }), p.evaluate(() => saisonJetzt())]);
   await p.waitForTimeout(9000);
@@ -60,11 +67,12 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
     const inbox = inboxList().find(x => x.src === 'saison');
     return { coins: N.coins, lvl: N.lvl, sp: N.sp, skills: J(N.skills), ownN: own.length, capNeu: cap !== V.cap0, rand: isl && isl.type === 'tower' && landmasses[isl.landmassId].tier === 'outer', zweite: islandOwnerOf(V.zweite),
       truppen: tr[cap], bund: Object.keys((J(N.bund) || {}).b || {}).length, log: N.log, fog: (J(N.fog) || []).filter(k => k === V.fogAlt || k === V.fogZweite).length, weit: Math.hypot(isl.x - islandById[V.cap0].x, isl.y - islandById[V.cap0].y) > 2 * REVEAL_BASE,
-      keep: c.levels.keep, aca: c.levels.academy, forge: c.levels.forge, fo: c.fo, wounded: c.wounded, gems, roh: AUF.rohVon('player'),
+      keep: c.levels.keep, aca: c.levels.academy, forge: c.levels.forge, lumber: c.levels.lumber, fo: c.fo, bau: c.builds.length, foRun: c.foRun, wounded: c.wounded, gems, roh: AUF.rohVon('player'),
+      hinweis: saisonBurgGeladen, karte: /Burg höchstens/.test(saisonKarte()), y: (({ city, hb }) => ({ keep: city.levels.keep, aca: city.levels.academy, fo: city.fo, st: hb && hb.st, hfo: hb && hb.fo }))((J(N.botState) || {})[V.Y] || {}),
       inv: localStorage.getItem('openWaterInventory') === V.inv, eq: localStorage.getItem('openWaterEquippedItems') === V.eq, hel: localStorage.getItem('openWaterHeroes2') === V.hel,
-      preis: inbox && inbox.gems, titel: look.titles, traegt: playerTitle(), saison: { nr: saison.nr, wirtAb: saison.wirtAb, halt: saison.halt, ende: saison.ende - Date.now(), top: saison.last && saison.last.top.length, erster: saison.last && saison.last.top[0][0] },
-      bot: { lvl: bx.lvl, skills: Object.values(bx.skills).reduce((a, x) => a + x, 0), coins: bc[V.X], basen: (bo[V.X] || []).length, keep: bx.city.levels.keep === V.bot.city.keep, city: JSON.stringify(bx.city.levels) === JSON.stringify(V.bot.city),
-        fo: JSON.stringify(bx.city.fo) === JSON.stringify(V.bot.fo), gear: JSON.stringify(bx.gear) === JSON.stringify(V.bot.gear), gems: bx.gems, res: bx.res, titel: bx.titles, look: botLook(V.X).title,
+      preis: inbox && inbox.gems, titel: look.titles, traegt: playerTitle(), saison: { nr: saison.nr, wirtAb: saison.wirtAb, burgFair: saison.burgFair, halt: saison.halt, ende: saison.ende - Date.now(), top: saison.last && saison.last.top.length, erster: saison.last && saison.last.top[0][0] },
+      bot: { lvl: bx.lvl, skills: Object.values(bx.skills).reduce((a, x) => a + x, 0), coins: bc[V.X], basen: (bo[V.X] || []).length, keep: bx.city.levels.keep, aca: bx.city.levels.academy, lumber: bx.city.levels.lumber, wall: bx.city.levels.wall,
+        fo: bx.city.fo, bau: (bx.city.builds || []).map(x => x.id + x.to), foRun: bx.city.foRun || null, gear: JSON.stringify(bx.gear) === JSON.stringify(V.bot.gear), gems: bx.gems, res: bx.res, titel: bx.titles, look: botLook(V.X).title,
         hs: Object.entries(bx.hs).every(([k, x]) => V.bot.hs[k] && V.bot.hs[k][0] === x.own && V.bot.hs[k][1] === x.q), truppen: tr[bx.capital] },
       schutz: (+N.schutz - N.at) / 36e5, botSchutz: (bx.neuBis - N.at) / 36e5, anderer, ohne, chip: document.getElementById('midBar').innerText };
   }, v.vor);
@@ -75,7 +83,11 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
   ok(n.truppen >= 100000 && n.truppen < 2e5, 'Start-Truppen wie ein neuer Spieler (100.000)', n.truppen);
   ok(n.bund === 0, 'keine Bündnisse mehr', n.bund);
   ok(!n.log && (!n.fog || !n.weit) && n.wounded === 0, 'Kampfberichte, Nebel (um die alten Basen wieder zu) und Verwundete neu', { log: n.log, alteFelder: n.fog, wounded: n.wounded });
-  ok(n.keep === 7 && n.aca === 3 && n.forge === 2 && n.fo && n.fo.w_prod === 2 && n.fo.m_atk === 1, 'Hauptstadt bleibt: Burg, Gebäude, Forschung', { keep: n.keep, aca: n.aca, forge: n.forge, fo: n.fo });
+  ok(n.keep === 4 && n.aca === 4 && n.lumber === 4 && n.forge === 2 && JSON.stringify(n.fo) === '{"w_prod":2,"m_atk":1}' && n.bau === 0 && !n.foRun, 'Burg fair: deine Burg 7 → 4, Gebäude bis 4 (Schmiede 2 bleibt), Forschung bis Labor 4 (Ertrag 3 → 2, Kundschaft weg), Burg-Bau und Forschung darüber abgebrochen', { keep: n.keep, aca: n.aca, lumber: n.lumber, forge: n.forge, fo: n.fo, bau: n.bau, foRun: n.foRun });
+  ok(n.hinweis === 4 && !n.karte, 'Burg fair: Hinweis nach dem Neuladen, Events-Fenster kündigt es nicht mehr an', { hinweis: n.hinweis, karte: n.karte });
+  ok(n.saison.burgFair === 2, 'Burg fair gemerkt (saison.burgFair = 2: der nächste Reset ändert nichts mehr)', n.saison.burgFair);
+  const Y = n.y; ok(Y.keep === 4 && Y.aca === 4 && JSON.stringify(Y.fo) === '{"w_prod":2}' && Y.st && JSON.stringify([Y.st.keep[0], Y.st.academy[0], Y.st.lumber[0], Y.st.wall[0]]) === '[4,4,4,3]' && JSON.stringify(Y.hfo) === '{"w_prod":2}',
+    'Burg fair beim echten Spieler: Welt-Stadt und Hauptbuch (Burg 6 → 4, Labor 4, Holzfäller 4, Mauer 3 bleibt, Forschung passend) – wie sein Handy, also kein Fehlalarm', Y);
   ok(n.inv && n.eq && n.hel, 'Ausrüstung und Helden bleiben', { inv: n.inv, eq: n.eq, hel: n.hel });
   const um = x => Math.floor(x * wk), umOk = (r, x) => r >= um(x) && r <= um(x) + 2;   // (+2: was danach schon wieder produziert wurde)
   ok(n.gems >= 12345 && umOk(n.roh.h, 77777) && umOk(n.roh.s, 66666) && umOk(n.roh.e, 55555), 'Gems bleiben, Holz/Stein/Eisen bleiben – beim ersten Reset nach der Umstellung × WIRTSCHAFT_KOSTEN (77.777 → ' + um(77777) + ' Holz)', { gems: n.gems, roh: n.roh });
@@ -87,7 +99,9 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
   const B = n.bot;
   ok(B.lvl === 1 && B.skills === 0 && B.coins < 1e5 && B.basen === 1, 'Mitspieler: Stufe 1, keine Fähigkeiten, Start-Gold, nur die Hauptstadt', B);
   ok(B.truppen >= 100000 && B.truppen < 2e5, 'Mitspieler: Start-Truppen wie ein neuer Spieler', B.truppen);
-  ok(B.keep && B.city && B.fo && B.gear && B.hs && ['h', 's', 'e'].every(k => umOk(B.res[k], resVor[k])) && resVor.h >= 4444 && resVor.s >= 3333 && resVor.e >= 2222, 'Mitspieler: Stadt, Forschung, Ausrüstung, Helden bleiben, Rohstoffe genauso umgerechnet', { B, resVor });
+  ok(B.keep === 4 && B.aca === 4 && B.lumber === 4 && B.wall === 3 && JSON.stringify(B.fo) === '{"w_prod":2,"m_atk":2,"x_tempo":2}' && !B.bau.length && !B.foRun,
+    'Burg fair beim Mitspieler: Burg 14 → 4, Gebäude bis 4, Forschung bis Labor 4, Burg-Bau (15) und Forschung (Sammeln 3) abgebrochen', B);
+  ok(B.gear && B.hs && ['h', 's', 'e'].every(k => umOk(B.res[k], resVor[k])) && resVor.h >= 4444 && resVor.s >= 3333 && resVor.e >= 2222, 'Mitspieler: Ausrüstung, Helden bleiben, Rohstoffe genauso umgerechnet', { B, resVor });
   ok(B.gems === 999 + 2000 && (B.titel || []).includes('s1p2') && B.look === 'Saison 1 · Platz 2', 'Mitspieler Platz 2: 2.000 Gems + Titel „Saison 1 · Platz 2“', { gems: B.gems, titel: B.titel, look: B.look });
   ok(n.anderer === 0 && n.ohne >= 100, 'alle Reiche auf eine Hauptstadt zurückgesetzt', { mehr: n.anderer, eine: n.ohne });
   ok(!/Neue Saison in/.test(n.chip), 'Countdown oben erst wieder in den letzten 3 Tagen', n.chip);
@@ -95,10 +109,11 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
   // Sicherung von vor dem Reset zurückgespielt: die Welt ist wieder in Saison 1 → der Spielstand holt sich den Stand von vor dem Reset
   await p.evaluate(() => { const s = JSON.parse(localStorage.getItem('openWaterSaison')); localStorage.setItem('openWaterSaison', JSON.stringify({ nr: 1, start: s.start - 864e5, ende: Date.now() + 10 * 864e5 })); window.onbeforeunload = null; });
   await p.reload(); await p.waitForTimeout(500);
-  const z = await p.evaluate(() => ({ lvl: window.__nach.lvl, coins: +window.__nach.coins, skills: JSON.parse(window.__nach.skills || '{}'), mein: localStorage.getItem('openWaterSaisonMein'), schutz: localStorage.getItem('openWaterNeulingBis'), res: JSON.parse(window.__nach.res || '{}') }));
+  const z = await p.evaluate(() => ({ keep: (JSON.parse(window.__nach.city || '{}').levels || {}).keep, lvl: window.__nach.lvl, coins: +window.__nach.coins, skills: JSON.parse(window.__nach.skills || '{}'), mein: localStorage.getItem('openWaterSaisonMein'), schutz: localStorage.getItem('openWaterNeulingBis'), res: JSON.parse(window.__nach.res || '{}') }));
   ok(z.lvl === '20' && z.coins >= 5e6 && z.skills.attack === 10 && z.mein === '1', 'Sicherung zurückgespielt: Handy holt den alten Stand (Stufe, Gold, Fähigkeiten)', z);
   ok(z.schutz !== null && !(+z.schutz > Date.now()), 'Sicherung zurückgespielt: kein neuer Anfängerschutz (alter Stand ohne Schutz)', z.schutz);
   ok(z.res.h >= 77777 && z.res.s >= 66666 && z.res.e >= 55555, 'Sicherung zurückgespielt: Holz/Stein/Eisen wieder wie vor der Umrechnung', z.res);
+  ok(z.keep === 7, 'Sicherung zurückgespielt: deine Stadt wieder wie vor „Burg fair“ (Burg 7)', z.keep);
   await p.waitForTimeout(8000);
   // ein echter Spieler kann sich keinen Saison-Titel ins Profil schreiben: angezeigt wird er nur, wenn die Welt ihn vergeben hat
   const f = await p.evaluate(() => { const Y = BOT_DEFS.find(x => !x.mensch && loadBotState()[x.id] && !(loadBotState()[x.id].sTitel || []).length).id, by = loadBotState()[Y];
@@ -106,7 +121,7 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
     evPreis(Y, 'saison', 'Test', { gems: 0, titel: 's1p1' }, 'test'); const echt = botLook(Y).title; botById[Y].mensch = false; return { falsch, echt, liste: by.sTitel }; });
   ok(f.falsch === 'Neuling' && f.echt === 'Champion Saison 1' && f.liste.includes('s1p1'), 'Saison-Titel nur, wenn die Welt ihn vergeben hat (nicht aus dem Profil)', f);
   // 3) Handy ohne Nachricht „saison“ (über 60 Tage offline / nicht abgelegt): nach dem ersten Puls übernimmt es den Reset trotzdem
-  const r3 = await p.evaluate(() => { const s = JSON.parse(localStorage.getItem('openWaterSaison')); localStorage.setItem('openWaterSaison', JSON.stringify({ nr: 2, start: Date.now() - 36e5, ende: Date.now() + 50 * 864e5, wirtAb: 2, last: s.last })); saisonLaden();
+  const r3 = await p.evaluate(() => { const s = JSON.parse(localStorage.getItem('openWaterSaison')); localStorage.setItem('openWaterSaison', JSON.stringify({ nr: 2, start: Date.now() - 36e5, ende: Date.now() + 50 * 864e5, wirtAb: 2, burgFair: 2, last: s.last })); saisonLaden();
     window.onbeforeunload = null; const W0 = window.WELT; window.WELT = { pulse: 0, nachrichtenVoll: false };
     const vorPuls = saisonNachholen(), a = localStorage.getItem('openWaterSaisonNeu'); WELT.pulse = 1; WELT.nachrichtenVoll = true; const voll = saisonNachholen(), b2 = localStorage.getItem('openWaterSaisonNeu');
     WELT.nachrichtenVoll = false; const jetzt = saisonNachholen(); window.WELT = W0;
@@ -114,8 +129,20 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
   ok(r3.vorPuls === false && r3.a === null && r3.voll === false && r3.b2 === null, 'Rückfall erst nach dem ersten Puls (und wenn keine Nachrichten mehr warten)', r3);
   ok(r3.jetzt === true && r3.neu === '2' && r3.schutz > 46 && r3.schutz <= 47, 'Rückfall: Saison der Welt neuer, keine Nachricht – Reset wird übernommen (Anfängerschutz ab dem Reset)', r3);
   await p.waitForNavigation({ timeout: 30000 }).catch(() => {}); await p.waitForTimeout(500);
-  const z3 = await p.evaluate(() => ({ lvl: window.__nach.lvl, coins: window.__nach.coins, mein: localStorage.getItem('openWaterSaisonMein'), res: JSON.parse(window.__nach.res || '{}') }));
+  const z3 = await p.evaluate(() => ({ keep: (JSON.parse(window.__nach.city || '{}').levels || {}).keep, lvl: window.__nach.lvl, coins: window.__nach.coins, mein: localStorage.getItem('openWaterSaisonMein'), res: JSON.parse(window.__nach.res || '{}') }));
   ok(z3.lvl === '1' && z3.coins === '0' && z3.mein === '2', 'Rückfall: nach dem Neuladen Stufe 1, 0 Münzen, Saison 2', z3);
   ok(z3.res.h <= um(z.res.h) + 2 && z3.res.h >= um(z.res.h), 'Rückfall ohne Nachricht: Rohstoffe trotzdem umgerechnet (die Welt sagt: Saison 2 ist die erste neue)', { vor: z.res, nach: z3.res });
+  ok(z3.keep === 4, 'Rückfall ohne Nachricht: Burg fair trotzdem (die Welt sagt: saison.burgFair = 2) – Burg 7 → 4', z3.keep);
+  // 4) noch ein Reset: Burg fair war schon – Burgen über 4 (inzwischen gebaut) bleiben, für dich, Mitspieler und das Hauptbuch
+  await p.waitForFunction(() => typeof AUF !== 'undefined' && typeof saisonJetzt === 'function' && saison && saison.nr === 2 && islandById[playerIslandId], null, { timeout: 60000, polling: 500 }).catch(() => {});
+  const v4 = await p.evaluate(V => { const c = loadCity(); c.levels.keep = 6; c.levels.lumber = 6; saveCity();
+    const bs = loadBotState(), bx = bs[V.X], by = bs[V.Y]; bx.city.levels.keep = 9; bx.city.builds = []; botNextAt[V.X] = Date.now() + 1e9; by.city.levels.keep = 7; by.city.builds = []; botNextAt[V.Y] = Date.now() + 1e9; by.hb.st.keep = [7, Date.now()]; saveBotState(); saveGameNow();
+    return { nr: saison.nr, fair: saison.burgFair }; }, v.vor);
+  await Promise.all([p.waitForNavigation({ timeout: 30000 }), p.evaluate(() => saisonJetzt())]);
+  await p.waitForFunction(() => window.__nach && typeof saison !== 'undefined' && saison && saison.nr === 3 && typeof AUF !== 'undefined', null, { timeout: 60000, polling: 500 }).catch(() => {});
+  const z4 = await p.evaluate(V => { const bs = JSON.parse(window.__nach.botState || '{}'), c = JSON.parse(window.__nach.city || '{}');
+    return { nr: saison.nr, fair: saison.burgFair, keep: c.levels.keep, lumber: c.levels.lumber, x: bs[V.X].city.levels.keep, y: bs[V.Y].city.levels.keep, hb: bs[V.Y].hb.st.keep[0], hinweis: saisonBurgGeladen }; }, v.vor);
+  ok(v4.nr === 2 && v4.fair === 2 && z4.nr === 3 && z4.fair === 2 && z4.keep === 6 && z4.lumber === 6 && z4.x === 9 && z4.y === 7 && z4.hb === 7 && !z4.hinweis,
+    'Zweiter Reset danach: Burg fair nur einmal – Burg 6 (du), 9 (Mitspieler), 7 (Hauptbuch) bleiben', { v4, z4 });
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();
 })();
