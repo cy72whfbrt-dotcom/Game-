@@ -1583,6 +1583,11 @@ Nacht – vorher bauen und testen.
     auf dem Server lassen“ gesagt – trotzdem zeigen); eroberte Basis zeigt Stufe **11** (neutral war Stufe 1?) – prüfen;
     „Sammeln“ und „Mehrfach“ kosten je **1 Edelstein** – sinnvoll?; „Aufwerten 1.000“ rot (zu wenig Münzen) – ok, aber
     Grund zeigen („Fehlt: 217 Münzen“).
+12. **Sammeln: Zeitangabe fehlt** (Bild 840bf204, 18:41, Holzfällerei): Fenster zeigt Vorrat 3.994 Holz, „Du mit Ida ·
+    4.998 Truppen · 5 gesammelt“, „2 Holz pro Truppe“ – aber nicht, **wie lange** es noch dauert (bis voll beladen / bis das
+    Feld leer ist) und wann man zurück ist. Gewünscht wie RoK: „fertig in 3 h 12 m“, Fortschrittsbalken (gesammelt/Traglast),
+    Sammel-Tempo pro Stunde; auch am Marsch-Symbol auf der Karte und in Kampf → Unterwegs. Prüfen: 5 gesammelt nach ein paar
+    Minuten wirkt langsam – Tempo aus Spieler-Sicht ok?
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
