@@ -57,12 +57,15 @@ function crestDataUrl(px, who) {                      // for the HTML avatars (y
     drawCrest(g, px / 2, px / 2, px * .86, cr); return crestUrlCache[k] = c.toDataURL();
 }
 const FONT = (w, px) => w + ' ' + px + 'px Inter, system-ui, sans-serif';
+// Truppenzahl auf der Fahne: weit weg (Stufe C) kürzer statt gestaucht – „464,7 Mrd.“ → „465 Mrd.“ (3 Ziffern)
+function plateTroops(T, t) { const k = T === TIER.C && /^(\d{3}),(\d) (.+)$/.exec(t); return k ? Math.round(+(k[1] + '.' + k[2])) + ' ' + k[3] : t; }
+const plateFw = T => T.max ? 600 : 700;            // einzeilige Plaketten (K/C) fett
 function plateGeo(g, T, m, withDef) {             // Maße einer Fahne: Textfeld so breit wie Name bzw. Truppenzeile (höchstens T.tw), Stufen-Chip so breit wie die Zahl
-  const ar = T.av / 2, ls = T.lv; g.font = FONT(700, Math.max(11, ls * .66));
-  const lw = Math.max(ls, Math.ceil(g.measureText(String(m.level)).width) + 5), lx0 = ar + ar * .78 - ls / 2;   // Chip am Rand des Wappens, breitere Zahl wächst nach rechts
-  const tx = Math.max(T.av + 3, lx0 + lw + 1);                                                                     // Text beginnt hinter dem Chip
-  if (!T.tw) return { tw: 0, tx, lw, lx0, W: Math.max(T.av + ls / 2, lx0 + lw + 1) };
-  const s = T.fs; g.font = FONT(600, s); let w = s * 1.25 + g.measureText(m.troops).width + (withDef ? s * 1.95 + g.measureText(m.def).width : 0);
+  const ls = T.lv; g.font = FONT(700, Math.max(11, ls * .66));
+  const lw = Math.max(ls, Math.ceil(g.measureText(String(m.level)).width) + 5), lx0 = T.av - 3;   // Chip rechts neben dem Wappen (nur über dem Rand), breitere Zahl wächst nach rechts
+  const tx = lx0 + lw + 2;                                                                         // Text beginnt hinter dem Chip
+  if (!T.tw) return { tw: 0, tx, lw, lx0, W: lx0 + lw + 1 };
+  const s = T.fs; g.font = FONT(plateFw(T), s); let w = s * 1.25 + g.measureText(plateTroops(T, m.troops)).width + (withDef ? s * 1.95 + g.measureText(m.def).width : 0);
   if (T.max && m.name) {
     g.font = FONT(700, 11); const chip = m.tag ? Math.ceil(g.measureText(m.tag).width) + 12 : 0;
     g.font = FONT(600, T.fn); w = Math.max(w, chip + g.measureText(trunc(m.name, T.max)).width);
@@ -70,8 +73,9 @@ function plateGeo(g, T, m, withDef) {             // Maße einer Fahne: Textfeld
   const tw = Math.min(T.tw, Math.ceil(w) + 2);
   return { tw, tx, lw, lx0, W: tx + tw + T.pad };
 }
-function plateText(g, t, x, y, maxW, color) {     // mit 1px Schatten; zu breit → schmaler gesetzt, nie abgeschnitten
-  g.fillStyle = 'rgba(0,0,0,.55)'; g.fillText(t, x, y + 1, maxW); g.fillStyle = color; g.fillText(t, x, y, maxW);
+function plateText(g, t, x, y, maxW, color) {     // mit 1px Schatten und dunklem Rand; zu breit → schmaler gesetzt, nie abgeschnitten
+  g.fillStyle = 'rgba(0,0,0,.55)'; g.fillText(t, x, y + 1, maxW);
+  g.lineWidth = 2; g.lineJoin = 'round'; g.strokeStyle = 'rgba(0,0,0,.6)'; g.strokeText(t, x, y, maxW); g.fillStyle = color; g.fillText(t, x, y, maxW);
 }
 function paintPlate(g, T, m, withDef, geo) {      // g translated so the plate's top-left is (0,0); geo from plateGeo(); returns nothing
   const o = PLATE[m.kind], { W, tw, tx } = geo, H = T.H, px = T.av / 2, pw = W - T.av / 2;
@@ -82,11 +86,11 @@ function paintPlate(g, T, m, withDef, geo) {      // g translated so the plate's
     g.strokeStyle = 'rgba(0,0,0,.55)'; rr(g, px - .5, -.5, pw + 1, H + 1, 3.5); g.stroke();                                          // 0.5px black outer line (no blur)
     g.strokeStyle = 'rgba(255,255,255,.13)'; g.beginPath(); g.moveTo(px + T.av / 2, 1.5); g.lineTo(px + pw - 3, 1.5); g.stroke();    // top highlight
     const trW = (y, size) => {                                                                                                     // Zeile Truppen (+ Abwehr)
-      g.font = FONT(600, size); const s = size, t1 = g.measureText(m.troops).width, d1 = withDef ? g.measureText(m.def).width : 0;
+      g.font = FONT(plateFw(T), size); const s = size, tr = plateTroops(T, m.troops), t1 = g.measureText(tr).width, d1 = withDef ? g.measureText(m.def).width : 0;
       const need = s * 1.25 + t1 + (withDef ? s * 1.95 + d1 : 0), k = Math.min(1, tw / need);
       g.save(); g.translate(tx, 0); g.scale(k, 1);
       drawGlyph(g, 'troops', s * .5, y - s * .36, s * 1.05, 'rgba(238,230,212,.78)');
-      plateText(g, m.troops, s * 1.25, y, undefined, m.troops === '?' ? 'rgba(238,230,212,.62)' : '#eee6d4');
+      plateText(g, tr, s * 1.25, y, undefined, m.troops === '?' ? 'rgba(238,230,212,.62)' : '#eee6d4');
       if (withDef) { const dx = s * 1.25 + t1 + s * .7; drawGlyph(g, 'shield', dx + s * .5, y - s * .36, s * 1.05, 'rgba(238,230,212,.78)'); plateText(g, m.def, dx + s * 1.25, y, undefined, '#eee6d4'); }
       g.restore();
     };
@@ -151,13 +155,14 @@ function layoutBanners(visible, z, selectedId) {  // places every nameplate (set
     let p = m.p; if (isl.id === selectedId) p = 5;
     let tier = base;
     if (m.filler && isl.id !== selectedId) tier = z >= 0.1 ? DOWN[base] : m.troops === '?' ? 'N' : 'C';   // neutrale Basen ruhig: Wappen + Stufe (gespäht: + Zahl), Name erst beim Antippen/ganz nah
-    else if (isl.id !== selectedId && tier !== 'C' && (m.kind === 'player' ? !m.name : m.cap === false && tier === 'B')) tier = 'K';   // eigene Basen ohne Namen, fremde Nicht-Hauptstädte erst ganz nah mit Namen
+    else if (isl.id !== selectedId && m.kind === 'player' && !m.name) tier = tier === 'C' ? 'N' : 'K';   // eigene Basen ohne Namen, weit weg nur Wappen + Stufe
+    else if (isl.id !== selectedId && m.cap === false && tier === 'B') tier = 'K';                       // fremde Nicht-Hauptstädte erst ganz nah mit Namen
     if (m.mega) { if (tier === 'C' || tier === 'K') tier = 'B'; if (p < 5) p = 4.5; }   // placed first: temple > player > bot > neutral
     return { isl, m, p, tier };
   }).sort((a, b) => b.p - a.p || a.isl.y - b.isl.y);
   const placed = [];
   for (const it of items) {
-    const r = it.isl.radius * z * (it.isl.type === 'megaTemple' ? 1.8 : 1), sx = toSX(it.isl.x), sy = toSY(it.isl.y);   // Thron-Gebäude ist größer: Fahne darunter, nicht darauf
+    const r = it.isl.radius * z * (it.isl.type === 'megaTemple' ? 1.8 : it.m.cap ? 1.25 : 1), sx = toSX(it.isl.x), sy = toSY(it.isl.y);   // Thron und Hauptstädte sind größer: Fahne darunter, nicht auf der Mauer
     let best = null;
     for (let t = it.tier; ; t = DOWN[t]) {
       const sp = bannerSprite(t, it.m), w = sp.w, h = sp.h;
@@ -177,10 +182,13 @@ function layoutBanners(visible, z, selectedId) {  // places every nameplate (set
   for (const it of items) bannerHitRects.push({ id: it.isl.id, x: it.rect.x, y: it.rect.y, w: it.rect.w, h: it.rect.h });
   return items;
 }
+const BANNER_UNTER = ['hud', 'midBar', 'mapControls', 'anleitung', 'cornerButtons'];   // Leisten über der Karte: Fahnen darunter blass
 function paintBanners(items) {
   setScreen(ctx);
+  const cv = canvas.getBoundingClientRect(), unter = [];
+  for (const id of BANNER_UNTER) { const el = document.getElementById(id); if (!el || el.hidden) continue; const b = el.getBoundingClientRect(); if (b.width && b.height) unter.push({ x: b.left - cv.left, y: b.top - cv.top, w: b.width, h: b.height }); }
   for (const it of items) {
-    ctx.globalAlpha = it.m.filler ? 0.8 : 1;
+    ctx.globalAlpha = (it.m.filler ? 0.8 : 1) * (unter.some(q => overlap(it.rect, q) > 0) ? 0.35 : 1);
     const x = Math.round(it.rect.x * dpr) / dpr, y = Math.round(it.rect.y * dpr) / dpr;
     ctx.drawImage(it.sp.c, x - 2, y - 2, it.sp.c.width / dpr, it.sp.c.height / dpr);
   }

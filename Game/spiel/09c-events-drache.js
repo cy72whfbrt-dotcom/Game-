@@ -317,13 +317,18 @@ function drawEvents(now, wallNow) {
     if (!dead) { const R = 110 * kb, gr = ctx.createRadialGradient(s.x, s.y, 6, s.x, s.y, R); gr.addColorStop(0, 'rgba(255,120,60,.45)'); gr.addColorStop(1, 'rgba(255,80,40,0)'); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(s.x, s.y, R, 0, 7); ctx.fill(); }
     ctx.save(); ctx.translate(s.x, s.y - (dead ? 0 : Math.sin(now / 700) * 4 * kb)); ctx.scale(kb, kb); if (dead) { ctx.globalAlpha = .45; ctx.filter = 'grayscale(1)'; }
     drDraw(ctx, dead ? 0 : Math.sin(now / 260)); ctx.restore();
-    const bw = Math.max(90, 130 * kb), by = s.y + 40 * kb;                                    // Name und Leben
+    liveAnimation = true;
+}
+function drawDragonName(wallNow) {                   // Name und Leben des Drachen: nach allen Gebäuden (die Thron-Kuppel deckt ihn sonst zu)
+    const z = mapState.zoom, D = drOnMap(wallNow); if (!D || z < .0015) return;
+    const s = barbScreen(D), kb = drK(); if (s.x < -200 || s.x > viewW + 200 || s.y < -200 || s.y > viewH + 200) return;
+    const dead = D.hp <= 0; setScreen(ctx);
+    const bw = Math.max(90, 130 * kb), by = s.y + 40 * kb;
     ctx.font = '800 12px Inter, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     const label = dead ? D.name + ' · besiegt' : D.name, tw = ctx.measureText(label).width + 18;
     rr(ctx, s.x - tw / 2, by, tw, 20, 10); ctx.fillStyle = 'rgba(24,8,6,.92)'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#f2c75c'; ctx.stroke();
     ctx.fillStyle = '#ffe9c8'; ctx.fillText(label, s.x, by + 10.5);
     if (!dead) { rr(ctx, s.x - bw / 2, by + 24, bw, 7, 3.5); ctx.fillStyle = 'rgba(10,8,10,.85)'; ctx.fill(); rr(ctx, s.x - bw / 2 + 1, by + 25, Math.max(2, (bw - 2) * D.hp / D.max), 5, 2.5); ctx.fillStyle = '#e0483a'; ctx.fill(); }
-    liveAnimation = true;
 }
 function drDraw(g, flap) {                           // der Drache: Flügel (schlagend), Körper, langer Hals, gehörnter Kopf, Schwanz, Feueratem
     const col = DR_COL, dark = '#2a0c08', belly = '#f0b45a';
