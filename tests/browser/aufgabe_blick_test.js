@@ -27,10 +27,10 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   const w = await ev(() => { welcomeFrom = Object.assign({ produced: { coins: 48e6, troops: 24e6, capped: false, thronePts: 0, throneHit: null } }, empireSnapshot(), { at: Date.now() - 33 * 60000 });
     const hp0 = hourProduction; hourProduction = () => ({ coins: 87.5e6, troops: 43.8e6 }); showWelcome(); hourProduction = hp0;
     const o = [...document.querySelectorAll('#welcomeList li')].map(li => { const sp = li.querySelector('span'), lh = parseFloat(getComputedStyle(sp).lineHeight) || 16;
-      return [sp.innerText, Math.round(sp.getBoundingClientRect().height / lh), li.getBoundingClientRect().right <= li.parentElement.getBoundingClientRect().right + 1]; });
+      return [sp.innerText, Math.round(sp.getBoundingClientRect().height / lh), li.getBoundingClientRect().right <= li.parentElement.getBoundingClientRect().right + 1, li.querySelector('b').innerText.split('\n').length]; });
     return o; });
   await bild('willkommen');
-  ok(w.length >= 2 && w.some(r => r[0] === 'Ertrag pro Stunde') && w.every(r => r[1] === 1 && r[2]), 'Willkommen zurück: Bezeichnungen einzeilig („Ertrag pro Stunde“), nichts ragt hinaus', w);
+  ok(w.length >= 2 && w.some(r => r[0] === 'Ertrag pro Stunde') && w.every(r => r[1] === 1 && r[2] && r[3] === 2), 'Willkommen zurück: Bezeichnungen einzeilig („Ertrag pro Stunde“), Münzen und Truppen je eine Zeile, nichts ragt hinaus', w);
   await ev(() => closeWelcome());
   // E) Events
   const e = await ev(async () => {

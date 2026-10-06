@@ -644,6 +644,16 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Spielstand auf dem Server (wie alle `openWater…`-Werte; `sessionStorage` nur im Arbeitsspeicher, sw.js nur Push, Cookie nur
   Login). Nur die Vorschau ohne Server nutzt den echten Browser-Speicher. Nichts zu verlegen. Test
   `tests/browser/anleitung_test.js` (Handy 390×844 + Desktop).
+- **6.10. – Blick „mit den Augen eines Spielers“, Bereiche B/E/G/I (Branch `blick-begi`, NICHT hochgeladen):**
+  Start: neuer Spieler sieht nur die Anleitung (kein „Willkommen zurück“, Tagesbelohnung zeigt Kiste ×1 + Woche – war schon so).
+  „Willkommen zurück“: Bezeichnungen einzeilig („Ertrag pro Stunde“ brach in 3 Zeilen um), lange Zahlen rutschen darunter
+  (`spielseite/07`). Events: Welt-Saison nur in den letzten 3 Tagen (oder angehalten) oben in jedem Reiter, sonst unten im
+  Wochen-Event (`saisonOben`, 09c), Texte linksbündig; Handy-Chips kurz („Woche“, „Boss“), alle 4 im Bild; Preis-Kacheln größer.
+  Pass heißt „Saison-Pass“ ohne Nummer (neben „Welt-Saison 1“ verwirrte „Saison-Pass 10“), voriger Pass „Voriger Saison-Pass“.
+  Abholen leer: eine Zeile. Rangliste: Thron-Punkte-Erklärung zum Aufklappen, leere Liste kompakt. Heldenhalle: genug Splitter →
+  Karte golden oben mit „Freischalten“ (schaltet direkt frei), Stern als „Stern N · k von 4 Vierteln“ + Balken, am Desktop
+  größere Karten. Offen (nur gemeldet, Zahlen): Pass-Münzen klein (10/30), Mitspieler-Macht beim Start fast gleich.
+  Test `tests/browser/aufgabe_blick_test.js` (Handy 390 + Desktop).
 - **6.10. – Design P1: Grundwerte, HUD, Leiste, Streifen (11b F, Branch `design-p1`, NICHT hochgeladen):** **Grundwerte**
   (`spielseite/01`, andere Design-Pakete bauen darauf): Abstände `--ab-1…4` (4/8/12/16), Schriftstufen `--fs-11/13/15/17/22`
   (`--fs-9`/`--fs-10` = 11 px, nichts Kleineres mehr), Knopf-Arten `--k-haupt` 48 · `--k-zweit` 44 · `--k-gefahr` 48 · `--k-chip` 36

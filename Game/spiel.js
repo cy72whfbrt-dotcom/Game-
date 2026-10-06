@@ -7510,7 +7510,7 @@ function showWelcome() {
     document.getElementById('welcomeModal').hidden = false;
     welcomeLive = from.live ? { from, bis: Date.now() + 60000 } : null;
 }
-function welcomeListHtml(from) { return welcomeRows(from).map(r => '<li>' + icon(r[0], r[0] === 'coin' ? 'ico-coin' : r[0] === 'troops' ? 'ico-troops' : '') + '<span>' + r[1] + '</span><b>' + r[2] + '</b></li>').join(''); }
+function welcomeListHtml(from) { return welcomeRows(from).map(r => '<li>' + icon(r[0], r[0] === 'coin' ? 'ico-coin' : r[0] === 'troops' ? 'ico-troops' : '') + '<span>' + r[1] + '</span><b>' + r[2].replace(' · +', '<br>+') + '</b></li>').join(''); }   // (Münzen und Truppen je eine Zeile)
 // (Zuschauer) offene Begrüßung: neue Berichte/Münzen der Abwesenheit kommen mit den Pulsen → Liste nachziehen (1 Minute lang)
 let welcomeLive = null;
 function welcomeNachziehen() {
