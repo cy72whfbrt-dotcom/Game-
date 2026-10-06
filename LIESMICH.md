@@ -673,6 +673,17 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Flackern) und ohne Boni; Feld-Armeen mit ihrer Truppenzahl ohne Boni; sobald der Kampf läuft, die echte Stärke
   (`botSchaetzAngriff`/`botSchaetzArmee`, bots/05 – genutzt von `botDefend` und der Bündnis-Hilfe `bundUnterAngriff`,
   buendnis/01). Die Vorsicht (×1,1 halten, ×1,2 Hilfe) bleibt. Test `tests/browser/mitspieler_schaetzen_test.js`.
+
+- **6.10. – Design P3: Basis- und Angriffsfenster übersichtlich (11b F, C/D/N, NICHT hochgeladen):** Basis antippen → am Handy
+  steht die Basis mittig über dem Fenster (`inselMittig`, 10a). Untertitel zweizeilig (Name/Stufe/online, darunter Koordinaten;
+  `.psub--zwei`) – nichts mehr „o…“. Fremde Basis ungespäht: statt 2 Kacheln „Erst spähen“ + Kasten EINE Kachel „Stärke
+  unbekannt“ – antippen schickt den Späher (`.spaeh-kachel`, `data-spaehen`). Eigene Basis: EIN goldener Haupt-Knopf (Hauptstadt:
+  „Stadt betreten“, sonst „Aufwerten“; `.act--haupt`), darunter Senden · Sammeln · Mehrfach · Verlegen als kleine Zweit-Knöpfe mit
+  Preis. Angriff vorbereiten: Startbasis + Angriff gegen Abwehr (+ Kräfteverhältnis) bleiben beim Scrollen oben stehen
+  (`.ap-kopf`, sticky) – Alexanders Beispiel (Karte oben abgeschnitten) behoben; Hinweis „Abwehr unbekannt“ weg (das „?“ in der
+  Kachel reicht); Truppen: Schieber + 25/50/75/Alle, die Zahl ist nur Anzeige (antippen = eintippen); Helden in einer Zeile zum
+  Wischen (`.chips-quer`, auch Armee-Fenster 09d); „Angreifen“ fest unten. Funktion unverändert (Befehle, Server-Filter).
+  Stil: neue Klassen nur in spielseite/03. Test `tests/browser/handy_basis_test.js` (Handy + Desktop).
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 
