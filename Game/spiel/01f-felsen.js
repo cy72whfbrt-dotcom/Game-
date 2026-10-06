@@ -22,7 +22,8 @@ function felsenListe() {                             // alle Bergstöcke (einmal
     for (const lm of landmasses) {
         const hier = proLm[lm.id] = [], eigene = basen[lm.id] || [];
         const band = baender[lm.id] = [];                                     // alle möglichen Gebiets-Bänder: Nachbarbasen bis zum Verbindungsabstand
-        for (let i = 0; i < eigene.length; i++) for (let j = i + 1; j < eigene.length; j++) { const A = eigene[i], B = eigene[j];
+        const nachX = eigene.slice().sort((p, q) => p.x - q.x);
+        for (let i = 0; i < nachX.length; i++) for (let j = i + 1; j < nachX.length && nachX[j].x - nachX[i].x <= TERRITORY_CONNECT_MAX_DIST; j++) { const A = nachX[i], B = nachX[j];
             if (Math.hypot(A.x - B.x, A.y - B.y) <= TERRITORY_CONNECT_MAX_DIST) band.push([A.x, A.y, B.x, B.y]); }
         for (const g of gateSpots) if (g.lm === lm.id) band.push([g.x, g.y, g.ex, g.ey]);   // der Weg vom Tor auf die Brücke
         if (lm.tier === 'throne' || FELS_OHNE[lm.bio]) continue;
@@ -226,7 +227,7 @@ function felsenMalen(g, lm, zd, zl) {                // in paintBackground: zd =
     const f = FELS_FARBE[lm.stone ? 'stone' : lm.bio] || FELS_FARBE.green;
     const gipfelA = Math.min(1, Math.max(0, (zd - 0.006) / 0.004)), feinA = Math.min(1, Math.max(0, (zd - 0.016) / 0.006));
     if (gipfelA < 1) { g.globalAlpha = 1 - gipfelA;                            // weit weg: weiche Schattierung + heller Grat
-        g.fillStyle = 'rgba(0,0,0,.14)'; g.fill(d.huelle); g.lineCap = 'round'; g.lineJoin = 'round'; g.strokeStyle = 'rgba(255,255,255,.18)'; g.lineWidth = 1.4 / zl * 3; g.stroke(d.grat); }
+        g.fillStyle = 'rgba(0,0,0,.14)'; g.fill(d.huelle); g.lineCap = 'round'; g.lineJoin = 'round'; g.strokeStyle = 'rgba(255,255,255,.18)'; g.lineWidth = 1.4 / zl; g.stroke(d.grat); }
     if (gipfelA > 0) { g.globalAlpha = gipfelA;
         g.fillStyle = 'rgba(0,0,0,.18)'; g.fill(d.schatten);
         if (feinA > 0) { g.fillStyle = '#284d22'; g.fill(d.baum); g.fillStyle = '#35652c'; g.fill(d.baumL); }

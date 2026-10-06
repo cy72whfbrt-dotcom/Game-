@@ -779,6 +779,18 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   (06c `throneAmount`) = Stunden-Produktion × `THRONE_STUNDEN` (= WIRTSCHAFT_KOSTEN ÷ WIRTSCHAFT_ERTRAG = 2), wie Händler
   (`hdPreis`) und Markt (`marktLimit`); Mindestwerte bleiben. Shop zeigt „in 2 Std.“. Hauptbuch (10d `muenzGutscheine`,
   `truppenPruefen` „thron“) rechnet je Kauf ebenso 2 Stunden (sonst Fehlalarm). Tests `thron_verst_test`, `welt_test`.
+- **6.10. – Lebendige Welt: Berge auf der Karte, Märsche drumherum (11b G, Branch `welt-felsen`, NICHT hochgeladen):** Neuer Teil
+  `01f-felsen.js` (Schalter `WELT_FELSEN`, false = keine Berge, alles wie vorher – Projektleiter entscheidet, ob es in den
+  nächsten Saison-Reset kommt). Design-Vorgabe Variante A „Berge in den Lücken“: je Region 1–3 Bergstöcke (3–7 Low-Poly-Gipfel,
+  Farben je Landschaft, Wüste Tafelberge, Schneekappen), nicht auf Thron-Insel, Vulkan, Sumpf; fest aus eigenem Welt-Zufall
+  (gleich auf Handy und Weltrechner). Frei bleiben Basen (+1400), Startplätze/Tempel/Tore (+3000), Gebiets-Bänder (alle
+  Nachbarpaare bis 6000, +900), Brücken-Enden (+2000), Felder (+1200), Küste; Lager/Tagesboss (`barbSpot`), Wälder und
+  Eis-Deko meiden die Berge. Jeder Bergstock wird verworfen, wenn eine Basis ihrer Region eine andere nur mit mehr als 1,6 ×
+  Luftlinie erreicht. Wege: kürzester Weg über die Hüllen-Ecken (`felsenWeg`, Dijkstra, Ecken als Bogen, gemerkt),
+  `marchPath` (03c) und `marschStrecke` (02b) nutzen ihn → Marschzeit = Weglänge für alle (du, Mitspieler, Späher, Rally,
+  Verstärkung, Felder, Lager, Weltrechner). **Achtung:** `MAX_ATTACK_SECONDS` = 60 s bleibt – lange Märsche werden durch
+  Berge nicht länger (nur die unter 60 s; ein Umweg kostet etwa 5–25 %). Gezeichnet in den Karten-Kacheln (weit: Schattierung,
+  mittel: Gipfel, nah: Kanten, Kappen, Geröll, Einzelfelsen). Test `welt_felsen_test` (neu).
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 
