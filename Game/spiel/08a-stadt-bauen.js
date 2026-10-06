@@ -143,7 +143,7 @@ const cityView = document.getElementById('cityView'), cityCanvas = document.getE
 // ===== ENTERING AND LEAVING: like the big strategy games - the map dives into your capital, you pass through the
 // clouds and come out above your town; leaving, the town falls away below the clouds and the map opens up again.
 const cloudFx = document.createElement('canvas');
-cloudFx.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;z-index:60;pointer-events:none;display:none';
+cloudFx.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;z-index:19;pointer-events:none;display:none';
 document.body.appendChild(cloudFx);
 const CLOUD_PUFFS = (() => { const r = mulberry32(31), out = []; for (let i = 0; i < 22; i++) { const a = r() * Math.PI * 2; out.push({ a, d: .15 + r() * .55, s: .28 + r() * .32, sh: .93 + r() * .07 }); } return out; })();
 let cloudAnim = null, cityMapReturn = null, cityBusy = false, cloudCover = 0;   // cloudCover: wie dicht die Wolken gerade sind (ab .95 alles weiß – dahinter muss nichts gezeichnet werden)
@@ -155,8 +155,9 @@ function cloudsRun(dur, c0, c1, then) {                                   // cov
     cloudAnim = { t0: performance.now(), dur, c0, c1, then }; cloudFx.style.display = 'block';
     const step = now => {
         const a = cloudAnim; if (!a) return;
-        const q = Math.min(1, (now - a.t0) / a.dur), e = q < .5 ? 2 * q * q : 1 - Math.pow(-2 * q + 2, 2) / 2, c = a.c0 + (a.c1 - a.c0) * e;
+        const q = Math.max(0, Math.min(1, (now - a.t0) / a.dur)), e = q < .5 ? 2 * q * q : 1 - Math.pow(-2 * q + 2, 2) / 2, c = a.c0 + (a.c1 - a.c0) * e;   // (das erste Bild kann etwas vor t0 liegen)
         cloudCover = c;
+        cloudFx.style.opacity = Math.min(.3, c * .86);                       // ein leichter, warmer Schleier (höchstens .3, auch wo Wolken übereinander liegen) – kein Milchglas, das wie „lädt“ wirkt
         const z = cityView.hidden ? 19 : 51; if (cloudFx.style.zIndex !== String(z)) cloudFx.style.zIndex = z;   // nie über den Leisten: unter HUD/Leiste der Karte (20/25), in der Stadt unter ihren (52)
         const dpr3 = CLOUD_RES, W = window.innerWidth, H = window.innerHeight;
         if (cloudFx.width !== Math.round(W * dpr3) || cloudFx.height !== Math.round(H * dpr3)) { cloudFx.width = Math.round(W * dpr3); cloudFx.height = Math.round(H * dpr3); }
@@ -165,8 +166,7 @@ function cloudsRun(dur, c0, c1, then) {                                   // cov
         for (const p of CLOUD_PUFFS) {                                     // puffs drift in from the edges as the cover grows, part again as it falls
             const dist = (p.d + (1 - c) * .9) * R * .6, x = W / 2 + Math.cos(p.a) * dist, y = H / 2 + Math.sin(p.a) * dist * .75, rad = p.s * R * (.55 + c * .5);
             const gr = g.createRadialGradient(x - rad * .2, y - rad * .25, rad * .05, x, y, rad);
-            const al = Math.min(.3, c * .86);                                // ein leichter, warmer Schleier (höchstens .3) – kein Milchglas, das wie „lädt“ wirkt
-            gr.addColorStop(0, 'rgba(243,230,196,' + al + ')'); gr.addColorStop(.55, 'rgba(' + Math.round(243 * p.sh) + ',' + Math.round(230 * p.sh) + ',' + Math.round(196 * p.sh) + ',' + (al * .85) + ')'); gr.addColorStop(1, 'rgba(243,230,196,0)');
+            gr.addColorStop(0, 'rgb(243,230,196)'); gr.addColorStop(.55, 'rgba(' + Math.round(243 * p.sh) + ',' + Math.round(230 * p.sh) + ',' + Math.round(196 * p.sh) + ',.85)'); gr.addColorStop(1, 'rgba(243,230,196,0)');
             g.fillStyle = gr; g.beginPath(); g.arc(x, y, rad, 0, Math.PI * 2); g.fill();
         }
         if (q < 1) requestAnimationFrame(step);

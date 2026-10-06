@@ -40,7 +40,7 @@ function cityVergleich(id, L) {                    // Gebäude-Fenster „Jetzt 
 function cityExtraHtml(id, lvl) {
     if (AUF && ['academy', 'market'].includes(id)) return AUF.extraHtml(id, lvl);   // Forschung, Markt (aufbau.js)
     if (id === 'heroes') { const up = HEROES.filter(h => heroCanDo('player', h.id)).length;   // the way into the hero screen
-        return (lvl ? '' : '<small class="keep-note">Deine Helden kannst du schon jetzt nutzen – die Halle gibt allen Helden Gefolge-Bonus.</small>') + '<button type="button" class="btn btn--primary btn--grow hh-open" data-hero-open>' + icon('profile') + '<span>Helden öffnen</span>' + (up ? '<em class="hh-badge">' + up + '</em>' : '') + '</button>'; }
+        return (lvl ? '' : '<small class="keep-note">Deine Helden kannst du schon jetzt nutzen – die Halle gibt allen Helden Gefolge-Bonus.</small>') + '<button type="button" class="btn btn--' + (lvl ? 'primary' : 'secondary') + ' btn--grow hh-open" data-hero-open>' + icon('profile') + '<span>Helden öffnen</span>' + (up ? '<em class="hh-badge">' + up + '</em>' : '') + '</button>'; }
     if (id === 'embassy' && lvl && typeof verstHtml === 'function') return verstHtml();   // Botschaft: Verstärkung (buendnis.js)
     if (id === 'wall') return vhHtml(lvl);                                                 // Verteidigungs-Helden
     if (id === 'forge' && lvl) {                   // pick a slot, then any piece you own in it - equipped or in the chest
