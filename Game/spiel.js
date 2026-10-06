@@ -1340,7 +1340,7 @@ function felsenListe() {                             // alle Bergstöcke (einmal
             const x = lm.x + (r() * 2 - 1) * lm.shapeMaxR * .75, y = lm.y + (r() * 2 - 1) * lm.shapeMaxR * .75;
             if (eigene.some(i => Math.abs(i.x - x) < 3200 && Math.abs(i.y - y) < 3200 && Math.hypot(i.x - x, i.y - y) < i.radius + FELS_ABSTAND.basis + 1200)) continue;   // (schnell: zu nah an einer Basis)
             if (!aufLand(lm, x, y) || band.some(q => pointToSegmentDistance(x, y, q[0], q[1], q[2], q[3]) < FELS_ABSTAND.band + 800)) continue;   // (schnell: Wasser oder Band)
-            const b = felsBergstock(x, y, r, tries >= 60);                         // (findet sich lange kein Platz: kleinerer Stock)
+            const b = felsBergstock(x, y, r, tries < 50 ? 0 : tries < 110 ? 1 : 2);   // (findet sich lange kein Platz: kleinerer Stock)
             if (!felsPasst(lm, b, eigene, band, enden, meineFelder, hier)) continue;
             hier.push(b);
             if (!felsErreichbar(eigene, b, hier)) { hier.pop(); continue; }
@@ -1350,11 +1350,11 @@ function felsenListe() {                             // alle Bergstöcke (einmal
     felsenDaten = { liste, proLm, baender };
     return liste;
 }
-function felsBergstock(x, y, r, klein) {             // 3–7 Gipfel in zwei versetzten Reihen entlang einer leicht gebogenen Linie: in der Mitte der höchste,
-    const n = klein ? 3 + Math.floor(r() * 2) : 3 + Math.floor(r() * 5), ang = (r() - .5) * Math.PI * .9, bieg = (r() - .5) * .5, ca = Math.cos(ang), sa = Math.sin(ang);   // dazu Hülle und Wegpunkte
-    const gipfel = [], w0 = (klein ? 1150 : 1400) + r() * 300, haupt = Math.floor(n / 2 + (r() - .5)); let t = 0;
-    for (let i = 0; i < n; i++) { const s = Math.max(.55, 1 - .17 * Math.abs(i - haupt) + (r() - .5) * .2), w = Math.max(800, Math.min(1700, w0 * s));
-        gipfel.push({ t, v: (i % 2 ? 1 : -1) * w0 * (.12 + r() * .2), w, h: w * (.65 + r() * .3), off: w * (.1 + r() * .1) }); t += w * (.55 + r() * .2); }
+function felsBergstock(x, y, r, stufe) {             // 3–7 Gipfel in zwei versetzten Reihen entlang einer leicht gebogenen Linie: in der Mitte der höchste,
+    const n = 3 + Math.floor(r() * (5 - stufe * 2)), ang = (r() - .5) * Math.PI * .5, bieg = (r() - .5) * .5, ca = Math.cos(ang), sa = Math.sin(ang);   // dazu Hülle und Wegpunkte
+    const gipfel = [], w0 = [2200, 1800, 1400][stufe] + r() * 400, haupt = Math.floor(n / 2 + (r() - .5)); let t = 0;
+    for (let i = 0; i < n; i++) { const s = Math.max(.55, 1 - .17 * Math.abs(i - haupt) + (r() - .5) * .2), w = Math.max(1000, Math.min(2800, w0 * s));
+        gipfel.push({ t, v: (i % 2 ? 1 : -1) * w0 * (.12 + r() * .2), w, h: w * (.55 + r() * .25), off: w * (.1 + r() * .1) }); t += w * (.5 + r() * .15); }
     const mitte = t / 2;
     for (const g of gipfel) { const u = g.t - mitte, v = bieg * u * u / Math.max(1, mitte) * .5 + g.v; g.x = x + u * ca - v * sa; g.y = y + u * sa + v * ca; }
     const ymin = Math.min(...gipfel.map(g => g.y)), ymax = Math.max(...gipfel.map(g => g.y));
@@ -1531,11 +1531,11 @@ function felsBild(lm) {                              // die Pfade einer Region (
         const e = d.fels = { boden: P(), ton: [P(), P(), P(), P(), P()], kante: P(), sil: P(), kappe: null };
         for (let i = 0, ok = 0, want = viel ? 10 + Math.floor(rnd() * 7) : 2 + Math.floor(rnd() * 4); i < want * 12 && ok < want; i++) {
             const a = rnd() * Math.PI * 2, r0 = Math.sqrt(rnd()) * lm.shapeMaxR * .85, x = lm.x + Math.cos(a) * r0, y = lm.y + Math.sin(a) * r0;
-            if (!aufLand(lm, x, y) || bas.some(b => Math.abs(b.x - x) < 3000 && Math.abs(b.y - y) < 3000 && Math.hypot(b.x - x, b.y - y) < b.radius + 1400) || felsAuf(x, y, 600)
-                || band.some(s => pointToSegmentDistance(x, y, s[0], s[1], s[2], s[3]) < 900)) continue;
+            if (!aufLand(lm, x, y) || bas.some(b => Math.abs(b.x - x) < 3000 && Math.abs(b.y - y) < 3000 && Math.hypot(b.x - x, b.y - y) < b.radius + 800) || felsAuf(x, y, 600)
+                || band.some(s => pointToSegmentDistance(x, y, s[0], s[1], s[2], s[3]) < 500)) continue;   // (Deko, kein Hindernis: nur nicht auf Basis oder Band)
             ok++;
             const n = 2 + Math.floor(rnd() * 3), br = [];
-            for (let k = 0; k < n; k++) { const s = (k ? 240 : 380) + rnd() * 260; br.push([x + (rnd() - .5) * 800, y + (rnd() - .5) * 420, s]); }
+            for (let k = 0; k < n; k++) { const s = (k ? 380 : 560) + rnd() * 300; br.push([x + (rnd() - .5) * 1100, y + (rnd() - .5) * 500, s]); }
             br.sort((p, q) => p[1] - q[1]);
             for (const [bx, by, s] of br) felsFacetten(e, bx, by, s, s * (.5 + rnd() * .3), s * (.05 + rnd() * .12), rnd, false, false);
         }
