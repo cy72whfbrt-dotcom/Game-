@@ -517,6 +517,10 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   „Suchen“ mit seiner Zeile). **Fehler mitbehoben:** das Profil echter Spieler verlor Holzfäller, Steinbruch und Eisenmine
   (fehlten in `profil_bereinigen`) – der Weltrechner rechnete ihre Rohstoffe zu klein. Tests: `erfolg_test`, `rang_profil_test`,
   `aufgabe_test`, `welt_test` (Push), `server_test` (Profil, Push-Arten, foP).
+  **Nach der Prüfung:** die Tagesliste entsteht schon beim Skript-Start (vor `aufbau.js`) – darum prüft `loadQuests` sie einmal
+  nach, sobald `AUF` da ist (`geprueft`): Bau/Forschung, die heute nicht geht, wird gegen eine andere Aufgabe derselben Stufe
+  getauscht (nur ohne Fortschritt). Untertitel „Hauptstadt“ kürzer („Burg-Stufe, dann Forschung“, 390 px). Fremdes Profil: der
+  Bündnis-Knopf steht in eigener Zeile unter Titel/online (`.rp-bundzeile`).
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.

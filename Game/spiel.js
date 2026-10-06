@@ -5634,7 +5634,7 @@ function openRulerProfile(who) {
     document.getElementById('rulerName').textContent = pr.name;
     document.getElementById('rulerOver').textContent = (who === 'player' ? 'Dein Profil' : 'Profil') + ' · Rang ' + RANK_TIERS[rankIndexFor(pr.bases)].name;
     document.getElementById('rulerSub').innerHTML = '<span class="ptitle-tag" style="margin:0">' + escapeHtml(pr.title) + '</span>' + (who === 'player' ? '' : ' <span class="rp-online' + (pr.online ? ' on' : '') + '"><i></i>' + (pr.online ? 'online' : 'offline') + '</span>') +
-        profilBundHtml(who);   // sein Bündnis (antippen: Bündnis-Fenster)
+        '<div class="rp-bundzeile">' + profilBundHtml(who) + '</div>';   // sein Bündnis in eigener Zeile (antippen: Bündnis-Fenster)
     const rd = r => RARITY_DEFS[r];
     const gear = pr.items.map(it => { const d = EQUIPMENT_DEFS[it[0]], r = rd(it[1]);
         return '<span class="gslot"><span class="tile' + (r ? '' : ' empty') + '"' + (r ? ' data-r="' + r.key + '"' : '') + ' title="' + d.name + (r ? ' – ' + r.label + ', Stufe ' + it[2] : ' – leer') + '">' + icon(d.icon) +
@@ -5701,7 +5701,7 @@ const rankPopup = document.getElementById('rankPopup'), RANK_TOP = 50;
 let rankTab = 'power';
 const RANK_TABS = { power: { t: 'Macht', sub: 'Die Stärke des ganzen Reichs', unit: 'Macht' },
     caps: { t: 'Eroberungen', sub: 'Eroberte Basen insgesamt', unit: 'erobert' },
-    burg: { t: 'Hauptstadt', sub: 'Burg-Stufe · bei Gleichstand zählt die Forschung', unit: 'Burg-Stufe' },
+    burg: { t: 'Hauptstadt', sub: 'Burg-Stufe, dann Forschung', unit: 'Burg-Stufe' },
     titles: { t: 'Titel', sub: 'Wer die Mitte hält und wer einen Titel trägt', unit: 'Thron-P.' },
     week: { t: 'Thron-Punkte', sub: 'Fürs Halten der Mitte · alle je verdienten', unit: 'Thron-P.' } };
 function conquestsOf(who) { return who === 'player' ? playerStats.captures || 0 : botConquests(who); }
@@ -6429,10 +6429,23 @@ function loadQuests() {
     if (!questState) { try { questState = JSON.parse(store.get('openWaterQuests')) || null; } catch (e) { questState = null; } }
     if (!questState || questState.date !== today || !Array.isArray(questState.list)) {
         const types = Object.keys(QUEST_DEFS).filter(t => !QUEST_DEFS[t].geht || QUEST_DEFS[t].geht()).sort(() => Math.random() - 0.5).slice(0, 3);
-        questState = { date: today, bonusClaimed: false, list: types.map((type, i) => {
+        questState = { date: today, bonusClaimed: false, geprueft: AUF ? 1 : 0, list: types.map((type, i) => {
             const tier = i;                                  // one easy, one medium, one hard
             return { type, target: QUEST_DEFS[type].steps[tier], progress: 0, gems: QUEST_GEMS[tier], claimed: false };
         }) };
+        saveQuests();
+    }
+    // Liste beim Skript-Start gewürfelt (aufbau.js noch nicht da, geht() sagte ja): einmal nachprüfen, sonst Tagesbonus unmöglich
+    if (AUF && !questState.geprueft) {
+        questState.geprueft = 1;
+        questState.list.forEach((t, i) => {
+            const def = QUEST_DEFS[t.type];
+            if (!def || t.claimed || t.progress > 0 || !def.geht || def.geht()) return;   // (Fortschritt bleibt)
+            const frei = Object.keys(QUEST_DEFS).filter(k => !questState.list.some(x => x.type === k) && (!QUEST_DEFS[k].geht || QUEST_DEFS[k].geht()));
+            if (!frei.length) return;
+            const neu = frei[Math.floor(Math.random() * frei.length)];
+            t.type = neu; t.target = QUEST_DEFS[neu].steps[i];             // (Index = Stufe: leicht, mittel, schwer)
+        });
         saveQuests();
     }
     return questState;

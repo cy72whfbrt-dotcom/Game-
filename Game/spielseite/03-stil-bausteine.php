@@ -267,7 +267,7 @@
 #popupEmblem[data-profile]{cursor:pointer}
 .rp-bund{display:flex;align-items:center;gap:6px;width:fit-content;max-width:100%;margin-top:5px;padding:3px 9px 3px 3px;border:1px solid var(--line-1);border-radius:999px;background:rgba(0,0,0,.22);font:600 var(--fs-12)/1.2 var(--font-ui);color:var(--tx-1);text-align:left;cursor:pointer}
 .rp-bund > span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .rp-bund .bd-wappen{width:20px;height:20px;border-radius:6px} .rp-bund .bd-wappen .icon{width:12px;height:12px}
-.rp-bund.is-leer{color:var(--tx-2);padding-left:9px} span.rp-bund{cursor:default} .rp-bund > .icon{width:14px;height:14px} .bd-zeile.is-ziel{outline:2px solid var(--gold-300);outline-offset:2px;border-radius:10px}
+#rulerSub{flex-wrap:wrap;row-gap:0} .rp-bundzeile{flex:1 0 100%;min-width:0} .rp-bund.is-leer{color:var(--tx-2);padding-left:9px} span.rp-bund{cursor:default} .rp-bund > .icon{width:14px;height:14px} .bd-zeile.is-ziel{outline:2px solid var(--gold-300);outline-offset:2px;border-radius:10px}
 .logRow .lv{font:600 var(--fs-12)/1 var(--font-ui);color:var(--tx-2);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
 .seg.hero-seg{display:flex;flex-wrap:wrap} .seg.hero-seg button{flex:1 1 28%;display:inline-flex;align-items:center;justify-content:center;gap:4px;padding:0 6px;border-left:3px solid var(--hc,var(--line-1))} .seg.hero-seg button small{color:var(--gold-200);font-size:10px} .seg.hero-seg button:disabled{opacity:.4} .seg.hero-seg .hero-pic{width:22px;height:22px;flex:none;border-radius:5px;border:1px solid var(--hc)} .seg.hero-seg button small{white-space:nowrap}
 .logHero{padding:6px 0;border-top:1px solid var(--line-1)} .logHeroFire{font-style:normal;color:var(--gold-200);font-weight:700}

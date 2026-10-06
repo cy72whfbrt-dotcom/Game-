@@ -85,5 +85,18 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(await ev(() => PASS_HOW.some(h => /Bau in der Stadt/.test(h[1])) && PASS_HOW.some(h => /Forschung/.test(h[1]))), 'Pass erklärt die neuen Punkte');
   const bh = await ev(() => EV_WOCHE.find(x => x.k === 'bau').pkt);
   ok(/Stadt/.test(bh), 'Wochen-Event Bauherr nennt die Stadt', bh);
+  // 4) Liste beim Skript-Start gewürfelt (AUF noch nicht da): nach dem Laden wird „Forschung“ ohne Labor getauscht
+  const p2 = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); p2.on('pageerror', e => fe.push(e.message));
+  await p2.addInitScript(() => { const d = new Date(), tag = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    try { localStorage.setItem('openWaterReset', '1'); localStorage.setItem('openWaterQuests', JSON.stringify({ date: tag, bonusClaimed: false, list: [{ type: 'forschung', target: 1, progress: 0, gems: 5, claimed: false },
+      { type: 'scout', target: 4, progress: 0, gems: 10, claimed: false }, { type: 'send', target: 6, progress: 0, gems: 15, claimed: false }] })); } catch (e) {} });
+  await p2.goto('file://' + require('path').resolve(process.argv[2]) + '/index.html');
+  await p2.waitForFunction(() => typeof AUF !== 'undefined' && AUF && islandById[playerIslandId], null, { timeout: 60000, polling: 500 }).catch(() => {});
+  await p2.waitForTimeout(3000);
+  const neu = await p2.evaluate(() => ({ labor: loadCity().levels.academy || 0, gespeichert: JSON.parse(localStorage.getItem('openWaterQuests')), liste: loadQuests().list.map(t => [t.type, t.target]) }));
+  const l0 = neu.liste[0];
+  ok(neu.labor === 0 && l0[0] !== 'forschung' && !neu.liste.slice(1).some(t => t[0] === l0[0]) && l0[1] === await p2.evaluate(t => QUEST_DEFS[t].steps[0], l0[0]) && neu.liste[1][0] === 'scout' && neu.liste[2][0] === 'send',
+    'beim Laden gewürfelte Forschungs-Aufgabe ohne Labor wird getauscht (Stufe bleibt, andere bleiben)', neu.liste);
+  ok(neu.gespeichert.geprueft === 1 && neu.gespeichert.list[0].type === l0[0], 'Tausch geschieht von selbst nach dem Laden und ist gespeichert', neu.gespeichert);
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();
 })();

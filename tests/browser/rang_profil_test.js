@@ -29,6 +29,9 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(r.titel === 'Hauptstadt' && r.tab, 'Reiter „Hauptstadt“ da und aktiv', r.titel);
   ok(JSON.stringify(r.reihen) === JSON.stringify(r.soll), 'Reihenfolge: Burg-Stufe, bei Gleichstand Forschung', r);
   ok(/25/.test(r.text) && /Forschung 3/.test(r.text) && /Burg-Stufe/i.test(r.text) && !r.schlecht, 'Zeile zeigt Burg-Stufe und Forschung', r.text);
+  // Handy 390 px: Untertitel ganz zu sehen (#rankSub schneidet nicht ab)
+  const sub = await ev(() => { openRankings('burg'); const s = document.getElementById('rankSub'), o = { txt: s.textContent, voll: s.scrollWidth <= s.clientWidth + 1, breite: innerWidth }; closeAllPopups(); return o; });
+  ok(sub.voll && sub.breite <= 390 && /Burg-Stufe/.test(sub.txt) && /Forschung/.test(sub.txt), 'Untertitel „Hauptstadt“ bei 390 px nicht abgeschnitten', sub);
   ok(r.zuschauer.join() === '40,0,3', 'Zuschauer: fremde Forschung nur als Summe (foP), eigene selbst gerechnet', r.zuschauer);
   // 2) Bündnis im Profil: ohne Bündnis → „suchen“
   const o = await ev(() => { closeAllPopups(); renderProfile(); const el = document.getElementById('profileBund'); return { txt: el.innerText, knopf: !!el.querySelector('button[data-bund-zeigen]') }; });
@@ -54,6 +57,11 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   // fremdes Profil: sein Bündnis, antippen → Suchen mit seiner Zeile
   const f = await ev(id => { closeAllPopups(); openRulerProfile(id); const s = document.getElementById('rulerSub'); return { txt: s.innerText, wappen: !!s.querySelector('.bd-wappen'), knopf: !!s.querySelector('[data-bund-zeigen]') }; }, g.fremd);
   ok(/\[SF\] Sturmfalken/.test(f.txt) && f.wappen && f.knopf, 'fremdes Profil: sein Bündnis mit Wappen', f);
+  // Handy 390 px: Bündnis-Knopf in eigener Zeile unter Titel/online – nichts gequetscht oder abgeschnitten
+  const z = await ev(() => { const s = document.getElementById('rulerSub'), r = e => e.getBoundingClientRect(), t = s.querySelector('.ptitle-tag'), on = s.querySelector('.rp-online'), k = s.querySelector('.rp-bund'), sb = r(s);
+    const ganz = e => e.scrollWidth <= e.clientWidth + 1 && r(e).right <= sb.right + 1 && r(e).bottom <= sb.bottom + 1;
+    return { titel: ganz(t), online: ganz(on), knopf: r(k).bottom <= sb.bottom + 1 && r(k).right <= sb.right + 1, darunter: r(k).top >= Math.max(r(t).bottom, r(on).bottom) - 1, onlineText: on.innerText }; });
+  ok(z.titel && z.online && z.knopf && z.darunter && /online|offline/.test(z.onlineText), 'fremdes Profil 390 px: Bündnis eigene Zeile, Titel und online ganz zu sehen', z);
   await p.locator('#rulerSub [data-bund-zeigen]').click(); await p.waitForTimeout(500);
   const f2 = await ev(() => ({ bund: isPanelOpen(bundPopup), ruler: isPanelOpen(rulerPopup), tab: bundTab, ziel: (document.querySelector('#bundPopup .bd-zeile.is-ziel b') || {}).textContent || '' }));
   ok(f2.bund && !f2.ruler && f2.tab === 'suchen' && /Sturmfalken/.test(f2.ziel), 'antippen: Bündnis-Fenster, seine Zeile markiert', f2);

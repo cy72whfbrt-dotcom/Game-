@@ -129,10 +129,23 @@ function loadQuests() {
     if (!questState) { try { questState = JSON.parse(store.get('openWaterQuests')) || null; } catch (e) { questState = null; } }
     if (!questState || questState.date !== today || !Array.isArray(questState.list)) {
         const types = Object.keys(QUEST_DEFS).filter(t => !QUEST_DEFS[t].geht || QUEST_DEFS[t].geht()).sort(() => Math.random() - 0.5).slice(0, 3);
-        questState = { date: today, bonusClaimed: false, list: types.map((type, i) => {
+        questState = { date: today, bonusClaimed: false, geprueft: AUF ? 1 : 0, list: types.map((type, i) => {
             const tier = i;                                  // one easy, one medium, one hard
             return { type, target: QUEST_DEFS[type].steps[tier], progress: 0, gems: QUEST_GEMS[tier], claimed: false };
         }) };
+        saveQuests();
+    }
+    // Liste beim Skript-Start gewürfelt (aufbau.js noch nicht da, geht() sagte ja): einmal nachprüfen, sonst Tagesbonus unmöglich
+    if (AUF && !questState.geprueft) {
+        questState.geprueft = 1;
+        questState.list.forEach((t, i) => {
+            const def = QUEST_DEFS[t.type];
+            if (!def || t.claimed || t.progress > 0 || !def.geht || def.geht()) return;   // (Fortschritt bleibt)
+            const frei = Object.keys(QUEST_DEFS).filter(k => !questState.list.some(x => x.type === k) && (!QUEST_DEFS[k].geht || QUEST_DEFS[k].geht()));
+            if (!frei.length) return;
+            const neu = frei[Math.floor(Math.random() * frei.length)];
+            t.type = neu; t.target = QUEST_DEFS[neu].steps[i];             // (Index = Stufe: leicht, mittel, schwer)
+        });
         saveQuests();
     }
     return questState;
