@@ -20,15 +20,16 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       for (const id of ['welcomeModal', 'dailyModal']) { const m = document.getElementById(id); if (m) m.hidden = true; }
       closeAllPopups(); coins = 5e6; gems = 5e4; updateHud();
       // 0) Basis-Fenster → „Aufwerten“ an der Hauptstadt: die Burg öffnet, sobald die Stadt da ist (nicht nach festen 300 ms)
-      { const zs = new Set(), durs = [], orig = cloudsRun; let maxC = 0;
+      { const durs = [], orig = cloudsRun;
         cloudsRun = (d, ...a) => { durs.push(d); return orig(d, ...a); };          // (die Zeiten selbst – unter Last laufen die Bilder langsamer)
         openIslandPopup(islandById[playerIslandId]); await warte(300);
         const t0 = performance.now(); document.getElementById('upgradeBtn').click();
-        while (performance.now() - t0 < 15000 && (cityBusy || cloudAnim || performance.now() - t0 < 1500)) { await warte(30); if (cloudFx.style.display !== 'none') zs.add(cloudFx.style.zIndex + (cityView.hidden ? 'k' : 's')); maxC = Math.max(maxC, cloudCover); }
+        while (performance.now() - t0 < 15000 && (cityBusy || cloudAnim || performance.now() - t0 < 1500)) await warte(30);
         cloudsRun = orig;
-        orig(30, .35, .35); await warte(300); const maxA = +getComputedStyle(cloudFx).opacity;   // (ganz dicht: so stark wird der Schleier höchstens)
-        orig(30, .35, 0); await warte(300);
-        o.uebergang = { burg: cityOpenId === '_keep' && !document.getElementById('citySheet').hidden, z: [...zs], maxC, maxA, weg: 560 + durs.slice(0, 2).reduce((a, b) => a + b, 0), midbar: getComputedStyle(document.getElementById('midBar')).visibility,
+        const dicht = async () => { orig(30, .35, .35); let n = 0; while (cloudAnim && n++ < 200) await warte(20); const r = cloudFx.style.zIndex + ':' + getComputedStyle(cloudFx).opacity; orig(30, .35, 0); n = 0; while (cloudAnim && n++ < 200) await warte(20); return r; };
+        const zStadt = await dicht(); cityView.hidden = true; const zKarte = await dicht(); cityView.hidden = false; cityRaf = requestAnimationFrame(cityFrame);   // (ganz dicht: so stark wird der Schleier höchstens)
+        const maxA = Math.max(+zStadt.split(':')[1], +zKarte.split(':')[1]), zs = [zKarte.split(':')[0] + 'k', zStadt.split(':')[0] + 's'];
+        o.uebergang = { burg: cityOpenId === '_keep' && !document.getElementById('citySheet').hidden, z: zs, maxA, weg: 560 + durs.slice(0, 2).reduce((a, b) => a + b, 0), midbar: getComputedStyle(document.getElementById('midBar')).visibility,
           desk: innerWidth >= 900 && innerHeight >= 501, camZ: Math.round(cityCam.z * 100) / 100, sollZ: Math.round(Math.max(cityFitZoom(innerWidth, innerHeight), Math.min(2.2, innerWidth / 420) * (innerWidth >= 900 && innerHeight >= 501 ? .85 : 1)) * 100) / 100 };
         cityOpenId = null; document.getElementById('citySheet').hidden = true; }
       // 0b) Gebäude-Fenster: Botschaft bei Burg 1 – Jetzt / Stufe 1, „Burg Stufe 5“ rot mit „Zur Burg“, Knopf sagt, was fehlt
@@ -77,7 +78,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     if (r.fehler) { await ctx.close(); continue; }
     const u = r.uebergang, g = r.geb;
     ok(u.burg, art + ': Basis „Aufwerten“ → die Burg ist offen, wenn die Stadt da ist', u);
-    ok(u.z.length && u.z.every(z => z === '19k' || z === '51s') && u.maxC <= .36 && u.maxA <= .3 && u.weg <= 1100 && u.midbar === 'hidden', art + ': Schleier unter den Leisten (Karte 19, Stadt 51), höchstens .3, nach ' + u.weg + ' ms weg, Karten-Hinweise hart weg', u);
+    ok(u.z.join() === '19k,51s' && u.maxA <= .3 && u.weg <= 1100 && u.midbar === 'hidden', art + ': Schleier unter den Leisten (Karte 19, Stadt 51), höchstens .3, nach ' + u.weg + ' ms weg, Karten-Hinweise hart weg', u);
     ok(Math.abs(u.camZ - u.sollZ) < .02, art + ': Start-Zoom der Stadt' + (u.desk ? ' (Desktop × 0,85)' : ''), u);
     ok(g.geh && g.knopf === 'Burg Stufe 5 nötig' && g.aus && g.sprung, art + ': Botschaft – Burg Stufe 5 rot mit „Zur Burg“ (springt), Knopf „Burg Stufe 5 nötig“', g);
     ok(g.vgl && /^\|Jetzt\|Stufe 1\//.test(g.vgl) && /Bündnis-Hilfen–1×/.test(g.vgl) && !/1 Hilfen/.test(g.hilfe), art + ': Jetzt / Nächste Stufe statt Pfeil-Text, kein „1 Hilfen“', g);

@@ -9106,10 +9106,11 @@ function openCity(dann) {                                                   // d
     cityBusy = true;
     flyTo(home.x, home.y, { zoom: maxZoom * CITY_NAH, ms: 650 });           // 1) the map flies to your capital …
     setTimeout(() => { const tauch = karteTauchen(1, CITY_TAUCH, CITY_TAUCH_MS, home);   // 2) … dives on a little, getting soft …
-        cloudsRun(240, 0, .35, () => cloudsRun(300, .35, 0, () => { cityBusy = false; }));   // (nur Wolken am Rand, nie ganz weiß – ab dem Tipp nach 1,1 s ganz weg)
+        let offen = 2; const fertig = () => { if (--offen === 0) cityBusy = false; };   // frei erst, wenn die Wolken weg sind UND die Karte nicht mehr eintaucht
+        cloudsRun(240, 0, .35, () => cloudsRun(300, .35, 0, fertig));      // (nur Wolken am Rand, nie ganz weiß – ab dem Tipp nach 1,1 s ganz weg)
         setTimeout(() => { cityShow(); stadtBlende(0, 1); if (dann) dann();    // 3) … and the town fades in, coming up from below
             if (cityCam) cityCam.anim = { from: .62, t0: performance.now(), dur: 1100 }; else cityPendingAnim = true; }, CITY_BLENDE_AB);
-        setTimeout(() => { if (tauch) tauch.cancel(); }, CITY_TAUCH_MS); }, 560);
+        setTimeout(() => { if (tauch) tauch.cancel(); fertig(); }, CITY_TAUCH_MS); }, 560);
 }
 let cityPendingAnim = false;
 function closeCity() {
