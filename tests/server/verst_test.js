@@ -41,8 +41,8 @@ const rein = name => G.rein(b, name, { fehler });
   ok('H ist im Bündnis', await h.evaluate(a => { const x = bundVon('player'); return !!x && x.id === a; }, wahl.aid));
   const r = await h.evaluate(z => { islandTroops[playerIslandId] = Math.max(islandTroops[playerIslandId] || 0, 0); const n = islandTroops[playerIslandId] || 0; bundWahl = { mode: 'hilfe', nach: z, f: Math.min(1, 500 / Math.max(1, n)), von: playerIslandId }; const aus0 = WELT.ausgang.length; const hint = []; const fh = window.flashHint; window.flashHint = t => { hint.push(t); return fh && fh(t); }; bundWahlLos(); window.flashHint = fh; return 'Truppen ' + n + ' · frei ' + Math.floor(verstFrei(islandOwnerOf(z))) + ' · Befehl ' + (WELT.ausgang.length > aus0) + ' · ' + hint.join(' / '); }, wahl.ziel);
   ok('Hinweis neutral (Handy kennt den Platz nicht)', /Verstärkung geschickt/.test(r), r);
-  await warte(12000);
-  const m = (welt('openWaterPendingSends') || []).find(x => x.senderBotId === 'u' + HID && x.verst);
+  // Weltrechner übernimmt den Befehl beim nächsten Puls – unter Last dauert das länger: nachsehen bis 60 s (statt fest 12 s)
+  const m = await G.bis(() => (welt('openWaterPendingSends') || []).find(x => x.senderBotId === 'u' + HID && x.verst), 60000, 2000);
   ok('Verstärkung marschiert (Welt)', !!m, m ? Math.round((m.resolveAt - Date.now()) / 1000) + ' s · ' + m.troops + ' Truppen' : 'Antwort: ' + r);
   if (m) await warte(Math.min(600000, Math.max(0, m.resolveAt - Date.now()) + 20000));
   const v = (welt('openWaterVerstaerkung') || { l: [] }).l.find(x => x.w === 'u' + HID);
@@ -51,7 +51,8 @@ const rein = name => G.rein(b, name, { fehler });
   ok('H sieht sie (Botschaft-Liste)', await h.evaluate(() => verst.l.some(x => x.w === 'player')));
   const f = await rein('pruefer5');
   ok('Fremder (anderes Bündnis) sieht sie nicht', await f.evaluate(id => !verst.l.some(x => x.id === id), v && v.id));
-  if (v) { await h.evaluate(id => bundBefehl('verstZurueck', { vid: id }), v.id); await warte(12000);
+  if (v) { await h.evaluate(id => bundBefehl('verstZurueck', { vid: id }), v.id);
+    await G.bis(() => !(welt('openWaterVerstaerkung') || { l: [] }).l.some(x => x.id === v.id) && (welt('openWaterPendingSends') || []).some(x => x.senderBotId === 'u' + HID && x.back), 60000, 2000);
     ok('zurückgeholt: nicht mehr stationiert', !(welt('openWaterVerstaerkung') || { l: [] }).l.some(x => x.id === v.id));
     ok('… marschiert heim', (welt('openWaterPendingSends') || []).some(x => x.senderBotId === 'u' + HID && x.back)); }
   ok('keine Skript-Fehler', !fehler.length, fehler.join(' | '));
