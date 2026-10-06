@@ -452,7 +452,7 @@ function botStrategic(bot, target) {
 let botFreiCtx = null;
 function botFrei(botId, id, now) {                          // → Anteil der Truppen, der los darf (0 … .9)
     if (!botFreiCtx || botFreiCtx.bot !== botId || botFreiCtx.now !== now) botFreiCtx = { bot: botId, now, thr: botThreatened(botId), aer: botAerger(botId, 30 * 60000, now), cap: botCapitalOf(botId) };
-    const c = botFreiCtx, isl = islandById[id]; if (c.thr.has(id)) return 0;
+    const c = botFreiCtx, isl = islandById[id]; if (!isl || c.thr.has(id)) return 0;   // (keine Insel: nichts los)
     let f = .9;
     if (c.aer.some(i => Math.hypot(i.x - isl.x, i.y - isl.y) < ISLAND_RADIUS * 25)) f = .3;
     else { const sh = botLmShare(botId, isl.landmassId, now); if (sh.f > sh.v) f = .6; }
@@ -1258,7 +1258,7 @@ function botGather(bot) {
             }
         }
     }
-    if (!plan) return false;
+    if (!plan || !plan.helpers.length) return false;                                            // (Quelle allein stark genug: nichts zusammenzuziehen)
     const id = plan.helpers.sort((a, c) => (islandTroops[c] || 0) - (islandTroops[a] || 0))[0], n = Math.floor((islandTroops[id] || 0) * botFrei(bot.id, id, Date.now()));
     if (n < BOT_MIN_GARRISON_TO_ATTACK) return false;
     launchSend(id, plan.sourceId, bot.id, n);                                                   // (nach Lage, nicht die ganze Basis)

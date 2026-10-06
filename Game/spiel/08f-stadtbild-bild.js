@@ -21,8 +21,10 @@ function cityPathPoint(p, t) {                                              // a
 // ---- camera ----
 const CITY_VIEW = { x0: -420, x1: 420, y0: 0, y1: 650 };                    // what the camera may show (the town, the land around it)
 function cityFitZoom(W, H) { return Math.min(W / (CITY_VIEW.x1 - CITY_VIEW.x0), H / (CITY_VIEW.y1 - CITY_VIEW.y0)); }
+function cityStartZoom(W, H) {                                                 // Desktop: etwas weiter weg · Handy: alle Bauplätze samt Steinbruch und Mauer im Bild (500 breit)
+    return Math.max(cityFitZoom(W, H), W >= 900 && H >= 501 ? Math.min(2.2, W / 420) * .85 : Math.min(2.2, W / 500)); }
 function cityClampCam(W, H) {
-    const c = cityCam, zMin = Math.max(cityFitZoom(W, H) * .95, W / (CITY_BOUNDS.x1 - CITY_BOUNDS.x0 - 60), H / (CITY_BOUNDS.y1 - CITY_BOUNDS.y0 + 60)), zMax = 3;   // (nie weiter als das gemalte Land; oben/unten läuft es weich in die Grundfarbe aus)
+    const c = cityCam, zMin = Math.min(cityStartZoom(W, H), Math.max(cityFitZoom(W, H) * .95, W / (CITY_BOUNDS.x1 - CITY_BOUNDS.x0 - 60), H / (CITY_BOUNDS.y1 - CITY_BOUNDS.y0 + 60))), zMax = 3;   // (nie weiter als das gemalte Land – außer bis zum Start-Blick; oben/unten läuft es weich in die Grundfarbe aus)
     c.z = Math.max(zMin, Math.min(zMax, c.z));
     const hw = W / 2 / c.z, hh = H / 2 / c.z, V = CITY_VIEW;                  // keep the town in view (centred when it is smaller than the screen)
     c.x = V.x1 - V.x0 <= 2 * hw ? (V.x0 + V.x1) / 2 : Math.max(V.x0 + hw, Math.min(V.x1 - hw, c.x));
@@ -115,7 +117,7 @@ function cityFrame(now) {
     cityFrame.drawn = now;
     const dpr2 = Math.min(window.devicePixelRatio || 1, 2), W = window.innerWidth, H = window.innerHeight;
     if (cityCanvas.width !== Math.round(W * dpr2) || cityCanvas.height !== Math.round(H * dpr2)) { cityCanvas.width = Math.round(W * dpr2); cityCanvas.height = Math.round(H * dpr2); }
-    if (!cityCam) { const [kx, ky] = cIso(CC, CC), desk = W >= 900 && H >= 501, z = Math.max(cityFitZoom(W, H), Math.min(2.2, W / 420) * (desk ? .85 : 1));   // (Handy: das Mauer-Tor samt Schild im Bild)
+    if (!cityCam) { const [kx, ky] = cIso(CC, CC), desk = W >= 900 && H >= 501, z = cityStartZoom(W, H);   // (Handy: alle Baufelder und das Mauer-Tor samt Schild im Bild)
         cityCam = { x: kx, y: ky + 6 - (desk ? 40 / z : 0), z };                                                // (Desktop: etwas weiter weg und 40 px tiefer – die ganze Mauer-Raute unter der Leiste oben)
         if (cityPendingAnim) { cityCam.anim = { from: .62, t0: now, dur: 1100 }; cityPendingAnim = false; } }
     let animZ = 1;
@@ -249,7 +251,7 @@ function cityFrame(now) {
     plates.sort((p, q) => rang(p) - rang(q) || q.sy - p.sy);
     cityNamen = [];
     for (const { it, sx, sy, building, ghost } of plates) {
-        if (ghost && !building && Z >= .8) {                                 // leerer Platz: ein schwebendes Zeichen – „+“ = hier bauen, Schloss = braucht eine höhere Burg
+        if (ghost && !building && Z >= .7) {                                 // leerer Platz: ein schwebendes Zeichen – „+“ = hier bauen, Schloss = braucht eine höhere Burg
             const zu = !!(AUF && AUF.BAU_AB_BURG[it.id] > AUF.burgStufe('player')), r = Math.max(9, Math.min(14, 5.5 * Z));
             const [bx, by0] = toS(it.x, it.y, 34), by = by0 + Math.sin(now / 430 + it.x) * 1.8;
             g.fillStyle = 'rgba(0,0,0,.28)'; g.beginPath(); g.ellipse(bx + 1.5, by + r + 2, r * .8, r * .3, 0, 0, 7); g.fill();
@@ -257,7 +259,7 @@ function cityFrame(now) {
             g.fillStyle = bg; g.strokeStyle = zu ? 'rgba(200,190,170,.7)' : '#fff1c4'; g.lineWidth = 1.5; g.beginPath(); g.arc(bx, by, r, 0, 7); g.fill(); g.stroke();
             drawGlyph(g, zu ? 'lock' : 'plus', bx, by, r * 1.25, zu ? '#e6dccb' : '#4a2c08');
         }
-        if (Z < .8 && !building) {                                           // weit weg: nur die Stufe
+        if (Z < .7 && !building) {                                           // weit weg: nur die Stufe (ab .7: Handy-Start-Blick mit Schildern)
             if (!it.lvl) continue; const r2 = 7.5, [bx, by] = [sx, sy + 4 * Z + r2];
             if (!cityNamePlatz(it.id, bx - r2, by - r2, r2 * 2, r2 * 2, W, H)) continue; g.font = '800 10px Inter, system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
             g.fillStyle = it.keep ? '#c98f22' : '#2f6fb8'; g.strokeStyle = 'rgba(255,236,190,.9)'; g.lineWidth = 1.2; g.beginPath(); g.arc(bx, by, r2, 0, 7); g.fill(); g.stroke(); g.fillStyle = '#fff'; g.fillText(String(it.lvl), bx, by + .5); continue; }

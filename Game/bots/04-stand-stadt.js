@@ -340,7 +340,7 @@ function botGather(bot) {
             }
         }
     }
-    if (!plan) return false;
+    if (!plan || !plan.helpers.length) return false;                                            // (Quelle allein stark genug: nichts zusammenzuziehen)
     const id = plan.helpers.sort((a, c) => (islandTroops[c] || 0) - (islandTroops[a] || 0))[0], n = Math.floor((islandTroops[id] || 0) * botFrei(bot.id, id, Date.now()));
     if (n < BOT_MIN_GARRISON_TO_ATTACK) return false;
     launchSend(id, plan.sourceId, bot.id, n);                                                   // (nach Lage, nicht die ganze Basis)

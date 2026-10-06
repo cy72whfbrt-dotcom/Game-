@@ -1091,6 +1091,18 @@ Befehle und Nachrichten verteilen, Spielerliste mit Profilen.
   („Ubersicht“, „SPAHBERICHT“); Unter-Chips nicht größer als die Hauptreiter; kleine Knöpfe nicht zusammengedrückt;
   gesperrter Knopf in `--tx-3`; Platzhalter normal/gedämpft; lesbarer Kleintext mindestens `--fs-11`; Zahlen-Klassen
   `.zahl`, `.zahl--plus`, `.zahl--minus`. Test `design_stil_test` (+ server_test Startseite).
+- **6.10. – Fixes aus dem Gesamt-Spieltest (Branch `fix-spieltest2`, NICHT hochgeladen):** **Fehler „bot move failed …
+  landmassId“:** `botGather` (bots/04) nahm den ersten Helfer auch, wenn es keinen gab (Quelle allein stark genug) und fragte
+  `botFrei` nach „undefined“ → jetzt kein Plan ohne Helfer; `botFrei` (bots/02) gibt ohne Insel 0 zurück. **Tägliche Belohnung**
+  springt nie mehr mitten in die Anleitung (vorher nach Schritt 2), erst wenn sie fertig/übersprungen ist (abholen geht in
+  Schritt 6 unter „Events“). **Angriff mit „Alle“ aus der Hauptstadt:** Hinweis „Deine Hauptstadt bleibt ohne Truppen“ im
+  Angriffs-Fenster (nur Hinweis, keine Regel). **Tippflächen ≥ 44 px:** alle kleinen Knöpfe (`.btn--sm`: „Abholen“, „Zeigen“ …),
+  „Spähen“, Kartenknöpfe auf dem Desktop jetzt 44 px. **Heldenkisten:** die ganze Karte kauft (Tipp aufs Bild lief ins Leere),
+  ab 500 weiter „Wirklich?“. Profil → Rangliste/Einstellungen geprüft: kein Fehler (Test mit echtem Tipp). **Funde** (Münz-Kreis
+  auf der Karte) mit Beschriftung „+Menge“, auf einem Namensschild unsichtbar und nicht antippbar. **Wochen-Event-Chip:**
+  feste Breite (Platz für „Platz 12“ schon ohne Rang), die Leiste lässt rechts das Schild „Rohstoffe“ frei. **Stadt auf dem
+  Handy:** Start-Blick zeigt alle Baufelder samt Steinbruch und Mauer (`cityStartZoom`, Schilder ab Zoom 0,7). Test `handy_tipp_test`
+  (Handy + Desktop), erweitert: `anleitung_test`, `mitspieler_schaetzen_test`, `stadt_fenster_test`.
 - **Befehle der Zuschauer** (in `spiel.js`, Helfer `alsBefehl`): Angreifen (mit gewähltem Held), Senden, Zurückrufen,
   Beschleunigen (Gems zahlt man selbst), Basis/Burg ausbauen (Münzen zahlt man selbst), Hauptstadt verlegen,
   Truppen-Geschenke (Stufe, Thron-Shop, Lazarett, Funde → `eigeneTruppenDazu`), Tore (Maut/zu), Titel vergeben als

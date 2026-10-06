@@ -7244,7 +7244,7 @@ setInterval(() => { if (isPanelOpen(goalsPopup) && goalsTab === 'pass') passLeft
 setInterval(() => { const n = passNo(Date.now()), ps = passLoad(); if (ps.n !== n) { ps.n = n; passPrune(); passSave(); if (isPanelOpen(goalsPopup) && goalsTab === 'pass') renderPass(); } updateGoalsBadge(); }, 60000);   // a new season while the game stays open
 passPrune();
 function maybeShowDaily() {
-    if (anleitung.schritt < ANLEITUNG_TAEGLICH && !anleitung.nochmal) return;   // allererster Start: erst nach Schritt 2 der Anleitung (dann ruft anleitungZeigen wieder)
+    if (anleitung.schritt < ANLEITUNG.length) return;     // nie mitten in der Anleitung (Spieltest 6.10.): erst danach – abholen geht in Schritt 6 unter „Events“
     if (!dailyClaimable() || !document.getElementById('dailyModal').hidden || (isPanelOpen(goalsPopup) && goalsTab === 'reward')) return;   // an open Belohnung tab shows it already
     const busy = !document.getElementById('levelUpModal').hidden || !document.getElementById('rewardModal').hidden || (typeof welcomeFrom !== 'undefined' && welcomeFrom) || (document.getElementById('welcomeModal') && !document.getElementById('welcomeModal').hidden);
     if (busy) { setTimeout(maybeShowDaily, 1500); return; }
@@ -7279,7 +7279,6 @@ const ANLEITUNG = [
       tipp: () => isPanelOpen(goalsPopup) ? 'Tippe auf „Abholen“ – die Zahl an einem Reiter zeigt, wo noch etwas wartet.' : null, puls: () => isPanelOpen(goalsPopup) ? 'abholen' : 'events' },
     { t: 'Knöpfe rechts: Fadenkreuz = zur Hauptstadt · Fahne = Wegmarke · Schwerter = Armee aufstellen · + und − = näher, weiter. Würfel oben = Rohstoffe (Holz, Stein, Eisen).', fertig: () => anleitungTat.knoepfe, puls: () => 'knoepfe', ok: true }
 ];
-const ANLEITUNG_TAEGLICH = 2;                             // die tägliche Belohnung kommt beim allerersten Start erst nach Schritt 2
 const anleitungTat = {};
 const anleitungInsel = () => isPanelOpen(popup) && popupIslandId !== null && popupIslandId !== undefined && islandById[popupIslandId];
 var anleitung = (() => { try { return JSON.parse(store.get('openWaterAnleitung')) || null; } catch (e) { return null; } })();
@@ -7307,10 +7306,10 @@ function anleitungZeigen() {
             const erstesMal = !anleitung.belohnt; anleitung.belohnt = true; anleitungSpeichern(); el.hidden = true; anleitungPuls(''); anleitungFenster();
             if (erstesMal) { inboxAdd({ src: 'gift', title: 'Anleitung geschafft', gems: 10, crate: 0 }); flashHint('Geschafft! Unter „Events“ → Abholfach wartet eine kleine Belohnung. Viel Spaß!', 6000); }
             else flashHint('Anleitung geschafft. Viel Spaß!', 4000);   // (die Belohnung gibt es nur beim ersten Mal)
+            setTimeout(maybeShowDaily, 1500);                 // jetzt erst die tägliche Belohnung (falls noch nicht abgeholt)
             return;
         }
         anleitungSpeichern();
-        if (anleitung.schritt === ANLEITUNG_TAEGLICH) setTimeout(maybeShowDaily, 1500);
     }
     const s = ANLEITUNG[anleitung.schritt], inStadt = !cityView.hidden && !s.stadt;
     let puls = ''; try { puls = (s.puls && s.puls()) || ''; } catch (e) {}
@@ -7331,7 +7330,7 @@ document.getElementById('anleitungWeg').addEventListener('click', () => { anleit
 document.getElementById('anleitungText').addEventListener('click', () => document.getElementById('anleitung').classList.toggle('is-auf'));   // langer Text: antippen zeigt alles
 document.getElementById('anleitungNein').addEventListener('click', () => { anleitungFrage = false; anleitungZeigen(); });
 document.getElementById('anleitungJa').addEventListener('click', () => {
-    anleitungFrage = false; anleitung.schritt = ANLEITUNG.length; anleitungSpeichern(); anleitungZeigen(); setTimeout(maybeShowDaily, 1500);   // (vor Schritt 3 übersprungen: die tägliche Belohnung kommt jetzt)
+    anleitungFrage = false; anleitung.schritt = ANLEITUNG.length; anleitungSpeichern(); anleitungZeigen(); setTimeout(maybeShowDaily, 1500);   // (übersprungen: die tägliche Belohnung kommt jetzt)
     flashHint('Anleitung übersprungen – unter Profil → Einstellungen kannst du sie noch mal starten.', 3500);
 });
 document.getElementById('anleitungOk').addEventListener('click', () => { anleitungTat.knoepfe = true; anleitungZeigen(); });
@@ -7572,7 +7571,7 @@ let midBarHtml = '', midBarAuf = false;
 function renderMidBar() {
     const now = Date.now(), b = bountyOf(), chips = [];   // [Dringlichkeit, html]
     if (woOn(now)) { const th = woThemaAm(now), W = evState.wo || {}, rk = W.key === woWin(now).key ? evRang(W.pts) : [], pl = rk.findIndex(e => e[0] === 'player') + 1;   // Wochen-Event (Mo–Fr)
-        chips.push([9, '<button type="button" class="mb-chip is-tour" data-mb="woche">' + icon(th.ic) + '<span>Wochen-Event · ' + th.name + '</span>' + (pl ? '<b>Platz ' + pl + '</b>' : '') + '</button>']); }
+        chips.push([9, '<button type="button" class="mb-chip is-tour" data-mb="woche">' + icon(th.ic) + '<span>Wochen-Event · ' + th.name + '</span><b class="mb-platz' + (pl ? '' : ' is-leer') + '">Platz ' + (pl || '–') + '</b></button>']); }   // (Platz immer belegt: der Chip springt nicht, wenn der Rang kommt)
     if (b && b.gems >= 5) chips.push([b.who === 'player' ? 1 : 7, '<button type="button" class="mb-chip' + (b.who === 'player' ? ' is-warn' : '') + '" data-mb="bounty">' + icon(b.who === 'player' ? 'losses' : 'coin') +
         '<span>' + (b.who === 'player' ? 'Kopfgeld auf dich' : 'Kopfgeld') + '</span><b>' + fmtNum(b.gems) + '</b>' + icon('gem', 'mb-gem') + '</button>']);
     chips.push(...evChips(now));                                                        // Invasion, Drache (Events)
@@ -7704,7 +7703,7 @@ function heroChestOpen(who, c) {                    // the same chest for you an
     if (c.gems >= 500) { if (who === 'player') alsBefehl('bund', { op: 'kiste', c: c.id }); else if (typeof bundGeschenk === 'function') bundGeschenk(who, 'kiste'); }   // große Kiste: Geschenk fürs Bündnis
     const got = []; for (let i = 0; i < c.n; i++) { const h = heroGrantShards(who, c.sh, null, c.minR); if (h) got.push(h); } return got;
 }
-shopPopup.addEventListener('click', e => { const bt = e.target.closest('[data-hchest]'); if (!bt) return;
+shopPopup.addEventListener('click', e => { const karte = e.target.closest('#heroChestOpts .ware'), bt = e.target.closest('[data-hchest]') || (karte && karte.querySelector('[data-hchest]')); if (!bt || bt.disabled) return;   // die ganze Karte ist der Knopf (Spieltest: Tipp aufs Bild lief ins Leere)
     const c = HERO_CHESTS.find(x => x.id === bt.dataset.hchest); if (!c) return;
     if (gems < c.gems) { flashHint('Zu wenig Edelsteine – die ' + c.name + ' kostet ' + fmtNum(c.gems) + '.', 3000); return; }
     if (!heroChestPool(c.minR).length) { flashHint('Alle passenden Helden haben schon 5 Sterne.', 3000); return; }
@@ -10497,8 +10496,10 @@ function cityPathPoint(p, t) {                                              // a
 // ---- camera ----
 const CITY_VIEW = { x0: -420, x1: 420, y0: 0, y1: 650 };                    // what the camera may show (the town, the land around it)
 function cityFitZoom(W, H) { return Math.min(W / (CITY_VIEW.x1 - CITY_VIEW.x0), H / (CITY_VIEW.y1 - CITY_VIEW.y0)); }
+function cityStartZoom(W, H) {                                                 // Desktop: etwas weiter weg · Handy: alle Bauplätze samt Steinbruch und Mauer im Bild (500 breit)
+    return Math.max(cityFitZoom(W, H), W >= 900 && H >= 501 ? Math.min(2.2, W / 420) * .85 : Math.min(2.2, W / 500)); }
 function cityClampCam(W, H) {
-    const c = cityCam, zMin = Math.max(cityFitZoom(W, H) * .95, W / (CITY_BOUNDS.x1 - CITY_BOUNDS.x0 - 60), H / (CITY_BOUNDS.y1 - CITY_BOUNDS.y0 + 60)), zMax = 3;   // (nie weiter als das gemalte Land; oben/unten läuft es weich in die Grundfarbe aus)
+    const c = cityCam, zMin = Math.min(cityStartZoom(W, H), Math.max(cityFitZoom(W, H) * .95, W / (CITY_BOUNDS.x1 - CITY_BOUNDS.x0 - 60), H / (CITY_BOUNDS.y1 - CITY_BOUNDS.y0 + 60))), zMax = 3;   // (nie weiter als das gemalte Land – außer bis zum Start-Blick; oben/unten läuft es weich in die Grundfarbe aus)
     c.z = Math.max(zMin, Math.min(zMax, c.z));
     const hw = W / 2 / c.z, hh = H / 2 / c.z, V = CITY_VIEW;                  // keep the town in view (centred when it is smaller than the screen)
     c.x = V.x1 - V.x0 <= 2 * hw ? (V.x0 + V.x1) / 2 : Math.max(V.x0 + hw, Math.min(V.x1 - hw, c.x));
@@ -10591,7 +10592,7 @@ function cityFrame(now) {
     cityFrame.drawn = now;
     const dpr2 = Math.min(window.devicePixelRatio || 1, 2), W = window.innerWidth, H = window.innerHeight;
     if (cityCanvas.width !== Math.round(W * dpr2) || cityCanvas.height !== Math.round(H * dpr2)) { cityCanvas.width = Math.round(W * dpr2); cityCanvas.height = Math.round(H * dpr2); }
-    if (!cityCam) { const [kx, ky] = cIso(CC, CC), desk = W >= 900 && H >= 501, z = Math.max(cityFitZoom(W, H), Math.min(2.2, W / 420) * (desk ? .85 : 1));   // (Handy: das Mauer-Tor samt Schild im Bild)
+    if (!cityCam) { const [kx, ky] = cIso(CC, CC), desk = W >= 900 && H >= 501, z = cityStartZoom(W, H);   // (Handy: alle Baufelder und das Mauer-Tor samt Schild im Bild)
         cityCam = { x: kx, y: ky + 6 - (desk ? 40 / z : 0), z };                                                // (Desktop: etwas weiter weg und 40 px tiefer – die ganze Mauer-Raute unter der Leiste oben)
         if (cityPendingAnim) { cityCam.anim = { from: .62, t0: now, dur: 1100 }; cityPendingAnim = false; } }
     let animZ = 1;
@@ -10725,7 +10726,7 @@ function cityFrame(now) {
     plates.sort((p, q) => rang(p) - rang(q) || q.sy - p.sy);
     cityNamen = [];
     for (const { it, sx, sy, building, ghost } of plates) {
-        if (ghost && !building && Z >= .8) {                                 // leerer Platz: ein schwebendes Zeichen – „+“ = hier bauen, Schloss = braucht eine höhere Burg
+        if (ghost && !building && Z >= .7) {                                 // leerer Platz: ein schwebendes Zeichen – „+“ = hier bauen, Schloss = braucht eine höhere Burg
             const zu = !!(AUF && AUF.BAU_AB_BURG[it.id] > AUF.burgStufe('player')), r = Math.max(9, Math.min(14, 5.5 * Z));
             const [bx, by0] = toS(it.x, it.y, 34), by = by0 + Math.sin(now / 430 + it.x) * 1.8;
             g.fillStyle = 'rgba(0,0,0,.28)'; g.beginPath(); g.ellipse(bx + 1.5, by + r + 2, r * .8, r * .3, 0, 0, 7); g.fill();
@@ -10733,7 +10734,7 @@ function cityFrame(now) {
             g.fillStyle = bg; g.strokeStyle = zu ? 'rgba(200,190,170,.7)' : '#fff1c4'; g.lineWidth = 1.5; g.beginPath(); g.arc(bx, by, r, 0, 7); g.fill(); g.stroke();
             drawGlyph(g, zu ? 'lock' : 'plus', bx, by, r * 1.25, zu ? '#e6dccb' : '#4a2c08');
         }
-        if (Z < .8 && !building) {                                           // weit weg: nur die Stufe
+        if (Z < .7 && !building) {                                           // weit weg: nur die Stufe (ab .7: Handy-Start-Blick mit Schildern)
             if (!it.lvl) continue; const r2 = 7.5, [bx, by] = [sx, sy + 4 * Z + r2];
             if (!cityNamePlatz(it.id, bx - r2, by - r2, r2 * 2, r2 * 2, W, H)) continue; g.font = '800 10px Inter, system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
             g.fillStyle = it.keep ? '#c98f22' : '#2f6fb8'; g.strokeStyle = 'rgba(255,236,190,.9)'; g.lineWidth = 1.2; g.beginPath(); g.arc(bx, by, r2, 0, 7); g.fill(); g.stroke(); g.fillStyle = '#fff'; g.fillText(String(it.lvl), bx, by + .5); continue; }
@@ -10818,6 +10819,7 @@ function pickupAmount(kind) {
     return Math.max(wirtM(200), niceRound(levelRewardCoins(L) * 0.1));   // (Münzen: wirtM)
 }
 function pickupScreenPos(p) { return { x: p.x * mapState.zoom + mapState.offsetX, y: p.y * mapState.zoom + mapState.offsetY }; }
+const pickupVerdeckt = s => bannerHitRects.some(b => s.x > b.x - 22 && s.x < b.x + b.w + 22 && s.y > b.y - 22 && s.y < b.y + b.h + 22);   // auf einem Namensschild: nicht zeigen (nach Zoom/Verschieben)
 function trySpawnPickup() {
     if (pickups.length >= PICKUP_MAX || document.hidden || mapState.zoom < 0.012) return;
     const top = 110, bottom = viewH - 150;
@@ -10847,7 +10849,7 @@ function tickPickups() {
 function collectPickupAt(sx, sy) {
     for (let i = pickups.length - 1; i >= 0; i--) {
         const p = pickups[i], s = pickupScreenPos(p);
-        if (Math.hypot(s.x - sx, s.y - sy) > PICKUP_HIT_PX) continue;
+        if (Math.hypot(s.x - sx, s.y - sy) > PICKUP_HIT_PX || pickupVerdeckt(s)) continue;
         pickups.splice(i, 1);
         let label;
         if (p.kind === 'gem') { gems += p.amount; label = '+' + fmtNum(p.amount) + (p.amount === 1 ? ' Edelstein' : ' Edelsteine'); }
@@ -10869,7 +10871,7 @@ function collectPickupAt(sx, sy) {
 function drawPickups(now) {          // screen space (setScreen active)
     for (const p of pickups) {
         const s = pickupScreenPos(p);
-        if (s.x < -40 || s.y < -40 || s.x > viewW + 40 || s.y > viewH + 40) continue;
+        if (s.x < -40 || s.y < -40 || s.x > viewW + 40 || s.y > viewH + 40 || pickupVerdeckt(s)) continue;
         const age = now - p.born, left = p.expires - Date.now();
         let a = Math.min(1, age / 400);
         if (left < 5000) a *= 0.55 + 0.45 * Math.abs(Math.sin(left / 160));   // blinks before it disappears
@@ -10886,6 +10888,9 @@ function drawPickups(now) {          // screen space (setScreen active)
         ctx.lineWidth = 2; ctx.strokeStyle = p.kind === 'gem' ? '#8fd8ff' : '#e4c886'; ctx.stroke();
         drawGlyph(ctx, p.kind === 'gem' ? 'gem' : p.kind === 'troops' ? 'troops' : 'coin', cx, cy, r * 1.3,
             p.kind === 'gem' ? '#8fd8ff' : p.kind === 'troops' ? '#efe8d6' : '#e8c46e');
+        const t = '+' + fmtCompact(p.amount); ctx.font = '700 10px Inter, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';   // Beschriftung: was es gibt
+        const w = ctx.measureText(t).width + 12; ctx.fillStyle = 'rgba(14,14,20,.85)'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(cx - w / 2, cy + r + 2, w, 15, 7) : ctx.rect(cx - w / 2, cy + r + 2, w, 15); ctx.fill();
+        ctx.fillStyle = p.kind === 'gem' ? '#9fe0ff' : p.kind === 'troops' ? '#f1ece0' : '#f0d58f'; ctx.fillText(t, cx, cy + r + 5);
         ctx.restore();
     }
     pickupFx = pickupFx.filter(f => now - f.born < 1200);
@@ -13112,7 +13117,8 @@ function renderAttackPreview(island, scouted) {
             (scouted ? '<div class="notice" data-preview="alter" hidden></div>' : '') +
             '<div class="ap-truppen"><input type="range" id="attackTroopsSlider" class="slider" min="0" max="' + SLIDER_STEPS + '" value="' + troopsToSlider(previewAttackTroops || 0, maxTroops) + '"' + (maxTroops <= 0 ? ' disabled' : '') + ' aria-label="Truppen entsenden">' +   // Schieber ganze Breite (Daumen)
                 '<div class="ap-regler"><div class="seg" data-preview="quick"><button type="button" data-f=".25">25 %</button><button type="button" data-f=".5">50 %</button><button type="button" data-f=".75">75 %</button><button type="button" data-f="1">Alle</button></div>' +
-                '<span class="val"><input id="attackTroopsLabel" class="troop-in" inputmode="decimal" autocomplete="off" enterkeyhint="done" aria-label="Anzahl Truppen"></span></div></div>' +
+                '<span class="val"><input id="attackTroopsLabel" class="troop-in" inputmode="decimal" autocomplete="off" enterkeyhint="done" aria-label="Anzahl Truppen"></span></div>' +
+                '<small class="ap-leer" data-preview="leer" hidden>' + icon('alert') + 'Deine Hauptstadt bleibt ohne Truppen</small></div>' +   // nur ein Hinweis, keine Regel
             (helden ? '<div class="ap-held"><div class="ap-held-zeile"><button type="button" class="ap-hchip" data-held-auf="1" aria-label="Held wählen"></button><button type="button" class="ap-hchip" data-held-auf="2" aria-label="Zweitheld wählen"></button></div>' +   // Held + Zweitheld als zwei Chips, antippen klappt die Auswahl auf
                 '<div class="seg hero-seg chips-quer" data-preview="hero" hidden>' + helden + '</div><div class="seg hero-seg hero-seg2 chips-quer" data-preview="hero2" hidden></div>' +
                 '<small class="ap-herofx" data-preview="herofx"></small></div>' : '');
@@ -13269,6 +13275,7 @@ function patchAttackPreview() {
         b.classList.toggle('on', maxTroops > 0 && (previewFraction !== null
             ? previewFraction === parseFloat(b.dataset.f)
             : Math.max(1, Math.round(maxTroops * parseFloat(b.dataset.f))) === shown));
+    const leer = popupStats.querySelector('[data-preview="leer"]'); if (leer) leer.hidden = !(previewSourceId === playerIslandId && maxTroops > 0 && shown >= maxTroops);   // „Alle“ aus der Hauptstadt
     const alEl = popupStats.querySelector('[data-preview="alter"]');
     if (alEl) { const t = spaehAlterText(island.id); alEl.hidden = !t; alEl.classList.toggle('notice--warn', !!t && Date.now() - spaehVom(island.id) >= SPAEH_ALT_MS);   // Alter des Spähberichts, ab 30 Min. gelb
         if (alEl.textContent !== t) alEl.innerHTML = icon('scout') + '<span>' + t + '</span>'; }

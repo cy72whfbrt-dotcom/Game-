@@ -18,8 +18,8 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
   background:var(--glass);border:1px solid var(--line-2);border-radius:var(--r-pill);box-shadow:var(--sh-1);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 /* der EINE Streifen unter der Werte-Zeile: alle Dauer-Hinweise (Wochen-Event, Kopfgeld, Thron, Invasion, Drache, Händler, Saison), einzeilig –
    der dringendste sichtbar, der Rest als Zähler „+2“ (antippen klappt alle auf) */
-.midbar{position:fixed;z-index:var(--z-hud);top:calc(var(--safe-t) + 14px + var(--hud-h));left:calc(var(--safe-l) + 70px);right:calc(var(--safe-r) + 10px);
-  display:flex;align-items:flex-start;gap:var(--ab-1);pointer-events:none}
+.midbar{position:fixed;z-index:var(--z-hud);top:calc(var(--safe-t) + 14px + var(--hud-h));left:calc(var(--safe-l) + 70px);right:calc(var(--safe-r) + 64px);
+  display:flex;align-items:flex-start;gap:var(--ab-1);pointer-events:none}   /* (rechts frei: das Schild „Rohstoffe“ unter dem Würfel) */
 .midbar.offen{flex-direction:column}
 .midbar[hidden]{display:none} .midbar > *{pointer-events:auto}
 .mb-mehr{position:relative;flex:none;min-width:34px;height:26px;padding:0 8px;border-radius:var(--r-pill);background:var(--glass-strong);border:1px solid var(--line-3);
@@ -34,6 +34,7 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
 .mb-chip.is-drache{border-color:rgba(255,140,70,.6);background:linear-gradient(90deg,rgba(170,50,20,.78),rgba(22,10,8,.88))} .mb-chip.is-drache .icon{color:#ffc46a} .mb-chip.is-drache i{color:#ffd9c0}
 .mb-chip.is-warn{border-color:rgba(225,72,60,.6);background:linear-gradient(90deg,rgba(150,30,30,.75),rgba(20,12,12,.88));color:#ffd9d3} .mb-chip.is-warn > .icon:first-child{color:#ffb3aa}
 .mb-chip > span{overflow:hidden;text-overflow:ellipsis}
+.mb-chip .mb-platz{flex:none;min-width:6.3ch;text-align:right} .mb-chip .mb-platz.is-leer{visibility:hidden}   /* Wochen-Event: feste Breite, auch ohne Rang */
 .mb-chip::before{content:"";position:absolute;left:0;right:0;top:50%;height:var(--k-tipp);transform:translateY(-50%)}   /* Tippfläche 44 px */
 .res{position:relative;flex:1 1 auto;min-width:0;height:100%;display:flex;align-items:center;justify-content:center;gap:var(--ab-1);padding:0 var(--ab-1)}
 .res > .icon{width:16px;height:16px}
@@ -93,7 +94,7 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
 .mapctl{position:fixed;z-index:var(--z-mapctl);right:calc(var(--safe-r) + 10px);bottom:calc(var(--dock-h) + var(--safe-bd) + 14px);
   display:flex;flex-direction:column;background:rgba(14,16,22,.52);border:1px solid rgba(214,170,90,.16);border-radius:var(--r-sm);box-shadow:var(--sh-1);
   -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
-.mapctl button{width:34px;height:34px;display:grid;place-items:center;color:var(--tx-2)}
+.mapctl button{width:44px;height:44px;display:grid;place-items:center;color:var(--tx-2)}
 .mapctl button + button{border-top-color:rgba(255,255,255,.05)}
 .mapctl button.on{color:var(--gold-100);background:rgba(214,170,90,.18)}
 [data-frame="bronze"]{--fr1:#c9854f;--fr2:#7a4a26} [data-frame="silver"]{--fr1:#e8eef5;--fr2:#8a95a3} [data-frame="gold"]{--fr1:#ffd35a;--fr2:#a0701c}

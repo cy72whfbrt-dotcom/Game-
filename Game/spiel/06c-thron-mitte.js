@@ -220,7 +220,7 @@ let midBarHtml = '', midBarAuf = false;
 function renderMidBar() {
     const now = Date.now(), b = bountyOf(), chips = [];   // [Dringlichkeit, html]
     if (woOn(now)) { const th = woThemaAm(now), W = evState.wo || {}, rk = W.key === woWin(now).key ? evRang(W.pts) : [], pl = rk.findIndex(e => e[0] === 'player') + 1;   // Wochen-Event (Mo–Fr)
-        chips.push([9, '<button type="button" class="mb-chip is-tour" data-mb="woche">' + icon(th.ic) + '<span>Wochen-Event · ' + th.name + '</span>' + (pl ? '<b>Platz ' + pl + '</b>' : '') + '</button>']); }
+        chips.push([9, '<button type="button" class="mb-chip is-tour" data-mb="woche">' + icon(th.ic) + '<span>Wochen-Event · ' + th.name + '</span><b class="mb-platz' + (pl ? '' : ' is-leer') + '">Platz ' + (pl || '–') + '</b></button>']); }   // (Platz immer belegt: der Chip springt nicht, wenn der Rang kommt)
     if (b && b.gems >= 5) chips.push([b.who === 'player' ? 1 : 7, '<button type="button" class="mb-chip' + (b.who === 'player' ? ' is-warn' : '') + '" data-mb="bounty">' + icon(b.who === 'player' ? 'losses' : 'coin') +
         '<span>' + (b.who === 'player' ? 'Kopfgeld auf dich' : 'Kopfgeld') + '</span><b>' + fmtNum(b.gems) + '</b>' + icon('gem', 'mb-gem') + '</button>']);
     chips.push(...evChips(now));                                                        // Invasion, Drache (Events)

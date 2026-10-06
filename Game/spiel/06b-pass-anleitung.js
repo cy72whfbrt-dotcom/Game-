@@ -117,7 +117,7 @@ setInterval(() => { if (isPanelOpen(goalsPopup) && goalsTab === 'pass') passLeft
 setInterval(() => { const n = passNo(Date.now()), ps = passLoad(); if (ps.n !== n) { ps.n = n; passPrune(); passSave(); if (isPanelOpen(goalsPopup) && goalsTab === 'pass') renderPass(); } updateGoalsBadge(); }, 60000);   // a new season while the game stays open
 passPrune();
 function maybeShowDaily() {
-    if (anleitung.schritt < ANLEITUNG_TAEGLICH && !anleitung.nochmal) return;   // allererster Start: erst nach Schritt 2 der Anleitung (dann ruft anleitungZeigen wieder)
+    if (anleitung.schritt < ANLEITUNG.length) return;     // nie mitten in der Anleitung (Spieltest 6.10.): erst danach – abholen geht in Schritt 6 unter „Events“
     if (!dailyClaimable() || !document.getElementById('dailyModal').hidden || (isPanelOpen(goalsPopup) && goalsTab === 'reward')) return;   // an open Belohnung tab shows it already
     const busy = !document.getElementById('levelUpModal').hidden || !document.getElementById('rewardModal').hidden || (typeof welcomeFrom !== 'undefined' && welcomeFrom) || (document.getElementById('welcomeModal') && !document.getElementById('welcomeModal').hidden);
     if (busy) { setTimeout(maybeShowDaily, 1500); return; }
@@ -152,7 +152,6 @@ const ANLEITUNG = [
       tipp: () => isPanelOpen(goalsPopup) ? 'Tippe auf „Abholen“ – die Zahl an einem Reiter zeigt, wo noch etwas wartet.' : null, puls: () => isPanelOpen(goalsPopup) ? 'abholen' : 'events' },
     { t: 'Knöpfe rechts: Fadenkreuz = zur Hauptstadt · Fahne = Wegmarke · Schwerter = Armee aufstellen · + und − = näher, weiter. Würfel oben = Rohstoffe (Holz, Stein, Eisen).', fertig: () => anleitungTat.knoepfe, puls: () => 'knoepfe', ok: true }
 ];
-const ANLEITUNG_TAEGLICH = 2;                             // die tägliche Belohnung kommt beim allerersten Start erst nach Schritt 2
 const anleitungTat = {};
 const anleitungInsel = () => isPanelOpen(popup) && popupIslandId !== null && popupIslandId !== undefined && islandById[popupIslandId];
 var anleitung = (() => { try { return JSON.parse(store.get('openWaterAnleitung')) || null; } catch (e) { return null; } })();
@@ -180,10 +179,10 @@ function anleitungZeigen() {
             const erstesMal = !anleitung.belohnt; anleitung.belohnt = true; anleitungSpeichern(); el.hidden = true; anleitungPuls(''); anleitungFenster();
             if (erstesMal) { inboxAdd({ src: 'gift', title: 'Anleitung geschafft', gems: 10, crate: 0 }); flashHint('Geschafft! Unter „Events“ → Abholfach wartet eine kleine Belohnung. Viel Spaß!', 6000); }
             else flashHint('Anleitung geschafft. Viel Spaß!', 4000);   // (die Belohnung gibt es nur beim ersten Mal)
+            setTimeout(maybeShowDaily, 1500);                 // jetzt erst die tägliche Belohnung (falls noch nicht abgeholt)
             return;
         }
         anleitungSpeichern();
-        if (anleitung.schritt === ANLEITUNG_TAEGLICH) setTimeout(maybeShowDaily, 1500);
     }
     const s = ANLEITUNG[anleitung.schritt], inStadt = !cityView.hidden && !s.stadt;
     let puls = ''; try { puls = (s.puls && s.puls()) || ''; } catch (e) {}
@@ -204,7 +203,7 @@ document.getElementById('anleitungWeg').addEventListener('click', () => { anleit
 document.getElementById('anleitungText').addEventListener('click', () => document.getElementById('anleitung').classList.toggle('is-auf'));   // langer Text: antippen zeigt alles
 document.getElementById('anleitungNein').addEventListener('click', () => { anleitungFrage = false; anleitungZeigen(); });
 document.getElementById('anleitungJa').addEventListener('click', () => {
-    anleitungFrage = false; anleitung.schritt = ANLEITUNG.length; anleitungSpeichern(); anleitungZeigen(); setTimeout(maybeShowDaily, 1500);   // (vor Schritt 3 übersprungen: die tägliche Belohnung kommt jetzt)
+    anleitungFrage = false; anleitung.schritt = ANLEITUNG.length; anleitungSpeichern(); anleitungZeigen(); setTimeout(maybeShowDaily, 1500);   // (übersprungen: die tägliche Belohnung kommt jetzt)
     flashHint('Anleitung übersprungen – unter Profil → Einstellungen kannst du sie noch mal starten.', 3500);
 });
 document.getElementById('anleitungOk').addEventListener('click', () => { anleitungTat.knoepfe = true; anleitungZeigen(); });
