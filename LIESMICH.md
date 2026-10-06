@@ -1640,6 +1640,11 @@ Nacht – vorher bauen und testen.
     Shop: Knöpfe „1x öffnen“ / „10x öffnen“ (wie RoK). Angriff auf der Karte wie RoK (Bilder f027e614, dc4e5516, 15b390d0):
     Helden-Porträt im Sechseck über der Armee, Lebensbalken, Schadens-Zahlen fliegen hoch, roter Kampf-Kreis, Geschosse,
     Armeen als Soldaten-Gruppen mit Fahne/Allianz-Kürzel, Rally-Pfeile. Vorbild-Bilder: scratchpad/vorbilder/ (Designer).
+24. **Belohnungen anzeigen wie RoK – Alexander: „das find ich geil“** (Bild 93373b2e, 19:55): Jede Belohnung als quadratische
+    Kachel mit Goldrand, Hintergrund in Seltenheits-Farbe (grün/blau/lila/orange), Symbol groß in der Mitte, oben Wert-Band
+    („1.000“, „60m“, „4h“), unten rechts Anzahl („25“). In Tabellen: Zeile je Stufe/Platz (z. B. „10001+“), Kacheln
+    nebeneinander. Überall gleich nutzen: Events, Pass, Kisten-Ergebnis, Shop, Postfach, Ranglisten-Belohnung.
+    Vorbild-Datei: scratchpad/vorbilder/11_belohnung_rok_alexander.jpg.
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
