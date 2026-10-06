@@ -22,6 +22,7 @@ function bundRender(neu) {
     bundPopup.classList.toggle('bd-ohne', !a);
     for (const t of bundPopup.querySelectorAll('[data-btab]')) t.classList.toggle('active', t.dataset.btab === bundTab);
     setText(document.getElementById('bundTitle'), a ? '[' + a.tag + '] ' + a.name : 'Bündnis');
+    const ov = bundPopup.querySelector('.phead .overline'); if (ov) ov.hidden = !a;   // ohne Bündnis nicht „Bündnis / Bündnis“
     liveHtml(document.getElementById('bundSub'), a ? a.mit.length + ' / ' + BUND.MAX + ' Mitglieder · ' + (a.anf === 'player' ? 'du führst' : 'Anführer ' + escapeHtml(bundName(a.anf))) : 'Gemeinsam stärker');
     const em = document.getElementById('bundEmblem'); if (em) { em.style.setProperty('--bf', a ? BUND.FARBEN[a.farbe] : ''); em.classList.toggle('bd-em', !!a); const u = em.querySelector('use'); if (u) u.setAttribute('href', '#i-' + (a ? BUND.ZEICHEN[a.zeichen] || 'bund' : 'bund')); }
     if (neu || bundOben.dataset.fuer !== bundObenSchluessel()) bundObenZeichnen(); else bundGruendenKnopf();   // (Münzen ändern sich: der Knopf zieht jede Sekunde nach)
@@ -128,7 +129,7 @@ function bundListeHtml(a) {                                       // alle Bündn
             '<div class="bd-zeile">' + bundZeichenHtml(x) + '<span class="bd-name"><b>[' + escapeHtml(x.tag) + '] ' + escapeHtml(x.name) + '</b><small>' + x.mit.length + ' / ' + BUND.MAX + ' · Macht ' + fmtCompact(m) + ' · ' + (x.mit.length >= BUND.MAX ? 'voll – der Anführer kann tauschen' : x.offen ? 'offen' : 'auf Anfrage') + ' · Anführer ' + escapeHtml(bundName(x.anf)) + '</small></span>' +
             (a ? '' : angefragt(x.id) ? '<button type="button" class="btn btn--ghost btn--sm" data-bact="anfrageWeg">Angefragt ✕</button>'
                 : '<button type="button" class="btn btn--primary btn--sm" data-bact="beitreten" data-aid="' + x.id + '">' + (x.offen && x.mit.length < BUND.MAX ? 'Beitreten' : 'Anfragen') + '</button>') + '</div>').join('')
-            : '<div class="inbox-empty">Noch gibt es keine Bündnisse – gründe unten dein eigenes und sei der Erste.</div>') + '</div>';
+            : leerHtml('bund', 'Noch keine Bündnisse', 'Sei der Erste – gründe unten dein eigenes.')) + '</div>';
 }
 // oben im Fenster: was sich nicht jede Sekunde ändern darf (Eingaben, Auswahl)
 function bundObenSchluessel() { const a = bundIch(); return bundTab + '|' + (a ? a.id : '-') + '|' + (bundWahl ? JSON.stringify(bundWahl) : '') + '|' + bundGruendenAuf; }

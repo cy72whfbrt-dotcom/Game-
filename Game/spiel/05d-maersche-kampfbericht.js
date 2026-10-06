@@ -7,7 +7,7 @@ const battleLogPopup = document.getElementById('battleLogPopup');
 const battleLogCloseBtn = document.getElementById('battleLogCloseBtn');
 const activeMarchesEl = document.getElementById('activeMarches');
 activeMarchesEl.addEventListener('click', e => { const bt = e.target.closest('[data-mact]'); if (!bt) return;
-    e.stopPropagation(); if (bt.dataset.mact === 'recall') recallMarch(bt.dataset.k); else if (bt.dataset.mact === 'speedAll') speedUpAll(bt); else speedUpMarch(bt.dataset.k, bt); });
+    e.stopPropagation(); if (bt.dataset.mact === 'karte') { closeAllPopups(); flashHint('Tippe eine fremde Basis an → „Angreifen“.', 3500); } else if (bt.dataset.mact === 'recall') recallMarch(bt.dataset.k); else if (bt.dataset.mact === 'speedAll') speedUpAll(bt); else speedUpMarch(bt.dataset.k, bt); });
 const combatLogListEl = document.getElementById('combatLogList');
 let battleLogRefreshTimer = null, battleTab = 'unterwegs', battleGesehenBis = 0;   // Reiter Unterwegs | Berichte; Berichte bis hier schon gesehen
 function showBattleTab(t) {
@@ -100,7 +100,8 @@ function renderActiveMarches() {
             : logRowHtml('send', 'send', 'Sammeln → ' + was, 'von ' + T(m.homeId) + ' · ' + fmtNum(m.troops) + ' Truppen', clock(sec), marchButtons(m, true))); }
     const fast = speedableMarches();
     if (fast.length > 1) rows.unshift('<div class="march-all"><span class="mact"><button type="button" data-mact="speedAll"' + (gemsArmed('marschAlle') ? ' class="is-armed"' : '') + ' title="Restzeit aller Märsche halbieren">' + (gemsArmed('marschAlle') ? 'Wirklich? ' + icon('gem') + fmtNum(fast.reduce((a, m) => a + speedUpCost(m), 0)) : icon('hourglass') + 'Alle schneller (' + fast.length + ') · <b>' + fmtNum(fast.reduce((a, m) => a + speedUpCost(m), 0)) + '</b>' + icon('gem')) + '</button></span></div>');
-    const amHtml = rows.length ? rows.join('') : '<div class="logEmpty">' + icon('hourglass') + 'Gerade nichts unterwegs.</div>';
+    const amHtml = rows.length ? rows.join('') : leerHtml('hourglass', 'Gerade nichts unterwegs', 'Tippe eine fremde Basis an → „Angreifen“.',
+        '<button type="button" class="btn btn--primary btn--haupt" data-mact="karte">' + icon('send') + '<span>Ziel auf der Karte wählen</span></button>');
     if (amHtml !== activeMarchesEl._html) { activeMarchesEl._html = amHtml; activeMarchesEl.innerHTML = amHtml; }   // many fights resolve per second: rebuild only on change (keeps the buttons tappable)
     battleLogPopup.classList.toggle('has-entries', rows.length > 0 || combatLog.length > 0);
 

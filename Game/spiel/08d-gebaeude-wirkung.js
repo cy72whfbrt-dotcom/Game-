@@ -35,7 +35,7 @@ function cityVergleich(id, L) {                    // Gebäude-Fenster „Jetzt 
     if (!AUF) return null;
     if (id === 'market') return [z('Gebühr', l => Math.round(AUF.marktGebuehr(l) * 100) + '\u00a0%')];
     const x = { lumber: 'h', quarry: 's', mine: 'e' }[id];
-    return x ? [[AUF.ROH_DEF[x].name + ' pro Stunde', fmtStunde(AUF.rohJeStunde(x, L)), fmtStunde(AUF.rohJeStunde(x, L + 1))]] : null;   // (ohne Gebäude: was die Burg allein macht)
+    return x ? [[AUF.ROH_DEF[x].name + ' pro Stunde', L ? AUF.rohStd(AUF.rohJeStunde(x, L)) : '–', AUF.rohStd(AUF.rohJeStunde(x, L + 1))]] : null;   // (ganze Zahlen; noch nicht gebaut: „–“ wie die anderen)
 }
 function cityExtraHtml(id, lvl) {
     if (AUF && ['academy', 'market'].includes(id)) return AUF.extraHtml(id, lvl);   // Forschung, Markt (aufbau.js)

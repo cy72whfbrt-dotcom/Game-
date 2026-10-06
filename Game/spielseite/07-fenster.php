@@ -19,12 +19,12 @@
 .p5-chip .badge{position:static}
 #combatLogList > .logRow{cursor:pointer}
 /* Events (Blick 6.10.): am Handy passen alle 4 Ereignis-Chips (kurze Namen), Welt-Saison linksbündig, Preise gut lesbar */
-.p5-kurz{display:none}
-@media (max-width:480px){ #goalsTabs{gap:6px;padding-inline:12px} #goalsTabs .p5-chip{padding:0 12px} #goalsTabs .p5-lang{display:none} #goalsTabs .p5-kurz{display:inline} }
+@media (max-width:480px){ #goalsTabs{gap:6px;padding-inline:12px} #goalsTabs .p5-chip{padding:0 12px} }
 /* Events/Bündnis (Gesamt-Blick 6.10.): Bild-Banner je Ereignis mit Titel + Uhr darauf, lange Erklärungen hinter „i“, leere Zustände mit Bild + Knopf */
 .ev-banner{position:relative;flex:none;height:96px;margin:0 0 10px;border-radius:var(--r-sm);overflow:hidden;border:1px solid var(--line-2);background:#100b08}
 .ev-banner .ev-bild{position:absolute;inset:0;width:100%;height:100%;display:block}
 .ev-banner::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(8,6,4,.85) 0%,rgba(8,6,4,.55) 50%,rgba(8,6,4,0) 76%);pointer-events:none}
+.ev-banner--tour::after{background:linear-gradient(90deg,rgba(18,10,30,.92) 0%,rgba(18,10,30,.75) 55%,rgba(18,10,30,0) 80%)}   /* Woche: Titel + Uhr nie auf Fahne/Schwertern */
 .ev-banner-t{position:absolute;left:12px;right:26%;bottom:10px;z-index:1;display:flex;flex-direction:column;gap:4px;text-shadow:0 1px 3px rgba(0,0,0,.9)}
 .ev-banner-t > b{display:flex;align-items:center;gap:7px;font:600 16px/1.25 var(--font-display);color:var(--gold-100);letter-spacing:.02em}
 .ev-banner-t > b .icon{width:18px;height:18px;flex:none;color:var(--gold-300)}
@@ -341,10 +341,10 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
     <button class="p5-chip" type="button" role="tab" data-gtab="ach" data-ggrp-von="aufgaben"><span>Erfolge</span><span class="badge" data-gbadge="ach" style="display:none">0</span></button>
     <button class="p5-chip" type="button" role="tab" data-gtab="reward" data-ggrp-von="abholen" hidden><span>Belohnung</span><span class="badge" data-gbadge="reward" style="display:none">0</span></button>
     <button class="p5-chip" type="button" role="tab" data-gtab="pass" data-ggrp-von="pass" hidden><span>Pass</span><span class="badge" data-gbadge="pass" style="display:none">0</span></button>
-    <button class="p5-chip" type="button" role="tab" data-gtab="tour" data-ggrp-von="ereignisse" hidden><span class="p5-lang">Wochen-Event</span><span class="p5-kurz">Woche</span><span class="badge" data-gbadge="tour" style="display:none">!</span></button>
+    <button class="p5-chip" type="button" role="tab" data-gtab="tour" data-ggrp-von="ereignisse" hidden><span>Woche</span><span class="badge" data-gbadge="tour" style="display:none">!</span></button>
     <button class="p5-chip" type="button" role="tab" data-gtab="inv" data-ggrp-von="ereignisse" hidden><span>Invasion</span><span class="badge" data-gbadge="inv" style="display:none">!</span></button>
     <button class="p5-chip" type="button" role="tab" data-gtab="drache" data-ggrp-von="ereignisse" hidden><span>Drache</span><span class="badge" data-gbadge="drache" style="display:none">!</span></button>
-    <button class="p5-chip" type="button" role="tab" data-gtab="boss" data-ggrp-von="ereignisse" hidden><span class="p5-lang">Boss &amp; Lager</span><span class="p5-kurz">Boss</span></button>
+    <button class="p5-chip" type="button" role="tab" data-gtab="boss" data-ggrp-von="ereignisse" hidden><span>Boss</span></button>
   </div>
   <div class="pbody">
     <div class="mail-pane" data-gpane="daily">
@@ -411,7 +411,7 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
       <!-- Schaufenster: Epische Kiste groß oben, darunter 2 Spalten; je Karte gezeichnete Truhe in der Farbe der Seltenheit, Preis-Knopf unten über die ganze Breite (ein Tipp = kaufen) -->
       <div class="waren">
         <div id="heroChestOpts" class="waren-teil"></div>
-        <div class="ware" data-r="grau"><span class="ware-bild" data-kiste-art="aus"></span><span class="ware-txt"><b class="ware-name">Ausrüstungskiste</b><small>1 Teil · Grau bis Episch</small></span>
+        <div class="ware" data-r="grau"><span class="ware-bild" data-kiste-art="aus"></span><span class="ware-txt"><b class="ware-name">Ausrüstungs&shy;kiste</b><small>1 Teil · Grau bis Episch</small></span>
           <button id="shopOpenCrateBtn" class="ware-preis" type="button" aria-label="Ausrüstungskiste kaufen"><svg class="icon"><use href="#i-gem"/></svg><b data-const="CRATE_GEM_COST">150</b></button></div>
         <div class="ware-mehr"><button id="shopToEquipBtn" class="ware-link" type="button"><svg class="icon"><use href="#i-shield"/></svg><span>Inventar ›</span></button>
           <button type="button" class="ware-link" data-sinfo="kiste" aria-expanded="false"><svg class="icon"><use href="#i-info"/></svg><span>Chancen</span></button></div>

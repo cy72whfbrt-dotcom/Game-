@@ -30,7 +30,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     try {
       bundOeffnen('suchen'); await warte(400);
       const k = document.querySelector('[data-bact="gruendenAuf"]'), c = k && k.querySelector('.cost'), kr = k && k.getBoundingClientRect(), cr = c && c.getBoundingClientRect();
-      return { leer: (document.querySelector('#bundPopup .inbox-empty') || {}).textContent || '', preis: c ? c.textContent.trim() : '', soll: fmtNum(BUND.KOSTEN) + ' Münzen',
+      return { leer: (document.querySelector('#bundPopup .bd-liste .ev-leer') || {}).textContent || '', preis: c ? c.textContent.trim() : '', soll: fmtNum(BUND.KOSTEN) + ' Münzen',
         drin: !!(kr && cr && cr.right <= kr.right + 1 && cr.left >= kr.left - 1 && kr.right <= innerWidth), eineZeile: !!(cr && cr.height < 40), aria: k ? k.getAttribute('aria-label') : '' };
     } finally { bund.b = alt; }
   });

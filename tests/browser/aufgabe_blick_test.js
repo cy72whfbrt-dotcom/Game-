@@ -40,7 +40,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const o = {}; o.inv = await tab('inv'); o.tour = await tab('tour');
     const lb = document.querySelector('.ev-saison .field-lines b'); o.links = lb ? getComputedStyle(lb).textAlign : '';
     o.boss = await tab('boss');
-    o.tourSaisonUnten = o.tour.indexOf('Welt-Saison') > o.tour.indexOf('Wochen-Event');
+    o.tourSaisonUnten = o.tour.indexOf('Welt-Saison') > o.tour.indexOf('Punkte für');
     const k = [...document.querySelectorAll('#goalsTabs [data-gtab]:not([hidden])')], box = document.getElementById('goalsTabs').getBoundingClientRect();
     o.chips = k.map(c => { const r = c.getBoundingClientRect(); return [c.innerText.trim(), Math.round(r.left), Math.round(r.right)]; }); o.chipsRand = Math.round(box.right); o.breite = innerWidth;
     S.ende = Date.now() + 2 * 864e5; o.invBald = await tab('inv');

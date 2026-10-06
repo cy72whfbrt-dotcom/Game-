@@ -105,6 +105,8 @@ function burgZeitRoh(L) { return 86400 * Math.pow(60, (Math.max(1, Math.min(BURG
 function burgSchutzStufe(B) { B = Math.max(1, Math.min(BURG_MAX, B | 0 || 1)); return wirtM(B <= 10 ? 1e4 * Math.pow(100, (B - 1) / 9) : 1e6 * Math.pow(100, (B - 10) / 15)); }
 const burgSchutz = (who, B) => Math.round(burgSchutzStufe(B || burgStufe(who)) * (1 + foWert(who, 'w_schutz') / 100));   // (+ Forschung Burg-Schutz+) – Gold
 const burgSchutzRoh = (who, B) => Math.round(burgSchutz(who, B) * ROH_JE_MUENZE);   // je Holz, Stein, Eisen
+const schutzText = v => fmtCompact(niceRound(v));               // Anzeige: glatt (10.000 statt 10.001)
+const rohStd = n => fmtNum(Math.round(n));                    // Rohstoffe pro Stunde: ganze Zahl (nie „55,6“)
 const STADT_MIX = { lumber: { h: .3, s: .9, e: .2 }, quarry: { h: 1.1, s: .2, e: .2 }, mine: { h: 1, s: .9, e: 0 }, wall: { h: .5, s: 1.3, e: .3 }, forge: { h: .6, s: .6, e: 1 }, market: { h: 1.2, s: .6, e: .2 } };
 function stadtKosten(id, L) {                                  // alles für ein Gebäude von Stufe L auf L + 1 (Burg: eigene Tabelle)
     if (id === 'keep') return burgKosten(L);
@@ -287,15 +289,15 @@ function hudRoh() {
 function rohDropMalen() {
     const d = document.getElementById('rohDrop'); if (!d) return;
     const ps = rohStunde('player');
-    liveHtml(d, ROH.map(x => '<div class="roh-row">' + icon(ROH_DEF[x].icon, 'roh-' + x) + '<span>' + ROH_DEF[x].name + '</span><b>' + fmtNum(Math.floor(roh[x])) + '</b><small>+' + fmtStunde(ps[x]) + '/Std.</small></div>').join('') +
-        '<small class="roh-hint">Holzfäller, Steinbruch und Eisenmine in deiner Stadt machen Rohstoffe (je nach Landschaft der Hauptstadt). Mehr durch Sammeln auf Holz-, Stein- und Eisen-Feldern der Karte. Gebraucht für Burg, Gebäude und Forschung. Die Burg schützt ' + fmtCompact(burgSchutzRoh('player')) + ' von jedem Rohstoff und ' + fmtCompact(burgSchutz('player')) + ' Gold vor Angreifern.</small>');
+    liveHtml(d, ROH.map(x => '<div class="roh-row">' + icon(ROH_DEF[x].icon, 'roh-' + x) + '<span>' + ROH_DEF[x].name + '</span><b>' + fmtNum(Math.floor(roh[x])) + '</b><small>+' + rohStd(ps[x]) + '/Std.</small></div>').join('') +
+        '<small class="roh-hint">Holzfäller, Steinbruch und Eisenmine in deiner Stadt machen Rohstoffe (je nach Landschaft der Hauptstadt). Mehr durch Sammeln auf Holz-, Stein- und Eisen-Feldern der Karte. Gebraucht für Burg, Gebäude und Forschung. Die Burg schützt ' + schutzText(burgSchutzRoh('player')) + ' von jedem Rohstoff und ' + schutzText(burgSchutz('player')) + ' Münzen vor Angreifern.</small>');
 }
 function rohUmschalten(an) { rohOffen = an === undefined ? !rohOffen : an; const d = document.getElementById('rohDrop'); if (!d) return; d.hidden = !rohOffen; document.getElementById('hudRoh').classList.toggle('on', rohOffen); if (rohOffen) rohDropMalen(); }
 
 function freiText(B) {                                         // was die Burg-Stufe B freischaltet
     const out = ['Gebäude bis Stufe ' + (B >= BURG_MAX ? 'zum Höchstwert' : B)];
     const m = 2 + Math.floor((B - 1) / 6); if (B === 1 || (B - 1) % 6 === 0) out.push(m + ' Marsch-Plätze');
-    out.push('Schutz: ' + fmtCompact(burgSchutzRoh('player', B)) + ' von jedem Rohstoff, ' + fmtCompact(burgSchutz('player', B)) + ' Gold');
+    out.push('Schutz: ' + schutzText(burgSchutzRoh('player', B)) + ' von jedem Rohstoff, ' + schutzText(burgSchutz('player', B)) + ' Münzen');
     for (const id in BAU_AB_BURG) if (BAU_AB_BURG[id] === B) out.push('neues Gebäude: ' + cityDef(id).name);
     return out;
 }
@@ -307,7 +309,7 @@ function renderKeep() {                                        // das Burg-Fenst
     setText(document.getElementById('cityBOver'), 'Deine Burg');
     setText(document.getElementById('cityBName'), 'Burg');
     liveHtml(document.getElementById('cityBLevel'), cityStufeHtml(B, max, BURG_MAX));   // „Stufe 1 → 2“ groß, „von 25“ klein (08b)
-    setText(document.getElementById('cityBDesc'), 'Das Herz deines Reiches – unabhängig von der Basis-Stufe draußen auf der Karte. Die Burg-Stufe bestimmt, wie hoch deine Gebäude gehen, wie viele Märsche gleichzeitig laufen und wie viel Gold, Holz, Stein und Eisen vor Angreifern sicher ist. Jede Stufe dauert lange (1 bis 60 Tage).');
+    setText(document.getElementById('cityBDesc'), 'Das Herz deines Reiches – unabhängig von der Basis-Stufe draußen auf der Karte. Die Burg-Stufe bestimmt, wie hoch deine Gebäude gehen, wie viele Märsche gleichzeitig laufen und wie viele Münzen und wie viel Holz, Stein und Eisen vor Angreifern sicher sind. Jede Stufe dauert lange (1 bis 60 Tage).');
     const note = document.getElementById('cityBNote'), blk = !bau && !max ? cityBlocker('keep') : null; let cls, nh;
     if (bau) { cls = 'notice notice--gold'; nh = icon('hourglass') + '<span style="flex:1">Ausbau auf Burg-Stufe ' + bau.to + ' · noch <b id="cityBNoteTime"></b><div class="city-progress" style="margin-top:6px"><i></i></div>' + (typeof bundHilfeKnopf === 'function' ? bundHilfeKnopf('bau', 'keep', bau.to, bau.endsAt) : '') + '</span>'; }
     else { cls = 'notice city-wirkung'; nh = icon('shield') + '<span>' + (sh ? 'Friedensschild aktiv – noch ' + uhrHtml(sh) : neu > now ? 'Anfängerschutz – noch ' + uhrHtml(neu) : 'Kein Friedensschild aktiv.') + '</span>'; }
@@ -319,7 +321,7 @@ function renderKeep() {                                        // das Burg-Fenst
     sp.style.display = bau ? '' : 'none'; if (bau) renderCitySheetTimer();
     const belegt = marschBelegt('player');
     liveHtml(document.getElementById('cityBExtra'),
-        '<div class="keep-h">Jetzt</div><div class="auf-grid"><div><span>Marsch-Plätze</span><b>' + belegt + ' / ' + marschGrenze('player') + ' belegt</b></div><div><span>Gebäude</span><b>bis Stufe ' + stadtCap('player', 'wall') + '</b></div><div><span>Schutz</span><b>' + fmtCompact(burgSchutzRoh('player')) + ' je Rohstoff · ' + fmtCompact(burgSchutz('player')) + ' Gold</b></div></div>' +
+        '<div class="keep-h">Jetzt</div><div class="auf-grid"><div><span>Marsch-Plätze</span><b>' + belegt + ' / ' + marschGrenze('player') + ' belegt</b></div><div><span>Gebäude</span><b>bis Stufe ' + stadtCap('player', 'wall') + '</b></div><div><span>Schutz</span><b>' + schutzText(burgSchutzRoh('player')) + ' je Rohstoff · ' + schutzText(burgSchutz('player')) + ' Münzen</b></div></div>' +
         (max ? '' : '<div class="keep-h">Burg-Stufe ' + (B + 1) + ' schaltet frei</div><ul class="auf-frei">' + freiText(B + 1).map(t => '<li>' + icon('check') + t + '</li>').join('') + '</ul>') +
         '<small class="keep-note">Fällt nie · Sieger nimmt ' + Math.round(HAUPT_BEUTE * 100) + ' % über dem Schutz</small>');
 }
@@ -329,7 +331,7 @@ function effektText(id, lvl) {
         return (lvl ? 'Jetzt: ' + t(lvl) + '.' : 'Mehr Verstärkung, größere Rallys, Bündnis-Hilfe.') + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: ' + t(lvl + 1) + '.' : ''); }
     const rx = { lumber: ['h', 'Holz'], quarry: ['s', 'Stein'], mine: ['e', 'Eisen'] }[id];
     if (rx) { const k = rx[0], jetzt = rohStunde('player')[k], f = jetzt / Math.max(1, ROH_BURG_STUNDE + rohGebStunde(lvl));
-        return (lvl ? 'Jetzt: ' : 'Ohne Gebäude (nur die Burg): ') + fmtStunde(jetzt) + ' ' + rx[1] + ' pro Stunde.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: ' + fmtStunde((ROH_BURG_STUNDE + rohGebStunde(lvl + 1)) * f) + '.' : ''); }
+        return (lvl ? 'Jetzt: ' : 'Ohne Gebäude (nur die Burg): ') + rohStd(jetzt) + ' ' + rx[1] + ' pro Stunde.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: ' + rohStd((ROH_BURG_STUNDE + rohGebStunde(lvl + 1)) * f) + '.' : ''); }
     if (id === 'market') return lvl ? 'Gebühr ' + Math.round(marktGebuehr(lvl) * 100) + ' % · Tageslimit ' + fmtCompact(marktLimit('player')) + ' Münzen je Richtung.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: Gebühr ' + Math.round(marktGebuehr(lvl + 1) * 100) + ' %, höheres Limit.' : '') : 'Baue den Markt, um Rohstoffe gegen Münzen zu tauschen.';
     return '';
 }
@@ -500,7 +502,7 @@ setInterval(hauptstadtStufen, 3000);
 AUF = {
     ROH_START, foZeitRoh, foAkaFuer,                           // (für das Hauptbuch 3B in spiel.js)
     ROH_DEF, BURG_MAX, BAU_AB_BURG, FORSCHUNG, MARKT_WERT,
-    rohVon, rohDazu, rohSpeichern, basisRoh, rohBuchen, rohStunde, kannZahlen, zahlen, kostenHtml,
+    rohVon, rohDazu, rohSpeichern, basisRoh, rohBuchen, rohStunde, rohStd, kannZahlen, zahlen, kostenHtml,
     burgStufe, burgZeitRoh, stadtKosten, stadtCap, burgSchutz, burgSchutzRoh, burgSchutzStufe, burgFair,
     marschFrei, marschOk, marschVoll, gruppeLaeuft, frei: { an() { marschFreiPass++; }, aus() { marschFreiPass = Math.max(0, marschFreiPass - 1); } },
     foStufe, foWert, foSumme, foGesamt, foKosten, foFertig, marktLimit, marktHtml, marktGebuehr, marktStufe: who => bauStufe(who, 'market'),
