@@ -50,7 +50,7 @@ A="${1:?Aufruf: tests/server_tests.sh <arbeitsordner> [test …]}"; A=$(cd "$A" 
 BETROFFEN=(
   "Game/server.php|Game/server/*|Game/speichern.js            → klick_test admin_test absturz_test schummel_test"
   "Game/admin.php|Game/index.php                              → admin_test absturz_test"
-  "Game/spiel.php|Game/spielseite/*|Game/ladebildschirm.js|Game/aufbau.js|Game/baukunst.js|Game/baukunst/*|Game/haendler.js|Game/sw.js|Game/app/* → klick_test"
+  "Game/spiel.php|Game/spielseite/*|Game/skript.php|werkzeuge/verkleinern.js|werkzeuge/terser.js|Game/ladebildschirm.js|Game/aufbau.js|Game/baukunst.js|Game/baukunst/*|Game/haendler.js|Game/sw.js|Game/app/* → klick_test"
   "Game/welt.js                                               → klick_test verst_test armee_test schummel_test"
   "Game/weltrechner/*                                         → absturz_test schummel_test verst_test kiste_test armee_test"
   "Game/buendnis/*|Game/buendnis.js                           → verst_test kiste_test klick_test"

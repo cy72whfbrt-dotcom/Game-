@@ -12784,8 +12784,14 @@ function einstellungenZeigen() {
     document.getElementById('setAkku').checked = akkuSparen;
     setText(document.getElementById('setName'), profileName.value || '–');
     setText(document.getElementById('setNr'), String((window.__OW || {}).uid || '–'));
-    const sc = document.querySelector('script[src*="spiel.js"]'), v = sc && /[?&]v=(\d+)/.exec(sc.src);
-    setText(document.getElementById('setVersion'), v ? new Date(+v[1] * 1000).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '–');
+    setText(document.getElementById('setVersion'), spielVersion());
+}
+// Version: Zeit von spiel.js auf dem Server (window.__OW.version) – sonst aus der Skript-Adresse: spiel.js?v=<Zeit>
+// oder verkleinert skript.php?d=spiel&v=<Anfang der sha1> (Vorschau: klein/spiel.js?v=<sha1>) → die ersten 7 Zeichen
+function spielVersion() {
+    const sc = [...document.scripts].find(s => /(^|\/)spiel\.js\?|[?&]d=spiel(&|$)/.test(s.src)), v = sc && /[?&]v=([0-9a-f]+)/.exec(sc.src);
+    const t = +(window.__OW || {}).version || (v && /^\d{10}$/.test(v[1]) ? +v[1] : 0);
+    return t ? new Date(t * 1000).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : v ? v[1].slice(0, 7) : '–';
 }
 document.getElementById('setTon').addEventListener('click', e => { const b = e.target.closest('[data-ton]'); if (!b) return; Music.setMode(b.dataset.ton); einstellungenZeigen(); });
 document.getElementById('setAkku').addEventListener('change', e => {
@@ -12863,6 +12869,17 @@ renderActiveMarches();
 if (bonusGrantedAtBoot) saveGame();      // a reload right after the first start must not lose the grant
 updateZoomBounds(); clampCamera();
 requestAnimationFrame(frame);
+requestAnimationFrame(() => setTimeout(dreiDLaden, 0));   // (nach dem ersten Bild der Karte)
+
+// 3D-Basen erst jetzt laden (three.js vom CDN, dann baukunst.js) – vorher würden sie den Start bremsen. Ohne Netz oder
+// WebGL bleiben die gezeichneten Basen (bk3d). Der Weltrechner braucht sie nie.
+function dreiDLaden() {
+    const el = document.getElementById('spaeterLaden');
+    if (SYSTEM || !el || el.dataset.geladen) return;
+    el.dataset.geladen = '1';
+    const laden = (src, sri, dann) => { const s = document.createElement('script'); s.src = src; if (sri) { s.integrity = sri; s.crossOrigin = 'anonymous'; } s.onload = dann; document.body.appendChild(s); };
+    laden(el.dataset.three, el.dataset.sri, () => laden(el.dataset.baukunst, '', requestRender));
+}
 
 // Nichts markieren und kein Kopieren-Menü beim langen Drücken (außer in Eingabefeldern)
 const feldErlaubt = t => t && t.closest && t.closest('input,textarea,select,[contenteditable]');

@@ -71,7 +71,7 @@
     <div class="splash-meta"><span id="splashStatus" class="splash-status">Welt wird erschaffen …</span><span id="splashPct" class="splash-pct">0 %</span></div>
   </div>
 </div>
-<script src="ladebildschirm.js?v=<?= v('ladebildschirm.js') ?>"></script>
+<script src="<?= skript('ladebildschirm') ?>"></script>
 <canvas id="mapCanvas" aria-label="Weltkarte"></canvas>
 <div id="mapVignette" aria-hidden="true"></div>
 

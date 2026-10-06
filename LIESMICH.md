@@ -42,6 +42,8 @@ Game/                  ← genau dieser Ordner liegt auf dem Server
   aufbau.js            Aufbau: Burg-Stufe, Holz/Stein/Eisen, Forschung, Truppen-Stufen, Markt, Marsch-Plätze (Abschnitt 22)
   haendler.js          wandernder Händler: Karren auf der Karte, Angebot, Kauf über den Weltrechner (Abschnitt 23)
   server.php           alles auf dem Server: Datenbank, Login, Laden, Speichern, Welt, Sicherheit
+  skript.php           liefert die verkleinerten Skripte aus klein/ (gepackt, ein Jahr zwischengespeichert, Version in der Adresse)
+  klein/               die Skripte verkleinert (für den Browser) – entstehen beim Bauen (spiel_bauen.sh), nie im Git
   admin.php            nur für Admins (alexander): Wartung an/aus, Geschenke verschicken, Spielerliste
   app/                 Open Water als App auf dem Startbildschirm:
     index.html         Installier-Seite (Android: Knopf „Zum Startbildschirm hinzufügen“, iPhone: Anleitung)
@@ -71,7 +73,8 @@ tests/                 Tests (liegen NIE auf dem Server)
   server/              die Server-Tests: Absturz/Zurückspielen, Admin, Nebel bei Armeen, Bündnis-Kiste,
                        Verstärkung, Klick-Test neuer Spieler (+ geschenk.sh: Admin-Geschenk für Tests)
 werkzeuge/             spiel_bauen.sh (spiel.js, bots.js, buendnis.js, baukunst.js, spiel.php, server.php zusammensetzen),
-                       vorschau_bauen.php (Vorschau ohne Server),
+                       vorschau_bauen.php (Vorschau ohne Server), verkleinern.js (+ terser.js: Skripte für den Browser
+                       verkleinern → Game/klein/, läuft in spiel_bauen.sh),
                        vorschau_test*.js (Test-Modus), welt_neustart.php (neue Saison), vor_commit.sh (Prüfung vor dem
                        Commit), server_starten.sh (MariaDB + lokaler PHP-Server 8770 für die Server-Tests),
                        karte.sh (+ karte.js: erzeugt KARTE.md), fortschritt.sh (FORTSCHRITT-Zeilen der Testreihen),
@@ -364,6 +367,30 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   stießen zusammen. Jetzt nimmt jeder Test einen freien Port vom System, Bilder kommen in den eigenen Arbeitsordner.
   gemeinsam-, saison-, fremd- und helden_beute-Test warten nicht mehr feste Zeiten, sondern auf das Ergebnis (bis zu 3× so
   lang) – unter Last nicht mehr rot. (Nur Tests, kein Spiel-Code.)
+- **5./6.10. Nacht – Schneller laden (11b D) – GEBAUT, NICHT hochgeladen:** (1) `werkzeuge/spiel_bauen.sh` verkleinert am
+  Ende alle Browser-Skripte nach `Game/klein/` (`werkzeuge/verkleinern.js` mit terser in `werkzeuge/terser.js`, ohne Netz:
+  nur Leerraum/Kommentare raus, lokale Namen kürzer, Funktionsnamen bleiben; unverändertes Original → nichts zu tun).
+  `klein/` ist nicht im Git, entsteht bei jedem Bauen (also auch vor dem Hochladen, in der Vorschau und den Server-Tests);
+  `spiel_bauen.sh pruefen` meldet eine veraltete Datei. Die Originale bleiben – Weltrechner, Server und Tests lesen sie.
+  spiel.js 1,28 MB → 0,80 MB, baukunst.js 381 → 241 KB. (2) Neue `Game/skript.php` liefert sie gepackt (gzip) und mit
+  „ein Jahr behalten“ (Version = Anfang der sha1 des Originals in der Adresse, `skript()` in server.php; jede verkleinerte
+  Datei nennt in der ersten Zeile die sha1 ihres Originals – passt sie nicht oder fehlt die Datei, kommt das Original,
+  nie alter Code, egal in welcher Reihenfolge `hochladen.sh` die Dateien hochlädt). Der Weltrechner bekommt immer die Originale. Die Spielseite selbst geht jetzt
+  gepackt raus (`ob_gzhandler` – die ganze Welt steht darin), die Startseite holt die Skripte schon während des
+  Anmeldens im Hintergrund (`prefetch`). (3) three.js (CDN) und baukunst.js kommen erst nach dem ersten Bild der Karte
+  (`dreiDLaden` in 10c) – vorher hielten sie DOMContentLoaded auf, und damit auch den Start der Welt-Verbindung
+  (welt.js startet dort). Ohne three.js wird baukunst.js gar nicht geladen. `hochladen.sh` prüft `klein/` nach dem
+  Hochladen mit. Gemessen in der Vorschau (Handy-Größe, gedrosseltes Netz, Maschine stark belastet – Zeiten nur grob):
+  Start-Daten ungepackt 1.915 → 1.277 KB, gepackt 566 → 390 KB (ohne die 3D-Dateien, die jetzt später kommen); langsames
+  Netz (200 KB/s): Skripte da nach 12,4 → 7,2 s, Karte sichtbar 35 → 22 s; 4G gepackt: Skripte 1,0 → 0,7 s, Karte
+  sichtbar 29 → 23 s. **Live prüfen** (ging von hier nicht): ob der Hoster statische .js schon packt
+  (`curl -sI -H 'Accept-Encoding: gzip' …/Game/spiel.js` → `Content-Encoding`), ob `skript.php` gepackt + mit
+  `Cache-Control: … immutable` ankommt und die Spielseite gepackt. Test: `tests/browser/laden_test.js` (+ server_test).
+  Nachbesserung: Profil → Einstellungen → „Version“ zeigt wieder die Zeit von spiel.js (kommt jetzt mit der Spielseite,
+  `version` in `window.__OW`; ohne Server die ersten 7 Zeichen der sha1 aus der Skript-Adresse, `spielVersion()` in 10c).
+  `Game/klein/` (nicht im Git) wird in jeder Kopie beim Bauen erzeugt – Vorschau, `tests/alle_tests.sh` und `hochladen.sh`
+  prüfen danach mit `node werkzeuge/verkleinern.js voll`, dass jede Datei da ist und passt (sonst Abbruch). Zwei Bau-Läufe
+  gleichzeitig (z. B. `komplett.sh`) stören sich beim Verkleinern nicht mehr.
 - **5.10. Fremde Werte erst nach dem Spähen (Alexanders Entscheidung) – NICHT hochgeladen:** Der Server schickte jedem Handy
   den ganzen Zustand aller Spieler/Mitspieler (Helden, Ausrüstung, Skills, Stadt, Forschung, Gems …) – ein verändertes Handy
   konnte alles lesen. Jetzt (`server.php` `FREMD_OEFFENTLICH`, `fremd_kuerzen`, in `weltteil_fuer_spieler` UND
@@ -884,7 +911,7 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
   Neustart-Dauer des Weltrechners messen. **→ gebaut (nicht hochgeladen), Branch `nacht-technik`, Verlauf 5./6.10. Nacht.**
 - Neue Spieler: tägliche Belohnung erst nach der Anleitung · Anleitung wiederholbar, Schritt 6 erst nach Abholen ·
   Hauptstadt-Fenster erklärt sich, nächster Knopf leuchtet · Knöpfe ohne Text werden in der Anleitung erklärt ·
-  schneller laden · prüfen, ob der Anleitungs-Stand im Browser liegt (wenn ja: auf den Server).
+  schneller laden (**gebaut, nicht hochgeladen** – Verlauf 5./6.10. Nacht) · prüfen, ob der Anleitungs-Stand im Browser liegt (wenn ja: auf den Server).
 - Kampf/Bündnis: Nachricht, wenn ein echter Spieler dich ausspäht · Warnung + automatische Hilfe bei einer Rally gegen
   das Bündnis · Meldung, wenn ein Verbündeter seine Verstärkung heimholt, und beim Antippen der eigenen Basis sehen, wer
   dort verstärkt · Mitspieler: auf „Später“ folgt „Jetzt!“, sie schreiben „Danke!“/„Gut gemacht!“.

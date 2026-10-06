@@ -3,7 +3,7 @@
 // Der Spielstand kommt gleich mit der Seite mit (aus der Datenbank), speichern.js schickt Änderungen zurück.
 require __DIR__ . '/server.php';
 $kopf = spielseite_vorbereiten();   // Login prüfen, Spielstand laden (sonst geht es zur Anmeldung)
-function v($f) { return filemtime(__DIR__ . '/' . $f); }   // neue Version = Browser lädt neu
+if (!ini_get('zlib.output_compression') && function_exists('ob_gzhandler')) ob_start('ob_gzhandler');   // gepackt schicken, wenn der Browser es kann (die ganze Welt steht in der Seite)
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -1661,7 +1661,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
     <div class="splash-meta"><span id="splashStatus" class="splash-status">Welt wird erschaffen …</span><span id="splashPct" class="splash-pct">0 %</span></div>
   </div>
 </div>
-<script src="ladebildschirm.js?v=<?= v('ladebildschirm.js') ?>"></script>
+<script src="<?= skript('ladebildschirm') ?>"></script>
 <canvas id="mapCanvas" aria-label="Weltkarte"></canvas>
 <div id="mapVignette" aria-hidden="true"></div>
 
@@ -2197,14 +2197,14 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
   </footer>
 </section>
 
-    <script defer src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js" integrity="sha384-qOkzR5Ke/XkQxuGVJ9hpFEpDlcoLtWwVYhnJf06cLIZa2vaIptSqaubivErzmD5O" crossorigin="anonymous"></script><!-- 3D bases: deferred, so a slow or missing network never holds the game up -->
-    <script defer src="baukunst.js?v=<?= v('baukunst.js') ?>"></script>
-    <script src="bots.js?v=<?= v('bots.js') ?>"></script>
-    <script src="welt.js?v=<?= v('welt.js') ?>"></script>
-    <script src="spiel.js?v=<?= v('spiel.js') ?>"></script>
-    <script src="aufbau.js?v=<?= v('aufbau.js') ?>"></script>
-    <script src="buendnis.js?v=<?= v('buendnis.js') ?>"></script>
-    <script src="haendler.js?v=<?= v('haendler.js') ?>"></script>
-    <script src="benachrichtigung.js?v=<?= v('benachrichtigung.js') ?>"></script>
+    <!-- 3D-Basen (three.js + baukunst.js): lädt spiel.js erst nach dem ersten Bild der Karte (dreiDLaden) – sie bremsen den Start nicht -->
+    <div id="spaeterLaden" hidden data-three="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js" data-sri="sha384-qOkzR5Ke/XkQxuGVJ9hpFEpDlcoLtWwVYhnJf06cLIZa2vaIptSqaubivErzmD5O" data-baukunst="<?= skript('baukunst') ?>"></div>
+    <script src="<?= skript('bots') ?>"></script>
+    <script src="<?= skript('welt') ?>"></script>
+    <script src="<?= skript('spiel') ?>"></script>
+    <script src="<?= skript('aufbau') ?>"></script>
+    <script src="<?= skript('buendnis') ?>"></script>
+    <script src="<?= skript('haendler') ?>"></script>
+    <script src="<?= skript('benachrichtigung') ?>"></script>
 </body>
 </html>

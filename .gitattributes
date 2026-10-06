@@ -1,2 +1,4 @@
 # KARTE.md wird beim Bauen neu erzeugt – bei Merges eigene Fassung behalten (Treiber: werkzeuge/git_einrichten.sh)
 KARTE.md merge=ours
+# terser.js: fremde Bibliothek, fast alles in einer Zeile (aus npm zusammengepackt) – kein Text-Diff
+werkzeuge/terser.js -diff

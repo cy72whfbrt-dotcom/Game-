@@ -242,6 +242,21 @@ pruefe('Grenze Fehlversuche je Adresse', strpos($ix, "bremse('loginip:' . client
 // CSP: fremde Skripte nur genau three.js (nicht ganz jsdelivr) – und genau die Datei, die die Spielseite einbindet
 $sh = file_get_contents(__DIR__ . '/../Game/server/02-sicherheit-datenlecks.php');
 pruefe('CSP nur three.js', [strpos($sh, "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js; script-src-attr") !== false, strpos($sh, 'https://cdn.jsdelivr.net;') !== false], [true, false]);
-pruefe('Spielseite bindet genau diese Datei ein', strpos(file_get_contents(__DIR__ . '/../Game/spielseite/08-dialoge-stadt-skripte.php'), 'src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"') !== false, true);
+pruefe('Spielseite bindet genau diese Datei ein', strpos(file_get_contents(__DIR__ . '/../Game/spielseite/08-dialoge-stadt-skripte.php'), 'data-three="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"') !== false, true);   // (lädt spiel.js nach dem ersten Bild: dreiDLaden)
+// Skript-Adressen (schneller laden, 6.10.): verkleinert über skript.php, wenn Game/klein/ aktuell ist – sonst das Original
+$g = __DIR__ . '/../Game';
+$sha = sha1_file("$g/spiel.js"); $frisch = strpos((string)@file_get_contents("$g/klein/spiel.js", false, null, 0, 160), "/* verkleinert aus spiel.js · $sha · ") === 0;
+pruefe('Skript-Adresse spiel', skript('spiel'), $frisch ? 'skript.php?d=spiel&amp;v=' . substr($sha, 0, 12) : 'spiel.js?v=' . filemtime("$g/spiel.js"));
+pruefe('Skript ohne verkleinerte Fassung → Original', skript('sw'), 'sw.js?v=' . filemtime("$g/sw.js"));
+$sk = file_get_contents("$g/skript.php"); preg_match("/const SKRIPTE = \[([^\]]*)\]/", $sk, $m1); preg_match("/const SKRIPTE = \[([^\]]*)\]/", file_get_contents(__DIR__ . '/../werkzeuge/verkleinern.js'), $m2);
+pruefe('Startseite holt die Skripte vorab (nicht in der Wartung)', strpos($ix, "if (!wartung()) foreach (['ladebildschirm', 'speichern', 'bots', 'welt', 'spiel', 'aufbau', 'buendnis', 'haendler', 'benachrichtigung'] as \$s) echo '<link rel=\"prefetch\" href=\"' . skript(\$s) . '\">'") !== false, true);
+pruefe('Spielseite gepackt (nach dem Login-Teil)', preg_match("/spielseite_vorbereiten\(\);[^\n]*\nif \(!ini_get\('zlib.output_compression'\) && function_exists\('ob_gzhandler'\)\) ob_start\('ob_gzhandler'\);/", file_get_contents("$g/spiel.php")), 1);
+pruefe('skript.php und verkleinern.js: dieselbe Liste', [$m1[1] ?? 'fehlt', strpos($sk, "in_array(\$name, SKRIPTE, true)") !== false], [$m2[1] ?? 'fehlt2', true]);
+// Game/klein/ ist nicht im Git: Vorschau/alle_tests.sh und hochladen.sh prüfen nach dem Bauen, dass jede Datei da ist
+$w = __DIR__ . '/../werkzeuge'; $hs = file_get_contents(__DIR__ . '/../hochladen.sh');
+pruefe('hochladen.sh: klein/ vollständig vor dem Hochladen', [strpos($hs, 'node werkzeuge/verkleinern.js voll ||') > strpos($hs, 'werkzeuge/spiel_bauen.sh ||'), strpos($hs, 'node werkzeuge/verkleinern.js voll ||') < strpos($hs, 'AENDERN=""')], [true, true]);
+pruefe('Vorschau und alle_tests.sh: klein/ vollständig', [strpos(file_get_contents("$w/vorschau_bauen.php"), "verkleinern.js') . ' voll") !== false, strpos(file_get_contents(__DIR__ . '/alle_tests.sh'), 'node werkzeuge/verkleinern.js voll ') !== false], [true, true]);
+// Profil → Einstellungen → Version: Zeit von spiel.js kommt mit der Spielseite (die Skript-Adresse hat jetzt die sha1)
+pruefe('Spielseite nennt die Version', strpos(file_get_contents("$g/server/03-nebel-maersche-seite.php"), "'version' => filemtime(__DIR__ . '/spiel.js'),") !== false, true);
 echo ($fehler ? "$fehler von $n Tests FEHLGESCHLAGEN\n" : "Alle $n Server-Tests bestanden.\n");
 exit($fehler ? 1 : 0);
