@@ -112,14 +112,6 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
 .throne-status .ts-row .icon{width:15px;height:15px;color:#f2c75c;flex:none}
 .throne-status .ts-row b{margin-left:auto;color:var(--tx-1);font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
 .throne-status .ts-row b.warn{color:#ff9d8f}
-.throne-list{display:grid;gap:6px}
-.throne-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line-1);border-radius:10px;background:rgba(0,0,0,.22)}
-.throne-row .tr-ic{width:38px;height:38px;flex:none;display:grid;place-items:center;border-radius:8px;border:1px solid var(--line-2);background:var(--tile-bg)}
-.throne-row .tr-ic .icon{width:20px;height:20px;color:var(--gold-200)} .throne-row .tr-ic .ico-coin{color:var(--res-coin)} .throne-row .tr-ic .ico-gem{color:var(--res-gem)} .throne-row .tr-ic .ico-troops{color:var(--res-troop)}
-.throne-row.is-special{border-color:rgba(242,199,92,.45);background:radial-gradient(100% 140% at 0% 50%,rgba(242,199,92,.12),transparent 70%),rgba(0,0,0,.22)}
-.throne-row .tr-t{flex:1;min-width:0} .throne-row .tr-t b{display:block;font:600 var(--fs-13)/1.2 var(--font-ui);color:var(--tx-1)}
-.throne-row .tr-t small{display:block;margin-top:2px;font:500 var(--fs-11)/1.3 var(--font-ui);color:var(--tx-3)}
-.throne-row .btn{flex:none;min-width:78px} .throne-row .btn .icon{color:#f2c75c}
 .tour-rules b{color:var(--tx-1);font-weight:700} .tour-rules span span{display:block} .tour-rules{display:grid;gap:5px} .tour-rules span{display:flex;align-items:center;gap:8px;font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-2)} .tour-rules .icon{width:15px;height:15px;flex:none;color:#c9a2ff}
 .tour-prizes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
 .tour-prize{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 3px;border:1px solid var(--line-1);border-radius:var(--r-sm);background:rgba(0,0,0,.22);text-align:center;min-width:0}

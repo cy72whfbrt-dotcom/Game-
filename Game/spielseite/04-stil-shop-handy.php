@@ -30,20 +30,63 @@
 /* =====================================================================
    SHOP
    ===================================================================== */
-/* Shop-Zeilen (6.10.): Kisten wie die Thron-Zeilen – Bild, Name, Inhalt in einer Zeile, eigener Preis-Knopf; Erklärung hinter „i“ */
-#shopPopup .pbody > .mail-pane:not([hidden]){display:grid;gap:8px}
+/* Shop-Schaufenster (6.10., Vorgabe design_shop.md, Layout A): Waren als Karten – die ganze Karte in der Farbe der Seltenheit
+   (Verlauf, Rahmen, Leuchten), gezeichnete Truhe, Name groß, Inhalt eine Zeile, Preis-Knopf unten über die volle Breite
+   (Gold = Edelsteine, Navy = Thron-Punkte). Die Epische Kiste groß über beide Spalten. Erklärungen hinter „i“. */
+#shopPopup.panel--sheet{--sheet-max:calc(100dvh - var(--safe-t) - var(--hud-top-space) - var(--dock-h) - var(--safe-bd))}   /* (Handy: mehr Platz, damit alle Kisten ohne Scrollen passen) */
+#shopPopup .phead{min-height:56px;padding-bottom:8px} #shopPopup .phead .overline{display:none} #shopPopup .emblem{width:38px;height:38px}
+#shopPopup .phead-text{display:flex;align-items:center;gap:10px;min-width:0} #shopPopup .ptitle{margin:0;flex:none} #shopPopup .psub{min-width:0}
+#shopPopup .psub small{display:none}   /* (nur Zahl + Zeichen – „Edelsteine“ steht im title) */
+#shopPopup .pbody > .mail-pane:not([hidden]){display:grid;gap:10px;align-content:start}
 #shopPopup .sect{min-height:28px} #shopPopup .sect-aside{gap:2px}
-.shop-i,.shop-link{display:inline-grid;place-items:center;min-width:44px;min-height:44px;margin:-8px -10px -8px 0;padding:0;background:none;border:0;cursor:pointer;color:var(--tx-3)}
+.shop-i{display:inline-grid;place-items:center;min-width:44px;min-height:44px;margin:-8px -10px -8px 0;padding:0;background:none;border:0;cursor:pointer}
 .shop-i .icon{width:17px;height:17px;color:var(--gold-300)} .shop-i.on .icon{color:var(--gold-100)}
-.shop-link{margin:-8px 4px -8px 0;padding:0 6px;font:600 var(--fs-11)/1 var(--font-ui);color:var(--gold-200)}
-.shop-info{padding:8px 10px;border-radius:var(--r-sm);background:var(--well);border:1px solid var(--line-1)} .shop-info .mail-intro{margin:0} .shop-info .mail-intro + .mail-intro{margin-top:6px}
-.shop-info .odds{margin-top:6px}
-.kisten .kiste-row{min-height:56px}
-.kiste-row .tr-ic{--rc:var(--gold-200);width:44px;height:44px;background:radial-gradient(90% 70% at 50% 110%,color-mix(in srgb,var(--rc) 35%,transparent),transparent 70%),var(--tile-bg);border-color:color-mix(in srgb,var(--rc) 45%,var(--line-2))}
-.throne-row.kiste-row .tr-ic .icon{width:24px;height:24px;color:var(--rc)}
-.kiste-row .tr-t b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .kiste-row .tr-t small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.throne-row.kiste-row .btn{min-width:92px;min-height:44px} .kiste-row .btn .cost{background:none;padding:0;gap:4px} .kiste-row .btn .cost b{font-size:var(--fs-14,14px)}
-.kiste-row .btn .cost .icon{color:var(--res-gem);filter:drop-shadow(0 0 1px rgba(0,0,0,.6))} .kiste-row .btn.is-armed{min-width:132px}
+.shop-info{padding:8px 10px;border-radius:var(--r-sm);background:var(--well);border:1px solid var(--line-1)} .shop-info .mail-intro{margin:0} .shop-info .mail-intro + .mail-intro,.shop-info .odds + .mail-intro,.shop-info .throne-status + .mail-intro{margin-top:8px}
+.shop-info .mail-intro b{color:var(--gold-100);font-weight:600} .shop-info .odds{margin-top:6px}
+.waren{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px} .waren--3{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px} .waren-teil{display:contents}
+.ware{--c:var(--r-blau);--c1:#173459;--c2:#0c1626;--cr:#3b78bd;position:relative;display:flex;flex-direction:column;min-width:0;padding:8px 10px 0;overflow:hidden;text-align:center;border-radius:12px;
+  background:radial-gradient(70% 55% at 50% 36%,color-mix(in srgb,var(--c) 45%,transparent),transparent 70%),linear-gradient(180deg,var(--c1),var(--c2));
+  border:1.5px solid var(--cr);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),inset 0 0 0 1px rgba(0,0,0,.45),0 6px 16px rgba(0,0,0,.55),0 0 18px -4px color-mix(in srgb,var(--c) 60%,transparent)}
+.ware[data-r="grau"]{--c:var(--r-grau);--c1:#2a2e35;--c2:#14171c;--cr:#5b6069} .ware[data-r="gruen"]{--c:var(--r-gruen);--c1:#1d3a24;--c2:#0f1a13;--cr:#3f8a47}
+.ware[data-r="lila"]{--c:var(--r-lila);--c1:#3a2160;--c2:#150c26;--cr:#8a57d1} .ware[data-r="gold"]{--c:var(--r-gold);--c1:#4a3613;--c2:#1a1308;--cr:#c29449}
+.ware[data-r="navy"]{--c:#e4c886;--c1:#1b2638;--c2:#0d121c;--cr:var(--gold-500,#a27832)}
+.ware-bild{position:relative;display:block;height:80px;flex:none} .ware-bild svg{display:block;width:100%;height:100%}
+.ware-bild--ic{display:grid;place-items:center} .ware-bild--ic .icon{width:52px;height:52px;color:var(--c);filter:drop-shadow(0 0 8px color-mix(in srgb,var(--c) 70%,transparent))}
+.ware-bild--ic i{position:absolute;left:50%;top:50%;transform:translate(-50%,-38%);font:800 15px/1 var(--font-ui);font-style:normal;color:#fff;text-shadow:0 1px 3px #000,0 0 6px #000}
+.ware-txt{display:grid;gap:2px;min-width:0;margin-top:2px}
+.ware-name{display:block;font:600 15px/1.15 var(--font-display);color:var(--tx-1);text-shadow:0 1px 2px #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ware-txt small{display:block;font:500 12px/1.3 var(--font-ui);color:var(--tx-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ware-preis{display:flex;align-items:center;justify-content:center;gap:6px;height:44px;margin:8px -10px 0;padding:0 6px;border:0;border-top:1px solid #f6e7bf;cursor:pointer;
+  font:800 17px/1 var(--font-ui);color:#1d1406;background:linear-gradient(180deg,#f0dfb0 0%,#d4ad66 45%,#a27832 100%);box-shadow:inset 0 -3px 0 rgba(0,0,0,.25)}
+.ware-preis .icon{width:16px;height:16px;color:var(--res-gem);filter:drop-shadow(0 0 1px rgba(0,0,0,.7))}
+.ware-preis:active{transform:translateY(1px);filter:brightness(.92)}
+.ware-preis.thron{border-top-color:#4a6aa0;color:#f0dfb0;background:linear-gradient(180deg,#2c4a7a,#1b2f52)} .ware-preis.thron .icon{color:var(--gold-200)}
+.ware-preis:disabled{cursor:default;border-top-color:#4a4f58;color:#ff8d82;background:linear-gradient(180deg,#3a3f49,#23272e);box-shadow:none} .ware-preis:disabled .icon{filter:grayscale(.6)}
+.ware-preis.is-armed{font-size:13px;color:#fff;background:linear-gradient(180deg,#f2a066,#b8562a)}
+.band{position:absolute;top:12px;right:-31px;z-index:1;width:120px;text-align:center;transform:rotate(35deg);font:700 10px/19px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:#1d1406;
+  background:linear-gradient(180deg,#f0dfb0,#c29449);box-shadow:0 2px 6px rgba(0,0,0,.5)}
+/* die große Karte: Truhe links (130 px), Name/Inhalt rechts, Knopf über die volle Breite; Strahlen + Glanzstreifen */
+.ware--gross{grid-column:1/-1;display:grid;grid-template-columns:150px minmax(0,1fr);grid-template-rows:1fr auto;align-items:center;text-align:left}
+.ware--gross .ware-bild{height:104px;margin:-4px 0 -2px}
+.ware--gross .band{top:0;left:0;right:auto;width:auto;padding:0 12px;transform:none;border-radius:10px 0 10px 0}   /* gerades Band oben links: ganz lesbar */
+#throneShop{display:grid;gap:10px}
+.ware--gross .ware-bild::before{content:"";position:absolute;inset:-30px -10px;background:conic-gradient(from 0deg,transparent 0 8deg,rgba(169,112,242,.22) 8deg 14deg,transparent 14deg 30deg,rgba(169,112,242,.22) 30deg 36deg,transparent 36deg 52deg,rgba(169,112,242,.22) 52deg 58deg,transparent 58deg 74deg,rgba(169,112,242,.22) 74deg 80deg,transparent 80deg 96deg,rgba(169,112,242,.22) 96deg 102deg,transparent 102deg 120deg);
+  -webkit-mask:radial-gradient(circle,#000 25%,transparent 68%);mask:radial-gradient(circle,#000 25%,transparent 68%);animation:ware-strahlen 40s linear infinite;pointer-events:none}
+.ware--gross .ware-bild svg{position:relative}
+.ware--gross .ware-name{font-size:19px} .ware--gross .ware-txt small{font-size:13px}
+.ware--gross .ware-preis{grid-column:1/-1}
+@keyframes ware-strahlen{to{transform:rotate(360deg)}}
+.ware.glanz::after{content:"";position:absolute;top:-40%;bottom:-40%;left:-60%;width:40%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.16),transparent);transform:skewX(-20deg);animation:ware-glanz 5s ease-in-out infinite;pointer-events:none}
+@keyframes ware-glanz{0%,70%{left:-60%}100%{left:130%}}
+@media (prefers-reduced-motion:reduce){.ware.glanz::after,.ware--gross .ware-bild::before{animation:none}}
+.waren--3 .ware{padding:6px 6px 0} .waren--3 .ware-bild{height:64px} .waren--3 .ware-preis{margin:8px -6px 0;font-size:15px} .waren--3 .ware-name{font-size:14px} .waren--3 .ware-txt small{font-size:11px}
+.ware-mehr{display:grid;gap:8px;align-content:stretch}
+.ware-link{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 8px;border-radius:12px;border:1px dashed var(--line-3);background:rgba(0,0,0,.22);cursor:pointer;
+  font:600 var(--fs-13) var(--font-ui);color:var(--gold-200)} .ware-link .icon{width:16px;height:16px;color:var(--gold-300)} .ware-link.on{color:var(--gold-100);border-style:solid}
+.thron-zeile{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;padding:0 12px;border-radius:10px;border:1px solid var(--line-2);background:rgba(0,0,0,.25);cursor:pointer;
+  font:500 var(--fs-13) var(--font-ui);color:var(--tx-2);text-align:left}
+.thron-zeile > .icon{width:16px;height:16px;flex:none;color:#f2c75c} .thron-zeile > span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .thron-zeile b{color:var(--tx-1);font-variant-numeric:tabular-nums}
+.thron-zeile .tz-i{margin-left:4px;color:var(--gold-300)} .thron-zeile.on{border-color:var(--line-3)}
 .odds{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
 .shield-opts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px} .shield-opts .btn{min-height:52px;flex-direction:column;justify-content:center;gap:4px;padding:6px 4px}
 .odds .chip{height:20px;padding:0 6px;font-size:var(--fs-10)}
@@ -194,6 +237,8 @@
   .panel--island.is-left::after{left:auto;right:-7px;border-left:0;border-bottom:0;border-right:1px solid var(--line-3);border-top:1px solid var(--line-3)}
   /* profile / battle log / goals / shop = right drawer under the nav */
   .panel--sheet{--sheet-max:calc(100dvh - 86px);top:72px;bottom:auto;right:14px;left:auto;width:404px;border-radius:var(--r-xs)}
+  #shopPopup.panel--sheet{--sheet-max:calc(100dvh - 72px - 104px);width:min(720px,calc(100vw - 28px))}   /* Shop: breit (4 Karten nebeneinander), endet über der Leiste */
+  #shopPopup .waren:not(.waren--3){grid-template-columns:repeat(4,minmax(0,1fr))} #shopPopup .ware--gross{grid-column:span 2}
   /* item detail = card left of the drawer */
   .panel--item{top:72px;right:432px;left:auto;bottom:auto;width:320px;max-height:calc(100dvh - 86px);border-radius:var(--r-xs)}
 }
