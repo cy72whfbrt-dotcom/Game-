@@ -115,12 +115,13 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(F.befehle && F.befehle.length === 2 && F.befehle[1][1].h1 === 'brunhild' && F.befehle[1][1].h2 === 'sigrun', 'Befehl „vheld“ an den Weltrechner', F.befehle);
   ok(/Verteidigungs-Helden/.test(F.text || '') && /Brunhild/.test(F.text || ''), 'Mauer-Fenster zeigt den Stand', (F.text || '').slice(0, 200));
   ok(F.reiter && F.reiter.length === 2 && /Helden/.test(F.reiter[1]) && F.chips === 2 && F.zuVorher && F.zuNach, 'Mauer-Fenster: Reiter „Helden“, zwei Chips, antippen klappt die Auswahl auf (nach der Wahl zu)', F);
-  await p.waitForTimeout(1500);   // (das Stadt-Fenster fährt erst herein)
-  const L = await p.evaluate(() => { vhAuf = 1; renderCitySheet(); const sh = document.getElementById('citySheet'), rs = sh.getBoundingClientRect(), kb = [...document.querySelectorAll('[data-vh-box] [data-vh1]')];
-    return { n: kb.length, passt: kb.every(x => { const q = x.getBoundingClientRect(); return q.width > 40 && q.left >= rs.left + 14 && q.right <= rs.right - 14; }),   // nichts rechts abgeschnitten
+  await p.waitForTimeout(1500);   // (openCity zeigt die Stadt verzögert und schließt dabei das Fenster: danach neu öffnen)
+  await p.evaluate(() => { cityOpenId = 'wall'; cityPage = 'nutz'; vhAuf = 1; renderCitySheet(); }); await p.waitForTimeout(500);
+  const L = await p.evaluate(() => { const sh = document.getElementById('citySheet'), rs = sh.getBoundingClientRect(), kb = [...document.querySelectorAll('[data-vh-box] [data-vh1]')];
+    return { n: kb.length, offen: !sh.hidden && rs.width > 0, passt: kb.every(x => { const q = x.getBoundingClientRect(); return q.width > 40 && q.left >= rs.left + 14 && q.right <= rs.right - 14; }),   // nichts rechts abgeschnitten
       rahmen: getComputedStyle(sh, '::before').content === 'none' && /url/.test(getComputedStyle(sh).borderImageSource),   // der Rahmen ist der Rand: scrollt nicht mit
       kopf: document.querySelector('.city-sheet-head').getBoundingClientRect().top >= rs.top && sh.scrollTop === 0 && sh.scrollHeight <= sh.clientHeight + 1 }; });   // Reiter „Helden“ passt ohne Scrollen
-  ok(F.box && F.auf > 1 && L.n > 1 && L.passt && L.rahmen && L.kopf, 'Mauer-Fenster: Auswahl passt in die Breite, Rahmen fest, Kopf sichtbar, kein Scrollen', L);
+  ok(F.box && F.auf > 1 && L.n > 1 && L.offen && L.passt && L.rahmen && L.kopf, 'Mauer-Fenster: Auswahl passt in die Breite, Rahmen fest, Kopf sichtbar, kein Scrollen', L);
   await p.evaluate(() => { vhAuf = 0; renderCitySheet(); });
   ok(/Angriff der Verteidiger/.test(F.text || '') && /Eigene Verluste/.test(F.text || ''), 'Werte verständlich: „Angriff der Verteidiger“, „Eigene Verluste“', (F.text || '').slice(0, 300));
   const zu = () => { for (const id of ['welcomeModal', 'dailyModal', 'levelUpModal', 'rewardModal', 'titleModal']) { const m = document.getElementById(id); if (m) m.hidden = true; }

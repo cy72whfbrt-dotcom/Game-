@@ -659,7 +659,7 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Nachbesserung (Designer): Mauer-Fenster wie Krankenhaus/Schmiede mit Reitern **Aufwerten | Helden**; Haupt- und Zweitheld als
   zwei Chips (wie im Angriffs-Fenster), antippen klappt die Auswahl darunter auf (zwei je Zeile, nichts abgeschnitten); Werte
   „Angriff der Verteidiger“ / „Eigene Verluste“. Gebäude-Fenster allgemein: der goldene Rahmen ist der Rand von `#citySheet`
-  (scrollt nicht mehr mit – die Ecken saßen beim Scrollen mitten im Inhalt). `08b` (cityNutz), `08d` (vhHtml, vhChip), `spielseite/03`.
+  (scrollt nicht mehr mit – die Ecken saßen beim Scrollen mitten im Inhalt); Desktop: das Fenster steht über der schwebenden Leiste. `08b` (cityNutz), `08d` (vhHtml, vhChip), `spielseite/03`.
 - **6.10. – Design P1: Grundwerte, HUD, Leiste, Streifen (11b F, Branch `design-p1`, NICHT hochgeladen):** **Grundwerte**
   (`spielseite/01`, andere Design-Pakete bauen darauf): Abstände `--ab-1…4` (4/8/12/16), Schriftstufen `--fs-11/13/15/17/22`
   (`--fs-9`/`--fs-10` = 11 px, nichts Kleineres mehr), Knopf-Arten `--k-haupt` 48 · `--k-zweit` 44 · `--k-gefahr` 48 · `--k-chip` 36

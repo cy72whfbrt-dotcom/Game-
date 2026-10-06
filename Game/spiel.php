@@ -871,6 +871,7 @@ body.in-stadt .hud,body.in-stadt .nav{z-index:52} body.in-stadt .panel{z-index:5
 body.in-stadt .city-head{padding-top:calc(var(--safe-t) + var(--hud-top-space) + 6px);background:linear-gradient(180deg,rgba(6,8,12,.75),rgba(6,8,12,.3) 70%,transparent)}
 body.in-stadt .city-title,body.in-stadt #cityCloseBtn{display:none}
 body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bottom:14px;max-height:calc(100% - var(--dock-h) - var(--safe-bd) - var(--safe-t) - var(--hud-top-space) - 60px)}
+@media (min-width:900px) and (min-height:501px){ body.in-stadt .city-sheet{bottom:100px;max-height:calc(100% - 100px - var(--safe-t) - var(--hud-top-space) - 60px)} }   /* Desktop: die Leiste schwebt (bis ~92 px hoch) – das Fenster steht darüber */
 .city-bdesc{display:none} .city-sheet.zeig-info .city-bdesc{display:block}
 .city-info-btn.on{color:var(--gold-100);border-color:var(--line-3)}
 .hh-pairs{padding:8px 0 4px;border-top:1px solid var(--line-2)} .hh-pairs h3{margin:6px 0;font:700 var(--fs-11)/1 var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--tx-3)}
