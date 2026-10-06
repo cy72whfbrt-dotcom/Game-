@@ -754,6 +754,16 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Events: Randnotizen („verpasster Tag = Tag 1“) klein wie „Neu um …“. Stadt am Handy (Mauer/Krankenhaus/Steinbruch am Rand):
   bleibt – weiter herauszoomen geht nicht, weil das gemalte Land am hohen Handy-Bild sonst oben/unten endet (08f
   `cityClampCam`, `CITY_BOUNDS`); dafür müsste mehr Land gemalt werden. Test `design_hud_test` (Abschnitt 6).
+
+- **6.10. – Endprüfung: Zurücklesen über den echten Editor + verst_test (nur Werkzeug/Tests, kein Spiel-Code):** Nur lesend
+  gegen den echten Editor des Hosters geprüft: er zeigt jeden Rückstrich als Kürzel (`<bsl>`, aus `\n` im Text wird `<n>`,
+  Legende unter dem Textfeld: `<nbsp> <bsl> <r> <n> <rn>`). Darum hätte `hochladen.sh` beim nächsten Hochladen admin.php,
+  server.php … für „anders“ gehalten, 4× hochgeladen und mit „WARTUNG NOCH AN“ abgebrochen. Neu `werkzeuge/editor_text.php`
+  holt den Inhalt aus dem Textfeld und verwandelt die Kürzel zurück – benutzt von `ed_lesen` (hochladen.sh) und `lesen`
+  (werkzeuge/nach_hochladen.sh) (danach: alle PHP-Dateien live = Stand des letzten Hochladens). Neu **`./hochladen.sh pruefen`**: nur lesend,
+  vergleicht jede PHP-Datei auf dem Server mit `Game/` hier (Ende 0 = gleich). `welt_hochladen_test`: nachgebauter Editor
+  zeigt die Kürzel wie der echte, prüft server.php beim ersten Mal gleich und den Modus `pruefen`. `tests/server/verst_test.js`
+  wartet nicht mehr fest 12 s auf den Weltrechner, sondern sieht bis 60 s nach (war unter Last rot).
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 

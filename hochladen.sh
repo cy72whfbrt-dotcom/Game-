@@ -1,7 +1,8 @@
 #!/bin/bash
 # hochladen.sh – lädt den Ordner Game/ auf office.hobbitonhill.de (…/klassenarbeit_GR4/Game/).
 # Während des Hochladens ist WARTUNG an (Datei wartung.txt): niemand kommt ins Spiel (auch kein Admin).
-# NUR nach Alexanders Ja benutzen (Regel in LIESMICH.md).
+# NUR nach Alexanders Ja benutzen (Regel in LIESMICH.md). Nur lesend, jederzeit: ./hochladen.sh pruefen (PHP-Dateien auf dem
+# Server = Game/ hier?).
 # Zugangsdaten nur aus den Umgebungsvariablen: OFFICE_USER, OFFICE_PASS, DB_USER, DB_PASS (DB_HOST, DB_NAME optional).
 # config.php (Datenbank-Zugang) wird dabei aus den Variablen erzeugt – sie liegt nie im Git.
 # Robust (6.10.; vorher brach spiel.php 2× mit „curl: (35) Connection reset by peer“ ab): jede Anfrage hat Zeitgrenzen und wird
@@ -46,11 +47,9 @@ ed_tun() { local code; code=$(ed "$@" -o /dev/null -w '%{http_code}') || return 
 # ls_ordner <pfad>: Namen in einem Ordner auf dem Server (Ergebnis in $T/liste; Fehler, wenn nicht lesbar)
 ls_ordner() { c -b "$T/jar" "$E?h=48&w=138&sid=$SID&path=$B$1" -o "$T/ls.html" || return 1
   grep -o 'path=[^"&]*' "$T/ls.html" | sed "s#.*klassenarbeit_GR4$1/##" | grep -v '^\.\.$\|^path=' | sort -u > "$T/liste"; }
-# ed_lesen <datei unter Game/> <ziel>: Inhalt aus dem Textfeld des Editors (wie werkzeuge/nach_hochladen.sh)
-ed_lesen() { ed "/Game/$1" -o "$T/roh.html" || return 1
-  php -r '$s = file_get_contents($argv[1]); $a = stripos($s, "<textarea"); $e = strripos($s, "</textarea>"); if ($a === false || $e === false) exit(1);
-    $a = strpos($s, ">", $a); if ($a === false || $a > $e) exit(1);
-    file_put_contents($argv[2], html_entity_decode(substr($s, $a + 1, $e - $a - 1), ENT_QUOTES | ENT_HTML5, "UTF-8"));' "$T/roh.html" "$2"; }
+# ed_lesen <datei unter Game/> <ziel>: Inhalt aus dem Textfeld des Editors, Kürzel <bsl>/<n> … zurückverwandelt
+# (werkzeuge/editor_text.php, auch für werkzeuge/nach_hochladen.sh)
+ed_lesen() { ed "/Game/$1" -o "$T/roh.html" || return 1; php werkzeuge/editor_text.php "$T/roh.html" "$2"; }
 # Vergleich mit dem Editor: Zeilenenden und Leerzeilen am Anfang/Ende zählen nicht (so zeigt ihn das Textfeld) – alles andere schon
 text_gleich() { php -r '$n = function ($f) { return trim(str_replace("\r", "", file_get_contents($f)), "\n"); }; exit($n($argv[1]) === $n($argv[2]) ? 0 : 1);' "$1" "$2"; }
 url_holen() { c -H 'Cache-Control: no-cache' "$U/$1?v=$RANDOM$RANDOM" -o "$T/url"; }
@@ -89,6 +88,19 @@ anmelden() { c -c "$T/jar" -b "$T/jar" -L "$O/index.php?" --data-binary @"$T/anm
 nochmal anmelden; rm -f "$T/anmelden"
 SID=$(grep -o 'sid=[a-f0-9]*' "$T/login.html" 2>/dev/null | head -1 | cut -d= -f2)
 [ -n "$SID" ] || abbruch "Office-Login fehlgeschlagen"
+
+# ./hochladen.sh pruefen: NUR LESEN – jede PHP-Datei über den Editor zurücklesen und mit Game/ hier vergleichen (wie nach dem
+# Hochladen), nichts hochladen, keine Wartung. Ende 0 = alles gleich.
+if [ "$1" = pruefen ]; then
+  ANDERS=0
+  for f in $(cd Game && find . -name '*.php' | sed 's#^\./##' | sort); do
+    [ "$f" = config.php ] && continue
+    nur_server "$f" && continue
+    case "$f" in spiel/*|bots/*|buendnis/*|baukunst/*|spielseite/*|server/*) continue;; esac
+    if nochmal ed_lesen "$f" "$T/zurueck" && text_gleich "Game/$f" "$T/zurueck"; then echo "gleich: $f"; else echo "ANDERS: $f"; ANDERS=1; fi
+  done
+  exit $ANDERS
+fi
 
 # 2) config.php aus den Umgebungsvariablen
 if [ -n "$DB_PASS" ]; then

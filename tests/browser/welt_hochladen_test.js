@@ -9,6 +9,8 @@ const REPO = path.join(__dirname, '../..'), ARBEIT = process.argv[3] || fs.mkdte
 const B = '/var/www/vhosts/hosting126306.a2feb.netcup.net/httpdocs/office.hobbitonhill.de/html/725/klassenarbeit_GR4';
 const SID = '0123abcd';
 const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+// wie der echte Editor (gemessen 6.10.): Rückstriche als Kürzel im Textfeld, aus \\n wird <bsl><n>; Legende unter dem Textfeld
+const kuerzel = s => s.replace(/\\r\\n/g, '<rn>').replace(/\\r/g, '<r>').replace(/\\n/g, '<n>').replace(/\\/g, '<bsl>');
 
 // Der nachgebaute Editor: Anmelden (index.php), editor.php (Ordnerliste, Textfeld, Hochladen, Ordner anlegen, Löschen),
 // öffentliche Adresse …/Game/<datei>. Fehler: jede 3. Verbindung gekappt, Verbindung Nr. haengen bleibt ohne Antwort,
@@ -58,7 +60,7 @@ function editor(wurzel, { haengen = 0, kaputt = '', nie = '' } = {}) {
         return;
       }
       if (!fs.existsSync(ort)) { s.end('<html>Datei nicht gefunden</html>'); return; }
-      s.end('<html><form><textarea name="text" rows="48">\n' + esc(fs.readFileSync(ort, 'utf8')) + '</textarea></form></html>');
+      s.end('<html><form><textarea name="text" rows="48">\n' + esc(kuerzel(fs.readFileSync(ort, 'utf8'))) + '</textarea>' + esc('<nbsp> <bsl> <r> <n> <rn>') + '</form></html>');
     });
   });
   srv.on('connection', so => {
@@ -68,12 +70,12 @@ function editor(wurzel, { haengen = 0, kaputt = '', nie = '' } = {}) {
   });
   return { srv, st, zu: () => { for (const so of offen) so.destroy(); srv.close(); } };
 }
-function lauf(port, ordner) {
+function lauf(port, ordner, arg) {
   return new Promise(fertig => {
     const env = Object.assign({}, process.env, { OW_OFFICE: 'http://127.0.0.1:' + port, OW_PAUSEN: '0.1 0.1 0.1', OW_WARTUNG_PAUSE: '0', OW_MAXZEIT: '4', OW_VERBINDEN: '4',
       OFFICE_USER: 'probe', OFFICE_PASS: 'probe', DB_USER: 'probe', DB_PASS: 'nur-ein-test', NO_PROXY: '127.0.0.1,localhost', no_proxy: '127.0.0.1,localhost' });
     for (const k of ['http_proxy', 'HTTP_PROXY', 'https_proxy', 'HTTPS_PROXY', 'ALL_PROXY', 'all_proxy', 'ALLES']) delete env[k];
-    const p = spawn('bash', [path.join(ordner, 'hochladen.sh')], { env }); let aus = '';
+    const p = spawn('bash', [path.join(ordner, 'hochladen.sh')].concat(arg ? [arg] : []), { env }); let aus = '';
     p.stdout.on('data', d => aus += d); p.stderr.on('data', d => aus += d);
     const t = setTimeout(() => p.kill('SIGKILL'), 600000);
     p.on('close', code => { clearTimeout(t); fertig({ code, aus }); });
@@ -88,6 +90,11 @@ function dateien(d, r = '') { return fs.readdirSync(path.join(d, r)).flatMap(x =
   const kopie = path.join(ARBEIT, 'kopie'); fs.rmSync(kopie, { recursive: true, force: true }); fs.mkdirSync(kopie, { recursive: true });
   execFileSync('cp', ['-r', path.join(REPO, 'Game'), path.join(REPO, 'werkzeuge'), path.join(REPO, 'hochladen.sh'), kopie]);
   const soll = dateien(path.join(kopie, 'Game')).filter(f => !TEILE.test(f) && !NUR_SERVER.test(f) && f !== 'config.php');
+
+  // 0) werkzeuge/editor_text.php (hochladen.sh + nach_hochladen.sh): Textfeld von stdin, Kürzel zurück wie der echte Editor
+  const roh = '{"a":"x\\\\y","b":"z\\n"} \\\\n \\r\\n &amp; <nbsp>', seite = '<html><textarea name="text">' + esc(kuerzel(roh)) + '</textarea>' + esc('<nbsp> <bsl> <r> <n> <rn>') + '</html>';
+  ok(execFileSync('php', [path.join(REPO, 'werkzeuge/editor_text.php')], { input: seite }).toString() === roh, 'editor_text.php: Kürzel <bsl>/<n>/<rn> zurück, Rest unverändert');
+  ok(/werkzeuge\/editor_text\.php/.test(fs.readFileSync(path.join(REPO, 'werkzeuge/nach_hochladen.sh'), 'utf8')), 'nach_hochladen.sh liest das Textfeld über editor_text.php');
 
   // 1) jede 3. Verbindung gekappt, eine hängt, bots.js kommt einmal halb an → am Ende alles gleich, Wartung aus
   const w1 = path.join(ARBEIT, 'server1'); fs.rmSync(w1, { recursive: true, force: true });
@@ -104,9 +111,19 @@ function dateien(d, r = '') { return fs.readdirSync(path.join(d, r)).flatMap(x =
   ok(e1.st.gehaengt === 1 && /curl: \(28\)/.test(r1.aus), 'hängende Anfrage: Zeitgrenze, dann neuer Versuch', { gehaengt: e1.st.gehaengt });
   ok(e1.st.kaputt === 1 && Object.keys(e1.st.hoch).filter(k => /(^|\/)bots\.js$/.test(k)).reduce((z, k) => z + e1.st.hoch[k], 0) === 1 + Object.keys(e1.st.hoch).filter(k => /(^|\/)bots\.js$/.test(k)).length && /bots\.js ist auf dem Server anders als hier – nochmal hochladen/.test(r1.aus), 'halb angekommenes bots.js beim Zurücklesen erkannt und nochmal hochgeladen', { hoch: e1.st.hoch['bots.js'] });
   ok(e1.st.hoch['Game/spiel.php'] === 1 && /spiel\.php hochgeladen \+ geprüft/.test(r1.aus), 'PHP-Datei über den Editor zurückgelesen und geprüft');
+  ok(e1.st.hoch['Game/server.php'] === 1 && /server\.php hochgeladen \+ geprüft/.test(r1.aus), 'PHP-Datei mit Rückstrichen (server.php, Editor zeigt <bsl>/<n>) beim ersten Mal als gleich erkannt', { hoch: e1.st.hoch['Game/server.php'] });
   ok(!e1.st.hoch['Game/sw.js'], 'unveränderte Datei nicht nochmal hochgeladen');
   ok(!fs.existsSync(path.join(w1, 'Game/altes.txt')) && !fs.existsSync(path.join(w1, 'Game/api')), 'alte Dateien/Ordner auf dem Server entfernt');
   console.log('  (Lauf 1: ' + Math.round((Date.now() - t0) / 1000) + ' s, ' + e1.st.gekappt + ' Verbindungen gekappt)');
+
+  // 1b) ./hochladen.sh pruefen: nur lesen – gleich → Ende 0; eine PHP-Datei anders → „ANDERS“, Ende 1; nie hochgeladen, keine Wartung
+  const e1b = editor(w1); await new Promise(f => e1b.srv.listen(0, '127.0.0.1', f));
+  const p1 = await lauf(e1b.srv.address().port, kopie, 'pruefen');
+  fs.appendFileSync(path.join(w1, 'Game/admin.php'), '\n// anders\n');
+  const p2 = await lauf(e1b.srv.address().port, kopie, 'pruefen'); e1b.zu();
+  ok(p1.code === 0 && /gleich: server\.php/.test(p1.aus) && !/ANDERS/.test(p1.aus), 'pruefen: alles gleich → Ende 0', p1.aus.slice(-400));
+  ok(p2.code === 1 && /ANDERS: admin\.php/.test(p2.aus) && /gleich: spiel\.php/.test(p2.aus), 'pruefen: geänderte Datei gemeldet → Ende 1', p2.aus.slice(-400));
+  ok(!Object.keys(e1b.st.hoch).length && !fs.existsSync(path.join(w1, 'Game/wartung.txt')), 'pruefen lädt nichts hoch und schaltet keine Wartung an', e1b.st.hoch);
 
   // 2) spiel.php kommt nie an → nach 3 Wiederholungen große Meldung, Wartung bleibt an
   const w2 = path.join(ARBEIT, 'server2'); fs.rmSync(w2, { recursive: true, force: true }); fs.mkdirSync(path.join(w2, 'Game'), { recursive: true });
