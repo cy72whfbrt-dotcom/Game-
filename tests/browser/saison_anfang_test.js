@@ -35,7 +35,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     saisonWelt(now); const lager = { ich: barbRec('player').b, x: barbRec(X).b, heute: barbRec('player').n, vor: lagerVor, nach: barbState.camps.length, gespeichert: JSON.parse(localStorage.getItem('openWaterBarbWho')).player.b }; const schutzY = (loadBotState()[Y].neuBis - now) / 36e5, schutzIch = (+localStorage.getItem('openWaterSaisonSchutz') - now) / 36e5; botById[Y].mensch = false;
     return { bald, halt: /Neustart\s*vom Admin/.test(halt.replace(/<[^>]+>/g, ' ')), haltDatum: /\d{1,2}:\d{2} Uhr/.test(halt), normal: !/vom Admin/.test(normal) && / Uhr</.test(normal),
       lager, pass, passNr: passNo(Date.now()), anfang, spaeter, erste, trost: trost.map(x => [x.gems, x.sh, x.crate]), ib: ib.length - ib0, gx: gx1 - gx, gefallen, schutzY, schutzIch,
-      nachricht: /neuBis: \(loadBotState\(\)\[id\] \|\| \{\}\)\.neuBis \|\| now \+ NEULING_MS/.test(saisonNeu.toString()) };
+      nachricht: /neuBis:\s*\(loadBotState\(\)\[\w+\]\s*\|\|\s*\{\}\)\.neuBis\s*\|\|\s*\w+\s*\+\s*NEULING_MS/.test(saisonNeu.toString()) };
   });
   console.log(JSON.stringify(r));
   ok(r.bald[0] === 'In 1 Tag beg' && r.bald[1] === 'In 2 Tagen b' && r.bald[2] === 'In 3 Tagen b', 'Ankündigung nach echter Restzeit (1 Tag, 2 Tage, 3 Tage)', r.bald);

@@ -47,7 +47,7 @@ function editor(wurzel, { haengen = 0, kaputt = '', nie = '' } = {}) {
           if (nie && d === nie) { s.socket.destroy(); return; }
           let inhalt = felder.file.inhalt;
           if (kaputt && d === kaputt && !st.kaputt) { st.kaputt++; inhalt = inhalt.slice(0, inhalt.length >> 1); }
-          fs.mkdirSync(ort, { recursive: true }); fs.writeFileSync(path.join(ort, d), inhalt); st.hoch[d] = (st.hoch[d] || 0) + 1;
+          fs.mkdirSync(ort, { recursive: true }); fs.writeFileSync(path.join(ort, d), inhalt); { const rel = path.relative(wurzel, path.join(ort, d)); st.hoch[rel] = (st.hoch[rel] || 0) + 1; }
         } else if (felder.button === 'new folder') fs.mkdirSync(path.join(ort, felder.file), { recursive: true });
         else if (felder.button === 'delete') fs.rmSync(path.join(ort, felder.file), { recursive: true, force: true });
         s.end('<html>erledigt</html>'); return;
@@ -102,9 +102,9 @@ function dateien(d, r = '') { return fs.readdirSync(path.join(d, r)).flatMap(x =
   ok(/'db_pass' => 'nur-ein-test'/.test(fs.existsSync(path.join(w1, 'Game/config.php')) ? fs.readFileSync(path.join(w1, 'Game/config.php'), 'utf8') : ''), 'config.php aus den Umgebungsvariablen hochgeladen + geprüft');
   ok(e1.st.gekappt >= 10 && /neuer Versuch/.test(r1.aus), 'gekappte Verbindungen wurden wiederholt', { gekappt: e1.st.gekappt });
   ok(e1.st.gehaengt === 1 && /curl: \(28\)/.test(r1.aus), 'hängende Anfrage: Zeitgrenze, dann neuer Versuch', { gehaengt: e1.st.gehaengt });
-  ok(e1.st.kaputt === 1 && e1.st.hoch['bots.js'] === 2 && /bots\.js ist auf dem Server anders als hier – nochmal hochladen/.test(r1.aus), 'halb angekommenes bots.js beim Zurücklesen erkannt und nochmal hochgeladen', { hoch: e1.st.hoch['bots.js'] });
-  ok(e1.st.hoch['spiel.php'] === 1 && /spiel\.php hochgeladen \+ geprüft/.test(r1.aus), 'PHP-Datei über den Editor zurückgelesen und geprüft');
-  ok(!e1.st.hoch['sw.js'], 'unveränderte Datei nicht nochmal hochgeladen');
+  ok(e1.st.kaputt === 1 && Object.keys(e1.st.hoch).filter(k => /(^|\/)bots\.js$/.test(k)).reduce((z, k) => z + e1.st.hoch[k], 0) === 1 + Object.keys(e1.st.hoch).filter(k => /(^|\/)bots\.js$/.test(k)).length && /bots\.js ist auf dem Server anders als hier – nochmal hochladen/.test(r1.aus), 'halb angekommenes bots.js beim Zurücklesen erkannt und nochmal hochgeladen', { hoch: e1.st.hoch['bots.js'] });
+  ok(e1.st.hoch['Game/spiel.php'] === 1 && /spiel\.php hochgeladen \+ geprüft/.test(r1.aus), 'PHP-Datei über den Editor zurückgelesen und geprüft');
+  ok(!e1.st.hoch['Game/sw.js'], 'unveränderte Datei nicht nochmal hochgeladen');
   ok(!fs.existsSync(path.join(w1, 'Game/altes.txt')) && !fs.existsSync(path.join(w1, 'Game/api')), 'alte Dateien/Ordner auf dem Server entfernt');
   console.log('  (Lauf 1: ' + Math.round((Date.now() - t0) / 1000) + ' s, ' + e1.st.gekappt + ' Verbindungen gekappt)');
 

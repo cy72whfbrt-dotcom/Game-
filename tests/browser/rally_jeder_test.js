@@ -89,9 +89,10 @@ const nah = (x, y, d) => Math.abs(x - y) <= (d === undefined ? 1 : d);
   // 4) Wochen-Punkte nach Anteil
   const kA = e.A.k, kE = e.E.k, sk = kA + kE, aK = Math.min(e.en, e.my), weg = 4e6 - 1e6, Tot = e.en + e.def, kH = (e.verst[0] || {}).k || 0;
   const pk = w => e.pkt.filter(x => x.w === w).reduce((s, x) => s + x.n, 0);
-  ok(nah(pk(e.A.w), aK * kA / sk / 1000, 1e-6) && nah(pk(e.E.w), aK * kE / sk / 1000, 1e-6), '4) Angreifer: Punkte nach Stärke-Anteil', { A: pk(e.A.w), E: pk(e.E.w), sollA: aK * kA / sk / 1000, sollE: aK * kE / sk / 1000 });
-  ok(kH > 0 && (e.verst[0] || {}).w === e.ids.H && nah(pk(e.ids.H), weg * kH / Tot / 1000, 1e-6) && nah(pk(e.ids.Z), weg * (Tot - kH) / Tot / 1000, 1e-6), '4) Verteidiger: Zora + Hugo (Verstärkung) nach Anteil',
-    { H: pk(e.ids.H), Z: pk(e.ids.Z), sollH: weg * kH / Tot / 1000, sollZ: weg * (Tot - kH) / Tot / 1000 });
+  const KILL = 1000 / 1800;   // WO_KILL_PER = 1000 × WIRTSCHAFT_KOSTEN (1/1800)
+  ok(nah(pk(e.A.w), aK * kA / sk / KILL, 1e-6) && nah(pk(e.E.w), aK * kE / sk / KILL, 1e-6), '4) Angreifer: Punkte nach Stärke-Anteil', { A: pk(e.A.w), E: pk(e.E.w), sollA: aK * kA / sk / KILL, sollE: aK * kE / sk / KILL });
+  ok(kH > 0 && (e.verst[0] || {}).w === e.ids.H && nah(pk(e.ids.H), weg * kH / Tot / KILL, 1e-6) && nah(pk(e.ids.Z), weg * (Tot - kH) / Tot / KILL, 1e-6), '4) Verteidiger: Zora + Hugo (Verstärkung) nach Anteil',
+    { H: pk(e.ids.H), Z: pk(e.ids.Z), sollH: weg * kH / Tot / KILL, sollZ: weg * (Tot - kH) / Tot / KILL });
   // 5) Verteidigungs-Gold: Hugo seinen Anteil mit SEINEM Satz (3), Zora nur ihren (Satz 1)
   ok(e.verst[0] && e.verst[0].gold === Math.round(weg * kH / Tot * 3) && e.defGoldZ === Math.round(weg * (Tot - kH) / Tot * 1), '5) Verteidigungs-Gold: Hugo Anteil × 3, Zora nur ihr Anteil', { hugo: e.verst[0] && e.verst[0].gold, sollH: Math.round(weg * kH / Tot * 3), zora: e.defGoldZ, sollZ: Math.round(weg * (Tot - kH) / Tot) });
   // 11) Erfahrung nach Anteil an alle Angreifer

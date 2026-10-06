@@ -83,7 +83,7 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
   ok(n.preis === 3000 && (n.titel || []).includes('s1p1') && n.traegt === 'Champion Saison 1', 'Platz 1: 3.000 Gems im Abholfach + Titel „Champion Saison 1“ (angelegt)', { preis: n.preis, titel: n.titel, traegt: n.traegt });
   ok(!n.saison.halt, 'Admin-Knopf: die angehaltene Saison beginnt neu (nicht mehr angehalten)', n.saison);
   ok(n.saison.nr === 2 && n.saison.top === 10 && n.saison.erster === 'player' && n.saison.ende > 55 * 864e5, 'Saison 2 läuft, nächste in 8 Wochen, Top 10 gemerkt', n.saison);
-  ok(/'saison\|' \+ nr \+ '\|' \+ now/.test(await p.evaluate(() => saisonNeu.toString())), 'Nachricht „saison“: Nummer je Reset eindeutig (mit Zeitpunkt)');
+  ok(/['"]saison\|['"]\s*\+\s*\w+\s*\+\s*['"]\|['"]\s*\+\s*\w+/.test(await p.evaluate(() => saisonNeu.toString())), 'Nachricht „saison“: Nummer je Reset eindeutig (mit Zeitpunkt)');
   const B = n.bot;
   ok(B.lvl === 1 && B.skills === 0 && B.coins < 1e5 && B.basen === 1, 'Mitspieler: Stufe 1, keine Fähigkeiten, Start-Gold, nur die Hauptstadt', B);
   ok(B.truppen >= 100000 && B.truppen < 2e5, 'Mitspieler: Start-Truppen wie ein neuer Spieler', B.truppen);
