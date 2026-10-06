@@ -365,11 +365,14 @@ function bannerModel(island) {
   const boss = bossAt(island.id);
   if (boss) return { kind: 'bot', glyph: 'attack', name: boss.name, troops: fmtCompact(boss.troops), def: null, level, temple: false, p: 4.8 };
   const tag = owner && typeof bundTagVon === 'function' ? bundTagVon(owner) : '';   // Bündnis-Kürzel: eigenes Chip vor dem Namen
-  if (owner === 'player') return { kind: 'player', glyph: isTemple ? 'temple' : island.type === 'gate' ? 'lock' : island.id === playerIslandId ? 'castle' : 'crest:player:' + crestKey(),
-                                   name: island.id === playerIslandId ? 'Hauptstadt' : profileName.value || 'Du', tag: island.id === playerIslandId ? '' : tag,
-                                   troops: fmtCompact(islandTroops[island.id] || 0), def: null, level, temple: isTemple, p: 4 };
-  if (owner) return { kind: bundFreund('player', owner) ? 'ally' : 'bot', glyph: isTemple ? 'temple' : botCapitalOf(owner) === island.id ? 'castle' : 'crest:' + owner, name: botById[owner].name, tag,
-                      troops: scouted ? fmtCompact(islandTroops[island.id] || 0) : '?', def: null, level, temple: isTemple, p: 3 };
+  if (owner === 'player') {                                                       // eigene Basen: Name nur an der Hauptstadt (Farbe + Wappen reichen), dafür ohne Vorrang
+    const cap = island.id === playerIslandId;
+    return { kind: 'player', glyph: isTemple ? 'temple' : island.type === 'gate' ? 'lock' : cap ? 'castle' : 'crest:player:' + crestKey(),
+             name: cap ? 'Hauptstadt' : '', tag: '', cap, troops: fmtCompact(islandTroops[island.id] || 0), def: null, level, temple: isTemple, p: cap || isTemple ? 4 : 3.5 };
+  }
+  if (owner) { const cap = botCapitalOf(owner) === island.id;
+    return { kind: bundFreund('player', owner) ? 'ally' : 'bot', glyph: isTemple ? 'temple' : cap ? 'castle' : 'crest:' + owner, name: botById[owner].name, tag, cap,
+             troops: scouted ? fmtCompact(islandTroops[island.id] || 0) : '?', def: null, level, temple: isTemple, p: cap || isTemple ? 3.2 : 3 }; }
   if (island.type === 'gate') return { kind: 'neutral', glyph: 'lock', name: island.gateKind === 'throne' ? 'Thron-Tor' : island.gateKind === 'guardian' ? 'Wächter-Tor' : 'Grenztor',
            troops: scouted ? fmtCompact(island.neutralTroops) : '?', def: scouted ? fmtCompact(island.neutralDefense) : null, level, temple: false, p: 2.5 };
   return { kind: 'neutral', glyph: isTemple ? 'temple' : 'question', name: isTemple ? tName : 'Neutral',
@@ -377,10 +380,12 @@ function bannerModel(island) {
            level, temple: isTemple, mega: island.type === 'megaTemple', p: isTemple ? 2 : 0, filler: !isTemple };
 }
 
-// Fahnen-Stufen: feste Breite (tw = Textfeld), Schrift mind. 11 px, Name bis 14 Zeichen; C nur Wappen + Truppenzahl, N (neutral, nicht gespäht) nur Wappen + Stufe
+// Fahnen-Stufen: Breite passt sich dem Text an (tw = höchstens so breites Textfeld), Schrift mind. 11 px, Name bis 14 Zeichen;
+// K (kompakt) und C nur Wappen + Stufe + Truppenzahl, N (neutral, nicht gespäht) nur Wappen + Stufe
 const TIER = { A: { H: 34, av: 34, fn: 12.5, fs: 11.5, pad: 8, lv: 17, tw: 140, max: 14 },
                B: { H: 30, av: 28, fn: 11,   fs: 11,   pad: 7, lv: 16, tw: 120, max: 14 },
-               C: { H: 22, av: 22, fn: 11,   fs: 11,   pad: 5, lv: 15, tw: 46,  max: 0 },
+               K: { H: 26, av: 26, fn: 11,   fs: 12,   pad: 6, lv: 16, tw: 84,  max: 0 },
+               C: { H: 22, av: 22, fn: 11,   fs: 11,   pad: 4, lv: 15, tw: 54,  max: 0 },
                N: { H: 22, av: 22, fn: 11,   fs: 11,   pad: 0, lv: 15, tw: 0,   max: 0 } };
 const PLATE = { player: { top: '#2b5d9b', bot: '#183a66', line: 'rgba(140,192,255,.7)',  hi: '#8cc0ff' },
                 bot:    { top: '#8e2b24', bot: '#5a1814', line: 'rgba(255,141,130,.62)', hi: '#ff8d82' },
