@@ -666,6 +666,12 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   nach, sobald `AUF` da ist (`geprueft`): Bau/Forschung, die heute nicht geht, wird gegen eine andere Aufgabe derselben Stufe
   getauscht (nur ohne Fortschritt). Untertitel „Hauptstadt“ kürzer („Burg-Stufe, dann Forschung“, 390 px). Fremdes Profil: der
   Bündnis-Knopf steht in eigener Zeile unter Titel/online (`.rp-bundzeile`).
+- **6.10. Startseite im Spiel-Stil (11b F, Design-Plan M):** `Game/index.php` statt hellem Pergament-Kasten mit Times jetzt
+  dunkel/Gold wie die Spielseite (Farben + Cinzel/Inter wie dort, gleiche Google-Schriften, keine neue Quelle), Wappen,
+  Reiter als Umschalter, Felder 48 px. Beim Registrieren stehen die Regeln schon unter den Feldern („3 bis 20 Zeichen“,
+  „Mindestens 10 Zeichen“) und werden beim Tippen grün/rot (nur Länge; der Rest bleibt Server-Prüfung). Auge-Knopf zeigt das
+  Passwort (`type="button"`, ohne Skript versteckt). App-Link als dunkler Knopf statt blauem Link. Login/Registrieren,
+  Nonce/CSP und Bremsen unverändert. Tests in `tests/server_test.php` („Startseite: …“).
 
 - **5./6.10. Nacht – Mitspieler schätzen Angriffe (11b C, Alexander N1):** Mitspieler kannten beim Losmarsch die genaue
   Stärke eines Angriffs (Held, Fähigkeit, Titel, Forschung) und schickten genau passende Hilfe oder räumten rechtzeitig. Jetzt

@@ -249,6 +249,11 @@ pruefe('Wachhund nach der Antwort', [strpos($wp, "welt_antwort(\$antwort, \$wach
 $ix = file_get_contents(__DIR__ . '/../Game/index.php');
 pruefe('Grenze neue Konten', strpos($ix, "bremse('neu:' . client_ip(), 30, 3600)") !== false, true);
 pruefe('Grenze Fehlversuche je Adresse', strpos($ix, "bremse('loginip:' . client_ip(), 100, 900)") !== false, true);
+// Startseite im Spiel-Stil (11b F): Regeln vor dem Fehler sichtbar, Auge kein Absende-Knopf, App-Link als Knopf, nichts im Browser speichern
+pruefe('Startseite: Regel 10 Zeichen vorab', [strpos($ix, 'id="pwRegel" data-min="10">Mindestens 10 Zeichen') !== false, strpos($ix, 'id="nameRegel" data-min="3">3 bis 20 Zeichen') !== false], [true, true]);
+pruefe('Startseite: Auge ist type=button', [strpos($ix, '<button type="button" class="auge"') !== false, substr_count($ix, '<button type="submit"')], [true, 5]);
+pruefe('Startseite: App-Link als Knopf, Spiel-Schrift', [strpos($ix, '<a class="knopf2" href="app/">') !== false, strpos($ix, 'Times New Roman') === false, strpos($ix, 'family=Cinzel') !== false], [true, true, true]);
+pruefe('Startseite: kein Browser-Speicher, Skript nur mit Nonce', [preg_match('/localStorage|sessionStorage|indexedDB|document\.cookie/', $ix), substr_count($ix, '<script'), substr_count($ix, '<script nonce="<?= h(csp_nonce()) ?>">')], [0, 1, 1]);
 // CSP: fremde Skripte nur genau three.js (nicht ganz jsdelivr) – und genau die Datei, die die Spielseite einbindet
 $sh = file_get_contents(__DIR__ . '/../Game/server/02-sicherheit-datenlecks.php');
 pruefe('CSP nur three.js', [strpos($sh, "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js; script-src-attr") !== false, strpos($sh, 'https://cdn.jsdelivr.net;') !== false], [true, false]);
