@@ -56,7 +56,7 @@ function saveEv() { evDirty = false; evSaveAt = Date.now(); store.set('openWater
 window.addEventListener('pagehide', () => { if (evDirty && rechnet()) saveEv(); });
 const evRang = o => Object.entries(o || {}).filter(e => e[1] > 0 && (e[0] === 'player' || botById[e[0]])).sort((a, b) => b[1] - a[1]);
 function evPreis(who, src, title, p, schl) {          // schl: fester Schlüssel der Auszahlung (Woche, Tag …) – kommt nie doppelt an; ein Preis: deiner ins Abholfach, ein echter Mitspieler bekommt ihn als Nachricht (auch Kisten), Mitspieler direkt
-    const gems = Math.round(p.gems || 0), sh = Math.round(p.sh || 0), crate = p.crate >= 0 ? p.crate : -1, titel = saisonTitel(p.titel) ? p.titel : null;   // titel: Saison-Titel (für immer)
+    const gems = Math.round(p.gems || 0), sh = Math.round(p.sh || 0), crate = p.crate >= 0 ? p.crate : -1, titel = saisonTitel(p.titel) ? p.titel : null;   // titel: Saison-Platz (Erfolg; der Saison-Rahmen kommt aus saison.last)
     if (who === 'player') { inboxAdd({ src, title, gems, sh, crate }); if (titel) saisonTitelGeben(titel); return; }
     const bd = botById[who]; if (!bd) return;
     if (titel) { const b0 = loadBotState()[who]; if (b0) { b0.sTitel = [...new Set([...(b0.sTitel || []), titel])]; saveBotState(); } }   // die vergebenen Saison-Titel führt nur, wer rechnet (ein Profil kann sich keinen eintragen)

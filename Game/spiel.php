@@ -246,8 +246,12 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
 .mapctl button.on{color:var(--gold-100);background:rgba(214,170,90,.18)}
 [data-frame="bronze"]{--fr1:#c9854f;--fr2:#7a4a26} [data-frame="silver"]{--fr1:#e8eef5;--fr2:#8a95a3} [data-frame="gold"]{--fr1:#ffd35a;--fr2:#a0701c}
 [data-frame="platin"]{--fr1:#9fe3da;--fr2:#3f8c86} [data-frame="diamond"]{--fr1:#bfe6ff;--fr2:#3f86d8} [data-frame="master"]{--fr1:#d6a6ff;--fr2:#6a3fa0} [data-frame="legend"]{--fr1:#ffb04a;--fr2:#c0392b} [data-frame="throne"]{--fr1:#f7d77c;--fr2:#7a1420} [data-frame="saison"]{--fr1:#8ff5e6;--fr2:#5b3fc4}
+[data-frame="conq"]{--fr1:#ff9a6a;--fr2:#8a2f1c} [data-frame="warlord"]{--fr1:#e0504a;--fr2:#3a0f12} [data-frame="wall"]{--fr1:#b8c4d4;--fr2:#4a5868} [data-frame="emma"]{--fr1:#b07ad8;--fr2:#24122e}
+[data-frame="slayer"]{--fr1:#a6e05a;--fr2:#2f5a1c} [data-frame="builder"]{--fr1:#e2b27a;--fr2:#6a4422} [data-frame="king"]{--fr1:#ffd05a;--fr2:#a3161c}
+[data-frame="sz1"]{--fr1:#fff0a8;--fr2:#d4202a} [data-frame="sz2"]{--fr1:#f2f6ff;--fr2:#2a5ad8} [data-frame="sz4"]{--fr1:#7ef0c8;--fr2:#1c6a8a} [data-frame="sz6"]{--fr1:#f0c87a;--fr2:#3a6a9a}
+[data-frame="mgut"]{--fr1:#ffd05a;--fr2:#c08a1c} [data-frame="mstraf"]{--fr1:#ff5a4a;--fr2:#7a1010}   /* Rahmen aus der Mitte (Alexander 6.10.): wie die Ringe – Gold, Rot, Herrscher Blutrot-Gold */
 #pAvatarRing[data-frame]{background:conic-gradient(from 200deg,var(--fr1),var(--fr2),var(--fr1),var(--fr2),var(--fr1));padding:3px;box-shadow:0 0 10px color-mix(in srgb,var(--fr1) 45%,transparent)}
-#pAvatarRing[data-frame="saison"],#pAvatarRing[data-frame="throne"],#pAvatarRing[data-frame="legend"],#pAvatarRing[data-frame="master"],#pAvatarRing[data-frame="diamond"]{animation:frame-glow 2.4s ease-in-out infinite alternate}
+#pAvatarRing[data-frame^="sz"],#pAvatarRing[data-frame="king"],#pAvatarRing[data-frame="mgut"],#pAvatarRing[data-frame="mstraf"],#pAvatarRing[data-frame="saison"],#pAvatarRing[data-frame="throne"],#pAvatarRing[data-frame="legend"],#pAvatarRing[data-frame="master"],#pAvatarRing[data-frame="diamond"]{animation:frame-glow 2.4s ease-in-out infinite alternate}
 @keyframes frame-glow{from{box-shadow:0 0 6px color-mix(in srgb,var(--fr1) 35%,transparent)}to{box-shadow:0 0 16px color-mix(in srgb,var(--fr1) 75%,transparent)}}
 .ptitle-tag{margin-top:4px;font:700 10px/1.2 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--gold-200)}
 .troop-in{width:9.5em;max-width:46vw;height:30px;padding:0 8px;border:1px solid var(--line-2);border-radius:var(--r-xs);background:#12151b;color:var(--tx-1);font:700 var(--fs-13)/1 var(--font-ui);text-align:right;font-variant-numeric:tabular-nums}
@@ -985,13 +989,13 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
 .lk-top{display:flex;align-items:center;gap:12px;padding:12px 2px 10px} .lk-me{width:58px;height:58px;flex:none;border-radius:50%;padding:6px;background:conic-gradient(from 200deg,var(--fr1),var(--fr2),var(--fr1),var(--fr2),var(--fr1))}
 .lk-me img{display:block;width:100%;height:100%;border-radius:50%;background:#141a24;padding:3px} .lk-me-t{flex:1;min-width:0;display:grid;gap:3px} .lk-me-t b{font:700 var(--fs-14)/1.2 var(--font-ui);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lk-me-t small{font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--gold-100)} .lk-pay{display:flex;flex-direction:column;align-items:flex-end;gap:4px} .lk-pay .pill b{font-variant-numeric:tabular-nums}
-.lk-tabs{position:sticky;top:calc(-8px - var(--safe-t));z-index:3;background:#0e0e11;border:1px solid var(--line-1);border-radius:8px 8px 0 0} .lk-pane{padding:12px 2px 8px} .lk-pane[hidden]{display:none}
+#lkTabs.tabs{grid-template-columns:repeat(4,minmax(0,1fr))} .lk-tabs{position:sticky;top:calc(-8px - var(--safe-t));z-index:3;background:#0e0e11;border:1px solid var(--line-1);border-radius:8px 8px 0 0} .lk-pane{padding:12px 2px 8px} .lk-pane[hidden]{display:none}
 .lk-grid{grid-template-columns:repeat(auto-fill,minmax(100px,1fr))} .lk-grid--m{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))} .lk-grid--m canvas{width:140px;height:70px}
 .lk-card{align-content:start;min-height:100px} .lk-card.is-shop{background:rgba(0,0,0,.28);border-style:dashed} .lk-card b{font:600 var(--fs-12)/1.2 var(--font-ui);text-align:center}
 .lk-card.on small{color:var(--gold-100)} .lk-cost{display:inline-flex;align-items:center;gap:3px;font-weight:700;color:var(--gold-100);font-variant-numeric:tabular-nums} .lk-cost.is-bad{color:#e0685c}
 .lk-frame{width:48px;height:48px;margin:4px 0 2px;border-radius:50%;padding:5px;background:conic-gradient(from 200deg,var(--fr1),var(--fr2),var(--fr1),var(--fr2),var(--fr1))} .lk-frame img{display:block;width:100%;height:100%;border-radius:50%;background:#141a24;padding:3px}
 .lk-grid--t .lk-card{min-height:0} .lk-plate{display:grid;place-items:center;width:100%;min-height:40px;padding:4px 6px;border-radius:4px;border:1px solid var(--line-3);background:linear-gradient(180deg,#2a2419,#15120d);font:600 var(--fs-12)/1.15 var(--font-display);color:var(--gold-100);text-align:center}
-.lk-mid{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line-2);border-radius:10px;background:rgba(0,0,0,.22)} .lk-mid > .icon{width:22px;height:22px;flex:none;color:var(--tx-3)} .lk-mid span{display:grid;gap:2px} .lk-mid small{color:var(--tx-2)}
+.lk-mid{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line-2);border-radius:10px;background:rgba(0,0,0,.22)} .lk-mid > .icon{width:22px;height:22px;flex:none;color:var(--tx-3)} .lk-mid > span:not(.frame-ring){display:grid;gap:2px} .lk-mid > .frame-ring{flex:none} .lk-mid small{color:var(--tx-2)}
 .lk-mid.is-good{border-color:#ffd05a} .lk-mid.is-good > .icon{color:#ffd05a} .lk-mid.is-bad{border-color:#e13030} .lk-mid.is-bad > .icon{color:#e13030} .lk-mid.is-ruler{border-color:#eb3c32;box-shadow:inset 0 0 0 1px rgba(255,208,90,.5)} .lk-mid.is-ruler > .icon{color:#ffd05a}
 .lk-cap{grid-template-columns:repeat(2,1fr)} .ring-card.is-shop{background:rgba(0,0,0,.28);border-style:dashed} .lk .look-titles .look-title .icon{width:12px;height:12px}
 .logWounded,.logRetreat.logWounded{color:#f2c94c;font-weight:600}
@@ -1968,9 +1972,9 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
     <div id="tabInfo" class="profileTabPanel active" role="tabpanel">
       <div id="xpNext" class="xp-next p5-naechste"></div>
       <!-- Aussehen: nur hier (Wappen, Rahmen, Titel, Basis- und Marsch-Skins, Ringe) -->
-      <button id="crestCard" class="crest-card" type="button" aria-label="Aussehen: Wappen, Rahmen, Titel, Skins, Ringe">
+      <button id="crestCard" class="crest-card" type="button" aria-label="Aussehen: Wappen, Rahmen, Skins, Ringe">
         <canvas id="crestSmall" width="112" height="112"></canvas>
-        <span id="lookNow" class="crest-card-t"><b>Aussehen</b><small>Wappen, Rahmen, Titel, Skins, Ringe</small></span>
+        <span id="lookNow" class="crest-card-t"><b>Aussehen</b><small>Wappen, Rahmen, Skins, Ringe</small></span>
         <span class="crest-card-go">Ändern<svg class="icon"><use href="#i-upgrade"/></svg></span>
       </button>
       <!-- Rangliste: eigenes Fenster, hier nur der Weg dorthin -->
@@ -2385,7 +2389,6 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
   <div id="lkTabs" class="tabs lk-tabs" role="tablist">
     <button class="tab" type="button" role="tab" data-lk-tab="crest"><svg class="icon"><use href="#i-flag"/></svg><span>Wappen</span></button>
     <button class="tab" type="button" role="tab" data-lk-tab="frame"><svg class="icon"><use href="#i-star"/></svg><span>Rahmen</span></button>
-    <button class="tab" type="button" role="tab" data-lk-tab="title"><svg class="icon"><use href="#i-crown"/></svg><span>Titel</span></button>
     <button class="tab" type="button" role="tab" data-lk-tab="base"><svg class="icon"><use href="#i-castle"/></svg><span>Basis</span></button>
     <button class="tab" type="button" role="tab" data-lk-tab="march"><svg class="icon"><use href="#i-troops"/></svg><span>Marsch</span></button>
   </div>

@@ -9,10 +9,9 @@ const THRONE_OFFERS = [
     { id: 'troops', name: 'Truppen',             icon: 'troops', cost: 200 },
     { id: 'crate',  name: 'Ausrüstungskiste',    icon: 'shop',   cost: 60 },
     { id: 'royal',  name: 'Königliche Kiste',    icon: 'shop',   cost: 400 },
-    { id: 'look',   name: 'Titel „Thronhüter“ + Thron-Rahmen', icon: 'crown', cost: 3000, once: true },
     ...RING_SKINS.filter(r => r.tp).map(r => ({ id: 'ring_' + r.id, name: 'Ring „' + r.name + '“', icon: 'crown', cost: r.tp, once: true, ring: r.id }))
 ];
-const throneOwned = (who, o) => o.ring ? ringSkinsOf(who).includes(o.ring) : who === 'player' ? !!(look.bought && look.bought.throne) : !!(loadBotState()[who] || {}).throneLook;
+const throneOwned = (who, o) => !!o.ring && ringSkinsOf(who).includes(o.ring);   // (Thronhüter + Thron-Rahmen gibt es nicht mehr – Rahmen nicht zu kaufen, Alexander 6.10.)
 var throneState = (() => { try { return JSON.parse(store.get('openWaterThrone')) || null; } catch (e) { return null; } })() || { pts: 0 };
 (() => { const now = Date.now(), ts = throneState;               // no points or volleys pile up while the game was closed
     if (!(ts.nextPts > now)) ts.nextPts = now + THRONE_TICK_MS; if (!(ts.nextFire > now)) ts.nextFire = now + THRONE_FIRE_MS;
@@ -46,8 +45,6 @@ function throneGive(who, id) {                        // hands one offer over; r
     if (id === 'crate' || id === 'royal') { const r = id === 'royal' ? Math.max(3, pickRandomRarity()) : pickRandomRarity(), slot = pickRandomSlot();
         if (b) { b.spare[slot][r]++; return ''; }
         addInventoryItem(slot, r, 1); sfx('crate'); questProgress('crate', 1); return RARITY_DEFS[r].label + ' ' + EQUIPMENT_DEFS[slot].name + ' im Inventar'; }
-    if (id === 'look') { if (b) b.throneLook = true; else { look.bought = Object.assign({}, look.bought, { throne: true }); look.title = 'keeper'; look.frame = 'throne'; store.set('openWaterLook', JSON.stringify(look)); renderLook(); }
-        return 'Titel „Thronhüter“ und Thron-Rahmen – schon angelegt'; }
     if (id.startsWith('ring_')) { const r = ringSkinDef(id.slice(5)); if (!r) return ''; ringGive(who, r.id); return 'Ring „' + r.name + '“ – schon angelegt'; }
     return '';
 }

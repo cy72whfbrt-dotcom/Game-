@@ -17,47 +17,46 @@ function cityFehlt(id) {                           // fehlt nur etwas zum Bezahl
     const f = k.c > coins ? [k.c - coins, 'Münzen'] : ['h', 's', 'e'].filter(x => k[x] > (r[x] || 0)).map(x => [k[x] - (r[x] || 0), AUF.ROH_DEF[x].name])[0];
     return f ? 'Fehlt: ' + fmtCompact(Math.ceil(f[0])) + ' ' + f[1] : '';
 }
-// ===== AUSSEHEN: every look in one place - Wappen, Rahmen, Titel, Basis-Skin (+ Ring), Marsch-Skin. Only to buy (Gems or Thron-Punkte) or a title from the middle =====
+// ===== AUSSEHEN: every look in one place - Wappen, Rahmen (= Titel), Basis-Skin (+ Ring), Marsch-Skin. Basis und Marsch zu kaufen (Gems oder Thron-Punkte), Rahmen nicht (05a RAHMEN) =====
 var lkTab = 'frame';
-function lkPrice(d) { if (d.buy === 'pass') return '<span class="lk-cost">' + icon('crown') + 'Saison-Pass</span>'; return d.tp ? '<span class="lk-cost' + ((throneState.pts || 0) < d.tp ? ' is-bad' : '') + '">' + icon('crown') + fmtNum(d.tp) + '</span>' : '<span class="lk-cost' + (gems < d.gems ? ' is-bad' : '') + '">' + icon('gem') + fmtNum(d.gems) + '</span>'; }
+function lkPrice(d) { if (d.platz) return '<span class="lk-cost">' + icon('crown') + rahmenPlatzText(d) + '</span>'; if (d.buy === 'pass') return '<span class="lk-cost">' + icon('crown') + 'Saison-Pass</span>'; return d.tp ? '<span class="lk-cost' + ((throneState.pts || 0) < d.tp ? ' is-bad' : '') + '">' + icon('crown') + fmtNum(d.tp) + '</span>' : '<span class="lk-cost' + (gems < d.gems ? ' is-bad' : '') + '">' + icon('gem') + fmtNum(d.gems) + '</span>'; }
 function lkCard(kind, d, prev, has, on, label) {     // one look: preview, name, and Angelegt / Anlegen / price
     return '<button type="button" class="skin-card lk-card' + (on ? ' on' : '') + (has ? '' : ' is-shop') + '" data-lk="' + kind + ':' + d.id + '">' + prev + (label === false ? '' : '<b>' + (label || d.name) + '</b>') +
         '<small>' + (on ? icon('check') + 'Angelegt' : has ? 'Anlegen' : lkPrice(d)) + '</small></button>';
 }
 function lkDef(kind, id) {
-    if (kind === 'frame') return FRAMES.find(f => f.id === id); if (kind === 'title') return titelDef(id); if (kind === 'march') return MARCH_SKINS.find(m => m.id === id);
+    if (kind === 'frame') return rahmenDef(id); if (kind === 'march') return MARCH_SKINS.find(m => m.id === id);
     if (kind === 'style') return BAUSTILE[id] ? Object.assign({ id, name: BAUSTILE[id] }, BAUSTIL_PRICE[id]) : null;
     if (kind === 'color') { const d = SKIN_DEFS[id]; return d ? { id, name: d.name, gems: d.cost } : null; } return null;
 }
 function lkHas(kind, id) { const d = lkDef(kind, id); if (!d) return false;
-    if (kind === 'frame') return lookOwns('frames', d); if (kind === 'title') return lookOwns('titles', d); if (kind === 'march') return d.gems === 0 || (look.marchs || []).includes(id);
+    if (kind === 'frame') return rahmenHat('player', d); if (kind === 'march') return d.gems === 0 || (look.marchs || []).includes(id);
     if (kind === 'style') return loadBaustil().own.includes(id); return loadSkins().own.includes(id); }
 function lkUse(kind, id) {                            // put on something you own
-    if (kind === 'frame' || kind === 'title' || kind === 'march') { look[kind] = id; saveLook(); }
+    if (kind === 'frame' || kind === 'march') { look[kind] = id; saveLook(); }
     else if (kind === 'style') { const v = loadBaustil(); v.style = id; store.set('openWaterBaustil', JSON.stringify(v)); }
     else if (kind === 'color') { const sk = loadSkins(); sk.active = id; store.set('openWaterSkins', JSON.stringify(sk)); BUILDING_SPRITES.clear(); }
     renderLook(); if (cityOpenId === '_keep') renderKeepSheet(); requestRender();
 }
-function lkBuy(kind, id, btn) {                       // Gems or Thron-Punkte; bought = put on at once
+function lkBuy(kind, id, btn) {                       // Gems or Thron-Punkte; bought = put on at once (Rahmen: nur anlegen)
     const d = lkDef(kind, id); if (!d) return;
     if (lkHas(kind, id)) { lkUse(kind, id); return; }
+    if (kind === 'frame') { flashHint('„' + d.name + '“ ' + (d.platz ? 'bekommen am Saison-Ende die Spieler auf ' + rahmenPlatzText(d) + ' – bis zum nächsten Saison-Ende.' : 'gibt es nicht mehr – Rahmen gibt es am Saison-Ende und in der Mitte.'), 3500); return; }   // Rahmen nicht zu kaufen (Alexander 6.10.)
     if (d.buy === 'pass') { flashHint('„' + d.name + '“ gibt es nur im Saison-Pass (Premium-Reihe) – unter „Events“.', 3000); return; }
     const cost = d.tp || d.gems || 0;
     if (d.tp ? (throneState.pts || 0) < cost : gems < cost) { flashHint('Zu wenig ' + (d.tp ? 'Thron-Punkte' : 'Edelsteine') + ' – „' + d.name + '“ kostet ' + fmtNum(cost) + '.', 2500); return; }
     if (!d.tp && !gemsWirklich('lk:' + kind + ':' + id, cost, btn)) return;
     if (d.tp) { throneState.pts -= cost; saveThrone(); } else gems -= cost;
-    if (d.buy === 'throne') throneGive('player', 'look');                   // Thronhüter + Thron-Rahmen come together
-    else if (kind === 'frame' || kind === 'title' || kind === 'march') { const k = kind + 's'; look[k] = [...new Set([...(look[k] || []), id])]; saveLook(); }
+    if (kind === 'march') { look.marchs = [...new Set([...(look.marchs || []), id])]; saveLook(); }
     else if (kind === 'style') { const v = loadBaustil(); v.own = [...new Set([...v.own, id])]; store.set('openWaterBaustil', JSON.stringify(v)); }
     else { const sk = loadSkins(); sk.own = [...new Set([...sk.own, id])]; store.set('openWaterSkins', JSON.stringify(sk)); }
-    if (d.buy !== 'throne') lkUse(kind, id); else renderLook();
+    lkUse(kind, id);
     updateHud(); saveGame(); sfx('coin'); flashHint('„' + d.name + '“ gekauft und angelegt.', 2500);
 }
 function renderLookTop() {                            // what you wear now + what you can pay with
     const el = document.getElementById('lkTop'); if (!el || document.getElementById('lookSheet').hidden) return;
-    const fr = playerFrame(), mt = titleOf('player'), rl = rulerOwner() === 'player';
-    liveHtml(el, '<span class="frame-ring lk-me" data-frame="' + fr + '"><img alt="" src="' + crestDataUrl(48) + '"></span>' +
-        '<span class="lk-me-t"><b>' + escapeHtml(profileName.value || 'Du') + '</b><small>' + escapeHtml(playerTitle()) + (rl ? ' · Herrscher der Meere' : mt ? ' · ' + mt.name : '') + '</small></span>' +
+    liveHtml(el, '<span class="frame-ring lk-me" data-frame="' + playerFrame() + '"><img alt="" src="' + crestDataUrl(48) + '"></span>' +
+        '<span class="lk-me-t"><b>' + escapeHtml(profileName.value || 'Du') + '</b><small>' + escapeHtml(playerTitle()) + '</small></span>' +
         '<span class="lk-pay"><span class="pill pill--gem">' + icon('gem') + '<b>' + fmtCompact(Math.floor(gems)) + '</b></span><span class="pill pill--throne">' + icon('crown') + '<b>' + fmtCompact(throneState.pts || 0) + '</b></span></span>');
 }
 function lkMarchPrev() {                              // the march cards: a little column with your flag and the trail
@@ -80,15 +79,15 @@ function renderLookSheet(live) {                     // live = jede Sekunde aus 
     document.getElementById('crestPage').hidden = lkTab !== 'crest';
     const el = document.getElementById('lkPane'); el.hidden = lkTab === 'crest'; let h = '';
     if (lkTab === 'crest') { if (!live) renderCrestEditor(); }
-    else if (lkTab === 'frame') { const fr = playerFrame(), img = '<img alt="" src="' + crestDataUrl(36) + '">';
-        h = '<div class="skin-grid lk-grid">' + FRAMES.map(f => lkCard('frame', f, '<span class="frame-ring lk-frame" data-frame="' + f.id + '">' + img + '</span>', lkHas('frame', f.id), f.id === fr)).join('') + '</div>' +
-            '<small class="keep-note">Dein Rahmen um Wappen und Profil – so sehen dich alle in der Rangliste. Der Thron-Rahmen kommt mit dem Titel „Thronhüter“.</small>'; }
-    else if (lkTab === 'title') { const cur = playerTitle(), mt = titleOf('player'), rl = rulerOwner() === 'player', own = [...TITLES_P, ...(look.titles || []).map(saisonTitel).filter(Boolean)].filter(t => lkHas('title', t.id)), buy = TITLES_P.filter(t => !lkHas('title', t.id));
-        h = '<div class="keep-h">Titel aus der Mitte</div><div class="lk-mid' + (rl ? ' is-ruler' : mt ? (mt.good ? ' is-good' : ' is-bad') : '') + '">' + icon('crown') + '<span><b>' + (rl ? 'Herrscher der Meere' : mt ? mt.name : 'Gerade keiner') + '</b><small>' +
-                (rl ? 'Solange du den Mega-Tempel hältst · Ring Blutrot-Gold' : mt ? mt.desc + ' · gilt bis zum nächsten Herrscher' : 'Titel aus der Mitte vergibt der Herrscher – sie kommen und gehen.') + '</small></span></div>' +
-            '<div class="keep-h">Deine Titel</div><div class="look-titles">' + own.map(t => '<button type="button" class="look-title' + (t.name === cur ? ' on' : '') + '" data-lk="title:' + t.id + '">' + (t.name === cur ? icon('check') : '') + t.name + '</button>').join('') + '</div>' +
-            (buy.length ? '<div class="keep-h">Zu kaufen</div><div class="skin-grid lk-grid lk-grid--t">' + buy.map(t => lkCard('title', t, '<span class="lk-plate">' + t.name + '</span>', false, false, false)).join('') + '</div>' : '') +
-            '<small class="keep-note">Dein Titel steht im Profil und in der Rangliste.</small>'; }
+    else if (lkTab === 'frame') {                     // Rahmen = Titel (Alexander 6.10.): deine Rahmen zum Anlegen, die Saison-Rahmen, der aus der Mitte
+        const img = '<img alt="" src="' + crestDataUrl(36) + '">', an = rahmenDef(look.frame) && lkHas('frame', look.frame) ? look.frame : 'bronze', mt = titleOf('player'), rl = rulerOwner() === 'player';
+        const ring = id => '<span class="frame-ring lk-frame" data-frame="' + id + '">' + img + '</span>', card = r => lkCard('frame', r, ring(r.id), lkHas('frame', r.id), r.id === an);
+        const sz = RAHMEN.filter(r => r.platz), dein = RAHMEN.filter(r => !r.platz && lkHas('frame', r.id));
+        h = '<div class="skin-grid lk-grid">' + dein.map(card).join('') + '</div>' +
+            '<div id="lkTitel" class="keep-h">Saison-Rahmen</div><div class="skin-grid lk-grid">' + sz.map(card).join('') + '</div>' +
+            '<div class="keep-h">Aus der Mitte</div><div class="lk-mid' + (rl ? ' is-ruler' : mt ? (mt.good ? ' is-good' : ' is-bad') : '') + '">' + ring(rl ? 'king' : mt ? (mt.good ? 'mgut' : 'mstraf') : 'bronze') + '<span><b>' + (rl ? 'Herrscher der Meere' : mt ? mt.name : 'Gerade keiner') + '</b><small>' +
+                (rl ? 'Solange du den Mega-Tempel hältst · geht vor' : mt ? mt.desc + ' · geht vor, bis zum nächsten Herrscher' : 'Den Rahmen aus der Mitte vergibt der Herrscher – er kommt und geht.') + '</small></span></div>' +
+            '<small class="keep-note">Titel und Rahmen sind eins: so sehen dich alle in Profil und Rangliste. Rahmen gibt es nicht zu kaufen – Saison-Rahmen bekommen die besten 10 am Saison-Ende (bis zum nächsten), dazu die aus der Mitte.</small>'; }
     else if (lkTab === 'base') { const bs = loadBaustil(), sk = loadSkins();
         h = '<div class="keep-h">Baustil</div><div class="skin-grid lk-grid">' + Object.keys(BAUSTILE).map(k => lkCard('style', lkDef('style', k), '<canvas data-bk-prev="' + k + '" width="120" height="132"></canvas>', lkHas('style', k), bs.style === k)).join('') + '</div>' +
             '<small class="keep-note">Gilt für alle deine Basen. Die Stufe zeigt der Stein, dich zeigen Dach und Fahne mit deinem Wappen.</small>' +
@@ -107,7 +106,10 @@ function renderLookSheet(live) {                     // live = jede Sekunde aus 
     if (lkTab === 'march') lkMarchPrev();
     sh.scrollTop = top;
 }
-function openLookSheet(tab) { lookMigrate(); if (tab) lkTab = tab; const sh = document.getElementById('lookSheet'); sh.hidden = false; renderLookSheet(); sh.scrollTop = 0; }
+function openLookSheet(tab) {                         // tab 'title': Titel = Rahmen (Alexander 6.10.) – Reiter „Rahmen“, zu den Saison-Rahmen rollen
+    lookMigrate(); if (tab) lkTab = tab === 'title' ? 'frame' : tab; const sh = document.getElementById('lookSheet'); sh.hidden = false; renderLookSheet(); sh.scrollTop = 0;
+    const ti = tab === 'title' && document.getElementById('lkTitel'); if (ti) sh.scrollTop = ti.getBoundingClientRect().top - sh.getBoundingClientRect().top - document.getElementById('lkTabs').offsetHeight - 8;
+}
 function closeLookSheet() { document.getElementById('lookSheet').hidden = true; renderCrestCard(); if (cityOpenId === '_keep') renderKeepSheet(); }
 document.getElementById('lookSheet').addEventListener('click', e => {
     if (e.target.closest('[data-lk-close]')) return closeLookSheet();

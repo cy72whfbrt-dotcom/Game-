@@ -900,6 +900,19 @@ Befehle und Nachrichten verteilen, Spielerliste mit Profilen.
   Truppen wachsen über den Weltrechner; Anna schließt → Bernd wird nach ~12 s Weltrechner. Keine Fehler.
 
 **Browser-Teil, Stufe 2 (fertig, lokal mit 3 Spielern getestet, noch nicht hochgeladen):**
+  `truppenPruefen` „thron“) rechnet je Kauf ebenso 2 Stunden (sonst Fehlalarm). Tests `thron_verst_test`, `welt_test`.
+- **6.10. – Rahmen = Titel, nicht mehr zu kaufen (Alexander 6.10., Branch `fix-aussehen-rahmen`, NICHT hochgeladen):** Im Fenster
+  „Profil · Aussehen“ nur noch die Reiter Wappen · Rahmen · Basis · Marsch (spielseite/08, 4 Spalten in spielseite/03). Titel und
+  Rahmen sind EIN Ding (05a `RAHMEN`: Titel + Ring ums Wappen, z. B. „Goldfürst“ = goldener Rahmen; `rahmenHat`, `rahmenVon`). Rahmen
+  gibt es nicht mehr zu kaufen (kein Raster mit Preisen, `lkBuy` nur Hinweis; Thron-Shop ohne „Thronhüter + Thron-Rahmen“, 06c; Mitspieler
+  kaufen keine, bots/06 `botLookShop`). Man bekommt sie: **Saison-Ende** Platz 1 „Saison-Champion“, 2–3 „Saison-Großadmiral“, 4–5
+  „Saison-Admiral“, 6–10 „Saison-Kapitän“ – nur bis zum nächsten Saison-Ende (abgeleitet aus `saison.last.top`, beim nächsten Reset
+  verliert der alte Halter ihn: angelegt → Standard); **Mitte**: Herrscher „Herrscher der Meere“, Titel aus der Mitte mit Rahmen Gold
+  (gut) / Rot (Straf-Titel), geht vor. Vorher Gekauftes bleibt (look.frames / look.titles). Saisonkrone aus dem Saison-Pass bleibt.
+  Weltrechner (10d `hbRahmen`): merkt sich einmal, welche Rahmen ein Spieler bis jetzt hatte (neu: keine), aus dem Profil kommt keiner
+  mehr dazu; Profil schickt `frames`/`titles` statt `title` (welt.js, server/02). `openLookSheet('title')` öffnet „Rahmen“ bei den
+  Saison-Rahmen. Tests `aussehen_rahmen_test` (neu), `saison_test` (Reset 1/2), `handy_stadt_test` („Wirklich?“ jetzt am Marsch-Skin),
+  `server_test`, `tests/server/schummel_test.js` (erfundene Rahmen).
 - **Befehle der Zuschauer** (in `spiel.js`, Helfer `alsBefehl`): Angreifen (mit gewähltem Held), Senden, Zurückrufen,
   Beschleunigen (Gems zahlt man selbst), Basis/Burg ausbauen (Münzen zahlt man selbst), Hauptstadt verlegen,
   Truppen-Geschenke (Stufe, Thron-Shop, Lazarett, Funde → `eigeneTruppenDazu`), Tore (Maut/zu), Titel vergeben als

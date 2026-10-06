@@ -30,7 +30,7 @@ const GOAL_VAL = {
     armyWins: () => achStat('armyWins'), heroes: () => goalHeroes('player'), heroStars: () => goalHeroStars('player'), heroFires: () => achStat('heroFires'),
     healed: () => achStat('healed'), shields: () => achStat('shields'), teleports: () => achStat('teleports'), barb: () => achStat('barb'), dboss: () => achStat('dboss'),
     burg: () => AUF ? AUF.burgStufe('player') : 1, foStufen: () => AUF ? AUF.foSumme('player') : 0, drache: () => achStat('drache'), inv: () => achStat('inv'),
-    saisonTop: () => (look.titles || []).filter(saisonTitel).length   // Hauptstadt (Burg, Labor), Drache, Invasion, Saison-Titel (die besten 10)
+    saisonTop: () => (look.titles || []).filter(saisonTitel).length   // Hauptstadt (Burg, Labor), Drache, Invasion, Saison-Platz (die besten 10)
 };
 const foGesamtZiel = () => AUF ? AUF.foGesamt() : 95;   // „alles erforscht“ – wächst mit, wenn neue Forschungen dazukommen
 const ACHIEVEMENTS = [   // the old ids stay (claims are kept); the tiers of one kind share k
