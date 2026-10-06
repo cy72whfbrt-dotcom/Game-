@@ -390,7 +390,46 @@ function evRangHtml(list, fmt, lim) {                // Top 10 (+ deine Zeile)
     const row = (e, i) => '<li' + (e[0] === 'player' ? ' class="me"' : '') + '><em>' + (i + 1) + '</em><span>' + whoLink(e[0], fieldWhoName(e[0])) + '</span><b>' + fmt(e[1]) + '</b></li>';
     return list.length ? '<ol class="barb-rank">' + list.slice(0, lim || 10).map(row).join('') + (mi >= (lim || 10) ? row(list[mi], mi) : '') + '</ol>' : '';
 }
-function evKarte(ic, titel, sub, inhalt, cls) { return '<div class="barb-card ev-card' + (cls ? ' ' + cls : '') + '"><div class="barb-ct"><b>' + icon(ic) + ' ' + titel + '</b><small>' + sub + '</small></div>' + inhalt + '</div>'; }
+function evKarte(ic, titel, sub, inhalt, cls, art) {   // art: mit Bild-Banner (Titel + Uhr darauf) statt Textzeile
+    return '<div class="barb-card ev-card' + (cls ? ' ' + cls : '') + (art ? ' ev-mit-bild' : '') + '">' + (art ? evBanner(art, icon(ic) + ' ' + titel, sub) : '<div class="barb-ct"><b>' + icon(ic) + ' ' + titel + '</b><small>' + sub + '</small></div>') + inhalt + '</div>'; }
+// ---- Bild-Banner (Vorbild RoK/Call of Dragons): je Ereignis eine gezeichnete Szene, Titel und Uhr darauf ----
+const EV_BILD = {                                    // Himmel oben, unten, Licht
+    tour: ['#1a0f2e', '#5b2f92', '#c9a2ff'], inv: ['#1d0807', '#7a2616', '#ff8a4a'], drache: ['#2a0b06', '#b8431a', '#ffc46a'],
+    boss: ['#0b1512', '#35502a', '#f2c75c'], rally: ['#0a1424', '#2c5585', '#9cc8ff'], tempel: ['#0e1a20', '#7a5e26', '#ffe4a0'],
+};
+const EV_SZENE = {                                   // S: Schattenriss, L: Licht
+    drache: (S, L) => '<g fill="' + S + '"><path d="M268 46 L226 14 L236 30 L214 24 L228 40 L208 42 L256 58Z"/><path d="M274 46 L318 10 L310 28 L336 20 L320 38 L342 40 L284 58Z"/><ellipse cx="270" cy="54" rx="17" ry="8"/>' +
+        '<path d="M282 50 Q296 40 306 44 L316 42 L311 49 L302 52 Q292 56 284 60Z"/><path d="M256 58 Q232 72 210 62 Q230 78 260 64Z"/>' +
+        '<rect x="338" y="76" width="62" height="34"/><rect x="358" y="58" width="18" height="40"/><path d="M354 58 L367 40 L380 58Z"/>' + [338, 348, 386, 394].map(x => '<rect x="' + x + '" y="70" width="5" height="7"/>').join('') + '</g>' +
+        '<path d="M314 45 Q342 38 376 54 Q346 51 314 50Z" fill="' + L + '" opacity=".9"/><circle cx="305" cy="46" r="1.6" fill="' + L + '"/><rect x="364" y="66" width="5" height="8" fill="' + L + '" opacity=".8"/>',
+    inv: (S, L) => '<circle cx="342" cy="94" r="22" fill="' + L + '" opacity=".35"/><g fill="' + S + '"><path d="M222 100 L246 62 L270 100Z"/><path d="M276 100 L306 52 L336 100Z"/><path d="M352 100 L374 68 L396 100Z"/>' +
+        '<path d="M306 52 V32 h2 V52Z"/></g>' +
+        '<path d="M308 32 L326 37 L308 43Z" fill="#c9423a"/><path d="M242 100 L246 86 L250 100Z M302 100 L306 82 L310 100Z" fill="' + L + '" opacity=".7"/><path d="M336 100 Q342 84 342 80 Q348 90 348 100Z" fill="' + L + '"/>',
+    tour: (S, L) => '<g transform="translate(24 0)">' + [[300, 40], [300, -40]].map(([x, r]) => '<g transform="translate(' + x + ' 58) rotate(' + r + ')"><path d="M-3 -44 L0 -52 L3 -44 V18 H-3Z" fill="#e8dcc8"/><rect x="-12" y="18" width="24" height="4" fill="' + L + '"/><rect x="-2" y="22" width="4" height="13" fill="' + S + '"/></g>').join('') +
+        [236, 364].map(x => '<path d="M' + x + ' 104 V28" stroke="' + S + '" stroke-width="3"/><path d="M' + x + ' 30 h22 v32 l-11 -7 l-11 7Z" fill="#7a3fc0" stroke="' + L + '" stroke-width="1"/>').join('') +
+        [[210, 18], [262, 12], [338, 16], [370, 30], [222, 44]].map(([x, y]) => '<circle cx="' + x + '" cy="' + y + '" r="1.3" fill="' + L + '"/>').join('') + '</g>',
+    boss: (S, L) => '<g fill="' + S + '"><path d="M250 110 Q252 72 280 64 Q282 40 300 36 Q318 40 320 64 Q348 72 350 110Z"/><path d="M204 100 L222 74 L240 100Z"/><path d="M366 100 L382 78 L398 100Z"/></g>' +
+        '<path d="M290 46 Q276 32 280 18 Q286 34 296 42Z M310 46 Q324 32 320 18 Q314 34 304 42Z" fill="#e8d9b8"/><circle cx="294" cy="52" r="2.2" fill="' + L + '"/><circle cx="306" cy="52" r="2.2" fill="' + L + '"/>',
+    rally: (S, L) => '<g fill="' + S + '"><path d="M200 110 Q300 70 400 92 V110Z"/>' + Array.from({ length: 11 }, (_, i) => { const x = 212 + i * 17, y = 100 - Math.sin(i / 10 * Math.PI) * 14 - i;
+            return '<path d="M' + x + ' ' + y + ' v-13 h5 v13Z"/><circle cx="' + (x + 2.5) + '" cy="' + (y - 16) + '" r="3"/><path d="M' + (x + 5) + ' ' + y + ' L' + (x + 7) + ' ' + (y - 30) + ' L' + (x + 8) + ' ' + (y - 30) + ' L' + (x + 6) + ' ' + y + 'Z"/>'; }).join('') +
+        '<path d="M300 84 V20 h3 V84Z"/></g><path d="M303 22 L342 28 L328 36 L342 44 L303 48Z" fill="#f2c75c"/><path d="M314 30 l6 5 l-6 5 l-6 -5Z" fill="' + S + '"/>',
+    tempel: (S, L) => '<g fill="' + L + '" opacity=".14"><path d="M310 0 L270 110 H300Z"/><path d="M310 0 L320 110 H350Z"/></g><g fill="' + S + '"><path d="M248 104 h124 v-6 h-124Z M254 98 h112 v-6 h-112Z"/>' +
+        Array.from({ length: 6 }, (_, i) => '<rect x="' + (262 + i * 18) + '" y="56" width="8" height="36"/>').join('') + '<rect x="256" y="50" width="108" height="6"/><path d="M252 50 L310 28 L368 50Z"/></g><circle cx="310" cy="42" r="3" fill="' + L + '"/>',
+};
+function evBild(art) {
+    const [o, u, l] = EV_BILD[art], id = 'evb-' + art, S = '#100b08';
+    return '<svg class="ev-bild" viewBox="0 0 400 110" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><linearGradient id="' + id + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + o + '"/><stop offset="1" stop-color="' + u + '"/></linearGradient>' +
+        '<radialGradient id="' + id + 'l"><stop offset="0" stop-color="' + l + '" stop-opacity=".7"/><stop offset="1" stop-color="' + l + '" stop-opacity="0"/></radialGradient></defs>' +
+        '<rect width="400" height="110" fill="url(#' + id + ')"/><circle cx="300" cy="50" r="72" fill="url(#' + id + 'l)"/><path d="M0 92 Q60 78 120 88 T240 84 T400 86 V110 H0Z" fill="' + S + '" opacity=".5"/>' +
+        EV_SZENE[art](S, l) + '<path d="M0 102 Q100 96 200 101 T400 99 V110 H0Z" fill="' + S + '"/></svg>';
+}
+function evBanner(art, titel, sub) { return '<div class="ev-banner ev-banner--' + art + '">' + evBild(art) + '<div class="ev-banner-t"><b>' + titel + '</b>' + (sub ? '<small>' + sub + '</small>' : '') + '</div></div>'; }
+// lange Erklärung zum Aufklappen („i“ wie bei RoK) – offen bleibt offen, auch wenn das Fenster neu zeichnet (nur im Speicher)
+const infoAuf = {};
+function infoKlapp(key, titel, inhalt) { return '<details class="lb-info ev-info" data-info="' + key + '"' + (infoAuf[key] ? ' open' : '') + '><summary>' + icon('info') + '<span>' + titel + '</span></summary>' + inhalt + '</details>'; }
+document.addEventListener('toggle', e => { const d = e.target; if (d && d.dataset && d.dataset.info) infoAuf[d.dataset.info] = d.open; }, true);
+// leerer Zustand: Symbol, eine Zeile groß, eine klein, höchstens EIN goldener Knopf
+function leerHtml(ic, titel, text, knopf) { return '<div class="empty-state ev-leer">' + icon(ic) + '<b>' + titel + '</b><span>' + text + '</span>' + (knopf || '') + '</div>'; }
 function evTourHtml() { return woHtml(); }            // Events → Reiter „Wochen-Event“ (Schlüssel 'tour' von früher)
 function woHtml() {                                   // das Wochen-Event: Thema, Uhr, dein Platz, Preise, Rangliste, die nächsten Wochen
     const now = Date.now(), w = woWin(now), th = woThemaAm(now), W = evState.wo || {}, live = w.on && W.key === w.key, rk = live ? evRang(W.pts) : [], mine = rk.findIndex(e => e[0] === 'player') + 1;
@@ -398,12 +437,12 @@ function woHtml() {                                   // das Wochen-Event: Thema
     const preise = WO_PRIZES.map((p, i) => '<div class="tour-prize' + (i ? '' : ' is-1') + '"><b>' + p.t + '</b><span>' + icon('gem') + fmtNum(p.gems) + '</span><span>' + icon('star') + p.sh + '</span>' + (p.crate >= 0 ? '<em>' + RARITY_DEFS[p.crate].label + '-Kiste</em>' : '') + '</div>').join('');
     const plan = [1, 2, 3, 4].map(i => { const t = w.start + 7 * 864e5 * i + 3600000, x = woThemaAm(t), a = new Date(t), e = new Date(t + 4 * 864e5); return '<span>Mo ' + a.getDate() + '.' + (a.getMonth() === e.getMonth() ? '' : (a.getMonth() + 1) + '.') + ' – Fr ' + e.getDate() + '.' + (e.getMonth() + 1) + '.</span><b>' + icon(x.ic) + ' ' + x.name + '</b>'; }).join('');
     const alt = !live && W.last && W.last.top ? W.last.top : null, liste = live ? rk : alt || [];
-    return evKarte(th.ic, 'Wochen-Event · ' + th.name, kopf, '<div class="field-lines"><span>Punkte für</span><b>' + th.pkt + (th.k === 'krieg' ? ' (' + (1 / WO_KILL_PER).toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' Punkte pro besiegtem Krieger)' : '') + '</b><span>Bonus</span><b>' + th.bonus + '</b>' +
-            (live ? '<span>Dein Platz</span><b>' + (mine || '–') + ' · ' + fmtNum(Math.floor((W.pts || {}).player || 0)) + ' Punkte</b>' : '') + '</div>', 'is-tour') +
+    return evKarte(th.ic, 'Wochen-Event · ' + th.name, kopf, '<div class="ev-zeilen"><div><small>Punkte für</small><span>' + th.pkt + (th.k === 'krieg' ? ' (' + (1 / WO_KILL_PER).toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' Punkte pro besiegtem Krieger)' : '') + '</span></div><div><small>Bonus</small><span>' + th.bonus + '</span></div></div>' +
+            (live ? '<div class="field-lines"><span>Dein Platz</span><b>' + (mine || '–') + ' · ' + fmtNum(Math.floor((W.pts || {}).player || 0)) + ' Punkte</b></div>' : ''), 'is-tour', 'tour') +
         '<div class="lb-gap">' + (live ? 'Live · Top 10' : alt ? 'Letzte Woche · Top 10' : 'Top 10') + '</div>' +
         (evRangHtml(liste, v => fmtNum(Math.floor(v)) + ' P.') || '<div class="war-empty">' + (w.on ? 'Noch hat niemand Punkte – sobald jemand Punkte holt, steht er hier.' : 'Am Montag geht es los.') + '</div>') +
         '<div class="lb-gap">Preise</div><div class="tour-prizes">' + preise + '</div>' +
-        '<div class="tour-rules"><span>' + icon('hourglass') + '<span>Höchstens ' + WO_KILL_MAX + ' Punkte auf einmal, im Schnitt ' + WO_KILL_MIN + ' pro Minute. Jede Woche (Mo–Fr) ein anderes Thema, am Wochenende ist frei.</span></span></div>' +
+        infoKlapp('tour', 'So gibt es Punkte', '<div class="tour-rules"><span>' + icon('hourglass') + '<span>Höchstens ' + WO_KILL_MAX + ' Punkte auf einmal, im Schnitt ' + WO_KILL_MIN + ' pro Minute. Jede Woche (Mo–Fr) ein anderes Thema, am Wochenende ist frei.</span></span></div>') +
         '<div class="lb-gap">Nächste Wochen</div><div class="field-lines ev-plan">' + plan + '</div>';
 }
 function evInvHtml() {
@@ -416,11 +455,11 @@ function evInvHtml() {
         (I && (akt || last) ? '<span>' + (akt ? 'Deine Punkte' : 'Letztes Mal') + '</span><b>' + fmtNum(me) + (mine ? ' · Platz ' + mine : '') + '</b>' : '') + '</div>';
     const preise = INV_PREISE.map(x => '<div class="tour-prize"><b>' + x.t + '</b><span>' + icon('gem') + x.gems + '</span><span>' + icon('star') + x.sh + '</span>' + (x.crate >= 0 ? '<em>' + RARITY_DEFS[x.crate].label + '-Kiste</em>' : '') + '</div>').join('');
     return evKarte('defense', 'Barbaren-Invasion', kopf, inh +
-        (meine.length ? '<button class="btn btn--primary btn--sm" type="button" data-ev-go="inv">' + icon('send') + '<span>Zur Armee auf deine Basis</span></button>' : ''), akt ? 'is-warn' : '') +
-        '<div class="tour-rules"><span>' + icon('hourglass') + '<span><b>Alle 3 Tage um ' + INV_STUNDE + ' Uhr, eine Stunde</b> – ' + INV_WELLEN + ' Wellen, je 5–7 Minuten Marsch vom Rand der Insel</span></span>' +
+        (meine.length ? '<button class="btn btn--primary btn--sm" type="button" data-ev-go="inv">' + icon('send') + '<span>Zur Armee auf deine Basis</span></button>' : ''), akt ? 'is-warn' : '', 'inv') +
+        infoKlapp('inv', 'Alle 3 Tage · so gibt es Punkte', '<div class="tour-rules"><span>' + icon('hourglass') + '<span><b>Alle 3 Tage um ' + INV_STUNDE + ' Uhr, eine Stunde</b> – ' + INV_WELLEN + ' Wellen, je 5–7 Minuten Marsch vom Rand der Insel</span></span>' +
         '<span>' + icon('defense') + '<span><b>+' + INV_PTS_WEHR + ' Punkte</b> für jede abgewehrte Armee an deiner Basis – schick vorher Verstärkung</span></span>' +
         '<span>' + icon('attack') + '<span><b>+' + INV_PTS_SIEG + ' Punkte</b> für jede Armee, die du unterwegs schlägst – auch die auf deine Nachbarn (Teilschaden zählt anteilig)</span></span>' +
-        '<span>' + icon('losses') + '<span>Barbaren erobern nichts – aber wer sie nicht aufhält, verliert viele Truppen.</span></span></div>' +
+        '<span>' + icon('losses') + '<span>Barbaren erobern nichts – aber wer sie nicht aufhält, verliert viele Truppen.</span></span></div>') +
         '<div class="tour-prizes ev-prizes3">' + preise + '</div><div class="lb-gap">' + (akt ? 'Live · Top 10' : 'Letzte Invasion') + '</div>' +
         (evRangHtml(rk, v => fmtNum(Math.floor(v)) + ' P.') || '<div class="war-empty">' + (akt ? 'Noch hat niemand Punkte.' : 'Noch keine Invasion gewesen.') + '</div>');
 }
@@ -432,10 +471,10 @@ function evDrHtml() {
         (D && rk.length ? '<span>' + (akt ? 'Dein Schaden' : 'Letztes Mal') + '</span><b>' + (mine ? fmtCompact(rk[mine - 1][1]) + ' · Platz ' + mine : '–') + '</b>' : '') + '</div>';
     const go = drOnMap() ? '<button class="btn btn--primary btn--sm" type="button" data-ev-go="drache">' + icon('send') + '<span>Zum Drachen</span></button>' : '';
     const preise = DR_PREISE.map((x, i) => '<div class="tour-prize' + (i ? '' : ' is-1') + '"><b>' + x.t + '</b><span>' + icon('gem') + x.gems + '</span><span>' + icon('star') + x.sh + '</span>' + (x.crate >= 0 ? '<em>' + RARITY_DEFS[x.crate].label + '-Kiste</em>' : '') + '</div>').join('');
-    return evKarte('star', 'Der Drache', kopf, inh + go, akt ? 'is-drache' : '') +
-        '<div class="tour-rules"><span>' + icon('hourglass') + '<span><b>Jeden Sonntag ' + DR_STUNDE + '–' + (DR_STUNDE + DR_DAUER / 3600000) + ' Uhr</b> kreist ' + DR_NAME + ' über dem Thron – sehr viel Leben, nur alle zusammen schaffen ihn</span></span>' +
+    return evKarte('star', 'Der Drache', kopf, inh + go, akt ? 'is-drache' : '', 'drache') +
+        infoKlapp('drache', 'Jeden Sonntag · so läuft es', '<div class="tour-rules"><span>' + icon('hourglass') + '<span><b>Jeden Sonntag ' + DR_STUNDE + '–' + (DR_STUNDE + DR_DAUER / 3600000) + ' Uhr</b> kreist ' + DR_NAME + ' über dem Thron – sehr viel Leben, nur alle zusammen schaffen ihn</span></span>' +
         '<span>' + icon('attack') + '<span><b>' + DR_HITS + ' Angriffe</b> pro Person, höchstens 2 % seines Lebens pro Angriff, ein Drittel der Kämpfer fällt</span></span>' +
-        '<span>' + icon('crown') + '<span>Fällt er, gibt es Preise nach Schaden. Entkommt er, bekommen alle Kämpfer etwas Kleines.</span></span></div>' +
+        '<span>' + icon('crown') + '<span>Fällt er, gibt es Preise nach Schaden. Entkommt er, bekommen alle Kämpfer etwas Kleines.</span></span></div>') +
         '<div class="tour-prizes ev-prizes3">' + preise + '</div><div class="lb-gap">' + (akt ? 'Live · Schaden' : 'Letzter Drache') + '</div>' +
         (evRangHtml(rk, v => fmtCompact(v)) || '<div class="war-empty">' + (akt ? 'Noch hat niemand angegriffen.' : 'Noch kein Drache gewesen.') + '</div>');
 }
@@ -443,7 +482,7 @@ function evBossHtml() {                              // Reiter „Boss & Lager�
     const b = dbossEnsure(), rec = barbRec('player'), near = barbNearest();
     const boss = evKarte('crown', 'Tagesboss · ' + escapeHtml(b.name), b.hp <= 0 ? 'Besiegt · neuer in ' + evUhr(Date.now() + msToMidnight()) : rec.h + ' / ' + dbossHitsMax() + ' Angriffe heute',
         '<div class="barb-hp"><i style="width:' + (b.hp / b.max * 100).toFixed(1) + '%"></i><span>' + (b.hp <= 0 ? 'Besiegt' : fmtCompact(b.hp) + ' Leben') + '</span></div>' +
-        (dbossOnMap() ? '<button class="btn btn--secondary btn--sm" type="button" data-ev-go="boss">' + icon('send') + '<span>Zum Tagesboss</span></button>' : ''));
+        (dbossOnMap() ? '<button class="btn btn--secondary btn--sm" type="button" data-ev-go="boss">' + icon('send') + '<span>Zum Tagesboss</span></button>' : ''), '', 'boss');
     const lager = evKarte('attack', 'Barbaren-Lager', rec.n + ' / ' + barbTagMax() + ' heute', '<div class="field-lines"><span>Freigeschaltet</span><b>bis Stufe ' + Math.min(BARB_MAX_L, rec.b + 1) + '</b><span>Neuer Tag in</span>' + evUhr(Date.now() + msToMidnight()) + '</div>' +
         (near ? '<button class="btn btn--secondary btn--sm" type="button" data-ev-go="camp">' + icon('send') + '<span>Nächstes Lager · Stufe ' + near.L + '</span></button>' : ''));
     return boss + lager;

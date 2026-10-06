@@ -966,6 +966,16 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   „67 Münzen“). Grundverteidigung mindestens 50 je Stufe (vorher bis Stufe 10 nur 1). Mitspieler rechnen mit denselben Funktionen.
   Tabelle: 11b A4. Tests `wirtschaft_muenz_test` (neu), `forschung_kosten_test`, `wirtschaft_gold_test`, `wirtschaft_roh_test`,
   `profil_stunde_test`, `thron_verst_test`, `welt_test`.
+- **6.10. – Design Events/Bündnis/Shop (Gesamt-Blick Punkte 9+10, Branch `design-events`, NICHT hochgeladen):** Vorbild
+  RoK/Call of Dragons: jedes Ereignis hat oben ein gezeichnetes Bild-Banner (SVG, 96 px) mit Titel und Uhr darauf – Woche
+  (gekreuzte Schwerter, Fahnen), Invasion (Zelte, Feuer), Drache (Drache über Burg, Feueratem), Boss (gehörnter Riese), im
+  Bündnis Rally (Krieger am Sammelbanner) und Tempel (Säulentempel im Licht) (09c `evBild`/`evBanner`, CSS in 07-fenster).
+  Lange Erklärungen (Rally 10 Zeilen, Tempel-Bonus, Invasion-/Drache-/Wochen-Regeln) stehen hinter „i“ zum Aufklappen
+  (`infoKlapp`, bleibt beim Neuzeichnen offen – nur im Speicher). Woche: „Punkte für“/„Bonus“ als Zeilen, Text linksbündig.
+  Leere Zustände mit Symbol + Satz + EINEM Gold-Knopf (`leerHtml`): Rally leer („Ziel auf der Karte wählen“ schließt das
+  Fenster), Bündnis-Chat leer, Shop → Markt noch nicht gebaut („Markt bauen“ bzw. „Burg ausbauen“ öffnet die Stadt beim
+  Gebäude, aufbau.js), Schild-Vorrat leer (ein Satz statt drei „0×“-Kästen). Desktop-Angriff: Zweitheld-Wahl war schon da
+  (fehlt nur, wenn man nur einen Helden hat – wie am Handy), jetzt mit Test. Test `aufgabe_bild_test`.
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 

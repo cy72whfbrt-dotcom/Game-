@@ -1326,9 +1326,8 @@ function bundInfoHtml(a) {
     const chef = a.anf === 'player', bon = bundBonus(a), heute = a.gesch && a.gesch.tag === bundTagHeute() ? (a.gesch.n || {}).player || 0 : 0, now = Date.now();
     const mit = a.mit.slice().sort((x, y) => (y === a.anf) - (x === a.anf) || staerke(y) - staerke(x));
     return '<div class="bd-kopf">' + bundZeichenHtml(a, true) + '<div><b>[' + escapeHtml(a.tag) + '] ' + escapeHtml(a.name) + '</b><small>Macht ' + fmtCompact(bundMacht(a)) + ' · ' + (a.offen ? 'offen für alle' : 'nur auf Anfrage') + '</small></div></div>' +
-        '<div class="stat-grid">' + statTile('Tempel-Bonus', 'temple', '+' + bon.pct + ' %', bon.pct ? 'is-good' : '') + statTile('Gebiet', 'send', '+10 % Tempo') + '</div>' +
-        '<div class="notice">' + icon('temple') + '<span>' + (bon.n.t || bon.n.m ? 'Dein Bündnis hält ' + (bon.n.t ? bon.n.t + ' Tempel' : '') + (bon.n.t && bon.n.m ? ' und ' : '') + (bon.n.m ? 'den Mega-Tempel' : '') + ': alle Mitglieder produzieren +' + bon.pct + ' % Münzen und Truppen.'
-            : 'Hält ein Mitglied einen Tempel, produzieren alle Mitglieder mehr: +' + BUND.TEMPEL_PCT + ' % je Tempel, Mega-Tempel +' + BUND.MEGA_PCT + ' % (höchstens +' + BUND.BONUS_MAX + ' %).') + ' Im eigenen Gebiet marschiert ihr 10 % schneller.</span></div>' +
+        evBanner('tempel', icon('temple') + ' Tempel-Bonus +' + bon.pct + ' %', (bon.n.t || bon.n.m ? 'Ihr haltet ' + (bon.n.t ? bon.n.t + ' Tempel' : '') + (bon.n.t && bon.n.m ? ' und ' : '') + (bon.n.m ? 'den Mega-Tempel' : '') : 'Noch kein Tempel') + ' · Gebiet +10 % Tempo') +
+        infoKlapp('tempel', 'So wirkt der Tempel-Bonus', '<p class="mail-intro">Hält ein Mitglied einen Tempel, produzieren alle Mitglieder mehr Münzen und Truppen: +' + BUND.TEMPEL_PCT + ' % je Tempel, Mega-Tempel +' + BUND.MEGA_PCT + ' % (höchstens +' + BUND.BONUS_MAX + ' %). Im eigenen Gebiet marschiert ihr 10 % schneller.</p>') +
         bundHilfeHtml(a) +
         '<div class="notice">' + icon('shop') + '<span>Bündnis-Geschenke heute: ' + heute + ' / ' + BUND.GESCHENKE_TAG + ' – wenn ein Mitglied einen Boss besiegt oder eine große Kiste kauft.</span></div>' +
         (chef && (a.anfragen || []).length ? '<div class="sect"><h4>Anfragen</h4></div><div class="bd-liste">' + a.anfragen.map(q => '<div class="bd-zeile"><span class="bd-name">' + whoLink(q.w, bundName(q.w)) + '<small>Macht ' + fmtCompact(staerke(q.w)) + ' · ' + bundBasenText(q.w) + '</small></span>' +
@@ -1373,7 +1372,7 @@ function bundChatHtml(a) {
     return '<div class="bd-chat" id="bdChat">' + (l.length ? l.map(x => { const mir = x.w === 'player', sys = BUND_CHAT[x.k] && BUND_CHAT[x.k].g === 's', ort = x.z !== null && x.z !== undefined && islandById[x.z];
             return '<div class="bd-cz' + (mir ? ' is-me' : '') + (sys ? ' is-sys' : '') + (x.k === 'hilfe' || x.k === 's_gegen' || x.k === 'rueckzug' ? ' is-hilfe' : '') + '"><b>' + (mir ? 'Du' : escapeHtml(bundName(x.w))) + (BUND_CHAT[x.k] && 'fa'.includes(BUND_CHAT[x.k].g) ? ':' : '') + '</b> <span>' + escapeHtml(bundChatText(x, mir)) + '</span>' +
                 (ort ? ' <button type="button" class="btn btn--ghost btn--sm" data-bact="zeigen" data-z="' + x.z + '">Zeigen</button>' : '') + '<small>' + uhrHtml(x.at, 'vor') + '</small></div>'; }).join('')
-            : '<div class="inbox-empty">Noch ist es ruhig. Frag dein Bündnis – oder tippe eine Basis an → „Im Chat teilen“.</div>') + '</div>' +
+            : leerHtml('bund', 'Noch ist es ruhig', 'Frag dein Bündnis mit den Knöpfen unten – oder tippe eine Basis an → „Im Chat teilen“.')) + '</div>' +
         '<div class="bd-ck"><span>Fragen</span>' + Object.keys(BUND_CHAT).filter(k => BUND_CHAT[k].g === 'f').map(knopf).join('') + '</div>' +   // (alle festen Sätze aus BUND_CHAT – kein zweites Verzeichnis)
         '<div class="bd-ck"><span>Antworten</span>' + Object.keys(BUND_CHAT).filter(k => BUND_CHAT[k].g === 'a').map(knopf).join('') + '</div>';
 }
@@ -1397,8 +1396,10 @@ function bundRallyZeile(r, meins) {
 }
 function bundRallyHtml(a) {
     const meine = bund.r.filter(r => r.aid === a.id), gegen = bund.r.filter(r => r.aid !== a.id && bundVerbuendet('player', islandOwnerOf(r.t)) || r.aid !== a.id && islandOwnerOf(r.t) === 'player');
-    return '<div class="notice">' + icon('info') + '<span>Rally: ein Mitglied sammelt Truppen an seiner Basis, die anderen schicken ihre dazu (Tore egal – nur wer startet, braucht den Weg zum Ziel). Nach Ablauf (1, 3 oder 5 Min.) marschiert alles als EIN Angriff los; wer später ankommt, zieht direkt zum Ziel nach. Jeder kämpft mit seinen eigenen Werten, der Anführer nimmt Haupt- und Zweitheld mit. Beute (Gold, Holz, Stein, Eisen – nur an der Hauptstadt) und Überlebende gehen nach Truppen zurück. Starten: feindliches Ziel antippen → „Rally“.</span></div>' +
-        '<div class="bd-liste">' + (meine.length ? meine.map(r => bundRallyZeile(r, true)).join('') : '<div class="inbox-empty">Gerade läuft keine Rally.</div>') + '</div>' +
+    return evBanner('rally', icon('troops') + ' Rally', meine.length ? meine.length + ' läuft' : 'Gemeinsam angreifen') +   // kurz + „i“ (die ganze Erklärung zum Aufklappen)
+        '<p class="bd-kurz">Ein Mitglied sammelt, alle schicken Truppen dazu – nach 1, 3 oder 5 Min. greift alles als EIN Angriff an.</p>' +
+        infoKlapp('rally', 'So läuft eine Rally', '<p class="mail-intro">Ein Mitglied sammelt Truppen an seiner Basis, die anderen schicken ihre dazu (Tore egal – nur wer startet, braucht den Weg zum Ziel). Nach Ablauf (1, 3 oder 5 Min.) marschiert alles als EIN Angriff los; wer später ankommt, zieht direkt zum Ziel nach. Jeder kämpft mit seinen eigenen Werten, der Anführer nimmt Haupt- und Zweitheld mit. Beute (Gold, Holz, Stein, Eisen – nur an der Hauptstadt) und Überlebende gehen nach Truppen zurück. Starten: feindliches Ziel antippen → „Rally“.</p>') +
+        '<div class="bd-liste">' + (meine.length ? meine.map(r => bundRallyZeile(r, true)).join('') : leerHtml('troops', 'Gerade läuft keine Rally', 'Tippe ein feindliches Ziel an → „Rally“.', '<button type="button" class="btn btn--primary btn--haupt" data-bact="zurKarte">' + icon('send') + '<span>Ziel auf der Karte wählen</span></button>')) + '</div>' +
         (gegen.length ? '<div class="sect"><h4>Gegen euch</h4></div><div class="bd-liste">' + gegen.map(r => bundRallyZeile(r, false)).join('') + '</div>' : '');
 }
 function bundSuchenHtml(a) { return bundOhneListeHtml() + '<div class="notice">' + icon('info') + '<span>Du bist in [' + escapeHtml(a.tag) + '] ' + escapeHtml(a.name) + '. Um zu wechseln, verlasse erst dein Bündnis.</span></div>' + bundListeHtml(a); }
@@ -1549,6 +1550,7 @@ if (bundPopup) {
         else if (act === 'zeigen') { const isl = islandById[+b.dataset.z]; if (isl) { bundSchliessen(); flyTo(isl.x, isl.y); setTimeout(() => openIslandPopup(isl), 380); } }
         else if (act === 'hilfeWahl') { bundWahl = { mode: 'hilfe', nach: +b.dataset.z, f: .5 }; bundRender(true); bundPopup.querySelector('.pbody').scrollTop = 0; }
         else if (act === 'dazuWahl') { bundWahl = { mode: 'dazu', rid: b.dataset.rid, f: .5 }; bundRender(true); bundPopup.querySelector('.pbody').scrollTop = 0; }
+        else if (act === 'zurKarte') { closeAllPopups(); flashHint('Tippe ein feindliches Ziel an → „Rally“.', 3500); }
         else if (act === 'abbruch') { if (sicher('abbruch:' + b.dataset.rid)) bundBefehl('rallyAbbruch', { rid: b.dataset.rid }, 'Rally wird abgebrochen.'); }
         else if (act === 'wahlZu') { bundWahl = null; bundRender(true); }
         else if (act === 'wahlLos') bundWahlLos();
